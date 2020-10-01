@@ -121,19 +121,27 @@ def _CheckConditionType(t):
   return True
 
 
-def get_c_type(t):
+def get_c_type(t, param=False):
+  is_pointer = False
+
   if isinstance(t, NoneTyp):  # e.g. a function that doesn't return anything
     return 'void'
 
-  if isinstance(t, AnyType):
+  elif isinstance(t, AnyType):
     # Note: this usually results in another compile-time error.  We should get
     # rid of the 'Any' types.
-    return 'void*'
+    c_type = 'void'
+    is_pointer = True
+
+  elif isinstance(t, PartialType):
+    # Note: bin/oil.py has some of these?  Not sure why.
+    c_type = 'void'
+    is_pointer = True
 
   # TODO: It seems better not to check for string equality, but that's what
   # mypyc/genops.py does?
 
-  if isinstance(t, Instance):
+  elif isinstance(t, Instance):
     type_name = t.type.fullname()
 
     if type_name == 'builtins.int':
@@ -146,22 +154,26 @@ def get_c_type(t):
       c_type = 'bool'
 
     elif type_name == 'builtins.str':
-      c_type = 'Str*'
+      c_type = 'Str'
+      is_pointer = True
 
     elif type_name == 'builtins.list':
       assert len(t.args) == 1, t.args
       type_param = t.args[0]
       inner_c_type = get_c_type(type_param)
-      c_type = 'List<%s>*' % inner_c_type
+      c_type = 'List<%s>' % inner_c_type
+      is_pointer = True
 
     elif type_name == 'builtins.dict':
       params = []
       for type_param in t.args:
         params.append(get_c_type(type_param))
-      c_type = 'Dict<%s>*' % ', '.join(params)
+      c_type = 'Dict<%s>' % ', '.join(params)
+      is_pointer = True
 
     elif type_name == 'typing.IO':
-      c_type = 'void*'
+      c_type = 'void'
+      is_pointer = True
 
     else:
       # note: fullname() => 'parse.Lexer'; name() => 'Lexer'
@@ -175,18 +187,11 @@ def get_c_type(t):
       # NOTE: Could we avoid the typedef?  If it's SimpleObj, just generate
       # tok_e instead?
 
-      # TODO: respect shared_ptr<> here
-      if 'asdl.pybase.SimpleObj' in base_class_names:
-        is_pointer = ''
-      else:
-        is_pointer = '*'
+      if 'asdl.pybase.SimpleObj' not in base_class_names:
+        is_pointer = True
 
       parts = t.type.fullname().split('.')
-      c_type = '%s::%s%s' % (parts[-2], parts[-1], is_pointer)
-
-  elif isinstance(t, PartialType):
-    # For Any?
-    c_type = 'void*'
+      c_type = '%s::%s' % (parts[-2], parts[-1])
 
   elif isinstance(t, UninhabitedType):
     # UninhabitedType has a NoReturn flag
@@ -197,7 +202,8 @@ def get_c_type(t):
     for inner_type in t.items:
       inner_c_types.append(get_c_type(inner_type))
 
-    c_type = 'Tuple%d<%s>*' % (len(t.items), ', '.join(inner_c_types))
+    c_type = 'Tuple%d<%s>' % (len(t.items), ', '.join(inner_c_types))
+    is_pointer = True
 
   elif isinstance(t, UnionType):
     # Special case for Optional[T] == Union[T, None]
@@ -220,6 +226,12 @@ def get_c_type(t):
 
   else:
     raise NotImplementedError('MyPy type: %s %s' % (type(t), t))
+
+  if is_pointer:
+    if param:
+      c_type = 'Local<%s>' % c_type
+    else:
+      c_type += '*'
 
   return c_type
 
@@ -1175,18 +1187,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # in Oil.
 
         if self.indent == 0:
+          assert isinstance(lval, NameExpr), lval
+          if lval.name == '_':  # Skip _ = log
+            return
+
           self.log('    GLOBAL List/Dict: %s', lval.name)
 
           # TODO: Change this to
           #
           # - GLOBAL_LIST(name, int, {42, 0})
           # - GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
+          # - GLOBAL_INSTANCE(name, Token, ...)
           #
           # So that they can have Tag::Global
-          #
-          # Also GLOBAL_INSTANCE?
 
-          assert isinstance(lval, NameExpr), lval
           lval_type = self.types[lval]
 
           if isinstance(o.rvalue, ListExpr):
@@ -1816,7 +1830,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if not first:
             self.decl_write(', ')
 
-          c_type = get_c_type(arg_type)
+          # TODO: Turn this on.  Having stdlib problems, e.g.
+          # examples/cartesian.
+          c_type = get_c_type(arg_type, param=False)
+          #c_type = get_c_type(arg_type, param=True)
+
           arg_name = arg.variable.name()
 
           # C++ has implicit 'this'

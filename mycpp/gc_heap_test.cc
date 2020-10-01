@@ -13,6 +13,7 @@
 // Types
 using gc_heap::Heap;
 using gc_heap::Local;
+using gc_heap::Param;
 using gc_heap::Obj;
 
 using gc_heap::Dict;
@@ -455,6 +456,11 @@ void otherfunc(Local<Str> s) {
   log("len(s) = %d", len(s));
 }
 
+void paramfunc(Param<Str> s) {
+  log("paramfunc roots_top_ = %d", gHeap.roots_top_);
+  log("len(s) = %d", len(s));
+}
+
 TEST local_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
@@ -479,6 +485,9 @@ TEST local_test() {
     otherfunc(str2);
     ASSERT_EQ_FMT(2, gHeap.roots_top_, "%d");
 
+    paramfunc(str2);
+    ASSERT_EQ_FMT(2, gHeap.roots_top_, "%d");
+
     ShowRoots(gHeap);
 
     gHeap.Collect();
@@ -497,6 +506,8 @@ TEST local_test() {
 
   // Hm this calls copy constructor!
   Local<Point> p4 = nullptr;
+
+  Param<Point> p5 = p4;
 
   PASS();
 }

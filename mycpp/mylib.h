@@ -808,7 +808,9 @@ inline int len(const std::shared_ptr<Str> s) {
 }
 
 template <typename T>
-inline int len(const List<T>* L) {
+//inline int len(gc_heap::Local<List<T>> L) {
+//inline int len(const List<T>* L) {
+inline int len(List<T>* L) {
   return L->v_.size();
 }
 

@@ -245,6 +245,7 @@ def main(argv):
 
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
+using gc_heap::Local;
 """ % header_name)
 
   if gc:

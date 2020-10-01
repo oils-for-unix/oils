@@ -315,9 +315,19 @@ class Local {
 };
 
 template <typename T>
-class Param {
+class Param : public Local<T> {
   // This could be an optimization like SpiderMonkey's Handle<T> vs Rooted<T>.
   // We use the names Param<T> and Local<T>.
+
+ public:
+  // hm this is awkward, I think we should NOT inherit!  We should only
+  // convert.
+  Param(const Local<T>& other) : Local<T>(nullptr) {
+    this->raw_pointer_ = other.raw_pointer_;
+  }
+
+  ~Param() {  // do not PopRoot()
+  }
 
   // Construct from T* -- PushRoot()
   // Construct from Local<T> -- we don't need to PushRoot()
@@ -766,21 +776,18 @@ using gc_heap::List;
 using gc_heap::Local;
 using gc_heap::Str;
 
-// Note: we need this duplicate for now... Otherwise the implicit construction
-// for len(Local<Str>) leads to more stack roots than we think!  TODO: I think
-// we need a better way of balancing it.
-#if 0
-inline int len(const Str* s) {
+// For string methods to use, e.g. _len(this).  Note: it might be OK to call
+// this len() and overload it?
+inline int _len(const Str* s) {
   return s->obj_len_ - gc_heap::kStrHeaderSize - 1;
 }
-#endif
 
 // Hm only functions that don't allocate can take a raw pointer ...
 // If they allocate, then that pointer can be moved out from under them!
 
 // Hm do all standard library functions have to take Handles now?
 inline int len(Local<Str> s) {
-  return s.Get()->obj_len_ - gc_heap::kStrHeaderSize - 1;
+  return _len(s.Get());
 }
 
 // TODO: Make this Local<List<T>>
