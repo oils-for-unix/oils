@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
-#include <memory>    // shared_ptr
 
 #include "greatest.h"
 #include "mylib.h"
@@ -691,20 +690,6 @@ TEST test_print() {
   PASS();
 }
 
-using std::make_shared;
-using std::shared_ptr;
-
-TEST test_shared_ptr() {
-  auto mystr = make_shared<Str>("foo");
-  log("len = %d", len(mystr));
-
-  // This doesn't compile because of some destructor problems
-  // auto mylist = make_shared<List<shared_ptr<Str>>();
-
-  auto mylist = new List<Str*>();
-  log("len = %d", len(mylist));
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -728,7 +713,6 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_tuple);
 
   RUN_TEST(test_print);
-  RUN_TEST(test_shared_ptr);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

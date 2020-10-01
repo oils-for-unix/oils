@@ -121,7 +121,7 @@ def _CheckConditionType(t):
   return True
 
 
-def get_c_type(t, param=False):
+def get_c_type(t, param=False, local=False):
   is_pointer = False
 
   if isinstance(t, NoneTyp):  # e.g. a function that doesn't return anything
@@ -228,7 +228,7 @@ def get_c_type(t, param=False):
     raise NotImplementedError('MyPy type: %s %s' % (type(t), t))
 
   if is_pointer:
-    if param:
+    if param or local:
       c_type = 'Local<%s>' % c_type
     else:
       c_type += '*'
@@ -1293,6 +1293,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
           lval_type = self.types[lval]
+          #c_type = get_c_type(lval_type, local=self.indent != 0)
           c_type = get_c_type(lval_type)
 
           # for "hoisting" to the top of the function

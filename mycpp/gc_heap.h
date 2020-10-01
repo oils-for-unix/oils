@@ -790,7 +790,6 @@ inline int len(Local<Str> s) {
   return _len(s.Get());
 }
 
-// TODO: Make this Local<List<T>>
 template <typename T>
 int len(const List<T>* L) {
   return L->len_;
