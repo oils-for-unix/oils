@@ -61,3 +61,30 @@ not `${}`.
 
 -->
 
+## The `setvar` keyword feels too long.
+
+Yes, but if you upgrade to `bin/oil` instead of `bin/osh`, you can almost
+always use `set` (which is an alias for `setlocal`, not `setvar`).
+
+OSH style, works everywhere:
+
+    setvar x = 42
+
+Oil style, which OK for new scripts, may need to change old scripts:
+
+    set x = 42  # nicer, but conflicts with set -o errexit
+
+To avoid the `set` conflict, change this:
+
+    set -o errexit
+    set +o errexit
+
+to one of these:
+
+    shopt --set errexit
+    shopt --unset errexit
+
+    # same thing
+    shopt -s errexit
+    shopt -u errexit
+
