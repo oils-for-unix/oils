@@ -100,8 +100,8 @@ shopt -s parse_tea
 func f(; x=42) {
   echo $x
 }
-pass f()
-pass f(x=99)
+_ f()
+_ f(x=99)
 ## STDOUT:
 42
 99
@@ -175,7 +175,7 @@ func printf(fmt, ...args) {
   # Should be a LIST
   = args
 }
-pass printf('foo', 'a', 42, null)
+_ printf('foo', 'a', 42, null)
 
 ## STDOUT:
 (Str)   'foo'
