@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Differences from bash:
 # - literal syntax alternates key-value

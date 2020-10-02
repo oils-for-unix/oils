@@ -1,4 +1,3 @@
-#!/bin/bash
 
 #### command -v
 myfunc() { echo x; }

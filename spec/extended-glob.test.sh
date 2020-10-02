@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # This is an OPTION in bash, but not mksh (because the feature originated in
 # ksh).

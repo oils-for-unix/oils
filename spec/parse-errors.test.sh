@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### Bad var sub
 echo $%

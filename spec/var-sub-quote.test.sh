@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # 
 # Tests for the args in:
 #

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 # NOTE:
 # -declare -A is required.

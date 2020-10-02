@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### exec builtin 
 exec echo hi

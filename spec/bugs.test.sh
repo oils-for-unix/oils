@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### echo keyword
 echo done

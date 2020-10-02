@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Var refs are done with ${!a}
 #

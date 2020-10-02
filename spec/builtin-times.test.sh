@@ -1,4 +1,3 @@
-#!/bin/bash
 
 #### times shows two formatted lines
 output=$(times)

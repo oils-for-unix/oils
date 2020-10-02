@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### --debug-file
 $SH --debug-file $TMP/debug.txt -c 'true'

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### [bash_unset] local-unset / dynamic-unset for localvar
 unlocal() { unset -v "$1"; }

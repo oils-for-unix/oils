@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### >&
 echo hi 1>&2

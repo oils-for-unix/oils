@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Test combination of var ops.
 #

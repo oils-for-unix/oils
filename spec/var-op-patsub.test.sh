@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Test ${x/pat*/replace}
 

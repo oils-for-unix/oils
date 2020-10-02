@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Test set flags, sh flags.
 

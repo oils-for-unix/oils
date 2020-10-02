@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
 # Things that dash doesn't support.

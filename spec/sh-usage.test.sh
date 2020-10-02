@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Usage:
 #   ./sh-usage.test.sh <function name>

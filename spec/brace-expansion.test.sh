@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### no expansion
 echo {foo}

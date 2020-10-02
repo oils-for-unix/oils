@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Interesting interpretation of constants.
 #

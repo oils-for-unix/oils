@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Test the length oeprator, which dash supports.  Dash doesn't support most
 # other ops.

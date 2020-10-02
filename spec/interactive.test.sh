@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 
 #### 'exit' in oshrc (regression)

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Tests for builtins having to do with variables: export, readonly, unset, etc.
 #

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Miscellaneous tests for the command language.
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### recursive arith: one level
 shopt -s eval_unsafe_arith

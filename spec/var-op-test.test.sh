@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### Lazy Evaluation of Alternative
 i=0

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Tests for bash's type flags on cells.  Hopefully we don't have to implement
 # this, but it's good to know the behavior.

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### sh -i
 # This fails because OSH prompt goes to stdout, and other differences. It's

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Tests for the blog.
 #

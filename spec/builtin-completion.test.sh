@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### -A function prints functions
 add () { expr 4 + 4; }

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### zero args: [ ]
 [ ] || echo false

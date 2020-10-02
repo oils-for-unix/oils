@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Tests that explore parsing corner cases.
 

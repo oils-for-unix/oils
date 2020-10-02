@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # xtrace test.  Test PS4 and line numbers, etc.
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Tests for pipelines.
 # NOTE: Grammatically, ! is part of the pipeline:

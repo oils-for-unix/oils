@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Alias is in POSIX.
 #

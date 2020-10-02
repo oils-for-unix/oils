@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### ~ expansion in assignment
 HOME=/home/bob

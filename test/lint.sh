@@ -213,13 +213,20 @@ replace-bash-shebang() {
 
 readonly BAD_PY='^#!.*/usr/bin/python'
 
-bad-shebangs() {
+bad-py() {
   find-py -a -print | xargs -- grep "$BAD_PY"
   #grep '^#!.*/bin/bash ' */*.sh
 }
 
 replace-shebangs() {
   find-py -a -print | xargs -- grep -l "$BAD_PY" | xargs $0 replace-py-shebang
+}
+
+readonly BAD_BASH='^#!.*/bin/bash'
+
+bad-bash() {
+  # these files don't need shebangs
+  grep -l '^#!' spec/*.test.sh | xargs -- sed -i '1d'
 }
 
 

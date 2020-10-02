@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### Empty do/done
 while false; do

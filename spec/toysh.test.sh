@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Snippets from http://landley.net/notes.html
 #

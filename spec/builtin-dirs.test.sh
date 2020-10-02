@@ -1,4 +1,3 @@
-#!/bin/bash
 
 #### pushd/popd
 set -o errexit

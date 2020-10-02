@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # Weird case from bash-help mailing list.
 #

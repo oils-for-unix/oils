@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### implicit for loop
 # This is like "for i in $@".

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # For testing the Python sketch
 

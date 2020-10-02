@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Corner cases in var sub.  Maybe rename this file.
 

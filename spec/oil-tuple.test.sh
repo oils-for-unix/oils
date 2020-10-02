@@ -1,4 +1,3 @@
-#!/bin/bash
 
 #### tuple comparison
 var t1 = 3, 0

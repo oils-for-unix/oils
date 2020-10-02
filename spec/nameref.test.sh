@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Usage:
 #   ./named-ref.test.sh <function name>

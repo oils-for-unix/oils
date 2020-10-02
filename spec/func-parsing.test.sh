@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### Incomplete Function
 ## code: foo()

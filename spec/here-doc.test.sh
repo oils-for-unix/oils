@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### Here string
 cat <<< 'hi'

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 
 #### Locals don't leak
 f() {
