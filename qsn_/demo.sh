@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # What do Unix tools do with "bad" filenames?
 #

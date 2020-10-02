@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 n=1000
 x=10000

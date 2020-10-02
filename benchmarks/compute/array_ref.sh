@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Show superlinear behavior in bash arrays.  Need pretty high N to start seeing
 # it.

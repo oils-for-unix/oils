@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Library shared between test/{spec,spec-alpine,spec-bin}.sh.
 

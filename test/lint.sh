@@ -167,13 +167,15 @@ travis() {
   fi
 
   flake8-all
+
+  check-shebangs
 }
 
 #
 # Adjust and Check shebang lines.  It matters for developers on different distros.
 #
 
-find-py() {
+find-src() {
   # don't touch mycpp yet because it's in Python 3
   # build has build/app_deps.py which needs the -S
   find \
@@ -181,8 +183,11 @@ find-py() {
     -name 'Python-*' -a -prune -o \
     -name 'mycpp' -a -prune -o \
     -name 'build' -a -prune -o \
-    -name '*.py' "$@"
+    "$@"
 }
+
+find-py() { find-src -name '*.py' -a -print "$@"; }
+find-sh() { find-src -name '*.sh' -a -print "$@"; }
 
 print-if-has-shebang() {
   read first < $1
@@ -202,8 +207,10 @@ executable-py() {
 # - Use /usr/bin/env because it works better with virtualenv?
 #
 # https://stackoverflow.com/questions/9309940/sed-replace-first-line
+#
+# e.g. cat edit.list, change the first line
+
 replace-py-shebang() {
-  # e.g. cat edit.list, change the first line
   sed -i '1c#!/usr/bin/env python2' "$@"
 }
 
@@ -211,24 +218,51 @@ replace-bash-shebang() {
   sed -i '1c#!/usr/bin/env bash' "$@"
 }
 
-readonly BAD_PY='^#!.*/usr/bin/python'
+# NOTE: no ^ anchor because of print-first-line
+
+readonly BAD_PY='#!.*/usr/bin/python'
+readonly BAD_BASH='#!.*/bin/bash'
 
 bad-py() {
-  find-py -a -print | xargs -- grep "$BAD_PY"
+  find-py -a -print | xargs -- egrep "$BAD_PY"
   #grep '^#!.*/bin/bash ' */*.sh
-}
 
-replace-shebangs() {
-  find-py -a -print | xargs -- grep -l "$BAD_PY" | xargs $0 replace-py-shebang
+  find-py -a -print | xargs -- egrep -l "$BAD_PY" | xargs $0 replace-py-shebang
 }
-
-readonly BAD_BASH='^#!.*/bin/bash'
 
 bad-bash() {
   # these files don't need shebangs
-  grep -l '^#!' spec/*.test.sh | xargs -- sed -i '1d'
+  #grep -l '^#!' spec/*.test.sh | xargs -- sed -i '1d'
+
+  #find-sh -a -print | xargs -- grep "$BAD_BASH"
+
+  find-sh -a -print | xargs -- egrep -l "$BAD_BASH" | xargs $0 replace-bash-shebang
 }
 
+print-first-line() {
+  local path=$1
+
+  read line < $path
+  echo "$path: $line"  # like grep output
+}
+
+check-shebangs() {
+  set +o errexit
+
+  if true; then
+    find-py | xargs -n 1 -- $0 print-first-line | egrep "$BAD_PY"
+    if test $? -ne 1; then
+      die "FAIL: Found bad Python shebangs"
+    fi
+  fi
+
+  find-sh | xargs -n 1 -- $0 print-first-line | egrep "$BAD_BASH"
+  if test $? -ne 1; then
+    die "FAIL: Found bad bash shebangs"
+  fi
+
+  echo 'PASS: check-shebangs'
+}
 
 #
 # sprintf -- What do we need in mycpp?

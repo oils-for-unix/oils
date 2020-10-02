@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copied from hard-coded-descriptors/ in oilshell/blog-code, which was copied
 # from Nix setup.sh.  See issue #26.

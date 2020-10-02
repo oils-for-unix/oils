@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 hexdigits='0123456789abcdef'
 for c in {0..9} {a..f}; do

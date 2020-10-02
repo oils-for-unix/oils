@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test out our modifications to posixmodule.c to handle EINTR.
 #

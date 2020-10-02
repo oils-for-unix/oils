@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo source-argv: $@
 # 'shift' will only apply to the args of 'f()' when no new args are provided.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Compare operations on data structures, with little I/O: strings, array,
 # associative arrays, integers.
