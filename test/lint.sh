@@ -202,10 +202,26 @@ executable-py() {
 # - Use /usr/bin/env because it works better with virtualenv?
 #
 # https://stackoverflow.com/questions/9309940/sed-replace-first-line
-replace-shebang() {
+replace-py-shebang() {
   # e.g. cat edit.list, change the first line
   sed -i '1c#!/usr/bin/env python2' "$@"
 }
+
+replace-bash-shebang() {
+  sed -i '1c#!/usr/bin/env bash' "$@"
+}
+
+readonly BAD_PY='^#!.*/usr/bin/python'
+
+bad-shebangs() {
+  find-py -a -print | xargs -- grep "$BAD_PY"
+  #grep '^#!.*/bin/bash ' */*.sh
+}
+
+replace-shebangs() {
+  find-py -a -print | xargs -- grep -l "$BAD_PY" | xargs $0 replace-py-shebang
+}
+
 
 #
 # sprintf -- What do we need in mycpp?
