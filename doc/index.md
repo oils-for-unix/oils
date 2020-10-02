@@ -35,6 +35,8 @@ language.  It's **our upgrade path from bash**.
 
 - [The Oil Language From 10,000 Feet](oil-overview.html)  A tour of Oil.
 - [Oil Language Idioms](idioms.html).  A list of idioms you may want to use.
+- [Oil Language FAQ](oil-language-faq.html).  Common questions about the
+  language.
 - [Shell Language Deprecations](deprecations.html).  When you turn on Oil,
   there are some shell constructs you can no longer use.  We try to minimize
   the length of this list.

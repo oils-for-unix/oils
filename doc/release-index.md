@@ -51,6 +51,7 @@ docs are ready:
 - [Egg Expressions (Oil Regexes)](doc/eggex.html)
 - [Simple Word Evaluation](doc/simple-word-eval.html)
 - [Oil Language Idioms](doc/idioms.html)
+- [Oil Language FAQ](doc/oil-language-faq.html)
 - [Shell Language Deprecations](doc/deprecations.html)
 - [QSN](doc/qsn.html)
 - [Quirks](doc/quirks.html)

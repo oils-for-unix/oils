@@ -17,6 +17,7 @@ export PYTHONPATH='.:vendor/'
 
 ubuntu-deps() {
   # python-dev: for all the extension modules
+  #   TODO: upgrade Ubuntu and change to python2-dev
   # gawk: used by spec-runner.sh for the special match() function.
   # time: used to collect the exit code and timing of a test
   # libreadline-dev: needed for the build/prepare.sh Python build.

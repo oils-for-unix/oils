@@ -79,6 +79,7 @@ readonly MARKDOWN_DOCS=(
   deprecations
   future
   idioms
+  oil-language-faq
   qsn
   qtsv
   language-design
