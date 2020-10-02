@@ -682,7 +682,8 @@ def CommandId(w):
         return Id.Word_Compound
 
       elif token_type in (
-          Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals, Id.ControlFlow_Return):
+          Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals, Id.Lit_Underscore,
+          Id.ControlFlow_Return):
         # OSH and Oil recognize:  { }
         # Oil recognizes:         = return
         return token_type

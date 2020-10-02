@@ -215,9 +215,6 @@ _KEYWORDS = [
   C('setglobal', Id.KW_SetGlobal),
   C('proc',      Id.KW_Proc),
 
-  # Not used, but reserved for now?
-  C('pass',      Id.KW_Pass),
-
   # Tea-only
   C('func',      Id.KW_Func),
   C('data',      Id.KW_Data),
@@ -305,7 +302,8 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
   C(',', Id.Lit_Comma),
 
-  C('=', Id.Lit_Equals),  # for x = 1+2*3
+  C('=', Id.Lit_Equals),      # for = f(x) and x = 1+2*3
+  C('_', Id.Lit_Underscore),  # for _ f(x)
 
   # @array and @func(1, c)
   R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for Oil splicing

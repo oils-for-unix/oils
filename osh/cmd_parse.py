@@ -1728,7 +1728,7 @@ class CommandParser(object):
       enode = self.w_parser.ParseCommandExpr()
       return command.Return(keyword, enode)
 
-    if self.c_id in (Id.KW_Pass, Id.Lit_Equals):
+    if self.c_id in (Id.Lit_Underscore, Id.Lit_Equals):
       keyword = _KeywordToken(self.cur_word)
       self._Next()
       enode = self.w_parser.ParseCommandExpr()

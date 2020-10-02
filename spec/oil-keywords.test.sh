@@ -6,10 +6,10 @@
 (Int)   7
 ## END
 
-#### pass
-pass 1 + 2 * 3
+#### _ to ignore return value
+_ 1 + 2 * 3
 var a = %(a b c)
-pass len(a)
+_ len(a)
 echo end
 ## STDOUT:
 end

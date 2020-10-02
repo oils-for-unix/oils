@@ -214,7 +214,8 @@ def AddKinds(spec):
       'Star', 'QMark',
       # Either brace expansion or keyword for { and }
       'LBrace', 'RBrace', 'Comma',
-      'Equals',
+      'Equals',            # For = f()
+      'Underscore',        # For _ f()
       'DRightBracket',     # the ]] that matches [[, NOT a keyword
       'TildeLike',         # tilde expansion
       'Pound',             #  for comment or VAROP state
@@ -461,7 +462,6 @@ def AddKinds(spec):
       # later: Auto
       'Proc', 'Func', 'Data', 'Enum',
       'Class', 'Use',
-      'Pass',  # for printing
 
       # 'Match', 'With',  # matching
       # not sure: yield

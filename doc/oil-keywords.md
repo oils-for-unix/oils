@@ -139,6 +139,16 @@ $ = %(one two)
 (StrArray)   ['one', 'two']
 ```
 
+### `_` ignores an expression
+
+Think of this:
+
+    _ f(x)
+
+as a shortcut for:
+
+    _ = f(x)  # assign to "meh" variable
+
 <!--
 
 LATER: If we ever get true integers and floats!

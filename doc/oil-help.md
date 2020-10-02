@@ -114,8 +114,6 @@ The `_` keyword evaluates an expression and throws away the result:
 
 Think of it as a shortcut for `_ = expr` (throwaway assignment).
 
-TODO: implement this.
-
 #### oil-block
 
 Blocks can be passed to builtins (and procs eventually):
