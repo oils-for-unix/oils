@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test building the tarball on Gentoo.  Adapted from test/alpine.sh.
 #

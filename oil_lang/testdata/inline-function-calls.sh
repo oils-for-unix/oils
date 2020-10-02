@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Usage:
 #   ./inline-function-calls.sh <function name>

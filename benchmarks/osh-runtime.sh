@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test scripts found in the wild for both correctness and performance.
 #

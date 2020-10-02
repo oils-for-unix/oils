@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Usage:
 #   ./strace-redirects.sh <function name>

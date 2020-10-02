@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # echo, read, mapfile
 # TODO mapfile options: -c, -C, -u, etc.

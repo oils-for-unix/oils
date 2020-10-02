@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Usage:
 #   ./osh-crash.sh <function name>

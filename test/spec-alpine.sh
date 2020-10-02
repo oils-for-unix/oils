@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Analogous to test/spec.sh, but for the environment set up by test/alpine2.sh.
 #

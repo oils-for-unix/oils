@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 
 # Make a tarball containing native (C++) code.
 #

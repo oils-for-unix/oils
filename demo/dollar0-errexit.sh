@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Pattern for testing if a function has succeeded or failed with set -e:
 #

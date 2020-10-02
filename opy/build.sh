@@ -133,7 +133,7 @@ _fill-oil-tree() {
 
   local stub=$dir/bin/osh-byterun
   cat >$stub <<'EOF'
-#!/bin/bash
+#!/usr/bin/env bash
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 exec python $THIS_DIR/opy_.pyc opyc run $THIS_DIR/oil.pyc osh "$@"
 EOF

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Do a quick test of virtual memory.
 # TODO: We could use Max RSS instead?  Didn't know about that when I originally

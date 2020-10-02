@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #### K and V are variables in (( array[K] = V ))
 K=5

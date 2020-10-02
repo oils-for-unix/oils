@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Demo of bash completion fallback.  Hm.  -D is not chained, and neither is -F
 # -F.

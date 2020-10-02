@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #### tuple comparison
 var t1 = 3, 0

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Install smoosh.  Based on a shell script by Michael Greenberg.  #
 #

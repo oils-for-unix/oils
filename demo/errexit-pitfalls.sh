@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Prep for the "Ultimate Guide to errexit".
 #

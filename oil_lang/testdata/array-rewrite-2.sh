@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Example of rewriting string-based argv processing to use arrays.
 #

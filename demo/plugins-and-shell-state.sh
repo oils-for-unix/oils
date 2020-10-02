@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Investigation of https://github.com/oilshell/oil/issues/268
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Metrics for Oil bytecode produced by the OPy compiler.
 #

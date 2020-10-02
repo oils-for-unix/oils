@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Hm this changes everything -- exit code is 1!
 #set -o errexit

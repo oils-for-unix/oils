@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # See if mypy's pyi format is useful.  It does extract members.
 #
