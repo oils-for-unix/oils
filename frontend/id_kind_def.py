@@ -298,7 +298,9 @@ def AddKinds(spec):
       'OneChar', 'Stop', 'Hex',
       # Two variants of Octal: \377, and \0377.
       'Octal3', 'Octal4',
-      'Unicode4', 'Unicode8', 'Literals',
+      'Unicode4', 'Unicode8',  # legacy
+      'UBraced', # Oil
+      'Literals',
       'BadBackslash',  # \D or trailing \
   ])
 

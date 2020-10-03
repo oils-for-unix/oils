@@ -35,8 +35,8 @@ def EvalCharLiteralForRegex(tok):
     i = int(s, 16)
     return class_literal_term.ByteSet(chr(i), tok.span_id)
 
-  elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
-    s = value[2:]
+  elif id_ == Id.Char_UBraced:
+    s = value[3:-1]  # \u{123}
     i = int(s, 16)
     return class_literal_term.CodePoint(i, tok.span_id)
 

@@ -140,3 +140,70 @@ You could do:
 - This change probably doesn't involve a lexer mode.
 - It would be a big breakage!
 
+<!--
+
+Idea: parse_square_brackets in lex_mode::OilCommand?
+
+Instead of
+
+    echo *.[ch]
+
+You have to do
+
+    echo @glob('*.[ch]')
+
+Or even:
+
+    echo @'*.[ch]'
+
+Which is a small price to pay to free up []
+
+Actually that's not bad... but
+
+    echo *.py 
+    still works
+
+So then you can distinguish sigil pairs
+
+EXPRESSION:
+
+    :(1 + 2)
+    &(1 + 2)
+
+COMMAND:
+
+    $[hostname] - bah!  conflicts   I guess the $(hostname) wart is OK?
+        $<1+2> or $<a[i]>  # too ugly?
+    @[seq 3]
+    x = ^[echo $PWD]
+
+    myarray = %[foo bar baz]
+
+Yes I like this.  Doh might take ahwile.
+
+Have to resolve $[1 + 2] and $[hostname].  We need another thing for expression
+substitution.  It can't be $(1 + 2)
+
+Maybe it's
+
+    $$(1 + 2)   
+    .(1 + 2)  
+    ~(1 + 2)
+
+    /(1 + 2)
+
+That's a syntax error?
+
+
+Globbing option:
+
+if (x ~ @'*.py') {
+}
+
+if (x ~~ '*.py') {
+}
+
+Hm the latter still reads better.
+
+-->
+

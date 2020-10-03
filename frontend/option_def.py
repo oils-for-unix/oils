@@ -194,8 +194,15 @@ _BASIC_PARSE_OPTIONS = [
 
 # Extra stuff that breaks too many programs.
 _AGGRESSIVE_PARSE_OPTIONS = [
-    'parse_set',  # set x = 'var'
-    'parse_equals',  # x = 'var'
+    'parse_set',       # set x = 'var'
+    'parse_equals',    # x = 'var'
+
+    # This affects the LEXER.  Turn Lit_LBracket in to Op_LBracket?
+    'parse_brackets',  # so we can detect end of $[echo hi], %[one two], etc.
+
+    # Does this one require OilCommand mode?
+    # Two rules: '&('  and  '&' + _VAR_NAME_RE
+    #'parse_amp',       # echo foo > &fd, cd /tmp &block
 ]
 
 

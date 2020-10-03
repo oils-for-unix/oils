@@ -344,21 +344,26 @@ no
 
 #### ERE can express Unicode escapes that are in the ASCII range
 shopt -s oil:all
-var pat = /[ \u007f ]/;
+var pat = /[ \u{7f} ]/;
 
 echo $pat | od -A n -t x1
 if (c'\x7f' ~ pat) { echo yes } else { echo no }
 if (c'\x7e' ~ pat) { echo yes } else { echo no }
 
+var pat2 = /[ \u{7f} ]/;
+var pat3 = /[ \u{0007f} ]/;
+test "$pat2" = "$pat3" && echo 'equal'
+
 ## STDOUT:
  5b 7f 5d 0a
 yes
 no
+equal
 ## END
 
 #### ERE can't express higher Unicode escapes
 shopt -s oil:all
-var pat = /[ \u00ff ]/;
+var pat = /[ \u{ff} ]/;
 
 echo $pat | od -A n -t x1
 if (c'\x7f' ~ pat) { echo yes } else { echo no }

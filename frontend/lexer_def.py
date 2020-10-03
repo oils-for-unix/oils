@@ -467,18 +467,20 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 
 # The main purpose for EXPR_CHARS is in regex literals, e.g. [a-z \t \n].
 #
-# Since chars are integers, means that \u1234 is the same as 0x1234.  And 0x0
+# In Oil expressions, Chars are code point integers, so \u{1234} is the same as
+# 0x1234.  And \0 is 0x0.
 
 # In Python:
-# chr(0x00012345) == u'\u00012345'
+# chr(0x00012345) == u'\U00012345'
 #
 # In Oil:
-# 
-# 0x00012345 == \u00012345
-# chr(0x00012345) == chr(\u00012345) == c'\u00012345'
-#
-# The syntax follows Python, which is stricter than bash.  There must be
-# exactly 2, 4, or 8 digits.
+# 0x00012345 == \u{12345}
+# chr(0x012345) == chr(\u{012345}) == c'\u{012345}'
+
+# We choose to match QSN (Rust) rather than Python or bash.
+# Technically it could be \u123456, because we're not embedded in a string, but
+# it's better to be consistent.
+
 EXPR_CHARS = [
   # This is like Rust.  We don't have the legacy C escapes like \b.
 
@@ -486,8 +488,7 @@ EXPR_CHARS = [
   R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
 
   R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
-  R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4),
-  R(r'\\U[0-9a-fA-F]{8}', Id.Char_Unicode8),
+  R(r'\\u\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced),
 ]
 
 # Shared between echo -e and $''.
@@ -497,6 +498,9 @@ _C_STRING_COMMON = [
   R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex),
   R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
   R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
+
+  # TODO: Also add \u{123456} here
+  # And make sure there are syntax errors
 
   R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
@@ -862,6 +866,10 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
+
+  # TODO:
+  # - Call this Expr_PercentSymbol
+  # - Expr_ColonSymbol for interned strings
   R('%' + VAR_NAME_RE, Id.Expr_Symbol),
 
   #

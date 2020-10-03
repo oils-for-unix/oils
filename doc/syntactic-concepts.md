@@ -22,6 +22,85 @@ Oil extends these syntactic concepts.
 <div id="toc">
 </div> 
 
+## Rough Idea
+
+`$` means "string":
+
+    $var   ${var}   $(hostname)   $[hostname]   $len(x)
+    $/ digit+ /
+
+`@` means array:
+
+    write -- @strs
+    for i in @(seq 3) { echo $i }
+    @[seq 3]  # new style
+    @split(x)  @glob(x)
+    proc(first, @rest) {  write -- @rest }
+
+`[]` means sequence:
+
+    ['one', 'two', 'three']
+    %[one two three]
+    $[echo hi]  # new style
+    @[seq 3]    # new style
+
+And are used in type expressions:
+
+    Dict[Int, Str]
+    Func[Int => Int]
+
+`()` means runtime expressions / typed data:
+
+    setvar x = (1 + 2) * 3
+
+    if (x > 0) {
+      echo 'positive'
+    }
+
+    echo .(4 + 5)
+    echo foo > &(fd)
+
+`{}` means dict / block / name-value:
+
+    d = {name: 'Bob'}
+
+    while (x > 0) {
+      setvar x -= 1
+    }
+
+    server foo {
+      name = 'Bob'
+    }
+
+Kebab-case is for procs and filenames:
+
+    gc-test   opt-stats   gen-mypy-asdl
+
+    test/spec-runner.oil   spec/data-enum.tea
+
+Capital Letters are used for types:
+
+    Bool  Int  Float  Str  List  Dict  Func
+
+    class Parser { }
+    data Point(x Int, y Int)
+
+    enum Expr { Unary(child Expr), Binary(left Expr, right Expr) }
+
+Less important sigils:
+
+`:` means unevaluated:
+
+    :myname
+    :(1 + 2)
+
+`^` means a command block:
+
+    ^(echo $PWD)
+    ^[echo $PWD]  # new style
+    proc foo(x, ^block) { echo $x; _ run(block) }
+
+
 ## Static Parsing
 
 Like Python, JS.  See Oil language definition.
@@ -125,6 +204,7 @@ And it may change the lexer mode, based on what's inside.
 
     %(array lit) Array Literal      Words          expr
 
+    .(1 + 2)     Expr to String     Expression     cmd          currently $[1 + 2]
     :(1 + 2)     Lazy Expression    Expression     cmd,expr     
     &(1 + 2)     Eager Expression   Expression     cmd          > &(fd) and > &fd
 
@@ -171,3 +251,10 @@ Table example:
       'andy c'  15_000
     }
     var people = {name: %(bob 'andy c'), age: %[10_000 15_000]}
+
+## Related Documents
+
+- [Ideas for Future Deprecations](future.html).  We can reduce the overloading
+  of parens by taking back `[]` as operator characters, and globbing with
+  `@'*.[ch]'`.
+
