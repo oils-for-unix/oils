@@ -69,16 +69,15 @@ comp_op: (
 splat_expr: '...' expr
 
 expr: xor_expr ('|' xor_expr)*
-xor_expr: and_expr ('xor' and_expr)*
+xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
 shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
-# Oil patch: removed '@' and // -> div, % -> mod
-term: factor (('*'|'/'|'mod'|'div') factor)*
+# Oil patch: removed '@'
+term: factor (('*'|'/'|'//'|'%') factor)*
 factor: ('+'|'-'|'~') factor | power
-# Oil patch: ** -> ^
-# Also removed Python 3 'await'
-power: atom trailer* ['^' factor]
+# Oil patch: removed Python 3 'await'
+power: atom trailer* ['**' factor]
 
 testlist_comp: (test|splat_expr) ( comp_for | (',' (test|splat_expr))* [','] )
 

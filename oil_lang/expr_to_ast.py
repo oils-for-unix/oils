@@ -543,7 +543,7 @@ class Transformer(object):
         return expr.Unary(op.tok, self.Expr(e))
 
       elif typ == grammar_nt.power:
-        # power: atom trailer* ['^' factor]
+        # power: atom trailer* ['**' factor]
 
         node = self.Expr(children[0])
         if len(children) == 1:  # No trailers
@@ -555,9 +555,9 @@ class Transformer(object):
           node = self._Trailer(node, children[i])
           i += 1
 
-        if i != n:  # ['^' factor]
+        if i != n:  # ['**' factor]
           op_tok = children[i].tok
-          assert op_tok.id == Id.Arith_Caret, op_tok
+          assert op_tok.id == Id.Arith_DStar, op_tok
           factor = self.Expr(children[i+1])
           node = expr.Binary(op_tok, node, factor)
 

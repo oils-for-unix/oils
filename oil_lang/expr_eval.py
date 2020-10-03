@@ -310,12 +310,12 @@ class OilEvaluator(object):
         # But just make it explicit.
         return float(left) / right  # floating point division
 
-      if node.op.id == Id.Expr_Div:
+      if node.op.id == Id.Expr_DSlash:
         return left // right  # integer divison
-      if node.op.id == Id.Expr_Mod:
+      if node.op.id == Id.Arith_Percent:
         return left % right
 
-      if node.op.id == Id.Arith_Caret:  # Exponentiation
+      if node.op.id == Id.Arith_DStar:  # Exponentiation
         return left ** right
 
       # Bitwise
@@ -323,7 +323,7 @@ class OilEvaluator(object):
         return left & right
       if node.op.id == Id.Arith_Pipe:
         return left | right
-      if node.op.id == Id.Expr_Xor:
+      if node.op.id == Id.Arith_Caret:
         return left ^ right
       if node.op.id == Id.Arith_DGreat:
         return left >> right

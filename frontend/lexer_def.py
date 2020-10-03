@@ -234,13 +234,10 @@ _CONTROL_FLOW = [
 
 # Used by oil_lang/grammar_gen.py too
 EXPR_WORDS = [
+  # TODO: Should be True/False/None to be Python compatible
   C('null', Id.Expr_Null),
   C('true', Id.Expr_True),
   C('false', Id.Expr_False),
-
-  C('div', Id.Expr_Div),
-  C('mod', Id.Expr_Mod),
-  C('xor', Id.Expr_Xor),
 
   C('and', Id.Expr_And),
   C('or', Id.Expr_Or),
@@ -254,7 +251,10 @@ EXPR_WORDS = [
 
   # for function literals
   C('func', Id.Expr_Func),
+  # TODO: also allow 'def' for compatibility?  At the cost of vars named
+  # 'def'?
 
+  # Note: can 'virtual' just be 'override'?  What do other languages do?
   C('virtual',   Id.Expr_Virtual),
   C('override',  Id.Expr_Override),
   C('abstract',  Id.Expr_Abstract),
@@ -868,8 +868,12 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('+', Id.Arith_Plus),    # arith infix, regex postfix
   C('-', Id.Arith_Minus),   # arith infix, regex postfix
   C('*', Id.Arith_Star),
-  C('^', Id.Arith_Caret),   # ^ rather than ** is exponentiation.  xor is 'xor'.
+  C('^', Id.Arith_Caret),   # xor
   C('/', Id.Arith_Slash),
+  C('%', Id.Arith_Percent),
+
+  C('//', Id.Expr_DSlash),  # For Oil integer division
+  C('**', Id.Arith_DStar),   # exponentiation
 
   C('<', Id.Arith_Less),
   C('>', Id.Arith_Great),
@@ -928,7 +932,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
 
   C('...', Id.Expr_Ellipsis),  # f(...args) and maybe a[:, ...]
 
-  C('//', Id.Expr_Reserved),
   # For multiline regex literals?
   C('///', Id.Expr_Reserved),
 

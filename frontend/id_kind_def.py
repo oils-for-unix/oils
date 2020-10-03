@@ -268,6 +268,7 @@ def AddKinds(spec):
     'Name',
     'DecInt', 'BinInt', 'OctInt', 'HexInt', 'Float',
     'Dot', 'DColon', 'RArrow', 'RDArrow',
+    'DSlash',   # integer division
     'At', 'DoubleAt',  # splice operators
     'Ellipsis',  # for varargs
     'Dollar',  # legacy regex
@@ -281,7 +282,6 @@ def AddKinds(spec):
     'Null', 'True', 'False',
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
-    'Div', 'Mod', 'Xor', 
     'And', 'Or', 'Not', 
 
     # List comprehensions

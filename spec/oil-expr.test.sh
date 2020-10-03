@@ -418,7 +418,7 @@ write -sep ' ' @n
 # TODO: Test this
 #var n = [i*2 for i,j in range(5)]
 
-var even = [i*2 for i in range(5) if i mod 2 == 0]
+var even = [i*2 for i in range(5) if i % 2 == 0]
 write -sep ' ' @even
 ## STDOUT:
 0 2 4 6 8
@@ -530,7 +530,7 @@ var a = 0b0101 & 0b0011
 echo $a
 var b = 0b0101 | 0b0011
 echo $b
-var c = 0b0101 xor 0b0011
+var c = 0b0101 ^ 0b0011
 echo $c
 var d = ~b
 echo $d
@@ -551,10 +551,10 @@ echo $b
 1
 ## END
 
-#### Exponent is ^
-var x = 2^3
+#### Exponentiation with **
+var x = 2**3
 echo $x
-var y = 2.0^3.0
+var y = 2.0**3.0
 echo $y
 ## STDOUT:
 8
@@ -564,7 +564,7 @@ echo $y
 #### Two Kinds of Division
 var x = 5/2
 echo $x
-var y = 5 div 2
+var y = 5 // 2
 echo $y
 ## STDOUT:
 2.5
@@ -572,8 +572,8 @@ echo $y
 ## END
 
 #### mod operator
-= 5 mod 3
-= -5 mod 3
+= 5 % 3
+= -5 % 3
 ## STDOUT:
 (Int)   2
 (Int)   1
