@@ -64,7 +64,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
     command, command_t, command__ForExpr, command__Proc, command__Func,
-    command__Use,
+    command__Import,
 
     expr_t, source, arg_list,
 )
@@ -938,9 +938,9 @@ class WordParser(WordEmitter):
       last_token.id = Id.Lit_LBrace
     self.buffered_word = last_token
 
-  def ParseUse(self, node):
-    # type: (command__Use) -> None
-    last_token = self.parse_ctx.ParseUse(self.lexer, node)
+  def ParseImport(self, node):
+    # type: (command__Import) -> None
+    last_token = self.parse_ctx.ParseImport(self.lexer, node)
     self.buffered_word = last_token
 
   def _ReadArithExpr(self, end_id):

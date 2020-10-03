@@ -18,7 +18,7 @@ parse-all-osh() {
 
 parse-all-tea() {
   find oil_lang/testdata -name '*.tea' \
-    | xargs -n 1 -- bin/oil -n
+    | xargs -n 1 -- bin/oil -O parse_tea -n
 }
 
 all-passing() {

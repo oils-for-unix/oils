@@ -223,9 +223,9 @@ _KEYWORDS = [
   C('enum',      Id.KW_Enum),
   C('class',     Id.KW_Class),
 
-  # TODO: Should be 'import'.  'use' is a builtin for Oil, e.g.  use
-  # {env,bin,lib} for static analysis
-  C('use',       Id.KW_Use),
+  # 'import' is a Python-like import for tea.  Contrast with 'use lib
+  # foo.oil', which is a builtin.
+  C('import',    Id.KW_Import),
   # and we also need export
 ]
 

@@ -465,7 +465,7 @@ def AddKinds(spec):
       'Set',  'SetLocal',  'SetGlobal',  # Strict Oil style
       # later: Auto
       'Proc', 'Func', 'Data', 'Enum',
-      'Class', 'Use',
+      'Class', 'Import',
 
       # 'Match', 'With',  # matching
       # not sure: yield

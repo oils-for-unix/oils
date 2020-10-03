@@ -4,7 +4,7 @@ data Point3(x, y, z)  # optional types
 
 data one(x); data two(y);
 
-enum op { Plus, Minus }
+enum op { Plus, Minus }  # one line
 
 enum comma1 {  # no trailing comma
   Times,
@@ -16,13 +16,12 @@ enum trailing_comma {
   Divide,
 }
 
-enum no_comma {  
+enum no_comma {  # newlines are commas
   Times
   Divide
 }
 
 enum cflow {  
-
   Break, Continue, Return(status Int)
 }
 
@@ -35,12 +34,23 @@ enum suffix_op {
 
 data word(parts Array[WordPart])
 
-# TODO: omit trailing comma
-# Need to change dict syntax to @{ }
 enum value {
   Str(s Str),
-
   AssocArray(d Map[Str, Str])
+}
+
+#
+# Functions
+#
+
+func add(x, y) { return x + y }
+
+func stmt_semicolon(x, y) { var z = 32; return x + y + z }
+
+func stmt_newline(x, y) {
+  var d = [42]
+  set d[0] = 5
+  return x + y + z
 }
 
 #
@@ -108,11 +118,15 @@ class OneLine2 { var a; var b; func f(x) { echo; echo } }
 # wtf why can I use these terminators, but not Op_Newline?
 # oh maybe the word parser does something with it?
 
-use 'frontend/syntax'
-use 'core/util' log, p_die, foo as bar
+# TODO: Also test
 
-use 'one'; use 'two'
+import 'frontend/syntax'
 
-use 'bar' as foo
+# Should we have parens here?
+import 'core/util' log, p_die, foo as bar
+
+import 'one'; use 'two'
+
+import 'bar' as foo
 
 #echo hi

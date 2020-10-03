@@ -331,29 +331,34 @@ func_params: (
 
 type_expr_list: type_expr (',' type_expr)*
 
-oil_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
+tea_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
 
 data_params: (func_param ',')* [ func_param [','] ]
 
 # zero params allowed for consistency with func and class?
-oil_data: Expr_Name '(' [data_params] ')'
+tea_data: Expr_Name '(' [data_params] ')'
 
 
 # e.g. Nullary %Token or Nullary(x Int)
 variant_type: Expr_Symbol | '(' data_params ')' 
 variant: Expr_Name [ variant_type ]
 
-end_variant: ',' [Op_Newline] | Op_Newline
+comma_newline: ',' [Op_Newline] | Op_Newline
 
 # braces can't be empty like shell (but parens can)
-oil_enum: Expr_Name '{' [Op_Newline] (variant end_variant)* [ variant [end_variant] ] '}'
+tea_enum: (
+  Expr_Name '{' [Op_Newline]
+  (variant comma_newline)* [ variant [comma_newline] ]
+  '}'
+)
 
 # Like end_stmt, but doesn't compose with CommandParser.
 end_inner: ';' [Op_Newline] | Op_Newline
 
-# Inside func/class and at top level: oil_func, oil_var_decl, oil_place_mutation
+# Inside func/class and at top level: tea_func, oil_var_decl,
+# oil_place_mutation
 
-# TODO: assignments, for/if/switch, with, break/continue/return, try/throw, 
+# TODO: for/while, if/switch, with, break/continue/return, try/throw, etc.
 inner_stmt: (
   ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
 | 'set' place_list (augassign | '=') testlist  # oil_place_mutation
@@ -375,8 +380,8 @@ inner_stmts: (inner_stmt end_inner)* [ inner_stmt [end_inner] ]
 
 # TODO: make { symmetric?
 class_item: (
-  ('virtual' | 'override' | 'func' ) oil_func [Op_Newline] inner_stmts '}'
-| 'abstract' oil_func  # TODO: get rid of {
+  ('virtual' | 'override' | 'func' ) tea_func [Op_Newline] inner_stmts '}'
+| 'abstract' tea_func  # TODO: get rid of {
 | 'var' name_type_list
 )
 
@@ -384,7 +389,7 @@ class_item: (
 # But then you couldn't do class Foo { var a; var b }
 class_items: (class_item end_inner)* [ class_item [end_inner] ] 
 
-oil_class: Expr_Name [':' Expr_Name ] '{' [Op_Newline] class_items '}'
+tea_class: Expr_Name [':' Expr_Name ] '{' [Op_Newline] class_items '}'
 
 # 'use' can't use 'end_inner' because ending with an unknown number of
 # tokens doesn't compose with our CommandParser.
@@ -395,7 +400,7 @@ use_names: (use_name ',')* [ use_name [','] ]
 # TODO:
 # - Should we have a simpler Oil string literal?
 # - Could we have optional () for multiline?
-oil_use: sq_string [ 'as' Expr_Name | use_names ] end_use
+tea_import: sq_string [ 'as' Expr_Name | use_names ] end_use
 
 # Top level:
 # delarations of constants -- with const only?
@@ -407,12 +412,12 @@ end_outer: ';' [Op_Newline] | Op_Newline | Eof_Real
 outer_stmt: (
   # oil_var_decl, but no mutation
   ('var' | 'const') name_type_list '=' testlist end_outer
-| 'use' oil_use  # TODO: needs Eof_Real
-| 'class' oil_class end_outer
-| 'data' oil_data end_outer
-| 'enum' oil_enum end_outer
+| 'import' tea_import  # TODO: needs Eof_Real
+| 'class' tea_class end_outer
+| 'data' tea_data end_outer
+| 'enum' tea_enum end_outer
   # TODO: refactor
-| 'func' oil_func [Op_Newline] inner_stmts '}'
+| 'func' tea_func [Op_Newline] inner_stmts '}'
 
   # Might need: typedef?  Or typealias?
 )

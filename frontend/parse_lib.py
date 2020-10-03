@@ -26,7 +26,7 @@ from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       command__VarDecl, command__PlaceMutation, command__Proc, command__Func,
-      command__Data, command__Enum, command__Class, command__Use
+      command__Data, command__Enum, command__Class, command__Import
   )
   from core.alloc import Arena
   from core.util import DebugFile
@@ -404,7 +404,7 @@ class ParseContext(object):
   def ParseFunc(self, lexer, out):
     # type: (Lexer, command__Func) -> Token
     """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_func)
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_func)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -415,7 +415,7 @@ class ParseContext(object):
   def ParseDataType(self, lexer, out):
     # type: (Lexer, command__Data) -> Token
     """ data Point(x Int, y Int) """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_data)
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_data)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -426,7 +426,7 @@ class ParseContext(object):
   def ParseEnum(self, lexer, out):
     # type: (Lexer, command__Enum) -> Token
     """ enum cflow { Break, Continue, Return(status Int) } """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_enum)
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_enum)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -437,7 +437,7 @@ class ParseContext(object):
   def ParseClass(self, lexer, out):
     # type: (Lexer, command__Class) -> Token
     """ class Lexer { var Token; func Next() { echo } } """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_class)
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_class)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -445,15 +445,15 @@ class ParseContext(object):
     self.tr.Class(pnode, out)
     return last_token
 
-  def ParseUse(self, lexer, out):
-    # type: (Lexer, command__Use) -> Token
+  def ParseImport(self, lexer, out):
+    # type: (Lexer, command__Import) -> Token
     """ use 'foo/bar' as spam, Foo, Z as Y """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_use)
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_import)
 
     if 0:
       self.p_printer.Print(pnode)
 
-    self.tr.Use(pnode, out)
+    self.tr.Import(pnode, out)
     return last_token
 
   if mylib.PYTHON:

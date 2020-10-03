@@ -84,8 +84,9 @@ def _Classify(gr, tok):
   p_die('Unexpected token in expression mode%s', type_str, token=tok)
 
 
-# For ignoring newlines.
+# Newlines are ignored between these pairs.
 _OTHER_BALANCE = {
+    # Parenthesized expressions (tuples) and func/proc parameter lists
     Id.Op_LParen:  1,
     Id.Op_RParen: -1,
 
@@ -97,6 +98,9 @@ _OTHER_BALANCE = {
     # Dict %{}
     Id.Left_PercentBrace:  1,
     Id.Op_RBrace: -1
+
+    # TODO: Dicts should be {} and then grammar respects Op_Newline, I think
+    # I don't like the asymmetry between [1, 2] and {}.
 }
 
 

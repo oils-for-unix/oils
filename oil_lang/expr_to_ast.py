@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       command__VarDecl, command__PlaceMutation, command__Func, command__Data,
-      command__Enum, command__Class, command__Use,
+      command__Enum, command__Class, command__Import,
   )
   from pgen2.grammar import Grammar
   from pgen2.pnode import PNode
@@ -912,9 +912,9 @@ class Transformer(object):
   def Func(self, pnode, out):
     # type: (PNode, command__Func) -> None
     """
-    oil_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
+    tea_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
     """
-    assert pnode.typ == grammar_nt.oil_func
+    assert pnode.typ == grammar_nt.tea_func
     children = pnode.children
 
     out.name = children[0].tok
@@ -961,9 +961,9 @@ class Transformer(object):
   def Data(self, pnode, out):
     # type: (PNode, command__Data) -> None
     """
-    oil_data: Expr_Name '(' [data_params] ')'
+    tea_data: Expr_Name '(' [data_params] ')'
     """
-    assert pnode.typ == grammar_nt.oil_data
+    assert pnode.typ == grammar_nt.tea_data
     children = pnode.children
 
     out.name = children[0].tok
@@ -999,9 +999,9 @@ class Transformer(object):
   def Enum(self, pnode, out):
     # type: (PNode, command__Enum) -> None
     """
-    oil_enum: Expr_Name '{' [Op_Newline] (variant variant_end)* [ variant [variant_end] ] '}'
+    tea_enum: Expr_Name '{' [Op_Newline] (variant variant_end)* [ variant [variant_end] ] '}'
     """
-    assert pnode.typ == grammar_nt.oil_enum
+    assert pnode.typ == grammar_nt.tea_enum
     children = pnode.children
 
     out.name = children[0].tok
@@ -1020,9 +1020,9 @@ class Transformer(object):
   def Class(self, pnode, out):
     # type: (PNode, command__Class) -> None
     """
-    oil_class: Expr_Name [':' Expr_Name ] '{' class_items '}'
+    tea_class: Expr_Name [':' Expr_Name ] '{' class_items '}'
     """
-    assert pnode.typ == grammar_nt.oil_class
+    assert pnode.typ == grammar_nt.tea_class
     children = pnode.children
 
     out.name = children[0].tok
@@ -1034,15 +1034,15 @@ class Transformer(object):
     #  p_node = children[i]
     #  out.variants.append(self._Variant(p_node))
 
-  def Use(self, pnode, out):
-    # type: (PNode, command__Use) -> None
+  def Import(self, pnode, out):
+    # type: (PNode, command__Import) -> None
     """
-    oil_use: (
+    tea_import: (
       sq_string ['as' Expr_Name]
-      (use_name ',')* [ use_name [','] ]
+      (import_name ',')* [ import_name [','] ]
     )
     """
-    assert pnode.typ == grammar_nt.oil_use
+    assert pnode.typ == grammar_nt.tea_import
     children = pnode.children
 
     typ = children[0].typ

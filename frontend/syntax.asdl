@@ -317,7 +317,7 @@ module syntax
   | Data(Token name, param* params)
   | Enum(Token name, variant* variants)
   | Class(Token name, Token? extends, class_item* items)
-  | Use(single_quoted path, Token? alias, use_name* names)
+  | Import(single_quoted path, Token? alias, import_name* names)
 
   attributes (int* spids)
 
@@ -329,7 +329,7 @@ module syntax
 
   class_item = Data(Token keyword, name_type* fields) | Method()
 
-  use_name = (Token name, Token? alias)
+  import_name = (Token name, Token? alias)
 
   -- 'open' is for proc p { }; closed is for proc p [] { }
   proc_sig =

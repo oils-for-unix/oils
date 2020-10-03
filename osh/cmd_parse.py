@@ -1588,7 +1588,7 @@ class CommandParser(object):
 
     return node
 
-  def ParseOilFunc(self):
+  def ParseTeaFunc(self):
     # type: () -> command__Func
     node = command.Func()
     self.w_parser.ParseFunc(node)
@@ -1688,7 +1688,7 @@ class CommandParser(object):
     # 'use'.
     if self.parse_opts.parse_tea():
       if self.c_id == Id.KW_Func:
-        return self.ParseOilFunc()
+        return self.ParseTeaFunc()
       if self.c_id == Id.KW_Data:
         out1 = command.Data()
         self.parse_ctx.ParseDataType(self.lexer, out1)
@@ -1704,9 +1704,9 @@ class CommandParser(object):
         self.parse_ctx.ParseClass(self.lexer, out3)
         self._Next()
         return out3
-      if self.c_id == Id.KW_Use:
-        out4 = command.Use()
-        self.w_parser.ParseUse(out4)  # need last_token?  Try without
+      if self.c_id == Id.KW_Import:
+        out4 = command.Import()
+        self.w_parser.ParseImport(out4)  # need last_token?  Try without
         self._Next()
         return out4
 
