@@ -45,15 +45,15 @@ enum value {
 # Functions
 #
 
-func add(x, y) { return x + y }
+# TEA func add(x, y) { return x + y }
 
-func stmt_semicolon(x, y) { var z = 32; return x + y + z }
+# TEA func stmt_semicolon(x, y) { var z = 32; return x + y + z }
 
-func stmt_newline(x, y) {
-  var d = [42]
-  set d[0] = 5
-  return x + y + z
-}
+# TEA func stmt_newline(x, y) {
+#   var d = [42]
+#   set d[0] = 5
+#   return x + y + z
+# }
 
 # Note: both of these get 'unexpected right brace' from osh/cmd_parse.py.
 # Oh because it starts a line.  It is Lit_RBrace  Hm.
@@ -135,12 +135,12 @@ class OneLine2 { var a; var b; func f(x) { echo; echo } }
 # TODO: Also test
 
 import 'frontend/syntax'
-
-# Should we have parens here?
-import 'core/util' log, p_die, foo as bar
-
-import 'one'; use 'two'
-
 import 'bar' as foo
+
+import 'core/util' (log, p_die, foo as bar)
+
+import 'core/util' as myutil (log as mylog)
+
+import 'one'; import 'two'
 
 #echo hi

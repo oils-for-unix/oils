@@ -99,6 +99,22 @@ atom: (
   | sh_array_literal | array_literal 
 )
 
+# Tea can run a limited form of procs.  The first word must be a name, and NO
+# BARE WORDS.
+#
+# Example:
+#   log "hello $name"       # valid in OSH, Oil, Tea
+#   myproc $(hostname)      # ditto
+#
+#   my-proc '/' $foo        # OSH and Oil
+#   run 'my-proc' '/' $foo  # Tea.  'run' is similar to 'command' and 'builtin'
+#
+
+tea_word: (
+    dq_string | sq_string
+  | sh_command_sub | braced_var_sub | simple_var_sub
+)
+
 # var f = f(x)
 trailer: (
     '(' [arglist] ')'
@@ -347,7 +363,10 @@ tea_data: Expr_Name '(' [data_params] ')'
 variant_type: Expr_Symbol | '(' data_params ')' 
 variant: Expr_Name [ variant_type ]
 
+# for dict, tea_enum
 comma_newline: ',' [Op_Newline] | Op_Newline
+# for tea_func, tea_class
+semi_newline: ';' [Op_Newline] | Op_Newline
 
 tea_enum: (
   Expr_Name '{' [Op_Newline]
@@ -356,23 +375,22 @@ tea_enum: (
   '}'
 )
 
-# Like end_stmt, but doesn't compose with CommandParser.
-semi_newline: ';' [Op_Newline] | Op_Newline
-
 # Inside func/class and at top level: tea_func, oil_var_decl,
 # oil_place_mutation
 
 # TODO: for/while, if/switch, with, break/continue/return, try/throw, etc.
-inner_stmt: (
+func_item: (
   ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
 | 'set' place_list (augassign | '=') testlist  # oil_place_mutation
   # x  f(x)  etc.   And also x = 1?  Python uses the same "hack" to fit within
   # pgen2.  It also supports a = b = 1, which we don't want.
 | testlist ['=' testlist]
+  # Also can be
+  # testlist tea_word* or something?
 )
 
 # we want to avoid requiring newline or ; before }
-inner_stmts: inner_stmt (semi_newline inner_stmt)* [semi_newline]
+func_items: func_item (semi_newline func_item)* [semi_newline]
 
 # TODO: Methods differ from functions:
 #  super() can be the first arg
@@ -390,7 +408,7 @@ inner_stmts: inner_stmt (semi_newline inner_stmt)* [semi_newline]
 
 class_item: (
   # TODO: refactor to make { } symmetric
-  ('virtual' | 'override' | 'func' ) tea_func [Op_Newline] [inner_stmts] '}'
+  ('virtual' | 'override' | 'func' ) tea_func [Op_Newline] [func_items] '}'
 | 'abstract' tea_func
   # Member declaration
 | 'var' name_type_list
@@ -404,16 +422,13 @@ tea_class: Expr_Name [':' Expr_Name ] '{' [Op_Newline] [class_items] '}'
 
 # 'import' can't use 'semi_newline' because ending with an unknown number of
 # tokens doesn't compose with our CommandParser.
-# TODO: Change syntax to:
-# import 'foo.lib' as bar (log, die, myfunc as other)
 end_import: ';' | Op_Newline
 
-use_name: Expr_Name ['as' Expr_Name]
-use_names: (use_name ',')* [ use_name [','] ]
-# TODO:
-# - Should we have a simpler Oil string literal?
-# - Could we have optional () for multiline?
-tea_import: sq_string [ 'as' Expr_Name | use_names ] end_import
+import_name: Expr_Name ['as' Expr_Name]
+import_names: import_name (comma_newline import_name)* [import_name]
+
+# TODO: Should we have a simpler Oil string literal?
+tea_import: sq_string [ 'as' Expr_Name ] ['(' [Op_Newline] [import_names] ')'] end_import
 
 # Top level:
 # delarations of constants -- with const only?
@@ -422,7 +437,7 @@ tea_import: sq_string [ 'as' Expr_Name | use_names ] end_import
 
 end_outer: ';' [Op_Newline] | Op_Newline | Eof_Real
 
-outer_stmt: (
+module_item: (
   # oil_var_decl, but no mutation
   ('var' | 'const') name_type_list '=' testlist end_outer
 | 'import' tea_import  # TODO: needs Eof_Real
@@ -430,13 +445,13 @@ outer_stmt: (
 | 'data' tea_data end_outer
 | 'enum' tea_enum end_outer
   # TODO: refactor to make {} symmetrical
-| 'func' tea_func [Op_Newline] [inner_stmts] '}'
+| 'func' tea_func [Op_Newline] [func_items] '}'
 
   # Might need: typedef?  Or typealias?
 )
 
 # Eof_Real either after newline or before newline are both valid
-tea_module: outer_stmt* [Eof_Real]
+tea_module: module_item* [Eof_Real]
 
 
 #

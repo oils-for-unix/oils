@@ -202,7 +202,7 @@ def TeaMain(argv):
   # type: (str, List[str]) -> int
   arena = alloc.Arena()
   try:
-    script_name = argv[0]
+    script_name = argv[1]
     arena.PushSource(source.MainFile(script_name))
   except IndexError:
     arena.PushSource(source.Stdin())
