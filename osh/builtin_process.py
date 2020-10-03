@@ -17,6 +17,7 @@ from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import alloc
 from core import error
+from core.pyerror import e_usage
 from core import main_loop
 from core.pyutil import stderr_line
 from core import ui
@@ -496,3 +497,17 @@ class Umask(vm._Builtin):
         return 0
 
     raise error.Usage('umask: unexpected arguments')
+
+
+class Fork(vm._Builtin):
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    e_usage('fork builtin not implemented')
+
+
+class ForkWait(vm._Builtin):
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    e_usage('forkwait builtin not implemented')

@@ -316,13 +316,24 @@ class Json(vm._Builtin):
     return 0
 
 
+# TODO: Put this in flag_def.py
 WRITE_SPEC = flag_spec.OilFlags('write')
 WRITE_SPEC.Flag('-sep', args.String, default='\n',
-                    help='Characters to separate each argument')
+                help='Characters to separate each argument')
 WRITE_SPEC.Flag('-end', args.String, default='\n',
-                    help='Characters to terminate the whole invocation')
+                help='Characters to terminate the whole invocation')
 WRITE_SPEC.Flag('-n', args.Bool, default=False,
-                    help="Omit newline (synonym for -end '')")
+                help="Omit newline (synonym for -end '')")
+
+# TODO: Implement these
+WRITE_SPEC.Flag('-qsn', args.Bool, default='none',
+                help='Write elements in this QSN format')
+
+# x means I want \x00
+# u means I want \u{1234}
+# raw is utf-8
+WRITE_SPEC.Flag('-encode', ['x', 'u', 'raw'], default='none',
+                help='Write elements in this QSN format')
 
 
 class Write(_Builtin):
@@ -330,8 +341,8 @@ class Write(_Builtin):
   write -- @strs
   write --sep ' ' --end '' -- @strs
   write -n -- @
-  write --cstr -- @strs   # argv serialization
-  write --cstr --sep $'\t' -- @strs   # this is like TSV2!
+  write --qsn -- @strs   # argv serialization
+  write --qsn --sep $'\t' -- @strs   # this is like QTSV
   """
   def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)

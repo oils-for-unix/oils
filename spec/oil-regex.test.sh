@@ -48,6 +48,27 @@ yes
 no
 ## END
 
+#### Capture groups (also tested in spec/oil-expr)
+shopt -s oil:all
+
+var x = 'zz 2020-08-20'
+
+if [[ $x =~ ([[:digit:]]+)-([[:digit:]]+) ]] {
+  argv.py "${BASH_REMATCH[@]}"
+}
+
+setvar BASH_REMATCH = %(reset)
+
+if (x ~ /<d+> '-' <d+>/) {
+  argv.py "${BASH_REMATCH[@]}"
+  argv.py @M
+}
+## STDOUT:
+['2020-08', '2020', '08']
+['reset']
+['2020-08', '2020', '08']
+## END
+
 #### Repeat {1,3} etc.
 var pat = null
 
@@ -574,3 +595,4 @@ var pat = / d+ /
 pat[invalid]+=1
 ## status: 1
 ## stdout-json: ""
+

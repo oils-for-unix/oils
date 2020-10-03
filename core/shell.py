@@ -177,6 +177,8 @@ def AddProcess(
   b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
   b[builtin_i.bg] = builtin_process.Bg(job_state)
   b[builtin_i.umask] = builtin_process.Umask()
+  b[builtin_i.fork] = builtin_process.Fork()
+  b[builtin_i.forkwait] = builtin_process.ForkWait()
 
 
 def AddOil(b, mem, errfmt):

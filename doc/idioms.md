@@ -323,8 +323,6 @@ Yes:
       write -- @rest        # @ means "splice this array"
     }
 
-TODO: Test this out.
-
 ### "Out" Params as Return Values
 
 No:
@@ -349,7 +347,7 @@ Yes:
     var myvar = 'zzz'
     f zzz :myvar        # : means pass a string "reference" (optional)
 
-TODO: Test this out.
+TODO: Implement this
 
 ## Curly Braces Fix Semantic Problems
 
@@ -394,17 +392,17 @@ Suggested workaround:
 
 Oil extension, without an extra process:
 
-    if invoke myfunc; then
+    if catch myfunc; then
       echo hi
     fi
 
 Even better:
 
-    if myfunc {  # implicit 'invoke', equivalent to the above
+    if myfunc {  # implicit 'catch', equivalent to the above
       echo hi
     }
 
-Note that `&&` and `||` and `!` require an explicit `invoke`:
+Note that `&&` and `||` and `!` require an explicit `catch`:
 
 No:
 
@@ -414,15 +412,15 @@ No:
 
 Yes:
 
-    invoke myfunc || fail
-    invoke myfunc && echo 'success'
-    ! invoke myfunc
+    catch myfunc || fail
+    catch myfunc && echo 'success'
+    ! catch myfunc
 
 
 This explicit syntax avoids breaking POSIX shell.  You have to opt in to the
 better behavior.
 
-TODO: Implement this.
+TODO: Implement 'catch' and implicit catch
 
 ## Use Oil Expressions, Initializations, and Assignments (var, setvar)
 
@@ -560,7 +558,17 @@ Or extract the pattern:
 
 ### Extract Submatches
 
-TODO: `BASH_REMATCH` alternative.
+No:
+
+    if [[ $x =~ ([[:digit:]]+) ]] {
+      echo "${BASH_REMATCH[@]}"
+    }
+
+Yes:
+
+    if (x ~ / <d+> /) {  # <> is capture
+      argv.py @M         # special M variable
+    }
 
 ## Glob Matching
 

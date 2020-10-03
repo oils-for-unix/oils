@@ -108,6 +108,19 @@ c
 status=0
 ## END
 
+#### varargs 2
+shopt -s oil:all
+
+proc f(first, @rest) {  # @ means "the rest of the arguments"
+  write -sep ' ' -- $first
+  write -sep ' ' -- @rest        # @ means "splice this array"
+}
+f a b c
+## STDOUT:
+a
+b c
+## END
+
 #### Proc name-with-hyphen
 proc name-with-hyphen {
   echo "$@"
@@ -149,3 +162,18 @@ proc f {
 f
 ## STDOUT:
 ## END
+
+#### Out param / setref
+
+# TODO: Implement the :out syntax, and setref, using the nameref flag
+
+proc f(input, :out) {  # : means accept a string "reference"
+  setref out = "PREFIX-$in"
+}
+
+var myvar = 'zzz'
+f zzz :myvar        # : means pass a string "reference" (optional)
+
+## STDOUT:
+## END
+
