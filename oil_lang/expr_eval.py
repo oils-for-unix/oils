@@ -251,12 +251,16 @@ class OilEvaluator(object):
       return self.LookupVar(node.name.val)
 
     if node.tag == expr_e.CommandSub:
-      stdout = self.shell_ex.RunCommandSub(node.child)
-      if node.left_token.id == Id.Left_AtParen:
-        strs = self.splitter.SplitForWordEval(stdout)
-        return strs
+      id_ = node.left_token.id
+      if id_ == Id.Left_CaretParen:  # ^(echo block literal)
+        return 'TODO: value.Block'
       else:
-        return stdout
+        stdout = self.shell_ex.RunCommandSub(node.child)
+        if id_ == Id.Left_AtParen:  # @(seq 3)
+          strs = self.splitter.SplitForWordEval(stdout)
+          return strs
+        else:
+          return stdout
 
     if node.tag == expr_e.ShArrayLiteral:
       words = braces.BraceExpandWords(node.words)

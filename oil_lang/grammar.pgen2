@@ -213,7 +213,7 @@ array_item: (
 array_literal: '%[' array_item* Op_RBracket
 
 sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
-sh_command_sub: ( '$(' | '@(' ) Expr_CastedDummy Eof_RParen
+sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
 
 # Note: could add c"" too
 dq_string: '"' Expr_CastedDummy Right_DoubleQuote
@@ -308,14 +308,14 @@ oil_expr_sub: testlist ']'
 #   func: optional list
 #   proc: disallowed -- it's always int
 
-# proc params can't have types.
-proc_param: Expr_Name ['=' expr]
+# proc params can't have types.  Note: optional : sets the nameref flag.
+proc_param: [':'] Expr_Name ['=' expr]
 
-# This is an awkward way of writing that we have params, then '@', then '&' --
-# all optional.  If they appear, @ and & have to be last, in that order.
+# This is an awkward way of writing that we have params, then '@', then '^' --
+# all optional.  If they appear, @ and ^ have to be last, in that order.
 proc_params: (
   (proc_param ',')*
-  [ (proc_param | '&' Expr_Name | '@' Expr_Name [',' '&' Expr_Name]) [','] ]
+  [ (proc_param | '^' Expr_Name | '@' Expr_Name [',' '^' Expr_Name]) [','] ]
 )
 
 # Note: we might have proc name-with-hyphens, so we can't parse the name in

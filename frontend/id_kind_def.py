@@ -344,6 +344,7 @@ def AddKinds(spec):
       'ProcSubOut',         # >( )
 
       'AtParen',            # @( for split command sub
+      'CaretParen',         # ^( for block literal in expression mode
 
       'PercentParen',       # %( for word arrays
       'PercentBrace',       # %{ for map literals
@@ -366,6 +367,8 @@ def AddKinds(spec):
       'CasePat',            # )
       'ShArrayLiteral',     # )
       'ExtGlob',            # )
+
+      'BlockLiteral',       # } that matches &{ echo hi }
   ])
 
   spec.AddKind('ExtGlob', ['Comma', 'At', 'Star', 'Plus', 'QMark', 'Bang'])

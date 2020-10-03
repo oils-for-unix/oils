@@ -216,11 +216,17 @@ _KEYWORDS = [
   C('proc',      Id.KW_Proc),
 
   # Tea-only
-  C('func',      Id.KW_Func),
+
+  # TODO: parse_tea should enable these so we can have 'setvar x = func'
+  C('func',      Id.KW_Func),  # 'def' for migration path?
   C('data',      Id.KW_Data),
   C('enum',      Id.KW_Enum),
   C('class',     Id.KW_Class),
+
+  # TODO: Should be 'import'.  'use' is a builtin for Oil, e.g.  use
+  # {env,bin,lib} for static analysis
   C('use',       Id.KW_Use),
+  # and we also need export
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
@@ -763,10 +769,12 @@ OIL_LEFT_UNQUOTED = [
   C("$'", Id.Left_SingleQuoteC),
 
   C('@(', Id.Left_AtParen),         # Split Command Sub
+  C('^(', Id.Left_CaretParen),      # Block literals in expression mode
 
   C('%(', Id.Left_PercentParen),    # shell-like word arrays.
   C('%[', Id.Left_PercentBracket),  # typed array literals.  Not used yet.
   C('%{', Id.Left_PercentBrace),    # map literals
+
 
   # Not sure if we'll use these
   C('@{', Id.Expr_Reserved),

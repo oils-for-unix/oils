@@ -788,7 +788,7 @@ class Transformer(object):
   def _ProcParam(self, pnode):
     # type: (PNode) -> Tuple[Token, expr_t]
     """
-    func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name
+    proc_param: [':'] Expr_Name ['=' expr]
     """
     assert pnode.typ == grammar_nt.proc_param
 
@@ -796,10 +796,18 @@ class Transformer(object):
     tok0 = children[0].tok
     n = len(children)
 
-    if tok0.id == Id.Expr_Name:
+    i = 0
+    if tok0.id == Id.Arith_Colon:
+      # TODO: Set a flag for :out param
+      i += 1
+
+    child = children[i]
+    if child.tok.id == Id.Expr_Name:
       default_val = None  # type: expr_t
-      if n > 1 and children[1].tok.id == Id.Arith_Equal:  # proc p(x = 1+2*3)
-        default_val = self.Expr(children[2])
+      i += 1
+      if n > i and children[i].tok.id == Id.Arith_Equal:  # proc p(x = 1+2*3)
+        i += 1
+        default_val = self.Expr(children[i])
       return tok0, default_val
 
     raise AssertionError(Id_str(tok0.id))
@@ -828,7 +836,7 @@ class Transformer(object):
         if p.tok.id == Id.Expr_At:  # @args
           i += 1
           rest = children[i].tok
-        elif p.tok.id == Id.Arith_Amp:  # &block
+        elif p.tok.id == Id.Arith_Caret:  # ^block
           i += 1
           block = children[i].tok
         else:

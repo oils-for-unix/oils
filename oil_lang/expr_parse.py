@@ -205,7 +205,9 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         continue
 
-      if tok.id in (Id.Left_DollarParen, Id.Left_AtParen):  # $(  @(
+      # $(  @(  ^(
+      if tok.id in (Id.Left_DollarParen, Id.Left_AtParen, Id.Left_CaretParen):
+
         left_token = tok
 
         lex.PushHint(Id.Op_RParen, Id.Eof_RParen)

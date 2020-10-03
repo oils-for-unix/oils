@@ -9,8 +9,7 @@ module runtime
   -- in 'local foo', rval is None
   assign_arg = (string var_name, value? rval, int spid)
 
-  -- ASDL issue: I need to import the 'command' type from frontend/syntax.asdl!
-  -- and 'builtin' from synthetic option_asdl
+  -- note: could import 'builtin' from synthetic option_asdl
   cmd_value =
     Argv(string* argv, int* arg_spids, BraceGroup? block)
   | Assign(int builtin_id,
@@ -50,22 +49,18 @@ module runtime
 
   | Bool(bool b)
   | Float(float f) -- For flags only now.  TODO: ASDL needs float type.
-  | Eggex(re expr, string as_ere)
-    -- what about Proc or Module here?  are they first class?
-    -- then you can reflect on them?  Get name and docstring?
 
-    -- Iterator type:
-    --   for (i in 1..=n) { echo $i }
-    --   for (k in keys(d)) { echo $k }
-    --   for (item in myarray) { echo $item }
-    -- What about pipelines?  make-pipeline, add-process, etc.
+    -- / d+ /
+  | Eggex(re expr, string as_ere)
+
+    -- &(echo one; echo two)
+  | Block(command body)
+    -- Is Proc separate?  Or should Block be a "open Proc"?
+
+    -- Tea stuff: Func, Data, Enum, Class, and maybe File?
 
     -- A Python-style object.  'any' is not currently type checked.
-    -- invariant for 'proc' stack:
-    -- * s bool, int, float, (NOT str), or...
-    -- * BoolArray, IntArray, FloatArray (NOT StrArray), or ...
-    -- * heterogeneous List (NOT dict)
-    -- * or a user-defined type
+    -- TODO: Remove this
   | Obj(any obj)
 
   -- What is valid in arrays or assoc arrays a[i] or A[i] in shell.
