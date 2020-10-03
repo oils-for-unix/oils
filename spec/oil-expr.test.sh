@@ -761,3 +761,34 @@ echo $x
 ## STDOUT:
 andy
 ## END
+
+#### a ++ b for string/list concatenation
+var i = 'abc'
+var j = 'de'
+var k = i ++ j
+echo $k
+
+var a = [1, 2]
+var b = [3]
+var c = a ++ b
+echo len=$len(c)
+
+## STDOUT:
+abcde
+len=3
+## END
+
+#### s ~~ glob and s !~~ glob
+shopt -s oil:all
+
+if ('foo.py' ~~ '*.py') {
+  echo yes
+}
+if ('foo.py' !~~ '*.sh') {
+  echo no
+}
+## STDOUT:
+yes
+no
+## END
+

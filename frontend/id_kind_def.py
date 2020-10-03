@@ -268,12 +268,13 @@ def AddKinds(spec):
     'Name',
     'DecInt', 'BinInt', 'OctInt', 'HexInt', 'Float',
     'Dot', 'DColon', 'RArrow', 'RDArrow',
-    'DSlash',   # integer division
+    'DSlash',   # concat, integer division
     'At', 'DoubleAt',  # splice operators
     'Ellipsis',  # for varargs
     'Dollar',  # legacy regex
 
     'NotTilde',  # !~
+    'DTilde', 'NotDTilde',  # ~~ !~~
 
     'CastedDummy',    # Used for @()  $() (words in lex_mode_e.ShCommand)
                       # and ${}  ''  ""  (and all other strings)

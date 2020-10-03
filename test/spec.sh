@@ -895,7 +895,7 @@ oil-options() {
 }
 
 oil-expr() {
-  sh-spec spec/oil-expr.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/oil-expr.test.sh --osh-failures-allowed 6 \
     $OSH_LIST "$@"
 }
 

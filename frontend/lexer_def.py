@@ -873,7 +873,8 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('%', Id.Arith_Percent),
 
   C('//', Id.Expr_DSlash),  # For Oil integer division
-  C('**', Id.Arith_DStar),   # exponentiation
+  C('**', Id.Arith_DStar),  # exponentiation
+  C('++', Id.Arith_DPlus),  # Option for string/list concatenation
 
   C('<', Id.Arith_Less),
   C('>', Id.Arith_Great),
@@ -891,6 +892,8 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # Bitwise complement, as well as infix pattern matching
   C('~', Id.Arith_Tilde),
   C('!~', Id.Expr_NotTilde),
+  C('~~', Id.Expr_DTilde),
+  C('!~~', Id.Expr_NotDTilde),
 
   # Left out for now:
   # ++ --       -- needed for loops, awk?

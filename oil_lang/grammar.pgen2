@@ -62,7 +62,7 @@ range_expr: expr [':' expr]
 # Oil patch: removed legacy <>
 comp_op: (
     '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'|
-    Arith_Tilde | Expr_NotTilde
+    '~' | '!~' | '~~' | '!~~'
 )
 
 # For lists and dicts.  Note: In Python this was star_expr *foo
@@ -72,7 +72,8 @@ expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
 shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-arith_expr: term (('+'|'-') term)*
+# Oil: add concatenation with same precedence as +
+arith_expr: term (('+'|'-'|'++') term)*
 # Oil patch: removed '@'
 term: factor (('*'|'/'|'//'|'%') factor)*
 factor: ('+'|'-'|'~') factor | power

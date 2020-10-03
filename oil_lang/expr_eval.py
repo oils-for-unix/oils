@@ -318,6 +318,10 @@ class OilEvaluator(object):
       if node.op.id == Id.Arith_DStar:  # Exponentiation
         return left ** right
 
+      if node.op.id == Id.Arith_DPlus:
+        # list or string concatenation
+        return left + right
+
       # Bitwise
       if node.op.id == Id.Arith_Amp:
         return left & right
@@ -375,6 +379,11 @@ class OilEvaluator(object):
           result = left is right
         elif op.id == Id.Node_IsNot:
           result = left is not right
+
+        elif op.id == Id.Expr_DTilde:
+          e_die('~~ not implemented')
+        elif op.id == Id.Expr_NotDTilde:
+          e_die('!~~ not implemented')
 
         else:
           try:

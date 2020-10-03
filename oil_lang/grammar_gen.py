@@ -78,6 +78,10 @@ def main(argv):
       '->': Id.Expr_RArrow,
       '::': Id.Expr_DColon,
       '//': Id.Expr_DSlash,
+      '++': Id.Arith_DPlus,
+      '!~': Id.Expr_NotTilde,
+      '~~': Id.Expr_DTilde,
+      '!~~': Id.Expr_NotDTilde,
 
       '@': Id.Expr_At,
       '...': Id.Expr_Ellipsis,
