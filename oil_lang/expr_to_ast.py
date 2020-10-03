@@ -200,7 +200,7 @@ class Transformer(object):
       assert p_node.tok.id == Id.Op_RBrace
       return expr.Dict([], [])
 
-    assert p_node.typ == grammar_nt.dict
+    #assert p_node.typ == grammar_nt.dict
 
     keys = []  # type: List[expr_t]
     values = []  # type: List[expr_t]
@@ -215,6 +215,10 @@ class Transformer(object):
       i += 2
 
     return expr.Dict(keys, values)
+
+  def _Dict2(self, p_node):
+    # type: (PNode) -> expr__Dict
+    return self._Dict(p_node)
 
   def _Tuple(self, children):
     # type: (List[PNode]) -> expr_t
@@ -300,6 +304,9 @@ class Transformer(object):
 
     if id_ == Id.Left_PercentBrace:
       return self._Dict(children[1])
+
+    if id_ == Id.Op_LBrace:
+      return self._Dict2(children[1])
 
     if id_ == Id.Arith_Slash:
       r = self._Regex(children[1])

@@ -86,6 +86,8 @@ atom: (
     '(' [testlist_comp] ')' 
   | '[' [testlist_comp] ']' 
   | '%{' [dict] '}'
+    # Note: newlines are significant inside {}, unlike inside () and []
+  | '{' [Op_Newline] [dict2] '}'
     # TODO: translation preference
   | '/' regex [re_flags] '/'
     # NOTE: These atoms are are allowed in typed array literals
@@ -154,6 +156,8 @@ dict_pair: (
   | dq_string ':' test
 )
 dict: dict_pair (',' dict_pair)* [',']
+
+dict2: dict_pair (comma_newline dict_pair)* [comma_newline]
 
 # This how Python implemented dict comprehensions.  We can probably do the
 # same.
@@ -345,15 +349,15 @@ variant: Expr_Name [ variant_type ]
 
 comma_newline: ',' [Op_Newline] | Op_Newline
 
-# braces can't be empty like shell (but parens can)
 tea_enum: (
   Expr_Name '{' [Op_Newline]
-  (variant comma_newline)* [ variant [comma_newline] ]
+  # note: braces can be empty
+  [ variant (comma_newline variant)* [comma_newline] ]
   '}'
 )
 
 # Like end_stmt, but doesn't compose with CommandParser.
-end_inner: ';' [Op_Newline] | Op_Newline
+semi_newline: ';' [Op_Newline] | Op_Newline
 
 # Inside func/class and at top level: tea_func, oil_var_decl,
 # oil_place_mutation
@@ -368,7 +372,7 @@ inner_stmt: (
 )
 
 # we want to avoid requiring newline or ; before }
-inner_stmts: (inner_stmt end_inner)* [ inner_stmt [end_inner] ]
+inner_stmts: inner_stmt (semi_newline inner_stmt)* [semi_newline]
 
 # TODO: Methods differ from functions:
 #  super() can be the first arg
@@ -377,30 +381,39 @@ inner_stmts: (inner_stmt end_inner)* [ inner_stmt [end_inner] ]
 #  should we allow annotations, like 'public' or 'export'?
 # 
 # No field initializers for now.  Later C++ versions allow it.
+#
+# Annotations:
+#
+# func Parse() Int
+#   [override const abstract] {
+# } ?
 
-# TODO: make { symmetric?
 class_item: (
-  ('virtual' | 'override' | 'func' ) tea_func [Op_Newline] inner_stmts '}'
-| 'abstract' tea_func  # TODO: get rid of {
+  # TODO: refactor to make { } symmetric
+  ('virtual' | 'override' | 'func' ) tea_func [Op_Newline] [inner_stmts] '}'
+| 'abstract' tea_func
+  # Member declaration
 | 'var' name_type_list
 )
 
 # Note: we could restrict separators to newlines.
 # But then you couldn't do class Foo { var a; var b }
-class_items: (class_item end_inner)* [ class_item [end_inner] ] 
+class_items: class_item (semi_newline class_item)* [semi_newline] 
 
-tea_class: Expr_Name [':' Expr_Name ] '{' [Op_Newline] class_items '}'
+tea_class: Expr_Name [':' Expr_Name ] '{' [Op_Newline] [class_items] '}'
 
-# 'use' can't use 'end_inner' because ending with an unknown number of
+# 'import' can't use 'semi_newline' because ending with an unknown number of
 # tokens doesn't compose with our CommandParser.
-end_use: ';' | Op_Newline
+# TODO: Change syntax to:
+# import 'foo.lib' as bar (log, die, myfunc as other)
+end_import: ';' | Op_Newline
 
 use_name: Expr_Name ['as' Expr_Name]
 use_names: (use_name ',')* [ use_name [','] ]
 # TODO:
 # - Should we have a simpler Oil string literal?
 # - Could we have optional () for multiline?
-tea_import: sq_string [ 'as' Expr_Name | use_names ] end_use
+tea_import: sq_string [ 'as' Expr_Name | use_names ] end_import
 
 # Top level:
 # delarations of constants -- with const only?
@@ -416,8 +429,8 @@ outer_stmt: (
 | 'class' tea_class end_outer
 | 'data' tea_data end_outer
 | 'enum' tea_enum end_outer
-  # TODO: refactor
-| 'func' tea_func [Op_Newline] inner_stmts '}'
+  # TODO: refactor to make {} symmetrical
+| 'func' tea_func [Op_Newline] [inner_stmts] '}'
 
   # Might need: typedef?  Or typealias?
 )

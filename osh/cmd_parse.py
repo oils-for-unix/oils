@@ -1734,10 +1734,7 @@ class CommandParser(object):
       enode = self.w_parser.ParseCommandExpr()
       return command.Expr(speck(keyword.id, keyword.span_id), enode)
 
-    # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
-    # work because Lit_RBrace is in END_LIST below.
-
-    # TODO: KW_Do is also invalid here.
+    # Sytnax error for '}' starting a line, which all shells disallow.
     if self.c_id == Id.Lit_RBrace:
       p_die('Unexpected right brace', word=self.cur_word)
 

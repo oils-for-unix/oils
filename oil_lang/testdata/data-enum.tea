@@ -4,6 +4,8 @@ data Point3(x, y, z)  # optional types
 
 data one(x); data two(y);
 
+enum empty { }
+
 enum op { Plus, Minus }  # one line
 
 enum comma1 {  # no trailing comma
@@ -53,9 +55,21 @@ func stmt_newline(x, y) {
   return x + y + z
 }
 
+# Note: both of these get 'unexpected right brace' from osh/cmd_parse.py.
+# Oh because it starts a line.  It is Lit_RBrace  Hm.
+#
+# func empty() { }
+# func empty2() {
+# }
+
 #
 # Classes
 #
+
+class empty { }
+
+class empty2 {
+}
 
 class Lexer {
   func Run() {
