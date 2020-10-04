@@ -16,7 +16,7 @@ echo $[obj.x]
 ## END
 
 #### $[d['key']]
-var d = %{}
+var d = {}
 set d['key'] = 42
 echo $[d['key']]
 ## STDOUT:
@@ -24,7 +24,7 @@ echo $[d['key']]
 ## END
 
 #### $[d->key]
-var d = %{}
+var d = {}
 set d['key'] = 42
 echo $[d->key]
 ## STDOUT:
@@ -35,7 +35,7 @@ echo $[d->key]
 var a = %(a b c)
 var obj = /d+/
 set obj.x = 42
-var d = %{}
+var d = {}
 set d['key'] = 42
 echo "func $[len(a)]"
 echo "attr $[obj.x]"

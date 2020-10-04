@@ -195,6 +195,8 @@ class Transformer(object):
     # type: (PNode) -> expr__Dict
     """
     dict: dict_pair (',' dict_pair)* [',']
+
+    dict2: dict_pair (comma_newline dict_pair)* [comma_newline]
     """
     if not ISNONTERMINAL(p_node.typ):
       assert p_node.tok.id == Id.Op_RBrace
@@ -215,10 +217,6 @@ class Transformer(object):
       i += 2
 
     return expr.Dict(keys, values)
-
-  def _Dict2(self, p_node):
-    # type: (PNode) -> expr__Dict
-    return self._Dict(p_node)
 
   def _Tuple(self, children):
     # type: (List[PNode]) -> expr_t
@@ -302,11 +300,12 @@ class Transformer(object):
 
       return self._TestlistComp(children[1], id_)
 
-    if id_ == Id.Left_PercentBrace:
-      return self._Dict(children[1])
-
-    if id_ == Id.Op_LBrace:
-      return self._Dict2(children[1])
+    if id_ == Id.Op_LBrace: 
+      # atom: ... | '{' [Op_Newline] [dict] '}'
+      i = 1
+      if children[i].tok.id == Id.Op_Newline:
+        i += 1
+      return self._Dict(children[i])
 
     if id_ == Id.Arith_Slash:
       r = self._Regex(children[1])
