@@ -784,7 +784,6 @@ OIL_LEFT_UNQUOTED = [
   # TODO: @[ alias
 
   C('^(', Id.Left_CaretParen),      # Block literals in expression mode
-  C('^[', Id.Left_CaretBracket),    # Oil syntax
 
   C('%(', Id.Left_PercentParen),    # shell-like word arrays.
   C('%[', Id.Left_PercentBracket),  # typed array literals.  Not used yet.

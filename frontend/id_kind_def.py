@@ -193,7 +193,7 @@ def AddKinds(spec):
       ('CaretEqual', '^=')
   ])
 
-  spec.AddKind('Eof', ['Real', 'RParen', 'Backtick', 'RBracket'])
+  spec.AddKind('Eof', ['Real', 'RParen', 'Backtick'])
 
   # TODO: Unknown_Tok is OK, but Undefined_Id is better
   spec.AddKind('Undefined', ['Tok'])  # for initial state
@@ -347,7 +347,6 @@ def AddKinds(spec):
 
       'AtParen',            # @( for split command sub
       'CaretParen',         # ^( for block literal in expression mode
-      'CaretBracket',       # ^[ Oil syntax
 
       'PercentParen',       # %( for word arrays
       'PercentBracket',     # %[ for typed array literals

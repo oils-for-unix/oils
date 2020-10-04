@@ -233,35 +233,6 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         continue
 
-      # $[  @[  ^[
-      if tok.id in (Id.Left_CaretBracket,):
-
-        left_token = tok
-
-        lex.PushHint(Id.Op_RBracket, Id.Eof_RBracket)
-        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-        c_parser = parse_ctx.MakeParserForCommandSub(line_reader, lex,
-                                                     Id.Eof_RBracket)
-        node = c_parser.ParseCommandSub()
-        # A little gross: Copied from osh/word_parse.py
-        right_token = c_parser.w_parser.cur_token
-
-        cs_part = command_sub(left_token, node)
-        cs_part.spids.append(left_token.span_id)
-        cs_part.spids.append(right_token.span_id)
-
-        typ = Id.Expr_CastedDummy
-        opaque = cast(Token, cs_part)  # HACK for expr_to_ast
-        done = p.addtoken(typ, opaque, gr.tokens[typ])
-        assert not done  # can't end the expression
-
-        # Now push the closing )
-        ilabel = _Classify(gr, right_token)
-        done = p.addtoken(right_token.id, right_token, ilabel)
-        assert not done  # can't end the expression
-
-        continue
-
       if tok.id == Id.Left_DoubleQuote:
         left_token = tok
         line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)

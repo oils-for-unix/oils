@@ -315,8 +315,8 @@ class Transformer(object):
       return expr.RegexLiteral(children[0].tok, r, flags, trans_pref)
 
     if id_ == Id.Expr_Func:
-      # STUB
-      return expr.Lambda([], command.CommandList())
+      # STUB.  This should really be a Func, not Lambda.
+      return expr.Lambda([], expr.Implicit())
 
     raise NotImplementedError(Id_str(id_))
 

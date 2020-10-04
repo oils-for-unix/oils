@@ -17,7 +17,7 @@ from _devbuild.gen.syntax_asdl import (
     command__Simple, command__DoGroup, command__ForExpr, command__ForEach,
     command__WhileUntil, command__Case, command__If, command__ShFunction,
     command__Subshell, command__DBracket, command__DParen,
-    command__CommandList, command__Func, command__Proc,
+    command__CommandList, command__Proc,
     BraceGroup,
     case_arm,
 

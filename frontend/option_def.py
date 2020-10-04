@@ -197,8 +197,14 @@ _AGGRESSIVE_PARSE_OPTIONS = [
     'parse_set',       # set x = 'var'
     'parse_equals',    # x = 'var'
 
-    # This affects the LEXER.  Turn Lit_LBracket in to Op_LBracket?
-    'parse_brackets',  # so we can detect end of $[echo hi], %[one two], etc.
+    # Failed experiment for $[echo hi], myarray = %[one two], etc.
+    # I turned Lit_LBracket in to Op_LBracket.  But there were several issues:
+    # 1) it was too "modal", didn't work in OSH mode
+    # 2) resulting parse # errors needed more polish
+    # 3) Introducing two new syntaxes for NEW constructs isn't a good idea.
+    # 4) Although I wanted [] to mean array/sequence, () is for commands.
+    #    We could possibly do %[one two] in expression mode with some effort.
+    # 'parse_brackets',
 
     # Does this one require OilCommand mode?
     # Two rules: '&('  and  '&' + _VAR_NAME_RE
