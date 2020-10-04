@@ -195,9 +195,15 @@ def AddKinds(spec):
 
   spec.AddKind('Eof', ['Real', 'RParen', 'Backtick'])
 
-  # TODO: Unknown_Tok is OK, but Undefined_Id is better
   spec.AddKind('Undefined', ['Tok'])  # for initial state
-  spec.AddKind('Unknown',   ['Tok'])  # for when nothing matches
+
+  # The Unknown kind is used when we lex something, but it's invalid.
+  # Examples:
+  #   ${^}
+  #   $'\z'  Such bad codes are accepted when strict_backslash is off
+  #          (default in OSH), so we have to lex them.
+  spec.AddKind('Unknown', ['Tok', 'Backslash'])
+
   spec.AddKind('Eol',       ['Tok'])  # no more tokens on line (\0)
 
   spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
@@ -301,7 +307,6 @@ def AddKinds(spec):
       'Unicode4', 'Unicode8',  # legacy
       'UBraced', # Oil
       'Literals',
-      'BadBackslash',  # \D or trailing \
   ])
 
   # Regular expression primtiives.

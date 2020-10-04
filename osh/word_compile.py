@@ -63,19 +63,8 @@ def EvalCStringToken(tok):
   id_ = tok.id
   value = tok.val
 
-  if id_ == Id.Char_Literals:
-    return value
-
-  elif id_ == Id.Char_BadBackslash:
-    if 1:
-      # Either \A or trailing \ (A is not a valid backslash escape)
-      # TODO: add location info with tok.span_id (errfmt), and make it an rror
-      # when strict_backslash is on.  I USED this to fix a refactored regex!
-      # Extract from [[ ]] and fix backslashes.
-      stderr_line(
-          'warning: Invalid backslash escape in C-style string: %r' % value)
-      #from core.pyerror import e_die
-      #e_die('Invalid backslash escape %r', value, span_id=tok.span_id)
+  if id_ in (Id.Char_Literals, Id.Unknown_Backslash):
+    # shopt -s strict_backslash detects Unknown_Backslash at PARSE time in Oil.
     return value
 
   elif id_ == Id.Char_OneChar:

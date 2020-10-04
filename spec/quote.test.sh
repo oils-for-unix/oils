@@ -200,6 +200,33 @@ $mu = \u{03bc}z
 mu = 
 ## END
 
+#### OSH allows invalid backslashes
+case $SH in (dash|mksh) exit ;; esac
+
+w=$'\uZ'
+x=$'\u{03bc'
+y=$'\z'
+echo $w $x $y
+## STDOUT:
+\uZ \u{03bc \z
+## END
+## N-I dash/mksh stdout-json: ""
+
+#### Oil parse errors with strict_backslash
+case $SH in (*osh) ;; (*) exit  ;; esac
+shopt -s oil:all
+
+w = c'\uZ'
+
+x = c'\u{03bc'
+
+# Also invalid
+y = c'\z'
+
+## stdout-json: ""
+## status: 2
+## N-I dash/bash/mksh/ash status: 0
+
 #### $""
 echo $"foo"
 ## stdout: foo

@@ -517,7 +517,10 @@ _C_STRING_COMMON = [
 
   # e.g. \A is not an escape, and \x doesn't match a hex escape.  We allow it,
   # but a lint tool could warn about it.
-  C('\\', Id.Char_BadBackslash),
+  C('\\', Id.Unknown_Backslash),
+
+  # could be at the end of the line
+  #R('\\[uU]', Id.Unknown_BackslashU),
 ]
 
 # Used by ECHO_LEXER in core/builtin.py.

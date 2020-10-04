@@ -548,6 +548,18 @@ class WordParser(WordEmitter):
   def ReadSingleQuoted(self, lex_mode, left_token, tokens, no_backslashes):
     # type: (lex_mode_t, Token, List[Token], bool) -> Token
     """Used by expr_parse.py."""
+
+    # TODO:
+    # - Detect self.token_type == Id.Char_BadBackslash if strict_backslash
+    # - Also Char_BadU for a better syntax error
+
+    # Oil could also disallow Unicode{4,8} and Octal{3,4}?  And certain OneChar
+    # like \v if we want to be pedantic.  Well that would make porting harder
+    # for no real reason.  It's probably better in a lint tool.
+    #
+    # The backslash issue is a correctness thing.  It allows the language to be
+    # expanded later.
+
     done = False
     while not done:
       self._Next(lex_mode)
@@ -556,9 +568,18 @@ class WordParser(WordEmitter):
       # Kind.Char emitted in DOLLAR_SQ state
       if self.token_kind in (Kind.Lit, Kind.Char):
         tok = self.cur_token
+        # Happens in lex_mode_e.SQ: 'one\two' is ambiguous, should be
+        # r'one\two' or c'one\\two'
         if no_backslashes and '\\' in tok.val:
           p_die(r"Strings with backslashes should look like r'\n' or c'\n'",
                 token=tok)
+        tokens.append(tok)
+
+      elif self.token_kind == Kind.Unknown:
+        tok = self.cur_token
+        if self.parse_opts.strict_backslash():
+          p_die("Invalid char escape in C-style string literal", token=tok)
+
         tokens.append(tok)
 
       elif self.token_kind == Kind.Eof:

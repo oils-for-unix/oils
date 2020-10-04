@@ -10,7 +10,7 @@ from typing import List, Dict, Optional, Any
 class Option(object):
 
   def __init__(self, index, name, short_flag=None, builtin='shopt',
-               default=False, implemented=True, groups=None):
+               default=False, implemented=True, groups=None, is_parse=False):
     # type: (int, str, str, Optional[str], bool, bool, List[str]) -> None
     self.index = index
     self.name = name  # e.g. 'errexit'
@@ -28,7 +28,7 @@ class Option(object):
     self.groups = groups or []  # list of groups
 
     # for optview
-    self.is_parse = name.startswith('parse_')
+    self.is_parse = is_parse or name.startswith('parse_')
     # errexit is a special case for now
     # interactive() is an accessor
     self.is_exec = (
@@ -79,11 +79,9 @@ _OTHER_SET_OPTIONS = [
     # checking this.
 ]
 
+# These are RUNTIME strict options.  We also have parse time ones like
+# strict_backslash.
 _STRICT_OPTION_NAMES = [
-    # NOTE:
-    # - some are PARSING: strict_glob, strict_backslash
-    # - some are runtime: strict_arith, strict_word_eval
-
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
     # No implicit conversions between string and array.
@@ -103,8 +101,7 @@ _STRICT_OPTION_NAMES = [
     'strict_tilde',         # ~nonexistent is an error (like zsh)
 
     # Not implemented
-    'strict_backslash',  # BadBackslash for echo -e, printf, PS1, etc.
-    'strict_glob',       # glob_.py GlobParser has warnings
+    'strict_glob',          # glob_.py GlobParser has warnings
 ]
 
 # These will break some programs, but the fix should be simple.
@@ -260,6 +257,11 @@ def _Init(opt_def):
   # TODO: Some of these shouldn't be in oil:basic, like maybe strict_echo.
   for name in _STRICT_OPTION_NAMES:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
+
+  # A strict option that is a parse option.  This is in oil:basic because c'\z'
+  # needs to be strict.
+  opt_def.Add('strict_backslash', groups=['strict:all', 'oil:basic', 'oil:all'],
+              is_parse=True)
 
   #
   # Options that enable Oil language features

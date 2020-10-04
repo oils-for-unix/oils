@@ -125,7 +125,7 @@ X [Testing]       check
                   strict_nameref         trap invalid variable names
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
-                  X strict_backslash     Parse the sublanguage more strictly
+                  strict_backslash       Parse $'' and c'' more strictly
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
                   parse_ignored          Parse and silently ignore?
