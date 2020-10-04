@@ -481,6 +481,8 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 # Technically it could be \u123456, because we're not embedded in a string, but
 # it's better to be consistent.
 
+_UBRACED = R(r'\\u\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
+
 EXPR_CHARS = [
   # This is like Rust.  We don't have the legacy C escapes like \b.
 
@@ -488,8 +490,8 @@ EXPR_CHARS = [
   R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
 
   R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
-  R(r'\\u\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced),
-]
+  _UBRACED,
+] 
 
 # Shared between echo -e and $''.
 _C_STRING_COMMON = [
@@ -498,6 +500,12 @@ _C_STRING_COMMON = [
   R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex),
   R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
   R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
+
+  # This is an incompatible extension to make Oil strings "sane" and QSN
+  # compatible.  I don't want to have yet another string syntax!  A lint tool
+  # could get rid of the legacy stuff like \U.
+
+  _UBRACED,
 
   # TODO: Also add \u{123456} here
   # And make sure there are syntax errors

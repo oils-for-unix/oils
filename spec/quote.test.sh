@@ -184,6 +184,22 @@ echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'
  $ 001 \t \t I \n
 ## END
 
+#### Oil extension of \u{1234} to match QSN
+
+# This is technically an incompatibility
+
+echo $'mu = \u{03bc}z'
+## stdout-repr: 'mu = \xce\xbcz\n'
+## N-I bash/ash STDOUT:
+mu = \u{03bc}z
+## END
+## N-I dash STDOUT:
+$mu = \u{03bc}z
+## END
+## N-I mksh STDOUT:
+mu = 
+## END
+
 #### $""
 echo $"foo"
 ## stdout: foo

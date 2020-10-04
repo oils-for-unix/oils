@@ -109,5 +109,10 @@ def EvalCStringToken(tok):
     #util.log('i = %d', i)
     return string_ops.Utf8Encode(i)
 
+  elif id_ == Id.Char_UBraced:
+    s = value[3:-1]  # \u{123}
+    i = int(s, 16)
+    return string_ops.Utf8Encode(i)
+
   else:
     raise AssertionError()
