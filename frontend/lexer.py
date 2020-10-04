@@ -20,6 +20,7 @@ from frontend import match
 from typing import Callable, List, Tuple, Optional, Counter, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
+  from core import optview
   from frontend.reader import _Reader
 
 
@@ -153,8 +154,8 @@ class Lexer(object):
   Read lines from the line_reader, split them into tokens with line_lexer,
   returning them in a stream.
   """
-  def __init__(self, line_lexer, line_reader):
-    # type: (LineLexer, _Reader) -> None
+  def __init__(self, line_lexer, line_reader, parse_opts):
+    # type: (LineLexer, _Reader, optview.Parse) -> None
     """
     Args:
       line_lexer: Underlying object to get tokens from
@@ -162,6 +163,8 @@ class Lexer(object):
     """
     self.line_lexer = line_lexer
     self.line_reader = line_reader
+    self.parse_opts = parse_opts
+
     self.line_id = -1  # Invalid one
     self.translation_stack = []  # type: List[Tuple[Id_t, Id_t]]
     self.emit_comp_dummy = False
@@ -235,6 +238,21 @@ class Lexer(object):
 
       self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
       t = self.line_lexer.Read(lex_mode)
+
+    # Turn [] into operators rather than literals.  This helps turn them into
+    # Eof_RBracket.
+    if self.parse_opts.parse_brackets():
+      # This causes syntax errors:
+      #
+      # echo *.[ch]   Unexpected word while parsing command line
+      # [ -d /tmp ]   Invalid word while parsing command
+
+      if t.id == Id.Lit_LBracket:
+        t.id = Id.Op_LBracket
+        #log('t = %s', t)
+      elif t.id == Id.Lit_RBracket:
+        t.id = Id.Op_RBracket
+        #log('t = %s', t)
 
     # e.g. translate ) or ` into EOF
     if len(self.translation_stack):

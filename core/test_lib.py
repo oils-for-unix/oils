@@ -124,7 +124,11 @@ def InitLexer(s, arena):
   """For tests only."""
   line_lexer = lexer.LineLexer('', arena)
   line_reader = reader.StringLineReader(s, arena)
-  lx = lexer.Lexer(line_lexer, line_reader)
+
+  opt_array = [False] * option_i.ARRAY_SIZE
+  parse_opts = optview.Parse(opt_array)
+
+  lx = lexer.Lexer(line_lexer, line_reader, parse_opts)
   return line_reader, lx
 
 

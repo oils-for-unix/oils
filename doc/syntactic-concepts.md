@@ -226,6 +226,10 @@ And it may change the lexer mode, based on what's inside.
     ?(...)
     !(...)
 
+Notes:
+
+- Don't really need `&(fd)`?  Could use `.(myfd)` and `.(myblock)`
+
 Unused sigil pairs:
 
     ~() .() -() =() ;() /()    # .() could be easy to confuse with ,()

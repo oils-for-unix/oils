@@ -646,6 +646,27 @@ oil_expr() {
   _oil-parse-error 'name=val'
 }
 
+oil_to_make_nicer() {
+  set +o errexit
+
+  # expects expression on right
+  _oil-parse-error '='
+  _oil-parse-error '_'
+
+  # parse_brackets
+  _oil-parse-error '[ -d / tmp ]'
+  _oil-parse-error 'echo *.[ch]'
+
+  # What about \u{123} parse errors
+  # I get a warning now, but strict_backslash should give a syntax error
+  # _oil-parse-error "x = c'\\uz'"
+
+  # Dict pair split
+  _oil-parse-error ' d = { name:
+42 }'
+
+  #_oil-parse-error ' d = %{}'
+}
 
 cases-in-strings() {
   set +o errexit
@@ -688,6 +709,7 @@ cases-in-strings() {
   regex_literals
   proc_sig
   oil_expr
+  oil_to_make_nicer
 }
 
 # Cases in their own file

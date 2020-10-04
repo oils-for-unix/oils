@@ -781,16 +781,28 @@ OIL_LEFT_UNQUOTED = [
   C("$'", Id.Left_SingleQuoteC),
 
   C('@(', Id.Left_AtParen),         # Split Command Sub
+  # TODO: @[ alias
+
   C('^(', Id.Left_CaretParen),      # Block literals in expression mode
+  C('^[', Id.Left_CaretBracket),    # Oil syntax
 
   C('%(', Id.Left_PercentParen),    # shell-like word arrays.
   C('%[', Id.Left_PercentBracket),  # typed array literals.  Not used yet.
-  C('%{', Id.Left_PercentBrace),    # map literals
+                                    # TODO: after parse_brackets, this is an
+                                    # alias for %()
 
+  C('%{', Id.Expr_Reserved),        # Table literals, analogous to %[]
+                                    # t = %{
+                                    #    name:Str age:Int
+                                    #    andy     10
+                                    # }
+                                    # newlines are significant.
 
   # Not sure if we'll use these
   C('@{', Id.Expr_Reserved),
   C('@[', Id.Expr_Reserved),
+
+  # Idea: Set literals are #{a, b} like Clojure
 ]
 
 # Used by oil_lang/grammar_gen.py
