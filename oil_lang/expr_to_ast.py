@@ -314,6 +314,10 @@ class Transformer(object):
       trans_pref = None  # type: Token
       return expr.RegexLiteral(children[0].tok, r, flags, trans_pref)
 
+    if id_ == Id.Expr_Func:
+      # STUB
+      return expr.Lambda([], command.CommandList())
+
     raise NotImplementedError(Id_str(id_))
 
   def _NameTypeList(self, p_node):
@@ -915,24 +919,24 @@ class Transformer(object):
 
     return sig
 
-  def Func(self, pnode, out):
+  def TeaFunc(self, pnode, out):
     # type: (PNode, command__Func) -> None
     """
-    tea_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
+    tea_func: (
+      '(' [func_params] [';' func_params] ')' [type_expr_list]
+      '{' [Op_Newline] [func_items] '}'
+    )
     """
     assert pnode.typ == grammar_nt.tea_func
     children = pnode.children
+    assert children[0].tok.id == Id.Op_LParen  # proc foo(
 
-    out.name = children[0].tok
-
-    assert children[1].tok.id == Id.Op_LParen  # proc foo(
-
-    pos = 2
+    pos = 1
     typ2 = children[pos].typ
     if ISNONTERMINAL(typ2):
       assert typ2 == grammar_nt.func_params, children[pos]  # f(x, y)
       # every other one is a comma
-      out.pos_params, out.pos_splat = self._FuncParams(children[2])
+      out.pos_params, out.pos_splat = self._FuncParams(children[pos])
       pos += 1
 
     id_ = children[pos].tok.id
@@ -948,6 +952,17 @@ class Transformer(object):
 
     # Stub
     out.body = command.CommandList()
+
+  def NamedFunc(self, pnode, out):
+    # type: (PNode, command__Func) -> None
+    """
+    named_func: Expr_Name tea_func
+    """
+    assert pnode.typ == grammar_nt.named_func
+    children = pnode.children
+
+    out.name = children[0].tok
+    self.TeaFunc(children[1], out)
 
   def _DataParams(self, p_node):
     # type: (PNode) -> List[param]

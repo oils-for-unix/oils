@@ -403,13 +403,13 @@ class ParseContext(object):
 
   def ParseFunc(self, lexer, out):
     # type: (Lexer, command__Func) -> Token
-    """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_func)
+    """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.named_func)
 
     if 0:
       self.p_printer.Print(pnode)
 
-    self.tr.Func(pnode, out)
+    self.tr.NamedFunc(pnode, out)
     return last_token
 
   def ParseDataType(self, lexer, out):

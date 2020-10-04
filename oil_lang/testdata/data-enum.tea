@@ -108,6 +108,20 @@ func proclike() {
 }
 
 #
+# First Class Funtions
+#
+
+var x = func(x) { return x + 1 }
+
+var x = func(x) {
+  var f = func(y) {
+    return x + y
+  }
+  return f
+}
+
+
+#
 # Classes
 #
 
