@@ -1588,19 +1588,6 @@ class CommandParser(object):
 
     return node
 
-  def ParseTeaFunc(self):
-    # type: () -> command__Func
-    node = command.Func()
-    self.w_parser.ParseFunc(node)
-
-    self._Next()
-    self.return_expr = True
-    node.body = self.ParseBraceGroup()
-    self.return_expr = False
-    # No redirects for Oil funcs (only at call site)
-
-    return node
-
   def ParseCoproc(self):
     # type: () -> command_t
     """
@@ -1688,7 +1675,10 @@ class CommandParser(object):
     # 'use'.
     if self.parse_opts.parse_tea():
       if self.c_id == Id.KW_Func:
-        return self.ParseTeaFunc()
+        out0 = command.Func()
+        self.parse_ctx.ParseFunc(self.lexer, out0)
+        self._Next()
+        return out0
       if self.c_id == Id.KW_Data:
         out1 = command.Data()
         self.parse_ctx.ParseDataType(self.lexer, out1)
@@ -1705,8 +1695,9 @@ class CommandParser(object):
         self._Next()
         return out3
       if self.c_id == Id.KW_Import:
+        # Needs last_token because it ends with an optional thing?
         out4 = command.Import()
-        self.w_parser.ParseImport(out4)  # need last_token?  Try without
+        self.w_parser.ParseImport(out4)
         self._Next()
         return out4
 

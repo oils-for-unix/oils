@@ -310,6 +310,9 @@ module syntax
   | OilCondition(expr e) -- for if/while
   | OilForIn(name_type* lhs, expr iterable, command body)
   | Proc(Token name, proc_sig sig, command body)
+
+  -- Tea
+
   | Func(Token name, 
          param* pos_params, Token? pos_splat,
          param* named_params, Token? named_splat,

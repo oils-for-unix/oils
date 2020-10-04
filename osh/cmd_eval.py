@@ -1167,6 +1167,8 @@ class CommandEvaluator(object):
 
       elif case(command_e.Func):
         node = cast(command__Func, UP_node)
+        # TODO: These should be piped into the tea evaluator ...
+
         # Note: funcs have the Python pitfall where mutable objects shouldn't be
         # used as default args.
 

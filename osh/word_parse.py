@@ -931,13 +931,6 @@ class WordParser(WordEmitter):
     self.buffered_word = last_token
     self._Next(lex_mode_e.ShCommand)  # TODO: Do we need this?
 
-  def ParseFunc(self, node):
-    # type: (command__Func) -> None
-    last_token = self.parse_ctx.ParseFunc(self.lexer, node)
-    if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
-      last_token.id = Id.Lit_LBrace
-    self.buffered_word = last_token
-
   def ParseImport(self, node):
     # type: (command__Import) -> None
     last_token = self.parse_ctx.ParseImport(self.lexer, node)

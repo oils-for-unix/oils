@@ -78,22 +78,34 @@ var commas2 = {
 #
 
 
-# TEA func add(x, y) { return x + y }
+func add(x, y) { return x + y }
 
-# TEA func stmt_semicolon(x, y) { var z = 32; return x + y + z }
+func add(x, y) { return x + y
+}
 
-# TEA func stmt_newline(x, y) {
-#   var d = [42]
-#   set d[0] = 5
-#   return x + y + z
-# }
+func stmt_semicolon(x, y) { var z = 32; return x + y + z }
 
-# Note: both of these get 'unexpected right brace' from osh/cmd_parse.py.
-# Oh because it starts a line.  It is Lit_RBrace  Hm.
-#
-# func empty() { }
-# func empty2() {
-# }
+func stmt_newline(x, y) {
+   var d = [42]
+   set d[0] = 5
+   return x + y + z
+}
+
+func empty() { }
+func empty2() {
+}
+
+func proclike() {
+  # NOT allowed
+  #echo hi
+
+  # These ARE allowed.  Special case
+  echo 'hi'
+  echo 'hi';
+
+  echo 'hi' $there;
+  echo 'hi' $there "double" ${x};
+}
 
 #
 # Classes

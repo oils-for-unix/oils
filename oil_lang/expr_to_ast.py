@@ -946,6 +946,9 @@ class Transformer(object):
       out.return_types = self._TypeExprList(children[pos])
       # otherwise it's Id.Op_LBrace like f() {
 
+    # Stub
+    out.body = command.CommandList()
+
   def _DataParams(self, p_node):
     # type: (PNode) -> List[param]
     """

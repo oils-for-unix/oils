@@ -360,8 +360,6 @@ func_params: (
 
 type_expr_list: type_expr (',' type_expr)*
 
-tea_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
-
 data_params: (func_param ',')* [ func_param [','] ]
 
 # zero params allowed for consistency with func and class?
@@ -387,19 +385,32 @@ tea_enum: (
 # Inside func/class and at top level: tea_func, oil_var_decl,
 # oil_place_mutation
 
+# In Python, imports, assert, etc. also at this 'small_stmt' level
+flow_stmt: 'break' | 'continue' | 'return' [testlist]
+
 # TODO: for/while, if/switch, with, break/continue/return, try/throw, etc.
 func_item: (
   ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
+| flow_stmt
 | 'set' place_list (augassign | '=') testlist  # oil_place_mutation
-  # x  f(x)  etc.   And also x = 1?  Python uses the same "hack" to fit within
-  # pgen2.  It also supports a = b = 1, which we don't want.
-| testlist ['=' testlist]
-  # Also can be
-  # testlist tea_word* or something?
+  # x  f(x)  etc.
+  #
+  # And x = 1.  Python uses the same "hack" to fit within pgen2.  It also
+  # supports a = b = 1, which we don't want.
+  #
+  # And echo 'hi' 'there'
+  #
+  # TODO: expr_to_ast needs to validate this
+| testlist (['=' testlist] | tea_word*)
 )
 
 # we want to avoid requiring newline or ; before }
 func_items: func_item (semi_newline func_item)* [semi_newline]
+
+tea_func: (
+  Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list]
+  '{' [Op_Newline] [func_items] '}'
+)
 
 # TODO: Methods differ from functions:
 #  super() can be the first arg
@@ -416,9 +427,7 @@ func_items: func_item (semi_newline func_item)* [semi_newline]
 # } ?
 
 class_item: (
-  # TODO: refactor to make { } symmetric
-  ('virtual' | 'override' | 'func' ) tea_func [Op_Newline] [func_items] '}'
-| 'abstract' tea_func
+  ('virtual' | 'override' | 'func' | 'abstract' ) tea_func
   # Member declaration
 | 'var' name_type_list
 )
@@ -450,11 +459,11 @@ module_item: (
   # oil_var_decl, but no mutation
   ('var' | 'const') name_type_list '=' testlist end_outer
 | 'import' tea_import  # TODO: needs Eof_Real
+  # Also 'export'
 | 'class' tea_class end_outer
 | 'data' tea_data end_outer
 | 'enum' tea_enum end_outer
-  # TODO: refactor to make {} symmetrical
-| 'func' tea_func [Op_Newline] [func_items] '}'
+| 'func' tea_func end_outer
 
   # Might need: typedef?  Or typealias?
 )

@@ -21,7 +21,7 @@ shopt -s oil:all
 shopt -s parse_tea
 
 func add(x, y) Int {
-  echo hi
+  echo 'hi'
   return x + y
 }
 var result = add(42, 1)
@@ -36,7 +36,7 @@ shopt -s oil:all
 shopt -s parse_tea
 
 func add(x Int, y Int) Int {
-  echo hi
+  echo 'hi'
   return x+y
 }
 var result = add(42, 1)
@@ -81,7 +81,7 @@ shopt -s oil:all
 shopt -s parse_tea
 
 func add(x, y, ...args) {
-  write @args
+  repr ':args'  # This works in Tea too for debugging
   return x + y
 }
 var args = %[5 6 7 8]
@@ -152,11 +152,18 @@ shopt -s parse_tea
 
 func add(x, y; verbose=true, ...named) {
   if (verbose) { echo 'verbose' }
+
+  # Can list splatting work in tea?  Maybe it should be 
+  #   x = splice(named)
+  #   repr 'x'
+  # Or just  
+  #   = named
+  #   = splice(named)
   write @named | sort
   return x + y
 }
-var args = %{verbose: false, a: 1, b: 2}
-var args2 = %{f: 3}
+var args = {verbose: false, a: 1, b: 2}
+var args2 = {f: 3}
 var ret = add(2, 3; ...args, ...args2)
 echo ret=$ret
 ## STDOUT:

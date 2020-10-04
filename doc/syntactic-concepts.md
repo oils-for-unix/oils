@@ -234,18 +234,12 @@ Unused sigil pairs:
 
     ~() .() -() =() ;() /()    # .() could be easy to confuse with ,()
 
-Oil Process Sub?
-
-    diff <(cat left.txt) <(cat right.txt)
-    diff ^(cat left.txt) ^(cat right.txt)  # does this do anything?
-
 Other ideas:
 
 - `%[1 2 3]` for typed arrays.  The entries are dynamically typed check upon
   entry perhaps?
-- `%{ }` for table literals / embedded TSV
-  - Problem: detecting the last `}` in the word.  Might need to be `~( ... )`
-    or something.  Or perhaps `%%( ... )`
+
+<!--
 
 Table example:
 
@@ -255,6 +249,48 @@ Table example:
       'andy c'  15_000
     }
     var people = {name: %(bob 'andy c'), age: %[10_000 15_000]}
+
+But this doesn't work for the same reason!
+
+
+PARENS
+
+5 Commands:
+
+   2 main command subs with $() and @()
+   3 uncommon ones ^() >() <()
+
+1 Words:
+   1 with %(array literal)
+
+2 Expressions:
+   :(...)  # this is rare, we don't have dplyr
+
+   &(...)  # this is very rare, and honestly the most common case will be
+           # echo foo > &myfd, and cd /tmp &myblock
+           # So it's really only 1.
+
+BRACKETS
+
+1 Expressions  $[a[i]]
+
+- So honestly () USUALLY means COMMANDS/WORDS
+  - I can't flip the whole lanugage from one to another!!!
+
+honestly you could have filter :(a, b) mean an arg list, while
+
+x = :[age > 30]   # This is a lazily evaluated expression.  Ok sure.
+
+
+- parse_brackets is too pevasive
+
+   # expressions
+   $[a[i]]        could also be $a(i)
+   $[d->key]      could also be $d('key')
+
+                  @d('key') and @a(i) too?   Confusing
+
+-->
 
 ## Related Documents
 
