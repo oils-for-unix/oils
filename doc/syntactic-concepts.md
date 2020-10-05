@@ -87,6 +87,22 @@ Capital Letters are used for types:
 
     enum Expr { Unary(child Expr), Binary(left Expr, right Expr) }
 
+ALL CAPS are used for global variables:
+
+    PATH  IFS  UID  HOSTNAME
+
+And external programs accept environment variables in all caps:
+
+    PYTHONPATH  LD_LIBRARY_PATH
+
+Global variables that are silently mutated by the interpreter:
+
+    _argv  _status   _pipe_status
+
+And functions to access such mutable vars:
+
+    _match  _start   _end   _field
+
 Less important sigils:
 
 `:` means unevaluated:
@@ -193,7 +209,7 @@ And it may change the lexer mode, based on what's inside.
 
     $(hostname)  Command Sub        Command        cmd,expr
     @(seq 3)     Split Command Sub  Command        cmd,expr
-    ^(echo $PWD) Block Literal      Command        expr         block literals
+    &(echo $PWD) Block Literal      Command        expr         block literals
                                                                 look like
                                                                 cd / { echo $PWD }
                                                                 in command mode
@@ -201,12 +217,14 @@ And it may change the lexer mode, based on what's inside.
     >(sort -n)   Process Sub        Command        cmd          rare
     <(echo hi)   Process Sub        Command        cmd          rare
 
-
     %(array lit) Array Literal      Words          expr
 
-    .(1 + 2)     Expr to String     Expression     cmd          currently $[1 + 2]
-    :(1 + 2)     Lazy Expression    Expression     cmd,expr     
-    &(1 + 2)     Eager Expression   Expression     cmd          > &(fd) and > &fd
+
+    $[1 + a[i]]  Stringify Expr     Expression     cmd
+    :[1 + 2]     Lazy Expression    Expression     expr
+
+    .(1 + 2)     Typed Expression   Expression     cmd          > .(fd) .(myblock)
+    :(a=1, b='') Lazy Arg List      Arg List       cmd,expr     filter(), mutate()
 
 
     $/d+/        Inline Eggex       Eggex          cmd          needs oil-cmd mode

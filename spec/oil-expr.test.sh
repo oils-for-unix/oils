@@ -676,18 +676,19 @@ shopt -s oil:basic
 var s = 'foo'
 if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
   echo matches
-  argv.py @M
+  argv.py $_match(0) $_match(1)
 }
 if (s !~ '[[:digit:]]+') {
   echo "does not match"
-  argv.py @M
+  argv.py $_match(0) $_match(1)
 }
 
 if (s ~ '[[:digit:]]+') {
   echo "matches"
 }
 # Should be cleared now
-argv.py @M
+# should this be Undef rather than ''?
+argv.py $_match(0) $_match(1)
 
 ## STDOUT:
 matches
@@ -702,7 +703,7 @@ shopt -s oil:basic
 proc f {
   if ('foo' ~ '.([[:alpha:]]+)') {  # ERE syntax
     echo matches
-    argv.py @M
+    argv.py $_match(0) $_match(1)
   }
 }
 f
@@ -712,28 +713,6 @@ matches
 ['foo', 'oo']
 default
 ## END
-
-
-#### M can be saved and used later (deferred)
-shopt -s oil:basic
-
-var pat = '.([[:alpha:]]+)'  # ERE syntax
-if ('foo' ~ pat) {
-  var m1 = copy(M)
-  if ('bar' ~ pat) {
-    var m2 = copy(M)
-  }
-}
-argv.py @m1
-argv.py @m2
-# STDOUT:
-#['foo', 'oo']
-#['bar', 'ar']
-# END
-
-## status: 1
-
-
 
 #### obj.attr and obj.method()
 var s = 'hi'

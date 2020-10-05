@@ -24,7 +24,7 @@ Oil's design is more conservative than that of other alternative shells.  It
 
 ### POSIX Shell
 
-For the command and word syntax:
+The command and word syntax comes from shell:
 
     ls | wc -l                       # pipeline
     echo $var "${var} $(hostname)"   # variable and command sub
@@ -63,12 +63,14 @@ Historical note: Usenix 93.  korn shell was used for GUIs and such!
 
 ### Python
 
-For the expression language:
+Oil's expression language is mostly Python compatible.  Expressions occur on
+the RHS of `=`:
 
-    var i = 1 + 2*3
-    var s = 'yes' if mybool else 'no'
+    var a = 1 + a[i]
+    var b = fib(10)
+    var c = 'yes' if mybool else r'no'
 
-And proc signatures:
+Proc signatures resemble Python:
 
     proc cp(src, dest='/tmp') {  # Python-like default value
       cp --verbose $src $dest
@@ -77,26 +79,25 @@ And proc signatures:
 Differences:
 
 - Oil uses shell-like composition with "procs", not Python- or JavaScript-like
-  functions.
-- No classes, or operator loading.
-  - `a + b` (addition) vs. `a ++ b` (concatenation)
-  - `a < b` is only for integers.  `cmp()` could be for strings.
+	functions.
+- Oil doesn't overload operators as much:
+	- `a + b` is for addition, whle `a ++ b` is for concatenation.
+	- `a < b` is only for numbers.  `cmp()` could be for strings.
 - No "accidentally quadratic"
   - Strings and `+=`
   - No `in` for array/list membership.  Only dict membership.
 - `s[i]` returns an integer "rune", not a string?
-- Syntax
-  - `div` and `mod`
-  - `xor`, because `^` is for exponentiation
+- Singleton tuples like `42,` are disallowed, in favor of the more explicit
+	`tup(42)`.
 
 ### JavaScript
 
-For dict literals:
+Oil uses JavaScript's dict literals:
 
     # Unquoted keys.  Sigil to avoid confusion with blocks.
-    d = %{name: 'Bob', age: 10}
+    d = {name: 'Bob', age: 10}
 
-    d = %{[mystr]: 'value'}  # key expressions in []
+    d = {[mystr]: 'value'}  # key expressions in []
 
 And "structured programming" looks like C / Java / JavaScript:
 
@@ -114,14 +115,18 @@ And "structured programming" looks like C / Java / JavaScript:
 
 ### Ruby
 
-For blocks:
+Oil has Ruby-like blocks:
 
     cd /tmp {
       echo $PWD  # prints /tmp
     }
     echo $PWD
 
+    proc foo (&block) { run(block) }
+    var myblock = &(echo $PWD)
+
 (Julia has something like blocks too.)
+
 
 And the syntax for references to variable names:
 
@@ -131,12 +136,16 @@ And the syntax for references to variable names:
 
 ### Perl
 
-For the `@` character (which PowerShell also uses):
+The `@` character (which PowerShell also uses) comes from Perl:
 
     var myarray = %(one two three)
-    echo @myarray  # @ isn't a really sigil; it's the "splice" operator
+    echo @myarray          # @ is the "splice" operator
 
     echo @arrayfunc(x, y)
+
+    for i in @(seq 3) {    # split command sub
+      echo $i
+    }
 
 Perl can be viewed as a mixture of shell, awk, and sed.  Oil is a similar
 agglomeration of related languages.
@@ -148,40 +157,97 @@ TODO: autovivification from Perl/awk.  Is this setvar?
 
 ### Go (library)
 
-For the builtin flags syntax:
+The builtin flags syntax comes from Go:
 
      mybuiltin --show=0  # turn a flag that's default true
 
 It also uses a native UTF-8 representation of strings.
 
-### awk and make, find and xargs
+
+### Awk
+
+Oil gets its regex match operator from Awk:
+
+    if (mystr ~ /digit+/) {
+      echo 'Number'
+    }
+
+(We don't use Perl's `=~` operator.)
+
+### make
+
+TODO
+
+### find and xargs
 
 Features influenced by these languages are planned, but not implemented.
 
-## Aside
+## Minor Influences
 
 ### Tcl
 
-Oil uses `proc` and `setvar`, which makes it look a bit like Tcl:
+Oil uses `proc` and `set`, which makes it look something like Tcl:
 
      proc p(x) {
-       setvar y = x * 2
+       set y = x * 2
        echo $y
      }
 
      p 3  # prints 6
 
-But this is mostly "convergent evolution", and relatively superficial.
+But Oil isn't homoiconic like Tcl is.  It avoids dynamic parsing, and has a lot
+of syntax.
 
-Oil isn't homoiconic like Tcl is.  It avoids dynamic parsing.  It also has a
-lot of syntax.
+So this is superficial, an instance of "convergent evolution".
+
+However, [Data Definition and Code Generation in Tcl (PDF)][config-tcl] shows
+how Tcl can be used a configuration language:
+
+    change 6/11/2003 {
+      author "Will Duquette"
+      description {
+        Added the SATl component to UCLO.
+      }
+    }
+
+Oil's blocks (also inspired Ruby) would allow this to be expressed very
+similarly:
+
+    change 6/11/2003 {
+      author  = "Will Duquette"
+      description = '''
+        Added the SATl component to UCLO.
+      '''
+    }
+
+
+(This mechanism is still in progress.)
+
+[config-tcl]: https://trs.jpl.nasa.gov/bitstream/handle/2014/7660/03-1728.pdf
+
+
+
+### Lua
+
+Oil also uses a leading `=` to print expressions in the REPL.
+
+    = 1 + 2
+
+
+### PHP
+
+PHP has global variables like `_REQUEST` and `_POST`.
+
+Oil may have `_argv`, `_match()`, `_start()`, etc.  These are global variables
+that are "silently" mutated by the interpreter, and functions to access such
+global data.
 
 <!--
 
 Config Dialect:
 
 - nginx configs?
-- hcl? 
+- HCL? 
 
 What about JS safe string interpolation?
 
@@ -189,7 +255,8 @@ What about JS safe string interpolation?
 
 LATER:
 
-- R language (probably later, need help): data frames, lazy evaluation
+- R language (probably later, need help): data frames
+	- lazy evaluation like  mutate :(ms = secs * 100)
 - Honorable mention: Lua: reentrant interpreter.  However the use of Unix
   syscalls implies global process state.
 - Lisp: symbol types
@@ -207,6 +274,20 @@ Go and MyPy, for types:
       return x + y
     }
     # what about named return values?
+
+Rust:
+
+    0..n and 1..=n ?
+    enum
+    |x| x+1 
+
+
+Clojure:
+
+\n and \newline for character literals, but Oil uses #'n' and \n
+
+maybe set literals with #{a b c} vs. #{a, b, c}
+
 -->
 
 ## Paradigms and Style

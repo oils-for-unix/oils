@@ -359,11 +359,11 @@ func_params: (
 
 type_expr_list: type_expr (',' type_expr)*
 
+# Note: It may make sense to have ; here, for named params only!
 data_params: (func_param ',')* [ func_param [','] ]
 
 # zero params allowed for consistency with func and class?
 tea_data: Expr_Name '(' [data_params] ')'
-
 
 # e.g. Nullary %Token or Nullary(x Int)
 variant_type: Expr_Symbol | '(' data_params ')' 

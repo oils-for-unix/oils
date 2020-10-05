@@ -895,7 +895,7 @@ oil-options() {
 }
 
 oil-expr() {
-  sh-spec spec/oil-expr.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/oil-expr.test.sh --osh-failures-allowed 8 \
     $OSH_LIST "$@"
 }
 
@@ -910,7 +910,7 @@ oil-slice-range() {
 }
 
 oil-regex() {
-  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 

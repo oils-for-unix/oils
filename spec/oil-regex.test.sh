@@ -48,7 +48,7 @@ yes
 no
 ## END
 
-#### Capture groups (also tested in spec/oil-expr)
+#### Positional captures with _match
 shopt -s oil:all
 
 var x = 'zz 2020-08-20'
@@ -61,12 +61,28 @@ setvar BASH_REMATCH = %(reset)
 
 if (x ~ /<d+> '-' <d+>/) {
   argv.py "${BASH_REMATCH[@]}"
-  argv.py @M
+  argv.py $_match(0) $_match(1) $_match(2)
+
+  argv.py $_match()  # synonym for _match(0)
+
+  # TODO: Also test _start() and _end()
 }
 ## STDOUT:
 ['2020-08', '2020', '08']
 ['reset']
 ['2020-08', '2020', '08']
+## END
+
+#### Named captures with _match
+shopt -s oil:all
+
+var x = 'zz 2020-08-20'
+
+if (x ~ /<d+ : year> '-' <d+ : month>/) {
+  argv.py $_match('year') $_match('month')
+}
+## STDOUT:
+['2020', '08']
 ## END
 
 #### Repeat {1,3} etc.
