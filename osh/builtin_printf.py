@@ -127,10 +127,12 @@ class _FormatStringParser(object):
     parts = []  # type: List[printf_part_t]
     while True:
       if (self.token_kind == Kind.Char or
-          self.token_type == Id.Format_EscapedPercent):
+          self.token_type == Id.Format_EscapedPercent or
+          self.token_type == Id.Unknown_Backslash):
 
-        # TODO: Could handle Char_BadBackslash.
-        # Maybe make that a different kind?
+        # TODO: Could fail on Unknown_Backslash with strict_backslash?  But it
+        # would happen at runtime rather than parse time.  I'd rather have a
+        # statically parsed printf like ${x %.3f}
 
         parts.append(printf_part.Literal(self.cur_token))
 
