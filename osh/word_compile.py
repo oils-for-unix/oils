@@ -9,7 +9,6 @@ from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, class_literal_term, class_literal_term_t,
 )
-from core.pyutil import stderr_line
 from frontend import consts
 from osh import string_ops
 

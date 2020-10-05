@@ -481,7 +481,9 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 # Technically it could be \u123456, because we're not embedded in a string, but
 # it's better to be consistent.
 
-_UBRACED = R(r'\\u\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
+_U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
+
+_X_CHAR = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)
 
 EXPR_CHARS = [
   # This is like Rust.  We don't have the legacy C escapes like \b.
@@ -490,14 +492,14 @@ EXPR_CHARS = [
   R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
 
   R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
-  _UBRACED,
+  _U_BRACED_CHAR,
 ] 
 
 # Shared between echo -e and $''.
 _C_STRING_COMMON = [
 
   # \x6 is valid in bash
-  R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex),
+  _X_CHAR,
   R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
   R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
 
@@ -505,7 +507,7 @@ _C_STRING_COMMON = [
   # compatible.  I don't want to have yet another string syntax!  A lint tool
   # could get rid of the legacy stuff like \U.
 
-  _UBRACED,
+  _U_BRACED_CHAR,
 
   # TODO: Also add \u{123456} here
   # And make sure there are syntax errors
@@ -548,20 +550,10 @@ PS1_DEF = [
     C('\\', Id.PS_BadBackslash),
 ]
 
-# NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
-# point of it is that supports other backslash escapes like \n!  It just
-# becomes a regular backslash.
-LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
-  # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
-  # with no leading 0.
-  R(OCTAL3_RE, Id.Char_Octal3),
+# Shared between $'' and QSN strings
+_SQ_COMMON = [
 
-  # ' is escaped in $'' mode, but not echo -e.  Ditto fr ", not sure why.
-  C(r"\'", Id.Char_OneChar),
-  C(r'\"', Id.Char_OneChar),
-
-  # e.g. 'foo', anything that's not a backslash escape.  Need to exclude ' as
-  # well.
+  # e.g. 'foo', anything that's not a backslash escape or '
   R(r"[^\\'\0]+", Id.Char_Literals),
 
   C("'", Id.Right_SingleQuote),
@@ -570,6 +562,30 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
   # will assert; should give a better syntax error.
   C('\\\0', Id.Unknown_Tok),
 ]
+
+# NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
+# point of it is that supports other backslash escapes like \n!  It just
+# becomes a regular backslash.
+LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
+  # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
+  # with no leading 0.
+  R(OCTAL3_RE, Id.Char_Octal3),
+
+  # ' and " are escaped in $'' mode, but not echo -e.
+  C(r"\'", Id.Char_OneChar),
+  C(r'\"', Id.Char_OneChar),
+] + _SQ_COMMON
+
+# Matches pure Python decoder in qsn_/qsn.py
+# TODO: Hook this up to a new lexer!
+QSN_DEF = [
+  R(r'''\\[nrt0'"\\]''', Id.Char_OneChar),
+  _X_CHAR,
+  _U_BRACED_CHAR,
+
+  # Note: we don't have bad backslash?  I think it will be caught anyway.
+
+] + _SQ_COMMON
 
 LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
   R(OCTAL3_RE, Id.Char_Octal3),

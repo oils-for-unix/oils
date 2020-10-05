@@ -186,15 +186,17 @@ echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'
 
 #### Oil extension of \u{1234} to match QSN
 
+#shopt -s oil:basic
+
 # This is technically an incompatibility
 
-echo $'mu = \u{03bc}z'
-## stdout-repr: 'mu = \xce\xbcz\n'
+echo $'mu = \u{03bc}-\U{03bc}'
+## stdout-repr: 'mu = \xce\xbc-\xce\xbc\n'
 ## N-I bash/ash STDOUT:
-mu = \u{03bc}z
+mu = \u{03bc}-\U{03bc}
 ## END
 ## N-I dash STDOUT:
-$mu = \u{03bc}z
+$mu = \u{03bc}-\U{03bc}
 ## END
 ## N-I mksh STDOUT:
 mu = 

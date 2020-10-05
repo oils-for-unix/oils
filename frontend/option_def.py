@@ -11,7 +11,7 @@ class Option(object):
 
   def __init__(self, index, name, short_flag=None, builtin='shopt',
                default=False, implemented=True, groups=None, is_parse=False):
-    # type: (int, str, str, Optional[str], bool, bool, List[str]) -> None
+    # type: (int, str, str, Optional[str], bool, bool, List[str], bool) -> None
     self.index = index
     self.name = name  # e.g. 'errexit'
     self.short_flag = short_flag  # 'e' for -e
