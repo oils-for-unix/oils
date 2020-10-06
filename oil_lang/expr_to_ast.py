@@ -846,7 +846,7 @@ class Transformer(object):
         if p.tok.id == Id.Expr_At:  # @args
           i += 1
           rest = children[i].tok
-        elif p.tok.id == Id.Arith_Caret:  # ^block
+        elif p.tok.id == Id.Arith_Amp:  # &block
           i += 1
           block = children[i].tok
         else:

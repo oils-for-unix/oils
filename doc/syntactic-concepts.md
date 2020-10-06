@@ -219,15 +219,25 @@ And it may change the lexer mode, based on what's inside.
 
     %(array lit) Array Literal      Words          expr
 
+    %{table lit} Table Literal      Words, no []   expr         Not implemented
+                                    or {}
+
 
     $[1 + a[i]]  Stringify Expr     Expression     cmd
-    :[1 + 2]     Lazy Expression    Expression     expr
+    :[1 + 2]     Lazy Expression    Expression     expr         Not implemented
 
     .(1 + 2)     Typed Expression   Expression     cmd          > .(fd) .(myblock)
-    :(a=1, b='') Lazy Arg List      Arg List       cmd,expr     filter(), mutate()
+                                                                later &fd &myblock
+                                                                Not Implemented
+
+    :(a=1, b='') Lazy Arg List      Arg List       cmd,expr     when(), filter()
+                                                                mutate()
+                                                                Not Implemented
 
 
     $/d+/        Inline Eggex       Eggex          cmd          needs oil-cmd mode
+
+    #'a'         Char Literal       UTF-8 char     expr         Not implemented
 
     c'' c""      C and Raw String   String         expr         add to oil-cmd mode
     r'' r""      Literals
@@ -244,18 +254,9 @@ And it may change the lexer mode, based on what's inside.
     ?(...)
     !(...)
 
-Notes:
-
-- Don't really need `&(fd)`?  Could use `.(myfd)` and `.(myblock)`
-
 Unused sigil pairs:
 
-    ~() .() -() =() ;() /()    # .() could be easy to confuse with ,()
-
-Other ideas:
-
-- `%[1 2 3]` for typed arrays.  The entries are dynamically typed check upon
-  entry perhaps?
+    ~()   -()   =()   ;()   /()  
 
 <!--
 
@@ -265,11 +266,11 @@ Table example:
       name      age:Int
       bob       10_000
       'andy c'  15_000
+      [c]
     }
     var people = {name: %(bob 'andy c'), age: %[10_000 15_000]}
 
 But this doesn't work for the same reason!
-
 
 PARENS
 
@@ -307,7 +308,6 @@ x = :[age > 30]   # This is a lazily evaluated expression.  Ok sure.
    $[d->key]      could also be $d('key')
 
                   @d('key') and @a(i) too?   Confusing
-
 -->
 
 ## Related Documents

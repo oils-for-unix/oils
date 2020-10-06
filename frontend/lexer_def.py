@@ -802,7 +802,7 @@ OIL_LEFT_UNQUOTED = [
   C('@(', Id.Left_AtParen),         # Split Command Sub
   # TODO: @[ alias
 
-  C('^(', Id.Left_CaretParen),      # Block literals in expression mode
+  C('&(', Id.Left_AmpParen),        # Block literals in expression mode
 
   C('%(', Id.Left_PercentParen),    # shell-like word arrays.
   C('%[', Id.Left_PercentBracket),  # typed array literals.  Not used yet.

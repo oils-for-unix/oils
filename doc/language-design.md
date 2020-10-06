@@ -268,6 +268,13 @@ Julia for signatures, default arguments, named arguments:
     func f(p1, p2=0 ; n2, n2=0) {
     }
 
+And lazy arugment lists:
+
+    :(1+2)   # lazy expression in Julia
+
+    mutate :(a, b)  # lazy argument list in Oil
+
+
 Go and MyPy, for types:
 
     func add(x Int, y Int) Int {

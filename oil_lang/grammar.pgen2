@@ -93,15 +93,16 @@ atom: (
   | '/' regex [re_flags] '/'
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
-    # TODO: Allow suffixes on floats and decimals?  What about in arrays?
+    # TODO: Allow suffixes on floats and decimals?
   | Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt 
 
-    # Expr_Symbol is %mykey now.  Change it to :mykey?
-    #
-    # Maybe call it Expr_PercentSymbol for %begin %end and Expr_ColonSymbol for
-    # :myintern?
+    # TODO: Expr_Symbol for %mykey
 
   | dq_string | sq_string
+    
+		# TODO: Char_OneChar like \n, and Expr_CharLiteral #'a' (up to 4 
+		# utf-8 encoded bytes, which are decoded into an integer!)
+
   | sh_command_sub | braced_var_sub | simple_var_sub
   | sh_array_literal | array_literal 
     # Anonymous function.  Is this only in Tea mode?
@@ -241,7 +242,7 @@ array_item: (
 array_literal: '%[' array_item* Op_RBracket
 
 sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
-sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
+sh_command_sub: ( '$(' | '@(' | '&(' ) Expr_CastedDummy Eof_RParen
 
 # Note: could add c"" too
 dq_string: '"' Expr_CastedDummy Right_DoubleQuote
@@ -343,11 +344,13 @@ proc_param: [':'] Expr_Name ['=' expr]
 # all optional.  If they appear, @ and ^ have to be last, in that order.
 proc_params: (
   (proc_param ',')*
-  [ (proc_param | '^' Expr_Name | '@' Expr_Name [',' '^' Expr_Name]) [','] ]
+  [ (proc_param | '&' Expr_Name | '@' Expr_Name [',' '&' Expr_Name]) [','] ]
 )
 
 # Note: we might have proc name-with-hyphens, so we can't parse the name in
 # expression mode.
+
+# TODO: :(x, y) for lazy (typed) expressions as params
 oil_proc: ['(' [proc_params] ')'] '{'  # opening { for pgen2
 
 func_param: Expr_Name [type_expr] ['=' expr]

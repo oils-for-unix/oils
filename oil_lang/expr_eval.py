@@ -252,8 +252,8 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.CommandSub:
       id_ = node.left_token.id
-      # ^(echo block literal)
-      if id_ == Id.Left_CaretParen:
+      # &(echo block literal)
+      if id_ == Id.Left_AmpParen:
         return 'TODO: value.Block'
       else:
         stdout = self.shell_ex.RunCommandSub(node.child)

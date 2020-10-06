@@ -101,4 +101,19 @@ inner x = 42
 outer x = 1
 ## END
 
+#### block literal in expression mode: &(echo $PWD)
+shopt -s oil:all
 
+myblock = &(echo $PWD)
+
+b2 = &(echo one; echo two)
+
+# TODO:
+# Implement something like this?
+# _ evalexpr(b2, binding_dict)  # e.g. to bind to QTSV fields
+# _ evalblock(b2, binding_dict)
+
+## STDOUT:
+one
+two
+## END

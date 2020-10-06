@@ -351,7 +351,7 @@ def AddKinds(spec):
       'ProcSubOut',         # >( )
 
       'AtParen',            # @( for split command sub
-      'CaretParen',         # ^( for block literal in expression mode
+      'AmpParen',           # &( for block literal in expression mode
 
       'PercentParen',       # %( for word arrays
       'PercentBracket',     # %[ for typed array literals
