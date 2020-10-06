@@ -225,6 +225,13 @@ similarly:
 
 [config-tcl]: https://trs.jpl.nasa.gov/bitstream/handle/2014/7660/03-1728.pdf
 
+### PHP
+
+PHP has global variables like `_REQUEST` and `_POST`.
+
+Oil may have `_argv`, `_match()`, `_start()`, etc.  These are global variables
+that are "silently" mutated by the interpreter, and functions to access such
+global data.
 
 
 ### Lua
@@ -233,14 +240,17 @@ Oil also uses a leading `=` to print expressions in the REPL.
 
     = 1 + 2
 
+### Haskell
 
-### PHP
+Oil also uses `++` to concatenate strings and lists, although the operator
+isn't strictly necessary:
 
-PHP has global variables like `_REQUEST` and `_POST`.
 
-Oil may have `_argv`, `_match()`, `_start()`, etc.  These are global variables
-that are "silently" mutated by the interpreter, and functions to access such
-global data.
+     mystr = a ++ b    
+     mystr = "$a$b"       # also converts every element to a string
+
+     mylist = c ++ d
+     mylist = %( @c @d )  # also converts every element to a string
 
 <!--
 

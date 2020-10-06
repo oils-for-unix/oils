@@ -42,6 +42,7 @@ language.  It's **our upgrade path from bash**.
   the length of this list.
 - [Syntactic Concepts](syntactic-concepts.html)
   - [Command vs. Expression Mode](command-vs-expression-mode.html).
+  - [Syntax Feelings](syntax-feelings.html)
 - [Oil Help Topics](oil-help-topics.html) (incomplete).  This document
   underlies the `help` builtin.
 

@@ -84,6 +84,7 @@ readonly MARKDOWN_DOCS=(
   qtsv
   language-design
   syntactic-concepts
+  syntax-feelings
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.

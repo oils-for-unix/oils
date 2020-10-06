@@ -114,10 +114,7 @@ EOF)
   def testOtherExpr(self):
     """Some examples copied from pgen2/pgen2-test.sh mode-test."""
 
-    node = self._ParseOsh('%[1 2 3];')
-
     CASES = [
-      '%[1 2 3]',
       #'$/ x /',
       # TODO: Put this back after fixing double quoted strings in expression
       # mode.

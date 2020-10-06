@@ -2,119 +2,22 @@
 in_progress: yes
 ---
 
-Syntactic Concepts in Oil
-=========================
+Syntactic Concepts in the Oil Language
+======================================
 
-Shell uses sigils like `$`:
+Oil borrows popular syntax from many languages, so it has a complex syntax.
+Here are some concepts that may help you learn and remember it.
 
-    echo $var
-    echo "${array[@]}"
-    echo "$@"
 
-and sigil pairs:
-
-    echo ${var} 
-    echo $(hostname)  
-    echo $((1 + 2))
-
-Oil extends these syntactic concepts.
+- Static Parsing: For better errors, and for tooling.
+- Parse Options: for compatibility.
+- Command vs. Expression Mode.  The expression mode is the major
+  new part of Oil.
+- Lexer Modes: There are actually more than two.  Oil uses two, but bash uses many.
+- Sigils and Sigil Pairs.
 
 <div id="toc">
 </div> 
-
-## Rough Idea
-
-`$` means "string":
-
-    $var   ${var}   $(hostname)   $[hostname]   $len(x)
-    $/ digit+ /
-
-`@` means array:
-
-    write -- @strs
-    for i in @(seq 3) { echo $i }
-    @[seq 3]  # new style
-    @split(x)  @glob(x)
-    proc(first, @rest) {  write -- @rest }
-
-`[]` means sequence:
-
-    ['one', 'two', 'three']
-    %[one two three]
-    $[echo hi]  # new style
-    @[seq 3]    # new style
-
-And are used in type expressions:
-
-    Dict[Int, Str]
-    Func[Int => Int]
-
-`()` means runtime expressions / typed data:
-
-    setvar x = (1 + 2) * 3
-
-    if (x > 0) {
-      echo 'positive'
-    }
-
-    echo .(4 + 5)
-    echo foo > &(fd)
-
-`{}` means dict / block / name-value:
-
-    d = {name: 'Bob'}
-
-    while (x > 0) {
-      setvar x -= 1
-    }
-
-    server foo {
-      name = 'Bob'
-    }
-
-Kebab-case is for procs and filenames:
-
-    gc-test   opt-stats   gen-mypy-asdl
-
-    test/spec-runner.oil   spec/data-enum.tea
-
-Capital Letters are used for types:
-
-    Bool  Int  Float  Str  List  Dict  Func
-
-    class Parser { }
-    data Point(x Int, y Int)
-
-    enum Expr { Unary(child Expr), Binary(left Expr, right Expr) }
-
-ALL CAPS are used for global variables:
-
-    PATH  IFS  UID  HOSTNAME
-
-And external programs accept environment variables in all caps:
-
-    PYTHONPATH  LD_LIBRARY_PATH
-
-Global variables that are silently mutated by the interpreter:
-
-    _argv  _status   _pipe_status
-
-And functions to access such mutable vars:
-
-    _match  _start   _end   _field
-
-Less important sigils:
-
-`:` means unevaluated:
-
-    :myname
-    :(1 + 2)
-
-`^` means a command block:
-
-    ^(echo $PWD)
-    ^[echo $PWD]  # new style
-    proc foo(x, ^block) { echo $x; _ run(block) }
 
 
 ## Static Parsing
@@ -178,7 +81,27 @@ Control Flow:
     switch/case -- for translation to C++ like mycpp
     match/case
 
-## Sigils, Sigil Pairs, and Lexer Modes
+## Lexer Modes
+
+More
+
+
+## Sigils, Sigil Pairs
+
+Shell uses sigils like `$`:
+
+    echo $var
+    echo "${array[@]}"
+    echo "$@"
+
+and sigil pairs:
+
+    echo ${var} 
+    echo $(hostname)  
+    echo $((1 + 2))
+
+Oil extends them.
+
 
 A sigil is a symbol that prefixes a "name":
 
