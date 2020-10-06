@@ -573,12 +573,6 @@ class Transformer(object):
 
         return node
 
-      elif typ == grammar_nt.array_literal:
-        left_tok = children[0].tok
-
-        items = [self._ArrayItem(p) for p in children[1:-1]]
-        return expr.ArrayLiteral(left_tok, items)
-
       elif typ == grammar_nt.oil_expr_sub:
         return self.Expr(children[0])
 

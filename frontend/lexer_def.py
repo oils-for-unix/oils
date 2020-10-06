@@ -800,21 +800,18 @@ OIL_LEFT_UNQUOTED = [
   C("$'", Id.Left_SingleQuoteC),
 
   C('@(', Id.Left_AtParen),         # Split Command Sub
-  # TODO: @[ alias
 
   C('&(', Id.Left_AmpParen),        # Block literals in expression mode
 
   C('%(', Id.Left_PercentParen),    # shell-like word arrays.
-  C('%[', Id.Left_PercentBracket),  # typed array literals.  Not used yet.
-                                    # TODO: after parse_brackets, this is an
-                                    # alias for %()
 
-  C('%{', Id.Expr_Reserved),        # Table literals, analogous to %[]
+  C('%[', Id.Expr_Reserved),        # Maybe: like %() without unquoted [], {}
+  C('%{', Id.Expr_Reserved),        # Table literals
                                     # t = %{
-                                    #    name:Str age:Int
-                                    #    andy     10
+                                    #    name:Str  age:Int
+                                    #    'andy c'  10
                                     # }
-                                    # newlines are significant.
+                                    # Significant newlines.  No unquoted [], {}
 
   # Not sure if we'll use these
   C('@{', Id.Expr_Reserved),

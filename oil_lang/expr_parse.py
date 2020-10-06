@@ -90,8 +90,6 @@ _OTHER_BALANCE = {
     Id.Op_LParen:  1,
     Id.Op_RParen: -1,
 
-    # Array %[]
-    Id.Left_PercentBracket:  1,
     Id.Op_LBracket:  1,
     Id.Op_RBracket: -1,
 

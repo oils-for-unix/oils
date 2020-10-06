@@ -354,7 +354,6 @@ def AddKinds(spec):
       'AmpParen',           # &( for block literal in expression mode
 
       'PercentParen',       # %( for word arrays
-      'PercentBracket',     # %[ for typed array literals
   ])
 
   spec.AddKind('Right', [

@@ -1,7 +1,7 @@
-# Typed arrays
+# These are really lists
 
-#### integer array
-var x = %[1 2 3]
+#### basic array
+var x = %(1 2 3)
 write len=$len(x)
 ## STDOUT:
 len=3
@@ -11,7 +11,7 @@ len=3
 shopt -s oil:all
 
 var x = 1
-var a = %[$x $(write hi) 'sq' "dq $x"]
+var a = %($x $(write hi) 'sq' "dq $x")
 write len=$len(a)
 write @a
 ## STDOUT:
@@ -20,25 +20,6 @@ len=4
 hi
 sq
 dq 1
-## END
-
-#### arrays with expressions
-shopt -s oil:all
-
-# Does () make makes sense?
-
-var x = 5
-var y = 6
-var a = %[(x) (x+1) (y*2)]
-
-write len=$len(a)
-write @a
-
-## STDOUT:
-len=3
-5
-6
-12
 ## END
 
 #### Empty arrays and using Array[T]

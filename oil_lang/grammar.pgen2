@@ -13,7 +13,6 @@
 # - What about list comprehensions?
 #   - I think this could be replaced with implicit vectorization, like
 #     @len(x) or len.(x) ?  It's shorter, but it maps and doesn't filter.
-#     %[n[1:] for n in names]
 #   - Generator expressions?
 
 # Note: trailing commas are allowed:
@@ -104,7 +103,7 @@ atom: (
 		# utf-8 encoded bytes, which are decoded into an integer!)
 
   | sh_command_sub | braced_var_sub | simple_var_sub
-  | sh_array_literal | array_literal 
+  | sh_array_literal
     # Anonymous function.  Is this only in Tea mode?
   | 'func' tea_func
 )
@@ -131,13 +130,13 @@ trailer: (
   | '[' subscriptlist ']'
 
   # TODO:
-  # - %{} %() %[] trailers for passing a single arg that's a collection.
-  # - and maybe [] {} %"" too
+  # - {} %() :() trailers for passing a single arg that's a collection.
+  # - and maybe %"" too
   # Lazy evaluation:
-  # - f :(x, y)      could be equivalent to  f(:(x), :(y))
-  # - f :[x y]       could be equivalent to  f(%[x y])
-  # - f :{name: a+1} could be equilavent to  f({:(name): :(a+1)})
-  # - and :foo can be equivalent to :(foo) ?  or %foo?
+  # - f %(a b c)     could be                f(%(a b c))
+  # - f {a=1, b=2}   could be                f({a=1, b=2})
+  #   - although we might want that for Point {x: 1, y: 2}
+  # - f :(x, y)      could be equivalent to  f(:[x], :[y])
 
   | '.' Expr_Name
   | '->' Expr_Name
@@ -239,8 +238,6 @@ array_item: (
  | sh_command_sub | braced_var_sub | simple_var_sub
  | '(' test ')'
 )
-array_literal: '%[' array_item* Op_RBracket
-
 sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: ( '$(' | '@(' | '&(' ) Expr_CastedDummy Eof_RParen
 
