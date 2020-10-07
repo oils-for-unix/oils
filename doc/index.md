@@ -40,9 +40,6 @@ language.  It's **our upgrade path from bash**.
 - [Shell Language Deprecations](deprecations.html).  When you turn on Oil,
   there are some shell constructs you can no longer use.  We try to minimize
   the length of this list.
-- [Syntactic Concepts](syntactic-concepts.html)
-  - [Command vs. Expression Mode](command-vs-expression-mode.html).
-  - [Syntax Feelings](syntax-feelings.html)
 - [Oil Help Topics](oil-help-topics.html) (incomplete).  This document
   underlies the `help` builtin.
 
@@ -64,10 +61,16 @@ Oil has a new **expression** language:
 - [Oil Expressions](oil-expressions.html) are similar to Python and JavaScript.
 - [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
 
+Language Design:
+
+- [A Feel For Oil's Syntax](syntax-feelings.html)
+- [Language Influences](language-influences.html)
+- [Syntactic Concepts](syntactic-concepts.html)
+  - [Command vs. Expression Mode](command-vs-expression-mode.html).
+
 More:
 
 - [Options](oil-options.html).  Parsing and runtime options turn OSH into Oil.
-- [Oil Language Design Notes](language-design.html)
 - Future: Error Handling
 
 ## Interchange Formats

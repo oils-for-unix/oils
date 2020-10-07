@@ -52,7 +52,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
   [Keywords]      const   var   setvar   setref   setglobal   setlocal/set
   [Literals]      oil-string    c'line\n'  r'[a-z]\n'
                   oil-array     %(a b c)
-                  oil-dict      %{name: 'bob'}
+                  oil-dict      {name: 'bob'}
                   oil-numbers    42  3.14  1e100
                   oil-bool      True T   False F   null
   [Operators]     concat        ++ on Str, Array, Dict?
@@ -83,7 +83,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 ```oil-help-topics
                   inline-call   $strfunc(x, y) @arrayfunc(z)
                   splice        @myarray @ARGV
-                  expr-sub      echo $[3 + a[i]]
+                  expr-sub      echo $[42 + a[i]]
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
 ```
@@ -100,7 +100,6 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   X opts                 getopts replacement
                   push                   add elements to end of array
                   repr                   Show debug representation of vars
-                  getline                Instead of read -raw :name
                   write                  like echo, but with --, -sep, -end
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv

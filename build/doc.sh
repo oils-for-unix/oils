@@ -82,7 +82,7 @@ readonly MARKDOWN_DOCS=(
   oil-language-faq
   qsn
   qtsv
-  language-design
+  language-influences
   syntactic-concepts
   syntax-feelings
 
