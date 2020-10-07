@@ -86,10 +86,10 @@ Differences:
 	functions.
 - Oil doesn't overload operators as much:
   - `a + b` is for addition, while `a ++ b` is for concatenation.
-	- `a < b` is only for numbers.  `cmp()` could be for strings.
+  - `a < b` is only for numbers.  `cmp()` could be for strings.
 - No "accidentally quadratic"
-  - Don't build up strings with `+=`
   - No `in` for array/list membership.  Only dict membership.
+  - The `++=` operator on strings doesn't exist
 - Singleton tuples like `42,` are disallowed, in favor of the more explicit
   `tup(42)`.
 - Iterating over a string yields code points, not one-character strings.
@@ -112,13 +112,13 @@ Blocks use curly braces, so most code resembles C / Java / JavaScript:
     if (x > 0) {
       echo 'positive'
     } else {
-      echo '0 or negative'
+      echo 'zero or negative'
     }
 
-    var x = 5
-    while (x > 0) {
-      echo $x
-      setvar x -= 1
+    var i = 5
+    while (i > 0) {
+      echo $i
+      setvar i -= 1
     }
 
 ### Ruby
@@ -130,7 +130,7 @@ Oil has Ruby-like blocks:
     }
     echo $PWD
 
-    proc foo (&block) { run(block) }
+    proc foo(x, &block) { run(block) }
     var myblock = &(echo $PWD)
 
 (Julia has something like blocks too.)
@@ -212,8 +212,7 @@ how Tcl can be used a configuration language:
       }
     }
 
-Oil's blocks (also inspired by Ruby) would allow this to be expressed very
-similarly:
+Oil's blocks would allow this to be expressed very similarly:
 
     change 6/11/2003 {
       author  = "Will Duquette"
@@ -222,8 +221,7 @@ similarly:
       '''
     }
 
-
-(This mechanism is still in progress.)
+(This mechanism is still being implemented.)
 
 [config-tcl]: https://trs.jpl.nasa.gov/bitstream/handle/2014/7660/03-1728.pdf
 
@@ -246,7 +244,7 @@ Oil also uses a leading `=` to print expressions in the REPL.
 Oil also uses `++` to concatenate strings and lists:
 
      mystr = a ++ b    
-     mystr = "$a$b"       # also converts every element to a string
+     mystr = "$a$b"       # very similar
 
      mylist = c ++ d
      mylist = %( @c @d )  # also converts every element to a string

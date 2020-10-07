@@ -322,3 +322,116 @@ Shell arithmetic is also discouraged in favor of Oil arithmetic:
 - [Oil Help Topics](oil-help-topics.html).  A comprehensive list of language
   constructs (in progress).
 
+## Appendix: Table of Sigil Pairs
+
+This table is mainly for Oil language designers.  Many constructs aren't
+implemented, but we reserve space for them.  The [Oil
+Help](oil-help-topics.html) is a better reference for users.
+
+    Example      Description        What's Inside  Lexer Modes  Notes
+
+    $(hostname)  Command Sub        Command        cmd,expr
+    @(seq 3)     Split Command Sub  Command        cmd,expr
+    &(echo $PWD) Block Literal      Command        expr         block literals
+                                                                look like
+                                                                cd / { echo $PWD }
+                                                                in command mode
+
+    >(sort -n)   Process Sub        Command        cmd          rare
+    <(echo hi)   Process Sub        Command        cmd          rare
+
+    %(array lit) Array Literal      Words          expr
+
+    %{table lit} Table Literal      Words, no []   expr         Not implemented yet
+                                    or {}
+
+
+    $[42 + a[i]] Stringify Expr     Expression     cmd
+    :[1 + 2]     Lazy Expression    Expression     expr         Not implemented yet
+
+    .(1 + 2)     Typed Expression   Expression     cmd          > .(fd) .(myblock)
+                                                                later &fd &myblock
+                                                                Not Implemented
+
+    :(a=1, b='') Lazy Arg List      Arg List       cmd,expr     when(), filter()
+                                                                mutate()
+                                                                Not implemented yet
+
+
+    $/d+/        Inline Eggex       Eggex          cmd          needs oil-cmd mode
+    :/d+/        Lazy Eggex         Eggex          cmd          Not implemented yet
+
+    #'a'         Char Literal       UTF-8 char     expr         Not implemented yet
+
+    c'' c""      C and Raw String   String         expr         add to oil-cmd mode
+    r'' r""      Literals
+
+    $''          Shell String       String         cmd          mostly deprecated
+                 Literal
+
+    ${x %.3f}    Shell Var Sub      Shell          cmd,expr     mostly deprecated
+    $((1+2))     Shell Arith Sub    Shell Arith    cmd          deprecated
+
+    ,(*.py|*.sh) Extended Glob      Glob Words     cmd          deprecated
+    +(...)
+    *(...)
+    ?(...)
+    !(...)
+
+Unused sigil pairs:
+
+    ~()   -()   =()   ;()   /()  
+
+<!--
+
+Table example:
+
+    var people = %{      # Switches to word mode, but keep track of newlines?
+      name      age:Int
+      bob       10_000
+      'andy c'  15_000
+      [c]
+    }
+    var people = {name: %(bob 'andy c'), age: %[10_000 15_000]}
+
+But this doesn't work for the same reason!
+
+PARENS
+
+5 Commands:
+
+   2 main command subs with $() and @()
+   3 uncommon ones ^() >() <()
+
+1 Words:
+   1 with %(array literal)
+
+2 Expressions:
+   :(...)  # this is rare, we don't have dplyr
+
+   &(...)  # this is very rare, and honestly the most common case will be
+           # echo foo > &myfd, and cd /tmp &myblock
+           # So it's really only 1.
+
+BRACKETS
+
+1 Expressions  $[a[i]]
+
+- So honestly () USUALLY means COMMANDS/WORDS
+  - I can't flip the whole lanugage from one to another!!!
+
+honestly you could have filter :(a, b) mean an arg list, while
+
+x = :[age > 30]   # This is a lazily evaluated expression.  Ok sure.
+
+
+- parse_brackets is too pevasive
+
+   # expressions
+   $[a[i]]        could also be $a(i)
+   $[d->key]      could also be $d('key')
+
+                  @d('key') and @a(i) too?   Confusing
+-->
+
+

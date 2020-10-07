@@ -1,133 +1,154 @@
----
-in_progress: yes
----
-
 Command vs. Expression Mode
 ===========================
 
-- command mode: `unquoted` is a string, while `$dollar` is a variable.
-- expression mode: `'quoted'` is a string, while `unquoted` is a variable.
+This is an essential [syntactic concept](syntactic-concepts.html) in Oil.
+
+Oil is an extension of the shell language, which consists of **commands**.  The
+most important addition is a Python-like **expression language**.  To implement
+that, the lexer enters "expression mode".
+
+Here's the key difference:
+
+ In command mode, `unquoted` is a string, while `$dollar` is a variable:
+
+    ls /bin/str $myvar
+
+In expression mode: `'quoted'` is a string, while `unquoted` is a variable:
+
+    var s = myfunc('str', myvar)
 
 
 <div id="toc">
 </div>
 
+Here is a list of places we switch modes.
 
-Here is a list of places we switch modes:
+<!--
+Example:
+
+    # Parsed in command mode
+    echo "hello $name"
+
+    # the RHS of an assignment is parsed as an expression
+    var x = 42 + a[i]
+
+    # The arguments inside function calls expressions
+    echo $len(s.strip())
+-->
 
 ## From Command Mode to Expression Mode
 
-Assignments:
+### RHS of Assignments
 
-```oil
-var x = 1 + f(x)    # RHS of var/setvar
-setvar x = 1 + f(x)
-setvar x = obj.method()   
+Everything after `=` is parsed in expression mode:
 
-x = 1 + f(x)   # when parse_equals is on, = becomes special
-```
+    var x = 42 + f(x)    # RHS of var/setvar
+    setvar x += g(y)
 
-`do` parses in expression mode, and throws away the return value:
+    setvar x = obj.method()   
 
-```oil
-do 1 + f(x)
-do obj.method()
-```
+    x = 'myconst'
 
-**Arguments** to Inline function calls:
+### `=` and `_` keywords
 
-```
-echo $strfunc(x, y + f(z))
-echo @arrayfunc(x, y + f(z))
-```
+Likewise, everything after `=` or `_` is in expression mode:
 
-**Parameter Lists**
+    = 42 + f(x)
 
-```oil
-func add(x = 5, y = 2) {  # what's between () is in expression mode
-  return x + y   # this part is in command mode
-}
-```
+Throw away the value:
 
-**Oil if/while/for**
+    _ L.append(x)
 
-```oil
-if (x > 0) { ... }
-while (x > 0) { ... }
-for (x, y in pairs) { ... }
-```
 
+### Expression Substitution
+
+    echo $[42 + a[i]]
+
+### Arguments to Inline Function Calls
+
+    echo $strfunc(1, 2, a[i])
+    echo @arrayfunc('three', 'four', f(x))
+
+### Parameter Lists
+
+    proc p(x, y) {  # what's between () is in expression mode
+      echo $x $y    # back to command mode
+    }
+
+### Oil `if`, `while`, and `for`
+
+Expressions appear inside `()`:
+
+    if (x > 0) { 
+      echo positive
+    }
+    
+    while (x > 0) {
+      setvar x -= 1
+    }
+    
+    for (k, v in mydict) { 
+      echo $x $y
+    }
 
 ## From Expression Mode to Command Mode
 
-```oil
-var x = func(x) { echo hi; return x +1 }   # everything between {} is in command mode
-```
+### Array Literals
 
+    var myarray = %( /tmp/foo ${var} $(echo hi) @myarray )
 
-## Other
+### Command Substitution
 
-Braced Vars in Double Quotes:
+Everything in between sigil pairs is in command mode:
 
-```oil
-echo ${f(x)}
-```
+    var x = $(hostname | tr a-z A-Z) 
 
-This is an incomplete list.  Double quoted strings are yet another lexer mode I didn't list.
+    var y = @(seq 3)   # Split command sub
 
+### Block Literals
 
-## Does that mean that functions arguments can’t be globs?
+    var b = &(echo $PWD)
 
-For example:
+## Examples
 
-```oil
-do_something_with_files(data*.dat)?
-```
-
-
-Good question, yes in expressions globs have to be quoted:
-
-Yes:
-
-```oil
-ls *.py
-echo $myfunc('*.py')
-if (x ~ '*.py') {  # ~ operator also matches globs, not implemented yet
-  echo yes
-}
-
-```
+### How Are Glob Patterns Written in Each Mode?
 
 No:
 
-```oil
-echo '*.py'  # not a glob
-echo $myfunc(*.py)  # syntax error
-```
+    echo '*.py'              # a literal string, not a glob
 
-So yeah you do have to have an awareness of what's an expression and what's a "word/command", which is why I highlighted it.
+    echo @glob(*.py)         # syntax error, * is an operator in 
+                             # expression mode
+
+    var x = myfunc(*.py)     # ditto, syntax error
+
+Yes:
+
+    echo *.py                # expanded as a glob
+
+    echo @glob('*.py')       # A literal string passed to the builtin
+                             # glob function
+
+    var x = f('*.py')        # Just a string
+
+    var x = f(glob('*.py'))  # Now it's expanded
 
 
+Another construct that uses glob aka `fnmatch()` syntax:
+
+    if (x ~~ '*.py') {  # not yet implemented
+      echo 'Python'
+    }
 
 
-Right I should have clarified – they don’t turn globbing back on. It’s just a string. It’s up to the function that is called to interpret as a glob or not.
+Example:
 
-It’s exactly like the difference between:
+    var x = myfunc(*.py)  # Invalid
+
+Oil basically works like Python:
 
 ```python
-from glob import glob; glob('*.py')  # yes glob
+from glob import glob
+glob('*.py')        # this is a glob
 os.listdir('*.py')  # no glob because it's not how listdir() works
 ```
-
-in Python. Single quoted strings in Oil are just like string literals in Python. Does that make sense?
-
-I’m not sure what you mean by myEcho? Both of these work in Oil just like they
-do in sh:
-
-```sh
-echo *
-echo '*'
-```
-
-Because you’ve never entered expression mode. You’re still in command mode.
-

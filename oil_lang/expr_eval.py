@@ -145,11 +145,12 @@ class OilEvaluator(object):
       # - Is 'M' the right name?  What do Perl and Ruby do?
       #   - BASH_REMATCH?
       if set_match_result:
+        # TODO: self.mem.SetMatch() for Oil
         state.SetLocalArray(self.mem, 'M', matches)
       return True
     else:
       if set_match_result:
-        # TODO: Clearing this would save allocations
+        # TODO: Clearing this would save allocations.
         # NOTE: M does not exist initially.
         state.SetLocalArray(self.mem, 'M', [])
       return False

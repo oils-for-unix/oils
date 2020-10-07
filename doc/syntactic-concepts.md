@@ -1,241 +1,222 @@
----
-in_progress: yes
----
-
 Syntactic Concepts in the Oil Language
 ======================================
 
-Oil borrows popular syntax from many languages, so it has a complex syntax.
-Here are some concepts that may help you learn and remember it.
+Oil is an extension of the Unix shell, which means that it's a large language.
+The concepts introduced here may help advanced users **remember** the syntax.
 
+However, new users should read these docs to **learn** the syntax:
 
-- Static Parsing: For better errors, and for tooling.
-- Parse Options: for compatibility.
-- Command vs. Expression Mode.  The expression mode is the major
-  new part of Oil.
-- Lexer Modes: There are actually more than two.  Oil uses two, but bash uses many.
-- Sigils and Sigil Pairs.
+- [The Simplest Explanation of Oil ](//www.oilshell.org/blog/2020/01/simplest-explanation.html) (blog)
+- [A Feel For Oil's Syntax](syntax-feelings.html)
+
+Read on to learn about:
+
+- **Sigils and Sigil Pairs**.  A style of syntax that's familiar to shell and
+  Perl users.
+- **Parse Options** like `shopt -s parse_paren`.  To selectively break
+  compatibility, and gradually upgrade to Oil.
+- **Static Parsing**, as opposed to the dynamic parsing of shell.  For better
+  error messages, and for software engineering tools.
+- **Command vs. Expression Mode**.  Command mode is like shell, and expression
+  mode is like Python.
+- **Lexer Modes** to help parse different "sublanguages" or dialects.
+  Expressions are lexed in a single way, but there are ~13 lexer modes to
+  handle shell syntax!
 
 <div id="toc">
 </div> 
 
 
+## Sigils and Sigil Pairs
+
+A **sigil** is a symbol like the `$` in `$mystr`.
+
+A **sigil pair** is a sigil with opening and closing delimiters, like `${var}`
+and `@(seq 3)`.
+
+See [A Feel For Oil's Syntax](syntax-feelings.html) for a list of sigils and
+sigil pairs.
+
+### Valid Contexts
+
+Each sigil pair may be available in command mode, expression mode, or both.
+
+For example, command substitution is available in both:
+
+    echo $(hostname)      # command mode
+    var x = $(hostname)   # expression mode
+
+Array literals only make sense in expression mode:
+
+    var myarray = %(one two three)
+
+    echo one two three  # no array literal needed
+
+The `$''` syntax for C-style strings makes sense in command mode:
+
+    echo $'foo\n'  # the bash-compatible way to do it
+
+but in expression mode, we prefer `r''` and `c''`:
+
+    var raw      = r'c:\Program Files\'
+    var newlines = c'foo\n'
+
+    var newlines = $'foo\n'  # also accepted
+
+A sigil pair often changes the **lexer mode** to parse what's inside.
+
+## Parse Options to Take Over `()`, `@`, `set`, and `=`
+
+Most users don't have to worry about parse options.  Instead, they run either
+`bin/osh` or `bin/oil`, which are actually aliases for the same binary.  The
+difference is that `bin/oil` has the **option group** `oil:all` on by default.
+
+Nonetheless, here are two examples.
+
+The `parse_at` option (in group `oil:basic`) turns `@` into the **splice
+operator** when it's at the front of a word:
+
+```sh-prompt
+$ var myarray = %(one two three)
+
+$ echo @myarray         # @ isn't an an operator in shell
+@myarray
+
+$ shopt -s parse_at     # parse the @ symbol
+$ echo @myarray
+one two three
+
+$ echo '@myarray'       # quote it to get the old behavior
+@myarray
+```
+
+The `parse_set` option (in group `oil:all`) lets you use `set` as a **keyword**
+to mutate vars.  It's shorter than `setvar`.
+
+```sh-prompt
+set -o errexit          # set is a shell builtin
+
+shopt -s parse_set      # parse set as a keyword
+
+set x = 42 + a[i]       # Now it accepts a LHS and RHS
+
+builtin set -o errexit  # One way to use the set builtin
+```
+
 ## Static Parsing
 
-Like Python, JS.  See Oil language definition.
+POSIX specifies that Unix shell has multiple stages of parsing and evaluation.  For example:
 
-- `[[ ]]` vs `[]`
-- `echo -e` vs `$''`
-- shell arithmetic vs. Oil arithmetic, e.g. `0xff`
-- assignment builtins vs. Oil assignment (`var`, `setvar`, etc.)
+```sh-prompt
+$ y=2 
+$ code='3 * y'
+$ echo $(( y ))  # Silent eval of a string.  Dangerous!
+6
+```
 
+Oil expressions are parsed in a single stage, and then evaluated, which makes
+it more like Python or JavaScript:
+
+```sh-prompt
+$ setvar code = '3 * y'
+$ echo $[ code ]
+3 * y
+```
+
+Another example: shell assignment builtins like `readonly` and `local`
+dynamically parsed, while Oil assignment like `const` and `var` are statically
+parsed.
+
+### Aside: Duplicate Functionality in Bash
+
+It's confusing that [bash]($xref) has **both** statically- and
+dynamically-parsed variants of the same functionality.
+
+Boolean expressions:
+
+- `[ -d /tmp ]` is dynamically parsed
+- `[[ -d /tmp ]]` is statically parsed
+
+C-style string literals:
+
+- `echo -e '\n'` is dynamically parsed 
+- `echo $'\n'` is statically pasred
+
+<!--
 Remaining dynamic parsing in shell:
 
 - printf: `%.3f`
 - glob: `*.py'`
 - history lexer does another pass ...
+-->
 
-## Parsing Options to Take Over @, (), {}, `set`, and maybe =
+### Related Links
 
-Another concept is parsing modes.
-
-    shopt -s all:oil  # most important thing, turns on many options
-
-    if ( ) {
-    }
-
-    echo @array
-
-    set x = 1
-    builtin set -o errexit
-
-equals:
-
-    x = 1
-    equivalent to 
-    const x = 1
-
-This is for Oil as a **configuration language**.
+- [Parsing Bash is Undecidable](//www.oilshell.org/blog/2016/10/20.html)
+- [A 30-year-old Security Problem](//www.oilshell.org/blog/2019/01/18.html#a-story-about-a-30-year-old-security-problem)
+- [Comment on Perl and the rc shell](https://lobste.rs/s/7bpgbl/rc_plan_9_shell#c_mokqrn)
 
 ## Command vs. Expression Mode
 
-See [Command vs. Expression Mode](command-vs-expression-mode.html).
+The Oil parser starts out in command mode:
 
-    echo hi
+    echo "hello $name"
 
-Expression mode in three places:
+    for i in 1 2 3 {
+      echo $i
+    }
 
-    echo @array
-    myprog --flag=$f(x, y)
-    var z = f(x+1, y)
+But it switches to expression mode in a few places:
 
-Control Flow:
+    var x = 42 + a[i]      # the RHS of an assignment is an expression
 
-    if grep foo
-    if (foo) {}   # replaces if [ -n $foo ]; then
+    echo $len('foo')       # interpolated function call
 
-    while
+    echo $[mydict['key']]  # interpolated Oil expressions with $[]
 
-    for
-
-    switch/case -- for translation to C++ like mycpp
-    match/case
+See [Command vs. Expression Mode](command-vs-expression-mode.html) for details.
 
 ## Lexer Modes
 
-More
+Lexer Modes are a technique that Oil uses to manage the complex syntax of
+shell, which evolved over many decades.
 
+For example, `:` means something different in each of these lines:
 
-## Sigils, Sigil Pairs
+    PATH=/bin:/usr/bin          # Literal string
+    echo ${x:-default}          # Part of an opeartor
+    echo $(( x > y ? 42 : 0 ))  # Arithmetic Operator
+    var myslice = a[3:5]        # Oil expression
 
-Shell uses sigils like `$`:
+To solve this problem, Oil has a lexer that can run in many **modes**.
+Multiple parsers read from this single lexer, but they demand different tokens,
+depending on the parsing context.
 
-    echo $var
-    echo "${array[@]}"
-    echo "$@"
+### More Information
 
-and sigil pairs:
-
-    echo ${var} 
-    echo $(hostname)  
-    echo $((1 + 2))
-
-Oil extends them.
-
-
-A sigil is a symbol that prefixes a "name":
-
-- `$foo` for string
-- `@array` for array of strings
-- `:` sort of means unevaluated
-  - `:interned` could be an unevaluated but interned string/variable name
-  - `:(1 + 2)`
-  - unfortunately `^(echo hi)` is not symmetrical, but there's a reason for
-    that
-
-A sigil pair encloses other symbols, as in `$(echo hi)` or `r'raw string'`.  The
-opening/left bracket is generally 2 characters, and the closing/right bracket
-is generally 1.
-
-Each sigil pair may be available in:
-
-- the command lexer mode,
-- the Oil expression lexer mode,  
-- or both
-
-And it may change the lexer mode, based on what's inside.
-
-## Appendix: Table of Sigil Pairs
-
-
-    Example      Description        What's Inside  Lexer Modes  Notes
-
-    $(hostname)  Command Sub        Command        cmd,expr
-    @(seq 3)     Split Command Sub  Command        cmd,expr
-    &(echo $PWD) Block Literal      Command        expr         block literals
-                                                                look like
-                                                                cd / { echo $PWD }
-                                                                in command mode
-
-    >(sort -n)   Process Sub        Command        cmd          rare
-    <(echo hi)   Process Sub        Command        cmd          rare
-
-    %(array lit) Array Literal      Words          expr
-
-    %{table lit} Table Literal      Words, no []   expr         Not implemented
-                                    or {}
-
-
-    $[42 + a[i]] Stringify Expr     Expression     cmd
-    :[1 + 2]     Lazy Expression    Expression     expr         Not implemented
-
-    .(1 + 2)     Typed Expression   Expression     cmd          > .(fd) .(myblock)
-                                                                later &fd &myblock
-                                                                Not Implemented
-
-    :(a=1, b='') Lazy Arg List      Arg List       cmd,expr     when(), filter()
-                                                                mutate()
-                                                                Not Implemented
-
-
-    $/d+/        Inline Eggex       Eggex          cmd          needs oil-cmd mode
-
-    #'a'         Char Literal       UTF-8 char     expr         Not implemented
-
-    c'' c""      C and Raw String   String         expr         add to oil-cmd mode
-    r'' r""      Literals
-
-    $''          Shell String       String         cmd          mostly deprecated
-                 Literal
-
-    ${x %.3f}    Shell Var Sub      Shell          cmd,expr     mostly deprecated
-    $((1+2))     Shell Arith Sub    Shell Arith    cmd          deprecated
-
-    ,(*.py|*.sh) Extended Glob      Glob Words     cmd          deprecated
-    +(...)
-    *(...)
-    ?(...)
-    !(...)
-
-Unused sigil pairs:
-
-    ~()   -()   =()   ;()   /()  
-
-<!--
-
-Table example:
-
-    var people = %{      # Switches to word mode, but keep track of newlines?
-      name      age:Int
-      bob       10_000
-      'andy c'  15_000
-      [c]
-    }
-    var people = {name: %(bob 'andy c'), age: %[10_000 15_000]}
-
-But this doesn't work for the same reason!
-
-PARENS
-
-5 Commands:
-
-   2 main command subs with $() and @()
-   3 uncommon ones ^() >() <()
-
-1 Words:
-   1 with %(array literal)
-
-2 Expressions:
-   :(...)  # this is rare, we don't have dplyr
-
-   &(...)  # this is very rare, and honestly the most common case will be
-           # echo foo > &myfd, and cd /tmp &myblock
-           # So it's really only 1.
-
-BRACKETS
-
-1 Expressions  $[a[i]]
-
-- So honestly () USUALLY means COMMANDS/WORDS
-  - I can't flip the whole lanugage from one to another!!!
-
-honestly you could have filter :(a, b) mean an arg list, while
-
-x = :[age > 30]   # This is a lazily evaluated expression.  Ok sure.
-
-
-- parse_brackets is too pevasive
-
-   # expressions
-   $[a[i]]        could also be $a(i)
-   $[d->key]      could also be $d('key')
-
-                  @d('key') and @a(i) too?   Confusing
--->
+- [How OSH Uses Lexer Modes](//www.oilshell.org/blog/2016/10/19.html)
+- [When Are Lexer Modes Useful?](//www.oilshell.org/blog/2017/12/17.html)
+- [How to Parse Shell Like a Programming Language](//www.oilshell.org/blog/2019/02/07.html)
+  - See the list of 14 lexer modes.
+- [Posts tagged #lexing]($blog-tag:lexing)
 
 ## Related Documents
 
-- [Ideas for Future Deprecations](future.html).  We can reduce the overloading
-  of parens by taking back `[]` as operator characters, and globbing with
-  `@'*.[ch]'`.
+- [Oil Language Influences](language-influences.html).  Where the syntax in Oil
+  comes from.
+- [Ideas for Future Deprecations](future.html).  Oil may grow its own command
+  lexer mode.
+
+## Appendix: Hand-Written vs. Generated Parsers
+
+The [OSH language]($xref:osh-language) is parsed "by hand", while the [Oil
+language]($xref:oil-language) is parsed with tables generated from a grammar (a
+modified version of [Python's pgen]($xref:pgen2)).
+
+This is mostly an implementation detail, but users may notice that OSH gives
+more specific error messages!
+
+Hand-written parsers give you more control over errors.  Eventually the Oil
+language may have a hand-written parser as well.  Either way, feel free to file
+bugs about error messages that confuse you.
 
