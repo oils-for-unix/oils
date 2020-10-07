@@ -359,6 +359,16 @@ values like strings and arrays.)
     var x = %(one two)
     repr :x
 
+#### write
+
+    write -- @strs
+
+#### oil-read
+
+    read --line   # default var is _line
+    read --all    # whole file, including newline
+    read --qsn
+
 ### Data Formats
 
 ### External Lang

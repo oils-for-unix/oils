@@ -55,7 +55,7 @@ And these Oil language extensions also use `$`:
 
     echo $[42 + a[i]]            # string interpolation of expression
     echo $len(x)                 # string interpolation of function call
-    grep $/ digit+ /             # inline eggex (not implemented)
+    grep $/ digit+ /             # inline eggex (not implemented yet)
 
 `@` means *array* / *splice an array*:
 
@@ -81,12 +81,12 @@ Oil:
 Oil doesn't need sigils for hashes, so `%` isn't used the way it's used in
 Perl.  Instead, `%` means "unquoted word" in these two cases:
 
-    var mysymbol = %key             # not implemented
+    var mysymbol = %key             # not implemented yet
     var myarray = %(one two three)
 
 These sigils are parsed, but not entirely implemented:
 
-- `&` for Ruby-like blocks like `{ echo $PWD }`
+- `&` for Ruby-like blocks in expression mode
 - `:` means "out param" / "nameref", or "lazily evaluated"
 
 <!--
@@ -113,16 +113,15 @@ These sigils are parsed, but not entirely implemented:
 
 ## Opening and Closing Delimiters
 
-Unfortunately, parens `()` and square brackets `[]` are the most widely used
-symbols, and therefore the most inconsistent.  They're subject to legacy
-constraints from Bourne shell, Korn shell, and [bash]($xref).
+The `{}` `[]` and `()` characters have several different meanings, but we try
+our best to make them consistent.  They're subject to legacy constraints from
+Bourne shell, Korn shell, and [bash]($xref).
 
-Let's start with braces, which **are** used consistently.
+### Braces: Blocks and Dicts
 
-### Braces
-
-The `{}` characters are used for dicts (aka hash tables, associative arrays)
-and blocks of code, which makes Oil look like JavaScript in many circumstances:
+The `{}` characters are used for blocks of code and dict literals (aka hash
+tables, associative arrays), which makes Oil look like JavaScript in many
+circumstances:
 
     var d = {name: 'Bob', age: 10}
 
@@ -150,13 +149,65 @@ Which can be used for "declarative" configuration:
 Future: QTSV / table literals with %{ ... }
 -->
 
-### Brackets
+### Parens: Expression
 
-`[]` means sequence:
+Parens are used in expressions:
+
+    var x = (42 + a[i]) * myfunc(42, 'foo')
+
+    if (x > 0) {         # compare with if test -d /tmp
+      echo 'positive'
+    }
+
+And signatures:
+
+    proc p(x, y) {
+      echo $x $y
+    }
+
+In [Eggex](eggex.html), they mean grouping and **not** capture, which is
+consistent with arithmetic:
+
+    var p = / digit+ ('seconds' | 'minutes' | 'hours' ) /
+
+
+<!--
+    echo .(4 + 5)
+    echo foo > &(fd)
+-->
+
+### Parens with Sigil: Command Interpolation
+
+The "sigil pairs" with parens enclose commands:
+
+    echo $(ls | wc -l)             # command sub
+    echo @(seq 3)                  # split command usb
+
+    var myblock = &(echo $PWD)     # block literal in expression mode
+
+    diff <(sort left.txt) <(sort right.txt)  # bash syntax
+
+And shell words:
+
+    var mylist = %(one two three)  # equivalent to ['one', 'two', 'three']
+
+Unlike brackets and braces, the `()` characters can't appear in shell commands,
+which makes them useful as delimiters.
+
+### Brackets: Sequence, Subscript
+
+In expression mode, `[]` means sequence:
 
     var mylist = ['one', 'two', 'three']
 
-And sometimes expressions:
+or subscript:
+
+    var item = mylist[1]
+    var item = mydict['foo']
+
+### Brackets with a Sigil: Expression
+
+In command mode, it means "expression":
 
     echo $[1 + 2]
 
@@ -169,37 +220,6 @@ And are used in type expressions:
 
 -->
 
-### Parens
-
-Parens are used in expressions:
-
-    var x = (42 + a[i]) * myfunc(42, 'foo')
-
-    if (x > 0) {         # compare with if test -d /tmp
-      echo 'positive'
-    }
-
-They also mean "grouping" in [Eggex](eggex.html), **not** capture:
-
-    var p = / digit+' ('seconds' | 'minutes' | 'hours' ) /
-
-
-<!--
-    echo .(4 + 5)
-    echo foo > &(fd)
--->
-
-When there's a preceding sigil, forming a "sigil pair", parens enclose commands
-and shell words:
-
-    echo $(ls | wc -l)             # command sub
-    echo @(seq 3)                  # split command usb
-    var myblock = &(echo $PWD)     # block literal in expression mode
-
-    var mylist = %(one two three)  # equivalent to ['one', 'two', 'three']
-
-Note that unlike brackets and braces, the `()` characters can't appear in shell
-commands, which makes them useful as delimiters.
 
 ## Identifier Naming Conventions
 
@@ -265,11 +285,31 @@ Eggex:
 
 The `~` character is used in operators that mean "pattern" or "approximate":
 
-    if (s ~ /d+/) { echo 'number' }   
+    if (s ~ /d+/) {
+      echo 'number'
+    }   
 
-    if (s ~~ '*.py') { echo 'Python' }
+    if (s ~~ '*.py') {
+      echo 'Python'
+    }
 
-    if (x ~== y) { echo 'string equals number' }
+    if (mystr ~== myint) {
+      echo 'string equals number'
+    }
+
+Extended globs are discouraged in Oil because they're a weird way of writing
+regular expressions.  But they also use "sigil pairs" with parens:
+
+    ,(*.py|*.sh)   # preferred synonym for @(*.py|*.sh)
+    +(...)         # bash/ksh-compatible
+    *(...)
+    ?(...)
+    !(...)
+
+Shell arithmetic is also discouraged in favor of Oil arithmetic:
+
+    echo $((1 + 2))  # shell: confusing coercions, dynamically parsed
+    echo $[1 + 2]    # Oil: types, statically parsed
 
 <!--
     ! ?   suffixes (not implemented)

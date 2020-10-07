@@ -181,7 +181,7 @@ Features influenced by these languages are planned, but not implemented.
 The builtin flags syntax comes from Go, particularly with respect to boolean
 flags:
 
-     mybuiltin --show=0  # turn a flag that's default true
+     mybuiltin --show=0  # turn off a boolean flag that's true by default
      mybuiltin --show    # turn it on
 
 Oil also uses a native UTF-8 representation of strings.

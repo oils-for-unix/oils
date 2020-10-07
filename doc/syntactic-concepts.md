@@ -146,7 +146,7 @@ And it may change the lexer mode, based on what's inside.
                                     or {}
 
 
-    $[1 + a[i]]  Stringify Expr     Expression     cmd
+    $[42 + a[i]] Stringify Expr     Expression     cmd
     :[1 + 2]     Lazy Expression    Expression     expr         Not implemented
 
     .(1 + 2)     Typed Expression   Expression     cmd          > .(fd) .(myblock)
