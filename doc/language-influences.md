@@ -9,7 +9,7 @@ It's mostly trivia for the curious, but it may help you remember the syntax.
 <div id="toc">
 </div> 
 
-## General Philosohpy
+## General Philosophy
 
 At a high level, Oil is a bash-compatible shell language that adds features
 from popular dynamic languages.

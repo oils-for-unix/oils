@@ -188,6 +188,12 @@ parse_set`, because otherwise it would conflict with the `set` builtin.  Use
 
 ### Literals
 
+#### oil-numbers
+
+    var myint = 42
+    var myfloat = 3.14
+    var float2 = 1e100
+
 #### oil-string
 
 Oil strings appear in expression contexts, and look like shell strings:
@@ -205,58 +211,70 @@ strings or C-style strings:
 
     var s = r'[a-z]\n'  # raw strings are useful for regexes (not eggexes)
 
-#### oil-array
+    var unicode = 'mu = \u{3bc}'
 
-Like shell arays, Oil arrays accept anything that can appear in a command:
+#### char-literal
 
-    ls $mystr @ARGV *.py
+    #'a'   #'_'   \n   \\   \u{3bc}
 
-    # Put it in an array
-    var a = %(ls $mystr @ARGV *.py)
+#### bool-literal
 
-#### oil-dict
+Capital letters like Python, which avoids confusion with the builtin
+**commands** `true` and `false`:
 
-#### oil-numbers
-
-    myint = 42
-    myfloat = 3.14
-    float2 = 1e100
-
-#### oil-bool
-
-Capital letters to avoid confusions with the builtin **commands** `true` and
-`false`:
-
-    True T   False F
+    True   False
 
 And the value that's unequal to any other:
 
-    null
+    None   null    # JSON style also accepted
 
-It's preferable to use the empty string in many cases.  The `null` value can't
+It's preferable to use the empty string in many cases.  The `None` value can't
 be interpolated into words.
+
+#### list-literal
+
+Lists have a Python-like syntax:
+
+    var mylist = ['one', 'two', 3]
+
+And a shell-like syntax:
+
+    var list2 = %(one two)
+
+The shell-like syntax accepts the same syntax that a command can:
+
+    ls $mystr @ARGV *.py {foo,bar}@example.com
+
+    # Rather than executing ls, evaluate and store words
+    var cmd = %(ls $mystr @ARGV *.py {foo,bar}@example.com)
+
+#### dict-literal
+
+    {name: 'value'}
 
 ### Operators
 
 #### concat
 
-    mystr ++ otherstr
-    "$mystr$otherstr"  # equivalent
+    var s = 's'
+    var concat1 = s ++ '_suffix'
+    var concat2 = "${s}_suffix"  # similar
 
-    = mylist ++ otherlist
+    var c = %(one two)
+    var concat3 = c ++ %(three 4)
+    var concat4 = %( @c three 4 )
 
-    setvar mydict = %{a: 1, b: 2}
-    setvar otherdict = %{a: 10, c: 20}
-    = mydict ++ otherdict
-
-    setvar mystr ++= suffiX       # ???
-    setvar mylist ++= %[item]
-    setvar mydict ++= otherdict   # ???
+    var mydict = {a: 1, b: 2}
+    var otherdict = {a: 10, c: 20}
+    var concat5 = mydict ++ otherdict
 
 
 #### oil-compare
 
-    ==  <=  in
+    a == b        # Python-like equality, no type conversion
+    3 ~== 3.0     # True, type conversion
+    3 ~== '3'     # True, type conversion
+    3 ~== '3.0'   # True, type conversion
 
 #### oil-logical
 
@@ -264,13 +282,13 @@ be interpolated into words.
 
 #### oil-arith
 
-    +  -  *  /   div  mod
+    +  -  *  /   //   %   **
 
 `div` is for integer math, while `/` is for floating point math.
 
 #### oil-bitwise
 
-    ~  &  |  xor
+    ~  &  |  ^
 
 #### oil-ternary
 
@@ -300,6 +318,9 @@ Like Python:
 
     f(x, y)
 
+#### block-expr
+
+    var myblock = &(echo $PWD)
 
 ### Eggex
 
@@ -438,8 +459,7 @@ var new = copy(d)  # valid
 
 ### Pattern
 
-- `regmatch(/d+/, s)` returns a match object
-- `fnmatch('*.py', s)`  returns a boolean
+    _match()   _start()   _end()
 
 ### String
 

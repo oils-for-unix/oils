@@ -32,7 +32,7 @@ language and eggex (for lexers).
 </h2>
 
 ```oil-help-topics
-                  func      func inc(p, p2=0; n=0, ...named) { echo hi }
+                  func      func inc(p, p2=0; n=0, ...named) { echo 'hi' }
                   data      data Point(x Int, y Int)
                   enum      enum Tree { Leaf(x Int), Node(left Tree, right Tree) }
   [Assignment]    var   set   X const   
@@ -51,20 +51,19 @@ language and eggex (for lexers).
 ```oil-help-topics
   [Literals]      Str           r'\'   c'\n'   "$var"   X multiline r""" c'''
                   X Symbol      %foo
-                  Null          null
-                  Bool          true  false
+                  Bool          True   False   None
                   Int           1_000_000  0b0100  0xFF  0o377  \n  \\  \u0100
                   Float         3.14   6.022e+23
-                  Array[]       %(ls -l)  %[T F F]  %[1 2 3]  %[1.5 2.5] 
+                  List[]        %(ls -l)
                   Tuple[]       ()  tup(42)  (42, "foo")
-                  Map[]         %{name: 'oil'}  %{['name']: 'oil'}  %{name}
+                  Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}
                   Regex         / d+ /
                   X Func        fn(x) x+1   func(x) { return x+1 }
                   X Buf         file-like, mutable string
                   Type          Bool  Map[Str, Int]  Func[Int => Int]
   [Operators]     ternary       a if cond else b
                   subscript     a[b, c]   a[start:end]
-                  X chain       pass a => f(y, z) => var new
+                  X chain       _ a => f(y, z) => var new
                   getattr       d->key is like d['key'] or d.key
                   scope-attr    module::name
                   genexp   listcomp   X dictcomp
@@ -75,14 +74,13 @@ language and eggex (for lexers).
 </h2>
 
 ```oil-help-topics
-  [Objects]       mod           bundle state and behavior
+  [Objects]       class         bundle state and behavior (aka module)
                   extends       inheritance
-                  new           instantiate
-                  this          pseudo-keyword
+                  self          pseudo-keyword
                   virtual   override   abstract
-                  export        All public by default, except for this "allowlist"
   [Names]         namespace
                   import        contrast with 'use' in Oil
+                  export        for both files and classes
 ```
 
 Not needed for minimal Oil port:

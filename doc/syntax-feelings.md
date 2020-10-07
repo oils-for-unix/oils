@@ -4,7 +4,7 @@ A Feel For Oil's Syntax
 Here's one of the shortest ways to describe the [Oil
 language]($xref:oil-language):
 
-> A shell that's familiar to people who know Python, JavaScript, or Ruby.
+> A Unix shell that's familiar to people who know Python, JavaScript, or Ruby.
 
 This document gives you a feel for that, with brief examples.  It's not a
 comprehensive or precise guide.  Roughly speaking, Oil code has more
@@ -17,13 +17,18 @@ of Oil ](//www.oilshell.org/blog/2020/01/simplest-explanation.html) first.
 <div id="toc">
 </div> 
 
-In the examples below, I distinguish **expression mode** (which is like Python)
-and **command mode** (which is like shell) as follows:
+## Preliminaries
 
-    var x = 42 + array[i]  # expression mode example starts with var
-    echo $x                # command mode example starts with echo
+Recall that **expression mode** is like Python and appears to the right of `=`:
 
-Some constructs are valid in both modes.
+    var x = 42 + array[i]
+
+And **command mode** is like shell:
+
+    echo $x 
+
+The examples below aren't organized along those lines, but they use `var` and
+`echo` to remind you of the context.  Some constructs are valid in both modes.
 
 (I use `echo $x` for familiarity, even though `write -- $x` is more correct.)
 

@@ -50,21 +50,24 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 
 ```oil-help-topics
   [Keywords]      const   var   setvar   setref   setglobal   setlocal/set
-  [Literals]      oil-string    c'line\n'  r'[a-z]\n'
-                  oil-array     %(a b c)
-                  oil-dict      {name: 'bob'}
-                  oil-numbers    42  3.14  1e100
-                  oil-bool      True T   False F   null
-  [Operators]     concat        ++ on Str, Array, Dict?
-                  oil-equals    ==  !=  ===  !==  in
+  [Literals]      oil-numbers    42  3.14  1e100
+                  oil-string    c'line\n'  r'[a-z]\n'
+                  char-literal  #'a'   #'_'   \n   \\   \u{3bc}
+                  bool-literal  True   False   None
+                  list-literal  %(one two)  ['one', 'two', 3]
+                  dict-literal  {name: 'bob'}
+  [Operators]     concat        s1 ++ s2,  L1 ++ L2
+                  oil-equals    ==   !=   ~==   is, is not, in, not in
                   oil-compare   <  <=  >  >=  (numbers only)
                   oil-logical    not  and  or
-                  oil-arith     +  -  *  /  div  mod  ^
-                  oil-bitwise   ~  &  |  xor  <<  >>
+                  oil-arith     +  -  *  /  //  %   ** 
+                  oil-bitwise   ~  &  |  ^  <<  >>
                   oil-ternary   '+' if x >= 0 else '-'
                   oil-index     a[3]  s[3]
                   oil-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)
+                  block-expr    &(echo $PWD)
+                  match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
                   re-compound   ~   (group)   <capture>   sequence
                   re-primitive  %zero   Subpattern   @subpattern
@@ -73,7 +76,6 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   class-literal [c a-z 'abc' \\ \xFF \u0100]
                   X re-flags    ignorecase etc.
                   X re-multiline  ///
-                  X re-glob-ops   ~~   !~~
 ```
 
 <h2 id="word">
@@ -101,6 +103,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   push                   add elements to end of array
                   repr                   Show debug representation of vars
                   write                  like echo, but with --, -sep, -end
+                  oil-read               buffered I/O with --line, --all, --qsn
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv
 X [External Lang] BEGIN   END   when (awk)
@@ -176,9 +179,17 @@ X [Testing]       check
   Builtin Functions (<a class="group-link" href="oil-help.html#lib">lib</a>)
 </h2>
 
+Access silently mutated globals:
+
+```oil-help-topics
+X [Pattern]       _match()   _start()   _end()
+X [Wok]           _line   _field()
+```
+
+Functions:
+
 ```oil-help-topics
   [Collections]   len()   copy()
-X [Pattern]       regmatch()   fnmatch()
 X [String]        find()   sub()   join() 
                   split()             $IFS, awk algorithm, regex
   [Word]          glob()   maybe()
