@@ -105,12 +105,13 @@ builtin set -o errexit  # One way to use the set builtin
 
 ## Static Parsing
 
-POSIX specifies that Unix shell has multiple stages of parsing and evaluation.  For example:
+POSIX specifies that Unix shell has multiple stages of parsing and evaluation.
+For example:
 
 ```sh-prompt
-$ y=2 
-$ code='3 * y'
-$ echo $(( y ))  # Silent eval of a string.  Dangerous!
+$ x=2 
+$ code='3 * x'
+$ echo $(( code ))  # Silent eval of a string.  Dangerous!
 6
 ```
 
@@ -118,9 +119,9 @@ Oil expressions are parsed in a single stage, and then evaluated, which makes
 it more like Python or JavaScript:
 
 ```sh-prompt
-$ setvar code = '3 * y'
+$ setvar code = '3 * x'
 $ echo $[ code ]
-3 * y
+3 * x
 ```
 
 Another example: shell assignment builtins like `readonly` and `local`
