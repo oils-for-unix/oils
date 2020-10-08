@@ -128,6 +128,7 @@ X [Testing]       check
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
                   strict_backslash       Parse $'' and c'' more strictly
+                  strict_backticks       Disallow `echo hi`
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
                   parse_ignored          Parse and silently ignore?

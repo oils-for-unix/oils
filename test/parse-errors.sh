@@ -706,6 +706,18 @@ EOF
 
 }
 
+oil_backticks() {
+  set +o errexit
+
+  # These are allowed
+  _should-parse 'echo `echo hi`'
+  _should-parse 'echo "foo = `echo hi`"'
+
+  _error-case2 -O strict_backticks -n -c 'echo `echo hi`'
+  _error-case2 -O strict_backticks -n -c 'echo "foo = `echo hi`"'
+}
+
+
 oil_to_make_nicer() {
   set +o errexit
 
@@ -766,6 +778,7 @@ cases-in-strings() {
   proc_sig
   oil_expr
   oil_string_literals
+  oil_backticks
   oil_to_make_nicer
 }
 

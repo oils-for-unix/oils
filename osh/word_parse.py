@@ -829,6 +829,10 @@ class WordParser(WordEmitter):
       right_spid = c_parser.w_parser.cur_token.span_id
 
     elif left_id == Id.Left_Backtick:
+      if self.parse_opts.strict_backticks():
+        p_die('Use $(cmd) instead of backticks (strict_backticks)',
+              token=left_token)
+
       self._Next(lex_mode_e.Backtick)  # advance past `
 
       parts = []  # type: List[str]
