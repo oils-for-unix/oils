@@ -51,11 +51,12 @@ class ExprParseTest(unittest.TestCase):
     # This works.
     node = self._ParseOsh('var x = y + 2 * 3;')
 
-    # The lexer isn't handling single quotes yet.
-    #node = self._ParseOsh(r"var x = 'one\ntwo\n';")
+    node = self._ParseOsh(r"var x = r'one\ntwo\n';")
+    node = self._ParseOsh(r"var x = c'one\ntwo\n';")
+    node = self._ParseOsh(r"var x = $'one\ntwo\n';")
 
     # NOTE: C-escapes aren't parsed properly.
-    node = self._ParseOsh(r'var x = "one\ntwo\n";')
+    node = self._ParseOsh(r'var x = "one\\ntwo\\n";')
 
     # These raise NotImplementedError()
 
