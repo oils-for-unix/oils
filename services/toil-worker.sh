@@ -87,7 +87,11 @@ translate       mycpp/setup.sh build                  -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
 build-examples  mycpp/setup.sh build-examples         -
 test-examples   mycpp/setup.sh test-examples          -
+parse-errors    test/parse-errors.sh run-for-release  -
 EOF
+
+# note: parse-errors depends on oil-native
+
 # Why is this hanging?
 #spec-cpp        test/spec-cpp.sh travis      _tmp/spec/cpp/osh-summary.html
 

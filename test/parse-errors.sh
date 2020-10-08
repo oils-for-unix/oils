@@ -18,6 +18,16 @@ banner() {
   echo
 }
 
+is-oil-native() {
+  case $SH in
+    *osh_*.asan)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
 _error-case() {
   ### Assert that a parse error happens without running the program
 
@@ -89,13 +99,11 @@ _runtime-parse-error() {
 _oil-parse-error() {
   ### Assert that a parse error happens with Oil options on
 
-  case $SH in
-    *osh_*.asan)
-      echo 'skipping _oil-parse-error'
-      return
-      ;;
-  esac
-
+  if is-oil-native; then
+    echo 'skipping _oil-parse-error'
+    return
+  fi
+   
   banner "$@"
   echo
   $SH -O oil:all -c "$@"
@@ -697,6 +705,12 @@ EOF
   _oil-parse-error-here <<'EOF'
 bad = $'\u{03bc'
 EOF
+
+  # We want these to be tested under OSH, but they won't work under Oil native!
+  if is-oil-native; then
+    echo 'Skipping some oil_string_literals cases on oil-native'
+    return
+  fi
 
   _error-case 'setvar x = "\z"'
 
