@@ -41,28 +41,43 @@ Note: `oil-native` is a **preview** release, not a working shell.
 
 ## Documentation
 
-The [Doc Overview](doc/) links to all docs.  It's work in progress, but these
-docs are ready:
+The [Doc Overview](doc/) links to all docs.  Here is the subset of them that
+are ready to read:
 
 - [INSTALL][]
+
+OSH:
+
 - [OSH User Manual](doc/osh-manual.html)
-- [Known Differences Between OSH and Other
-  Shells](doc/known-differences.html)
+- [Known Differences Between OSH and Other Shells](doc/known-differences.html)
+- [Quirks](doc/quirks.html)
+
+The Oil language:
+
+- [Oil Language Idioms](doc/idioms.html)
+- [Shell Language Deprecations](doc/deprecations.html)
+- [Oil Language FAQ](doc/oil-language-faq.html)
 - [Egg Expressions (Oil Regexes)](doc/eggex.html)
 - [Simple Word Evaluation](doc/simple-word-eval.html)
-- [Oil Language Idioms](doc/idioms.html)
-- [Oil Language FAQ](doc/oil-language-faq.html)
-- [Shell Language Deprecations](doc/deprecations.html)
+
+Language Design:
+
+- [A Feel For Oil's Syntax](doc/syntax-feelings.html)
+- [Syntactic Concepts](doc/syntactic-concepts.html)
+  - [Command vs. Expression Mode](doc/command-vs-expression-mode.html).
+- [Language Influences](doc/language-influences.html)
+
+Interchange Formats:
+
 - [QSN](doc/qsn.html)
-- [Quirks](doc/quirks.html)
-- [Notes on Oil's Architecture](doc/architecture-notes.html).  For developers.
 
-Help topics for [OSH](doc/osh-help-topics.html) and
-[Oil](doc/oil-help-topics.html).  These documents underly the `help` builtin.
+More:
 
-[Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The [Oil
-Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki page
-has other ways of getting Oil.  These versions may not be up-to-date.
+- [OSH Help Topics](doc/osh-help-topics.html) (in progress).
+- [Oil Help Topics](doc/oil-help-topics.html) (in progress).
+- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
+  [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
+  page has other ways of getting Oil.  These versions may not be up-to-date.
 
 ## Tests
 

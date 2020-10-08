@@ -1,7 +1,3 @@
----
-in_progress: yes
----
-
 Quirks
 ======
 

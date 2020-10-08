@@ -83,6 +83,7 @@ readonly MARKDOWN_DOCS=(
   qsn
   qtsv
   language-influences
+  oil-vs-python
   syntactic-concepts
   syntax-feelings
 

@@ -1,13 +1,6 @@
 Parser Architecture
 ===================
 
-<style>
-/* override language.css */
-.sh-command {
-  font-weight: unset;
-}
-</style>
-
 This doc has rough notes on the architecture of the parser.  [How to Parse
 Shell Like a Programming Language][parse-shell] (on the blog) covers some of
 the same material and is more polished.

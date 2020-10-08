@@ -5,13 +5,6 @@ in_progress: true
 Notes on Oil's Architecture
 ===========================
 
-<style>
-/* override language.css */
-.sh-command {
-  font-weight: unset;
-}
-</style>
-
 This doc is for contributors or users who want to understand the Oil codebase.
 These internal details are subject to change.
 

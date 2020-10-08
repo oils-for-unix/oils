@@ -5,14 +5,6 @@ in_progress: yes
 Process Model
 =============
 
-<style>
-/* override language.css */
-.sh-command {
-  font-weight: unset;
-}
-</style>
-
-
 Related: [Interpreter State](interpreter-state.html).  These two docs are the
 missing documentation for shell!
 

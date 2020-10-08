@@ -65,6 +65,7 @@ Language Design:
 
 - [A Feel For Oil's Syntax](syntax-feelings.html)
 - [Language Influences](language-influences.html)
+  - [Oil vs. Python](oil-vs-python.html)
 - [Syntactic Concepts](syntactic-concepts.html)
   - [Command vs. Expression Mode](command-vs-expression-mode.html).
 

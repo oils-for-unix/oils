@@ -5,13 +5,6 @@ in_progress: yes
 Interpreter State
 =================
 
-<style>
-/* override language.css */
-.sh-command {
-  font-weight: unset;
-}
-</style>
-
 The Oil project has a single interpreter that supports both the OSH and Oil
 languages.
 

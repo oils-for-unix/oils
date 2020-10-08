@@ -1,13 +1,6 @@
 Simple Word Evaluation in Unix Shell
 ====================================
 
-<!-- override web/language.css because there's too much bold -->
-<style>
-.sh-command {
-  font-weight: normal;
-}
-</style>
-
 This document describes Oil's word evaluation semantics (`shopt -s
 simple_word_eval`) for experienced shell users.  It may also be useful to
 those who want to implement this behavior in another shell.

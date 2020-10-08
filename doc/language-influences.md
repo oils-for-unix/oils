@@ -84,16 +84,7 @@ Differences:
 
 - Oil uses shell-like composition with "procs", not Python- or JavaScript-like
 	functions.
-- Oil doesn't overload operators as much:
-  - `a + b` is for addition, while `a ++ b` is for concatenation.
-  - `a < b` is only for numbers.  `cmp()` could be for strings.
-- No "accidentally quadratic"
-  - No `in` for array/list membership.  Only dict membership.
-  - The `++=` operator on strings doesn't exist
-- Singleton tuples like `42,` are disallowed, in favor of the more explicit
-  `tup(42)`.
-- Iterating over a string yields code points, not one-character strings.
-  `s[i]` returns an integer code point ("rune").
+- More differences in [Oil Expressions vs. Python](oil-vs-python.html).
 
 ### JavaScript
 

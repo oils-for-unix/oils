@@ -39,6 +39,8 @@ h4 {
 /* Exclude <pre><code>.  Is there a better way to do this?  */
 p code, div code, li code, h2 code, h3 code {
   color: green;
+  /* makes size more consistent with pre in Chrome, but not Firefox, sigh */
+  /* font-size: medium; */
 }
 
 blockquote {
@@ -172,3 +174,8 @@ hr {
   background-color: #BBB;
 }
 
+/* Hack to override language.css.  Not in manual.css because pre blocks are
+ * bigger, sigh */
+.sh-command {
+  font-weight: bold;
+}
