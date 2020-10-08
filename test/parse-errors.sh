@@ -637,8 +637,9 @@ regex_literals() {
 
 oil_expr() {
   set +o errexit
-  # % is not a token
-  _oil-parse-error '= 5 % 3'
+  # old syntax
+  _oil-parse-error '= 5 mod 3'
+
   _oil-parse-error '= >>='
   _oil-parse-error '= %('
 
@@ -683,10 +684,6 @@ oil_to_make_nicer() {
   # expects expression on right
   _oil-parse-error '='
   _oil-parse-error '_'
-
-  # parse_brackets
-  _oil-parse-error '[ -d / tmp ]'
-  _oil-parse-error 'echo *.[ch]'
 
   # What about \u{123} parse errors
   # I get a warning now, but strict_backslash should give a syntax error

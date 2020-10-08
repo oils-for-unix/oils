@@ -80,7 +80,7 @@ _BACKSLASH = [
 # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
 _DQ_BACKSLASH = [
   R(r'\\[$`"\\]', Id.Lit_EscapedChar),
-  C('\\', Id.Unknown_Backslash),  # syntax error in Oil
+  C('\\', Id.Lit_BadBackslash),  # syntax error in Oil, but NOT in OSH
 ]
 
 VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'

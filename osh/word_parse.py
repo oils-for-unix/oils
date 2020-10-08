@@ -710,19 +710,18 @@ class WordParser(WordEmitter):
       self._Next(lex_mode_e.DQ)
       self._Peek()
 
-      if self.token_type == Id.Unknown_Backslash:
-        # Note that we catch 'x = "\z", but not 'x = ${undef:-"\z"}.  The
-        # latter syntax is sicouraged anyway.
-        if is_oil_expr:
-          p_die("Invalid char escape in double quoted string", token=self.cur_token)
-        # echo "\z" is OK in shell, but not in Oil
-        part = self.cur_token  # type: word_part_t
-        out_parts.append(part)
-
-      elif self.token_kind == Kind.Lit:
+      if self.token_kind == Kind.Lit:
         if self.token_type == Id.Lit_EscapedChar:
-          part = word_part.EscapedLiteral(self.cur_token)
+          part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
         else:
+          if self.token_type == Id.Lit_BadBackslash:
+            # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
+            # Oil.  We don't catch 'x = ${undef:-"\z"} because of the
+            # recursion.  The latter syntax is discouraged anyway.
+            if is_oil_expr:
+              p_die("Invalid char escape in double quoted string",
+                    token=self.cur_token)
+
           part = self.cur_token
         out_parts.append(part)
 
