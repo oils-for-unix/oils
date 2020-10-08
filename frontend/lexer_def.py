@@ -79,7 +79,8 @@ _BACKSLASH = [
 # Only 4 characters are backslash escaped inside "".
 # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
 _DQ_BACKSLASH = [
-  R(r'\\[$`"\\]', Id.Lit_EscapedChar)
+  R(r'\\[$`"\\]', Id.Lit_EscapedChar),
+  C('\\', Id.Unknown_Backslash),  # syntax error in Oil
 ]
 
 VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'

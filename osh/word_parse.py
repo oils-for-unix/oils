@@ -696,12 +696,13 @@ class WordParser(WordEmitter):
     part.spids.extend(spids)
     return part
 
-  def _ReadLikeDQ(self, left_dq_token, out_parts):
-    # type: (Optional[Token], List[word_part_t]) -> None
+  def _ReadLikeDQ(self, left_dq_token, is_oil_expr, out_parts):
+    # type: (Optional[Token], bool, List[word_part_t]) -> None
     """
     Args:
       left_dq_token: A token if we are reading a double quoted part, or None if
         we're reading a here doc.
+      is_oil_expr: Whether to disallow backticks and invalid char escapes
       out_parts: list of word_part to append to
     """
     done = False
@@ -709,14 +710,27 @@ class WordParser(WordEmitter):
       self._Next(lex_mode_e.DQ)
       self._Peek()
 
-      if self.token_kind == Kind.Lit:
+      if self.token_type == Id.Unknown_Backslash:
+        # Note that we catch 'x = "\z", but not 'x = ${undef:-"\z"}.  The
+        # latter syntax is sicouraged anyway.
+        if is_oil_expr:
+          p_die("Invalid char escape in double quoted string", token=self.cur_token)
+        # echo "\z" is OK in shell, but not in Oil
+        part = self.cur_token  # type: word_part_t
+        out_parts.append(part)
+
+      elif self.token_kind == Kind.Lit:
         if self.token_type == Id.Lit_EscapedChar:
-          part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
+          part = word_part.EscapedLiteral(self.cur_token)
         else:
           part = self.cur_token
         out_parts.append(part)
 
       elif self.token_kind == Kind.Left:
+        if self.token_type == Id.Left_Backtick and is_oil_expr:
+          p_die("Invalid backtick: use $(cmd) or \\` in Oil strings",
+                token=self.cur_token)
+
         part = self._ReadDoubleQuotedLeftParts()
         out_parts.append(part)
 
@@ -756,7 +770,7 @@ class WordParser(WordEmitter):
     """
     left_dq_token = self.cur_token
     parts = []  # type: List[word_part_t]
-    self._ReadLikeDQ(left_dq_token, parts)
+    self._ReadLikeDQ(left_dq_token, False, parts)
 
     dq_part = double_quoted(left_dq_token, parts)
     dq_part.spids.append(left_dq_token.span_id)  # Left ", sort of redundant
@@ -769,7 +783,7 @@ class WordParser(WordEmitter):
     
     Read var x = "${dir:-}/$name"; etc.
     """
-    self._ReadLikeDQ(left_token, parts)
+    self._ReadLikeDQ(left_token, True, parts)
     return self.cur_token
 
   def _ReadCommandSub(self, left_id):
@@ -1531,7 +1545,7 @@ class WordParser(WordEmitter):
   def ReadHereDocBody(self, parts):
     # type: (List[word_part_t]) -> None
     """A here doc is like a double quoted context, except " isn't special."""
-    self._ReadLikeDQ(None, parts)
+    self._ReadLikeDQ(None, False, parts)
     # Returns nothing
 
   def ReadForPlugin(self):
@@ -1542,5 +1556,5 @@ class WordParser(WordEmitter):
     typical substitutions ${x} $(echo hi) $((1 + 2)).
     """
     w = compound_word()
-    self._ReadLikeDQ(None, w.parts)
+    self._ReadLikeDQ(None, False, w.parts)
     return w

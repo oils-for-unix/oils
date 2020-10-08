@@ -85,6 +85,11 @@ _oil-parse-error() {
   fi
 }
 
+_oil-parse-error-here() {
+  ### So we can write single quoted strings in an easier way
+  _oil-parse-error "$(cat)"
+}
+
 # All in osh/word_parse.py
 patsub() {
   set +o errexit
@@ -646,6 +651,32 @@ oil_expr() {
   _oil-parse-error 'name=val'
 }
 
+oil_string_literals() {
+  set +o errexit
+
+  # This is allowed
+  echo "\z"
+  echo $'\u{03bc'
+  echo "`echo hi`"
+
+  # But not in expression mode
+  _oil-parse-error 'bad = "\z"'
+
+  # C style escapes not respected
+  _oil-parse-error 'bad = "\u1234"'
+
+  _oil-parse-error 'bad = "`echo hi`"'
+
+  _oil-parse-error-here <<'EOF'
+bad = $'\z'
+EOF
+
+  _oil-parse-error-here <<'EOF'
+bad = $'\u{03bc'
+EOF
+
+}
+
 oil_to_make_nicer() {
   set +o errexit
 
@@ -709,6 +740,7 @@ cases-in-strings() {
   regex_literals
   proc_sig
   oil_expr
+  oil_string_literals
   oil_to_make_nicer
 }
 
