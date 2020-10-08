@@ -190,7 +190,6 @@ shopt -s simple_word_eval
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
-shopt -s strict_backslash
 shopt -s strict_control_flow
 shopt -s strict_echo
 shopt -s strict_errexit

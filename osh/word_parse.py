@@ -545,13 +545,9 @@ class WordParser(WordEmitter):
     node.spids.append(self.cur_token.span_id)  # right '
     return node
 
-  def ReadSingleQuoted(self, lex_mode, left_token, tokens, no_backslashes):
+  def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_oil_expr):
     # type: (lex_mode_t, Token, List[Token], bool) -> Token
     """Used by expr_parse.py."""
-
-    # TODO:
-    # - Detect self.token_type == Id.Char_BadBackslash if strict_backslash
-    # - Also Char_BadU for a better syntax error
 
     # Oil could also disallow Unicode{4,8} and Octal{3,4}?  And certain OneChar
     # like \v if we want to be pedantic.  Well that would make porting harder
@@ -559,6 +555,11 @@ class WordParser(WordEmitter):
     #
     # The backslash issue is a correctness thing.  It allows the language to be
     # expanded later.
+
+    # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
+    # TODO: Use a different token type besides Id.Left_SingleQuoteRaw.
+    # Or maybe just test that the length is 1?
+    no_backslashes = is_oil_expr and (left_token.val == "'")
 
     done = False
     while not done:
@@ -577,7 +578,8 @@ class WordParser(WordEmitter):
 
       elif self.token_kind == Kind.Unknown:
         tok = self.cur_token
-        if self.parse_opts.strict_backslash():
+        # x = c'\z' is disallowed, and echo $'\z' if shopt -s strict_backslash
+        if is_oil_expr or self.parse_opts.strict_backslash():
           p_die("Invalid char escape in C-style string literal", token=tok)
 
         tokens.append(tok)
@@ -716,9 +718,10 @@ class WordParser(WordEmitter):
         else:
           if self.token_type == Id.Lit_BadBackslash:
             # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
-            # Oil.  We don't catch 'x = ${undef:-"\z"} because of the
-            # recursion.  The latter syntax is discouraged anyway.
-            if is_oil_expr:
+            # Oil.
+            # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
+            # recursion (unless strict_backslash)
+            if is_oil_expr or self.parse_opts.strict_backslash():
               p_die("Invalid char escape in double quoted string",
                     token=self.cur_token)
 

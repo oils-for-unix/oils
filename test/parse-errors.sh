@@ -33,6 +33,25 @@ _error-case() {
   fi
 }
 
+_error-case-here() { _error-case "$(cat)"; }
+
+_error-case2() {
+  ### An interface where you can pass flags like -O strict_backslash
+
+  banner "$@"
+  echo
+
+  $SH "$@"
+
+  # NOTE: This works with osh, not others.
+  local status=$?
+  if test $status != 2; then
+    die "Expected status 2, got $status"
+  fi
+}
+
+_error-case2-here() { _error-case2 "$@" -c "$(cat)"; }
+
 _should-parse() {
   banner "$@"
   echo
@@ -43,6 +62,8 @@ _should-parse() {
     die "Expected it to parse"
   fi
 }
+
+_should-parse-here() { _should-parse "$(cat)"; }
 
 _runtime-parse-error() {
   ### Assert that a parse error happens at runtime
@@ -85,10 +106,8 @@ _oil-parse-error() {
   fi
 }
 
-_oil-parse-error-here() {
-  ### So we can write single quoted strings in an easier way
-  _oil-parse-error "$(cat)"
-}
+# So we can write single quoted strings in an easier way
+_oil-parse-error-here() { _oil-parse-error "$(cat)"; }
 
 # All in osh/word_parse.py
 patsub() {
@@ -543,11 +562,6 @@ args-parse-main() {
   # TODO: opy/opy_main.py uses OilFlags, which has Go-like boolean syntax
 }
 
-strict_backslash_warnings() {
-  echo $'\A'
-  echo -e '\A'
-}
-
 invalid-brace-ranges() {
   set +o errexit
 
@@ -655,10 +669,18 @@ oil_expr() {
 oil_string_literals() {
   set +o errexit
 
-  # This is allowed
-  echo "\z"
-  echo $'\u{03bc'
-  echo "`echo hi`"
+  # These are allowed
+  _should-parse-here <<'EOF'
+echo $'\u{03bc'
+EOF
+  _error-case2-here -O strict_backslash -n <<EOF
+echo strict_backslash $'\u{03bc'
+EOF
+
+  _should-parse 'echo "\z"'
+  _error-case2 -O strict_backslash -n -c 'echo strict_backslash "\z"'
+
+  _should-parse 'echo "`echo hi`"'
 
   # But not in expression mode
   _oil-parse-error 'bad = "\z"'
@@ -674,6 +696,12 @@ EOF
 
   _oil-parse-error-here <<'EOF'
 bad = $'\u{03bc'
+EOF
+
+  _error-case 'setvar x = "\z"'
+
+  _error-case-here <<'EOF'
+setvar x = $'\z'
 EOF
 
 }

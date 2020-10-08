@@ -258,9 +258,8 @@ def _Init(opt_def):
   for name in _STRICT_OPTION_NAMES:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
 
-  # A strict option that is a parse option.  This is in oil:basic because c'\z'
-  # needs to be strict.
-  opt_def.Add('strict_backslash', groups=['strict:all', 'oil:basic', 'oil:all'],
+  # A strict option that is a parse option.  NOT on in oil:basic
+  opt_def.Add('strict_backslash', groups=['strict:all', 'oil:all'],
               is_parse=True)
 
   #

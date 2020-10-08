@@ -274,9 +274,9 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
         tokens = []  # type: List[Token]
-        no_backslashes = (left_token.val == "'")
         last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
-                                               no_backslashes)
+                                               True)
+
         sq_part = single_quoted(left_token, tokens)
 
         typ = Id.Expr_CastedDummy
