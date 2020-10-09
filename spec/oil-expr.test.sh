@@ -670,50 +670,6 @@ array=3
 comsub=6
 ## END
 
-#### s ~ regex and s !~ regex
-shopt -s oil:basic
-
-var s = 'foo'
-if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
-  echo matches
-  argv.py $_match(0) $_match(1)
-}
-if (s !~ '[[:digit:]]+') {
-  echo "does not match"
-  argv.py $_match(0) $_match(1)
-}
-
-if (s ~ '[[:digit:]]+') {
-  echo "matches"
-}
-# Should be cleared now
-# should this be Undef rather than ''?
-argv.py $_match(0) $_match(1)
-
-## STDOUT:
-matches
-['foo', 'oo']
-does not match
-['foo', 'oo']
-[]
-## END
-
-#### s ~ regex sets a local, not a global
-shopt -s oil:basic
-proc f {
-  if ('foo' ~ '.([[:alpha:]]+)') {  # ERE syntax
-    echo matches
-    argv.py $_match(0) $_match(1)
-  }
-}
-f
-echo ${M:-default}
-## STDOUT:
-matches
-['foo', 'oo']
-default
-## END
-
 #### obj.attr and obj.method()
 var s = 'hi'
 

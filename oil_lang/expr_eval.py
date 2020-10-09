@@ -16,7 +16,6 @@ from core.pyerror import e_die, log
 from frontend import consts
 from oil_lang import objects
 from osh import braces
-from core import state
 from osh import word_compile
 from osh import word_eval
 

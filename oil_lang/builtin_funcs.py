@@ -65,8 +65,9 @@ class _Match(object):
       arg = args[0]
       if isinstance(arg, int):
         s = self.mem.GetMatch(arg)
-        if s is None:
-          raise IndexError('No such group')
+        # Oil code doesn't deal well with exceptions!
+        #if s is None:
+        #  raise IndexError('No such group')
         return s
 
       # TODO: Support strings

@@ -86,6 +86,38 @@ if (x ~ /<d+ : year> '-' <d+ : month>/) {
 ['2020', '08']
 ## END
 
+#### s ~ regex and s !~ regex
+shopt -s oil:basic
+
+var s = 'foo'
+if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
+  echo matches
+  argv.py $_match(0) $_match(1)
+}
+if (s !~ '[[:digit:]]+') {
+  echo "does not match"
+  argv.py $_match(0) $_match(1)
+}
+
+if (s ~ '[[:digit:]]+') {
+  echo "matches"
+}
+# Should be cleared now
+# should this be Undef rather than ''?
+var x = _match(0)
+var y = _match(1)
+if (x == null and y == null) {
+  echo 'cleared'
+}
+
+## STDOUT:
+matches
+['foo', 'oo']
+does not match
+['foo', 'oo']
+cleared
+## END
+
 #### Repeat {1,3} etc.
 var pat = null
 
