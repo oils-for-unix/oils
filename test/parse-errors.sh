@@ -765,6 +765,16 @@ oil_to_make_nicer() {
   #_oil-parse-error ' d = %{}'
 }
 
+parse_at() {
+  set +o errexit
+
+  _oil-parse-error 'echo @'
+  _oil-parse-error 'echo @@'
+  _oil-parse-error 'echo @{foo}'
+  _oil-parse-error 'echo @/foo/'
+  _oil-parse-error 'echo @"foo"'
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -809,6 +819,7 @@ cases-in-strings() {
   oil_string_literals
   oil_backticks
   oil_to_make_nicer
+  parse_at
 }
 
 # Cases in their own file

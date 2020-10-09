@@ -193,6 +193,7 @@ _BASIC_PARSE_OPTIONS = [
 _AGGRESSIVE_PARSE_OPTIONS = [
     'parse_set',       # set x = 'var'
     'parse_equals',    # x = 'var'
+    'parse_at_all',    # @ starting any word, e.g. @[] @{} @@ @_ @-
 
     # Failed experiment for $[echo hi], myarray = %[one two], etc.
     # I turned Lit_LBracket in to Op_LBracket.  But there were several issues:

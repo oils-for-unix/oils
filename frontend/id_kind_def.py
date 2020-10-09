@@ -228,7 +228,7 @@ def AddKinds(spec):
       'Slash', 'Percent',  #  / # % for patsub, NOT unary op
       'Colon',             #  x=foo:~:~root needs tilde expansion
       'Digits',            # for lex_mode_e.Arith
-      'At',                # for ${a[@]}, in lex_mode_e.Arith, and Oil splice
+      'At',                # for ${a[@]} in lex_mode_e.Arith, and detecting @[]
       'ArithVarLike',      # for $((var+1)).  Distinct from Lit_VarLike 'var='
       'BadBackslash',      # for "\z", not Id.Unknown_Backslash because it's a
                            # syntax error in Oil, but NOT OSH

@@ -1228,17 +1228,17 @@ class WordParser(WordEmitter):
     # Call into expression language.
     self.parse_ctx.ParseOilArgList(self.lexer, arglist)
 
-  def _MaybeReadWholeWord(self, num_parts, lex_mode, parts):
-    # type: (int, lex_mode_t, List[word_part_t]) -> Tuple[bool, int]
+  def _MaybeReadWholeWord(self, is_first, lex_mode, parts):
+    # type: (bool, lex_mode_t, List[word_part_t]) -> bool
+    """Helper for _ReadCompoundWord3."""
     done = False
-    br = 0
 
     if self.token_type == Id.Lit_EscapedChar:
       part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
     else:
       part = self.cur_token
 
-    if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
+    if is_first and self.token_type == Id.Lit_VarLike:  # foo=
       parts.append(part)
       # Unfortunately it's awkward to pull the check for a=(1 2) up to
       # _ReadWord.
@@ -1257,8 +1257,8 @@ class WordParser(WordEmitter):
                 token=self.cur_token)
         done = True
 
-    elif (self.parse_opts.parse_at() and self.token_type == Id.Lit_Splice and
-          num_parts == 0):
+    elif (is_first and self.parse_opts.parse_at() and
+          self.token_type == Id.Lit_Splice):
 
       splice_token = self.cur_token
 
@@ -1266,11 +1266,11 @@ class WordParser(WordEmitter):
       if next_id == Id.Op_LParen:  # @arrayfunc(x)
         arglist = arg_list()
         self._ParseCallArguments(arglist)
-        part = word_part.FuncCall(splice_token, arglist)
+        part2 = word_part.FuncCall(splice_token, arglist)
       else:
-        part = word_part.Splice(splice_token)
+        part2 = word_part.Splice(splice_token)
 
-      parts.append(part)
+      parts.append(part2)
 
       # @words or @arrayfunc() must be the last part of the word
       self._Next(lex_mode)
@@ -1280,17 +1280,21 @@ class WordParser(WordEmitter):
         p_die('Unexpected token after array splice', token=self.cur_token)
       done = True
 
-    else:
-      # Syntax error for { and }
-      if self.token_type == Id.Lit_LBrace:
-        br = 1
-      elif self.token_type == Id.Lit_RBrace:
-        br = -1
+    elif (is_first and self.parse_opts.parse_at_all() and
+          self.token_type == Id.Lit_At):
+      # Because $[x] ${x} and perhaps $/x/ are reserved, it makes sense for @
+      # at the beginning of a word to be reserved.
 
+      # Although should we relax 'echo @' ?  I'm tempted to have a shortcut for
+      # @_argv and
+      p_die('Literal @ starting a word must be quoted (parse_at_all)',
+            token=self.cur_token)
+
+    else:
       # not a literal with lookahead; append it
       parts.append(part)
 
-    return done, br
+    return done
 
   def _ReadCompoundWord(self, lex_mode):
     # type: (lex_mode_t) -> compound_word
@@ -1310,6 +1314,7 @@ class WordParser(WordEmitter):
     num_parts = 0
     brace_count = 0
     done = False
+
     while not done:
       self._Peek()
 
@@ -1322,8 +1327,13 @@ class WordParser(WordEmitter):
           Kind.Lit, Kind.History, Kind.KW, Kind.ControlFlow, Kind.BoolUnary,
           Kind.BoolBinary):
 
-        done, br = self._MaybeReadWholeWord(num_parts, lex_mode, w.parts)
-        brace_count += br
+        # Syntax error for { and }
+        if self.token_type == Id.Lit_LBrace:
+          brace_count += 1
+        elif self.token_type == Id.Lit_RBrace:
+          brace_count -= 1
+
+        done = self._MaybeReadWholeWord(num_parts == 0, lex_mode, w.parts)
 
       elif self.token_kind == Kind.VSub:
         vsub_token = self.cur_token
