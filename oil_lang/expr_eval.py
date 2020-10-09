@@ -125,34 +125,15 @@ class OilEvaluator(object):
       raise RuntimeError(
           "RHS of ~ should be string or Regex (got %s)" % right.__class__.__name__)
     
+    # TODO: We need an API that can populate _start() and _end() too
     matches = libc.regex_match(right, left)
     if matches:
-      # TODO:
-      # - Also set NAMED CAPTURES.
-      #   - Idea: Set an OBJECT:
-      #     M.group(0)   M.match()
-      #     M.group(1)   M.group('foo')
-      #     M.group(2)   M.group('bar')
-      #
-      #     Since it's statically parsed, it could be statically typed?
-      #     $/ (digit+ as foo Int) /
-      #
-      #     Can use Python's __getattr__ and __index__ under the hood
-      #     M[0]         M._ or M.match
-      #     M[1]         M.foo
-      #     M[2]         M.bar
-      #
-      # - Is 'M' the right name?  What do Perl and Ruby do?
-      #   - BASH_REMATCH?
       if set_match_result:
-        # TODO: self.mem.SetMatch() for Oil
-        state.SetLocalArray(self.mem, 'M', matches)
+        self.mem.SetMatches(matches)
       return True
     else:
       if set_match_result:
-        # TODO: Clearing this would save allocations.
-        # NOTE: M does not exist initially.
-        state.SetLocalArray(self.mem, 'M', [])
+        self.mem.ClearMatches()
       return False
 
   def EvalArgList(self, args):

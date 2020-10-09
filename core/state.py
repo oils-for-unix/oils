@@ -803,6 +803,9 @@ class Mem(object):
     # Done ONCE on initialization
     self.root_pid = posix.getpid()
 
+    # 0 is the whole match, 1..n are submatches
+    self.regex_matches = []  # type: List[str]  
+
   def __repr__(self):
     # type: () -> str
     parts = []  # type: List[str]
@@ -1684,6 +1687,21 @@ class Mem(object):
   def IsGlobalScope(self):
     # type: () -> bool
     return len(self.var_stack) == 1
+
+  def ClearMatches(self):
+    # type: () -> None
+    del self.regex_matches[:]  # no clear() in Python 2
+
+  def SetMatches(self, matches):
+    # type: (List[str]) -> None
+    self.regex_matches = matches
+
+  def GetMatch(self, i):
+    # type: (int) -> Optional[str]
+    if i < len(self.regex_matches):
+      return self.regex_matches[i]
+    else:
+      return None
 
 
 def SetLocalString(mem, name, s):

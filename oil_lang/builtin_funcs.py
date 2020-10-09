@@ -49,6 +49,32 @@ def _Maybe(obj):
     return []
 
 
+class _Match(object):
+  """
+  _match(0) or _match():   get the whole match
+  _match(1) .. _match(N):  submatch
+  """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def __call__(self, *args):
+    if len(args) == 0:
+      return self.mem.GetMatch(0)
+
+    if len(args) == 1:
+      arg = args[0]
+      if isinstance(arg, int):
+        s = self.mem.GetMatch(arg)
+        if s is None:
+          raise IndexError('No such group')
+        return s
+
+      # TODO: Support strings
+      raise TypeError('Expected an integer')
+
+    raise TypeError('Too many arguments')
+
+
 def Init(mem):
   # type: (Mem) -> None
   """Populate the top level namespace with some builtin functions."""
@@ -63,21 +89,21 @@ def Init(mem):
   # $IFS.
   # TODO: How to ask for Python's split algorithm?  Or Awk's?
 
+  SetGlobalFunc(mem, '_match', _Match(mem))
+
   #
   # Borrowed from Python
   #
 
   SetGlobalFunc(mem, 'Table', objects.Table)
+  # TODO: remove this
   SetGlobalFunc(mem, 'Array', objects.ParameterizedArray())
 
   # Types:
-  # TODO: Should these be Bool Int Float Str List Dict?
+  # Should the constructors be Python compatible, and types be capital?
   SetGlobalFunc(mem, 'Bool', bool)
   SetGlobalFunc(mem, 'Int', int)
 
-  # TODO: Enable float
-  # OVM: PyOS_string_to_double()
-  # osh: Python/ovm_stub_pystrtod.c:10: PyOS_string_to_double: Assertion `0' failed.
   SetGlobalFunc(mem, 'Float', float)
 
   SetGlobalFunc(mem, 'Tuple', tuple)
