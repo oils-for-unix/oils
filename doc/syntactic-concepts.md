@@ -1,30 +1,72 @@
 Syntactic Concepts in the Oil Language
 ======================================
 
-Oil is an extension of the Unix shell, which means that it's a large language.
-The concepts introduced here may help advanced users **remember** the syntax.
-
-However, new users should read these docs to **learn** the syntax:
+These documents introduce the Oil language:
 
 - [The Simplest Explanation of Oil ](//www.oilshell.org/blog/2020/01/simplest-explanation.html) (blog)
 - [A Feel For Oil's Syntax](syntax-feelings.html)
 
-Read on to learn about:
+In contrast, the concepts introduced below may help advanced users **remember**
+Oil and its syntax.  Read on to learn about:
 
+- **Command vs. Expression Mode**.  Command mode is like shell, and expression
+  mode is like Python.
+- **Lexer Modes** help parse different "sublanguages" or dialects.
 - **Sigils and Sigil Pairs**.  A style of syntax that's familiar to shell and
   Perl users.
 - **Parse Options** like `shopt -s parse_paren`.  To selectively break
-  compatibility, and gradually upgrade to Oil.
-- **Static Parsing**, as opposed to the dynamic parsing of shell.  For better
-  error messages, and for software engineering tools.
-- **Command vs. Expression Mode**.  Command mode is like shell, and expression
-  mode is like Python.
-- **Lexer Modes** to help parse different "sublanguages" or dialects.
-  Expressions are lexed in a single way, but there are ~13 lexer modes to
-  handle shell syntax!
+  compatibility, and gradually upgrade shell to Oil.
+- **Static Parsing**, as opposed to the dynamic parsing of shell.  Static
+  parsing improves error messages and makes more software engineering tools
+  possible.
 
 <div id="toc">
 </div> 
+
+## Command vs. Expression Mode
+
+The Oil parser starts out in command mode:
+
+    echo "hello $name"
+
+    for i in 1 2 3 {
+      echo $i
+    }
+
+But it switches to expression mode in a few places:
+
+    var x = 42 + a[i]      # the RHS of an assignment is an expression
+
+    echo $len('foo')       # interpolated function call
+
+    echo $[mydict['key']]  # interpolated Oil expressions with $[]
+
+See [Command vs. Expression Mode](command-vs-expression-mode.html) for details.
+
+## Lexer Modes
+
+*Lexer modes* are a technique that Oil uses to manage the complex syntax of
+shell, which evolved over many decades.
+
+For example, `:` means something different in each of these lines:
+
+    PATH=/bin:/usr/bin          # Literal string
+    echo ${x:-default}          # Part of an opeartor
+    echo $(( x > y ? 42 : 0 ))  # Arithmetic Operator
+    var myslice = a[3:5]        # Oil expression
+
+To solve this problem, Oil has a lexer that can run in many **modes**.
+Multiple parsers read from this single lexer, but they demand different tokens,
+depending on the parsing context.
+
+### More Information
+
+- [How OSH Uses Lexer Modes](//www.oilshell.org/blog/2016/10/19.html)
+- [When Are Lexer Modes Useful?](//www.oilshell.org/blog/2017/12/17.html)
+- [How to Parse Shell Like a Programming Language](//www.oilshell.org/blog/2019/02/07.html)
+  - See the list of 14 lexer modes.
+- [Posts tagged #lexing]($blog-tag:lexing)
+
 
 
 ## Sigils and Sigil Pairs
@@ -34,8 +76,8 @@ A **sigil** is a symbol like the `$` in `$mystr`.
 A **sigil pair** is a sigil with opening and closing delimiters, like `${var}`
 and `@(seq 3)`.
 
-See [A Feel For Oil's Syntax](syntax-feelings.html) for a list of sigils and
-sigil pairs.
+An appendix of [A Feel For Oil's Syntax](syntax-feelings.html) lists the sigil
+pairs in the Oil language.
 
 ### Valid Contexts
 
@@ -156,50 +198,6 @@ Remaining dynamic parsing in shell:
 - [Parsing Bash is Undecidable](//www.oilshell.org/blog/2016/10/20.html)
 - [A 30-year-old Security Problem](//www.oilshell.org/blog/2019/01/18.html#a-story-about-a-30-year-old-security-problem)
 - [Comment on Perl and the rc shell](https://lobste.rs/s/7bpgbl/rc_plan_9_shell#c_mokqrn)
-
-## Command vs. Expression Mode
-
-The Oil parser starts out in command mode:
-
-    echo "hello $name"
-
-    for i in 1 2 3 {
-      echo $i
-    }
-
-But it switches to expression mode in a few places:
-
-    var x = 42 + a[i]      # the RHS of an assignment is an expression
-
-    echo $len('foo')       # interpolated function call
-
-    echo $[mydict['key']]  # interpolated Oil expressions with $[]
-
-See [Command vs. Expression Mode](command-vs-expression-mode.html) for details.
-
-## Lexer Modes
-
-Lexer Modes are a technique that Oil uses to manage the complex syntax of
-shell, which evolved over many decades.
-
-For example, `:` means something different in each of these lines:
-
-    PATH=/bin:/usr/bin          # Literal string
-    echo ${x:-default}          # Part of an opeartor
-    echo $(( x > y ? 42 : 0 ))  # Arithmetic Operator
-    var myslice = a[3:5]        # Oil expression
-
-To solve this problem, Oil has a lexer that can run in many **modes**.
-Multiple parsers read from this single lexer, but they demand different tokens,
-depending on the parsing context.
-
-### More Information
-
-- [How OSH Uses Lexer Modes](//www.oilshell.org/blog/2016/10/19.html)
-- [When Are Lexer Modes Useful?](//www.oilshell.org/blog/2017/12/17.html)
-- [How to Parse Shell Like a Programming Language](//www.oilshell.org/blog/2019/02/07.html)
-  - See the list of 14 lexer modes.
-- [Posts tagged #lexing]($blog-tag:lexing)
 
 ## Related Documents
 

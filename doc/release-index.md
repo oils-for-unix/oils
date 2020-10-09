@@ -44,32 +44,23 @@ Note: `oil-native` is a **preview** release, not a working shell.
 The [Doc Overview](doc/) links to all docs.  Here is the subset of them that
 are ready to read:
 
-- [INSTALL][]
-
-OSH:
-
-- [OSH User Manual](doc/osh-manual.html)
-- [Known Differences Between OSH and Other Shells](doc/known-differences.html)
-- [Quirks](doc/quirks.html)
-
-The Oil language:
-
-- [Oil Language Idioms](doc/idioms.html)
-- [Shell Language Deprecations](doc/deprecations.html)
-- [Oil Language FAQ](doc/oil-language-faq.html)
-- [Egg Expressions (Oil Regexes)](doc/eggex.html)
-- [Simple Word Evaluation](doc/simple-word-eval.html)
-
-Language Design:
-
-- [A Feel For Oil's Syntax](doc/syntax-feelings.html)
-- [Syntactic Concepts](doc/syntactic-concepts.html)
-  - [Command vs. Expression Mode](doc/command-vs-expression-mode.html).
-- [Language Influences](doc/language-influences.html)
-
-Interchange Formats:
-
-- [QSN](doc/qsn.html)
+- OSH
+  - [OSH User Manual](doc/osh-manual.html)
+  - [Known Differences Between OSH and Other Shells](doc/known-differences.html)
+  - [Quirks](doc/quirks.html)
+- The Oil language
+  - [Oil Language Idioms](doc/idioms.html)
+  - [Shell Language Deprecations](doc/deprecations.html)
+  - [Oil Language FAQ](doc/oil-language-faq.html)
+  - [Egg Expressions (Oil Regexes)](doc/eggex.html)
+  - [Simple Word Evaluation](doc/simple-word-eval.html)
+- Language Design
+  - [A Feel For Oil's Syntax](doc/syntax-feelings.html)
+  - [Syntactic Concepts](doc/syntactic-concepts.html)
+    - [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
+  - [Language Influences](doc/language-influences.html)
+- Interchange Formats:
+  - [QSN](doc/qsn.html)
 
 More:
 
