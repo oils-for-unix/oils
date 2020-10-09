@@ -118,6 +118,22 @@ does not match
 cleared
 ## END
 
+#### _start() and _end()
+shopt -s oil:basic
+
+var s = 'foo123bar'
+if (s ~ /digit+/) {
+  echo start=$_start() end=$_end()
+}
+
+if (s ~ / word+ <digit+> /) {
+  echo start=$_start(1) end=$_end(1)
+}
+## STDOUT:
+start=3 end=6
+start=3 end=6
+## END
+
 #### Repeat {1,3} etc.
 var pat = null
 

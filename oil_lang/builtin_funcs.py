@@ -76,6 +76,28 @@ class _Match(object):
     raise TypeError('Too many arguments')
 
 
+class _Start(object):
+  """
+  Same signature as _match(), but for start positions
+  """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def __call__(self, *args):
+    raise NotImplementedError('_start')
+
+
+class _End(object):
+  """
+  Same signature as _match(), but for end positions
+  """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def __call__(self, *args):
+    raise NotImplementedError('_end')
+
+
 def Init(mem):
   # type: (Mem) -> None
   """Populate the top level namespace with some builtin functions."""
@@ -91,6 +113,8 @@ def Init(mem):
   # TODO: How to ask for Python's split algorithm?  Or Awk's?
 
   SetGlobalFunc(mem, '_match', _Match(mem))
+  SetGlobalFunc(mem, '_start', _Start(mem))
+  SetGlobalFunc(mem, '_end', _End(mem))
 
   #
   # Borrowed from Python

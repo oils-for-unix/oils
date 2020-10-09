@@ -44,28 +44,27 @@ Note: `oil-native` is a **preview** release, not a working shell.
 The [Doc Overview](doc/) links to all docs.  Here is the subset of them that
 are ready to read:
 
-- OSH
+- OSH:
   - [OSH User Manual](doc/osh-manual.html)
-  - [Known Differences Between OSH and Other Shells](doc/known-differences.html)
-  - [Quirks](doc/quirks.html)
-- The Oil language
+  | [Known Differences Between OSH and Other Shells](doc/known-differences.html)
+  | [Quirks](doc/quirks.html)
+- The Oil language:
   - [Oil Language Idioms](doc/idioms.html)
-  - [Shell Language Deprecations](doc/deprecations.html)
-  - [Oil Language FAQ](doc/oil-language-faq.html)
-  - [Egg Expressions (Oil Regexes)](doc/eggex.html)
-  - [Simple Word Evaluation](doc/simple-word-eval.html)
-- Language Design
-  - [A Feel For Oil's Syntax](doc/syntax-feelings.html)
-  - [Syntactic Concepts](doc/syntactic-concepts.html)
-    - [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
-  - [Language Influences](doc/language-influences.html)
+  | [Shell Language Deprecations](doc/deprecations.html)
+  | [Oil Language FAQ](doc/oil-language-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
+  | [Simple Word Evaluation](doc/simple-word-eval.html)
+- Language Design:
+  - [A Feel For Oil's Syntax](doc/syntax-feelings.html) 
+  | [Syntactic Concepts](doc/syntactic-concepts.html) 
+  | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
+  | [Language Influences](doc/language-influences.html)
 - Interchange Formats:
   - [QSN](doc/qsn.html)
 
-More:
+More docs:
 
-- [OSH Help Topics](doc/osh-help-topics.html) (in progress).
-- [Oil Help Topics](doc/oil-help-topics.html) (in progress).
+- [OSH Help Topics](doc/osh-help-topics.html) (in progress)
+  | [Oil Help Topics](doc/oil-help-topics.html) (in progress).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oil.  These versions may not be up-to-date.
@@ -75,11 +74,12 @@ More:
 ### Main Test Suites
 
 - Spec Tests
-  - [Oil Language Features](test/spec.wwz/oil-language/oil.html)
   - [OSH Survey](test/spec.wwz/survey/osh.html).  Test OSH with existing
     shells, and compare their behavior.
-	- [OSH in C++](test/spec.wwz/cpp/osh-summary.html).  Measuring the progress
-of Oil's C++ translation.
+  - [OSH in C++](test/spec.wwz/cpp/osh-summary.html).  The progress of Oil's
+    C++ translation.
+  - [Oil Language](test/spec.wwz/oil-language/oil.html).  The legacy-free
+    language.
 - [Wild Tests](test/wild.wwz/).  Parse and translate thousands of shell scripts
   with OSH.
 - [Unit Tests](test/unit.wwz/).  Python unit test results.
@@ -104,10 +104,10 @@ of Oil's C++ translation.
 - [opyc](test/other.wwz/opyc.txt).  Tests for the opyc tool.
 - [Smoosh][] test suite (from [mgree/smoosh][]):
   - [smoosh](test/spec.wwz/survey/smoosh.html)
-  - [smoosh-hang](test/spec.wwz/survey/smoosh-hang.html)
+    | [smoosh-hang](test/spec.wwz/survey/smoosh-hang.html)
 - How many processes does Oil start compared to other shells?
   - [syscall/by-code](test/other.wwz/syscall/by-code.txt)
-  - [syscall/by-input](test/other.wwz/syscall/by-input.txt)
+    | [syscall/by-input](test/other.wwz/syscall/by-input.txt)
 
 [Smoosh]: http://shell.cs.pomona.edu/
 
@@ -179,8 +179,8 @@ domain-specific languages and code generation.
   elements, used in the lexer and in multiple parsers and evaluators.
 - The regex-based lexer uses two stages of code generation:
   - [frontend/lexer_def.py](source-code.wwz/frontend/lexer_def.py)
-  - [_devbuild/tmp/osh-lex.re2c.h](source-code.wwz/_devbuild/tmp/osh-lex.re2c.h)
-  - [_devbuild/gen/osh-lex.h](source-code.wwz/_devbuild/gen/osh-lex.h)
+    | [_devbuild/tmp/osh-lex.re2c.h](source-code.wwz/_devbuild/tmp/osh-lex.re2c.h)
+    | [_devbuild/gen/osh-lex.h](source-code.wwz/_devbuild/gen/osh-lex.h)
 - [frontend/syntax.asdl](source-code.wwz/frontend/syntax.asdl). The syntax tree
   for OSH and Oil.
 - [oil_lang/grammar.pgen2](source-code.wwz/oil_lang/grammar.pgen2). The
@@ -201,12 +201,9 @@ The OPy compiler is used to compile Oil to bytecode, but isn't itself part of
 the release.
 
 - [build-oil-repo](test/opy.wwz/build-oil-repo.txt)
-- [test-gold](test/opy.wwz/test-gold.txt)
-- [regtest-compile](test/opy.wwz/regtest-compile.txt)
-- [regtest-verify-golden](test/opy.wwz/regtest-verify-golden.txt)
-
-Tree-shaking:
-
-- [Symbols in Oil](test/opy.wwz/oil-symbols.txt)
-- [Symbols in OPy](test/opy.wwz/opy-symbols.txt)
+  | [test-gold](test/opy.wwz/test-gold.txt)
+  | [regtest-compile](test/opy.wwz/regtest-compile.txt)
+  | [regtest-verify-golden](test/opy.wwz/regtest-verify-golden.txt)
+- Tree-shaking: [Symbols in Oil](test/opy.wwz/oil-symbols.txt)
+  | [Symbols in OPy](test/opy.wwz/opy-symbols.txt)
 
