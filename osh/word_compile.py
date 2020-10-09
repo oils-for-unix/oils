@@ -46,12 +46,6 @@ def EvalCharLiteralForRegex(tok):
     raise AssertionError(Id_str(id_))
 
 
-# TODO: Strict mode syntax errors:
-#
-# \x is a syntax error -- needs two digits (It's like this in C)
-# \0777 is a syntax error -- we shouldn't do modulus
-# \d could be a syntax error -- it is better written as \\d
-
 def EvalCStringToken(tok):
   # type: (Token) -> Optional[str]
   """
@@ -74,7 +68,7 @@ def EvalCStringToken(tok):
     return None
 
   elif id_ in (Id.Char_Octal3, Id.Char_Octal4):
-    if id_ == Id.Char_Octal3:  # $'\377'
+    if id_ == Id.Char_Octal3:  # $'\377' (disallowed at parse time in Oil)
       s = value[1:]
     else:                      # echo -e '\0377'
       s = value[2:]

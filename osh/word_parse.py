@@ -574,6 +574,11 @@ class WordParser(WordEmitter):
         if no_backslashes and '\\' in tok.val:
           p_die(r"Strings with backslashes should look like r'\n' or c'\n'",
                 token=tok)
+
+        if is_oil_expr and self.token_type == Id.Char_Octal3:
+          p_die(r"Use \xhh or \u{...} instead of octal escapes in Oil strings",
+                token=tok)
+
         tokens.append(tok)
 
       elif self.token_kind == Kind.Unknown:

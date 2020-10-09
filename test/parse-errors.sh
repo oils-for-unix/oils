@@ -677,34 +677,49 @@ oil_expr() {
 oil_string_literals() {
   set +o errexit
 
-  # These are allowed
+  # OK in OSH
   _should-parse-here <<'EOF'
 echo $'\u{03bc'
 EOF
+  # Not with strict_backslash
   _error-case2-here -O strict_backslash -n <<EOF
 echo strict_backslash $'\u{03bc'
 EOF
+  # Not in Oil
+  _oil-parse-error-here <<'EOF'
+bad = $'\u{03bc'
+EOF
 
-  _should-parse 'echo "\z"'
-  _error-case2 -O strict_backslash -n -c 'echo strict_backslash "\z"'
-
-  _should-parse 'echo "`echo hi`"'
-
-  # But not in expression mode
-  _oil-parse-error 'bad = "\z"'
-
-  # C style escapes not respected
-  _oil-parse-error 'bad = "\u1234"'
-
-  _oil-parse-error 'bad = "`echo hi`"'
-
+  # Test single quoted
+  _should-parse-here <<'EOF'
+echo $'\z'
+EOF
   _oil-parse-error-here <<'EOF'
 bad = $'\z'
 EOF
 
-  _oil-parse-error-here <<'EOF'
-bad = $'\u{03bc'
+  # Octal not allowed
+  _should-parse-here <<'EOF'
+echo $'\101'
 EOF
+  _oil-parse-error-here <<'EOF'
+bad = $'\101'
+EOF
+
+  _should-parse 'echo "\z"'
+  # Double quoted is an error
+  _error-case2 -O strict_backslash -n -c 'echo strict_backslash "\z"'
+  _oil-parse-error 'echo "\z"'  # not in Oil
+  _oil-parse-error 'bad = "\z"'  # not in expression mode
+
+  # C style escapes not respected
+  _should-parse 'echo "\u1234"'  # ok in OSH
+  _oil-parse-error 'echo "\u1234"'  # not in Oil
+  _oil-parse-error 'bad = "\u1234"'
+
+  _should-parse 'echo "`echo hi`"'
+  _oil-parse-error 'echo "`echo hi`"'
+  _oil-parse-error 'bad = "`echo hi`"'
 
   # We want these to be tested under OSH, but they won't work under Oil native!
   if is-oil-native; then
