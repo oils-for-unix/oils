@@ -820,20 +820,34 @@ all() {
   return 0
 }
 
+with-oil-native() {
+  local src_root=$1
+  local out=_tmp/other/parse-errors-oil-native.txt
+  ASAN_OPTIONS='detect_leaks=0' SH=$src_root/_bin/osh_eval.asan \
+    run-other-suite-for-release parse-errors all $out
+}
+
+travis1() {
+  ### run with Python. output _tmp/other/parse-errors.txt
+
+  run-other-suite-for-release parse-errors all
+}
+
+travis2() {
+  ### run with C++.  output: _tmp/other/oil-parse-errors-oil-native.txt
+
+  # Done in _oil-native-build on the benchmark-data version
+  build/mycpp.sh compile-oil-native-asan
+  with-oil-native '.'
+}
+
 run-for-release() {
   ### Test with bin/osh and the ASAN binary.
 
   run-other-suite-for-release parse-errors all
 
-  # Done in _oil-native-build on the benchmark-data version
-  #build/mycpp.sh compile-oil-native-asan
-
   readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-  readonly src="../benchmark-data/src/oil-native-$OIL_VERSION"
-
-  local out=_tmp/other/parse-errors-oil-native.txt
-  ASAN_OPTIONS=detect_leaks=0 SH=$src/_bin/osh_eval.asan \
-    run-other-suite-for-release parse-errors all $out
+  with-oil-native "../benchmark-data/src/oil-native-$OIL_VERSION"
 }
 
 "$@"

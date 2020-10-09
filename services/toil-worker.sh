@@ -87,7 +87,8 @@ translate       mycpp/setup.sh build                  -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
 build-examples  mycpp/setup.sh build-examples         -
 test-examples   mycpp/setup.sh test-examples          -
-parse-errors    test/parse-errors.sh run-for-release  -
+parse-errors    test/parse-errors.sh travis1          _tmp/other/parse-errors.txt
+parse-errors2   test/parse-errors.sh travis2          _tmp/other/parse-errors-oil-native.txt
 EOF
 
 # note: parse-errors depends on oil-native
