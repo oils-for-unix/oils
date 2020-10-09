@@ -1228,6 +1228,70 @@ class WordParser(WordEmitter):
     # Call into expression language.
     self.parse_ctx.ParseOilArgList(self.lexer, arglist)
 
+  def _MaybeReadWholeWord(self, num_parts, lex_mode, parts):
+    # type: (int, lex_mode_t, List[word_part_t]) -> Tuple[bool, int]
+    done = False
+    br = 0
+
+    if self.token_type == Id.Lit_EscapedChar:
+      part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
+    else:
+      part = self.cur_token
+
+    if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
+      parts.append(part)
+      # Unfortunately it's awkward to pull the check for a=(1 2) up to
+      # _ReadWord.
+      next_id = self.lexer.LookAhead(lex_mode)
+      if next_id == Id.Op_LParen:
+        self.lexer.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+        part2 = self._ReadArrayLiteral()
+        parts.append(part2)
+
+        # Array literal must be the last part of the word.
+        self._Next(lex_mode)
+        self._Peek()
+        # EOF, whitespace, newline, Right_Subshell
+        if self.token_kind not in KINDS_THAT_END_WORDS:
+          p_die('Unexpected token after array literal',
+                token=self.cur_token)
+        done = True
+
+    elif (self.parse_opts.parse_at() and self.token_type == Id.Lit_Splice and
+          num_parts == 0):
+
+      splice_token = self.cur_token
+
+      next_id = self.lexer.LookAhead(lex_mode)
+      if next_id == Id.Op_LParen:  # @arrayfunc(x)
+        arglist = arg_list()
+        self._ParseCallArguments(arglist)
+        part = word_part.FuncCall(splice_token, arglist)
+      else:
+        part = word_part.Splice(splice_token)
+
+      parts.append(part)
+
+      # @words or @arrayfunc() must be the last part of the word
+      self._Next(lex_mode)
+      self._Peek()
+      # EOF, whitespace, newline, Right_Subshell
+      if self.token_kind not in KINDS_THAT_END_WORDS:
+        p_die('Unexpected token after array splice', token=self.cur_token)
+      done = True
+
+    else:
+      # Syntax error for { and }
+      if self.token_type == Id.Lit_LBrace:
+        br = 1
+      elif self.token_type == Id.Lit_RBrace:
+        br = -1
+
+      # not a literal with lookahead; append it
+      parts.append(part)
+
+    return done, br
+
   def _ReadCompoundWord(self, lex_mode):
     # type: (lex_mode_t) -> compound_word
     return self._ReadCompoundWord3(lex_mode, Id.Undefined_Tok, True)
@@ -1255,70 +1319,16 @@ class WordParser(WordEmitter):
 
       # Keywords like "for" are treated like literals
       elif self.token_kind in (
-          Kind.Lit, Kind.History, Kind.KW, Kind.ControlFlow,
-          Kind.BoolUnary, Kind.BoolBinary):
-        if self.token_type == Id.Lit_EscapedChar:
-          part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
-        else:
-          part = self.cur_token
+          Kind.Lit, Kind.History, Kind.KW, Kind.ControlFlow, Kind.BoolUnary,
+          Kind.BoolBinary):
 
-        if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
-          w.parts.append(part)
-          # Unfortunately it's awkward to pull the check for a=(1 2) up to
-          # _ReadWord.
-          next_id = self.lexer.LookAhead(lex_mode)
-          if next_id == Id.Op_LParen:
-            self.lexer.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
-            part2 = self._ReadArrayLiteral()
-            w.parts.append(part2)
-
-            # Array literal must be the last part of the word.
-            self._Next(lex_mode)
-            self._Peek()
-            # EOF, whitespace, newline, Right_Subshell
-            if self.token_kind not in KINDS_THAT_END_WORDS:
-              p_die('Unexpected token after array literal',
-                    token=self.cur_token)
-            done = True
-
-        elif (self.parse_opts.parse_at() and self.token_type == Id.Lit_Splice and
-              num_parts == 0):
-
-          splice_token = self.cur_token
-
-          next_id = self.lexer.LookAhead(lex_mode)
-          if next_id == Id.Op_LParen:  # @arrayfunc(x)
-            arglist = arg_list()
-            self._ParseCallArguments(arglist)
-            part = word_part.FuncCall(splice_token, arglist)
-          else:
-            part = word_part.Splice(splice_token)
-
-          w.parts.append(part)
-
-          # @words or @arrayfunc() must be the last part of the word
-          self._Next(lex_mode)
-          self._Peek()
-          # EOF, whitespace, newline, Right_Subshell
-          if self.token_kind not in KINDS_THAT_END_WORDS:
-            p_die('Unexpected token after array splice',
-                  token=self.cur_token)
-          done = True
-
-        else:
-          # Syntax error for { and }
-          if self.token_type == Id.Lit_LBrace:
-            brace_count += 1
-          elif self.token_type == Id.Lit_RBrace:
-            brace_count -= 1
-
-          # not a literal with lookahead; append it
-          w.parts.append(part)
+        done, br = self._MaybeReadWholeWord(num_parts, lex_mode, w.parts)
+        brace_count += br
 
       elif self.token_kind == Kind.VSub:
         vsub_token = self.cur_token
 
-        part = simple_var_sub(vsub_token)
+        part = simple_var_sub(vsub_token)  # type: word_part_t
         if self.token_type == Id.VSub_DollarName:
           # Look ahead for $strfunc(x)
           #   $f(x) or --name=$f(x) is allowed
