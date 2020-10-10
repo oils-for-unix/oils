@@ -1332,6 +1332,9 @@ class WordParser(WordEmitter):
           brace_count += 1
         elif self.token_type == Id.Lit_RBrace:
           brace_count -= 1
+        elif self.token_type == Id.Lit_Dollar:
+          if self.parse_opts.strict_dollar():
+            p_die('Literal $ should be escaped like \$', token=self.cur_token)
 
         done = self._MaybeReadWholeWord(num_parts == 0, lex_mode, w.parts)
 

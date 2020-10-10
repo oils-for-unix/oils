@@ -222,6 +222,7 @@ def AddKinds(spec):
       'LBrace', 'RBrace', 'Comma',
       'Equals',            # For = f()
       'Underscore',        # For _ f()
+      'Dollar',            # detecting 'echo $'
       'DRightBracket',     # the ]] that matches [[, NOT a keyword
       'TildeLike',         # tilde expansion
       'Pound',             #  for comment or VAROP state

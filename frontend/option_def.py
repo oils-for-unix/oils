@@ -259,13 +259,11 @@ def _Init(opt_def):
   for name in _STRICT_OPTION_NAMES:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
 
-  # These two are strict option that are PRSE option.  They are NOT on in
+  # These are strict options that are PARSE options.  They are NOT on in
   # oil:basic.
-  opt_def.Add('strict_backslash', groups=['strict:all', 'oil:all'],
-              is_parse=True)
-  # This means NO backticks
-  opt_def.Add('strict_backticks', groups=['strict:all', 'oil:all'],
-              is_parse=True)
+  for name in ['strict_backslash', 'strict_backticks', 'strict_dollar']:
+    opt_def.Add(name, groups=['strict:all', 'oil:all'],
+                is_parse=True)
 
   #
   # Options that enable Oil language features

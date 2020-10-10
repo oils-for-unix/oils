@@ -72,6 +72,8 @@ _SIGNIFICANT_SPACE = R(r'[ \t\r]+', Id.WS_Space)
 _TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
 
 _BACKSLASH = [
+  # TODO: Should Oil make this stricter?  \a-\z, \A-\Z, \0-\9, should just be
+  # written without \
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
 ]
@@ -282,8 +284,8 @@ FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
 # dash/zsh/etc. can have one
 FD_NUM = r'[0-9]?[0-9]?'
 
-# These two can must be recognized in the Outer state, but can't nested within
-# [[.
+# These two can must be recognized in the ShCommand state, but can't nested
+# within [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
 LEXER_DEF[lex_mode_e.ShCommand] = [
@@ -311,7 +313,8 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
 
   C('=', Id.Lit_Equals),      # for = f(x) and x = 1+2*3
   C('_', Id.Lit_Underscore),  # for _ f(x)
-  C('@', Id.Lit_At),          # for detecting @[, @' etc.
+  C('$', Id.Lit_Dollar),      # shotp -s strict_dollar
+  C('@', Id.Lit_At),          # for detecting @[, @' etc. shopt -s parse_at_all
 
   # @array and @func(1, c)
   R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for Oil splicing
@@ -344,7 +347,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
 
 ] + _KEYWORDS + _CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN
 
-# Preprocessing before Outer
+# Preprocessing before ShCommand
 LEXER_DEF[lex_mode_e.Backtick] = [
   C(r'`', Id.Backtick_Right),
   # A backslash, and then one of the SAME FOUR escaped chars in the DQ mode.
@@ -353,7 +356,7 @@ LEXER_DEF[lex_mode_e.Backtick] = [
   R(r'[^\0]', Id.Backtick_Other),  # anything else
 ]
 
-# DBRACKET: can be like Outer, except:
+# DBRACKET: can be like ShCommand, except:
 # - Don't really need redirects either... Redir_Less could be Op_Less
 # - Id.Op_DLeftParen can't be nested inside.
 LEXER_DEF[lex_mode_e.DBracket] = [
@@ -410,12 +413,11 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # evaluate to \*.  Compare with ( | ).
   R(r'\\[*+?.^$\[\]]', Id.Lit_RegexMeta),
 
-  # Everything else is an escape.
-  R(r'\\[^\n\0]', Id.Lit_EscapedChar),
-  C('\\\n', Id.Ignored_LineCont),
-
   # NOTE: ( | and ) aren't operators!
-  R(r'[^\0]', Id.Lit_Other),  # everything else is literal
+
+] + _BACKSLASH +  [
+
+  R(r'[^\0]', Id.Lit_Other),  # Everything else is a literal
 ]
 
 LEXER_DEF[lex_mode_e.DQ] = _DQ_BACKSLASH + [

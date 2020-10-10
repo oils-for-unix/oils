@@ -735,7 +735,7 @@ EOF
 
 }
 
-oil_backticks() {
+strict_backticks() {
   set +o errexit
 
   # These are allowed
@@ -746,6 +746,43 @@ oil_backticks() {
   _error-case2 -O strict_backticks -n -c 'echo "foo = `echo hi`"'
 }
 
+strict_dollar() {
+  set +o errexit
+
+  # The right way:
+  #   echo \$
+  #   echo \$:
+
+  _should-parse 'echo $'
+  _should-parse 'echo $:'
+
+  _error-case2 -O strict_dollar -n -c 'echo $'
+  _error-case2 -O strict_dollar -n -c 'echo $:'
+
+  _oil-parse-error 'echo $'
+  _oil-parse-error 'echo $:'
+}
+
+# Backslash in UNQUOTED context
+strict_backslash() {
+  set +o errexit
+
+  # The right way:
+  #   echo \: -> :
+  #   echo \n -> n
+  # () ;
+  # But \~ is also valid \[ \]
+
+  _should-parse 'echo \('
+  _should-parse 'echo \;'
+  _should-parse 'echo ~'
+  _should-parse 'echo \!'  # history?
+
+  _should-parse 'echo \%'  # job ID?  I feel like '%' is better
+  _should-parse 'echo \#'  # comment
+
+  # really I think \a .. \z, \A - \Z, \0 - \9, \_, \- are useless
+}
 
 oil_to_make_nicer() {
   set +o errexit
@@ -817,7 +854,9 @@ cases-in-strings() {
   proc_sig
   oil_expr
   oil_string_literals
-  oil_backticks
+  strict_backticks
+  strict_dollar
+  strict_backslash
   oil_to_make_nicer
   parse_at
 }
