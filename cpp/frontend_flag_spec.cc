@@ -143,8 +143,8 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   auto out = new flag_spec::_FlagSpec();
   out->arity0 = new List<Str*>();
   out->arity1 = new Dict<Str*, args::_Action*>();
-  out->plus_flags = new List<Str*>();
   out->actions_long = new Dict<Str*, args::_Action*>();
+  out->plus_flags = new List<Str*>();
   out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
   if (in->arity0) {
@@ -153,6 +153,9 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
 #ifndef CPP_UNIT_TEST
   if (in->arity1) {
     _CreateActions(in->arity1, out->arity1);
+  }
+  if (in->actions_long) {
+    _CreateActions(in->actions_long, out->actions_long);
   }
 #endif
   if (in->plus_flags) {

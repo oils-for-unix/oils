@@ -66,6 +66,7 @@ struct FlagSpec_c {
   const char* name;         // e.g. 'wait'
   const char** arity0;      // NULL terminated array
   Action_c* arity1;         // NULL terminated array
+  Action_c* actions_long;   // NULL terminated array
   const char** plus_flags;  // NULL terminated array
   DefaultPair_c* defaults;
 };

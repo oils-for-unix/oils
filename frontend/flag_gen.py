@@ -71,7 +71,8 @@ def _WriteActions(f, var_name, actions, counter):
   f.write('Action_c %s[] = {\n' % var_name)
   for i, key in enumerate(sorted(actions)):
     action = actions[key]
-    log('%s %s', key, action)
+    #log('%s %s', key, action)
+
     name = None
     if isinstance(action, args.SetToString):
       if action.quit_parsing_flags:
@@ -270,6 +271,7 @@ namespace arg_types {
     spec = specs[spec_name]
     arity0_name = None
     arity1_name = None
+    actions_long_name = None
     plus_name = None
     defaults_name = None
 
@@ -281,6 +283,10 @@ namespace arg_types {
       arity1_name = 'arity1_%d' % i
       _WriteActions(cc_f, arity1_name, spec.arity1, counter)
 
+    if spec.actions_long:
+      actions_long_name = 'actions_long_%d' % i
+      _WriteActions(cc_f, actions_long_name, spec.actions_long, counter)
+
     if spec.plus_flags:
       plus_name = 'plus_%d' % i
       _WriteStrArray(cc_f, plus_name, spec.plus_flags)
@@ -289,7 +295,11 @@ namespace arg_types {
       defaults_name = 'defaults_%d' % i
       _WriteDefaults(cc_f, defaults_name, spec.defaults)
 
-    var_names.append((arity0_name, arity1_name, plus_name, defaults_name))
+    var_names.append(
+        (arity0_name, arity1_name, actions_long_name, plus_name,
+         defaults_name)
+    )
+
     cc_f.write('\n')
 
   cc_f.write('FlagSpec_c kFlagSpecs[] = {\n')
@@ -298,12 +308,13 @@ namespace arg_types {
   for i, spec_name in enumerate(sorted(flag_spec.FLAG_SPEC)):
     spec = specs[spec_name]
     names = var_names[i]
-    cc_f.write('    { "%s", %s, %s, %s, %s },\n' % (
+    cc_f.write('    { "%s", %s, %s, %s, %s, %s },\n' % (
       spec_name,
       names[0] or 'nullptr', 
       names[1] or 'nullptr', 
       names[2] or 'nullptr', 
       names[3] or 'nullptr', 
+      names[4] or 'nullptr', 
     ))
 
   cc_f.write("""\
