@@ -155,3 +155,38 @@ shopt -s nullglob
 shopt -u nullglob
 ## END
 
+#### shopt supports 'set' options
+shopt -p errexit
+
+shopt --set errexit
+shopt -p errexit
+
+shopt --unset errexit
+shopt -p errexit
+
+## STDOUT:
+shopt -u errexit
+shopt -s errexit
+shopt -u errexit
+## END
+
+
+#### shopt and block
+shopt --set oil:all
+
+echo one
+
+shopt --unset errexit {
+  echo two
+  false
+  echo three
+}
+
+false
+echo 'should not get here'
+
+## STDOUT:
+one
+two
+three
+## END

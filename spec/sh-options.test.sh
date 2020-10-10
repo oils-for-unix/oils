@@ -657,7 +657,7 @@ done
 127
 ## END
 
-#### shopt -s nounset doesn't work (may relax this later)
+#### shopt -s nounset works in Oil, not in bash
 case $SH in
   *dash|*mksh)
     echo N-I
@@ -666,12 +666,13 @@ case $SH in
 esac
 shopt -s nounset
 echo status=$?
-# get rid of extra space in bash
+
+# get rid of extra space in bash output
 set -o | grep nounset | sed 's/[ \t]\+/ /g'
 
 ## STDOUT:
-status=2
-set +o nounset
+status=0
+set -o nounset
 ## END
 ## OK bash STDOUT:
 status=1
