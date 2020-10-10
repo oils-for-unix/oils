@@ -753,14 +753,24 @@ strict_dollar() {
   #   echo \$
   #   echo \$:
 
-  _should-parse 'echo $'
-  _should-parse 'echo $:'
+  CASES=(
+    'echo $'          # lex_mode_e.ShCommand
+    'echo $:'
 
-  _error-case2 -O strict_dollar -n -c 'echo $'
-  _error-case2 -O strict_dollar -n -c 'echo $:'
+    'echo "$"'        # lex_mode_e.DQ
+    'echo "$:"'
 
-  _oil-parse-error 'echo $'
-  _oil-parse-error 'echo $:'
+    'echo ${x:-$}'    # lex_mode_e.VSub_ArgUnquoted
+    'echo ${x:-$:}'
+
+    'echo "${x:-$}"'  # lex_mode_e.VSub_DQ
+    'echo "${x:-$:}"'
+  )
+  for c in "${CASES[@]}"; do
+    _should-parse "$c"
+    _error-case2 -O strict_dollar -n -c "$c"
+    _oil-parse-error "$c"
+  done
 }
 
 # Backslash in UNQUOTED context

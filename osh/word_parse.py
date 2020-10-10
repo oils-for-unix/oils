@@ -729,6 +729,10 @@ class WordParser(WordEmitter):
             if is_oil_expr or self.parse_opts.strict_backslash():
               p_die("Invalid char escape in double quoted string",
                     token=self.cur_token)
+          elif self.token_type == Id.Lit_Dollar:
+            if is_oil_expr or self.parse_opts.strict_dollar():
+              p_die("Literal $ should be quoted like \$",
+                    token=self.cur_token)
 
           part = self.cur_token
         out_parts.append(part)
@@ -1334,7 +1338,7 @@ class WordParser(WordEmitter):
           brace_count -= 1
         elif self.token_type == Id.Lit_Dollar:
           if self.parse_opts.strict_dollar():
-            p_die('Literal $ should be escaped like \$', token=self.cur_token)
+            p_die('Literal $ should be quoted like \$', token=self.cur_token)
 
         done = self._MaybeReadWholeWord(num_parts == 0, lex_mode, w.parts)
 
