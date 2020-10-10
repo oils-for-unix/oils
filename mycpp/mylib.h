@@ -805,7 +805,7 @@ inline int len(const Str* s) {
 
 template <typename T>
 inline int len(const List<T>* L) {
-//inline int len(List<T>* L) {
+  // inline int len(List<T>* L) {
   return L->v_.size();
 }
 

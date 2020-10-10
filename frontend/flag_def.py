@@ -114,6 +114,11 @@ READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 READ_SPEC.ShortFlag('-p', args.String)  # prompt
 
+# Oil extensions
+READ_SPEC.LongFlag('--all')
+READ_SPEC.LongFlag('--line')
+READ_SPEC.ShortFlag('-q', long_name='--qsn')
+
 
 MAPFILE_SPEC = FlagSpec('mapfile')
 MAPFILE_SPEC.ShortFlag('-t')

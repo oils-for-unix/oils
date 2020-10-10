@@ -140,6 +140,24 @@ line=a
 line=b
 ## END
 
+#### read --line --end=T
+shopt -s oil:basic
+
+# Hm this preserves the newline?
+seq 3 | while read --line {
+  write line=$_line  # implisict
+}
+write a b | while read --line --end=T :myline {
+  write -end '' line=$myline
+}
+## STDOUT:
+line=1
+line=2
+line=3
+line=a
+line=b
+## END
+
 
 #### shopt supports long flags
 shopt -p nullglob

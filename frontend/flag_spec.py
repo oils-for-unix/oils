@@ -210,6 +210,19 @@ class _FlagSpec(object):
     self.defaults[char] = _Default(arg_type)
     self.fields[char] = typ
 
+  def LongFlag(self, long_name, arg_type=None, help=None):
+    # type: (str, Optional[int], Optional[str]) -> None
+    typ = _FlagType(arg_type)
+
+    name = long_name[2:]  # key for parsing
+    if arg_type is None:
+      self.actions_long[name] = args.SetToTrue(name)
+    else:
+      self.actions_long[name] = _MakeAction(arg_type, name)
+
+    self.defaults[name] = _Default(arg_type)
+    self.fields[name] = typ
+
   def PlusFlag(self, char, help=None):
     # type: (str, Optional[str]) -> None
     """Define an option that can be turned off with + and on with -.

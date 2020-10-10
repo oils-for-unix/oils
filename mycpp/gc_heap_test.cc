@@ -13,8 +13,8 @@
 // Types
 using gc_heap::Heap;
 using gc_heap::Local;
-using gc_heap::Param;
 using gc_heap::Obj;
+using gc_heap::Param;
 
 using gc_heap::Dict;
 using gc_heap::GlobalStr;

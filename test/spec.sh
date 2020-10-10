@@ -876,7 +876,7 @@ oil-blocks() {
 }
 
 oil-builtins() {
-  sh-spec spec/oil-builtins.test.sh \
+  sh-spec spec/oil-builtins.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 

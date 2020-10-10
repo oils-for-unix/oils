@@ -240,6 +240,12 @@ Action_c arity1_1[] = {
     {},  // sentinel
 };
 
+Action_c actions_long_1[] = {
+    {"all", ActionType_c::SetToTrue, "all"},
+    {"line", ActionType_c::SetToTrue, "line"},
+    {},  // sentinel
+};
+
 const char* plus_1[] = {"o", "p", nullptr};
 
 DefaultPair_c defaults_1[] = {
@@ -256,9 +262,11 @@ DefaultPair_c defaults_2[] = {
     {},
 };
 
-FlagSpec_c spec1 = {"export", arity0_1, arity1_1, plus_1, defaults_1};
+FlagSpec_c spec1 = {"export",       arity0_1, arity1_1,
+                    actions_long_1, plus_1,   defaults_1};
 // a copy for demonstrations
-FlagSpec_c spec2 = {"unset", arity0_1, arity1_1, plus_1, defaults_1};
+FlagSpec_c spec2 = {"unset",        arity0_1, arity1_1,
+                    actions_long_1, plus_1,   defaults_1};
 
 TEST flag_spec_test() {
   // Test the declared constants

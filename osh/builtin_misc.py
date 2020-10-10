@@ -172,6 +172,14 @@ class Read(vm._Builtin):
     arg = arg_types.read(attrs.attrs)
     names = arg_r.Rest()
 
+    # Don't respect any of the other options here?  This is buffered I/O.
+    if arg.line:
+      e_usage('--line not implemented yet')
+    if arg.all:
+      e_usage('--all not implemented yet')
+    if arg.q:
+      e_usage('--qsn not implemented yet')
+
     fd = self.stdin.fileno()
 
     if arg.t >= 0.0:
