@@ -163,6 +163,9 @@ class _FlagSpec(object):
     self.arity0 = []  # type: List[str]
     self.arity1 = {}  # type: Dict[str, args._Action]
     self.plus_flags = []  # type: List[str]
+
+    # Oil extensions
+    self.actions_long = {}  # type: Dict[str, args._Action]
     self.defaults = {}  # type: Dict[str, value_t]
 
     # For code generation.  Not used at runtime.
@@ -180,8 +183,8 @@ class _FlagSpec(object):
     for ch in self.arity1:
       print('    -%s' % ch)
 
-  def ShortFlag(self, short_name, arg_type=None, help=None):
-    # type: (str, Optional[int], Optional[str]) -> None
+  def ShortFlag(self, short_name, arg_type=None, long_name=None, help=None):
+    # type: (str, Optional[int], Optional[str], Optional[str]) -> None
     """
     This is very similar to ShortFlag for FlagSpecAndMore, except we have
     separate arity0 and arity1 dicts.
@@ -191,10 +194,18 @@ class _FlagSpec(object):
 
     typ = _FlagType(arg_type)
     char = short_name[1]
+
     if arg_type is None:
       self.arity0.append(char)
     else:
       self.arity1[char] = _MakeAction(arg_type, char)
+
+    if long_name is not None:
+      name = long_name[2:]  # key for parsing
+      if arg_type is None:
+        self.actions_long[name] = args.SetToTrue(char)
+      else:
+        self.actions_long[name] = _MakeAction(arg_type, char)
 
     self.defaults[char] = _Default(arg_type)
     self.fields[char] = typ
@@ -204,6 +215,8 @@ class _FlagSpec(object):
     """Define an option that can be turned off with + and on with -.
 
     It's actually a ternary value: plus, minus, or unset.
+
+    For declare -x, etc.
     """
     assert len(char) == 1  # 'r' for -r +r
     self.plus_flags.append(char)

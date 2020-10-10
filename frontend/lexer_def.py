@@ -72,10 +72,14 @@ _SIGNIFICANT_SPACE = R(r'[ \t\r]+', Id.WS_Space)
 _TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
 
 _BACKSLASH = [
-  # TODO: Should Oil make this stricter?  \a-\z, \A-\Z, \0-\9, should just be
-  # written without \
-  # That's a lot of work since this is used in
+  # TODO: Should Oil make this stricter?  \a-\z, \A-\Z, \0-\9, should be
+  # written without \.
+  # But that's a lot of work since this is used in
   # lex_mode_e.{ShCommand,VSub_ArgUnquoted,DBracket,ExtGlob,BashRegex}
+  #
+  # To be conservative, we could deny a set of chars similar to
+  # _LITERAL_WHITELIST_REGEX, rather than allowing all the operator characters
+  # like \( and \;.
 
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),

@@ -139,3 +139,19 @@ line=3
 line=a
 line=b
 ## END
+
+
+#### shopt supports long flags
+shopt -p nullglob
+
+shopt --set nullglob
+shopt -p nullglob
+
+shopt --unset nullglob
+shopt -p nullglob
+## STDOUT:
+shopt -u nullglob
+shopt -s nullglob
+shopt -u nullglob
+## END
+

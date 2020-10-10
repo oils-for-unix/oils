@@ -513,7 +513,18 @@ def Parse(spec, arg_r):
       arg_r.Next()
       break
 
-    if arg.startswith('-') and len(arg) > 1:
+    # Only accept -- if there are any long flags defined
+    if len(spec.actions_long) and arg.startswith('--'):
+      action = spec.actions_long.get(arg[2:])
+      if action is None:
+        e_usage('got invalid flag %r' % arg, span_id=arg_r.SpanId())
+
+      # TODO: attached_arg could be 'bar' for --foo=bar
+      action.OnMatch(None, arg_r, out)
+      arg_r.Next()
+      continue
+
+    elif arg.startswith('-') and len(arg) > 1:
       n = len(arg)
       for i in xrange(1, n):  # parse flag combos like -rx
         ch = arg[i]
@@ -621,7 +632,6 @@ def ParseMore(spec, arg_r):
       arg_r.Next()
       break
 
-    # NOTE: We don't yet support --rcfile=foo.  Only --rcfile foo.
     if arg.startswith('--'):
       action = spec.actions_long.get(arg[2:])
       if action is None:

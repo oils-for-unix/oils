@@ -77,8 +77,8 @@ ALIAS_SPEC = FlagSpec('alias')  # no flags yet
 UNALIAS_SPEC = FlagSpec('unalias')  # no flags yet
 
 SHOPT_SPEC = FlagSpec('shopt')
-SHOPT_SPEC.ShortFlag('-s')  # set
-SHOPT_SPEC.ShortFlag('-u')  # unset
+SHOPT_SPEC.ShortFlag('-s', long_name='--set')
+SHOPT_SPEC.ShortFlag('-u', long_name='--unset')
 SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' names
 SHOPT_SPEC.ShortFlag('-p')  # print
 SHOPT_SPEC.ShortFlag('-q')  # query option settings
