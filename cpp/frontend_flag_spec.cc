@@ -144,6 +144,7 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   out->arity0 = new List<Str*>();
   out->arity1 = new Dict<Str*, args::_Action*>();
   out->plus_flags = new List<Str*>();
+  out->actions_long = new Dict<Str*, args::_Action*>();
   out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
   if (in->arity0) {

@@ -90,6 +90,7 @@ class _FlagSpec {
   List<Str*>* arity0;
   Dict<Str*, args::_Action*>* arity1;
   List<Str*>* plus_flags;
+  Dict<Str*, args::_Action*>* actions_long;
   Dict<Str*, runtime_asdl::value_t*>* defaults;
 };
 
