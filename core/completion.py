@@ -719,11 +719,15 @@ class UserSpec(object):
 
 
 # Helpers for Matches()
-
-# NOTE: We could add Lit_Dollar, but it would affect many lexer modes.
 def IsDollar(t):
   # type: (Token) -> bool
-  return t.id == Id.Lit_Other and t.val == '$'
+
+  # First condition is for lex_mode_e.{ShCommand,DQ}.
+  #return t.id == Id.Lit_Dollar or (t.id == Id.Lit_Other and t.val == '$')
+
+  # We have rules for Lit_Dollar in
+  # lex_mode_e.{ShCommand,DQ,VSub_ArgUnquoted,VSub_ArgDQ}
+  return t.id == Id.Lit_Dollar
 
 
 def IsDummy(t):

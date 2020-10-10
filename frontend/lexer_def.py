@@ -74,6 +74,8 @@ _TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
 _BACKSLASH = [
   # TODO: Should Oil make this stricter?  \a-\z, \A-\Z, \0-\9, should just be
   # written without \
+
+  # Used in lex_mode_e.{ShCommand,DBracket,ExtGlob,BashRegex}
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
 ]
@@ -158,6 +160,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
   _TILDE_LIKE,
   C(':', Id.Lit_Colon),  # for special PATH=a:~foo tilde detection
+  C('$', Id.Lit_Dollar),   # shopt -s strict_dollar
 
   C('#', Id.Lit_Pound),  # For comments
   _SIGNIFICANT_SPACE,
@@ -313,7 +316,6 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
 
   C('=', Id.Lit_Equals),      # for = f(x) and x = 1+2*3
   C('_', Id.Lit_Underscore),  # for _ f(x)
-  C('$', Id.Lit_Dollar),      # shotp -s strict_dollar
   C('@', Id.Lit_At),          # for detecting @[, @' etc. shopt -s parse_at_all
 
   # @array and @func(1, c)
@@ -352,7 +354,7 @@ LEXER_DEF[lex_mode_e.Backtick] = [
   C(r'`', Id.Backtick_Right),
   # A backslash, and then one of the SAME FOUR escaped chars in the DQ mode.
   R(r'\\[$`"\\]', Id.Backtick_Quoted),
-  R(r'[^`\\\0]+', Id.Backtick_Other),  # contiguous run of literals
+  R(r'[^`\\\0]+', Id.Backtick_Other),  # contiguous run of litera
   R(r'[^\0]', Id.Backtick_Other),  # anything else
 ]
 
@@ -402,6 +404,7 @@ LEXER_DEF[lex_mode_e.ExtGlob] = \
 # From code: ( | ) are treated special.
 
 LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+
   # NOTE: bash accounts for spaces and non-word punctuation like ; inside ()
   # and [].  We will avoid that and ask the user to extract a variable?
 
@@ -414,19 +417,17 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'\\[*+?.^$\[\]]', Id.Lit_RegexMeta),
 
   # NOTE: ( | and ) aren't operators!
-
-] + _BACKSLASH +  [
-
   R(r'[^\0]', Id.Lit_Other),  # Everything else is a literal
-]
+
+] + _BACKSLASH   # These have to come after RegexMeta
 
 LEXER_DEF[lex_mode_e.DQ] = _DQ_BACKSLASH + [
   C('\\\n', Id.Ignored_LineCont),
 ] + _LEFT_SUBS + _VARS + [
   R(r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
+  C('$', Id.Lit_Dollar),  # completion of var names relies on this
   # NOTE: When parsing here doc line, this token doesn't end it.
   C('"', Id.Right_DoubleQuote),
-  R(r'[^\0]', Id.Lit_Other),  # e.g. "$"
 ]
 
 _VS_ARG_COMMON = [
@@ -434,6 +435,8 @@ _VS_ARG_COMMON = [
   C('#', Id.Lit_Pound),  # for patsub prefix (not Id.VOp1_Pound)
   C('%', Id.Lit_Percent),  # for patsdub suffix (not Id.VOp1_Percent)
   C('}', Id.Right_DollarBrace),  # For var sub "${a}"
+
+  C('$', Id.Lit_Dollar),  # completion of var names relies on this
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
@@ -453,13 +456,8 @@ LEXER_DEF[lex_mode_e.VSub_ArgDQ] = \
 
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
 
-  # Weird wart: even in double quoted state, double quotes are allowed
-  C('"', Id.Left_DoubleQuote),
-
   # Another weird wart of bash/mksh: $'' is recognized but NOT ''!
   C("$'", Id.Left_SingleQuoteC),
-
-  R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ

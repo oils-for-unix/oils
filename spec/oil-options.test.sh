@@ -159,6 +159,7 @@ shopt -s strict_array
 shopt -s strict_backslash
 shopt -s strict_backticks
 shopt -s strict_control_flow
+shopt -s strict_dollar
 shopt -s strict_echo
 shopt -s strict_errexit
 shopt -s strict_eval_builtin
