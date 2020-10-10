@@ -74,8 +74,9 @@ _TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
 _BACKSLASH = [
   # TODO: Should Oil make this stricter?  \a-\z, \A-\Z, \0-\9, should just be
   # written without \
+  # That's a lot of work since this is used in
+  # lex_mode_e.{ShCommand,VSub_ArgUnquoted,DBracket,ExtGlob,BashRegex}
 
-  # Used in lex_mode_e.{ShCommand,DBracket,ExtGlob,BashRegex}
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
 ]
@@ -455,6 +456,9 @@ LEXER_DEF[lex_mode_e.VSub_ArgDQ] = \
   C(r'\}', Id.Lit_EscapedChar),  # For "${var-\}}"
 
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
+
+  # Weird wart: even in double quoted state, double quotes are allowed
+  C('"', Id.Left_DoubleQuote),
 
   # Another weird wart of bash/mksh: $'' is recognized but NOT ''!
   C("$'", Id.Left_SingleQuoteC),
