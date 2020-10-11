@@ -151,6 +151,21 @@ line=a
 line=b
 ## END
 
+#### read --all
+echo foo | read --all
+echo "[$_all]"
+
+echo bad > tmp.txt
+read --all :x < tmp.txt
+echo "[$x]"
+
+## STDOUT:
+[foo
+]
+[bad
+]
+## END
+
 
 #### shopt supports long flags
 shopt -p nullglob

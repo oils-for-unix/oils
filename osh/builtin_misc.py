@@ -162,10 +162,7 @@ def ReadLineFromStdin(delim_char):
 
 def _ReadLine():
   # type: () -> str
-  """Read a line from stdin.
-
-  TODO: use a more efficient function in C
-  """
+  """Read a line from stdin."""
   # TODO: This should be an array of integers in C++
   chars = []  # type: List[str]
   while True:
@@ -179,6 +176,20 @@ def _ReadLine():
       break
 
   return ''.join(chars)
+
+
+def _ReadAll():
+  # type: () -> str
+  """Read all of stdin."""
+  chunks = []  # type: List[str]
+  while True:
+    c = posix.read(0, 4096)
+    if len(c) == 0:
+      break
+
+    chunks.append(c)
+
+  return ''.join(chunks)
 
 
 class Read(vm._Builtin):
@@ -204,6 +215,16 @@ class Read(vm._Builtin):
     self.mem.SetVar(lhs, value.Str(line), scope_e.LocalOnly)
     return 0
 
+  def _All(self, var_name):
+    # type: (str) -> int
+    contents = _ReadAll()
+
+    # No error conditions?
+
+    lhs = lvalue.Named(var_name)
+    self.mem.SetVar(lhs, value.Str(contents), scope_e.LocalOnly)
+    return 0
+
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val)
@@ -227,7 +248,20 @@ class Read(vm._Builtin):
       return self._Line(arg, var_name)
 
     if arg.all:
-      e_usage('--all not implemented yet')
+      var_name, var_spid = arg_r.Peek2()
+      if var_name is None:
+        var_name = '_all'
+      else:
+        if var_name.startswith(':'):  # optional : sigil
+          var_name = var_name[1:]
+        arg_r.Next()
+
+      next_arg, next_spid = arg_r.Peek2()
+      if next_arg is not None:
+        raise error.Usage('got extra argument', span_id=next_spid)
+
+      return self._All(var_name)
+
     if arg.q:
       e_usage('--qsn not implemented yet')
 
