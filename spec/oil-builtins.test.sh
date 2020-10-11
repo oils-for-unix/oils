@@ -92,6 +92,43 @@ a b_c d END
 xy
 ## END
 
+#### write --qsn
+write --qsn foo bar
+write __
+
+write --qsn 'abc def' ' 123 456'
+write __
+
+write --qsn $'one\ttwo\n'
+
+write __
+write --qsn $'\u{3bc}'
+
+
+## STDOUT:
+foo
+bar
+__
+'abc def'
+' 123 456'
+__
+'one\ttwo\n'
+__
+'μ'
+## END
+
+
+#### write --qsn --unicode
+write --qsn $'\u{3bc}'
+write --qsn --unicode u $'\u{3bc}'
+write --qsn --unicode x $'\u{3bc}'
+
+## STDOUT:
+'μ'
+'\u{3bc}'
+'\xce\xbc'
+## END
+
 #### write  -e not supported
 shopt -s oil:all
 write -e foo

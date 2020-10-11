@@ -21,6 +21,7 @@ from frontend import flag_spec
 from frontend import args
 from frontend import match
 from mycpp.mylib import tagswitch
+from qsn_ import qsn
 
 import yajl
 import posix_ as posix
@@ -324,16 +325,17 @@ WRITE_SPEC.Flag('-end', args.String, default='\n',
                 help='Characters to terminate the whole invocation')
 WRITE_SPEC.Flag('-n', args.Bool, default=False,
                 help="Omit newline (synonym for -end '')")
-
-# TODO: Implement these
-WRITE_SPEC.Flag('-qsn', args.Bool, default='none',
-                help='Write elements in this QSN format')
+WRITE_SPEC.Flag('-qsn', args.Bool, default=False,
+                help='Write elements in QSN format')
 
 # x means I want \x00
 # u means I want \u{1234}
 # raw is utf-8
-WRITE_SPEC.Flag('-encode', ['x', 'u', 'raw'], default='none',
-                help='Write elements in this QSN format')
+# might also want: maybe?
+WRITE_SPEC.Flag('-unicode', ['raw', 'u', 'x',], default='raw',
+                help='Encode QSN with these options.  '
+                     'x assumes an opaque byte string, while raw and u try to '
+                     'decode UTF-8.')
 
 
 class Write(_Builtin):
@@ -351,12 +353,26 @@ class Write(_Builtin):
     arg, _ = WRITE_SPEC.Parse(arg_r)
     #print(arg)
 
+    if arg.unicode == 'raw':
+      bit8_display = qsn.BIT8_UTF8
+    elif arg.unicode == 'u':
+      bit8_display = qsn.BIT8_U_ESCAPE
+    elif arg.unicode == 'x':
+      bit8_display = qsn.BIT8_X_ESCAPE
+    else:
+      raise AssertionError()
+
     i = 0
     while not arg_r.AtEnd():
       if i != 0:
         sys.stdout.write(arg.sep)
       s = arg_r.Peek()
+
+      if arg.qsn:
+        s = qsn.maybe_encode(s, bit8_display)
+
       sys.stdout.write(s)
+
       arg_r.Next()
       i += 1
 
