@@ -48,7 +48,7 @@ _NORMAL_BUILTINS = [
 
     # Oil only
     'push', 'append',
-    'write', 'getline', 'json',
+    'write', 'json',
     'repr', 'use', 'opts',
     'fork', 'forkwait',
 ]

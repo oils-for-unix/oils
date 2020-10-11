@@ -122,32 +122,25 @@ write ---
 done
 ## END
 
-#### getline
-shopt -s oil:basic
+#### read flag usage
+read --lin
+echo status=$?
 
-# Hm this preserves the newline?
-seq 3 | while getline :line {
-  write line=$line
-}
-write a b | while getline --end=T :line {
-  write -end '' line=$line
-}
+read --line :var extra
+echo status=$?
 ## STDOUT:
-line=1
-line=2
-line=3
-line=a
-line=b
+status=2
+status=2
 ## END
 
-#### read --line --end=T
+#### read --line --with-eol
 shopt -s oil:basic
 
 # Hm this preserves the newline?
 seq 3 | while read --line {
   write line=$_line  # implisict
 }
-write a b | while read --line --end=T :myline {
+write a b | while read --line --with-eol :myline {
   write -end '' line=$myline
 }
 ## STDOUT:

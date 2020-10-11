@@ -187,7 +187,6 @@ def AddOil(b, mem, errfmt):
   b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
-  b[builtin_i.getline] = builtin_oil.Getline(mem, errfmt)
 
   b[builtin_i.repr] = builtin_oil.Repr(mem, errfmt)
   b[builtin_i.use] = builtin_oil.Use(mem, errfmt)

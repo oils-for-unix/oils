@@ -183,7 +183,7 @@ Boolean expressions:
 C-style string literals:
 
 - `echo -e '\n'` is dynamically parsed 
-- `echo $'\n'` is statically pasred
+- `echo $'\n'` is statically parsed
 
 <!--
 Remaining dynamic parsing in shell:

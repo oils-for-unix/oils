@@ -198,6 +198,7 @@ class %s {
     field_decls = []
     for field_name in sorted(spec.fields):
       typ = spec.fields[field_name]
+      field_name = field_name.replace('-', '_')
 
       with switch(typ) as case:
         if case(flag_type_e.Bool):
@@ -233,6 +234,7 @@ attrs->index(new Str("%s"))->tag_() == value_e::Undef
           raise AssertionError(typ)
 
     for i, field_name in enumerate(sorted(spec.fields)):
+      field_name = field_name.replace('-', '_')
       if i != 0:
         header_f.write(',\n')
       header_f.write('    %s(%s)' % (field_name, init_vals[i]))
@@ -430,6 +432,7 @@ class %s(object):
       i = 0
       for field_name in sorted(spec.fields):
         typ = spec.fields[field_name]
+        field_name = field_name.replace('-', '_')
 
         with switch(typ) as case:
           if case(flag_type_e.Bool):

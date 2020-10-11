@@ -11,7 +11,8 @@ builtin_misc.py - Misc builtins.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
+from _devbuild.gen.runtime_asdl import (
+    span_e, cmd_value__Argv, lvalue, value, scope_e)
 from asdl import runtime
 from core import error
 from core import pyos
@@ -159,12 +160,49 @@ def ReadLineFromStdin(delim_char):
   return ''.join(chars), eof
 
 
+def _ReadLine():
+  # type: () -> str
+  """Read a line from stdin.
+
+  TODO: use a more efficient function in C
+  """
+  # TODO: This should be an array of integers in C++
+  chars = []  # type: List[str]
+  while True:
+    c = posix.read(0, 1)
+    if len(c) == 0:
+      break
+
+    chars.append(c)
+
+    if c == '\n':
+      break
+
+  return ''.join(chars)
+
+
 class Read(vm._Builtin):
   def __init__(self, splitter, mem):
     # type: (SplitContext, Mem) -> None
     self.splitter = splitter
     self.mem = mem
     self.stdin = mylib.Stdin()
+
+  def _Line(self, arg, var_name):
+    # type: (arg_types.read, str) -> int
+    line = _ReadLine()
+    if len(line) == 0:  # EOF
+      return 1
+
+    if not arg.with_eol:
+      if line.endswith('\r\n'):
+        line = line[:-2]
+      elif line.endswith('\n'):
+        line = line[:-1]
+
+    lhs = lvalue.Named(var_name)
+    self.mem.SetVar(lhs, value.Str(line), scope_e.LocalOnly)
+    return 0
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -174,7 +212,20 @@ class Read(vm._Builtin):
 
     # Don't respect any of the other options here?  This is buffered I/O.
     if arg.line:
-      e_usage('--line not implemented yet')
+      var_name, var_spid = arg_r.Peek2()
+      if var_name is None:
+        var_name = '_line'
+      else:
+        if var_name.startswith(':'):  # optional : sigil
+          var_name = var_name[1:]
+        arg_r.Next()
+
+      next_arg, next_spid = arg_r.Peek2()
+      if next_arg is not None:
+        raise error.Usage('got extra argument', span_id=next_spid)
+
+      return self._Line(arg, var_name)
+
     if arg.all:
       e_usage('--all not implemented yet')
     if arg.q:

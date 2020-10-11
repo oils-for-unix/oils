@@ -388,61 +388,14 @@ def _ReadLine():
   return ''.join(chars)
 
 
-GETLINE_SPEC = flag_spec.OilFlags('getline')
-GETLINE_SPEC.Flag('-cstr', args.Bool,
-                    help='Decode the line in CSTR format')
-GETLINE_SPEC.Flag('-end', args.Bool, default=False,
-                    help='Whether to return the trailing newline, if any')
-
-class Getline(_Builtin):
-  """
-  getline :mystr
-  getline --cstr :mystr  # better version of read -r
-
-  What if there are multiple vars?  Try TSV2 then?
-  """
-  def Run(self, cmd_val):
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()
-    arg, _ = GETLINE_SPEC.Parse(arg_r)
-    if arg.cstr:
-      # TODO: implement it
-      # returns error if it can't decode
-      raise NotImplementedError()
-
-    var_name, var_spid = arg_r.ReadRequired2(
-        'requires a variable name')
-
-    if var_name.startswith(':'):  # optional : sigil
-      var_name = var_name[1:]
-
-    next_arg, next_spid = arg_r.Peek2()
-    if next_arg is not None:
-      raise error.Usage('got extra argument', span_id=next_spid)
-
-    line = _ReadLine()
-    if len(line) == 0:  # EOF
-      return 1
-
-    if not arg.end:
-      if line.endswith('\r\n'):
-        line = line[:-2]
-      elif line.endswith('\n'):
-        line = line[:-1]
-
-    self.mem.SetVar(
-        sh_lhs_expr.Name(var_name), value.Str(line), scope_e.LocalOnly)
-    return 0
-
-
-class Tsv2(_Builtin):
-  """TSV2 I/O.
+class Qtsv(_Builtin):
+  """QTSV I/O.
 
   # Takes a block.
   tsv2 echo :var1 :var2 {
     # Does this make sense?
-    x = @(a b c)
-    age = @[1 2 3]
+    x = %(a b c)
+    age = [1, 2, 3]
   }
 
   tsv2 read :x < foo.tsv2

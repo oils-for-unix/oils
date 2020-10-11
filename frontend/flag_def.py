@@ -117,6 +117,8 @@ READ_SPEC.ShortFlag('-p', args.String)  # prompt
 # Oil extensions
 READ_SPEC.LongFlag('--all')
 READ_SPEC.LongFlag('--line')
+# don't strip the trailing newline
+READ_SPEC.LongFlag('--with-eol')
 READ_SPEC.ShortFlag('-q', long_name='--qsn')
 
 
