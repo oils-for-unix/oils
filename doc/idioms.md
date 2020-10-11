@@ -137,7 +137,7 @@ These are discussed in the next two sections, but here's a summary.
 That is, take advantage of the the invariants that the [IO
 builtins](io-builtins.html) respect.  (doc in progress)
 
-TODO: Implement and test these.
+TODO: Implement `read --qsn`, `--lines`
 
 ### More Strategies For Structured Data
 
@@ -202,20 +202,15 @@ Yes:
 
     read --line   # also faster because it's a buffered read
 
-TODO: implement this.
-
 ### Read a Whole File
 
 No:
 
-    mapfile -d ''
-    read -d ''
+    read -d ''      # harder to read, easy to forget -r
 
 Yes:
 
     read --all :mystr
-
-TODO: implement this.
 
 ## Use Blocks to Save and Restore Context
 
@@ -251,7 +246,7 @@ Yes:
       myfunc
     }
 
-TODO: Implement this.
+TODO: Implement block arg to `shopt`.
 
 ### Use the `forkwait` builtin for Subshells, not `()`
 
@@ -267,7 +262,7 @@ Yes:
     }
     echo $not_mutated
 
-TODO: Implement this.
+TODO: Implement `forkwait`.
 
 ### Use the `fork` builtin for async, not `&`
 
@@ -283,7 +278,7 @@ Yes:
 
     fork { sleep 1; echo one; sleep 2 }
 
-TODO: Implement this.
+TODO: Implement `fork`.
 
 ## Use Procs (Better Shell Functions)
 
@@ -347,7 +342,7 @@ Yes:
     var myvar = 'zzz'
     f zzz :myvar        # : means pass a string "reference" (optional)
 
-TODO: Implement this
+TODO: Implement out params, setref.
 
 ## Curly Braces Fix Semantic Problems
 
@@ -630,7 +625,7 @@ Easier to read:
 Style note: Prefer `test` to `[`, because idiomatic Oil code doesn't use
 "puns".
 
-TODO: implement this.
+TODO: implement long flags to `test`.
 
 ### Don't use `&&`
 
@@ -663,7 +658,7 @@ Yes:
     catch myfunc || die "failed"
     ! catch myfunc
 
-TODO: Implement this.
+TODO: Implement `catch`.
 
 ### Source Files and Namespaces
 

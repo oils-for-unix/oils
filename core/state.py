@@ -427,6 +427,10 @@ class MutableOpts(object):
 
     opt_num = _ShoptOptionNum(opt_name)
 
+    if opt_num == option_i.errexit:
+      self.errexit.Set(b)
+      return
+
     self._SetArrayByNum(opt_num, b)
 
   def ShowOptions(self, opt_names):

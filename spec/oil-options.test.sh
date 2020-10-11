@@ -45,9 +45,6 @@ argv.py "$@"*.txt
 words=(a 'b c')
 argv.py @words
 
-# TODO: This should be parse_oil-at, and only allowed at the top of the file?
-# Going midway is weird?  Then you can't bin/osh -n?
-
 shopt -s parse_at
 argv.py @words
 
@@ -268,6 +265,8 @@ cd /tmp {
 
 #### parse_brace: if accepts blocks
 shopt -s oil:basic
+shopt -u errexit  # don't need strict_errexit check!
+
 if test -n foo {
   echo one
 }

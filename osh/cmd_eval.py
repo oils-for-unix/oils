@@ -73,6 +73,7 @@ from core import ui
 from core import util
 from core.pyerror import log, e_die
 from frontend import consts
+from frontend import location
 from oil_lang import objects
 from osh import braces
 from osh import sh_expr_eval
@@ -120,37 +121,6 @@ OIL_TYPE_NAMES = {
     'list': 'List',
     'dict': 'Dict',
 }
-
-
-# These are nodes that execute more than one COMMAND.  DParen doesn't
-# count because there are no commands.
-# - AndOr has multiple commands, but uses exit code in boolean way
-_DISALLOWED = [
-    command_e.DoGroup,  # covers ForEach and ForExpr, but not WhileUntil/If
-    command_e.BraceGroup, command_e.Subshell,
-    command_e.WhileUntil, command_e.If, command_e.Case,
-    command_e.TimeBlock,
-    # BUG: This happens in 'if echo $(echo hi; false)'
-    #           but not in 'if echo $(false)'
-    # Because the CommandSub has no CommandList!
-    # This also doesn't work bceause the CommandList is inside the
-    # SubProgramThunk, and doesn't abort the rest of the program!
-    command_e.CommandList,
-]
-
-def _DisallowErrExit(node):
-  # type: (command_t) -> bool
-  tag = node.tag_()
-  if tag in _DISALLOWED:
-    return True
-
-  UP_node = node # type: command_t
-  # '! foo' is a pipeline according to the POSIX shell grammar, but it's NOT
-  # disallowed!  It's not more than one command.
-  if tag == command_e.Pipeline:
-    node = cast(command__Pipeline, UP_node)
-    return len(node.children) > 1
-  return False
 
 
 class Deps(object):
@@ -497,10 +467,55 @@ class CommandEvaluator(object):
       self.mem.SetVar(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
                       flags=flags)
 
+  def _StrictErrExit(self, node):
+    # type: (command_t) -> None
+    if not (self.exec_opts.errexit() and self.exec_opts.strict_errexit()):
+      return
+
+    if node.tag_() == command_e.Sentence:
+      node1 = cast(command__Sentence, node)
+      self._StrictErrExit(node1.child)  # recursive
+      return
+
+    #if 0:
+    with tagswitch(node) as case:
+      if case(command_e.Simple, command_e.DBracket, command_e.DParen,
+              command_e.OilCondition):
+        # TODO: Also check every word for command subs.
+        # command subs in expressions too
+        return
+      elif case(command_e.Pipeline):
+        # If it looks like ! false, then it's OK
+        pi = cast(command__Pipeline, node)
+        if len(pi.children) == 1:
+          return
+
+    node_str = ui.CommandType(node)
+    e_die('strict_errexit only allows simple commands (got %s)',
+          node_str, span_id=location.SpanForCommand(node))
+
+  def _StrictErrExitList(self, node_list):
+    # type: (List[command_t]) -> None
+    """
+    Not allowed, too confusing:
+
+    if grep foo eggs.txt; grep bar eggs.txt; then
+      echo hi
+    fi
+    """
+    if not (self.exec_opts.errexit() and self.exec_opts.strict_errexit()):
+      return
+
+    if len(node_list) > 1:
+      e_die('strict_errexit only allows a single command',
+            span_id=location.SpanForCommand(node_list[0]))
+
+    self._StrictErrExit(node_list[0])
+
   def _Dispatch(self, node):
     # type: (command_t) -> Tuple[int, bool]
     # If we call RunCommandSub in a recursive call to the executor, this will
-    # be set true (if strict-errexit is false).  But it only lasts for one
+    # be set true (if strict_errexit is false).  But it only lasts for one
     # command.
     self.check_command_sub_status = False
 
@@ -599,6 +614,7 @@ class CommandEvaluator(object):
           e_die("|& isn't supported", span_id=node.spids[0])
 
         if node.negated:
+          self._StrictErrExit(node)
           with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):  # ! spid
             status2 = self.shell_ex.RunPipeline(node)
 
@@ -962,6 +978,7 @@ class CommandEvaluator(object):
         left = node.children[0]
 
         # Suppress failure for every child except the last one.
+        self._StrictErrExit(left)
         with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):
           status = self._Execute(left)
 
@@ -987,6 +1004,7 @@ class CommandEvaluator(object):
             check_errexit = True
           else:
             # blame the right && or ||
+            self._StrictErrExit(child)
             with state.ctx_ErrExit(self.mutable_opts, node.spids[i]):
               status = self._Execute(child)
 
@@ -1000,7 +1018,8 @@ class CommandEvaluator(object):
         try:
           while True:
             try:
-              # while/until spid
+              # blame while/until spid
+              self._StrictErrExitList(node.cond)
               with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):
                 cond_status = self._ExecuteList(node.cond)
 
@@ -1195,6 +1214,7 @@ class CommandEvaluator(object):
         done = False
         for if_arm in node.arms:
           # if/elif spid
+          self._StrictErrExitList(if_arm.cond)
           with state.ctx_ErrExit(self.mutable_opts, if_arm.spids[0]):
             status = self._ExecuteList(if_arm.cond)
 
@@ -1272,16 +1292,6 @@ class CommandEvaluator(object):
       del self.trap_nodes[:]
       for trap_node in to_run:  # NOTE: Don't call this 'node'!
         self._Execute(trap_node)
-
-    # strict_errexit check for all compound commands.
-    # TODO: Speed this up with some kind of bit mask?
-    if self.exec_opts.strict_errexit() and _DisallowErrExit(node):
-
-      span_id = self.mutable_opts.errexit.SpidIfDisabled()
-      if span_id != runtime.NO_SPID:
-        node_str = ui.CommandType(node)  # e.g. command.BraceGroup
-        e_die("errexit is disabled here, but strict_errexit disallows it "
-              "with a compound command (%s)", node_str, span_id=span_id)
 
     # These nodes have no redirects.
     # TODO: Speed this up with some kind of bit mask?

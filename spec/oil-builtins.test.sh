@@ -222,14 +222,11 @@ shopt -u nullglob
 shopt -p errexit
 
 shopt --set errexit
-shopt -p errexit
+false
 
-shopt --unset errexit
-shopt -p errexit
-
+echo should not get here
+## status: 1
 ## STDOUT:
-shopt -u errexit
-shopt -s errexit
 shopt -u errexit
 ## END
 

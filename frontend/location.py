@@ -10,8 +10,8 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
     command_e, command_t, command__Pipeline, command__AndOr,
-    command__DoGroup, command__Subshell, command__WhileUntil, command__If,
-    command__Case, command__TimeBlock,
+    command__DoGroup, command__Sentence, command__Subshell,
+    command__WhileUntil, command__If, command__Case, command__TimeBlock,
     BraceGroup,
 
     arith_expr_e, arith_expr_t, compound_word, Token,
@@ -31,6 +31,18 @@ def SpanForCommand(node):
   """
   UP_node = node # type: command_t
   tag = node.tag_()
+
+  if tag == command_e.Sentence:
+    node = cast(command__Sentence, UP_node)
+    #log("node.child %s", node.child)
+    return node.terminator.span_id  # & or ;
+
+  # TODO: This is complicated
+  #if tag == command_e.Simple:
+    #node = cast(command__Simple, UP_node)
+    #if node.words:
+    #  return word_.LeftMostSpanForWord(node.words[0])
+
   if tag == command_e.Pipeline:
     node = cast(command__Pipeline, UP_node)
     return node.spids[0]  # first |
