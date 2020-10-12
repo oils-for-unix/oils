@@ -15,7 +15,7 @@ import sys
 from _devbuild.gen.runtime_asdl import value, value_e, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core import error
-from core.pyerror import log, e_usage
+from core.pyerror import log
 from core import vm
 from frontend import flag_spec
 from frontend import args
@@ -142,14 +142,6 @@ class Env(_Builtin):
   Should be compatible with POSIX, but also take a block.
   """
   pass
-
-
-class Catch(_Builtin):
-  """For the 'if myfunc' problem with errexit.  """
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    e_usage('builtin not implemented')
 
 
 class Opts(_Builtin):

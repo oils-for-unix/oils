@@ -199,6 +199,19 @@ class Builtin(vm._Builtin):
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
+class Catch(vm._Builtin):
+  """For the 'if myfunc' problem with errexit.  """
+  def __init__(self, mutable_opts, shell_ex, errfmt):
+    # type: (state.MutableOpts, vm._Executor, ui.ErrorFormatter) -> None
+    self.mutable_opts = mutable_opts
+    self.shell_ex = shell_ex
+    self.errfmt = errfmt
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    e_usage('builtin not implemented')
+
+
 def _ResolveNames(names, funcs, aliases, search_path):
   # type: (List[str], Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> List[Tuple[str, str]]
   results = []  # type: List[Tuple[str, str]]
