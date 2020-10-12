@@ -165,49 +165,61 @@ class _ErrExit(object):
   def __init__(self):
     # type: () -> None
     self._value = False  # the setting
-    # SUBTLE INVARIANT: There's only ONE valid integer in the stack that's not
-    # runtime.NO_SPID, and it's either a valid span_id or 0.  Push() and Set()
-    # enforce this.
-    self.stack = []  # type: List[int]
+
+    # the errexit values to restore.  Mutated by Set()
+    self.value_stack = []  # type: List[bool]
+    # the locations where we saved and restored.
+    self.spid_stack = []  # type: List[int]
+
+    self.deferred = 0
 
   def Push(self, span_id):
     # type: (int) -> None
     """Temporarily disable errexit."""
     assert span_id != runtime.NO_SPID
-    if self._value:
-      self._value = False
-      self.stack.append(span_id)  # value to restore
-    else:
-      self.stack.append(runtime.NO_SPID)  # INVALID span ID / "False"
+    #log('Push %s', self.disable_stack)
+
+    self.value_stack.append(self._value)
+    self._value = False  # it may have already been false
+
+    #self.spid_stack.append(span_id if self._value else runtime.NO_SPID)
+    self.spid_stack.append(span_id)
+    self.deferred += 1
+
+    #log('Push values=%s spids=%s', self.value_stack, self.spid_stack)
 
   def Pop(self):
     # type: () -> None
     """Restore the previous value."""
-    self._value = (self.stack.pop() != runtime.NO_SPID)
+    #log('Pop _value = %d', self._value)
+
+    self.deferred -= 1
+    self.spid_stack.pop()
+    self._value = self.value_stack.pop()
 
   def SpidIfDisabled(self):
     # type: () -> int
-    for n in self.stack:
+    #log('SpidIfDisabled')
+
+    # Look down on the stack to tell if it was disabled
+    for n in self.spid_stack:
       if n != runtime.NO_SPID:  # set -e will be restored later
         return n
     return runtime.NO_SPID
 
   def Set(self, b):
     # type: (bool) -> None
-    """Set the errexit flag.
+    """Set the errexit flag, possibly deferring it.
 
-    Callers: set -o errexit, shopt -s oil:all, strict:all.
+    Implements the unusual POSIX "defer" behavior.  Callers: set -o errexit,
+    shopt -s oil:all, strict:all.
     """
-    for i, n in enumerate(self.stack):
-      if n != runtime.NO_SPID:  # set -e will be restored later
-        # Ignore set -e or set +e now, but its effect becomes visible LATER.
-        # This is confusing behavior that all shells implement!  strict_errexit
-        # makes it a non-issue.
+    #log('Set %s', b)
 
-        # SUBTLE: 0 isn't a valid span_id, but we will never use it for the
-        # strict_errexit message.
-        self.stack[i] = 0 if b else runtime.NO_SPID
-        return
+    if self.deferred != 0:
+      # "Queue" the effect for a later Pop()!
+      self.value_stack[-1] = b
+      return
 
     self._value = b  # Otherwise just set it
 
@@ -218,11 +230,12 @@ class _ErrExit(object):
 
   def value(self):
     # type: () -> bool
+    #log('value query = %d', self._value)
     return self._value
 
   def __repr__(self):  # not translated
     # type: () -> str
-    return '<ErrExit %s %s>' % (self._value, self.stack)
+    return '<ErrExit %s %s>' % (self._value, self.disable_stack)
 
 
 class _Getter(object):

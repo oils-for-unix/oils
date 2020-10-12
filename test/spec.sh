@@ -624,7 +624,7 @@ exit-status() {
 }
 
 errexit() {
-  sh-spec spec/errexit.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/errexit.test.sh --osh-failures-allowed 0 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

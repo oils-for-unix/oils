@@ -249,7 +249,7 @@ class CommandEvaluator(object):
 
   def _CheckStatus(self, status, node):
     # type: (int, command_t) -> None
-    """Raises ErrExitFailure, maybe with location info attached."""
+    """Raises error.ErrExit, maybe with location info attached."""
     if self.exec_opts.errexit() and status != 0:
       # NOTE: Sometimes location info is duplicated, like on UsageError, or a
       # bad redirect.  Also, pipelines can fail twice.

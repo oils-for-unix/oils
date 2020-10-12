@@ -8,7 +8,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
 from core import alloc
-from core.error import _ControlFlow
+from core import error
 from core import main_loop
 from core.pyerror import e_usage
 from core import pyutil  # strerror
@@ -118,7 +118,7 @@ class Source(vm._Builtin):
 
       return status
 
-    except _ControlFlow as e:
+    except error._ControlFlow as e:
       if e.IsReturn():
         return e.StatusCode()
       else:
@@ -209,7 +209,42 @@ class Catch(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    e_usage('builtin not implemented')
+    #e_usage('builtin not implemented')
+
+    # TODO:
+    # Either
+    # - statically detect 'catch'and don't disable errexit?
+    # - or re-enable it somehow here
+    #   - I guess if it's an arg to Execute, you can just pass it down?
+    #
+    # And then catch the ErrorFormatter
+    try:
+      # TODO: shift the args
+
+      # this is on command.Simple.  Hm.
+      # I guess it matters if you do something like 'forkwait { catch ls }'
+      # You don't need another fork!
+      # See _NoForkLast() in CommandEvaluator
+
+      # Should this only apply to procs?
+      # Or also external functions, builtins?  What about aliases?
+      # I guess it doesn't make much sense for them?
+
+      # Note: core/executor.py does the opposite of this: the SpidIfDisabled
+      # if myfunc
+      # vs.
+      # if catch myfunc
+
+
+      do_fork = True
+
+      cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
+                                cmd_val.block)
+      status = self.shell_ex.RunSimpleCommand(cmd_val2, do_fork)
+    except error.ErrExit:
+      status = 1
+
+    return status
 
 
 def _ResolveNames(names, funcs, aliases, search_path):
