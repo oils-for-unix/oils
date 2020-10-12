@@ -2280,6 +2280,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'sh_lhs_expr', 'parse_result',
 
                 'command_e', 'command', 
+                'condition_e', 'condition', 
                 'arith_expr_e', 'arith_expr',
                 'bool_expr_e', 'bool_expr',
                 'expr_e', 'expr',

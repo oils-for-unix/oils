@@ -241,12 +241,15 @@ module syntax
   assign_pair = (sh_lhs_expr lhs, assign_op op, word? rhs, int* spids)
   env_pair = (string name, word val, int* spids)
 
+  condition = 
+    Shell(command* commands)  -- if false; true; then echo hi; fi
+  | Oil(expr e)               -- if (x > 0) { echo hi }
+
   -- Each arm tests one word against multiple words
   case_arm = (word* pat_list, command* action, int* spids)
-  if_arm = (command* cond, command* action, int* spids)
+  if_arm = (condition cond, command* action, int* spids)
 
   -- TODO: Make field names consistent: child vs expr, etc.
-
   BraceGroup = (command* children, redir* redirects) attributes (int* spids)
 
   command = 
@@ -283,7 +286,7 @@ module syntax
     -- order.
   | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
             command? body, redir* redirects)
-  | WhileUntil(Token keyword, command* cond, command body, redir* redirects)
+  | WhileUntil(Token keyword, condition cond, command body, redir* redirects)
   | If(if_arm* arms, command* else_action, redir* redirects)
   | Case(word to_match, case_arm* arms, redir* redirects)
   | ShFunction(string name, command body)
@@ -307,7 +310,6 @@ module syntax
   | Expr(speck keyword, expr e)
     -- return an Obj, not an int-like string
   | Return(Token keyword, expr e)
-  | OilCondition(expr e) -- for if/while
   | OilForIn(name_type* lhs, expr iterable, command body)
   | Proc(Token name, proc_sig sig, command body)
 

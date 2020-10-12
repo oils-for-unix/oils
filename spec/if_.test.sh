@@ -39,3 +39,18 @@ else
 fi
 ## stdout: elif
 
+
+#### if break corner case
+
+## This is analogous to the 'while' case in spec/loop
+f() {
+  if break; then
+    echo hi
+  fi
+}
+f
+## STDOUT:
+hi
+## END
+## BUG zsh stdout-json: ""
+## BUG zsh status: 1

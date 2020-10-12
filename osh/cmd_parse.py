@@ -13,6 +13,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
+    condition, condition_t,
     command, command_t,
     command__Simple, command__DoGroup, command__ForExpr, command__ForEach,
     command__WhileUntil, command__Case, command__If, command__ShFunction,
@@ -1103,12 +1104,12 @@ class CommandParser(object):
     if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
-      cond_list = [command.OilCondition(enode)]  # type: List[command_t]
+      cond = condition.Oil(enode)  # type: condition_t
     else:
       self.allow_block = False
-      cond = self._ParseCommandList()
+      commands = self._ParseCommandList()
       self.allow_block = True
-      cond_list = cond.children
+      cond = condition.Shell(commands.children)
 
     # NOTE: The LSTs will be different for Oil and OSH, but the execution
     # should be unchanged.  To be sure we should desugar.
@@ -1119,7 +1120,7 @@ class CommandParser(object):
     else:
       body_node = self.ParseDoGroup()
 
-    node = command.WhileUntil(keyword, cond_list, body_node, None)  # no redirects yet
+    node = command.WhileUntil(keyword, cond, body_node, None)  # no redirects yet
     node.spids.append(keyword.span_id)  # e.g. for errexit message
     return node
 
@@ -1257,16 +1258,16 @@ class CommandParser(object):
       if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
         enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
         # NOTE: OilCondition could have spids of ( and ) ?
-        cond_list = [command.OilCondition(enode)]  # type: List[command_t]
+        cond = condition.Oil(enode)  # type: condition_t
       else:
         self.allow_block = False
-        cond = self._ParseCommandList()
+        commands= self._ParseCommandList()
         self.allow_block = True
-        cond_list = cond.children
+        cond = condition.Shell(commands.children)
 
       body = self.ParseBraceGroup()
 
-      arm = syntax_asdl.if_arm(cond_list, body.children, [elif_spid])
+      arm = syntax_asdl.if_arm(cond, body.children, [elif_spid])
       arms.append(arm)
 
     self._Peek()
@@ -1280,8 +1281,8 @@ class CommandParser(object):
 
     if_node.spids.append(else_spid)
 
-  def _ParseOilIf(self, if_spid, cond_list):
-    # type: (int, List[command_t]) -> command__If
+  def _ParseOilIf(self, if_spid, cond):
+    # type: (int, condition_t) -> command__If
     """
     if test -f foo {
                  # ^ we parsed up to here
@@ -1304,7 +1305,7 @@ class CommandParser(object):
     body1 = self.ParseBraceGroup()
     # Every arm has 1 spid, unlike shell-style
     # TODO: We could get the spids from the brace group.
-    arm = syntax_asdl.if_arm(cond_list, body1.children, [if_spid])
+    arm = syntax_asdl.if_arm(cond, body1.children, [if_spid])
 
     if_node.arms.append(arm)
 
@@ -1329,14 +1330,15 @@ class CommandParser(object):
       elif_spid = word_.LeftMostSpanForWord(self.cur_word)
 
       self._Next()  # skip elif
-      cond = self._ParseCommandList()
+      commands = self._ParseCommandList()
+      cond = condition.Shell(commands.children)
 
       then_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Eat(Id.KW_Then)
 
       body = self._ParseCommandList()
+      arm = syntax_asdl.if_arm(cond, body.children, [elif_spid, then_spid])
 
-      arm = syntax_asdl.if_arm(cond.children, body.children, [elif_spid, then_spid])
       arms.append(arm)
 
     if self.c_id == Id.KW_Else:
@@ -1362,23 +1364,23 @@ class CommandParser(object):
     if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
-      cond_list = [command.OilCondition(enode)]  # type: List[command_t]
+      cond = condition.Oil(enode)  # type: condition_t
     else:
       self.allow_block = False
-      cond = self._ParseCommandList()
+      commands = self._ParseCommandList()
       self.allow_block = True
-      cond_list = cond.children
+      cond = condition.Shell(commands.children)
 
     self._Peek()
     if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
       # if foo {
-      return self._ParseOilIf(if_spid, cond_list)
+      return self._ParseOilIf(if_spid, cond)
 
     then_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Then)
     body = self._ParseCommandList()
 
-    arm = syntax_asdl.if_arm(cond_list, body.children, [if_spid, then_spid])
+    arm = syntax_asdl.if_arm(cond, body.children, [if_spid, then_spid])
     if_node.arms.append(arm)
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):

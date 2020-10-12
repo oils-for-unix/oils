@@ -21,34 +21,15 @@ from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     compound_word,
     command_e, command_t,
-    command__AndOr,
-    command__Case,
-    command__CommandList,
-    command__ControlFlow,
-    command__DBracket,
-    command__DoGroup,
-    command__DParen,
-    command__ExpandedAlias,
-    command__Expr,
-    command__ForEach,
-    command__ForExpr,
-    command__Func,
-    command__If,
-    command__NoOp,
-    command__OilCondition,
-    command__OilForIn,
-    command__Pipeline,
-    command__PlaceMutation,
-    command__Proc,
-    command__Return,
-    command__Sentence,
-    command__ShAssignment,
-    command__ShFunction,
-    command__Simple,
-    command__Subshell,
-    command__TimeBlock,
-    command__VarDecl,
+    command__AndOr, command__Case, command__CommandList, command__ControlFlow,
+    command__DBracket, command__DoGroup, command__DParen,
+    command__ExpandedAlias, command__Expr, command__ForEach, command__ForExpr,
+    command__Func, command__If, command__NoOp, command__OilForIn,
+    command__Pipeline, command__PlaceMutation, command__Proc, command__Return,
+    command__Sentence, command__ShAssignment, command__ShFunction,
+    command__Simple, command__Subshell, command__TimeBlock, command__VarDecl,
     command__WhileUntil,
+    condition_e, condition_t, condition__Shell, condition__Oil,
     BraceGroup,
     assign_op_e,
     place_expr__Var,
@@ -468,7 +449,7 @@ class CommandEvaluator(object):
                       flags=flags)
 
   def _HasManyStatuses(self, node):
-    # type: (command_t) -> None
+    # type: (command_t) -> bool
     """
     Code patterns that are bad for POSIX errexit.  For Oil's strict_errexit.
     """
@@ -482,7 +463,7 @@ class CommandEvaluator(object):
         # TODO: Also check every word for command subs.
         return False
         
-      elif case(command_e.DBracket, command_e.DParen, command_e.OilCondition):
+      elif case(command_e.DBracket, command_e.DParen):
         # Lower priority: command subs in expressions too
         return False
 
@@ -526,6 +507,27 @@ class CommandEvaluator(object):
       node_str = ui.CommandType(node)
       e_die('strict_errexit only allows simple commands (got %s)',
             node_str, span_id=location.SpanForCommand(node))
+
+  def _EvalCondition(self, cond, spid):
+    # type: (condition_t, int) -> bool
+    b = False
+    UP_cond = cond
+    with tagswitch(cond) as case:
+      if case(condition_e.Shell):
+        cond = cast(condition__Shell, UP_cond)
+        self._StrictErrExitList(cond.commands)
+        with state.ctx_ErrExit(self.mutable_opts, spid):
+          cond_status = self._ExecuteList(cond.commands)
+
+        b = cond_status == 0
+
+      elif case(condition_e.Oil):
+        if mylib.PYTHON:
+          cond = cast(condition__Oil, UP_cond)
+          obj = self.expr_ev.EvalExpr(cond.e)
+          b = bool(obj)
+
+    return b
 
   def _Dispatch(self, node):
     # type: (command_t) -> Tuple[int, bool]
@@ -661,16 +663,6 @@ class CommandEvaluator(object):
         check_errexit = True
         i = self.arith_ev.EvalToInt(node.child)
         status = 1 if i == 0 else 0
-
-      elif case(command_e.OilCondition):
-        node = cast(command__OilCondition, UP_node)
-        # TODO: Do we need location information?  Yes, probably for execptions in
-        # Oil expressions.
-        #span_id = node.spids[0]
-        #self.mem.SetCurrentSpanId(span_id)
-
-        obj = self.expr_ev.EvalExpr(node.e)
-        status = 0 if obj else 1
 
       # TODO: Change x = 1 + 2*3 into its own Decl node.
       elif case(command_e.VarDecl):
@@ -1034,16 +1026,11 @@ class CommandEvaluator(object):
           while True:
             try:
               # blame while/until spid
-              self._StrictErrExitList(node.cond)
-              with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):
-                cond_status = self._ExecuteList(node.cond)
-
-              if node.keyword.id == Id.KW_While:
-                if cond_status != 0:
-                  break
-              else:
-                if cond_status == 0:
-                  break
+              b = self._EvalCondition(node.cond, node.spids[0])
+              if node.keyword.id == Id.KW_Until:
+                b = not b
+              if not b:
+                break
               status = self._Execute(node.body)  # last one wins
 
             except _ControlFlow as e:
@@ -1096,7 +1083,7 @@ class CommandEvaluator(object):
         status = 0
 
         init = node.init
-        cond = node.cond
+        for_cond = node.cond
         body = node.body
         update = node.update
 
@@ -1106,9 +1093,9 @@ class CommandEvaluator(object):
         self.loop_level += 1
         try:
           while True:
-            if cond:
+            if for_cond:
               # We only accept integers as conditions
-              cond_int = self.arith_ev.EvalToInt(cond)
+              cond_int = self.arith_ev.EvalToInt(for_cond)
               if cond_int == 0:  # false
                 break
 
@@ -1228,12 +1215,8 @@ class CommandEvaluator(object):
         node = cast(command__If, UP_node)
         done = False
         for if_arm in node.arms:
-          # if/elif spid
-          self._StrictErrExitList(if_arm.cond)
-          with state.ctx_ErrExit(self.mutable_opts, if_arm.spids[0]):
-            status = self._ExecuteList(if_arm.cond)
-
-          if status == 0:
+          b = self._EvalCondition(if_arm.cond, if_arm.spids[0])
+          if b:
             status = self._ExecuteList(if_arm.action)
             done = True
             break
@@ -1315,7 +1298,7 @@ class CommandEvaluator(object):
         command_e.AndOr, command_e.CommandList, command_e.DoGroup,
         command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
-        command_e.PlaceMutation, command_e.OilCondition, command_e.OilForIn,
+        command_e.PlaceMutation, command_e.OilForIn,
         command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,
         command_e.BareDecl):
       redirects = []  # type: List[redirect]
