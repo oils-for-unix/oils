@@ -15,7 +15,7 @@ import sys
 from _devbuild.gen.runtime_asdl import value, value_e, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core import error
-from core.pyerror import log
+from core.pyerror import log, e_usage
 from core import vm
 from frontend import flag_spec
 from frontend import args
@@ -66,13 +66,6 @@ class Repr(_Builtin):
         cell.PrettyPrint()  # may be color
         sys.stdout.write('\n')
     return status
-
-
-class Append(_Builtin):
-  """Append to a string.
-  
-  The newer version of foo+='suffix'
-  """
 
 
 class Push(_Builtin):
@@ -151,12 +144,12 @@ class Env(_Builtin):
   pass
 
 
-class Fork(_Builtin):
-  """Replaces &.  Takes a block.
+class Catch(_Builtin):
+  """For the 'if myfunc' problem with errexit.  """
 
-  Similar to Wait, which is in osh/builtin_process.py.
-  """
-  pass
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    e_usage('builtin not implemented')
 
 
 class Opts(_Builtin):
@@ -382,26 +375,6 @@ class Write(_Builtin):
       sys.stdout.write(arg.end)
 
     return 0
-
-
-def _ReadLine():
-  # type: () -> str
-  """Read a line from stdin.
-
-  TODO: use a more efficient function in C
-  """
-  chars = []
-  while True:
-    c = posix.read(0, 1)
-    if not c:
-      break
-
-    chars.append(c)
-
-    if c == '\n':
-      break
-
-  return ''.join(chars)
 
 
 class Qtsv(_Builtin):

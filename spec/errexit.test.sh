@@ -310,15 +310,37 @@ should not get here
 ## END
 
 #### set -e enabled in function (regression)
-set +e
 foo() {
   set -e
   false
   echo "should be executed"
 }
-foo && true
+#foo && true
+#foo || true
+
+if foo; then
+  true
+fi
+
 echo "should be executed"
 ## STDOUT:
 should be executed
 should be executed
 ## END
+
+#### set -e in function #2
+foo() {
+  set -e
+  false
+  echo "should be executed"
+}
+! foo
+
+echo "should be executed"
+## BUG bash stdout-json: ""
+## BUG bash status: 1
+## STDOUT:
+should be executed
+should be executed
+## END
+

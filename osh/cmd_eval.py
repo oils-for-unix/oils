@@ -109,13 +109,13 @@ class Deps(object):
   def __init__(self):
     # type: () -> None
     self.mutable_opts = None  # type: state.MutableOpts
-    self.dumper = None      # type: dev.CrashDumper
-    self.debug_f = None     # type: util._DebugFile
+    self.dumper = None        # type: dev.CrashDumper
+    self.debug_f = None       # type: util._DebugFile
 
     # signal/hook name -> handler
-    self.traps = None       # type: Dict[str, builtin_process._TrapHandler]
+    self.traps = None         # type: Dict[str, builtin_process._TrapHandler]
     # appended to by signal handlers
-    self.trap_nodes = None  # type: List[command_t]
+    self.trap_nodes = None    # type: List[command_t]
 
 
 if mylib.PYTHON:

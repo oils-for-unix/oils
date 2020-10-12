@@ -624,12 +624,12 @@ exit-status() {
 }
 
 errexit() {
-  sh-spec spec/errexit.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/errexit.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 errexit-oil() {
-  sh-spec spec/errexit-oil.test.sh \
+  sh-spec spec/errexit-oil.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

@@ -469,3 +469,34 @@ before
 
 after
 ## N-I dash/bash/mksh/ash status: 0
+
+
+#### catch builtin
+shopt --set errexit strict_errexit
+
+myfunc() {
+  echo hi
+  false
+  echo bye
+}
+
+case $SH in
+  (*osh)
+    # new semantics: the function aborts at 'false', the 'catch' builtin exits
+    # with code 1, and we echo 'failed'
+    catch myfunc || echo "failed"
+    ;;
+  (*)
+    myfunc || echo "failed"
+    ;;
+esac
+
+## STDOUT:
+hi
+failed
+## END
+## N-I dash/bash/mksh/ash STDOUT:
+hi
+bye
+## END
+

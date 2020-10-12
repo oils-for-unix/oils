@@ -184,13 +184,14 @@ def AddProcess(
 def AddOil(b, mem, errfmt):
   # type: (Dict[int, vm._Builtin], state.Mem, ui.ErrorFormatter) -> None
   b[builtin_i.push] = builtin_oil.Push(mem, errfmt)
-  b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
 
   b[builtin_i.repr] = builtin_oil.Repr(mem, errfmt)
   b[builtin_i.use] = builtin_oil.Use(mem, errfmt)
   b[builtin_i.opts] = builtin_oil.Opts(mem, errfmt)
+
+  b[builtin_i.catch] = builtin_oil.Catch(mem, errfmt)
 
 
 def Main(lang, arg_r, environ, login_shell, loader, line_input):

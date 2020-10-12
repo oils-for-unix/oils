@@ -47,10 +47,11 @@ _NORMAL_BUILTINS = [
     'bind',
 
     # Oil only
-    'push', 'append',
+    'push',
     'write', 'json',
     'repr', 'use', 'opts',
     'fork', 'forkwait',
+    'catch',
 ]
 
 

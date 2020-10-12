@@ -503,11 +503,11 @@ class Fork(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    e_usage('fork builtin not implemented')
+    e_usage('builtin not implemented')
 
 
 class ForkWait(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    e_usage('forkwait builtin not implemented')
+    e_usage('builtin not implemented')
