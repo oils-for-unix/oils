@@ -35,6 +35,7 @@ from _devbuild.gen.syntax_asdl import (
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
     redir_param_e, redir_param__MultiLine,
+    word_e, word_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
     quote_e,
@@ -458,9 +459,18 @@ class CommandEvaluator(object):
       return self._HasManyStatuses(node1.child)
 
     # allow list under strict_errexit
+    UP_node = node
     with tagswitch(node) as case:
       if case(command_e.Simple):
-        # TODO: Also check every word for command subs.
+        node = cast(command__Simple, UP_node)
+        # Check every word for command subs.
+        for w in node.words:
+          UP_w = w
+          if w.tag_() == word_e.Compound:
+            w = cast(compound_word, UP_w)
+            for p in w.parts:
+              if p.tag_() == word_part_e.CommandSub:
+                return True
         return False
         
       elif case(command_e.DBracket, command_e.DParen):
