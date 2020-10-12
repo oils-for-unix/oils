@@ -467,32 +467,42 @@ class CommandEvaluator(object):
       self.mem.SetVar(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
                       flags=flags)
 
+  def _HasManyStatuses(self, node):
+    # type: (command_t) -> None
+    """
+    Code patterns that are bad for POSIX errexit.  For Oil's strict_errexit.
+    """
+    if node.tag_() == command_e.Sentence:
+      node1 = cast(command__Sentence, node)
+      return self._HasManyStatuses(node1.child)
+
+    # allow list under strict_errexit
+    with tagswitch(node) as case:
+      if case(command_e.Simple):
+        # TODO: Also check every word for command subs.
+        return False
+        
+      elif case(command_e.DBracket, command_e.DParen, command_e.OilCondition):
+        # Lower priority: command subs in expressions too
+        return False
+
+      elif case(command_e.Pipeline):
+        # If it looks like ! false, then it's OK
+        pi = cast(command__Pipeline, node)
+        if len(pi.children) == 1:
+          return False
+
+    return True
+
   def _StrictErrExit(self, node):
     # type: (command_t) -> None
     if not (self.exec_opts.errexit() and self.exec_opts.strict_errexit()):
       return
 
-    if node.tag_() == command_e.Sentence:
-      node1 = cast(command__Sentence, node)
-      self._StrictErrExit(node1.child)  # recursive
-      return
-
-    #if 0:
-    with tagswitch(node) as case:
-      if case(command_e.Simple, command_e.DBracket, command_e.DParen,
-              command_e.OilCondition):
-        # TODO: Also check every word for command subs.
-        # command subs in expressions too
-        return
-      elif case(command_e.Pipeline):
-        # If it looks like ! false, then it's OK
-        pi = cast(command__Pipeline, node)
-        if len(pi.children) == 1:
-          return
-
-    node_str = ui.CommandType(node)
-    e_die('strict_errexit only allows simple commands (got %s)',
-          node_str, span_id=location.SpanForCommand(node))
+    if self._HasManyStatuses(node):
+      node_str = ui.CommandType(node)
+      e_die('strict_errexit only allows simple commands (got %s)',
+            node_str, span_id=location.SpanForCommand(node))
 
   def _StrictErrExitList(self, node_list):
     # type: (List[command_t]) -> None
@@ -510,7 +520,12 @@ class CommandEvaluator(object):
       e_die('strict_errexit only allows a single command',
             span_id=location.SpanForCommand(node_list[0]))
 
-    self._StrictErrExit(node_list[0])
+    assert len(node_list) > 0
+    node = node_list[0]
+    if self._HasManyStatuses(node):  # TODO: consolidate error message with above
+      node_str = ui.CommandType(node)
+      e_die('strict_errexit only allows simple commands (got %s)',
+            node_str, span_id=location.SpanForCommand(node))
 
   def _Dispatch(self, node):
     # type: (command_t) -> Tuple[int, bool]
