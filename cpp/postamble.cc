@@ -5,7 +5,7 @@
 namespace optview {
 
 bool Exec::errexit() {
-  return errexit_->value();
+  return errexit_->Get();
 }
 
 }  // namespace optview

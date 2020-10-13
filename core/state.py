@@ -247,12 +247,12 @@ class OptHook(object):
 def MakeOpts(mem, opt_hook):
   # type: (Mem, OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
 
-  # 38 options
-  #log('opts = %d', option_def.ArraySize())
-
+  # Underlying state is an array + _ErrExit instance.  TODO: To implement shopt
+  # --unset errexit { false }, we should copy both of these and put them on a
+  # stack.  That will involve changing core/optview_gen.py and so forth.
   opt_array = [False] * option_i.ARRAY_SIZE
-
   errexit = _ErrExit()
+
   parse_opts = optview.Parse(opt_array)
   exec_opts = optview.Exec(opt_array, errexit)
   mutable_opts = MutableOpts(mem, opt_array, errexit, opt_hook)
