@@ -18,6 +18,13 @@ This doc explains how we accomplish this.
 
 ## Overview
 
+Below are DETAILS.  You only need to know:
+
+- Use `shopt --set strict:all` if you want to run your script with another
+  shell
+- Use `shopt --set oil:basic` to start upgrading.
+  - And then `shopt --set oil:all` once you're confident about Oil.
+
 Remember that Oil is a gradual upgrade from shell:
 
 - `bin/osh` behaves like a POSIX shell, so existing scripts will continue to
@@ -32,18 +39,34 @@ A friendly introduction on the blog: [The Shell Programmer's Guide to `errexit`
 
 ## What Mechanisms Does Oil Provide?
 
-These are the three related options in the `oil:basic` option group:
+
+TODO: organize this
+
+- turned on by option group `strict:all`:
+  - `errexit`, `pipefail` -- POSIX sh stuff
+  - `inherit_errexit` -- bash thing
+  - `strict_errexit` -- Oil thing
+- turned on by option group `oil:basic`
+  - command_sub_errexit` -- fail more often.  It's not in "strict" because
+    it doesn't disallow dangerous constructs.
+  - `process_sub_fail` -- analogous to `pipefail`.  If the status was otherwise zero,
+    and a process sub within the command exited nonzero, set the status of the
+    command to one of those values.  Then `errexit` will make the whole command
+    fail.
+    - Note that process subs are "async" like pipelines, while command subs are
+      synchronous.  That is why the `command_sub_errexit` and
+      `process_sub_fail` options don't work the same way.
+
+These are new in Oil:
 
 1. `strict_errexit`: Disallow programming patterns that would lead to ignored
    errors.
-3. `inherit_errexit`.  Fail inside command subs like `echo $(date %x; echo hi)`
-   A bash-specific fix, implemented in bash 4.4 and Oil.
-2. `command_sub_errexit`: Check for failure at the end of command subs, like `local
-   d=$(date %x)`.
+2. `command_sub_errexit`: Check for failure at the end of command subs, like
+   `local d=$(date %x)`.
 
 And a builtin:
 
-4. `catch`: Ensure that errors get "thrown", and allow handling them with an
+3. `catch`: Ensure that errors get "thrown", and allow handling them with an
    `if` statement.
 
 <!-- TODO: copy section from OSH manual -->

@@ -118,6 +118,7 @@ _BASIC_RUNTIME_OPTIONS = [
                                      # Don't reparse program data as globs
     ('dashglob', True),              # do globs return files starting with - ?
     ('command_sub_errexit', False),  # check after command sub
+    ('process_sub_fail', False),     # like pipefail, but for <(sort foo.txt)
 
     # TODO: Move this?  (not implemented yet) Anything that removes
     # functionality sould be in oil:all or oil:pure
