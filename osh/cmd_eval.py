@@ -526,7 +526,7 @@ class CommandEvaluator(object):
       if case(condition_e.Shell):
         cond = cast(condition__Shell, UP_cond)
         self._StrictErrExitList(cond.commands)
-        with state.ctx_ErrExit(self.mutable_opts, spid):
+        with state.ctx_ErrExit(self.mutable_opts, False, spid):
           cond_status = self._ExecuteList(cond.commands)
 
         b = cond_status == 0
@@ -642,7 +642,8 @@ class CommandEvaluator(object):
 
         if node.negated:
           self._StrictErrExit(node)
-          with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):  # ! spid
+          # spid of !
+          with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
             status2 = self.shell_ex.RunPipeline(node)
 
           # errexit is disabled for !.
@@ -996,7 +997,7 @@ class CommandEvaluator(object):
 
         # Suppress failure for every child except the last one.
         self._StrictErrExit(left)
-        with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):
+        with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
           status = self._Execute(left)
 
         i = 1
@@ -1022,7 +1023,7 @@ class CommandEvaluator(object):
           else:
             # blame the right && or ||
             self._StrictErrExit(child)
-            with state.ctx_ErrExit(self.mutable_opts, node.spids[i]):
+            with state.ctx_ErrExit(self.mutable_opts, False, node.spids[i]):
               status = self._Execute(child)
 
           i += 1

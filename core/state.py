@@ -137,9 +137,9 @@ class SearchPath(object):
 
 class ctx_ErrExit(object):
 
-  def __init__(self, mutable_opts, span_id):
-    # type: (MutableOpts, int) -> None
-    mutable_opts.errexit.Push(span_id)
+  def __init__(self, mutable_opts, errexit_val, span_id):
+    # type: (MutableOpts, bool, int) -> None
+    mutable_opts.errexit.Push(errexit_val, span_id)
     self.mutable_opts = mutable_opts
 
   def __enter__(self):
@@ -169,13 +169,13 @@ class _ErrExit(object):
     # the locations where we saved and restored.
     self.spid_stack = []  # type: List[int]
 
-  def Push(self, span_id):
-    # type: (int) -> None
+  def Push(self, errexit_val, span_id):
+    # type: (bool, int) -> None
     """Temporarily disable errexit."""
     assert span_id != runtime.NO_SPID
     #log('Push %s', self.disable_stack)
 
-    self.value_stack.append(False)
+    self.value_stack.append(errexit_val)
     self.spid_stack.append(span_id)
 
     #log('Push values=%s spids=%s', self.value_stack, self.spid_stack)
