@@ -504,7 +504,7 @@ class NullExecutor(vm._Executor):
     func_node = self.procs.get(arg0)
     if func_node is not None:
       if (self.exec_opts.strict_errexit() and 
-          self.mutable_opts.errexit.SpidIfDisabled() != runtime.NO_SPID):
+          self.mutable_opts.errexit.IsDisabled()):
         # NOTE: This would be checked below, but this gives a better error
         # message.
         e_die("can't disable errexit running a function. "

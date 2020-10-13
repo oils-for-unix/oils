@@ -59,7 +59,6 @@ class ShellExecutor(vm._Executor):
     vm._Executor.__init__(self)
     self.mem = mem
     self.exec_opts = exec_opts
-    # for errexit.SpidIfDisabled.  TODO: try removing it?
     self.mutable_opts = mutable_opts
     self.procs = procs
     self.builtins = builtins
@@ -201,7 +200,7 @@ class ShellExecutor(vm._Executor):
       func_node = self.procs.get(arg0)
       if func_node is not None:
         if (self.exec_opts.strict_errexit() and 
-            self.mutable_opts.errexit.SpidIfDisabled() != runtime.NO_SPID):
+            self.mutable_opts.errexit.IsDisabled()):
           # NOTE: This would be checked below, but this gives a better error
           # message.
           e_die("can't disable errexit running a function. "

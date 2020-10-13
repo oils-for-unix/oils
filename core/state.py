@@ -169,8 +169,6 @@ class _ErrExit(object):
     # the locations where we saved and restored.
     self.spid_stack = []  # type: List[int]
 
-    self.deferred = 0
-
   def Push(self, span_id):
     # type: (int) -> None
     """Temporarily disable errexit."""
@@ -179,7 +177,6 @@ class _ErrExit(object):
 
     self.value_stack.append(False)
     self.spid_stack.append(span_id)
-    self.deferred += 1
 
     #log('Push values=%s spids=%s', self.value_stack, self.spid_stack)
 
@@ -188,19 +185,19 @@ class _ErrExit(object):
     """Restore the previous value."""
     #log('Pop _value = %d', self._value)
 
-    self.deferred -= 1
     self.spid_stack.pop()
     self.value_stack.pop()
 
-  def SpidIfDisabled(self):
-    # type: () -> int
+  def IsDisabled(self):
+    # type: () -> bool
     #log('SpidIfDisabled')
 
-    # Look down on the stack to tell if it was disabled
-    for n in self.spid_stack:
-      if n != runtime.NO_SPID:  # set -e will be restored later
-        return n
-    return runtime.NO_SPID
+    if self.value_stack[0]:  # errexit is enabled
+      for entry in self.value_stack:
+        if not entry:
+          return True
+
+    return False
 
   def Set(self, b):
     # type: (bool) -> None
@@ -228,8 +225,7 @@ class _ErrExit(object):
 
   def __repr__(self):  # not translated
     # type: () -> str
-    return '<ErrExit %s %d %s %s>' % (
-        self._value, self.deferred, self.value_stack, self.spid_stack)
+    return '<ErrExit %s %s>' % (self.value_stack, self.spid_stack)
 
 
 class _Getter(object):
