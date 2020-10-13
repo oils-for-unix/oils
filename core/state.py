@@ -218,7 +218,8 @@ class _ErrExit(object):
 
     if self.deferred != 0:
       # "Queue" the effect for a later Pop()!
-      self.value_stack[-1] = b
+      n = len(self.value_stack)
+      self.value_stack[n - self.deferred] = b
       return
 
     self._value = b  # Otherwise just set it

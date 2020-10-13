@@ -182,6 +182,23 @@ echo 7
 7
 ## END
 
+#### set +o errexit with 2 levels of ignored
+set -o errexit
+if { echo 1; ! set +o errexit; echo 2; }; then
+  echo 3
+fi
+echo 6
+false
+echo 7
+
+## STDOUT:
+1
+2
+3
+6
+7
+## END
+
 #### setting errexit in a subshell works but doesn't affect parent shell
 ( echo 1; false; echo 2; set -o errexit; echo 3; false; echo 4; )
 echo 5
