@@ -501,19 +501,23 @@ class NullExecutor(vm._Executor):
     if builtin_id != consts.NO_INDEX:
       return self.RunBuiltin(builtin_id, cmd_val)
 
-    func_node = self.procs.get(arg0)
-    if func_node is not None:
-      if (self.exec_opts.strict_errexit() and 
-          self.mutable_opts.errexit.IsDisabled()):
-        # NOTE: This would be checked below, but this gives a better error
-        # message.
-        e_die("can't disable errexit running a function. "
-              "Maybe wrap the function in a process with the at-splice "
-              "pattern.", span_id=span_id)
+    # Copied from core/executor.py
+    if call_procs:
+      proc_node = self.procs.get(arg0)
+      if proc_node is not None:
+        if (self.exec_opts.strict_errexit() and 
+            self.mutable_opts.errexit.IsDisabled()):
+          # TODO: make errfmt a member
+          #self.errfmt.Print_('errexit was disabled for this construct',
+          #                   span_id=self.mutable_opts.errexit.spid_stack[0])
+          #stderr_line('')
+          e_die("Can't run a proc while errexit is disabled. "
+                "Use 'catch' or wrap it in a process with $0 myproc",
+                span_id=span_id)
 
-      # NOTE: Functions could call 'exit 42' directly, etc.
-      status = self.cmd_ev.RunProc(func_node, argv[1:])
-      return status
+        # NOTE: Functions could call 'exit 42' directly, etc.
+        status = self.cmd_ev.RunProc(proc_node, argv[1:])
+        return status
 
     builtin_id = consts.LookupNormalBuiltin(arg0)
     if builtin_id != consts.NO_INDEX:

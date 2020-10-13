@@ -17,6 +17,7 @@ from asdl import runtime
 from core import error
 from core import process
 from core.pyerror import log, e_die
+from core.pyutil import stderr_line
 from core import ui
 from core import vm
 from frontend import consts
@@ -197,18 +198,19 @@ class ShellExecutor(vm._Executor):
       # foo-bar() {} can't be accessed anyway
       # functions can have hyphens, but variables can't
 
-      func_node = self.procs.get(arg0)
-      if func_node is not None:
+      proc_node = self.procs.get(arg0)
+      if proc_node is not None:
         if (self.exec_opts.strict_errexit() and 
             self.mutable_opts.errexit.IsDisabled()):
-          # NOTE: This would be checked below, but this gives a better error
-          # message.
-          e_die("can't disable errexit running a function. "
-                "Maybe wrap the function in a process with the at-splice "
-                "pattern.", span_id=span_id)
+          self.errfmt.Print_('errexit was disabled for this construct',
+                             span_id=self.mutable_opts.errexit.spid_stack[0])
+          stderr_line('')
+          e_die("Can't run a proc while errexit is disabled. "
+                "Use 'catch' or wrap it in a process with $0 myproc",
+                span_id=span_id)
 
         # NOTE: Functions could call 'exit 42' directly, etc.
-        status = self.cmd_ev.RunProc(func_node, argv[1:])
+        status = self.cmd_ev.RunProc(proc_node, argv[1:])
         return status
 
       # TODO:
