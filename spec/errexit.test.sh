@@ -361,3 +361,32 @@ should be executed
 should be executed
 ## END
 
+
+#### Command sub exit code is lost
+echo ft $(false) $(true)
+echo status=$?
+
+set -o errexit
+shopt -s inherit_errexit || true
+
+# This changes it
+#shopt -s more_errexit || true
+
+echo f $(date %x)
+echo status=$?
+
+# compare with 
+# x=$(date %x)         # FAILS
+# local x=$(date %x)   # does NOT fail
+
+echo ft $(false) $(true)
+echo status=$?
+
+## STDOUT:
+ft
+status=0
+f
+status=0
+ft
+status=0
+## END

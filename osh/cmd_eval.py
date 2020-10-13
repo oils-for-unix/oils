@@ -148,6 +148,44 @@ def _PackFlags(keyword_id, flags=0):
   return (keyword_id << 8) | flags
 
 
+def _HasManyStatuses(node):
+  # type: (command_t) -> bool
+  """
+  Code patterns that are bad for POSIX errexit.  For Oil's strict_errexit.
+  """
+  if node.tag_() == command_e.Sentence:
+    node1 = cast(command__Sentence, node)
+    return _HasManyStatuses(node1.child)
+
+  # allow list under strict_errexit
+  UP_node = node
+  with tagswitch(node) as case:
+    if case(command_e.Simple):
+      node = cast(command__Simple, UP_node)
+      # Check every word for command subs.
+      for w in node.words:
+        UP_w = w
+        if w.tag_() == word_e.Compound:
+          w = cast(compound_word, UP_w)
+          for p in w.parts:
+            if p.tag_() == word_part_e.CommandSub:
+              return True
+      return False
+      
+    elif case(command_e.DBracket, command_e.DParen):
+      # Lower priority: command subs in expressions too
+      return False
+
+    elif case(command_e.Pipeline):
+      # If it looks like ! false, then it's OK
+      pi = cast(command__Pipeline, node)
+      if len(pi.children) == 1:
+        return False
+
+  return True
+
+
+
 class CommandEvaluator(object):
   """Executes the program by tree-walking.
 
@@ -449,48 +487,12 @@ class CommandEvaluator(object):
       self.mem.SetVar(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
                       flags=flags)
 
-  def _HasManyStatuses(self, node):
-    # type: (command_t) -> bool
-    """
-    Code patterns that are bad for POSIX errexit.  For Oil's strict_errexit.
-    """
-    if node.tag_() == command_e.Sentence:
-      node1 = cast(command__Sentence, node)
-      return self._HasManyStatuses(node1.child)
-
-    # allow list under strict_errexit
-    UP_node = node
-    with tagswitch(node) as case:
-      if case(command_e.Simple):
-        node = cast(command__Simple, UP_node)
-        # Check every word for command subs.
-        for w in node.words:
-          UP_w = w
-          if w.tag_() == word_e.Compound:
-            w = cast(compound_word, UP_w)
-            for p in w.parts:
-              if p.tag_() == word_part_e.CommandSub:
-                return True
-        return False
-        
-      elif case(command_e.DBracket, command_e.DParen):
-        # Lower priority: command subs in expressions too
-        return False
-
-      elif case(command_e.Pipeline):
-        # If it looks like ! false, then it's OK
-        pi = cast(command__Pipeline, node)
-        if len(pi.children) == 1:
-          return False
-
-    return True
-
   def _StrictErrExit(self, node):
     # type: (command_t) -> None
     if not (self.exec_opts.errexit() and self.exec_opts.strict_errexit()):
       return
 
-    if self._HasManyStatuses(node):
+    if _HasManyStatuses(node):
       node_str = ui.CommandType(node)
       e_die('strict_errexit only allows simple commands (got %s)',
             node_str, span_id=location.SpanForCommand(node))
@@ -513,7 +515,7 @@ class CommandEvaluator(object):
 
     assert len(node_list) > 0
     node = node_list[0]
-    if self._HasManyStatuses(node):  # TODO: consolidate error message with above
+    if _HasManyStatuses(node):  # TODO: consolidate error message with above
       node_str = ui.CommandType(node)
       e_die('strict_errexit only allows simple commands (got %s)',
             node_str, span_id=location.SpanForCommand(node))
@@ -578,7 +580,11 @@ class CommandEvaluator(object):
         # to print the filename too.
 
         words = braces.BraceExpandWords(node.words)
-        # note: we could catch the 'failglob' exception here and return 1.
+
+        # TODO: Individual WORDS can fail
+        # - $() and <() can have failures.  But this can happen in DBracket,
+        #   DParen, etc. too
+        # - we could catch the 'failglob' exception here and return 1, e.g. *.bad
         cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
         UP_cmd_val = cmd_val
@@ -1340,6 +1346,11 @@ class CommandEvaluator(object):
 
     self.mem.SetLastStatus(status)
 
+    # TODO: Also wait() on process substitution here?  And we could set
+    # _proc_sub_status.  And proc_sub_fail like pipefail?
+    #
+    # - more_errexit is for command subs.  maybe rename command_sub_errexit.
+
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier
     # just to put it at the end, instead of after every node.
@@ -1349,9 +1360,9 @@ class CommandEvaluator(object):
     # - assignment - its result should be the result of the RHS?
     #   - e.g. arith sub, command sub?  I don't want arith sub.
     # - ControlFlow: always raises, it has no status.
-
     if check_errexit:
       self._CheckStatus(status, node)
+
     return status
 
   def _ExecuteList(self, children):

@@ -186,4 +186,34 @@ sigpipe-error() {
 # - let i++
 # - (( i++ ))
 
+# So we DO want more_errexit.  Because we don't want
+#
+# diff $(error 1) $(error 2)
+#
+# to execute the diff!  It should fail earlier
+
+word-failures() {
+  set -o errexit
+
+  echo $BASH_VERSION
+  #shopt -s inherit_errexit
+
+  echo "command sub $(false)"
+  echo status=$?
+
+  readonly x="readonly command sub $(false)"
+  echo status=$?
+
+  [[ "dparen $(false)" == 'dparen ' ]]
+  echo status=$?
+
+  (( a = $(false)42 ))
+  echo status=$?
+  echo a=$a
+
+  diff -u <(cat nonexistent.txt) /dev/null
+  echo status=$?
+}
+
 "$@"
+

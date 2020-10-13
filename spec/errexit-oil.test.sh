@@ -554,3 +554,89 @@ one
 two
 done
 ## END
+
+#### What's in strict:all?
+
+# inherit_errexit, strict_errexit, but not more_errexit!
+# for that you need oil:basic!
+
+set -o errexit
+shopt -s strict:all || true
+
+# inherit_errexit is bash compatible, so we have it
+#echo $(date %x)
+
+# more_errexit would hide errors!
+f() {
+  local d=$(date %x)
+}
+f
+
+deploy_func() {
+  echo one
+  false
+  echo two
+}
+
+if ! deploy_func; then
+  echo failed
+fi
+
+echo 'should not get here'
+
+## status: 1
+## STDOUT:
+## END
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+one
+two
+should not get here
+## END
+
+#### more_errexit causes local d=$(date %x) to fail
+set -o errexit
+shopt -s inherit_errexit || true
+#shopt -s strict_errexit || true
+shopt -s more_errexit || true
+
+myproc() {
+  # this is disallowed because we want a runtime error 100% of the time
+  local x=$(true)
+
+  # Realistic example.  Should fail here but shells don't!
+  local d=$(date %x)
+  echo hi
+}
+myproc
+
+## status: 1
+## STDOUT:
+## END
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+hi
+## END
+
+#### more_errexit and command sub in array
+case $SH in (dash|ash|mksh) exit ;; esac
+
+set -o errexit
+shopt -s inherit_errexit || true
+#shopt -s strict_errexit || true
+shopt -s more_errexit || true
+
+# We don't want silent failure here
+readonly -a myarray=( one "$(date %x)" two )
+
+#echo len=${#myarray[@]}
+argv.py "${myarray[@]}"
+## status: 1
+## STDOUT:
+## END
+## N-I bash status: 0
+## N-I bash STDOUT:
+['one', '', 'two']
+## END
+## N-I dash/ash/mksh status: 0
+

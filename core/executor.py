@@ -450,8 +450,15 @@ class ShellExecutor(vm._Executor):
     else:
       raise AssertionError()
 
-    # NOTE: Like bash, we never actually wait on it!
-    # TODO: At least set $! ?
+    # NOTE: Like bash, we never actually wait() on it.  Because the calling program
+    # needs to read before we can wait, e.g. diff <(sort left.txt) <(sort
+    # right.txt)
+    #
+    # But we should add p to a to_wait queue, for the same place that we
+    # _CheckStatus.
+    #
+    # We could set $! to the PID?  But what if there are two command subs?
+    # I think we want _proc_sub_pids=(124 125) or something.
 
     # Is /dev Linux-specific?
     if op_id == Id.Left_ProcSubIn:

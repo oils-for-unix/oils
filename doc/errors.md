@@ -16,6 +16,17 @@ Parse Error:
 
 TODO: See test/runtime-errors.sh.  Merge them here.
 
+### Syntax Errors in Oil String Literals
+
+- `strict_backslash`
+  - no octal
+  - no `\z`
+  - no `\u{invalid`
+
+- `strict_backticks`
+  - use "$(echo hi)"` and not backticks
+
+
 ## Fatal vs. Non-Fatal
 
 Fatal Error:

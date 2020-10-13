@@ -1677,7 +1677,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           i += 2
         return value.AssocArray(d)
 
-    # If RHS doens't look like a=( ... ), then it must be a string.
+    # If RHS doesn't look like a=( ... ), then it must be a string.
     return self.EvalWordToString(w)
 
   def _EvalWordFrame(self, frame, argv):

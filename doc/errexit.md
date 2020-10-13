@@ -2,34 +2,49 @@
 in_progress: yes
 ---
 
-set -e / errexit in shell
-=========================
+Error Handling With `set -e` / `errexit`
+========================================
 
-Unix shell experts are divided on what the best way to handle errors is.  
-Existing mechanisms like `set -e` are unreliable, and shell scripts are often
-flaky as a result.
+Unix shell programmers disagree on what the best way to handle errors is.  The
+`set -e` mechanism is unreliable, and that can make your **programs**
+unreliable.
 
-The goal of Oil is:
+A primary goal of Oil is: *Don't give anyone an excuse not to use `set -e`*.
 
-> Don't give anyone an excuse not to use `set -e`
-
-And this doc explains how.
-
-
-Remember that `bin/osh` behaves exactly like a POSIX shell, so all your
-existing scripts will continue to work, with their quirky error handling.
-
-`bin/oil` has `errexit` on, so you don't need to write it explicitly.  It also
-has a bunch of options to fix the quirky behavior, including:
-
-- `strict_errexit`: Disallow surprising / dangerous programming patterns.  It
-  will alert you when POSIX shell interpreters would do something surprising.
-- `more_errexit`: Fail more often.
-- `inherit_errexit` (bash 4.4 also has this)
-
+This doc explains how we accomplish this.
 
 <div id="toc">
 </div>
+
+## Overview
+
+Remember that Oil is a gradual upgrade from shell:
+
+- `bin/osh` behaves like a POSIX shell, so existing scripts will continue to
+  run, with the same quirky error handling.
+- Add `shopt --set oil:basic` to the top of your program to **opt in** to
+  better `errexit` error handling.
+- Or use `bin/oil`, which has even more features to make shell a better
+  programming language.
+
+A friendly introduction on the blog: [The Shell Programmer's Guide to `errexit`
+(`set -e`)](TODO).
+
+## What Mechanisms Does Oil Provide?
+
+These are the three related options in the `oil:basic` option group:
+
+1. `strict_errexit`: Disallow programming patterns that would lead to ignored
+   errors.
+3. `inherit_errexit`.  Fail inside command subs like `echo $(date %x; echo hi)`
+   A bash-specific fix, implemented in bash 4.4 and Oil.
+2. `more_errexit`: Check for failure at the end of command subs, like `local
+   d=$(date %x)`.
+
+And a builtin:
+
+4. `catch`: Ensure that errors get "thrown", and allow handling them with an
+   `if` statement.
 
 <!-- TODO: copy section from OSH manual -->
 
@@ -142,5 +157,5 @@ The `$0 myfunc` pattern wraps the function in an external command.
 
 
 - Spec Test Suites:
-  - <https://www.oilshell.org/release/latest/test/spec.wwz/errexit.html>
-  - <https://www.oilshell.org/release/latest/test/spec.wwz/errexit-oil.html>
+  - <https://www.oilshell.org/release/latest/test/spec.wwz/survey/errexit.html>
+  - <https://www.oilshell.org/release/latest/test/spec.wwz/survey/errexit-oil.html>
