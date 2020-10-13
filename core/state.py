@@ -164,10 +164,8 @@ class _ErrExit(object):
   """
   def __init__(self):
     # type: () -> None
-    self._value = False  # the setting
-
     # the errexit values to restore.  Mutated by Set()
-    self.value_stack = []  # type: List[bool]
+    self.value_stack = [False]  # type: List[bool]
     # the locations where we saved and restored.
     self.spid_stack = []  # type: List[int]
 
@@ -179,10 +177,7 @@ class _ErrExit(object):
     assert span_id != runtime.NO_SPID
     #log('Push %s', self.disable_stack)
 
-    self.value_stack.append(self._value)
-    self._value = False  # it may have already been false
-
-    #self.spid_stack.append(span_id if self._value else runtime.NO_SPID)
+    self.value_stack.append(False)
     self.spid_stack.append(span_id)
     self.deferred += 1
 
@@ -195,7 +190,7 @@ class _ErrExit(object):
 
     self.deferred -= 1
     self.spid_stack.pop()
-    self._value = self.value_stack.pop()
+    self.value_stack.pop()
 
   def SpidIfDisabled(self):
     # type: () -> int
@@ -216,23 +211,20 @@ class _ErrExit(object):
     """
     #log('Set %s', b)
 
-    if self.deferred != 0:
-      # "Queue" the effect for a later Pop()!
-      n = len(self.value_stack)
-      self.value_stack[n - self.deferred] = b
-      return
-
-    self._value = b  # Otherwise just set it
+    # Defer it until we pop by setting the bottom of the stack.
+    self.value_stack[0] = b
 
   def Disable(self):
     # type: () -> None
     """For bash compatibility in command sub."""
-    self._value = False
+    self.value_stack[-1] = False
 
   def value(self):
     # type: () -> bool
     #log('value query = %d', self._value)
-    return self._value
+
+    # Get the top of the stack (but the set the bottom!)
+    return self.value_stack[-1]
 
   def __repr__(self):  # not translated
     # type: () -> str
