@@ -211,18 +211,18 @@ class Catch(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     try:
-      # do_fork is on command.Simple.  Hm.
-      # I guess it matters if you do something like 'forkwait { catch ls }' You
-      # don't need another fork!
-      # See _NoForkLast() in CommandEvaluator
-      do_fork = True
+      cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
+                                cmd_val.block)
 
       # Temporarily turn on errexit.  Note that 'if catch myproc' disables it
       # and then enables it!
-      cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
-                                cmd_val.block)
       with state.ctx_ErrExit(self.mutable_opts, True, cmd_val.arg_spids[0]):
-        status = self.shell_ex.RunSimpleCommand(cmd_val2, do_fork)
+
+        # do_fork is on command.Simple.  See _NoForkLast() in CommandEvaluator
+        # We have an extra fork (miss out on an optimization) of code like
+        # ( catch ls ) or forkwait { catch ls }, but that is NOT idiomatic
+        # code.  catch is for functions.
+        status = self.shell_ex.RunSimpleCommand(cmd_val2, True)
     except error.ErrExit:
       status = 1
 
