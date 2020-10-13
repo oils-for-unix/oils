@@ -236,7 +236,8 @@ class _ErrExit(object):
 
   def __repr__(self):  # not translated
     # type: () -> str
-    return '<ErrExit %s %s>' % (self._value, self.disable_stack)
+    return '<ErrExit %s %d %s %s>' % (
+        self._value, self.deferred, self.value_stack, self.spid_stack)
 
 
 class _Getter(object):
