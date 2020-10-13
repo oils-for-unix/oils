@@ -35,10 +35,9 @@ class _View(object):
 
   def __getattr__(self, opt_name):
     # type: (str) -> _Getter
+    """ Make the API look like self.exec_opts.strict_control_flow() """
     if opt_name in self.allowed:
       return _Getter(self.opt_array, opt_name)
-      #num = match.MatchOption(opt_name)
-      #return self.opt_array[num]
     else:
       raise AttributeError(opt_name)
 
@@ -58,4 +57,4 @@ class Exec(_View):
 
   def errexit(self):
     # type: () -> bool
-    return self._errexit.value()
+    return self._errexit.Get()

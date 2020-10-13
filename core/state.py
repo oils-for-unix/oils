@@ -215,7 +215,7 @@ class _ErrExit(object):
     """For bash compatibility in command sub."""
     self.value_stack[-1] = False
 
-  def value(self):
+  def Get(self):
     # type: () -> bool
     #log('value query = %d', self._value)
 
@@ -225,19 +225,6 @@ class _ErrExit(object):
   def __repr__(self):  # not translated
     # type: () -> str
     return '<ErrExit %s %s>' % (self.value_stack, self.spid_stack)
-
-
-class _Getter(object):
-
-  def __init__(self, opt_array, opt_name):
-    # type: (List[bool], str) -> None
-    self.opt_array = opt_array
-    self.num = match.MatchOption(opt_name)
-    assert self.num != 0, opt_name
-
-  def __call__(self):
-    # type: () -> bool
-    return self.opt_array[self.num]
 
 
 class OptHook(object):
@@ -447,7 +434,7 @@ class MutableOpts(object):
       opt_num = _SetOptionNum(opt_name)
 
       if opt_name == 'errexit':
-        b = self.errexit.value()
+        b = self.errexit.Get()
       else:
         b = self.opt_array[opt_num]
       print('set %so %s' % ('-' if b else '+', opt_name))

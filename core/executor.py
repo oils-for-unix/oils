@@ -60,7 +60,7 @@ class ShellExecutor(vm._Executor):
     vm._Executor.__init__(self)
     self.mem = mem
     self.exec_opts = exec_opts
-    self.mutable_opts = mutable_opts
+    self.mutable_opts = mutable_opts  # for IsDisabled(), not mutating
     self.procs = procs
     self.builtins = builtins
     self.search_path = search_path
