@@ -177,7 +177,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 shopt -s inherit_errexit
-shopt -s more_errexit
+shopt -s command_sub_errexit
 shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace

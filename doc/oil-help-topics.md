@@ -139,7 +139,7 @@ X [Testing]       check
                   parse_paren            if (x > 0) ...
                   X parse_redir_expr     >> var x   << 'here string'
                   X longopts             test -file, read -delim, etc.
-                  more_errexit           More errexit checks --  at command sub
+                  command_sub_errexit           More errexit checks --  at command sub
                   simple_word_eval       No splitting, static globbing
                   dashglob               Disabled to avoid files like -rf
   [oil:all]       * The full Oil language

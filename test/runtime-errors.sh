@@ -298,7 +298,7 @@ ambiguous_redirect_context() {
 
   set -o errexit
 
-  # This is the issue addressed by more_errexit!
+  # This is the issue addressed by command_sub_errexit!
   echo $(echo hi > "$@")
   echo 'ambiguous is NOT FATAL in command sub, even if errexit'
   echo

@@ -370,7 +370,7 @@ set -o errexit
 shopt -s inherit_errexit || true
 
 # This changes it
-#shopt -s more_errexit || true
+#shopt -s command_sub_errexit || true
 
 echo f $(date %x)
 echo status=$?

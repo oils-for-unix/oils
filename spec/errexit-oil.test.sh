@@ -1,6 +1,6 @@
 # Cases relevant to Oil:
 #
-# - shopt -s more_errexit
+# - shopt -s command_sub_errexit
 # - and maybe inherit_errexit and strict_errexit (OSH)
 #
 # Summary:
@@ -17,7 +17,7 @@
 # See inherit_errexit below.
 #
 # I remember finding a script that relies on bash's bad behavior, so OSH copies
-# it.  Instead more_errexit, is recommended.
+# it.  Instead command_sub_errexit, is recommended.
 
 set -o errexit
 echo $(echo one; false; echo two)  # bash/ash keep going
@@ -93,10 +93,23 @@ A
 done
 ## END
 
+#### strict_errexit with command sub in weird place
+shopt -s oil:basic
 
-#### command sub with more_errexit only
+if echo 1 > $(echo tmp); then
+  echo 2
+fi
+## status: 1
+## STDOUT:
+## END
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+2
+## END
+
+#### command sub with command_sub_errexit only
 set -o errexit
-shopt -s more_errexit || true
+shopt -s command_sub_errexit || true
 echo zero
 echo $(echo one; false; echo two)  # bash/ash keep going
 echo parent status=$?
@@ -111,12 +124,12 @@ one
 parent status=0
 ## END
 
-#### command sub with inherit_errexit and more_errexit
+#### command sub with inherit_errexit and command_sub_errexit
 set -o errexit
 
 # bash implements inherit_errexit, but it's not as strict as OSH.
 shopt -s inherit_errexit || true
-shopt -s more_errexit || true
+shopt -s command_sub_errexit || true
 echo zero
 echo $(echo one; false; echo two)  # bash/ash keep going
 echo parent status=$?
@@ -202,11 +215,11 @@ status=0
 one
 ## END
 
-#### local and inherit_errexit / more_errexit
+#### local and inherit_errexit / command_sub_errexit
 # I've run into this problem a lot.
 set -o errexit
 shopt -s inherit_errexit || true  # bash option
-shopt -s more_errexit || true  # oil option
+shopt -s command_sub_errexit || true  # oil option
 f() {
   echo good
   local x=$(echo one; false; echo two)
@@ -455,7 +468,7 @@ false
 
 #### command sub errexit preserves exit code
 set -e
-shopt -s more_errexit || true
+shopt -s command_sub_errexit || true
 
 echo before
 echo $(exit 42)
@@ -557,7 +570,7 @@ done
 
 #### What's in strict:all?
 
-# inherit_errexit, strict_errexit, but not more_errexit!
+# inherit_errexit, strict_errexit, but not command_sub_errexit!
 # for that you need oil:basic!
 
 set -o errexit
@@ -566,7 +579,7 @@ shopt -s strict:all || true
 # inherit_errexit is bash compatible, so we have it
 #echo $(date %x)
 
-# more_errexit would hide errors!
+# command_sub_errexit would hide errors!
 f() {
   local d=$(date %x)
 }
@@ -594,11 +607,11 @@ two
 should not get here
 ## END
 
-#### more_errexit causes local d=$(date %x) to fail
+#### command_sub_errexit causes local d=$(date %x) to fail
 set -o errexit
 shopt -s inherit_errexit || true
 #shopt -s strict_errexit || true
-shopt -s more_errexit || true
+shopt -s command_sub_errexit || true
 
 myproc() {
   # this is disallowed because we want a runtime error 100% of the time
@@ -618,13 +631,13 @@ myproc
 hi
 ## END
 
-#### more_errexit and command sub in array
+#### command_sub_errexit and command sub in array
 case $SH in (dash|ash|mksh) exit ;; esac
 
 set -o errexit
 shopt -s inherit_errexit || true
 #shopt -s strict_errexit || true
-shopt -s more_errexit || true
+shopt -s command_sub_errexit || true
 
 # We don't want silent failure here
 readonly -a myarray=( one "$(date %x)" two )

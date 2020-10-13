@@ -163,6 +163,13 @@ def _HasManyStatuses(node):
     if case(command_e.Simple):
       node = cast(command__Simple, UP_node)
       # Check every word for command subs.
+
+      # TODO: I think we should switch this to a more dynamic check at
+      # EVALUATION TIME.  Like:
+      # with ctx_DisallowCommandSubs(
+      #    self.mutable_opts, self.exec_opts.strict_errexit()):
+      #   self._Execute(node)
+
       for w in node.words:
         UP_w = w
         if w.tag_() == word_e.Compound:
@@ -1349,7 +1356,7 @@ class CommandEvaluator(object):
     # TODO: Also wait() on process substitution here?  And we could set
     # _proc_sub_status.  And proc_sub_fail like pipefail?
     #
-    # - more_errexit is for command subs.  maybe rename command_sub_errexit.
+    # - command_sub_errexit is for command subs.  maybe rename command_sub_errexit.
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier

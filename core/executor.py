@@ -372,7 +372,7 @@ class ShellExecutor(vm._Executor):
 
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!
-    if self.exec_opts.more_errexit():
+    if self.exec_opts.command_sub_errexit():
       if self.exec_opts.errexit() and status != 0:
         # TODO: Add spid of $(
         raise error.ErrExit(

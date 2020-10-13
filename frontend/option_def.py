@@ -106,7 +106,7 @@ _STRICT_OPTION_NAMES = [
 
 # These will break some programs, but the fix should be simple.
 
-# more_errexit makes 'local foo=$(false)' and echo $(false) fail.
+# command_sub_errexit makes 'local foo=$(false)' and echo $(false) fail.
 # By default, we have mimic bash's undesirable behavior of ignoring
 # these failures, since ash copied it, and Alpine's abuild relies on it.
 #
@@ -114,10 +114,10 @@ _STRICT_OPTION_NAMES = [
 # inherit the value of errexit.  # I don't believe it is strict enough --
 # local still needs to fail.
 _BASIC_RUNTIME_OPTIONS = [
-    ('simple_word_eval', False),  # No splitting (arity isn't data-dependent)
-                                  # Don't reparse program data as globs
-    ('dashglob', True),           # do globs return results starting with - ?
-    ('more_errexit', False),      # check after command sub
+    ('simple_word_eval', False),     # No splitting; arity isn't data-dependent
+                                     # Don't reparse program data as globs
+    ('dashglob', True),              # do globs return files starting with - ?
+    ('command_sub_errexit', False),  # check after command sub
 
     # TODO: Move this?  (not implemented yet) Anything that removes
     # functionality sould be in oil:all or oil:pure

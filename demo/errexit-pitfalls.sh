@@ -35,7 +35,7 @@ subshell-demo() {
 }
 
 #
-# more_errexit (Oil)
+# command_sub_errexit (Oil)
 #
 # It's confusing that a=$(false) is different than local a=$(false).
 
@@ -50,7 +50,7 @@ assignment-builtin-overwrites-status() {
 }
 
 oil-more-errexit() {
-  shopt -s more_errexit
+  shopt -s command_sub_errexit
 
   local b=$(false)  # FAILS!
   echo $? 
@@ -186,7 +186,7 @@ sigpipe-error() {
 # - let i++
 # - (( i++ ))
 
-# So we DO want more_errexit.  Because we don't want
+# So we DO want command_sub_errexit.  Because we don't want
 #
 # diff $(error 1) $(error 2)
 #

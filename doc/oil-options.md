@@ -30,7 +30,7 @@ It turns on:
 - `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
 - Oil modes:
   - `simple-word-eval` (subsumes `nullglob` that `strict:all` includes)
-  - `more_errexit`
+  - `command_sub_errexit`
   - `strict-*` (`strict-array`, etc.)
   - `parse-*` (`parse-at`, etc.)
 
@@ -138,7 +138,7 @@ TODO: copy examples from spec tests
 echo $dir/*.py
 ```
 
-- `more_errexit`.  A error in a command sub can cause the **parent shell** to
+- `command_sub_errexit`.  A error in a command sub can cause the **parent shell** to
   exit fatally.  Also see `inherit_errexit` and `strict_errexit`.
 
 ## Strict Option Produce More Errors

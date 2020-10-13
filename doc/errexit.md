@@ -38,7 +38,7 @@ These are the three related options in the `oil:basic` option group:
    errors.
 3. `inherit_errexit`.  Fail inside command subs like `echo $(date %x; echo hi)`
    A bash-specific fix, implemented in bash 4.4 and Oil.
-2. `more_errexit`: Check for failure at the end of command subs, like `local
+2. `command_sub_errexit`: Check for failure at the end of command subs, like `local
    d=$(date %x)`.
 
 And a builtin:
@@ -159,3 +159,92 @@ The `$0 myfunc` pattern wraps the function in an external command.
 - Spec Test Suites:
   - <https://www.oilshell.org/release/latest/test/spec.wwz/survey/errexit.html>
   - <https://www.oilshell.org/release/latest/test/spec.wwz/survey/errexit-oil.html>
+
+## OSH Has Four `errexit` Options (while Bash Has Two)
+
+The complex behavior of these global execution options requires extra attention
+in this manual.
+
+But you don't need to understand all the details.  Simply choose between:
+
+```
+# Turn on four errexit options.  I don't run this script with other shells.
+shopt -s oil:all
+```
+
+and
+
+```
+# Turn on three errexit options.  I run this script with other shells.
+shopt -s strict:all
+```
+
+### Quirk 1: the Shell Sometimes Disables And Restores `errexit`
+
+Here's some background for understanding the additional `errexit` options
+described below.
+
+In all Unix shells, the `errexit` check is disabled in these situations:
+ 
+1. The condition of the `if`, `while`, and `until`  constructs
+2. A command/pipeline prefixed by `!`
+3. Every clause in `||` and `&&` except the last.
+
+Now consider this situation:
+
+1. `errexit` is **on**
+2. The shell disables it one of those three situations
+3. While disabled, the user touches it with `set -o errexit` (or `+o` to turn
+   it off).
+
+Surprising behavior: Unix shells **ignore** the `set` builtin for awhile,
+delaying its execution until **after** the temporary disablement.
+
+### Quirk 2: x=$(false) is inconsitent with local x=$(false)
+
+Background: In shell, `local` is a builtin rather than a keyword, which means
+`local foo=$(false)` behaves differently than than `foo=$(false)`.
+
+### Additional `errexit` options
+
+OSH aims to fix the many quirks of `errexit`.  It has this bash-compatible
+option:
+
+- `inherit_errexit`: `errexit` is inherited inside `$()`, so errors aren't
+  ignored.  It's enabled by both `strict:all` and `oil:all`.
+
+And two more options:
+
+- `strict_errexit` makes the quirk above irrelevant.  Compound commands,
+  including **functions**, can't be used in any of those three situations.  You
+  can write `set -o errexit || true`, but not `{ set -o errexit; false } ||
+  true`.  When this option is set, you get a runtime error indicating that you
+  should **change your code**.  Consider using the ["at-splice
+  pattern"][at-splice] to fix this, e.g. `$0 myfunc || echo errexit`.
+- `command_sub_errexit`: Check more often for non-zero status.  In particular, the
+  failure of a command sub can abort the entire script.  For example, `local
+  foo=$(false)` is a fatal runtime error rather than a silent success.
+
+### Example
+
+When both `inherit_errexit` and `command_sub_errexit` are on, this code
+
+    echo 0; echo $(touch one; false; touch two); echo 3
+
+will print `0` and touch the file `one`.
+
+1. The command sub aborts at `false` (`inherrit_errexit), and
+2. The parent process aborts after the command sub fails (`command_sub_errexit`).
+
+### Recap/Summary
+
+- `errexit` -- abort the shell script when a command exits nonzero, except in
+  the three situations described above.
+- `inherit_errexit` -- A bash option that OSH borrows.
+- `strict_errexit` -- Turned on with `strict:all`.
+- `command_sub_errexit` -- Turned on with `oil:all`.
+
+Good articles on `errexit`:
+
+- <http://mywiki.wooledge.org/BashFAQ/105>
+- <http://fvue.nl/wiki/Bash:_Error_handling>
