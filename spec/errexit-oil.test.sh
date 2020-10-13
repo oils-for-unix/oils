@@ -470,6 +470,21 @@ before
 after
 ## N-I dash/bash/mksh/ash status: 0
 
+#### strict_errexit without errexit
+myfunc() {
+  echo myfunc
+}
+myfunc || true
+
+# This should be a no-op I guess
+shopt -s strict_errexit || true
+myfunc || true
+
+## STDOUT:
+myfunc
+myfunc
+## END
+
 
 #### catch builtin
 shopt --set errexit strict_errexit
