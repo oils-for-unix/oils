@@ -515,3 +515,42 @@ hi
 bye
 ## END
 
+#### catch with !
+shopt -s oil:all || true
+
+case $SH in
+  (*osh)
+    ;;
+  (*)
+    # no-op
+    catch() {
+      "$@"
+    }
+    ;;
+esac
+
+deploy() {
+  echo 'one'
+  false
+  echo 'two'
+}
+
+#if ! deploy; then
+#  echo 'failed'
+#fi
+
+if ! catch deploy; then
+  echo 'failed'
+fi
+echo done
+
+## STDOUT:
+one
+failed
+done
+## END
+## N-I dash/bash/mksh/ash STDOUT:
+one
+two
+done
+## END
