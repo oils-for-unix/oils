@@ -190,14 +190,13 @@ class _ErrExit(object):
 
   def IsDisabled(self):
     # type: () -> bool
-    #log('SpidIfDisabled')
+    #log('IsDisabled')
 
-    if self.value_stack[0]:  # errexit is enabled
-      for entry in self.value_stack:
-        if not entry:
-          return True
+    # Bottom of stack: true
+    # Top of stack: false
 
-    return False
+    # 'catch' will make the top of the stack true
+    return self.value_stack[0] and not self.value_stack[-1]
 
   def Set(self, b):
     # type: (bool) -> None

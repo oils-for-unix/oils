@@ -188,16 +188,16 @@ class ShellExecutor(vm._Executor):
       #  e_die('special builtin failed', status=status)
       return status
 
+    # TODO: if shopt -s namespaces, then look up in current namespace FIRST.
+    #
+    # Then fallback on self.procs, which should be renamed self.procs?
+    #
+    # honestly there is no real chance of colllision because
+    # foo-bar() {} can't be accessed anyway
+    # functions can have hyphens, but variables can't
+
     # Builtins like 'true' can be redefined as functions.
     if call_procs:
-      # TODO: if shopt -s namespaces, then look up in current namespace FIRST.
-      #
-      # Then fallback on self.procs, which should be renamed self.procs?
-      #
-      # honestly there is no real chance of colllision because
-      # foo-bar() {} can't be accessed anyway
-      # functions can have hyphens, but variables can't
-
       proc_node = self.procs.get(arg0)
       if proc_node is not None:
         if (self.exec_opts.strict_errexit() and 
