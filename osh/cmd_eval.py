@@ -165,12 +165,9 @@ def _HasManyStatuses(node):
       return False
 
     elif case(command_e.Pipeline):
-      # TODO: Allow it because of pipefail?
-
-      # If it looks like ! false, then it's OK
-      pi = cast(command__Pipeline, node)
-      if len(pi.children) == 1:
-        return False
+      # TODO: Allow it because set -o pipefail takes all exit codes into
+      # account.
+      return False
 
   return True
 

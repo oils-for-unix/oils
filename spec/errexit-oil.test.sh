@@ -107,6 +107,33 @@ fi
 2
 ## END
 
+#### strict_errexit allows pipeline because you can set -o pipefail
+case $SH in (dash|ash) exit ;; esac
+
+set -o errexit
+set -o pipefail
+shopt -s strict_errexit || true
+
+if echo 1 | grep 1; then
+  echo one
+fi
+
+#{ echo 3; exit 3; } | grep 3
+#echo status ${PIPESTATUS[@]}
+
+if { echo 5; exit 5; } | grep 5; then
+  echo 'should not succeed'
+else
+  echo status ${PIPESTATUS[@]}
+fi
+## STDOUT:
+1
+one
+5
+status 5 0
+## END
+## N-I dash/ash stdout-json: ""
+
 #### command sub with command_sub_errexit only
 set -o errexit
 shopt -s command_sub_errexit || true
@@ -425,39 +452,6 @@ echo done
 ## STDOUT:
 done
 ## END
-
-#### if pipeline DOES fail fatally with strict_errexit
-set -o errexit
-set -o pipefail
-shopt -s strict_errexit || true
-
-# This "PIPELINE" is OK
-if ! false; then
-  echo '! false ok'
-fi
-
-f() {
-  local dir=$1
-	if ls $dir | grep ''; then
-    echo foo
-	fi
-}
-rmdir $TMP/_tmp || true
-rm -f $TMP/*
-f $TMP
-f /nonexistent # should fail
-echo done
-## status: 1
-## STDOUT:
-! false ok
-## END
-## N-I bash/mksh/ash status: 0
-## N-I bash/mksh/ash STDOUT:
-! false ok
-done
-## END
-## N-I dash status: 2
-## N-I dash stdout-json: ""
 
 #### errexit is silent (verbose_errexit for Oil)
 shopt -u verbose_errexit 2>/dev/null || true
