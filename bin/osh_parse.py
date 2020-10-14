@@ -54,7 +54,9 @@ def main(argv):
   arena = alloc.Arena()
 
   opt0_array = [False] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt0_array)
+  no_stack = None  # type: List[bool]  # for mycpp
+  opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
+  parse_opts = optview.Parse(opt0_array, opt_stacks)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently
