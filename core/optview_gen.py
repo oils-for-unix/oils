@@ -26,19 +26,14 @@ def main(argv):
 #include "mylib.h"
 #include "option_asdl.h"
 
-// duplication because mycpp doesn't export headers
-namespace state {
-class _ErrExit; 
-}
-
 namespace optview {
 
 namespace option_i = option_asdl::option_i;
 
 class Parse {
  public:
-  Parse(List<bool>* opt0_array)
-      : opt0_array(opt0_array) {
+  Parse(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
+      : opt0_array(opt0_array), opt_stacks(opt_stacks) {
   }
 """)
 
@@ -47,17 +42,15 @@ class Parse {
   f.write("""\
 
   List<bool>* opt0_array;
+  List<List<bool>*>* opt_stacks;
 };
 
 #ifndef OSH_PARSE  // hack for osh_parse, set in build/mycpp.sh
 class Exec {
  public:
-  Exec(List<bool>* opt0_array, state::_ErrExit* errexit)
-      : opt0_array(opt0_array), errexit_(errexit) {
+  Exec(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
+      : opt0_array(opt0_array), opt_stacks(opt_stacks) {
   }
-
-  // definition in cpp/postamble.cc
-  bool errexit();
 """)
 
   GenMethods(option_def.ExecOptNames(), f)
@@ -65,7 +58,7 @@ class Exec {
   f.write("""\
 
   List<bool>* opt0_array;
-  state::_ErrExit* errexit_;
+  List<List<bool>*>* opt_stacks;
 };
 #endif  // OSH_PARSE
 

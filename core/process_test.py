@@ -37,10 +37,10 @@ _ARENA = test_lib.MakeArena('process_test.py')
 _MEM = state.Mem('', [], _ARENA, [])
 state.InitMem(_MEM, {}, '0.1')
 
-_OPT_ARRAY = [False] * option_i.ARRAY_SIZE
-_PARSE_OPTS = optview.Parse(_OPT_ARRAY)
-_ERREXIT = state._ErrExit()
-_EXEC_OPTS = state.MutableOpts(_MEM, _OPT_ARRAY, _ERREXIT, None)
+_OPT0_ARRAY = [False] * option_i.ARRAY_SIZE
+_OPT_STACKS = [False] * option_i.ARRAY_SIZE
+_PARSE_OPTS = optview.Parse(_OPT0_ARRAY, _OPT_STACKS)
+_EXEC_OPTS = state.MutableOpts(_MEM, _OPT0_ARRAY, _OPT_STACKS, None)
 _JOB_STATE = process.JobState()
 _WAITER = process.Waiter(_JOB_STATE, _EXEC_OPTS)
 _ERRFMT = ui.ErrorFormatter(_ARENA)

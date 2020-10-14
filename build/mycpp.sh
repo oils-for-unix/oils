@@ -119,9 +119,6 @@ int main(int argc, char **argv) {
   dumb_alloc::Summarize();
   return status;
 }
-
-// hard-coded definitions!
-#include "postamble.cc"
 EOF
 
 }

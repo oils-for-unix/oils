@@ -134,9 +134,9 @@ def InitWordEvaluator():
   state.InitMem(mem, {}, '0.1')
 
   opt0_array = [False] * option_i.ARRAY_SIZE
-  errexit = state._ErrExit()
-  parse_opts = optview.Parse(opt0_array)
-  exec_opts = optview.Exec(opt0_array, errexit)
+  opt_stacks = [None] * option_i.ARRAY_SIZE
+  parse_opts = optview.Parse(opt0_array, opt_stacks)
+  exec_opts = optview.Exec(opt0_array, opt_stacks)
   mem.exec_opts = exec_opts  # circular dep
 
   cmd_deps = cmd_eval.Deps()
@@ -152,6 +152,7 @@ def InitWordEvaluator():
 def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                  aliases=None, ext_prog=None):
   opt0_array = [False] * option_i.ARRAY_SIZE
+  opt_stacks = [None] * option_i.ARRAY_SIZE
   if parse_ctx:
     arena = parse_ctx.arena
     parse_opts = parse_ctx.parse_opts
@@ -160,9 +161,8 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   mem = mem or state.Mem('', [], arena, [])
   state.InitMem(mem, {}, '0.1')
-  errexit = state._ErrExit()
-  exec_opts = optview.Exec(opt0_array, errexit)
-  mutable_opts = state.MutableOpts(mem, opt0_array, errexit, None)
+  exec_opts = optview.Exec(opt0_array, opt_stacks)
+  mutable_opts = state.MutableOpts(mem, opt0_array, opt_stacks, None)
   # No 'readline' in the tests.
 
   errfmt = ui.ErrorFormatter(arena)
@@ -277,8 +277,10 @@ def InitParseContext(arena=None, oil_grammar=None, aliases=None):
 def InitWordParser(word_str, oil_at=False, arena=None):
   arena = arena or MakeArena('<test_lib>')
   opt0_array = [False] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt0_array)
+  opt_stacks = [None] * option_i.ARRAY_SIZE
+  parse_opts = optview.Parse(opt0_array, opt_stacks)
   opt0_array[option_i.parse_at] = oil_at
+
   loader = pyutil.GetResourceLoader()
   oil_grammar = pyutil.LoadOilGrammar(loader)
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)

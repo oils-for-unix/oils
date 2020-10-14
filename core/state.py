@@ -192,7 +192,8 @@ def MakeOpts(mem, opt_hook):
   
   opt0_array = [False] * option_i.ARRAY_SIZE
   # Overrides, including errexit
-  opt_stacks = [None] * option_i.ARRAY_SIZE  # type: List[List[bool]]
+  no_stack = None  # type: List[bool]  # for mycpp
+  opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
 
   parse_opts = optview.Parse(opt0_array, opt_stacks)
   exec_opts = optview.Exec(opt0_array, opt_stacks)
