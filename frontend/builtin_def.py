@@ -50,6 +50,7 @@ _NORMAL_BUILTINS = [
     'push',
     'write', 'json',
     'repr', 'use', 'opts',
+    'status',
     'fork', 'forkwait',
 ]
 
@@ -118,7 +119,6 @@ def _Init(b):
 
   b.Add('true', enum_name='true_')
   b.Add('false', enum_name='false_')
-  b.Add('catch', enum_name='catch_')
 
   for name in _NORMAL_BUILTINS:
     b.Add(name)

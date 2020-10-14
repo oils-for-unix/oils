@@ -484,8 +484,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
                                                      search_path)
-  builtins[builtin_i.catch_] = builtin_meta.Catch(mutable_opts, shell_ex,
-                                                  errfmt)
+  builtins[builtin_i.status] = builtin_meta.Status(mutable_opts, shell_ex,
+                                                   errfmt)
 
   spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
                                           comp_lookup)

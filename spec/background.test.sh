@@ -55,17 +55,23 @@ echo status=$?
 #### Wait for job doesn't support PIPESTATUS
 
 # foreground works
-{ echo hi; exit 55; } | { exit 99; }
-echo pipestatus=${PIPESTATUS[@]}
+{ echo hi; exit 55; } | false
+echo status=$? pipestatus=${PIPESTATUS[@]}
 
-# background doesn't work
-{ echo hi; exit 55; } | { exit 99; } &
+{ echo hi; exit 55; } | false &
+echo status=$? pipestatus=${PIPESTATUS[@]}
+
+# Hm pipestatus doesn't work
 wait %+
-echo pipestatus=${PIPESTATUS[@]}
+#wait %1
+#wait $!
+echo status=$? pipestatus=${PIPESTATUS[@]}
+
 ## STDOUT:
-pipestatus=55 99
-pipestatus=99
-##
+status=1 pipestatus=55 1
+status=0 pipestatus=0
+status=1 pipestatus=1
+## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 

@@ -200,8 +200,25 @@ class Builtin(vm._Builtin):
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
-class Catch(vm._Builtin):
-  """For the 'if myfunc' problem with errexit.  """
+class Status(vm._Builtin):
+  """For the 'if myfunc' problem with errexit.
+  --nonzero
+
+  --zero-or-one or --01
+
+  --ok
+    for SIGPIPE problem
+
+  --assign
+
+  if status deploy {  # "get the status"
+    echo "success"
+  }
+  if status --nonzero deploy {  # "if the status is nonzero"
+    echo "failed"
+  }
+  """
+
   def __init__(self, mutable_opts, shell_ex, errfmt):
     # type: (state.MutableOpts, vm._Executor, ui.ErrorFormatter) -> None
     self.mutable_opts = mutable_opts

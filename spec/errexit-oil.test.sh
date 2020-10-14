@@ -493,7 +493,7 @@ myfunc
 ## END
 
 
-#### catch builtin
+#### status builtin
 shopt --set errexit strict_errexit
 
 myfunc() {
@@ -506,7 +506,7 @@ case $SH in
   (*osh)
     # new semantics: the function aborts at 'false', the 'catch' builtin exits
     # with code 1, and we echo 'failed'
-    catch myfunc || echo "failed"
+    status myfunc || echo "failed"
     ;;
   (*)
     myfunc || echo "failed"
@@ -522,7 +522,7 @@ hi
 bye
 ## END
 
-#### catch with !
+#### status with !
 shopt -s oil:all || true
 
 case $SH in
@@ -530,7 +530,7 @@ case $SH in
     ;;
   (*)
     # no-op
-    catch() {
+    status() {
       "$@"
     }
     ;;
@@ -546,7 +546,7 @@ deploy() {
 #  echo 'failed'
 #fi
 
-if ! catch deploy; then
+if ! status deploy; then
   echo 'failed'
 fi
 echo done
