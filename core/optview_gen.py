@@ -13,7 +13,7 @@ from frontend import option_def
 
 def GenMethods(opt_names, f):
   for n in opt_names:
-    f.write('  bool %s() { return opt0_array->index(option_i::%s); }\n' % (n, n))
+    f.write('  bool %s() { return _Get(option_i::%s); }\n' % (n, n))
 
 
 def main(argv):
@@ -30,35 +30,48 @@ namespace optview {
 
 namespace option_i = option_asdl::option_i;
 
-class Parse {
+class _View {
+ public:
+  _View(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
+      : opt0_array(opt0_array), opt_stacks(opt_stacks) {
+  }
+
+  bool _Get(int opt_num) {
+    List<bool>* overlay = opt_stacks->index(opt_num);
+    if ((overlay == nullptr) or len(overlay) == 0) {
+      return opt0_array->index(opt_num);
+    } else {
+      return overlay->index(-1);
+    }
+  }
+
+  List<bool>* opt0_array;
+  List<List<bool>*>* opt_stacks;
+};
+
+class Parse : public _View {
  public:
   Parse(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
-      : opt0_array(opt0_array), opt_stacks(opt_stacks) {
+      : _View(opt0_array, opt_stacks) {
   }
 """)
 
   GenMethods(option_def.ParseOptNames(), f)
 
   f.write("""\
-
-  List<bool>* opt0_array;
-  List<List<bool>*>* opt_stacks;
 };
 
 #ifndef OSH_PARSE  // hack for osh_parse, set in build/mycpp.sh
-class Exec {
+class Exec : public _View {
  public:
   Exec(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
-      : opt0_array(opt0_array), opt_stacks(opt_stacks) {
+      : _View(opt0_array, opt_stacks) {
   }
 """)
 
   GenMethods(option_def.ExecOptNames(), f)
 
   f.write("""\
-
-  List<bool>* opt0_array;
-  List<List<bool>*>* opt_stacks;
 };
 #endif  // OSH_PARSE
 
