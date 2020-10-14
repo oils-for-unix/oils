@@ -245,8 +245,35 @@ shopt --unset errexit {
 false
 echo 'should not get here'
 
+## status: 1
 ## STDOUT:
 one
 two
 three
+## END
+
+#### shopt and block status
+shopt --set oil:all
+
+shopt --unset errexit {
+  false
+}
+# this is still 0, even though last command was 1
+echo status=$?
+
+## STDOUT:
+status=0
+## END
+
+#### shopt usage error
+shopt --set oil:all
+
+echo one
+shopt --set a {
+  echo two
+}
+echo status=$?
+## status: 2
+## STDOUT:
+one
 ## END

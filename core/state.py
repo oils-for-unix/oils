@@ -135,6 +135,25 @@ class SearchPath(object):
     return self.cache.values()
 
 
+class ctx_Option(object):
+  """shopt --unset errexit { false } """
+  def __init__(self, mutable_opts, opt_nums, b):
+    # type: (MutableOpts, List[int], bool) -> None
+    for opt_num in opt_nums:
+      mutable_opts.Push(opt_num, b)
+    self.mutable_opts = mutable_opts
+    self.opt_nums = opt_nums
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    for opt_num in self.opt_nums:  # don't bother to do it in reverse order
+      self.mutable_opts.Pop(opt_num)
+
+
 class ctx_ErrExit(object):
   """Manages the errexit setting.
 
@@ -396,7 +415,7 @@ class MutableOpts(object):
   def SetOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
-    _ = _SetOptionNum(opt_name)
+    _ = _SetOptionNum(opt_name)  # validate it
     self._SetOption(opt_name, b)
 
     UP_val = self.mem.GetVar('SHELLOPTS')

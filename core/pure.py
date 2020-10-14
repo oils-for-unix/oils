@@ -27,7 +27,6 @@ from core import state
 from core import ui
 from core import util
 from core.pyerror import log, e_die
-#unused = log
 from core import vm
 
 from frontend import args
@@ -76,7 +75,6 @@ def MakeBuiltinArgv(argv1):
 def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):
   # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, command__ShFunction], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
   b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
-  b[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
 
   b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
   b[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
@@ -390,6 +388,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # These builtins take blocks, and thus need cmd_ev.
   builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
+  builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
 
   #sig_state = process.SignalState()
   #sig_state.InitShell()

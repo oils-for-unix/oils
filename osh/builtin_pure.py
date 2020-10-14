@@ -37,6 +37,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.ui import ErrorFormatter
   from core.state import MutableOpts, Mem, SearchPath
+  from osh.cmd_eval import CommandEvaluator
 
 _ = log
 
@@ -171,9 +172,10 @@ class Set(vm._Builtin):
 
 
 class Shopt(vm._Builtin):
-  def __init__(self, exec_opts):
-    # type: (MutableOpts) -> None
-    self.exec_opts = exec_opts
+  def __init__(self, mutable_opts, cmd_ev):
+    # type: (MutableOpts, CommandEvaluator) -> None
+    self.mutable_opts = mutable_opts
+    self.cmd_ev = cmd_ev
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -184,9 +186,9 @@ class Shopt(vm._Builtin):
 
     if arg.p:  # print values
       if arg.o:  # use set -o names
-        self.exec_opts.ShowOptions(opt_names)
+        self.mutable_opts.ShowOptions(opt_names)
       else:
-        self.exec_opts.ShowShoptOptions(opt_names)
+        self.mutable_opts.ShowShoptOptions(opt_names)
       return 0
 
     if arg.q:  # query values
@@ -194,7 +196,7 @@ class Shopt(vm._Builtin):
         index = match.MatchOption(name)
         if index == 0:
           return 2  # bash gives 1 for invalid option; 2 is better
-        if not self.exec_opts.opt0_array[index]:
+        if not self.mutable_opts.opt0_array[index]:
           return 1  # at least one option is not true
       return 0  # all options are true
 
@@ -205,15 +207,29 @@ class Shopt(vm._Builtin):
     else:
       # bash prints uses a different format for 'shopt', but we use the
       # same format as 'shopt -p'.
-      self.exec_opts.ShowShoptOptions(opt_names)
+      self.mutable_opts.ShowShoptOptions(opt_names)
       return 0
+
+    if cmd_val.block:
+      opt_nums = []  # type: List[int]
+      for name in opt_names:
+        index = match.MatchOption(name)
+        if index == 0:
+          # TODO: compute span_id
+          e_usage('got invalid option %r' % name)
+        opt_nums.append(index)
+
+      with state.ctx_Option(self.mutable_opts, opt_nums, b):
+        unused = self.cmd_ev.EvalBlock(cmd_val.block)
+      return 0  # cd also returns 0
 
     # Otherwise, set options.
     for name in opt_names:
-      if arg.o:
-        self.exec_opts.SetOption(name, b)
-      else:
-        self.exec_opts.SetShoptOption(name, b)
+      #if arg.o:
+      #  self.mutable_opts.SetOption(name, b)
+      #else:
+      # We allow set -o options here
+      self.mutable_opts.SetShoptOption(name, b)
 
     return 0
 
