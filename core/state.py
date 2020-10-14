@@ -155,7 +155,11 @@ class ctx_ErrExit(object):
     # Well, to be honest we could allow it with command_sub_errexit, but other
     # shells don't have it!
 
-    mutable_opts.Push(option_i.allow_command_sub, False)
+    self.do_pop = False
+    if mutable_opts.Get(option_i.strict_errexit):
+      mutable_opts.Push(option_i.allow_command_sub, False)
+      self.do_pop = True
+
     self.mutable_opts = mutable_opts
 
   def __enter__(self):
@@ -164,7 +168,8 @@ class ctx_ErrExit(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.mutable_opts.Pop(option_i.allow_command_sub)
+    if self.do_pop:
+      self.mutable_opts.Pop(option_i.allow_command_sub)
     self.mutable_opts.PopErrExit()
 
 

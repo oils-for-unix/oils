@@ -336,8 +336,7 @@ class ShellExecutor(vm._Executor):
   def RunCommandSub(self, node):
     # type: (command_t) -> str
 
-    if (self.exec_opts.strict_errexit() and
-        not self.exec_opts.allow_command_sub()):
+    if not self.exec_opts.allow_command_sub():
       # TODO: Add spid of $(
       e_die("Command subs not allowed when errexit disabled (strict_errexit)")
 
