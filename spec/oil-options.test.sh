@@ -147,6 +147,7 @@ shopt -p | grep -- ' -s '
 set -o errexit
 set -o nounset
 set -o pipefail
+shopt -s allow_command_sub
 shopt -s dashglob
 shopt -s inherit_errexit
 shopt -s nullglob
@@ -176,6 +177,7 @@ shopt -p | grep -- ' -s '
 set -o errexit
 set -o nounset
 set -o pipefail
+shopt -s allow_command_sub
 shopt -s command_sub_errexit
 shopt -s inherit_errexit
 shopt -s nullglob

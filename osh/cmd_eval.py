@@ -35,7 +35,6 @@ from _devbuild.gen.syntax_asdl import (
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
     redir_param_e, redir_param__MultiLine,
-    word_e, word_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
     quote_e,
@@ -170,7 +169,6 @@ def _HasManyStatuses(node):
       return False
 
   return True
-
 
 
 class CommandEvaluator(object):
