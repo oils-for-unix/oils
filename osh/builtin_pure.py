@@ -194,7 +194,7 @@ class Shopt(vm._Builtin):
         index = match.MatchOption(name)
         if index == 0:
           return 2  # bash gives 1 for invalid option; 2 is better
-        if not self.exec_opts.opt_array[index]:
+        if not self.exec_opts.opt0_array[index]:
           return 1  # at least one option is not true
       return 0  # all options are true
 

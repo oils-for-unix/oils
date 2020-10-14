@@ -53,8 +53,8 @@ def main(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
 
-  opt_array = [False] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt_array)
+  opt0_array = [False] * option_i.ARRAY_SIZE
+  parse_opts = optview.Parse(opt0_array)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently

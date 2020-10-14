@@ -15,7 +15,6 @@ import signal as signal_
 from sys import exit  # mycpp translation directly calls exit(int status)!
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t,
     job_status, job_status_t,

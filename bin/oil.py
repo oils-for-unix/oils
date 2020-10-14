@@ -142,8 +142,8 @@ def OshCommandMain(argv):
   loader = pyutil.GetResourceLoader()
   oil_grammar = pyutil.LoadOilGrammar(loader)
 
-  opt_array = [False] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt_array)
+  opt0_array = [False] * option_i.ARRAY_SIZE
+  parse_opts = optview.Parse(opt0_array)
   # parse `` and a[x+1]=bar differently
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(True)
@@ -221,8 +221,8 @@ def TeaMain(argv):
   oil_grammar = pyutil.LoadOilGrammar(loader)
 
   # Not used in tea, but OK...
-  opt_array = [False] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt_array)
+  opt0_array = [False] * option_i.ARRAY_SIZE
+  parse_opts = optview.Parse(opt0_array)
 
   # parse `` and a[x+1]=bar differently
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)

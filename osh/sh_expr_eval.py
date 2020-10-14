@@ -875,7 +875,7 @@ class BoolEvaluator(ArithEvaluator):
             if index == 0:
               return False
             else:
-              return self.exec_opts.opt_array[index]
+              return self.exec_opts.opt0_array[index]
 
           if op_id == Id.BoolUnary_v:
             val = self.mem.GetVar(s)

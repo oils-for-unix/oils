@@ -13,7 +13,7 @@ from frontend import option_def
 
 def GenMethods(opt_names, f):
   for n in opt_names:
-    f.write('  bool %s() { return opt_array->index(option_i::%s); }\n' % (n, n))
+    f.write('  bool %s() { return opt0_array->index(option_i::%s); }\n' % (n, n))
 
 
 def main(argv):
@@ -37,8 +37,8 @@ namespace option_i = option_asdl::option_i;
 
 class Parse {
  public:
-  Parse(List<bool>* opt_array)
-      : opt_array(opt_array) {
+  Parse(List<bool>* opt0_array)
+      : opt0_array(opt0_array) {
   }
 """)
 
@@ -46,14 +46,14 @@ class Parse {
 
   f.write("""\
 
-  List<bool>* opt_array;
+  List<bool>* opt0_array;
 };
 
 #ifndef OSH_PARSE  // hack for osh_parse, set in build/mycpp.sh
 class Exec {
  public:
-  Exec(List<bool>* opt_array, state::_ErrExit* errexit)
-      : opt_array(opt_array), errexit_(errexit) {
+  Exec(List<bool>* opt0_array, state::_ErrExit* errexit)
+      : opt0_array(opt0_array), errexit_(errexit) {
   }
 
   // definition in cpp/postamble.cc
@@ -64,7 +64,7 @@ class Exec {
 
   f.write("""\
 
-  List<bool>* opt_array;
+  List<bool>* opt0_array;
   state::_ErrExit* errexit_;
 };
 #endif  // OSH_PARSE

@@ -167,7 +167,7 @@ class OptHook(object):
     """Empty constructor for mycpp."""
     pass
 
-  def OnChange(self, opt_array, opt_name, b):
+  def OnChange(self, opt0_array, opt_name, b):
     # type: (List[bool], str, bool) -> bool
     """This method is called whenever an option is changed.
 
@@ -179,24 +179,24 @@ class OptHook(object):
 def MakeOpts(mem, opt_hook):
   # type: (Mem, OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
 
-  # Unusual representation: opt_array + opt_overlay.  For two features:
+  # Unusual representation: opt0_array + opt_stacks.  For two features:
   # 
   # - POSIX errexit disable semantics
   # - Oil's shopt --set nullglob { ... }
   #
   # We could do it with a single List of stacks.  But because shopt --set
   # random_option { ... } is very uncommon, we optimize and store the ZERO
-  # element of the stack in a flat array opt_array (default False), and then
-  # the rest in opt_overlay, where the value could be None.  By allowing the
+  # element of the stack in a flat array opt0_array (default False), and then
+  # the rest in opt_stacks, where the value could be None.  By allowing the
   # None value, we save ~50 or so list objects in the common case.
   
-  opt_array = [False] * option_i.ARRAY_SIZE
+  opt0_array = [False] * option_i.ARRAY_SIZE
   # Overrides, including errexit
-  opt_overlay = [None] * option_i.ARRAY_SIZE  # type: List[List[bool]]
+  opt_stacks = [None] * option_i.ARRAY_SIZE  # type: List[List[bool]]
 
-  parse_opts = optview.Parse(opt_array, opt_overlay)
-  exec_opts = optview.Exec(opt_array, opt_overlay)
-  mutable_opts = MutableOpts(mem, opt_array, opt_overlay, opt_hook)
+  parse_opts = optview.Parse(opt0_array, opt_stacks)
+  exec_opts = optview.Exec(opt0_array, opt_stacks)
+  mutable_opts = MutableOpts(mem, opt0_array, opt_stacks, opt_hook)
 
   return parse_opts, exec_opts, mutable_opts
 
@@ -230,16 +230,16 @@ def _SetOptionNum(opt_name):
 
 class MutableOpts(object):
 
-  def __init__(self, mem, opt_array, opt_overlay, opt_hook):
+  def __init__(self, mem, opt0_array, opt_stacks, opt_hook):
     # type: (Mem, List[bool], List[List[bool]], OptHook) -> None
     self.mem = mem
-    self.opt_array = opt_array
-    self.opt_overlay = opt_overlay
+    self.opt0_array = opt0_array
+    self.opt_stacks = opt_stacks
     self.errexit_spid_stack = []  # type: List[int]
 
     # On by default
     for opt_num in consts.DEFAULT_TRUE:
-      self.opt_array[opt_num] = True
+      self.opt0_array[opt_num] = True
 
     # Used for 'set -o vi/emacs'
     self.opt_hook = opt_hook
@@ -261,15 +261,15 @@ class MutableOpts(object):
 
   def Push(self, opt_num, b):
     # type: (int, bool) -> None
-    overlay = self.opt_overlay[opt_num]
+    overlay = self.opt_stacks[opt_num]
     if overlay is None or len(overlay) == 0:
-      self.opt_overlay[opt_num] = [b]  # Allocate a new list
+      self.opt_stacks[opt_num] = [b]  # Allocate a new list
     else:
       overlay.append(b)
 
   def Pop(self, opt_num):
     # type: (int) -> bool
-    overlay = self.opt_overlay[opt_num]
+    overlay = self.opt_stacks[opt_num]
     assert overlay is not None
     return overlay.pop()
 
@@ -286,9 +286,9 @@ class MutableOpts(object):
   def Get(self, opt_num):
     # type: (int) -> bool
     # Like _Getter in core/optview.py
-    overlay = self.opt_overlay[opt_num]
+    overlay = self.opt_stacks[opt_num]
     if overlay is None or len(overlay) == 0:
-      return self.opt_array[opt_num]
+      return self.opt0_array[opt_num]
     else:
       return overlay[-1]  # the top value
 
@@ -297,9 +297,9 @@ class MutableOpts(object):
     """Used to disable errexit.  For bash compatibility in command sub."""
 
     # Like _Getter in core/optview.py
-    overlay = self.opt_overlay[opt_num]
+    overlay = self.opt_stacks[opt_num]
     if overlay is None or len(overlay) == 0:
-      self.opt_array[opt_num] = b
+      self.opt0_array[opt_num] = b
     else:
       overlay[-1] = b  # The top value
 
@@ -334,7 +334,7 @@ class MutableOpts(object):
     #log('Set %s', b)
 
     # Defer it until we pop by setting the BOTTOM OF THE STACK.
-    self.opt_array[option_i.errexit] = b
+    self.opt0_array[option_i.errexit] = b
 
   def DisableErrExit(self):
     # type: () -> None
@@ -347,12 +347,12 @@ class MutableOpts(object):
     # Bottom of stack: true
     # Top of stack: false
 
-    overlay = self.opt_overlay[option_i.errexit]
+    overlay = self.opt_stacks[option_i.errexit]
     if overlay is None or len(overlay) == 0:
       return False
     else:
       # 'catch' will make the top of the stack true
-      return self.opt_array[option_i.errexit] and not overlay[-1]
+      return self.opt0_array[option_i.errexit] and not overlay[-1]
 
   def ErrExitSpanId(self):
     # type: () -> int
@@ -376,7 +376,7 @@ class MutableOpts(object):
 
     # note: may FAIL before we get here.
 
-    success = self.opt_hook.OnChange(self.opt_array, opt_name, b)
+    success = self.opt_hook.OnChange(self.opt0_array, opt_name, b)
 
   def SetOption(self, opt_name, b):
     # type: (str, bool) -> None
@@ -412,7 +412,7 @@ class MutableOpts(object):
     # type: (List[int], bool) -> None
     for opt_num in opt_nums:
       b2 = not b if opt_num in consts.DEFAULT_TRUE else b
-      self.opt_array[opt_num] = b2
+      self.opt0_array[opt_num] = b2
 
     self.SetDeferredErrExit(b)  # Special case for all option groups
 
@@ -464,7 +464,7 @@ class MutableOpts(object):
       index = match.MatchOption(opt_name)
       if index == 0:
         e_usage('got invalid option %r' % opt_name)
-      b = self.opt_array[index]
+      b = self.opt0_array[index]
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))
 
 

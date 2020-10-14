@@ -133,7 +133,7 @@ class ShellOptHook(state.OptHook):
     # type: (Any) -> None
     self.line_input = line_input
 
-  def OnChange(self, opt_array, opt_name, b):
+  def OnChange(self, opt0_array, opt_name, b):
     # type: (List[bool], str, bool) -> bool
     """This method is called whenever an option is changed.
 
@@ -150,9 +150,9 @@ class ShellOptHook(state.OptHook):
 
       # Invert: they are mutually exclusive!
       if opt_name == 'vi':
-        opt_array[option_i.emacs] = not b
+        opt0_array[option_i.emacs] = not b
       elif opt_name == 'emacs':
-        opt_array[option_i.vi] = not b
+        opt0_array[option_i.vi] = not b
 
     return True
 
