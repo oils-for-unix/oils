@@ -160,30 +160,13 @@ def _HasManyStatuses(node):
   # allow list under strict_errexit
   UP_node = node
   with tagswitch(node) as case:
-    if case(command_e.Simple):
-      node = cast(command__Simple, UP_node)
-      # Check every word for command subs.
-
-      # TODO: I think we should switch this to a more dynamic check at
-      # EVALUATION TIME.  Like:
-      # with ctx_DisallowCommandSubs(
-      #    self.mutable_opts, self.exec_opts.strict_errexit()):
-      #   self._Execute(node)
-
-      for w in node.words:
-        UP_w = w
-        if w.tag_() == word_e.Compound:
-          w = cast(compound_word, UP_w)
-          for p in w.parts:
-            if p.tag_() == word_part_e.CommandSub:
-              return True
-      return False
-      
-    elif case(command_e.DBracket, command_e.DParen):
-      # Lower priority: command subs in expressions too
+    # command subs in words are detected by allow_command_sub in ctx_ErrExit
+    if case(command_e.Simple, command_e.DBracket, command_e.DParen):
       return False
 
     elif case(command_e.Pipeline):
+      # TODO: Allow it because of pipefail?
+
       # If it looks like ! false, then it's OK
       pi = cast(command__Pipeline, node)
       if len(pi.children) == 1:

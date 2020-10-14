@@ -148,6 +148,14 @@ class ctx_ErrExit(object):
     # type: (MutableOpts, bool, int) -> None
     assert span_id != runtime.NO_SPID
     mutable_opts.PushErrExit(errexit_val, span_id)
+
+    # command subs would allow failures to be ignored, like ...
+    # if echo $(date %x); then ...
+    # Avoid!
+    # Well, to be honest we could allow it with command_sub_errexit, but other
+    # shells don't have it!
+
+    mutable_opts.Push(option_i.allow_command_sub, False)
     self.mutable_opts = mutable_opts
 
   def __enter__(self):
@@ -156,6 +164,7 @@ class ctx_ErrExit(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
+    self.mutable_opts.Pop(option_i.allow_command_sub)
     self.mutable_opts.PopErrExit()
 
 

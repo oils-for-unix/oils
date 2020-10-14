@@ -247,6 +247,8 @@ def _Init(opt_def):
   opt_def.Add('compat_array')  # ${array} is ${array[0]}
 
   opt_def.Add('verbose_errexit', default=True)
+  # used to enforce strict_errexit
+  opt_def.Add('allow_command_sub', default=True)
 
   # Two strict options that from bash's shopt
   for name in ['nullglob', 'inherit_errexit']:
