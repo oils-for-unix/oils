@@ -136,10 +136,18 @@ class SearchPath(object):
 
 
 class ctx_ErrExit(object):
+  """Manages the errexit setting.
 
+  - The user can change it with builtin 'set' at any point in the code.
+  - These constructs implicitly disable 'errexit':
+    - if / while / until conditions
+    - ! (part of pipeline)
+    - && ||
+  """
   def __init__(self, mutable_opts, errexit_val, span_id):
     # type: (MutableOpts, bool, int) -> None
-    mutable_opts.errexit.Push(errexit_val, span_id)
+    assert span_id != runtime.NO_SPID
+    mutable_opts.PushErrExit(errexit_val, span_id)
     self.mutable_opts = mutable_opts
 
   def __enter__(self):
@@ -148,83 +156,7 @@ class ctx_ErrExit(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.mutable_opts.errexit.Pop()
-
-
-class _ErrExit(object):
-  """Manages the errexit setting.
-
-  - The user can change it with builtin 'set' at any point in the code.
-  - These constructs implicitly disable 'errexit':
-    - if / while / until conditions
-    - ! (part of pipeline)
-    - && ||
-
-  An _ErrExit object prevents these two mechanisms from clobbering each other.
-  """
-  def __init__(self):
-    # type: () -> None
-    # the errexit values to restore.  Mutated by Set()
-    self.value_stack = [False]  # type: List[bool]
-    # the locations where we saved and restored.
-    self.spid_stack = []  # type: List[int]
-
-  def Push(self, errexit_val, span_id):
-    # type: (bool, int) -> None
-    """Temporarily disable errexit."""
-    assert span_id != runtime.NO_SPID
-    #log('Push %s', self.disable_stack)
-
-    self.value_stack.append(errexit_val)
-    self.spid_stack.append(span_id)
-
-    #log('Push values=%s spids=%s', self.value_stack, self.spid_stack)
-
-  def Pop(self):
-    # type: () -> None
-    """Restore the previous value."""
-    #log('Pop _value = %d', self._value)
-
-    self.spid_stack.pop()
-    self.value_stack.pop()
-
-  def IsDisabled(self):
-    # type: () -> bool
-    #log('IsDisabled')
-
-    # Bottom of stack: true
-    # Top of stack: false
-
-    # 'catch' will make the top of the stack true
-    return self.value_stack[0] and not self.value_stack[-1]
-
-  def Set(self, b):
-    # type: (bool) -> None
-    """Set the errexit flag, possibly deferring it.
-
-    Implements the unusual POSIX "defer" behavior.  Callers: set -o errexit,
-    shopt -s oil:all, strict:all.
-    """
-    #log('Set %s', b)
-
-    # Defer it until we pop by setting the bottom of the stack.
-    self.value_stack[0] = b
-
-  def Disable(self):
-    # type: () -> None
-    """For bash compatibility in command sub."""
-    self.value_stack[-1] = False
-
-  def Get(self):
-    # type: () -> bool
-    #log('value query = %d', self._value)
-
-    # Get the top of the stack (but the set the bottom!)
-    return self.value_stack[-1]
-
-  def __repr__(self):  # not translated
-    # type: () -> str
-    return '<ErrExit %s %s>' % (self.value_stack, self.spid_stack)
+    self.mutable_opts.PopErrExit()
 
 
 class OptHook(object):
@@ -247,15 +179,24 @@ class OptHook(object):
 def MakeOpts(mem, opt_hook):
   # type: (Mem, OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
 
-  # Underlying state is an array + _ErrExit instance.  TODO: To implement shopt
-  # --unset errexit { false }, we should copy both of these and put them on a
-  # stack.  That will involve changing core/optview_gen.py and so forth.
+  # Unusual representation: opt_array + opt_overlay.  For two features:
+  # 
+  # - POSIX errexit disable semantics
+  # - Oil's shopt --set nullglob { ... }
+  #
+  # We could do it with a single List of stacks.  But because shopt --set
+  # random_option { ... } is very uncommon, we optimize and store the ZERO
+  # element of the stack in a flat array opt_array (default False), and then
+  # the rest in opt_overlay, where the value could be None.  By allowing the
+  # None value, we save ~50 or so list objects in the common case.
+  
   opt_array = [False] * option_i.ARRAY_SIZE
-  errexit = _ErrExit()
+  # Overrides, including errexit
+  opt_overlay = [None] * option_i.ARRAY_SIZE  # type: List[List[bool]]
 
-  parse_opts = optview.Parse(opt_array)
-  exec_opts = optview.Exec(opt_array, errexit)
-  mutable_opts = MutableOpts(mem, opt_array, errexit, opt_hook)
+  parse_opts = optview.Parse(opt_array, opt_overlay)
+  exec_opts = optview.Exec(opt_array, opt_overlay)
+  mutable_opts = MutableOpts(mem, opt_array, opt_overlay, opt_hook)
 
   return parse_opts, exec_opts, mutable_opts
 
@@ -289,11 +230,12 @@ def _SetOptionNum(opt_name):
 
 class MutableOpts(object):
 
-  def __init__(self, mem, opt_array, errexit, opt_hook):
-    # type: (Mem, List[bool], _ErrExit, OptHook) -> None
+  def __init__(self, mem, opt_array, opt_overlay, opt_hook):
+    # type: (Mem, List[bool], List[List[bool]], OptHook) -> None
     self.mem = mem
     self.opt_array = opt_array
-    self.errexit = errexit
+    self.opt_overlay = opt_overlay
+    self.errexit_spid_stack = []  # type: List[int]
 
     # On by default
     for opt_num in consts.DEFAULT_TRUE:
@@ -317,17 +259,61 @@ class MutableOpts(object):
       if name in lookup:
         self._SetOption(name, True)
 
+  def Push(self, opt_num, b):
+    # type: (int, bool) -> None
+    overlay = self.opt_overlay[opt_num]
+    if overlay is None or len(overlay) == 0:
+      self.opt_overlay[opt_num] = [b]  # Allocate a new list
+    else:
+      overlay.append(b)
+
+  def Pop(self, opt_num):
+    # type: (int) -> bool
+    overlay = self.opt_overlay[opt_num]
+    assert overlay is not None
+    return overlay.pop()
+
+  def PushErrExit(self, b, spid):
+    # type: (bool, int) -> None
+    self.Push(option_i.errexit, b)
+    self.errexit_spid_stack.append(spid)
+
+  def PopErrExit(self):
+    # type: () -> bool
+    self.errexit_spid_stack.pop()
+    return self.Pop(option_i.errexit)
+
+  def Get(self, opt_num):
+    # type: (int) -> bool
+    # Like _Getter in core/optview.py
+    overlay = self.opt_overlay[opt_num]
+    if overlay is None or len(overlay) == 0:
+      return self.opt_array[opt_num]
+    else:
+      return overlay[-1]  # the top value
+
+  def _Set(self, opt_num, b):
+    # type: (int, bool) -> None
+    """Used to disable errexit.  For bash compatibility in command sub."""
+
+    # Like _Getter in core/optview.py
+    overlay = self.opt_overlay[opt_num]
+    if overlay is None or len(overlay) == 0:
+      self.opt_array[opt_num] = b
+    else:
+      overlay[-1] = b  # The top value
+
   def set_interactive(self):
     # type: () -> None
-    self.opt_array[option_i.interactive] = True
+    self._Set(option_i.interactive, True)
 
   def set_emacs(self):
     # type: () -> None
-    self.opt_array[option_i.emacs] = True
+    self._Set(option_i.emacs, True)
 
   def set_xtrace(self, b):
     # type: (bool) -> None
-    self.opt_array[option_i.xtrace] = b
+    self._Set(option_i.xtrace, b)
 
   def _SetArrayByNum(self, opt_num, b):
     # type: (int, bool) -> None
@@ -336,7 +322,41 @@ class MutableOpts(object):
       e_die('Syntax options must be set at the top level '
             '(outside any function)')
 
-    self.opt_array[opt_num] = b
+    self._Set(opt_num, b)
+
+  def SetDeferredErrExit(self, b):
+    # type: (bool) -> None
+    """Set the errexit flag, possibly deferring it.
+
+    Implements the unusual POSIX "defer" behavior.  Callers: set -o errexit,
+    shopt -s oil:all, strict:all.
+    """
+    #log('Set %s', b)
+
+    # Defer it until we pop by setting the BOTTOM OF THE STACK.
+    self.opt_array[option_i.errexit] = b
+
+  def DisableErrExit(self):
+    # type: () -> None
+    self._Set(option_i.errexit, False)
+
+  def ErrExitIsDisabled(self):
+    # type: () -> bool
+    #log('IsDisabled')
+
+    # Bottom of stack: true
+    # Top of stack: false
+
+    overlay = self.opt_overlay[option_i.errexit]
+    if overlay is None or len(overlay) == 0:
+      return False
+    else:
+      # 'catch' will make the top of the stack true
+      return self.opt_array[option_i.errexit] and not overlay[-1]
+
+  def ErrExitSpanId(self):
+    # type: () -> int
+    return self.errexit_spid_stack[0]
 
   def _SetOption(self, opt_name, b):
     # type: (str, bool) -> None
@@ -348,7 +368,7 @@ class MutableOpts(object):
     assert opt_num != 0, opt_name
 
     if opt_num == option_i.errexit:
-      self.errexit.Set(b)
+      self.SetDeferredErrExit(b)
     else:
       if opt_num == option_i.verbose and b:
         stderr_line('Warning: set -o verbose not implemented')
@@ -394,7 +414,7 @@ class MutableOpts(object):
       b2 = not b if opt_num in consts.DEFAULT_TRUE else b
       self.opt_array[opt_num] = b2
 
-    self.errexit.Set(b)  # Special case for all option groups
+    self.SetDeferredErrExit(b)  # Special case for all option groups
 
   def SetShoptOption(self, opt_name, b):
     # type: (str, bool) -> None
@@ -417,7 +437,7 @@ class MutableOpts(object):
     opt_num = _ShoptOptionNum(opt_name)
 
     if opt_num == option_i.errexit:
-      self.errexit.Set(b)
+      self.SetDeferredErrExit(b)
       return
 
     self._SetArrayByNum(opt_num, b)
@@ -432,11 +452,7 @@ class MutableOpts(object):
 
     for opt_name in opt_names:
       opt_num = _SetOptionNum(opt_name)
-
-      if opt_name == 'errexit':
-        b = self.errexit.Get()
-      else:
-        b = self.opt_array[opt_num]
+      b = self.Get(opt_num)
       print('set %so %s' % ('-' if b else '+', opt_name))
 
   def ShowShoptOptions(self, opt_names):

@@ -201,9 +201,9 @@ class ShellExecutor(vm._Executor):
       proc_node = self.procs.get(arg0)
       if proc_node is not None:
         if (self.exec_opts.strict_errexit() and 
-            self.mutable_opts.errexit.IsDisabled()):
+            self.mutable_opts.ErrExitIsDisabled()):
           self.errfmt.Print_('errexit was disabled for this construct',
-                             span_id=self.mutable_opts.errexit.spid_stack[0])
+                             span_id=self.mutable_opts.ErrExitSpanId())
           stderr_line('')
           e_die("Can't run a proc while errexit is disabled. "
                 "Use 'catch' or wrap it in a process with $0 myproc",

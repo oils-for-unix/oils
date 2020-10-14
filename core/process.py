@@ -15,6 +15,7 @@ import signal as signal_
 from sys import exit  # mycpp translation directly calls exit(int status)!
 
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t,
     job_status, job_status_t,
@@ -687,8 +688,7 @@ class SubProgramThunk(Thunk):
 
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:
-      self.cmd_ev.mutable_opts.errexit.Disable()
-
+      self.cmd_ev.mutable_opts.DisableErrExit()
     try:
       # optimize to eliminate redundant subshells like ( echo hi ) | wc -l etc.
       self.cmd_ev.ExecuteAndCatch(self.node, cmd_flags=cmd_eval.Optimize)

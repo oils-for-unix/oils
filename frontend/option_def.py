@@ -29,11 +29,8 @@ class Option(object):
 
     # for optview
     self.is_parse = is_parse or name.startswith('parse_')
-    # errexit is a special case for now
     # interactive() is an accessor
-    self.is_exec = (
-        implemented and not self.is_parse and name != 'errexit'
-    )
+    self.is_exec = implemented and not self.is_parse
 
 
 class _OptionDef(object):

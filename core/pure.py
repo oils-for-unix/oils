@@ -506,7 +506,7 @@ class NullExecutor(vm._Executor):
       proc_node = self.procs.get(arg0)
       if proc_node is not None:
         if (self.exec_opts.strict_errexit() and 
-            self.mutable_opts.errexit.IsDisabled()):
+            self.mutable_opts.ErrExitIsDisabled()):
           # TODO: make errfmt a member
           #self.errfmt.Print_('errexit was disabled for this construct',
           #                   span_id=self.mutable_opts.errexit.spid_stack[0])
