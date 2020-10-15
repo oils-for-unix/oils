@@ -791,6 +791,7 @@ class ctx_Status(object):
     # type: (Mem) -> None
     mem.last_status.append(0)
     mem.pipe_status.append([])
+    mem.process_sub_status.append([])
     self.mem = mem
 
   def __enter__(self):
@@ -801,6 +802,7 @@ class ctx_Status(object):
     # type: (Any, Any, Any) -> None
     self.mem.last_status.pop()
     self.mem.pipe_status.pop()
+    self.mem.process_sub_status.pop()
 
 
 class Mem(object):
@@ -842,6 +844,7 @@ class Mem(object):
 
     self.last_status = [0]  # type: List[int]  # a stack
     self.pipe_status = [[]]  # type: List[List[int]]  # stack
+    self.process_sub_status = [[]]  # type: List[List[int]]  # stack
     self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
     # Done ONCE on initialization
@@ -943,6 +946,10 @@ class Mem(object):
   def SetPipeStatus(self, x):
     # type: (List[int]) -> None
     self.pipe_status[-1] = x
+
+  def SetProcessSubStatus(self, x):
+    # type: (List[int]) -> None
+    self.process_sub_status[-1] = x
 
   #
   # Call Stack
@@ -1463,6 +1470,9 @@ class Mem(object):
 
     if name == 'PIPESTATUS':
       return value.MaybeStrArray([str(i) for i in self.pipe_status[-1]])
+
+    if name == '_process_sub_status':  # Oil naming convention
+      return value.MaybeStrArray([str(i) for i in self.process_sub_status[-1]])
 
     # Do lookup of system globals before looking at user variables.  Note: we
     # could optimize this at compile-time like $?.  That would break

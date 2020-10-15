@@ -10,7 +10,15 @@ cat <(head -n 2 $f) <(tail -n 2 $f)
 3
 ## END
 
-#### Process sub output
+#### Process sub from external process to stdin
+seq 3 > >(tac)
+## STDOUT:
+3
+2
+1
+## END
+
+#### Process sub from shell to stdin
 { echo 1; echo 2; echo 3; } > >(tac)
 ## STDOUT:
 3
@@ -64,4 +72,28 @@ FOO
 foo
 FOO
 hi
+## END
+
+#### status code is available
+cat <(seq 2; exit 2) <(seq 3; exit 3)
+echo status=${_process_sub_status[@]}
+echo done
+
+## STDOUT:
+1
+2
+1
+2
+3
+status=2 3
+done
+## END
+## N-I bash/zsh STDOUT:
+1
+2
+1
+2
+3
+status=
+done
 ## END

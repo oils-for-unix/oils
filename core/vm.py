@@ -98,6 +98,10 @@ class _Executor(object):
     # type: (command_t, Id_t) -> str
     return ''
 
+  def MaybeWaitOnProcessSubs(self):
+    # type: () -> List[int]
+    pass
+
   def Time(self):
     # type: () -> None
     pass

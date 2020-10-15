@@ -369,6 +369,13 @@ values like strings and arrays.)
     read --all    # whole file, including newline
     read --qsn
 
+#### status
+
+Re-enable errexit.
+
+    status --nonzero
+    status --ok
+
 ### Data Formats
 
 ### External Lang

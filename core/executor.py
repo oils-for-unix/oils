@@ -71,6 +71,10 @@ class ShellExecutor(vm._Executor):
     self.fd_state = fd_state
     self.errfmt = errfmt
 
+    # for process subs
+    self.to_wait = []  # type: List[process.Process]
+    self.to_close = []  # type: List[int]  # file descriptors
+
   def CheckCircularDeps(self):
     # type: () -> None
     assert self.cmd_ev is not None
@@ -406,36 +410,63 @@ class ShellExecutor(vm._Executor):
 
     The pipe is typically passed to another process via a /dev/fd/$FD path.
 
-    TODO:
+    Life cycle of a process substitution:
 
-    sane-proc-sub:
-    - wait for all the words
+    1. Start with this code
 
-    Otherwise, set $!  (mem.last_bg_pid)
+      diff <(seq 3) <(seq 4)
 
-    strict-proc-sub:
-    - Don't allow it anywhere except SimpleCommand, any redirect, or
-    ShAssignment?  And maybe not even assignment?
+    2. To evaluate the command line, we evaluate every word.  The
+    NormalWordEvaluator this method, RunProcessSub(), which does 3 things:
 
-    Should you put return codes in @PROCESS_SUB_STATUS?  You need two of them.
+      a. Create a pipe(), getting r and w
+      b. Starts the seq process, which inherits r and w
+         It has a StdoutToPipe() redirect, which means that it dup2(w, 1)
+         and close(r)
+      c. Close the w FD, because neither the shell or 'diff' will write to it.
+         However we must retain 'r', because 'diff' hasn't opened /dev/fd yet!
+      d. We evaluate <(seq 3) to /dev/fd/$r, so "diff" can read from it
+
+    3. Now we're done evaluating every word, so we know the command line of
+       diff, which looks like
+
+      diff /dev/fd/64 /dev/fd/65
+
+    Those are the FDs for the read ends of the pipes we created.
+
+    4. diff inherits a copy of the read end of bot pipes.  But it actually
+    calls open() both files passed as argv.  (I think this is fine.)
+
+    5. wait() for the diff process.
+
+    6. The shell closes both the read ends of both pipes.  Neither us or
+    'diffd' will read again.
+
+    7. The shell waits for both 'seq' processes.
+
+    Related:
+      shopt -s process_sub_fail
+      _process_sub_status
     """
+    log('--- RunProcessSub')
     p = self._MakeProcess(node)
 
     r, w = posix.pipe()
+    #log('pipe = %d, %d', r, w)
 
     if op_id == Id.Left_ProcSubIn:
       # Example: cat < <(head foo.txt)
       #
       # The head process should write its stdout to a pipe.
-      redir = process.StdoutToPipe(r, w) # type: process.ChildStateChange
+      redir = process.StdoutToPipe(r, w)  # type: process.ChildStateChange
 
     elif op_id == Id.Left_ProcSubOut:
       # Example: head foo.txt > >(tac)
       #
       # The tac process should read its stdin from a pipe.
-      #
-      # NOTE: This appears to hang in bash?  At least when done interactively.
-      # It doesn't work at all in osh interactively?
+
+      # Note: this example sometimes requires you to hit "enter" in bash and
+      # zsh.  WHy?
       redir = process.StdinFromPipe(r, w)
 
     else:
@@ -446,23 +477,21 @@ class ShellExecutor(vm._Executor):
     # Fork, letting the child inherit the pipe file descriptors.
     pid = p.Start()
 
+    # Note: bash never waits() on the process, but zsh does.  The calling
+    # program needs to read() before we can wait, e.g.
+    #   diff <(sort left.txt) <(sort right.txt)
+    self.to_wait.append(p)
+
     # After forking, close the end of the pipe we're not using.
     if op_id == Id.Left_ProcSubIn:
-      posix.close(w)
+      posix.close(w)  # cat < <(head foo.txt)
+      self.to_close.append(r)  # close later
     elif op_id == Id.Left_ProcSubOut:
       posix.close(r)
+      #log('Left_ProcSubOut closed %d', r)
+      self.to_close.append(w)  # close later
     else:
       raise AssertionError()
-
-    # NOTE: Like bash, we never actually wait() on it.  Because the calling program
-    # needs to read before we can wait, e.g. diff <(sort left.txt) <(sort
-    # right.txt)
-    #
-    # But we should add p to a to_wait queue, for the same place that we
-    # _CheckStatus.
-    #
-    # We could set $! to the PID?  But what if there are two command subs?
-    # I think we want _proc_sub_pids=(124 125) or something.
 
     # Is /dev Linux-specific?
     if op_id == Id.Left_ProcSubIn:
@@ -473,6 +502,30 @@ class ShellExecutor(vm._Executor):
 
     else:
       raise AssertionError()
+
+  def MaybeWaitOnProcessSubs(self):
+    # type: () -> List[int]
+
+    # Wait in the same order that they were evaluated.  That seems fine.
+
+    #if self.to_close:
+    #  log('to_close %s', self.to_close)
+    for fd in self.to_close:
+      #log('close %d', fd)
+      posix.close(fd)
+    del self.to_close[:]
+
+    #if self.to_wait:
+    #  log('to_wait %s', self.to_wait)
+
+    statuses = []  # type: List[int]
+    for p in self.to_wait:
+      #log('waiting for %s', p)
+      st = p.Wait(self.waiter)
+      statuses.append(st)
+
+    del self.to_wait[:]
+    return statuses
 
   def Time(self):
     # type: () -> None

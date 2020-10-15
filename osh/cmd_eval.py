@@ -1322,7 +1322,6 @@ class CommandEvaluator(object):
           status, check_errexit = self._Dispatch(node)
         finally:
           self.shell_ex.PopRedirects()
-        #log('_dispatch returned %d', status)
       else:  # Error applying redirects, e.g. bad file descriptor.
         status = 1
 
@@ -1331,10 +1330,17 @@ class CommandEvaluator(object):
 
     self.mem.SetLastStatus(status)
 
-    # TODO: Also wait() on process substitution here?  And we could set
-    # _proc_sub_status.  And proc_sub_fail like pipefail?
-    #
-    # - command_sub_errexit is for command subs.  maybe rename command_sub_errexit.
+    # Unlike command subs, process subs like diff <(seq 3) <(seq 4) are
+    # asynchronous.  We wait for them at the end of the command.
+    #ps_status = self.shell_ex.MaybeWaitOnProcessSubs()
+
+    # BUG: We can't wait here because of { echo foo; } > >(tac)
+    # We will try to wait before the redirect closes the /dev/fd/64 pipe
+    ps_status = []  # type: List[int]
+    if len(ps_status):
+
+      self.mem.SetProcessSubStatus(ps_status)
+      pass
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier

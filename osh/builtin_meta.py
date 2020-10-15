@@ -217,6 +217,12 @@ class Status(vm._Builtin):
   if status --nonzero deploy {  # "if the status is nonzero"
     echo "failed"
   }
+
+  # Technically --nonzero is same as this, but we want to give a pass/fail
+  # connotation, not a true/false (boolean) connotation.
+  if ! status deploy {
+    echo "failed"
+  }
   """
 
   def __init__(self, mutable_opts, shell_ex, errfmt):
@@ -242,6 +248,12 @@ class Status(vm._Builtin):
         status = self.shell_ex.RunSimpleCommand(cmd_val2, True)
     except error.ErrExit:
       status = 1
+
+    # if arg.nonzero:
+    #   if status != 0:
+    #     status = 0
+    #   else:
+    #     status = 1
 
     return status
 
