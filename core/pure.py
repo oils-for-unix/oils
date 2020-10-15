@@ -115,6 +115,40 @@ def AddIO(b, mem, dir_stack, exec_opts, splitter, errfmt):
   b[builtin_i.times] = builtin_misc.Times()
 
 
+def AddMeta(builtins, shell_ex, mutable_opts, procs, aliases, search_path,
+            errfmt):
+  # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+
+  builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
+  builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
+                                                     search_path)
+  builtins[builtin_i.status] = builtin_meta.Status(mutable_opts, shell_ex,
+                                                   errfmt)
+
+
+def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt):
+  # type: (Dict[int, vm._Builtin], state.Mem, state.MutableOpts, state.DirStack, cmd_eval.CommandEvaluator, ui.ErrorFormatter) -> None
+  # These builtins take blocks, and thus need cmd_ev.
+  builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
+  builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
+
+
+def InitAssignmentBuiltins(mem, procs, errfmt):
+  # type: (state.Mem, Dict[str, command__ShFunction], ui.ErrorFormatter) -> Dict[int, vm._AssignBuiltin]
+
+  assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
+
+  new_var = builtin_assign.NewVar(mem, procs, errfmt)
+  assign_b[builtin_i.declare] = new_var
+  assign_b[builtin_i.typeset] = new_var
+  assign_b[builtin_i.local] = new_var
+
+  assign_b[builtin_i.export_] = builtin_assign.Export(mem, errfmt)
+  assign_b[builtin_i.readonly] = builtin_assign.Readonly(mem, errfmt)
+
+  return assign_b
+
+
 def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Any) -> int
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
@@ -326,20 +360,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.help] = help_builtin
 
   #
-  # Assignment builtins
-  #
-
-  assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
-
-  new_var = builtin_assign.NewVar(mem, procs, errfmt)
-  assign_b[builtin_i.declare] = new_var
-  assign_b[builtin_i.typeset] = new_var
-  assign_b[builtin_i.local] = new_var
-
-  assign_b[builtin_i.export_] = builtin_assign.Export(mem, errfmt)
-  assign_b[builtin_i.readonly] = builtin_assign.Readonly(mem, errfmt)
-
-  #
   # Initialize Evaluators
   #
 
@@ -347,6 +367,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
   expr_ev = None  # type: expr_eval.OilEvaluator
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
+
+  assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
 
@@ -380,15 +402,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   #builtins[builtin_i.source] = source_builtin
   #builtins[builtin_i.dot] = source_builtin
 
-  builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
-  builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
-                                                     search_path)
-  builtins[builtin_i.status] = builtin_meta.Status(mutable_opts, shell_ex,
-                                                   errfmt)
-
-  # These builtins take blocks, and thus need cmd_ev.
-  builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
-  builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
+  AddMeta(builtins, shell_ex, mutable_opts, procs, aliases, search_path,
+          errfmt)
+  AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt)
 
   #sig_state = process.SignalState()
   #sig_state.InitShell()

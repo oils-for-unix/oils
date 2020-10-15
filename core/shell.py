@@ -416,7 +416,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   builtins = {}  # type: Dict[int, vm._Builtin]
 
-  pure.AddPure(builtins, mem, procs, mutable_opts, aliases, search_path, errfmt)
+  pure.AddPure(builtins, mem, procs, mutable_opts, aliases, search_path,
+               errfmt)
   pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, errfmt)
   AddProcess(builtins, mem, ext_prog, fd_state, job_state, waiter, search_path,
              errfmt)
@@ -429,20 +430,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.history] = builtin_lib.History(line_input, mylib.Stdout())
 
   #
-  # Assignment builtins
-  #
-
-  assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
-
-  new_var = builtin_assign.NewVar(mem, procs, errfmt)
-  assign_b[builtin_i.declare] = new_var
-  assign_b[builtin_i.typeset] = new_var
-  assign_b[builtin_i.local] = new_var
-
-  assign_b[builtin_i.export_] = builtin_assign.Export(mem, errfmt)
-  assign_b[builtin_i.readonly] = builtin_assign.Readonly(mem, errfmt)
-
-  #
   # Initialize Evaluators
   #
 
@@ -450,6 +437,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, splitter, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
+
+  assign_b = pure.InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
 
@@ -481,11 +470,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
-  builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
-  builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
-                                                     search_path)
-  builtins[builtin_i.status] = builtin_meta.Status(mutable_opts, shell_ex,
-                                                   errfmt)
+  pure.AddMeta(builtins, shell_ex, mutable_opts, procs, aliases, search_path,
+               errfmt)
+  pure.AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt)
+  # Another block builtin
+  builtins[builtin_i.json] = builtin_oil.Json(mem, cmd_ev, errfmt)
 
   spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
                                           comp_lookup)
@@ -495,10 +484,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
   builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
-  # These builtins take blocks, and thus need cmd_ev.
-  builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
-  builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
-  builtins[builtin_i.json] = builtin_oil.Json(mem, cmd_ev, errfmt)
 
   sig_state = pyos.SignalState()
   sig_state.InitShell()
