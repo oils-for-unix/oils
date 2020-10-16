@@ -1331,6 +1331,11 @@ class CommandEvaluator(object):
 
     if len(ps_status):
       self.mem.SetProcessSubStatus(ps_status)
+      if status == 0 and self.exec_opts.process_sub_fail():
+        for st in ps_status:  # Make it the first non-zero exit code
+          if st != 0:
+            status = st
+            break
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier

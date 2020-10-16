@@ -43,20 +43,9 @@ stdin-shell-2() {
   echo '__ ONE ___'
   echo 99 > >(tac)
 
-  #return
-
-  # HANG HERE!
-  # Hm I think the sentence messes it up...
-
-  # Sequence of events:
-  # when do we evaluate the redirect word?
-  # Hm PopRedirects() should close the pipe to tac that we open() as
-  # /dev/fd/64, and THEN later we wait()?   So I don't see a problem.
-
+  # This used to hang!
   echo '__ ONE ___'
   { echo 99; } > >(tac)
-
-  return
 
   echo '__ TWO ___'
   { echo 4; echo 5; } > >(tac)
@@ -64,6 +53,16 @@ stdin-shell-2() {
 
 both() {
   diff -u <(seq 2) <(seq 3) > >(tac) || true
+
+  if test -n "${OIL_VERSION:-}"; then
+    echo status=${_process_sub_status[@]}
+  fi
+
+  diff -u <(seq 2; exit 2) <(seq 3; exit 3) > >(tac; exit 5) || true
+
+  if test -n "${OIL_VERSION:-}"; then
+    echo status=${_process_sub_status[@]}
+  fi
 }
 
 

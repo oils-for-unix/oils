@@ -97,3 +97,50 @@ done
 status=
 done
 ## END
+
+#### shopt -s process_sub_fail
+
+cat <(echo a; exit 2) <(echo b; exit 3)
+echo status=$? ps=${_process_sub_status[@]}
+
+echo __
+shopt -s process_sub_fail
+
+cat <(echo a; exit 2) <(echo b; exit 3)
+echo status=$? ps=${_process_sub_status[@]}
+
+# Now exit because of it
+set -o errexit
+
+cat <(echo a; exit 2) <(echo b; exit 3)
+echo status=$? ps=${_process_sub_status[@]}
+
+## status: 2
+## STDOUT:
+a
+b
+status=0 ps=2 3
+__
+a
+b
+status=2 ps=2 3
+a
+b
+## END
+## N-I bash/zsh status: 0
+## N-I bash/zsh STDOUT:
+a
+b
+status=0 ps=
+__
+a
+b
+status=0 ps=
+a
+b
+status=0 ps=
+## END
+
+
+
+

@@ -452,7 +452,6 @@ class ShellExecutor(vm._Executor):
       shopt -s process_sub_fail
       _process_sub_status
     """
-    log('--- RunProcessSub')
     p = self._MakeProcess(node)
 
     r, w = posix.pipe()
