@@ -40,9 +40,9 @@ def SpanForCommand(node):
   if tag == command_e.Simple:
     node = cast(command__Simple, UP_node)
     # It should have either words or redirects, e.g. '> foo'
-    if node.words:
+    if len(node.words):
       return word_.LeftMostSpanForWord(node.words[0])
-    elif node.redirects:
+    elif len(node.redirects):
       return node.redirects[0].op.span_id
 
   if tag == command_e.Pipeline:

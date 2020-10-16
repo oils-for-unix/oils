@@ -99,6 +99,14 @@ errexit_subshell() {
   ( echo subshell; exit 42; )
 }
 
+errexit_pipeline() {
+  set -o errexit
+  set -o pipefail
+
+  # We don't blame the right location here
+  echo subshell | cat | exit 42 | wc -l
+}
+
 errexit_dbracket() {
   set -o errexit
   [[ -n '' ]]
@@ -769,7 +777,8 @@ all() {
 
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
-    failed_command errexit_usage_error errexit_subshell errexit_dbracket \
+    failed_command errexit_usage_error errexit_subshell errexit_pipeline \
+    errexit_dbracket \
     errexit_alias strict_errexit_1 strict_errexit_2 \
     pipefail pipefail_group pipefail_subshell pipefail_no_words pipefail_func \
     pipefail_while pipefail_multiple \

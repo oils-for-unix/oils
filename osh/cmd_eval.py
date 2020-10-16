@@ -274,8 +274,13 @@ class CommandEvaluator(object):
     # type: (int, command_t) -> None
     """Raises error.ErrExit, maybe with location info attached."""
     if self.exec_opts.errexit() and status != 0:
-      # NOTE: Sometimes location info is duplicated, like on UsageError, or a
-      # bad redirect.  Also, pipelines can fail twice.
+      # NOTE: Sometimes location info is duplicated.
+      # - 'type -z' has a UsageError with location, then errexit
+      # - '> /nonexistent' has an I/O error, then errexit
+      # - Pipelines and subshells are compound.  Commands within them fail.
+      #   - however ( exit 33 ) only prints one message.
+      #
+      # But we will want something like 'false' to have location info.
 
       UP_node = node
       with tagswitch(node) as case:
@@ -287,6 +292,8 @@ class CommandEvaluator(object):
           node = cast(command__ShAssignment, UP_node)
           reason = 'assignment in '
           span_id = self._SpanIdForShAssignment(node)
+
+        # Note: a subshell often doesn't fail on its own.
         elif case(command_e.Subshell):
           node = cast(command__Subshell, UP_node)
           reason = 'subshell invoked from '
