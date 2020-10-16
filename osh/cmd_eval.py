@@ -48,11 +48,12 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from asdl import runtime
 from core import error
 from core.error import _ControlFlow
+from core.pyerror import log, e_die
 from core import pyos  # Time().  TODO: rename
 from core import state
 from core import ui
 from core import util
-from core.pyerror import log, e_die
+from core import vm
 from frontend import consts
 from frontend import location
 from oil_lang import objects
@@ -437,7 +438,14 @@ class CommandEvaluator(object):
         node = cast(command__Case, UP_node)
         redirects = node.redirects
       else:
-        raise AssertionError()
+        # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
+        # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
+        # command_e.Sentence, # command_e.TimeBlock, command_e.ShFunction,
+        # Oil:
+        # command_e.VarDecl, command_e.PlaceMutation, command_e.OilForIn,
+        # command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,
+        # command_e.BareDecl
+        redirects = []
 
     result = []  # type: List[redirect]
     for redir in redirects:
@@ -1291,63 +1299,26 @@ class CommandEvaluator(object):
       for trap_node in to_run:  # NOTE: Don't call this 'node'!
         self._Execute(trap_node)
 
-    # TODO:
-    # with vm.ctx_ProcessSub(self.shell_ex) has to begin here
-    # Because _EvalRedirects can evaluate like 'seq 3 > >(tac)'
-
-    # These nodes have no redirects.
-    # TODO: Speed this up with some kind of bit mask?
-    if node.tag_() in (
-        command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
-        command_e.AndOr, command_e.CommandList, command_e.DoGroup,
-        command_e.Sentence,
-        command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
-        command_e.PlaceMutation, command_e.OilForIn,
-        command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,
-        command_e.BareDecl):
-      redirects = []  # type: List[redirect]
-    else:
-      try:
-        redirects = self._EvalRedirects(node)
-      except error.RedirectEval as e:
-        ui.PrettyPrintError(e, self.arena)
-        redirects = None
+    try:
+      redirects = self._EvalRedirects(node)
+    except error.RedirectEval as e:
+      ui.PrettyPrintError(e, self.arena)
+      redirects = None
 
     check_errexit = True
 
     if redirects is None:  # evaluation error
       status = 1
 
-    # TODO:
-    # _Dispatch wraps redirects
-    # _It also has a process sub stack, for Wait().  Where does that live?  In
-    # the executor?
-    #
-    # new_status = []  # out param
-    # with vm.ctx_Redirects(self.shell_ex, redirects, new_status, to_wait):
-    #   status, check_errexit = self._Dispatch(node)
-    #
-    # if len(new_status):
-    #   status = new_status[0]
-    #
-    # ps_status = self.shell_ex.WaitForProcessSubs(to_wait)
-    # if len(ps_status):
-    #   ... 
-    #
-    # And then
-    # in shell_ex.RunProcessSub()
-    #   self.process_sub_stack[-1].append( ...  ) # append to the top of the stack
-    # ctx_Redirects does PushRedirects() and PopRedirects(), and that includes
-    # the process sub stack
-
     else:
       # If there are no redirects, push/pop is a no-op.
       if self.shell_ex.PushRedirects(redirects):
-        try:
+        # Asymmetry because of applying redirects can fail.
+        with vm.ctx_Redirect(self.shell_ex):
           status, check_errexit = self._Dispatch(node)
-        finally:
-          self.shell_ex.PopRedirects()
-      else:  # Error applying redirects, e.g. bad file descriptor.
+
+      else:
+        # Error applying redirects, e.g. bad file descriptor.
         status = 1
 
     self.mem.SetLastStatus(status)

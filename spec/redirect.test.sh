@@ -323,14 +323,26 @@ echo four 1>&4
 
 #### >| to clobber
 echo XX >| $TMP/c.txt
+
 set -o noclobber
+
 echo YY >  $TMP/c.txt  # not globber
 echo status=$?
+
 cat $TMP/c.txt
 echo ZZ >| $TMP/c.txt
+
 cat $TMP/c.txt
-## stdout-json: "status=1\nXX\nZZ\n"
-## OK dash stdout-json: "status=2\nXX\nZZ\n"
+## STDOUT: 
+status=1
+XX
+ZZ
+## END
+## OK dash STDOUT:
+status=2
+XX
+ZZ
+## END
 
 #### &> redirects stdout and stderr
 stdout_stderr.py &> $TMP/f.txt

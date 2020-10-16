@@ -158,16 +158,16 @@ class _Builtin(object):
 
 
 class ctx_Redirect(object):
-  """For opening and closing files.
+  """For closing files.
+
+  This is asymmetric because if PushRedirects fails, then we don't execute the
+  command at all.
 
   Example:
     { seq 3 > foo.txt; echo 4; } > bar.txt 
   """
-  def __init__(self, shell_ex, redirects, new_status):
-    # type: (_Executor, List[redirect], List[int]) -> None
-    if not shell_ex.PushRedirects(redirects):
-      # Error applying redirects, e.g. bad file descriptor.
-      new_status.append(1)
+  def __init__(self, shell_ex):
+    # type: (_Executor) -> None
     self.shell_ex = shell_ex
 
   def __enter__(self):
