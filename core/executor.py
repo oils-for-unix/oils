@@ -38,6 +38,13 @@ if TYPE_CHECKING:
   from core.vm import _Builtin
 
 
+class ProcessSubFrame(object):
+  def __init__(self):
+    # type: () -> None
+    self.to_close = []  # type: List[int]  # file descriptors
+    self.to_wait = []  # type: List[process.Process]
+
+
 class ShellExecutor(vm._Executor):
   """
   This CommandEvaluator is combined with the OSH language evaluators in osh/ to create
@@ -74,6 +81,8 @@ class ShellExecutor(vm._Executor):
     # for process subs
     self.to_wait = []  # type: List[process.Process]
     self.to_close = []  # type: List[int]  # file descriptors
+
+    self.process_sub_stack = []  # type: List[ProcessSubFrame]
 
   def CheckCircularDeps(self):
     # type: () -> None
@@ -538,3 +547,19 @@ class ShellExecutor(vm._Executor):
   def PopRedirects(self):
     # type: () -> None
     self.fd_state.Pop()
+
+  def PushProcessSub(self):
+    # type: () -> None
+    self.process_sub_stack.append(ProcessSubFrame())
+
+  def PopProcessSub(self):
+    # type: () -> List[int]
+    """
+    This method is called by a context manager, which means we always wait() on
+    the way out, which I think is the right thing.  We don't always set
+    _process_sub_status, e.g. if some fatal error occurs first, but we always
+    wait.
+    """
+    frame = self.process_sub_stack.pop()
+    st = self.MaybeWaitOnProcessSubs()
+    return st

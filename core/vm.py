@@ -4,7 +4,7 @@ vm.py: Library for executing shell.
 """
 from __future__ import print_function
 
-from typing import List, TYPE_CHECKING
+from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.runtime_asdl import (
@@ -114,6 +114,14 @@ class _Executor(object):
     # type: () -> None
     pass
 
+  def PushProcessSub(self):
+    # type: () -> None
+    pass
+
+  def PopProcessSub(self):
+    # type: () -> List[int]
+    pass
+
 
 #
 # Abstract base classes
@@ -147,3 +155,49 @@ class _Builtin(object):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     raise NotImplementedError()
+
+
+class ctx_Redirect(object):
+  """For opening and closing files.
+
+  Example:
+    { seq 3 > foo.txt; echo 4; } > bar.txt 
+  """
+  def __init__(self, shell_ex, redirects, new_status):
+    # type: (_Executor, List[redirect], List[int]) -> None
+    if not shell_ex.PushRedirects(redirects):
+      # Error applying redirects, e.g. bad file descriptor.
+      new_status.append(1)
+    self.shell_ex = shell_ex
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.shell_ex.PopRedirects()
+
+
+class ctx_ProcessSub(object):
+  """For waiting on processes started during word evaluation.
+
+  Example:
+    diff <(seq 3) <(seq 4) > >(tac)
+  """
+  def __init__(self, shell_ex, process_sub_status):
+    # type: (_Executor, List[int]) -> None
+    shell_ex.PushProcessSub()
+    self.shell_ex = shell_ex
+    self.process_sub_status = process_sub_status
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+
+    # Wait and return array to set _process_sub_status
+    st = self.shell_ex.PopProcessSub()
+    self.process_sub_status.extend(st)

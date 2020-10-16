@@ -62,5 +62,9 @@ stdin-shell-2() {
   { echo 4; echo 5; } > >(tac)
 }
 
+both() {
+  diff -u <(seq 2) <(seq 3) > >(tac) || true
+}
+
 
 "$@"

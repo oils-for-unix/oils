@@ -1291,6 +1291,10 @@ class CommandEvaluator(object):
       for trap_node in to_run:  # NOTE: Don't call this 'node'!
         self._Execute(trap_node)
 
+    # TODO:
+    # with vm.ctx_ProcessSub(self.shell_ex) has to begin here
+    # Because _EvalRedirects can evaluate like 'seq 3 > >(tac)'
+
     # These nodes have no redirects.
     # TODO: Speed this up with some kind of bit mask?
     if node.tag_() in (
@@ -1314,7 +1318,30 @@ class CommandEvaluator(object):
     if redirects is None:  # evaluation error
       status = 1
 
-    elif len(redirects):
+    # TODO:
+    # _Dispatch wraps redirects
+    # _It also has a process sub stack, for Wait().  Where does that live?  In
+    # the executor?
+    #
+    # new_status = []  # out param
+    # with vm.ctx_Redirects(self.shell_ex, redirects, new_status, to_wait):
+    #   status, check_errexit = self._Dispatch(node)
+    #
+    # if len(new_status):
+    #   status = new_status[0]
+    #
+    # ps_status = self.shell_ex.WaitForProcessSubs(to_wait)
+    # if len(ps_status):
+    #   ... 
+    #
+    # And then
+    # in shell_ex.RunProcessSub()
+    #   self.process_sub_stack[-1].append( ...  ) # append to the top of the stack
+    # ctx_Redirects does PushRedirects() and PopRedirects(), and that includes
+    # the process sub stack
+
+    else:
+      # If there are no redirects, push/pop is a no-op.
       if self.shell_ex.PushRedirects(redirects):
         try:
           status, check_errexit = self._Dispatch(node)
@@ -1323,20 +1350,12 @@ class CommandEvaluator(object):
       else:  # Error applying redirects, e.g. bad file descriptor.
         status = 1
 
-    else:  # No redirects
-      status, check_errexit = self._Dispatch(node)
-
     self.mem.SetLastStatus(status)
-
-    # Unlike command subs, process subs like diff <(seq 3) <(seq 4) are
-    # asynchronous.  We wait for them at the end of the command.
-    #ps_status = self.shell_ex.MaybeWaitOnProcessSubs()
 
     # BUG: We can't wait here because of { echo foo; } > >(tac)
     # We will try to wait before the redirect closes the /dev/fd/64 pipe
     ps_status = []  # type: List[int]
     if len(ps_status):
-
       self.mem.SetProcessSubStatus(ps_status)
       pass
 
