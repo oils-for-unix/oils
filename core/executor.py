@@ -11,7 +11,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value_e, value__Obj, redirect)
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
-    Token, compound_word,
+    command_sub, compound_word, Token,
 )
 from asdl import runtime
 from core import error
@@ -341,12 +341,14 @@ class ShellExecutor(vm._Executor):
     p = self._MakeProcess(node.child)
     return p.Run(self.waiter)
 
-  def RunCommandSub(self, node):
-    # type: (command_t) -> str
+  def RunCommandSub(self, cs_part):
+    # type: (command_sub) -> str
 
     if not self.exec_opts.allow_command_sub():
       # TODO: Add spid of $(
       e_die("Command subs not allowed when errexit disabled (strict_errexit)")
+
+    node = cs_part.child
 
     # Hack for weird $(<file) construct
     if node.tag_() == command_e.Simple:
@@ -408,8 +410,8 @@ class ShellExecutor(vm._Executor):
     # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
     return ''.join(chunks).rstrip('\n')
 
-  def RunProcessSub(self, node, op_id):
-    # type: (command_t, Id_t) -> str
+  def RunProcessSub(self, cs_part):
+    # type: (command_sub) -> str
     """Process sub creates a forks a process connected to a pipe.
 
     The pipe is typically passed to another process via a /dev/fd/$FD path.
@@ -452,11 +454,12 @@ class ShellExecutor(vm._Executor):
       shopt -s process_sub_fail
       _process_sub_status
     """
-    p = self._MakeProcess(node)
+    p = self._MakeProcess(cs_part.child)
 
     r, w = posix.pipe()
     #log('pipe = %d, %d', r, w)
 
+    op_id = cs_part.left_token.id
     if op_id == Id.Left_ProcSubIn:
       # Example: cat < <(head foo.txt)
       #

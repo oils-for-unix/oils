@@ -11,7 +11,7 @@ if TYPE_CHECKING:
       cmd_value__Argv, cmd_value__Assign, redirect
   )
   from _devbuild.gen.syntax_asdl import (
-      command_t, command__Pipeline, command__Subshell
+      command_t, command__Pipeline, command__Subshell, command_sub
   )
   from osh.sh_expr_eval import ArithEvaluator
   from osh.sh_expr_eval import BoolEvaluator
@@ -90,12 +90,12 @@ class _Executor(object):
     # type: (command__Subshell) -> int
     return 0
 
-  def RunCommandSub(self, node):
-    # type: (command_t) -> str
+  def RunCommandSub(self, cs_part):
+    # type: (command_sub) -> str
     return ''
 
-  def RunProcessSub(self, node, op_id):
-    # type: (command_t, Id_t) -> str
+  def RunProcessSub(self, cs_part):
+    # type: (command_sub) -> str
     return ''
 
   def Time(self):
