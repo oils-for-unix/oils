@@ -70,7 +70,6 @@ no_such_command_heredoc() {
 
   # Note: bash gives the line of the beginning of the here doc!  Not the actual
   # line.
-  # TODO: osh doesn't give any psition info.
   cat <<EOF
 one
 $(ZZZZZ)
@@ -309,6 +308,24 @@ ambiguous_redirect_context() {
   foo=$(echo hi > "$@")
   echo $foo
   echo 'SHOULD NOT REACH HERE'
+}
+
+command_sub_errexit() {
+  #set -o errexit
+  shopt -s command_sub_errexit || true
+  shopt -s inherit_errexit || true
+
+  echo t=$(true) f=$(false) 3=$(exit 3)
+  echo 'SHOULD NOT GET HERE'
+}
+
+process_sub_fail() {
+  shopt -s process_sub_fail || true
+  shopt -s inherit_errexit || true
+  set -o errexit
+
+  cat <(echo a; exit 2) <(echo b; exit 3)
+  echo 'SHOULD NOT GET HERE'
 }
 
 #
@@ -759,7 +776,8 @@ all() {
     builtin_trap builtin_getopts builtin_wait \
     builtin_exec \
     strict_word_eval_warnings strict_arith_warnings \
-    strict_control_flow_warnings control_flow_subshell; do
+    strict_control_flow_warnings control_flow_subshell \
+    command_sub_errexit process_sub_fail; do
     _run_test $t
   done
 }
