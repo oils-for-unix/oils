@@ -9,7 +9,7 @@ TODO: Move some of osh/word_ here.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    command_e, command_t, command__Pipeline, command__AndOr,
+    command_e, command_t, command__Simple, command__Pipeline, command__AndOr,
     command__DoGroup, command__Sentence, command__Subshell,
     command__WhileUntil, command__If, command__Case, command__TimeBlock,
     BraceGroup,
@@ -37,11 +37,13 @@ def SpanForCommand(node):
     #log("node.child %s", node.child)
     return node.terminator.span_id  # & or ;
 
-  # TODO: This is complicated
-  #if tag == command_e.Simple:
-    #node = cast(command__Simple, UP_node)
-    #if node.words:
-    #  return word_.LeftMostSpanForWord(node.words[0])
+  if tag == command_e.Simple:
+    node = cast(command__Simple, UP_node)
+    # It should have either words or redirects, e.g. '> foo'
+    if node.words:
+      return word_.LeftMostSpanForWord(node.words[0])
+    elif node.redirects:
+      return node.redirects[0].op.span_id
 
   if tag == command_e.Pipeline:
     node = cast(command__Pipeline, UP_node)

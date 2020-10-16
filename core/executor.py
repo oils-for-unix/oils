@@ -321,6 +321,9 @@ class ShellExecutor(vm._Executor):
     pi.AddLast((self.cmd_ev, node.children[n-1]))
 
     pipe_status = pi.Run(self.waiter, self.fd_state)
+
+    # TODO: Do this in the command evaluator?
+    # Well you have to negate the status too
     self.mem.SetPipeStatus(pipe_status)
 
     if self.exec_opts.pipefail():

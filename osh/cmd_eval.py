@@ -282,7 +282,7 @@ class CommandEvaluator(object):
         if case(command_e.Simple):
           node = cast(command__Simple, UP_node)
           reason = 'command in '
-          span_id = word_.LeftMostSpanForWord(node.words[0])
+          span_id = location.SpanForCommand(node)
         elif case(command_e.ShAssignment):
           node = cast(command__ShAssignment, UP_node)
           reason = 'assignment in '
@@ -296,7 +296,7 @@ class CommandEvaluator(object):
           # The whole pipeline can fail separately
           # TODO: We should show which element of the pipeline failed!
           reason = 'pipeline invoked from '
-          span_id = node.spids[0]  # only one spid
+          span_id = node.spids[0]  # spid of first |
         else:
           # NOTE: The fallback of CurrentSpanId() fills this in.
           reason = ''

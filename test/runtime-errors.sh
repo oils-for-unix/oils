@@ -192,6 +192,16 @@ pipefail() {
   echo 'SHOULD NOT GET HERE'
 }
 
+pipefail_no_words() {
+  set -o errexit
+  set -o pipefail
+
+  # Make sure we can blame this
+  seq 3 | wc -l | > /nonexistent
+
+  echo done
+}
+
 pipefail_func() {
   set -o errexit -o pipefail
   f42() {
@@ -761,7 +771,7 @@ all() {
     no_such_command no_such_command_commandsub no_such_command_heredoc \
     failed_command errexit_usage_error errexit_subshell errexit_dbracket \
     errexit_alias strict_errexit_1 strict_errexit_2 \
-    pipefail pipefail_group pipefail_subshell pipefail_func \
+    pipefail pipefail_group pipefail_subshell pipefail_no_words pipefail_func \
     pipefail_while pipefail_multiple \
     core_process osh_state \
     nounset bad_var_ref \
