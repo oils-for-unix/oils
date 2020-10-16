@@ -18,7 +18,8 @@
 -- * select block
 -- * case fallthrough ;& and ;;&
 
--- TODO: Preserve these source differences:
+-- We usually try to preserve the physical order of the source in the ASDL fields.
+-- Exceptions:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
 
 -- Refactorings:
@@ -27,17 +28,8 @@
 --   bool_expr = WordTest %compound_word | ...
 --
 -- Many %Token references:
---   word_part = Literal %Token | ...
 --   type_expr = Atom %Token | ...
 --   printf_part ...
---
--- Size optimization:
---   SimpleVarSub(Token token) could be optimized
---   SimpleVarSub(id id, string val, int span_id) without useless token 'tag'
---   Or VarSubSpecial(id id, int span_id)
---    | VarSubNum(id, int n, int span_id)
---    | SimpleVarSub(id, string val, int span_id)
--- and get rid of attributes (int* spids)
 
 module syntax
 {
@@ -86,8 +78,7 @@ module syntax
 
   -- NOTE: 'val' and 'span_id' fields redundant but useful.  'val' is for
   -- execution, and 'span_id' is for error messages and translation.
-  -- TODO: define Id_t as uint16_t, and this should pack in (2+2) + 4 + 8 = 16
-  -- bytes.
+  -- TODO: new representation that points to a line?
   Token = (id id, int span_id, string val)
 
   -- After parsing, we often don't need the token 'string val', so use a
@@ -153,10 +144,10 @@ module syntax
   | DoubleQuoted %double_quoted
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
+    -- For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %command_sub
     -- This should be token tilde, token rest
   | TildeSub(Token token)
-    -- For command sub and process sub: $(...)  <(...)  >(...)
   | ArithSub(arith_expr anode)
     -- {a,b,c}
   | BracedTuple(compound_word* words)
@@ -166,7 +157,10 @@ module syntax
     -- note: optional int may need special handling in ASDL
   -- extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, word* arms)
-    -- @array
+
+    -- Oil extensions
+
+    -- @myarray
   | Splice(Token name)
     -- $strfunc(x) and @arrayfunc(x)
   | FuncCall(Token name, arg_list args)
@@ -196,12 +190,6 @@ module syntax
     -- note: this could also be Token
   | String(id id, string s, int span_id)
 
-  -- TODO: Need more tokens/spids to translate a[x++]=1
-  -- These don't follow the LST design, because they're shared for
-  -- s['x']+='y' and (( s[ 42 ] ++ )).
-  -- It would be better runtime.lvalue were be the shared representation, and
-  -- there were 2 different lhs_expr types.  They both should contribute their
-  -- location information.
   sh_lhs_expr =
     Name(string name)
   | IndexedName(string name, arith_expr index)
@@ -254,8 +242,7 @@ module syntax
 
   command = 
     NoOp
-    -- notes:
-    -- * do_fork is semantic, not syntactic
+    -- Note: do_fork is semantic, not syntactic
   | Simple(word* words, redir* redirects, env_pair* more_env,
            BraceGroup? block, bool do_fork)
     -- This doesn't technically belong in the LST, but it's convenient for
@@ -282,7 +269,7 @@ module syntax
   | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
             command body, redir* redirects)
     -- C-style for loop.  Any of the 3 expressions can be omitted.
-    -- TODO: body is required, but only optional here because of initialization
+    -- Note: body is required, but only optional here because of initialization
     -- order.
   | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
             command? body, redir* redirects)
@@ -296,6 +283,7 @@ module syntax
     -- 2. ls ; ls & ls  (same line)
     -- 3. command_sub -- single child that's a CommandList
     -- 4. Subshell -- single child that's a CommandList
+    -- Similar to DoGroup, except that has do and done spids.
   | CommandList(command* children)
 
     -- Oil stuff
@@ -397,14 +385,14 @@ module syntax
   attribute = (expr obj, Token op, Token attr, expr_context ctx)
 
   -- Places that can be mutated.
-  -- TODO: Changed to Var %Token and expr.Var %Token.
   place_expr = 
-    Var(Token name)
+    Var(Token name)  -- TODO: could be Var %Token
   | Subscript %subscript
   | Attribute %attribute
 
   expr =
-    Var(Token name)  -- a variable name to evaluate
+    -- a variable name to evaluate
+    Var(Token name)  -- TODO: could be Var %Token
     -- For null, Bool, Int, Float
     -- Python uses Num(object n), which doesn't respect our "LST" invariant.
   | Const(Token c)

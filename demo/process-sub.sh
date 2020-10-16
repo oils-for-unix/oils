@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # I think this is a zsh feature ported to bash.
 #

@@ -91,7 +91,6 @@ IsEvalSource = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
 
 
-
 # Python type name -> Oil type name
 OIL_TYPE_NAMES = {
     'bool': 'Bool',
@@ -966,13 +965,17 @@ class CommandEvaluator(object):
             self.errfmt.PrefixPrint(msg, prefix='warning: ', span_id=tok.span_id)
             status = 0
 
-      # The only difference between these next two is that CommandList
-      # has no redirects.  We already took care of that above.  But we
-      # need to split them up for mycpp.
+      # Note CommandList and DoGroup have no redirects, but BraceGroup does.
+      # DoGroup has 'do' and 'done' spids for translation.
       elif case(command_e.CommandList):
         node = cast(command__CommandList, UP_node)
         status = self._ExecuteList(node.children)
         check_errexit = False
+
+      elif case(command_e.DoGroup):
+        node = cast(command__DoGroup, UP_node)
+        status = self._ExecuteList(node.children)
+        check_errexit = False  # not real statements
 
       elif case(command_e.BraceGroup):
         node = cast(BraceGroup, UP_node)
@@ -1152,11 +1155,6 @@ class CommandEvaluator(object):
                 status = 0
               else:  # return needs to pop up more
                 raise
-
-      elif case(command_e.DoGroup):
-        node = cast(command__DoGroup, UP_node)
-        status = self._ExecuteList(node.children)
-        check_errexit = False  # not real statements
 
       elif case(command_e.ShFunction):
         node = cast(command__ShFunction, UP_node)
@@ -1599,7 +1597,7 @@ class CommandEvaluator(object):
 
       # TODO:
       # - Handle &block param?  How to do that?  It's really the
-      #   syntax_asdl.command_t type?  Or objects.Block probably.
+      #   syntax_asdl.command_t type?  Or value.Block.
 
       try:
         status = self._Execute(node.body)
