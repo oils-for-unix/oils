@@ -47,8 +47,7 @@ from osh import word_compile
 from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.id_kind_asdl import Id_t
-  from _devbuild.gen.syntax_asdl import command_t, speck, word_part_t
+  from _devbuild.gen.syntax_asdl import speck, word_part_t
   from _devbuild.gen.option_asdl import builtin_t
   from core import optview
   from core.state import Mem

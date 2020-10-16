@@ -28,7 +28,6 @@ import posix_ as posix
 
 from typing import cast, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import (
     command_t, command__Subshell, command__ShFunction,

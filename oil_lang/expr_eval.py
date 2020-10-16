@@ -237,7 +237,7 @@ class OilEvaluator(object):
       if id_ == Id.Left_AmpParen:
         return 'TODO: value.Block'
       else:
-        stdout = self.shell_ex.RunCommandSub(node.child)
+        stdout = self.shell_ex.RunCommandSub(node)
         if id_ == Id.Left_AtParen:  # @(seq 3)
           strs = self.splitter.SplitForWordEval(stdout)
           return strs

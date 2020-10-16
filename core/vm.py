@@ -6,7 +6,6 @@ from __future__ import print_function
 
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.runtime_asdl import (
       cmd_value__Argv, cmd_value__Assign, redirect
   )
