@@ -388,10 +388,10 @@ class ShellExecutor(vm._Executor):
     # waiting until the command is over!
     if self.exec_opts.command_sub_errexit():
       if status != 0:
-        # TODO: Add spid of $(
         raise error.ErrExit(
             'Command sub exited with status %d (%s)' %
-            (status, ui.CommandType(node)), span_id=runtime.NO_SPID, status=status)
+            (status, ui.CommandType(node)), span_id=cs_part.left_token.span_id,
+            status=status)
 
     else:
       # Set a flag so we check errexit at the same time as bash.  Example:
@@ -531,6 +531,7 @@ class ShellExecutor(vm._Executor):
       st = p.Wait(self.waiter)
       statuses.append(st)
 
+    # TODO: Return spid of <( or >( as well.  Thread it into _CheckStatus
     return statuses
 
   def Time(self):

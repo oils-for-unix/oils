@@ -294,6 +294,7 @@ class CommandEvaluator(object):
         elif case(command_e.Pipeline):
           node = cast(command__Pipeline, UP_node)
           # The whole pipeline can fail separately
+          # TODO: We should show which element of the pipeline failed!
           reason = 'pipeline invoked from '
           span_id = node.spids[0]  # only one spid
         else:

@@ -194,13 +194,15 @@ pipefail() {
 
 pipefail_func() {
   set -o errexit -o pipefail
-  f() {
+  f42() {
     cat
     # NOTE: If you call 'exit 42', there is no error message displayed!
     #exit 42
     return 42
   }
-  echo hi | f | wc
+
+  # TODO: blame the right location
+  echo hi | cat | f42 | wc
 
   echo 'SHOULD NOT GET HERE'
 }

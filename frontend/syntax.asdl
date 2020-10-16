@@ -278,7 +278,7 @@ module syntax
   | Case(word to_match, case_arm* arms, redir* redirects)
   | ShFunction(string name, command body)
   | TimeBlock(command pipeline)
-    -- Some nodes optimize it out as command*, but we use this for
+    -- Some nodes optimize it out as command*, but we use CommandList for
     -- 1. the top level
     -- 2. ls ; ls & ls  (same line)
     -- 3. command_sub -- single child that's a CommandList
