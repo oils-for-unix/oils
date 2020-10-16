@@ -38,7 +38,7 @@ if TYPE_CHECKING:
   from core.vm import _Builtin
 
 
-class ProcessSubFrame(object):
+class _ProcessSubFrame(object):
   def __init__(self):
     # type: () -> None
     self.to_close = []  # type: List[int]  # file descriptors
@@ -77,12 +77,7 @@ class ShellExecutor(vm._Executor):
     self.job_state = job_state
     self.fd_state = fd_state
     self.errfmt = errfmt
-
-    # for process subs
-    self.to_wait = []  # type: List[process.Process]
-    self.to_close = []  # type: List[int]  # file descriptors
-
-    self.process_sub_stack = []  # type: List[ProcessSubFrame]
+    self.process_sub_stack = []  # type: List[_ProcessSubFrame]
 
   def CheckCircularDeps(self):
     # type: () -> None
@@ -486,19 +481,21 @@ class ShellExecutor(vm._Executor):
     # Fork, letting the child inherit the pipe file descriptors.
     pid = p.Start()
 
+    ps_frame = self.process_sub_stack[-1]
+
     # Note: bash never waits() on the process, but zsh does.  The calling
     # program needs to read() before we can wait, e.g.
     #   diff <(sort left.txt) <(sort right.txt)
-    self.to_wait.append(p)
+    ps_frame.to_wait.append(p)
 
     # After forking, close the end of the pipe we're not using.
     if op_id == Id.Left_ProcSubIn:
       posix.close(w)  # cat < <(head foo.txt)
-      self.to_close.append(r)  # close later
+      ps_frame.to_close.append(r)  # close later
     elif op_id == Id.Left_ProcSubOut:
       posix.close(r)
       #log('Left_ProcSubOut closed %d', r)
-      self.to_close.append(w)  # close later
+      ps_frame.to_close.append(w)  # close later
     else:
       raise AssertionError()
 
@@ -512,28 +509,26 @@ class ShellExecutor(vm._Executor):
     else:
       raise AssertionError()
 
-  def MaybeWaitOnProcessSubs(self):
-    # type: () -> List[int]
+  def MaybeWaitOnProcessSubs(self, frame):
+    # type: (_ProcessSubFrame) -> List[int]
 
     # Wait in the same order that they were evaluated.  That seems fine.
 
     #if self.to_close:
     #  log('to_close %s', self.to_close)
-    for fd in self.to_close:
+    for fd in frame.to_close:
       #log('close %d', fd)
       posix.close(fd)
-    del self.to_close[:]
 
     #if self.to_wait:
     #  log('to_wait %s', self.to_wait)
 
     statuses = []  # type: List[int]
-    for p in self.to_wait:
+    for p in frame.to_wait:
       #log('waiting for %s', p)
       st = p.Wait(self.waiter)
       statuses.append(st)
 
-    del self.to_wait[:]
     return statuses
 
   def Time(self):
@@ -550,7 +545,7 @@ class ShellExecutor(vm._Executor):
 
   def PushProcessSub(self):
     # type: () -> None
-    self.process_sub_stack.append(ProcessSubFrame())
+    self.process_sub_stack.append(_ProcessSubFrame())
 
   def PopProcessSub(self):
     # type: () -> List[int]
@@ -561,5 +556,5 @@ class ShellExecutor(vm._Executor):
     wait.
     """
     frame = self.process_sub_stack.pop()
-    st = self.MaybeWaitOnProcessSubs()
+    st = self.MaybeWaitOnProcessSubs(frame)
     return st

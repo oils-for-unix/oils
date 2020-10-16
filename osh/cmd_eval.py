@@ -1299,36 +1299,38 @@ class CommandEvaluator(object):
       for trap_node in to_run:  # NOTE: Don't call this 'node'!
         self._Execute(trap_node)
 
-    try:
-      redirects = self._EvalRedirects(node)
-    except error.RedirectEval as e:
-      ui.PrettyPrintError(e, self.arena)
-      redirects = None
+    # This has to go around redirect handling because the process sub could be
+    # in the redirect word:
+    #     { echo one; echo two; } > >(tac)
 
-    check_errexit = True
+    ps_status = []  # type: List[int]
+    with vm.ctx_ProcessSub(self.shell_ex, ps_status):
+      try:
+        redirects = self._EvalRedirects(node)
+      except error.RedirectEval as e:
+        ui.PrettyPrintError(e, self.arena)
+        redirects = None
 
-    if redirects is None:  # evaluation error
-      status = 1
+      check_errexit = True
 
-    else:
-      # If there are no redirects, push/pop is a no-op.
-      if self.shell_ex.PushRedirects(redirects):
-        # Asymmetry because of applying redirects can fail.
-        with vm.ctx_Redirect(self.shell_ex):
-          status, check_errexit = self._Dispatch(node)
-
-      else:
-        # Error applying redirects, e.g. bad file descriptor.
+      if redirects is None:  # evaluation error
         status = 1
 
-    self.mem.SetLastStatus(status)
+      else:
+        # If there are no redirects, push/pop is a no-op.
+        if self.shell_ex.PushRedirects(redirects):
+          # Asymmetry because of applying redirects can fail.
+          with vm.ctx_Redirect(self.shell_ex):
+            status, check_errexit = self._Dispatch(node)
 
-    # BUG: We can't wait here because of { echo foo; } > >(tac)
-    # We will try to wait before the redirect closes the /dev/fd/64 pipe
-    ps_status = []  # type: List[int]
+        else:
+          # Error applying redirects, e.g. bad file descriptor.
+          status = 1
+
+      self.mem.SetLastStatus(status)
+
     if len(ps_status):
       self.mem.SetProcessSubStatus(ps_status)
-      pass
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier
