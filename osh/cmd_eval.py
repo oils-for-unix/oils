@@ -304,13 +304,14 @@ class CommandEvaluator(object):
           # The whole pipeline can fail separately
           # TODO: We should show which element of the pipeline failed!
           reason = 'pipeline invoked from '
-          span_id = node.spids[0]  # spid of first |
+          span_id = node.spids[0]  # spid of !, or first |
         else:
           # NOTE: The fallback of CurrentSpanId() fills this in.
           reason = ''
           span_id = runtime.NO_SPID
 
-      if blame_spid != runtime.NO_SPID:  # override if explicitly passed
+      # override if explicitly passed, e.g. for process sub
+      if blame_spid != runtime.NO_SPID:
         span_id = blame_spid
 
       raise error.ErrExit(
@@ -547,12 +548,13 @@ class CommandEvaluator(object):
 
   def _Dispatch(self, node):
     # type: (command_t) -> Tuple[int, bool]
+    """Switch on the command_t variants and execute them."""
+
     # If we call RunCommandSub in a recursive call to the executor, this will
     # be set true (if strict_errexit is false).  But it only lasts for one
     # command.
     self.check_command_sub_status = False
 
-    #argv0 = None  # for error message
     check_errexit = False  # for errexit
 
     UP_node = node
@@ -650,17 +652,34 @@ class CommandEvaluator(object):
         if len(node.stderr_indices):
           e_die("|& isn't supported", span_id=node.spids[0])
 
+        # TODO: how to get errexit_spid into _Execute?
+        # It can be the span_id of !, or of the pipeline component that failed,
+        # recorded in c_status.
         if node.negated:
           self._StrictErrExit(node)
           # spid of !
           with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
-            status2 = self.shell_ex.RunPipeline(node)
+            c_status = self.shell_ex.RunPipeline(node)
 
           # errexit is disabled for !.
           check_errexit = False
-          status = 1 if status2 == 0 else 0
         else:
-          status = self.shell_ex.RunPipeline(node)
+          c_status = self.shell_ex.RunPipeline(node)
+
+        statuses = c_status.statuses
+        self.mem.SetPipeStatus(statuses)
+
+        if self.exec_opts.pipefail():
+          # The status is that of the LAST command that is non-zero.
+          status = 0
+          for st in statuses:
+            if st != 0:
+              status = st
+        else:
+          status = statuses[-1]  # status of last one is pipeline status
+
+        if node.negated:
+          status = 1 if status == 0 else 0
 
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)

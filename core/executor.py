@@ -22,6 +22,7 @@ from core.pyutil import stderr_line
 from core import ui
 from core import vm
 from frontend import consts
+from frontend import location
 from oil_lang import objects
 from mycpp import mylib
 
@@ -308,36 +309,29 @@ class ShellExecutor(vm._Executor):
     return 0
 
   def RunPipeline(self, node):
-    # type: (command__Pipeline) -> int
+    # type: (command__Pipeline) -> CompoundStatus
 
     pi = process.Pipeline()
+
+    c_status = CompoundStatus()
 
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)
     for i in xrange(n - 1):
-      p = self._MakeProcess(node.children[i])
+      child = node.children[i]
+
+      # TODO: maybe determine these at parse time?
+      c_status.spids.append(location.SpanForCommand(child))
+
+      p = self._MakeProcess(child)
       p.Init_ParentPipeline(pi)
       pi.Add(p)
 
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
     pi.AddLast((self.cmd_ev, node.children[n-1]))
 
-    pipe_status = pi.Run(self.waiter, self.fd_state)
-
-    # TODO: Do this in the command evaluator?
-    # Well you have to negate the status too
-    self.mem.SetPipeStatus(pipe_status)
-
-    if self.exec_opts.pipefail():
-      # The status is that of the last command that is non-zero.
-      status = 0
-      for st in pipe_status:
-        if st != 0:
-          status = st
-    else:
-      status = pipe_status[-1]  # status of last one is pipeline status
-
-    return status
+    c_status.statuses = pi.Run(self.waiter, self.fd_state)
+    return c_status
 
   def RunSubshell(self, node):
     # type: (command__Subshell) -> int

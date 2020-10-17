@@ -4,10 +4,11 @@ vm.py: Library for executing shell.
 """
 from __future__ import print_function
 
+from _devbuild.gen.runtime_asdl import CompoundStatus
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
-      cmd_value__Argv, cmd_value__Assign, redirect, CompoundStatus
+      cmd_value__Argv, cmd_value__Assign, redirect
   )
   from _devbuild.gen.syntax_asdl import (
       command_t, command__Pipeline, command__Subshell, command_sub
@@ -82,8 +83,8 @@ class _Executor(object):
     return 0
 
   def RunPipeline(self, node):
-    # type: (command__Pipeline) -> int
-    return 0
+    # type: (command__Pipeline) -> CompoundStatus
+    return CompoundStatus()   # no results
 
   def RunSubshell(self, node):
     # type: (command__Subshell) -> int
