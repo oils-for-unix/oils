@@ -324,8 +324,10 @@ class ShellExecutor(vm._Executor):
       p.Init_ParentPipeline(pi)
       pi.Add(p)
 
+    last_child = node.children[n-1]
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
-    pi.AddLast((self.cmd_ev, node.children[n-1]))
+    pi.AddLast((self.cmd_ev, last_child))
+    status_out.spids.append(location.SpanForCommand(last_child))
 
     status_out.codes = pi.Run(self.waiter, self.fd_state)
 

@@ -141,3 +141,51 @@ b
 status=0 ps=
 ## END
 
+#### process subs and pipelines together
+
+# zsh is very similar to bash, but don't bother with the assertions
+case $SH in (zsh) exit ;; esac
+
+
+f() {
+  cat <(seq 1; exit 1) | {
+    cat <(seq 2; exit 2) <(seq 3; exit 3)
+    (exit 4)
+  }
+  echo process_sub=${_process_sub_status[@]}
+  echo pipeline=${PIPESTATUS[@]}
+  echo status=$?
+  echo __
+}
+
+f
+
+#set -o pipefail
+#f
+#
+#shopt -s process_sub_fail
+#f
+
+## STDOUT:
+1
+2
+1
+2
+3
+process_sub=2 3
+pipeline=0 4
+status=0
+__
+## END
+## N-I bash STDOUT:
+1
+2
+1
+2
+3
+process_sub=
+pipeline=0
+status=0
+__
+## END
+## N-I zsh stdout-json: ""
