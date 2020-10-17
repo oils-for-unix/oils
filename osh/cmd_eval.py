@@ -42,6 +42,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Int, value__Str, value__MaybeStrArray,
     redirect, redirect_arg, scope_e,
     cmd_value_e, cmd_value__Argv, cmd_value__Assign,
+    CompoundStatus,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -270,8 +271,8 @@ class CommandEvaluator(object):
     # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
     return node.spids[0]
 
-  def _CheckStatus(self, status, node):
-    # type: (int, command_t) -> None
+  def _CheckStatus(self, status, node, blame_spid):
+    # type: (int, command_t, int) -> None
     """Raises error.ErrExit, maybe with location info attached."""
     if self.exec_opts.errexit() and status != 0:
       # NOTE: Sometimes location info is duplicated.
@@ -308,6 +309,9 @@ class CommandEvaluator(object):
           # NOTE: The fallback of CurrentSpanId() fills this in.
           reason = ''
           span_id = runtime.NO_SPID
+
+      if blame_spid != runtime.NO_SPID:  # override if explicitly passed
+        span_id = blame_spid
 
       raise error.ErrExit(
           'Exiting with status %d (%sPID %d)' % (status, reason, posix.getpid()),
@@ -885,7 +889,7 @@ class CommandEvaluator(object):
         # Set a flag in mem?   self.mem.last_status or
         if self.check_command_sub_status:
           last_status = self.mem.LastStatus()
-          self._CheckStatus(last_status, node)
+          self._CheckStatus(last_status, node, runtime.NO_SPID)
           status = last_status  # A global assignment shouldn't clear $?.
         else:
           status = 0
@@ -1311,7 +1315,7 @@ class CommandEvaluator(object):
     # in the redirect word:
     #     { echo one; echo two; } > >(tac)
 
-    ps_status = []  # type: List[int]
+    ps_status = CompoundStatus()
     with vm.ctx_ProcessSub(self.shell_ex, ps_status):
       try:
         redirects = self._EvalRedirects(node)
@@ -1337,12 +1341,15 @@ class CommandEvaluator(object):
 
       self.mem.SetLastStatus(status)
 
-    if len(ps_status):
-      self.mem.SetProcessSubStatus(ps_status)
+    errexit_spid = runtime.NO_SPID
+    if len(ps_status.statuses):
+      statuses = ps_status.statuses
+      self.mem.SetProcessSubStatus(statuses)
       if status == 0 and self.exec_opts.process_sub_fail():
-        for st in ps_status:  # Make it the first non-zero exit code
+        for i, st in enumerate(statuses):  # Make it the first non-zero exit code
           if st != 0:
             status = st
+            errexit_spid = ps_status.spids[i]
             break
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
@@ -1355,7 +1362,7 @@ class CommandEvaluator(object):
     #   - e.g. arith sub, command sub?  I don't want arith sub.
     # - ControlFlow: always raises, it has no status.
     if check_errexit:
-      self._CheckStatus(status, node)
+      self._CheckStatus(status, node, errexit_spid)
 
     return status
 

@@ -7,7 +7,7 @@ from __future__ import print_function
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
-      cmd_value__Argv, cmd_value__Assign, redirect
+      cmd_value__Argv, cmd_value__Assign, redirect, CompoundStatus
   )
   from _devbuild.gen.syntax_asdl import (
       command_t, command__Pipeline, command__Subshell, command_sub
@@ -113,8 +113,8 @@ class _Executor(object):
     # type: () -> None
     pass
 
-  def PopProcessSub(self):
-    # type: () -> List[int]
+  def PopProcessSub(self, compound_st):
+    # type: (CompoundStatus) -> None
     pass
 
 
@@ -181,7 +181,7 @@ class ctx_ProcessSub(object):
     diff <(seq 3) <(seq 4) > >(tac)
   """
   def __init__(self, shell_ex, process_sub_status):
-    # type: (_Executor, List[int]) -> None
+    # type: (_Executor, CompoundStatus) -> None
     shell_ex.PushProcessSub()
     self.shell_ex = shell_ex
     self.process_sub_status = process_sub_status
@@ -194,5 +194,4 @@ class ctx_ProcessSub(object):
     # type: (Any, Any, Any) -> None
 
     # Wait and return array to set _process_sub_status
-    st = self.shell_ex.PopProcessSub()
-    self.process_sub_status.extend(st)
+    self.shell_ex.PopProcessSub(self.process_sub_status)

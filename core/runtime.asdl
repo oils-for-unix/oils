@@ -99,6 +99,10 @@ module runtime
   -- evaluated version of syntax.redir
   redirect = (id op_id, int op_spid, redir_loc loc, redirect_arg arg)
 
+  -- an exit status with location info.  For process sub and pipelines.
+  -- TODO: we could have beginning and end spids?
+  CompoundStatus = (int* statuses, int* spids)
+
   job_status =
     Proc(int code)
   | Pipeline(int* codes)

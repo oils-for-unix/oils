@@ -8,7 +8,8 @@ import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (value_e, value__Obj, redirect)
+from _devbuild.gen.runtime_asdl import (
+    value_e, value__Obj, redirect, CompoundStatus)
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
     command_sub, compound_word, Token,
@@ -42,6 +43,7 @@ class _ProcessSubFrame(object):
     # type: () -> None
     self.to_close = []  # type: List[int]  # file descriptors
     self.to_wait = []  # type: List[process.Process]
+    self.span_ids = []  # type: List[int]
 
 
 class ShellExecutor(vm._Executor):
@@ -491,6 +493,7 @@ class ShellExecutor(vm._Executor):
     # program needs to read() before we can wait, e.g.
     #   diff <(sort left.txt) <(sort right.txt)
     ps_frame.to_wait.append(p)
+    ps_frame.span_ids.append(cs_part.left_token.span_id)
 
     # After forking, close the end of the pipe we're not using.
     if op_id == Id.Left_ProcSubIn:
@@ -513,8 +516,8 @@ class ShellExecutor(vm._Executor):
     else:
       raise AssertionError()
 
-  def MaybeWaitOnProcessSubs(self, frame):
-    # type: (_ProcessSubFrame) -> List[int]
+  def MaybeWaitOnProcessSubs(self, frame, compound_st):
+    # type: (_ProcessSubFrame, CompoundStatus) -> None
 
     # Wait in the same order that they were evaluated.  That seems fine.
 
@@ -527,14 +530,12 @@ class ShellExecutor(vm._Executor):
     #if self.to_wait:
     #  log('to_wait %s', self.to_wait)
 
-    statuses = []  # type: List[int]
-    for p in frame.to_wait:
+    for i, p in enumerate(frame.to_wait):
       #log('waiting for %s', p)
       st = p.Wait(self.waiter)
-      statuses.append(st)
-
-    # TODO: Return spid of <( or >( as well.  Thread it into _CheckStatus
-    return statuses
+      compound_st.statuses.append(st)
+      compound_st.spids.append(frame.span_ids[i])
+      i += 1
 
   def Time(self):
     # type: () -> None
@@ -552,8 +553,8 @@ class ShellExecutor(vm._Executor):
     # type: () -> None
     self.process_sub_stack.append(_ProcessSubFrame())
 
-  def PopProcessSub(self):
-    # type: () -> List[int]
+  def PopProcessSub(self, compound_st):
+    # type: (CompoundStatus) -> None
     """
     This method is called by a context manager, which means we always wait() on
     the way out, which I think is the right thing.  We don't always set
@@ -561,5 +562,4 @@ class ShellExecutor(vm._Executor):
     wait.
     """
     frame = self.process_sub_stack.pop()
-    st = self.MaybeWaitOnProcessSubs(frame)
-    return st
+    self.MaybeWaitOnProcessSubs(frame, compound_st)
