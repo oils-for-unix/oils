@@ -115,7 +115,7 @@ set -o errexit
 cat <(echo a; exit 2) <(echo b; exit 3)
 echo status=$? ps=${_process_sub_status[@]}
 
-## status: 2
+## status: 3
 ## STDOUT:
 a
 b
@@ -123,7 +123,7 @@ status=0 ps=2 3
 __
 a
 b
-status=2 ps=2 3
+status=3 ps=2 3
 a
 b
 ## END
@@ -140,7 +140,4 @@ a
 b
 status=0 ps=
 ## END
-
-
-
 

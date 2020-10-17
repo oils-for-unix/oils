@@ -546,8 +546,8 @@ class CommandEvaluator(object):
 
     return b
 
-  def _Dispatch(self, node):
-    # type: (command_t) -> Tuple[int, bool]
+  def _Dispatch(self, node, pipeline_st):
+    # type: (command_t, CompoundStatus) -> Tuple[int, bool]
     """Switch on the command_t variants and execute them."""
 
     # If we call RunCommandSub in a recursive call to the executor, this will
@@ -657,29 +657,17 @@ class CommandEvaluator(object):
         # recorded in c_status.
         if node.negated:
           self._StrictErrExit(node)
+          pipeline_st.negated = True
           # spid of !
           with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
-            c_status = self.shell_ex.RunPipeline(node)
+            self.shell_ex.RunPipeline(node, pipeline_st)
 
           # errexit is disabled for !.
           check_errexit = False
         else:
-          c_status = self.shell_ex.RunPipeline(node)
+          self.shell_ex.RunPipeline(node, pipeline_st)
 
-        statuses = c_status.statuses
-        self.mem.SetPipeStatus(statuses)
-
-        if self.exec_opts.pipefail():
-          # The status is that of the LAST command that is non-zero.
-          status = 0
-          for st in statuses:
-            if st != 0:
-              status = st
-        else:
-          status = statuses[-1]  # status of last one is pipeline status
-
-        if node.negated:
-          status = 1 if status == 0 else 0
+        status = -1  # INVALID value because the caller will compute it
 
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
@@ -1334,15 +1322,17 @@ class CommandEvaluator(object):
     # in the redirect word:
     #     { echo one; echo two; } > >(tac)
 
-    ps_status = CompoundStatus()
-    with vm.ctx_ProcessSub(self.shell_ex, ps_status):
+    pipeline_st = CompoundStatus()
+    process_sub_st = CompoundStatus()
+    errexit_spid = runtime.NO_SPID
+    check_errexit = True
+
+    with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):
       try:
         redirects = self._EvalRedirects(node)
       except error.RedirectEval as e:
         ui.PrettyPrintError(e, self.arena)
         redirects = None
-
-      check_errexit = True
 
       if redirects is None:  # evaluation error
         status = 1
@@ -1352,24 +1342,40 @@ class CommandEvaluator(object):
         if self.shell_ex.PushRedirects(redirects):
           # Asymmetry because of applying redirects can fail.
           with vm.ctx_Redirect(self.shell_ex):
-            status, check_errexit = self._Dispatch(node)
+            status, check_errexit = self._Dispatch(node, pipeline_st)
+
+          codes = pipeline_st.codes 
+          if codes:  # Did we run a pipeline?
+            self.mem.SetPipeStatus(codes)
+
+            if self.exec_opts.pipefail():
+              # The status is that of the LAST command that is non-zero.
+              status = 0
+              for i, st in enumerate(codes):
+                if st != 0:
+                  status = st
+                  errexit_spid = pipeline_st.spids[i]
+            else:
+              status = codes[-1]  # status of last one is pipeline status
+
+            if pipeline_st.negated:
+              status = 1 if status == 0 else 0
 
         else:
           # Error applying redirects, e.g. bad file descriptor.
           status = 1
 
-      self.mem.SetLastStatus(status)
-
-    errexit_spid = runtime.NO_SPID
-    if len(ps_status.statuses):
-      statuses = ps_status.statuses
-      self.mem.SetProcessSubStatus(statuses)
+    if len(process_sub_st.codes):
+      codes = process_sub_st.codes
+      self.mem.SetProcessSubStatus(codes)
       if status == 0 and self.exec_opts.process_sub_fail():
-        for i, st in enumerate(statuses):  # Make it the first non-zero exit code
+        # Choose the LAST one, consistent with pipefail
+        for i, st in enumerate(codes):
           if st != 0:
             status = st
-            errexit_spid = ps_status.spids[i]
-            break
+            errexit_spid = process_sub_st.spids[i]
+
+    self.mem.SetLastStatus(status)
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
     # However, any bash construct can appear in a pipeline.  So it's easier

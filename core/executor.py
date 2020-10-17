@@ -8,8 +8,7 @@ import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (
-    value_e, value__Obj, redirect, CompoundStatus)
+from _devbuild.gen.runtime_asdl import value_e, value__Obj, redirect
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
     command_sub, compound_word, Token,
@@ -30,7 +29,7 @@ import posix_ as posix
 
 from typing import cast, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv, CompoundStatus
   from _devbuild.gen.syntax_asdl import (
     command_t, command__Subshell, command__ShFunction,
   )
@@ -308,12 +307,10 @@ class ShellExecutor(vm._Executor):
       log('[%%%d] Started PID %d', job_id, pid)
     return 0
 
-  def RunPipeline(self, node):
-    # type: (command__Pipeline) -> CompoundStatus
+  def RunPipeline(self, node, status_out):
+    # type: (command__Pipeline, CompoundStatus) -> None
 
     pi = process.Pipeline()
-
-    c_status = CompoundStatus()
 
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)
@@ -321,7 +318,7 @@ class ShellExecutor(vm._Executor):
       child = node.children[i]
 
       # TODO: maybe determine these at parse time?
-      c_status.spids.append(location.SpanForCommand(child))
+      status_out.spids.append(location.SpanForCommand(child))
 
       p = self._MakeProcess(child)
       p.Init_ParentPipeline(pi)
@@ -330,8 +327,7 @@ class ShellExecutor(vm._Executor):
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
     pi.AddLast((self.cmd_ev, node.children[n-1]))
 
-    c_status.statuses = pi.Run(self.waiter, self.fd_state)
-    return c_status
+    status_out.codes = pi.Run(self.waiter, self.fd_state)
 
   def RunSubshell(self, node):
     # type: (command__Subshell) -> int
@@ -527,7 +523,7 @@ class ShellExecutor(vm._Executor):
     for i, p in enumerate(frame.to_wait):
       #log('waiting for %s', p)
       st = p.Wait(self.waiter)
-      compound_st.statuses.append(st)
+      compound_st.codes.append(st)
       compound_st.spids.append(frame.span_ids[i])
       i += 1
 

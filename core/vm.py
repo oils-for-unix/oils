@@ -82,9 +82,9 @@ class _Executor(object):
     # type: (command_t) -> int
     return 0
 
-  def RunPipeline(self, node):
-    # type: (command__Pipeline) -> CompoundStatus
-    return CompoundStatus()   # no results
+  def RunPipeline(self, node, status_out):
+    # type: (command__Pipeline, CompoundStatus) -> None
+    pass
 
   def RunSubshell(self, node):
     # type: (command__Subshell) -> int
