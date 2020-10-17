@@ -1455,6 +1455,13 @@ class Mem(object):
 
   def GetVar(self, name, lookup_mode=scope_e.Dynamic):
     # type: (str, scope_t) -> value_t
+    """Used by the word evaluator and oil_lang/expr_eval.py
+
+    TODO:
+    - Many of these should be value.Int, not value.Str
+    - And even later _pipeline_status etc. should be lists of integers, not
+      strings
+    """
     assert isinstance(name, str), name
 
     # TODO: Short-circuit down to _ResolveNameOrRef by doing a single hash
@@ -1467,6 +1474,9 @@ class Mem(object):
       # - Reuse the MaybeStrArray?
       # - @@ could be an alias for ARGV (in command mode, but not expr mode)
       return value.MaybeStrArray(self.GetArgv())
+
+    if name == '_status':
+      return value.Str(str(self.last_status[-1]))
 
     if name in ('PIPESTATUS', '_pipeline_status'):
       return value.MaybeStrArray([str(i) for i in self.pipe_status[-1]])

@@ -924,6 +924,11 @@ oil-builtin-funcs() {
     $OIL_LIST "$@"
 }
 
+oil-special-vars() {
+  sh-spec spec/oil-special-vars.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
 oil-demo() {
   # Using OSH for minimalism
   sh-spec spec/oil-demo.test.sh --osh-failures-allowed 0 \
