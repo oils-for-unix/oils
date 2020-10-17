@@ -152,19 +152,13 @@ f() {
     cat <(seq 2; exit 2) <(seq 3; exit 3)
     (exit 4)
   }
-  echo process_sub=${_process_sub_status[@]}
-  echo pipeline=${PIPESTATUS[@]}
   echo status=$?
+  echo process_sub=${_process_sub_status[@]}
+  echo pipeline=${_pipeline_status[@]}
   echo __
 }
 
 f
-
-#set -o pipefail
-#f
-#
-#shopt -s process_sub_fail
-#f
 
 ## STDOUT:
 1
@@ -172,9 +166,9 @@ f
 1
 2
 3
+status=4
 process_sub=2 3
 pipeline=0 4
-status=0
 __
 ## END
 ## N-I bash STDOUT:
@@ -183,9 +177,9 @@ __
 1
 2
 3
+status=4
 process_sub=
-pipeline=0
-status=0
+pipeline=
 __
 ## END
 ## N-I zsh stdout-json: ""

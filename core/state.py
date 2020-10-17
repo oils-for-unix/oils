@@ -1468,7 +1468,7 @@ class Mem(object):
       # - @@ could be an alias for ARGV (in command mode, but not expr mode)
       return value.MaybeStrArray(self.GetArgv())
 
-    if name == 'PIPESTATUS':
+    if name in ('PIPESTATUS', '_pipeline_status'):
       return value.MaybeStrArray([str(i) for i in self.pipe_status[-1]])
 
     if name == '_process_sub_status':  # Oil naming convention

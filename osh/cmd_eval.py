@@ -1358,6 +1358,7 @@ class CommandEvaluator(object):
             else:
               status = codes[-1]  # status of last one is pipeline status
 
+            #log('pi st %d', status)
             if pipeline_st.negated:
               status = 1 if status == 0 else 0
 
@@ -1375,6 +1376,7 @@ class CommandEvaluator(object):
             status = st
             errexit_spid = process_sub_st.spids[i]
 
+    #log('set %d', status)
     self.mem.SetLastStatus(status)
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.

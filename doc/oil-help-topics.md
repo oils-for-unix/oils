@@ -137,11 +137,12 @@ X [Testing]       check
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
-                  X parse_redir_expr     >> var x   << 'here string'
-                  X longopts             test -file, read -delim, etc.
-                  command_sub_errexit           More errexit checks --  at command sub
+                  command_sub_errexit    More errexit checks --  at command sub
+                  process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
                   dashglob               Disabled to avoid files like -rf
+                  X longopts             test -file, read -delim, etc.
+                  X parse_redir_expr     >> var x   << 'here string'
   [oil:all]       * The full Oil language
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
@@ -158,6 +159,7 @@ X [Testing]       check
                                          ${a[@]}
   [Compatibility] eval_unsafe_arith   parse_dynamic_arith
                   verbose_errexit
+  [More Options]  allow_command_sub      Internal detail for strict_errexit
 ```
 
 <h2 id="env">
@@ -173,8 +175,10 @@ X [Testing]       check
 </h2>
 
 ```oil-help-topics
-                  ARGV   STATUS   M
+                  ARGV
   [Platform]      OIL_VERSION
+  [Exit Status]   _status   _pipeline_status   _process_sub_status
+X [Wok]           _line
 ```
 
 <h2 id="lib">
@@ -184,8 +188,8 @@ X [Testing]       check
 Access silently mutated globals:
 
 ```oil-help-topics
-X [Pattern]       _match()   _start()   _end()
-X [Wok]           _line   _field()
+  [Pattern]       _match()   X _start()   X _end()
+X [Wok]           _field()
 ```
 
 Functions:
