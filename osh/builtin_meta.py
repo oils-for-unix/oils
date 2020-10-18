@@ -11,7 +11,7 @@ from asdl import runtime
 from core import alloc
 from core import error
 from core import main_loop
-from core.pyerror import e_usage, log
+from core.pyerror import e_die, e_usage, log
 from core import pyutil  # strerror
 from core.pyutil import stderr_line
 from core import state
@@ -238,8 +238,13 @@ class Run(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
+    # TODO: Also hard usage error here too?
     attrs, arg_r = flag_spec.ParseOilCmdVal('run', cmd_val)
     arg = arg_types.run(attrs.attrs)
+
+    if arg_r.Peek() is None:
+      # HARD ERROR, not e_usage(), because errexit is often disabled!
+      e_die("'Run' expected a command to run", status=2)
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.block)
@@ -275,8 +280,14 @@ class Run(vm._Builtin):
           'Command executed with non-boolean status %d' % status,
           span_id=spids[0], status=status)
 
-    if arg.assign_status:
-      pass
+    if arg.assign_status is not None:
+      var_name = arg.assign_status
+      if var_name.startswith(':'):
+        var_name = var_name[1:]
+
+      # TODO: dynamic scope?  It should compose
+      state.SetLocalString(self.mem, var_name, str(status))
+      return 0  # don't fail
 
     return status
 
