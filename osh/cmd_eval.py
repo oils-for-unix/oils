@@ -1345,7 +1345,7 @@ class CommandEvaluator(object):
             status, check_errexit = self._Dispatch(node, pipeline_st)
 
           codes = pipeline_st.codes 
-          if codes:  # Did we run a pipeline?
+          if len(codes):  # Did we run a pipeline?
             self.mem.SetPipeStatus(codes)
 
             if self.exec_opts.pipefail():
