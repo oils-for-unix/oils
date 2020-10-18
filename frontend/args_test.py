@@ -231,7 +231,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(1, arg_r.i)
 
   def testOilFlags(self):
-    s = flag_spec._OilFlags()
+    s = flag_spec._OilFlagSpec()
     s.Flag('-docstring', args.Bool, default=True)
     s.Flag('-out-file', args.String)
     s.Flag('-retries', args.Int)
