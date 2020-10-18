@@ -50,7 +50,7 @@ _NORMAL_BUILTINS = [
     'push',
     'write', 'json',
     'repr', 'use', 'opts',
-    'status',
+    'run',
     'fork', 'forkwait',
 ]
 

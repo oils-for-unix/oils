@@ -122,8 +122,7 @@ def AddMeta(builtins, shell_ex, mutable_opts, procs, aliases, search_path,
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
                                                      search_path)
-  builtins[builtin_i.status] = builtin_meta.Status(mutable_opts, shell_ex,
-                                                   errfmt)
+  builtins[builtin_i.run] = builtin_meta.Run(mutable_opts, shell_ex, errfmt)
 
 
 def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt):

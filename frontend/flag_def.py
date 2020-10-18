@@ -242,14 +242,10 @@ _AddShellOptions(SET_SPEC)
 #
 
 
-STATUS_SPEC = OilFlags('status', typed=True)
-STATUS_SPEC.Flag('-ok', args.Bool,
+RUN_SPEC = OilFlags('run', typed=True)
+RUN_SPEC.Flag('-status-ok', args.Bool,
     help='Treat this statuses as zero.  Processes before other flags')
-STATUS_SPEC.Flag('-assign', args.String,
+RUN_SPEC.Flag('-assign-status', args.String,
     help='Assign status to this variable, and return 0')
-STATUS_SPEC.Flag('-nonzero', args.Bool,
-    help='Return 0 if the status is nonzero, 1 otherwise')
-STATUS_SPEC.Flag('-zero', args.Bool,
-    help='no-op: Return the status of the original command')
-STATUS_SPEC.Flag('-zero-or-one', args.Bool,
+RUN_SPEC.Flag('-bool-status', args.Bool,
     help='Return 0 or 1 status values, but fail for others (e.g. for grep)')

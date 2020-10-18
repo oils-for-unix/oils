@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import source
 from core import alloc
 from core import error
 from core import main_loop
-from core.pyerror import e_usage
+from core.pyerror import e_usage, log
 from core import pyutil  # strerror
 from core import state
 from core import vm
@@ -18,6 +18,8 @@ from frontend import flag_spec
 from frontend import consts
 from frontend import reader
 from osh import cmd_eval
+
+_ = log
 
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -200,27 +202,18 @@ class Builtin(vm._Builtin):
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
-class Status(vm._Builtin):
+class Run(vm._Builtin):
   """For the 'if myfunc' problem with errexit.
-  --nonzero
 
-  --zero-or-one or --01
-
-  --ok
+  --status-ok
     for SIGPIPE problem
+  --assign-status
+  --bool-status
 
-  --assign
-
-  if status deploy {  # "get the status"
+  if run deploy {
     echo "success"
   }
-  if status --nonzero deploy {  # "if the status is nonzero"
-    echo "failed"
-  }
-
-  # Technically --nonzero is same as this, but we want to give a pass/fail
-  # connotation, not a true/false (boolean) connotation.
-  if ! status deploy {
+  if ! run deploy {
     echo "failed"
   }
   """
@@ -234,11 +227,8 @@ class Status(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    attrs, arg_r = flag_spec.ParseOilCmdVal('status', cmd_val)
-    arg = arg_types.status(attrs.attrs)
-
-    if arg.nonzero:
-      print('TODO')
+    attrs, arg_r = flag_spec.ParseOilCmdVal('run', cmd_val)
+    arg = arg_types.run(attrs.attrs)
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.block)
@@ -253,8 +243,15 @@ class Status(vm._Builtin):
         # or forkwait { status ls }, but that is NOT idiomatic code.  status is
         # for functions.
         status = self.shell_ex.RunSimpleCommand(cmd_val2, True)
-    except error.ErrExit:
-      status = 1
+        #log('st %d', status)
+    except error.ErrExit as e:  # from functino call
+      #log('e %d', e.exit_status)
+      status = e.exit_status
+
+    if arg.bool_status and status not in (0, 1):
+      # TODO: preserve location info for external and for builtin
+      raise error.ErrExit(
+          'Command executed with non-boolean status %d' % status, status=status)
 
     # if arg.nonzero:
     #   if status != 0:
