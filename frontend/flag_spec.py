@@ -9,10 +9,13 @@ import sys
 from _devbuild.gen.runtime_asdl import (
     cmd_value__Argv, flag_type_e, flag_type_t, value, value_t,
 )
+from core.pyerror import log
 from frontend import args
 from mycpp import mylib
 
 from typing import Union, List, Tuple, Dict, Any, Optional
+
+_ = log
 
 # Similar to frontend/{option,builtin}_def.py
 FLAG_SPEC = {}
@@ -38,12 +41,12 @@ def FlagSpecAndMore(name, typed=False):
   return arg_spec
 
 
-def OilFlags(name):
-  # type: (str) -> _OilFlags
+def OilFlags(name, typed=False):
+  # type: (str, bool) -> _OilFlagSpec
   """
   For set, bin/oil.py ("main"), compgen -A, complete -A, etc.
   """
-  arg_spec = _OilFlags()
+  arg_spec = _OilFlagSpec(typed=typed)
   OIL_SPEC[name] = arg_spec
   return arg_spec
 
@@ -80,6 +83,16 @@ def ParseMore(spec_name, arg_r):
   return spec.Parse(arg_r)
 
 
+def ParseOilCmdVal(spec_name, cmd_val):
+  # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, args.Reader]
+  """Parse argv using a given FlagSpecAndMore."""
+  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+  arg_r.Next()  # move past the builtin name
+
+  spec = OIL_SPEC[spec_name]
+  return args.ParseOil(spec, arg_r), arg_r
+
+
 def All():
   # type: () -> Dict[str, Any]
   return FLAG_SPEC
@@ -88,8 +101,11 @@ def All():
 def _FlagType(arg_type):
   # type: (Union[None, int, List[str]]) -> flag_type_t
 
-  if arg_type is None:
+  if arg_type is None:  # implicit _FlagSpec
     typ = flag_type_e.Bool
+  elif arg_type == args.Bool:  # explicit _OilFlagSpec
+    typ = flag_type_e.Bool
+
   elif arg_type == args.Int:
     typ = flag_type_e.Int
   elif arg_type == args.Float:
@@ -137,6 +153,9 @@ def _Default(arg_type, arg_default=None):
 
   if arg_type is None:
     default = value.Bool(False)  # type: value_t
+  elif arg_type == args.Bool:  # for _OilFlagSpec
+    default = value.Bool(False)
+
   elif arg_type == args.Int:
     default = value.Int(-1)  # positive values aren't allowed now
   elif arg_type == args.Float:
@@ -323,7 +342,6 @@ class _FlagSpecAndMore(object):
     attr_name = name.replace('-', '_')
     if self.typed:
       self.defaults[attr_name] = _Default(arg_type, arg_default=default)
-      #from core.pyerror import log
       #log('%s DEFAULT %s', attr_name, self.defaults[attr_name])
     else:
       self.defaults[attr_name] = args.PyToValue(default)
@@ -378,7 +396,7 @@ class _FlagSpecAndMore(object):
     return args.ParseMore(self, arg_r)
 
 
-class _OilFlags(object):
+class _OilFlagSpec(object):
   """Parser for oil command line tools and builtins.
 
   Tools:
@@ -431,12 +449,16 @@ class _OilFlags(object):
 
   You can just attach that to every spec, like DefineOshCommonOptions(spec).
   """
-  def __init__(self):
-    # type: () -> None
+  def __init__(self, typed=False):
+    # type: (bool) -> None
     self.arity1 = {}  # type: Dict[str, args._Action]
     self.defaults = {}  # type: Dict[str, value_t]  # attr name -> default value
     # (flag name, string) tuples, in order
     self.help_strings = []  # type: List[Tuple[str, str]]
+
+    # For code generation.  Not used at runtime.
+    self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
+    self.typed = typed
 
   def Flag(self, name, arg_type, default=None, help=None):
     # type: (str, int, Optional[Any], Optional[str]) -> None
@@ -453,14 +475,21 @@ class _OilFlags(object):
     else:
       self.arity1[attr_name] = _MakeAction(arg_type, attr_name)
 
-    self.defaults[attr_name] = args.PyToValue(default)
+    if self.typed:
+      self.defaults[attr_name] = _Default(arg_type, arg_default=default)
+    else:
+      self.defaults[attr_name] = args.PyToValue(default)
+
+    #log('%s %s', name, arg_type)
+    typ = _FlagType(arg_type)
+    self.fields[attr_name] = typ
 
   def Parse(self, arg_r):
-    # type: (args.Reader) -> Tuple[args._Attributes, int]
+    # type: (args.Reader) -> args._Attributes
     return args.ParseOil(self, arg_r)
 
   def ParseArgv(self, argv):
     # type: (List[str]) -> Tuple[args._Attributes, int]
-    """For tools/readlink.py -- no location info available."""
+    """For opy/opy_main.py -- no location info available."""
     arg_r = args.Reader(argv)
-    return self.Parse(arg_r)
+    return self.Parse(arg_r), arg_r.i

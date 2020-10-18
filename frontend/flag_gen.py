@@ -251,6 +251,7 @@ attrs->index(new Str("%s"))->tag_() == value_e::Undef
   header_f.write("""
 extern FlagSpec_c kFlagSpecs[];
 extern FlagSpecAndMore_c kFlagSpecsAndMore[];
+extern OilFlagSpec_c kOilFlagSpecs[];
 
 }  // namespace arg_types
 
@@ -368,6 +369,12 @@ namespace arg_types {
 };
 """)
 
+  cc_f.write('OilFlagSpec_c kOilFlagSpecs[] = {\n')
+  cc_f.write("""\
+    {},
+};
+""")
+
   cc_f.write("""\
 }  // namespace arg_types
 """)
@@ -387,6 +394,8 @@ def main(argv):
   specs = {}
   specs.update(flag_spec.FLAG_SPEC)
   specs.update(flag_spec.FLAG_SPEC_AND_MORE)
+  specs.update(flag_spec.OIL_SPEC)
+  #log('SPECS %s', specs)
 
   for spec_name in sorted(specs):
     spec = specs[spec_name]

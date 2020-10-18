@@ -233,18 +233,25 @@ class Status(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
+
+    attrs, arg_r = flag_spec.ParseOilCmdVal('status', cmd_val)
+    arg = arg_types.status(attrs.attrs)
+
+    if arg.nonzero:
+      print('TODO')
+
+    argv, spids = arg_r.Rest2()
+    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.block)
+
     try:
-      cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
-                                cmd_val.block)
-
-      # Temporarily turn on errexit.  Note that 'if catch myproc' disables it
-      # and then enables it!
+      # Temporarily turn ON errexit, and blame the 'status' spid.  Note that
+      # 'if status myproc' disables it and then enables it!
       with state.ctx_ErrExit(self.mutable_opts, True, cmd_val.arg_spids[0]):
-
-        # do_fork is on command.Simple.  See _NoForkLast() in CommandEvaluator
-        # We have an extra fork (miss out on an optimization) of code like
-        # ( catch ls ) or forkwait { catch ls }, but that is NOT idiomatic
-        # code.  catch is for functions.
+        # Pass do_fork=True.  Slight annoyance: the real value is a field of
+        # command.Simple().  See _NoForkLast() in CommandEvaluator We have an
+        # extra fork (miss out on an optimization) of code like ( status ls )
+        # or forkwait { status ls }, but that is NOT idiomatic code.  status is
+        # for functions.
         status = self.shell_ex.RunSimpleCommand(cmd_val2, True)
     except error.ErrExit:
       status = 1

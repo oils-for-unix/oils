@@ -11,6 +11,7 @@ namespace flag_spec {
 
 using arg_types::kFlagSpecs;
 using arg_types::kFlagSpecsAndMore;
+using arg_types::kOilFlagSpecs;
 using runtime_asdl::flag_type_e;
 using runtime_asdl::value__Bool;
 using runtime_asdl::value__Undef;
@@ -192,6 +193,22 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   return out;
 }
 
+flag_spec::_OilFlagSpec* CreateSpecOil(OilFlagSpec_c* in) {
+  auto out = new flag_spec::_OilFlagSpec();
+  out->arity1 = new Dict<Str*, args::_Action*>();
+  out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
+
+#ifndef CPP_UNIT_TEST
+  if (in->arity1) {
+    _CreateActions(in->arity1, out->arity1);
+  }
+#endif
+  if (in->defaults) {
+    _CreateDefaults(in->defaults, out->defaults);
+  }
+  return out;
+}
+
 flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name) {
   int i = 0;
   while (true) {
@@ -220,6 +237,24 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
     if (str_equals0(name, spec_name)) {
       // log("%s found", spec_name->data_);
       return CreateSpec2(&kFlagSpecsAndMore[i]);
+    }
+
+    i++;
+  }
+  // log("%s not found", spec_name->data_);
+  return nullptr;
+}
+
+flag_spec::_OilFlagSpec* LookupFlagSpecOil(Str* spec_name) {
+  int i = 0;
+  while (true) {
+    const char* name = kOilFlagSpecs[i].name;
+    if (name == nullptr) {
+      break;
+    }
+    if (str_equals0(name, spec_name)) {
+      // log("%s found", spec_name->data_);
+      return CreateSpecOil(&kOilFlagSpecs[i]);
     }
 
     i++;
@@ -279,6 +314,21 @@ args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
   assert(spec);
   // assert(spec);  // should always be found
   return args::ParseMore(spec, arg_r);
+#endif
+}
+
+Tuple2<args::_Attributes*, args::Reader*> ParseOilCmdVal(
+    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
+#ifdef CPP_UNIT_TEST
+  return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
+#else
+  auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
+  arg_r->Next();  // move past the builtin name
+
+  flag_spec::_OilFlagSpec* spec = LookupFlagSpecOil(spec_name);
+  assert(spec);  // should always be found
+  return Tuple2<args::_Attributes*, args::Reader*>(args::ParseOil(spec, arg_r),
+                                                   arg_r);
 #endif
 }
 

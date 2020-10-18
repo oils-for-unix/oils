@@ -680,6 +680,12 @@ def ParseMore(spec, arg_r):
 _FLAG_ERE = '^--?([a-zA-Z0-9][a-zA-Z0-9\-]*)(=.*)?$'
 
 
+# TODO: translate after getting rid of regex
+def ParseOil(spec, arg_r):
+  # type: (flag_spec._OilFlagSpec, Reader) -> _Attributes
+  raise AssertionError()
+
+
 if mylib.PYTHON:
   try:
     import libc  # OilFlags uses regexes right now.
@@ -687,7 +693,7 @@ if mylib.PYTHON:
     libc = None
 
   def ParseOil(spec, arg_r):
-    # type: (flag_spec._OilFlags, Reader) -> Tuple[_Attributes, int]
+    # type: (flag_spec._OilFlagSpec, Reader) -> _Attributes
     out = _Attributes(spec.defaults)
 
     while not arg_r.AtEnd():
@@ -719,11 +725,11 @@ if mylib.PYTHON:
             suffix = None
           action.OnMatch(suffix, arg_r, out)
         else:
-          e_usage('Unrecognized flag %r' % arg)
+          e_usage("doesn't accept flag %r" % arg)
 
         arg_r.Next()  # next arg
 
       else:  # a regular arg
         break
 
-    return out, arg_r.i
+    return out

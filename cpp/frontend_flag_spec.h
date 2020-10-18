@@ -71,16 +71,19 @@ struct FlagSpec_c {
   DefaultPair_c* defaults;
 };
 
-//
-// For FlagSpecAndMore
-//
-
 struct FlagSpecAndMore_c {
   const char* name;  // e.g. 'osh'
   // These are Dict[str, _Action]
   Action_c* actions_short;
   Action_c* actions_long;
   const char** plus_flags;  // NULL terminated array
+  DefaultPair_c* defaults;
+};
+
+struct OilFlagSpec_c {
+  const char* name;  // e.g. 'osh'
+  // These are Dict[str, _Action]
+  Action_c* arity1;
   DefaultPair_c* defaults;
 };
 
@@ -103,6 +106,12 @@ class _FlagSpecAndMore {
   Dict<Str*, runtime_asdl::value_t*>* defaults;
 };
 
+class _OilFlagSpec {
+ public:
+  Dict<Str*, args::_Action*>* arity1;
+  Dict<Str*, runtime_asdl::value_t*>* defaults;
+};
+
 // for testing only
 flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name);
 
@@ -115,6 +124,9 @@ Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val);
 
 args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r);
+
+Tuple2<args::_Attributes*, args::Reader*> ParseOilCmdVal(
+    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val);
 
 }  // namespace flag_spec
 
