@@ -46,20 +46,22 @@ class Repr(_Builtin):
   'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
   """
   def Run(self, cmd_val):
+    arg, arg_r = flag_spec.ParseOilCmdVal('repr', cmd_val)
+    argv, spids = arg_r.Rest2()
+
     status = 0
-    for i in xrange(1, len(cmd_val.argv)):
-      name = cmd_val.argv[i]
+    for i, name in enumerate(argv):
       if name.startswith(':'):
         name = name[1:]
 
       if not match.IsValidVarName(name):
         raise error.Usage('got invalid variable name %r' % name,
-                          span_id=cmd_val.arg_spids[i])
+                          span_id=spids[i])
 
       cell = self.mem.GetCell(name)
       if cell is None:
         self.errfmt.Print("Couldn't find a variable named %r" % name,
-                          span_id=cmd_val.arg_spids[i])
+                          span_id=spids[i])
         status = 1
       else:
         sys.stdout.write('%s = ' % name)
@@ -74,8 +76,7 @@ class Push(_Builtin):
   Note: this could also be in builtins_pure.py?
   """
   def Run(self, cmd_val):
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip 'push'
+    arg, arg_r = flag_spec.ParseOilCmdVal('push', cmd_val)
 
     var_name, var_spid = arg_r.ReadRequired2(
         'requires a variable name')
@@ -166,13 +167,13 @@ class Opts(_Builtin):
     raise NotImplementedError()
 
 
-JSON_WRITE_SPEC = flag_spec.OilFlags('json-write')
+JSON_WRITE_SPEC = flag_spec.OilFlags('json-write', typed=True)
 JSON_WRITE_SPEC.Flag('-pretty', args.Bool, default=True,
                      help='Whitespace in output (default true)')
 JSON_WRITE_SPEC.Flag('-indent', args.Int, default=2,
                      help='Indent JSON by this amount')
 
-JSON_READ_SPEC = flag_spec.OilFlags('json-read')
+JSON_READ_SPEC = flag_spec.OilFlags('json-read', typed=True)
 # yajl has this option
 JSON_READ_SPEC.Flag('-validate', args.Bool, default=True,
                      help='Validate UTF-8')
@@ -332,10 +333,7 @@ class Write(_Builtin):
   write --qsn --sep $'\t' -- @strs   # this is like QTSV
   """
   def Run(self, cmd_val):
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip 'echo'
-
-    arg = WRITE_SPEC.Parse(arg_r)
+    arg, arg_r = flag_spec.ParseOilCmdVal('write', cmd_val)
     #print(arg)
 
     if arg.unicode == 'raw':

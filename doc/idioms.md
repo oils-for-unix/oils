@@ -246,8 +246,6 @@ Yes:
       myfunc
     }
 
-TODO: Implement block arg to `shopt`.
-
 ### Use the `forkwait` builtin for Subshells, not `()`
 
 No:
@@ -371,33 +369,33 @@ TODO: Implement this.
 
 ### If and `errexit`
 
-Bug in POSIX shell:
+Bug in POSIX shell, which Oil's `strict_errexit` warns you of:
 
     if myfunc; then  # oops, errors not checked in myfunc
-      echo hi
+      echo 'success'
     fi
 
 Suggested workaround:
 
     if $0 myfunc; then  # invoke a new shell
-      echo hi
+      echo 'success'
     fi
 
     "$@"
 
-Oil extension, without an extra process:
+Oil has a `run` builtin, which re-enables errexit without the extra process:
 
-    if catch myfunc; then
-      echo hi
+    if run myfunc; then
+      echo 'success'
     fi
 
-Even better:
+(TODO: decide on this) Or you can also use curly braces for an implicit `run`:
 
-    if myfunc {  # implicit 'catch', equivalent to the above
-      echo hi
+    if myfunc {
+      echo 'success'
     }
 
-Note that `&&` and `||` and `!` require an explicit `catch`:
+The constructs `&&`, `||`, and `!` also require an explicit `run`:
 
 No:
 
@@ -407,15 +405,13 @@ No:
 
 Yes:
 
-    catch myfunc || fail
-    catch myfunc && echo 'success'
-    ! catch myfunc
+    run myfunc || fail
+    run myfunc && echo 'success'
+    ! run myfunc
 
 
 This explicit syntax avoids breaking POSIX shell.  You have to opt in to the
 better behavior.
-
-TODO: Implement 'catch' and implicit catch
 
 ## Use Oil Expressions, Initializations, and Assignments (var, setvar)
 
@@ -629,36 +625,16 @@ TODO: implement long flags to `test`.
 
 ### Don't use `&&`
 
-Because `errexit` is on in Oil, it's implicit.
+It's implicit Because `errexit` is on in Oil.
 
 No:
 
-    mkdir /tmp/dest && cp foo /tmp/destj
+    mkdir /tmp/dest && cp foo /tmp/dest
 
 Yes:
 
     mkdir /tmp/dest
     cp foo /tmp/dest
-
-### Use `catch` to avoid Broken `errexit` When Using `||` and `!`
-
-No:
-
-    # Bad POSIX behavior results in ignored errors
-    set -o errexit
-
-    myfunc || die "failed"  # Oil's strict_errexit disallows this
-    ! myfunc                # and this
-
-Yes:
-
-    # Oil respects errors, but catches at top level
-    set -o errexit
-
-    catch myfunc || die "failed"
-    ! catch myfunc
-
-TODO: Implement `catch`.
 
 ### Source Files and Namespaces
 
@@ -681,6 +657,8 @@ Hypothetical example:
 ## Related Documents
 
 - [Shell Language Deprecations](deprecations.html)
+- [Error Handling with `set -e` / `errexit`](errexit.html).  Oil fixes the
+  flaky error handling in POSIX shell and bash.
 - TODO: Go through more of the [Pure Bash
   Bible](https://github.com/dylanaraps/pure-bash-bible).  Oil provides
   alternatives for such quirky syntax.

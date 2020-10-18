@@ -2,11 +2,18 @@
 
 #### repr
 x=42
+
 repr x
 echo status=$?
+
+repr -- :x
+echo status=$?
+
 repr nonexistent
 echo status=$?
 ## STDOUT:
+x = (cell exported:F readonly:F nameref:F val:(value.Str s:42))
+status=0
 x = (cell exported:F readonly:F nameref:F val:(value.Str s:42))
 status=0
 status=1
@@ -26,8 +33,11 @@ shopt -s parse_at
 a=(1 2)
 push :a '3 4' '5'
 argv.py @a
+push -- :a 6
+argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
+['1', '2', '3 4', '5', '6']
 ## END
 
 #### push onto var a = %(1 2)

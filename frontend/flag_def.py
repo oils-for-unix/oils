@@ -256,3 +256,8 @@ RUN_SPEC.Flag('-allow-status-01', args.Bool,
 #   fine.
 # run --builtin, run --command, run --proc:
 #   to "replace" 'builtin' and # 'command'
+
+
+PUSH_SPEC = OilFlags('push', typed=True)
+
+REPR_SPEC = OilFlags('repr', typed=True)

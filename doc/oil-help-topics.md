@@ -104,7 +104,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   repr                   Show debug representation of vars
                   write                  like echo, but with --, -sep, -end
                   oil-read               buffered I/O with --line, --all, --qsn
-                  status                 re-enable errexit on a proc invocation
+                  run                    re-enable errexit; exit status utils
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv
 X [External Lang] BEGIN   END   when (awk)
