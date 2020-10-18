@@ -348,6 +348,33 @@ process_sub_fail() {
   echo 'SHOULD NOT GET HERE'
 }
 
+myproc() {
+  echo ---
+  grep pat BAD  # exits with code 2
+  #grep pat file.txt
+  echo ---
+}
+
+bool_status() {
+  set -o errexit
+
+  if run --bool-status -- myproc; then
+    echo 'match'
+  else
+    echo 'no match'
+  fi
+}
+
+bool_status_simple() {
+  set -o errexit
+
+  if run --bool-status -- grep pat BAD; then
+    echo 'match'
+  else
+    echo 'no match'
+  fi
+}
+
 #
 # WORD ERRORS
 #
@@ -798,7 +825,7 @@ all() {
     builtin_exec \
     strict_word_eval_warnings strict_arith_warnings \
     strict_control_flow_warnings control_flow_subshell \
-    command_sub_errexit process_sub_fail; do
+    command_sub_errexit process_sub_fail bool_status bool_status_simple; do
     _run_test $t
   done
 }

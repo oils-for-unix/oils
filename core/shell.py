@@ -470,8 +470,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
-  pure.AddMeta(builtins, shell_ex, mutable_opts, procs, aliases, search_path,
-               errfmt)
+  pure.AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases,
+               search_path, errfmt)
   pure.AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt)
   # Another block builtin
   builtins[builtin_i.json] = builtin_oil.Json(mem, cmd_ev, errfmt)

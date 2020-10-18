@@ -115,14 +115,14 @@ def AddIO(b, mem, dir_stack, exec_opts, splitter, errfmt):
   b[builtin_i.times] = builtin_misc.Times()
 
 
-def AddMeta(builtins, shell_ex, mutable_opts, procs, aliases, search_path,
+def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
             errfmt):
-  # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+  # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, state.Mem, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
 
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
                                                      search_path)
-  builtins[builtin_i.run] = builtin_meta.Run(mutable_opts, shell_ex, errfmt)
+  builtins[builtin_i.run] = builtin_meta.Run(mutable_opts, mem, shell_ex, errfmt)
 
 
 def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt):
@@ -401,7 +401,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   #builtins[builtin_i.source] = source_builtin
   #builtins[builtin_i.dot] = source_builtin
 
-  AddMeta(builtins, shell_ex, mutable_opts, procs, aliases, search_path,
+  AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
           errfmt)
   AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt)
 

@@ -7,11 +7,13 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
+from asdl import runtime
 from core import alloc
 from core import error
 from core import main_loop
 from core.pyerror import e_usage, log
 from core import pyutil  # strerror
+from core.pyutil import stderr_line
 from core import state
 from core import vm
 from frontend import flag_spec
@@ -202,6 +204,14 @@ class Builtin(vm._Builtin):
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
+def _AdjustStatus(status_ok, status):
+  # type: (str, int) -> int
+  # TODO: Parse the status more?
+  if status_ok.lower() == 'sigpipe' and status == 141:
+    status = 0
+  return status
+
+
 class Run(vm._Builtin):
   """For the 'if myfunc' problem with errexit.
 
@@ -218,9 +228,10 @@ class Run(vm._Builtin):
   }
   """
 
-  def __init__(self, mutable_opts, shell_ex, errfmt):
-    # type: (state.MutableOpts, vm._Executor, ui.ErrorFormatter) -> None
+  def __init__(self, mutable_opts, mem, shell_ex, errfmt):
+    # type: (state.MutableOpts, state.Mem, vm._Executor, ui.ErrorFormatter) -> None
     self.mutable_opts = mutable_opts
+    self.mem = mem
     self.shell_ex = shell_ex
     self.errfmt = errfmt
 
@@ -233,6 +244,8 @@ class Run(vm._Builtin):
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.block)
 
+    # Set in the 'except' block, e.g. if 'myfunc' failed
+    failure_spid = runtime.NO_SPID
     try:
       # Temporarily turn ON errexit, and blame the 'status' spid.  Note that
       # 'if status myproc' disables it and then enables it!
@@ -247,17 +260,23 @@ class Run(vm._Builtin):
     except error.ErrExit as e:  # from functino call
       #log('e %d', e.exit_status)
       status = e.exit_status
+      failure_spid = e.span_id
+
+    # Do this before -bool-status
+    if arg.status_ok is not None:
+      status = _AdjustStatus(arg.status_ok, status)
 
     if arg.bool_status and status not in (0, 1):
-      # TODO: preserve location info for external and for builtin
-      raise error.ErrExit(
-          'Command executed with non-boolean status %d' % status, status=status)
+      if failure_spid != runtime.NO_SPID:
+        self.errfmt.Print_('(original failure)', span_id=failure_spid)
+        stderr_line('')
 
-    # if arg.nonzero:
-    #   if status != 0:
-    #     status = 0
-    #   else:
-    #     status = 1
+      raise error.ErrExit(
+          'Command executed with non-boolean status %d' % status,
+          span_id=spids[0], status=status)
+
+    if arg.assign_status:
+      pass
 
     return status
 

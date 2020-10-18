@@ -243,7 +243,7 @@ _AddShellOptions(SET_SPEC)
 
 
 RUN_SPEC = OilFlags('run', typed=True)
-RUN_SPEC.Flag('-status-ok', args.Bool,
+RUN_SPEC.Flag('-status-ok', args.String,
     help='Treat this statuses as zero.  Processes before other flags')
 RUN_SPEC.Flag('-assign-status', args.String,
     help='Assign status to this variable, and return 0')
