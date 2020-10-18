@@ -206,6 +206,7 @@ class Builtin(vm._Builtin):
 
 def _AdjustStatus(status_ok, status):
   # type: (str, int) -> int
+
   # TODO: Parse the status more?
   if status_ok.lower() == 'sigpipe' and status == 141:
     status = 0
@@ -218,7 +219,7 @@ class Run_(vm._Builtin):
   --status-ok
     for SIGPIPE problem
   --assign-status
-  --bool-status
+  --allow-status-01
 
   if run deploy {
     echo "success"
@@ -267,17 +268,17 @@ class Run_(vm._Builtin):
       status = e.exit_status
       failure_spid = e.span_id
 
-    # Do this before -bool-status
+    # Do this before -allow-status-01
     if arg.status_ok is not None:
       status = _AdjustStatus(arg.status_ok, status)
 
-    if arg.bool_status and status not in (0, 1):
+    if arg.allow_status_01 and status not in (0, 1):
       if failure_spid != runtime.NO_SPID:
         self.errfmt.Print_('(original failure)', span_id=failure_spid)
         stderr_line('')
 
       raise error.ErrExit(
-          'Command executed with non-boolean status %d' % status,
+          'fatal: status %d when --allow-status-01' % status,
           span_id=spids[0], status=status)
 
     if arg.assign_status is not None:

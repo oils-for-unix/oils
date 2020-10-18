@@ -52,19 +52,19 @@ failed
 done
 ## END
 
-#### run -bool-status with external command
+#### run -allow-status-01 with external command
 
 set -o errexit
 
 echo hi > file.txt
 
-if run --bool-status -- grep pat file.txt; then
+if run --allow-status-01 -- grep pat file.txt; then
   echo 'match'
 else 
   echo 'no match'
 fi
 
-if run --bool-status -- grep pat BAD; then
+if run --allow-status-01 -- grep pat BAD; then
   echo 'match'
 else 
   echo 'no match'
@@ -76,7 +76,7 @@ echo DONE
 no match
 ## END
 
-#### run -bool-status with function
+#### run -allow-status-01 with function
 
 set -o errexit
 
@@ -91,7 +91,7 @@ myproc() {
 
 #myproc
 
-if run --bool-status -- myproc; then
+if run --allow-status-01 -- myproc; then
   echo 'match'
 else 
   echo 'no match'
@@ -137,4 +137,31 @@ echo st=$st
 ## STDOUT:
 st=42
 st=42
+## END
+
+
+#### run --status-ok SIGPIPE
+
+yes | head -n 1
+echo pipeline=${_pipeline_status[@]}
+
+run --status-ok SIGPIPE -- yes | head -n 1
+echo pipeline=${_pipeline_status[@]}
+
+set -o errexit
+
+if run --status-ok SIGPIPE -- yes | head -n 1; then
+  echo OK
+  echo pipeline=${_pipeline_status[@]}
+fi
+
+
+## STDOUT:
+y
+pipeline=141 0
+y
+pipeline=0 0
+y
+OK
+pipeline=0 0
 ## END

@@ -247,5 +247,12 @@ RUN_SPEC.Flag('-status-ok', args.String,
     help='Treat this statuses as zero.  Processes before other flags')
 RUN_SPEC.Flag('-assign-status', args.String,
     help='Assign status to this variable, and return 0')
-RUN_SPEC.Flag('-bool-status', args.Bool,
+RUN_SPEC.Flag('-allow-status-01', args.Bool,
     help='Return 0 or 1 status values, but fail for others (e.g. for grep)')
+
+# Future directions:
+# run --allow-status=0,1
+#   an arbitrary list of statuses.  Although --assign-status does this just
+#   fine.
+# run --builtin, run --command, run --proc:
+#   to "replace" 'builtin' and # 'command'
