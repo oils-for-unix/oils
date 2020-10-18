@@ -123,8 +123,9 @@ class Strict : public FatalRuntime {
 class ErrExit : public _ErrorWithLocation {
  public:
   ErrExit(Str* user_str, int span_id, int status)
-      : _ErrorWithLocation(user_str, span_id) {
+      : _ErrorWithLocation(user_str, span_id), exit_status(status) {
   }
+  int exit_status;
 };
 
 // Stub

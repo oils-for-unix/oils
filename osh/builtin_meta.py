@@ -212,7 +212,7 @@ def _AdjustStatus(status_ok, status):
   return status
 
 
-class Run(vm._Builtin):
+class Run_(vm._Builtin):
   """For the 'if myfunc' problem with errexit.
 
   --status-ok
