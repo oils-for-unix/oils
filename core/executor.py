@@ -17,7 +17,6 @@ from asdl import runtime
 from core import error
 from core import process
 from core.pyerror import log, e_die
-from core.pyutil import stderr_line
 from core import ui
 from core import vm
 from frontend import consts
@@ -213,7 +212,7 @@ class ShellExecutor(vm._Executor):
             self.mutable_opts.ErrExitIsDisabled()):
           self.errfmt.Print_('errexit was disabled for this construct',
                              span_id=self.mutable_opts.ErrExitSpanId())
-          stderr_line('')
+          self.errfmt.StderrLine('')
           e_die("Can't run a proc while errexit is disabled. "
                 "Use 'catch' or wrap it in a process with $0 myproc",
                 span_id=span_id)

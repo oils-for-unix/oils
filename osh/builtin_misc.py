@@ -33,6 +33,7 @@ if TYPE_CHECKING:
   from core.pyutil import _ResourceLoader
   from core.state import Mem, DirStack
   from core.ui import ErrorFormatter
+  from frontend.parse_lib import ParseContext
   from osh.cmd_eval import CommandEvaluator
   from osh.split import SplitContext
 
@@ -193,10 +194,11 @@ def _ReadAll():
 
 
 class Read(vm._Builtin):
-  def __init__(self, splitter, mem):
-    # type: (SplitContext, Mem) -> None
+  def __init__(self, splitter, mem, parse_ctx):
+    # type: (SplitContext, Mem, ParseContext) -> None
     self.splitter = splitter
     self.mem = mem
+    self.parse_ctx = parse_ctx
     self.stdin = mylib.Stdin()
 
   def _Line(self, arg, var_name):
@@ -210,6 +212,10 @@ class Read(vm._Builtin):
         line = line[:-2]
       elif line.endswith('\n'):
         line = line[:-1]
+
+    if arg.q:
+      # TODO: decode QSN
+      pass
 
     lhs = lvalue.Named(var_name)
     self.mem.SetVar(lhs, value.Str(line), scope_e.LocalOnly)
@@ -232,7 +238,7 @@ class Read(vm._Builtin):
     names = arg_r.Rest()
 
     # Don't respect any of the other options here?  This is buffered I/O.
-    if arg.line:
+    if arg.line:  # read --line
       var_name, var_spid = arg_r.Peek2()
       if var_name is None:
         var_name = '_line'
@@ -247,7 +253,10 @@ class Read(vm._Builtin):
 
       return self._Line(arg, var_name)
 
-    if arg.all:
+    if arg.q:
+      e_usage('--qsn can only be used with --line')
+
+    if arg.all:  # read --all
       var_name, var_spid = arg_r.Peek2()
       if var_name is None:
         var_name = '_all'

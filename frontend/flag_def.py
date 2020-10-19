@@ -121,6 +121,8 @@ READ_SPEC.LongFlag('--all')
 READ_SPEC.LongFlag('--line')
 # don't strip the trailing newline
 READ_SPEC.LongFlag('--with-eol')
+# Decode QSN after reading a line.  Note: A QSN string can't have literal
+# newlines or tabs; they must be escaped.
 READ_SPEC.ShortFlag('-q', long_name='--qsn')
 
 

@@ -198,6 +198,26 @@ line=a
 line=b
 ## END
 
+#### read --line --qsn
+read --line --qsn <<EOF
+'foo\n'
+EOF
+write --qsn -- "$_line"
+
+## STDOUT:
+'foo\n'
+## END
+
+#### read --qsn usage
+read --qsn << EOF
+foo
+EOF
+echo status=$?
+
+## STDOUT:
+status=2
+## END
+
 #### read --all
 echo foo | read --all
 echo "[$_all]"

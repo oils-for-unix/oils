@@ -418,7 +418,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   pure.AddPure(builtins, mem, procs, mutable_opts, aliases, search_path,
                errfmt)
-  pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, errfmt)
+  pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
   AddProcess(builtins, mem, ext_prog, fd_state, job_state, waiter, search_path,
              errfmt)
   AddOil(builtins, mem, errfmt)

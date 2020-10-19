@@ -176,6 +176,22 @@ class QStrTest(unittest.TestCase):
       else:
         self.fail('Expected %r to be invalid' % c)
 
+  def testDecode(self):
+    try:
+      print(qsn.decode("'no\nnewlines'"))
+    except RuntimeError as e:
+      print(e)
+    else:
+      self.fail('Expected failure')
+
+    try:
+      print(qsn.decode("'no\ttabs'"))
+    except RuntimeError as e:
+      print(e)
+    else:
+      self.fail('Expected failure')
+
+
   def testUtf8WithRegex(self):
     """
     This doesn't test any code; it's just a demo of matching UTF-8 with a

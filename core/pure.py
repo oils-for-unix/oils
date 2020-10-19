@@ -92,15 +92,15 @@ def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):
   b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
 
 
-def AddIO(b, mem, dir_stack, exec_opts, splitter, errfmt):
-  # type: (Dict[int, vm._Builtin], state.Mem, state.DirStack, optview.Exec, split.SplitContext, ui.ErrorFormatter) -> None
+def AddIO(b, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt):
+  # type: (Dict[int, vm._Builtin], state.Mem, state.DirStack, optview.Exec, split.SplitContext, parse_lib.ParseContext, ui.ErrorFormatter) -> None
   mapfile = builtin_misc.MapFile(mem, errfmt)
 
   b[builtin_i.echo] = builtin_pure.Echo(exec_opts)
   b[builtin_i.mapfile] = mapfile
   b[builtin_i.readarray] = mapfile
 
-  b[builtin_i.read] = builtin_misc.Read(splitter, mem)
+  b[builtin_i.read] = builtin_misc.Read(splitter, mem, parse_ctx)
   b[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
 
   # test / [ differ by need_right_bracket
@@ -354,7 +354,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins = {}  # type: Dict[int, vm._Builtin]
 
   AddPure(builtins, mem, procs, mutable_opts, aliases, search_path, errfmt)
-  AddIO(builtins, mem, dir_stack, exec_opts, splitter, errfmt)
+  AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
 
   builtins[builtin_i.help] = help_builtin
 

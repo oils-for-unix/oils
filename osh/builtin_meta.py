@@ -13,7 +13,6 @@ from core import error
 from core import main_loop
 from core.pyerror import e_die, e_usage, log
 from core import pyutil  # strerror
-from core.pyutil import stderr_line
 from core import state
 from core import vm
 from frontend import flag_spec
@@ -275,7 +274,7 @@ class Run_(vm._Builtin):
     if arg.allow_status_01 and status not in (0, 1):
       if failure_spid != runtime.NO_SPID:
         self.errfmt.Print_('(original failure)', span_id=failure_spid)
-        stderr_line('')
+        self.errfmt.StderrLine('')
 
       raise error.ErrExit(
           'fatal: status %d when --allow-status-01' % status,

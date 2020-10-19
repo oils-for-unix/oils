@@ -501,10 +501,11 @@ if mylib.PYTHON:  # So we don't translate it
       ( \\ [nrt0'"\\]                  ) # " accepted here but not encoded
     | ( \\ [xX]    [0-9a-fA-F]{2}      )
     | ( \\ [uU] \{ [0-9a-fA-F]{1,6} \} ) # 21 bits fits in 6 hex digits
-    | ( [^'\\]+                        ) # regular chars
+    | ( [^'\\\t\n]+                    ) # literal chars; no newlines or tabs
     | ( '                              ) # closing quote
-    | ( .                              ) # invalid escape \a, or trailing backslash
-    ''', re.VERBOSE)
+    | ( .                              ) # invalid escape \a, trailing backslash
+                                         # newline or tab
+    ''', re.VERBOSE | re.DOTALL)         # . matches newline, a syntax error
 
     def decode(s):
       # type: (str) -> str
