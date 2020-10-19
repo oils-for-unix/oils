@@ -586,16 +586,40 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
   C(r'\"', Id.Char_OneChar),
 ] + _SQ_COMMON
 
-# Matches pure Python decoder in qsn_/qsn.py
-# TODO: Hook this up to a new lexer!
-QSN_DEF = [
+# Should match pure Python decoder in qsn_/qsn.py
+LEXER_DEF[lex_mode_e.QSN] = [
   R(r'''\\[nrt0'"\\]''', Id.Char_OneChar),
   _X_CHAR,
   _U_BRACED_CHAR,
 
   # Note: we don't have bad backslash?  I think it will be caught anyway.
+  # TODO: Omit literal newlines and tabs!  Those are syntax errors.
 
-] + _SQ_COMMON
+] + _SQ_COMMON + [
+
+  R(r'[^\0]', Id.Unknown_Tok),
+]
+
+# TODO: Hook this more sophisticated UTF-8 decoder up!
+
+# Note: this would be an optimization.  NUL handling might be a problem
+# because the ('\0', Id.Eol_Tok) rule is automatically inserted.
+QSN_DEF = [
+  # Optimized so they appear together
+  R(_LITERAL_WHITELIST_REGEX, Id.QSN_LiteralBytes),
+
+  # includes \r \n \t \0
+  R(r'[\x00-\x1F\'"\\]', Id.QSN_SpecialByte),
+
+  # UTF-8 sequences
+  R(r'[\xc0-\xdf]', Id.QSN_Begin2),
+  R(r'[\xe0-\xef]', Id.QSN_Begin3),
+  R(r'[\xf0-\xf7]', Id.QSN_Begin4),
+
+  R(r'[\x80-\xbf]', Id.QSN_Cont),
+
+  R(r'[^\0]', Id.QSN_LiteralBytes),
+]
 
 LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
   R(OCTAL3_RE, Id.Char_Octal3),
@@ -761,26 +785,6 @@ BRACE_RANGE_DEF = [
   R(r'\.\.', Id.Range_Dots),
   R(r'[^\0]', Id.Range_Other),  # invalid
 ]
-
-# Note: this would be an optimization.  NUL handling might be a problem
-# because the ('\0', Id.Eol_Tok) rule is automatically inserted.
-QSN_DEF = [
-  # Optimized so they appear together
-  R(_LITERAL_WHITELIST_REGEX, Id.QSN_LiteralBytes),
-
-  # includes \r \n \t \0
-  R(r'[\x00-\x1F\'"\\]', Id.QSN_SpecialByte),
-
-  # UTF-8 sequences
-  R(r'[\xc0-\xdf]', Id.QSN_Begin2),
-  R(r'[\xe0-\xef]', Id.QSN_Begin3),
-  R(r'[\xf0-\xf7]', Id.QSN_Begin4),
-
-  R(r'[\x80-\xbf]', Id.QSN_Cont),
-
-  R(r'[^\0]', Id.QSN_LiteralBytes),
-]
-
 
 #
 # Oil lexing.  TODO: Move to a different file?

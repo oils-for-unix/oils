@@ -70,9 +70,6 @@ to be parsed.
   UTF-8 (e.g. e-mail, Twitter).
 
 [surrogate pairs]: https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF
-
-
-
 [coreutils]: https://www.gnu.org/software/coreutils/quotes.html
 
 ## Specification
@@ -157,6 +154,19 @@ In theory, only escapes like `\'` `\n` `\\` are strictly necessary, and no
 bytes need to be hex-escaped.  But that strategy would defeat the purpose of
 QSN for many applications, like printing filenames in a terminal.
 
+### List of Syntax Errors
+
+QSN decoders must enforce (at least) these syntax errors:
+
+- Literal newline or tab in a string.  Should be `\t` or `\n`.  (The lack of
+  literal tabs and newlines is essential for [QTSV](qtsv.html).)
+- Invalid character escape, e.g. `\z`
+- Invalid hex escape, e.g. `\xgg`
+- Invalid unicode escape, e.g. `\u{123` (incomplete)
+
+(Separate messages aren't required for each error; the only requirement is that
+they not accept these sequences.)
+
 ## Reference Implementation in Oil
 
 You can see Oil's implementation in [qsn_/qsn.py]($oil-src).  It has an encoder
@@ -205,36 +215,29 @@ terminals.  Code (control codes) and data are intermingled.
 
 When arguments don't have any spaces, there's no ambiguity:
 
-```
-$ set -x
-$ echo two args
-+ echo two args
-```
+
+    $ set -x
+    $ echo two args
+    + echo two args
 
 Here we need quotes to show that the `argv` array has 3 elements:
 
-```
-$ set -x
-$ x='a b'
-$ echo "$x" c
-+ echo 'a b' c
-```
+    $ set -x
+    $ x='a b'
+    $ echo "$x" c
+    + echo 'a b' c
 
 And we want the trace to fit on a single line, so we print a QSN string with
 `\n`:
 
-```
-$ set -x
-$ x=$'a\nb'
-$ echo "$x" c
-+ echo $'a\nb' c
-```
+    $ set -x
+    $ x=$'a\nb'
+    $ echo "$x" c
+    + echo $'a\nb' c
 
 Here's an example with unprintable characters:
 
-```
-$ set -x
-$ x=$'\e\001'
-$ echo "$x"
-+ echo $'\x1b\x01'
-```
+    $ set -x
+    $ x=$'\e\001'
+    $ echo "$x"
+    + echo $'\x1b\x01'

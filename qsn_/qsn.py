@@ -92,7 +92,9 @@ from __future__ import print_function
 #from core.pyerror import log
 from mycpp import mylib
 
-from typing import List
+from typing import List, Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+  from frontend.lexer import Lexer
 
 #_ = log
 
@@ -489,6 +491,25 @@ def _encode_runes(s, bit8_display, shell_compat, parts):
   return valid_utf8
 
 
+def decode(lexer):
+  # type: (Lexer) -> Tuple[str, int]
+  """Given a QSN literal in a string, return the corresponding byte string."""
+
+  # don't break ASDL?
+  from _devbuild.gen.id_kind_asdl import Id
+  from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
+
+  pos = 0
+  while True:
+    tok = lexer.Read(lex_mode_e.QSN)
+    print(tok)
+
+    if tok.id == Id.Eof_Real:
+      break
+
+  return '', pos
+
+
 # TODO: Translate this to something that can be built into the OVM tarball.
 
 if mylib.PYTHON:  # So we don't translate it
@@ -501,16 +522,19 @@ if mylib.PYTHON:  # So we don't translate it
       ( \\ [nrt0'"\\]                  ) # " accepted here but not encoded
     | ( \\ [xX]    [0-9a-fA-F]{2}      )
     | ( \\ [uU] \{ [0-9a-fA-F]{1,6} \} ) # 21 bits fits in 6 hex digits
-    | ( [^'\\\t\n]+                    ) # literal chars; no newlines or tabs
+    | ( [^'\\\t\n\0]+                  ) # literal chars; no newlines, tab, NUL
     | ( '                              ) # closing quote
     | ( .                              ) # invalid escape \a, trailing backslash
                                          # newline or tab
     ''', re.VERBOSE | re.DOTALL)         # . matches newline, a syntax error
 
-    def decode(s):
+    def py_decode(s):
       # type: (str) -> str
-      """Given a QSN literal in a string, return the corresponding byte string."""
+      """Given a QSN literal in a string, return the corresponding byte string.
 
+      This is basically a proof of concept of the single regex above.  It
+      throws away data after the closing quote of the QSN string.
+      """
       pos = 0
       n = len(s)
 
@@ -562,7 +586,7 @@ if mylib.PYTHON:  # So we don't translate it
 
         elif m.group(5):
           need_quote = False
-          continue  # no part to append
+          break  # closing quote
 
         elif m.group(6):
           raise RuntimeError('Invalid syntax %r' % m.group(6))

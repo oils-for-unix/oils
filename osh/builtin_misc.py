@@ -21,8 +21,10 @@ from core import state
 from core import ui
 from core import vm
 from frontend import flag_spec
+from frontend import reader
 from mycpp import mylib
 from pylib import os_path
+from qsn_ import qsn
 
 import libc
 import posix_ as posix
@@ -214,8 +216,11 @@ class Read(vm._Builtin):
         line = line[:-1]
 
     if arg.q:
-      # TODO: decode QSN
-      pass
+      line_reader = reader.StringLineReader(line, self.parse_ctx.arena)
+      lexer = self.parse_ctx._MakeLexer(line_reader)
+      line, pos = qsn.decode(lexer)
+
+      # TODO: what to do with 'pos'?
 
     lhs = lvalue.Named(var_name)
     self.mem.SetVar(lhs, value.Str(line), scope_e.LocalOnly)

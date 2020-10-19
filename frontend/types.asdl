@@ -27,6 +27,8 @@ module types {
 
   | Expr      -- var x = 1 + 2 * 3; echo $f(a, b + 1)
 
+  | QSN
+
   -- TODO:
   -- * Multiline strings.  May require some parsing too.
   -- * Tagged strings.  Are these raw by default?
