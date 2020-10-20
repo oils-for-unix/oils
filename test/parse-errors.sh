@@ -706,6 +706,11 @@ EOF
 bad = $'\101'
 EOF
 
+  # \xH not allowed
+  _oil-parse-error-here <<'EOF'
+bad = c'\xf'
+EOF
+
   _should-parse 'echo "\z"'
   # Double quoted is an error
   _error-case2 -O strict_backslash -n -c 'echo strict_backslash "\z"'

@@ -575,9 +575,14 @@ class WordParser(WordEmitter):
           p_die(r"Strings with backslashes should look like r'\n' or c'\n'",
                 token=tok)
 
-        if is_oil_expr and self.token_type == Id.Char_Octal3:
-          p_die(r"Use \xhh or \u{...} instead of octal escapes in Oil strings",
-                token=tok)
+        if is_oil_expr:
+          if self.token_type == Id.Char_Octal3:
+            p_die(r"Use \xhh or \u{...} instead of octal escapes in Oil strings",
+                  token=tok)
+          if self.token_type == Id.Char_Hex and len(self.cur_token.val) != 4:
+            # disallow \xH
+            p_die(r'Invalid hex escape in Oil string (must be \xHH)',
+                  token=tok)
 
         tokens.append(tok)
 
