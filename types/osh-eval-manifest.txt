@@ -71,4 +71,5 @@
 ./pylib/cgi.py
 ./pylib/os_path.py
 ./pylib/path_stat.py
+./qsn_/qsn_native.py
 ./qsn_/qsn.py

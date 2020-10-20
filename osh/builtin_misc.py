@@ -24,7 +24,7 @@ from frontend import flag_spec
 from frontend import reader
 from mycpp import mylib
 from pylib import os_path
-from qsn_ import qsn
+from qsn_ import qsn_native
 
 import libc
 import posix_ as posix
@@ -218,7 +218,7 @@ class Read(vm._Builtin):
     if arg.q:
       line_reader = reader.StringLineReader(line, self.parse_ctx.arena)
       lexer = self.parse_ctx._MakeLexer(line_reader)
-      line, pos = qsn.decode(lexer)
+      line, pos = qsn_native.decode(lexer)
 
       # TODO: what to do with 'pos'?
 

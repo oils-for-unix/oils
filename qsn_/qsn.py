@@ -92,9 +92,7 @@ from __future__ import print_function
 #from core.pyerror import log
 from mycpp import mylib
 
-from typing import List, Tuple, TYPE_CHECKING
-if TYPE_CHECKING:
-  from frontend.lexer import Lexer
+from typing import List
 
 #_ = log
 
@@ -490,27 +488,6 @@ def _encode_runes(s, bit8_display, shell_compat, parts):
 
   return valid_utf8
 
-
-def decode(lexer):
-  # type: (Lexer) -> Tuple[str, int]
-  """Given a QSN literal in a string, return the corresponding byte string."""
-
-  # don't break ASDL?
-  from _devbuild.gen.id_kind_asdl import Id
-  from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
-
-  pos = 0
-  while True:
-    tok = lexer.Read(lex_mode_e.QSN)
-    print(tok)
-
-    if tok.id == Id.Eof_Real:
-      break
-
-  return '', pos
-
-
-# TODO: Translate this to something that can be built into the OVM tarball.
 
 if mylib.PYTHON:  # So we don't translate it
   # Hack so so 'import re' isn't executed, but unit tests still work
