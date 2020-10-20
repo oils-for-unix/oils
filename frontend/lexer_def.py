@@ -495,6 +495,9 @@ _U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
 
 _X_CHAR = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)
 
+# Stricter QSN
+_X_CHAR_2 = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)
+
 EXPR_CHARS = [
   # This is like Rust.  We don't have the legacy C escapes like \b.
 
@@ -560,18 +563,6 @@ PS1_DEF = [
     C('\\', Id.PS_BadBackslash),
 ]
 
-# Shared between $'' and QSN strings
-_SQ_COMMON = [
-
-  # e.g. 'foo', anything that's not a backslash escape or '
-  R(r"[^\\'\0]+", Id.Char_Literals),
-
-  C("'", Id.Right_SingleQuote),
-
-  # Backslash that ends the file!  Caught by re2c exhaustiveness check.  Parser
-  # will assert; should give a better syntax error.
-  C('\\\0', Id.Unknown_Tok),
-]
 
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
@@ -584,18 +575,29 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
   # ' and " are escaped in $'' mode, but not echo -e.
   C(r"\'", Id.Char_OneChar),
   C(r'\"', Id.Char_OneChar),
-] + _SQ_COMMON
 
-# Should match pure Python decoder in qsn_/qsn.py
+  # e.g. 'foo', anything that's not a backslash escape or '
+  R(r"[^\\'\0]+", Id.Char_Literals),
+
+  C("'", Id.Right_SingleQuote),
+
+  # Backslash that ends the file!  Caught by re2c exhaustiveness check.  Parser
+  # will assert; should give a better syntax error.
+  C('\\\0', Id.Unknown_Tok),
+]
+
+# Should match the pure Python decoder in qsn_/qsn.py
 LEXER_DEF[lex_mode_e.QSN] = [
   R(r'''\\[nrt0'"\\]''', Id.Char_OneChar),
-  _X_CHAR,
+  _X_CHAR_2,
   _U_BRACED_CHAR,
 
-  # Note: we don't have bad backslash?  I think it will be caught anyway.
-  # TODO: Omit literal newlines and tabs!  Those are syntax errors.
+  # Like SQ_C, but we omit literal newlines and tabs!
 
-] + _SQ_COMMON + [
+  # e.g. 'foo', anything that's not a backslash escape or '
+  R(r"[^\\'\0\t\n]+", Id.Char_Literals),
+
+  C("'", Id.Right_SingleQuote),
 
   R(r'[^\0]', Id.Unknown_Tok),
 ]

@@ -783,6 +783,37 @@ control_flow_subshell() {
   done
 }
 
+qsn_decode() {
+  read --line --qsn <<EOF
+'no closing quote
+EOF
+  assert $? -eq 1
+
+  read --line --qsn <<EOF
+'foo' trailing data
+EOF
+  assert $? -eq 1
+
+  read --line --qsn <<EOF
+'\x0'
+EOF
+  assert $? -eq 1
+
+  read --line --qsn <<EOF
+'\u{3bc'
+EOF
+  assert $? -eq 1
+
+  echo "'literal"$'\t'"tab'" | read --line --qsn
+  assert $? -eq 1
+
+	# trailing tab below is allowed
+  read --line --qsn <<EOF
+'foo'		
+EOF
+  assert $? -eq 0
+}
+
 #
 # TEST DRIVER
 #
@@ -825,7 +856,8 @@ all() {
     builtin_exec \
     strict_word_eval_warnings strict_arith_warnings \
     strict_control_flow_warnings control_flow_subshell \
-    command_sub_errexit process_sub_fail bool_status bool_status_simple; do
+    command_sub_errexit process_sub_fail bool_status bool_status_simple \
+    qsn_decode; do
     _run_test $t
   done
 }

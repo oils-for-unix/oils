@@ -204,6 +204,21 @@ read --line --qsn <<EOF
 EOF
 write --qsn -- "$_line"
 
+read --line --qsn <<EOF
+'foo\tbar hex=\x01 mu=\u{3bc}'
+EOF
+write --qsn --unicode u -- "$_line"
+
+## STDOUT:
+'foo\n'
+'foo\tbar hex=\u{1} mu=\u{3bc}'
+## END
+
+#### read --line --with-eol --qsn
+read --line --with-eol --qsn <<EOF
+'foo\n'
+EOF
+write --qsn -- "$_line"
 ## STDOUT:
 'foo\n'
 ## END

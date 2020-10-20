@@ -13,7 +13,9 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     span_e, cmd_value__Argv, lvalue, value, scope_e)
+from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
+from core import alloc
 from core import error
 from core import pyos
 from core.pyerror import e_usage, e_die, log
@@ -23,6 +25,7 @@ from core import vm
 from frontend import flag_spec
 from frontend import reader
 from mycpp import mylib
+from osh import word_compile
 from pylib import os_path
 from qsn_ import qsn_native
 
@@ -215,12 +218,30 @@ class Read(vm._Builtin):
       elif line.endswith('\n'):
         line = line[:-1]
 
-    if arg.q:
-      line_reader = reader.StringLineReader(line, self.parse_ctx.arena)
+    # Lines that don't start with a single quote aren't QSN.  They may contain
+    # a single quote internally, like:
+    #
+    # Fool's Gold
+    if arg.q and line.startswith("'"):
+      arena = self.parse_ctx.arena
+      line_reader = reader.StringLineReader(line, arena)
       lexer = self.parse_ctx._MakeLexer(line_reader)
-      line, pos = qsn_native.decode(lexer)
 
-      # TODO: what to do with 'pos'?
+      # The parser only yields valid tokens:
+      #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
+      # So we can use word_compile.EvalCStringToken, which is also used for $''.
+      #
+      # Important: we don't generate Id.Unknown_Backslash because that is valid
+      # in echo -e.  We just make it Id.Unknown_Tok?
+      try:
+        # TODO: read should know about stdin, and redirects, and pipelines?
+        with alloc.ctx_Location(arena, source.Stdin('')):
+          tokens = qsn_native.Parse(lexer)
+      except error.Parse as e:
+        ui.PrettyPrintError(e, arena)
+        return 1
+      tmp = [word_compile.EvalCStringToken(t) for t in tokens]
+      line = ''.join(tmp)
 
     lhs = lvalue.Named(var_name)
     self.mem.SetVar(lhs, value.Str(line), scope_e.LocalOnly)
