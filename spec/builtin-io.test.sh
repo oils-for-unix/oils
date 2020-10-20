@@ -840,3 +840,25 @@ n=3
 [a7]
 ## END
 ## N-I dash/mksh/zsh/ash stdout-json: ""
+
+
+
+#### read -r -d '' for NUL strings, e.g. find -print0
+
+
+case $SH in (dash|zsh|mksh) exit ;; esac  # NOT IMPLEMENTED
+
+mkdir -p read0
+cd read0
+rm -f *
+
+touch a\\b\\c\\d  # -r is necessary!
+
+find . -type f -a -print0 | { read -r -d ''; echo "[$REPLY]"; }
+
+## STDOUT:
+[./a\b\c\d]
+## END
+## N-I dash/zsh/mksh STDOUT:
+## END
+
