@@ -132,12 +132,13 @@ These are discussed in the next two sections, but here's a summary.
     read --qsn :mystr  # also -q
 
     read --line --qsn :myline     # read a single line
-    read --lines --qsn :myarray   # read many lines
 
 That is, take advantage of the the invariants that the [IO
 builtins](io-builtins.html) respect.  (doc in progress)
 
-TODO: Implement `read --qsn`, `--lines`
+<!--
+    read --lines --qsn :myarray   # read many lines
+-->
 
 ### More Strategies For Structured Data
 

@@ -563,7 +563,6 @@ PS1_DEF = [
     C('\\', Id.PS_BadBackslash),
 ]
 
-
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
@@ -589,38 +588,14 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
 # Should match the pure Python decoder in qsn_/qsn.py
 LEXER_DEF[lex_mode_e.QSN] = [
   R(r'''\\[nrt0'"\\]''', Id.Char_OneChar),
-  _X_CHAR_2,
-  _U_BRACED_CHAR,
+  _X_CHAR_2,       # \xff
+  _U_BRACED_CHAR,  # \u{3bc}
 
-  # Like SQ_C, but we omit literal newlines and tabs!
-
-  # e.g. 'foo', anything that's not a backslash escape or '
+  # Like SQ_C, but literal newlines and tabs are illegal.
   R(r"[^\\'\0\t\n]+", Id.Char_Literals),
 
   C("'", Id.Right_SingleQuote),
-
   R(r'[^\0]', Id.Unknown_Tok),
-]
-
-# TODO: Hook this more sophisticated UTF-8 decoder up!
-
-# Note: this would be an optimization.  NUL handling might be a problem
-# because the ('\0', Id.Eol_Tok) rule is automatically inserted.
-QSN_DEF = [
-  # Optimized so they appear together
-  R(_LITERAL_WHITELIST_REGEX, Id.QSN_LiteralBytes),
-
-  # includes \r \n \t \0
-  R(r'[\x00-\x1F\'"\\]', Id.QSN_SpecialByte),
-
-  # UTF-8 sequences
-  R(r'[\xc0-\xdf]', Id.QSN_Begin2),
-  R(r'[\xe0-\xef]', Id.QSN_Begin3),
-  R(r'[\xf0-\xf7]', Id.QSN_Begin4),
-
-  R(r'[\x80-\xbf]', Id.QSN_Cont),
-
-  R(r'[^\0]', Id.QSN_LiteralBytes),
 ]
 
 LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
