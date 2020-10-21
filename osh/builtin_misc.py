@@ -366,13 +366,18 @@ class Read(vm._Builtin):
     else:
       max_results = len(names)
 
-    if arg.d is not None:
-      if len(arg.d):
-        delim_char = arg.d[0]
-      else:
-        delim_char = '\0'  # -d '' delimits by NUL
+    if arg.Z:  # -0 is synonym for -r -d ''
+      raw = True
+      delim_char = '\0'
     else:
-      delim_char = '\n'  # read a line
+      raw = arg.r
+      if arg.d is not None:
+        if len(arg.d):
+          delim_char = arg.d[0]
+        else:
+          delim_char = '\0'  # -d '' delimits by NUL
+      else:
+        delim_char = '\n'  # read a line
 
     # We have to read more than one line if there is a line continuation (and
     # it's not -r).
@@ -391,7 +396,7 @@ class Read(vm._Builtin):
       if len(line) == 0:
         break
 
-      spans = self.splitter.SplitForRead(line, not arg.r)
+      spans = self.splitter.SplitForRead(line, not raw)
       done, join_next = _AppendParts(line, spans, max_results, join_next, parts)
 
       #log('PARTS %s continued %s', parts, continued)

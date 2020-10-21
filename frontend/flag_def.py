@@ -117,6 +117,7 @@ READ_SPEC.ShortFlag('-d', args.String)
 READ_SPEC.ShortFlag('-p', args.String)  # prompt
 
 # Oil extensions
+READ_SPEC.ShortFlag('-0')  # until NUL, like -r -d ''
 READ_SPEC.LongFlag('--all')
 READ_SPEC.LongFlag('--line')
 # don't strip the trailing newline

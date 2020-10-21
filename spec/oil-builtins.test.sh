@@ -248,6 +248,24 @@ echo "[$x]"
 ]
 ## END
 
+#### read -0 is like read -r -d ''
+set -o errexit
+
+mkdir -p read0
+cd read0
+touch a\\b\\c\\d
+
+find . -type f -a -print0 | read -r -d '' name
+echo "[$name]"
+
+find . -type f -a -print0 | read -0
+echo "[$REPLY]"
+
+## STDOUT:
+[./a\b\c\d]
+[./a\b\c\d]
+## END
+
 
 #### shopt supports long flags
 shopt -p nullglob

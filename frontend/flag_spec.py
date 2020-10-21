@@ -214,6 +214,10 @@ class _FlagSpec(object):
     typ = _FlagType(arg_type)
     char = short_name[1]
 
+    # Hack for read -0.  Make it a valid variable name
+    if char == '0':
+      char = 'Z'
+
     if arg_type is None:
       self.arity0.append(char)
     else:

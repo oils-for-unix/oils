@@ -365,9 +365,10 @@ values like strings and arrays.)
 
 #### oil-read
 
-    read --line   # default var is _line
-    read --all    # whole file, including newline
-    read --qsn
+    read --line        # default var is $_line
+    read --line --qsn  # decode QSN too
+    read --all         # whole file including newline; var is $_all
+		read -0            # read until NUL, synonym for read -r -d ''
 
 #### status
 

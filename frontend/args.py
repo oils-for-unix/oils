@@ -529,6 +529,9 @@ def Parse(spec, arg_r):
       for i in xrange(1, n):  # parse flag combos like -rx
         ch = arg[i]
 
+        if ch == '0':
+          ch = 'Z'  # hack for read -0
+
         if ch in spec.plus_flags:
           out.Set(ch, value.Str('-'))
           continue
