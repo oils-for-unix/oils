@@ -214,7 +214,7 @@ class ShellExecutor(vm._Executor):
                              span_id=self.mutable_opts.ErrExitSpanId())
           self.errfmt.StderrLine('')
           e_die("Can't run a proc while errexit is disabled. "
-                "Use 'catch' or wrap it in a process with $0 myproc",
+                "Use 'run' or wrap it in a process with $0 myproc",
                 span_id=span_id)
 
         # NOTE: Functions could call 'exit 42' directly, etc.

@@ -18,6 +18,10 @@ This doc explains how we accomplish this.
 
 ## Overview
 
+<!--
+TODO: Move this to doc/oil-options.
+-->
+
 Below are DETAILS.  You only need to know:
 
 - Use `shopt --set strict:all` if you want to run your script with another

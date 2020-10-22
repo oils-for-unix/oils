@@ -15,14 +15,37 @@ Notes:
 <div id="toc">
 </div>
 
+## The Most Important Thing, Quickly Explained
 
-## Use **Option Groups** To Gradually Opt In to Oil
+Put one of these lines at the top of your script.
+
+If you still want to run your script with other shells:
+
+    shopt -s strict:all 2>/dev/null || true
+
+If you want to run with **some** Oil enhancements:
+
+    shopt --set oil:basic
+
+This is unlikely to break existing scripts, but it's possible.  See [Shell
+Language Deprecations](deprecations.html).
+
+Or use `bin/oil` for a brand new Oil script, opting into **all** enhancements.
+Your shebang line might be `#!/usr/bin/env oil`.  This is the equivalent of
+`shopt --set oil:all` when running `bin/osh`.
+
+That's all most users need to know.  These **option groups** allow you to
+gradually opt into Oil.
+
+## Details
+
+TODO: Polish everything below.
+
+---
  
 This is how you opt into the Oil language:
 
-```
-shopt -s oil:all
-```
+    shopt --set oil:all
 
 It turns on:
 
