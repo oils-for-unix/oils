@@ -8,7 +8,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import word_style_e
 from _devbuild.gen.syntax_asdl import (
-    command_e, word_e, word_part_e, sh_lhs_expr_e
+    command_e, word_e, word_part_e, sh_lhs_expr_e, condition_e
 )
 from asdl import runtime
 from core.pyerror import log, p_die
@@ -801,12 +801,13 @@ class OilPrinter(object):
         self.f.write('while not')
         self.cursor.SkipUntil(kw_spid + 1)
 
-      cond = node.cond
-      # Skip the semi-colon in the condition, which is ususally a Sentence
-      if len(cond) == 1 and cond[0].tag == command_e.Sentence:
-        self.DoCommand(cond[0].child, local_symbols)
-        semi_spid = cond[0].terminator.span_id
-        self.cursor.SkipUntil(semi_spid + 1)
+      if node.cond.tag_() == condition_e.Shell:
+        commands = node.cond.commands
+        # Skip the semi-colon in the condition, which is ususally a Sentence
+        if len(commands) == 1 and commands[0].tag_() == command_e.Sentence:
+          self.DoCommand(commands[0].child, local_symbols)
+          semi_spid = commands[0].terminator.span_id
+          self.cursor.SkipUntil(semi_spid + 1)
 
       self.DoCommand(node.body, local_symbols)
 
@@ -822,17 +823,18 @@ class OilPrinter(object):
           self.f.write('} ')
 
         cond = arm.cond
-        if len(cond) == 1 and cond[0].tag == command_e.Sentence:
-          sentence = cond[0]
-          self.DoCommand(sentence, local_symbols)
+        if cond.tag_() == condition_e.Shell:
+          if len(cond.commands) == 1 and cond.commands[0].tag == command_e.Sentence:
+            sentence = cond.commands[0]
+            self.DoCommand(sentence, local_symbols)
 
-          # Remove semi-colon
-          semi_spid = sentence.terminator.span_id
-          self.cursor.PrintUntil(semi_spid)
-          self.cursor.SkipUntil(semi_spid + 1)
-        else:
-          for child in arm.cond:
-            self.DoCommand(child, local_symbols)
+            # Remove semi-colon
+            semi_spid = sentence.terminator.span_id
+            self.cursor.PrintUntil(semi_spid)
+            self.cursor.SkipUntil(semi_spid + 1)
+          else:
+            for child in cond.commands:
+              self.DoCommand(child, local_symbols)
 
         self.cursor.PrintUntil(then_spid)
         self.cursor.SkipUntil(then_spid + 1)

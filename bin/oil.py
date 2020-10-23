@@ -143,7 +143,10 @@ def OshCommandMain(argv):
   oil_grammar = pyutil.LoadOilGrammar(loader)
 
   opt0_array = [False] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt0_array)
+  no_stack = None  # type: List[bool]  # for mycpp
+  opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
+
+  parse_opts = optview.Parse(opt0_array, opt_stacks)
   # parse `` and a[x+1]=bar differently
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(True)

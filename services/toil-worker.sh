@@ -158,6 +158,7 @@ other-tests-tasks() {
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
 repo-overview     metrics/source-code.sh travis           -
+osh2oil           test/osh2oil.sh all-passing             -
 EOF
 }
 
