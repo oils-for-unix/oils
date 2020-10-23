@@ -18,7 +18,7 @@ QSN: A Familiar String Interchange Format
 }
 </style>
 
-QSN ("quoted string notation") is an interchange format for **byte strings**.
+QSN ("quoted string notation") is a data format for **byte strings**.
 Examples:
 
 <pre>
@@ -30,18 +30,27 @@ Examples:
 'mu = &#x03bc;'                     <span class=comment># represented literally, not escaped</span>
 </pre>
 
-It's meant to be emitted and parsed by programs written in different languages,
-as UTF-8 or JSON are.  It's both human- and machine-readable.
+It's an adaptation of Rust's string literal syntax with two main use cases:
 
-[Oil](/) understands QSN, and other Unix shells should too.
+- To exchange data between different programs, like [JSON][] or UTF-8.  Note
+  that JSON can't express arbitrary byte strings.
+- To print filenames to a terminal.  Printing arbitrary bytes to a
+  terminal is bad, so programs like [coreutils]($xref) already have informal
+  QSN-like formats.
+  
+Oil uses QSN because it's well-defined and parsable.  It's both human- and
+machine-readable.
+
+Any programming language or tool that understands JSON should also understand
+QSN.
+
+[JSON]: https://json.org
 
 <div id="toc">
 </div>
 
-## Why?
-
-QSN has many uses, but one is that [Oil](//www.oilshell.org/) needs a way to
-safely and readably **display filenames** in a terminal.
+<!--
+### The Terminal Use Case
 
 Filenames may contain arbitrary bytes, including ones that will <span
 class=terminal>change your terminal color</span>, and more.  Most command line
@@ -51,20 +60,22 @@ For example, as of 2016, [coreutils quotes funny filenames][coreutils] to avoid
 the same problem.  However, they didn't specify the format so it can be parsed.
 In contrast, QSN can be parsed and printed like JSON.
 
-[in-band]: https://en.wikipedia.org/wiki/In-band_signaling
+-->
 
 <!--
 The quoting only happens when `isatty()`, so it's not really meant
 to be parsed.
 -->
 
-### More Use Cases
+## More QSN Use Cases
 
-- For `set -x` in shell.  Like filenames, Unix `argv` arrays may contain
-  arbitrary bytes.  See the example below.
 - To pack arbitrary bytes on a **single line**, e.g. for line-based tools like
   [grep]($xref), [awk]($xref), and [xargs]($xref).  QSN strings never contain
-  literal newlines.
+  literal newlines or tabs.
+- For `set -x` in shell.  Like filenames, Unix `argv` arrays may contain
+  arbitrary bytes.  There's an example in the appendix.
+  - `ps` has to display untrusted `argv` arrays.
+  - `ls` has to display untrusted filenames.
 - As a building block for larger specifications, like [QTSV](qtsv.html).
 - To transmit arbitrary bytes over channels that can only represent ASCII or
   UTF-8 (e.g. e-mail, Twitter).
@@ -164,8 +175,8 @@ QSN decoders must enforce (at least) these syntax errors:
 - Invalid hex escape, e.g. `\xgg`
 - Invalid unicode escape, e.g. `\u{123` (incomplete)
 
-(Separate messages aren't required for each error; the only requirement is that
-they not accept these sequences.)
+Separate messages aren't required for each error; the only requirement is that
+they not accept these sequences.
 
 ## Reference Implementation in Oil
 
@@ -208,8 +219,12 @@ Comparison with Python's `repr()`:
 
 ### Related Links
 
-[In-band signaling][in-band] is the fundamental problem with filenames and
+- [QTSV](qtsv.html) is a cleanup of CSV/TSV, built on top of QSN.
+- [In-band signaling][in-band] is the fundamental problem with filenames and
 terminals.  Code (control codes) and data are intermingled.
+
+[in-band]: https://en.wikipedia.org/wiki/In-band_signaling
+
 
 ### `set -x` example
 

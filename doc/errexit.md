@@ -11,40 +11,34 @@ unreliable.
 
 A primary goal of Oil is: *Don't give anyone an excuse not to use `set -e`*.
 
-This doc explains how we accomplish this.
+This doc explains how we accomplish this, but most users don't need to know the
+details.  All you need to do is to follow the instructions in [Oil
+Options](oil-options.html).
+
+That is, add `shopt --set oil:basic` to the top of your program, or use
+`bin/oil` instead of `bin/osh`.  
+
+The basic guarantee that Oil gives you is that **it doesn't lose errors**.
+Your program won't chug along in a bad state for hours after `rm` fails.
 
 <div id="toc">
 </div>
 
 ## Overview
 
-<!--
-TODO: Move this to doc/oil-options.
--->
+TODO: Transcribe [Reliable Error
+Handling](//www.oilshell.org/blog/2020/10/osh-features.html#reliable-error-handling).
 
-Below are DETAILS.  You only need to know:
+We have:
 
-- Use `shopt --set strict:all` if you want to run your script with another
-  shell
-- Use `shopt --set oil:basic` to start upgrading.
-  - And then `shopt --set oil:all` once you're confident about Oil.
-
-Remember that Oil is a gradual upgrade from shell:
-
-- `bin/osh` behaves like a POSIX shell, so existing scripts will continue to
-  run, with the same quirky error handling.
-- Add `shopt --set oil:basic` to the top of your program to **opt in** to
-  better `errexit` error handling.
-- Or use `bin/oil`, which has even more features to make shell a better
-  programming language.
-
-A friendly introduction on the blog: [The Shell Programmer's Guide to `errexit`
-(`set -e`)](TODO).
+- Shell options: `strict_errexit`, `command_errexit`, `process_sub_fail`
+- Special variables: `_process_sub_status`, analogous to `PIPESTATUS`
+- The `run` builtin, which accepts `--status-ok`, `--allow-status-01`, and
+  `--assign-status`.
 
 ## What Mechanisms Does Oil Provide?
 
-
-TODO: organize this
+TODO: organize this.
 
 - turned on by option group `strict:all`:
   - `errexit`, `pipefail` -- POSIX sh stuff
@@ -67,11 +61,6 @@ These are new in Oil:
    errors.
 2. `command_sub_errexit`: Check for failure at the end of command subs, like
    `local d=$(date %x)`.
-
-And a builtin:
-
-3. `catch`: Ensure that errors get "thrown", and allow handling them with an
-   `if` statement.
 
 <!-- TODO: copy section from OSH manual -->
 
