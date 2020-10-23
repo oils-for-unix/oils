@@ -293,7 +293,7 @@ prompt() {
 
 osh-only() {
   # 2 failures until we build in a JSON encoder.
-  sh-spec spec/osh-only.test.sh --osh-failures-allowed 2  \
+  sh-spec spec/osh-only.test.sh --osh-failures-allowed 0  \
     $OSH_LIST "$@"
 }
 
@@ -540,7 +540,7 @@ special-vars() {
 }
 
 introspect() {
-  sh-spec spec/introspect.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/introspect.test.sh --osh-failures-allowed 0 \
     $BASH $OSH_LIST "$@"
 }
 
@@ -594,7 +594,7 @@ var-num() {
 }
 
 var-sub-quote() {
-  sh-spec spec/var-sub-quote.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/var-sub-quote.test.sh --osh-failures-allowed 0 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -699,7 +699,7 @@ regex() {
 
 process-sub() {
   # mksh and dash don't support it
-  sh-spec spec/process-sub.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/process-sub.test.sh --osh-failures-allowed 0 \
     $BASH $ZSH $OSH_LIST "$@"
 }
 
