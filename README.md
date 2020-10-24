@@ -49,7 +49,8 @@ Python program that you can quickly run and change!  Try it interactively:
     hello world
 
 - Try running a shell script you wrote with `bin/osh myscript.sh`.
-- Run `bin/oil` to try the Oil language.
+- Try the [Oil language](https://www.oilshell.org/cross-ref.html#oil-language)
+  with `bin/oil`.
 
 Let us know if any of these things don't work!  [The continuous
 build](http://travis-ci.oilshell.org/jobs/) tests them at every commit.
@@ -62,6 +63,27 @@ tarball.  The [Contributing][] page describes this difference in detail.
 The release tarballs are linked from the [home
 page](https://www.oilshell.org/).  (Developer builds don't work on OS X, so use
 the release tarballs on OS X.)
+
+### Important: We Accept Small Contributions!
+
+Oil is full of [many ideas](https://www.oilshell.org/blog/), which may be
+intimidating at first.
+
+But the bar to contribution is very low.  It's basically a medium size Python
+program with many tests, and many programmers know how to change such programs.
+It's great for prototyping.
+
+- For OSH compatibility, I often merge **failing [spec
+  tests](https://www.oilshell.org/cross-ref.html#spec-test)**.  You don't even
+  have to write code!  The tests alone help.  I search for related tests with
+  `grep xtrace spec/*.test.sh`, where `xtrace` is a shell feature.
+- You only have to make your code work **in Python**.  Plain Python program
+  are easy to modify.  We can do the semi-automated translation to C++ as a
+  separate step, although it often just works.  In other words, don't worry
+  about anything except making it work in Python!
+- You can **influence the design** of the Oil language.  If you have an itch to
+  scratch, be ambitious.  For example, you might want to show us how to
+  implement [nonlinear pipelines](https://github.com/oilshell/oil/issues/843).
 
 ### Docs
 
