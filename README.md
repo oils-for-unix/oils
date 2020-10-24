@@ -24,7 +24,7 @@ The deployed executable doesn't depend on Python.
 
 ## Contributing
 
-* Make sure to check out the [Contributing][] page.
+* Try making the **dev build** of Oil with the instructions on the [Contributing][] page.  This should take 1 to 5 minutes if you have a Linux machine.
 * Let us know if you have problems getting started by posting on the `#oil-dev`
   channel of [oilshell.zulipchat.com][].
 * Feel free to grab an [issue from
@@ -37,16 +37,7 @@ The deployed executable doesn't depend on Python.
 
 ### Quick Start on Linux
 
-Fetch the source code:
-
-    git clone https://github.com/oilshell/oil.git  # or your fork
-    git submodule update --init --recursive        # to get dependencies
-
-Build the Python extension, and run `bin/osh` (or `bin/oil`):
-
-    bash$ build/dev.sh minimal
-    ...
-    # Now you should have a libc.so symlink in the repository root directory
+After following the instructions on the [Contributing][] page, you should be able to do this:
 
     bash$ bin/osh
     osh$ name=world
