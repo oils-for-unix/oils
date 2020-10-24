@@ -67,6 +67,21 @@ The quoting only happens when `isatty()`, so it's not really meant
 to be parsed.
 -->
 
+## Important Properties
+
+- QSN can represent **any byte sequence**.
+- Given a QSN-encoded string, any 2 decoders must produce the same byte string.
+  (On the other hand, encoders have flexiblity with regard to escaping.)
+- An encoded string always fits on a **single line**.  Newlines must be encoded as
+  `\n`, not literal.
+- A encoded string always fits in a **TSV cell**.  Tabs must be encoded as `\t`,
+  not literal.
+- An encoded string can itself be **valid UTF-8**.
+  - Example: `'μ \xff'` is valid UTF-8, even though the decoded string is not.
+- An encoded string can itself be **valid ASCII**.
+  - Example: `'\xce\xbc'` is valid ASCII, even though the decoded string is
+    not.
+
 ## More QSN Use Cases
 
 - To pack arbitrary bytes on a **single line**, e.g. for line-based tools like
@@ -76,6 +91,8 @@ to be parsed.
   arbitrary bytes.  There's an example in the appendix.
   - `ps` has to display untrusted `argv` arrays.
   - `ls` has to display untrusted filenames.
+  - `env` has to display untrusted byte strings.  (Most versions of `env` don't
+    handle newlines well.)
 - As a building block for larger specifications, like [QTSV](qtsv.html).
 - To transmit arbitrary bytes over channels that can only represent ASCII or
   UTF-8 (e.g. e-mail, Twitter).
