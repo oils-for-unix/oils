@@ -6,10 +6,8 @@ Oil Source Code
 [![Build
 Status](https://travis-ci.org/oilshell/oil.svg)](https://travis-ci.org/oilshell/oil)
 
-[Oil][] is a new Unix shell.  It's our upgrade path from bash!  ([Why Create a
-New Unix Shell?][why] / [2019 FAQ][faq])
-
-Its [source code lives in git][git-repo].
+[Oil][] is a new Unix shell.  It's our upgrade path from bash to a better
+language and runtime!  ([Why Create a New Unix Shell?][why] / [2019 FAQ][faq])
 
 [Oil]: https://www.oilshell.org/
 [why]: https://www.oilshell.org/blog/2018/01/28.html
@@ -19,14 +17,18 @@ It's written in Python, so the code is short and easy to change.  But we
 automatically translate it to C++ with custom tools, to make it fast and small.
 The deployed executable doesn't depend on Python.
 
+This README is at the root of the [git repo][git-repo].
+
 <div id="toc">
 </div>
 
 ## Contributing
 
-* Try making the **dev build** of Oil with the instructions on the [Contributing][] page.  This should take 1 to 5 minutes if you have a Linux machine.
-* Let us know if you have problems getting started by posting on the `#oil-dev`
-  channel of [oilshell.zulipchat.com][].
+* Try making the **dev build** of Oil with the instructions on the
+  [Contributing][] page.  This should take 1 to 5 minutes if you have a Linux
+  machine.
+* If it doesn't, let us know.  You can post on the `#oil-dev` channel of
+  [oilshell.zulipchat.com][], or file an issue on Github.
 * Feel free to grab an [issue from
   Github](https://github.com/oilshell/oil/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
   Let us know what you're thinking before you get too far.
@@ -37,24 +39,29 @@ The deployed executable doesn't depend on Python.
 
 ### Quick Start on Linux
 
-After following the instructions on the [Contributing][] page, you should be able to do this:
+After following the instructions on the [Contributing][] page, you'll have a
+Python program that you can quickly run and change!  Try it interactively:
 
     bash$ bin/osh
+
     osh$ name=world
     osh$ echo "hello $name"
     hello world
 
-Try running a shell script you wrote with `bin/osh myscript.sh`.
+- Try running a shell script you wrote with `bin/osh myscript.sh`.
+- Run `bin/oil` to try the Oil language.
 
-This is called the **developer build**, and is **very different** from the
-release tarball.  The [Contributing][] page describes this difference in
-detail.
+Let us know if any of these things don't work!  [The continuous
+build](http://travis-ci.oilshell.org/jobs/) tests them at every commit.
+
+### Dev Build vs. Release Build
+
+Again, note that the **developer build** is **very different** from the release
+tarball.  The [Contributing][] page describes this difference in detail.
 
 The release tarballs are linked from the [home
 page](https://www.oilshell.org/).  (Developer builds don't work on OS X, so use
 the release tarballs on OS X.)
-
-Run `bin/oil` to try the Oil language.  Send me feedback about it!
 
 ### Docs
 
