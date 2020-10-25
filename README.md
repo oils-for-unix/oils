@@ -77,10 +77,9 @@ It's great for prototyping.
   tests](https://www.oilshell.org/cross-ref.html#spec-test)**.  You don't even
   have to write code!  The tests alone help.  I search for related tests with
   `grep xtrace spec/*.test.sh`, where `xtrace` is a shell feature.
-- You only have to make your code work **in Python**.  Plain Python program
-  are easy to modify.  We can do the semi-automated translation to C++ as a
-  separate step, although it often just works.  In other words, don't worry
-  about anything except making it work in Python!
+- You only have to make your code work **in Python**.  Plain Python programs
+  are easy to modify.  The semi-automated translation to C++ is a separate
+  step, although it often just works. 
 - You can **influence the design** of the Oil language.  If you have an itch to
   scratch, be ambitious.  For example, you might want to show us how to
   implement [nonlinear pipelines](https://github.com/oilshell/oil/issues/843).

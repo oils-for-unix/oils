@@ -99,12 +99,13 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   X fork   X forkwait    replaces & and (), takes a block
                   X fopen                Many open streams, takes a block
                   X use                  source with namespace, file-relative 
-                  X opts                 getopts replacement
+                  X opts                 getopts replacement, sets OPT
                   push                   add elements to end of array
                   repr                   Show debug representation of vars
                   write                  like echo, but with --, -sep, -end
                   oil-read               buffered I/O with --line, --all, --qsn
                   run                    re-enable errexit; exit status utils
+                  proc-main              for main program
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv
 X [External Lang] BEGIN   END   when (awk)
@@ -130,6 +131,7 @@ X [Testing]       check
                   strict_tilde           Tilde subst can result in error
                   strict_backslash       Parse $'' and c'' more strictly
                   strict_backticks       Disallow `echo hi`
+                  strict_dollar          word=\$ not word=$
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
                   parse_ignored          Parse and silently ignore?
@@ -144,9 +146,11 @@ X [Testing]       check
                   X longopts             test -file, read -delim, etc.
                   X parse_redir_expr     >> var x   << 'here string'
   [oil:all]       * The full Oil language
+                  X copy_env             Use $[ENV->PYTHONPATH] when false
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
-                  X parse_amp            echo hi &2 > /dev/null
+                  X parse_triple_quotes  ''' """
+                  X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   X parse_dollar_slash   egrep $/ d+ / *.txt
                   X parse_dparen         remove ((
                   X parse_rawc           r'\'   c'\n'   c"$x\n"
@@ -175,7 +179,7 @@ X [Testing]       check
 </h2>
 
 ```oil-help-topics
-                  ARGV
+                  ARGV   ENV   OPT
   [Platform]      OIL_VERSION
   [Exit Status]   _status   _pipeline_status   _process_sub_status
 X [Wok]           _filename   _line

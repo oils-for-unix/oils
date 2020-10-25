@@ -1,7 +1,7 @@
-// frontend_arg_def.h
+// frontend_flag_spec.h
 
-#ifndef FRONTEND_ARG_DEF_H
-#define FRONTEND_ARG_DEF_H
+#ifndef FRONTEND_FLAG_SPEC_H
+#define FRONTEND_FLAG_SPEC_H
 
 #include "id_kind_asdl.h"
 #include "mylib.h"
@@ -130,4 +130,4 @@ Tuple2<args::_Attributes*, args::Reader*> ParseOilCmdVal(
 
 }  // namespace flag_spec
 
-#endif  // FRONTEND_ARG_DEF_H
+#endif  // FRONTEND_FLAG_SPEC_H

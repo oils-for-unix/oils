@@ -26,8 +26,9 @@ from core.pyerror import log
 from frontend import args
 from frontend import flag_spec
 from frontend import reader
+from frontend import signal_def
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import iteritems, tagswitch
 
 import posix_ as posix
 
@@ -72,8 +73,8 @@ class Exec(vm._Builtin):
     cmd = cmd_val.argv[i]
     argv0_path = self.search_path.CachedLookup(cmd)
     if argv0_path is None:
-      self.errfmt.Print('exec: %r not found', cmd,
-                        span_id=cmd_val.arg_spids[1])
+      self.errfmt.Print_('exec: %r not found' % cmd,
+                         span_id=cmd_val.arg_spids[1])
       raise SystemExit(127)  # exec builtin never returns
 
     # shift off 'exec'
@@ -179,8 +180,8 @@ class Wait(vm._Builtin):
 
       job = self.job_state.JobFromPid(pid)
       if job is None:
-        self.errfmt.Print("%s isn't a child of this shell", pid,
-                          span_id=span_id)
+        self.errfmt.Print_("%s isn't a child of this shell" % pid,
+                           span_id=span_id)
         return 127
 
       # TODO: Does this wait for pipelines?
@@ -197,7 +198,7 @@ class Wait(vm._Builtin):
           # Is this right?
           status = job_status.codes[-1]
         else:
-          raise AssertionError
+          raise AssertionError()
 
     return status
 
@@ -294,23 +295,6 @@ class _TrapHandler(object):
     return '<Trap %s>' % self.node
 
 
-# TODO: Requires code generation.
-def _MakeSignals():
-  # type: () -> Dict[str, int]
-  """Piggy-back on CPython to get a list of portable signals.
-
-  When Oil is ported to C, we might want to do something like bash/dash.
-  """
-  names = {}  # type: Dict[str, int]
-  for name in dir(signal):
-    # don't want SIG_DFL or SIG_IGN
-    if name.startswith('SIG') and not name.startswith('SIG_'):
-      int_val = getattr(signal, name)
-      abbrev = name[3:]
-      names[abbrev] = int_val
-  return names
-
-
 def _GetSignalNumber(sig_spec):
   # type: (str) -> int
 
@@ -324,12 +308,10 @@ def _GetSignalNumber(sig_spec):
   # INT is an alias for SIGINT
   if sig_spec.startswith('SIG'):
     sig_spec = sig_spec[3:]
-  return _SIGNAL_NAMES.get(sig_spec)
+  return signal_def.GetNumber(sig_spec)
 
 
-_SIGNAL_NAMES = _MakeSignals()
-
-_HOOK_NAMES = ('EXIT', 'ERR', 'RETURN', 'DEBUG')
+_HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 
 # TODO:
@@ -377,7 +359,7 @@ class Trap(vm._Builtin):
     arg = arg_types.trap(attrs.attrs)
 
     if arg.p:  # Print registered handlers
-      for name, value in self.traps.iteritems():
+      for name, value in iteritems(self.traps):
         # The unit tests rely on this being one line.
         # bash prints a line that can be re-parsed.
         print('%s %s' % (name, value.__class__.__name__))
@@ -385,12 +367,9 @@ class Trap(vm._Builtin):
       return 0
 
     if arg.l:  # List valid signals and hooks
-      ordered = _SIGNAL_NAMES.items()
-      ordered.sort(key=lambda x: x[1])
-
       for name in _HOOK_NAMES:
         print('   %s' % name)
-      for name, int_val in ordered:
+      for name, int_val in signal_def.AllNames():
         print('%2d %s' % (int_val, name))
 
       return 0
@@ -412,8 +391,8 @@ class Trap(vm._Builtin):
         sig_key = str(sig_num)
 
     if sig_key is None:
-      self.errfmt.Print("Invalid signal or hook %r", sig_spec,
-                        span_id=cmd_val.arg_spids[2])
+      self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
+                         span_id=cmd_val.arg_spids[2])
       return 1
 
     # NOTE: sig_spec isn't validated when removing handlers.
@@ -454,8 +433,8 @@ class Trap(vm._Builtin):
       # For signal handlers, the traps dictionary is used only for debugging.
       self.traps[sig_key] = handler
       if sig_num in (signal.SIGKILL, signal.SIGSTOP):
-        self.errfmt.Print("Signal %r can't be handled", sig_spec,
-                          span_id=sig_spid)
+        self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
+                           span_id=sig_spid)
         # Other shells return 0, but this seems like an obvious error
         return 1
       self.sig_state.AddUserTrap(sig_num, handler)
@@ -470,6 +449,11 @@ class Trap(vm._Builtin):
 
 
 class Umask(vm._Builtin):
+
+  def __init__(self):
+    # type: () -> None
+    """Dummy constructor for mycpp."""
+    pass
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -496,10 +480,14 @@ class Umask(vm._Builtin):
         posix.umask(new_mask)
         return 0
 
-    raise error.Usage('umask: unexpected arguments')
+    e_usage('umask: unexpected arguments')
 
 
 class Fork(vm._Builtin):
+
+  def __init__(self):
+    # type: () -> None
+    pass
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -507,6 +495,10 @@ class Fork(vm._Builtin):
 
 
 class ForkWait(vm._Builtin):
+
+  def __init__(self):
+    # type: () -> None
+    pass
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int

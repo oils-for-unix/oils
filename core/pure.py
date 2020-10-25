@@ -42,6 +42,7 @@ from osh import builtin_bracket
 from osh import builtin_meta
 from osh import builtin_misc
 from osh import builtin_printf
+#from osh import builtin_process
 from osh import builtin_pure
 from osh import cmd_eval
 from osh import prompt
@@ -130,6 +131,31 @@ def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt):
   # These builtins take blocks, and thus need cmd_ev.
   builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
   builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
+
+
+if mylib.PYTHON:
+  def AddProcess(
+      b,  # type: Dict[int, vm._Builtin]
+      mem,  # type: state.Mem
+      ext_prog,  # type: process.ExternalProgram
+      fd_state,  # type: process.FdState
+      job_state,  # type: process.JobState
+      waiter,  # type: process.Waiter
+      search_path,  # type: state.SearchPath
+      errfmt  # type: ui.ErrorFormatter
+      ):
+      # type: (...) -> None
+
+    # Process
+    b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
+                                              search_path, errfmt)
+    b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, errfmt)
+    b[builtin_i.jobs] = builtin_process.Jobs(job_state)
+    b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
+    b[builtin_i.bg] = builtin_process.Bg(job_state)
+    b[builtin_i.umask] = builtin_process.Umask()
+    b[builtin_i.fork] = builtin_process.Fork()
+    b[builtin_i.forkwait] = builtin_process.ForkWait()
 
 
 def InitAssignmentBuiltins(mem, procs, errfmt):

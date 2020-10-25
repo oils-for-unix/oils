@@ -20,7 +20,7 @@ readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
 CPPFLAGS="$CXXFLAGS -fno-omit-frame-pointer"
 
 # this flag is only valid in Clang
-#CPPFLAGS="$CPPFLAGS -ferror-limit=1000"
+CPPFLAGS="$CPPFLAGS -ferror-limit=1000"
 
 # Always build with Address Sanitizer
 readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
@@ -298,7 +298,7 @@ osh-eval-manifest() {
 
   # TODO: could be pyoptview,pyconsts,pymatch,pyflag
 
-  local exclude='_devbuild/|.*_def\.py|core/py.*\.py|pybase.py|optview.py|match.py|path_stat.py|bool_stat.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|builtin_process.py'
+  local exclude='_devbuild/|.*_def\.py|core/py.*\.py|pybase.py|optview.py|match.py|path_stat.py|bool_stat.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py'
 
   egrep -v "$exclude" types/osh-eval-manifest.txt
 }
