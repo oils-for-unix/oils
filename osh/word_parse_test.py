@@ -480,7 +480,7 @@ class WordParserTest(unittest.TestCase):
         if word_.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
           break
 
-  def testMultiLine(self):
+  def testHereDoc(self):
     w_parser = test_lib.InitWordParser("""\
 ls foo
 

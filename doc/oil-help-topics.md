@@ -149,7 +149,7 @@ X [Testing]       check
                   X copy_env             Use $[ENV->PYTHONPATH] when false
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
-                  X parse_triple_quotes  ''' """
+                  X parse_triple_quoted  ''' """
                   X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   X parse_dollar_slash   egrep $/ d+ / *.txt
                   X parse_dparen         remove ((

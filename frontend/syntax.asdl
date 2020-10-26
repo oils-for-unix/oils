@@ -216,13 +216,22 @@ module syntax
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
+  -- dedent is calculated from the first part
+  -- TODO: could be string_part
+  string_line = (int dedent, word_part* part)
+
+  -- min_dedent is calculated from each line using Julia's rules
+  triple_quoted = (int min_dedent, string_line* lines)
+
   redir_loc = Fd(int fd) | VarName(string name)
   redir_param =
     Word %compound_word
-  | MultiLine(word here_begin,  -- e.g. EOF or 'EOF'
-              int here_end_span_id,  -- this span is an entire line
-              word_part* stdin_parts -- one for each line
-              )
+  | HereDoc(word here_begin,  -- e.g. EOF or 'EOF'
+            int here_end_span_id,  -- this span is an entire line
+            word_part* stdin_parts -- one for each line
+           )
+  | TriplQuoted %triple_quoted -- Oil style
+
   redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual

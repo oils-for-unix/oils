@@ -23,7 +23,7 @@ from _devbuild.gen.syntax_asdl import (
     case_arm,
 
     sh_lhs_expr, sh_lhs_expr_t,
-    redir, redir_param, redir_param__MultiLine,
+    redir, redir_param, redir_param__HereDoc,
     redir_loc, redir_loc_t,
     word, word_e, word_t, compound_word, Token,
     word_part_e, word_part_t,
@@ -150,7 +150,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
 def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
   # type: (ParseContext, redir, _Reader, Arena) -> None
   """Fill in attributes of a pending here doc node."""
-  h = cast(redir_param__MultiLine, r.arg)
+  h = cast(redir_param__HereDoc, r.arg)
   # "If any character in word is quoted, the delimiter shall be formed by
   # performing quote removal on word, and the here-document lines shall not
   # be expanded. Otherwise, the delimiter shall be the word itself."
@@ -510,7 +510,7 @@ class CommandParser(object):
 
     # Here doc
     if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
-      arg = redir_param.MultiLine()
+      arg = redir_param.HereDoc()
       arg.here_begin = self.cur_word
       r = redir(op_tok, loc, arg)
 
@@ -2103,5 +2103,5 @@ class CommandParser(object):
     # osh -c 'cat <<EOF'
     if len(self.pending_here_docs):
       node = self.pending_here_docs[0]  # Just show the first one?
-      h = cast(redir_param__MultiLine, node.arg)
+      h = cast(redir_param__HereDoc, node.arg)
       p_die('Unterminated here doc began here', word=h.here_begin)

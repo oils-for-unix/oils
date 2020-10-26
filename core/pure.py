@@ -133,7 +133,8 @@ def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt):
   builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
 
 
-if mylib.PYTHON:
+if 0:
+  from osh import builtin_process
   def AddProcess(
       b,  # type: Dict[int, vm._Builtin]
       mem,  # type: state.Mem

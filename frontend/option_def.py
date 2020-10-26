@@ -168,11 +168,12 @@ _NO_OPS = [
 _BASIC_PARSE_OPTIONS = [
     'parse_at',  # @foo, @array(a, b)
     'parse_brace',  # cd /bin { ... }
+    'parse_paren',  # if (x > 0) ...
+    'parse_triple_quoted',  # for ''' and """
+
+    # Not implemented
     'parse_index_expr',  # ${a[1 + f(x)]}  -- can this just be $[]?
      
-    # TODO: also allow bare (x > 0) for awk dialect?
-    'parse_paren',  # if (x > 0) ...
-
     # Should this also change r''' c''' and and c"""?  Those are hard to
     # do in command mode without changing the lexer, but useful because of
     # redirects.  Maybe r' and c' are tokens, and then you look for '' after

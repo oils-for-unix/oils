@@ -34,7 +34,7 @@ from _devbuild.gen.syntax_asdl import (
     assign_op_e,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
-    redir_param_e, redir_param__MultiLine,
+    redir_param_e, redir_param__HereDoc,
 )
 from _devbuild.gen.runtime_asdl import (
     quote_e,
@@ -382,8 +382,8 @@ class CommandEvaluator(object):
         else:
           raise AssertionError('Unknown redirect op')
 
-      elif case(redir_param_e.MultiLine):
-        arg = cast(redir_param__MultiLine, UP_arg)
+      elif case(redir_param_e.HereDoc):
+        arg = cast(redir_param__HereDoc, UP_arg)
         w = compound_word(arg.stdin_parts)  # HACK: Wrap it in a word to eval
         val = self.word_ev.EvalWordToString(w)
         assert val.tag_() == value_e.Str, val
