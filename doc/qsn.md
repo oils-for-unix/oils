@@ -197,15 +197,16 @@ they not accept these sequences.
 
 ## Reference Implementation in Oil
 
-You can see Oil's implementation in [qsn_/qsn.py]($oil-src).  It has an encoder
-with the various UTF-8 strategies.  As of August 2020, the decoder is
-incomplete.
+- Oil's **encoder** in [qsn_/qsn.py]($oil-src), including the state machine for
+  the UTF-8 strategies.
+- The **decoder** has a lexer in [frontend/lexer_def.py]($oil-src), and a
+  "parser" / validator in [qsn_/qsn_native.py]($oil-src).  (Note that QSN is a
+  [regular language]($xref:regular-language)).
 
-Note that we also have options to emit shell-compatible strings, which you
-probably **don't need**.
+The encoder has options to emit shell-compatible strings, which you probably
+**don't need**.  That is, C-escaped strings in bash look `$'like this\n'`.
 
-That is, C-escaped strings in bash look `$'like this\n'`.  A **subset** of QSN
-is compatible with this syntax.  Example:
+A **subset** of QSN is compatible with this syntax.  Example:
 
     $'\x01\n'  # A valid bash string.  Removing $ makes it valid QSN.
 

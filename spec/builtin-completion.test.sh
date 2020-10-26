@@ -251,6 +251,7 @@ spec/testdata
 spec/tilde.test.sh
 spec/toysh-posix.test.sh
 spec/toysh.test.sh
+spec/triple-quoted.test.sh
 spec/type-compat.test.sh
 ## END
 
