@@ -1502,8 +1502,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part_val = part_value.String(s) # type: part_value_t
 
           elif id_ == Id.Lit_Splice:
-            # NOTE: Using iterable protocol as with @array.  TODO: Optimize this so
-            # it doesn't make a copy?
+            # NOTE: Using iterable protocol as with @array.  TODO: Optimize
+            # this so it doesn't make a copy?
             a = [str(item) for item in func(*pos_args, **named_args)]
             part_val = part_value.Array(a)
 

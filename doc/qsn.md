@@ -37,8 +37,8 @@ It's an adaptation of Rust's string literal syntax with a few use cases:
   QSN-like formats.
 - To exchange data between different programs, like [JSON][] or UTF-8.  Note
   that JSON can't express arbitrary byte strings.
-- To solve the "framing problem" over pipes.  QSN represents newlines like
-  `\n`, so literal newlines can be used to delimit records.
+- To solve the "[framing problem](framing.html)" over pipes.  QSN represents
+  newlines like `\n`, so literal newlines can be used to delimit records.
   
 Oil uses QSN because it's well-defined and parsable.  It's both human- and
 machine-readable.

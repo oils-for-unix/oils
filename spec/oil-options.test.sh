@@ -183,9 +183,8 @@ shopt -s inherit_errexit
 shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
-shopt -s parse_index_expr
 shopt -s parse_paren
-shopt -s parse_rawc
+shopt -s parse_triple_quoted
 shopt -s process_sub_fail
 shopt -s simple_test_builtin
 shopt -s simple_word_eval

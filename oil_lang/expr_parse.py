@@ -262,7 +262,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         continue
 
-      # '' and c''
+      # '' and r'' and c''
       if tok.id in (Id.Left_SingleQuoteRaw, Id.Left_SingleQuoteC):
         if tok.id == Id.Left_SingleQuoteRaw:
           sq_mode = lex_mode_e.SQ_Raw

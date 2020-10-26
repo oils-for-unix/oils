@@ -1384,6 +1384,24 @@ class WordParser(WordEmitter):
 
       elif self.token_kind == Kind.Left:
         part = self._ReadLeftParts()
+
+        from _devbuild.gen.id_kind_asdl import Id_str
+        # Detect triple quoted strings, but only in the "outer" context.
+        if (self.parse_opts.parse_triple_quoted() and
+            lex_mode == lex_mode_e.ShCommand and num_parts == 0):
+
+          if (part.tag_() == word_part_e.SingleQuoted and
+              len(cast(single_quoted, part).tokens) == 0):
+            next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+            if next_id == Id.Left_SingleQuoteRaw:  # should be '
+              log("id = %s", Id_str(next_id))
+            
+          if (part.tag_() == word_part_e.DoubleQuoted and
+              len(cast(double_quoted, part).parts) == 0):
+            next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+            if next_id == Id.Left_DoubleQuote:
+              log("id = %s", Id_str(next_id))
+
         w.parts.append(part)
 
       # NOT done yet, will advance below

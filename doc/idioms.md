@@ -190,7 +190,7 @@ Yes:
     var myarray = %(one two three)
     write -- @myarray
 
-## Use Long Flags on the `read` builtin
+## Use New Flags on the `read` builtin
 
 ### Read a Line
 
@@ -212,6 +212,17 @@ No:
 Yes:
 
     read --all :mystr
+
+### Read Until `\0` (consume `find -print0`)
+
+No:
+
+    # Obscure syntax that bash accepts, but not other shells
+    read -r -d '' myvar
+
+Yes:
+
+    read -0 :myvar
 
 ## Use Blocks to Save and Restore Context
 

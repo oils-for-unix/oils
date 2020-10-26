@@ -170,6 +170,13 @@ module syntax
 
   compound_word = (word_part* parts)
 
+  -- dedent is calculated from the first part
+  -- TODO: could be string_part
+  string_line = (int dedent, word_part* part)
+
+  -- min_dedent is calculated from each line using Julia's rules
+  triple_quoted = (int min_dedent, string_line* lines)
+
   word = 
     -- Empty is for the RHS of 'x=', 'declare x=', and the argument in "${x:-}".
     -- Semantically, we need it for "${x:-}" (see osh/word_parse.py).  Other 
@@ -183,6 +190,8 @@ module syntax
     -- overhead and seems like overkill.  Note that DoubleQuoted can't
     -- contain a SingleQuoted, etc. either.
   | Compound %compound_word
+    -- Similar to CompoundWord, but leading space is stripped
+  | TripleQuoted %triple_quoted
     -- A BracedTree is a word because it can appear in a command.  It can
     -- contain any type of word_part.
   | BracedTree(word_part* parts)
@@ -216,13 +225,6 @@ module syntax
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
-  -- dedent is calculated from the first part
-  -- TODO: could be string_part
-  string_line = (int dedent, word_part* part)
-
-  -- min_dedent is calculated from each line using Julia's rules
-  triple_quoted = (int min_dedent, string_line* lines)
-
   redir_loc = Fd(int fd) | VarName(string name)
   redir_param =
     Word %compound_word
@@ -230,7 +232,8 @@ module syntax
             int here_end_span_id,  -- this span is an entire line
             word_part* stdin_parts -- one for each line
            )
-  | TriplQuoted %triple_quoted -- Oil style
+    -- When this is the arg, it's the here doc BODY, not the DELIMITER.
+  | TripleQuoted %triple_quoted -- Oil style
 
   redir = (Token op, redir_loc loc, redir_param arg)
 

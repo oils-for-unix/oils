@@ -172,7 +172,7 @@ _BASIC_PARSE_OPTIONS = [
     'parse_triple_quoted',  # for ''' and """
 
     # Not implemented
-    'parse_index_expr',  # ${a[1 + f(x)]}  -- can this just be $[]?
+    # 'parse_index_expr',  # ${a[1 + f(x)]}  -- can this just be $[]?
      
     # Should this also change r''' c''' and and c"""?  Those are hard to
     # do in command mode without changing the lexer, but useful because of
@@ -185,7 +185,7 @@ _BASIC_PARSE_OPTIONS = [
     #   hello\n
     #   '''
     # }
-    'parse_rawc',  # echo r'' c''
+    # 'parse_rawc',  # echo r'' c''
 ]
 
 # Extra stuff that breaks too many programs.
