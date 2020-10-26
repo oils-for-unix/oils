@@ -30,13 +30,15 @@ Examples:
 'mu = &#x03bc;'                     <span class=comment># represented literally, not escaped</span>
 </pre>
 
-It's an adaptation of Rust's string literal syntax with two main use cases:
+It's an adaptation of Rust's string literal syntax with a few use cases:
 
-- To exchange data between different programs, like [JSON][] or UTF-8.  Note
-  that JSON can't express arbitrary byte strings.
 - To print filenames to a terminal.  Printing arbitrary bytes to a
   terminal is bad, so programs like [coreutils]($xref) already have informal
   QSN-like formats.
+- To exchange data between different programs, like [JSON][] or UTF-8.  Note
+  that JSON can't express arbitrary byte strings.
+- To solve the "framing problem" over pipes.  QSN represents newlines like
+  `\n`, so literal newlines can be used to delimit records.
   
 Oil uses QSN because it's well-defined and parsable.  It's both human- and
 machine-readable.
@@ -197,8 +199,8 @@ they not accept these sequences.
 
 ## Reference Implementation in Oil
 
-- Oil's **encoder** in [qsn_/qsn.py]($oil-src), including the state machine for
-  the UTF-8 strategies.
+- Oil's **encoder** is in [qsn_/qsn.py]($oil-src), including the state machine
+  for the UTF-8 strategies.
 - The **decoder** has a lexer in [frontend/lexer_def.py]($oil-src), and a
   "parser" / validator in [qsn_/qsn_native.py]($oil-src).  (Note that QSN is a
   [regular language]($xref:regular-language)).

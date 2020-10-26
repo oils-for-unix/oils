@@ -104,6 +104,7 @@ readonly MARKDOWN_DOCS=(
   oil-proc-func-block
   io-builtins
   unicode
+  framing
 
   # Internal stuff
   interpreter-state
