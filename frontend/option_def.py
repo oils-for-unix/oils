@@ -220,10 +220,6 @@ def _Init(opt_def):
   opt_def.Add('nounset', short_flag='u', builtin='set', 
               groups=['strict:all', 'oil:basic', 'oil:all'])
 
-  # bash --norc -c 'set -o' shows this is on by default
-  opt_def.Add('hashall', short_flag='h', builtin='set', default=True,
-              groups=['strict:all', 'oil:basic', 'oil:all'])
-
   opt_def.Add('pipefail', builtin='set', 
               groups=['strict:all', 'oil:basic', 'oil:all'])
 
@@ -233,6 +229,9 @@ def _Init(opt_def):
 
   # The only one where builtin=None.  Only the shell can change it.
   opt_def.Add('interactive', builtin=None)
+
+  # bash --norc -c 'set -o' shows this is on by default
+  opt_def.Add('hashall', short_flag='h', builtin='set', default=True)
 
   #
   # shopt
@@ -354,8 +353,8 @@ SHOPT_OPTION_NUMS = [opt.index for opt in _SORTED if opt.builtin == 'shopt']
 PARSE_OPTION_NUMS = [opt.index for opt in _SORTED if opt.is_parse]
 
 # Sorted because 'shopt -o -p' should be sorted, etc.
-VISIBLE_SHOPT_NAMES = [
-    opt.name for opt in _SORTED
+VISIBLE_SHOPT_NUMS = [
+    opt.index for opt in _SORTED
     if opt.builtin == 'shopt' and opt.implemented
 ]
 

@@ -205,8 +205,9 @@ class Shopt(vm._Builtin):
     elif arg.u:
       b = False
     else:
-      # bash prints uses a different format for 'shopt', but we use the
-      # same format as 'shopt -p'.
+      # If no flags are passed, print the options.  bash prints uses a
+      # different format for 'shopt', but we use the same format as 'shopt
+      # -p'.
       self.mutable_opts.ShowShoptOptions(opt_names)
       return 0
 

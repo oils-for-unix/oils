@@ -492,14 +492,32 @@ class MutableOpts(object):
   def ShowShoptOptions(self, opt_names):
     # type: (List[str]) -> None
     """ For 'shopt -p' """
-    if len(opt_names) == 0:
-      opt_names = consts.VISIBLE_SHOPT_NAMES  # if none supplied, show all
+
+    # Respect option gropus.
+    opt_nums = []
     for opt_name in opt_names:
-      index = match.MatchOption(opt_name)
-      if index == 0:
-        e_usage('got invalid option %r' % opt_name)
-      b = self.opt0_array[index]
-      print('shopt -%s %s' % ('s' if b else 'u', opt_name))
+      if opt_name == 'oil:basic':
+        opt_nums.extend(consts.OIL_BASIC)
+      elif opt_name == 'oil:all':
+        opt_nums.extend(consts.OIL_ALL)
+      elif opt_name == 'strict:all':
+        opt_nums.extend(consts.STRICT_ALL)
+      else:
+        index = match.MatchOption(opt_name)
+        # Minor incompatibility with bash: we validate everything before
+        # printing.
+        if index == 0:
+          e_usage('got invalid option %r' % opt_name)
+        opt_nums.append(index)
+
+    if len(opt_names) == 0:
+      # If none supplied, show all>
+      # TODO: Should this show 'set' options too?
+      opt_nums.extend(consts.VISIBLE_SHOPT_NUMS)
+
+    for opt_num in opt_nums:
+      b = self.opt0_array[opt_num]
+      print('shopt -%s %s' % ('s' if b else 'u', consts.OptionName(opt_num)))
 
 
 class _ArgFrame(object):

@@ -340,3 +340,30 @@ echo status=$?
 ## STDOUT:
 one
 ## END
+
+#### shopt --print
+
+# TODO: It would be nice to print long flags ...
+
+shopt -p errexit
+shopt -p nullglob
+
+echo --
+shopt -p strict:all | head -n 3
+
+echo --
+shopt --set strict:all
+shopt -p strict:all | head -n 3
+
+## STDOUT:
+shopt -u errexit
+shopt -u nullglob
+--
+shopt -u inherit_errexit
+shopt -u nounset
+shopt -u nullglob
+--
+shopt -s inherit_errexit
+shopt -s nounset
+shopt -s nullglob
+## END

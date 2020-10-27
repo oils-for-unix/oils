@@ -234,7 +234,7 @@ module syntax
   redir_param =
     Word %compound_word
   | HereDoc(word here_begin,  -- e.g. EOF or 'EOF'
-            int here_end_span_id,  -- this span is an entire line
+            int here_end_span_id,  -- span is whole line (for defunct osh2oil)
             word_part* stdin_parts -- one for each line
            )
     -- When this is the arg, it's the here doc BODY, not the DELIMITER.

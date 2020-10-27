@@ -82,7 +82,9 @@ SHOPT_SPEC = FlagSpec('shopt')
 SHOPT_SPEC.ShortFlag('-s', long_name='--set')
 SHOPT_SPEC.ShortFlag('-u', long_name='--unset')
 SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' names
-SHOPT_SPEC.ShortFlag('-p')  # print
+# TODO: --print could print in a verbose format.  (Annoying: codegen conflicts
+# with Python keyword.)
+SHOPT_SPEC.ShortFlag('-p')
 SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 

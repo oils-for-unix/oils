@@ -88,16 +88,16 @@ osh-eval-demo   build/mycpp.sh osh-eval-demo          -
 build-examples  mycpp/setup.sh build-examples         -
 test-examples   mycpp/setup.sh test-examples          -
 parse-errors    test/parse-errors.sh travis1          _tmp/other/parse-errors.txt
-parse-errors2   test/parse-errors.sh travis2          _tmp/other/parse-errors-oil-native.txt
 EOF
+# TODO: Commented this out because it was slow
+#parse-errors2   test/parse-errors.sh travis2          _tmp/other/parse-errors-oil-native.txt
 
-# note: parse-errors depends on oil-native
+# note: parse-errors2 depends on oil-native
 
 # Why is this hanging?
 #spec-cpp        test/spec-cpp.sh travis      _tmp/spec/cpp/osh-summary.html
 
   # TODO:
-  # - Run mycpp.sh build-all, test-all
   # - Run build/mycpp.sh osh-eval-smoke
 }
 

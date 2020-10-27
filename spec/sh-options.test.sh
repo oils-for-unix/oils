@@ -599,9 +599,7 @@ status=$?
 sed --regexp-extended 's/\s+/ /' $TMP/out.txt  # make it easier to assert
 echo status=$status
 ## STDOUT:
-shopt -u nullglob
 status=2
-shopt -u nullglob
 status=2
 ## END
 ## OK bash STDOUT:

@@ -83,11 +83,11 @@ jobs:
       <<: *publish_html
 
     # Developer build that can run all spec tests.
-    - name: dev-all-nix
-      language: nix
-      script: services/toil-worker.sh run-dev-all-nix
+    #- name: dev-all-nix
+    #  language: nix
+    #  script: services/toil-worker.sh run-dev-all-nix
 
-      <<: *publish_html
+    #  <<: *publish_html
 
     # Low-dependency developer build.  Spec tests broken because we don't have
     # exact versions of shells.

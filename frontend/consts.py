@@ -32,7 +32,7 @@ PARSE_OPTION_NUMS = option_def.PARSE_OPTION_NUMS
 SET_OPTION_NUMS = option_def.SET_OPTION_NUMS
 SET_OPTION_NAMES = option_def.SET_OPTION_NAMES  # used for assertions only
 
-VISIBLE_SHOPT_NAMES = option_def.VISIBLE_SHOPT_NAMES  # used to print
+VISIBLE_SHOPT_NUMS = option_def.VISIBLE_SHOPT_NUMS  # used to print
 
 BUILTIN_NAMES = builtin_def.BUILTIN_NAMES  # Used by builtin_comp.py
 

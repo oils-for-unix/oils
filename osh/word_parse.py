@@ -1469,8 +1469,7 @@ class WordParser(WordEmitter):
       return cast(word_t, self.cur_token), False
 
     elif self.token_kind == Kind.Ignored:
-      # Space should be ignored.  TODO: change this to SPACE_SPACE and
-      # SPACE_NEWLINE?  or SPACE_TOK.
+      # Space should be ignored.
       self._Next(lex_mode_e.Arith)
       no_word = None  # type: Optional[word_t]
       return no_word, True  # Tell wrapper to try again
