@@ -69,8 +69,8 @@ def _double_quoted(obj):
 def _single_quoted(obj):
   # type: (single_quoted) -> hnode_t
 
-  # Only abbreviate 'foo', not $'foo\n'
-  if obj.left.id != Id.Left_SingleQuoteRaw:
+  # Only abbreviate 'foo', not $'foo\n' or r'foo'
+  if obj.left.id != Id.Left_SingleQuote:
     return None  # Fall back on obj._AbbreviatedTree()
 
   p_node = runtime.NewRecord('SQ')

@@ -342,8 +342,9 @@ def AddKinds(spec):
   # get that.
   spec.AddKind('Left', [
       'DoubleQuote',
-      'SingleQuoteRaw',
-      'SingleQuoteC',       # $'' for \n escapes, and c'' in expression mode
+      'SingleQuote',        # ''
+      'RSingleQuote',       # r''
+      'CSingleQuote',       # $'' for \n escapes, and c'' in expression mode
       'Backtick',           # `
       'DollarParen',        # $(
       'DollarBrace',        # ${

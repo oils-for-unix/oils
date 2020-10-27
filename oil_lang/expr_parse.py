@@ -263,11 +263,12 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         continue
 
       # '' and r'' and c''
-      if tok.id in (Id.Left_SingleQuoteRaw, Id.Left_SingleQuoteC):
-        if tok.id == Id.Left_SingleQuoteRaw:
-          sq_mode = lex_mode_e.SQ_Raw
-        else:
+      if tok.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
+                    Id.Left_CSingleQuote):
+        if tok.id == Id.Left_CSingleQuote:
           sq_mode = lex_mode_e.SQ_C
+        else:
+          sq_mode = lex_mode_e.SQ_Raw
 
         left_token = tok
         line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)

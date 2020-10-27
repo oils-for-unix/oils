@@ -107,10 +107,10 @@ def GetArrayItem(strs, index):
 
 def EvalSingleQuoted(part):
   # type: (single_quoted) -> str
-  if part.left.id == Id.Left_SingleQuoteRaw:
+  if part.left.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote):
     tmp = [t.val for t in part.tokens]
     s = ''.join(tmp)
-  elif part.left.id == Id.Left_SingleQuoteC:
+  elif part.left.id == Id.Left_CSingleQuote:
     # NOTE: This could be done at compile time
     tmp = [word_compile.EvalCStringToken(t) for t in part.tokens]
     s = ''.join(tmp)

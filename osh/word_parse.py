@@ -557,9 +557,7 @@ class WordParser(WordEmitter):
     # expanded later.
 
     # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
-    # TODO: Use a different token type besides Id.Left_SingleQuoteRaw.
-    # Or maybe just test that the length is 1?
-    no_backslashes = is_oil_expr and (left_token.val == "'")
+    no_backslashes = is_oil_expr and left_token.id == Id.Left_SingleQuote
 
     done = False
     while not done:
@@ -634,10 +632,10 @@ class WordParser(WordEmitter):
       # token to the part?
       return self._ReadDoubleQuoted()
 
-    if self.token_type == Id.Left_SingleQuoteRaw:
+    if self.token_type in (Id.Left_SingleQuote, Id.Left_RSingleQuote):
       return self._ReadSingleQuoted(lex_mode_e.SQ_Raw)
 
-    if self.token_type == Id.Left_SingleQuoteC:
+    if self.token_type == Id.Left_CSingleQuote:
       return self._ReadSingleQuoted(lex_mode_e.SQ_C)
 
     if self.token_type in (
@@ -1393,7 +1391,7 @@ class WordParser(WordEmitter):
           if (part.tag_() == word_part_e.SingleQuoted and
               len(cast(single_quoted, part).tokens) == 0):
             next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
-            if next_id == Id.Left_SingleQuoteRaw:  # should be '
+            if next_id == Id.Left_SingleQuote:  # should be '
               log("id = %s", Id_str(next_id))
             
           if (part.tag_() == word_part_e.DoubleQuoted and

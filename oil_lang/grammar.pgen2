@@ -243,7 +243,7 @@ sh_command_sub: ( '$(' | '@(' | '&(' ) Expr_CastedDummy Eof_RParen
 
 # Note: could add c"" too
 dq_string: '"' Expr_CastedDummy Right_DoubleQuote
-sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_CastedDummy Right_SingleQuote
+sq_string: (Left_SingleQuote | Left_RSingleQuote | Left_CSingleQuote) Expr_CastedDummy Right_SingleQuote
 
 braced_var_sub: '${' Expr_CastedDummy Right_DollarBrace
 

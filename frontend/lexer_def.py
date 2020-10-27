@@ -121,9 +121,9 @@ _LEFT_SUBS = [
 # Additional Kind.Left that are valid in unquoted modes.
 _LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
-  C("'", Id.Left_SingleQuoteRaw),
+  C("'", Id.Left_SingleQuote),
   C('$"', Id.Left_DollarDoubleQuote),
-  C("$'", Id.Left_SingleQuoteC),
+  C("$'", Id.Left_CSingleQuote),
 
   C('<(', Id.Left_ProcSubIn),
   C('>(', Id.Left_ProcSubOut),
@@ -465,7 +465,7 @@ LEXER_DEF[lex_mode_e.VSub_ArgDQ] = \
   C('"', Id.Left_DoubleQuote),
 
   # Another weird wart of bash/mksh: $'' is recognized but NOT ''!
-  C("$'", Id.Left_SingleQuoteC),
+  C("$'", Id.Left_CSingleQuote),
 ]
 
 # NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ
@@ -784,11 +784,11 @@ OIL_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
 
   # In expression mode, we add the r'' and c'' prefixes for '' and $''.
-  C("'", Id.Left_SingleQuoteRaw),
-  C("r'", Id.Left_SingleQuoteRaw),
+  C("'", Id.Left_SingleQuote),
+  C("r'", Id.Left_RSingleQuote),
 
-  C("c'", Id.Left_SingleQuoteC),
-  C("$'", Id.Left_SingleQuoteC),
+  C("c'", Id.Left_CSingleQuote),
+  C("$'", Id.Left_CSingleQuote),
 
   C('@(', Id.Left_AtParen),         # Split Command Sub
 

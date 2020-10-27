@@ -299,7 +299,7 @@ class LineLexerTest(unittest.TestCase):
   def testRead_VS_ARG_UNQ(self):
     l = LineLexer("'hi'", self.arena)
     t = l.Read(lex_mode_e.VSub_ArgUnquoted)
-    self.assertEqual(Id.Left_SingleQuoteRaw, t.id)
+    self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'
