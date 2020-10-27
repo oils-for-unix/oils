@@ -1,3 +1,7 @@
+---
+default_highlighter: oil-sh
+---
+
 Shell Language Deprecations
 ===========================
 

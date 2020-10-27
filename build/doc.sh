@@ -75,6 +75,7 @@ readonly MARKDOWN_DOCS=(
   quirks
 
   doc-toolchain
+  doc-plugins
   eggex
   deprecations
   future

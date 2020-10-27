@@ -97,6 +97,7 @@ More:
 
 - [README.md](README.html).  If you want to modify Oil, start here.  We
   welcome contributions!
+- [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
 <!--

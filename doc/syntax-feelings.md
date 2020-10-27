@@ -1,3 +1,7 @@
+---
+default_highlighter: oil-sh
+---
+
 A Feel For Oil's Syntax
 =======================
 

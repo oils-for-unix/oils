@@ -256,7 +256,7 @@ def _ApplyInsertions(lines, insertions, out_file):
     out_file.write(line)
 
 
-def Render(opts, in_file, out_file, use_fastlex=True):
+def Render(opts, meta, in_file, out_file, use_fastlex=True):
   html = md2html(in_file.read())
 
   if use_fastlex:
@@ -269,7 +269,7 @@ def Render(opts, in_file, out_file, use_fastlex=True):
     # Stages of transformation.
     html = oil_doc.ExpandLinks(html)
 
-    html = oil_doc.HighlightCode(html)
+    html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
 
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
@@ -345,7 +345,7 @@ def main(argv):
 
   with open(argv[2]) as content_f:
     doc_html.Header(meta, sys.stdout)
-    Render(opts, content_f, sys.stdout)
+    Render(opts, meta, content_f, sys.stdout)
     doc_html.Footer(meta, sys.stdout)
 
 

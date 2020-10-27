@@ -1,3 +1,7 @@
+---
+default_highlighter: oil-sh
+---
+
 Command vs. Expression Mode
 ===========================
 

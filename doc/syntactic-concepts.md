@@ -1,3 +1,7 @@
+---
+default_highlighter: oil-sh
+---
+
 Syntactic Concepts in the Oil Language
 ======================================
 

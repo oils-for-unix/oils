@@ -299,7 +299,7 @@ class PygmentsPlugin(_Plugin):
     out.Print(highlighted)
 
 
-def HighlightCode(s):
+def HighlightCode(s, default_highlighter):
   """
   Algorithm:
   1. Collect what's inside <pre><code> ...
@@ -339,8 +339,24 @@ def HighlightCode(s):
 
           css_class = tag_lexer.GetAttr('class')
           code_start_pos = end_pos
-          if css_class is not None and css_class.startswith('language'):
 
+          if css_class is None:
+            slash_code_left, slash_code_right = \
+                html.ReadUntilEndTag(it, tag_lexer, 'code')
+
+            if default_highlighter is not None:
+              if default_highlighter == 'oil-sh':
+                out.PrintUntil(code_start_pos)
+
+                # Using ShPromptPlugin because it does the comment highlighting we want!
+                plugin = ShPromptPlugin(s, code_start_pos, slash_code_left)
+                plugin.PrintHighlighted(out)
+
+                out.SkipTo(slash_code_left)
+              else:
+                raise RuntimeError('Unknown default highlighter %r' % default_highlighter)
+
+          elif css_class.startswith('language'):
             slash_code_left, slash_code_right = \
                 html.ReadUntilEndTag(it, tag_lexer, 'code')
 
@@ -376,9 +392,9 @@ def HighlightCode(s):
 
               out.SkipTo(slash_code_left)
 
-            else:
-              # Here's we're REMOVING the original <pre><code>
-              # Pygments gives you a <pre> already
+            else:  # language-*: Use Pygments
+
+              # We REMOVIE the original <pre><code> because Pygments gives you a <pre> already
 
               # We just read closing </code>, and the next one should be </pre>.
               try:

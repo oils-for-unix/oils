@@ -6,7 +6,10 @@ default_highlighter: oil-sh
 Examples of HTML Plugins
 ========================
 
-This file is a sort of unit test for [doctools/]($oil-src).
+This file is essentially a unit test for [doctools/oil_doc.py]($oil-src), which
+contains all the HTML plugins.
+
+Related: [How We Build Oil's Documentation](doc-toolchain.html).
 
 <div id="toc">
 </div>
@@ -20,8 +23,24 @@ This file is a sort of unit test for [doctools/]($oil-src).
 - `$issue`: [issue 11]($issue:11)
 - `$oil-commit`: [this commit]($oil-commit:a1dad10d53b1fb94a164888d9ec277249ae98b58)
 
+## Syntax Highlighting Specified In Front matter
 
-## Syntax Highlighting With Markdown Code Blocks
+If every `pre` block in a document needs the same higlighter, you can specify
+it in the front matter like this:
+
+    ---
+    default_highlighter: oil-sh
+    ---
+
+    My Title
+    ========
+
+Right now we only allow `oil-sh`, which is a generic formatter that works for
+both shell and Oil code (detail: it's the same as `sh-prompt` for now).  This
+is what we use in [idioms.html](idioms.html) and [known
+differences](known-differences.html).
+
+## Syntax Highlighting With Fenced Code Blocks
 
 ### sh-prompt
 
@@ -36,21 +55,6 @@ hi
 x = 42
 print(x, file=sys.stderr)
 ```
-
-### `default_highlighter` in Front matter
-
-`oil-sh` is a generic formatter that works for both shell and Oil code.  This
-is what we use in [idioms.html](idioms.html).
-
-No:
-
-    pat='*.py'         # pattern stored in a string
-    echo $pat          # implicit glob in shell
-
-Yes:
-
-    var pat = '*.py'   # Oil assignment
-    echo @glob(pat)    # explicit
 
 ### Plugins We Should Have
 
@@ -76,6 +80,3 @@ Embeddings:
 - Graphviz
   - LaTeX (although I don't really use it)
 
-## Related Docs
-
-- [doc-toolchain](doc-toolchain.html)

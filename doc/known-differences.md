@@ -1,3 +1,7 @@
+---
+default_highlighter: oil-sh
+---
+
 Known Differences Between OSH and Other Shells
 ==============================================
 
