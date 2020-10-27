@@ -105,20 +105,6 @@ def GetArrayItem(strs, index):
   return s
 
 
-def EvalSingleQuoted(part):
-  # type: (single_quoted) -> str
-  if part.left.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote):
-    tmp = [t.val for t in part.tokens]
-    s = ''.join(tmp)
-  elif part.left.id == Id.Left_CSingleQuote:
-    # NOTE: This could be done at compile time
-    tmp = [word_compile.EvalCStringToken(t) for t in part.tokens]
-    s = ''.join(tmp)
-  else:
-    raise AssertionError(part.left.id)
-  return s
-
-
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().
 def _BackslashEscape(s):
   # type: (str) -> str
@@ -1392,7 +1378,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(word_part_e.SingleQuoted):
         part = cast(single_quoted, UP_part)
-        s = EvalSingleQuoted(part)
+        s = word_compile.EvalSingleQuoted(part)
         v = part_value.String(s, True, False)
         part_vals.append(v)
 

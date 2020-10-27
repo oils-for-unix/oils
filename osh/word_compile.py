@@ -7,7 +7,7 @@ doesn't depend on any values at runtime.
 """
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, class_literal_term, class_literal_term_t,
+    Token, class_literal_term, class_literal_term_t, single_quoted
 )
 from frontend import consts
 from osh import string_ops
@@ -98,3 +98,19 @@ def EvalCStringToken(tok):
 
   else:
     raise AssertionError()
+
+
+def EvalSingleQuoted(part):
+  # type: (single_quoted) -> str
+  if part.left.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote):
+    tmp = [t.val for t in part.tokens]
+    s = ''.join(tmp)
+  elif part.left.id == Id.Left_CSingleQuote:
+    # NOTE: This could be done at compile time
+    tmp = [EvalCStringToken(t) for t in part.tokens]
+    s = ''.join(tmp)
+  else:
+    raise AssertionError(part.left.id)
+  return s
+
+

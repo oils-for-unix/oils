@@ -262,7 +262,7 @@ class OilEvaluator(object):
       return self.word_ev.EvalDoubleQuotedToString(node)
 
     if node.tag == expr_e.SingleQuoted:
-      return word_eval.EvalSingleQuoted(node)
+      return word_compile.EvalSingleQuoted(node)
 
     if node.tag == expr_e.BracedVarSub:
       return self.word_ev.EvalBracedVarSubToString(node)
@@ -611,7 +611,7 @@ class OilEvaluator(object):
         new_leaf = re.LiteralChars(s, node.span_id)
 
     elif node.tag == re_e.SingleQuoted:
-      s = word_eval.EvalSingleQuoted(node)
+      s = word_compile.EvalSingleQuoted(node)
       new_leaf = re.LiteralChars(s, node.left.span_id)
 
     elif node.tag == re_e.DoubleQuoted:
@@ -659,7 +659,7 @@ class OilEvaluator(object):
     for i, term in enumerate(node.terms):
       s = None
       if term.tag == class_literal_term_e.SingleQuoted:
-        s = word_eval.EvalSingleQuoted(term)
+        s = word_compile.EvalSingleQuoted(term)
         spid = term.left.span_id
 
       elif term.tag == class_literal_term_e.DoubleQuoted:
