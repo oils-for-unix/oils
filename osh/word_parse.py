@@ -665,7 +665,7 @@ class WordParser(WordEmitter):
       Compound includes ExtGlob
     """
     left_token = self.cur_token
-    arms = []  # type: List[word_t]
+    arms = []  # type: List[compound_word]
     spids = []  # type: List[int]
     spids.append(left_token.span_id)
 

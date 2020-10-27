@@ -1,5 +1,6 @@
 ---
 in_progress: true
+default_highlighter: oil-sh
 ---
 
 I/O Builtins in Oil

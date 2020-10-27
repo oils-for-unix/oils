@@ -1,3 +1,7 @@
+---
+default_highlighter: oil-sh
+---
+
 Oil Language FAQ
 ===================
 

@@ -1,5 +1,6 @@
 ---
 in_progress: yes
+default_highlighter: oil-sh
 ---
 
 Oil Builtins
