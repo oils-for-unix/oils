@@ -2,128 +2,126 @@
 in_progress: yes
 ---
 
-Oil Documentation Toolchain
-===========================
+How We Build Oil's Documentation
+================================
 
-The toolchain is based on hand-written Markdown and HTML filters.  See
-[lazylex/README.md]().
+1. Write Markdown by hand, with optional "front matter".
+2. Render Markdown to HTML, and run the result through our own HTML filters.
+3. Publish static HTML to <https://www.oilshell.org/>.
+
+The code is in the [doctools/]($oil-src) directory, which uses the
+[lazylex/]($oil-src)  library.
 
 <div id="toc">
 </div>
 
-## Plugins
+## Quick Start
 
-### Link Shortcuts
+To build and preview this doc, run:
 
-This markdown:
+    build/doc.sh split-and-render doc/doc-toolchain.md
 
-```
-The [GNU bash shell]($xref:bash)
-```
+Open the path in prints in your browser
+(`_release/VERSION/doc/doc-toolchain.html`).
 
-is translated to this HTML:
+## Front Matter and Title
 
-```
-The <a href="$xref:bash">GNU bash shell</a>
-```
+Most docs start with something like this:
 
-which is expanded by our plugin to:
+    ---
+    in_progress: yes
+    default_highlighter: oil-sh
+    ---
 
-```
-The <a href="/cross-ref.html#bash">GNU bash shell</a>
-```
+    My Title
+    ========
 
-If the argument is omitted, then the anchor text is used.  For example,
+    Hello
 
-```
-<a href="$xref">bash</a>
-```
+The "front matter" between `---` lines is metadata for rendering the doc.
+Github's web UI understands and renders it.
 
-becomes:
+## Plugins That Transform HTML
 
-```
-The <a href="/cross-ref.html#bash">bash</a>
-```
+We have some HTML plugins that make writing **markdown** easier.
+Note that [CommonMark][] tightens up the rules for embedding HTML in Markdown,
+and that is very useful.
+
+[CommonMark]: https://www.oilshell.org/blog/2018/02/14.html 
+
+### Table of Contents
+
+Insert this into the doc
+
+    <div id="toc">
+    </div>
+
+and it will be expanded into a table of contents derived from `h2` and `h3`
+tags.
+
+### Link Shortcuts, e.g. `$xref`
+
+Here's an example of how it works.  This Markdown:
+
+    The [GNU bash shell]($xref:bash)
+
+is translated to HTML by [CommonMark][]:
+
+    The <a href="$xref:bash">GNU bash shell</a>
+
+Our `$xref:` plugin expands it to:
+
+    The <a href="/cross-ref.html#bash">GNU bash shell</a>
+
+If the argument is omitted, then the **anchor text** is used.  So you can just write:
+
+    [bash][]
+
+and it will become:
+
+    The <a href="/cross-ref.html#bash">bash</a>
 
 List of plugins:
 
 - `$xref:bash` expands to `/cross-ref.html#bash` (shown above)
 - `$blog-tag:oil-release` expands to `/blog/tags.html#oil-release`
+- `$oil-src`
 
+See the raw and rendered versions of this doc for more:
 
-[bash]($xref)
+- [doc-plugins.md][]
+- [doc-plugins.html](doc-plugins.html)
 
-[oil-release]($blog-tag)
+[doc-plugins.md]: $oil-src:doc/doc-plugins.md
 
-[INSTALL.txt]($oil-src)
+### Syntax Highlighting of Code Blocks
 
-[INSTALL.txt]($oil-src:INSTALL.txt)
+Use Markdown's fenced code blocks like this:
 
-[interactive-shell/README.md]($blog-code-src)
+    ``` sh-prompt
+    oil$ var x = 'hello world'
+    oil$ echo $x
+    hello world
+    ```
 
-[issue 11]($issue:11)
+Or you can set `default_highlighter` for blocks indented by 4 sapces.
 
-[this commit]($oil-commit:a1dad10d53b1fb94a164888d9ec277249ae98b58)
+Again see [doc-plugins.md][] for examples.
 
-### Syntax Highlighting
+## The Help Toolchain Renders to HTML and ANSI
 
+TODO: Describe how this works.  We have a plugin for the table of contents.
 
-Plugins:
+It's published to the web as well as underlying the `help` builtin.  TODO:
+Render to ANSI.
 
-`sh-prompt`:
+We also split `{osh,oil}-help.md` into "cards".
 
-``` sh-prompt
-oil$ var x = 'hello world'
-oil$ echo $x
-hello world
-```
-
-`python`:
-
-``` python
-x = 42  # comment
-
-def add(y):
-  return x + y
-
-print(add(x * 7))
-```
-
-
-### TODO:
-
-- Side-by-side sh and Oil
-- Side-by-side PCRE and Eggex
-- sh-session - How to replace the data?
-
-
-A shell session could look like this:
-
-<div shell="sh">
-
-```
-$ echo one
-$ echo two
-```
-
-</div>
-
-Embeddings:
-
-- Embed Image Preview of Web Page?
-- Embed Github Commit?
-- Graphviz
-  - LaTeX (although I don't really use it)
-
-
-## Help Toolchain
-
-- It splits `help-index.md` and `help.md` into "cards"
-- TODO: Render to ANSI
+Table of contents: `{osh,oil}-help-topics.md`.
 
 ## Code Location
 
-Right now there are several scripts in `devtools/*.py`.  And `build/doc.sh`.
+- [build/doc.sh]($oil-src) drives the tools in [doctools/]($oil-src).
+- Markdown files are in [doc/]($oil-src).
 
-TODO: Move into `doc/`?
 

@@ -17,7 +17,6 @@ from frontend import consts
 from oil_lang import objects
 from osh import braces
 from osh import word_compile
-from osh import word_eval
 
 import libc
 

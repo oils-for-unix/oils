@@ -27,7 +27,7 @@ language.  It's **our upgrade path from bash**.
 - [Known Differences](known-differences.html) is trivia for advanced users.
   It lists differences between OSH and other shells.
 - [Quirks](quirks.html) for compatibility.
-- [errexit](errexit.html) (in progress)
+- [Error Handling with `errexit`](errexit.html)
 - [OSH Help Topics](osh-help-topics.html) (incomplete).  This document
   underlies the `help` builtin.
 
@@ -79,6 +79,7 @@ More:
 - [JSON](json.html): Currently supported only in the Python prototype of Oil.
 - [QSN](qsn.html): Quoted String Notation.  A human- and machine-readable
   format for byte strings.
+  - [Framing](framing.html)
 - [QTSV](qtsv.html): An extension of TSV, built on top of QSN.
 - [Unicode](unicode.html).  Oil supports and prefers UTF-8.
 

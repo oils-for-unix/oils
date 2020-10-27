@@ -15,7 +15,7 @@ contexts.
 <div id="toc">
 </div>
 
-## Delimiter Based
+## Delimiter Based Solutions
 
 ### Newline as Delimiter
 
@@ -30,15 +30,16 @@ contain newlines, but not `NUL` (`\0`).
 So naturally we also support the the format that `find -print0` emits, and
 `xargs -0` consumes.
 
-## Quoting / Escaping Special characters: [QSN][]
+## Solutions That Can Express Arbitrary Bytes
 
-Quoted String Notation
+### Quoting / Escaping Special characters: [QSN][]
 
-TODO: Describe this.
+QSN uses backslash escapes like `\n`, `\x00`, and `\u{3bc}` to express
+arbitrary bytes (and characters).
 
-## Length-Prefixed: Netstrings
+### Length-Prefixed: Netstrings
 
-TODO: Implement this
+TODO: Implement this.
 
 Like [QSN][], this format is "8-bit clean", but:
 
@@ -46,8 +47,8 @@ Like [QSN][], this format is "8-bit clean", but:
   useful if you don't have a library handy.
 - It's more efficient to decode, in theory.
 
-However the encoded payload may contain binary data, so it can't be viewed in
-a terminal, in general.
+However, the encoded output may contain binary data, which is hard to view in a
+terminal.
 
 [QSN]: qsn.html
 
