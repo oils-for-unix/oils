@@ -6,7 +6,7 @@
 -- Exceptions:
 -- * <<- here docs with leading tabs, since we don't want those for
 --   conversion.  We don't want files with mixed tabs and spaces.
--- * Found to be not strictly necessary for oil conversion
+-- * Distinguishing between function styles wasn't necessary:
 --   * foo() { } vs function foo { } -- ksh 
 --
 -- The AST is composed of the builtin ASDL types (string, int, bool) and our
@@ -24,8 +24,12 @@
 
 -- Refactorings:
 --
+--   # word.{Empty,BracedTree} not allowed here.  What about TripleQuoted?
 --   cmd_token = Word %compound_word | Token %Token
 --   bool_expr = WordTest %compound_word | ...
+--
+--   # Makes sense for DoubleQuoted and TripleQuoted
+--   string_part = ...  # subset of word_part
 --
 -- Many %Token references:
 --   type_expr = Atom %Token | ...
@@ -158,7 +162,7 @@ module syntax
   -- extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, compound_word* arms)
 
-    -- Oil extensions
+    -- Oil word_part extensions
 
     -- @myarray
   | Splice(Token name)
@@ -178,10 +182,11 @@ module syntax
   triple_quoted = (int min_dedent, string_line* lines)
 
   word = 
-    -- Empty is for the RHS of 'x=', 'declare x=', and the argument in "${x:-}".
-    -- Semantically, we need it for "${x:-}" (see osh/word_parse.py).  Other 
-    -- usages may be cosmetic, because e.g. compound_word will have zero parts
-    -- in the assoc array literal A=([k]=)
+    -- Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
+    -- The latter is semantically necessary.  (See osh/word_parse.py). 
+    -- At runtime: RHS of 'declare x='.
+    -- We don't always use it, e.g. the RHS of 'A=([k]=)' is a compound_word 
+    -- with zero parts.
     Empty
     -- Returns from WordParser, but not generally stored in LST (TODO: cmd_token)
   | Token %Token

@@ -45,7 +45,7 @@ class OilDoc(unittest.TestCase):
   def testHighlightCode(self):
     # lazylex/testdata.html has the language-sh-prompt
 
-    h = oil_doc.HighlightCode(TEST_HTML)
+    h = oil_doc.HighlightCode(TEST_HTML, None)
     self.assert_('<span class="sh-prompt">' in h, h)
     #print(h)
 
@@ -59,7 +59,7 @@ class OilDoc(unittest.TestCase):
   echo hi &gt; out.txt
 </code></pre>
     '''
-    h = oil_doc.HighlightCode(HTML)
+    h = oil_doc.HighlightCode(HTML, None)
 
     # assert there's no double escaping
     self.assert_('hi &gt; out.txt' in h, h)

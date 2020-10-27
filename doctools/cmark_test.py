@@ -94,11 +94,11 @@ class RenderTest(unittest.TestCase):
     opts, _ = cmark.Options().parse_args([])
 
     out_file = cStringIO.StringIO()
-    cmark.Render(opts, SIMPLE_DOC, out_file)
+    cmark.Render(opts, {}, SIMPLE_DOC, out_file)
     self.assertEqual('<p>hi</p>\n', out_file.getvalue())
 
     out_file = cStringIO.StringIO()
-    cmark.Render(opts, TOC_DOC, out_file)
+    cmark.Render(opts, {}, TOC_DOC, out_file)
     print(out_file.getvalue())
 
   def testNewRender(self):
@@ -109,7 +109,7 @@ class RenderTest(unittest.TestCase):
 
     in_file = cStringIO.StringIO(NEW_DOC)
     out_file = cStringIO.StringIO()
-    cmark.Render(opts, in_file, out_file)
+    cmark.Render(opts, {}, in_file, out_file)
 
     h = out_file.getvalue()
     self.assert_('<div class="toclevel1"><a href="#one">' in h, h)
@@ -122,7 +122,7 @@ class RenderTest(unittest.TestCase):
 
     in_file = cStringIO.StringIO(NEW_DOC)
     out_file = cStringIO.StringIO()
-    cmark.Render(opts, in_file, out_file)
+    cmark.Render(opts, {}, in_file, out_file)
     h = out_file.getvalue()
     self.assert_('<a name="subsubheading">' in h, h)
 
