@@ -145,3 +145,35 @@ status=2
 ## N-I mksh STDOUT:
 status=1
 ## END
+
+#### PROMPT_COMMAND and exit code: should we copy bash?
+case $SH in (dash|mksh) exit ;; esac
+
+export PS1=''  # OSH prints prompt to stdout
+
+case $SH in
+  *bash|*osh)
+    $SH --rcfile /dev/null -i << 'EOF'
+myfunc() {
+  echo last_status=$?
+}
+PROMPT_COMMAND='myfunc'
+( exit 42 )
+( exit 43 )
+echo ok
+EOF
+    ;;
+esac
+
+# Paper over difference with OSH
+case $SH in *bash) echo '^D';; esac
+## STDOUT:
+last_status=0
+last_status=42
+last_status=43
+ok
+last_status=0
+^D
+## END
+## N-I dash/mksh stdout-json: ""
+
