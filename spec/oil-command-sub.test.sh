@@ -79,3 +79,31 @@ for x in @(seq 3) {
 ['z']
 ['z']
 ## END
+
+#### @() can't start in the middle of the word
+
+# TODO: This could be as syntax error?  We need filename globbing to match
+# bash.
+
+shopt -s extglob  # this makes it match in bash
+shopt -s oil:basic
+
+touch foo.py
+echo f@(*.py)
+## STDOUT:
+f@(*.py)
+## END
+## OK bash STDOUT:
+foo.py
+## END
+
+#### @() can't have any tokens after it
+shopt -s oil:basic
+
+write -- @(seq 2)
+write -- @(seq 3)x
+## status: 2
+## STDOUT:
+1
+2
+## END

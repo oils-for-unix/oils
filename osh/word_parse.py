@@ -806,9 +806,10 @@ class WordParser(WordEmitter):
     NOTE: This is not in the grammar, because word parts aren't in the grammar!
 
     command_sub = '$(' command_list ')'
-                | ` command_list `
+                | '@(' command_list ')'
                 | '<(' command_list ')'
                 | '>(' command_list ')'
+                | ` command_list `
     """
     left_token = self.cur_token
     left_spid = left_token.span_id
@@ -823,8 +824,8 @@ class WordParser(WordEmitter):
       self.lexer.PushHint(Id.Op_RParen, right_id)
       c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader,
                                                         self.lexer, right_id)
-      # NOTE: This doesn't use something like main_loop because we don't want to
-      # interleave parsing and execution!  Unlike 'source' and 'eval'.
+      # NOTE: This doesn't use something like main_loop because we don't want
+      # to interleave parsing and execution!  Unlike 'source' and 'eval'.
       node = c_parser.ParseCommandSub()
 
       right_spid = c_parser.w_parser.cur_token.span_id
@@ -1376,6 +1377,14 @@ class WordParser(WordEmitter):
           # RARE mutation of tok.id!
           cs_part.left_token.id = Id.Left_AtParen
           part = cs_part  # for type safety
+
+          # Same check as _MaybeReadWholeWord.  @(seq 3)x is illegal, just like
+          # a=(one two)x and @arrayfunc(3)x.
+          self._Peek()
+          if self.token_kind not in KINDS_THAT_END_WORDS:
+            p_die('Unexpected token after @()', token=self.cur_token)
+          done = True
+
         else:
           part = self._ReadExtGlob()
         w.parts.append(part)

@@ -393,8 +393,8 @@ Re-enable errexit.
 Option in this group disallow problematic or confusing shell constructs.  The
 resulting script will still run in another shell.
 
-    shopt --set strict:all  # set all options
-    shopt -p strict:all     # print current state
+    shopt --set strict:all  # turn on all options
+    shopt -p strict:all     # print their current state
 
 <h4 id="oil:basic">oil:basic</h4>
 
@@ -405,16 +405,16 @@ For example, `parse_at` means that `@myarray` is now the operation to splice
 an array.  This will break scripts that expect `@` to be literal, but you can
 simply quote it like `'@literal'` to fix the problem.
 
-    shopt --set oil:basic   # set all options
-    shopt -p oil:basic      # print current state
+    shopt --set oil:basic   # turn on all options
+    shopt -p oil:basic      # print their current state
 
 <h4 id="oil:all">oil:all</h4>
 
 Enable the full Oil language.  This includes everything in the `oil:basic`
 group.
 
-    shopt --set oil:all     # set all options
-    shopt -p oil:all        # print current state
+    shopt --set oil:all     # turn on all options
+    shopt -p oil:all        # print their current state
 
 ### Strictness
 
