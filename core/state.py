@@ -809,6 +809,7 @@ class ctx_Status(object):
     # type: (Mem) -> None
 
     # Because some prompts rely on the status leaking.  See issue #853.
+    # PS1 also does.
     last = mem.last_status[-1]
 
     mem.last_status.append(last)

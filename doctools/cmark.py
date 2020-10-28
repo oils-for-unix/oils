@@ -332,7 +332,8 @@ def main(argv):
 
   if len(argv) == 1:
     # Old style for blog: it's a filter
-    Render(opts, sys.stdin, sys.stdout, use_fastlex=not opts.disable_fastlex)
+    Render(opts, {}, sys.stdin, sys.stdout, use_fastlex=not
+           opts.disable_fastlex)
     return
 
   # Otherwise we expect metadata and content

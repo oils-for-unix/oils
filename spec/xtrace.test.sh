@@ -254,3 +254,16 @@ status=0
 ## OK mksh stdout-json: ""
 ## OK mksh status: 1
 
+
+#### $? in PS1
+PS4='[last=$?] '
+set -x
+false
+echo ok
+## STDOUT:
+ok
+## END
+## STDERR:
+[last=0] false
+[last=1] echo ok
+## END
