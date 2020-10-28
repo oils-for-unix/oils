@@ -29,9 +29,7 @@ import posix_ as posix
 from typing import cast, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv, CompoundStatus
-  from _devbuild.gen.syntax_asdl import (
-    command_t, command__Subshell, command__ShFunction,
-  )
+  from _devbuild.gen.syntax_asdl import command_t, command__ShFunction
   from core import optview
   from core import state
   from core.vm import _Builtin

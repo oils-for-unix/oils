@@ -67,7 +67,7 @@ old=$PWD
 fork {
   cd /
   echo hi
-  sleep 0.1  # print status first, slightly racy
+  sleep 0.5  # print status first, slightly racy
   exit 42
 }
 echo status=$?

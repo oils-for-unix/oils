@@ -5,8 +5,6 @@ default_highlighter: oil-sh
 Oil Language Idioms
 ===================
 
-<!-- TODO: write a highlighter that just recognizes # comments -->
-
 This is an informal, lightly-organized list of recommended idioms for the [Oil
 language]($xref:oil-language).  Each section has snippets labeled *No* and
 *Yes*.
@@ -377,7 +375,7 @@ In Oil, you have to pass params explicitly:
       echo $foo_var  # error
     }
 
-TODO: Implement this.
+TODO: Implement local scope for `proc`.  With `shopt --unset dynamic_scope`.
 
 ### If and `errexit`
 

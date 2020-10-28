@@ -37,6 +37,32 @@ Your shebang line might be `#!/usr/bin/env oil`.  This is the equivalent of
 That's all most users need to know.  These **option groups** allow you to
 gradually opt into Oil.
 
+## Philosophy For Option Groups
+
+- `strict:all`: Help you find bugs.  Do NOT break things to improve style.
+- `oil:basic`: Allow using Oil features that are unlikely to break something,
+  or have an easy fix (example: `@foo` -> `'@foo'`, and `()` -> `forkwait`).
+  Again, do NOT break things to improve style.
+- `oil:all`: Allow even more Oil features.  And also break things to improve
+  style.  (Example: `simple_eval_builtin`).
+
+TODO: Do we need `simple:all`?
+
+## Naming Conventions
+
+- `parse_*`.   Change parsing.
+  - true by default, and turned off: `parse_ignored`.  TODO:
+    `parse_backticks`, `parse_backslash`, `parse_dollar`.
+
+- `strict_*`: Add more runtime errors.  And detect bugs.  Example:
+  - `~typo` is a runtime error.
+  - `${#s}` on invalid unicode is a runtime error.
+
+- `simple_*`: Break things to improve style.
+  - TODO: rename to `simple_eval_builtin`, `simple_echo`.
+  - `simple_word_eval` is the most aggresive
+
+
 ## Details
 
 TODO: Polish everything below.

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
       cmd_value__Argv, cmd_value__Assign, redirect
   )
   from _devbuild.gen.syntax_asdl import (
-      command_t, command__Pipeline, command__Subshell, command_sub
+      command_t, command__Pipeline, command_sub
   )
   from osh.sh_expr_eval import ArithEvaluator
   from osh.sh_expr_eval import BoolEvaluator

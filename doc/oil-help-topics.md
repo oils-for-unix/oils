@@ -123,18 +123,15 @@ X [Testing]       check
                   strict_arith           Fatal parse errors (on by default)
                   strict_array           Arrays don't decay to strings
                   strict_control_flow    trap misplaced break/continue
-                  strict_echo            echo takes 0 or 1 arguments
                   strict_errexit         Disallow code that ignores failure
-                  strict_eval_builtin    eval takes exactly 1 argument
                   strict_nameref         trap invalid variable names
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
-                  strict_backslash       Parse $'' and c'' more strictly
-                  strict_backticks       Disallow `echo hi`
-                  strict_dollar          word=\$ not word=$
                   X strict_glob          Parse the sublanguage more strictly
+  [Simplicity]    strict_echo            echo takes 0 or 1 arguments
+                  strict_eval_builtin    eval takes exactly 1 argument
+                  X simple_test_builtin  Only file tests, remove [, status 2
                   X strict_trap          Function name only
-                  parse_ignored          Parse and silently ignore?
   [Oil Basic]     * Enable Oil functionality
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
@@ -144,26 +141,30 @@ X [Testing]       check
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
                   dashglob               Disabled to avoid files like -rf
-                  X longopts             test -file, read -delim, etc.
-                  X parse_redir_expr     >> var x   << 'here string'
   [Oil Breaking]  * The full Oil language
                   X copy_env             Use $[ENV->PYTHONPATH] when false
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
+
+                  # TODO: parse_
+                  strict_backslash       Parse $'' and c'' more strictly
+                  strict_backticks       Disallow `echo hi`
+                  strict_dollar          word=\$ not word=$
+                  # TODO: change groups
+                  parse_ignored          Parse and silently ignore?
+
                   X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   X parse_dollar_slash   egrep $/ d+ / *.txt
-                  X parse_dparen         remove ((
-                  X parse_rawc           r'\'   c'\n'   c"$x\n"
-                  X simple_test_builtin  Only file tests, remove [, status 2
-                  X no_old_builtins      local/declare/etc.  pushd/popd/dirs
+                  X old_builtins         local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
                                          ... getopts
-                  X no_old_syntax        [[   $(( ))  ${x%prefix}   $$
+                  X old_syntax           [[   $(( ))  ${x%prefix}   $$
                                          $'\n'   @(*.py|*.sh)  `echo comsub`
                                          ${a[@]}
   [Compatibility] eval_unsafe_arith   parse_dynamic_arith
                   verbose_errexit
-  [More Options]  allow_command_sub      Internal detail for strict_errexit
+  [More Options]  allow_command_sub      For implementing strict_errexit
+                  dynamic_scope          For implementing 'proc'
 ```
 
 <h2 id="env">

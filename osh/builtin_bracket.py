@@ -116,6 +116,9 @@ def _TwoArgs(w_parser):
   # type: (_StringWordEmitter) -> bool_expr_t
   """Returns an expression tree to be evaluated."""
   w0 = w_parser.Read()
+  # TODO: Implement --dir, --file, --exists here
+  # --symlink, maybe --executable
+
   w1 = w_parser.Read()
   if w0.s == '!':
     return bool_expr.LogicalNot(bool_expr.WordTest(w1))
