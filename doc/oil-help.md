@@ -385,7 +385,38 @@ Re-enable errexit.
 
 <h2 id="option">Shell Options</h2>
 
-<h3 id="strict:all">strict:all</h3>
+### Option Groups
+
+<!-- note: explicit anchor necessary because of mangling -->
+<h4 id="strict:all">strict:all</h4>
+
+Option in this group disallow problematic or confusing shell constructs.  The
+resulting script will still run in another shell.
+
+    shopt --set strict:all  # set all options
+    shopt -p strict:all     # print current state
+
+<h4 id="oil:basic">oil:basic</h4>
+
+Options in this group enable Oil features that are less likely to break
+existing shell scripts.
+
+For example, `parse_at` means that `@myarray` is now the operation to splice
+an array.  This will break scripts that expect `@` to be literal, but you can
+simply quote it like `'@literal'` to fix the problem.
+
+    shopt --set oil:basic   # set all options
+    shopt -p oil:basic      # print current state
+
+<h4 id="oil:all">oil:all</h4>
+
+Enable the full Oil language.  This includes everything in the `oil:basic`
+group.
+
+    shopt --set oil:all     # set all options
+    shopt -p oil:all        # print current state
+
+### Strictness
 
 #### strict_tilde
 
@@ -418,7 +449,7 @@ For compatibility, Oil will parse some constructs it doesn't execute, like:
 
 When this option is disabled, that statement is a syntax error.
 
-<h3 id="oil:basic">oil:basic</h3>
+### Oil Basic
 
 #### simple_word_eval
 
@@ -426,7 +457,11 @@ TODO:
 
 <!-- See doc/simple-word-eval.html -->
 
-<h3 id="oil:all">oil:all</h3>
+### Oil Breaking
+
+#### copy_env
+
+#### parse_equals
 
 <h2 id="special">Special Variables</h2>
 

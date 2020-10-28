@@ -118,8 +118,8 @@ X [Testing]       check
 </h2>
 
 ```oil-help-topics
-  [strict:all]    * All options starting with 'strict_'
-                  strict_argv            No empty argv
+  [Option Groups] strict:all   oil:basic   oil:all
+  [Strictness]    strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)
                   strict_array           Arrays don't decay to strings
                   strict_control_flow    trap misplaced break/continue
@@ -135,21 +135,21 @@ X [Testing]       check
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
                   parse_ignored          Parse and silently ignore?
-  [oil:basic]     * Enable Oil functionality
+  [Oil Basic]     * Enable Oil functionality
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
+                  X parse_triple_quoted  ''' """
                   command_sub_errexit    More errexit checks --  at command sub
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
                   dashglob               Disabled to avoid files like -rf
                   X longopts             test -file, read -delim, etc.
                   X parse_redir_expr     >> var x   << 'here string'
-  [oil:all]       * The full Oil language
+  [Oil Breaking]  * The full Oil language
                   X copy_env             Use $[ENV->PYTHONPATH] when false
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
-                  X parse_triple_quoted  ''' """
                   X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   X parse_dollar_slash   egrep $/ d+ / *.txt
                   X parse_dparen         remove ((
