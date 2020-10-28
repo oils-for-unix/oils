@@ -266,3 +266,7 @@ RUN_SPEC.Flag('-allow-status-01', args.Bool,
 PUSH_SPEC = OilFlags('push', typed=True)
 
 REPR_SPEC = OilFlags('repr', typed=True)
+
+# --verbose?
+FORK_SPEC = OilFlags('fork', typed=True)
+FORKWAIT_SPEC = OilFlags('forkwait', typed=True)

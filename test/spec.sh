@@ -885,6 +885,11 @@ oil-builtins() {
     $OSH_LIST "$@"
 }
 
+oil-builtin-process() {
+  sh-spec spec/oil-builtin-process.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
 oil-command-sub() {
   sh-spec spec/oil-command-sub.test.sh $OSH_LIST "$@"
 }

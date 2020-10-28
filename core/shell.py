@@ -160,6 +160,7 @@ class ShellOptHook(state.OptHook):
 def AddProcess(
     b,  # type: Dict[int, vm._Builtin]
     mem,  # type: state.Mem
+    shell_ex,  # type: vm._Executor
     ext_prog,  # type: process.ExternalProgram
     fd_state,  # type: process.FdState
     job_state,  # type: process.JobState
@@ -177,8 +178,8 @@ def AddProcess(
   b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
   b[builtin_i.bg] = builtin_process.Bg(job_state)
   b[builtin_i.umask] = builtin_process.Umask()
-  b[builtin_i.fork] = builtin_process.Fork()
-  b[builtin_i.forkwait] = builtin_process.ForkWait()
+  b[builtin_i.fork] = builtin_process.Fork(shell_ex)
+  b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
 
 
 def AddOil(b, mem, errfmt):
@@ -416,11 +417,15 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   builtins = {}  # type: Dict[int, vm._Builtin]
 
+  shell_ex = executor.ShellExecutor(
+      mem, exec_opts, mutable_opts, procs, builtins, search_path,
+      ext_prog, waiter, job_state, fd_state, errfmt)
+
   pure.AddPure(builtins, mem, procs, mutable_opts, aliases, search_path,
                errfmt)
   pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
-  AddProcess(builtins, mem, ext_prog, fd_state, job_state, waiter, search_path,
-             errfmt)
+  AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_state, waiter,
+             search_path, errfmt)
   AddOil(builtins, mem, errfmt)
 
   builtins[builtin_i.help] = help_builtin
@@ -441,10 +446,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   assign_b = pure.InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
-
-  shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, builtins, search_path,
-      ext_prog, waiter, job_state, fd_state, errfmt)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)

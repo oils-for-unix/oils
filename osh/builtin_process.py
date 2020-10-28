@@ -485,21 +485,36 @@ class Umask(vm._Builtin):
 
 class Fork(vm._Builtin):
 
-  def __init__(self):
-    # type: () -> None
-    pass
+  def __init__(self, shell_ex):
+    # type: (vm._Executor) -> None
+    self.shell_ex = shell_ex
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
+    attrs, arg_r = flag_spec.ParseOilCmdVal('fork', cmd_val)
+    arg, span_id = arg_r.Peek2()
+    if arg is not None:
+      e_usage('got unexpected argument %r' % arg, span_id=span_id)
+
+    if cmd_val.block is None:
+      e_usage('expected a block')
+
     e_usage('builtin not implemented')
 
 
 class ForkWait(vm._Builtin):
 
-  def __init__(self):
-    # type: () -> None
-    pass
+  def __init__(self, shell_ex):
+    # type: (vm._Executor) -> None
+    self.shell_ex = shell_ex
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    e_usage('builtin not implemented')
+    attrs, arg_r = flag_spec.ParseOilCmdVal('forkwait', cmd_val)
+    arg, span_id = arg_r.Peek2()
+    if arg is not None:
+      e_usage('got unexpected argument %r' % arg, span_id=span_id)
+
+    if cmd_val.block is None:
+      e_usage('expected a block')
+

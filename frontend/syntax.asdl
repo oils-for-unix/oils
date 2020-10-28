@@ -18,22 +18,24 @@
 -- * select block
 -- * case fallthrough ;& and ;;&
 
--- We usually try to preserve the physical order of the source in the ASDL fields.
--- Exceptions:
+-- We usually try to preserve the physical order of the source in the ASDL
+-- fields. Exception:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
 
 -- Refactorings:
 --
---   # word.{Empty,BracedTree} not allowed here.  What about TripleQuoted?
+--   # word.{Empty,BracedTree} not allowed here
 --   cmd_token = Word %compound_word | Token %Token
---   bool_expr = WordTest %compound_word | ...
 --
 --   # Makes sense for DoubleQuoted and TripleQuoted
 --   string_part = ...  # subset of word_part
 --
--- Many %Token references:
+--   # Simplify many %Token references:
 --   type_expr = Atom %Token | ...
 --   printf_part ...
+--
+--   # Simplify compound_word reference
+--   bool_expr = WordTest %compound_word | ...
 
 module syntax
 {
@@ -113,8 +115,13 @@ module syntax
   | Slice(arith_expr? begin, arith_expr? length)
   attributes (int* spids)
 
-  double_quoted = (Token left, word_part* parts) attributes (int* spids)
-  single_quoted = (Token left, Token* tokens) attributes (int* spids)
+  -- Variants:
+  -- * Look at left token for $'' c'' vs r'' ''
+  -- * """ and ''' strings have a boolean set
+  double_quoted = (Token left, word_part* parts, bool multiline)
+                  attributes (int* spids)
+  single_quoted = (Token left, Token* tokens, bool multiline)
+                  attributes (int* spids)
 
   -- Note: simple_var_sub could be split up into speck for $?, (speck, int) for
   -- $0 $1, token for $foo.
@@ -196,9 +203,6 @@ module syntax
     -- contain a SingleQuoted, etc. either.
   | Compound %compound_word
     -- Similar to CompoundWord, but leading space is stripped
-  | TripleQuoted %triple_quoted
-    -- A BracedTree is a word because it can appear in a command.  It can
-    -- contain any type of word_part.
   | BracedTree(word_part* parts)
     -- For dynamic parsing of test/[ -- the string is already evaluated.
     -- note: this could also be Token
@@ -237,8 +241,6 @@ module syntax
             int here_end_span_id,  -- span is whole line (for defunct osh2oil)
             word_part* stdin_parts -- one for each line
            )
-    -- When this is the arg, it's the here doc BODY, not the DELIMITER.
-  | TripleQuoted %triple_quoted -- Oil style
 
   redir = (Token op, redir_loc loc, redir_param arg)
 

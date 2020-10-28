@@ -138,6 +138,7 @@ if 0:
   def AddProcess(
       b,  # type: Dict[int, vm._Builtin]
       mem,  # type: state.Mem
+      shell_ex,  # type: vm._Executor
       ext_prog,  # type: process.ExternalProgram
       fd_state,  # type: process.FdState
       job_state,  # type: process.JobState
@@ -155,8 +156,8 @@ if 0:
     b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
     b[builtin_i.bg] = builtin_process.Bg(job_state)
     b[builtin_i.umask] = builtin_process.Umask()
-    b[builtin_i.fork] = builtin_process.Fork()
-    b[builtin_i.forkwait] = builtin_process.ForkWait()
+    b[builtin_i.fork] = builtin_process.Fork(shell_ex)
+    b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
 
 
 def InitAssignmentBuiltins(mem, procs, errfmt):

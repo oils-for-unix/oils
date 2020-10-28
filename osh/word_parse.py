@@ -1399,13 +1399,15 @@ class WordParser(WordEmitter):
           if (part.tag_() == word_part_e.SingleQuoted and
               len(cast(single_quoted, part).tokens) == 0):
             next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
-            if next_id == Id.Left_SingleQuote:  # should be '
+            if next_id == Id.Left_SingleQuote:
+              # TODO: read until '''
               log("id = %s", ui.PrettyId(next_id))
             
           if (part.tag_() == word_part_e.DoubleQuoted and
               len(cast(double_quoted, part).parts) == 0):
             next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
             if next_id == Id.Left_DoubleQuote:
+              # TODO: read until """
               log("id = %s", ui.PrettyId(next_id))
 
         w.parts.append(part)
