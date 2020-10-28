@@ -266,9 +266,8 @@ from asdl import pybase
     LIST_INT = [
         'STRICT_ALL', 'OIL_BASIC', 'OIL_ALL', 'DEFAULT_TRUE',
         'PARSE_OPTION_NUMS', 'SHOPT_OPTION_NUMS', 'SET_OPTION_NUMS',
+        'VISIBLE_SHOPT_NUMS',
         ]
-    # TODO: These could be changed to numbers
-    LIST_STR = ['VISIBLE_SHOPT_NAMES']
 
     prefix = argv[2]
 
@@ -291,8 +290,6 @@ namespace consts {
 
       for name in LIST_INT:
         out('extern List<int>* %s;', name)
-      for name in LIST_STR:
-        out('extern List<Str*>* %s;', name)
 
       out("""\
 
@@ -343,11 +340,6 @@ int NO_INDEX = 0;  // duplicated from frontend/consts.py
         val = getattr(consts, name)
         val_str = ', '.join(str(i) for i in val)
         out('List<int>* %s = new List<int>({%s});', name, val_str)
-
-      for name in LIST_STR:
-        val = getattr(consts, name)
-        val_str = '/* TODO */'
-        out('List<Str*>* %s = new List<Str*>({%s});', name, val_str)
 
       out("""\
 
