@@ -128,6 +128,7 @@ X [Testing]       check
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
+                  # TODO: rename
   [Simplicity]    strict_echo            echo takes 0 or 1 arguments
                   strict_eval_builtin    eval takes exactly 1 argument
                   X simple_test_builtin  Only file tests, remove [, status 2
@@ -140,18 +141,17 @@ X [Testing]       check
                   command_sub_errexit    More errexit checks --  at command sub
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
-                  dashglob               Disabled to avoid files like -rf
+                  dashglob (-u)          Disabled to avoid files like -rf
   [Oil Breaking]  * The full Oil language
                   X copy_env             Use $[ENV->PYTHONPATH] when false
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
+                  parse_ignored (-u)     Parse, but ignore, certain redirects
 
                   # TODO: parse_
-                  strict_backslash       Parse $'' and c'' more strictly
-                  strict_backticks       Disallow `echo hi`
-                  strict_dollar          word=\$ not word=$
-                  # TODO: change groups
-                  parse_ignored          Parse and silently ignore?
+                  strict_backslash (-u)  Parse $'' and c'' more strictly
+                  strict_backticks (-u)  Disallow `echo hi`
+                  strict_dollar (-u)     word=\$ not word=$
 
                   X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   X parse_dollar_slash   egrep $/ d+ / *.txt

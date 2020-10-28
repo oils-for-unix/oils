@@ -430,8 +430,6 @@ cmd-parse() {
 
   _error-case 'FOO=1 break'
   _error-case 'break 1 2'
-  # only if shopt -u parse_ignored
-  #_error-case 'break >out'
 
   _error-case 'for x in &'
 
@@ -458,6 +456,9 @@ cmd-parse() {
   # Unquoted (.  What happened here?
   _error-case '[ ( x ]'
 
+  # parse_ignored
+  _should-parse 'break >out'
+  _oil-parse-error 'break >out'
 }
 
 append() {
