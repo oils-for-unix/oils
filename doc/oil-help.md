@@ -351,6 +351,39 @@ Not implemented.
 
 ### Oil Builtins
 
+#### cd
+
+It takes a block:
+
+    cd / {
+      echo $PWD
+    }
+
+#### shopt
+
+It takes a block:
+
+    shopt --unset errexit {
+      false
+      echo 'ok'
+    }
+
+#### fork
+
+Preferred alternative to shell's `&`.
+
+    fork { sleep 1 }
+    wait -n
+
+#### forkwait
+
+Preferred alternative to shell's `()`.  Prefer `cd` with a block if possible.
+
+    forkwait {
+      not_mutated=zzz
+    }
+    echo $not_mutated
+
 #### repr
 
 Displays the internal representation of a cell.  (Cells are locations for

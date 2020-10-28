@@ -95,7 +95,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 </h2>
 
 ```oil-help-topics
-  [Oil Builtins]  cd   X shopt   X env   compatible, and takes a block
+  [Oil Builtins]  cd   shopt   X env     compatible, and takes a block
                   X fork   X forkwait    replaces & and (), takes a block
                   X fopen                Many open streams, takes a block
                   X use                  source with namespace, file-relative 
