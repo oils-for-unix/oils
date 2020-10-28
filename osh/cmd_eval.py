@@ -674,7 +674,7 @@ class CommandEvaluator(object):
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
         check_errexit = True
-        status = self.shell_ex.RunSubshell(node)
+        status = self.shell_ex.RunSubshell(node.child)
 
       elif case(command_e.DBracket):
         node = cast(command__DBracket, UP_node)

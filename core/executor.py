@@ -331,9 +331,9 @@ class ShellExecutor(vm._Executor):
     status_out.codes = pi.Run(self.waiter, self.fd_state)
 
   def RunSubshell(self, node):
-    # type: (command__Subshell) -> int
+    # type: (command_t) -> int
 
-    p = self._MakeProcess(node.child)
+    p = self._MakeProcess(node)
     return p.Run(self.waiter)
 
   def RunCommandSub(self, cs_part):

@@ -87,7 +87,7 @@ class _Executor(object):
     pass
 
   def RunSubshell(self, node):
-    # type: (command__Subshell) -> int
+    # type: (command_t) -> int
     return 0
 
   def RunCommandSub(self, cs_part):

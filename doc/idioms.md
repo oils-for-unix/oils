@@ -276,8 +276,6 @@ Yes:
     }
     echo $not_mutated
 
-TODO: Implement `forkwait`.
-
 ### Use the `fork` builtin for async, not `&`
 
 No:
@@ -288,11 +286,9 @@ No:
 
 Yes:
 
-    fork myproc
+    fork { myproc }
 
     fork { sleep 1; echo one; sleep 2 }
-
-TODO: Implement `fork`.
 
 ## Use Procs (Better Shell Functions)
 

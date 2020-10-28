@@ -811,8 +811,10 @@ class ctx_Status(object):
     # Because some prompts rely on the status leaking.  See issue #853.
     # PS1 also does.
     last = mem.last_status[-1]
-
     mem.last_status.append(last)
+
+    # TODO: We should also copy these values!  Turn the whole thing into a
+    # frame.
     mem.pipe_status.append([])
     mem.process_sub_status.append([])
     self.mem = mem

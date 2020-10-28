@@ -499,7 +499,7 @@ class Fork(vm._Builtin):
     if cmd_val.block is None:
       e_usage('expected a block')
 
-    e_usage('builtin not implemented')
+    return self.shell_ex.RunBackgroundJob(cmd_val.block)
 
 
 class ForkWait(vm._Builtin):
@@ -518,3 +518,4 @@ class ForkWait(vm._Builtin):
     if cmd_val.block is None:
       e_usage('expected a block')
 
+    return self.shell_ex.RunSubshell(cmd_val.block)
