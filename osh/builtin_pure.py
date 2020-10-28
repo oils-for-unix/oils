@@ -501,7 +501,7 @@ class Echo(vm._Builtin):
       # Replace it
       argv = new_argv
 
-    if self.exec_opts.strict_echo():
+    if self.exec_opts.simple_echo():
       n = len(argv)
       if n == 0:
         pass
@@ -510,7 +510,7 @@ class Echo(vm._Builtin):
       else:
         # TODO: span_id could be more accurate
         e_usage(
-            "takes at most one arg when strict_echo is on (hint: add quotes)")
+            "takes at most one arg when simple_echo is on (hint: add quotes)")
     else:
       #log('echo argv %s', argv)
       for i, a in enumerate(argv):

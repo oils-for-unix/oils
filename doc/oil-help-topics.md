@@ -129,7 +129,7 @@ X [Testing]       check
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
                   # TODO: rename
-  [Simplicity]    strict_echo            echo takes 0 or 1 arguments
+  [Simplicity]    simple_echo            echo takes 0 or 1 arguments
                   strict_eval_builtin    eval takes exactly 1 argument
                   X simple_test_builtin  Only file tests, remove [, status 2
                   X strict_trap          Function name only
@@ -162,7 +162,7 @@ X [Testing]       check
                                          $'\n'   @(*.py|*.sh)  `echo comsub`
                                          ${a[@]}
   [Compatibility] eval_unsafe_arith   parse_dynamic_arith
-                  verbose_errexit
+                  compat_array        verbose_errexit
   [More Options]  allow_command_sub      For implementing strict_errexit
                   dynamic_scope          For implementing 'proc'
 ```

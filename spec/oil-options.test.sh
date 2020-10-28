@@ -142,15 +142,17 @@ f 1 '2 3'
 shopt -s strict:all
 # normal option names
 shopt -o -p | grep -- ' -o ' | grep -v hashall
-shopt -p | grep -- ' -s '
+shopt -p strict:all
 ## STDOUT:
 set -o errexit
 set -o nounset
 set -o pipefail
-shopt -s allow_command_sub
-shopt -s dashglob
+shopt -s errexit
 shopt -s inherit_errexit
+shopt -s nounset
 shopt -s nullglob
+shopt -s pipefail
+shopt -s simple_echo
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
@@ -158,48 +160,48 @@ shopt -s strict_backslash
 shopt -s strict_backticks
 shopt -s strict_control_flow
 shopt -s strict_dollar
-shopt -s strict_echo
 shopt -s strict_errexit
 shopt -s strict_eval_builtin
 shopt -s strict_glob
 shopt -s strict_nameref
 shopt -s strict_tilde
 shopt -s strict_word_eval
-shopt -s verbose_errexit
 ## END
 
 #### shopt -s oil:basic
 shopt -s oil:basic
 # normal option names
 shopt -o -p | grep -- ' -o ' | grep -v hashall
-shopt -p | grep -- ' -s '
+shopt -p oil:basic
 ## STDOUT:
 set -o errexit
 set -o nounset
 set -o pipefail
-shopt -s allow_command_sub
 shopt -s command_sub_errexit
+shopt -u dashglob
+shopt -s errexit
 shopt -s inherit_errexit
+shopt -s nounset
 shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
 shopt -s parse_paren
 shopt -s parse_triple_quoted
+shopt -s pipefail
 shopt -s process_sub_fail
+shopt -s simple_echo
 shopt -s simple_test_builtin
 shopt -s simple_word_eval
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
 shopt -s strict_control_flow
-shopt -s strict_echo
 shopt -s strict_errexit
 shopt -s strict_eval_builtin
 shopt -s strict_glob
 shopt -s strict_nameref
 shopt -s strict_tilde
 shopt -s strict_word_eval
-shopt -s verbose_errexit
 ## END
 
 #### osh -O oil:basic 
@@ -568,10 +570,10 @@ one
 two
 ## END
 
-#### shopt -s strict_echo
+#### shopt -s simple_echo
 foo='one   two'
 echo $foo   # bad split then join
-shopt -s strict_echo
+shopt -s simple_echo
 echo
 echo "$foo"  # good
 echo -e "$foo"  # still good

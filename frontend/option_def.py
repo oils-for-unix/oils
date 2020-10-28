@@ -90,7 +90,7 @@ _STRICT_OPTION_NAMES = [
 
     'strict_array',
     'strict_control_flow',  # break/continue at top level is fatal
-    'strict_echo',          # echo takes 0 or 1 arguments
+    'simple_echo',          # echo takes 0 or 1 arguments
     'strict_errexit',       # errexit can't be disabled in compound commands
     'strict_eval_builtin',  # eval takes exactly 1 argument
     'strict_nameref',       # trap invalid variable names
@@ -212,14 +212,10 @@ _AGGRESSIVE_PARSE_OPTIONS = [
 def _Init(opt_def):
   # type: (_OptionDef) -> None
 
-  # Note: this is in all three groups, but it's handled explicitly in
-  # core/state.py.
-  opt_def.Add('errexit', short_flag='e', builtin='set')
-
-  # Two more strict options from bash's set
+  opt_def.Add('errexit', short_flag='e', builtin='set',
+              groups=['strict:all', 'oil:basic', 'oil:all'])
   opt_def.Add('nounset', short_flag='u', builtin='set', 
               groups=['strict:all', 'oil:basic', 'oil:all'])
-
   opt_def.Add('pipefail', builtin='set', 
               groups=['strict:all', 'oil:basic', 'oil:all'])
 
@@ -255,7 +251,7 @@ def _Init(opt_def):
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
 
   # shopt -s strict_arith, etc.
-  # TODO: Some of these shouldn't be in oil:basic, like maybe strict_echo.
+  # TODO: Some of these shouldn't be in oil:basic, like maybe simple_echo.
   for name in _STRICT_OPTION_NAMES:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
 

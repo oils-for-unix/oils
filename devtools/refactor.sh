@@ -119,4 +119,8 @@ import() {
   sed --regexp-extended -i 's/from qsen_ import qsn/from qsn_ import qsn/' */*.py
 }
 
+options() {
+  sed -i 's/simple_echo/simple_echo/g' */*.{py,md,sh}
+}
+
 "$@"
