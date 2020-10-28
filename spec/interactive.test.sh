@@ -146,7 +146,10 @@ status=2
 status=1
 ## END
 
-#### PROMPT_COMMAND and exit code: should we copy bash?
+#### PROMPT_COMMAND can see $?, like bash
+
+# bug fix #853
+
 case $SH in (dash|mksh) exit ;; esac
 
 export PS1=''  # OSH prints prompt to stdout
@@ -154,9 +157,7 @@ export PS1=''  # OSH prints prompt to stdout
 case $SH in
   *bash|*osh)
     $SH --rcfile /dev/null -i << 'EOF'
-myfunc() {
-  echo last_status=$?
-}
+myfunc() { echo last_status=$?;  }
 PROMPT_COMMAND='myfunc'
 ( exit 42 )
 ( exit 43 )

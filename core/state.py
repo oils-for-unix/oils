@@ -803,11 +803,15 @@ class ctx_Temp(object):
 
 
 class ctx_Status(object):
-  """For $PS1 and $PS4."""
+  """For $PS1, $PS4, and $PROMPT_COMMAND."""
 
   def __init__(self, mem):
     # type: (Mem) -> None
-    mem.last_status.append(0)
+
+    # Because some prompts rely on the status leaking.  See issue #853.
+    last = mem.last_status[-1]
+
+    mem.last_status.append(last)
     mem.pipe_status.append([])
     mem.process_sub_status.append([])
     self.mem = mem
