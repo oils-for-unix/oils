@@ -63,6 +63,7 @@ from core import optview
 from core import pure
 from core import pyutil
 from core.pyutil import stderr_line
+from core import state
 from core import ui
 from core.pyerror import log
 from frontend import args
@@ -142,7 +143,7 @@ def OshCommandMain(argv):
   loader = pyutil.GetResourceLoader()
   oil_grammar = pyutil.LoadOilGrammar(loader)
 
-  opt0_array = [False] * option_i.ARRAY_SIZE
+  opt0_array = state.InitOpts()
   no_stack = None  # type: List[bool]  # for mycpp
   opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
 
@@ -224,7 +225,7 @@ def TeaMain(argv):
   oil_grammar = pyutil.LoadOilGrammar(loader)
 
   # Not used in tea, but OK...
-  opt0_array = [False] * option_i.ARRAY_SIZE
+  opt0_array = state.InitOpts()
   parse_opts = optview.Parse(opt0_array)
 
   # parse `` and a[x+1]=bar differently

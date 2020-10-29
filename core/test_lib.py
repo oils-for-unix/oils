@@ -149,7 +149,7 @@ def InitWordEvaluator(exec_opts=None):
 
 def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                  aliases=None, ext_prog=None):
-  opt0_array = [False] * option_i.ARRAY_SIZE
+  opt0_array = state.InitOpts()
   opt_stacks = [None] * option_i.ARRAY_SIZE
   if parse_ctx:
     arena = parse_ctx.arena

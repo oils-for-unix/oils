@@ -67,10 +67,10 @@ old=$PWD
 fork {
   cd /
   echo hi
-  sleep 0.5  # print status first, slightly racy
+  sleep 0.01 
   exit 42
 }
-echo status=$?
+#echo status=$?  race condition
 
 wait -n
 echo status=$?
@@ -79,7 +79,6 @@ if test "$old" = "$PWD"; then
   echo ok
 fi
 ## STDOUT:
-status=0
 hi
 status=42
 ok

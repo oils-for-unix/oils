@@ -10,8 +10,8 @@ from typing import List, Dict, Optional, Any
 class Option(object):
 
   def __init__(self, index, name, short_flag=None, builtin='shopt',
-               default=False, implemented=True, groups=None, is_parse=False):
-    # type: (int, str, str, Optional[str], bool, bool, List[str], bool) -> None
+               default=False, implemented=True, groups=None):
+    # type: (int, str, str, Optional[str], bool, bool, List[str]) -> None
     self.index = index
     self.name = name  # e.g. 'errexit'
     self.short_flag = short_flag  # 'e' for -e
@@ -28,7 +28,7 @@ class Option(object):
     self.groups = groups or []  # list of groups
 
     # for optview
-    self.is_parse = is_parse or name.startswith('parse_')
+    self.is_parse = name.startswith('parse_')
     # interactive() is an accessor
     self.is_exec = implemented and not self.is_parse
 
@@ -194,6 +194,11 @@ _AGGRESSIVE_PARSE_OPTIONS = [
     ('parse_equals', False),   # x = 'var'
     ('parse_at_all', False),   # @ starting any word, e.g. @[] @{} @@ @_ @-
 
+    # Legacy syntax that is removed
+    ('parse_backslash', True),
+    ('parse_backticks', True),
+    ('parse_dollar', True),
+
     # Failed experiment for $[echo hi], myarray = %[one two], etc.
     # I turned Lit_LBracket in to Op_LBracket.  But there were several issues:
     # 1) it was too "modal", didn't work in OSH mode
@@ -255,11 +260,6 @@ def _Init(opt_def):
   for name in _STRICT_OPTION_NAMES:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
 
-  # These are strict options that are PARSE options.  They are NOT on in
-  # oil:basic.
-  for name in ['parse_backslash', 'parse_backticks', 'parse_dollar']:
-    opt_def.Add(name, groups=['oil:all'], default=True, is_parse=True)
-
   #
   # Options that enable Oil language features
   #
@@ -271,7 +271,7 @@ def _Init(opt_def):
     opt_def.Add(name, default=default, groups=['oil:basic', 'oil:all'])
 
   for name, default in _AGGRESSIVE_PARSE_OPTIONS:
-    opt_def.Add(name, groups=['oil:all'])
+    opt_def.Add(name, default=default, groups=['oil:all'])
   for name in _AGGRESSIVE_RUNTIME_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])
   # By default we parse 'return 2>&1', even though it does nothing in Oil.
@@ -356,6 +356,8 @@ OIL_BASIC = [opt.index for opt in _SORTED if 'oil:basic' in opt.groups]
 OIL_ALL = [opt.index for opt in _SORTED if 'oil:all' in opt.groups]
 STRICT_ALL = [opt.index for opt in _SORTED if 'strict:all' in opt.groups]
 DEFAULT_TRUE = [opt.index for opt in _SORTED if opt.default]
+#print([opt.name for opt in _SORTED if opt.default])
+
 
 META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
 

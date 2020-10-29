@@ -129,11 +129,6 @@ X [Testing]       check
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
-  [Simplicity]    * More Consistent Style
-                  simple_echo            echo takes 0 or 1 arguments
-                  simple_eval_builtin    eval takes exactly 1 argument
-                  X simple_test_builtin  2 or 3 args only, remove [, status 2
-                  X simple_trap          Function name only
   [Oil Basic]     * Start Migrating to Oil
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
@@ -143,6 +138,11 @@ X [Testing]       check
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
                   dashglob (-u)          Disabled to avoid files like -rf
+  [Simplicity]    * More Consistent Style
+                  simple_echo            echo takes 0 or 1 arguments
+                  simple_eval_builtin    eval takes exactly 1 argument
+                  X simple_test_builtin  2 or 3 args only, remove [, status 2
+                  X simple_trap          Function name only
   [Oil Breaking]  * The Full Oil Language
                   X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   parse_at_all           @ starting any word is an operator

@@ -47,7 +47,6 @@ def MockApi(line):
 
 
 def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
-  #comp_state = comp_state or completion.State()
   compopt_state = completion.OptionState()
   comp_ui_state = comp_ui.State()
   comp_lookup = comp_lookup or completion.Lookup()

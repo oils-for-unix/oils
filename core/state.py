@@ -209,6 +209,15 @@ class OptHook(object):
     return True
 
 
+def InitOpts():
+  # type: () -> List[bool]
+
+  opt0_array = [False] * option_i.ARRAY_SIZE
+  for opt_num in consts.DEFAULT_TRUE:
+    opt0_array[opt_num] = True
+  return opt0_array
+
+
 def MakeOpts(mem, opt_hook):
   # type: (Mem, OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
 
@@ -223,7 +232,7 @@ def MakeOpts(mem, opt_hook):
   # the rest in opt_stacks, where the value could be None.  By allowing the
   # None value, we save ~50 or so list objects in the common case.
   
-  opt0_array = [False] * option_i.ARRAY_SIZE
+  opt0_array = InitOpts()
   # Overrides, including errexit
   no_stack = None  # type: List[bool]  # for mycpp
   opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
@@ -270,10 +279,6 @@ class MutableOpts(object):
     self.opt0_array = opt0_array
     self.opt_stacks = opt_stacks
     self.errexit_spid_stack = []  # type: List[int]
-
-    # On by default
-    for opt_num in consts.DEFAULT_TRUE:
-      self.opt0_array[opt_num] = True
 
     # Used for 'set -o vi/emacs'
     self.opt_hook = opt_hook

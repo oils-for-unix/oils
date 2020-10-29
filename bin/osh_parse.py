@@ -15,6 +15,7 @@ from core import optview
 #from core import main_loop
 from core import pyutil
 from core.pyerror import log
+from core import state
 from core import ui
 from frontend import parse_lib
 from frontend import reader
@@ -53,7 +54,7 @@ def main(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
 
-  opt0_array = [False] * option_i.ARRAY_SIZE
+  opt0_array = state.InitOpts()
   no_stack = None  # type: List[bool]  # for mycpp
   opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
   parse_opts = optview.Parse(opt0_array, opt_stacks)

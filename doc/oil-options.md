@@ -50,18 +50,18 @@ TODO: Do we need `simple:all`?
 
 ## Naming Conventions
 
-- `parse_*`.   Change parsing.
-  - true by default, and turned off: `parse_ignored`.  TODO:
-    `parse_backticks`, `parse_backslash`, `parse_dollar`.
+- `parse_*`: Change parsing.
+  - enable new features: `parse_at`, `parse_equals`.
+  - turn off to reject bad or old code: `parse_backticks`, `parse_backslash`,
+    `parse_dollar`.
 
-- `strict_*`: Add more runtime errors.  And detect bugs.  Example:
-  - `~typo` is a runtime error.
+- `strict_*`: Fail at runtime instead of ignoring the bug like bash.
   - `${#s}` on invalid unicode is a runtime error.
+  - `~typo` is a runtime error.
 
 - `simple_*`: Break things to improve style.
-  - TODO: rename to `simple_eval_builtin`, `simple_echo`.
+  - `simple_eval_builtin`, `simple_echo`.
   - `simple_word_eval` is the most aggresive
-
 
 ## Details
 
