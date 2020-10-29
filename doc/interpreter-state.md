@@ -58,7 +58,7 @@ Oil's syntax can express more data types, but it may also confuse new users.
 So the sections below describe the shell from a **semantic** perspective, which
 should help users reason about their programs.
 
-Quick tip: Use the [repr]($help) builtin to inspect shell variables.
+Quick tip: Use the [pp]($help) builtin to inspect shell variables.
 
 ## Design Goals
 
@@ -210,7 +210,7 @@ Oil supports various shell and bash operations to view the interpretr state.
 - `declare/typeset/readonly/export -p` prints a subset of variables
 - `test -v` tests if a variable is defined.
 
-### [repr]($help) in Oil
+### [pp]($help) in Oil
 
 Pretty prints a cell.
 

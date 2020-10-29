@@ -331,18 +331,20 @@ class NewVar(vm._AssignBuiltin):
     if arg.f:
       names = arg_r.Rest()
       if len(names):
-        # NOTE: in bash, -f shows the function body, while -F shows the name.
-        # Right now we just show the name.
+        # This is only used for a STATUS QUERY now.  We only show the name,
+        # not the body.
         status = self._PrintFuncs(names)
       else:
-        e_usage('passed -f without args')
+        # Disallow this since it would be incompatible.
+        e_usage('with -f expects function names')
       return status
 
     if arg.F:
       names = arg_r.Rest()
       if len(names):
         status = self._PrintFuncs(names)
-      else:  # weird bash quirk: they're printed in a different format!
+      else:
+        # bash quirk: with no names, they're printed in a different format!
         for func_name in sorted(self.funcs):
           print('declare -f %s' % (func_name))
       return status

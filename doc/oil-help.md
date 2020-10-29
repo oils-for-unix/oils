@@ -384,13 +384,19 @@ Preferred alternative to shell's `()`.  Prefer `cd` with a block if possible.
     }
     echo $not_mutated
 
-#### repr
+#### pp
 
-Displays the internal representation of a cell.  (Cells are locations for
-values like strings and arrays.)
+Pretty prints interpreter state.  Some of these are implementaion details,
+subject to change.
+
+Examples:
+
+    pp proc  # print all procs and their doc comments
 
     var x = %(one two)
-    repr :x
+    pp .cell x  # print a cell, which is a location for a value
+
+The `.cell` action starts with `.` to indicate that its format is unstable.
 
 #### write
 

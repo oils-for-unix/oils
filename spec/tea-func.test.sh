@@ -81,7 +81,7 @@ shopt -s oil:all
 shopt -s parse_tea
 
 func add(x, y, ...args) {
-  repr ':args'  # This works in Tea too for debugging
+  pp .cell ':args'  # This works in Tea too for debugging
   return x + y
 }
 var args = %[5 6 7 8]
@@ -155,7 +155,7 @@ func add(x, y; verbose=true, ...named) {
 
   # Can list splatting work in tea?  Maybe it should be 
   #   x = splice(named)
-  #   repr 'x'
+  #   pp .cell 'x'
   # Or just  
   #   = named
   #   = splice(named)

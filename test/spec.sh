@@ -886,6 +886,11 @@ oil-builtins() {
     $OSH_LIST "$@"
 }
 
+oil-builtin-pp() {
+  sh-spec spec/oil-builtin-pp.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
 oil-builtin-process() {
   sh-spec spec/oil-builtin-process.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
@@ -936,8 +941,8 @@ oil-proc() {
     $OSH_LIST "$@"
 }
 
-oil-builtin-funcs() {
-  sh-spec spec/oil-builtin-funcs.test.sh --osh-failures-allowed 2 \
+oil-stdlib-funcs() {
+  sh-spec spec/oil-stdlib-funcs.test.sh --osh-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 

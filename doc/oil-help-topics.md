@@ -101,11 +101,11 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   X use                  source with namespace, file-relative 
                   X opts                 getopts replacement, sets OPT
                   push                   add elements to end of array
-                  repr                   Show debug representation of vars
+                  pp                     pretty print interpreter state
                   write                  like echo, but with --, -sep, -end
                   oil-read               buffered I/O with --line, --all, --qsn
                   run                    re-enable errexit; exit status utils
-                  X proc-main            for main program
+                  X proc-main            main() that dispatches to proc
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv
 X [External Lang] BEGIN   END   when (awk)

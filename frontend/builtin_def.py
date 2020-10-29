@@ -49,9 +49,10 @@ _NORMAL_BUILTINS = [
     # Oil only
     'push',
     'write', 'json',
-    'repr', 'use', 'opts',
-    'run',
-    'fork', 'forkwait',
+    'pp',
+    'use', 'opts',  # not implemented
+    'fopen',
+    'run', 'fork', 'forkwait',
 ]
 
 

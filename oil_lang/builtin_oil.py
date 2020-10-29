@@ -13,9 +13,11 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.runtime_asdl import value, value_e, scope_e
-from _devbuild.gen.syntax_asdl import sh_lhs_expr
+from _devbuild.gen.syntax_asdl import (
+    sh_lhs_expr, command_e, command__ShFunction
+)
 from core import error
-from core.pyerror import log
+from core.pyerror import log, e_usage
 from core import vm
 from frontend import flag_spec
 from frontend import args
@@ -26,8 +28,9 @@ from qsn_ import qsn
 import yajl
 import posix_ as posix
 
-from typing import TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
+  from core.alloc import Arena
   from core.ui import ErrorFormatter
   from core.state import Mem
   from osh.cmd_eval import CommandEvaluator
@@ -40,33 +43,82 @@ class _Builtin(vm._Builtin):
     self.errfmt = errfmt
 
 
-class Repr(_Builtin):
+class Pp(_Builtin):
   """Given a list of variable names, print their values.
 
   'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
   """
+  def __init__(self, mem, errfmt, procs, arena):
+    # type: (Mem, ErrorFormatter, Dict[str, command__ShFunction], Arena) -> None
+    self.mem = mem
+    self.errfmt = errfmt
+    self.procs = procs
+    self.arena = arena
+
   def Run(self, cmd_val):
     arg, arg_r = flag_spec.ParseOilCmdVal('repr', cmd_val)
-    argv, spids = arg_r.Rest2()
 
-    status = 0
-    for i, name in enumerate(argv):
-      if name.startswith(':'):
-        name = name[1:]
+    action, action_spid = arg_r.ReadRequired2(
+        'expected an action (proc, .cell, etc.)')
 
-      if not match.IsValidVarName(name):
-        raise error.Usage('got invalid variable name %r' % name,
-                          span_id=spids[i])
+    # Actions that print unstable formats start with '.'
+    if action == '.cell':
+      argv, spids = arg_r.Rest2()
 
-      cell = self.mem.GetCell(name)
-      if cell is None:
-        self.errfmt.Print("Couldn't find a variable named %r" % name,
-                          span_id=spids[i])
-        status = 1
+      status = 0
+      for i, name in enumerate(argv):
+        if name.startswith(':'):
+          name = name[1:]
+
+        if not match.IsValidVarName(name):
+          raise error.Usage('got invalid variable name %r' % name,
+                            span_id=spids[i])
+
+        cell = self.mem.GetCell(name)
+        if cell is None:
+          self.errfmt.Print("Couldn't find a variable named %r" % name,
+                            span_id=spids[i])
+          status = 1
+        else:
+          sys.stdout.write('%s = ' % name)
+          cell.PrettyPrint()  # may be color
+          sys.stdout.write('\n')
+
+    elif action == 'proc':
+      names, spids = arg_r.Rest2()
+      if len(names):
+        for i, name in enumerate(names):
+          node = self.procs.get(name)
+          if node is None:
+            self.errfmt.Print_('Invalid proc %r' % name, span_id=spids[i])
+            return 1
       else:
-        sys.stdout.write('%s = ' % name)
-        cell.PrettyPrint()  # may be color
-        sys.stdout.write('\n')
+        names = sorted(self.procs)
+
+      # QTSV header
+      print('proc_name\tdoc_comment')
+      for name in names:
+        node = self.procs[name]  # must exist
+        body = node.body
+
+        # TODO: not just command__ShFunction, but command__Proc!
+        doc = ''
+        if body.tag_() == command_e.BraceGroup:
+          if body.doc_token:
+            span_id = body.doc_token.span_id
+            span = self.arena.GetLineSpan(span_id)
+            line = self.arena.GetLine(span.line_id)
+            # 1 to remove leading space
+            doc = line[span.col+1 : span.col + span.length]
+
+        # No limits on proc names
+        print('%s\t%s' % (qsn.maybe_encode(name), qsn.maybe_encode(doc)))
+
+      status = 0
+
+    else:
+      e_usage('got invalid action %r' % action, span_id=action_spid)
+
     return status
 
 

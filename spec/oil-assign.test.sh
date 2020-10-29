@@ -12,7 +12,7 @@
 # LookupVar gives you a plain Python object.  I don't think there's any
 # downside here.
 #
-# repr exposes the differences.
+# pp exposes the differences.
 #
 # Notes:
 #

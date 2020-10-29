@@ -456,7 +456,6 @@ echo len=${#ASSOC[@]}
 # Check that it really can be used like an associative array
 ASSOC['k']='32'
 echo len=${#ASSOC[@]}
-#repr ASSOC
 
 # bash allows a variable to be an associative array AND unset, while OSH
 # doesn't

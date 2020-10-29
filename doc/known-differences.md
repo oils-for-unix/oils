@@ -325,7 +325,7 @@ these two statements are different:
 OSH behaves more like Python or JavaScript: **values** are tagged with types
 like `Str` and `AssocArray`.
 
-- The [repr]($help:repr) builtin is useful for gaining an understanding of the
+- The [pp]($help:pp) builtin is useful for gaining an understanding of the
 data model.
 - See the [Quirks](quirks.html) doc for details on how Oil uses this cleaner
   model while staying compatible with bash.

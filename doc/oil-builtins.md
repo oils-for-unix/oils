@@ -35,7 +35,7 @@ A more awkward way to write this:
 setvar a = %( @a three four )
 ```
 
-### [repr]($help) shows the value of a variable, for debugging
+### [pp]($help) shows the value of a variable, for debugging
 
 This is implemented, but the output format may change.
 

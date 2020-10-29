@@ -42,7 +42,7 @@ from frontend import parse_lib
 
 from oil_lang import expr_eval
 from oil_lang import builtin_oil
-from oil_lang import builtin_funcs
+from oil_lang import stdlib_funcs
 
 from osh import builtin_assign
 from osh import builtin_comp
@@ -182,13 +182,13 @@ def AddProcess(
   b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
 
 
-def AddOil(b, mem, errfmt):
-  # type: (Dict[int, vm._Builtin], state.Mem, ui.ErrorFormatter) -> None
+def AddOil(b, mem, errfmt, procs, arena):
+  # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, command__ShFunction, ui.ErrorFormatter, Arena) -> None
   b[builtin_i.push] = builtin_oil.Push(mem, errfmt)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
 
-  b[builtin_i.repr] = builtin_oil.Repr(mem, errfmt)
+  b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
   b[builtin_i.use] = builtin_oil.Use(mem, errfmt)
   b[builtin_i.opts] = builtin_oil.Opts(mem, errfmt)
 
@@ -275,7 +275,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   version_str = pyutil.GetVersion(loader)
   state.InitMem(mem, environ, version_str)
 
-  builtin_funcs.Init(mem)
+  stdlib_funcs.Init(mem)
 
   procs = {}  # type: Dict[str, command__ShFunction]
 
@@ -383,13 +383,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # split() builtin
   # TODO: Accept IFS as a named arg?  split('a b', IFS=' ')
-  builtin_funcs.SetGlobalFunc(
+  stdlib_funcs.SetGlobalFunc(
       mem, 'split', lambda s, ifs=None: splitter.SplitForWordEval(s, ifs=ifs))
 
   # glob() builtin
   # TODO: This is instantiation is duplicated in osh/word_eval.py
   globber = glob_.Globber(exec_opts)
-  builtin_funcs.SetGlobalFunc(
+  stdlib_funcs.SetGlobalFunc(
       mem, 'glob', lambda s: globber.OilFuncCall(s))
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
@@ -426,7 +426,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
   AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_state, waiter,
              search_path, errfmt)
-  AddOil(builtins, mem, errfmt)
+  AddOil(builtins, mem, errfmt, procs, arena)
 
   builtins[builtin_i.help] = help_builtin
 

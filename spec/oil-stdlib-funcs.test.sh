@@ -59,7 +59,6 @@ write $a
 #### Dict()
 # TODO: more testing
 var a = Dict()
-#repr a
 write $len(a)
 ## STDOUT:
 0
