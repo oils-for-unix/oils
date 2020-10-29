@@ -152,7 +152,6 @@ shopt -s inherit_errexit
 shopt -s nounset
 shopt -s nullglob
 shopt -s pipefail
-shopt -s simple_echo
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
@@ -161,7 +160,6 @@ shopt -s strict_backticks
 shopt -s strict_control_flow
 shopt -s strict_dollar
 shopt -s strict_errexit
-shopt -s strict_eval_builtin
 shopt -s strict_glob
 shopt -s strict_nameref
 shopt -s strict_tilde
@@ -189,15 +187,12 @@ shopt -s parse_paren
 shopt -s parse_triple_quoted
 shopt -s pipefail
 shopt -s process_sub_fail
-shopt -s simple_echo
-shopt -s simple_test_builtin
 shopt -s simple_word_eval
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
 shopt -s strict_control_flow
 shopt -s strict_errexit
-shopt -s strict_eval_builtin
 shopt -s strict_glob
 shopt -s strict_nameref
 shopt -s strict_tilde

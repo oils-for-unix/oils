@@ -209,7 +209,7 @@ argv.py "${undef[@]}"
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### strict_eval_builtin
+#### simple_eval_builtin
 for i in 1 2; do
   eval  # zero args
   echo status=$?
@@ -217,7 +217,7 @@ for i in 1 2; do
   echo status=$?
   eval 'echo two'
   echo status=$?
-  shopt -s strict_eval_builtin
+  shopt -s simple_eval_builtin
   echo ---
 done
 ## STDOUT:

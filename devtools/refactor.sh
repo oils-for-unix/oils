@@ -120,7 +120,9 @@ import() {
 }
 
 options() {
-  sed -i 's/simple_echo/simple_echo/g' */*.{py,md,sh}
+  #sed -i 's/simple_echo/simple_echo/g' */*.{py,md,sh}
+  sed -i 's/simple_eval_builtin/simple_eval_builtin/g' */*.{py,md,sh}
+  sed -i 's/simple_trap/simple_trap/g' */*.{py,md,sh}
 }
 
 "$@"

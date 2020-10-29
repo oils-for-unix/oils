@@ -128,11 +128,10 @@ X [Testing]       check
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
-                  # TODO: rename
   [Simplicity]    simple_echo            echo takes 0 or 1 arguments
-                  strict_eval_builtin    eval takes exactly 1 argument
-                  X simple_test_builtin  Only file tests, remove [, status 2
-                  X strict_trap          Function name only
+                  simple_eval_builtin    eval takes exactly 1 argument
+                  X simple_test_builtin  2 or 3 args only, remove [, status 2
+                  X simple_trap          Function name only
   [Oil Basic]     * Enable Oil functionality
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
@@ -144,25 +143,28 @@ X [Testing]       check
                   dashglob (-u)          Disabled to avoid files like -rf
   [Oil Breaking]  * The full Oil language
                   X copy_env             Use $[ENV->PYTHONPATH] when false
+                  parse_at_all           @ starting any word is an operator
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
-                  parse_ignored (-u)     Parse, but ignore, certain redirects
+                  X parse_amp            echo hi &2 > /dev/null, disallow >& <&
 
+                  parse_ignored (-u)     Parse, but ignore, certain redirects
                   # TODO: parse_
                   strict_backslash (-u)  Parse $'' and c'' more strictly
                   strict_backticks (-u)  Disallow `echo hi`
                   strict_dollar (-u)     word=\$ not word=$
 
-                  X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   X parse_dollar_slash   egrep $/ d+ / *.txt
-                  X old_builtins         local/declare/etc.  pushd/popd/dirs
+                  X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
                                          ... getopts
-                  X old_syntax           [[   $(( ))  ${x%prefix}   $$
+                  X old_syntax (-u)      [[   $(( ))  ${x%prefix}   $$
                                          $'\n'   @(*.py|*.sh)  `echo comsub`
                                          ${a[@]}
-  [Compatibility] eval_unsafe_arith   parse_dynamic_arith
-                  compat_array        verbose_errexit
+  [Compatibility] compat_array           ${array} is ${array[0]}
+                  eval_unsafe_arith      recursively parse and evaluate
+                  parse_dynamic_arith    LHS can contain variables
+                  verbose_errexit        Whether to print detailed errors
   [More Options]  allow_command_sub      For implementing strict_errexit
                   dynamic_scope          For implementing 'proc'
 ```

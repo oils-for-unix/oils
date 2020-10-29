@@ -70,10 +70,6 @@ _OTHER_SET_OPTIONS = [
 
     (None, 'vi'),
     (None, 'emacs'),
-
-    # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
-    # valid, because it has an extra argument.  Builtins are inconsistent about
-    # checking this.
 ]
 
 # These are RUNTIME strict options.  We also have parse time ones like
@@ -81,18 +77,16 @@ _OTHER_SET_OPTIONS = [
 _STRICT_OPTION_NAMES = [
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
+
     # No implicit conversions between string and array.
     # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
     # - ${a} not ${a[0]} (not implemented)
     # sane-array?  compare arrays like [[ "$@" == "${a[@]}" ]], which is
     #              incompatible because bash coerces
     # default:    do not allow
-
     'strict_array',
     'strict_control_flow',  # break/continue at top level is fatal
-    'simple_echo',          # echo takes 0 or 1 arguments
     'strict_errexit',       # errexit can't be disabled in compound commands
-    'strict_eval_builtin',  # eval takes exactly 1 argument
     'strict_nameref',       # trap invalid variable names
     'strict_word_eval',     # negative slices, unicode
     'strict_tilde',         # ~nonexistent is an error (like zsh)
@@ -116,11 +110,17 @@ _BASIC_RUNTIME_OPTIONS = [
     ('dashglob', True),              # do globs return files starting with - ?
     ('command_sub_errexit', False),  # check after command sub
     ('process_sub_fail', False),     # like pipefail, but for <(sort foo.txt)
+]
 
-    # TODO: Move this?  (not implemented yet) Anything that removes
-    # functionality sould be in oil:all or oil:pure
+# TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
+# valid, because it has an extra argument.  Builtins are inconsistent about
+# checking this.
+
+_AGGRESSIVE_RUNTIME_OPTIONS = [
+    'simple_echo',          # echo takes 0 or 1 arguments
+    'simple_eval_builtin',  # eval takes exactly 1 argument
     # only file tests (no strings), remove [, status 2
-    ('simple_test_builtin', False),
+    'simple_test_builtin',
 ]
 
 # No-ops for bash compatibility
@@ -251,7 +251,6 @@ def _Init(opt_def):
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
 
   # shopt -s strict_arith, etc.
-  # TODO: Some of these shouldn't be in oil:basic, like maybe simple_echo.
   for name in _STRICT_OPTION_NAMES:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
 
@@ -265,18 +264,18 @@ def _Init(opt_def):
   # Options that enable Oil language features
   #
 
+  for name in _BASIC_PARSE_OPTIONS:
+    opt_def.Add(name, groups=['oil:basic', 'oil:all'])
   # shopt -s simple_word_eval, etc.
   for name, default in _BASIC_RUNTIME_OPTIONS:
     opt_def.Add(name, default=default, groups=['oil:basic', 'oil:all'])
 
-  for name in _BASIC_PARSE_OPTIONS:
-    opt_def.Add(name, groups=['oil:basic', 'oil:all'])
-
-  # By default we parse 'return 2>&1', even though it does nothing in Oil.
-  opt_def.Add('parse_ignored', groups=['oil:all'], default=True)
-
   for name in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])
+  for name in _AGGRESSIVE_RUNTIME_OPTIONS:
+    opt_def.Add(name, groups=['oil:all'])
+  # By default we parse 'return 2>&1', even though it does nothing in Oil.
+  opt_def.Add('parse_ignored', groups=['oil:all'], default=True)
 
   # Off by default.
   opt_def.Add('parse_tea')

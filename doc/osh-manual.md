@@ -120,7 +120,7 @@ words, turning this on gives you a "real" array type.
 `strict_control_flow`. `break` and `continue` outside of a loop are fatal
 errors.
 
-`strict_eval_builtin`.  The `eval` builtin takes exactly **one** argument.  It
+`simple_eval_builtin`.  The `eval` builtin takes exactly **one** argument.  It
 doesn't concatenate its arguments with a space, or accept zero arguments.
 
 `strict_word_eval`.  More word evaluation errors are fatal.

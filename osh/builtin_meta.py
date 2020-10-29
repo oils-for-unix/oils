@@ -49,7 +49,7 @@ class Eval(vm._Builtin):
     # There are no flags, but we need it to respect --
     _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
 
-    if self.exec_opts.strict_eval_builtin():
+    if self.exec_opts.simple_eval_builtin():
       code_str, eval_spid = arg_r.ReadRequired2('requires code string')
       if not arg_r.AtEnd():
         e_usage('requires exactly 1 argument')
