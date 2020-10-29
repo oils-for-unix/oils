@@ -388,7 +388,7 @@ other-builtins() {
   _runtime-parse-error 'pushd x y'
   _runtime-parse-error 'pwd -x'
 
-  _runtime-parse-error 'repr foo a-x'
+  _runtime-parse-error 'pp x foo a-x'
 
   _runtime-parse-error 'wait zzz'
   _runtime-parse-error 'wait %jobspec-not-supported'

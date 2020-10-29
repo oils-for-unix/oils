@@ -183,7 +183,7 @@ def AddProcess(
 
 
 def AddOil(b, mem, errfmt, procs, arena):
-  # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, command__ShFunction, ui.ErrorFormatter, Arena) -> None
+  # type: (Dict[int, vm._Builtin], state.Mem, ui.ErrorFormatter, Dict[str, command__ShFunction], alloc.Arena) -> None
   b[builtin_i.push] = builtin_oil.Push(mem, errfmt)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
