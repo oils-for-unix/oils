@@ -494,7 +494,7 @@ class MutableOpts(object):
     """ For 'shopt -p' """
 
     # Respect option gropus.
-    opt_nums = []
+    opt_nums = []  # type: List[int]
     for opt_name in opt_names:
       if opt_name == 'oil:basic':
         opt_nums.extend(consts.OIL_BASIC)

@@ -155,10 +155,7 @@ shopt -s pipefail
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
-shopt -s strict_backslash
-shopt -s strict_backticks
 shopt -s strict_control_flow
-shopt -s strict_dollar
 shopt -s strict_errexit
 shopt -s strict_glob
 shopt -s strict_nameref

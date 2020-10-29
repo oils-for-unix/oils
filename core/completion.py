@@ -828,6 +828,7 @@ class RootCompleter(object):
 
     debug_f.log('t1 %s', t1)
     debug_f.log('t2 %s', t2)
+    #debug_f.log('tokens %s', tokens)
 
     # Each of the 'yield' statements below returns a fully-completed line, to
     # appease the readline library.  The root cause of this dance: If there's

@@ -200,7 +200,7 @@ def AddKinds(spec):
   # The Unknown kind is used when we lex something, but it's invalid.
   # Examples:
   #   ${^}
-  #   $'\z'  Such bad codes are accepted when strict_backslash is off
+  #   $'\z'  Such bad codes are accepted when parse_backslash is on
   #          (default in OSH), so we have to lex them.
   spec.AddKind('Unknown', ['Tok', 'Backslash'])
 

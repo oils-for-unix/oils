@@ -73,7 +73,7 @@ _OTHER_SET_OPTIONS = [
 ]
 
 # These are RUNTIME strict options.  We also have parse time ones like
-# strict_backslash.
+# parse_backslash.
 _STRICT_OPTION_NAMES = [
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
@@ -190,9 +190,9 @@ _BASIC_PARSE_OPTIONS = [
 
 # Extra stuff that breaks too many programs.
 _AGGRESSIVE_PARSE_OPTIONS = [
-    'parse_set',       # set x = 'var'
-    'parse_equals',    # x = 'var'
-    'parse_at_all',    # @ starting any word, e.g. @[] @{} @@ @_ @-
+    ('parse_set', False),      # set x = 'var'
+    ('parse_equals', False),   # x = 'var'
+    ('parse_at_all', False),   # @ starting any word, e.g. @[] @{} @@ @_ @-
 
     # Failed experiment for $[echo hi], myarray = %[one two], etc.
     # I turned Lit_LBracket in to Op_LBracket.  But there were several issues:
@@ -238,12 +238,13 @@ def _Init(opt_def):
   opt_def.Add('failglob')  # not implemented.
   opt_def.Add('extglob')
 
+  # Compatibility
   opt_def.Add('eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
   opt_def.Add('parse_dynamic_arith')  # dynamic LHS
   opt_def.Add('compat_array')  # ${array} is ${array[0]}
-
   opt_def.Add('verbose_errexit', default=True)
-  # used to enforce strict_errexit
+
+  # For implementing strict_errexit
   opt_def.Add('allow_command_sub', default=True)
 
   # Two strict options that from bash's shopt
@@ -256,9 +257,8 @@ def _Init(opt_def):
 
   # These are strict options that are PARSE options.  They are NOT on in
   # oil:basic.
-  for name in ['strict_backslash', 'strict_backticks', 'strict_dollar']:
-    opt_def.Add(name, groups=['strict:all', 'oil:all'],
-                is_parse=True)
+  for name in ['parse_backslash', 'parse_backticks', 'parse_dollar']:
+    opt_def.Add(name, groups=['oil:all'], default=True, is_parse=True)
 
   #
   # Options that enable Oil language features
@@ -270,7 +270,7 @@ def _Init(opt_def):
   for name, default in _BASIC_RUNTIME_OPTIONS:
     opt_def.Add(name, default=default, groups=['oil:basic', 'oil:all'])
 
-  for name in _AGGRESSIVE_PARSE_OPTIONS:
+  for name, default in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])
   for name in _AGGRESSIVE_RUNTIME_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])

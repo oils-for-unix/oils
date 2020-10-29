@@ -128,16 +128,14 @@ def InitLexer(s, arena):
   return line_reader, lx
 
 
-def InitWordEvaluator():
+def InitWordEvaluator(exec_opts=None):
   arena = MakeArena('<InitWordEvaluator>')
   mem = state.Mem('', [], arena, [])
   state.InitMem(mem, {}, '0.1')
 
-  opt0_array = [False] * option_i.ARRAY_SIZE
-  opt_stacks = [None] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt0_array, opt_stacks)
-  exec_opts = optview.Exec(opt0_array, opt_stacks)
-  mem.exec_opts = exec_opts  # circular dep
+  if exec_opts is None:
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    mem.exec_opts = exec_opts  # circular dep
 
   cmd_deps = cmd_eval.Deps()
   cmd_deps.trap_nodes = []
@@ -227,6 +225,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   assert cmd_ev.mutable_opts is not None, cmd_ev
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
+
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev,
                       debug_f)
 
@@ -263,23 +262,29 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   return cmd_ev
 
 
-def InitParseContext(arena=None, oil_grammar=None, aliases=None):
+def InitParseContext(arena=None, oil_grammar=None, aliases=None,
+                     parse_opts=None):
   arena = arena or MakeArena('<test_lib>')
+
   if aliases is None:
     aliases = {}
-  opt0_array = [False] * option_i.ARRAY_SIZE
-  opt_stacks = [None] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt0_array, opt_stacks)
+
+  mem = state.Mem('', [], arena, [])
+  if parse_opts is None:
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   return parse_ctx
 
 
 def InitWordParser(word_str, oil_at=False, arena=None):
   arena = arena or MakeArena('<test_lib>')
-  opt0_array = [False] * option_i.ARRAY_SIZE
-  opt_stacks = [None] * option_i.ARRAY_SIZE
-  parse_opts = optview.Parse(opt0_array, opt_stacks)
-  opt0_array[option_i.parse_at] = oil_at
+
+  mem = state.Mem('', [], arena, [])
+  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+
+  # CUSTOM SETTING
+  mutable_opts.opt0_array[option_i.parse_at] = oil_at
 
   loader = pyutil.GetResourceLoader()
   oil_grammar = pyutil.LoadOilGrammar(loader)

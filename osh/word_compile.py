@@ -57,7 +57,7 @@ def EvalCStringToken(tok):
   value = tok.val
 
   if id_ in (Id.Char_Literals, Id.Unknown_Backslash):
-    # shopt -s strict_backslash detects Unknown_Backslash at PARSE time in Oil.
+    # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in Oil.
     return value
 
   elif id_ == Id.Char_OneChar:

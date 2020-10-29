@@ -119,7 +119,8 @@ X [Testing]       check
 
 ```oil-help-topics
   [Option Groups] strict:all   oil:basic   oil:all
-  [Strictness]    strict_argv            No empty argv
+  [Strictness]    * More Runtime Errors
+                  strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)
                   strict_array           Arrays don't decay to strings
                   strict_control_flow    trap misplaced break/continue
@@ -128,32 +129,30 @@ X [Testing]       check
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
-  [Simplicity]    simple_echo            echo takes 0 or 1 arguments
+  [Simplicity]    * More Consistent Style
+                  simple_echo            echo takes 0 or 1 arguments
                   simple_eval_builtin    eval takes exactly 1 argument
                   X simple_test_builtin  2 or 3 args only, remove [, status 2
                   X simple_trap          Function name only
-  [Oil Basic]     * Enable Oil functionality
+  [Oil Basic]     * Start Migrating to Oil
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
                   X parse_triple_quoted  ''' """
-                  command_sub_errexit    More errexit checks --  at command sub
+                  command_sub_errexit    More errexit checks -- at command sub
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
                   dashglob (-u)          Disabled to avoid files like -rf
-  [Oil Breaking]  * The full Oil language
-                  X copy_env             Use $[ENV->PYTHONPATH] when false
+  [Oil Breaking]  * The Full Oil Language
+                  X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   parse_at_all           @ starting any word is an operator
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
-                  X parse_amp            echo hi &2 > /dev/null, disallow >& <&
-
+                  parse_backslash (-u)   Bad backslashes in $'' and c''
+                  parse_backticks (-u)   Legacy syntax `echo hi`
+                  parse_dollar (-u)      word=$ instead of word=\$ 
                   parse_ignored (-u)     Parse, but ignore, certain redirects
-                  # TODO: parse_
-                  strict_backslash (-u)  Parse $'' and c'' more strictly
-                  strict_backticks (-u)  Disallow `echo hi`
-                  strict_dollar (-u)     word=\$ not word=$
-
+                  X copy_env             Use $[ENV->PYTHONPATH] when false
                   X parse_dollar_slash   egrep $/ d+ / *.txt
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias

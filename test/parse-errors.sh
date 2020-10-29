@@ -46,7 +46,7 @@ _error-case() {
 _error-case-here() { _error-case "$(cat)"; }
 
 _error-case2() {
-  ### An interface where you can pass flags like -O strict_backslash
+  ### An interface where you can pass flags like -O parse_backslash
 
   banner "$@"
   echo
@@ -682,9 +682,9 @@ oil_string_literals() {
   _should-parse-here <<'EOF'
 echo $'\u{03bc'
 EOF
-  # Not with strict_backslash
-  _error-case2-here -O strict_backslash -n <<EOF
-echo strict_backslash $'\u{03bc'
+  # Not with parse_backslash
+  _error-case2-here +O parse_backslash -n <<EOF
+echo parse_backslash $'\u{03bc'
 EOF
   # Not in Oil
   _oil-parse-error-here <<'EOF'
@@ -714,7 +714,7 @@ EOF
 
   _should-parse 'echo "\z"'
   # Double quoted is an error
-  _error-case2 -O strict_backslash -n -c 'echo strict_backslash "\z"'
+  _error-case2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
   _oil-parse-error 'echo "\z"'  # not in Oil
   _oil-parse-error 'bad = "\z"'  # not in expression mode
 
@@ -741,18 +741,18 @@ EOF
 
 }
 
-strict_backticks() {
+parse_backticks() {
   set +o errexit
 
   # These are allowed
   _should-parse 'echo `echo hi`'
   _should-parse 'echo "foo = `echo hi`"'
 
-  _error-case2 -O strict_backticks -n -c 'echo `echo hi`'
-  _error-case2 -O strict_backticks -n -c 'echo "foo = `echo hi`"'
+  _error-case2 +O parse_backticks -n -c 'echo `echo hi`'
+  _error-case2 +O parse_backticks -n -c 'echo "foo = `echo hi`"'
 }
 
-strict_dollar() {
+parse_dollar() {
   set +o errexit
 
   # The right way:
@@ -774,13 +774,13 @@ strict_dollar() {
   )
   for c in "${CASES[@]}"; do
     _should-parse "$c"
-    _error-case2 -O strict_dollar -n -c "$c"
+    _error-case2 +O parse_dollar -n -c "$c"
     _oil-parse-error "$c"
   done
 }
 
 # Backslash in UNQUOTED context
-strict_backslash() {
+parse_backslash() {
   set +o errexit
 
   # The right way:
@@ -808,7 +808,7 @@ oil_to_make_nicer() {
   _oil-parse-error '_'
 
   # What about \u{123} parse errors
-  # I get a warning now, but strict_backslash should give a syntax error
+  # I get a warning now, but parse_backslash should give a syntax error
   # _oil-parse-error "x = c'\\uz'"
 
   # Dict pair split
@@ -870,9 +870,9 @@ cases-in-strings() {
   proc_sig
   oil_expr
   oil_string_literals
-  strict_backticks
-  strict_dollar
-  strict_backslash
+  parse_backticks
+  parse_dollar
+  parse_backslash
   oil_to_make_nicer
   parse_at
 }

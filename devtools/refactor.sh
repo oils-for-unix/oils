@@ -121,8 +121,13 @@ import() {
 
 options() {
   #sed -i 's/simple_echo/simple_echo/g' */*.{py,md,sh}
-  sed -i 's/simple_eval_builtin/simple_eval_builtin/g' */*.{py,md,sh}
-  sed -i 's/simple_trap/simple_trap/g' */*.{py,md,sh}
+
+  #sed -i 's/simple_eval_builtin/simple_eval_builtin/g' */*.{py,md,sh}
+  #sed -i 's/simple_trap/simple_trap/g' */*.{py,md,sh}
+
+  sed -i 's/parse_backslash/parse_backslash/g' */*.{py,md,sh}
+  sed -i 's/parse_backticks/parse_backticks/g' */*.{py,md,sh}
+  sed -i 's/parse_dollar/parse_dollar/g' */*.{py,md,sh}
 }
 
 "$@"

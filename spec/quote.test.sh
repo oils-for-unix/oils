@@ -214,7 +214,7 @@ echo $w $x $y
 ## END
 ## N-I dash/mksh stdout-json: ""
 
-#### Oil parse errors with strict_backslash
+#### Oil parse errors with parse_backslash
 case $SH in (*osh) ;; (*) exit  ;; esac
 shopt -s oil:all
 

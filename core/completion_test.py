@@ -18,14 +18,13 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import value_e
 from core import completion  # module under test
 from core import comp_ui
+from core import state
 from core import test_lib
 from core import util
 from core.pyerror import log
-
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from frontend import parse_lib
-from core import state
 from testdata.completion import bash_oracle
 
 # guard some tests that fail on Darwin
@@ -52,10 +51,13 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   compopt_state = completion.OptionState()
   comp_ui_state = comp_ui.State()
   comp_lookup = comp_lookup or completion.Lookup()
-  ev = test_lib.InitWordEvaluator()
+
+  mem = state.Mem('', [], None, [])
+  state.InitMem(mem, {}, '0.1')
+  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
 
   if not parse_ctx:
-    parse_ctx = test_lib.InitParseContext()
+    parse_ctx = test_lib.InitParseContext(parse_opts=parse_opts)
     parse_ctx.Init_Trail(parse_lib.Trail())
     parse_ctx.Init_OnePassParse(True)
 
@@ -64,9 +66,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   else:
     debug_f = util.NullDebugFile()
 
-  mem = state.Mem('', [], None, [])
-  state.InitMem(mem, {}, '0.1')
-
+  ev = test_lib.InitWordEvaluator(exec_opts=exec_opts)
   return completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
                                   comp_ui_state, parse_ctx, debug_f)
 
@@ -284,6 +284,7 @@ class RootCompleterTest(unittest.TestCase):
     self.assertEqual(6, comp.end)
     print(comp)
     m = list(r.Matches(comp))
+
     # Just test for a subset
     self.assert_('echo $HOSTNAME' in m, m)
     self.assert_('echo $IFS' in m, m)

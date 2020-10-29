@@ -130,9 +130,10 @@ class _FormatStringParser(object):
           self.token_type == Id.Format_EscapedPercent or
           self.token_type == Id.Unknown_Backslash):
 
-        # TODO: Could fail on Unknown_Backslash with strict_backslash?  But it
-        # would happen at runtime rather than parse time.  I'd rather have a
-        # statically parsed printf like ${x %.3f}
+        # Note: like in echo -e, we don't fail with Unknown_Backslash here
+        # when shopt -u pasre_backslash because it's at runtime rather than
+        # parse time.
+        # Users should use $'' or the future static printf ${x %.3f}.
 
         parts.append(printf_part.Literal(self.cur_token))
 

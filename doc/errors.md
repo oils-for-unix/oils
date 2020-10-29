@@ -18,12 +18,12 @@ TODO: See test/runtime-errors.sh.  Merge them here.
 
 ### Syntax Errors in Oil String Literals
 
-- `strict_backslash`
+- `parse_backslash`
   - no octal
   - no `\z`
   - no `\u{invalid`
 
-- `strict_backticks`
+- `parse_backticks`
   - use "$(echo hi)"` and not backticks
 
 

@@ -540,7 +540,7 @@ class WordParser(WordEmitter):
     # In command mode, we never disallow backslashes like '\'
     self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
 
-    node = single_quoted(left_token, tokens)
+    node = single_quoted(left_token, tokens, False)
     node.spids.append(left_token.span_id)  # left '
     node.spids.append(self.cur_token.span_id)  # right '
     return node
@@ -586,8 +586,8 @@ class WordParser(WordEmitter):
 
       elif self.token_kind == Kind.Unknown:
         tok = self.cur_token
-        # x = c'\z' is disallowed, and echo $'\z' if shopt -s strict_backslash
-        if is_oil_expr or self.parse_opts.strict_backslash():
+        # x = c'\z' is disallowed, and echo $'\z' if shopt -u parse_backslash
+        if is_oil_expr or not self.parse_opts.parse_backslash():
           p_die("Invalid char escape in C-style string literal", token=tok)
 
         tokens.append(tok)
@@ -728,12 +728,12 @@ class WordParser(WordEmitter):
             # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
             # Oil.
             # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
-            # recursion (unless strict_backslash)
-            if is_oil_expr or self.parse_opts.strict_backslash():
+            # recursion (unless parse_backslash)
+            if is_oil_expr or not self.parse_opts.parse_backslash():
               p_die("Invalid char escape in double quoted string",
                     token=self.cur_token)
           elif self.token_type == Id.Lit_Dollar:
-            if is_oil_expr or self.parse_opts.strict_dollar():
+            if is_oil_expr or not self.parse_opts.parse_dollar():
               p_die("Literal $ should be quoted like \$",
                     token=self.cur_token)
 
@@ -786,7 +786,7 @@ class WordParser(WordEmitter):
     parts = []  # type: List[word_part_t]
     self._ReadLikeDQ(left_dq_token, False, parts)
 
-    dq_part = double_quoted(left_dq_token, parts)
+    dq_part = double_quoted(left_dq_token, parts, False)
     dq_part.spids.append(left_dq_token.span_id)  # Left ", sort of redundant
     dq_part.spids.append(self.cur_token.span_id)  # Right "
     return dq_part
@@ -842,8 +842,8 @@ class WordParser(WordEmitter):
       right_spid = c_parser.w_parser.cur_token.span_id
 
     elif left_id == Id.Left_Backtick:
-      if self.parse_opts.strict_backticks():
-        p_die('Use $(cmd) instead of backticks (strict_backticks)',
+      if not self.parse_opts.parse_backticks():
+        p_die('Use $(cmd) instead of backticks (parse_backticks)',
               token=left_token)
 
       self._Next(lex_mode_e.Backtick)  # advance past `
@@ -1341,7 +1341,7 @@ class WordParser(WordEmitter):
         elif self.token_type == Id.Lit_RBrace:
           brace_count -= 1
         elif self.token_type == Id.Lit_Dollar:
-          if self.parse_opts.strict_dollar():
+          if not self.parse_opts.parse_dollar():
             p_die('Literal $ should be quoted like \$', token=self.cur_token)
 
         done = self._MaybeReadWholeWord(num_parts == 0, lex_mode, w.parts)
