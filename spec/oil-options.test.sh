@@ -175,6 +175,7 @@ set -o pipefail
 shopt -s command_sub_errexit
 shopt -u dashglob
 shopt -s errexit
+shopt -u expand_aliases
 shopt -s inherit_errexit
 shopt -s nounset
 shopt -s nullglob
@@ -631,3 +632,24 @@ shopt -s strict_arith
 shopt -s dashglob
 shopt -u strict_arith
 ## END
+
+#### oil:basic disables aliases
+
+alias x='echo hi'
+x
+
+shopt --set oil:basic
+shopt --unset errexit
+x
+echo status=$?
+
+shopt --set expand_aliases
+x
+
+## STDOUT:
+hi
+status=127
+hi
+## END
+
+

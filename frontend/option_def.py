@@ -28,7 +28,7 @@ class Option(object):
     self.groups = groups or []  # list of groups
 
     # for optview
-    self.is_parse = name.startswith('parse_')
+    self.is_parse = name.startswith('parse_') or name == 'expand_aliases'
     # interactive() is an accessor
     self.is_exec = implemented and not self.is_parse
 
@@ -111,6 +111,10 @@ _BASIC_RUNTIME_OPTIONS = [
                                      # Don't reparse program data as globs
     ('dashglob', True),              # do globs return files starting with - ?
 
+    # Turn this off so we can statically parse.  Because bash has it off
+    # non-interactively, this shouldn't break much.
+    ('expand_aliases', True),
+
     # TODO: Should these be in strict mode?
     # The logic was that strict_errexit improves your bash programs, but these
     # would lead you to remove error handling.  But the same could be said for
@@ -118,6 +122,7 @@ _BASIC_RUNTIME_OPTIONS = [
 
     ('command_sub_errexit', False),  # check after command sub
     ('process_sub_fail', False),     # like pipefail, but for <(sort foo.txt)
+
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
@@ -193,8 +198,7 @@ _AGGRESSIVE_PARSE_OPTIONS = [
 
 # No-ops for bash compatibility
 _NO_OPS = [
-    'expand_aliases', 'lastpipe',  # language features always on
-                                   # TODO: turn OFF expand_aliases in Oil
+    'lastpipe',  # this feature is always on
 
     # Handled one by one
     'progcomp',
