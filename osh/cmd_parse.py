@@ -942,18 +942,34 @@ class CommandParser(object):
   def ParseBraceGroup(self):
     # type: () -> BraceGroup
     """
-    brace_group      : LBrace command_list RBrace ;
+    Original:
+      brace_group : LBrace command_list RBrace ;
+
+    Oil:
+      brace_group : LBrace (Op_Newline IgnoredComment?)? command_list RBrace ;
+
+    The doc comment can only occur if there's a newline.
     """
     left_spid = _KeywordSpid(self.cur_word)
     self._Eat(Id.Lit_LBrace)
 
+    doc_token = None  # type: Token
+    self._Peek()
+    if self.c_id == Id.Op_Newline:
+      self._Next()
+      with word_.ctx_EmitDocToken(self.w_parser):
+        self._Peek()
+
+    if self.c_id == Id.Ignored_Comment:
+      doc_token = cast(Token, self.cur_word)
+      self._Next()
+
     c_list = self._ParseCommandList()
 
-    # Not needed
     #right_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Lit_RBrace)
 
-    node = BraceGroup(c_list.children, None)  # no redirects yet
+    node = BraceGroup(doc_token, c_list.children, None)  # no redirects yet
     node.spids.append(left_spid)
     return node
 

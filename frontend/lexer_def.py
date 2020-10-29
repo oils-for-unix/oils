@@ -314,6 +314,8 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C('*', Id.Lit_Star),
   C('?', Id.Lit_QMark),
 
+  C('###', Id.Lit_TPound),  # like Lit_Pound, for doc comments
+
   # For brace expansion {a,b}
   C('{', Id.Lit_LBrace),
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}

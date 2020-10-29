@@ -257,7 +257,8 @@ module syntax
   if_arm = (condition cond, command* action, int* spids)
 
   -- TODO: Make field names consistent: child vs expr, etc.
-  BraceGroup = (command* children, redir* redirects) attributes (int* spids)
+  BraceGroup = (Token? doc_token, command* children, redir* redirects)
+               attributes (int* spids)
 
   command = 
     NoOp

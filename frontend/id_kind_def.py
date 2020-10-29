@@ -225,9 +225,10 @@ def AddKinds(spec):
       'Dollar',            # detecting 'echo $'
       'DRightBracket',     # the ]] that matches [[, NOT a keyword
       'TildeLike',         # tilde expansion
-      'Pound',             #  for comment or VAROP state
-      'Slash', 'Percent',  #  / # % for patsub, NOT unary op
-      'Colon',             #  x=foo:~:~root needs tilde expansion
+      'Pound',             # for comment or VarOp state
+      'TPound',            # for doc comments like ###
+      'Slash', 'Percent',  # / # % for patsub, NOT unary op
+      'Colon',             # x=foo:~:~root needs tilde expansion
       'Digits',            # for lex_mode_e.Arith
       'At',                # for ${a[@]} in lex_mode_e.Arith, and detecting @[]
       'ArithVarLike',      # for $((var+1)).  Distinct from Lit_VarLike 'var='

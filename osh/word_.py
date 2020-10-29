@@ -22,9 +22,10 @@ from core.pyerror import log
 from frontend import consts
 from mycpp.mylib import tagswitch
 
-from typing import Tuple, Optional, List, cast, TYPE_CHECKING
+from typing import Tuple, Optional, List, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.error import _ErrorWithLocation
+  from osh.word_parse import WordParser
 
 _ = log
 
@@ -777,3 +778,20 @@ def Pretty(w):
   else:
     # internal representation
     return str(w)
+
+
+class ctx_EmitDocToken(object):
+  """For doc comments."""
+
+  def __init__(self, w_parser):
+    # type: (WordParser) -> None
+    w_parser.EmitDocToken(True)
+    self.w_parser = w_parser
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.w_parser.EmitDocToken(False)

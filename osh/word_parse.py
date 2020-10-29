@@ -137,6 +137,7 @@ class WordParser(WordEmitter):
     self.cursor_was_newline = False
 
     self.buffered_word = None  # type: word_t
+    self.emit_doc_token = False
 
   def _Peek(self):
     # type: () -> None
@@ -1560,6 +1561,15 @@ class WordParser(WordEmitter):
         # lex_mode_e.ShCommand/etc.
         return no_word, True  # tell Read() to try again after comment
 
+      elif self.token_type == Id.Lit_TPound:   ### doc comment
+        self._Next(lex_mode_e.Comment)
+        self._Peek()
+
+        if self.token_type == Id.Ignored_Comment and self.emit_doc_token:
+          return cast(word_t, self.cur_token), False
+
+        return no_word, True  # tell Read() to try again after comment
+
       else:
         w = self._ReadCompoundWord(lex_mode)
         return cast(word_t, w), False
@@ -1632,3 +1642,7 @@ class WordParser(WordEmitter):
     w = compound_word()
     self._ReadLikeDQ(None, False, w.parts)
     return w
+
+  def EmitDocToken(self, b):
+    # type: (bool) -> None
+    self.emit_doc_token = b
