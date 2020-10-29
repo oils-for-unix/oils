@@ -597,6 +597,19 @@ class CommandParser(object):
             # We're DONE!!!
             break
 
+        if self.parse_opts.parse_triple_dots():
+          # TODO: If the first word is ... ,  invoke ParsePipeline()
+          # But call:
+          #   self.w_parser.PushTripleDots()
+          #   self.w_parser.PopTripleDots()
+          #
+          # Which changes the behavior of ReadWord?
+          #   \n -> space
+          #   \n comment \n -> space
+          #   \n space \n -> \n
+          # IDs involved: Op_Newline, WS_Space, and maybe Id.Lit_Comment
+          pass
+
         w = cast(compound_word, self.cur_word)  # Kind.Word ensures this
         words.append(w)
 

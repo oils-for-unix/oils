@@ -181,6 +181,7 @@ shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
 shopt -s parse_paren
+shopt -s parse_triple_dots
 shopt -s parse_triple_quoted
 shopt -s pipefail
 shopt -s process_sub_fail

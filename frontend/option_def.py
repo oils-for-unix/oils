@@ -75,6 +75,9 @@ _OTHER_SET_OPTIONS = [
 # These are RUNTIME strict options.  We also have parse time ones like
 # parse_backslash.
 _STRICT_OPTION_NAMES = [
+    # Bash options that are strict (and Oil).
+    'nullglob', 'inherit_errexit',
+
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
 
@@ -101,13 +104,18 @@ _STRICT_OPTION_NAMES = [
 # By default, we have mimic bash's undesirable behavior of ignoring
 # these failures, since ash copied it, and Alpine's abuild relies on it.
 #
-# bash 4.4 also has shopt -s inherit_errexit, which says that command subs
-# inherit the value of errexit.  # I don't believe it is strict enough --
-# local still needs to fail.
+# Note that inherit_errexit is a strict option.
+
 _BASIC_RUNTIME_OPTIONS = [
     ('simple_word_eval', False),     # No splitting; arity isn't data-dependent
                                      # Don't reparse program data as globs
     ('dashglob', True),              # do globs return files starting with - ?
+
+    # TODO: Should these be in strict mode?
+    # The logic was that strict_errexit improves your bash programs, but these
+    # would lead you to remove error handling.  But the same could be said for
+    # strict_array?
+
     ('command_sub_errexit', False),  # check after command sub
     ('process_sub_fail', False),     # like pipefail, but for <(sort foo.txt)
 ]
@@ -117,10 +125,70 @@ _BASIC_RUNTIME_OPTIONS = [
 # checking this.
 
 _AGGRESSIVE_RUNTIME_OPTIONS = [
-    'simple_echo',          # echo takes 0 or 1 arguments
-    'simple_eval_builtin',  # eval takes exactly 1 argument
+    ('simple_echo', False),          # echo takes 0 or 1 arguments
+    ('simple_eval_builtin', False),  # eval takes exactly 1 argument
+
     # only file tests (no strings), remove [, status 2
-    'simple_test_builtin',
+    ('simple_test_builtin', False),
+]
+
+
+# Stuff that doesn't break too many programs.
+_BASIC_PARSE_OPTIONS = [
+    'parse_at',  # @foo, @array(a, b)
+    'parse_brace',  # cd /bin { ... }
+    'parse_paren',  # if (x > 0) ...
+    'parse_triple_quoted',  # for ''' and """
+    'parse_triple_dots',  # ...
+
+    # Not implemented
+    # 'parse_index_expr',  # ${a[1 + f(x)]}  -- can this just be $[]?
+     
+    # Should this also change r''' c''' and and c"""?  Those are hard to
+    # do in command mode without changing the lexer, but useful because of
+    # redirects.  Maybe r' and c' are tokens, and then you look for '' after
+    # it?  If it's off and you get the token, then you change it into
+    # word_part::Literal and start parsing.
+    #
+    # proc foo {
+    #   cat << c'''
+    #   hello\n
+    #   '''
+    # }
+    # 'parse_rawc',  # echo r'' c''
+]
+
+# Extra stuff that breaks too many programs.
+_AGGRESSIVE_PARSE_OPTIONS = [
+    ('parse_set', False),      # set x = 'var'
+    ('parse_equals', False),   # x = 'var'
+    ('parse_at_all', False),   # @ starting any word, e.g. @[] @{} @@ @_ @-
+
+    # Legacy syntax that is removed
+    ('parse_backslash', True),
+    ('parse_backticks', True),
+    ('parse_dollar', True),
+    ('parse_ignored', True),
+
+    # Failed experiment for $[echo hi], myarray = %[one two], etc.
+    # I turned Lit_LBracket in to Op_LBracket.  But there were several issues:
+    # 1) it was too "modal", didn't work in OSH mode
+    # 2) resulting parse # errors needed more polish
+    # 3) Introducing two new syntaxes for NEW constructs isn't a good idea.
+    # 4) Although I wanted [] to mean array/sequence, () is for commands.
+    #    We could possibly do %[one two] in expression mode with some effort.
+    # 'parse_brackets',
+
+    # Does this one require OilCommand mode?
+    # Two rules: '&('  and  '&' + _VAR_NAME_RE
+
+    # echo foo > &2
+    # echo foo &2 > &1
+    # maybe:
+    #   myprog foo &2 &1 > out.txt
+    #   fopen &left > left.txt &right > right.txt {
+    #   }
+    ('parse_amp', False),
 ]
 
 # No-ops for bash compatibility
@@ -163,64 +231,6 @@ _NO_OPS = [
     'shift_verbose', 'sourcepath', 'xpg_echo',
 ]
 
-
-# Oil parse options only.
-_BASIC_PARSE_OPTIONS = [
-    'parse_at',  # @foo, @array(a, b)
-    'parse_brace',  # cd /bin { ... }
-    'parse_paren',  # if (x > 0) ...
-    'parse_triple_quoted',  # for ''' and """
-
-    # Not implemented
-    # 'parse_index_expr',  # ${a[1 + f(x)]}  -- can this just be $[]?
-     
-    # Should this also change r''' c''' and and c"""?  Those are hard to
-    # do in command mode without changing the lexer, but useful because of
-    # redirects.  Maybe r' and c' are tokens, and then you look for '' after
-    # it?  If it's off and you get the token, then you change it into
-    # word_part::Literal and start parsing.
-    #
-    # proc foo {
-    #   cat << c'''
-    #   hello\n
-    #   '''
-    # }
-    # 'parse_rawc',  # echo r'' c''
-]
-
-# Extra stuff that breaks too many programs.
-_AGGRESSIVE_PARSE_OPTIONS = [
-    ('parse_set', False),      # set x = 'var'
-    ('parse_equals', False),   # x = 'var'
-    ('parse_at_all', False),   # @ starting any word, e.g. @[] @{} @@ @_ @-
-
-    # Legacy syntax that is removed
-    ('parse_backslash', True),
-    ('parse_backticks', True),
-    ('parse_dollar', True),
-
-    # Failed experiment for $[echo hi], myarray = %[one two], etc.
-    # I turned Lit_LBracket in to Op_LBracket.  But there were several issues:
-    # 1) it was too "modal", didn't work in OSH mode
-    # 2) resulting parse # errors needed more polish
-    # 3) Introducing two new syntaxes for NEW constructs isn't a good idea.
-    # 4) Although I wanted [] to mean array/sequence, () is for commands.
-    #    We could possibly do %[one two] in expression mode with some effort.
-    # 'parse_brackets',
-
-    # Does this one require OilCommand mode?
-    # Two rules: '&('  and  '&' + _VAR_NAME_RE
-
-    # echo foo > &2
-    # echo foo &2 > &1
-    # maybe:
-    #   myprog foo &2 &1 > out.txt
-    #   fopen &left > left.txt &right > right.txt {
-    #   }
-    ('parse_amp', False),
-]
-
-
 def _Init(opt_def):
   # type: (_OptionDef) -> None
 
@@ -259,10 +269,6 @@ def _Init(opt_def):
   # For implementing strict_errexit
   opt_def.Add('allow_command_sub', default=True)
 
-  # Two strict options that from bash's shopt
-  for name in ['nullglob', 'inherit_errexit']:
-    opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
-
   # shopt -s strict_arith, etc.
   for name in _STRICT_OPTION_NAMES:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
@@ -279,10 +285,8 @@ def _Init(opt_def):
 
   for name, default in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, default=default, groups=['oil:all'])
-  for name in _AGGRESSIVE_RUNTIME_OPTIONS:
-    opt_def.Add(name, groups=['oil:all'])
-  # By default we parse 'return 2>&1', even though it does nothing in Oil.
-  opt_def.Add('parse_ignored', groups=['oil:all'], default=True)
+  for name, default in _AGGRESSIVE_RUNTIME_OPTIONS:
+    opt_def.Add(name, default=default, groups=['oil:all'])
 
   # Off by default.
   opt_def.Add('parse_tea')
