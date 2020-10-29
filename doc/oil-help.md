@@ -351,7 +351,7 @@ Not implemented.
 
 ### Oil Builtins
 
-#### cd
+#### oil-cd
 
 It takes a block:
 
@@ -359,7 +359,7 @@ It takes a block:
       echo $PWD
     }
 
-#### shopt
+#### oil-shopt
 
 It takes a block:
 

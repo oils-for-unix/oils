@@ -210,7 +210,14 @@ _AGGRESSIVE_PARSE_OPTIONS = [
 
     # Does this one require OilCommand mode?
     # Two rules: '&('  and  '&' + _VAR_NAME_RE
-    #'parse_amp',       # echo foo > &fd, cd /tmp &block
+
+    # echo foo > &2
+    # echo foo &2 > &1
+    # maybe:
+    #   myprog foo &2 &1 > out.txt
+    #   fopen &left > left.txt &right > right.txt {
+    #   }
+    ('parse_amp', False),
 ]
 
 

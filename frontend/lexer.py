@@ -106,6 +106,14 @@ class LineLexer(object):
 
     return tok_type
 
+  def ByteLookAhead(self):
+    # type: () -> str
+    pos = self.line_pos
+    if pos == len(self.line):
+      return ''
+    else:
+      return self.line[pos]
+
   def Read(self, lex_mode):
     # type: (lex_mode_t) -> Token
     # Inner loop optimization
@@ -193,6 +201,10 @@ class Lexer(object):
     {}
     """
     return self.line_lexer.LookAhead(lex_mode)
+
+  def ByteLookAhead(self):
+    # type: () -> str
+    return self.line_lexer.ByteLookAhead()
 
   def EmitCompDummy(self):
     # type: () -> None

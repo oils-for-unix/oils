@@ -95,8 +95,8 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 </h2>
 
 ```oil-help-topics
-  [Oil Builtins]  cd   shopt   X env     compatible, and takes a block
-                  X fork   X forkwait    replaces & and (), takes a block
+  [Oil Builtins]  oil-cd   oil-shopt     compatible, and takes a block
+                  fork   forkwait        replace & and (), and takes a block
                   X fopen                Many open streams, takes a block
                   X use                  source with namespace, file-relative 
                   X opts                 getopts replacement, sets OPT
@@ -105,7 +105,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   write                  like echo, but with --, -sep, -end
                   oil-read               buffered I/O with --line, --all, --qsn
                   run                    re-enable errexit; exit status utils
-                  proc-main              for main program
+                  X proc-main            for main program
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv
 X [External Lang] BEGIN   END   when (awk)
@@ -119,7 +119,7 @@ X [Testing]       check
 
 ```oil-help-topics
   [Option Groups] strict:all   oil:basic   oil:all
-  [Strictness]    * More Runtime Errors
+  [Strictness]    ... More Runtime Errors
                   strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)
                   strict_array           Arrays don't decay to strings
@@ -129,7 +129,7 @@ X [Testing]       check
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
-  [Oil Basic]     * Start Migrating to Oil
+  [Oil Basic]     ... Start Migrating to Oil
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
@@ -138,22 +138,21 @@ X [Testing]       check
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
                   dashglob (-u)          Disabled to avoid files like -rf
-  [Simplicity]    * More Consistent Style
+  [Simplicity]    ... More Consistent Style
                   simple_echo            echo takes 0 or 1 arguments
                   simple_eval_builtin    eval takes exactly 1 argument
                   X simple_test_builtin  2 or 3 args only, remove [, status 2
                   X simple_trap          Function name only
-  [Oil Breaking]  * The Full Oil Language
+  [Oil Breaking]  ... The Full Oil Language
                   X parse_amp            echo hi &2 > /dev/null, disallow >& <&
                   parse_at_all           @ starting any word is an operator
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
                   parse_backslash (-u)   Bad backslashes in $'' and c''
                   parse_backticks (-u)   Legacy syntax `echo hi`
-                  parse_dollar (-u)      word=$ instead of word=\$ 
+                  parse_dollar (-u)      Is $ allowed for \$?  Maybe $/d+/
                   parse_ignored (-u)     Parse, but ignore, certain redirects
-                  X copy_env             Use $[ENV->PYTHONPATH] when false
-                  X parse_dollar_slash   egrep $/ d+ / *.txt
+                  X copy_env (-u)        Use $[ENV->PYTHONPATH] when false
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
                                          ... getopts
@@ -165,7 +164,7 @@ X [Testing]       check
                   parse_dynamic_arith    LHS can contain variables
                   verbose_errexit        Whether to print detailed errors
   [More Options]  allow_command_sub      For implementing strict_errexit
-                  dynamic_scope          For implementing 'proc'
+                  X dynamic_scope        For implementing 'proc'
 ```
 
 <h2 id="env">

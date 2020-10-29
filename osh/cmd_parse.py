@@ -600,6 +600,11 @@ class CommandParser(object):
         w = cast(compound_word, self.cur_word)  # Kind.Word ensures this
         words.append(w)
 
+      elif self.parse_opts.parse_amp() and self.c_id == Id.Op_Amp:
+        # TODO:
+        # myprog &2 > &1 should be parsed
+        p_die('TODO: Parse Redirect', word=self.cur_word)
+
       else:
         break
 
@@ -1932,7 +1937,7 @@ class CommandParser(object):
       child = self.ParseAndOr()
 
       self._Peek()
-      if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
+      if self.c_id in (Id.Op_Semi, Id.Op_Amp):
         tok = cast(Token, self.cur_word)  # for MyPy
         child = command.Sentence(child, tok)
         self._Next()

@@ -1342,6 +1342,12 @@ class WordParser(WordEmitter):
           brace_count -= 1
         elif self.token_type == Id.Lit_Dollar:
           if not self.parse_opts.parse_dollar():
+            if num_parts == 0 and lex_mode == lex_mode_e.ShCommand:
+              next_byte = self.lexer.ByteLookAhead()
+              # TODO: switch lexer modes and parse $/d+/.  But not ${a:-$/d+/}
+              if next_byte == '/':
+                log('next_byte %r', next_byte)
+
             p_die('Literal $ should be quoted like \$', token=self.cur_token)
 
         done = self._MaybeReadWholeWord(num_parts == 0, lex_mode, w.parts)
