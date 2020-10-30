@@ -30,7 +30,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 
 ```oil-help-topics
   [Usage]         bundle-usage   oil-usage
-  [Oil Lexing]    X single-command %%%   X docstring ###
+  [Oil Lexing]    docstring ###    X single-command ...
 ```
 
 <h2 id="command">
@@ -96,15 +96,15 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 
 ```oil-help-topics
   [Oil Builtins]  oil-cd   oil-shopt     compatible, and takes a block
-                  fork   forkwait        replace & and (), and takes a block
-                  X fopen                Many open streams, takes a block
+                  fork   forkwait        Replace & and (), and takes a block
+                  push                   Add elements to end of array
+                  pp                     Pretty print interpreter state
+                  write                  Like echo, but with --, -sep, -end
+                  oil-read               Buffered I/O with --line, --all, --qsn
+                  run                    Re-enable errexit; exit status utils
+                  X fopen                Open multiple streams, takes a block
                   X use                  source with namespace, file-relative 
                   X opts                 getopts replacement, sets OPT
-                  push                   add elements to end of array
-                  pp                     pretty print interpreter state
-                  write                  like echo, but with --, -sep, -end
-                  oil-read               buffered I/O with --line, --all, --qsn
-                  run                    re-enable errexit; exit status utils
                   X proc-main            main() that dispatches to proc
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv

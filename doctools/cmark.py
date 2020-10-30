@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import ctypes
 import HTMLParser
+import json
 import optparse
 import os
 import re
@@ -29,7 +30,8 @@ from doctools import oil_doc
 # There's some ongoing discussion about how to deal with the same in Nix.
 # I think normally you'd just patch/substitute this path during the Nix build.
 # See note in shell.nix
-libname = os.environ.get('_NIX_SHELL_LIBCMARK', '_deps/libcmark.so')
+this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+libname = os.environ.get('_NIX_SHELL_LIBCMARK', os.path.join(this_dir, '../_deps/libcmark.so'))
 
 cmark = ctypes.CDLL(libname)
 
@@ -307,6 +309,9 @@ def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser('cmark.py [options]')
   p.add_option(
+      '--blog', action='store_true', default=False,
+      help='Generate a blog post')
+  p.add_option(
       '--toc-pretty-href', action='store_true', default=False,
       help='Generate textual hrefs #like-this rather than like #toc10')
   p.add_option(
@@ -330,24 +335,30 @@ def main(argv):
   opts, argv = o.parse_args(argv)
   assert all(tag.startswith('h') for tag in opts.toc_tags), opts.toc_tags
 
-  if len(argv) == 1:
+  if opts.blog:  # Are we making a blog post?
+    # Metadata is optional here
+    if len(argv) == 2:
+      meta = dict(DEFAULT_META)
+      with open(argv[1]) as f:
+        meta.update(json.load(f))
+    else:
+      meta = {}
+
     # Old style for blog: it's a filter
-    Render(opts, {}, sys.stdin, sys.stdout, use_fastlex=not
+    Render(opts, meta, sys.stdin, sys.stdout, use_fastlex=not
            opts.disable_fastlex)
-    return
 
-  # Otherwise we expect metadata and content
+  else:  # Otherwise, it's Oil documentation.
 
-  meta = dict(DEFAULT_META)
-  import json
-  with open(argv[1]) as f:
-    doc_meta = json.load(f)
-  meta.update(doc_meta)
+    meta = dict(DEFAULT_META)
+    with open(argv[1]) as f:
+      meta.update(json.load(f))
 
-  with open(argv[2]) as content_f:
-    doc_html.Header(meta, sys.stdout)
-    Render(opts, meta, content_f, sys.stdout)
-    doc_html.Footer(meta, sys.stdout)
+    # Docs have a special header and footer.
+    with open(argv[2]) as content_f:
+      doc_html.Header(meta, sys.stdout)
+      Render(opts, meta, content_f, sys.stdout)
+      doc_html.Footer(meta, sys.stdout)
 
 
 if __name__ == '__main__':

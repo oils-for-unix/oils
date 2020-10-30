@@ -610,6 +610,20 @@ Yes (purely a style preference):
         ;;
     }
 
+## Use Statically Parsed Language Constructs
+
+<!--
+
+Syntactic Concepts
+
+TODO: proc or shell functions vs. alias
+
+$'' vs echo -e
+
+later: ${x %.3f} vs. printf '.%3f' "$x"
+
+-->
+
 ## TODO
 
 ### Consider Using `--long-flags` for builtins

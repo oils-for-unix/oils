@@ -1,6 +1,6 @@
-/* oilshell/oil/web/blog.css 
+/* oilshell/oil/web/blog-v3.css 
  *
- * Old blog posts use this.  Newer ones use web/blog-v3.css.
+ * Blog style as of October 2020.
  */
 
 @media screen and (min-width: 801px) {
@@ -44,19 +44,11 @@ h4 {
 /* Exclude <pre><code>.  Is there a better way to do this?  */
 p code, div code, li code, h2 code, h3 code {
   color: green;
-  /* makes size more consistent with pre in Chrome, but not Firefox, sigh */
-  /* font-size: medium; */
 }
 
 blockquote {
   background-color: papayawhip;
   padding: 1.0em;
-}
-
-pre {
-  /* TODO: It would be nice to remove this, but many code blocks wrap.
-     Other solutions: A skinny font.  Make the whole page 35em? (not great) */
-  font-size: medium;
 }
 
 .footnotes {
@@ -179,8 +171,17 @@ hr {
   background-color: #BBB;
 }
 
-/* Hack to override language.css.  Not in manual.css because pre blocks are
- * bigger, sigh */
-.sh-command {
-  font-weight: bold;
+/* For blog release notes.  Copied from web/changelog.css */
+.checksum {
+  font-family: monospace;
+}
+.issue-num {
+  font-family: monospace;
+  width: 3em;
+}
+.issue-title {
+  font-family: sans-serif;
+}
+.subject {
+  font-family: sans-serif;
 }
