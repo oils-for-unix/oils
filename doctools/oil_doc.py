@@ -63,6 +63,9 @@ _ABBREVIATIONS = {
       _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
   'oil-help':
       _Abbrev('oil-help.html?topic=%(value)s#%(value)s'),
+  # For the blog
+  'oil-doc':
+      _Abbrev('//www.oilshell.org/release/latest/doc/%(value)s'),
 
   'blog-tag':
       _Abbrev('/blog/tags.html?tag=%(value)s#%(value)s'),
@@ -76,6 +79,7 @@ _ABBREVIATIONS = {
       _Abbrev('https://github.com/oilshell/oil/issues/%(value)s'),
   'wiki':
       _Abbrev('https://github.com/oilshell/oil/wiki/%(value)s'),
+
 }
 
 # $xref:foo

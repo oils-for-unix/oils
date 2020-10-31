@@ -58,7 +58,7 @@ We implement many bash semantics, like "named references" for out variables:
 But clean up the syntax:   
 
     proc f(:out) {       # "out param" declared with :
-      setref out = 1
+      setref out = 'bar'
     }
 
     var myvar = 'foo'
