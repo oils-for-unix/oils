@@ -1,7 +1,7 @@
 Building and Installing OSH
 ===========================
 
-OSH is a bash-compatible shell, and is part of the Oil project
+OSH is a bash-compatible shell and is part of the Oil project
 (http://www.oilshell.org).
 
 This file describes how to configure, build, and install it from source code.
@@ -78,7 +78,7 @@ Alpine Linux:
 
     apk add libc-dev gcc bash make readline-dev
 
-OSH has been tested several Linux distros and OS X.  It aims to run on any
+OSH has been tested in several Linux distros and OS X.  It aims to run on any
 POSIX system.  If it doesn't, file a bug here:
 
     https://github.com/oilshell/oil/issues
