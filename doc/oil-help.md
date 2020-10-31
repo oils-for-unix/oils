@@ -32,7 +32,7 @@ This section describes how to use the Oil binary.
     Usage: oil  [OPTION]... SCRIPT [ARG]...
            oil [OPTION]... -c COMMAND [ARG]...
 
-`bin/oil` is the same as `bin/osh` with a the `oil:all` option group set.  So
+`bin/oil` is the same as `bin/osh` with a the `oil:all` option groupset.  So
 `bin/oil` also accepts shell flags.
 
     oil -c 'echo hi'
@@ -45,7 +45,7 @@ This section describes how to use the Oil binary.
            MAIN_NAME [ARG]...
 
 oil.ovm behaves like busybox.  If it's invoked through a symlink, e.g. 'osh',
-then it behaves like that binary.  Otherwise the binary name can be passed as
+then it behaves like that binary.  Otherwise, the binary name can be passed as
 the first argument, e.g.:
 
     oil.ovm osh -c 'echo hi'
@@ -102,7 +102,7 @@ The `=` keyword evaluates an expression and shows the result:
     oil$ = 1 + 2*3
     (Int)   7
 
-It's meant to be used interactively.  Think of it like an assignment with no
+It's meant to be used interactively.  Think of it as an assignment with no
 variable on the left.
 
 #### underscore
@@ -143,7 +143,7 @@ Initializes a name to the Oil expression on the right.
     var s = 'mystr'        # equivalent to declare s=mystr
     var pat = / digit+ /   # an eggex, with no shell equivalent
 
-It's either a global or scoped to the current function.
+It's either global or scoped to the current function.
 
 #### setvar
 
@@ -164,7 +164,7 @@ error.
 
 #### setref
 
-Mutates a variable through a named reference.  TODO: Show example.
+Mutates a variable through a named reference.  TODO: Show an example.
 
 #### setlocal
 
@@ -172,7 +172,7 @@ Mutates an existing variable in the current scope.  If it doesn't exist, the
 shell exits with a fatal error.
 
 `set` is an alias for `setlocal` in the Oil language.  Requires `shopt -s
-parse_set`, because otherwise it would conflict with the `set` builtin.  Use
+parse_set`, because otherwise, it would conflict with the `set` builtin.  Use
 `builtin set -- 1 2 3` to get the builtin, or `shopt -o` to change options.
 
 
@@ -284,7 +284,7 @@ The shell-like syntax accepts the same syntax that a command can:
 
     +  -  *  /   //   %   **
 
-`div` is for integer math, while `/` is for floating point math.
+`div` is for integer math, while `/` is for floating-point math.
 
 #### oil-bitwise
 
@@ -370,14 +370,14 @@ It takes a block:
 
 #### fork
 
-Preferred alternative to shell's `&`.
+The preferred alternative to shell's `&`.
 
     fork { sleep 1 }
     wait -n
 
 #### forkwait
 
-Preferred alternative to shell's `()`.  Prefer `cd` with a block if possible.
+The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible.
 
     forkwait {
       not_mutated=zzz
@@ -386,7 +386,7 @@ Preferred alternative to shell's `()`.  Prefer `cd` with a block if possible.
 
 #### pp
 
-Pretty prints interpreter state.  Some of these are implementaion details,
+Pretty prints interpreter state.  Some of these are implementation details,
 subject to change.
 
 Examples:
@@ -429,7 +429,7 @@ Re-enable errexit.
 <!-- note: explicit anchor necessary because of mangling -->
 <h4 id="strict:all">strict:all</h4>
 
-Option in this group disallow problematic or confusing shell constructs.  The
+Option in this group disallows problematic or confusing shell constructs.  The
 resulting script will still run in another shell.
 
     shopt --set strict:all  # turn on all options
