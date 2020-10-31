@@ -110,7 +110,7 @@ You can also turn individual options on or off:
 `strict_arith`.  Strings that don't look like integers cause a fatal error in
 arithmetic expressions.
 
-`strict_argv`.  Empty `argv` arrays are disallowed, since there's no practical
+`strict_argv`.  Empty `argv` arrays are disallowed since there's no practical
 use for them.  For example, the second statement in `x=''; $x` results in a
 fatal error.
 
@@ -121,7 +121,7 @@ words, turning this on gives you a "real" array type.
 errors.
 
 `simple_eval_builtin`.  The `eval` builtin takes exactly **one** argument.  It
-doesn't concatenate its arguments with a space, or accept zero arguments.
+doesn't concatenate its arguments with spaces, or accept zero arguments.
 
 `strict_word_eval`.  More word evaluation errors are fatal.
 
@@ -258,7 +258,7 @@ plugins should not do it.
   - `echo foo > out.txt` and `out.txt` can't be opened.
   - `fg` and there's not job to put in the foreground.
 - `2` for **parse errors**.  This means that we didn't *attempt* to do
-  anything, rather than doing something and it failing.  Examples:
+  anything, rather than doing something and it fails.  Examples:
   - A language parse error, like `echo $(`.
   - Builtin usage error, like `read -z`.
 - `0` for **true**, and `1` for **false**.  Example:
@@ -296,7 +296,7 @@ Strings in OSH are arbitrary sequences of **bytes**.  Caveats:
 
 The GNU `iconv` program converts text from one encoding to another.
 
-Also see [Notes on Unicode in Shell][unicode.md].
+Also, see [Notes on Unicode in Shell][unicode.md].
 
 [unicode.md]: https://github.com/oilshell/oil/blob/master/doc/unicode.md
 
