@@ -278,7 +278,8 @@ def AddKinds(spec):
     'Name',
     'DecInt', 'BinInt', 'OctInt', 'HexInt', 'Float',
     'Dot', 'DColon', 'RArrow', 'RDArrow',
-    'DSlash',   # concat, integer division
+    'DSlash',   # integer division
+    'TildeDEqual',
     'At', 'DoubleAt',  # splice operators
     'Ellipsis',  # for varargs
     'Dollar',  # legacy regex

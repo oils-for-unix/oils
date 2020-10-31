@@ -916,7 +916,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('/', Id.Arith_Slash),
   C('%', Id.Arith_Percent),
 
-  C('//', Id.Expr_DSlash),  # For Oil integer division
   C('**', Id.Arith_DStar),  # exponentiation
   C('++', Id.Arith_DPlus),  # Option for string/list concatenation
 
@@ -962,6 +961,9 @@ LEXER_DEF[lex_mode_e.Expr] = \
   #
   # Expr
   #
+
+  C('//', Id.Expr_DSlash),  # For Oil integer division
+  C('~==', Id.Expr_TildeDEqual),  # approximate equality
 
   C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
   C('::', Id.Expr_DColon),  # static namespace access

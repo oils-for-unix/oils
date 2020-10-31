@@ -63,7 +63,7 @@ range_expr: expr [':' expr]
 # Oil patch: removed legacy <>
 comp_op: (
     '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'|
-    '~' | '!~' | '~~' | '!~~'
+    '~' | '!~' | '~~' | '!~~' | '~=='
 )
 
 # For lists and dicts.  Note: In Python this was star_expr *foo

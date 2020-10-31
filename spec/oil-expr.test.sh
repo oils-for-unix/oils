@@ -730,3 +730,52 @@ yes
 no
 ## END
 
+#### 3 ~== '3'
+shopt -s oil:all
+
+# TODO: should we have !~== too?
+# Or just make it not (a ~== b)
+
+if (3 ~== 3) {
+  echo exact
+}
+if (1 ~== 3) {
+  echo FAIL
+}
+
+if (3 ~== '3') {
+  echo int-str
+}
+if (3 ~== '4') {
+  echo FAIL
+}
+
+if (42 ~== 42.0) {
+  echo int-float
+}
+if (42 ~== 43.0) {
+  echo FAIL
+}
+
+if ('42' ~== 42.0) {
+  echo str-float
+}
+if ('42' ~== 43.0) {
+  echo FAIL
+}
+
+if (42 ~== '42.0') {
+  echo int-str-float
+}
+if (42 ~== '43.0') {
+  echo FAIL
+}
+
+## STDOUT:
+exact
+int-str
+int-float
+str-float
+int-str-float
+## END
+

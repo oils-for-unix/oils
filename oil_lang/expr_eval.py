@@ -370,6 +370,10 @@ class OilEvaluator(object):
         elif op.id == Id.Expr_NotDTilde:
           e_die('!~~ not implemented')
 
+        elif op.id == Id.Expr_TildeDEqual:
+          # Approximate equality
+          e_die('~== not implemented')
+
         else:
           try:
             if op.id == Id.Arith_Tilde:
