@@ -270,3 +270,13 @@ REPR_SPEC = OilFlags('repr', typed=True)
 # --verbose?
 FORK_SPEC = OilFlags('fork', typed=True)
 FORKWAIT_SPEC = OilFlags('forkwait', typed=True)
+
+#
+# Tea
+#
+
+TEA_MAIN_SPEC = OilFlags('tea_main', typed=True)
+TEA_MAIN_SPEC.Flag('-n', args.Bool)  # Parse
+TEA_MAIN_SPEC.Flag('-c', args.String)  # Command snippet
+TEA_MAIN_SPEC.Flag('-translate', args.Bool)
+

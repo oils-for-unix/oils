@@ -16,18 +16,6 @@ parse-all-osh() {
     | xargs -n 1 -- bin/osh -n
 }
 
-tea-files() {
-  find oil_lang/testdata -name '*.tea' 
-}
-
-parse-all-tea() {
-  # Parse with the Oil binary
-  tea-files | xargs -n 1 -- bin/oil -O parse_tea -n
-
-  # Standalone tea parser
-  tea-files | xargs -n 1 -- bin/tea
-}
-
 all-passing() {
   for prog in oil_lang/testdata/*.{sh,osh}; do
     echo $prog
@@ -69,5 +57,11 @@ demo() {
 
   bin/osh oil_lang/testdata/assign.osh
 }
+
+travis() {
+  parse-all-osh
+  all-passing
+}
+
 
 "$@"

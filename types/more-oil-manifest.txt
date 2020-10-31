@@ -7,3 +7,4 @@
 ./core/shell.py
 ./osh/builtin_process.py
 #./osh/builtin_comp.py
+./tea/tea_main.py

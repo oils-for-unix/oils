@@ -71,6 +71,7 @@ from frontend import reader
 from frontend import parse_lib
 from osh import builtin_misc
 from pylib import os_path
+from tea import tea_main
 from tools import deps
 from tools import osh2oil
 from tools import readlink
@@ -202,49 +203,6 @@ def OshCommandMain(argv):
   return 0
 
 
-def TeaMain(argv):
-  # type: (str, List[str]) -> int
-  arena = alloc.Arena()
-  try:
-    script_name = argv[1]
-    arena.PushSource(source.MainFile(script_name))
-  except IndexError:
-    arena.PushSource(source.Stdin())
-    f = sys.stdin
-  else:
-    try:
-      f = open(script_name)
-    except IOError as e:
-      stderr_line("tea: Couldn't open %r: %s", script_name,
-                  posix.strerror(e.errno))
-      return 2
-
-  aliases = {}  # Dummy value; not respecting aliases!
-
-  loader = pyutil.GetResourceLoader()
-  oil_grammar = pyutil.LoadOilGrammar(loader)
-
-  # Not used in tea, but OK...
-  opt0_array = state.InitOpts()
-  no_stack = None  # type: List[bool]  # for mycpp
-  opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
-  parse_opts = optview.Parse(opt0_array, opt_stacks)
-
-  # parse `` and a[x+1]=bar differently
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
-
-  line_reader = reader.FileLineReader(f, arena)
-
-  try:
-    parse_ctx.ParseTeaModule(line_reader)
-    status = 0
-  except error.Parse as e:
-    ui.PrettyPrintError(e, arena)
-    status = 2
-
-  return status
-
-
 # TODO: Hook up these applets and all valid applets to completion
 # APPLETS = ['osh', 'osh', 'oil', 'readlink']
 
@@ -309,8 +267,8 @@ def AppBundleMain(argv):
                       loader, line_input)
 
   elif main_name == 'tea':
-    main_argv = arg_r.Rest()
-    return TeaMain(main_argv)
+    arg_r.Next()
+    return tea_main.Main(arg_r)
 
   # For testing latency
   elif main_name == 'true':

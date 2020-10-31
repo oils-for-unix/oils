@@ -67,7 +67,8 @@ typecheck-other types/run.sh travis         -
 unit            test/unit.sh travis         -
 oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
 tea-spec        test/spec.sh tea-all-serial _tmp/spec/tea-language/tea.html
-tea-parsing     oil_lang/run.sh parse-all-tea -
+oil-large       oil_lang/run.sh travis      -
+tea-large       tea/run.sh travis           - 
 osh-minimal     test/spec.sh osh-minimal    _tmp/spec/survey/osh-minimal.html
 EOF
 

@@ -34,16 +34,6 @@ var strarray = %(
 
 show @strarray
 
-var typedarray = %[
-   'quoted' 'words' '*.sh' '{a,b}@example.com' 'sq' "dq ${x:-default}" 
-]
-
-show @typedarray
-
-var typedarray2 = %[1.0 2.3 3.4]
-
-show @typedarray2
-
 var cmd_sub = $(
     echo bare words *.sh {a,b}@example.com 'sq' "dq ${x:-default}"
 )
