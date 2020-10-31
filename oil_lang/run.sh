@@ -21,6 +21,7 @@ tea-files() {
 }
 
 parse-all-tea() {
+  # Parse with the Oil binary
   tea-files | xargs -n 1 -- bin/oil -O parse_tea -n
 
   # Standalone tea parser
