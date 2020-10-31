@@ -89,12 +89,12 @@ It's great for prototyping.
 The [Wiki](https://github.com/oilshell/oil/wiki) has many developer docs.  Feel
 free to edit them.  If you make a major change, let us know on Zulip!
 
-There are also READMEs in some subdirs, like `opy/` and `mycpp/`.
+There are also READMEs in some subdirectories, like `opy/` and `mycpp/`.
 
 If you're confused, the best thing to do is to ask on Zulip and someone should
 produce a pointer and/or improve the docs.
 
-Docs for **end users** are linked from each [release
+Docs for **end-users** are linked from each [release
 page](https://www.oilshell.org/releases.html).
 
 ## Repository Structure
@@ -109,7 +109,7 @@ Try this to show a summary of what's in the repo and their line counts:
 
 Oil is naturally structured as a set of mutually recursive parsers and
 evaluators.  These interpreters are specified at a high-level: with regular
-languages, Zephyr ASDL, and aa statically-typed subset of Python.
+languages, Zephyr ASDL, and a statically-typed subset of Python.
 
     bin/              # Main entry points like bin/osh (source in bin/oil.py)
     frontend/         # Lexing/Parsing code common to Oil and OSH
@@ -171,7 +171,7 @@ shell, of course!
     build/            # Build automation
       oil-defs/       # Files that define our slice of CPython.
       dev.sh          # For development builds, running CPython
-    devtools/         # For Oil developers (not end users)
+    devtools/         # For Oil developers (not end-users)
       release.sh      # The (large) release process.
     demo/             # Demonstrations of bash/shell features.  Could be
                       # moved to tests/ if automated.
@@ -213,7 +213,7 @@ above create and use these dirs.
         web/          # Static files, copy of $REPO_ROOT/web
           table/
 
-### Build System for End Users
+### Build System for End-Users
 
 This is very different than the **developer build** of Oil.
 
@@ -227,7 +227,7 @@ This is very different than the **developer build** of Oil.
     doctools/         # Tools that use lazylex/ to transform Markdown/HTML
     README.md         # This page, which is For Oil developers
 
-    LICENSE.txt       # For end users
+    LICENSE.txt       # For end-users
     INSTALL.txt
 
 ## More info
