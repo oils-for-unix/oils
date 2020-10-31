@@ -24,7 +24,7 @@ string.  But they are different:
 - `$(dirname $x)` is a shell command substitution that returns a string, and
   **starts another process**.
 - `$len(x)` is a function call, and doesn't need to start a process.
-  - Note that `len(x)` is an expression that evalutes to an integer, and
+  - Note that `len(x)` is an expression that evaluates to an integer, and
     `$len(x)` converts it to a string.
 
 (Note: command subs may be optimized later, as `ksh` does.)
@@ -58,7 +58,7 @@ New:
 
 <!--
 
-## Why doesn't the ternary operator work here: `${array[0 if cond else 5]}` ?
+## Why doesn't the ternary operator work here: `${array[0 if cond else 5]}`?
 
 The issue is the same as above.  Oil expression are allowed within `$[]` but
 not `${}`.
