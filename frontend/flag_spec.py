@@ -83,6 +83,13 @@ def ParseMore(spec_name, arg_r):
   return spec.Parse(arg_r)
 
 
+def ParseOil(spec_name, arg_r):
+  # type: (str, args.Reader) -> args._Attributes
+  """Parse argv using a given FlagSpec."""
+  spec = OIL_SPEC[spec_name]
+  return args.ParseOil(spec, arg_r)
+
+
 def ParseOilCmdVal(spec_name, cmd_val):
   # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, args.Reader]
   """Parse argv using a given FlagSpecAndMore."""

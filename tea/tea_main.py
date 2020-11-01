@@ -6,13 +6,16 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import source
+from frontend import flag_spec
 from frontend import parse_lib
 from frontend import reader
 from core import alloc
 from core import error
 from core import optview
+from core.pyerror import e_usage
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
@@ -39,22 +42,33 @@ def Main(arg_r):
     # Compile to C++.  Produce myprog.cc and myprog.h.
     tea --cpp-out myprog myprog.tea lib.tea
   """
-  argv = arg_r.Rest()
-  arena = alloc.Arena()
   try:
-    script_name = argv[0]
-    arena.PushSource(source.MainFile(script_name))
-  except IndexError:
-    arena.PushSource(source.Stdin())
-    f = mylib.Stdin()  # type: mylib.LineReader
+    attrs = flag_spec.ParseOil('tea_main', arg_r)
+  except error.Usage as e:
+    stderr_line('tea usage error: %s', e.msg)
+    return 2
+  arg = arg_types.tea_main(attrs.attrs)
+
+  arena = alloc.Arena()
+
+  if arg.c is not None:
+    arena.PushSource(source.CFlag())
+    line_reader = reader.StringLineReader(arg.c, arena)  # type: reader._Reader
   else:
-    try:
-      # Hack for type checking.  core/shell.py uses fd_state.Open().
-      f = cast('mylib.LineReader', open(script_name))
-    except IOError as e:
-      stderr_line("tea: Couldn't open %r: %s", script_name,
-                  posix.strerror(e.errno))
-      return 2
+    script_name = arg_r.Peek()
+    if script_name is None:
+      arena.PushSource(source.Stdin())
+      f = mylib.Stdin()  # type: mylib.LineReader
+    else:
+      arena.PushSource(source.MainFile(script_name))
+      try:
+        # Hack for type checking.  core/shell.py uses fd_state.Open().
+        f = cast('mylib.LineReader', open(script_name))
+      except IOError as e:
+        stderr_line("tea: Couldn't open %r: %s", script_name,
+                    posix.strerror(e.errno))
+        return 2
+    line_reader = reader.FileLineReader(f, arena)
 
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
@@ -71,13 +85,14 @@ def Main(arg_r):
   # parse `` and a[x+1]=bar differently
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
 
-  line_reader = reader.FileLineReader(f, arena)
-
-  try:
-    parse_ctx.ParseTeaModule(line_reader)
-    status = 0
-  except error.Parse as e:
-    ui.PrettyPrintError(e, arena)
-    status = 2
+  if arg.n:
+    try:
+      parse_ctx.ParseTeaModule(line_reader)
+      status = 0
+    except error.Parse as e:
+      ui.PrettyPrintError(e, arena)
+      status = 2
+  else:
+    e_usage("Tea doesn't run anything yet.  Pass -n to parse.")
 
   return status

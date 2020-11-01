@@ -23,9 +23,8 @@ This is currently run in the continuous build
 
 ## Demo
 
-    $ bin/oil -O parse_tea -n -c  'data Point(x Int, y Int)'
+    $ bin/tea -n -c 'var x = 42'
 
-TODO: `bin/tea -c`.
-
+    $ bin/oil -O parse_tea -n -c 'var x = 42'
 
 

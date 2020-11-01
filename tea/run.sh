@@ -16,11 +16,23 @@ parse-all-tea() {
   tea-files | xargs -n 1 -- bin/oil -O parse_tea -n
 
   # Standalone tea parser
-  tea-files | xargs -n 1 -- bin/tea
+  tea-files | xargs -n 1 -- bin/tea -n
+}
+
+usage-test() {
+  local prog='data Point(x Int, y Int)'
+
+  bin/oil -O parse_tea -n -c "echo 'hi'; $prog"
+
+  bin/tea -n -c "$prog"
+  #bin/tea -c "$prog"
+
+  echo "$prog" | bin/tea -n
 }
 
 travis() {
   parse-all-tea
+  usage-test
 }
 
 "$@"
