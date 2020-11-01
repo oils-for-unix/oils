@@ -12,11 +12,12 @@ tea-files() {
 }
 
 parse-one() {
-  # Integrated Oil parser
+  # Standalone Tea parser.  Prints the CST.  TODO: Should print AST too?
+  bin/tea -n "$@"
+
+  # Integrated Oil parser.  Prints AST.
   bin/oil -O parse_tea -n "$@"
 
-  # Standalone Tea parser
-  bin/tea -n "$@"
 }
 
 parse-all-tea() {

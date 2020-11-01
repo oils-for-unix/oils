@@ -913,12 +913,15 @@ class Transformer(object):
 
     return sig
 
+  def _Suite(self, pnode):
+    return command.CommandList()  # stub
+
   def TeaFunc(self, pnode, out):
     # type: (PNode, command__Func) -> None
     """
     tea_func: (
       '(' [func_params] [';' func_params] ')' [type_expr_list]
-      '{' [Op_Newline] [func_items] '}'
+      suite
     )
     """
     assert pnode.typ == grammar_nt.tea_func
@@ -940,12 +943,11 @@ class Transformer(object):
       out.named_params, out.named_splat = self._FuncParams(children[pos+1])
       pos += 3
 
-    if ISNONTERMINAL(children[pos].typ):
+    if children[pos].typ == grammar_nt.type_expr_list:
       out.return_types = self._TypeExprList(children[pos])
-      # otherwise it's Id.Op_LBrace like f() {
+      pos += 1
 
-    # Stub
-    out.body = command.CommandList()
+    out.body = self._Suite(children[pos])
 
   def NamedFunc(self, pnode, out):
     # type: (PNode, command__Func) -> None

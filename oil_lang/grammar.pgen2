@@ -381,15 +381,16 @@ tea_enum: (
   '}'
 )
 
-# Inside func/class and at top level: tea_func, oil_var_decl,
-# oil_place_mutation
+suite: '{' [Op_Newline] [func_items] '}'
 
 # In Python, imports, assert, etc. also at this 'small_stmt' level
 flow_stmt: 'break' | 'continue' | 'return' [testlist]
 
-# TODO: for/while, if/switch, with, break/continue/return, try/throw, etc.
 func_item: (
   ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
+
+  # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
+| 'while' test suite
 | flow_stmt
 | 'set' place_list (augassign | '=') testlist  # oil_place_mutation
   # x  f(x)  etc.
@@ -409,7 +410,7 @@ func_items: func_item (semi_newline func_item)* [semi_newline]
 # This is anonymous
 tea_func: (
   '(' [func_params] [';' func_params] ')' [type_expr_list]
-  '{' [Op_Newline] [func_items] '}'
+  suite
 )
 
 # Oil entry point
