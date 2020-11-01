@@ -472,7 +472,7 @@ module_item: (
 )
 
 # Eof_Real either after newline or before newline are both valid
-tea_module: module_item* [Eof_Real]
+tea_module: [Op_Newline] module_item* [Eof_Real]
 
 
 #
