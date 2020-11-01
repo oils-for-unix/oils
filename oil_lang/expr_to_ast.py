@@ -25,6 +25,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       command__VarDecl, command__PlaceMutation, command__Func, command__Data,
       command__Enum, command__Class, command__Import,
+      command__CommandList,
   )
   from pgen2.grammar import Grammar
   from pgen2.pnode import PNode
@@ -914,6 +915,7 @@ class Transformer(object):
     return sig
 
   def _Suite(self, pnode):
+    # type: (PNode) -> command__CommandList
     return command.CommandList()  # stub
 
   def TeaFunc(self, pnode, out):
