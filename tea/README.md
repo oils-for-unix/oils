@@ -13,6 +13,9 @@ messy, and needs cleanup.)
 
 - Tea Grammar: <https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2#L363>
 - Tea ASDL Schema: <https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl#L324>
+- Python-like "transformer" from CST to AST:
+  <https://github.com/oilshell/oil/blob/master/oil_lang/expr_to_ast.py>.  This
+  code is repetitive, but it's how CPython did it for 25+ years.
 
 ## Testing
 
@@ -27,4 +30,16 @@ This is currently run in the continuous build
 
     $ bin/oil -O parse_tea -n -c 'var x = 42'
 
+    # Similar to both of the above
+    $ tea/run.sh parse-one tea/testdata/hello.tea
+
+
+Note that tea stands alone as a language, but it can also be intermingled with
+Oil, which I think will be useful for metaprogramming.
+
+## Metaphors
+
+- "Oil + Tea" is like "Shell + C".  :)
+- Oil could be the metaprogramming language for Tea.  "So Oil + Tea" is like
+  the "C preprocessor + C".
 

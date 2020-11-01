@@ -11,12 +11,17 @@ tea-files() {
   find tea/testdata -name '*.tea' 
 }
 
+parse-one() {
+  # Integrated Oil parser
+  bin/oil -O parse_tea -n "$@"
+
+  # Standalone Tea parser
+  bin/tea -n "$@"
+}
+
 parse-all-tea() {
   # Parse with the Oil binary
-  tea-files | xargs -n 1 -- bin/oil -O parse_tea -n
-
-  # Standalone tea parser
-  tea-files | xargs -n 1 -- bin/tea -n
+  tea-files | xargs -n 1 -- $0 parse-one
 }
 
 usage-test() {
