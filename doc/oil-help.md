@@ -427,7 +427,7 @@ Re-enable errexit.
 <!-- note: explicit anchor necessary because of mangling -->
 <h4 id="strict:all">strict:all</h4>
 
-Option in this group disallows problematic or confusing shell constructs.  The
+Option in this group disallow problematic or confusing shell constructs.  The
 resulting script will still run in another shell.
 
     shopt --set strict:all  # turn on all options
