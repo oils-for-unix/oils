@@ -371,8 +371,6 @@ class CommandParser(object):
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
-    # 'return' in proc and func takes an expression
-    self.return_expr = False
     self.parse_opts = parse_ctx.parse_opts
 
     self.Reset()
@@ -1632,9 +1630,7 @@ class CommandParser(object):
     self.w_parser.ParseProc(node)
 
     self._Next()
-    self.return_expr = True
     node.body = self.ParseBraceGroup()
-    self.return_expr = False
     # No redirects for Oil procs (only at call site)
 
     return node
@@ -1760,15 +1756,6 @@ class CommandParser(object):
       return self.ParseCompoundCommand()
     if self.parse_opts.parse_set() and self.c_id == Id.KW_Set:
       return self.ParseCompoundCommand()
-
-    # return (x+y).  NOTE: We're not calling ParseCompoundCommand.  That
-    # doesn't seem to matter except for f() return x (no braces), which we
-    # don't care about.
-    if self.return_expr and self.c_id == Id.ControlFlow_Return:
-      keyword = _KeywordToken(self.cur_word)
-      self._Next()
-      enode = self.w_parser.ParseCommandExpr()
-      return command.Return(keyword, enode)
 
     if self.c_id in (Id.Lit_Underscore, Id.Lit_Equals):
       keyword = _KeywordToken(self.cur_word)

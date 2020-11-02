@@ -134,7 +134,7 @@ X [Testing]       check
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
                   X parse_triple_quoted  ''' """
-                  X parse_triple_dots    multiline pipelines
+                  X parse_triple_dots    Multiline pipelines
                   command_sub_errexit    More errexit checks -- at command sub
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
@@ -145,7 +145,7 @@ X [Testing]       check
                   simple_test_builtin    3 args or fewer; use test not [
                   X simple_trap          Function name only
   [Oil Breaking]  ... The Full Oil Language
-                  X parse_amp            echo hi &2 > /dev/null, disallow >& <&
+                  X parse_amp            ls &2 > /dev/null, disallow >& <&
                   parse_at_all           @ starting any word is an operator
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_set              'set' instead of 'setlocal'
@@ -157,11 +157,10 @@ X [Testing]       check
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
                                          ... getopts
-                  X old_syntax (-u)      [[   $(( ))  ${x%prefix}   $$
-                                         $'\n'   @(*.py|*.sh)  `echo comsub`
-                                         ${a[@]}
+                  X old_syntax (-u)      [[   $(( ))  ${x%prefix}   ${a[@]}
+                                         $$
   [Compatibility] compat_array           ${array} is ${array[0]}
-                  eval_unsafe_arith      recursively parse and evaluate
+                  eval_unsafe_arith      Recursively parse and evaluate
                   parse_dynamic_arith    LHS can contain variables
                   verbose_errexit        Whether to print detailed errors
   [More Options]  allow_command_sub      For implementing strict_errexit

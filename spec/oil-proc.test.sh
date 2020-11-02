@@ -184,3 +184,12 @@ f zzz :myvar        # : means pass a string "reference" (optional)
 ## STDOUT:
 ## END
 
+#### 'return' doesn't accept expressions
+proc p {
+  return 1 + 2
+}
+p
+## status: 2
+## STDOUT:
+## END
+
