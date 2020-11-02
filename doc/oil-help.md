@@ -32,7 +32,7 @@ This section describes how to use the Oil binary.
     Usage: oil  [OPTION]... SCRIPT [ARG]...
            oil [OPTION]... -c COMMAND [ARG]...
 
-`bin/oil` is the same as `bin/osh` with a the `oil:all` option groupset.  So
+`bin/oil` is the same as `bin/osh` with a the `oil:all` option group set.  So
 `bin/oil` also accepts shell flags.
 
     oil -c 'echo hi'
