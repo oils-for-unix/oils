@@ -149,7 +149,7 @@ Mentioned in the last post.  This is big!
 - Like shell and Python, there is a global scope and function scope..
 - shell functions don't live in their own scope?  This is like Lisp-1 vs
   Lisp-2.
-- There won't be dynamic scope as in the shell.
+- There won't be dynamic scope as in shell.
 
 The `use` builtin will provide scope.
 
