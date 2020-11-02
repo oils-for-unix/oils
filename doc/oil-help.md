@@ -284,8 +284,6 @@ The shell-like syntax accepts the same syntax that a command can:
 
     +  -  *  /   //   %   **
 
-`div` is for integer math, while `/` is for floating-point math.
-
 #### oil-bitwise
 
     ~  &  |  ^
