@@ -31,7 +31,7 @@ Related Documents:
   - different syntax
 
 <!--
-Would be nice to show these side-by-side?  Old way and new way.
+Would be nice to show these side-by-side?  The old way and new way.
 -->
 
 Oil retains them all.  A big difference is that keywords rather than builtins
@@ -119,7 +119,7 @@ Python and shell both borrow from C.  Oil borrows from Python and C.
 - sorted() ?  -- Does QSN have a lexicographical mapping for this?
   - or write `sort --qsn`? 
 - `sum()` 
-  - this can be written with a 'wok' filter that runs in process?
+  - this can be written with a 'wok' filter that runs in the process?
 - enumerate, zip: these return tuples.  Not sure I want to implement them.
 
 ## Runtime Semantics
@@ -159,7 +159,7 @@ The `use` builtin will provide scope.
 - Data Frames from R
   - Have to get dict/list/etc. working first
   - date and time types
-- Low Level Bindings for POSIX, Linux, Containers 
+- Low-Level Bindings for POSIX, Linux, Containers 
 - Find Dialect
   - replace find
   - need work on this
