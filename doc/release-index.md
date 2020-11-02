@@ -49,7 +49,7 @@ are ready to read:
   | [Known Differences Between OSH and Other Shells](doc/known-differences.html)
   | [Quirks](doc/quirks.html)
 - The Oil language:
-  - [Oil Language Idioms](doc/idioms.html)
+  - [Oil Language Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
   | [Shell Language Deprecations](doc/deprecations.html)
   | [Oil Language FAQ](doc/oil-language-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)

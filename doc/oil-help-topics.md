@@ -142,7 +142,7 @@ X [Testing]       check
   [Simplicity]    ... More Consistent Style
                   simple_echo            echo takes 0 or 1 arguments
                   simple_eval_builtin    eval takes exactly 1 argument
-                  X simple_test_builtin  2 or 3 args only, remove [, status 2
+                  simple_test_builtin    3 args or fewer; use test not [
                   X simple_trap          Function name only
   [Oil Breaking]  ... The Full Oil Language
                   X parse_amp            echo hi &2 > /dev/null, disallow >& <&

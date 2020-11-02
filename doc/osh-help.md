@@ -944,6 +944,13 @@ these are discouraged.
 
 <!--    -R VAR     True if the variable VAR has been set and is a nameref variable. -->
 
+Oil supports these long flags:
+
+    --dir            same as -d
+    --exists         same as -e
+    --file           same as -f
+    --symlink        same as -L
+
 #### getopts
 
     getopts SPEC VAR ARG*

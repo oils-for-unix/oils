@@ -30,6 +30,7 @@ language.  It's **our upgrade path from bash**.
 - [Error Handling with `errexit`](errexit.html)
 - [OSH Help Topics](osh-help-topics.html) (incomplete).  This document
   underlies the `help` builtin.
+- [Shell Language Idioms](shell-idioms.html).
 
 ## Oil is a New Shell Language
 

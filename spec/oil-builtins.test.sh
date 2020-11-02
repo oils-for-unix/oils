@@ -339,3 +339,63 @@ shopt -s errexit
 shopt -s inherit_errexit
 shopt -s nounset
 ## END
+
+#### simple_test_builtin
+
+test -n "foo"
+echo status=$?
+
+test -n "foo" -a -n "bar"
+echo status=$?
+
+[ -n foo ]
+echo status=$?
+
+shopt --set oil:all
+shopt --unset errexit
+
+test -n "foo" -a -n "bar"
+echo status=$?
+
+[ -n foo ]
+echo status=$?
+
+test -z foo
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+status=0
+status=2
+status=2
+status=1
+## END
+
+#### long flags to test
+# no options necessary!
+
+test --dir /
+echo status=$?
+
+touch foo
+test --file foo
+echo status=$?
+
+test --exists /
+echo status=$?
+
+test --symlink foo
+echo status=$?
+
+test --typo foo
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+status=0
+status=1
+status=2
+## END
+

@@ -135,6 +135,8 @@ _AGGRESSIVE_RUNTIME_OPTIONS = [
 
     # only file tests (no strings), remove [, status 2
     ('simple_test_builtin', False),
+
+    # TODO: simple_trap
 ]
 
 

@@ -13,7 +13,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
 from core import error
-from core.pyerror import p_die, log
+from core.pyerror import e_usage, p_die, log
 from core import vm
 from frontend import match
 from osh import sh_expr_eval
@@ -116,17 +116,31 @@ def _TwoArgs(w_parser):
   # type: (_StringWordEmitter) -> bool_expr_t
   """Returns an expression tree to be evaluated."""
   w0 = w_parser.Read()
-  # TODO: Implement --dir, --file, --exists here
-  # --symlink, maybe --executable
-
   w1 = w_parser.Read()
-  if w0.s == '!':
+
+  s0 = w0.s
+  if s0 == '!':
     return bool_expr.LogicalNot(bool_expr.WordTest(w1))
-  unary_id = match.BracketUnary(w0.s)
+
+  unary_id = Id.Undefined_Tok
+
+  # Oil's preferred long flags
+  if w0.s.startswith('--'):
+    if s0 == '--dir':
+      unary_id = Id.BoolUnary_d
+    elif s0 == '--exists':
+      unary_id = Id.BoolUnary_e
+    elif s0 == '--file':
+      unary_id = Id.BoolUnary_f
+    elif s0 == '--symlink':
+      unary_id = Id.BoolUnary_L
+
   if unary_id == Id.Undefined_Tok:
-    # TODO:
-    # - separate lookup by unary
+    unary_id = match.BracketUnary(w0.s)
+
+  if unary_id == Id.Undefined_Tok:
     p_die('Expected unary operator, got %r (2 args)', w0.s, word=w0)
+
   return bool_expr.Unary(unary_id, w1)
 
 
@@ -175,6 +189,9 @@ class Test(vm._Builtin):
     The only difference between test and [ is that [ needs a matching ].
     """
     if self.need_right_bracket:  # Preprocess right bracket
+      if self.exec_opts.simple_test_builtin():
+        e_usage("should be invoked as 'test' (simple_test_builtin)")
+
       strs = cmd_val.argv
       if not strs or strs[-1] != ']':
         self.errfmt.Print_('missing closing ]', span_id=cmd_val.arg_spids[0])
@@ -203,6 +220,10 @@ class Test(vm._Builtin):
 
     bool_node = None # type: bool_expr_t
     n = len(cmd_val.argv) - 1
+
+    if self.exec_opts.simple_test_builtin() and n > 3:
+      e_usage("should only have 3 arguments or fewer (simple_test_builtin)")
+
     try:
       if n == 0:
         return 1  # [ ] is False
@@ -232,9 +253,10 @@ class Test(vm._Builtin):
       self.errfmt.PrettyPrintError(e, prefix='(test) ')
       return 2
 
-    # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
+    # We technically don't need mem because we don't support BASH_REMATCH here.
     word_ev = _WordEvaluator()
-    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, None, self.errfmt)
+    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, None,
+                                         self.errfmt)
 
     # We want [ a -eq a ] to always be an error, unlike [[ a -eq a ]].  This is a
     # weird case of [[ being less strict.

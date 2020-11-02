@@ -80,6 +80,7 @@ readonly MARKDOWN_DOCS=(
   deprecations
   future
   idioms
+  shell-idioms
   oil-language-faq
   qsn
   qtsv

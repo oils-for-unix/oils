@@ -502,23 +502,6 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_e
 """)
 
-    if 0:
-      print('')
-      print('REDIR_DEFAULT_FD = {')
-      for id_ in sorted(consts.REDIR_DEFAULT_FD):
-        v = consts.REDIR_DEFAULT_FD[id_]
-        print('  %s: %s,' % (Id_str(id_), v))
-      print('}')
-
-      print('')
-      print('REDIR_ARG_TYPES = {')
-      for id_ in sorted(consts.REDIR_ARG_TYPES):
-        v = consts.REDIR_ARG_TYPES[id_]
-        # HACK
-        v = redir_arg_type_str(v).replace('.', '_e.')
-        print('  %s: %s,' % (Id_str(id_), v))
-      print('}')
-
     print('')
     print('BOOL_ARG_TYPES = {')
     for id_ in sorted(BOOL_ARG_TYPES):

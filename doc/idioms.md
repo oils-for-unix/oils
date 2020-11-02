@@ -226,6 +226,40 @@ Yes:
 
     read -0 :myvar
 
+## Oil Enhancements to Builtins
+
+### Use `shopt` instead of `set`
+
+`bin/oil` uses the `set` keyword for assignments, although OSH code will often
+use `setvar`.  Using `shopt` "clears the way" for this upgrade.
+
+Discouraged:
+
+    set -o errexit  
+
+Idiomatic:
+
+    shopt --set errexit
+
+(As always, using `set` is useful if your script needs to run under another
+shell.)
+
+### Consider Using `--long-flags`
+
+Easier to write:
+
+    test -d /tmp
+    test -d / && test -f /vmlinuz
+
+    shopt -u extglob
+
+Easier to read:
+
+    test --dir /tmp
+    test --dir / && test --file /vmlinuz
+
+    shopt --unset extglob
+
 ## Use Blocks to Save and Restore Context
 
 ### Do Something In Another Directory
@@ -610,42 +644,7 @@ Yes (purely a style preference):
         ;;
     }
 
-## Use Statically Parsed Language Constructs
-
-<!--
-
-Syntactic Concepts
-
-TODO: proc or shell functions vs. alias
-
-$'' vs echo -e
-
-later: ${x %.3f} vs. printf '.%3f' "$x"
-
--->
-
 ## TODO
-
-### Consider Using `--long-flags` for builtins
-
-Easier to write:
-
-    test -d /tmp
-    test -d / -a -f /vmlinuz
-
-    shopt -u extglob
-
-Easier to read:
-
-    test --dir /tmp
-    test --dir / && test --file /vmlinuz
-
-    shopt --unset extglob
-
-Style note: Prefer `test` to `[`, because idiomatic Oil code doesn't use
-"puns".
-
-TODO: implement long flags to `test`.
 
 ### Don't use `&&`
 
@@ -680,7 +679,10 @@ Hypothetical example:
 
 ## Related Documents
 
-- [Shell Language Deprecations](deprecations.html)
+- [Shell Language Idioms](shell-idioms.html).  This advice applies to shells
+  other than Oil.
+- [Shell Language Deprecations](deprecations.html).  Shell constructs that Oil
+  users should avoid.
 - [Error Handling with `set -e` / `errexit`](errexit.html).  Oil fixes the
   flaky error handling in POSIX shell and bash.
 - TODO: Go through more of the [Pure Bash
