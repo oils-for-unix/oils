@@ -27,7 +27,7 @@ osh-files() {
 }
 
 oil-lang-files() {
-  ls oil_lang/*.{py,pgen2} | filter-py 
+  ls oil_lang/*.{py,pgen2} tea/*.py | filter-py 
 }
 
 # cloc doesn't understand ASDL files.
@@ -159,7 +159,7 @@ all() {
   osh-files | xargs wc -l | sort --numeric
   echo
 
-  echo 'Oil Language'
+  echo 'Oil Language (and Tea)'
   oil-lang-files | xargs wc -l | sort --numeric
   echo
 

@@ -941,8 +941,8 @@ oil-proc() {
     $OSH_LIST "$@"
 }
 
-oil-stdlib-funcs() {
-  sh-spec spec/oil-stdlib-funcs.test.sh --osh-failures-allowed 2 \
+oil-funcs-builtin() {
+  sh-spec spec/oil-funcs-builtin.test.sh --osh-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 

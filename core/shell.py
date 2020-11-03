@@ -42,7 +42,7 @@ from frontend import parse_lib
 
 from oil_lang import expr_eval
 from oil_lang import builtin_oil
-from oil_lang import stdlib_funcs
+from oil_lang import funcs_builtin
 
 from osh import builtin_assign
 from osh import builtin_comp
@@ -275,7 +275,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   version_str = pyutil.GetVersion(loader)
   state.InitMem(mem, environ, version_str)
 
-  stdlib_funcs.Init(mem)
+  funcs_builtin.Init(mem)
 
   procs = {}  # type: Dict[str, command__ShFunction]
 
@@ -383,13 +383,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # split() builtin
   # TODO: Accept IFS as a named arg?  split('a b', IFS=' ')
-  stdlib_funcs.SetGlobalFunc(
+  funcs_builtin.SetGlobalFunc(
       mem, 'split', lambda s, ifs=None: splitter.SplitForWordEval(s, ifs=ifs))
 
   # glob() builtin
   # TODO: This is instantiation is duplicated in osh/word_eval.py
   globber = glob_.Globber(exec_opts)
-  stdlib_funcs.SetGlobalFunc(
+  funcs_builtin.SetGlobalFunc(
       mem, 'glob', lambda s: globber.OilFuncCall(s))
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
