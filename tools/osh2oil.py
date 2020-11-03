@@ -731,7 +731,7 @@ class OilPrinter(object):
 
       self.f.write('proc ')
       self.f.write(node.name)
-      self.cursor.SkipUntil(node.spids[1])
+      self.cursor.SkipUntil(node.spids[2])
 
       if node.body.tag == command_e.BraceGroup:
         # Don't add "do" like a standalone brace group.  Just use {}.

@@ -182,8 +182,10 @@ proc f(input, :out) {  # : means accept a string "reference"
 
 var myvar = 'zzz'
 f zzz :myvar        # : means pass a string "reference" (optional)
+echo myvar=$myvar
 
 ## STDOUT:
+myvar=PREFIX-zzz
 ## END
 
 #### 'return' doesn't accept expressions
@@ -195,3 +197,17 @@ p
 ## STDOUT:
 ## END
 
+#### procs are in same namespace as shell functions
+myfunc() {
+  echo hi
+}
+
+proc myproc {
+  echo hi
+}
+
+declare -F
+## STDOUT:
+declare -f myfunc
+declare -f myproc
+## END

@@ -25,7 +25,7 @@ from qsn_ import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import command__ShFunction
+  from _devbuild.gen.runtime_asdl import Proc
   from core import optview
   from core.state import Mem
   from core.ui import ErrorFormatter
@@ -302,7 +302,7 @@ class NewVar(vm._AssignBuiltin):
   """declare/typeset/local."""
 
   def __init__(self, mem, funcs, errfmt):
-    # type: (Mem, Dict[str, command__ShFunction], ErrorFormatter) -> None
+    # type: (Mem, Dict[str, Proc], ErrorFormatter) -> None
     self.mem = mem
     self.funcs = funcs
     self.errfmt = errfmt
@@ -408,7 +408,7 @@ class NewVar(vm._AssignBuiltin):
 class Unset(vm._Builtin):
 
   def __init__(self, mem, exec_opts, funcs, parse_ctx, arith_ev, errfmt):
-    # type: (Mem, optview.Exec, Dict[str, command__ShFunction], ParseContext, ArithEvaluator, ErrorFormatter) -> None
+    # type: (Mem, optview.Exec, Dict[str, Proc], ParseContext, ArithEvaluator, ErrorFormatter) -> None
     self.mem = mem
     self.exec_opts = exec_opts
     self.funcs = funcs

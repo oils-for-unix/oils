@@ -12,10 +12,8 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.runtime_asdl import value, value_e, scope_e
-from _devbuild.gen.syntax_asdl import (
-    sh_lhs_expr, command_e, command__ShFunction
-)
+from _devbuild.gen.runtime_asdl import value, value_e, scope_e, Proc
+from _devbuild.gen.syntax_asdl import sh_lhs_expr, command_e
 from core import error
 from core.pyerror import log, e_usage
 from core import vm
@@ -49,7 +47,7 @@ class Pp(_Builtin):
   'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
   """
   def __init__(self, mem, errfmt, procs, arena):
-    # type: (Mem, ErrorFormatter, Dict[str, command__ShFunction], Arena) -> None
+    # type: (Mem, ErrorFormatter, Dict[str, Proc], Arena) -> None
     self.mem = mem
     self.errfmt = errfmt
     self.procs = procs
@@ -98,8 +96,9 @@ class Pp(_Builtin):
       # QTSV header
       print('proc_name\tdoc_comment')
       for name in names:
-        node = self.procs[name]  # must exist
-        body = node.body
+        proc = self.procs[name]  # must exist
+        #log('Proc %s', proc)
+        body = proc.body
 
         # TODO: not just command__ShFunction, but command__Proc!
         doc = ''

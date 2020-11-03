@@ -10,3 +10,8 @@ g() {
   ### not a doc comment
 }
 
+proc myproc {
+  ### Oil-style proc
+  echo myproc
+}
+

@@ -15,7 +15,8 @@ import unittest
 import sys
 
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.runtime_asdl import value_e, Proc
+from _devbuild.gen.syntax_asdl import proc_sig
 from core import completion  # module under test
 from core import comp_ui
 from core import state
@@ -196,13 +197,13 @@ class CompletionTest(unittest.TestCase):
       COMPREPLY=(f1 f2)
     }
     """, arena=arena)
-    func_node = c_parser.ParseLogicalLine()
-    print(func_node)
+    node = c_parser.ParseLogicalLine()
+    proc = Proc(node.name, node.spids[1], proc_sig.Open(), node.body, [])
 
     cmd_ev = test_lib.InitCommandEvaluator(arena=arena)
 
     comp_lookup = completion.Lookup()
-    a = completion.ShellFuncAction(cmd_ev, func_node, comp_lookup)
+    a = completion.ShellFuncAction(cmd_ev, proc, comp_lookup)
     comp = self._CompApi(['f'], 0, 'f')
     matches = list(a.Matches(comp))
     self.assertEqual(['f1', 'f2'], matches)

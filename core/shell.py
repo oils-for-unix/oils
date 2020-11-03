@@ -70,7 +70,7 @@ import posix_ as posix
 from typing import List, Dict, Optional, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import command__ShFunction
+  from _devbuild.gen.runtime_asdl import Proc
 
 
 def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
@@ -183,7 +183,7 @@ def AddProcess(
 
 
 def AddOil(b, mem, errfmt, procs, arena):
-  # type: (Dict[int, vm._Builtin], state.Mem, ui.ErrorFormatter, Dict[str, command__ShFunction], alloc.Arena) -> None
+  # type: (Dict[int, vm._Builtin], state.Mem, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
   b[builtin_i.push] = builtin_oil.Push(mem, errfmt)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
@@ -277,7 +277,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   funcs_builtin.Init(mem)
 
-  procs = {}  # type: Dict[str, command__ShFunction]
+  procs = {}  # type: Dict[str, Proc]
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem)

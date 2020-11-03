@@ -32,9 +32,15 @@ array = (cell exported:F readonly:F nameref:F val:(value.MaybeStrArray strs:[_ _
 # This has to be a separate file because sh_spec.py strips comments!
 . $REPO_ROOT/spec/testdata/doc-comments.sh
 
-pp proc f g
+pp proc
+echo ---
+pp proc f
 ## STDOUT:
 proc_name	doc_comment
 f	'doc \' comment with " quotes'
 g	''
+myproc	'Oil-style proc'
+---
+proc_name	doc_comment
+f	'doc \' comment with " quotes'
 ## END

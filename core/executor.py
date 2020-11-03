@@ -8,7 +8,7 @@ import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value_e, value__Obj, redirect
+from _devbuild.gen.runtime_asdl import redirect
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
     command_sub, compound_word, Token,
@@ -21,15 +21,13 @@ from core import ui
 from core import vm
 from frontend import consts
 from frontend import location
-from oil_lang import objects
-from mycpp import mylib
 
 import posix_ as posix
 
 from typing import cast, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, CompoundStatus
-  from _devbuild.gen.syntax_asdl import command_t, command__ShFunction
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv, CompoundStatus, Proc
+  from _devbuild.gen.syntax_asdl import command_t
   from core import optview
   from core import state
   from core.vm import _Builtin
@@ -52,7 +50,7 @@ class ShellExecutor(vm._Executor):
       mem,  # type: state.Mem
       exec_opts,  # type: optview.Exec
       mutable_opts,  # type: state.MutableOpts
-      procs,  # type: Dict[str, command__ShFunction]
+      procs,  # type: Dict[str, Proc]
       builtins,  # type: Dict[int, _Builtin]
       search_path,  # type: state.SearchPath
       ext_prog,  # type: process.ExternalProgram
@@ -218,19 +216,6 @@ class ShellExecutor(vm._Executor):
         # NOTE: Functions could call 'exit 42' directly, etc.
         status = self.cmd_ev.RunProc(proc_node, argv[1:])
         return status
-
-      # TODO:
-      # look up arg0 in global namespace?  And see if the type is value.Obj
-      # And it's a proc?
-      # isinstance(val.obj, objects.Proc)
-      UP_val = self.mem.GetVar(arg0)
-
-      if mylib.PYTHON:  # Not reusing CPython objects
-        if UP_val.tag_() == value_e.Obj:
-          val = cast(value__Obj, UP_val)
-          if isinstance(val.obj, objects.Proc):
-            status = self.cmd_ev.RunOilProc(val.obj, argv[1:])
-            return status
 
     builtin_id = consts.LookupNormalBuiltin(arg0)
 

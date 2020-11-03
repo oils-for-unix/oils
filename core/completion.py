@@ -38,7 +38,7 @@ import time
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e
-from _devbuild.gen.runtime_asdl import value_e, value__Str
+from _devbuild.gen.runtime_asdl import value_e, value__Str, Proc
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core.pyerror import log
@@ -59,7 +59,7 @@ from typing import (
     Dict, Tuple, List, Optional, Iterator, Union, Callable, Any, TYPE_CHECKING
 )
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import Token, compound_word, command__ShFunction
+  from _devbuild.gen.syntax_asdl import Token, compound_word
   from core.alloc import Arena
   from core.comp_ui import State
   from core.state import Mem
@@ -412,7 +412,7 @@ class ShellFuncAction(CompletionAction):
   """Call a user-defined function using bash's completion protocol."""
 
   def __init__(self, cmd_ev, func, comp_lookup):
-    # type: (CommandEvaluator, command__ShFunction, Lookup) -> None
+    # type: (CommandEvaluator, Proc, Lookup) -> None
     """
     Args:
       comp_lookup: For the 124 protocol: test if the user-defined function

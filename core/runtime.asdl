@@ -3,7 +3,7 @@
 module runtime
 {
   -- import these types from syntax.asdl
-  use syntax { command re redir_loc BraceGroup }
+  use syntax { command re redir_loc BraceGroup Token proc_sig }
 
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
@@ -98,6 +98,14 @@ module runtime
 
   -- evaluated version of syntax.redir
   redirect = (id op_id, int op_spid, redir_loc loc, redirect_arg arg)
+
+  -- What command.ShFunction and command.Proc evaluate to
+  -- For ShFunction, this is trivial.  For Proc, we evaluate default args.
+  -- We store name_spid separately because ShFunction has a word as a name, but
+  -- a Proc has a Token.
+  Proc = (
+    string name, int name_spid, proc_sig sig, command body, value* defaults
+  )
 
   -- An exit status with location info.  For process sub and pipelines.
   -- Only pipelines can be negated.

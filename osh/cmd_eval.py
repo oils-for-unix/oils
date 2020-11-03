@@ -34,7 +34,7 @@ from _devbuild.gen.syntax_asdl import (
     assign_op_e,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
-    redir_param_e, redir_param__HereDoc,
+    redir_param_e, redir_param__HereDoc, proc_sig
 )
 from _devbuild.gen.runtime_asdl import (
     quote_e,
@@ -42,7 +42,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Int, value__Str, value__MaybeStrArray,
     redirect, redirect_arg, scope_e,
     cmd_value_e, cmd_value__Argv, cmd_value__Assign,
-    CompoundStatus,
+    CompoundStatus, Proc
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -76,7 +76,7 @@ if TYPE_CHECKING:
       cmd_value_t, cell, lvalue_t,
   )
   from _devbuild.gen.syntax_asdl import (
-      redir, expr__Lambda, env_pair, proc_sig__Closed,
+      redir, env_pair, proc_sig__Closed,
   )
   from core.alloc import Arena
   from core import dev
@@ -182,7 +182,7 @@ class CommandEvaluator(object):
                mem,              # type: state.Mem
                exec_opts,        # type: optview.Exec
                errfmt,           # type: ui.ErrorFormatter
-               procs,            # type: Dict[str, command__ShFunction]
+               procs,            # type: Dict[str, Proc]
                assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
                arena,            # type: Arena
                cmd_deps,         # type: Deps
@@ -1187,32 +1187,29 @@ class CommandEvaluator(object):
 
       elif case(command_e.ShFunction):
         node = cast(command__ShFunction, UP_node)
-        # TODO: if shopt -s namespaces, then enter it in self.mem
-        # self.mem.SetVar(value.Obj(...))
+        # name_spid is node.spids[1]
+        self.procs[node.name] = Proc(
+            node.name, node.spids[1], proc_sig.Open(), node.body, [])
 
-        # NOTE: Would it make sense to evaluate the redirects BEFORE entering?
-        # It will save time on function calls.
-        self.procs[node.name] = node
         status = 0
 
       elif case(command_e.Proc):
         node = cast(command__Proc, UP_node)
+
+        defaults = []  # type: List[value_t]
         if mylib.PYTHON:
-          UP_proc_sig = node.sig
-          if UP_proc_sig.tag_() == proc_sig_e.Closed:
-            proc_sig = cast(proc_sig__Closed, UP_proc_sig)
-            defaults = [None] * len(proc_sig.params)
-            for i, param in enumerate(proc_sig.params):
+          UP_sig = node.sig
+          if UP_sig.tag_() == proc_sig_e.Closed:
+            sig = cast(proc_sig__Closed, UP_sig)
+            defaults = [None] * len(sig.params)
+            for i, param in enumerate(sig.params):
               if param.default_val:
                 py_val = self.expr_ev.EvalExpr(param.default_val)
                 defaults[i] = _PyObjectToVal(py_val)
-          else:
-            defaults = None
+     
+        self.procs[node.name.val] = Proc(
+            node.name.val, node.name.span_id, node.sig, node.body, defaults)
 
-          obj = objects.Proc(node, defaults)
-
-          self.mem.SetVar(
-              lvalue.Named(node.name.val), value.Obj(obj), scope_e.GlobalOnly)
         status = 0
 
       elif case(command_e.Func):
@@ -1571,46 +1568,20 @@ class CommandEvaluator(object):
       if is_return:  # explicit 'return' in the trap handler!
         mut_status[0] = self.LastStatus()
 
-  def RunProc(self, func_node, argv):
-    # type: (command__ShFunction, List[str]) -> int
+  def RunProc(self, proc, argv):
+    # type: (Proc, List[str]) -> int
     """Run a shell "functions".
 
     For SimpleCommand and registered completion hooks.
     """
-    with state.ctx_Call(self.mem, func_node.name, func_node.spids[0], argv):
-      # Redirects still valid for functions.
-      # Here doc causes a pipe and Process(SubProgramThunk).
-      try:
-        status = self._Execute(func_node.body)
-      except _ControlFlow as e:
-        if e.IsReturn():
-          status = e.StatusCode()
-        else:
-          # break/continue used in the wrong place.
-          e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
-      except error.FatalRuntime as e:
-        # Dump the stack before unwinding it
-        self.dumper.MaybeCollect(self, e)
-        raise
+    sig = proc.sig
+    if sig.tag_() == proc_sig_e.Closed:
+      # We're binding named params.  User should use @rest.  No 'shift'.
+      proc_argv = []  # type: List[str]
+    else:
+      proc_argv = argv
 
-    return status
-
-  if mylib.PYTHON:
-    def RunOilProc(self, proc, argv):
-      # type: (objects.Proc, List[str]) -> int
-      """
-      Run an oil proc foo { } or proc foo(x, y, @names) { }
-      """
-      node = proc.node
-      sig = node.sig
-      if sig.tag_() == proc_sig_e.Closed:
-        # We're binding named params.  User should use @rest.  No 'shift'.
-        proc_argv = []  # type: List[str]
-      else:
-        proc_argv = argv
-
-      self.mem.PushCall(node.name.val, node.name.span_id, proc_argv)
-
+    with state.ctx_Call(self.mem, proc.name, proc.name_spid, proc_argv):
       n_args = len(argv)
       UP_sig = sig
 
@@ -1618,7 +1589,7 @@ class CommandEvaluator(object):
         sig = cast(proc_sig__Closed, UP_sig)
         for i, p in enumerate(sig.params):
           if i < n_args:
-            val = value.Str(argv[i])
+            val = value.Str(argv[i])  # type: value_t
           else:
             val = proc.defaults[i]
             if val is None:
@@ -1634,14 +1605,12 @@ class CommandEvaluator(object):
           if n_args > n_params:
             raise TypeError(
                 "proc %r expected %d arguments, but got %d" %
-                (node.name.val, n_params, n_args))
+                (proc.name, n_params, n_args))
 
-      # TODO:
-      # - Handle &block param?  How to do that?  It's really the
-      #   syntax_asdl.command_t type?  Or value.Block.
-
+      # Redirects still valid for functions.
+      # Here doc causes a pipe and Process(SubProgramThunk).
       try:
-        status = self._Execute(node.body)
+        status = self._Execute(proc.body)
       except _ControlFlow as e:
         if e.IsReturn():
           status = e.StatusCode()
@@ -1649,14 +1618,11 @@ class CommandEvaluator(object):
           # break/continue used in the wrong place.
           e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
       except error.FatalRuntime as e:
-        self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
+        # Dump the stack before unwinding it
+        self.dumper.MaybeCollect(self, e)
         raise
-      # Does this ever happen?  e.g. 'source' should catch its own errors.
-      #except error.Parse as e:
-      finally:
-        self.mem.PopCall()
 
-      return status
+    return status
 
   def EvalBlock(self, block):
     # type: (command_t) -> Dict[str, cell]
@@ -1694,11 +1660,11 @@ class CommandEvaluator(object):
     #namespace['_returned'] = status
     return namespace_
 
-  def RunFuncForCompletion(self, func_node, argv):
-    # type: (command__ShFunction, List[str]) -> int
+  def RunFuncForCompletion(self, proc, argv):
+    # type: (Proc, List[str]) -> int
     # TODO: Change this to run Oil procs and funcs too
     try:
-      status = self.RunProc(func_node, argv)
+      status = self.RunProc(proc, argv)
     except error.FatalRuntime as e:
       ui.PrettyPrintError(e, self.arena)
       status = e.ExitStatus()

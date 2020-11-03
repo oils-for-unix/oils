@@ -1567,7 +1567,7 @@ class CommandParser(object):
 
     self._Next()  # skip function name
 
-    # Must be true beacuse of lookahead
+    # Must be true because of lookahead
     self._Peek()
     assert self.c_id == Id.Op_LParen, self.cur_word
 
@@ -1584,7 +1584,9 @@ class CommandParser(object):
     func.name = name
     func.body = self.ParseCompoundCommand()
 
+    # matches ParseKshFunctionDef below
     func.spids.append(left_spid)
+    func.spids.append(left_spid)  # name_spid is same as left_spid in this case
     func.spids.append(after_name_spid)
     return func
 
@@ -1603,7 +1605,8 @@ class CommandParser(object):
     if len(name) == 0:
       p_die('Invalid KSH-style function name', word=cur_word)
 
-    after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
+    name_spid = word_.LeftMostSpanForWord(self.cur_word)
+    after_name_spid = name_spid + 1
     self._Next()  # skip past 'function name
 
     self._Peek()
@@ -1620,7 +1623,9 @@ class CommandParser(object):
     func.name = name
     func.body = self.ParseCompoundCommand()
 
+    # matches ParseFunctionDef above
     func.spids.append(left_spid)
+    func.spids.append(name_spid)
     func.spids.append(after_name_spid)
     return func
 

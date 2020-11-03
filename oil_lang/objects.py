@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   StrList = List[str]
   TableDict = Dict[Any, List[Any]]
   AssocArrayDict = Dict[Any, Any]
-  from _devbuild.gen.syntax_asdl import re_t, command__Proc, command__Func, expr__Lambda
+  from _devbuild.gen.syntax_asdl import re_t, command__Func, expr__Lambda
   from osh.cmd_eval import CommandEvaluator
 else:
   BoolList = IntList = FloatList = StrList = list
@@ -134,18 +134,6 @@ class Table(TableDict):
     return 'TODO: Table Slicing'
 
 
-class Proc(object):
-  """An Oil proc declared with 'proc'.
-
-  Unlike a shell proc, it has a signature, so we need to bind names to params.
-  """
-  def __init__(self, node, defaults):
-    # type: (command__Proc, Optional[List[Any]]) -> None
-    self.docstring = ''
-    self.node = node
-    self.defaults = defaults
-
-
 class Func(object):
   """An Oil function declared with 'func'."""
   def __init__(self, node, pos_defaults, named_defaults, cmd_ev):
@@ -157,7 +145,9 @@ class Func(object):
 
   def __call__(self, *args, **kwargs):
     # type: (*Any, **Any) -> Any
-    return self.cmd_ev.RunOilFunc(self, args, kwargs)
+    raise NotImplementedError()
+    # Moved to tea
+    #return self.cmd_ev.RunOilFunc(self, args, kwargs)
 
 
 class Lambda(object):
@@ -169,7 +159,9 @@ class Lambda(object):
 
   def __call__(self, *args, **kwargs):
     # type: (*Any, **Any) -> Any
-    return self.cmd_ev.RunLambda(self.node, args, kwargs)
+    raise NotImplementedError()
+    # Moved to tea
+    # return self.cmd_ev.RunLambda(self.node, args, kwargs)
 
 
 class Module(object):

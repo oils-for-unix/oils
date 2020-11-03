@@ -58,8 +58,7 @@ import posix_ as posix
 from typing import List, Dict, Optional, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv
-  from _devbuild.gen.syntax_asdl import command__ShFunction
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
   from core import optview
   from oil_lang import expr_eval
   from pgen2 import grammar
@@ -74,7 +73,7 @@ def MakeBuiltinArgv(argv1):
 
 
 def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):
-  # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, command__ShFunction], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+  # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, Proc], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
   b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
 
   b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
@@ -118,7 +117,7 @@ def AddIO(b, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt):
 
 def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
             errfmt):
-  # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, state.Mem, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+  # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, state.Mem, Dict[str, Proc], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
 
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
@@ -161,7 +160,7 @@ if 0:
 
 
 def InitAssignmentBuiltins(mem, procs, errfmt):
-  # type: (state.Mem, Dict[str, command__ShFunction], ui.ErrorFormatter) -> Dict[int, vm._AssignBuiltin]
+  # type: (state.Mem, Dict[str, Proc], ui.ErrorFormatter) -> Dict[int, vm._AssignBuiltin]
 
   assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
 
@@ -258,7 +257,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   version_str = pyutil.GetVersion(loader)
   state.InitMem(mem, environ, version_str)
 
-  procs = {}  # type: Dict[str, command__ShFunction]
+  procs = {}  # type: Dict[str, Proc]
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem)
@@ -511,7 +510,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
 class NullExecutor(vm._Executor):
   def __init__(self, exec_opts, mutable_opts, procs, builtins):
-    # type: (optview.Exec, state.MutableOpts, Dict[str, command__ShFunction], Dict[int, vm._Builtin]) -> None
+    # type: (optview.Exec, state.MutableOpts, Dict[str, Proc], Dict[int, vm._Builtin]) -> None
     vm._Executor.__init__(self)
     self.exec_opts = exec_opts
     self.mutable_opts = mutable_opts
