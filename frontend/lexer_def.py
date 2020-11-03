@@ -261,6 +261,7 @@ EXPR_WORDS = [
   C('not', Id.Expr_Not),
 
   C('for', Id.Expr_For),
+  C('while', Id.Expr_While),
   C('is', Id.Expr_Is),
   C('in', Id.Expr_In),
   C('if', Id.Expr_If),
@@ -276,8 +277,12 @@ EXPR_WORDS = [
   C('override',  Id.Expr_Override),
   C('abstract',  Id.Expr_Abstract),
   C('as',        Id.Expr_As),  # use 'foo.sh' as bar
-]
 
+  # Tea Control Flow Operators
+  C('break',    Id.Expr_Break),
+  C('continue', Id.Expr_Continue),
+  C('return',   Id.Expr_Return),
+]
 
 # The 'compen' and 'type' builtins introspect on keywords and builtins.
 OSH_KEYWORD_NAMES = [name for _, name, _ in _KEYWORDS]

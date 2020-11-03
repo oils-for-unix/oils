@@ -391,6 +391,7 @@ func_item: (
 
   # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
 | 'while' test suite
+| 'for' name_type_list 'in' test suite
 | flow_stmt
 | 'set' place_list (augassign | '=') testlist  # oil_place_mutation
   # x  f(x)  etc.

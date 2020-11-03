@@ -331,6 +331,10 @@ module syntax
   | Enum(Token name, variant* variants)
   | Class(Token name, Token? extends, class_item* items)
   | Import(single_quoted path, Token? alias, import_name* names)
+  | For(name_type* targets, expr iterable, command body)
+  | While(expr test, command body)
+  | Break | Continue
+  | TeaReturn(expr? value)
 
   attributes (int* spids)
 

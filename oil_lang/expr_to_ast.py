@@ -914,9 +914,75 @@ class Transformer(object):
 
     return sig
 
+  def func_item(self, node):
+    """
+    func_item: (
+      ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
+
+      # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
+    | 'while' test suite
+    | 'for' name_type_list 'in' test suite
+    | flow_stmt
+    | 'set' place_list (augassign | '=') testlist  # oil_place_mutation
+      # x  f(x)  etc.
+      #
+      # And x = 1.  Python uses the same "hack" to fit within pgen2.  It also
+      # supports a = b = 1, which we don't want.
+      #
+      # And echo 'hi' 'there'
+      #
+      # TODO: expr_to_ast needs to validate this
+    | testlist (['=' testlist] | tea_word*)
+    )
+    """
+    if node.tok.id == Id.Expr_While:
+      return command.While(self.Expr(node.children[1]), self._Suite(node.children[2]))
+    elif node.tok.id == Id.Expr_For:
+      return command.For(
+          self._NameTypeList(node.children[1]),
+          self.Expr(node.children[3]),
+          self._Suite(node.children[4])
+        )
+    elif node.tok.id == Id.Expr_Break:
+      return command.Break()
+    elif node.tok.id == Id.Expr_Continue:
+      return command.Continue()
+    elif node.tok.id == Id.Expr_Return:
+      # 'return' [testlist]
+      if len(node.children) == 1:
+        return command.TeaReturn()
+      else:
+        return command.TeaReturn(self.Expr(node.children[1]))
+    else:
+      raise NotImplementedError(node)
+
+  def func_items(self, pnode):
+    # type: (PNode) -> List[ast.stmt]
+    """
+    func_items: func_item (semi_newline func_item)* [semi_newline]
+    """
+    raw_items = pnode.children
+    if raw_items[-1].typ == grammar_nt.semi_newline:
+      raw_items = raw_items[:-1]
+    return [self.func_item(raw_item) for raw_item in raw_items[::2]]
+
   def _Suite(self, pnode):
     # type: (PNode) -> command__CommandList
-    return command.CommandList()  # stub
+    """
+    suite: '{' [Op_Newline] [func_items] '}'
+    """
+
+    raw_body = pnode.children[1:-1]
+    if len(raw_body) == 2:
+      body = raw_body[1]
+    elif len(raw_body) == 1 and raw_body[0].typ == grammar_nt.func_items:
+      body = raw_body[0]
+    else:
+      body = []
+
+    if body:
+      body = self.func_items(body)
+    return command.CommandList(body)  # stub
 
   def TeaFunc(self, pnode, out):
     # type: (PNode, command__Func) -> None
