@@ -3,7 +3,7 @@
 #### Open proc (any number of args)
 proc f {
   var x = 42
-  return x
+  return $x
 }
 # this gets called with 3 args then?
 f a b c
@@ -74,7 +74,7 @@ x=foo
 proc f(x, y, z) {
   echo $x $y $z
   var ret = 42
-  return ret  # expression mode
+  return $ret
 }
 # this gets called with 3 args then?
 f a b c
@@ -153,9 +153,10 @@ G
 # this should print an error message
 proc f {
   var a = %(one two)
-  return a
+  return $a
 }
 f
+## status: 1
 ## STDOUT:
 ## END
 
@@ -164,9 +165,10 @@ f
 # this should print an error message
 proc f {
   var s = 'not an integer status'
-  return s
+  return $s
 }
 f
+## status: 1
 ## STDOUT:
 ## END
 
