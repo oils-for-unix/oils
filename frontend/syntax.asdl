@@ -316,8 +316,6 @@ module syntax
   | PlaceMutation(Token? keyword, place_expr* lhs, Token op, expr rhs)
     -- = keyword
   | Expr(speck keyword, expr e)
-    -- return an Obj, not an int-like string
-  | Return(Token keyword, expr e)
   | OilForIn(name_type* lhs, expr iterable, command body)
   | Proc(Token name, proc_sig sig, command body)
 
@@ -334,7 +332,7 @@ module syntax
   | For(name_type* targets, expr iterable, command body)
   | While(expr test, command body)
   | Break | Continue
-  | TeaReturn(expr? value)
+  | Return(expr? value)
 
   attributes (int* spids)
 

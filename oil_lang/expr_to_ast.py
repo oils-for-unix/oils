@@ -950,9 +950,9 @@ class Transformer(object):
     elif node.tok.id == Id.Expr_Return:
       # 'return' [testlist]
       if len(node.children) == 1:
-        return command.TeaReturn()
+        return command.Return()
       else:
-        return command.TeaReturn(self.Expr(node.children[1]))
+        return command.Return(self.Expr(node.children[1]))
     else:
       raise NotImplementedError(node)
 
@@ -962,8 +962,6 @@ class Transformer(object):
     func_items: func_item (semi_newline func_item)* [semi_newline]
     """
     raw_items = pnode.children
-    if raw_items[-1].typ == grammar_nt.semi_newline:
-      raw_items = raw_items[:-1]
     return [self.func_item(raw_item) for raw_item in raw_items[::2]]
 
   def _Suite(self, pnode):
@@ -971,14 +969,13 @@ class Transformer(object):
     """
     suite: '{' [Op_Newline] [func_items] '}'
     """
-
     raw_body = pnode.children[1:-1]
     if len(raw_body) == 2:
       body = raw_body[1]
     elif len(raw_body) == 1 and raw_body[0].typ == grammar_nt.func_items:
       body = raw_body[0]
     else:
-      body = []
+      body = None
 
     if body:
       body = self.func_items(body)
