@@ -272,6 +272,12 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   arg_r.Next()
   mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
 
+  opt_hook = ShellOptHook(line_input)
+  # TODO: only MutableOpts needs mem, so it's not a true circular dep.
+  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
+  mem.exec_opts = exec_opts  # circular dep
+  mutable_opts.Init()
+
   version_str = pyutil.GetVersion(loader)
   state.InitMem(mem, environ, version_str)
 
@@ -281,11 +287,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem)
-
-  opt_hook = ShellOptHook(line_input)
-  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
-  # TODO: only MutableOpts needs mem, so it's not a true circular dep.
-  mem.exec_opts = exec_opts  # circular dep
 
   if attrs.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])

@@ -266,6 +266,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
   # TODO: only MutableOpts needs mem, so it's not a true circular dep.
   mem.exec_opts = exec_opts  # circular dep
+  mutable_opts.Init()
 
   if attrs.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])

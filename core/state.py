@@ -283,6 +283,9 @@ class MutableOpts(object):
     # Used for 'set -o vi/emacs'
     self.opt_hook = opt_hook
 
+  def Init(self):
+    # type: () -> None
+
     # This comes after all the 'set' options.
     UP_shellopts = self.mem.GetValue('SHELLOPTS')
     if UP_shellopts.tag_() == value_e.Str:  # Always true in Oil, see Init above
@@ -321,6 +324,20 @@ class MutableOpts(object):
     # type: () -> bool
     self.errexit_spid_stack.pop()
     return self.Pop(option_i.errexit)
+
+  def PushDynamicScope(self, b):
+    # type: (bool) -> None
+    """
+    b: False if it's a proc, and True if it's a shell function
+    """
+    # If it's already disabled, keep it disabled
+    if not self.Get(option_i.dynamic_scope):
+      b = False
+    self.Push(option_i.dynamic_scope, b)
+
+  def PopDynamicScope(self):
+    # type: () -> None
+    self.Pop(option_i.dynamic_scope)
 
   def Get(self, opt_num):
     # type: (int) -> bool
@@ -779,7 +796,7 @@ class ctx_Call(object):
   def __init__(self, mem, mutable_opts, proc, argv):
     # type: (Mem, MutableOpts, Proc, List[str]) -> None
     mem.PushCall(proc.name, proc.name_spid, argv)
-    mutable_opts.Push(option_i.dynamic_scope, proc.dynamic_scope)
+    mutable_opts.PushDynamicScope(proc.dynamic_scope)
     self.mem = mem
     self.mutable_opts = mutable_opts
 
@@ -789,7 +806,7 @@ class ctx_Call(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.mutable_opts.Pop(option_i.dynamic_scope)
+    self.mutable_opts.PopDynamicScope()
     self.mem.PopCall()
 
 
@@ -1487,7 +1504,7 @@ class Mem(object):
     cell = self.var_stack[0][name]
     cell.val = new_val
 
-  def GetValue(self, name, lookup_mode=scope_e.Dynamic):
+  def GetValue(self, name, lookup_mode=scope_e.Shopt):
     # type: (str, scope_t) -> value_t
     """Used by the WordEvaluator, ArithEvalutor, oil_lang/expr_eval.py, etc.
 
@@ -1497,6 +1514,12 @@ class Mem(object):
       strings
     """
     assert isinstance(name, str), name
+
+    #lookup_mode = scope_e.Dynamic
+    if lookup_mode == scope_e.Shopt:
+      lookup_mode = self._LookupMode()
+
+    #log('mode %s', lookup_mode)
 
     # TODO: Short-circuit down to _ResolveNameOrRef by doing a single hash
     # lookup:

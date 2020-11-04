@@ -5,21 +5,31 @@ f() {
   echo "f x=$x"
 }
 
+f1() {
+  local x=43
+  f
+}
+
 proc p {
   echo "p x=$x"
 }
 
+p1() {
+  local x=43
+  p
+}
+
 x=42
-f
-p
+f1
+p1
 
 shopt --unset dynamic_scope
-f
+f1
 
 ## STDOUT:
+f x=43
+p x=42
 f x=42
-p x=
-f x=
 ## END
 
 
