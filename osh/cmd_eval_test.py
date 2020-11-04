@@ -22,8 +22,8 @@ from core import state
 
 def InitEvaluator():
   word_ev = test_lib.InitWordEvaluator()
-  state.SetLocalString(word_ev.mem, 'x', 'xxx')
-  state.SetLocalString(word_ev.mem, 'y', 'yyy')
+  test_lib.SetLocalString(word_ev.mem, 'x', 'xxx')
+  test_lib.SetLocalString(word_ev.mem, 'y', 'yyy')
   return word_ev
 
 

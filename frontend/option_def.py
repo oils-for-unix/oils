@@ -274,6 +274,8 @@ def _Init(opt_def):
 
   # For implementing strict_errexit
   opt_def.Add('allow_command_sub', default=True)
+  # For implementing 'proc'
+  opt_def.Add('dynamic_scope', default=True)
 
   # shopt -s strict_arith, etc.
   for name in _STRICT_OPTION_NAMES:

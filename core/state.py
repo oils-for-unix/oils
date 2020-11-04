@@ -43,7 +43,7 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.option_asdl import option_t
-  from _devbuild.gen.runtime_asdl import cell
+  from _devbuild.gen.runtime_asdl import cell, Proc
   from core.alloc import Arena
 
 
@@ -776,10 +776,12 @@ def InitMem(mem, environ, version_str):
 class ctx_Call(object):
   """For function calls."""
 
-  def __init__(self, mem, func_name, def_spid, argv):
-    # type: (Mem, str, int, List[str]) -> None
-    mem.PushCall(func_name, def_spid, argv)
+  def __init__(self, mem, mutable_opts, proc, argv):
+    # type: (Mem, MutableOpts, Proc, List[str]) -> None
+    mem.PushCall(proc.name, proc.name_spid, argv)
+    mutable_opts.Push(option_i.dynamic_scope, proc.dynamic_scope)
     self.mem = mem
+    self.mutable_opts = mutable_opts
 
   def __enter__(self):
     # type: () -> None
@@ -787,6 +789,7 @@ class ctx_Call(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
+    self.mutable_opts.Pop(option_i.dynamic_scope)
     self.mem.PopCall()
 
 
@@ -1298,10 +1301,10 @@ class Mem(object):
     # bash?
     #
     # TODO:
-    # - COMPUTED_VARS can't be set
+    # - COMPUTED vars can't be set
     # - What about PWD / OLDPWD / UID / EUID ?  You can simply make them
-    # readonly.
-    # - $PS1 and $PS4 should be PARSED when they are set, to avoid the error on use
+    #   readonly.
+    # - Maybe PARSE $PS1 and $PS4 when they're set, to avoid the error on use?
     # - Other validity: $HOME could be checked for existence
 
     UP_lval = lval
@@ -1315,7 +1318,8 @@ class Mem(object):
           cell_name = lval.name
         else:
           # ref=x  # mutates THROUGH the reference
-          cell, name_map, cell_name = self._ResolveNameOrRef(lval.name, lookup_mode)
+          cell, name_map, cell_name = self._ResolveNameOrRef(lval.name,
+                                                             lookup_mode)
 
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell:
@@ -1485,7 +1489,7 @@ class Mem(object):
 
   def GetVar(self, name, lookup_mode=scope_e.Dynamic):
     # type: (str, scope_t) -> value_t
-    """Used by the word evaluator and oil_lang/expr_eval.py
+    """Used by the WordEvaluator, ArithEvalutor, oil_lang/expr_eval.py, etc.
 
     TODO:
     - Many of these should be value.Int, not value.Str
@@ -1798,19 +1802,6 @@ class Mem(object):
       return None
 
 
-def SetLocalString(mem, name, s):
-  # type: (Mem, str, str) -> None
-  """Set a local string.
-
-  Used for:
-  1) for loop iteration variables
-  2) temporary environments like FOO=bar BAR=$FOO cmd,
-  3) read builtin
-  """
-  assert isinstance(s, str)
-  mem.SetVar(lvalue.Named(name), value.Str(s), scope_e.LocalOnly)
-
-
 def SetStringDynamic(mem, name, s):
   # type: (Mem, str, str) -> None
   """Set a string by looking up the stack.
@@ -1846,13 +1837,6 @@ def SetGlobalArray(mem, name, a):
   mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
 
 
-def SetLocalArray(mem, name, a):
-  # type: (Mem, str, List[str]) -> None
-  """Helper for completion."""
-  assert isinstance(a, list)
-  mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.LocalOnly)
-
-
 def ExportGlobalString(mem, name, s):
   # type: (Mem, str, str) -> None
   """Helper for completion, $PWD, $OLDPWD, etc."""
@@ -1875,7 +1859,7 @@ def GetString(mem, name):
 
   TODO: We could also check this when you're storing variables?
   """
-  val = mem.GetVar(name, scope_e.Dynamic)
+  val = mem.GetVar(name)
   UP_val = val
   with tagswitch(val) as case:
     if case(value_e.Undef):
@@ -1903,7 +1887,7 @@ def GetInteger(mem, name):
   """
   For OPTIND variable used in getopts builtin.  TODO: it could be value.Int() ?
   """
-  val = mem.GetVar(name, scope_e.Dynamic)
+  val = mem.GetVar(name)
   if val.tag_() != value_e.Str:
     raise error.Runtime(
         '$%s should be a string, got %s' % (name, ui.ValType(val)))

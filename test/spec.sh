@@ -957,6 +957,11 @@ oil-demo() {
     $OSH_LIST "$@"
 }
 
+oil-scope() {
+  sh-spec spec/oil-scope.test.sh --osh-failures-allowed 4 \
+    $OSH_LIST "$@"
+}
+
 # Use bin/oil
 
 oil-keywords() {

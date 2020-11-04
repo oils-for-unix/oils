@@ -20,11 +20,11 @@ from core import state
 
 def InitEvaluator():
   word_ev = test_lib.InitWordEvaluator()
-  state.SetLocalString(word_ev.mem, 'x', '- -- ---')
-  state.SetLocalString(word_ev.mem, 'y', 'y yy')
-  state.SetLocalString(word_ev.mem, 'empty', '')
-  state.SetLocalString(word_ev.mem, 'binding', 'spam=eggs')
-  state.SetLocalString(
+  test_lib.SetLocalString(word_ev.mem, 'x', '- -- ---')
+  test_lib.SetLocalString(word_ev.mem, 'y', 'y yy')
+  test_lib.SetLocalString(word_ev.mem, 'empty', '')
+  test_lib.SetLocalString(word_ev.mem, 'binding', 'spam=eggs')
+  test_lib.SetLocalString(
       word_ev.mem, 'binding_with_spaces', 'x=green eggs and ham')
 
   word_ev.mem.SetArgv(['x', 'foo', 'spam=eggs'])

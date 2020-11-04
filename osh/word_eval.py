@@ -1474,7 +1474,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if mylib.PYTHON:
           func_name = part.name.val[1:]
 
-          fn_val = self.mem.GetVar(func_name) # type: value_t
+          fn_val = self.mem.GetVar(func_name)  # type: value_t
           if fn_val.tag != value_e.Obj:
             e_die("Expected function named %r, got %r ", func_name, fn_val)
           assert isinstance(fn_val, value__Obj)
@@ -1485,7 +1485,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           id_ = part.name.id
           if id_ == Id.VSub_DollarName:
             s = str(func(*pos_args, **named_args))
-            part_val = part_value.String(s) # type: part_value_t
+            part_val = part_value.String(s)  # type: part_value_t
 
           elif id_ == Id.Lit_Splice:
             # NOTE: Using iterable protocol as with @array.  TODO: Optimize

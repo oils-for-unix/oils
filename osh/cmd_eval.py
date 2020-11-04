@@ -1096,7 +1096,8 @@ class CommandEvaluator(object):
         try:
           for x in iter_list:
             #log('> ForEach setting %r', x)
-            state.SetLocalString(self.mem, iter_name, x)
+            self.mem.SetVar(lvalue.Named(iter_name), value.Str(x),
+                            scope_e.LocalOnly)
             #log('<')
 
             try:
@@ -1187,16 +1188,16 @@ class CommandEvaluator(object):
 
       elif case(command_e.ShFunction):
         node = cast(command__ShFunction, UP_node)
-        # name_spid is node.spids[1]
+        # name_spid is node.spids[1].  Dynamic scope.
         self.procs[node.name] = Proc(
-            node.name, node.spids[1], proc_sig.Open(), node.body, [])
+            node.name, node.spids[1], proc_sig.Open(), node.body, [], True)
 
         status = 0
 
       elif case(command_e.Proc):
         node = cast(command__Proc, UP_node)
 
-        defaults = []  # type: List[value_t]
+        defaults = None  # type: List[value_t]
         if mylib.PYTHON:
           UP_sig = node.sig
           if UP_sig.tag_() == proc_sig_e.Closed:
@@ -1208,7 +1209,8 @@ class CommandEvaluator(object):
                 defaults[i] = _PyObjectToVal(py_val)
      
         self.procs[node.name.val] = Proc(
-            node.name.val, node.name.span_id, node.sig, node.body, defaults)
+            node.name.val, node.name.span_id, node.sig, node.body, defaults,
+            False)  # no dynamic scope
 
         status = 0
 
@@ -1581,7 +1583,7 @@ class CommandEvaluator(object):
     else:
       proc_argv = argv
 
-    with state.ctx_Call(self.mem, proc.name, proc.name_spid, proc_argv):
+    with state.ctx_Call(self.mem, self.mutable_opts, proc, proc_argv):
       n_args = len(argv)
       UP_sig = sig
 

@@ -284,8 +284,7 @@ class Run_(vm._Builtin):
       if var_name.startswith(':'):
         var_name = var_name[1:]
 
-      # TODO: dynamic scope?  It should compose
-      state.SetLocalString(self.mem, var_name, str(status))
+      state.SetStringDynamic(self.mem, var_name, str(status))
       return 0  # don't fail
 
     return status

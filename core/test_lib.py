@@ -13,7 +13,7 @@ import string
 import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, lvalue, value, scope_e
 from _devbuild.gen.syntax_asdl import source, Token
 from asdl import pybase
 from asdl import runtime
@@ -301,3 +301,10 @@ def InitCommandParser(code_str, arena=None):
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
   return c_parser
+
+
+def SetLocalString(mem, name, s):
+  # type: (Mem, str, str) -> None
+  """Bind a local string."""
+  assert isinstance(s, str)
+  mem.SetVar(lvalue.Named(name), value.Str(s), scope_e.LocalOnly)
