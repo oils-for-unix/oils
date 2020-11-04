@@ -1909,8 +1909,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # osh/word_eval.py
             class_name is None and func_name == 'CheckCompatArray' or
             # core/state.py
-            class_name is None and func_name == '_PackFlags' or
-            class_name == 'Mem' and func_name in ('GetVar', 'SetVar', 'GetCell') or
+            class_name is None and func_name in ('_PackFlags', 'SetVar') or
+            class_name == 'Mem' and func_name in ('GetValue', 'SetValue', 'GetCell') or
             class_name == 'SearchPath' and func_name == 'Lookup' or
             # core/ui.py
             class_name == 'ErrorFormatter' and func_name == 'Print_' or
