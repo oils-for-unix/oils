@@ -87,7 +87,9 @@ module runtime
   --   GetValue: N/A
   --   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
 
-  scope = Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly 
+  -- NOTE: scope_e.Dynamic should generally not be used by callers.  Most
+  -- use scope_e.Shopt to allow turning it off.
+  scope = Dynamic | Shopt | LocalOrGlobal | LocalOnly | GlobalOnly 
 
   -- For OSH assignment, evaluated from osh_ast.lhs_expr
   -- TODO: Rename this to sh_place?

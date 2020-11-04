@@ -21,6 +21,7 @@ from asdl import runtime
 from core import alloc
 from core import error
 from core.pyerror import e_usage, e_die, p_die, log
+from core import state
 from core import ui
 from core import vm
 from frontend import flag_spec
@@ -448,7 +449,7 @@ class Printf(vm._Builtin):
       if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
         e_usage('-v expected a variable name.  shopt -s eval_unsafe_arith allows expressions', span_id=v_spid)
 
-      self.mem.SetValue(lval, value.Str(result), scope_e.Dynamic)
+      state.SetVar(self.mem, lval, value.Str(result))
     else:
       mylib.Stdout().write(result)
     return 0

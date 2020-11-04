@@ -72,13 +72,14 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   flag_r = cast(value__Str, tmp_r).s if tmp_r and tmp_r.tag_() == value_e.Str else None  # type: Optional[str]
   flag_x = cast(value__Str, tmp_x).s if tmp_x and tmp_x.tag_() == value_e.Str else None  # type: Optional[str]
 
-  lookup_mode = scope_e.Dynamic
   if cmd_val.builtin_id == builtin_i.local:
     if flag_g and not mem.IsGlobalScope():
       return 1
     lookup_mode = scope_e.LocalOnly
   elif flag_g:
     lookup_mode = scope_e.GlobalOnly
+  else:
+    lookup_mode = scope_e.Dynamic
 
   if len(cmd_val.pairs) == 0:
     print_all = True
@@ -227,8 +228,8 @@ class Export(vm._AssignBuiltin):
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
-        self.mem.SetValue(lvalue.Named(pair.var_name), pair.rval, scope_e.Dynamic,
-                        flags=state.SetExport)
+        state.SetVar(self.mem, lvalue.Named(pair.var_name), pair.rval,
+                     flags=state.SetExport)
 
     return 0
 
@@ -292,8 +293,8 @@ class Readonly(vm._AssignBuiltin):
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      self.mem.SetValue(lvalue.Named(pair.var_name), rval, scope_e.Dynamic,
-                      flags=state.SetReadOnly)
+      state.SetVar(self.mem, lvalue.Named(pair.var_name), rval,
+                   flags=state.SetReadOnly)
 
     return 0
 

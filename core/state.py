@@ -1770,11 +1770,8 @@ class Mem(object):
       scopes = self.var_stack[-1:]
     elif lookup_mode == scope_e.GlobalOnly:
       scopes = self.var_stack[0:1]
-    elif lookup_mode == scope_e.LocalOrGlobal:
-      scopes = self.var_stack[0:1]
-      if len(self.var_stack) > 1:
-        scopes.append(self.var_stack[-1])
     else:
+      # scope_e.LocalOrGlobal never used
       raise AssertionError()
 
     for scope in scopes:
@@ -1802,15 +1799,14 @@ class Mem(object):
       return None
 
 
-#def SetValue(mem, name, s):
-#  # type: (Mem, str, str) -> None
-#  """Equivalent of x=y or setvar x = 'y', 
-#  
-#  Both of these respects shopt --unset dynamic_scope.
-#  """
-#  assert isinstance(s, str)
-#  # TODO: respect dynamic_scope
-#  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.Dynamic)
+def SetVar(mem, lval, val, flags=0):
+  # type: (Mem, lvalue_t, value_t, int) -> None
+  """Equivalent of x=$y or setvar x = y 
+  
+  Both of these respects shopt --unset dynamic_scope.
+  """
+  # TODO: choose scope_e.LocalOrGlobal too
+  mem.SetValue(lval, val, scope_e.Dynamic, flags=flags)
 
 
 def SetRefString(mem, name, s):

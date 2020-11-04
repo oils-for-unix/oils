@@ -20,7 +20,7 @@ from _devbuild.gen.runtime_asdl import (
     job_status, job_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
-    value, value_e, lvalue, scope_e, value__Str,
+    value, value_e, lvalue, value__Str,
 )
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
@@ -28,6 +28,7 @@ from _devbuild.gen.syntax_asdl import (
 from core import pyutil
 from core.pyutil import stderr_line
 from core import pyos
+from core import state
 from core import ui
 from core import util
 from core.pyerror import log
@@ -155,8 +156,8 @@ class FdState(object):
   def _WriteFdToMem(self, fd_name, fd):
     # type: (str, int) -> None
     if self.mem:
-      # SetVarString, not SetRefString?  It's like x=y
-      self.mem.SetValue(lvalue.Named(fd_name), value.Str(str(fd)), scope_e.Dynamic)
+      # setvar, not setref
+      state.SetVar(self.mem, lvalue.Named(fd_name), value.Str(str(fd)))
 
   def _ReadFdFromMem(self, fd_name):
     # type: (str) -> int

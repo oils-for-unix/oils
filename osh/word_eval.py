@@ -25,7 +25,6 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     quote_e, quote_t,
     a_index, a_index_e, a_index_t, a_index__Int, a_index__Str,
-    scope_e,
 )
 from core import error
 from core import pyos
@@ -568,8 +567,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
               else: 
                 raise AssertionError()
 
-          # SetVarString, not SetRefString?  It's like x=y
-          self.mem.SetValue(lval, value.Str(rhs_str), scope_e.Dynamic)
+          # like setvar, not setref
+          state.SetVar(self.mem, lval, value.Str(rhs_str))
         return True
 
       else:

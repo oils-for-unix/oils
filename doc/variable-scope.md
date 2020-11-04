@@ -43,11 +43,15 @@ Also see [Oil Keywords](oil-keywords.html).
 - `read`
 - `getopts`
 - `mapfile` / `readarray`
+- `printf -v`
 - `run --assign-status`
 
 ### `setvar` is for Variables Specified "Statically"
 
 - Shell's `x=y` and Oil's `setvar x = 'y'`
+- `s+=suffix`, `a[i]+=suffix`, a+=(suffix 2)
+- `(( i = j ))`, `(( i += j ))`
+- `(( a[i] = j ))`, `(( a[i] += j ))`
 - `${undef=default}` and `${undef:=default}
 - `myprog {fd}>out.txt`
 - `export`
