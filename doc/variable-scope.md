@@ -40,24 +40,48 @@ Also see [Oil Keywords](oil-keywords.html).
 
 ### `setref` is for "Out Params"
 
+Idea: You can write functions with out params that also **compose**.  TODO:
+Example.
+
 - `read`
 - `getopts`
 - `mapfile` / `readarray`
 - `printf -v`
 - `run --assign-status`
 
+TODO: Fix this.
+
+- `unset` -- this takes a var name, so maybe it should be `setref`, not
+  `setvar`?
+  - it's really `unsetref`?
+
 ### `setvar` is for Variables Specified "Statically"
 
 - Shell's `x=y` and Oil's `setvar x = 'y'`
-- `s+=suffix`, `a[i]+=suffix`, a+=(suffix 2)
+- `s+=suffix`, `a[i]+=suffix`, `a+=(suffix 2)`
 - `(( i = j ))`, `(( i += j ))`
 - `(( a[i] = j ))`, `(( a[i] += j ))`
-- `${undef=default}` and `${undef:=default}
+- `${undef=default}` and `${undef:=default}`
 - `myprog {fd}>out.txt`
 - `export`
+
+TODO:
+
+- These constructs can all still mutate globals.
+- Maybe what we should do is set ALL of them to SetLocalOrDynamic.  Except for
+  SetVar.
 
 ### Constructs That Use Neither
 
 - `local` is neither obviously
   - `declare` and `readonly` are also local
 - Oil's `set` / `setlocal` / `setglobal`
+
+### More Variable Scope
+
+- `GetCell()` and `GetAllCells()`
+  - `declare -p` to print variables
+  - `${x@a}` to print flags
+  - `pp .cell`
+  - weird `TZ` test in `printf`.  I think this could just look in the
+    environment itself?  Do `getenv()`?

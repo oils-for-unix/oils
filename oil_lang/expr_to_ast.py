@@ -954,8 +954,11 @@ class Transformer(object):
         return command.Return()
       else:
         return command.Return(self.Expr(node.children[1]))
+    elif node.tok.id == Id.Expr_Name:
+      # TODO: turn echo 'hi' into AST
+      return command.NoOp()
     else:
-      raise NotImplementedError(node)
+      raise NotImplementedError(Id_str(node.tok.id))
 
   def func_items(self, pnode):
     # type: (PNode) -> List[command_t]
@@ -970,17 +973,21 @@ class Transformer(object):
     """
     suite: '{' [Op_Newline] [func_items] '}'
     """
-    raw_body = pnode.children[1:-1]
-    if len(raw_body) == 2:
-      body = raw_body[1]
-    elif len(raw_body) == 1 and raw_body[0].typ == grammar_nt.func_items:
-      body = raw_body[0]
-    else:
-      body = None
+    n = len(pnode.children)
 
-    if body:
-      body = self.func_items(body)
-    return command.CommandList(body)  # stub
+    if n == 2:  # {}
+      return command.CommandList([])
+
+    if n == 3:
+      if pnode.children[1].typ == grammar_nt.func_items:  # { func_items }
+        items_index = 1
+      else:
+        return command.CommandList([])
+
+    if n == 4:  # { Op_Newline func_items }
+      items_index = 2
+
+    return command.CommandList(self.func_items(pnode.children[items_index]))
 
   def TeaFunc(self, pnode, out):
     # type: (PNode, command__Func) -> None

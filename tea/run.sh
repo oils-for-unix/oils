@@ -7,22 +7,29 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh
+
 tea-files() {
   find tea/testdata -name '*.tea' 
 }
 
+# TODO: We should have run --fail-with-status 255
+
 parse-one() {
+  set +o errexit
+
   # Standalone Tea parser.  Prints the CST.  TODO: Should print AST too?
   bin/tea -n "$@"
+  if test $? -ne 0; then return 255; fi  # make xargs quit
 
   # Integrated Oil parser.  Prints AST.
   bin/oil -O parse_tea -n "$@"
-
+  if test $? -ne 0; then return 255; fi  # make xargs quit
 }
 
 parse-all-tea() {
   # Parse with the Oil binary
-  tea-files | xargs -n 1 -- $0 parse-one
+  tea-files | xargs --verbose -n 1 -- $0 parse-one
 }
 
 usage-test() {
@@ -36,9 +43,13 @@ usage-test() {
   echo "$prog" | bin/tea -n
 }
 
-travis() {
+all() {
   parse-all-tea
   usage-test
+}
+
+travis() {
+  run-other-suite-for-release tea-large all
 }
 
 "$@"

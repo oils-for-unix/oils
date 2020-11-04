@@ -7,12 +7,10 @@ import os
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     redirect, redirect_arg, cmd_value
 )
 from _devbuild.gen.syntax_asdl import redir_loc
-from core import optview
 from core import process  # module under test
 from core import test_lib
 from core import ui

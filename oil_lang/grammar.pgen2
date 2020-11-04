@@ -383,8 +383,6 @@ tea_enum: (
 
 suite: '{' [Op_Newline] [func_items] '}'
 
-# In Python, imports, assert, etc. also at this 'small_stmt' level
-flow_stmt: 'break' | 'continue' | 'return' [testlist]
 
 func_item: (
   ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
@@ -392,7 +390,10 @@ func_item: (
   # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
 | 'while' test suite
 | 'for' name_type_list 'in' test suite
-| flow_stmt
+
+# In Python, imports, assert, etc. also at this 'small_stmt' level
+| 'break' | 'continue' | 'return' [testlist]
+
 | 'set' place_list (augassign | '=') testlist  # oil_place_mutation
   # x  f(x)  etc.
   #

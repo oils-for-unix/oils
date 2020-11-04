@@ -444,7 +444,8 @@ class Unset(vm._Builtin):
     #log('lval %s', lval)
     found = False
     try:
-      # not strict
+      # Note: This has 'setvar' semantics.  It could be 'setref' too?
+      # So it composes?
       found = self.mem.Unset(lval, False)
     except error.Runtime as e:
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
