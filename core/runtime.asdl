@@ -74,10 +74,20 @@ module runtime
   -- This is enforced in mem.SetVar but isn't expressed in the schema.
   cell = (bool exported, bool readonly, bool nameref, value val)
 
-  -- Shopt means we respect the shopt setting.  For reading, it's either
-  -- dynamic or LocalOrGlobal.
-  -- Dynamic is for shell; LocalOrGlobal is for Oil
-  scope = Shopt | LocalOnly | GlobalOnly | Dynamic | LocalOrGlobal
+  -- Dynamic:
+  --   GetVar: Shell Style
+  --   SetVar: Shell Style, and Oil's 'setref' keyword
+  -- LocalOrGlobal:
+  --   GetVar: Oil style
+  --   SetVar: What 'setvar' does in Oil.  No dynamic scope.
+  -- LocalOnly:
+  --   GetVar: N/A, we can always READ globals
+  --   SetVar: for parameter bindings and for loops iterators
+  -- GlobalOnly:
+  --    GetVar: N/A
+  --    SetVar: internal use in COMPREPLY, and Oil's 'setglobal' keyword
+
+  scope = Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly 
 
   -- For OSH assignment, evaluated from osh_ast.lhs_expr
   -- TODO: Rename this to sh_place?

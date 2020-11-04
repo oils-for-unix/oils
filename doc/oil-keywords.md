@@ -6,38 +6,56 @@ default_highlighter: oil-sh
 Oil Keywords
 ============
 
+Also see [Oil Procs Func Block](oil-proc-func-block.html).
+
 <div id="toc">
 </div>
 
-## Two Styles for Declaration and Assignment
+## Three Styles of Variable Declaration and Assignment
 
-### `const`, `var`, and `setvar` are shell-like and interactive
+### Legacy Style: `readonly`, `local`, `name=val`
+
+They don't allow expressions on the right.
+
+### Oil's Shell-Like Style: `const`, `var`, and `setvar`
+
+- `const` declares a constant, like `readonly`
+- `var` declares a local or global
+- `setvar` mutates a local, mutates a global, or creates a **new global**.
+  - This makes it more convenient for interactive use.
 
 Shell:
 
-```
-readonly c=C
+    g=G                       # global variable
+    readonly c=C              # global constant
 
-myfunc() {
-  local x=L
-  x=mutated
+    myfunc() {
+      local x=X               # local variable
+      readonly y=Y            # local constant
 
-  newglobal=G
-}
-```
+      x=mutated               # mutate local
+      g=mutated               # mutate global
+      newglobal=G             # create new global
 
-OSH:
+      caller_var=mutated      # dynamic scope (Oil doesn't have this)
+    }
 
-```
-const c = 'C'
+Oil:
 
-proc myproc {
-  var x = 'L'
-  setvar x = 'mutated'
+    var g = 'G'               # global variable
+    const c = 'C'             # global constant
 
-  setvar newglobal = 'G'
-}
-```
+    proc myproc {
+      var x = 'L'             # local variable
+      const y = 'Y'           # local constant
+
+      setvar x = 'mutated'    # mutate local
+      setvar g = 'mutated'    # mutate global
+      setvar newglobal = 'G'  # create new global
+
+                              # For dynamic scope, Oil uses setref and an
+                              # explicit ref param.  See below.
+    }
 
 - `var` declares a new variable in the current scope (global or local)
 - `const` is like `var`, except the binding can never be changed
@@ -47,9 +65,9 @@ proc myproc {
   - Otherwise it creates a new global `x`.
   - If you want stricter behavior, use `set` rather than `setvar`.
 
-### `var` and `set`/`setglobal` are Oil-like and stricter
+### Oil's Stricter Style: `const` (optional), `var`, `set`/`setglobal`
 
-- `set` mutates a local that's been declared
+- `set` mutates a local that's been declared (also `setlocal`)
 - `setglobal` mutates a global that's been decalred
 - `c = 'X'` is syntactic sugar for `const c = 'X'`.  This is to make it more
   compact, i.e. for "Huffman coding" of programs.
@@ -77,70 +95,22 @@ proc myproc {
 }
 ```
 
-## Other Kinds of Assignment
+## Expressions Go on the Right
 
-### Mutating Arrays
+Just like with assignments.
 
-You can use `setvar` or `set`:
-
-Shell:
-
-```
-a=(one two three)
-a[0]=zz
-```
-
-Oil:
-
-```
-var a = %(one two three)
-set a[0] = 'zz'
-
-setvar a[0] = 'zz'  # also acceptable
-```
-
-### Mutating Associative Arrays
-
-Shell:
-
-```
-declare -A A=(['name']=foo ['type']='dir')
-A['type']=file
-```
-
-Oil:
-
-```
-var A = {name: 'foo', type: 'dir'}
-set A['type'] = 'file'
-
-setvar A['type'] = 'file'  # also acceptable
-```
-
-
-### Advanced: `setref` is for "out parameters"
-
-To return a value.  Like "named references" in [bash]($xref:bash).
-
-```
-proc decode (s, :out) {
-  setref out = '123'
-}
-```
-
-### `=` pretty prints an expression
+### `=` Pretty Prints an Expression
 
 Useful interactively.
 
-```sh-prompt
-$ = 'foo'
-(Str)   'foo'
 
-$ = %(one two)
-(StrArray)   ['one', 'two']
-```
+    $ = 'foo'
+    (Str)   'foo'
+    
+    $ = %(one two)
+    (StrArray)   ['one', 'two']
 
-### `_` ignores an expression
+### `_` Ignores an Expression
 
 Think of this:
 
@@ -150,29 +120,25 @@ as a shortcut for:
 
     _ = f(x)  # assign to "meh" variable
 
-<!--
 
-LATER: If we ever get true integers and floats!
+## Other Kinds of Assignment
 
-## Autovivification with `setvar`
+### `setref` for "Out Params" (advanced)
 
-Or honestly this could be auto?
+To return a value.  Like "named references" in [bash]($xref:bash).
 
-auto count += 1
-auto hist['key'] += 1
+    proc decode (s, :out) {
+      setref out = '123'
+    }
 
+### `auto` for Autovivification (future, not implemented)
 
-proc main { 
-  setvar count += 1   # it's now 1
+    auto count += 1
 
-  hist = {}
-  setvar hist['key'] += 1
+    auto hist['key'] += 1
 
-  setvar hist['key'] += weight  # later: floating point
-}
-
--->
-
+    auto total += 3.5
+    auto hist['key'] += 4.6
 
 <!--
 
@@ -197,95 +163,63 @@ https://github.com/oilshell/oil/commit/64e1e9c91c541e495fee4a39e5a23bc775ae3104
 
 -->
 
+## Notes and Examples
 
-<!--
+### Mutating Arrays
 
-Future work, not implemented:
+You can use `setvar` or `set`:
 
-- `auto` for "auto-vivifcation"
-
-when we get integers.
-
--->
+Shell:
 
 
-## Defining "Functions"
+    a=(one two three)
+    a[0]=zz
 
-### `proc` declares a shell-like "function"
+Oil:
 
-```
-proc p {
-  echo one
-  echo two
-}
+    var a = %(one two three)
+    set a[0] = 'zz'
+    
+    setvar a[0] = 'zz'  # also acceptable
 
-p > file.txt
-```
+### Mutating Associative Arrays
 
-<!--
-### `func` declares a true function
+Shell:
 
-LIke Python or JavaScript.
+    declare -A A=(['name']=foo ['type']='dir')
+    A['type']=file
 
--->
+Oil:
 
-### `return` is a keyword in Oil
-
-It takes an expression, not a word.  See command vs. expression mode.
-
-```
-proc p {
-  var status = '1'
-
-  echo 'hello'
-
-  return status  # not $status
-}
-
-p
-echo $?  # prints 1
-```
-
-(This is intended to be consistent with a future `func`.)
+    var A = {name: 'foo', type: 'dir'}
+    set A['type'] = 'file'
+    
+    setvar A['type'] = 'file'  # also acceptable
 
 
 
-<!--
-### `do` and `pass`
+## `proc` Disables Dynamic Scope
 
+Recall that [procs](oil-proc-func-block.html) are the way to declare shell-like
+functions in Oil.
 
-- `pass` evaluates an expression and throws away its result.   It's intended to be used for left-to-right function calls.  See the `sub()` example in this thread:
+    proc p {
+      echo one
+      echo two
+    }
+    
+    p > file.txt
 
-https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/left-to-right.20syntax.20ideas
+They mostly look like and work like shell functions, but they change scoping rules.
 
-- `pp` pretty prints an expression.
+### Style
 
-They both have to be **keywords** because they take an expression, not a bunch of words.
+- `local` -> `var`
+- `readonly` -> `const`
+- `x=mystr` -> `setvar x = 'mystr'`
+- `x=(my array)` -> `setvar x = %(my array)`
 
------
-
-Unfortunately I found that `do/done` in shell prevents us from adding `do`:
-
-    do f(x)   #can't write this
-    pass f(x)   # it has to be this, which doesn't read as nicely :-(
-
-
-Not sure what to do about it... we can add a mode for `oil:all` to repurpose `do`, but I'm not sure it's worth it.  It's more complexity. 
-
-So basically **every** call that doesn't use its result has to be preceded with
-`pass` now:
-
-    pass f(x)
-    pass obj.method()
-    var y = f(x)
-    var z = obj.method()
-
-Kind of ugly ... :neutral:
-
-
-https://github.com/oilshell/oil/commit/dc7a0474b006287f2152b54f78d56df8c3d13281
-
--->
+Advantage: you get expressions on the right.
 
 
 <!--
@@ -304,9 +238,9 @@ declare x=1
 declare x=2  # mutates x, "declare" is something of a misnomer
 x=2  # better way of mutating x
 f() {
-    local y=1
-      local y=2  # mutates y
-        y=2  # better way of mutating y
+  local y=1
+  local y=2  # mutates y
+  y=2  # better way of mutating y
 }
 ```
 

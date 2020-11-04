@@ -17,7 +17,6 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core import test_lib
 from core.test_lib import Tok
-from core import state
 
 
 def InitEvaluator():

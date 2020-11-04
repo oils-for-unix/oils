@@ -15,7 +15,6 @@ import unittest
 from core import error
 from core import test_lib
 from osh.cmd_parse_test import assertParseSimpleCommand
-from core import state
 
 
 def InitEvaluator():

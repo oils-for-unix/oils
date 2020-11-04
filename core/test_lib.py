@@ -304,7 +304,7 @@ def InitCommandParser(code_str, arena=None):
 
 
 def SetLocalString(mem, name, s):
-  # type: (Mem, str, str) -> None
+  # type: (state.Mem, str, str) -> None
   """Bind a local string."""
   assert isinstance(s, str)
   mem.SetVar(lvalue.Named(name), value.Str(s), scope_e.LocalOnly)
