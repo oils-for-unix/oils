@@ -1219,14 +1219,14 @@ class Mem(object):
     cell, name_map, cell_name = self._ResolveNameOrRef(new_name, lookup_mode)
     return cell, name_map, cell_name
 
-  def IsAssocArray(self, name, lookup_mode):
-    # type: (str, scope_t) -> bool
+  def IsAssocArray(self, name):
+    # type: (str) -> bool
     """Returns whether a name resolve to a cell with an associative array.
     
     We need to know this to evaluate the index expression properly -- should it
     be coerced to an integer or not?
     """
-    cell, _, _ = self._ResolveNameOrRef(name, lookup_mode)
+    cell, _, _ = self._ResolveNameOrRef(name, self._LookupMode())
     if cell:
       if cell.val.tag_() == value_e.AssocArray:  # foo=([key]=value)
         return True
@@ -1595,8 +1595,8 @@ class Mem(object):
     cell, _ = self._ResolveNameOnly(name, lookup_mode)
     return cell
 
-  def Unset(self, lval, lookup_mode, strict):
-    # type: (lvalue_t, scope_t, bool) -> bool
+  def Unset(self, lval, strict):
+    # type: (lvalue_t, bool) -> bool
     """
     Returns:
       Whether the cell was found.
@@ -1617,7 +1617,8 @@ class Mem(object):
       else:
         raise AssertionError()
 
-    cell, name_map, cell_name = self._ResolveNameOrRef(var_name, lookup_mode)
+    cell, name_map, cell_name = self._ResolveNameOrRef(var_name,
+                                                       self._LookupMode())
     if not cell:
       return False  # 'unset' builtin falls back on functions
     if cell.readonly:
@@ -1685,14 +1686,21 @@ class Mem(object):
 
     return True
 
-  def ClearFlag(self, name, flag, lookup_mode):
-    # type: (str, int, scope_t) -> bool
+  def _LookupMode(self):
+    # type: () -> scope_t
+    return (
+        scope_e.Dynamic if self.exec_opts.dynamic_scope() else
+        scope_e.LocalOrGlobal
+    )
+
+  def ClearFlag(self, name, flag):
+    # type: (str, int) -> bool
     """Used for export -n.
 
     We don't use SetValue() because even if rval is None, it will make an Undef
     value in a scope.
     """
-    cell, name_map = self._ResolveNameOnly(name, lookup_mode)
+    cell, name_map = self._ResolveNameOnly(name, self._LookupMode())
     if cell:
       if flag & ClearExport:
         cell.exported = False

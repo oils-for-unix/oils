@@ -224,7 +224,7 @@ class Export(vm._AssignBuiltin):
           e_usage("doesn't accept RHS with -n", span_id=pair.spid)
 
         # NOTE: we don't care if it wasn't found, like bash.
-        self.mem.ClearFlag(pair.var_name, state.ClearExport, scope_e.Dynamic)
+        self.mem.ClearFlag(pair.var_name, state.ClearExport)
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
@@ -445,7 +445,7 @@ class Unset(vm._Builtin):
     found = False
     try:
       # not strict
-      found = self.mem.Unset(lval, scope_e.Dynamic, False)
+      found = self.mem.Unset(lval, False)
     except error.Runtime as e:
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.

@@ -9,7 +9,7 @@ import time as time_  # avoid name conflict
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv, value_e, value__Str, value, lvalue_e, scope_e
+    cmd_value__Argv, value_e, value__Str, value, lvalue_e
 )
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_e, printf_part_t, printf_part__Literal,

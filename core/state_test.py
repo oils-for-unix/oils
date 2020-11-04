@@ -17,7 +17,12 @@ def _InitMem():
   arena = test_lib.MakeArena('<state_test.py>')
   line_id = arena.AddLine(1, 'foo')
   unused = arena.AddLineSpan(line_id, 0, 1)  # dummy
-  return state.Mem('', [], arena, [])
+  mem = state.Mem('', [], arena, [])
+
+  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+
+  mem.exec_opts = exec_opts
+  return mem
 
 
 class MemTest(unittest.TestCase):
@@ -198,7 +203,7 @@ class MemTest(unittest.TestCase):
     # export -n PYTHONPATH
     # Remove the exported property.  NOTE: scope is LocalOnly for Oil?
     self.assertEqual(True, mem.var_stack[0]['PYTHONPATH'].exported)
-    mem.ClearFlag('PYTHONPATH', state.ClearExport, scope_e.Dynamic)
+    mem.ClearFlag('PYTHONPATH', state.ClearExport)
     self.assertEqual(False, mem.var_stack[0]['PYTHONPATH'].exported)
 
     lhs = lvalue.Indexed('a', 1)
@@ -267,12 +272,12 @@ class MemTest(unittest.TestCase):
   def testUnset(self):
     mem = _InitMem()
     # unset a
-    mem.Unset(lvalue.Named('a'), scope_e.Dynamic, False)
+    mem.Unset(lvalue.Named('a'), False)
 
     return  # not implemented yet
 
     # unset a[1]
-    mem.Unset(lvalue.Indexed('a', 1), scope_e.Dynamic, False)
+    mem.Unset(lvalue.Indexed('a', 1), False)
 
   def testArgv(self):
     mem = _InitMem()

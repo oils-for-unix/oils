@@ -11,8 +11,7 @@ sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    scope_e, scope_t,
-    quote_e, quote_t,
+    scope_t, quote_e, quote_t,
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     value, value_e, value_t, value__Str, value__Int, value__MaybeStrArray,
     value__AssocArray, value__Obj,
@@ -699,7 +698,7 @@ class ArithEvaluator(object):
       elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
         node = cast(sh_lhs_expr__IndexedName, UP_node)
 
-        if self.mem.IsAssocArray(node.name, lookup_mode):
+        if self.mem.IsAssocArray(node.name):
           key = self.EvalWordToString(node.index)
           lval2 = lvalue.Keyed(node.name, key)
           lval2.spids.append(node.spids[0])
@@ -746,7 +745,7 @@ class ArithEvaluator(object):
       if anode.op_id == Id.Arith_LBracket:
         var_name, span_id = self._VarRefOrWord(anode.left)
         if var_name is not None:
-          if self.mem.IsAssocArray(var_name, scope_e.Dynamic):
+          if self.mem.IsAssocArray(var_name):
             key = self.EvalWordToString(anode.right)
             lval2 = lvalue.Keyed(var_name, key)
             lval2.spids.append(span_id)
