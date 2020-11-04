@@ -53,8 +53,11 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   comp_lookup = comp_lookup or completion.Lookup()
 
   mem = state.Mem('', [], None, [])
-  state.InitMem(mem, {}, '0.1')
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+  mem.exec_opts = exec_opts
+
+  state.InitMem(mem, {}, '0.1')
+  mutable_opts.Init()
 
   if not parse_ctx:
     parse_ctx = test_lib.InitParseContext(parse_opts=parse_opts)
@@ -122,6 +125,9 @@ class CompletionTest(unittest.TestCase):
 
   def testExternalCommandAction(self):
     mem = state.Mem('dummy', [], None, [])
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    mem.exec_opts = exec_opts
+
     a = completion.ExternalCommandAction(mem)
     comp = self._CompApi([], 0, 'f')
     print(list(a.Matches(comp)))
@@ -731,6 +737,10 @@ class InitCompletionTest(unittest.TestCase):
       arena = test_lib.MakeArena('<InitCompletionTest>')
       parse_ctx = test_lib.InitParseContext(arena=arena)
       mem = state.Mem('', [], arena, [])
+      parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+      mem.exec_opts = exec_opts
+
+      mutable_opts.Init()
 
       #
       # Allow our code to access oracle data

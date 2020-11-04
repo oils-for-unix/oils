@@ -273,7 +273,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
 
   opt_hook = ShellOptHook(line_input)
-  # TODO: only MutableOpts needs mem, so it's not a true circular dep.
+  # Note: only MutableOpts needs mem, so it's not a true circular dep.
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
   mem.exec_opts = exec_opts  # circular dep
   mutable_opts.Init()
