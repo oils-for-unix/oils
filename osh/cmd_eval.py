@@ -87,7 +87,7 @@ if TYPE_CHECKING:
   from osh import builtin_process
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
-# ExecuteAndCatch, along with SetVar() flags.
+# ExecuteAndCatch, along with SetValue() flags.
 IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 IsEvalSource = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
@@ -489,7 +489,7 @@ class CommandEvaluator(object):
       val = self.word_ev.EvalWordToString(e_pair.val)
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetVar(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
+      self.mem.SetValue(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
                       flags=flags)
 
   def _StrictErrExit(self, node):
@@ -708,7 +708,7 @@ class CommandEvaluator(object):
             py_val = self.expr_ev.EvalExpr(node.rhs)
             val = _PyObjectToVal(py_val)  # type: value_t
 
-            self.mem.SetVar(vd_lval, val, scope_e.LocalOnly, 
+            self.mem.SetValue(vd_lval, val, scope_e.LocalOnly, 
                             flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
             status = 0
 
@@ -734,7 +734,7 @@ class CommandEvaluator(object):
                 vals.append(val)
 
             for vd_lval, val in zip(vd_lvals, vals):
-              self.mem.SetVar(vd_lval, val, scope_e.LocalOnly,
+              self.mem.SetValue(vd_lval, val, scope_e.LocalOnly,
                               flags=_PackFlags(node.keyword.id))
 
           status = 0
@@ -793,7 +793,7 @@ class CommandEvaluator(object):
               else:
                 val = _PyObjectToVal(py_val)
                 # top level variable
-                self.mem.SetVar(UP_lval_, val, lookup_mode,
+                self.mem.SetValue(UP_lval_, val, lookup_mode,
                                 flags=_PackFlags(node.keyword.id))
 
           # TODO: Other augmented assignments
@@ -809,7 +809,7 @@ class CommandEvaluator(object):
             # This should only be an int or float, so we don't need the logic above
             val = value.Obj(new_py_val)
 
-            self.mem.SetVar(pe_lval, val, lookup_mode,
+            self.mem.SetValue(pe_lval, val, lookup_mode,
                             flags=_PackFlags(node.keyword.id))
 
           else:
@@ -882,7 +882,7 @@ class CommandEvaluator(object):
 
           #log('setting %s to %s with flags %s', lval, val, flags)
           flags = 0
-          self.mem.SetVar(lval, val, lookup_mode, flags=flags)
+          self.mem.SetValue(lval, val, lookup_mode, flags=flags)
           self.tracer.OnShAssignment(lval, pair.op, val, flags, lookup_mode)
 
         # PATCH to be compatible with existing shells: If the assignment had a
@@ -1096,7 +1096,7 @@ class CommandEvaluator(object):
         try:
           for x in iter_list:
             #log('> ForEach setting %r', x)
-            self.mem.SetVar(lvalue.Named(iter_name), value.Str(x),
+            self.mem.SetValue(lvalue.Named(iter_name), value.Str(x),
                             scope_e.LocalOnly)
             #log('<')
 
@@ -1171,7 +1171,7 @@ class CommandEvaluator(object):
               loop_val = it.next()
             except StopIteration:
               break
-            self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val),
+            self.mem.SetValue(lvalue.Named(iter_name), _PyObjectToVal(loop_val),
                             scope_e.LocalOnly)
 
             # Copied from above
@@ -1235,7 +1235,7 @@ class CommandEvaluator(object):
               named_defaults[param.name.val] = value.Obj(obj)
 
           obj = objects.Func(node, pos_defaults, named_defaults, self)
-          self.mem.SetVar(
+          self.mem.SetValue(
               lvalue.Named(node.name.val), value.Obj(obj), scope_e.GlobalOnly)
         status = 0
 
@@ -1596,12 +1596,12 @@ class CommandEvaluator(object):
             val = proc.defaults[i]
             if val is None:
               e_die("No value provided for param %r", p.name.val)
-          self.mem.SetVar(lvalue.Named(p.name.val), val, scope_e.LocalOnly)
+          self.mem.SetValue(lvalue.Named(p.name.val), val, scope_e.LocalOnly)
 
         n_params = len(sig.params)
         if sig.rest:
           leftover = value.MaybeStrArray(argv[n_params:])
-          self.mem.SetVar(
+          self.mem.SetValue(
               lvalue.Named(sig.rest.val), leftover, scope_e.LocalOnly)
         else:
           if n_args > n_params:

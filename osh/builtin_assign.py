@@ -227,7 +227,7 @@ class Export(vm._AssignBuiltin):
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
-        self.mem.SetVar(lvalue.Named(pair.var_name), pair.rval, scope_e.Dynamic,
+        self.mem.SetValue(lvalue.Named(pair.var_name), pair.rval, scope_e.Dynamic,
                         flags=state.SetExport)
 
     return 0
@@ -292,7 +292,7 @@ class Readonly(vm._AssignBuiltin):
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      self.mem.SetVar(lvalue.Named(pair.var_name), rval, scope_e.Dynamic,
+      self.mem.SetValue(lvalue.Named(pair.var_name), rval, scope_e.Dynamic,
                       flags=state.SetReadOnly)
 
     return 0
@@ -387,7 +387,7 @@ class NewVar(vm._AssignBuiltin):
       rval = pair.rval
       # declare -a foo=(a b); declare -a foo;  should not reset to empty array
       if rval is None and (arg.a or arg.A):
-        old_val = self.mem.GetVar(pair.var_name)
+        old_val = self.mem.GetValue(pair.var_name)
         if arg.a:
           if old_val.tag_() != value_e.MaybeStrArray:
             rval = value.MaybeStrArray([])
@@ -396,7 +396,7 @@ class NewVar(vm._AssignBuiltin):
             rval = value.AssocArray({})
 
       rval = _ReconcileTypes(rval, arg.a, arg.A, pair.spid)
-      self.mem.SetVar(lvalue.Named(pair.var_name), rval, lookup_mode, flags=flags)
+      self.mem.SetValue(lvalue.Named(pair.var_name), rval, lookup_mode, flags=flags)
 
     return status
 

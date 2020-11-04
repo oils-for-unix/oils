@@ -51,14 +51,14 @@ class TeaEvaluator(object):
         if val is None:
           # Python raises TypeError.  Should we do something else?
           raise TypeError('No value provided for param %r', param.name)
-      self.mem.SetVar(lvalue.Named(param.name.val), val, scope_e.LocalOnly)
+      self.mem.SetValue(lvalue.Named(param.name.val), val, scope_e.LocalOnly)
 
     if node.pos_splat:
       splat_name = node.pos_splat.val
 
       # NOTE: This is a heterogeneous TUPLE, not list.
       leftover = value.Obj(args[n_params:])
-      self.mem.SetVar(lvalue.Named(splat_name), leftover, scope_e.LocalOnly)
+      self.mem.SetValue(lvalue.Named(splat_name), leftover, scope_e.LocalOnly)
     else:
       if n_args > n_params:
         raise TypeError(
@@ -79,13 +79,13 @@ class TeaEvaluator(object):
               "Named argument %r wasn't passed, and it doesn't have a default "
               "value" % name.val)
 
-      self.mem.SetVar(lvalue.Named(name.val), val, scope_e.LocalOnly)
+      self.mem.SetValue(lvalue.Named(name.val), val, scope_e.LocalOnly)
 
     if node.named_splat:
       splat_name = node.named_splat.val
       # Note: this dict is not an AssocArray
       leftover = value.Obj(kwargs)
-      self.mem.SetVar(lvalue.Named(splat_name), leftover, scope_e.LocalOnly)
+      self.mem.SetValue(lvalue.Named(splat_name), leftover, scope_e.LocalOnly)
     else:
       if kwargs:
         raise TypeError(
@@ -111,7 +111,7 @@ class TeaEvaluator(object):
     # Bind params.  TODO: Reject kwargs, etc.
     for i, param in enumerate(lambda_node.params):
       val = value.Obj(args[i])
-      self.mem.SetVar(lvalue.Named(param.name.val), val, scope_e.LocalOnly)
+      self.mem.SetValue(lvalue.Named(param.name.val), val, scope_e.LocalOnly)
 
     return_val = None
     try:

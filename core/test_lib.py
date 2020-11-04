@@ -307,4 +307,4 @@ def SetLocalString(mem, name, s):
   # type: (state.Mem, str, str) -> None
   """Bind a local string."""
   assert isinstance(s, str)
-  mem.SetVar(lvalue.Named(name), value.Str(s), scope_e.LocalOnly)
+  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.LocalOnly)

@@ -71,21 +71,21 @@ module runtime
   -- TODO: add spid for last-assigned location
 
   -- Invariant: if exported or nameref is set, the val should be Str or Undef.
-  -- This is enforced in mem.SetVar but isn't expressed in the schema.
+  -- This is enforced in mem.SetValue but isn't expressed in the schema.
   cell = (bool exported, bool readonly, bool nameref, value val)
 
   -- Dynamic:
-  --   GetVar: Shell Style
-  --   SetVar: Shell Style, and Oil's 'setref' keyword
+  --   GetValue: Shell Style
+  --   SetValue: Shell Style, and Oil's 'setref' keyword
   -- LocalOrGlobal:
-  --   GetVar: Oil style
-  --   SetVar: What 'setvar' does in Oil.  No dynamic scope.
+  --   GetValue: Oil style
+  --   SetValue: What 'setvar' does in Oil.  No dynamic scope.
   -- LocalOnly:
-  --   GetVar: N/A, we can always READ globals
-  --   SetVar: for parameter bindings and for loops iterators
+  --   GetValue: N/A, we can always READ globals
+  --   SetValue: for parameter bindings and for loops iterators
   -- GlobalOnly:
-  --    GetVar: N/A
-  --    SetVar: internal use in COMPREPLY, and Oil's 'setglobal' keyword
+  --   GetValue: N/A
+  --   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
 
   scope = Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly 
 

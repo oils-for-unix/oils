@@ -38,7 +38,7 @@ import time
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e
-from _devbuild.gen.runtime_asdl import value_e, value__Str, Proc
+from _devbuild.gen.runtime_asdl import value_e, value__Str, scope_e, Proc
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core.pyerror import log
@@ -482,7 +482,7 @@ class ShellFuncAction(CompletionAction):
 
     # Read the response.  # Note: the name 'COMP_REPLY' would be more
     # consistent!
-    val = self.cmd_ev.mem.GetVar('COMPREPLY', scope_e.GlobalOnly)
+    val = self.cmd_ev.mem.GetValue('COMPREPLY', scope_e.GlobalOnly)
 
     if val.tag_() == value_e.Undef:
       # We set it above, so this error would only happen if the user unset it.
@@ -552,7 +552,7 @@ class ExternalCommandAction(CompletionAction):
     - When we get a newer timestamp, we should clear the old one.
     - When PATH is changed, we can remove old entries.
     """
-    val = self.mem.GetVar('PATH')
+    val = self.mem.GetValue('PATH')
     if val.tag_() != value_e.Str:
       # No matches if not a string
       return

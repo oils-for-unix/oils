@@ -105,7 +105,7 @@ class SplitContext(object):
     # type: (str) -> IfsSplitter
     """Based on the current stack frame, get the splitter."""
     if ifs is None:
-      val = self.mem.GetVar('IFS')
+      val = self.mem.GetValue('IFS')
 
       UP_val = val
       with tagswitch(val) as case:
@@ -154,7 +154,7 @@ class SplitContext(object):
     # by a <space> if IFS is unset. If IFS is set to a null string, this is
     # not equivalent to unsetting it; its first character does not exist, so
     # the parameter values are concatenated."
-    val = self.mem.GetVar('IFS') # type: value_t
+    val = self.mem.GetValue('IFS') # type: value_t
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Undef):

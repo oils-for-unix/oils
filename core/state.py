@@ -86,7 +86,7 @@ class SearchPath(object):
 
     # TODO: Could cache this computation to avoid allocating every time for all
     # the splitting.
-    val = self.mem.GetVar('PATH')
+    val = self.mem.GetValue('PATH')
     UP_val = val
     if val.tag_() == value_e.Str:
       val = cast(value__Str, UP_val)
@@ -284,7 +284,7 @@ class MutableOpts(object):
     self.opt_hook = opt_hook
 
     # This comes after all the 'set' options.
-    UP_shellopts = self.mem.GetVar('SHELLOPTS')
+    UP_shellopts = self.mem.GetValue('SHELLOPTS')
     if UP_shellopts.tag_() == value_e.Str:  # Always true in Oil, see Init above
       shellopts = cast(value__Str, UP_shellopts)
       self._InitOptionsFromEnv(shellopts.s)
@@ -423,7 +423,7 @@ class MutableOpts(object):
     _ = _SetOptionNum(opt_name)  # validate it
     self._SetOption(opt_name, b)
 
-    UP_val = self.mem.GetVar('SHELLOPTS')
+    UP_val = self.mem.GetValue('SHELLOPTS')
     assert UP_val.tag == value_e.Str, UP_val
     val = cast(value__Str, UP_val)
     shellopts = val.s
@@ -728,7 +728,7 @@ def _InitVarsFromEnv(mem, environ):
   # 'environ' variable into shell variables.  Bash has an export_env
   # variable.  Dash has a loop through environ in init.c
   for n, v in iteritems(environ):
-    mem.SetVar(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
+    mem.SetValue(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
                flags=SetExport)
 
   # If it's not in the environment, initialize it.  This makes it easier to
@@ -737,21 +737,21 @@ def _InitVarsFromEnv(mem, environ):
   # TODO: IFS, etc. should follow this pattern.  Maybe need a SysCall
   # interface?  self.syscall.getcwd() etc.
 
-  val = mem.GetVar('SHELLOPTS')
+  val = mem.GetValue('SHELLOPTS')
   if val.tag_() == value_e.Undef:
     SetGlobalString(mem, 'SHELLOPTS', '')
   # Now make it readonly
-  mem.SetVar(
+  mem.SetValue(
       lvalue.Named('SHELLOPTS'), None, scope_e.GlobalOnly, flags=SetReadOnly)
 
   # Usually we inherit PWD from the parent shell.  When it's not set, we may
   # compute it.
-  val = mem.GetVar('PWD')
+  val = mem.GetValue('PWD')
   if val.tag_() == value_e.Undef:
     SetGlobalString(mem, 'PWD', _GetWorkingDir())
   # Now mark it exported, no matter what.  This is one of few variables
   # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
-  mem.SetVar(
+  mem.SetValue(
       lvalue.Named('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
 
 
@@ -766,7 +766,7 @@ def InitMem(mem, environ, version_str):
   _InitVarsFromEnv(mem, environ)
   # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
   # it can't be modified by users.
-  val = mem.GetVar('PWD')
+  val = mem.GetValue('PWD')
   # should be true since it's exported
   assert val.tag_() == value_e.Str, val
   pwd = cast(value__Str, val).s
@@ -1194,7 +1194,7 @@ class Mem(object):
         new_name = val.s
 
       else:
-        # SetVar() protects the invariant that nameref is Undef or Str
+        # SetValue() protects the invariant that nameref is Undef or Str
         raise AssertionError(val.tag_())
 
     if not match.IsValidVarName(new_name):
@@ -1277,7 +1277,7 @@ class Mem(object):
 
     self._DisallowNamerefCycle(new_name, ref_trail)
 
-  def SetVar(self, lval, val, lookup_mode, flags=0):
+  def SetValue(self, lval, val, lookup_mode, flags=0):
     # type: (lvalue_t, value_t, scope_t, int) -> None
     """
     Args:
@@ -1487,7 +1487,7 @@ class Mem(object):
     cell = self.var_stack[0][name]
     cell.val = new_val
 
-  def GetVar(self, name, lookup_mode=scope_e.Dynamic):
+  def GetValue(self, name, lookup_mode=scope_e.Dynamic):
     # type: (str, scope_t) -> value_t
     """Used by the WordEvaluator, ArithEvalutor, oil_lang/expr_eval.py, etc.
 
@@ -1689,7 +1689,7 @@ class Mem(object):
     # type: (str, int, scope_t) -> bool
     """Used for export -n.
 
-    We don't use SetVar() because even if rval is None, it will make an Undef
+    We don't use SetValue() because even if rval is None, it will make an Undef
     value in a scope.
     """
     cell, name_map = self._ResolveNameOnly(name, lookup_mode)
@@ -1802,6 +1802,17 @@ class Mem(object):
       return None
 
 
+#def SetValue(mem, name, s):
+#  # type: (Mem, str, str) -> None
+#  """Equivalent of x=y or setvar x = 'y', 
+#  
+#  Both of these respects shopt --unset dynamic_scope.
+#  """
+#  assert isinstance(s, str)
+#  # TODO: respect dynamic_scope
+#  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.Dynamic)
+
+
 def SetRefString(mem, name, s):
   # type: (Mem, str, str) -> None
   """Set a string by looking up the stack.
@@ -1814,7 +1825,7 @@ def SetRefString(mem, name, s):
   Used for 'read', 'getopts', completion builtins, etc.
   """
   assert isinstance(s, str)
-  mem.SetVar(lvalue.Named(name), value.Str(s), scope_e.Dynamic)
+  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.Dynamic)
 
 
 def SetRefArray(mem, name, a):
@@ -1829,7 +1840,7 @@ def SetRefArray(mem, name, a):
   Used by compadjust, read.
   """
   assert isinstance(a, list)
-  mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.Dynamic)
+  mem.SetValue(lvalue.Named(name), value.MaybeStrArray(a), scope_e.Dynamic)
 
 
 def SetGlobalString(mem, name, s):
@@ -1837,14 +1848,14 @@ def SetGlobalString(mem, name, s):
   """Helper for completion, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(lvalue.Named(name), val, scope_e.GlobalOnly)
+  mem.SetValue(lvalue.Named(name), val, scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
   # type: (Mem, str, List[str]) -> None
   """Used by completion, shell initialization, etc."""
   assert isinstance(a, list)
-  mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
+  mem.SetValue(lvalue.Named(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):
@@ -1852,18 +1863,18 @@ def ExportGlobalString(mem, name, s):
   """Helper for completion, $PWD, $OLDPWD, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(lvalue.Named(name), val, scope_e.GlobalOnly, flags=SetExport)
+  mem.SetValue(lvalue.Named(name), val, scope_e.GlobalOnly, flags=SetExport)
 
 
 def GetString(mem, name):
   # type: (Mem, str) -> str
   """
-  Wrapper around GetVar().  Check that HOME, PWD, OLDPWD, etc. are strings.
+  Wrapper around GetValue().  Check that HOME, PWD, OLDPWD, etc. are strings.
   bash doesn't have these errors because ${array} is ${array[0]}.
 
   TODO: We could also check this when you're storing variables?
   """
-  val = mem.GetVar(name)
+  val = mem.GetValue(name)
   UP_val = val
   with tagswitch(val) as case:
     if case(value_e.Undef):
@@ -1891,7 +1902,7 @@ def GetInteger(mem, name):
   """
   For OPTIND variable used in getopts builtin.  TODO: it could be value.Int() ?
   """
-  val = mem.GetVar(name)
+  val = mem.GetValue(name)
   if val.tag_() != value_e.Str:
     raise error.Runtime(
         '$%s should be a string, got %s' % (name, ui.ValType(val)))

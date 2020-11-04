@@ -19,7 +19,7 @@ def SetGlobalFunc(mem, name, func):
   # type: (Mem, str, Union[Callable, ParameterizedArray, type]) -> None
   """Used by bin/oil.py to set split(), etc."""
   assert callable(func), func
-  mem.SetVar(sh_lhs_expr.Name(name), value.Obj(func), scope_e.GlobalOnly)
+  mem.SetValue(sh_lhs_expr.Name(name), value.Obj(func), scope_e.GlobalOnly)
 
 
 def _Join(array, delim=''):

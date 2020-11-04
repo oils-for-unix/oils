@@ -139,7 +139,7 @@ class Push(_Builtin):
       raise error.Usage('got invalid variable name %r' % var_name,
                             span_id=var_spid)
 
-    val = self.mem.GetVar(var_name)
+    val = self.mem.GetValue(var_name)
     # TODO: value.Obj too
     if val.tag != value_e.MaybeStrArray:
       self.errfmt.Print("%r isn't an array", var_name, span_id=var_spid)
@@ -273,13 +273,13 @@ class Json(vm._Builtin):
     if action == 'write':
       arg = JSON_WRITE_SPEC.Parse(arg_r)
 
-      # GetVar() of each name and print it.
+      # GetValue() of each name and print it.
 
       for var_name in arg_r.Rest():
         if var_name.startswith(':'):
           var_name = var_name[1:]
 
-        val = self.mem.GetVar(var_name)
+        val = self.mem.GetValue(var_name)
         with tagswitch(val) as case:
           if case(value_e.Undef):
             # TODO: blame the right span_id
@@ -345,7 +345,7 @@ class Json(vm._Builtin):
         self.errfmt.Print('json read: %s', e, span_id=action_spid)
         return 1
 
-      self.mem.SetVar(
+      self.mem.SetValue(
           sh_lhs_expr.Name(var_name), value.Obj(obj), scope_e.LocalOnly)
 
     else:

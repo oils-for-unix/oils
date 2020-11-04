@@ -76,7 +76,7 @@ _ = log
 
 def _LookupVar(name, mem, exec_opts):
   # type: (str, Mem, optview.Exec) -> value_t
-  val = mem.GetVar(name)
+  val = mem.GetValue(name)
   # By default, undefined variables are the ZERO value.  TODO: Respect
   # nounset and raise an exception.
   if val.tag_() == value_e.Undef and exec_opts.nounset():
@@ -367,7 +367,7 @@ class ArithEvaluator(object):
   def _Store(self, lval, new_int):
     # type: (lvalue_t, int) -> None
     val = value.Str(str(new_int))
-    self.mem.SetVar(lval, val, scope_e.Dynamic)
+    self.mem.SetValue(lval, val, scope_e.Dynamic)
 
   def EvalToInt(self, node):
     # type: (arith_expr_t) -> int
@@ -878,7 +878,7 @@ class BoolEvaluator(ArithEvaluator):
               return self.exec_opts.opt0_array[index]
 
           if op_id == Id.BoolUnary_v:
-            val = self.mem.GetVar(s)
+            val = self.mem.GetValue(s)
             return val.tag_() != value_e.Undef
 
           e_die("%s isn't implemented", ui.PrettyId(op_id))  # implicit location

@@ -244,7 +244,7 @@ class Read(vm._Builtin):
       line = ''.join(tmp)
 
     lhs = lvalue.Named(var_name)
-    self.mem.SetVar(lhs, value.Str(line), scope_e.LocalOnly)
+    self.mem.SetValue(lhs, value.Str(line), scope_e.LocalOnly)
     return 0
 
   def _All(self, var_name):
@@ -254,7 +254,7 @@ class Read(vm._Builtin):
     # No error conditions?
 
     lhs = lvalue.Named(var_name)
-    self.mem.SetVar(lhs, value.Str(contents), scope_e.LocalOnly)
+    self.mem.SetValue(lhs, value.Str(contents), scope_e.LocalOnly)
     return 0
 
   def Run(self, cmd_val):
@@ -465,7 +465,7 @@ class Cd(vm._Builtin):
 
     dest_dir, arg_spid = arg_r.Peek2()
     if dest_dir is None:
-      val = self.mem.GetVar('HOME')
+      val = self.mem.GetValue('HOME')
       try:
         dest_dir = state.GetString(self.mem, 'HOME')
       except error.Runtime as e:

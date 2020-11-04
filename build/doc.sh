@@ -109,6 +109,7 @@ readonly MARKDOWN_DOCS=(
   framing
 
   # Internal stuff
+  variable-scope
   interpreter-state
   process-model
   architecture-notes

@@ -195,7 +195,7 @@ class Tracer(object):
 
     first_char = '+'
     ps4 = ' '  # default
-    val = self.mem.GetVar('PS4')
+    val = self.mem.GetValue('PS4')
     if val.tag_() == value_e.Str:
       s = cast(value__Str, val).s
       if len(s):

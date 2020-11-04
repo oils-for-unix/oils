@@ -48,6 +48,7 @@ The shell **command** language has been enhanced:
 
 - [Procs, Funcs, and Blocks](oil-proc-func-block.html)
 - [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
+  - [Variable Scope](variable-scope.html)
 - [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
   - [IO Builtins](io-builtins.html)
 

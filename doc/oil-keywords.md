@@ -6,7 +6,10 @@ default_highlighter: oil-sh
 Oil Keywords
 ============
 
-Also see [Oil Procs Func Block](oil-proc-func-block.html).
+Related:
+
+- [Procs and Blocks](oil-proc-func-block.html)
+- [Variable Scope](variable-scope.html)
 
 <div id="toc">
 </div>

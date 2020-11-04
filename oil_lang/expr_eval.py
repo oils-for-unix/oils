@@ -69,9 +69,9 @@ class OilEvaluator(object):
     """Convert to a Python object so we can calculate on it natively."""
 
     # Lookup WITHOUT dynamic scope.
-    val = self.mem.GetVar(var_name, lookup_mode=scope_e.LocalOnly)
+    val = self.mem.GetValue(var_name, lookup_mode=scope_e.LocalOnly)
     if val.tag == value_e.Undef:
-      val = self.mem.GetVar(var_name, lookup_mode=scope_e.GlobalOnly)
+      val = self.mem.GetValue(var_name, lookup_mode=scope_e.GlobalOnly)
       if val.tag == value_e.Undef:
         # TODO: Location info
         e_die('Undefined variable %r', var_name)
@@ -445,7 +445,7 @@ class OilEvaluator(object):
           loop_val = it.next()  # e.g. x
         except StopIteration:
           break
-        self.mem.SetVar(
+        self.mem.SetValue(
             lvalue.Named(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
 
         if comp.cond:
@@ -477,7 +477,7 @@ class OilEvaluator(object):
             loop_val = it.next()  # e.g. x
           except StopIteration:
             break
-          self.mem.SetVar(
+          self.mem.SetValue(
               lvalue.Named(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
 
           if comp.cond:

@@ -42,11 +42,17 @@ f() {
 }
 g() {
   local g_var=g_var
+  echo "g_var=$g_var"
   f
-  echo "g: $g_var"
+  echo "g_var=$g_var"
 }
 g
-## stdout: g: f_mutation
+echo g_var=$g_var
+## STDOUT:
+g_var=g_var
+g_var=f_mutation
+g_var=
+## END
 
 #### Assign local separately
 f() {

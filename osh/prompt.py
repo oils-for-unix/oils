@@ -163,7 +163,7 @@ class Evaluator(object):
             r = '<Error: %s>' % e.UserErrorString()
 
         elif ch == 'W':
-          val = self.mem.GetVar('PWD')
+          val = self.mem.GetValue('PWD')
           if val.tag_() == value_e.Str:
             str_val = cast(value__Str, val)
             r = os_path.basename(str_val.s)
@@ -208,7 +208,7 @@ class Evaluator(object):
     ps1_str = self._ReplaceBackslashCodes(tokens)
 
     # Parse it like a double-quoted word (cached).  TODO: This could be done on
-    # mem.SetVar(), so we get the error earlier.
+    # mem.SetValue(), so we get the error earlier.
     # NOTE: This is copied from the PS4 logic in Tracer.
     ps1_word = self.parse_cache.get(ps1_str)
     if ps1_word is None:
@@ -227,7 +227,7 @@ class Evaluator(object):
   def EvalFirstPrompt(self):
     # type: () -> str
     if self.lang == 'osh':
-      val = self.mem.GetVar('PS1')
+      val = self.mem.GetValue('PS1')
       return self.EvalPrompt(val)
     else:
       # TODO: If the lang is Oil, we should use a better prompt language than
@@ -251,7 +251,7 @@ class UserPlugin(object):
 
   def Run(self):
     # type: () -> None
-    val = self.mem.GetVar('PROMPT_COMMAND')
+    val = self.mem.GetValue('PROMPT_COMMAND')
     if val.tag_() != value_e.Str:
       return
 

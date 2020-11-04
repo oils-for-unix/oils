@@ -36,7 +36,7 @@ def GetMyHomeDir():
   """Get the user's home directory from the /etc/pyos.
 
   Used by $HOME initialization in osh/state.py.  Tilde expansion and readline
-  initialization use mem.GetVar('HOME').
+  initialization use mem.GetValue('HOME').
   """
   uid = posix.getuid()
   try:

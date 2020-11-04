@@ -155,11 +155,12 @@ class FdState(object):
   def _WriteFdToMem(self, fd_name, fd):
     # type: (str, int) -> None
     if self.mem:
-      self.mem.SetVar(lvalue.Named(fd_name), value.Str(str(fd)), scope_e.Dynamic)
+      # SetVarString, not SetRefString?  It's like x=y
+      self.mem.SetValue(lvalue.Named(fd_name), value.Str(str(fd)), scope_e.Dynamic)
 
   def _ReadFdFromMem(self, fd_name):
     # type: (str) -> int
-    val = self.mem.GetVar(fd_name)
+    val = self.mem.GetValue(fd_name)
     if val.tag_() == value_e.Str:
       try:
         return int(cast(value__Str, val).s)

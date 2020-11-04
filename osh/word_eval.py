@@ -359,7 +359,7 @@ class TildeEvaluator(object):
     """Evaluates ~ and ~user, given a Lit_TildeLike token"""
     if token.val == '~':
       # First look up the HOME var, then ask the OS.  This is what bash does.
-      val = self.mem.GetVar('HOME')
+      val = self.mem.GetValue('HOME')
       UP_val = val
       if val.tag_() == value_e.Str:
         val = cast(value__Str, UP_val)
@@ -568,7 +568,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
               else: 
                 raise AssertionError()
 
-          self.mem.SetVar(lval, value.Str(rhs_str), scope_e.Dynamic)
+          # SetVarString, not SetRefString?  It's like x=y
+          self.mem.SetValue(lval, value.Str(rhs_str), scope_e.Dynamic)
         return True
 
       else:
@@ -602,7 +603,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if not match.IsValidVarName(name):
       return None
 
-    val = self.mem.GetVar(name)
+    val = self.mem.GetValue(name)
     UP_val = val
 
     with tagswitch(val) as case:
@@ -708,7 +709,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           val = cast(value__Str, UP_val)
           # plain variable name, like 'foo'
           if match.IsValidVarName(val.s):
-            return self.mem.GetVar(val.s)
+            return self.mem.GetValue(val.s)
 
           # positional argument, like '1'
           try:
@@ -1139,7 +1140,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       var_name = part.token.val
       # TODO: LINENO can use its own span_id!
-      val = self.mem.GetVar(var_name)
+      val = self.mem.GetValue(var_name)
 
     elif part.token.id == Id.VSub_Number:
       var_num = int(part.token.val)
@@ -1303,7 +1304,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       var_name = token.val[1:]
 
       # TODO: Special case for LINENO
-      val = self.mem.GetVar(var_name)
+      val = self.mem.GetValue(var_name)
       if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
         if CheckCompatArray(var_name, self.exec_opts):
           # for $BASH_SOURCE, etc.
@@ -1444,7 +1445,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case(word_part_e.Splice):
         part = cast(word_part__Splice, UP_part)
         var_name = part.name.val[1:]
-        val = self.mem.GetVar(var_name)
+        val = self.mem.GetValue(var_name)
 
         UP_val = val
         with tagswitch(val) as case2:
@@ -1474,7 +1475,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if mylib.PYTHON:
           func_name = part.name.val[1:]
 
-          fn_val = self.mem.GetVar(func_name)  # type: value_t
+          fn_val = self.mem.GetValue(func_name)  # type: value_t
           if fn_val.tag != value_e.Obj:
             e_die("Expected function named %r, got %r ", func_name, fn_val)
           assert isinstance(fn_val, value__Obj)
