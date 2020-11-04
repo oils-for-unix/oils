@@ -302,6 +302,9 @@ def AddKinds(spec):
 
     'As',
     'Virtual', 'Override', 'Abstract',
+
+    # Tea-specific
+    'While', 'Break', 'Continue', 'Return'
   ])
 
   # For C-escaped strings.
