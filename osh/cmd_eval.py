@@ -25,7 +25,7 @@ from _devbuild.gen.syntax_asdl import (
     command__DBracket, command__DoGroup, command__DParen,
     command__ExpandedAlias, command__Expr, command__ForEach, command__ForExpr,
     command__Func, command__If, command__NoOp, command__OilForIn,
-    command__Pipeline, command__PlaceMutation, command__Proc, command__Return,
+    command__Pipeline, command__PlaceMutation, command__Proc,
     command__Sentence, command__ShAssignment, command__ShFunction,
     command__Simple, command__Subshell, command__TimeBlock, command__VarDecl,
     command__WhileUntil,
@@ -456,7 +456,7 @@ class CommandEvaluator(object):
         # command_e.Sentence, # command_e.TimeBlock, command_e.ShFunction,
         # Oil:
         # command_e.VarDecl, command_e.PlaceMutation, command_e.OilForIn,
-        # command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,
+        # command_e.Proc, command_e.Func, command_e.Expr,
         # command_e.BareDecl
         redirects = []
 
@@ -902,39 +902,6 @@ class CommandEvaluator(object):
           status = last_status  # A global assignment shouldn't clear $?.
         else:
           status = 0
-
-      elif case(command_e.Return):
-        node = cast(command__Return, UP_node)
-        # TODO: This should always return value_t, which is coerced to an
-        # integer?
-        # BUT: we don't have 'func' yet.  Alternative: in 'proc' mode,
-        # return remains a builtin.  This node should be called ReturnExpr.
-        # Can change ParseOilProc to make it inactive.  Might be a good
-        # idea.
-
-        obj = self.expr_ev.EvalExpr(node.e)
-
-        if 0:
-          val = _PyObjectToVal(obj)
-
-          status_code = -1
-          UP_val = val
-          with tagswitch(val) as case:
-            if case(value_e.Int):
-              val = cast(value__Int, UP_val)
-              status_code = val.i
-            elif case(value_e.Str):
-              val = cast(value__Str, UP_val)
-              try:
-                status_code = int(val.s)
-              except ValueError:
-                e_die('Invalid return value %r', val.s, token=node.keyword)
-            else:
-              e_die('Expected integer return value, got %r', val,
-                    token=node.keyword)
-
-        if mylib.PYTHON:
-          raise _ControlFlow(node.keyword, obj)
 
       elif case(command_e.Expr):
         node = cast(command__Expr, UP_node)

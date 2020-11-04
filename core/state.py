@@ -1767,7 +1767,7 @@ class Mem(object):
           result[name] = str_val.s
     return result
 
-  def GetAllCells(self, lookup_mode=scope_e.Dynamic):
+  def GetAllCells(self, lookup_mode):
     # type: (scope_t) -> Dict[str, cell]
     """Get all variables and their values, for 'set' builtin. """
     result = {}  # type: Dict[str, cell]
