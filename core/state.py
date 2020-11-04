@@ -1265,8 +1265,8 @@ class Mem(object):
                                        Id.KW_SetGlobal):
       e_die("%r hasn't been declared", name)
 
-  def _DisallowNamerefCycle(self, name, ref_trail):
-    # type: (str, List[str]) -> None
+  def _DisallowNamerefCycle(self, name, lookup_mode, ref_trail):
+    # type: (str, scope_t, List[str]) -> None
     """Recursively resolve names until the trail ends or a cycle is detected.
 
     Note: we're using dynamic scope because that's the most general.  This
@@ -1276,7 +1276,7 @@ class Mem(object):
     The other possibility is to do it during _ResolveNameOrRef, but that delays
     tne error.
     """
-    cell, _ = self._ResolveNameOnly(name, scope_e.Dynamic)
+    cell, _ = self._ResolveNameOnly(name, lookup_mode)
 
     if not cell or not cell.nameref:
       return
@@ -1292,7 +1292,7 @@ class Mem(object):
       e_die('nameref cycle: %s', ' -> '.join(ref_trail))
     ref_trail.append(new_name)
 
-    self._DisallowNamerefCycle(new_name, ref_trail)
+    self._DisallowNamerefCycle(new_name, lookup_mode, ref_trail)
 
   def SetValue(self, lval, val, lookup_mode, flags=0):
     # type: (lvalue_t, value_t, scope_t, int) -> None
@@ -1387,7 +1387,7 @@ class Mem(object):
         # Note: we check for circular namerefs on every definition, like mksh.
         if cell.nameref:
           ref_trail = []  # type: List[str]
-          self._DisallowNamerefCycle(cell_name, ref_trail)
+          self._DisallowNamerefCycle(cell_name, lookup_mode, ref_trail)
 
       elif case(lvalue_e.Indexed):
         lval = cast(lvalue__Indexed, UP_lval)
@@ -1515,7 +1515,6 @@ class Mem(object):
     """
     assert isinstance(name, str), name
 
-    #lookup_mode = scope_e.Dynamic
     if lookup_mode == scope_e.Shopt:
       lookup_mode = self._LookupMode()
 
@@ -1612,9 +1611,19 @@ class Mem(object):
 
     return value.Undef()
 
-  def GetCell(self, name, lookup_mode=scope_e.Dynamic):
+  def GetCell(self, name, lookup_mode=scope_e.Shopt):
     # type: (str, scope_t) -> cell
-    """For the 'repr' builtin."""
+    """Get both the value and flags.
+
+    Usages:
+      - the 'pp' builtin.
+      - declare -p
+      - ${x@a}
+      - to test of 'TZ' is exported in printf?  Why?
+    """
+    if lookup_mode == scope_e.Shopt:
+      lookup_mode = self._LookupMode()
+
     cell, _ = self._ResolveNameOnly(name, lookup_mode)
     return cell
 
@@ -1801,8 +1810,11 @@ class Mem(object):
       scopes = self.var_stack[-1:]
     elif lookup_mode == scope_e.GlobalOnly:
       scopes = self.var_stack[0:1]
+    elif lookup_mode == scope_e.LocalOrGlobal:
+      scopes = [self.var_stack[0]]
+      if len(self.var_stack) > 1:
+        scopes.append(self.var_stack[-1])
     else:
-      # scope_e.LocalOrGlobal never used
       raise AssertionError()
 
     for scope in scopes:
@@ -1836,8 +1848,17 @@ def SetVar(mem, lval, val, flags=0):
   
   Both of these respects shopt --unset dynamic_scope.
   """
-  # TODO: choose scope_e.LocalOrGlobal too
-  mem.SetValue(lval, val, scope_e.Dynamic, flags=flags)
+  lookup_mode = mem._LookupMode()
+  mem.SetValue(lval, val, lookup_mode, flags=flags)
+
+
+def SetRef(mem, lval, val):
+  # type: (Mem, lvalue_t, value_t) -> None
+  """Equivalent of x=$y or setref x = y 
+  
+  Does NOT respect shopt --unset dynamic_scope
+  """
+  mem.SetValue(lval, val, scope_e.Dynamic)
 
 
 def SetRefString(mem, name, s):

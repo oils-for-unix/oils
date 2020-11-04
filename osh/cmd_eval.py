@@ -490,7 +490,7 @@ class CommandEvaluator(object):
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
       self.mem.SetValue(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
-                      flags=flags)
+                        flags=flags)
 
   def _StrictErrExit(self, node):
     # type: (command_t) -> None
@@ -709,7 +709,7 @@ class CommandEvaluator(object):
             val = _PyObjectToVal(py_val)  # type: value_t
 
             self.mem.SetValue(vd_lval, val, scope_e.LocalOnly, 
-                            flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
+                              flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
             status = 0
 
           else:
@@ -735,7 +735,7 @@ class CommandEvaluator(object):
 
             for vd_lval, val in zip(vd_lvals, vals):
               self.mem.SetValue(vd_lval, val, scope_e.LocalOnly,
-                              flags=_PackFlags(node.keyword.id))
+                                flags=_PackFlags(node.keyword.id))
 
           status = 0
 
@@ -820,7 +820,7 @@ class CommandEvaluator(object):
       elif case(command_e.ShAssignment):  # Only unqualified assignment
         node = cast(command__ShAssignment, UP_node)
 
-        lookup_mode = scope_e.Dynamic
+        lookup_mode = self.mem._LookupMode()  # x=y is equivalent of setvar
         for pair in node.pairs:
           spid = pair.spids[0]  # Source location for tracing
           # Use the spid of each pair.

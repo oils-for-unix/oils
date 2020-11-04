@@ -7,7 +7,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub, sh_array_literal,
-    command,
+    command, command_t,
     expr, expr_e, expr_t, expr__Var, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
@@ -915,6 +915,7 @@ class Transformer(object):
     return sig
 
   def func_item(self, node):
+    # type: (PNode) -> command_t
     """
     func_item: (
       ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
@@ -957,7 +958,7 @@ class Transformer(object):
       raise NotImplementedError(node)
 
   def func_items(self, pnode):
-    # type: (PNode) -> List[ast.stmt]
+    # type: (PNode) -> List[command_t]
     """
     func_items: func_item (semi_newline func_item)* [semi_newline]
     """

@@ -958,7 +958,7 @@ oil-demo() {
 }
 
 oil-scope() {
-  sh-spec spec/oil-scope.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/oil-scope.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 

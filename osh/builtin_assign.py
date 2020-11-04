@@ -79,7 +79,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   elif flag_g:
     lookup_mode = scope_e.GlobalOnly
   else:
-    lookup_mode = scope_e.Dynamic
+    lookup_mode = mem._LookupMode()
 
   if len(cmd_val.pairs) == 0:
     print_all = True

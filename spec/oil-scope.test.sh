@@ -1,87 +1,205 @@
 # Demonstrations for users.  Could go in docs.
 
-#### GetVar scope and shopt --unset dynamic_scope
+#### GetValue scope and shopt --unset dynamic_scope
+
 f() {
-  echo "f x=$x"
+  echo "sh x=$x"
 }
 
-f1() {
-  local x=43
+proc p {
+  echo "oil x=$x"
+}
+
+demo() {
+  local x=dynamic
+  f
+  p
+
+  shopt --unset dynamic_scope
   f
 }
 
-proc p {
-  echo "p x=$x"
-}
-
-p1() {
-  local x=43
-  p
-}
-
-x=42
-f1
-p1
-
-shopt --unset dynamic_scope
-f1
+x=global
+demo
+echo x=$x
 
 ## STDOUT:
-f x=43
-p x=42
-f x=42
+sh x=dynamic
+oil x=global
+sh x=global
+x=global
 ## END
 
 
-#### SetVar scope and shopt --unset dynamic_scope
+#### SetValue scope and shopt --unset dynamic_scope
 f() {
   x=f
-  echo "f x=$x"
 }
 
-# I think you're supposed to use setglobal x = 'p' here?
-# Should the old kind of assignment be a failure?
-# Yeah because it was confusing that x=1 is a global assignment.
 proc p {
   x=p
-  echo "p x=$x"
 }
 
-x=42
-echo x:$x
+demo() {
+  local x=stack
+  echo x=$x
+  echo ---
 
-f
-echo x:$x
+  f
+  echo f x=$x
 
-p
-echo x:$x
+  x=stack
+  p
+  echo p x=$x
 
-shopt --unset dynamic_scope
-f
-echo x:$x
+  shopt --unset dynamic_scope
+  x=stack
+  f
+  echo funset x=$x
+}
+
+x=global
+demo
+
+echo ---
+echo x=$x
 
 ## STDOUT:
-x:42
+x=stack
+---
 f x=f
+p x=stack
+funset x=stack
+---
 x=f
-
-x=p
-
 ## END
 
-#### read scope
-echo 42 | read x
+#### read scope (setref)
+read-x() {
+  echo new | read x
+}
+demo() {
+  local x=42
+  echo x=$x
+  read-x
+  echo x=$x
+}
+demo
+echo x=$x
 
-## STDOUT:
-x=42
-x=
-## END
+echo ---
 
-#### getopts scope
-getopts 'x:' x -x 42
+shopt --unset dynamic_scope  # should NOT affect read
+demo
 echo x=$x
 
 ## STDOUT:
 x=42
+x=new
+x=
+---
+x=42
+x=new
 x=
 ## END
+
+#### printf -v scope (setref)
+set-x() {
+  printf -v x "%s" new
+}
+demo() {
+  local x=42
+  echo x=$x
+  set-x
+  echo x=$x
+}
+demo
+echo x=$x
+
+echo ---
+
+shopt --unset dynamic_scope  # should NOT affect read
+demo
+echo x=$x
+
+## STDOUT:
+x=42
+x=new
+x=
+---
+x=42
+x=new
+x=
+## END
+
+#### ${undef=a} and shopt --unset dynamic_scope
+
+set-x() {
+  : ${x=new}
+}
+demo() {
+  local x
+  echo x=$x
+  set-x
+  echo x=$x
+}
+
+demo
+echo x=$x
+
+echo ---
+
+# Now this IS affected?
+shopt --unset dynamic_scope 
+demo
+echo x=$x
+## STDOUT:
+x=
+x=new
+x=
+---
+x=
+x=
+x=new
+## END
+
+#### declare -p respects it
+__g=G
+show-vars() {
+  local __x=X
+  declare -p | grep '__'
+  echo status=$?
+
+  echo -
+  declare -p __y | grep '__'
+  echo status=$?
+}
+
+demo() {
+  local __y=Y
+
+  show-vars
+  echo ---
+  shopt --unset dynamic_scope
+  show-vars
+}
+
+demo
+
+## STDOUT:
+declare -- __g=G
+declare -- __x=X
+declare -- __y=Y
+status=0
+-
+declare -- __y=Y
+status=0
+---
+declare -- __g=G
+declare -- __x=X
+status=0
+-
+status=1
+## END
+
+
