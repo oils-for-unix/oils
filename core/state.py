@@ -1802,21 +1802,31 @@ class Mem(object):
       return None
 
 
-def SetStringDynamic(mem, name, s):
+def SetRefString(mem, name, s):
   # type: (Mem, str, str) -> None
   """Set a string by looking up the stack.
 
-  Used for getopts.
+  # Equivalent of:
+  proc p(:myref) {
+    setref myref = 's'
+  }
+
+  Used for 'read', 'getopts', completion builtins, etc.
   """
   assert isinstance(s, str)
   mem.SetVar(lvalue.Named(name), value.Str(s), scope_e.Dynamic)
 
 
-def SetArrayDynamic(mem, name, a):
+def SetRefArray(mem, name, a):
   # type: (Mem, str, List[str]) -> None
   """Set an array by looking up the stack.
 
-  Used for _init_completion.
+  # Equivalent of:
+  proc p(:myref) {
+    setref myref = %(a b c)
+  }
+
+  Used by compadjust, read.
   """
   assert isinstance(a, list)
   mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.Dynamic)
@@ -1832,7 +1842,7 @@ def SetGlobalString(mem, name, s):
 
 def SetGlobalArray(mem, name, a):
   # type: (Mem, str, List[str]) -> None
-  """Helper for completion."""
+  """Used by completion, shell initialization, etc."""
   assert isinstance(a, list)
   mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
 
@@ -1843,12 +1853,6 @@ def ExportGlobalString(mem, name, s):
   assert isinstance(s, str)
   val = value.Str(s)
   mem.SetVar(lvalue.Named(name), val, scope_e.GlobalOnly, flags=SetExport)
-
-
-def GetGlobal(mem, name):
-  # type: (Mem, str) -> value_t
-  assert isinstance(name, str), name
-  return mem.GetVar(name, scope_e.GlobalOnly)
 
 
 def GetString(mem, name):

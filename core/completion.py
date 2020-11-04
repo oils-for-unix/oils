@@ -480,9 +480,10 @@ class ShellFuncAction(CompletionAction):
             "changed", self.func.name, cmd)
         return []
 
-    # Read the response.
-    # NOTE: 'COMP_REPLY' would follow the naming convention!
-    val = state.GetGlobal(self.cmd_ev.mem, 'COMPREPLY')
+    # Read the response.  # Note: the name 'COMP_REPLY' would be more
+    # consistent!
+    val = self.cmd_ev.mem.GetVar('COMPREPLY', scope_e.GlobalOnly)
+
     if val.tag_() == value_e.Undef:
       # We set it above, so this error would only happen if the user unset it.
       # Not changing it means there were no completions.

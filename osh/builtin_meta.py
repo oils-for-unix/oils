@@ -284,7 +284,7 @@ class Run_(vm._Builtin):
       if var_name.startswith(':'):
         var_name = var_name[1:]
 
-      state.SetStringDynamic(self.mem, var_name, str(status))
+      state.SetRefString(self.mem, var_name, str(status))
       return 0  # don't fail
 
     return status
