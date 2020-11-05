@@ -1649,8 +1649,9 @@ class Mem(object):
       else:
         raise AssertionError()
 
+    # Dynamic scope because it's really an "out param"
     cell, name_map, cell_name = self._ResolveNameOrRef(var_name,
-                                                       self._LookupMode())
+                                                       scope_e.Dynamic)
     if not cell:
       return False  # 'unset' builtin falls back on functions
     if cell.readonly:

@@ -203,3 +203,30 @@ status=1
 ## END
 
 
+
+#### unset composes because it uses dynamic scope (even in Oil)
+shopt -s oil:all
+
+proc unset-two {
+  unset $1 
+  unset $2
+}
+
+demo() {
+  local x=X
+  local y=Y
+
+  echo "x=$x y=$y"
+
+  unset-two x y
+
+  shopt --unset nounset
+  echo "x=$x y=$y"
+}
+
+demo
+## STDOUT:
+x=X y=Y
+x= y=
+## END
+
