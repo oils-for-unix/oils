@@ -1142,20 +1142,16 @@ class Mem(object):
   # Named Vars
   #
 
-  def _ResolveNameOnly(self, name, lookup_mode):
+  def _ResolveNameOnly(self, name, which_scopes):
     # type: (str, scope_t) -> Tuple[Optional[cell], Dict[str, cell]]
     """Helper for getting and setting variable.
-
-    Args:
-      name: the variable name
-      lookup_mode: scope_e
 
     Returns:
       cell: The cell corresponding to looking up 'name' with the given mode, or
         None if it's not found.
       name_map: The name_map it should be set to or deleted from.
     """
-    if lookup_mode == scope_e.Dynamic:
+    if which_scopes == scope_e.Dynamic:
       for i in xrange(len(self.var_stack) - 1, -1, -1):
         name_map = self.var_stack[i]
         if name in name_map:
@@ -1164,15 +1160,15 @@ class Mem(object):
       no_cell = None  # type: Optional[runtime_asdl.cell]
       return no_cell, self.var_stack[0]  # set in global name_map
 
-    elif lookup_mode == scope_e.LocalOnly:
+    elif which_scopes == scope_e.LocalOnly:
       name_map = self.var_stack[-1]
       return name_map.get(name), name_map
 
-    elif lookup_mode == scope_e.GlobalOnly:
+    elif which_scopes == scope_e.GlobalOnly:
       name_map = self.var_stack[0]
       return name_map.get(name), name_map
 
-    elif lookup_mode == scope_e.LocalOrGlobal:
+    elif which_scopes == scope_e.LocalOrGlobal:
       # Local
       name_map = self.var_stack[-1]
       cell = name_map.get(name)
@@ -1186,10 +1182,10 @@ class Mem(object):
     else:
       raise AssertionError()
 
-  def _ResolveNameOrRef(self, name, lookup_mode):
+  def _ResolveNameOrRef(self, name, which_scopes):
     # type: (str, scope_t) -> Tuple[Optional[cell], Dict[str, cell], str]
     """Look up a cell and namespace, but respect the nameref flag."""
-    cell, name_map = self._ResolveNameOnly(name, lookup_mode)
+    cell, name_map = self._ResolveNameOnly(name, which_scopes)
 
     if not cell or not cell.nameref:
       return cell, name_map, name  # not a nameref
@@ -1233,7 +1229,7 @@ class Mem(object):
     #ref_trail.append(new_name)
 
     # You could have a "trail" parameter here?
-    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, lookup_mode)
+    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes)
     return cell, name_map, cell_name
 
   def IsAssocArray(self, name):
@@ -1243,7 +1239,7 @@ class Mem(object):
     We need to know this to evaluate the index expression properly -- should it
     be coerced to an integer or not?
     """
-    cell, _, _ = self._ResolveNameOrRef(name, self.DynamicOrLocalGlobal())
+    cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading())
     if cell:
       if cell.val.tag_() == value_e.AssocArray:  # foo=([key]=value)
         return True
@@ -1265,7 +1261,7 @@ class Mem(object):
                                        Id.KW_SetGlobal):
       e_die("%r hasn't been declared", name)
 
-  def _DisallowNamerefCycle(self, name, lookup_mode, ref_trail):
+  def _DisallowNamerefCycle(self, name, which_scopes, ref_trail):
     # type: (str, scope_t, List[str]) -> None
     """Recursively resolve names until the trail ends or a cycle is detected.
 
@@ -1276,7 +1272,7 @@ class Mem(object):
     The other possibility is to do it during _ResolveNameOrRef, but that delays
     tne error.
     """
-    cell, _ = self._ResolveNameOnly(name, lookup_mode)
+    cell, _ = self._ResolveNameOnly(name, which_scopes)
 
     if not cell or not cell.nameref:
       return
@@ -1292,15 +1288,15 @@ class Mem(object):
       e_die('nameref cycle: %s', ' -> '.join(ref_trail))
     ref_trail.append(new_name)
 
-    self._DisallowNamerefCycle(new_name, lookup_mode, ref_trail)
+    self._DisallowNamerefCycle(new_name, which_scopes, ref_trail)
 
-  def SetValue(self, lval, val, lookup_mode, flags=0):
+  def SetValue(self, lval, val, which_scopes, flags=0):
     # type: (lvalue_t, value_t, scope_t, int) -> None
     """
     Args:
       lval: lvalue
       val: value, or None if only changing flags
-      lookup_mode:
+      which_scopes:
         Local | Global | Dynamic - for builtins, PWD, etc.
       flags: bit mask of set/clear flags
 
@@ -1331,12 +1327,12 @@ class Mem(object):
 
         if flags & SetNameref or flags & ClearNameref:
           # declare -n ref=x  # refers to the ref itself
-          cell, name_map = self._ResolveNameOnly(lval.name, lookup_mode)
+          cell, name_map = self._ResolveNameOnly(lval.name, which_scopes)
           cell_name = lval.name
         else:
           # ref=x  # mutates THROUGH the reference
           cell, name_map, cell_name = self._ResolveNameOrRef(lval.name,
-                                                             lookup_mode)
+                                                             which_scopes)
 
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell:
@@ -1387,7 +1383,7 @@ class Mem(object):
         # Note: we check for circular namerefs on every definition, like mksh.
         if cell.nameref:
           ref_trail = []  # type: List[str]
-          self._DisallowNamerefCycle(cell_name, lookup_mode, ref_trail)
+          self._DisallowNamerefCycle(cell_name, which_scopes, ref_trail)
 
       elif case(lvalue_e.Indexed):
         lval = cast(lvalue__Indexed, UP_lval)
@@ -1404,7 +1400,7 @@ class Mem(object):
         # bash/mksh have annoying behavior of letting you do LHS assignment to
         # Undef, which then turns into an INDEXED array.  (Undef means that set
         # -o nounset fails.)
-        cell, name_map, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
+        cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if not cell:
           self._BindNewArrayWithEntry(name_map, lval, rval, flags)
@@ -1463,7 +1459,7 @@ class Mem(object):
 
         left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
 
-        cell, name_map, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
+        cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell.readonly:
           e_die("Can't assign to readonly associative array", span_id=left_spid)
@@ -1504,7 +1500,7 @@ class Mem(object):
     cell = self.var_stack[0][name]
     cell.val = new_val
 
-  def GetValue(self, name, lookup_mode=scope_e.Shopt):
+  def GetValue(self, name, which_scopes=scope_e.Shopt):
     # type: (str, scope_t) -> value_t
     """Used by the WordEvaluator, ArithEvalutor, oil_lang/expr_eval.py, etc.
 
@@ -1515,10 +1511,10 @@ class Mem(object):
     """
     assert isinstance(name, str), name
 
-    if lookup_mode == scope_e.Shopt:
-      lookup_mode = self.DynamicOrLocalGlobal()
+    if which_scopes == scope_e.Shopt:
+      which_scopes = self.ScopesForReading()
 
-    #log('mode %s', lookup_mode)
+    #log('mode %s', which_scopes)
 
     # TODO: Short-circuit down to _ResolveNameOrRef by doing a single hash
     # lookup:
@@ -1604,14 +1600,14 @@ class Mem(object):
     if name == 'BASHPID':  # TODO: Oil name for it
       return value.Str(str(posix.getpid()))
 
-    cell, _, _ = self._ResolveNameOrRef(name, lookup_mode)
+    cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
 
     if cell:
       return cell.val
 
     return value.Undef()
 
-  def GetCell(self, name, lookup_mode=scope_e.Shopt):
+  def GetCell(self, name, which_scopes=scope_e.Shopt):
     # type: (str, scope_t) -> cell
     """Get both the value and flags.
 
@@ -1621,10 +1617,10 @@ class Mem(object):
       - ${x@a}
       - to test of 'TZ' is exported in printf?  Why?
     """
-    if lookup_mode == scope_e.Shopt:
-      lookup_mode = self.DynamicOrLocalGlobal()
+    if which_scopes == scope_e.Shopt:
+      which_scopes = self.ScopesForReading()
 
-    cell, _ = self._ResolveNameOnly(name, lookup_mode)
+    cell, _ = self._ResolveNameOnly(name, which_scopes)
     return cell
 
   def Unset(self, lval, strict):
@@ -1719,7 +1715,7 @@ class Mem(object):
 
     return True
 
-  def DynamicOrLocalGlobal(self):
+  def ScopesForReading(self):
     # type: () -> scope_t
     """Read scope."""
     return (
@@ -1727,7 +1723,7 @@ class Mem(object):
         scope_e.LocalOrGlobal
     )
 
-  def DynamicOrLocalOnly(self):
+  def ScopesForWriting(self):
     # type: () -> scope_t
     """Write scope."""
     return (
@@ -1742,7 +1738,7 @@ class Mem(object):
     We don't use SetValue() because even if rval is None, it will make an Undef
     value in a scope.
     """
-    cell, name_map = self._ResolveNameOnly(name, self.DynamicOrLocalGlobal())
+    cell, name_map = self._ResolveNameOnly(name, self.ScopesForReading())
     if cell:
       if flag & ClearExport:
         cell.exported = False
@@ -1809,18 +1805,18 @@ class Mem(object):
           result[name] = str_val.s
     return result
 
-  def GetAllCells(self, lookup_mode):
+  def GetAllCells(self, which_scopes):
     # type: (scope_t) -> Dict[str, cell]
     """Get all variables and their values, for 'set' builtin. """
     result = {}  # type: Dict[str, cell]
 
-    if lookup_mode == scope_e.Dynamic:
+    if which_scopes == scope_e.Dynamic:
       scopes = self.var_stack
-    elif lookup_mode == scope_e.LocalOnly:
+    elif which_scopes == scope_e.LocalOnly:
       scopes = self.var_stack[-1:]
-    elif lookup_mode == scope_e.GlobalOnly:
+    elif which_scopes == scope_e.GlobalOnly:
       scopes = self.var_stack[0:1]
-    elif lookup_mode == scope_e.LocalOrGlobal:
+    elif which_scopes == scope_e.LocalOrGlobal:
       scopes = [self.var_stack[0]]
       if len(self.var_stack) > 1:
         scopes.append(self.var_stack[-1])
@@ -1862,8 +1858,8 @@ def SetLocalShopt(mem, lval, val, flags=0):
   That is, it respects shopt --unset dynamic_scope.
   setlocal uses the scope_e.LocalOnly semantics.
   """
-  lookup_mode = mem.DynamicOrLocalOnly()
-  mem.SetValue(lval, val, lookup_mode, flags=flags)
+  which_scopes = mem.ScopesForWriting()
+  mem.SetValue(lval, val, which_scopes, flags=flags)
 
 
 def SetRef(mem, lval, val):

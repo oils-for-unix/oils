@@ -676,7 +676,7 @@ class ArithEvaluator(object):
       # TODO: location info for orginal
       e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
 
-  def EvalShellLhs(self, node, spid, lookup_mode):
+  def EvalShellLhs(self, node, spid, which_scopes):
     # type: (sh_lhs_expr_t, int, scope_t) -> lvalue_t
     """Evaluate a shell LHS expression, i.e. place expression.
 

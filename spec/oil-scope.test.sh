@@ -292,3 +292,19 @@ e=E g=G
 e=E g=G
 e=SH g=SH
 ## END
+
+#### setvar still allows setting globals
+
+proc p {
+  setvar new_global = 'p'
+  setvar g = 'p'
+}
+
+var g = 'G'
+
+p
+
+echo g=$g new_global=$new_global
+## STDOUT:
+g=p new_global=p
+## END

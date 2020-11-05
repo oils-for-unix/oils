@@ -75,15 +75,15 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   if cmd_val.builtin_id == builtin_i.local:
     if flag_g and not mem.IsGlobalScope():
       return 1
-    lookup_mode = scope_e.LocalOnly
+    which_scopes = scope_e.LocalOnly
   elif flag_g:
-    lookup_mode = scope_e.GlobalOnly
+    which_scopes = scope_e.GlobalOnly
   else:
-    lookup_mode = mem.DynamicOrLocalGlobal()  # reading
+    which_scopes = mem.ScopesForReading()  # reading
 
   if len(cmd_val.pairs) == 0:
     print_all = True
-    cells = mem.GetAllCells(lookup_mode)
+    cells = mem.GetAllCells(which_scopes)
     names = sorted(cells)  # type: List[str]
   else:
     print_all = False
@@ -100,7 +100,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         cells[invalid] = None
       else:
         names.append(name)
-        cells[name] = mem.GetCell(name, lookup_mode)
+        cells[name] = mem.GetCell(name, which_scopes)
 
   count = 0
   for name in names:
@@ -361,12 +361,12 @@ class NewVar(vm._AssignBuiltin):
 
     #raise error.Usage("doesn't understand %s" % cmd_val.argv[1:])
     if cmd_val.builtin_id == builtin_i.local:
-      lookup_mode = scope_e.LocalOnly
+      which_scopes = scope_e.LocalOnly
     else:  # declare/typeset
       if arg.g:  
-        lookup_mode = scope_e.GlobalOnly
+        which_scopes = scope_e.GlobalOnly
       else:
-        lookup_mode = scope_e.LocalOnly
+        which_scopes = scope_e.LocalOnly
 
     flags = 0
     if arg.x == '-': 
@@ -397,7 +397,7 @@ class NewVar(vm._AssignBuiltin):
             rval = value.AssocArray({})
 
       rval = _ReconcileTypes(rval, arg.a, arg.A, pair.spid)
-      self.mem.SetValue(lvalue.Named(pair.var_name), rval, lookup_mode,
+      self.mem.SetValue(lvalue.Named(pair.var_name), rval, which_scopes,
                         flags=flags)
 
     return status

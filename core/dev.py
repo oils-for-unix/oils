@@ -245,7 +245,7 @@ class Tracer(object):
     cmd = ' '.join(tmp)
     self.f.log('%s%s%s', first_char, prefix, cmd)
 
-  def OnShAssignment(self, lval, op, val, flags, lookup_mode):
+  def OnShAssignment(self, lval, op, val, flags, which_scopes):
     # type: (lvalue_t, assign_op_t, value_t, int, scope_t) -> None
     # NOTE: I think tracing should be on by default?  For post-mortem viewing.
     if not self.exec_opts.xtrace():

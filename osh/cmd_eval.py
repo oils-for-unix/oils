@@ -747,15 +747,15 @@ class CommandEvaluator(object):
 
           with switch(node.keyword.id) as case2:
             if case2(Id.KW_SetVar):
-              lookup_mode = scope_e.LocalOrGlobal
+              which_scopes = scope_e.LocalOrGlobal
             elif case2(Id.KW_Set, Id.KW_SetLocal):
-              lookup_mode = scope_e.LocalOnly
+              which_scopes = scope_e.LocalOnly
             elif case2(Id.KW_SetGlobal):
-              lookup_mode = scope_e.GlobalOnly
+              which_scopes = scope_e.GlobalOnly
             elif case2(Id.KW_SetRef):
               # TODO: setref upvalue = 'returned'
               # Require the cell.nameref flag on it.
-              lookup_mode = scope_e.Dynamic
+              which_scopes = scope_e.Dynamic
 
               e_die("setref isn't implemented")
             else:
@@ -793,7 +793,7 @@ class CommandEvaluator(object):
               else:
                 val = _PyObjectToVal(py_val)
                 # top level variable
-                self.mem.SetValue(UP_lval_, val, lookup_mode,
+                self.mem.SetValue(UP_lval_, val, which_scopes,
                                 flags=_PackFlags(node.keyword.id))
 
           # TODO: Other augmented assignments
@@ -809,7 +809,7 @@ class CommandEvaluator(object):
             # This should only be an int or float, so we don't need the logic above
             val = value.Obj(new_py_val)
 
-            self.mem.SetValue(pe_lval, val, lookup_mode,
+            self.mem.SetValue(pe_lval, val, which_scopes,
                             flags=_PackFlags(node.keyword.id))
 
           else:
@@ -821,7 +821,7 @@ class CommandEvaluator(object):
         node = cast(command__ShAssignment, UP_node)
 
         # x=y is 'neutered' inside 'proc'
-        lookup_mode = self.mem.DynamicOrLocalOnly()
+        which_scopes = self.mem.ScopesForWriting()
 
         for pair in node.pairs:
           spid = pair.spids[0]  # Source location for tracing
@@ -832,7 +832,7 @@ class CommandEvaluator(object):
             assert pair.rhs, pair.rhs  # I don't think a+= is valid?
             val = self.word_ev.EvalRhsWord(pair.rhs)
 
-            lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, lookup_mode)
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, which_scopes)
             old_val = sh_expr_eval.OldValue(lval, self.mem, self.exec_opts)
 
             UP_old_val = old_val
@@ -869,7 +869,7 @@ class CommandEvaluator(object):
               val = value.MaybeStrArray(strs)
 
           else:  # plain assignment
-            lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, lookup_mode)
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, which_scopes)
 
             # RHS can be a string or array.
             if pair.rhs:
@@ -884,8 +884,8 @@ class CommandEvaluator(object):
 
           #log('setting %s to %s with flags %s', lval, val, flags)
           flags = 0
-          self.mem.SetValue(lval, val, lookup_mode, flags=flags)
-          self.tracer.OnShAssignment(lval, pair.op, val, flags, lookup_mode)
+          self.mem.SetValue(lval, val, which_scopes, flags=flags)
+          self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
 
         # PATCH to be compatible with existing shells: If the assignment had a
         # command sub like:
