@@ -71,7 +71,7 @@ f x=f
 p x=stack
 funset x=stack
 ---
-x=f
+x=global
 ## END
 
 #### read scope (setref)
@@ -259,4 +259,36 @@ x=42
 x=
 --- global
 x=
+## END
+
+
+#### shell assignments 'neutered' inside 'proc'
+
+# They can't mutate globals or anything higher on the stack
+
+proc p {
+  g=PROC
+  export e=PROC
+}
+
+f() {
+  g=SH
+  export e=SH
+}
+
+e=E
+g=G
+p
+echo e=$e g=$g
+
+p
+echo e=$e g=$g
+
+f
+echo e=$e g=$g
+
+## STDOUT:
+e=E g=G
+e=E g=G
+e=SH g=SH
 ## END

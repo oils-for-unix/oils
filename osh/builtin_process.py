@@ -176,7 +176,7 @@ class Wait(vm._Builtin):
         pid = int(job_id)
       except ValueError:
         raise error.Usage('expected PID or jobspec, got %r' % job_id,
-                              span_id=span_id)
+                          span_id=span_id)
 
       job = self.job_state.JobFromPid(pid)
       if job is None:

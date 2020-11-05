@@ -123,23 +123,13 @@ The `setlocal` key always does the same thing.  but all these other constructs
 
 ## Where Are These Semantics Used?
 
-### `Dynamic` &rarr; `LocalOrGlobal` (keyword `setvar`)
+### `LocalOrGlobal` For Reading Variables, and for `setvar`
 
-Shell:
-
-- `x=y`
-  - including: `s+=suffix`, `a[i]+=suffix`, `a+=(suffix 2)`.
-- `export x=y`
-- `readonly x=y`
-
-<!-- note: can all of these be LocalOnly?  It is possible in theory.  -->
-
-New Oil keyword: `setvar`
+- reading global vars is normal
 
 Constructs That Retrieve Cells:
 
-The other ones deal with values.  These deal with cells.  These also change to
-`LocalOrGlobal then.
+The other ones deal with values.  These deal with cells. 
 
 - `GetCell()` and `GetAllCells()`
   - `declare -p` to print variables
@@ -151,8 +141,15 @@ The other ones deal with values.  These deal with cells.  These also change to
     - yeah I think this is a separate case
     - I think it should just look for a GLOBAL honestly
 
-
 ### `Dynamic` &rarr; `LocalOnly` (keyword `setlocal`)
+
+Shell:
+
+- Shell Assignment like `x=y`
+  - including: `s+=suffix`, `a[i]+=suffix`, `a+=(suffix 2)`.
+- Assignment Builtins like
+  - `export x=y`
+  - `readonly x=y`
 
 These shell constructs mutate.
 
@@ -160,6 +157,7 @@ These shell constructs mutate.
 - core/process: `myprog {fd}>out.txt`
 - osh/sh_expr_eval: `(( i = j ))`, `(( i += j ))`
   - `(( a[i] = j ))`, `(( a[i] += j ))`
+
 
 ### Unchanged: Builtins That Take "Out Params" (keyword `setref`)
 

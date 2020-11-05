@@ -1721,6 +1721,7 @@ class Mem(object):
 
   def DynamicOrLocalGlobal(self):
     # type: () -> scope_t
+    """Read scope."""
     return (
         scope_e.Dynamic if self.exec_opts.dynamic_scope() else
         scope_e.LocalOrGlobal
@@ -1728,6 +1729,7 @@ class Mem(object):
 
   def DynamicOrLocalOnly(self):
     # type: () -> scope_t
+    """Write scope."""
     return (
         scope_e.Dynamic if self.exec_opts.dynamic_scope() else
         scope_e.LocalOnly
@@ -1849,26 +1851,16 @@ class Mem(object):
     else:
       return None
 
-
-def SetVarShopt(mem, lval, val, flags=0):
-  # type: (Mem, lvalue_t, value_t, int) -> None
-  """ Like 'setvar', unless dynamic scope is on.
-  
-  setvar <=> scope_e.LocalOrGlobal
-
-  Respects shopt --unset dynamic_scope.
-  """
-  lookup_mode = mem.DynamicOrLocalGlobal()
-  mem.SetValue(lval, val, lookup_mode, flags=flags)
-
+#
+# Wrappers to Set Variables
+#
 
 def SetLocalShopt(mem, lval, val, flags=0):
   # type: (Mem, lvalue_t, value_t, int) -> None
   """ Like 'setlocal', unless dynamic scope is on.
   
-  setlocal <=> scope_e.LocalOnly
-
-  Respects shopt --unset dynamic_scope.
+  That is, it respects shopt --unset dynamic_scope.
+  setlocal uses the scope_e.LocalOnly semantics.
   """
   lookup_mode = mem.DynamicOrLocalOnly()
   mem.SetValue(lval, val, lookup_mode, flags=flags)
@@ -1935,6 +1927,9 @@ def ExportGlobalString(mem, name, s):
   val = value.Str(s)
   mem.SetValue(lvalue.Named(name), val, scope_e.GlobalOnly, flags=SetExport)
 
+#
+# Wrappers to Get Variables
+#
 
 def GetString(mem, name):
   # type: (Mem, str) -> str

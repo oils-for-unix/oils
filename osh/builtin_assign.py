@@ -79,7 +79,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   elif flag_g:
     lookup_mode = scope_e.GlobalOnly
   else:
-    lookup_mode = mem.DynamicOrLocalGlobal()
+    lookup_mode = mem.DynamicOrLocalGlobal()  # reading
 
   if len(cmd_val.pairs) == 0:
     print_all = True
@@ -228,8 +228,8 @@ class Export(vm._AssignBuiltin):
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
-        state.SetVarShopt(self.mem, lvalue.Named(pair.var_name), pair.rval,
-                          flags=state.SetExport)
+        state.SetLocalShopt(self.mem, lvalue.Named(pair.var_name), pair.rval,
+                            flags=state.SetExport)
 
     return 0
 
@@ -293,8 +293,8 @@ class Readonly(vm._AssignBuiltin):
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      state.SetVarShopt(self.mem, lvalue.Named(pair.var_name), rval,
-                        flags=state.SetReadOnly)
+      state.SetLocalShopt(self.mem, lvalue.Named(pair.var_name), rval,
+                          flags=state.SetReadOnly)
 
     return 0
 

@@ -820,8 +820,8 @@ class CommandEvaluator(object):
       elif case(command_e.ShAssignment):  # Only unqualified assignment
         node = cast(command__ShAssignment, UP_node)
 
-        # x=y is equivalent of setvar
-        lookup_mode = self.mem.DynamicOrLocalGlobal()
+        # x=y is 'neutered' inside 'proc'
+        lookup_mode = self.mem.DynamicOrLocalOnly()
 
         for pair in node.pairs:
           spid = pair.spids[0]  # Source location for tracing
