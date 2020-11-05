@@ -567,8 +567,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
               else: 
                 raise AssertionError()
 
-          # like setvar, not setref
-          state.SetVar(self.mem, lval, value.Str(rhs_str))
+          state.SetLocalShopt(self.mem, lval, value.Str(rhs_str))
         return True
 
       else:

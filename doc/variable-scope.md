@@ -112,18 +112,6 @@ The `setlocal` key always does the same thing.  but all these other constructs
 
 - Mutates exactly one scope!
 
-
-We introduce three names here: `setvar`, `setref`, and `setlocal`.
-
-And they will be used below.
-
-**Important**: They are both **keywords** and semantics.   For example, we say
-that all of these have `setvar` semantics:
-
-    x=y                  # shell assignment
-    : ${x=default}       # another form of shell assignment
-    setvar x = 'y'       # Oil keyword
-
 ## Where Are These Semantics Used?
 
 ### `Dynamic` &rarr; `LocalOrGlobal` (keyword `setvar`)
@@ -131,7 +119,11 @@ that all of these have `setvar` semantics:
 Shell:
 
 - `x=y`
-- `export` too
+  - including: `s+=suffix`, `a[i]+=suffix`, `a+=(suffix 2)`.
+- `export x=y`
+- `readonly x=y`
+
+<!-- note: can all of these be LocalOnly?  It is possible in theory.  -->
 
 New Oil keyword: `setvar`
 
@@ -152,18 +144,10 @@ The other ones deal with values.  These deal with cells.  These also change to
 
 These shell constructs mutate.
 
-- `s+=suffix`, `a[i]+=suffix`, `a+=(suffix 2)`
-- `(( i = j ))`, `(( i += j ))`
-- `(( a[i] = j ))`, `(( a[i] += j ))`
-- `${undef=default}` and `${undef:=default}`
-- `myprog {fd}>out.txt`
-- `export`
-
-TODO:
-
-- These constructs can all still mutate globals.
-- Maybe what we should do is set ALL of them to SetLocalOrDynamic.  Except for
-  SetVar.
+- osh/word_eval: `${undef=default}` and `${undef:=default}`
+- core/process: `myprog {fd}>out.txt`
+- osh/sh_expr_eval: `(( i = j ))`, `(( i += j ))`
+  - `(( a[i] = j ))`, `(( a[i] += j ))`
 
 ### Unchanged: Builtins That Take "Out Params" (keyword `setref`)
 
@@ -177,12 +161,7 @@ Example.
 - `mapfile` / `readarray`
 - `printf -v`
 - `run --assign-status`
-
-TODO: Fix `unset`.
-
-- `unset` -- this takes a var name, so maybe it should be `setref`, not
-  `setvar`?
-  - it's really `unsetref`?
+- `unset` -- This takes a variable name, so it's like an "out param".
 
 ## More Details
 

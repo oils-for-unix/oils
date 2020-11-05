@@ -1243,7 +1243,7 @@ class Mem(object):
     We need to know this to evaluate the index expression properly -- should it
     be coerced to an integer or not?
     """
-    cell, _, _ = self._ResolveNameOrRef(name, self._LookupMode())
+    cell, _, _ = self._ResolveNameOrRef(name, self.DynamicOrLocalGlobal())
     if cell:
       if cell.val.tag_() == value_e.AssocArray:  # foo=([key]=value)
         return True
@@ -1516,7 +1516,7 @@ class Mem(object):
     assert isinstance(name, str), name
 
     if lookup_mode == scope_e.Shopt:
-      lookup_mode = self._LookupMode()
+      lookup_mode = self.DynamicOrLocalGlobal()
 
     #log('mode %s', lookup_mode)
 
@@ -1622,7 +1622,7 @@ class Mem(object):
       - to test of 'TZ' is exported in printf?  Why?
     """
     if lookup_mode == scope_e.Shopt:
-      lookup_mode = self._LookupMode()
+      lookup_mode = self.DynamicOrLocalGlobal()
 
     cell, _ = self._ResolveNameOnly(name, lookup_mode)
     return cell
@@ -1719,11 +1719,18 @@ class Mem(object):
 
     return True
 
-  def _LookupMode(self):
+  def DynamicOrLocalGlobal(self):
     # type: () -> scope_t
     return (
         scope_e.Dynamic if self.exec_opts.dynamic_scope() else
         scope_e.LocalOrGlobal
+    )
+
+  def DynamicOrLocalOnly(self):
+    # type: () -> scope_t
+    return (
+        scope_e.Dynamic if self.exec_opts.dynamic_scope() else
+        scope_e.LocalOnly
     )
 
   def ClearFlag(self, name, flag):
@@ -1733,7 +1740,7 @@ class Mem(object):
     We don't use SetValue() because even if rval is None, it will make an Undef
     value in a scope.
     """
-    cell, name_map = self._ResolveNameOnly(name, self._LookupMode())
+    cell, name_map = self._ResolveNameOnly(name, self.DynamicOrLocalGlobal())
     if cell:
       if flag & ClearExport:
         cell.exported = False
@@ -1843,13 +1850,27 @@ class Mem(object):
       return None
 
 
-def SetVar(mem, lval, val, flags=0):
+def SetVarShopt(mem, lval, val, flags=0):
   # type: (Mem, lvalue_t, value_t, int) -> None
-  """Equivalent of x=$y or setvar x = y 
+  """ Like 'setvar', unless dynamic scope is on.
   
-  Both of these respects shopt --unset dynamic_scope.
+  setvar <=> scope_e.LocalOrGlobal
+
+  Respects shopt --unset dynamic_scope.
   """
-  lookup_mode = mem._LookupMode()
+  lookup_mode = mem.DynamicOrLocalGlobal()
+  mem.SetValue(lval, val, lookup_mode, flags=flags)
+
+
+def SetLocalShopt(mem, lval, val, flags=0):
+  # type: (Mem, lvalue_t, value_t, int) -> None
+  """ Like 'setlocal', unless dynamic scope is on.
+  
+  setlocal <=> scope_e.LocalOnly
+
+  Respects shopt --unset dynamic_scope.
+  """
+  lookup_mode = mem.DynamicOrLocalOnly()
   mem.SetValue(lval, val, lookup_mode, flags=flags)
 
 

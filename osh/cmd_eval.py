@@ -753,10 +753,10 @@ class CommandEvaluator(object):
             elif case2(Id.KW_SetGlobal):
               lookup_mode = scope_e.GlobalOnly
             elif case2(Id.KW_SetRef):
-              # So this can modify two levels up?
+              # TODO: setref upvalue = 'returned'
+              # Require the cell.nameref flag on it.
               lookup_mode = scope_e.Dynamic
 
-              # TODO: setref upvalue = 'returned'
               e_die("setref isn't implemented")
             else:
               raise AssertionError(node.keyword.id)
@@ -820,7 +820,9 @@ class CommandEvaluator(object):
       elif case(command_e.ShAssignment):  # Only unqualified assignment
         node = cast(command__ShAssignment, UP_node)
 
-        lookup_mode = self.mem._LookupMode()  # x=y is equivalent of setvar
+        # x=y is equivalent of setvar
+        lookup_mode = self.mem.DynamicOrLocalGlobal()
+
         for pair in node.pairs:
           spid = pair.spids[0]  # Source location for tracing
           # Use the spid of each pair.
@@ -1064,7 +1066,7 @@ class CommandEvaluator(object):
           for x in iter_list:
             #log('> ForEach setting %r', x)
             self.mem.SetValue(lvalue.Named(iter_name), value.Str(x),
-                            scope_e.LocalOnly)
+                              scope_e.LocalOnly)
             #log('<')
 
             try:
@@ -1138,8 +1140,8 @@ class CommandEvaluator(object):
               loop_val = it.next()
             except StopIteration:
               break
-            self.mem.SetValue(lvalue.Named(iter_name), _PyObjectToVal(loop_val),
-                            scope_e.LocalOnly)
+            self.mem.SetValue(lvalue.Named(iter_name),
+                              _PyObjectToVal(loop_val), scope_e.LocalOnly)
 
             # Copied from above
             try:

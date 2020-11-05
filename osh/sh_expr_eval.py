@@ -366,7 +366,7 @@ class ArithEvaluator(object):
   def _Store(self, lval, new_int):
     # type: (lvalue_t, int) -> None
     val = value.Str(str(new_int))
-    state.SetVar(self.mem, lval, val)
+    state.SetLocalShopt(self.mem, lval, val)
 
   def EvalToInt(self, node):
     # type: (arith_expr_t) -> int

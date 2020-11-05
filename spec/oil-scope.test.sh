@@ -160,7 +160,7 @@ x=
 ---
 x=
 x=
-x=new
+x=
 ## END
 
 #### declare -p respects it
@@ -230,3 +230,33 @@ x=X y=Y
 x= y=
 ## END
 
+
+#### SetLocalShopt constructs
+
+f() {
+  (( x = 42 ))
+}
+demo() {
+  f
+  echo x=$x
+}
+
+demo
+
+echo ---
+
+shopt --unset dynamic_scope
+
+unset x
+
+demo
+
+echo --- global
+echo x=$x
+## STDOUT:
+x=42
+---
+x=
+--- global
+x=
+## END
