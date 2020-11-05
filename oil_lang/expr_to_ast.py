@@ -208,14 +208,11 @@ class Transformer(object):
     keys = []  # type: List[expr_t]
     values = []  # type: List[expr_t]
 
-    children = p_node.children
-    n = len(children)
-    i = 0
-    while i < n:
-      key, value = self._DictPair(children[i])
+    n = len(p_node.children)
+    for i in xrange(0, n, 2):
+      key, value = self._DictPair(p_node.children[i])
       keys.append(key)
       values.append(value)
-      i += 2
 
     return expr.Dict(keys, values)
 
@@ -882,14 +879,12 @@ class Transformer(object):
 
     children = p_node.children
     n = len(children)
-    i = 0
-    while i < n:
+    for i in xrange(n):
       p = children[i]
       if ISNONTERMINAL(p.typ):
         params.append(self._FuncParam(p))
       elif p.tok.id == Id.Expr_Ellipsis:
         splat = children[i+1].tok
-      i += 1
 
     return params, splat
 
@@ -965,8 +960,15 @@ class Transformer(object):
     """
     func_items: func_item (semi_newline func_item)* [semi_newline]
     """
-    raw_items = pnode.children
-    return [self.func_item(raw_item) for raw_item in raw_items[::2]]
+    # Rewrite of
+    # return [self.func_item(item) for item in pnode.children[::2]]
+    # Unfortunately mycpp doesn't support the stride.
+
+    result = []  # type: List[command_t]
+    n = len(pnode.children)
+    for i in xrange(0, n, 2):
+      result.append(self.func_item(pnode.children[i]))
+    return result
 
   def _Suite(self, pnode):
     # type: (PNode) -> command__CommandList
@@ -1042,12 +1044,8 @@ class Transformer(object):
 
     children = p_node.children
     n = len(children)
-    i = 0
-    while i < n:
-      p = children[i]
-      if ISNONTERMINAL(p.typ):
-        params.append(self._FuncParam(p))
-      i += 1
+    for i in xrange(0, n, 2):
+      params.append(self._FuncParam(children[i]))
 
     return params
 
