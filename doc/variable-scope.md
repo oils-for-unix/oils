@@ -18,6 +18,10 @@ Also see [Oil Keywords](oil-keywords.html).
 
 This doc is filled with details, so it will help to keep these goals in mind:
 
+- Code written in Oil style (with `proc`) is easier to read/audit than code
+  written in shell style.
+  - in shell, functions can pollute the caller's stack, because of the dynamic
+    scope rule.
 - Remove dynamic scope.  This mechanism is unfamiliar to most programmers, and
   may result in mutating variables where you don't expect it.
   - Instead of using dynamic scope by default, Oil lets you choose it
@@ -59,7 +63,12 @@ Don't use the old style of `local`, `readonly`, `x=y`.
 
 This covers 95%+ of shell programming.
 
-### `shopt --unset dynamic_scope`  in `bin/oil`
+### When Dynamic Scope Is Off
+
+`shopt --unset dynamic_scope` 
+
+- it's off when calling a `proc`.
+- it's off in  `bin/oil`
 
 This option affects how nearly **every** shell assignment construct behaves.  There are a lot of them!
 
@@ -136,8 +145,11 @@ The other ones deal with values.  These deal with cells.  These also change to
   - `declare -p` to print variables
   - `${x@a}` to print flags
   - `pp .cell`
+
   - weird `TZ` test in `printf`.  I think this could just look in the
     environment itself?  Do `getenv()`?
+    - yeah I think this is a separate case
+    - I think it should just look for a GLOBAL honestly
 
 
 ### `Dynamic` &rarr; `LocalOnly` (keyword `setlocal`)
