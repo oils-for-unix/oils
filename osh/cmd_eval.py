@@ -756,8 +756,6 @@ class CommandEvaluator(object):
               # TODO: setref upvalue = 'returned'
               # Require the cell.nameref flag on it.
               which_scopes = scope_e.Dynamic
-
-              e_die("setref isn't implemented")
             else:
               raise AssertionError(node.keyword.id)
 
@@ -787,14 +785,18 @@ class CommandEvaluator(object):
               if tag == lvalue_e.ObjIndex:
                 lval_ = cast(lvalue__ObjIndex, UP_lval_)
                 lval_.obj[lval_.index] = py_val
+                if node.keyword.id == Id.KW_SetRef:
+                  e_die('setref obj[index] not implemented')
               elif tag == lvalue_e.ObjAttr:
                 lval_ = cast(lvalue__ObjAttr, UP_lval_)
                 setattr(lval_.obj, lval_.attr, py_val)
+                if node.keyword.id == Id.KW_SetRef:
+                  e_die('setref obj.attr not implemented')
               else:
                 val = _PyObjectToVal(py_val)
                 # top level variable
                 self.mem.SetValue(UP_lval_, val, which_scopes,
-                                flags=_PackFlags(node.keyword.id))
+                                  flags=_PackFlags(node.keyword.id))
 
           # TODO: Other augmented assignments
           elif node.op.id == Id.Arith_PlusEqual:
@@ -1559,13 +1561,38 @@ class CommandEvaluator(object):
       if UP_sig.tag_() == proc_sig_e.Closed:  # proc is-closed []
         sig = cast(proc_sig__Closed, UP_sig)
         for i, p in enumerate(sig.params):
+          is_out_param = p.prefix is not None and p.prefix.id == Id.Arith_Colon
+
+          param_name = p.name.val
           if i < n_args:
-            val = value.Str(argv[i])  # type: value_t
+            arg_str = argv[i]
+
+            # If we have myproc(p), and call it with myproc :arg, we get
+            # __p -> arg.
+            # That is, the param has a prefix ADDED, and the arg has a prefix
+            # REMOVED.
+            if is_out_param:
+              param_name = '__' + param_name
+
+              if not arg_str.startswith(':'):
+                # TODO: Point to the exact argument
+                e_die('Invalid argument %r.  Expected a name starting with :',
+                      arg_str)
+              arg_str = arg_str[1:]
+
+            val = value.Str(arg_str)  # type: value_t
           else:
             val = proc.defaults[i]
             if val is None:
               e_die("No value provided for param %r", p.name.val)
-          self.mem.SetValue(lvalue.Named(p.name.val), val, scope_e.LocalOnly)
+
+          if is_out_param:
+            flags = state.SetNameref 
+          else:
+            flags = 0
+
+          self.mem.SetValue(lvalue.Named(param_name), val, scope_e.LocalOnly,
+                            flags=flags)
 
         n_params = len(sig.params)
         if sig.rest:

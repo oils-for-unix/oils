@@ -351,7 +351,10 @@ module syntax
     Open
   | Closed(param* params, Token? rest, Token? block)
 
-  param = (Token name, type_expr? type, expr? default_val)
+  -- prefix is : for out param, @ for proc splat, ... for func splat
+  -- & for block.  Probably use List[Expr] for lazy arg lists instead of
+  -- another sigil.
+  param = (Token? prefix, Token name, type_expr? type, expr? default_val)
 
   --
   -- Glob representation, for converting ${x//} to extended regexes.

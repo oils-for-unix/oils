@@ -788,7 +788,7 @@ class Transformer(object):
     return None
 
   def _ProcParam(self, pnode):
-    # type: (PNode) -> Tuple[Token, expr_t]
+    # type: (PNode) -> param
     """
     proc_param: [':'] Expr_Name ['=' expr]
     """
@@ -798,19 +798,24 @@ class Transformer(object):
     tok0 = children[0].tok
     n = len(children)
 
+    prefix_tok = None  # type: Token
     i = 0
     if tok0.id == Id.Arith_Colon:
-      # TODO: Set a flag for :out param
+      prefix_tok = tok0
       i += 1
 
     child = children[i]
     if child.tok.id == Id.Expr_Name:
+      name_tok = child.tok
       default_val = None  # type: expr_t
       i += 1
-      if n > i and children[i].tok.id == Id.Arith_Equal:  # proc p(x = 1+2*3)
+      if i < n and children[i].tok.id == Id.Arith_Equal:  # proc p(x = 1+2*3)
         i += 1
         default_val = self.Expr(children[i])
-      return tok0, default_val
+
+      # No type_expr for procs
+      type_ = None  # type: type_expr_t
+      return param(prefix_tok, name_tok, type_, default_val)
 
     raise AssertionError(Id_str(tok0.id))
 
@@ -830,10 +835,7 @@ class Transformer(object):
     while i < n:
       p = children[i]
       if ISNONTERMINAL(p.typ):
-        name, default_val = self._ProcParam(p)
-        # No type_expr for procs
-        type_ = None  # type: type_expr_t
-        params.append(param(name, type_, default_val))
+        params.append(self._ProcParam(p))
       else:
         if p.tok.id == Id.Expr_At:  # @args
           i += 1
@@ -865,7 +867,8 @@ class Transformer(object):
         default_val = self.Expr(children[2])
       elif n > 2 and children[2].tok.id == Id.Arith_Equal:  # f(x Int = 1+2*3)
         default_val = self.Expr(children[3])
-      return param(tok0, type_, default_val)
+      prefix_tok = None  # type: Token
+      return param(prefix_tok, tok0, type_, default_val)
 
     raise AssertionError(Id_str(tok0.id))
 

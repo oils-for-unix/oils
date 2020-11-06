@@ -1203,12 +1203,14 @@ class Mem(object):
     else:
       raise AssertionError()
 
-  def _ResolveNameOrRef(self, name, which_scopes):
-    # type: (str, scope_t) -> Tuple[Optional[cell], Dict[str, cell], str]
+  def _ResolveNameOrRef(self, name, which_scopes, ref_required=False):
+    # type: (str, scope_t, bool) -> Tuple[Optional[cell], Dict[str, cell], str]
     """Look up a cell and namespace, but respect the nameref flag."""
     cell, name_map = self._ResolveNameOnly(name, which_scopes)
 
     if not cell or not cell.nameref:
+      if ref_required:
+        e_die("setref requires a nameref (:out param), got %r", name)
       return cell, name_map, name  # not a nameref
 
     val = cell.val
@@ -1324,6 +1326,7 @@ class Mem(object):
       NOTE: in bash, PWD=/ changes the directory.  But not in dash.
     """
     keyword_id = flags >> 8  # opposite of _PackFlags
+    ref_required = keyword_id == Id.KW_SetRef
     # STRICTNESS / SANENESS:
     #
     # 1) Don't create arrays automatically, e.g. a[1000]=x
@@ -1346,6 +1349,9 @@ class Mem(object):
       if case(lvalue_e.Named):
         lval = cast(lvalue__Named, UP_lval)
 
+        if keyword_id == Id.KW_SetRef:
+          lval.name = '__' + lval.name
+
         if flags & SetNameref or flags & ClearNameref:
           # declare -n ref=x  # refers to the ref itself
           cell, name_map = self._ResolveNameOnly(lval.name, which_scopes)
@@ -1353,7 +1359,8 @@ class Mem(object):
         else:
           # ref=x  # mutates THROUGH the reference
           cell, name_map, cell_name = self._ResolveNameOrRef(lval.name,
-                                                             which_scopes)
+                                                             which_scopes,
+                                                             ref_required)
 
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell:
@@ -1409,10 +1416,17 @@ class Mem(object):
       elif case(lvalue_e.Indexed):
         lval = cast(lvalue__Indexed, UP_lval)
         assert isinstance(lval.index, int), lval
+
         # There is no syntax 'declare a[x]'
         assert val is not None, val
+
+        # TODO: relax this for Oil
         assert val.tag_() == value_e.Str, val
         rval = cast(value__Str, val)
+
+        # 'setref' array[index] not implemented here yet
+        #if keyword_id == Id.KW_SetRef:
+        #  lval.name = '__' + lval.name
 
         # TODO: All paths should have this?  We can get here by a[x]=1 or
         # (( a[ x ] = 1 )).  Maybe we should make them different?
@@ -1421,7 +1435,8 @@ class Mem(object):
         # bash/mksh have annoying behavior of letting you do LHS assignment to
         # Undef, which then turns into an INDEXED array.  (Undef means that set
         # -o nounset fails.)
-        cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes)
+        cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
+                                                   ref_required)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if not cell:
           self._BindNewArrayWithEntry(name_map, lval, rval, flags)
@@ -1480,7 +1495,8 @@ class Mem(object):
 
         left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
 
-        cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes)
+        cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
+                                                   ref_required)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell.readonly:
           e_die("Can't assign to readonly associative array", span_id=left_spid)
@@ -1622,7 +1638,6 @@ class Mem(object):
       return value.Str(str(posix.getpid()))
 
     cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
-
     if cell:
       return cell.val
 

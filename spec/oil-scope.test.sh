@@ -308,3 +308,107 @@ echo g=$g new_global=$new_global
 ## STDOUT:
 g=p new_global=p
 ## END
+
+#### setref with :out param
+
+# The name is mangled with : so you can't use it
+proc append(:s, suffix) {
+  setref s = "$s-$suffix"
+}
+
+proc set-it(:s, val) {
+  #pp cell __s
+  setref s = "foo-$val"
+}
+
+proc demo {
+  var s = 'abc'
+  var t = 'def'
+  set-it :s SS
+  set-it :t TT
+
+  echo $s
+  echo $t
+}
+
+demo
+
+## STDOUT:
+foo-SS
+foo-TT
+## END
+
+#### setref without :out param
+proc set-it(:s, val) {
+  setref val = 'oops'
+}
+
+var s = 'abc'
+set-it :s SS
+echo $s
+
+## status: 1
+## STDOUT:
+## END
+
+#### setref: syntax without pgen2 using open proc
+
+# This is kind of what we compile to.  Ref params get an extra __ prefix?  then
+# that means you can't really READ them either?  I think that's OK.
+
+# At call time, param binding time:
+#   If the PARAM has a colon prefix:
+#     Assert that the ARG has a colon prefix.  Don't remove it.
+#     Set the cell.nameref flag.
+#
+# At Setref time:
+#   Check that it's cell.nameref.
+#   Add extra : to lvalue.{Named,Indexed,Keyed} and perform it.
+#
+# The __ avoids the nameref cycle check.
+# And we probably disallow reading from the ref.  That's OK.  The caller can
+# pass it in as a regular value!
+
+proc set-it {
+  local -n __s=$1  # nameref flag needed with setref
+  local val=$2
+
+  # well this part requires pgen2
+  setref s = "foo-$val"
+}
+
+var s = 'abc'
+var t = 'def'
+set-it s SS
+set-it t TT  # no colon here
+echo $s
+echo $t
+
+## STDOUT:
+foo-SS
+foo-TT
+## END
+
+#### setref a[i]
+
+# You can do this in bash/mksh.  See nameref!
+
+proc set1(:a, item) {
+  setref a[1] = item
+}
+
+var a = %(one two three)
+var myarray = %(a b c)
+
+set1 :a zzz
+set1 :myarray z
+
+shopt --set oil:basic
+#write -- @a
+write -- @myarray
+
+## STDOUT:
+a
+z
+c
+## END
