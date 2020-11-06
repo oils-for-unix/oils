@@ -3,7 +3,6 @@ pyutil.py: Code that's only needed in Python.  C++ will use other mechanisms.
 """
 from __future__ import print_function
 
-import string
 import sys
 import time
 import zipimport  # NOT the zipfile module.
@@ -17,6 +16,10 @@ import posix_ as posix
 from typing import Any, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from mycpp import mylib
+
+
+# Copied from 'string' module
+_PUNCT = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 
 
 def IsValidCharEscape(c):
@@ -37,7 +40,7 @@ def IsValidCharEscape(c):
 
   # What about ^(...) or %(...) or /(...) .(1+2), etc.?  
 
-  return ch in string.punctuation
+  return ch in _PUNCT  # like ispunct() in C
 
 
 def BackslashEscape(s, meta_chars):
