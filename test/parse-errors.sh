@@ -899,7 +899,13 @@ cases-in-files() {
   for t in test/parse-errors/*.sh; do
     banner $t
     $SH $t
+
+    local status=$?
+    if test $status != 2; then
+      die "Expected status 2, got $status"
+    fi
   done
+
 }
 
 all() {
