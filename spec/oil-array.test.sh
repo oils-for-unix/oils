@@ -64,7 +64,7 @@ True
 #### Standalone generator expression
 var x = (i+1 for i in 1:3)
 # This is NOT a list.  TODO: This test is overspecified.
-pp .cell x | grep -o '<generator'
+pp cell x | grep -o '<generator'
 write status=$?
 ## STDOUT:
 <generator
@@ -73,12 +73,12 @@ status=0
 
 #### typeof should show the type
 var b = %(true)
-# pp .cell should show the type of the object?
-pp .cell b
+# pp cell should show the type of the object?
+pp cell b
 #typeof b
 
 var empty = %()
-pp .cell empty
+pp cell empty
 
 ## STDOUT:
 Array[Bool]

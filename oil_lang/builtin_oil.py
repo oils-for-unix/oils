@@ -44,7 +44,7 @@ class _Builtin(vm._Builtin):
 class Pp(_Builtin):
   """Given a list of variable names, print their values.
 
-  'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
+  'pp cell a' is a lot easier to type than 'argv.py "${a[@]}"'.
   """
   def __init__(self, mem, errfmt, procs, arena):
     # type: (Mem, ErrorFormatter, Dict[str, Proc], Arena) -> None
@@ -57,10 +57,10 @@ class Pp(_Builtin):
     arg, arg_r = flag_spec.ParseOilCmdVal('repr', cmd_val)
 
     action, action_spid = arg_r.ReadRequired2(
-        'expected an action (proc, .cell, etc.)')
+        'expected an action (proc, cell, etc.)')
 
     # Actions that print unstable formats start with '.'
-    if action == '.cell':
+    if action == 'cell':
       argv, spids = arg_r.Rest2()
 
       status = 0

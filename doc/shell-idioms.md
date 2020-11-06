@@ -5,8 +5,8 @@ default_highlighter: oil-sh
 Shell Language Idioms
 =====================
 
-This is like [Oil Language Idioms](idioms.html), but the advice also applies to
-shells other than Oil.
+These are like [Oil Language Idioms](idioms.html), but the advice also applies
+to other Unix shells.
 
 <div id="toc">
 </div>
@@ -71,6 +71,13 @@ Yes:
 
     proc ll {      # Oil Style
       ls -l @ARGV
+    }
+
+If you're wrapping an external command with a function of the same, use the
+[command]($osh-help) builtin:
+
+    proc ls {
+      command ls --color @ARGV
     }
 
 ### Prefer `$'\n'` to `echo -e`
