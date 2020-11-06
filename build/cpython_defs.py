@@ -329,6 +329,10 @@ class OilMethodFilter(object):
     if basename == 'tupleobject.c' and method_name == 'index':
       return False
 
+    if basename == 'stringobject.c' and method_name == 'translate':
+      # false positive from arg.translate
+      return False
+
     if basename == 'setobject.c' and method_name == 'pop':
       return False
 
