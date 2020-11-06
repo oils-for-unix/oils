@@ -42,7 +42,8 @@ def ParseAndEval(code_str):
   splitter = split.SplitContext(mem)
   errfmt = ui.ErrorFormatter(arena)
 
-  word_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, errfmt)
+  word_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
+                                              splitter, errfmt)
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, arena)
   arith_ev.word_ev = word_ev

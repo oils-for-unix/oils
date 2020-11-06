@@ -49,6 +49,12 @@ all() {
 }
 
 travis() {
+  ### Used by services/toil-worker.sh.  Prints to stdout.
+  all
+}
+
+run-for-release() {
+  ### Used by devtools/release.sh.  Writes a file.
   run-other-suite-for-release tea-large all
 }
 

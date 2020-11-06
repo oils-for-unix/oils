@@ -235,6 +235,8 @@ EOF
 
     test/$name.sh run-for-release
   done
+
+  tea/run.sh run-for-release
 }
 
 _test-release-build() {

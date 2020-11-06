@@ -137,6 +137,8 @@ def InitWordEvaluator(exec_opts=None):
     mem.exec_opts = exec_opts  # circular dep
     state.InitMem(mem, {}, '0.1')
     mutable_opts.Init()
+  else:
+    mutable_opts = None
 
   cmd_deps = cmd_eval.Deps()
   cmd_deps.trap_nodes = []
@@ -144,7 +146,8 @@ def InitWordEvaluator(exec_opts=None):
   splitter = split.SplitContext(mem)
   errfmt = ui.ErrorFormatter(arena)
 
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, errfmt)
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
+                                         splitter, errfmt)
   return ev
 
 
@@ -219,7 +222,8 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, splitter, errfmt)
-  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
+                                          splitter, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_builtins, arena, cmd_deps)
 

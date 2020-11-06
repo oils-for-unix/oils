@@ -265,3 +265,10 @@ Good articles on `errexit`:
 
 - <http://mywiki.wooledge.org/BashFAQ/105>
 - <http://fvue.nl/wiki/Bash:_Error_handling>
+
+## Related Documents
+
+- [Shell Idioms](shell-idioms.html).  There's a section  on fixing
+  `strict_errexit` problems.
+
+

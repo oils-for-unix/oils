@@ -896,9 +896,6 @@ all() {
   echo
 
   cases-in-files
-
-  # Always passes
-  return 0
 }
 
 with-oil-native() {
@@ -911,7 +908,7 @@ with-oil-native() {
 travis1() {
   ### run with Python. output _tmp/other/parse-errors.txt
 
-  run-other-suite-for-release parse-errors all
+  all
 }
 
 travis2() {
@@ -919,7 +916,8 @@ travis2() {
 
   # Done in _oil-native-build on the benchmark-data version
   build/mycpp.sh compile-oil-native-asan
-  with-oil-native '.'
+
+  ASAN_OPTIONS='detect_leaks=0' SH=_bin/osh_eval.asan all
 }
 
 run-for-release() {
