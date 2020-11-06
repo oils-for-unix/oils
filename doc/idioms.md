@@ -386,20 +386,19 @@ No:
       out=PREFIX-$in
     }
 
-    myvar='zzz'
-    f zzz myvar  # assigns myvar to 'PREFIX-zzz'
+    myvar='init'
+    f zzz myvar         # assigns myvar to 'PREFIX-zzz'
 
 
 Yes:
 
-    proc f(in, :out) {  # : means accept a string "reference"
+    proc f(in, :out) {  # : is an out param, i.e. a string "reference"
       setref out = "PREFIX-$in"
     }
 
-    var myvar = 'zzz'
-    f zzz :myvar        # : means pass a string "reference" (optional)
-
-TODO: Implement out params, setref.
+    var myvar = 'init'
+    f zzz :myvar        # assigns myvar to 'PREFIX-zzz'.
+                        # colon is required
 
 ## Curly Braces Fix Semantic Problems
 
