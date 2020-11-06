@@ -308,9 +308,12 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
 def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser('cmark.py [options]')
+
+  # TODO: Remove --blog since it's obsolete
   p.add_option(
       '--blog', action='store_true', default=False,
       help='Generate a blog post')
+
   p.add_option(
       '--toc-pretty-href', action='store_true', default=False,
       help='Generate textual hrefs #like-this rather than like #toc10')
@@ -335,22 +338,9 @@ def main(argv):
   opts, argv = o.parse_args(argv)
   assert all(tag.startswith('h') for tag in opts.toc_tags), opts.toc_tags
 
-  if opts.blog:  # Are we making a blog post?
-    # Metadata is optional here
-    if len(argv) == 2:
-      meta = dict(DEFAULT_META)
-      with open(argv[1]) as f:
-        meta.update(json.load(f))
-    else:
-      meta = {}
+  meta = dict(DEFAULT_META)
 
-    # Old style for blog: it's a filter
-    Render(opts, meta, sys.stdin, sys.stdout, use_fastlex=not
-           opts.disable_fastlex)
-
-  else:  # Otherwise, it's Oil documentation.
-
-    meta = dict(DEFAULT_META)
+  if len(argv) == 3:  # It's Oil documentation
     with open(argv[1]) as f:
       meta.update(json.load(f))
 
@@ -359,6 +349,19 @@ def main(argv):
       doc_html.Header(meta, sys.stdout)
       Render(opts, meta, content_f, sys.stdout)
       doc_html.Footer(meta, sys.stdout)
+  else:
+    # Filter for blog and for benchmarks.
+
+    # Metadata is optional here
+    try:
+      with open(argv[1]) as f:
+        meta.update(json.load(f))
+    except IndexError:
+      pass
+
+    # Old style for blog: it's a filter
+    Render(opts, meta, sys.stdin, sys.stdout, use_fastlex=not
+           opts.disable_fastlex)
 
 
 if __name__ == '__main__':

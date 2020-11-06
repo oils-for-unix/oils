@@ -65,9 +65,11 @@ set -o errexit
 
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+OIL_VERSION=$(head -n 1 oil-version.txt)
+readonly OIL_VERSION
 
-readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+readonly REPO_ROOT
 
 # Dir is defined in build/test.sh.
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
@@ -585,7 +587,8 @@ build-tree() {
   # Metadata
   cp -v _build/release-date.txt oil-version.txt $root
 
-  local release_date=$(cat _build/release-date.txt)
+  local release_date
+  release_date=$(cat _build/release-date.txt)
 
   # Docs
 
@@ -693,8 +696,10 @@ EOF
       continue
     fi
 
-    local checksum=$(sha256sum $path | awk '{print $1}')
-    local size=$(pretty-size $path)
+    local checksum
+    checksum=$(sha256sum $path | awk '{print $1}')
+    local size
+    size=$(pretty-size $path)
 
     # TODO: Port this to oil with "commas" extension.
 
@@ -743,8 +748,10 @@ _html-index() {
     fi
     local dir=$entry
 
-    local version=$(head -n 1 $dir/oil-version.txt)
-    local release_date=$(head -n 1 $dir/release-date.txt)
+    local version
+    version=$(head -n 1 $dir/oil-version.txt)
+    local release_date
+    release_date=$(head -n 1 $dir/release-date.txt)
 
     log "-- $dir"
     log "Version: $version"
