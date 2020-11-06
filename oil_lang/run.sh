@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./run.sh <function name>
+#   oil_lang/run.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
+
+source test/common.sh
 
 # TODO: Put parse-all and run-all in test/oil-language.sh?
 
@@ -58,9 +60,19 @@ demo() {
   bin/osh oil_lang/testdata/assign.osh
 }
 
-travis() {
+all() {
   parse-all-osh
   all-passing
+}
+
+travis() {
+  ### Used by services/toil-worker.sh.  Prints to stdout.
+  all
+}
+
+run-for-release() {
+  ### Used by devtools/release.sh.  Writes a file.
+  run-other-suite-for-release oil-large all
 }
 
 "$@"

@@ -103,6 +103,24 @@ Better Oil style:
 
     var d = $(date %x)   # fails properly
 
+### Variations With `readonly` and `export`
+
+In these cases, the builtin comes after the assignment.
+
+No:
+
+    readonly d1=$(date %x)
+    export d2=$(date %x)
+
+Yes:
+
+    d1=$(date %x)
+    readonly d1
+
+    d2=$(date %x)
+    export d2
+ 
+
 ### The `if myfunc` Problem
 
 No:

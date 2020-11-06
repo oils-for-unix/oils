@@ -236,6 +236,7 @@ EOF
     test/$name.sh run-for-release
   done
 
+  oil_lang/run.sh run-for-release
   tea/run.sh run-for-release
 }
 

@@ -16,9 +16,11 @@ sh-spec() {
     die "Test file should end with .test.sh"
   fi
 
-  local this_dir=$(cd $(dirname $0); pwd)
+  local this_dir
+  this_dir=$(cd $(dirname $0); pwd)
 
-  local tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
+  local tmp_env
+  tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
 
   # note: this other _tmp dir is for tests that assume '_tmp' is available
   mkdir -p $tmp_env $tmp_env/_tmp
