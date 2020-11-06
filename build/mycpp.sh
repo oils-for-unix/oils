@@ -266,6 +266,7 @@ compile-slice-opt() {
   fi
 }
 
+compile-slice-dbg() { compile-slice "${1:-}" '.dbg'; }
 compile-slice-alloclog() { compile-slice "${1:-}" '.alloclog'; }
 compile-slice-asan() { compile-slice "${1:-}" '.asan'; }
 compile-slice-uftrace() { compile-slice "${1:-}" '.uftrace'; }

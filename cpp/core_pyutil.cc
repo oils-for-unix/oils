@@ -4,6 +4,13 @@
 
 namespace pyutil {
 
+bool IsValidCharEscape(int c) {
+  if (c == '/' || c == '.' || c == '-') {
+    return false;
+  }
+  return ispunct(c);
+}
+
 Str* _ResourceLoader::Get(Str* path) {
   return new Str("TODO");
 }

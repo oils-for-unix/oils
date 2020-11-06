@@ -8,6 +8,8 @@
 
 namespace pyutil {
 
+bool IsValidCharEscape(int c);
+
 class _ResourceLoader {
  public:
   virtual Str* Get(Str* path);
