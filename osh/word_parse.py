@@ -70,6 +70,7 @@ from _devbuild.gen.syntax_asdl import (
 from core import alloc
 from core.pyerror import p_die
 from core.pyerror import log
+from core import pyutil
 from core import ui
 from frontend import consts
 from frontend import reader
@@ -1245,6 +1246,13 @@ class WordParser(WordEmitter):
     done = False
 
     if self.token_type == Id.Lit_EscapedChar:
+      if not self.parse_opts.parse_backslash():
+        tok_val = self.cur_token.val
+        assert len(tok_val) == 2  # because of the regex
+        ch = tok_val[1]
+        if not pyutil.IsValidCharEscape(ord(ch)):
+          p_die('Invalid char escape (parse_backslash)', token=self.cur_token)
+
       part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
     else:
       part = self.cur_token

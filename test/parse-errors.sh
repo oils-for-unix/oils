@@ -96,6 +96,17 @@ _runtime-parse-error() {
   fi
 }
 
+_oil-should-parse() {
+  banner "$@"
+  echo
+  $SH -O oil:all -n -c "$@"
+
+  local status=$?
+  if test $status != 0; then
+    die "Expected it to parse"
+  fi
+}
+
 _oil-parse-error() {
   ### Assert that a parse error happens with Oil options on
 
@@ -783,21 +794,24 @@ parse_dollar() {
 parse_backslash() {
   set +o errexit
 
-  # The right way:
-  #   echo \: -> :
-  #   echo \n -> n
-  # () ;
-  # But \~ is also valid \[ \]
+  _oil-should-parse 'echo \('
+  _oil-should-parse 'echo \;'
+  _oil-should-parse 'echo ~'
+  _oil-should-parse 'echo \!'  # history?
 
-  _should-parse 'echo \('
-  _should-parse 'echo \;'
-  _should-parse 'echo ~'
-  _should-parse 'echo \!'  # history?
+  _oil-should-parse 'echo \%'  # job ID?  I feel like '%' is better
+  _oil-should-parse 'echo \#'  # comment
 
-  _should-parse 'echo \%'  # job ID?  I feel like '%' is better
-  _should-parse 'echo \#'  # comment
+  _oil-parse-error 'echo \.'
+  _oil-parse-error 'echo \-'
+  _oil-parse-error 'echo \/'
 
-  # really I think \a .. \z, \A - \Z, \0 - \9, \_, \- are useless
+  _oil-parse-error 'echo \a'
+  _oil-parse-error 'echo \Z'
+  _oil-parse-error 'echo \0'
+  _oil-parse-error 'echo \9'
+
+  _should-parse 'echo \. \- \/ \a \Z \0 \9'
 }
 
 oil_to_make_nicer() {

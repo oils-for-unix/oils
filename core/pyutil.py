@@ -3,6 +3,7 @@ pyutil.py: Code that's only needed in Python.  C++ will use other mechanisms.
 """
 from __future__ import print_function
 
+import string
 import sys
 import time
 import zipimport  # NOT the zipfile module.
@@ -16,6 +17,27 @@ import posix_ as posix
 from typing import Any, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from mycpp import mylib
+
+
+def IsValidCharEscape(c):
+  # type: (int) -> bool
+  """Is this a valid character escape when unquoted?
+
+  Takes an integer because we want the C++ function to do so.
+  """
+  ch = chr(c)
+
+  # These punctuation chars never needs to be escaped.  (Note that _ is a
+  # keyword sometimes.)
+  if ch == '/' or ch == '.' or ch == '-':
+    return False
+
+  # Borderline: ^ and %.  But ^ is used for history?
+  # ! is an operator.  And used for history.
+
+  # What about ^(...) or %(...) or /(...) .(1+2), etc.?  
+
+  return ch in string.punctuation
 
 
 def BackslashEscape(s, meta_chars):
