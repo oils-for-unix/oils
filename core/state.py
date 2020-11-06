@@ -154,6 +154,27 @@ class ctx_Option(object):
       self.mutable_opts.Pop(opt_num)
 
 
+class ctx_AssignBuiltin(object):
+  """local x=$(false) is disallowed."""
+  def __init__(self, mutable_opts):
+    # type: (MutableOpts) -> None
+    self.do_pop = False
+    if mutable_opts.Get(option_i.strict_errexit):
+      mutable_opts.Push(option_i.allow_command_sub, False)
+      self.do_pop = True
+
+    self.mutable_opts = mutable_opts
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    if self.do_pop:
+      self.mutable_opts.Pop(option_i.allow_command_sub)
+
+
 class ctx_ErrExit(object):
   """Manages the errexit setting.
 

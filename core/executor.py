@@ -323,8 +323,13 @@ class ShellExecutor(vm._Executor):
     # type: (command_sub) -> str
 
     if not self.exec_opts.allow_command_sub():
-      # TODO: Add spid of $(
-      e_die("Command subs not allowed when errexit disabled (strict_errexit)")
+      # TODO:
+      # - Add spid of $(
+      # - Better hints.  Use 'run' for 'if myfunc', and 2 lines like local x;
+      #   x=$(false) fo assignment builtins.
+      # - Maybe we should have an error message ID that links somewhere?
+
+      e_die("Command subs not allowed here because status wouldn't be checked (strict_errexit).")
 
     node = cs_part.child
 

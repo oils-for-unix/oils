@@ -394,7 +394,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
   expr_ev = None  # type: expr_eval.OilEvaluator
-  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
+                                          splitter, errfmt)
 
   assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,

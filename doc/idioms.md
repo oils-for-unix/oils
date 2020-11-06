@@ -244,6 +244,21 @@ Idiomatic:
 (As always, using `set` is useful if your script needs to run under another
 shell.)
 
+### Use `:` When Mentioning Variable Names
+
+Oil accepts this optional "pseudo-sigil" to make code more explicit.
+
+No:
+
+    read -0 record < file.bin
+    echo $record
+
+Yes:
+
+    read -0 :record < file.bin
+    echo $record
+
+
 ### Consider Using `--long-flags`
 
 Easier to write:
@@ -388,17 +403,20 @@ TODO: Implement out params, setref.
 
 ## Curly Braces Fix Semantic Problems
 
-### Procs Don't Have Dynamic Scope
+### Procs Don't Mess With Their Callers
 
-Shell functions can access variables in their caller:
+That is, [dynamic scope]($xref:dynamic-scope) is turned off when procs are
+invoked.
 
-    foo() {
-      foo_var=x;
-      bar
-    }
+Here's an example of shell functions reading variables in their caller:
 
     bar() {
       echo $foo_var  # looks up the stack
+    }
+
+    foo() {
+      foo_var=x
+      bar
     }
 
     foo
@@ -406,10 +424,11 @@ Shell functions can access variables in their caller:
 In Oil, you have to pass params explicitly:
 
     proc bar {
-      echo $foo_var  # error
+      echo $foo_var  # error, not defined
     }
 
-TODO: Implement local scope for `proc`.  With `shopt --unset dynamic_scope`.
+Shell functions can also **mutate** variables in their caller!  But procs can't
+do this, which makes code easier to reason about.
 
 ### If and `errexit`
 

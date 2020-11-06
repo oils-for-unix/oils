@@ -386,8 +386,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     EvalWordSequence
     EvalWordSequence2
   """
-  def __init__(self, mem, exec_opts, splitter, errfmt):
-    # type: (Mem, optview.Exec, SplitContext, ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, mutable_opts, splitter, errfmt):
+    # type: (Mem, optview.Exec, state.MutableOpts, SplitContext, ErrorFormatter) -> None
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator
     self.prompt_ev = None  # type: prompt.Evaluator
@@ -395,6 +395,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
+    self.mutable_opts = mutable_opts  # for allow_command_sub
     self.splitter = splitter
     self.errfmt = errfmt
 
@@ -1798,7 +1799,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             word_.TildeDetectAssign(tmp)
             rhs_word = tmp
 
-          right = self.EvalRhsWord(rhs_word)
+          with state.ctx_AssignBuiltin(self.mutable_opts):
+            right = self.EvalRhsWord(rhs_word)
           arg2 = assign_arg(var_name, right, word_spid)
           assign_args.append(arg2)
 
@@ -2005,9 +2007,9 @@ def _SplitAssignArg(arg, w):
 
 class NormalWordEvaluator(AbstractWordEvaluator):
 
-  def __init__(self, mem, exec_opts, splitter, errfmt):
-    # type: (Mem, optview.Exec, SplitContext, ErrorFormatter) -> None
-    AbstractWordEvaluator.__init__(self, mem, exec_opts, splitter, errfmt)
+  def __init__(self, mem, exec_opts, mutable_opts, splitter, errfmt):
+    # type: (Mem, optview.Exec, state.MutableOpts, SplitContext, ErrorFormatter) -> None
+    AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts, splitter, errfmt)
     self.shell_ex = None  # type: _Executor
 
   def CheckCircularDeps(self):

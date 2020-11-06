@@ -1,13 +1,13 @@
-# Cases relevant to Oil:
+# Oil mechanisms:
 #
+# - shopt -s strict_errexit 
 # - shopt -s command_sub_errexit
-# - and maybe inherit_errexit and strict_errexit (OSH)
+# - inherit_errexit (bash)
 #
 # Summary:
-# - errexit is reset to false in ash/bash -- completely ignored!
 # - local assignment is different than global!  The exit code and errexit
-# behavior are different because the concept of the "last command" is
-# different.
+#   behavior are different because the concept of the "last command" is
+#   different.
 # - ash has copied bash behavior!
 
 #### command sub: errexit is NOT inherited and outer shell keeps going
@@ -17,7 +17,7 @@
 # See inherit_errexit below.
 #
 # I remember finding a script that relies on bash's bad behavior, so OSH copies
-# it.  Instead command_sub_errexit, is recommended.
+# it.  But you can opt in to better behavior.
 
 set -o errexit
 echo $(echo one; false; echo two)  # bash/ash keep going
@@ -74,6 +74,50 @@ done
 A
 done
 ## END
+
+#### strict_errexit and assignment builtins (local, export, readonly ...)
+set -o errexit
+shopt -s strict_errexit || true
+#shopt -s command_sub_errexit || true
+
+f() {
+  local x=$(echo hi; false)
+  echo x=$x
+}
+
+eval 'f'
+echo ---
+
+## status: 1
+## STDOUT:
+## END
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+x=hi
+---
+## END
+
+#### strict_errexit and command sub in export / readonly
+case $SH in (dash|bash|mksh|ash) exit ;; esac
+
+$SH -o errexit -O strict_errexit -c 'echo a; export x=$(might-fail); echo b'
+echo status=$?
+$SH -o errexit -O strict_errexit -c 'echo a; readonly x=$(might-fail); echo b'
+echo status=$?
+$SH -o errexit -O strict_errexit -c 'echo a; x=$(true); echo b'
+echo status=$?
+
+## STDOUT:
+a
+status=1
+a
+status=1
+a
+b
+status=0
+## END
+## N-I dash/bash/mksh/ash stdout-json: ""
+
 
 #### {inherit,strict}_errexit: command sub with a single command
 set -o errexit
@@ -269,16 +313,6 @@ one two
 good
 status=0
 one
-## END
-
-#### global assignment when last status is failure
-# this is a bug I introduced
-set -o errexit
-[ -n "${BUILDDIR+x}" ] && _BUILDDIR=$BUILDDIR
-BUILDDIR=${_BUILDDIR-$BUILDDIR}
-echo status=$?
-## STDOUT:
-status=0
 ## END
 
 #### global assignment when last status is failure
