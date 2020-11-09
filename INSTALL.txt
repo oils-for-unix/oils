@@ -52,7 +52,7 @@ More Documentation
 
 Every release has a home page with links, e.g.
 
-    https://oilshell.org/release/0.7.pre6/
+    https://oilshell.org/release/0.8.4/
 
 System Requirements
 -------------------

@@ -228,8 +228,9 @@ update-src-versions() {
     "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" \
     doc/release-index.md 
 
+  # we need to update tarball paths, /release/0.8.4/ URL, etc.
   _sed-ext \
-    "s/oil-[0-9]+\.[0-9]+\.[a-z0-9]+/oil-$OIL_VERSION/g" INSTALL.txt
+    "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" INSTALL.txt
 
   _sed-ext \
     "s;/release/[0-9]+\.[0-9]+\.[a-z0-9]+/;/release/$OIL_VERSION/;g" \

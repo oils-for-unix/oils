@@ -407,12 +407,17 @@ The `.cell` action starts with `.` to indicate that its format is unstable.
     read --all         # whole file including newline; var is $_all
 		read -0            # read until NUL, synonym for read -r -d ''
 
-#### status
+#### run
 
-Re-enable errexit.
+Re-enable errexit, and provide fine-grained control over exit codes.
 
-    status --nonzero
-    status --ok
+    if run --allow-status-01 -- grep pat file.txt {
+    }
+
+    run --assign-status :st -- mycmd
+    echo $st
+
+    run --status-ok SIGPIPE yes | head
 
 ### Data Formats
 
