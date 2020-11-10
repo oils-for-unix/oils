@@ -33,8 +33,8 @@ Examples:
 It's an adaptation of Rust's string literal syntax with a few use cases:
 
 - To print filenames to a terminal.  Printing arbitrary bytes to a
-  terminal is bad, so programs like [coreutils]($xref) already have informal
-  QSN-like formats.
+  terminal is bad, so programs like [coreutils]($xref) already have [informal
+  QSN-like formats][coreutils-quotes].
 - To exchange data between different programs, like [JSON][] or UTF-8.  Note
   that JSON can't express arbitrary byte strings.
 - To solve the "[framing problem](framing.html)" over pipes.  QSN represents
@@ -239,9 +239,14 @@ Comparison with Python's `repr()`:
 
 ### Related Links
 
-- [QTSV](qtsv.html) is a cleanup of CSV/TSV, built on top of QSN.
+- [GNU Coreutils - Quoting File names][coreutils-quotes].  *Starting with GNU
+  coreutils version 8.25 (released Jan. 2016), ls's default output quotes
+  filenames with special characters*
 - [In-band signaling][in-band] is the fundamental problem with filenames and
 terminals.  Code (control codes) and data are intermingled.
+- [QTSV](qtsv.html) is a cleanup of CSV/TSV, built on top of QSN.
+
+[coreutils-quotes]: https://www.gnu.org/software/coreutils/quotes.html
 
 [in-band]: https://en.wikipedia.org/wiki/In-band_signaling
 

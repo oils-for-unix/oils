@@ -139,6 +139,7 @@ X [Testing]       check
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
                   dashglob (-u)          Disabled to avoid files like -rf
+                  expand_aliases (-u)    Whether aliases are expanded
   [Simplicity]    ... More Consistent Style
                   simple_echo            echo takes 0 or 1 arguments
                   simple_eval_builtin    eval takes exactly 1 argument

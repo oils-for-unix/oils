@@ -126,7 +126,7 @@ Instead, emit and consume the [QSN][] and QTSV interchange formats.
 Custom parsing and serializing should be limited to "the edges" of your Oil
 programs.
 
-### Use New I/O Builtins
+### Use New Builtins That Support Structured I/O
 
 These are discussed in the next two sections, but here's a summary.
 
@@ -192,7 +192,7 @@ Yes:
     var myarray = %(one two three)
     write -- @myarray
 
-## Use New Flags on the `read` builtin
+## New Long Flags on the `read` builtin
 
 ### Read a Line
 
@@ -228,7 +228,7 @@ Yes:
 
 ## Oil Enhancements to Builtins
 
-### Use `shopt` instead of `set`
+### Use `shopt` Instead of `set`
 
 `bin/oil` uses the `set` keyword for assignments, although OSH code will often
 use `setvar`.  Using `shopt` "clears the way" for this upgrade.

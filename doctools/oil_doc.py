@@ -57,12 +57,20 @@ _ABBREVIATIONS = {
       _Abbrev('/cross-ref.html?tag=%(value)s#%(value)s'),
 
   # alias for osh-help, for backward compatibility
+  # to link to the same version
   'help':
       _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
   'osh-help':
       _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
   'oil-help':
       _Abbrev('oil-help.html?topic=%(value)s#%(value)s'),
+
+   # for blog
+  'osh-help-latest':
+      _Abbrev('//oilshell.org/release/latest/doc/osh-help.html?topic=%(value)s#%(value)s'),
+  'oil-help-latest':
+      _Abbrev('//oilshell.org/release/latest/doc/oil-help.html?topic=%(value)s#%(value)s'),
+
   # For the blog
   'oil-doc':
       _Abbrev('//www.oilshell.org/release/latest/doc/%(value)s'),
