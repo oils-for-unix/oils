@@ -217,6 +217,13 @@ gen-ctags() {
 }
 
 gc-examples() {
+  # print()
+  GC=1 example-both switch_
+  return
+
+  # slice(), maybe_str_equals()
+  GC=1 example-both length
+
   if true; then
     # these work
     GC=1 example-both fib_iter

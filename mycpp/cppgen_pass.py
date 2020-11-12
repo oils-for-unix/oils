@@ -22,9 +22,6 @@ from crash import catch_errors
 from util import log
 
 
-SHARED_PTR = False  # global variable set by main()
-
-
 T = None
 
 class UnsupportedException(Exception):

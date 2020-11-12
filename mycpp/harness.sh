@@ -56,18 +56,11 @@ _translate-example() {
   local raw=_gen/${name}_raw${variant}.cc
   local out=_gen/${name}${variant}.cc
 
-  flags=''
-  case $variant in
-    (.shared_ptr)
-      flags='--shared-ptr'
-      ;;
-  esac
-
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different
   # PYTHONPATH.
   ( source _tmp/mycpp-venv/bin/activate
     # flags may be empty
-    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py $flags $main > $raw
+    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py $main > $raw
   )
   wc -l $raw
 
@@ -108,6 +101,7 @@ _compile-example() {
   local -a runtime
   if test -n "${GC:-}"; then
     runtime=(my_runtime.cc gc_heap.cc)
+    # TODO: Reconcile my_runtime.cc and mylib.cc
   else
     runtime=(mylib.cc gc_heap.cc)
   fi
