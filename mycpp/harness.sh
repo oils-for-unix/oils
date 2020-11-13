@@ -8,7 +8,7 @@ gen-main() {
   cat <<EOF
 
 int main(int argc, char **argv) {
-  gc_heap::gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc
+  gc_heap::gHeap.Init(4 << 20);  // 400 MiB matches dumb_alloc
 
   if (getenv("BENCHMARK")) {
     fprintf(stderr, "Benchmarking...\n");
@@ -326,19 +326,23 @@ example-both() {
 
   # We're asserting both stdout and stderr, so use a temp file
   local tmp='_tmp/t'
-  local -a time=(/usr/bin/time --format '%U %M' -o $tmp --)
+  local -a time=(/usr/bin/time --format '%x %U %M' -o $tmp --)
 
   # diff stderr too!
   echo
   echo $'\t[ C++ ]'
+  set +o errexit
   "${time[@]}" _bin/$name.$variant > _tmp/$name.cpp.txt 2>&1
+  set -o errexit
   cat $tmp
 
   #time _bin/$name.$variant > _tmp/$name.cpp.txt 2>&1
 
   echo
   echo $'\t[ Python ]'
+  set +o errexit
   "${time[@]}" $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
+  set -o errexit
   cat $tmp
 
   #time $0 pyrun-example $name > _tmp/$name.python.txt 2>&1

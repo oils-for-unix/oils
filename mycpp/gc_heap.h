@@ -161,7 +161,7 @@ class Heap {
     char* p = free_;
     free_ += aligned(num_bytes);
 
-    // TODO: realloc it here
+    // TODO: grow the heap, collect here.  Use femtolisp policy
     if (free_ >= from_space_ + space_size_) {
       log("free_ %p  from_space_ %p  space_size_ %d", free_, from_space_,
           space_size_);

@@ -13,7 +13,9 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
-// Copied from mylib.cc.  TODO: Clean this up a bit.
+// Copied from mylib.cc.
+// TODO:
+// - I think we can assert that len(old) == 1 for now.
 Str* Str::replace(Str* old, Str* new_str) {
   const char* old_data = old->data_;
   const char* last_possible = data_ + len(this) - len(old);
@@ -77,7 +79,8 @@ Writer* gStderr;
 
 void BufWriter::write(Str* s) {
   int orig_len = len_;
-  len_ += len(s);
+  int n = len(s);
+  len_ += n;
 
   // BUG: This is quadratic!
 
@@ -85,7 +88,7 @@ void BufWriter::write(Str* s) {
   data_ = static_cast<char*>(realloc(data_, len_ + 1));
 
   // Append to the end
-  memcpy(data_ + orig_len, s->data_, len_);
+  memcpy(data_ + orig_len, s->data_, n);
   data_[len_] = '\0';
 }
 
