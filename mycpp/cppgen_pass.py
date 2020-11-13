@@ -665,6 +665,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       fmt_parts = format_strings.Parse(fmt)
       self.fmt_funcs.write('inline Str* %s(' % temp_name)
 
+      # NOTE: We're not calling gc_heap::Alloc<> inside these functions, so
+      # they don't need StackRoots?
       for i, typ in enumerate(fmt_types):
         if i != 0:
           self.fmt_funcs.write(', ');
@@ -1945,7 +1947,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
 
-            # TODO: Write all params except last optional one
+            # Write all params except last optional one
             self._WriteFuncParams(o.type.arg_types[:-1], o.arguments[:-1])
 
             self.decl_write(')')
@@ -2016,12 +2018,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Write local vars we collected in the 'decl' phase
         if not self.forward_decl and not self.decl:
           arg_names = [arg.variable.name() for arg in o.arguments]
-          no_args = [
-              (lval_name, c_type) for (lval_name, c_type) in self.local_vars[o]
-              if lval_name not in arg_names
+          self.prepend_to_block = [
+              (lval_name, c_type, lval_name in arg_names)
+              for (lval_name, c_type) in self.local_vars[o]
           ]
-
-          self.prepend_to_block = no_args
 
         self.in_func_body = True
         self.accept(o.body)
@@ -2352,11 +2352,28 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if self.prepend_to_block:
           done = set()
-          for lval_name, c_type in self.prepend_to_block:
-            if lval_name not in done:
+          for lval_name, c_type, is_param in self.prepend_to_block:
+            if not is_param and lval_name not in done:
               self.write_ind('%s %s;\n', c_type, lval_name)
               done.add(lval_name)
-          self.write('\n')
+
+          # Figure out if we have any roots to write with StackRoots
+          roots = []  # keep it sorted
+          for lval_name, c_type, _ in self.prepend_to_block:
+            if lval_name not in roots and c_type == 'Str*':
+              roots.append(lval_name)
+
+          # TODO: Also need function parameters
+          if len(roots):
+            self.write_ind('StackRoots _roots({');
+            for i, r in enumerate(roots):
+              if i != 0:
+                self.write(', ')
+              self.write('&%s' % lval_name)
+
+            self.write('});\n')
+            self.write('\n')
+
           self.prepend_to_block = None
 
         self._write_body(block.body)

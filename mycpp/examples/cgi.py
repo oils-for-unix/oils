@@ -32,11 +32,13 @@ def escape(s, quote=False):
 def run_tests():
   # type: () -> None
 
-  s = 'xo--xo'
-  log('s: %s', s)
+  mystr = 'xo--xo'
+  log('s: %s', mystr)
 
   log("escaped: %s", escape('<html>', True))
-  log("%s\n", s.replace('xo', 'OX'))
+
+  # Let's only replace one character for now
+  log("%s\n", mystr.replace('x', 'X'))
 
 
 def run_benchmarks():

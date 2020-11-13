@@ -238,7 +238,7 @@ def main(argv):
 
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
-using gc_heap::Local;
+using gc_heap::StackRoots;
 """ % header_name)
 
   if gc:
