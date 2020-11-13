@@ -11,7 +11,7 @@
 //
 // https://github.com/silentbicycle/greatest/blob/master/example.c#L71
 
-TEST test_cstr() {
+TEST test_str0() {
   Str* s = new Str("foo");
   ASSERT_EQ(3, len(s));
 
@@ -695,7 +695,7 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(test_cstr);
+  RUN_TEST(test_str0);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_funcs);
   RUN_TEST(test_split);

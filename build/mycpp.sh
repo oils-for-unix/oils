@@ -628,6 +628,10 @@ tarball-demo() {
   $bin -n -c 'echo "hello $name"'
 }
 
+audit-tuple() {
+  fgrep -n --color 'Alloc<Tuple' _build/cpp/osh_eval.cc
+}
+
 if test $(basename $0) = 'mycpp.sh'; then
   "$@"
 fi

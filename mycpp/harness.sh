@@ -89,34 +89,45 @@ _compile-example() {
   local name=${1:-fib} #  name of output, and maybe input
   local variant=${2:-}
 
-  local src=_gen/$name${variant}.cc
+  local src=_gen/$name.cc
 
-  # for benchmarks, and to debug crashes
-  local more_flags='-O2 -g'
-  #local more_flags=''
+  local flags
+  case $variant in
+    (asan)
+      flags="$CXXFLAGS $ASAN_FLAGS"
+      ;;
+    (opt)
+      flags="$CXXFLAGS -O2 -g"
+      ;;
+    (*)
+      flags="$CXXFLAGS"
+      ;;
+  esac
 
-  local out=_bin/${name}${variant}
+  local out=_bin/${name}.${variant}
   mkdir -p _bin
 
   local -a runtime
   if test -n "${GC:-}"; then
     runtime=(my_runtime.cc gc_heap.cc)
+    #runtime=(mylib.cc gc_heap.cc)
     # TODO: Reconcile my_runtime.cc and mylib.cc
   else
     runtime=(mylib.cc gc_heap.cc)
   fi
 
   # need -lstdc++ for 'operator new'
-  $CXX -o $out $CPPFLAGS $more_flags -I . \
-    "${runtime[@]}" $src -lstdc++
+  $CXX -o $out $flags -I . "${runtime[@]}" $src -lstdc++
 }
 
 compile-example() {
   local name=$1
+  local variant=$2
+
   if test "$(type -t compile-$name)" = "function"; then
-    compile-$name
+    compile-$name $variant
   else
-    _compile-example "$@"  # name and optional variant
+    _compile-example $name $variant
   fi
 }
 
@@ -187,7 +198,8 @@ build-all() {
     echo -----
 
     translate-example $name
-    compile-example $name
+    compile-example $name asan
+    compile-example $name opt
   done
 }
 
@@ -210,7 +222,7 @@ test-all() {
     echo -n "___ $name"
 
     pyrun-example ${name} > _tmp/$name.python.txt 2>&1
-    _bin/$name > _tmp/$name.cpp.txt 2>&1
+    _bin/$name.asan > _tmp/$name.cpp.txt 2>&1
 
     diff-output $name
   done
@@ -255,7 +267,7 @@ benchmark-all() {
 
     echo
     echo $'\t[ C++ ]'
-    "${time[@]}" --field $name --field 'C++' -- _bin/$name
+    "${time[@]}" --field $name --field 'C++' -- _bin/$name.opt
 
     echo
     echo $'\t[ Python ]'
@@ -305,17 +317,12 @@ should-skip-benchmark() {
 
 example-both() {
   local name=$1
+  local variant=${2:-asan}
 
   typecheck-example $name
 
   translate-example $name
-  compile-example $name
-
-  # Doesn't work
-  if false; then
-    translate-example $name .shared_ptr
-    compile-example $name .shared_ptr
-  fi
+  compile-example $name $variant
 
   # Not great because of stdout
   #local -a time=(/usr/bin/time --format '%U %M' --)
@@ -324,7 +331,7 @@ example-both() {
   echo
   echo $'\t[ C++ ]'
   #"${time[@]}" _bin/$name > _tmp/$name.cpp.txt 2>&1
-  time _bin/$name > _tmp/$name.cpp.txt 2>&1
+  time _bin/$name.$variant > _tmp/$name.cpp.txt 2>&1
 
   echo
   echo $'\t[ Python ]'
@@ -335,8 +342,10 @@ example-both() {
 }
 
 benchmark-both() {
+  local name=$1
+
   export BENCHMARK=1
-  example-both "$@"
+  example-both $name opt
 }
 
 strip-all() {

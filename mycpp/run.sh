@@ -51,8 +51,7 @@ source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 source examples.sh
 source harness.sh
 
-# -O3 is faster than -O2 for fib, but let's use -O2 since it's "standard"?
-CPPFLAGS="$CXXFLAGS -O0 -g -fsanitize=address"
+readonly ASAN_FLAGS="-O0 -g -fsanitize=address"
 export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
 
 time-tsv() {
@@ -135,16 +134,25 @@ mypy() {
 # -I with ASDL files.
 compile-with-asdl() {
   local name=$1
+  local variant=$2
   local src=_gen/$name.cc
-  shift
+  shift 2
 
-  # TODO: Remove _gen dir
-
-  local more_flags='-O0 -g'  # to debug crashes
-  #local more_flags=''
+  local flags
+  case $variant in
+    (asan)
+      flags="$CXXFLAGS $ASAN_FLAGS"
+      ;;
+    (opt)
+      flags="$CXXFLAGS -O2 -g"
+      ;;
+    (*)
+      flags="$CXXFLAGS"
+      ;;
+  esac
 
   # .. for asdl/runtime.h
-  $CXX -o _bin/$name $CPPFLAGS $more_flags \
+  $CXX -o _bin/$name.$variant $flags \
     -I . -I .. -I ../_devbuild/gen -I ../_build/cpp -I _gen -I ../cpp \
     mylib.cc gc_heap.cc $src "$@" -lstdc++
 }
@@ -194,22 +202,33 @@ count() {
 
 cpp-compile() {
   local name=$1
-  shift
+  local variant=$2
+  shift 2
+
+  local flags
+  case $variant in
+    (asan)
+      flags="$CXXFLAGS $ASAN_FLAGS"
+      ;;
+    (*)
+      flags="$CXXFLAGS"
+      ;;
+  esac
 
   mkdir -p _bin
-  $CXX -o _bin/$name $CPPFLAGS -I . $name.cc "$@" -lstdc++ -std=c++11
+  $CXX -o _bin/$name.$variant $flags -I . $name.cc "$@" -lstdc++ -std=c++11
 }
 
 mylib-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile mylib_test -I ../cpp mylib.cc
-  _bin/mylib_test "$@"
+  cpp-compile mylib_test asan -I ../cpp mylib.cc
+  _bin/mylib_test.asan "$@"
 }
 
 gc-heap-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile gc_heap_test -I ../cpp gc_heap.cc
-  _bin/gc_heap_test "$@"
+  cpp-compile gc_heap_test asan -I ../cpp gc_heap.cc
+  _bin/gc_heap_test.asan "$@"
 }
 
 gen-ctags() {
@@ -217,18 +236,22 @@ gen-ctags() {
 }
 
 gc-examples() {
-  # print()
-  GC=1 example-both switch_
+  GC=1 example-both classes
   return
-
-  # slice(), maybe_str_equals()
-  GC=1 example-both length
 
   if true; then
     # these work
     GC=1 example-both fib_iter
     GC=1 example-both fib_recursive
   fi
+
+  # print()
+  GC=1 example-both switch_
+  return
+
+  # slice(), maybe_str_equals()
+  GC=1 example-both length
+  return
 
   # needs .replace()
   #GC=1 example-both cgi

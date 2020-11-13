@@ -33,7 +33,6 @@ def run_tests():
   # type: () -> None
 
   log("escaped: %s", escape('<html>', True))
-  # TODO: Fix double escaping here
   s = 'xo--xo'
   log("%s\n", s.replace('xo', 'OX'))
 

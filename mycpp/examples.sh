@@ -39,8 +39,9 @@ translate-varargs() {
 } 
 
 compile-varargs() {
+  local variant=$1
   # need -I flag
-  compile-with-asdl varargs
+  compile-with-asdl varargs $variant
 }
 
 #
@@ -91,10 +92,11 @@ Str* repr(void* obj) {
 
 # Because it depends on ASDL
 compile-parse() {
+  local variant=$1
   mkdir -p _gen
   asdl-gen cpp examples/expr.asdl _gen/expr_asdl
 
-  compile-with-asdl parse \
+  compile-with-asdl parse $variant \
     _gen/expr_asdl.cc \
     ../_build/cpp/hnode_asdl.cc
 }
@@ -254,9 +256,10 @@ translate-pgen2_demo() {
 } 
 
 compile-pgen2_demo() {
+  local variant=$1
   local name='pgen2_demo'
 
-  compile-with-asdl $name \
+  compile-with-asdl $name $variant \
     ../cpp/frontend_match.cc \
     ../cpp/osh_arith_parse.cc \
     ../_devbuild/gen-cpp/syntax_asdl.cc \

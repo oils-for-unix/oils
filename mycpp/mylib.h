@@ -95,6 +95,7 @@ class RuntimeError {
 // Data Types
 //
 
+#ifdef MYLIB_LEGACY
 class Str : public gc_heap::Obj {
  public:
   Str(const char* data, int len)
@@ -732,6 +733,8 @@ class Dict : public gc_heap::Obj {
   }
 };
 
+#endif  // MYLIB_LEGACY
+
 template <class A, class B>
 class Tuple2 {
  public:
@@ -799,6 +802,7 @@ class Tuple4 {
 // Overloaded free function len()
 //
 
+#ifdef MYLIB_LEGACY
 inline int len(const Str* s) {
   return s->len_;
 }
@@ -826,6 +830,7 @@ inline int len(const Dict<Str*, V>* d) {
   }
   return len;
 }
+#endif
 
 //
 // Free functions
@@ -836,6 +841,7 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
+#if MYLIB_LEGACY
 inline bool str_equals(Str* left, Str* right) {
   if (left->len_ == right->len_) {
     return memcmp(left->data_, right->data_, left->len_) == 0;
@@ -843,6 +849,7 @@ inline bool str_equals(Str* left, Str* right) {
     return false;
   }
 }
+#endif
 
 inline bool str_equals0(const char* c_string, Str* s) {
   int n = strlen(c_string);
