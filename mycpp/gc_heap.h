@@ -466,6 +466,8 @@ class Str : public gc_heap::Obj {
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
   }
 
+  Str* replace(Str* old, Str* new_str);
+
   int unique_id_;  // index into intern table ?
   char data_[1];   // flexible array
 

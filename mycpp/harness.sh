@@ -324,19 +324,24 @@ example-both() {
   translate-example $name
   compile-example $name $variant
 
-  # Not great because of stdout
-  #local -a time=(/usr/bin/time --format '%U %M' --)
+  # We're asserting both stdout and stderr, so use a temp file
+  local tmp='_tmp/t'
+  local -a time=(/usr/bin/time --format '%U %M' -o $tmp --)
 
   # diff stderr too!
   echo
   echo $'\t[ C++ ]'
-  #"${time[@]}" _bin/$name > _tmp/$name.cpp.txt 2>&1
-  time _bin/$name.$variant > _tmp/$name.cpp.txt 2>&1
+  "${time[@]}" _bin/$name.$variant > _tmp/$name.cpp.txt 2>&1
+  cat $tmp
+
+  #time _bin/$name.$variant > _tmp/$name.cpp.txt 2>&1
 
   echo
   echo $'\t[ Python ]'
-  #"${time[@]}" $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
-  time $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
+  "${time[@]}" $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
+  cat $tmp
+
+  #time $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
 
   diff-output $name
 }

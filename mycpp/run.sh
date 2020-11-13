@@ -231,12 +231,18 @@ gc-heap-test() {
   _bin/gc_heap_test.asan "$@"
 }
 
+my-runtime-test() {
+  ### Accepts greatest args like -t dict
+  cpp-compile my_runtime_test asan -I ../cpp gc_heap.cc my_runtime.cc
+  _bin/my_runtime_test.asan "$@"
+}
+
 gen-ctags() {
   ctags -R $MYPY_REPO
 }
 
 gc-examples() {
-  GC=1 example-both classes
+  GC=1 example-both cgi
   return
 
   if true; then

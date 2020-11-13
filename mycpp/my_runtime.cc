@@ -13,6 +13,63 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
+// Copied from mylib.cc.  TODO: Clean this up a bit.
+Str* Str::replace(Str* old, Str* new_str) {
+  const char* old_data = old->data_;
+  const char* last_possible = data_ + len(this) - len(old);
+
+  const char* p_this = data_;  // advances through 'this'
+
+  // First pass to calculate the new length
+  int replace_count = 0;
+  while (p_this < last_possible) {
+    // cstring-TODO: Don't use strstr()
+    const char* next = strstr(p_this, old_data);
+    if (next == nullptr) {
+      break;
+    }
+    replace_count++;
+    p_this = next + len(old);  // skip past
+  }
+
+  // log("done %d", replace_count);
+
+  if (replace_count == 0) {
+    return this;  // Reuse the string if there were no replacements
+  }
+
+  int length = len(this) - (replace_count * len(old)) +
+               (replace_count * len(new_str));
+
+  char* result = static_cast<char*>(malloc(length + 1));  // +1 for NUL
+
+  const char* new_data = new_str->data_;
+  const size_t new_len = len(new_str);
+
+  // Second pass to copy into new 'result'
+  p_this = data_;
+  char* p_result = result;  // advances through 'result'
+
+  for (int i = 0; i < replace_count; ++i) {
+    const char* next = strstr(p_this, old_data);
+    assert(p_this != nullptr);
+    size_t n = next - p_this;
+
+    memcpy(p_result, p_this, n);  // Copy from 'this'
+    p_result += n;
+
+    memcpy(p_result, new_data, new_len);  // Copy from new_str
+    p_result += new_len;
+
+    p_this = next + len(old);
+  }
+  memcpy(p_result, p_this, data_ + len(this) - p_this);  // Copy the rest of 'this'
+  result[length] = '\0';                            // NUL terminate
+
+  // NOTE: This copies the buffer 'result'
+  return NewStr(result);
+}
+
 namespace my_runtime {
 
 Writer* gStdout;

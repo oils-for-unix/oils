@@ -13,7 +13,7 @@ from core import alloc
 from frontend import lexer
 from frontend import match
 
-from core.util import log
+from core.pyerror import log
 
 from typing import cast
 

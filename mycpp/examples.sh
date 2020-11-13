@@ -5,19 +5,8 @@ typecheck-oil() {
   local name=$1
   local flags='--no-strict-optional'
 
-  set +o errexit
   MYPYPATH="$REPO_ROOT:$REPO_ROOT/native" \
     mypy --py2 --strict $flags examples/$name.py | tee _tmp/err.txt
-  set -o errexit
-
-  # Stupid fastlex error in asdl/pretty.py
-
-  local num_errors=$(grep -v 'Found 1 error in 1 file' _tmp/err.txt | wc -l)
-  if [[ $num_errors -eq 1 ]]; then
-    echo 'OK'
-  else
-    return 1
-  fi
 }
 
 #
@@ -138,7 +127,6 @@ translate-modules() {
   wc -l $raw $out
 }
 
-# TODO: Get rid of translate-ordered
 translate-asdl-generated() {
   translate-ordered asdl_generated '#include "expr_asdl.h"' \
     $REPO_ROOT/asdl/runtime.py \
@@ -147,6 +135,8 @@ translate-asdl-generated() {
 } 
 
 lexer-main() {
+  local variant=${1:-opt}
+
   local name='lexer_main'
   PYTHONPATH=$REPO_ROOT examples/lexer_main.py
   #mypy --py2 --strict examples/$name.py
@@ -156,14 +146,15 @@ lexer-main() {
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
 
 #include "syntax_asdl.h"
+#include "types_asdl.h"
 
-#include "match.h"
+//#include "match.h"
 
 // TODO: This is already added elsewhere
 #include "mylib.h"
 
 // Stub
-void p_die(Str* s, syntax_asdl::token* blame_token) {
+void p_die(Str* s, syntax_asdl::Token* blame_token) {
   throw AssertionError();
 }
 
@@ -179,11 +170,23 @@ Str* repr(syntax_asdl::source_t* obj) {
     $REPO_ROOT/frontend/lexer.py \
     examples/lexer_main.py
 
-  compile-with-asdl $name ../cpp/match.cc
+  compile-with-asdl $name $variant # ../cpp/match.cc
 }
 
-alloc-main() {
+#
+# alloc_main
+#
+
+typecheck-alloc_main() {
+  typecheck-oil alloc_main
+}
+
+# TODO: pyrun-alloc_main could set PYTHONPATH for syntax_asdl
+
+compile-alloc_main() {
+  local variant=${1:-opt}
   local name='alloc_main'
+
   #mypy --py2 --strict examples/$name.py
 
   PYTHONPATH=$REPO_ROOT examples/alloc_main.py
@@ -207,10 +210,10 @@ Str* repr(syntax_asdl::source_t* obj) {
   local out=_gen/syntax_asdl
   asdl-gen cpp ../frontend/syntax.asdl $out
 
-  compile-with-asdl alloc_main \
+  compile-with-asdl alloc_main $variant \
     _gen/syntax_asdl.cc \
-    ../_devbuild/gen-cpp/hnode_asdl.cc \
-    ../_devbuild/gen-cpp/id_kind_asdl.cc
+    ../_build/cpp/hnode_asdl.cc \
+    ../_build/cpp/id_kind_asdl.cc
 } 
 
 #

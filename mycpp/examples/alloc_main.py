@@ -9,7 +9,7 @@ import sys
 
 from _devbuild.gen.syntax_asdl import source_e, source__MainFile
 from core import alloc
-from core.util import log
+from core.pyerror import log
 
 from typing import cast
 

@@ -32,8 +32,10 @@ def escape(s, quote=False):
 def run_tests():
   # type: () -> None
 
-  log("escaped: %s", escape('<html>', True))
   s = 'xo--xo'
+  log('s: %s', s)
+
+  log("escaped: %s", escape('<html>', True))
   log("%s\n", s.replace('xo', 'OX'))
 
 
