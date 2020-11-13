@@ -2,8 +2,8 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "greatest.h"
 #include "gc_heap.h"
+#include "greatest.h"
 #include "my_runtime.h"
 
 using gc_heap::gHeap;

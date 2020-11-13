@@ -40,8 +40,8 @@ Str* Str::replace(Str* old, Str* new_str) {
     return this;  // Reuse the string if there were no replacements
   }
 
-  int length = len(this) - (replace_count * len(old)) +
-               (replace_count * len(new_str));
+  int length =
+      len(this) - (replace_count * len(old)) + (replace_count * len(new_str));
 
   char* result = static_cast<char*>(malloc(length + 1));  // +1 for NUL
 
@@ -65,8 +65,9 @@ Str* Str::replace(Str* old, Str* new_str) {
 
     p_this = next + len(old);
   }
-  memcpy(p_result, p_this, data_ + len(this) - p_this);  // Copy the rest of 'this'
-  result[length] = '\0';                            // NUL terminate
+  memcpy(p_result, p_this,
+         data_ + len(this) - p_this);  // Copy the rest of 'this'
+  result[length] = '\0';               // NUL terminate
 
   // NOTE: This copies the buffer 'result'
   return NewStr(result);

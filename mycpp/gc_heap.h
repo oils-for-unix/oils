@@ -223,6 +223,26 @@ class Heap {
 // - For some applications, this can be thread_local rather than global.
 extern Heap gHeap;
 
+class StackRoots {
+ public:
+  StackRoots(std::initializer_list<void*> roots) {
+    n_ = roots.size();
+    for (auto root : roots) {  // can't use roots[i]
+      gHeap.PushRoot(root);
+    }
+  }
+
+  ~StackRoots() {
+    // TODO: optimize this
+    for (int i = 0; i < n_; ++i) {
+      gHeap.PopRoot();
+    }
+  }
+
+ private:
+  int n_;
+};
+
 template <typename T>
 class Local {
   // We can garbage collect at any Alloc() invocation, so we need a level of

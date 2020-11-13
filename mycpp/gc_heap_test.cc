@@ -514,6 +514,69 @@ TEST local_test() {
   PASS();
 }
 
+class Base {
+ public:
+  Base(int a) : a_(a) {
+  }
+  int a_;
+};
+
+class Derived : public Base {
+ public:
+  Derived(int a, int b) : Base(a), b_(b) {
+  }
+  int b_;
+};
+
+int base_func(Base* base) {
+  return base->a_;
+}
+
+int base_func_local(Local<Base> base) {
+  return base->a_;
+}
+
+TEST variance_test() {
+  Base i1(5);
+  log("i1.a_ = %d", i1.a_);
+
+  Derived i2(3, 4);
+  log("i2 = %d %d", i2.a_, i2.b_);
+
+  ASSERT_EQ(5, base_func(&i1));
+  ASSERT_EQ(3, base_func(&i2));
+
+  Local<Base> h1 = &i1;
+  // Does NOT work
+  // Local<Base> h2 = i2;
+  Local<Derived> h2 = &i2;
+
+  ASSERT_EQ(5, base_func_local(h1));
+  // Variance doesn't work!  Bad!  So we don't want to use Local<T>.
+  // ASSERT_EQ(3, base_func_local(h2));
+
+  PASS();
+}
+
+TEST stack_roots_test() {
+  Str* s;
+  List<int>* L;
+
+  gHeap.Init(kInitialSize);  // reset the whole thing
+
+  ASSERT_EQ(0, gHeap.roots_top_);
+
+  gc_heap::StackRoots _roots({&s, &L});
+
+  s = NewStr("foo");
+  // L = nullptr;
+  L = Alloc<List<int>>();
+
+  ASSERT_EQ_FMT(2, gHeap.roots_top_, "%d");
+
+  PASS();
+}
+
 void ShowSlab(Obj* obj) {
   assert(obj->heap_tag_ == Tag::Scanned);
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
@@ -569,6 +632,8 @@ int main(int argc, char** argv) {
   RUN_TEST(slab_trace_test);
   RUN_TEST(global_trace_test);
   RUN_TEST(local_test);
+  RUN_TEST(variance_test);
+  RUN_TEST(stack_roots_test);
   RUN_TEST(field_mask_test);
 
   GREATEST_MAIN_END(); /* display results */
