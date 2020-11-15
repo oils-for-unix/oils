@@ -630,10 +630,10 @@ int main(int argc, char** argv) {
   RUN_TEST(str_test);
   RUN_TEST(list_test);
   RUN_TEST(dict_test);
-  //RUN_TEST(fixed_trace_test);
+  // RUN_TEST(fixed_trace_test);
   RUN_TEST(slab_trace_test);
   RUN_TEST(global_trace_test);
-  //RUN_TEST(local_test);
+  // RUN_TEST(local_test);
   RUN_TEST(variance_test);
   RUN_TEST(stack_roots_test);
   RUN_TEST(field_mask_test);

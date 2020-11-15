@@ -68,17 +68,17 @@ Obj* Heap::Relocate(Obj* obj) {
   }  // switch
 }
 
-void Heap::Collect() {
+void Heap::Collect(bool must_grow) {
   log("--> COLLECT");
-
-  // Copy policy from femtolisp for now:
-  //
-  // If we're using > 80% of the space, resize tospace so we have more space to
-  // fill next time. if we grew tospace last time, grow the other half of the
-  // heap this time to catch up.
 
   scan_ = to_space_;  // boundary between black and gray
   free_ = to_space_;  // where to copy new entries
+
+  if (grew_) {
+    limit_ = to_space_ + space_size_ * 2;
+  } else {
+    limit_ = to_space_ + space_size_;
+  }
 
 #if GC_DEBUG
   num_live_objs_ = 0;
@@ -138,11 +138,42 @@ void Heap::Collect() {
   char* tmp = from_space_;
   from_space_ = to_space_;
   to_space_ = tmp;
-
   log("<-- COLLECT from %p, to %p, num_live_objs_ %d", from_space_, to_space_,
       num_live_objs_);
 
+  // Subtle logic for growing the heap.  Copied from femtolisp.
+  //
+  // Happy Path:
+  //   The collection brought us from "full" to more than 20% heap free.
+  //   Then we can continue to allocate int he new space until it is full, and
+  //   not grow the heap.
+  //
+  // When There's Memory Pressure:
+  //   1. There's less than 20% free space left, and we grow the EMPTY
+  //      to_space_
+  //   2. We set grew_, and the next iteration of Collect() uses a new limit_
+  //      calculated from space_size_ (top of this function)
+  //   3. That iteration also GROWS ITS EMPTY to_space_ (the other one), and
+  //      resets grew_
+  //
+  if (grew_ || must_grow || (limit_ - free_) < (space_size_ / 5)) {
+    char* tmp = static_cast<char*>(realloc(to_space_, space_size_ * 2));
+    assert(tmp != nullptr);  // TODO: raise a proper error
+    to_space_ = tmp;
+    if (grew_) {
+      space_size_ *= 2;
+    }
+    grew_ = !grew_;
+  }
 
+    // TODO: Does it ever happen?  Try to hit it with a unit test.
+    // I think the Collect(true) loop in Allocate() is enough.
+#if 0
+  if (free_ >= limit_) {
+    // All data was live.  Do the growing right away.
+    Collect(false);
+  }
+#endif
 }
 
 bool str_equals(Str* left, Str* right) {

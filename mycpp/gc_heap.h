@@ -140,17 +140,19 @@ class Heap {
   void Init(int num_bytes) {
     from_space_ = static_cast<char*>(malloc(num_bytes));
     to_space_ = static_cast<char*>(malloc(num_bytes));
+    limit_ = from_space_ + num_bytes;
 
     free_ = from_space_;  // where we allocate from
     scan_ = nullptr;
 
+    space_size_ = num_bytes;
+    grew_ = false;
+
+    roots_top_ = 0;
+
     // slab scanning relies on 0 bytes (nullptr)
     memset(from_space_, 0, num_bytes);
     memset(to_space_, 0, num_bytes);
-
-    space_size_ = num_bytes;
-
-    roots_top_ = 0;
 
 #if GC_DEBUG
     num_live_objs_ = 0;
@@ -160,18 +162,35 @@ class Heap {
   void* Allocate(int num_bytes) {
     char* p = free_;
     int n = aligned(num_bytes);
-    //log("n = %d, p = %p", n, p);
+    // log("n = %d, p = %p", n, p);
+    //
 
-    // TODO:
-    // - grow the heap, collect here.  Use femtolisp policy
-    // - what if you try to allocate something bigger than the heap size ??
-    if (free_ + n >= from_space_ + space_size_) {
-      log("OOM free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+    // Possible: optimization: do it if we have less than 20% free space.
+    // bool almost_full = (limit_ - free_) < (space_size_ / 5);
+    // This is still a correct GC algorithm
+    bool almost_full = false;
+
+    // Do a collection if REQUIRED.
+    if (almost_full || free_ + n > limit_) {
+      log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
           space_size_);
-      //assert(0);
-      Collect();
+
+      Collect(false);
+      // Three cases at the end of Collect:
+      // - We have more than 20% free space, and we didn't grow.
+      // - We have less than 20% free space, but more than zero, and we grew.
+      //   A future collection will grow (or it may never happen).
+      // - NOTHING was collected.  We have zero space, and we need to collect
+      //   NOW with must_grow=true.  This is unlikely.
+
+      while (free_ + n > limit_) {
+        Collect(true);
+      }
+
+      // Allocate again, using new free_ pointer
       return Allocate(num_bytes);
     }
+
     free_ += n;
 
 #if GC_DEBUG
@@ -194,17 +213,20 @@ class Heap {
   }
 
   Obj* Relocate(Obj* obj);
-  void Collect();
 
-  char* from_space_;
-  char* to_space_;
+  // mutates free_ and other variables
+  void Collect(bool must_grow);
+
+  char* from_space_;  // beginning of the space we're allocating from
+  char* to_space_;    // beginning of the space we should copy to
+  char* limit_;       // end of space we're allocating from
 
   char* scan_;  // boundary between black and grey
-  char* free_;  // next place to
+  char* free_;  // next place to allocate, from_space_ <= free_ < limit_
 
-  int space_size_;  // current size
-
-  bool grew_;  // did we grow the last time?
+  int space_size_;  // current size of space.  NOT redundant with limit_ because
+                    // of resizing
+  bool grew_;       // did the TO SPACE grow on the last collection?
 
   // Stack roots.  The obvious data structure is a linked list, but an array
   // has better locality.
@@ -262,13 +284,13 @@ class Local {
   // IMPLICIT conversion.  No 'explicit'.
   Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
     assert(0);
-    //gHeap.PushRoot(this);
+    // gHeap.PushRoot(this);
   }
 
   // Copy constructor, e.g. f(mylocal) where f(Local<T> param);
   Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
     assert(0);
-    //gHeap.PushRoot(this);
+    // gHeap.PushRoot(this);
   }
 
   void operator=(const Local& other) {  // Assignment operator
@@ -492,7 +514,7 @@ class Str : public gc_heap::Obj {
  public:
   // Don't call this directly.  Call NewStr() instead, which calls this.
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
-    //log("GC Str()");
+    // log("GC Str()");
   }
 
   Str* replace(Str* old, Str* new_str);
@@ -555,8 +577,8 @@ inline Str* NewStr(const char* data, int len) {
   void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
   auto s = new (place) Str();
 
-  //log("NewStr s->data_ %p len = %d", s->data_, len);
-  //log("sizeof(Str) = %d", sizeof(Str));
+  // log("NewStr s->data_ %p len = %d", s->data_, len);
+  // log("sizeof(Str) = %d", sizeof(Str));
   memcpy(s->data_, data, len);
   s->data_[len] = '\0';  // So we can pass it directly to C functions
 

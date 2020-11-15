@@ -242,7 +242,7 @@ gen-ctags() {
 }
 
 gc-examples() {
-  BENCHMARK=1 GC=1 example-both cgi asan
+  BENCHMARK=1 GC=1 example-both cgi opt
 
   #GC=1 benchmark-both cgi
   return
