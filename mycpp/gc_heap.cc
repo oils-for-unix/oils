@@ -6,6 +6,8 @@ using gc_heap::Heap;
 using gc_heap::Local;
 using gc_heap::Obj;
 
+#define GC_DEBUG 1
+
 namespace gc_heap {
 
 Heap gHeap;
@@ -83,8 +85,8 @@ void Heap::Collect() {
 #endif
 
   for (int i = 0; i < roots_top_; ++i) {
-    auto handle = static_cast<Local<void>*>(roots_[i]);
-    auto root = reinterpret_cast<Obj*>(handle->Get());
+    Obj** handle = roots_[i];
+    auto root = *handle;
 
     log("%d. handle %p", i, handle);
     log("     root %p", root);
@@ -95,7 +97,7 @@ void Heap::Collect() {
 
     // This update is for the "double indirection", so future accesses to a
     // local variable use the new location
-    handle->Update(new_location);
+    *handle = new_location;
   }
 
   while (scan_ < free_) {
@@ -132,12 +134,15 @@ void Heap::Collect() {
     scan_ += obj->obj_len_;
   }
 
-  log("<-- COLLECT");
-
   // Swap spaces for next collection
   char* tmp = from_space_;
   from_space_ = to_space_;
   to_space_ = tmp;
+
+  log("<-- COLLECT from %p, to %p, num_live_objs_ %d", from_space_, to_space_,
+      num_live_objs_);
+
+
 }
 
 bool str_equals(Str* left, Str* right) {

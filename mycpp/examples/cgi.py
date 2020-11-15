@@ -48,6 +48,7 @@ def run_benchmarks():
   while i < n:
     escape('<html>', True)
     i = i + 1
+    #log("i = %d", i)
 
 
 if __name__ == '__main__':

@@ -159,14 +159,20 @@ class Heap {
 
   void* Allocate(int num_bytes) {
     char* p = free_;
-    free_ += aligned(num_bytes);
+    int n = aligned(num_bytes);
+    //log("n = %d, p = %p", n, p);
 
-    // TODO: grow the heap, collect here.  Use femtolisp policy
-    if (free_ >= from_space_ + space_size_) {
-      log("free_ %p  from_space_ %p  space_size_ %d", free_, from_space_,
+    // TODO:
+    // - grow the heap, collect here.  Use femtolisp policy
+    // - what if you try to allocate something bigger than the heap size ??
+    if (free_ + n >= from_space_ + space_size_) {
+      log("OOM free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
           space_size_);
-      assert(0);
+      //assert(0);
+      Collect();
+      return Allocate(num_bytes);
     }
+    free_ += n;
 
 #if GC_DEBUG
     num_live_objs_++;
@@ -175,7 +181,7 @@ class Heap {
     return p;
   }
 
-  void PushRoot(void* p) {
+  void PushRoot(Obj** p) {
     // log("PushRoot %d", roots_top_);
     roots_[roots_top_++] = p;
     // TODO: This should be like a malloc() failure?
@@ -207,7 +213,7 @@ class Heap {
   // with initial N_STACK = 262144!  Kind of arbitrary.
 
   int roots_top_;
-  void* roots_[kMaxRoots];  // TODO: Could be Handle<void*> ?
+  Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
 
 #if GC_DEBUG
   int num_live_objs_;
@@ -228,7 +234,7 @@ class StackRoots {
   StackRoots(std::initializer_list<void*> roots) {
     n_ = roots.size();
     for (auto root : roots) {  // can't use roots[i]
-      gHeap.PushRoot(root);
+      gHeap.PushRoot(reinterpret_cast<Obj**>(root));
     }
   }
 
@@ -255,12 +261,14 @@ class Local {
 
   // IMPLICIT conversion.  No 'explicit'.
   Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
-    gHeap.PushRoot(this);
+    assert(0);
+    //gHeap.PushRoot(this);
   }
 
   // Copy constructor, e.g. f(mylocal) where f(Local<T> param);
   Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
-    gHeap.PushRoot(this);
+    assert(0);
+    //gHeap.PushRoot(this);
   }
 
   void operator=(const Local& other) {  // Assignment operator
@@ -484,6 +492,7 @@ class Str : public gc_heap::Obj {
  public:
   // Don't call this directly.  Call NewStr() instead, which calls this.
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
+    //log("GC Str()");
   }
 
   Str* replace(Str* old, Str* new_str);
@@ -546,6 +555,8 @@ inline Str* NewStr(const char* data, int len) {
   void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
   auto s = new (place) Str();
 
+  //log("NewStr s->data_ %p len = %d", s->data_, len);
+  //log("sizeof(Str) = %d", sizeof(Str));
   memcpy(s->data_, data, len);
   s->data_[len] = '\0';  // So we can pass it directly to C functions
 
@@ -800,16 +811,8 @@ using gc_heap::Str;
 
 // For string methods to use, e.g. _len(this).  Note: it might be OK to call
 // this len() and overload it?
-inline int _len(const Str* s) {
+inline int len(const Str* s) {
   return s->obj_len_ - gc_heap::kStrHeaderSize - 1;
-}
-
-// Hm only functions that don't allocate can take a raw pointer ...
-// If they allocate, then that pointer can be moved out from under them!
-
-// Hm do all standard library functions have to take Handles now?
-inline int len(Local<Str> s) {
-  return _len(s.Get());
 }
 
 template <typename T>
