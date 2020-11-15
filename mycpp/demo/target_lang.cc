@@ -547,7 +547,7 @@ int main(int argc, char** argv) {
   RUN_TEST(static_literals);
   RUN_TEST(enum_demo);
   RUN_TEST(field_mask_demo);
-  RUN_TEST(inheritance_demo);
+  // RUN_TEST(inheritance_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

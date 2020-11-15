@@ -128,7 +128,7 @@ class Obj;
 
 const int kMaxRoots = 1024;  // related to C stack size
 
-#define GC_DEBUG 1
+// #define GC_DEBUG 1
 
 class Heap {
  public:
@@ -172,8 +172,10 @@ class Heap {
 
     // Do a collection if REQUIRED.
     if (almost_full || free_ + n > limit_) {
+#if GC_DEBUG
       log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
           space_size_);
+#endif
 
       Collect(false);
       // Three cases at the end of Collect:

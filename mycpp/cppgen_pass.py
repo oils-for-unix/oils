@@ -118,6 +118,15 @@ def _CheckConditionType(t):
   return True
 
 
+def CTypeIsManaged(c_type):
+  # type: (str) -> bool
+  """Do we need to add it to StackRoots?"""
+  assert c_type != 'void'
+
+  # TODO: What about function types?  I don't think we're using those?
+  return c_type not in ('int', 'double', 'bool')
+
+
 def get_c_type(t, param=False, local=False):
   is_pointer = False
 
@@ -2360,7 +2369,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Figure out if we have any roots to write with StackRoots
           roots = []  # keep it sorted
           for lval_name, c_type, _ in self.prepend_to_block:
-            if lval_name not in roots and c_type == 'Str*':
+            if lval_name not in roots and CTypeIsManaged(c_type):
               roots.append(lval_name)
 
           # TODO: Also need function parameters
@@ -2369,7 +2378,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             for i, r in enumerate(roots):
               if i != 0:
                 self.write(', ')
-              self.write('&%s' % lval_name)
+              self.write('&%s' % r)
 
             self.write('});\n')
             self.write('\n')

@@ -11,8 +11,7 @@ containing MyPy's dependencies.
 
 See the instructions at the top of `run.sh` for details.
 
-
-### Notes on the Algorithm / Architecture
+## Notes on the Algorithm / Architecture
 
 (A) One `const_pass.py`.  Collect string constants.
   
@@ -21,10 +20,9 @@ See the instructions at the top of `run.sh` for details.
 
 1. Forward Declaration Pass.
 
-```
+
     class Foo;
     class Bar;
-```
 
 More work:
 
@@ -33,14 +31,13 @@ More work:
 
 2. Declaration Pass.
 
-```
+
     class Foo {
       void method();
     };
     class Bar {
       void method();
     };
-```
 
 
 More work:
@@ -51,22 +48,19 @@ More work:
 
 3. Definition Pass.
 
-```
     void Foo:method() {
       ...
     }
     void Bar:method() {
       ...
     }
-```
-
 
 
 Note: I really wish we were not using visitors, but that's inherited from MyPy.
 MyPy seems to have some support for serializing the AST, so maybe we could do
 that and rewrite it in Oil.
 
-### C++ Features We Use
+## C++ Features We Use
 
 It would be nice to generate plain C, but it would also be significantly more
 work because we use several C++ features.
@@ -102,7 +96,7 @@ Not using:
 - I/O Streams, RTTI, etc.
 - `const`
 
-### Notes on mylib
+## Notes on mylib
 
 - A `Str` is immutable, and can be used as a key to a `Dict` (at the Python
   level), and thus an `AssocArray` (at the Oil level).
@@ -110,3 +104,15 @@ Not using:
 - A `BufWriter` is mutable.  It's an alias for `cStringIO.StringIO()`.  You
   build it with repeated calls to`write()`, and then call `getvalue()` at the
   end.
+
+## Limitations 
+
+### Due to Garbage Collection
+
+- Instead of `Tuple[str, int]`, use an ASDL record `(str s, int i)`
+- `for x in [1, 2, 3]` is not allowed.  Assign it to a temporary variable
+  first, so it can be picked up in StackRoots().
+
+
+
+

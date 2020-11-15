@@ -6,8 +6,6 @@ using gc_heap::Heap;
 using gc_heap::Local;
 using gc_heap::Obj;
 
-#define GC_DEBUG 1
-
 namespace gc_heap {
 
 Heap gHeap;
@@ -69,7 +67,9 @@ Obj* Heap::Relocate(Obj* obj) {
 }
 
 void Heap::Collect(bool must_grow) {
+#if GC_DEBUG
   log("--> COLLECT");
+#endif
 
   scan_ = to_space_;  // boundary between black and gray
   free_ = to_space_;  // where to copy new entries
@@ -88,8 +88,10 @@ void Heap::Collect(bool must_grow) {
     Obj** handle = roots_[i];
     auto root = *handle;
 
+#if GC_DEBUG
     log("%d. handle %p", i, handle);
     log("     root %p", root);
+#endif
 
     // This updates the underlying Str/List/Dict with a forwarding pointer,
     // i.e. for other objects that are pointing to it
@@ -138,8 +140,11 @@ void Heap::Collect(bool must_grow) {
   char* tmp = from_space_;
   from_space_ = to_space_;
   to_space_ = tmp;
+
+#if GC_DEBUG
   log("<-- COLLECT from %p, to %p, num_live_objs_ %d", from_space_, to_space_,
       num_live_objs_);
+#endif
 
   // Subtle logic for growing the heap.  Copied from femtolisp.
   //

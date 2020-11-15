@@ -43,14 +43,14 @@ Str* Str::replace(Str* old, Str* new_str) {
   int length =
       len(this) - (replace_count * len(old)) + (replace_count * len(new_str));
 
-  char* result = static_cast<char*>(malloc(length + 1));  // +1 for NUL
+  char* tmp = static_cast<char*>(malloc(length + 1));  // +1 for NUL
 
   const char* new_data = new_str->data_;
   const size_t new_len = len(new_str);
 
   // Second pass to copy into new 'result'
   p_this = data_;
-  char* p_result = result;  // advances through 'result'
+  char* p_result = tmp;  // advances through 'result'
 
   for (int i = 0; i < replace_count; ++i) {
     const char* next = strstr(p_this, old_data);
@@ -67,10 +67,12 @@ Str* Str::replace(Str* old, Str* new_str) {
   }
   memcpy(p_result, p_this,
          data_ + len(this) - p_this);  // Copy the rest of 'this'
-  result[length] = '\0';               // NUL terminate
+  tmp[length] = '\0';               // NUL terminate
 
-  // NOTE: This copies the buffer 'result'
-  return NewStr(result);
+  // NOTE: This copies the buffer
+  Str* s = NewStr(tmp);
+  free(tmp);
+  return s;
 }
 
 namespace my_runtime {

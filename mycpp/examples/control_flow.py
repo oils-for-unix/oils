@@ -44,7 +44,8 @@ def ExceptDemo():
   # type: () -> None
 
   result = ''
-  for prog in ['foo', 'bar']:
+  tmp = ['foo', 'bar']
+  for prog in tmp:
     try:
       result = f(prog)
     except ParseError as e:
@@ -56,8 +57,8 @@ def ExceptDemo():
 def run_tests():
   # type: () -> None
 
-  # TODO: xrange()
-  for i in [1, 2, 3, 4, 5]:
+  tmp = [1, 2, 3, 4, 5]
+  for i in tmp:
     IfDemo(i)
 
   log('')
