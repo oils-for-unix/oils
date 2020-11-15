@@ -8,7 +8,7 @@ gen-main() {
   cat <<EOF
 
 int main(int argc, char **argv) {
-  gc_heap::gHeap.Init(4 << 20);  // 400 MiB matches dumb_alloc
+  gc_heap::gHeap.Init(512 << 10);  // 512 KiB; doubling in size
 
   if (getenv("BENCHMARK")) {
     fprintf(stderr, "Benchmarking...\n");
