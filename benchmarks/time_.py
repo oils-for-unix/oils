@@ -77,6 +77,9 @@ def main(argv):
     log('Error executing %s: %s', child_argv, e)
     return 1
 
+  # BUG here!  Because subprocess does a fork(), which includes Python's
+  # address space.
+  # https://stackoverflow.com/questions/13880724/python-getrusage-with-rusage-children-behaves-stangely
   if opts.rusage:
     r = resource.getrusage(resource.RUSAGE_CHILDREN)
     rusage_fields = [r.ru_utime, r.ru_stime, r.ru_maxrss]

@@ -242,16 +242,15 @@ gen-ctags() {
 }
 
 gc-examples() {
-  BENCHMARK=1 GC=1 example-both cgi opt
-
-  #GC=1 benchmark-both cgi
-  return
-
   if true; then
     # these work
-    GC=1 example-both fib_iter
-    GC=1 example-both fib_recursive
+    GC=1 example-both fib_iter opt
+    GC=1 example-both fib_recursive opt
   fi
+
+  BENCHMARK=1 GC=1 example-both cgi opt
+  #BENCHMARK=1 GC=1 example-both control_flow opt
+  return
 
   # print()
   GC=1 example-both switch_
@@ -260,9 +259,6 @@ gc-examples() {
   # slice(), maybe_str_equals()
   GC=1 example-both length
   return
-
-  # needs .replace()
-  #GC=1 example-both cgi
 
   # print() and to_int()
   #GC=1 example-both conditional

@@ -43,6 +43,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   int length =
       len(this) - (replace_count * len(old)) + (replace_count * len(new_str));
 
+  // TODO: Do NewStr(len) here, and then the data_ member
   char* tmp = static_cast<char*>(malloc(length + 1));  // +1 for NUL
 
   const char* new_data = new_str->data_;

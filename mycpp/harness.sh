@@ -8,7 +8,8 @@ gen-main() {
   cat <<EOF
 
 int main(int argc, char **argv) {
-  gc_heap::gHeap.Init(512 << 10);  // 512 KiB; doubling in size
+  // gc_heap::gHeap.Init(512 << 10);  // 512 KiB; doubling in size
+  gc_heap::gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
 
   if (getenv("BENCHMARK")) {
     fprintf(stderr, "Benchmarking...\n");
@@ -315,6 +316,8 @@ should-skip-benchmark() {
 # One
 #
 
+readonly -a TIME_xUM=(/usr/bin/time --format '%x %U %M')
+
 example-both() {
   local name=$1
   local variant=${2:-asan}
@@ -325,14 +328,14 @@ example-both() {
   compile-example $name $variant
 
   # We're asserting both stdout and stderr, so use a temp file
+
   local tmp='_tmp/t'
-  local -a time=(/usr/bin/time --format '%x %U %M' -o $tmp --)
 
   # diff stderr too!
   echo
   echo $'\t[ C++ ]'
   set +o errexit
-  "${time[@]}" _bin/$name.$variant > _tmp/$name.cpp.txt 2>&1
+  "${TIME_xUM[@]}" -o $tmp -- _bin/$name.$variant > _tmp/$name.cpp.txt 2>&1
   set -o errexit
   cat $tmp
 
@@ -341,7 +344,7 @@ example-both() {
   echo
   echo $'\t[ Python ]'
   set +o errexit
-  "${time[@]}" $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
+  "${TIME_xUM[@]}" -o $tmp -- $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
   set -o errexit
   cat $tmp
 
@@ -377,4 +380,20 @@ strip-all() {
   ls -l _bin/*.stripped
 }
 
+# This is a preview for what benchmarks/compute will do.
+fib-compare() {
+  # 6768 KiB
+  "${TIME_xUM[@]}" ../benchmarks/compute/fib.py 
 
+  # 1652 KiB
+  "${TIME_xUM[@]}" ../benchmarks/compute/fib.sh
+
+  # 1652 KiB
+  "${TIME_xUM[@]}" dash ../benchmarks/compute/fib.sh 
+
+  # Measurement error!!!
+  # But we're passing resource.RUSAGE_CHILDREN?
+  ../benchmarks/time_.py -o /dev/stdout --rusage -- dash ../benchmarks/compute/fib.sh
+
+  # With OSH we're getting down to 2000-3000 KiB now?
+}

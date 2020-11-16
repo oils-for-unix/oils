@@ -3,7 +3,7 @@
 # Run all the benchmarks on a given machine.
 #
 # Usage:
-#   ./auto.sh <function name>
+#   benchmarks/auto.sh <function name>
 #
 # List of benchmarks:
 #
