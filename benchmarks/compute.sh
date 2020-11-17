@@ -37,6 +37,17 @@ readonly OSH_CC=_bin/osh_eval.opt.stripped
 TIMEFORMAT='%U'
 
 # task_name,iter,args
+hello-tasks() {
+  local provenance=$1
+
+  # Add 1 field for each of 5 fields.
+  cat $provenance | filter-provenance python bash dash $OSH_CC |
+  while read fields; do
+    echo 'hello _ _' | xargs -n 3 -- echo "$fields"
+  done
+}
+
+# task_name,iter,args
 fib-tasks() {
   local provenance=$1
 
@@ -155,6 +166,16 @@ ext() {
   esac
 }
 
+hello-one() {
+  ### Run one hello task
+
+  local name=$1
+  local runtime=$2
+  shift 2
+
+  $runtime benchmarks/compute/$name.$(ext $runtime) "$@"
+}
+
 fib-one() {
   ### Run one fibonacci task
 
@@ -241,6 +262,7 @@ parse_help-one() {
 # Helpers
 #
 
+hello-all() { task-all hello "$@"; }
 fib-all() { task-all fib "$@"; }
 word_freq-all() { task-all word_freq "$@"; }
 assoc_array-all() { task-all assoc_array "$@"; }
@@ -294,6 +316,9 @@ task-all() {
     #log "runtime=$runtime args=$args"
 
     local stdout=stdout-$file-$arg1-$(basename $arg2).txt
+
+    # Measurement BUG!  This makes dash have the memory usage of bash!
+    # It's better to get argv into the shell.
 
     # join args into a single field
     "${TIME_PREFIX[@]}" \
@@ -358,6 +383,7 @@ measure() {
 
   mkdir -p $BASE_DIR/{tmp,raw,stage1} $raw_dir
 
+  hello-all $provenance $raw_dir
   fib-all $provenance $raw_dir
   word_freq-all $provenance $raw_dir
   parse_help-all $provenance $raw_dir
@@ -427,6 +453,13 @@ Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
 Source code: [oil/benchmarks/compute](https://github.com/oilshell/oil/tree/master/benchmarks/compute)
 
 EOF
+
+  cmark <<EOF
+### hello (minimal startup)
+
+EOF
+
+  tsv2html $in_dir/hello.tsv
 
   cmark <<EOF
 ### fibonacci (integers)
