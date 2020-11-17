@@ -20,7 +20,7 @@ from __future__ import print_function
 
 import csv
 import optparse
-import resource
+import os
 import sys
 import subprocess
 import time
@@ -63,40 +63,49 @@ def main(argv):
   (opts, child_argv) = Options().parse_args(argv[1:])
 
   if not child_argv:
-    log('time.py: Expected a command')
-    return 2
+    raise RuntimeError('Expected a command')
+
+  # BUG fix!  We have to shell out to /usr/bin/time rather than use Python's
+  # resource.getursage().  Because subprocess does a fork(), which includes
+  # Python's address space.
+  # https://stackoverflow.com/questions/13880724/python-getrusage-with-rusage-children-behaves-stangely
+
+  # %x: exit status
+  # %e: elapsed
+  fmt_parts = ['%x', '%e']
+
+  if opts.rusage:
+    # %U: user time
+    # %S: sys time
+    # %M: Max RSS
+    fmt_parts.extend(['%U', '%S', '%M'])
+
+  # Used only for 'time' format string.  For --field, we use our own.
+  sep = '\t' if opts.tsv else ','
+  fmt = sep.join(fmt_parts)
+
+  time_argv = ['time', '--format', fmt]
+  if opts.append:
+    time_argv.append('--append')
+  if opts.output:
+    time_argv.extend(['--output', opts.output])
+  time_argv.append('--')
+  time_argv.extend(child_argv)
+  #log('time_argv %s', time_argv)
 
   start_time = time.time()
   try:
     if opts.stdout:
+      # We don't want to intermingle 'time' stdout with the program's stdout
+      if not opts.output:
+        raise RuntimeError('Flag -o is required when --stdout')
       with open(opts.stdout, 'w') as f:
-        exit_code = subprocess.call(child_argv, stdout=f)
+        exit_code = subprocess.call(time_argv, stdout=f)
     else:
-      exit_code = subprocess.call(child_argv)
+      exit_code = subprocess.call(time_argv)
   except OSError as e:
-    log('Error executing %s: %s', child_argv, e)
+    log('Error executing %s: %s', time_argv, e)
     return 1
-
-  # BUG here!  Because subprocess does a fork(), which includes Python's
-  # address space.
-  # https://stackoverflow.com/questions/13880724/python-getrusage-with-rusage-children-behaves-stangely
-
-  # --format $''
-  # %x: exit status
-  # %e: elapsed
-
-  # %U: user time
-  # %S: user time
-  # %M: Max RSS
-
-  # So we append this to the file WITHOUT a newline
-  # And then add maybe_stdout and opts.fields, WITH a newline.
-
-  if opts.rusage:
-    r = resource.getrusage(resource.RUSAGE_CHILDREN)
-    rusage_fields = [r.ru_utime, r.ru_stime, r.ru_maxrss]
-  else:
-    rusage_fields = []
 
   elapsed = time.time() - start_time
   if opts.stdout:
@@ -112,24 +121,25 @@ def main(argv):
   else:
     maybe_stdout = []  # no field
 
-  row = (
-      [exit_code, opts.time_fmt % elapsed] + rusage_fields + maybe_stdout +
-      opts.fields
-  )
+  more_cells = maybe_stdout + opts.fields
 
-  if opts.output:
-    mode = 'a' if opts.append else 'w'
-    with open(opts.output, mode) as f:
-      if opts.tsv:
-        # TSV output.
-        out = csv.writer(f, delimiter='\t', lineterminator='\n',
-                         doublequote=False,
-                         quoting=csv.QUOTE_NONE)
-      else:
-        out = csv.writer(f)
-      out.writerow(row)
-  else:
-    log("time.py wasn't passed -o: %s", row)
+  if more_cells:
+    if opts.output:
+      with open(opts.output, 'r+') as f:  # read/write to seek and modify
+        # Hack: overwrite the newline that 'time' wrote!
+        f.seek(-1, os.SEEK_END)
+        f.write(sep)
+
+        if opts.tsv:
+          # TSV output.
+          out = csv.writer(f, delimiter='\t', lineterminator='\n',
+                           doublequote=False,
+                           quoting=csv.QUOTE_NONE)
+        else:
+          out = csv.writer(f)
+        out.writerow(more_cells)
+    else:
+      log("Rows that -o would have written: %s", row)
 
   # Preserve the command's exit code.  (This means you can't distinguish
   # between a failure of time.py and the command, but that's better than
@@ -138,4 +148,9 @@ def main(argv):
 
 
 if __name__ == '__main__':
-  sys.exit(main(sys.argv))
+  try:
+    status = main(sys.argv)
+  except RuntimeError as e:
+    log('time_.py: %s', e)
+    status = 2
+  sys.exit(status)

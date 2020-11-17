@@ -157,7 +157,10 @@ EOF
 
   # No assertions here yet
   md5sum _tmp/stdout.txt
-  cat $out
+  cat $out | count-lines-and-cols 1 3 ,
+
+  time-tool -o $out --rusage --stdout _tmp/stdout.txt -- seq 3
+  cat $out | count-lines-and-cols 1 6 ,
 }
 
 test-rusage() {
@@ -184,7 +187,7 @@ test-rusage() {
 test-maxrss() {
   /usr/bin/time --format '%x %U %M' -- seq 1
 
-  # Showing a discrepancy
+  # Showing a discrepancy.  FIXED!
   time-tool --tsv --rusage -o /dev/stdout -- seq 1
 }
 
