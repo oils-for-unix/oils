@@ -270,19 +270,28 @@ Julia for signatures, default arguments, named arguments:
     func f(p1, p2=0 ; n2, n2=0) {
     }
 
-And lazy arugment lists:
+And lazy argument lists:
 
     :(1+2)   # lazy expression in Julia
 
     mutate :(a, b)  # lazy argument list in Oil
 
+And multi-line strings
 
-Go and MyPy, for types:
+    x = '''
+    whitespace stripped
+    '''
+
+Go for type signatures:
 
     func add(x Int, y Int) Int {
       return x + y
     }
     # what about named return values?
+
+and MyPy for types like List[Int], Dict[Str, Str]
+
+(Swift and Perl 6 also capitalize all types)
 
 Rust:
 

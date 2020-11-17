@@ -242,15 +242,15 @@ gen-ctags() {
 }
 
 gc-examples() {
+  BENCHMARK=1 GC=1 example-both cgi opt
+  #BENCHMARK=1 GC=1 example-both control_flow opt
+  return
+
   if true; then
     # these work
     GC=1 example-both fib_iter opt
     GC=1 example-both fib_recursive opt
   fi
-
-  BENCHMARK=1 GC=1 example-both cgi opt
-  #BENCHMARK=1 GC=1 example-both control_flow opt
-  return
 
   # print()
   GC=1 example-both switch_

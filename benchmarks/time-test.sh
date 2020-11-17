@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./time-test.sh <function name>
+#   benchmarks/time-test.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -9,8 +9,56 @@ set -o errexit
 
 source test/common.sh
 
+# TODO: This would be a nice little program for Oil
+count-lines-and-cols() {
+  python -c '
+import sys
+
+expected_num_lines = int(sys.argv[1])
+expected_num_cols = int(sys.argv[2])
+try:
+  sep = sys.argv[3]
+except IndexError:
+  sep = "\t"
+
+num_lines = 0
+tab_counts = []
+for line in sys.stdin:
+  tab_counts.append(line.count(sep))
+  num_lines += 1
+  # Show what we get
+  sys.stdout.write(line)
+
+if any(tab_counts[0] != n for n in tab_counts):
+  raise AssertionError(tab_counts)
+
+num_tabs = tab_counts[0]
+
+assert expected_num_lines == num_lines, \
+  "expected %d lines, got %d" % (expected_num_lines, num_lines)
+assert expected_num_cols == num_tabs + 1, \
+  "expected %d cols, got %d" % (expected_num_cols, num_tabs + 1)
+' "$@"
+}
+
 time-tool() {
   $(dirname $0)/time_.py "$@"
+}
+
+test-csv() {
+  local out=_tmp/time.csv
+
+  time-tool -o $out -- echo hi
+  cat $out | count-lines-and-cols 1 2 ,
+
+  time-tool -o $out --field a --field b -- echo hi
+  cat $out | count-lines-and-cols 1 4 ,
+
+  time-tool -o $out --rusage -- echo hi
+  cat $out | count-lines-and-cols 1 5 ,
+
+  time-tool -o $out --rusage --field a --field b -- echo hi
+  cat $out | count-lines-and-cols 1 7 ,
 }
 
 test-tsv() {
@@ -20,7 +68,13 @@ test-tsv() {
   for i in 1 2 3; do
     time-tool --tsv -o $out --append --time-fmt '%.2f' -- sleep 0.0${i}
   done
-  cat $out
+  cat $out | count-lines-and-cols 3 2
+
+  time-tool --tsv -o $out --field a --field b -- echo hi
+  cat $out | count-lines-and-cols 1 4 
+
+  time-tool --tsv -o $out --rusage --field a --field b -- echo hi
+  cat $out | count-lines-and-cols 1 7
 }
 
 test-append() {
@@ -28,14 +82,17 @@ test-append() {
   for i in 4 5; do
     time-tool --tsv -o $out -- sleep 0.0${i}
   done
-  local num_lines=$(cat $out | wc -l)
-  test $num_lines -eq 1 || fail "Expected 1 line, got $num_lines"
+  cat $out | count-lines-and-cols 1 2
+
+  echo ---
 
   local out=_tmp/append.tsv
+  rm -f $out
+
   for i in 4 5; do
     time-tool --tsv -o $out --append -- sleep 0.0${i}
   done
-  wc -l $out
+  cat $out | count-lines-and-cols 2 2
 }
 
 test-usage() {
@@ -43,13 +100,14 @@ test-usage() {
   set +o errexit
 
   time-tool; status=$?
-  test $status = 2 || fail "Unexpected status $status"
+  assert $status -eq 2
+
   time-tool --output; status=$?
-  test $status = 2 || fail "Unexpected status $status"
+  assert $status -eq 2
 
   time-tool sleep 0.1
   time-tool --append sleep 0.1; status=$?
-  test $status = 0 || fail "Unexpected status $status"
+  assert $status -eq 0
 
   set -o errexit
 }
@@ -62,23 +120,23 @@ test-bad-tsv-chars() {
 
   # Newline should fail
   time-tool --tsv -o $out --field $'\n' -- sleep 0.001; status=$?
-  test $status = 1 || fail "Unexpected status $status"
+  assert $status -eq 1
 
   # Tab should fail
   time-tool --tsv -o $out --field $'\t' -- sleep 0.001; status=$?
-  test $status = 1 || fail "Unexpected status $status"
+  assert $status -eq 1
 
   # Quote should fail
   time-tool --tsv -o $out --field '"' -- sleep 0.001; status=$?
-  test $status = 1 || fail "Unexpected status $status"
+  assert $status -eq 1
 
   # Backslash is OK
   time-tool --tsv -o $out --field '\' -- sleep 0.001; status=$?
-  test $status = 0 || fail "Unexpected status $status"
+  assert $status -eq 0
 
   # Space is OK, although canonical form would be " "
   time-tool --tsv -o $out --field ' ' -- sleep 0.001; status=$?
-  test $status = 0 || fail "Unexpected status $status"
+  assert $status -eq 0
 
   set -o errexit
 
@@ -89,7 +147,13 @@ test-bad-tsv-chars() {
 
 test-stdout() {
   local out=_tmp/time-stdout.csv
-  time-tool -o $out --stdout _tmp/stdout.txt -- ls
+  time-tool -o $out --stdout _tmp/stdout.txt -- seq 3
+
+  diff _tmp/stdout.txt - <<EOF
+1
+2
+3
+EOF
 
   # No assertions here yet
   md5sum _tmp/stdout.txt
@@ -101,7 +165,7 @@ test-rusage() {
 
   local out=_tmp/time-usage.csv
   time-tool --tsv -o $out --rusage -- bash -c 'echo bash'
-  cat $out
+  cat $out | count-lines-and-cols 1 5
 
   #time-tool --tsv -o $out --rusage -- dash -c 'echo dash'
   #cat $out
@@ -110,20 +174,30 @@ test-rusage() {
   local py='a=[42]*500000; print "python"'
 
   time-tool --tsv -o $out --rusage -- python -c "$py"
-  cat $out
+  cat $out | count-lines-and-cols 1 5
 
   #time-tool --tsv -o $out --rusage -- bin/osh -c 'echo osh'
   #cat $out
 }
 
+# Compare vs. /usr/bin/time
+test-maxrss() {
+  /usr/bin/time --format '%x %U %M' -- seq 1
+
+  # Showing a discrepancy
+  time-tool --tsv --rusage -o /dev/stdout -- seq 1
+}
+
 all-passing() {
   test-usage
+  test-csv
   test-tsv
   test-append
   # Spews some errors
   test-bad-tsv-chars
   test-stdout
   test-rusage
+  test-maxrss
 
   echo
   echo "All tests in $0 passed."
