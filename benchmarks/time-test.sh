@@ -11,7 +11,7 @@ source test/common.sh
 
 # TODO: This would be a nice little program for Oil
 count-lines-and-cols() {
-  python -c '
+  python2 -c '
 import sys
 
 expected_num_lines = int(sys.argv[1])
@@ -188,7 +188,7 @@ test-maxrss() {
   /usr/bin/time --format '%x %U %M' -- seq 1
 
   # Showing a discrepancy.  FIXED!
-  time-tool --tsv --rusage -o /dev/stdout -- seq 1
+  time-tool --tsv --rusage -- seq 1
 }
 
 all-passing() {
