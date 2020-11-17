@@ -80,6 +80,18 @@ def main(argv):
   # BUG here!  Because subprocess does a fork(), which includes Python's
   # address space.
   # https://stackoverflow.com/questions/13880724/python-getrusage-with-rusage-children-behaves-stangely
+
+  # --format $''
+  # %x: exit status
+  # %e: elapsed
+
+  # %U: user time
+  # %S: user time
+  # %M: Max RSS
+
+  # So we append this to the file WITHOUT a newline
+  # And then add maybe_stdout and opts.fields, WITH a newline.
+
   if opts.rusage:
     r = resource.getrusage(resource.RUSAGE_CHILDREN)
     rusage_fields = [r.ru_utime, r.ru_stime, r.ru_maxrss]

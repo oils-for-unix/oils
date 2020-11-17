@@ -68,7 +68,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   }
   memcpy(p_result, p_this,
          data_ + len(this) - p_this);  // Copy the rest of 'this'
-  tmp[length] = '\0';               // NUL terminate
+  tmp[length] = '\0';                  // NUL terminate
 
   // NOTE: This copies the buffer
   Str* s = NewStr(tmp);

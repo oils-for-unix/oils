@@ -10,7 +10,6 @@
 #include "typed_demo_asdl.gc.h"
 
 using gc_heap::Alloc;
-using gc_heap::Local;
 using gc_heap::NewStr;
 // using hnode_asdl::hnode_str;
 
@@ -25,9 +24,9 @@ TEST pretty_print_test() {
   // left and right are not optional.
   // auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
 
-  Local<word> w1 = Alloc<word>(NewStr("left"));
-  Local<word> w2 = Alloc<word>(NewStr("right"));
-  Local<bool_expr__Binary> b = Alloc<bool_expr__Binary>(w1, w2);
+  auto w1 = Alloc<word>(NewStr("left"));
+  auto w2 = Alloc<word>(NewStr("right"));
+  auto b = Alloc<bool_expr__Binary>(w1, w2);
 
   //
   log("sizeof b = %d", sizeof b);

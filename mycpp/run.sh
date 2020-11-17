@@ -227,7 +227,7 @@ mylib-test() {
 
 gc-heap-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile gc_heap_test asan -I ../cpp gc_heap.cc
+  cpp-compile gc_heap_test asan -D GC_DEBUG -I ../cpp gc_heap.cc
   _bin/gc_heap_test.asan "$@"
 }
 
