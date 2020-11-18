@@ -8,14 +8,16 @@ set -o errexit
 #
 # TODO: It would be much nicer to export a FUNCTION "cxx" rather than a
 # variable $CXX.
-_THIS_DIR=$(dirname ${BASH_SOURCE[0]})
+_THIS_DIR=$(dirname ${BASH_SOURCE[0]})  # oilshell/oil/build/ dir
 readonly _THIS_DIR
+_REPO_ROOT=$(cd $THIS_DIR/.. && pwd)  # oilshell/oil
+readonly _REPO_ROOT
 
 # TODO: This changes depending on the version.  Maybe there should be a 'clang'
 # function for things that really require clang, like code coverage and so
 # forth.
 readonly CLANG_DIR_RELATIVE='_deps/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04'
-readonly CLANG_DIR=$_THIS_DIR/../$CLANG_DIR_RELATIVE
+readonly CLANG_DIR=$_REPO_ROOT/$CLANG_DIR_RELATIVE
 readonly CLANG=$CLANG_DIR/bin/clang
 readonly CLANGXX=$CLANG_DIR/bin/clang++
 

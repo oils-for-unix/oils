@@ -194,8 +194,13 @@ true 9> "$TMP/fd.txt"
 cat "$TMP/fd.txt"
 ## stdout-json: ""
 
-#### : 3>&3 (OSH regression)
-: 3>&3
+#### : 4>&4 (OSH regression)
+
+# Note: This used to be 3>&3 except on the 0.8.5 release it was flaky under
+# mksh only?  Reproducible with test/spec.sh osh-all, but not test/spec.sh
+# redirect.  Very weird.
+
+: 4>&4
 echo hello
 ## stdout: hello
 ## BUG mksh stdout-json: ""
