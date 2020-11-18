@@ -404,7 +404,7 @@ stage1() {
 
   local -a raw=()
 
-  for metric in fib word_freq parse_help bubble_sort palindrome; do
+  for metric in hello fib word_freq parse_help bubble_sort palindrome; do
     local dir=$raw_dir/$metric
 
     # Globs are in lexicographical order, which works for our dates.

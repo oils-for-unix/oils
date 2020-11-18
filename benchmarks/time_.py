@@ -7,14 +7,25 @@ The interface of this program is modelled after:
 /usr/bin/time --append --output foo.txt --format '%x %e'
 
 Problems with /usr/bin/time:
-  - elapsed time only has 2 digits of precision
+- Elapsed time only has 2 digits of precision.  Apparently it uses times()
+  rather than getrusage()?  https://unix.stackexchange.com/questions/70653/increase-e-precision-with-usr-bin-time-shell-command 
+
+Problems with resource.getrusage() in Python:
+
+  The memory usage of dash and bash get obscured by Python!  Because
+  subprocess.call() does a fork(), which includes Python's address space.
+  # https://stackoverflow.com/questions/13880724/python-getrusage-with-rusage-children-behaves-stangely
 
 Problems with bash time builtin
-  - has no way to get the exit code
-  - writes to stderr, so you it's annoying to get both process stderr and
-    and
+- has no way to get the exit code
+- writes to stderr, so you it's annoying to get both process stderr and the
+  timing
 
-This program also writes CSV directly, so you can have commas in fields, etc.
+This program also writes CSV and TSV directly.
+- CSV values get escaped
+- TSV values can't have tabs
+
+Real solution: Write a tiny C program to do it, and ditch /usr/bin/time.
 """
 from __future__ import print_function
 
@@ -64,11 +75,6 @@ def main(argv):
 
   if not child_argv:
     raise RuntimeError('Expected a command')
-
-  # BUG fix!  We have to shell out to /usr/bin/time rather than use Python's
-  # resource.getursage().  Because subprocess does a fork(), which includes
-  # Python's address space.
-  # https://stackoverflow.com/questions/13880724/python-getrusage-with-rusage-children-behaves-stangely
 
   # %x: exit status
   # %e: elapsed

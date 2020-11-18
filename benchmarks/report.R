@@ -558,6 +558,7 @@ ComputeReport = function(in_dir, out_dir) {
   # Check correctness
   #
 
+  times %>% filter(task_name == 'hello') %>% unique_stdout_md5sum(1)
   times %>% filter(task_name == 'fib') %>% unique_stdout_md5sum(1)
   times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(1)
   # 3 different inputs
@@ -601,6 +602,7 @@ ComputeReport = function(in_dir, out_dir) {
     arrange(host_name, task_name, arg1, arg2, user_ms) ->
     details
 
+  details %>% filter(task_name == 'hello') %>% select(-c(task_name)) -> hello
   details %>% filter(task_name == 'fib') %>% select(-c(task_name)) -> fib
   details %>% filter(task_name == 'word_freq') %>% select(-c(task_name)) -> word_freq
   # There's no arg2
@@ -611,6 +613,7 @@ ComputeReport = function(in_dir, out_dir) {
 
   writeTsv(details, file.path(out_dir, 'details'))
 
+  writeTsv(hello, file.path(out_dir, 'hello'))
   writeTsv(fib, file.path(out_dir, 'fib'))
   writeTsv(word_freq, file.path(out_dir, 'word_freq'))
   writeTsv(parse_help, file.path(out_dir, 'parse_help'))
