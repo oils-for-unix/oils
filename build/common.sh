@@ -10,7 +10,7 @@ set -o errexit
 # variable $CXX.
 _THIS_DIR=$(dirname ${BASH_SOURCE[0]})  # oilshell/oil/build/ dir
 readonly _THIS_DIR
-_REPO_ROOT=$(cd $THIS_DIR/.. && pwd)  # oilshell/oil
+_REPO_ROOT=$(cd $_THIS_DIR/.. && pwd)  # oilshell/oil
 readonly _REPO_ROOT
 
 # TODO: This changes depending on the version.  Maybe there should be a 'clang'
