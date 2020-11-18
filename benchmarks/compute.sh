@@ -166,26 +166,6 @@ ext() {
   esac
 }
 
-hello-one() {
-  ### Run one hello task
-
-  local name=$1
-  local runtime=$2
-  shift 2
-
-  $runtime benchmarks/compute/$name.$(ext $runtime) "$@"
-}
-
-fib-one() {
-  ### Run one fibonacci task
-
-  local name=$1
-  local runtime=$2
-  shift 2
-
-  $runtime benchmarks/compute/$name.$(ext $runtime) "$@"
-}
-
 word_freq-one() {
   ### Run one word_freq task (hash tables)
 
@@ -320,13 +300,25 @@ task-all() {
     # Measurement BUG!  This makes dash have the memory usage of bash!
     # It's better to get argv into the shell.
 
+    local -a cmd
+    case $task_name in
+      (hello|fib)
+        # Run it DIRECTLY, do not run $0.  Because we do NOT want to fork bash
+        # than dash, because bash uses more memory.
+        cmd=($runtime benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
+        ;;
+      (*)
+        cmd=($0 ${task_name}-one "$task_name" "$runtime" "$arg1" "$arg2")
+        ;;
+    esac
+
     # join args into a single field
     "${TIME_PREFIX[@]}" \
       --stdout $tmp_dir/$stdout -o $times_tsv \
       --field "$host" --field "$host_hash" \
       --field $runtime --field $runtime_hash \
       --field "$task_name" --field "$arg1" --field "$arg2" -- \
-      $0 ${task_name}-one "$task_name" "$runtime" "$arg1" "$arg2"
+      "${cmd[@]}"
 
     task_id=$((task_id + 1))
   done
