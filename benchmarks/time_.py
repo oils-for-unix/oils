@@ -31,7 +31,6 @@ from __future__ import print_function
 
 import csv
 import optparse
-import os
 import sys
 import subprocess
 import time
@@ -76,25 +75,26 @@ def main(argv):
   if not child_argv:
     raise RuntimeError('Expected a command')
 
+  # Used only for 'time' format string.  For --field, we use our own.
+  sep = '\t' if opts.tsv else ','
+  # built by build/dev.sh all
+  time_argv = ['_devbuild/bin/time-helper', '-d', sep]
+
+  if opts.append:
+    time_argv.append('-a')
+
+  if opts.output:
+    time_argv.extend(['-o', opts.output])
+
   # %x: exit status
   # %e: elapsed
-  fmt_parts = ['%x', '%e']
-
+  time_argv.extend(['-x', '-e'])
   if opts.rusage:
     # %U: user time
     # %S: sys time
     # %M: Max RSS
-    fmt_parts.extend(['%U', '%S', '%M'])
+    time_argv.extend(['-U', '-S', '-M'])
 
-  # Used only for 'time' format string.  For --field, we use our own.
-  sep = '\t' if opts.tsv else ','
-  fmt = sep.join(fmt_parts)
-
-  time_argv = ['time', '--format', fmt]
-  if opts.append:
-    time_argv.append('--append')
-  if opts.output:
-    time_argv.extend(['--output', opts.output])
   time_argv.append('--')
   time_argv.extend(child_argv)
   #log('time_argv %s', time_argv)
@@ -129,13 +129,10 @@ def main(argv):
 
   more_cells = maybe_stdout + opts.fields
 
-  if more_cells:
-    if opts.output:
-      with open(opts.output, 'r+') as f:  # read/write to seek and modify
-        # Hack: overwrite the newline that 'time' wrote!
-        f.seek(-1, os.SEEK_END)
-        f.write(sep)
-
+  if opts.output:
+    with open(opts.output, 'a') as f:  # append
+      if more_cells:
+        f.write(sep)  # tab or comma for more cells
         if opts.tsv:
           # TSV output.
           out = csv.writer(f, delimiter='\t', lineterminator='\n',
@@ -144,8 +141,11 @@ def main(argv):
         else:
           out = csv.writer(f)
         out.writerow(more_cells)
-    else:
-      log("Rows that -o would have written: %s", row)
+      else:
+        f.write('\n')   # end the row
+  else:
+    if more_cells:
+      log("More cells that -o would have written: %s", more_cells)
 
   # Preserve the command's exit code.  (This means you can't distinguish
   # between a failure of time.py and the command, but that's better than
