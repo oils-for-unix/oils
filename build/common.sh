@@ -15,7 +15,7 @@ readonly _THIS_DIR
 # function for things that really require clang, like code coverage and so
 # forth.
 readonly CLANG_DIR_RELATIVE='_deps/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04'
-readonly CLANG_DIR=$THIS_DIR/../$CLANG_DIR_RELATIVE
+readonly CLANG_DIR=$_THIS_DIR/../$CLANG_DIR_RELATIVE
 readonly CLANG=$CLANG_DIR/bin/clang
 readonly CLANGXX=$CLANG_DIR/bin/clang++
 
