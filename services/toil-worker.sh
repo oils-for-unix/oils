@@ -170,6 +170,9 @@ EOF
 run-tasks() {
   ### Run the tasks on stdin and write _tmp/toil/INDEX.tsv.
 
+  # So we can always run benchmarks/time_.py.  TODO: Use Ninja for deps.
+  build/dev.sh time-helper
+
   local out_dir=_tmp/toil
   mkdir -p $out_dir
 
