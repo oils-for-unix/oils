@@ -322,12 +322,18 @@ demo-grammar() {
 }
 
 time-helper() {
-  local out=_devbuild/bin
-  mkdir -p $out
-  cc -std=c99 -o $out/time-helper benchmarks/time-helper.c
+  local out=_devbuild/bin/time-helper
+  mkdir -p $(dirname $out)
+  cc -std=c99 -o $out benchmarks/time-helper.c
+  ls -l $out
+}
+
+time-helper-test() {
   set +o errexit
 
   local tmp=_tmp/time-helper.txt
+
+  local th=_devbuild/bin/time-helper
 
   # Make some work show up
   local cmd='{ md5sum */*.md; sleep 0.15; exit 42; } > /dev/null'
@@ -335,25 +341,25 @@ time-helper() {
   echo 'will be overwritten' > $tmp
   cat $tmp
 
-  $out/time-helper
+  $th
   echo status=$?
 
-  $out/time-helper /bad
+  $th /bad
   echo status=$?
 
-  $out/time-helper -o $tmp -d $'\t' -x -e -- sh -c "$cmd"
+  $th -o $tmp -d $'\t' -x -e -- sh -c "$cmd"
   echo status=$?
   cat $tmp
   echo
 
   # Now append
-  $out/time-helper -o $tmp -a -d , -x -e -U -S -M -- sh -c "$cmd"
+  $th -o $tmp -a -d , -x -e -U -S -M -- sh -c "$cmd"
   echo status=$?
   cat $tmp
   echo
   
   # Error case
-  $out/time-helper -z
+  $th -z
   echo status=$?
 }
 

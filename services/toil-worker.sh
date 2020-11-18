@@ -160,6 +160,7 @@ other-tests-tasks() {
   # repo overview is suggested by README.md
   cat <<EOF
 time-test         benchmarks/time-test.sh all-passing     -
+time-helper-test  build/dev.sh time-helper-test           -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
 repo-overview     metrics/source-code.sh travis           -
 osh2oil           test/osh2oil.sh all-passing             -

@@ -31,9 +31,14 @@ from __future__ import print_function
 
 import csv
 import optparse
+import os
 import sys
 import subprocess
 import time
+
+THIS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
+TIME_HELPER = os.path.abspath(
+    os.path.join(THIS_DIR, '../_devbuild/bin/time-helper'))
 
 
 def log(msg, *args):
@@ -78,7 +83,7 @@ def main(argv):
   # Used only for 'time' format string.  For --field, we use our own.
   sep = '\t' if opts.tsv else ','
   # built by build/dev.sh all
-  time_argv = ['_devbuild/bin/time-helper', '-d', sep]
+  time_argv = [TIME_HELPER, '-d', sep]
 
   if opts.append:
     time_argv.append('-a')
