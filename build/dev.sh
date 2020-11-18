@@ -321,12 +321,49 @@ demo-grammar() {
   oil_lang/grammar_gen.py marshal mycpp/examples/arith.pgen2 _devbuild/gen
 }
 
+time-helper() {
+  local out=_devbuild/bin
+  mkdir -p $out
+  cc -std=c99 -o $out/time-helper benchmarks/time-helper.c
+  set +o errexit
+
+  local tmp=_tmp/time-helper.txt
+
+  # Make some work show up
+  local cmd='{ md5sum */*.md; sleep 0.15; exit 42; } > /dev/null'
+
+  echo 'will be overwritten' > $tmp
+  cat $tmp
+
+  $out/time-helper
+  echo status=$?
+
+  $out/time-helper /bad
+  echo status=$?
+
+  $out/time-helper -o $tmp -d $'\t' -x -e -- sh -c "$cmd"
+  echo status=$?
+  cat $tmp
+  echo
+
+  # Now append
+  $out/time-helper -o $tmp -a -d , -x -e -U -S -M -- sh -c "$cmd"
+  echo status=$?
+  cat $tmp
+  echo
+  
+  # Error case
+  $out/time-helper -z
+  echo status=$?
+}
+
 # Prerequisites: build/codegen.sh {download,install}-re2c
 all() {
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
   _minimal
   fastlex
+  time-helper
   build/doc.sh all-help
 }
 

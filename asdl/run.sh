@@ -49,7 +49,6 @@ osh-both() { py-cpp osh/osh.asdl; }
 #
 
 cxx() {
-  #local CXX=c++ 
   local CXX=$CLANGXX
   local opt_flag='-O2'
   #local opt_flag='-O0'
