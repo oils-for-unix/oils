@@ -51,6 +51,9 @@ build-examples() {
 
   export MYPY_REPO
 
+  # Don't use clang for benchmarks.
+  export CXX=c++
+
   cd $THIS_DIR
   ./run.sh build-all
 }

@@ -117,6 +117,8 @@ _compile-example() {
     runtime=(mylib.cc gc_heap.cc)
   fi
 
+  echo "__ Compiling with $CXX"
+
   # need -lstdc++ for 'operator new'
   $CXX -o $out $flags -I . "${runtime[@]}" $src -lstdc++
 }

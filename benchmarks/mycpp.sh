@@ -60,6 +60,15 @@ EOF
   tsv2html $in_dir/details.tsv
 fi
 
+  cmark <<'EOF'
+### TODO
+
+- Benchmark with both GCC and Clang, and show compiler provenance.  Right now
+  the compiler is forced to be the system `c++`.
+- Run this benchmark on multiple machines.
+
+EOF
+
   cat <<EOF
   </body>
 </html>

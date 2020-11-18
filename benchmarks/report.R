@@ -652,16 +652,12 @@ MyCppReport = function(in_dir, out_dir) {
     arrange(`C++ : Python`) ->
     max_rss
 
-  # TODO: one chart for
-  # - user_secs: Python, mycpp, mycpp refcounted
-  # - max_rss_KiB: Python, mycpp, mycpp refcounted
-
-
   # Sometimes it speeds up by more than 10x
-  precision = ColumnPrecision(list(`C++ : Python` = 2))
+  precision3 = ColumnPrecision(list(`C++ : Python` = 3))
+  precision2 = ColumnPrecision(list(`C++ : Python` = 2))
 
-  writeTsv(user_time, file.path(out_dir, 'user_time'), precision)
-  writeTsv(max_rss, file.path(out_dir, 'max_rss'))
+  writeTsv(user_time, file.path(out_dir, 'user_time'), precision3)
+  writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision2)
   writeTsv(details, file.path(out_dir, 'details'))
 }
 
