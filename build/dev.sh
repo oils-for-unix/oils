@@ -328,41 +328,6 @@ time-helper() {
   ls -l $out
 }
 
-time-helper-test() {
-  set +o errexit
-
-  local tmp=_tmp/time-helper.txt
-
-  local th=_devbuild/bin/time-helper
-
-  # Make some work show up
-  local cmd='{ md5sum */*.md; sleep 0.15; exit 42; } > /dev/null'
-
-  echo 'will be overwritten' > $tmp
-  cat $tmp
-
-  $th
-  echo status=$?
-
-  $th /bad
-  echo status=$?
-
-  $th -o $tmp -d $'\t' -x -e -- sh -c "$cmd"
-  echo status=$?
-  cat $tmp
-  echo
-
-  # Now append
-  $th -o $tmp -a -d , -x -e -U -S -M -- sh -c "$cmd"
-  echo status=$?
-  cat $tmp
-  echo
-  
-  # Error case
-  $th -z
-  echo status=$?
-}
-
 # Prerequisites: build/codegen.sh {download,install}-re2c
 all() {
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of

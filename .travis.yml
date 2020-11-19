@@ -120,8 +120,8 @@ jobs:
             - mksh
             - zsh
               # since we're not using language: python
-            - python3-setuptools
             - python-pip
+            - python3-setuptools
             - python3-pip
 
       install:

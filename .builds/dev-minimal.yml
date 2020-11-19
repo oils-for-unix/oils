@@ -1,5 +1,10 @@
 image: debian/buster
+# doesn't have python2-dev!
+#image: ubuntu/18.04
+
 packages:
+  # for utf-8
+  - locales
   # for toil
   - zip
 
@@ -19,6 +24,9 @@ packages:
   # Python3 for flake8
   - python3-setuptools
   - python3-pip
+
+environment:
+  LANG: en_US.UTF-8
 
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd

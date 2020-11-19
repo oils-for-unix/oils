@@ -194,6 +194,42 @@ test-maxrss() {
   cat _tmp/maxrss
 }
 
+test-time-helper() {
+  set +o errexit
+
+  local tmp=_tmp/time-helper.txt
+
+  local th=_devbuild/bin/time-helper
+
+  # Make some work show up
+  local cmd='{ md5sum */*.md; sleep 0.15; exit 42; } > /dev/null'
+
+  echo 'will be overwritten' > $tmp
+  cat $tmp
+
+  $th
+  assert $? -ne 0  # it's 1, but could be 2
+
+  $th /bad
+  assert $? -eq 1
+
+  $th -o $tmp -d $'\t' -x -e -- sh -c "$cmd"
+  assert $? -eq 42
+  cat $tmp
+  echo
+
+  # Now append
+  $th -o $tmp -a -d , -x -e -U -S -M -- sh -c "$cmd"
+  assert $? -eq 42
+  cat $tmp
+  echo
+  
+  # Error case
+  $th -z
+  assert $? -eq 2
+}
+
+
 all-passing() {
   test-usage
   test-csv
@@ -204,6 +240,8 @@ all-passing() {
   test-stdout
   test-rusage
   test-maxrss
+
+  test-time-helper
 
   echo
   echo "All tests in $0 passed."

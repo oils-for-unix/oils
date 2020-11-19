@@ -90,15 +90,20 @@ int time_helper(Spec *spec, FILE* f) {
   struct timeval *user = &usage.ru_utime;
   struct timeval *sys  = &usage.ru_stime;
 
+  int exit_status = -1;
+  if (WIFEXITED(status)) {
+    exit_status = WEXITSTATUS(status);
+  }
+
   char d = spec->delimiter;
   // NO delimiter at first!
-  if (spec->x) { int_cell(f, 0, WEXITSTATUS(status)); }
+  if (spec->x) { int_cell(f, 0, exit_status); }
   if (spec->e) { time_cell(f, d, &elapsed); }
   if (spec->U) { time_cell(f, d, &usage.ru_utime); }
   if (spec->S) { time_cell(f, d, &usage.ru_stime); }
   if (spec->M) { int_cell(f, d, usage.ru_maxrss); }
 
-  return status;
+  return exit_status;
 }
 
 int main(int argc, char **argv) {
@@ -159,8 +164,8 @@ int main(int argc, char **argv) {
 
   char* mode = spec.append ? "a" : "w";
   FILE* f = fopen(spec.out_path, mode);
-  int status = time_helper(&spec, f);
+  int exit_status = time_helper(&spec, f);
   fclose(f);
 
-  return status;
+  return exit_status;
 }

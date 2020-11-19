@@ -14,6 +14,7 @@ source services/travis.sh
 #
 # https://man.sr.ht/tutorials/getting-started-with-builds.md
 # https://man.sr.ht/builds.sr.ht/#secrets
+# https://man.sr.ht/builds.sr.ht/compatibility.md
 #
 # Basically, it supports up to 4 files called .builds/*.yml.
 # And we need to upload an SSH key as secret via the web UI.
@@ -78,8 +79,13 @@ publish-html-assuming-ssh-key() {
   remote-cleanup-jobs-index 'srht-'
 
   # toil-worker.sh recorded this for us
-  return $(cat _tmp/toil/exit-status.txt)
-}
+  local status
+  status=$(cat _tmp/toil/exit-status.txt)
 
+  log "Exiting with saved status $status"
+
+  #return $status
+  return 42
+}
 
 "$@"

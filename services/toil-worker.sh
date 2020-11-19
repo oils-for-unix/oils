@@ -38,6 +38,12 @@ dump-versions() {
   python3 -V
 }
 
+dump-locale() {
+  locale
+
+  return 42
+}
+
 dummy-tasks() {
   ### Print tasks that execute quickly
 
@@ -45,11 +51,8 @@ dummy-tasks() {
   cat <<EOF
 dump-env      services/toil-worker.sh dump-env      -
 dump-timezone services/toil-worker.sh dump-timezone -
+dump-locale   services/toil-worker.sh dump-locale   -
 EOF
-}
-
-run-dummy() {
-  dummy-tasks | run-tasks
 }
 
 dev-minimal-tasks() {
@@ -160,7 +163,6 @@ other-tests-tasks() {
   # repo overview is suggested by README.md
   cat <<EOF
 time-test         benchmarks/time-test.sh all-passing     -
-time-helper-test  build/dev.sh time-helper-test           -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
 repo-overview     metrics/source-code.sh travis           -
 osh2oil           test/osh2oil.sh all-passing             -
@@ -181,6 +183,7 @@ run-tasks() {
   local tsv=$out_dir/INDEX.tsv
   rm -f $tsv
 
+  local status
   local max_status=0
 
   while read task_name script action result_html; do
@@ -196,7 +199,7 @@ run-tasks() {
     status=$?
     set -o errexit
 
-    if test $status -gt $max_status; then
+    if test "$status" -gt "$max_status"; then
       max_status=$status
     fi
 
@@ -206,6 +209,7 @@ run-tasks() {
     echo $'status\telapsed\ttask\tscript\taction\tresult_html'
     tail -n 1 $tsv
     echo
+    log "status=$status max_status=$max_status"
   done
 
   log '--- done ---'
@@ -270,6 +274,8 @@ job-main() {
 
   ${job_name}-tasks | run-tasks $out_dir
 }
+
+run-dummy() { job-main 'dummy'; }
 
 run-dev-minimal() { job-main 'dev-minimal'; }
 
