@@ -1,0 +1,8 @@
+image: debian/buster
+tasks:
+  - other-tests: |
+      cd oil
+      services/toil-worker.sh run-other-tests
+  - publish-html: |
+      cd oil
+      services/travis.sh publish-html
