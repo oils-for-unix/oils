@@ -1,8 +1,13 @@
 image: debian/buster
+packages:
+  - zip
+  - python2-dev  # for posix_.so, etc.
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
 tasks:
   - other-tests: |
       cd oil
       services/toil-worker.sh run-other-tests
   - publish-html: |
       cd oil
-      services/travis.sh publish-html
+      services/sourcehut.sh publish-html-assuming-ssh-key

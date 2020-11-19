@@ -193,18 +193,7 @@ JOB_ROW_TEMPLATE = '''\
 </tr>
 '''
 
-
-def main(argv):
-  action = argv[1]
-
-  if action == 'index':
-
-    # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
-    # have Ctrl-F5)
-    html_head.Write(sys.stdout, 'Recent Jobs',
-        css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
-
-    print('''
+INDEX_TOP = '''
   <body class="width50">
     <p id="home-link">
       <a href="/">travis-ci.oilshell.org</a>
@@ -226,8 +215,32 @@ def main(argv):
           -->
         </tr>
       </thead>
-''')
+'''
 
+
+def main(argv):
+  action = argv[1]
+
+  if action == 'srht-index':
+
+    # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
+    # have Ctrl-F5)
+    html_head.Write(sys.stdout, 'Recent Jobs',
+        css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
+
+    print(INDEX_TOP)
+
+    rows = list(ParseJobs(sys.stdin))
+    #print(json.dump(rows, indent=2))
+
+  elif action == 'travis-index':
+
+    # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
+    # have Ctrl-F5)
+    html_head.Write(sys.stdout, 'Recent Jobs',
+        css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
+
+    print(INDEX_TOP)
     rows = list(ParseJobs(sys.stdin))
 
     # Sort by descending build number

@@ -183,12 +183,15 @@ test-rusage() {
   #cat $out
 }
 
-# Compare vs. /usr/bin/time
+# Compare vs. /usr/bin/time.
 test-maxrss() {
-  /usr/bin/time --format '%x %U %M' -- seq 1
+  if command -v time; then  # Ignore this on continuous build
+    command time --format '%x %U %M' -- seq 1
+  fi
 
   # Showing a discrepancy.  FIXED!
-  time-tool --tsv --rusage -- seq 1
+  time-tool -o _tmp/maxrss --tsv --rusage -- seq 1
+  cat _tmp/maxrss
 }
 
 all-passing() {

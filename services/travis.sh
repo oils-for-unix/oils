@@ -111,10 +111,13 @@ home-page() {
 
     <ul>
       <li>
-        <a href="jobs/">Jobs</a>
+        <a href="srht-jobs/">sr.ht Jobs</a>
       </li>
       <li>
-        <a href="builds/">Builds</a>
+        <a href="travis-jobs/">Travis Jobs</a>
+      </li>
+      <li>
+        <a href="builds/">Builds</a> (not yet implemented)
       </li>
     </ul>
 
@@ -158,16 +161,18 @@ sshq() {
 }
 
 remote-rewrite-jobs-index() {
-  sshq toil-web/services/toil-web.sh rewrite-jobs-index
+  local prefix=$1
+  sshq toil-web/services/toil-web.sh rewrite-jobs-index "$prefix"
 }
 
 remote-cleanup-jobs-index() {
+  local prefix=$1
   # clean it up for real!
-  sshq toil-web/services/toil-web.sh cleanup-jobs-index '' false
+  sshq toil-web/services/toil-web.sh cleanup-jobs-index "$prefix" false
 }
 
 init-server-html() {
-  ssh $USER@$HOST mkdir -v -p $HOST/{jobs,web,builds/src}
+  ssh $USER@$HOST mkdir -v -p $HOST/{travis-jobs,srht-jobs,web,builds/src}
 
   home-page > _tmp/index.html
 
@@ -185,14 +190,17 @@ decrypt-key() {
 
 scp-results() {
   # could also use Travis known_hosts addon?
+  local prefix=$1  # srht- or ''
+  shift
+
   scp -o StrictHostKeyChecking=no "$@" \
-    travis_admin@travis-ci.oilshell.org:travis-ci.oilshell.org/jobs/
+    "travis_admin@travis-ci.oilshell.org:travis-ci.oilshell.org/${prefix}jobs/"
 }
 
 list-remote-results() {
-  # could also use Travis known_hosts addon?
+  local prefix=$1
   ssh -o StrictHostKeyChecking=no \
-    travis_admin@travis-ci.oilshell.org ls 'travis-ci.oilshell.org/jobs/'
+    travis_admin@travis-ci.oilshell.org ls "travis-ci.oilshell.org/${prefix}jobs/"
 }
 
 # Dummy that doesn't depend on results
@@ -212,7 +220,7 @@ EOF
 
   zip $wwz env.txt index.html build/*.txt
 
-  scp-results $wwz
+  scp-results '' $wwz
 }
 
 format-wwz-index() {
@@ -325,7 +333,7 @@ deploy-job-results() {
   cp _tmp/toil/INDEX.tsv $job_id.tsv
 
   # Copy wwz, tsv, json
-  scp-results $job_id.*
+  scp-results '' $job_id.*
 
   log ''
   log "http://travis-ci.oilshell.org/jobs/"
@@ -379,9 +387,10 @@ EOF
 
 write-jobs-raw() {
   ### Rewrite travis-ci.oilshell.org/jobs/raw.html
+  local prefix=$1
   
   log "Listing remote .wwz"
-  list-remote-results > _tmp/listing.txt
+  list-remote-results "$prefix" > _tmp/listing.txt
   ls -l _tmp/listing.txt
 
   # Pass all .wwz files in reverse order.
@@ -393,7 +402,24 @@ write-jobs-raw() {
 
   log "Copying raw.html"
 
-  scp-results _tmp/raw.html
+  scp-results "$prefix" _tmp/raw.html
+}
+
+publish-html-assuming-ssh-key() {
+  if true; then
+    deploy-job-results
+  else
+    deploy-test-wwz  # dummy data that doesn't depend on the build
+  fi
+
+  write-jobs-raw 'travis-'
+  remote-rewrite-jobs-index 'travis-'
+
+  # note: we could speed jobs up by doing this separately?
+  remote-cleanup-jobs-index 'travis-'
+
+  # toil-worker.sh recorded this for us
+  return $(cat _tmp/toil/exit-status.txt)
 }
 
 publish-html() {
@@ -404,20 +430,7 @@ publish-html() {
   eval "$(ssh-agent -s)"
   ssh-add $privkey
 
-  if true; then
-    deploy-job-results
-  else
-    deploy-test-wwz  # dummy data that doesn't depend on the build
-  fi
-
-  write-jobs-raw
-  remote-rewrite-jobs-index
-
-  # note: we could speed jobs up by doing this separately?
-  remote-cleanup-jobs-index
-
-  # toil-worker.sh recorded this for us
-  return $(cat _tmp/toil/exit-status.txt)
+  publish-html-assuming-ssh-key
 }
 
 #
@@ -429,4 +442,7 @@ delete-caches() {
   travis cache -d
 }
 
-"$@"
+if test $(basename $0) = 'travis.sh'; then
+  "$@"
+fi
+

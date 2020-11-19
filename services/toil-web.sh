@@ -20,18 +20,19 @@ source $REPO_ROOT/services/common.sh
 #     toil-web.sh
 #   doctools/
 #   services/
-#   
-#
+
+
 toil-web() {
   PYTHONPATH=$REPO_ROOT $REPO_ROOT/services/toil_web.py "$@"
 }
 
-index() { toil-web index "$@"; }
 cleanup() { toil-web cleanup "$@"; }
 
 rewrite-jobs-index() {
   ### Atomic update of travis-ci.oilshell.org/jobs/
-  local dir=${1:-~/travis-ci.oilshell.org/jobs/}
+  local prefix=$1
+
+  local dir=~/travis-ci.oilshell.org/${prefix}jobs/
 
   log "toil-web: Rewriting jobs/index.html"
 
@@ -41,15 +42,17 @@ rewrite-jobs-index() {
   # 2020-03-20__...
 
   # suppress SIGPIPE failure
-  { ls $dir/*.json || true; } | tail -n -100 | index > $tmp
+  { ls $dir/*.json || true; } | tail -n -100 | toil-web ${prefix}index > $tmp
   echo status=${PIPESTATUS[@]}
 
   mv -v $tmp $dir/index.html
 }
 
 cleanup-jobs-index() {
-  local dir=${1:-~/travis-ci.oilshell.org/jobs/}
+  local prefix=$1
   local dry_run=${2:-true}
+
+  local dir=~/travis-ci.oilshell.org/${prefix}jobs/
 
   # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
   case $dry_run in
