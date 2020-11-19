@@ -1,0 +1,41 @@
+image: debian/buster
+packages:
+  # for toil
+  - zip
+
+  # build/dev.sh ubuntu-deps
+  - python2-dev
+  - gawk
+  - libreadline-dev
+
+  # test/spec.sh install-shells
+  - busybox-static
+  - mksh
+  - zsh
+
+  - python-setuptools  # travis doesn't need this?
+  - python-pip
+
+  # Python3 for flake8
+  - python3-setuptools
+  - python3-pip
+
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+
+tasks:
+  # Copied from .travis.yml
+  - install: |
+      pip install --user flake8 typing
+      # MyPy requires Python 3, but Oil requires Python 2.
+      pip3 install --user mypy
+
+      cd oil
+      # After this symlink is made, build/dev-shell.sh will modify $PATH to include it
+      test/spec.sh link-busybox-ash
+  - dev-minimal: |
+      cd oil
+      services/toil-worker.sh run-dev-minimal
+  - publish-html: |
+      cd oil
+      services/sourcehut.sh publish-html-assuming-ssh-key

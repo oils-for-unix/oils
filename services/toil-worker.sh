@@ -227,13 +227,6 @@ run-tasks() {
   echo $max_status > $out_dir/exit-status.txt
 }
 
-run-dev-minimal() {
-  ### Travis job dev-minimal
-
-  #export TRAVIS_SKIP=1
-  dev-minimal-tasks | run-tasks
-}
-
 allow-job-failure() {
   # Note: toil_web.py will still count failures in INDEX.tsv.  This just
   # prevents Travis from failing.
@@ -278,13 +271,15 @@ job-main() {
   ${job_name}-tasks | run-tasks $out_dir
 }
 
+run-dev-minimal() { job-main 'dev-minimal'; }
+
+run-other-tests() { job-main 'other-tests'; }
+
 run-ovm-tarball() { job-main 'ovm-tarball'; }
 
 run-app-tests() { job-main 'app-tests'; }
 
 run-cpp() { job-main 'cpp'; }
-
-run-other-tests() { job-main 'other-tests'; }
 
 run-dev-all-nix() {
   ### Travis job dev-all-nix

@@ -315,7 +315,7 @@ deploy-job-results() {
   export TASK_DEPLOY_START_TIME=$(date +%s)
 
   # Redundant with TRAVIS_JOB_NAME
-  export TOIL_JOB_NAME=$(cat _tmp/toil-job-name.txt)
+  export TOIL_JOB_NAME=$(cat _tmp/toil/job-name.txt)
 
   services/env_to_json.py \
     TASK_RUN_START_TIME \
