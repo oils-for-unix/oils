@@ -185,7 +185,7 @@ test-rusage() {
 
 # Compare vs. /usr/bin/time.
 test-maxrss() {
-  if command -v time; then  # Ignore this on continuous build
+  if which time; then  # Ignore this on continuous build
     command time --format '%x %U %M' -- seq 1
   fi
 

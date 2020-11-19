@@ -169,12 +169,10 @@ EOF
 
 run-tasks() {
   ### Run the tasks on stdin and write _tmp/toil/INDEX.tsv.
+  local out_dir=$1  # should already exist
 
   # So we can always run benchmarks/time_.py.  TODO: Use Ninja for deps.
   build/dev.sh time-helper
-
-  local out_dir=_tmp/toil
-  mkdir -p $out_dir
 
   # For the later deploy step to pick up
   date +%s > $out_dir/task-run-start-time.txt
@@ -270,16 +268,31 @@ _run-dev-all-nix() {
 
 }
 
-run-ovm-tarball() { ovm-tarball-tasks | run-tasks; }
+job-main() {
+  local job_name=$1
 
-run-app-tests() { app-tests-tasks | run-tasks; }
+  local out_dir=_tmp/toil
+  mkdir -p $out_dir
+  echo "$job_name" > $out_dir/job-name.txt
 
-run-cpp() { cpp-tasks | run-tasks; }
+  ${job_name}-tasks | run-tasks $out_dir
+}
 
-run-other-tests() { other-tests-tasks | run-tasks; }
+run-ovm-tarball() { job-main 'ovm-tarball'; }
+
+run-app-tests() { job-main 'app-tests'; }
+
+run-cpp() { job-main 'cpp'; }
+
+run-other-tests() { job-main 'other-tests'; }
 
 run-dev-all-nix() {
   ### Travis job dev-all-nix
+
+  local job_name='dev-all-nix'
+  local out_dir=_tmp/toil
+  mkdir -p $out_dir
+  echo "$job_name" > $out_dir/job-name.txt
 
   # Run tasks the nix environment
   nix-shell \

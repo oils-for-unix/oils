@@ -39,7 +39,13 @@ deploy-job-results() {
   export TASK_RUN_START_TIME=$(cat _tmp/toil/task-run-start-time.txt)
   export TASK_DEPLOY_START_TIME=$(date +%s)
 
+  # Because we don't have TRAVIS_JOB_NAME, etc.
+  export TOIL_JOB_NAME=$(cat _tmp/toil-job-name.txt)
+
   services/env_to_json.py \
+    TASK_RUN_START_TIME \
+    TASK_DEPLOY_START_TIME \
+    TOIL_JOB_NAME \
     JOB_ID \
     JOB_URL \
     > $job_id.json

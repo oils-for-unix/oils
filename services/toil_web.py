@@ -142,17 +142,24 @@ def ParseJobs(stdin):
 
     meta['start_time_str'] = start_time_str
 
+    # Metadata for "Build".  Travis has this concept, but sourcehut doesn't.
+    # A build consists of many jobs.
+    meta['git_branch'] = meta.get('TRAVIS_BRANCH') or '?'
+
     try:
       commit_line = meta['TRAVIS_COMMIT_MESSAGE'].splitlines()[0]
-    except AttributeError:
+    except KeyError:
       commit_line = '?'
     meta['commit_line'] = commit_line
 
-    try:
-      commit_hash = meta['TRAVIS_COMMIT'][-8:]  # last 8 chars
-    except TypeError:
-      commit_hash = '?'
-    meta['commit_hash']  = commit_hash
+    meta['commit_hash'] = meta.get('TRAVIS_COMMIT') or '?'
+    meta['commit_hash_short'] = meta['commit_hash'][-8:]  # last 8 chars
+
+    # Metadata for "Job"
+
+    meta['job_name'] = meta.get('TOIL_JOB_NAME') or '?'  # Also be TRAVIS_JOB_NAME
+    meta['job_num'] = meta.get('TRAVIS_JOB_NUMBER') or meta.get('JOB_ID') or '?'
+    meta['job_url'] = meta.get('TRAVIS_JOB_WEB_URL') or meta.get('JOB_URL') or '?'
 
     filename = os.path.basename(json_path)
     basename, _ = os.path.splitext(filename)
@@ -166,9 +173,9 @@ BUILD_ROW_TEMPLATE = '''\
 </tr>
 <tr class="commit-row">
   <td colspan=2>
-    <code>%(TRAVIS_BRANCH)s</code>
+    <code>%(git_branch)s</code>
     &nbsp;
-    <code><a href="https://github.com/oilshell/oil/commit/%(TRAVIS_COMMIT)s">%(commit_hash)s</a></code>
+    <code><a href="https://github.com/oilshell/oil/commit/%(commit_hash)s">%(commit_hash_short)s</a></code>
   </td>
   <td class="commit-line" colspan=3>
     <code>%(commit_line)s</code>
@@ -182,9 +189,9 @@ BUILD_ROW_TEMPLATE = '''\
 
 JOB_ROW_TEMPLATE = '''\
 <tr>
-  <td>%(TRAVIS_JOB_NUMBER)s</td>
-  <td> <code><a href="%(basename)s.wwz/">%(TRAVIS_JOB_NAME)s</a></code> </td>
-  <td><a href="%(TRAVIS_JOB_WEB_URL)s">%(start_time_str)s</a></td>
+  <td>%(job_num)s</td>
+  <td> <code><a href="%(basename)s.wwz/">%(job_name)s</a></code> </td>
+  <td><a href="%(job_url)s">%(start_time_str)s</a></td>
   <td>%(elapsed_str)s</td>
   <td>%(status_html)s</td>
   <!-- todo; spec details
@@ -217,6 +224,27 @@ INDEX_TOP = '''
       </thead>
 '''
 
+INDEX_BOTTOM = '''\
+    </table>
+
+    <p>
+      <a href="raw.html">raw data</a>
+    </p>
+  </body>
+</html>
+'''
+
+# Sort by descending build number
+def ByBuildNum(row):
+  return int(row.get('TRAVIS_BUILD_NUMBER', 0))
+
+def ByTaskRunStartTime(row):
+  return int(row.get('TASK_RUN_START_TIME', 0))
+
+# These are ascending
+def BySourcehutJobId(row):
+  return int(row.get('JOB_ID', 0))
+
 
 def main(argv):
   action = argv[1]
@@ -230,8 +258,23 @@ def main(argv):
 
     print(INDEX_TOP)
 
-    rows = list(ParseJobs(sys.stdin))
-    #print(json.dump(rows, indent=2))
+    jobs  = list(ParseJobs(sys.stdin))
+
+    # sourcehut doesn't have this grouping.
+    #rows.sort(key=BySourcehutJobId, reverse=True)
+    #groups = itertools.groupby(rows, key=BySourcehutJobId)
+
+    # Sort by start time
+    jobs.sort(key=ByTaskRunStartTime, reverse=True)
+
+    # TODO: We don't have this info
+    # The first job should have the same branch/commit/commit_line
+    #print(BUILD_ROW_TEMPLATE % jobs[0])
+
+    for job in jobs:
+      print(JOB_ROW_TEMPLATE % job)
+
+    print(INDEX_BOTTOM)
 
   elif action == 'travis-index':
 
@@ -242,13 +285,6 @@ def main(argv):
 
     print(INDEX_TOP)
     rows = list(ParseJobs(sys.stdin))
-
-    # Sort by descending build number
-    def ByBuildNum(row):
-      return int(row.get('TRAVIS_BUILD_NUMBER', 0))
-
-    def ByTaskRunStartTime(row):
-      return int(row.get('TASK_RUN_START_TIME', 0))
 
     rows.sort(key=ByBuildNum, reverse=True)
     groups = itertools.groupby(rows, key=ByBuildNum)
@@ -269,15 +305,7 @@ def main(argv):
       for job in jobs:
         print(JOB_ROW_TEMPLATE % job)
 
-    print('''\
-    </table>
-
-    <p>
-      <a href="raw.html">raw data</a>
-    </p>
-  </body>
-</html>
-  ''')
+    print(INDEX_BOTTOM)
 
   elif action == 'cleanup':
     prefixes = []
