@@ -3,8 +3,6 @@ packages:
   # for utf-8
   - locales
   - zip
-environment:
-  LANG: en_US.UTF-8
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 tasks:

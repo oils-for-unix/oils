@@ -21,6 +21,9 @@
 
 #include <Python.h>
 
+// Oil always uses UTF-8.
+const char* kLocaleOverride = "C.UTF-8";
+
 // Log messages to stderr.
 static void debug(const char* fmt, ...) {
 #ifdef LIBC_VERBOSE
@@ -73,7 +76,7 @@ func_fnmatch(PyObject *self, PyObject *args) {
 #endif
 
   const char *old_locale = setlocale(LC_CTYPE, NULL);
-  if (setlocale(LC_CTYPE, "") == NULL) {
+  if (setlocale(LC_CTYPE, kLocaleOverride) == NULL) {
 	  PyErr_SetString(PyExc_SystemError, "Invalid locale for LC_CTYPE");
 	  return NULL;
   }
@@ -256,7 +259,7 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
 
   const char *old_locale = setlocale(LC_CTYPE, NULL);
 
-  if (setlocale(LC_CTYPE, "") == NULL) {
+  if (setlocale(LC_CTYPE, kLocaleOverride) == NULL) {
 	  PyErr_SetString(PyExc_SystemError, "Invalid locale for LC_CTYPE");
 	  return NULL;
   }
@@ -342,8 +345,8 @@ func_wcswidth(PyObject *self, PyObject *args){
     }
 
     const char *old_locale = setlocale(LC_CTYPE, NULL);
-    if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL) {
-        PyErr_SetString(PyExc_SystemError, "en_US.UTF-8 is not a valid locale");
+    if (setlocale(LC_CTYPE, kLocaleOverride) == NULL) {
+        PyErr_SetString(PyExc_SystemError, "C.UTF-8 is not a valid locale");
         return NULL;
     }
     int len = mbstowcs(NULL, string, 0);

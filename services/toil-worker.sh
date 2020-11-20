@@ -39,9 +39,12 @@ dump-versions() {
 }
 
 dump-locale() {
+  set -x
+  # show our locale
   locale
 
-  return 42
+  # show all locales
+  locale -a
 }
 
 dummy-tasks() {
@@ -60,10 +63,12 @@ dev-minimal-tasks() {
 
   # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
   # build-minimal
+  # repo overview is suggested by README.md
 
   # (task_name, script, action, result_html)
   cat <<EOF
 build-minimal   build/dev.sh minimal        -
+repo-overview   metrics/source-code.sh all  -
 lint            test/lint.sh travis         -
 typecheck-slice types/oil-slice.sh travis   -
 typecheck-other types/run.sh travis         -
@@ -160,11 +165,9 @@ EOF
 }
 
 other-tests-tasks() {
-  # repo overview is suggested by README.md
   cat <<EOF
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
-repo-overview     metrics/source-code.sh travis           -
 osh2oil           test/osh2oil.sh all-passing             -
 EOF
 }
