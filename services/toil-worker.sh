@@ -47,6 +47,12 @@ dump-locale() {
   locale -a
 }
 
+dump-hardware() {
+  egrep '^(processor|model name)' /proc/cpuinfo
+  echo
+  egrep '^Mem' /proc/meminfo
+}
+
 dummy-tasks() {
   ### Print tasks that execute quickly
 
@@ -55,6 +61,7 @@ dummy-tasks() {
 dump-env      services/toil-worker.sh dump-env      -
 dump-timezone services/toil-worker.sh dump-timezone -
 dump-locale   services/toil-worker.sh dump-locale   -
+dump-hardware services/toil-worker.sh dump-hardware -
 EOF
 }
 
@@ -168,7 +175,7 @@ other-tests-tasks() {
   cat <<EOF
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
-osh2oil           test/osh2oil.sh all-passing             -
+osh2oil           test/osh2oil.sh travis                  -
 EOF
 }
 

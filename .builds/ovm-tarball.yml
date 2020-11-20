@@ -1,0 +1,28 @@
+image: debian/buster
+
+packages:
+  # for toil
+  - zip
+
+  # retrieving deps
+  - wget
+  # for syscall measurements
+  - strace
+
+  # for cmark and yajl
+  - cmake
+
+  # line_input.so needs this
+  - libreadline-dev
+  - python2-dev
+
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+
+tasks:
+  - ovm-tarball: |
+      cd oil
+      services/toil-worker.sh run-ovm-tarball
+  - publish-html: |
+      cd oil
+      services/sourcehut.sh publish-html-assuming-ssh-key

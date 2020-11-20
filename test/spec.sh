@@ -86,9 +86,9 @@ check-shells-exist() {
 
   echo "PWD = $PWD"
   echo "PATH = $PATH"
-  ls -l _tmp/shells || true
 
-  /bin/busybox ash -c 'echo "hello from /bin/busybox"'
+  #ls -l _tmp/shells || true
+  #/bin/busybox ash -c 'echo "hello from /bin/busybox"'
 
   for sh in "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST; do
 

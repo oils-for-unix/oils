@@ -1,0 +1,26 @@
+image: debian/buster
+
+packages:
+  # for toil
+  - zip
+  # retrieving deps
+  - wget
+
+  # line_input.so needs this
+  - libreadline-dev
+  - python2-dev
+
+  - python3-pip
+    # for MyPy virtualenv
+  - python3-venv
+
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+
+tasks:
+  - ovm-tarball: |
+      cd oil
+      services/toil-worker.sh run-cpp
+  - publish-html: |
+      cd oil
+      services/sourcehut.sh publish-html-assuming-ssh-key

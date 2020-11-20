@@ -3,8 +3,6 @@ image: debian/buster
 #image: ubuntu/18.04
 
 packages:
-  # for utf-8
-  - locales
   # for toil
   - zip
 

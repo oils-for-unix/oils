@@ -1355,4 +1355,10 @@ run-for-release() {
   run-other-suite-for-release osh2oil all-passing
 }
 
+travis() {
+  # We need posix_.so.  Though we could probably factor this out.
+  build/dev.sh minimal
+  all-passing
+}
+
 "$@"
