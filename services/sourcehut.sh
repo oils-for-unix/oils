@@ -84,8 +84,7 @@ publish-html-assuming-ssh-key() {
 
   log "Exiting with saved status $status"
 
-  #return $status
-  return 42
+  return $status
 }
 
 "$@"
