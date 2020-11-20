@@ -252,7 +252,7 @@ format-wwz-index() {
 EOF
   cat $tsv | while read status elapsed task script action result_html; do
     echo "<tr>"
-    echo "  <td><code><a href="_tmp/toil/$task.log.txt">$task</a></code></td>"
+    echo "  <td><code><a href="_tmp/toil/logs/$task.txt">$task</a></code></td>"
     echo "  <td>$elapsed</td>"
 
     case $status in
@@ -302,46 +302,27 @@ make-job-wwz() {
 }
 
 deploy-job-results() {
+  local prefix=$1
+  shift
+  # rest of args are more env vars
+
   local job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
   make-job-wwz $job_id
 
-  # Written by toil-worker.sh
-  # TODO:
-  # - Don't export these, just pass to env_to_json
-  # - if it exists, publish _tmp/spec/*.stats.txt and publish it?
-  #   - osh failures and total failures
-  export TASK_RUN_START_TIME=$(cat _tmp/toil/task-run-start-time.txt)
-  export TASK_DEPLOY_START_TIME=$(date +%s)
+  date +%s > _tmp/toil/task-deploy-start-time.txt
 
-  # Redundant with TRAVIS_JOB_NAME
-  export TOIL_JOB_NAME=$(cat _tmp/toil/job-name.txt)
-
-  services/env_to_json.py \
-    TASK_RUN_START_TIME \
-    TASK_DEPLOY_START_TIME \
-    TOIL_JOB_NAME \
-    TRAVIS_JOB_NAME \
-    TRAVIS_OS_NAME \
-    TRAVIS_TIMER_START_TIME \
-    TRAVIS_BUILD_WEB_URL \
-    TRAVIS_JOB_WEB_URL \
-    TRAVIS_BUILD_NUMBER \
-    TRAVIS_JOB_NUMBER \
-    TRAVIS_BRANCH \
-    TRAVIS_COMMIT \
-    TRAVIS_COMMIT_MESSAGE \
-    > $job_id.json
+  services/env_to_json.py _tmp/toil "$@" > $job_id.json
 
   # So we don't have to unzip it
   cp _tmp/toil/INDEX.tsv $job_id.tsv
 
   # Copy wwz, tsv, json
-  scp-results '' $job_id.*
+  scp-results "$prefix" $job_id.*
 
   log ''
-  log "http://travis-ci.oilshell.org/jobs/"
-  log "http://travis-ci.oilshell.org/jobs/$job_id.wwz/"
+  log "http://travis-ci.oilshell.org/${prefix}jobs/"
+  log "http://travis-ci.oilshell.org/${prefix}jobs/$job_id.wwz/"
   log ''
 }
 
@@ -411,7 +392,17 @@ write-jobs-raw() {
 
 publish-html-assuming-ssh-key() {
   if true; then
-    deploy-job-results
+    deploy-job-results 'travis-' \
+      TRAVIS_JOB_NAME \
+      TRAVIS_OS_NAME \
+      TRAVIS_TIMER_START_TIME \
+      TRAVIS_BUILD_WEB_URL \
+      TRAVIS_JOB_WEB_URL \
+      TRAVIS_BUILD_NUMBER \
+      TRAVIS_JOB_NUMBER \
+      TRAVIS_BRANCH \
+      TRAVIS_COMMIT \
+      TRAVIS_COMMIT_MESSAGE
   else
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi

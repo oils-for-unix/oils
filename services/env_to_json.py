@@ -4,6 +4,7 @@ env_to_json.py: Dump selected environment variables as JSON.
 """
 from __future__ import print_function
 
+import glob
 import json
 import os
 import sys
@@ -11,7 +12,16 @@ import sys
 
 def main(argv):
   d = {}
-  for name in argv[1:]:
+  metadata_dir = argv[1]
+
+  for path in glob.glob('%s/*.txt' % metadata_dir):
+    filename = os.path.basename(path)
+    key, _ = os.path.splitext(filename)
+    with open(path) as f:
+      value = f.read()
+    d[key] = value.strip()
+
+  for name in argv[2:]:
     d[name] = os.getenv(name)  # could be None
   json.dump(d, sys.stdout, indent=2)
   print()

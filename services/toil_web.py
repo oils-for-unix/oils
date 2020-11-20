@@ -124,7 +124,7 @@ def ParseJobs(stdin):
     #microseconds = int(meta['TRAVIS_TIMER_START_TIME']) / 1e6
     #log('ts = %d', microseconds)
 
-    start_time = meta.get('TASK_RUN_START_TIME')
+    start_time = meta.get('task-run-start-time')
     if start_time is None:
       start_time_str = '?'
     else:
@@ -157,7 +157,7 @@ def ParseJobs(stdin):
 
     # Metadata for "Job"
 
-    meta['job_name'] = meta.get('TOIL_JOB_NAME') or '?'  # Also be TRAVIS_JOB_NAME
+    meta['job_name'] = meta.get('job-name') or '?'  # Also TRAVIS_JOB_NAME
     meta['job_num'] = meta.get('TRAVIS_JOB_NUMBER') or meta.get('JOB_ID') or '?'
     meta['job_url'] = meta.get('TRAVIS_JOB_WEB_URL') or meta.get('JOB_URL') or '?'
 
@@ -239,7 +239,7 @@ def ByBuildNum(row):
   return int(row.get('TRAVIS_BUILD_NUMBER', 0))
 
 def ByTaskRunStartTime(row):
-  return int(row.get('TASK_RUN_START_TIME', 0))
+  return int(row.get('task-run-start-time', 0))
 
 # These are ascending
 def BySourcehutJobId(row):

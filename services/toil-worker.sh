@@ -183,6 +183,8 @@ run-tasks() {
   ### Run the tasks on stdin and write _tmp/toil/INDEX.tsv.
   local out_dir=$1  # should already exist
 
+  mkdir -p $out_dir/logs
+
   # So we can always run benchmarks/time_.py.  TODO: Use Ninja for deps.
   build/dev.sh time-helper
 
@@ -199,7 +201,7 @@ run-tasks() {
   while read task_name script action result_html; do
     log "--- task: $task_name ---"
 
-    local log_path=$out_dir/$task_name.log.txt 
+    local log_path=$out_dir/logs/$task_name.txt 
 
     set +o errexit
     time-tsv -o $tsv --append --time-fmt '%.2f' \
@@ -223,7 +225,8 @@ run-tasks() {
   done
 
   log '--- done ---'
-  wc -l $out_dir/*
+  ls -l $out_dir
+  wc -l $out_dir/logs/*
 
   # This suppressed the deployment of logs, which we don't want.  So all our
   # Travis builds succeed?  But then we can't use their failure notifications
@@ -275,12 +278,25 @@ _run-dev-all-nix() {
 
 }
 
+save-metadata() {
+  local job_name=$1
+  local meta_dir=$2
+
+  echo "$job_name" > $meta_dir/job-name.txt
+
+  # command to show current branch
+  git rev-parse --abbrev-ref HEAD > $meta_dir/git-branch.txt
+
+  git log -n 1 --pretty='format:%H' > $meta_dir/commit-hash.txt
+  git log -n 1 --pretty='format:%s' > $meta_dir/commit-line.txt  # "subject"
+}
+
 job-main() {
   local job_name=$1
 
   local out_dir=_tmp/toil
   mkdir -p $out_dir
-  echo "$job_name" > $out_dir/job-name.txt
+  save-metadata $job_name $out_dir
 
   ${job_name}-tasks | run-tasks $out_dir
 }
@@ -302,8 +318,8 @@ run-dev-all-nix() {
 
   local job_name='dev-all-nix'
   local out_dir=_tmp/toil
-  mkdir -p $out_dir
-  echo "$job_name" > $out_dir/job-name.txt
+  mkdir -p $out_dir/metadata
+  save-metadata $job_name $out_dir/metadata
 
   # Run tasks the nix environment
   nix-shell \
