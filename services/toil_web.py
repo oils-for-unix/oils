@@ -144,20 +144,15 @@ def ParseJobs(stdin):
 
     # Metadata for "Build".  Travis has this concept, but sourcehut doesn't.
     # A build consists of many jobs.
-    meta['git_branch'] = meta.get('TRAVIS_BRANCH') or '?'
+    meta['git-branch'] = meta.get('git-branch') or '?'
+    meta['commit-line'] = meta.get('commit-line') or '?'
+    meta['commit-hash'] = meta.get('commit-hash') or '?'
 
-    try:
-      commit_line = meta['TRAVIS_COMMIT_MESSAGE'].splitlines()[0]
-    except KeyError:
-      commit_line = '?'
-    meta['commit_line'] = commit_line
-
-    meta['commit_hash'] = meta.get('TRAVIS_COMMIT') or '?'
-    meta['commit_hash_short'] = meta['commit_hash'][-8:]  # last 8 chars
+    meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
 
     # Metadata for "Job"
 
-    meta['job_name'] = meta.get('job-name') or '?'  # Also TRAVIS_JOB_NAME
+    meta['job-name'] = meta.get('job-name') or '?'  # Also TRAVIS_JOB_NAME
     meta['job_num'] = meta.get('TRAVIS_JOB_NUMBER') or meta.get('JOB_ID') or '?'
     meta['job_url'] = meta.get('TRAVIS_JOB_WEB_URL') or meta.get('JOB_URL') or '?'
 
@@ -169,16 +164,16 @@ def ParseJobs(stdin):
 
 BUILD_ROW_TEMPLATE = '''\
 <tr class="spacer">
-  <td colspan=5><td/>
+  <td colspan=5></td>
 </tr>
 <tr class="commit-row">
   <td colspan=2>
-    <code>%(git_branch)s</code>
+    <code>%(git-branch)s</code>
     &nbsp;
-    <code><a href="https://github.com/oilshell/oil/commit/%(commit_hash)s">%(commit_hash_short)s</a></code>
+    <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
   </td>
   <td class="commit-line" colspan=3>
-    <code>%(commit_line)s</code>
+    <code>%(commit-line)s</code>
   </td>
 </tr>
 <tr class="spacer">
@@ -190,7 +185,7 @@ BUILD_ROW_TEMPLATE = '''\
 JOB_ROW_TEMPLATE = '''\
 <tr>
   <td>%(job_num)s</td>
-  <td> <code><a href="%(basename)s.wwz/">%(job_name)s</a></code> </td>
+  <td> <code><a href="%(basename)s.wwz/">%(job-name)s</a></code> </td>
   <td><a href="%(job_url)s">%(start_time_str)s</a></td>
   <td>%(elapsed_str)s</td>
   <td>%(status_html)s</td>
@@ -241,9 +236,9 @@ def ByBuildNum(row):
 def ByTaskRunStartTime(row):
   return int(row.get('task-run-start-time', 0))
 
-# These are ascending
-def BySourcehutJobId(row):
-  return int(row.get('JOB_ID', 0))
+def ByCommitDate(row):
+  # This is in ISO 8601 format (git log %aI), so we can sort by it.
+  return row.get('commit-date', '?')
 
 
 def main(argv):
@@ -258,21 +253,22 @@ def main(argv):
 
     print(INDEX_TOP)
 
-    jobs  = list(ParseJobs(sys.stdin))
+    rows = list(ParseJobs(sys.stdin))
 
     # sourcehut doesn't have this grouping.
-    #rows.sort(key=BySourcehutJobId, reverse=True)
-    #groups = itertools.groupby(rows, key=BySourcehutJobId)
+    rows.sort(key=ByCommitDate, reverse=True)
+    groups = itertools.groupby(rows, key=ByCommitDate)
 
-    # Sort by start time
-    jobs.sort(key=ByTaskRunStartTime, reverse=True)
+    for commit_hash, group in groups:
+      jobs = list(group)
+      # Sort by start time
+      jobs.sort(key=ByTaskRunStartTime, reverse=True)
 
-    # TODO: We don't have this info
-    # The first job should have the same branch/commit/commit_line
-    #print(BUILD_ROW_TEMPLATE % jobs[0])
+      # First job
+      print(BUILD_ROW_TEMPLATE % jobs[0])
 
-    for job in jobs:
-      print(JOB_ROW_TEMPLATE % job)
+      for job in jobs:
+        print(JOB_ROW_TEMPLATE % job)
 
     print(INDEX_BOTTOM)
 

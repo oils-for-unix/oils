@@ -288,6 +288,8 @@ save-metadata() {
   git rev-parse --abbrev-ref HEAD > $meta_dir/git-branch.txt
 
   git log -n 1 --pretty='format:%H' > $meta_dir/commit-hash.txt
+  # ISO 8601 format0
+  git log -n 1 --pretty='format:%aI' > $meta_dir/commit-date.txt
   git log -n 1 --pretty='format:%s' > $meta_dir/commit-line.txt  # "subject"
 }
 
