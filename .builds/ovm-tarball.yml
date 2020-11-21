@@ -19,6 +19,13 @@ packages:
   # test/spec-runner.sh needs this
   - gawk
 
+environment:
+  # matches native/libc.c
+  # not sure if/why we need 3 vars
+  LANG: C.UTF-8
+  LANGUAGE: C.UTF-8
+  LC_ALL: C.UTF-8
+
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
