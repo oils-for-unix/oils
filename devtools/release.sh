@@ -868,7 +868,7 @@ tarball-build-deps() {
 
   local d0='_deps/cpython-full'
   #if false; then
-  if test -d $d0 then
+  if test -d $d0; then
     echo "$d0 exists: skipping build/prepare.sh"
   else
     build/prepare.sh configure
