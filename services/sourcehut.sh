@@ -54,9 +54,25 @@ publish-html-assuming-ssh-key() {
 # For create-cache.yml
 #
 
+compress-dir() {
+  local dir=$1
+
+  local name=$(basename $dir)
+
+  local out_dir=_tmp/deps-cache
+  mkdir -p $out_dir
+
+  tar --create --xz --file $out_dir/$name.tar.xz $dir
+}
+
 compress-deps() {
   ### Compress output of tarball-deps and spec-deps
-  echo TODO
+
+  compress-dir _deps/cpython-full
+  compress-dir _deps/re2c-1.0.3
+  compress-dir _deps/cmark-0.29.0
+
+  compress-dir _deps/spec-bin
 }
 
 "$@"

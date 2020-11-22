@@ -31,3 +31,9 @@ tasks:
   - publish-html: |
       cd oil
       services/sourcehut.sh publish-html-assuming-ssh-key
+
+artifacts:
+  - _tmp/deps-cache/cpython-full.tar.xz
+  - _tmp/deps-cache/re2c-1.0.3.tar.xz
+  - _tmp/deps-cache/cmark-0.29.0.tar.xz
+  - _tmp/deps-cache/spec-bin.tar.xz
