@@ -194,17 +194,17 @@ true 9> "$TMP/fd.txt"
 cat "$TMP/fd.txt"
 ## stdout-json: ""
 
-#### : 4>&4 (OSH regression)
+#### : 3>&3 (OSH regression)
 
-# Note: This used to be 3>&3 except on the 0.8.5 release it was flaky under
-# mksh only?  Reproducible with test/spec.sh osh-all, but not test/spec.sh
-# redirect.  Very weird.
+# mksh started being flaky on the continuous build and during release.  We
+# don't care!  Related to issue #330.
+case $SH in (mksh) exit ;; esac
 
-: 4>&4
+: 3>&3
 echo hello
 ## stdout: hello
 ## BUG mksh stdout-json: ""
-## BUG mksh status: 1
+## BUG mksh status: 0
 
 #### : 3>&3-
 : 3>&3-
