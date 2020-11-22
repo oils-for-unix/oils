@@ -295,7 +295,9 @@ save-metadata() {
   echo "$job_name" > $meta_dir/job-name.txt
 
   # command to show current branch
-  git rev-parse --abbrev-ref HEAD > $meta_dir/git-branch.txt
+  # This does NOT work in detached HEAD!  Travis puts the branch in an env
+  # variable, but sr.ht doesn't.
+  # git rev-parse --abbrev-ref HEAD > $meta_dir/git-branch.txt
 
   git log -n 1 --pretty='format:%H' > $meta_dir/commit-hash.txt
   # ISO 8601 format0

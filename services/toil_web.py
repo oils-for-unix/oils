@@ -144,7 +144,7 @@ def ParseJobs(stdin):
 
     # Metadata for "Build".  Travis has this concept, but sourcehut doesn't.
     # A build consists of many jobs.
-    meta['git-branch'] = meta.get('git-branch') or '?'
+    meta['git-branch'] = meta.get('TRAVIS_BRANCH') or '?'  # no data for sr.ht
     meta['commit-line'] = meta.get('commit-line') or '?'
     meta['commit-hash'] = meta.get('commit-hash') or '?'
 
