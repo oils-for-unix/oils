@@ -50,4 +50,13 @@ publish-html-assuming-ssh-key() {
   return $status
 }
 
+#
+# For create-cache.yml
+#
+
+compress-deps() {
+  ### Compress output of tarball-deps and spec-deps
+  echo TODO
+}
+
 "$@"

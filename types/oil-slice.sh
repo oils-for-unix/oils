@@ -104,7 +104,7 @@ typecheck-all() {
 }
 
 # The manifest needs to be checked in because we don't have
-# _devbuild/cpython-full on Travis to crawl dependencies.
+# _deps/cpython-full on Travis to crawl dependencies.
 travis-setup() {
   # TODO: add stat.py back.  Why does it cause errors?
   local exclude='vendor|__future__|mylib.py|/stat.py'

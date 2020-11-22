@@ -44,7 +44,6 @@ oil-python-sources() {
     -name _deps -a -prune -o \
     -name _regtest -a -prune -o \
     -name mycpp -a -prune -o \
-    -name cpython-full -a -prune -o \
     -name testdata -a -prune -o \
     -name Python-2.7.13 -a -prune -o \
     -name py-yajl -a -prune -o \

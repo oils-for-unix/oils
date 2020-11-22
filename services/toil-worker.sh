@@ -166,6 +166,7 @@ create-cache-tasks() {
   cat <<EOF
 tarball-deps      devtools/release.sh tarball-build-deps -
 spec-deps         test/spec-bin.sh all-steps             -
+compress-deps     services/sourcehut.sh compress-deps    -
 EOF
 }
 
