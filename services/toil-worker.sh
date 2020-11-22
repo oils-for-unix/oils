@@ -161,6 +161,14 @@ build-tarball     build/test.sh oil-tar                  -
 EOF
 }
 
+
+create-cache-tasks() {
+  cat <<EOF
+tarball-deps      devtools/release.sh tarball-build-deps -
+spec-deps         test/spec-bin.sh all-steps             -
+EOF
+}
+
 app-tests-tasks() {
   cat <<EOF
 tarball-deps      devtools/release.sh tarball-build-deps  -
@@ -311,6 +319,8 @@ run-dev-minimal() { job-main 'dev-minimal'; }
 run-other-tests() { job-main 'other-tests'; }
 
 run-ovm-tarball() { job-main 'ovm-tarball'; }
+
+run-create-cache() { job-main 'create-cache'; }
 
 run-app-tests() { job-main 'app-tests'; }
 

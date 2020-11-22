@@ -1,0 +1,33 @@
+image: debian/buster
+
+packages:
+  # for toil
+  - zip
+
+  # retrieving deps
+  - wget
+
+  # for cmark
+  - cmake
+
+  # line_input.so needs this
+  - libreadline-dev
+  - python2-dev
+
+environment:
+  # matches native/libc.c
+  # not sure if/why we need 3 vars
+  LANG: C.UTF-8
+  LANGUAGE: C.UTF-8
+  LC_ALL: C.UTF-8
+
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+
+tasks:
+  - ovm-tarball: |
+      cd oil
+      services/toil-worker.sh run-create-cache
+  - publish-html: |
+      cd oil
+      services/sourcehut.sh publish-html-assuming-ssh-key
