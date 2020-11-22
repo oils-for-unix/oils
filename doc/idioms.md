@@ -339,7 +339,7 @@ Yes:
 
 ## Use Procs (Better Shell Functions)
 
-### Named Parameters
+### Use Named Parameters Instead of `$1`, `$2`, ...
 
 No:
 
@@ -356,7 +356,7 @@ Yes:
       cp $src $dest
     }
 
-### Variable Number of Arguments
+### Use Named Varargs Instead of `"$@"`
 
 No:
 
@@ -375,7 +375,15 @@ Yes:
       write -- @rest        # @ means "splice this array"
     }
 
-### "Out" Params as Return Values
+You can also use the implicit `ARGV` variable:
+
+    proc p {
+      cp -- @ARGV /tmp
+    }
+
+### Use "Out Params" instead of `declare -n`
+
+Out params are one way to "return" values from a `proc`.
 
 No:
 
@@ -457,23 +465,42 @@ Oil has a `run` builtin, which re-enables errexit without the extra process:
       echo 'success'
     }
 
-The constructs `&&`, `||`, and `!` also require an explicit `run`:
+This explicit syntax avoids breaking POSIX shell.  You have to opt in to the
+better behavior.
+
+## Error Handling
+
+### Use the `run` Builtin With `!`, `||`, and `&&`
+
+These constructs require an explicit `run`:
 
 No:
 
+    ! myfunc
     myfunc || fail
     myfunc && echo 'success'
-    ! myfunc
 
 Yes:
 
+    ! run myfunc
     run myfunc || fail
     run myfunc && echo 'success'
-    ! run myfunc
 
+Although `||` and `&&` are rare in idiomatic Oil code.
 
-This explicit syntax avoids breaking POSIX shell.  You have to opt in to the
-better behavior.
+### Don't use `&&` Outside of `if` / `while`
+
+It's implicit because `errexit` is on in Oil.
+
+No:
+
+    mkdir /tmp/dest && cp foo /tmp/dest
+
+Yes:
+
+    mkdir /tmp/dest
+    cp foo /tmp/dest
+
 
 ## Use Oil Expressions, Initializations, and Assignments (var, setvar)
 
@@ -664,19 +691,6 @@ Yes (purely a style preference):
 
 ## TODO
 
-### Don't use `&&`
-
-It's implicit Because `errexit` is on in Oil.
-
-No:
-
-    mkdir /tmp/dest && cp foo /tmp/dest
-
-Yes:
-
-    mkdir /tmp/dest
-    cp foo /tmp/dest
-
 ### Source Files and Namespaces
 
 TODO
@@ -694,6 +708,11 @@ Hypothetical example:
     html footer
 
 -->
+
+### Distinguish Between Variables and Functions
+
+- `$RANDOM` vs. `random()`
+- `LANG=C` vs.  `shopt --setattr LANG=C`
 
 ## Related Documents
 
