@@ -33,7 +33,8 @@ tasks:
       services/sourcehut.sh publish-html-assuming-ssh-key
 
 artifacts:
-  - _tmp/deps-cache/cpython-full.tar.xz
-  - _tmp/deps-cache/re2c-1.0.3.tar.xz
-  - _tmp/deps-cache/cmark-0.29.0.tar.xz
-  - _tmp/deps-cache/spec-bin.tar.xz
+  # relative to home dir
+  - oil/_tmp/deps-cache/cpython-full.tar.xz
+  - oil/_tmp/deps-cache/re2c-1.0.3.tar.xz
+  - oil/_tmp/deps-cache/cmark-0.29.0.tar.xz
+  - oil/_tmp/deps-cache/spec-bin.tar.xz

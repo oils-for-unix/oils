@@ -57,12 +57,17 @@ publish-html-assuming-ssh-key() {
 compress-dir() {
   local dir=$1
 
-  local name=$(basename $dir)
-
   local out_dir=_tmp/deps-cache
   mkdir -p $out_dir
 
-  tar --create --xz --file $out_dir/$name.tar.xz $dir
+  local name=$(basename $dir)
+
+  local out=$out_dir/$name.tar.xz 
+
+  log "Compressing $dir -> $out"
+
+  tar --create --xz --file $out $dir
+  ls -l $out
 }
 
 compress-deps() {
