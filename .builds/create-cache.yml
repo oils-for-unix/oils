@@ -25,7 +25,7 @@ secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
 tasks:
-  - ovm-tarball: |
+  - create-cache: |
       cd oil
       services/toil-worker.sh run-create-cache
   - publish-html: |
