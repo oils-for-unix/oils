@@ -53,6 +53,8 @@ source harness.sh
 
 readonly ASAN_FLAGS="-O0 -g -fsanitize=address"
 export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
+# also in build/mycpp.sh
+export ASAN_SYMBOLIZER_PATH="$REPO_ROOT/$CLANG_DIR_RELATIVE/bin/llvm-symbolizer"
 
 time-tsv() {
   $REPO_ROOT/benchmarks/time_.py --tsv "$@"

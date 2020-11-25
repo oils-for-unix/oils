@@ -164,6 +164,7 @@ void Heap::Collect(bool must_grow) {
   if (grew_ || must_grow || (limit_ - free_) < (space_size_ / 5)) {
     char* tmp = static_cast<char*>(realloc(to_space_, space_size_ * 2));
     assert(tmp != nullptr);  // TODO: raise a proper error
+    // memset(tmp, 0, space_size_ * 2);  // maintain invariant
     to_space_ = tmp;
     if (grew_) {
       space_size_ *= 2;

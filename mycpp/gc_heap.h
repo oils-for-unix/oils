@@ -582,12 +582,26 @@ inline Str* NewStr(const char* data, int len) {
   // log("NewStr s->data_ %p len = %d", s->data_, len);
   // log("sizeof(Str) = %d", sizeof(Str));
   memcpy(s->data_, data, len);
-  s->data_[len] = '\0';  // So we can pass it directly to C functions
+
+  // So we can pass it directly to C functions.  TODO: is this redundant
+  // because the  heap is zero'd?
+  s->data_[len] = '\0';
 
   s->SetCellLength(obj_len);  // So the GC can copy it
   return s;
 }
 
+// New string of a certain length, to be filled in
+inline Str* NewStr(int len) {
+  int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
+  void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
+  auto s = new (place) Str();
+
+  s->SetCellLength(obj_len);  // So the GC can copy it
+  return s;
+}
+
+// CHOPPED OFF at internal NUL.  Use explicit length if you have a NUL.
 inline Str* NewStr(const char* data) {
   return NewStr(data, strlen(data));
 }

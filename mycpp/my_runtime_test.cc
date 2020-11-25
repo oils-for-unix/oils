@@ -9,13 +9,14 @@
 using gc_heap::gHeap;
 
 GLOBAL_STR(kString1, "food");
+GLOBAL_STR(kWithNull, "foo\0bar");
 
 TEST print_test() {
   print(kString1);
   println_stderr(kString1);
 
-  Str* s = kString1->replace(NewStr("o"), NewStr("x"));
-  print(s);
+  print(kWithNull);
+  println_stderr(kWithNull);
 
   PASS();
 }
@@ -33,6 +34,11 @@ TEST str_replace_test() {
   Str* s3 = NewStr("foxo")->replace(NewStr("o"), NewStr("123"));
   ASSERT(str_equals(NewStr("f123x123"), s3));
   print(s3);
+
+  Str* s4 = kWithNull->replace(NewStr("a"), NewStr("XX"));
+  print(s4);
+  // Explicit length because of \0
+  ASSERT(str_equals(NewStr("foo\0bXXr", 8), s4));
 
   PASS();
 }

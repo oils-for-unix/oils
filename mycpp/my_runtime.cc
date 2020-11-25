@@ -7,40 +7,35 @@
 GLOBAL_STR(kEmptyString, "");
 my_runtime::BufWriter gBuf;
 
-// Like print(..., file=sys.stderr), but Python code explicitly calls it.
-void println_stderr(Str* s) {
-  fputs(s->data_, stderr);  // it's NUL terminated
-  fputs("\n", stderr);
-}
-
 // Translation of Python's print().
 void print(Str* s) {
-  fputs(s->data_, stdout);  // it's NUL terminated
+  int n = len(s);
+  fwrite(s->data_, sizeof(char), n, stdout);
   fputs("\n", stdout);
 }
 
-// Copied from mylib.cc.
-// TODO:
-// - I think we can assert that len(old) == 1 for now.
-Str* Str::replace(Str* old, Str* new_str) {
-  const char* old_data = old->data_;
-  const char* last_possible = data_ + len(this) - len(old);
+// Like print(..., file=sys.stderr), but Python code explicitly calls it.
+void println_stderr(Str* s) {
+  int n = len(s);
+  fwrite(s->data_, sizeof(char), n, stderr);
+  fputs("\n", stderr);
+}
 
+Str* Str::replace(Str* old, Str* new_str) {
+  assert(len(old) == 1);  // Restriction that Oil code is OK with
+
+  char old_char = old->data_[0];
   const char* p_this = data_;  // advances through 'this'
+  const char* p_end = data_ + len(this);
 
   // First pass to calculate the new length
   int replace_count = 0;
-  while (p_this <= last_possible) {
-    // cstring-TODO: Don't use strstr()
-    const char* next = strstr(p_this, old_data);
-    if (next == nullptr) {
-      break;
+  while (p_this < p_end) {
+    if (*p_this == old_char) {
+      replace_count++;
     }
-    replace_count++;
-    p_this = next + len(old);  // skip past
+    p_this++;
   }
-
-  // log("replace count %d", replace_count);
 
   if (replace_count == 0) {
     return this;  // Reuse the string if there were no replacements
@@ -49,37 +44,32 @@ Str* Str::replace(Str* old, Str* new_str) {
   int length =
       len(this) - (replace_count * len(old)) + (replace_count * len(new_str));
 
-  // TODO: Do NewStr(len) here, and then the data_ member
-  char* tmp = static_cast<char*>(malloc(length + 1));  // +1 for NUL
-
   const char* new_data = new_str->data_;
   const size_t new_len = len(new_str);
 
   // Second pass to copy into new 'result'
-  p_this = data_;
-  char* p_result = tmp;  // advances through 'result'
+  Str* result = NewStr(length);
+  p_this = data_;  // back to beginning
+  char* p_result = result->data_;  // advances through 'result'
 
-  for (int i = 0; i < replace_count; ++i) {
-    const char* next = strstr(p_this, old_data);
-    assert(p_this != nullptr);
-    size_t n = next - p_this;
-
-    memcpy(p_result, p_this, n);  // Copy from 'this'
-    p_result += n;
-
-    memcpy(p_result, new_data, new_len);  // Copy from new_str
-    p_result += new_len;
-
-    p_this = next + len(old);
+  while (p_this < p_end) {
+    if (*p_this == old_char) {
+      memcpy(p_result, new_data, new_len);  // Copy from new_str
+      p_this++;
+      p_result += new_len;
+    } else {
+      *p_result = *p_this;
+      p_this++;
+      p_result++;
+    }
   }
-  memcpy(p_result, p_this,
-         data_ + len(this) - p_this);  // Copy the rest of 'this'
-  tmp[length] = '\0';                  // NUL terminate
-
-  // NOTE: This copies the buffer
-  Str* s = NewStr(tmp);
-  free(tmp);
-  return s;
+  if (0) {
+    log("length = %d", length);
+    log("result->data_[length-1] = %c", result->data_[length-1]);
+    log("result->data_[length] = %c", result->data_[length]);
+    assert(result->data_[length] == '\0');  // buffer should have been zero'd
+  }
+  return result;
 }
 
 namespace my_runtime {
