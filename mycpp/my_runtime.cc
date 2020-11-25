@@ -13,6 +13,12 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
+// Translation of Python's print().
+void print(Str* s) {
+  fputs(s->data_, stdout);  // it's NUL terminated
+  fputs("\n", stdout);
+}
+
 // Copied from mylib.cc.
 // TODO:
 // - I think we can assert that len(old) == 1 for now.
@@ -24,7 +30,7 @@ Str* Str::replace(Str* old, Str* new_str) {
 
   // First pass to calculate the new length
   int replace_count = 0;
-  while (p_this < last_possible) {
+  while (p_this <= last_possible) {
     // cstring-TODO: Don't use strstr()
     const char* next = strstr(p_this, old_data);
     if (next == nullptr) {
@@ -34,7 +40,7 @@ Str* Str::replace(Str* old, Str* new_str) {
     p_this = next + len(old);  // skip past
   }
 
-  // log("done %d", replace_count);
+  // log("replace count %d", replace_count);
 
   if (replace_count == 0) {
     return this;  // Reuse the string if there were no replacements

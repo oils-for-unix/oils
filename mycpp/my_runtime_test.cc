@@ -8,6 +8,35 @@
 
 using gc_heap::gHeap;
 
+GLOBAL_STR(kString1, "food");
+
+TEST print_test() {
+  print(kString1);
+  println_stderr(kString1);
+
+  Str* s = kString1->replace(NewStr("o"), NewStr("x"));
+  print(s);
+
+  PASS();
+}
+
+TEST str_replace_test() {
+  Str* s = kString1->replace(NewStr("o"), NewStr("12"));
+  ASSERT(str_equals(NewStr("f1212d"), s));
+  print(s);
+
+  // BUG in corner case!
+  Str* s2 = NewStr("foo")->replace(NewStr("o"), NewStr("123"));
+  ASSERT(str_equals(NewStr("f123123"), s2));
+  print(s2);
+
+  Str* s3 = NewStr("foxo")->replace(NewStr("o"), NewStr("123"));
+  ASSERT(str_equals(NewStr("f123x123"), s3));
+  print(s3);
+
+  PASS();
+}
+
 TEST formatter_test() {
   gBuf.reset();
   gBuf.write_const("[", 1);
@@ -34,7 +63,7 @@ TEST collect_test() {
   for (int i = 0; i < 40; ++i) {
     s = s->replace(b, bb);
     // log("i = %d", i);
-    log("len(s) = %d", len(s));
+    // log("len(s) = %d", len(s));
   }
 
   PASS();
@@ -47,6 +76,8 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(print_test);
+  RUN_TEST(str_replace_test);
   RUN_TEST(formatter_test);
   RUN_TEST(collect_test);
 

@@ -13,6 +13,8 @@ extern Str* kEmptyString;
 
 void println_stderr(Str* s);
 
+void print(Str* s);
+
 namespace my_runtime {
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994

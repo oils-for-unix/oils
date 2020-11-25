@@ -1,10 +1,10 @@
 #define _GNU_SOURCE  // for timersub()
 #include <assert.h>
-#include <getopt.h>
 #include <errno.h>
+#include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>  // exit()
+#include <stdlib.h>        // exit()
 #include <sys/resource.h>  // getrusage()
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -21,7 +21,7 @@ void die(const char *message) {
 }
 
 typedef struct Spec_t {
-  char* out_path;
+  char *out_path;
   bool append;
 
   char delimiter;  // delimiter should be tab or ,
@@ -36,9 +36,8 @@ typedef struct Spec_t {
   char **argv;
 } Spec;
 
-
 // Write CSV/TSV cells of different types
-void int_cell(FILE* f, char delimiter, int val) {
+void int_cell(FILE *f, char delimiter, int val) {
   if (delimiter != 0) {  // NUL is invalid delimiter
     fprintf(f, "%c%d", delimiter, val);
   } else {
@@ -46,11 +45,11 @@ void int_cell(FILE* f, char delimiter, int val) {
   }
 }
 
-void time_cell(FILE* f, char delimiter, struct timeval *val) {
+void time_cell(FILE *f, char delimiter, struct timeval *val) {
   fprintf(f, "%c%ld.%06ld", delimiter, val->tv_sec, val->tv_usec);
 }
 
-int time_helper(Spec *spec, FILE* f) {
+int time_helper(Spec *spec, FILE *f) {
   char *prog = spec->argv[0];
 
   struct timeval start;
@@ -79,7 +78,7 @@ int time_helper(Spec *spec, FILE* f) {
     }
     break;
   }
-  //fprintf(stderr, "done waiting\n");
+  // fprintf(stderr, "done waiting\n");
 
   struct timeval elapsed;
   timersub(&end, &start, &elapsed);
@@ -88,7 +87,7 @@ int time_helper(Spec *spec, FILE* f) {
   getrusage(RUSAGE_CHILDREN, &usage);
 
   struct timeval *user = &usage.ru_utime;
-  struct timeval *sys  = &usage.ru_stime;
+  struct timeval *sys = &usage.ru_stime;
 
   int exit_status = -1;
   if (WIFEXITED(status)) {
@@ -97,11 +96,21 @@ int time_helper(Spec *spec, FILE* f) {
 
   char d = spec->delimiter;
   // NO delimiter at first!
-  if (spec->x) { int_cell(f, 0, exit_status); }
-  if (spec->e) { time_cell(f, d, &elapsed); }
-  if (spec->U) { time_cell(f, d, &usage.ru_utime); }
-  if (spec->S) { time_cell(f, d, &usage.ru_stime); }
-  if (spec->M) { int_cell(f, d, usage.ru_maxrss); }
+  if (spec->x) {
+    int_cell(f, 0, exit_status);
+  }
+  if (spec->e) {
+    time_cell(f, d, &elapsed);
+  }
+  if (spec->U) {
+    time_cell(f, d, &usage.ru_utime);
+  }
+  if (spec->S) {
+    time_cell(f, d, &usage.ru_stime);
+  }
+  if (spec->M) {
+    int_cell(f, d, usage.ru_maxrss);
+  }
 
   return exit_status;
 }
@@ -162,8 +171,8 @@ int main(int argc, char **argv) {
   spec.argv = argv + a;
   spec.argc = argc - a;
 
-  char* mode = spec.append ? "a" : "w";
-  FILE* f = fopen(spec.out_path, mode);
+  char *mode = spec.append ? "a" : "w";
+  FILE *f = fopen(spec.out_path, mode);
   int exit_status = time_helper(&spec, f);
   fclose(f);
 
