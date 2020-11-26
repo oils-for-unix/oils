@@ -123,6 +123,7 @@ TEST str_replace_test() {
 }
 
 TEST str_funcs_test() {
+  log("slice()");
   ASSERT(str_equals(NewStr("f"), kString1->index(0)));
 
   ASSERT(str_equals(NewStr("d"), kString1->index(-1)));
@@ -134,6 +135,42 @@ TEST str_funcs_test() {
   ASSERT(str_equals(NewStr("fo"), kString1->slice(-4, -2)));
 
   ASSERT(str_equals(NewStr("foodfood"), str_concat(kString1, kString1)));
+
+  log("str_repeat()");
+  Str* s = NewStr("abc");
+
+  // -1 is allowed by Python and used by Oil!
+  ASSERT(str_equals(kEmptyString, str_repeat(s, -1)));
+  ASSERT(str_equals(kEmptyString, str_repeat(s, 0)));
+
+  Str* r1 = str_repeat(s, 1);
+  ASSERT(str_equals(s, r1));
+
+  Str* r3 = str_repeat(s, 3);
+  ASSERT(str_equals(NewStr("abcabcabc"), r3));
+
+  log("join()");
+  auto foo = NewStr("foo");
+  auto bar = NewStr("bar");
+
+  auto L1 = Alloc<List<Str*>>(std::initializer_list<Str*>{foo, bar});
+  ASSERT(str_equals(NewStr("foobar"), kEmptyString->join(L1)));
+
+  // Join by NUL
+  ASSERT(str_equals(NewStr("foo\0bar", 7), NewStr("\0", 1)->join(L1)));
+
+  auto L2 = Alloc<List<Str*>>(std::initializer_list<Str*>{foo});
+  ASSERT(str_equals(NewStr("foo"), kEmptyString->join(L2)));
+
+  auto empty_list = Alloc<List<Str*>>(std::initializer_list<Str*>{});
+
+  auto empty = kEmptyString->join(empty_list);
+  ASSERT(str_equals(kEmptyString, empty));
+  ASSERT_EQ(0, len(empty));
+
+  auto j1 = (NewStr(" "))->join(empty_list);
+  ASSERT(str_equals(kEmptyString, j1));
+  ASSERT_EQ(0, len(j1));
 
   PASS();
 }
@@ -196,6 +233,10 @@ TEST list_funcs_test() {
   ASSERT_EQ(9, ints->index(0));
   ASSERT_EQ(6, ints->index(1));
   ASSERT_EQ(7, ints->index(2));
+
+  ints->clear();
+  ASSERT_EQ(0, len(ints));
+  ASSERT_EQ(0, ints->slab_->items_[0]);  // make sure it's zero'd
 
   auto L = list_repeat<Str*>(nullptr, 3);
   ASSERT_EQ(3, len(L));

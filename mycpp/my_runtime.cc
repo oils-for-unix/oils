@@ -93,6 +93,24 @@ Str* str_concat(Str* a, Str* b) {
   return result;
 }
 
+Str* str_repeat(Str* s, int times) {
+  // Python allows -1 too, and Oil used that
+  if (times <= 0) {
+    return kEmptyString;
+  }
+  int part_len = len(s);
+  int result_len = part_len * times;
+  Str* result = NewStr(result_len);
+
+  char* p_result = result->data_;
+  for (int i = 0; i < times; i++) {
+    memcpy(p_result, s->data_, part_len);
+    p_result += part_len;
+  }
+  assert(p_result[result_len] == '\0');
+  return result;
+}
+
 // Get a string with one character
 Str* Str::index(int i) {
   if (i < 0) {
@@ -179,6 +197,43 @@ Str* Str::replace(Str* old, Str* new_str) {
     }
   }
   assert(result->data_[length] == '\0');  // buffer should have been zero'd
+  return result;
+}
+
+Str* Str::join(List<Str*>* items) {
+  int result_len = 0;
+  int num_parts = len(items);
+  if (num_parts == 0) {  // " ".join([]) == ""
+    return kEmptyString;
+  }
+  for (int i = 0; i < num_parts; ++i) {
+    result_len += len(items->index(i));
+  }
+  int sep_len = len(this);
+  // add length of all the separators
+  result_len += sep_len * (num_parts - 1);
+
+  // log("len: %d", len);
+  // log("v.size(): %d", v.size());
+
+  Str* result = NewStr(result_len);
+  char* p_result = result->data_;  // advances through
+
+  for (int i = 0; i < num_parts; ++i) {
+    // log("i %d", i);
+    if (i != 0 && sep_len) {             // optimize common case of ''.join()
+      memcpy(p_result, data_, sep_len);  // copy the separator
+      p_result += sep_len;
+      // log("len_ %d", len_);
+    }
+
+    int n = len(items->index(i));
+    // log("n: %d", n);
+    memcpy(p_result, items->index(i)->data_, n);  // copy the list item
+    p_result += n;
+  }
+
+  assert(p_result[result_len] == '\0');  // GC should zero it
   return result;
 }
 

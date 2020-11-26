@@ -244,6 +244,17 @@ gen-ctags() {
 }
 
 gc-examples() {
+  GC=1 example-both strings
+
+  # needs extend(List<>), not initializer_list
+  #GC=1 example-both scoped_resource
+  return
+  #GC=1 example-both files
+
+  # Tuple2, etc.
+  GC=1 example-both loops
+
+  # needs Tuple2
   GC=1 example-both containers
   return
 
@@ -260,7 +271,9 @@ gc-examples() {
 
     GC=1 example-both asdl_generated
     GC=1 example-both control_flow opt
+    GC=1 example-both escape
     GC=1 example-both length
+    GC=1 example-both modules
     GC=1 example-both test_conditional
   fi
   return

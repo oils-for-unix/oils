@@ -114,6 +114,9 @@ const int Scanned = 5;    // Copy AND scan for non-NULL pointers.
 
 namespace gc_heap {
 
+template <class T>
+class List;
+
 constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
 
 // Align returned pointers to the worst case of 8 bytes (64-bit pointers)
@@ -525,6 +528,7 @@ class Str : public gc_heap::Obj {
   Str* slice(int begin);
   Str* slice(int begin, int end);
   Str* replace(Str* old, Str* new_str);
+  Str* join(List<Str*>* items);
 
   int unique_id_;  // index into intern table ?
   char data_[1];   // flexible array
@@ -701,7 +705,7 @@ class List : public gc_heap::Obj {
     assert(len_ > 0);
     len_--;
     T result = slab_->items_[len_];
-    slab_->items_[len_] = 0;  // zero it for garbage collector
+    slab_->items_[len_] = 0;  // zero for GC scan
     return result;
   }
 
@@ -722,8 +726,13 @@ class List : public gc_heap::Obj {
     }
     */
 
-    slab_->items_[len_] = 0;  // zero it for garbage collector
+    slab_->items_[len_] = 0;  // zero for GC scan
     return result;
+  }
+
+  void clear() {
+    memset(slab_->items_, 0, len_ * sizeof(T));  // zero for GC scan
+    len_ = 0;
   }
 
   // Used in osh/string_ops.py
