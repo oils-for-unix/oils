@@ -1868,9 +1868,54 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.log('  initializer %s', arg.initializer)
             self.log('  kind %s', arg.kind)
 
+    def _WithOneLessArg(self, o, class_name, ret_type):
+      default_val = o.arguments[-1].initializer
+      if default_val:  # e.g. osh/bool_parse.py has default val
+        if self.decl or class_name is None:
+          func_name = o.name()
+        else:
+          func_name = '%s::%s' % (self.current_class_name, o.name())
+        self.write('\n')
+
+        # Write _Next() with no args
+        virtual = ''  # Note: the extra method can NEVER be virtual?
+        c_ret_type = get_c_type(ret_type)
+        if isinstance(ret_type, TupleType):
+          assert c_ret_type.endswith('*')
+          c_ret_type = c_ret_type[:-1]
+
+        self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
+
+        # Write all params except last optional one
+        self._WriteFuncParams(o.type.arg_types[:-1], o.arguments[:-1])
+
+        self.decl_write(')')
+        if self.decl:
+          self.decl_write(';\n')
+        else:
+          self.write(' {\n')
+          # return MakeOshParser()
+          kw = '' if isinstance(ret_type, NoneTyp) else 'return '
+          self.write('  %s%s(' % (kw, o.name()))
+
+          # Don't write self or last optional argument
+          first_arg_index = 0 if class_name is None else 1
+          pass_through = o.arguments[first_arg_index:-1]
+
+          if pass_through:
+            for i, arg in enumerate(pass_through):
+              if i != 0:
+                self.write(', ')
+              self.write(arg.variable.name())
+            self.write(', ')
+
+          # Now write default value, e.g. lex_mode_e::DBracket
+          self.accept(default_val)  
+          self.write(');\n')
+          self.write('}\n')
+
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
-        # Skip these for now
-        if o.name() == '__repr__':
+        if o.name() == '__repr__':  # Don't translate
           return
 
         # No function prototypes when forward declaring.
@@ -1878,21 +1923,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.virtual.OnMethod(self.current_class_name, o.name())
           return
 
-        # Hack to turn _Next() with keyword arg into a set of overloaded
-        # methods
+        # Hacky MANUAL LIST of functions and methods with OPTIONAL ARGUMENTS.
         #
-        # Other things I tried:
-        # if mylib.CPP: def _Next()          # MyPy doesn't like this
-        # if not TYPE_CHECKING: def _Next()  # get UnboundType?
-        # @overload decorator -- not sure how to do it, will probably cause
-        # runtime overhead
-
-        # Have:
-        # MakeOshParser(_Reader* line_reader, bool emit_comp_dummy)
-        # Want:
-        # MakeOshParser(_Reader* line_reader) {
-        #   return MakeOshParser(line_reader, True);
-        # }
+        # For example, we have a method like this:
+        #   MakeOshParser(_Reader* line_reader, bool emit_comp_dummy)
+        #
+        # And we want to write an EXTRA C++ method like this:
+        #   MakeOshParser(_Reader* line_reader) {
+        #     return MakeOshParser(line_reader, true);
+        #   }
 
         # TODO: restrict this
         class_name = self.current_class_name
@@ -1942,51 +1981,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # core/main_loop.py
             func_name == 'Batch'
           ):
-
-          default_val = o.arguments[-1].initializer
-          if default_val:  # e.g. osh/bool_parse.py has default val
-            if self.decl or class_name is None:
-              func_name = o.name()
-            else:
-              func_name = '%s::%s' % (self.current_class_name, o.name())
-            self.write('\n')
-
-            # Write _Next() with no args
-            virtual = ''
-            c_ret_type = get_c_type(ret_type)
-            if isinstance(ret_type, TupleType):
-              assert c_ret_type.endswith('*')
-              c_ret_type = c_ret_type[:-1]
-
-            self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
-
-            # Write all params except last optional one
-            self._WriteFuncParams(o.type.arg_types[:-1], o.arguments[:-1])
-
-            self.decl_write(')')
-            if self.decl:
-              self.decl_write(';\n')
-            else:
-              self.write(' {\n')
-              # return MakeOshParser()
-              kw = '' if isinstance(ret_type, NoneTyp) else 'return '
-              self.write('  %s%s(' % (kw, o.name()))
-
-              # Don't write self or last optional argument
-              first_arg_index = 0 if class_name is None else 1
-              pass_through = o.arguments[first_arg_index:-1]
-
-              if pass_through:
-                for i, arg in enumerate(pass_through):
-                  if i != 0:
-                    self.write(', ')
-                  self.write(arg.variable.name())
-                self.write(', ')
-
-              # Now write default value, e.g. lex_mode_e::DBracket
-              self.accept(default_val)  
-              self.write(');\n')
-              self.write('}\n')
+          self._WithOneLessArg(o, class_name, ret_type)
 
         virtual = ''
         if self.decl:
@@ -2006,10 +2001,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           func_name = o.name()
 
         self.write('\n')
-
-        # TODO: if self.current_class_name ==
-        # write 'virtual' here.
-        # You could also test NotImplementedError as abstract?
 
         c_ret_type = get_c_type(ret_type)
         if isinstance(ret_type, TupleType):
