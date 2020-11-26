@@ -11,9 +11,60 @@ using gc_heap::NewStr;
 
 extern Str* kEmptyString;
 
+class IndexError {};
+class ValueError {};
+class KeyError {};
+
+class EOFError {};
+
+class NotImplementedError {
+ public:
+  NotImplementedError() {
+  }
+  explicit NotImplementedError(int i) {  // e.g. in expr_to_ast
+  }
+  explicit NotImplementedError(const char* s) {
+  }
+  explicit NotImplementedError(Str* s) {
+  }
+};
+
+class AssertionError {
+ public:
+  AssertionError() {
+  }
+  explicit AssertionError(int i) {  // e.g. in expr_to_ast
+  }
+  explicit AssertionError(const char* s) {
+  }
+  explicit AssertionError(Str* s) {
+  }
+};
+
 void println_stderr(Str* s);
 
 void print(Str* s);
+
+bool _str_to_int(Str* s, int* result, int base);  // for testing only
+int to_int(Str* s);
+int to_int(Str* s, int base);
+
+// int(a == b) used in arithmetic evaluator
+inline int to_int(bool b) {
+  return b;
+}
+
+inline bool to_bool(int i) {
+  return i != 0;
+}
+
+inline bool to_bool(Str* s) {
+  return len(s) != 0;
+}
+
+inline double to_float(Str* s) {
+  assert(0);
+}
 
 Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
 Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()

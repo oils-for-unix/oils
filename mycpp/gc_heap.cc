@@ -193,6 +193,18 @@ bool str_equals(Str* left, Str* right) {
   }
 }
 
+bool maybe_str_equals(Str* left, Str* right) {
+  if (left && right) {
+    return str_equals(left, right);
+  }
+
+  if (!left && !right) {
+    return true;  // None == None
+  }
+
+  return false;  // one is None and one is a Str*
+}
+
 #if GC_DEBUG
 void ShowFixedChildren(Obj* obj) {
   assert(obj->heap_tag_ == Tag::FixedSize);

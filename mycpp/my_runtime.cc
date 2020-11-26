@@ -2,6 +2,7 @@
 
 #include "my_runtime.h"
 
+#include <ctype.h>  // isspace()
 #include <cstdarg>  // va_list, etc.
 
 GLOBAL_STR(kEmptyString, "");
@@ -19,6 +20,64 @@ void println_stderr(Str* s) {
   int n = len(s);
   fwrite(s->data_, sizeof(char), n, stderr);
   fputs("\n", stderr);
+}
+
+// Helper for str_to_int() that doesn't use exceptions.
+// Like atoi(), but with better error checking.
+bool _str_to_int(Str* s, int* result, int base) {
+  if (len(s) == 0) {
+    return false;  // special case for empty string
+  }
+
+  char* p;  // mutated by strtol
+
+  long v = strtol(s->data_, &p, base);  // base 10
+  switch (v) {
+  case LONG_MIN:
+    // log("underflow");
+    return false;
+  case LONG_MAX:
+    // log("overflow");
+    return false;
+  }
+
+  *result = v;
+
+  // Return true if it consumed ALL characters.
+  const char* end = s->data_ + len(s);
+
+  // log("start %p   p %p   end %p", s->data_, p, end);
+  if (p == end) {
+    return true;
+  }
+
+  // Trailing space is OK!
+  while (p < end) {
+    if (!isspace(*p)) {
+      return false;
+    }
+    p++;
+  }
+  return true;
+}
+
+// Python-like wrapper
+int to_int(Str* s) {
+  int i;
+  if (_str_to_int(s, &i, 10)) {
+    return i;
+  } else {
+    throw new ValueError();
+  }
+}
+
+int to_int(Str* s, int base) {
+  int i;
+  if (_str_to_int(s, &i, base)) {
+    return i;
+  } else {
+    throw new ValueError();
+  }
 }
 
 Str* str_concat(Str* a, Str* b) {

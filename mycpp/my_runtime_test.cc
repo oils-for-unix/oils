@@ -22,6 +22,84 @@ TEST print_test() {
   PASS();
 }
 
+TEST str_to_int_test() {
+  int i;
+  bool ok;
+
+  ok = _str_to_int(NewStr("345"), &i, 10);
+  ASSERT(ok);
+  ASSERT_EQ_FMT(345, i, "%d");
+
+  // Hack to test slicing.  Truncated "345" at "34".
+  ok = _str_to_int(NewStr("345", 2), &i, 10);
+  ASSERT(ok);
+  ASSERT_EQ_FMT(34, i, "%d");
+
+  ok = _str_to_int(NewStr("1234567890"), &i, 10);
+  ASSERT(ok);
+  ASSERT(i == 1234567890);
+
+  // overflow
+  ok = _str_to_int(NewStr("12345678901234567890"), &i, 10);
+  ASSERT(!ok);
+
+  // underflow
+  ok = _str_to_int(NewStr("-12345678901234567890"), &i, 10);
+  ASSERT(!ok);
+
+  // negative
+  ok = _str_to_int(NewStr("-123"), &i, 10);
+  ASSERT(ok);
+  ASSERT(i == -123);
+
+  // Leading space is OK!
+  ok = _str_to_int(NewStr(" -123"), &i, 10);
+  ASSERT(ok);
+  ASSERT(i == -123);
+
+  // Trailing space is OK!  NOTE: This fails!
+  ok = _str_to_int(NewStr(" -123  "), &i, 10);
+  ASSERT(ok);
+  ASSERT(i == -123);
+
+  // Empty string isn't an integer
+  ok = _str_to_int(NewStr(""), &i, 10);
+  ASSERT(!ok);
+
+  ok = _str_to_int(NewStr("xx"), &i, 10);
+  ASSERT(!ok);
+
+  // Trailing garbage
+  ok = _str_to_int(NewStr("42a"), &i, 10);
+  ASSERT(!ok);
+
+  i = to_int(NewStr("ff"), 16);
+  ASSERT(i == 255);
+
+  // strtol allows 0x prefix
+  i = to_int(NewStr("0xff"), 16);
+  ASSERT(i == 255);
+
+  // TODO: test ValueError here
+  // i = to_int(NewStr("0xz"), 16);
+
+  i = to_int(NewStr("0"), 16);
+  ASSERT(i == 0);
+
+  i = to_int(NewStr("077"), 8);
+  ASSERT_EQ_FMT(63, i, "%d");
+
+  bool caught = false;
+  try {
+    i = to_int(NewStr("zzz"));
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  PASS();
+}
+
 TEST str_replace_test() {
   Str* s = kString1->replace(NewStr("o"), NewStr("12"));
   ASSERT(str_equals(NewStr("f1212d"), s));
@@ -158,6 +236,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(print_test);
+  RUN_TEST(str_to_int_test);
   RUN_TEST(str_replace_test);
   RUN_TEST(str_funcs_test);
   RUN_TEST(str_iters_test);

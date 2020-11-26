@@ -754,6 +754,7 @@ int find_by_key(Slab<K>* keys_, int len, int key) {
 }
 
 bool str_equals(Str* left, Str* right);
+bool maybe_str_equals(Str* left, Str* right);
 
 // TODO: need sentinel for deletion.  The sentinel is in the *indices* array,
 // not in keys or values.  Those are copied verbatim, but may be sparse because

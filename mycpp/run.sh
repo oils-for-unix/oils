@@ -244,6 +244,13 @@ gen-ctags() {
 }
 
 gc-examples() {
+  GC=1 example-both test_conditional
+
+  # mylib.Writer
+  # GC=1 example-both classes
+  return
+
+  # FAILS with a small heap.  Some List invaraitsn?
   BENCHMARK=1 GC=1 example-both cartesian
   return
 
@@ -253,15 +260,13 @@ gc-examples() {
     BENCHMARK=1 GC=1 example-both cgi asan
     BENCHMARK=1 GC=1 example-both fib_iter asan
     BENCHMARK=1 GC=1 example-both fib_recursive asan
+
+    GC=1 example-both length
   fi
   return
 
   # have print(), ListIter
   BENCHMARK=1 GC=1 example-both control_flow opt
-  return
-
-  # slice(), maybe_str_equals()
-  GC=1 example-both length
   return
 
   # print() and to_int()
