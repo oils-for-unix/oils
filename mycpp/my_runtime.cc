@@ -21,6 +21,62 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
+Str* str_concat(Str* a, Str* b) {
+  int len_a = len(a);
+  int len_b = len(b);
+
+  Str* result = NewStr(len_a + len_b);
+  char* buf = result->data_;
+  memcpy(buf, a->data_, len_a);
+  memcpy(buf + len_a, b->data_, len_b);
+
+  assert(buf[len_a + len_b] == '\0');
+  return result;
+}
+
+// Get a string with one character
+Str* Str::index(int i) {
+  if (i < 0) {
+    i = len(this) + i;
+  }
+  assert(i >= 0);
+  assert(i < len(this));  // had a problem here!
+
+  Str* result = NewStr(1);
+  char* buf = result->data_;
+  buf[0] = data_[i];
+  assert(buf[1] == '\0');
+  return result;
+}
+
+// s[begin:]
+Str* Str::slice(int begin) {
+  if (begin == 0) {
+    return this;  // s[i:] where i == 0 is common in here docs
+  }
+  int length = len(this);
+  if (begin < 0) {
+    begin = length + begin;
+  }
+  return slice(begin, length);
+}
+
+// s[begin:end]
+Str* Str::slice(int begin, int end) {
+  if (begin < 0) {
+    begin = len(this) + begin;
+  }
+  if (end < 0) {
+    end = len(this) + end;
+  }
+  int new_len = end - begin;
+  Str* result = NewStr(new_len);
+  char* buf = result->data_;
+  memcpy(buf, data_ + begin, new_len);
+  assert(buf[new_len] == '\0');
+  return result;
+}
+
 Str* Str::replace(Str* old, Str* new_str) {
   assert(len(old) == 1);  // Restriction that Oil code is OK with
 

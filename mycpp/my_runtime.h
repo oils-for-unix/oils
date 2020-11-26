@@ -15,6 +15,79 @@ void println_stderr(Str* s);
 
 void print(Str* s);
 
+Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
+Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
+
+Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
+
+// NOTE: This iterates over bytes.
+class StrIter {
+ public:
+  explicit StrIter(Str* s) : s_(s), i_(0), len_(len(s)) {
+  }
+  void Next() {
+    i_++;
+  }
+  bool Done() {
+    return i_ >= len_;
+  }
+  Str* Value() {  // similar to index()
+    Str* result = NewStr(1);
+    result->data_[0] = s_->data_[i_];
+    // assert(result->data_[1] == '\0');
+    return result;
+  }
+
+ private:
+  Str* s_;
+  int i_;
+  int len_;
+
+  DISALLOW_COPY_AND_ASSIGN(StrIter)
+};
+
+template <class T>
+class ListIter {
+ public:
+  explicit ListIter(List<T>* L) : L_(L), i_(0) {
+  }
+  void Next() {
+    i_++;
+  }
+  bool Done() {
+    // "unsigned size_t was a mistake"
+    return i_ >= static_cast<int>(L_->len_);
+  }
+  T Value() {
+    return L_->slab_->items_[i_];
+  }
+
+ private:
+  List<T>* L_;
+  int i_;
+};
+
+// TODO: Does using pointers rather than indices make this more efficient?
+template <class T>
+class ReverseListIter {
+ public:
+  explicit ReverseListIter(List<T>* L) : L_(L), i_(L_->len_ - 1) {
+  }
+  void Next() {
+    i_--;
+  }
+  bool Done() {
+    return i_ < 0;
+  }
+  T Value() {
+    return L_->slab_->items_[i_];
+  }
+
+ private:
+  List<T>* L_;
+  int i_;
+};
+
 namespace my_runtime {
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994

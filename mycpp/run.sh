@@ -244,8 +244,8 @@ gen-ctags() {
 }
 
 gc-examples() {
-  # print()
-  GC=1 example-both switch_
+  #GC=1 example-both switch_
+  GC=1 example-both cartesian
   return
 
   if true; then

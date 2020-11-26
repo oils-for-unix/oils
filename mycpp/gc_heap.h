@@ -521,6 +521,9 @@ class Str : public gc_heap::Obj {
     // log("GC Str()");
   }
 
+  Str* index(int i);
+  Str* slice(int begin);
+  Str* slice(int begin, int end);
   Str* replace(Str* old, Str* new_str);
 
   int unique_id_;  // index into intern table ?
@@ -625,13 +628,10 @@ class List : public gc_heap::Obj {
         slab_(nullptr) {
   }
 
-    // TODO: are we using this?
-#if 0
   List(std::initializer_list<T> init)
       : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)), slab_(nullptr) {
     extend(init);
   }
-#endif
 
   // Implements L[i]
   T index(int i) {
@@ -647,6 +647,39 @@ class List : public gc_heap::Obj {
     slab_->items_[i] = item;
   }
 
+  // L[begin:]
+  List* slice(int begin) {
+    if (begin == 0) {
+      return this;
+    }
+    if (begin < 0) {
+      begin = len_ + begin;
+    }
+
+    List* result = Alloc<List<T>>();
+    for (int i = begin; i < len_; i++) {
+      result->append(slab_->items_[i]);
+    }
+    return result;
+  }
+
+  // L[begin:end]
+  // TODO: Can this be optimized?
+  List* slice(int begin, int end) {
+    if (begin < 0) {
+      begin = len_ + begin;
+    }
+    if (end < 0) {
+      end = len_ + end;
+    }
+
+    List* result = new List();
+    for (int i = begin; i < end; i++) {
+      result->append(slab_->items_[i]);
+    }
+    return result;
+  }
+
   // 8 / 4 = 2 items, or 8 / 8 = 1 item
   static const int kCapacityAdjust = kSlabHeaderSize / sizeof(T);
   static_assert(kSlabHeaderSize % sizeof(T) == 0,
@@ -654,7 +687,7 @@ class List : public gc_heap::Obj {
 
   // Ensure that there's space for a number of items
   void reserve(int n) {
-    log("reserve capacity = %d, n = %d", capacity_, n);
+    // log("reserve capacity = %d, n = %d", capacity_, n);
 
     if (capacity_ < n) {
       // Example: The user asks for space for 7 integers.  Account for the
