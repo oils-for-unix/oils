@@ -100,6 +100,25 @@ TEST str_to_int_test() {
   PASS();
 }
 
+TEST int_to_str_test() {
+  Str* int_str;
+  int_str = str((1 << 31) - 1);
+  ASSERT(str_equals0("2147483647", int_str));
+
+  int_str = str(-(1 << 31) + 1);
+  ASSERT(str_equals0("-2147483647", int_str));
+
+  int int_min = -(1 << 31);
+  int_str = str(int_min);
+  ASSERT(str_equals0("-2147483648", int_str));
+
+  // Wraps with - sign.  Is this well-defined behavior?
+  int_str = str(1 << 31);
+  log("i = %s", int_str->data_);
+
+  PASS();
+}
+
 TEST str_replace_test() {
   Str* s = kString1->replace(NewStr("o"), NewStr("12"));
   ASSERT(str_equals(NewStr("f1212d"), s));
@@ -164,6 +183,31 @@ TEST str_methods_test() {
   Str* st3 = (NewStr("123 "))->strip();
   ASSERT(str_equals0("123", st3));
 
+  log("startswith endswith");
+  Str* s = NewStr("abc");
+  ASSERT(s->startswith(NewStr("")));
+  ASSERT(s->startswith(NewStr("ab")));
+  ASSERT(s->startswith(s));
+  ASSERT(!s->startswith(NewStr("bc")));
+
+  ASSERT(s->endswith(NewStr("")));
+  ASSERT(!s->endswith(NewStr("ab")));
+  ASSERT(s->endswith(NewStr("bc")));
+  ASSERT(s->endswith(s));
+
+  log("rjust()");
+  auto space = NewStr(" ");
+  auto s6 = NewStr("13");
+  ASSERT(str_equals0("  13", s6->rjust(4, space)));
+  ASSERT(str_equals0(" 13", s6->rjust(3, space)));
+  ASSERT(str_equals0("13", s6->rjust(2, space)));
+  ASSERT(str_equals0("13", s6->rjust(1, space)));
+
+  ASSERT(str_equals0("13  ", s6->ljust(4, space)));
+  ASSERT(str_equals0("13 ", s6->ljust(3, space)));
+  ASSERT(str_equals0("13", s6->ljust(2, space)));
+  ASSERT(str_equals0("13", s6->ljust(1, space)));
+
   log("join()");
   auto foo = NewStr("foo");
   auto bar = NewStr("bar");
@@ -207,6 +251,22 @@ TEST str_funcs_test() {
 
   Str* r3 = str_repeat(s, 3);
   ASSERT(str_equals(NewStr("abcabcabc"), r3));
+
+  log("repr %s", repr(NewStr(""))->data_);
+  log("repr %s", repr(NewStr("'"))->data_);
+  log("repr %s", repr(NewStr("'single'"))->data_);
+  log("repr %s", repr(NewStr("\"double\""))->data_);
+
+  // this one is truncated
+  const char* n_str = "NUL \x00 NUL";
+  int n_len = 9;  // 9 bytes long
+  log("repr %s", repr(NewStr(n_str, n_len))->data_);
+  log("len %d", len(repr(NewStr(n_str, n_len))));
+
+  log("repr %s", repr(NewStr("tab\tline\nline\r\n"))->data_);
+  log("repr %s", repr(NewStr("high \xFF \xFE high"))->data_);
+
+  ASSERT_EQ(65, ord(NewStr("A")));
 
   PASS();
 }
@@ -450,6 +510,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(print_test);
   RUN_TEST(str_to_int_test);
+  RUN_TEST(int_to_str_test);
   RUN_TEST(str_replace_test);
   RUN_TEST(str_methods_test);
   RUN_TEST(str_funcs_test);

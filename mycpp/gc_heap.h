@@ -533,11 +533,25 @@ class Str : public gc_heap::Obj {
   Str* rstrip(Str* chars);
   Str* rstrip();
 
+  Str* ljust(int width, Str* fillchar);
+  Str* rjust(int width, Str* fillchar);
+
+  bool startswith(Str* s);
+  bool endswith(Str* s);
+
   Str* replace(Str* old, Str* new_str);
   Str* join(List<Str*>* items);
   bool isdigit();
   bool isalpha();
   bool isupper();
+
+  Str* upper() {
+    assert(0);
+  }
+
+  Str* lower() {
+    assert(0);
+  }
 
   int unique_id_;  // index into intern table ?
   char data_[1];   // flexible array

@@ -210,9 +210,8 @@ Str* Str::strip() {
     return this;
   }
 
-  // Copy part of data
   int new_len = right_pos - left_pos + 1;
-  return NewStr(data_ + left_pos, new_len);
+  return NewStr(data_ + left_pos, new_len);  // Copy part of data
 }
 
 // Used for CommandSub in osh/cmd_exec.py
@@ -230,6 +229,61 @@ Str* Str::rstrip() {
     return this;
   }
   return NewStr(data_, right_pos + 1);  // Copy part of data_
+}
+
+Str* Str::ljust(int width, Str* fillchar) {
+  assert(len(fillchar) == 1);
+
+  int length = len(this);
+  int num_fill = width - length;
+  if (num_fill < 0) {
+    return this;
+  } else {
+    Str* result = NewStr(width);
+    char c = fillchar->data_[0];
+    memcpy(result->data_, data_, length);
+    for (int i = length; i < width; ++i) {
+      result->data_[i] = c;
+    }
+    assert(result->data_[width] == '\0');
+    return result;
+  }
+}
+
+Str* Str::rjust(int width, Str* fillchar) {
+  assert(len(fillchar) == 1);
+
+  int length = len(this);
+  int num_fill = width - length;
+  if (num_fill < 0) {
+    return this;
+  } else {
+    Str* result = NewStr(width);
+    char c = fillchar->data_[0];
+    for (int i = 0; i < num_fill; ++i) {
+      result->data_[i] = c;
+    }
+    memcpy(result->data_ + num_fill, data_, length);
+    assert(result->data_[width] == '\0');
+    return result;
+  }
+}
+
+bool Str::startswith(Str* s) {
+  int n = len(s);
+  if (n > len(this)) {
+    return false;
+  }
+  return memcmp(data_, s->data_, n) == 0;
+}
+bool Str::endswith(Str* s) {
+  int len_s = len(s);
+  int len_this = len(this);
+  if (len_s > len_this) {
+    return false;
+  }
+  const char* start = data_ + len_this - len_s;
+  return memcmp(start, s->data_, len_s) == 0;
 }
 
 // Get a string with one character
@@ -356,6 +410,12 @@ Str* Str::join(List<Str*>* items) {
 
   assert(p_result[result_len] == '\0');  // GC should zero it
   return result;
+}
+
+Str* repr(Str* s) {
+  my_runtime::BufWriter f;
+  f.format_r(s);
+  return f.getvalue();
 }
 
 namespace my_runtime {

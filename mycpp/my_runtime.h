@@ -46,6 +46,8 @@ void println_stderr(Str* s);
 
 void print(Str* s);
 
+Str* repr(Str* s);
+
 //
 // Conversion Functions
 //
@@ -69,6 +71,32 @@ inline bool to_bool(Str* s) {
 
 inline double to_float(Str* s) {
   assert(0);
+}
+
+// https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
+// Notes:
+// - Python 2.7's intobject.c has an erroneous +6
+// - This is 13, but len('-2147483648') is 11, which means we only need 12?
+// - This formula is valid for octal(), because 2^(3 bits) = 8
+const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
+
+inline Str* str(int i) {
+  // We use a static buffer first rather than NewStr(n), because we don't know
+  // what n is until we call snprintf().
+  char buf[kIntBufSize];
+  int length = snprintf(buf, kIntBufSize, "%d", i);
+  return NewStr(buf, length);  // copy buf
+}
+
+inline Str* str(double f) {  // TODO: should be double
+  assert(0);
+}
+
+inline int ord(Str* s) {
+  assert(len(s) == 1);
+  // signed to unsigned conversion, so we don't get values like -127
+  uint8_t c = static_cast<uint8_t>(s->data_[0]);
+  return c;
 }
 
 //

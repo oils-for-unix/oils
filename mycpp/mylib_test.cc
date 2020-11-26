@@ -118,19 +118,8 @@ TEST test_str_to_int() {
 
 TEST test_str_funcs() {
   Str* int_str;
-  int_str = str((1 << 31) - 1);
-  ASSERT(str_equals0("2147483647", int_str));
-
-  // wraps with - sign.
-  int_str = str(1 << 31);
-  log("i = %s", int_str->data_);
-
-  int_str = str(-(1 << 31) + 1);
-  log("i = %s", int_str->data_);
 
   int int_min = -(1 << 31);
-  int_str = str(int_min);
-  log("i = %s", int_str->data_);
 
   int_str = mylib::hex_lower(15);
   ASSERT(str_equals0("f", int_str));
@@ -155,32 +144,6 @@ TEST test_str_funcs() {
   Str* re2 = s1->replace(new Str("bc"), new Str("--"));
   // ASSERT(str_equals(new Str("a--\0--d", 7), re1));
 
-  ASSERT(s->startswith(new Str("")));
-  ASSERT(s->startswith(new Str("ab")));
-  ASSERT(s->startswith(s));
-  ASSERT(!s->startswith(new Str("bc")));
-
-  ASSERT(s->endswith(new Str("")));
-  ASSERT(!s->endswith(new Str("ab")));
-  ASSERT(s->endswith(new Str("bc")));
-  ASSERT(s->endswith(s));
-
-  log("repr %s", repr(new Str(""))->data_);
-  log("repr %s", repr(new Str("'"))->data_);
-  log("repr %s", repr(new Str("'single'"))->data_);
-  log("repr %s", repr(new Str("\"double\""))->data_);
-
-  // this one is truncated
-  const char* n_str = "NUL \x00 NUL";
-  int n_len = 9;  // 9 bytes long
-  log("repr %s", repr(new Str(n_str, n_len))->data_);
-  log("len %d", len(repr(new Str(n_str, n_len))));
-
-  log("repr %s", repr(new Str("tab\tline\nline\r\n"))->data_);
-  log("repr %s", repr(new Str("high \xFF \xFE high"))->data_);
-
-  ASSERT_EQ(65, ord(new Str("A")));
-
   log("split_once()");
   Tuple2<Str*, Str*> t = mylib::split_once(new Str("foo=bar"), new Str("="));
   ASSERT(str_equals(t.at0(), new Str("foo")));
@@ -197,33 +160,6 @@ TEST test_str_funcs() {
   Tuple2<Str*, Str*> w = mylib::split_once(new Str(""), new Str("Z"));
   ASSERT(str_equals(w.at0(), new Str("")));
   ASSERT(w.at1() == nullptr);
-
-  log("rjust()");
-  auto space = new Str(" ");
-  auto s6 = new Str("13");
-  ASSERT(str_equals0("  13", s6->rjust(4, space)));
-  ASSERT(str_equals0(" 13", s6->rjust(3, space)));
-  ASSERT(str_equals0("13", s6->rjust(2, space)));
-  ASSERT(str_equals0("13", s6->rjust(1, space)));
-
-  ASSERT(str_equals0("13  ", s6->ljust(4, space)));
-  ASSERT(str_equals0("13 ", s6->ljust(3, space)));
-  ASSERT(str_equals0("13", s6->ljust(2, space)));
-  ASSERT(str_equals0("13", s6->ljust(1, space)));
-
-  log("join()");
-  auto foo = new Str("foo");
-  auto bar = new Str("bar");
-  ASSERT(str_equals0("foobar", kEmptyString->join(new List<Str*>({foo, bar}))));
-  ASSERT(str_equals0("foo", kEmptyString->join(new List<Str*>({foo}))));
-
-  auto empty = kEmptyString->join(new List<Str*>({}));
-  ASSERT(str_equals0("", empty));
-  ASSERT_EQ(0, len(empty));
-
-  auto j1 = (new Str(" "))->join(new List<Str*>({}));
-  ASSERT(str_equals0("", j1));
-  ASSERT_EQ(0, len(j1));
 
   PASS();
 }
