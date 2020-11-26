@@ -55,7 +55,8 @@ def run_benchmarks():
   n = 200000
   while i < n:
     out = []  # type: List[str]
-    Cartesian(['ab', '-|_', 'ABC'], out)
+    L = ['ab', '-|_', 'ABC']
+    Cartesian(L, out)
     i = i + 1
 
 

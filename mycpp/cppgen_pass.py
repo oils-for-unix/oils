@@ -1834,6 +1834,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(';\n')
 
     def _WriteFuncParams(self, arg_types, arguments):
+        """Write params and mutate self.local_vars."""
         first = True  # first NOT including self
         for arg_type, arg in zip(arg_types, arguments):
           if not first:
@@ -1852,6 +1853,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.decl_write('%s %s', c_type, arg_name)
           first = False
+
+          # Register it as a parameter
+          self.local_var_list.append((arg_name, c_type))
 
           # We can't use __str__ on these Argument objects?  That seems like an
           # oversight
@@ -1873,6 +1877,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.forward_decl:
           self.virtual.OnMethod(self.current_class_name, o.name())
           return
+
+        virtual = ''
+        if self.decl:
+          self.local_var_list = []  # Make a new instance to collect from
+          self.local_vars[o] = self.local_var_list
+
+          #log('Is Virtual? %s %s', self.current_class_name, o.name())
+          if self.virtual.IsVirtual(self.current_class_name, o.name()):
+            virtual = 'virtual '
 
         # Hack to turn _Next() with keyword arg into a set of overloaded
         # methods
@@ -1984,15 +1997,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.write(');\n')
               self.write('}\n')
 
-        virtual = ''
-        if self.decl:
-          self.local_var_list = []  # Make a new instance to collect from
-          self.local_vars[o] = self.local_var_list
-
-          #log('Is Virtual? %s %s', self.current_class_name, o.name())
-          if self.virtual.IsVirtual(self.current_class_name, o.name()):
-            virtual = 'virtual '
-
         if not self.decl and self.current_class_name:
           # definition looks like
           # void Type::foo(...);
@@ -2027,6 +2031,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Write local vars we collected in the 'decl' phase
         if not self.forward_decl and not self.decl:
           arg_names = [arg.variable.name() for arg in o.arguments]
+          #log('arg_names %s', arg_names)
+          #log('local_vars %s', self.local_vars[o])
           self.prepend_to_block = [
               (lval_name, c_type, lval_name in arg_names)
               for (lval_name, c_type) in self.local_vars[o]
@@ -2366,11 +2372,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.write_ind('%s %s;\n', c_type, lval_name)
               done.add(lval_name)
 
+          self.log('--- Block')
           # Figure out if we have any roots to write with StackRoots
           roots = []  # keep it sorted
-          for lval_name, c_type, _ in self.prepend_to_block:
+          for lval_name, c_type, is_param in self.prepend_to_block:
+            self.log('%s %s %s', lval_name, c_type, is_param)
             if lval_name not in roots and CTypeIsManaged(c_type):
               roots.append(lval_name)
+          self.log('roots %s', roots)
 
           # TODO: Also need function parameters
           if len(roots):

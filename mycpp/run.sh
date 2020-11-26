@@ -244,21 +244,21 @@ gen-ctags() {
 }
 
 gc-examples() {
-  #GC=1 example-both switch_
-  GC=1 example-both cartesian
+  BENCHMARK=1 GC=1 example-both cartesian
   return
 
   if true; then
     # these work
-    BENCHMARK=1 GC=1 example-both cgi opt
-    BENCHMARK=1 GC=1 example-both fib_iter opt
-    BENCHMARK=1 GC=1 example-both fib_recursive opt
+    BENCHMARK=1 GC=1 example-both switch_ asan
+    BENCHMARK=1 GC=1 example-both cgi asan
+    BENCHMARK=1 GC=1 example-both fib_iter asan
+    BENCHMARK=1 GC=1 example-both fib_recursive asan
   fi
+  return
 
   # have print(), ListIter
   BENCHMARK=1 GC=1 example-both control_flow opt
   return
-
 
   # slice(), maybe_str_equals()
   GC=1 example-both length
@@ -268,6 +268,11 @@ gc-examples() {
   #GC=1 example-both conditional
 
   #GC=1 example-both classes
+}
+
+# For getting PYTHONPATH, ASAN_SYMBOLIZER_PATH, etc.
+run() {
+  "$@"
 }
 
 "$@"

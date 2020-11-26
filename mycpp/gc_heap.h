@@ -492,7 +492,7 @@ class Slab : public Obj {
   Slab(int obj_len) : Obj(0, 0, obj_len) {
     InitSlabCell<T>(this);
   }
-  T items_[1];  // minimum string obj_len_
+  T items_[1];  // variable length
 };
 
 // Note: entries will be zero'd because the Heap is zero'd.
@@ -638,6 +638,7 @@ class List : public gc_heap::Obj {
     if (i < len_) {
       return slab_->items_[i];
     } else {
+      log("i = %d, len_ = %d", i, len_);
       assert(0);  // Out of bounds
     }
   }
