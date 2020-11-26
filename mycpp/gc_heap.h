@@ -622,15 +622,28 @@ template <typename T>
 class List : public gc_heap::Obj {
  public:
   List()
-      : gc_heap::Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
+      : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
         len_(0),
         capacity_(0),
         slab_(nullptr) {
   }
 
+  // Literal ['foo', 'bar']
   List(std::initializer_list<T> init)
       : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)), slab_(nullptr) {
     extend(init);
+  }
+
+  // list_repeat ['foo'] * 3
+  List(T item, int times)
+      : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
+        len_(times),
+        capacity_(0),
+        slab_(nullptr) {
+    reserve(times);
+    for (int i = 0; i < times; ++i) {
+      set(i, item);
+    }
   }
 
   // Implements L[i]
@@ -692,13 +705,14 @@ class List : public gc_heap::Obj {
 
     if (capacity_ < n) {
       // Example: The user asks for space for 7 integers.  Account for the
-      // header, and say we need 9 to determine the obj length.  9 is rounded
-      // up to 16, for a 64-byte obj.  Then we actually have space for 14
-      // items.
+      // header, and say we need 9 to determine the obj length.  9 is
+      // rounded up to 16, for a 64-byte obj.  Then we actually have space
+      // for 14 items.
       capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
       auto new_slab = NewSlab<T>(capacity_);
 
-      // slab_ may not be initialized constructor because many lists are empty.
+      // slab_ may not be initialized constructor because many lists are
+      // empty.
       if (capacity_ != 0) {
         // log("Copying %d bytes", len_ * sizeof(T));
         memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
@@ -715,7 +729,8 @@ class List : public gc_heap::Obj {
     ++len_;
   }
 
-  // Extend this list with multiple elements.  TODO: overload to take a List<> ?
+  // Extend this list with multiple elements.  TODO: overload to take a
+  // List<> ?
   void extend(std::initializer_list<T> init) {
     int n = init.size();
 
@@ -757,8 +772,8 @@ bool str_equals(Str* left, Str* right);
 bool maybe_str_equals(Str* left, Str* right);
 
 // TODO: need sentinel for deletion.  The sentinel is in the *indices* array,
-// not in keys or values.  Those are copied verbatim, but may be sparse because
-// of deletions?
+// not in keys or values.  Those are copied verbatim, but may be sparse
+// because of deletions?
 
 template <typename K>
 int find_by_key(Slab<K>* keys_, int len, Str* key) {
@@ -786,7 +801,8 @@ class Dict : public gc_heap::Obj {
   }
 
   // This relies on the fact that containers of 4-byte ints are reduced by 2
-  // items, which is greater than (or equal to) the reduction of any other type
+  // items, which is greater than (or equal to) the reduction of any other
+  // type
   static const int kCapacityAdjust = kSlabHeaderSize / sizeof(int);
   static_assert(kSlabHeaderSize % sizeof(int) == 0,
                 "Slab header size should be multiple of key size");

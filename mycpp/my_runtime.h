@@ -71,6 +71,49 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
+// e.g. ('a' in 'abc')
+inline bool str_contains(Str* haystack, Str* needle) {
+  if (len(needle) == 1) {
+    return memchr(haystack->data_, needle->data_[0], len(haystack));
+  }
+  // TODO: Implement substring
+  assert(0);
+
+  // cstring-TODO: this not rely on NUL termination
+  const char* p = strstr(haystack->data_, needle->data_);
+  return p != nullptr;
+}
+
+// ints, floats, enums like Kind
+// e.g. 1 in [1, 2, 3]
+template <typename T>
+inline bool list_contains(List<T>* haystack, T needle) {
+  int n = len(haystack);
+  for (int i = 0; i < n; ++i) {
+    if (haystack->index(i) == needle) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// e.g. 'a' in ['a', 'b', 'c']
+inline bool list_contains(List<Str*>* haystack, Str* needle) {
+  int n = len(haystack);
+  for (int i = 0; i < n; ++i) {
+    if (str_equals(haystack->index(i), needle)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// e.g. [None] * 3
+template <typename T>
+List<T>* list_repeat(T item, int times) {
+  return gc_heap::Alloc<List<T>>(item, times);
+}
+
 // NOTE: This iterates over bytes.
 class StrIter {
  public:

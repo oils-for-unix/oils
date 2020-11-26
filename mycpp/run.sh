@@ -244,10 +244,7 @@ gen-ctags() {
 }
 
 gc-examples() {
-  GC=1 example-both test_conditional
-
-  # mylib.Writer
-  # GC=1 example-both classes
+  GC=1 example-both containers
   return
 
   # FAILS with a small heap.  Some List invaraitsn?
@@ -261,18 +258,14 @@ gc-examples() {
     BENCHMARK=1 GC=1 example-both fib_iter asan
     BENCHMARK=1 GC=1 example-both fib_recursive asan
 
+    GC=1 example-both asdl_generated
+    GC=1 example-both control_flow opt
     GC=1 example-both length
+    GC=1 example-both test_conditional
   fi
   return
 
   # have print(), ListIter
-  BENCHMARK=1 GC=1 example-both control_flow opt
-  return
-
-  # print() and to_int()
-  #GC=1 example-both conditional
-
-  #GC=1 example-both classes
 }
 
 # For getting PYTHONPATH, ASAN_SYMBOLIZER_PATH, etc.

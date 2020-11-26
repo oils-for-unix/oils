@@ -188,6 +188,56 @@ TEST list_iters_test() {
   PASS();
 }
 
+TEST contains_test() {
+  bool b;
+
+  // TODO: Implement substring
+#if 0
+  b = str_contains(NewStr("foo"), NewStr("oo"));
+  ASSERT(b == true);
+
+  b = str_contains(NewStr("foo"), NewStr("ood"));
+  ASSERT(b == false);
+#endif
+
+  b = str_contains(NewStr("foo\0a", 5), NewStr("a"));
+  ASSERT(b == true);
+
+  // this ends with a NUL, but also has a NUL terinator.
+  Str* s = NewStr("foo\0", 4);
+  b = str_contains(s, NewStr("\0", 1));
+  ASSERT(b == true);
+
+  log("  List<Str*>");
+  auto strs = Alloc<List<Str*>>();
+  strs->append(NewStr("bar"));
+
+  b = list_contains(strs, NewStr("foo"));
+  ASSERT(b == false);
+
+  strs->append(NewStr("foo"));
+  b = list_contains(strs, NewStr("foo"));
+  ASSERT(b == true);
+
+  log("  ints");
+  auto ints = Alloc<List<int>>(std::initializer_list<int>{1, 2, 3});
+  b = list_contains(ints, 1);
+  ASSERT(b == true);
+
+  b = list_contains(ints, 42);
+  ASSERT(b == false);
+
+  log("  floats");
+  auto floats =
+      Alloc<List<double>>(std::initializer_list<double>{0.5, 0.25, 0.0});
+  b = list_contains(floats, 0.0);
+  log("b = %d", b);
+  b = list_contains(floats, 42.0);
+  log("b = %d", b);
+
+  PASS();
+}
+
 TEST formatter_test() {
   gBuf.reset();
   gBuf.write_const("[", 1);
@@ -242,6 +292,7 @@ int main(int argc, char** argv) {
   RUN_TEST(str_iters_test);
   RUN_TEST(list_funcs_test);
   RUN_TEST(list_iters_test);
+  RUN_TEST(contains_test);
 
   RUN_TEST(formatter_test);
   RUN_TEST(collect_test);

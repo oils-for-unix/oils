@@ -29,9 +29,9 @@ bool _str_to_int(Str* s, int* result, int base) {
     return false;  // special case for empty string
   }
 
-  char* p;  // mutated by strtol
-
+  char* p;                              // mutated by strtol
   long v = strtol(s->data_, &p, base);  // base 10
+
   switch (v) {
   case LONG_MIN:
     // log("underflow");
