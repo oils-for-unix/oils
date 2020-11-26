@@ -637,10 +637,11 @@ class List : public gc_heap::Obj {
   // list_repeat ['foo'] * 3
   List(T item, int times)
       : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
-        len_(times),
+        len_(0),  // can't set this before reserve()
         capacity_(0),
         slab_(nullptr) {
     reserve(times);
+    len_ = times;
     for (int i = 0; i < times; ++i) {
       set(i, item);
     }
@@ -692,6 +693,53 @@ class List : public gc_heap::Obj {
       result->append(slab_->items_[i]);
     }
     return result;
+  }
+
+  // Should we have a separate API that doesn't return it?
+  // https://stackoverflow.com/questions/12600330/pop-back-return-value
+  T pop() {
+    assert(len_ > 0);
+    len_--;
+    T result = slab_->items_[len_];
+    slab_->items_[len_] = 0;  // zero it for garbage collector
+    return result;
+  }
+
+  // Used in osh/word_parse.py to remove from front
+  // TODO: Don't accept arbitrary index?
+  T pop(int i) {
+    assert(len_ > 0);
+    assert(i == 0);  // only support popping the first item
+
+    len_--;
+    T result = index(0);
+
+    // Shift everything by one
+    memmove(slab_->items_, slab_->items_ + 1, len_ * sizeof(T));
+    /*
+    for (int j = 0; j < len_; j++) {
+      slab_->items_[j] = slab_->items_[j+1];
+    }
+    */
+
+    slab_->items_[len_] = 0;  // zero it for garbage collector
+    return result;
+  }
+
+  // Used in osh/string_ops.py
+  void reverse() {
+    for (int i = 0; i < len_ / 2; ++i) {
+      // log("swapping %d and %d", i, n-i);
+      T tmp = slab_->items_[i];
+      int j = len_ - 1 - i;
+      slab_->items_[i] = slab_->items_[j];
+      slab_->items_[j] = tmp;
+    }
+  }
+
+  // Templated function
+  void sort() {
+    mysort(slab_->items_, slab_->items_ + len_);
   }
 
   // 8 / 4 = 2 items, or 8 / 8 = 1 item

@@ -5,7 +5,8 @@
 
 #include "gc_heap.h"
 
-#include <climits>  // CHAR_BIT
+#include <algorithm>  // min(), sort()
+#include <climits>    // CHAR_BIT
 
 using gc_heap::NewStr;
 
@@ -45,6 +46,10 @@ void println_stderr(Str* s);
 
 void print(Str* s);
 
+//
+// Conversion Functions
+//
+
 bool _str_to_int(Str* s, int* result, int base);  // for testing only
 int to_int(Str* s);
 int to_int(Str* s, int base);
@@ -65,6 +70,46 @@ inline bool to_bool(Str* s) {
 inline double to_float(Str* s) {
   assert(0);
 }
+
+//
+// Comparison and Sorting
+//
+
+inline int int_cmp(int a, int b) {
+  if (a == b) {
+    return 0;
+  }
+  return a < b ? -1 : 1;
+}
+
+// Used by [[ a > b ]] and so forth
+inline int str_cmp(Str* a, Str* b) {
+  int len_a = len(a);
+  int len_b = len(b);
+
+  int min = std::min(len_a, len_b);
+  if (min == 0) {
+    return int_cmp(len_a, len_b);
+  }
+  int comp = memcmp(a->data_, b->data_, min);
+  if (comp == 0) {
+    return int_cmp(len_a, len_b);  // tiebreaker
+  }
+  return comp;
+}
+
+inline bool _cmp(Str* a, Str* b) {
+  return str_cmp(a, b) < 0;
+}
+
+template <typename T>
+void mysort(T* begin, T* end) {
+  std::sort(begin, end, _cmp);
+}
+
+//
+// Free Standing Str, List, and Dict Functions
+//
 
 Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
 Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()

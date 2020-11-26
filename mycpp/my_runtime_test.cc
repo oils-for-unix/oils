@@ -162,6 +162,52 @@ TEST list_funcs_test() {
   ASSERT_EQ(2, len(slice2));
   ASSERT_EQ(5, slice2->index(0));
 
+  log("-- before pop(0)");
+  for (int i = 0; i < len(ints); ++i) {
+    log("ints[%d] = %d", i, ints->index(i));
+  }
+  ASSERT_EQ(4, len(ints));  // [5, 6, 7, 8]
+
+  log("pop()");
+
+  ints->pop();  // [5, 6, 7]
+  ASSERT_EQ(3, len(ints));
+  ASSERT_EQ_FMT(5, ints->index(0), "%d");
+  ASSERT_EQ_FMT(6, ints->index(1), "%d");
+  ASSERT_EQ_FMT(7, ints->index(2), "%d");
+
+  log("pop(0)");
+
+  ints->pop(0);  // [6, 7]
+  ASSERT_EQ(2, len(ints));
+  ASSERT_EQ_FMT(6, ints->index(0), "%d");
+  ASSERT_EQ_FMT(7, ints->index(1), "%d");
+
+  ints->reverse();
+  ASSERT_EQ(2, len(ints));  // [7, 6]
+
+  ASSERT_EQ_FMT(7, ints->index(0), "%d");
+  ASSERT_EQ_FMT(6, ints->index(1), "%d");
+
+  ints->append(9);  // [7, 6, 9]
+  ASSERT_EQ(3, len(ints));
+
+  ints->reverse();  // [9, 6, 7]
+  ASSERT_EQ(9, ints->index(0));
+  ASSERT_EQ(6, ints->index(1));
+  ASSERT_EQ(7, ints->index(2));
+
+  auto L = list_repeat<Str*>(nullptr, 3);
+  ASSERT_EQ(3, len(L));
+
+  auto L2 = list_repeat<bool>(true, 3);
+  log("list_repeat length = %d", len(L2));
+  log("item 0 %d", L2->index(0));
+  log("item 1 %d", L2->index(1));
+
+  // Not implemented since we don't use it in Oil.
+  // ints->sort();
+
   PASS();
 }
 
@@ -184,6 +230,42 @@ TEST list_iters_test() {
   // hm std::initializer_list is "first class"
   auto strs = {NewStr("foo"), NewStr("bar")};
   ListFunc(strs);
+
+  PASS();
+}
+
+TEST sort_test() {
+  ASSERT_EQ(0, int_cmp(0, 0));
+  ASSERT_EQ(-1, int_cmp(0, 5));
+  ASSERT_EQ(1, int_cmp(0, -5));
+
+  auto a = NewStr("a");
+  auto aa = NewStr("aa");
+  auto b = NewStr("b");
+
+  ASSERT_EQ(0, str_cmp(kEmptyString, kEmptyString));
+  ASSERT_EQ(-1, str_cmp(kEmptyString, a));
+  ASSERT_EQ(-1, str_cmp(a, aa));
+  ASSERT_EQ(-1, str_cmp(a, b));
+
+  ASSERT_EQ(1, str_cmp(b, a));
+  ASSERT_EQ(1, str_cmp(b, kEmptyString));
+
+  auto strs = Alloc<List<Str*>>();
+  strs->append(NewStr("c"));
+  strs->append(NewStr("a"));
+  strs->append(NewStr("b"));
+  strs->append(kEmptyString);
+  ASSERT_EQ(4, len(strs));  // ['c', 'a', 'b', '']
+
+#if 0
+  strs->sort();  // ['a', 'b', 'c']
+  ASSERT_EQ(4, len(strs));
+  ASSERT(str_equals(kEmptyString, strs->index(0)));
+  ASSERT(str_equals(NewStr("a"), strs->index(1)));
+  ASSERT(str_equals(NewStr("b"), strs->index(2)));
+  ASSERT(str_equals(NewStr("c"), strs->index(3)));
+#endif
 
   PASS();
 }
@@ -292,6 +374,7 @@ int main(int argc, char** argv) {
   RUN_TEST(str_iters_test);
   RUN_TEST(list_funcs_test);
   RUN_TEST(list_iters_test);
+  RUN_TEST(sort_test);
   RUN_TEST(contains_test);
 
   RUN_TEST(formatter_test);

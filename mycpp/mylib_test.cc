@@ -402,6 +402,13 @@ TEST test_list_funcs() {
   strs->append(kEmptyString);
   ASSERT_EQ(4, len(strs));  // ['c', 'a', 'b', '']
 
+  strs->sort();
+  ASSERT_EQ(4, len(strs));  // ['', 'a', 'b', 'c']
+  ASSERT(str_equals(kEmptyString, strs->index(0)));
+  ASSERT(str_equals(new Str("a"), strs->index(1)));
+  ASSERT(str_equals(new Str("b"), strs->index(2)));
+  ASSERT(str_equals(new Str("c"), strs->index(3)));
+
   auto a = new Str("a");
   auto aa = new Str("aa");
   auto b = new Str("b");
@@ -417,13 +424,6 @@ TEST test_list_funcs() {
 
   ASSERT_EQ(1, str_cmp(b, a));
   ASSERT_EQ(1, str_cmp(b, kEmptyString));
-
-  strs->sort();  // ['a', 'b', 'c']
-  ASSERT_EQ(4, len(strs));
-  ASSERT(str_equals(kEmptyString, strs->index(0)));
-  ASSERT(str_equals(new Str("a"), strs->index(1)));
-  ASSERT(str_equals(new Str("b"), strs->index(2)));
-  ASSERT(str_equals(new Str("c"), strs->index(3)));
 
   PASS();
 }
