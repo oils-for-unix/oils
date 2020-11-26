@@ -527,11 +527,24 @@ class Str : public gc_heap::Obj {
   Str* index(int i);
   Str* slice(int begin);
   Str* slice(int begin, int end);
+
+  Str* strip();
+  // Used for CommandSub in osh/cmd_exec.py
+  Str* rstrip(Str* chars);
+  Str* rstrip();
+
   Str* replace(Str* old, Str* new_str);
   Str* join(List<Str*>* items);
+  bool isdigit();
+  bool isalpha();
+  bool isupper();
 
   int unique_id_;  // index into intern table ?
   char data_[1];   // flexible array
+
+ private:
+  int _strip_left_pos();
+  int _strip_right_pos();
 
   DISALLOW_COPY_AND_ASSIGN(Str)
 };

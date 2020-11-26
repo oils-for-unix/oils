@@ -107,6 +107,16 @@ void mysort(T* begin, T* end) {
   std::sort(begin, end, _cmp);
 }
 
+// Is this only used by unit tests?
+inline bool str_equals0(const char* c_string, Str* s) {
+  int n = strlen(c_string);
+  if (len(s) == n) {
+    return memcmp(s->data_, c_string, n) == 0;
+  } else {
+    return false;
+  }
+}
+
 //
 // Free Standing Str, List, and Dict Functions
 //

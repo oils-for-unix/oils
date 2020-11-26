@@ -122,7 +122,17 @@ TEST str_replace_test() {
   PASS();
 }
 
-TEST str_funcs_test() {
+TEST str_methods_test() {
+  log("char funcs");
+  ASSERT(!(NewStr(""))->isupper());
+  ASSERT(!(NewStr("a"))->isupper());
+  ASSERT((NewStr("A"))->isupper());
+  ASSERT((NewStr("AB"))->isupper());
+
+  ASSERT((NewStr("abc"))->isalpha());
+  ASSERT((NewStr("3"))->isdigit());
+  ASSERT(!(NewStr(""))->isdigit());
+
   log("slice()");
   ASSERT(str_equals(NewStr("f"), kString1->index(0)));
 
@@ -134,20 +144,25 @@ TEST str_funcs_test() {
   ASSERT(str_equals(NewStr("o"), kString1->slice(-3, -2)));
   ASSERT(str_equals(NewStr("fo"), kString1->slice(-4, -2)));
 
-  ASSERT(str_equals(NewStr("foodfood"), str_concat(kString1, kString1)));
+  log("strip()");
+  Str* s2 = NewStr(" abc ");
+  ASSERT(str_equals0(" abc", s2->rstrip()));
 
-  log("str_repeat()");
-  Str* s = NewStr("abc");
+  Str* s3 = NewStr(" def");
+  ASSERT(str_equals0(" def", s3->rstrip()));
 
-  // -1 is allowed by Python and used by Oil!
-  ASSERT(str_equals(kEmptyString, str_repeat(s, -1)));
-  ASSERT(str_equals(kEmptyString, str_repeat(s, 0)));
+  Str* s4 = NewStr("");
+  ASSERT(str_equals0("", s4->rstrip()));
 
-  Str* r1 = str_repeat(s, 1);
-  ASSERT(str_equals(s, r1));
+  Str* s5 = NewStr("");
+  ASSERT(str_equals0("", s5->strip()));
 
-  Str* r3 = str_repeat(s, 3);
-  ASSERT(str_equals(NewStr("abcabcabc"), r3));
+  Str* st1 = (NewStr(" 123 "))->strip();
+  ASSERT(str_equals0("123", st1));
+  Str* st2 = (NewStr(" 123"))->strip();
+  ASSERT(str_equals0("123", st2));
+  Str* st3 = (NewStr("123 "))->strip();
+  ASSERT(str_equals0("123", st3));
 
   log("join()");
   auto foo = NewStr("foo");
@@ -175,6 +190,27 @@ TEST str_funcs_test() {
   PASS();
 }
 
+TEST str_funcs_test() {
+  log("str_concat()");
+  ASSERT(str_equals(NewStr("foodfood"), str_concat(kString1, kString1)));
+  ASSERT(str_equals(kEmptyString, str_concat(kEmptyString, kEmptyString)));
+
+  log("str_repeat()");
+  Str* s = NewStr("abc");
+
+  // -1 is allowed by Python and used by Oil!
+  ASSERT(str_equals(kEmptyString, str_repeat(s, -1)));
+  ASSERT(str_equals(kEmptyString, str_repeat(s, 0)));
+
+  Str* r1 = str_repeat(s, 1);
+  ASSERT(str_equals(s, r1));
+
+  Str* r3 = str_repeat(s, 3);
+  ASSERT(str_equals(NewStr("abcabcabc"), r3));
+
+  PASS();
+}
+
 TEST str_iters_test() {
   for (StrIter it(kString1); !it.Done(); it.Next()) {
     print(it.Value());
@@ -183,11 +219,7 @@ TEST str_iters_test() {
   PASS();
 }
 
-void ListFunc(std::initializer_list<Str*> init) {
-  log("init.size() = %d", init.size());
-}
-
-TEST list_funcs_test() {
+TEST list_methods_test() {
   auto ints = Alloc<List<int>>();
   ints->extend(std::initializer_list<int>{5, 6, 7, 8});
 
@@ -238,6 +270,14 @@ TEST list_funcs_test() {
   ASSERT_EQ(0, len(ints));
   ASSERT_EQ(0, ints->slab_->items_[0]);  // make sure it's zero'd
 
+  PASS();
+}
+
+void ListFunc(std::initializer_list<Str*> init) {
+  log("init.size() = %d", init.size());
+}
+
+TEST list_funcs_test() {
   auto L = list_repeat<Str*>(nullptr, 3);
   ASSERT_EQ(3, len(L));
 
@@ -411,8 +451,10 @@ int main(int argc, char** argv) {
   RUN_TEST(print_test);
   RUN_TEST(str_to_int_test);
   RUN_TEST(str_replace_test);
+  RUN_TEST(str_methods_test);
   RUN_TEST(str_funcs_test);
   RUN_TEST(str_iters_test);
+  RUN_TEST(list_methods_test);
   RUN_TEST(list_funcs_test);
   RUN_TEST(list_iters_test);
   RUN_TEST(sort_test);

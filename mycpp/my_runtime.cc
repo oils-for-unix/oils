@@ -2,7 +2,7 @@
 
 #include "my_runtime.h"
 
-#include <ctype.h>  // isspace()
+#include <ctype.h>  // isspace(), isdigit()
 #include <cstdarg>  // va_list, etc.
 
 GLOBAL_STR(kEmptyString, "");
@@ -109,6 +109,127 @@ Str* str_repeat(Str* s, int times) {
   }
   assert(p_result[result_len] == '\0');
   return result;
+}
+
+//
+// Str methods
+//
+
+bool Str::isdigit() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isdigit(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+bool Str::isalpha() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isalpha(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// e.g. for osh/braces.py
+bool Str::isupper() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isupper(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper for lstrip() and strip()
+int Str::_strip_left_pos() {
+  assert(len(this) > 0);
+
+  int i = 0;
+  int n = len(this);
+  bool done = false;
+  while (i < n && !done) {
+    switch (data_[i]) {
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\n':
+      i++;
+    default:
+      done = true;
+      break;
+    }
+  }
+  return i;
+}
+
+// Helper for rstrip() and strip()
+int Str::_strip_right_pos() {
+  assert(len(this) > 0);
+
+  int last = len(this) - 1;
+  int i = last;
+  bool done = false;
+  while (i > 0 && !done) {
+    switch (data_[i]) {
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\n':
+      i--;
+    default:
+      done = true;
+      break;
+    }
+  }
+  return i;
+}
+
+Str* Str::strip() {
+  int n = len(this);
+  if (n == 0) {
+    return this;
+  }
+
+  int left_pos = _strip_left_pos();
+  int right_pos = _strip_right_pos();
+  if (left_pos == 0 && right_pos == n - 1) {
+    return this;
+  }
+
+  // Copy part of data
+  int new_len = right_pos - left_pos + 1;
+  return NewStr(data_ + left_pos, new_len);
+}
+
+// Used for CommandSub in osh/cmd_exec.py
+Str* Str::rstrip(Str* chars) {
+  assert(0);
+}
+
+Str* Str::rstrip() {
+  int n = len(this);
+  if (n == 0) {
+    return this;
+  }
+  int right_pos = _strip_right_pos();
+  if (right_pos == n - 1) {  // nothing stripped
+    return this;
+  }
+  return NewStr(data_, right_pos + 1);  // Copy part of data_
 }
 
 // Get a string with one character

@@ -117,23 +117,6 @@ TEST test_str_to_int() {
 }
 
 TEST test_str_funcs() {
-  ASSERT(!(new Str(""))->isupper());
-  ASSERT(!(new Str("a"))->isupper());
-  ASSERT((new Str("A"))->isupper());
-  ASSERT((new Str("AB"))->isupper());
-
-  ASSERT((new Str("abc"))->isalpha());
-
-  Str* s = new Str("abc");
-  Str* r0 = str_repeat(s, 0);
-  ASSERT(str_equals0("", r0));
-
-  Str* r1 = str_repeat(s, 1);
-  ASSERT(str_equals0("abc", r1));
-
-  Str* r3 = str_repeat(s, 3);
-  ASSERT(str_equals0("abcabcabc", r3));
-
   Str* int_str;
   int_str = str((1 << 31) - 1);
   ASSERT(str_equals0("2147483647", int_str));
@@ -171,25 +154,6 @@ TEST test_str_funcs() {
 
   Str* re2 = s1->replace(new Str("bc"), new Str("--"));
   // ASSERT(str_equals(new Str("a--\0--d", 7), re1));
-
-  Str* s2 = new Str(" abc ");
-  ASSERT(str_equals0(" abc", s2->rstrip()));
-
-  Str* s3 = new Str(" def");
-  ASSERT(str_equals0(" def", s3->rstrip()));
-
-  Str* s4 = new Str("");
-  ASSERT(str_equals0("", s4->rstrip()));
-
-  Str* s5 = new Str("");
-  ASSERT(str_equals0("", s5->strip()));
-
-  Str* st1 = (new Str(" 123 "))->strip();
-  ASSERT(str_equals0("123", st1));
-  Str* st2 = (new Str(" 123"))->strip();
-  ASSERT(str_equals0("123", st2));
-  Str* st3 = (new Str("123 "))->strip();
-  ASSERT(str_equals0("123", st3));
 
   ASSERT(s->startswith(new Str("")));
   ASSERT(s->startswith(new Str("ab")));
