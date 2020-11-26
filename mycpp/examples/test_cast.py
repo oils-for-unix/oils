@@ -48,7 +48,7 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
-  pass
+  raise NotImplementedError()
 
 
 if __name__ == '__main__':

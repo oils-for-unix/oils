@@ -306,7 +306,7 @@ should-skip() {
 
 should-skip-benchmark() {
   case $1 in
-    (hoist|conditional|switch_)
+    (test_*)
       return 0  # nope, nothing interesting here
       ;;
   esac

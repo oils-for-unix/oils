@@ -50,12 +50,7 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
-
-  # For testing shared_ptr optimization
-  s = 'foo'
-  for i in xrange(100000):
-    s = strfunc(s)
-  log("len = %d", len(s))
+  raise NotImplementedError()
 
 
 if __name__ == '__main__':
