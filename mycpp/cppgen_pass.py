@@ -1855,7 +1855,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           first = False
 
           # Register it as a parameter
-          self.local_var_list.append((arg_name, c_type))
+          #self.local_var_list.append((arg_name, c_type))
 
           # We can't use __str__ on these Argument objects?  That seems like an
           # oversight
