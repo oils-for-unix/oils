@@ -1833,8 +1833,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.write(';\n')
 
-    def _WriteFuncParams(self, arg_types, arguments):
-        """Write params and mutate self.local_vars."""
+    def _WriteFuncParams(self, arg_types, arguments, update_locals=False):
+        """Write params and optionally mutate self.local_vars."""
         first = True  # first NOT including self
         for arg_type, arg in zip(arg_types, arguments):
           if not first:
@@ -1854,8 +1854,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write('%s %s', c_type, arg_name)
           first = False
 
-          # Register it as a parameter
-          #self.local_var_list.append((arg_name, c_type))
+          # Params are locals.  There are 4 callers to _WriteFuncParams and we
+          # only do it in one place.  TODO: Check if locals are used in
+          # __init__ after allocation.
+          if update_locals:
+            self.local_var_list.append((arg_name, c_type))
 
           # We can't use __str__ on these Argument objects?  That seems like an
           # oversight
@@ -2008,7 +2011,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           c_ret_type = c_ret_type[:-1]
         self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
 
-        self._WriteFuncParams(o.type.arg_types, o.arguments)
+        self._WriteFuncParams(o.type.arg_types, o.arguments, update_locals=True)
 
         if self.decl:
           self.decl_write(');\n')
