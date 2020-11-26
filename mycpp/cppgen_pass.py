@@ -1878,15 +1878,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.virtual.OnMethod(self.current_class_name, o.name())
           return
 
-        virtual = ''
-        if self.decl:
-          self.local_var_list = []  # Make a new instance to collect from
-          self.local_vars[o] = self.local_var_list
-
-          #log('Is Virtual? %s %s', self.current_class_name, o.name())
-          if self.virtual.IsVirtual(self.current_class_name, o.name()):
-            virtual = 'virtual '
-
         # Hack to turn _Next() with keyword arg into a set of overloaded
         # methods
         #
@@ -1996,6 +1987,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.accept(default_val)  
               self.write(');\n')
               self.write('}\n')
+
+        virtual = ''
+        if self.decl:
+          self.local_var_list = []  # Make a new instance to collect from
+          self.local_vars[o] = self.local_var_list
+
+          #log('Is Virtual? %s %s', self.current_class_name, o.name())
+          if self.virtual.IsVirtual(self.current_class_name, o.name()):
+            virtual = 'virtual '
 
         if not self.decl and self.current_class_name:
           # definition looks like
