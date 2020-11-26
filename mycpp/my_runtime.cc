@@ -49,7 +49,7 @@ Str* Str::replace(Str* old, Str* new_str) {
 
   // Second pass to copy into new 'result'
   Str* result = NewStr(length);
-  p_this = data_;  // back to beginning
+  p_this = data_;                  // back to beginning
   char* p_result = result->data_;  // advances through 'result'
 
   while (p_this < p_end) {
@@ -63,12 +63,7 @@ Str* Str::replace(Str* old, Str* new_str) {
       p_result++;
     }
   }
-  if (0) {
-    log("length = %d", length);
-    log("result->data_[length-1] = %c", result->data_[length-1]);
-    log("result->data_[length] = %c", result->data_[length]);
-    assert(result->data_[length] == '\0');  // buffer should have been zero'd
-  }
+  assert(result->data_[length] == '\0');  // buffer should have been zero'd
   return result;
 }
 

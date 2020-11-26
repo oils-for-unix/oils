@@ -68,6 +68,9 @@ TEST collect_test() {
   auto s = NewStr("abcdefg");
   for (int i = 0; i < 40; ++i) {
     s = s->replace(b, bb);
+
+    Str* t = NewStr("NUL");
+
     // log("i = %d", i);
     // log("len(s) = %d", len(s));
   }

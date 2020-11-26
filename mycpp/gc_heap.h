@@ -150,7 +150,9 @@ class Heap {
 
     roots_top_ = 0;
 
-    // slab scanning relies on 0 bytes (nullptr)
+    // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
+    // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
+    // it makes sense to zero the slabs instead?
     memset(from_space_, 0, num_bytes);
     memset(to_space_, 0, num_bytes);
 
@@ -527,8 +529,6 @@ class Str : public gc_heap::Obj {
   DISALLOW_COPY_AND_ASSIGN(Str)
 };
 
-constexpr int kStrHeaderSize = offsetof(Str, data_);
-
 template <int N>
 class GlobalStr {
   // A template type with the same layout as Str with length N-1 (which needs a
@@ -541,6 +541,10 @@ class GlobalStr {
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
+
+// This is the same as offsetof(Str, data_), but doesn't give a warning,
+// because of the inheritance?
+constexpr int kStrHeaderSize = offsetof(GlobalStr<1>, data_);
 
 // This macro is a workaround for the fact that it's impossible to have a
 // a constexpr initializer for char[N].  The "String Literals as Non-Type
@@ -582,10 +586,7 @@ inline Str* NewStr(const char* data, int len) {
   // log("NewStr s->data_ %p len = %d", s->data_, len);
   // log("sizeof(Str) = %d", sizeof(Str));
   memcpy(s->data_, data, len);
-
-  // So we can pass it directly to C functions.  TODO: is this redundant
-  // because the  heap is zero'd?
-  s->data_[len] = '\0';
+  assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
 
   s->SetCellLength(obj_len);  // So the GC can copy it
   return s;

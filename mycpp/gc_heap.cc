@@ -139,6 +139,8 @@ void Heap::Collect(bool must_grow) {
   // Swap spaces for next collection
   char* tmp = from_space_;
   from_space_ = to_space_;
+  // Maintain invariant of the space we will allocate from.
+  memset(from_space_, 0, space_size_);
   to_space_ = tmp;
 
 #if GC_DEBUG
