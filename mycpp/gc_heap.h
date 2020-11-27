@@ -644,18 +644,15 @@ inline Str* NewStr(const char* data) {
 // Compile-time computation of GC field masks.
 //
 
-constexpr int maskbit(int offset) {
-  return 1 << (offset / sizeof(void*));
-}
-
-class _DummyObj {  // For Obj_offsetof()
+class _DummyObj {  // For maskbit()
  public:
   OBJ_HEADER()
   int first_field_;
 };
 
-#define Obj_offsetof(T, field) \
-  (offsetof(T, field) - offsetof(_DummyObj, first_field_))
+constexpr int maskbit(int offset) {
+  return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
+}
 
 //
 // List<T>
@@ -673,7 +670,7 @@ class _DummyList {
 
 // A list has one Slab pointer which we need to follow.
 constexpr uint16_t maskof_List() {
-  return maskbit(Obj_offsetof(_DummyList, slab_));
+  return maskbit(offsetof(_DummyList, slab_));
 }
 
 template <typename T>
@@ -919,9 +916,6 @@ int find_by_key(Slab<K>* keys_, int len, Str* key) {
   return -1;
 }
 
-// This is three slab pointers after 2 integers.  TODO: portability?
-const int kDictMask = 0x000E;  // in binary: 0b 0000 0000 0000 01110
-
 // Type that is layout-compatible with List to avoid invalid-offsetof warnings.
 // Unit tests assert that they have the same layout.
 class _DummyDict {
@@ -936,9 +930,9 @@ class _DummyDict {
 
 // A list has one Slab pointer which we need to follow.
 constexpr uint16_t maskof_Dict() {
-  return maskbit(Obj_offsetof(_DummyDict, index_)) |
-         maskbit(Obj_offsetof(_DummyDict, keys_)) |
-         maskbit(Obj_offsetof(_DummyDict, values_));
+  return maskbit(offsetof(_DummyDict, index_)) |
+         maskbit(offsetof(_DummyDict, keys_)) |
+         maskbit(offsetof(_DummyDict, values_));
 }
 
 template <class K, class V>

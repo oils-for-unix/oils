@@ -619,7 +619,11 @@ TEST compile_time_masks_test() {
   // Note: These will be different for 32 bit
 
   ASSERT_EQ(offsetof(List<int>, slab_), offsetof(gc_heap::_DummyList, slab_));
+  // 0b 0000 0010
   ASSERT_EQ_FMT(0x0002, gc_heap::maskof_List(), "0x%x");
+
+  // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
+  // There is a trick with __VA_ARGS__ I don't understand.
 
 #define COMMA ,
   ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, index_),
@@ -628,6 +632,8 @@ TEST compile_time_masks_test() {
             offsetof(gc_heap::_DummyDict, keys_));
   ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, values_),
             offsetof(gc_heap::_DummyDict, values_));
+
+  // in binary: 0b 0000 0000 0000 01110
   ASSERT_EQ_FMT(0x000E, gc_heap::maskof_Dict(), "0x%x");
 
   PASS();
