@@ -539,6 +539,9 @@ class ReverseListIter {
   int i_;
 };
 
+// TODO: A proper dict index should get rid of this unusual sentinel scheme.
+// The index can be -1 on deletion, regardless of the type of the key.
+
 template <class K, class V>
 void dict_next(DictIter<K, V>* it, const std::vector<std::pair<K, V>>& items) {
   ++it->i_;

@@ -375,6 +375,41 @@ Str* Str::replace(Str* old, Str* new_str) {
   return result;
 }
 
+List<Str*>* Str::split(Str* sep) {
+  assert(len(sep) == 1);  // we can only split one char
+  char sep_char = sep->data_[0];
+
+  int length = len(this);
+  if (length == 0) {
+    // weird case consistent with Python: ''.split(':') == ['']
+    return Alloc<List<Str*>>(std::initializer_list<Str*>{kEmptyString});
+  }
+
+  auto result = new List<Str*>();
+
+  int n = length;
+  const char* pos = data_;
+  const char* end = data_ + length;
+
+  while (true) {
+    const char* new_pos = static_cast<const char*>(memchr(pos, sep_char, n));
+    if (new_pos == nullptr) {
+      result->append(NewStr(pos, end - pos));  // rest of the string
+      break;
+    }
+    int new_len = new_pos - pos;
+
+    result->append(NewStr(pos, new_len));
+    n -= new_len + 1;
+    pos = new_pos + 1;
+    if (pos >= end) {  // separator was at end of string
+      result->append(kEmptyString);
+      break;
+    }
+  }
+  return result;
+}
+
 Str* Str::join(List<Str*>* items) {
   int result_len = 0;
   int num_parts = len(items);

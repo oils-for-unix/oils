@@ -541,6 +541,8 @@ class Str : public gc_heap::Obj {
 
   Str* replace(Str* old, Str* new_str);
   Str* join(List<Str*>* items);
+  List<Str*>* split(Str* sep);
+
   bool isdigit();
   bool isalpha();
   bool isupper();
@@ -686,6 +688,19 @@ class List : public gc_heap::Obj {
     len_ = times;
     for (int i = 0; i < times; ++i) {
       set(i, item);
+    }
+  }
+
+  // Internal constructor
+  List(Slab<T>* slab, int n)
+      : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
+        len_(0),  // can't set this before reserve()
+        capacity_(0),
+        slab_(nullptr) {
+    reserve(n);
+    len_ = n;
+    for (int i = 0; i < n; ++i) {
+      set(i, slab->items_[i]);
     }
   }
 
@@ -950,6 +965,22 @@ class Dict : public gc_heap::Obj {
     } else {
       values_->items_[pos] = val;
     }
+  }
+
+  List<K>* keys() {
+    // Make a copy of the Slab
+    return Alloc<List<K>>(keys_, len_);
+  }
+
+  // For AssocArray transformations
+  List<V>* values() {
+    return Alloc<List<V>>(values_, len_);
+  }
+
+  void clear() {
+    memset(keys_->items_, 0, len_ * sizeof(K));    // zero for GC scan
+    memset(values_->items_, 0, len_ * sizeof(V));  // zero for GC scan
+    len_ = 0;
   }
 
   // int index_size_;  // size of index (sparse)

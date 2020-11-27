@@ -169,6 +169,12 @@ inline int ord(Str* s) {
   return c;
 }
 
+inline Str* chr(int i) {
+  auto result = NewStr(1);
+  result->data_[0] = i;
+  return result;
+}
+
 //
 // Comparison and Sorting
 //

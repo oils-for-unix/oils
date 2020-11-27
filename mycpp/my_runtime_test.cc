@@ -141,6 +141,54 @@ TEST str_replace_test() {
   PASS();
 }
 
+void Print(List<Str*>* parts) {
+  log("---");
+  log("len = %d", len(parts));
+  for (int i = 0; i < len(parts); ++i) {
+    printf("%d [", i);
+    Str* s = parts->index(i);
+    int n = len(s);
+    fwrite(s->data_, sizeof(char), n, stdout);
+    fputs("]\n", stdout);
+  }
+}
+
+TEST str_split_test() {
+  Str* empty = NewStr("");
+  auto sep = NewStr(":");
+  auto parts = empty->split(sep);
+  ASSERT_EQ(1, len(parts));
+  Print(parts);
+
+  parts = (NewStr(":"))->split(sep);
+  ASSERT_EQ(2, len(parts));
+  ASSERT(str_equals(kEmptyString, parts->index(0)));
+  ASSERT(str_equals(kEmptyString, parts->index(1)));
+  Print(parts);
+
+  parts = (NewStr("::"))->split(sep);
+  ASSERT_EQ(3, len(parts));
+  Print(parts);
+
+  parts = (NewStr("a:b"))->split(sep);
+  ASSERT_EQ(2, len(parts));
+  Print(parts);
+
+  parts = (NewStr("abc:def:"))->split(sep);
+  ASSERT_EQ(3, len(parts));
+  Print(parts);
+
+  parts = (NewStr(":abc:def:"))->split(sep);
+  ASSERT_EQ(4, len(parts));
+  Print(parts);
+
+  parts = (NewStr("abc:def:ghi"))->split(sep);
+  ASSERT_EQ(3, len(parts));
+  Print(parts);
+
+  PASS();
+}
+
 TEST str_methods_test() {
   log("char funcs");
   ASSERT(!(NewStr(""))->isupper());
@@ -267,6 +315,7 @@ TEST str_funcs_test() {
   log("repr %s", repr(NewStr("high \xFF \xFE high"))->data_);
 
   ASSERT_EQ(65, ord(NewStr("A")));
+  ASSERT_EQ(NewStr("A"), chr(65));
 
   PASS();
 }
@@ -467,6 +516,63 @@ TEST contains_test() {
   PASS();
 }
 
+TEST dict_methods_test() {
+  Dict<int, Str*>* d = Alloc<Dict<int, Str*>>();
+  d->set(1, NewStr("foo"));
+  ASSERT(str_equals0("foo", d->index(1)));
+
+  auto d2 = Alloc<Dict<Str*, int>>();
+  Str* key = NewStr("key");
+  d2->set(key, 42);
+  ASSERT_EQ(42, d2->index(key));
+
+  d2->set(NewStr("key2"), 2);
+  d2->set(NewStr("key3"), 3);
+
+  ASSERT_EQ_FMT(3, len(d2), "%d");
+
+  auto keys = d2->keys();
+  ASSERT_EQ_FMT(3, len(keys), "%d");
+
+  // Retain insertion order
+  ASSERT(str_equals0("key", keys->index(0)));
+  ASSERT(str_equals0("key2", keys->index(1)));
+  ASSERT(str_equals0("key3", keys->index(2)));
+
+  auto values = d2->values();
+  ASSERT_EQ_FMT(3, len(values), "%d");
+  ASSERT_EQ(42, values->index(0));
+  ASSERT_EQ(2, values->index(1));
+  ASSERT_EQ(3, values->index(2));
+
+  d2->clear();
+  ASSERT_EQ(0, len(d2));
+  // Ensure it was zero'd
+  ASSERT_EQ(nullptr, d2->keys_->items_[0]);
+  ASSERT_EQ(0, d2->values_->items_[0]);
+
+  PASS();
+}
+
+TEST dict_funcs_test() {
+  PASS();
+}
+
+TEST dict_iters_test() {
+  auto d2 = Alloc<Dict<Str*, int>>();
+  d2->set(NewStr("foo"), 2);
+  d2->set(NewStr("bar"), 3);
+
+#if 0
+  log("  iterating over Dict");
+  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
+    log("k = %s, v = %d", it.Key()->data_, it.Value());
+  }
+#endif
+
+  PASS();
+}
+
 TEST formatter_test() {
   gBuf.reset();
   gBuf.write_const("[", 1);
@@ -518,6 +624,7 @@ int main(int argc, char** argv) {
   RUN_TEST(str_to_int_test);
   RUN_TEST(int_to_str_test);
   RUN_TEST(str_replace_test);
+  RUN_TEST(str_split_test);
   RUN_TEST(str_methods_test);
   RUN_TEST(str_funcs_test);
   RUN_TEST(str_iters_test);
@@ -526,6 +633,9 @@ int main(int argc, char** argv) {
   RUN_TEST(list_iters_test);
   RUN_TEST(sort_test);
   RUN_TEST(contains_test);
+  RUN_TEST(dict_methods_test);
+  RUN_TEST(dict_funcs_test);
+  RUN_TEST(dict_iters_test);
 
   RUN_TEST(formatter_test);
   RUN_TEST(collect_test);
