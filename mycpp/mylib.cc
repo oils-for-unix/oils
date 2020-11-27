@@ -88,6 +88,42 @@ Str* Str::replace(Str* old, Str* new_str) {
   return new Str(result);
 }
 
+Str* Str::ljust(int width, Str* fillchar) {
+  assert(len(fillchar) == 1);
+
+  int num_fill = width - len_;
+  if (num_fill < 0) {
+    return this;
+  } else {
+    char* buf = static_cast<char*>(malloc(width + 1));
+    char c = fillchar->data_[0];
+    memcpy(buf, data_, len_);
+    for (int i = len_; i < width; ++i) {
+      buf[i] = c;
+    }
+    buf[width] = '\0';
+    return new Str(buf, width);
+  }
+}
+
+Str* Str::rjust(int width, Str* fillchar) {
+  assert(len(fillchar) == 1);
+
+  int num_fill = width - len_;
+  if (num_fill < 0) {
+    return this;
+  } else {
+    char* buf = static_cast<char*>(malloc(width + 1));
+    char c = fillchar->data_[0];
+    for (int i = 0; i < num_fill; ++i) {
+      buf[i] = c;
+    }
+    memcpy(buf + num_fill, data_, len_);
+    buf[width] = '\0';
+    return new Str(buf, width);
+  }
+}
+
 List<Str*>* Str::split(Str* sep) {
   assert(sep->len_ == 1);  // we can only split one char
   char sep_char = sep->data_[0];

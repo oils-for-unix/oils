@@ -32,8 +32,8 @@ def run_tests():
 
   print('<a href="foo.html">%s</a>' % 'anchor')
 
-  print("foo? %d" % ('foo' in s))
-  print("str? %d" % ('str' in s))
+  print("foo? %d" % ('f' in s))
+  print("str? %d" % ('s' in s))
 
   print("int 5d %5d" % 35)
 

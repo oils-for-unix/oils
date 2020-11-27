@@ -244,12 +244,19 @@ gen-ctags() {
 }
 
 gc-examples() {
-  GC=1 example-both strings
-
   # needs extend(List<>), not initializer_list
-  #GC=1 example-both scoped_resource
+  GC=1 example-both scoped_resource
+
   return
-  #GC=1 example-both files
+
+  # mylib.BufWriter
+  GC=1 example-both files
+
+  # Tuple2
+  GC=1 example-both tuple_return_value
+
+  # %5d doesn't work in either mylib or my_runtime
+  GC=1 example-both strings
 
   # Tuple2, etc.
   GC=1 example-both loops
@@ -275,6 +282,7 @@ gc-examples() {
     GC=1 example-both length
     GC=1 example-both modules
     GC=1 example-both test_conditional
+    GC=1 example-both test_hoist
   fi
   return
 
