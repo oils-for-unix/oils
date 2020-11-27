@@ -615,6 +615,16 @@ TEST field_mask_test() {
   PASS();
 }
 
+TEST compile_time_masks_test() {
+  // Note: These will be different for 32 bit
+  ASSERT_EQ_FMT(0x0002, gc_heap::maskof_List<int>(), "0x%x");
+  ASSERT_EQ_FMT(0x000E, gc_heap::kDictMask, "0x%x");
+
+  ASSERT_EQ(offsetof(List<int>, slab_), offsetof(gc_heap::_DummyList, slab_));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -638,6 +648,7 @@ int main(int argc, char** argv) {
   // RUN_TEST(local_test);
   RUN_TEST(stack_roots_test);
   RUN_TEST(field_mask_test);
+  RUN_TEST(compile_time_masks_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

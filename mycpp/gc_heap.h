@@ -604,6 +604,7 @@ constexpr int kStrHeaderSize = offsetof(GlobalStr<1>, data_);
 
 // Hm we're getting a warning because these aren't plain old data?
 // https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
+// https://stackoverflow.com/questions/53850100/warning-offset-of-on-non-standard-layout-type-derivedclass
 
 // The structures must be layout compatible!  Protect against typos.
 static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_), "oops");
@@ -643,10 +644,6 @@ inline Str* NewStr(const char* data) {
 // List<T>
 //
 
-// This is one slab in the second position.  TODO: This is different for 32
-// bit???  Is there a way to make it portable?
-const int kListMask = 0x0002;  // in binary: 0b 0000 0000 0000 00010
-
 template <typename T>
 class List : public gc_heap::Obj {
   // TODO: Move methods that don't allocate or resize: out of gc_heap?
@@ -657,52 +654,13 @@ class List : public gc_heap::Obj {
   // - neither: index(), slice()
 
  public:
-  List()
-      : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
-        len_(0),
-        capacity_(0),
-        slab_(nullptr) {
-  }
-
+  List();
   // Literal ['foo', 'bar']
-  List(std::initializer_list<T> init)
-      : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)), slab_(nullptr) {
-    int n = init.size();
-    reserve(n);
-
-    int i = 0;
-    for (auto item : init) {
-      set(i, item);
-      ++i;
-    }
-    len_ = n;
-  }
-
+  List(std::initializer_list<T> init);
   // list_repeat ['foo'] * 3
-  List(T item, int times)
-      : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
-        len_(0),  // can't set this before reserve()
-        capacity_(0),
-        slab_(nullptr) {
-    reserve(times);
-    len_ = times;
-    for (int i = 0; i < times; ++i) {
-      set(i, item);
-    }
-  }
-
+  List(T item, int times);
   // Internal constructor
-  List(Slab<T>* slab, int n)
-      : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
-        len_(0),  // can't set this before reserve()
-        capacity_(0),
-        slab_(nullptr) {
-    reserve(n);
-    len_ = n;
-    for (int i = 0; i < n; ++i) {
-      set(i, slab->items_[i]);
-    }
-  }
+  List(Slab<T>* slab, int n);
 
   // Implements L[i]
   T index(int i) {
@@ -860,6 +818,85 @@ class List : public gc_heap::Obj {
 
   DISALLOW_COPY_AND_ASSIGN(List)
 };
+
+class _Dummy {
+ public:
+  OBJ_HEADER()
+  int first_field_;
+};
+
+constexpr int FirstFieldOffset() {
+  return offsetof(_Dummy, first_field_);
+}
+
+// Type that is layout-compatible with List to avoid invalid-offsetof warnings.
+// Unit tests assert that they have the same layout.
+class _DummyList {
+ public:
+  OBJ_HEADER()
+  int len_;
+  int capacity_;
+  void* slab_;
+};
+
+// A list has one Slab pointer which we need to follow.
+template <typename T>
+constexpr uint16_t maskof_List() {
+  return 1 << ((offsetof(_DummyList, slab_) - FirstFieldOffset()) /
+               sizeof(void*));
+}
+
+// These have to be defined separately because they use maskof_List().
+
+template <typename T>
+List<T>::List()
+    : Obj(Tag::FixedSize, maskof_List<T>(), sizeof(List<T>)),
+      len_(0),
+      capacity_(0),
+      slab_(nullptr) {
+}
+
+template <typename T>
+List<T>::List(std::initializer_list<T> init)
+    : Obj(Tag::FixedSize, maskof_List<T>(), sizeof(List<T>)), slab_(nullptr) {
+  int n = init.size();
+  reserve(n);
+
+  int i = 0;
+  for (auto item : init) {
+    set(i, item);
+    ++i;
+  }
+  len_ = n;
+}
+
+// list_repeat ['foo'] * 3
+template <typename T>
+List<T>::List(T item, int times)
+    : Obj(Tag::FixedSize, maskof_List<T>(), sizeof(List<T>)),
+      len_(0),  // can't set this before reserve()
+      capacity_(0),
+      slab_(nullptr) {
+  reserve(times);
+  len_ = times;
+  for (int i = 0; i < times; ++i) {
+    set(i, item);
+  }
+}
+
+// Internal constructor
+template <typename T>
+List<T>::List(Slab<T>* slab, int n)
+    : Obj(Tag::FixedSize, maskof_List<T>(), sizeof(List<T>)),
+      len_(0),  // can't set this before reserve()
+      capacity_(0),
+      slab_(nullptr) {
+  reserve(n);
+  len_ = n;
+  for (int i = 0; i < n; ++i) {
+    set(i, slab->items_[i]);
+  }
+}
 
 //
 // Dict<K, V>
