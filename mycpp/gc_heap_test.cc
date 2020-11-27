@@ -617,10 +617,18 @@ TEST field_mask_test() {
 
 TEST compile_time_masks_test() {
   // Note: These will be different for 32 bit
-  ASSERT_EQ_FMT(0x0002, gc_heap::maskof_List<int>(), "0x%x");
-  ASSERT_EQ_FMT(0x000E, gc_heap::kDictMask, "0x%x");
 
   ASSERT_EQ(offsetof(List<int>, slab_), offsetof(gc_heap::_DummyList, slab_));
+  ASSERT_EQ_FMT(0x0002, gc_heap::maskof_List(), "0x%x");
+
+#define COMMA ,
+  ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, index_),
+            offsetof(gc_heap::_DummyDict, index_));
+  ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, keys_),
+            offsetof(gc_heap::_DummyDict, keys_));
+  ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, values_),
+            offsetof(gc_heap::_DummyDict, values_));
+  ASSERT_EQ_FMT(0x000E, gc_heap::maskof_Dict(), "0x%x");
 
   PASS();
 }

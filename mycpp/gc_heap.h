@@ -641,8 +641,40 @@ inline Str* NewStr(const char* data) {
 }
 
 //
+// Compile-time computation of GC field masks.
+//
+
+constexpr int maskbit(int offset) {
+  return 1 << (offset / sizeof(void*));
+}
+
+class _DummyObj {  // For Obj_offsetof()
+ public:
+  OBJ_HEADER()
+  int first_field_;
+};
+
+#define Obj_offsetof(T, field) \
+  (offsetof(T, field) - offsetof(_DummyObj, first_field_))
+
+//
 // List<T>
 //
+
+// Type that is layout-compatible with List to avoid invalid-offsetof warnings.
+// Unit tests assert that they have the same layout.
+class _DummyList {
+ public:
+  OBJ_HEADER()
+  int len_;
+  int capacity_;
+  void* slab_;
+};
+
+// A list has one Slab pointer which we need to follow.
+constexpr uint16_t maskof_List() {
+  return maskbit(Obj_offsetof(_DummyList, slab_));
+}
 
 template <typename T>
 class List : public gc_heap::Obj {
@@ -654,13 +686,50 @@ class List : public gc_heap::Obj {
   // - neither: index(), slice()
 
  public:
-  List();
+  List()
+      : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)),
+        len_(0),
+        capacity_(0),
+        slab_(nullptr) {
+  }
+
   // Literal ['foo', 'bar']
-  List(std::initializer_list<T> init);
+  List(std::initializer_list<T> init)
+      : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)), slab_(nullptr) {
+    int n = init.size();
+    reserve(n);
+
+    int i = 0;
+    for (auto item : init) {
+      set(i, item);
+      ++i;
+    }
+    len_ = n;
+  }
+
   // list_repeat ['foo'] * 3
-  List(T item, int times);
-  // Internal constructor
-  List(Slab<T>* slab, int n);
+  List(T item, int times)
+      : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)),
+        len_(0),  // can't set this before reserve()
+        capacity_(0),
+        slab_(nullptr) {
+    reserve(times);
+    len_ = times;
+    for (int i = 0; i < times; ++i) {
+      set(i, item);
+    }
+  }
+
+  // Internal constructor for keys() and values()
+  List(Slab<T>* from_slab, int n)
+      : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)),
+        len_(0),  // can't set this before reserve()
+        capacity_(0),
+        slab_(nullptr) {
+    reserve(n);
+    len_ = n;
+    memcpy(slab_->items_, from_slab->items_, n * sizeof(T));
+  }
 
   // Implements L[i]
   T index(int i) {
@@ -819,85 +888,6 @@ class List : public gc_heap::Obj {
   DISALLOW_COPY_AND_ASSIGN(List)
 };
 
-class _Dummy {
- public:
-  OBJ_HEADER()
-  int first_field_;
-};
-
-constexpr int FirstFieldOffset() {
-  return offsetof(_Dummy, first_field_);
-}
-
-// Type that is layout-compatible with List to avoid invalid-offsetof warnings.
-// Unit tests assert that they have the same layout.
-class _DummyList {
- public:
-  OBJ_HEADER()
-  int len_;
-  int capacity_;
-  void* slab_;
-};
-
-// A list has one Slab pointer which we need to follow.
-template <typename T>
-constexpr uint16_t maskof_List() {
-  return 1 << ((offsetof(_DummyList, slab_) - FirstFieldOffset()) /
-               sizeof(void*));
-}
-
-// These have to be defined separately because they use maskof_List().
-
-template <typename T>
-List<T>::List()
-    : Obj(Tag::FixedSize, maskof_List<T>(), sizeof(List<T>)),
-      len_(0),
-      capacity_(0),
-      slab_(nullptr) {
-}
-
-template <typename T>
-List<T>::List(std::initializer_list<T> init)
-    : Obj(Tag::FixedSize, maskof_List<T>(), sizeof(List<T>)), slab_(nullptr) {
-  int n = init.size();
-  reserve(n);
-
-  int i = 0;
-  for (auto item : init) {
-    set(i, item);
-    ++i;
-  }
-  len_ = n;
-}
-
-// list_repeat ['foo'] * 3
-template <typename T>
-List<T>::List(T item, int times)
-    : Obj(Tag::FixedSize, maskof_List<T>(), sizeof(List<T>)),
-      len_(0),  // can't set this before reserve()
-      capacity_(0),
-      slab_(nullptr) {
-  reserve(times);
-  len_ = times;
-  for (int i = 0; i < times; ++i) {
-    set(i, item);
-  }
-}
-
-// Internal constructor
-template <typename T>
-List<T>::List(Slab<T>* slab, int n)
-    : Obj(Tag::FixedSize, maskof_List<T>(), sizeof(List<T>)),
-      len_(0),  // can't set this before reserve()
-      capacity_(0),
-      slab_(nullptr) {
-  reserve(n);
-  len_ = n;
-  for (int i = 0; i < n; ++i) {
-    set(i, slab->items_[i]);
-  }
-}
-
 //
 // Dict<K, V>
 //
@@ -932,11 +922,30 @@ int find_by_key(Slab<K>* keys_, int len, Str* key) {
 // This is three slab pointers after 2 integers.  TODO: portability?
 const int kDictMask = 0x000E;  // in binary: 0b 0000 0000 0000 01110
 
+// Type that is layout-compatible with List to avoid invalid-offsetof warnings.
+// Unit tests assert that they have the same layout.
+class _DummyDict {
+ public:
+  OBJ_HEADER()
+  int len_;
+  int capacity_;
+  void* index_;
+  void* keys_;
+  void* values_;
+};
+
+// A list has one Slab pointer which we need to follow.
+constexpr uint16_t maskof_Dict() {
+  return maskbit(Obj_offsetof(_DummyDict, index_)) |
+         maskbit(Obj_offsetof(_DummyDict, keys_)) |
+         maskbit(Obj_offsetof(_DummyDict, values_));
+}
+
 template <class K, class V>
 class Dict : public gc_heap::Obj {
  public:
   Dict()
-      : gc_heap::Obj(Tag::FixedSize, kDictMask, 0),
+      : gc_heap::Obj(Tag::FixedSize, maskof_Dict(), 0),
         len_(0),
         capacity_(0),
         index_(nullptr),
