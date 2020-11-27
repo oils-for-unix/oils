@@ -315,7 +315,7 @@ TEST str_funcs_test() {
   log("repr %s", repr(NewStr("high \xFF \xFE high"))->data_);
 
   ASSERT_EQ(65, ord(NewStr("A")));
-  ASSERT_EQ(NewStr("A"), chr(65));
+  ASSERT(str_equals(NewStr("A"), chr(65)));
 
   PASS();
 }

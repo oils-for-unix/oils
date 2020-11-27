@@ -276,6 +276,7 @@ bool Str::startswith(Str* s) {
   }
   return memcmp(data_, s->data_, n) == 0;
 }
+
 bool Str::endswith(Str* s) {
   int len_s = len(s);
   int len_this = len(this);

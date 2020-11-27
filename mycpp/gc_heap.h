@@ -728,7 +728,7 @@ class List : public gc_heap::Obj {
       begin = len_ + begin;
     }
 
-    List* result = Alloc<List<T>>();
+    List* result = Alloc<List<T>>();  // TODO: initialize with size
     for (int i = begin; i < len_; i++) {
       result->append(slab_->items_[i]);
     }
@@ -745,7 +745,7 @@ class List : public gc_heap::Obj {
       end = len_ + end;
     }
 
-    List* result = new List();
+    List* result = new List();  // TODO: initialize with size
     for (int i = begin; i < end; i++) {
       result->append(slab_->items_[i]);
     }
