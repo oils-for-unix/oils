@@ -280,8 +280,8 @@ TEST str_iters_test() {
 }
 
 TEST list_methods_test() {
-  auto ints = Alloc<List<int>>();
-  ints->extend(std::initializer_list<int>{5, 6, 7, 8});
+  auto init = std::initializer_list<int>{5, 6, 7, 8};
+  auto ints = Alloc<List<int>>(init);
 
   List<int>* slice1 = ints->slice(1);
   ASSERT_EQ(3, len(slice1));
@@ -326,6 +326,12 @@ TEST list_methods_test() {
   ASSERT_EQ(6, ints->index(1));
   ASSERT_EQ(7, ints->index(2));
 
+  auto other = Alloc<List<int>>(std::initializer_list<int>{-1, -2});
+  ints->extend(other);  // [9, 6, 7, 1, 2]
+  ASSERT_EQ(5, len(ints));
+  ASSERT_EQ(-2, ints->index(4));
+  ASSERT_EQ(-1, ints->index(3));
+
   ints->clear();
   ASSERT_EQ(0, len(ints));
   ASSERT_EQ(0, ints->slab_->items_[0]);  // make sure it's zero'd
@@ -354,8 +360,8 @@ TEST list_funcs_test() {
 
 TEST list_iters_test() {
   log("  forward iteration over list");
-  auto ints = Alloc<List<int>>();
-  ints->extend(std::initializer_list<int>{1, 2, 3});
+  auto init = std::initializer_list<int>{1, 2, 3};
+  auto ints = Alloc<List<int>>(init);
 
   for (ListIter<int> it(ints); !it.Done(); it.Next()) {
     int x = it.Value();

@@ -244,22 +244,9 @@ gen-ctags() {
 }
 
 gc-examples() {
-  # needs extend(List<>), not initializer_list
-  GC=1 example-both scoped_resource
-
-  return
-
-  # mylib.BufWriter
-  GC=1 example-both files
-
-  # Tuple2
-  GC=1 example-both tuple_return_value
-
-  # %5d doesn't work in either mylib or my_runtime
-  GC=1 example-both strings
-
   # Tuple2, etc.
   GC=1 example-both loops
+  return
 
   # needs Tuple2
   GC=1 example-both containers
@@ -267,6 +254,14 @@ gc-examples() {
 
   # FAILS with a small heap.  Some List invaraitsn?
   BENCHMARK=1 GC=1 example-both cartesian
+  return
+
+  # mylib.BufWriter
+  GC=1 example-both files
+
+  # %5d doesn't work in either mylib or my_runtime
+  GC=1 example-both strings
+
   return
 
   if true; then
@@ -281,8 +276,10 @@ gc-examples() {
     GC=1 example-both escape
     GC=1 example-both length
     GC=1 example-both modules
+    GC=1 example-both scoped_resource
     GC=1 example-both test_conditional
     GC=1 example-both test_hoist
+    GC=1 example-both tuple_return_value
   fi
   return
 

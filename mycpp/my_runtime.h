@@ -1,4 +1,11 @@
-// my_runtime.h
+// my_runtime.h: Statically typed Python builtins.
+//
+// Builtin types: tuples, NotImplementedError, AssertionError
+// Builtin functions: print(), repr(), ord()
+// Builtin operators: str_concat(), str_repeat(), list_repeat()
+// Builtin methods: Str::join, etc. (Move this to my_methods.cc?)
+//
+// TODO: Move BufWriter to mylib?
 
 #ifndef MY_RUNTIME_H
 #define MY_RUNTIME_H
@@ -40,6 +47,69 @@ class AssertionError {
   }
   explicit AssertionError(Str* s) {
   }
+};
+
+template <class A, class B>
+class Tuple2 {
+ public:
+  Tuple2(A a, B b) : a_(a), b_(b) {
+  }
+  A at0() {
+    return a_;
+  }
+  B at1() {
+    return b_;
+  }
+
+ private:
+  A a_;
+  B b_;
+};
+
+template <class A, class B, class C>
+class Tuple3 {
+ public:
+  Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
+  }
+  A at0() {
+    return a_;
+  }
+  B at1() {
+    return b_;
+  }
+  C at2() {
+    return c_;
+  }
+
+ private:
+  A a_;
+  B b_;
+  C c_;
+};
+
+template <class A, class B, class C, class D>
+class Tuple4 {
+ public:
+  Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
+  }
+  A at0() {
+    return a_;
+  }
+  B at1() {
+    return b_;
+  }
+  C at2() {
+    return c_;
+  }
+  D at3() {
+    return d_;
+  }
+
+ private:
+  A a_;
+  B b_;
+  C c_;
+  D d_;
 };
 
 void println_stderr(Str* s);

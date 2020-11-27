@@ -612,27 +612,23 @@ static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_), "oops");
 // require mycpp to generate 2 statements everywhere.
 //
 
-inline Str* NewStr(const char* data, int len) {
+// New string of a certain length, to be filled in
+inline Str* NewStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
   auto s = new (place) Str();
+  s->SetCellLength(obj_len);  // So the GC can copy it
+  return s;
+}
+
+inline Str* NewStr(const char* data, int len) {
+  Str* s = NewStr(len);
 
   // log("NewStr s->data_ %p len = %d", s->data_, len);
   // log("sizeof(Str) = %d", sizeof(Str));
   memcpy(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
 
-  s->SetCellLength(obj_len);  // So the GC can copy it
-  return s;
-}
-
-// New string of a certain length, to be filled in
-inline Str* NewStr(int len) {
-  int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
-  auto s = new (place) Str();
-
-  s->SetCellLength(obj_len);  // So the GC can copy it
   return s;
 }
 
@@ -651,6 +647,13 @@ const int kListMask = 0x0002;  // in binary: 0b 0000 0000 0000 00010
 
 template <typename T>
 class List : public gc_heap::Obj {
+  // TODO: Move methods that don't allocate or resize: out of gc_heap?
+  // - allocate: append(), extend()
+  // - resize: pop(), clear()
+  // - neither: reverse(), sort() -- these are more like functions.  Except
+  //   sort() is a templated method that depends on type param T.
+  // - neither: index(), slice()
+
  public:
   List()
       : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
@@ -662,7 +665,15 @@ class List : public gc_heap::Obj {
   // Literal ['foo', 'bar']
   List(std::initializer_list<T> init)
       : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)), slab_(nullptr) {
-    extend(init);
+    int n = init.size();
+    reserve(n);
+
+    int i = 0;
+    for (auto item : init) {
+      set(i, item);
+      ++i;
+    }
+    len_ = n;
   }
 
   // list_repeat ['foo'] * 3
@@ -815,18 +826,15 @@ class List : public gc_heap::Obj {
 
   // Extend this list with multiple elements.  TODO: overload to take a
   // List<> ?
-  void extend(std::initializer_list<T> init) {
-    int n = init.size();
+  void extend(List<T>* other) {
+    int n = other->len_;
+    int new_len = len_ + n;
+    reserve(new_len);
 
-    reserve(len_ + n);
-
-    int i = len_;
-    for (auto item : init) {
-      set(i, item);
-      ++i;
+    for (int i = 0; i < n; ++i) {
+      set(len_ + i, other->slab_->items_[i]);
     }
-
-    len_ += n;
+    len_ = new_len;
   }
 
   int len_;       // number of entries
