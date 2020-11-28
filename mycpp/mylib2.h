@@ -7,8 +7,11 @@
 #define MYLIB2_H
 
 #include "gc_heap.h"
+#include "my_runtime.h"  // Tuple2
 
 namespace mylib {
+
+Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 class Writer {
  public:

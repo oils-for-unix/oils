@@ -9,6 +9,25 @@ mylib::BufWriter gBuf;
 
 namespace mylib {
 
+Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
+  assert(len(delim) == 1);
+
+  const char* start = s->data_;
+  char c = delim->data_[0];
+  int length = len(s);
+
+  const char* p = static_cast<const char*>(memchr(start, c, length));
+
+  if (p) {
+    int len1 = p - start;
+    Str* first = NewStr(start, len1);
+    Str* second = NewStr(p + 1, length - len1 - 1);
+    return Tuple2<Str*, Str*>(first, second);
+  } else {
+    return Tuple2<Str*, Str*>(s, nullptr);
+  }
+}
+
 Writer* gStdout;
 Writer* gStderr;
 

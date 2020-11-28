@@ -604,9 +604,11 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_iters);
   RUN_TEST(test_dict);
 
-  RUN_TEST(test_buf_line_reader);
   RUN_TEST(test_formatter);
   RUN_TEST(test_contains);
+
+  // TODO: Move to mylib2, and add test file
+  RUN_TEST(test_buf_line_reader);
   RUN_TEST(test_files);
 
   RUN_TEST(test_sizeof);
