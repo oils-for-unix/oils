@@ -13,6 +13,24 @@ namespace mylib {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
+inline Str* hex_lower(int i) {
+  char buf[kIntBufSize];
+  int length = snprintf(buf, kIntBufSize, "%x", i);
+  return NewStr(buf, length);  // copy buf
+}
+
+inline Str* hex_upper(int i) {
+  char buf[kIntBufSize];
+  int length = snprintf(buf, kIntBufSize, "%X", i);
+  return NewStr(buf, length);  // copy buf
+}
+
+inline Str* octal(int i) {
+  char buf[kIntBufSize];
+  int length = snprintf(buf, kIntBufSize, "%o", i);
+  return NewStr(buf, length);  // copy buf
+}
+
 class Writer {
  public:
   virtual void write(Str* s) = 0;

@@ -3,9 +3,9 @@
 // Builtin types: tuples, NotImplementedError, AssertionError
 // Builtin functions: print(), repr(), ord()
 // Builtin operators: str_concat(), str_repeat(), list_repeat()
-// Builtin methods: Str::join, etc. (Move this to my_methods.cc?)
+// Builtin methods: Str::join, etc.  Note that Str is declared in gc_heap.h.
 //
-// TODO: Move BufWriter to mylib?
+// TODO: Rename this file to my_builtins.{h,cc}?
 
 #ifndef MY_RUNTIME_H
 #define MY_RUNTIME_H

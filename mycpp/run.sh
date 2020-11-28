@@ -229,7 +229,7 @@ mylib-test() {
 
 mylib2-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile mylib2_test asan -I ../cpp mylib2.cc gc_heap.cc
+  cpp-compile mylib2_test asan -I ../cpp mylib2.cc gc_heap.cc my_runtime.cc
   _bin/mylib2_test.asan "$@"
 }
 

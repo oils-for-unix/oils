@@ -1,7 +1,7 @@
 #include "mylib2.h"
 
-#include "greatest.h"
 #include "gc_heap.h"
+#include "greatest.h"
 #include "my_runtime.h"
 
 using gc_heap::NewStr;
@@ -28,6 +28,26 @@ TEST split_once_test() {
   PASS();
 }
 
+TEST int_to_str_test() {
+  int int_min = -(1 << 31);
+  Str* int_str;
+
+  int_str = mylib::hex_lower(15);
+  ASSERT(str_equals0("f", int_str));
+  print(int_str);
+  print(mylib::hex_lower(int_min));
+
+  int_str = mylib::hex_upper(15);
+  ASSERT(str_equals0("F", int_str));
+  print(mylib::hex_upper(int_min));
+
+  int_str = mylib::octal(15);
+  ASSERT(str_equals0("17", int_str));
+  print(mylib::octal(int_min));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -36,6 +56,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(split_once_test);
+  RUN_TEST(int_to_str_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
