@@ -453,4 +453,3 @@ Str* repr(Str* s) {
   f.format_r(s);
   return f.getvalue();
 }
-

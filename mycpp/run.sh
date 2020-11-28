@@ -244,29 +244,12 @@ gen-ctags() {
 }
 
 gc-examples() {
-  # Tuple2, etc.
-  GC=1 example-both loops
-  return
-
-  # needs Tuple2
-  GC=1 example-both containers
-  return
-
-  # FAILS with a small heap.  Some List invaraitsn?
-  BENCHMARK=1 GC=1 example-both cartesian
-  return
-
-  # mylib.BufWriter
-  GC=1 example-both files
-
-  # %5d doesn't work in either mylib or my_runtime
-  GC=1 example-both strings
-
+  GC=1 example-both cartesian
   return
 
   if true; then
     # these work
-    BENCHMARK=1 GC=1 example-both switch_ asan
+    BENCHMARK=1 GC=1 example-both test_switch asan
     BENCHMARK=1 GC=1 example-both cgi asan
     BENCHMARK=1 GC=1 example-both fib_iter asan
     BENCHMARK=1 GC=1 example-both fib_recursive asan
@@ -274,6 +257,7 @@ gc-examples() {
     GC=1 example-both asdl_generated
     GC=1 example-both control_flow opt
     GC=1 example-both escape
+    GC=1 example-both files
     GC=1 example-both length
     GC=1 example-both modules
     GC=1 example-both scoped_resource
@@ -281,6 +265,23 @@ gc-examples() {
     GC=1 example-both test_hoist
     GC=1 example-both tuple_return_value
   fi
+  return
+
+  # DictIter
+  GC=1 example-both loops
+  return
+
+  # Dict
+  GC=1 example-both containers
+  return
+
+  # FAILS with a small heap.  Some List invaraitsn?
+  BENCHMARK=1 GC=1 example-both cartesian
+  return
+
+  # %5d doesn't work in either mylib or my_runtime
+  GC=1 example-both strings
+
   return
 
   # have print(), ListIter

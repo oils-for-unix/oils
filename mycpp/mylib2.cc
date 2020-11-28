@@ -1,6 +1,8 @@
 // mylib2.cc
 
 #include "mylib2.h"
+
+#include <unistd.h>      // isatty
 #include "my_runtime.h"  // kIntBufSize
 
 mylib::BufWriter gBuf;
@@ -98,4 +100,17 @@ void BufWriter::format_r(Str* s) {
   data_ = static_cast<char*>(realloc(data_, len_ + 1));
 }
 
-}  // namespace my_runtime
+void CFileWriter::write(Str* s) {
+  // note: throwing away the return value
+  fwrite(s->data_, sizeof(char), len(s), f_);
+}
+
+void CFileWriter::flush() {
+  ::fflush(f_);
+}
+
+bool CFileWriter::isatty() {
+  return ::isatty(fileno(f_));
+}
+
+}  // namespace mylib
