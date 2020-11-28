@@ -250,7 +250,6 @@ gen-ctags() {
 }
 
 gc-examples() {
-  GC=1 example-both cartesian
   return
 
   if true; then
@@ -261,6 +260,8 @@ gc-examples() {
     BENCHMARK=1 GC=1 example-both fib_recursive asan
 
     GC=1 example-both asdl_generated
+    GC=1 example-both cartesian
+    GC=1 example-both classes
     GC=1 example-both control_flow opt
     GC=1 example-both escape
     GC=1 example-both files

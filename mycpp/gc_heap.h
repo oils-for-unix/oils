@@ -30,16 +30,7 @@
 //   - Dict::set() can realloc and rehash
 
 // TODO:
-// - Allocate() should Collect() -- hook up that policy.
-// - Resize the heap!  This only happens when there's a really large
-//   allocation?  More than 20% of the heap.
-// - How can we make the field masks portable?
-//   - Do we need some kind of constexpr computation?  sizeof(int) vs
-//   sizeof(void*)
 // - Dicts should actually use hashing!  Test computational complexity.
-// - Don't collect or copy GLOBAL Str* instances
-//   - Do they have a special tag in the Obj header?
-//   - can they be constexpr in the generated source?  Would be nice.
 
 // Memory allocation APIs:
 //
@@ -247,9 +238,6 @@ class Heap {
 #if GC_DEBUG
   int num_live_objs_;
 #endif
-
-  // TODO:
-  //   reallocation policy?
 };
 
 // The heap is a (compound) global variable.  Notes:
@@ -433,7 +421,7 @@ const int kZeroMask = 0;  // for types with no pointers
 //   Obj like Str, because of the constexpr issue with char[N].
 
 // heap_tag_: one of Tag::
-// tag_: ASDL tag (variant)
+// type_tag_: ASDL tag (variant)
 // field_mask_: for fixed length records, so max 16 fields
 // obj_len_: number of bytes to copy
 //   TODO: with a limitation of ~15 fields, we can encode obj_len_ in
@@ -642,6 +630,9 @@ inline Str* NewStr(const char* data) {
   return NewStr(data, strlen(data));
 }
 
+bool str_equals(Str* left, Str* right);
+bool maybe_str_equals(Str* left, Str* right);
+
 //
 // Compile-time computation of GC field masks.
 //
@@ -789,7 +780,7 @@ class List : public gc_heap::Obj {
   }
 
   // Used in osh/word_parse.py to remove from front
-  // TODO: Don't accept arbitrary index?
+  // TODO: Don't accept an arbitrary index?
   T pop(int i) {
     assert(len_ > 0);
     assert(i == 0);  // only support popping the first item
@@ -865,8 +856,7 @@ class List : public gc_heap::Obj {
     ++len_;
   }
 
-  // Extend this list with multiple elements.  TODO: overload to take a
-  // List<> ?
+  // Extend this list with multiple elements.
   void extend(List<T>* other) {
     int n = other->len_;
     int new_len = len_ + n;
@@ -891,31 +881,23 @@ class List : public gc_heap::Obj {
 // Dict<K, V>
 //
 
-template <typename K>
-int find_by_key(Slab<K>* keys_, int len, int key) {
-  for (int i = 0; i < len; ++i) {
-    if (keys_->items_[i] == key) {
-      return i;
-    }
-  }
-  return -1;
+// Non-negative entries in index_ are array indices into keys_ and values_.
+// There are two special negative entries.
+
+// index that means this Dict item was deleted (a tombstone).
+const int kDeletedEntry = -1;
+
+// index that means this Dict entry is free.  Because we have Dict[int, int],
+// we can't use a sentinel entry in keys_.  It has to be a sentinel entry in
+// index_.
+const int kEmptyEntry = -2;
+
+inline bool keys_equal(int left, int right) {
+  return left == right;
 }
 
-bool str_equals(Str* left, Str* right);
-bool maybe_str_equals(Str* left, Str* right);
-
-// TODO: need sentinel for deletion.  The sentinel is in the *indices* array,
-// not in keys or values.  Those are copied verbatim, but may be sparse
-// because of deletions?
-
-template <typename K>
-int find_by_key(Slab<K>* keys_, int len, Str* key) {
-  for (int i = 0; i < len; ++i) {
-    if (str_equals(keys_->items_[i], key)) {
-      return i;
-    }
-  }
-  return -1;
+inline bool keys_equal(Str* left, Str* right) {
+  return str_equals(left, right);
 }
 
 // Type that is layout-compatible with List to avoid invalid-offsetof warnings.
@@ -958,7 +940,8 @@ class Dict : public gc_heap::Obj {
 
   void reserve(int n) {
     // log("--- reserve %d", capacity_);
-    if (capacity_ < n) {
+    //
+    if (capacity_ < n) {  // TODO: use load factor, not exact fit
       // calculate the number of keys and values we should have
       capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
 
@@ -966,6 +949,11 @@ class Dict : public gc_heap::Obj {
       // load factor?
       int index_len = capacity_;
       auto new_i = NewSlab<int>(index_len);
+
+      // For the linear search to work
+      for (int i = 0; i < index_len; ++i) {
+        new_i->items_[i] = kEmptyEntry;
+      }
 
       // These are DENSE.
       auto new_k = NewSlab<K>(capacity_);
@@ -988,7 +976,7 @@ class Dict : public gc_heap::Obj {
 
   // d[key] in Python: raises KeyError if not found
   V index(K key) {
-    int pos = find(key);
+    int pos = key_to_pos(key);
     if (pos == -1) {
       assert(0);
     } else {
@@ -996,19 +984,45 @@ class Dict : public gc_heap::Obj {
     }
   }
 
+  // Get a key.
+  // Returns nullptr if not found (Can't use this for non-pointer types?)
+  V get(K key) {
+    int pos = key_to_pos(key);
+    if (pos == -1) {
+      return nullptr;
+    } else {
+      return values_->items_[pos];
+    }
+  }
+
+  // Get a key, but return a default if not found.
+  // expr_parse.py uses this with OTHER_BALANCE
+  V get(K key, V default_val) {
+    int pos = key_to_pos(key);
+    if (pos == -1) {
+      return default_val;
+    } else {
+      return values_->items_[pos];
+    }
+  }
+
   // Implements d[k] = v.  May resize the dictionary.
   void set(K key, V val) {
-    int pos = find(key);
-    if (pos == -1) {
+    int pos = key_to_pos(key);
+    if (pos == -1) {  // new pair
       reserve(len_ + 1);
       keys_->items_[len_] = key;
       values_->items_[len_] = val;
+
+      index_->items_[len_] = 0;  // new special value
+
       ++len_;
     } else {
       values_->items_[pos] = val;
     }
   }
 
+  // TODO: Remove deleted items!
   List<K>* keys() {
     // Make a copy of the Slab
     return Alloc<List<K>>(keys_, len_);
@@ -1020,9 +1034,43 @@ class Dict : public gc_heap::Obj {
   }
 
   void clear() {
+    // Maintain invariant
+    for (int i = 0; i < capacity_; ++i) {
+      index_->items_[i] = kEmptyEntry;
+    }
+
     memset(keys_->items_, 0, len_ * sizeof(K));    // zero for GC scan
     memset(values_->items_, 0, len_ * sizeof(V));  // zero for GC scan
     len_ = 0;
+  }
+
+  // Returns the position in the array.  Used by dict_contains(), index(),
+  // get(), and set().
+  //
+  // For now this does a linear search.
+  // TODO:
+  // - hash functions, and linear probing.
+  // - resizing based on load factor
+  //   - which requires rehashing (re-insert all items)
+  // - Special case to intern Str* when it's hashed?  How?
+  //   - Should we have wrappers like:
+  //   - V GetAndIntern<V>(D, &string_key)
+  //   - SetAndIntern<V>(D, &string_key, value)
+  //   This will enable duplicate copies of the string to be garbage collected
+  int key_to_pos(K key) {
+    for (int i = 0; i < capacity_; ++i) {
+      int special = index_->items_[i];  // NOT an index now
+      if (special == kDeletedEntry) {
+        continue;  // keep searching
+      }
+      if (special == kEmptyEntry) {
+        return -1;  // not found
+      }
+      if (keys_equal(keys_->items_[i], key)) {
+        return i;
+      }
+    }
+    return -1;  // table is completely full?  Does this happen?
   }
 
   // int index_size_;  // size of index (sparse)
@@ -1030,16 +1078,11 @@ class Dict : public gc_heap::Obj {
   int capacity_;  // number of entries before resizing
 
   // These 3 slabs are resized at the same time.
-  Slab<int>* index_;  // dense indices which are themselves indexed by
-                      //  hash value % capacity_
+  Slab<int>* index_;  // NOW: kEmptyEntry, kDeletedEntry, or 0.
+                      // LATER: indices which are themselves indexed by // hash
+                      // value % capacity_
   Slab<K>* keys_;     // Dict<int, V>
   Slab<V>* values_;   // Dict<K, int>
-
- private:
-  // returns the position in the array
-  int find(K key) {
-    return find_by_key(keys_, len_, key);
-  }
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 };
@@ -1058,25 +1101,18 @@ void ShowFixedChildren(Obj* obj);
 
 #ifndef MYLIB_LEGACY
 
-// TODO: Move to mylib?
-using gc_heap::Dict;
-using gc_heap::List;
-using gc_heap::Local;
-using gc_heap::Str;
-
-// For string methods to use, e.g. _len(this).  Note: it might be OK to call
-// this len() and overload it?
-inline int len(const Str* s) {
+// Do some extra calculation to avoid storing redundant lengths.
+inline int len(const gc_heap::Str* s) {
   return s->obj_len_ - gc_heap::kStrHeaderSize - 1;
 }
 
 template <typename T>
-int len(const List<T>* L) {
+int len(const gc_heap::List<T>* L) {
   return L->len_;
 }
 
 template <typename K, typename V>
-inline int len(const Dict<K, V>* d) {
+inline int len(const gc_heap::Dict<K, V>* d) {
   return d->len_;
 }
 

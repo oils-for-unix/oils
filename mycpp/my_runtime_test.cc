@@ -8,6 +8,7 @@
 #include "mylib2.h"  // gBuf
 
 using gc_heap::Alloc;
+using gc_heap::Dict;
 using gc_heap::gHeap;
 using gc_heap::kEmptyString;
 
@@ -553,6 +554,19 @@ TEST dict_methods_test() {
   ASSERT_EQ(nullptr, d2->keys_->items_[0]);
   ASSERT_EQ(0, d2->values_->items_[0]);
 
+  // get()
+  ASSERT(str_equals0("foo", d->get(1)));
+
+  // dict_contains()
+  ASSERT(dict_contains(d, 1));
+  ASSERT(!dict_contains(d, 2));
+
+  ASSERT_EQ(nullptr, d->get(423));  // nonexistent
+
+  // get(k, default)
+  ASSERT_EQ(kEmptyString, d->get(423, kEmptyString));
+  ASSERT_EQ(-99, d2->get(kEmptyString, -99));
+
   PASS();
 }
 
@@ -565,12 +579,15 @@ TEST dict_iters_test() {
   d2->set(NewStr("foo"), 2);
   d2->set(NewStr("bar"), 3);
 
-#if 0
+  auto keys = d2->keys();
+  for (int i = 0; i < len(keys); ++i) {
+    printf("k %s\n", keys->index(i)->data_);
+  }
+
   log("  iterating over Dict");
   for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
     log("k = %s, v = %d", it.Key()->data_, it.Value());
   }
-#endif
 
   PASS();
 }

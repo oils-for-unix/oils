@@ -18,6 +18,7 @@ using gc_heap::Param;
 using gc_heap::Dict;
 using gc_heap::GlobalStr;
 using gc_heap::List;
+using gc_heap::Local;
 using gc_heap::NewStr;
 using gc_heap::Slab;
 using gc_heap::Str;
@@ -121,7 +122,6 @@ TEST str_test() {
 //   - how does it trigger a collection?
 
 TEST list_test() {
-#if 0
   auto list1 = Alloc<List<int>>();
   auto list2 = Alloc<List<Str*>>();
 
@@ -144,7 +144,8 @@ TEST list_test() {
   ASSERT(diff1 < 1024);
   ASSERT(diff2 < 1024);
 
-  list1->extend({11, 22, 33});
+  auto more = Alloc<List<int>>(std::initializer_list<int>{11, 22, 33});
+  list1->extend(more);
   ASSERT_EQ_FMT(3, len(list1), "%d");
 
   // 32 byte block - 8 byte header = 24 bytes, 6 elements
@@ -159,7 +160,8 @@ TEST list_test() {
   ASSERT_EQ_FMT(33, list1->index(2), "%d");
 
   log("extending");
-  list1->extend({44, 55, 66, 77});
+  auto more2 = Alloc<List<int>>(std::initializer_list<int>{44, 55, 66, 77});
+  list1->extend(more2);
 
   // 64 byte block - 8 byte header = 56 bytes, 14 elements
   ASSERT_EQ_FMT(14, list1->capacity_, "%d");
@@ -197,16 +199,6 @@ TEST list_test() {
   ASSERT_EQ(str1, list2->index(0));
   ASSERT_EQ(str2, list2->index(1));
 
-  // This combination is problematic.  Maybe avoid it and then just do
-  // .extend({1, 2, 3}) or something?
-  // https://stackoverflow.com/questions/21573808/using-initializer-lists-with-variadic-templates
-  // auto list3 = Alloc<List<int>>({1, 2, 3});
-  // auto list4 = Alloc<List<Str*>>({str1, str2});
-
-  // log("len(list3) = %d", len(list3));
-  // log("len(list4) = %d", len(list3));
-
-#endif
   PASS();
 }
 

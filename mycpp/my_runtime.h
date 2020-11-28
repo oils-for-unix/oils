@@ -15,7 +15,11 @@
 #include <algorithm>  // min(), sort()
 #include <climits>    // CHAR_BIT
 
+// TODO: Don't use 'using' in header
+using gc_heap::Dict;
+using gc_heap::List;
 using gc_heap::NewStr;
+using gc_heap::Str;
 
 class IndexError {};
 class ValueError {};
@@ -271,6 +275,11 @@ List<T>* list_repeat(T item, int times) {
   return gc_heap::Alloc<List<T>>(item, times);
 }
 
+template <typename K, typename V>
+inline bool dict_contains(Dict<K, V>* haystack, K needle) {
+  return haystack->key_to_pos(needle) != -1;
+}
+
 // NOTE: This iterates over bytes.
 class StrIter {
  public:
@@ -338,4 +347,48 @@ class ReverseListIter {
   List<T>* L_;
   int i_;
 };
+
+// TODO:
+// - Look at index_ to see if an item is deleted (or is a tombstone once we
+// have hash chaining)
+
+template <class K, class V>
+class DictIter {
+ public:
+  explicit DictIter(Dict<K, V>* D) : D_(D), i_(0) {
+  }
+  void Next() {
+    while (true) {
+      ++i_;
+      if (i_ >= D_->capacity_) {
+        break;
+      }
+      int index = D_->index_->items_[i_];
+      if (index == gc_heap::kDeletedEntry) {
+        continue;  // increment again
+      }
+      break;  // i_ now points to a valid entry
+    }
+  }
+  bool Done() {
+    if (i_ >= D_->capacity_) {
+      return true;
+    }
+    int index = D_->index_->items_[i_];
+    if (index == gc_heap::kEmptyEntry) {
+      return true;
+    }
+    return false;
+  }
+  K Key() {
+    return D_->keys_->items_[i_];
+  }
+  V Value() {
+    return D_->values_->items_[i_];
+  }
+
+  Dict<K, V>* D_;
+  int i_;
+};
+
 #endif  // MY_RUNTIME_H
