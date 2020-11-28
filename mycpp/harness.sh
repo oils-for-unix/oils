@@ -110,7 +110,7 @@ _compile-example() {
 
   local -a runtime
   if test -n "${GC:-}"; then
-    runtime=(my_runtime.cc gc_heap.cc)
+    runtime=(my_runtime.cc mylib2.cc gc_heap.cc)
     #runtime=(mylib.cc gc_heap.cc)
     # TODO: Reconcile my_runtime.cc and mylib.cc
   else

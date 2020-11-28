@@ -8,6 +8,8 @@ using gc_heap::Obj;
 
 namespace gc_heap {
 
+GLOBAL_STR(kEmptyString, "");
+
 Heap gHeap;
 
 // LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary

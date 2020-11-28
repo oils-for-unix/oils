@@ -5,9 +5,11 @@
 #include "gc_heap.h"
 #include "greatest.h"
 #include "my_runtime.h"
+#include "mylib2.h"  // gBuf
 
 using gc_heap::Alloc;
 using gc_heap::gHeap;
+using gc_heap::kEmptyString;
 
 GLOBAL_STR(kString1, "food");
 GLOBAL_STR(kWithNull, "foo\0bar");

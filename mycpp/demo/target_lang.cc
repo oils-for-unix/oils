@@ -315,6 +315,8 @@ TEST sizeof_demo() {
   // Good, this is 50.
   Extent ext_array[5];
   log("sizeof(ext_array): %d", sizeof(ext_array));
+
+  PASS();
 }
 
 TEST test_misc() {

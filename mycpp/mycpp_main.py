@@ -244,6 +244,7 @@ using gc_heap::StackRoots;
   if gc:
     f.write("""\
 #include "my_runtime.h"
+#include "mylib2.h"
 
 using gc_heap::NewStr;
 """)

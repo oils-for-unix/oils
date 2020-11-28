@@ -235,7 +235,7 @@ gc-heap-test() {
 
 my-runtime-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile my_runtime_test asan -I ../cpp gc_heap.cc my_runtime.cc
+  cpp-compile my_runtime_test asan -I ../cpp gc_heap.cc my_runtime.cc mylib2.cc
   _bin/my_runtime_test.asan "$@"
 }
 
