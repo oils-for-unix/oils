@@ -364,30 +364,25 @@ class ReverseListIter {
 template <class K, class V>
 class DictIter {
  public:
-  explicit DictIter(Dict<K, V>* D) : D_(D), i_(0) {
+  explicit DictIter(Dict<K, V>* D) : D_(D), pos_(ValidPosAfter(0)) {
   }
   void Next() {
-    ++i_;
+    pos_ = ValidPosAfter(pos_ + 1);
   }
   bool Done() {
-    return ValidPosition() == -1;
+    return pos_ == -1;
   }
   K Key() {
-    int pos = ValidPosition();
-    assert(pos != -1);
-    return D_->keys_->items_[pos];
+    return D_->keys_->items_[pos_];
   }
   V Value() {
-    int pos = ValidPosition();
-    assert(pos != -1);
-    return D_->values_->items_[pos];
+    return D_->values_->items_[pos_];
   }
 
  private:
-  int ValidPosition() {
+  int ValidPosAfter(int pos) {
     // Returns the position of a valid entry at or after index i_.  Or -1 if
     // there isn't one.  Advances i_ too.
-    int pos = i_;
     while (true) {
       if (pos >= D_->capacity_) {
         return -1;
@@ -402,12 +397,11 @@ class DictIter {
       }
       break;
     }
-    i_ = pos;  // advance
     return pos;
   }
 
   Dict<K, V>* D_;
-  int i_;
+  int pos_;
 };
 
 #endif  // MY_RUNTIME_H
