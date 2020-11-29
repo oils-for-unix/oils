@@ -189,7 +189,7 @@ inline int int_cmp(int a, int b) {
 }
 
 // Used by [[ a > b ]] and so forth
-inline int str_cmp(Str* a, Str* b) {
+inline int str_cmp(gc_heap::Str* a, gc_heap::Str* b) {
   int len_a = len(a);
   int len_b = len(b);
 
@@ -204,13 +204,22 @@ inline int str_cmp(Str* a, Str* b) {
   return comp;
 }
 
-inline bool _cmp(Str* a, Str* b) {
+inline bool _cmp(gc_heap::Str* a, gc_heap::Str* b) {
   return str_cmp(a, b) < 0;
 }
 
+// This is a METHOD definition.  It's in my_runtime.h so that gc_heap.h doesn't
+// need to #include <algorithm>.  I think that would bloat all the ASDL types.
 template <typename T>
-void mysort(T* begin, T* end) {
-  std::sort(begin, end, _cmp);
+void gc_heap::List<T>::sort() {
+  std::sort(slab_->items_, slab_->items_ + len_, _cmp);
+}
+
+template <typename V>
+List<Str*>* sorted(Dict<Str*, V>* d) {
+  auto keys = d->keys();
+  keys->sort();
+  return keys;
 }
 
 // Is this only used by unit tests?

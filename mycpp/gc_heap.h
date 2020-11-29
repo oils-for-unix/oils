@@ -811,9 +811,7 @@ class List : public gc_heap::Obj {
   }
 
   // Templated function
-  void sort() {
-    mysort(slab_->items_, slab_->items_ + len_);
-  }
+  void sort();
 
   // 8 / 4 = 2 items, or 8 / 8 = 1 item
   static const int kCapacityAdjust = kSlabHeaderSize / sizeof(T);

@@ -457,14 +457,12 @@ TEST sort_test() {
   strs->append(kEmptyString);
   ASSERT_EQ(4, len(strs));  // ['c', 'a', 'b', '']
 
-#if 0
   strs->sort();  // ['a', 'b', 'c']
   ASSERT_EQ(4, len(strs));
   ASSERT(str_equals(kEmptyString, strs->index(0)));
   ASSERT(str_equals(NewStr("a"), strs->index(1)));
   ASSERT(str_equals(NewStr("b"), strs->index(2)));
   ASSERT(str_equals(NewStr("c"), strs->index(3)));
-#endif
 
   PASS();
 }
@@ -586,13 +584,11 @@ TEST dict_methods_test() {
   ASSERT_EQ(12, d3->index(NewStr("c")));
   ASSERT_EQ(3, len(d3));
 
-#if 0
   auto keys3 = sorted(d3);
   ASSERT_EQ(3, len(keys3));
   ASSERT(str_equals0("a", keys3->index(0)));
   ASSERT(str_equals0("b", keys3->index(1)));
   ASSERT(str_equals0("c", keys3->index(2)));
-#endif
 
   auto keys4 = d3->keys();
   ASSERT(list_contains(keys4, a));
