@@ -277,7 +277,7 @@ List<T>* list_repeat(T item, int times) {
 
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
-  return haystack->key_to_pos(needle) != -1;
+  return haystack->position_of_key(needle) != -1;
 }
 
 // NOTE: This iterates over bytes.

@@ -567,6 +567,37 @@ TEST dict_methods_test() {
   ASSERT_EQ(kEmptyString, d->get(423, kEmptyString));
   ASSERT_EQ(-99, d2->get(kEmptyString, -99));
 
+  // sorted()
+  auto d3 = Alloc<Dict<Str*, int>>();
+  auto a = NewStr("a");
+
+  d3->set(NewStr("b"), 11);
+  d3->set(NewStr("c"), 12);
+  d3->set(NewStr("a"), 10);
+  ASSERT_EQ(10, d3->index(NewStr("a")));
+  ASSERT_EQ(11, d3->index(NewStr("b")));
+  ASSERT_EQ(12, d3->index(NewStr("c")));
+  ASSERT_EQ(3, len(d3));
+
+#if 0
+  auto keys3 = sorted(d3);
+  ASSERT_EQ(3, len(keys3));
+  ASSERT(str_equals0("a", keys3->index(0)));
+  ASSERT(str_equals0("b", keys3->index(1)));
+  ASSERT(str_equals0("c", keys3->index(2)));
+
+  auto keys4 = d3->keys();
+  ASSERT(list_contains(keys4, a));
+  ASSERT(!list_contains(keys4, NewStr("zzz")));
+
+  ASSERT(dict_contains(d3, a));
+  mylib::dict_remove(d3, a);
+  ASSERT(!dict_contains(d3, a));
+  ASSERT_EQ(2, len(d3));
+#endif
+
+  // TODO: keys() and values() need to respect deletions
+
   PASS();
 }
 

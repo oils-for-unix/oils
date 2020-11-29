@@ -386,7 +386,7 @@ List<Str*>* Str::split(Str* sep) {
     return Alloc<List<Str*>>(std::initializer_list<Str*>{kEmptyString});
   }
 
-  auto result = new List<Str*>();
+  auto result = Alloc<List<Str*>>();
 
   int n = length;
   const char* pos = data_;

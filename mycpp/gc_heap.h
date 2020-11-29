@@ -543,8 +543,18 @@ class Str : public gc_heap::Obj {
     assert(0);
   }
 
-  int unique_id_;  // index into intern table ?
-  char data_[1];   // flexible array
+  // Other options for fast comparison / hashing / string interning:
+  // - unique_id_: an index into intern table.  I don't think this works unless
+  //   you want to deal with rehashing all strings when the set grows.
+  // - Hashed strings become GLOBAL_STR().  Never deallocated.
+  // - Hashed strings become part of the "large object space", which might be
+  //   managed by mark and sweep.  This requires linked list overhead.
+  //   (doubly-linked?)
+  // - Intern strings at GARBAGE COLLECTION TIME, with
+  //   LayoutForwarded::new_location_?  Is this possible?  Does it introduce
+  //   too much coupling between strings, hash tables, and GC?
+  int hash_value_;
+  char data_[1];  // flexible array
 
  private:
   int _strip_left_pos();
@@ -560,7 +570,7 @@ class GlobalStr {
  public:
   OBJ_HEADER()
 
-  int unique_id_;
+  int hash_value_;
   const char data_[N];
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
@@ -676,16 +686,15 @@ class List : public gc_heap::Obj {
   // - neither: index(), slice()
 
  public:
-  List()
-      : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)),
-        len_(0),
-        capacity_(0),
-        slab_(nullptr) {
+  List() : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)) {
+    // Ensured by heap zeroing.  It's never directly on the stack.
+    assert(len_ == 0);
+    assert(capacity_ == 0);
+    assert(slab_ == nullptr);
   }
 
   // Literal ['foo', 'bar']
-  List(std::initializer_list<T> init)
-      : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)), slab_(nullptr) {
+  List(std::initializer_list<T> init) : List() {
     int n = init.size();
     reserve(n);
 
@@ -698,11 +707,7 @@ class List : public gc_heap::Obj {
   }
 
   // list_repeat ['foo'] * 3
-  List(T item, int times)
-      : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)),
-        len_(0),  // can't set this before reserve()
-        capacity_(0),
-        slab_(nullptr) {
+  List(T item, int times) : List() {
     reserve(times);
     len_ = times;
     for (int i = 0; i < times; ++i) {
@@ -711,11 +716,7 @@ class List : public gc_heap::Obj {
   }
 
   // Internal constructor for keys() and values()
-  List(Slab<T>* from_slab, int n)
-      : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)),
-        len_(0),  // can't set this before reserve()
-        capacity_(0),
-        slab_(nullptr) {
+  List(Slab<T>* from_slab, int n) : List() {
     reserve(n);
     len_ = n;
     memcpy(slab_->items_, from_slab->items_, n * sizeof(T));
@@ -762,7 +763,7 @@ class List : public gc_heap::Obj {
       end = len_ + end;
     }
 
-    List* result = new List();  // TODO: initialize with size
+    List* result = Alloc<List<T>>();  // TODO: initialize with size
     for (int i = begin; i < end; i++) {
       result->append(slab_->items_[i]);
     }
@@ -987,7 +988,7 @@ class Dict : public gc_heap::Obj {
 
   // d[key] in Python: raises KeyError if not found
   V index(K key) {
-    int pos = key_to_pos(key);
+    int pos = position_of_key(key);
     if (pos == -1) {
       assert(0);
     } else {
@@ -998,7 +999,7 @@ class Dict : public gc_heap::Obj {
   // Get a key.
   // Returns nullptr if not found (Can't use this for non-pointer types?)
   V get(K key) {
-    int pos = key_to_pos(key);
+    int pos = position_of_key(key);
     if (pos == -1) {
       return nullptr;
     } else {
@@ -1009,7 +1010,7 @@ class Dict : public gc_heap::Obj {
   // Get a key, but return a default if not found.
   // expr_parse.py uses this with OTHER_BALANCE
   V get(K key, V default_val) {
-    int pos = key_to_pos(key);
+    int pos = position_of_key(key);
     if (pos == -1) {
       return default_val;
     } else {
@@ -1019,7 +1020,7 @@ class Dict : public gc_heap::Obj {
 
   // Implements d[k] = v.  May resize the dictionary.
   void set(K key, V val) {
-    int pos = key_to_pos(key);
+    int pos = position_of_key(key);
     if (pos == -1) {  // new pair
       reserve(len_ + 1);
       keys_->items_[len_] = key;
@@ -1068,7 +1069,7 @@ class Dict : public gc_heap::Obj {
   //   - V GetAndIntern<V>(D, &string_key)
   //   - SetAndIntern<V>(D, &string_key, value)
   //   This will enable duplicate copies of the string to be garbage collected
-  int key_to_pos(K key) {
+  int position_of_key(K key) {
     for (int i = 0; i < capacity_; ++i) {
       int special = index_->items_[i];  // NOT an index now
       if (special == kDeletedEntry) {
