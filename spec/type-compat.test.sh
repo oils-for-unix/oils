@@ -7,18 +7,46 @@
 #
 # See https://github.com/oilshell/oil/issues/26
 
-#### declare -i
+#### declare -i with +=
 declare s
 s='1 '
 s+=' 2 '  # string append
+
 declare -i i
 i='1 '
 i+=' 2 '  # arith add
+
 declare -i j
 j=x  # treated like zero
 j+=' 2 '  # arith add
-echo "$s|$i|$j"
-## stdout: 1  2 |3|2
+
+echo "[$s]"
+echo $i
+echo $j
+## STDOUT:
+[1  2 ]
+3
+2
+## END
+
+#### declare -i with arithmetic inside strings (Nix, issue 864)
+
+# example
+# https://github.com/NixOS/nixpkgs/blob/master/pkgs/stdenv/generic/setup.sh#L379
+
+declare -i s
+s='1 + 2'
+echo s=$s
+
+declare -a array=(1 2 3)
+declare -i item
+item='array[1+1]'
+echo item=$item
+
+## STDOUT:
+s=3
+item=3
+## END
 
 #### append in arith context
 declare s
