@@ -13,6 +13,19 @@ namespace mylib {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
+template <typename V>
+void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
+  int pos = haystack->position_of_key(needle);
+  if (pos == -1) {
+    return;
+  }
+  haystack->index_->items_[pos] = gc_heap::kDeletedEntry;
+  // Zero out for GC.  These could be nullptr or 0
+  haystack->keys_->items_[pos] = 0;
+  haystack->values_->items_[pos] = 0;
+  haystack->len_--;
+}
+
 inline Str* hex_lower(int i) {
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%x", i);

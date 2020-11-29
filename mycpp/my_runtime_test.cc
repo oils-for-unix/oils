@@ -472,7 +472,7 @@ TEST sort_test() {
 TEST contains_test() {
   bool b;
 
-  // TODO: Implement substring
+  // NOTE: 'substring' in mystr not allowed now, only 'c' in mystr
 #if 0
   b = str_contains(NewStr("foo"), NewStr("oo"));
   ASSERT(b == true);
@@ -585,6 +585,7 @@ TEST dict_methods_test() {
   ASSERT(str_equals0("a", keys3->index(0)));
   ASSERT(str_equals0("b", keys3->index(1)));
   ASSERT(str_equals0("c", keys3->index(2)));
+#endif
 
   auto keys4 = d3->keys();
   ASSERT(list_contains(keys4, a));
@@ -594,7 +595,6 @@ TEST dict_methods_test() {
   mylib::dict_remove(d3, a);
   ASSERT(!dict_contains(d3, a));
   ASSERT_EQ(2, len(d3));
-#endif
 
   // TODO: keys() and values() need to respect deletions
 

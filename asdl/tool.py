@@ -105,9 +105,10 @@ using id_kind_asdl::Id_t;
       if gc:
         f.write("""\
 using gc_heap::Obj;
-using gc_heap::NewStr;
-using gc_heap::List;
 using gc_heap::Dict;
+using gc_heap::List;
+using gc_heap::NewStr;
+using gc_heap::Str;
 """)
 
       for use in schema_ast.uses:
