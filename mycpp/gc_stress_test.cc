@@ -4,13 +4,14 @@
 
 #include "gc_heap.h"
 #include "greatest.h"
-//#include "my_runtime.h"
+#include "my_runtime.h"
 //#include "mylib2.h"  // gBuf
 
 using gc_heap::Alloc;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewStr;
+using gc_heap::StackRoots;
 using gc_heap::Str;
 // using gc_heap::kEmptyString;
 
@@ -27,20 +28,32 @@ GLOBAL_STR(bb, "bx");
 TEST str_collect_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
-  auto s = NewStr("abcdefg");
+  Str* s;
+  Str* t;
+  // Why isn't this necessary?  I thought it woudl realloc.
+  StackRoots({&s});
+  
+  s = NewStr("abcdefg");
+
+#if 0
   int total = 0;
-  for (int i = 0; i < 40; ++i) {
+  for (int i = 0; i < 4000; ++i) {
     s = s->replace(b, bb);
+    print(s);
     total += len(s);
+    log("%d", len(s));
 
     // hit NUL termination path
-    s = NewStr("NUL");
-    total += len(s);
+    //t = NewStr("NUL");
+    //total += len(t);
 
     // log("i = %d", i);
     // log("len(s) = %d", len(s));
   }
   log("total = %d", total);
+#endif
+
+  gHeap.Report();
 
   PASS();
 }
@@ -48,13 +61,17 @@ TEST str_collect_test() {
 TEST list_collect_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
-#if 0
-  auto s = NewStr("abcdefg");
-  auto L = Alloc<List<Str*>>();
+  Str* s;
+  List<Str*>* L;
+  StackRoots({&s, &L});
 
+  s = NewStr("abcdefg");
+  L = Alloc<List<Str*>>();
+
+#if 0
   int total = 0;
   for (int i = 0; i < 40; ++i) {
-    s = s->replace(b, bb);
+    //s = s->replace(b, bb);
     L->append(s);
     total += len(s);
   }
@@ -66,10 +83,15 @@ TEST list_collect_test() {
 
 TEST dict_collect_test() {
   gHeap.Init(1 << 8);  // 1 KiB
-#if 0
-  auto s = NewStr("abcdefg");
-  auto D = Alloc<Dict<Str*, int>>();
 
+  Str* s;
+  Dict<Str*, int>* D;
+  StackRoots({&s, &D});
+
+  s = NewStr("abcdefg");
+  D = Alloc<Dict<Str*, int>>();
+
+#if 0
   int total = 0;
   for (int i = 0; i < 40; ++i) {
     s = s->replace(b, bb);

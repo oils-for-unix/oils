@@ -70,7 +70,8 @@ Obj* Heap::Relocate(Obj* obj) {
 
 void Heap::Collect(bool must_grow) {
 #if GC_DEBUG
-  log("--> COLLECT");
+  //log("--> COLLECT");
+  num_collections_++;
 #endif
 
   scan_ = to_space_;  // boundary between black and gray
@@ -146,8 +147,8 @@ void Heap::Collect(bool must_grow) {
   to_space_ = tmp;
 
 #if GC_DEBUG
-  log("<-- COLLECT from %p, to %p, num_live_objs_ %d", from_space_, to_space_,
-      num_live_objs_);
+  //log("<-- COLLECT from %p, to %p, num_live_objs_ %d", from_space_, to_space_,
+  //    num_live_objs_);
 #endif
 
   // Subtle logic for growing the heap.  Copied from femtolisp.
@@ -168,6 +169,11 @@ void Heap::Collect(bool must_grow) {
   if (grew_ || must_grow || (limit_ - free_) < (space_size_ / 5)) {
     char* tmp = static_cast<char*>(realloc(to_space_, space_size_ * 2));
     assert(tmp != nullptr);  // TODO: raise a proper error
+
+#if GC_DEBUG
+    num_heap_growths_++;
+#endif
+
     to_space_ = tmp;
     if (grew_) {
       space_size_ *= 2;

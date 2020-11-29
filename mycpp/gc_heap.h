@@ -151,6 +151,8 @@ class Heap {
     memset(to_space_, 0, num_bytes);
 
 #if GC_DEBUG
+    num_collections_ = 0;
+    num_heap_growths_ = 0;
     num_live_objs_ = 0;
 #endif
   }
@@ -169,8 +171,8 @@ class Heap {
     // Do a collection if REQUIRED.
     if (almost_full || free_ + n > limit_) {
 #if GC_DEBUG
-      log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
-          space_size_);
+      //log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+      //    space_size_);
 #endif
 
       Collect(false);
@@ -215,6 +217,15 @@ class Heap {
   // mutates free_ and other variables
   void Collect(bool must_grow);
 
+#if GC_DEBUG
+  void Report() {
+    log("num collections = %d", num_collections_);
+    log("num heap growths = %d", num_heap_growths_);
+    log("num live objects = %d", num_live_objs_);
+    log("final heap size = %d", space_size_);
+  }
+#endif
+
   char* from_space_;  // beginning of the space we're allocating from
   char* to_space_;    // beginning of the space we should copy to
   char* limit_;       // end of space we're allocating from
@@ -236,6 +247,8 @@ class Heap {
   Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
 
 #if GC_DEBUG
+  int num_collections_;
+  int num_heap_growths_;
   int num_live_objs_;
 #endif
 };
