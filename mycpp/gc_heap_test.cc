@@ -290,6 +290,8 @@ TEST dict_test() {
   ASSERT(str_equals(kEmptyString, dict3->get(1)));
   ASSERT(str_equals(NewStr("two"), dict3->get(2)));
 
+  ASSERT(str_equals(kEmptyString, kEmptyString));
+
   PASS();
 }
 

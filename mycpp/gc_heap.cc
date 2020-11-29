@@ -186,12 +186,17 @@ void Heap::Collect(bool must_grow) {
 }
 
 bool str_equals(Str* left, Str* right) {
+  // Fast path for identical strings.  String deduplication during GC could
+  // make this more likely.  String interning could guarantee it, allowing us
+  // to remove memcmp().
+  if (left == right) {
+    return true;
+  }
   // obj_len_ equal implies string lengths are equal
   if (left->obj_len_ == right->obj_len_) {
     return memcmp(left->data_, right->data_, len(left)) == 0;
-  } else {
-    return false;
   }
+  return false;
 }
 
 bool maybe_str_equals(Str* left, Str* right) {
