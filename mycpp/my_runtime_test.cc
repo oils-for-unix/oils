@@ -542,11 +542,18 @@ TEST dict_methods_test() {
   ASSERT(str_equals0("key2", keys->index(1)));
   ASSERT(str_equals0("key3", keys->index(2)));
 
+  mylib::dict_remove(d2, NewStr("key"));
+  ASSERT_EQ_FMT(2, len(d2), "%d");
+
+  auto keys2 = d2->keys();
+  ASSERT_EQ_FMT(2, len(keys2), "%d");
+  ASSERT(str_equals0("key2", keys2->index(0)));
+  ASSERT(str_equals0("key3", keys2->index(1)));
+
   auto values = d2->values();
-  ASSERT_EQ_FMT(3, len(values), "%d");
-  ASSERT_EQ(42, values->index(0));
-  ASSERT_EQ(2, values->index(1));
-  ASSERT_EQ(3, values->index(2));
+  ASSERT_EQ_FMT(2, len(values), "%d");
+  ASSERT_EQ(2, values->index(0));
+  ASSERT_EQ(3, values->index(1));
 
   d2->clear();
   ASSERT_EQ(0, len(d2));

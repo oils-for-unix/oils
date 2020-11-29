@@ -715,13 +715,6 @@ class List : public gc_heap::Obj {
     }
   }
 
-  // Internal constructor for keys() and values()
-  List(Slab<T>* from_slab, int n) : List() {
-    reserve(n);
-    len_ = n;
-    memcpy(slab_->items_, from_slab->items_, n * sizeof(T));
-  }
-
   // Implements L[i]
   T index(int i) {
     if (i < len_) {
@@ -893,6 +886,25 @@ const int kDeletedEntry = -1;
 // index_.
 const int kEmptyEntry = -2;
 
+// Helper for keys() and values()
+template <typename T>
+List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
+  // TODO: Reserve the right amount of space
+  List<T>* result = Alloc<List<T>>();
+
+  for (int i = 0; i < n; ++i) {
+    int special = index->items_[i];
+    if (special == kDeletedEntry) {
+      continue;
+    }
+    if (special == kEmptyEntry) {
+      break;
+    }
+    result->append(slab->items_[i]);
+  }
+  return result;
+}
+
 inline bool keys_equal(int left, int right) {
   return left == right;
 }
@@ -1034,15 +1046,13 @@ class Dict : public gc_heap::Obj {
     }
   }
 
-  // TODO: Remove deleted items!
   List<K>* keys() {
-    // Make a copy of the Slab
-    return Alloc<List<K>>(keys_, len_);
+    return ListFromDictSlab<K>(index_, keys_, capacity_);
   }
 
   // For AssocArray transformations
   List<V>* values() {
-    return Alloc<List<V>>(values_, len_);
+    return ListFromDictSlab<V>(index_, values_, capacity_);
   }
 
   void clear() {
