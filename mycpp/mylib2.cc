@@ -28,6 +28,58 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   }
 }
 
+LineReader* gStdin;
+
+Str* CFileLineReader::readline() {
+  char* line = nullptr;
+  size_t allocated_size = 0;  // unused
+
+  errno = 0;  // must be reset because we check it below!
+  ssize_t len = getline(&line, &allocated_size, f_);
+  if (len < 0) {
+    // log("getline() result: %d", len);
+    if (errno != 0) {
+      // Unexpected error
+      log("getline() error: %s", strerror(errno));
+      throw new AssertionError(errno);
+    }
+    // Expected EOF
+    return gc_heap::kEmptyString;
+  }
+  // log("len = %d", len);
+
+  // Note: it's NUL terminated
+  return NewStr(line, len);
+}
+
+// Problem: most Str methods like index() and slice() COPY so they have a
+// NUL terminator.
+// log("%s") falls back on sprintf, so it expects a NUL terminator.
+// It would be easier for us to just share.
+Str* BufLineReader::readline() {
+  const char* end = s_->data_ + len(s_);
+  if (pos_ == end) {
+    return gc_heap::kEmptyString;
+  }
+
+  const char* orig_pos = pos_;
+  const char* new_pos = strchr(pos_, '\n');
+  // log("pos_ = %s", pos_);
+  int length;
+  if (new_pos) {
+    length = new_pos - pos_ + 1;  // past newline char
+    pos_ = new_pos + 1;
+  } else {  // leftover line
+    length = end - pos_;
+    pos_ = end;
+  }
+
+  Str* line = NewStr(length);
+  memcpy(line->data_, orig_pos, length);  // copy the list item
+  assert(line->data_[length] == '\0');
+  return line;
+}
+
 Writer* gStdout;
 Writer* gStderr;
 

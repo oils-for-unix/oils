@@ -209,27 +209,6 @@ TEST test_split() {
   PASS();
 }
 
-using mylib::BufLineReader;
-
-TEST test_buf_line_reader() {
-  Str* s = new Str("foo\nbar\nleftover");
-  BufLineReader* reader = new BufLineReader(s);
-  Str* line;
-
-  log("BufLineReader");
-
-  line = reader->readline();
-  log("1 [%s]", line->data_);
-  line = reader->readline();
-  log("2: [%s]", line->data_);
-  line = reader->readline();
-  log("3: [%s]", line->data_);
-  line = reader->readline();
-  log("4: [%s]", line->data_);
-
-  PASS();
-}
-
 TEST test_formatter() {
   gBuf.reset();
   gBuf.write_const("[", 1);

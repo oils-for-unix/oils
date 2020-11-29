@@ -44,6 +44,65 @@ inline Str* octal(int i) {
   return NewStr(buf, length);  // copy buf
 }
 
+class LineReader {
+ public:
+  virtual Str* readline() = 0;
+  virtual bool isatty() {
+    return false;
+  }
+  virtual int fileno() {
+    assert(0);  // shouldn't be called here
+  }
+};
+
+class BufLineReader : public LineReader {
+ public:
+  explicit BufLineReader(Str* s) : s_(s), pos_(s->data_) {
+  }
+  virtual Str* readline();
+
+ private:
+  Str* s_;
+  const char* pos_;
+
+  DISALLOW_COPY_AND_ASSIGN(BufLineReader)
+};
+
+// Wrap a FILE*
+class CFileLineReader : public LineReader {
+ public:
+  explicit CFileLineReader(FILE* f) : f_(f) {
+  }
+  virtual Str* readline();
+  virtual int fileno() {
+    return ::fileno(f_);
+  }
+
+ private:
+  FILE* f_;
+
+  DISALLOW_COPY_AND_ASSIGN(CFileLineReader)
+};
+
+extern LineReader* gStdin;
+
+inline LineReader* Stdin() {
+  if (gStdin == nullptr) {
+    gStdin = new CFileLineReader(stdin);
+  }
+  return gStdin;
+}
+
+inline LineReader* open(Str* path) {
+  FILE* f = fopen(path->data_, "r");
+
+  // TODO: Better error checking.  IOError?
+  if (!f) {
+    throw new AssertionError("file not found");
+  }
+  return new CFileLineReader(f);
+}
+
 class Writer {
  public:
   virtual void write(Str* s) = 0;
