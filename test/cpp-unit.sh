@@ -63,6 +63,7 @@ mycpp-unit-tests() {
   ### Run unit tests in the mycpp/ dir
 
   pushd mycpp
+  set -x
   ./run.sh mylib-test
   ./run.sh mylib2-test
   ./run.sh gc-heap-test

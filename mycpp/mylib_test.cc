@@ -175,56 +175,6 @@ void Print(List<Str*>* parts) {
   }
 }
 
-TEST test_split() {
-  Str* empty = new Str("");
-  auto sep = new Str(":");
-  auto parts = empty->split(sep);
-  ASSERT_EQ(1, len(parts));
-  Print(parts);
-
-  parts = (new Str(":"))->split(sep);
-  ASSERT_EQ(2, len(parts));
-  Print(parts);
-
-  parts = (new Str("::"))->split(sep);
-  ASSERT_EQ(3, len(parts));
-  Print(parts);
-
-  parts = (new Str("a:b"))->split(sep);
-  ASSERT_EQ(2, len(parts));
-  Print(parts);
-
-  parts = (new Str("abc:def:"))->split(sep);
-  ASSERT_EQ(3, len(parts));
-  Print(parts);
-
-  parts = (new Str(":abc:def:"))->split(sep);
-  ASSERT_EQ(4, len(parts));
-  Print(parts);
-
-  parts = (new Str("abc:def:ghi"))->split(sep);
-  ASSERT_EQ(3, len(parts));
-  Print(parts);
-
-  PASS();
-}
-
-TEST test_formatter() {
-  gBuf.reset();
-  gBuf.write_const("[", 1);
-  gBuf.format_s(new Str("bar"));
-  gBuf.write_const("]", 1);
-  log("value = %s", gBuf.getvalue()->data_);
-
-  gBuf.format_d(42);
-  gBuf.write_const("-", 1);
-  gBuf.format_d(42);
-  gBuf.write_const(".", 1);
-  log("value = %s", gBuf.getvalue()->data_);
-
-  PASS();
-}
-
 TEST test_list_funcs() {
   std::vector<int> v;
   v.push_back(0);
@@ -376,34 +326,6 @@ TEST test_contains() {
   log("b = %d", b);
   b = list_contains(floats, 42.0);
   log("b = %d", b);
-
-  PASS();
-}
-
-TEST test_files() {
-  mylib::Writer* stdout_ = mylib::Stdout();
-  log("stdout isatty() = %d", stdout_->isatty());
-
-  mylib::LineReader* stdin_ = mylib::Stdin();
-  log("stdin isatty() = %d", stdin_->isatty());
-
-  ASSERT_EQ(0, stdin_->fileno());
-
-  FILE* f = fopen("README.md", "r");
-  auto r = new mylib::CFileLineReader(f);
-  // auto r = mylib::Stdin();
-  Str* s = r->readline();
-  log("test_files");
-  println_stderr(s);
-  log("test_files DONE");
-
-  auto f2 = mylib::open(new Str("README.md"));
-  ASSERT(f2 != nullptr);
-
-  // See if we can strip a space and still open it.  Underlying fopen() call
-  // works.
-  auto f3 = mylib::open((new Str("README.md "))->strip());
-  ASSERT(f3 != nullptr);
 
   PASS();
 }
@@ -560,15 +482,6 @@ TEST test_sizeof() {
   PASS();
 }
 
-TEST test_print() {
-  // should print "one"
-  print(new Str("onez", 3));
-
-  println_stderr(new Str("onez", 3));
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -577,23 +490,15 @@ int main(int argc, char** argv) {
   RUN_TEST(test_str0);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_funcs);
-  RUN_TEST(test_split);
 
   RUN_TEST(test_list_funcs);
   RUN_TEST(test_list_iters);
   RUN_TEST(test_dict);
 
-  RUN_TEST(test_formatter);
   RUN_TEST(test_contains);
-
-  // TODO: Move to mylib2, and add test file
-  RUN_TEST(test_buf_line_reader);
-  RUN_TEST(test_files);
-
   RUN_TEST(test_sizeof);
-  RUN_TEST(test_list_tuple);
 
-  RUN_TEST(test_print);
+  RUN_TEST(test_list_tuple);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
