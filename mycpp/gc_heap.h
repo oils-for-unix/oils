@@ -931,6 +931,17 @@ class Dict : public gc_heap::Obj {
         values_(nullptr) {
   }
 
+  Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
+      : Dict() {  // delegating constructor
+    assert(keys.size() == values.size());
+
+    auto v = values.begin();  // This simulates a "zip" loop
+    for (auto key : keys) {
+      set(key, *v);
+      ++v;
+    }
+  }
+
   // This relies on the fact that containers of 4-byte ints are reduced by 2
   // items, which is greater than (or equal to) the reduction of any other
   // type

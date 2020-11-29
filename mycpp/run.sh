@@ -250,6 +250,8 @@ gen-ctags() {
 }
 
 gc-examples() {
+  # ASAN failure on Heap::Collect()
+  GC=1 example-both loops
   return
 
   if true; then
@@ -262,6 +264,7 @@ gc-examples() {
     GC=1 example-both asdl_generated
     GC=1 example-both cartesian
     GC=1 example-both classes
+    GC=1 example-both containers
     GC=1 example-both control_flow opt
     GC=1 example-both escape
     GC=1 example-both files
@@ -272,14 +275,6 @@ gc-examples() {
     GC=1 example-both test_hoist
     GC=1 example-both tuple_return_value
   fi
-  return
-
-  # DictIter
-  GC=1 example-both loops
-  return
-
-  # Dict
-  GC=1 example-both containers
   return
 
   # FAILS with a small heap.  Some List invaraitsn?

@@ -24,6 +24,7 @@ using gc_heap::Slab;
 using gc_heap::Str;
 
 // Constants
+using gc_heap::kEmptyString;
 using gc_heap::kSlabHeaderSize;
 using gc_heap::kStrHeaderSize;
 using gc_heap::kZeroMask;
@@ -281,6 +282,13 @@ TEST dict_test() {
   ASSERT_EQ_FMT(32, dict_is->index_->obj_len_, "%d");
   ASSERT_EQ_FMT(32, dict_is->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict_is->values_->obj_len_, "%d");
+
+  auto dict3 = Alloc<Dict<int, Str*>>(
+      std::initializer_list<int>{1, 2},
+      std::initializer_list<Str*>{kEmptyString, NewStr("two")});
+  ASSERT_EQ_FMT(2, len(dict3), "%d");
+  ASSERT(str_equals(kEmptyString, dict3->get(1)));
+  ASSERT(str_equals(NewStr("two"), dict3->get(2)));
 
   PASS();
 }
