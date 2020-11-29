@@ -25,6 +25,22 @@ TEST print_test() {
   PASS();
 }
 
+TEST formatter_test() {
+  gBuf.reset();
+  gBuf.write_const("[", 1);
+  gBuf.format_s(NewStr("bar"));
+  gBuf.write_const("]", 1);
+  log("value = %s", gBuf.getvalue()->data_);
+
+  gBuf.format_d(42);
+  gBuf.write_const("-", 1);
+  gBuf.format_d(42);
+  gBuf.write_const(".", 1);
+  log("value = %s", gBuf.getvalue()->data_);
+
+  PASS();
+}
+
 TEST str_to_int_test() {
   int i;
   bool ok;
@@ -661,49 +677,6 @@ TEST dict_iters_test() {
   PASS();
 }
 
-TEST formatter_test() {
-  gBuf.reset();
-  gBuf.write_const("[", 1);
-  gBuf.format_s(NewStr("bar"));
-  gBuf.write_const("]", 1);
-  log("value = %s", gBuf.getvalue()->data_);
-
-  gBuf.format_d(42);
-  gBuf.write_const("-", 1);
-  gBuf.format_d(42);
-  gBuf.write_const(".", 1);
-  log("value = %s", gBuf.getvalue()->data_);
-
-  PASS();
-}
-
-GLOBAL_STR(b, "b");
-GLOBAL_STR(bb, "bx");
-
-// TODO: list_collect_test, dict_collect_test.
-// Assert the number of collections too?
-
-TEST str_collect_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
-
-  auto s = NewStr("abcdefg");
-  int total = 0;
-  for (int i = 0; i < 40; ++i) {
-    s = s->replace(b, bb);
-    total += len(s);
-
-    // hit NUL termination path
-    s = NewStr("NUL");
-    total += len(s);
-
-    // log("i = %d", i);
-    // log("len(s) = %d", len(s));
-  }
-  log("total = %d", total);
-
-  PASS();
-}
-
 using mylib::BufLineReader;
 
 TEST buf_line_reader_test() {
@@ -778,24 +751,26 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(print_test);
+  RUN_TEST(formatter_test);
+
   RUN_TEST(str_to_int_test);
   RUN_TEST(int_to_str_test);
+
   RUN_TEST(str_replace_test);
   RUN_TEST(str_split_test);
   RUN_TEST(str_methods_test);
   RUN_TEST(str_funcs_test);
   RUN_TEST(str_iters_test);
+
   RUN_TEST(list_methods_test);
   RUN_TEST(list_funcs_test);
   RUN_TEST(list_iters_test);
   RUN_TEST(sort_test);
   RUN_TEST(contains_test);
+
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_funcs_test);
   RUN_TEST(dict_iters_test);
-
-  RUN_TEST(formatter_test);
-  RUN_TEST(str_collect_test);
 
   RUN_TEST(buf_line_reader_test);
   RUN_TEST(test_files);
