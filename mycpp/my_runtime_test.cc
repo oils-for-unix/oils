@@ -553,6 +553,15 @@ TEST dict_methods_test() {
   ASSERT_EQ(2, values->index(0));
   ASSERT_EQ(3, values->index(1));
 
+  int j = 0;
+  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
+    auto key = it.Key();
+    auto value = it.Value();
+    log("d2 key = %s, value = %d", key->data_, value);
+    ++j;
+  }
+  ASSERT_EQ_FMT(len(d2), j, "%d");
+
   d2->clear();
   ASSERT_EQ(0, len(d2));
   // Ensure it was zero'd
@@ -599,7 +608,33 @@ TEST dict_methods_test() {
   ASSERT(!dict_contains(d3, a));
   ASSERT_EQ(2, len(d3));
 
-  // TODO: keys() and values() need to respect deletions
+  // Test a different type of dict, to make sure partial template
+  // specialization works
+  auto ss = Alloc<Dict<Str*, Str*>>();
+  ss->set(a, a);
+  ASSERT_EQ(1, len(ss));
+  ASSERT_EQ(1, len(ss->keys()));
+  ASSERT_EQ(1, len(ss->values()));
+
+  int k = 0;
+  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
+    auto key = it.Key();
+    log("ss key = %s", key->data_);
+    ++k;
+  }
+  ASSERT_EQ_FMT(len(ss), k, "%d");
+
+  mylib::dict_remove(ss, a);
+  ASSERT_EQ(0, len(ss));
+
+  int m = 0;
+  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
+    auto key = it.Key();
+    log("ss key = %s", key->data_);
+    ++m;
+  }
+  ASSERT_EQ_FMT(0, m, "%d");
+  ASSERT_EQ_FMT(len(ss), m, "%d");
 
   PASS();
 }

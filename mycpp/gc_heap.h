@@ -546,6 +546,8 @@ class Str : public gc_heap::Obj {
   // Other options for fast comparison / hashing / string interning:
   // - unique_id_: an index into intern table.  I don't think this works unless
   //   you want to deal with rehashing all strings when the set grows.
+  //   - although note that the JVM has -XX:StringTableSize=FIXED, which means
+  //   - it can degrade into linked list performance
   // - Hashed strings become GLOBAL_STR().  Never deallocated.
   // - Hashed strings become part of the "large object space", which might be
   //   managed by mark and sweep.  This requires linked list overhead.

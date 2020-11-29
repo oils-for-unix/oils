@@ -367,33 +367,43 @@ class DictIter {
   explicit DictIter(Dict<K, V>* D) : D_(D), i_(0) {
   }
   void Next() {
-    while (true) {
-      ++i_;
-      if (i_ >= D_->capacity_) {
-        break;
-      }
-      int index = D_->index_->items_[i_];
-      if (index == gc_heap::kDeletedEntry) {
-        continue;  // increment again
-      }
-      break;  // i_ now points to a valid entry
-    }
+    ++i_;
   }
   bool Done() {
-    if (i_ >= D_->capacity_) {
-      return true;
-    }
-    int index = D_->index_->items_[i_];
-    if (index == gc_heap::kEmptyEntry) {
-      return true;
-    }
-    return false;
+    return ValidPosition() == -1;
   }
   K Key() {
-    return D_->keys_->items_[i_];
+    int pos = ValidPosition();
+    assert(pos != -1);
+    return D_->keys_->items_[pos];
   }
   V Value() {
-    return D_->values_->items_[i_];
+    int pos = ValidPosition();
+    assert(pos != -1);
+    return D_->values_->items_[pos];
+  }
+
+ private:
+  int ValidPosition() {
+    // Returns the position of a valid entry at or after index i_.  Or -1 if
+    // there isn't one.  Advances i_ too.
+    int pos = i_;
+    while (true) {
+      if (pos >= D_->capacity_) {
+        return -1;
+      }
+      int index = D_->index_->items_[pos];
+      if (index == gc_heap::kDeletedEntry) {
+        ++pos;
+        continue;  // increment again
+      }
+      if (index == gc_heap::kEmptyEntry) {
+        return -1;
+      }
+      break;
+    }
+    i_ = pos;  // advance
+    return pos;
   }
 
   Dict<K, V>* D_;
