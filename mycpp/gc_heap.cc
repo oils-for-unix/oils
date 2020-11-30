@@ -54,6 +54,15 @@ Obj* Heap::Relocate(Obj* obj) {
     // their length from the field_mask here.  How much would it slow down GC?
     int n = obj->obj_len_;
     memcpy(new_location, obj, n);
+    // log("memcpy %d bytes from %p -> %p", n, obj, new_location);
+#if 0
+    if (obj->heap_tag_ == Tag::Opaque) {
+      Str* s = static_cast<Str*>(obj);
+      log("from = %s", s->data_);
+      Str* s2 = static_cast<Str*>(new_location);
+      log("to = %s", s2->data_);
+    }
+#endif
     free_ += n;
 
 #if GC_DEBUG
@@ -70,7 +79,7 @@ Obj* Heap::Relocate(Obj* obj) {
 
 void Heap::Collect(bool must_grow) {
 #if GC_DEBUG
-  //log("--> COLLECT");
+  log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
 #endif
 
@@ -93,16 +102,20 @@ void Heap::Collect(bool must_grow) {
 
 #if GC_DEBUG
     log("%d. handle %p", i, handle);
-    log("     root %p", root);
+    log("    root %p", root);
 #endif
 
-    // This updates the underlying Str/List/Dict with a forwarding pointer,
-    // i.e. for other objects that are pointing to it
-    Obj* new_location = Relocate(root);
+    if (root) {  // could be nullptr
+      // This updates the underlying Str/List/Dict with a forwarding pointer,
+      // i.e. for other objects that are pointing to it
+      Obj* new_location = Relocate(root);
 
-    // This update is for the "double indirection", so future accesses to a
-    // local variable use the new location
-    *handle = new_location;
+      log("    new location %p", new_location);
+
+      // This update is for the "double indirection", so future accesses to a
+      // local variable use the new location
+      *handle = new_location;
+    }
   }
 
   while (scan_ < free_) {
@@ -139,16 +152,10 @@ void Heap::Collect(bool must_grow) {
     scan_ += obj->obj_len_;
   }
 
-  // Swap spaces for next collection
-  char* tmp = from_space_;
-  from_space_ = to_space_;
-  // Maintain invariant of the space we will allocate from.
-  memset(from_space_, 0, space_size_);
-  to_space_ = tmp;
-
 #if GC_DEBUG
-  //log("<-- COLLECT from %p, to %p, num_live_objs_ %d", from_space_, to_space_,
-  //    num_live_objs_);
+    // log("<-- COLLECT from %p, to %p, num_live_objs_ %d", from_space_,
+    // to_space_,
+    //    num_live_objs_);
 #endif
 
   // Subtle logic for growing the heap.  Copied from femtolisp.
@@ -167,22 +174,38 @@ void Heap::Collect(bool must_grow) {
   //      resets grew_
   //
   if (grew_ || must_grow || (limit_ - free_) < (space_size_ / 5)) {
-    char* tmp = static_cast<char*>(realloc(to_space_, space_size_ * 2));
-    assert(tmp != nullptr);  // TODO: raise a proper error
-
 #if GC_DEBUG
+    log("GROWING HEAP");
     num_heap_growths_++;
 #endif
 
-    to_space_ = tmp;
+    char* tmp = static_cast<char*>(realloc(from_space_, space_size_ * 2));
+    assert(tmp != nullptr);  // TODO: raise a proper error
+    from_space_ = tmp;
+
+    memset(from_space_, 0, space_size_ * 2);
     if (grew_) {
       space_size_ *= 2;
     }
     grew_ = !grew_;
+
+  } else {
+    // We just copied everything from_space_ -> to_space_.  Maintain
+    // invariant of the space we will allocate from next time.
+    memset(from_space_, 0, space_size_);
   }
 
-    // TODO: Does it ever happen?  Try to hit it with a unit test.
-    // I think the Collect(true) loop in Allocate() is enough.
+  // Swap spaces for next collection.
+  char* tmp = from_space_;
+  from_space_ = to_space_;
+  to_space_ = tmp;
+
+#if GC_DEBUG
+  Report();
+#endif
+
+  // TODO: Does it ever happen?  Try to hit it with a unit test.
+  // I think the Collect(true) loop in Allocate() is enough.
 #if 0
   if (free_ >= limit_) {
     // All data was live.  Do the growing right away.

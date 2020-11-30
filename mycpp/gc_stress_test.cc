@@ -17,40 +17,67 @@ using gc_heap::Str;
 
 using gc_heap::gHeap;
 
-GLOBAL_STR(b, "b");
-GLOBAL_STR(bb, "bx");
-
 // TODO:
 // - Assert the number of collections
 // - Assert the number of heap growths
 // - maybe number of allocations?
 
-TEST str_collect_test() {
+TEST str_simple_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
   Str* s;
-  Str* t;
-  // Why isn't this necessary?  I thought it woudl realloc.
-  StackRoots({&s});
-  
-  s = NewStr("abcdefg");
+  // Note: This test case doesn't strictly require this.  I guess because
+  // it doesn't use the strings long after they've been allocated and/or moved.
+  StackRoots _roots({&s});
 
-#if 0
   int total = 0;
-  for (int i = 0; i < 4000; ++i) {
-    s = s->replace(b, bb);
-    print(s);
+  for (int i = 0; i < 400; ++i) {
+    unsigned char c = i % 256;
+    s = chr(c);
+    // print(s);
+    ASSERT_EQ_FMT(c, ord(s), "%d");  // Check for memory corruption
     total += len(s);
-    log("%d", len(s));
+  }
+  log("total = %d", total);
+  gHeap.Report();
+
+  PASS();
+}
+
+GLOBAL_STR(b, "b");
+GLOBAL_STR(bb, "bx");
+
+TEST str_growth_test() {
+  gHeap.Init(1 << 8);  // 1 KiB
+
+  Str* s;
+  StackRoots _roots({&s});
+
+  gHeap.Report();
+
+  s = NewStr("b");
+#if 1
+  int n = 300;
+  int total = 0;
+  for (int i = 0; i < n; ++i) {
+    total += len(s);  // count it first
+
+    // log("--- %p %d", s, len(s));
+    // print(s);
+    s = s->replace(b, bb);
+    // print(s);
 
     // hit NUL termination path
-    //t = NewStr("NUL");
-    //total += len(t);
+    // t = NewStr("NUL");
+    // total += len(t);
 
     // log("i = %d", i);
     // log("len(s) = %d", len(s));
   }
   log("total = %d", total);
+
+  int expected = (n * (n + 1)) / 2;
+  ASSERT_EQ_FMT(expected, total, "%d");
 #endif
 
   gHeap.Report();
@@ -58,12 +85,12 @@ TEST str_collect_test() {
   PASS();
 }
 
-TEST list_collect_test() {
+TEST list_growth_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
   Str* s;
   List<Str*>* L;
-  StackRoots({&s, &L});
+  StackRoots _roots({&s, &L});
 
   s = NewStr("abcdefg");
   L = Alloc<List<Str*>>();
@@ -81,12 +108,12 @@ TEST list_collect_test() {
   PASS();
 }
 
-TEST dict_collect_test() {
+TEST dict_growth_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
   Str* s;
   Dict<Str*, int>* D;
-  StackRoots({&s, &D});
+  StackRoots _roots({&s, &D});
 
   s = NewStr("abcdefg");
   D = Alloc<Dict<Str*, int>>();
@@ -111,9 +138,10 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(str_collect_test);
-  RUN_TEST(list_collect_test);
-  RUN_TEST(dict_collect_test);
+  RUN_TEST(str_simple_test);
+  RUN_TEST(str_growth_test);
+  RUN_TEST(list_growth_test);
+  RUN_TEST(dict_growth_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

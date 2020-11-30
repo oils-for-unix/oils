@@ -171,8 +171,8 @@ class Heap {
     // Do a collection if REQUIRED.
     if (almost_full || free_ + n > limit_) {
 #if GC_DEBUG
-      //log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
-      //    space_size_);
+    // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+    //    space_size_);
 #endif
 
       Collect(false);
@@ -219,10 +219,15 @@ class Heap {
 
 #if GC_DEBUG
   void Report() {
+    log("-----");
     log("num collections = %d", num_collections_);
     log("num heap growths = %d", num_heap_growths_);
     log("num live objects = %d", num_live_objs_);
-    log("final heap size = %d", space_size_);
+    log("heap size = %d", space_size_);
+
+    log("from_space_ %p", from_space_);
+    log("to_space %p", to_space_);
+    log("-----");
   }
 #endif
 

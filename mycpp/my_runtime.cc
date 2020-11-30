@@ -6,6 +6,7 @@
 #include <ctype.h>  // isspace(), isdigit()
 #include <cstdarg>  // va_list, etc.
 
+using gc_heap::StackRoots;
 using gc_heap::kEmptyString;
 
 // Translation of Python's print().
@@ -333,9 +334,17 @@ Str* Str::slice(int begin, int end) {
 Str* Str::replace(Str* old, Str* new_str) {
   assert(len(old) == 1);  // Restriction that Oil code is OK with
 
+  Str* self = this;       // must be a root!
+  Str* result = nullptr;  // ditto
+
+  // log("  self BEFORE %p", self);
+  StackRoots _roots({&self, &old, &new_str, &result});
+
+  int len_this = len(self);
   char old_char = old->data_[0];
-  const char* p_this = data_;  // advances through 'this'
-  const char* p_end = data_ + len(this);
+  const char* p_this = self->data_;  // advances through 'this'
+  const char* p_end = p_this + len_this;
+  // printf("  p_this BEFORE %s\n", p_this);
 
   // First pass to calculate the new length
   int replace_count = 0;
@@ -347,21 +356,30 @@ Str* Str::replace(Str* old, Str* new_str) {
   }
 
   if (replace_count == 0) {
-    return this;  // Reuse the string if there were no replacements
+    return self;  // Reuse the string if there were no replacements
   }
 
-  int length =
-      len(this) - (replace_count * len(old)) + (replace_count * len(new_str));
+  int result_len =
+      len_this - (replace_count * len(old)) + (replace_count * len(new_str));
+
+  // Second pass to copy into new 'result'
+  result = NewStr(result_len);
+  // log("  alloc result = %p", result);
+  // log("  result = %p", result);
+  // log("  self AFTER %p", self);
 
   const char* new_data = new_str->data_;
   const size_t new_len = len(new_str);
 
-  // Second pass to copy into new 'result'
-  Str* result = NewStr(length);
-  p_this = data_;                  // back to beginning
+  p_this = self->data_;  // back to beginning
+  // printf("  p_this AFTER %p\n", p_this);
+  p_end = p_this + len_this;  // Must be rebound AFTER Alloc<>!
+
   char* p_result = result->data_;  // advances through 'result'
 
+  // log("  p_this = %p, p_end %p", p_this, p_end);
   while (p_this < p_end) {
+    // log("  *p_this [%d]", *p_this);
     if (*p_this == old_char) {
       memcpy(p_result, new_data, new_len);  // Copy from new_str
       p_this++;
@@ -372,7 +390,7 @@ Str* Str::replace(Str* old, Str* new_str) {
       p_result++;
     }
   }
-  assert(result->data_[length] == '\0');  // buffer should have been zero'd
+  assert(result->data_[result_len] == '\0');  // buffer should have been zero'd
   return result;
 }
 
