@@ -163,13 +163,15 @@ class Heap {
     // log("n = %d, p = %p", n, p);
     //
 
-    // Possible: optimization: do it if we have less than 20% free space.
-    // bool almost_full = (limit_ - free_) < (space_size_ / 5);
-    // This is still a correct GC algorithm
-    bool almost_full = false;
-
     // Do a collection if REQUIRED.
-    if (almost_full || free_ + n > limit_) {
+
+#if GC_EVERY_ALLOC
+    // Hm this causes an infinite loop.  How to avoid?
+    if (true) {
+#else
+    if (free_ + n > limit_) {
+#endif
+
 #if GC_DEBUG
     // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
     //    space_size_);
@@ -747,21 +749,27 @@ class List : public gc_heap::Obj {
 
   // Implements L[i] = item
   void set(int i, T item) {
-    slab_->items_[i] = item;
+    List<T>* self = this;
+    StackRoots _roots({&self});
+    self->slab_->items_[i] = item;
   }
 
   // L[begin:]
   List* slice(int begin) {
+    List<T>* self = this;
+    List<T>* result = nullptr;
+    StackRoots _roots({&self, &result});
+
     if (begin == 0) {
-      return this;
+      return self;
     }
     if (begin < 0) {
-      begin = len_ + begin;
+      begin = self->len_ + begin;
     }
 
-    List* result = Alloc<List<T>>();  // TODO: initialize with size
-    for (int i = begin; i < len_; i++) {
-      result->append(slab_->items_[i]);
+    result = Alloc<List<T>>();  // TODO: initialize with size
+    for (int i = begin; i < self->len_; i++) {
+      result->append(self->slab_->items_[i]);
     }
     return result;
   }
@@ -769,16 +777,20 @@ class List : public gc_heap::Obj {
   // L[begin:end]
   // TODO: Can this be optimized?
   List* slice(int begin, int end) {
+    List<T>* self = this;
+    List<T>* result = nullptr;
+    StackRoots _roots({&self, &result});
+
     if (begin < 0) {
-      begin = len_ + begin;
+      begin = self->len_ + begin;
     }
     if (end < 0) {
-      end = len_ + end;
+      end = self->len_ + end;
     }
 
-    List* result = Alloc<List<T>>();  // TODO: initialize with size
+    result = Alloc<List<T>>();  // TODO: initialize with size
     for (int i = begin; i < end; i++) {
-      result->append(slab_->items_[i]);
+      result->append(self->slab_->items_[i]);
     }
     return result;
   }
@@ -841,31 +853,35 @@ class List : public gc_heap::Obj {
   // Ensure that there's space for a number of items
   void reserve(int n) {
     // log("reserve capacity = %d, n = %d", capacity_, n);
+    List<T>* self = this;
+    StackRoots _roots({&self});
 
-    if (capacity_ < n) {
+    if (self->capacity_ < n) {
       // Example: The user asks for space for 7 integers.  Account for the
       // header, and say we need 9 to determine the obj length.  9 is
       // rounded up to 16, for a 64-byte obj.  Then we actually have space
       // for 14 items.
-      capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
-      auto new_slab = NewSlab<T>(capacity_);
+      self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+      auto new_slab = NewSlab<T>(self->capacity_);
 
       // slab_ may not be initialized constructor because many lists are
       // empty.
-      if (capacity_ != 0) {
+      if (self->capacity_ != 0) {
         // log("Copying %d bytes", len_ * sizeof(T));
-        memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
+        memcpy(new_slab->items_, self->slab_->items_, self->len_ * sizeof(T));
       }
-      slab_ = new_slab;
+      self->slab_ = new_slab;
     }
     // Otherwise, there's enough capacity
   }
 
   // Append a single element to this list
   void append(T item) {
-    reserve(len_ + 1);
-    set(len_, item);
-    ++len_;
+    List<T>* self = this;
+    StackRoots _roots({&self});
+    self->reserve(self->len_ + 1);
+    self->set(self->len_, item);
+    ++self->len_;
   }
 
   // Extend this list with multiple elements.

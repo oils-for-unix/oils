@@ -241,7 +241,8 @@ gc-heap-test() {
 
 gc-stress-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile gc_stress_test asan -D GC_DEBUG -I ../cpp \
+  cpp-compile gc_stress_test asan \
+    -D GC_DEBUG -I ../cpp \
     gc_heap.cc my_runtime.cc mylib2.cc
   _bin/gc_stress_test.asan "$@"
 }

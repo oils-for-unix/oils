@@ -45,7 +45,7 @@ TEST str_simple_test() {
 }
 
 GLOBAL_STR(b, "b");
-GLOBAL_STR(bb, "bx");
+GLOBAL_STR(bx, "bx");
 
 TEST str_growth_test() {
   gHeap.Init(1 << 8);  // 1 KiB
@@ -56,7 +56,6 @@ TEST str_growth_test() {
   gHeap.Report();
 
   s = NewStr("b");
-#if 1
   int n = 300;
   int total = 0;
   for (int i = 0; i < n; ++i) {
@@ -64,21 +63,94 @@ TEST str_growth_test() {
 
     // log("--- %p %d", s, len(s));
     // print(s);
-    s = s->replace(b, bb);
+    s = s->replace(b, bx);
     // print(s);
-
-    // hit NUL termination path
-    // t = NewStr("NUL");
-    // total += len(t);
-
-    // log("i = %d", i);
-    // log("len(s) = %d", len(s));
   }
   log("total = %d", total);
 
   int expected = (n * (n + 1)) / 2;
   ASSERT_EQ_FMT(expected, total, "%d");
-#endif
+
+  gHeap.Report();
+
+  PASS();
+}
+
+// Simple test with just List on the heap.
+TEST list_append_test() {
+  gHeap.Init(1 << 8);  // 1 KiB
+
+  List<int>* L;
+  StackRoots _roots({&L});
+
+  int length = 1;
+  L = Alloc<List<int>>(42, length);
+
+  int n = 1000;
+  int total = 0;
+  for (int i = 0; i < n; ++i) {
+    total += len(L);  // count it first
+
+    // log("sliced L = %p", L);
+    L->append(43);  // append to end
+  }
+  log("total = %d", total);
+  ASSERT_EQ_FMT(500500, total, "%d");
+
+  PASS();
+}
+
+TEST list_slice_append_test() {
+  gHeap.Init(1 << 8);  // 1 KiB
+
+  List<int>* L;
+  StackRoots _roots({&L});
+
+  int length = 5;
+  L = Alloc<List<int>>(42, length);
+
+  int n = 300;
+  int total = 0;
+  for (int i = 0; i < n; ++i) {
+    log("i = %d", i);
+    total += len(L);  // count it first
+
+    L = L->slice(1);
+    L->append(43);  // append to end
+  }
+  log("total = %d", total);
+
+  int expected = n * length;
+  ASSERT_EQ_FMT(expected, total, "%d");
+
+  PASS();
+}
+
+// List and Str on the heap.
+// BUG: The slab_ becomes NULL after collection.  Why?
+TEST list_str_test() {
+  gHeap.Init(1 << 8);  // 1 KiB
+
+  List<Str*>* L;
+  StackRoots _roots({&L});
+
+  gHeap.Report();
+
+  L = Alloc<List<Str*>>(b, 5);
+  int n = 30;
+  int total = 0;
+  for (int i = 0; i < n; ++i) {
+    log("i = %d", i);
+    total += len(L);  // count it first
+
+    L = L->slice(1);  // remove front
+    log("sliced L = %p", L);
+    // L->append(bx);  // append to end
+  }
+  log("total = %d", total);
+
+  int expected = (n * (n + 1)) / 2;
+  // ASSERT_EQ_FMT(expected, total, "%d");
 
   gHeap.Report();
 
@@ -92,17 +164,22 @@ TEST list_growth_test() {
   List<Str*>* L;
   StackRoots _roots({&s, &L});
 
-  s = NewStr("abcdefg");
+  s = NewStr("b");
   L = Alloc<List<Str*>>();
 
 #if 0
   int total = 0;
-  for (int i = 0; i < 40; ++i) {
-    //s = s->replace(b, bb);
-    L->append(s);
+  int n = 40;
+  for (int i = 0; i < n; ++i) {
     total += len(s);
+
+    //s = s->replace(b, bx);
+    L->append(s);
   }
   log("total = %d", total);
+
+  int expected = (n * (n + 1)) / 2;
+  ASSERT_EQ_FMT(expected, total, "%d");
 #endif
 
   PASS();
@@ -121,9 +198,9 @@ TEST dict_growth_test() {
 #if 0
   int total = 0;
   for (int i = 0; i < 40; ++i) {
-    s = s->replace(b, bb);
-    D->set(s, 42);
     total += len(s);
+    s = s->replace(b, bx);
+    D->set(s, 42);
   }
   log("total = %d", total);
 #endif
@@ -140,6 +217,9 @@ int main(int argc, char** argv) {
 
   RUN_TEST(str_simple_test);
   RUN_TEST(str_growth_test);
+  RUN_TEST(list_append_test);
+  RUN_TEST(list_slice_append_test);
+  RUN_TEST(list_str_test);
   RUN_TEST(list_growth_test);
   RUN_TEST(dict_growth_test);
 

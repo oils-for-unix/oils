@@ -13,6 +13,7 @@
 //     places, e.g. for the readline callbacks.
 //   - C++ 20 coroutines (but we're almost certainly not using this)
 
+#include <sys/mman.h>  // mmap()
 #include <initializer_list>
 #include <memory>  // shared_ptr
 #include <unordered_map>
@@ -530,6 +531,41 @@ TEST inheritance_demo() {
   PASS();
 }
 
+char* realloc(char* buf, size_t num_bytes) {
+  void* result = mmap(nullptr, num_bytes, PROT_READ | PROT_WRITE,
+                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  memcpy(result, buf, num_bytes);
+
+  // Now make it unreadable
+  int m = mprotect(buf, num_bytes, PROT_NONE);
+  log("mprotect = %d", m);
+
+  return static_cast<char*>(result);
+}
+
+TEST mmap_demo() {
+  size_t num_bytes = 1;
+
+  void* tmp = mmap(nullptr, num_bytes, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  char* space = static_cast<char*>(tmp);
+
+  *space = 42;
+
+  log("space %p", space);
+
+  log("value = %d", *space);
+
+  space = realloc(space, num_bytes);
+  log("value = %d", *space);
+
+  // Can't use this anymore
+  char* tmp2 = static_cast<char*>(tmp);
+  // log("tmp2 = %d", *tmp2);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -550,6 +586,8 @@ int main(int argc, char** argv) {
   RUN_TEST(enum_demo);
   RUN_TEST(field_mask_demo);
   // RUN_TEST(inheritance_demo);
+  //
+  RUN_TEST(mmap_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

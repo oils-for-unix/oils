@@ -129,7 +129,9 @@ void Heap::Collect(bool must_grow) {
           Obj* child = fixed->children_[i];
           // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
           if (child) {
+            log("  fixed: child %d from %p", i, child);
             fixed->children_[i] = Relocate(child);
+            log("  to %p", fixed->children_[i]);
           }
         }
       }
@@ -179,6 +181,8 @@ void Heap::Collect(bool must_grow) {
     num_heap_growths_++;
 #endif
 
+    // BUG: why do I still have references here?  I thought it was empty?
+    // YOu can't use 2 reallocs in a row?
     char* tmp = static_cast<char*>(realloc(from_space_, space_size_ * 2));
     assert(tmp != nullptr);  // TODO: raise a proper error
     from_space_ = tmp;
