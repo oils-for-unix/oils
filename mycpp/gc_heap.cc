@@ -204,6 +204,14 @@ void Heap::Collect(bool must_grow) {
   from_space_ = to_space_;
   to_space_ = tmp;
 
+#if 0
+  log("free_ %p scan_ %p limit_ %p", free_, scan_, limit_);
+  if (scan_ > limit_) {  // all data was live, from femtolisp
+    log("============= COLLECTING AGAIN");
+    Collect(0);
+  }
+#endif
+
 #if GC_DEBUG
   Report();
 #endif

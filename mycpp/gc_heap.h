@@ -153,6 +153,7 @@ class Heap {
 #if GC_DEBUG
     num_collections_ = 0;
     num_heap_growths_ = 0;
+    num_forced_growths_ = 0;
     num_live_objs_ = 0;
 #endif
   }
@@ -185,8 +186,14 @@ class Heap {
       // - NOTHING was collected.  We have zero space, and we need to collect
       //   NOW with must_grow=true.  This is unlikely.
 
+      // Even if we grew the OTHER semispace, and something was collected, we
+      // could still not have enough space for THIS allocation.  So we need to
+      // collect again.
       while (free_ + n > limit_) {
         Collect(true);
+#if GC_DEBUG
+        num_forced_growths_++;
+#endif
       }
 
       // Allocate again, using new free_ pointer
@@ -224,6 +231,7 @@ class Heap {
     log("-----");
     log("num collections = %d", num_collections_);
     log("num heap growths = %d", num_heap_growths_);
+    log("num forced heap growths = %d", num_forced_growths_);
     log("num live objects = %d", num_live_objs_);
     log("heap size = %d", space_size_);
 
@@ -256,6 +264,7 @@ class Heap {
 #if GC_DEBUG
   int num_collections_;
   int num_heap_growths_;
+  int num_forced_growths_;  // when a single allocation is too big
   int num_live_objs_;
 #endif
 };
@@ -749,14 +758,14 @@ class List : public gc_heap::Obj {
 
   // Implements L[i] = item
   void set(int i, T item) {
-    List<T>* self = this;
+    auto self = this;
     StackRoots _roots({&self});
     self->slab_->items_[i] = item;
   }
 
   // L[begin:]
   List* slice(int begin) {
-    List<T>* self = this;
+    auto self = this;
     List<T>* result = nullptr;
     StackRoots _roots({&self, &result});
 
@@ -777,7 +786,7 @@ class List : public gc_heap::Obj {
   // L[begin:end]
   // TODO: Can this be optimized?
   List* slice(int begin, int end) {
-    List<T>* self = this;
+    auto self = this;
     List<T>* result = nullptr;
     StackRoots _roots({&self, &result});
 
@@ -853,7 +862,7 @@ class List : public gc_heap::Obj {
   // Ensure that there's space for a number of items
   void reserve(int n) {
     // log("reserve capacity = %d, n = %d", capacity_, n);
-    List<T>* self = this;
+    auto self = this;
     StackRoots _roots({&self});
 
     if (self->capacity_ < n) {
@@ -877,7 +886,7 @@ class List : public gc_heap::Obj {
 
   // Append a single element to this list
   void append(T item) {
-    List<T>* self = this;
+    auto self = this;
     StackRoots _roots({&self});
     self->reserve(self->len_ + 1);
     self->set(self->len_, item);
@@ -997,15 +1006,18 @@ class Dict : public gc_heap::Obj {
                 "Slab header size should be multiple of key size");
 
   void reserve(int n) {
+    auto self = this;
+    StackRoots _roots({&self});
+
     // log("--- reserve %d", capacity_);
     //
-    if (capacity_ < n) {  // TODO: use load factor, not exact fit
+    if (self->capacity_ < n) {  // TODO: use load factor, not exact fit
       // calculate the number of keys and values we should have
-      capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+      self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
 
       // TODO: This is SPARSE.  How to compute a size that ensures a decent
       // load factor?
-      int index_len = capacity_;
+      int index_len = self->capacity_;
       auto new_i = NewSlab<int>(index_len);
 
       // For the linear search to work
@@ -1014,10 +1026,10 @@ class Dict : public gc_heap::Obj {
       }
 
       // These are DENSE.
-      auto new_k = NewSlab<K>(capacity_);
-      auto new_v = NewSlab<V>(capacity_);
+      auto new_k = NewSlab<K>(self->capacity_);
+      auto new_v = NewSlab<V>(self->capacity_);
 
-      if (keys_ != nullptr) {
+      if (self->keys_ != nullptr) {
         // Copy the old index.  Note: remaining entries should be zero'd
         // because of Allocate() behavior.
         memcpy(new_i->items_, index_->items_, index_->obj_len_);
@@ -1026,9 +1038,9 @@ class Dict : public gc_heap::Obj {
         memcpy(new_v->items_, values_->items_, len_ * sizeof(V));
       }
 
-      index_ = new_i;
-      keys_ = new_k;
-      values_ = new_v;
+      self->index_ = new_i;
+      self->keys_ = new_k;
+      self->values_ = new_v;
     }
   }
 
@@ -1066,17 +1078,20 @@ class Dict : public gc_heap::Obj {
 
   // Implements d[k] = v.  May resize the dictionary.
   void set(K key, V val) {
-    int pos = position_of_key(key);
-    if (pos == -1) {  // new pair
-      reserve(len_ + 1);
-      keys_->items_[len_] = key;
-      values_->items_[len_] = val;
+    auto self = this;
+    StackRoots _roots({&self});
 
-      index_->items_[len_] = 0;  // new special value
+    int pos = self->position_of_key(key);
+    if (pos == -1) {  // new pair
+      self->reserve(self->len_ + 1);
+      self->keys_->items_[self->len_] = key;
+      self->values_->items_[self->len_] = val;
+
+      self->index_->items_[self->len_] = 0;  // new special value
 
       ++len_;
     } else {
-      values_->items_[pos] = val;
+      self->values_->items_[pos] = val;
     }
   }
 
@@ -1114,15 +1129,18 @@ class Dict : public gc_heap::Obj {
   //   - SetAndIntern<V>(D, &string_key, value)
   //   This will enable duplicate copies of the string to be garbage collected
   int position_of_key(K key) {
-    for (int i = 0; i < capacity_; ++i) {
-      int special = index_->items_[i];  // NOT an index now
+    auto self = this;
+    StackRoots _roots({&self});
+
+    for (int i = 0; i < self->capacity_; ++i) {
+      int special = self->index_->items_[i];  // NOT an index now
       if (special == kDeletedEntry) {
         continue;  // keep searching
       }
       if (special == kEmptyEntry) {
         return -1;  // not found
       }
-      if (keys_equal(keys_->items_[i], key)) {
+      if (keys_equal(self->keys_->items_[i], key)) {
         return i;
       }
     }

@@ -126,43 +126,13 @@ TEST list_slice_append_test() {
   PASS();
 }
 
-// List and Str on the heap.
-// BUG: The slab_ becomes NULL after collection.  Why?
-TEST list_str_test() {
+TEST list_str_growth_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
-  List<Str*>* L;
-  StackRoots _roots({&L});
-
-  gHeap.Report();
-
-  L = Alloc<List<Str*>>(b, 5);
-  int n = 30;
-  int total = 0;
-  for (int i = 0; i < n; ++i) {
-    log("i = %d", i);
-    total += len(L);  // count it first
-
-    L = L->slice(1);  // remove front
-    log("sliced L = %p", L);
-    // L->append(bx);  // append to end
-  }
-  log("total = %d", total);
-
-  int expected = (n * (n + 1)) / 2;
-  // ASSERT_EQ_FMT(expected, total, "%d");
-
-  gHeap.Report();
-
-  PASS();
-}
-
-TEST list_growth_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
-
-  Str* s;
-  List<Str*>* L;
+  Str* s = nullptr;
+  List<Str*>* L = nullptr;
   StackRoots _roots({&s, &L});
+  // StackRoots _roots({&L});
 
   s = NewStr("b");
   L = Alloc<List<Str*>>();
@@ -171,10 +141,13 @@ TEST list_growth_test() {
   int total = 0;
   int n = 40;
   for (int i = 0; i < n; ++i) {
-    total += len(s);
+    log("i = %d", i);
+    //total += len(s);
 
-    //s = s->replace(b, bx);
     L->append(s);
+
+    // This works if we don't have 's'.  Because it's global?
+    //L->append(bx);
   }
   log("total = %d", total);
 
@@ -219,8 +192,7 @@ int main(int argc, char** argv) {
   RUN_TEST(str_growth_test);
   RUN_TEST(list_append_test);
   RUN_TEST(list_slice_append_test);
-  RUN_TEST(list_str_test);
-  RUN_TEST(list_growth_test);
+  RUN_TEST(list_str_growth_test);
   RUN_TEST(dict_growth_test);
 
   GREATEST_MAIN_END(); /* display results */
