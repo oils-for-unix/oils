@@ -1,0 +1,176 @@
+# Parallel Travis jobs for Oil.  We delegate most logic to
+# services/toil-worker.sh.
+
+# https://github.com/travis-ci/travis-ci/issues/1147
+# Might want to turn this on.
+
+#branches:
+#  only:
+#    - master
+
+
+# Every job uses this deploy step.
+_publish_html: &publish_html
+  deploy:
+    # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
+    # otherwise we can't zip up _tmp/toil, etc.
+    - provider: script
+      skip_cleanup: true
+      script: services/travis.sh publish-html
+      on:
+        branch: master
+    # duplicate block for testing on dev branches
+    - provider: script
+      skip_cleanup: true
+      script: services/travis.sh publish-html
+      on:
+        branch: dev/andy-27
+    # duplicate block for testing on dev branches
+    - provider: script
+      skip_cleanup: true
+      script: services/travis.sh publish-html
+      on:
+        branch: dev/andy-vb1
+
+jobs:
+  include:
+    # Job for testing
+    #- name: dummy
+    #  # Travis's default is Ruby, but we don't need it.
+    #  language: minimal
+    #  script: services/toil-worker.sh run-dummy
+
+    #  <<: *publish_html
+
+    # Make a tarball to build oil.ovm.
+    - name: ovm-tarball
+      # Travis's default is Ruby, but we don't need it.
+      language: minimal
+      cache:
+        directories:
+          - _devbuild/cpython-full  # Python-2.x/ in the repo doesn't change much
+          - _deps/                  # re2c doesn't change much
+
+      script: services/toil-worker.sh run-ovm-tarball
+
+      # For building Python extensions like posix_.so and yajl.so.  We import
+      # them to build a tarball.
+      addons:
+        apt:
+          packages:
+            - python-dev
+
+      <<: *publish_html
+
+    # Run app unit tests against _bin/osh.  Similar to ovm-tarball.
+    #- name: app-tests
+    #  # Travis's default is Ruby, but we don't need it.
+    #  language: minimal
+    #  cache:
+    #    directories:
+    #      - _devbuild/cpython-full  # Python-2.x/ in the repo doesn't change much
+    #      - _deps/                  # re2c doesn't change much
+
+    #  script: services/toil-worker.sh run-app-tests
+
+    #  # For building Python extensions like posix_.so and yajl.so.  We import
+    #  # them to build a tarball.
+    #  addons:
+    #    apt:
+    #      packages:
+    #        - python-dev
+
+    #  <<: *publish_html
+
+    # Developer build that can run all spec tests.
+    #- name: dev-all-nix
+    #  language: nix
+    #  script: services/toil-worker.sh run-dev-all-nix
+
+    #  <<: *publish_html
+
+    # Low-dependency developer build.  Spec tests broken because we don't have
+    # exact versions of shells.
+    - name: dev-minimal
+      # https://docs.travis-ci.com/user/reference/xenial/#python-support
+      # It says Xenial has Python 2.7, 3.6, and 3.7 (?)
+      # We're not using language: python because that creates a virtualenv, which is
+      # specific to a Python version.  MyPy needs both in the same environment.
+      dist: xenial
+      language: minimal
+      cache:
+        apt: true
+        pip: true
+        directories:
+          - _deps/                  # re2c doesn't change much
+
+      # Enable this to quickly test the deploy step at the end
+      env:
+        - TRAVIS_SKIP=
+
+      addons:
+        apt:
+          packages:
+            # build/dev.sh ubuntu-deps
+            - python-dev
+            - gawk
+            - libreadline-dev
+            # test/spec.sh install-shells
+            - busybox-static
+            - mksh
+            - zsh
+              # since we're not using language: python
+            - python-pip
+            - python3-setuptools
+            - python3-pip
+
+      install:
+        - pip install --user flake8 typing
+        # MyPy requires Python 3, but Oil requires Python 2.
+        - pip3 install --user mypy
+        # After this symlink is made, build/dev-shell.sh will modify $PATH to include it
+        - test/spec.sh link-busybox-ash
+
+      script:
+        - services/toil-worker.sh run-dev-minimal
+
+      notifications:
+        on_success: change
+        on_failure: change  # `always` will be the setting once code changes slow down
+
+      <<: *publish_html
+
+    - name: cpp
+      dist: bionic
+      cache:
+        apt: true
+        pip: true
+        directories:
+          - _deps/                  # re2c doesn't change much
+
+      # Enable this to quickly test the deploy step at the end
+      env:
+        - TRAVIS_SKIP=
+
+      addons:
+        apt:
+          packages:
+            - python3-pip
+              # for MyPy virtualenv
+            - python3-venv
+
+      script:
+        - services/toil-worker.sh run-cpp
+
+      <<: *publish_html
+
+    - name: other-tests
+      dist: bionic
+      cache:
+        apt: true
+        pip: true
+
+      script:
+        - services/toil-worker.sh run-other-tests
+
+      <<: *publish_html
