@@ -124,6 +124,26 @@ const int kMaxRoots = 1024;  // related to C stack size
 
 // #define GC_DEBUG 1
 
+class Space {
+ public:
+  Space() {
+  }
+  void Init(int space_size) {
+    begin_ = static_cast<char*>(malloc(space_size));
+    size_ = space_size;
+    // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
+    // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
+    // it makes sense to zero the slabs instead?
+    memset(begin_, 0, space_size);
+  }
+
+  void Resize(int multiple) {
+  }
+
+  char* begin_;
+  int size_;  // number of bytes
+};
+
 class Heap {
  public:
   Heap() {  // default constructor does nothing -- relies on zero initialization
@@ -131,24 +151,17 @@ class Heap {
 
   // Real initialization with the initial heap size.  The heap grows with
   // allocations.
-  void Init(int num_bytes) {
-    from_space_ = static_cast<char*>(malloc(num_bytes));
-    to_space_ = static_cast<char*>(malloc(num_bytes));
-    limit_ = from_space_ + num_bytes;
+  void Init(int space_size) {
+    // Allocate and memset()
+    from_space_.Init(space_size);
+    to_space_.Init(space_size);
 
-    free_ = from_space_;  // where we allocate from
-    scan_ = nullptr;
+    free_ = from_space_.begin_;  // where we allocate from
+    limit_ = free_ + space_size;
 
-    space_size_ = num_bytes;
     grew_ = false;
 
     roots_top_ = 0;
-
-    // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
-    // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
-    // it makes sense to zero the slabs instead?
-    memset(from_space_, 0, num_bytes);
-    memset(to_space_, 0, num_bytes);
 
 #if GC_DEBUG
     num_collections_ = 0;
@@ -157,6 +170,22 @@ class Heap {
     num_live_objs_ = 0;
 #endif
   }
+
+  // TODO: Refactor into:
+  //
+  // Allocate()
+  // Collect()
+  //   Is Swap() separate from Collect()?
+  // Grow(space, int multiple)  // explicit arg!
+  //
+  // Later optimization:
+  //
+  // bool AlmostFull() after Collect()
+  //
+  // struct Space {
+  //   char* begin;
+  //   int size;  // for growth
+  // };
 
   void* Allocate(int num_bytes) {
     char* p = free_;
@@ -233,24 +262,20 @@ class Heap {
     log("num heap growths = %d", num_heap_growths_);
     log("num forced heap growths = %d", num_forced_growths_);
     log("num live objects = %d", num_live_objs_);
-    log("heap size = %d", space_size_);
 
-    log("from_space_ %p", from_space_);
-    log("to_space %p", to_space_);
+    log("from_space_ %p", from_space_.begin_);
+    log("to_space %p", to_space_.begin_);
     log("-----");
   }
 #endif
 
-  char* from_space_;  // beginning of the space we're allocating from
-  char* to_space_;    // beginning of the space we should copy to
-  char* limit_;       // end of space we're allocating from
+  Space from_space_;
+  Space to_space_;
+  char* limit_;  // end of space we're allocating from
 
-  char* scan_;  // boundary between black and grey
   char* free_;  // next place to allocate, from_space_ <= free_ < limit_
 
-  int space_size_;  // current size of space.  NOT redundant with limit_ because
-                    // of resizing
-  bool grew_;       // did the TO SPACE grow on the last collection?
+  bool grew_;  // did the TO SPACE grow on the last collection?
 
   // Stack roots.  The obvious data structure is a linked list, but an array
   // has better locality.

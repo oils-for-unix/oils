@@ -96,8 +96,8 @@ TEST str_test() {
   ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->obj_len_, "%d");
 
   // Make sure they're on the heap
-  int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_;
-  int diff2 = reinterpret_cast<char*>(str2) - gHeap.from_space_;
+  int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_.begin_;
+  int diff2 = reinterpret_cast<char*>(str2) - gHeap.from_space_.begin_;
   ASSERT(diff1 < 1024);
   ASSERT(diff2 < 1024);
 
@@ -140,8 +140,8 @@ TEST list_test() {
   ASSERT_EQ_FMT(24, list2->obj_len_, "%d");
 
   // Make sure they're on the heap
-  int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_;
-  int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_;
+  int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_.begin_;
+  int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_.begin_;
   ASSERT(diff1 < 1024);
   ASSERT(diff2 < 1024);
 
@@ -183,7 +183,7 @@ TEST list_test() {
   ASSERT_EQ_FMT(88, list1->index(7), "%d");
   ASSERT_EQ_FMT(8, len(list1), "%d");
 
-  int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_;
+  int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_.begin_;
   ASSERT(d_slab < 1024);
 
   log("list1_ = %p", list1);
@@ -225,8 +225,8 @@ TEST dict_test() {
   ASSERT_EQ(nullptr, dict1->values_);
 
   // Make sure they're on the heap
-  int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_;
-  int diff2 = reinterpret_cast<char*>(dict2) - gHeap.from_space_;
+  int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_.begin_;
+  int diff2 = reinterpret_cast<char*>(dict2) - gHeap.from_space_.begin_;
   ASSERT(diff1 < 1024);
   ASSERT(diff2 < 1024);
 
@@ -433,7 +433,7 @@ void ShowRoots(const Heap& heap) {
     log("   %p", raw);
 
     // Raw pointer is on the heap.
-    int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_;
+    int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_.begin_;
     // log("diff2 = %d", diff2);
     assert(diff2 < 2048);
 

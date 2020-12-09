@@ -83,13 +83,13 @@ void Heap::Collect(bool must_grow) {
   num_collections_++;
 #endif
 
-  scan_ = to_space_;  // boundary between black and gray
-  free_ = to_space_;  // where to copy new entries
+  char* scan = to_space_.begin_;  // boundary between black and gray
+  free_ = to_space_.begin_;       // where to copy new entries
 
   if (grew_) {
-    limit_ = to_space_ + space_size_ * 2;
+    limit_ = to_space_.begin_ + to_space_.size_ * 2;
   } else {
-    limit_ = to_space_ + space_size_;
+    limit_ = to_space_.begin_ + to_space_.size_;
   }
 
 #if GC_DEBUG
@@ -118,8 +118,8 @@ void Heap::Collect(bool must_grow) {
     }
   }
 
-  while (scan_ < free_) {
-    auto obj = reinterpret_cast<Obj*>(scan_);
+  while (scan < free_) {
+    auto obj = reinterpret_cast<Obj*>(scan);
     switch (obj->heap_tag_) {
     case Tag::FixedSize: {
       auto fixed = reinterpret_cast<LayoutFixed*>(obj);
@@ -151,7 +151,7 @@ void Heap::Collect(bool must_grow) {
 
       // other tags like Tag::Opaque have no children
     }
-    scan_ += obj->obj_len_;
+    scan += obj->obj_len_;
   }
 
 #if GC_DEBUG
@@ -160,21 +160,22 @@ void Heap::Collect(bool must_grow) {
     //    num_live_objs_);
 #endif
 
-  // Subtle logic for growing the heap.  Copied from femtolisp.
-  //
-  // Happy Path:
-  //   The collection brought us from "full" to more than 20% heap free.
-  //   Then we can continue to allocate int he new space until it is full, and
-  //   not grow the heap.
-  //
-  // When There's Memory Pressure:
-  //   1. There's less than 20% free space left, and we grow the EMPTY
-  //      to_space_
-  //   2. We set grew_, and the next iteration of Collect() uses a new limit_
-  //      calculated from space_size_ (top of this function)
-  //   3. That iteration also GROWS ITS EMPTY to_space_ (the other one), and
-  //      resets grew_
-  //
+    // Subtle logic for growing the heap.  Copied from femtolisp.
+    //
+    // Happy Path:
+    //   The collection brought us from "full" to more than 20% heap free.
+    //   Then we can continue to allocate int he new space until it is full, and
+    //   not grow the heap.
+    //
+    // When There's Memory Pressure:
+    //   1. There's less than 20% free space left, and we grow the EMPTY
+    //      to_space_
+    //   2. We set grew_, and the next iteration of Collect() uses a new limit_
+    //      calculated from space_size_ (top of this function)
+    //   3. That iteration also GROWS ITS EMPTY to_space_ (the other one), and
+    //      resets grew_
+    //
+#if 0
   if (grew_ || must_grow || (limit_ - free_) < (space_size_ / 5)) {
 #if GC_DEBUG
     log("GROWING HEAP");
@@ -198,11 +199,12 @@ void Heap::Collect(bool must_grow) {
     // invariant of the space we will allocate from next time.
     memset(from_space_, 0, space_size_);
   }
+#endif
 
   // Swap spaces for next collection.
-  char* tmp = from_space_;
-  from_space_ = to_space_;
-  to_space_ = tmp;
+  char* tmp = from_space_.begin_;
+  from_space_.begin_ = to_space_.begin_;
+  to_space_.begin_ = tmp;
 
 #if 0
   log("free_ %p scan_ %p limit_ %p", free_, scan_, limit_);
