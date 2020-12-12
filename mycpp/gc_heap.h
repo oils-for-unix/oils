@@ -131,13 +131,18 @@ class Space {
   void Init(int space_size) {
     begin_ = static_cast<char*>(malloc(space_size));
     size_ = space_size;
+    Clear();
+  }
+
+  void Free() {
+    free(begin_);
+  }
+
+  void Clear() {
     // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
     // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
     // it makes sense to zero the slabs instead?
-    memset(begin_, 0, space_size);
-  }
-
-  void Resize(int multiple) {
+    memset(begin_, 0, size_);
   }
 
   char* begin_;
@@ -152,14 +157,12 @@ class Heap {
   // Real initialization with the initial heap size.  The heap grows with
   // allocations.
   void Init(int space_size) {
-    // Allocate and memset()
+    // malloc() and memset()
     from_space_.Init(space_size);
     to_space_.Init(space_size);
 
     free_ = from_space_.begin_;  // where we allocate from
     limit_ = free_ + space_size;
-
-    grew_ = false;
 
     roots_top_ = 0;
 
@@ -171,71 +174,79 @@ class Heap {
 #endif
   }
 
-  // TODO: Refactor into:
-  //
-  // Allocate()
-  // Collect()
-  //   Is Swap() separate from Collect()?
-  // Grow(space, int multiple)  // explicit arg!
-  //
-  // Later optimization:
-  //
-  // bool AlmostFull() after Collect()
-  //
-  // struct Space {
-  //   char* begin;
-  //   int size;  // for growth
-  // };
-
   void* Allocate(int num_bytes) {
-    char* p = free_;
     int n = aligned(num_bytes);
     // log("n = %d, p = %p", n, p);
-    //
 
-    // Do a collection if REQUIRED.
-
-#if GC_EVERY_ALLOC
-    // Hm this causes an infinite loop.  How to avoid?
-    if (true) {
-#else
-    if (free_ + n > limit_) {
-#endif
-
+    if (free_ + n <= limit_) {  // Common case: we have space for it.
+      char* p = free_;
+      free_ += n;
 #if GC_DEBUG
-    // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
-    //    space_size_);
+      num_live_objs_++;
 #endif
-
-      Collect(false);
-      // Three cases at the end of Collect:
-      // - We have more than 20% free space, and we didn't grow.
-      // - We have less than 20% free space, but more than zero, and we grew.
-      //   A future collection will grow (or it may never happen).
-      // - NOTHING was collected.  We have zero space, and we need to collect
-      //   NOW with must_grow=true.  This is unlikely.
-
-      // Even if we grew the OTHER semispace, and something was collected, we
-      // could still not have enough space for THIS allocation.  So we need to
-      // collect again.
-      while (free_ + n > limit_) {
-        Collect(true);
-#if GC_DEBUG
-        num_forced_growths_++;
-#endif
-      }
-
-      // Allocate again, using new free_ pointer
-      return Allocate(num_bytes);
+      return p;
     }
 
-    free_ += n;
+#if GC_DEBUG
+      // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+      //    space_size_);
+#endif
 
+    Collect();
+    // Three cases at the end of Collect:
+    // - We have more than 20% free space, and we didn't grow.
+    // - We have less than 20% free space, but more than zero, and we grew.
+    //   A future collection will grow (or it may never happen).
+    // - NOTHING was collected.  We have zero space, and we need to collect
+    //   NOW with must_grow=true.  This is unlikely.
+
+    // log("after GC: from begin %p, free_ %p,  n %d, limit_ %p",
+    //    from_space_.begin_, free_, n, limit_);
+
+    if (free_ + n <= limit_) {  // After collection, we have space for it.
+      char* p = free_;
+      free_ += n;
+#if GC_DEBUG
+      num_live_objs_++;
+#endif
+      return p;
+    }
+
+    // After collection, it's STILL too small.  So resize to_space_ to ENSURE
+    // that allocation will succeed, copy the heap to it, then allocate the
+    // object.
+    // Ensure there will be enough space.
+    int multiple = 2;
+    while (from_space_.size_ + n > to_space_.size_ * multiple) {
+      multiple *= 2;
+    }
+    // log("=== FORCED by multiple of %d", multiple);
+
+    to_space_.Free();
+    to_space_.Init(to_space_.size_ * multiple);
+
+    Collect();
+#if GC_DEBUG
+    num_forced_growths_++;
+#endif
+
+    char* p = free_;
+    free_ += n;
 #if GC_DEBUG
     num_live_objs_++;
 #endif
-
     return p;
+  }
+
+  void Swap() {
+    // Swap spaces for next collection.
+    char* tmp = from_space_.begin_;
+    from_space_.begin_ = to_space_.begin_;
+    to_space_.begin_ = tmp;
+
+    int tmp2 = from_space_.size_;
+    from_space_.size_ = to_space_.size_;
+    to_space_.size_ = tmp2;
   }
 
   void PushRoot(Obj** p) {
@@ -253,7 +264,7 @@ class Heap {
   Obj* Relocate(Obj* obj);
 
   // mutates free_ and other variables
-  void Collect(bool must_grow);
+  void Collect();
 
 #if GC_DEBUG
   void Report() {
@@ -269,13 +280,11 @@ class Heap {
   }
 #endif
 
-  Space from_space_;
-  Space to_space_;
+  Space from_space_;  // space we allocate from
+  Space to_space_;    // space that the collector copies to
+
+  char* free_;   // next place to allocate, from_space_ <= free_ < limit_
   char* limit_;  // end of space we're allocating from
-
-  char* free_;  // next place to allocate, from_space_ <= free_ < limit_
-
-  bool grew_;  // did the TO SPACE grow on the last collection?
 
   // Stack roots.  The obvious data structure is a linked list, but an array
   // has better locality.

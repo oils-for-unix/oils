@@ -337,13 +337,13 @@ TEST fixed_trace_test() {
 
   ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
-  gHeap.Collect(false);
+  gHeap.Collect();
   ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
   // remove last reference
   line->end_ = nullptr;
 
-  gHeap.Collect(false);
+  gHeap.Collect();
   ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
 
   PASS();
@@ -361,7 +361,7 @@ TEST slab_trace_test() {
     ints->append(3);
     ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
   }
-  gHeap.Collect(false);
+  gHeap.Collect();
   ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
 
   // List of strings
@@ -378,12 +378,12 @@ TEST slab_trace_test() {
 
   // -1: remove reference to "bar"
   strings->set(1, nullptr);
-  gHeap.Collect(false);
+  gHeap.Collect();
   ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
   // -1: set to GLOBAL instance.  Remove reference to "yo".
   strings->set(0, str4);
-  gHeap.Collect(false);
+  gHeap.Collect();
   ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
 
   PASS();
@@ -397,7 +397,7 @@ TEST global_trace_test() {
   Local<Str> l4 = str4;
   ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
 
-  gHeap.Collect(false);
+  gHeap.Collect();
   ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
 
   // Heap reference to global
@@ -414,7 +414,7 @@ TEST global_trace_test() {
   ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
 
   // Not after GC either
-  gHeap.Collect(false);
+  gHeap.Collect();
   ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
 
   PASS();
