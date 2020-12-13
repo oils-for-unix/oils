@@ -335,7 +335,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   assert(len(old) == 1);  // Restriction that Oil code is OK with
 
   Str* self = this;       // must be a root!
-  Str* result = nullptr;  // ditto
+  Str* result = nullptr;  // may not need to be a root, but make it robust 
 
   // log("  self BEFORE %p", self);
   StackRoots _roots({&self, &old, &new_str, &result});
@@ -430,6 +430,11 @@ List<Str*>* Str::split(Str* sep) {
 }
 
 Str* Str::join(List<Str*>* items) {
+  Str* self = this;       // must be a root!
+  Str* result = nullptr;  // may not need to be a root, but make it robust 
+
+  StackRoots _roots({&self, &result, &items});
+
   int result_len = 0;
   int num_parts = len(items);
   if (num_parts == 0) {  // " ".join([]) == ""
@@ -438,14 +443,14 @@ Str* Str::join(List<Str*>* items) {
   for (int i = 0; i < num_parts; ++i) {
     result_len += len(items->index(i));
   }
-  int sep_len = len(this);
+  int sep_len = len(self);
   // add length of all the separators
   result_len += sep_len * (num_parts - 1);
 
   // log("len: %d", len);
   // log("v.size(): %d", v.size());
 
-  Str* result = NewStr(result_len);
+  result = NewStr(result_len);
   char* p_result = result->data_;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
@@ -457,7 +462,10 @@ Str* Str::join(List<Str*>* items) {
     }
 
     int n = len(items->index(i));
-    // log("n: %d", n);
+    if (n < 0) {
+      log("n: %d", n);
+      assert(0);
+    }
     memcpy(p_result, items->index(i)->data_, n);  // copy the list item
     p_result += n;
   }

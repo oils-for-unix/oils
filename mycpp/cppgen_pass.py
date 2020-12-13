@@ -1352,6 +1352,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if isinstance(item_type, Instance):
               self.write_ind('  %s ', get_c_type(item_type))
+              # TODO(StackRoots): for ch in 'abc'
               self.accept(index_expr)
               self.write(' = it.Value();\n')
             
@@ -1614,6 +1615,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           else: 
             self.write(' = it.Value();\n')
 
+          # Register loop variable as a stack root.
+          self.write_ind('  StackRoots _for({&');
+          self.accept(index_expr)
+          self.write_ind('});\n')
+
         elif isinstance(item_type, TupleType):  # for x, y in pairs
           if over_dict:
             assert isinstance(o.index, TupleExpr), o.index
@@ -1624,6 +1630,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             key_type = get_c_type(item_type.items[0])
             val_type = get_c_type(item_type.items[1])
 
+            # TODO(StackRoots): k, v
             self.write_ind('  %s %s = it.Key();\n', key_type, index_items[0].name)
             self.write_ind('  %s %s = it.Value();\n', val_type, index_items[1].name)
 
@@ -1639,6 +1646,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             c_item_type = get_c_type(item_type)
 
             if isinstance(o.index, TupleExpr):
+              # TODO(StackRoots)
               temp_name = 'tup%d' % self.unique_id
               self.unique_id += 1
               self.write_ind('  %s %s = it.Value();\n', c_item_type, temp_name)
@@ -1651,6 +1659,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.indent -= 1
             else:
               self.write_ind('  %s %s = it.Value();\n', c_item_type, o.index.name)
+              #self.write_ind('  StackRoots _for(&%s)\n;', o.index.name)
 
         else:
           raise AssertionError('Unexpected type %s' % item_type)
@@ -2372,7 +2381,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               roots.append(lval_name)
           self.log('roots %s', roots)
 
-          # TODO: Also need function parameters
           if len(roots):
             self.write_ind('StackRoots _roots({');
             for i, r in enumerate(roots):

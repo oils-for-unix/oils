@@ -45,6 +45,25 @@ class StrPrinter:
         return data_.lazy_string('ascii', len_)
 
 
+class GcStrPrinter:
+    """Print gc_heap::Str type"""
+
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        # Unused because GDB in CLion doesn't want us to print past end of array?
+        len_ = self.val['obj_len_'] - 12 - 1
+
+        # This is a gdb.Value object
+        data_ = self.val['data_']
+        
+        # This only prints until first NUL, since we don't have the length.
+        # note: lazy_string() only prints the first char!
+        t = gdb.lookup_type('char*')
+        return data_.reinterpret_cast(t)
+
+
 class AsdlPrinter(object):
     """Print the variants of a particular ASDL sum type.
 
@@ -133,6 +152,10 @@ class TypeLookup(object):
       #print('target name %r' % target.name)
       #print('target tag %r' % target.tag)
 
+      if target.name == 'gc_heap::Str':
+          return GcStrPrinter(val)
+
+      # TODO: remove Str when we remove mylib.cc
       if target.name == 'Str':
           return StrPrinter(val)
 

@@ -64,7 +64,7 @@ build-examples() {
 test-examples() {
   ### Test all mycpp/examples
 
-  # crashes on 'loops'
+  # This works!
   # export GC=1
 
   cd $THIS_DIR
@@ -74,7 +74,7 @@ test-examples() {
 benchmark-examples() {
   ### Benchmark all mycpp/examples
 
-  # crashes on 'escape', which uses join()
+  # crashes on 'files', which uses BufWriter
   # export GC=1
 
   cd $THIS_DIR
