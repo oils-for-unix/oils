@@ -315,6 +315,11 @@ should-skip-benchmark() {
     (test_*)
       return 0  # nope, nothing interesting here
       ;;
+
+    (control_flow)
+      # TODO: fix 8191 exceptions problem, I think caused by Alloc<ParseError>
+      return 0
+      ;;
   esac
 
   should-skip $1  # return this

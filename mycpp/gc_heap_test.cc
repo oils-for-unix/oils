@@ -36,8 +36,6 @@ using gc_heap::RoundUp;
 // Variables
 using gc_heap::gHeap;
 
-#define COMMA ,
-
 // Hm we're getting a warning because these aren't plain old data?
 // https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
 // https://stackoverflow.com/questions/53850100/warning-offset-of-on-non-standard-layout-type-derivedclass
@@ -676,7 +674,8 @@ TEST field_mask_test() {
 TEST compile_time_masks_test() {
   // Note: These will be different for 32 bit
 
-  ASSERT_EQ(offsetof(List<int>, slab_), offsetof(gc_heap::_DummyList, slab_));
+  ASSERT_EQ(offsetof(List<int>, slab_),
+            offsetof(gc_heap::GlobalList<int COMMA 1>, slab_));
   // 0b 0000 0010
   ASSERT_EQ_FMT(0x0002, gc_heap::maskof_List(), "0x%x");
 

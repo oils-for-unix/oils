@@ -718,9 +718,20 @@ constexpr int maskbit(int offset) {
   return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
 }
 
-//
-// List<T>
-//
+  //
+  // List<T>
+  //
+
+  // Silly definition for passing types like GlobalList<T, N> and initializer
+  // lists like {1, 2, 3} to macros
+
+#define COMMA ,
+
+// Type that is layout-compatible with List (unit tests assert this).  Two
+// purposes:
+// - To make globals of "plain old data" at compile-time, not at startup time.
+//   This can't be done with subclasses of Obj.
+// - To avoid invalid-offsetof warnings when computing GC masks.
 
 template <typename T, int N>
 class GlobalList {
@@ -739,19 +750,9 @@ class GlobalList {
       N,           N, &_slab_##name};                                 \
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
-// Type that is layout-compatible with List to avoid invalid-offsetof warnings.
-// Unit tests assert that they have the same layout.
-class _DummyList {
- public:
-  OBJ_HEADER()
-  int len_;
-  int capacity_;
-  void* slab_;
-};
-
 // A list has one Slab pointer which we need to follow.
 constexpr uint16_t maskof_List() {
-  return maskbit(offsetof(_DummyList, slab_));
+  return maskbit(offsetof(GlobalList<int COMMA 1>, slab_));
 }
 
 template <typename T>

@@ -67,6 +67,10 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
+
+  # BUG: we only get 8191 exceptions instead of 100,000?  I think this must be
+  # because of 'throw Alloc<ParseError>?  TODO: Should exceptions throw by
+  # value?
   n = 100000
 
   # C++ exceptions are slower than Python!  Woah.
