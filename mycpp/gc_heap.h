@@ -174,17 +174,21 @@ class Heap {
 #endif
   }
 
+  void* Bump(int n) {
+    char* p = free_;
+    free_ += n;
+#if GC_DEBUG
+    num_live_objs_++;
+#endif
+    return p;
+  }
+
   void* Allocate(int num_bytes) {
     int n = aligned(num_bytes);
     // log("n = %d, p = %p", n, p);
 
     if (free_ + n <= limit_) {  // Common case: we have space for it.
-      char* p = free_;
-      free_ += n;
-#if GC_DEBUG
-      num_live_objs_++;
-#endif
-      return p;
+      return Bump(n);
     }
 
 #if GC_DEBUG
@@ -192,30 +196,17 @@ class Heap {
       //    space_size_);
 #endif
 
-    Collect();
-    // Three cases at the end of Collect:
-    // - We have more than 20% free space, and we didn't grow.
-    // - We have less than 20% free space, but more than zero, and we grew.
-    //   A future collection will grow (or it may never happen).
-    // - NOTHING was collected.  We have zero space, and we need to collect
-    //   NOW with must_grow=true.  This is unlikely.
+    Collect();  // Try to free some space.
 
     // log("after GC: from begin %p, free_ %p,  n %d, limit_ %p",
     //    from_space_.begin_, free_, n, limit_);
 
-    if (free_ + n <= limit_) {  // After collection, we have space for it.
-      char* p = free_;
-      free_ += n;
-#if GC_DEBUG
-      num_live_objs_++;
-#endif
-      return p;
+    if (free_ + n <= limit_) {  // Now we have space for it.
+      return Bump(n);
     }
 
-    // After collection, it's STILL too small.  So resize to_space_ to ENSURE
-    // that allocation will succeed, copy the heap to it, then allocate the
-    // object.
-    // Ensure there will be enough space.
+    // It's STILL too small.  Resize to_space_ to ENSURE that allocation will
+    // succeed, copy the heap to it, then allocate the object.
     int multiple = 2;
     while (from_space_.size_ + n > to_space_.size_ * multiple) {
       multiple *= 2;
@@ -230,12 +221,7 @@ class Heap {
     num_forced_growths_++;
 #endif
 
-    char* p = free_;
-    free_ += n;
-#if GC_DEBUG
-    num_live_objs_++;
-#endif
-    return p;
+    return Bump(n);
   }
 
   void Swap() {

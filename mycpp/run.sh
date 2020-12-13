@@ -259,6 +259,10 @@ gen-ctags() {
 }
 
 gc-examples() {
+  BENCHMARK=1 GC=1 example-both cartesian
+  #GC=1 example-both cartesian
+  return
+
   # ASAN failure on Heap::Collect()
   GC=1 example-both loops
   return
@@ -284,10 +288,6 @@ gc-examples() {
     GC=1 example-both test_hoist
     GC=1 example-both tuple_return_value
   fi
-  return
-
-  # FAILS with a small heap.  Some List invaraitsn?
-  BENCHMARK=1 GC=1 example-both cartesian
   return
 
   # %5d doesn't work in either mylib or my_runtime

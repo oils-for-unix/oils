@@ -111,7 +111,7 @@ void Heap::Collect() {
       // i.e. for other objects that are pointing to it
       Obj* new_location = Relocate(root);
 
-      log("    new location %p", new_location);
+      // log("    new location %p", new_location);
 
       // This update is for the "double indirection", so future accesses to a
       // local variable use the new location
@@ -130,9 +130,9 @@ void Heap::Collect() {
           Obj* child = fixed->children_[i];
           // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
           if (child) {
-            log("  fixed: child %d from %p", i, child);
+            // log("  fixed: child %d from %p", i, child);
             fixed->children_[i] = Relocate(child);
-            log("  to %p", fixed->children_[i]);
+            // log("  to %p", fixed->children_[i]);
           }
         }
       }
