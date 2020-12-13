@@ -1,5 +1,9 @@
 # examples.sh: Hooks for specific files
 
+asdl-gen() {
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
+}
+
 # Type check, with some relaxations for Oil
 typecheck-oil() {
   local name=$1
@@ -60,6 +64,7 @@ translate-parse() {
   # Need this otherwise we get type errors
   codegen-parse
 
+  # TODO: qsn_qsn.h is incompatible with GC=1
   local snippet='
 
 #include "expr_asdl.h"

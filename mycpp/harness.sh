@@ -297,6 +297,12 @@ should-skip() {
       ;;
 
     (strings)  # '%5d' doesn't work yet.  TODO: fix this.
+      return 0
+      ;;
+
+    (parse)
+      # TODO. expr.asdl when GC=1
+      # qsn_qsn.h is incompatible
       return 0;
       ;;
   esac

@@ -461,6 +461,8 @@ inline int RoundUp(int n) {
 }
 
 const int kZeroMask = 0;  // for types with no pointers
+// no obj_len_ computed for global List/Slab/Dict
+const int kNoObjLen = 0x0eadbeef;
 
 // Why do we need this macro instead of using inheritance?
 // - Because ASDL uses multiple inheritance for first class variants, but we
@@ -533,6 +535,18 @@ class Slab : public Obj {
     InitSlabCell<T>(this);
   }
   T items_[1];  // variable length
+};
+
+template <typename T, int N>
+class GlobalSlab {
+  // A template type with the same layout as Str with length N-1 (which needs a
+  // buffer of size N).  For initializing global constant instances.
+ public:
+  OBJ_HEADER()
+
+  T items_[N];
+
+  DISALLOW_COPY_AND_ASSIGN(GlobalSlab)
 };
 
 // Note: entries will be zero'd because the Heap is zero'd.
@@ -651,14 +665,10 @@ extern Str* kEmptyString;
       val};                                   \
   Str* name = reinterpret_cast<Str*>(&_##name);
 
-// Note: sizeof("foo") == 4, for the NUL terminator.
-
-// Hm we're getting a warning because these aren't plain old data?
-// https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
-// https://stackoverflow.com/questions/53850100/warning-offset-of-on-non-standard-layout-type-derivedclass
-
-// The structures must be layout compatible!  Protect against typos.
-static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_), "oops");
+// Notes:
+// - sizeof("foo") == 4, for the NUL terminator.
+// - gc_heap_test.cc has a static_assert that GlobalStr matches Str.  We don't
+// put it here because it triggers -Winvalid-offsetof
 
 //
 // String "Constructors".  We need these because of the "flexible array"
@@ -711,6 +721,23 @@ constexpr int maskbit(int offset) {
 //
 // List<T>
 //
+
+template <typename T, int N>
+class GlobalList {
+ public:
+  OBJ_HEADER()
+  int len_;
+  int capacity_;
+  GlobalSlab<T, N>* slab_;
+};
+
+#define GLOBAL_LIST(T, N, name, array)                                \
+  gc_heap::GlobalSlab<T, N> _slab_##name = {                          \
+      Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen, array}; \
+  gc_heap::GlobalList<T, N> _list_##name = {                          \
+      Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen,         \
+      N,           N, &_slab_##name};                                 \
+  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
 // Type that is layout-compatible with List to avoid invalid-offsetof warnings.
 // Unit tests assert that they have the same layout.

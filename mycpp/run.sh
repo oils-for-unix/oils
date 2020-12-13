@@ -120,10 +120,6 @@ translate-ordered() {
   wc -l _gen/*
 }
 
-asdl-gen() {
-  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
-}
-
 # This is the one installed from PIP
 #mypy() { ~/.local/bin/mypy "$@"; }
 
@@ -259,14 +255,6 @@ gen-ctags() {
 }
 
 gc-examples() {
-  BENCHMARK=1 GC=1 example-both cartesian
-  #GC=1 example-both cartesian
-  return
-
-  # ASAN failure on Heap::Collect()
-  GC=1 example-both loops
-  return
-
   if true; then
     # these work
     BENCHMARK=1 GC=1 example-both test_switch asan
@@ -288,6 +276,14 @@ gc-examples() {
     GC=1 example-both test_hoist
     GC=1 example-both tuple_return_value
   fi
+  return
+
+  # GLOBAL List() can't do NewSlab!  Duh.
+  GC=1 example-both loops
+  return
+
+  BENCHMARK=1 GC=1 example-both cartesian
+  #GC=1 example-both cartesian
   return
 
   # %5d doesn't work in either mylib or my_runtime

@@ -36,6 +36,28 @@ using gc_heap::RoundUp;
 // Variables
 using gc_heap::gHeap;
 
+#define COMMA ,
+
+// Hm we're getting a warning because these aren't plain old data?
+// https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
+// https://stackoverflow.com/questions/53850100/warning-offset-of-on-non-standard-layout-type-derivedclass
+
+// The structures must be layout compatible!  Protect against typos.
+static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_),
+              "Str and GlobalStr should be consistent");
+
+static_assert(offsetof(Slab<int>, items_) ==
+                  offsetof(gc_heap::GlobalSlab<int COMMA 1>, items_),
+              "Slab and GlobalSlab should be consistent");
+
+static_assert(kSlabHeaderSize ==
+                  offsetof(gc_heap::GlobalSlab<int COMMA 1>, items_),
+              "kSlabHeaderSize and GlobalSlab should be consistent");
+
+static_assert(offsetof(List<int>, slab_) ==
+                  offsetof(gc_heap::GlobalList<int COMMA 1>, slab_),
+              "List and GlobalList should be consistent");
+
 // 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
 const int kInitialSize = 1 << 20;
 
@@ -199,6 +221,40 @@ TEST list_test() {
   ASSERT_EQ(2, len(list2));
   ASSERT_EQ(str1, list2->index(0));
   ASSERT_EQ(str2, list2->index(1));
+
+  PASS();
+}
+
+// Manual initialization.  This helped me write the GLOBAL_LIST() macro.
+gc_heap::GlobalSlab<int, 3> _gSlab = {
+    Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen, {5, 6, 7}};
+gc_heap::GlobalList<int, 3> _gList = {
+    Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen,
+    3,  // len
+    3,  // capacity
+    &_gSlab};
+List<int>* gList = reinterpret_cast<List<int>*>(&_gList);
+
+GLOBAL_LIST(int, 4, gList2, {5 COMMA 4 COMMA 3 COMMA 2});
+
+GLOBAL_STR(gFoo, "foo");
+GLOBAL_LIST(Str*, 2, gList3, {gFoo COMMA gFoo});
+
+TEST global_list_test() {
+  ASSERT_EQ(3, len(gList));
+  ASSERT_EQ_FMT(5, gList->index(0), "%d");
+  ASSERT_EQ_FMT(6, gList->index(1), "%d");
+  ASSERT_EQ_FMT(7, gList->index(2), "%d");
+
+  ASSERT_EQ(4, len(gList2));
+  ASSERT_EQ_FMT(5, gList2->index(0), "%d");
+  ASSERT_EQ_FMT(4, gList2->index(1), "%d");
+  ASSERT_EQ_FMT(3, gList2->index(2), "%d");
+  ASSERT_EQ_FMT(2, gList2->index(3), "%d");
+
+  ASSERT_EQ(2, len(gList3));
+  ASSERT(str_equals(gFoo, gList3->index(0)));
+  ASSERT(str_equals(gFoo, gList3->index(1)));
 
   PASS();
 }
@@ -627,7 +683,6 @@ TEST compile_time_masks_test() {
   // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
   // There is a trick with __VA_ARGS__ I don't understand.
 
-#define COMMA ,
   ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, index_),
             offsetof(gc_heap::_DummyDict, index_));
   ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, keys_),
@@ -653,6 +708,7 @@ int main(int argc, char** argv) {
   RUN_TEST(roundup_test);
   RUN_TEST(str_test);
   RUN_TEST(list_test);
+  RUN_TEST(global_list_test);
   RUN_TEST(dict_test);
 
   // TODO: Shouldn't use Local
