@@ -975,11 +975,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write(op_str)
         self.accept(o.expr)
 
-    def _WriteListElements(self, o):
+    def _WriteListElements(self, o, sep=', '):
+        # sep may be 'COMMA' for a macro
         self.write('{')
         for i, item in enumerate(o.items):
             if i != 0:
-                self.write(', ')
+                self.write(sep)
             self.accept(item)
         self.write('}')
 
@@ -1215,19 +1216,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             item_type = lval_type.args[0]
             item_c_type = get_c_type(item_type)
 
-            # Create a value first
-
-            temp_name = 'glist%d' % self.unique_id
-            self.unique_id += 1
-
-            self.write('List<%s> %s = ', item_c_type, temp_name)
-            self._WriteListElements(o.rvalue)
-            self.write(';\n')
-
             # Then a pointer to it
-            self.write('List<%s>* %s = &%s;\n', item_c_type, lval.name,
-                temp_name)
+            self.write('GLOBAL_LIST(%s, %d, %s, ',
+                item_c_type, len(o.rvalue.items), lval.name)
 
+            # TODO: Assert that every item is a constant?
+            # COMMA for macro
+            self._WriteListElements(o.rvalue, sep=' COMMA ')
+
+            self.write(');\n')
             return
 
           if isinstance(o.rvalue, DictExpr):

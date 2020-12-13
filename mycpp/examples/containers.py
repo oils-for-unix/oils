@@ -10,6 +10,13 @@ from mylib import log
 from typing import List, Tuple, Dict, Optional
 
 
+mystr = 'foo'  # type: str
+mylist = [1, 2]  # type: List[int]
+mylist2 = ['spam', 'eggs']  # type: List[str]
+
+#mydict = {'a': 42, 'b': 43}  # type: Dict[str, int]
+
+
 def ListDemo():
   # type: () -> None
   intlist = []  # type: List[int]
