@@ -10,11 +10,11 @@ from mylib import log
 from typing import List, Tuple, Dict, Optional
 
 
-mystr = 'foo'  # type: str
-mylist = [1, 2]  # type: List[int]
-mylist2 = ['spam', 'eggs']  # type: List[str]
+gstr = 'foo'  # type: str
+glist_int = [1, 2]  # type: List[int]
+glist_str = ['spam', 'eggs']  # type: List[str]
 
-#mydict = {'a': 42, 'b': 43}  # type: Dict[str, int]
+gdict = {'a': 42, 'b': 43}  # type: Dict[str, int]
 
 
 def ListDemo():
@@ -103,6 +103,8 @@ def TupleDemo():
   else:
     print('no')
 
+  log("glist_int = %d", len(glist_int))
+  log("glist_str = %d", len(glist_str))
 
 
 def DictDemo():
@@ -120,6 +122,9 @@ def DictDemo():
 
     del d['foo']
     log('len(d) = %d', len(d))
+
+  # TODO: fix this
+  # log("gdict = %d", len(gdict))
 
 
 def run_tests():

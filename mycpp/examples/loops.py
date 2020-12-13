@@ -27,6 +27,11 @@ def TestListComp():
   log('--- list comprehension changing type')
 
   z = ['[%d]' % i for i in x[1:-1]]
+
+  # I think this rewrite might be necessary?
+  #tmp1 = x[1:-1]
+  #z = ['[%d]' % i for i in tmp1]
+
   if mylib.PYTHON:
     #log("z = %s", z)
     pass

@@ -796,12 +796,15 @@ class List : public gc_heap::Obj {
 
   // Implements L[i]
   T index(int i) {
+    if (i < 0) {
+      i += len_;
+    }
     if (i < len_) {
       return slab_->items_[i];
-    } else {
-      log("i = %d, len_ = %d", i, len_);
-      assert(0);  // Out of bounds
     }
+
+    log("i = %d, len_ = %d", i, len_);
+    assert(0);  // Out of bounds
   }
 
   // Implements L[i] = item
