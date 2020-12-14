@@ -48,6 +48,14 @@ TEST int_to_str_test() {
   PASS();
 }
 
+TEST writer_test() {
+  // Demonstrate bug with inheritance
+  log("obj obj_len %d", offsetof(gc_heap::Obj, obj_len_));
+  log("buf obj_len %d", offsetof(mylib::BufWriter, obj_len_));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -57,6 +65,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(split_once_test);
   RUN_TEST(int_to_str_test);
+  RUN_TEST(writer_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

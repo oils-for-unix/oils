@@ -91,8 +91,13 @@ void BufWriter::write(Str* s) {
 
   // BUG: This is quadratic!
 
-  // TODO: change this to append to a list?
-  // and then getvalue() does a join() on it?
+  // TODO:
+  //
+  // - add capacity_, and double it?  start at 32 bytes -> 64 -> 128
+  //   - only realloc by doublings?
+  // - or change this to append to a list?  and then getvalue() does a join()
+  // on it?
+  // - DEALLOCATE.  mylib2 doesn't leak!
 
   // data_ is nullptr at first
   data_ = static_cast<char*>(realloc(data_, len_ + 1));

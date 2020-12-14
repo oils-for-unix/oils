@@ -695,6 +695,101 @@ TEST compile_time_masks_test() {
   PASS();
 }
 
+class Base2 {
+ public:
+  virtual int Method() {
+    return 1;
+  }
+  int member_ = 255;
+};
+
+class Derived2 : public Base2 {
+ public:
+  virtual int Method() {
+    return 2;
+  }
+};
+
+// 8 byte vtable, obj header, then member_
+class Base3 : public gc_heap::Obj {
+ public:
+  Base3(int obj_len)
+      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, obj_len) {
+  }
+  Base3() : Base3(sizeof(Base3)) {
+  }
+
+  virtual int Method() {
+    return 3;
+  }
+  int member_ = 254;
+};
+
+// 8 byte vtable, obj header, then member_, then derived_member_
+class Derived3 : public Base3 {
+ public:
+  Derived3() : Base3(sizeof(Derived3)) {
+  }
+  virtual int Method() {
+    return 4;
+  }
+
+  int derived_member_ = 253;
+  int derived_member2_ = 252;
+};
+
+void ShowObj(gc_heap::Obj* obj) {
+  log("obj->heap_tag_ %d", obj->heap_tag_);
+  log("obj->obj_len_ %d", obj->obj_len_);
+}
+
+TEST endian_test() {
+  Derived2 d;
+  Base2* b = &d;
+  log("method = %d", b->Method());
+
+  unsigned char* c = reinterpret_cast<unsigned char*>(b);
+  log("c[0] = %x", c[0]);
+  log("c[1] = %x", c[1]);
+  log("c[2] = %x", c[2]);
+  log("c[8] = %x", c[8]);  // this is the member
+
+  Derived3 d3;
+  Base3* b3 = &d3;
+  log("method = %d", b3->Method());
+
+  Base3 base3;
+
+  log("Base3 obj_len_ = %d", base3.obj_len_);
+  log("derived b3->obj_len_ = %d", b3->obj_len_);  // derived length
+  log("sizeof(d3) = %d", sizeof(d3));
+
+  unsigned char* c3 = reinterpret_cast<unsigned char*>(b3);
+  log("c3[0] = %x", c3[0]);
+  log("c3[1] = %x", c3[1]);
+  log("c3[2] = %x", c3[2]);
+  log("c3[8] = %x", c3[8]);  // this is the Obj header
+
+  log("c3[12] = %x", c3[12]);  // this is padding?   gah.
+
+  log("c3[16] = %x", c3[16]);  // 0xfe is member_
+  log("c3[20] = %x", c3[20]);  // 0xfd is derived_member_
+
+  // Note: if static casting, then it doesn't include the vtable pointer!  Must
+  // reinterpret_cast!
+  gc_heap::Obj* obj = reinterpret_cast<gc_heap::Obj*>(b3);
+
+  ShowObj(obj);
+  if (obj->heap_tag_ % 2 == 0) {  // vtable pointer, NOT A TAG!
+    gc_heap::Obj* header =
+        reinterpret_cast<Obj*>(reinterpret_cast<char*>(obj) + sizeof(void*));
+    // Now we have the right GC info.
+    ShowObj(header);
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -720,6 +815,7 @@ int main(int argc, char** argv) {
   RUN_TEST(stack_roots_test);
   RUN_TEST(field_mask_test);
   RUN_TEST(compile_time_masks_test);
+  RUN_TEST(endian_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

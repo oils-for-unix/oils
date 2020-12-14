@@ -103,8 +103,11 @@ inline LineReader* open(Str* path) {
   return new CFileLineReader(f);
 }
 
-class Writer {
+class Writer : public gc_heap::Obj {
  public:
+  Writer(uint8_t heap_tag, uint16_t field_mask, int obj_len)
+      : gc_heap::Obj(heap_tag, field_mask, obj_len) {
+  }
   virtual void write(Str* s) = 0;
   virtual void flush() = 0;
   virtual bool isatty() = 0;
@@ -112,7 +115,10 @@ class Writer {
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : data_(nullptr), len_(0) {
+  BufWriter()
+      : Writer(Tag::FixedSize, gc_heap::kZeroMask, sizeof(BufWriter)),
+        data_(nullptr),
+        len_(0) {
   }
   virtual void write(Str* s) override;
   virtual void flush() override {
@@ -164,7 +170,8 @@ class BufWriter : public Writer {
 // Wrap a FILE*
 class CFileWriter : public Writer {
  public:
-  explicit CFileWriter(FILE* f) : f_(f) {
+  explicit CFileWriter(FILE* f)
+      : Writer(Tag::FixedSize, gc_heap::kZeroMask, sizeof(BufWriter)), f_(f) {
   }
   virtual void write(Str* s) override;
   virtual void flush() override;

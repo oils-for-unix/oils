@@ -335,7 +335,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   assert(len(old) == 1);  // Restriction that Oil code is OK with
 
   Str* self = this;       // must be a root!
-  Str* result = nullptr;  // may not need to be a root, but make it robust 
+  Str* result = nullptr;  // may not need to be a root, but make it robust
 
   // log("  self BEFORE %p", self);
   StackRoots _roots({&self, &old, &new_str, &result});
@@ -431,7 +431,7 @@ List<Str*>* Str::split(Str* sep) {
 
 Str* Str::join(List<Str*>* items) {
   Str* self = this;       // must be a root!
-  Str* result = nullptr;  // may not need to be a root, but make it robust 
+  Str* result = nullptr;  // may not need to be a root, but make it robust
 
   StackRoots _roots({&self, &result, &items});
 

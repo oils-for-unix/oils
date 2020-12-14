@@ -93,14 +93,15 @@
 // - Dict: 40 bytes: I don't think it optimizes
 // - Doesn't apply to Str because it's immutable: 16 bytes + string length.
 
-// TODO: Reconcile these with ASDL tags.  Those are all FixedSize, so I guess
-// that should be a high bit?  0xC000  3 && Tag::FixedSize
+// These are all odd to distinguish them from vtable pointers.
+// On either big or little endian machines, I believe the first byte of the 4
+// or 8 byte pointer should be even.
 namespace Tag {
 const int Forwarded = 1;  // For the Cheney algorithm.
-const int Global = 2;     // Neither copy nor scan.
-const int Opaque = 3;     // Copy but don't scan.  List<int> and Str
-const int FixedSize = 4;  // Fixed size headers: consult field_mask_
-const int Scanned = 5;    // Copy AND scan for non-NULL pointers.
+const int Global = 3;     // Neither copy nor scan.
+const int Opaque = 5;     // Copy but don't scan.  List<int> and Str
+const int FixedSize = 7;  // Fixed size headers: consult field_mask_
+const int Scanned = 9;    // Copy AND scan for non-NULL pointers.
 }  // namespace Tag
 
 namespace gc_heap {
