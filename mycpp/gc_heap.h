@@ -248,7 +248,7 @@ class Heap {
     // log("PopRoot %d", roots_top_);
   }
 
-  Obj* Relocate(Obj* obj);
+  Obj* Relocate(Obj* obj, Obj* header);
 
   // mutates free_ and other variables
   void Collect();
@@ -479,6 +479,14 @@ const int kNoObjLen = 0x0eadbeef;
 //   TODO: with a limitation of ~15 fields, we can encode obj_len_ in
 //   field_mask_, and save space on many ASDL types.
 //   And we can sort integers BEFORE pointers.
+
+// TODO: ./configure could detect big or little endian, and then flip the
+// fields in OBJ_HEADER?
+//
+// https://stackoverflow.com/questions/2100331/c-macro-definition-to-determine-big-endian-or-little-endian-machine
+//
+// Because we want to do (obj->heap_tag_ & 1 == 0) to distinguish it from
+// vtable pointer.  We assume low bits of a pointer are 0 but not high bits.
 
 #define OBJ_HEADER()    \
   uint8_t heap_tag_;    \

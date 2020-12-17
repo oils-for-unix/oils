@@ -21,6 +21,7 @@ using gc_heap::List;
 using gc_heap::Local;
 using gc_heap::NewStr;
 using gc_heap::Slab;
+using gc_heap::StackRoots;
 using gc_heap::Str;
 
 // Constants
@@ -695,28 +696,13 @@ TEST compile_time_masks_test() {
   PASS();
 }
 
-class Base2 {
+// 8 byte vtable, 8 byte Obj header, then member_
+class BaseObj : public gc_heap::Obj {
  public:
-  virtual int Method() {
-    return 1;
+  BaseObj(int obj_len)
+      : gc_heap::Obj(Tag::Opaque, gc_heap::kZeroMask, obj_len) {
   }
-  int member_ = 255;
-};
-
-class Derived2 : public Base2 {
- public:
-  virtual int Method() {
-    return 2;
-  }
-};
-
-// 8 byte vtable, obj header, then member_
-class Base3 : public gc_heap::Obj {
- public:
-  Base3(int obj_len)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, obj_len) {
-  }
-  Base3() : Base3(sizeof(Base3)) {
+  BaseObj() : BaseObj(sizeof(BaseObj)) {
   }
 
   virtual int Method() {
@@ -725,10 +711,10 @@ class Base3 : public gc_heap::Obj {
   int member_ = 254;
 };
 
-// 8 byte vtable, obj header, then member_, then derived_member_
-class Derived3 : public Base3 {
+// 8 byte vtable, 8 byte Obj header, then member_, then derived_member_
+class DerivedObj : public BaseObj {
  public:
-  Derived3() : Base3(sizeof(Derived3)) {
+  DerivedObj() : BaseObj(sizeof(DerivedObj)) {
   }
   virtual int Method() {
     return 4;
@@ -743,24 +729,14 @@ void ShowObj(gc_heap::Obj* obj) {
   log("obj->obj_len_ %d", obj->obj_len_);
 }
 
-TEST endian_test() {
-  Derived2 d;
-  Base2* b = &d;
-  log("method = %d", b->Method());
-
-  unsigned char* c = reinterpret_cast<unsigned char*>(b);
-  log("c[0] = %x", c[0]);
-  log("c[1] = %x", c[1]);
-  log("c[2] = %x", c[2]);
-  log("c[8] = %x", c[8]);  // this is the member
-
-  Derived3 d3;
-  Base3* b3 = &d3;
+TEST vtable_test() {
+  DerivedObj d3;
+  BaseObj* b3 = &d3;
   log("method = %d", b3->Method());
 
-  Base3 base3;
+  BaseObj base3;
 
-  log("Base3 obj_len_ = %d", base3.obj_len_);
+  log("BaseObj obj_len_ = %d", base3.obj_len_);
   log("derived b3->obj_len_ = %d", b3->obj_len_);  // derived length
   log("sizeof(d3) = %d", sizeof(d3));
 
@@ -780,12 +756,41 @@ TEST endian_test() {
   gc_heap::Obj* obj = reinterpret_cast<gc_heap::Obj*>(b3);
 
   ShowObj(obj);
-  if (obj->heap_tag_ % 2 == 0) {  // vtable pointer, NOT A TAG!
+  if ((obj->heap_tag_ & 0x1) == 0) {  // vtable pointer, NOT A TAG!
     gc_heap::Obj* header =
         reinterpret_cast<Obj*>(reinterpret_cast<char*>(obj) + sizeof(void*));
     // Now we have the right GC info.
     ShowObj(header);
+
+    ASSERT_EQ_FMT(Tag::Opaque, header->heap_tag_, "%d");
+    ASSERT_EQ_FMT(0, header->field_mask_, "%d");
+    ASSERT_EQ_FMT(sizeof(DerivedObj), header->obj_len_, "%d");
+  } else {
+    ASSERT(false);  // shouldn't get here
   }
+
+  PASS();
+}
+
+TEST inheritance_test() {
+  gHeap.Init(kInitialSize);  // reset the whole thing
+
+  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+
+  DerivedObj* obj = nullptr;
+  StackRoots _roots({&obj});
+
+  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  gHeap.Collect();
+  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+
+  obj = Alloc<DerivedObj>();
+  ASSERT_EQ_FMT(253, obj->derived_member_, "%d");
+  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+
+  gHeap.Collect();
+  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+  ASSERT_EQ_FMT(253, obj->derived_member_, "%d");
 
   PASS();
 }
@@ -815,7 +820,8 @@ int main(int argc, char** argv) {
   RUN_TEST(stack_roots_test);
   RUN_TEST(field_mask_test);
   RUN_TEST(compile_time_masks_test);
-  RUN_TEST(endian_test);
+  RUN_TEST(vtable_test);
+  RUN_TEST(inheritance_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
