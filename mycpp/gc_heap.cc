@@ -44,6 +44,10 @@ Obj* Heap::Relocate(Obj* obj, Obj* header) {
   }
 
   default: {
+    assert(header->heap_tag_ == Tag::Opaque ||
+           header->heap_tag_ == Tag::FixedSize ||
+           header->heap_tag_ == Tag::Scanned);
+
     auto new_location = reinterpret_cast<Obj*>(free_);
     // Note: if we wanted to save space on ASDL records, we could calculate
     // their length from the field_mask here.  How much would it slow down GC?
@@ -137,8 +141,9 @@ void Heap::Collect() {
           Obj* child = fixed->children_[i];
           // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
           if (child) {
+            auto child_header = ObjHeader(child);
             // log("  fixed: child %d from %p", i, child);
-            fixed->children_[i] = Relocate(child, header);
+            fixed->children_[i] = Relocate(child, child_header);
             // log("  to %p", fixed->children_[i]);
           }
         }
@@ -146,15 +151,22 @@ void Heap::Collect() {
       break;
     }
     case Tag::Scanned: {
+      assert(header == obj);  // no inheritance
       auto slab = reinterpret_cast<Slab<void*>*>(header);
       int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
       for (int i = 0; i < n; ++i) {
         Obj* child = reinterpret_cast<Obj*>(slab->items_[i]);
         if (child) {  // note: List<> may have nullptr; Dict is sparse
-          slab->items_[i] = Relocate(child, header);
+          auto child_header = ObjHeader(child);
+          slab->items_[i] = Relocate(child, child_header);
         }
       }
       break;
+    }
+    default: {
+      assert(header->heap_tag_ == Tag::Forwarded ||
+             header->heap_tag_ == Tag::Global ||
+             header->heap_tag_ == Tag::Opaque);
     }
 
       // other tags like Tag::Opaque have no children

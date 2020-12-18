@@ -293,6 +293,12 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
 class StrIter {
  public:
   explicit StrIter(Str* s) : s_(s), i_(0), len_(len(s)) {
+    // We need this because StrIter is directly on the stack, and s_ could be
+    // moved during iteration.
+    gc_heap::gHeap.PushRoot(reinterpret_cast<gc_heap::Obj**>(&s_));
+  }
+  ~StrIter() {
+    gc_heap::gHeap.PopRoot();
   }
   void Next() {
     i_++;
@@ -319,6 +325,12 @@ template <class T>
 class ListIter {
  public:
   explicit ListIter(List<T>* L) : L_(L), i_(0) {
+    // We need this because ListIter is directly on the stack, and L_ could be
+    // moved during iteration.
+    gc_heap::gHeap.PushRoot(reinterpret_cast<gc_heap::Obj**>(&L_));
+  }
+  ~ListIter() {
+    gc_heap::gHeap.PopRoot();
   }
   void Next() {
     i_++;

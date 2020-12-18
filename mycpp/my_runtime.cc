@@ -82,10 +82,14 @@ int to_int(Str* s, int base) {
 }
 
 Str* str_concat(Str* a, Str* b) {
+  Str* result = nullptr;
+  StackRoots _roots({&a, &b, &result});
   int len_a = len(a);
   int len_b = len(b);
+  assert(len_a >= 0);
+  assert(len_b >= 0);
 
-  Str* result = NewStr(len_a + len_b);
+  result = NewStr(len_a + len_b);
   char* buf = result->data_;
   memcpy(buf, a->data_, len_a);
   memcpy(buf + len_a, b->data_, len_b);
