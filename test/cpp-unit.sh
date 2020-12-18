@@ -64,12 +64,7 @@ mycpp-unit-tests() {
 
   pushd mycpp
   set -x
-  ./run.sh mylib-test
-  ./run.sh mylib2-test
-  ./run.sh gc-heap-test
-  ./run.sh gc-stress-test
-  ./run.sh my-runtime-test
-  ./demo.sh target-lang
+  ./run.sh all-tests
 
   # Note: we also have square_heap and gc_heap
   popd

@@ -223,15 +223,9 @@ mylib-test() {
   _bin/mylib_test.asan "$@"
 }
 
-mylib2-test() {
-  ### Accepts greatest args like -t dict
-  cpp-compile mylib2_test asan -I ../cpp mylib2.cc gc_heap.cc my_runtime.cc
-  _bin/mylib2_test.asan "$@"
-}
-
 gc-heap-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile gc_heap_test asan -D GC_DEBUG -I ../cpp gc_heap.cc
+  cpp-compile gc_heap_test asan -D GC_DEBUG -D GC_PROTECT -I ../cpp gc_heap.cc
   _bin/gc_heap_test.asan "$@"
 }
 
@@ -243,11 +237,26 @@ gc-stress-test() {
   _bin/gc_stress_test.asan "$@"
 }
 
-
 my-runtime-test() {
   ### Accepts greatest args like -t dict
   cpp-compile my_runtime_test asan -I ../cpp gc_heap.cc my_runtime.cc mylib2.cc
   _bin/my_runtime_test.asan "$@"
+}
+
+mylib2-test() {
+  ### Accepts greatest args like -t dict
+  cpp-compile mylib2_test asan -I ../cpp mylib2.cc gc_heap.cc my_runtime.cc
+  _bin/mylib2_test.asan "$@"
+}
+
+all-tests() {
+  gc-heap-test
+  gc-stress-test
+  my-runtime-test
+  mylib2-test
+
+  mylib-test  # will be deprecated
+  ./demo.sh target-lang
 }
 
 gen-ctags() {

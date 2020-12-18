@@ -9,7 +9,8 @@ gen-main() {
 
 int main(int argc, char **argv) {
   // gc_heap::gHeap.Init(1 << 10);  // for debugging
-  gc_heap::gHeap.Init(128 << 10);  // 128 KiB; doubling in size
+  gc_heap::gHeap.Init(512);
+  // gc_heap::gHeap.Init(128 << 10);  // 128 KiB; doubling in size
   // gc_heap::gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
 
   if (getenv("BENCHMARK")) {
@@ -93,16 +94,18 @@ _compile-example() {
 
   local src=_gen/$name.cc
 
-  local flags
+  # TODO: Remove for performance?
+  local flags='-D GC_PROTECT '
+
   case $variant in
     (asan)
-      flags="$CXXFLAGS $ASAN_FLAGS"
+      flags+="$CXXFLAGS $ASAN_FLAGS"
       ;;
     (opt)
-      flags="$CXXFLAGS -O2 -g"
+      flags+="$CXXFLAGS -O2 -g"
       ;;
     (*)
-      flags="$CXXFLAGS"
+      flags+="$CXXFLAGS"
       ;;
   esac
 
@@ -112,8 +115,6 @@ _compile-example() {
   local -a runtime
   if test -n "${GC:-}"; then
     runtime=(my_runtime.cc mylib2.cc gc_heap.cc)
-    #runtime=(mylib.cc gc_heap.cc)
-    # TODO: Reconcile my_runtime.cc and mylib.cc
   else
     runtime=(mylib.cc gc_heap.cc)
   fi
@@ -121,6 +122,7 @@ _compile-example() {
   echo "__ Compiling with $CXX"
 
   # need -lstdc++ for 'operator new'
+  # set -x
   $CXX -o $out $flags -I . "${runtime[@]}" $src -lstdc++
 }
 

@@ -129,11 +129,7 @@ class Space {
  public:
   Space() {
   }
-  void Init(int space_size) {
-    begin_ = static_cast<char*>(malloc(space_size));
-    size_ = space_size;
-    Clear();
-  }
+  void Init(int space_size);
 
   void Free() {
     free(begin_);
@@ -145,6 +141,12 @@ class Space {
     // it makes sense to zero the slabs instead?
     memset(begin_, 0, size_);
   }
+
+#if GC_PROTECT
+  // To maintain invariants
+  void Protect();
+  void Unprotect();
+#endif
 
   char* begin_;
   int size_;  // number of bytes
@@ -536,7 +538,7 @@ inline void InitSlabCell<int>(Obj* obj) {
 // don't include items_[1]
 const int kSlabHeaderSize = sizeof(Obj);
 
-// Opaque slab.  e.g. for String data
+// Opaque slab, e.g. for List<int>
 template <typename T>
 class Slab : public Obj {
  public:
@@ -783,36 +785,45 @@ class List : public gc_heap::Obj {
 
   // Literal ['foo', 'bar']
   List(std::initializer_list<T> init) : List() {
+    auto self = this;
+    StackRoots _roots({&self});
+
     int n = init.size();
-    reserve(n);
+    self->reserve(n);
 
     int i = 0;
     for (auto item : init) {
-      set(i, item);
+      self->set(i, item);
       ++i;
     }
-    len_ = n;
+    self->len_ = n;
   }
 
   // list_repeat ['foo'] * 3
   List(T item, int times) : List() {
-    reserve(times);
-    len_ = times;
+    auto self = this;
+    StackRoots _roots({&self});  // TODO: What about item!  Could be moved!
+
+    self->reserve(times);
+    self->len_ = times;
     for (int i = 0; i < times; ++i) {
-      set(i, item);
+      self->set(i, item);
     }
   }
 
   // Implements L[i]
   T index(int i) {
+    auto self = this;
+    StackRoots _roots({&self});
+
     if (i < 0) {
-      i += len_;
+      i += self->len_;
     }
     if (i < len_) {
-      return slab_->items_[i];
+      return self->slab_->items_[i];
     }
 
-    log("i = %d, len_ = %d", i, len_);
+    log("i = %d, len_ = %d", i, self->len_);
     assert(0);  // Out of bounds
   }
 

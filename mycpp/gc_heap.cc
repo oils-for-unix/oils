@@ -2,6 +2,8 @@
 
 #include "gc_heap.h"
 
+#include <sys/mman.h>  // mprotect()
+
 using gc_heap::Heap;
 using gc_heap::Local;
 using gc_heap::Obj;
@@ -26,6 +28,30 @@ class LayoutFixed : public Obj {
  public:
   Obj* children_[16];  // only the entries denoted in field_mask will be valid
 };
+
+void Space::Init(int space_size) {
+#if GC_PROTECT
+  void* p = mmap(nullptr, space_size, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  begin_ = static_cast<char*>(p);
+#else
+  begin_ = static_cast<char*>(malloc(space_size));
+#endif
+  size_ = space_size;
+  Clear();
+}
+
+#if GC_PROTECT
+void Space::Protect() {
+  int m = mprotect(begin_, size_, PROT_NONE);
+  assert(m == 0);
+}
+
+void Space::Unprotect() {
+  int m = mprotect(begin_, size_, PROT_READ | PROT_WRITE);
+  assert(m == 0);
+}
+#endif
 
 Obj* Heap::Relocate(Obj* obj, Obj* header) {
   // Move an object from one space to another.
@@ -86,9 +112,14 @@ inline Obj* ObjHeader(Obj* obj) {
 }
 
 void Heap::Collect() {
+  log("--> COLLECT with %d roots", roots_top_);
 #if GC_DEBUG
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
+#endif
+
+#if GC_PROTECT
+  to_space_.Unprotect();
 #endif
 
   // If we grew one space, the other one has to catch up.
@@ -177,6 +208,11 @@ void Heap::Collect() {
   // We just copied everything from_space_ -> to_space_.  Maintain
   // invariant of the space we will allocate from next time.
   from_space_.Clear();
+#if GC_PROTECT
+  from_space_.Protect();
+  // log("begin = %x", *from_space_.begin_);
+#endif
+
   Swap();
 
 #if GC_DEBUG
