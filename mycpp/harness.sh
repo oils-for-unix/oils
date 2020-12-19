@@ -97,6 +97,9 @@ _compile-example() {
   # TODO: Remove for performance?
   local flags='-D GC_PROTECT '
 
+  # to see what happened
+  flags+='-D GC_DEBUG '
+
   case $variant in
     (asan)
       flags+="$CXXFLAGS $ASAN_FLAGS"

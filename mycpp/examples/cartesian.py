@@ -37,14 +37,22 @@ def Cartesian(dims, out):
 def run_tests():
   # type: () -> None
   out = []  # type: List[str]
-  Cartesian(['ab'], out)
+
+  #Cartesian(['ab'], out)
+  tmp = ['ab']
+  Cartesian(tmp, out)
+
   for s in out:
     print(s)
 
   print('--')
 
   out = []
-  Cartesian(['ab', '-|_', 'ABC'], out)
+
+  #Cartesian(['ab', '-|_', 'ABC'], out)
+  # Do we need a tmp variable?
+  tmp2 = ['ab', '-|_', 'ABC']
+  Cartesian(tmp2, out)
   for s in out:
     print(s)
 

@@ -190,6 +190,10 @@ class Heap {
     int n = aligned(num_bytes);
     // log("n = %d, p = %p", n, p);
 
+#if 1
+    Collect();  // force collection to find problems early
+#endif
+
     if (free_ + n <= limit_) {  // Common case: we have space for it.
       return Bump(n);
     }
@@ -828,6 +832,8 @@ class List : public gc_heap::Obj {
   }
 
   // Implements L[i] = item
+  // Note: Unlike Dict::set(), we don't need to specialize List::set() on T for
+  // StackRoots because it doesn't allocate.
   void set(int i, T item) {
     auto self = this;
     StackRoots _roots({&self});
@@ -966,14 +972,17 @@ class List : public gc_heap::Obj {
 
   // Extend this list with multiple elements.
   void extend(List<T>* other) {
+    auto self = this;
+    StackRoots _roots({&self, &other});
+
     int n = other->len_;
-    int new_len = len_ + n;
-    reserve(new_len);
+    int new_len = self->len_ + n;
+    self->reserve(new_len);
 
     for (int i = 0; i < n; ++i) {
-      set(len_ + i, other->slab_->items_[i]);
+      self->set(self->len_ + i, other->slab_->items_[i]);
     }
-    len_ = new_len;
+    self->len_ = new_len;
   }
 
   int len_;       // number of entries
@@ -984,6 +993,33 @@ class List : public gc_heap::Obj {
 
   DISALLOW_COPY_AND_ASSIGN(List)
 };
+
+// "Constructors" as free functions since we can't allocate within a
+// constructor.  Allocation may cause garbage collection, which interferes with
+// placement new.
+
+template <typename T>
+List<T>* NewList() {
+  return Alloc<List<T>>();
+}
+
+// Literal ['foo', 'bar']
+template <typename T>
+List<T>* NewList(std::initializer_list<T> init) {
+  auto self = Alloc<List<T>>();
+  StackRoots _roots({&self});
+
+  int n = init.size();
+  self->reserve(n);
+
+  int i = 0;
+  for (auto item : init) {
+    self->set(i, item);
+    ++i;
+  }
+  self->len_ = n;
+  return self;
+}
 
 //
 // Dict<K, V>
@@ -1049,13 +1085,12 @@ constexpr uint16_t maskof_Dict() {
 template <class K, class V>
 class Dict : public gc_heap::Obj {
  public:
-  Dict()
-      : gc_heap::Obj(Tag::FixedSize, maskof_Dict(), 0),
-        len_(0),
-        capacity_(0),
-        index_(nullptr),
-        keys_(nullptr),
-        values_(nullptr) {
+  Dict() : gc_heap::Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
+    assert(len_ == 0);
+    assert(capacity_ == 0);
+    assert(index_ == nullptr);
+    assert(keys_ == nullptr);
+    assert(values_ == nullptr);
   }
 
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
@@ -1078,7 +1113,10 @@ class Dict : public gc_heap::Obj {
 
   void reserve(int n) {
     auto self = this;
-    StackRoots _roots({&self});
+    Slab<int>* new_i = nullptr;
+    Slab<K>* new_k = nullptr;
+    Slab<V>* new_v = nullptr;
+    StackRoots _roots({&self, &new_i, &new_k, &new_v});
 
     // log("--- reserve %d", capacity_);
     //
@@ -1089,7 +1127,7 @@ class Dict : public gc_heap::Obj {
       // TODO: This is SPARSE.  How to compute a size that ensures a decent
       // load factor?
       int index_len = self->capacity_;
-      auto new_i = NewSlab<int>(index_len);
+      new_i = NewSlab<int>(index_len);
 
       // For the linear search to work
       for (int i = 0; i < index_len; ++i) {
@@ -1097,8 +1135,8 @@ class Dict : public gc_heap::Obj {
       }
 
       // These are DENSE.
-      auto new_k = NewSlab<K>(self->capacity_);
-      auto new_v = NewSlab<V>(self->capacity_);
+      new_k = NewSlab<K>(self->capacity_);
+      new_v = NewSlab<V>(self->capacity_);
 
       if (self->keys_ != nullptr) {
         // Copy the old index.  Note: remaining entries should be zero'd
@@ -1148,23 +1186,9 @@ class Dict : public gc_heap::Obj {
   }
 
   // Implements d[k] = v.  May resize the dictionary.
-  void set(K key, V val) {
-    auto self = this;
-    StackRoots _roots({&self});
-
-    int pos = self->position_of_key(key);
-    if (pos == -1) {  // new pair
-      self->reserve(self->len_ + 1);
-      self->keys_->items_[self->len_] = key;
-      self->values_->items_[self->len_] = val;
-
-      self->index_->items_[self->len_] = 0;  // new special value
-
-      ++len_;
-    } else {
-      self->values_->items_[pos] = val;
-    }
-  }
+  //
+  // TODO: Need to specialize this for StackRoots!  Gah!
+  void set(K key, V val);
 
   List<K>* keys() {
     return ListFromDictSlab<K>(index_, keys_, capacity_);
@@ -1231,6 +1255,47 @@ class Dict : public gc_heap::Obj {
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 };
+
+// TODO: specialize on K and V?  4 possibilities.
+template <typename K, typename V>
+void dict_set(Dict<K, V>* self, K key, V val) {
+  StackRoots _roots({&self});
+
+  self->reserve(self->len_ + 1);
+  self->keys_->items_[self->len_] = key;
+  self->values_->items_[self->len_] = val;
+
+  self->index_->items_[self->len_] = 0;  // new special value
+
+  ++self->len_;
+}
+
+// K == Str*
+template <typename V>
+void dict_set(Dict<Str*, V>* self, Str* key, V val) {
+  StackRoots _roots({&self, &key});
+
+  self->reserve(self->len_ + 1);
+  self->keys_->items_[self->len_] = key;
+  self->values_->items_[self->len_] = val;
+
+  self->index_->items_[self->len_] = 0;  // new special value
+
+  ++self->len_;
+}
+
+template <typename K, typename V>
+void Dict<K, V>::set(K key, V val) {
+  auto self = this;
+  StackRoots _roots({&self});  // May not need this here?
+
+  int pos = self->position_of_key(key);
+  if (pos == -1) {             // new pair
+    dict_set(self, key, val);  // ALLOCATES
+  } else {
+    self->values_->items_[pos] = val;
+  }
+}
 
 #if GC_DEBUG
 void ShowFixedChildren(Obj* obj);

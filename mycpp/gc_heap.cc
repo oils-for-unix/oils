@@ -78,6 +78,7 @@ Obj* Heap::Relocate(Obj* obj, Obj* header) {
     // Note: if we wanted to save space on ASDL records, we could calculate
     // their length from the field_mask here.  How much would it slow down GC?
     int n = header->obj_len_;
+    assert(n > 0);  // detect common problem
     memcpy(new_location, obj, n);
     // log("memcpy %d bytes from %p -> %p", n, obj, new_location);
 #if 0
@@ -261,8 +262,10 @@ void ShowFixedChildren(Obj* obj) {
   for (int i = 0; i < 16; ++i) {
     if (mask & (1 << i)) {
       Obj* child = fixed->children_[i];
-      // make sure we get Tag::Opaque, Tag::Scanned, etc.
-      log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
+      if (child) {
+        // make sure we get Tag::Opaque, Tag::Scanned, etc.
+        log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
+      }
     }
   }
 }

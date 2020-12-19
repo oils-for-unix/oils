@@ -2369,14 +2369,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           done = set()
           for lval_name, c_type, is_param in self.prepend_to_block:
             if not is_param and lval_name not in done:
-              self.write_ind('%s %s;\n', c_type, lval_name)
+              rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
+              self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
               done.add(lval_name)
 
-          self.log('--- Block')
           # Figure out if we have any roots to write with StackRoots
           roots = []  # keep it sorted
           for lval_name, c_type, is_param in self.prepend_to_block:
-            self.log('%s %s %s', lval_name, c_type, is_param)
+            #self.log('%s %s %s', lval_name, c_type, is_param)
             if lval_name not in roots and CTypeIsManaged(c_type):
               roots.append(lval_name)
           self.log('roots %s', roots)

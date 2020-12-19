@@ -566,6 +566,21 @@ TEST mmap_demo() {
   PASS();
 }
 
+TEST comma_demo() {
+  auto k = (3, 5);
+  log("k = %d", k);
+
+  auto n = new Node();
+  log("n = %p, n->i = %d, n->j = %d", n, n->i, n->j);
+
+  // Hacky workaround ... actually this sorta works.  Gah.
+  Node* tmp;
+  auto n2 = (tmp = new Node(), tmp->i = 42, tmp);
+  log("n2 = %p, n2->i = %d, n2->j = %d", n2, n2->i, n2->j);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -588,6 +603,7 @@ int main(int argc, char** argv) {
   // RUN_TEST(inheritance_demo);
   //
   RUN_TEST(mmap_demo);
+  RUN_TEST(comma_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
