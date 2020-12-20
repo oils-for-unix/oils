@@ -113,7 +113,6 @@ inline Obj* ObjHeader(Obj* obj) {
 }
 
 void Heap::Collect() {
-  log("--> COLLECT with %d roots", roots_top_);
 #if GC_DEBUG
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
@@ -140,7 +139,7 @@ void Heap::Collect() {
   for (int i = 0; i < roots_top_; ++i) {
     Obj** handle = roots_[i];
     auto root = *handle;
-#if GC_DEBUG
+#if GC_VERBOSE
     log("%d. handle %p", i, handle);
     log("    root %p", root);
 #endif
@@ -216,7 +215,7 @@ void Heap::Collect() {
 
   Swap();
 
-#if GC_DEBUG
+#if GC_VERBOSE
   Report();
 #endif
 }

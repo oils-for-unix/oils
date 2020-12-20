@@ -19,6 +19,7 @@ using gc_heap::Dict;
 using gc_heap::GlobalStr;
 using gc_heap::List;
 using gc_heap::Local;
+using gc_heap::NewDict;
 using gc_heap::NewList;
 using gc_heap::NewStr;
 using gc_heap::Slab;
@@ -110,6 +111,8 @@ TEST roundup_test() {
 GLOBAL_STR(str4, "egg");
 
 TEST str_test() {
+  ASSERT(str_equals(kEmptyString, kEmptyString));
+
   Str* str1 = nullptr;
   Str* str2 = nullptr;
   StackRoots _roots({&str1, &str2});
@@ -295,9 +298,9 @@ TEST global_list_test() {
 //   - I guess you have to do rehashing?
 
 TEST dict_test() {
-  auto dict1 = Alloc<Dict<int, int>>();
+  auto dict1 = NewDict<int, int>();
   StackRoots _roots1({&dict1});
-  auto dict2 = Alloc<Dict<Str*, Str*>>();
+  auto dict2 = NewDict<Str*, Str*>();
   StackRoots _roots2({&dict2});
 
   ASSERT_EQ(0, len(dict1));
@@ -352,11 +355,6 @@ TEST dict_test() {
   foo = NewStr("foo");
   bar = NewStr("bar");
 
-  log("@@@");
-  log("%s", foo->data_);
-  log("%s", bar->data_);
-  log("@@@");
-
   dict2->set(foo, bar);
 
   ASSERT_EQ(1, len(dict2));
@@ -366,9 +364,7 @@ TEST dict_test() {
   ASSERT_EQ_FMT(64, dict2->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict2->values_->obj_len_, "%d");
 
-  // Check other sizes
-
-  auto dict_si = Alloc<Dict<Str*, int>>();
+  auto dict_si = NewDict<Str*, int>();
   StackRoots _roots4({&dict_si});
   dict_si->set(foo, 42);
   ASSERT_EQ(1, len(dict_si));
@@ -377,32 +373,55 @@ TEST dict_test() {
   ASSERT_EQ_FMT(64, dict_si->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(32, dict_si->values_->obj_len_, "%d");
 
-  auto dict_is = Alloc<Dict<int, Str*>>();
+  auto dict_is = NewDict<int, Str*>();
   StackRoots _roots5({&dict_is});
   dict_is->set(42, foo);
+  PASS();
+
   ASSERT_EQ(1, len(dict_is));
 
   ASSERT_EQ_FMT(32, dict_is->index_->obj_len_, "%d");
   ASSERT_EQ_FMT(32, dict_is->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict_is->values_->obj_len_, "%d");
 
-  // TODO: Turn this into NewDict!
-  auto dict3 = Alloc<Dict<int, Str*>>(
-      std::initializer_list<int>{1, 2},
-      std::initializer_list<Str*>{kEmptyString, NewStr("two")});
-  StackRoots _roots6({&dict3});
+  auto two = NewStr("two");
+  StackRoots _roots6({&two});
+
+  auto dict3 =
+      NewDict<int, Str*>(std::initializer_list<int>{1, 2},
+                         std::initializer_list<Str*>{kEmptyString, two});
+  StackRoots _roots7({&dict3});
 
   ASSERT_EQ_FMT(2, len(dict3), "%d");
   ASSERT(str_equals(kEmptyString, dict3->get(1)));
-  ASSERT(str_equals(NewStr("two"), dict3->get(2)));
-
-  ASSERT(str_equals(kEmptyString, kEmptyString));
+  ASSERT(str_equals(two, dict3->get(2)));
 
   PASS();
 }
 
 TEST dict_repro() {
-  // Dummy
+  // For isolation
+  Str* foo = nullptr;
+  StackRoots _roots1({&foo});
+  // auto dict_si = NewDict<Str*, int>();
+  Dict<Str*, int>* dict_si = nullptr;
+  StackRoots _roots2({&dict_si});
+  dict_si = NewDict<Str*, int>();
+  log("dict_si = %p", dict_si);
+  gHeap.from_space_.AssertValid(dict_si);
+
+  Dict<int, Str*>* dict_is = nullptr;
+  log("dict_is = %p", dict_is);
+
+  StackRoots _roots3({&dict_is});
+  dict_is = NewDict<int, Str*>();
+  log("dict_is = %p", dict_is);
+  gHeap.from_space_.AssertValid(dict_is);
+
+  foo = NewStr("foo");
+
+  dict_si->set(foo, 42);           // creates slab that's not valid?
+  dict_is->set(42, kEmptyString);  // crash
 
   PASS();
 }

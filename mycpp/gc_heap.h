@@ -147,6 +147,15 @@ class Space {
   void Protect();
   void Unprotect();
 #endif
+#if GC_DEBUG
+  void AssertValid(void* p) {
+    if (begin_ <= p && p < begin_ + size_) {
+      return;
+    }
+    log("p = %p isn't between %p and %p", begin_, begin_ + size_);
+    assert(0);
+  }
+#endif
 
   char* begin_;
   int size_;  // number of bytes
@@ -1093,17 +1102,6 @@ class Dict : public gc_heap::Obj {
     assert(values_ == nullptr);
   }
 
-  Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-      : Dict() {  // delegating constructor
-    assert(keys.size() == values.size());
-
-    auto v = values.begin();  // This simulates a "zip" loop
-    for (auto key : keys) {
-      set(key, *v);
-      ++v;
-    }
-  }
-
   // This relies on the fact that containers of 4-byte ints are reduced by 2
   // items, which is greater than (or equal to) the reduction of any other
   // type
@@ -1255,6 +1253,30 @@ class Dict : public gc_heap::Obj {
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 };
+
+// "Constructors" that allocate
+
+template <typename K, typename V>
+Dict<K, V>* NewDict() {
+  auto self = Alloc<Dict<K, V>>();
+  return self;
+}
+
+template <typename K, typename V>
+Dict<K, V>* NewDict(std::initializer_list<K> keys,
+                    std::initializer_list<V> values) {
+  assert(keys.size() == values.size());
+  auto self = Alloc<Dict<K, V>>();
+  StackRoots _roots({&self});
+
+  auto v = values.begin();  // This simulates a "zip" loop
+  for (auto key : keys) {
+    self->set(key, *v);
+    ++v;
+  }
+
+  return self;
+}
 
 // Four overloads for dict_set()!  TODO: Is there a nicer way to do this?
 
