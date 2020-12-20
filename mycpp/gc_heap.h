@@ -1141,10 +1141,10 @@ class Dict : public gc_heap::Obj {
       if (self->keys_ != nullptr) {
         // Copy the old index.  Note: remaining entries should be zero'd
         // because of Allocate() behavior.
-        memcpy(new_i->items_, index_->items_, index_->obj_len_);
+        memcpy(new_i->items_, self->index_->items_, self->index_->obj_len_);
 
-        memcpy(new_k->items_, keys_->items_, len_ * sizeof(K));
-        memcpy(new_v->items_, values_->items_, len_ * sizeof(V));
+        memcpy(new_k->items_, self->keys_->items_, self->len_ * sizeof(K));
+        memcpy(new_v->items_, self->values_->items_, self->len_ * sizeof(V));
       }
 
       self->index_ = new_i;
@@ -1256,7 +1256,9 @@ class Dict : public gc_heap::Obj {
   DISALLOW_COPY_AND_ASSIGN(Dict)
 };
 
-// TODO: specialize on K and V?  4 possibilities.
+// Four overloads for dict_set()!  TODO: Is there a nicer way to do this?
+
+// e.g. Dict<int, int>
 template <typename K, typename V>
 void dict_set(Dict<K, V>* self, K key, V val) {
   StackRoots _roots({&self});
@@ -1270,10 +1272,38 @@ void dict_set(Dict<K, V>* self, K key, V val) {
   ++self->len_;
 }
 
-// K == Str*
-template <typename V>
-void dict_set(Dict<Str*, V>* self, Str* key, V val) {
+// e.g. Dict<Str*, int>
+template <typename K, typename V>
+void dict_set(Dict<K, V*>* self, K* key, V val) {
   StackRoots _roots({&self, &key});
+
+  self->reserve(self->len_ + 1);
+  self->keys_->items_[self->len_] = key;
+  self->values_->items_[self->len_] = val;
+
+  self->index_->items_[self->len_] = 0;  // new special value
+
+  ++self->len_;
+}
+
+// e.g. Dict<int, Str*>
+template <typename K, typename V>
+void dict_set(Dict<K, V*>* self, K key, V* val) {
+  StackRoots _roots({&self, &val});
+
+  self->reserve(self->len_ + 1);
+  self->keys_->items_[self->len_] = key;
+  self->values_->items_[self->len_] = val;
+
+  self->index_->items_[self->len_] = 0;  // new special value
+
+  ++self->len_;
+}
+
+// e.g. Dict<Str*, Str*>
+template <typename K, typename V>
+void dict_set(Dict<K*, V*>* self, K* key, V* val) {
+  StackRoots _roots({&self, &key, &val});
 
   self->reserve(self->len_ + 1);
   self->keys_->items_[self->len_] = key;

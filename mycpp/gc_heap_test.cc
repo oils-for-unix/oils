@@ -346,9 +346,21 @@ TEST dict_test() {
     ASSERT_EQ(10, dict1->index(43));
   }
 
-  dict2->set(NewStr("foo"), NewStr("bar"));
+  Str* foo = nullptr;
+  Str* bar = nullptr;
+  StackRoots _roots3({&foo, &bar});
+  foo = NewStr("foo");
+  bar = NewStr("bar");
+
+  log("@@@");
+  log("%s", foo->data_);
+  log("%s", bar->data_);
+  log("@@@");
+
+  dict2->set(foo, bar);
+
   ASSERT_EQ(1, len(dict2));
-  ASSERT(str_equals(NewStr("bar"), dict2->index(NewStr("foo"))));
+  ASSERT(str_equals(bar, dict2->index(foo)));
 
   ASSERT_EQ_FMT(32, dict2->index_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict2->keys_->obj_len_, "%d");
@@ -357,7 +369,8 @@ TEST dict_test() {
   // Check other sizes
 
   auto dict_si = Alloc<Dict<Str*, int>>();
-  dict_si->set(NewStr("foo"), 42);
+  StackRoots _roots4({&dict_si});
+  dict_si->set(foo, 42);
   ASSERT_EQ(1, len(dict_si));
 
   ASSERT_EQ_FMT(32, dict_si->index_->obj_len_, "%d");
@@ -365,21 +378,31 @@ TEST dict_test() {
   ASSERT_EQ_FMT(32, dict_si->values_->obj_len_, "%d");
 
   auto dict_is = Alloc<Dict<int, Str*>>();
-  dict_is->set(42, NewStr("foo"));
+  StackRoots _roots5({&dict_is});
+  dict_is->set(42, foo);
   ASSERT_EQ(1, len(dict_is));
 
   ASSERT_EQ_FMT(32, dict_is->index_->obj_len_, "%d");
   ASSERT_EQ_FMT(32, dict_is->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict_is->values_->obj_len_, "%d");
 
+  // TODO: Turn this into NewDict!
   auto dict3 = Alloc<Dict<int, Str*>>(
       std::initializer_list<int>{1, 2},
       std::initializer_list<Str*>{kEmptyString, NewStr("two")});
+  StackRoots _roots6({&dict3});
+
   ASSERT_EQ_FMT(2, len(dict3), "%d");
   ASSERT(str_equals(kEmptyString, dict3->get(1)));
   ASSERT(str_equals(NewStr("two"), dict3->get(2)));
 
   ASSERT(str_equals(kEmptyString, kEmptyString));
+
+  PASS();
+}
+
+TEST dict_repro() {
+  // Dummy
 
   PASS();
 }
@@ -883,7 +906,8 @@ int main(int argc, char** argv) {
   // RUN_TEST(repro);
 
   RUN_TEST(global_list_test);
-  // RUN_TEST(dict_test);
+  RUN_TEST(dict_test);
+  RUN_TEST(dict_repro);
 
   // TODO: Shouldn't use Local
   // RUN_TEST(fixed_trace_test);
