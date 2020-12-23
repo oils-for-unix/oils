@@ -1265,7 +1265,7 @@ class Transformer(object):
         return class_literal_term.Range(start, end)
 
     else:
-      if children[0].tok.id == Id.Arith_Tilde:
+      if children[0].tok.id == Id.Expr_Bang:
         return self._NameInClass(children[0].tok, children[1].tok)
 
       raise AssertionError(children[0].tok.id)
@@ -1398,7 +1398,7 @@ class Transformer(object):
         # | '@' Expr_Name
         return re.Splice(children[1].tok)
 
-      if tok.id == Id.Arith_Tilde:
+      if tok.id == Id.Expr_Bang:
         # | '~' [Expr_Name | class_literal]
         typ = children[1].typ
         if ISNONTERMINAL(typ):

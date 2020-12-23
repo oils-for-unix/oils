@@ -88,7 +88,6 @@ atom: (
   | '[' [testlist_comp] ']' 
     # Note: newlines are significant inside {}, unlike inside () and []
   | '{' [Op_Newline] [dict] '}'
-    # TODO: translation preference
   | '/' regex [re_flags] '/'
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
@@ -492,7 +491,7 @@ range_char: Expr_Name | Expr_DecInt | sq_string | char_literal
 # We have to do further validation of ranges later.
 class_literal_term: (
     range_char ['-' range_char ]
-  | '~' Expr_Name
+  | '!' Expr_Name
     # $mychars or ${mymodule.mychars}
   | simple_var_sub | braced_var_sub
     # e.g. 'abc' or "abc$mychars" 
@@ -523,8 +522,8 @@ re_atom: (
     # %begin or %end
   | Expr_Symbol
   | class_literal
-    # ~digit or ~ %boundary or ~[a-f]
-  | '~' [Expr_Name | Expr_Symbol | class_literal]
+    # !digit or ~ %boundary or ![a-f]
+  | '!' [Expr_Name | Expr_Symbol | class_literal]
     # Splice another expression
   | '@' Expr_Name
     # any %start %end are preferred
@@ -541,9 +540,9 @@ re_atom: (
   | '<' regex [':' name_type] '>'
 
     # syntactic space for Perl-style backtracking
-    # !REF 1   !REF name
-    # !AHEAD(d+)   !BEHIND(d+)  !NOT_AHEAD(d+)  !NOT_BEHIND(d+)
-  | '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
+    # !!REF 1   !!REF name
+    # !!AHEAD(d+)   !!BEHIND(d+)  !!NOT_AHEAD(d+)  !!NOT_BEHIND(d+)
+  | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.
@@ -573,9 +572,16 @@ re_alt: (re_atom [repeat_op])+
 
 regex: [re_alt] (('|'|'or') re_alt)*
 
-# /digit+ ; multiline,ignorecase/
-re_flag: ['~'] Expr_Name
-re_flags: ';' re_flag (',' re_flag)*
+# e.g. /digit+ ; multiline !ignorecase/
+#
+# This can express translation preferences:
+#
+# / d+ ; %ERE /                 is   '[[:digit:]]+'
+# / d+ ; %python /              is   '\d+'
+# / d+ ; ignorecase %python /   is   '(?i)\d+'
+
+re_flag: ['!'] Expr_Name | Expr_Symbol
+re_flags: ';' re_flag+
 
 # Syntax reserved for PCRE/Python, but that's not in ERE:
 # 

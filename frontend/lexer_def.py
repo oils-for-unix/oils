@@ -967,6 +967,8 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # Expr
   #
 
+  C('!', Id.Expr_Bang),     # For eggex negation
+
   C('//', Id.Expr_DSlash),  # For Oil integer division
   C('~==', Id.Expr_TildeDEqual),  # approximate equality
 

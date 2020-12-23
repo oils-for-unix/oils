@@ -155,7 +155,7 @@ echo $pat
 ## END
 
 
-#### d+  digit+  ~d+  ~digit+
+#### d+  digit+  !d+  !digit+
 shopt -s oil:all
 
 var pat = ''
@@ -169,9 +169,9 @@ if (empty ~ pat) { echo yes } else { echo no }
 
 setvar pat = /digit+/
 echo $pat
-setvar pat = /~d+/
+setvar pat = /!d+/
 echo $pat
-setvar pat = /~digit+/
+setvar pat = /!digit+/
 echo $pat
 
 
@@ -547,10 +547,10 @@ yes
 no
 ## END
 
-#### Negation of Character Class
+#### Negation of Character Class ![a-z]
 shopt -s oil:all
 
-var pat = / ~[ a-z ] /
+var pat = / ![ a-z ] /
 echo $pat
 
 if ('0' ~ pat) { echo yes }
@@ -587,15 +587,15 @@ echo $pat
 [[:digit:]z]
 ## END
 
-#### [~d] can't be negated because it's a literal character
-setvar pat = / [ ~d 'z' ] /
+#### [!d] can't be negated because it's a literal character
+setvar pat = / [ !d 'z' ] /
 echo $pat
 ## status: 2
 ## stdout-json: ""
 
-#### [~digit] can't be negated in POSIX ERE (but yes in Perl)
+#### [!digit] can't be negated in POSIX ERE (but yes in Perl)
 var pat = null
-setvar pat = / [ ~digit 'z' ] /
+setvar pat = / [ !digit 'z' ] /
 echo $pat
 ## status: 1
 ## stdout-json: ""

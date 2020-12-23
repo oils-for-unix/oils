@@ -173,27 +173,27 @@ We've reserved syntactic space for PCRE and Python variants:
 - lazy/non-greedy: `x{L +}`, `x{L 3,4}`
 - possessive: `x{P +}`, `x{P 3,4}`
 
-### Negation Consistently Uses ~
+### Negation Consistently Uses !
 
 You can negate named char classes:
 
-    / ~digit /
+    / !digit /
 
 and char class literals:
 
-    / ~[ a-z A-Z ] /
+    / ![ a-z A-Z ] /
 
 Sometimes you can do both:
 
-    / ~[ ~digit ] /  # translates to /[^\D]/ in PCRE
+    / ![ !digit ] /  # translates to /[^\D]/ in PCRE
                      # error in ERE because it can't be expressed
 
 
 You can also negate "regex modifiers" / compilation flags:
 
     / word ; ignorecase /   # flag on
-    / word ; ~ignorecase /  # flag off
-    / word ; ~i /           # abbreviated
+    / word ; !ignorecase /  # flag off
+    / word ; !i /           # abbreviated
 
 In contrast, regexes have many confusing syntaxes for negation:
 
@@ -266,21 +266,21 @@ Yes:
 
     /[a-f A-f 0-9]/
 
-### Backtracking Constructs Use `!` (Discouraged)
+### Backtracking Constructs Use `!!` (Discouraged)
 
 If you want to translate to PCRE, you can use these.
 
-    !REF 1
-    !REF name
+    !!REF 1
+    !!REF name
 
-    !AHEAD( d+ )
-    !NOT_AHEAD( d+ )
-    !BEHIND( d+ )
-    !NOT_BEHIND( d+ )
+    !!AHEAD( d+ )
+    !!NOT_AHEAD( d+ )
+    !!BEHIND( d+ )
+    !!NOT_BEHIND( d+ )
 
-    !ATOMIC( d+ )
+    !!ATOMIC( d+ )
 
-Since they all begin with `!`, You can visually audit your code for potential
+Since they all begin with `!!`, You can visually audit your code for potential
 performance problems.
 
 ## Outside the Expression language
@@ -291,14 +291,10 @@ Flags or "regex modifiers" appear after the first semicolon:
 
     / digit+ ; ignorecase /
 
-A translation preference appears after the second semicolon.  It controls what
-regex syntax the eggex is translated to by default.
+A translation preference looks like `%pref`.  It controls what regex syntax the
+eggex is translated to by default.
 
-    / digit+ ; ignorecase ; ERE /
-
-This expression has a translation preference, but no flags:
-
-    / digit+ ;; ERE /
+    / digit+ ; ignorecase %ERE /
 
 ### Multiline Syntax
 

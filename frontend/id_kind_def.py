@@ -262,7 +262,7 @@ def AddKinds(spec):
       # for [[ ]] language
       'Less',     # <
       'Great',    # >
-      'Bang',
+      'Bang',     # !
 
       # Oil [] {}
       'LBracket',
@@ -277,6 +277,7 @@ def AddKinds(spec):
     'Symbol',  # %foo
     'Name',
     'DecInt', 'BinInt', 'OctInt', 'HexInt', 'Float',
+    'Bang',  # eggex !digit, ![a-z]
     'Dot', 'DColon', 'RArrow', 'RDArrow',
     'DSlash',   # integer division
     'TildeDEqual',
