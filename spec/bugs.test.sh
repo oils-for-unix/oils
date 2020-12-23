@@ -40,6 +40,16 @@ echo hi
 hi
 ## END
 
+#### assign readonly -- multiple lines -- set -o posix
+set -o posix
+readonly x=1
+x=2
+echo hi
+## status: 1
+## OK dash/mksh/ash status: 2
+## STDOUT:
+## END
+
 #### unset readonly -- one line
 readonly x=1; unset x; echo hi
 ## STDOUT:
