@@ -1296,7 +1296,7 @@ void dict_set(Dict<K, V>* self, K key, V val) {
 
 // e.g. Dict<Str*, int>
 template <typename K, typename V>
-void dict_set(Dict<K, V*>* self, K* key, V val) {
+void dict_set(Dict<K*, V>* self, K* key, V val) {
   StackRoots _roots({&self, &key});
 
   self->reserve(self->len_ + 1);

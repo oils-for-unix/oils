@@ -287,14 +287,19 @@ performance problems.
 
 ### Flags and Translation Preferences (`;`)
 
-Flags or "regex modifiers" appear after the first semicolon:
+Flags or "regex modifiers" appear after a semicolon:
 
     / digit+ ; ignorecase /
 
-A translation preference looks like `%pref`.  It controls what regex syntax the
-eggex is translated to by default.
+A translation preference is specified with a symbol like `%pref`.  It controls
+what regex syntax the eggex is translated to by default.
 
-    / digit+ ; ignorecase %ERE /
+    / digit+ ; %ERE /                # translates to [[:digit:]]+
+    / digit+ ; %python /             # translates to \d+
+
+Flags and translation preferences together:
+
+    / digit+ ; ignorecase %python /  # translates to (?i)\d+
 
 ### Multiline Syntax
 

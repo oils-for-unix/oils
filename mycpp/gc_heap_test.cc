@@ -401,27 +401,6 @@ TEST dict_test() {
 
 TEST dict_repro() {
   // For isolation
-  Str* foo = nullptr;
-  StackRoots _roots1({&foo});
-  // auto dict_si = NewDict<Str*, int>();
-  Dict<Str*, int>* dict_si = nullptr;
-  StackRoots _roots2({&dict_si});
-  dict_si = NewDict<Str*, int>();
-  log("dict_si = %p", dict_si);
-  gHeap.from_space_.AssertValid(dict_si);
-
-  Dict<int, Str*>* dict_is = nullptr;
-  log("dict_is = %p", dict_is);
-
-  StackRoots _roots3({&dict_is});
-  dict_is = NewDict<int, Str*>();
-  log("dict_is = %p", dict_is);
-  gHeap.from_space_.AssertValid(dict_is);
-
-  foo = NewStr("foo");
-
-  dict_si->set(foo, 42);           // creates slab that's not valid?
-  dict_is->set(42, kEmptyString);  // crash
 
   PASS();
 }
