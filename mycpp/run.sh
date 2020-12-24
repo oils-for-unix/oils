@@ -203,13 +203,14 @@ cpp-compile() {
   local variant=$2
   shift 2
 
-  local flags
+  local flags='-D GC_DEBUG -D GC_PROTECT ' #-D GC_EVERY_MALLOC'
+  #local flags='-D GC_DEBUG '
   case $variant in
     (asan)
-      flags="$CXXFLAGS $ASAN_FLAGS"
+      flags+="$CXXFLAGS $ASAN_FLAGS"
       ;;
     (*)
-      flags="$CXXFLAGS"
+      flags+="$CXXFLAGS"
       ;;
   esac
 
@@ -225,15 +226,13 @@ mylib-test() {
 
 gc-heap-test() {
   ### Accepts greatest args like -t dict
-  local flags='-D GC_DEBUG -D GC_PROTECT'
-  cpp-compile gc_heap_test asan $flags -I ../cpp gc_heap.cc
+  cpp-compile gc_heap_test asan -I ../cpp gc_heap.cc
   _bin/gc_heap_test.asan "$@"
 }
 
 gc-stress-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile gc_stress_test asan \
-    -D GC_DEBUG -I ../cpp \
+  cpp-compile gc_stress_test asan -I ../cpp \
     gc_heap.cc my_runtime.cc mylib2.cc
   _bin/gc_stress_test.asan "$@"
 }

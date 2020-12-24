@@ -41,6 +41,14 @@ void Space::Init(int space_size) {
   Clear();
 }
 
+void Space::Free() {
+#if GC_PROTECT
+  Protect();  // There is no way of deallocating I guess
+#else
+  free(begin_);
+#endif
+}
+
 #if GC_PROTECT
 void Space::Protect() {
   int m = mprotect(begin_, size_, PROT_NONE);

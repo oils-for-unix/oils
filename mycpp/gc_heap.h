@@ -1,7 +1,7 @@
 // gc_heap.h
 //
 // A garbage collected heap that looks like statically typed Python: Str,
-// List, Dict.
+// List<T>, Dict<K, V>.
 
 #ifndef GC_HEAP_H
 #define GC_HEAP_H
@@ -19,9 +19,8 @@
 
 // Design Notes:
 
-// We're starting off very simple: It's a semi-space collector using the Cheney
-// algorithm.  (Later we may add a "large object space", managed by
-// mark-and-sweep after each copy step.)
+// It's a semi-space collector using the Cheney algorithm.  (Later we may add a
+// "large object space", managed by mark-and-sweep after each copy step.)
 
 // Design:
 // - Immutable Slab<T> and Str (Str may have a hash value and other fields).
@@ -37,65 +36,32 @@
 // - gc_heap::Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
+// - NewStr, NewList, NewDict: gc_heap::Alloc() doesn't work for these types
+//   for various reasons
 // - Heap::Allocate()
 //   The untyped internal API.  For NewStr() and NewSlab().
 // - malloc() -- for say yajl to use.  Manually deallocated.
-// - new/delete -- for other C++ libs to use.  Manually deallocated.
+// - new/delete -- shouldn't be in Oil?
 
-// Must use Local<T> instead of raw pointers on the stack.
+// Stack rooting API:
 //
-//   This implements "double indirection".
-//
-//   Why do we need signatures like len(Local<Str> s) and len(Local<List<T>> L)
-//   ?  Consider a call like len(["foo"]).  If len() allocated, we could lose
-//   track of ["foo"], if it weren't registered with PushRoot().
-//
-//   Example:
-//
-//   Str* myfunc(Local<Str> s) {  /* takes Local, returns raw pointer */
-//     // allocation may trigger collection
-//     Local<Str> suffix = NewStr("foo");
-//     return str_concat(s, suffix);
-//   }
-//   // Pointer gets coerced to Local?  But not the reverse.
-//   Local<Str> result = myfunc(NewStr("bar"));
-//
-//   TODO: godbolt an example with Local<T>, to see how much it costs.  I hope
-//   it could be optimized away.
-//
-//   https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/GC_Rooting_Guide
-//   Our Local<T> is like their Rooted<T>
-//
-//   "JS::Handle<T> exists because creating and destroying a JS::Rooted<T> is
-//   not free (though it only costs a few cycles). Thus, it makes more sense to
-//   only root the GC thing once and reuse it through an indirect reference.
-//   Like a reference, a JS::Handle is immutable: it can only ever refer to the
-//   JS::Rooted<T> that it was created for."
-//   "Return raw pointers from functions"
-//
-//   Hm I guess we could have two types.  But do the dumb thing for now.
-//
-//   They have MutableHandle<T> for out params, but we don't have out params!
+//   StackRoots _roots({mystr, mydict, mylist});
 
 // Slab Sizing with 8-byte slab header
 //
 //   16 - 8 =  8 = 1 eight-byte or  2 four-byte elements
 //   32 - 8 = 24 = 3 eight-byte or  6 four-byte elements
 //   64 - 8 = 56 = 7 eight-byte or 14 four-byte elements
-//
-// Note: dict will have DIFFERENT size keys and values!  It has its own
-// calculation.
 
-// Small Size Optimization: omit separate slabs (later)
+// #defines for degbugging:
 //
-// - List: 24 bytes, so we could get 1 or 2 entries for free?  That might add
-//   up
-// - Dict: 40 bytes: I don't think it optimizes
-// - Doesn't apply to Str because it's immutable: 16 bytes + string length.
+// GC_EVERY_ALLOC: Collect() on every Allocate().  Exposes many bugs!
+// GC_PROTECT: Use mprotect()
+// GC_VERBOSE: Log when we collect
+// GC_DEBUG: Collect more stats.  TODO: Rename this?
 
-// These are all odd to distinguish them from vtable pointers.
-// On either big or little endian machines, I believe the first byte of the 4
-// or 8 byte pointer should be even.
+// Obj::heap_tag_ values.  They're odd numbers to distinguish them from vtable
+// pointers.
 namespace Tag {
 const int Forwarded = 1;  // For the Cheney algorithm.
 const int Global = 3;     // Neither copy nor scan.
@@ -131,9 +97,7 @@ class Space {
   }
   void Init(int space_size);
 
-  void Free() {
-    free(begin_);
-  }
+  void Free();
 
   void Clear() {
     // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
@@ -199,7 +163,7 @@ class Heap {
     int n = aligned(num_bytes);
     // log("n = %d, p = %p", n, p);
 
-#if 1
+#if GC_EVERY_ALLOC
     Collect();  // force collection to find problems early
 #endif
 
@@ -228,7 +192,6 @@ class Heap {
       multiple *= 2;
     }
     // log("=== FORCED by multiple of %d", multiple);
-
     to_space_.Free();
     to_space_.Init(to_space_.size_ * multiple);
 
