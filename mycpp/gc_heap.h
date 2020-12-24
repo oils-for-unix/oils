@@ -970,14 +970,9 @@ class List : public gc_heap::Obj {
     // Otherwise, there's enough capacity
   }
 
-  // Append a single element to this list
-  void append(T item) {
-    auto self = this;
-    StackRoots _roots({&self});
-    self->reserve(self->len_ + 1);
-    self->set(self->len_, item);
-    ++self->len_;
-  }
+  // Append a single element to this list.  Must be specialized List<int> vs
+  // List<Str*>.
+  void append(T item);
 
   // Extend this list with multiple elements.
   void extend(List<T>* other) {
@@ -1028,6 +1023,31 @@ List<T>* NewList(std::initializer_list<T> init) {
   }
   self->len_ = n;
   return self;
+}
+
+// e.g. List<int>
+template <typename T>
+void list_append(List<T>* self, T item) {
+  StackRoots _roots({&self});
+
+  self->reserve(self->len_ + 1);
+  self->set(self->len_, item);
+  ++self->len_;
+}
+
+// e.g. List<Str*>
+template <typename T>
+void list_append(List<T*>* self, T* item) {
+  StackRoots _roots({&self, &item});
+
+  self->reserve(self->len_ + 1);
+  self->set(self->len_, item);
+  ++self->len_;
+}
+
+template <typename T>
+void List<T>::append(T item) {
+  list_append(this, item);
 }
 
 //

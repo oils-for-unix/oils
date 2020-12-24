@@ -238,23 +238,8 @@ TEST list_test() {
   PASS();
 }
 
-// Copied from list_test.  GAH!
-TEST repro() {
-  auto list2 = NewList<Str*>();
-  StackRoots _roots2({&list2});
-
-  auto str1 = NewStr("foo");
-  StackRoots _roots5({&str1});
-  log("str1 = %p", str1);
-  auto str2 = NewStr("bar");
-  StackRoots _roots6({&str2});
-  log("str2 = %p", str2);
-
-  list2->append(str1);
-  list2->append(str2);
-  ASSERT_EQ(2, len(list2));
-  ASSERT(str_equals(str1, list2->index(0)));
-  ASSERT(str_equals(str2, list2->index(1)));
+TEST list_repro() {
+  // For isolation
 
   PASS();
 }
@@ -900,8 +885,8 @@ int main(int argc, char** argv) {
   RUN_TEST(sizeof_test);
   RUN_TEST(roundup_test);
   RUN_TEST(str_test);
-  // RUN_TEST(list_test);
-  // RUN_TEST(repro);
+  RUN_TEST(list_test);
+  RUN_TEST(list_repro);
 
   RUN_TEST(global_list_test);
   RUN_TEST(dict_test);
