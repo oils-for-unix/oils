@@ -789,17 +789,14 @@ class List : public gc_heap::Obj {
 
   // Implements L[i]
   T index(int i) {
-    auto self = this;
-    StackRoots _roots({&self});
-
     if (i < 0) {
-      i += self->len_;
+      i += len_;
     }
     if (i < len_) {
-      return self->slab_->items_[i];
+      return slab_->items_[i];
     }
 
-    log("i = %d, len_ = %d", i, self->len_);
+    log("i = %d, len_ = %d", i, len_);
     assert(0);  // Out of bounds
   }
 
@@ -807,9 +804,7 @@ class List : public gc_heap::Obj {
   // Note: Unlike Dict::set(), we don't need to specialize List::set() on T for
   // StackRoots because it doesn't allocate.
   void set(int i, T item) {
-    auto self = this;
-    StackRoots _roots({&self});
-    self->slab_->items_[i] = item;
+    slab_->items_[i] = item;
   }
 
   // L[begin:]

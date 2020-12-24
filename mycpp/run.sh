@@ -51,10 +51,12 @@ source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 source examples.sh
 source harness.sh
 
-readonly ASAN_FLAGS="-O0 -g -fsanitize=address"
+readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
 export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
 # also in build/mycpp.sh
 export ASAN_SYMBOLIZER_PATH="$REPO_ROOT/$CLANG_DIR_RELATIVE/bin/llvm-symbolizer"
+
+readonly DBG_FLAGS='-O0 -g'
 
 time-tsv() {
   $REPO_ROOT/benchmarks/time_.py --tsv "$@"
@@ -203,11 +205,15 @@ cpp-compile() {
   local variant=$2
   shift 2
 
-  local flags='-D GC_DEBUG -D GC_PROTECT ' #-D GC_EVERY_MALLOC'
+  local flags='-D GC_DEBUG -D GC_PROTECT -D GC_EVERY_ALLOC '
+  #local flags='-D GC_DEBUG -D GC_PROTECT '
   #local flags='-D GC_DEBUG '
   case $variant in
     (asan)
       flags+="$CXXFLAGS $ASAN_FLAGS"
+      ;;
+    (dbg)
+      flags+="$CXXFLAGS $DBG_FLAGS"
       ;;
     (*)
       flags+="$CXXFLAGS"
@@ -245,8 +251,10 @@ my-runtime-test() {
 
 mylib2-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile mylib2_test asan -I ../cpp mylib2.cc gc_heap.cc my_runtime.cc
-  _bin/mylib2_test.asan "$@"
+  local variant=asan
+  local variant=dbg
+  cpp-compile mylib2_test $variant -I ../cpp mylib2.cc gc_heap.cc my_runtime.cc
+  _bin/mylib2_test.$variant "$@"
 }
 
 all-tests() {

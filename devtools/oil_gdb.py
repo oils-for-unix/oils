@@ -60,7 +60,7 @@ class GcStrPrinter:
         
         # This only prints until first NUL, since we don't have the length.
         # note: lazy_string() only prints the first char!
-        t = gdb.lookup_type('char*')
+        t = gdb.lookup_type('char').pointer()
         return data_.reinterpret_cast(t)
 
 

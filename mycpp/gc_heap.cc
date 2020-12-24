@@ -158,6 +158,25 @@ void Heap::Collect() {
       // This updates the underlying Str/List/Dict with a forwarding pointer,
       // i.e. for other objects that are pointing to it
       Obj* new_location = Relocate(root, header);
+#if GC_DEBUG
+      for (int j = 0; j < roots_top_; ++j) {
+        Obj** handle2 = roots_[j];
+        auto root2 = *handle2;
+        if (root2) {
+          switch (root2->heap_tag_) {
+            case Tag::Forwarded:
+            case Tag::Global:
+            case Tag::Opaque:
+            case Tag::FixedSize:
+            case Tag::Scanned:
+              break;
+            default:
+              assert(0);
+          }
+        }
+      }
+
+#endif
 
       // log("    new location %p", new_location);
 
