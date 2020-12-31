@@ -1,0 +1,18 @@
+--- a/services/toil-worker.sh
++++ b/services/toil-worker.sh
+@@ -299,10 +299,11 @@ save-metadata() {
+   # variable, but sr.ht doesn't.
+   # git rev-parse --abbrev-ref HEAD > $meta_dir/git-branch.txt
+ 
+-  git log -n 1 --pretty='format:%H' > $meta_dir/commit-hash.txt
+-  # ISO 8601 format0
+-  git log -n 1 --pretty='format:%aI' > $meta_dir/commit-date.txt
+-  git log -n 1 --pretty='format:%s' > $meta_dir/commit-line.txt  # "subject"
++  echo GIT METADATA NOT YET AVAILABLE IN NIX  > $meta_dir/commit-line.txt  # "subject"
++  # git log -n 1 --pretty='format:%H' > $meta_dir/commit-hash.txt
++  # # ISO 8601 format0
++  # git log -n 1 --pretty='format:%aI' > $meta_dir/commit-date.txt
++  # git log -n 1 --pretty='format:%s' > $meta_dir/commit-line.txt  # "subject"
+ }
+ 
+ job-main() {

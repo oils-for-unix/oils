@@ -1,0 +1,33 @@
+--- a/build/dev.sh	2020-12-31 20:07:47.138174527 +0100
++++ b/build/dev.sh	2020-12-31 23:12:33.464939155 +0100
+@@ -236,24 +236,7 @@
+ }
+ 
+ yajl() {
+-  ### Build and test yajl binding (depends on submodule)
+-
+-  log ''
+-  log "py-yajl/setup.py -> yajl.so"
+-
+-  pushd py-yajl >/dev/null
+-  python2 setup.py --quiet build_ext --inplace
+-
+-  # DISABLED.  It causes a lot of spew.  And yajl will not make it into oil-native.
+-  # Adapted from py-yajl/runtests.sh
+-  # python2 tests/unit.py
+-
+-  # Hm this test doesn't make any assertions.
+-  zcat test_data/issue_11.gz | python2 tests/issue_11.py >/dev/null
+-  popd >/dev/null
+-
+-  # Link it in the repo root
+-  ln -s -f py-yajl/yajl.so .
++  log 'PATCHED OUT yajl()'
+ }
+ 
+ clean() {
+@@ -344,3 +327,4 @@
+ fi
+ 
+ "$@"
++
