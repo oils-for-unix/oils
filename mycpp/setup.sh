@@ -46,11 +46,13 @@ build() {
 # Hooks needs because mycpp/run.sh needs to be in the mycpp/ dir.
 #
 
+# TODO: Restore GC=1 after d = {} is translated to NewDict().
+
 build-examples() {
   ### Build all mycpp/examples
 
   # TODO: examples/parse expr.asdl needs NewStr instead of new Str()
-  export GC=1
+  # export GC=1
 
   export MYPY_REPO
 
@@ -65,7 +67,7 @@ test-examples() {
   ### Test all mycpp/examples
 
   # This works!
-  export GC=1
+  # export GC=1
 
   cd $THIS_DIR
   ./run.sh test-all
@@ -75,7 +77,7 @@ benchmark-examples() {
   ### Benchmark all mycpp/examples
 
   # 'files' has a different result?
-  export GC=1
+  # export GC=1
 
   cd $THIS_DIR
   ./run.sh benchmark-all
