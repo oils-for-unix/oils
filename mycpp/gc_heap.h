@@ -70,6 +70,11 @@ const int FixedSize = 7;  // Fixed size headers: consult field_mask_
 const int Scanned = 9;    // Copy AND scan for non-NULL pointers.
 }  // namespace Tag
 
+// Silly definition for passing types like GlobalList<T, N> and initializer
+// lists like {1, 2, 3} to macros
+
+#define COMMA ,
+
 namespace gc_heap {
 
 template <class T>
@@ -547,6 +552,7 @@ inline Slab<T>* NewSlab(int len) {
 
 #ifdef MYLIB_LEGACY
 #define GLOBAL_STR(name, val) Str* name = new Str(val);
+#define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 #endif
 
 #ifndef MYLIB_LEGACY
@@ -708,11 +714,6 @@ constexpr int maskbit(int offset) {
   //
   // List<T>
   //
-
-  // Silly definition for passing types like GlobalList<T, N> and initializer
-  // lists like {1, 2, 3} to macros
-
-#define COMMA ,
 
 // Type that is layout-compatible with List (unit tests assert this).  Two
 // purposes:

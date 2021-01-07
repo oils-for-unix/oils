@@ -123,8 +123,8 @@ def CTypeIsManaged(c_type):
   """Do we need to add it to StackRoots?"""
   assert c_type != 'void'
 
-  # TODO: What about function types?  I don't think we're using those?
-  return c_type not in ('int', 'double', 'bool')
+  # int, double, bool, scope_t enums, etc. are not managed
+  return c_type.endswith('*')
 
 
 def get_c_type(t, param=False, local=False):
