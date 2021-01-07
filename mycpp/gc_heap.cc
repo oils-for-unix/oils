@@ -158,7 +158,7 @@ void Heap::Collect() {
       // This updates the underlying Str/List/Dict with a forwarding pointer,
       // i.e. for other objects that are pointing to it
       Obj* new_location = Relocate(root, header);
-#if GC_DEBUG
+#if TODO_BUG
       for (int j = 0; j < roots_top_; ++j) {
         Obj** handle2 = roots_[j];
         auto root2 = *handle2;

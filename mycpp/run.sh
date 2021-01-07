@@ -205,9 +205,8 @@ cpp-compile() {
   local variant=$2
   shift 2
 
-  local flags='-D GC_DEBUG -D GC_PROTECT -D GC_EVERY_ALLOC '
-  #local flags='-D GC_DEBUG -D GC_PROTECT '
-  #local flags='-D GC_DEBUG '
+  #local flags='-D GC_DEBUG -D GC_PROTECT -D GC_EVERY_ALLOC '
+  local flags='-D GC_DEBUG -D GC_PROTECT '
   case $variant in
     (asan)
       flags+="$CXXFLAGS $ASAN_FLAGS"
