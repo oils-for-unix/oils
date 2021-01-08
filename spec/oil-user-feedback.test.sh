@@ -68,13 +68,16 @@ EOF
 }
 
 git-branch-merged | while read --line {
-  if (_line != "master" and not _line.startswith('*')) {
-    echo $_line
+  # BUG: var or const messes up in al oop.
+  setvar line = _line.strip()  # removing leading space
+  if (line != "master" and not line.startswith('*')) {
+    echo $line
   }
 } | readarray -t :branches
 
 # TODO:
-# - read --lines instead?
+# - read --lines instead?  But does it have -t?
+#   - make it an alias?
 
 if (len(branches) == 0) {
   echo "No merged branches"
@@ -85,12 +88,9 @@ if (len(branches) == 0) {
 git
 branch
 -D
-  foo
-  baz
-  master
+foo
+baz
 ## END
-
-
 
 #### Location info undefined var in expression mode
 
