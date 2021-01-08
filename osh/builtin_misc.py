@@ -143,7 +143,7 @@ def _AppendParts(s, spans, max_results, join_next, parts):
 # NOTE that dash, mksh, and zsh all read a single byte at a time.  It appears
 # to be required by POSIX?  Could try libc getline and make this an option.
 
-def ReadLineFromStdin(delim_char):
+def ReadUntilDelim(delim_char):
   # type: (Optional[str]) -> Tuple[str, bool]
   """Read a portion of stdin.
   
@@ -164,6 +164,22 @@ def ReadLineFromStdin(delim_char):
     chars.append(c)
 
   return ''.join(chars), eof
+
+
+def ReadLineFromStdin():
+  # type: () -> str
+  chars = []  # type: List[str]
+  while True:
+    c = posix.read(0, 1)
+    if len(c) == 0:
+      break
+
+    chars.append(c)
+
+    if c == '\n':
+      break
+
+  return ''.join(chars)
 
 
 def _ReadLine():
@@ -385,7 +401,7 @@ class Read(vm._Builtin):
     join_next = False
     status = 0
     while True:
-      line, eof = ReadLineFromStdin(delim_char)
+      line, eof = ReadUntilDelim(delim_char)
 
       if eof:
         # status 1 to terminate loop.  (This is true even though we set
@@ -426,7 +442,6 @@ class MapFile(vm._Builtin):
     # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
-    self.f = mylib.Stdin()
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -436,10 +451,13 @@ class MapFile(vm._Builtin):
     var_name, _ = arg_r.Peek2()
     if var_name is None:
       var_name = 'MAPFILE'
+    else:
+     if var_name.startswith(':'):
+       var_name = var_name[1:]
 
     lines = []  # type: List[str]
     while True:
-      line = self.f.readline()
+      line = ReadLineFromStdin()
       if len(line) == 0:
         break
       if arg.t and line.endswith('\n'):

@@ -404,7 +404,7 @@ builtin-eval-source() {
 }
 
 builtin-io() {
-  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -448,7 +448,8 @@ builtin-trap() {
 # Bash implements type -t, but no other shell does.  For Nix.
 # zsh/mksh/dash don't have the 'help' builtin.
 builtin-bash() {
-  sh-spec spec/builtin-bash.test.sh $BASH $OSH_LIST "$@"
+  sh-spec spec/builtin-bash.test.sh --osh-failures-allowed 4 \
+    $BASH $OSH_LIST "$@"
 }
 
 # This is bash/OSH only

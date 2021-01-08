@@ -175,3 +175,161 @@ type -f mv tar grep
 mv is /tmp/mv
 tar is /tmp/tar
 grep is /tmp/grep
+## END
+
+#### mapfile
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s\n' {1..5..2} | {
+  mapfile
+  echo "n=${#MAPFILE[@]}"
+  printf '[%s]\n' "${MAPFILE[@]}"
+}
+## STDOUT:
+n=3
+[1
+]
+[3
+]
+[5
+]
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### readarray (synonym for mapfile)
+type readarray >/dev/null 2>&1 || exit 0
+printf '%s\n' {1..5..2} | {
+  readarray
+  echo "n=${#MAPFILE[@]}"
+  printf '[%s]\n' "${MAPFILE[@]}"
+}
+## STDOUT:
+n=3
+[1
+]
+[3
+]
+[5
+]
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### mapfile (array name): arr
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s\n' {1..5..2} | {
+  mapfile arr
+  echo "n=${#arr[@]}"
+  printf '[%s]\n' "${arr[@]}"
+}
+## STDOUT:
+n=3
+[1
+]
+[3
+]
+[5
+]
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### mapfile (delimiter): -d delim
+# Note: Bash-4.4+
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s:' {1..5..2} | {
+  mapfile -d : arr
+  echo "n=${#arr[@]}"
+  printf '[%s]\n' "${arr[@]}"
+}
+## STDOUT:
+n=3
+[1:]
+[3:]
+[5:]
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### mapfile (delimiter): -d '' (null-separated)
+# Note: Bash-4.4+
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s\0' {1..5..2} | {
+  mapfile -d '' arr
+  echo "n=${#arr[@]}"
+  printf '[%s]\n' "${arr[@]}"
+}
+## STDOUT:
+n=3
+[1]
+[3]
+[5]
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### mapfile (truncate delim): -t
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s\n' {1..5..2} | {
+  mapfile -t arr
+  echo "n=${#arr[@]}"
+  printf '[%s]\n' "${arr[@]}"
+}
+## STDOUT:
+n=3
+[1]
+[3]
+[5]
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### mapfile -t doesn't remove \r
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s\r\n' {1..5..2} | {
+  mapfile -t arr
+  argv.py "${arr[@]}"
+}
+## STDOUT:
+['1\r', '3\r', '5\r']
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### mapfile (store position): -O start
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s\n' a{0..2} | {
+  arr=(x y z)
+  mapfile -O 2 -t arr
+  echo "n=${#arr[@]}"
+  printf '[%s]\n' "${arr[@]}"
+}
+## STDOUT:
+n=5
+[x]
+[y]
+[a0]
+[a1]
+[a2]
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### mapfile (input range): -s start -n count
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s\n' a{0..10} | {
+  mapfile -s 5 -n 3 -t arr
+  echo "n=${#arr[@]}"
+  printf '[%s]\n' "${arr[@]}"
+}
+## STDOUT:
+n=3
+[a5]
+[a6]
+[a7]
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
+#### mapfile / readarray stdin  TODO: Fix me.
+shopt -s lastpipe  # for bash
+
+seq 2 | mapfile m
+seq 3 | readarray r
+echo ${#m[@]}
+echo ${#r[@]}
+## STDOUT:
+2
+3
+## END

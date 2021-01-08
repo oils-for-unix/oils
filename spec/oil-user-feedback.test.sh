@@ -53,3 +53,54 @@ if ( arg ~ / '--variant=' <word> / ) {
 ## STDOUT:
 variant=foo
 ## END
+
+#### Julia port
+
+# https://lobste.rs/s/ritbgc/what_glue_languages_do_you_use_like#c_nhikri
+
+git-branch-merged() {
+  cat <<EOF
+  foo
+* bar
+  baz
+  master
+EOF
+}
+
+git-branch-merged | while read --line {
+  if (_line != "master" and not _line.startswith('*')) {
+    echo $_line
+  }
+} | readarray -t :branches
+
+# TODO:
+# - read --lines instead?
+
+if (len(branches) == 0) {
+  echo "No merged branches"
+} else {
+  write git branch -D @branches
+}
+## STDOUT:
+git
+branch
+-D
+  foo
+  baz
+  master
+## END
+
+
+
+#### Location info undefined var in expression mode
+
+# TODO: Move this to runtime-errors?
+
+if (x) {
+  echo x
+}
+## status: 1
+## STDOUT:
+x
+## END
+
