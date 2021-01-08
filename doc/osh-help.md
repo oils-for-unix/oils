@@ -556,6 +556,10 @@ Read a line from stdin, split it into tokens with the `$IFS` algorithm,
 and assign the tokens to the given variables.  When no VARs are given,
 assign to `$REPLY`.
 
+Note: When writing Oil, prefer the extensions documented in
+[oil-read]($oil-help).  The `read` builtin is confusing because `-r` needs to
+be explicitly enabled.
+
 Flags:
 
     -a ARRAY  assign the tokens to elements of this array

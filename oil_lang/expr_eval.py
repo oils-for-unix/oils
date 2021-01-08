@@ -12,6 +12,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e,
 )
+from asdl import runtime
 from core.pyerror import e_die, log
 from frontend import consts
 from oil_lang import objects
@@ -65,14 +66,14 @@ class OilEvaluator(object):
     assert self.shell_ex is not None
     assert self.word_ev is not None
 
-  def LookupVar(self, var_name):
+  def LookupVar(self, var_name, span_id=runtime.NO_SPID):
     """Convert to a Python object so we can calculate on it natively."""
 
     # Lookup WITHOUT dynamic scope.
     val = self.mem.GetValue(var_name, which_scopes=scope_e.LocalOrGlobal)
     if val.tag == value_e.Undef:
       # TODO: Location info
-      e_die('Undefined variable %r', var_name)
+      e_die('Undefined variable %r', var_name, span_id=span_id)
 
     if val.tag == value_e.Str:
       return val.s
@@ -226,7 +227,7 @@ class OilEvaluator(object):
       raise AssertionError(id_)
 
     if node.tag == expr_e.Var:
-      return self.LookupVar(node.name.val)
+      return self.LookupVar(node.name.val, span_id=node.name.span_id)
 
     if node.tag == expr_e.CommandSub:
       id_ = node.left_token.id
@@ -631,7 +632,7 @@ class OilEvaluator(object):
       new_leaf = re.LiteralChars(s, node.token.span_id)
 
     elif node.tag == re_e.Splice:
-      obj = self.LookupVar(node.name.val)
+      obj = self.LookupVar(node.name.val, span_id=node.name.span_id)
       if not isinstance(obj, objects.Regex):
         e_die("Can't splice object of type %r into regex", obj.__class__,
               token=node.name)

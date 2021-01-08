@@ -402,10 +402,11 @@ The `.cell` action starts with `.` to indicate that its format is unstable.
 
 #### oil-read
 
-    read --line        # default var is $_line
-    read --line --qsn  # decode QSN too
-    read --all         # whole file including newline; var is $_all
-		read -0            # read until NUL, synonym for read -r -d ''
+    read --line             # default var is $_line
+    read --line --with-eol  # keep the \n
+    read --line --qsn       # decode QSN too
+    read --all              # whole file including newline; var is $_all
+    read -0                 # read until NUL, synonym for read -r -d ''
 
 #### run
 

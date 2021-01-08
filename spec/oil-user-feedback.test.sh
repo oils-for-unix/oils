@@ -92,15 +92,17 @@ foo
 baz
 ## END
 
-#### Location info undefined var in expression mode
+#### readonly in loop: explains why const doesn't work
 
-# TODO: Move this to runtime-errors?
+# TODO: Might want to change const in Oil...
+# bash actually prevents assignment and prints a warning, DOH.
 
-if (x) {
-  echo x
-}
+seq 3 | while read -r line; do
+  readonly stripped=${line//1/x}
+  #declare stripped=${line//1/x}
+  echo $stripped
+done
 ## status: 1
 ## STDOUT:
 x
 ## END
-
