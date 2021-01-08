@@ -16,6 +16,7 @@ Old and new constructs exist side-by-side.  New constructs have fewer
 <div id="toc">
 </div>
 
+
 ## What's the difference between `$(dirname $x)` and `$len(x)` ?
 
 Superficially, both of these syntaxes take an argument `x` and return a
@@ -28,6 +29,21 @@ string.  But they are different:
     `$len(x)` converts it to a string.
 
 (Note: command subs may be optimized later, as `ksh` does.)
+
+## How can I return rich values from shell functions / Oil `proc`s?
+
+There are two primary ways:
+
+- Print the "returned" data to `stdout`.  Retrieve it with a command sub like
+  `$(myproc)` or a pipeline like `myproc | read --line`.
+- Use an "out param" with [setref]($oil-help:setref).
+
+Oil may grow true functions with the `func` keyword at some point.  However,
+that must be done carefully, as a `proc` composes with processes, but a `func`
+doesn't.
+
+Send us feedback if this doesn't make sense, or if you want a longer
+explanation.
 
 ## Why doesn't a raw string work here: `${array[r'\']}` ?
 

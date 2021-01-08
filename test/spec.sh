@@ -980,6 +980,11 @@ oil-interactive() {
     $OIL_LIST "$@"
 }
 
+oil-user-feedback() {
+  sh-spec spec/oil-user-feedback.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
 ble-idioms() {
   sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 0 \
           $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
