@@ -174,11 +174,11 @@ TEST libc_test() {
   ASSERT_EQ_FMT(10, result->at1(), "%d");
 
   // This depends on the file system
-  auto files = libc::glob(new Str("*.py"));
+  auto files = libc::glob(new Str("*.mk"));
   ASSERT_EQ_FMT(1, len(files), "%d");
-  print(files->index(0));  // should get __init__.py only
+  print(files->index(0));  // should get portable_rules.mk only
 
-  auto files2 = libc::glob(new Str("*.pyzzz"));
+  auto files2 = libc::glob(new Str("*.mkzzz"));
   ASSERT_EQ_FMT(0, len(files2), "%d");
 
   Str* h = libc::gethostname();
