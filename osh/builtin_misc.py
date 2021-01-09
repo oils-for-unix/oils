@@ -138,12 +138,7 @@ def _AppendParts(s, spans, max_results, join_next, parts):
   return done, join_next
 
 
-# sys.stdin.readline() in Python has buffering!  TODO: Rewrite this tight loop
-# in C?  Less garbage probably.
-# NOTE that dash, mksh, and zsh all read a single byte at a time.  It appears
-# to be required by POSIX?  Could try libc getline and make this an option.
-
-def ReadUntilDelim(delim_char):
+def _ReadUntilDelim(delim_char):
   # type: (Optional[str]) -> Tuple[str, bool]
   """Read a portion of stdin.
   
@@ -166,21 +161,11 @@ def ReadUntilDelim(delim_char):
   return ''.join(chars), eof
 
 
-def ReadLineFromStdin():
-  # type: () -> str
-  chars = []  # type: List[str]
-  while True:
-    c = posix.read(0, 1)
-    if len(c) == 0:
-      break
+# sys.stdin.readline() in Python has buffering, so we need our own function.
+# TODO: Rewrite this tight loop in C (or Tea) for less garbage.
 
-    chars.append(c)
-
-    if c == '\n':
-      break
-
-  return ''.join(chars)
-
+# Note that dash, mksh, and zsh all read a single byte at a time.  It appears
+# to be required by POSIX?  Could try libc getline and make this an option.
 
 def _ReadLine():
   # type: () -> str
@@ -245,8 +230,8 @@ class Read(vm._Builtin):
 
       # The parser only yields valid tokens:
       #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
-      # So we can use word_compile.EvalCStringToken, which is also used for $''.
-      #
+      # So we can use word_compile.EvalCStringToken, which is also used for
+      # $''.
       # Important: we don't generate Id.Unknown_Backslash because that is valid
       # in echo -e.  We just make it Id.Unknown_Tok?
       try:
@@ -401,7 +386,7 @@ class Read(vm._Builtin):
     join_next = False
     status = 0
     while True:
-      line, eof = ReadUntilDelim(delim_char)
+      line, eof = _ReadUntilDelim(delim_char)
 
       if eof:
         # status 1 to terminate loop.  (This is true even though we set
@@ -457,7 +442,7 @@ class MapFile(vm._Builtin):
 
     lines = []  # type: List[str]
     while True:
-      line = ReadLineFromStdin()
+      line = _ReadLine()
       if len(line) == 0:
         break
       if arg.t and line.endswith('\n'):

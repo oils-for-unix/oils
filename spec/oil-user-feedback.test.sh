@@ -67,6 +67,7 @@ git-branch-merged() {
 EOF
 }
 
+# With bash-style readarray.  The -t is annoying.
 git-branch-merged | while read --line {
   # BUG: var or const messes up in al oop.
   setvar line = _line.strip()  # removing leading space
@@ -75,19 +76,31 @@ git-branch-merged | while read --line {
   }
 } | readarray -t :branches
 
-# TODO:
-# - read --lines instead?  But does it have -t?
-#   - make it an alias?
-
 if (len(branches) == 0) {
   echo "No merged branches"
 } else {
   write git branch -D @branches
 }
+
+# With "push".  Hm read --lines isn't bad.
+var branches2 = %()
+git-branch-merged | while read --line {
+  # BUG: var or const messes up in al oop.
+  setvar line = _line.strip()  # removing leading space
+  if (line != "master" and not line.startswith('*')) {
+    push :branches2 $line
+  }
+}
+
+write -- ___  @branches2
+
 ## STDOUT:
 git
 branch
 -D
+foo
+baz
+___
 foo
 baz
 ## END

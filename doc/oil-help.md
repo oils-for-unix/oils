@@ -408,6 +408,10 @@ The `.cell` action starts with `.` to indicate that its format is unstable.
     read --all              # whole file including newline; var is $_all
     read -0                 # read until NUL, synonym for read -r -d ''
 
+When --qsn is passed, the line is check for an opening single quote.  If so,
+it's decoded as QSN.  The line must have a closing single quote, and there
+can't be any non-whitespace characters after it.
+
 #### run
 
 Re-enable errexit, and provide fine-grained control over exit codes.

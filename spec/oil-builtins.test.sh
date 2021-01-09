@@ -187,6 +187,10 @@ write --qsn --unicode u -- "$_line"
 ## END
 
 #### read --line --with-eol --qsn
+
+# whitespace is allowed after closing single quote; it doesn't make a 
+# difference.
+
 read --line --with-eol --qsn <<EOF
 'foo\n'
 EOF
@@ -203,6 +207,36 @@ echo status=$?
 
 ## STDOUT:
 status=2
+## END
+
+#### read --all-lines
+seq 3 | read --all-lines :nums
+write --sep ' ' -- @nums
+## STDOUT:
+1 2 3
+## END
+
+#### read --all-lines --with-eol
+seq 3 | read --all-lines --with-eol :nums
+write --sep '' -- @nums
+## STDOUT:
+1
+2
+3
+## END
+
+#### read --all-lines --qsn --with-eol
+read --all-lines --qsn --with-eol :lines << EOF
+foo
+bar
+'one\ntwo'
+EOF
+write --sep '' -- @lines
+## STDOUT:
+foo
+bar
+one
+two
 ## END
 
 #### read --all

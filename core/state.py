@@ -1277,7 +1277,12 @@ class Mem(object):
     languages.
     """
     if cell and keyword_id in (Id.KW_Var, Id.KW_Const):
-      # TODO: Point at the ORIGINAL declaration!
+      # TODO:
+      # - This doesn't work for LOOPS.  Maybe you need to store the keyword
+      #   SPID with it?  (Would have to change PackFlags and so forth)
+      #   - note setvar and builtins like 'read' and 'mapfile' can create vars
+      #     with state.SetRef{String,Array}
+      # - Point at the ORIGINAL declaration!
       e_die("%r has already been declared", name)
 
     if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetLocal,
