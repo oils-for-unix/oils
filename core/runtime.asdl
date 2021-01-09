@@ -67,8 +67,8 @@ module runtime
   -- Used for ${a[i]=x}.  TODO: also use for lvalue/place.
   a_index = Str(string s) | Int(int i)
 
-  -- A cell is a wrapper for a value.  16 bytes in C++.
-  -- TODO: add spid for last-assigned location
+  -- A cell is a wrapper for a value.
+  -- TODO: add spid for declaration for 'assigning const' error
 
   -- Invariant: if exported or nameref is set, the val should be Str or Undef.
   -- This is enforced in mem.SetValue but isn't expressed in the schema.
@@ -87,8 +87,8 @@ module runtime
   --   GetValue: N/A
   --   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
 
-  -- NOTE: scope_e.Dynamic should generally not be used by callers.  Most
-  -- use scope_e.Shopt to allow turning it off.
+  -- NOTE: Most callers use scope_e.Shopt rather than scope_e.Dynamic 
+  -- to respect shopt -u dynamic_scope.
   scope = Dynamic | Shopt | LocalOrGlobal | LocalOnly | GlobalOnly 
 
   -- For OSH assignment, evaluated from osh_ast.lhs_expr

@@ -57,6 +57,8 @@ variant=foo
 #### Julia port
 
 # https://lobste.rs/s/ritbgc/what_glue_languages_do_you_use_like#c_nhikri
+#
+# See bash counterpart in spec/blog1.test.sh
 
 git-branch-merged() {
   cat <<EOF
@@ -71,7 +73,7 @@ EOF
 git-branch-merged | while read --line {
   # BUG: var or const messes up in al oop.
   setvar line = _line.strip()  # removing leading space
-  if (line != "master" and not line.startswith('*')) {
+  if (line != 'master' and not line.startswith('*')) {
     echo $line
   }
 } | readarray -t :branches
@@ -85,9 +87,9 @@ if (len(branches) == 0) {
 # With "push".  Hm read --lines isn't bad.
 var branches2 = %()
 git-branch-merged | while read --line {
-  # BUG: var or const messes up in al oop.
+  # TODO: Should be 'const' once we fix it?  Or 'var'?
   setvar line = _line.strip()  # removing leading space
-  if (line != "master" and not line.startswith('*')) {
+  if (line != 'master' and not line.startswith('*')) {
     push :branches2 $line
   }
 }

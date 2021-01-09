@@ -48,7 +48,7 @@ from osh import braces
 from osh import bool_parse
 from osh import word_
 
-from typing import Optional, List, Tuple, cast, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from frontend.lexer import Lexer
@@ -345,6 +345,72 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
   return node
 
 
+class Declarations(object):
+  """Ensure that var and const can only appear once per function.
+
+  Bash allows this:
+
+  f() {
+    g() {
+      echo 'top level function defined in another one'
+    }
+  }
+
+  So we have a stack... And then
+  """
+  def __init__(self):
+    # type: () -> None
+    """
+    Args:
+      oil_proc: Whether to disallow nested proc/function declarations
+    """
+    # tokens has 'proc' or some other token
+    self.tokens = []  # type: List[Token]
+    self.names = []  # type: List[Dict[str, bool]]
+
+  def Push(self, blame_tok):
+    # type: (Token) -> None
+    if len(self.tokens) != 0:
+      if self.tokens[0].id == Id.KW_Proc or blame_tok.id == Id.KW_Proc:
+        p_die("procs can't contain other procs or functions", token=blame_tok)
+
+    self.tokens.append(blame_tok)
+    entry = {}  # type: Dict[str, bool]
+    self.names.append(entry)
+
+  def Pop(self):
+    # type: () -> None
+    self.names.pop()
+    self.tokens.pop()
+
+  def Register(self, name_tok):
+    # type: (Token) -> None
+    """
+    Register a variable or param declaration.
+    """
+    top = self.names[-1] 
+    name = name_tok.val
+    if name in top:
+      p_die('%r was already declared', name, token=name_tok)
+    else:
+      top[name] = True
+
+
+class ctx_Declarations(object):
+  def __init__(self, declarations, blame_tok):
+    # type: (Declarations, Token) -> None
+    declarations.Push(blame_tok)
+    self.declarations = declarations
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.declarations.Pop()
+
+
 SECONDARY_KEYWORDS = [
     Id.KW_Do, Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else, Id.KW_Esac
 ]
@@ -372,6 +438,7 @@ class CommandParser(object):
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
     self.parse_opts = parse_ctx.parse_opts
+    self.declarations = Declarations()
 
     self.Reset()
 
@@ -1546,10 +1613,9 @@ class CommandParser(object):
     # type: () -> command__ShFunction
     """
     function_header : fname '(' ')'
-    function_def     : function_header newline_ok function_body ;
+    function_def    : function_header newline_ok function_body ;
 
     Precondition: Looking at the function name.
-    Post condition:
 
     NOTE: There is an ambiguity with:
 
@@ -1562,6 +1628,12 @@ class CommandParser(object):
 
     cur_word = cast(compound_word, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(cur_word)
+
+    # If it passed ShFunctionName, this should be true.
+    part0 = cur_word.parts[0]
+    assert part0.tag_() == word_part_e.Literal
+    blame_tok = cast(Token, part0)
+
     if len(name) == 0:
       p_die('Invalid function name', word=cur_word)
 
@@ -1582,7 +1654,8 @@ class CommandParser(object):
 
     func = command.ShFunction()
     func.name = name
-    func.body = self.ParseCompoundCommand()
+    with ctx_Declarations(self.declarations, blame_tok):
+      func.body = self.ParseCompoundCommand()
 
     # matches ParseKshFunctionDef below
     func.spids.append(left_spid)
@@ -1595,6 +1668,7 @@ class CommandParser(object):
     """
     ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
     """
+    keyword_tok = _KeywordToken(self.cur_word)
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     self._Next()  # skip past 'function'
@@ -1621,7 +1695,8 @@ class CommandParser(object):
 
     func = command.ShFunction()
     func.name = name
-    func.body = self.ParseCompoundCommand()
+    with ctx_Declarations(self.declarations, keyword_tok):
+      func.body = self.ParseCompoundCommand()
 
     # matches ParseFunctionDef above
     func.spids.append(left_spid)
@@ -1632,11 +1707,16 @@ class CommandParser(object):
   def ParseOilProc(self):
     # type: () -> command__Proc
     node = command.Proc()
-    self.w_parser.ParseProc(node)
 
-    self._Next()
-    node.body = self.ParseBraceGroup()
-    # No redirects for Oil procs (only at call site)
+    keyword_tok = _KeywordToken(self.cur_word)
+    with ctx_Declarations(self.declarations, keyword_tok):
+      self.w_parser.ParseProc(node)
+
+      # TODO: self.declarations.Register(params ...)
+
+      self._Next()
+      node.body = self.ParseBraceGroup()
+      # No redirects for Oil procs (only at call site)
 
     return node
 

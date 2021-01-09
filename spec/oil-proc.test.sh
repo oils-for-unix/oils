@@ -211,3 +211,18 @@ declare -F
 declare -f myfunc
 declare -f myproc
 ## END
+
+
+#### Nested proc is disallowed at parse time
+
+# NOTE: we can disallow this in Oil statically ...
+proc f {
+  proc g {
+    echo 'G'
+  }
+  g
+}
+f
+g
+## status: 2
+## stdout-json: ""

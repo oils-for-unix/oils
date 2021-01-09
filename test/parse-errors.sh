@@ -842,6 +842,21 @@ parse_at() {
   _oil-parse-error 'echo @"foo"'
 }
 
+oil_nested_proc() {
+  set +o errexit
+
+  _oil-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _oil-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
+
+  # ksh function
+  _oil-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
+
+  _oil-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
+
+  # shell nesting is still allowed
+  _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -888,6 +903,7 @@ cases-in-strings() {
   parse_dollar
   parse_backslash
   oil_to_make_nicer
+  oil_nested_proc
   parse_at
 }
 
