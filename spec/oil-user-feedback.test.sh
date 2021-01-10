@@ -35,23 +35,32 @@ not equal
 ## END
 
 
-#### Regex Literal
-
-# This seems to work as expected?
-
-proc get_opt(arg, :out) {
-  setref out = $(write -- $arg | cut -d'=' -f2)
+#### elif bug
+if (true) {
+  echo A
+} elif (true) {
+  echo B
+} elif (true) {
+  echo C
+} else {
+  echo else
 }
-
-var variant = ''
-var arg = '--variant=foo'
-if ( arg ~ / '--variant=' <word> / ) {
-  get_opt $arg :variant
-  echo variant=$variant
-}
-
 ## STDOUT:
-variant=foo
+A
+## END
+
+#### global vars
+builtin set -u
+
+main() {
+  source $REPO_ROOT/spec/testdata/global-lib.sh
+}
+
+main
+test_func
+
+## status: 1
+## STDOUT:
 ## END
 
 #### Julia port
@@ -121,3 +130,5 @@ done
 ## STDOUT:
 x
 ## END
+
+

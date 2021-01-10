@@ -1358,7 +1358,7 @@ class CommandParser(object):
     if test -f foo {
       echo foo
     } elif test -f bar; test -f spam {
-  # ^ we parsed up to here
+    ^ we parsed up to here
       echo bar
     } else {
       echo none
@@ -1369,7 +1369,8 @@ class CommandParser(object):
     while self.c_id == Id.KW_Elif:
       elif_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Next()  # skip elif
-      if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
+      if (self.parse_opts.parse_paren() and
+          self.w_parser.LookAhead() == Id.Op_LParen):
         enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
         # NOTE: OilCondition could have spids of ( and ) ?
         cond = condition.Oil(enode)  # type: condition_t
@@ -1380,6 +1381,7 @@ class CommandParser(object):
         cond = condition.Shell(commands.children)
 
       body = self.ParseBraceGroup()
+      self._Peek()
 
       arm = syntax_asdl.if_arm(cond, body.children, [elif_spid])
       arms.append(arm)
