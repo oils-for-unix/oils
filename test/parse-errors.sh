@@ -853,6 +853,11 @@ oil_nested_proc() {
 
   _oil-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
 
+  if is-oil-native; then
+    echo 'skipping oil_nested_proc'  # TODO: re-enable with pgen2
+    return
+  fi
+
   # shell nesting is still allowed
   _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
 }
@@ -882,6 +887,20 @@ oil_var_decl() {
     const x = 2
   }
   '
+
+  # implicit const
+  _oil-parse-error '
+  proc p {
+    x = 1
+    echo hi
+    x = 2
+  }
+  '
+
+  if is-oil-native; then
+    echo 'skipping oil_nested_proc'  # TODO: re-enable with pgen2
+    return
+  fi
 
   _should-parse '
   var x = 1

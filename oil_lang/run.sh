@@ -13,9 +13,15 @@ source test/common.sh
 
 # This doesn't distinguish if they should parse with osh or Oil though!
 
+parse-one() {
+  set +o errexit
+  bin/osh -n "$@"
+  if test $? -ne 0; then return 255; fi  # make xargs quit
+}
+
 parse-all-osh() {
   find oil_lang/testdata -name '*.sh' -o -name '*.osh' \
-    | xargs -n 1 -- bin/osh -n
+    | xargs -n 1 -- $0 parse-one
 }
 
 all-passing() {
