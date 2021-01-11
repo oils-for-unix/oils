@@ -221,6 +221,7 @@ echo x=$x
 echo argv "$@"
 
 shopt -s parse_set
+var x = 1
 set x=42
 builtin set --
 echo x=$x

@@ -347,19 +347,8 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
   return node
 
 
-class Declarations(object):
-  """Ensure that var and const can only appear once per function.
-
-  Bash allows this:
-
-  f() {
-    g() {
-      echo 'top level function defined in another one'
-    }
-  }
-
-  So we have a stack... And then
-  """
+class VarChecker(object):
+  """Statically check for proc and variable usage errors."""
   def __init__(self):
     # type: () -> None
     """
@@ -368,16 +357,28 @@ class Declarations(object):
     """
     # tokens has 'proc' or some other token
     self.tokens = []  # type: List[Token]
-    self.names = [{}]  # type: List[Dict[str, bool]]
+    self.names = [{}]  # type: List[Dict[str, Id_t]]
 
   def Push(self, blame_tok):
     # type: (Token) -> None
+    """
+    Bash allows this, but it's confusing because it's the same as two functions
+    at the top level.
+
+    f() {
+      g() {
+        echo 'top level function defined in another one'
+      }
+    }
+
+    Oil disallows nested procs.
+    """
     if len(self.tokens) != 0:
       if self.tokens[0].id == Id.KW_Proc or blame_tok.id == Id.KW_Proc:
         p_die("procs can't contain other procs or functions", token=blame_tok)
 
     self.tokens.append(blame_tok)
-    entry = {}  # type: Dict[str, bool]
+    entry = {}  # type: Dict[str, Id_t]
     self.names.append(entry)
 
   def Pop(self):
@@ -385,24 +386,52 @@ class Declarations(object):
     self.names.pop()
     self.tokens.pop()
 
-  def Register(self, name_tok):
-    # type: (Token) -> None
-    """
-    Register a variable or param declaration.
+  def Check(self, keyword_id, name_tok):
+    # type: (Id_t, Token) -> None
+    """Check for errors in declaration and mutation errors.
+
+    var x, const x:
+      x already declared
+    setlocal x:    (must be var)
+      x is not declared
+      x is constant
+    setvar x:
+      x is constant (only for locals)
+    setglobal x:
+      I don't think any errors are possible
+      We would have to have many conditions to statically know the names:
+      - no 'source'
+      - shopt -u copy_env.
+      - AND use lib has to be static
+
+    LATER:
+    setref x:
+      Should only mutate out params
     """
     top = self.names[-1] 
     name = name_tok.val
-    if name in top:
-      p_die('%r was already declared', name, token=name_tok)
-    else:
-      top[name] = True
+    if keyword_id in (Id.KW_Const, Id.KW_Var):
+      if name in top:
+        p_die('%r was already declared', name, token=name_tok)
+      else:
+        top[name] = keyword_id
+
+    if keyword_id in (Id.KW_Set, Id.KW_SetLocal):
+      if name not in top:
+        p_die("%r hasn't been declared", name, token=name_tok)
+
+    if keyword_id in (Id.KW_Set, Id.KW_SetLocal, Id.KW_SetVar):
+      if name in top and top[name] == Id.KW_Const:
+        p_die("Can't modify constant %r", name, token=name_tok)
+
+    # TODO: setref.
 
 
-class ctx_Declarations(object):
-  def __init__(self, declarations, blame_tok):
-    # type: (Declarations, Token) -> None
-    declarations.Push(blame_tok)
-    self.declarations = declarations
+class ctx_VarChecker(object):
+  def __init__(self, var_checker, blame_tok):
+    # type: (VarChecker, Token) -> None
+    var_checker.Push(blame_tok)
+    self.var_checker = var_checker
 
   def __enter__(self):
     # type: () -> None
@@ -410,7 +439,7 @@ class ctx_Declarations(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.declarations.Pop()
+    self.var_checker.Pop()
 
 
 SECONDARY_KEYWORDS = [
@@ -440,7 +469,7 @@ class CommandParser(object):
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
     self.parse_opts = parse_ctx.parse_opts
-    self.declarations = Declarations()
+    self.var_checker = VarChecker()
 
     self.Reset()
 
@@ -655,7 +684,7 @@ class CommandParser(object):
             if self.allow_block:  # Disabled for if/while condition, etc.
               blame_tok = _KeywordToken(self.cur_word)
               # Our own scope for 'var'
-              with ctx_Declarations(self.declarations, blame_tok):
+              with ctx_VarChecker(self.var_checker, blame_tok):
                 block = self.ParseBraceGroup()
             if 0:
               print('--')
@@ -1597,23 +1626,26 @@ class CommandParser(object):
 
     # Oil extensions
     if self.c_id in (Id.KW_Var, Id.KW_Const):
+      keyword_id = self.c_id
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
       n8 = self.w_parser.ParseVarDecl(kw_token)
       for lhs in n8.lhs:
-        self.declarations.Register(lhs.name)
+        self.var_checker.Check(keyword_id, lhs.name)
       return n8
 
     if self.c_id in (Id.KW_SetVar, Id.KW_SetRef, Id.KW_SetLocal,
                      Id.KW_SetGlobal):
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParsePlaceMutation(kw_token)
+      n9 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
+      return n9
 
     if self.parse_opts.parse_set() and self.c_id == Id.KW_Set:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParsePlaceMutation(kw_token)
+      n10 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
+      return n10
 
     # Happens in function body, e.g. myfunc() oops
     p_die('Unexpected word while parsing compound command', word=self.cur_word)
@@ -1663,7 +1695,7 @@ class CommandParser(object):
 
     func = command.ShFunction()
     func.name = name
-    with ctx_Declarations(self.declarations, blame_tok):
+    with ctx_VarChecker(self.var_checker, blame_tok):
       func.body = self.ParseCompoundCommand()
 
     # matches ParseKshFunctionDef below
@@ -1704,7 +1736,7 @@ class CommandParser(object):
 
     func = command.ShFunction()
     func.name = name
-    with ctx_Declarations(self.declarations, keyword_tok):
+    with ctx_VarChecker(self.var_checker, keyword_tok):
       func.body = self.ParseCompoundCommand()
 
     # matches ParseFunctionDef above
@@ -1718,12 +1750,13 @@ class CommandParser(object):
     node = command.Proc()
 
     keyword_tok = _KeywordToken(self.cur_word)
-    with ctx_Declarations(self.declarations, keyword_tok):
+    with ctx_VarChecker(self.var_checker, keyword_tok):
       self.w_parser.ParseProc(node)
       if node.sig.tag_() == proc_sig_e.Closed:  # Register params
         sig = cast(proc_sig__Closed, node.sig)
         for param in sig.params:
-          self.declarations.Register(param.name)
+          # Treat params as variables.  TODO: Treat setref params differently?
+          self.var_checker.Check(Id.KW_Var, param.name)
 
       self._Next()
       node.body = self.ParseBraceGroup()
@@ -1887,7 +1920,7 @@ class CommandParser(object):
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookAhead() == Id.Lit_Equals):
-            self.declarations.Register(tok)
+            self.var_checker.Check(Id.KW_Const, tok)
 
             enode = self.w_parser.ParseBareDecl()
             self._Next()  # Somehow this is necessary

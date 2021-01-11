@@ -63,8 +63,10 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part_e, word_part_t,
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
-    command, command_t, command__ForExpr, command__Proc, command__Import,
-    command__VarDecl,
+    command, command__ForExpr, command__Proc, command__Import,
+    command__PlaceMutation, command__VarDecl,
+
+    place_expr_e, place_expr__Var,
 
     expr_t, source, arg_list,
 )
@@ -79,6 +81,7 @@ from osh import tdop
 from osh import arith_parse
 from osh import braces
 from osh import word_
+from mycpp.mylib import tagswitch
 
 from typing import List, Optional, Tuple, cast
 from typing import TYPE_CHECKING
@@ -86,6 +89,7 @@ if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
   from frontend.reader import _Reader
+  from osh.cmd_parse import VarChecker
 
 _ = log
 
@@ -925,8 +929,8 @@ class WordParser(WordEmitter):
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
-  def ParsePlaceMutation(self, kw_token):
-    # type: (Token) -> command_t
+  def ParsePlaceMutation(self, kw_token, var_checker):
+    # type: (Token, VarChecker) -> command__PlaceMutation
     """
     setvar a[i] = 1
     setvar i += 1
@@ -938,6 +942,14 @@ class WordParser(WordEmitter):
     # wants
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
+
+    for place in enode.lhs:
+      UP_place = place
+      with tagswitch(place) as case:
+        if case(place_expr_e.Var):
+          place = cast(place_expr__Var, UP_place)
+          var_checker.Check(kw_token.id, place.name)
+        # TODO: Do indices as well
 
     # Let the CommandParser see the Op_Semi or Op_Newline.
     self.buffered_word = last_token

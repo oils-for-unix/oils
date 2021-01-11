@@ -898,7 +898,7 @@ oil_var_decl() {
   '
 
   if is-oil-native; then
-    echo 'skipping oil_nested_proc'  # TODO: re-enable with pgen2
+    echo 'skipping oil_var_decl'  # TODO: re-enable with pgen2
     return
   fi
 
@@ -911,6 +911,44 @@ oil_var_decl() {
 
   proc p2 {
     var x = 3
+  }
+  '
+}
+
+oil_place_mutation() {
+  set +o errexit
+
+  _oil-parse-error '
+  proc p(x) {
+    setvar g = "G"   # This can be a global, no error
+
+    setlocal L = "L"  # ERROR: not declared
+  }
+  '
+
+  _oil-parse-error '
+  proc p(x) {
+    const c = 123
+    setvar c = 42  # ERROR: cannot modify constant
+  }
+  '
+
+  # can't modify constant
+  _oil-parse-error '
+  proc p(x) {
+    c = 123
+    set c = 42  # ERROR: cannot modify constant
+  }
+  '
+
+  if is-oil-native; then
+    echo 'skipping oil_place_mutation'  # TODO: re-enable with pgen2
+    return
+  fi
+
+  _should-parse '
+  proc p(x) {
+    setvar x = "X"  # is mutating params allowed?  I guess why not.
   }
   '
 }
@@ -963,6 +1001,7 @@ cases-in-strings() {
   oil_to_make_nicer
   oil_nested_proc
   oil_var_decl
+  oil_place_mutation
   parse_at
 }
 

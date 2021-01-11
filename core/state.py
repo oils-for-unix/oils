@@ -11,7 +11,7 @@ from __future__ import print_function
 
 import cStringIO
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
@@ -1268,27 +1268,6 @@ class Mem(object):
         return True
     return False
 
-  def _CheckOilKeyword(self, keyword_id, name, cell):
-    # type: (Id_t, str, Optional[cell]) -> None
-    """Check that 'var' and setvar/set are used correctly.
-
-    NOTE: These are dynamic checks, but the syntactic difference between
-    definition and mutation will help translate the Oil subset of OSH to static
-    languages.
-    """
-    # This dynamic check can prevent 'local' before 'var', or 'readonly before
-    # 'const', etc.  But it also prevents 'var' in a loop, which we don't want.
-    # TODO: Possibly disable local/readonly/declare inside 'proc'.
-
-    # if cell is not None and keyword_id in (Id.KW_Var, Id.KW_Const):
-    #   e_die('%r has already been declared', name)
-
-    # TODO: Also do this at parse time.  We have some name resolution in
-    # ctx_Declarations.
-    if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetLocal,
-                                       Id.KW_SetGlobal):
-      e_die("%r hasn't been declared", name)
-
   def _DisallowNamerefCycle(self, name, which_scopes, ref_trail):
     # type: (str, scope_t, List[str]) -> None
     """Recursively resolve names until the trail ends or a cycle is detected.
@@ -1367,7 +1346,6 @@ class Mem(object):
                                                              which_scopes,
                                                              ref_required)
 
-        self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell:
           # Clear before checking readonly bit.
           # NOTE: Could be cell.flags &= flag_clear_mask 
@@ -1445,7 +1423,6 @@ class Mem(object):
         # -o nounset fails.)
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
                                                    ref_required)
-        self._CheckOilKeyword(keyword_id, lval.name, cell)
         if not cell:
           self._BindNewArrayWithEntry(name_map, lval, rval, flags)
           return
@@ -1505,7 +1482,6 @@ class Mem(object):
 
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
                                                    ref_required)
-        self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell.readonly:
           e_die("Can't assign to readonly associative array", span_id=left_spid)
 

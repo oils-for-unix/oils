@@ -43,14 +43,8 @@ proc f {
   setvar x = 'mutated'
   echo x=$x
 }
-var x = 'global'
-echo x=$x
-f
-echo x=$x
-## status: 1
+## status: 2
 ## STDOUT:
-x=global
-x=local
 ## END
 
 #### const can't be redeclared
@@ -107,11 +101,8 @@ f() {
   set z = 3  # NOT DECLARED
   echo z=$z
 }
-f
-## status: 1
+## status: 2
 ## STDOUT:
-x=XX
-y=YY
 ## END
 
 #### setlocal works (with bin/osh, no shopt)
@@ -129,10 +120,10 @@ p
 
 #### setlocal at top level
 var x = 1
-setlocal x = 42
+setlocal x = 42  # this is allowed
 echo $x
 setlocal y = 50  # error because it's not declared
-## status: 1
+## status: 2
 ## STDOUT:
 42
 ## END
@@ -165,7 +156,7 @@ x=local
 x=mutated
 ## END
 
-#### setglobal of undeclared var is an error
+#### setglobal of undeclared var is allowed
 var x = 'XX'
 echo x=$x
 setglobal x = 'xx'
@@ -174,14 +165,10 @@ echo x=$x
 # fatal error
 setglobal y = 'YY'
 
-## status: 1
 ## STDOUT:
 x=XX
 x=xx
 ## END
-
-
-
 
 #### var/setvar x, y = 1, 2
 
@@ -317,20 +304,22 @@ f=local
 f=setvar
 ## END
 
-#### setref (not implemented)
-
-# TODO: should be :out (rather than out Ref, because procs have no types?)
-# or (out Ref, b Block) ?
-proc p (s, out) {
+#### setref
+proc p (s, :out) {
   setref out = 'YY'
 }
 var x = 'XX'
 echo x=$x
 p abcd :x
 echo x=$x
+
+p zz :undefined_var
+echo u=$undefined_var
+
 ## STDOUT:
 x=XX
 x=YY
+u=YY
 ## END
 
 #### circular dict
