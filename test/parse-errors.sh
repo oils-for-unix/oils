@@ -857,6 +857,45 @@ oil_nested_proc() {
   _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
 }
 
+oil_var_decl() {
+  set +o errexit
+
+  _oil-parse-error '
+  proc p(x) {
+    echo hi
+    var x = 2
+  }
+  '
+
+  _oil-parse-error '
+  proc p {
+    var x = 1
+    echo hi
+    var x = 2
+  }
+  '
+
+  _oil-parse-error '
+  proc p {
+    var x = 1
+    echo hi
+    const x = 2
+  }
+  '
+
+  _should-parse '
+  var x = 1
+  proc p {
+    echo hi
+    var x = 2
+  }
+
+  proc p2 {
+    var x = 3
+  }
+  '
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -904,6 +943,7 @@ cases-in-strings() {
   parse_backslash
   oil_to_make_nicer
   oil_nested_proc
+  oil_var_decl
   parse_at
 }
 

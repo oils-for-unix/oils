@@ -80,8 +80,9 @@ EOF
 
 # With bash-style readarray.  The -t is annoying.
 git-branch-merged | while read --line {
-  # BUG: var or const messes up in al oop.
-  setvar line = _line.strip()  # removing leading space
+  # Note: this can't be 'const' because const is dynamic like 'readonly'.  And
+  # we don't have block scope.
+  var line = _line.strip()  # removing leading space
   if (line != 'master' and not line.startswith('*')) {
     echo $line
   }
@@ -96,10 +97,9 @@ if (len(branches) == 0) {
 # With "push".  Hm read --lines isn't bad.
 var branches2 = %()
 git-branch-merged | while read --line {
-  # TODO: Should be 'const' once we fix it?  Or 'var'?
-  setvar line = _line.strip()  # removing leading space
-  if (line != 'master' and not line.startswith('*')) {
-    push :branches2 $line
+  var line2 = _line.strip()  # removing leading space
+  if (line2 != 'master' and not line2.startswith('*')) {
+    push :branches2 $line2
   }
 }
 

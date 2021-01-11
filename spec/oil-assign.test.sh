@@ -252,7 +252,7 @@ f() {
 }
 f
 var x = "redeclaration is an error"
-## status: 1
+## status: 2
 ## STDOUT:
 x=local
 ## END

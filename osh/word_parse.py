@@ -64,6 +64,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
     command, command_t, command__ForExpr, command__Proc, command__Import,
+    command__VarDecl,
 
     expr_t, source, arg_list,
 )
@@ -902,7 +903,7 @@ class WordParser(WordEmitter):
     return node
 
   def ParseVarDecl(self, kw_token):
-    # type: (Token) -> command_t
+    # type: (Token) -> command__VarDecl
     """
     oil_var_decl: name_type_list '=' testlist end_stmt
 

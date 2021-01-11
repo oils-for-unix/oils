@@ -1276,15 +1276,8 @@ class Mem(object):
     definition and mutation will help translate the Oil subset of OSH to static
     languages.
     """
-    if cell and keyword_id in (Id.KW_Var, Id.KW_Const):
-      # TODO:
-      # - This doesn't work for LOOPS.  Maybe you need to store the keyword
-      #   SPID with it?  (Would have to change PackFlags and so forth)
-      #   - note setvar and builtins like 'read' and 'mapfile' can create vars
-      #     with state.SetRef{String,Array}
-      # - Point at the ORIGINAL declaration!
-      e_die("%r has already been declared", name)
-
+    # TODO: Also do this at parse time.  We have some name resolution in
+    # ctx_Declarations.
     if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetLocal,
                                        Id.KW_SetGlobal):
       e_die("%r hasn't been declared", name)

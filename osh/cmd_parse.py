@@ -33,6 +33,8 @@ from _devbuild.gen.syntax_asdl import (
 
     source, parse_result, parse_result_t,
     speck, name_type,
+
+    proc_sig_e, proc_sig__Closed,
 )
 from _devbuild.gen import syntax_asdl  # token, etc.
 
@@ -366,7 +368,7 @@ class Declarations(object):
     """
     # tokens has 'proc' or some other token
     self.tokens = []  # type: List[Token]
-    self.names = []  # type: List[Dict[str, bool]]
+    self.names = [{}]  # type: List[Dict[str, bool]]
 
   def Push(self, blame_tok):
     # type: (Token) -> None
@@ -651,7 +653,10 @@ class CommandParser(object):
           # Treat { and } more like operators
           if self.c_id == Id.Lit_LBrace:
             if self.allow_block:  # Disabled for if/while condition, etc.
-              block = self.ParseBraceGroup()
+              blame_tok = _KeywordToken(self.cur_word)
+              # Our own scope for 'var'
+              with ctx_Declarations(self.declarations, blame_tok):
+                block = self.ParseBraceGroup()
             if 0:
               print('--')
               block.PrettyPrint()
@@ -1594,7 +1599,10 @@ class CommandParser(object):
     if self.c_id in (Id.KW_Var, Id.KW_Const):
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParseVarDecl(kw_token)
+      n8 = self.w_parser.ParseVarDecl(kw_token)
+      for lhs in n8.lhs:
+        self.declarations.Register(lhs.name)
+      return n8
 
     if self.c_id in (Id.KW_SetVar, Id.KW_SetRef, Id.KW_SetLocal,
                      Id.KW_SetGlobal):
@@ -1630,14 +1638,13 @@ class CommandParser(object):
 
     cur_word = cast(compound_word, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(cur_word)
+    if len(name) == 0:
+      p_die('Invalid function name', word=cur_word)
 
-    # If it passed ShFunctionName, this should be true.
+    # If we got a non-empty string from ShFunctionName, this should be true.
     part0 = cur_word.parts[0]
     assert part0.tag_() == word_part_e.Literal
     blame_tok = cast(Token, part0)
-
-    if len(name) == 0:
-      p_die('Invalid function name', word=cur_word)
 
     self._Next()  # skip function name
 
@@ -1713,8 +1720,10 @@ class CommandParser(object):
     keyword_tok = _KeywordToken(self.cur_word)
     with ctx_Declarations(self.declarations, keyword_tok):
       self.w_parser.ParseProc(node)
-
-      # TODO: self.declarations.Register(params ...)
+      if node.sig.tag_() == proc_sig_e.Closed:  # Register params
+        sig = cast(proc_sig__Closed, node.sig)
+        for param in sig.params:
+          self.declarations.Register(param.name)
 
       self._Next()
       node.body = self.ParseBraceGroup()
