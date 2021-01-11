@@ -1276,6 +1276,16 @@ class Mem(object):
     definition and mutation will help translate the Oil subset of OSH to static
     languages.
     """
+    if cell is not None and keyword_id in (Id.KW_Var, Id.KW_Const):
+      # This dynamic check is for 'local' before 'var', or 'readonly before
+      # 'const', etc.
+      #
+      # Another option: REMOVE assignment builtins from 'proc'.  You can only
+      # use keywords.
+
+      # TODO: location
+      e_die('%r has already been declared', name)
+
     # TODO: Also do this at parse time.  We have some name resolution in
     # ctx_Declarations.
     if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetLocal,
@@ -1372,6 +1382,9 @@ class Mem(object):
             cell.nameref = False
 
           if val is not None:  # e.g. declare -rx existing
+            # TODO: Maybe DON'T enforce this for 'const', so we can have const
+            # in a loop.  It's checked statically.  But that would change
+            # 'readonly x=1; const x=2'.  Disallow assign builtins?
             if cell.readonly:
               # TODO: error context
               e_die("Can't assign to readonly value %r", lval.name)

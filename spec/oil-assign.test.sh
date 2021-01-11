@@ -60,7 +60,7 @@ x = 'foo'
 echo x=$x
 const x = 'bar'
 echo x=$x
-## status: 1
+## status: 2
 ## STDOUT:
 x=foo
 ## END
@@ -257,6 +257,31 @@ var x = "redeclaration is an error"
 x=local
 ## END
 
+#### mixing assignment builtins and Oil assignment
+shopt -s oil:all
+
+proc local-var {
+  local x=1
+  var x = 2
+  echo x=$x
+}
+
+proc readonly-const {
+  readonly x=1
+  x = 2
+  echo x=$x
+}
+
+run --assign-status :st eval 'local-var'
+echo status=$st
+run --assign-status :st eval 'readonly-const' || true
+echo status=$st
+
+## STDOUT:
+status=1
+status=1
+## END
+
 #### setvar modified local or global scope
 modify_with_shell_assignment() {
   f=shell
@@ -332,5 +357,7 @@ setvar L[0] = L
 (List)   [1, 2, 3]
 (List)   [[...], 2, 3]
 ## END
+
+
 
 
