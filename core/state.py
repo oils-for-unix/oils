@@ -1276,15 +1276,12 @@ class Mem(object):
     definition and mutation will help translate the Oil subset of OSH to static
     languages.
     """
-    if cell is not None and keyword_id in (Id.KW_Var, Id.KW_Const):
-      # This dynamic check is for 'local' before 'var', or 'readonly before
-      # 'const', etc.
-      #
-      # Another option: REMOVE assignment builtins from 'proc'.  You can only
-      # use keywords.
+    # This dynamic check can prevent 'local' before 'var', or 'readonly before
+    # 'const', etc.  But it also prevents 'var' in a loop, which we don't want.
+    # TODO: Possibly disable local/readonly/declare inside 'proc'.
 
-      # TODO: location
-      e_die('%r has already been declared', name)
+    # if cell is not None and keyword_id in (Id.KW_Var, Id.KW_Const):
+    #   e_die('%r has already been declared', name)
 
     # TODO: Also do this at parse time.  We have some name resolution in
     # ctx_Declarations.

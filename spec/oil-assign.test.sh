@@ -278,7 +278,8 @@ run --assign-status :st eval 'readonly-const' || true
 echo status=$st
 
 ## STDOUT:
-status=1
+x=2
+status=0
 status=1
 ## END
 
