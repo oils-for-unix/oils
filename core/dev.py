@@ -8,7 +8,6 @@ from _devbuild.gen.runtime_asdl import (
     lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     cmd_value__Assign
 )
-from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.syntax_asdl import assign_op_e
 
 from asdl import runtime
@@ -19,7 +18,7 @@ from core.pyerror import log
 from osh import word_
 from pylib import os_path
 from mycpp import mylib
-from mycpp.mylib import switch, tagswitch, iteritems
+from mycpp.mylib import tagswitch, iteritems
 
 import posix_ as posix
 

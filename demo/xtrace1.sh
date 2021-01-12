@@ -101,13 +101,14 @@ loop() {
   for x in 1 \
     2 \
     3; do
-  echo $x; echo =$(echo {x}-)
+    echo $x; echo =$(echo {x}-)
   done
 
   i=0
   while test $i -lt 3; do
     echo $x; echo ${x}-
     i=$((i+1))
+    if true; then continue; fi
   done
 }
 
@@ -155,6 +156,53 @@ atoms2() {
   local lo=2
   export e=3 f=foo
   readonly r=4
+}
+
+compound() {
+  set -x
+
+  # Nothing for time
+  time sleep 0
+
+  # There is no tracing for () and {}
+  { echo b1
+    echo b2
+  }
+
+  ( echo c1
+    echo c2
+  )
+
+  # no tracing for if; just the conditions
+  if test -d /; then
+    echo yes
+  else
+    echo no
+  fi
+
+  # Hm this causes a concurrency problem.
+  # I think we want to buffer the line
+  ls | wc -l | sort
+
+  # There IS tracing for 'case' line
+  case foo in
+    fo*)
+      echo case
+      ;;
+    *)
+      echo default
+      ;;
+  esac
+
+  f() {
+    echo hi
+  }
+
+}
+
+oil_constructs() {
+  echo TODO
+  # BareDecl, VarDecl, PlaceMutation, Expr
 }
 
 "$@"
