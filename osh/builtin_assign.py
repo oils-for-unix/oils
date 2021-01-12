@@ -217,7 +217,6 @@ class Export(vm._AssignBuiltin):
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, attrs, True, builtin=_EXPORT)
 
-
     if arg.n:
       for pair in cmd_val.pairs:
         if pair.rval is not None:

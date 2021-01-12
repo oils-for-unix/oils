@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./xtrace1.sh <function name>
+#   demo/xtrace1.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+#set -o nounset
+#set -o pipefail
+#set -o errexit
 
 # Problem:
 # - There is no indentation for function calls
@@ -63,7 +63,7 @@ main() {
   echo foo
 }
 
-my-ps4() {
+my_ps4() {
   for i in {1..3}; do
     echo -n $i
   done
@@ -71,11 +71,90 @@ my-ps4() {
 
 # The problem with this is you don't want to fork the shell for every line!
 
-call-func-in-ps4() {
+call_func_in_ps4() {
   set -x
   PS4='[$(my-ps4)] '
   echo one
   echo two
+}
+
+# EXPANDED argv is displayed, NOT the raw input.
+# - OK just do assignments?
+
+# - bash shows the 'for x in 1 2 3' all on one line
+# - dash doesn't show the 'for'
+# - neither does zsh and mksh
+#   - zsh shows line numbers and the function name!
+
+# - two statements on one line are broken up
+
+# - bash doesn't show 'while'
+
+# The $((i+1)) is evaluated.  Hm.
+
+# Hm we don't implement this, only works at top level
+# set -v
+
+loop() {
+  set -x
+
+  for x in 1 \
+    2 \
+    3; do
+  echo $x; echo =$(echo {x}-)
+  done
+
+  i=0
+  while test $i -lt 3; do
+    echo $x; echo ${x}-
+    i=$((i+1))
+  done
+}
+
+atoms1() {
+  set -x
+
+  foo=bar
+
+  # this messes up a lot of printing.  OSH will use QSN.
+  x='one
+  two'
+
+  i=1
+
+  [[ -n $x ]]
+  echo "$x"
+
+  # $i gets expanded, not i
+  (( y = 42 + i + $i ))
+}
+
+atoms2() {
+  set -x
+
+  x='one
+  two'
+
+  declare -a a
+  a[1]="$x"
+
+  # This works
+  declare -A A
+  A["$x"]=1
+
+  a=(1 2 3)
+  A=([k]=v)
+
+  a=("$x" $x)
+  A=([k]="$x")
+
+  # Assignment builtins
+
+  declare -g -r d=0 foo=bar
+  typeset t=1
+  local lo=2
+  export e=3 f=foo
+  readonly r=4
 }
 
 "$@"

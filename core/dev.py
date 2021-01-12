@@ -3,7 +3,12 @@ dev.py - Devtools / introspection.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value_e, value__Str
+from _devbuild.gen.runtime_asdl import (
+    value_e, value__Str, value__MaybeStrArray, value__AssocArray,
+    lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
+    cmd_value__Assign
+)
+from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.syntax_asdl import assign_op_e
 
 from asdl import runtime
@@ -14,6 +19,7 @@ from core.pyerror import log
 from osh import word_
 from pylib import os_path
 from mycpp import mylib
+from mycpp.mylib import switch, tagswitch, iteritems
 
 import posix_ as posix
 
@@ -184,7 +190,7 @@ class Tracer(object):
     self.mutable_opts = mutable_opts
     self.mem = mem
     self.word_ev = word_ev
-    self.f = f  # can be the --debug-file as well
+    self.f = f  # can be stderr, the --debug-file, etc.
 
     # PS4 value -> compound_word.  PS4 is scoped.
     self.parse_cache = {}  # type: Dict[str, compound_word]
@@ -234,31 +240,99 @@ class Tracer(object):
       self.mutable_opts.set_xtrace(True)
     return first_char, prefix.s
 
-  def OnSimpleCommand(self, argv):
-    # type: (List[str]) -> None
-    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
+  def _TraceBegin(self):
+    # type: () -> bool
     if not self.exec_opts.xtrace():
-      return
+      return False
 
     first_char, prefix = self._EvalPS4()
+    self.f.write(first_char)
+    self.f.write(prefix)
+    return True
+
+  def _Value(self, val):
+    # type: (value_t) -> None
+
+    # NOTE: This is a bit like _PrintVariables for declare -p
+    result = '?'
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        result = qsn.maybe_shell_encode(val.s)
+
+      elif case(value_e.MaybeStrArray):
+        val = cast(value__MaybeStrArray, UP_val)
+        parts = ['(']
+        for s in val.strs:
+          parts.append(qsn.maybe_shell_encode(s))
+        parts.append(')')
+        result = ' '.join(parts)
+
+      elif case(value_e.AssocArray):
+        val = cast(value__AssocArray, UP_val)
+        parts = ['(']
+        for k, v in iteritems(val.d):
+          parts.append('[%s]=%s' % (
+              qsn.maybe_shell_encode(k), qsn.maybe_shell_encode(v)))
+        parts.append(')')
+        result = ' '.join(parts)
+
+    self.f.write(result)
+
+  def OnSimpleCommand(self, argv):
+    # type: (List[str]) -> None
+    if not self._TraceBegin():
+      return
+
     tmp = [qsn.maybe_shell_encode(a) for a in argv]
-    cmd = ' '.join(tmp)
-    self.f.log('%s%s%s', first_char, prefix, cmd)
+    self.f.write(' '.join(tmp))
+    self.f.write('\n')
+
+  def OnAssignBuiltin(self, cmd_val):
+    # type: (cmd_value__Assign) -> None
+    if not self._TraceBegin():
+      return
+
+    for arg in cmd_val.argv:
+      self.f.write(arg)
+      self.f.write(' ')
+
+    for pair in cmd_val.pairs:
+      self.f.write(pair.var_name)
+      self.f.write('=')
+      if pair.rval:
+        self._Value(pair.rval)
+        self.f.write(' ')
+
+    self.f.write('\n')
 
   def OnShAssignment(self, lval, op, val, flags, which_scopes):
     # type: (lvalue_t, assign_op_t, value_t, int, scope_t) -> None
-    # NOTE: I think tracing should be on by default?  For post-mortem viewing.
-    if not self.exec_opts.xtrace():
+    if not self._TraceBegin():
       return
 
-    first_char, prefix = self._EvalPS4()
+    left = '?'
+    UP_lval = lval
+    with tagswitch(lval) as case:
+      if case(lvalue_e.Named):
+        lval = cast(lvalue__Named, UP_lval)
+        left = lval.name
+      elif case(lvalue_e.Indexed):
+        lval = cast(lvalue__Indexed, UP_lval)
+        left = '%s[%d]' % (lval.name, lval.index)
+      elif case(lvalue_e.Keyed):
+        lval = cast(lvalue__Keyed, UP_lval)
+        left = '%s[%s]' % (lval.name, qsn.maybe_shell_encode(lval.key))
+    self.f.write(left)
 
     # Only two possibilities here
     op_str = '+=' if op == assign_op_e.PlusEqual else '='
+    self.f.write(op_str)
 
-    # TODO: Need a way to print arbitrary 'lval' and 'val' here
-    if mylib.PYTHON:
-      self.f.log('%s%s%s %s %s', first_char, prefix, lval, op_str, val)
+    self._Value(val)
+
+    self.f.write('\n')
 
   def Event(self):
     # type: () -> None

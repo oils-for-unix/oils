@@ -80,7 +80,7 @@ class DebugFile(_DebugFile):
         msg = msg % args
     self.f.write(msg)
     self.f.write('\n')
-    self.f.flush()  # need to see it interacitvely
+    self.f.flush()  # need to see it interactively
 
   # These two methods are for node.PrettyPrint()
   def write(self, s):
@@ -90,5 +90,3 @@ class DebugFile(_DebugFile):
   def isatty(self):
     # type: () -> bool
     return self.f.isatty()
-
-

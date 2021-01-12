@@ -598,18 +598,19 @@ class CommandEvaluator(object):
         UP_cmd_val = cmd_val
         if UP_cmd_val.tag_() == cmd_value_e.Argv:
           cmd_val = cast(cmd_value__Argv, UP_cmd_val)
-          argv = cmd_val.argv
           cmd_val.block = node.block  # may be None
+
+          # This comes before evaluating env, in case there are problems evaluating
+          # it.  We could trace the env separately?  Also trace unevaluated code
+          # with set-o verbose?
+          self.tracer.OnSimpleCommand(cmd_val.argv)
+
         else:
-          argv = ['TODO: trace string for assignment']
           if node.block:
             e_die("ShAssignment builtins don't accept blocks",
                   span_id=node.block.spids[0])
-
-        # This comes before evaluating env, in case there are problems evaluating
-        # it.  We could trace the env separately?  Also trace unevaluated code
-        # with set-o verbose?
-        self.tracer.OnSimpleCommand(argv)
+          cmd_val = cast(cmd_value__Assign, UP_cmd_val)
+          self.tracer.OnAssignBuiltin(cmd_val)
 
         # NOTE: RunSimpleCommand never returns when do_fork=False!
         if len(node.more_env):  # I think this guard is necessary?
@@ -753,8 +754,6 @@ class CommandEvaluator(object):
             elif case2(Id.KW_SetGlobal):
               which_scopes = scope_e.GlobalOnly
             elif case2(Id.KW_SetRef):
-              # TODO: setref upvalue = 'returned'
-              # Require the cell.nameref flag on it.
               which_scopes = scope_e.Dynamic
             else:
               raise AssertionError(node.keyword.id)
