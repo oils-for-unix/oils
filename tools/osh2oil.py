@@ -711,8 +711,8 @@ class OilPrinter(object):
       self.cursor.PrintUntil(left_spid)
       self.cursor.SkipUntil(left_spid + 1)
       self.f.write("sh-expr '")
-      self.cursor.PrintUntil(right_spid - 1)  # before ))
-      self.cursor.SkipUntil(right_spid + 1)  # after )) -- each one is a token
+      self.cursor.PrintUntil(right_spid - 2)  # before ))
+      self.cursor.SkipUntil(right_spid)  # skip ))
       self.f.write("'")
 
     elif node.tag == command_e.DBracket:

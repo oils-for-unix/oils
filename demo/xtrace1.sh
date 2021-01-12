@@ -7,48 +7,118 @@
 #set -o pipefail
 #set -o errexit
 
-# Problem:
-# - There is no indentation for function calls
-# - There is no indication of the function call.  It only traces simple
-# commands.  'local' is also traced with the concrete value.
-
 myfunc() {
-  local arg=$1
-  echo "{ myfunc $arg"
-  echo "myfunc $arg }"
+  : "myfunc $1"
 }
 
-main() {
-  set -o xtrace
+banner() {
+  echo
+  echo "$@"
+  echo
+}
 
-  echo '{ main'
-  myfunc main
-  echo 'main }'
-
-  # No indentation or increase in +
-  ( myfunc subshell)
-
-  # Now we change to ++
+# bash repeats the + for command sub, eval, source.  Other shells don't.
+posix() {
+  banner COMMANDSUB
+  set -x
   foo=$(myfunc commandsub)
-  echo $foo
+  set +x
 
-  # Still +
-  myfunc pipeline | wc -l
+  # Hm this gives you ++
+  banner EVAL
+  set -x
+  eval myfunc evalarg
+  set +x
+
+  # Also gives you ++
+  banner SOURCE
+  set -x
+  . spec/testdata/source-argv.sh 1 2
+  set +x
+}
+
+# Various stacks:
+# - proc call stack (similar: FUNCNAME)
+# - process stack (similar: BASHPID)
+# - interpreter stack (eval, source.  xtrace already respects this)
+#   - and maybe Oil subinterpreters
+
+# User level:
+# - Color
+# - Indentation
+# - HTML
+#
+# What you really want PARSEABLE traces.  Which means each trace item is ONE
+# LINE.  And emitted by a single write() call.
+#
+# Related debugging features of OSH:
+#
+# - pp cell (ASDL), pp proc (QTT)
+# - osh -n (ASDL)
+# - Oil expressions: = keyword (ASDL)
+
+main() {
+  banner FUNC
+
+  set -x
+  myfunc invoke
+  set +x
+
+  banner SUBSHELL
+  # No increase in +
+  # pid and SHLVL do NOT increase.  BASHPID increases.
+  set -x
+  : pid=$$ BASHPID=$BASHPID SHLVL=$SHLVL
+  ( myfunc subshell; : pid=$$ BASHPID=$BASHPID SHLVL=$SHLVL )
+  set +x
+
+  # Now it changes to ++
+  banner COMMANDSUB
+  set -x
+  foo=$(myfunc commandsub)
+  set +x
+
+  banner PIPELINE
+  set -x
+  myfunc pipeline | sort
+  set +x
+
+  banner THREE
 
   # Increase to three
+  set -x
   foo=$(echo $(myfunc commandsub))
   echo $foo
+  set +x
 
-  # Call it recursively
+  # Hm this gives you ++
+  banner EVAL
+  set -x
+  eval myfunc evalarg
+  set +x
+
+  # Also gives you ++
+  banner SOURCE
+  set -x
+  source spec/testdata/source-argv.sh 1 2
+  set +x
+
+  banner RECURSIVE
+  set -x
   $0 myfunc dollar-zero
+  set +x
 
-  # Call it recursively with 
+  # TODO: SHELLOPTS not set here?
+  banner "SHELLOPTS=$SHELLOPTS"
+
   export SHELLOPTS
+  set -x
   $0 myfunc dollar-zero-shellopts
+  set +x
+}
 
-  echo
-  echo
-  echo
+main2() {
+  set -x
 
   # OK this is useful.
 
@@ -61,6 +131,19 @@ main() {
   myfunc ps4
   foo=$(myfunc ps4-commandsub)
   echo foo
+}
+
+slowfunc() {
+  echo $1
+  sleep 0.1
+  echo $2
+}
+
+concurrency() {
+  set -x
+
+  # PID prefix would be nice here
+  slowfunc 1 2 | slowfunc 3 4
 }
 
 my_ps4() {

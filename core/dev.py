@@ -170,6 +170,8 @@ class Tracer(object):
     - yeah bash doesn't have this, but we should have it
     - for subshells, pipelines and so forth
   - Command Completion -- you get the status code?
+  - Oil stuff
+    - BareDecl, VarDecl, PlaceMutation, Expr,
   """
   def __init__(self,
                parse_ctx,  # type: ParseContext
@@ -253,6 +255,9 @@ class Tracer(object):
     first_char, prefix = self._EvalPS4()
 
     buf = mylib.BufWriter()
+
+    # Note: bash repeats the + for command sub, eval, source.  Other shells
+    # don't do it.  Leave this out for now.
     buf.write(first_char)
     buf.write(prefix)
     return buf
