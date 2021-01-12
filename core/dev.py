@@ -26,6 +26,7 @@ from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import assign_op_t, compound_word
   from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
+  from core import alloc
   from core.error import _ErrorWithLocation
   from core.util import _DebugFile
   from frontend.parse_lib import ParseContext
@@ -162,11 +163,13 @@ class Tracer(object):
 
   https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 
-  Bare minimum to debug problems:
-    - argv and span ID of the SimpleCommand that corresponds to that
-    - then print line number using arena
-    - set -x doesn't print line numbers!  OH but you can do that with
-      PS4=$LINENO
+  Other hooks:
+
+  - Proc calls.  As opposed to external commands.
+  - Process Forks.  Subshell, command sub, pipeline,
+    - yeah bash doesn't have this, but we should have it
+    - for subshells, pipelines and so forth
+  - Command Completion -- you get the status code?
   """
   def __init__(self,
                parse_ctx,  # type: ParseContext
@@ -244,6 +247,8 @@ class Tracer(object):
     if not self.exec_opts.xtrace():
       return None
 
+    # TODO: Using a member variable and then clear() would probably save
+    # pressure.  Tracing is in the inner loop.
     self.buf = mylib.BufWriter()
     first_char, prefix = self._EvalPS4()
 
@@ -342,15 +347,43 @@ class Tracer(object):
     buf.write('\n')
     self.f.write(buf.getvalue())
 
-  def Event(self):
-    # type: () -> None
-    """
-    Other events:
+  def OnControlFlow(self, keyword, arg):
+    # type: (str, int) -> None
+    buf = self._TraceBegin()
+    if not buf:
+      return
 
-    - Function call events.  As opposed to external commands.
-    - Process Forks.  Subshell, command sub, pipeline,
-    - Command Completion -- you get the status code.
-    - ShAssignments
-      - We should desugar to SetVar like mksh
+    buf.write(keyword)
+    if arg != 0:
+      buf.write(' ')
+      buf.write(str(arg))
+
+    buf.write('\n')
+    self.f.write(buf.getvalue())
+
+  def PrintSourceCode(self, left_spid, right_spid, arena):
+    # type: (int, int, alloc.Arena) -> None
     """
-    pass
+    For (( )) and [[ ]].  Bash traces these.
+    """
+    buf = self._TraceBegin()
+    if not buf:
+      return
+
+    left_span = arena.GetLineSpan(left_spid)
+    right_span = arena.GetLineSpan(right_spid)
+    line = arena.GetLine(left_span.line_id)
+    start = left_span.col
+
+    if left_span.line_id == right_span.line_id:
+      end = right_span.col  # This is one spid PAST the end.
+      buf.write(line[start:end])
+    else:
+      # Print first line only
+      line = arena.GetLine(left_span.line_id)
+      end = -1 if line.endswith('\n') else len(line)
+      buf.write(line[start:end])
+      buf.write(' ...')
+
+    buf.write('\n')
+    self.f.write(buf.getvalue())

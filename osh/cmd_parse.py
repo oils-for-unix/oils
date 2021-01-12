@@ -1808,6 +1808,7 @@ class CommandParser(object):
     self._Next()  # skip [[
     b_parser = bool_parse.BoolParser(self.w_parser)
     bnode = b_parser.Parse()  # May raise
+
     self._Peek()
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
@@ -1821,8 +1822,11 @@ class CommandParser(object):
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     self._Next()  # skip ((
-    anode, right_spid = self.w_parser.ReadDParen()
+    anode = self.w_parser.ReadDParen()
     assert anode is not None
+
+    self._Peek()
+    right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     node = command.DParen(anode, None)  # no redirects yet
     node.spids.append(left_spid)

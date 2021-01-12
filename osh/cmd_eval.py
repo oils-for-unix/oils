@@ -679,8 +679,10 @@ class CommandEvaluator(object):
 
       elif case(command_e.DBracket):
         node = cast(command__DBracket, UP_node)
-        span_id = node.spids[0]
-        self.mem.SetCurrentSpanId(span_id)
+        left_spid = node.spids[0]
+        self.mem.SetCurrentSpanId(left_spid)
+
+        self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
         check_errexit = True
         result = self.bool_ev.EvalB(node.expr)
@@ -688,8 +690,10 @@ class CommandEvaluator(object):
 
       elif case(command_e.DParen):
         node = cast(command__DParen, UP_node)
-        span_id = node.spids[0]
-        self.mem.SetCurrentSpanId(span_id)
+        left_spid = node.spids[0]
+        self.mem.SetCurrentSpanId(left_spid)
+
+        self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
         check_errexit = True
         i = self.arith_ev.EvalToInt(node.child)
@@ -941,6 +945,8 @@ class CommandEvaluator(object):
             arg = self.mem.LastStatus()
           else:
             arg = 0  # break 0 levels, nothing for continue
+
+        self.tracer.OnControlFlow(tok.val, arg)
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.

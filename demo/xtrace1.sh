@@ -123,11 +123,19 @@ atoms1() {
 
   i=1
 
-  [[ -n $x ]]
-  echo "$x"
+  [[ -n $x ]]; echo "$x"
 
   # $i gets expanded, not i
-  (( y = 42 + i + $i ))
+  (( y = 42 + i + $i )); echo yo
+
+  [[ -n $x
+  ]]
+
+  (( y =
+     42 +
+     i +
+     $i
+  ))
 }
 
 atoms2() {

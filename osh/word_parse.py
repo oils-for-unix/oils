@@ -1074,7 +1074,7 @@ class WordParser(WordEmitter):
     return node
 
   def ReadDParen(self):
-    # type: () -> Tuple[arith_expr_t, int]
+    # type: () -> arith_expr_t
     """Read ((1+ 2))  -- command context.
 
     We're using the word parser because it's very similar to _ReadArithExpr
@@ -1097,7 +1097,7 @@ class WordParser(WordEmitter):
 
     self._Next(lex_mode_e.ShCommand)
 
-    return anode, self.cur_token.span_id
+    return anode
 
   def _NextNonSpace(self):
     # type: () -> None
