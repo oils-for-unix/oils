@@ -200,17 +200,18 @@ class Tracer(object):
     self.parse_cache = {}  # type: Dict[str, compound_word]
 
   def _EvalPS4(self):
-    # type: () -> Tuple[str, str]
-    """For set -x."""
+    # type: () -> str
+    """The prefix of each line.
 
-    first_char = '+'
-    ps4 = ' '  # default
+    TODO: XTRACE_PREFIX (or OIL_XTRACE_PREFIX) could be the same except for the
+    "first char" behavior, which is replaced with indentation.
+
+    BASH_XTRACEFD exists.
+    """
+    ps4 = '+ '  # default
     val = self.mem.GetValue('PS4')
     if val.tag_() == value_e.Str:
-      s = cast(value__Str, val).s
-      if len(s):
-        first_char = s[0]
-        ps4 = s[1:]
+      ps4 = cast(value__Str, val).s
 
     # NOTE: This cache is slightly broken because aliases are mutable!  I think
     # that is more or less harmless though.
@@ -242,7 +243,17 @@ class Tracer(object):
       prefix = self.word_ev.EvalForPlugin(ps4_word)
     finally:
       self.mutable_opts.set_xtrace(True)
-    return first_char, prefix.s
+    return prefix.s
+
+  def Push(self, desc_line):
+    # type: (str) -> None
+    """Print > and the description."""
+    pass
+
+  def Pop(self):
+    # type: () -> None
+    """Print < and the description."""
+    pass
 
   def _TraceBegin(self):
     # type: () -> Optional[mylib.BufWriter]
@@ -252,13 +263,12 @@ class Tracer(object):
     # TODO: Using a member variable and then clear() would probably save
     # pressure.  Tracing is in the inner loop.
     self.buf = mylib.BufWriter()
-    first_char, prefix = self._EvalPS4()
+    prefix = self._EvalPS4()
 
     buf = mylib.BufWriter()
 
     # Note: bash repeats the + for command sub, eval, source.  Other shells
     # don't do it.  Leave this out for now.
-    buf.write(first_char)
     buf.write(prefix)
     return buf
 

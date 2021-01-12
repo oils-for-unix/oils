@@ -17,6 +17,17 @@ banner() {
   echo
 }
 
+# bash is the only shell with the "first char repeated" behavior
+first_char() {
+  for sh in bash dash mksh zsh bin/osh; do
+    echo
+    echo $sh
+    export PS4='$PWD '
+    #export PS4='$ '
+    $sh -x -c 'echo $(echo hi)-'
+  done
+}
+
 # bash repeats the + for command sub, eval, source.  Other shells don't.
 posix() {
   banner COMMANDSUB
@@ -294,6 +305,26 @@ compound() {
 oil_constructs() {
   echo TODO
   # BareDecl, VarDecl, PlaceMutation, Expr
+}
+
+details() {
+  PS4='+ ${BASH_SOURCE[0]}:${FUNCNAME[0]}:${LINENO} '
+
+  # X_pid can have a space after it, or call it ${X_tag}
+  # Or should we could call the whole thing ? ${XTRACE_PREFIX} ?
+  # Idea: $PS5 and $PS6 for push and pop?
+
+  # Problem: remove the first char behavior?  Or only respect it in PS4.
+  #
+  # This string can be OIL_XTRACE_PREFIX='' or something.
+  PS4=' ${X_indent}${X_punct}${X_tag}${BASH_SOURCE[0]}:${FUNCNAME[0]}:${LINENO} '
+
+
+  set -x
+
+  echo hi
+  echo command=$(echo inner)
+  eval 'echo eval'
 }
 
 "$@"
