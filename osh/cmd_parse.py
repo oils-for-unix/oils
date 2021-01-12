@@ -1808,6 +1808,7 @@ class CommandParser(object):
     self._Next()  # skip [[
     b_parser = bool_parse.BoolParser(self.w_parser)
     bnode = b_parser.Parse()  # May raise
+    self._Peek()
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     node = command.DBracket(bnode, None)  # no redirects yet

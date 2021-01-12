@@ -22,7 +22,7 @@ from mycpp.mylib import tagswitch, iteritems
 
 import posix_ as posix
 
-from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import assign_op_t, compound_word
   from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
@@ -240,17 +240,20 @@ class Tracer(object):
     return first_char, prefix.s
 
   def _TraceBegin(self):
-    # type: () -> bool
+    # type: () -> Optional[mylib.BufWriter]
     if not self.exec_opts.xtrace():
-      return False
+      return None
 
+    self.buf = mylib.BufWriter()
     first_char, prefix = self._EvalPS4()
-    self.f.write(first_char)
-    self.f.write(prefix)
-    return True
 
-  def _Value(self, val):
-    # type: (value_t) -> None
+    buf = mylib.BufWriter()
+    buf.write(first_char)
+    buf.write(prefix)
+    return buf
+
+  def _Value(self, val, buf):
+    # type: (value_t, mylib.BufWriter) -> None
 
     # NOTE: This is a bit like _PrintVariables for declare -p
     result = '?'
@@ -277,38 +280,43 @@ class Tracer(object):
         parts.append(')')
         result = ' '.join(parts)
 
-    self.f.write(result)
+    buf.write(result)
 
   def OnSimpleCommand(self, argv):
     # type: (List[str]) -> None
-    if not self._TraceBegin():
+    buf = self._TraceBegin()
+    if not buf:
       return
 
     tmp = [qsn.maybe_shell_encode(a) for a in argv]
-    self.f.write(' '.join(tmp))
-    self.f.write('\n')
+    buf.write(' '.join(tmp))
+    buf.write('\n')
+    self.f.write(buf.getvalue())
 
   def OnAssignBuiltin(self, cmd_val):
     # type: (cmd_value__Assign) -> None
-    if not self._TraceBegin():
+    buf = self._TraceBegin()
+    if not buf:
       return
 
     for arg in cmd_val.argv:
-      self.f.write(arg)
-      self.f.write(' ')
+      buf.write(arg)
+      buf.write(' ')
 
     for pair in cmd_val.pairs:
-      self.f.write(pair.var_name)
-      self.f.write('=')
+      buf.write(pair.var_name)
+      buf.write('=')
       if pair.rval:
-        self._Value(pair.rval)
-        self.f.write(' ')
+        self._Value(pair.rval, buf)
+        buf.write(' ')
 
-    self.f.write('\n')
+    buf.write('\n')
+    self.f.write(buf.getvalue())
 
   def OnShAssignment(self, lval, op, val, flags, which_scopes):
     # type: (lvalue_t, assign_op_t, value_t, int, scope_t) -> None
-    if not self._TraceBegin():
+    buf = self._TraceBegin()
+    if not buf:
       return
 
     left = '?'
@@ -323,15 +331,16 @@ class Tracer(object):
       elif case(lvalue_e.Keyed):
         lval = cast(lvalue__Keyed, UP_lval)
         left = '%s[%s]' % (lval.name, qsn.maybe_shell_encode(lval.key))
-    self.f.write(left)
+    buf.write(left)
 
     # Only two possibilities here
     op_str = '+=' if op == assign_op_e.PlusEqual else '='
-    self.f.write(op_str)
+    buf.write(op_str)
 
-    self._Value(val)
+    self._Value(val, buf)
 
-    self.f.write('\n')
+    buf.write('\n')
+    self.f.write(buf.getvalue())
 
   def Event(self):
     # type: () -> None
