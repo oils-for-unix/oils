@@ -68,7 +68,16 @@ posix() {
 # - osh -n (ASDL)
 # - Oil expressions: = keyword (ASDL)
 
+shopt -s expand_aliases
+alias e=echo
+
 main() {
+  banner ALIAS
+
+  set -x
+  e alias
+  set +x
+
   banner FUNC
 
   set -x

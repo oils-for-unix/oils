@@ -22,7 +22,7 @@ from mycpp.mylib import tagswitch, iteritems
 
 import posix_ as posix
 
-from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
+from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import assign_op_t, compound_word
   from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
@@ -172,6 +172,10 @@ class Tracer(object):
   - Command Completion -- you get the status code?
   - Oil stuff
     - BareDecl, VarDecl, PlaceMutation, Expr,
+
+  Idea:
+    shopt --set process_trace   is orthogonal to xtrace?
+    It should show > < and details about external command vs. function
   """
   def __init__(self,
                parse_ctx,  # type: ParseContext
@@ -196,7 +200,8 @@ class Tracer(object):
     self.word_ev = word_ev
     self.f = f  # can be stderr, the --debug-file, etc.
 
-    self.X_indent = ''
+    self.X_indent = ''  # changed by process, proc, source, eval
+    self.pid_stack = []  # type: List[int]
 
     # PS4 value -> compound_word.  PS4 is scoped.
     self.parse_cache = {}  # type: Dict[str, compound_word]
@@ -250,15 +255,15 @@ class Tracer(object):
       self.mutable_opts.set_xtrace(True)
     return prefix.s
 
-  def Push(self, desc_line):
-    # type: (str) -> None
+  def PushPid(self, pid):
+    # type: (int) -> None
     """Print > and the description."""
-    pass
+    self.pid_stack.append(pid)
 
-  def Pop(self):
+  def PopPid(self):
     # type: () -> None
     """Print < and the description."""
-    pass
+    self.pid_stack.pop()
 
   def _TraceBegin(self):
     # type: () -> Optional[mylib.BufWriter]
