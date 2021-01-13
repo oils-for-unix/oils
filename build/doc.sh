@@ -107,6 +107,7 @@ readonly MARKDOWN_DOCS=(
   io-builtins
   unicode
   framing
+  xtrace
 
   # Internal stuff
   variable-scope

@@ -154,16 +154,16 @@ main2() {
 }
 
 slowfunc() {
-  echo $1
-  sleep 0.1
-  echo $2
+  for i in "$@"; do
+    sleep 0.$i
+  done
 }
 
 concurrency() {
   set -x
 
   # PID prefix would be nice here
-  slowfunc 1 2 | slowfunc 3 4
+  slowfunc 1 3 | slowfunc 2 4 5 | slowfunc 6
 }
 
 my_ps4() {

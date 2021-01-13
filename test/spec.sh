@@ -964,6 +964,11 @@ oil-scope() {
     $OSH_LIST "$@"
 }
 
+oil-xtrace() {
+  sh-spec spec/oil-xtrace.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
 # Use bin/oil
 
 oil-keywords() {

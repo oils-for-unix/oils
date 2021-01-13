@@ -867,10 +867,12 @@ class Process(Job):
       for st in self.state_changes:
         st.Apply()
 
+      self.tracer.SetProcess(posix.getpid())
       self.thunk.Run()
       # Never returns
 
     #log('STARTED process %s, pid = %d', self, pid)
+    self.tracer.OnProcessStart(pid)
 
     # Class invariant: after the process is started, it stores its PID.
     self.pid = pid
@@ -888,6 +890,7 @@ class Process(Job):
         break
       if self.state != job_state_e.Running:
         break
+    self.tracer.OnProcessEnd(self.pid, self.status)
     return self.status
 
   def JobWait(self, waiter):

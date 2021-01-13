@@ -217,7 +217,10 @@ class Tracer(object):
 
     self.word_ev = None  # type: NormalWordEvaluator
 
-    self.indent = 0  # changed by process, proc, source, eval
+    self.ind  = 0  # changed by process, proc, source, eval
+    self.indents = ['']  # "pooled" to avoid allocations
+
+    self.pid = -1
 
     # PS4 value -> compound_word.  PS4 is scoped.
     self.parse_cache = {}  # type: Dict[str, compound_word]
@@ -275,36 +278,6 @@ class Tracer(object):
       self.mutable_opts.set_xtrace(True)
     return prefix.s
 
-  def OnProcessStart(self, pid):
-    # type: (int) -> None
-    """Print > and the description."""
-    self.f.write('> process %d\n' % pid)
-
-  def OnProcessEnd(self):
-    # type: () -> None
-    """Print < and the description."""
-    #self.f.write('< process %s\n' % pid)
-    # TODO: Need pid and status
-    pass
-
-  def SetProcess(self, pid):
-    # type: (int) -> None
-    pass
-
-  def Push(self, desc):
-    # type: (str) -> None
-    """Print > and the description."""
-    if not self.exec_opts.xtrace():
-      return
-    #self.f.write('> %s\n' % desc)
-
-  def Pop(self, desc):
-    # type: (str) -> None
-    """Print < and the description."""
-    if not self.exec_opts.xtrace():
-      return
-    #self.f.write('< %s\n' % desc)
-
   def _TraceBegin(self):
     # type: () -> Optional[mylib.BufWriter]
     if not self.exec_opts.xtrace():
@@ -312,14 +285,86 @@ class Tracer(object):
 
     # TODO: Using a member variable and then clear() would probably save
     # pressure.  Tracing is in the inner loop.
-    self.buf = mylib.BufWriter()
     prefix = self._EvalPS4()
 
     buf = mylib.BufWriter()
+    if self.exec_opts.xtrace_rich():
+      buf.write(self.indents[self.ind])
+
     # Note: bash repeats the + for command sub, eval, source.  Other shells
     # don't do it.  Leave this out for now.
     buf.write(prefix)
+
+    if self.pid != -1:
+      buf.write(str(self.pid))
+      buf.write(' ')
+
     return buf
+
+  def _TraceBegin2(self, char):
+    # type: (str) -> Optional[mylib.BufWriter]
+    """For the stack printed by xtrace_rich"""
+    if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_rich():
+      return None
+
+    # TODO: change to _EvalPS4
+    buf = mylib.BufWriter()
+    buf.write(self.indents[self.ind])
+    buf.write(char)
+    if self.pid != -1:
+      buf.write(str(self.pid))
+    buf.write(' ')
+    return buf
+
+  def OnProcessStart(self, pid):
+    # type: (int) -> None
+    buf = self._TraceBegin2('|')
+    if not buf:
+      return
+
+    buf.write('process %d\n' % pid)
+    self.f.write(buf.getvalue())
+
+  def OnProcessEnd(self, pid, status):
+    # type: (int, int) -> None
+    buf = self._TraceBegin2('.')
+    if not buf:
+      return
+
+    buf.write('process %s (status %d)\n' % (pid, status))
+    self.f.write(buf.getvalue())
+
+  def SetProcess(self, pid):
+    # type: (int) -> None
+    self.pid = pid
+
+  def Push(self, desc):
+    # type: (str) -> None
+    """Print > and the description."""
+    self.ind += 1
+    if self.ind >= len(self.indents):  # make sure there are enough
+      self.indents.append(self.ind * '  ')
+
+    buf = self._TraceBegin2('>')
+    if not buf:
+      return
+
+    buf.write(desc)
+    buf.write('\n')
+    self.f.write(buf.getvalue())
+
+  def Pop(self, desc):
+    # type: (str) -> None
+    """Print < and the description."""
+    buf = self._TraceBegin2('<')
+    if not buf:
+      return
+
+    buf.write(desc)
+    buf.write('\n')
+    self.f.write(buf.getvalue())
+
+    self.ind -= 1
 
   def _Value(self, val, buf):
     # type: (value_t, mylib.BufWriter) -> None
