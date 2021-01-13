@@ -147,6 +147,14 @@ echo two
 + local 'PS4=- '
 - echo func
 + echo two
+## END
+## OK osh STDERR:
++ echo one
++ f
++ local PS4='- ' 
+- echo func
++ echo two
+## END
 ## OK dash STDERR:
 # dash loses information about spaces!  There is a trailing space, but you
 # can't see it.
@@ -155,17 +163,12 @@ echo two
 + local PS4=- 
 - echo func
 + echo two
+## END
 ## OK mksh STDERR:
 # local gets turned into typeset
 + echo one
 + f
 + typeset 'PS4=- '
-- echo func
-+ echo two
-## BUG osh STDERR:
-# local gets turned into typeset
-+ echo one
-+ f
 - echo func
 + echo two
 ## END
@@ -180,26 +183,28 @@ echo two
 ## STDOUT:
 one
 two
+## END
+
 ## STDERR:
 +:x=1
 +1:echo one
 +1:x=2
 +2:echo two
+## END
+
 ## OK mksh STDERR:
 # mksh has trailing spaces
 +:x=1 
 +1:echo one
 +1:x=2 
 +2:echo two
-## OK dash STDERR:
-# dash evaluates it earlier
+## END
+
+## OK osh/dash STDERR:
+# the PS4 string is evaluated AFTER the variable is set.  That's OK
 +1:x=1
 +1:echo one
 +2:x=2
-+2:echo two
-## OK osh STDERR:
-# dash evaluates it earlier
-+1:echo one
 +2:echo two
 ## END
 

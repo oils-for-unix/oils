@@ -196,6 +196,8 @@ class Tracer(object):
     self.word_ev = word_ev
     self.f = f  # can be stderr, the --debug-file, etc.
 
+    self.X_indent = ''
+
     # PS4 value -> compound_word.  PS4 is scoped.
     self.parse_cache = {}  # type: Dict[str, compound_word]
 
@@ -208,6 +210,9 @@ class Tracer(object):
 
     BASH_XTRACEFD exists.
     """
+    # Change this to be the default?  Users can change it to '+ ' I guess?
+    ps4 = '${X_indent}${X_punct}${X_tag} '
+
     ps4 = '+ '  # default
     val = self.mem.GetValue('PS4')
     if val.tag_() == value_e.Str:
