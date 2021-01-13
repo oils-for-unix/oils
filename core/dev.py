@@ -283,7 +283,9 @@ class Tracer(object):
   def OnProcessEnd(self):
     # type: () -> None
     """Print < and the description."""
-    self.f.write('< process %s\n' % pid)
+    #self.f.write('< process %s\n' % pid)
+    # TODO: Need pid and status
+    pass
 
   def SetProcess(self, pid):
     # type: (int) -> None
