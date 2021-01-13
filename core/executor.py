@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     command_sub, compound_word, Token,
 )
 from asdl import runtime
+from core import dev
 from core import error
 from core import process
 from core.pyerror import log, e_die
@@ -43,8 +44,8 @@ class _ProcessSubFrame(object):
 
 class ShellExecutor(vm._Executor):
   """
-  This CommandEvaluator is combined with the OSH language evaluators in osh/ to create
-  a shell interpreter.
+  An executor combined with the OSH language evaluators in osh/ to create a
+  shell interpreter.
   """
   def __init__(self,
       mem,  # type: state.Mem
@@ -55,6 +56,7 @@ class ShellExecutor(vm._Executor):
       search_path,  # type: state.SearchPath
       ext_prog,  # type: process.ExternalProgram
       waiter,  # type: process.Waiter
+      tracer,  # type: dev.Tracer
       job_state,  # type: process.JobState
       fd_state,  # type: process.FdState
       errfmt  # type: ui.ErrorFormatter
@@ -69,6 +71,7 @@ class ShellExecutor(vm._Executor):
     self.search_path = search_path
     self.ext_prog = ext_prog
     self.waiter = waiter
+    self.tracer = tracer
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = job_state
     self.fd_state = fd_state
@@ -106,7 +109,7 @@ class ShellExecutor(vm._Executor):
     # get this check for "free".
     thunk = process.SubProgramThunk(self.cmd_ev, node,
                                     inherit_errexit=inherit_errexit)
-    p = process.Process(thunk, self.job_state)
+    p = process.Process(thunk, self.job_state, self.tracer)
     return p
 
   def RunBuiltin(self, builtin_id, cmd_val):
@@ -213,8 +216,9 @@ class ShellExecutor(vm._Executor):
                 "Use 'run' or wrap it in a process with $0 myproc",
                 span_id=span_id)
 
-        # NOTE: Functions could call 'exit 42' directly, etc.
-        status = self.cmd_ev.RunProc(proc_node, argv[1:])
+        with dev.ctx_Tracer(self.tracer, 'proc %s' % arg0):
+          # NOTE: Functions could call 'exit 42' directly, etc.
+          status = self.cmd_ev.RunProc(proc_node, argv[1:])
         return status
 
     builtin_id = consts.LookupNormalBuiltin(arg0)
@@ -237,7 +241,7 @@ class ShellExecutor(vm._Executor):
     # Normal case: ls /
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
-      p = process.Process(thunk, self.job_state)
+      p = process.Process(thunk, self.job_state, self.tracer)
       status = p.Run(self.waiter)
       return status
 
@@ -315,7 +319,6 @@ class ShellExecutor(vm._Executor):
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
-
     p = self._MakeProcess(node)
     return p.Run(self.waiter)
 

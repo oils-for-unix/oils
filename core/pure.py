@@ -265,10 +265,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   procs = {}  # type: Dict[str, Proc]
 
-  job_state = process.JobState()
-  fd_state = process.FdState(errfmt, job_state, mem)
-
-
   if attrs.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])
     return 0
@@ -322,8 +318,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_deps.traps = {}
   cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
-  waiter = process.Waiter(job_state, exec_opts)
-
   my_pid = posix.getpid()
 
   debug_path = ''
@@ -351,6 +345,16 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   if len(debug_path):
     debug_f.log('Writing logs to %r', debug_path)
 
+  if flag.xtrace_to_debug_file:
+    trace_f = debug_f
+  else:
+    trace_f = util.DebugFile(mylib.Stderr())
+  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
+
+  job_state = process.JobState()
+  fd_state = process.FdState(errfmt, job_state, mem, tracer)
+  waiter = process.Waiter(job_state, exec_opts)
+
   interp = environ.get('OSH_HIJACK_SHEBANG', '')
   search_path = state.SearchPath(mem)
   ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
@@ -361,11 +365,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # stuffing too much into one, since a .json crash dump isn't a stream.
   crash_dump_dir = environ.get('OSH_CRASH_DUMP_DIR', '')
   cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
-
-  if flag.xtrace_to_debug_file:
-    trace_f = debug_f
-  else:
-    trace_f = util.DebugFile(mylib.Stderr())
 
   #comp_lookup = completion.Lookup()
 
@@ -403,12 +402,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
-      ext_prog, waiter, job_state, fd_state, errfmt)
+      ext_prog, waiter, tracer, job_state, fd_state, errfmt)
   #shell_ex = NullExecutor(exec_opts, mutable_opts, procs, builtins)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
-  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
 
   # Wire up circular dependencies.
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,

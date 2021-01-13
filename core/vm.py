@@ -46,6 +46,7 @@ def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex, prom
   shell_ex.cmd_ev = cmd_ev
 
   prompt_ev.word_ev = word_ev
+  tracer.word_ev = word_ev
 
   arith_ev.CheckCircularDeps()
   bool_ev.CheckCircularDeps()
@@ -55,6 +56,7 @@ def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex, prom
   cmd_ev.CheckCircularDeps()
   shell_ex.CheckCircularDeps()
   prompt_ev.CheckCircularDeps()
+  tracer.CheckCircularDeps()
 
 
 class _Executor(object):

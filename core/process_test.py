@@ -41,7 +41,7 @@ state.InitMem(_MEM, {}, '0.1')
 _JOB_STATE = process.JobState()
 _WAITER = process.Waiter(_JOB_STATE, _EXEC_OPTS)
 _ERRFMT = ui.ErrorFormatter(_ARENA)
-_FD_STATE = process.FdState(_ERRFMT, _JOB_STATE)
+_FD_STATE = process.FdState(_ERRFMT, _JOB_STATE, None, None)
 _EXT_PROG = process.ExternalProgram('', _FD_STATE, _ERRFMT,
                                     util.NullDebugFile())
 
@@ -61,14 +61,14 @@ def _ExtProc(argv):
       break
   if not argv0_path:
     argv0_path = argv[0]  # fallback that tests failure case
-  return Process(ExternalThunk(_EXT_PROG, argv0_path, arg_vec, {}), _JOB_STATE)
+  return Process(ExternalThunk(_EXT_PROG, argv0_path, arg_vec, {}), _JOB_STATE, None)
 
 
 class ProcessTest(unittest.TestCase):
 
   def testStdinRedirect(self):
     waiter = process.Waiter(_JOB_STATE, _EXEC_OPTS)
-    fd_state = process.FdState(_ERRFMT, _JOB_STATE)
+    fd_state = process.FdState(_ERRFMT, _JOB_STATE, None, None)
 
     PATH = '_tmp/one-two.txt'
     # Write two lines
@@ -139,7 +139,7 @@ class ProcessTest(unittest.TestCase):
     node = _CommandNode('head', _ARENA)
     p.AddLast((cmd_ev, node))
 
-    fd_state = process.FdState(_ERRFMT, _JOB_STATE)
+    fd_state = process.FdState(_ERRFMT, _JOB_STATE, None, None)
     print(p.Run(_WAITER, _FD_STATE))
 
     # Simulating subshell for each command
@@ -148,9 +148,9 @@ class ProcessTest(unittest.TestCase):
     node3 = _CommandNode('sort --reverse', _ARENA)
 
     p = process.Pipeline()
-    p.Add(Process(process.SubProgramThunk(cmd_ev, node1), _JOB_STATE))
-    p.Add(Process(process.SubProgramThunk(cmd_ev, node2), _JOB_STATE))
-    p.Add(Process(process.SubProgramThunk(cmd_ev, node3), _JOB_STATE))
+    p.Add(Process(process.SubProgramThunk(cmd_ev, node1), _JOB_STATE, None))
+    p.Add(Process(process.SubProgramThunk(cmd_ev, node2), _JOB_STATE, None))
+    p.Add(Process(process.SubProgramThunk(cmd_ev, node3), _JOB_STATE, None))
 
     last_thunk = (cmd_ev, _CommandNode('cat', _ARENA))
     p.AddLast(last_thunk)
@@ -173,7 +173,7 @@ class ProcessTest(unittest.TestCase):
     # capture stdout of that interpreter.
 
   def testOpen(self):
-    fd_state = process.FdState(_ERRFMT, _JOB_STATE)
+    fd_state = process.FdState(_ERRFMT, _JOB_STATE, None, None)
 
     # Disabled because mycpp translation can't handle it.  We do this at a
     # higher layer.

@@ -155,6 +155,23 @@ class CrashDumper(object):
       log('[%d] Wrote crash dump to %s', my_pid, path)
 
 
+class ctx_Tracer(object):
+
+  def __init__(self, tracer, desc):
+    # type: (Tracer, str) -> None
+    tracer.Push(desc)
+    self.tracer = tracer
+    self.desc = desc
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.tracer.Pop(self.desc)
+
+
 class Tracer(object):
   """A tracer for this process.
 
@@ -182,7 +199,6 @@ class Tracer(object):
                exec_opts,  # type: optview.Exec
                mutable_opts,  # type: MutableOpts
                mem,  # type: Mem
-               word_ev,  # type: NormalWordEvaluator
                f,  # type: _DebugFile
                ):
     # type: (...) -> None
@@ -197,14 +213,18 @@ class Tracer(object):
     self.exec_opts = exec_opts
     self.mutable_opts = mutable_opts
     self.mem = mem
-    self.word_ev = word_ev
     self.f = f  # can be stderr, the --debug-file, etc.
 
-    self.X_indent = ''  # changed by process, proc, source, eval
-    self.pid_stack = []  # type: List[int]
+    self.word_ev = None  # type: NormalWordEvaluator
+
+    self.indent = 0  # changed by process, proc, source, eval
 
     # PS4 value -> compound_word.  PS4 is scoped.
     self.parse_cache = {}  # type: Dict[str, compound_word]
+
+  def CheckCircularDeps(self):
+    # type: () -> None
+    assert self.word_ev is not None
 
   def _EvalPS4(self):
     # type: () -> str
@@ -255,15 +275,33 @@ class Tracer(object):
       self.mutable_opts.set_xtrace(True)
     return prefix.s
 
-  def PushPid(self, pid):
+  def OnProcessStart(self, pid):
     # type: (int) -> None
     """Print > and the description."""
-    self.pid_stack.append(pid)
+    self.f.write('> process %d\n' % pid)
 
-  def PopPid(self):
+  def OnProcessEnd(self):
     # type: () -> None
     """Print < and the description."""
-    self.pid_stack.pop()
+    self.f.write('< process %s\n' % pid)
+
+  def SetProcess(self, pid):
+    # type: (int) -> None
+    pass
+
+  def Push(self, desc):
+    # type: (str) -> None
+    """Print > and the description."""
+    if not self.exec_opts.xtrace():
+      return
+    #self.f.write('> %s\n' % desc)
+
+  def Pop(self, desc):
+    # type: (str) -> None
+    """Print < and the description."""
+    if not self.exec_opts.xtrace():
+      return
+    #self.f.write('< %s\n' % desc)
 
   def _TraceBegin(self):
     # type: () -> Optional[mylib.BufWriter]
@@ -276,7 +314,6 @@ class Tracer(object):
     prefix = self._EvalPS4()
 
     buf = mylib.BufWriter()
-
     # Note: bash repeats the + for command sub, eval, source.  Other shells
     # don't do it.  Leave this out for now.
     buf.write(prefix)

@@ -25,6 +25,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
+from core import dev
 from core import pyutil
 from core.pyutil import stderr_line
 from core import pyos
@@ -46,7 +47,7 @@ from posix_ import (
     WEXITSTATUS, WTERMSIG,
 )
 
-from typing import List, Tuple, Dict, cast, TYPE_CHECKING
+from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
@@ -103,8 +104,8 @@ class FdState(object):
 
   For example, you can do 'myfunc > out.txt' without forking.
   """
-  def __init__(self, errfmt, job_state, mem=None):
-    # type: (ErrorFormatter, JobState, Mem) -> None
+  def __init__(self, errfmt, job_state, mem, tracer):
+    # type: (ErrorFormatter, JobState, Mem, Optional[dev.Tracer]) -> None
     """
     Args:
       errfmt: for errors
@@ -115,6 +116,7 @@ class FdState(object):
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
     self.mem = mem
+    self.tracer = tracer
 
   def Open(self, path):
     # type: (str) -> mylib.LineReader
@@ -390,7 +392,7 @@ class FdState(object):
         #start_process = False
 
         if start_process:
-          here_proc = Process(thunk, self.job_state)
+          here_proc = Process(thunk, self.job_state, self.tracer)
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
@@ -791,8 +793,8 @@ class Process(Job):
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
-  def __init__(self, thunk, job_state):
-    # type: (Thunk, JobState) -> None
+  def __init__(self, thunk, job_state, tracer):
+    # type: (Thunk, JobState, dev.Tracer) -> None
     """
     Args:
       thunk: Thunk instance
@@ -803,9 +805,10 @@ class Process(Job):
     assert isinstance(thunk, Thunk), thunk
     self.thunk = thunk
     self.job_state = job_state
-    self.parent_pipeline = None  # type: Pipeline
+    self.tracer = tracer
 
     # For pipelines
+    self.parent_pipeline = None  # type: Pipeline
     self.state_changes = []  # type: List[ChildStateChange]
     self.close_r = -1
     self.close_w = -1
@@ -911,13 +914,6 @@ class Process(Job):
     # type: (Waiter) -> int
     """Run this process synchronously."""
     self.Start()
-
-    # TODO: Can collect garbage here, and record timing stats.  The process
-    # will likely take longer than the GC?  Although I guess some processes can
-    # only take 1ms, whereas garbage collection can take longer.
-    # Maybe you can have a separate GC thread, and only start it after 100ms,
-    # and then cancel when done?
-
     return self.Wait(waiter)
 
 
@@ -938,7 +934,7 @@ class Pipeline(Job):
     self.pipe_status = []  # type: List[int]  # status in order
     self.status = -1  # for 'wait' jobs
 
-    # Optional for foregroud
+    # Optional for foreground
     self.last_thunk = None  # type: Tuple[CommandEvaluator, command_t]
     self.last_pipe = None  # type: Tuple[int, int]
 

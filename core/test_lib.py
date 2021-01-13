@@ -172,7 +172,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   errfmt = ui.ErrorFormatter(arena)
   job_state = process.JobState()
-  fd_state = process.FdState(errfmt, job_state)
+  fd_state = process.FdState(errfmt, job_state, None, None)
   aliases = {} if aliases is None else aliases
   procs = {}
 
@@ -227,15 +227,14 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_builtins, arena, cmd_deps)
 
+  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
+
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
-      ext_prog, waiter, job_state, fd_state, errfmt)
+      ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
   assert cmd_ev.mutable_opts is not None, cmd_ev
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
-
-  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev,
-                      debug_f)
 
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                       prompt_ev, tracer)

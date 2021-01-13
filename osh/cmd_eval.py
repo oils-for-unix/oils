@@ -468,15 +468,16 @@ class CommandEvaluator(object):
   def _RunSimpleCommand(self, cmd_val, do_fork):
     # type: (cmd_value_t, bool) -> int
     """Private interface to run a simple command (including assignment)."""
-
     UP_cmd_val = cmd_val
     with tagswitch(UP_cmd_val) as case:
       if case(cmd_value_e.Argv):
         cmd_val = cast(cmd_value__Argv, UP_cmd_val)
+        self.tracer.OnSimpleCommand(cmd_val.argv)
         return self.shell_ex.RunSimpleCommand(cmd_val, do_fork)
 
       elif case(cmd_value_e.Assign):
         cmd_val = cast(cmd_value__Assign, UP_cmd_val)
+        self.tracer.OnAssignBuiltin(cmd_val)
         return self._RunAssignBuiltin(cmd_val)
 
       else:
@@ -599,18 +600,11 @@ class CommandEvaluator(object):
         if UP_cmd_val.tag_() == cmd_value_e.Argv:
           cmd_val = cast(cmd_value__Argv, UP_cmd_val)
           cmd_val.block = node.block  # may be None
-
-          # This comes before evaluating env, in case there are problems evaluating
-          # it.  We could trace the env separately?  Also trace unevaluated code
-          # with set-o verbose?
-          self.tracer.OnSimpleCommand(cmd_val.argv)
-
         else:
           if node.block:
             e_die("ShAssignment builtins don't accept blocks",
                   span_id=node.block.spids[0])
           cmd_val = cast(cmd_value__Assign, UP_cmd_val)
-          self.tracer.OnAssignBuiltin(cmd_val)
 
         # NOTE: RunSimpleCommand never returns when do_fork=False!
         if len(node.more_env):  # I think this guard is necessary?

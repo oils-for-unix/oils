@@ -285,9 +285,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   procs = {}  # type: Dict[str, Proc]
 
-  job_state = process.JobState()
-  fd_state = process.FdState(errfmt, job_state, mem)
-
   if attrs.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])
     return 0
@@ -340,6 +337,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_deps.traps = {}
   cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
+  job_state = process.JobState()
+  fd_state = process.FdState(errfmt, job_state, mem, None)
   waiter = process.Waiter(job_state, exec_opts)
 
   my_pid = posix.getpid()
@@ -363,6 +362,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       return 2
   else:
     debug_f = util.NullDebugFile()
+
+  if flag.xtrace_to_debug_file:
+    trace_f = debug_f
+  else:
+    trace_f = util.DebugFile(mylib.Stderr())
+  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
+  fd_state.tracer = tracer  # circular dep
 
   cmd_deps.debug_f = debug_f
 
@@ -398,11 +404,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   crash_dump_dir = environ.get('OSH_CRASH_DUMP_DIR', '')
   cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
 
-  if flag.xtrace_to_debug_file:
-    trace_f = debug_f
-  else:
-    trace_f = util.DebugFile(mylib.Stderr())
-
   comp_lookup = completion.Lookup()
 
   # Various Global State objects to work around readline interfaces
@@ -420,7 +421,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
-      ext_prog, waiter, job_state, fd_state, errfmt)
+      ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
   pure.AddPure(builtins, mem, procs, mutable_opts, aliases, search_path,
                errfmt)
@@ -452,7 +453,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
-  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
 
   # Wire up circular dependencies.
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
