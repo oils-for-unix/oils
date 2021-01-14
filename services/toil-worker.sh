@@ -80,6 +80,8 @@ lint            test/lint.sh travis         -
 typecheck-slice types/oil-slice.sh travis   -
 typecheck-other types/run.sh travis         -
 unit            test/unit.sh travis         -
+runtime-errors      test/runtime-errors.sh run-all-with-osh      -
+oil-runtime-errors  test/oil-runtime-errors.sh run-all-with-osh  -
 oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
 tea-spec        test/spec.sh tea-all-serial _tmp/spec/tea-language/tea.html
 oil-large       oil_lang/run.sh travis      -
