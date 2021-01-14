@@ -9,7 +9,15 @@ source test/common.sh
 
 OIL=${OIL:-bin/oil}
 
+banner() {
+  echo
+  echo ===== CASE: "$@" =====
+  echo
+}
+
 _error-case() {
+  banner "$@"
+  echo
   $OIL -c "$@"
 
   # NOTE: This works with osh, not others.
@@ -19,22 +27,45 @@ _error-case() {
   fi
 }
 
+_should-run() {
+  banner "$@"
+  echo
+  $OIL -c "$@"
+
+  local status=$?
+  if test $status != 0; then
+    die "Expected it to parse"
+  fi
+}
+
+
 regex_literals() {
-  var sq = / 'foo'+ /
+  _should-run "var sq = / 'foo'+ /"
+
+  _error-case '
   var dq = / "foo"+ /
+  echo $dq
+  '
 
-  var literal = 'foo'
+  _should-run '
+  var dq = / ("foo")+ /
+  echo $dq
+
+  var dq2 = / <"foo">+ /
+  echo $dq2
+  '
+
+  _error-case '
+  var literal = "foo"
   var svs = / $literal+ /
+  echo $svs
+  '
+
+  _error-case '
+  var literal = "foo"
   var bvs = / ${literal}+ /
-
-  # All of these fail individually.
-  # NOTE: They are fatal failures so we can't catch them?  It would be nicer to
-  # catch them.
-
-  #echo $sq
-  #echo $dq
-  #echo $svs
   echo $bvs
+  '
 }
 
 undefined_vars() {
@@ -45,17 +76,17 @@ undefined_vars() {
   _error-case 'if ($x) { echo hi }'
   _error-case 'if (${x}) { echo hi }'
 
-  _error-case 'x = / @yo /'
+  # BareDecl and regex
+  _error-case 'x = / @undef /; echo hi'
+
+  _error-case 'var x = undef; echo $x'  # VarDecl
+  _error-case 'setvar a = undef'  # PlaceMutation
 }
 
 _run-test() {
   local name=$1
 
   bin/osh -O oil:basic -- $0 $name
-  local status=$?
-  if test $status -ne 1; then
-    die "Expected status 1, got $status"
-  fi
 }
 
 run-all-with-osh() {
