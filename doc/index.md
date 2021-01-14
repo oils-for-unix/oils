@@ -9,7 +9,6 @@ Oil Documentation
 The Oil project aims to transform Unix shell into a better programming
 language.  It's **our upgrade path from bash**.
 
-<!-- cmark.py expands this -->
 <div id="toc">
 </div>
 
@@ -74,6 +73,7 @@ Language Design:
 More:
 
 - [Options](oil-options.html).  Parsing and runtime options turn OSH into Oil.
+- [Tracing Execution](xtrace.html).  Oil enhances shell's `set -x`.
 - Future: Error Handling
 
 ## Interchange Formats
