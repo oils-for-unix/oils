@@ -206,26 +206,41 @@ def _PrintValue(val, buf):
 
 
 class Tracer(object):
-  """A tracer for this process.
+  """For shell's set -x, and Oil's hierarchical, parsable tracing.
 
-  TODO: Connect it somehow to tracers for other processes.  So you can make an
+  Default prefix is
+
+  PS4='${X_indent}${X_punct}${X_pid} '
+
+  X_punct is:
+
+      + for a builtin
+      > and < for proc calls, eval, and source (synchronous, stack-based)
+      | and . to begin and end a process (async)
+
+  | 1234 main.sh foo bar
+  + builtin cd /
+  > proc foo
+    | 1235 ls .
+    . 1235 ls (status 0)
+  < proc foo
+  | 1236 subshell
+    + 1236 cd /
+  . 1236 subshell
+  . 1234 main.sh (status 0)
+
+  I guess the PID should appear on EVERY line?
+
+  - TODO: Connect it somehow to tracers for other processes.  So you can make an
   HTML report offline.
 
   https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 
   Other hooks:
 
-  - Proc calls.  As opposed to external commands.
-  - Process Forks.  Subshell, command sub, pipeline,
-    - yeah bash doesn't have this, but we should have it
-    - for subshells, pipelines and so forth
-  - Command Completion -- you get the status code?
+  - Command completion starts other processes
   - Oil stuff
-    - BareDecl, VarDecl, PlaceMutation, Expr,
-
-  Idea:
-    shopt --set process_trace   is orthogonal to xtrace?
-    It should show > < and details about external command vs. function
+    - BareDecl, VarDecl, PlaceMutation, Expr
   """
   def __init__(self,
                parse_ctx,  # type: ParseContext
