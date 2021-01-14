@@ -88,7 +88,6 @@ oil-large       oil_lang/run.sh travis      -
 tea-large       tea/run.sh travis           - 
 osh-minimal     test/spec.sh osh-minimal    _tmp/spec/survey/osh-minimal.html
 EOF
-
 }
 
 cpp-tasks() {

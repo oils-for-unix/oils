@@ -279,7 +279,9 @@ control_flow() {
 core_process() {
   echo foo > not/a/file
   echo foo > /etc/no-perms-for-this
-  echo hi 1>&3
+
+  # DISABLED!  This messes up the toil log file!
+  # echo hi 1>&3
 }
 
 # Errors from osh/state.py
