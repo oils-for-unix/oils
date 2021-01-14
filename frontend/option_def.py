@@ -123,6 +123,7 @@ _BASIC_RUNTIME_OPTIONS = [
     ('command_sub_errexit', False),  # check after command sub
     ('process_sub_fail', False),     # like pipefail, but for <(sort foo.txt)
     ('xtrace_rich', False),          # Hierarchical trace with PIDs
+    ('xtrace_details', True),        # Legacy set -x stuff
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be

@@ -115,6 +115,7 @@ class ShellExecutor(vm._Executor):
   def RunBuiltin(self, builtin_id, cmd_val):
     # type: (int, cmd_value__Argv) -> int
     """Run a builtin.  Also called by the 'builtin' builtin."""
+    self.tracer.OnBuiltin(cmd_val.argv)
 
     builtin_func = self.builtins[builtin_id]
 

@@ -3,6 +3,7 @@ dev.py - Devtools / introspection.
 """
 from __future__ import print_function
 
+from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
@@ -13,6 +14,7 @@ from _devbuild.gen.syntax_asdl import assign_op_e
 from asdl import runtime
 from core import error
 from core import optview
+from core import state
 from qsn_ import qsn
 from core.pyerror import log
 from osh import word_
@@ -172,6 +174,37 @@ class ctx_Tracer(object):
     self.tracer.Pop(self.desc)
 
 
+def _PrintValue(val, buf):
+  # type: (value_t, mylib.BufWriter) -> None
+
+  # NOTE: This is a bit like _PrintVariables for declare -p
+  result = '?'
+  UP_val = val
+  with tagswitch(val) as case:
+    if case(value_e.Str):
+      val = cast(value__Str, UP_val)
+      result = qsn.maybe_shell_encode(val.s)
+
+    elif case(value_e.MaybeStrArray):
+      val = cast(value__MaybeStrArray, UP_val)
+      parts = ['(']
+      for s in val.strs:
+        parts.append(qsn.maybe_shell_encode(s))
+      parts.append(')')
+      result = ' '.join(parts)
+
+    elif case(value_e.AssocArray):
+      val = cast(value__AssocArray, UP_val)
+      parts = ['(']
+      for k, v in iteritems(val.d):
+        parts.append('[%s]=%s' % (
+            qsn.maybe_shell_encode(k), qsn.maybe_shell_encode(v)))
+      parts.append(')')
+      result = ' '.join(parts)
+
+  buf.write(result)
+
+
 class Tracer(object):
   """A tracer for this process.
 
@@ -217,10 +250,9 @@ class Tracer(object):
 
     self.word_ev = None  # type: NormalWordEvaluator
 
-    self.ind  = 0  # changed by process, proc, source, eval
+    self.ind = 0  # changed by process, proc, source, eval
     self.indents = ['']  # "pooled" to avoid allocations
-
-    self.pid = -1
+    self.pid = -1  # PID to print as prefix
 
     # PS4 value -> compound_word.  PS4 is scoped.
     self.parse_cache = {}  # type: Dict[str, compound_word]
@@ -238,13 +270,11 @@ class Tracer(object):
 
     BASH_XTRACEFD exists.
     """
-    # Change this to be the default?  Users can change it to '+ ' I guess?
-    ps4 = '${X_indent}${X_punct}${X_tag} '
-
-    ps4 = '+ '  # default
     val = self.mem.GetValue('PS4')
     if val.tag_() == value_e.Str:
       ps4 = cast(value__Str, val).s
+    else:
+      ps4 = ''
 
     # NOTE: This cache is slightly broken because aliases are mutable!  I think
     # that is more or less harmless though.
@@ -271,16 +301,13 @@ class Tracer(object):
 
     # Prevent infinite loop when PS4 has command sub!
     assert self.exec_opts.xtrace()  # We shouldn't call this unless it's on!
-    self.mutable_opts.set_xtrace(False)
-    try:
+    with state.ctx_Option(self.mutable_opts, [option_i.xtrace], False):
       prefix = self.word_ev.EvalForPlugin(ps4_word)
-    finally:
-      self.mutable_opts.set_xtrace(True)
     return prefix.s
 
-  def _TraceBegin(self):
+  def _ShTraceBegin(self):
     # type: () -> Optional[mylib.BufWriter]
-    if not self.exec_opts.xtrace():
+    if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_details():
       return None
 
     # TODO: Using a member variable and then clear() would probably save
@@ -301,7 +328,7 @@ class Tracer(object):
 
     return buf
 
-  def _TraceBegin2(self, ch):
+  def _OilTraceBegin(self, ch):
     # type: (str) -> Optional[mylib.BufWriter]
     """For the stack printed by xtrace_rich"""
     if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_rich():
@@ -311,14 +338,15 @@ class Tracer(object):
     buf = mylib.BufWriter()
     buf.write(self.indents[self.ind])
     buf.write(ch)
+    buf.write(' ')
     if self.pid != -1:
       buf.write(str(self.pid))
-    buf.write(' ')
+      buf.write(' ')
     return buf
 
   def OnProcessStart(self, pid):
     # type: (int) -> None
-    buf = self._TraceBegin2('|')
+    buf = self._OilTraceBegin('|')
     if not buf:
       return
 
@@ -327,7 +355,7 @@ class Tracer(object):
 
   def OnProcessEnd(self, pid, status):
     # type: (int, int) -> None
-    buf = self._TraceBegin2('.')
+    buf = self._OilTraceBegin('.')
     if not buf:
       return
 
@@ -341,64 +369,56 @@ class Tracer(object):
   def Push(self, desc):
     # type: (str) -> None
     """Print > and the description."""
+    #import traceback
+    #log('push')
+    #traceback.print_stack()
     self.ind += 1
     if self.ind >= len(self.indents):  # make sure there are enough
       self.indents.append('  ' * self.ind)
 
-    buf = self._TraceBegin2('>')
-    if not buf:
-      return
-
-    buf.write(desc)
-    buf.write('\n')
-    self.f.write(buf.getvalue())
+    buf = self._OilTraceBegin('>')
+    if buf:
+      buf.write(desc)
+      buf.write('\n')
+      self.f.write(buf.getvalue())
 
   def Pop(self, desc):
     # type: (str) -> None
     """Print < and the description."""
-    buf = self._TraceBegin2('<')
-    if not buf:
-      return
-
-    buf.write(desc)
-    buf.write('\n')
-    self.f.write(buf.getvalue())
+    #log('pop')
+    buf = self._OilTraceBegin('<')
+    if buf:
+      buf.write(desc)
+      buf.write('\n')
+      self.f.write(buf.getvalue())
 
     self.ind -= 1
 
-  def _Value(self, val, buf):
-    # type: (value_t, mylib.BufWriter) -> None
+  def OnBuiltin(self, argv):
+    # type: (List[str]) -> None
+    buf = self._OilTraceBegin('+')
+    if not buf:
+      return
 
-    # NOTE: This is a bit like _PrintVariables for declare -p
-    result = '?'
-    UP_val = val
-    with tagswitch(val) as case:
-      if case(value_e.Str):
-        val = cast(value__Str, UP_val)
-        result = qsn.maybe_shell_encode(val.s)
+    buf.write('builtin ')
+    for i, arg in enumerate(argv):
+      if i != 0:
+        buf.write(' ')
+      buf.write(qsn.maybe_shell_encode(arg))
+    buf.write('\n')
+    self.f.write(buf.getvalue())
 
-      elif case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, UP_val)
-        parts = ['(']
-        for s in val.strs:
-          parts.append(qsn.maybe_shell_encode(s))
-        parts.append(')')
-        result = ' '.join(parts)
-
-      elif case(value_e.AssocArray):
-        val = cast(value__AssocArray, UP_val)
-        parts = ['(']
-        for k, v in iteritems(val.d):
-          parts.append('[%s]=%s' % (
-              qsn.maybe_shell_encode(k), qsn.maybe_shell_encode(v)))
-        parts.append(')')
-        result = ' '.join(parts)
-
-    buf.write(result)
+  #
+  # Shell Tracing That Begins with _ShTraceBegin
+  #
 
   def OnSimpleCommand(self, argv):
     # type: (List[str]) -> None
-    buf = self._TraceBegin()
+    """For legacy set -x.
+
+    Called before we know if it's a builtin, external, or proc.
+    """
+    buf = self._ShTraceBegin()
     if not buf:
       return
 
@@ -409,27 +429,28 @@ class Tracer(object):
 
   def OnAssignBuiltin(self, cmd_val):
     # type: (cmd_value__Assign) -> None
-    buf = self._TraceBegin()
+    buf = self._ShTraceBegin()
     if not buf:
       return
 
-    for arg in cmd_val.argv:
+    for i, arg in enumerate(cmd_val.argv):
+      if i != 0:
+        buf.write(' ')
       buf.write(arg)
-      buf.write(' ')
 
     for pair in cmd_val.pairs:
+      buf.write(' ')
       buf.write(pair.var_name)
       buf.write('=')
       if pair.rval:
-        self._Value(pair.rval, buf)
-        buf.write(' ')
+        _PrintValue(pair.rval, buf)
 
     buf.write('\n')
     self.f.write(buf.getvalue())
 
   def OnShAssignment(self, lval, op, val, flags, which_scopes):
     # type: (lvalue_t, assign_op_t, value_t, int, scope_t) -> None
-    buf = self._TraceBegin()
+    buf = self._ShTraceBegin()
     if not buf:
       return
 
@@ -448,17 +469,16 @@ class Tracer(object):
     buf.write(left)
 
     # Only two possibilities here
-    op_str = '+=' if op == assign_op_e.PlusEqual else '='
-    buf.write(op_str)
+    buf.write('+=' if op == assign_op_e.PlusEqual else '=')
 
-    self._Value(val, buf)
+    _PrintValue(val, buf)
 
     buf.write('\n')
     self.f.write(buf.getvalue())
 
   def OnControlFlow(self, keyword, arg):
     # type: (str, int) -> None
-    buf = self._TraceBegin()
+    buf = self._ShTraceBegin()
     if not buf:
       return
 
@@ -475,7 +495,7 @@ class Tracer(object):
     """
     For (( )) and [[ ]].  Bash traces these.
     """
-    buf = self._TraceBegin()
+    buf = self._ShTraceBegin()
     if not buf:
       return
 

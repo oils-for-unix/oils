@@ -1,5 +1,18 @@
-#
 # xtrace test.  Test PS4 and line numbers, etc.
+
+#### unset PS4
+set -x
+echo 1
+unset PS4
+echo 2
+## STDOUT:
+1
+2
+## STDERR:
++ echo 1
++ unset PS4
+echo 2
+## END
 
 #### set -o verbose prints unevaluated code
 set -o verbose
@@ -132,6 +145,63 @@ one
 two
 ## END
 
+#### Assignments and assign builtins
+set -x
+x=1 x=2; echo $x; readonly x=3
+## STDOUT:
+2
+## END
+## STDERR:
++ x=1
++ x=2
++ echo 2
++ readonly x=3
+## END
+## OK dash STDERR:
++ x=1 x=2
++ echo 2
++ readonly x=3
+## END
+## OK dash STDERR:
++ x=1 x=2
++ echo 2
++ readonly x=3
+## END
+## OK bash STDERR:
++ x=1
++ x=2
++ echo 2
++ readonly x=3
++ x=3
+## END
+## OK mksh STDERR:
++ x=1 x=2 
++ echo 2
++ readonly 'x=3'
+## END
+
+#### [[ ]]
+case $SH in (dash|mksh) exit ;; esac
+
+set -x
+
+dir=/
+if [[ -d $dir ]]; then
+  (( a = 42 ))
+fi
+## stdout-json: ""
+## STDERR:
++ dir='/'
++ [[ -d $dir ]]
++ (( a = 42 ))
+## END
+## OK bash STDERR:
++ dir=/
++ [[ -d / ]]
++ ((  a = 42  ))
+## END
+## N-I dash/mksh stderr-json: ""
+
 #### PS4 is scoped
 set -x
 echo one
@@ -151,7 +221,7 @@ echo two
 ## OK osh STDERR:
 + echo one
 + f
-+ local PS4='- ' 
++ local PS4='- '
 - echo func
 + echo two
 ## END

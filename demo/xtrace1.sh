@@ -71,6 +71,12 @@ posix() {
 shopt -s expand_aliases
 alias e=echo
 
+simple() {
+  e alias
+  myfunc invoke
+  ( myfunc subshell )
+}
+
 main() {
   banner ALIAS
 
@@ -164,6 +170,32 @@ concurrency() {
 
   # PID prefix would be nice here
   slowfunc 1 3 | slowfunc 2 4 5 | slowfunc 6
+}
+
+task() {
+  for i in "$@"; do
+    echo $i
+    sleep 0.$i
+  done
+}
+
+through_xargs() {
+  set -x
+  export PS4='+ $$ '
+
+  # This doesn't work because xargs invokes $0!  Not OSH.
+  export OSH_HIJACK_SHEBANG=1
+
+  # This makes us trace through xargs.
+  #
+  # problem: $0 invokes bash because of the shebang.
+  # We can't use $SHELL $0.
+  # - bash is the only shell that sets $SHELL.
+  # - It's not the right value.  "If it is not set when the shell starts, bash
+  #   assigns to it the full pathname of the current user's login shell."
+
+  export SHELLOPTS
+  seq 6 | xargs -n 2 -P 3 -- $0 task
 }
 
 my_ps4() {

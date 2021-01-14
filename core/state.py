@@ -747,6 +747,10 @@ def _InitDefaults(mem):
   # For getopts builtin
   SetGlobalString(mem, 'OPTIND', '1')
 
+  # TODO: Change this to be the default.  Users can change it to '+ ' if they
+  # want.
+  # ps4 = '${X_indent}${X_punct}${X_pid} '
+
   # For xtrace
   SetGlobalString(mem, 'PS4', '+ ')
 
