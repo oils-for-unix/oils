@@ -331,7 +331,7 @@ class Tracer(object):
     if not buf:
       return
 
-    buf.write('process %s (status %d)\n' % (pid, status))
+    buf.write('process %d (status %d)\n' % (pid, status))
     self.f.write(buf.getvalue())
 
   def SetProcess(self, pid):
@@ -343,7 +343,7 @@ class Tracer(object):
     """Print > and the description."""
     self.ind += 1
     if self.ind >= len(self.indents):  # make sure there are enough
-      self.indents.append(self.ind * '  ')
+      self.indents.append('  ' * self.ind)
 
     buf = self._TraceBegin2('>')
     if not buf:
