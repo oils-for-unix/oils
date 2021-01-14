@@ -301,7 +301,7 @@ class Tracer(object):
 
     return buf
 
-  def _TraceBegin2(self, char):
+  def _TraceBegin2(self, ch):
     # type: (str) -> Optional[mylib.BufWriter]
     """For the stack printed by xtrace_rich"""
     if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_rich():
@@ -310,7 +310,7 @@ class Tracer(object):
     # TODO: change to _EvalPS4
     buf = mylib.BufWriter()
     buf.write(self.indents[self.ind])
-    buf.write(char)
+    buf.write(ch)
     if self.pid != -1:
       buf.write(str(self.pid))
     buf.write(' ')
