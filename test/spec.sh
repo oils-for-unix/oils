@@ -965,7 +965,7 @@ oil-scope() {
 }
 
 oil-xtrace() {
-  sh-spec spec/oil-xtrace.test.sh --osh-failures-allowed 9 \
+  sh-spec spec/oil-xtrace.test.sh --osh-failures-allowed 6 \
     $OSH_LIST "$@"
 }
 

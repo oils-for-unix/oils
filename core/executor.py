@@ -115,7 +115,7 @@ class ShellExecutor(vm._Executor):
   def RunBuiltin(self, builtin_id, cmd_val):
     # type: (int, cmd_value__Argv) -> int
     """Run a builtin.  Also called by the 'builtin' builtin."""
-    self.tracer.OnBuiltin(cmd_val.argv)
+    self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
 
     builtin_func = self.builtins[builtin_id]
 
@@ -243,7 +243,9 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
+      #self.tracer.OnExternalStart(cmd_val.argv)
       status = p.Run(self.waiter)
+      #self.tracer.OnExternalEnd()
       return status
 
     # Already forked for pipeline: ls / | wc -l

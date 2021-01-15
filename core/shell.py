@@ -467,10 +467,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                                                      arith_ev, errfmt)
   builtins[builtin_i.unset] = builtin_assign.Unset(mem, exec_opts, procs,
                                                    parse_ctx, arith_ev, errfmt)
-  builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev)
+  builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev,
+                                               tracer)
 
   source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
-                                       fd_state, errfmt)
+                                       fd_state, tracer, errfmt)
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 

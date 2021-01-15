@@ -3,7 +3,7 @@ dev.py - Devtools / introspection.
 """
 from __future__ import print_function
 
-from _devbuild.gen.option_asdl import option_i
+from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
     value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
@@ -216,23 +216,37 @@ class Tracer(object):
 
       + for a builtin
       > and < for proc calls, eval, and source (synchronous, stack-based)
-      | and . to begin and end a process (async)
+        - for synchronous processes: subshell, semicolon
+      | and . to begin and end a process (async), command sub
+        - async processes: fork, elements of a pipeline, process sub
 
-  | 1234 main.sh foo bar
+  Oil PID 1234: main.sh foo bar (try https://xtrace.oilshell.org/)
   + builtin cd /
   > proc foo
-    | 1235 ls .
-    . 1235 ls (status 0)
+    > 1235 ls .
+    < 1235 ls (status 0)
   < proc foo
-  | 1236 subshell
-    + 1236 cd /
-  . 1236 subshell
-  . 1234 main.sh (status 0)
+  > 1236 subshell
+    > 1236 proc bar
+      > 1237 ls /nonexistent
+      < 1237 ls (status 1)
+    < 1236 proc bar
+    + 1236 builtin cd /
+  < 1236 subshell (status 0)
+  > pipeline
+    | PID 1234
+    | PID 1235
+    . PID 1235 (status 0)
+    . PID 1234 (status 1)
+  < pipeline (pipestatus now available)
+  Oil exited (status 0)
 
+  The first and last line are special.  We don't want to include the same PID
+  on EVERY line.
   I guess the PID should appear on EVERY line?
 
-  - TODO: Connect it somehow to tracers for other processes.  So you can make an
-  HTML report offline.
+  - TODO: Connect it somehow to tracers for other processes.  So you can make
+    an HTML report offline.
 
   https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 
@@ -361,6 +375,16 @@ class Tracer(object):
 
   def OnProcessStart(self, pid):
     # type: (int) -> None
+    """
+    TODO:
+
+    | for async (& and pipeline)
+    > for synchronous (command sub, subshell and external)
+
+    Also we need a description:
+      pipeline, & fork, subshell, command.Simple with argv
+    """
+
     buf = self._OilTraceBegin('|')
     if not buf:
       return
@@ -379,38 +403,64 @@ class Tracer(object):
 
   def SetProcess(self, pid):
     # type: (int) -> None
+    """
+    All trace lines have a PID prefix, except those from the root process.
+    """
     self.pid = pid
 
   def Push(self, desc):
     # type: (str) -> None
-    """Print > and the description."""
+    """Indent for synchronous constructs.
+
+    synchronous, in-process constructs.
+      proc: argv
+      source: filename
+      eval
+
+    <> synchronous, new process:
+      external: PID and argv
+      command sub: PID and maybe argv[0] if it's a SimpleCommand?
+      subshell: PID
+    """
     #import traceback
     #log('push')
     #traceback.print_stack()
+
+    buf = self._OilTraceBegin('[')
+    if buf:
+      buf.write(desc)
+      buf.write('\n')
+      self.f.write(buf.getvalue())
+
     self.ind += 1
     if self.ind >= len(self.indents):  # make sure there are enough
       self.indents.append('  ' * self.ind)
 
-    buf = self._OilTraceBegin('>')
-    if buf:
-      buf.write(desc)
-      buf.write('\n')
-      self.f.write(buf.getvalue())
-
   def Pop(self, desc):
     # type: (str) -> None
-    """Print < and the description."""
+    """Dedent for synchronous constructs.
+
+    new process:
+      external: status
+      subshell: status
+
+    proc, source, eval, can also have status.  But not as important.
+    """
+    self.ind -= 1
+
     #log('pop')
-    buf = self._OilTraceBegin('<')
+    buf = self._OilTraceBegin(']')
     if buf:
       buf.write(desc)
       buf.write('\n')
       self.f.write(buf.getvalue())
 
-    self.ind -= 1
+  def OnBuiltin(self, builtin_id, argv):
+    # type: (builtin_t, List[str]) -> None
+    if builtin_id in (builtin_i.eval, builtin_i.source):
+      # Handled separately
+      return
 
-  def OnBuiltin(self, argv):
-    # type: (List[str]) -> None
     buf = self._OilTraceBegin('+')
     if not buf:
       return

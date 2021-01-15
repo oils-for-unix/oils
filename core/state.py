@@ -135,6 +135,24 @@ class SearchPath(object):
     return self.cache.values()
 
 
+class ctx_Source(object):
+  """For source builtin."""
+
+  def __init__(self, mem, source_name, argv):
+    # type: (Mem, str, List[str]) -> None
+    mem.PushSource(source_name, argv)
+    self.mem = mem
+    self.argv = argv
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.mem.PopSource(self.argv)
+
+
 class ctx_Option(object):
   """shopt --unset errexit { false } """
   def __init__(self, mutable_opts, opt_nums, b):

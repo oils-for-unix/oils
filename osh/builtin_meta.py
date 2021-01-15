@@ -9,6 +9,7 @@ from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import alloc
+from core import dev
 from core import error
 from core import main_loop
 from core.pyerror import e_die, e_usage, log
@@ -35,12 +36,13 @@ if TYPE_CHECKING:
 
 class Eval(vm._Builtin):
 
-  def __init__(self, parse_ctx, exec_opts, cmd_ev):
-    # type: (ParseContext, optview.Exec, CommandEvaluator) -> None
+  def __init__(self, parse_ctx, exec_opts, cmd_ev, tracer):
+    # type: (ParseContext, optview.Exec, CommandEvaluator, dev.Tracer) -> None
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.exec_opts = exec_opts
     self.cmd_ev = cmd_ev
+    self.tracer = tracer
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -61,25 +63,25 @@ class Eval(vm._Builtin):
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     src = source.EvalArg(eval_spid)
-    with alloc.ctx_Location(self.arena, src):
-      return main_loop.Batch(self.cmd_ev, c_parser, self.arena,
-                             cmd_flags=cmd_eval.IsEvalSource)
+    with dev.ctx_Tracer(self.tracer, 'eval'):
+      with alloc.ctx_Location(self.arena, src):
+        return main_loop.Batch(self.cmd_ev, c_parser, self.arena,
+                               cmd_flags=cmd_eval.IsEvalSource)
 
 
 class Source(vm._Builtin):
 
-  def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, errfmt):
-    # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, ui.ErrorFormatter) -> None
+  def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, tracer, errfmt):
+    # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, dev.Tracer, ui.ErrorFormatter) -> None
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
-
     self.search_path = search_path
-
     self.cmd_ev = cmd_ev
     self.fd_state = fd_state
-    self.mem = cmd_ev.mem
-
+    self.tracer = tracer
     self.errfmt = errfmt
+
+    self.mem = cmd_ev.mem
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -108,17 +110,13 @@ class Source(vm._Builtin):
       # A sourced module CAN have a new arguments array, but it always shares
       # the same variable scope as the caller.  The caller could be at either a
       # global or a local scope.
-      source_argv = arg_r.Rest()
-      self.mem.PushSource(path, source_argv)
-
-      src = source.SourcedFile(path, call_spid)
-      try:
-        with alloc.ctx_Location(self.arena, src):
-          status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
-                                   cmd_flags=cmd_eval.IsEvalSource)
-      finally:
-        self.mem.PopSource(source_argv)
-
+      with dev.ctx_Tracer(self.tracer, 'source'):
+        source_argv = arg_r.Rest()
+        with state.ctx_Source(self.mem, path, source_argv):
+          src = source.SourcedFile(path, call_spid)
+          with alloc.ctx_Location(self.arena, src):
+            status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
+                                     cmd_flags=cmd_eval.IsEvalSource)
       return status
 
     except error._ControlFlow as e:

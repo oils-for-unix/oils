@@ -15,39 +15,67 @@ cd /
 + builtin cd '/'
 ## END
 
-#### proc
-shopt --set xtrace xtrace_rich
+#### proc and shell function
+shopt --set oil:basic
+set -x
 
-proc f {
+shfunc() {
   : $1
 }
-f hi
+
+proc p {
+  : $1
+}
+
+shfunc 1
+p 2
 ## stdout-json: ""
 ## STDERR:
-> proc f hi
-  + ':' hi
-< proc f
+[ proc shfunc
+  + builtin ':' 1
+] proc shfunc
+[ proc p
+  + builtin ':' 2
+] proc p
 ## END
 
 #### eval
-shopt --set xtrace xtrace_rich
+shopt --set oil:basic
+set -x
 
-eval 'echo hi'
-## stdout-json: ""
+eval 'echo 1; echo 2'
+## STDOUT:
+1
+2
+## END
 ## STDERR:
+[ eval
+  + builtin echo 1
+  + builtin echo 2
+] eval
 ## END
 
 #### source
-shopt --set xtrace xtrace_rich
+shopt --set oil:basic
+set -x
 
 source $REPO_ROOT/spec/testdata/source-argv.sh 1 2 3
 
-## stdout-json: ""
+## STDOUT:
+source-argv: 1 2 3
+## END
+
+# TODO: add argv
 ## STDERR:
+[ source
+  + builtin echo 'source-argv:' '1 2 3'
+  + builtin shift
+] source
 ## END
 
 #### external and builtin
-shopt --set xtrace xtrace_rich
+shopt --set oil:basic
+set -x
 
 env true
 cd /
@@ -56,12 +84,14 @@ pwd
 ## STDERR:
 | 123 external env true
 . 123 status=0 env true
-+ builtin cd /
++ builtin cd '/'
 + builtin pwd
 ## END
 
 #### subshell
-shopt --set xtrace xtrace_rich
+shopt --set oil:basic
+shopt --unset errexit
+set -x
 
 ( : 1
   : 2
