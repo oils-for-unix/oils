@@ -93,8 +93,13 @@ shopt --set oil:basic
 shopt --unset errexit
 set -x
 
+proc p {
+  : p
+}
+
 ( : 1
   : 2
+  p
   exit 3
 )
 : 4
@@ -109,13 +114,24 @@ set -x
 ## END
 
 #### command sub
-echo $(echo hi)
+shopt --set oil:basic
+set -x
 
-## stdout-json: ""
+echo foo=$(echo bar)
+
+## STDOUT:
+hi
+## END
 ## STDERR:
+> command sub
+  + 1234 builtin echo bar
+< command sub
++ builtin echo 'foo=bar'
 ## END
 
 #### process sub (nondeterministic)
+shopt --set oil:basic
+set -x
 
 # we wait() for them all at the end
 
@@ -125,18 +141,25 @@ diff -u <(seq 3) <(seq 4)
 ## END
 
 #### pipeline (nondeterministic)
+shopt --set oil:basic
+set -x
+
 myfunc() {
   echo 1
   echo 2
 }
 
+: 1
 myfunc | sort | wc -l
+: 2
 
 ## stdout-json: ""
 ## STDERR:
 ## END
 
 #### fork and & (nondeterministic)
+shopt --set oil:basic
+set -x
 
 sleep 0.1 &
 wait

@@ -243,13 +243,12 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
-      #self.tracer.OnExternalStart(cmd_val.argv)
+      self.tracer.OnExternalStart(cmd_val.argv)
       status = p.Run(self.waiter)
-      #self.tracer.OnExternalEnd()
+      self.tracer.OnExternalEnd(status)
       return status
 
     # Already forked for pipeline: ls / | wc -l
-    # TODO: count subshell?  ( ls / ) vs. ( ls /; ls / )
     self.ext_prog.Exec(argv0_path, cmd_val, environ)  # NEVER RETURNS
     assert False, "This line should never be reached" # makes mypy happy
 
@@ -318,12 +317,14 @@ class ShellExecutor(vm._Executor):
     pi.AddLast((self.cmd_ev, last_child))
     status_out.spids.append(location.SpanForCommand(last_child))
 
-    status_out.codes = pi.Run(self.waiter, self.fd_state)
+    with dev.ctx_Tracer(self.tracer, 'pipeline'):
+      status_out.codes = pi.Run(self.waiter, self.fd_state)
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
-    return p.Run(self.waiter)
+    with dev.ctx_Tracer(self.tracer, 'subshell'):
+      return p.Run(self.waiter)
 
   def RunCommandSub(self, cs_part):
     # type: (command_sub) -> str

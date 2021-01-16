@@ -164,6 +164,7 @@ class ctx_Tracer(object):
     tracer.Push(desc)
     self.tracer = tracer
     self.desc = desc
+    #self.pid = posix.getpid()
 
   def __enter__(self):
     # type: () -> None
@@ -171,6 +172,18 @@ class ctx_Tracer(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
+
+    # Avoid the fork() problem.  Is there a better way to do this?
+
+    # Yeah this is annoying because I do NOT want to have this should up in
+    # strace().  syscalls for tracing is BAD.  I think I had the same problem
+    # with the crash dump.  See demo/osh-crash.sh.
+    #
+    # SOLUTION: HARD exit on subshells?  Like posix._exit() like readline?
+
+    #if posix.getpid() != self.pid:
+    #  return
+
     self.tracer.Pop(self.desc)
 
 
@@ -407,6 +420,40 @@ class Tracer(object):
     All trace lines have a PID prefix, except those from the root process.
     """
     self.pid = pid
+    buf = self._OilTraceBegin('.')
+    if not buf:
+      return
+
+  def _PrintArgv(self, argv, buf):
+    # type: (List[str], mylib.BufWriter) -> None
+    for i, arg in enumerate(argv):
+      if i != 0:
+        buf.write(' ')
+      buf.write(qsn.maybe_shell_encode(arg))
+    buf.write('\n')
+    self.f.write(buf.getvalue())
+
+  def OnExternalStart(self, argv):
+    # type: (List[str]) -> None
+    buf = self._OilTraceBegin('>')
+    if buf:
+      self._PrintArgv(argv, buf)
+
+    self.ind += 1
+    if self.ind >= len(self.indents):  # make sure there are enough
+      self.indents.append('  ' * self.ind)
+
+  def OnExternalEnd(self, status):
+    # type: (int) -> None
+
+    # TODO: Might not need this?
+
+    self.ind -= 1
+
+    buf = self._OilTraceBegin('<')
+    if buf:
+      buf.write('(status %d)\n' % status)
+      self.f.write(buf.getvalue())
 
   def Push(self, desc):
     # type: (str) -> None
@@ -466,12 +513,7 @@ class Tracer(object):
       return
 
     buf.write('builtin ')
-    for i, arg in enumerate(argv):
-      if i != 0:
-        buf.write(' ')
-      buf.write(qsn.maybe_shell_encode(arg))
-    buf.write('\n')
-    self.f.write(buf.getvalue())
+    self._PrintArgv(argv, buf)
 
   #
   # Shell Tracing That Begins with _ShTraceBegin

@@ -26,28 +26,6 @@ import sys
 import time  # for perf measurement
 from typing import List
 
-_trace_path = posix.environ.get('_PY_TRACE')
-if _trace_path:
-  from benchmarks import pytrace
-  _tracer = pytrace.Tracer()
-  _tracer.Start()
-else:
-  _tracer = None
-
-# Uncomment this to see startup time problems.
-if posix.environ.get('OIL_TIMING'):
-  start_time = time.time()
-  def _tlog(msg):
-    # type: (str) -> None
-    pid = posix.getpid()  # TODO: Maybe remove PID later.
-    print('[%d] %.3f %s' % (pid, (time.time() - start_time) * 1000, msg))
-else:
-  def _tlog(msg):
-    # type: (str) -> None
-    pass
-
-_tlog('before imports')
-
 # Needed for oil.ovm app bundle build, since there is an functino-local import
 # to break a circular build dep in frontend/consts.py.
 from _devbuild.gen import id_kind
@@ -80,10 +58,6 @@ try:
   import line_input
 except ImportError:
   line_input = None
-
-
-_tlog('after imports')
-
 
 # TODO: Hook up to completion.
 SUBCOMMANDS = [
@@ -246,7 +220,6 @@ def AppBundleMain(argv):
     status = shell.Main('osh', arg_r, posix.environ, login_shell,
                         loader, line_input)
 
-    _tlog('done osh main')
     return status
 
   elif main_name == 'osh-pure':
@@ -308,10 +281,6 @@ def main(argv):
     # test this with prlimit --nproc=1 --pid=$$
     stderr_line('osh I/O error: %s', posix.strerror(e.errno))
     return 2  # dash gives status 2
-  finally:
-    _tlog('Exiting main()')
-    if _trace_path:
-      _tracer.Stop(_trace_path)
 
 
 # Called from Python-2.7.13/Modules/main.c.
