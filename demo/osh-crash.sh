@@ -31,19 +31,30 @@ _do-subshell() {
   ( f a b c )
 }
 
-# Problem: we get two difference crash dumps, with two different stacks.
-# It would be nice to unify these somehow.
+# Note: we get two difference crash dumps, with two different stacks.
 #
-# Could we add a URL to link related crash dumps?  Maybe do it with PPID?  If a
-# subshell exits with 1, and we have OSH_CRASH_DUMP_DIR, then we know it should
-# have exited?
-#
-# MaybeCollect is done on fatal errors in several places.  MaybeDump is done on
-# ExecuteAndCatch.  Subshells raise SystemExit?
+# That's because we call through $0.
 
 do-subshell() {
   # clear environment so it's smaller
-  env -i OSH_CRASH_DUMP_DIR=_tmp bin/osh $0 _do-subshell "$@"
+  env -i OSH_CRASH_DUMP_DIR=_tmp \
+    bin/osh $0 _do-subshell "$@"
+}
+
+_pipeline() {
+  # All of these show multiple errors
+
+  false | wc -l
+
+  #{ echo 1; false; echo 2; } | wc -l
+
+  #f() { echo 1; false; echo 2; }
+  #f | tac
+}
+
+do-pipeline() {
+  env -i PATH=$PATH OSH_CRASH_DUMP_DIR=_tmp \
+    bin/osh $0 _pipeline
 }
 
 "$@"

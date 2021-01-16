@@ -1512,6 +1512,7 @@ class CommandEvaluator(object):
       else:
         ui.PrettyPrintError(err, self.arena, prefix='fatal: ')
 
+    # TODO: This gets called in subshells (and compound pipelines)
     self.dumper.MaybeDump(status)
     self.mem.SetLastStatus(status)
     return is_return, is_fatal

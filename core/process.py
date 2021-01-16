@@ -710,8 +710,10 @@ class SubProgramThunk(Thunk):
       stderr_line('osh I/O error: %s', pyutil.strerror(e))
       status = 2
 
-    # Raises SystemExit, so we still have time to write a crash dump.
-    exit(status)
+    # We do NOT want to raise SystemExit here.  Otherwise dev.Tracer::Pop()
+    # gets called in BOTH processes.
+    # The crash dump seems to be unaffected.
+    posix._exit(status)
 
 
 class _HereDocWriterThunk(Thunk):
