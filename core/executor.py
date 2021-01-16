@@ -8,7 +8,7 @@ import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import redirect
+from _devbuild.gen.runtime_asdl import redirect, trace_e
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
     command_sub, compound_word, Token,
@@ -217,7 +217,7 @@ class ShellExecutor(vm._Executor):
                 "Use 'run' or wrap it in a process with $0 myproc",
                 span_id=span_id)
 
-        with dev.ctx_Tracer(self.tracer, 'proc %s' % arg0):
+        with dev.ctx_Tracer(self.tracer, trace_e.Proc, argv):
           # NOTE: Functions could call 'exit 42' directly, etc.
           status = self.cmd_ev.RunProc(proc_node, argv[1:])
         return status
@@ -244,7 +244,7 @@ class ShellExecutor(vm._Executor):
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
       self.tracer.OnExternalStart(cmd_val.argv)
-      status = p.Run(self.waiter)
+      status = p.RunWait(self.waiter)
       self.tracer.OnExternalEnd(status)
       return status
 
@@ -317,14 +317,14 @@ class ShellExecutor(vm._Executor):
     pi.AddLast((self.cmd_ev, last_child))
     status_out.spids.append(location.SpanForCommand(last_child))
 
-    with dev.ctx_Tracer(self.tracer, 'pipeline'):
+    with dev.ctx_Tracer(self.tracer, trace_e.Pipeline, None):
       status_out.codes = pi.Run(self.waiter, self.fd_state)
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
-    with dev.ctx_Tracer(self.tracer, 'subshell'):
-      return p.Run(self.waiter)
+    with dev.ctx_Tracer(self.tracer, trace_e.Subshell, None):
+      return p.RunWait(self.waiter)
 
   def RunCommandSub(self, cs_part):
     # type: (command_sub) -> str
@@ -360,19 +360,21 @@ class ShellExecutor(vm._Executor):
 
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
-    _ = p.Start()
-    #log('Command sub started %d', pid)
 
-    chunks = []  # type: List[str]
-    posix.close(w)  # not going to write
-    while True:
-      byte_str = posix.read(r, 4096)
-      if len(byte_str) == 0:
-        break
-      chunks.append(byte_str)
-    posix.close(r)
+    with dev.ctx_Tracer(self.tracer, trace_e.CommandSub, None):
+      _ = p.Start()
+      #log('Command sub started %d', pid)
 
-    status = p.Wait(self.waiter)
+      chunks = []  # type: List[str]
+      posix.close(w)  # not going to write
+      while True:
+        byte_str = posix.read(r, 4096)
+        if len(byte_str) == 0:
+          break
+        chunks.append(byte_str)
+      posix.close(r)
+
+      status = p.Wait(self.waiter)
 
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!
@@ -472,6 +474,8 @@ class ShellExecutor(vm._Executor):
 
     # Fork, letting the child inherit the pipe file descriptors.
     pid = p.Start()
+    # TODO: need a "why" here
+    # self.tracer.OnProcessStart(pid)
 
     ps_frame = self.process_sub_stack[-1]
 

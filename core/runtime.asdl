@@ -158,4 +158,25 @@ module runtime
 
   -- Flag arguments can be any of these types.
   flag_type = Bool | Int | Float | Str
+
+  -- For dev.Tracer
+  trace =
+    -- INTERNAL (all synchronous)
+    Builtin      -- argv
+  | Proc         -- argv
+  | Eval
+  | Source       -- argv
+  | Pipeline     -- sync (the whole thing)
+
+    -- EXTERNAL (all of them need a PID)
+  | PipelinePart -- async
+  | External     -- sync, needs argv (TODO: indent if process sub or here doc?)
+  | Fork         -- async, needs argv, & fork
+  | Subshell     -- sync
+  | CommandSub   -- sync
+  | ProcessSub   -- async (other processes can be started)
+  | HereDoc      -- async (multiple here docs per process)
+
+  -- PID?
+  trace_msg = (trace why, string* argv)
 }

@@ -124,6 +124,10 @@ inline int fork() {
   return ::fork();
 }
 
+inline void _exit(int status) {
+  exit(status);
+}
+
 inline void write(int fd, Str* value) {
   assert(0);
 }

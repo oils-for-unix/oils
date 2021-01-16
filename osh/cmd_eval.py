@@ -590,10 +590,11 @@ class CommandEvaluator(object):
 
         words = braces.BraceExpandWords(node.words)
 
-        # TODO: Individual WORDS can fail
-        # - $() and <() can have failures.  But this can happen in DBracket,
+        # Note: Individual WORDS can fail
+        # - $() and <() can have failures.  This can happen in DBracket,
         #   DParen, etc. too
         # - we could catch the 'failglob' exception here and return 1, e.g. *.bad
+        # - Tracing: this can start processes for proc sub and here docs!
         cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
         UP_cmd_val = cmd_val
@@ -1508,12 +1509,14 @@ class CommandEvaluator(object):
         err.span_id = self.mem.CurrentSpanId()
 
       if is_errexit and not self.exec_opts.verbose_errexit():
-        pass  # Supress error
+        pass  # Suppress error
       else:
         ui.PrettyPrintError(err, self.arena, prefix='fatal: ')
 
-    # TODO: This gets called in subshells (and compound pipelines)
+    # Problem: We have no idea here if a SUBSHELL (or pipeline comment) already
+    # created a crash dump.  So we get 2 or more of them.
     self.dumper.MaybeDump(status)
+
     self.mem.SetLastStatus(status)
     return is_return, is_fatal
 

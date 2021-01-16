@@ -31,12 +31,12 @@ shfunc 1
 p 2
 ## stdout-json: ""
 ## STDERR:
-[ proc shfunc
+[ proc shfunc 1
   + builtin ':' 1
-] proc shfunc
-[ proc p
+] 
+[ proc p 2
   + builtin ':' 2
-] proc p
+] 
 ## END
 
 #### eval
@@ -52,7 +52,7 @@ eval 'echo 1; echo 2'
 [ eval
   + builtin echo 1
   + builtin echo 2
-] eval
+] 
 ## END
 
 #### source
@@ -65,12 +65,12 @@ source $REPO_ROOT/spec/testdata/source-argv.sh 1 2 3
 source-argv: 1 2 3
 ## END
 
-# TODO: add argv
+# TODO: Path shouldn't depend on file system
 ## STDERR:
-[ source
+[ source '/home/andy/git/oilshell/oil/spec/testdata/source-argv.sh' 1 2 3
   + builtin echo 'source-argv:' '1 2 3'
   + builtin shift
-] source
+] 
 ## END
 
 #### external and builtin
@@ -97,20 +97,20 @@ proc p {
   : p
 }
 
-( : 1
+( : begin
   : 2
   p
   exit 3
 )
-: 4
+: end
 ## stdout-json: ""
 ## STDERR:
 | 123 subshell
-  + 123 ':' 1
+  + 123 ':' begin
   + 123 ':' 2
   + 123 exit 3
 . 123 subshell (status 3)
-+ ':' 4
++ ':' end
 ## END
 
 #### command sub
@@ -131,11 +131,15 @@ hi
 
 #### process sub (nondeterministic)
 shopt --set oil:basic
+shopt --unset errexit
 set -x
 
 # we wait() for them all at the end
 
+: begin
 diff -u <(seq 3) <(seq 4)
+: end
+
 ## stdout-json: ""
 ## STDERR:
 ## END
@@ -149,13 +153,29 @@ myfunc() {
   echo 2
 }
 
-: 1
+: begin
 myfunc | sort | wc -l
-: 2
+: end
 
 ## stdout-json: ""
 ## STDERR:
 ## END
+
+#### singleton pipeline
+
+# Hm extra tracing
+
+shopt --set oil:basic
+set -x
+
+: begin
+! false
+: end
+
+## stdout-json: ""
+## STDERR:
+## END
+
 
 #### fork and & (nondeterministic)
 shopt --set oil:basic
@@ -177,3 +197,17 @@ wait
 
 # others: redirects?
 
+#### here doc
+shopt --set oil:basic
+set -x
+
+: begin
+tac <<EOF
+3
+2
+EOF
+: end
+## STDOUT:
+## END
+## STDERR:
+## END

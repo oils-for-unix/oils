@@ -23,7 +23,6 @@ from __future__ import print_function
 
 import posix_ as posix
 import sys
-import time  # for perf measurement
 from typing import List
 
 # Needed for oil.ovm app bundle build, since there is an functino-local import

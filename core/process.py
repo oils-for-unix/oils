@@ -915,7 +915,7 @@ class Process(Job):
     if self.parent_pipeline:
       self.parent_pipeline.WhenDone(pid, status)
 
-  def Run(self, waiter):
+  def RunWait(self, waiter):
     # type: (Waiter) -> int
     """Run this process synchronously."""
     self.Start()

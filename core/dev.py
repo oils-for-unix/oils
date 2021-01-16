@@ -7,7 +7,7 @@ from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
     value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
-    cmd_value__Assign
+    cmd_value__Assign, trace_e, trace_t
 )
 from _devbuild.gen.syntax_asdl import assign_op_e
 
@@ -20,7 +20,7 @@ from core.pyerror import log
 from osh import word_
 from pylib import os_path
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems
+from mycpp.mylib import switch, tagswitch, iteritems
 
 import posix_ as posix
 
@@ -148,7 +148,6 @@ class CrashDumper(object):
           'pid': my_pid,
       }
 
-      # TODO: Add PID here
       path = os_path.join(self.crash_dump_dir, '%d-osh-crash-dump.json' % my_pid)
       with open(path, 'w') as f:
         import json
@@ -158,13 +157,12 @@ class CrashDumper(object):
 
 
 class ctx_Tracer(object):
+  """A stack for tracing synchronous constructs."""
 
-  def __init__(self, tracer, desc):
-    # type: (Tracer, str) -> None
-    tracer.Push(desc)
+  def __init__(self, tracer, what, argv):
+    # type: (Tracer, trace_t, Optional[List[str]]) -> None
+    tracer.PushMessage(what, argv)
     self.tracer = tracer
-    self.desc = desc
-    #self.pid = posix.getpid()
 
   def __enter__(self):
     # type: () -> None
@@ -172,19 +170,7 @@ class ctx_Tracer(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-
-    # Avoid the fork() problem.  Is there a better way to do this?
-
-    # Yeah this is annoying because I do NOT want to have this should up in
-    # strace().  syscalls for tracing is BAD.  I think I had the same problem
-    # with the crash dump.  See demo/osh-crash.sh.
-    #
-    # SOLUTION: HARD exit on subshells?  Like posix._exit() like readline?
-
-    #if posix.getpid() != self.pid:
-    #  return
-
-    self.tracer.Pop(self.desc)
+    self.tracer.PopMessage()
 
 
 def _PrintValue(val, buf):
@@ -216,6 +202,15 @@ def _PrintValue(val, buf):
       result = ' '.join(parts)
 
   buf.write(result)
+
+
+def _PrintArgv(argv, buf):
+  # type: (List[str], mylib.BufWriter) -> None
+  for i, arg in enumerate(argv):
+    if i != 0:
+      buf.write(' ')
+    buf.write(qsn.maybe_shell_encode(arg))
+  buf.write('\n')
 
 
 class Tracer(object):
@@ -294,6 +289,9 @@ class Tracer(object):
 
     self.ind = 0  # changed by process, proc, source, eval
     self.indents = ['']  # "pooled" to avoid allocations
+    self.what_stack = []  # type: List[trace_t]
+    self.argv_stack = []  # type: List[Optional[List[str]]]
+
     self.pid = -1  # PID to print as prefix
 
     # PS4 value -> compound_word.  PS4 is scoped.
@@ -386,6 +384,26 @@ class Tracer(object):
       buf.write(' ')
     return buf
 
+  def _RichTraceBegin(self):
+    # type: () -> Optional[mylib.BufWriter]
+    """For the stack printed by xtrace_rich"""
+    if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_rich():
+      return None
+
+    # TODO: change to _EvalPS4
+    buf = mylib.BufWriter()
+    buf.write(self.indents[self.ind])
+    return buf
+
+  def _PrintPrefix(self, ch, label, buf):
+    # type: (str, str, mylib.BufWriter) -> None
+    buf.write(ch)
+    buf.write(' ')
+    if self.pid != -1:
+      buf.write(str(self.pid))
+      buf.write(' ')
+    buf.write(label)
+
   def OnProcessStart(self, pid):
     # type: (int) -> None
     """
@@ -424,20 +442,12 @@ class Tracer(object):
     if not buf:
       return
 
-  def _PrintArgv(self, argv, buf):
-    # type: (List[str], mylib.BufWriter) -> None
-    for i, arg in enumerate(argv):
-      if i != 0:
-        buf.write(' ')
-      buf.write(qsn.maybe_shell_encode(arg))
-    buf.write('\n')
-    self.f.write(buf.getvalue())
-
   def OnExternalStart(self, argv):
     # type: (List[str]) -> None
     buf = self._OilTraceBegin('>')
     if buf:
-      self._PrintArgv(argv, buf)
+      _PrintArgv(argv, buf)
+      self.f.write(buf.getvalue())
 
     self.ind += 1
     if self.ind >= len(self.indents):  # make sure there are enough
@@ -453,6 +463,79 @@ class Tracer(object):
     buf = self._OilTraceBegin('<')
     if buf:
       buf.write('(status %d)\n' % status)
+      self.f.write(buf.getvalue())
+
+  def PushMessage(self, what, argv):
+    # type: (trace_t, Optional[List[str]]) -> None
+    buf = self._RichTraceBegin()
+    if buf:
+      # TODO: ><   []   |.
+      with switch(what) as case:
+        if case(trace_e.Proc):
+          self._PrintPrefix('[', 'proc', buf)
+          buf.write(' ')
+          _PrintArgv(argv, buf)
+        elif case(trace_e.Eval):
+          self._PrintPrefix('[', 'eval', buf)
+          buf.write('\n')
+        elif case(trace_e.Source):
+          self._PrintPrefix('[', 'source', buf)
+          buf.write(' ')
+          _PrintArgv(argv[1:], buf)
+        elif case(trace_e.Pipeline):
+          self._PrintPrefix('[', 'pipeline', buf)
+          buf.write('\n')
+        elif case(trace_e.External):
+          self._PrintPrefix('>', 'external', buf)
+          _PrintArgv(argv, buf)
+        elif case(trace_e.Subshell):
+          self._PrintPrefix('>', 'subshell', buf)
+          buf.write('\n')
+        elif case(trace_e.CommandSub):
+          self._PrintPrefix('>', 'command sub', buf)
+          buf.write('\n')
+
+      self.f.write(buf.getvalue())
+
+      # save the character < or ] ?
+      self.what_stack.append(what)
+      # Only save the label, and maybe argv[0]?
+      self.argv_stack.append(argv)
+
+    self.ind += 1
+    if self.ind >= len(self.indents):  # make sure there are enough
+      self.indents.append('  ' * self.ind)
+
+  def PopMessage(self):
+    # type: () -> None
+    self.ind -= 1
+
+    #log('pop')
+    buf = self._OilTraceBegin(']')
+    if buf:
+      self.argv_stack.pop()
+      what = self.what_stack.pop()
+      # TODO: write closing
+
+      buf.write('\n')
+      self.f.write(buf.getvalue())
+
+  def PrintMessage(self, what, argv):
+    # type: (trace_t, Optional[List[str]]) -> None
+    buf = self._OilTraceBegin('+')  # + or | or .
+    if buf:
+      # TODO: ><   []   |.
+      with switch(what) as case:
+        if case(trace_e.PipelinePart):
+          buf.write('part\n') 
+        elif case(trace_e.Fork):
+          buf.write('&fork\n') 
+        elif case(trace_e.ProcessSub):
+          buf.write('process sub\n') 
+        elif case(trace_e.HereDoc):
+          buf.write('here doc\n') 
+
+      buf.write('\n')
       self.f.write(buf.getvalue())
 
   def Push(self, desc):
@@ -513,7 +596,8 @@ class Tracer(object):
       return
 
     buf.write('builtin ')
-    self._PrintArgv(argv, buf)
+    _PrintArgv(argv, buf)
+    self.f.write(buf.getvalue())
 
   #
   # Shell Tracing That Begins with _ShTraceBegin
