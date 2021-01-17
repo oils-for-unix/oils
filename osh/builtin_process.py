@@ -12,6 +12,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     cmd_value, cmd_value__Argv,
     job_status_e, job_status__Proc, job_status__Pipeline,
+    trace_msg, trace_e
 )
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
@@ -184,8 +185,8 @@ class Wait(vm._Builtin):
                            span_id=span_id)
         return 127
 
-      # TODO: Does this wait for pipelines?
-      job_status = job.JobWait(self.waiter)
+      msg = trace_msg(trace_e.JobWait, None)
+      job_status = job.JobWait(self.waiter, msg)
 
       UP_job_status = job_status
       with tagswitch(job_status) as case:

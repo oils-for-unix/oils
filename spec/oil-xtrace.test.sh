@@ -56,20 +56,19 @@ eval 'echo 1; echo 2'
 ## END
 
 #### source
+echo 'echo source-argv: "$@"' > lib.sh
+
 shopt --set oil:basic
 set -x
 
-source $REPO_ROOT/spec/testdata/source-argv.sh 1 2 3
+source lib.sh 1 2 3
 
 ## STDOUT:
 source-argv: 1 2 3
 ## END
-
-# TODO: Path shouldn't depend on file system
 ## STDERR:
-[ source '/home/andy/git/oilshell/oil/spec/testdata/source-argv.sh' 1 2 3
-  + builtin echo 'source-argv:' '1 2 3'
-  + builtin shift
+[ source lib.sh 1 2 3
+  + builtin echo 'source-argv:' 1 2 3
 ] 
 ## END
 
