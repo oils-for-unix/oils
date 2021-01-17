@@ -339,7 +339,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem, None)
-  waiter = process.Waiter(job_state, exec_opts)
 
   my_pid = posix.getpid()
 
@@ -369,6 +368,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     trace_f = util.DebugFile(mylib.Stderr())
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
   fd_state.tracer = tracer  # circular dep
+
+  waiter = process.Waiter(job_state, exec_opts, tracer)
 
   cmd_deps.debug_f = debug_f
 

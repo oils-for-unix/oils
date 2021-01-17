@@ -116,6 +116,8 @@ class Wait(vm._Builtin):
 
     job_ids, arg_spids = arg_r.Rest2()
 
+    msg = trace_msg(trace_e.WaitBuiltin, None)
+
     if arg.n:
       # wait -n returns the exit status of the JOB.
       # You don't know WHICH process, which is odd.
@@ -135,7 +137,7 @@ class Wait(vm._Builtin):
       #    
       #log('wait next')
 
-      if self.waiter.WaitForOne():
+      if self.waiter.WaitForOne(msg):
         return self.waiter.last_status
       else:
         return 127  # nothing to wait for
@@ -149,13 +151,13 @@ class Wait(vm._Builtin):
         # we don't get ECHILD.
         # Not sure it matters since you can now Ctrl-C it.
 
-        if not self.waiter.WaitForOne():
+        if not self.waiter.WaitForOne(msg):
           break  # nothing to wait for
         i += 1
         if self.job_state.NoneAreRunning():
           break
 
-      log('Waited for %d processes', i)
+      #log('Waited for %d processes', i)
       return 0
 
     # Get list of jobs.  Then we need to check if they are ALL stopped.
@@ -251,7 +253,7 @@ class Fg(vm._Builtin):
     posix.kill(pid, signal.SIGCONT)
 
     job = self.job_state.JobFromPid(pid)
-    msg = trace_msg(trace_e.Fg, None)
+    msg = trace_msg(trace_e.FgBuiltin, None)
     status = job.Wait(self.waiter, msg)
     #log('status = %d', status)
     return status

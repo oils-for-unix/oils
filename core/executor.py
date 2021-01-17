@@ -279,7 +279,8 @@ class ShellExecutor(vm._Executor):
       self.mem.last_bg_pid = last_pid   # for $!
 
       job_id = self.job_state.AddJob(pi)  # show in 'jobs' list
-      log('[%%%d] Started Pipeline with PID %d', job_id, last_pid)
+      # TODO: Put in tracer
+      #log('[%%%d] Started Pipeline with PID %d', job_id, last_pid)
 
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -291,7 +292,8 @@ class ShellExecutor(vm._Executor):
       pid = p.Start(trace_msg(trace_e.Fork, None))
       self.mem.last_bg_pid = pid  # for $!
       job_id = self.job_state.AddJob(p)  # show in 'jobs' list
-      log('[%%%d] Started PID %d', job_id, pid)
+      # TODO: Put in tracer
+      #log('[%%%d] Started PID %d', job_id, pid)
     return 0
 
   def RunPipeline(self, node, status_out):
@@ -520,7 +522,7 @@ class ShellExecutor(vm._Executor):
     #  log('to_wait %s', self.to_wait)
 
     for i, p in enumerate(frame.to_wait):
-      #log('waiting for %s', p)
+      log('waiting for %s', p)
       msg = trace_msg(trace_e.ProcessSub, None)
       st = p.Wait(self.waiter, msg)
       compound_st.codes.append(st)

@@ -177,9 +177,10 @@ module runtime
   | ProcessSub   -- async (other processes can be started)
   | HereDoc      -- async (multiple here docs per process)
 
-    -- for Wait
-  | JobWait
-  | Fg
+    -- Why did we awit?
+  | WaitBuiltin
+  | PipelineWait
+  | FgBuiltin
 
   -- PID?
   trace_msg = (trace what, string* argv)

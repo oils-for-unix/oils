@@ -888,17 +888,20 @@ class Process(Job):
     # type: (Waiter, trace_msg) -> int
     """Wait for this process to finish."""
     while True:
-      #log('WAITING')
-      if not waiter.WaitForOne():
+      #from _devbuild.gen.runtime_asdl import trace_str
+      #import traceback
+      #traceback.print_stack()
+      #log('WAITING %s', trace_str(msg.what))
+
+      if not waiter.WaitForOne(msg):
         break
       if self.state != job_state_e.Running:
         break
-    self.tracer.OnProcessEnd(self.pid, self.status, msg)
     return self.status
 
   def JobWait(self, waiter):
     # type: (Waiter) -> job_status_t
-    msg = trace_msg(trace_e.JobWait, None)
+    msg = trace_msg(trace_e.WaitBuiltin, None)
     exit_code = self.Wait(waiter, msg)
     return job_status.Proc(exit_code)
 
@@ -1015,8 +1018,8 @@ class Pipeline(Job):
     """
     return self.pids[-1]
 
-  def Wait(self, waiter):
-    # type: (Waiter) -> List[int]
+  def Wait(self, waiter, msg):
+    # type: (Waiter, trace_msg) -> List[int]
     """Wait for this pipeline to finish.
 
     Called by the 'wait' builtin.
@@ -1026,7 +1029,7 @@ class Pipeline(Job):
     assert self.procs, "no procs for Wait()"
     while True:
       #log('WAIT pipeline')
-      if not waiter.WaitForOne():
+      if not waiter.WaitForOne(msg):
         break
       if self.state != job_state_e.Running:
         #log('Pipeline DONE')
@@ -1036,7 +1039,8 @@ class Pipeline(Job):
 
   def JobWait(self, waiter):
     # type: (Waiter) -> job_status_t
-    pipe_status = self.Wait(waiter)
+    msg = trace_msg(trace_e.WaitBuiltin, None)
+    pipe_status = self.Wait(waiter, msg)
     return job_status.Pipeline(pipe_status)
 
   def Run(self, waiter, fd_state):
@@ -1083,7 +1087,8 @@ class Pipeline(Job):
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
     if len(self.procs):
-      return self.Wait(waiter)
+      msg = trace_msg(trace_e.Pipeline, None)
+      return self.Wait(waiter, msg)
     else:
       return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
 
@@ -1285,14 +1290,15 @@ class Waiter(object):
   Now when you do wait() after starting the pipeline, you might get a pipeline
   process OR a background process!  So you have to distinguish between them.
   """
-  def __init__(self, job_state, exec_opts):
-    # type: (JobState, optview.Exec) -> None
+  def __init__(self, job_state, exec_opts, tracer):
+    # type: (JobState, optview.Exec, dev.Tracer) -> None
     self.job_state = job_state
     self.exec_opts = exec_opts
+    self.tracer = tracer
     self.last_status = 127  # wait -n error code
 
-  def WaitForOne(self):
-    # type: () -> bool
+  def WaitForOne(self, msg):
+    # type: (trace_msg) -> bool
     """Wait until the next process returns (or maybe Ctrl-C).
 
     Returns:
@@ -1327,8 +1333,6 @@ class Waiter(object):
         return True
       else:
         raise  # abort a batch script
-
-    #log('WAIT got %s %s', pid, status)
 
     # All child processes are supposed to be in this dict.  But this may
     # legitimately happen if a grandchild outlives the child (its parent).
@@ -1367,5 +1371,7 @@ class Waiter(object):
       proc.WhenStopped()
 
     self.last_status = status  # for wait -n
+
+    self.tracer.OnProcessEnd(pid, status, msg)
 
     return True  # caller should keep waiting

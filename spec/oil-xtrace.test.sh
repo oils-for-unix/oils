@@ -163,6 +163,7 @@ set -x
 } 2>err.txt
 
 sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt >&2
+#cat err.txt >&2
 
 ## STDOUT:
 1
@@ -171,12 +172,12 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt >&2
 ## END
 ## STDERR:
 + builtin ':' begin
-| procsub 12345
-| procsub 12345
+| proc sub 12345
+| proc sub 12345
 > command 12345: cat '/dev/fd/N' '/dev/fd/N'
 < command 12345: status 0
-. procsub 12345: status 0
-. procsub 12345: status 0
+. proc sub 12345: status 0
+. proc sub 12345: status 0
 + builtin set '+x'
 ## END
 
@@ -264,27 +265,63 @@ shopt --set oil:basic
 shopt --unset errexit
 set -x
 
-: begin
-tac <<EOF
+{
+  : begin
+  tac <<EOF
 3
 2
 EOF
 
-echo --
+  set +x
+} 2>err.txt
 
-# Two here docs!
-diff -u - /dev/fd/3 <<EOF 3<<EOF2
-zz
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
+
+## STDOUT:
+2
+3
+## END
+## STDERR:
++ builtin ':' begin
+| here doc 12345
+> command 12345: tac
+< command 12345: status 0
+. here doc 12345: status 0
++ builtin set '+x'
+## END
+
+#### Two here docs
+
+# BUG: This trace shows an extra process?
+
+shopt --set oil:basic
+shopt --unset errexit
+set -x
+
+{
+  cat - /dev/fd/3 <<EOF 3<<EOF2
+xx
 yy
 EOF
 zz
 EOF2
 
-: end
+  set +x
+} 2>err.txt
 
-
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## STDOUT:
+xx
+yy
+zz
 ## END
 ## STDERR:
+| here doc 12345
+| here doc 12345
+> command 12345: cat - '/dev/fd/3'
+< command 12345: status 0
+. here doc 12345: status 0
+. here doc 12345: status 0
++ builtin set '+x'
 ## END

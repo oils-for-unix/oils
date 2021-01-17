@@ -389,22 +389,6 @@ class Tracer(object):
 
     return buf
 
-  def _OilTraceBegin(self, ch):
-    # type: (str) -> Optional[mylib.BufWriter]
-    """For the stack printed by xtrace_rich"""
-    if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_rich():
-      return None
-
-    # TODO: change to _EvalPS4
-    buf = mylib.BufWriter()
-    buf.write(self.indents[self.ind])
-    buf.write(ch)
-    buf.write(' ')
-    if self.pid != -1:
-      buf.write(str(self.pid))
-      buf.write(' ')
-    return buf
-
   def _RichTraceBegin(self):
     # type: () -> Optional[mylib.BufWriter]
     """For the stack printed by xtrace_rich"""
@@ -456,7 +440,12 @@ class Tracer(object):
 
       # Async cases: no indent
       elif case(trace_e.ProcessSub):
-        self._PrintPrefix('|', 'procsub %d\n' % pid, buf)
+        self._PrintPrefix('|', 'proc sub %d\n' % pid, buf)
+      elif case(trace_e.HereDoc):
+        self._PrintPrefix('|', 'here doc %d\n' % pid, buf)
+      elif case(trace_e.Fork):
+        self._PrintPrefix('|', 'fork& %d\n' % pid, buf)
+
       # elif case(trace_e.PipelinePart):
       #   buf.write('part\n') 
       # elif case(trace_e.Fork):
@@ -486,9 +475,12 @@ class Tracer(object):
 
       # Async
       elif case(trace_e.ProcessSub):
-        label = 'procsub'
+        label = 'proc sub'
         ch = '.'
-      elif case(trace_e.JobWait):
+      elif case(trace_e.HereDoc):
+        label = 'here doc'
+        ch = '.'
+      elif case(trace_e.WaitBuiltin):
         label = 'wait'
         ch = '.'
       else:
@@ -546,11 +538,11 @@ class Tracer(object):
       # Handled separately
       return
 
-    buf = self._OilTraceBegin('+')
+    buf = self._RichTraceBegin()
     if not buf:
       return
-
-    buf.write('builtin ')
+    self._PrintPrefix('+', 'builtin', buf)
+    buf.write(' ')
     _PrintArgv(argv, buf)
     self.f.write(buf.getvalue())
 

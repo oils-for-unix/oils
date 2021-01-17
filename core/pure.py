@@ -353,7 +353,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem, tracer)
-  waiter = process.Waiter(job_state, exec_opts)
+  waiter = process.Waiter(job_state, exec_opts, tracer)
 
   interp = environ.get('OSH_HIJACK_SHEBANG', '')
   search_path = state.SearchPath(mem)
