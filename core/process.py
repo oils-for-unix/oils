@@ -998,7 +998,7 @@ class Pipeline(Job):
     # whole pipeline.
 
     for i, proc in enumerate(self.procs):
-      pid = proc.Start(trace_msg(trace_e.Pipeline, None))
+      pid = proc.Start(trace_msg(trace_e.PipelinePart, None))
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 

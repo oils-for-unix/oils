@@ -247,6 +247,8 @@ class ShellExecutor(vm._Executor):
       status = p.RunWait(self.waiter, msg)
       return status
 
+    self.tracer.OnExec(cmd_val.argv)
+
     # Already forked for pipeline: ls / | wc -l
     self.ext_prog.Exec(argv0_path, cmd_val, environ)  # NEVER RETURNS
     assert False, "This line should never be reached" # makes mypy happy
@@ -473,10 +475,11 @@ class ShellExecutor(vm._Executor):
 
     p.AddStateChange(redir)
 
+    # Problem: We only have an unevaluated node, not argv array
+    msg = trace_msg(trace_e.ProcessSub, None)
+
     # Fork, letting the child inherit the pipe file descriptors.
-    pid = p.Start(trace_msg(trace_e.ProcessSub, None))
-    # TODO: need a "why" here
-    # self.tracer.OnProcessStart(pid)
+    pid = p.Start(msg)
 
     ps_frame = self.process_sub_stack[-1]
 
@@ -511,18 +514,11 @@ class ShellExecutor(vm._Executor):
     # type: (_ProcessSubFrame, CompoundStatus) -> None
 
     # Wait in the same order that they were evaluated.  That seems fine.
-
-    #if self.to_close:
-    #  log('to_close %s', self.to_close)
     for fd in frame.to_close:
-      #log('close %d', fd)
       posix.close(fd)
 
-    #if self.to_wait:
-    #  log('to_wait %s', self.to_wait)
-
     for i, p in enumerate(frame.to_wait):
-      log('waiting for %s', p)
+      #log('waiting for %s', p)
       msg = trace_msg(trace_e.ProcessSub, None)
       st = p.Wait(self.waiter, msg)
       compound_st.codes.append(st)

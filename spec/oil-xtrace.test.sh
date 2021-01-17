@@ -1,6 +1,6 @@
 # Oil xtrace
 
-#### xtrace_details
+#### xtrace_details doesn't show [[ ]] etc.
 shopt -s oil:basic
 set -x
 
@@ -12,7 +12,27 @@ cd /
 
 ## stdout-json: ""
 ## STDERR:
-+ builtin cd '/'
+. builtin cd '/'
+## END
+
+#### xtrace_details AND xtrace_rich on
+shopt -s oil:basic xtrace_details
+shopt --unset errexit
+set -x
+
+{
+  env false
+  set +x
+} 2>err.txt
+
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
+
+## STDOUT:
+## END
+## STDERR:
+| command 12345: env false
+; process 12345: status 1
+. builtin set '+x'
 ## END
 
 #### proc and shell function
@@ -32,10 +52,10 @@ p 2
 ## stdout-json: ""
 ## STDERR:
 [ proc shfunc 1
-  + builtin ':' 1
+  . builtin ':' 1
 ] proc
 [ proc p 2
-  + builtin ':' 2
+  . builtin ':' 2
 ] proc
 ## END
 
@@ -50,8 +70,8 @@ eval 'echo 1; echo 2'
 ## END
 ## STDERR:
 [ eval
-  + builtin echo 1
-  + builtin echo 2
+  . builtin echo 1
+  . builtin echo 2
 ] eval
 ## END
 
@@ -68,7 +88,7 @@ source-argv: 1 2 3
 ## END
 ## STDERR:
 [ source lib.sh 1 2 3
-  + builtin echo 'source-argv:' 1 2 3
+  . builtin echo 'source-argv:' 1 2 3
 ] source
 ## END
 
@@ -88,10 +108,10 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## stdout-json: ""
 ## STDERR:
-> command 12345: env false
-< command 12345: status 1
-+ builtin true
-+ builtin set '+x'
+| command 12345: env false
+; process 12345: status 1
+. builtin true
+. builtin set '+x'
 ## END
 
 #### subshell
@@ -117,14 +137,14 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## stdout-json: ""
 ## STDERR:
-+ builtin ':' begin
-> forkwait 12345
-  + 12345 builtin ':' 1
+. builtin ':' begin
+| forkwait 12345
+  . 12345 builtin ':' 1
   [ 12345 proc p
-    + 12345 builtin ':' p
+    . 12345 builtin ':' p
   ] 12345 proc
-< forkwait 12345: status 3
-+ builtin set '+x'
+; process 12345: status 3
+. builtin set '+x'
 ## END
 
 #### command sub
@@ -134,6 +154,7 @@ set -x
 {
   echo foo=$(echo bar)
   set +x
+
 } 2>err.txt
 
 sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
@@ -142,11 +163,11 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 foo=bar
 ## END
 ## STDERR:
-> command sub 12345
-  + 12345 builtin echo bar
-< command sub 12345: status 0
-+ builtin echo 'foo=bar'
-+ builtin set '+x'
+| command sub 12345
+  . 12345 builtin echo bar
+; process 12345: status 0
+. builtin echo 'foo=bar'
+. builtin set '+x'
 ## END
 
 #### process sub (nondeterministic)
@@ -158,7 +179,7 @@ set -x
 
 {
   : begin
-  cat <(seq 2) <(seq 1)
+  cat <(seq 2) <(echo 1)
   set +x
 } 2>err.txt
 
@@ -170,15 +191,21 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt >&2
 2
 1
 ## END
+
+
+# TODO: should we sort these lines to make it deterministic?
+
 ## STDERR:
-+ builtin ':' begin
+. builtin ':' begin
 | proc sub 12345
 | proc sub 12345
-> command 12345: cat '/dev/fd/N' '/dev/fd/N'
-< command 12345: status 0
-. proc sub 12345: status 0
-. proc sub 12345: status 0
-+ builtin set '+x'
+  . 12345 exec seq 2
+  . 12345 builtin echo 1
+| command 12345: cat '/dev/fd/N' '/dev/fd/N'
+; process 12345: status 0
+; process 12345: status 0
+; process 12345: status 0
+. builtin set '+x'
 ## END
 
 #### pipeline (nondeterministic)
@@ -190,12 +217,33 @@ myfunc() {
   echo 2
 }
 
-: begin
-myfunc | sort | wc -l
-: end
+{
+  : begin
+  myfunc | sort | wc -l
+  set +x
+} 2>err.txt
 
-## stdout-json: ""
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt >&2
+
+## STDOUT:
+2
+## END
 ## STDERR:
+. builtin ':' begin
+[ pipeline
+  | part 12345
+  | part 12345
+    [ 12345 proc myfunc
+    . 12345 exec sort
+      . 12345 builtin echo 1
+      . 12345 builtin echo 2
+    ] 12345 proc
+  | command 12345: wc -l
+  ; process 12345: status 0
+  ; process 12345: status 0
+  ; process 12345: status 0
+] pipeline
+. builtin set '+x'
 ## END
 
 #### singleton pipeline
@@ -211,11 +259,11 @@ set -x
 
 ## stdout-json: ""
 ## STDERR:
-+ builtin ':' begin
+. builtin ':' begin
 [ pipeline
-  + builtin false
+  . builtin false
 ] pipeline
-+ builtin ':' end
+. builtin ':' end
 ## END
 
 #### Background pipeline (separate code path)
@@ -229,33 +277,70 @@ myfunc() {
   echo 1
 }
 
-: begin
-myfunc | sort | grep ZZZ &
-wait
-echo status=$?
+{
+	: begin
+	myfunc | sort | grep ZZZ &
+	wait
+	echo status=$?
+  set +x
+} 2>err.txt
+
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## STDOUT:
 status=0
 ## END
 ## STDERR:
+. builtin ':' begin
+| part 12345
+| part 12345
+  [ 12345 proc myfunc
+| part 12345
+. builtin wait
+  . 12345 exec sort
+    . 12345 builtin echo 2
+    . 12345 builtin echo 1
+  ] 12345 proc
+  . 12345 exec grep ZZZ
+; process 12345: status 0
+; process 12345: status 0
+; process 12345: status 1
+. builtin echo 'status=0'
+. builtin set '+x'
 ## END
 
 #### Background process with fork and & (nondeterministic)
 shopt --set oil:basic
 set -x
 
-sleep 0.1 &
-wait
+{
+  sleep 0.1 &
+  wait
 
-shopt -s oil:basic
+  shopt -s oil:basic
 
-fork {
-  sleep 0.1
-}
-wait
+  fork {
+    sleep 0.1
+  }
+  wait
+  set +x
+} 2>err.txt
+
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## stdout-json: ""
 ## STDERR:
+| fork 12345
+. builtin wait
+  . 12345 exec sleep 0.1
+; process 12345: status 0
+. builtin shopt -s 'oil:basic'
+. builtin fork
+| fork 12345
+. builtin wait
+  . 12345 exec sleep 0.1
+; process 12345: status 0
+. builtin set '+x'
 ## END
 
 # others: redirects?
@@ -282,12 +367,12 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 3
 ## END
 ## STDERR:
-+ builtin ':' begin
+. builtin ':' begin
 | here doc 12345
-> command 12345: tac
-< command 12345: status 0
-. here doc 12345: status 0
-+ builtin set '+x'
+| command 12345: tac
+; process 12345: status 0
+; process 12345: status 0
+. builtin set '+x'
 ## END
 
 #### Two here docs
@@ -319,9 +404,29 @@ zz
 ## STDERR:
 | here doc 12345
 | here doc 12345
-> command 12345: cat - '/dev/fd/3'
-< command 12345: status 0
-. here doc 12345: status 0
-. here doc 12345: status 0
-+ builtin set '+x'
+| command 12345: cat - '/dev/fd/3'
+; process 12345: status 0
+; process 12345: status 0
+; process 12345: status 0
+. builtin set '+x'
+## END
+
+#### Control Flow
+shopt --set oil:basic
+set -x
+
+for i in 1 2 3 {
+  echo $i
+  if (i == '2') {
+    break
+  }
+}
+## STDOUT:
+1
+2
+## END
+## STDERR:
+. builtin echo 1
+. builtin echo 2
++ break
 ## END

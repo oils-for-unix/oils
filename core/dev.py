@@ -219,9 +219,8 @@ def _PrintValue(val, buf):
 
 def _PrintArgv(argv, buf):
   # type: (List[str], mylib.BufWriter) -> None
-  for i, arg in enumerate(argv):
-    if i != 0:
-      buf.write(' ')
+  for arg in argv:
+    buf.write(' ')
     buf.write(qsn.maybe_shell_encode(arg))
   buf.write('\n')
 
@@ -409,6 +408,15 @@ class Tracer(object):
       buf.write(' ')
     buf.write(label)
 
+  def OnExec(self, argv):
+    # type: (List[str]) -> None
+    buf = self._RichTraceBegin()
+    if not buf:
+      return
+    self._PrintPrefix('.', 'exec', buf)
+    _PrintArgv(argv, buf)
+    self.f.write(buf.getvalue())
+
   def OnProcessStart(self, pid, msg):
     # type: (int, trace_msg) -> None
     """
@@ -424,18 +432,20 @@ class Tracer(object):
     if not buf:
       return
 
+    # TODO: ProcessSub and PipelinePart are commonly command.Simple, and also
+    # Fork/ForkWait through the BraceGroup.  We could print those argv arrays.
+
     with switch(msg.what) as case:
       # Synchronous cases
       if case(trace_e.External):
-        self._PrintPrefix('>', 'command %d:' % pid, buf)
+        self._PrintPrefix('|', 'command %d:' % pid, buf)
         if msg.argv is not None:
-          buf.write(' ')
           _PrintArgv(msg.argv, buf)
       elif case(trace_e.Subshell):
-        self._PrintPrefix('>', 'forkwait %d\n' % pid, buf)
+        self._PrintPrefix('|', 'forkwait %d\n' % pid, buf)
         self._Inc()
       elif case(trace_e.CommandSub):
-        self._PrintPrefix('>', 'command sub %d\n' % pid, buf)
+        self._PrintPrefix('|', 'command sub %d\n' % pid, buf)
         self._Inc()
 
       # Async cases: no indent
@@ -444,19 +454,12 @@ class Tracer(object):
       elif case(trace_e.HereDoc):
         self._PrintPrefix('|', 'here doc %d\n' % pid, buf)
       elif case(trace_e.Fork):
-        self._PrintPrefix('|', 'fork& %d\n' % pid, buf)
-
-      # elif case(trace_e.PipelinePart):
-      #   buf.write('part\n') 
-      # elif case(trace_e.Fork):
-      #   buf.write('&fork\n') 
-      # elif case(trace_e.ProcessSub):
-      #   buf.write('process sub\n') 
-      # elif case(trace_e.HereDoc):
-      #   buf.write('here doc\n') 
+        self._PrintPrefix('|', 'fork %d\n' % pid, buf)
+      elif case(trace_e.PipelinePart):
+        self._PrintPrefix('|', 'part %d\n' % pid, buf)
 
       else:
-        self._PrintPrefix('|', 'process %d\n' % pid, buf)
+        raise AssertionError()
 
     self.f.write(buf.getvalue())
 
@@ -487,6 +490,9 @@ class Tracer(object):
         label = 'process'
         ch = '.'
 
+    label = 'process'
+    ch = ';'
+
     buf = self._RichTraceBegin()
     if not buf:
       return
@@ -509,10 +515,8 @@ class Tracer(object):
     if buf:
       self._PrintPrefix('[', label, buf)
       if label == 'proc':
-        buf.write(' ')
         _PrintArgv(argv, buf)
       elif label ==  'source':
-        buf.write(' ')
         _PrintArgv(argv[1:], buf)
       else:
         buf.write('\n')
@@ -541,8 +545,7 @@ class Tracer(object):
     buf = self._RichTraceBegin()
     if not buf:
       return
-    self._PrintPrefix('+', 'builtin', buf)
-    buf.write(' ')
+    self._PrintPrefix('.', 'builtin', buf)
     _PrintArgv(argv, buf)
     self.f.write(buf.getvalue())
 
@@ -558,6 +561,10 @@ class Tracer(object):
     """
     buf = self._ShTraceBegin()
     if not buf:
+      return
+
+    # Redundant with OnProcessStart (external), PushMessage (proc), and OnBuiltin
+    if self.exec_opts.xtrace_rich():
       return
 
     tmp = [qsn.maybe_shell_encode(a) for a in argv]
@@ -617,8 +624,7 @@ class Tracer(object):
   def OnControlFlow(self, keyword, arg):
     # type: (str, int) -> None
 
-    # TODO: Include this in Oil tracing too?  It's always on?
-
+    # Hm need to consolidate PS4 to have this work in both modes.
     buf = self._ShTraceBegin()
     if not buf:
       return
