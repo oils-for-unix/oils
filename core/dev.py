@@ -161,8 +161,21 @@ class ctx_Tracer(object):
 
   def __init__(self, tracer, what, argv):
     # type: (Tracer, trace_t, Optional[List[str]]) -> None
-    tracer.PushMessage(what, argv)
+    with switch(what) as case:
+      if case(trace_e.Proc):
+        label = 'proc'
+      elif case(trace_e.Eval):
+        label = 'eval'
+      elif case(trace_e.Source):
+        label = 'source'
+      elif case(trace_e.Pipeline):
+        label = 'pipeline'
+      else:
+        raise AssertionError()
+
+    tracer.PushMessage(label, argv)
     self.tracer = tracer
+    self.label = label
 
   def __enter__(self):
     # type: () -> None
@@ -170,7 +183,7 @@ class ctx_Tracer(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.tracer.PopMessage()
+    self.tracer.PopMessage(self.label)
 
 
 def _PrintValue(val, buf):
@@ -289,7 +302,6 @@ class Tracer(object):
 
     self.ind = 0  # changed by process, proc, source, eval
     self.indents = ['']  # "pooled" to avoid allocations
-    self.what_stack = []  # type: List[trace_t]
 
     self.pid = -1  # PID to print as prefix
 
@@ -436,7 +448,7 @@ class Tracer(object):
           buf.write(' ')
           _PrintArgv(msg.argv, buf)
       elif case(trace_e.Subshell):
-        self._PrintPrefix('>', 'subshell %d\n' % pid, buf)
+        self._PrintPrefix('>', 'forkwait %d\n' % pid, buf)
         self._Inc()
       elif case(trace_e.CommandSub):
         self._PrintPrefix('>', 'command sub %d\n' % pid, buf)
@@ -462,22 +474,24 @@ class Tracer(object):
     ch = '<'
     with switch(msg.what) as case:
       if case(trace_e.External):
-        pass
+        label = 'command'
       elif case(trace_e.Subshell):
-        #raise AssertionError()
+        label = 'forkwait'
         self._Dec()
       elif case(trace_e.CommandSub):
+        label = 'command sub'
         self._Dec()
       elif case(trace_e.JobWait):  # async
-        pass
+        label = 'wait'
       else:
+        label = 'process'
         ch = '.'
 
     buf = self._RichTraceBegin()
     if not buf:
       return
 
-    self._PrintPrefix(ch, 'process %d: status %d\n' % (pid, status), buf)
+    self._PrintPrefix(ch, '%s %d: status %d\n' % (label, pid, status), buf)
     self.f.write(buf.getvalue())
 
   def SetProcess(self, pid):
@@ -488,55 +502,33 @@ class Tracer(object):
     self.pid = pid
     self._Inc()
 
-  def PushMessage(self, what, argv):
-    # type: (trace_t, Optional[List[str]]) -> None
+  def PushMessage(self, label, argv):
+    # type: (str, Optional[List[str]]) -> None
+    """For synchronous constructs that aren't processes."""
     buf = self._RichTraceBegin()
     if buf:
-      # TODO: ><   []   |.
-      with switch(what) as case:
-        if case(trace_e.Proc):
-          self._PrintPrefix('[', 'proc', buf)
-          buf.write(' ')
-          _PrintArgv(argv, buf)
-        elif case(trace_e.Eval):
-          self._PrintPrefix('[', 'eval', buf)
-          buf.write('\n')
-        elif case(trace_e.Source):
-          self._PrintPrefix('[', 'source', buf)
-          buf.write(' ')
-          _PrintArgv(argv[1:], buf)
-        elif case(trace_e.Pipeline):
-          self._PrintPrefix('[', 'pipeline', buf)
-          buf.write('\n')
-        elif case(trace_e.External):
-          self._PrintPrefix('>', 'external', buf)
-          _PrintArgv(argv, buf)
-        elif case(trace_e.Subshell):
-          self._PrintPrefix('>', 'subshell', buf)
-          buf.write('\n')
-        elif case(trace_e.CommandSub):
-          self._PrintPrefix('>', 'command sub', buf)
-          buf.write('\n')
-
+      buf.write('[ %s' % label)
+      if label == 'proc':
+        buf.write(' ')
+        _PrintArgv(argv, buf)
+      elif label ==  'source':
+        buf.write(' ')
+        _PrintArgv(argv[1:], buf)
+      else:
+        buf.write('\n')
       self.f.write(buf.getvalue())
-
-      # save the character < or ] ?
-      self.what_stack.append(what)
-      # Only save the label, and maybe argv[0]?
 
     self._Inc()
 
-  def PopMessage(self):
-    # type: () -> None
+  def PopMessage(self, label):
+    # type: (str) -> None
+    """For synchronous constructs that aren't processes."""
     self.ind -= 1
 
     #log('pop')
-    buf = self._OilTraceBegin(']')
+    buf = self._RichTraceBegin()
     if buf:
-      what = self.what_stack.pop()
-      # TODO: write closing
-
-      buf.write('\n')
+      buf.write('] %s\n' % label)
       self.f.write(buf.getvalue())
 
   def OnBuiltin(self, builtin_id, argv):

@@ -33,10 +33,10 @@ p 2
 ## STDERR:
 [ proc shfunc 1
   + builtin ':' 1
-] 
+] proc
 [ proc p 2
   + builtin ':' 2
-] 
+] proc
 ## END
 
 #### eval
@@ -52,7 +52,7 @@ eval 'echo 1; echo 2'
 [ eval
   + builtin echo 1
   + builtin echo 2
-] 
+] eval
 ## END
 
 #### source
@@ -69,7 +69,7 @@ source-argv: 1 2 3
 ## STDERR:
 [ source lib.sh 1 2 3
   + builtin echo 'source-argv:' 1 2 3
-] 
+] source
 ## END
 
 #### external and builtin
@@ -180,7 +180,7 @@ set -x
 + builtin ':' begin
 [ pipeline
   + builtin false
-] 
+] pipeline
 + builtin ':' end
 ## END
 
