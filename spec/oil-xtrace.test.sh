@@ -77,15 +77,21 @@ shopt --set oil:basic
 shopt --unset errexit
 set -x
 
-env false
-cd /
-pwd
+{
+  env false
+  true
+  set +x
+} 2>err.txt
+
+# normalize PIDs, assumed to be 2 or more digits
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
+
 ## stdout-json: ""
 ## STDERR:
-> PID 123: command env false
-< PID 123: status 1
-+ builtin cd '/'
-+ builtin pwd
+> command 12345: env false
+< command 12345: status 1
++ builtin true
++ builtin set '+x'
 ## END
 
 #### subshell
@@ -97,23 +103,29 @@ proc p {
   : p
 }
 
-: begin
-( 
-  : 1
-  p
-  exit 3  # this is control flow, so it's not traced?
-)
-: end
+{
+  : begin
+  ( 
+    : 1
+    p
+    exit 3  # this is control flow, so it's not traced?
+  )
+  set +x
+} 2>err.txt
+
+# normalize PIDs, assumed to be 2 or more digits
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
+
 ## stdout-json: ""
 ## STDERR:
 + builtin ':' begin
-> subshell 123
-  + 123 builtin ':' 1
-  [ 123 proc p
-    + 123 builtin ':' p
-  ] 123
-< PID 123: status 3
-+ builtin ':' end
+> forkwait 12345
+  + 12345 builtin ':' 1
+  [ 12345 proc p
+    + 12345 builtin ':' p
+  ] 12345 proc
+< forkwait 12345: status 3
++ builtin set '+x'
 ## END
 
 #### command sub

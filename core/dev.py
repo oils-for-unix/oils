@@ -507,7 +507,7 @@ class Tracer(object):
     """For synchronous constructs that aren't processes."""
     buf = self._RichTraceBegin()
     if buf:
-      buf.write('[ %s' % label)
+      self._PrintPrefix('[', label, buf)
       if label == 'proc':
         buf.write(' ')
         _PrintArgv(argv, buf)
@@ -528,7 +528,8 @@ class Tracer(object):
     #log('pop')
     buf = self._RichTraceBegin()
     if buf:
-      buf.write('] %s\n' % label)
+      self._PrintPrefix(']', label, buf)
+      buf.write('\n')
       self.f.write(buf.getvalue())
 
   def OnBuiltin(self, builtin_id, argv):
