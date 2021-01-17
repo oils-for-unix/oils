@@ -7,7 +7,7 @@ from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
     value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
-    cmd_value__Assign, trace_e, trace_t
+    cmd_value__Assign, trace_e, trace_t, trace_msg
 )
 from _devbuild.gen.syntax_asdl import assign_op_e
 
@@ -290,7 +290,6 @@ class Tracer(object):
     self.ind = 0  # changed by process, proc, source, eval
     self.indents = ['']  # "pooled" to avoid allocations
     self.what_stack = []  # type: List[trace_t]
-    self.argv_stack = []  # type: List[Optional[List[str]]]
 
     self.pid = -1  # PID to print as prefix
 
@@ -344,6 +343,16 @@ class Tracer(object):
     with state.ctx_Option(self.mutable_opts, [option_i.xtrace], False):
       prefix = self.word_ev.EvalForPlugin(ps4_word)
     return prefix.s
+
+  def _Inc(self):
+    # type: () -> None
+    self.ind += 1
+    if self.ind >= len(self.indents):  # make sure there are enough
+      self.indents.append('  ' * self.ind)
+
+  def _Dec(self):
+    # type: () -> None
+    self.ind -= 1
 
   def _ShTraceBegin(self):
     # type: () -> Optional[mylib.BufWriter]
@@ -404,8 +413,8 @@ class Tracer(object):
       buf.write(' ')
     buf.write(label)
 
-  def OnProcessStart(self, pid):
-    # type: (int) -> None
+  def OnProcessStart(self, pid, msg):
+    # type: (int, trace_msg) -> None
     """
     TODO:
 
@@ -415,21 +424,60 @@ class Tracer(object):
     Also we need a description:
       pipeline, & fork, subshell, command.Simple with argv
     """
-
-    buf = self._OilTraceBegin('|')
+    buf = self._RichTraceBegin()
     if not buf:
       return
 
-    buf.write('process %d\n' % pid)
+    with switch(msg.what) as case:
+      # Synchronous cases
+      if case(trace_e.External):
+        self._PrintPrefix('>', 'command %d:' % pid, buf)
+        if msg.argv is not None:
+          buf.write(' ')
+          _PrintArgv(msg.argv, buf)
+      elif case(trace_e.Subshell):
+        self._PrintPrefix('>', 'subshell %d\n' % pid, buf)
+        self._Inc()
+      elif case(trace_e.CommandSub):
+        self._PrintPrefix('>', 'command sub %d\n' % pid, buf)
+        self._Inc()
+
+      # Async cases
+      # elif case(trace_e.PipelinePart):
+      #   buf.write('part\n') 
+      # elif case(trace_e.Fork):
+      #   buf.write('&fork\n') 
+      # elif case(trace_e.ProcessSub):
+      #   buf.write('process sub\n') 
+      # elif case(trace_e.HereDoc):
+      #   buf.write('here doc\n') 
+
+      else:
+        self._PrintPrefix('|', 'process %d\n' % pid, buf)
+
     self.f.write(buf.getvalue())
 
-  def OnProcessEnd(self, pid, status):
-    # type: (int, int) -> None
-    buf = self._OilTraceBegin('.')
+  def OnProcessEnd(self, pid, status, msg):
+    # type: (int, int, trace_msg) -> None
+    ch = '<'
+    with switch(msg.what) as case:
+      if case(trace_e.External):
+        pass
+      elif case(trace_e.Subshell):
+        #raise AssertionError()
+        self._Dec()
+      elif case(trace_e.CommandSub):
+        self._Dec()
+      elif case(trace_e.JobWait):  # async
+        pass
+      else:
+        ch = '.'
+
+    buf = self._RichTraceBegin()
     if not buf:
       return
 
-    buf.write('process %d (status %d)\n' % (pid, status))
+    self._PrintPrefix(ch, 'process %d: status %d\n' % (pid, status), buf)
     self.f.write(buf.getvalue())
 
   def SetProcess(self, pid):
@@ -438,32 +486,7 @@ class Tracer(object):
     All trace lines have a PID prefix, except those from the root process.
     """
     self.pid = pid
-    buf = self._OilTraceBegin('.')
-    if not buf:
-      return
-
-  def OnExternalStart(self, argv):
-    # type: (List[str]) -> None
-    buf = self._OilTraceBegin('>')
-    if buf:
-      _PrintArgv(argv, buf)
-      self.f.write(buf.getvalue())
-
-    self.ind += 1
-    if self.ind >= len(self.indents):  # make sure there are enough
-      self.indents.append('  ' * self.ind)
-
-  def OnExternalEnd(self, status):
-    # type: (int) -> None
-
-    # TODO: Might not need this?
-
-    self.ind -= 1
-
-    buf = self._OilTraceBegin('<')
-    if buf:
-      buf.write('(status %d)\n' % status)
-      self.f.write(buf.getvalue())
+    self._Inc()
 
   def PushMessage(self, what, argv):
     # type: (trace_t, Optional[List[str]]) -> None
@@ -500,11 +523,8 @@ class Tracer(object):
       # save the character < or ] ?
       self.what_stack.append(what)
       # Only save the label, and maybe argv[0]?
-      self.argv_stack.append(argv)
 
-    self.ind += 1
-    if self.ind >= len(self.indents):  # make sure there are enough
-      self.indents.append('  ' * self.ind)
+    self._Inc()
 
   def PopMessage(self):
     # type: () -> None
@@ -513,75 +533,9 @@ class Tracer(object):
     #log('pop')
     buf = self._OilTraceBegin(']')
     if buf:
-      self.argv_stack.pop()
       what = self.what_stack.pop()
       # TODO: write closing
 
-      buf.write('\n')
-      self.f.write(buf.getvalue())
-
-  def PrintMessage(self, what, argv):
-    # type: (trace_t, Optional[List[str]]) -> None
-    buf = self._OilTraceBegin('+')  # + or | or .
-    if buf:
-      # TODO: ><   []   |.
-      with switch(what) as case:
-        if case(trace_e.PipelinePart):
-          buf.write('part\n') 
-        elif case(trace_e.Fork):
-          buf.write('&fork\n') 
-        elif case(trace_e.ProcessSub):
-          buf.write('process sub\n') 
-        elif case(trace_e.HereDoc):
-          buf.write('here doc\n') 
-
-      buf.write('\n')
-      self.f.write(buf.getvalue())
-
-  def Push(self, desc):
-    # type: (str) -> None
-    """Indent for synchronous constructs.
-
-    synchronous, in-process constructs.
-      proc: argv
-      source: filename
-      eval
-
-    <> synchronous, new process:
-      external: PID and argv
-      command sub: PID and maybe argv[0] if it's a SimpleCommand?
-      subshell: PID
-    """
-    #import traceback
-    #log('push')
-    #traceback.print_stack()
-
-    buf = self._OilTraceBegin('[')
-    if buf:
-      buf.write(desc)
-      buf.write('\n')
-      self.f.write(buf.getvalue())
-
-    self.ind += 1
-    if self.ind >= len(self.indents):  # make sure there are enough
-      self.indents.append('  ' * self.ind)
-
-  def Pop(self, desc):
-    # type: (str) -> None
-    """Dedent for synchronous constructs.
-
-    new process:
-      external: status
-      subshell: status
-
-    proc, source, eval, can also have status.  But not as important.
-    """
-    self.ind -= 1
-
-    #log('pop')
-    buf = self._OilTraceBegin(']')
-    if buf:
-      buf.write(desc)
       buf.write('\n')
       self.f.write(buf.getvalue())
 
@@ -669,6 +623,9 @@ class Tracer(object):
 
   def OnControlFlow(self, keyword, arg):
     # type: (str, int) -> None
+
+    # TODO: Include this in Oil tracing too?  It's always on?
+
     buf = self._ShTraceBegin()
     if not buf:
       return

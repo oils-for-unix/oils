@@ -20,7 +20,7 @@ from _devbuild.gen.runtime_asdl import (
     job_status, job_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
-    value, value_e, lvalue, value__Str,
+    value, value_e, lvalue, value__Str, trace_e, trace_msg
 )
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
@@ -396,7 +396,7 @@ class FdState(object):
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
-          _ = here_proc.Start()
+          _ = here_proc.Start(trace_msg(trace_e.HereDoc, None))
           #log('Started %s as %d', here_proc, pid)
           self._PushWait(here_proc, waiter)
 
@@ -469,7 +469,8 @@ class FdState(object):
 
     # Wait for here doc processes to finish.
     for proc, waiter in frame.need_wait:
-      unused_status = proc.Wait(waiter)
+      msg = trace_msg(trace_e.HereDoc, None)  # TODO: should be singleton
+      unused_status = proc.Wait(waiter, msg)
 
   def MakePermanent(self):
     # type: () -> None
@@ -841,8 +842,8 @@ class Process(Job):
       posix.close(self.close_r)
       posix.close(self.close_w)
 
-  def Start(self):
-    # type: () -> int
+  def Start(self, msg):
+    # type: (trace_msg) -> int
     """Start this process with fork(), handling redirects."""
     # TODO: If OSH were a job control shell, we might need to call some of
     # these here.  They control the distribution of signals, some of which
@@ -874,7 +875,7 @@ class Process(Job):
       # Never returns
 
     #log('STARTED process %s, pid = %d', self, pid)
-    self.tracer.OnProcessStart(pid)
+    self.tracer.OnProcessStart(pid, msg)
 
     # Class invariant: after the process is started, it stores its PID.
     self.pid = pid
@@ -883,8 +884,8 @@ class Process(Job):
 
     return pid
 
-  def Wait(self, waiter):
-    # type: (Waiter) -> int
+  def Wait(self, waiter, msg):
+    # type: (Waiter, trace_msg) -> int
     """Wait for this process to finish."""
     while True:
       #log('WAITING')
@@ -892,12 +893,13 @@ class Process(Job):
         break
       if self.state != job_state_e.Running:
         break
-    self.tracer.OnProcessEnd(self.pid, self.status)
+    self.tracer.OnProcessEnd(self.pid, self.status, msg)
     return self.status
 
   def JobWait(self, waiter):
     # type: (Waiter) -> job_status_t
-    exit_code = self.Wait(waiter)
+    msg = trace_msg(trace_e.JobWait, None)
+    exit_code = self.Wait(waiter, msg)
     return job_status.Proc(exit_code)
 
   def WhenStopped(self):
@@ -915,11 +917,11 @@ class Process(Job):
     if self.parent_pipeline:
       self.parent_pipeline.WhenDone(pid, status)
 
-  def RunWait(self, waiter):
-    # type: (Waiter) -> int
+  def RunWait(self, waiter, msg):
+    # type: (Waiter, trace_msg) -> int
     """Run this process synchronously."""
-    self.Start()
-    return self.Wait(waiter)
+    self.Start(msg)
+    return self.Wait(waiter, msg)
 
 
 class Pipeline(Job):
@@ -993,7 +995,7 @@ class Pipeline(Job):
     # whole pipeline.
 
     for i, proc in enumerate(self.procs):
-      pid = proc.Start()
+      pid = proc.Start(trace_msg(trace_e.Pipeline, None))
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 

@@ -75,15 +75,16 @@ source-argv: 1 2 3
 
 #### external and builtin
 shopt --set oil:basic
+shopt --unset errexit
 set -x
 
-env true
+env false
 cd /
 pwd
 ## stdout-json: ""
 ## STDERR:
-| 123 external env true
-. 123 status=0 env true
+> PID 123: command env false
+< PID 123: status 1
 + builtin cd '/'
 + builtin pwd
 ## END
@@ -97,20 +98,23 @@ proc p {
   : p
 }
 
-( : begin
-  : 2
+: begin
+( 
+  : 1
   p
-  exit 3
+  exit 3  # this is control flow, so it's not traced?
 )
 : end
 ## stdout-json: ""
 ## STDERR:
-| 123 subshell
-  + 123 ':' begin
-  + 123 ':' 2
-  + 123 exit 3
-. 123 subshell (status 3)
-+ ':' end
++ builtin ':' begin
+> subshell 123
+  + 123 builtin ':' 1
+  [ 123 proc p
+    + 123 builtin ':' p
+  ] 123
+< PID 123: status 3
++ builtin ':' end
 ## END
 
 #### command sub
@@ -174,10 +178,36 @@ set -x
 
 ## stdout-json: ""
 ## STDERR:
++ builtin ':' begin
+[ pipeline
+  + builtin false
+] 
++ builtin ':' end
 ## END
 
+#### Background pipeline (separate code path)
 
-#### fork and & (nondeterministic)
+shopt --set oil:basic
+shopt --unset errexit
+set -x
+
+myfunc() {
+  echo 2
+  echo 1
+}
+
+: begin
+myfunc | sort | grep ZZZ &
+wait
+echo status=$?
+
+## STDOUT:
+status=0
+## END
+## STDERR:
+## END
+
+#### Background process with fork and & (nondeterministic)
 shopt --set oil:basic
 set -x
 
@@ -199,6 +229,7 @@ wait
 
 #### here doc
 shopt --set oil:basic
+shopt --unset errexit
 set -x
 
 : begin
@@ -206,7 +237,21 @@ tac <<EOF
 3
 2
 EOF
+
+echo --
+
+# Two here docs!
+diff -u - /dev/fd/3 <<EOF 3<<EOF2
+zz
+yy
+EOF
+zz
+EOF2
+
 : end
+
+
+
 ## STDOUT:
 ## END
 ## STDERR:

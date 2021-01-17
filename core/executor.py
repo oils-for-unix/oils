@@ -8,7 +8,7 @@ import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import redirect, trace_e
+from _devbuild.gen.runtime_asdl import redirect, trace_e, trace_msg
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
     command_sub, compound_word, Token,
@@ -243,9 +243,8 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
-      self.tracer.OnExternalStart(cmd_val.argv)
-      status = p.RunWait(self.waiter)
-      self.tracer.OnExternalEnd(status)
+      msg = trace_msg(trace_e.External, cmd_val.argv)
+      status = p.RunWait(self.waiter, msg)
       return status
 
     # Already forked for pipeline: ls / | wc -l
@@ -289,7 +288,7 @@ class ShellExecutor(vm._Executor):
 
       #log('job state %s', self.job_state)
       p = self._MakeProcess(node)
-      pid = p.Start()
+      pid = p.Start(trace_msg(trace_e.Fork, None))
       self.mem.last_bg_pid = pid  # for $!
       job_id = self.job_state.AddJob(p)  # show in 'jobs' list
       log('[%%%d] Started PID %d', job_id, pid)
@@ -323,8 +322,8 @@ class ShellExecutor(vm._Executor):
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
-    with dev.ctx_Tracer(self.tracer, trace_e.Subshell, None):
-      return p.RunWait(self.waiter)
+    msg = trace_msg(trace_e.Subshell, None)
+    return p.RunWait(self.waiter, msg)
 
   def RunCommandSub(self, cs_part):
     # type: (command_sub) -> str
@@ -361,20 +360,20 @@ class ShellExecutor(vm._Executor):
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
 
-    with dev.ctx_Tracer(self.tracer, trace_e.CommandSub, None):
-      _ = p.Start()
-      #log('Command sub started %d', pid)
+    msg = trace_msg(trace_e.CommandSub, None)
+    _ = p.Start(msg)
+    #log('Command sub started %d', pid)
 
-      chunks = []  # type: List[str]
-      posix.close(w)  # not going to write
-      while True:
-        byte_str = posix.read(r, 4096)
-        if len(byte_str) == 0:
-          break
-        chunks.append(byte_str)
-      posix.close(r)
+    chunks = []  # type: List[str]
+    posix.close(w)  # not going to write
+    while True:
+      byte_str = posix.read(r, 4096)
+      if len(byte_str) == 0:
+        break
+      chunks.append(byte_str)
+    posix.close(r)
 
-      status = p.Wait(self.waiter)
+    status = p.Wait(self.waiter, msg)
 
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!
@@ -473,7 +472,7 @@ class ShellExecutor(vm._Executor):
     p.AddStateChange(redir)
 
     # Fork, letting the child inherit the pipe file descriptors.
-    pid = p.Start()
+    pid = p.Start(trace_msg(trace_e.ProcessSub, None))
     # TODO: need a "why" here
     # self.tracer.OnProcessStart(pid)
 
@@ -522,7 +521,8 @@ class ShellExecutor(vm._Executor):
 
     for i, p in enumerate(frame.to_wait):
       #log('waiting for %s', p)
-      st = p.Wait(self.waiter)
+      msg = trace_msg(trace_e.ProcessSub, None)
+      st = p.Wait(self.waiter, msg)
       compound_st.codes.append(st)
       compound_st.spids.append(frame.span_ids[i])
       i += 1

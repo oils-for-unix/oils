@@ -177,6 +177,9 @@ module runtime
   | ProcessSub   -- async (other processes can be started)
   | HereDoc      -- async (multiple here docs per process)
 
+    -- for Wait
+  | JobWait
+
   -- PID?
-  trace_msg = (trace why, string* argv)
+  trace_msg = (trace what, string* argv)
 }
