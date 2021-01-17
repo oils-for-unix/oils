@@ -99,13 +99,13 @@ class ProcessTest(unittest.TestCase):
 
     Banner('date')
     p = self._ExtProc(['date'])
-    status = p.Run(self.waiter)
+    status = p.RunWait(self.waiter)
     log('date returned %d', status)
     self.assertEqual(0, status)
 
     Banner('does-not-exist')
     p = self._ExtProc(['does-not-exist'])
-    print(p.Run(self.waiter))
+    print(p.RunWait(self.waiter))
 
     # 12 file descriptors open!
     print('FDS AFTER', os.listdir('/dev/fd'))
