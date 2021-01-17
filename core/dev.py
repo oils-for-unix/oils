@@ -454,7 +454,9 @@ class Tracer(object):
         self._PrintPrefix('>', 'command sub %d\n' % pid, buf)
         self._Inc()
 
-      # Async cases
+      # Async cases: no indent
+      elif case(trace_e.ProcessSub):
+        self._PrintPrefix('|', 'procsub %d\n' % pid, buf)
       # elif case(trace_e.PipelinePart):
       #   buf.write('part\n') 
       # elif case(trace_e.Fork):
@@ -481,8 +483,14 @@ class Tracer(object):
       elif case(trace_e.CommandSub):
         label = 'command sub'
         self._Dec()
-      elif case(trace_e.JobWait):  # async
+
+      # Async
+      elif case(trace_e.ProcessSub):
+        label = 'procsub'
+        ch = '.'
+      elif case(trace_e.JobWait):
         label = 'wait'
+        ch = '.'
       else:
         label = 'process'
         ch = '.'

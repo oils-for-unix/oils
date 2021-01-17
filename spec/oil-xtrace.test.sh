@@ -113,7 +113,6 @@ proc p {
   set +x
 } 2>err.txt
 
-# normalize PIDs, assumed to be 2 or more digits
 sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## stdout-json: ""
@@ -132,16 +131,22 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 shopt --set oil:basic
 set -x
 
-echo foo=$(echo bar)
+{
+  echo foo=$(echo bar)
+  set +x
+} 2>err.txt
+
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## STDOUT:
-hi
+foo=bar
 ## END
 ## STDERR:
-> command sub
-  + 1234 builtin echo bar
-< command sub
+> command sub 12345
+  + 12345 builtin echo bar
+< command sub 12345: status 0
 + builtin echo 'foo=bar'
++ builtin set '+x'
 ## END
 
 #### process sub (nondeterministic)
@@ -151,12 +156,28 @@ set -x
 
 # we wait() for them all at the end
 
-: begin
-diff -u <(seq 3) <(seq 4)
-: end
+{
+  : begin
+  cat <(seq 2) <(seq 1)
+  set +x
+} 2>err.txt
 
-## stdout-json: ""
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt >&2
+
+## STDOUT:
+1
+2
+1
+## END
 ## STDERR:
++ builtin ':' begin
+| procsub 12345
+| procsub 12345
+> command 12345: cat '/dev/fd/N' '/dev/fd/N'
+< command 12345: status 0
+. procsub 12345: status 0
+. procsub 12345: status 0
++ builtin set '+x'
 ## END
 
 #### pipeline (nondeterministic)

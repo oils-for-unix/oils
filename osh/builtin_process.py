@@ -185,8 +185,7 @@ class Wait(vm._Builtin):
                            span_id=span_id)
         return 127
 
-      msg = trace_msg(trace_e.JobWait, None)
-      job_status = job.JobWait(self.waiter, msg)
+      job_status = job.JobWait(self.waiter)
 
       UP_job_status = job_status
       with tagswitch(job_status) as case:
@@ -252,7 +251,8 @@ class Fg(vm._Builtin):
     posix.kill(pid, signal.SIGCONT)
 
     job = self.job_state.JobFromPid(pid)
-    status = job.Wait(self.waiter)
+    msg = trace_msg(trace_e.Fg, None)
+    status = job.Wait(self.waiter, msg)
     #log('status = %d', status)
     return status
 

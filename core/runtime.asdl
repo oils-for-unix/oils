@@ -179,6 +179,7 @@ module runtime
 
     -- for Wait
   | JobWait
+  | Fg
 
   -- PID?
   trace_msg = (trace what, string* argv)
