@@ -63,7 +63,8 @@ test-r-packages() {
 gen-asdl-py() {
   local asdl_path=$1  # e.g. osh/osh.asdl
 
-  local name=$(basename $asdl_path .asdl)
+  local name
+  name=$(basename $asdl_path .asdl)
 
   local tmp=_tmp/${name}_asdl.py
   local out=_devbuild/gen/${name}_asdl.py
@@ -81,7 +82,8 @@ gen-asdl-py() {
 gen-asdl-cpp() {
   local asdl_path=$1  # e.g. osh/osh.asdl
 
-  local name=$(basename $asdl_path .asdl)
+  local name
+  name=$(basename $asdl_path .asdl)
 
   local out_prefix=${2:-_build/cpp/${name}_asdl}
   local debug_info=_devbuild/gen/${name}_asdl_debug.py
@@ -174,7 +176,8 @@ py-ext() {
   log "$setup_script -> $name.so"
 
   mkdir -p _devbuild/py-ext
-  local arch=$(uname -m)
+  local arch
+  arch=$(uname -m)
 
   # global opts come first
   $setup_script --quiet build_ext --inplace

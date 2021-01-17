@@ -166,21 +166,17 @@ module runtime
   | Proc         -- argv
   | Eval
   | Source       -- argv
-  | Pipeline     -- sync (the whole thing)
+  | Pipeline     -- (the whole thing is synchronous)
+  | Wait         -- argv
 
-    -- EXTERNAL (all of them need a PID)
+    -- EXTERNAL
   | PipelinePart -- async
-  | External     -- sync, needs argv (TODO: indent if process sub or here doc?)
+  | External     -- sync, needs argv (aka Command, command.Simple)
   | Fork         -- async, needs argv, & fork
   | Subshell     -- sync
   | CommandSub   -- sync
   | ProcessSub   -- async (other processes can be started)
   | HereDoc      -- async (multiple here docs per process)
-
-    -- Why did we awit?
-  | WaitBuiltin
-  | PipelineWait
-  | FgBuiltin
 
   -- PID?
   trace_msg = (trace what, string* argv)

@@ -469,8 +469,7 @@ class FdState(object):
 
     # Wait for here doc processes to finish.
     for proc, waiter in frame.need_wait:
-      msg = trace_msg(trace_e.HereDoc, None)  # TODO: should be singleton
-      unused_status = proc.Wait(waiter, msg)
+      unused_status = proc.Wait(waiter)
 
   def MakePermanent(self):
     # type: () -> None
@@ -884,8 +883,8 @@ class Process(Job):
 
     return pid
 
-  def Wait(self, waiter, msg):
-    # type: (Waiter, trace_msg) -> int
+  def Wait(self, waiter):
+    # type: (Waiter) -> int
     """Wait for this process to finish."""
     while True:
       #from _devbuild.gen.runtime_asdl import trace_str
@@ -893,7 +892,7 @@ class Process(Job):
       #traceback.print_stack()
       #log('WAITING %s', trace_str(msg.what))
 
-      if not waiter.WaitForOne(msg):
+      if not waiter.WaitForOne():
         break
       if self.state != job_state_e.Running:
         break
@@ -901,8 +900,7 @@ class Process(Job):
 
   def JobWait(self, waiter):
     # type: (Waiter) -> job_status_t
-    msg = trace_msg(trace_e.WaitBuiltin, None)
-    exit_code = self.Wait(waiter, msg)
+    exit_code = self.Wait(waiter)
     return job_status.Proc(exit_code)
 
   def WhenStopped(self):
@@ -924,7 +922,7 @@ class Process(Job):
     # type: (Waiter, trace_msg) -> int
     """Run this process synchronously."""
     self.Start(msg)
-    return self.Wait(waiter, msg)
+    return self.Wait(waiter)
 
 
 class Pipeline(Job):
@@ -1018,8 +1016,8 @@ class Pipeline(Job):
     """
     return self.pids[-1]
 
-  def Wait(self, waiter, msg):
-    # type: (Waiter, trace_msg) -> List[int]
+  def Wait(self, waiter):
+    # type: (Waiter) -> List[int]
     """Wait for this pipeline to finish.
 
     Called by the 'wait' builtin.
@@ -1029,7 +1027,7 @@ class Pipeline(Job):
     assert self.procs, "no procs for Wait()"
     while True:
       #log('WAIT pipeline')
-      if not waiter.WaitForOne(msg):
+      if not waiter.WaitForOne():
         break
       if self.state != job_state_e.Running:
         #log('Pipeline DONE')
@@ -1039,8 +1037,7 @@ class Pipeline(Job):
 
   def JobWait(self, waiter):
     # type: (Waiter) -> job_status_t
-    msg = trace_msg(trace_e.WaitBuiltin, None)
-    pipe_status = self.Wait(waiter, msg)
+    pipe_status = self.Wait(waiter)
     return job_status.Pipeline(pipe_status)
 
   def Run(self, waiter, fd_state):
@@ -1087,8 +1084,7 @@ class Pipeline(Job):
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
     if len(self.procs):
-      msg = trace_msg(trace_e.Pipeline, None)
-      return self.Wait(waiter, msg)
+      return self.Wait(waiter)
     else:
       return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
 
@@ -1297,8 +1293,8 @@ class Waiter(object):
     self.tracer = tracer
     self.last_status = 127  # wait -n error code
 
-  def WaitForOne(self, msg):
-    # type: (trace_msg) -> bool
+  def WaitForOne(self):
+    # type: () -> bool
     """Wait until the next process returns (or maybe Ctrl-C).
 
     Returns:
@@ -1372,6 +1368,6 @@ class Waiter(object):
 
     self.last_status = status  # for wait -n
 
-    self.tracer.OnProcessEnd(pid, status, msg)
+    self.tracer.OnProcessEnd(pid, status)
 
     return True  # caller should keep waiting

@@ -17,7 +17,7 @@ from asdl import runtime
 from core import dev
 from core import error
 from core import process
-from core.pyerror import log, e_die
+from core.pyerror import e_die
 from core import ui
 from core import vm
 from frontend import consts
@@ -377,7 +377,7 @@ class ShellExecutor(vm._Executor):
       chunks.append(byte_str)
     posix.close(r)
 
-    status = p.Wait(self.waiter, msg)
+    status = p.Wait(self.waiter)
 
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!
@@ -519,8 +519,7 @@ class ShellExecutor(vm._Executor):
 
     for i, p in enumerate(frame.to_wait):
       #log('waiting for %s', p)
-      msg = trace_msg(trace_e.ProcessSub, None)
-      st = p.Wait(self.waiter, msg)
+      st = p.Wait(self.waiter)
       compound_st.codes.append(st)
       compound_st.spids.append(frame.span_ids[i])
       i += 1

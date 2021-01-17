@@ -234,36 +234,14 @@ class Tracer(object):
 
   X_punct is:
 
-      + for a builtin
-      > and < for proc calls, eval, and source (synchronous, stack-based)
-        - for synchronous processes: subshell, semicolon
-      | and . to begin and end a process (async), command sub
-        - async processes: fork, elements of a pipeline, process sub
-
-  Oil PID 1234: main.sh foo bar (try https://xtrace.oilshell.org/)
-  + builtin cd /
-  > proc foo
-    > 1235 ls .
-    < 1235 ls (status 0)
-  < proc foo
-  > 1236 subshell
-    > 1236 proc bar
-      > 1237 ls /nonexistent
-      < 1237 ls (status 1)
-    < 1236 proc bar
-    + 1236 builtin cd /
-  < 1236 subshell (status 0)
-  > pipeline
-    | PID 1234
-    | PID 1235
-    . PID 1235 (status 0)
-    . PID 1234 (status 1)
-  < pipeline (pipestatus now available)
-  Oil exited (status 0)
-
-  The first and last line are special.  We don't want to include the same PID
-  on EVERY line.
-  I guess the PID should appear on EVERY line?
+      + for old shell constructs (xtrace_details)
+      . for builtin or exec
+      > and < for synchronous, stack-based constructs:
+        - proc calls, eval, and source
+        - pipeline and wait
+      | and ; to begin and end a process (async)
+        - synchronous processes: subshell, command sub, command (;)
+        - async processes: fork (&), pipeline parts, process sub, here doc
 
   - TODO: Connect it somehow to tracers for other processes.  So you can make
     an HTML report offline.
@@ -443,12 +421,10 @@ class Tracer(object):
           _PrintArgv(msg.argv, buf)
       elif case(trace_e.Subshell):
         self._PrintPrefix('|', 'forkwait %d\n' % pid, buf)
-        self._Inc()
       elif case(trace_e.CommandSub):
         self._PrintPrefix('|', 'command sub %d\n' % pid, buf)
-        self._Inc()
 
-      # Async cases: no indent
+      # Async cases
       elif case(trace_e.ProcessSub):
         self._PrintPrefix('|', 'proc sub %d\n' % pid, buf)
       elif case(trace_e.HereDoc):
@@ -463,41 +439,13 @@ class Tracer(object):
 
     self.f.write(buf.getvalue())
 
-  def OnProcessEnd(self, pid, status, msg):
-    # type: (int, int, trace_msg) -> None
-    ch = '<'
-    with switch(msg.what) as case:
-      if case(trace_e.External):
-        label = 'command'
-      elif case(trace_e.Subshell):
-        label = 'forkwait'
-        self._Dec()
-      elif case(trace_e.CommandSub):
-        label = 'command sub'
-        self._Dec()
-
-      # Async
-      elif case(trace_e.ProcessSub):
-        label = 'proc sub'
-        ch = '.'
-      elif case(trace_e.HereDoc):
-        label = 'here doc'
-        ch = '.'
-      elif case(trace_e.WaitBuiltin):
-        label = 'wait'
-        ch = '.'
-      else:
-        label = 'process'
-        ch = '.'
-
-    label = 'process'
-    ch = ';'
-
+  def OnProcessEnd(self, pid, status):
+    # type: (int, int) -> None
     buf = self._RichTraceBegin()
     if not buf:
       return
 
-    self._PrintPrefix(ch, '%s %d: status %d\n' % (label, pid, status), buf)
+    self._PrintPrefix(';', 'process %d: status %d\n' % (pid, status), buf)
     self.f.write(buf.getvalue())
 
   def SetProcess(self, pid):
