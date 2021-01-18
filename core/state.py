@@ -1083,7 +1083,10 @@ class Mem(object):
 
   def PushTemp(self):
     # type: () -> None
-    """For the temporary scope in 'FOO=bar BAR=baz echo'."""
+    """For the temporary scope in 'FOO=bar BAR=baz echo'.
+
+    Also for PS4 evaluation with more variables.
+    """
     # We don't want the 'read' builtin to write to this frame!
     self.var_stack.append({})
     self._PushDebugStack(None, None, None)

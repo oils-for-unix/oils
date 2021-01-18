@@ -184,7 +184,8 @@ set -x
 } 2>err.txt
 
 # SORT for determinism
-sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt | sort >&2
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
+  LC_ALL=C sort >&2
 #cat err.txt >&2
 
 ## STDOUT:
@@ -198,10 +199,10 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt | sor
   . 12345 exec seq 2
 . builtin ':' begin
 . builtin set '+x'
+; process 12345: status 0
+; process 12345: status 0
+; process 12345: status 0
 | command 12345: cat '/dev/fd/N' '/dev/fd/N'
-; process 12345: status 0
-; process 12345: status 0
-; process 12345: status 0
 | proc sub 12345
 | proc sub 12345
 ## END
@@ -222,7 +223,8 @@ myfunc() {
 } 2>err.txt
 
 # SORT for determinism
-sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt | sort >&2
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt | 
+  LC_ALL=C sort >&2
 
 ## STDOUT:
 2
@@ -231,18 +233,18 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt | sor
       . 12345 builtin echo 1
       . 12345 builtin echo 2
     . 12345 exec sort
-    ] 12345 proc
     [ 12345 proc myfunc
-. builtin ':' begin
-. builtin set '+x'
+    ] 12345 proc
+  ; process 12345: status 0
+  ; process 12345: status 0
+  ; process 12345: status 0
   | command 12345: wc -l
   | part 12345
   | part 12345
+. builtin ':' begin
+. builtin set '+x'
 [ pipeline
 ] pipeline
-  ; process 12345: status 0
-  ; process 12345: status 0
-  ; process 12345: status 0
 ## END
 
 #### singleton pipeline
@@ -285,7 +287,8 @@ myfunc() {
 } 2>err.txt
 
 # SORT for determinism
-sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt | sort >&2
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
+  LC_ALL=C sort >&2
 
 ## STDOUT:
 status=0
@@ -295,19 +298,19 @@ status=0
     . 12345 builtin echo 2
   . 12345 exec grep ZZZ
   . 12345 exec sort
-  ] 12345 proc
-  [ 12345 proc myfunc
-. builtin ':' begin
-. builtin echo 'status=0'
-. builtin set '+x'
-| part 12345
-| part 12345
-| part 12345
   ; process 12345: status 0
   ; process 12345: status 0
   ; process 12345: status 1
+  [ 12345 proc myfunc
+  ] 12345 proc
+. builtin ':' begin
+. builtin echo 'status=0'
+. builtin set '+x'
 [ wait
 ] wait
+| part 12345
+| part 12345
+| part 12345
 ## END
 
 #### Background process with fork and & (nondeterministic)
@@ -328,23 +331,24 @@ set -x
 } 2>err.txt
 
 # SORT for determinism
-sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt | sort >&2
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
+  LC_ALL=C sort >&2
 
 ## stdout-json: ""
 ## STDERR:
   . 12345 exec sleep 0.1
   . 12345 exec sleep 0.1
+  ; process 12345: status 0
+  ; process 12345: status 0
 . builtin fork
 . builtin set '+x'
 . builtin shopt -s 'oil:basic'
-| fork 12345
-| fork 12345
-  ; process 12345: status 0
-  ; process 12345: status 0
 [ wait
 [ wait
 ] wait
 ] wait
+| fork 12345
+| fork 12345
 ## END
 
 # others: redirects?

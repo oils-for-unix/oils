@@ -5,9 +5,9 @@ from __future__ import print_function
 
 from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
-    value_e, value__Str, value__MaybeStrArray, value__AssocArray,
-    lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
-    cmd_value__Assign, trace_e, trace_t, trace_msg
+    value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
+    lvalue, lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
+    cmd_value__Assign, scope_e, trace_e, trace_t, trace_msg
 )
 from _devbuild.gen.syntax_asdl import assign_op_e
 
@@ -253,8 +253,7 @@ class Tracer(object):
   Other hooks:
 
   - Command completion starts other processes
-  - Oil stuff
-    - BareDecl, VarDecl, PlaceMutation, Expr
+  - Oil command constructs: BareDecl, VarDecl, PlaceMutation, Expr
   """
   def __init__(self,
                parse_ctx,  # type: ParseContext
@@ -295,9 +294,6 @@ class Tracer(object):
     # type: () -> str
     """The prefix of each line.
 
-    TODO: XTRACE_PREFIX (or OIL_XTRACE_PREFIX) could be the same except for the
-    "first char" behavior, which is replaced with indentation.
-
     BASH_XTRACEFD exists.
     """
     val = self.mem.GetValue('PS4')
@@ -322,17 +318,15 @@ class Tracer(object):
 
     #print(ps4_word)
 
-    # TODO: Repeat first character according process stack depth.  Where is
-    # that stored?  In the executor itself?  It should be stored along with
-    # the PID.  Need some kind of ShellProcessState or something.
-    #
-    # We should come up with a better mechanism.  Something like $PROC_INDENT
-    # and $OIL_XTRACE_PREFIX.
-
     # Prevent infinite loop when PS4 has command sub!
     assert self.exec_opts.xtrace()  # We shouldn't call this unless it's on!
     with state.ctx_Option(self.mutable_opts, [option_i.xtrace], False):
-      prefix = self.word_ev.EvalForPlugin(ps4_word)
+      with state.ctx_Temp(self.mem):
+        # TODO: create fewer objects
+        self.mem.SetValue(lvalue.Named('X_indent'), value.Str('zz'), scope_e.LocalOnly)
+        self.mem.SetValue(lvalue.Named('X_punct'), value.Str('+'), scope_e.LocalOnly)
+        self.mem.SetValue(lvalue.Named('X_pid'), value.Str('123'), scope_e.LocalOnly)
+        prefix = self.word_ev.EvalForPlugin(ps4_word)
     return prefix.s
 
   def _Inc(self):
