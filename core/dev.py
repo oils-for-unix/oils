@@ -170,6 +170,8 @@ class ctx_Tracer(object):
         label = 'source'
       elif case(trace_e.Pipeline):
         label = 'pipeline'
+      elif case(trace_e.Wait):
+        label = 'wait'
       else:
         raise AssertionError()
 
@@ -464,7 +466,9 @@ class Tracer(object):
       self._PrintPrefix('[', label, buf)
       if label == 'proc':
         _PrintArgv(argv, buf)
-      elif label ==  'source':
+      elif label == 'source':
+        _PrintArgv(argv[1:], buf)
+      elif label == 'wait':
         _PrintArgv(argv[1:], buf)
       else:
         buf.write('\n')
@@ -486,7 +490,7 @@ class Tracer(object):
 
   def OnBuiltin(self, builtin_id, argv):
     # type: (builtin_t, List[str]) -> None
-    if builtin_id in (builtin_i.eval, builtin_i.source):
+    if builtin_id in (builtin_i.eval, builtin_i.source, builtin_i.wait):
       # Handled separately
       return
 

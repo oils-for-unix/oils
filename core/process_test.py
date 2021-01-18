@@ -48,9 +48,9 @@ class ProcessTest(unittest.TestCase):
     state.InitMem(mem, {}, '0.1')
 
     self.job_state = process.JobState()
-    self.waiter = process.Waiter(self.job_state, exec_opts)
-    errfmt = ui.ErrorFormatter(self.arena)
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
+    self.waiter = process.Waiter(self.job_state, exec_opts, self.tracer)
+    errfmt = ui.ErrorFormatter(self.arena)
     self.fd_state = process.FdState(errfmt, self.job_state, None, self.tracer)
     self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,
                                             util.NullDebugFile())
@@ -99,7 +99,7 @@ class ProcessTest(unittest.TestCase):
 
     Banner('date')
     p = self._ExtProc(['date'])
-    msg = trace_msg(trace_e.JobWait, None)
+    msg = trace_msg(trace_e.External, None)
     status = p.RunWait(self.waiter, msg)
     log('date returned %d', status)
     self.assertEqual(0, status)

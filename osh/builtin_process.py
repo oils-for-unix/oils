@@ -12,11 +12,12 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     cmd_value, cmd_value__Argv,
     job_status_e, job_status__Proc, job_status__Pipeline,
-    trace_msg, trace_e
+    trace_e
 )
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import alloc
+from core import dev
 from core import error
 from core.pyerror import e_usage
 from core import main_loop
@@ -102,21 +103,25 @@ class Wait(vm._Builtin):
       Returns the status of the last ID; fails if ID is invalid or an invalid
       option is given.
   """
-  def __init__(self, waiter, job_state, mem, errfmt):
-    # type: (Waiter, JobState, Mem, ErrorFormatter) -> None
+  def __init__(self, waiter, job_state, mem, tracer, errfmt):
+    # type: (Waiter, JobState, Mem, dev.Tracer, ErrorFormatter) -> None
     self.waiter = waiter
     self.job_state = job_state
     self.mem = mem
+    self.tracer = tracer
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    with dev.ctx_Tracer(self.tracer, trace_e.Wait, cmd_val.argv):
+      return self._Run(cmd_val)
+
+  def _Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('wait', cmd_val)
     arg = arg_types.wait(attrs.attrs)
 
     job_ids, arg_spids = arg_r.Rest2()
-
-    msg = trace_msg(trace_e.WaitBuiltin, None)
 
     if arg.n:
       # wait -n returns the exit status of the JOB.
@@ -137,7 +142,7 @@ class Wait(vm._Builtin):
       #    
       #log('wait next')
 
-      if self.waiter.WaitForOne(msg):
+      if self.waiter.WaitForOne():
         return self.waiter.last_status
       else:
         return 127  # nothing to wait for
@@ -151,7 +156,7 @@ class Wait(vm._Builtin):
         # we don't get ECHILD.
         # Not sure it matters since you can now Ctrl-C it.
 
-        if not self.waiter.WaitForOne(msg):
+        if not self.waiter.WaitForOne():
           break  # nothing to wait for
         i += 1
         if self.job_state.NoneAreRunning():
@@ -253,8 +258,7 @@ class Fg(vm._Builtin):
     posix.kill(pid, signal.SIGCONT)
 
     job = self.job_state.JobFromPid(pid)
-    msg = trace_msg(trace_e.FgBuiltin, None)
-    status = job.Wait(self.waiter, msg)
+    status = job.Wait(self.waiter)
     #log('status = %d', status)
     return status
 

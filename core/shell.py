@@ -165,6 +165,7 @@ def AddProcess(
     fd_state,  # type: process.FdState
     job_state,  # type: process.JobState
     waiter,  # type: process.Waiter
+    tracer,  # type: dev.Tracer
     search_path,  # type: state.SearchPath
     errfmt  # type: ui.ErrorFormatter
     ):
@@ -173,7 +174,8 @@ def AddProcess(
   # Process
   b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
                                             search_path, errfmt)
-  b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, errfmt)
+  b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, tracer,
+                                           errfmt)
   b[builtin_i.jobs] = builtin_process.Jobs(job_state)
   b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
   b[builtin_i.bg] = builtin_process.Bg(job_state)
@@ -428,7 +430,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                errfmt)
   pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
   AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_state, waiter,
-             search_path, errfmt)
+             tracer, search_path, errfmt)
   AddOil(builtins, mem, errfmt, procs, arena)
 
   builtins[builtin_i.help] = help_builtin

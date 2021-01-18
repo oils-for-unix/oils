@@ -209,7 +209,6 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   cmd_deps.trap_nodes = []
 
   search_path = state.SearchPath(mem)
-  waiter = process.Waiter(job_state, exec_opts)
 
   ext_prog = \
       ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
@@ -228,6 +227,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                                      assign_builtins, arena, cmd_deps)
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
+  waiter = process.Waiter(job_state, exec_opts, tracer)
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
