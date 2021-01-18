@@ -148,7 +148,7 @@ proc p {
   ( 
     : 1
     p
-    exit 3  # this is control flow, so it's not traced?
+    exit 3
   )
   set +x
 } 2>err.txt
@@ -163,6 +163,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
   [ 12345 proc p
     . 12345 builtin ':' p
   ] 12345 proc
+  + 12345 exit 3
 ; process 12345: status 3
 . builtin set '+x'
 ## END

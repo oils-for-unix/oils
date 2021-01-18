@@ -551,17 +551,20 @@ class Tracer(object):
   def OnControlFlow(self, keyword, arg):
     # type: (str, int) -> None
 
-    # Hm need to consolidate PS4 to have this work in both modes.
-    buf = self._ShTraceBegin()
-    if not buf:
-      return
+    # This is NOT affected by xtrace_rich or xtrace_details.  Works in both.
+    if not self.exec_opts.xtrace():
+      return None
+
+    prefix = self._EvalPS4('+')
+    buf = mylib.BufWriter()
+    buf.write(prefix)
 
     buf.write(keyword)
     if arg != 0:
       buf.write(' ')
       buf.write(str(arg))
-
     buf.write('\n')
+
     self.f.write(buf.getvalue())
 
   def PrintSourceCode(self, left_spid, right_spid, arena):
