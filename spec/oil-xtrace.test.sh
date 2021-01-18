@@ -1,5 +1,25 @@
 # Oil xtrace
 
+#### Customize PS4
+shopt -s oil:basic
+set -x
+
+# Reuse the default
+PS4='$LINENO '"$PS4"
+echo 1; echo 2
+echo 3
+## STDOUT:
+1
+2
+3
+## END
+## STDERR:
+4 . builtin echo 1
+4 . builtin echo 2
+5 . builtin echo 3
+## END
+
+
 #### xtrace_details doesn't show [[ ]] etc.
 shopt -s oil:basic
 set -x
@@ -438,3 +458,5 @@ for i in 1 2 3 {
 . builtin echo 2
 + break
 ## END
+
+

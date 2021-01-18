@@ -281,21 +281,26 @@ class Tracer(object):
     self.ind = 0  # changed by process, proc, source, eval
     self.indents = ['']  # "pooled" to avoid allocations
 
-    self.pid = -1  # PID to print as prefix
-
     # PS4 value -> compound_word.  PS4 is scoped.
     self.parse_cache = {}  # type: Dict[str, compound_word]
+
+    # Mutate objects to save allocations
+    self.val_indent = value.Str('')
+    self.val_punct = value.Str('')
+    self.val_pid_str = value.Str('')  # mutated by SetProcess
+
+    # Can these be global constants?  I don't think we have that in ASDL yet.
+    self.lval_indent = lvalue.Named('X_indent')
+    self.lval_punct = lvalue.Named('X_punct')
+    self.lval_pid_str = lvalue.Named('X_pid_str')
 
   def CheckCircularDeps(self):
     # type: () -> None
     assert self.word_ev is not None
 
-  def _EvalPS4(self):
-    # type: () -> str
-    """The prefix of each line.
-
-    BASH_XTRACEFD exists.
-    """
+  def _EvalPS4(self, punct):
+    # type: (str) -> str
+    """The prefix of each line."""
     val = self.mem.GetValue('PS4')
     if val.tag_() == value_e.Str:
       ps4 = cast(value__Str, val).s
@@ -318,14 +323,20 @@ class Tracer(object):
 
     #print(ps4_word)
 
+    # Mutate objects to save allocations
+    if self.exec_opts.xtrace_rich():
+      self.val_indent.s = self.indents[self.ind] 
+    else:
+      self.val_indent.s = ''
+    self.val_punct.s = punct
+
     # Prevent infinite loop when PS4 has command sub!
     assert self.exec_opts.xtrace()  # We shouldn't call this unless it's on!
     with state.ctx_Option(self.mutable_opts, [option_i.xtrace], False):
       with state.ctx_Temp(self.mem):
-        # TODO: create fewer objects
-        self.mem.SetValue(lvalue.Named('X_indent'), value.Str('zz'), scope_e.LocalOnly)
-        self.mem.SetValue(lvalue.Named('X_punct'), value.Str('+'), scope_e.LocalOnly)
-        self.mem.SetValue(lvalue.Named('X_pid'), value.Str('123'), scope_e.LocalOnly)
+        self.mem.SetValue(self.lval_indent, self.val_indent, scope_e.LocalOnly)
+        self.mem.SetValue(self.lval_punct, self.val_punct, scope_e.LocalOnly)
+        self.mem.SetValue(self.lval_pid_str, self.val_pid_str, scope_e.LocalOnly)
         prefix = self.word_ev.EvalForPlugin(ps4_word)
     return prefix.s
 
@@ -344,65 +355,36 @@ class Tracer(object):
     if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_details():
       return None
 
-    # TODO: Using a member variable and then clear() would probably save
-    # pressure.  Tracing is in the inner loop.
-    prefix = self._EvalPS4()
-
-    buf = mylib.BufWriter()
-    if self.exec_opts.xtrace_rich():
-      buf.write(self.indents[self.ind])
-
     # Note: bash repeats the + for command sub, eval, source.  Other shells
     # don't do it.  Leave this out for now.
+    prefix = self._EvalPS4('+')
+    buf = mylib.BufWriter()
     buf.write(prefix)
-
-    if self.pid != -1:
-      buf.write(str(self.pid))
-      buf.write(' ')
-
     return buf
 
-  def _RichTraceBegin(self):
-    # type: () -> Optional[mylib.BufWriter]
+  def _RichTraceBegin(self, punct):
+    # type: (str) -> Optional[mylib.BufWriter]
     """For the stack printed by xtrace_rich"""
     if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_rich():
       return None
 
-    # TODO: change to _EvalPS4
+    prefix = self._EvalPS4(punct)
     buf = mylib.BufWriter()
-    buf.write(self.indents[self.ind])
+    buf.write(prefix)
     return buf
-
-  def _PrintPrefix(self, ch, label, buf):
-    # type: (str, str, mylib.BufWriter) -> None
-    buf.write(ch)
-    buf.write(' ')
-    if self.pid != -1:
-      buf.write(str(self.pid))
-      buf.write(' ')
-    buf.write(label)
 
   def OnExec(self, argv):
     # type: (List[str]) -> None
-    buf = self._RichTraceBegin()
+    buf = self._RichTraceBegin('.')
     if not buf:
       return
-    self._PrintPrefix('.', 'exec', buf)
+    buf.write('exec')
     _PrintArgv(argv, buf)
     self.f.write(buf.getvalue())
 
   def OnProcessStart(self, pid, msg):
     # type: (int, trace_msg) -> None
-    """
-    TODO:
-
-    | for async (& and pipeline)
-    > for synchronous (command sub, subshell and external)
-
-    Also we need a description:
-      pipeline, & fork, subshell, command.Simple with argv
-    """
-    buf = self._RichTraceBegin()
+    buf = self._RichTraceBegin('|')
     if not buf:
       return
 
@@ -412,23 +394,23 @@ class Tracer(object):
     with switch(msg.what) as case:
       # Synchronous cases
       if case(trace_e.External):
-        self._PrintPrefix('|', 'command %d:' % pid, buf)
+        buf.write('command %d:' % pid)
         if msg.argv is not None:
           _PrintArgv(msg.argv, buf)
       elif case(trace_e.Subshell):
-        self._PrintPrefix('|', 'forkwait %d\n' % pid, buf)
+        buf.write('forkwait %d\n' % pid)
       elif case(trace_e.CommandSub):
-        self._PrintPrefix('|', 'command sub %d\n' % pid, buf)
+        buf.write('command sub %d\n' % pid)
 
       # Async cases
       elif case(trace_e.ProcessSub):
-        self._PrintPrefix('|', 'proc sub %d\n' % pid, buf)
+        buf.write('proc sub %d\n' % pid)
       elif case(trace_e.HereDoc):
-        self._PrintPrefix('|', 'here doc %d\n' % pid, buf)
+        buf.write('here doc %d\n' % pid)
       elif case(trace_e.Fork):
-        self._PrintPrefix('|', 'fork %d\n' % pid, buf)
+        buf.write('fork %d\n' % pid)
       elif case(trace_e.PipelinePart):
-        self._PrintPrefix('|', 'part %d\n' % pid, buf)
+        buf.write('part %d\n' % pid)
 
       else:
         raise AssertionError()
@@ -437,11 +419,11 @@ class Tracer(object):
 
   def OnProcessEnd(self, pid, status):
     # type: (int, int) -> None
-    buf = self._RichTraceBegin()
+    buf = self._RichTraceBegin(';')
     if not buf:
       return
 
-    self._PrintPrefix(';', 'process %d: status %d\n' % (pid, status), buf)
+    buf.write('process %d: status %d\n' % (pid, status))
     self.f.write(buf.getvalue())
 
   def SetProcess(self, pid):
@@ -449,15 +431,15 @@ class Tracer(object):
     """
     All trace lines have a PID prefix, except those from the root process.
     """
-    self.pid = pid
+    self.val_pid_str.s = ' %d' % pid
     self._Inc()
 
   def PushMessage(self, label, argv):
     # type: (str, Optional[List[str]]) -> None
     """For synchronous constructs that aren't processes."""
-    buf = self._RichTraceBegin()
+    buf = self._RichTraceBegin('[')
     if buf:
-      self._PrintPrefix('[', label, buf)
+      buf.write(label)
       if label == 'proc':
         _PrintArgv(argv, buf)
       elif label == 'source':
@@ -473,12 +455,11 @@ class Tracer(object):
   def PopMessage(self, label):
     # type: (str) -> None
     """For synchronous constructs that aren't processes."""
-    self.ind -= 1
+    self._Dec()
 
-    #log('pop')
-    buf = self._RichTraceBegin()
+    buf = self._RichTraceBegin(']')
     if buf:
-      self._PrintPrefix(']', label, buf)
+      buf.write(label)
       buf.write('\n')
       self.f.write(buf.getvalue())
 
@@ -488,10 +469,10 @@ class Tracer(object):
       # Handled separately
       return
 
-    buf = self._RichTraceBegin()
+    buf = self._RichTraceBegin('.')
     if not buf:
       return
-    self._PrintPrefix('.', 'builtin', buf)
+    buf.write('builtin')
     _PrintArgv(argv, buf)
     self.f.write(buf.getvalue())
 
