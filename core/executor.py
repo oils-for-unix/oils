@@ -8,7 +8,7 @@ import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import redirect, trace_e, trace_msg
+from _devbuild.gen.runtime_asdl import redirect, trace
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
     command_sub, compound_word, Token,
@@ -217,7 +217,7 @@ class ShellExecutor(vm._Executor):
                 "Use 'run' or wrap it in a process with $0 myproc",
                 span_id=span_id)
 
-        with dev.ctx_Tracer(self.tracer, trace_e.Proc, argv):
+        with dev.ctx_Tracer(self.tracer, 'proc', argv):
           # NOTE: Functions could call 'exit 42' directly, etc.
           status = self.cmd_ev.RunProc(proc_node, argv[1:])
         return status
@@ -243,7 +243,7 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
-      msg = trace_msg(trace_e.External, cmd_val.argv)
+      msg = trace.External(cmd_val.argv)
       status = p.RunWait(self.waiter, msg)
       return status
 
@@ -291,7 +291,7 @@ class ShellExecutor(vm._Executor):
 
       #log('job state %s', self.job_state)
       p = self._MakeProcess(node)
-      pid = p.Start(trace_msg(trace_e.Fork, None))
+      pid = p.Start(trace.Fork())
       self.mem.last_bg_pid = pid  # for $!
       job_id = self.job_state.AddJob(p)  # show in 'jobs' list
       # TODO: Put in tracer
@@ -320,14 +320,13 @@ class ShellExecutor(vm._Executor):
     pi.AddLast((self.cmd_ev, last_child))
     status_out.spids.append(location.SpanForCommand(last_child))
 
-    with dev.ctx_Tracer(self.tracer, trace_e.Pipeline, None):
+    with dev.ctx_Tracer(self.tracer, 'pipeline', None):
       status_out.codes = pi.Run(self.waiter, self.fd_state)
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
-    msg = trace_msg(trace_e.Subshell, None)
-    return p.RunWait(self.waiter, msg)
+    return p.RunWait(self.waiter, trace.ForkWait())
 
   def RunCommandSub(self, cs_part):
     # type: (command_sub) -> str
@@ -364,8 +363,7 @@ class ShellExecutor(vm._Executor):
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
 
-    msg = trace_msg(trace_e.CommandSub, None)
-    _ = p.Start(msg)
+    _ = p.Start(trace.CommandSub())
     #log('Command sub started %d', pid)
 
     chunks = []  # type: List[str]
@@ -475,11 +473,8 @@ class ShellExecutor(vm._Executor):
 
     p.AddStateChange(redir)
 
-    # Problem: We only have an unevaluated node, not argv array
-    msg = trace_msg(trace_e.ProcessSub, None)
-
     # Fork, letting the child inherit the pipe file descriptors.
-    pid = p.Start(msg)
+    pid = p.Start(trace.ProcessSub())
 
     ps_frame = self.process_sub_stack[-1]
 

@@ -7,7 +7,7 @@ from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue, lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
-    cmd_value__Assign, scope_e, trace_e, trace_t, trace_msg
+    cmd_value__Assign, scope_e, trace_e, trace_t, trace__External
 )
 from _devbuild.gen.syntax_asdl import assign_op_e
 
@@ -20,7 +20,7 @@ from core.pyerror import log
 from osh import word_
 from pylib import os_path
 from mycpp import mylib
-from mycpp.mylib import switch, tagswitch, iteritems
+from mycpp.mylib import tagswitch, iteritems
 
 import posix_ as posix
 
@@ -159,26 +159,16 @@ class CrashDumper(object):
 class ctx_Tracer(object):
   """A stack for tracing synchronous constructs."""
 
-  def __init__(self, tracer, what, argv):
-    # type: (Tracer, trace_t, Optional[List[str]]) -> None
+  def __init__(self, tracer, label, argv):
+    # type: (Tracer, str, Optional[List[str]]) -> None
     self.arg = None  # type: Optional[str]
-    with switch(what) as case:
-      if case(trace_e.Proc):
-        self.label = 'proc'
-        self.arg = argv[0]
-      elif case(trace_e.Eval):
-        self.label = 'eval'
-      elif case(trace_e.Source):
-        self.label = 'source'
-        self.arg = argv[1]
-      elif case(trace_e.Pipeline):
-        self.label = 'pipeline'
-      elif case(trace_e.Wait):
-        self.label = 'wait'
-      else:
-        raise AssertionError()
+    if label == 'proc':
+      self.arg = argv[0]
+    elif label == 'source':
+      self.arg = argv[1]
 
-    tracer.PushMessage(self.label, argv)
+    tracer.PushMessage(label, argv)
+    self.label = label
     self.tracer = tracer
 
   def __enter__(self):
@@ -375,8 +365,8 @@ class Tracer(object):
     buf.write(prefix)
     return buf
 
-  def OnProcessStart(self, pid, msg):
-    # type: (int, trace_msg) -> None
+  def OnProcessStart(self, pid, why):
+    # type: (int, trace_t) -> None
     buf = self._RichTraceBegin('|')
     if not buf:
       return
@@ -384,12 +374,16 @@ class Tracer(object):
     # TODO: ProcessSub and PipelinePart are commonly command.Simple, and also
     # Fork/ForkWait through the BraceGroup.  We could print those argv arrays.
 
-    with switch(msg.what) as case:
+    UP_why = why
+    with tagswitch(why) as case:
       # Synchronous cases
       if case(trace_e.External):
+        why = cast(trace__External, UP_why)
         buf.write('command %d:' % pid)
-        _PrintArgv(msg.argv, buf)
-      elif case(trace_e.Subshell):
+        _PrintArgv(why.argv, buf)
+
+      # Everything below is the same.  Could use string literals?
+      elif case(trace_e.ForkWait):
         buf.write('forkwait %d\n' % pid)
       elif case(trace_e.CommandSub):
         buf.write('command sub %d\n' % pid)

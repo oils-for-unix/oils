@@ -20,7 +20,7 @@ from _devbuild.gen.runtime_asdl import (
     job_status, job_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
-    value, value_e, lvalue, value__Str, trace_e, trace_msg
+    value, value_e, lvalue, value__Str, trace, trace_t
 )
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
@@ -396,7 +396,7 @@ class FdState(object):
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
-          _ = here_proc.Start(trace_msg(trace_e.HereDoc, None))
+          _ = here_proc.Start(trace.HereDoc())
           #log('Started %s as %d', here_proc, pid)
           self._PushWait(here_proc, waiter)
 
@@ -842,7 +842,7 @@ class Process(Job):
       posix.close(self.close_w)
 
   def Start(self, msg):
-    # type: (trace_msg) -> int
+    # type: (trace_t) -> int
     """Start this process with fork(), handling redirects."""
     # TODO: If OSH were a job control shell, we might need to call some of
     # these here.  They control the distribution of signals, some of which
@@ -919,7 +919,7 @@ class Process(Job):
       self.parent_pipeline.WhenDone(pid, status)
 
   def RunWait(self, waiter, msg):
-    # type: (Waiter, trace_msg) -> int
+    # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
     self.Start(msg)
     return self.Wait(waiter)
@@ -996,7 +996,7 @@ class Pipeline(Job):
     # whole pipeline.
 
     for i, proc in enumerate(self.procs):
-      pid = proc.Start(trace_msg(trace_e.PipelinePart, None))
+      pid = proc.Start(trace.PipelinePart())
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 

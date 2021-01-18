@@ -63,7 +63,7 @@ class Eval(vm._Builtin):
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     src = source.EvalArg(eval_spid)
-    with dev.ctx_Tracer(self.tracer, trace_e.Eval, None):
+    with dev.ctx_Tracer(self.tracer, 'eval', None):
       with alloc.ctx_Location(self.arena, src):
         return main_loop.Batch(self.cmd_ev, c_parser, self.arena,
                                cmd_flags=cmd_eval.IsEvalSource)
@@ -110,7 +110,7 @@ class Source(vm._Builtin):
       # A sourced module CAN have a new arguments array, but it always shares
       # the same variable scope as the caller.  The caller could be at either a
       # global or a local scope.
-      with dev.ctx_Tracer(self.tracer, trace_e.Source, cmd_val.argv):
+      with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
         source_argv = arg_r.Rest()
         with state.ctx_Source(self.mem, path, source_argv):
           src = source.SourcedFile(path, call_spid)

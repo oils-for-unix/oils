@@ -113,7 +113,7 @@ class Wait(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    with dev.ctx_Tracer(self.tracer, trace_e.Wait, cmd_val.argv):
+    with dev.ctx_Tracer(self.tracer, 'wait', cmd_val.argv):
       return self._Run(cmd_val)
 
   def _Run(self, cmd_val):

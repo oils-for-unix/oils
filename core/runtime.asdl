@@ -161,23 +161,11 @@ module runtime
 
   -- For dev.Tracer
   trace =
-    -- INTERNAL (all synchronous)
-    Builtin      -- argv
-  | Proc         -- argv
-  | Eval
-  | Source       -- argv
-  | Pipeline     -- (the whole thing is synchronous)
-  | Wait         -- argv
-
-    -- EXTERNAL
-  | PipelinePart -- async
-  | External     -- sync, needs argv (aka Command, command.Simple)
-  | Fork         -- async, needs argv, & fork
-  | Subshell     -- sync
-  | CommandSub   -- sync
-  | ProcessSub   -- async (other processes can be started)
-  | HereDoc      -- async (multiple here docs per process)
-
-  -- PID?
-  trace_msg = (trace what, string* argv)
+    External(string* argv) -- sync, needs argv (command.Simple or 'command')
+  | CommandSub             -- sync
+  | ForkWait               -- sync
+  | Fork                   -- async, needs argv, & fork
+  | PipelinePart           -- async
+  | ProcessSub             -- async (other processes can be started)
+  | HereDoc                -- async (multiple here docs per process)
 }
