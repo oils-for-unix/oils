@@ -73,10 +73,10 @@ p 2
 ## STDERR:
 [ proc shfunc 1
   . builtin ':' 1
-] proc
+] proc shfunc
 [ proc p 2
   . builtin ':' 2
-] proc
+] proc p
 ## END
 
 #### eval
@@ -109,7 +109,7 @@ source-argv: 1 2 3
 ## STDERR:
 [ source lib.sh 1 2 3
   . builtin echo 'source-argv:' 1 2 3
-] source
+] source lib.sh
 ## END
 
 #### external and builtin
@@ -162,7 +162,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
   . 12345 builtin ':' 1
   [ 12345 proc p
     . 12345 builtin ':' p
-  ] 12345 proc
+  ] 12345 proc p
   + 12345 exit 3
 ; process 12345: status 3
 . builtin set '+x'
@@ -255,7 +255,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
       . 12345 builtin echo 2
     . 12345 exec sort
     [ 12345 proc myfunc
-    ] 12345 proc
+    ] 12345 proc myfunc
   ; process 12345: status 0
   ; process 12345: status 0
   ; process 12345: status 0
@@ -323,7 +323,7 @@ status=0
   ; process 12345: status 0
   ; process 12345: status 1
   [ 12345 proc myfunc
-  ] 12345 proc
+  ] 12345 proc myfunc
 . builtin ':' begin
 . builtin echo 'status=0'
 . builtin set '+x'

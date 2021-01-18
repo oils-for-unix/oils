@@ -161,23 +161,25 @@ class ctx_Tracer(object):
 
   def __init__(self, tracer, what, argv):
     # type: (Tracer, trace_t, Optional[List[str]]) -> None
+    self.arg = None  # type: Optional[str]
     with switch(what) as case:
       if case(trace_e.Proc):
-        label = 'proc'
+        self.label = 'proc'
+        self.arg = argv[0]
       elif case(trace_e.Eval):
-        label = 'eval'
+        self.label = 'eval'
       elif case(trace_e.Source):
-        label = 'source'
+        self.label = 'source'
+        self.arg = argv[1]
       elif case(trace_e.Pipeline):
-        label = 'pipeline'
+        self.label = 'pipeline'
       elif case(trace_e.Wait):
-        label = 'wait'
+        self.label = 'wait'
       else:
         raise AssertionError()
 
-    tracer.PushMessage(label, argv)
+    tracer.PushMessage(self.label, argv)
     self.tracer = tracer
-    self.label = label
 
   def __enter__(self):
     # type: () -> None
@@ -185,7 +187,7 @@ class ctx_Tracer(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.tracer.PopMessage(self.label)
+    self.tracer.PopMessage(self.label, self.arg)
 
 
 def _PrintValue(val, buf):
@@ -321,8 +323,6 @@ class Tracer(object):
             "<ERROR: Can't parse PS4: %s>" % e.UserErrorString())
       self.parse_cache[ps4] = ps4_word
 
-    #print(ps4_word)
-
     # Mutate objects to save allocations
     if self.exec_opts.xtrace_rich():
       self.val_indent.s = self.indents[self.ind] 
@@ -331,7 +331,9 @@ class Tracer(object):
     self.val_punct.s = punct
 
     # Prevent infinite loop when PS4 has command sub!
-    assert self.exec_opts.xtrace()  # We shouldn't call this unless it's on!
+    assert self.exec_opts.xtrace()  # We shouldn't call this unless it's on
+
+    # TODO: Remove allocation for [] ?
     with state.ctx_Option(self.mutable_opts, [option_i.xtrace], False):
       with state.ctx_Temp(self.mem):
         self.mem.SetValue(self.lval_indent, self.val_indent, scope_e.LocalOnly)
@@ -373,15 +375,6 @@ class Tracer(object):
     buf.write(prefix)
     return buf
 
-  def OnExec(self, argv):
-    # type: (List[str]) -> None
-    buf = self._RichTraceBegin('.')
-    if not buf:
-      return
-    buf.write('exec')
-    _PrintArgv(argv, buf)
-    self.f.write(buf.getvalue())
-
   def OnProcessStart(self, pid, msg):
     # type: (int, trace_msg) -> None
     buf = self._RichTraceBegin('|')
@@ -395,8 +388,7 @@ class Tracer(object):
       # Synchronous cases
       if case(trace_e.External):
         buf.write('command %d:' % pid)
-        if msg.argv is not None:
-          _PrintArgv(msg.argv, buf)
+        _PrintArgv(msg.argv, buf)
       elif case(trace_e.Subshell):
         buf.write('forkwait %d\n' % pid)
       elif case(trace_e.CommandSub):
@@ -452,22 +444,33 @@ class Tracer(object):
 
     self._Inc()
 
-  def PopMessage(self, label):
-    # type: (str) -> None
+  def PopMessage(self, label, arg):
+    # type: (str, Optional[str]) -> None
     """For synchronous constructs that aren't processes."""
     self._Dec()
 
     buf = self._RichTraceBegin(']')
     if buf:
       buf.write(label)
+      if arg is not None:
+        buf.write(' ')
+        buf.write(qsn.maybe_shell_encode(arg))
       buf.write('\n')
       self.f.write(buf.getvalue())
+
+  def OnExec(self, argv):
+    # type: (List[str]) -> None
+    buf = self._RichTraceBegin('.')
+    if not buf:
+      return
+    buf.write('exec')
+    _PrintArgv(argv, buf)
+    self.f.write(buf.getvalue())
 
   def OnBuiltin(self, builtin_id, argv):
     # type: (builtin_t, List[str]) -> None
     if builtin_id in (builtin_i.eval, builtin_i.source, builtin_i.wait):
-      # Handled separately
-      return
+      return  # These 3 builtins handled separately
 
     buf = self._RichTraceBegin('.')
     if not buf:
