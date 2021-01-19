@@ -1834,10 +1834,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     return cmd_value.Assign(builtin_id, flags, flag_spids, assign_args)
 
-  def StaticEvalWordSequence2(self, words, allow_assign):
+  def SimpleEvalWordSequence2(self, words, allow_assign):
     # type: (List[compound_word], bool) -> cmd_value_t
-    """Static word evaluation for Oil."""
-    #log('W %s', words)
+    """Simple word evaluation for Oil."""
     strs = []  # type: List[str]
     spids = []  # type: List[int]
 
@@ -1845,8 +1844,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     for i, w in enumerate(words):
       word_spid = word_.LeftMostSpanForWord(w)
 
-      # No globbing in the first arg!  That seems like a feature, not a bug.
-      if i == 0:
+      # No globbing in the first arg for command.Simple.
+      if i == 0 and allow_assign:
         strs0 = self._EvalWordToArgv(w)  # respects strict-array
         if len(strs0) == 1:
           arg0 = strs0[0]
@@ -1908,7 +1907,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       argv: list of string arguments, or None if there was an eval error
     """
     if self.exec_opts.simple_word_eval():
-      return self.StaticEvalWordSequence2(words, allow_assign)
+      return self.SimpleEvalWordSequence2(words, allow_assign)
 
     # Parse time:
     # 1. brace expansion.  TODO: Do at parse time.

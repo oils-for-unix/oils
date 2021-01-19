@@ -41,6 +41,28 @@ argv.py "$@"*.txt
 ['foo.txt']
 ## END
 
+#### simple_word_eval and glob
+shopt -s simple_word_eval
+
+# rm -v -f *.ff
+touch 1.ff 2.ff
+
+for i in *.ff; do
+  echo $i
+done
+
+array=(*.ff)
+echo "${array[@]}"
+
+echo *.ff
+
+## STDOUT:
+1.ff
+2.ff
+1.ff 2.ff
+1.ff 2.ff
+## END
+
 #### parse_at
 words=(a 'b c')
 argv.py @words
