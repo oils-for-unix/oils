@@ -346,7 +346,7 @@ def main(argv):
 
     # Docs have a special header and footer.
     with open(argv[2]) as content_f:
-      doc_html.Header(meta, sys.stdout)
+      doc_html.Header(meta, sys.stdout, draft_warning=True)
       Render(opts, meta, content_f, sys.stdout)
       doc_html.Footer(meta, sys.stdout)
   else:

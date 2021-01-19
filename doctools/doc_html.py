@@ -12,7 +12,7 @@ JS_FMT = '<script type="text/javascript" src="%s"></script>\n'
 
 CSS_FMT = '<link rel="stylesheet" type="text/css" href="%s" />\n'
 
-def Header(meta, f):
+def Header(meta, f, draft_warning=False):
   css_files = [x for x in meta['css_files'].split() if x]
 
   meta['css_links'] = ''.join(CSS_FMT % url for url in css_files)
@@ -45,8 +45,8 @@ def Header(meta, f):
 
   if meta.get('all_docs_url') != '-':
     f.write('''\
-      <a href="%(all_docs_url)s">all docs</a>
-        for <span id="version-in-header">version %(oil_version)s</span> |
+      <span id="all-docs"><a href="%(all_docs_url)s">all docs</a>
+        for <span id="version-in-header">version %(oil_version)s</span></span> |
 ''' % meta)
   elif meta.get('version_url') != '-':
     # The doc/ URL needs to go back
@@ -57,8 +57,32 @@ def Header(meta, f):
   f.write('''\
       <a href="/releases.html">all versions</a> |
       <a href="/">oilshell.org</a>
-    </p>
 ''' % meta)
+
+  if draft_warning:
+    f.write('''\
+      <span id="draft-warning" style="visibility: hidden;"></span>
+
+      <script type="text/javascript">
+      function showWarning(el) {
+        el.innerHTML = '<br/>This is a DRAFT.  Latest docs are at <a href="/release/latest/doc/">/release/latest/doc/</a> ';
+        el.style.visibility = "visible";
+      }
+      function removeVersion(el) {
+        el.innerHTML = '<a href=".">drafts</a>';
+      }
+
+      var url = window.location.href;
+      if (url.indexOf('/preview/') === -1) {
+        console.log("Not a draft");
+      } else {
+        showWarning(document.querySelector('#draft-warning'));
+        removeVersion(document.querySelector('#all-docs'));
+      }
+      </script>
+''')
+
+  f.write('</p>')
 
   if 'in_progress' in meta:
     f.write('''\
