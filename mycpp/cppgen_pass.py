@@ -2323,6 +2323,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'a_index_e', 'a_index',
                 'printf_part_e', 'printf_part',
                 'job_status', 'job_status_e',
+                'trace', 'trace_e',
                 ):
                 is_namespace = True
 

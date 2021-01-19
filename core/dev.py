@@ -538,7 +538,7 @@ class Tracer(object):
 
     # This is NOT affected by xtrace_rich or xtrace_details.  Works in both.
     if not self.exec_opts.xtrace():
-      return None
+      return
 
     prefix = self._EvalPS4('+')
     buf = mylib.BufWriter()

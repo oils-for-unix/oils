@@ -8,7 +8,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    redirect, redirect_arg, cmd_value, trace_msg, trace_e
+    redirect, redirect_arg, cmd_value, trace
 )
 from _devbuild.gen.syntax_asdl import redir_loc
 from asdl import runtime
@@ -98,15 +98,16 @@ class ProcessTest(unittest.TestCase):
     print('FDS BEFORE', os.listdir('/dev/fd'))
 
     Banner('date')
-    p = self._ExtProc(['date'])
-    msg = trace_msg(trace_e.External, None)
-    status = p.RunWait(self.waiter, msg)
+    argv = ['date']
+    p = self._ExtProc(argv)
+    why = trace.External(argv)
+    status = p.RunWait(self.waiter, why)
     log('date returned %d', status)
     self.assertEqual(0, status)
 
     Banner('does-not-exist')
     p = self._ExtProc(['does-not-exist'])
-    print(p.RunWait(self.waiter, msg))
+    print(p.RunWait(self.waiter, why))
 
     # 12 file descriptors open!
     print('FDS AFTER', os.listdir('/dev/fd'))

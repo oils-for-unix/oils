@@ -12,7 +12,6 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     cmd_value, cmd_value__Argv,
     job_status_e, job_status__Proc, job_status__Pipeline,
-    trace_e
 )
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
