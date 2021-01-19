@@ -492,13 +492,12 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
   builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
-
   sig_state = pyos.SignalState()
   sig_state.InitShell()
 
   builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
                                                   cmd_deps.trap_nodes,
-                                                  parse_ctx, errfmt)
+                                                  parse_ctx, tracer, errfmt)
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)

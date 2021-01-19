@@ -18,6 +18,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
     compound_word,
     command_e, command_t,
@@ -47,6 +48,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from asdl import runtime
+from core import dev
 from core import error
 from core.error import _ControlFlow
 from core.pyerror import log, e_die
@@ -79,7 +81,6 @@ if TYPE_CHECKING:
       redir, env_pair, proc_sig__Closed,
   )
   from core.alloc import Arena
-  from core import dev
   from core import optview
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
@@ -1287,8 +1288,11 @@ class CommandEvaluator(object):
       # Make a copy and clear it so we don't cause an infinite loop.
       to_run = list(self.trap_nodes)
       del self.trap_nodes[:]
-      for trap_node in to_run:  # NOTE: Don't call this 'node'!
-        self._Execute(trap_node)
+      with state.ctx_Option(self.mutable_opts, [option_i._running_trap], True):
+        for trap_node in to_run:
+          # TODO: Show the trap kind too
+          with dev.ctx_Tracer(self.tracer, 'trap', None):
+            self._Execute(trap_node)
 
     # This has to go around redirect handling because the process sub could be
     # in the redirect word:
@@ -1536,13 +1540,14 @@ class CommandEvaluator(object):
     """
     handler = self.traps.get('EXIT')
     if handler:
-      try:
-        is_return, is_fatal = self.ExecuteAndCatch(handler.node)
-      except util.UserExit as e:  # explicit exit
-        mut_status[0] = e.status
-        return
-      if is_return:  # explicit 'return' in the trap handler!
-        mut_status[0] = self.LastStatus()
+      with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
+        try:
+          is_return, is_fatal = self.ExecuteAndCatch(handler.node)
+        except util.UserExit as e:  # explicit exit
+          mut_status[0] = e.status
+          return
+        if is_return:  # explicit 'return' in the trap handler!
+          mut_status[0] = self.LastStatus()
 
   def RunProc(self, proc, argv):
     # type: (Proc, List[str]) -> int

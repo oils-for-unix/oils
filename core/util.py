@@ -82,11 +82,12 @@ class DebugFile(_DebugFile):
     self.f.write('\n')
     self.f.flush()  # need to see it interactively
 
-  # These two methods are for node.PrettyPrint()
   def write(self, s):
     # type: (str) -> None
+    """Used by dev::Tracer and ASDL node.PrettyPrint()."""
     self.f.write(s)
 
   def isatty(self):
     # type: () -> bool
+    """Used by node.PrettyPrint()."""
     return self.f.isatty()

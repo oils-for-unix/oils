@@ -282,16 +282,19 @@ class _TrapHandler(object):
 
   Similar to process.SubProgramThunk."""
 
-  def __init__(self, node, nodes_to_run):
-    # type: (command_t, List[command_t]) -> None
+  def __init__(self, node, nodes_to_run, tracer):
+    # type: (command_t, List[command_t], dev.Tracer) -> None
     self.node = node
     self.nodes_to_run = nodes_to_run
+    self.tracer = tracer
 
-  def __call__(self, unused_signalnum, unused_frame):
+  def __call__(self, signalnum, unused_frame):
     # type: (int, Any) -> None
     """For Python's signal module."""
-    # TODO: set -o xtrace/verbose should enable this.
-    #log('*** SETTING TRAP for %d ***', unused_signalnum)
+    # TODO: Why does this cause errno 0 at the top level?
+    if 0:
+      self.tracer.PrintMessage(
+          'Received signal %d.  Will run handler in main loop' % signalnum)
     self.nodes_to_run.append(self.node)
 
   def __str__(self):
@@ -331,13 +334,14 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 # OVM match sh/bash more closely.
 
 class Trap(vm._Builtin):
-  def __init__(self, sig_state, traps, nodes_to_run, parse_ctx, errfmt):
-    # type: (SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, ErrorFormatter) -> None
+  def __init__(self, sig_state, traps, nodes_to_run, parse_ctx, tracer, errfmt):
+    # type: (SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, dev.Tracer, ErrorFormatter) -> None
     self.sig_state = sig_state
     self.traps = traps
     self.nodes_to_run = nodes_to_run
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
+    self.tracer = tracer
     self.errfmt = errfmt
 
   def _ParseTrapCode(self, code_str):
@@ -422,6 +426,10 @@ class Trap(vm._Builtin):
       raise AssertionError('Signal or trap')
 
     # Try parsing the code first.
+
+    # TODO: If simple_trap is on (for oil:basic), then it must be a function
+    # name?  And then you wrap it in 'run'?
+
     node = self._ParseTrapCode(code_str)
     if node is None:
       return 1  # ParseTrapCode() prints an error for us.
@@ -430,12 +438,12 @@ class Trap(vm._Builtin):
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run)
+      self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run, self.tracer)
       return 0
 
     # Register a signal.
     if sig_num is not None:
-      handler = _TrapHandler(node, self.nodes_to_run)
+      handler = _TrapHandler(node, self.nodes_to_run, self.tracer)
       # For signal handlers, the traps dictionary is used only for debugging.
       self.traps[sig_key] = handler
       if sig_num in (signal.SIGKILL, signal.SIGSTOP):

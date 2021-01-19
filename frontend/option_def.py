@@ -278,6 +278,12 @@ def _Init(opt_def):
   # For implementing 'proc'
   opt_def.Add('dynamic_scope', default=True)
 
+  # For disabling strict_errexit while running traps.  Because we run in the
+  # main loop, the value can be "off".  Prefix with _ because it's undocumented
+  # and users shouldn't fiddle with it.  We need a stack so this is a
+  # convenient place.
+  opt_def.Add('_running_trap')
+
   # shopt -s strict_arith, etc.
   for name in _STRICT_OPTION_NAMES:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])

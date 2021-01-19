@@ -241,7 +241,7 @@ class Run_(vm._Builtin):
 
     if arg_r.Peek() is None:
       # HARD ERROR, not e_usage(), because errexit is often disabled!
-      e_die("'Run' expected a command to run", status=2)
+      e_die("'run' expected a command to run", status=2)
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.block)
@@ -249,8 +249,8 @@ class Run_(vm._Builtin):
     # Set in the 'except' block, e.g. if 'myfunc' failed
     failure_spid = runtime.NO_SPID
     try:
-      # Temporarily turn ON errexit, and blame the 'status' spid.  Note that
-      # 'if status myproc' disables it and then enables it!
+      # Temporarily turn ON errexit, and blame the 'run' spid.  Note that
+      # 'if run myproc' disables it and then enables it!
       with state.ctx_ErrExit(self.mutable_opts, True, cmd_val.arg_spids[0]):
         # Pass do_fork=True.  Slight annoyance: the real value is a field of
         # command.Simple().  See _NoForkLast() in CommandEvaluator We have an

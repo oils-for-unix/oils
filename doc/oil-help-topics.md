@@ -167,7 +167,7 @@ X [Testing]       check
                   parse_dynamic_arith    LHS can contain variables
                   verbose_errexit        Whether to print detailed errors
   [More Options]  allow_command_sub      For implementing strict_errexit
-                  X dynamic_scope        For implementing 'proc'
+                  dynamic_scope          For implementing 'proc'
 ```
 
 <h2 id="env">

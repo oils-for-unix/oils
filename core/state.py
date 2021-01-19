@@ -437,11 +437,15 @@ class MutableOpts(object):
 
   def ErrExitIsDisabled(self):
     # type: () -> bool
-    #log('IsDisabled')
+
+    # Bug fix: The errexit disabling inherently follows a STACK DISCIPLINE.
+    # But we run trap handlers in the MAIN LOOP, which break this.  So just
+    # declare that it's never disabled it in a trap.
+    if self.Get(option_i._running_trap):
+      return False
 
     # Bottom of stack: true
     # Top of stack: false
-
     overlay = self.opt_stacks[option_i.errexit]
     if overlay is None or len(overlay) == 0:
       return False

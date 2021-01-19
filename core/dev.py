@@ -440,6 +440,17 @@ class Tracer(object):
       buf.write('\n')
       self.f.write(buf.getvalue())
 
+  def PrintMessage(self, message):
+    # type: (str) -> None
+    """Used when receiving signals."""
+    buf = self._RichTraceBegin('!')
+    if not buf:
+      return
+
+    buf.write(message)
+    buf.write('\n')
+    self.f.write(buf.getvalue())
+
   def OnExec(self, argv):
     # type: (List[str]) -> None
     buf = self._RichTraceBegin('.')
