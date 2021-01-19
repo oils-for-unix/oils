@@ -411,7 +411,7 @@ class Tracer(object):
   def PushMessage(self, label, argv):
     # type: (str, Optional[List[str]]) -> None
     """For synchronous constructs that aren't processes."""
-    buf = self._RichTraceBegin('[')
+    buf = self._RichTraceBegin('>')
     if buf:
       buf.write(label)
       if label == 'proc':
@@ -431,7 +431,7 @@ class Tracer(object):
     """For synchronous constructs that aren't processes."""
     self._Dec()
 
-    buf = self._RichTraceBegin(']')
+    buf = self._RichTraceBegin('<')
     if buf:
       buf.write(label)
       if arg is not None:

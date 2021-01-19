@@ -71,12 +71,12 @@ shfunc 1
 p 2
 ## stdout-json: ""
 ## STDERR:
-[ proc shfunc 1
+> proc shfunc 1
   . builtin ':' 1
-] proc shfunc
-[ proc p 2
+< proc shfunc
+> proc p 2
   . builtin ':' 2
-] proc p
+< proc p
 ## END
 
 #### eval
@@ -89,10 +89,10 @@ eval 'echo 1; echo 2'
 2
 ## END
 ## STDERR:
-[ eval
+> eval
   . builtin echo 1
   . builtin echo 2
-] eval
+< eval
 ## END
 
 #### source
@@ -107,9 +107,9 @@ source lib.sh 1 2 3
 source-argv: 1 2 3
 ## END
 ## STDERR:
-[ source lib.sh 1 2 3
+> source lib.sh 1 2 3
   . builtin echo 'source-argv:' 1 2 3
-] source lib.sh
+< source lib.sh
 ## END
 
 #### external and builtin
@@ -160,9 +160,9 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 . builtin ':' begin
 | forkwait 12345
   . 12345 builtin ':' 1
-  [ 12345 proc p
+  > 12345 proc p
     . 12345 builtin ':' p
-  ] 12345 proc p
+  < 12345 proc p
   + 12345 exit 3
 ; process 12345: status 3
 . builtin set '+x'
@@ -254,8 +254,8 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
       . 12345 builtin echo 1
       . 12345 builtin echo 2
     . 12345 exec sort
-    [ 12345 proc myfunc
-    ] 12345 proc myfunc
+    < 12345 proc myfunc
+    > 12345 proc myfunc
   ; process 12345: status 0
   ; process 12345: status 0
   ; process 12345: status 0
@@ -264,8 +264,8 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
   | part 12345
 . builtin ':' begin
 . builtin set '+x'
-[ pipeline
-] pipeline
+< pipeline
+> pipeline
 ## END
 
 #### singleton pipeline
@@ -282,9 +282,9 @@ set -x
 ## stdout-json: ""
 ## STDERR:
 . builtin ':' begin
-[ pipeline
+> pipeline
   . builtin false
-] pipeline
+< pipeline
 . builtin ':' end
 ## END
 
@@ -322,13 +322,13 @@ status=0
   ; process 12345: status 0
   ; process 12345: status 0
   ; process 12345: status 1
-  [ 12345 proc myfunc
-  ] 12345 proc myfunc
+  < 12345 proc myfunc
+  > 12345 proc myfunc
 . builtin ':' begin
 . builtin echo 'status=0'
 . builtin set '+x'
-[ wait
-] wait
+< wait
+> wait
 | part 12345
 | part 12345
 | part 12345
@@ -364,10 +364,10 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
 . builtin fork
 . builtin set '+x'
 . builtin shopt -s 'oil:basic'
-[ wait
-[ wait
-] wait
-] wait
+< wait
+< wait
+> wait
+> wait
 | fork 12345
 | fork 12345
 ## END

@@ -100,7 +100,7 @@ web-dir() {
 web-dir-versioned() {
   ### Publish static assets needed for the wild HTML pages (versioned)
   local user=$1
-  local host=$user.org
+  local host=oilshell.org
 
   local branch=$(current-branch-name)
   local dest=$user@$host:oilshell.org/git-branch/$branch/web/
@@ -110,7 +110,7 @@ web-dir-versioned() {
 web-dir-preview() {
   ### Publish static assets needed for the wild HTML pages.
   local user=$1
-  local host=$user.org
+  local host=oilshell.org
 
   local dir='oilshell.org/preview/web'
 
@@ -123,7 +123,7 @@ web-dir-preview() {
 doc-preview() {
   ### Publish a file (e.g. _release/VERSION/doc/json.html) to 
   local user=$1
-  local host=$user.org
+  local host=oilshell.org
 
   local path=$2
   local dest=${3:-'oilshell.org/preview/doc'}
@@ -138,7 +138,7 @@ mycpp-benchmarks() {
 
 file-to-share() {
   local user=$1
-  local host=$user.org
+  local host=oilshell.org
 
   local file=$2
   local dest_suffix=${3:-}  # e.g. .txt

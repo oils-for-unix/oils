@@ -48,6 +48,7 @@ are ready to read:
   - [OSH User Manual](doc/osh-manual.html)
   | [Known Differences Between OSH and Other Shells](doc/known-differences.html)
   | [Quirks](doc/quirks.html)
+  | [Tracing Execution](doc/xtrace.html)
 - The Oil language:
   - [Oil Language Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
   | [Shell Language Deprecations](doc/deprecations.html)
