@@ -138,6 +138,8 @@ X [Testing]       check
                   command_sub_errexit    More errexit checks -- at command sub
                   process_sub_fail       Analogous to pipefail for process subs
                   simple_word_eval       No splitting, static globbing
+                  xtrace_rich            Hierarchical and process tracing
+                  xtrace_details (-u)    Disable most tracing with +
                   dashglob (-u)          Disabled to avoid files like -rf
                   expand_aliases (-u)    Whether aliases are expanded
   [Simplicity]    ... More Consistent Style
@@ -183,6 +185,7 @@ X [Testing]       check
 ```oil-help-topics
                   ARGV   ENV   OPT
   [Platform]      OIL_VERSION
+  [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
   [Exit Status]   _status   _pipeline_status   _process_sub_status
 X [Wok]           _filename   _line
 ```

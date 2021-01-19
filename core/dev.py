@@ -222,23 +222,11 @@ def _PrintArgv(argv, buf):
 class Tracer(object):
   """For shell's set -x, and Oil's hierarchical, parsable tracing.
 
-  Default prefix is
-
-  PS4='${X_indent}${X_punct}${X_pid} '
-
-  X_punct is:
-
-      + for old shell constructs (xtrace_details)
-      . for builtin or exec
-      > and < for synchronous, stack-based constructs:
-        - proc calls, eval, and source
-        - pipeline and wait
-      | and ; to begin and end a process (async)
-        - synchronous processes: subshell, command sub, command (;)
-        - async processes: fork (&), pipeline parts, process sub, here doc
+  See doc/xtrace.md for details.
 
   - TODO: Connect it somehow to tracers for other processes.  So you can make
     an HTML report offline.
+    - Could inherit SHX_*
 
   https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 
@@ -282,9 +270,9 @@ class Tracer(object):
     self.val_pid_str = value.Str('')  # mutated by SetProcess
 
     # Can these be global constants?  I don't think we have that in ASDL yet.
-    self.lval_indent = lvalue.Named('X_indent')
-    self.lval_punct = lvalue.Named('X_punct')
-    self.lval_pid_str = lvalue.Named('X_pid_str')
+    self.lval_indent = lvalue.Named('SHX_indent')
+    self.lval_punct = lvalue.Named('SHX_punct')
+    self.lval_pid_str = lvalue.Named('SHX_pid_str')
 
   def CheckCircularDeps(self):
     # type: () -> None

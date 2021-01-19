@@ -841,7 +841,7 @@ class Process(Job):
       posix.close(self.close_r)
       posix.close(self.close_w)
 
-  def Start(self, msg):
+  def Start(self, why):
     # type: (trace_t) -> int
     """Start this process with fork(), handling redirects."""
     # TODO: If OSH were a job control shell, we might need to call some of
@@ -874,7 +874,7 @@ class Process(Job):
       # Never returns
 
     #log('STARTED process %s, pid = %d', self, pid)
-    self.tracer.OnProcessStart(pid, msg)
+    self.tracer.OnProcessStart(pid, why)
 
     # Class invariant: after the process is started, it stores its PID.
     self.pid = pid
@@ -887,11 +887,6 @@ class Process(Job):
     # type: (Waiter) -> int
     """Wait for this process to finish."""
     while True:
-      #from _devbuild.gen.runtime_asdl import trace_str
-      #import traceback
-      #traceback.print_stack()
-      #log('WAITING %s', trace_str(msg.what))
-
       if not waiter.WaitForOne():
         break
       if self.state != job_state_e.Running:
@@ -918,10 +913,10 @@ class Process(Job):
     if self.parent_pipeline:
       self.parent_pipeline.WhenDone(pid, status)
 
-  def RunWait(self, waiter, msg):
+  def RunWait(self, waiter, why):
     # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
-    self.Start(msg)
+    self.Start(why)
     return self.Wait(waiter)
 
 

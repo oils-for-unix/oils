@@ -711,9 +711,9 @@ constexpr int maskbit(int offset) {
   return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
 }
 
-  //
-  // List<T>
-  //
+//
+// List<T>
+//
 
 // Type that is layout-compatible with List (unit tests assert this).  Two
 // purposes:

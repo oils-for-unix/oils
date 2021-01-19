@@ -243,8 +243,7 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
-      msg = trace.External(cmd_val.argv)
-      status = p.RunWait(self.waiter, msg)
+      status = p.RunWait(self.waiter, trace.External(cmd_val.argv))
       return status
 
     self.tracer.OnExec(cmd_val.argv)

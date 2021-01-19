@@ -164,14 +164,14 @@ void Heap::Collect() {
         auto root2 = *handle2;
         if (root2) {
           switch (root2->heap_tag_) {
-            case Tag::Forwarded:
-            case Tag::Global:
-            case Tag::Opaque:
-            case Tag::FixedSize:
-            case Tag::Scanned:
-              break;
-            default:
-              assert(0);
+          case Tag::Forwarded:
+          case Tag::Global:
+          case Tag::Opaque:
+          case Tag::FixedSize:
+          case Tag::Scanned:
+            break;
+          default:
+            assert(0);
           }
         }
       }

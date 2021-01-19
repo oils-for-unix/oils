@@ -766,7 +766,7 @@ def _InitDefaults(mem):
   SetGlobalString(mem, 'OPTIND', '1')
 
   # When xtrace_rich is off, this is just like '+ ', the shell default
-  SetGlobalString(mem, 'PS4', '${X_indent}${X_punct}${X_pid_str} ')
+  SetGlobalString(mem, 'PS4', '${SHX_indent}${SHX_punct}${SHX_pid_str} ')
 
   # bash-completion uses this.  Value copied from bash.  It doesn't integrate
   # with 'readline' yet.
