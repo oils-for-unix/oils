@@ -13,6 +13,7 @@
 #undef EACCES
 #undef ENOENT
 #undef ECHILD
+#undef EINTR
 
 namespace errno_ {
 
@@ -21,6 +22,7 @@ extern int ENOEXEC;
 extern int EACCES;
 extern int ENOENT;
 extern int ECHILD;
+extern int EINTR;
 
 }  // namespace errno_
 

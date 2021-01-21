@@ -469,7 +469,7 @@ class FdState(object):
 
     # Wait for here doc processes to finish.
     for proc, waiter in frame.need_wait:
-      unused_status = proc.Wait(waiter)
+      unused_status = proc.Wait(waiter, True)
 
   def MakePermanent(self):
     # type: () -> None
@@ -883,7 +883,7 @@ class Process(Job):
 
     return pid
 
-  def Wait(self, waiter, eintr_retry=True):
+  def Wait(self, waiter, eintr_retry):
     # type: (Waiter, bool) -> int
     """Wait for this process to finish."""
     while True:
@@ -918,7 +918,7 @@ class Process(Job):
     # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
     self.Start(why)
-    return self.Wait(waiter)
+    return self.Wait(waiter, True)
 
 
 class Pipeline(Job):
@@ -1012,7 +1012,7 @@ class Pipeline(Job):
     """
     return self.pids[-1]
 
-  def Wait(self, waiter, eintr_retry=True):
+  def Wait(self, waiter, eintr_retry):
     # type: (Waiter, bool) -> List[int]
     """Wait for this pipeline to finish.
 
@@ -1081,7 +1081,7 @@ class Pipeline(Job):
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
     if len(self.procs):
-      return self.Wait(waiter)
+      return self.Wait(waiter, True)
     else:
       return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
 

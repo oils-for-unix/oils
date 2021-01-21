@@ -11,5 +11,6 @@ int ENOEXEC = ENOEXEC;
 int EACCES = EACCES;
 int ENOENT = ENOEXEC;
 int ECHILD = ECHILD;
+int EINTR = EINTR;
 
 }  // namespace errno_

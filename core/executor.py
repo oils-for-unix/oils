@@ -374,7 +374,7 @@ class ShellExecutor(vm._Executor):
       chunks.append(byte_str)
     posix.close(r)
 
-    status = p.Wait(self.waiter)
+    status = p.Wait(self.waiter, True)
 
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!
@@ -513,7 +513,7 @@ class ShellExecutor(vm._Executor):
 
     for i, p in enumerate(frame.to_wait):
       #log('waiting for %s', p)
-      st = p.Wait(self.waiter)
+      st = p.Wait(self.waiter, True)
       compound_st.codes.append(st)
       compound_st.spids.append(frame.span_ids[i])
       i += 1
