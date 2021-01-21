@@ -141,7 +141,7 @@ class Wait(vm._Builtin):
       #    
       #log('wait next')
 
-      if self.waiter.WaitForOne():
+      if self.waiter.WaitForOne(False):
         return self.waiter.last_status
       else:
         return 127  # nothing to wait for
@@ -155,7 +155,7 @@ class Wait(vm._Builtin):
         # we don't get ECHILD.
         # Not sure it matters since you can now Ctrl-C it.
 
-        if not self.waiter.WaitForOne():
+        if not self.waiter.WaitForOne(False):
           break  # nothing to wait for
         i += 1
         if self.job_state.NoneAreRunning():

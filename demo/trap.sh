@@ -2,9 +2,15 @@
 #
 # Demo of traps.
 
+# BUG: OSH doesn't run the trap because of KeyboardInterrupt!
+
+# BUG interactively too:
+#
+# osh$ trap 'echo INT' SIGINT; sleep 5 & wait
+
 sigint-batch() {
   trap 'echo [got SIGINT]' INT
-  echo "Registered SIGINT trap.  Run 'kill -INT $$' to see a message."
+  echo "Registered SIGINT trap.  Hit Ctrl-C or Run 'kill -INT $$' to see a message."
   sleep 5
 }
 

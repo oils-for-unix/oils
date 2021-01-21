@@ -883,11 +883,11 @@ class Process(Job):
 
     return pid
 
-  def Wait(self, waiter):
-    # type: (Waiter) -> int
+  def Wait(self, waiter, eintr_retry=True):
+    # type: (Waiter, bool) -> int
     """Wait for this process to finish."""
     while True:
-      if not waiter.WaitForOne():
+      if not waiter.WaitForOne(eintr_retry):
         break
       if self.state != job_state_e.Running:
         break
@@ -895,7 +895,8 @@ class Process(Job):
 
   def JobWait(self, waiter):
     # type: (Waiter) -> job_status_t
-    exit_code = self.Wait(waiter)
+    # wait builtin can be interrupted
+    exit_code = self.Wait(waiter, eintr_retry=False)
     return job_status.Proc(exit_code)
 
   def WhenStopped(self):
@@ -1011,8 +1012,8 @@ class Pipeline(Job):
     """
     return self.pids[-1]
 
-  def Wait(self, waiter):
-    # type: (Waiter) -> List[int]
+  def Wait(self, waiter, eintr_retry=True):
+    # type: (Waiter, bool) -> List[int]
     """Wait for this pipeline to finish.
 
     Called by the 'wait' builtin.
@@ -1022,7 +1023,7 @@ class Pipeline(Job):
     assert self.procs, "no procs for Wait()"
     while True:
       #log('WAIT pipeline')
-      if not waiter.WaitForOne():
+      if not waiter.WaitForOne(eintr_retry):
         break
       if self.state != job_state_e.Running:
         #log('Pipeline DONE')
@@ -1032,7 +1033,8 @@ class Pipeline(Job):
 
   def JobWait(self, waiter):
     # type: (Waiter) -> job_status_t
-    pipe_status = self.Wait(waiter)
+    # wait builtin can be interrupted
+    pipe_status = self.Wait(waiter, eintr_retry=False)
     return job_status.Pipeline(pipe_status)
 
   def Run(self, waiter, fd_state):
@@ -1288,31 +1290,58 @@ class Waiter(object):
     self.tracer = tracer
     self.last_status = 127  # wait -n error code
 
-  def WaitForOne(self):
-    # type: () -> bool
+  def WaitForOne(self, eintr_retry):
+    # type: (bool) -> bool
     """Wait until the next process returns (or maybe Ctrl-C).
+
+    Args:
+      Should be True to prevent zombies
 
     Returns:
       True if we got a notification, or False if there was nothing to wait for.
 
       In the interactive shell, we return True if we get a Ctrl-C, so the
       caller will try again.
+
+    Callers:
+      wait -n  -- WaitForOne() just once
+      wait     -- WaitForOne() in a loop
+      wait $!  -- job.JobWait()
+
+    Comparisons:
+      bash: jobs.c waitchld() Has a special case macro(!) CHECK_WAIT_INTR for
+      the wait builtin
+
+      dash: jobs.c waitproc() uses sigfillset(), sigprocmask(), etc.  Runs in a
+      loop while (gotsigchld), but that might be a hack for System V!
+
+    You could imagine a clean API like posix::wait_for_one() 
+
+    wait_result =
+      ECHILD                     -- nothing to wait for
+    | Done(int pid, int status)  -- process done
+    | EINTR(bool sigint)         -- may or may not retry
+
+    But I think we want to keep KeyboardInterrupt as an exception for now.
     """
     # This is a list of async jobs
     try:
-      # -1 makes it like wait(), which waits for any process.
-      # NOTE: WUNTRACED is necessary to get stopped jobs.  What about
-      # WCONTINUED?
+      # Notes:
+      # - The arg -1 makes it like wait(), which waits for any process.
+      # - WUNTRACED is necessary to get stopped jobs.  What about WCONTINUED?
+      # - Unlike other syscalls, we do NOT try on EINTR, because the 'wait'
+      #   builtin should be interruptable.  This doesn't appear to cause any
+      #   problems for other WaitForOne callers?
       pid, status = posix.waitpid(-1, WUNTRACED)
     except OSError as e:
       #log('wait() error: %s', e)
       if e.errno == errno_.ECHILD:
         return False  # nothing to wait for caller should stop
+      elif e.errno == errno_.EINTR:  # Bug #858 fix
+        return eintr_retry
       else:
-        # We should never get here.  EINTR was handled by the 'posix'
-        # module.  The only other error is EINVAL, which doesn't apply to
-        # this call.
-        raise
+        # The signature of waitpid() means this shouldn't happen
+        raise AssertionError()
     except KeyboardInterrupt:
       # NOTE: Another way to handle this is to disable SIGINT when a process is
       # running.  Not sure if there's any real difference.  bash and dash
