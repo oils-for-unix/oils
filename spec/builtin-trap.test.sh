@@ -391,3 +391,16 @@ trap 'eval "echo hi"' 0
 ## STDOUT:
 hi
 ## END
+
+
+#### exit codes for traps are isolated
+trap 'echo USR1; ( exit 42)' USR1
+echo status=$?
+kill -USR1 $$
+echo status=$?
+
+## STDOUT:
+status=0
+USR1
+status=0
+## END

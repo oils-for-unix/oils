@@ -17,7 +17,7 @@ from asdl import runtime
 from core import dev
 from core import error
 from core import process
-from core.pyerror import e_die
+from core.pyerror import e_die, log
 from core import ui
 from core import vm
 from frontend import consts
@@ -32,6 +32,8 @@ if TYPE_CHECKING:
   from core import optview
   from core import state
   from core.vm import _Builtin
+
+_ = log
 
 
 class _ProcessSubFrame(object):

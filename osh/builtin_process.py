@@ -123,6 +123,7 @@ class Wait(vm._Builtin):
     job_ids, arg_spids = arg_r.Rest2()
 
     if arg.n:
+      #log('*** wait -n')
       # wait -n returns the exit status of the JOB.
       # You don't know WHICH process, which is odd.
 
@@ -141,28 +142,30 @@ class Wait(vm._Builtin):
       #    
       #log('wait next')
 
-      if self.waiter.WaitForOne(False):
+      result = self.waiter.WaitForOne(False)
+      if result == 0:  # OK
         return self.waiter.last_status
+      elif result == -1:  # nothing to wait for
+        return 127
       else:
-        return 127  # nothing to wait for
+        return result  # signal
 
     if len(job_ids) == 0:
-      #log('wait all')
-
+      #log('*** wait')
       i = 0
       while True:
         # BUG: If there is a STOPPED process, this will hang forever, because
         # we don't get ECHILD.
         # Not sure it matters since you can now Ctrl-C it.
 
-        if not self.waiter.WaitForOne(False):
-          break  # nothing to wait for
+        result = self.waiter.WaitForOne(False)
+        if result != 0:
+          break  # nothing to wait for, or interrupted
         i += 1
         if self.job_state.NoneAreRunning():
           break
 
-      #log('Waited for %d processes', i)
-      return 0
+      return 0 if result == -1 else result
 
     # Get list of jobs.  Then we need to check if they are ALL stopped.
     # Returns the exit code of the last one on the COMMAND LINE, not the exit
@@ -292,7 +295,7 @@ class _TrapHandler(object):
     # type: (int, Any) -> None
     """For Python's signal module."""
     # TODO: Why does this cause errno 0 at the top level?
-    if 0:
+    if 1:
       self.tracer.PrintMessage(
           'Received signal %d.  Will run handler in main loop' % signalnum)
     self.nodes_to_run.append(self.node)

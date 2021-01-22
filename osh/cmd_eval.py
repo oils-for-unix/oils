@@ -1290,9 +1290,11 @@ class CommandEvaluator(object):
       del self.trap_nodes[:]
       with state.ctx_Option(self.mutable_opts, [option_i._running_trap], True):
         for trap_node in to_run:
-          # TODO: Show the trap kind too
-          with dev.ctx_Tracer(self.tracer, 'trap', None):
-            self._Execute(trap_node)
+          # Isolate the exit status.
+          with state.ctx_Status(self.mem): 
+            # Trace it.  TODO: Show the trap kind too
+            with dev.ctx_Tracer(self.tracer, 'trap', None):
+              self._Execute(trap_node)
 
     # This has to go around redirect handling because the process sub could be
     # in the redirect word:

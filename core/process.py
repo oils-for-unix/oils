@@ -887,7 +887,8 @@ class Process(Job):
     # type: (Waiter, bool) -> int
     """Wait for this process to finish."""
     while True:
-      if not waiter.WaitForOne(eintr_retry):
+      # note that status == 0 on interrupt when eintr_retry
+      if waiter.WaitForOne(eintr_retry) != 0:
         break
       if self.state != job_state_e.Running:
         break
@@ -1022,8 +1023,8 @@ class Pipeline(Job):
     # and must account for lastpipe!
     assert self.procs, "no procs for Wait()"
     while True:
-      #log('WAIT pipeline')
-      if not waiter.WaitForOne(eintr_retry):
+      # note that status == 0 on interrupt when eintr_retry
+      if waiter.WaitForOne(eintr_retry) != 0:
         break
       if self.state != job_state_e.Running:
         #log('Pipeline DONE')
@@ -1291,17 +1292,19 @@ class Waiter(object):
     self.last_status = 127  # wait -n error code
 
   def WaitForOne(self, eintr_retry):
-    # type: (bool) -> bool
+    # type: (bool) -> int
     """Wait until the next process returns (or maybe Ctrl-C).
 
     Args:
       Should be True to prevent zombies
 
     Returns:
-      True if we got a notification, or False if there was nothing to wait for.
+      -1      Nothing to wait for
+      0       OK, job mutated
+      >= 128  Interrupted with signal
 
-      In the interactive shell, we return True if we get a Ctrl-C, so the
-      caller will try again.
+      In the interactive shell, we return 0 if we get a Ctrl-C, so the caller
+      will try again.
 
     Callers:
       wait -n  -- WaitForOne() just once
@@ -1323,6 +1326,7 @@ class Waiter(object):
     | EINTR(bool sigint)         -- may or may not retry
 
     But I think we want to keep KeyboardInterrupt as an exception for now.
+
     """
     # This is a list of async jobs
     try:
@@ -1336,9 +1340,12 @@ class Waiter(object):
     except OSError as e:
       #log('wait() error: %s', e)
       if e.errno == errno_.ECHILD:
-        return False  # nothing to wait for caller should stop
+        return -1  # nothing to wait for caller should stop
       elif e.errno == errno_.EINTR:  # Bug #858 fix
-        return eintr_retry
+        # TODO:
+        # - 128 + SIGUSR1 = 128 + 10 = 138
+        # - 128 + SIGUSR2 = 128 + 12 = 140
+        return 0 if eintr_retry else 128
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()
@@ -1350,7 +1357,7 @@ class Waiter(object):
         # Caller should keep waiting.  If we run 'sleep 3' and hit Ctrl-C, both
         # processes will get SIGINT, but the shell has to wait again to get the
         # exit code.
-        return True
+        return 0
       else:
         raise  # abort a batch script
 
@@ -1390,8 +1397,9 @@ class Waiter(object):
       self.job_state.NotifyStopped(pid)  # show in 'jobs' list, enable 'fg'
       proc.WhenStopped()
 
+    else:
+      raise AssertionError(status)
+
     self.last_status = status  # for wait -n
-
     self.tracer.OnProcessEnd(pid, status)
-
-    return True  # caller should keep waiting
+    return 0  # caller should keep waiting
