@@ -20,7 +20,7 @@ deps() {
 
   # Without --upgrade, it won't install the latest version.
   # In .travis.yaml we apparently install the latest version too (?)
-  pip3 install --upgrade 'mypy'
+  pip3 install --user --upgrade 'mypy'
 }
 
 # This has a bug
@@ -148,6 +148,10 @@ travis() {
     echo "TRAVIS_SKIP: Skipping $0"
     return
   fi
+
+  set -x
+  mypy_ --version
+  set +x
 
   typed-demo-asdl
   # Avoid spew on Travis.

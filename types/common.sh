@@ -1,10 +1,17 @@
 # types/common.sh
 
+mypy_() {
+  ### Version of mypy that PIP installs
+
+  # This exists too?
+  # ~/.local/bin/mypy "$@"
+  /usr/local/bin/mypy "$@"
+}
+
 typecheck() {
   # we 'import libc' but the source is native/libc.{c,pyi}
-  # note: pip puts mypy in ~/.local/bin.  I also had a confusing
-  # /usr/local/bin/mypy.
-  MYPYPATH=.:native PYTHONPATH=. ~/.local/bin/mypy --py2 "$@"
+
+  MYPYPATH=.:native PYTHONPATH=. mypy_ --py2 "$@"
 }
 
 readonly MYPY_FLAGS='--strict --no-implicit-optional --no-strict-optional'
