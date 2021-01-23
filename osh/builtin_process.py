@@ -11,7 +11,7 @@ import signal  # for calculating numbers
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     cmd_value, cmd_value__Argv,
-    job_status_e, job_status__Proc, job_status__Pipeline,
+    wait_status_e, wait_status__Proc, wait_status__Pipeline, wait_status__Cancelled,
 )
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
@@ -194,18 +194,20 @@ class Wait(vm._Builtin):
                            span_id=span_id)
         return 127
 
-      job_status = job.JobWait(self.waiter)
+      wait_status = job.JobWait(self.waiter)
 
-      UP_job_status = job_status
-      with tagswitch(job_status) as case:
-        if case(job_status_e.Proc):
-          job_status = cast(job_status__Proc, UP_job_status)
-          status = job_status.code
-        elif case(job_status_e.Pipeline):
-          # TODO: handle PIPESTATUS?
-          job_status = cast(job_status__Pipeline, UP_job_status)
-          # Is this right?
-          status = job_status.codes[-1]
+      UP_wait_status = wait_status
+      with tagswitch(wait_status) as case:
+        if case(wait_status_e.Proc):
+          wait_status = cast(wait_status__Proc, UP_wait_status)
+          status = wait_status.code
+        elif case(wait_status_e.Pipeline):
+          wait_status = cast(wait_status__Pipeline, UP_wait_status)
+          # TODO: handle PIPESTATUS?  Is this right?
+          status = wait_status.codes[-1]
+        elif case(wait_status_e.Cancelled):
+          wait_status = cast(wait_status__Cancelled, UP_wait_status)
+          status = wait_status.code
         else:
           raise AssertionError()
 

@@ -17,7 +17,7 @@ from sys import exit  # mycpp translation directly calls exit(int status)!
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t,
-    job_status, job_status_t,
+    wait_status, wait_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
     value, value_e, lvalue, value__Str, trace, trace_t
@@ -469,7 +469,7 @@ class FdState(object):
 
     # Wait for here doc processes to finish.
     for proc, waiter in frame.need_wait:
-      unused_status = proc.Wait(waiter, True)
+      unused_status = proc.Wait(waiter)
 
   def MakePermanent(self):
     # type: () -> None
@@ -782,7 +782,7 @@ class Job(object):
     pass
 
   def JobWait(self, waiter):
-    # type: (Waiter) -> job_status_t
+    # type: (Waiter) -> wait_status_t
     """Wait for this process/pipeline to be stopped or finished."""
     raise NotImplementedError()
 
@@ -883,22 +883,34 @@ class Process(Job):
 
     return pid
 
-  def Wait(self, waiter, eintr_retry):
-    # type: (Waiter, bool) -> int
+  def Wait(self, waiter):
+    # type: (Waiter) -> int
     """Wait for this process to finish."""
     while True:
-      # note that status == 0 on interrupt when eintr_retry
-      if waiter.WaitForOne(eintr_retry) != 0:
+      # eintr_retry == True
+      if waiter.WaitForOne(True) != 0:
         break
       if self.state != job_state_e.Running:
         break
     return self.status
 
   def JobWait(self, waiter):
-    # type: (Waiter) -> job_status_t
+    # type: (Waiter) -> wait_status_t
     # wait builtin can be interrupted
-    exit_code = self.Wait(waiter, eintr_retry=False)
-    return job_status.Proc(exit_code)
+    while True:
+      # Don't retry
+      result = waiter.WaitForOne(False)
+
+      if result > 0:  # signal
+        return wait_status.Cancelled(result)
+
+      if result == -1:  # nothing to wait for
+        break
+
+      if self.state != job_state_e.Running:
+        break
+
+    return wait_status.Proc(self.status)
 
   def WhenStopped(self):
     # type: () -> None
@@ -919,7 +931,7 @@ class Process(Job):
     # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
     self.Start(why)
-    return self.Wait(waiter, True)
+    return self.Wait(waiter)
 
 
 class Pipeline(Job):
@@ -1013,8 +1025,8 @@ class Pipeline(Job):
     """
     return self.pids[-1]
 
-  def Wait(self, waiter, eintr_retry):
-    # type: (Waiter, bool) -> List[int]
+  def Wait(self, waiter):
+    # type: (Waiter) -> List[int]
     """Wait for this pipeline to finish.
 
     Called by the 'wait' builtin.
@@ -1023,20 +1035,31 @@ class Pipeline(Job):
     # and must account for lastpipe!
     assert self.procs, "no procs for Wait()"
     while True:
-      # note that status == 0 on interrupt when eintr_retry
-      if waiter.WaitForOne(eintr_retry) != 0:
+      if waiter.WaitForOne(True) != 0:  # nothing to wait for
         break
       if self.state != job_state_e.Running:
-        #log('Pipeline DONE')
         break
 
     return self.pipe_status
 
   def JobWait(self, waiter):
-    # type: (Waiter) -> job_status_t
+    # type: (Waiter) -> wait_status_t
     # wait builtin can be interrupted
-    pipe_status = self.Wait(waiter, eintr_retry=False)
-    return job_status.Pipeline(pipe_status)
+    assert self.procs, "no procs for Wait()"
+    while True:
+      # wait builtin is interruptible
+      result = waiter.WaitForOne(False)
+
+      if result > 0:  # signal
+        return wait_status.Cancelled(result)
+
+      if result == -1:  # nothing to wait for
+        break
+
+      if self.state != job_state_e.Running:
+        break
+
+    return wait_status.Pipeline(self.pipe_status)
 
   def Run(self, waiter, fd_state):
     # type: (Waiter, FdState) -> List[int]
@@ -1082,7 +1105,7 @@ class Pipeline(Job):
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
     if len(self.procs):
-      return self.Wait(waiter, True)
+      return self.Wait(waiter)
     else:
       return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
 

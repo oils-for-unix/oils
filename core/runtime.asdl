@@ -127,9 +127,11 @@ module runtime
   -- TODO: we could have beginning and end spids?
   CompoundStatus = (bool negated, int* codes, int* spids)
 
-  job_status =
+  wait_status =
     Proc(int code)
   | Pipeline(int* codes)
+    -- because the 'wait' builtin is interruptible
+  | Cancelled(int code)
 
   -- For word splitting (in frontend/consts.py and osh/split.py)
   span = Black | Delim | Backslash
