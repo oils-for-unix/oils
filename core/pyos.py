@@ -153,6 +153,7 @@ class SignalState(object):
     # Before doing anything else, save the original handler that raises
     # KeyboardInterrupt.
     self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
+    self.last_sig_num = 0  # MUTABLE GLOBAL, for interrupted 'wait'
 
   def InitShell(self):
     # type: () -> None

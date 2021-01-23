@@ -287,19 +287,20 @@ class _TrapHandler(object):
 
   Similar to process.SubProgramThunk."""
 
-  def __init__(self, node, nodes_to_run, tracer):
-    # type: (command_t, List[command_t], dev.Tracer) -> None
+  def __init__(self, node, nodes_to_run, sig_state, tracer):
+    # type: (command_t, List[command_t], SignalState, dev.Tracer) -> None
     self.node = node
     self.nodes_to_run = nodes_to_run
+    self.sig_state = sig_state
     self.tracer = tracer
 
-  def __call__(self, signalnum, unused_frame):
+  def __call__(self, sig_num, unused_frame):
     # type: (int, Any) -> None
     """For Python's signal module."""
-    # TODO: Why does this cause errno 0 at the top level?
-    if 1:
-      self.tracer.PrintMessage(
-          'Received signal %d.  Will run handler in main loop' % signalnum)
+    self.tracer.PrintMessage(
+        'Received signal %d.  Will run handler in main loop' % sig_num)
+
+    self.sig_state.last_sig_num = sig_num  # for interrupted 'wait'
     self.nodes_to_run.append(self.node)
 
   def __str__(self):
@@ -443,12 +444,14 @@ class Trap(vm._Builtin):
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run, self.tracer)
+      self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run,
+                                         self.sig_state, self.tracer)
       return 0
 
     # Register a signal.
     if sig_num is not None:
-      handler = _TrapHandler(node, self.nodes_to_run, self.tracer)
+      handler = _TrapHandler(node, self.nodes_to_run, self.sig_state,
+                             self.tracer)
       # For signal handlers, the traps dictionary is used only for debugging.
       self.traps[sig_key] = handler
       if sig_num in (signal.SIGKILL, signal.SIGSTOP):

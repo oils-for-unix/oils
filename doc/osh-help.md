@@ -849,16 +849,23 @@ Shows all jobs running in the shell and their status.
 
     wait FLAG* ARG
 
-Waits for a a process to exit, and returns its status.
+Wait for processes to exit.
 
-The ARG can be a PID (tracked by the kernel), or a job number (tracked by the
-shell).  Specify jobs with the syntax `%jobnumber`.
+If the ARG is a PID, wait only for that job, and return its status.
 
 If there's no ARG, wait for all child processes.
+
+<!--
+The ARG can be a PID (tracked by the kernel), or a job number (tracked by the
+shell).  Specify jobs with the syntax `%jobnumber`.
+-->
 
 Flags:
 
     -n  Wait for the next process to exit, rather than a specific process.
+
+Wait can be interrupted by a signal, in which case the exit code indicates the
+signal number.
 
 #### fg
 

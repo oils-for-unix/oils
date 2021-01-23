@@ -371,7 +371,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
   fd_state.tracer = tracer  # circular dep
 
-  waiter = process.Waiter(job_state, exec_opts, tracer)
+  sig_state = pyos.SignalState()
+  sig_state.InitShell()
+  waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
 
   cmd_deps.debug_f = debug_f
 
@@ -491,9 +493,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
   builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
   builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
-
-  sig_state = pyos.SignalState()
-  sig_state.InitShell()
 
   builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
                                                   cmd_deps.trap_nodes,

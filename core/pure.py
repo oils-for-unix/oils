@@ -21,6 +21,7 @@ from core import executor
 from core import main_loop
 from core import process
 from core.pyerror import e_usage
+from core import pyos
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
@@ -324,9 +325,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     trace_f = util.DebugFile(mylib.Stderr())
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
 
+  # TODO: We shouldn't have SignalState?
+  sig_state = pyos.SignalState()
+  sig_state.InitShell()
+
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem, tracer)
-  waiter = process.Waiter(job_state, exec_opts, tracer)
+  waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
 
   interp = environ.get('OSH_HIJACK_SHEBANG', '')
   search_path = state.SearchPath(mem)
@@ -406,9 +411,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
           errfmt)
   AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt)
-
-  #sig_state = process.SignalState()
-  #sig_state.InitShell()
 
   #builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
   #                                                cmd_deps.trap_nodes,

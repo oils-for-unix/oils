@@ -1307,10 +1307,11 @@ class Waiter(object):
   Now when you do wait() after starting the pipeline, you might get a pipeline
   process OR a background process!  So you have to distinguish between them.
   """
-  def __init__(self, job_state, exec_opts, tracer):
-    # type: (JobState, optview.Exec, dev.Tracer) -> None
+  def __init__(self, job_state, exec_opts, sig_state, tracer):
+    # type: (JobState, optview.Exec, pyos.SignalState, dev.Tracer) -> None
     self.job_state = job_state
     self.exec_opts = exec_opts
+    self.sig_state = sig_state
     self.tracer = tracer
     self.last_status = 127  # wait -n error code
 
@@ -1365,10 +1366,10 @@ class Waiter(object):
       if e.errno == errno_.ECHILD:
         return -1  # nothing to wait for caller should stop
       elif e.errno == errno_.EINTR:  # Bug #858 fix
-        # TODO:
+        # Examples:
         # - 128 + SIGUSR1 = 128 + 10 = 138
         # - 128 + SIGUSR2 = 128 + 12 = 140
-        return 0 if eintr_retry else 128
+        return 0 if eintr_retry else (128 + self.sig_state.last_sig_num)
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()
