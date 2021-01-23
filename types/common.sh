@@ -3,9 +3,16 @@
 mypy_() {
   ### Version of mypy that PIP installs
 
-  # This exists too?
-  # ~/.local/bin/mypy "$@"
-  /usr/local/bin/mypy "$@"
+  # Try 2 locations.  There's a weird difference between pip3 install location
+  # on Debian vs. Ubuntu
+  local first=/usr/local/bin/mypy
+  local second=~/.local/bin/mypy
+
+  if test -x $first; then
+    $first "$@"
+  else
+    $second "$@"
+  fi
 }
 
 typecheck() {
