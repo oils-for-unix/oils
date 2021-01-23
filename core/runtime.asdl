@@ -151,13 +151,6 @@ module runtime
   --   inside them are stopped.
   job_state = Running | Done | Stopped
 
-  -- tools/osh2oil.py
-  word_style = Expr | Unquoted | DQ | SQ
-
-  -- 
-  -- Flag Parsing
-  --
-
   -- Flag arguments can be any of these types.
   flag_type = Bool | Int | Float | Str
 
@@ -170,4 +163,7 @@ module runtime
   | PipelinePart           -- async
   | ProcessSub             -- async (other processes can be started)
   | HereDoc                -- async (multiple here docs per process)
+
+  -- tools/osh2oil.py
+  word_style = Expr | Unquoted | DQ | SQ
 }
