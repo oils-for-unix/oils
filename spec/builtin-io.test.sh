@@ -238,7 +238,6 @@ echo $?
 ## END
 ## OK dash stdout: 2
 
-
 #### read with zero args
 echo | read
 echo status=$?
@@ -290,6 +289,24 @@ IFS= TMOUT= read -n 1 char < "$TMP/readn.txt"
 argv.py "$char"
 ## stdout: ['X']
 ## N-I dash/zsh stdout: ['']
+
+#### read -n with invalid arg
+read -n not_a_number
+echo status=$?
+## stdout: status=2
+## OK bash stdout: status=1
+## N-I zsh stdout-json: ""
+
+#### read -n from pipe
+case $SH in (dash|ash|zsh) exit ;; esac
+
+echo abcxyz | { read -n 3; echo reply=$REPLY; }
+## status: 0
+## stdout: reply=abc
+## N-I dash/ash/zsh stdout-json: ""
+
+# zsh appears to hang with -k
+## N-I zsh stdout-json: ""
 
 #### Read uses $REPLY (without -n)
 echo 123 > $TMP/readreply.txt
@@ -452,41 +469,6 @@ argv.py "${arguments[@]}"
 ## END
 ## N-I dash/mksh/zsh/ash status: 2
 ## N-I dash/mksh/zsh/ash stdout-json: ""
-
-#### read -n with invalid arg
-read -n not_a_number
-echo status=$?
-## stdout: status=2
-## OK bash stdout: status=1
-## N-I zsh stdout-json: ""
-
-#### read returns correct number of bytes without EOF
-case $SH in
-  *bash|*osh) FLAG=n ;;
-  *mksh)      FLAG=N ;;
-  *) exit ;;  # other shells don't implement it, or hang
-esac
-
-i=0
-while true; do
-  echo -n x
-
-  (( i++ ))
-
-  # TODO: Why does OSH hang without this test?  Other shells are fine.  I can't
-  # reproduce outside of sh_spec.py.
-  if test $i = 100; then
-    break
-    #true
-  fi
-done | { read -$FLAG 3; echo $REPLY; }
-
-## status: 0
-## stdout: xxx
-## N-I dash/ash stdout-json: ""
-
-# zsh appears to hang with -k
-## N-I zsh stdout-json: ""
 
 #### read -d : (colon-separated records)
 printf a,b,c:d,e,f:g,h,i | {
