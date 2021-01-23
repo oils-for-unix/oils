@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import redir_loc
 from asdl import runtime
 from core import dev
 from core import process  # module under test
+from core import pyos
 from core import test_lib
 from core import ui
 from core import util
@@ -48,8 +49,9 @@ class ProcessTest(unittest.TestCase):
     state.InitMem(mem, {}, '0.1')
 
     self.job_state = process.JobState()
+    sig_state = pyos.SignalState()
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
-    self.waiter = process.Waiter(self.job_state, exec_opts, self.tracer)
+    self.waiter = process.Waiter(self.job_state, exec_opts, sig_state, self.tracer)
     errfmt = ui.ErrorFormatter(self.arena)
     self.fd_state = process.FdState(errfmt, self.job_state, None, self.tracer)
     self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,

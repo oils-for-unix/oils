@@ -24,6 +24,7 @@ from core import executor
 from core import main_loop
 from core import optview
 from core import process
+from core import pyos
 from core import pyutil
 from core import ui
 from core import util
@@ -226,8 +227,9 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_builtins, arena, cmd_deps)
 
+  sig_state = pyos.SignalState()
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
-  waiter = process.Waiter(job_state, exec_opts, tracer)
+  waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,

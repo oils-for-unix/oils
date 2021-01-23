@@ -56,7 +56,7 @@ class SignalState {
   }
   void InitShell() {
   }
-  int last_sig_num;
+  int last_sig_num = 0;
 
   DISALLOW_COPY_AND_ASSIGN(SignalState)
 };
