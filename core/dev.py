@@ -180,8 +180,9 @@ class ctx_Tracer(object):
     self.tracer.PopMessage(self.label, self.arg)
 
 
-def _PrintValue(val, buf):
+def _PrintShValue(val, buf):
   # type: (value_t, mylib.BufWriter) -> None
+  """Using maybe_shell_encode() for legacy xtrace_details."""
 
   # NOTE: This is a bit like _PrintVariables for declare -p
   result = '?'
@@ -213,9 +214,10 @@ def _PrintValue(val, buf):
 
 def _PrintArgv(argv, buf):
   # type: (List[str], mylib.BufWriter) -> None
+  """Uses QSN encoding without $ for xtrace_rich."""
   for arg in argv:
     buf.write(' ')
-    buf.write(qsn.maybe_shell_encode(arg))
+    buf.write(qsn.maybe_encode(arg))
   buf.write('\n')
 
 
@@ -436,7 +438,7 @@ class Tracer(object):
       buf.write(label)
       if arg is not None:
         buf.write(' ')
-        buf.write(qsn.maybe_shell_encode(arg))
+        buf.write(qsn.maybe_encode(arg))
       buf.write('\n')
       self.f.write(buf.getvalue())
 
@@ -490,8 +492,11 @@ class Tracer(object):
     if self.exec_opts.xtrace_rich():
       return
 
-    tmp = [qsn.maybe_shell_encode(a) for a in argv]
-    buf.write(' '.join(tmp))
+    # Legacy: Use SHELL encoding
+    for i, arg in enumerate(argv):
+      if i != 0:
+        buf.write(' ')
+      buf.write(qsn.maybe_shell_encode(arg))
     buf.write('\n')
     self.f.write(buf.getvalue())
 
@@ -511,7 +516,7 @@ class Tracer(object):
       buf.write(pair.var_name)
       buf.write('=')
       if pair.rval:
-        _PrintValue(pair.rval, buf)
+        _PrintShValue(pair.rval, buf)
 
     buf.write('\n')
     self.f.write(buf.getvalue())
@@ -539,7 +544,7 @@ class Tracer(object):
     # Only two possibilities here
     buf.write('+=' if op == assign_op_e.PlusEqual else '=')
 
-    _PrintValue(val, buf)
+    _PrintShValue(val, buf)
 
     buf.write('\n')
     self.f.write(buf.getvalue())

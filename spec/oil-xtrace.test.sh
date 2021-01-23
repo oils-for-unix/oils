@@ -460,4 +460,15 @@ for i in 1 2 3 {
 + break
 ## END
 
+#### QSN encoded argv
+shopt --set oil:basic
+set -x
 
+echo $'one two\n' $'\u03bc'
+## STDOUT:
+one two
+ μ
+## END
+## STDERR:
+. builtin echo 'one two\n' 'μ'
+## END
