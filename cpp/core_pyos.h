@@ -50,6 +50,17 @@ inline bool InputAvailable(int fd) {
 
 void SignalState_AfterForkingChild();
 
+class SignalState {
+ public:
+  SignalState() {
+  }
+  void InitShell() {
+  }
+  int last_sig_num;
+
+  DISALLOW_COPY_AND_ASSIGN(SignalState)
+};
+
 }  // namespace pyos
 
 #endif  // CORE_PYOS_H
