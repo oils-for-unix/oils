@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 my-curl() {
-	curl \
+  curl \
     -s -S -X GET -G \
     "$@"
 }
@@ -19,7 +19,7 @@ messages-in-stream() {
 
   # copied from example at https://zulip.com/api/get-messages 
   my-curl \
-	  -u "$bot_email:$bot_api_key" \
+    -u "$bot_email:$bot_api_key" \
     -d 'anchor=newest' \
     -d 'num_before=50' \
     -d 'num_after=0' \
@@ -59,7 +59,7 @@ topics() {
 
   # stream ID 121540 is #oil-discuss
   my-curl \
-	  -u "$bot_email:$bot_api_key" \
+    -u "$bot_email:$bot_api_key" \
     https://oilshell.zulipchat.com/api/v1/users/me/121540/topics 
 }
 
@@ -69,7 +69,7 @@ one-message() {
 
   # message ID from max_id of topics
   my-curl \
-	  -u "$bot_email:$bot_api_key" \
+    -u "$bot_email:$bot_api_key" \
     https://oilshell.zulipchat.com/api/v1/messages/158997038
 }
 
