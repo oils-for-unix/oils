@@ -739,7 +739,7 @@ var-ref() {
 # declare / local -n
 # there is one divergence when combining -n and ${!ref}
 nameref() {
-  sh-spec spec/nameref.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/nameref.test.sh --osh-failures-allowed 4 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

@@ -532,3 +532,21 @@ echo ref=$ref
 ## STDOUT:
 ref=three
 ## END
+
+#### Unquoted assoc reference on RHS
+typeset -A bashup_ev_r
+bashup_ev_r['foo']=bar
+
+p() {
+  local s=foo
+  local -n e=bashup_ev["$s"] f=bashup_ev_r["$s"]
+  # Different!
+  #local e=bashup_ev["$s"] f=bashup_ev_r["$s"]
+  argv.py "$f"
+}
+p
+## STDOUT:
+['bar']
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
