@@ -11,6 +11,7 @@ using gc_heap::Alloc;
 using gc_heap::Dict;
 using gc_heap::gHeap;
 using gc_heap::kEmptyString;
+using gc_heap::NewList;
 
 GLOBAL_STR(kString1, "food");
 GLOBAL_STR(kWithNull, "foo\0bar");
@@ -279,16 +280,16 @@ TEST str_methods_test() {
   auto foo = NewStr("foo");
   auto bar = NewStr("bar");
 
-  auto L1 = Alloc<List<Str*>>(std::initializer_list<Str*>{foo, bar});
+  auto L1 = NewList<Str*>(std::initializer_list<Str*>{foo, bar});
   ASSERT(str_equals(NewStr("foobar"), kEmptyString->join(L1)));
 
   // Join by NUL
   ASSERT(str_equals(NewStr("foo\0bar", 7), NewStr("\0", 1)->join(L1)));
 
-  auto L2 = Alloc<List<Str*>>(std::initializer_list<Str*>{foo});
+  auto L2 = NewList<Str*>(std::initializer_list<Str*>{foo});
   ASSERT(str_equals(NewStr("foo"), kEmptyString->join(L2)));
 
-  auto empty_list = Alloc<List<Str*>>(std::initializer_list<Str*>{});
+  auto empty_list = NewList<Str*>(std::initializer_list<Str*>{});
 
   auto empty = kEmptyString->join(empty_list);
   ASSERT(str_equals(kEmptyString, empty));
@@ -349,7 +350,7 @@ TEST str_iters_test() {
 
 TEST list_methods_test() {
   auto init = std::initializer_list<int>{5, 6, 7, 8};
-  auto ints = Alloc<List<int>>(init);
+  auto ints = NewList<int>(init);
 
   List<int>* slice1 = ints->slice(1);
   ASSERT_EQ(3, len(slice1));
@@ -394,7 +395,7 @@ TEST list_methods_test() {
   ASSERT_EQ(6, ints->index(1));
   ASSERT_EQ(7, ints->index(2));
 
-  auto other = Alloc<List<int>>(std::initializer_list<int>{-1, -2});
+  auto other = NewList<int>(std::initializer_list<int>{-1, -2});
   ints->extend(other);  // [9, 6, 7, 1, 2]
   ASSERT_EQ(5, len(ints));
   ASSERT_EQ(-2, ints->index(4));
@@ -429,7 +430,7 @@ TEST list_funcs_test() {
 TEST list_iters_test() {
   log("  forward iteration over list");
   auto init = std::initializer_list<int>{1, 2, 3};
-  auto ints = Alloc<List<int>>(init);
+  auto ints = NewList<int>(init);
 
   for (ListIter<int> it(ints); !it.Done(); it.Next()) {
     int x = it.Value();
@@ -515,7 +516,7 @@ TEST contains_test() {
   ASSERT(b == true);
 
   log("  ints");
-  auto ints = Alloc<List<int>>(std::initializer_list<int>{1, 2, 3});
+  auto ints = NewList<int>(std::initializer_list<int>{1, 2, 3});
   b = list_contains(ints, 1);
   ASSERT(b == true);
 
@@ -524,7 +525,7 @@ TEST contains_test() {
 
   log("  floats");
   auto floats =
-      Alloc<List<double>>(std::initializer_list<double>{0.5, 0.25, 0.0});
+      NewList<double>(std::initializer_list<double>{0.5, 0.25, 0.0});
   b = list_contains(floats, 0.0);
   log("b = %d", b);
   b = list_contains(floats, 42.0);
