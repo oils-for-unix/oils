@@ -3,6 +3,7 @@ cppgen.py - AST pass to that prints C++ code
 """
 import io
 import json  # for "C escaping"
+import os
 import sys
 
 from typing import overload, Union, Optional, Any, Dict
@@ -279,6 +280,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.current_class_name = None  # for prototypes
 
       self.imported_names = set()  # For module::Foo() vs. self.foo
+
+      # for NewList vs. Alloc<List>, etc.
+      self.gc = bool(os.getenv('GC'))
 
     def log(self, msg, *args):
       ind_str = self.indent * '  '
@@ -1000,7 +1004,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         else:
             # Lists are MUTABLE so we can't pull them to the top level.
             # C++ wart: Use initializer_list.  
-            self.write('Alloc<%s>(std::initializer_list<%s>' % (c_type, item_c_type))
+            if self.gc:
+              self.write('NewList<%s>(std::initializer_list<%s>' %
+                  (item_c_type, item_c_type))
+            else:
+              self.write('Alloc<%s>(std::initializer_list<%s>' %
+                  (c_type, item_c_type))
+
             self._WriteListElements(o)
             self.write(')')
 

@@ -14,7 +14,7 @@ gstr = 'foo'  # type: str
 glist_int = [1, 2]  # type: List[int]
 glist_str = ['spam', 'eggs']  # type: List[str]
 
-gdict = {'a': 42, 'b': 43}  # type: Dict[str, int]
+#gdict = {'a': 42, 'b': 43}  # type: Dict[str, int]
 
 
 def ListDemo():
@@ -26,6 +26,9 @@ def ListDemo():
   intlist.append(1)
   intlist.append(2)
   intlist.append(3)
+
+  local_list = [1, 2]
+  log("local_list = %d", len(local_list))
 
   # turned into intlist->set(1, 42)
   intlist[1] = 42
@@ -111,7 +114,7 @@ def DictDemo():
   # type: () -> None
 
   # regression
-  nonempty = {'a': 'b'}  # type: Dict[str, str]
+  #nonempty = {'a': 'b'}  # type: Dict[str, str]
 
   d = {}  # type: Dict[str, int]
   d['foo'] = 42

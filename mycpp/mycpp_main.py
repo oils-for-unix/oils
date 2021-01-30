@@ -247,6 +247,8 @@ using gc_heap::StackRoots;
 #include "mylib2.h"
 
 using gc_heap::NewStr;
+using gc_heap::NewList;
+using gc_heap::NewDict;
 """)
 
   if to_header:

@@ -218,10 +218,16 @@ compile-slice() {
 
   mkdir -p _bin
 
+  # Not ready for this yet.  Need list_contains() etc.
+  if test -n "${GC:-}"; then
+    local -a runtime=(mycpp/{gc_heap,mylib2,my_runtime}.cc)
+  else
+    local -a runtime=(mycpp/{gc_heap,mylib}.cc)
+  fi
+
   # Note: can't use globs here because we have _test.cc
   time compile _bin/$name$suffix _build/cpp/${name}.cc \
-    mycpp/gc_heap.cc \
-    mycpp/mylib.cc \
+    "${runtime[@]}" \
     cpp/core_pyos.cc \
     cpp/core_pyutil.cc \
     cpp/frontend_flag_spec.cc \
@@ -321,6 +327,8 @@ osh-eval() {
 
   #if false; then
   if true; then
+    #export GC=1  # read by mycpp_main
+
     # relies on splitting
     mycpp \
       --header-out $h \

@@ -405,7 +405,7 @@ List<Str*>* Str::split(Str* sep) {
   int length = len(this);
   if (length == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
-    return Alloc<List<Str*>>(std::initializer_list<Str*>{kEmptyString});
+    return NewList<Str*>(std::initializer_list<Str*>{kEmptyString});
   }
 
   auto result = Alloc<List<Str*>>();

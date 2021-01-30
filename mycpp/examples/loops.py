@@ -71,7 +71,7 @@ def TestDict():
 
 CATS = ['big', 'small', 'hairless']
 
-EMPTY_DICT = {}  # type: Dict[int, int]
+#EMPTY_DICT = {}  # type: Dict[int, int]
 
 def run_tests():
   # type: () -> None

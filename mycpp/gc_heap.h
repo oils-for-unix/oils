@@ -760,26 +760,12 @@ class List : public gc_heap::Obj {
     assert(slab_ == nullptr);
   }
 
-  // Literal ['foo', 'bar']
-  List(std::initializer_list<T> init) : List() {
-    auto self = this;
-    StackRoots _roots({&self});
-
-    int n = init.size();
-    self->reserve(n);
-
-    int i = 0;
-    for (auto item : init) {
-      self->set(i, item);
-      ++i;
-    }
-    self->len_ = n;
-  }
-
+  // TODO: Move to NewList() because constructors can't move itself like
+  // self->set().
   // list_repeat ['foo'] * 3
   List(T item, int times) : List() {
     auto self = this;
-    StackRoots _roots({&self});  // TODO: What about item!  Could be moved!
+    StackRoots _roots({&self});
 
     self->reserve(times);
     self->len_ = times;
