@@ -325,10 +325,12 @@ osh-eval() {
   local cc=_build/cpp/$name.cc
   local h=_build/cpp/$name.h
 
+  # mycpp uses this, as well as compile-slice to determine the runtime library
+  # TODO: Fix mylib-audit
+  # export GC=1
+
   #if false; then
   if true; then
-    #export GC=1  # read by mycpp_main
-
     # relies on splitting
     mycpp \
       --header-out $h \
@@ -341,6 +343,11 @@ osh-eval() {
   cpp-skeleton $name $raw > $cc
 
   compile-slice 'osh_eval' '.dbg'
+}
+
+# TODO: Fix all this code to use mylib2/my_runtime
+mylib-audit() { 
+  grep --color mylib.h cpp/*
 }
 
 asdl-runtime() {

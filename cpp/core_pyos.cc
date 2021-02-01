@@ -17,10 +17,12 @@ static Str* CopyStr(const char* s) {
 namespace pyos {
 
 int Chdir(Str* dest_dir) {
-  errno = 0;
   mylib::Str0 d(dest_dir);
-  chdir(d.Get());
-  return errno;
+  if (chdir(d.Get()) == 0) {
+    return 0;  // success
+  } else {
+    return errno;
+  }
 }
 
 Str* GetMyHomeDir() {
