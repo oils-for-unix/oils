@@ -51,21 +51,20 @@ Str* CFileLineReader::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
 
-  errno = 0;  // must be reset because we check it below!
+  // Reset errno because we turn the EOF error into empty string (like Python).
+  errno = 0;
   ssize_t len = getline(&line, &allocated_size, f_);
   if (len < 0) {
-    // log("getline() result: %d", len);
-    if (errno != 0) {
-      // Unexpected error
+    if (errno != 0) {  // Unexpected error
       log("getline() error: %s", strerror(errno));
       throw new AssertionError(errno);
     }
     // Expected EOF
     return gc_heap::kEmptyString;
   }
-  // log("len = %d", len);
 
-  // Note: it's NUL terminated
+  // TODO: Fix the leak here.
+  // Note: getline() NUL terminates the buffer
   return NewStr(line, len);
 }
 

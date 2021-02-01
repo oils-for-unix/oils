@@ -3,7 +3,7 @@
 #include <sys/wait.h>    // WIFSIGNALED, etc. called DIRECTLY
 #include "dumb_alloc.h"  // change the allocator
 // TODO: Need #if GC
-#include "mylib.h"       // runtime library e.g. with Python data structures
+#include "mylib.h"  // runtime library e.g. with Python data structures
 
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
 

@@ -4,6 +4,7 @@
 #include "greatest.h"
 #include "my_runtime.h"
 
+using gc_heap::Alloc;
 using gc_heap::NewStr;
 using gc_heap::StackRoots;
 using gc_heap::kEmptyString;
@@ -76,6 +77,72 @@ TEST writer_test() {
   PASS();
 }
 
+using mylib::BufLineReader;
+
+TEST buf_line_reader_test() {
+  Str* s = NewStr("foo\nbar\nleftover");
+  BufLineReader* reader = Alloc<BufLineReader>(s);
+  Str* line;
+
+  log("BufLineReader");
+
+  line = reader->readline();
+  log("1 [%s]", line->data_);
+  ASSERT(str_equals0("foo\n", line));
+
+  line = reader->readline();
+  log("2 [%s]", line->data_);
+  ASSERT(str_equals0("bar\n", line));
+
+  line = reader->readline();
+  log("3 [%s]", line->data_);
+  ASSERT(str_equals0("leftover", line));
+
+  line = reader->readline();
+  log("4 [%s]", line->data_);
+  ASSERT(str_equals0("", line));
+
+  PASS();
+}
+
+TEST test_files() {
+  mylib::Writer* stdout_ = mylib::Stdout();
+  log("stdout isatty() = %d", stdout_->isatty());
+
+  mylib::LineReader* stdin_ = mylib::Stdin();
+  log("stdin isatty() = %d", stdin_->isatty());
+
+  ASSERT_EQ(0, stdin_->fileno());
+
+  FILE* f = fopen("README.md", "r");
+  auto r = new mylib::CFileLineReader(f);
+  // auto r = mylib::Stdin();
+
+  log("test_files");
+  int i = 0;
+  while (true) {
+    Str* s = r->readline();
+    if (len(s) == 0) {
+      break;
+    }
+    if (i < 5) {
+      println_stderr(s);
+    }
+    ++i;
+  };
+  log("test_files DONE");
+
+  auto f2 = mylib::open(NewStr("README.md"));
+  ASSERT(f2 != nullptr);
+
+  // See if we can strip a space and still open it.  Underlying fopen() call
+  // works.
+  auto f3 = mylib::open((NewStr("README.md "))->strip());
+  ASSERT(f3 != nullptr);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -86,6 +153,9 @@ int main(int argc, char** argv) {
   RUN_TEST(split_once_test);
   RUN_TEST(int_to_str_test);
   RUN_TEST(writer_test);
+
+  RUN_TEST(buf_line_reader_test);
+  RUN_TEST(test_files);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
