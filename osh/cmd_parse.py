@@ -506,10 +506,13 @@ class CommandParser(object):
     self.lexer.ResetInputObjects()
     self.line_reader.Reset()
 
-  def _Next(self, lex_mode=lex_mode_e.ShCommand):
-    # type: (lex_mode_t) -> None
-    """Helper method."""
-    self.next_lex_mode = lex_mode
+  def _Next(self):
+    # type: () -> None
+    """Called when we don't need to look at the current token anymore.
+
+    A subsequent call to _Peek() will read the next token and store its Id and Kind.
+    """
+    self.next_lex_mode = lex_mode_e.ShCommand
 
   def _Peek(self):
     # type: () -> None
@@ -520,6 +523,15 @@ class CommandParser(object):
     """
     if self.next_lex_mode != lex_mode_e.Undefined:
       w = self.w_parser.ReadWord(self.next_lex_mode)
+      # TODO:
+      # - For parse_triple_dots, write a state machine that does stuff like this:
+      #   - Op_Newline -> Ignored_Space
+      #   - Op_Newline Ignored_Comment Op_Newline -> Ignored_Space
+      #   - Op_Newline Ignored_Space Op_Newline -> Op_Newline
+      # - Also move WordParser cursor_was_newline here as well.
+      #   - The WordParser is used by the BoolParser, which ignores Op_Newline
+      #   - It'a also used by expr_parse.py for %(), which also ignores newlines
+      #   - So I think all the newline logic DOES belong here.
 
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
@@ -695,19 +707,6 @@ class CommandParser(object):
             # Another thing: { echo hi }
             # We're DONE!!!
             break
-
-        if self.parse_opts.parse_triple_dots():
-          # TODO: If the first word is ... ,  invoke ParsePipeline()
-          # But call:
-          #   self.w_parser.PushTripleDots()
-          #   self.w_parser.PopTripleDots()
-          #
-          # Which changes the behavior of ReadWord?
-          #   \n -> space
-          #   \n comment \n -> space
-          #   \n space \n -> \n
-          # IDs involved: Op_Newline, WS_Space, and maybe Id.Lit_Comment
-          pass
 
         w = cast(compound_word, self.cur_word)  # Kind.Word ensures this
         words.append(w)
@@ -2016,6 +2015,9 @@ class CommandParser(object):
     Note that it is left recursive and left associative.  We parse it
     iteratively with a token of lookahead.
     """
+    # TODO: _Peek() and check parse_triple_dots here.  This method is called by
+    # both _ParseCommandLine and _ParseCommandTerm.
+
     child = self.ParsePipeline()
     assert child is not None
 
@@ -2048,12 +2050,12 @@ class CommandParser(object):
 
   # NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.
 
-  # At the top level, We want to execute after every line:
-  # - to process alias
-  # - to process 'exit', because invalid syntax might appear after it
+  # At the top level, we execute after every line, e.g. to
+  # - process alias (a form of dynamic parsing)
+  # - process 'exit', because invalid syntax might appear after it
 
-  # But for say a while loop body, we want to parse the whole thing at once, and
-  # then execute it.  We don't want to parse it over and over again!
+  # On the other hand, for a while loop body, we parse the whole thing at once,
+  # and then execute it.  We don't want to parse it over and over again!
 
   # COMPARE
   # command_line     : and_or (sync_op and_or)* trailer? ;   # TOP LEVEL
@@ -2260,8 +2262,6 @@ class CommandParser(object):
     if self.c_kind == Kind.Eof:  # e.g. $()
       return command.NoOp()
 
-    # This calls ParseAndOr(), but I think it should be a loop that calls
-    # _ParseCommandLine(), like oil.InteractiveLoop.
     c_list = self._ParseCommandTerm()
     if len(c_list.children) == 1:
       return c_list.children[0]
