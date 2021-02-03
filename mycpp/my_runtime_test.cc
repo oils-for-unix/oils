@@ -10,15 +10,16 @@
 using gc_heap::Alloc;
 using gc_heap::Dict;
 using gc_heap::NewList;
+using gc_heap::StackRoots;
 using gc_heap::gHeap;
 using gc_heap::kEmptyString;
 
-GLOBAL_STR(kString1, "food");
+GLOBAL_STR(kStrFood, "food");
 GLOBAL_STR(kWithNull, "foo\0bar");
 
 TEST print_test() {
-  print(kString1);
-  println_stderr(kString1);
+  print(kStrFood);
+  println_stderr(kStrFood);
 
   print(kWithNull);
   println_stderr(kWithNull);
@@ -139,24 +140,40 @@ TEST int_to_str_test() {
   PASS();
 }
 
+GLOBAL_STR(kStrFoo, "foo");
+GLOBAL_STR(a, "a");
+GLOBAL_STR(XX, "XX");
+
 TEST str_replace_test() {
-  Str* s = kString1->replace(NewStr("o"), NewStr("12"));
+  Str* o = nullptr;
+  Str* _12 = nullptr;
+  Str* _123 = nullptr;
+  Str* s = nullptr;
+  Str* foxo = nullptr;
+  StackRoots _roots({&o, &_12, &_123, &s, &foxo});
+
+  o = NewStr("o");
+  _12 = NewStr("12");
+  _123 = NewStr("123");
+
+  s = kStrFood->replace(o, _12);
   ASSERT(str_equals(NewStr("f1212d"), s));
   print(s);
 
-  // BUG in corner case!
-  Str* s2 = NewStr("foo")->replace(NewStr("o"), NewStr("123"));
-  ASSERT(str_equals(NewStr("f123123"), s2));
-  print(s2);
+  s = kStrFoo->replace(o, _123);
+  ASSERT(str_equals(NewStr("f123123"), s));
+  print(s);
 
-  Str* s3 = NewStr("foxo")->replace(NewStr("o"), NewStr("123"));
-  ASSERT(str_equals(NewStr("f123x123"), s3));
-  print(s3);
+  foxo = NewStr("foxo");
+  s = foxo->replace(o, _123);
+  ASSERT(str_equals(NewStr("f123x123"), s));
+  print(s);
 
-  Str* s4 = kWithNull->replace(NewStr("a"), NewStr("XX"));
-  print(s4);
+  s = kWithNull->replace(a, XX);
+  print(s);
+
   // Explicit length because of \0
-  ASSERT(str_equals(NewStr("foo\0bXXr", 8), s4));
+  ASSERT(str_equals(NewStr("foo\0bXXr", 8), s));
 
   PASS();
 }
@@ -221,15 +238,15 @@ TEST str_methods_test() {
   ASSERT(!(NewStr(""))->isdigit());
 
   log("slice()");
-  ASSERT(str_equals(NewStr("f"), kString1->index(0)));
+  ASSERT(str_equals(NewStr("f"), kStrFood->index(0)));
 
-  ASSERT(str_equals(NewStr("d"), kString1->index(-1)));
+  ASSERT(str_equals(NewStr("d"), kStrFood->index(-1)));
 
-  ASSERT(str_equals(NewStr("ood"), kString1->slice(1)));
-  ASSERT(str_equals(NewStr("oo"), kString1->slice(1, 3)));
-  ASSERT(str_equals(NewStr("oo"), kString1->slice(1, -1)));
-  ASSERT(str_equals(NewStr("o"), kString1->slice(-3, -2)));
-  ASSERT(str_equals(NewStr("fo"), kString1->slice(-4, -2)));
+  ASSERT(str_equals(NewStr("ood"), kStrFood->slice(1)));
+  ASSERT(str_equals(NewStr("oo"), kStrFood->slice(1, 3)));
+  ASSERT(str_equals(NewStr("oo"), kStrFood->slice(1, -1)));
+  ASSERT(str_equals(NewStr("o"), kStrFood->slice(-3, -2)));
+  ASSERT(str_equals(NewStr("fo"), kStrFood->slice(-4, -2)));
 
   log("strip()");
   Str* s2 = NewStr(" abc ");
@@ -304,7 +321,7 @@ TEST str_methods_test() {
 
 TEST str_funcs_test() {
   log("str_concat()");
-  ASSERT(str_equals(NewStr("foodfood"), str_concat(kString1, kString1)));
+  ASSERT(str_equals(NewStr("foodfood"), str_concat(kStrFood, kStrFood)));
   ASSERT(str_equals(kEmptyString, str_concat(kEmptyString, kEmptyString)));
 
   log("str_repeat()");
@@ -341,7 +358,7 @@ TEST str_funcs_test() {
 }
 
 TEST str_iters_test() {
-  for (StrIter it(kString1); !it.Done(); it.Next()) {
+  for (StrIter it(kStrFood); !it.Done(); it.Next()) {
     print(it.Value());
   }
 

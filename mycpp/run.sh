@@ -207,8 +207,8 @@ cpp-compile() {
 
   # TODO: my_runtime_test, gc_stress_test, mylib2_test fail with GC_EVERY_ALLOC
   #local flags='-D GC_DEBUG -D GC_PROTECT -D GC_EVERY_ALLOC '
-
   local flags='-D GC_DEBUG -D GC_PROTECT '
+
   case $variant in
     (asan)
       flags+="$CXXFLAGS $ASAN_FLAGS"
@@ -227,44 +227,50 @@ cpp-compile() {
 
 mylib-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile mylib_test asan -I ../cpp mylib.cc
-  _bin/mylib_test.asan "$@"
+  local variant=${1:-dbg}
+  cpp-compile mylib_test $variant -I ../cpp mylib.cc
+  _bin/mylib_test.$variant "$@"
 }
 
 gc-heap-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile gc_heap_test asan -I ../cpp gc_heap.cc
-  _bin/gc_heap_test.asan "$@"
+  local variant=${1:-dbg}
+  cpp-compile gc_heap_test $variant -I ../cpp gc_heap.cc
+  _bin/gc_heap_test.$variant "$@"
 }
 
 gc-stress-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile gc_stress_test asan -I ../cpp \
+  local variant=${1:-dbg}
+  cpp-compile gc_stress_test $variant -I ../cpp \
     gc_heap.cc my_runtime.cc mylib2.cc
-  _bin/gc_stress_test.asan "$@"
+  _bin/gc_stress_test.$variant "$@"
 }
 
 my-runtime-test() {
   ### Accepts greatest args like -t dict
-  cpp-compile my_runtime_test asan -I ../cpp gc_heap.cc my_runtime.cc mylib2.cc
-  _bin/my_runtime_test.asan "$@"
+  local variant=${1:-dbg}
+  cpp-compile my_runtime_test $variant -I ../cpp gc_heap.cc my_runtime.cc mylib2.cc
+  _bin/my_runtime_test.$variant "$@"
 }
 
 mylib2-test() {
   ### Accepts greatest args like -t dict
-  local variant=asan
-  local variant=dbg
+  local variant=${1:-dbg}
   cpp-compile mylib2_test $variant -I ../cpp mylib2.cc gc_heap.cc my_runtime.cc
   _bin/mylib2_test.$variant "$@"
 }
 
 all-tests() {
-  gc-heap-test
-  gc-stress-test
-  my-runtime-test
-  mylib2-test
+  local variant=asan
 
-  mylib-test  # will be deprecated
+  gc-heap-test $variant
+  gc-stress-test $variant
+  my-runtime-test $variant
+  mylib2-test $variant
+
+  # will be deprecated
+  mylib-test $variant
   ./demo.sh target-lang
 }
 

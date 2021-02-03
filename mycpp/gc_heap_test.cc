@@ -62,6 +62,16 @@ static_assert(offsetof(List<int>, slab_) ==
 // 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
 const int kInitialSize = 1 << 20;
 
+// COPY of what's in gc_heap.cc for testing.  This is 16 bytes.
+// The empty string is 12 + 1 = 13 bytes.  But we round up with aligned().
+// TODO: We could avoid the 3 aligned() calls by changing the definition of
+// obj_len_.  We could use the OCaml trick of numbers after the NUL byte.
+
+class LayoutForwarded : public Obj {
+ public:
+  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
+};
+
 // Doesn't really test anything
 TEST sizeof_test() {
   log("");
@@ -80,6 +90,15 @@ TEST sizeof_test() {
   // log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
 
   log("sizeof(Heap) = %d", sizeof(Heap));
+
+  int min_obj_size = sizeof(LayoutForwarded);
+  int short_str_size = gc_heap::aligned(kStrHeaderSize + 1);
+
+  log("kStrHeaderSize = %d", kStrHeaderSize);
+  log("aligned(kStrHeaderSize + 1) = %d", short_str_size);
+  log("sizeof(LayoutForwarded) = %d", min_obj_size);
+
+  ASSERT(min_obj_size <= short_str_size);
 
   char* p = static_cast<char*>(gHeap.Allocate(17));
   char* q = static_cast<char*>(gHeap.Allocate(9));

@@ -97,7 +97,8 @@ Obj* Heap::Relocate(Obj* obj, Obj* header) {
       log("to = %s", s2->data_);
     }
 #endif
-    free_ += n;
+    // aligned() like Heap::Allocate()
+    free_ += aligned(n);
 
 #if GC_DEBUG
     num_live_objs_++;
@@ -229,7 +230,8 @@ void Heap::Collect() {
 
       // other tags like Tag::Opaque have no children
     }
-    scan += header->obj_len_;
+    // aligned() like Heap::Allocate()
+    scan += aligned(header->obj_len_);
   }
 
   // We just copied everything from_space_ -> to_space_.  Maintain
