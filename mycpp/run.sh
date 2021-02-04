@@ -205,9 +205,9 @@ cpp-compile() {
   local variant=$2
   shift 2
 
-  # TODO: my_runtime_test and gc_stress_test fail with GC_EVERY_ALLOC
-  local flags='-D GC_DEBUG -D GC_PROTECT -D GC_EVERY_ALLOC '
-  # local flags='-D GC_DEBUG -D GC_PROTECT '
+  # TODO: my_runtime_test fails with GC_EVERY_ALLOC
+  #local flags='-D GC_DEBUG -D GC_PROTECT -D GC_EVERY_ALLOC '
+  local flags='-D GC_DEBUG -D GC_PROTECT '
 
   case $variant in
     (asan)

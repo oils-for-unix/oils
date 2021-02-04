@@ -1114,9 +1114,8 @@ class Dict : public gc_heap::Obj {
       new_v = NewSlab<V>(self->capacity_);
 
       if (self->keys_ != nullptr) {
-        // Copy the old index.  Note: remaining entries should be zero'd
-        // because of Allocate() behavior.
-        memcpy(new_i->items_, self->index_->items_, self->index_->obj_len_);
+        // Right now the index is the same size as keys and values.
+        memcpy(new_i->items_, self->index_->items_, self->len_ * sizeof(int));
 
         memcpy(new_k->items_, self->keys_->items_, self->len_ * sizeof(K));
         memcpy(new_v->items_, self->values_->items_, self->len_ * sizeof(V));

@@ -278,10 +278,11 @@ inline bool list_contains(List<Str*>* haystack, Str* needle) {
   return false;
 }
 
+// TODO: mycpp can just generate the constructor instead?
 // e.g. [None] * 3
 template <typename T>
 List<T>* list_repeat(T item, int times) {
-  return gc_heap::Alloc<List<T>>(item, times);
+  return gc_heap::NewList<T>(item, times);
 }
 
 template <typename K, typename V>

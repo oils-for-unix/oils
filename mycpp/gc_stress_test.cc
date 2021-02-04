@@ -26,7 +26,7 @@ using gc_heap::gHeap;
 TEST str_simple_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
-  Str* s;
+  Str* s = nullptr;
   // Note: This test case doesn't strictly require this.  I guess because
   // it doesn't use the strings long after they've been allocated and/or moved.
   StackRoots _roots({&s});
@@ -52,7 +52,7 @@ GLOBAL_STR(bx, "bx");
 TEST str_growth_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
-  Str* s;
+  Str* s = nullptr;
   StackRoots _roots({&s});
 
   gHeap.Report();
@@ -163,14 +163,13 @@ TEST list_str_growth_test() {
 TEST dict_growth_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
-  Str* s;
-  Dict<Str*, int>* D;
+  Str* s = nullptr;
+  Dict<Str*, int>* D = nullptr;
   StackRoots _roots({&s, &D});
 
   s = NewStr("abcdefg");
   D = Alloc<Dict<Str*, int>>();
 
-#if 0
   int total = 0;
   for (int i = 0; i < 40; ++i) {
     total += len(s);
@@ -178,7 +177,8 @@ TEST dict_growth_test() {
     D->set(s, 42);
   }
   log("total = %d", total);
-#endif
+
+  // TODO: Test NewDict(), etc.
 
   PASS();
 }
