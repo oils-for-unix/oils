@@ -10,6 +10,7 @@
 using gc_heap::Alloc;
 using gc_heap::Dict;
 using gc_heap::List;
+using gc_heap::NewList;
 using gc_heap::NewStr;
 using gc_heap::StackRoots;
 using gc_heap::Str;
@@ -81,11 +82,11 @@ TEST str_growth_test() {
 TEST list_append_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
-  List<int>* L;
+  List<int>* L = nullptr;
   StackRoots _roots({&L});
 
   int length = 1;
-  L = Alloc<List<int>>(42, length);
+  L = NewList<int>(42, length);
 
   int n = 1000;
   int total = 0;
@@ -104,11 +105,11 @@ TEST list_append_test() {
 TEST list_slice_append_test() {
   gHeap.Init(1 << 8);  // 1 KiB
 
-  List<int>* L;
+  List<int>* L = nullptr;
   StackRoots _roots({&L});
 
   int length = 5;
-  L = Alloc<List<int>>(42, length);
+  L = NewList<int>(42, length);
 
   int n = 300;
   int total = 0;

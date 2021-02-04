@@ -772,20 +772,6 @@ class List : public gc_heap::Obj {
     assert(slab_ == nullptr);
   }
 
-  // TODO: Move to NewList() because constructors can't move itself like
-  // self->set().
-  // list_repeat ['foo'] * 3
-  List(T item, int times) : List() {
-    auto self = this;
-    StackRoots _roots({&self});
-
-    self->reserve(times);
-    self->len_ = times;
-    for (int i = 0; i < times; ++i) {
-      self->set(i, item);
-    }
-  }
-
   // Implements L[i]
   T index(int i) {
     if (i < 0) {
@@ -979,6 +965,20 @@ List<T>* NewList(std::initializer_list<T> init) {
     ++i;
   }
   self->len_ = n;
+  return self;
+}
+
+// ['foo'] * 3
+template <typename T>
+List<T>* NewList(T item, int times) {
+  auto self = Alloc<List<T>>();
+  StackRoots _roots({&self});
+
+  self->reserve(times);
+  self->len_ = times;
+  for (int i = 0; i < times; ++i) {
+    self->set(i, item);
+  }
   return self;
 }
 
