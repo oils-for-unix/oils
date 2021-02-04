@@ -205,7 +205,7 @@ cpp-compile() {
   local variant=$2
   shift 2
 
-  # TODO: my_runtime_test, gc_stress_test, mylib2_test fail with GC_EVERY_ALLOC
+  # TODO: my_runtime_test and gc_stress_test fail with GC_EVERY_ALLOC
   #local flags='-D GC_DEBUG -D GC_PROTECT -D GC_EVERY_ALLOC '
   local flags='-D GC_DEBUG -D GC_PROTECT '
 
@@ -227,21 +227,24 @@ cpp-compile() {
 
 mylib-test() {
   ### Accepts greatest args like -t dict
-  local variant=${1:-dbg}
+  local variant=$1
+  shift
   cpp-compile mylib_test $variant -I ../cpp mylib.cc
   _bin/mylib_test.$variant "$@"
 }
 
 gc-heap-test() {
   ### Accepts greatest args like -t dict
-  local variant=${1:-dbg}
+  local variant=$1  # dbg, asan, etc.
+  shift
   cpp-compile gc_heap_test $variant -I ../cpp gc_heap.cc
   _bin/gc_heap_test.$variant "$@"
 }
 
 gc-stress-test() {
   ### Accepts greatest args like -t dict
-  local variant=${1:-dbg}
+  local variant=$1
+  shift
   cpp-compile gc_stress_test $variant -I ../cpp \
     gc_heap.cc my_runtime.cc mylib2.cc
   _bin/gc_stress_test.$variant "$@"
@@ -249,14 +252,16 @@ gc-stress-test() {
 
 my-runtime-test() {
   ### Accepts greatest args like -t dict
-  local variant=${1:-dbg}
+  local variant=$1
+  shift
   cpp-compile my_runtime_test $variant -I ../cpp gc_heap.cc my_runtime.cc mylib2.cc
   _bin/my_runtime_test.$variant "$@"
 }
 
 mylib2-test() {
   ### Accepts greatest args like -t dict
-  local variant=${1:-dbg}
+  local variant=$1
+  shift
   cpp-compile mylib2_test $variant -I ../cpp mylib2.cc gc_heap.cc my_runtime.cc
   _bin/mylib2_test.$variant "$@"
 }

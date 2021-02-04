@@ -679,6 +679,7 @@ inline Str* NewStr(int len) {
 }
 
 inline Str* NewStr(const char* data, int len) {
+  // Problem: if data points inside a Str, it's often invalidated!
   Str* s = NewStr(len);
 
   // log("NewStr s->data_ %p len = %d", s->data_, len);
@@ -709,6 +710,17 @@ class _DummyObj {  // For maskbit()
 
 constexpr int maskbit(int offset) {
   return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
+}
+
+class _DummyObj_v {  // For maskbit_v()
+ public:
+  void* vtable;  // how the compiler does dynamic dispatch
+  OBJ_HEADER()
+  int first_field_;
+};
+
+constexpr int maskbit_v(int offset) {
+  return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
 }
 
 //

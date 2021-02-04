@@ -9,6 +9,12 @@
 #include "gc_heap.h"
 #include "my_runtime.h"  // Tuple2
 
+using gc_heap::Alloc;
+using gc_heap::StackRoots;
+using gc_heap::kZeroMask;
+using gc_heap::maskbit;
+using gc_heap::maskbit_v;
+
 namespace mylib {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
@@ -44,8 +50,12 @@ inline Str* octal(int i) {
   return NewStr(buf, length);  // copy buf
 }
 
-class LineReader {
+class LineReader : gc_heap::Obj {
  public:
+  // Abstract type with no fields: unknown size
+  LineReader(uint16_t field_mask, int obj_len)
+      : gc_heap::Obj(Tag::FixedSize, field_mask, obj_len) {
+  }
   virtual Str* readline() = 0;
   virtual bool isatty() {
     return false;
@@ -57,22 +67,29 @@ class LineReader {
 
 class BufLineReader : public LineReader {
  public:
-  explicit BufLineReader(Str* s) : s_(s), pos_(s->data_) {
-  }
+  explicit BufLineReader(Str* s);
   virtual Str* readline();
 
- private:
   Str* s_;
-  const char* pos_;
+  int pos_;
 
   DISALLOW_COPY_AND_ASSIGN(BufLineReader)
 };
 
+constexpr uint16_t maskof_BufLineReader() {
+  return maskbit_v(offsetof(BufLineReader, s_));
+}
+
+inline BufLineReader::BufLineReader(Str* s)
+    : LineReader(maskof_BufLineReader(), sizeof(BufLineReader)),
+      s_(s),
+      pos_(0) {
+}
+
 // Wrap a FILE*
 class CFileLineReader : public LineReader {
  public:
-  explicit CFileLineReader(FILE* f) : f_(f) {
-  }
+  explicit CFileLineReader(FILE* f);
   virtual Str* readline();
   virtual int fileno() {
     return ::fileno(f_);
@@ -84,6 +101,10 @@ class CFileLineReader : public LineReader {
   DISALLOW_COPY_AND_ASSIGN(CFileLineReader)
 };
 
+inline CFileLineReader::CFileLineReader(FILE* f)
+    : LineReader(kZeroMask, sizeof(CFileLineReader)), f_(f) {
+}
+
 extern LineReader* gStdin;
 
 inline LineReader* Stdin() {
@@ -94,13 +115,15 @@ inline LineReader* Stdin() {
 }
 
 inline LineReader* open(Str* path) {
+  StackRoots _roots({&path});
+
   FILE* f = fopen(path->data_, "r");
 
   // TODO: Better error checking.  IOError?
   if (!f) {
     throw new AssertionError("file not found");
   }
-  return new CFileLineReader(f);
+  return Alloc<CFileLineReader>(f);
 }
 
 class Writer : public gc_heap::Obj {

@@ -191,9 +191,13 @@ void Print(List<Str*>* parts) {
 }
 
 TEST str_split_test() {
-  Str* empty = NewStr("");
-  auto sep = NewStr(":");
-  auto parts = empty->split(sep);
+  Str* sep = nullptr;
+  List<Str*>* parts = nullptr;
+
+  StackRoots _roots({&sep, &parts});
+  sep = NewStr(":");
+
+  parts = kEmptyString->split(sep);
   ASSERT_EQ(1, len(parts));
   Print(parts);
 

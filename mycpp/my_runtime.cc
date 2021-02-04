@@ -204,6 +204,10 @@ int Str::_strip_right_pos() {
 }
 
 Str* Str::strip() {
+  auto self = this;
+  Str* result = nullptr;
+  StackRoots _roots({&self, &result});
+
   int n = len(this);
   if (n == 0) {
     return this;
@@ -216,7 +220,9 @@ Str* Str::strip() {
   }
 
   int new_len = right_pos - left_pos + 1;
-  return NewStr(data_ + left_pos, new_len);  // Copy part of data
+  result = NewStr(new_len);
+  memcpy(result->data_, self->data_ + left_pos, new_len);
+  return result;
 }
 
 // Used for CommandSub in osh/cmd_exec.py
@@ -399,6 +405,9 @@ Str* Str::replace(Str* old, Str* new_str) {
 }
 
 List<Str*>* Str::split(Str* sep) {
+  List<Str*>* result = nullptr;
+  StackRoots _roots({&sep, &result});
+
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
 
@@ -408,12 +417,14 @@ List<Str*>* Str::split(Str* sep) {
     return NewList<Str*>(std::initializer_list<Str*>{kEmptyString});
   }
 
-  auto result = Alloc<List<Str*>>();
-
   int n = length;
   const char* pos = data_;
   const char* end = data_ + length;
 
+  result = Alloc<List<Str*>>();
+
+  // TODO: allocations here are problematic.  I ran into this with
+  // mylib::split_once() too.
   while (true) {
     const char* new_pos = static_cast<const char*>(memchr(pos, sep_char, n));
     if (new_pos == nullptr) {

@@ -80,9 +80,14 @@ TEST writer_test() {
 using mylib::BufLineReader;
 
 TEST buf_line_reader_test() {
-  Str* s = NewStr("foo\nbar\nleftover");
-  BufLineReader* reader = Alloc<BufLineReader>(s);
-  Str* line;
+  Str* s = nullptr;
+  BufLineReader* reader = nullptr;
+  Str* line = nullptr;
+
+  StackRoots _roots({&s, &reader, &line});
+
+  s = NewStr("foo\nbar\nleftover");
+  reader = Alloc<BufLineReader>(s);
 
   log("BufLineReader");
 
@@ -105,7 +110,7 @@ TEST buf_line_reader_test() {
   PASS();
 }
 
-TEST test_files() {
+TEST files_test() {
   mylib::Writer* stdout_ = mylib::Stdout();
   log("stdout isatty() = %d", stdout_->isatty());
 
@@ -115,10 +120,18 @@ TEST test_files() {
   ASSERT_EQ(0, stdin_->fileno());
 
   FILE* f = fopen("README.md", "r");
-  auto r = new mylib::CFileLineReader(f);
+
+  mylib::CFileLineReader* r = nullptr;
+  Str* filename = nullptr;
+  Str* filename2 = nullptr;
+  StackRoots _roots({&r, &filename, &filename2});
+
+  r = Alloc<mylib::CFileLineReader>(f);
+  filename = NewStr("README.md");
+  filename2 = NewStr("README.md ");
   // auto r = mylib::Stdin();
 
-  log("test_files");
+  log("files_test");
   int i = 0;
   while (true) {
     Str* s = r->readline();
@@ -130,14 +143,14 @@ TEST test_files() {
     }
     ++i;
   };
-  log("test_files DONE");
+  log("files_test DONE");
 
-  auto f2 = mylib::open(NewStr("README.md"));
+  auto f2 = mylib::open(filename);
   ASSERT(f2 != nullptr);
 
   // See if we can strip a space and still open it.  Underlying fopen() call
   // works.
-  auto f3 = mylib::open((NewStr("README.md "))->strip());
+  auto f3 = mylib::open(filename2->strip());
   ASSERT(f3 != nullptr);
 
   PASS();
@@ -155,7 +168,7 @@ int main(int argc, char** argv) {
   RUN_TEST(writer_test);
 
   RUN_TEST(buf_line_reader_test);
-  RUN_TEST(test_files);
+  RUN_TEST(files_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

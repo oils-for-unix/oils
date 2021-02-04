@@ -73,26 +73,31 @@ Str* CFileLineReader::readline() {
 // log("%s") falls back on sprintf, so it expects a NUL terminator.
 // It would be easier for us to just share.
 Str* BufLineReader::readline() {
-  const char* end = s_->data_ + len(s_);
-  if (pos_ == end) {
+  auto self = this;
+  Str* line = nullptr;
+  StackRoots _roots({&self, &line});
+
+  int buf_len = len(s_);
+  if (pos_ == buf_len) {
     return gc_heap::kEmptyString;
   }
 
-  const char* orig_pos = pos_;
-  const char* new_pos = strchr(pos_, '\n');
+  int orig_pos = pos_;
+  const char* p = strchr(s_->data_ + pos_, '\n');
   // log("pos_ = %s", pos_);
-  int length;
-  if (new_pos) {
-    length = new_pos - pos_ + 1;  // past newline char
+  int line_len;
+  if (p) {
+    int new_pos = p - self->s_->data_;
+    line_len = new_pos - pos_ + 1;  // past newline char
     pos_ = new_pos + 1;
   } else {  // leftover line
-    length = end - pos_;
-    pos_ = end;
+    line_len = buf_len - pos_;
+    pos_ = buf_len;
   }
 
-  Str* line = NewStr(length);
-  memcpy(line->data_, orig_pos, length);  // copy the list item
-  assert(line->data_[length] == '\0');
+  line = NewStr(line_len);
+  memcpy(line->data_, self->s_->data_ + orig_pos, line_len);
+  assert(line->data_[line_len] == '\0');
   return line;
 }
 
