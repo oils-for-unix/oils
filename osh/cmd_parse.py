@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
-from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
+from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     condition, condition_t,
     command, command_t,

@@ -693,54 +693,6 @@ extern int fdatasync(int);
 #endif /* 0 */
 
 
-/* On 4.4BSD-descendants, ctype functions serves the whole range of
- * wchar_t character set rather than single byte code points only.
- * This characteristic can break some operations of string object
- * including str.upper() and str.split() on UTF-8 locales.  This
- * workaround was provided by Tim Robbins of FreeBSD project.
- */
-
-#ifdef __FreeBSD__
-#include <osreldate.h>
-#if (__FreeBSD_version >= 500040 && __FreeBSD_version < 602113) || \
-    (__FreeBSD_version >= 700000 && __FreeBSD_version < 700054) || \
-    (__FreeBSD_version >= 800000 && __FreeBSD_version < 800001)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
-#endif
-#endif
-
-
-#if defined(__APPLE__)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
-#endif
-
-#ifdef _PY_PORT_CTYPE_UTF8_ISSUE
-#ifndef __cplusplus
-   /* The workaround below is unsafe in C++ because
-    * the <locale> defines these symbols as real functions,
-    * with a slightly different signature.
-    * See issue #10910
-    */
-#include <ctype.h>
-#include <wctype.h>
-#undef isalnum
-#define isalnum(c) iswalnum(btowc(c))
-#undef isalpha
-#define isalpha(c) iswalpha(btowc(c))
-#undef islower
-#define islower(c) iswlower(btowc(c))
-#undef isspace
-#define isspace(c) iswspace(btowc(c))
-#undef isupper
-#define isupper(c) iswupper(btowc(c))
-#undef tolower
-#define tolower(c) towlower(btowc(c))
-#undef toupper
-#define toupper(c) towupper(btowc(c))
-#endif
-#endif
-
-
 /* Declarations for symbol visibility.
 
   PyAPI_FUNC(type): Declares a public Python API function and return type
