@@ -231,6 +231,10 @@ Str* Str::rstrip(Str* chars) {
 }
 
 Str* Str::rstrip() {
+  auto self = this;
+  Str* result = nullptr;
+  StackRoots _roots({&self, &result});
+
   int n = len(this);
   if (n == 0) {
     return this;
@@ -239,10 +243,16 @@ Str* Str::rstrip() {
   if (right_pos == n - 1) {  // nothing stripped
     return this;
   }
-  return NewStr(data_, right_pos + 1);  // Copy part of data_
+  int new_len = right_pos + 1;
+  result = NewStr(new_len);
+  memcpy(result->data_, self->data_, new_len);
+  return result;
 }
 
 Str* Str::ljust(int width, Str* fillchar) {
+  auto self = this;
+  StackRoots _roots({&self, &fillchar});
+
   assert(len(fillchar) == 1);
 
   int length = len(this);
@@ -252,7 +262,7 @@ Str* Str::ljust(int width, Str* fillchar) {
   } else {
     Str* result = NewStr(width);
     char c = fillchar->data_[0];
-    memcpy(result->data_, data_, length);
+    memcpy(result->data_, self->data_, length);
     for (int i = length; i < width; ++i) {
       result->data_[i] = c;
     }
@@ -262,6 +272,9 @@ Str* Str::ljust(int width, Str* fillchar) {
 }
 
 Str* Str::rjust(int width, Str* fillchar) {
+  auto self = this;
+  StackRoots _roots({&self, &fillchar});
+
   assert(len(fillchar) == 1);
 
   int length = len(this);
@@ -274,7 +287,7 @@ Str* Str::rjust(int width, Str* fillchar) {
     for (int i = 0; i < num_fill; ++i) {
       result->data_[i] = c;
     }
-    memcpy(result->data_ + num_fill, data_, length);
+    memcpy(result->data_ + num_fill, self->data_, length);
     assert(result->data_[width] == '\0');
     return result;
   }
@@ -445,7 +458,7 @@ List<Str*>* Str::split(Str* sep) {
 }
 
 Str* Str::join(List<Str*>* items) {
-  Str* self = this;       // must be a root!
+  auto self = this;       // must be a root!
   Str* result = nullptr;  // may not need to be a root, but make it robust
 
   StackRoots _roots({&self, &result, &items});
@@ -470,8 +483,8 @@ Str* Str::join(List<Str*>* items) {
 
   for (int i = 0; i < num_parts; ++i) {
     // log("i %d", i);
-    if (i != 0 && sep_len) {             // optimize common case of ''.join()
-      memcpy(p_result, data_, sep_len);  // copy the separator
+    if (i != 0 && sep_len) {  // optimize common case of ''.join()
+      memcpy(p_result, self->data_, sep_len);  // copy the separator
       p_result += sep_len;
       // log("len_ %d", len_);
     }
