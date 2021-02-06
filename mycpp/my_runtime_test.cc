@@ -152,30 +152,32 @@ TEST str_replace_test() {
   Str* _123 = nullptr;
   Str* s = nullptr;
   Str* foxo = nullptr;
-  StackRoots _roots({&o, &_12, &_123, &s, &foxo});
+  Str* expected = nullptr;
+  StackRoots _roots({&o, &_12, &_123, &s, &foxo, &expected});
 
   o = NewStr("o");
   _12 = NewStr("12");
   _123 = NewStr("123");
 
   s = kStrFood->replace(o, _12);
-  ASSERT(str_equals(NewStr("f1212d"), s));
+  ASSERT(str_equals0("f1212d", s));
   print(s);
 
   s = kStrFoo->replace(o, _123);
-  ASSERT(str_equals(NewStr("f123123"), s));
+  ASSERT(str_equals0("f123123", s));
   print(s);
 
   foxo = NewStr("foxo");
   s = foxo->replace(o, _123);
-  ASSERT(str_equals(NewStr("f123x123"), s));
+  ASSERT(str_equals0("f123x123", s));
   print(s);
 
   s = kWithNull->replace(a, XX);
   print(s);
 
   // Explicit length because of \0
-  ASSERT(str_equals(NewStr("foo\0bXXr", 8), s));
+  expected = NewStr("foo\0bXXr", 8);
+  ASSERT(str_equals(expected, s));
 
   PASS();
 }
