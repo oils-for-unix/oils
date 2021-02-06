@@ -420,8 +420,10 @@ Str* Str::replace(Str* old, Str* new_str) {
 }
 
 List<Str*>* Str::split(Str* sep) {
+  auto self = this;
   List<Str*>* result = nullptr;
-  StackRoots _roots({&sep, &result});
+  char* place = nullptr;
+  StackRoots _roots({&self, &sep, &result, &place});
 
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
@@ -432,30 +434,42 @@ List<Str*>* Str::split(Str* sep) {
     return NewList<Str*>(std::initializer_list<Str*>{kEmptyString});
   }
 
-  int n = length;
-  const char* pos = data_;
-  const char* end = data_ + length;
-
-  result = Alloc<List<Str*>>();
-
-  // TODO: allocations here are problematic.  I ran into this with
-  // mylib::split_once() too.
-  while (true) {
-    const char* new_pos = static_cast<const char*>(memchr(pos, sep_char, n));
-    if (new_pos == nullptr) {
-      result->append(NewStr(pos, end - pos));  // rest of the string
-      break;
-    }
-    int new_len = new_pos - pos;
-
-    result->append(NewStr(pos, new_len));
-    n -= new_len + 1;
-    pos = new_pos + 1;
-    if (pos >= end) {  // separator was at end of string
-      result->append(kEmptyString);
-      break;
+  // Find breaks first so we can allocate the right number of strings ALL AT
+  // ONCE. We want to avoid invalidating self->data_.
+  int num_bytes = 0;
+  int prev_pos = 0;
+  std::vector<int> breaks;
+  breaks.push_back(-1);  // beginning of first part
+  for (int i = 0; i < length; ++i) {
+    if (data_[i] == sep_char) {
+      breaks.push_back(i);
+      int part_len = i - prev_pos - 1;
+      if (part_len > 0) {  // only non-empty parts
+        num_bytes += aligned(kStrHeaderSize + part_len + 1);
+      }
+      prev_pos = i;
     }
   }
+  breaks.push_back(length);  // end of last part
+
+  result = NewList<Str*>(nullptr, breaks.size() - 1);  // reserve enough space
+  place = reinterpret_cast<char*>(gHeap.Allocate(num_bytes));
+  for (int i = 1; i < breaks.size(); ++i) {
+    int prev_pos = breaks[i - 1];
+    int part_len = breaks[i] - prev_pos - 1;
+    if (part_len > 0) {
+      // like NewStr(), but IN PLACE
+      int obj_len = kStrHeaderSize + part_len + 1;  // NUL terminator
+      Str* part = new (place) Str();                // placement new
+      part->SetCellLength(obj_len);                 // So the GC can copy it
+      memcpy(part->data_, self->data_ + prev_pos + 1, part_len);
+      result->set(i - 1, part);
+      place += aligned(obj_len);
+    } else {
+      result->set(i - 1, kEmptyString);  // save some space
+    }
+  }
+
   return result;
 }
 

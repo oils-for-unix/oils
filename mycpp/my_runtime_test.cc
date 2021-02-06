@@ -16,6 +16,7 @@ using gc_heap::kEmptyString;
 
 GLOBAL_STR(kStrFood, "food");
 GLOBAL_STR(kWithNull, "foo\0bar");
+GLOBAL_STR(kSpace, " ");
 
 TEST print_test() {
   print(kStrFood);
@@ -141,6 +142,7 @@ TEST int_to_str_test() {
 }
 
 GLOBAL_STR(kStrFoo, "foo");
+GLOBAL_STR(kStrBar, "bar");
 GLOBAL_STR(a, "a");
 GLOBAL_STR(XX, "XX");
 
@@ -202,22 +204,30 @@ TEST str_split_test() {
   Print(parts);
 
   parts = (NewStr(":"))->split(sep);
-  ASSERT_EQ(2, len(parts));
+  ASSERT_EQ_FMT(2, len(parts), "%d");
   ASSERT(str_equals(kEmptyString, parts->index(0)));
   ASSERT(str_equals(kEmptyString, parts->index(1)));
   Print(parts);
 
   parts = (NewStr("::"))->split(sep);
   ASSERT_EQ(3, len(parts));
+  ASSERT(str_equals(kEmptyString, parts->index(0)));
+  ASSERT(str_equals(kEmptyString, parts->index(1)));
+  ASSERT(str_equals(kEmptyString, parts->index(2)));
   Print(parts);
 
   parts = (NewStr("a:b"))->split(sep);
   ASSERT_EQ(2, len(parts));
   Print(parts);
+  ASSERT(str_equals0("a", parts->index(0)));
+  ASSERT(str_equals0("b", parts->index(1)));
 
   parts = (NewStr("abc:def:"))->split(sep);
   ASSERT_EQ(3, len(parts));
   Print(parts);
+  ASSERT(str_equals0("abc", parts->index(0)));
+  ASSERT(str_equals0("def", parts->index(1)));
+  ASSERT(str_equals(kEmptyString, parts->index(2)));
 
   parts = (NewStr(":abc:def:"))->split(sep);
   ASSERT_EQ(4, len(parts));
@@ -229,8 +239,6 @@ TEST str_split_test() {
 
   PASS();
 }
-
-GLOBAL_STR(kSpace, " ");
 
 TEST str_methods_test() {
   log("char funcs");
@@ -401,7 +409,11 @@ TEST str_iters_test() {
 
 TEST list_methods_test() {
   auto init = std::initializer_list<int>{5, 6, 7, 8};
-  auto ints = NewList<int>(init);
+
+  List<int>* ints = nullptr;
+  StackRoots _roots({&ints});
+
+  ints = NewList<int>(init);
 
   List<int>* slice1 = ints->slice(1);
   ASSERT_EQ(3, len(slice1));
@@ -506,9 +518,12 @@ TEST sort_test() {
   ASSERT_EQ(-1, int_cmp(0, 5));
   ASSERT_EQ(1, int_cmp(0, -5));
 
-  auto a = NewStr("a");
-  auto aa = NewStr("aa");
-  auto b = NewStr("b");
+  Str *a = nullptr, *aa = nullptr, *b = nullptr;
+  StackRoots _roots({&a, &aa, &b});
+
+  a = NewStr("a");
+  aa = NewStr("aa");
+  b = NewStr("b");
 
   ASSERT_EQ(0, str_cmp(kEmptyString, kEmptyString));
   ASSERT_EQ(-1, str_cmp(kEmptyString, a));
@@ -518,19 +533,22 @@ TEST sort_test() {
   ASSERT_EQ(1, str_cmp(b, a));
   ASSERT_EQ(1, str_cmp(b, kEmptyString));
 
-  auto strs = Alloc<List<Str*>>();
-  strs->append(NewStr("c"));
-  strs->append(NewStr("a"));
-  strs->append(NewStr("b"));
-  strs->append(kEmptyString);
-  ASSERT_EQ(4, len(strs));  // ['c', 'a', 'b', '']
+  List<Str*>* strs = nullptr;
+  StackRoots _roots2({&strs});
+  strs = Alloc<List<Str*>>();
 
-  strs->sort();  // ['a', 'b', 'c']
+  strs->append(a);
+  strs->append(aa);
+  strs->append(b);
+  strs->append(kEmptyString);
+  ASSERT_EQ(4, len(strs));  // ['a', 'aa', 'b', '']
+
+  strs->sort();  // ['', 'a', 'aa', 'b']
   ASSERT_EQ(4, len(strs));
   ASSERT(str_equals(kEmptyString, strs->index(0)));
-  ASSERT(str_equals(NewStr("a"), strs->index(1)));
-  ASSERT(str_equals(NewStr("b"), strs->index(2)));
-  ASSERT(str_equals(NewStr("c"), strs->index(3)));
+  ASSERT(str_equals0("a", strs->index(1)));
+  ASSERT(str_equals0("aa", strs->index(2)));
+  ASSERT(str_equals0("b", strs->index(3)));
 
   PASS();
 }
@@ -547,52 +565,65 @@ TEST contains_test() {
   ASSERT(b == false);
 #endif
 
-  b = str_contains(NewStr("foo\0a", 5), NewStr("a"));
-  ASSERT(b == true);
+  Str* s = nullptr;
+  Str* nul = nullptr;
+  StackRoots _roots({&s, &nul});
+
+  s = NewStr("foo\0 ", 5);
+  ASSERT(str_contains(s, kSpace));
 
   // this ends with a NUL, but also has a NUL terinator.
-  Str* s = NewStr("foo\0", 4);
-  b = str_contains(s, NewStr("\0", 1));
-  ASSERT(b == true);
+  nul = NewStr("\0", 1);
+  ASSERT(str_contains(s, nul));
+  ASSERT(!str_contains(kSpace, nul));
 
   log("  List<Str*>");
-  auto strs = Alloc<List<Str*>>();
-  strs->append(NewStr("bar"));
+  List<Str*>* strs = nullptr;
+  List<int>* ints = nullptr;
+  List<double>* floats = nullptr;
 
-  b = list_contains(strs, NewStr("foo"));
-  ASSERT(b == false);
+  StackRoots _roots2({&strs, &ints, &floats});
 
-  strs->append(NewStr("foo"));
-  b = list_contains(strs, NewStr("foo"));
-  ASSERT(b == true);
+  strs = Alloc<List<Str*>>();
+
+  strs->append(kSpace);
+  s = NewStr(" ");  // LOCAL space
+  ASSERT(list_contains(strs, s));
+  ASSERT(!list_contains(strs, kStrFoo));
+
+  strs->append(kStrFoo);
+  ASSERT(list_contains(strs, kStrFoo));
 
   log("  ints");
-  auto ints = NewList<int>(std::initializer_list<int>{1, 2, 3});
-  b = list_contains(ints, 1);
-  ASSERT(b == true);
+  ints = NewList<int>(std::initializer_list<int>{1, 2, 3});
+  ASSERT(list_contains(ints, 1));
 
-  b = list_contains(ints, 42);
-  ASSERT(b == false);
+  ASSERT(!list_contains(ints, 42));
 
   log("  floats");
-  auto floats = NewList<double>(std::initializer_list<double>{0.5, 0.25, 0.0});
-  b = list_contains(floats, 0.0);
-  log("b = %d", b);
-  b = list_contains(floats, 42.0);
-  log("b = %d", b);
+  floats = NewList<double>(std::initializer_list<double>{0.5, 0.25, 0.0});
+  ASSERT(list_contains(floats, 0.0));
+  ASSERT(!list_contains(floats, 42.0));
 
   PASS();
 }
 
 TEST dict_methods_test() {
-  Dict<int, Str*>* d = Alloc<Dict<int, Str*>>();
-  d->set(1, NewStr("foo"));
+  Dict<int, Str*>* d = nullptr;
+  Dict<Str*, int>* d2 = nullptr;
+  Str* key = nullptr;
+  StackRoots _roots({&d, &d2, &key});
+
+  d = Alloc<Dict<int, Str*>>();
+  d->set(1, kStrFoo);
   ASSERT(str_equals0("foo", d->index(1)));
 
-  auto d2 = Alloc<Dict<Str*, int>>();
-  Str* key = NewStr("key");
+  d2 = Alloc<Dict<Str*, int>>();
+  key = NewStr("key");
   d2->set(key, 42);
   ASSERT_EQ(42, d2->index(key));
+
+  PASS();
 
   d2->set(NewStr("key2"), 2);
   d2->set(NewStr("key3"), 3);
@@ -711,11 +742,15 @@ TEST dict_funcs_test() {
 }
 
 TEST dict_iters_test() {
-  auto d2 = Alloc<Dict<Str*, int>>();
-  d2->set(NewStr("foo"), 2);
-  d2->set(NewStr("bar"), 3);
+  Dict<Str*, int>* d2 = nullptr;
+  List<Str*>* keys = nullptr;
+  StackRoots _roots({&d2, &keys});
 
-  auto keys = d2->keys();
+  d2 = Alloc<Dict<Str*, int>>();
+  d2->set(kStrFoo, 2);
+  d2->set(kStrBar, 3);
+
+  keys = d2->keys();
   for (int i = 0; i < len(keys); ++i) {
     printf("k %s\n", keys->index(i)->data_);
   }
@@ -742,15 +777,12 @@ int main(int argc, char** argv) {
   RUN_TEST(int_to_str_test);
 
   RUN_TEST(str_replace_test);
-  // TODO: Fix crashes here
-  // RUN_TEST(str_split_test);
+  RUN_TEST(str_split_test);
 
   RUN_TEST(str_methods_test);
   RUN_TEST(str_funcs_test);
   RUN_TEST(str_iters_test);
 
-  // TODO: Fix crashes here
-#if 0
   RUN_TEST(list_methods_test);
   RUN_TEST(list_funcs_test);
   RUN_TEST(list_iters_test);
@@ -760,7 +792,6 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_funcs_test);
   RUN_TEST(dict_iters_test);
-#endif
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

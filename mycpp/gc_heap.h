@@ -1026,7 +1026,10 @@ const int kEmptyEntry = -2;
 template <typename T>
 List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
   // TODO: Reserve the right amount of space
-  List<T>* result = Alloc<List<T>>();
+  List<T>* result = nullptr;
+  StackRoots _roots({&index, &slab, &result});
+
+  result = Alloc<List<T>>();
 
   for (int i = 0; i < n; ++i) {
     int special = index->items_[i];

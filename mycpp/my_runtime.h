@@ -19,6 +19,7 @@
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewStr;
+using gc_heap::StackRoots;
 using gc_heap::Str;
 
 class IndexError {};
@@ -258,6 +259,8 @@ inline bool str_contains(Str* haystack, Str* needle) {
 // e.g. 1 in [1, 2, 3]
 template <typename T>
 inline bool list_contains(List<T>* haystack, T needle) {
+  // StackRoots _roots({&haystack});  // doesn't allocate
+
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
     if (haystack->index(i) == needle) {
@@ -269,6 +272,8 @@ inline bool list_contains(List<T>* haystack, T needle) {
 
 // e.g. 'a' in ['a', 'b', 'c']
 inline bool list_contains(List<Str*>* haystack, Str* needle) {
+  // StackRoots _roots({&haystack, &needle});  // doesn't allocate
+
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
     if (str_equals(haystack->index(i), needle)) {
