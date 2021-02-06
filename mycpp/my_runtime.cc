@@ -5,6 +5,7 @@
 
 #include <ctype.h>  // isspace(), isdigit()
 #include <cstdarg>  // va_list, etc.
+#include <vector>
 
 using gc_heap::StackRoots;
 using gc_heap::kEmptyString;
