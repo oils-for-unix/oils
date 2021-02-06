@@ -99,6 +99,8 @@ Str* str_concat(Str* a, Str* b) {
 }
 
 Str* str_repeat(Str* s, int times) {
+  StackRoots _roots({&s});
+
   // Python allows -1 too, and Oil used that
   if (times <= 0) {
     return kEmptyString;

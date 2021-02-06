@@ -346,38 +346,47 @@ TEST str_methods_test() {
 
 TEST str_funcs_test() {
   log("str_concat()");
-  ASSERT(str_equals(NewStr("foodfood"), str_concat(kStrFood, kStrFood)));
+  ASSERT(str_equals0("foodfood", str_concat(kStrFood, kStrFood)));
   ASSERT(str_equals(kEmptyString, str_concat(kEmptyString, kEmptyString)));
 
   log("str_repeat()");
-  Str* s = NewStr("abc");
+
+  Str* s = nullptr;
+  Str* result = nullptr;
+  StackRoots _roots({&s, &result});
 
   // -1 is allowed by Python and used by Oil!
+  s = NewStr("abc");
   ASSERT(str_equals(kEmptyString, str_repeat(s, -1)));
   ASSERT(str_equals(kEmptyString, str_repeat(s, 0)));
 
-  Str* r1 = str_repeat(s, 1);
-  ASSERT(str_equals(s, r1));
+  result = str_repeat(s, 1);
+  ASSERT(str_equals(s, result));
 
-  Str* r3 = str_repeat(s, 3);
-  ASSERT(str_equals(NewStr("abcabcabc"), r3));
+  result = str_repeat(s, 3);
+  ASSERT(str_equals0("abcabcabc", result));
 
-  log("repr %s", repr(NewStr(""))->data_);
-  log("repr %s", repr(NewStr("'"))->data_);
-  log("repr %s", repr(NewStr("'single'"))->data_);
-  log("repr %s", repr(NewStr("\"double\""))->data_);
+  ASSERT(str_equals0("''", repr(kEmptyString)));
+  ASSERT(str_equals0("\"'\"", repr(NewStr("'"))));
+  ASSERT(str_equals0("\"'single'\"", repr(NewStr("'single'"))));
+  ASSERT(str_equals0("'\"double\"'", repr(NewStr("\"double\""))));
 
   // this one is truncated
-  const char* n_str = "NUL \x00 NUL";
-  int n_len = 9;  // 9 bytes long
-  log("repr %s", repr(NewStr(n_str, n_len))->data_);
-  log("len %d", len(repr(NewStr(n_str, n_len))));
+  s = NewStr("NUL \x00 NUL", 9);
+  ASSERT(str_equals0("'NUL \\x00 NUL'", repr(s)));
 
-  log("repr %s", repr(NewStr("tab\tline\nline\r\n"))->data_);
-  log("repr %s", repr(NewStr("high \xFF \xFE high"))->data_);
+  result = repr(NewStr("tab\tline\nline\r\n"));
+  print(result);
+  ASSERT(str_equals0("'tab\\tline\\nline\\r\\n'", result));
 
-  ASSERT_EQ(65, ord(NewStr("A")));
-  ASSERT(str_equals(NewStr("A"), chr(65)));
+  result = repr(NewStr("high \xFF \xFE high"));
+  ASSERT(str_equals0("'high \\xff \\xfe high'", result));
+
+  s = NewStr("A");
+  ASSERT_EQ(65, ord(s));
+
+  result = chr(65);
+  ASSERT(str_equals(s, result));
 
   PASS();
 }
@@ -737,12 +746,11 @@ int main(int argc, char** argv) {
   // RUN_TEST(str_split_test);
 
   RUN_TEST(str_methods_test);
-
-  // TODO: Fix crashes here
-#if 0
   RUN_TEST(str_funcs_test);
   RUN_TEST(str_iters_test);
 
+  // TODO: Fix crashes here
+#if 0
   RUN_TEST(list_methods_test);
   RUN_TEST(list_funcs_test);
   RUN_TEST(list_iters_test);
