@@ -47,6 +47,25 @@ typecheck-example() {
   fi
 }
 
+ninja-translate() {
+  ### Ninja action.  TODO: Get rid of the 2 functions below?
+
+  local in=$1
+  local out=$2
+
+  local name=$(basename $in .py)
+  local raw=_gen/${name}_raw.cc
+
+  # NOTE: mycpp has to be run in the virtualenv, as well as with a different
+  # PYTHONPATH.
+  ( source _tmp/mycpp-venv/bin/activate
+    # flags may be empty
+    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py $in > $raw
+  )
+
+  cpp-skeleton $name $raw > $out
+}
+
 _translate-example() {
   local name=${1:-fib}
   local variant=${2:-}
