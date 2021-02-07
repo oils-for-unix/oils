@@ -56,6 +56,8 @@ ninja-translate() {
   local name=$(basename $in .py)
   local raw=_gen/${name}_raw.cc
 
+  export GC=1  # mycpp_main.py reads this
+
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different
   # PYTHONPATH.
   ( source _tmp/mycpp-venv/bin/activate
@@ -106,8 +108,39 @@ translate-example() {
   fi
 }
 
+ninja-compile() {
+  local variant=$1
+  local in=$2
+  local out=$3
+
+  local flags="$CXXFLAGS"
+
+  case $variant in
+    (asan)
+      flags+=" $ASAN_FLAGS"  # from run.sh
+      ;;
+    (opt)
+      flags+=' -O2 -g'  # -g so you can debug crashes?
+      ;;
+    (gc_debug)
+      # TODO: GC_REPORT and GC_VERBOSE instead?
+      flags+=' -g -D GC_PROTECT -D GC_DEBUG'
+      ;;
+    (*)
+      die "Invalid variant: $variant"
+      ;;
+  esac
+
+  # Note: needed -lstdc++ for 'operator new', which we're no longer using.  But
+  # probably exceptions too.
+
+  local -a runtime=(my_runtime.cc mylib2.cc gc_heap.cc)
+  set -x
+  $CXX -o $out $flags -I . "${runtime[@]}" $in -lstdc++
+}
+
 _compile-example() { 
-  local name=${1:-fib} #  name of output, and maybe input
+  local name=${1:-fib}  # name of output, and maybe input
   local variant=${2:-}
 
   local src=_gen/$name.cc
@@ -143,7 +176,7 @@ _compile-example() {
   echo "__ Compiling with $CXX"
 
   # need -lstdc++ for 'operator new'
-  # set -x
+  set -x
   $CXX -o $out $flags -I . "${runtime[@]}" $src -lstdc++
 }
 
