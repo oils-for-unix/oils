@@ -41,8 +41,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
+source common.sh  # THIS_DIR and REPO_ROOT
 
 readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
 
@@ -57,10 +56,6 @@ export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
 export ASAN_SYMBOLIZER_PATH="$REPO_ROOT/$CLANG_DIR_RELATIVE/bin/llvm-symbolizer"
 
 readonly DBG_FLAGS='-O0 -g'
-
-time-tsv() {
-  $REPO_ROOT/benchmarks/time_.py --tsv "$@"
-}
 
 create-venv() {
   local dir=_tmp/mycpp-venv

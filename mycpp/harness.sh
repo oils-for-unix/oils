@@ -1,5 +1,7 @@
 # harness.sh: Allow customization of compile/build/run for each example.
 
+source common.sh  # time-tsv
+
 EXAMPLES=( $(cd examples && echo *.py) )
 EXAMPLES=( "${EXAMPLES[@]//.py/}" )
 
