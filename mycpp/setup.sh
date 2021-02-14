@@ -87,12 +87,17 @@ benchmark-examples() {
 travis() {
   cd $THIS_DIR
   ./configure.py
+
+  set +o errexit
   ninja
+  local status=$?
+  set -o errexit
 
   find _ninja -type f > _ninja/index.txt
-  echo 'setup.sh travis done'
+  echo 'mycpp/setup.sh travis done'
 
   # Now we want to zip up
+  return $status
 }
 
 "$@"

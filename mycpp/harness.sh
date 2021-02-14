@@ -56,7 +56,7 @@ ninja-translate() {
   local out=$2
 
   local name=$(basename $in .py)
-  local raw=_gen/${name}_raw.cc
+  local raw=_ninja/gen/${name}_raw.cc
 
   export GC=1  # mycpp_main.py reads this
 

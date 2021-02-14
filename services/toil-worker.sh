@@ -105,11 +105,8 @@ translate       mycpp/setup.sh build                  -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
 mycpp-examples       mycpp/setup.sh travis                 mycpp/_ninja/index.txt
 parse-errors         test/parse-errors.sh travis1          -
-parse-errors-native  test/parse-errors.sh travis2          -
 EOF
-# TODO: Commented this out because it was slow
-#parse-errors2   test/parse-errors.sh travis2          _tmp/other/parse-errors-oil-native.txt
-# note: parse-errors2 depends on oil-native
+#parse-errors-native  test/parse-errors.sh travis2          -
 
 #build-examples       mycpp/setup.sh build-examples         -
 #test-examples        mycpp/setup.sh test-examples          -
