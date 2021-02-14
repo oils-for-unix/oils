@@ -121,7 +121,8 @@
           "apt": {
             "packages": [
               "python3-pip", 
-              "python3-venv"
+              "python3-venv", 
+              "ninja-build"
             ]
           }
         }, 
