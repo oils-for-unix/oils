@@ -85,6 +85,11 @@ benchmark-examples() {
 
 # Ninja
 travis() {
+  # mycpp_main.py needs to find it
+  export MYPY_REPO
+  # Don't use clang for benchmarks.
+  export CXX=c++
+
   cd $THIS_DIR
   ./configure.py
 
