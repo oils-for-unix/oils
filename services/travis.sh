@@ -293,11 +293,12 @@ make-job-wwz() {
   format-wwz-index $job_id $index > index.html
 
   # _tmp/toil: Logs are in _tmp, see services/toil-worker.sh
+  # mycpp/ : leave out bin/ for now
   # web/ : spec test HTML references this.
   #        Note that that index references /web/{base,toil}.css, outside the .wwz
   # temporary: debug dash
   zip -r $wwz \
-    index.html _tmp/toil _tmp/spec _tmp/syscall \
+    index.html _tmp/toil _tmp/spec _tmp/syscall mycpp/_ninja/{tasks,gen} \
     web/{base,spec-code,spec-tests}.css
 }
 

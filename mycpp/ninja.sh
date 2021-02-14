@@ -22,7 +22,7 @@ clean() {
 }
 
 loop() {
-  clean
+  #clean
 
   set +o errexit
   all

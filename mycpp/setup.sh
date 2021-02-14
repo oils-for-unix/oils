@@ -83,4 +83,16 @@ benchmark-examples() {
   ./run.sh benchmark-all
 }
 
+# Ninja
+travis() {
+  cd $THIS_DIR
+  ./configure.py
+  ninja
+
+  find _ninja -type f > _ninja/index.txt
+  echo 'setup.sh travis done'
+
+  # Now we want to zip up
+}
+
 "$@"

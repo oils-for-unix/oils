@@ -24,16 +24,20 @@ source common.sh
 
 # TODO: Move ninja-{translate,compile} here
 
-
 task() {
   local bin=$1  # Run this
-  local task_out=$2  # task file
+  local task_out=$2
   local log_out=$3
 
   case $bin in
     _ninja/bin/*.asan)
       # copied from run.sh and build/mycpp.sh
       export ASAN_OPTIONS='detect_leaks=0'
+      ;;
+
+    examples/*.py)
+      # for running most examples
+      export PYTHONPATH=".:$REPO_ROOT/vendor"
       ;;
   esac
 

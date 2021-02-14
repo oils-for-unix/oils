@@ -53,6 +53,68 @@ sys.path.append('../vendor')
 import ninja_syntax
 
 
+def log(msg, *args):
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
+
+# special ones in examples.sh:
+# - parse, varargs, modules (because it uses many modules)
+# - lexer_main, alloc_main -- these use Oil code
+# - pgen2_demo -- uses pgen2
+
+def ShouldSkip(name):
+  if name in ['pgen2_demo', 'alloc_main', 'lexer_main', 'named_args',
+      'varargs']:
+    return True
+
+  # '%5d' doesn't work yet.  TODO: fix this.
+  if name == 'strings':
+    return True
+
+  # TODO. expr.asdl when GC=1
+  # qsn_qsn.h is incompatible
+  if name == 'parse':
+    return True
+
+  # TODO: Call custom function in examples.sh!
+  if name == 'modules':
+    return True
+
+  return False
+
+
+def ExamplesToTest():
+
+  filenames = os.listdir('examples')
+  py = [name[:-3] for name in filenames if name.endswith('.py')]
+
+  to_test = [name for name in py if not ShouldSkip(name)]
+
+  return to_test
+
+
+def ShouldSkipBenchmark(name):
+  if name.startswith('test_'):
+    return True
+
+  if name == 'control_flow':
+    # TODO: fix 8191 exceptions problem, I think caused by Alloc<ParseError>
+    return True
+
+  # BUG: Assertion failure here!
+  if name == 'cartesian':
+    return True
+
+  return False
+
+
+def ExamplesToBenchmark():
+  to_test = ExamplesToTest()
+  return [name for name in to_test if not ShouldSkipBenchmark(name)]
+
+
 def main(argv):
   n = ninja_syntax.Writer(open('build.ninja', 'w'))
 
@@ -69,16 +131,55 @@ def main(argv):
          description='compile $variant $in $out')
   n.newline()
   n.rule('task',
-         command='./steps.sh task $in $out $log_out',
-         description='task $in $out $log_out')
+         # note: $out can be MULTIPLE FILES, shell-quoted
+         command='./steps.sh task $in $out',
+         description='task $in $out')
   n.newline()
 
-  #examples = ['cgi', 'containers']
-  examples = ['cgi']
+  to_benchmark = ExamplesToBenchmark()
+
+  examples = ExamplesToTest()
+
+  #examples = ['cgi', 'containers', 'fib_iter']
+  #examples = ['cgi']
+
+  # task table dimensions:
+  #
+  # (example, mode, variant)
+  #
+  # mode = test | benchmark
+  # variant = gc_debug | asan | opt | py
+  #
+  # benchmark: opt and py (gc_debug also useful, asan too)
+  # test: asan and py (gc_debug useful, asan mildly)
+  #
+  # Verification task depends on all benchmark and test tasks?
+  # Then do {gc_debug, opt, asan} vs. py
+  # To check that it works.
 
   for ex in examples:
+    n.comment('---')
+    n.comment(ex)
+    n.comment('---')
+    n.newline()
+
+    # Run Python.
+    for mode in ['test', 'benchmark']:
+      if mode == 'benchmark' and ShouldSkipBenchmark(ex):
+        log('Skipping benchmark of %s', ex)
+        continue
+
+      prefix = '_ninja/tasks/%s/%s.py' % (mode, ex)
+      n.build(['%s.task.txt' % prefix, '%s.log.txt' % prefix],
+              'task',
+              'examples/%s.py' % ex)
+      n.newline()
+
+    # Translate to C++
     n.build('_ninja/gen/%s.cc' % ex, 'translate', 'examples/%s.py' % ex)
     n.newline()
+
+    # Compile and run C++.
 
     # TODO: Can also parameterize by CXX: Clang or GCC.
     for variant in ['gc_debug', 'asan', 'opt']:
@@ -88,18 +189,36 @@ def main(argv):
               variables=[('variant', variant)])
       n.newline()
 
-      # Run the binary in two ways
-      for task in ['test', 'benchmark']:
-        n.build('_ninja/tasks/%s/%s.$variant.task.txt' % (task, ex),
-                'task',
-                '_ninja/bin/%s.$variant' % ex,
-                variables=[
-                  ('variant', variant),
-                  # Why do I need to expand variant here?  It's not defined
-                  # yet.
-                  ('log_out', '_ninja/tasks/%s/%s.%s.log.txt' % (task, ex, variant)),
-                ])
-        n.newline()
+      # TODO:
+      # These should depend on the Python log.txt?
+      # And it will diff them?
+      #
+      # It's not just a task?
+      # It's a comparison?
+      # But we don't want to time that, so it should be done separately.
+      # There are a lot of tiny files.
+
+    # minimal
+    MATRIX = [
+        ('test', 'asan'),
+        ('benchmark', 'opt'),
+    ]
+
+    # Run the binary in two ways
+    for mode, variant in MATRIX:
+      if mode == 'benchmark' and ShouldSkipBenchmark(ex):
+        log('Skipping benchmark of %s', ex)
+        continue
+
+      n.build(['_ninja/tasks/%s/%s.$variant.task.txt' % (mode, ex),
+               '_ninja/tasks/%s/%s.$variant.log.txt' % (mode, ex),
+              ],
+              'task',
+              '_ninja/bin/%s.$variant' % ex,
+              variables=[
+                ('variant', variant),
+              ])
+      n.newline()
 
 
 if __name__ == '__main__':
