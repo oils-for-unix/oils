@@ -43,8 +43,6 @@ set -o errexit
 
 source common.sh  # THIS_DIR and REPO_ROOT
 
-readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
-
 source $REPO_ROOT/test/common.sh  # for R_PATH
 source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 source examples.sh

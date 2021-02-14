@@ -5,41 +5,6 @@ source common.sh  # time-tsv
 EXAMPLES=( $(cd examples && echo *.py) )
 EXAMPLES=( "${EXAMPLES[@]//.py/}" )
 
-gen-main() {
-  local main_module=${1:-fib_iter}
-  cat <<EOF
-
-int main(int argc, char **argv) {
-  // gc_heap::gHeap.Init(512);
-  gc_heap::gHeap.Init(128 << 10);  // 128 KiB; doubling in size
-  // gc_heap::gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
-
-  if (getenv("BENCHMARK")) {
-    fprintf(stderr, "Benchmarking...\n");
-    $main_module::run_benchmarks();
-  } else {
-    $main_module::run_tests();
-  }
-}
-EOF
-}
-
-cpp-skeleton() {
-  local main_module=${1:-fib_iter}
-  shift
-
-  cat <<EOF
-// examples/$main_module
-
-EOF
-
-  # the raw module
-  cat "$@"
-
-  # main() function
-  gen-main $main_module
-}
-
 typecheck-example() {
   local name=$1
   if test "$(type -t typecheck-$name)" = "function"; then
@@ -47,27 +12,6 @@ typecheck-example() {
   else
     mypy --py2 --strict examples/$name.py
   fi
-}
-
-ninja-translate() {
-  ### Ninja action.  TODO: Get rid of the 2 functions below?
-
-  local in=$1
-  local out=$2
-
-  local name=$(basename $in .py)
-  local raw=_ninja/gen/${name}_raw.cc
-
-  export GC=1  # mycpp_main.py reads this
-
-  # NOTE: mycpp has to be run in the virtualenv, as well as with a different
-  # PYTHONPATH.
-  ( source _tmp/mycpp-venv/bin/activate
-    # flags may be empty
-    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py $in > $raw
-  )
-
-  cpp-skeleton $name $raw > $out
 }
 
 _translate-example() {
@@ -108,37 +52,6 @@ translate-example() {
   else
     _translate-example "$@"  # name and optional variant
   fi
-}
-
-ninja-compile() {
-  local variant=$1
-  local in=$2
-  local out=$3
-
-  local flags="$CXXFLAGS"
-
-  case $variant in
-    (asan)
-      flags+=" $ASAN_FLAGS"  # from run.sh
-      ;;
-    (opt)
-      flags+=' -O2 -g'  # -g so you can debug crashes?
-      ;;
-    (gc_debug)
-      # TODO: GC_REPORT and GC_VERBOSE instead?
-      flags+=' -g -D GC_PROTECT -D GC_DEBUG'
-      ;;
-    (*)
-      die "Invalid variant: $variant"
-      ;;
-  esac
-
-  # Note: needed -lstdc++ for 'operator new', which we're no longer using.  But
-  # probably exceptions too.
-
-  local -a runtime=(my_runtime.cc mylib2.cc gc_heap.cc)
-  set -x
-  $CXX -o $out $flags -I . "${runtime[@]}" $in -lstdc++
 }
 
 _compile-example() { 

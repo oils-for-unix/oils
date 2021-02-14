@@ -1,5 +1,9 @@
 #!/bin/bash
 #
+# Toil build steps.
+#
+# TODO: Rename to toil-tasks.sh?
+#
 # Usage:
 #   ./setup.sh <function name>
 
@@ -42,49 +46,7 @@ build() {
   build/dev.sh oil-cpp
 }
 
-#
-# Hooks needs because mycpp/run.sh needs to be in the mycpp/ dir.
-#
-
-# TODO: Restore GC=1 after d = {} is translated to NewDict().
-
-build-examples() {
-  ### Build all mycpp/examples
-
-  # TODO: examples/parse expr.asdl needs NewStr instead of new Str()
-  export GC=1
-
-  export MYPY_REPO
-
-  # Don't use clang for benchmarks.
-  export CXX=c++
-
-  cd $THIS_DIR
-  ./run.sh build-all
-}
-
-test-examples() {
-  ### Test all mycpp/examples
-
-  # This works!
-  export GC=1
-
-  cd $THIS_DIR
-  ./run.sh test-all
-}
-
-benchmark-examples() {
-  ### Benchmark all mycpp/examples
-
-  # 'files' has a different result?
-  export GC=1
-
-  cd $THIS_DIR
-  ./run.sh benchmark-all
-}
-
-# Ninja
-travis() {
+all-examples() {
   # mycpp_main.py needs to find it
   export MYPY_REPO
   # Don't use clang for benchmarks.
@@ -103,6 +65,23 @@ travis() {
 
   # Now we want to zip up
   return $status
+}
+
+travis() {
+  # invoked by services/toil-worker.sh
+  all-examples
+}
+
+run-for-release() {
+  # invoked by devtools/release.sh
+
+  rm --verbose -r -f _ninja
+  all-examples
+
+  # TODO: harness.sh benchmark-all creates ../_tmp/mycpp-examples/raw/times.tsv
+  # It compares C++ and Python.
+  #
+  # So we need to do the same with 'cat' and some magic.
 }
 
 "$@"

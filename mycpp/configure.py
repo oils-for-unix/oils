@@ -42,6 +42,17 @@ Notes for Oil:
 
   - Spawn a process with environment variables.
   - use % for substitution instead
+
+TODO:
+- More actions:
+  - Type check
+  - strip binaries
+  - Build and run tests!  These have VARIANTS too!
+    - ninja unit
+    - ninja examples
+- Create table for benchmarking
+  _tmp/mycpp-examples/raw/times.tsv
+
 """
 
 from __future__ import print_function
@@ -123,11 +134,11 @@ def main(argv):
   n.newline()
 
   n.rule('translate',
-         command='./run.sh ninja-translate $in $out',
+         command='./steps.sh translate $in $out',
          description='translate $in $out')
   n.newline()
   n.rule('compile',
-         command='./run.sh ninja-compile $variant $in $out',
+         command='./steps.sh compile $variant $in $out',
          description='compile $variant $in $out')
   n.newline()
   n.rule('task',

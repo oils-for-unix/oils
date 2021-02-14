@@ -497,9 +497,7 @@ compress-benchmarks() {
 
 mycpp-examples() {
   ### Single machine benchmarks that show our GC progress
-  mycpp/setup.sh build-examples
-  mycpp/setup.sh test-examples
-  mycpp/setup.sh benchmark-examples
+  mycpp/setup.sh run-for-release
 }
 
 line-counts() {
