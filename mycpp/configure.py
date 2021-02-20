@@ -16,15 +16,21 @@ _ninja/
     translate/
     compile/
 
-    test/
-      python/
-      cpp/
+    test/       # py, gc_debug, asan, opt
     benchmark/
-      python/
-      cpp/
+    unit/
 
   gen/    # source
+
   bin/    # binaries
+    examples/  # many variants
+    unit/      # unit tests
+
+Phony Targets
+
+  ninja typecheck  # for debugging
+  ninja examples  # all the test, benchmark tasks?
+  ninja unit      # all the 'unit' tasks
 
 Also:
 
@@ -48,8 +54,6 @@ TODO:
   - Type check
   - strip binaries
   - Build and run tests!  These have VARIANTS too!
-    - ninja unit
-    - ninja examples
 - Create table for benchmarking
   _tmp/mycpp-examples/raw/times.tsv
 
@@ -146,6 +150,10 @@ def main(argv):
          command='./steps.sh task $in $out',
          description='task $in $out')
   n.newline()
+  n.rule('typecheck',
+         command='./steps.sh typecheck $in $out',
+         description='typecheck $in $out')
+  n.newline()
 
   to_benchmark = ExamplesToBenchmark()
 
@@ -168,11 +176,34 @@ def main(argv):
   # Then do {gc_debug, opt, asan} vs. py
   # To check that it works.
 
+  phony = {
+      'unit': [],
+      'typecheck': [],  # optional: for debugging only.  translation does it.
+
+      'test': [],  # test examples (across variants, including Python)
+      'benchmark': [],  # benchmark examples (ditto)
+
+      # Compare logs for test AND benchmarks?
+      # This is a separate task because we have multiple variants to compare,
+      # and the timing of test/benchmark tasks should NOT include comparison.
+      'compare': [],
+
+      'strip': [],  # optional: strip binaries.  To see how big they are.
+  }
+
   for ex in examples:
     n.comment('---')
     n.comment(ex)
     n.comment('---')
     n.newline()
+
+    # TODO: make a phony target for these, since they're not strictly necessary.
+    # Translation does everything that type checking does.  Type checking only
+    # is useful for debugging.
+    t = '_ninja/tasks/typecheck/%s.log.txt' % ex
+    n.build([t], 'typecheck', 'examples/%s.py' % ex)
+    n.newline()
+    phony['typecheck'].append(t)
 
     # Run Python.
     for mode in ['test', 'benchmark']:
@@ -181,10 +212,12 @@ def main(argv):
         continue
 
       prefix = '_ninja/tasks/%s/%s.py' % (mode, ex)
-      n.build(['%s.task.txt' % prefix, '%s.log.txt' % prefix],
-              'task',
-              'examples/%s.py' % ex)
+      task_out = '%s.task.txt' % prefix
+      log_out = '%s.log.txt' % prefix
+      n.build([task_out, log_out], 'task', 'examples/%s.py' % ex)
       n.newline()
+
+      phony[mode].append(task_out)
 
     # Translate to C++
     n.build('_ninja/gen/%s.cc' % ex, 'translate', 'examples/%s.py' % ex)
@@ -221,15 +254,21 @@ def main(argv):
         log('Skipping benchmark of %s', ex)
         continue
 
-      n.build(['_ninja/tasks/%s/%s.$variant.task.txt' % (mode, ex),
-               '_ninja/tasks/%s/%s.$variant.log.txt' % (mode, ex),
-              ],
-              'task',
-              '_ninja/bin/%s.$variant' % ex,
-              variables=[
-                ('variant', variant),
-              ])
+      task_out = '_ninja/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
+      log_out = '_ninja/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
+      n.build([task_out, log_out], 'task', '_ninja/bin/%s.%s' % (ex, variant))
       n.newline()
+
+      phony[mode].append(task_out)
+
+  # Write out phony rules
+  for name in sorted(phony):
+    deps = phony[name]
+    if deps:
+      n.build([name], 'phony', deps)
+      n.newline()
+
+  n.default(['test', 'benchmark'])
 
 
 if __name__ == '__main__':

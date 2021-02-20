@@ -145,4 +145,26 @@ task() {
     $bin >$log_out 2>&1
 }
 
+# This is the one installed from PIP
+#mypy() { ~/.local/bin/mypy "$@"; }
+
+# Use repo in the virtualenv
+mypy() {
+  ( source _tmp/mycpp-venv/bin/activate
+    PYTHONPATH=$MYPY_REPO python3 -m mypy "$@";
+  )
+}
+
+typecheck() {
+  ### Typecheck without translation
+  local in=$1
+  local out=$2
+
+  # if test "$(type -t typecheck-$name)" = "function"; then
+  #  typecheck-$name > $out
+  # else
+
+  mypy --py2 --strict $in > $out
+}
+
 "$@"
