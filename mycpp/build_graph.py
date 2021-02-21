@@ -48,13 +48,11 @@ Notes for Oil:
 
 TODO:
 - More actions:
-  - assert-logs-equal: *.log.txt
-    - output has size and md5sum overview?
   - strip binaries
-- benchmark table: *.task.txt
-  _tmp/mycpp-examples/raw/times.tsv
-  cat these together, with a header file?
-  you might need to split and parse the paths in R.
+  - benchmark table: *.task.txt
+    _tmp/mycpp-examples/raw/times.tsv
+    cat these together, with a header file?
+    you might need to split and parse the paths in R.
 """
 
 from __future__ import print_function
@@ -161,6 +159,11 @@ def main(argv):
          command='./build-steps.sh compile $variant $out $in',
          description='compile $variant $in $out')
   n.newline()
+  n.rule('strip',
+         # TODO: there could be 2 outputs: symbols + binary
+         command='./build-steps.sh strip_ $in $out',
+         description='strip $in $out')
+  n.newline()
   n.rule('task',
          # note: $out can be MULTIPLE FILES, shell-quoted
          command='./build-steps.sh task $in $out',
@@ -178,24 +181,10 @@ def main(argv):
   to_benchmark = ExamplesToBenchmark()
 
   examples = ExamplesToTest()
-
   #examples = ['cgi', 'containers', 'fib_iter']
   #examples = ['cgi']
 
-  # task table dimensions:
-  #
-  # (example, mode, variant)
-  #
-  # mode = test | benchmark
-  # variant = gc_debug | asan | opt | py
-  #
-  # benchmark: opt and py (gc_debug also useful, asan too)
-  # test: asan and py (gc_debug useful, asan mildly)
-  #
-  # Verification task depends on all benchmark and test tasks?
-  # Then do {gc_debug, opt, asan} vs. py
-  # To check that it works.
-
+  # Groups of targets.  Not all of these are run by default.
   phony = {
       'unit': [],
       'typecheck': [],  # optional: for debugging only.  translation does it.
@@ -203,13 +192,20 @@ def main(argv):
       'test': [],  # test examples (across variants, including Python)
       'benchmark': [],  # benchmark examples (ditto)
 
-      # Compare logs for test AND benchmarks?
-      # This is a separate task because we have multiple variants to compare,
-      # and the timing of test/benchmark tasks should NOT include comparison.
+      # Compare logs for tests AND benchmarks.
+      # It's a separate task because we have multiple variants to compare, and
+      # the timing of test/benchmark tasks should NOT include comparison.
       'compare-logs': [],
+
+      # TODO: For timing of benchmarks
+      'task-table': [],
 
       'strip': [],  # optional: strip binaries.  To see how big they are.
   }
+
+  #
+  # Build and run unit tests
+  #
 
   for test_name in sorted(UNIT_TESTS):
     cc_files = UNIT_TESTS[test_name]
@@ -235,8 +231,11 @@ def main(argv):
 
       phony['unit'].append(task_out)
 
-  to_compare = []
+  #
+  # Build and run examples/
+  #
 
+  to_compare = []
   for ex in examples:
     n.comment('---')
     n.comment(ex)
@@ -269,24 +268,19 @@ def main(argv):
     n.build('_ninja/gen/%s.cc' % ex, 'translate', 'examples/%s.py' % ex)
     n.newline()
 
-    # Compile and run C++.
-
-    # TODO: Can also parameterize by CXX: Clang or GCC.
+    # Compile C++. TODO: Can also parameterize by CXX: Clang or GCC.
     for variant in ['gc_debug', 'asan', 'opt']:
-      n.build('_ninja/bin/examples/%s.$variant' % ex,
-              'compile',
-              ['_ninja/gen/%s.cc' % ex] + RUNTIME,
+      b = '_ninja/bin/examples/%s.%s' % (ex, variant)
+      n.build(b, 'compile', ['_ninja/gen/%s.cc' % ex] + RUNTIME,
               variables=[('variant', variant)])
       n.newline()
 
-      # TODO:
-      # These should depend on the Python log.txt?
-      # And it will diff them?
-      #
-      # It's not just a task?
-      # It's a comparison?
-      # But we don't want to time that, so it should be done separately.
-      # There are a lot of tiny files.
+      if variant == 'opt':
+        stripped = '_ninja/bin/examples-stripped/%s.%s' % (ex, variant)
+        n.build(stripped, 'strip', [b],
+                variables=[('variant', variant)])
+        n.newline()
+        phony['strip'].append(stripped)
 
     # minimal
     MATRIX = [
@@ -320,8 +314,11 @@ def main(argv):
 
   phony['compare-logs'].append(out)
 
+  #
+  # Write phony rules we accumulated
+  #
+
   phony_real = []
-  # Write out phony rules
   for name in sorted(phony):
     deps = phony[name]
     if deps:

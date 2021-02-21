@@ -122,6 +122,14 @@ compile() {
   $CXX -o $out $flags -I . "$@" -lstdc++
 }
 
+strip_() {
+  local in=$1
+  local out=$2
+
+  # TODO: there could be 2 outputs: symbols + binary
+  strip -o $out $in
+}
+
 task() {
   local bin=$1  # Run this
   local task_out=$2
@@ -181,6 +189,11 @@ lines() {
 checksum() {
   lines "$@" | sort | xargs md5sum
 }
+
+# TODO: Could rewrite this in shell:
+# - md5sum
+# - read hash1 path1; read hash2 path2;
+# - and then invoke diff if they're not equal
 
 compare-pairs() {
   python2 -c '
