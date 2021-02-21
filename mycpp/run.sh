@@ -174,6 +174,7 @@ compile-with-asdl() {
 # no timings
 
 
+# Is this used?
 report() {
   R_LIBS_USER=$R_PATH ./examples.R report _tmp "$@"
 }
@@ -216,19 +217,6 @@ cpp-compile() {
 
   mkdir -p _bin
   $CXX -o _bin/$name.$variant $flags -I . $name.cc "$@" -lstdc++ -std=c++11
-}
-
-all-tests() {
-  local variant=asan
-
-  gc-heap-test $variant
-  gc-stress-test $variant
-  my-runtime-test $variant
-  mylib2-test $variant
-
-  # will be deprecated
-  mylib-test $variant
-  ./demo.sh target-lang
 }
 
 gen-ctags() {

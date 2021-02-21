@@ -48,11 +48,13 @@ Notes for Oil:
 
 TODO:
 - More actions:
-  - assert-logs-equal
+  - assert-logs-equal: *.log.txt
+    - output has size and md5sum overview?
   - strip binaries
-  - Build and run unit tests!  These have VARIANTS too!
-- Create table for benchmarking
+- benchmark table: *.task.txt
   _tmp/mycpp-examples/raw/times.tsv
+  cat these together, with a header file?
+  you might need to split and parse the paths in R.
 """
 
 from __future__ import print_function

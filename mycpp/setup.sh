@@ -46,6 +46,21 @@ build() {
   build/dev.sh oil-cpp
 }
 
+write-results() {
+  find _ninja -type f | sort > _ninja/index.txt
+  echo 'Wrote _ninja/index.txt'
+
+  # Note: no HTML escaping.  Would be nice for Oil.
+  find _ninja -type f | sort | gawk '
+  match($0, "_ninja/(.*)", m) {
+    url = m[1]
+    printf("<a href=\"%s\">%s</a> <br/>\n", url, url)
+  }
+  ' > _ninja/index.html
+
+  echo 'Wrote _ninja/index.html'
+}
+
 all-ninja() {
   # mycpp_main.py needs to find it
   export MYPY_REPO
@@ -62,8 +77,7 @@ all-ninja() {
   local status=$?
   set -o errexit
 
-  find _ninja -type f > _ninja/index.txt
-  echo 'mycpp/setup.sh travis done'
+  write-results
 
   # Now we want to zip up
   return $status

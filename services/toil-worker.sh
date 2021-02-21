@@ -103,8 +103,8 @@ mycpp-clone     mycpp/setup.sh clone                  -
 mycpp-deps      mycpp/setup.sh deps                   -
 translate       mycpp/setup.sh build                  -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
-mycpp-examples       mycpp/setup.sh travis                 mycpp/_ninja/index.txt
-parse-errors         test/parse-errors.sh travis1          -
+mycpp-examples  mycpp/setup.sh travis                 mycpp/_ninja/index.html
+parse-errors    test/parse-errors.sh travis1          -
 EOF
 #parse-errors-native  test/parse-errors.sh travis2          -
 
