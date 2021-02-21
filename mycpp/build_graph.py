@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-configure.py
+build_graph.py
 
 Generates a Ninja file which uses this layout.
 
@@ -27,10 +27,7 @@ _ninja/
     unit/      # unit tests
 
 Phony Targets
-
-  ninja typecheck  # for debugging
-  ninja examples  # all the test, benchmark tasks?
-  ninja unit      # all the 'unit' tasks
+  test, benchmark, etc. (See phony dict below)
 
 Also:
 
@@ -51,12 +48,11 @@ Notes for Oil:
 
 TODO:
 - More actions:
-  - Type check
+  - assert-logs-equal
   - strip binaries
-  - Build and run tests!  These have VARIANTS too!
+  - Build and run unit tests!  These have VARIANTS too!
 - Create table for benchmarking
   _tmp/mycpp-examples/raw/times.tsv
-
 """
 
 from __future__ import print_function
@@ -138,20 +134,20 @@ def main(argv):
   n.newline()
 
   n.rule('translate',
-         command='./steps.sh translate $in $out',
+         command='./build-steps.sh translate $in $out',
          description='translate $in $out')
   n.newline()
   n.rule('compile',
-         command='./steps.sh compile $variant $in $out',
+         command='./build-steps.sh compile $variant $in $out',
          description='compile $variant $in $out')
   n.newline()
   n.rule('task',
          # note: $out can be MULTIPLE FILES, shell-quoted
-         command='./steps.sh task $in $out',
+         command='./build-steps.sh task $in $out',
          description='task $in $out')
   n.newline()
   n.rule('typecheck',
-         command='./steps.sh typecheck $in $out',
+         command='./build-steps.sh typecheck $in $out',
          description='typecheck $in $out')
   n.newline()
 
