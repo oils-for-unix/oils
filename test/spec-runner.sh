@@ -40,8 +40,8 @@ _spec-names() {
   # Oil:
   #
   # for t in spec/*.test.sh {
-  #   if (t ~ / 'spec/' <.* = name> '.test.sh' /) {
-  #     echo $name
+  #   if (t ~ / 'spec/' <dot* : name> '.test.sh' /) {
+  #     write -- $name
   #   } else {
   #     die "Should have matched"
   #   }

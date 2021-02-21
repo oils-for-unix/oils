@@ -299,7 +299,7 @@ make-job-wwz() {
   # temporary: debug dash
   zip -r $wwz \
     index.html _tmp/toil _tmp/spec _tmp/syscall \
-    mycpp/_ninja/index.* mycpp/_ninja/{tasks,gen} \
+    mycpp/_ninja/*.{txt,html} mycpp/_ninja/{tasks,gen} \
     web/{base,spec-code,spec-tests}.css
 }
 

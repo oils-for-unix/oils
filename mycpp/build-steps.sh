@@ -172,4 +172,70 @@ typecheck() {
   mypy --py2 --strict $in > $out
 }
 
+lines() {
+  for line in "$@"; do
+    echo $line
+  done
+}
+
+checksum() {
+  lines "$@" | sort | xargs md5sum
+}
+
+compare-pairs() {
+  python2 -c '
+from __future__ import print_function
+
+import subprocess
+import sys
+
+def Check(left, right):
+  with open(left) as f1, open(right) as f2:
+    b1 = f1.read()
+    b2 = f2.read()
+
+  if b1 != b2:
+    print("%s != %s" % (left, right))
+    # Only invoke a subprocess when they are NOT equal
+    subprocess.call(["diff", "-u", left, right])
+    return False
+
+  return True
+
+num_failures = 0
+
+paths = sys.argv[1:]
+n = len(paths)
+i = 0
+while i < n:
+  log_path = paths[i]
+  py_path = paths[i+1]
+
+  #print(log_path, py_path)
+
+  if not Check(log_path, py_path):
+    num_failures += 1
+  else:
+    print("OK %s" % log_path)
+    print("   %s" % py_path)
+
+  i += 2
+
+if num_failures != 0:
+  print("compare-logs: %d failures" % num_failures)
+  sys.exit(1)
+' "$@"
+}
+
+compare-logs() {
+  local out=$1
+  shift
+
+  {
+    compare-pairs "$@"
+    # echo
+    # checksum "$@" 
+  } | tee $out
+}
+
 "$@"

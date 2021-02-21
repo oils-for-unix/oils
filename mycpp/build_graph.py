@@ -120,6 +120,10 @@ def ShouldSkipBenchmark(name):
   if name == 'cartesian':
     return True
 
+  # BUG: Different number of iterations!
+  if name == 'files':
+    return True
+
   return False
 
 
@@ -166,6 +170,10 @@ def main(argv):
          command='./build-steps.sh typecheck $in $out',
          description='typecheck $in $out')
   n.newline()
+  n.rule('compare-logs',
+         command='./build-steps.sh compare-logs $out $in',
+         description='compare-logs $in $out')
+  n.newline()
 
   to_benchmark = ExamplesToBenchmark()
 
@@ -198,7 +206,7 @@ def main(argv):
       # Compare logs for test AND benchmarks?
       # This is a separate task because we have multiple variants to compare,
       # and the timing of test/benchmark tasks should NOT include comparison.
-      'compare': [],
+      'compare-logs': [],
 
       'strip': [],  # optional: strip binaries.  To see how big they are.
   }
@@ -226,6 +234,8 @@ def main(argv):
       n.newline()
 
       phony['unit'].append(task_out)
+
+  to_compare = []
 
   for ex in examples:
     n.comment('---')
@@ -292,13 +302,25 @@ def main(argv):
 
       task_out = '_ninja/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
       log_out = '_ninja/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
-      n.build([task_out, log_out], 'task', '_ninja/bin/examples/%s.%s' % (ex, variant))
+      py_log_out = '_ninja/tasks/%s/%s.py.log.txt' % (mode, ex)
+
+      to_compare.append(log_out)
+      to_compare.append(py_log_out)
+
+      n.build([task_out, log_out], 'task',
+              '_ninja/bin/examples/%s.%s' % (ex, variant))
       n.newline()
 
       phony[mode].append(task_out)
 
-  phony_real = []
+  # Compare the log of all examples
+  out = '_ninja/compare-logs.txt'
+  n.build([out], 'compare-logs', to_compare)
+  n.newline()
 
+  phony['compare-logs'].append(out)
+
+  phony_real = []
   # Write out phony rules
   for name in sorted(phony):
     deps = phony[name]
