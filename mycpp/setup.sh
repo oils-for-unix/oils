@@ -46,17 +46,19 @@ build() {
   build/dev.sh oil-cpp
 }
 
-all-examples() {
+all-ninja() {
   # mycpp_main.py needs to find it
   export MYPY_REPO
   # Don't use clang for benchmarks.
   export CXX=c++
 
   cd $THIS_DIR
-  ./configure.py
+  ./build_graph.py
 
   set +o errexit
-  ninja
+
+  # includes non-essential stuff like type checking alone, stripping
+  ninja all
   local status=$?
   set -o errexit
 
@@ -69,14 +71,14 @@ all-examples() {
 
 travis() {
   # invoked by services/toil-worker.sh
-  all-examples
+  all-ninja
 }
 
 run-for-release() {
   # invoked by devtools/release.sh
 
   rm --verbose -r -f _ninja
-  all-examples
+  all-ninja
 
   # TODO: harness.sh benchmark-all creates ../_tmp/mycpp-examples/raw/times.tsv
   # It compares C++ and Python.

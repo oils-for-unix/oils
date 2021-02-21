@@ -59,17 +59,6 @@ cpp-unit-tests() {
   $bin "$@"
 }
 
-mycpp-unit-tests() {
-  ### Run unit tests in the mycpp/ dir
-
-  pushd mycpp
-  set -x
-  ./run.sh all-tests
-
-  # Note: we also have square_heap and gc_heap
-  popd
-}
-
 all() {
   build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h
   build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
@@ -77,8 +66,6 @@ all() {
 
   cpp-unit-tests
   cpp-unit-tests-asan
-
-  mycpp-unit-tests
 
   asdl/run.sh gen-cpp-test
   asdl/run.sh gc-test  # integration between ASDL and the GC heap

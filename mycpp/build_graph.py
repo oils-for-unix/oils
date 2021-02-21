@@ -126,6 +126,19 @@ def ExamplesToBenchmark():
   return [name for name in to_test if not ShouldSkipBenchmark(name)]
 
 
+RUNTIME = ['my_runtime.cc', 'mylib2.cc', 'gc_heap.cc']
+
+UNIT_TESTS = {
+    'mylib_test': ['mylib.cc'],
+    'gc_heap_test': ['gc_heap.cc'],
+    'gc_stress_test': RUNTIME,
+    'my_runtime_test': RUNTIME,
+    'mylib2_test': RUNTIME,
+
+    # lives in demo/target_lang.cc
+    'target_lang': ['../cpp/dumb_alloc.cc', 'gc_heap.cc'],
+}
+
 def main(argv):
   n = ninja_syntax.Writer(open('build.ninja', 'w'))
 
@@ -138,7 +151,8 @@ def main(argv):
          description='translate $in $out')
   n.newline()
   n.rule('compile',
-         command='./build-steps.sh compile $variant $in $out',
+         # note: $in can be MULTIPLE files, shell-quoted
+         command='./build-steps.sh compile $variant $out $in',
          description='compile $variant $in $out')
   n.newline()
   n.rule('task',
@@ -187,6 +201,30 @@ def main(argv):
       'strip': [],  # optional: strip binaries.  To see how big they are.
   }
 
+  for test_name in sorted(UNIT_TESTS):
+    cc_files = UNIT_TESTS[test_name]
+
+    # TODO: doesn't run under pure 'asan' because of -D GC_DEBUG, etc.
+    for variant in ['gc_debug']:  # , 'asan', 'opt']:
+      b = '_ninja/bin/unit/%s.%s' % (test_name, variant)
+
+      if test_name == 'target_lang':  # SPECIAL CASE
+        main_cc = 'demo/target_lang.cc'
+      else:
+        main_cc = '%s.cc' % test_name
+
+      n.build([b], 'compile', [main_cc] + cc_files,
+              variables=[('variant', variant)])
+      n.newline()
+
+      prefix = '_ninja/tasks/unit/%s.%s' % (test_name, variant)
+      task_out = '%s.task.txt' % prefix
+      log_out = '%s.log.txt' % prefix
+      n.build([task_out, log_out], 'task', b)
+      n.newline()
+
+      phony['unit'].append(task_out)
+
   for ex in examples:
     n.comment('---')
     n.comment(ex)
@@ -223,9 +261,9 @@ def main(argv):
 
     # TODO: Can also parameterize by CXX: Clang or GCC.
     for variant in ['gc_debug', 'asan', 'opt']:
-      n.build('_ninja/bin/%s.$variant' % ex,
+      n.build('_ninja/bin/examples/%s.$variant' % ex,
               'compile',
-              '_ninja/gen/%s.cc' % ex,
+              ['_ninja/gen/%s.cc' % ex] + RUNTIME,
               variables=[('variant', variant)])
       n.newline()
 
@@ -252,10 +290,12 @@ def main(argv):
 
       task_out = '_ninja/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
       log_out = '_ninja/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
-      n.build([task_out, log_out], 'task', '_ninja/bin/%s.%s' % (ex, variant))
+      n.build([task_out, log_out], 'task', '_ninja/bin/examples/%s.%s' % (ex, variant))
       n.newline()
 
       phony[mode].append(task_out)
+
+  phony_real = []
 
   # Write out phony rules
   for name in sorted(phony):
@@ -264,7 +304,12 @@ def main(argv):
       n.build([name], 'phony', deps)
       n.newline()
 
-  n.default(['test', 'benchmark'])
+      phony_real.append(name)
+
+  n.default(['unit', 'test', 'benchmark'])
+
+  # All groups
+  n.build(['all'], 'phony', phony_real)
 
 
 if __name__ == '__main__':

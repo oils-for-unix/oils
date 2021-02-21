@@ -8,12 +8,12 @@ set -o pipefail
 set -o errexit
 
 config() {
-  ./configure.py
+  ./build_graph.py
   cat build.ninja
 }
 
 all() {
-  ./configure.py
+  ./build_graph.py
   ninja
 }
 
@@ -22,7 +22,7 @@ clean() {
 }
 
 loop() {
-  #clean
+  clean
 
   set +o errexit
   all

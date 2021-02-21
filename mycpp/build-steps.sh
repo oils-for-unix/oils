@@ -87,10 +87,17 @@ compile() {
   ### Compile C++ with various flags
 
   local variant=$1
-  local in=$2
-  local out=$3
+  local out=$2
+  shift 2
+  # Now "$@" are the inputs
 
   local flags="$CXXFLAGS"
+
+  case $out in
+    (*/bin/unit/*)
+      flags+=' -I ../cpp'  # for greatest.h
+      ;;
+  esac
 
   case $variant in
     (asan)
@@ -101,7 +108,7 @@ compile() {
       ;;
     (gc_debug)
       # TODO: GC_REPORT and GC_VERBOSE instead?
-      flags+=' -g -D GC_PROTECT -D GC_DEBUG'
+      flags+=' -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC'
       ;;
     (*)
       die "Invalid variant: $variant"
@@ -111,11 +118,9 @@ compile() {
   # Note: needed -lstdc++ for 'operator new', which we're no longer using.  But
   # probably exceptions too.
 
-  local -a runtime=(my_runtime.cc mylib2.cc gc_heap.cc)
   set -x
-  $CXX -o $out $flags -I . "${runtime[@]}" $in -lstdc++
+  $CXX -o $out $flags -I . "$@" -lstdc++
 }
-
 
 task() {
   local bin=$1  # Run this
