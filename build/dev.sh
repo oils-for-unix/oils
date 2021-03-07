@@ -44,8 +44,10 @@ libedit-flags() {
 release-ubuntu-deps() {
   # For the release to run test/report.R, you need r-base-core too.
   # cloc is used for line counts
-  # TODO: switch to CommonMark rather than using markdown.pl.
-  sudo apt install r-base-core cloc markdown
+  sudo apt install r-base-core cloc
+
+  # for yaml2json
+  pip2 install pyyaml
 }
 
 r-packages() {
@@ -63,7 +65,6 @@ test-r-packages() {
 }
 
 travis-r-libs() {
-  release-ubuntu-deps
   r-packages
   test-r-packages
 }

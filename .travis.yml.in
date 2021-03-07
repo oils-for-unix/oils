@@ -171,6 +171,11 @@ jobs:
         apt: true
         pip: true
 
+      addons:
+        apt:
+          packages:
+            - r-base-core
+
       script:
         - services/toil-worker.sh run-other-tests
 

@@ -166,9 +166,12 @@
         }
       }, 
       {
-        "cache": {
-          "pip": true, 
-          "apt": true
+        "addons": {
+          "apt": {
+            "packages": [
+              "r-base-core"
+            ]
+          }
         }, 
         "dist": "bionic", 
         "name": "other-tests", 
@@ -200,7 +203,11 @@
         ], 
         "script": [
           "services/toil-worker.sh run-other-tests"
-        ]
+        ], 
+        "cache": {
+          "pip": true, 
+          "apt": true
+        }
       }
     ]
   }, 
