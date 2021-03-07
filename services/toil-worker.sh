@@ -53,6 +53,15 @@ dump-hardware() {
   egrep '^Mem' /proc/meminfo
 }
 
+dump-distro() {
+  local path=/etc/lsb-release
+  if test -f $path; then
+    cat $path
+  fi
+
+  apt-cache policy r-base-core
+}
+
 dummy-tasks() {
   ### Print tasks that execute quickly
 
@@ -186,6 +195,7 @@ EOF
 # Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
+dump-distro       services/toil-worker.sh dump-distro     -
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
 osh2oil           test/osh2oil.sh travis                  -
