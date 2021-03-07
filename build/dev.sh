@@ -50,7 +50,15 @@ release-ubuntu-deps() {
   pip2 install pyyaml
 }
 
+show-r() {
+  set -x
+  which R
+  R --version
+  set +x
+}
+
 r-packages() {
+
   # Install to a directory that doesn't require root.  This requires setting
   # R_LIBS_USER.  Or library(dplyr, lib.loc = "~/R", but the former is preferable.
   mkdir -p ~/R
@@ -65,6 +73,7 @@ test-r-packages() {
 }
 
 travis-r-libs() {
+  show-r
   r-packages
   test-r-packages
 }
