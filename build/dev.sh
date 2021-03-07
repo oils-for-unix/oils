@@ -62,6 +62,12 @@ test-r-packages() {
   R_LIBS_USER=$R_PATH Rscript -e 'library(dplyr)'
 }
 
+travis-r-libs() {
+  release-ubuntu-deps
+  r-packages
+  test-r-packages
+}
+
 # Helper
 gen-asdl-py() {
   local asdl_path=$1  # e.g. osh/osh.asdl

@@ -180,11 +180,16 @@ ble-test          test/ble.sh run-tests                   -
 EOF
 }
 
+# TODO: Most of these should be Ninja tasks.
+# Other tests:
+# find-test, xargs-test, pgen2-test, web/table/csv2html-test.sh
+# Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
 osh2oil           test/osh2oil.sh travis                  -
+r-libs            build/dev.sh travis-r-libs              -
 EOF
 }
 
