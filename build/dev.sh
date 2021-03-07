@@ -78,6 +78,32 @@ travis-r-libs() {
   test-r-packages
 }
 
+# 3/2021: For installing dplyr on Ubuntu Xenial 16.04 LTS, which has an old R version
+# Following these instructions
+# https://cloud.r-project.org/bin/linux/ubuntu/README.html
+
+_install-new-r() {
+  # update indices
+  apt update -qq
+
+  # install two helper packages we need
+  apt install --no-install-recommends software-properties-common dirmngr
+
+  # import the signing key (by Michael Rutter) for these repo
+  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+
+  # add the R 4.0 repo from CRAN -- adjust 'focal' to 'groovy' or 'bionic' as needed
+  add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran40/'
+
+  # Hm I had to run this manually and I got R 4.0
+  apt install --no-install-recommends r-base
+}
+
+install-new-r() {
+  sudo $0 _install-new-r "$@"
+}
+
+
 # Helper
 gen-asdl-py() {
   local asdl_path=$1  # e.g. osh/osh.asdl
