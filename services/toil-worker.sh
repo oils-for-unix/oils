@@ -190,6 +190,8 @@ time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
 osh2oil           test/osh2oil.sh travis                  -
 r-libs            build/dev.sh travis-r-libs              -
+xargs-test        test/other.sh xargs-test                -
+csv2html-test     test/other.sh csv2html-test             -
 EOF
 }
 
