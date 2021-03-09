@@ -42,7 +42,7 @@ expressions in important ways.  So we call them *eggexes* rather than
     of code.
 - Eggexes support **regular languages** in the mathematical sense, whereas
   regexes are **confused** about the issue.  All nonregular eggex extensions
-  are prefixed with `!`, so you can visually audit them for [catastrophic
+  are prefixed with `!!`, so you can visually audit them for [catastrophic
   backtracking][backtracking].  (Russ Cox, author of the RE2 engine, [has
   written extensively](https://swtch.com/~rsc/regexp/) on this issue.)
 - Eggexes are more fun than regexes!
