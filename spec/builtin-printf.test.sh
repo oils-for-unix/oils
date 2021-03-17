@@ -585,13 +585,16 @@ printf '[%q]\n' "$x"
 # NOTE: coreutils /usr/bin/printf does NOT implement this %6q !!!
 x='a b'
 printf '[%6q]\n' "$x"
+printf '[%1q]\n' "$x"
 ## STDOUT:
 [ 'a b']
+['a b']
 ## END
 ## OK bash/zsh STDOUT:
 [  a\ b]
+[a\ b]
 ## END
-## N-I mksh/ash/dash stdout-json: "["
+## N-I mksh/ash/dash stdout-json: "[["
 ## N-I mksh/ash status: 1
 ## N-I dash status: 2
 

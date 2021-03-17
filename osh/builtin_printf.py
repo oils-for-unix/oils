@@ -160,45 +160,10 @@ class Printf(vm._Builtin):
 
     self.shell_start_time = time_.time()  # this object initialized in main()
 
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    """
-    printf: printf [-v var] format [argument ...]
-    """
-    attrs, arg_r = flag_spec.ParseCmdVal('printf', cmd_val)
-    arg = arg_types.printf(attrs.attrs)
+  def _Format(self, parts, varargs, spids, out):
+    # type: (List[printf_part_t], List[str], List[int], List[str]) -> int
+    """Hairy printf formatting logic."""
 
-    fmt, fmt_spid = arg_r.ReadRequired2('requires a format string')
-    varargs, spids = arg_r.Rest2()
-
-    #log('fmt %s', fmt)
-    #log('vals %s', vals)
-
-    arena = self.parse_ctx.arena
-    if fmt in self.parse_cache:
-      parts = self.parse_cache[fmt]
-    else:
-      line_reader = reader.StringLineReader(fmt, arena)
-      # TODO: Make public
-      lexer = self.parse_ctx._MakeLexer(line_reader)
-      parser = _FormatStringParser(lexer)
-
-      with alloc.ctx_Location(arena, source.ArgvWord(fmt_spid)):
-        try:
-          parts = parser.Parse()
-        except error.Parse as e:
-          self.errfmt.PrettyPrintError(e)
-          return 2  # parse error
-
-      self.parse_cache[fmt] = parts
-
-    if 0:
-      print()
-      for part in parts:
-        part.PrettyPrint()
-        print()
-
-    out = []  # type: List[str]
     arg_index = 0
     num_args = len(varargs)
     backslash_c = False
@@ -216,7 +181,12 @@ class Printf(vm._Builtin):
           out.append(s)
 
         elif part.tag_() == printf_part_e.Percent:
+          # Note: This case is very long, but hard to refactor because of the
+          # error cases and "recycling" of args!  (arg_index, return 1, etc.)
           part = cast(printf_part__Percent, UP_part)
+
+          # TODO: These calculations are independent of the data, so could be
+          # cached
           flags = []  # type: List[str]
           if len(part.flags) > 0:
             for flag_token in part.flags:
@@ -276,14 +246,15 @@ class Printf(vm._Builtin):
                   span_id=precision_spid)
               return 1
 
-          #log('index=%d n=%d', arg_index, num_args)
           if arg_index < num_args:
             s = varargs[arg_index]
             word_spid = spids[arg_index]
             arg_index += 1
+            has_arg = True
           else:
             s = ''
             word_spid = runtime.NO_SPID
+            has_arg = False
 
           typ = part.type.val
           if typ == 's':
@@ -317,34 +288,76 @@ class Printf(vm._Builtin):
               c_parts.append(p)
             s = ''.join(c_parts)
 
-          elif typ in 'diouxX' or part.type.id == Id.Format_Time:
+          elif part.type.id == Id.Format_Time or typ in 'diouxX':
+            # %(...)T and %d share this complex integer conversion logic
+
             try:
               d = int(s)  # note: spaces like ' -42 ' accepted and normalized
+
             except ValueError:
+              # 'a is interpreted as the ASCII value of 'a'
               if len(s) >= 1 and s[0] in '\'"':
                 # TODO: utf-8 decode s[1:] to be more correct.  Probably
                 # depends on issue #366, a utf-8 library.
                 # Note: len(s) == 1 means there is a NUL (0) after the quote..
                 d = ord(s[1]) if len(s) >= 2 else 0
-              elif part.type.id == Id.Format_Time and len(s) == 0 and word_spid == runtime.NO_SPID:
-                # Note: No argument means -1 for %(...)T as in Bash Reference
-                #   Manual 4.2 "If no argument is specified, conversion behaves
-                #   as if -1 had been given."
+
+              # No argument means -1 for %(...)T as in Bash Reference Manual
+              # 4.2 "If no argument is specified, conversion behaves as if -1
+              # had been given."
+              elif not has_arg and part.type.id == Id.Format_Time:
                 d = -1
+
               else:
-                if word_spid == runtime.NO_SPID:
-                  # Blame the format string
-                  blame_spid = part.type.span_id
-                else:
-                  blame_spid = word_spid
+                blame_spid = word_spid if has_arg else part.type.span_id
                 self.errfmt.Print_('printf expected an integer, got %r' % s,
                                    span_id=blame_spid)
                 return 1
 
-            if typ in 'diouxX':  # requires conversion to integer
+            if part.type.id == Id.Format_Time:
+              # Initialize timezone:
+              #   `localtime' uses the current timezone information initialized
+              #   by `tzset'.  The function `tzset' refers to the environment
+              #   variable `TZ'.  When the exported variable `TZ' is present,
+              #   its value should be reflected in the real environment
+              #   variable `TZ' before call of `tzset'.
+              #
+              # Note: unlike LANG, TZ doesn't seem to change behavior if it's
+              # not exported.
+              #
+              # TODO: In Oil, provide an API that doesn't rely on libc's
+              # global state.
+
+              tzcell = self.mem.GetCell('TZ')
+              if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
+                tzval = cast(value__Str, tzcell.val)
+                posix.putenv('TZ', tzval.s)
+
+              time_.tzset()
+
+              # Handle special values:
+              #   User can specify two special values -1 and -2 as in Bash
+              #   Reference Manual 4.2: "Two special argument values may be
+              #   used: -1 represents the current time, and -2 represents the
+              #   time the shell was invoked." from
+              #   https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html#index-printf
+              if d == -1: # the current time
+                ts = time_.time()
+              elif d == -2: # the shell start time
+                ts = self.shell_start_time
+              else:
+                ts = d
+
+              s = time_.strftime(typ[1:-2], time_.localtime(ts))
+              if precision >= 0:
+                s = s[:precision]  # truncate
+
+            else:  # typ in 'diouxX'
+              # Disallowed because it depends on 32- or 64- bit
               if d < 0 and typ in 'ouxX':
                 e_die("Can't format negative number %d with %%%s",
                       d, typ, span_id=part.type.span_id)
+
               if typ == 'o':
                 s = mylib.octal(d)
               elif typ == 'x':
@@ -383,49 +396,6 @@ class Printf(vm._Builtin):
                     n = precision
                 s = sign + digits.rjust(n, '0')
 
-            elif part.type.id == Id.Format_Time:
-              # %(...)T
-
-              # Initialize timezone:
-              #   `localtime' uses the current timezone information initialized
-              #   by `tzset'.  The function `tzset' refers to the environment
-              #   variable `TZ'.  When the exported variable `TZ' is present,
-              #   its value should be reflected in the real environment
-              #   variable `TZ' before call of `tzset'.
-              #
-              # Note: unlike LANG, TZ doesn't seem to change behavior if it's
-              # not exported.
-              #
-              # TODO: In Oil, provide an API that doesn't rely on libc's
-              # global state.
-
-              tzcell = self.mem.GetCell('TZ')
-              if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
-                tzval = cast(value__Str, tzcell.val)
-                posix.putenv('TZ', tzval.s)
-
-              time_.tzset()
-
-              # Handle special values:
-              #   User can specify two special values -1 and -2 as in Bash
-              #   Reference Manual 4.2: "Two special argument values may be
-              #   used: -1 represents the current time, and -2 represents the
-              #   time the shell was invoked." from
-              #   https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html#index-printf
-              if d == -1: # the current time
-                ts = time_.time()
-              elif d == -2: # the shell start time
-                ts = self.shell_start_time
-              else:
-                ts = d
-
-              s = time_.strftime(typ[1:-2], time_.localtime(ts))
-              if precision >= 0:
-                s = s[:precision]  # truncate
-
-            else:
-              raise AssertionError()
-
           else:
             raise AssertionError()
 
@@ -447,6 +417,51 @@ class Printf(vm._Builtin):
         break
       # Otherwise there are more args.  So cycle through the loop once more to
       # implement the 'arg recycling' behavior.
+
+    return 0
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    """
+    printf: printf [-v var] format [argument ...]
+    """
+    attrs, arg_r = flag_spec.ParseCmdVal('printf', cmd_val)
+    arg = arg_types.printf(attrs.attrs)
+
+    fmt, fmt_spid = arg_r.ReadRequired2('requires a format string')
+    varargs, spids = arg_r.Rest2()
+
+    #log('fmt %s', fmt)
+    #log('vals %s', vals)
+
+    arena = self.parse_ctx.arena
+    if fmt in self.parse_cache:
+      parts = self.parse_cache[fmt]
+    else:
+      line_reader = reader.StringLineReader(fmt, arena)
+      # TODO: Make public
+      lexer = self.parse_ctx._MakeLexer(line_reader)
+      parser = _FormatStringParser(lexer)
+
+      with alloc.ctx_Location(arena, source.ArgvWord(fmt_spid)):
+        try:
+          parts = parser.Parse()
+        except error.Parse as e:
+          self.errfmt.PrettyPrintError(e)
+          return 2  # parse error
+
+      self.parse_cache[fmt] = parts
+
+    if 0:
+      print()
+      for part in parts:
+        part.PrettyPrint()
+        print()
+
+    out = []  # type: List[str]
+    status = self._Format(parts, varargs, spids, out)
+    if status != 0:
+      return status  # failure
 
     result = ''.join(out)
     if arg.v is not None:
