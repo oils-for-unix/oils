@@ -192,13 +192,93 @@ printf '[%05d]\n' 42
 [00042]
 ## END
 
-#### printf %6.4d -- precision means something different for integers !?
+#### printf %6.4d -- "precision" does padding for integers
 printf '[%6.4d]\n' 42
+printf '[%.4d]\n' 42
+printf '[%6.d]\n' 42
+echo --
+printf '[%6.4d]\n' -42
+printf '[%.4d]\n' -42
+printf '[%6.d]\n' -42
 ## STDOUT:
 [  0042]
+[0042]
+[    42]
+--
+[ -0042]
+[-0042]
+[   -42]
 ## END
-## N-I osh stdout-json: ""
-## N-I osh status: 2
+
+#### printf %6.4x X o 
+printf '[%6.4x]\n' 42
+printf '[%.4x]\n' 42
+printf '[%6.x]\n' 42
+echo --
+printf '[%6.4X]\n' 42
+printf '[%.4X]\n' 42
+printf '[%6.X]\n' 42
+echo --
+printf '[%6.4o]\n' 42
+printf '[%.4o]\n' 42
+printf '[%6.o]\n' 42
+## STDOUT:
+[  002a]
+[002a]
+[    2a]
+--
+[  002A]
+[002A]
+[    2A]
+--
+[  0052]
+[0052]
+[    52]
+## END
+
+#### %06d zero padding vs. %6.6d
+printf '[%06d]\n' 42
+printf '[%06d]\n' -42  # 6 TOTAL
+echo --
+printf '[%6.6d]\n' 42
+printf '[%6.6d]\n' -42  # 6 + 1 for the - sign!!!
+## STDOUT:
+[000042]
+[-00042]
+--
+[000042]
+[-000042]
+## END
+
+#### %06x %06X %06o
+printf '[%06x]\n' 42
+printf '[%06X]\n' 42
+printf '[%06o]\n' 42
+## STDOUT:
+[00002a]
+[00002A]
+[000052]
+## END
+
+#### %06s is no-op
+printf '(%6s)\n' 42
+printf '(%6s)\n' -42
+printf '(%06s)\n' 42
+printf '(%06s)\n' -42
+echo status=$?
+## STDOUT:
+(    42)
+(   -42)
+(    42)
+(   -42)
+status=0
+## END
+# mksh is stricter
+## OK mksh STDOUT:
+(    42)
+(   -42)
+((status=1
+## END
 
 #### printf %6.4s does both truncation and padding
 printf '[%6s]\n' foo
@@ -514,6 +594,79 @@ printf '[%6q]\n' "$x"
 ## N-I mksh/ash/dash stdout-json: "["
 ## N-I mksh/ash status: 1
 ## N-I dash status: 2
+
+#### printf negative numbers
+printf '[%d] ' -42
+echo status=$?
+printf '[%i] ' -42
+echo status=$?
+
+# extra LEADING space too
+printf '[%d] ' ' -42'
+echo status=$?
+printf '[%i] ' ' -42'
+echo status=$?
+
+# extra TRAILING space too
+printf '[%d] ' ' -42 '
+echo status=$?
+printf '[%i] ' ' -42 '
+echo status=$?
+
+# extra TRAILING chars
+printf '[%d] ' ' -42z'
+echo status=$?
+printf '[%i] ' ' -42z'
+echo status=$?
+
+exit 0  # ok
+
+## STDOUT:
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=1
+[-42] status=1
+[-42] status=1
+[-42] status=1
+## END
+# zsh is LESS STRICT
+## OK zsh STDOUT:
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[0] status=1
+[0] status=1
+## END
+
+# osh is like zsh but has a hard failure (TODO: could be an option?)
+## OK osh STDOUT:
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=0
+status=1
+status=1
+## END
+
+# ash is MORE STRICT
+## OK ash STDOUT:
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[-42] status=0
+[0] status=1
+[0] status=1
+[0] status=1
+[0] status=1
+## END
+
 
 #### printf + and space flags
 # I didn't know these existed -- I only knew about - and 0 !

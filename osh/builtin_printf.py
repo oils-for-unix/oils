@@ -115,11 +115,6 @@ class _FormatStringParser(object):
     else:
       p_die('Expected a printf format character', token=self.cur_token)
 
-    # Do this check AFTER the floating point checks
-    if part.precision and part.type.val[-1] not in 'fsT':
-      p_die("printf precision can't be specified with type %r" % part.type.val,
-            token=part.precision)
-
     return part
 
   def Parse(self):
@@ -208,8 +203,8 @@ class Printf(vm._Builtin):
     num_args = len(varargs)
     backslash_c = False
 
-    while True:
-      for part in parts:
+    while True:  # loop over arguments
+      for part in parts:  # loop over parsed format string
         UP_part = part
         if part.tag_() == printf_part_e.Literal:
           part = cast(printf_part__Literal, UP_part)
@@ -296,6 +291,8 @@ class Printf(vm._Builtin):
               s = s[:precision]  # truncate
 
           elif typ == 'q':
+            # TODO: most shells give \' for single quote, while OSH gives $'\''
+            # this could matter when SSH'ing
             s = qsn.maybe_shell_encode(s)
 
           elif typ == 'b':
@@ -322,7 +319,7 @@ class Printf(vm._Builtin):
 
           elif typ in 'diouxX' or part.type.id == Id.Format_Time:
             try:
-              d = int(s)
+              d = int(s)  # note: spaces like ' -42 ' accepted and normalized
             except ValueError:
               if len(s) >= 1 and s[0] in '\'"':
                 # TODO: utf-8 decode s[1:] to be more correct.  Probably
@@ -344,20 +341,47 @@ class Printf(vm._Builtin):
                                    span_id=blame_spid)
                 return 1
 
-            if typ in 'di':
-              s = str(d)
-            elif typ in 'ouxX':
-              if d < 0:
+            if typ in 'diouxX':  # requires conversion to integer
+              if d < 0 and typ in 'ouxX':
                 e_die("Can't format negative number %d with %%%s",
                       d, typ, span_id=part.type.span_id)
-              if typ == 'u':
-                s = str(d)
-              elif typ == 'o':
+              if typ == 'o':
                 s = mylib.octal(d)
               elif typ == 'x':
                 s = mylib.hex_lower(d)
               elif typ == 'X':
                 s = mylib.hex_upper(d)
+              else:  # diu
+                s = str(d)  # without spaces like ' -42 '
+
+              # There are TWO different ways to ZERO PAD, and they differ on
+              # the negative sign!  See spec/builtin-printf
+
+              zero_pad = 0  # no zero padding
+              if width >= 0 and '0' in flags:
+                zero_pad = 1  # style 1
+              elif precision > 0 and len(s) < precision:
+                zero_pad = 2  # style 2
+
+              if zero_pad:
+                negative = (s[0] == '-')
+                if negative:
+                  digits = s[1:]
+                  sign = '-'
+                  if zero_pad == 1:
+                    # [%06d] -42 becomes [-00042] (6 TOTAL)
+                    n = width - 1
+                  else:
+                    # [%6.6d] -42 becomes [-000042] (1 for '-' + 6)
+                    n = precision
+                else:
+                  digits = s
+                  sign = ''
+                  if zero_pad == 1:
+                    n = width
+                  else:
+                    n = precision
+                s = sign + digits.rjust(n, '0')
 
             elif part.type.id == Id.Format_Time:
               # %(...)T
@@ -406,13 +430,8 @@ class Printf(vm._Builtin):
             raise AssertionError()
 
           if width >= 0:
-            if len(flags):
-              if '-' in flags:
-                s = s.ljust(width, ' ')
-              elif '0' in flags:
-                s = s.rjust(width, '0')
-              else:
-                pass
+            if '-' in flags:
+              s = s.ljust(width, ' ')
             else:
               s = s.rjust(width, ' ')
 
