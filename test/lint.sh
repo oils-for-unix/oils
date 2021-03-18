@@ -183,13 +183,19 @@ find-src() {
   find \
     -name '_*' -a -prune -o \
     -name 'Python-*' -a -prune -o \
-    -name 'mycpp' -a -prune -o \
-    -name 'build' -a -prune -o \
     "$@"
 }
 
-find-py() { find-src -name '*.py' -a -print "$@"; }
-find-sh() { find-src -name '*.sh' -a -print "$@"; }
+find-py() {
+  find-src  \
+    -name 'mycpp' -a -prune -o \
+    -name 'build' -a -prune -o \
+    -name '*.py' -a -print "$@"
+}
+
+find-sh() {
+  find-src -name '*.sh' -a -print "$@"
+}
 
 print-if-has-shebang() {
   read first < $1

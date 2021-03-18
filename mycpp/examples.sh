@@ -1,5 +1,34 @@
 # examples.sh: Hooks for specific files
 
+# COPIED FROM DEFUNCT run.sh.  Because some examples require it.  NOT
+# TESTED.  TODO: Fold this into Ninja's build-steps.sh.
+
+# -I with ASDL files.
+compile-with-asdl() {
+  local name=$1
+  local variant=$2
+  local src=_gen/$name.cc
+  shift 2
+
+  local flags
+  case $variant in
+    (asan)
+      flags="$CXXFLAGS $ASAN_FLAGS"
+      ;;
+    (opt)
+      flags="$CXXFLAGS -O2 -g"
+      ;;
+    (*)
+      flags="$CXXFLAGS"
+      ;;
+  esac
+
+  # .. for asdl/runtime.h
+  $CXX -o _bin/$name.$variant $flags \
+    -I . -I .. -I ../_devbuild/gen -I ../_build/cpp -I _gen -I ../cpp \
+    mylib.cc gc_heap.cc $src "$@" -lstdc++
+}
+
 asdl-gen() {
   PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
 }
