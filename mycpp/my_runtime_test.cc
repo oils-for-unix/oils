@@ -195,47 +195,54 @@ void Print(List<Str*>* parts) {
 }
 
 TEST str_split_test() {
+  Str* s = nullptr;
   Str* sep = nullptr;
   List<Str*>* parts = nullptr;
 
-  StackRoots _roots({&sep, &parts});
+  StackRoots _roots({&s, &sep, &parts});
   sep = NewStr(":");
 
   parts = kEmptyString->split(sep);
   ASSERT_EQ(1, len(parts));
   Print(parts);
 
-  parts = (NewStr(":"))->split(sep);
+  s = NewStr(":");
+  parts = s->split(sep);
   ASSERT_EQ_FMT(2, len(parts), "%d");
   ASSERT(str_equals(kEmptyString, parts->index(0)));
   ASSERT(str_equals(kEmptyString, parts->index(1)));
   Print(parts);
 
-  parts = (NewStr("::"))->split(sep);
+  s = NewStr("::");
+  parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
   ASSERT(str_equals(kEmptyString, parts->index(0)));
   ASSERT(str_equals(kEmptyString, parts->index(1)));
   ASSERT(str_equals(kEmptyString, parts->index(2)));
   Print(parts);
 
-  parts = (NewStr("a:b"))->split(sep);
+  s = NewStr("a:b");
+  parts = s->split(sep);
   ASSERT_EQ(2, len(parts));
   Print(parts);
   ASSERT(str_equals0("a", parts->index(0)));
   ASSERT(str_equals0("b", parts->index(1)));
 
-  parts = (NewStr("abc:def:"))->split(sep);
+  s = NewStr("abc:def:");
+  parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
   Print(parts);
   ASSERT(str_equals0("abc", parts->index(0)));
   ASSERT(str_equals0("def", parts->index(1)));
   ASSERT(str_equals(kEmptyString, parts->index(2)));
 
-  parts = (NewStr(":abc:def:"))->split(sep);
+  s = NewStr(":abc:def:");
+  parts = s->split(sep);
   ASSERT_EQ(4, len(parts));
   Print(parts);
 
-  parts = (NewStr("abc:def:ghi"))->split(sep);
+  s = NewStr("abc:def:ghi");
+  parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
   Print(parts);
 
