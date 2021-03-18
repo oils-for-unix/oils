@@ -72,13 +72,16 @@ def log(msg, *args):
 # - lexer_main, alloc_main -- these use Oil code
 # - pgen2_demo -- uses pgen2
 
-def ShouldSkip(name):
-  if name in ['pgen2_demo', 'alloc_main', 'lexer_main', 'named_args',
-      'varargs']:
-    return True
+def ShouldSkipBuild(name):
+  if name in [
+      # these 3 use Oil code, and don't type check or compile
+      'pgen2_demo',
+      'alloc_main',  
+      'lexer_main', 
 
-  # '%5d' doesn't work yet.  TODO: fix this.
-  if name == 'strings':
+      'named_args',  # I think this never worked
+      'varargs',  # e_die() missing.  DID work with compile-with-asdl
+      ]:
     return True
 
   # TODO. expr.asdl when GC=1
@@ -86,21 +89,25 @@ def ShouldSkip(name):
   if name == 'parse':
     return True
 
-  # TODO: Call custom function in examples.sh!
-  if name == 'modules':
-    return True
-
   return False
 
 
-def ExamplesToTest():
+def ExamplesToBuild():
 
   filenames = os.listdir('examples')
   py = [name[:-3] for name in filenames if name.endswith('.py')]
 
-  to_test = [name for name in py if not ShouldSkip(name)]
+  to_test = [name for name in py if not ShouldSkipBuild(name)]
 
   return to_test
+
+
+def ShouldSkipTest(name):
+  # '%5d' doesn't work yet.  TODO: fix this.
+  if name == 'strings':
+    return True
+
+  return False
 
 
 def ShouldSkipBenchmark(name):
@@ -122,11 +129,6 @@ def ShouldSkipBenchmark(name):
   return False
 
 
-def ExamplesToBenchmark():
-  to_test = ExamplesToTest()
-  return [name for name in to_test if not ShouldSkipBenchmark(name)]
-
-
 RUNTIME = ['my_runtime.cc', 'mylib2.cc', 'gc_heap.cc']
 
 UNIT_TESTS = {
@@ -140,6 +142,10 @@ UNIT_TESTS = {
     'target_lang': ['../cpp/dumb_alloc.cc', 'gc_heap.cc'],
 }
 
+MORE_FILES = {
+    'modules': ['testpkg/module1.py', 'testpkg/module2.py'],
+}
+
 def main(argv):
   n = ninja_syntax.Writer(open('build.ninja', 'w'))
 
@@ -148,8 +154,8 @@ def main(argv):
   n.newline()
 
   n.rule('translate',
-         command='./build-steps.sh translate $in $out',
-         description='translate $in $out')
+         command='./build-steps.sh translate $name $out $in',
+         description='translate $name $out $in')
   n.newline()
   n.rule('compile',
          # note: $in can be MULTIPLE files, shell-quoted
@@ -184,9 +190,7 @@ def main(argv):
          description='benchmark-table $out $in')
   n.newline()
 
-  to_benchmark = ExamplesToBenchmark()
-
-  examples = ExamplesToTest()
+  examples = ExamplesToBuild()
   #examples = ['cgi', 'containers', 'fib_iter']
   #examples = ['cgi']
 
@@ -268,13 +272,23 @@ def main(argv):
           continue
         benchmark_tasks.append(task_out)
 
+      elif mode == 'test':
+        if ShouldSkipTest(ex):
+          log('Skipping test of %s', ex)
+          continue
+
       log_out = '%s.log.txt' % prefix
       n.build([task_out, log_out], 'example-task', 'examples/%s.py' % ex,
               variables=[('name', ex), ('impl', 'Python')])
       n.newline()
 
     # Translate to C++
-    n.build('_ninja/gen/%s.cc' % ex, 'translate', 'examples/%s.py' % ex)
+    n.build(
+        '_ninja/gen/%s.cc' % ex, 'translate',
+        MORE_FILES.get(ex, []) + ['examples/%s.py' % ex] ,
+        variables=[('name', ex)],
+    )
+
     n.newline()
 
     # Compile C++. TODO: Can also parameterize by CXX: Clang or GCC.
@@ -306,6 +320,11 @@ def main(argv):
           log('Skipping benchmark of %s', ex)
           continue
         benchmark_tasks.append(task_out)
+
+      elif mode == 'test':
+        if ShouldSkipTest(ex):
+          log('Skipping test of %s', ex)
+          continue
 
       log_out = '_ninja/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
       py_log_out = '_ninja/tasks/%s/%s.py.log.txt' % (mode, ex)

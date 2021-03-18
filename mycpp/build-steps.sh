@@ -59,10 +59,10 @@ EOF
 translate() {
   ### Translate Python/MyPy to C++.
 
-  local in=$1
+  local name=$1
   local out=$2
+  shift 2  # rest of artgs are inputs
 
-  local name=$(basename $in .py)
   local raw=_ninja/gen/${name}_raw.cc
 
   export GC=1  # mycpp_main.py reads this
@@ -71,7 +71,7 @@ translate() {
   # PYTHONPATH.
   ( source _tmp/mycpp-venv/bin/activate
     # flags may be empty
-    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py $in > $raw
+    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py "$@" > $raw
   )
 
   cpp-skeleton $name $raw > $out

@@ -21,9 +21,9 @@ def run_tests():
 
   # 6 7 8
 
-  log("%s", add(1))
-  log("%s", add(1, y=3))
-  log("%s", add(1, z=5))
+  log("%d", add(1))
+  log("%d", add(1, y=3))
+  log("%d", add(1, z=5))
 
   # Hm the CallableType doesn't have default args, because two functions could
   # have the same type siganature, but different args, and you don't know which

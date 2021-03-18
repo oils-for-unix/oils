@@ -14,7 +14,7 @@ set -o errexit
 source devtools/release-version.sh  # for escape-segements
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.8.3'
+readonly PREV_VERSION='0.8.7'
 
 # adapted from release-version.sh
 _git-changelog-body() {
@@ -59,7 +59,8 @@ issues-table() {
 }
 
 write-template() {
-  local out=../oilshell.org/blog/2020/11/_release-$OIL_VERSION.md
+  local date=$(date +%Y/%m)
+  local out=../oilshell.org/blog/$date/_release-$OIL_VERSION.md
   print-template > $out
   echo "Wrote $out"
 }
@@ -71,6 +72,7 @@ print-template() {
 ---
 title: Release of Oil $OIL_VERSION
 date: $(date +%Y/%m/%d)
+css_file: blog-bundle-v4.css
 tags: oil-release
 comments_url: TODO
 published: no
@@ -107,12 +109,12 @@ This is the latest version of Oil, a Unix shell that's our upgrade path from
 To build and run it, follow the instructions in [INSTALL.txt][].  The wiki has
 tips on [How To Test OSH](\$wiki).
 
-If you're new to the project, see [Why Create a New Shell?][why-oil] and the
-[2019 FAQ](../../2019/06/17.html).
+If you're new to the project, see [Why Create a New Shell?][why-oil] and posts
+tagged #[FAQ](\$blog-tag).
 
 [INSTALL.txt]: /release/$OIL_VERSION/doc/INSTALL.html
 [github-bugs]: https://github.com/oilshell/oil/issues
-[why-oil]: ../../2018/01/28.html
+[why-oil]: ../../2021/01/why-a-new-shell.html
 [release-index]: /release/$OIL_VERSION/
 
 [oilshell.zulipchat.com]: http://oilshell.zulipchat.com/
