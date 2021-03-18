@@ -626,7 +626,7 @@ ComputeReport = function(in_dir, out_dir) {
 
 MyCppReport = function(in_dir, out_dir) {
   # TSV file, not CSV
-  times = read.table(file.path(in_dir, 'times.tsv'), header=T)
+  times = read.table(file.path(in_dir, 'benchmark-table.tsv'), header=T)
   print(times)
 
   times %>% filter(status != 0) -> failed
@@ -636,7 +636,7 @@ MyCppReport = function(in_dir, out_dir) {
   }
 
   # Don't care about elapsed and system
-  times %>% select(-c(status, elapsed_secs, sys_secs)) %>%
+  times %>% select(-c(status, elapsed_secs, sys_secs, bin, task_out)) %>%
     mutate(example_name_HREF = mycppUrl(example_name),
            user_ms = user_secs * 1000, 
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
@@ -644,53 +644,13 @@ MyCppReport = function(in_dir, out_dir) {
     details
 
   details %>% select(-c(max_rss_MB)) %>%
-    spread(key = language, value = user_ms) %>%
+    spread(key = impl, value = user_ms) %>%
     mutate(`C++ : Python` = `C++` / Python) %>%
     arrange(`C++ : Python`) ->
     user_time
 
   details %>% select(-c(user_ms)) %>%
-    spread(key = language, value = max_rss_MB) %>%
-    mutate(`C++ : Python` = `C++` / Python) %>%
-    arrange(`C++ : Python`) ->
-    max_rss
-
-  # Sometimes it speeds up by more than 10x
-  precision3 = ColumnPrecision(list(`C++ : Python` = 3))
-  precision2 = ColumnPrecision(list(`C++ : Python` = 2))
-
-  writeTsv(user_time, file.path(out_dir, 'user_time'), precision3)
-  writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision2)
-  writeTsv(details, file.path(out_dir, 'details'))
-}
-
-MyCppReport2 = function(in_dir, out_dir) {
-  # TSV file, not CSV
-  times = read.table(file.path(in_dir, 'times.tsv'), header=T)
-  print(times)
-
-  times %>% filter(status != 0) -> failed
-  if (nrow(failed) != 0) {
-    print(failed)
-    stop('Some mycpp tasks failed')
-  }
-
-  # Don't care about elapsed and system
-  times %>% select(-c(status, elapsed_secs, sys_secs)) %>%
-    mutate(example_name_HREF = mycppUrl(example_name),
-           user_ms = user_secs * 1000, 
-           max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
-    select(-c(user_secs, max_rss_KiB)) ->
-    details
-
-  details %>% select(-c(max_rss_MB)) %>%
-    spread(key = language, value = user_ms) %>%
-    mutate(`C++ : Python` = `C++` / Python) %>%
-    arrange(`C++ : Python`) ->
-    user_time
-
-  details %>% select(-c(user_ms)) %>%
-    spread(key = language, value = max_rss_MB) %>%
+    spread(key = impl, value = max_rss_MB) %>%
     mutate(`C++ : Python` = `C++` / Python) %>%
     arrange(`C++ : Python`) ->
     max_rss
@@ -726,9 +686,6 @@ main = function(argv) {
 
   } else if (action == 'mycpp') {
     MyCppReport(in_dir, out_dir)
-
-  } else if (action == 'mycpp2') {
-    MyCppReport2(in_dir, out_dir)
 
   } else if (action == 'oheap') {
     OheapReport(in_dir, out_dir)

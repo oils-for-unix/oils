@@ -87,17 +87,19 @@ mycpp-examples() {
   local base_dir=${1:-_tmp/mycpp-examples}
   local in_tsv=_ninja/benchmark-table.tsv
 
+  # Force SERIAL reexecution
   pushd mycpp
-  ninja $in_tsv
+  rm -r -f --verbose _ninja/tasks/benchmark/
+  ninja -j 1 $in_tsv
   popd 
 
-  mkdir -p $base_dir
-  cp -v mycpp/$in_tsv $base_dir
+  mkdir -p $base_dir/raw
+  cp -v mycpp/$in_tsv $base_dir/raw
 
   local dir2=$base_dir/stage2
   mkdir -p $dir2
 
-  R_LIBS_USER=$R_PATH benchmarks/report.R mycpp2 $base_dir/raw $dir2
+  R_LIBS_USER=$R_PATH benchmarks/report.R mycpp $base_dir/raw $dir2
 
   stage3 $base_dir mycpp
 }
