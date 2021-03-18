@@ -50,11 +50,6 @@ Notes for Oil:
 
   - Spawn a process with environment variables.
   - use % for substitution instead
-
-TODO:
-
-  - Create (lang, example) Ninja vars and thread them through to
-    time-tsv --field and R.
 """
 
 from __future__ import print_function
@@ -171,6 +166,11 @@ def main(argv):
          command='./build-steps.sh task $in $out',
          description='task $in $out')
   n.newline()
+  n.rule('example-task',
+         # note: $out can be MULTIPLE FILES, shell-quoted
+         command='./build-steps.sh example-task $name $impl $in $out',
+         description='example-task $name $impl $in $out')
+  n.newline()
   n.rule('typecheck',
          command='./build-steps.sh typecheck $in $out',
          description='typecheck $in $out')
@@ -269,7 +269,8 @@ def main(argv):
         benchmark_tasks.append(task_out)
 
       log_out = '%s.log.txt' % prefix
-      n.build([task_out, log_out], 'task', 'examples/%s.py' % ex)
+      n.build([task_out, log_out], 'example-task', 'examples/%s.py' % ex,
+              variables=[('name', ex), ('impl', 'Python')])
       n.newline()
 
     # Translate to C++
@@ -312,8 +313,9 @@ def main(argv):
       to_compare.append(log_out)
       to_compare.append(py_log_out)
 
-      n.build([task_out, log_out], 'task',
-              '_ninja/bin/examples/%s.%s' % (ex, variant))
+      n.build([task_out, log_out], 'example-task',
+              '_ninja/bin/examples/%s.%s' % (ex, variant),
+              variables=[('name', ex), ('impl', 'C++')])
       n.newline()
 
   # Compare the log of all examples

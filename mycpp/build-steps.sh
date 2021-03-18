@@ -125,6 +125,9 @@ task() {
   local task_out=$2
   local log_out=$3
 
+  shift 3
+  # The rest of the args are passed as flags to time-tsv
+
   case $bin in
     _ninja/bin/*.asan)
       # copied from run.sh and build/mycpp.sh
@@ -144,17 +147,31 @@ task() {
       ;;
   esac
 
-  time-tsv -o $task_out --rusage --field $bin --field $task_out -- \
+  time-tsv -o $task_out --rusage "$@" --field $bin --field $task_out -- \
     $bin >$log_out 2>&1
+}
+
+example-task() {
+  ### Run a program in the examples/ dir, either in Python or C++
+
+  local name=$1  # e.g. 'fib_iter'
+  local impl=$2  # 'Python' or 'C++'
+
+  local bin=$3  # Run this
+  local task_out=$4
+  local log_out=$5
+
+  task $bin $task_out $log_out --field $name --field $impl
 }
 
 benchmark-table() {
   local out=$1
   shift
 
-  # TODO: Use QTT header?
-
-  { time-tsv --print-header --rusage --field bin --field task_out
+  # TODO: Use QTT header with types?
+  { time-tsv --print-header --rusage \
+      --field example_name --field impl \
+      --field bin --field task_out 
     cat "$@" 
   } > $out
 }
