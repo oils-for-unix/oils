@@ -3,16 +3,18 @@
 #
 
 # Include guard.
-test -n "${__MYCPP_COMMON_SH:-}" && return
+if test -n "${__MYCPP_COMMON_SH:-}"; then
+  return
+fi
 readonly __MYCPP_COMMON_SH=1
 
-readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
+if test -z "${REPO_ROOT:-}"; then
+  echo "$REPO_ROOT should be set before sourcing"
+  exit 1
+fi
 
-# Could also be in _clone
-readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
+readonly MYPY_REPO=$REPO_ROOT/_clone/mypy
 
 time-tsv() {
   $REPO_ROOT/benchmarks/time_.py --tsv "$@"
 }
-

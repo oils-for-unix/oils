@@ -108,11 +108,11 @@ dump-versions   services/toil-worker.sh dump-versions -
 build-minimal   build/dev.sh minimal                  -
 cpp-unit-deps   test/cpp-unit.sh deps                 -
 cpp-unit-all    test/cpp-unit.sh all                  -
-mycpp-clone     mycpp/setup.sh clone                  -
-mycpp-deps      mycpp/setup.sh deps                   -
-translate       mycpp/setup.sh build                  -
+mycpp-git       mycpp/deps.sh git-clone               -
+mycpp-pip       mycpp/deps.sh pip-install             -
+build-osh-eval  mycpp/build.sh osh-eval               -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
-mycpp-examples  mycpp/setup.sh travis                 mycpp/_ninja/index.html
+mycpp-examples  mycpp/build.sh examples               mycpp/_ninja/index.html
 parse-errors    test/parse-errors.sh travis1          -
 EOF
 #parse-errors-native  test/parse-errors.sh travis2          -

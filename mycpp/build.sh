@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 #
-# Toil build steps.
-#
-# TODO: Rename to toil-tasks.sh?
+# Entry points for services/toil-worker.sh, and wrappers around Ninja.
 #
 # Usage:
-#   ./setup.sh <function name>
+#   ./build.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -13,34 +11,10 @@ set -o errexit
 
 readonly THIS_DIR=$(dirname $(readlink -f $0))
 readonly REPO_ROOT=$THIS_DIR/..
-readonly MYPY_REPO=$REPO_ROOT/_clone/mypy
 
-clone() {
-  local out=$MYPY_REPO
-  mkdir -p $out
-  git clone --recursive --depth=50 --branch=release-0.730 \
-    https://github.com/python/mypy $out
-}
+source $THIS_DIR/common.sh  # MYPY_REPO
 
-# From run.sh
-deps() {
-  export MYPY_REPO  # mypy-deps function uses this
-
-  pushd $THIS_DIR
-
-  ./run.sh create-venv
-
-  set +o nounset
-  set +o pipefail
-  set +o errexit
-  source _tmp/mycpp-venv/bin/activate
-
-  ./run.sh mypy-deps      # install deps in virtual env
-
-  popd
-}
-
-build() {
+osh-eval() {
   export MYPY_REPO  # build/mycpp.sh uses this
 
   build/dev.sh oil-cpp
@@ -83,7 +57,7 @@ all-ninja() {
   return $status
 }
 
-travis() {
+examples() {
   # invoked by services/toil-worker.sh
   all-ninja
 }
@@ -98,6 +72,19 @@ run-for-release() {
   # It compares C++ and Python.
   #
   # We have _ninja/benchmark-table.tsv instead
+}
+
+#
+# Utilities
+#
+
+config() {
+  ./build_graph.py
+  cat build.ninja
+}
+
+clean() {
+  rm --verbose -r -f _ninja
 }
 
 "$@"

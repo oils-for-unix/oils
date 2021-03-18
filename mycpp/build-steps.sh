@@ -5,14 +5,18 @@
 # Usage:
 #   ./build-steps.sh <function name>
 #
-# TODO: build/actions.sh should be renamed build/build-steps.sh?  "actions" implies a
-# side effect, where as "steps" largely know their outputs an outputs largely
+# TODO: build/actions.sh should be renamed build/build-steps.sh?  "actions"
+# implies a side effect, where as "steps" largely know their outputs an outputs
+# largely
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-source common.sh  # sets REPO_ROOT
+readonly THIS_DIR=$(dirname $(readlink -f $0))
+readonly REPO_ROOT=$THIS_DIR/..
+
+source $THIS_DIR/common.sh
 source $REPO_ROOT/build/common.sh  # for CXX
 
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'

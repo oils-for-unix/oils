@@ -9,7 +9,7 @@ It's inspired by both mypyc and Shed Skin.
 To run it, you'll need the MyPy source repository, as well as a virtualenv
 containing MyPy's dependencies.
 
-See the instructions at the top of `run.sh` for details.
+See the instructions at the top of `deps.sh` for details.
 
 ## Notes on the Algorithm / Architecture
 
