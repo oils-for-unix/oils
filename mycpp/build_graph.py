@@ -4,10 +4,9 @@ build_graph.py
 
 Code Layout:
 
-  build_graph.py  # this file
-  build-steps.sh
-  build.ninja  # generated
-  ninja.sh     # wrapper -- don't really need this?
+  build_graph.py  # This file describes dependencies programmatically
+  build.ninja     # Generated build description ('rule' and 'build')
+  build-steps.sh  # Invoked by Ninja rules
 
 Data Layout:
 
@@ -16,7 +15,10 @@ Data Layout:
     containers.py
 
   _ninja/
-    gen/    # source
+    src/    # generated source
+      mycpp/  # mycpp output, which may include examples/varargs_preamble.h
+      main/   # main drivers
+
     bin/    # binaries
       examples/  # many variants
       examples-stripped/
@@ -41,7 +43,9 @@ Also:
 
 Notes for Oil: 
 
-- escape_path() in ninja_syntax seems wrong?  It should really take $ to $$.
+- escape_path() in ninja_syntax seems wrong?
+  - It should really take $ to $$.
+  - It doesn't escape newlines
 
     return word.replace('$ ', '$$ ').replace(' ', '$ ').replace(':', '$:')
 
@@ -50,6 +54,9 @@ Notes for Oil:
 
   - Spawn a process with environment variables.
   - use % for substitution instead
+
+- Another problem: Ninja doesn't escape the # comment character like $#, so
+  how can you write a string with a # as the first char on a line?
 """
 
 from __future__ import print_function
@@ -68,24 +75,28 @@ def log(msg, *args):
 
 
 # special ones in examples.sh:
-# - parse, varargs, modules (because it uses many modules)
+# - parse, varargs
 # - lexer_main, alloc_main -- these use Oil code
 # - pgen2_demo -- uses pgen2
 
 def ShouldSkipBuild(name):
   if name in [
       # these 3 use Oil code, and don't type check or compile
-      'pgen2_demo',
+      # Maybe give up on these?  pgen2_demo might be useful later.
       'alloc_main',  
       'lexer_main', 
+      'pgen2_demo',
 
       'named_args',  # I think this never worked
-      'varargs',  # e_die() missing.  DID work with compile-with-asdl
+
+      # TODO: e_die() missing.  DID work with compile-with-asdl
+      'varargs',  
       ]:
     return True
 
-  # TODO. expr.asdl when GC=1
-  # qsn_qsn.h is incompatible
+  # TODO: make this compile.  It's a realistic example.
+  # - expr.asdl when GC=1
+  # - qsn_qsn.h is incompatible
   if name == 'parse':
     return True
 
@@ -114,8 +125,8 @@ def ShouldSkipBenchmark(name):
   if name.startswith('test_'):
     return True
 
+  # BUG: 8191 exceptions problem, I think caused by Alloc<ParseError>
   if name == 'control_flow':
-    # TODO: fix 8191 exceptions problem, I think caused by Alloc<ParseError>
     return True
 
   # BUG: Assertion failure here!
@@ -142,8 +153,15 @@ UNIT_TESTS = {
     'target_lang': ['../cpp/dumb_alloc.cc', 'gc_heap.cc'],
 }
 
-MORE_FILES = {
+TRANSLATE_FILES = {
     'modules': ['testpkg/module1.py', 'testpkg/module2.py'],
+}
+
+EXAMPLE_CXXFLAGS = {
+    # for #include "preamble.h", then "id_kind_asdl.h".
+    # then grammar_nt.h
+    # TODO: simplify this
+    'varargs': "'-I ../cpp -I ../_build/cpp -I ../_devbuild/gen'"
 }
 
 def main(argv):
@@ -154,13 +172,16 @@ def main(argv):
   n.newline()
 
   n.rule('translate',
-         command='./build-steps.sh translate $name $out $in',
-         description='translate $name $out $in')
+         command='./build-steps.sh translate $out $in',
+         description='translate $out $in')
+  n.rule('wrap-cc',
+         command='./build-steps.sh wrap-cc $name $in $preamble_path $out',
+         description='wrap-cc $name $in $preamble_path $out')
   n.newline()
   n.rule('compile',
          # note: $in can be MULTIPLE files, shell-quoted
-         command='./build-steps.sh compile $variant $out $in',
-         description='compile $variant $in $out')
+         command='./build-steps.sh compile $variant $out $more_cxx_flags $in',
+         description='compile $variant $out $more_cxx_flags $in')
   n.newline()
   n.rule('strip',
          # TODO: there could be 2 outputs: symbols + binary
@@ -229,7 +250,7 @@ def main(argv):
         main_cc = '%s.cc' % test_name
 
       n.build([b], 'compile', [main_cc] + cc_files,
-              variables=[('variant', variant)])
+              variables=[('variant', variant), ('more_cxx_flags', "''")])
       n.newline()
 
       prefix = '_ninja/tasks/unit/%s.%s' % (test_name, variant)
@@ -282,20 +303,32 @@ def main(argv):
               variables=[('name', ex), ('impl', 'Python')])
       n.newline()
 
+    raw = '_ninja/gen/%s_raw.cc' % ex
+
     # Translate to C++
-    n.build(
-        '_ninja/gen/%s.cc' % ex, 'translate',
-        MORE_FILES.get(ex, []) + ['examples/%s.py' % ex] ,
-        variables=[('name', ex)],
-    )
+    n.build(raw, 'translate',
+            TRANSLATE_FILES.get(ex, []) + ['examples/%s.py' % ex])
+
+    p = 'examples/%s_preamble.h' % ex
+    # Ninja empty string!
+    preamble_path = p if os.path.exists(p) else "''"
+
+    # Make a translation unit
+    n.build('_ninja/gen/%s.cc' % ex, 'wrap-cc', raw,
+            variables=[('name', ex), ('preamble_path', preamble_path)])
 
     n.newline()
+
+    more_cxx_flags = EXAMPLE_CXXFLAGS.get(ex, "''")
 
     # Compile C++. TODO: Can also parameterize by CXX: Clang or GCC.
     for variant in ['gc_debug', 'asan', 'opt']:
       b = '_ninja/bin/examples/%s.%s' % (ex, variant)
-      n.build(b, 'compile', ['_ninja/gen/%s.cc' % ex] + RUNTIME,
-              variables=[('variant', variant)])
+      n.build(
+          b, 'compile', ['_ninja/gen/%s.cc' % ex] + RUNTIME,
+          variables=[
+              ('variant', variant), ('more_cxx_flags', more_cxx_flags)
+          ])
       n.newline()
 
       if variant == 'opt':

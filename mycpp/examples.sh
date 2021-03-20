@@ -149,25 +149,6 @@ benchmark-parse() {
 # Other
 #
 
-translate-modules() {
-  local raw=_gen/modules_raw.cc
-  local out=_gen/modules.cc
-
-  ( source _tmp/mycpp-venv/bin/activate
-    PYTHONPATH=$MYPY_REPO ./mycpp_main.py \
-      testpkg/module1.py testpkg/module2.py examples/modules.py > $raw
-  )
-  cpp-skeleton modules $raw > $out
-  wc -l $raw $out
-}
-
-translate-asdl-generated() {
-  translate-ordered asdl_generated '#include "expr_asdl.h"' \
-    $REPO_ROOT/asdl/runtime.py \
-    $REPO_ROOT/asdl/format.py \
-    examples/asdl_generated.py
-} 
-
 lexer-main() {
   local variant=${1:-opt}
 

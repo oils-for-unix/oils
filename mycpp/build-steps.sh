@@ -40,30 +40,33 @@ int main(int argc, char **argv) {
 EOF
 }
 
-cpp-skeleton() {
-  local main_module=${1:-fib_iter}
-  shift
+wrap-cc() {
+  local main_module=$1
+  local in=$2
+  local preamble_path=$3
+  local out=$4
 
-  cat <<EOF
-// examples/$main_module
+  {
+     echo "// examples/$main_module"
+     echo
 
-EOF
+     if test -f "$preamble_path"; then
+       echo "#include \"$preamble_path\""
+     fi
 
-  # the raw module
-  cat "$@"
+     cat $in
 
-  # main() function
-  gen-main $main_module
+     # main() function
+     gen-main $main_module
+
+  } > $out
 }
 
 translate() {
   ### Translate Python/MyPy to C++.
 
-  local name=$1
-  local out=$2
-  shift 2  # rest of artgs are inputs
-
-  local raw=_ninja/gen/${name}_raw.cc
+  local out=$1
+  shift  # rest of args are inputs
 
   export GC=1  # mycpp_main.py reads this
 
@@ -71,10 +74,8 @@ translate() {
   # PYTHONPATH.
   ( source _tmp/mycpp-venv/bin/activate
     # flags may be empty
-    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py "$@" > $raw
+    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py "$@" > $out
   )
-
-  cpp-skeleton $name $raw > $out
 }
 
 compile() {
@@ -82,10 +83,13 @@ compile() {
 
   local variant=$1
   local out=$2
-  shift 2
+  local more_cxx_flags=$3
+  shift 3
   # Now "$@" are the inputs
 
-  local flags="$CXXFLAGS"
+  argv COMPILE "$variant" "$out" "$more_cxx_flags"
+
+  local flags="$CXXFLAGS $more_cxx_flags"
 
   case $out in
     (*/bin/unit/*)
