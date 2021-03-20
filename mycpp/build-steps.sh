@@ -21,6 +21,24 @@ source $REPO_ROOT/build/common.sh  # for CXX
 
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
 
+asdl-tool() {
+  export GC=1  # asdl/tool.py reads this
+
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
+}
+
+asdl-mypy() {
+  local in=$1
+  local out=$2
+  asdl-tool mypy $in > $out
+}
+
+asdl-cpp() {
+  local in=$1
+  local out_prefix=$2
+  asdl-tool cpp $in $out_prefix
+}
+
 gen-main() {
   local main_module=${1:-fib_iter}
   cat <<EOF
@@ -87,7 +105,7 @@ compile() {
   shift 3
   # Now "$@" are the inputs
 
-  argv COMPILE "$variant" "$out" "$more_cxx_flags"
+  #argv COMPILE "$variant" "$out" "$more_cxx_flags"
 
   local flags="$CXXFLAGS $more_cxx_flags"
 
@@ -143,6 +161,11 @@ task() {
       export ASAN_SYMBOLIZER_PATH="$REPO_ROOT/$CLANG_DIR_RELATIVE/bin/llvm-symbolizer"
       ;;
 
+    examples/parse.py)
+      # imports mycpp.mylib
+      export PYTHONPATH=".:$REPO_ROOT/vendor:$REPO_ROOT"
+      ;;
+
     examples/*.py)
       # for running most examples
       export PYTHONPATH=".:$REPO_ROOT/vendor"
@@ -196,14 +219,13 @@ mypy() {
 
 typecheck() {
   ### Typecheck without translation
-  local in=$1
+  local main_py=$1
   local out=$2
 
-  # if test "$(type -t typecheck-$name)" = "function"; then
-  #  typecheck-$name > $out
-  # else
-
-  mypy --py2 --strict $in > $out
+  # Note: MYPYPATH added for examples/parse.py, which uses mycpp.mylib
+  #MYPYPATH="$REPO_ROOT:$REPO_ROOT/native" \
+  MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" \
+    mypy --py2 --strict $main_py > $out
 }
 
 lines() {

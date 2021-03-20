@@ -192,6 +192,9 @@ gen-cpp-test() {
   $bin "$@"
 }
 
+# TODO: Make this use mylib2.sh and the garbage collector!
+# Right now it's just compiling things in without activating it.
+
 gc-test() {
   build/dev.sh hnode-gc
 

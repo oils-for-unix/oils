@@ -26,6 +26,7 @@ if mylib.PYTHON:
     tok = kwargs.get('tok')
     print(tok)
 
+  # note: translates to println_stderr().  TODO: change that?
   def stderr_line(msg, *args):
     # type: (str, Any) -> None
     if args:

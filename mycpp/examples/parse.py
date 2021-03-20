@@ -13,7 +13,7 @@ from typing import Tuple, Optional, cast
 # PYTHONPATH=$REPO_ROOT/mycpp
 from mycpp.mylib import log, tagswitch
 from mycpp import mylib
-from _gen.expr_asdl import (
+from _ninja.asdl.expr_asdl import (
     expr_e,  # for translation only?
     expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
 )

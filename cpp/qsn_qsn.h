@@ -3,7 +3,11 @@
 #ifndef QSN_QSN_H
 #define QSN_QSN_H
 
+#if 1  // TODO: switch this off
 #include "mylib.h"
+#else
+#include "mylib2.h"
+#endif
 
 namespace qsn {
 
