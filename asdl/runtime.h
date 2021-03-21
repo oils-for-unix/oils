@@ -40,7 +40,7 @@ extern Str* FALSE_STR;
 namespace format {  // declare
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f);
 
-class ColorOutput {
+class ColorOutput : public gc_heap::Obj {
  public:
   ColorOutput(mylib::Writer* f);
   virtual format::ColorOutput* NewTempBuffer();
@@ -55,6 +55,8 @@ class ColorOutput {
 
   mylib::Writer* f;
   int num_chars;
+
+  DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
 
 class TextOutput : public ColorOutput {
@@ -63,6 +65,8 @@ class TextOutput : public ColorOutput {
   virtual format::TextOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+
+  DISALLOW_COPY_AND_ASSIGN(TextOutput)
 };
 
 class HtmlOutput : public ColorOutput {
@@ -74,6 +78,8 @@ class HtmlOutput : public ColorOutput {
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
   virtual void write(Str* s);
+
+  DISALLOW_COPY_AND_ASSIGN(HtmlOutput)
 };
 
 class AnsiOutput : public ColorOutput {
@@ -82,10 +88,12 @@ class AnsiOutput : public ColorOutput {
   virtual format::AnsiOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+
+  DISALLOW_COPY_AND_ASSIGN(AnsiOutput)
 };
 extern int INDENT;
 
-class _PrettyPrinter {
+class _PrettyPrinter : public gc_heap::Obj {
  public:
   _PrettyPrinter(int max_col);
   bool _PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
@@ -94,6 +102,8 @@ class _PrettyPrinter {
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
 
   int max_col;
+
+  DISALLOW_COPY_AND_ASSIGN(_PrettyPrinter)
 };
 bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);

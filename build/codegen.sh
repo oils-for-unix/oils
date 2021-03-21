@@ -94,11 +94,15 @@ const-mypy-gen() {
 }
 
 const-cpp-gen() {
+  local gc=${1:-}
+
   local out_dir=_build/cpp
+
   frontend/consts_gen.py cpp $out_dir/id_kind_asdl
   ls -l $out_dir/id_kind_asdl*
 
-  frontend/consts_gen.py cpp-consts $out_dir/consts
+  # TODO: Respect GC=1; Don't use mylib.h
+  frontend/consts_gen.py cpp-consts $out_dir/consts${gc}
   ls -l $out_dir/consts*
 }
 
@@ -109,11 +113,15 @@ option-mypy-gen() {
 }
 
 option-cpp-gen() {
-  local out_dir=_build/cpp
-  frontend/option_gen.py cpp $out_dir/option_asdl
+  local gc=${1:-}
 
-  core/optview_gen.py > $out_dir/core_optview.h
-  log "  (core/optview_gen) -> $out_dir/core_optview.h"
+  # TODO: respect GC=1
+  local out_dir=_build/cpp
+  frontend/option_gen.py cpp $out_dir/option_asdl${gc}
+
+  # TODO: Respect GC=1; Don't use mylib.h
+  core/optview_gen.py > $out_dir/core_optview${gc}.h
+  log "  (core/optview_gen) -> $out_dir/core_optview${gc}.h"
 }
 
 flag-gen-mypy() {

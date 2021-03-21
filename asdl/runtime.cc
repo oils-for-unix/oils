@@ -1,98 +1,103 @@
 // BEGIN mycpp output
 
+#include "mylib.h"
+
+using gc_heap::Alloc;
+using gc_heap::kZeroMask;
+using gc_heap::StackRoots;
 #include "runtime.h"
 
-Str* str0 = new Str("(");
-Str* str1 = new Str(")");
-Str* str2 = new Str("_");
-Str* str3 = new Str("T");
-Str* str4 = new Str("F");
-Str* str5 = new Str("\n<html>\n  <head>\n     <title>oil AST</title>\n     <style>\n      .n { color: brown }\n      .s { font-weight: bold }\n      .o { color: darkgreen }\n     </style>\n  </head>\n  <body>\n    <pre>\n");
-Str* str6 = new Str("\n    </pre>\n  </body>\n</html>\n    ");
-Str* str7 = new Str("n");
-Str* str8 = new Str("s");
-Str* str9 = new Str("o");
-Str* str10 = new Str("o");
-Str* str11 = new Str("o");
-Str* str12 = new Str("<span class=\"%s\">");
-Str* str13 = new Str("</span>");
-Str* str14 = new Str(" ");
-Str* str15 = new Str("\n");
-Str* str16 = new Str(" ");
-Str* str17 = new Str("]");
-Str* str18 = new Str(" ");
-Str* str19 = new Str(" ");
-Str* str20 = new Str("\n");
-Str* str21 = new Str("\n");
-Str* str22 = new Str(" ");
-Str* str23 = new Str("%s%s: [");
-Str* str24 = new Str("\n");
-Str* str25 = new Str("\n");
-Str* str26 = new Str("%s]");
-Str* str27 = new Str("%s%s: ");
-Str* str28 = new Str("\n");
-Str* str29 = new Str("\n");
-Str* str30 = new Str(" ");
-Str* str31 = new Str(" ");
-Str* str32 = new Str(" ");
-Str* str33 = new Str(" %s:");
-Str* str34 = new Str("[");
-Str* str35 = new Str(" ");
-Str* str36 = new Str("]");
-Str* str37 = new Str("\u001b[0;0m");
-Str* str38 = new Str("\u001b[1m");
-Str* str39 = new Str("\u001b[4m");
-Str* str40 = new Str("\u001b[7m");
-Str* str41 = new Str("\u001b[31m");
-Str* str42 = new Str("\u001b[32m");
-Str* str43 = new Str("\u001b[33m");
-Str* str44 = new Str("\u001b[34m");
-Str* str45 = new Str("&");
-Str* str46 = new Str("&amp;");
-Str* str47 = new Str("<");
-Str* str48 = new Str("&lt;");
-Str* str49 = new Str(">");
-Str* str50 = new Str("&gt;");
-Str* str51 = new Str("\\'\r\n\t\u0000");
-Str* str52 = new Str("$'");
-Str* str53 = new Str("'");
-Str* str54 = new Str("'");
-Str* str55 = new Str("");
-Str* str56 = new Str("'");
-Str* str57 = new Str("'");
-Str* str58 = new Str("");
-Str* str59 = new Str("'");
-Str* str60 = new Str("'");
-Str* str61 = new Str("");
-Str* str62 = new Str("\\");
-Str* str63 = new Str("\\\\");
-Str* str64 = new Str("'");
-Str* str65 = new Str("\\'");
-Str* str66 = new Str("\n");
-Str* str67 = new Str("\\n");
-Str* str68 = new Str("\r");
-Str* str69 = new Str("\\r");
-Str* str70 = new Str("\t");
-Str* str71 = new Str("\\t");
-Str* str72 = new Str("\u0000");
-Str* str73 = new Str("\\x00");
-Str* str74 = new Str("\\0");
-Str* str75 = new Str("");
-Str* str76 = new Str("");
-Str* str77 = new Str("");
-Str* str78 = new Str("\\");
-Str* str79 = new Str("\\\\");
-Str* str80 = new Str("'");
-Str* str81 = new Str("\\'");
-Str* str82 = new Str("\n");
-Str* str83 = new Str("\\n");
-Str* str84 = new Str("\r");
-Str* str85 = new Str("\\r");
-Str* str86 = new Str("\t");
-Str* str87 = new Str("\\t");
-Str* str88 = new Str("\u0000");
-Str* str89 = new Str("\\x00");
-Str* str90 = new Str("\\0");
+GLOBAL_STR(str0, "(");
+GLOBAL_STR(str1, ")");
+GLOBAL_STR(str2, "_");
+GLOBAL_STR(str3, "T");
+GLOBAL_STR(str4, "F");
+GLOBAL_STR(str5, "\n<html>\n  <head>\n     <title>oil AST</title>\n     <style>\n      .n { color: brown }\n      .s { font-weight: bold }\n      .o { color: darkgreen }\n     </style>\n  </head>\n  <body>\n    <pre>\n");
+GLOBAL_STR(str6, "\n    </pre>\n  </body>\n</html>\n    ");
+GLOBAL_STR(str7, "n");
+GLOBAL_STR(str8, "s");
+GLOBAL_STR(str9, "o");
+GLOBAL_STR(str10, "o");
+GLOBAL_STR(str11, "o");
+GLOBAL_STR(str12, "<span class=\"%s\">");
+GLOBAL_STR(str13, "</span>");
+GLOBAL_STR(str14, " ");
+GLOBAL_STR(str15, "\n");
+GLOBAL_STR(str16, " ");
+GLOBAL_STR(str17, "]");
+GLOBAL_STR(str18, " ");
+GLOBAL_STR(str19, " ");
+GLOBAL_STR(str20, "\n");
+GLOBAL_STR(str21, "\n");
+GLOBAL_STR(str22, " ");
+GLOBAL_STR(str23, "%s%s: [");
+GLOBAL_STR(str24, "\n");
+GLOBAL_STR(str25, "\n");
+GLOBAL_STR(str26, "%s]");
+GLOBAL_STR(str27, "%s%s: ");
+GLOBAL_STR(str28, "\n");
+GLOBAL_STR(str29, "\n");
+GLOBAL_STR(str30, " ");
+GLOBAL_STR(str31, " ");
+GLOBAL_STR(str32, " ");
+GLOBAL_STR(str33, " %s:");
+GLOBAL_STR(str34, "[");
+GLOBAL_STR(str35, " ");
+GLOBAL_STR(str36, "]");
+GLOBAL_STR(str37, "\u001b[0;0m");
+GLOBAL_STR(str38, "\u001b[1m");
+GLOBAL_STR(str39, "\u001b[4m");
+GLOBAL_STR(str40, "\u001b[7m");
+GLOBAL_STR(str41, "\u001b[31m");
+GLOBAL_STR(str42, "\u001b[32m");
+GLOBAL_STR(str43, "\u001b[33m");
+GLOBAL_STR(str44, "\u001b[34m");
+GLOBAL_STR(str45, "&");
+GLOBAL_STR(str46, "&amp;");
+GLOBAL_STR(str47, "<");
+GLOBAL_STR(str48, "&lt;");
+GLOBAL_STR(str49, ">");
+GLOBAL_STR(str50, "&gt;");
+GLOBAL_STR(str51, "\\'\r\n\t\u0000");
+GLOBAL_STR(str52, "$'");
+GLOBAL_STR(str53, "'");
+GLOBAL_STR(str54, "'");
+GLOBAL_STR(str55, "");
+GLOBAL_STR(str56, "'");
+GLOBAL_STR(str57, "'");
+GLOBAL_STR(str58, "");
+GLOBAL_STR(str59, "'");
+GLOBAL_STR(str60, "'");
+GLOBAL_STR(str61, "");
+GLOBAL_STR(str62, "\\");
+GLOBAL_STR(str63, "\\\\");
+GLOBAL_STR(str64, "'");
+GLOBAL_STR(str65, "\\'");
+GLOBAL_STR(str66, "\n");
+GLOBAL_STR(str67, "\\n");
+GLOBAL_STR(str68, "\r");
+GLOBAL_STR(str69, "\\r");
+GLOBAL_STR(str70, "\t");
+GLOBAL_STR(str71, "\\t");
+GLOBAL_STR(str72, "\u0000");
+GLOBAL_STR(str73, "\\x00");
+GLOBAL_STR(str74, "\\0");
+GLOBAL_STR(str75, "");
+GLOBAL_STR(str76, "");
+GLOBAL_STR(str77, "");
+GLOBAL_STR(str78, "\\");
+GLOBAL_STR(str79, "\\\\");
+GLOBAL_STR(str80, "'");
+GLOBAL_STR(str81, "\\'");
+GLOBAL_STR(str82, "\n");
+GLOBAL_STR(str83, "\\n");
+GLOBAL_STR(str84, "\r");
+GLOBAL_STR(str85, "\\r");
+GLOBAL_STR(str86, "\t");
+GLOBAL_STR(str87, "\\t");
+GLOBAL_STR(str88, "\u0000");
+GLOBAL_STR(str89, "\\x00");
+GLOBAL_STR(str90, "\\0");
 
 namespace ansi {  // forward declare
 
@@ -162,15 +167,19 @@ using hnode_asdl::color_e;
 int NO_SPID = -1;
 
 hnode_asdl::hnode__Record* NewRecord(Str* node_type) {
-  return new hnode__Record(node_type, new List<hnode_asdl::field*>(), false, str0, str1, new List<hnode_asdl::hnode_t*>());
+  StackRoots _roots({&node_type});
+
+  return Alloc<hnode__Record>(node_type, Alloc<List<hnode_asdl::field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
 }
 
 hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
+  StackRoots _roots({&s});
+
   if (s == nullptr) {
-    return new hnode__Leaf(str2, color_e::OtherConst);
+    return Alloc<hnode__Leaf>(str2, color_e::OtherConst);
   }
   else {
-    return new hnode__Leaf(s, e_color);
+    return Alloc<hnode__Leaf>(s, e_color);
   }
 }
 Str* TRUE_STR = str3;
@@ -191,21 +200,23 @@ using hnode_asdl::color_str;
 using hnode_asdl::hnode_str;
 
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
+  StackRoots _roots({&f});
+
   if (f->isatty()) {
-    return new AnsiOutput(f);
+    return Alloc<AnsiOutput>(f);
   }
   else {
-    return new TextOutput(f);
+    return Alloc<TextOutput>(f);
   }
 }
 
-ColorOutput::ColorOutput(mylib::Writer* f) {
+ColorOutput::ColorOutput(mylib::Writer* f) : gc_heap::Obj(Tag::FixedSize, kZeroMask, sizeof(ColorOutput)) {
   this->f = f;
   this->num_chars = 0;
 }
 
 format::ColorOutput* ColorOutput::NewTempBuffer() {
-  throw new NotImplementedError();
+  throw Alloc<NotImplementedError>();
 }
 
 void ColorOutput::FileHeader() {
@@ -217,21 +228,24 @@ void ColorOutput::FileFooter() {
 }
 
 void ColorOutput::PushColor(hnode_asdl::color_t e_color) {
-  throw new NotImplementedError();
+  throw Alloc<NotImplementedError>();
 }
 
 void ColorOutput::PopColor() {
-  throw new NotImplementedError();
+  throw Alloc<NotImplementedError>();
 }
 
 void ColorOutput::write(Str* s) {
+  StackRoots _roots({&s});
+
   this->f->write(s);
   this->num_chars += len(s);
 }
 
 void ColorOutput::WriteRaw(Tuple2<Str*, int>* raw) {
-  Str* s;
+  Str* s = nullptr;
   int num_chars;
+  StackRoots _roots({&raw, &s});
 
   Tuple2<Str*, int>* tup0 = raw;
   s = tup0->at0();
@@ -253,7 +267,7 @@ TextOutput::TextOutput(mylib::Writer* f) : ColorOutput(f) {
 }
 
 format::TextOutput* TextOutput::NewTempBuffer() {
-  return new TextOutput(new mylib::BufWriter());
+  return Alloc<TextOutput>(Alloc<mylib::BufWriter>());
 }
 
 void TextOutput::PushColor(hnode_asdl::color_t e_color) {
@@ -268,7 +282,7 @@ HtmlOutput::HtmlOutput(mylib::Writer* f) : ColorOutput(f) {
 }
 
 format::HtmlOutput* HtmlOutput::NewTempBuffer() {
-  return new HtmlOutput(new mylib::BufWriter());
+  return Alloc<HtmlOutput>(Alloc<mylib::BufWriter>());
 }
 
 void HtmlOutput::FileHeader() {
@@ -280,7 +294,8 @@ void HtmlOutput::FileFooter() {
 }
 
 void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
-  Str* css_class;
+  Str* css_class = nullptr;
+  StackRoots _roots({&css_class});
 
   if (e_color == color_e::TypeName) {
     css_class = str7;
@@ -302,7 +317,7 @@ void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
             css_class = str11;
           }
           else {
-            throw new AssertionError();
+            throw Alloc<AssertionError>();
           }
         }
       }
@@ -316,6 +331,8 @@ void HtmlOutput::PopColor() {
 }
 
 void HtmlOutput::write(Str* s) {
+  StackRoots _roots({&s});
+
   this->f->write(cgi::escape(s));
   this->num_chars += len(s);
 }
@@ -324,7 +341,7 @@ AnsiOutput::AnsiOutput(mylib::Writer* f) : ColorOutput(f) {
 }
 
 format::AnsiOutput* AnsiOutput::NewTempBuffer() {
-  return new AnsiOutput(new mylib::BufWriter());
+  return Alloc<AnsiOutput>(Alloc<mylib::BufWriter>());
 }
 
 void AnsiOutput::PushColor(hnode_asdl::color_t e_color) {
@@ -348,7 +365,7 @@ void AnsiOutput::PushColor(hnode_asdl::color_t e_color) {
             this->f->write(ansi::GREEN);
           }
           else {
-            throw new AssertionError();
+            throw Alloc<AssertionError>();
           }
         }
       }
@@ -361,7 +378,7 @@ void AnsiOutput::PopColor() {
 }
 int INDENT = 2;
 
-_PrettyPrinter::_PrettyPrinter(int max_col) {
+_PrettyPrinter::_PrettyPrinter(int max_col) : gc_heap::Obj(Tag::FixedSize, kZeroMask, sizeof(_PrettyPrinter)) {
   this->max_col = max_col;
 }
 
@@ -369,29 +386,31 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
   bool all_fit;
   int chars_so_far;
   int i;
-  format::ColorOutput* single_f;
-  Str* s;
+  format::ColorOutput* single_f = nullptr;
+  Str* s = nullptr;
   int num_chars;
+  StackRoots _roots({&array, &f, &single_f, &s});
 
   all_fit = true;
   chars_so_far = prefix_len;
   i = 0;
   for (ListIter<hnode_asdl::hnode_t*> it(array); !it.Done(); it.Next(), ++i) {
     hnode_asdl::hnode_t* val = it.Value();
+    StackRoots _for({&val  });
     if (i != 0) {
       f->write(str14);
     }
     single_f = f->NewTempBuffer();
-    if (_TrySingleLine(val, single_f, this->max_col - chars_so_far)) {
+    if (_TrySingleLine(val, single_f, (this->max_col - chars_so_far))) {
       Tuple2<Str*, int> tup1 = single_f->GetRaw();
       s = tup1.at0();
       num_chars = tup1.at1();
-      f->WriteRaw((new Tuple2<Str*, int>(s, num_chars)));
+      f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
       chars_so_far += single_f->NumChars();
     }
     else {
       f->write(str15);
-      this->PrintNode(val, f, indent + INDENT);
+      this->PrintNode(val, f, (indent + INDENT));
       chars_so_far = 0;
       all_fit = false;
     }
@@ -401,24 +420,26 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
 
 bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent) {
   bool all_fit;
-  List<Tuple2<Str*, int>*>* pieces;
+  List<Tuple2<Str*, int>*>* pieces = nullptr;
   int chars_so_far;
-  format::ColorOutput* single_f;
-  Str* s;
+  format::ColorOutput* single_f = nullptr;
+  Str* s = nullptr;
   int num_chars;
   int i;
+  StackRoots _roots({&array, &f, &pieces, &single_f, &s});
 
   all_fit = true;
-  pieces = new List<Tuple2<Str*, int>*>();
+  pieces = Alloc<List<Tuple2<Str*, int>*>>();
   chars_so_far = prefix_len;
   for (ListIter<hnode_asdl::hnode_t*> it(array); !it.Done(); it.Next()) {
     hnode_asdl::hnode_t* item = it.Value();
+    StackRoots _for({&item  });
     single_f = f->NewTempBuffer();
-    if (_TrySingleLine(item, single_f, this->max_col - chars_so_far)) {
+    if (_TrySingleLine(item, single_f, (this->max_col - chars_so_far))) {
       Tuple2<Str*, int> tup2 = single_f->GetRaw();
       s = tup2.at0();
       num_chars = tup2.at1();
-      pieces->append((new Tuple2<Str*, int>(s, num_chars)));
+      pieces->append((Alloc<Tuple2<Str*, int>>(s, num_chars)));
       chars_so_far += single_f->NumChars();
     }
     else {
@@ -430,6 +451,7 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
     i = 0;
     for (ListIter<Tuple2<Str*, int>*> it(pieces); !it.Done(); it.Next(), ++i) {
       Tuple2<Str*, int>* p = it.Value();
+      StackRoots _for({&p    });
       if (i != 0) {
         f->write(str16);
       }
@@ -441,20 +463,21 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
 }
 
 void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int indent) {
-  Str* ind;
-  Str* prefix;
+  Str* ind = nullptr;
+  Str* prefix = nullptr;
   int prefix_len;
   bool all_fit;
   int i;
-  Str* name;
-  hnode_asdl::hnode_t* val;
-  Str* ind1;
-  hnode_asdl::hnode_t* UP_val;
+  Str* name = nullptr;
+  hnode_asdl::hnode_t* val = nullptr;
+  Str* ind1 = nullptr;
+  hnode_asdl::hnode_t* UP_val = nullptr;
   int tag;
-  Str* name_str;
-  format::ColorOutput* single_f;
-  Str* s;
+  Str* name_str = nullptr;
+  format::ColorOutput* single_f = nullptr;
+  Str* s = nullptr;
   int num_chars;
+  StackRoots _roots({&node, &f, &ind, &prefix, &name, &val, &ind1, &UP_val, &name_str, &single_f, &s});
 
   ind = str_repeat(str18, indent);
   if (node->abbrev) {
@@ -466,7 +489,7 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
       f->PopColor();
       f->write(str19);
     }
-    prefix_len = len(prefix) + len(node->node_type) + 1;
+    prefix_len = ((len(prefix) + len(node->node_type)) + 1);
     all_fit = this->_PrintWrappedArray(node->unnamed_fields, prefix_len, f, indent);
     if (!all_fit) {
       f->write(str20);
@@ -483,9 +506,10 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
     i = 0;
     for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::field* field = it.Value();
+      StackRoots _for({&field    });
       name = field->name;
       val = field->val;
-      ind1 = str_repeat(str22, indent + INDENT);
+      ind1 = str_repeat(str22, (indent + INDENT));
       UP_val = val;
       tag = val->tag_();
       if (tag == hnode_e::Array) {
@@ -497,7 +521,8 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
           f->write(str24);
           for (ListIter<hnode_asdl::hnode_t*> it(val->children); !it.Done(); it.Next()) {
             hnode_asdl::hnode_t* child = it.Value();
-            this->PrintNode(child, f, indent + INDENT + INDENT);
+            StackRoots _for({&child          });
+            this->PrintNode(child, f, ((indent + INDENT) + INDENT));
             f->write(str25);
           }
           f->write(fmt2(ind1));
@@ -508,15 +533,15 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
         f->write(name_str);
         prefix_len = len(name_str);
         single_f = f->NewTempBuffer();
-        if (_TrySingleLine(val, single_f, this->max_col - prefix_len)) {
+        if (_TrySingleLine(val, single_f, (this->max_col - prefix_len))) {
           Tuple2<Str*, int> tup3 = single_f->GetRaw();
           s = tup3.at0();
           num_chars = tup3.at1();
-          f->WriteRaw((new Tuple2<Str*, int>(s, num_chars)));
+          f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
         }
         else {
           f->write(str28);
-          this->PrintNode(val, f, indent + INDENT + INDENT);
+          this->PrintNode(val, f, ((indent + INDENT) + INDENT));
         }
         i += 1;
       }
@@ -527,21 +552,22 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
 }
 
 void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent) {
-  Str* ind;
-  format::ColorOutput* single_f;
-  Str* s;
+  Str* ind = nullptr;
+  format::ColorOutput* single_f = nullptr;
+  Str* s = nullptr;
   int num_chars;
-  hnode_asdl::hnode_t* UP_node;
+  hnode_asdl::hnode_t* UP_node = nullptr;
   int tag;
+  StackRoots _roots({&node, &f, &ind, &single_f, &s, &UP_node});
 
   ind = str_repeat(str30, indent);
   single_f = f->NewTempBuffer();
   single_f->write(ind);
-  if (_TrySingleLine(node, single_f, this->max_col - indent)) {
+  if (_TrySingleLine(node, single_f, (this->max_col - indent))) {
     Tuple2<Str*, int> tup4 = single_f->GetRaw();
     s = tup4.at0();
     num_chars = tup4.at1();
-    f->WriteRaw((new Tuple2<Str*, int>(s, num_chars)));
+    f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
     return ;
   }
   UP_node = node;
@@ -565,7 +591,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
         this->_PrintRecord(node, f, indent);
       }
       else {
-        throw new AssertionError();
+        throw Alloc<AssertionError>();
       }
     }
   }
@@ -573,6 +599,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
 
 bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int max_chars) {
   int i;
+  StackRoots _roots({&node, &f});
 
   f->write(node->left);
   if (node->abbrev) {
@@ -585,6 +612,7 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
+      StackRoots _for({&val    });
       if (i != 0) {
         f->write(str32);
       }
@@ -599,6 +627,7 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
     f->PopColor();
     for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::field* field = it.Value();
+      StackRoots _for({&field    });
       f->write(fmt4(field->name));
       if (!_TrySingleLine(field->val, f, max_chars)) {
         return false;
@@ -610,10 +639,11 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
 }
 
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars) {
-  hnode_asdl::hnode_t* UP_node;
+  hnode_asdl::hnode_t* UP_node = nullptr;
   int tag;
   int i;
   int num_chars_so_far;
+  StackRoots _roots({&node, &f, &UP_node});
 
   UP_node = node;
   tag = node->tag_();
@@ -637,6 +667,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
+          StackRoots _for({&item        });
           if (i != 0) {
             f->write(str35);
           }
@@ -652,7 +683,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
           return _TrySingleLineObj(node, f, max_chars);
         }
         else {
-          throw new AssertionError();
+          throw Alloc<AssertionError>();
         }
       }
     }
@@ -665,9 +696,10 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
 }
 
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
-  format::_PrettyPrinter* pp;
+  format::_PrettyPrinter* pp = nullptr;
+  StackRoots _roots({&node, &f, &pp});
 
-  pp = new _PrettyPrinter(100);
+  pp = Alloc<_PrettyPrinter>(100);
   pp->PrintNode(node, f, 0);
 }
 
@@ -688,6 +720,8 @@ Str* BLUE = str44;
 namespace cgi {  // define
 
 Str* escape(Str* s) {
+  StackRoots _roots({&s});
+
   s = s->replace(str45, str46);
   s = s->replace(str47, str48);
   s = s->replace(str49, str50);
@@ -703,6 +737,8 @@ int BIT8_X_ESCAPE = 2;
 int MUST_QUOTE = 4;
 
 bool _encode(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts) {
+  StackRoots _roots({&s, &parts});
+
   if (bit8_display == BIT8_X_ESCAPE) {
     _encode_bytes_x(s, shell_compat, parts);
     return true;
@@ -720,24 +756,26 @@ Str* maybe_shell_encode(Str* s, int flags) {
   int quote;
   int must_quote;
   int bit8_display;
-  List<Str*>* parts;
+  List<Str*>* parts = nullptr;
   bool valid_utf8;
-  Str* prefix;
+  Str* prefix = nullptr;
+  StackRoots _roots({&s, &parts, &prefix});
 
   quote = 0;
-  must_quote = flags & 4;
-  bit8_display = flags & 3;
+  must_quote = (flags & 4);
+  bit8_display = (flags & 3);
   if (len(s) == 0) {
     quote = 1;
   }
   else {
     for (StrIter it(s); !it.Done(); it.Next()) {
       Str* ch = it.Value();
-      if (!must_quote and IsPlainChar(ch)) {
+      StackRoots _for({&ch    });
+      if ((!must_quote and IsPlainChar(ch))) {
         continue;
       }
       quote = 1;
-      if (str_contains(str51, ch) or IsUnprintableLow(ch)) {
+      if ((str_contains(str51, ch) or IsUnprintableLow(ch))) {
         quote = 2;
         break;
       }
@@ -746,9 +784,9 @@ Str* maybe_shell_encode(Str* s, int flags) {
   if (quote == 0) {
     return s;
   }
-  parts = new List<Str*>();
+  parts = Alloc<List<Str*>>();
   valid_utf8 = _encode(s, bit8_display, true, parts);
-  if (!valid_utf8 or quote == 2) {
+  if ((!valid_utf8 or quote == 2)) {
     prefix = str52;
   }
   else {
@@ -764,7 +802,8 @@ Str* maybe_encode(Str* s) {
 
 Str* maybe_encode(Str* s, int bit8_display) {
   int quote;
-  List<Str*>* parts;
+  List<Str*>* parts = nullptr;
+  StackRoots _roots({&s, &parts});
 
   quote = 0;
   if (len(s) == 0) {
@@ -773,6 +812,7 @@ Str* maybe_encode(Str* s, int bit8_display) {
   else {
     for (StrIter it(s); !it.Done(); it.Next()) {
       Str* ch = it.Value();
+      StackRoots _for({&ch    });
       if (IsPlainChar(ch)) {
         continue;
       }
@@ -782,7 +822,7 @@ Str* maybe_encode(Str* s, int bit8_display) {
   if (!quote) {
     return s;
   }
-  parts = new List<Str*>();
+  parts = Alloc<List<Str*>>();
   parts->append(str56);
   _encode(s, bit8_display, false, parts);
   parts->append(str57);
@@ -790,9 +830,10 @@ Str* maybe_encode(Str* s, int bit8_display) {
 }
 
 Str* encode(Str* s, int bit8_display) {
-  List<Str*>* parts;
+  List<Str*>* parts = nullptr;
+  StackRoots _roots({&s, &parts});
 
-  parts = new List<Str*>();
+  parts = Alloc<List<Str*>>();
   parts->append(str59);
   _encode(s, bit8_display, false, parts);
   parts->append(str60);
@@ -800,10 +841,12 @@ Str* encode(Str* s, int bit8_display) {
 }
 
 void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts) {
-  Str* part;
+  Str* part = nullptr;
+  StackRoots _roots({&s, &parts, &part});
 
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
+    StackRoots _for({&byte  });
     if (str_equals(byte, str62)) {
       part = str63;
     }
@@ -865,13 +908,14 @@ int B4_3 = 6;
 bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts) {
   bool valid_utf8;
   int state;
-  Str* r1;
-  Str* r2;
-  Str* r3;
+  Str* r1 = nullptr;
+  Str* r2 = nullptr;
+  Str* r3 = nullptr;
   int b;
   int typ;
-  Str* out;
+  Str* out = nullptr;
   int rune;
+  StackRoots _roots({&s, &parts, &r1, &r2, &r3, &out});
 
   valid_utf8 = true;
   state = Start;
@@ -880,24 +924,25 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
   r3 = str77;
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
+    StackRoots _for({&byte  });
     b = ord(byte);
     if (b < 127) {
       typ = Ascii;
     }
     else {
-      if (b >> 6 == 2) {
+      if ((b >> 6) == 2) {
         typ = Cont;
       }
       else {
-        if (b >> 5 == 6) {
+        if ((b >> 5) == 6) {
           typ = Begin2;
         }
         else {
-          if (b >> 4 == 14) {
+          if ((b >> 4) == 14) {
             typ = Begin3;
           }
           else {
-            if (b >> 3 == 30) {
+            if ((b >> 3) == 30) {
               typ = Begin4;
             }
             else {
@@ -997,8 +1042,8 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                       out = str_concat(r1, byte);
                     }
                     else {
-                      rune = ord(byte) & 63;
-                      rune |= ord(r1) & 31 << 6;
+                      rune = (ord(byte) & 63);
+                      rune |= ((ord(r1) & 31) << 6);
                       out = UEscape(rune);
                     }
                     parts->append(out);
@@ -1015,9 +1060,9 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                           out = str_concat(str_concat(r1, r2), byte);
                         }
                         else {
-                          rune = ord(byte) & 63;
-                          rune |= ord(r2) & 63 << 6;
-                          rune |= ord(r1) & 15 << 12;
+                          rune = (ord(byte) & 63);
+                          rune |= ((ord(r2) & 63) << 6);
+                          rune |= ((ord(r1) & 15) << 12);
                           out = UEscape(rune);
                         }
                         parts->append(out);
@@ -1039,17 +1084,17 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                                 out = str_concat(str_concat(str_concat(r1, r2), r3), byte);
                               }
                               else {
-                                rune = ord(byte) & 63;
-                                rune |= ord(r3) & 63 << 6;
-                                rune |= ord(r2) & 63 << 12;
-                                rune |= ord(r1) & 7 << 18;
+                                rune = (ord(byte) & 63);
+                                rune |= ((ord(r3) & 63) << 6);
+                                rune |= ((ord(r2) & 63) << 12);
+                                rune |= ((ord(r1) & 7) << 18);
                                 out = UEscape(rune);
                               }
                               parts->append(out);
                               state = Start;
                             }
                             else {
-                              throw new AssertionError();
+                              throw Alloc<AssertionError>();
                             }
                           }
                         }
@@ -1059,7 +1104,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                 }
               }
               else {
-                throw new AssertionError();
+                throw Alloc<AssertionError>();
               }
             }
           }
@@ -1081,10 +1126,14 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
 }
 
 Str* maybe_tsv_encode(Str* s, int bit8_display) {
+  StackRoots _roots({&s});
+
   ;  // pass
 }
 
 Str* tsv_decode(Str* s) {
+  StackRoots _roots({&s});
+
   ;  // pass
 }
 

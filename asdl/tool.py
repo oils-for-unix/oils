@@ -58,6 +58,7 @@ def main(argv):
     out_prefix = argv[3]
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
     gc = bool(os.getenv('GC', ''))
+    dot_gc = '.gc' if gc else ''
 
     with open(schema_path) as f:
       schema_ast = front_end.LoadSchema(f, app_types)
@@ -74,7 +75,6 @@ def main(argv):
 #define %s
 
 """ % (out_prefix, guard, guard))
-
 
 #define MYLIB_LEGACY 1  // get rid conflicting types
       f.write("""\
@@ -94,7 +94,7 @@ def main(argv):
 #include "hnode_asdl%s.h"
 using hnode_asdl::hnode_t;
 
-""" % ('.gc' if gc else ''))
+""" % dot_gc)
 
       if app_types:
         f.write("""\
@@ -162,9 +162,9 @@ tags_to_types = \\
 
 #include "%s.h"
 #include <assert.h>
-#include "asdl/runtime.h"  // generated code uses wrappers here
+#include "asdl/runtime%s.h"  // generated code uses wrappers here
 
-""" % (out_prefix, ns))
+""" % (out_prefix, ns, dot_gc))
 
         # To call pretty-printing methods
         for use in schema_ast.uses:
@@ -277,4 +277,4 @@ if __name__ == '__main__':
     main(sys.argv)
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)
+    
