@@ -41,8 +41,6 @@ function ajaxGet(url, errElem, success) {
 
 // Fill in title and iframe src attributes.
 function loadSource(sourceName, statusElem) {
-  var sourceElem = document.getElementById('sourceFrames');
-
   document.getElementById('title').innerHTML = sourceName;
 
   document.getElementById('orig').src = sourceName + '.txt';
