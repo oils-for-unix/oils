@@ -184,6 +184,7 @@ gen-cpp-test() {
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
     mycpp/mylib.cc \
+    mycpp/gc_heap.cc \
     _build/cpp/hnode_asdl.cc \
     _tmp/typed_arith_asdl.cc \
     _tmp/typed_demo_asdl.cc 
@@ -196,7 +197,8 @@ gen-cpp-test() {
 # Right now it's just compiling things in without activating it.
 
 gc-test() {
-  build/dev.sh hnode-gc
+  # Depends on hnode_asdl.h.  TODO: Should be hnode_asdl.gc.h
+  # build/dev.sh oil-asdl-to-cpp
 
   local prefix3=_tmp/typed_demo_asdl.gc
   PRETTY_PRINT_METHODS='' GC=1 asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
