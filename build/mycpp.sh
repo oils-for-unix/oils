@@ -350,6 +350,8 @@ mylib-audit() {
   grep --color mylib.h cpp/*
 }
 
+# TODO: Put this in Ninja?  Make a GC variant asdl/runtime.gc.h.
+
 asdl-runtime() {
   ### Translate ASDL deps for unit tests
 

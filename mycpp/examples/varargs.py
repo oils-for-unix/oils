@@ -50,7 +50,10 @@ def run_tests():
   log("[%%] %d %s", 42, "LL")
 
   log(CONST)
-  p_die(CONST, span_id=-1)
+
+  # mycpp generates dynamic_fmt_dummy() for DYNAMIC format string.
+  # TODO: We want to do something else.
+  # p_die(CONST, span_id=-1)
 
   # Keyword args give location info for X_die()
   span_id = 123

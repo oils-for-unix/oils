@@ -8,21 +8,23 @@ Code Layout:
   build.ninja     # Generated build description ('rule' and 'build')
   build-steps.sh  # Invoked by Ninja rules
 
+  build.sh        # wrappers invoked by the Toil and devtools/release.sh
+
 Data Layout:
 
   examples/
     cgi.py
-    containers.py
+    varargs.py
+    varargs_preamble.h
 
   _ninja/
-    src/    # generated source
-      mycpp/  # mycpp output, which may include examples/varargs_preamble.h
-      main/   # main drivers
-
-    bin/    # binaries
-      examples/  # many variants
+    gen/ 
+      varargs_raw.cc
+      varargs.cc
+    bin/          # binaries
+      examples/   # many variants
       examples-stripped/
-      unit/      # unit tests
+      unit/       # unit tests
     tasks/        # *.txt and *.task.txt for .wwz
       typecheck/  # optionally run
       test/       # py, gc_debug, asan, opt
@@ -75,32 +77,23 @@ def log(msg, *args):
 
 
 # special ones in examples.sh:
-# - parse, varargs
-# - lexer_main, alloc_main -- these use Oil code
+# - parse
+# - lexer_main -- these use Oil code
 # - pgen2_demo -- uses pgen2
 
 def ShouldSkipBuild(name):
   if name in [
       # these 3 use Oil code, and don't type check or compile
       # Maybe give up on these?  pgen2_demo might be useful later.
-      'alloc_main',  
       'lexer_main', 
       'pgen2_demo',
 
-      'named_args',  # I think this never worked
-
-      # TODO: e_die() missing.
-      # This is defined in
-      # cpp/core_pyerror, which depends on exceptions in cpp/core_error.h
-      'varargs',  
+      # TODO: make this compile.  It's a realistic example.
+      # - expr.asdl when GC=1
+      # - qsn_qsn.h is incompatible.  This is also an issue with
+      #   'asdl/run.sh gc-test'
+      'parse',
       ]:
-    return True
-
-  # TODO: make this compile.  It's a realistic example.
-  # - expr.asdl when GC=1
-  # - qsn_qsn.h is incompatible.  This is also an issue with asdl/run.sh
-  #   gc-test
-  if name == 'parse':
     return True
 
   return False
@@ -161,8 +154,6 @@ TRANSLATE_FILES = {
 }
 
 EXAMPLE_CXXFLAGS = {
-    # for #include "preamble.h", then "id_kind_asdl.h".
-    # then grammar_nt.h
     # TODO: simplify this
     'varargs': "'-I ../cpp -I ../_build/cpp -I ../_devbuild/gen'",
 
