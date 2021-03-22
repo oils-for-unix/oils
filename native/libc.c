@@ -21,8 +21,18 @@
 
 #include <Python.h>
 
-// Oil always uses UTF-8.
+// Oil always uses UTF-8, so some calls override the locale.
+
+// 'man setlocale' says that "C" aka "POSIX" is the only portable locale?
+
+// Doesn't work on default Arch?  See issue #912.
 const char* kLocaleOverride = "C.UTF-8";
+
+// mbstowcs() fails below
+// const char* kLocaleOverride = "C";
+
+// Doesn't work on default Debian
+// const char* kLocaleOverride = "en_US.UTF-8"; 
 
 // Log messages to stderr.
 static void debug(const char* fmt, ...) {
