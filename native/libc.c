@@ -346,6 +346,8 @@ func_cpython_reset_locale(PyObject *self, PyObject *unused)
   	  return NULL;
     }
   }
+
+  Py_RETURN_NONE;
 }
 
 #ifdef OVM_MAIN
