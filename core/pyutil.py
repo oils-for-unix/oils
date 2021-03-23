@@ -117,6 +117,7 @@ class _ZipResourceLoader(_ResourceLoader):
 
 
 def IsAppBundle():
+  # type: () -> bool
   """Are we running inside Oil's patched version of CPython?
 
   As opposed to a "stock" Python interpreter.
