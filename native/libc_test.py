@@ -90,8 +90,14 @@ class LibcTest(unittest.TestCase):
         ('[\\]]', '\\', 0),
         ('[\\]]', ']', 1),
 
+
         None if IS_DARWIN else ('[]', 'a', 0),
         None if IS_DARWIN else ('[]', '[]', 1),
+
+        ('?.c', 'a.c', 1),
+        ('?.c', 'aa.c', 0),
+        # mu character
+        ('?.c', '\xce\xbc.c', 1),
     ]
 
     for pat, s, expected in filter(None, cases):
@@ -256,4 +262,6 @@ class LibcTest(unittest.TestCase):
     self.assertRaises(UnicodeError, libc.wcswidth, "\xfe")
 
 if __name__ == '__main__':
+  # To simulate the OVM_MAIN patch in pythonrun.c
+  libc.cpython_reset_locale()
   unittest.main()

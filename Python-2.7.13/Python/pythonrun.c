@@ -308,6 +308,8 @@ Py_InitializeEx(int install_sigs, char* sys_path)
         overridden = 1;
     }
 
+// Do NOT call setlocale() in Oil!
+#ifndef OVM_MAIN
 #if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
     /* On Unix, set the file system encoding according to the
        user's preference, if the CODESET names a well-known
@@ -351,6 +353,7 @@ Py_InitializeEx(int install_sigs, char* sys_path)
                 free_codeset = 0;
         }
     }
+#endif
 #endif
 
 #ifdef MS_WINDOWS

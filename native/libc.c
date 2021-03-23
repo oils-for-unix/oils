@@ -21,19 +21,6 @@
 
 #include <Python.h>
 
-// Oil always uses UTF-8, so some calls override the locale.
-
-// 'man setlocale' says that "C" aka "POSIX" is the only portable locale?
-
-// Doesn't work on default Arch?  See issue #912.
-const char* kLocaleOverride = "C.UTF-8";
-
-// mbstowcs() fails below
-// const char* kLocaleOverride = "C";
-
-// Doesn't work on default Debian
-// const char* kLocaleOverride = "en_US.UTF-8"; 
-
 // Log messages to stderr.
 static void debug(const char* fmt, ...) {
 #ifdef LIBC_VERBOSE
@@ -85,15 +72,7 @@ func_fnmatch(PyObject *self, PyObject *args) {
   int flags = 0;
 #endif
 
-  const char *old_locale = setlocale(LC_CTYPE, NULL);
-  if (setlocale(LC_CTYPE, kLocaleOverride) == NULL) {
-	  PyErr_SetString(PyExc_SystemError, "Invalid locale for LC_CTYPE");
-	  return NULL;
-  }
-
   int ret = fnmatch(pattern, str, flags);
-
-  setlocale(LC_CTYPE, old_locale);
 
   switch (ret) {
   case 0:
@@ -267,13 +246,6 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   regex_t pat;
   regmatch_t m[NMATCH];
 
-  const char *old_locale = setlocale(LC_CTYPE, NULL);
-
-  if (setlocale(LC_CTYPE, kLocaleOverride) == NULL) {
-	  PyErr_SetString(PyExc_SystemError, "Invalid locale for LC_CTYPE");
-	  return NULL;
-  }
-
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
   // patterns like ${foo/x*/y}.
 
@@ -290,8 +262,6 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   // Match at offset 'pos'
   int result = regexec(&pat, str + pos, NMATCH, m, 0 /*flags*/);
   regfree(&pat);
-
-  setlocale(LC_CTYPE, old_locale);
 
   if (result != 0) {
     Py_RETURN_NONE;  // no match
@@ -354,23 +324,28 @@ func_wcswidth(PyObject *self, PyObject *args){
         return NULL;
     }
 
-    const char *old_locale = setlocale(LC_CTYPE, NULL);
-    if (setlocale(LC_CTYPE, kLocaleOverride) == NULL) {
-        PyErr_SetString(PyExc_SystemError, "C.UTF-8 is not a valid locale");
-        return NULL;
-    }
     int len = mbstowcs(NULL, string, 0);
     if (len == -1) {
         PyErr_SetString(PyExc_UnicodeError, "mbstowcs error: Invalid UTF-8 string");
-        setlocale(LC_CTYPE, old_locale);
         return NULL;
     }
     wchar_t unicode[len + 1];
     mbstowcs(unicode, string, len + 1);
     int width = wcswidth(unicode, len + 1);
 
-    setlocale(LC_CTYPE, old_locale);
     return PyInt_FromLong(width);
+}
+
+static PyObject *
+func_cpython_reset_locale(PyObject *self, PyObject *unused)
+{
+  if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL) {
+    if (setlocale(LC_CTYPE, "C.UTF-8") == NULL) {
+	    PyErr_SetString(PyExc_SystemError,
+                      "Couldn't set locale to en_US.UTF-8 or C.UTF-8");
+  	  return NULL;
+    }
+  }
 }
 
 #ifdef OVM_MAIN
@@ -410,6 +385,10 @@ static PyMethodDef methods[] = {
 
   // Get the display width of a string. Throw an exception if the string is invalid UTF8.
   {"wcswidth", func_wcswidth, METH_VARARGS, ""},
+
+  // Workaround for CPython's calling setlocale() in pythonrun.c.  ONLY used
+  // by tests and bin/oil.py.
+  {"cpython_reset_locale", func_cpython_reset_locale, METH_NOARGS, ""},
   {NULL, NULL},
 };
 #endif

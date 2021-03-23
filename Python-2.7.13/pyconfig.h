@@ -568,9 +568,6 @@
 /* Define to 1 if you have the `setitimer' function. */
 #define HAVE_SETITIMER 1
 
-/* Define to 1 if you have the `setlocale' function. */
-#define HAVE_SETLOCALE 1
-
 /* Define to 1 if you have the `setpgid' function. */
 #define HAVE_SETPGID 1
 

@@ -71,7 +71,7 @@ class _Match(object):
         return s
 
       # TODO: Support strings
-      raise TypeError('Expected an integer')
+      raise TypeError('Expected an integer, got %r' % arg)
 
     raise TypeError('Too many arguments')
 

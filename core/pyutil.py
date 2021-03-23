@@ -116,6 +116,15 @@ class _ZipResourceLoader(_ResourceLoader):
     return self.z.get_data(rel_path)
 
 
+def IsAppBundle():
+  """Are we running inside Oil's patched version of CPython?
+
+  As opposed to a "stock" Python interpreter.
+  """
+  # Ovm_Main in main.c sets this.
+  return posix.environ.get('_OVM_IS_BUNDLE') == '1'
+
+
 _loader = None  # type: _ResourceLoader
 
 def GetResourceLoader():
@@ -124,8 +133,7 @@ def GetResourceLoader():
   if _loader:
     return _loader
 
-  # Ovm_Main in main.c sets this.
-  if posix.environ.get('_OVM_IS_BUNDLE') == '1':
+  if IsAppBundle():
     ovm_path = posix.environ.get('_OVM_PATH')
     _loader = _ZipResourceLoader(ovm_path)
 

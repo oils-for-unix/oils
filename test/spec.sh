@@ -482,7 +482,7 @@ sh-func() {
 
 glob() {
   # Note: can't pass because it assumes 'bin' exists, etc.
-  sh-spec spec/glob.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -934,7 +934,7 @@ oil-slice-range() {
 }
 
 oil-regex() {
-  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 6 \
     $OSH_LIST "$@"
 }
 

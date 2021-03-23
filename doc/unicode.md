@@ -61,3 +61,21 @@ Other:
 - The prompt width is calculated with `wcswidth()`, which doesn't just count
   code points.  It calculates the **display width** of characters, which is
   different in general.
+
+## Implementation Notes
+
+Unlike bash and CPython, Oil doesn't call `setlocale()`.  (Although GNU
+readline may call it.)
+
+It's expected that your locale will respect UTF-8.  This is true on most
+distros.  If not, then some string operations will support UTF-8 and some
+won't.
+
+For example:
+
+- String length like `${#s}` is implemented in Oil code, not libc, so it will
+  always respect UTF-8.
+- `[[ s =~ $pat ]]` is implemented with libc, so it is affected by the locale
+  settings.  Same with Oil's `(x ~ pat)`.
+
+

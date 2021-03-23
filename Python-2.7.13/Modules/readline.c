@@ -44,6 +44,9 @@
 
 /* ------------------------------------------------------------------------- */
 
+// OVM: HAVE_SETLOCALE removed from pyconfig.h, because we never want to call
+// setlocale().
+
 #if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
  * This is evil.  Only the user or the app's main() should do this!

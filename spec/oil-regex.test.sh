@@ -379,7 +379,27 @@ write @lines | egrep $pat
 
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
-#### Match non-ASCII byte denoted using c'\xff'
+#### Match unicode char
+shopt -s oil:all
+var pat = / 'a' dot 'b' /
+
+if ('axb' ~ pat ) { echo yes } else { echo no }
+
+# mu character
+if (c'a\xce\xbcb' ~ pat ) { echo yes } else { echo no }
+
+if ('aZZb' ~ pat ) { echo yes } else { echo no }
+## STDOUT:
+yes
+yes
+no
+## END
+
+#### Match non-ASCII byte denoted using c'\xff' (TODO: LANG=C)
+
+# NOTE: This pattern doesn't work with en_US.UTF-8.  I think the user should
+# set LANG=C or shopt --unset libc_utf8.
+
 shopt -s oil:all
 var pat = /[ c'\xff' ]/;
 
@@ -393,7 +413,7 @@ yes
 no
 ## END
 
-#### Match non-ASCII byte denoted using \xff
+#### Match non-ASCII byte denoted using \xff (TODO: LANG=C)
 shopt -s oil:all
 var pat = /[ \xff ]/;
 
