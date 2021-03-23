@@ -22,6 +22,9 @@ readonly MACHINE2=lisa
 
 readonly SHELLS=( bash dash mksh zsh bin/osh $OSH_OVM )
 
+# for valgrind
+readonly NATIVE_SHELLS=( bash dash mksh zsh $OSH_OVM )
+
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Needed to run on flanders
@@ -82,7 +85,7 @@ benchmark-html-head() {
 }
 
 filter-provenance() {
-  # bash|dash
+  # create a regex bash|dash
   local pat=$(echo "$@" | sed 's/ /|/g')
 
   # Anchor it at the end only.  For _bin/osh_eval.opt.stripped and the

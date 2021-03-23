@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-core/main.py -- Entry point for the shell interpreter.
+core/shell.py -- Entry point for the shell interpreter.
 """
 from __future__ import print_function
 

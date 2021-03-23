@@ -10,7 +10,7 @@ Status](https://travis-ci.org/oilshell/oil.svg)](https://travis-ci.org/oilshell/
 language and runtime!  ([Why Create a New Unix Shell?][why] / [2019 FAQ][faq])
 
 [Oil]: https://www.oilshell.org/
-[why]: https://www.oilshell.org/blog/2018/01/28.html
+[why]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
 [faq]: https://www.oilshell.org/blog/2019/06/17.html
 
 It's written in Python, so the code is short and easy to change.  But we

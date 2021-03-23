@@ -98,8 +98,7 @@ auto-machine1() {
   test/wild.sh all
   $0 test-opy
   $0 spec-all
-  $0 benchmark-run
-
+  $0 benchmark-run do_cachegrind
   $0 mycpp-examples
 }
 
@@ -383,7 +382,9 @@ benchmark-build() {
 
 # Run benchmarks with the binary built out of the tarball.
 benchmark-run() {
-  OSH_OVM=$OSH_RELEASE_BINARY benchmarks/auto.sh all
+  local do_cachegrind=${1:-}
+
+  OSH_OVM=$OSH_RELEASE_BINARY benchmarks/auto.sh all "$do_cachegrind"
 }
 
 _compressed-tarball() {

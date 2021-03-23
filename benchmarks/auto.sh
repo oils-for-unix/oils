@@ -52,7 +52,8 @@ make-prov() {
 }
 
 measure-shells() {
-  local base_dir=${1:-../benchmark-data}
+  local do_cachegrind=${1:-}
+  local base_dir=../benchmark-data
 
   # capture the filename
   local provenance
@@ -66,7 +67,6 @@ measure-shells() {
 
 osh-parser-quick() {
   ### Quick evaluation of the parser
-
   local base_dir=${1:-../benchmark-data}
 
   # REPO VERSION
@@ -95,7 +95,8 @@ osh-parser-dup-testdata() {
 }
 
 measure-builds() {
-  local base_dir=${1:-../benchmark-data}
+  local do_cachegrind=${1:-}
+  local base_dir=../benchmark-data
 
   local provenance
   provenance=$(benchmarks/id.sh compiler-provenance)  # capture the filename
@@ -107,9 +108,11 @@ measure-builds() {
 # Before this, run devtools/release.sh benchmark-build.
 
 all() {
+  local do_cachegrind=${1:-}
+
   # NOTE: Depends on oil-native being built
-  measure-shells
-  measure-builds
+  measure-shells "$do_cachegrind"
+  measure-builds "$do_cachegrind"
 }
 
 #

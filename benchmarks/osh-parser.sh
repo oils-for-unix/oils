@@ -61,6 +61,9 @@ parser-task() {
   echo "--- $sh_path $script_path ---"
 
   local times_out="$raw_dir/$host.$job_id.times.csv"
+
+  # TODO: Get rid of this dir, but use something like it for the cachegrind
+  # output
   local vm_out_dir="$raw_dir/$host.$job_id.virtual-memory"
   mkdir -p $vm_out_dir
 
@@ -111,6 +114,39 @@ print-tasks() {
   done
 }
 
+cachegrind-demo() {
+  #local sh=bash
+  local sh=zsh
+
+  local out_dir=_tmp/cachegrind
+
+  mkdir -p $out_dir
+
+  # notes:
+  # - not passing --trace-children (follow execvpe)
+  # - passing --xml=yes gives error: cachegrind doesn't support XML
+  # - there is a log out and a details out
+
+  valgrind --tool=cachegrind \
+    --log-file=$out_dir/log.txt \
+    --cachegrind-out-file=$out_dir/details.txt \
+    -- $sh -c 'echo hi'
+
+  echo
+  head -n 20 $out_dir/*.txt
+}
+
+# Similar to the above, but we don't measure bin/osh.  We also don't need the
+# hostname.
+print-valgrind-tasks() {
+  local provenance=$1
+
+  cat $provenance | filter-provenance "${NATIVE_SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA |
+  while read fields; do
+    cat $SORTED | xargs -n 1 -- echo "$fields"
+  done
+}
+
 readonly NUM_COLUMNS=6  # input columns: 5 from provenance, 1 for file
 
 # output columns
@@ -144,6 +180,15 @@ measure() {
   cat $tasks | xargs -n $NUM_COLUMNS -- $0 parser-task $raw_dir
 
   cp -v $provenance $raw_dir
+}
+
+measure-cachegrind() {
+  # Do we need provenance?
+  # - shell provenance is good
+  # - we don't really need machine provenance.  It will run only on one
+  #   machine.
+
+  echo TODO
 }
 
 #

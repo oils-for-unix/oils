@@ -1,6 +1,9 @@
 #!/usr/bin/env python2
 """
-core/main.py -- Entry point for the shell interpreter.
+core/pure.py -- Pure shell interpreter without I/O.
+
+Note that this is a modified version of core/shell.py.  Maybe consolidate
+them.
 """
 from __future__ import print_function
 
