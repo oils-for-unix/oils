@@ -99,7 +99,6 @@ ParserReport = function(in_dir, out_dir) {
   times = read.csv(file.path(in_dir, 'times.csv'))
   lines = read.csv(file.path(in_dir, 'lines.csv'))
   raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
-  vm = read.csv(file.path(in_dir, 'virtual-memory.csv'))
 
   # For joining by filename
   lines_by_filename = data_frame(
@@ -208,24 +207,6 @@ ParserReport = function(in_dir, out_dir) {
              num_lines, filename, filename_HREF)) ->
     max_rss
 
-  # Just show osh-ovm because we know from the 'baseline' benchmark that it
-  # uses significantly less than osh-cpython.
-  vm %>%
-    left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
-    select(-c(shell_name, shell_hash)) %>%
-    filter(shell_label == 'osh-ovm') %>%
-    select(-c(shell_label)) %>%
-    rename(kib = metric_value) %>%
-    mutate(megabytes = kib * 1024 / 1e6) %>%
-    select(-c(kib)) %>%
-    spread(key = metric_name, value = megabytes) %>%
-    left_join(lines_by_filename, by = c('filename')) %>%
-    arrange(num_lines, host) %>%
-    mutate(filename_HREF = sourceUrl2(filename)) %>% 
-    rename(VmPeak_MB = VmPeak, VmRSS_MB = VmRSS) %>%
-    select(c(host, VmRSS_MB, VmPeak_MB, num_lines, filename, filename_HREF)) ->
-    vm_table
-
   Log('\n')
   Log('RATE')
   print(rate)
@@ -248,8 +229,6 @@ ParserReport = function(in_dir, out_dir) {
   writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeCsv(rate, file.path(out_dir, 'rate'))
   writeCsv(max_rss, file.path(out_dir, 'max_rss'))
-
-  writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
 
   Log('Wrote %s', out_dir)
 }

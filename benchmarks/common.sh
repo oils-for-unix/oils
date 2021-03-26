@@ -22,15 +22,14 @@ readonly MACHINE2=lisa
 
 readonly SHELLS=( bash dash mksh zsh bin/osh $OSH_OVM )
 
-# for valgrind
-readonly NATIVE_SHELLS=( bash dash mksh zsh $OSH_OVM )
-
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Needed to run on flanders
 readonly root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
 readonly OSH_EVAL_BENCHMARK_DATA=$root/_bin/osh_eval.opt.stripped
 
+# for cachegrind
+readonly NATIVE_SHELLS=( bash dash mksh zsh $OSH_EVAL_BENCHMARK_DATA )
 
 # NOTE: This is in {build,test}/common.sh too.
 die() {

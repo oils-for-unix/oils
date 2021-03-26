@@ -14,6 +14,7 @@
 #   lisa:
 #     benchmark/auto.sh osh-parser-quick
 #   flanders:
+#     benchmark/auto.sh osh-parser-dup-testdata
 #     TODO: fix this.  sometimes we use _bin/osh_eval.*, and sometimes the
 #     ../benchmark-data/ version.
 #   benchmarks/report.sh osh-parser
@@ -48,7 +49,7 @@ write-sorted-manifest() {
       > $csv_out
 }
 
-# Calls by xargs with a task row.
+# Called by xargs with a task row.
 parser-task() {
   local raw_dir=$1  # output
   local job_id=$2
@@ -58,14 +59,9 @@ parser-task() {
   local shell_hash=$6
   local script_path=$7
 
-  echo "--- $sh_path $script_path ---"
+  echo "--- TIME $sh_path $script_path ---"
 
   local times_out="$raw_dir/$host.$job_id.times.csv"
-
-  # TODO: Get rid of this dir, but use something like it for the cachegrind
-  # output
-  local vm_out_dir="$raw_dir/$host.$job_id.virtual-memory"
-  mkdir -p $vm_out_dir
 
   local shell_name
   shell_name=$(basename $sh_path)
@@ -73,20 +69,7 @@ parser-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   case "$shell_name" in
-    osh)
-      local script_name
-      local vm_out_path
-      script_name=$(basename $script_path)
-      vm_out_path="${vm_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
-      # TODO:
-      # - Add -O parse_dynamic_arith for one file?
-      # - Eventually get rid of --parser-mem-dump
-      extra_args="--ast-format none --parser-mem-dump $vm_out_path"
-
-      # Should we add a field here to say it has VM stats?
-      ;;
-
-    osh_eval.*)
+    osh|osh_eval.*)
       extra_args='--ast-format none'
       ;;
   esac
@@ -103,15 +86,75 @@ parser-task() {
     "$sh_path" -n $extra_args "$script_path" || echo FAILED
 }
 
+# Called by xargs with a task row.
+# NOTE: This is very similar to the function above, except that we add
+# cachegrind.  We could probably conslidate these.
+cachegrind-task() {
+  local raw_dir=$1  # output
+  local job_id=$2
+  local host=$3
+  local host_hash=$4
+  local sh_path=$5
+  local shell_hash=$6
+  local script_path=$7
+
+  echo "--- CACHEGRIND $sh_path $script_path ---"
+
+  local times_out="$raw_dir/$host.$job_id.cachegrind.tsv"
+
+  local cachegrind_out_dir="$raw_dir/$job_id.cachegrind"
+  mkdir -p $cachegrind_out_dir
+
+  local shell_name
+  shell_name=$(basename $sh_path)
+
+  local script_name
+  script_name=$(basename $script_path)
+
+  local cachegrind_out_path="${cachegrind_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
+
+  # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
+  extra_args=''
+  case "$shell_name" in
+    osh|osh_eval.*)
+      extra_args="--ast-format none"
+      ;;
+  esac
+
+  benchmarks/time_.py \
+    --tsv \
+    --append \
+    --output $times_out \
+    --rusage \
+    --field "$host" --field "$host_hash" \
+    --field "$shell_name" --field "$shell_hash" \
+    --field "$script_path" -- \
+    $0 cachegrind $cachegrind_out_path \
+    "$sh_path" -n $extra_args "$script_path" || echo FAILED
+}
+
 # For each shell, print 10 script paths.
 print-tasks() {
   local provenance=$1
+  shift
+  # rest are shells
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA |
+  cat $provenance | filter-provenance "$@" |
   while read fields; do
     cat $SORTED | xargs -n 1 -- echo "$fields"
   done
+}
+
+cachegrind() {
+  ### Run a command under cachegrind, writing to $out_file
+  local out_file=$1
+  shift
+
+  valgrind --tool=cachegrind \
+    --log-file=$out_file \
+    --cachegrind-out-file=/dev/null \
+    -- "$@"
 }
 
 cachegrind-demo() {
@@ -151,12 +194,14 @@ readonly NUM_COLUMNS=6  # input columns: 5 from provenance, 1 for file
 
 # output columns
 readonly HEADER='status,elapsed_secs,user_secs,sys_secs,max_rss_KiB,host_name,host_hash,shell_name,shell_hash,path' 
+readonly HEADER_TSV=${HEADER//,/$'\t'}
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
 # should be the ../benchmarks-data repo.
 measure() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
+  local do_cachegrind=${3:-}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -170,25 +215,25 @@ measure() {
   # Files that we should measure.  Exploded into tasks.
   write-sorted-manifest '' $lines_out
 
+  if test -n "$do_cachegrind"; then
+    local cachegrind_tsv="$raw_dir/$prefix.cachegrind.tsv"
+    echo $HEADER_TSV > $cachegrind_tsv
+
+    local ctasks=$BASE_DIR/cachegrind-tasks.txt
+    print-tasks $provenance "${NATIVE_SHELLS[@]}" > $ctasks
+    cat $ctasks | xargs -n $NUM_COLUMNS -- $0 cachegrind-task $raw_dir
+  fi
+
   # Write Header of the CSV file that is appended to.
   echo $HEADER > $times_out
 
   local tasks=$BASE_DIR/tasks.txt
-  print-tasks $provenance > $tasks
+  print-tasks $provenance "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA > $tasks
 
   # Run them all
   cat $tasks | xargs -n $NUM_COLUMNS -- $0 parser-task $raw_dir
 
   cp -v $provenance $raw_dir
-}
-
-measure-cachegrind() {
-  # Do we need provenance?
-  # - shell provenance is good
-  # - we don't really need machine provenance.  It will run only on one
-  #   machine.
-
-  echo TODO
 }
 
 #
@@ -307,14 +352,6 @@ Note that Oil uses a **different algorithm** than POSIX shells.  It builds an
 AST in memory rather than just validating the code line-by-line.
 EOF
   csv2html $in_dir/max_rss.csv
-
-  cmark <<'EOF'
-### Old Memory Usage Metric
-
-Running under `osh-ovm`.  Memory usage is measured in MB (powers of 10), not
-MiB (powers of 2).
-EOF
-  csv2html $in_dir/virtual-memory.csv
 
   cmark <<EOF
 ### Shell and Host Details

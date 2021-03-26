@@ -59,23 +59,30 @@ measure-shells() {
   local provenance
   provenance=$(make-prov)
 
-  benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
-  benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
-  benchmarks/osh-parser.sh measure $provenance $base_dir/osh-parser
-  benchmarks/compute.sh measure $provenance $base_dir/compute
+  benchmarks/vm-baseline.sh measure \
+    $provenance $base_dir/vm-baseline "$do_cachegrind"
+  benchmarks/osh-runtime.sh measure \
+    $provenance $base_dir/osh-runtime "$do_cachegrind"
+  benchmarks/osh-parser.sh measure \
+    $provenance $base_dir/osh-parser "$do_cachegrind"
+  benchmarks/compute.sh measure \
+    $provenance $base_dir/compute "$do_cachegrind"
 }
 
 osh-parser-quick() {
   ### Quick evaluation of the parser
+  # Follow the instructions at the top of benchmarks/osh-parser.sh to use this
+
   local base_dir=${1:-../benchmark-data}
 
-  # REPO VERSION
-  local osh_eval=_bin/osh_eval.opt.stripped
+  # NOTE: This has to match benchmarks/osh-parser.sh print-tasks, which calls
+  # filter-provenance on OSH_EVAL_BENCHMARK_DATA
+  local osh_eval=$OSH_EVAL_BENCHMARK_DATA
 
   local prov2
   prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval)
 
-  benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
+  benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser do_cachegrind
 }
 
 osh-parser-dup-testdata() {
@@ -90,7 +97,9 @@ osh-parser-dup-testdata() {
   for name in $latest.*; do 
     local dest=${name//lisa/flanders}
     cp -r -v $name $dest
-    sed -i 's/lisa/flanders/g' $dest
+    if test -f $dest; then
+      sed -i 's/lisa/flanders/g' $dest
+    fi
   done
 }
 
