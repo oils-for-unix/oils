@@ -929,13 +929,21 @@ class CommandEvaluator(object):
 
         if node.arg_word:  # Evaluate the argument
           str_val = self.word_ev.EvalWordToString(node.arg_word)
-          try:
-            # They all take integers.  NOTE: dash is the only shell that
-            # disallows -1!  Others wrap to 255.
-            arg = int(str_val.s)
-          except ValueError:
-            e_die('%r expected a number, got %r',
-                node.token.val, str_val.s, word=node.arg_word)
+
+          # This is an OVERLOADING of strict_control_flow, which also has to do
+          # with break/continue at top level.  # We need 'return $empty' to be valid
+          # for libtool.  It also has the side effect of making 'return ""'
+          # valid, which shells other than zsh fail on.  That seems OK.
+          if len(str_val.s) == 0 and not self.exec_opts.strict_control_flow():
+            arg = 0
+          else:
+            try:
+              # They all take integers.  NOTE: dash is the only shell that
+              # disallows -1!  Others wrap to 255.
+              arg = int(str_val.s)
+            except ValueError:
+              e_die('%r expected a number, got %r',
+                    node.token.val, str_val.s, word=node.arg_word)
         else:
           if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
             arg = self.mem.LastStatus()

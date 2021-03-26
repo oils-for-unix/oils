@@ -465,6 +465,11 @@ group.
 
 ### Strictness
 
+#### strict_control_flow
+
+Disallow `break` and `continue` at the top level, and disallow empty args like
+`return $empty`.
+
 #### strict_tilde
 
 Failed tilde expansions cause hard errors (like zsh) rather than silently

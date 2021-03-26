@@ -89,6 +89,7 @@ _STRICT_OPTION_NAMES = [
     # default:    do not allow
     'strict_array',
     'strict_control_flow',  # break/continue at top level is fatal
+                            # 'return $empty' and return "" are NOT accepted
     'strict_errexit',       # errexit can't be disabled in compound commands
     'strict_nameref',       # trap invalid variable names
     'strict_word_eval',     # negative slices, unicode

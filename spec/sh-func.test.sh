@@ -86,3 +86,47 @@ echo status=$?
 ## STDOUT:
 status=42
 ## END
+
+#### return "" (a lot of disagreement)
+f() {
+  echo f
+  return ""
+}
+
+f
+echo status=$?
+## STDOUT:
+f
+status=0
+## END
+## status: 0
+
+## OK dash status: 2
+## OK dash STDOUT:
+f
+## END
+
+## BUG mksh STDOUT:
+f
+status=1
+## END
+
+## BUG bash STDOUT:
+f
+status=2
+## END
+
+#### return $empty
+f() {
+  echo f
+  empty=
+  return $empty
+}
+
+f
+echo status=$?
+## STDOUT:
+f
+status=0
+## END
+

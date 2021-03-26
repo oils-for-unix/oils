@@ -123,7 +123,7 @@ X [Testing]       check
                   strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)
                   strict_array           Arrays don't decay to strings
-                  strict_control_flow    trap misplaced break/continue
+                  strict_control_flow    Disallow misplaced keyword, empty arg
                   strict_errexit         Disallow code that ignores failure
                   strict_nameref         trap invalid variable names
                   strict_word_eval       Expose unicode and slicing errors
