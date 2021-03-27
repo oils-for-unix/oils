@@ -112,6 +112,7 @@ mycpp-git       mycpp/deps.sh git-clone               -
 mycpp-pip       mycpp/deps.sh pip-install             -
 build-osh-eval  mycpp/build.sh osh-eval               -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
+shell-benchmarks benchmarks/auto.sh travis            _tmp/benchmark-data/index.html
 mycpp-examples  mycpp/build.sh examples               mycpp/_ninja/index.html
 parse-errors    test/parse-errors.sh travis1          -
 EOF

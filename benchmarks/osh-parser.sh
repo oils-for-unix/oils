@@ -146,7 +146,10 @@ print-tasks() {
   # Add 1 field for each of 5 fields.
   cat $provenance | filter-provenance "$@" |
   while read fields; do
-    cat $SORTED | xargs -n 1 -- echo "$fields"
+    #cat $SORTED | xargs -n 1 -- echo "$fields"
+
+    # As a quick test
+    head -n 2 $SORTED | xargs -n 1 -- echo "$fields"
   done
 }
 

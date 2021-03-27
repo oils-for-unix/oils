@@ -13,26 +13,12 @@ readonly THIS_DIR=$(dirname $(readlink -f $0))
 readonly REPO_ROOT=$THIS_DIR/..
 
 source $THIS_DIR/common.sh  # MYPY_REPO
+source $REPO_ROOT/services/common.sh  # find-dir-html
 
 osh-eval() {
   export MYPY_REPO  # build/mycpp.sh uses this
 
   build/dev.sh oil-cpp
-}
-
-write-results() {
-  find _ninja -type f | sort > _ninja/index.txt
-  echo 'Wrote _ninja/index.txt'
-
-  # Note: no HTML escaping.  Would be nice for Oil.
-  find _ninja -type f | sort | gawk '
-  match($0, "_ninja/(.*)", m) {
-    url = m[1]
-    printf("<a href=\"%s\">%s</a> <br/>\n", url, url)
-  }
-  ' > _ninja/index.html
-
-  echo 'Wrote _ninja/index.html'
 }
 
 all-ninja() {
@@ -51,7 +37,7 @@ all-ninja() {
   local status=$?
   set -o errexit
 
-  write-results
+  find-dir-html _ninja
 
   # Now we want to zip up
   return $status

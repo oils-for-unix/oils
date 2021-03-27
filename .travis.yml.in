@@ -159,6 +159,7 @@ jobs:
               # for MyPy virtualenv
             - python3-venv
             - ninja-build
+            - valgrind
 
       script:
         - services/toil-worker.sh run-cpp

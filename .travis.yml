@@ -122,7 +122,8 @@
             "packages": [
               "python3-pip", 
               "python3-venv", 
-              "ninja-build"
+              "ninja-build", 
+              "valgrind"
             ]
           }
         }, 

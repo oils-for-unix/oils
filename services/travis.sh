@@ -298,7 +298,7 @@ make-job-wwz() {
   #        Note that that index references /web/{base,toil}.css, outside the .wwz
   # temporary: debug dash
   zip -r $wwz \
-    index.html _tmp/toil _tmp/spec _tmp/syscall \
+    index.html _tmp/toil _tmp/spec _tmp/syscall _tmp/benchmark-data \
     mycpp/_ninja/*.{html,txt,tsv} mycpp/_ninja/{tasks,gen} \
     web/{base,spec-code,spec-tests}.css
 }

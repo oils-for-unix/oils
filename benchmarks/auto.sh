@@ -21,6 +21,7 @@ set -o errexit
 
 source test/common.sh  # die
 source benchmarks/common.sh  # default value of OSH_OVM
+source services/common.sh  # find-dir-html
 
 _banner() {
   echo -----
@@ -88,7 +89,7 @@ osh-parser-dup-testdata() {
 }
 
 cachegrind-shells() {
-  local base_dir=../benchmark-data
+  local base_dir=${1:-../benchmark-data}
 
   # Python is considered a shell for benchmarks/compute
   local provenance
@@ -163,6 +164,15 @@ demo-tasks() {
       echo $i $sh_path
     done
   done
+}
+
+travis() {
+  local base_dir=_tmp/benchmark-data
+  mkdir -p $base_dir
+
+  cachegrind-shells $base_dir
+
+  find-dir-html $base_dir
 }
 
 "$@"
