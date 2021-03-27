@@ -264,7 +264,6 @@ WriteDetails = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
 
 RuntimeReport = function(in_dir, out_dir) {
   times = read.csv(file.path(in_dir, 'times.csv'))
-  vm = read.csv(file.path(in_dir, 'virtual-memory.csv'))
 
   times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
@@ -318,33 +317,11 @@ RuntimeReport = function(in_dir, out_dir) {
   print(summary(elapsed))
   print(head(elapsed))
 
-  Log('VM:')
-  print(vm)
-
-  # This is a separate analysis.  We record virtual memory for both the parser
-  # and runtime.  The parser takes all the memory, which is not too surprising.
-  vm %>%
-    filter(shell_name == 'osh') %>%
-    select(-c(shell_name, shell_hash)) %>%
-    rename(kib = metric_value) %>%
-    mutate(megabytes = kib * 1024 / 1e6) %>%
-    select(-c(kib)) %>%
-    mutate(mem_name = paste(event, metric_name, 'MB', sep = '_')) %>%
-    select(-c(event, metric_name)) %>%
-    spread(key = c(mem_name), value = megabytes) %>%
-    arrange(task_arg, host) %>%
-    select(c(task_arg, host, runtime_VmRSS_MB, runtime_VmPeak_MB)) ->
-    vm
-
-  Log('VM:')
-  print(vm)
-
   WriteDetails(distinct_hosts, distinct_shells, out_dir)
 
   precision = ColumnPrecision(list(bash = 0, dash = 0, osh = 0))
   writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeCsv(max_rss, file.path(out_dir, 'max_rss'))
-  writeCsv(vm, file.path(out_dir, 'virtual-memory'))
 
   Log('Wrote %s', out_dir)
 }

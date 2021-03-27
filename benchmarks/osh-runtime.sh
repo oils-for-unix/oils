@@ -268,11 +268,8 @@ stage1() {
   local -a b=($raw_dir/$MACHINE2.*.times.csv)
   csv-concat ${a[-1]} ${b[-1]} > $times_csv
 
-  local vm_csv=$out_dir/virtual-memory.csv
-
   local -a c=($raw_dir/$MACHINE1.*.virtual-memory)
   local -a d=($raw_dir/$MACHINE2.*.virtual-memory)
-  benchmarks/virtual_memory.py osh-runtime ${c[-1]} ${d[-1]} > $vm_csv
 }
 
 print-report() {
@@ -303,14 +300,6 @@ EOF
 ### Memory Usage (Max Resident Set Size in MB)
 EOF
   csv2html $in_dir/max_rss.csv
-
-  cmark <<'EOF'
-### Old Memory Usage Metric
-
-Measuring `osh-ovm`.
-
-EOF
-  csv2html $in_dir/virtual-memory.csv
 
   cat <<EOF
 

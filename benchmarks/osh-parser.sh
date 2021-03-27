@@ -266,10 +266,8 @@ stage1() {
   local out=$BASE_DIR/stage1
   mkdir -p $out
 
-  local vm_csv=$out/virtual-memory.csv
   local -a x=($raw_dir/$MACHINE1.*.virtual-memory)
   local -a y=($raw_dir/$MACHINE2.*.virtual-memory)
-  benchmarks/virtual_memory.py osh-parser ${x[-1]} ${y[-1]} > $vm_csv
 
   local times_csv=$out/times.csv
   # Globs are in lexicographical order, which works for our dates.
