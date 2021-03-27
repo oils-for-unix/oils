@@ -35,6 +35,7 @@ write-sorted-manifest() {
   local files=${1:-benchmarks/osh-parser-files.txt}
   local counts=$BASE_DIR/tmp/line-counts.txt
   local csv_out=$2
+  local sep=${3:-','}  # CSV or TSV
 
   # Remove comments and sort by line count
   grep -v '^#' $files | xargs wc -l | sort -n > $counts
@@ -43,9 +44,9 @@ write-sorted-manifest() {
   cat $counts | awk '$2 != "total" { print $2 }' > $SORTED
 
   # Make a CSV file from wc output
-  cat $counts | awk '
-      BEGIN { print "num_lines,path" }
-      $2 != "total" { print $1 "," $2 }' \
+  cat $counts | awk -v sep="$sep" '
+      BEGIN { print "num_lines" sep "path" }
+      $2 != "total" { print $1 sep $2 }' \
       > $csv_out
 }
 
@@ -92,8 +93,8 @@ parser-task() {
 cachegrind-task() {
   local raw_dir=$1  # output
   local job_id=$2
-  local host=$3
-  local host_hash=$4
+  local unused1=$3
+  local unused2=$4
   local sh_path=$5
   local shell_hash=$6
   local script_path=$7
@@ -101,9 +102,9 @@ cachegrind-task() {
   echo "--- CACHEGRIND $sh_path $script_path ---"
 
   # NOTE: This has to match the path that the header was written to
-  local times_out="$raw_dir/$host.$job_id.cachegrind.tsv"
+  local times_out="$raw_dir/no-host.$job_id.cachegrind.tsv"
 
-  local cachegrind_out_dir="$job_id.cachegrind"
+  local cachegrind_out_dir="no-host.$job_id.cachegrind"
   mkdir -p $raw_dir/$cachegrind_out_dir
 
   local shell_name
@@ -200,7 +201,6 @@ readonly NUM_TASK_COLS=6  # input columns: 5 from provenance, 1 for file
 measure() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
-  local do_cachegrind=${3:-}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -213,25 +213,6 @@ measure() {
 
   # Files that we should measure.  Exploded into tasks.
   write-sorted-manifest '' $lines_out
-
-  if test -n "$do_cachegrind"; then
-    local cachegrind_tsv="$raw_dir/$prefix.cachegrind.tsv"
-
-    # TODO: This header is fragile.  Every task should print its own file with
-    # a header, and then we can run them in parallel, and join them with
-    # devtools/csv_concat.py
-
-    benchmarks/time_.py --tsv --print-header \
-      --rusage \
-      --field shell_name --field shell_hash \
-      --field path \
-      --field cachegrind_out_path \
-      > $cachegrind_tsv
-
-    local ctasks=$BASE_DIR/cachegrind-tasks.txt
-    print-tasks $provenance "${NATIVE_SHELLS[@]}" > $ctasks
-    cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $raw_dir
-  fi
 
   # Write Header of the CSV file that is appended to.
   benchmarks/time_.py --print-header \
@@ -249,6 +230,41 @@ measure() {
 
   cp -v $provenance $raw_dir
 }
+
+measure-cachegrind() {
+  local provenance=$1
+  local raw_dir=${2:-$BASE_DIR/raw}
+
+  # Job ID is everything up to the first dot in the filename.
+  local name=$(basename $provenance)
+  local prefix=${name%.provenance.txt}  # strip suffix
+
+  local cachegrind_tsv="$raw_dir/$prefix.cachegrind.tsv"
+  local lines_out="$raw_dir/$prefix.lines.tsv"
+
+  mkdir -p $BASE_DIR/{tmp,raw,stage1} $raw_dir
+
+  write-sorted-manifest '' $lines_out $'\t'  # TSV
+
+  # TODO: This header is fragile.  Every task should print its own file with a
+  # header, and then we can run them in parallel, and join them with
+  # devtools/csv_concat.py
+
+  benchmarks/time_.py --tsv --print-header \
+    --rusage \
+    --field shell_name --field shell_hash \
+    --field path \
+    --field cachegrind_out_path \
+    > $cachegrind_tsv
+
+  local ctasks=$BASE_DIR/cachegrind-tasks.txt
+  print-tasks $provenance "${NATIVE_SHELLS[@]}" > $ctasks
+
+  cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $raw_dir
+
+  cp -v $provenance $raw_dir
+}
+
 
 #
 # Testing

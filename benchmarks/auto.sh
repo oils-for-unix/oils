@@ -48,25 +48,7 @@ make-prov() {
   fi
 
   # Python is considered a shell for benchmarks/compute
-  benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval python
-}
-
-measure-shells() {
-  local do_cachegrind=${1:-}
-  local base_dir=../benchmark-data
-
-  # capture the filename
-  local provenance
-  provenance=$(make-prov)
-
-  benchmarks/vm-baseline.sh measure \
-    $provenance $base_dir/vm-baseline "$do_cachegrind"
-  benchmarks/osh-runtime.sh measure \
-    $provenance $base_dir/osh-runtime "$do_cachegrind"
-  benchmarks/osh-parser.sh measure \
-    $provenance $base_dir/osh-parser "$do_cachegrind"
-  benchmarks/compute.sh measure \
-    $provenance $base_dir/compute "$do_cachegrind"
+  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $osh_eval python
 }
 
 osh-parser-quick() {
@@ -79,10 +61,12 @@ osh-parser-quick() {
   # filter-provenance on OSH_EVAL_BENCHMARK_DATA
   local osh_eval=$OSH_EVAL_BENCHMARK_DATA
 
-  local prov2
-  prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval)
+  local c_prov prov
+  c_prov=$(benchmarks/id.sh shell-provenance no-host "${NATIVE_SHELLS[@]}")
+  prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $osh_eval)
 
-  benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser do_cachegrind
+  benchmarks/osh-parser.sh measure-cachegrind $c_prov $base_dir/osh-parser
+  benchmarks/osh-parser.sh measure $prov $base_dir/osh-parser
 }
 
 osh-parser-dup-testdata() {
@@ -103,6 +87,37 @@ osh-parser-dup-testdata() {
   done
 }
 
+cachegrind-shells() {
+  local base_dir=../benchmark-data
+
+  # Python is considered a shell for benchmarks/compute
+  local provenance
+  provenance=$(benchmarks/id.sh shell-provenance no-host "${NATIVE_SHELLS[@]}" python)
+
+  benchmarks/osh-parser.sh measure-cachegrind $provenance $base_dir/osh-parser
+}
+
+cachegrind-builds() {
+  echo TODO
+}
+
+measure-shells() {
+  local base_dir=../benchmark-data
+
+  # capture the filename
+  local provenance
+  provenance=$(make-prov)
+
+  benchmarks/vm-baseline.sh measure \
+    $provenance $base_dir/vm-baseline
+  benchmarks/osh-runtime.sh measure \
+    $provenance $base_dir/osh-runtime
+  benchmarks/osh-parser.sh measure \
+    $provenance $base_dir/osh-parser
+  benchmarks/compute.sh measure \
+    $provenance $base_dir/compute
+}
+
 measure-builds() {
   local do_cachegrind=${1:-}
   local base_dir=../benchmark-data
@@ -120,8 +135,13 @@ all() {
   local do_cachegrind=${1:-}
 
   # NOTE: Depends on oil-native being built
-  measure-shells "$do_cachegrind"
-  measure-builds "$do_cachegrind"
+  if test -n "$do_cachegrind"; then
+    cachegrind-shells
+    cachegrind-builds
+  fi
+
+  measure-shells
+  measure-builds
 }
 
 #

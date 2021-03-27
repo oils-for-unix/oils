@@ -309,20 +309,31 @@ publish-compiler-id() {
 
 shell-provenance() {
   ### Write info about the given shells to a file, and print its name
+  local label=$1  # if it exists, it overrides the host
+  shift
 
   local job_id
   job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+
   local host
-  host=$(hostname)
+  local host_hash
+  if test -z "$label"; then
+    host=$(hostname)
+
+    local tmp_dir=_tmp/host-id/$host
+    dump-host-id $tmp_dir
+
+    host_hash=$(publish-host-id $tmp_dir)
+
+    label=$host
+  else
+    # Not recorded.
+    host='-'
+    host_hash='-'
+  fi
 
   # Filename
-  local out=_tmp/${host}.${job_id}.provenance.txt
-
-  local tmp_dir=_tmp/host-id/$host
-  dump-host-id $tmp_dir
-
-  local host_hash
-  host_hash=$(publish-host-id $tmp_dir)
+  local out=_tmp/${label}.${job_id}.provenance.txt
 
   local shell_hash
 
@@ -335,6 +346,7 @@ shell-provenance() {
 
     shell_hash=$(publish-shell-id $tmp_dir)
 
+    # note: filter-provenance depends on $4 being $sh_path
     echo "$job_id $host $host_hash $sh_path $shell_hash"
   done > $out
 
