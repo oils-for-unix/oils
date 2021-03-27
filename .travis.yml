@@ -123,7 +123,10 @@
               "python3-pip", 
               "python3-venv", 
               "ninja-build", 
-              "valgrind"
+              "valgrind", 
+              "busybox-static", 
+              "mksh", 
+              "zsh"
             ]
           }
         }, 

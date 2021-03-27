@@ -17,7 +17,13 @@ packages:
   - ninja-build
     # to create mycpp/_ninja/index.html
   - gawk
+
+    # for stable benchmarks
   - valgrind
+    # the shell benchmarks compare shells
+  - busybox-static
+  - mksh
+  - zsh
 
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd

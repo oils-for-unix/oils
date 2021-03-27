@@ -159,7 +159,12 @@ jobs:
               # for MyPy virtualenv
             - python3-venv
             - ninja-build
+              # for stable benchmarks
             - valgrind
+              # the shell benchmarks compare shells
+            - busybox-static
+            - mksh
+            - zsh
 
       script:
         - services/toil-worker.sh run-cpp
