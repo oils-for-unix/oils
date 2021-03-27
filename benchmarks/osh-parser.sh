@@ -100,10 +100,11 @@ cachegrind-task() {
 
   echo "--- CACHEGRIND $sh_path $script_path ---"
 
+  # NOTE: This has to match the path that the header was written to
   local times_out="$raw_dir/$host.$job_id.cachegrind.tsv"
 
-  local cachegrind_out_dir="$raw_dir/$job_id.cachegrind"
-  mkdir -p $cachegrind_out_dir
+  local cachegrind_out_dir="$job_id.cachegrind"
+  mkdir -p $raw_dir/$cachegrind_out_dir
 
   local shell_name
   shell_name=$(basename $sh_path)
@@ -111,6 +112,7 @@ cachegrind-task() {
   local script_name
   script_name=$(basename $script_path)
 
+  # RELATIVE PATH
   local cachegrind_out_path="${cachegrind_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
 
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
@@ -126,10 +128,11 @@ cachegrind-task() {
     --append \
     --output $times_out \
     --rusage \
-    --field "$host" --field "$host_hash" \
     --field "$shell_name" --field "$shell_hash" \
-    --field "$script_path" -- \
-    $0 cachegrind $cachegrind_out_path \
+    --field "$script_path" \
+    --field $cachegrind_out_path \
+    -- \
+    $0 cachegrind $raw_dir/$cachegrind_out_path \
     "$sh_path" -n $extra_args "$script_path" || echo FAILED
 }
 
@@ -190,11 +193,7 @@ print-valgrind-tasks() {
   done
 }
 
-readonly NUM_COLUMNS=6  # input columns: 5 from provenance, 1 for file
-
-# output columns
-readonly HEADER='status,elapsed_secs,user_secs,sys_secs,max_rss_KiB,host_name,host_hash,shell_name,shell_hash,path' 
-readonly HEADER_TSV=${HEADER//,/$'\t'}
+readonly NUM_TASK_COLS=6  # input columns: 5 from provenance, 1 for file
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
 # should be the ../benchmarks-data repo.
@@ -217,21 +216,36 @@ measure() {
 
   if test -n "$do_cachegrind"; then
     local cachegrind_tsv="$raw_dir/$prefix.cachegrind.tsv"
-    echo $HEADER_TSV > $cachegrind_tsv
+
+    # TODO: This header is fragile.  Every task should print its own file with
+    # a header, and then we can run them in parallel, and join them with
+    # devtools/csv_concat.py
+
+    benchmarks/time_.py --tsv --print-header \
+      --rusage \
+      --field shell_name --field shell_hash \
+      --field path \
+      --field cachegrind_out_path \
+      > $cachegrind_tsv
 
     local ctasks=$BASE_DIR/cachegrind-tasks.txt
     print-tasks $provenance "${NATIVE_SHELLS[@]}" > $ctasks
-    cat $ctasks | xargs -n $NUM_COLUMNS -- $0 cachegrind-task $raw_dir
+    cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $raw_dir
   fi
 
   # Write Header of the CSV file that is appended to.
-  echo $HEADER > $times_out
+  benchmarks/time_.py --print-header \
+    --rusage \
+    --field host_name --field host_hash \
+    --field shell_name --field shell_hash \
+    --field path \
+    > $times_out
 
   local tasks=$BASE_DIR/tasks.txt
   print-tasks $provenance "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA > $tasks
 
   # Run them all
-  cat $tasks | xargs -n $NUM_COLUMNS -- $0 parser-task $raw_dir
+  cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $raw_dir
 
   cp -v $provenance $raw_dir
 }
