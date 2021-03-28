@@ -20,16 +20,16 @@ readonly MACHINE2=lisa
 # - These are NOT the versions of bash/dash/etc. in _tmp/spec-bin!  I
 #   guess we should test distro-provided binaries.
 
-readonly SHELLS=( bash dash mksh zsh bin/osh $OSH_OVM )
+readonly OTHER_SHELLS=( bash dash mksh zsh )
+readonly SHELLS=( ${OTHER_SHELLS[@]} bin/osh $OSH_OVM )
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Needed to run on flanders
 readonly root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
 readonly OSH_EVAL_BENCHMARK_DATA=$root/_bin/osh_eval.opt.stripped
+readonly OSH_EVAL_IN_TREE=_bin/osh_eval.opt.stripped
 
-# for cachegrind
-readonly NATIVE_SHELLS=( bash dash mksh zsh $OSH_EVAL_BENCHMARK_DATA )
 
 # NOTE: This is in {build,test}/common.sh too.
 die() {

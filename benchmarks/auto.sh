@@ -35,23 +35,6 @@ prereq() {
   test/spec.sh all
 }
 
-make-prov() {
-  ### Make a list of all runtimes we want to test
-
-  local in_tree=${1:-}  # pass T to get the one in tree
-  local osh_eval
-
-  # Test the one in the repo
-  if test -n "$in_tree"; then
-    osh_eval=_bin/osh_eval.opt.stripped
-  else
-    osh_eval=$OSH_EVAL_BENCHMARK_DATA
-  fi
-
-  # Python is considered a shell for benchmarks/compute
-  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $osh_eval python
-}
-
 osh-parser-quick() {
   ### Quick evaluation of the parser
   # Follow the instructions at the top of benchmarks/osh-parser.sh to use this
@@ -63,7 +46,8 @@ osh-parser-quick() {
   local osh_eval=$OSH_EVAL_BENCHMARK_DATA
 
   local c_prov prov
-  c_prov=$(benchmarks/id.sh shell-provenance no-host "${NATIVE_SHELLS[@]}")
+  c_prov=$(benchmarks/id.sh shell-provenance no-host \
+    "${OTHER_SHELLS[@]}" $osh_eval python)
   prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $osh_eval)
 
   benchmarks/osh-parser.sh measure-cachegrind $c_prov $base_dir/osh-parser
@@ -90,12 +74,16 @@ osh-parser-dup-testdata() {
 
 cachegrind-shells() {
   local base_dir=${1:-../benchmark-data}
+  local osh_eval=${2:-$OSH_EVAL_BENCHMARK_DATA}
 
   # Python is considered a shell for benchmarks/compute
   local provenance
-  provenance=$(benchmarks/id.sh shell-provenance no-host "${NATIVE_SHELLS[@]}" python)
+  provenance=$(benchmarks/id.sh shell-provenance no-host \
+    "${OTHER_SHELLS[@]}" $osh_eval python)
 
-  benchmarks/osh-parser.sh measure-cachegrind $provenance $base_dir/osh-parser
+  benchmarks/osh-parser.sh measure-cachegrind \
+    $provenance $base_dir/osh-parser $osh_eval
+
 }
 
 cachegrind-builds() {
@@ -107,7 +95,8 @@ measure-shells() {
 
   # capture the filename
   local provenance
-  provenance=$(make-prov)
+  provenance=$(benchmarks/id.sh shell-provenance '' \
+    "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python)
 
   benchmarks/vm-baseline.sh measure \
     $provenance $base_dir/vm-baseline
@@ -137,8 +126,8 @@ all() {
 
   # NOTE: Depends on oil-native being built
   if test -n "$do_cachegrind"; then
-    cachegrind-shells
-    cachegrind-builds
+    cachegrind-shells '' $OSH_EVAL_BENCHMARK_DATA
+    cachegrind-builds '' $OSH_EVAL_BENCHMARK_DATA
   fi
 
   measure-shells
@@ -170,7 +159,7 @@ travis() {
   local base_dir=_tmp/benchmark-data
   mkdir -p $base_dir
 
-  cachegrind-shells $base_dir
+  cachegrind-shells $base_dir $OSH_EVAL_IN_TREE
 
   find-dir-html $base_dir
 }

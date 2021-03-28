@@ -186,17 +186,6 @@ cachegrind-demo() {
   head -n 20 $out_dir/*.txt
 }
 
-# Similar to the above, but we don't measure bin/osh.  We also don't need the
-# hostname.
-print-valgrind-tasks() {
-  local provenance=$1
-
-  cat $provenance | filter-provenance "${NATIVE_SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA |
-  while read fields; do
-    cat $SORTED | xargs -n 1 -- echo "$fields"
-  done
-}
-
 readonly NUM_TASK_COLS=6  # input columns: 5 from provenance, 1 for file
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
@@ -237,6 +226,7 @@ measure() {
 measure-cachegrind() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
+  local osh_eval=${3:-$OSH_EVAL_BENCHMARK_DATA}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -261,7 +251,7 @@ measure-cachegrind() {
     > $cachegrind_tsv
 
   local ctasks=$BASE_DIR/cachegrind-tasks.txt
-  print-tasks $provenance "${NATIVE_SHELLS[@]}" > $ctasks
+  print-tasks $provenance "${OTHER_SHELLS[@]}" $osh_eval > $ctasks
 
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $raw_dir
 
