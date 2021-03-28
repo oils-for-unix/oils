@@ -84,7 +84,7 @@ toil-web-manifest() {
 }
 
 # Also used in test/wild.sh
-multi() { ~/hg/tree-tools/bin/multi "$@"; }
+multi() { ~/git/tree-tools/bin/multi "$@"; }
 
 deploy() {
   toil-web-manifest | multi cp _tmp/toil-web
