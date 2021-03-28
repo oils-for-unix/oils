@@ -15,12 +15,6 @@ readonly REPO_ROOT=$THIS_DIR/..
 source $THIS_DIR/common.sh  # MYPY_REPO
 source $REPO_ROOT/services/common.sh  # find-dir-html
 
-osh-eval() {
-  export MYPY_REPO  # build/mycpp.sh uses this
-
-  build/dev.sh oil-cpp
-}
-
 all-ninja() {
   # mycpp_main.py needs to find it
   export MYPY_REPO
