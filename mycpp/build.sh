@@ -16,8 +16,6 @@ source $THIS_DIR/common.sh  # MYPY_REPO
 source $REPO_ROOT/services/common.sh  # find-dir-html
 
 all-ninja() {
-  # mycpp_main.py needs to find it
-  export MYPY_REPO
   # Don't use clang for benchmarks.
   export CXX=c++
 

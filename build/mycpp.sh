@@ -12,8 +12,7 @@ source build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 readonly THIS_DIR=$(dirname $(readlink -f $0))
 readonly REPO_ROOT=$THIS_DIR/..
 
-# set by mycpp/setup.sh
-readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
+source mycpp/common.sh  # MYPY_REPO
 
 # for 'perf'.  Technically this may slow things down, but it was in the noise
 # on parsing configure-coreutils.

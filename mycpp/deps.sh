@@ -69,8 +69,6 @@ mypy-deps() {
 pip-install() {
   ### Invoked by services/toil-worker
 
-  export MYPY_REPO  # mypy-deps function uses this
-
   pushd $THIS_DIR
 
   create-venv
