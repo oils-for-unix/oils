@@ -17,18 +17,16 @@ behave as intended,
 programs like `.bashrc` and bash completion scripts may require small changes.
 
 This manual covers the **differences** between OSH and other shells.  It leaves
-the details of each construct to the `help` builtin and the [Quick
-Reference](osh-quick-ref.html) (*Warning: both are incomplete*).  It also
-doesn't cover the [Oil language][oil-language], which is a newer part of the
-Oil project.
+the details of each construct to the `help` builtin, which is also [available
+online](osh-help-topics.html) (*Warning: incomplete*).  It also doesn't cover
+the [Oil language][oil-language], which is a newer part of the Oil project.
 
 Existing educational materials for the Unix shell apply to OSH, because they
 generally don't teach the quirks that OSH disallows.  For example, much of the
 information and advice in [BashGuide][] can be used without worrying about
 which shell you're using.  See the end of this manual for more resources.
 
-
-[oil-language]: https://oilshell.org/cross-ref.html?tag=oil-language#oil-language
+[oil-language]: https://www.oilshell.org/cross-ref.html?tag=oil-language#oil-language
 
 <!-- cmark.py expands this -->
 <div id="toc">
