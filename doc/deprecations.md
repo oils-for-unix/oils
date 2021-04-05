@@ -25,7 +25,7 @@ bash construct `@()` has changed.
 
 Subshells are **uncommon** in idiomatic Oil code, so they have the awkward name
 `forkwait`.  Think of it as a sequence of the `fork` builtin (for `&`) and the
-`wait builtin.
+`wait` builtin.
 
 No:
 
