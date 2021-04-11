@@ -136,6 +136,9 @@ def Init(mem):
   SetGlobalFunc(mem, 'List', list)
   SetGlobalFunc(mem, 'Dict', dict)
 
+  # For compositionality and testing
+  SetGlobalFunc(mem, 'identity', lambda x: x)
+
   # Singleton tuple!
   SetGlobalFunc(mem, 'tup', lambda x: (x,))
 

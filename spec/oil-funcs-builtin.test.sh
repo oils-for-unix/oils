@@ -198,7 +198,6 @@ echo done
 ## STDOUT:
 ## END
 
-
 #### @glob(x)
 touch -- a.z b.z -.z
 write -- @glob('?.z')

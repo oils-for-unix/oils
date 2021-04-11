@@ -63,37 +63,6 @@ argv.py @x
 ['a', 'b c']
 ## END
 
-#### Splice in array
-shopt -s oil:basic
-var a = %(one two three)
-argv.py @a
-## STDOUT:
-['one', 'two', 'three']
-## END
-
-#### Splice in assoc array
-shopt -s oil:basic
-declare -A A=(['foo']=bar, ['spam']=eggs)
-write -- @A | sort
-## STDOUT:
-foo
-spam
-## END
-
-#### Can't splice string
-shopt -s oil:basic
-var mystr = 'abc'
-argv.py @mystr
-## status: 1
-## stdout-json: ""
-
-#### Can't splice undefined
-shopt -s oil:basic
-argv.py @undefined
-echo done
-## status: 1
-## stdout-json: ""
-
 #### Set $HOME using 'var' (i.e. Oil string var in word evaluator)
 var HOME = "foo"
 echo $HOME

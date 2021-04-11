@@ -83,6 +83,13 @@ undefined_vars() {
   _error-case 'setvar a = undef'  # PlaceMutation
 }
 
+oil_word_eval() {
+  set +o errexit
+
+  _error-case 'echo $maybe("foo")'
+  _error-case 'echo $identity({key: "val"})'
+}
+
 _run-test() {
   local name=$1
 
@@ -92,6 +99,7 @@ _run-test() {
 run-all-with-osh() {
   _run-test regex_literals
   _run-test undefined_vars
+  _run-test oil_word_eval
 
   return 0  # success
 }

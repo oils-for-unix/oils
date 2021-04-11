@@ -918,6 +918,11 @@ oil-options() {
     $OSH_LIST "$@"
 }
 
+oil-word-eval() {
+  sh-spec spec/oil-word-eval.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
 oil-expr() {
   sh-spec spec/oil-expr.test.sh --osh-failures-allowed 7 \
     $OSH_LIST "$@"

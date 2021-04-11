@@ -1484,7 +1484,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           id_ = part.name.id
           if id_ == Id.VSub_DollarName:
-            s = str(func(*pos_args, **named_args))
+            py_val = func(*pos_args, **named_args)
+            if not isinstance(py_val, (int, float, str)):
+              e_die("Expected function to return an int, float, or string.  Got %s", type(py_val))
+
+            s = str(py_val)
             part_val = part_value.String(s)  # type: part_value_t
 
           elif id_ == Id.Lit_Splice:
