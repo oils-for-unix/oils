@@ -40,6 +40,8 @@ _should-run() {
 
 
 regex_literals() {
+  set +o errexit
+
   _should-run "var sq = / 'foo'+ /"
 
   _error-case '
@@ -87,7 +89,11 @@ oil_word_eval() {
   set +o errexit
 
   _error-case 'echo $maybe("foo")'
+
   _error-case 'echo $identity({key: "val"})'
+
+  # this should be consistent
+  _error-case 'write -- @identity([{key: "val"}])'
 }
 
 _run-test() {
@@ -97,11 +103,16 @@ _run-test() {
 }
 
 run-all-with-osh() {
-  _run-test regex_literals
-  _run-test undefined_vars
-  _run-test oil_word_eval
+  local status=0
+  for t in regex_literals undefined_vars oil_word_eval; do
+    _run-test $t
+    status=$?
+    if test $status != 0; then
+      die "*** Test $t failed with status $status"
+    fi
+  done
 
-  return 0  # success
+  return 0 
 }
 
 run-for-release() {

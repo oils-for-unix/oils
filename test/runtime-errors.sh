@@ -26,6 +26,16 @@ _error-case() {
   fi
 }
 
+_error-case-2() {
+  $SH -c "$@"
+
+  # NOTE: This works with osh, not others.
+  local status=$?
+  if test $status != 2; then
+    die "Expected status 1, got $status"
+  fi
+}
+
 #
 # PARSE ERRORS
 #
@@ -156,8 +166,8 @@ strict_errexit_2() {
   # Test out all the location info
 
   # command.Pipeline.
-  _strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
-  _strict-errexit-case 'if ! ls | wc -l; then echo Pipeline; fi'
+  #_strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
+  #_strict-errexit-case 'if ! ls | wc -l; then echo Pipeline; fi'
 
   # This one is logical
   #_strict-errexit-case 'if ! ls; then echo Pipeline; fi'
@@ -179,7 +189,7 @@ strict_errexit_2() {
   _strict-errexit-case '! while false; do echo while; done'
 
   # command.If
-  _strict-errexit-case '! if true; then false; fi'
+  #_strict-errexit-case '! if true; then false; fi'
 
   # command.Case
   _strict-errexit-case '! case x in x) echo x;; esac'
@@ -430,8 +440,9 @@ unsafe_arith_eval() {
 unset_expr() {
   shopt -s unsafe_arith_eval
 
-  _error-case 'unset -v 1[1]'
-  _error-case 'unset -v 1+2'
+  # returns status 2
+  _error-case-2 'unset -v 1[1]'
+  _error-case-2 'unset -v 1+2'
 }
 
 # Only dash flags this as an error.
@@ -822,12 +833,21 @@ EOF
 
 _run_test() {
   local t=$1
+  local assert_status_zero=${2:-}
 
   echo "--------"
   echo "    CASE: $t"
+
   # Run in subshell so the whole thing doesn't exit
   ( $t )
-  echo "    STATUS: $?"
+  status=$?
+  if test -n "$assert_status_zero"; then
+    if test $status != 0; then
+      die "*** Test $t failed with status $status"
+    fi
+  else
+    echo "    STATUS: $?"
+  fi
   echo
 }
 
@@ -835,19 +855,27 @@ all() {
   # Can't be done inside a loop!
   _run_test control_flow 
 
+  # TODO: Move more tests here so we check errors!  _error-case needs it.
+  for t in \
+    strict_errexit_1 strict_errexit_2 \
+    unset_expr \
+    divzero; do
+    _run_test $t yes
+  done
+
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
     failed_command errexit_usage_error errexit_subshell errexit_pipeline \
     errexit_dbracket \
-    errexit_alias strict_errexit_1 strict_errexit_2 \
+    errexit_alias \
     pipefail pipefail_group pipefail_subshell pipefail_no_words pipefail_func \
     pipefail_while pipefail_multiple \
     core_process osh_state \
     nounset bad_var_ref \
-    nounset_arith divzero \
+    nounset_arith \
     array_arith undef_arith undef_arith2 \
     undef_assoc_array \
-    unsafe_arith_eval unset_expr \
+    unsafe_arith_eval \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool string_as_array \
     array_assign_1 array_assign_2 readonly_assign \
@@ -860,8 +888,11 @@ all() {
     strict_control_flow_warnings control_flow_subshell \
     command_sub_errexit process_sub_fail bool_status bool_status_simple \
     qsn_decode; do
-    _run_test $t
+
+    _run_test $t ''  # don't assert status
   done
+
+  return 0
 }
 
 run-all-with-osh() {

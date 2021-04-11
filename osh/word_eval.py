@@ -1484,17 +1484,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           id_ = part.name.id
           if id_ == Id.VSub_DollarName:
-            py_val = func(*pos_args, **named_args)
-            if not isinstance(py_val, (int, float, str)):
-              e_die("Expected function to return an int, float, or string.  Got %s", type(py_val))
-
-            s = str(py_val)
+            s = self._Stringify(func(*pos_args, **named_args))
             part_val = part_value.String(s)  # type: part_value_t
 
           elif id_ == Id.Lit_Splice:
             # NOTE: Using iterable protocol as with @array.  TODO: Optimize
             # this so it doesn't make a copy?
-            a = [str(item) for item in func(*pos_args, **named_args)]
+            a = [self._Stringify(item) for item in func(*pos_args, **named_args)]
             part_val = part_value.Array(a)
 
           else:
@@ -1506,11 +1502,25 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if mylib.PYTHON:
           part = cast(word_part__ExprSub, UP_part)
           py_val = self.expr_ev.EvalExpr(part.child)
-          part_val = part_value.String(str(py_val))
+          part_val = part_value.String(self._Stringify(py_val))
           part_vals.append(part_val)
 
       else:
         raise AssertionError(part.tag_())
+
+  if mylib.PYTHON:
+    def _Stringify(self, py_val):
+      """ For predictably converting between Python objects and strings.
+
+      We don't want to tie our sematnics to the Python interpreter too much.
+      """
+      if isinstance(py_val, bool):
+        return 'true' if py_val else 'false'  # Use JSON spelling
+
+      if not isinstance(py_val, (int, float, str)):
+        e_die("Expected function to return a bool, int, float, or string.  Got %s", type(py_val))
+
+      return str(py_val)
 
   def _EvalWordToParts(self, w, quoted, part_vals, is_subst=False):
     # type: (word_t, bool, List[part_value_t], bool) -> None

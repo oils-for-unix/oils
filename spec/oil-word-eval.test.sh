@@ -30,15 +30,23 @@ echo done
 ## stdout-json: ""
 
 #### echo $f(x) for various types
+shopt -s oil:basic
+
+echo bool $identity(true)
 echo int $len(['a', 'b'])
 echo float $abs(-3.14)
 echo str $identity('identity')
 
-# TODO: There are no builtin functions that return booleans?
+echo ---
+echo bool expr $[true]
+echo bool splice @identity([true])
 
 ## STDOUT:
+bool true
 int 2
 float 3.14
 str identity
+---
+bool expr true
+bool splice true
 ## END
-
