@@ -135,15 +135,16 @@ x
 #### Eggex bug in a loop
 
 # https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/A.20list.20of.20feedback
-for i in @(seq 10) {
+for i in @(seq 2) {
   # BUG: This crashes here, but NOT when extracted!  Bad.
   var pat = / 'test' word+ /
-  echo "pat = $pat "
   if ("test$i" ~ pat) {
-    echo "OK"
+    echo yes
   }
 }
 ## STDOUT:
+yes
+yes
 ## END
 
 

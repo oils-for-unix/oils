@@ -726,6 +726,10 @@ class OilEvaluator(object):
       self._MutateClassLiteral(node)
       return
 
+    elif node.tag == re_e.LiteralChars:
+      # No children
+      return
+
     raise NotImplementedError(node.__class__.__name__)
 
   def EvalRegex(self, node):
