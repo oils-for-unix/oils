@@ -132,3 +132,50 @@ x
 ## END
 
 
+#### Eggex bug in a loop
+
+# https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/A.20list.20of.20feedback
+for i in @(seq 10) {
+  # BUG: This crashes here, but NOT when extracted!  Bad.
+  var pat = / 'test' word+ /
+  echo "pat = $pat "
+  if ("test$i" ~ pat) {
+    echo "OK"
+  }
+}
+## STDOUT:
+## END
+
+
+#### Append object onto Array
+var e = []
+
+# %() is also acceptable, but we prefer Python-like [] for objects.
+# %() is more for an array of strings
+# var e = %()
+
+for i in @(seq 2) {
+  var o = {}
+  setvar o[$i] = "Test $i"
+
+  # push builtin is only for strings
+
+  # The _ keyword puts you in EXPRESSION MODE.  Then use Python-like methods.
+  # Is this awkward?  We could also do setvar e[] = o to append?  What about
+  # extend?
+
+  _ e.append(o)
+}
+
+json write :e
+
+## STDOUT:
+[
+  {
+    "1": "Test 1"
+  },
+  {
+    "2": "Test 2"
+  }
+]
+## END

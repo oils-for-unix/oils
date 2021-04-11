@@ -987,7 +987,7 @@ oil-interactive() {
 }
 
 oil-user-feedback() {
-  sh-spec spec/oil-user-feedback.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/oil-user-feedback.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
