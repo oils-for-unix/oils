@@ -10,5 +10,6 @@ static PyMethodDef methods[] = {
   {"gethostname", socket_gethostname, METH_NOARGS},
   {"get_terminal_width", func_get_terminal_width, METH_NOARGS},
   {"wcswidth", func_wcswidth, METH_VARARGS},
+  {"cpython_reset_locale", func_cpython_reset_locale, METH_NOARGS},
   {0},
 };
