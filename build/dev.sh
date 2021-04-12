@@ -46,14 +46,31 @@ install-py-libs() {
   # pyyaml: for yaml2json
   # typing: because the build/cpython-defs tool
   # flake8: for linting
-  pip2 install pyyaml typing
+  pip install pyyaml typing
 
-  # THIS FAILS
-  pip2 install flake8
+  #pip2 install flake8
 
   # not sure why this requires sudo and pip2 doesn't
   # this doesn't work on our code
   # sudo pip3 install flake8
+}
+
+destroy-pip() {
+  rm -r -f -v ~/.cache/pip ~/.local/lib/python2.7
+}
+
+# 2021-04: I have no idea why I need this on my Xenial machine
+# but the Travis continuous build doesn't need it.
+install-old-flake8() {
+  # Found by bisection and inspection of MY HOME DIR.  It makes the pip
+  # dependency resolver "work"...
+
+  pip install 'configparser==4.0.2'
+  pip install 'flake8==3.7.9'
+
+  # Test default version
+  unset PYTHONPATH
+  ~/.local/bin/flake8 --version
 }
 
 # Needed for the release process, but not the dev process.
