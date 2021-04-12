@@ -43,7 +43,7 @@ from osh import string_ops
 from osh import word_
 from osh import word_compile
 
-from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
+from typing import Optional, Tuple, List, Dict, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import speck, word_part_t
@@ -1510,6 +1510,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   if mylib.PYTHON:
     def _Stringify(self, py_val):
+      # type: (Any) -> str
       """ For predictably converting between Python objects and strings.
 
       We don't want to tie our sematnics to the Python interpreter too much.
