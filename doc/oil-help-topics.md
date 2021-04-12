@@ -40,7 +40,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 ```oil-help-topics
                   proc          proc p (x, y, @rest, &block) { echo hi }
                   equal =       = 1 + 2*3
-                  underscore _  _ push(x, 3)
+                  underscore _  _ mylist.append(42)
                   oil-block     cd /tmp { echo $PWD }
 ```
 

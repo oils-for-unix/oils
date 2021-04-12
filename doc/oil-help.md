@@ -110,7 +110,7 @@ variable on the left.
 The `_` keyword evaluates an expression and throws away the result:
 
     var x = %(one two)
-    _ push(x, 'three')
+    _ x.append('three')
 
 Think of it as a shortcut for `_ = expr` (throwaway assignment).
 
@@ -381,6 +381,17 @@ The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible
       not_mutated=zzz
     }
     echo $not_mutated
+
+#### push
+
+Append a string to an array of strings:
+
+    var mylist = %(one two)
+    push :mylist three
+
+This is a command-mode synonym for the expression:
+
+    _ mylist.append('three')
 
 #### pp
 
