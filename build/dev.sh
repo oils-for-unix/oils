@@ -40,14 +40,29 @@ libedit-flags() {
   pkg-config --libs --cflags libedit
 }
 
+install-py-libs() {
+  set -x
+
+  # pyyaml: for yaml2json
+  # typing: because the build/cpython-defs tool
+  # flake8: for linting
+  pip2 install pyyaml typing
+
+  # THIS FAILS
+  pip2 install flake8
+
+  # not sure why this requires sudo and pip2 doesn't
+  # this doesn't work on our code
+  # sudo pip3 install flake8
+}
+
 # Needed for the release process, but not the dev process.
 release-ubuntu-deps() {
   # For the release to run test/report.R, you need r-base-core too.
   # cloc is used for line counts
   sudo apt install r-base-core cloc
 
-  # for yaml2json
-  pip2 install pyyaml
+  install-py-libs
 }
 
 show-r() {
@@ -103,7 +118,6 @@ _install-new-r() {
 install-new-r() {
   sudo $0 _install-new-r "$@"
 }
-
 
 # Helper
 gen-asdl-py() {

@@ -12,12 +12,6 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source build/common.sh
 
-# ubuntu names
-install-flake8() {
-  sudo apt install python-pip
-  pip install flake8
-}
-
 get-cpplint() {
   mkdir -p _tmp
   wget --directory _tmp \
@@ -111,7 +105,15 @@ all-oil-parse() {
 }
 
 bin-flake8() {
-  local ubuntu_flake8=~/.local/bin/flake8 
+  # pip2 puts it here
+  local ubuntu_flake8=~/.local/bin/flake8
+
+  # pip3 for Python 3 puts it here
+  #local ubuntu_flake8=/usr/local/bin/flake8 
+
+  # This is another Python 3 version
+  #local ubuntu_flake8=/usr/bin/flake8
+
   if test -f "$ubuntu_flake8"; then
     $ubuntu_flake8 "$@"
   else

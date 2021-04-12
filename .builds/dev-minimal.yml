@@ -19,7 +19,7 @@ packages:
   - python-setuptools  # travis doesn't need this?
   - python-pip
 
-  # Python3 for flake8
+  # Python3 for mypy
   - python3-setuptools
   - python3-pip
 

@@ -19,11 +19,11 @@ echo "y: $y"
 
 var list2 = mylist + [4, 5]
 
-# This prints [1,2,3,4,5], not sure if we want a different representation
-echo $list2
+# TODO: $json(list) should print [1,2,3,4,5]?
+#echo $list2
 
 # This is a more explicit representation.
-pp .cell  list2
+pp cell list2
 
 str1='shell string'  # traditinoal shell-style assignment
 
