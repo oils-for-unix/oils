@@ -19,6 +19,7 @@
 #
 # Shortcut for below: $0 auto-machine1
 #
+#   TODO: Make sure benchmark-data directory is clean!
 #   sudo -k; sudo true  # clear and re-cache credentials
 #   $0 build-and-test  # build FINAL tarball, run unit/osh2oil suites, etc.
 #     prereq: build/codegen.sh {download,install}-re2c

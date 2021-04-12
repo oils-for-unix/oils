@@ -26,6 +26,7 @@ manifest() {
     build/common.sh \
     build/mycpp.sh \
     cpp/ \
+    mycpp/common.sh \
     mycpp/mylib.{cc,h} \
     mycpp/gc_heap.{cc,h} \
     mycpp/my_runtime.{cc,h} \

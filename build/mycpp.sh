@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./mycpp.sh <function name>
+#   build/mycpp.sh <function name>
 
 set -o nounset
 set -o pipefail
