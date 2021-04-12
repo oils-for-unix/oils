@@ -120,57 +120,52 @@ ParserReport = function(in_dir, out_dir) {
     mutate(elapsed_ms = elapsed_secs * 1000,
            lines_per_ms = num_lines / elapsed_ms) %>%
     select(-c(elapsed_secs)) ->
-    all_times
+    joined_times
 
   #print(head(times))
   #print(head(lines))
   #print(head(vm))
-  #print(head(all_times))
+  #print(head(joined_times))
 
-  print(summary(all_times))
+  print(summary(joined_times))
 
   #
   # Find distinct shells and hosts, and label them for readability.
   #
 
-  distinct_hosts = DistinctHosts(all_times)
+  distinct_hosts = DistinctHosts(joined_times)
   Log('')
   Log('Distinct hosts')
   print(distinct_hosts)
 
-  distinct_shells = DistinctShells(all_times)
+  distinct_shells = DistinctShells(joined_times)
   Log('')
   Log('Distinct shells')
   print(distinct_shells)
 
   # Replace name/hash combinations with labels.
-  all_times %>%
+  joined_times %>%
     left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
     left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
     select(-c(host_name, host_hash, shell_name, shell_hash)) ->
-    all_times
+    joined_times
 
   # Like 'times', but do shell_label as one step
   distinct_shells = DistinctShells(cachegrind)
   cachegrind %>%
     left_join(lines, by = c('path')) %>%
-    # It would be nice if the HTML table could display "thousands of irefs" as
-    # well as the exact number.  TODO: add something like the _HREF convention.
-    mutate(elapsed_ms = elapsed_secs * 1000,
-           lines_per_ms = num_lines / elapsed_ms,
-           thousand_irefs_per_line = irefs / num_lines / 1000) %>%
-    select(-c(elapsed_secs, irefs)) %>%
+    select(-c(elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>% 
     left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
     select(-c(shell_name, shell_hash)) ->
-    all_cachegrind
+    joined_cachegrind
 
-  Log('summary(all_times):')
-  print(summary(all_times))
-  Log('head(all_times):')
-  print(head(all_times))
+  Log('summary(joined_times):')
+  print(summary(joined_times))
+  Log('head(joined_times):')
+  print(head(joined_times))
 
   # Summarize rates by platform/shell
-  all_times %>%
+  joined_times %>%
     mutate(host_label = paste("host", host_label)) %>%
     group_by(host_label, shell_label) %>%
     summarize(total_lines = sum(num_lines), total_ms = sum(elapsed_ms)) %>%
@@ -179,13 +174,21 @@ ParserReport = function(in_dir, out_dir) {
     spread(key = host_label, value = lines_per_ms) %>%
     # sort by parsing rate on the fast machine
     arrange(desc(`host lisa`)) ->
-    shell_summary
+    times_summary
 
-  Log('shell_summary:')
-  print(shell_summary)
+  Log('times_summary:')
+  print(times_summary)
+
+  # Summarize cachegrind by platform/shell
+  joined_cachegrind %>%
+    group_by(shell_label) %>%
+    summarize(total_lines = sum(num_lines), total_irefs = sum(irefs)) %>%
+    mutate(thousand_irefs_per_line = total_irefs / total_lines / 1000) %>%
+    select(-c(total_irefs)) ->
+    cachegrind_summary
 
   # Elapsed seconds for each shell by platform and file
-  all_times %>%
+  joined_times %>%
     select(-c(lines_per_ms, user_secs, sys_secs, max_rss_KiB)) %>% 
     spread(key = shell_label, value = elapsed_ms) %>%
     arrange(host_label, num_lines) %>%
@@ -201,7 +204,7 @@ ParserReport = function(in_dir, out_dir) {
   print(elapsed)
 
   # Rates by file and shell
-  all_times  %>%
+  joined_times  %>%
     select(-c(elapsed_ms, user_secs, sys_secs, max_rss_KiB)) %>% 
     spread(key = shell_label, value = lines_per_ms) %>%
     arrange(host_label, num_lines) %>%
@@ -216,7 +219,7 @@ ParserReport = function(in_dir, out_dir) {
   print(rate)
 
   # Memory usage by file
-  all_times %>%
+  joined_times %>%
     select(-c(elapsed_ms, lines_per_ms, user_secs, sys_secs)) %>% 
     mutate(max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
     select(-c(max_rss_KiB)) %>%
@@ -229,13 +232,14 @@ ParserReport = function(in_dir, out_dir) {
     max_rss
 
   Log('\n')
-  Log('all_cachegrind has %d rows', nrow(all_cachegrind))
-  #print(all_cachegrind)
-  print(all_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
+  Log('joined_cachegrind has %d rows', nrow(joined_cachegrind))
+  #print(joined_cachegrind)
+  print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
 
   # Cachegrind instructions by file
-  all_cachegrind %>%
-    select(-c(elapsed_ms, lines_per_ms, user_secs, sys_secs, max_rss_KiB)) %>% 
+  joined_cachegrind %>%
+    mutate(thousand_irefs_per_line = irefs / num_lines / 1000) %>%
+    select(-c(irefs)) %>%
     spread(key = shell_label, value = thousand_irefs_per_line) %>%
     arrange(num_lines) %>%
     mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
@@ -258,7 +262,10 @@ ParserReport = function(in_dir, out_dir) {
   writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
 
   precision = ColumnPrecision(list(total_ms = 0))  # round to nearest millisecond
-  writeCsv(shell_summary, file.path(out_dir, 'summary'), precision)
+  writeCsv(times_summary, file.path(out_dir, 'summary'), precision)
+
+  precision = ColumnPrecision(list(), default = 1)
+  writeTsv(cachegrind_summary, file.path(out_dir, 'cachegrind_summary'), precision)
 
   # Round to nearest millisecond, but the ratio has a decimal point.
   precision = ColumnPrecision(list(osh_to_bash_ratio = 1), default = 0)

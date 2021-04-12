@@ -371,30 +371,41 @@ We run `$sh -n $file` for various files under various shells.  This means that
 shell startup time is included in the elapsed time measurements, but long files
 are chosen to minimize its effect.
 
-### Average Parsing Rate, Measured on Two Machines (lines/ms)</h3>
-EOF
-  csv2html $in_dir/summary.csv
+### Summary
 
-  cmark <<EOF
-  ### Instructions Per Line (cachegrind)
+#### Instructions Per Line (cachegrind)
 
 Lower numbers are generally better, but each shell recognizes a different
 language, and Oil uses a more thorough parsing algorithm.  In **thousands** of
 "I refs".
 
 EOF
+  tsv2html $in_dir/cachegrind_summary.tsv
+
+  cmark <<'EOF'
+
+(zsh isn't measured because `zsh -n` unexpectedly forks.)
+
+#### Average Parsing Rate, Measured on Two Machines (lines/ms)
+EOF
+  csv2html $in_dir/summary.csv
+
+  cmark <<EOF
+### Breakdown By File
+
+### Instructions Per Line (in thousands)
+
+EOF
   tsv2html $in_dir/instructions.tsv
 
   cmark<<EOF
 
-### Parse Time Breakdown by File</h3>
-
-#### Elasped Time in milliseconds
+#### Elasped Time (milliseconds)
 EOF
   csv2html $in_dir/elapsed.csv
 
   cmark <<EOF
-#### Parsing Rate in lines/millisecond
+  #### Parsing Rate (lines/ms)
 EOF
   csv2html $in_dir/rate.csv
 
