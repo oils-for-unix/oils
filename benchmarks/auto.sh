@@ -50,8 +50,11 @@ osh-parser-quick() {
     "${OTHER_SHELLS[@]}" $osh_eval python)
   prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $osh_eval)
 
+  # normally done on one machine
+  benchmarks/osh-parser.sh measure $prov $base_dir/osh-parser
+
+  # normally done on 2 machines
   benchmarks/osh-parser.sh measure-cachegrind $c_prov $base_dir/osh-parser
-  #benchmarks/osh-parser.sh measure $prov $base_dir/osh-parser
 }
 
 osh-parser-dup-testdata() {

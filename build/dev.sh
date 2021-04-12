@@ -63,8 +63,8 @@ r-packages() {
   # R_LIBS_USER.  Or library(dplyr, lib.loc = "~/R", but the former is preferable.
   mkdir -p ~/R
 
-  # TODO: All of these fail on Xenial, e.g. as of dplyr 1.0.3 in January 2021!
-  # Not hermetic!
+  # Note: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  See R 4.0
+  # installation below.
   INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
 }
 
@@ -96,6 +96,7 @@ _install-new-r() {
   add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran40/'
 
   # Hm I had to run this manually and I got R 4.0
+  # 2021-04: Hm this had to be run twice
   apt install --no-install-recommends r-base
 }
 
