@@ -51,7 +51,7 @@ osh-parser-quick() {
   prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $osh_eval)
 
   benchmarks/osh-parser.sh measure-cachegrind $c_prov $base_dir/osh-parser
-  benchmarks/osh-parser.sh measure $prov $base_dir/osh-parser
+  #benchmarks/osh-parser.sh measure $prov $base_dir/osh-parser
 }
 
 osh-parser-dup-testdata() {

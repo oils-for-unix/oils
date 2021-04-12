@@ -5,7 +5,12 @@
 # The 'app-deps' and 'runpy-deps' build steps require this.
 #
 # Usage:
-#   ./prepare.sh <function name>
+#   build/prepare.sh <function name>
+#
+# Example:
+#
+#   build/prepare.sh configure
+#   build/prepare.sh build-python
 
 set -o nounset
 set -o pipefail

@@ -403,9 +403,9 @@ echo $b
 setvar b = 0 not in d
 echo $b
 ## STDOUT:
-True
-False
-True
+true
+false
+true
 ## END
 
 #### Chained Comparisons
@@ -559,9 +559,9 @@ echo $c
 # TODO: These should be spelled 'false' 'false' 'true'?
 
 ## STDOUT:
-False
-False
-True
+false
+false
+true
 ## END
 
 #### x if b else y

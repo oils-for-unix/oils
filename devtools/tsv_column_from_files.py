@@ -41,6 +41,14 @@ def Options():
 def main(argv):
   (opts, child_argv) = Options().parse_args(argv[1:])
 
+  # tsv_column_from_files.py \
+  #   --path-column cachegrind_out_path  \
+  #   --new-column I_refs \
+  #   --file-regex 'I[ ]*refs:[ ]+([\d,]+)' \  # it extracts the first group
+  #   foo.tsv 
+  #
+  # NOTE: QTT can allow the commas
+
   path_col_name = argv[1]
   new_col_name = argv[2]
   pattern = argv[3]  # re.search

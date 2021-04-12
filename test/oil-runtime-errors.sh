@@ -94,6 +94,8 @@ oil_word_eval() {
 
   # this should be consistent
   _error-case 'write -- @identity([{key: "val"}])'
+
+  _error-case 'const x = [1, 2]; echo $x'
 }
 
 _run-test() {

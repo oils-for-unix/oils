@@ -7,8 +7,8 @@ var a = Bool( %() )
 var b = Bool( %(foo) )
 write $a $b
 ## STDOUT:
-False
-True
+false
+true
 ## END
 
 #### Int()
@@ -41,19 +41,13 @@ write $a $b
 ## END
 
 #### Tuple()
-# TODO: more testing
+
+# TODO: does Oil have tuples?  I think I want to defer this.
+
 var a = Tuple()
 write $a
 ## STDOUT:
 ()
-## END
-
-#### List()
-# TODO: more testing
-var a = List(range(3))
-write $a
-## STDOUT:
-[0, 1, 2]
 ## END
 
 #### Dict()
@@ -103,13 +97,13 @@ var x3 = any( %('' '') )
 write $x1 $x2 $x3
 
 ## STDOUT:
-True
-False
-False
+true
+false
+false
 __
-True
-True
-False
+true
+true
+false
 ## END
 
 #### sum()
@@ -143,7 +137,6 @@ write @x
 ## END
 
 #### enumerate()
-write $enumerate
 # TODO: need new for loop syntax
 for (i, a in enumerate( %(a b c) )) {
   write $i $a

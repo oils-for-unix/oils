@@ -50,3 +50,18 @@ str identity
 bool expr true
 bool splice true
 ## END
+
+#### echo $x for various types
+const mybool = true
+const myint = 42
+const myfloat = 3.14
+
+echo $mybool
+echo $myint
+echo $myfloat
+
+## STDOUT:
+true
+42
+3.14
+## END

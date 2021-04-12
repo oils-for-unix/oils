@@ -42,6 +42,8 @@ from osh import glob_
 from osh import string_ops
 from osh import word_
 from osh import word_compile
+if mylib.PYTHON:
+  from oil_lang import objects
 
 from typing import Optional, Tuple, List, Dict, Any, cast, TYPE_CHECKING
 
@@ -114,6 +116,25 @@ def _BackslashEscape(s):
   return s.replace('\\', '\\\\')
 
 
+if mylib.PYTHON:
+  def _Stringify(py_val):
+    # type: (Any) -> str
+    """ For predictably converting between Python objects and strings.
+
+    We don't want to tie our sematnics to the Python interpreter too much.
+    """
+    if isinstance(py_val, bool):
+      return 'true' if py_val else 'false'  # Use JSON spelling
+
+    if isinstance(py_val, objects.Regex):  # TODO: This should be a variant of value_t?
+      return py_val.AsPosixEre()
+
+    if not isinstance(py_val, (int, float, str)):
+      e_die("Expected function to return a bool, int, float, or string.  Got %s", type(py_val))
+
+    return str(py_val)
+
+
 def _ValueToPartValue(val, quoted):
   # type: (value_t, bool) -> part_value_t
   """Helper for VarSub evaluation.
@@ -144,7 +165,7 @@ def _ValueToPartValue(val, quoted):
     elif case(value_e.Obj):
       if mylib.PYTHON:
         val = cast(value__Obj, UP_val)
-        return part_value.String(str(val.obj), quoted, not quoted)
+        return part_value.String(_Stringify(val.obj), quoted, not quoted)
       # Not in C++
       raise AssertionError()
 
@@ -1484,13 +1505,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           id_ = part.name.id
           if id_ == Id.VSub_DollarName:
-            s = self._Stringify(func(*pos_args, **named_args))
+            s = _Stringify(func(*pos_args, **named_args))
             part_val = part_value.String(s)  # type: part_value_t
 
           elif id_ == Id.Lit_Splice:
             # NOTE: Using iterable protocol as with @array.  TODO: Optimize
             # this so it doesn't make a copy?
-            a = [self._Stringify(item) for item in func(*pos_args, **named_args)]
+            a = [_Stringify(item) for item in func(*pos_args, **named_args)]
             part_val = part_value.Array(a)
 
           else:
@@ -1502,26 +1523,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if mylib.PYTHON:
           part = cast(word_part__ExprSub, UP_part)
           py_val = self.expr_ev.EvalExpr(part.child)
-          part_val = part_value.String(self._Stringify(py_val))
+          part_val = part_value.String(_Stringify(py_val))
           part_vals.append(part_val)
 
       else:
         raise AssertionError(part.tag_())
-
-  if mylib.PYTHON:
-    def _Stringify(self, py_val):
-      # type: (Any) -> str
-      """ For predictably converting between Python objects and strings.
-
-      We don't want to tie our sematnics to the Python interpreter too much.
-      """
-      if isinstance(py_val, bool):
-        return 'true' if py_val else 'false'  # Use JSON spelling
-
-      if not isinstance(py_val, (int, float, str)):
-        e_die("Expected function to return a bool, int, float, or string.  Got %s", type(py_val))
-
-      return str(py_val)
 
   def _EvalWordToParts(self, w, quoted, part_vals, is_subst=False):
     # type: (word_t, bool, List[part_value_t], bool) -> None
