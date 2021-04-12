@@ -3,9 +3,10 @@
 # Common functions for benchmarks.
 #
 
-# What binary the benchmarks will run.  NOTE: should be RELATIVE, because
-# there's a hack to make it absolute in benchmarks/osh-runtime.sh.  TODO:
-# consolidate with OSH_OVM in test/common.sh.
+# What binary the benchmarks will run.  It should be a RELATIVE path,
+# because there's a hack to make it absolute in benchmarks/osh-runtime.sh.
+# TODO: consolidate with OSH_OVM in test/common.sh.  This is overridden by
+# devtools/release.sh.
 readonly OSH_OVM=${OSH_OVM:-_bin/osh}
 
 readonly MACHINE1=flanders

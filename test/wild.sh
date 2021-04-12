@@ -3,12 +3,19 @@
 # Run the osh parser on shell scripts found in the wild.
 #
 # Usage:
-#   ./wild.sh <function name>
+#   test/wild.sh <function name>
 #
+# Example:
+#   test/wild.sh fetch-archive
+#   test/wild.sh extract-archive
+#   test/wild.sh manifest-from-archive
+
 # TODO:
 # - There are a lot of hard-coded source paths here.  These files could
-# published in a tarball or torrent.
+#   published in a tarball or torrent.
 # - Add gentoo
+# - This doesn't work without ~/git/other!
+#   test/wild.sh write-manifest
 
 set -o nounset
 set -o pipefail

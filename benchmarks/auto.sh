@@ -112,7 +112,6 @@ measure-shells() {
 }
 
 measure-builds() {
-  local do_cachegrind=${1:-}
   local base_dir=../benchmark-data
 
   local provenance
@@ -127,7 +126,9 @@ measure-builds() {
 all() {
   local do_cachegrind=${1:-}
 
-  # NOTE: Depends on oil-native being built
+  # Notes:
+  # - During release, this happens on machine1, but not machine2
+  # - Depends on oil-native being built
   if test -n "$do_cachegrind"; then
     cachegrind-shells '' $OSH_EVAL_BENCHMARK_DATA
     cachegrind-builds '' $OSH_EVAL_BENCHMARK_DATA

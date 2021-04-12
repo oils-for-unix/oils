@@ -103,6 +103,15 @@ auto-machine1() {
   $0 mycpp-examples
 }
 
+auto-machine2() {
+  sudo -k; sudo true  # clear and re-cache credentials
+
+  # Note: this can't be done until we sync the oil-native source from machine
+  # 1.
+  $0 benchmark-build
+  $0 benchmark-run
+}
+
 # TODO:
 # - enforce that there is a release/$VERSION branch?
 
