@@ -290,6 +290,7 @@ fake-other-host() {
 stage1-cachegrind() {
   local raw_dir=$1
   local out_dir=$2
+  local raw_data_csv=$3
 
   local -a sorted=($raw_dir/no-host.*.cachegrind.tsv)
   local tsv_in=${sorted[-1]}  # latest one
@@ -300,6 +301,8 @@ stage1-cachegrind() {
     --extract-group-1 'I[ ]*refs:[ ]*([\d,]+)' \
     --remove-commas \
     $tsv_in > $out_dir/cachegrind.tsv
+
+  echo $tsv_in >> $raw_data_csv
 }
 
 stage1() {
@@ -308,7 +311,11 @@ stage1() {
   local out=$BASE_DIR/stage1
   mkdir -p $out
 
-  stage1-cachegrind $raw_dir $out
+  # Construct a one-column CSV file
+  local raw_data_csv=$out/raw-data.csv
+  echo 'path' > $raw_data_csv
+
+  stage1-cachegrind $raw_dir $out $raw_data_csv
 
   local -a x=($raw_dir/$MACHINE1.*.virtual-memory)
   local -a y=($raw_dir/$MACHINE2.*.virtual-memory)
@@ -320,12 +327,10 @@ stage1() {
 
   csv-concat ${a[-1]} ${b[-1]} > $times_csv
 
-  # Construct a one-column CSV file
-  local raw_data_csv=$out/raw-data.csv
-  { echo 'path'
+  {
     echo ${a[-1]}
     echo ${b[-1]}
-  } > $raw_data_csv
+  } >> $raw_data_csv
 
   # Verify that the files are equal, and pass one of them.
   local lines_csv=$out/lines.csv
@@ -367,13 +372,12 @@ EOF
   cmark <<'EOF'
 ## OSH Parser Performance
 
-We run `$sh -n $file` for various files under various shells.  This means that
-shell startup time is included in the elapsed time measurements, but long files
-are chosen to minimize its effect.
+We time `$sh -n $file` for various files under various shells, and repeat then
+run under cachegrind for stable metrics.
 
 ### Summary
 
-#### Instructions Per Line (cachegrind)
+#### Instructions Per Line (via cachegrind)
 
 Lower numbers are generally better, but each shell recognizes a different
 language, and Oil uses a more thorough parsing algorithm.  In **thousands** of
@@ -387,6 +391,9 @@ EOF
 (zsh isn't measured because `zsh -n` unexpectedly forks.)
 
 #### Average Parsing Rate, Measured on Two Machines (lines/ms)
+
+Shell startup time is included in the elapsed time measurements, but long files
+are chosen to minimize its effect.
 EOF
   csv2html $in_dir/summary.csv
 
