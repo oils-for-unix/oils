@@ -100,6 +100,8 @@ ParserReport = function(in_dir, out_dir) {
   lines = read.csv(file.path(in_dir, 'lines.csv'))
   raw_data = read.csv(file.path(in_dir, 'raw-data.csv'))
 
+  cachegrind = readTsv(file.path(in_dir, 'cachegrind.tsv'))
+
   # For joining by filename
   lines_by_filename = data_frame(
       num_lines = lines$num_lines,
@@ -108,6 +110,7 @@ ParserReport = function(in_dir, out_dir) {
 
   # Remove failures
   times %>% filter(status == 0) %>% select(-c(status)) -> times
+  cachegrind %>% filter(status == 0) %>% select(-c(status)) -> cachegrind
 
   # Add the number of lines, joining on path, and compute lines/sec
   # TODO: Is there a better way compute lines_per_ms and then drop
@@ -146,6 +149,20 @@ ParserReport = function(in_dir, out_dir) {
     left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
     select(-c(host_name, host_hash, shell_name, shell_hash)) ->
     all_times
+
+  # Like 'times', but do shell_label as one step
+  distinct_shells = DistinctShells(cachegrind)
+  cachegrind %>%
+    left_join(lines, by = c('path')) %>%
+    # It would be nice if the HTML table could display "thousands of irefs" as
+    # well as the exact number.  TODO: add something like the _HREF convention.
+    mutate(elapsed_ms = elapsed_secs * 1000,
+           lines_per_ms = num_lines / elapsed_ms,
+           thousand_irefs_per_line = irefs / num_lines / 1000) %>%
+    select(-c(elapsed_secs, irefs)) %>%
+    left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
+    select(-c(shell_name, shell_hash)) ->
+    all_cachegrind
 
   Log('summary(all_times):')
   print(summary(all_times))
@@ -194,8 +211,12 @@ ParserReport = function(in_dir, out_dir) {
              num_lines, filename, filename_HREF)) ->
     rate
 
+  Log('\n')
+  Log('RATE')
+  print(rate)
+
   # Memory usage by file
-  all_times  %>%
+  all_times %>%
     select(-c(elapsed_ms, lines_per_ms, user_secs, sys_secs)) %>% 
     mutate(max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
     select(-c(max_rss_KiB)) %>%
@@ -208,8 +229,23 @@ ParserReport = function(in_dir, out_dir) {
     max_rss
 
   Log('\n')
-  Log('RATE')
-  print(rate)
+  Log('all_cachegrind has %d rows', nrow(all_cachegrind))
+  #print(all_cachegrind)
+  print(all_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
+
+  # Cachegrind instructions by file
+  all_cachegrind %>%
+    select(-c(elapsed_ms, lines_per_ms, user_secs, sys_secs, max_rss_KiB)) %>% 
+    spread(key = shell_label, value = thousand_irefs_per_line) %>%
+    arrange(num_lines) %>%
+    mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
+    select(c(bash, dash, mksh, `oil-native`,
+             num_lines, filename, filename_HREF)) ->
+    instructions
+
+  Log('\n')
+  Log('instructions has %d rows', nrow(instructions))
+  print(instructions)
 
   WriteDetails(distinct_hosts, distinct_shells, out_dir)
 
@@ -217,7 +253,7 @@ ParserReport = function(in_dir, out_dir) {
     filename = basename(as.character(raw_data$path)),
     filename_HREF = benchmarkDataLink('osh-parser', filename, '')
   )
-  print(raw_data_table)
+  #print(raw_data_table)
 
   writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
 
@@ -229,6 +265,9 @@ ParserReport = function(in_dir, out_dir) {
   writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeCsv(rate, file.path(out_dir, 'rate'))
   writeCsv(max_rss, file.path(out_dir, 'max_rss'))
+
+  precision = ColumnPrecision(list(), default = 1)
+  writeTsv(instructions, file.path(out_dir, 'instructions'), precision)
 
   Log('Wrote %s', out_dir)
 }

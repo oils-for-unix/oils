@@ -146,10 +146,10 @@ print-tasks() {
   # Add 1 field for each of 5 fields.
   cat $provenance | filter-provenance "$@" |
   while read fields; do
-    #cat $SORTED | xargs -n 1 -- echo "$fields"
+    cat $SORTED | xargs -n 1 -- echo "$fields"
 
-    # As a quick test
-    head -n 2 $SORTED | xargs -n 1 -- echo "$fields"
+    # Quick test
+    #head -n 2 $SORTED | xargs -n 1 -- echo "$fields"
   done
 }
 
@@ -251,7 +251,11 @@ measure-cachegrind() {
     > $cachegrind_tsv
 
   local ctasks=$BASE_DIR/cachegrind-tasks.txt
-  print-tasks $provenance "${OTHER_SHELLS[@]}" $osh_eval > $ctasks
+
+  # zsh weirdly forks during zsh -n, which complicates our cachegrind
+  # measurement.  So just ignore it.  (This can be seen with
+  # strace -e fork -f -- zsh -n $file)
+  print-tasks $provenance bash dash mksh $osh_eval > $ctasks
 
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $raw_dir
 
@@ -283,11 +287,28 @@ fake-other-host() {
 # Data Preparation and Analysis
 #
 
+stage1-cachegrind() {
+  local raw_dir=$1
+  local out_dir=$2
+
+  local -a sorted=($raw_dir/no-host.*.cachegrind.tsv)
+  local tsv_in=${sorted[-1]}  # latest one
+
+  devtools/tsv_column_from_files.py \
+    --new-column irefs \
+    --path-column cachegrind_out_path \
+    --extract-group-1 'I[ ]*refs:[ ]*([\d,]+)' \
+    --remove-commas \
+    $tsv_in > $out_dir/cachegrind.tsv
+}
+
 stage1() {
   local raw_dir=${1:-$BASE_DIR/raw}
 
   local out=$BASE_DIR/stage1
   mkdir -p $out
+
+  stage1-cachegrind $raw_dir $out
 
   local -a x=($raw_dir/$MACHINE1.*.virtual-memory)
   local -a y=($raw_dir/$MACHINE2.*.virtual-memory)
@@ -354,7 +375,18 @@ are chosen to minimize its effect.
 EOF
   csv2html $in_dir/summary.csv
 
+  cmark <<EOF
+  ### Instructions Per Line (cachegrind)
+
+Lower numbers are generally better, but each shell recognizes a different
+language, and Oil uses a more thorough parsing algorithm.  In **thousands** of
+"I refs".
+
+EOF
+  tsv2html $in_dir/instructions.tsv
+
   cmark<<EOF
+
 ### Parse Time Breakdown by File</h3>
 
 #### Elasped Time in milliseconds
@@ -369,8 +401,8 @@ EOF
   cmark <<EOF
 ### Memory Usage (Max Resident Set Size in MB)
 
-Note that Oil uses a **different algorithm** than POSIX shells.  It builds an
-AST in memory rather than just validating the code line-by-line.
+Again, Oil uses a **different algorithm** (and language) than POSIX shells.  It
+builds an AST in memory rather than just validating the code line-by-line.
 EOF
   csv2html $in_dir/max_rss.csv
 

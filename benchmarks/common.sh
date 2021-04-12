@@ -53,11 +53,11 @@ tsv-concat() { devtools/csv_concat.py "$@"; }
 
 # For compatibility, if cell starts with 'osh', apply the 'special' CSS class.
 csv2html() {
-  web/table/csv2html.py --css-class-pattern 'special ^osh' "$@";
+  web/table/csv2html.py --css-class-pattern 'special ^osh' "$@"
 }
 
 tsv2html() {
-  web/table/csv2html.py --tsv "$@";
+  web/table/csv2html.py --tsv "$@"
 }
 
 # Need an absolute path here.

@@ -21,6 +21,19 @@ import re
 import sys
 
 
+def _PrintNewRow(row, path_col_index, new_val):
+  """Print a row, replacing the cell in one column."""
+  for i, cell in enumerate(row):
+    if i != 0:
+      print('\t', end='')
+
+    if i == path_col_index:
+      print(new_val, end='')
+    else:
+      print(row[i], end='')
+  print()
+
+
 def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser('tsv_column_from_files.py FLAG* FILE')
@@ -33,6 +46,9 @@ def Options():
   p.add_option(
       '--extract-group-1', dest='extract_group_1',
       help="Search the file contents for this Python regex.  Then extract the first group")
+  p.add_option(
+      '--remove-commas', dest='remove_commas', action='store_true',
+      help='Remove commas from the value after --extract-group1')
   return p
 
 
@@ -68,7 +84,7 @@ def main(argv):
           path_col_index = row.index(opts.path_column)
         except ValueError:
           raise RuntimeError('%r not found in %r' % (opts.path_column, row))
-        print('%s\t%s' % (line, opts.new_column))
+        _PrintNewRow(row, path_col_index, opts.new_column)
         continue  # skip to first row
 
       assert path_col_index != -1
@@ -83,12 +99,17 @@ def main(argv):
           if not m:
             raise RuntimeError("Couldn't find %r in %r" % (opts.extract_group_1, contents))
           val = m.group(1)
+
+          if opts.remove_commas:  # annoying hack for cachegrind output
+            val = val.replace(',', '')
+
           #print(repr(val))
         else:
           val = contents  # just use the whole file
       if '\t' in val or '\n' in val:
         raise RuntimeError("Found tab or newline in TSV cell %r" % val)
-      print('%s\t%s' % (line, val))
+
+      _PrintNewRow(row, path_col_index, val)
 
   return 0
 
