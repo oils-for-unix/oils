@@ -43,13 +43,7 @@ examples() {
 run-for-release() {
   # invoked by devtools/release.sh
 
-  rm --verbose -r -f _ninja
   all-ninja
-
-  # Note: harness.sh benchmark-all creates ../_tmp/mycpp-examples/raw/times.tsv
-  # It compares C++ and Python.
-  #
-  # We have _ninja/benchmark-table.tsv instead
 }
 
 #

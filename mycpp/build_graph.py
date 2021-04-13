@@ -213,8 +213,8 @@ def main(argv):
   n.newline()
   n.rule('example-task',
          # note: $out can be MULTIPLE FILES, shell-quoted
-         command='./build-steps.sh example-task $name $impl $main_py $out',
-         description='example-task $name $impl $main_py $out')
+         command='./build-steps.sh example-task $name $impl $bin $out',
+         description='example-task $name $impl $bin $out')
   n.newline()
   n.rule('typecheck',
          command='./build-steps.sh typecheck $main_py $out',
@@ -340,7 +340,7 @@ def main(argv):
       n.build([task_out, log_out], 'example-task',
               EXAMPLES_PY.get(ex, []) + ['examples/%s.py' % ex],
               variables=[
-                  ('main_py', main_py),
+                  ('bin', main_py),
                   ('name', ex), ('impl', 'Python')])
 
       n.newline()
@@ -411,7 +411,7 @@ def main(argv):
       n.build([task_out, log_out], 'example-task',
               '_ninja/bin/examples/%s.%s' % (ex, variant),
               variables=[
-                ('main_py', main_py),
+                ('bin', '_ninja/bin/examples/%s.%s' % (ex, variant)),
                 ('name', ex), ('impl', 'C++')])
       n.newline()
 
