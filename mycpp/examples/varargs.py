@@ -56,17 +56,24 @@ def run_tests():
   # p_die(CONST, span_id=-1)
 
   # Keyword args give location info for X_die()
-  span_id = 123
-  p_die('hello %d %s', 3, "PP", span_id=span_id)
+  # Just make sure these COMPILE.  We're not catching error::Parse or
+  # error::FatalRuntime here.
+  if 0:
+    span_id = 123
+    p_die('hello %d %s', 3, "PP", span_id=span_id)
 
-  # No keyword arguments
-  e_die('hello %d', 42)
-  e_die('hello')
+    # No keyword arguments
+    e_die('hello %d', 42)
+    e_die('hello')
 
 
 def run_benchmarks():
   # type: () -> None
-  pass
+
+  # Test the interpreted format strings vs. the compiler!
+  # This might not be enough to get over startup time
+  for i in xrange(1000):
+    log("[%%] %d %s", 42, "LL")
 
 
 if __name__ == '__main__':
