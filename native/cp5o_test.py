@@ -8,23 +8,23 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import print_function
 """
-c5po_test.py: Tests for c5po.py
+cp5o_test.py: Tests for cp5o.py
 """
 import unittest
 import socket
 import sys
 
-import c5po
+import cp5o
 
-class c5poTest(unittest.TestCase):
+class cp5oTest(unittest.TestCase):
 
   def testSend(self):
     left, right = socket.socketpair()
     print(left)
     print(right)
 
-    print(c5po.receive(42))
-    print(c5po.send(0, b'foo'))
+    print(cp5o.receive(42))
+    print(cp5o.send(0, b'foo'))
 
 
 if __name__ == '__main__':

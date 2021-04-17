@@ -295,11 +295,11 @@ pylibc() {
   native/libc_test.py "$@" > /dev/null
 }
 
-c5po() {
-  rm -f c5po.so
+cp5o() {
+  rm -f cp5o.so
 
-  py-ext c5po build/setup_c5po.py
-  native/c5po_test.py "$@" #> /dev/null
+  py-ext cp5o build/setup_cp5o.py
+  native/cp5o_test.py "$@" #> /dev/null
 }
 
 fastlex() {
@@ -397,7 +397,7 @@ _minimal() {
   find-grammar
 
   pylibc
-  c5po
+  cp5o
   line-input
   posix_
 

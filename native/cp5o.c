@@ -77,8 +77,8 @@ static PyMethodDef methods[] = {
 
 static PyObject *errno_error;
 
-void initc5po(void) {
-  Py_InitModule("c5po", methods);
-  errno_error = PyErr_NewException("c5po.error",
+void initcp5o(void) {
+  Py_InitModule("cp5o", methods);
+  errno_error = PyErr_NewException("cp5o.error",
                                     PyExc_IOError, NULL);
 }
