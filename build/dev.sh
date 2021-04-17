@@ -295,6 +295,13 @@ pylibc() {
   native/libc_test.py "$@" > /dev/null
 }
 
+c5po() {
+  rm -f c5po.so
+
+  py-ext c5po build/setup_c5po.py
+  native/c5po_test.py "$@" #> /dev/null
+}
+
 fastlex() {
   build/codegen.sh ast-id-lex
 
@@ -390,6 +397,7 @@ _minimal() {
   find-grammar
 
   pylibc
+  c5po
   line-input
   posix_
 
