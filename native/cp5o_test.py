@@ -16,15 +16,51 @@ import sys
 
 import cp5o
 
+
+def netstring_encode(s):
+  return b'%d:%s,' % (len(s), s)
+
+
 class cp5oTest(unittest.TestCase):
 
   def testSend(self):
+    print('___ c5po.send ___')
     left, right = socket.socketpair()
     print(left)
     print(right)
 
-    print(cp5o.receive(42))
-    print(cp5o.send(0, b'foo'))
+    print(cp5o.send(left.fileno(), b'foo'))
+    print(cp5o.send(left.fileno(), b'bar', 
+      sys.stdin.fileno(), sys.stdout.fileno(), sys.stderr.fileno()))
+
+    # Read what we wrote
+    received = right.recv(20)
+    print(received)
+
+  def testReceive(self):
+    print('___ c5po.receive ___')
+    left, right = socket.socketpair()
+
+    if 1:
+      left.send(netstring_encode('spam'))
+
+      fd_out = []
+      msg = cp5o.receive(right.fileno(), fd_out)
+      print("msg = %r" % msg)
+      print('fd_out = %s' % fd_out)
+      return
+
+    # This is OK
+    left.send(b'000001234:foo,')
+
+    # This is too long
+    # left.send(b'0000012345:foo,')
+
+    fd_out = []
+    msg = cp5o.receive(right.fileno(), fd_out)
+    print("msg = %r" % msg)
+    print('fd_out = %s' % fd_out)
+
 
 
 if __name__ == '__main__':
