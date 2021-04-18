@@ -11,8 +11,8 @@
 #include <assert.h>  // va_list, etc.
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // printf
-#include <limits.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 
 #include <Python.h>
 
@@ -27,7 +27,9 @@ static void debug(const char* fmt, ...) {
 #endif
 }
 
-void recv_helper(int sock_fd, char *msg, size_t *msg_len, PyObject *fd_out) {
+ssize_t recv_helper(int sock_fd, int num_bytes, char *buf, PyObject *fd_out) {
+  // TODO: Call recvmsg() instead!
+  return recv(sock_fd, buf, num_bytes, 0);
 }
 
 static PyObject *
@@ -49,8 +51,9 @@ func_receive(PyObject *self, PyObject *args) {
   // Receive with netstring encoding
   char buf[10];  // up to 9 digits, then :
   char* p = buf;
+  size_t n;
   for (int i = 0; i < 10; ++i) {
-    ssize_t n = recv(sock_fd, p, 1, 0);
+    n = recv(sock_fd, p, 1, 0);
     if (n != 1) {
       debug("n = %d", n);
       PyErr_SetString(PyExc_RuntimeError, "recv(1) failed");
@@ -76,20 +79,37 @@ func_receive(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  *p = '\0';  // NUL terminate
-  int num_bytes = atoi(buf);
+  *p = '\0';  // change : to NUL terminator
+  int expected_bytes = atoi(buf);
 
-  debug("num_bytes = %d", num_bytes);
+  debug("expected_bytes = %d", expected_bytes);
 
-  // TODO: allocate this
-  char *msg;
-  int msg_len = 0;
-  while (1) {
-    recv_helper(sock_fd, &msg, &msg_len, fd_out);
+  char *msg = malloc(expected_bytes + 1);
+  msg[expected_bytes] = '\0';
+
+  n = 0;
+  while (n < expected_bytes) {
+    ssize_t bytes_read = recv_helper(sock_fd, expected_bytes - n, msg + n,
+                                     fd_out);
+    debug("bytes_read = %d", bytes_read);
+    n += bytes_read;
     break;
   }
 
-  Py_RETURN_NONE;
+  assert(n == expected_bytes);
+  debug("msg = %s", msg);
+
+  n = recv(sock_fd, buf, 1, 0 /*flags*/);
+  if (n != 1) {
+    PyErr_SetString(PyExc_RuntimeError, "recv(1) failed");
+    return NULL;
+  }
+  if (buf[0] != ',') {
+    PyErr_SetString(PyExc_RuntimeError, "Expected ,");
+    return NULL;
+  }
+
+  return PyString_FromStringAndSize(msg, expected_bytes);
 }
 
 static PyObject *
@@ -130,7 +150,7 @@ func_send(PyObject *self, PyObject *args) {
   }
 
   int num_bytes;
-  if (num_bytes = send(sock_fd, msg, msg_len, 0) < 0) {  // send 'foo'
+  if ((num_bytes = send(sock_fd, msg, msg_len, 0)) < 0) {  // send 'foo'
     goto send_error;
   }
 
