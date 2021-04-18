@@ -14,30 +14,83 @@ import unittest
 import socket
 import sys
 
-import cp5o
+from core.pyerror import log
+
+import cp5o  # module under test
 
 
 def netstring_encode(s):
   return b'%d:%s,' % (len(s), s)
 
 
+def netstring_receive(sock):
+  """Plain decoder that IGNORES file descriptors.
+
+  Using pure Python libs is a useful sanity check on the protocol.
+  (Python 2 doesn't have recvmsg()).
+  """
+  len_buf = []
+  while True:
+    byte = sock.recv(1)
+    #log('byte = %r', byte)
+
+    if len(byte) == 0:
+      raise RuntimeError('Expected a netstring length byte')
+
+    if byte == b':':
+      break
+
+    if b'0' <= byte and byte <= b'9':
+      len_buf.append(byte)
+    else:
+      raise RuntimeError('Invalid netstring length byte %r' % byte)
+
+  num_bytes = int(b''.join(len_buf))
+  log('num_bytes = %d', num_bytes)
+
+  # +1 for the comma
+  n = num_bytes
+  msg = b''
+  #fd_list = []
+
+  while n > 0:
+    chunk = sock.recv(n)
+    log("chunk %r", chunk)
+
+    msg += chunk
+    n -= len(chunk)
+
+    if len(msg) == n:
+      break
+
+  byte = sock.recv(1)
+  if byte != b',':
+    raise RuntimeError('Expected ,')
+
+  return msg
+
+
 class cp5oTest(unittest.TestCase):
 
   def testSend(self):
+    """Send with our cp50 library; receive with Python stdlib."""
+
     print('\n___ c5po.send ___')
     left, right = socket.socketpair()
     print(left)
     print(right)
 
     print(cp5o.send(left.fileno(), b'foo'))
-    print(cp5o.send(left.fileno(), b'bar', 
+    print(cp5o.send(left.fileno(), b'https://www.oilshell.org/', 
       sys.stdin.fileno(), sys.stdout.fileno(), sys.stderr.fileno()))
 
-    # Read what we wrote
-    received = right.recv(20)
-    print('received %r' % received)
+    msg = netstring_receive(right)
+    self.assertEqual('foo', msg)
+    msg = netstring_receive(right)
+    self.assertEqual('https://www.oilshell.org/', msg)
 
   def testReceive(self):
+    """Send with Python; received our cp50 library"""
     print('\n___ c5po.receive ___')
     left, right = socket.socketpair()
 
@@ -56,17 +109,55 @@ class cp5oTest(unittest.TestCase):
     print("py msg = %r" % msg)
     print('fd_out = %s' % fd_out)
 
-    return
+  def testReceiveErrors(self):
+    left, right = socket.socketpair()
+
+    # TODO: test invalid netstring cases
+    # Instead of RuntimeError they sould be cp5o.error?
+    # Instead of 'OK' you return
+    # 'cp5o ERROR: Invalid netstring'
 
     # This is OK
-    left.send(b'000001234:foo,')
-
-    # This is too long
-    # left.send(b'0000012345:foo,')
+    left.send(b'000000003:foo,')
 
     fd_out = []
     msg = cp5o.receive(right.fileno(), fd_out)
     print("msg = %r" % msg)
+    print('fd_out = %s' % fd_out)
+
+    # This is too long
+    left.send(b'0000000003:foo,')
+
+    # TODO: Change RuntimeError
+    return
+    fd_out = []
+    msg = cp5o.receive(right.fileno(), fd_out)
+    print("msg = %r" % msg)
+    print('fd_out = %s' % fd_out)
+
+  def testSendReceive(self):
+    """Send and received with our cp50 library"""
+    print('\n___ testSendReceive ___')
+
+    left, right = socket.socketpair()
+
+    print(cp5o.send(left.fileno(), b'foo'))
+    print(cp5o.send(left.fileno(), b'https://www.oilshell.org/', 
+      sys.stdin.fileno(), sys.stdout.fileno(), sys.stderr.fileno()))
+
+    fd_out = []
+    msg = cp5o.receive(right.fileno(), fd_out)
+    self.assertEqual('foo', msg)
+    self.assertEqual([], fd_out)
+    print("py msg = %r" % msg)
+    print('fd_out = %s' % fd_out)
+
+    del fd_out[:]
+    msg = cp5o.receive(right.fileno(), fd_out)
+    self.assertEqual('https://www.oilshell.org/', msg)
+    self.assertEqual(3, len(fd_out))
+
+    print("py msg = %r" % msg)
     print('fd_out = %s' % fd_out)
 
 
