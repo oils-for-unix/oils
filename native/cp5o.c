@@ -8,9 +8,9 @@
 //   - It's currently hard-coded in pyconfig.h.
 #define _GNU_SOURCE 1
 
-#include <assert.h>  // va_list, etc.
+#include <assert.h>
 #include <stdarg.h>  // va_list, etc.
-#include <stdio.h>  // printf
+#include <stdio.h>  // vfprintf
 #include <stdlib.h>
 #include <sys/socket.h>
 
@@ -18,7 +18,7 @@
 
 // Log messages to stderr.
 static void debug(const char* fmt, ...) {
-#if 1
+#if 0
   va_list args;
   va_start(args, fmt);
   vfprintf(stderr, fmt, args);
@@ -27,11 +27,17 @@ static void debug(const char* fmt, ...) {
 #endif
 }
 
+static PyObject *io_error;
+static PyObject *cp5o_error;
+
 // same as 'sizeof fds' in send()
 #define NUM_FDS 3
 #define SIZEOF_FDS (sizeof(int) * NUM_FDS)
 
-ssize_t recv_helper(int sock_fd, int num_bytes, char *buf, PyObject *fd_out) {
+// Helper that calls recvmsg() once.
+PyObject* recv_fds_once(
+    int sock_fd, int num_bytes,
+    char *buf, int* buf_len, PyObject *fd_out) {
   // Where to put data
   struct iovec iov = {0};
   iov.iov_base = buf;
@@ -50,18 +56,18 @@ ssize_t recv_helper(int sock_fd, int num_bytes, char *buf, PyObject *fd_out) {
 
   size_t bytes_read = recvmsg(sock_fd, &msg, 0);
   if (bytes_read < 0) {
-    PyErr_SetString(PyExc_RuntimeError, strerror(errno));
-    return NULL;
+    return PyErr_SetFromErrno(io_error);
   }
+  *buf_len = bytes_read;
 
   struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
   if (cmsg && cmsg->cmsg_len == CMSG_LEN(SIZEOF_FDS)) {
     if (cmsg->cmsg_level != SOL_SOCKET) {
-      PyErr_SetString(PyExc_RuntimeError, "Expected cmsg_level SOL_SOCKET");
+      PyErr_SetString(cp5o_error, "Expected cmsg_level SOL_SOCKET");
       return NULL;
     }
     if (cmsg->cmsg_type != SCM_RIGHTS) {
-      PyErr_SetString(PyExc_RuntimeError, "Expected cmsg_type SCM_RIGHTS");
+      PyErr_SetString(cp5o_error, "Expected cmsg_type SCM_RIGHTS");
       return NULL;
     }
 
@@ -82,10 +88,10 @@ ssize_t recv_helper(int sock_fd, int num_bytes, char *buf, PyObject *fd_out) {
     debug("NO FDS");
   }
 
-  return bytes_read;
+  Py_RETURN_NONE;
 
 append_error:
-  PyErr_SetString(PyExc_RuntimeError, "append() error");
+  PyErr_SetString(PyExc_RuntimeError, "Couldn't append()");
   return NULL;
 }
 
@@ -105,13 +111,16 @@ func_receive(PyObject *self, PyObject *args) {
   char* p = buf;
   size_t n;
   for (int i = 0; i < 10; ++i) {
-    n = recv(sock_fd, p, 1, 0);
+    n = read(sock_fd, p, 1);
+    if (n < 0) {
+      return PyErr_SetFromErrno(io_error);
+    }
     if (n != 1) {
       debug("n = %d", n);
-      PyErr_SetString(PyExc_RuntimeError, "recv(1) failed");
+      PyErr_SetString(cp5o_error, "Unexpected EOF");
       return NULL;
     }
-    debug("p %c", *p);
+    // debug("p %c", *p);
 
     if ('0' <= *p && *p <= '9') {
       ;  // added to the buffer
@@ -123,11 +132,11 @@ func_receive(PyObject *self, PyObject *args) {
   }
   if (p == buf) {
     debug("*p = %c", *p);
-    PyErr_SetString(PyExc_RuntimeError, "Expected netstring length byte");
+    PyErr_SetString(cp5o_error, "Expected netstring length byte");
     return NULL;
   }
   if (*p != ':') {
-    PyErr_SetString(PyExc_RuntimeError, "Expected : after netstring length");
+    PyErr_SetString(cp5o_error, "Expected : after netstring length");
     return NULL;
   }
 
@@ -136,38 +145,46 @@ func_receive(PyObject *self, PyObject *args) {
 
   debug("expected_bytes = %d", expected_bytes);
 
-  char *msg = malloc(expected_bytes + 1);
-  msg[expected_bytes] = '\0';
+  char *data_buf = malloc(expected_bytes + 1);
+  data_buf[expected_bytes] = '\0';
 
   n = 0;
   while (n < expected_bytes) {
-    ssize_t bytes_read = recv_helper(sock_fd, expected_bytes - n, msg + n,
-                                     fd_out);
+    int bytes_read;
+    PyObject* result = recv_fds_once(
+        sock_fd, expected_bytes - n,
+        data_buf + n, &bytes_read, fd_out);
+    if (result == NULL) {
+      return NULL;  // error already set
+    }
     debug("bytes_read = %d", bytes_read);
     n += bytes_read;
     break;
   }
 
   assert(n == expected_bytes);
-  debug("msg = %s", msg);
+  debug("data_buf = %s", data_buf);
 
-  n = recv(sock_fd, buf, 1, 0 /*flags*/);
+  n = read(sock_fd, buf, 1);
+  if (n < 0) {
+      return PyErr_SetFromErrno(io_error);
+  }
   if (n != 1) {
-    PyErr_SetString(PyExc_RuntimeError, "recv(1) failed");
+    PyErr_SetString(cp5o_error, "Unexpected EOF");
     return NULL;
   }
   if (buf[0] != ',') {
-    PyErr_SetString(PyExc_RuntimeError, "Expected ,");
+    PyErr_SetString(cp5o_error, "Expected ,");
     return NULL;
   }
 
-  return PyString_FromStringAndSize(msg, expected_bytes);
+  return PyString_FromStringAndSize(data_buf, expected_bytes);
 }
 
 static PyObject *
 func_send(PyObject *self, PyObject *args) {
   int sock_fd;
-  const char *blob;
+  char *blob;
   int blob_len;
   int fds[NUM_FDS] = { -1, -1, -1 };
 
@@ -186,14 +203,12 @@ func_send(PyObject *self, PyObject *args) {
   // It the number of bytes it would have written, EXCLUDING \0
   int full_length = snprintf(buf, 10, "%d:", blob_len);
   if (full_length > sizeof(buf)) {
-    PyErr_SetString(PyExc_RuntimeError, "Message too large");
+    PyErr_SetString(cp5o_error, "Message too large");
     return NULL;
   }
 
   debug("full_length = %d", full_length);
-  if (send(sock_fd, buf, full_length, 0) < 0) {  // send '3:'
-    goto send_error;
-  }
+  write(sock_fd, buf, full_length);  // send '3:'
 
   // Example code adapted from 'man CMSG_LEN' on my machine.  (Is this
   // portable?)
@@ -240,22 +255,15 @@ func_send(PyObject *self, PyObject *args) {
 
   int num_bytes = sendmsg(sock_fd, &msg, 0);
   if (num_bytes < 0) {
-    PyErr_SetString(PyExc_RuntimeError, strerror(errno));
-    return NULL;
+    return PyErr_SetFromErrno(io_error);
   }
   debug("sendmsg num_bytes = %d", num_bytes);
 
   buf[0] = ',';
-  if (send(sock_fd, buf, 1, 0) < 0) {  // send ','
-    goto send_error;
-  }
+  write(sock_fd, buf, 1);
   debug("sent ,");
 
   return PyInt_FromLong(num_bytes);
-
-send_error:
-  PyErr_SetString(PyExc_RuntimeError, "send() error");
-  return NULL;
 }
 
 #ifdef OVM_MAIN
@@ -272,10 +280,12 @@ static PyMethodDef methods[] = {
 };
 #endif
 
-static PyObject *errno_error;
-
 void initcp5o(void) {
   Py_InitModule("cp5o", methods);
-  errno_error = PyErr_NewException("cp5o.error",
-                                    PyExc_IOError, NULL);
+
+  // error with errno
+  io_error = PyErr_NewException("cp5o.IOError", PyExc_IOError, NULL);
+
+  // other protocol errors
+  cp5o_error = PyErr_NewException("cp5o.ValueError", PyExc_ValueError, NULL);
 }

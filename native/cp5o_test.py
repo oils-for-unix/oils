@@ -128,10 +128,13 @@ class cp5oTest(unittest.TestCase):
     # This is too long
     left.send(b'0000000003:foo,')
 
-    # TODO: Change RuntimeError
-    return
-    fd_out = []
-    msg = cp5o.receive(right.fileno(), fd_out)
+    try:
+      msg = cp5o.receive(right.fileno(), fd_out)
+    except ValueError:
+      pass
+    else:
+      self.fail('Expected ValueError')
+
     print("msg = %r" % msg)
     print('fd_out = %s' % fd_out)
 
