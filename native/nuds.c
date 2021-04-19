@@ -1,12 +1,6 @@
 /*
- * c5po: The Unix Coprocess Protocol.
+ * NUDS: Netstrings (and file descriptors) over Unix Domain Sockets.
  */
-
-// - Enable GNU extensions in fnmatch.h for extended glob.
-// - It's also apparently needed for wchar.h in combination with Python.
-//   https://github.com/python-pillow/Pillow/issues/1850
-//   - It's currently hard-coded in pyconfig.h.
-#define _GNU_SOURCE 1
 
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.
