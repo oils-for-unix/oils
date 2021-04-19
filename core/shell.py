@@ -654,15 +654,15 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   return status
 
 
-import nuds
+import fanos
 
 def CoprocessDispatch():
-  # type: () -> None
+  # type: () -> int
 
   # TODO: This needs access to the shell executor and stuff like that?
 
 #def CoprocessDispatch(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
-  # type: (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
+  # (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
 
   done = False
   status = 0
@@ -684,28 +684,5 @@ def CoprocessDispatch():
   # Note: login_shell is not used?  TODO: fix that.
 
   print('TODO')
-  print(nuds.recv)
-  return
-
-  while True:
-    result = c_parser.ParseInteractiveLine()
-    if isinstance(result, parse_result__EmptyLine):
-      #display.EraseLines()
-      break  # quit shell
-    elif isinstance(result, parse_result__Eof):
-      #display.EraseLines()
-      done = True
-      break  # quit shell
-    elif isinstance(result, parse_result__Node):
-      node = result.cmd
-    else:
-      raise AssertionError()
-
-    is_return, _ = cmd_ev.ExecuteAndCatch(node)
-
-    status = cmd_ev.LastStatus()
-    if is_return:
-      done = True
-      break
+  print(fanos.recv)
   return status
-

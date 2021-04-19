@@ -267,9 +267,6 @@ write_error:
   return PyErr_SetFromErrno(io_error);
 }
 
-#ifdef OVM_MAIN
-#include "native/c5po.c/methods.def"
-#else
 static PyMethodDef methods[] = {
   // Receive message and FDs from socket.
   {"recv", func_recv, METH_VARARGS, ""},
@@ -279,7 +276,6 @@ static PyMethodDef methods[] = {
 
   {NULL, NULL},
 };
-#endif
 
 void initfanos(void) {
   Py_InitModule("fanos", methods);

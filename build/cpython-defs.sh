@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./cpython-defs.sh <function name>
+#   build/cpython-defs.sh <function name>
 #
 # Example:
 #
