@@ -295,11 +295,11 @@ pylibc() {
   native/libc_test.py "$@" > /dev/null
 }
 
-nuds() {
-  rm -f nuds.so
+fanos() {
+  rm -f fanos.so
 
-  py-ext nuds build/setup_nuds.py
-  native/nuds_test.py "$@" #> /dev/null
+  py-ext fanos build/setup_fanos.py
+  native/fanos_test.py "$@" #> /dev/null
 }
 
 fastlex() {
@@ -397,7 +397,7 @@ _minimal() {
   find-grammar
 
   pylibc
-  nuds
+  fanos
   line-input
   posix_
 
