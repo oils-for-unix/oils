@@ -237,7 +237,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # It has to be checked first, and then main() may be invoked with argv,
   # which THEN parses flags.
   argv1 = arg_r.Peek()
-  if argv1 == '---cp5o':
+  if argv1 == '--headless':
     return CoprocessDispatch()
 
   assert lang in ('osh', 'oil'), lang
@@ -654,7 +654,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   return status
 
 
-import cp5o
+import nuds
 
 def CoprocessDispatch():
   # type: () -> None
@@ -684,6 +684,7 @@ def CoprocessDispatch():
   # Note: login_shell is not used?  TODO: fix that.
 
   print('TODO')
+  print(nuds.recv)
   return
 
   while True:

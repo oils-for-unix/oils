@@ -295,11 +295,11 @@ pylibc() {
   native/libc_test.py "$@" > /dev/null
 }
 
-cp5o() {
-  rm -f cp5o.so
+nuds() {
+  rm -f nuds.so
 
-  py-ext cp5o build/setup_cp5o.py
-  native/cp5o_test.py "$@" #> /dev/null
+  py-ext nuds build/setup_nuds.py
+  native/nuds_test.py "$@" #> /dev/null
 }
 
 fastlex() {
@@ -397,7 +397,7 @@ _minimal() {
   find-grammar
 
   pylibc
-  cp5o
+  nuds
   line-input
   posix_
 

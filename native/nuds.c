@@ -28,7 +28,7 @@ static void debug(const char* fmt, ...) {
 }
 
 static PyObject *io_error;
-static PyObject *cp5o_error;
+static PyObject *nuds_error;
 
 // same as 'sizeof fds' in send()
 #define NUM_FDS 3
@@ -63,11 +63,11 @@ PyObject* recv_fds_once(
   struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
   if (cmsg && cmsg->cmsg_len == CMSG_LEN(SIZEOF_FDS)) {
     if (cmsg->cmsg_level != SOL_SOCKET) {
-      PyErr_SetString(cp5o_error, "Expected cmsg_level SOL_SOCKET");
+      PyErr_SetString(nuds_error, "Expected cmsg_level SOL_SOCKET");
       return NULL;
     }
     if (cmsg->cmsg_type != SCM_RIGHTS) {
-      PyErr_SetString(cp5o_error, "Expected cmsg_type SCM_RIGHTS");
+      PyErr_SetString(nuds_error, "Expected cmsg_type SCM_RIGHTS");
       return NULL;
     }
 
@@ -104,7 +104,7 @@ func_recv(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  debug("cp5o.recv %d\n", sock_fd);
+  debug("nuds.recv %d\n", sock_fd);
 
   // Receive with netstring encoding
   char buf[10];  // up to 9 digits, then :
@@ -117,7 +117,7 @@ func_recv(PyObject *self, PyObject *args) {
     }
     if (n != 1) {
       debug("n = %d", n);
-      PyErr_SetString(cp5o_error, "Unexpected EOF");
+      PyErr_SetString(nuds_error, "Unexpected EOF");
       return NULL;
     }
     // debug("p %c", *p);
@@ -132,11 +132,11 @@ func_recv(PyObject *self, PyObject *args) {
   }
   if (p == buf) {
     debug("*p = %c", *p);
-    PyErr_SetString(cp5o_error, "Expected netstring length byte");
+    PyErr_SetString(nuds_error, "Expected netstring length byte");
     return NULL;
   }
   if (*p != ':') {
-    PyErr_SetString(cp5o_error, "Expected : after netstring length");
+    PyErr_SetString(nuds_error, "Expected : after netstring length");
     return NULL;
   }
 
@@ -170,11 +170,11 @@ func_recv(PyObject *self, PyObject *args) {
       return PyErr_SetFromErrno(io_error);
   }
   if (n != 1) {
-    PyErr_SetString(cp5o_error, "Unexpected EOF");
+    PyErr_SetString(nuds_error, "Unexpected EOF");
     return NULL;
   }
   if (buf[0] != ',') {
-    PyErr_SetString(cp5o_error, "Expected ,");
+    PyErr_SetString(nuds_error, "Expected ,");
     return NULL;
   }
 
@@ -203,7 +203,7 @@ func_send(PyObject *self, PyObject *args) {
   // It the number of bytes it would have written, EXCLUDING \0
   int full_length = snprintf(buf, 10, "%d:", blob_len);
   if (full_length > sizeof(buf)) {
-    PyErr_SetString(cp5o_error, "Message too large");
+    PyErr_SetString(nuds_error, "Message too large");
     return NULL;
   }
 
@@ -280,12 +280,12 @@ static PyMethodDef methods[] = {
 };
 #endif
 
-void initcp5o(void) {
-  Py_InitModule("cp5o", methods);
+void initnuds(void) {
+  Py_InitModule("nuds", methods);
 
   // error with errno
-  io_error = PyErr_NewException("cp5o.IOError", PyExc_IOError, NULL);
+  io_error = PyErr_NewException("nuds.IOError", PyExc_IOError, NULL);
 
   // other protocol errors
-  cp5o_error = PyErr_NewException("cp5o.ValueError", PyExc_ValueError, NULL);
+  nuds_error = PyErr_NewException("nuds.ValueError", PyExc_ValueError, NULL);
 }

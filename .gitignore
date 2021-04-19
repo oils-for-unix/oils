@@ -17,6 +17,7 @@ _release/
 fastlex.so
 libc.so
 line_input.so
+nuds.so
 posix_.so
 yajl.so
 # Python build support
