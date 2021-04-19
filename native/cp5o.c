@@ -96,7 +96,7 @@ append_error:
 }
 
 static PyObject *
-func_receive(PyObject *self, PyObject *args) {
+func_recv(PyObject *self, PyObject *args) {
   int sock_fd;
   PyObject* fd_out;
 
@@ -104,7 +104,7 @@ func_receive(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  debug("cp5o.receive %d\n", sock_fd);
+  debug("cp5o.recv %d\n", sock_fd);
 
   // Receive with netstring encoding
   char buf[10];  // up to 9 digits, then :
@@ -271,7 +271,7 @@ func_send(PyObject *self, PyObject *args) {
 #else
 static PyMethodDef methods[] = {
   // Receive message and FDs from socket.
-  {"receive", func_receive, METH_VARARGS, ""},
+  {"recv", func_recv, METH_VARARGS, ""},
 
   // Send a message across a socket.
   {"send", func_send, METH_VARARGS, ""},

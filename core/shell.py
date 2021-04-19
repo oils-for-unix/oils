@@ -233,6 +233,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   assert argv0 is not None
   arg_r.Next()
 
+  # This has THREE dashes because it's not a flag.
+  # It has to be checked first, and then main() may be invoked with argv,
+  # which THEN parses flags.
+  argv1 = arg_r.Peek()
+  if argv1 == '---cp5o':
+    return CoprocessDispatch()
+
   assert lang in ('osh', 'oil'), lang
 
   try:
@@ -645,3 +652,59 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status
+
+
+import cp5o
+
+def CoprocessDispatch():
+  # type: () -> None
+
+  # TODO: This needs access to the shell executor and stuff like that?
+
+#def CoprocessDispatch(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
+  # type: (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
+
+  done = False
+  status = 0
+
+  # Headless mode commands:
+  #   ECMD (blob, descriptors)
+  #   PARSE (blob)
+  #
+  # FastCGLI commands:
+  #   GETPID
+  #   CHDIR
+  #   SETENV
+  #   ARGV -> STATUS 0 -- or call it MAIN
+
+
+  # TODO: Call Main() here, or do we need some kind of "shell context" for
+  # loader/line_input?
+  # Maybe this needs to be a class
+  # Note: login_shell is not used?  TODO: fix that.
+
+  print('TODO')
+  return
+
+  while True:
+    result = c_parser.ParseInteractiveLine()
+    if isinstance(result, parse_result__EmptyLine):
+      #display.EraseLines()
+      break  # quit shell
+    elif isinstance(result, parse_result__Eof):
+      #display.EraseLines()
+      done = True
+      break  # quit shell
+    elif isinstance(result, parse_result__Node):
+      node = result.cmd
+    else:
+      raise AssertionError()
+
+    is_return, _ = cmd_ev.ExecuteAndCatch(node)
+
+    status = cmd_ev.LastStatus()
+    if is_return:
+      done = True
+      break
+  return status
+
