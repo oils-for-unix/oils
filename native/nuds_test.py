@@ -8,7 +8,7 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import print_function
 """
-cp5o_test.py: Tests for cp5o.py
+nuds_test.py: Tests for nuds.c
 """
 import unittest
 import socket
@@ -16,7 +16,7 @@ import sys
 
 from core.pyerror import log
 
-import cp5o  # module under test
+import nuds  # module under test
 
 
 def netstring_encode(s):
@@ -70,7 +70,7 @@ def netstring_recv(sock):
   return msg
 
 
-class cp5oTest(unittest.TestCase):
+class nudsTest(unittest.TestCase):
 
   def testSend(self):
     """Send with our cp50 library; receive with Python stdlib."""
@@ -80,8 +80,8 @@ class cp5oTest(unittest.TestCase):
     print(left)
     print(right)
 
-    print(cp5o.send(left.fileno(), b'foo'))
-    print(cp5o.send(left.fileno(), b'https://www.oilshell.org/', 
+    print(nuds.send(left.fileno(), b'foo'))
+    print(nuds.send(left.fileno(), b'https://www.oilshell.org/', 
       sys.stdin.fileno(), sys.stdout.fileno(), sys.stderr.fileno()))
 
     msg = netstring_recv(right)
@@ -97,14 +97,14 @@ class cp5oTest(unittest.TestCase):
     left.send(netstring_encode('spam'))
 
     fd_out = []
-    msg = cp5o.recv(right.fileno(), fd_out)
+    msg = nuds.recv(right.fileno(), fd_out)
     self.assertEqual('spam', msg)
     print("msg = %r" % msg)
     print('fd_out = %s' % fd_out)
 
     left.send(netstring_encode('eggs-eggs-eggs'))
 
-    msg = cp5o.recv(right.fileno(), fd_out)
+    msg = nuds.recv(right.fileno(), fd_out)
     self.assertEqual('eggs-eggs-eggs', msg)
     print("py msg = %r" % msg)
     print('fd_out = %s' % fd_out)
@@ -113,15 +113,15 @@ class cp5oTest(unittest.TestCase):
     left, right = socket.socketpair()
 
     # TODO: test invalid netstring cases
-    # Instead of RuntimeError they sould be cp5o.error?
+    # Instead of RuntimeError they sould be nuds.error?
     # Instead of 'OK' you return
-    # 'cp5o ERROR: Invalid netstring'
+    # 'nuds ERROR: Invalid netstring'
 
     # This is OK
     left.send(b'000000003:foo,')
 
     fd_out = []
-    msg = cp5o.recv(right.fileno(), fd_out)
+    msg = nuds.recv(right.fileno(), fd_out)
     print("msg = %r" % msg)
     print('fd_out = %s' % fd_out)
 
@@ -129,7 +129,7 @@ class cp5oTest(unittest.TestCase):
     left.send(b'0000000003:foo,')
 
     try:
-      msg = cp5o.recv(right.fileno(), fd_out)
+      msg = nuds.recv(right.fileno(), fd_out)
     except ValueError:
       pass
     else:
@@ -144,19 +144,19 @@ class cp5oTest(unittest.TestCase):
 
     left, right = socket.socketpair()
 
-    print(cp5o.send(left.fileno(), b'foo'))
-    print(cp5o.send(left.fileno(), b'https://www.oilshell.org/', 
+    print(nuds.send(left.fileno(), b'foo'))
+    print(nuds.send(left.fileno(), b'https://www.oilshell.org/', 
       sys.stdin.fileno(), sys.stdout.fileno(), sys.stderr.fileno()))
 
     fd_out = []
-    msg = cp5o.recv(right.fileno(), fd_out)
+    msg = nuds.recv(right.fileno(), fd_out)
     self.assertEqual('foo', msg)
     self.assertEqual([], fd_out)
     print("py msg = %r" % msg)
     print('fd_out = %s' % fd_out)
 
     del fd_out[:]
-    msg = cp5o.recv(right.fileno(), fd_out)
+    msg = nuds.recv(right.fileno(), fd_out)
     self.assertEqual('https://www.oilshell.org/', msg)
     self.assertEqual(3, len(fd_out))
 
