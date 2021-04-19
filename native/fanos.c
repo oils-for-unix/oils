@@ -1,5 +1,5 @@
 /*
- * NUDS: Netstrings (and file descriptors) over Unix Domain Sockets.
+ * FANOS: File descriptors And Netstrings Over Sockets.
  */
 
 #include <assert.h>
