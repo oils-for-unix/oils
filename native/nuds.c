@@ -161,7 +161,7 @@ func_recv(PyObject *self, PyObject *args) {
 
   n = read(sock_fd, buf, 1);
   if (n < 0) {
-      return PyErr_SetFromErrno(io_error);
+    return PyErr_SetFromErrno(io_error);
   }
   if (n != 1) {
     PyErr_SetString(nuds_error, "Unexpected EOF");
@@ -202,7 +202,9 @@ func_send(PyObject *self, PyObject *args) {
   }
 
   debug("full_length = %d", full_length);
-  write(sock_fd, buf, full_length);  // send '3:'
+  if (write(sock_fd, buf, full_length) < 0) {  // send '3:'
+    goto write_error;
+  }
 
   // Example code adapted from 'man CMSG_LEN' on my machine.  (Is this
   // portable?)
@@ -249,15 +251,20 @@ func_send(PyObject *self, PyObject *args) {
 
   int num_bytes = sendmsg(sock_fd, &msg, 0);
   if (num_bytes < 0) {
-    return PyErr_SetFromErrno(io_error);
+    goto write_error;
   }
   debug("sendmsg num_bytes = %d", num_bytes);
 
   buf[0] = ',';
-  write(sock_fd, buf, 1);
+  if (write(sock_fd, buf, 1) < 0) {
+    goto write_error;
+  }
   debug("sent ,");
 
   return PyInt_FromLong(num_bytes);
+
+write_error:
+  return PyErr_SetFromErrno(io_error);
 }
 
 #ifdef OVM_MAIN
