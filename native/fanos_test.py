@@ -163,6 +163,84 @@ class fanosTest(unittest.TestCase):
     print("py msg = %r" % msg)
     print('fd_out = %s' % fd_out)
 
+    left.close()
+    msg = fanos.recv(right.fileno(), fd_out)
+    self.assertEqual(None, msg)  # Valid EOF
+
+    right.close()
+
+
+class InvalidMessageTests(unittest.TestCase):
+  """COPIED from py_fanos_test.py."""
+
+  def testInvalidColon(self):
+    fd_out = []
+    left, right = socket.socketpair()
+
+    left.send(b':')  # Should be 3:foo,
+    try:
+      msg = fanos.recv(right.fileno(), fd_out)
+    except ValueError as e:
+      print(type(e))
+      print(e)
+    else:
+      self.fail('Expected failure')
+
+    left.close()
+    right.close()
+
+  def testInvalidDigits(self):
+    fd_out = []
+    left, right = socket.socketpair()
+
+    left.send(b'34')  # EOF in the middle of length
+    left.close()
+    try:
+      msg = fanos.recv(right.fileno(), fd_out)
+    except ValueError as e:
+      print(type(e))
+      print(e)
+    else:
+      self.fail('Expected failure')
+
+    right.close()
+
+  def testInvalidMissingColon(self):
+    fd_out = []
+    left, right = socket.socketpair()
+
+    left.send(b'34foo')
+    left.close()
+    try:
+      msg = fanos.recv(right.fileno(), fd_out)
+    except ValueError as e:
+      print(type(e))
+      print(e)
+    else:
+      self.fail('Expected failure')
+
+    right.close()
+
+  def testInvalidMissingComma(self):
+    fd_out = []
+    left, right = socket.socketpair()
+
+    # Short payload BLOCKS indefinitely?
+    #left.send(b'3:fo')
+
+    left.send(b'3:foo')  # missing comma
+
+    left.close()
+    try:
+      msg = fanos.recv(right.fileno(), fd_out)
+    except ValueError as e:
+      print(type(e))
+      print(e)
+    else:
+      self.fail('Expected failure')
+
+    right.close()
+
 
 if __name__ == '__main__':
   unittest.main()

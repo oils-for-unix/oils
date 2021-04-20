@@ -111,8 +111,12 @@ func_recv(PyObject *self, PyObject *args) {
     }
     if (n != 1) {
       debug("n = %d", n);
-      PyErr_SetString(fanos_error, "Unexpected EOF");
-      return NULL;
+      if (i == 0) {
+        Py_RETURN_NONE;  // EOF at message boudnary
+      } else {
+        PyErr_SetString(fanos_error, "Unexpected EOF");
+        return NULL;
+      }
     }
     // debug("p %c", *p);
 
@@ -126,7 +130,7 @@ func_recv(PyObject *self, PyObject *args) {
   }
   if (p == buf) {
     debug("*p = %c", *p);
-    PyErr_SetString(fanos_error, "Expected netstring length byte");
+    PyErr_SetString(fanos_error, "Expected netstring length");
     return NULL;
   }
   if (*p != ':') {
