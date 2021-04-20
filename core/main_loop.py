@@ -25,6 +25,8 @@ from core.pyerror import log
 from osh import cmd_eval
 from mycpp import mylib
 
+import posix_ as posix
+
 from typing import Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
@@ -46,32 +48,45 @@ if mylib.PYTHON:
     done = False
     status = 0
 
-    fd_out = []
+    fd_out = []  # type: List[int]
     while True:
-      msg = fanos.recv(0, fd_out)
-      command, arg = msg.split(' ', 1)
+      blob = fanos.recv(0, fd_out)
+      if blob is None:
+        log('fanos: EOF received')
+        break
 
-      if command == 'ECMD':
+      log('blob %r', blob)
+      if ' ' in blob:
+        command, arg = blob.split(' ', 1)
+      else:
+        command = blob
+        arg = ''
+
+      if command == 'GETPID':
+        reply = str(posix.getpid())
+
+      elif command == 'ECMD':
         # TODO: Parse and evaluate
 
         # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
         # control that?
-        pass
+        reply = 'TODO:ECMD'
 
       # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
       # Do we also need 'complete --oil' and 'complete --osh' ?
       elif command == 'PARSE':
         # Just parse
-        pass
+        reply = 'TODO:PARSE'
 
       else:
-        # FAIL
-        pass
+        log('Invalid command %r', command)
+        fanos.send(1, b'ERROR Invalid command')
+        return 1
 
-      reply = 'TODO'
-      fanos.send(1, reply)
+      fanos.send(1, b'OK %s' % reply)
+      del fd_out[:]  # reset for nect iteration
 
-    return status
+    return 0
 
   def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
     # type: (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int

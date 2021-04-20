@@ -265,7 +265,9 @@ func_send(PyObject *self, PyObject *args) {
   }
   debug("sent ,");
 
-  return PyInt_FromLong(num_bytes);
+  // This return value would be redundant since send() and sendmsg() block.
+  // return PyInt_FromLong(num_bytes);
+  Py_RETURN_NONE;
 
 write_error:
   return PyErr_SetFromErrno(io_error);
