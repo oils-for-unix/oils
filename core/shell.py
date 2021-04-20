@@ -540,7 +540,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   if flag.headless:
     try:
-      status = HeadlessDispatch(cmd_ev, c_parser)
+      status = main_loop.HeadlessDispatch(cmd_ev, c_parser)
       # TODO: What other exceptions happen here?
     except util.UserExit as e:
       status = e.status
@@ -651,46 +651,4 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     pyutil.CopyFile(input_path, flag.runtime_mem_dump)
 
   # NOTE: We haven't closed the file opened with fd_state.Open
-  return status
-
-
-import fanos
-
-def HeadlessDispatch(cmd_ev, c_parser):
-  # type: (CommandEvaluator, CommandParser) -> int
-
-  # Compare with
-#def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
-  # (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
-  done = False
-  status = 0
-
-  fd_out = []
-  while True:
-    msg = fanos.recv(0, fd_out)
-    command, arg = msg.split(' ', 1)
-
-    if command == 'ECMD':
-      # TODO: Parse and evaluate
-
-      # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
-      # control that?
-      pass
-
-    # Should this be OIL-PARSE and OSH-PARSE?  It puts the parser in different
-    # modes?
-    #
-    # Do we also need 'complete --oil' and 'complete --osh' ?
-
-    elif command == 'SH-PARSE':
-      # Just parse
-      pass
-
-    else:
-      # FAIL
-      pass
-
-    reply = 'TODO'
-    fanos.send(1, reply)
-
   return status

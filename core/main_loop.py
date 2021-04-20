@@ -38,6 +38,41 @@ _ = log
 
 
 if mylib.PYTHON:
+  import fanos
+
+  def HeadlessDispatch(cmd_ev, c_parser):
+    # type: (CommandEvaluator, CommandParser) -> int
+
+    done = False
+    status = 0
+
+    fd_out = []
+    while True:
+      msg = fanos.recv(0, fd_out)
+      command, arg = msg.split(' ', 1)
+
+      if command == 'ECMD':
+        # TODO: Parse and evaluate
+
+        # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
+        # control that?
+        pass
+
+      # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
+      # Do we also need 'complete --oil' and 'complete --osh' ?
+      elif command == 'PARSE':
+        # Just parse
+        pass
+
+      else:
+        # FAIL
+        pass
+
+      reply = 'TODO'
+      fanos.send(1, reply)
+
+    return status
+
   def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
     # type: (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
 
