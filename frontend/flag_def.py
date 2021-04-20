@@ -209,6 +209,7 @@ OSH_SPEC.LongFlag('--help')
 OSH_SPEC.LongFlag('--version')
 
 OSH_SPEC.ShortFlag('-i')  # interactive
+OSH_SPEC.LongFlag('--headless')  # accepts ECMD, etc.
 
 # TODO: -h too
 # the output format when passing -n

@@ -1,0 +1,3 @@
+#!/bin/sh
+PYTHONPATH=. exec bin/oil.py ---caper
+

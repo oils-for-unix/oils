@@ -233,13 +233,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   assert argv0 is not None
   arg_r.Next()
 
-  # This has THREE dashes because it's not a flag.
-  # It has to be checked first, and then main() may be invoked with argv,
-  # which THEN parses flags.
-  argv1 = arg_r.Peek()
-  if argv1 == '--headless':
-    return CoprocessDispatch()
-
   assert lang in ('osh', 'oil'), lang
 
   try:
@@ -545,6 +538,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # TODO: .rc file needs its own arena.
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
+  if flag.headless:
+    try:
+      status = HeadlessDispatch(cmd_ev, c_parser)
+      # TODO: What other exceptions happen here?
+    except util.UserExit as e:
+      status = e.status
+
   if exec_opts.interactive():
     # bash: 'set -o emacs' is the default only in the interactive shell
     mutable_opts.set_emacs()
@@ -656,33 +656,41 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
 import fanos
 
-def CoprocessDispatch():
-  # type: () -> int
+def HeadlessDispatch(cmd_ev, c_parser):
+  # type: (CommandEvaluator, CommandParser) -> int
 
-  # TODO: This needs access to the shell executor and stuff like that?
-
-#def CoprocessDispatch(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
+  # Compare with
+#def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
   # (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
-
   done = False
   status = 0
 
-  # Headless mode commands:
-  #   ECMD (blob, descriptors)
-  #   PARSE (blob)
-  #
-  # FastCGLI commands:
-  #   GETPID
-  #   CHDIR
-  #   SETENV
-  #   ARGV -> STATUS 0 -- or call it MAIN
+  fd_out = []
+  while True:
+    msg = fanos.recv(0, fd_out)
+    command, arg = msg.split(' ', 1)
 
+    if command == 'ECMD':
+      # TODO: Parse and evaluate
 
-  # TODO: Call Main() here, or do we need some kind of "shell context" for
-  # loader/line_input?
-  # Maybe this needs to be a class
-  # Note: login_shell is not used?  TODO: fix that.
+      # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
+      # control that?
+      pass
 
-  print('TODO')
-  print(fanos.recv)
+    # Should this be OIL-PARSE and OSH-PARSE?  It puts the parser in different
+    # modes?
+    #
+    # Do we also need 'complete --oil' and 'complete --osh' ?
+
+    elif command == 'SH-PARSE':
+      # Just parse
+      pass
+
+    else:
+      # FAIL
+      pass
+
+    reply = 'TODO'
+    fanos.send(1, reply)
+
   return status

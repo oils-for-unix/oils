@@ -176,8 +176,45 @@ def OshCommandMain(argv):
   return 0
 
 
-# TODO: Hook up these applets and all valid applets to completion
-# APPLETS = ['osh', 'osh', 'oil', 'readlink']
+import fanos
+
+def CaperDispatch():
+  log('Running Oil in ---caper mode')
+  fd_out = []
+  while True:
+    try:
+      msg = fanos.recv(0, fd_out)
+    except ValueError as e:
+      # TODO: recv() needs to detect EOF condition.  Should it return ''
+      # like sys.stdin.readline(), or something else?
+      # Should that be distinguished from '0:,' ?   with None perhaps?
+      log('FANOS error: %s', e)
+      fanos.send(1, 'ERROR %s' % e)
+      continue
+
+    log('msg = %r', msg)
+
+    command, arg = msg.split(' ', 1)
+    if command == 'GETPID':
+      pass
+    elif command == 'CHDIR':
+      pass
+    elif command == 'SETENV':
+      pass
+    elif command == 'MAIN':
+      argv = ['TODO']
+      # I think we need to factor the oil.{py,ovm} condition out and call it like this:
+      # MainDispatch(main_name, argv) or
+      # MainDispatch(main_name, arg_r)
+      pass
+
+    # fanos.send(1, reply)
+
+  return 0  # Does this fail?
+
+
+# TODO: Hook up valid applets (including these) to completion
+# APPLETS = ['osh', 'osh', 'oil', 'readlink', 'true', 'false']
 
 
 def AppBundleMain(argv):
@@ -196,15 +233,20 @@ def AppBundleMain(argv):
     if first_arg is None:
       raise error.Usage('Missing required applet name.')
 
+    # Special flags to the top level binary: bin/oil.py --help, ---caper, etc.
     if first_arg in ('-h', '--help'):
       errfmt = None  # not needed here
       help_builtin = builtin_misc.Help(loader, errfmt)
       help_builtin.Run(pure.MakeBuiltinArgv(['bundle-usage']))
-      sys.exit(0)
+      return 0
 
     if first_arg in ('-V', '--version'):
       pyutil.ShowAppVersion('Oil', loader)
-      sys.exit(0)
+      return 0
+
+    # This has THREE dashes since it isn't a normal flag
+    if first_arg == '---caper':
+      return CaperDispatch()
 
     main_name = first_arg
 
@@ -256,6 +298,7 @@ def AppBundleMain(argv):
 
 def main(argv):
   # type: (List[str]) -> int
+
   try:
     return AppBundleMain(argv)
   except error.Usage as e:

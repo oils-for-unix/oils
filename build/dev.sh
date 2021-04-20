@@ -397,9 +397,9 @@ _minimal() {
   find-grammar
 
   pylibc
-  fanos
   line-input
   posix_
+  fanos
 
   # Require submodule
   yajl
