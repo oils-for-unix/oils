@@ -168,6 +168,7 @@ shell, of course!
 
     benchmarks/       # Benchmarks should be run on multiple machines.
     metrics/          # Metrics don't change between machines (e.g. code size)
+    client/           # Demonstration of OSH as a headless server.
     build/            # Build automation
       oil-defs/       # Files that define our slice of CPython.
       dev.sh          # For development builds, running CPython
@@ -177,7 +178,6 @@ shell, of course!
                       # moved to tests/ if automated.
       old/            # A junk drawer.
     web/              # HTML/JS/CSS for tests and tools
-    lazylex/          # An HTML lexer which doctools/ builds upon.
     services/         # Integration with cloud services (e.g. Travis CI)
 
 ### Temp Dirs
@@ -225,6 +225,7 @@ This is very different than the **developer build** of Oil.
 
     doc/              # A mix of docs
     doctools/         # Tools that use lazylex/ to transform Markdown/HTML
+    lazylex/          # An HTML lexer which doctools/ builds upon.
     README.md         # This page, which is For Oil developers
 
     LICENSE.txt       # For end users

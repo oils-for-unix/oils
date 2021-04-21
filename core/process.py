@@ -82,7 +82,7 @@ class _FdFrame(object):
   def __init__(self):
     # type: () -> None
     self.saved = []  # type: List[_RedirFrame]
-    self.need_wait = []  # type: List[Tuple[Process, Waiter]]
+    self.need_wait = []  # type: List[Process]
 
   def Forget(self):
     # type: () -> None
@@ -104,8 +104,8 @@ class FdState(object):
 
   For example, you can do 'myfunc > out.txt' without forking.
   """
-  def __init__(self, errfmt, job_state, mem, tracer):
-    # type: (ErrorFormatter, JobState, Mem, Optional[dev.Tracer]) -> None
+  def __init__(self, errfmt, job_state, mem, tracer, waiter):
+    # type: (ErrorFormatter, JobState, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
     """
     Args:
       errfmt: for errors
@@ -117,6 +117,7 @@ class FdState(object):
     self.stack = [self.cur_frame]
     self.mem = mem
     self.tracer = tracer
+    self.waiter = waiter
 
   def Open(self, path):
     # type: (str) -> mylib.LineReader
@@ -287,12 +288,12 @@ class FdState(object):
     # type: (int) -> None
     self.cur_frame.saved.append(_RedirFrame(NO_FD, fd, False))
 
-  def _PushWait(self, proc, waiter):
-    # type: (Process, Waiter) -> None
-    self.cur_frame.need_wait.append((proc, waiter))
+  def _PushWait(self, proc):
+    # type: (Process) -> None
+    self.cur_frame.need_wait.append(proc)
 
-  def _ApplyRedirect(self, r, waiter):
-    # type: (redirect, Waiter) -> None
+  def _ApplyRedirect(self, r):
+    # type: (redirect) -> None
     arg = r.arg
     UP_arg = arg
     with tagswitch(arg) as case:
@@ -398,7 +399,7 @@ class FdState(object):
           # matter because we control the code.
           _ = here_proc.Start(trace.HereDoc())
           #log('Started %s as %d', here_proc, pid)
-          self._PushWait(here_proc, waiter)
+          self._PushWait(here_proc)
 
           # Now that we've started the child, close it in the parent.
           posix.close(write_fd)
@@ -407,8 +408,8 @@ class FdState(object):
           posix.write(write_fd, arg.body)
           posix.close(write_fd)
 
-  def Push(self, redirects, waiter):
-    # type: (List[redirect], Waiter) -> bool
+  def Push(self, redirects):
+    # type: (List[redirect]) -> bool
     """Apply a group of redirects and remember to undo them."""
 
     #log('> fd_state.Push %s', redirects)
@@ -420,7 +421,7 @@ class FdState(object):
       #log('apply %s', r)
       self.errfmt.PushLocation(r.op_spid)
       try:
-        self._ApplyRedirect(r, waiter)
+        self._ApplyRedirect(r)
       except (IOError, OSError) as e:
         self.Pop()
         return False  # for bad descriptor, etc.
@@ -468,8 +469,8 @@ class FdState(object):
         #log('dup2 %s %s', saved, orig)
 
     # Wait for here doc processes to finish.
-    for proc, waiter in frame.need_wait:
-      unused_status = proc.Wait(waiter)
+    for proc in frame.need_wait:
+      unused_status = proc.Wait(self.waiter)
 
   def MakePermanent(self):
     # type: () -> None

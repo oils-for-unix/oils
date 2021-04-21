@@ -340,7 +340,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
   job_state = process.JobState()
-  fd_state = process.FdState(errfmt, job_state, mem, None)
+  fd_state = process.FdState(errfmt, job_state, mem, None, None)
 
   my_pid = posix.getpid()
 
@@ -374,6 +374,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   sig_state = pyos.SignalState()
   sig_state.InitShell()
   waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
+  fd_state.waiter = waiter
 
   cmd_deps.debug_f = debug_f
 
@@ -540,10 +541,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   if flag.headless:
     try:
-      status = main_loop.HeadlessDispatch(cmd_ev, c_parser)
+      status = main_loop.HeadlessDispatch(fd_state, cmd_ev, parse_ctx, errfmt)
       # TODO: What other exceptions happen here?
     except util.UserExit as e:
       status = e.status
+    return status
 
   if exec_opts.interactive():
     # bash: 'set -o emacs' is the default only in the interactive shell

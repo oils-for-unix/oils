@@ -22,6 +22,7 @@ from core import error
 from core import ui
 from core import util
 from core.pyerror import log
+from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
 
@@ -31,7 +32,9 @@ from typing import Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.comp_ui import _IDisplay
+  from core import process
   from core.ui import ErrorFormatter
+  from frontend import parse_lib
   from osh.cmd_parse import CommandParser
   from osh.cmd_eval import CommandEvaluator
   from osh.prompt import UserPlugin
@@ -42,17 +45,68 @@ _ = log
 if mylib.PYTHON:
   import fanos
 
-  def HeadlessDispatch(cmd_ev, c_parser):
-    # type: (CommandEvaluator, CommandParser) -> int
+  def Headless_ECMD(cmd_ev, c_parser, errfmt):
+    # type: (CommandEvaluator, CommandParser, ErrorFormatter) -> str
+
+    # TODO: Parse and evaluate
+    # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
+    # control that?
+
+    done = False
+
+    while True:
+      try:
+        # may raise HistoryError or ParseError
+        result = c_parser.ParseInteractiveLine()
+        if isinstance(result, parse_result__EmptyLine):
+          break  # quit shell
+        elif isinstance(result, parse_result__Eof):
+          done = True
+          break  # quit shell
+        elif isinstance(result, parse_result__Node):
+          node = result.cmd
+        else:
+          raise AssertionError()
+
+      except util.HistoryError as e:  # e.g. expansion failed
+        # TODO: Does this happen?  Or is history up to the user?
+        print(e.UserErrorString())
+        break
+      except error.Parse as e:
+        errfmt.PrettyPrintError(e)
+        # NOTE: This should set the status interactively!  Bash does this.
+        status = 2
+        break
+      except KeyboardInterrupt:
+        # The client can send SIGINT, and this will happen:
+        print('^C')
+        break
+
+      is_return, _ = cmd_ev.ExecuteAndCatch(node)
+
+      break  # unconditional
+
+    reply = 'OK'
+    return reply
+
+  def HeadlessDispatch(fd_state, cmd_ev, parse_ctx, errfmt):
+    # type: (process.FdState, CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> int
+
+    log('[headless mode] stdin/stdout should be connected to one end of a socketpair().  Logs are written to stderr.')
 
     done = False
     status = 0
 
     fd_out = []  # type: List[int]
     while True:
-      blob = fanos.recv(0, fd_out)
+      try:
+        blob = fanos.recv(0, fd_out)
+      except ValueError as e:
+        log('FANOS protocol error: %s', e)
+        break
+
       if blob is None:
-        log('fanos: EOF received')
+        log('FANOS: EOF received')
         break
 
       log('blob %r', blob)
@@ -66,11 +120,21 @@ if mylib.PYTHON:
         reply = str(posix.getpid())
 
       elif command == 'ECMD':
-        # TODO: Parse and evaluate
+        log('arg %r', arg)
+        line_reader = reader.StringLineReader(arg, parse_ctx.arena)
+        c_parser = parse_ctx.MakeOshParser(line_reader)
 
-        # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
-        # control that?
-        reply = 'TODO:ECMD'
+        # TODO: We have to do the dup() dance here.
+
+        # TODO: Use fd_state
+        # And construct some redirects, and apply them?
+
+        if len(fd_out) != 3:
+          fanos.send(1, b'ERROR Expected 3 file descriptors')
+          return 1
+
+        log('fd_out %s', fd_out)
+        reply = Headless_ECMD(cmd_ev, c_parser, errfmt)
 
       # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
       # Do we also need 'complete --oil' and 'complete --osh' ?
@@ -84,7 +148,7 @@ if mylib.PYTHON:
         return 1
 
       fanos.send(1, b'OK %s' % reply)
-      del fd_out[:]  # reset for nect iteration
+      del fd_out[:]  # reset for next iteration
 
     return 0
 

@@ -526,7 +526,7 @@ class ShellExecutor(vm._Executor):
 
   def PushRedirects(self, redirects):
     # type: (List[redirect]) -> bool
-    return self.fd_state.Push(redirects, self.waiter)
+    return self.fd_state.Push(redirects)
 
   def PopRedirects(self):
     # type: () -> None

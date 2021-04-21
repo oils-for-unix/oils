@@ -22,31 +22,49 @@ from py_fanos import log
 
 # ECMD x
 COMMANDS = [
-  'echo hi',     # OK, and prints 'hi' to stdout file descriptor
-  'read x',      # OK, and x is assigned
-  '(',           # OKK, syntax error to stderr  
-  'zzZZ',        # OK, and runtime error to stderr
-  'declare -X',  # OK, and runtime error to stderr
+  b'echo hi',     # OK, and prints 'hi' to stdout file descriptor
+  b'read x',      # OK, and x is assigned
+  b'(',           # OKK, syntax error to stderr  
+  b'zzZZ',        # OK, and runtime error to stderr
+  b'declare -X',  # OK, and runtime error to stderr
+
+  # What about async commands like &
+  # I think that works the same?
 
   # Is this valid?  ECMD space?  I think it probably shouldn't be?
-  '',
+  b'',
   # What about invalid netstrings?
 ]
 
 
 def ShowDescriptorState(label):
   if 1:
+    import time
+    time.sleep(0.01)  # prevent interleaving
+
     pid = os.getpid()
     print(label + ' (PID %d)' % pid, file=sys.stderr)
     os.system('ls -l /proc/%d/fd >&2' % pid)
+
+    time.sleep(0.01)  # prevent interleaving
 
 
 def main(argv):
   p = optparse.OptionParser(__doc__)
 
+  # By default, the server will use the stdin/stdout/stderr of THIS CLIENT
+  # PROCESS.
   p.add_option(
-      '--to-file', dest='to_file', default=None,
+      '--stdin-file', dest='stdin_file', default='/dev/stdin',
+      help='Where the server read stdin from')
+  p.add_option(
+      '--stdout-file', dest='stdout_file', default='/dev/stdout',
       help='Where the server should send child stdout')
+  p.add_option(
+      '--stderr-file', dest='stderr_file', default='/dev/stderr',
+      help='Where the server should send child stdout')
+
+  # Use a terminal instead
   p.add_option(
       '--to-new-pty', dest='to_new_pty', default=False, action='store_true',
       help='Send the child stdout to a new PTY')
@@ -91,27 +109,38 @@ def main(argv):
 
   master_fd, slave_fd = -1, -1
   try:
-    msg = b'GETPID'
+    stdin_fd = os.open('/dev/stdin', 0)
+    stderr_fd = os.open('/dev/stderr', 0)
 
-    if opts.to_file:
-      stdout_fd = os.open(opts.to_file, os.O_RDWR | os.O_CREAT)
-
-    elif opts.to_new_pty:
+    if opts.to_new_pty:
       master_fd, slave_fd = os.openpty()
+
+      stdin_fd = slave_fd
       stdout_fd = slave_fd
+      stderr_fd = slave_fd
+
       log('master %d slave %d', master_fd, slave_fd)
       #os.close(slave_fd)
 
     else:
-      raise AssertionError()
+      stdin_fd = os.open(opts.stdin_file, 0)
+      stdout_fd = os.open(opts.stdout_file, os.O_RDWR | os.O_CREAT)
+      stderr_fd = os.open(opts.stderr_file, os.O_RDWR | os.O_CREAT)
 
     log('stdout_fd = %d', stdout_fd)
 
-    # Send 2 messages across one connection
-    for i in range(2):
-      py_fanos.send(left, msg, [stdout_fd])
+    commands = [b'GETPID']
+    commands.extend(b'ECMD ' + c for c in COMMANDS)
 
-      reply = py_fanos.recv(left)
+    for cmd in commands:
+      py_fanos.send(left, cmd, [stdin_fd, stdout_fd, stderr_fd])
+
+      try:
+        reply = py_fanos.recv(left)
+      except ValueError as e:
+        log('FANOS protocol error: %s', e)
+        break
+
       print('reply %r' % reply)
       if reply is None:
         break
