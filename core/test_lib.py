@@ -173,7 +173,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   errfmt = ui.ErrorFormatter(arena)
   job_state = process.JobState()
-  fd_state = process.FdState(errfmt, job_state, None, None)
+  fd_state = process.FdState(errfmt, job_state, None, None, None)
   aliases = {} if aliases is None else aliases
   procs = {}
 

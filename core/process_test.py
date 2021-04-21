@@ -53,7 +53,7 @@ class ProcessTest(unittest.TestCase):
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
     self.waiter = process.Waiter(self.job_state, exec_opts, sig_state, self.tracer)
     errfmt = ui.ErrorFormatter(self.arena)
-    self.fd_state = process.FdState(errfmt, self.job_state, None, self.tracer)
+    self.fd_state = process.FdState(errfmt, self.job_state, None, self.tracer, None)
     self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,
                                             util.NullDebugFile())
 
@@ -81,11 +81,11 @@ class ProcessTest(unittest.TestCase):
     r = redirect(Id.Redir_Less, runtime.NO_SPID, redir_loc.Fd(0),
                  redirect_arg.Path(PATH))
 
-    self.fd_state.Push([r], self.waiter)
+    self.fd_state.Push([r])
     line1, _ = builtin_misc._ReadUntilDelim('\n')
     self.fd_state.Pop()
 
-    self.fd_state.Push([r], self.waiter)
+    self.fd_state.Push([r])
     line2, _ = builtin_misc._ReadUntilDelim('\n')
     self.fd_state.Pop()
 
