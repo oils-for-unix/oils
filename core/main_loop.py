@@ -14,7 +14,7 @@ ParseWholeFile() -- needs to check the here doc.
 """
 from __future__ import print_function
 
-import os
+import posix_ as posix
 import sys
 
 from _devbuild.gen.syntax_asdl import (
@@ -57,11 +57,13 @@ if mylib.PYTHON:
   def ShowDescriptorState(label):
     # type: (str) -> None
     if 1:
+      import os  # Our posix fork doesn't have os.system
       import time
       time.sleep(0.01)  # prevent interleaving
 
-      pid = os.getpid()
+      pid = posix.getpid()
       print(label + ' (PID %d)' % pid, file=sys.stderr)
+
       os.system('ls -l /proc/%d/fd >&2' % pid)
 
       time.sleep(0.01)  # prevent interleaving
@@ -156,28 +158,28 @@ if mylib.PYTHON:
         saved2 = process.SaveFd(2)
 
         #ShowDescriptorState('BEFORE')
-        os.dup2(fd_out[0], 0)
-        os.dup2(fd_out[1], 1)
-        os.dup2(fd_out[2], 2)
+        posix.dup2(fd_out[0], 0)
+        posix.dup2(fd_out[1], 1)
+        posix.dup2(fd_out[2], 2)
 
         #ShowDescriptorState('AFTER')
 
         reply = Headless_ECMD(cmd_ev, c_parser, errfmt)
 
         # Restore
-        os.dup2(saved0, 0)
-        os.dup2(saved1, 1)
-        os.dup2(saved2, 2)
+        posix.dup2(saved0, 0)
+        posix.dup2(saved1, 1)
+        posix.dup2(saved2, 2)
 
         # Don't need them anymore
-        os.close(saved0)
-        os.close(saved1)
-        os.close(saved2)
+        posix.close(saved0)
+        posix.close(saved1)
+        posix.close(saved2)
 
         # Close the descriptors we were passed
-        os.close(fd_out[0])
-        os.close(fd_out[1])
-        os.close(fd_out[2])
+        posix.close(fd_out[0])
+        posix.close(fd_out[1])
+        posix.close(fd_out[2])
 
         #ShowDescriptorState('RESTORED')
 
