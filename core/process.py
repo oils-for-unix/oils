@@ -70,6 +70,12 @@ NO_FD = -1
 _SHELL_MIN_FD = 100
 
 
+def SaveFd(fd):
+  # type: (int) -> int
+  saved = fcntl_.fcntl(fd, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
+  return saved
+
+
 class _RedirFrame(object):
   def __init__(self, saved_fd, orig_fd, forget):
     # type: (int, int, bool) -> None
@@ -147,7 +153,7 @@ class FdState(object):
     fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
 
     # Immediately move it to a new location
-    new_fd = fcntl_.fcntl(fd, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
+    new_fd = SaveFd(fd)
     posix.close(fd)
 
     # Return a Python file handle
@@ -178,7 +184,7 @@ class FdState(object):
     #log('---- _PushSave %s', fd)
     need_restore = True
     try:
-      new_fd = fcntl_.fcntl(fd, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
+      new_fd = SaveFd(fd)
     except IOError as e:
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.

@@ -14,11 +14,15 @@ ParseWholeFile() -- needs to check the here doc.
 """
 from __future__ import print_function
 
+import os
+import sys
+
 from _devbuild.gen.syntax_asdl import (
     command_t, command,
     parse_result__EmptyLine, parse_result__Eof, parse_result__Node
 )
 from core import error
+from core import process
 from core import ui
 from core import util
 from core.pyerror import log
@@ -32,7 +36,6 @@ from typing import Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.comp_ui import _IDisplay
-  from core import process
   from core.ui import ErrorFormatter
   from frontend import parse_lib
   from osh.cmd_parse import CommandParser
@@ -44,6 +47,24 @@ _ = log
 
 if mylib.PYTHON:
   import fanos
+
+  def fanos_log(msg, *args):
+    # type: (str, Any) -> None
+    if args:
+      msg = msg % args
+    print('[FANOS] %s' % msg, file=sys.stderr)
+
+  def ShowDescriptorState(label):
+    # type: (str) -> None
+    if 1:
+      import time
+      time.sleep(0.01)  # prevent interleaving
+
+      pid = os.getpid()
+      print(label + ' (PID %d)' % pid, file=sys.stderr)
+      os.system('ls -l /proc/%d/fd >&2' % pid)
+
+      time.sleep(0.01)  # prevent interleaving
 
   def Headless_ECMD(cmd_ev, c_parser, errfmt):
     # type: (CommandEvaluator, CommandParser, ErrorFormatter) -> str
@@ -86,13 +107,12 @@ if mylib.PYTHON:
 
       break  # unconditional
 
-    reply = 'OK'
-    return reply
+    return ''  # it's just 'OK '
 
   def HeadlessDispatch(fd_state, cmd_ev, parse_ctx, errfmt):
     # type: (process.FdState, CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> int
 
-    log('[headless mode] stdin/stdout should be connected to one end of a socketpair().  Logs are written to stderr.')
+    fanos_log('Connect stdin and stdout to one end of socketpair() and send control messages.  osh writes debug messages (like this one) to stderr.')
 
     done = False
     status = 0
@@ -102,14 +122,14 @@ if mylib.PYTHON:
       try:
         blob = fanos.recv(0, fd_out)
       except ValueError as e:
-        log('FANOS protocol error: %s', e)
+        fanos_log('protocol error: %s', e)
         break
 
       if blob is None:
-        log('FANOS: EOF received')
+        fanos_log('EOF received')
         break
 
-      log('blob %r', blob)
+      fanos_log('received blob %r', blob)
       if ' ' in blob:
         command, arg = blob.split(' ', 1)
       else:
@@ -120,21 +140,46 @@ if mylib.PYTHON:
         reply = str(posix.getpid())
 
       elif command == 'ECMD':
-        log('arg %r', arg)
+        fanos_log('arg %r', arg)
         line_reader = reader.StringLineReader(arg, parse_ctx.arena)
         c_parser = parse_ctx.MakeOshParser(line_reader)
-
-        # TODO: We have to do the dup() dance here.
-
-        # TODO: Use fd_state
-        # And construct some redirects, and apply them?
 
         if len(fd_out) != 3:
           fanos.send(1, b'ERROR Expected 3 file descriptors')
           return 1
 
-        log('fd_out %s', fd_out)
+        fanos_log('received descriptors %s', fd_out)
+
+        # TODO: Use context manager to do this dup() dance.
+        saved0 = process.SaveFd(0)
+        saved1 = process.SaveFd(1)
+        saved2 = process.SaveFd(2)
+
+        #ShowDescriptorState('BEFORE')
+        os.dup2(fd_out[0], 0)
+        os.dup2(fd_out[1], 1)
+        os.dup2(fd_out[2], 2)
+
+        #ShowDescriptorState('AFTER')
+
         reply = Headless_ECMD(cmd_ev, c_parser, errfmt)
+
+        # Restore
+        os.dup2(saved0, 0)
+        os.dup2(saved1, 1)
+        os.dup2(saved2, 2)
+
+        # Don't need them anymore
+        os.close(saved0)
+        os.close(saved1)
+        os.close(saved2)
+
+        # Close the descriptors we were passed
+        os.close(fd_out[0])
+        os.close(fd_out[1])
+        os.close(fd_out[2])
+
+        #ShowDescriptorState('RESTORED')
 
       # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
       # Do we also need 'complete --oil' and 'complete --osh' ?
@@ -143,7 +188,7 @@ if mylib.PYTHON:
         reply = 'TODO:PARSE'
 
       else:
-        log('Invalid command %r', command)
+        fanos_log('Invalid command %r', command)
         fanos.send(1, b'ERROR Invalid command')
         return 1
 

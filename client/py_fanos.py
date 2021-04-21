@@ -5,14 +5,17 @@ Python 2 doesn't have native FD passing, but Python 3 does.
 """
 
 import array
+import os
 import socket
 import sys
 
 
+ARGV0 = os.path.basename(sys.argv[0])
+
 def log(msg, *args):
   if args:
     msg = msg % args
-  print(msg, file=sys.stderr)
+  print('[%s] %s' %(ARGV0, msg), file=sys.stderr)
 
 
 def send(sock, msg, fds=None):

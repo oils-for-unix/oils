@@ -22,11 +22,12 @@ from py_fanos import log
 
 # ECMD x
 COMMANDS = [
-  b'echo hi',     # OK, and prints 'hi' to stdout file descriptor
-  b'read x',      # OK, and x is assigned
-  b'(',           # OKK, syntax error to stderr  
-  b'zzZZ',        # OK, and runtime error to stderr
-  b'declare -X',  # OK, and runtime error to stderr
+  b'echo hi',       # OK, and prints 'hi' to stdout file descriptor
+  b'read x',        # OK, and x is assigned
+  b'echo "x: $x"',  # OK, we maintained state
+  b'(',             # OK, syntax error to stderr  
+  b'zzZZ',          # OK, and runtime error to stderr
+  b'declare -X',    # OK, and runtime error to stderr
 
   # What about async commands like &
   # I think that works the same?
