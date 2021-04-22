@@ -14,12 +14,10 @@ ParseWholeFile() -- needs to check the here doc.
 """
 from __future__ import print_function
 
-import posix_ as posix
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    command_t, command,
-    parse_result__EmptyLine, parse_result__Eof, parse_result__Node
+    command_t, command, parse_result__Node, parse_result_e
 )
 from core import error
 from core import process
@@ -29,10 +27,11 @@ from core.pyerror import log
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
+from mycpp.mylib import tagswitch
 
 import posix_ as posix
 
-from typing import Any, List, TYPE_CHECKING
+from typing import cast, Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.comp_ui import _IDisplay
@@ -51,7 +50,6 @@ class ctx_Descriptors(object):
   def __init__(self, fds):
     # type: (List[int]) -> None
 
-    # TODO: Use context manager to do this dup() dance.
     self.saved0 = process.SaveFd(0)
     self.saved1 = process.SaveFd(1)
     self.saved2 = process.SaveFd(2)
@@ -75,12 +73,12 @@ class ctx_Descriptors(object):
     posix.dup2(self.saved1, 1)
     posix.dup2(self.saved2, 2)
 
-    # Don't need them anymore
+    # Restoration done, so close
     posix.close(self.saved0)
     posix.close(self.saved1)
     posix.close(self.saved2)
 
-    # Close the descriptors we were passed
+    # And close descriptors we were passed
     posix.close(self.fds[0])
     posix.close(self.fds[1])
     posix.close(self.fds[2])
@@ -114,37 +112,25 @@ if mylib.PYTHON:
 
     # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
     # control that?
-    done = False
 
-    while True:
-      try:
-        # may raise HistoryError or ParseError
-        result = c_parser.ParseInteractiveLine()
-        if isinstance(result, parse_result__EmptyLine):
-          break  # quit shell
-        elif isinstance(result, parse_result__Eof):
-          done = True
-          break  # quit shell
-        elif isinstance(result, parse_result__Node):
-          node = result.cmd
-        else:
-          raise AssertionError()
+    try:
+      UP_result = c_parser.ParseInteractiveLine()
+    except error.Parse as e:
+      errfmt.PrettyPrintError(e)
+      return ''
+    except KeyboardInterrupt:
+      # The client can send SIGINT, and this will happen?
+      print('^C')
+      return ''
 
-      except util.HistoryError as e:  # e.g. expansion failed
-        # TODO: Does this happen?  Or is history up to the user?
-        print(e.UserErrorString())
-        break
-      except error.Parse as e:
-        errfmt.PrettyPrintError(e)
-        break
-      except KeyboardInterrupt:
-        # The client can send SIGINT, and this will happen?
-        print('^C')
-        break
+    if UP_result.tag_() != parse_result_e.Node:
+      return ''
 
-      is_return, _ = cmd_ev.ExecuteAndCatch(node)
+    result = cast(parse_result__Node, UP_result)
+    node = result.cmd
 
-      break  # unconditional
+    # TODO: return should cause an 'EXIT 0' reply?
+    is_return, _ = cmd_ev.ExecuteAndCatch(node)
 
     return ''  # it's just 'OK '
 
@@ -184,6 +170,10 @@ if mylib.PYTHON:
 
       elif command == 'ECMD':
         #fanos_log('arg %r', arg)
+
+        # Note: we're not using the InteractiveLineReader, so there's no
+        # history expansion.
+        # Should we let the client use that?
         line_reader = reader.StringLineReader(arg, parse_ctx.arena)
         c_parser = parse_ctx.MakeOshParser(line_reader)
 
@@ -232,17 +222,20 @@ if mylib.PYTHON:
         try:
           # may raise HistoryError or ParseError
           result = c_parser.ParseInteractiveLine()
-          if isinstance(result, parse_result__EmptyLine):
-            display.EraseLines()
-            break  # quit shell
-          elif isinstance(result, parse_result__Eof):
-            display.EraseLines()
-            done = True
-            break  # quit shell
-          elif isinstance(result, parse_result__Node):
-            node = result.cmd
-          else:
-            raise AssertionError()
+          UP_result = result
+          with tagswitch(result) as case:
+            if case(parse_result_e.EmptyLine):
+              display.EraseLines()
+              break  # quit shell
+            elif case(parse_result_e.Eof):
+              display.EraseLines()
+              done = True
+              break  # quit shell
+            elif case(parse_result_e.Node):
+              result = cast(parse_result__Node, UP_result)
+              node = result.cmd
+            else:
+              raise AssertionError()
 
         except util.HistoryError as e:  # e.g. expansion failed
           # Where this happens:

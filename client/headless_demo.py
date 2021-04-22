@@ -23,6 +23,7 @@ from py_fanos import log
 # ECMD x
 COMMANDS = [
   b'echo hi',          # OK, and prints 'hi' to stdout file descriptor
+  b'echo !!',          # history?
   b'ls --color=auto',  # OK, and make sure it's in color!
   b'read x',           # OK, and x is assigned
   b'echo "x: $x"',     # OK, we maintained state
