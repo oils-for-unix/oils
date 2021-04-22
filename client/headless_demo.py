@@ -79,7 +79,7 @@ def main(argv):
       '--to-new-pty', dest='to_new_pty', default=False, action='store_true',
       help='Send the child stdout to a new PTY')
 
-  opts, _ = p.parse_args(argv[1:])
+  opts, args = p.parse_args(argv[1:])
 
   # left: we read and write from it
   # right: the server we spawn reads and writes.
@@ -134,6 +134,32 @@ def main(argv):
 
   log('stdout_fd = %d', stdout_fd)
 
+  # Send raw requests, for testing protocol errors
+  if args:
+    raw_requests = [a.encode('utf-8') for a in args]
+
+    status = 0
+    for req in raw_requests:
+      left.send(req)
+
+      try:
+        reply = py_fanos.recv(left)
+      except ValueError as e:
+        log('FANOS protocol error: %s', e)
+        break
+
+      log('reply %r' % reply)
+
+      if reply.startswith(b'ERROR'):
+        status = 1
+
+
+      if reply is None:
+        break
+    return status
+
+  # The normal path
+
   commands = [b'GETPID']
   #commands = [b'ECMD echo prompt ${PS1@P}']
   commands.extend(b'ECMD ' + c for c in COMMANDS)
@@ -162,10 +188,12 @@ def main(argv):
         break
       log('from pty: %r', chunk)
 
+  return 0
+
 
 if __name__ == '__main__':
   try:
-    main(sys.argv)
+    sys.exit(main(sys.argv))
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

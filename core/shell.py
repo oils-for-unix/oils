@@ -560,9 +560,10 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     except util.UserExit as e:
       return e.status
 
+    loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
     try:
-      status = main_loop.HeadlessDispatch(fd_state, cmd_ev, parse_ctx, errfmt)
       # TODO: What other exceptions happen here?
+      status = loop.Run()
     except util.UserExit as e:
       status = e.status
 

@@ -2331,6 +2331,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'cmd_value_e', 'cmd_value',
                 'redirect_arg_e', 'redirect_arg',
                 'a_index_e', 'a_index',
+                'parse_result_e',
                 'printf_part_e', 'printf_part',
                 'wait_status', 'wait_status_e',
                 'trace', 'trace_e',

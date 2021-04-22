@@ -107,102 +107,109 @@ if mylib.PYTHON:
 
       time.sleep(0.01)  # prevent interleaving
 
-  def Headless_ECMD(cmd_ev, c_parser, errfmt):
-    # type: (CommandEvaluator, CommandParser, ErrorFormatter) -> str
+  class Headless(object):
+    """Main loop for headless mode."""
 
-    # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
-    # control that?
+    def __init__(self, cmd_ev, parse_ctx, errfmt):
+      # type: (CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> None
+      self.cmd_ev = cmd_ev
+      self.parse_ctx = parse_ctx
+      self.errfmt = errfmt
 
-    try:
-      UP_result = c_parser.ParseInteractiveLine()
-    except error.Parse as e:
-      errfmt.PrettyPrintError(e)
-      return ''
-    except KeyboardInterrupt:
-      # The client can send SIGINT, and this will happen?
-      print('^C')
-      return ''
-
-    if UP_result.tag_() != parse_result_e.Node:
-      return ''
-
-    result = cast(parse_result__Node, UP_result)
-    node = result.cmd
-
-    # TODO: return should cause an 'EXIT 0' reply?
-    is_return, _ = cmd_ev.ExecuteAndCatch(node)
-
-    return ''  # it's just 'OK '
-
-  def HeadlessDispatch(fd_state, cmd_ev, parse_ctx, errfmt):
-    # type: (process.FdState, CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> int
-    """Main loop for headless mode.
-
-    TODO: Refactor and test error handling
-    """
-
-    fanos_log('Connect stdin and stdout to one end of socketpair() and send control messages.  osh writes debug messages (like this one) to stderr.')
-
-    done = False
-    status = 0
-
-    fd_out = []  # type: List[int]
-    while True:
+    def Run(self):
+      # type: () -> int
       try:
-        blob = fanos.recv(0, fd_out)
+        return self._Run()
       except ValueError as e:
-        fanos_log('protocol error: %s', e)
-        break
-
-      if blob is None:
-        fanos_log('EOF received')
-        break
-
-      fanos_log('received blob %r', blob)
-      if ' ' in blob:
-        command, arg = blob.split(' ', 1)
-      else:
-        command = blob
-        arg = ''
-
-      if command == 'GETPID':
-        reply = str(posix.getpid())
-
-      elif command == 'ECMD':
-        #fanos_log('arg %r', arg)
-
-        # Note: we're not using the InteractiveLineReader, so there's no
-        # history expansion.
-        # Should we let the client use that?
-        line_reader = reader.StringLineReader(arg, parse_ctx.arena)
-        c_parser = parse_ctx.MakeOshParser(line_reader)
-
-        if len(fd_out) != 3:
-          fanos.send(1, b'ERROR Expected 3 file descriptors')
-          return 1
-
-        fanos_log('received descriptors %s', fd_out)
-
-        with ctx_Descriptors(fd_out):
-          reply = Headless_ECMD(cmd_ev, c_parser, errfmt)
-
-        #ShowDescriptorState('RESTORED')
-
-      # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
-      # Do we also need 'complete --oil' and 'complete --osh' ?
-      elif command == 'PARSE':
-        # Just parse
-        reply = 'TODO:PARSE'
-
-      else:
-        fanos_log('Invalid command %r', command)
-        fanos.send(1, b'ERROR Invalid command')
+        fanos.send(1, 'ERROR %s' % e)
         return 1
 
-      fanos.send(1, b'OK %s' % reply)
-      del fd_out[:]  # reset for next iteration
+    def ECMD(self, arg):
+      # type: (str) -> str
 
-    return 0
+      # Note: we're not using the InteractiveLineReader, so there's no history
+      # expansion.  It would be nice if there was a way for the client to use
+      # that.
+      line_reader = reader.StringLineReader(arg, self.parse_ctx.arena)
+      c_parser = self.parse_ctx.MakeOshParser(line_reader)
+
+      # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
+      # control that?
+
+      try:
+        UP_result = c_parser.ParseInteractiveLine()
+      except error.Parse as e:
+        self.errfmt.PrettyPrintError(e)
+        return ''
+      except KeyboardInterrupt:
+        # The client can send SIGINT, and this will happen?
+        print('^C')
+        return ''
+
+      if UP_result.tag_() != parse_result_e.Node:
+        return ''
+
+      result = cast(parse_result__Node, UP_result)
+      node = result.cmd
+
+      # TODO: return should cause an 'EXIT 0' reply?
+      is_return, _ = self.cmd_ev.ExecuteAndCatch(node)
+
+      return ''  # it's just 'OK '
+
+    def _Run(self):
+      # type: () -> int
+      fanos_log('Connect stdin and stdout to one end of socketpair() and send control messages.  osh writes debug messages (like this one) to stderr.')
+
+      fd_out = []  # type: List[int]
+      while True:
+        try:
+          blob = fanos.recv(0, fd_out)
+        except ValueError as e:
+          fanos_log('protocol error: %s', e)
+          raise  # higher level handles it
+
+        if blob is None:
+          fanos_log('EOF received')
+          break
+
+        fanos_log('received blob %r', blob)
+        if ' ' in blob:
+          command, arg = blob.split(' ', 1)
+        else:
+          command = blob
+          arg = ''
+
+        if command == 'GETPID':
+          reply = str(posix.getpid())
+
+        elif command == 'ECMD':
+          #fanos_log('arg %r', arg)
+
+          if len(fd_out) != 3:
+            raise ValueError('Expected 3 file descriptors')
+
+          fanos_log('received descriptors %s', fd_out)
+
+          with ctx_Descriptors(fd_out):
+            reply = self.ECMD(arg)
+
+          #ShowDescriptorState('RESTORED')
+
+        # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
+        # Do we also need 'complete --oil' and 'complete --osh' ?
+        elif command == 'PARSE':
+          # Just parse
+          reply = 'TODO:PARSE'
+
+        else:
+          fanos_log('Invalid command %r', command)
+          raise ValueError('Invalid command %r' % command)
+
+        fanos.send(1, b'OK %s' % reply)
+        del fd_out[:]  # reset for next iteration
+
+      return 0
 
   def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
     # type: (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
