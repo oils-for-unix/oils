@@ -49,6 +49,7 @@ are ready to read:
   | [Known Differences Between OSH and Other Shells](doc/known-differences.html)
   | [Quirks](doc/quirks.html)
   | [Tracing Execution](doc/xtrace.html)
+  | [Headless Mode](doc/headless.html)
 - The Oil language:
   - [Oil Language Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
   | [Shell Language Deprecations](doc/deprecations.html)

@@ -108,6 +108,7 @@ readonly MARKDOWN_DOCS=(
   unicode
   framing
   xtrace
+  headless
 
   # Internal stuff
   variable-scope

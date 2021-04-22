@@ -74,6 +74,7 @@ More:
 
 - [Options](oil-options.html).  Parsing and runtime options turn OSH into Oil.
 - [Tracing Execution](xtrace.html).  Oil enhances shell's `set -x`.
+- [Headless Mode](headless.html).  For alternative UIs on top of Oil.
 - Future: Error Handling
 
 ## Interchange Formats

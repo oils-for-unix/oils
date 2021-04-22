@@ -23,7 +23,13 @@ from py_fanos import log
 # ECMD x
 COMMANDS = [
   b'echo hi',          # OK, and prints 'hi' to stdout file descriptor
-  b'echo !!',          # history?
+  b'echo !!',          # no history
+
+  # oops
+  b'echo one\necho two\necho three\n',  # multiline
+  b'echo 1;\necho 2;\necho 3\n',        # with semicolons
+  b'( \necho subshell\n)\n',            # proper multiline command
+
   b'ls --color=auto',  # OK, and make sure it's in color!
   b'read x',           # OK, and x is assigned
   b'echo "x: $x"',     # OK, we maintained state
