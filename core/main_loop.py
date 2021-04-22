@@ -45,6 +45,47 @@ if TYPE_CHECKING:
 _ = log
 
 
+class ctx_Descriptors(object):
+  """Save and restore descriptor state for the headless ECMD command."""
+
+  def __init__(self, fds):
+    # type: (List[int]) -> None
+
+    # TODO: Use context manager to do this dup() dance.
+    self.saved0 = process.SaveFd(0)
+    self.saved1 = process.SaveFd(1)
+    self.saved2 = process.SaveFd(2)
+
+    #ShowDescriptorState('BEFORE')
+    posix.dup2(fds[0], 0)
+    posix.dup2(fds[1], 1)
+    posix.dup2(fds[2], 2)
+
+    self.fds = fds
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+
+    # Restore
+    posix.dup2(self.saved0, 0)
+    posix.dup2(self.saved1, 1)
+    posix.dup2(self.saved2, 2)
+
+    # Don't need them anymore
+    posix.close(self.saved0)
+    posix.close(self.saved1)
+    posix.close(self.saved2)
+
+    # Close the descriptors we were passed
+    posix.close(self.fds[0])
+    posix.close(self.fds[1])
+    posix.close(self.fds[2])
+
+
 if mylib.PYTHON:
   import fanos
 
@@ -71,10 +112,8 @@ if mylib.PYTHON:
   def Headless_ECMD(cmd_ev, c_parser, errfmt):
     # type: (CommandEvaluator, CommandParser, ErrorFormatter) -> str
 
-    # TODO: Parse and evaluate
     # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
     # control that?
-
     done = False
 
     while True:
@@ -97,11 +136,9 @@ if mylib.PYTHON:
         break
       except error.Parse as e:
         errfmt.PrettyPrintError(e)
-        # NOTE: This should set the status interactively!  Bash does this.
-        status = 2
         break
       except KeyboardInterrupt:
-        # The client can send SIGINT, and this will happen:
+        # The client can send SIGINT, and this will happen?
         print('^C')
         break
 
@@ -113,6 +150,10 @@ if mylib.PYTHON:
 
   def HeadlessDispatch(fd_state, cmd_ev, parse_ctx, errfmt):
     # type: (process.FdState, CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> int
+    """Main loop for headless mode.
+
+    TODO: Refactor and test error handling
+    """
 
     fanos_log('Connect stdin and stdout to one end of socketpair() and send control messages.  osh writes debug messages (like this one) to stderr.')
 
@@ -142,7 +183,7 @@ if mylib.PYTHON:
         reply = str(posix.getpid())
 
       elif command == 'ECMD':
-        fanos_log('arg %r', arg)
+        #fanos_log('arg %r', arg)
         line_reader = reader.StringLineReader(arg, parse_ctx.arena)
         c_parser = parse_ctx.MakeOshParser(line_reader)
 
@@ -152,34 +193,8 @@ if mylib.PYTHON:
 
         fanos_log('received descriptors %s', fd_out)
 
-        # TODO: Use context manager to do this dup() dance.
-        saved0 = process.SaveFd(0)
-        saved1 = process.SaveFd(1)
-        saved2 = process.SaveFd(2)
-
-        #ShowDescriptorState('BEFORE')
-        posix.dup2(fd_out[0], 0)
-        posix.dup2(fd_out[1], 1)
-        posix.dup2(fd_out[2], 2)
-
-        #ShowDescriptorState('AFTER')
-
-        reply = Headless_ECMD(cmd_ev, c_parser, errfmt)
-
-        # Restore
-        posix.dup2(saved0, 0)
-        posix.dup2(saved1, 1)
-        posix.dup2(saved2, 2)
-
-        # Don't need them anymore
-        posix.close(saved0)
-        posix.close(saved1)
-        posix.close(saved2)
-
-        # Close the descriptors we were passed
-        posix.close(fd_out[0])
-        posix.close(fd_out[1])
-        posix.close(fd_out[2])
+        with ctx_Descriptors(fd_out):
+          reply = Headless_ECMD(cmd_ev, c_parser, errfmt)
 
         #ShowDescriptorState('RESTORED')
 

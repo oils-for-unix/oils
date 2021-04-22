@@ -539,26 +539,43 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # TODO: .rc file needs its own arena.
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
+  # Calculate ~/.config/oil/oshrc or oilrc.  Used for both -i and --headless
+  # We avoid cluttering the user's home directory.  Some users may want to ln
+  # -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
+
+  # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
+
+  home_dir = pyos.GetMyHomeDir()
+  assert home_dir is not None
+  rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil/%src' % lang)
+
   if flag.headless:
+    # This is like an interactive shell, so we copy some initialization from
+    # below.  Note: this may need to be tweaked.
+    _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
+
+    # NOTE: called AFTER _InitDefaultCompletions.
+    try:
+      SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
+    except util.UserExit as e:
+      return e.status
+
     try:
       status = main_loop.HeadlessDispatch(fd_state, cmd_ev, parse_ctx, errfmt)
       # TODO: What other exceptions happen here?
     except util.UserExit as e:
       status = e.status
+
+    # Same logic as interactive shell
+    box = [status]
+    cmd_ev.MaybeRunExitTrap(box)
+    status = box[0]
+
     return status
 
   if exec_opts.interactive():
     # bash: 'set -o emacs' is the default only in the interactive shell
     mutable_opts.set_emacs()
-
-    # Calculate ~/.config/oil/oshrc or oilrc
-    # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
-    # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
-
-    # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
-    home_dir = pyos.GetMyHomeDir()
-    assert home_dir is not None
-    history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
 
     if line_input:
       # NOTE: We're using a different WordEvaluator here.
@@ -586,6 +603,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
+      history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
       comp_ui.InitReadline(line_input, history_filename, root_comp, display,
                            debug_f)
       _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
@@ -595,9 +613,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
     sig_state.InitInteractiveShell(display)
 
-    rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil/%src' % lang)
+    # NOTE: called AFTER _InitDefaultCompletions.
     try:
-      # NOTE: Should be called AFTER _InitDefaultCompletions.
       SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
     except util.UserExit as e:
       return e.status
@@ -610,6 +627,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                                      prompt_plugin, errfmt)
     except util.UserExit as e:
       status = e.status
+
     box = [status]
     cmd_ev.MaybeRunExitTrap(box)
     status = box[0]

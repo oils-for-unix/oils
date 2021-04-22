@@ -22,12 +22,20 @@ from py_fanos import log
 
 # ECMD x
 COMMANDS = [
-  b'echo hi',       # OK, and prints 'hi' to stdout file descriptor
-  b'read x',        # OK, and x is assigned
-  b'echo "x: $x"',  # OK, we maintained state
-  b'(',             # OK, syntax error to stderr  
-  b'zzZZ',          # OK, and runtime error to stderr
-  b'declare -X',    # OK, and runtime error to stderr
+  b'echo hi',          # OK, and prints 'hi' to stdout file descriptor
+  b'ls --color=auto',  # OK, and make sure it's in color!
+  b'read x',           # OK, and x is assigned
+  b'echo "x: $x"',     # OK, we maintained state
+  b'(',                # OK, syntax error to stderr  
+  b'zzZZ',             # OK, and runtime error to stderr
+  b'declare -X',       # OK, and runtime error to stderr
+  b'echo PS1=${PS1@P}',   # typical prompt command
+  b'echo $? $PWD',    # dump state.  TODO: JSON?
+
+  # Hm this could actually return
+  b'return',    
+  b'exit',   # This exists the process
+  b'echo done',    
 
   # What about async commands like &
   # I think that works the same?
@@ -72,15 +80,13 @@ def main(argv):
 
   opts, _ = p.parse_args(argv[1:])
 
-  # FORK THE SERVER and pass it a socket.
-
-  # left -> coprocess stdin
-  # right -> coprocess stdout
+  # left: we read and write from it
+  # right: the server we spawn reads and writes.
   left, right = socket.socketpair()
 
   ShowDescriptorState('parent/client BEFORE')
 
-  # This is necessary so that the child gets it
+  # The server/child should inherit these descriptors
   os.set_inheritable(left.fileno(), True)
   os.set_inheritable(right.fileno(), True)
 
@@ -109,46 +115,42 @@ def main(argv):
     ShowDescriptorState('parent/client AFTER')
 
   master_fd, slave_fd = -1, -1
-  try:
-    stdin_fd = os.open('/dev/stdin', 0)
-    stderr_fd = os.open('/dev/stderr', 0)
 
-    if opts.to_new_pty:
-      master_fd, slave_fd = os.openpty()
+  if opts.to_new_pty:
+    master_fd, slave_fd = os.openpty()
 
-      stdin_fd = slave_fd
-      stdout_fd = slave_fd
-      stderr_fd = slave_fd
+    stdin_fd = slave_fd
+    stdout_fd = slave_fd
+    stderr_fd = slave_fd
 
-      log('master %d slave %d', master_fd, slave_fd)
-      #os.close(slave_fd)
+    log('master %d slave %d', master_fd, slave_fd)
+    #os.close(slave_fd)
 
-    else:
-      stdin_fd = os.open(opts.stdin_file, 0)
-      stdout_fd = os.open(opts.stdout_file, os.O_RDWR | os.O_CREAT)
-      stderr_fd = os.open(opts.stderr_file, os.O_RDWR | os.O_CREAT)
+  else:
+    stdin_fd = os.open(opts.stdin_file, 0)
+    stdout_fd = os.open(opts.stdout_file, os.O_RDWR | os.O_CREAT)
+    stderr_fd = os.open(opts.stderr_file, os.O_RDWR | os.O_CREAT)
 
-    log('stdout_fd = %d', stdout_fd)
+  log('stdout_fd = %d', stdout_fd)
 
-    commands = [b'GETPID']
-    commands.extend(b'ECMD ' + c for c in COMMANDS)
+  commands = [b'GETPID']
+  #commands = [b'ECMD echo prompt ${PS1@P}']
+  commands.extend(b'ECMD ' + c for c in COMMANDS)
 
-    for cmd in commands:
-      py_fanos.send(left, cmd, [stdin_fd, stdout_fd, stderr_fd])
+  for cmd in commands:
+    py_fanos.send(left, cmd, [stdin_fd, stdout_fd, stderr_fd])
 
-      try:
-        reply = py_fanos.recv(left)
-      except ValueError as e:
-        log('FANOS protocol error: %s', e)
-        break
+    try:
+      reply = py_fanos.recv(left)
+    except ValueError as e:
+      log('FANOS protocol error: %s', e)
+      break
 
-      print('reply %r' % reply)
-      if reply is None:
-        break
+    log('reply %r' % reply)
+    if reply is None:
+      break
 
-  finally:
-    log('closing socket')
-    left.close()
+  left.close()
 
   if master_fd != -1:
     # This hangs because the server still has the terminal open?  Not sure
