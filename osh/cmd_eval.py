@@ -90,7 +90,7 @@ if TYPE_CHECKING:
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
 IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
-IsEvalSource = 1 << 1  # eval/source builtins
+RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
 
 
@@ -1483,7 +1483,7 @@ class CommandEvaluator(object):
     try:
       status = self._Execute(node)
     except _ControlFlow as e:
-      if cmd_flags & IsEvalSource:
+      if cmd_flags & RaiseControlFlow:
         raise  # 'eval break' and 'source return.sh', etc.
       else:
         # Return at top level is OK, unlike in bash.
@@ -1491,8 +1491,6 @@ class CommandEvaluator(object):
           is_return = True
           status = e.StatusCode()
         else:
-          #raise  # break and continue in eval
-          is_eval = False
           # TODO: This error message is invalid.  Can also happen in eval.
           # We need a flag.
 
@@ -1502,7 +1500,7 @@ class CommandEvaluator(object):
               span_id=e.token.span_id)
           is_fatal = True
           # All shells exit 0 here.  It could be hidden behind
-          # strict-control-flow if the incompatibility causes problems.
+          # strict_control_flow if the incompatibility causes problems.
           status = 1
     except error.Parse as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack

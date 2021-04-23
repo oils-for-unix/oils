@@ -113,6 +113,8 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
     # TODO: Use color instead of [ ]
     if case(source_e.Interactive):
       source_str = '[ interactive ]'  # This might need some changes
+    elif case(source_e.Headless):
+      source_str = '[ headless ]'
     elif case(source_e.CFlag):
       source_str = '[ -c flag ]'
 

@@ -516,15 +516,20 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   else:
     if script_name is None:
-      stdin = mylib.Stdin()
-      if stdin.isatty():
-        arena.PushSource(source.Interactive())
-        line_reader = py_reader.InteractiveLineReader(
-            arena, prompt_ev, hist_ev, line_input, prompt_state)
-        mutable_opts.set_interactive()
+      if flag.headless:
+        arena.PushSource(source.Headless())
+        line_reader = None  # unused!
+        # Not setting '-i' flag for now.  Some people's bashrc may want it?
       else:
-        arena.PushSource(source.Stdin(''))
-        line_reader = reader.FileLineReader(stdin, arena)
+        stdin = mylib.Stdin()
+        if stdin.isatty():
+          arena.PushSource(source.Interactive())
+          line_reader = py_reader.InteractiveLineReader(
+              arena, prompt_ev, hist_ev, line_input, prompt_state)
+          mutable_opts.set_interactive()
+        else:
+          arena.PushSource(source.Stdin(''))
+          line_reader = reader.FileLineReader(stdin, arena)
     else:
       arena.PushSource(source.MainFile(script_name))
       try:

@@ -1,16 +1,13 @@
 """
 main_loop.py
 
-Two variants:
-
-main_loop.Interactive()
-main_loop.Batch()
-
-They call CommandParser.ParseLogicalLine() and CommandEvaluator.ExecuteAndCatch().
-
-Get rid of:
-
-ParseWholeFile() -- needs to check the here doc.
+Variants:
+  main_loop.Interactive()    calls ParseInteractiveLine() and ExecuteAndCatch()
+  main_loop.Batch()          calls ParseLogicalLine() and ExecuteAndCatch()
+  main_loop.Headless()       calls Batch() like eval and source. 
+                                   We want 'echo 1\necho 2\n' to work, so we 
+                                   don't bother with "the PS2 problem".
+  main_loop.ParseWholeFile() calls ParseLogicalLine().  Used by osh -n.
 """
 from __future__ import print_function
 
@@ -127,35 +124,18 @@ if mylib.PYTHON:
     def ECMD(self, arg):
       # type: (str) -> str
 
+      # This logic is similar to the 'eval' builtin in osh/builtin_meta.
+
       # Note: we're not using the InteractiveLineReader, so there's no history
       # expansion.  It would be nice if there was a way for the client to use
       # that.
       line_reader = reader.StringLineReader(arg, self.parse_ctx.arena)
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-      # Note: in interactive mode, HISTORY SUB like !! is on.  How do we
-      # control that?
+      # Status is unused; $_ can be queried by the headless client
+      unused_status = Batch(self.cmd_ev, c_parser, self.parse_ctx.arena, 0)
 
-      try:
-        UP_result = c_parser.ParseInteractiveLine()
-      except error.Parse as e:
-        self.errfmt.PrettyPrintError(e)
-        return ''
-      except KeyboardInterrupt:
-        # The client can send SIGINT, and this will happen?
-        print('^C')
-        return ''
-
-      if UP_result.tag_() != parse_result_e.Node:
-        return ''
-
-      result = cast(parse_result__Node, UP_result)
-      node = result.cmd
-
-      # TODO: return should cause an 'EXIT 0' reply?
-      is_return, _ = self.cmd_ev.ExecuteAndCatch(node)
-
-      return ''  # it's just 'OK '
+      return ''  # result is always 'OK ' since there was no protocol error
 
     def _Run(self):
       # type: () -> int

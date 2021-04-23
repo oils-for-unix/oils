@@ -45,6 +45,7 @@ module syntax
   -- 'source' represents the location of a line / token.
   source = 
     Interactive
+  | Headless
   | Unused(string comment)     -- completion and history never show parse errors?
   | CFlag
   | Stdin(string comment)

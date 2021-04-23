@@ -66,7 +66,7 @@ class Eval(vm._Builtin):
     with dev.ctx_Tracer(self.tracer, 'eval', None):
       with alloc.ctx_Location(self.arena, src):
         return main_loop.Batch(self.cmd_ev, c_parser, self.arena,
-                               cmd_flags=cmd_eval.IsEvalSource)
+                               cmd_flags=cmd_eval.RaiseControlFlow)
 
 
 class Source(vm._Builtin):
@@ -116,7 +116,7 @@ class Source(vm._Builtin):
           src = source.SourcedFile(path, call_spid)
           with alloc.ctx_Location(self.arena, src):
             status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
-                                     cmd_flags=cmd_eval.IsEvalSource)
+                                     cmd_flags=cmd_eval.RaiseControlFlow)
       return status
 
     except error._ControlFlow as e:

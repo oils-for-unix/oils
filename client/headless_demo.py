@@ -25,9 +25,10 @@ COMMANDS = [
   b'echo hi',          # OK, and prints 'hi' to stdout file descriptor
   b'echo !!',          # no history
 
-  # oops
+  # Headless mode uses something like 'eval' to handle multiline commands
   b'echo one\necho two\necho three\n',  # multiline
   b'echo 1;\necho 2;\necho 3\n',        # with semicolons
+
   b'( \necho subshell\n)\n',            # proper multiline command
 
   b'ls --color=auto',  # OK, and make sure it's in color!
@@ -38,6 +39,10 @@ COMMANDS = [
   b'declare -X',       # OK, and runtime error to stderr
   b'echo PS1=${PS1@P}',   # typical prompt command
   b'echo $? $PWD',    # dump state.  TODO: JSON?
+
+  # Errors at top level
+  b'break',    
+  b'continue',    
 
   # Hm this could actually return
   b'return',    
