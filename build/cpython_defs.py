@@ -339,7 +339,8 @@ class OilMethodFilter(object):
     if basename == 'sliceobject.c' and method_name == 'indices':
       return False
 
-    if basename == 'genobject.c' and method_name == 'close':  # Shadowed
+    # Shadowed by fanos.send(), posix.close(), etc.
+    if basename == 'genobject.c' and method_name in ('send', 'close'):
       return False
 
     # We're using list.remove()
