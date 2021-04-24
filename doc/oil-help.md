@@ -428,10 +428,20 @@ can't be any non-whitespace characters after it.
 Re-enable errexit, and provide fine-grained control over exit codes.
 
     if run --allow-status-01 -- grep pat file.txt {
+      echo 'pattern found'
     }
 
+    # Assign status to a variable, and return 0
     run --assign-status :st -- mycmd
-    echo $st
+    echo "mycmd returned $st"  # $? is now 0
+
+    # Push a status frame to preserve the value of $?, and ignore this one
+    run --push-status -- false
+    echo "previous status was $?"
+
+    # Like the above, but save the status in $st
+    run --push-status --assign-status :st -- false
+    echo "previous status was $?, and false returned $st"
 
     run --status-ok SIGPIPE yes | head
 
