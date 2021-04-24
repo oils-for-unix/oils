@@ -214,8 +214,13 @@ class Run_(vm._Builtin):
 
   --status-ok
     for SIGPIPE problem
-  --assign-status
+    TODO: I think we want sigpipe_status_ok instead of this
   --allow-status-01
+    because 'grep' returns 0, 1, or 2 (true, false, usage error)
+  --assign-status
+    To check exit codes in a more detailed way rather than relying on errexit
+  --push-status
+    TODO: for the headless shell to avoid clobbering $! with commands
 
   if run deploy {
     echo "success"
@@ -259,7 +264,7 @@ class Run_(vm._Builtin):
         # for functions.
         status = self.shell_ex.RunSimpleCommand(cmd_val2, True)
         #log('st %d', status)
-    except error.ErrExit as e:  # from functino call
+    except error.ErrExit as e:  # from function call
       #log('e %d', e.exit_status)
       status = e.exit_status
       failure_spid = e.span_id

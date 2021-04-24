@@ -165,3 +165,30 @@ y
 OK
 pipeline=0 0
 ## END
+
+#### run --status-ok SIGPIPE with builtin printf
+
+bad() {
+  /usr/bin/printf '%65538s\n' foo | head -c 1
+  echo external ${_pipeline_status[@]}
+
+  run --status-ok SIGPIPE /usr/bin/printf '%65538s\n' foo | head -c 1
+  echo external supressed ${_pipeline_status[@]}
+
+  printf '%65538s\n' foo | head -c 1
+  echo builtin ${_pipeline_status[@]}
+
+  run --status-ok SIGPIPE printf '%65538s\n' foo | head -c 1
+  echo builtin suppressed ${_pipeline_status[@]}
+}
+
+bad
+echo finished
+
+## STDOUT:
+ external 141 0
+ external suppressed  0 0
+ builtin 141 0
+ builtin suppressed  0 0
+finished
+## END
