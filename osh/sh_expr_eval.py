@@ -810,11 +810,6 @@ class BoolEvaluator(ArithEvaluator):
     val = self.word_ev.EvalWordToString(word, quote_kind=quote_kind)
     return val.s
 
-  def _SetRegexMatches(self, matches):
-    # type: (List[str]) -> None
-    """For ~= to set the BASH_REMATCH array."""
-    state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
-
   def EvalB(self, node):
     # type: (bool_expr_t) -> bool
 
@@ -958,7 +953,7 @@ class BoolEvaluator(ArithEvaluator):
             if matches is None:
               return False
 
-            self._SetRegexMatches(matches)
+            self.mem.SetMatches(matches)
             return True
 
           if op_id == Id.Op_Less:

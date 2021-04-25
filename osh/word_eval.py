@@ -1633,7 +1633,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     Runtime errors like $(( 1 / 0 )) and mutating $? like $(exit 42) are
     handled here.
     """
-    with state.ctx_Status(self.mem):  # to "sandbox" $? and $PIPESTATUS
+    with state.ctx_Registers(self.mem):  # to "sandbox" $? and $PIPESTATUS
       try:
         val = self.EvalWordToString(w)
       except error.FatalRuntime as e:

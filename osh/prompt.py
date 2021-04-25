@@ -275,6 +275,6 @@ class UserPlugin(object):
       self.parse_cache[prompt_cmd] = node
 
     # Save this so PROMPT_COMMAND can't set $?
-    with state.ctx_Status(self.mem):
+    with state.ctx_Registers(self.mem):
       # Catches fatal execution error
       self.cmd_ev.ExecuteAndCatch(node)

@@ -40,7 +40,7 @@ libedit-flags() {
   pkg-config --libs --cflags libedit
 }
 
-install-py-libs() {
+install-py2() {
   set -x
 
   # pyyaml: for yaml2json
@@ -53,6 +53,11 @@ install-py-libs() {
   # not sure why this requires sudo and pip2 doesn't
   # this doesn't work on our code
   # sudo pip3 install flake8
+}
+
+install-py3() {
+  sudo apt install python3-pip
+  pip3 install mypy
 }
 
 destroy-pip() {

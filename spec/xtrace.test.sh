@@ -330,7 +330,7 @@ status=0
 ## OK mksh status: 1
 
 
-#### $? in PS1
+#### Reading $? in PS4
 PS4='[last=$?] '
 set -x
 false

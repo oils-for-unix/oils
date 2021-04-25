@@ -870,8 +870,8 @@ class ctx_Temp(object):
     self.mem.PopTemp()
 
 
-class ctx_Status(object):
-  """For $PS1, $PS4, and $PROMPT_COMMAND."""
+class ctx_Registers(object):
+  """For $PS1, $PS4, $PROMPT_COMMAND, traps, and headless EVAL."""
 
   def __init__(self, mem):
     # type: (Mem) -> None
@@ -885,6 +885,8 @@ class ctx_Status(object):
     # frame.
     mem.pipe_status.append([])
     mem.process_sub_status.append([])
+
+    mem.regex_matches.append([])
     self.mem = mem
 
   def __enter__(self):
@@ -893,9 +895,10 @@ class ctx_Status(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.mem.last_status.pop()
-    self.mem.pipe_status.pop()
+    self.mem.regex_matches.pop()
     self.mem.process_sub_status.pop()
+    self.mem.pipe_status.pop()
+    self.mem.last_status.pop()
 
 
 class Mem(object):
@@ -935,16 +938,21 @@ class Mem(object):
 
     self.line_num = value.Str('')
 
-    self.last_status = [0]  # type: List[int]  # a stack
-    self.pipe_status = [[]]  # type: List[List[int]]  # stack
-    self.process_sub_status = [[]]  # type: List[List[int]]  # stack
-    self.last_bg_pid = -1  # Uninitialized value mutable public variable
-
     # Done ONCE on initialization
     self.root_pid = posix.getpid()
 
+    # TODO:
+    # - These are REGISTERS mutated by user code.
+    # - Call it self.reg_stack?  with ctx_Registers
+    # - push-registers builtin
+    self.last_status = [0]  # type: List[int]  # a stack
+    self.pipe_status = [[]]  # type: List[List[int]]  # stack
+    self.process_sub_status = [[]]  # type: List[List[int]]  # stack
+
     # 0 is the whole match, 1..n are submatches
-    self.regex_matches = []  # type: List[str]  
+    self.regex_matches = [[]]  # type: List[List[str]]
+
+    self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
   def __repr__(self):
     # type: () -> str
@@ -1575,6 +1583,7 @@ class Mem(object):
       # - @@ could be an alias for ARGV (in command mode, but not expr mode)
       return value.MaybeStrArray(self.GetArgv())
 
+    # "Registers"
     if name == '_status':
       return value.Str(str(self.last_status[-1]))
 
@@ -1583,6 +1592,9 @@ class Mem(object):
 
     if name == '_process_sub_status':  # Oil naming convention
       return value.MaybeStrArray([str(i) for i in self.process_sub_status[-1]])
+
+    if name == 'BASH_REMATCH':
+      return value.MaybeStrArray(self.regex_matches[-1])  # top of stack
 
     # Do lookup of system globals before looking at user variables.  Note: we
     # could optimize this at compile-time like $?.  That would break
@@ -1881,16 +1893,18 @@ class Mem(object):
 
   def ClearMatches(self):
     # type: () -> None
-    del self.regex_matches[:]  # no clear() in Python 2
+    top = self.regex_matches[-1]
+    del top[:]  # no clear() in Python 2
 
   def SetMatches(self, matches):
     # type: (List[str]) -> None
-    self.regex_matches = matches
+    self.regex_matches[-1] = matches
 
   def GetMatch(self, i):
     # type: (int) -> Optional[str]
-    if i < len(self.regex_matches):
-      return self.regex_matches[i]
+    top = self.regex_matches[-1]
+    if i < len(top):
+      return top[i]
     else:
       return None
 

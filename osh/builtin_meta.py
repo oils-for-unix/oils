@@ -263,7 +263,7 @@ class Run_(vm._Builtin):
         # or forkwait { status ls }, but that is NOT idiomatic code.  status is
         # for functions.
         if arg.push_globals:
-          with state.ctx_Status(self.mem):  # Mutate status in STACK FRAME, not $?
+          with state.ctx_Registers(self.mem):  # Mutate status in STACK FRAME, not $?
             status = self.shell_ex.RunSimpleCommand(cmd_val2, True)
         else:
           status = self.shell_ex.RunSimpleCommand(cmd_val2, True)

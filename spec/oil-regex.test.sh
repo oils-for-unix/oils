@@ -57,6 +57,8 @@ if [[ $x =~ ([[:digit:]]+)-([[:digit:]]+) ]] {
   argv.py "${BASH_REMATCH[@]}"
 }
 
+# THIS IS A NO-OP.  The variable is SHADOWED by the special name.
+# I think that's OK.
 setvar BASH_REMATCH = %(reset)
 
 if (x ~ /<d+> '-' <d+>/) {
@@ -69,7 +71,7 @@ if (x ~ /<d+> '-' <d+>/) {
 }
 ## STDOUT:
 ['2020-08', '2020', '08']
-['reset']
+['2020-08', '2020', '08']
 ['2020-08', '2020', '08']
 ['2020-08']
 ## END

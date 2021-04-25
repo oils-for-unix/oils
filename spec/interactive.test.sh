@@ -178,3 +178,39 @@ last_status=0
 ## END
 ## N-I dash/mksh stdout-json: ""
 
+#### PROMPT_COMMAND that writes to BASH_REMATCH
+export PS1=''
+
+case $SH in
+  *bash|*osh)
+    $SH --rcfile /dev/null -i << 'EOF'
+PROMPT_COMMAND='[[ clobber =~ (.)(.)(.) ]]; echo ---'
+echo one
+[[ bar =~ (.)(.)(.) ]]
+echo ${BASH_REMATCH[@]}
+EOF
+    ;;
+esac
+
+# Paper over difference with OSH
+case $SH in *bash) echo '^D';; esac
+
+## STDOUT:
+---
+one
+---
+---
+bar b a r
+---
+^D
+## END
+## OK bash STDOUT:
+---
+one
+---
+---
+clo c l o
+---
+^D
+## END
+## N-I dash/mksh stdout-json: ""

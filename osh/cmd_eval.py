@@ -1299,7 +1299,7 @@ class CommandEvaluator(object):
       with state.ctx_Option(self.mutable_opts, [option_i._running_trap], True):
         for trap_node in to_run:
           # Isolate the exit status.
-          with state.ctx_Status(self.mem): 
+          with state.ctx_Registers(self.mem): 
             # Trace it.  TODO: Show the trap kind too
             with dev.ctx_Tracer(self.tracer, 'trap', None):
               self._Execute(trap_node)
