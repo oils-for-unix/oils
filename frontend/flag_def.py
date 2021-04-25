@@ -255,8 +255,8 @@ RUN_SPEC.Flag('-assign-status', args.String,
     help='Assign status to this variable, and return 0')
 RUN_SPEC.Flag('-allow-status-01', args.Bool,
     help='Return 0 or 1 status values, but fail for others (e.g. for grep)')
-RUN_SPEC.Flag('-push-status', args.Bool,
-    help="Don't mutate the current $?; use a stack frame instead")
+RUN_SPEC.Flag('-push-globals', args.Bool,
+    help="Don't mutate globals like the current $?; use a stack frame instead")
 
 # Future directions:
 # run --allow-status=0,1

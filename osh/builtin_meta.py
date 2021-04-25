@@ -262,7 +262,7 @@ class Run_(vm._Builtin):
         # extra fork (miss out on an optimization) of code like ( status ls )
         # or forkwait { status ls }, but that is NOT idiomatic code.  status is
         # for functions.
-        if arg.push_status:
+        if arg.push_globals:
           with state.ctx_Status(self.mem):  # Mutate status in STACK FRAME, not $?
             status = self.shell_ex.RunSimpleCommand(cmd_val2, True)
         else:
@@ -293,10 +293,10 @@ class Run_(vm._Builtin):
 
       state.SetRefString(self.mem, var_name, str(status))
       # when not --push-status, return 0 for success
-      return self.mem.LastStatus() if arg.push_status else 0
+      return self.mem.LastStatus() if arg.push_globals else 0
 
     # when not --push-status, return status of wrapped command
-    return self.mem.LastStatus() if arg.push_status else status
+    return self.mem.LastStatus() if arg.push_globals else status
 
 
 def _ResolveNames(names, funcs, aliases, search_path):

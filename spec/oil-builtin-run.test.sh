@@ -193,21 +193,21 @@ echo finished
 finished
 ## END
 
-#### run --push-status (preserves last exit code)
+#### run --push-globals (preserves last exit code)
 f42() {
   return 42
 }
 f42
 echo bare status=$?
 
-run --push-status -- f42
+run --push-globals -- f42
 echo run status=$?
 ## STDOUT:
 bare status=42
 run status=0
 ## END
 
-#### run --push-status --assign-status (preserves last exit code and assigns inner one)
+#### run --push-globals --assign-status (preserves last exit code and assigns inner one)
 
 f42() {
   return 42
@@ -220,7 +220,7 @@ echo run status=$? st=$st
 
 ( exit 43 )  # $? is now 43
 
-run --push-status --assign-status :st -- f42
+run --push-globals --assign-status :st -- f42
 echo after push status=$? st=$st
 
 ## STDOUT:
