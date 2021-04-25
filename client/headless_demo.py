@@ -20,7 +20,7 @@ import py_fanos
 from py_fanos import log
 
 
-# ECMD x
+# EVAL x
 COMMANDS = [
   b'echo hi',          # OK, and prints 'hi' to stdout file descriptor
   b'echo !!',          # no history
@@ -52,7 +52,7 @@ COMMANDS = [
   # What about async commands like &
   # I think that works the same?
 
-  # Is this valid?  ECMD space?  I think it probably shouldn't be?
+  # Is this valid?  EVAL space?  I think it probably shouldn't be?
   b'',
   # What about invalid netstrings?
 ]
@@ -172,8 +172,8 @@ def main(argv):
   # The normal path
 
   commands = [b'GETPID']
-  #commands = [b'ECMD echo prompt ${PS1@P}']
-  commands.extend(b'ECMD ' + c for c in COMMANDS)
+  #commands = [b'EVAL echo prompt ${PS1@P}']
+  commands.extend(b'EVAL ' + c for c in COMMANDS)
 
   for cmd in commands:
     py_fanos.send(left, cmd, [stdin_fd, stdout_fd, stderr_fd])

@@ -568,7 +568,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
     try:
       # TODO: What other exceptions happen here?
-      status = loop.Run()
+      status = loop.Loop()
     except util.UserExit as e:
       status = e.status
 

@@ -42,7 +42,7 @@ _ = log
 
 
 class ctx_Descriptors(object):
-  """Save and restore descriptor state for the headless ECMD command."""
+  """Save and restore descriptor state for the headless EVAL command."""
 
   def __init__(self, fds):
     # type: (List[int]) -> None
@@ -113,15 +113,15 @@ if mylib.PYTHON:
       self.parse_ctx = parse_ctx
       self.errfmt = errfmt
 
-    def Run(self):
+    def Loop(self):
       # type: () -> int
       try:
-        return self._Run()
+        return self._Loop()
       except ValueError as e:
         fanos.send(1, 'ERROR %s' % e)
         return 1
 
-    def ECMD(self, arg):
+    def EVAL(self, arg):
       # type: (str) -> str
 
       # This logic is similar to the 'eval' builtin in osh/builtin_meta.
@@ -137,7 +137,7 @@ if mylib.PYTHON:
 
       return ''  # result is always 'OK ' since there was no protocol error
 
-    def _Run(self):
+    def _Loop(self):
       # type: () -> int
       fanos_log('Connect stdin and stdout to one end of socketpair() and send control messages.  osh writes debug messages (like this one) to stderr.')
 
@@ -163,7 +163,7 @@ if mylib.PYTHON:
         if command == 'GETPID':
           reply = str(posix.getpid())
 
-        elif command == 'ECMD':
+        elif command == 'EVAL':
           #fanos_log('arg %r', arg)
 
           if len(fd_out) != 3:
@@ -172,7 +172,7 @@ if mylib.PYTHON:
           fanos_log('received descriptors %s', fd_out)
 
           with ctx_Descriptors(fd_out):
-            reply = self.ECMD(arg)
+            reply = self.EVAL(arg)
 
           #ShowDescriptorState('RESTORED')
 

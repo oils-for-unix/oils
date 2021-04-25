@@ -51,8 +51,10 @@ FANOS stands for *File descriptors and Netstrings Over Sockets*.  It's a
 
 List of commands:
 
-- `ECMD`.  Parse and evaluate an "entered command".  The logic is similar to
-  the `eval` and `source` builtins.
+- `EVAL`.  Parse and evaluate a shell command.  The logic is similar to the
+  `eval` and `source` builtins.
+  - It can be used for both user-entered commands and "behind the scenes"
+    functions for the shell UI.
   - The stdin, stdout, and stderr of **the shell and its child processes** will
     be redirected to the descriptors you pass.
   - There's no history expansion for now.  The UI can implement this itself,
