@@ -677,4 +677,43 @@ status=127
 hi
 ## END
 
+#### sigpipe_status_ok
 
+status_141() {
+  return 141
+}
+
+yes | head -n 1
+echo ${PIPESTATUS[@]}
+
+# DUMMY
+yes | status_141
+echo ${PIPESTATUS[@]}
+
+shopt --set oil:basic  # sigpipe_status_ok
+shopt --unset errexit
+
+yes | head -n 1
+echo ${PIPESTATUS[@]}
+
+# Conveniently, the last 141 isn't changed to 0, because it's run in the
+# CURRENT process.
+
+yes | status_141
+echo ${PIPESTATUS[@]}
+
+echo background
+false | status_141 &
+wait
+echo status=$? pipestatus=${PIPESTATUS[@]}
+
+## STDOUT:
+y
+141 0
+141 141
+y
+0 0
+0 141
+background
+status=0 pipestatus=0 141
+## END

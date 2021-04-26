@@ -271,7 +271,7 @@ class ShellExecutor(vm._Executor):
 
     if UP_node.tag_() == command_e.Pipeline:
       node = cast(command__Pipeline, UP_node)
-      pi = process.Pipeline()
+      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
       for child in node.children:
         p = self._MakeProcess(child)
         p.Init_ParentPipeline(pi)
@@ -302,7 +302,7 @@ class ShellExecutor(vm._Executor):
   def RunPipeline(self, node, status_out):
     # type: (command__Pipeline, CompoundStatus) -> None
 
-    pi = process.Pipeline()
+    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
 
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)

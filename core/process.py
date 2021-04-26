@@ -950,8 +950,8 @@ class Pipeline(Job):
   $(foo | bar)
   foo | bar | read v
   """
-  def __init__(self):
-    # type: () -> None
+  def __init__(self, sigpipe_status_ok):
+    # type: (bool) -> None
     Job.__init__(self)
     self.procs = []  # type: List[Process]
     self.pids = []  # type: List[int]  # pids in order
@@ -961,6 +961,8 @@ class Pipeline(Job):
     # Optional for foreground
     self.last_thunk = None  # type: Tuple[CommandEvaluator, command_t]
     self.last_pipe = None  # type: Tuple[int, int]
+
+    self.sigpipe_status_ok = sigpipe_status_ok
 
   def __repr__(self):
     # type: () -> str
@@ -1122,6 +1124,10 @@ class Pipeline(Job):
     #log('Pipeline WhenDone %d %d', pid, status)
     i = self.pids.index(pid)
     assert i != -1, 'Unexpected PID %d' % pid
+
+    if status == 141 and self.sigpipe_status_ok:
+      status = 0
+
     self.pipe_status[i] = status
 
     # mycpp rewrite: all(status != -1 for status in self.pipe_status)

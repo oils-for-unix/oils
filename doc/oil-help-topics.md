@@ -138,6 +138,7 @@ X [Testing]       check
                   X parse_triple_dots    Multiline pipelines
                   command_sub_errexit    More errexit checks -- at command sub
                   process_sub_fail       Analogous to pipefail for process subs
+                  sigpipe_status_ok      status 141 -> 0 in pipelines
                   simple_word_eval       No splitting, static globbing
                   xtrace_rich            Hierarchical and process tracing
                   xtrace_details (-u)    Disable most tracing with +

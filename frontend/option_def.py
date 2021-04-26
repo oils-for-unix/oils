@@ -125,6 +125,9 @@ _BASIC_RUNTIME_OPTIONS = [
     ('process_sub_fail', False),     # like pipefail, but for <(sort foo.txt)
     ('xtrace_rich', False),          # Hierarchical trace with PIDs
     ('xtrace_details', True),        # Legacy set -x stuff
+
+    # Whether status 141 in pipelines is turned into 0
+    ('sigpipe_status_ok', False),
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be

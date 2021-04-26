@@ -535,6 +535,17 @@ When this option is disabled, that statement is a syntax error.
 
 ### Oil Basic
 
+#### command_sub_errexit
+
+#### process_sub_fail
+
+#### sigpipe_status_ok
+
+If a process that's part of a pipeline exits with status 141 when this is
+option is on, it's turned into status 0, which avoids failure.
+
+SIGPIPE errors occur in cases like 'yes | head', and generally aren't useful.
+
 #### simple_word_eval
 
 TODO:
