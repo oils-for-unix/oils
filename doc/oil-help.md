@@ -427,15 +427,20 @@ can't be any non-whitespace characters after it.
 
 Re-enable errexit, and provide fine-grained control over exit codes.
 
+    if run myfunc {  # errexit is ON during 'myfunc'
+      echo 'success'
+    }
+
     if run --allow-status-01 -- grep pat file.txt {
       echo 'pattern found'
     }
 
     # Assign status to a variable, and return 0
     run --assign-status :st -- mycmd
-    echo "mycmd returned $st"  # $? is now 0
-
-    run --status-ok SIGPIPE yes | head
+    case $st in
+      2) echo 'usage error' ;;
+      *) echo 'OK' ;;
+    esac
 
 #### push-registers
 

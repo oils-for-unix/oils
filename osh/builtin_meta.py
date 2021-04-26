@@ -200,15 +200,6 @@ class Builtin(vm._Builtin):
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
-def _AdjustStatus(status_ok, status):
-  # type: (str, int) -> int
-
-  # TODO: Parse the status more?
-  if status_ok.lower() == 'sigpipe' and status == 141:
-    status = 0
-  return status
-
-
 class Run_(vm._Builtin):
   """For the 'if myfunc' problem with errexit.
 
@@ -268,10 +259,6 @@ class Run_(vm._Builtin):
       #log('e %d', e.exit_status)
       status = e.exit_status
       failure_spid = e.span_id
-
-    # Do this before -allow-status-01
-    if arg.status_ok is not None:
-      status = _AdjustStatus(arg.status_ok, status)
 
     if arg.allow_status_01 and status not in (0, 1):
       if failure_spid != runtime.NO_SPID:

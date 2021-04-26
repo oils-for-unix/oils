@@ -208,6 +208,7 @@ shopt -s parse_triple_dots
 shopt -s parse_triple_quoted
 shopt -s pipefail
 shopt -s process_sub_fail
+shopt -s sigpipe_status_ok
 shopt -s simple_word_eval
 shopt -s strict_argv
 shopt -s strict_arith
@@ -716,4 +717,39 @@ y
 0 141
 background
 status=0 pipestatus=0 141
+## END
+
+
+#### printf | head regression (sigpipe_status_ok)
+
+shopt --set oil:basic
+shopt --unset errexit
+
+bad() {
+  /usr/bin/printf '%65538s\n' foo | head -c 1
+  echo external on ${_pipeline_status[@]}
+
+  shopt --unset sigpipe_status_ok {
+    /usr/bin/printf '%65538s\n' foo | head -c 1
+  }
+  echo external off ${_pipeline_status[@]}
+
+  printf '%65538s\n' foo | head -c 1
+  echo builtin on ${_pipeline_status[@]}
+
+  shopt --unset sigpipe_status_ok {
+    printf '%65538s\n' foo | head -c 1
+  }
+  echo builtin off ${_pipeline_status[@]}
+}
+
+bad
+echo finished
+
+## STDOUT:
+ external on 0 0
+ external off 141 0
+ builtin on 0 0
+ builtin off 141 0
+finished
 ## END

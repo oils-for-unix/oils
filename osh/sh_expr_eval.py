@@ -45,7 +45,7 @@ from osh import word_eval
 
 import libc  # for fnmatch
 
-from typing import List, Tuple, Optional, cast, TYPE_CHECKING
+from typing import Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core import optview

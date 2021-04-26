@@ -23,7 +23,9 @@ ubuntu-deps() {
   # libreadline-dev: needed for the build/prepare.sh Python build.
   # cmake: for build/dev.sh yajl-release
   set -x  # show what needs sudo
-  sudo apt install python-dev gawk libreadline-dev ninja-build cmake
+  sudo apt install \
+    python-dev gawk libreadline-dev ninja-build cmake \
+    python-pip python3-pip
   set +x
 
   test/spec.sh install-shells
@@ -46,9 +48,7 @@ install-py2() {
   # pyyaml: for yaml2json
   # typing: because the build/cpython-defs tool
   # flake8: for linting
-  pip install pyyaml typing
-
-  #pip2 install flake8
+  pip install pyyaml typing flake8
 
   # not sure why this requires sudo and pip2 doesn't
   # this doesn't work on our code
@@ -56,7 +56,6 @@ install-py2() {
 }
 
 install-py3() {
-  sudo apt install python3-pip
   pip3 install mypy
 }
 

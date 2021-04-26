@@ -12,7 +12,9 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.runtime_asdl import value, value_e, scope_e, Proc
+from _devbuild.gen.runtime_asdl import (
+    value, value_e, scope_e, Proc, cmd_value__Argv
+)
 from _devbuild.gen.syntax_asdl import sh_lhs_expr, command_e
 from core import error
 from core.pyerror import log, e_usage
