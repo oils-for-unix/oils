@@ -435,15 +435,26 @@ Re-enable errexit, and provide fine-grained control over exit codes.
     run --assign-status :st -- mycmd
     echo "mycmd returned $st"  # $? is now 0
 
-    # Push a status frame to preserve the value of $?, and ignore this one
-    run --push-status -- false
-    echo "previous status was $?"
-
-    # Like the above, but save the status in $st
-    run --push-status --assign-status :st -- false
-    echo "previous status was $?, and false returned $st"
-
     run --status-ok SIGPIPE yes | head
+
+#### push-registers
+
+Save global registers like $? on a stack.  It's useful for preventing plugins
+from interfering with user code.  Example:
+
+    status_42         # returns 42 and sets $?
+    push-registers {  # push a new frame
+      status_43       # top of stack changed here
+      echo done
+    }                 # stack popped
+    echo $?           # 42, read from new top-of-stack
+
+Current list of registers:
+
+    BASH_REMATCH   aka  _match()
+    $?             aka  _status
+    PIPESTATUS     aka  _pipeline_status
+    _process_sub_status
 
 ### Data Formats
 

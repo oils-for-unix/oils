@@ -102,6 +102,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   write                  Like echo, but with --, -sep, -end
                   oil-read               Buffered I/O with --line, --all, --qsn
                   run                    Re-enable errexit; exit status utils
+                  push-registers         Save registers like $?, PIPESTATUS
                   X fopen                Open multiple streams, takes a block
                   X use                  source with namespace, file-relative 
                   X opts                 getopts replacement, sets OPT

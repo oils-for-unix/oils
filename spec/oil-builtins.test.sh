@@ -433,3 +433,31 @@ status=1
 status=2
 ## END
 
+
+#### push-registers
+shopt --set oil:basic
+shopt --unset errexit
+
+status_code() {
+  return $1
+}
+
+[[ foo =~ (.*) ]]
+
+status_code 42
+push-registers {
+  status_code 43
+  echo status=$?
+
+  [[ bar =~ (.*) ]]
+  echo ${BASH_REMATCH[@]}
+}
+echo status=$?  # push-registers will return 42
+
+echo ${BASH_REMATCH[@]}
+## STDOUT:
+status=43
+bar bar
+status=42
+foo foo
+## END

@@ -48,6 +48,7 @@ _NORMAL_BUILTINS = [
 
     # Oil only
     'push',
+    # push-registers added below
     'write', 'json',
     'pp',
     'use', 'opts',  # not implemented
@@ -123,6 +124,8 @@ def _Init(b):
 
   for name in _NORMAL_BUILTINS:
     b.Add(name)
+
+  b.Add('push-registers', enum_name='push_registers')
 
   # Implementation detail of $(<file)
   b.Add('__cat', enum_name='cat')

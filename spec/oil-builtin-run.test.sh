@@ -192,39 +192,3 @@ echo finished
  builtin suppressed  0 0
 finished
 ## END
-
-#### run --push-globals (preserves last exit code)
-f42() {
-  return 42
-}
-f42
-echo bare status=$?
-
-run --push-globals -- f42
-echo run status=$?
-## STDOUT:
-bare status=42
-run status=0
-## END
-
-#### run --push-globals --assign-status (preserves last exit code and assigns inner one)
-
-f42() {
-  return 42
-}
-f42
-echo bare status=$?
-
-run --assign-status :st -- f42
-echo run status=$? st=$st
-
-( exit 43 )  # $? is now 43
-
-run --push-globals --assign-status :st -- f42
-echo after push status=$? st=$st
-
-## STDOUT:
-bare status=42
-run status=0 st=42
-after push status=43 st=42
-## END

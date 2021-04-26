@@ -184,9 +184,10 @@ def AddProcess(
   b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
 
 
-def AddOil(b, mem, errfmt, procs, arena):
-  # type: (Dict[int, vm._Builtin], state.Mem, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
+def AddOil(b, mem, cmd_ev, errfmt, procs, arena):
+  # type: (Dict[int, vm._Builtin], state.Mem, cmd_eval.CommandEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
   b[builtin_i.push] = builtin_oil.Push(mem, errfmt)
+  b[builtin_i.push_registers] = builtin_oil.PushRegisters(mem, cmd_ev)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
 
@@ -434,7 +435,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
   AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_state, waiter,
              tracer, search_path, errfmt)
-  AddOil(builtins, mem, errfmt, procs, arena)
 
   builtins[builtin_i.help] = help_builtin
 
@@ -452,10 +452,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
 
-
   assign_b = pure.InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
+
+  AddOil(builtins, mem, cmd_ev, errfmt, procs, arena)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)

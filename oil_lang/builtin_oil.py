@@ -16,6 +16,7 @@ from _devbuild.gen.runtime_asdl import value, value_e, scope_e, Proc
 from _devbuild.gen.syntax_asdl import sh_lhs_expr, command_e
 from core import error
 from core.pyerror import log, e_usage
+from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import args
@@ -30,13 +31,12 @@ from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.ui import ErrorFormatter
-  from core.state import Mem
   from osh.cmd_eval import CommandEvaluator
 
 
 class _Builtin(vm._Builtin):
   def __init__(self, mem, errfmt):
-    # type: (Mem, ErrorFormatter) -> None
+    # type: (state.Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
 
@@ -47,7 +47,7 @@ class Pp(_Builtin):
   'pp cell a' is a lot easier to type than 'argv.py "${a[@]}"'.
   """
   def __init__(self, mem, errfmt, procs, arena):
-    # type: (Mem, ErrorFormatter, Dict[str, Proc], Arena) -> None
+    # type: (state.Mem, ErrorFormatter, Dict[str, Proc], Arena) -> None
     self.mem = mem
     self.errfmt = errfmt
     self.procs = procs
@@ -147,6 +147,27 @@ class Push(_Builtin):
 
     val.strs.extend(arg_r.Rest())
     return 0
+
+
+class PushRegisters(vm._Builtin):
+  def __init__(self, mem, cmd_ev):
+    # type: (state.Mem, CommandEvaluator) -> None
+    self.mem = mem
+    self.cmd_ev = cmd_ev  # To run blocks
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    #attrs, arg_r = flag_spec.ParseCmdVal('pushregisters', cmd_val)
+    #arg = arg_types.pushregisters(attrs.attrs)
+
+    if not cmd_val.block:
+      raise error.Usage('expected a block')
+
+    with state.ctx_Registers(self.mem):
+      unused = self.cmd_ev.EvalBlock(cmd_val.block)
+
+    # Return the previous value so $? isn't changed
+    return self.mem.last_status[-1]
 
 
 class Use(_Builtin):
@@ -256,7 +277,7 @@ class Json(vm._Builtin):
   Well that will get confused with a redirect.
   """
   def __init__(self, mem, cmd_ev, errfmt):
-    # type: (Mem, CommandEvaluator, ErrorFormatter) -> None
+    # type: (state.Mem, CommandEvaluator, ErrorFormatter) -> None
     self.mem = mem
     self.cmd_ev = cmd_ev
     self.errfmt = errfmt
