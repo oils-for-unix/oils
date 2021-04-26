@@ -1928,6 +1928,8 @@ def SetRef(mem, lval, val):
   """Equivalent of x=$y or setref x = y 
   
   Does NOT respect shopt --unset dynamic_scope
+
+  Used by printf -v
   """
   mem.SetValue(lval, val, scope_e.Dynamic)
 
@@ -1956,7 +1958,7 @@ def SetRefArray(mem, name, a):
     setref myref = %(a b c)
   }
 
-  Used by compadjust, read.
+  Used by compadjust, read -a, etc.
   """
   assert isinstance(a, list)
   mem.SetValue(lvalue.Named(name), value.MaybeStrArray(a), scope_e.Dynamic)

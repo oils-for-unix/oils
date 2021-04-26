@@ -414,8 +414,11 @@ class Read(vm._Builtin):
           s = entries[i]
         else:
           s = ''  # if there are too many variables
-        #log('read: %s = %s', names[i], s)
-        state.SetRefString(self.mem, names[i], s)
+        var_name = names[i]
+        if var_name.startswith(':'):
+          var_name = var_name[1:]
+        #log('read: %s = %s', var_name, s)
+        state.SetRefString(self.mem, var_name, s)
 
     return status
 
