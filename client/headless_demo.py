@@ -60,14 +60,9 @@ COMMANDS = [
 
 def ShowDescriptorState(label):
   if 1:
-    import time
-    time.sleep(0.01)  # prevent interleaving
-
     pid = os.getpid()
     print(label + ' (PID %d)' % pid, file=sys.stderr)
     os.system('ls -l /proc/%d/fd >&2' % pid)
-
-    time.sleep(0.01)  # prevent interleaving
 
 
 def main(argv):
@@ -117,6 +112,8 @@ def main(argv):
     os.dup2(right.fileno(), 1)
     right.close()  # we don't need this either
 
+    import time
+    time.sleep(0.1)  # prevent interleaving of parent/child state
     ShowDescriptorState('child/server')
 
     # never returns
