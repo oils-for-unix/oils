@@ -172,7 +172,6 @@ _BASIC_PARSE_OPTIONS = [
 
 # Extra stuff that breaks too many programs.
 _AGGRESSIVE_PARSE_OPTIONS = [
-    ('parse_set', False),      # set x = 'var'
     ('parse_equals', False),   # x = 'var'
     ('parse_at_all', False),   # @ starting any word, e.g. @[] @{} @@ @_ @-
 

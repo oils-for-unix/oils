@@ -416,11 +416,11 @@ class VarChecker(object):
       else:
         top[name] = keyword_id
 
-    if keyword_id in (Id.KW_Set, Id.KW_SetLocal):
+    if keyword_id == Id.KW_SetLocal:
       if name not in top:
         p_die("%r hasn't been declared", name, token=name_tok)
 
-    if keyword_id in (Id.KW_Set, Id.KW_SetLocal, Id.KW_SetVar):
+    if keyword_id in (Id.KW_SetLocal, Id.KW_SetVar):
       if name in top and top[name] == Id.KW_Const:
         p_die("Can't modify constant %r", name, token=name_tok)
 
@@ -1640,12 +1640,6 @@ class CommandParser(object):
       n9 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
       return n9
 
-    if self.parse_opts.parse_set() and self.c_id == Id.KW_Set:
-      kw_token = word_.LiteralToken(self.cur_word)
-      self._Next()
-      n10 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
-      return n10
-
     # Happens in function body, e.g. myfunc() oops
     p_die('Unexpected word while parsing compound command', word=self.cur_word)
     assert False  # for MyPy
@@ -1886,8 +1880,6 @@ class CommandParser(object):
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time,
         Id.KW_Var, Id.KW_Const, Id.KW_SetVar, Id.KW_SetLocal, Id.KW_SetGlobal,
         Id.KW_SetRef):
-      return self.ParseCompoundCommand()
-    if self.parse_opts.parse_set() and self.c_id == Id.KW_Set:
       return self.ParseCompoundCommand()
 
     if self.c_id in (Id.Lit_Underscore, Id.Lit_Equals):

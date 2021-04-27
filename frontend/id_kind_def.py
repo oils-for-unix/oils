@@ -477,7 +477,7 @@ def AddKinds(spec):
 
       # Oil keywords.
       'Const', 'Var', 'SetVar', 'SetRef', # OSH style
-      'Set',  'SetLocal',  'SetGlobal',  # Strict Oil style
+      'SetLocal',  'SetGlobal',  # Strict Oil style
       # later: Auto
       'Proc', 'Func', 'Data', 'Enum',
       'Class', 'Import',

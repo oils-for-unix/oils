@@ -9,7 +9,7 @@ echo $[len(a)]
 
 #### $[obj.attr]
 var obj = /d+/
-set obj.x = 42
+setvar obj.x = 42
 echo $[obj.x]
 ## STDOUT:
 42
@@ -17,7 +17,7 @@ echo $[obj.x]
 
 #### $[d['key']]
 var d = {}
-set d['key'] = 42
+setvar d['key'] = 42
 echo $[d['key']]
 ## STDOUT:
 42
@@ -25,7 +25,7 @@ echo $[d['key']]
 
 #### $[d->key]
 var d = {}
-set d['key'] = 42
+setvar d['key'] = 42
 echo $[d->key]
 ## STDOUT:
 42
@@ -34,9 +34,9 @@ echo $[d->key]
 #### In Double quotes
 var a = %(a b c)
 var obj = /d+/
-set obj.x = 42
+setvar obj.x = 42
 var d = {}
-set d['key'] = 42
+setvar d['key'] = 42
 echo "func $[len(a)]"
 echo "attr $[obj.x]"
 echo "key $[d['key']]"

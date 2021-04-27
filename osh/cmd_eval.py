@@ -749,7 +749,7 @@ class CommandEvaluator(object):
           with switch(node.keyword.id) as case2:
             if case2(Id.KW_SetVar):
               which_scopes = scope_e.LocalOrGlobal
-            elif case2(Id.KW_Set, Id.KW_SetLocal):
+            elif case2(Id.KW_SetLocal):
               which_scopes = scope_e.LocalOnly
             elif case2(Id.KW_SetGlobal):
               which_scopes = scope_e.GlobalOnly

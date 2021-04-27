@@ -85,7 +85,7 @@ echo x=$x
 x=global
 ## END
 
-#### 'set' when variable isn't declared results in fatal error
+#### 'setlocal' when variable isn't declared results in fatal error
 shopt -s oil:all
 
 var x = 1
@@ -98,7 +98,7 @@ f() {
   setvar y = 'YY'
   echo y=$y
 
-  set z = 3  # NOT DECLARED
+  setlocal z = 3  # NOT DECLARED
   echo z=$z
 }
 ## status: 2
