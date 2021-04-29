@@ -933,14 +933,6 @@ oil_place_mutation() {
   }
   '
 
-  # can't modify constant
-  _oil-parse-error '
-  proc p(x) {
-    c = 123
-    set c = 42  # ERROR: cannot modify constant
-  }
-  '
-
   if is-oil-native; then
     echo 'skipping oil_place_mutation'  # TODO: re-enable with pgen2
     return
