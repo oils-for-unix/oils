@@ -1243,7 +1243,7 @@ class Mem(object):
 
     if not cell or not cell.nameref:
       if ref_required:
-        e_die("setref requires a nameref (:out param), got %r", name)
+        e_die("setref requires a nameref (:out param)")
       return cell, name_map, name  # not a nameref
 
     val = cell.val

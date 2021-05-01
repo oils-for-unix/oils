@@ -111,6 +111,7 @@ readonly MARKDOWN_DOCS=(
   headless
 
   # Internal stuff
+  variables
   variable-scope
   interpreter-state
   process-model

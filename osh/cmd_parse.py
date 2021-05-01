@@ -355,9 +355,9 @@ class VarChecker(object):
     Args:
       oil_proc: Whether to disallow nested proc/function declarations
     """
-    # tokens has 'proc' or some other token
+    # self.tokens for location info: 'proc' or another token
     self.tokens = []  # type: List[Token]
-    self.names = [{}]  # type: List[Dict[str, Id_t]]
+    self.names = []  # type: List[Dict[str, Id_t]]
 
   def Push(self, blame_tok):
     # type: (Token) -> None
@@ -408,6 +408,10 @@ class VarChecker(object):
     setref x:
       Should only mutate out params
     """
+    # Don't check the global level!  Semantics are different here!
+    if len(self.names) == 0:
+      return
+
     top = self.names[-1] 
     name = name_tok.val
     if keyword_id in (Id.KW_Const, Id.KW_Var):
@@ -469,6 +473,10 @@ class CommandParser(object):
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
     self.parse_opts = parse_ctx.parse_opts
+    # Note: VarChecker is instantiated with each CommandParser, which means
+    # that two 'proc foo' -- inside a command sub and outside -- don't
+    # conflict, because they use different CommandParser instances.  I think
+    # this OK but you can imagine different behaviors.
     self.var_checker = VarChecker()
 
     self.Reset()

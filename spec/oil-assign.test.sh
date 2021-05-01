@@ -231,17 +231,21 @@ echo val=$val
 val=42
 ## END
 
-#### duplicate var def results in fatal error
+#### The top level allows 'var' to be redefined
 var x = "global"
+echo x=$x
 f() {
   var x = "local"
   echo x=$x
 }
 f
-var x = "redeclaration is an error"
-## status: 2
+var x = "g2"
+echo x=$x
+## status: 0
 ## STDOUT:
+x=global
 x=local
+x=g2
 ## END
 
 #### mixing assignment builtins and Oil assignment

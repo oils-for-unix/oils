@@ -80,15 +80,17 @@ module runtime
   -- LocalOrGlobal:
   --   GetValue: Oil style
   --   SetValue: What 'setvar' does in Oil.  No dynamic scope.
+  --             TODO: OBSOLETE after removing setlocal!
   -- LocalOnly:
   --   GetValue: N/A, we can always READ globals
-  --   SetValue: for parameter bindings and for loops iterators
+  --   SetValue: setvar (NEW), parameter bindings, for loop iterator vars
   -- GlobalOnly:
   --   GetValue: N/A
   --   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
 
   -- NOTE: Most callers use scope_e.Shopt rather than scope_e.Dynamic 
-  -- to respect shopt -u dynamic_scope.
+  -- to respect shopt -u dynamic_scope.  This turns Dynamic -> LocalOrGlobal
+  -- for reading and Dynamic -> LocalOnly for writing.
   scope = Dynamic | Shopt | LocalOrGlobal | LocalOnly | GlobalOnly 
 
   -- For OSH assignment, evaluated from osh_ast.lhs_expr

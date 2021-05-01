@@ -28,6 +28,10 @@ h3 {
   color: darkblue;  /* different than blog */
 }
 
+h4 {
+  margin-left: 2em;
+}
+
 
 /* inline code 
  *

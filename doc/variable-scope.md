@@ -6,29 +6,24 @@ default_highlighter: oil-sh
 Variable Scope in Shell and Oil
 ===============================
 
-This is for advanced users.  Casual users should can read the first two
-sections.
+NOTE: Most important content has been moved to the [variables](variables.html)
+doc.
 
-Also see [Oil Keywords](oil-keywords.html).
+This doc has **details** for advanced users.
 
 <div id="toc">
 </div>
 
-## Oil Design Goals
+## Design Goals For Scope
 
-This doc is filled with details, so it will help to keep these goals in mind:
-
-- Code written in Oil style (with `proc`) is easier to read/audit than code
-  written in shell style.
-  - in shell, functions can pollute the caller's stack, because of the dynamic
-    scope rule.
+- "Subsume" all of shell and bash.  There shouldn't be anything you can do in
+  bash that you can't do in Oil.  But as usual, provide a smooth upgrade path.
 - Remove dynamic scope.  This mechanism is unfamiliar to most programmers, and
   may result in mutating variables where you don't expect it.
   - Instead of using dynamic scope by default, Oil lets you choose it
     explicitly, with the `setref` keyword.
-- "Subsume" all of shell and bash.  There shouldn't be anything you can do in
-  bash that you can't do in Oil.
-- But as usual, provide a smooth upgrade path.
+- Procs should be "self-contained", i.e. understandable by reading their
+  signature.
 
 ### Dynamic Scope Example
 
@@ -55,14 +50,6 @@ TODO: Improve This Example
 
 ## What Most Users Need to Know
 
-### Three Keywords
-
-Don't use the old style of `local`, `readonly`, `x=y`.
-
-- Use `const`, `var`, and `setvar`.
-
-This covers 95%+ of shell programming.
-
 ### When Dynamic Scope Is Off
 
 `shopt --unset dynamic_scope` 
@@ -75,16 +62,6 @@ This option affects how nearly **every** shell assignment construct behaves.  Th
 This option is unset in `bin/oil`, but not `bin/osh`.
 
 That's it!
-
-## More Constructs for Power Users
-
-- Use `setref` for "out params".  TODO: example of out params in C, as an analogy.
-- Use `set` and `setglobal` if you want to be stricter.
-
-See [Oil Keywords](oil-keywords.html).
-
-
-Read on if you want details.
 
 ## Three Semantics for Cell Lookup
 
@@ -158,7 +135,6 @@ These shell constructs mutate.
 - osh/sh_expr_eval: `(( i = j ))`, `(( i += j ))`
   - `(( a[i] = j ))`, `(( a[i] += j ))`
 
-
 ### Unchanged: Builtins That Take "Out Params" (keyword `setref`)
 
 These use `setref` semantics.
@@ -184,18 +160,12 @@ This one is the easiest to explain, to we leave it for last.
 - Shell's `local` is always `LocalOnly`
   - `declare` and `readonly` are also local by default
 
-
-## Interactive Use
-
-- use `setvar`
-- or `set` if you want to define things ahead of time
-
 ## Related Links
 
+- [Oil Variables](variables.html)
 - [Oil Keywords](oil-keywords.html)
 - [Interpreter State](interpreter-state.html)
   - The shell has a stack of namesapces.
   - Each namespace contains variable name -> cell bindings.
   - Cells have 3 flags and a tagged value.
-
 

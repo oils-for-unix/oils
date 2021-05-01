@@ -9,94 +9,20 @@ Oil Keywords
 Related:
 
 - [Procs and Blocks](oil-proc-func-block.html)
-- [Variable Scope](variable-scope.html)
+- [Variables](variables.html)
 
 <div id="toc">
 </div>
 
-## Three Styles of Variable Declaration and Assignment
+## Two Styles of Variable Declaration and Assignment
 
 ### Legacy Style: `readonly`, `local`, `name=val`
 
 They don't allow expressions on the right.
 
-### Oil's Shell-Like Style: `const`, `var`, and `setvar`
+### Oil's Style: `const`, `var`, `setvar`, `setglobal`, and `setref`
 
-- `const` declares a constant, like `readonly`
-- `var` declares a local or global
-- `setvar` mutates a local, mutates a global, or creates a **new global**.
-  - This makes it more convenient for interactive use.
-
-Shell:
-
-    g=G                       # global variable
-    readonly c=C              # global constant
-
-    myfunc() {
-      local x=X               # local variable
-      readonly y=Y            # local constant
-
-      x=mutated               # mutate local
-      g=mutated               # mutate global
-      newglobal=G             # create new global
-
-      caller_var=mutated      # dynamic scope (Oil doesn't have this)
-    }
-
-Oil:
-
-    var g = 'G'               # global variable
-    const c = 'C'             # global constant
-
-    proc myproc {
-      var x = 'L'             # local variable
-      const y = 'Y'           # local constant
-
-      setvar x = 'mutated'    # mutate local
-      setvar g = 'mutated'    # mutate global
-      setvar newglobal = 'G'  # create new global
-
-                              # For dynamic scope, Oil uses setref and an
-                              # explicit ref param.  See below.
-    }
-
-- `var` declares a new variable in the current scope (global or local)
-- `const` is like `var`, except the binding can never be changed
-- `setvar x = 'y'` is like `x=y` in shell (except that it doesn't obey [dynamic
-  scope]($xref:dynamic-scope).)
-  - If a local `x` exists, it mutates it.
-  - Otherwise it creates a new global `x`.
-  - If you want stricter behavior, use `set` rather than `setvar`.
-
-### Oil's Stricter Style: `const` (optional), `var`, `set`/`setglobal`
-
-- `set` mutates a local that's been declared (also `setlocal`)
-- `setglobal` mutates a global that's been decalred
-- `c = 'X'` is syntactic sugar for `const c = 'X'`.  This is to make it more
-  compact, i.e. for "Huffman coding" of programs.
-
-```
-c = 'X'  # syntactic sugar for const c = 'X'
-
-proc myproc {
-  var x = 'L'
-  set x = 'mutated' 
-
-  set notglobal = 'G'   # ERROR: neither a local or global
-}
-```
-
-It's rarely necessary to mutate globals in shell scripts, but if you do, use
-the `setglobal` keyword:
-
-```
-var g = 'G'
-proc myproc {
-  setglobal g = 'mutated'
-
-  setglobal notglobal = 'G'  # ERROR: not a global
-}
-```
+See the doc on [variables](variables.html) for details.
 
 ## Expressions Go on the Right
 
@@ -105,7 +31,6 @@ Just like with assignments.
 ### `=` Pretty Prints an Expression
 
 Useful interactively.
-
 
     $ = 'foo'
     (Str)   'foo'
@@ -126,14 +51,6 @@ as a shortcut for:
 
 ## Other Kinds of Assignment
 
-### `setref` for "Out Params" (advanced)
-
-To return a value.  Like "named references" in [bash]($xref:bash).
-
-    proc decode (s, :out) {
-      setref out = '123'
-    }
-
 ### `auto` for Autovivification (future, not implemented)
 
     auto count += 1
@@ -143,34 +60,11 @@ To return a value.  Like "named references" in [bash]($xref:bash).
     auto total += 3.5
     auto hist['key'] += 4.6
 
-<!--
-
-### Declaration / Assignment
-
-### Mutation
-
-Expressions like these should all work.  They're basically identical to Python,
-except that you use the `setvar` or `set` keyword to change locations.
-
-There implementation is still pretty hacky, but it's good to settle on syntax and semantics.
-
-```
-set x[1] = 2
-set d['key'] = 3
-set func_returning_list()[3] = 3
-set x, y = y, x  # swap
-set x.foo, x.bar = foo, bar
-```
-
-https://github.com/oilshell/oil/commit/64e1e9c91c541e495fee4a39e5a23bc775ae3104
-
--->
-
 ## Notes and Examples
 
 ### Mutating Arrays
 
-You can use `setvar` or `set`:
+Use `setvar`:
 
 Shell:
 
@@ -181,8 +75,6 @@ Shell:
 Oil:
 
     var a = %(one two three)
-    set a[0] = 'zz'
-    
     setvar a[0] = 'zz'  # also acceptable
 
 ### Mutating Associative Arrays
@@ -195,10 +87,7 @@ Shell:
 Oil:
 
     var A = {name: 'foo', type: 'dir'}
-    set A['type'] = 'file'
-    
     setvar A['type'] = 'file'  # also acceptable
-
 
 
 ## `proc` Disables Dynamic Scope
@@ -215,26 +104,16 @@ functions in Oil.
 
 They mostly look like and work like shell functions, but they change scoping rules.
 
-### Style
-
-- `local` -> `var`
-- `readonly` -> `const`
-- `x=mystr` -> `setvar x = 'mystr'`
-- `x=(my array)` -> `setvar x = %(my array)`
-
-Advantage: you get expressions on the right.
-
-
 <!--
 
 ## Variables and Assignment
 
 TODO: Merge this
 
-
 I just implemented some more Oil language semantics! [1]
 
-In shell (and Python), there's no difference between variable declaration and mutation.  These are valid:
+In shell (and Python), there's no difference between variable declaration and
+mutation.  These are valid:
 
 ```
 declare x=1  
