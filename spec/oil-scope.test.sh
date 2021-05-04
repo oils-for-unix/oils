@@ -75,37 +75,41 @@ x=global
 ## END
 
 #### read scope (setref)
+set -o errexit
+
 read-x() {
-  echo new | read x
+  echo dynamic-scope | read x
 }
 demo() {
   local x=42
-  echo x=$x
+  echo x_before=$x
   read-x
-  echo x=$x
+  echo x_after=$x
 }
 demo
 echo x=$x
 
 echo ---
 
-shopt --unset dynamic_scope  # should NOT affect read
+# Now 'read x' creates a local variable
+shopt --unset dynamic_scope
 demo
 echo x=$x
 
+## status: 1
 ## STDOUT:
-x=42
-x=new
+x_before=42
+x_after=dynamic-scope
 x=
 ---
-x=42
-x=new
-x=
+x_before=42
 ## END
 
 #### printf -v scope (setref)
+set -o errexit
+
 set-x() {
-  printf -v x "%s" new
+  printf -v x "%s" dynamic-scope
 }
 demo() {
   local x=42
@@ -122,14 +126,13 @@ shopt --unset dynamic_scope  # should NOT affect read
 demo
 echo x=$x
 
+## status: 1
 ## STDOUT:
 x=42
-x=new
+x=dynamic-scope
 x=
 ---
 x=42
-x=new
-x=
 ## END
 
 #### ${undef=a} and shopt --unset dynamic_scope

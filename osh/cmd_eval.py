@@ -1581,10 +1581,11 @@ class CommandEvaluator(object):
           if i < n_args:
             arg_str = argv[i]
 
-            # If we have myproc(p), and call it with myproc :arg, we get
-            # __p -> arg.
-            # That is, the param has a prefix ADDED, and the arg has a prefix
-            # REMOVED.
+            # If we have myproc(p), and call it with myproc :arg, then bind
+            # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
+            # has a prefix REMOVED.
+            #
+            # This helps eliminate "nameref cycles".
             if is_out_param:
               param_name = '__' + param_name
 

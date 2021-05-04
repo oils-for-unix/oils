@@ -1369,6 +1369,8 @@ class Mem(object):
         lval = cast(lvalue__Named, UP_lval)
 
         if keyword_id == Id.KW_SetRef:
+          # Hidden interpreter var with __ prefix.  Matches proc call in
+          # osh/cmd_eval.py
           lval.name = '__' + lval.name
 
         if flags & SetNameref or flags & ClearNameref:
@@ -1392,9 +1394,9 @@ class Mem(object):
             cell.nameref = False
 
           if val is not None:  # e.g. declare -rx existing
-            # TODO: Maybe DON'T enforce this for 'const', so we can have const
-            # in a loop.  It's checked statically.  But that would change
-            # 'readonly x=1; const x=2'.  Disallow assign builtins?
+            # Note: this DYNAMIC check means we can't have 'const' in a loop.
+            # But that's true for 'readonly' too, and hoisting it makes more
+            # sense anyway.
             if cell.readonly:
               # TODO: error context
               e_die("Can't assign to readonly value %r", lval.name)
@@ -1790,6 +1792,17 @@ class Mem(object):
         scope_e.LocalOnly
     )
 
+  def FlagsForWriting(self):
+    # type: () -> int
+    """If dynamic_scope is OFF, then we behave like setref.
+
+    This is EXPLICIT dynamic scope.
+    """
+    return (
+        0 if self.exec_opts.dynamic_scope() else
+        Id.KW_SetRef << 8
+    )
+
   def ClearFlag(self, name, flag):
     # type: (str, int) -> bool
     """Used for export -n.
@@ -1914,24 +1927,46 @@ class Mem(object):
 
 def SetLocalShopt(mem, lval, val, flags=0):
   # type: (Mem, lvalue_t, value_t, int) -> None
-  """ Like 'setlocal', unless dynamic scope is on.
+  """ Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.
   
   That is, it respects shopt --unset dynamic_scope.
-  setlocal uses the scope_e.LocalOnly semantics.
   """
   which_scopes = mem.ScopesForWriting()
   mem.SetValue(lval, val, which_scopes, flags=flags)
 
 
+# Idea:
+#
+# If shopt --unset dynamic_scope, then set flags = KW_Setref
+# Then it will require __, so it is an outparam.
+#
+# Does NOT work for setting a local!  See spec/oil-builtins
+#
+# read :x
+# if DYNAMIC SCOPE
+#   shell behavior with scope_e.Dynamic
+# else
+#  1. if 'x' exists in current scope, set it
+#  2. if '__x' exists in current scope, set it
+#
+# Another option: get rid of the stupid __x prefix altogether
+#
+# YES!  Right now setvar __out doesn't work because of static detection
+# But you can re-allow that!  OK!
+
 def SetRef(mem, lval, val):
   # type: (Mem, lvalue_t, value_t) -> None
   """Equivalent of x=$y or setref x = y 
   
-  Does NOT respect shopt --unset dynamic_scope
-
-  Used by printf -v
+  Used by printf -v because it can mutate an array
   """
-  mem.SetValue(lval, val, scope_e.Dynamic)
+  # TODO: scope_e.Shopt2?
+  # If it's a local variable, just mutate it.
+  # If it's an out param, use 'setref' semantics?
+  #   The problem is that in the normal case we do 'setvar mylocal' or 'setref
+  #   myout', so there's a syntactic difference, and we use Id.KW_SetRef.
+  #   Should we make read :x and read x different?  Not sure I like that.
+  mem.SetValue(lval, val, scope_e.Dynamic, mem.FlagsForWriting())
 
 
 def SetRefString(mem, name, s):
@@ -1946,7 +1981,7 @@ def SetRefString(mem, name, s):
   Used for 'read', 'getopts', completion builtins, etc.
   """
   assert isinstance(s, str)
-  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.Dynamic)
+  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.Dynamic, mem.FlagsForWriting())
 
 
 def SetRefArray(mem, name, a):

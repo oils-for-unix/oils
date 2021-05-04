@@ -166,10 +166,11 @@ To return a value.  Like "named references" in [bash]($xref:bash).
       setref out = '123'
     }
 
-## Procs Don't Use "Dynamic Scope" for Name Lookup
+## Procs Don't Use "Dynamic Scope"
 
-Dynamic scope means that a function **read and mutate** the locals of its
-caller, its caller's caller, and so forth.
+Bourne shell uses a rule called "dynamic scope" for variable name lookup.  It
+means that a function can **read and mutate** the locals of its caller, its
+caller's caller, and so forth.
 
 Example:
 
@@ -184,15 +185,37 @@ Example:
 
     f
 
-Oil code should use `proc` instead, and this doesn't work!
+Oil code should use `proc` instead.  Inside a proc call, the `dynamic_scope`
+option is implicitly disabled (equivalent to `shopt --unset dynamic_scope`).
+
+This means that adding the `proc` keyword to the definition of `g` changes its
+behavior:
 
     proc g() {
       echo "f_var is $f_var"  # Undefined!
     }
 
+### Constructs That Respect `shopt --unset dynamic_scope`
+
+- Shell Assignment
+  - TODO: grep for SetLocalShopt
+- Builtins
+  - read
+  - getopts
+  - printf -v
+  - TODO: whatever SetRef() and SetRefString() become
+
 ### `setref` Is Explicit
 
-When you use the `setref` keyword, you're using dynamic scope.  
+When you use the `setref` keyword, you're explicitly opting in dynamic scope,
+even when the option is off.
+
+<!--
+Note: this can sorta produce a leak?  If you GUESS the name of a caller's
+variable, you can pass it to its grandchild and mutate it?
+
+I think this is necessary for composability.
+-->
 
 ## Syntactic Sugar: Omit `const`
 

@@ -273,6 +273,30 @@ x=YY
 u=YY
 ## END
 
+#### setref composes: 2 levels deep
+proc q(s, :out) {
+  echo "q s=$s"
+  setref out = 'YY'
+}
+proc p(:out) {
+  # NOTE: This doesn't work
+  # q dummy :out
+  var tmp = ''
+  q dummy :tmp
+  setref out = tmp
+}
+
+var x = 'XX'
+echo x=$x
+p :x
+echo x=$x
+
+## STDOUT:
+x=XX
+q s=dummy
+x=YY
+## END
+
 #### circular dict
 var d = {name: 'foo'}
 = d

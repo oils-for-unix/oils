@@ -392,14 +392,12 @@ class VarChecker(object):
 
     var x, const x:
       x already declared
-    setlocal x:    (must be var)
+    setvar x:
       x is not declared
       x is constant
-    setvar x:
-      x is constant (only for locals)
     setglobal x:
-      I don't think any errors are possible
-      We would have to have many conditions to statically know the names:
+      No errors are possible; we would need all these many conditions to
+      statically know the names:
       - no 'source'
       - shopt -u copy_env.
       - AND use lib has to be static
@@ -427,7 +425,7 @@ class VarChecker(object):
       if name in top and top[name] == Id.KW_Const:
         p_die("Can't modify constant %r", name, token=name_tok)
 
-    # TODO: setref.
+    # TODO: setref should only mutate out params.
 
 
 class ctx_VarChecker(object):
