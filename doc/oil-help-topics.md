@@ -49,7 +49,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 </h2>
 
 ```oil-help-topics
-  [Keywords]      const   var   setvar   setref   setglobal   setlocal/set
+  [Keywords]      const   var   setvar   setglobal   setref
   [Literals]      oil-numbers    42  3.14  1e100
                   oil-string    c'line\n'  r'[a-z]\n'
                   char-literal  #'a'   #'_'   \n   \\   \u{3bc}
@@ -153,7 +153,6 @@ X [Testing]       check
                   X parse_amp            ls &2 > /dev/null, disallow >& <&
                   parse_at_all           @ starting any word is an operator
                   parse_equals           x = 'val' (for cleaner config blocks)
-                  parse_set              'set' instead of 'setlocal'
                   parse_backslash (-u)   Bad backslashes in $'' and c''
                   parse_backticks (-u)   Legacy syntax `echo hi`
                   parse_dollar (-u)      Is $ allowed for \$?  Maybe $/d+/

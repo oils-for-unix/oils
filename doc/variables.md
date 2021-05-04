@@ -211,8 +211,7 @@ You can use `env PYTHONPATH=. ./foo.py` in place of `PYTHONPATH=. ./foo.py`.
 
 ### Shell Builtins vs. Oil Keywords
 
-This section is for shell users.
-
+This section may help experienced shell users understand Oil.
 
 Shell:
 
@@ -257,10 +256,6 @@ Oil:
 
 ----
 
-- `set` mutates a local that's been declared (also `setlocal`)
-- `setglobal` mutates a global that's been decalred
-- `c = 'X'` is syntactic sugar for `const c = 'X'`.  This is to make it more
-  compact, i.e. for "Huffman coding" of programs.
 
 ```
 c = 'X'  # syntactic sugar for const c = 'X'

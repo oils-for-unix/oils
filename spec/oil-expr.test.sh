@@ -191,14 +191,16 @@ lt=1
 gt=0
 ## END
 
-#### Parse { setvar x = 1 }
+#### Parse { var x = 42 }
 shopt -s oil:basic
+g() { var x = 42 }
+
 var x = 1
-f() { setvar x = 2 }
+f() { var x = 42; setvar x = 43 }
 f
 echo x=$x
 ## STDOUT:
-x=2
+x=1
 ## END
 
 #### double quoted

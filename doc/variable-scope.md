@@ -92,11 +92,7 @@ In shell, it does these things:
 
 ### `scope_e.LocalOnly`
 
-The `setlocal` key always does the same thing.  but all these other constructs
-**switch** between `setvar` and `setlocal` semantics, depending on `shopt
---unset dynamic_scope`.
-
-- Mutates exactly one scope!
+For loop variables, etc.  Mutates exactly one scope!
 
 ## Where Are These Semantics Used?
 
@@ -118,7 +114,7 @@ The other ones deal with values.  These deal with cells.
     - yeah I think this is a separate case
     - I think it should just look for a GLOBAL honestly
 
-### `Dynamic` &rarr; `LocalOnly` (keyword `setlocal`)
+### `Dynamic` &rarr; `LocalOnly`
 
 Shell:
 

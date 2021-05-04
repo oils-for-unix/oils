@@ -147,34 +147,18 @@ It's either global or scoped to the current function.
 
 #### setvar
 
-Like shell's `x=1`, `setvar x = 1` either:
+At the top-level, setvar creates or mutates a variable.
 
-- Mutates an existing variable (e.g. declared with `var`)
-- Creates a new **global** variable.
-
-It's meant for interactive use and to easily convert existing shell scripts.
-
-New Oil programs should use `set`, `setglobal`, or `setref` instead of
-`setvar`.
+Inside a proc, it mutates a local variable declared with var.
 
 #### setglobal
 
-Mutates a global variable.  If it doesn't exist, the shell exits with a fatal
-error.
+Creates or mutates a global variable.
 
 #### setref
 
-Mutates a variable through a named reference.  TODO: Show an example.
-
-#### setlocal
-
-Mutates an existing variable in the current scope.  If it doesn't exist, the
-shell exits with a fatal error.
-
-`set` is an alias for `setlocal` in the Oil language.  Requires `shopt -s
-parse_set`, because otherwise, it would conflict with the `set` builtin.  Use
-`builtin set -- 1 2 3` to get the builtin, or `shopt -o` to change options.
-
+Mutates a variable through a named reference.  See examples in
+doc/variables.md.
 
 <h2 id="word">Word Language</h2>
 

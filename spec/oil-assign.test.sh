@@ -59,7 +59,7 @@ echo x=$x
 x=foo
 ## END
 
-#### top level: var can be redefined
+#### top level: var can be redefined by var/const
 var x = "global"
 echo x=$x
 f() {
@@ -69,13 +69,17 @@ f() {
 f
 var x = "g2"
 echo x=$x
-## status: 0
+const x = 'now-const'
+echo x=$x
+const x = 'oops'
+echo x=$x
+## status: 1
 ## STDOUT:
 x=global
 x=local
 x=g2
+x=now-const
 ## END
-
 
 #### setvar mutates local
 proc f {
@@ -96,48 +100,28 @@ x=mutated
 x=global
 ## END
 
-#### setvar CREATES global
+#### top level: setvar creates global
 setvar x = 'global'
+echo x=$x
+setvar x = 'g2'
 echo x=$x
 ## STDOUT:
 x=global
+x=g2
 ## END
 
-#### setvar modified local or global scope
-modify_with_shell_assignment() {
-  f=shell
-}
-
-modify_with_setvar() {
-  setvar f = "setvar"
-}
-
-f() {
-  var f = 1
-  echo f=$f
-  modify_with_shell_assignment
-  echo f=$f
-
-  # modifies the GLOBAL, not the one in parent scope
-  modify_with_setvar
-  echo f=$f
-  setvar f = 'local'
-  echo f=$f
-}
-var f = 'outer'
-echo f=$f
-f
-echo f=$f
+#### top level: setvar mutates var
+var x = 1
+setvar x = 42  # this is allowed
+echo $x
+setvar y = 50  # error because it's not declared
+echo $y
 ## STDOUT:
-f=outer
-f=1
-f=shell
-f=shell
-f=local
-f=setvar
+42
+50
 ## END
 
-#### setlocal when variable isn't declared results in fatal error
+#### proc static check: variable changed by setvar must be declared
 shopt -s oil:all
 
 var x = 1
@@ -146,50 +130,12 @@ f() {
   setglobal x = 'XX'
   echo x=$x
 
-  # setvar CREATES a variable
-  setvar y = 'YY'
+  # local NOT DECLARED
+  setvar x = 'YY'
   echo y=$y
-
-  setlocal z = 3  # NOT DECLARED
-  echo z=$z
 }
 ## status: 2
 ## STDOUT:
-## END
-
-#### setlocal works (with bin/osh, no shopt)
-proc p {
-  var x = 5
-  echo $x
-  setlocal x = 42
-  echo $x
-}
-p
-## STDOUT:
-5
-42
-## END
-
-#### setlocal at top level
-var x = 1
-setlocal x = 42  # this is allowed
-echo $x
-setlocal y = 50  # error because it's not declared
-## status: 2
-## STDOUT:
-42
-## END
-
-#### setlocal doesn't mutate globals
-proc p() {
-  var g = 1
-  setlocal g = 2
-}
-var g = 42
-p
-echo $g
-## STDOUT:
-42
 ## END
 
 #### setglobal

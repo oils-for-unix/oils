@@ -293,11 +293,11 @@ e=E g=G
 e=SH g=SH
 ## END
 
-#### setvar still allows setting globals
+#### setglobal still allows setting globals
 
 proc p {
-  setvar new_global = 'p'
-  setvar g = 'p'
+  setglobal new_global = 'p'
+  setglobal g = 'p'
 }
 
 var g = 'G'
