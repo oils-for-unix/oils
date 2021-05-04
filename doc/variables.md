@@ -3,16 +3,16 @@ in_progress: yes
 default_highlighter: oil-sh
 ---
 
-Oil Variables: Scope, Declaration, Mutation
-===========================================
+Variable Declaration, Mutation, and Scope
+=========================================
 
-This document describes the semantics of variables in Oil, and distills them to
-practical usage tips.
+This document describes the semantics of variables in Oil and distills them to
+practical usage guidelines.
 
 <div id="toc">
 </div>
 
-## Design Goals
+## Oil Design Goals
 
 The Oil language is a graceful upgrade to shell, and the behavior of variables
 is no exception.  This means that:
@@ -51,36 +51,38 @@ the right:
     var    foo  = "Hello $name"
     setvar foo  = 42 + a[2] + f(x, y)  # arbitrary expressions
 
-## Keywords Behave Differently in the Top-Level Scope vs. `proc` Scope
+## Keywords Behave Differently at the Top Level
 
+Keywords like `var` behave differently in the top-level scope vs. `proc` scope.
 This is due to the tension between shell's interactive nature and Oil's
-strictness.  This sections describes the differences, but first here's a
-**practical summary**:
+strictness.
+
+### Usage Guidelines
+
+Before going into detail, here are some practical guidelines:
 
 - When using Oil interactively, use `setvar` only.  Like Python's assignment
   operator, it creates or mutates a variable.
   - Short scripts (~20 lines) can also use this style.
-- Refactor longer programs into composable "functions" with `proc`.  The first
-  thing to do is wrap the whole program into `proc main(@argv)`.
+- Refactor long scripts into composable "functions", i.e. `proc`.  First wrap
+  the whole program into `proc main(@argv)`, and declare all variables.
+  - The `proc` may have `var` and `const` declarations.  (This is more like
+    JavaScript than Python.)
   - The top level should only have `const` declarations.  (You can use `var`,
-    but it has special rules at the top-level, explained below.)
-  - Inside a `proc`, you must **declare** all variables with `var` or `const`.
-    (This is more like JavaScript and less like Python.)
+    but it has special rules, explained below.)
   - Use `setvar` to **mutate local** variables, and `setglobal` to mutate
     **globals**.
-  - Advanced usage: use `setref` to mutate `:out` params.
 
-That's all you really need to remember.  The following sections go into more
-detail on the semantics of variables in top-level scope vs. `proc` scope.
-
+That's all you need to remember.  The following sections go into more detail.
 
 ### The Top-Level Scope Has Only Dynamic Checks
 
-The "top-level" of the interpreter means you're not inside any shell function
-or `proc`.  It's used in two situations:
+The "top-level" of the interpreter is used in two situations:
 
 - When using Oil **interactively**.
 - As the **global** scope of a batch program.
+
+("Top-level" means you're not inside a shell function or `proc`.)
 
 #### Interactive Use: `setvar` only
 
@@ -102,7 +104,7 @@ Details:
   *static* check as in `proc`.  As above, and in contrast to `proc` scope, a
   `const` can redefine a `var`.
 
-#### Batch Use: `const` is recommended
+#### Batch Use: `const` only
 
 It's simpler to use only constants at the top level.
 
@@ -116,14 +118,14 @@ It's simpler to use only constants at the top level.
 This is so you don't have to worry about `var` being redefined by `source`.  In
 contrast, a `const` can't be redefined because it can't be mutated.
 
-You can put mutable globals in a dictionary if you like:
+Putting mutable globals in a dictionary will prevent them from being redefined:
 
     const G = {
       mystate = 0
     }
 
     proc p {
-      setglobal G.mystate = 1
+      setglobal G->mystate = 1
     }
 
 ### `proc` Scope Has Static Checks
@@ -164,7 +166,7 @@ To return a value.  Like "named references" in [bash]($xref:bash).
       setref out = '123'
     }
 
-## Procs Don't Use "Dynamic Scope"
+## Procs Don't Use "Dynamic Scope" for Name Lookup
 
 Dynamic scope means that a function **read and mutate** the locals of its
 caller, its caller's caller, and so forth.

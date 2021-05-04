@@ -36,7 +36,7 @@ x=7
 x=11
 ## END
 
-#### const can't be mutated
+#### proc static check: const can't be mutated
 proc f {
   const x = 'local'
   echo x=$x
@@ -47,19 +47,37 @@ proc f {
 ## STDOUT:
 ## END
 
-#### const can't be redeclared
+#### top-level dynamic check: const can't be be mutated
 shopt -s oil:all
 
 x = 'foo'
 echo x=$x
 const x = 'bar'
 echo x=$x
-## status: 2
+## status: 1
 ## STDOUT:
 x=foo
 ## END
 
-#### 'setvar' mutates local
+#### top level: var can be redefined
+var x = "global"
+echo x=$x
+f() {
+  var x = "local"
+  echo x=$x
+}
+f
+var x = "g2"
+echo x=$x
+## status: 0
+## STDOUT:
+x=global
+x=local
+x=g2
+## END
+
+
+#### setvar mutates local
 proc f {
   var x = 'local'
   echo x=$x
@@ -78,14 +96,48 @@ x=mutated
 x=global
 ## END
 
-#### 'setvar' CREATES global
+#### setvar CREATES global
 setvar x = 'global'
 echo x=$x
 ## STDOUT:
 x=global
 ## END
 
-#### 'setlocal' when variable isn't declared results in fatal error
+#### setvar modified local or global scope
+modify_with_shell_assignment() {
+  f=shell
+}
+
+modify_with_setvar() {
+  setvar f = "setvar"
+}
+
+f() {
+  var f = 1
+  echo f=$f
+  modify_with_shell_assignment
+  echo f=$f
+
+  # modifies the GLOBAL, not the one in parent scope
+  modify_with_setvar
+  echo f=$f
+  setvar f = 'local'
+  echo f=$f
+}
+var f = 'outer'
+echo f=$f
+f
+echo f=$f
+## STDOUT:
+f=outer
+f=1
+f=shell
+f=shell
+f=local
+f=setvar
+## END
+
+#### setlocal when variable isn't declared results in fatal error
 shopt -s oil:all
 
 var x = 1
@@ -231,23 +283,6 @@ echo val=$val
 val=42
 ## END
 
-#### The top level allows 'var' to be redefined
-var x = "global"
-echo x=$x
-f() {
-  var x = "local"
-  echo x=$x
-}
-f
-var x = "g2"
-echo x=$x
-## status: 0
-## STDOUT:
-x=global
-x=local
-x=g2
-## END
-
 #### mixing assignment builtins and Oil assignment
 shopt -s oil:all
 
@@ -274,41 +309,7 @@ status=0
 status=1
 ## END
 
-#### setvar modified local or global scope
-modify_with_shell_assignment() {
-  f=shell
-}
-
-modify_with_setvar() {
-  setvar f = "setvar"
-}
-
-f() {
-  var f = 1
-  echo f=$f
-  modify_with_shell_assignment
-  echo f=$f
-
-  # modifies the GLOBAL, not the one in parent scope
-  modify_with_setvar
-  echo f=$f
-  setvar f = 'local'
-  echo f=$f
-}
-var f = 'outer'
-echo f=$f
-f
-echo f=$f
-## STDOUT:
-f=outer
-f=1
-f=shell
-f=shell
-f=local
-f=setvar
-## END
-
-#### setref
+#### setref out = 'YY'
 proc p (s, :out) {
   setref out = 'YY'
 }
@@ -351,7 +352,4 @@ setvar L[0] = L
 (List)   [1, 2, 3]
 (List)   [[...], 2, 3]
 ## END
-
-
-
 
