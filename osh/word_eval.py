@@ -589,7 +589,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
               else: 
                 raise AssertionError()
 
-          state.SetLocalShopt(self.mem, lval, value.Str(rhs_str))
+          state.OshLanguageSetValue(self.mem, lval, value.Str(rhs_str))
         return True
 
       else:

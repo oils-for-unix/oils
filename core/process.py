@@ -166,7 +166,7 @@ class FdState(object):
     # type: (str, int) -> None
     if self.mem:
       # setvar, not setref
-      state.SetLocalShopt(self.mem, lvalue.Named(fd_name), value.Str(str(fd)))
+      state.OshLanguageSetValue(self.mem, lvalue.Named(fd_name), value.Str(str(fd)))
 
   def _ReadFdFromMem(self, fd_name):
     # type: (str) -> int

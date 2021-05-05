@@ -1979,7 +1979,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # osh/word_eval.py
             class_name is None and func_name == 'CheckCompatArray' or
             # core/state.py
-            class_name is None and func_name in ('_PackFlags', 'SetLocalShopt') or
+            class_name is None and func_name in ('_PackFlags', 'OshLanguageSetValue') or
             class_name == 'Mem' and
               func_name in ('GetValue', 'SetValue', 'GetCell',
                             '_ResolveNameOrRef') or

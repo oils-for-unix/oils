@@ -1925,11 +1925,13 @@ class Mem(object):
 # Wrappers to Set Variables
 #
 
-def SetLocalShopt(mem, lval, val, flags=0):
+def OshLanguageSetValue(mem, lval, val, flags=0):
   # type: (Mem, lvalue_t, value_t, int) -> None
   """ Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.
   
   That is, it respects shopt --unset dynamic_scope.
+
+  Used for assignment builtins, (( a = b )), {fd}>out, ${x=}, etc.
   """
   which_scopes = mem.ScopesForWriting()
   mem.SetValue(lval, val, which_scopes, flags=flags)
@@ -1954,7 +1956,7 @@ def SetLocalShopt(mem, lval, val, flags=0):
 # YES!  Right now setvar __out doesn't work because of static detection
 # But you can re-allow that!  OK!
 
-def SetRef(mem, lval, val):
+def BuiltinSetValue(mem, lval, val):
   # type: (Mem, lvalue_t, value_t) -> None
   """Equivalent of x=$y or setref x = y 
   
@@ -1969,7 +1971,7 @@ def SetRef(mem, lval, val):
   mem.SetValue(lval, val, scope_e.Dynamic, mem.FlagsForWriting())
 
 
-def SetRefString(mem, name, s):
+def BuiltinSetString(mem, name, s):
   # type: (Mem, str, str) -> None
   """Set a string by looking up the stack.
 
@@ -1981,10 +1983,11 @@ def SetRefString(mem, name, s):
   Used for 'read', 'getopts', completion builtins, etc.
   """
   assert isinstance(s, str)
-  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.Dynamic, mem.FlagsForWriting())
+  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.Dynamic,
+               mem.FlagsForWriting())
 
 
-def SetRefArray(mem, name, a):
+def BuiltinSetArray(mem, name, a):
   # type: (Mem, str, List[str]) -> None
   """Set an array by looking up the stack.
 
@@ -1996,7 +1999,8 @@ def SetRefArray(mem, name, a):
   Used by compadjust, read -a, etc.
   """
   assert isinstance(a, list)
-  mem.SetValue(lvalue.Named(name), value.MaybeStrArray(a), scope_e.Dynamic)
+  mem.SetValue(lvalue.Named(name), value.MaybeStrArray(a), scope_e.Dynamic,
+               mem.FlagsForWriting())
 
 
 def SetGlobalString(mem, name, s):

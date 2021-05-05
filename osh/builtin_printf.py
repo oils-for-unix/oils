@@ -483,7 +483,7 @@ class Printf(vm._Builtin):
       if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
         e_usage('-v expected a variable name.  shopt -s eval_unsafe_arith allows expressions', span_id=v_spid)
 
-      state.SetRef(self.mem, lval, value.Str(result))
+      state.BuiltinSetValue(self.mem, lval, value.Str(result))
     else:
       mylib.Stdout().write(result)
     return 0

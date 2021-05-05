@@ -331,17 +331,17 @@ class GetOptsState(object):
     """Increment OPTIND."""
     # Note: bash-completion uses a *local* OPTIND !  Not global.
     assert self._optind != -1
-    state.SetRefString(self.mem, 'OPTIND', str(self._optind + 1))
+    state.BuiltinSetString(self.mem, 'OPTIND', str(self._optind + 1))
 
   def SetArg(self, optarg):
     # type: (str) -> None
     """Set OPTARG."""
-    state.SetRefString(self.mem, 'OPTARG', optarg)
+    state.BuiltinSetString(self.mem, 'OPTARG', optarg)
 
   def Fail(self):
     # type: () -> None
     """On failure, reset OPTARG."""
-    state.SetRefString(self.mem, 'OPTARG', '')
+    state.BuiltinSetString(self.mem, 'OPTARG', '')
 
 
 def _GetOpts(spec, argv, my_state, errfmt):
@@ -431,7 +431,7 @@ class GetOpts(vm._Builtin):
     status, flag_char = _GetOpts(spec, user_argv, self.my_state, self.errfmt)
 
     if match.IsValidVarName(var_name):
-      state.SetRefString(self.mem, var_name, flag_char)
+      state.BuiltinSetString(self.mem, var_name, flag_char)
     else:
       # NOTE: The builtin has PARTIALLY set state.  This happens in all shells
       # except mksh.

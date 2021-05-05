@@ -274,7 +274,7 @@ class Run_(vm._Builtin):
       if var_name.startswith(':'):
         var_name = var_name[1:]
 
-      state.SetRefString(self.mem, var_name, str(status))
+      state.BuiltinSetString(self.mem, var_name, str(status))
       return self.mem.LastStatus()
 
     return status

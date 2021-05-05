@@ -227,7 +227,7 @@ class Export(vm._AssignBuiltin):
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
-        state.SetLocalShopt(self.mem, lvalue.Named(pair.var_name), pair.rval,
+        state.OshLanguageSetValue(self.mem, lvalue.Named(pair.var_name), pair.rval,
                             flags=state.SetExport)
 
     return 0
@@ -292,7 +292,7 @@ class Readonly(vm._AssignBuiltin):
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      state.SetLocalShopt(self.mem, lvalue.Named(pair.var_name), rval,
+      state.OshLanguageSetValue(self.mem, lvalue.Named(pair.var_name), rval,
                           flags=state.SetReadOnly)
 
     return 0

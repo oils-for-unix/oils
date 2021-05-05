@@ -468,7 +468,7 @@ class CompAdjust(vm._Builtin):
       completion.AdjustArg(a, break_chars, adjusted_argv)
 
     if 'words' in var_names:
-      state.SetRefArray(self.mem, 'words', adjusted_argv)
+      state.BuiltinSetArray(self.mem, 'words', adjusted_argv)
 
     n = len(adjusted_argv)
     cur = adjusted_argv[-1]
@@ -482,14 +482,14 @@ class CompAdjust(vm._Builtin):
         split = 'false'
       # Do NOT set 'split' without -s.  Caller might not have declared it.
       # Also does not respect var_names, because we don't need it.
-      state.SetRefString(self.mem, 'split', split)
+      state.BuiltinSetString(self.mem, 'split', split)
 
     if 'cur' in var_names:
-      state.SetRefString(self.mem, 'cur', cur)
+      state.BuiltinSetString(self.mem, 'cur', cur)
     if 'prev' in var_names:
-      state.SetRefString(self.mem, 'prev', prev)
+      state.BuiltinSetString(self.mem, 'prev', prev)
     if 'cword' in var_names:
       # Same weird invariant after adjustment
-      state.SetRefString(self.mem, 'cword', str(n-1))
+      state.BuiltinSetString(self.mem, 'cword', str(n-1))
 
     return 0

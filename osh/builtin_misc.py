@@ -353,7 +353,7 @@ class Read(vm._Builtin):
       stdin_fd = self.stdin.fileno()
       s = self._ReadN(stdin_fd, arg.n)
 
-      state.SetRefString(self.mem, name, s)
+      state.BuiltinSetString(self.mem, name, s)
 
       # Did we read all the bytes we wanted?
       return 0 if len(s) == arg.n else 1
@@ -407,7 +407,7 @@ class Read(vm._Builtin):
     entries = [buf.getvalue() for buf in parts]
     num_parts = len(entries)
     if arg.a is not None:
-      state.SetRefArray(self.mem, arg.a, entries)
+      state.BuiltinSetArray(self.mem, arg.a, entries)
     else:
       for i in xrange(max_results):
         if i < num_parts:
@@ -418,7 +418,7 @@ class Read(vm._Builtin):
         if var_name.startswith(':'):
           var_name = var_name[1:]
         #log('read: %s = %s', var_name, s)
-        state.SetRefString(self.mem, var_name, s)
+        state.BuiltinSetString(self.mem, var_name, s)
 
     return status
 
@@ -452,7 +452,7 @@ class MapFile(vm._Builtin):
         line = line[:-1]
       lines.append(line)
 
-    state.SetRefArray(self.mem, var_name, lines)
+    state.BuiltinSetArray(self.mem, var_name, lines)
     return 0
 
 
