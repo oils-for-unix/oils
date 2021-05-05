@@ -174,6 +174,20 @@ x=spam y=eggs
 x=foo y=bar
 ## END
 
+#### Idiom for returning 'read'
+proc p(:out) {
+  #var tmp = ''
+
+  # We can't do read :out in Oil.  I think that's OK -- there's consistency in
+  # using setref everywhere.
+  echo foo | read :tmp
+  setref out = tmp
+}
+p :z
+echo z=$z
+## STDOUT:
+z=foo
+## END
 
 #### read --line --with-eol
 shopt -s oil:basic

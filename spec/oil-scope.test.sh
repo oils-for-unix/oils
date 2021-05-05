@@ -96,16 +96,17 @@ shopt --unset dynamic_scope
 demo
 echo x=$x
 
-## status: 1
 ## STDOUT:
 x_before=42
 x_after=dynamic-scope
 x=
 ---
 x_before=42
+x_after=42
+x=
 ## END
 
-#### printf -v scope (setref)
+#### printf -v x respects dynamic_scope
 set -o errexit
 
 set-x() {
@@ -126,13 +127,46 @@ shopt --unset dynamic_scope  # should NOT affect read
 demo
 echo x=$x
 
-## status: 1
 ## STDOUT:
 x=42
 x=dynamic-scope
 x=
 ---
 x=42
+x=42
+x=
+## END
+
+#### printf -v a[i] respects dynamic_scope
+set -o errexit
+shopt --set eval_unsafe_arith
+
+set-item() {
+  printf -v 'a[1]' "%s" dynamic-scope
+}
+demo() {
+  local -a a=(41 42 43)
+  echo "a[1]=${a[1]}"
+  set-item
+  echo "a[1]=${a[1]}"
+}
+demo
+echo "a[1]=${a[1]}"
+
+echo ---
+
+shopt --unset dynamic_scope  # should NOT affect read
+demo
+echo "a[1]=${a[1]}"
+
+## STDOUT:
+a[1]=42
+a[1]=dynamic-scope
+a[1]=
+---
+a[1]=42
+a[1]=42
+a[1]=
 ## END
 
 #### ${undef=a} and shopt --unset dynamic_scope
@@ -314,23 +348,22 @@ g=p new_global=p
 
 #### setref with :out param
 
-# The name is mangled with : so you can't use it
-proc append(:s, suffix) {
-  setref s = "$s-$suffix"
-}
-
 proc set-it(:s, val) {
   #pp cell __s
   setref s = "foo-$val"
 }
 
 proc demo {
-  var s = 'abc'
-  var t = 'def'
-  set-it :s SS
-  set-it :t TT
+  # TODO: Our bad implementation causes a recursion problem here because we use
+  # the name 's'.
+  if true; then
+    var s = 'abc'
+    set-it :s SS
+    echo $s
+  fi
 
-  echo $s
+  var t = 'def'
+  set-it :t TT
   echo $t
 }
 
@@ -341,7 +374,7 @@ foo-SS
 foo-TT
 ## END
 
-#### setref without :out param
+#### setref of regular param is a fatal error
 proc set-it(:s, val) {
   setref val = 'oops'
 }

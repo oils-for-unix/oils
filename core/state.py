@@ -1236,7 +1236,7 @@ class Mem(object):
     else:
       raise AssertionError()
 
-  def _ResolveNameOrRef(self, name, which_scopes, ref_required=False):
+  def _ResolveNameOrRef(self, name, which_scopes, ref_required=False, count=None):
     # type: (str, scope_t, bool) -> Tuple[Optional[cell], Dict[str, cell], str]
     """Look up a cell and namespace, but respect the nameref flag."""
     cell, name_map = self._ResolveNameOnly(name, which_scopes)
@@ -1286,8 +1286,14 @@ class Mem(object):
     #    e_die('Circular nameref %s', ref_trail)
     #ref_trail.append(new_name)
 
+    if 0:  # Another style of check
+      count = count or [0]
+      count[0] += 1
+      if count[0] > 10:
+        raise RuntimeError('too many calls')
+
     # You could have a "trail" parameter here?
-    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes)
+    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes, count=count)
     return cell, name_map, cell_name
 
   def IsAssocArray(self, name):
@@ -1307,12 +1313,8 @@ class Mem(object):
     # type: (str, scope_t, List[str]) -> None
     """Recursively resolve names until the trail ends or a cycle is detected.
 
-    Note: we're using dynamic scope because that's the most general.  This
-    could produce false positives if the actual lookup mode is different
-    (LocalOnly), but those should be rare and easily worked around.
-    
-    The other possibility is to do it during _ResolveNameOrRef, but that delays
-    tne error.
+    This is called in SetValue().  The other possibility is to do it during
+    _ResolveNameOrRef, but that delays the error.
     """
     cell, _ = self._ResolveNameOnly(name, which_scopes)
 
@@ -1325,8 +1327,12 @@ class Mem(object):
 
     str_val = cast(value__Str, val)
     new_name = str_val.s
+    #log('_DisallowNamerefCycle %s %s name %s new_name %s', which_scopes, ref_trail, name, new_name)
 
     if new_name in ref_trail:
+      if 0:
+        import traceback
+        traceback.print_stack()
       e_die('nameref cycle: %s', ' -> '.join(ref_trail))
     ref_trail.append(new_name)
 
@@ -1340,9 +1346,9 @@ class Mem(object):
       val: value, or None if only changing flags
       which_scopes:
         Local | Global | Dynamic - for builtins, PWD, etc.
-      flags: bit mask of set/clear flags
+      flags: packed pair (keyword_id, bit mask of set/clear flags)
 
-      NOTE: in bash, PWD=/ changes the directory.  But not in dash.
+    Note: in bash, PWD=/ changes the directory.  But not in dash.
     """
     keyword_id = flags >> 8  # opposite of _PackFlags
     ref_required = keyword_id == Id.KW_SetRef
@@ -1371,7 +1377,7 @@ class Mem(object):
         if keyword_id == Id.KW_SetRef:
           # Hidden interpreter var with __ prefix.  Matches proc call in
           # osh/cmd_eval.py
-          lval.name = '__' + lval.name
+          lval.name = '__' + lval.name  # Mutating arg lval!  Happens to be OK
 
         if flags & SetNameref or flags & ClearNameref:
           # declare -n ref=x  # refers to the ref itself
@@ -1431,7 +1437,8 @@ class Mem(object):
           if cell.nameref:
             e_die("nameref must be a string")
 
-        # Note: we check for circular namerefs on every definition, like mksh.
+        # Note: we check for circular namerefs on WRITE like mksh, not on READ
+        # like bash.
         if cell.nameref:
           ref_trail = []  # type: List[str]
           self._DisallowNamerefCycle(cell_name, which_scopes, ref_trail)
@@ -1792,17 +1799,6 @@ class Mem(object):
         scope_e.LocalOnly
     )
 
-  def FlagsForWriting(self):
-    # type: () -> int
-    """If dynamic_scope is OFF, then we behave like setref.
-
-    This is EXPLICIT dynamic scope.
-    """
-    return (
-        0 if self.exec_opts.dynamic_scope() else
-        Id.KW_SetRef << 8
-    )
-
   def ClearFlag(self, name, flag):
     # type: (str, int) -> bool
     """Used for export -n.
@@ -1937,39 +1933,14 @@ def OshLanguageSetValue(mem, lval, val, flags=0):
   mem.SetValue(lval, val, which_scopes, flags=flags)
 
 
-# Idea:
-#
-# If shopt --unset dynamic_scope, then set flags = KW_Setref
-# Then it will require __, so it is an outparam.
-#
-# Does NOT work for setting a local!  See spec/oil-builtins
-#
-# read :x
-# if DYNAMIC SCOPE
-#   shell behavior with scope_e.Dynamic
-# else
-#  1. if 'x' exists in current scope, set it
-#  2. if '__x' exists in current scope, set it
-#
-# Another option: get rid of the stupid __x prefix altogether
-#
-# YES!  Right now setvar __out doesn't work because of static detection
-# But you can re-allow that!  OK!
-
 def BuiltinSetValue(mem, lval, val):
   # type: (Mem, lvalue_t, value_t) -> None
   """Equivalent of x=$y or setref x = y 
   
-  Used by printf -v because it can mutate an array
+  Called by BuiltinSetString and BuiltinSetArray
+  Used directly by printf -v because it can mutate an array
   """
-  # TODO:
-  # if dynamic_scope:
-  #   SetValue with scope_e.Dynamic
-  # else:
-  #   If __x exists locally and it's a nameref, SetValue('__x', scope_e.LocalOnly)
-  #   Unconditionally SetValue('x', scope_e.LocalOnly).  This handles both proc scope and
-  #     top-level scope.
-  mem.SetValue(lval, val, scope_e.Dynamic, mem.FlagsForWriting())
+  mem.SetValue(lval, val, mem.ScopesForWriting())
 
 
 def BuiltinSetString(mem, name, s):
