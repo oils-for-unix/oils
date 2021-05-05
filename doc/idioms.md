@@ -318,6 +318,7 @@ No:
 
 Yes:
 
+    var not_mutated = 'bar'
     forkwait {
       setvar not_mutated = 'foo'
     }
