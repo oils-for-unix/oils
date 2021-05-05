@@ -1962,12 +1962,13 @@ def BuiltinSetValue(mem, lval, val):
   
   Used by printf -v because it can mutate an array
   """
-  # TODO: scope_e.Shopt2?
-  # If it's a local variable, just mutate it.
-  # If it's an out param, use 'setref' semantics?
-  #   The problem is that in the normal case we do 'setvar mylocal' or 'setref
-  #   myout', so there's a syntactic difference, and we use Id.KW_SetRef.
-  #   Should we make read :x and read x different?  Not sure I like that.
+  # TODO:
+  # if dynamic_scope:
+  #   SetValue with scope_e.Dynamic
+  # else:
+  #   If __x exists locally and it's a nameref, SetValue('__x', scope_e.LocalOnly)
+  #   Unconditionally SetValue('x', scope_e.LocalOnly).  This handles both proc scope and
+  #     top-level scope.
   mem.SetValue(lval, val, scope_e.Dynamic, mem.FlagsForWriting())
 
 
@@ -1983,8 +1984,7 @@ def BuiltinSetString(mem, name, s):
   Used for 'read', 'getopts', completion builtins, etc.
   """
   assert isinstance(s, str)
-  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.Dynamic,
-               mem.FlagsForWriting())
+  BuiltinSetValue(mem, lvalue.Named(name), value.Str(s))
 
 
 def BuiltinSetArray(mem, name, a):
@@ -1999,8 +1999,7 @@ def BuiltinSetArray(mem, name, a):
   Used by compadjust, read -a, etc.
   """
   assert isinstance(a, list)
-  mem.SetValue(lvalue.Named(name), value.MaybeStrArray(a), scope_e.Dynamic,
-               mem.FlagsForWriting())
+  BuiltinSetValue(mem, lvalue.Named(name), value.MaybeStrArray(a))
 
 
 def SetGlobalString(mem, name, s):
