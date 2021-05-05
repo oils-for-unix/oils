@@ -868,7 +868,7 @@ oil_var_decl() {
   _oil-parse-error '
   proc p(x) {
     echo hi
-    var x = 2
+    var x = 2  # Cannot redeclare param
   }
   '
 
@@ -876,7 +876,7 @@ oil_var_decl() {
   proc p {
     var x = 1
     echo hi
-    var x = 2
+    var x = 2  # Cannot redeclare local
   }
   '
 
@@ -884,7 +884,7 @@ oil_var_decl() {
   proc p {
     var x = 1
     echo hi
-    const x = 2
+    const x = 2  # Cannot redeclare local
   }
   '
 
@@ -893,9 +893,24 @@ oil_var_decl() {
   proc p {
     x = 1
     echo hi
-    x = 2
+    x = 2   # Cannot redeclare local
   }
   '
+
+  _oil-parse-error '
+  proc p(x, :out) {
+    var out = 2   # Cannot redeclare out param
+  }
+  '
+
+  # TODO: We COULD disallow this, but not sure it's necessary
+  if false; then
+    _oil-parse-error '
+    proc p(x, :out) {
+      var __out = 2   # Cannot redeclare out param
+    }
+    '
+  fi
 
   if is-oil-native; then
     echo 'skipping oil_var_decl'  # TODO: re-enable with pgen2
@@ -920,9 +935,8 @@ oil_place_mutation() {
 
   _oil-parse-error '
   proc p(x) {
-    setvar g = "G"   # This can be a global, no error
-
-    setlocal L = "L"  # ERROR: not declared
+    var y = 1
+    setvar L = "L"  # ERROR: not declared
   }
   '
 

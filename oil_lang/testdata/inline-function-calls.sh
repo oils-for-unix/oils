@@ -66,7 +66,9 @@ split-join-demo() {
   write @split(j)
   echo
 
-  setvar IFS = ":"
+  # NOTE: Can't use setvar IFS = ':' here because of static check
+  # declare or declare -g makes sense
+  declare IFS=':'
   echo 'When IFS is :, split(j) => '
   write @split(j)
   echo

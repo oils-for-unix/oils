@@ -405,6 +405,9 @@ class VarChecker(object):
     LATER:
     setref x:
       Should only mutate out params
+
+    Also should p(:out) declare 'out' as well as '__out'?  Then you can't have
+    local variables with the same name.
     """
     # Don't check the global level!  Semantics are different here!
     if len(self.names) == 0:
@@ -1752,8 +1755,12 @@ class CommandParser(object):
       if node.sig.tag_() == proc_sig_e.Closed:  # Register params
         sig = cast(proc_sig__Closed, node.sig)
         for param in sig.params:
-          # Treat params as variables.  TODO: Treat setref params differently?
+          # Treat params as variables.
           self.var_checker.Check(Id.KW_Var, param.name)
+
+          # We COULD register __out here but it would require a different API.
+          #if param.prefix and param.prefix.id == Id.Arith_Colon:
+          #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
 
       self._Next()
       node.body = self.ParseBraceGroup()
