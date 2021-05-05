@@ -230,19 +230,20 @@ Yes:
 
 ### Use `shopt` Instead of `set`
 
-`bin/oil` uses the `set` keyword for assignments, although OSH code will often
-use `setvar`.  Using `shopt` "clears the way" for this upgrade.
+Using a single builtin for all options makes scripts easier to read:
 
 Discouraged:
 
     set -o errexit  
+    shopt -s dotglob
 
 Idiomatic:
 
     shopt --set errexit
+    shopt --set dotglob
 
-(As always, using `set` is useful if your script needs to run under another
-shell.)
+(As always, `set` can be used when you care about compatibility with other
+shells.)
 
 ### Use `:` When Mentioning Variable Names
 
