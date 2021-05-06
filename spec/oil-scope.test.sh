@@ -448,6 +448,18 @@ foo-SS
 foo-TT
 ## END
 
+#### setref a, b = 'one', 'two'
+
+proc p(x, :a, :b) {
+  setref a, b = "${x}1", "${x}2"
+}
+
+p foo :c :d
+echo c=$c d=$d
+## STDOUT:
+c=foo1 d=foo2
+## END
+
 #### setref a[i]
 
 # You can do this in bash/mksh.  See nameref!
