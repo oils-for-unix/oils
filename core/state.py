@@ -1233,6 +1233,11 @@ class Mem(object):
       name_map = self.var_stack[0]
       return name_map.get(name), name_map
 
+    if which_scopes == scope_e.Parent:
+      assert len(self.var_stack) >= 2
+      name_map = self.var_stack[-2]
+      return name_map.get(name), name_map
+
     raise AssertionError()
 
   def _ResolveNameOrRef(self, name, which_scopes, ref_required=False):
@@ -1294,10 +1299,10 @@ class Mem(object):
     #if count[0] > 10:
     #  raise RuntimeError('too many calls')
 
-    # Recursive resolution uses dynamic scope -- in both the '-n' and 'setref'
-    # cases
-    cell, name_map, cell_name = self._ResolveNameOrRef(new_name,
-                                                       scope_e.Dynamic)
+    # 'declare -n' uses dynamic scope.  'setref' uses parent scope to avoid the
+    # problem of 2 procs containing the same variable name.
+    which_scopes = scope_e.Parent if ref_required else scope_e.Dynamic
+    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes)
     return cell, name_map, cell_name
 
   def IsAssocArray(self, name):

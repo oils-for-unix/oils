@@ -374,6 +374,29 @@ foo-SS
 foo-TT
 ## END
 
+#### setref with conflicting variable name
+
+proc set-it(:s, val) {
+  #pp cell __s
+
+  # This breaks it!
+  var oops = ''
+  setref s = "foo-$val"
+}
+
+proc demo {
+  var oops = ''
+  set-it :oops zz
+  echo oops=$oops
+}
+
+demo
+
+## STDOUT:
+oops=foo-zz
+## END
+
+
 #### setref of regular param is a fatal error
 proc set-it(:s, val) {
   setref val = 'oops'
@@ -387,7 +410,7 @@ echo $s
 ## STDOUT:
 ## END
 
-#### setref: syntax without pgen2 using open proc
+#### setref equivalent without pgen2 syntax, using open proc
 
 # This is kind of what we compile to.  Ref params get an extra __ prefix?  then
 # that means you can't really READ them either?  I think that's OK.
