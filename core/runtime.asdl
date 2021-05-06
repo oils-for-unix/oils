@@ -91,7 +91,7 @@ module runtime
   -- NOTE: Most callers use scope_e.Shopt rather than scope_e.Dynamic 
   -- to respect shopt -u dynamic_scope.  This turns Dynamic -> LocalOrGlobal
   -- for reading and Dynamic -> LocalOnly for writing.
-  scope = Dynamic | Shopt | LocalOrGlobal | LocalOnly | GlobalOnly 
+  scope = Dynamic | Shopt | LocalOrGlobal | LocalOnly | GlobalOnly
 
   -- For OSH assignment, evaluated from osh_ast.lhs_expr
   -- TODO: Rename this to sh_place?

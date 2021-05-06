@@ -1214,15 +1214,15 @@ class Mem(object):
       no_cell = None  # type: Optional[runtime_asdl.cell]
       return no_cell, self.var_stack[0]  # set in global name_map
 
-    elif which_scopes == scope_e.LocalOnly:
+    if which_scopes == scope_e.LocalOnly:
       name_map = self.var_stack[-1]
       return name_map.get(name), name_map
 
-    elif which_scopes == scope_e.GlobalOnly:
+    if which_scopes == scope_e.GlobalOnly:
       name_map = self.var_stack[0]
       return name_map.get(name), name_map
 
-    elif which_scopes == scope_e.LocalOrGlobal:
+    if which_scopes == scope_e.LocalOrGlobal:
       # Local
       name_map = self.var_stack[-1]
       cell = name_map.get(name)
@@ -1233,15 +1233,17 @@ class Mem(object):
       name_map = self.var_stack[0]
       return name_map.get(name), name_map
 
-    else:
-      raise AssertionError()
+    raise AssertionError()
 
-  def _ResolveNameOrRef(self, name, which_scopes, ref_required=False, count=None):
+  def _ResolveNameOrRef(self, name, which_scopes, ref_required=False):
     # type: (str, scope_t, bool) -> Tuple[Optional[cell], Dict[str, cell], str]
-    """Look up a cell and namespace, but respect the nameref flag."""
+    """Look up a cell and namespace, but respect the nameref flag.
+
+    Resolving namerefs does RECURSIVE calls.
+    """
     cell, name_map = self._ResolveNameOnly(name, which_scopes)
 
-    if not cell or not cell.nameref:
+    if cell is None or not cell.nameref:
       if ref_required:
         e_die("setref requires a nameref (:out param)")
       return cell, name_map, name  # not a nameref
@@ -1286,14 +1288,16 @@ class Mem(object):
     #    e_die('Circular nameref %s', ref_trail)
     #ref_trail.append(new_name)
 
-    if 0:  # Another style of check
-      count = count or [0]
-      count[0] += 1
-      if count[0] > 10:
-        raise RuntimeError('too many calls')
+    # Another style of check
+    #count = count or [0]
+    #count[0] += 1
+    #if count[0] > 10:
+    #  raise RuntimeError('too many calls')
 
-    # You could have a "trail" parameter here?
-    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes, count=count)
+    # Recursive resolution uses dynamic scope -- in both the '-n' and 'setref'
+    # cases
+    cell, name_map, cell_name = self._ResolveNameOrRef(new_name,
+                                                       scope_e.Dynamic)
     return cell, name_map, cell_name
 
   def IsAssocArray(self, name):

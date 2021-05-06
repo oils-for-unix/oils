@@ -752,7 +752,8 @@ class CommandEvaluator(object):
             elif case2(Id.KW_SetGlobal):
               which_scopes = scope_e.GlobalOnly
             elif case2(Id.KW_SetRef):
-              which_scopes = scope_e.Dynamic
+              # The out param is LOCAL, but the nameref lookup is dynamic
+              which_scopes = scope_e.LocalOnly
             else:
               raise AssertionError(node.keyword.id)
 
