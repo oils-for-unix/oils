@@ -229,6 +229,14 @@ y = c'\z'
 ## status: 2
 ## N-I dash/bash/mksh/ash status: 0
 
+#### Oil allows unquoted foo\ bar
+shopt -s oil:all
+touch foo\ bar
+ls foo\ bar
+## STDOUT:
+foo bar
+## END
+
 #### $""
 echo $"foo"
 ## stdout: foo

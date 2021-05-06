@@ -35,6 +35,9 @@ def IsValidCharEscape(c):
   if ch == '/' or ch == '.' or ch == '-':
     return False
 
+  if ch == ' ':  # foo\ bar is idiomatic
+    return True
+
   # Borderline: ^ and %.  But ^ is used for history?
   # ! is an operator.  And used for history.
 

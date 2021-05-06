@@ -8,6 +8,9 @@ bool IsValidCharEscape(int c) {
   if (c == '/' || c == '.' || c == '-') {
     return false;
   }
+  if (c == ' ') {  // foo\ bar is idiomatic
+    return true;
+  }
   return ispunct(c);
 }
 
