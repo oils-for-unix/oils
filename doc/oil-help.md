@@ -54,26 +54,27 @@ the first argument, e.g.:
 
 <h4 id="single-command">single-command</h4>
 
-The %%% prefix Starts a Single Command Over Multiple Lines (?)
+NOT IMPLEMENTED.
 
-This special lexer mode has several use cases:
+The ... prefix starts a single command over multiple lines.  It's has a few use
+cases:
 
 Long command lines without trailing \
 
-    %%% chromium-browser
+    ... chromium-browser
         --no-proxy-server
         # comments allowed
         --incognito
 
 Long pipelines or and-or chains without trailing \ 
 
-    %%% find .
+    ... find .
         # exclude tests
       | grep -v '_test.py'
       | xargs wc -l
       | sort -n
 
-    %%% ls /
+    ... ls /
      && ls /bin
      && ls /lib
      || error "oops"

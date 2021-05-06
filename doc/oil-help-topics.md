@@ -30,7 +30,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 
 ```oil-help-topics
   [Usage]         bundle-usage   oil-usage
-  [Oil Lexing]    docstring ###    X single-command ...
+  [Oil Lexing]    docstring ###   X single-command ...
 ```
 
 <h2 id="command">
