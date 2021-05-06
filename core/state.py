@@ -840,6 +840,9 @@ class ctx_Call(object):
     # type: (Mem, MutableOpts, Proc, List[str]) -> None
     mem.PushCall(proc.name, proc.name_spid, argv)
     mutable_opts.PushDynamicScope(proc.dynamic_scope)
+    # It may have been disabled with ctx_ErrExit for 'if echo $(false)', but
+    # 'if p' should be allowed.
+    mutable_opts.Push(option_i.allow_command_sub, True)
     self.mem = mem
     self.mutable_opts = mutable_opts
 
@@ -850,6 +853,7 @@ class ctx_Call(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     self.mutable_opts.PopDynamicScope()
+    self.mutable_opts.Pop(option_i.allow_command_sub)
     self.mem.PopCall()
 
 

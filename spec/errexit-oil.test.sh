@@ -178,6 +178,73 @@ status 5 0
 ## END
 ## N-I dash/ash stdout-json: ""
 
+#### strict_errexit does NOT affect inside of function
+shopt -s strict_errexit || true
+
+p() {
+  echo before
+  local x
+  x=$(false)
+  echo x=$x
+}
+
+if p; then
+  echo ok
+fi
+
+shopt -s command_sub_errexit || true
+
+if p; then
+  echo ok
+fi
+
+## status: 1
+## STDOUT:
+before
+x=
+ok
+before
+## END
+## OK dash/bash/mksh/ash status: 0
+## OK dash/bash/mksh/ash STDOUT:
+before
+x=
+ok
+before
+x=
+ok
+## END
+
+#### strict_errexit does NOT affect inside of proc
+shopt -s strict_errexit
+
+proc p() {
+  echo before
+  const x = $(false)
+  echo x=$x
+}
+
+if p; then
+  echo ok
+fi
+
+shopt -s command_sub_errexit
+
+if p; then
+  echo ok
+fi
+
+## status: 1
+## STDOUT:
+before
+x=
+ok
+before
+## END
+## N-I dash/bash/mksh/ash stdout-json: ""
+## N-I dash/bash/ash status: 2
+## N-I mksh status: 1
+
 #### command sub with command_sub_errexit only
 set -o errexit
 shopt -s command_sub_errexit || true

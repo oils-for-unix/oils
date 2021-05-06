@@ -17,16 +17,54 @@ practical usage guidelines.
 The Oil language is a graceful upgrade to shell, and the behavior of variables
 is no exception.  This means that:
 
-- We implement shell-compatible semantics and enhance them.
+- We implement shell-compatible behavior, enhance it, and make it stricter.
 - We add features that will be familiar to JavaScript and Python programmers.
   In particular, Oil has **typed data** and variable **declarations**.
-- Even though Oil is a stricter language, it should be convenient to use
+- Even though Oil is stricter, it should still be convenient to use
   interactively.
 
 ## Keywords Are More Consistent and Powerful Than Builtins
 
-Shell and [bash]($xref) have grown many mechanisms for declaring and mutating
-variables:
+Oil has 5 **keywords** affect shell variables.
+
+### Declare With `var` and `const`
+
+This is similar to JavaScript.
+
+    proc p {
+      var name = 'Bob'
+      const age = 42
+      echo "$name is $age years old"
+    }
+
+### Mutate With `setvar` and `setglobal`
+
+    proc p {
+      var name = 'Bob'
+      setvar name = 'Alice'
+
+      setglobal g = 42  # creates or mutates a global variable
+    }
+
+### "Return" By Mutating "Out Params" With `setref` (advanced)
+
+TODO: It does NOT use dynamic scope.  Instead it uses `scope_e.Parent`
+
+But it uses the "nameref" mechanism.  (Implementation detail: it hides the
+param name with a `__` prefix.  This is due to a perhaps overactive nameref
+cycle check, and could go away.)
+
+Keywords are statically-parsed, and take dynamically-typed **expressions** on
+the right.  Example:
+
+    const  name = 'World'              # quotes required
+    var    foo  = "Hello $name"
+    setvar foo  = 42 + a[2] + f(x, y)  # arbitrary expressions
+
+### Comparison to Shell
+
+In contrast, shell and [bash]($xref) have grown many mechanisms for declaring
+and mutating variables:
 
 - **builtins** like `declare`, `local`, and `readonly`
 - "bare" assignments like `x=foo`
@@ -34,22 +72,9 @@ variables:
 
 Example:
 
-    readonly name=World
+    readonly name=World        # no spaces allowed around =
     declare foo="Hello $name"
     foo=$((42 + a[2]))
-
-Oil uses **keywords** in all of these cases:
-
-- `const` and `var` to declare (similar to JavaScript)
-- `setvar` and  `setglobal` to mutate
-- `setref` as a more controlled nameref mechanism
-
-Keywords are staticall-pasred, and take dynamically-typed **expressions** on
-the right:
-
-    const  name = 'World'              # quotes required
-    var    foo  = "Hello $name"
-    setvar foo  = 42 + a[2] + f(x, y)  # arbitrary expressions
 
 ## Keywords Behave Differently at the Top Level
 
@@ -158,14 +183,6 @@ except that you use the `setvar` or `setglobal` keyword to change locations.
     setvar x, y = y, x  # swap
     setvar x.foo, x.bar = foo, bar
 
-#### `setref` for "Out Params" (advanced)
-
-To return a value.  Like "named references" in [bash]($xref:bash).
-
-    proc decode (s, :out) {
-      setref out = '123'
-    }
-
 ## Procs Don't Use "Dynamic Scope"
 
 Bourne shell uses a rule called "dynamic scope" for variable name lookup.  It
@@ -195,7 +212,11 @@ behavior:
       echo "f_var is $f_var"  # Undefined!
     }
 
-### Constructs That Respect `shopt --unset dynamic_scope`
+### Shell Language Constructs Affected
+
+- TODO
+
+### Builtins Affected
 
 - Shell Assignment
   - TODO: grep for SetLocalShopt
@@ -205,11 +226,6 @@ behavior:
   - printf -v
   - TODO: whatever SetRef() and SetRefString() become
 
-### `setref` Is Explicit
-
-When you use the `setref` keyword, you're explicitly opting in dynamic scope,
-even when the option is off.
-
 <!--
 Note: this can sorta produce a leak?  If you GUESS the name of a caller's
 variable, you can pass it to its grandchild and mutate it?
@@ -217,7 +233,9 @@ variable, you can pass it to its grandchild and mutate it?
 I think this is necessary for composability.
 -->
 
-## Syntactic Sugar: Omit `const`
+## Details
+
+### Syntactic Sugar: Omit `const`
 
 In Oil (but not OSH), you can omit `const` when there's only one variable:
 
