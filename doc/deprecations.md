@@ -90,27 +90,6 @@ This is for the "legacy-free" Oil language.  These options **break more code**.
 Existing shell users will turn this on later.  Users who have never used shell
 may want to start with the Oil language.
 
-### The `set` builtin Can't Be Used (`shopt -s parse_set`)
-
-No:
-
-    set -x   
-    set -o errexit
-
-Yes:
-
-    builtin set -x
-    builtin set -o errexit
-
-Possible alternatives:
-
-    shopt -s errexit
-    shopt --set errexit
-
-Justification: It conflicts with `set x = 1` in Oil, which has an alias `Set x
-= 1` for compatibility.  (TODO: Implement `Set`).
-
-
 ### Shell Assignment and Env Bindings Can't Be Used (`shopt -s parse_equals`)
 
 No:

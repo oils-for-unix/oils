@@ -642,14 +642,14 @@ Or extract the pattern:
 
 No:
 
-    if [[ $x =~ ([[:digit:]]+) ]] {
-      echo "${BASH_REMATCH[@]}"
+    if [[ $x =~ foo-([[:digit:]]+) ]] {
+      echo "${BASH_REMATCH[1]}"  # first submatch
     }
 
 Yes:
 
-    if (x ~ / <d+> /) {  # <> is capture
-      argv.py @M         # special M variable
+    if (x ~ / 'foo-' <d+> /) {   # <> is capture
+      echo _match(1)             # first submatch
     }
 
 ## Glob Matching

@@ -159,29 +159,5 @@ Comments appreciated!
 [1] https://github.com/oilshell/oil/commit/54754f3e8298bc3c272416eb0fc96946c8fa0694
 
 
-I just implemented `shopt -s parse_set`:
-
-https://github.com/oilshell/oil/commit/277c3525aacad48947124c70a52176f5ee447bc5
-
 Note that `shopt -s all:oil` turns on all the `parse_*` options.
-
-So now you can do:
-
-```
-var x = 1
-set x = 2
-setvar x = 3  # don't need this long way
-```
-
-To use the `set` builtin, prefix it with `builtin`
-
-```
-builtin set -o errexit
-builtin set -- a b c
-```
-
-Most programs shouldn't need to use the `set` builtin in Oil.  Of course, `shopt -u parse_set` unsets it if desired.
-
-Comments welcome!
-
 -->

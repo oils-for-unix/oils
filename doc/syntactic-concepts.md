@@ -111,7 +111,7 @@ but in expression mode, we prefer `r''` and `c''`:
 
 A sigil pair often changes the **lexer mode** to parse what's inside.
 
-## Parse Options to Take Over `()`, `@`, `set`, and `=`
+## Parse Options to Take Over `()`, `@`, and `=`
 
 Most users don't have to worry about parse options.  Instead, they run either
 `bin/osh` or `bin/oil`, which are actually aliases for the same binary.  The
@@ -136,17 +136,15 @@ $ echo '@myarray'       # quote it to get the old behavior
 @myarray
 ```
 
-The `parse_set` option (in group `oil:all`) lets you use `set` as a **keyword**
-to mutate vars.  It's shorter than `setvar`.
+The `parse_equals` option (in group `oil:all`) lets you omit `const`:
 
 ```sh-prompt
-set -o errexit          # set is a shell builtin
+const x = 42 + a[i]     # accepted in OSH and Oil
 
-shopt -s parse_set      # parse set as a keyword
+shopt -s parse_equals   # Change the meaning of =
 
-set x = 42 + a[i]       # Now it accepts a LHS and RHS
-
-builtin set -o errexit  # One way to use the set builtin
+x = 42 + a[i]           # Means the same as above
+                        # This is NOT a mutation.  It's a declaration.
 ```
 
 ## Static Parsing
