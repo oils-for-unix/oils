@@ -240,35 +240,7 @@ status=1
 ## END
 
 
-
-#### unset composes because it uses dynamic scope (even in Oil)
-shopt -s oil:all
-
-proc unset-two {
-  unset $1 
-  unset $2
-}
-
-demo() {
-  local x=X
-  local y=Y
-
-  echo "x=$x y=$y"
-
-  unset-two x y
-
-  shopt --unset nounset
-  echo "x=$x y=$y"
-}
-
-demo
-## STDOUT:
-x=X y=Y
-x= y=
-## END
-
-
-#### SetLocalShopt constructs
+#### OshLanguageSetValue constructs
 
 f() {
   (( x = 42 ))
@@ -483,3 +455,68 @@ a
 z
 c
 ## END
+
+#### unset inside proc uses local scope
+shopt --set parse_brace
+
+f() {
+  unset x
+}
+
+proc p() {
+  unset x
+}
+
+proc p2() {
+  shopt --set dynamic_scope {  # turn it back on
+    unset x
+  }
+}
+
+x=foo
+f
+echo f x=$x
+
+x=bar
+p
+echo p x=$x
+
+x=spam
+p2
+echo p2 x=$x
+
+## STDOUT:
+f x=
+p x=bar
+p2 x=
+## END
+
+#### unset composes when you turn on dynamic scope
+shopt -s oil:all
+
+proc unset-two {
+  shopt --set dynamic_scope {
+    unset $1 
+    unset $2
+  }
+}
+
+demo() {
+  local x=X
+  local y=Y
+
+  echo "x=$x y=$y"
+
+  unset-two x y
+
+  shopt --unset nounset
+  echo "x=$x y=$y"
+}
+
+demo
+## STDOUT:
+x=X y=Y
+x= y=
+## END
+
+

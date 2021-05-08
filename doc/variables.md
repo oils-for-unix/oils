@@ -1,4 +1,4 @@
----
+
 default_highlighter: oil-sh
 ---
 
@@ -233,7 +233,7 @@ These builtins are also "isolated" inside procs, using local scope:
 - [readarray]($osh-help) aka `mapfile`
 - [getopts]($osh-help) (`$OPTIND`, `$OPTARG`, etc.)
 - [printf]($osh-help) -v
-- [unset]($osh-help) (TODO: fix this)
+- [unset]($osh-help)
 
 Oil Builtins:
 

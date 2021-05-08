@@ -373,9 +373,8 @@ class VarChecker(object):
 
     Oil disallows nested procs.
     """
-    if len(self.tokens) != 0:
-      if self.tokens[0].id == Id.KW_Proc or blame_tok.id == Id.KW_Proc:
-        p_die("procs can't contain other procs or functions", token=blame_tok)
+    if len(self.tokens) != 0 and blame_tok.id == Id.KW_Proc:
+      p_die("procs should defined be at the top level", token=blame_tok)
 
     self.tokens.append(blame_tok)
     entry = {}  # type: Dict[str, Id_t]
