@@ -1726,6 +1726,8 @@ class Mem(object):
       else:
         raise AssertionError()
 
+    # TODO: unset should use ScopesForWriting()
+
     # Dynamic scope because it's really an "out param"
     cell, name_map, cell_name = self._ResolveNameOrRef(var_name,
                                                        scope_e.Dynamic)

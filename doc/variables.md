@@ -1,31 +1,40 @@
 ---
-in_progress: yes
 default_highlighter: oil-sh
 ---
 
 Variable Declaration, Mutation, and Scope
 =========================================
 
-This document describes the semantics of variables in Oil and distills them to
-practical usage guidelines.
+This doc addresses these questions:
+
+- How do variables behave in Oil?
+- What are some practical guidelines for using them?
 
 <div id="toc">
 </div>
 
 ## Oil Design Goals
 
-The Oil language is a graceful upgrade to shell, and the behavior of variables
-is no exception.  This means that:
+The Oil language is a graceful upgrade to shell, and the behavior
+of variables follows from that philosophy.  This means that:
 
-- We implement shell-compatible behavior, enhance it, and make it stricter.
-- We add features that will be familiar to JavaScript and Python programmers.
-  In particular, Oil has **typed data** and variable **declarations**.
+- We implement shell-compatible behavior.
+- We enhance it with **new features** like expressions over typed data, which
+  will be familiar to JavaScript and Python programmers.
+- We make the language **stricter**.
+  - Procs (shell functions) should be "self-contained", and understandable by
+    reading their signature.
+  - Remove [dynamic scope]($xref:dynamic-scope).  This mechanism is unfamiliar
+    to most programmers, and may result in unintentional variable mutation
+    (bugs).
+  - Avoid problems with typos by requiring variable **declarations**.
 - Even though Oil is stricter, it should still be convenient to use
   interactively.
 
 ## Keywords Are More Consistent and Powerful Than Builtins
 
-Oil has 5 **keywords** affect shell variables.
+Oil has 5 keywords affect shell variables.  Unlike shell builtins, they're
+statically-parsed, and take dynamically-typed **expressions** on the right.
 
 ### Declare With `var` and `const`
 
@@ -40,94 +49,89 @@ This is similar to JavaScript.
 ### Mutate With `setvar` and `setglobal`
 
     proc p {
-      var name = 'Bob'
-      setvar name = 'Alice'
+      var name = 'Bob'       # declare
+      setvar name = 'Alice'  # mutate
 
-      setglobal g = 42  # creates or mutates a global variable
+      setglobal g = 42       # creates or mutates a global variable
     }
 
 ### "Return" By Mutating "Out Params" With `setref` (advanced)
 
-TODO: It does NOT use dynamic scope.  Instead it uses `scope_e.Parent`
+    proc p(s, :out) {           # declare out param with :
+      setref out = "prefix-$s"  # mutate it to "return" value to caller
+    }
 
-But it uses the "nameref" mechanism.  (Implementation detail: it hides the
-param name with a `__` prefix.  This is due to a perhaps overactive nameref
-cycle check, and could go away.)
+This is a more controlled version of shell's dynamic scope.  It reuses the
+[nameref]($osh-help) mechanism.
 
-Keywords are statically-parsed, and take dynamically-typed **expressions** on
-the right.  Example:
+(Implementation detail: it hides the parameter name with a `__` prefix.  This
+is due to a perhaps overactive nameref cycle check.)
 
-    const  name = 'World'              # quotes required
-    var    foo  = "Hello $name"
-    setvar foo  = 42 + a[2] + f(x, y)  # arbitrary expressions
+- *Style guideline*: In some situations, it's better to "return" a value on
+  stdout and use `$(myproc)` to retrieve it.
 
 ### Comparison to Shell
 
 In contrast, shell and [bash]($xref) have grown many mechanisms for declaring
 and mutating variables:
 
-- **builtins** like `declare`, `local`, and `readonly`
 - "bare" assignments like `x=foo`
+- **builtins** like `declare`, `local`, and `readonly`
 - The `-n` "nameref" flag
 
-Example:
+Examples:
 
     readonly name=World        # no spaces allowed around =
     declare foo="Hello $name"
     foo=$((42 + a[2]))
+    declare -n ref=foo         # $foo can be written through $ref
 
 ## Keywords Behave Differently at the Top Level
 
 Keywords like `var` behave differently in the top-level scope vs. `proc` scope.
 This is due to the tension between shell's interactive nature and Oil's
-strictness.
+strictness (and to the dynamic nature of the `source` builtin).
+
+The "top-level" of the interpreter is used in two situations:
+
+1. When using Oil **interactively**.
+2. As the **global** scope of a batch program.
 
 ### Usage Guidelines
 
 Before going into detail, here are some practical guidelines:
 
-- When using Oil interactively, use `setvar` only.  Like Python's assignment
-  operator, it creates or mutates a variable.
-  - Short scripts (~20 lines) can also use this style.
-- Refactor long scripts into composable "functions", i.e. `proc`.  First wrap
-  the whole program into `proc main(@argv)`, and declare all variables.
-  - The `proc` may have `var` and `const` declarations.  (This is more like
+- **Interactive** sessions: Use `setvar` only.  This keyword is like Python's
+  assignment operator: it creates or mutates a variable.
+  - **Short scripts** (~20 lines) can also use this style.
+- **Long programs**: Refactor them into composable "functions", i.e. `proc`.
+  - First wrap the **whole program** into `proc main(@argv)`.
+  - Declare all variables with `var` and `const` declarations.  (This is more like
     JavaScript than Python.)
-  - The top level should only have `const` declarations.  (You can use `var`,
-    but it has special rules, explained below.)
-  - Use `setvar` to **mutate local** variables, and `setglobal` to mutate
-    **globals**.
+  - Inside procs, use `setvar` to mutate **local** variables, and `setglobal`
+    to mutate **globals**.
+  - The **top level** should only have `const` declarations.  (You can use
+    `var`, but it has special rules, explained below.)
 
 That's all you need to remember.  The following sections go into more detail.
 
 ### The Top-Level Scope Has Only Dynamic Checks
 
-The "top-level" of the interpreter is used in two situations:
-
-- When using Oil **interactively**.
-- As the **global** scope of a batch program.
-
-("Top-level" means you're not inside a shell function or `proc`.)
-
 #### Interactive Use: `setvar` only
 
 As mentioned, you only need the `setvar` keyword in an interactive shell:
 
-    oil$ setvar x = 42
-    oil$ setvar x = 43
-
-We encourage this style because `var` and `const` behave **differently** at the
-top level than they do in functions.  This is related to the dynamic nature of
-the `source` builtin, and the resulting inability to statically check
-definitions.
+    oil$ setvar x = 42   # create variable 'x'
+    oil$ setvar x = 43   # mutate it
 
 Details:
 
-- `var` behaves like `setvar`.  In contrast to `proc` scope, a `var` definition
-  can be redefined at the top-level.
-- `const` does a *dynamic* check, like shell's `readonly`).  There's no
-  *static* check as in `proc`.  As above, and in contrast to `proc` scope, a
-  `const` can redefine a `var`.
+- `var` behaves like `setvar`: It creates or mutates a variable.  In other
+  words, a `var` definition can be **redefined** at the top-level.
+- A `const` can also redefine a `var`.
+- A `var` can't redefine a `const` because there's a **dynamic** check that
+  disallows mutation (like shell's `readonly`).  But there are no *static*
+  checks at the top-level.
 
 #### Batch Use: `const` only
 
@@ -140,10 +144,11 @@ It's simpler to use only constants at the top level.
       ssh $USER@$HOST ls -l
     }
 
-This is so you don't have to worry about `var` being redefined by `source`.  In
-contrast, a `const` can't be redefined because it can't be mutated.
+This is so you don't have to worry about `var` being redefined by code in
+`source mylib.sh`.  A `const` can't be redefined, because it can't be mutated.
 
-Putting mutable globals in a dictionary will prevent them from being redefined:
+Note that putting mutable globals in a dictionary will prevent them from being
+redefined:
 
     const G = {
       mystate = 0
@@ -160,28 +165,16 @@ and composable:
 
 - They take named parameters
   - And check that there aren't too few or too many arguments
-- They don't "silently" mutate variables up the stack, or mutate globals (no
-  dynamic scope)
-  - They may take `:out` params instead
+- They don't "silently" mutate variables up the stack, including globals.  That
+  is, there's no [dynamic scope]($xref:dynamic-scope) rule.
+  - They may take `:out` params instead.
 
-#### Declare with `const` and `var`
+They have **static** checks (parse errors):
 
-- `const` declares a local or global constant (like `readonly`)
-- `var` declares a local or global variable (like `local` or `declare`)
-
-#### Mutate with `setvar` and `setglobal`
-
-- `setvar` mutates a local
-- `setvar` mutates a global
-
-Expressions like these should all work.  They're basically identical to Python,
-except that you use the `setvar` or `setglobal` keyword to change locations.
-
-    setvar x[1] = 2
-    setvar d['key'] = 3
-    setvar func_returning_list()[3] = 3
-    setvar x, y = y, x  # swap
-    setvar x.foo, x.bar = foo, bar
+- Every variable must be declared once and only once with `var` or `const`.  A
+  duplicate declaration is a parse error.
+- Mutating a `const` is a parse error.
+- `setvar` of an undeclared variable is a parse error.
 
 ## Procs Don't Use "Dynamic Scope"
 
@@ -214,26 +207,35 @@ behavior:
 
 ### Shell Language Constructs Affected
 
-- TODO
+These language constructs all do **assignment** with dynamic scope.  In Oil,
+they only mutate the local scope:
+
+- `x=val`
+  - And variants `x+=val`, `a[i]=val`, `a[i]+=val`
+- `export x=val` and `readonly x=val`
+- `${x=default}`
+- `mycmd {x}>out`
+- `(( x = 42 + y ))`
 
 ### Builtins Affected
 
-- Shell Assignment
-  - TODO: grep for SetLocalShopt
-- Builtins
-  - read
-  - getopts
-  - printf -v
-  - TODO: whatever SetRef() and SetRefString() become
+These builtins are also "isolated" inside procs:
 
-<!--
-Note: this can sorta produce a leak?  If you GUESS the name of a caller's
-variable, you can pass it to its grandchild and mutate it?
+- [read]($osh-help) (`$REPLY`)
+- [readarray]($osh-help) aka `mapfile`
+- [getopts]($osh-help) (`$OPTIND`, `$OPTARG`, etc.)
+- [printf]($osh-help) -v
+- [unset]($osh-help) (TODO: fix this)
 
-I think this is necessary for composability.
--->
+Oil Builtins:
 
-## Details
+- [compadjust]($osh-help)
+- [run]($oil-help) `--assign-status`
+
+<!-- TODO: should Oil builtins always behave the same way?  Isn't that a little
+faster? I think read -line and -all are not consistent.  -->
+
+## More Details
 
 ### Syntactic Sugar: Omit `const`
 
@@ -241,12 +243,26 @@ In Oil (but not OSH), you can omit `const` when there's only one variable:
 
     const x = 'foo'
 
-    x = 'foo'  # same thing
+    x = 'foo'  # Same thing.  This is NOT a mutation as in C or Java.
 
-The second statement is **not** a mutation!  Also note that `x=foo` (no spaces)
-is disallowed in Oil to avoid confusion.
+To prevent confusion, `x=foo` (no spaces) is disallowed in Oil.  Use the `env`
+command instead:
 
-You can use `env PYTHONPATH=. ./foo.py` in place of `PYTHONPATH=. ./foo.py`.
+    env PYTHONPATH=. ./foo.py  # good
+    PYTHONPATH=. ./foo.py`.    # disallowed because it would be confusing
+
+### Examples of Place Mutation
+
+The expression to the left of `=` is called a **place**.  These are basically
+Python or JavaScript expressions, except that you add the `setvar` or
+`setglobal` keyword.
+
+    setvar x[1] = 2
+    setvar d['key'] = 3
+    setvar d->key = 3               # syntactic sugar for the above
+    setvar func_returning_list()[3] = 3
+    setvar x, y = y, x              # swap
+    setvar x.foo, x.bar = foo, bar
 
 ## Appendices
 
@@ -256,81 +272,57 @@ This section may help experienced shell users understand Oil.
 
 Shell:
 
-    g=G                       # global variable
-    readonly c=C              # global constant
+    g=G                        # global variable
+    readonly c=C               # global constant
 
     myfunc() {
-      local x=X               # local variable
-      readonly y=Y            # local constant
+      local x=X                # local variable
+      readonly y=Y             # local constant
 
-      x=mutated               # mutate local
-      g=mutated               # mutate global
-      newglobal=G             # create new global
+      x=mutated                # mutate local
+      g=mutated                # mutate global
+      newglobal=G              # create new global
 
-      caller_var=mutated      # dynamic scope (Oil doesn't have this)
+      caller_var=mutated       # dynamic scope (Oil doesn't have this)
     }
 
 Oil:
 
-    var g = 'G'               # global variable
-    const c = 'C'             # global constant
+    var g = 'G'                # global variable (discouraged)
+    const c = 'C'              # global constant
 
     proc myproc {
-      var x = 'L'             # local variable
-      const y = 'Y'           # local constant
+      var x = 'L'              # local variable
+      const y = 'Y'            # local constant
 
-      setvar x = 'mutated'    # mutate local
-      setvar g = 'mutated'    # mutate global
-      setvar newglobal = 'G'  # create new global
+      setvar x = 'mutated'     # mutate local
+      setglobal g = 'mutated'  # mutate global
+      setvar newglobal = 'G'   # create new global
 
-                              # For dynamic scope, Oil uses setref and an
-                              # explicit ref param.  See below.
+                               # There's no dynamic scope, but you can use
+                               # "out params" with setref.
+
     }
-
-- `var` declares a new variable in the current scope (global or local)
-- `const` is like `var`, except the binding can never be changed
-- `setvar x = 'y'` is like `x=y` in shell (except that it doesn't obey [dynamic
-  scope]($xref:dynamic-scope).)
-  - If a local `x` exists, it mutates it.
-  - Otherwise it creates a new global `x`.
-  - If you want stricter behavior, use `set` rather than `setvar`.
-
-----
-
-
-```
-c = 'X'  # syntactic sugar for const c = 'X'
-
-proc myproc {
-  var x = 'L'
-  set x = 'mutated' 
-
-  set notglobal = 'G'   # ERROR: neither a local or global
-}
-```
-
-It's rarely necessary to mutate globals in shell scripts, but if you do, use
-the `setglobal` keyword:
-
-```
-var g = 'G'
-proc myproc {
-  setglobal g = 'mutated'
-
-  setglobal notglobal = 'G'  # ERROR: not a global
-}
-```
 
 ### Problems With Top-Level Scope In Other Languages
 
-- Racket: See Principled Approach to REPL's
-  -  Thanks to Michael Greenberg (of Smoosh) for this reference
-- Julia 1.5, Scope, and REPLs
-  - Oil doesn't print and warnings.  It just behaves differently, and we give a
-    style guideline to only use `const` at the top level to avoid a potential
-    issue with `source`.
+- Julia 1.5 (August 2020): [The return of "soft scope" in the
+  REPL"](https://julialang.org/blog/2020/08/julia-1.5-highlights/#the_return_of_soft_scope_in_the_repl).
+  - In contrast to Julia, Oil behaves the same in batch mode vs. interactive
+    mode, and doens't print warnings.  However, it behaves differently at the
+    top level, and we recommend using only `setvar` in interactive shells, and
+    only `const` in the global scope of programs.
+- Racket: [The Top Level is Hopeless](https://gist.github.com/samth/3083053)
+  - From [A Principled Approach to REPL Interpreters](https://2020.splashcon.org/details/splash-2020-Onward-papers/5/A-principled-approach-to-REPL-interpreters)
+    (Onward 2020).  Thanks to Michael Greenberg (of Smoosh) for this reference.
+  - The unusual behavior of `var` at the top level was partly inspired by this
+    paper.  It's also consistent with shell's `declare`!
 
 ## Related Documents
 
-- Unpolished Details: [variable-scope.html](variable-scope.html)
-
+- [Oil Keywords](oil-keywords.html)
+- [Interpreter State](interpreter-state.html)
+  - The shell has a stack of namesapces.
+  - Each namespace contains variable name -> cell bindings.
+  - Cells have a tagged value (string, array, etc.), and 3 flags (readonly, export, nameref).
+- Unpolished details: [variable-scope.html](variable-scope.html)

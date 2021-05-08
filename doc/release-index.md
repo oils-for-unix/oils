@@ -55,6 +55,7 @@ are ready to read:
   | [Shell Language Deprecations](doc/deprecations.html)
   | [Oil Language FAQ](doc/oil-language-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)
+  | [Variable Declaration, Mutation, and Scope](doc/variables.html)
 - Language Design:
   - [A Feel For Oil's Syntax](doc/syntax-feelings.html) 
   | [Syntactic Concepts](doc/syntactic-concepts.html) 
