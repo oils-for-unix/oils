@@ -125,15 +125,23 @@ def _MakeLexer(rules):
 LEXER = [
   # TODO: instead of nongreedy matches, the loop can just fo .find('-->') and
   # .find('?>')
+
+  # Actually non-greedy matches are regular and can be matched in linear time
+  # with RE2.
+  #
+  # https://news.ycombinator.com/item?id=27099798
+  #
+  # Maybe try combining all of these for speed.
+
   (r'<!-- .*? -->', Comment),
   (r'<\? .*? \?>', Processing),
 
   # NOTE: < is allowed in these.
-  (r'<! [^>]+ >', Decl),  # <!DOCTYPE html>
+  (r'<! [^>]+ >', Decl),         # <!DOCTYPE html>
 
-  (r'</ [^>]+ >', EndTag),  # self-closing <br/>  comes FIRST
-  (r'< [^>]+ />', StartEndTag),        # end </a>
-  (r'< [^>]+  >', StartTag), # start <a>
+  (r'</ [^>]+ >', EndTag),       # self-closing <br/>  comes FIRST
+  (r'< [^>]+ />', StartEndTag),  # end </a>
+  (r'< [^>]+  >', StartTag),     # start <a>
 
   (r'&\# [0-9]+ ;', DecChar),
   (r'&\# x[0-9a-fA-F]+ ;', HexChar),

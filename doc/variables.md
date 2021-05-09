@@ -25,7 +25,7 @@ of variables follows from that philosophy.
   - Procs (shell functions) are self-contained and modular.  In other words,
     they're understandable by reading their signature.
   - We removed [dynamic scope]($xref:dynamic-scope).  This mechanism isn't
-    familiar to most programmers, and may cause unintentional mutation (bugs).
+    familiar to most programmers, and may cause accidental mutation (bugs).
   - Oil has variable **declarations** like JavaScript, which can prevent
     trivial bugs.
 - Even though Oil is stricter, it should still be convenient to use
@@ -313,7 +313,7 @@ Oil:
 ## Appendix B: Problems With Top-Level Scope In Other Languages
 
 - Julia 1.5 (August 2020): [The return of "soft scope" in the
-  REPL"](https://julialang.org/blog/2020/08/julia-1.5-highlights/#the_return_of_soft_scope_in_the_repl).
+  REPL](https://julialang.org/blog/2020/08/julia-1.5-highlights/#the_return_of_soft_scope_in_the_repl).
   - In contrast to Julia, Oil behaves the same in batch mode vs. interactive
     mode, and doens't print warnings.  However, it behaves differently at the
     top level.  For this reason, we recommend using only `setvar` in
