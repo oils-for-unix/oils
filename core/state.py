@@ -206,18 +206,6 @@ class ctx_ErrExit(object):
     # type: (MutableOpts, bool, int) -> None
     assert span_id != runtime.NO_SPID
     mutable_opts.PushErrExit(errexit_val, span_id)
-
-    # command subs would allow failures to be ignored, like ...
-    # if echo $(date %x); then ...
-    # Avoid!
-    # Well, to be honest we could allow it with command_sub_errexit, but other
-    # shells don't have it!
-
-    self.do_pop = False
-    if mutable_opts.Get(option_i.strict_errexit):
-      mutable_opts.Push(option_i.allow_command_sub, False)
-      self.do_pop = True
-
     self.mutable_opts = mutable_opts
 
   def __enter__(self):
@@ -226,8 +214,6 @@ class ctx_ErrExit(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    if self.do_pop:
-      self.mutable_opts.Pop(option_i.allow_command_sub)
     self.mutable_opts.PopErrExit()
 
 
@@ -842,7 +828,6 @@ class ctx_Call(object):
     mutable_opts.PushDynamicScope(proc.dynamic_scope)
     # It may have been disabled with ctx_ErrExit for 'if echo $(false)', but
     # 'if p' should be allowed.
-    mutable_opts.Push(option_i.allow_command_sub, True)
     self.mem = mem
     self.mutable_opts = mutable_opts
 
@@ -853,7 +838,6 @@ class ctx_Call(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     self.mutable_opts.PopDynamicScope()
-    self.mutable_opts.Pop(option_i.allow_command_sub)
     self.mem.PopCall()
 
 

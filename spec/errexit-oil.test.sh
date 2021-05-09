@@ -49,32 +49,6 @@ one two
 parent status=0
 ## END
 
-#### strict_errexit with command sub stops program
-set -o errexit
-shopt -s inherit_errexit || true
-shopt -s strict_errexit || true
-if echo $(echo 1; false; echo 2); then
-  echo A
-fi
-echo done
-
-## status: 1
-## stdout-json: ""
-
-## N-I bash/ash status: 0
-## N-I bash/ash STDOUT:
-1 2
-A
-done
-## END
-
-## N-I dash/mksh status: 0
-## N-I dash/mksh STDOUT:
-1
-A
-done
-## END
-
 #### strict_errexit and assignment builtins (local, export, readonly ...)
 set -o errexit
 shopt -s strict_errexit || true
@@ -118,38 +92,6 @@ status=0
 ## END
 ## N-I dash/bash/mksh/ash stdout-json: ""
 
-
-#### {inherit,strict}_errexit: command sub with a single command
-set -o errexit
-shopt -s inherit_errexit || true
-shopt -s strict_errexit || true
-if echo $(false); then
-  echo A
-fi
-echo done
-## status: 1
-## stdout-json: ""
-
-## N-I dash/bash/mksh/ash status: 0
-## N-I dash/bash/mksh/ash STDOUT:
-
-A
-done
-## END
-
-#### strict_errexit with command sub in weird place
-shopt -s oil:basic
-
-if echo 1 > $(echo tmp); then
-  echo 2
-fi
-## status: 1
-## STDOUT:
-## END
-## N-I dash/bash/mksh/ash status: 0
-## N-I dash/bash/mksh/ash STDOUT:
-2
-## END
 
 #### strict_errexit allows pipeline because you can set -o pipefail
 case $SH in (dash|ash) exit ;; esac
@@ -679,3 +621,33 @@ argv.py "${myarray[@]}"
 ## END
 ## N-I dash/ash/mksh status: 0
 
+#### OLD: command sub in conditional, with inherit_errexit
+set -o errexit
+shopt -s inherit_errexit || true
+if echo $(echo 1; false; echo 2); then
+  echo A
+fi
+echo done
+
+## STDOUT:
+1 2
+A
+done
+## END
+## N-I dash/mksh STDOUT:
+1
+A
+done
+## END
+
+#### OLD: command sub in redirect in conditional
+set -o errexit
+
+if echo tmp_contents > $(echo tmp); then
+  echo 2
+fi
+cat tmp
+## STDOUT:
+2
+tmp_contents
+## END
