@@ -137,22 +137,19 @@ Yes:
 
     var x = f(glob('*.py'))  # Now it's expanded
 
+Another way to say this is that Oil works like Python:
 
-Another construct that uses glob aka `fnmatch()` syntax:
+```python
+from glob import glob
+glob('*.py')             # this is a glob
+os.listdir('*.py')       # no glob because it's not how listdir() works
+```
+
+Also note that Oil has a builtin operator that uses glob aka `fnmatch()`
+syntax:
 
     if (x ~~ '*.py') {  # not yet implemented
       echo 'Python'
     }
 
 
-Example:
-
-    var x = myfunc(*.py)  # Invalid
-
-Oil basically works like Python:
-
-```python
-from glob import glob
-glob('*.py')        # this is a glob
-os.listdir('*.py')  # no glob because it's not how listdir() works
-```
