@@ -118,6 +118,9 @@ travis-r-libs() {
 # Following these instructions
 # https://cloud.r-project.org/bin/linux/ubuntu/README.html
 
+# 5/2021: Upgraded to Ubuntu Bionic, which has R 3.4.4.  So it looks like I no
+# longer need this.
+
 _install-new-r() {
   # update indices
   apt update -qq

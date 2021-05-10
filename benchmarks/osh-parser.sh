@@ -11,7 +11,7 @@
 #   devtools/release-native.sh extract-for-benchmarks
 #   devtools/release.sh benchmark-build
 #   make  # to build _bin/osh
-#   lisa:
+#   lenny:
 #     benchmark/auto.sh osh-parser-quick
 #   flanders:
 #     benchmark/auto.sh osh-parser-dup-testdata
@@ -270,15 +270,15 @@ measure-cachegrind() {
 # Copy data so it looks like it's from another host
 fake-other-host() {
   local dir=${1:-_tmp/osh-parser/raw}
-  for entry in $dir/lisa*; do
-    local fake=${entry/lisa/flanders}
+  for entry in $dir/lenny*; do
+    local fake=${entry/lenny/flanders}
     #echo $entry $fake
     mv -v $entry $fake
 
     # The host ID isn't changed, but that's OK.
     # provencence.txt has host names.
     if test -f $fake; then
-      sed -i 's/lisa/flanders/g' $fake
+      sed -i 's/lenny/flanders/g' $fake
     fi
   done
 }
@@ -352,7 +352,7 @@ stage1() {
 }
 
 # TODO:
-# - maybe rowspan for hosts: flanders/lisa
+# - maybe rowspan for hosts: flanders/lenny
 #   - does that interfere with sorting?
 #
 # NOTE: not bothering to make it sortable now.  Just using the CSS.

@@ -10,7 +10,7 @@
 readonly OSH_OVM=${OSH_OVM:-_bin/osh}
 
 readonly MACHINE1=flanders
-readonly MACHINE2=lisa
+readonly MACHINE2=lenny
 
 #readonly MACHINE1=broome
 #readonly MACHINE2=spring

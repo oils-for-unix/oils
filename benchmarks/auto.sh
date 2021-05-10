@@ -58,19 +58,19 @@ osh-parser-quick() {
 }
 
 osh-parser-dup-testdata() {
-  ### Quickly duplicate lisa testdata to flanders, for quick testing
+  ### Quickly duplicate lenny testdata to flanders, for quick testing
 
   local raw_dir=../benchmark-data/osh-parser
 
-  local -a a=($raw_dir/lisa.*.times.csv)
+  local -a a=($raw_dir/lenny.*.times.csv)
   local latest=${a[-1]}
   latest=${latest//.times.csv/}
 
   for name in $latest.*; do 
-    local dest=${name//lisa/flanders}
+    local dest=${name//lenny/flanders}
     cp -r -v $name $dest
     if test -f $dest; then
-      sed -i 's/lisa/flanders/g' $dest
+      sed -i 's/lenny/flanders/g' $dest
     fi
   done
 }
