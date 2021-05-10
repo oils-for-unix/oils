@@ -115,8 +115,11 @@ date-and-git-info() {
   echo
 
   if test -d .git; then
-    local branch=$(git rev-parse --abbrev-ref HEAD)
-    local hash=$(git rev-parse $branch)
+    local branch
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    local hash
+    hash=$(git rev-parse $branch)
+
     echo "oil repo: $hash on branch $branch"
   else
     echo "(not running from git repository)"

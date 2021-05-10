@@ -160,7 +160,8 @@ osh-version-text() {
   # No -v or -V or --version.  TODO: Only use hermetic version on release.
 
   echo ---
-  local my_dash=$(type -p dash)
+  local my_dash
+  my_dash=$(type -p dash)
   if test -f $my_dash; then
     ls -l $my_dash
   else
@@ -169,7 +170,8 @@ osh-version-text() {
   echo
 
   echo ---
-  local my_mksh=$(type -p mksh)
+  local my_mksh
+  my_mksh=$(type -p mksh)
   if test -f $my_mksh; then
     ls -l $my_mksh
   else

@@ -81,9 +81,8 @@ install-old-flake8() {
 release-ubuntu-deps() {
   # For the release to run test/report.R, you need r-base-core too.
   # cloc is used for line counts
-  sudo apt install r-base-core cloc
-
-  install-py-libs
+  # valgrind/cachegrind for benchmarks
+  sudo apt install r-base-core cloc valgrind
 }
 
 show-r() {

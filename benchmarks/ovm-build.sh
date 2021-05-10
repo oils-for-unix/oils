@@ -332,7 +332,7 @@ measure() {
   # NOTE: Do we need two raw dirs?
   mkdir -p $BASE_DIR/{raw,stage1,bin} $raw_dir
 
-  # TODO: the $times_out calculation is duplicated in build-task()0
+  # TODO: the $times_out calculation is duplicated in build-task()
 
   # Write Header of the CSV file that is appended to.
   echo "$HEADER" > $times_out
