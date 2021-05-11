@@ -121,9 +121,12 @@ _shell-id-hash() {
   file=$src/dpkg-version.txt
   test -f $file && egrep '^Version' $file
 
-  # Interpreter as CPython vs. OVM is what we care about now.
+  # Interpreter as CPython vs. OVM is what we care about, so
+  # select 'Interpreter:' but not 'Interpreter version:'.
+  # For example, the version is different on Ubuntu Bionic vs. Trusty, but we
+  # ignore that.
   file=$src/osh-version.txt
-  test -f $file && egrep '^Oil version|^Interpreter' $file
+  test -f $file && egrep '^Oil version|^Interpreter:' $file
 
   # For OSH
   file=$src/git-commit-hash.txt
@@ -137,11 +140,12 @@ publish-shell-id() {
   local src=$1  # e.g. _tmp/shell-id/osh
   local dest_base=${2:-../benchmark-data/shell-id}
 
-  local name=$(basename $src)
-  local hash
+  local name
+  name=$(basename $src)
 
   # Problem: OSH is built on each machine.  Get rid of the release date?
   # And use the commit hash or what?
+  local hash
   hash=$(_shell-id-hash $src | md5sum)  # not secure, an identifier
 
   local id="${hash:0:8}"
@@ -222,7 +226,9 @@ publish-host-id() {
   local src=$1  # e.g. _tmp/host-id/lisa
   local dest_base=${2:-../benchmark-data/host-id}
 
-  local name=$(basename $src)
+  local name
+  name=$(basename $src)
+
   local hash
   hash=$(_host-id-hash $src | md5sum)  # not secure, an identifier
 
