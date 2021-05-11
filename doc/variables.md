@@ -251,12 +251,17 @@ The expression to the left of `=` is called a **place**.  These are basically
 Python or JavaScript expressions, except that you add the `setvar` or
 `setglobal` keyword.
 
-    setvar x[1] = 2
-    setvar d['key'] = 3
+    setvar x[1] = 2                 # array element
+    setvar d['key'] = 3             # dict element
     setvar d->key = 3               # syntactic sugar for the above
-    setvar func_returning_list()[3] = 3
     setvar x, y = y, x              # swap
+
+<!--
+Note: these may be valid in Tea, but not Oil
+
+    setvar func_returning_list()[3] = 3
     setvar x.foo, x.bar = foo, bar
+-->
 
 ### Syntactic Sugar: Omit `const`
 
