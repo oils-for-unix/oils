@@ -519,4 +519,22 @@ x=X y=Y
 x= y=
 ## END
 
+#### Temp Bindings
+myfunc() {
+  echo myfunc FOO=$FOO
+}
+proc myproc() {
+  echo myproc FOO=$FOO
+}
 
+FOO=bar myfunc
+FOO=bar myproc
+FOO=bar echo inline FOO=$FOO
+FOO=bar printenv.py FOO
+
+## STDOUT:
+myfunc FOO=bar
+myproc FOO=
+inline FOO=
+bar
+## END

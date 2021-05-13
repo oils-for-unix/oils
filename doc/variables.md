@@ -178,9 +178,9 @@ Procs are Oil's stricter notion of "shell functions", and they have additional
 
 ## Procs Don't Use "Dynamic Scope"
 
-Procs are designed to be encapsulated and composable like processes.  But
-Bourne shell functions use a rule called [dynamic scope]($xref:dynamic-scope)
-for variable name lookup that breaks encapsulation.
+Procs are designed to be encapsulated and composable like processes.  But the
+[dynamic scope]($xref:dynamic-scope) rule that Bourne shell functions use
+breaks encapsulation.
   
 Dynamic scope means that a function can **read and mutate** the locals of its
 caller, its caller's caller, and so forth.  Example:
@@ -199,6 +199,8 @@ caller, its caller's caller, and so forth.  Example:
 Oil code should use `proc` instead.  Inside a proc call, the `dynamic_scope`
 option is implicitly disabled (equivalent to `shopt --unset dynamic_scope`).
 
+### Reading Variables
+
 This means that adding the `proc` keyword to the definition of `g` changes its
 behavior:
 
@@ -209,11 +211,15 @@ behavior:
 This affects all kinds of variable references:
 
     proc p {
-      echo $foo        # look up foo in command mode
-      var y = foo + 1  # look up foo in expression mode
+      echo $foo         # look up foo in command mode
+      var y = foo + 42  # look up foo in expression mode
     }
 
-### Shell Language Constructs Affected
+As in Python and JavaScript, a local `foo` can *shadow* a global `foo`.  Using
+`CAPS` for globals is a common style that avoids confusion.  Remember that
+globals should usually be constants in Oil.
+
+### Shell Language Constructs That Write Variables
 
 In shell, these language constructs assign to variables using dynamic
 scope.  In Oil, they only mutate the **local** scope:
@@ -225,7 +231,7 @@ scope.  In Oil, they only mutate the **local** scope:
 - `mycmd {x}>out` (stores a file descriptor in `$x`)
 - `(( x = 42 + y ))`
 
-### Builtins Affected
+### Builtins That Write Variables
 
 These builtins are also "isolated" inside procs, using local scope:
 
@@ -276,6 +282,22 @@ command instead:
 
     env PYTHONPATH=. ./foo.py  # good
     PYTHONPATH=. ./foo.py`.    # disallowed because it would be confusing
+
+### Temp Bindings
+
+Temp bindings precede a simple command:
+
+    PYTHONPATH=. mycmd
+
+They create a new namespace on the stack where each cell has the `export` flag
+set (`declare -x`).
+
+In Oil, the lack of dynamic scope means that they can't be read inside a
+`proc`.  So they're only useful for setting environment variables, and can be
+replaced with:
+
+    env PYTHONPATH=. mycmd
+    env PYTHONPATH=. $0 myproc  # using the ARGV dispatch pattern
 
 ## Appendix A: More on Shell vs. Oil
 
