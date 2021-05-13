@@ -25,6 +25,8 @@ parse-all-osh() {
 }
 
 all-passing() {
+  ### Run all the examples
+
   for prog in oil_lang/testdata/*.{sh,osh}; do
     echo $prog
 
@@ -42,6 +44,11 @@ all-passing() {
 
     echo ---
     bin/osh $prog
+  done
+
+  for prog in oil_lang/testdata/*.oil; do
+    echo ---
+    bin/oil $prog
   done
 }
 
