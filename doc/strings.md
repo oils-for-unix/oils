@@ -3,18 +3,48 @@ default_highlighter: oil-sh
 in_progress: true
 ---
 
-Strings: Quoting and Interpolation
-==================================
+Strings: Quotes, Interpolation, Escaping, and Buffers
+=====================================================
 
-- Usage tips
-- Reference
+Strings are the most important data structure in shell.  Oil makes them easier
+and safer!
 
-In fact, it literally started with Python's `Grammar/Grammar` file.
+This doc addresses these questions:
+
+- How do you write different kinds of strings in Oil programs?
+- How do they behave at runtime?  What are the common operations?
+- What are the recommended ways to use them?
+
+Shell Features:
+
+- Quotes (single or double quoted)
+- Interpolation aka substitution (variable, command, etc.)
+
+Oil Features:
+
+- Escaping for safety: `${x|html}`, etc.
+- Buffers for effiency and readability: `${.myproc arg1}`, etc.
+  - (buffers are PHP-like)
 
 <div id="toc">
 </div>
 
-## Quick Reference
+## Summary
+
+This section summarizes the advice below.
+
+Preference order:
+
+- Unquoted strings (command mode only)
+- Single-quoted strings
+  - when you need to express special characters
+  - QSN
+- Double-quoted strings
+  - with `$[]` interpolation
+  - with `${}` interpolation
+  - with fast command sub `${.myproc arg1}
+
+### Quick Reference
 
     echo unquoted          # bare words are allowed in command mode
 
@@ -39,6 +69,8 @@ In fact, it literally started with Python's `Grammar/Grammar` file.
 
 Still TODO:
 
+    echo ${.myproc arg1}
+
     cat <<< '''
        one
        two
@@ -52,22 +84,9 @@ Still TODO:
     var s = """
        multiline with ${vars}
        $(date +%x)
-       ${.myproc}
+       ${.myproc arg1}
        """
 
-## Summary
-
-This section summarizes the advice below.
-
-Preference order:
-
-- unquoted strings (command mode only)
-- single quoted strings
-  - when you need to express special characters
-  - QSN
-- double quoted strings
-  - with `$[]` interpolation
-  - with `${}` interpolation
 
 ## Use Unquoted Strings in Command Mode
 
@@ -86,6 +105,16 @@ and quoted strings in expression mode
 ### C-Escaped With `$'foo\n'` 
 
 - Use the [QSN]($xref) subset
+
+### QSN For *Data* Interchange
+
+TODO: explain the difference.
+
+This is different!  It's data and not code.  Analogy to JSON.
+
+- When you want represent any string on a single line (filenames)
+- To make binary data readable
+- To display data in a terminal (protect against terminal codes)
 
 ## Use Double-Quoted Strings For Interpolation
 
@@ -106,6 +135,9 @@ Note you can have bugs if you use the wrong escaper!
   - These are identical except for syntax
 - Useful for log messages, which aren't security sensitive
 
+Note that you should **not** use `"${var}"` in Oil code.  Use `$var` or
+`${var}` because of simple word evaluation.
+
 ### Command Sub `$(echo hi)` 
 
 ### Fast Command Sub `${.myproc}` (stdout capture)
@@ -119,7 +151,7 @@ TODO:
 
    echo ${.myproc foo|html}  # I think this should be supported
 
-## Codecs and Escapers
+## Escapers / Codecs (TODO)
 
 For `${x|html}` and `${.myproc|html}`
 
@@ -191,6 +223,6 @@ echo, printf, and write have their output captured.
 
 ## Appendix B: Related Documents
 
+- Simple Word Eval: you don't need quoting as much
 - Expression Language
 - [QSN](qsn.html)
-
