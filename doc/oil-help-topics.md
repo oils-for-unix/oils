@@ -51,7 +51,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 ```oil-help-topics
   [Keywords]      const   var   setvar   setglobal   setref
   [Literals]      oil-numbers    42  3.14  1e100
-                  oil-string    c'line\n'  r'[a-z]\n'
+                  oil-string    r'[a-z]\n'  $'line\n'  
                   char-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   bool-literal  True   False   None
                   list-literal  %(one two)  ['one', 'two', 3]
@@ -67,6 +67,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)
                   block-expr    &(echo $PWD)
+                  builtin-sub   ${.myproc arg1}  @{.otherproc arg1}
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
                   re-compound   ~   (group)   <capture>   sequence
@@ -136,7 +137,8 @@ X [Testing]       check
                   parse_paren            if (x > 0) ...
                   X parse_triple_quoted  ''' """
                   X parse_triple_dots    Multiline pipelines
-                  command_sub_errexit    More errexit checks -- at command sub
+                  X parse_raw_string     r'\' in command mode
+                  command_sub_errexit    Synchronous errexit check
                   process_sub_fail       Analogous to pipefail for process subs
                   sigpipe_status_ok      status 141 -> 0 in pipelines
                   simple_word_eval       No splitting, static globbing
@@ -189,6 +191,7 @@ X [Testing]       check
   [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
   [Exit Status]   _status   _pipeline_status   _process_sub_status
 X [Wok]           _filename   _line
+X [Builtin Sub]   _buffer
 ```
 
 <h2 id="lib">
@@ -211,11 +214,10 @@ X [String]        find()   sub()   join()
   [Word]          glob()   maybe()
 X [Arrays]        index()
   [Assoc Arrays]  @keys()   @values()
-X [Block]         setvar()            for procs to set in outer scope
-                  evalblock()         procs evaluate block to namespace
-X [Better Syntax] shquote()
-                  lstrip()   rstrip()   lstripglob()   rstripglob()
+X [Block]         evalblock()         procs evaluate block to namespace
+X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()
+X [Codecs]        posix-sh-str   oil-str   html-utf8
 X [Hashing]       sha1   sha256 (etc.)
 ```
