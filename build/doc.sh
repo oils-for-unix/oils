@@ -109,9 +109,10 @@ readonly MARKDOWN_DOCS=(
   framing
   xtrace
   headless
+  variables
+  strings
 
   # Internal stuff
-  variables
   variable-scope
   interpreter-state
   process-model
