@@ -52,10 +52,8 @@ class ExprParseTest(unittest.TestCase):
     node = self._ParseOsh('var x = y + 2 * 3;')
 
     node = self._ParseOsh(r"var x = r'one\ntwo\n';")
-    node = self._ParseOsh(r"var x = c'one\ntwo\n';")
     node = self._ParseOsh(r"var x = $'one\ntwo\n';")
 
-    # NOTE: C-escapes aren't parsed properly.
     node = self._ParseOsh(r'var x = "one\\ntwo\\n";')
 
     # These raise NotImplementedError()

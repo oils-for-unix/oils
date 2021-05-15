@@ -931,7 +931,7 @@ oil-expr-sub() {
 }
 
 oil-string() {
-  sh-spec spec/oil-string.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/oil-string.test.sh --osh-failures-allowed 4 \
     $OIL_LIST "$@"
 }
 

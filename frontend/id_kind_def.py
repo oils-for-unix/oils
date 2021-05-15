@@ -351,6 +351,13 @@ def AddKinds(spec):
       'SingleQuote',        # ''
       'RSingleQuote',       # r''
       'DollarSingleQuote',  # $'' for \n escapes
+
+      # Multiline versions
+      'TDoubleQuote',       # """ """
+      'TSingleQuote',       # ''' '''
+      'RTSingleQuote',      # r''' '''
+      'DollarTSingleQuote', # $''' '''
+
       'Backtick',           # `
       'DollarParen',        # $(
       'DollarBrace',        # ${

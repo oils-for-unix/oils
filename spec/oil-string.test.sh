@@ -103,10 +103,55 @@ unset
 r\
 ## END
 
-#### Double Quoted Command Mode
+#### Triple Double Quotes, Expression Mode
 
-two=2
-three=3
+var two = 2
+var three = 2
+var x = """
+  one
+  two = $two
+  three = $three
+  """
+echo $x
+
+## STDOUT:
+one
+two = 2
+three = 3
+## END
+
+#### Triple Single Quotes, Expression Mode
+
+var two = 2
+var three = 2
+var x = '''
+  one
+  two = $two
+  three = $three
+  \u{61}
+  '''
+echo $x
+
+var x = $'''
+  one
+  two = $two
+  three = $three
+  \u{61}
+  '''
+echo $x
+
+## STDOUT:
+one
+two = $two
+three = $three
+\u{61}
+## END
+
+
+#### Triple Double Quotes, Command Mode
+
+var two=2
+var three=3
 
 echo """
   one
@@ -134,30 +179,13 @@ two = 2
 three = 3
 ## END
 
-#### Double Quoted Expression Mode
-
-var two = 2
-var three = 2
-var x = """
-  one
-  two = $two
-  three = $three
-  """
-echo $x
-
-## STDOUT:
-one
-two = 2
-three = 3
-## END
-
-
-#### Single Quoted Command Mode
+#### Triple Single Quotes, Command Mode
 
 echo '''
   one
   two = $two
   three = $three
+  \u{61}
   '''
 
 shopt --set parse_triple_quoted
@@ -167,6 +195,14 @@ echo '''
   one
   two = $two
   three = $three
+  \u{61}
+  '''
+
+echo $'''
+  one
+  two = $two
+  three = $three
+  \u{61}
   '''
 
 ## STDOUT:

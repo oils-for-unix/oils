@@ -783,16 +783,19 @@ OIL_LEFT_SUBS = [
 
 # Valid in lex_mode_e.Expr, but not valid in DQ_Oil
 # Used by oil_lang/grammar_gen.py
-#
-# TODO: multiline strings ''' """ r''' r"""
+
 OIL_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
-
   # In expression mode, we add the r'' and c'' prefixes for '' and $''.
   C("'", Id.Left_SingleQuote),
   C("r'", Id.Left_RSingleQuote),
-
   C("$'", Id.Left_DollarSingleQuote),
+
+  C('"""', Id.Left_TDoubleQuote),
+  # In expression mode, we add the r'' and c'' prefixes for '' and $''.
+  C("'''", Id.Left_TSingleQuote),
+  C("r'''", Id.Left_RTSingleQuote),
+  C("$'''", Id.Left_DollarTSingleQuote),
 
   C('@(', Id.Left_AtParen),         # Split Command Sub
 
