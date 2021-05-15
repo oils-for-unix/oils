@@ -916,7 +916,7 @@ oil-builtin-run() {
 }
 
 oil-options() {
-  sh-spec spec/oil-options.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/oil-options.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
@@ -932,6 +932,11 @@ oil-expr() {
 
 oil-expr-sub() {
   sh-spec spec/oil-expr-sub.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
+oil-string() {
+  sh-spec spec/oil-string.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 

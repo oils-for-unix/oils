@@ -520,17 +520,6 @@ var=val
 ## status: 2
 ## stdout-json: ""
 
-#### parse_rawc: C strings in %() array literals
-shopt -s oil:basic
-
-# BUG: Surprising that this doesn't work because of command mode!
-var lines=%(c'aa\tbb' c'cc\tdd')
-echo @lines
-
-## STDOUT:
-## END
-
-
 #### parse_paren allows f(x)
 shopt -s parse_paren
 func f(x) {

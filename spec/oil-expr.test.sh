@@ -219,37 +219,6 @@ echo $x
 ## status: 1
 ## stdout-json: ""
 
-#### single quoted -- implicit and explicit raw
-var x = 'foo bar'
-echo $x
-setvar x = r'foo bar'  # Same string
-echo $x
-setvar x = r'\t\n'  # This is raw
-echo $x
-## STDOUT:
-foo bar
-foo bar
-\t\n
-## END
-
-#### Implicit raw single quote with backslash is a syntax error
-var x = '\t\n'
-echo $x
-## status: 2
-## stdout-json: ""
-
-#### single quoted C strings: c'foo\n' and $'foo\n'
-var x = c'foo\nbar'
-echo "$x"
-var y = $'foo\nbar'
-echo "$y"
-## STDOUT:
-foo
-bar
-foo
-bar
-## END
-
 #### simple var sub $name $0 $1 $? etc.
 ( exit 42 )
 var status = $?
