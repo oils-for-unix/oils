@@ -45,3 +45,27 @@ bar
 equal
 ## END
 
+
+#### shopt parse_raw_string
+
+# Ignored prefix
+echo r'\'
+
+# These use shell rules!
+echo ra'\'
+echo raw'\'
+
+echo r"\\"
+
+# Now it's a regular r
+shopt --unset parse_raw_string
+write unset r'\'
+
+## STDOUT:
+\
+ra\
+raw\
+r\
+unset
+r\
+## END

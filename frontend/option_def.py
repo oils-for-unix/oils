@@ -150,6 +150,7 @@ _BASIC_PARSE_OPTIONS = [
     'parse_at',  # @foo, @array(a, b)
     'parse_brace',  # cd /bin { ... }
     'parse_paren',  # if (x > 0) ...
+    'parse_raw_string',  # echo r'\'
     'parse_triple_quoted',  # for ''' and """
     'parse_triple_dots',  # ...
 

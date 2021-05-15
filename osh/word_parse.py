@@ -1594,6 +1594,13 @@ class WordParser(WordEmitter):
         return no_word, True  # tell Read() to try again after comment
 
       else:
+        # parse_raw_string: Is there an r'' at the beginning of a word?
+        if (self.parse_opts.parse_raw_string() and
+            self.token_type == Id.Lit_Chars and
+            self.cur_token.val == 'r'):
+          if self.lexer.LookAhead(lex_mode_e.ShCommand) == Id.Left_SingleQuote:
+            self._Next(lex_mode_e.ShCommand)
+
         w = self._ReadCompoundWord(lex_mode)
         return cast(word_t, w), False
 

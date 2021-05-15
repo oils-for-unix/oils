@@ -135,9 +135,9 @@ X [Testing]       check
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
+                  parse_raw_string       echo r'\' (command mode)
                   X parse_triple_quoted  ''' """
                   X parse_triple_dots    Multiline pipelines
-                  X parse_raw_string     r'\' in command mode
                   command_sub_errexit    Synchronous errexit check
                   process_sub_fail       Analogous to pipefail for process subs
                   sigpipe_status_ok      status 141 -> 0 in pipelines

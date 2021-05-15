@@ -525,9 +525,34 @@ When this option is disabled, that statement is a syntax error.
 
 ### Oil Basic
 
+#### parse_at
+
+TODO
+
+#### parse_brace
+
+TODO
+
+#### parse_paren
+
+TODO
+
+#### parse_raw_string
+
+Allow the r prefix for raw strings in command mode:
+
+    echo r'\'  # a single backslash
+
+Since shell strings are already raw, this means that Oil just ignores the r
+prefix.
+
 #### command_sub_errexit
 
+TODO
+
 #### process_sub_fail
+
+TODO
 
 #### sigpipe_status_ok
 
