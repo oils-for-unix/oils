@@ -106,45 +106,53 @@ r\
 #### Triple Double Quotes, Expression Mode
 
 var two = 2
-var three = 2
+var three = 3
 var x = """
-  one
-  two = $two
+  one "
+  two = $two ""
   three = $three
   """
 echo $x
 
 ## STDOUT:
-one
-two = 2
-three = 3
+
+  one "
+  two = 2 ""
+  three = 3
+  
 ## END
 
 #### Triple Single Quotes, Expression Mode
 
 var two = 2
 var three = 2
-var x = '''
-  one
-  two = $two
-  three = $three
+var x = ''' 
+  two = $two '
+   three = $three ''
   \u{61}
-  '''
-echo $x
 
-var x = $'''
-  one
-  two = $two
-  three = $three
-  \u{61}
   '''
-echo $x
+echo "[$x]"
+
+var x = $''' 
+  two = $two '
+   three = $three ''
+  \u{61}
+
+  '''
+echo "[$x]"
 
 ## STDOUT:
-one
-two = $two
-three = $three
-\u{61}
+[ 
+  two = $two '
+   three = $three ''
+  \u{61}
+  ]
+[ 
+  two = $two '
+   three = $three ''
+  a
+  ]
 ## END
 
 
@@ -163,8 +171,14 @@ shopt --set parse_triple_quoted
 
 # dedent, and first newline doesn't count
 echo """
-  one
-  two = $two
+  one "
+  two = $two ""
+  three = $three
+  """
+
+tac <<< """
+  one "
+  two = $two ""
   three = $three
   """
 
@@ -182,9 +196,9 @@ three = 3
 #### Triple Single Quotes, Command Mode
 
 echo '''
-  one
   two = $two
-  three = $three
+  '
+  '' '
   \u{61}
   '''
 
@@ -192,16 +206,23 @@ shopt --set parse_triple_quoted
 
 # dedent, and first newline doesn't count
 echo '''
-  one
   two = $two
-  three = $three
+  '
+  '' '
   \u{61}
   '''
 
 echo $'''
-  one
   two = $two
-  three = $three
+  '
+  '' '
+  \u{61}
+  '''
+
+tac <<< '''
+  two = $two
+  '
+  '' '
   \u{61}
   '''
 

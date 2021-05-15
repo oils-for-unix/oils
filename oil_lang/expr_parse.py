@@ -231,6 +231,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         continue
 
+      # " and """
       if tok.id in (Id.Left_DoubleQuote, Id.Left_TDoubleQuote):
         left_token = tok
         line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
@@ -262,10 +263,12 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         continue
 
-      # '' and r'' and c''
+      # 'x'  r'x'  $'x' and '''x'''  r'''x'''  $'''x'''
       if tok.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
-                    Id.Left_DollarSingleQuote):
-        if tok.id == Id.Left_DollarSingleQuote:
+                    Id.Left_DollarSingleQuote,
+                    Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
+                    Id.Left_DollarTSingleQuote):
+        if tok.id in (Id.Left_DollarSingleQuote, Id.Left_DollarTSingleQuote):
           sq_mode = lex_mode_e.SQ_C
         else:
           sq_mode = lex_mode_e.SQ_Raw
@@ -284,22 +287,6 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         opaque = cast(Token, sq_part)  # HACK for expr_to_ast
         done = p.addtoken(typ, opaque, gr.tokens[typ])
         assert not done  # can't end the expression
-        continue
-
-      if tok.id in (Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
-                    Id.Left_DollarTSingleQuote):
-
-        if tok.id == Id.Left_DollarTSingleQuote:
-          sq_mode = lex_mode_e.SQ_C
-        else:
-          sq_mode = lex_mode_e.SQ_Raw
-
-        # TODO: Read until '''
-        # Should we use the word parser?
-        # - ReadSingleQuoted
-        # - ma
-
-        raise AssertionError()
         continue
 
   else:

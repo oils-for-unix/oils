@@ -9,6 +9,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, class_literal_term, class_literal_term_t, single_quoted
 )
+from core.pyerror import log
 from frontend import consts
 from osh import string_ops
 
@@ -56,8 +57,15 @@ def EvalCStringToken(tok):
   id_ = tok.id
   value = tok.val
 
+  if 0:
+    log('tok %s', tok)
+
   if id_ in (Id.Char_Literals, Id.Unknown_Backslash):
     # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in Oil.
+    return value
+
+  # single quotes in the middle of a triple quoted string
+  elif id_ == Id.Right_SingleQuote:
     return value
 
   elif id_ == Id.Char_OneChar:
@@ -102,15 +110,36 @@ def EvalCStringToken(tok):
 
 def EvalSingleQuoted(part):
   # type: (single_quoted) -> str
-  if part.left.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote):
+  if part.left.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
+      Id.Left_TSingleQuote, Id.Left_RTSingleQuote):
+
+    # TODO: Strip leading whitespace for ''' and r'''
+    if 0:
+      for t in part.tokens:
+        log('sq tok %s', t)
+
     tmp = [t.val for t in part.tokens]
     s = ''.join(tmp)
-  elif part.left.id == Id.Left_DollarSingleQuote:
+
+  elif part.left.id in (Id.Left_DollarSingleQuote, Id.Left_DollarTSingleQuote):
     # NOTE: This could be done at compile time
+
+    # TODO: Strip leading whitespace for ''' and r'''
+
     tmp = [EvalCStringToken(t) for t in part.tokens]
     s = ''.join(tmp)
+
   else:
     raise AssertionError(part.left.id)
   return s
 
 
+# Whitespace stripping algorithm
+#
+# - First token should be WHITESPACE* NEWLINE.  Omit it
+# - Last token should be WHITESPACE*
+#   - Then go through all the other tokens that are AFTER token that ends with \n
+#   - if tok.val[:n] is the same as the last token, then STRIP THAT PREFIX
+# - Do you need to set a flag on the SingleQuoted part?
+#
+# TODO: do this all at compile time?

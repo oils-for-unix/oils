@@ -566,8 +566,11 @@ class WordParser(WordEmitter):
     # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
     no_backslashes = is_oil_expr and left_token.id == Id.Left_SingleQuote
 
-    done = False
-    while not done:
+    expected_end_tokens = 3 if left_token.id in (
+        Id.Left_TSingleQuote, Id.Left_RTSingleQuote, Id.Left_DollarTSingleQuote) else 1
+    num_end_tokens = 0
+
+    while num_end_tokens < expected_end_tokens:
       self._Next(lex_mode)
       self._Peek()
 
@@ -604,10 +607,23 @@ class WordParser(WordEmitter):
               token=left_token)
 
       elif self.token_kind == Kind.Right:
-        done = True  # assume Id.Right_SingleQuote
+        # assume Id.Right_SingleQuote
+        num_end_tokens += 1
+        tokens.append(self.cur_token)
 
       else:
         raise AssertionError(self.cur_token)
+
+      if self.token_kind != Kind.Right:
+        num_end_tokens = 0  # we need three in a ROW
+
+    if expected_end_tokens == 1:
+      tokens.pop()
+    elif expected_end_tokens == 3:  # Get rid of spurious end tokens
+      tokens.pop()
+      tokens.pop()
+      tokens.pop()
+
     return self.cur_token
 
   def _ReadDoubleQuotedLeftParts(self):
@@ -722,8 +738,13 @@ class WordParser(WordEmitter):
       is_oil_expr: Whether to disallow backticks and invalid char escapes
       out_parts: list of word_part to append to
     """
-    done = False
-    while not done:
+    if left_dq_token:
+      expected_end_tokens = 3 if left_dq_token.id == Id.Left_TDoubleQuote else 1
+    else:
+      expected_end_tokens = 1000  # here doc will break
+
+    num_end_tokens = 0
+    while num_end_tokens < expected_end_tokens:
       self._Next(lex_mode_e.DQ)
       self._Peek()
 
@@ -764,20 +785,31 @@ class WordParser(WordEmitter):
       elif self.token_kind == Kind.Right:
         assert self.token_type == Id.Right_DoubleQuote, self.token_type
         if left_dq_token:
-          done = True
-        else:
-          # In a here doc, the right quote is literal!
-          out_parts.append(self.cur_token)
+          num_end_tokens += 1
+
+        # In a here doc, the right quote is literal!
+        out_parts.append(self.cur_token)
 
       elif self.token_kind == Kind.Eof:
         if left_dq_token:
           p_die('Unexpected EOF reading double-quoted string that began here',
                 token=left_dq_token)
         else:  # here docs will have an EOF in their token stream
-          done = True
+          break
 
       else:
         raise AssertionError(self.cur_token)
+
+      if self.token_kind != Kind.Right:
+        num_end_tokens = 0  # """ must be CONSECUTIVE
+
+    if expected_end_tokens == 1:
+      out_parts.pop()
+    elif expected_end_tokens == 3:
+      out_parts.pop()
+      out_parts.pop()
+      out_parts.pop()
+
     # Return nothing, since we appended to 'out_parts'
 
   def _ReadDoubleQuoted(self):
