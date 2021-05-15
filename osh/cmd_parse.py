@@ -618,27 +618,6 @@ class CommandParser(object):
 
     # Here doc
     if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
-      #log('after here doc %s', self.cur_word)
-      # TODO: if the arg_word is TripleQuoted, then we don't have a pending
-      # here doc.  We read the whole thing!
-      #
-      # Idea:
-      #   cmd_token = Token %Token | Word %compound_word | TripleQuoted %triple_quoted
-      #
-      # To store in treeremove one, and add two
-      #   word = Token %Token | Word %compound_word | Empty | BracedTree
-      #
-      # bool_token = Word %compound_word | Token %Token | String ?
-
-      # word_compile can have 2 routines:
-      #   HereDoc -> compound_word
-      #   TripleQuoted -> compound_word
-      # These are the same syntax
-      #
-      # Another option:
-      #   mutate word_part.Literal %Token -> word_part.Stripped(int dedent, Token tok)
-      #   then we may not need triple_quoted
-
       arg = redir_param.HereDoc()
       arg.here_begin = self.cur_word
       r = redir(op_tok, loc, arg)

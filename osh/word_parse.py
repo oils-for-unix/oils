@@ -14,7 +14,7 @@ hi$((1 + 2))"$(echo hi)"${var:-__"$(echo default)"__}
 Substitutions can be nested, but which inner subs are allowed depends on the
 outer sub.
 
-lex_mode_e.ShCommand (_ReadLeftParts)
+lex_mode_e.ShCommand (_ReadUnquotedLeftParts)
   All subs and quotes are allowed:
   $v ${v}   $() ``   $(())   '' ""   $'' $""  <()  >()
 
@@ -539,10 +539,9 @@ class WordParser(WordEmitter):
 
     return part
 
-  def _ReadSingleQuoted(self, lex_mode):
-    # type: (lex_mode_t) -> single_quoted
+  def _ReadSingleQuoted(self, left_token, lex_mode):
+    # type: (Token, lex_mode_t) -> single_quoted
     """Interal method to read a word_part."""
-    left_token = self.cur_token
     tokens = []  # type: List[Token]
     # In command mode, we never disallow backslashes like '\'
     self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
@@ -643,23 +642,48 @@ class WordParser(WordEmitter):
 
     raise AssertionError(self.cur_token)
 
-  def _ReadLeftParts(self):
-    # type: () -> word_part_t
+  def _ReadUnquotedLeftParts(self, try_triple_quote):
+    # type: (bool) -> word_part_t
     """Read substitutions and quoted strings (for lex_mode_e.ShCommand)."""
+    if self.token_type in (Id.Left_DoubleQuote, Id.Left_DollarDoubleQuote):
+      # NOTE: $"" is a synonym for "" for now.
+      # It would make sense if it added \n \0 \x00 \u{123} etc.  But that's not
+      # what bash does!
+      dq_part = self._ReadDoubleQuoted(self.cur_token)
+      if try_triple_quote and len(dq_part.parts) == 0:  # read empty word ""
+        if self.lexer.ByteLookAhead() == '"':
+          self._Next(lex_mode_e.ShCommand)
+          self._Peek()
+          # HACK: magically transform the third " in """ to
+          # Id.Left_TDoubleQuote, so that """ is the terminator
+          left_dq_token = self.cur_token
+          left_dq_token.id = Id.Left_TDoubleQuote
+          return self._ReadDoubleQuoted(left_dq_token)
 
-    if self.token_type == Id.Left_DoubleQuote:
-      return self._ReadDoubleQuoted()
+      return dq_part
 
-    if self.token_type == Id.Left_DollarDoubleQuote:
-      # NOTE: $"" is treated as "" for now.  Does it make sense to add the
-      # token to the part?
-      return self._ReadDoubleQuoted()
+    if self.token_type in (Id.Left_SingleQuote, Id.Left_RSingleQuote, Id.Left_DollarSingleQuote):
+      if self.token_type == Id.Left_DollarSingleQuote:
+        lexer_mode = lex_mode_e.SQ_C
+        new_id = Id.Left_DollarTSingleQuote
+      else:
+        lexer_mode = lex_mode_e.SQ_Raw
+        # Note we should also use Id.Left_RTSingleQuote
+        new_id = Id.Left_TSingleQuote
 
-    if self.token_type in (Id.Left_SingleQuote, Id.Left_RSingleQuote):
-      return self._ReadSingleQuoted(lex_mode_e.SQ_Raw)
+      sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
+      if try_triple_quote and len(sq_part.tokens) == 0:  # read empty '' or r'' or $''
+        if self.lexer.ByteLookAhead() == "'":
+          self._Next(lex_mode_e.ShCommand)
+          self._Peek()
 
-    if self.token_type == Id.Left_DollarSingleQuote:
-      return self._ReadSingleQuoted(lex_mode_e.SQ_C)
+          # HACK: magically transform the third ' in r''' to
+          # Id.Left_TSingleQuote, so that ''' is the terminator
+          left_sq_token = self.cur_token
+          left_sq_token.id = new_id
+          return self._ReadSingleQuoted(left_sq_token, lexer_mode)
+
+      return sq_part
 
     if self.token_type in (
         Id.Left_DollarParen, Id.Left_Backtick, Id.Left_ProcSubIn,
@@ -812,8 +836,8 @@ class WordParser(WordEmitter):
 
     # Return nothing, since we appended to 'out_parts'
 
-  def _ReadDoubleQuoted(self):
-    # type: () -> double_quoted
+  def _ReadDoubleQuoted(self, left_dq_token):
+    # type: (Token) -> double_quoted
     """
     Args:
       eof_type: for stopping at }, Id.Lit_RBrace
@@ -821,7 +845,6 @@ class WordParser(WordEmitter):
 
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
-    left_dq_token = self.cur_token
     parts = []  # type: List[word_part_t]
     self._ReadLikeDQ(left_dq_token, False, parts)
 
@@ -1452,26 +1475,9 @@ class WordParser(WordEmitter):
         w.parts.append(part)
 
       elif self.token_kind == Kind.Left:
-        part = self._ReadLeftParts()
-
-        # Detect triple quoted strings, but only in the "outer" context.
-        if (self.parse_opts.parse_triple_quoted() and
-            lex_mode == lex_mode_e.ShCommand and num_parts == 0):
-
-          if (part.tag_() == word_part_e.SingleQuoted and
-              len(cast(single_quoted, part).tokens) == 0):
-            next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
-            if next_id == Id.Left_SingleQuote:
-              # TODO: read until '''
-              log("id = %s", ui.PrettyId(next_id))
-            
-          if (part.tag_() == word_part_e.DoubleQuoted and
-              len(cast(double_quoted, part).parts) == 0):
-            next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
-            if next_id == Id.Left_DoubleQuote:
-              # TODO: read until """
-              log("id = %s", ui.PrettyId(next_id))
-
+        try_triple_quote = (self.parse_opts.parse_triple_quote() and
+            lex_mode == lex_mode_e.ShCommand and num_parts == 0)
+        part = self._ReadUnquotedLeftParts(try_triple_quote)
         w.parts.append(part)
 
       # NOT done yet, will advance below

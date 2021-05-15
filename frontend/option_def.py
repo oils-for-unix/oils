@@ -151,24 +151,11 @@ _BASIC_PARSE_OPTIONS = [
     'parse_brace',  # cd /bin { ... }
     'parse_paren',  # if (x > 0) ...
     'parse_raw_string',  # echo r'\'
-    'parse_triple_quoted',  # for ''' and """
-    'parse_triple_dots',  # ...
+    'parse_triple_quote',  # for ''' and """
+    'parse_triple_dot',  # ...
 
     # Not implemented
     # 'parse_index_expr',  # ${a[1 + f(x)]}  -- can this just be $[]?
-     
-    # Should this also change r''' c''' and and c"""?  Those are hard to
-    # do in command mode without changing the lexer, but useful because of
-    # redirects.  Maybe r' and c' are tokens, and then you look for '' after
-    # it?  If it's off and you get the token, then you change it into
-    # word_part::Literal and start parsing.
-    #
-    # proc foo {
-    #   cat << c'''
-    #   hello\n
-    #   '''
-    # }
-    # 'parse_rawc',  # echo r'' c''
 ]
 
 # Extra stuff that breaks too many programs.

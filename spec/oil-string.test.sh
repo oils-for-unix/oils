@@ -161,14 +161,15 @@ echo "[$x]"
 var two=2
 var three=3
 
+echo ""a  # test lookahead
+
 echo """
-  one
-  two = $two
+  one "
+  two = $two ""
   three = $three
   """
 
-shopt --set parse_triple_quoted
-
+echo --
 # dedent, and first newline doesn't count
 echo """
   one "
@@ -176,24 +177,53 @@ echo """
   three = $three
   """
 
+echo --
 tac <<< """
   one "
   two = $two ""
   three = $three
   """
 
-## STDOUT:
+shopt --unset parse_triple_quote
 
-  one
-  two = 2
+## STDOUT:
+a
+
+  one "
+  two = 2 ""
   three = 3
   
-one
-two = 2
-three = 3
+--
+
+  one "
+  two = 2 ""
+  three = 3
+  
+--
+  
+  three = 3
+  two = 2 ""
+  one "
+
 ## END
 
+#### raw strings and triple quotes
+
+echo r'''a'''
+
+shopt --unset parse_raw_string
+
+echo r'''a'''
+
+## STDOUT:
+a
+ra
+## END
+
+
 #### Triple Single Quotes, Command Mode
+
+echo ''a  # make sure lookahead doesn't mess up
 
 echo '''
   two = $two
@@ -202,7 +232,7 @@ echo '''
   \u{61}
   '''
 
-shopt --set parse_triple_quoted
+echo --
 
 # dedent, and first newline doesn't count
 echo '''
@@ -212,12 +242,7 @@ echo '''
   \u{61}
   '''
 
-echo $'''
-  two = $two
-  '
-  '' '
-  \u{61}
-  '''
+echo --
 
 tac <<< '''
   two = $two
@@ -226,16 +251,50 @@ tac <<< '''
   \u{61}
   '''
 
+shopt --unset parse_triple_quote
+
+## STDOUT:
+a
+
+  two = $two
+  '
+  '' '
+  \u{61}
+  
+--
+
+  two = $two
+  '
+  '' '
+  \u{61}
+  
+--
+  
+  \u{61}
+  '' '
+  '
+  two = $two
+
+## END
+
+#### $''' in command mode
+
+echo $'''
+  two = $two
+  '
+  '' '
+  \u{61}
+  '''
+
 ## STDOUT:
 
-  one
   two = $two
-  three = $three
-
-one
-two = $two
-three = $three
+  '
+  '' '
+  a
+  
 ## END
+
 
 #### here doc with quotes
 
