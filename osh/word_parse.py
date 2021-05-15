@@ -642,8 +642,8 @@ class WordParser(WordEmitter):
 
     raise AssertionError(self.cur_token)
 
-  def _ReadUnquotedLeftParts(self, try_triple_quote):
-    # type: (bool) -> word_part_t
+  def _ReadUnquotedLeftParts(self, try_triple_quote, triple_out):
+    # type: (bool, List[bool]) -> word_part_t
     """Read substitutions and quoted strings (for lex_mode_e.ShCommand)."""
     if self.token_type in (Id.Left_DoubleQuote, Id.Left_DollarDoubleQuote):
       # NOTE: $"" is a synonym for "" for now.
@@ -658,6 +658,7 @@ class WordParser(WordEmitter):
           # Id.Left_TDoubleQuote, so that """ is the terminator
           left_dq_token = self.cur_token
           left_dq_token.id = Id.Left_TDoubleQuote
+          triple_out[0] = True  # let caller know we got it
           return self._ReadDoubleQuoted(left_dq_token)
 
       return dq_part
@@ -681,6 +682,7 @@ class WordParser(WordEmitter):
           # Id.Left_TSingleQuote, so that ''' is the terminator
           left_sq_token = self.cur_token
           left_sq_token.id = new_id
+          triple_out[0] = True  # let caller know we got it
           return self._ReadSingleQuoted(left_sq_token, lexer_mode)
 
       return sq_part
@@ -1401,6 +1403,7 @@ class WordParser(WordEmitter):
     num_parts = 0
     brace_count = 0
     done = False
+    triple_out = [False]
 
     while not done:
       self._Peek()
@@ -1477,7 +1480,7 @@ class WordParser(WordEmitter):
       elif self.token_kind == Kind.Left:
         try_triple_quote = (self.parse_opts.parse_triple_quote() and
             lex_mode == lex_mode_e.ShCommand and num_parts == 0)
-        part = self._ReadUnquotedLeftParts(try_triple_quote)
+        part = self._ReadUnquotedLeftParts(try_triple_quote, triple_out)
         w.parts.append(part)
 
       # NOT done yet, will advance below
@@ -1530,6 +1533,9 @@ class WordParser(WordEmitter):
       p_die(
           'Word has unbalanced { }.  Maybe add a space or quote it like \{',
           word=w)
+
+    if triple_out[0] and num_parts > 1:
+      p_die('Unexpected parts after triple quoted string', part=w.parts[-1])
 
     return w
 

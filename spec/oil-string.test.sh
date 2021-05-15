@@ -312,3 +312,17 @@ EOF
 ""
 """
 ## END
+
+#### triple quoted and implicit concatenation
+
+# Should we allow this?  Or I think it's possible to make it a syntax error
+
+echo '''
+single
+'''zz
+
+echo """
+double
+"""zz
+## status: 2
+## stdout-json: ""

@@ -121,7 +121,7 @@ In other words, avoid *groveling through backslashes and spaces* in shell.
 Instead, emit and consume the [QSN][] and QTSV interchange formats.
 
 - QSN is a JSON-like format for byte string literals
-- QTSV is a convention for embedding QSN in TSV files.
+- QTSV is a convention for embedding QSN in TSV files (not yet implemented)
 
 Custom parsing and serializing should be limited to "the edges" of your Oil
 programs.
@@ -591,7 +591,7 @@ Yes:
 No:
 
     if (( x > 0 )); then
-      echo positive
+      echo 'positive'
     fi
 
 Yes:
@@ -649,7 +649,7 @@ No:
 Yes:
 
     if (x ~ / 'foo-' <d+> /) {   # <> is capture
-      echo _match(1)             # first submatch
+      echo $_match(1)             # first submatch
     }
 
 ## Glob Matching
@@ -657,7 +657,7 @@ Yes:
 No:
 
     if [[ $x == *.py ]]; then
-      echo Python
+      echo 'Python'
     fi
 
 TODO: Implement the `~~` operator.

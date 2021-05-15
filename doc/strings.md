@@ -31,9 +31,26 @@ Oil Features:
 
 ## Summary
 
-This section summarizes the advice below.
+- Oil has three ways to write strings: single quoted, double quoted, and
+  C-style (which is also QSN-style).
+- Each of the three types has a multiline variant.  They are Python-style
+  triple-quoted, but they also strip leading space in an intelligent way.
+- TODO: For string safety, Oil adds the concept of "escapers" and interpolation
+  with `$[x]` (square brackets)
+- TODO: For convenience and performance, Oil adds buffers and *builtin
+  substitution*: `${.myproc arg1}`.
 
-Preference order:
+### For Python/JS/C Users
+
+- Single and double quotes are different.    Double quotes allow interpolation.
+- Neither style of string respects backslash escapes like `\n` for newline.
+  You have to use the third form.
+
+### For Shell Users
+
+- Oil replaces here docs with Python-style triple-quoted strings.
+
+Preferences:
 
 - Unquoted strings (command mode only)
 - Single-quoted strings

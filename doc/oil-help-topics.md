@@ -136,7 +136,7 @@ X [Testing]       check
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
                   parse_raw_string       echo r'\' (command mode)
-                  X parse_triple_quote   ''' """
+                  parse_triple_quote     """  '''  r'''  $''' in command mode
                   X parse_triple_dot     Multiline pipelines
                   command_sub_errexit    Synchronous errexit check
                   process_sub_fail       Analogous to pipefail for process subs
