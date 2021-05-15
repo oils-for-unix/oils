@@ -529,11 +529,6 @@ here-doc() {
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-triple-quoted() {
-  sh-spec spec/triple-quoted.test.sh --osh-failures-allowed 1 \
-    $OSH_LIST "$@"
-}
-
 redirect() {
   sh-spec spec/redirect.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
@@ -936,7 +931,7 @@ oil-expr-sub() {
 }
 
 oil-string() {
-  sh-spec spec/oil-string.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/oil-string.test.sh --osh-failures-allowed 3 \
     $OIL_LIST "$@"
 }
 

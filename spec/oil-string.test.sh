@@ -1,14 +1,3 @@
-#### C strings in %() array literals
-shopt -s oil:basic
-
-var lines=%($'aa\tbb' $'cc\tdd')
-write @lines
-
-## STDOUT:
-aa	bb
-cc	dd
-## END
-
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
 echo $x
@@ -45,6 +34,50 @@ bar
 equal
 ## END
 
+#### Double Quoted
+var name = 'World'
+var g = "Hello $name"
+
+echo "Hello $name"
+echo $g
+## STDOUT:
+Hello World
+Hello World
+## END
+
+#### Multiline strings with '' and ""
+
+var single = '
+  single
+'
+
+var x = 42
+var double = "
+  double $x
+"
+
+echo $single
+echo $double
+
+## STDOUT:
+
+  single
+
+
+  double 42
+
+## END
+
+#### C strings in %() array literals
+shopt -s oil:basic
+
+var lines=%($'aa\tbb' $'cc\tdd')
+write @lines
+
+## STDOUT:
+aa	bb
+cc	dd
+## END
 
 #### shopt parse_raw_string
 
@@ -68,4 +101,98 @@ raw\
 r\
 unset
 r\
+## END
+
+#### Double Quoted Command Mode
+
+two=2
+three=3
+
+echo """
+  one
+  two = $two
+  three = $three
+  """
+
+shopt --set parse_triple_quoted
+
+# dedent, and first newline doesn't count
+echo """
+  one
+  two = $two
+  three = $three
+  """
+
+## STDOUT:
+
+  one
+  two = 2
+  three = 3
+  
+one
+two = 2
+three = 3
+## END
+
+#### Double Quoted Expression Mode
+
+var two = 2
+var three = 2
+var x = """
+  one
+  two = $two
+  three = $three
+  """
+echo $x
+
+## STDOUT:
+one
+two = 2
+three = 3
+## END
+
+
+#### Single Quoted Command Mode
+
+echo '''
+  one
+  two = $two
+  three = $three
+  '''
+
+shopt --set parse_triple_quoted
+
+# dedent, and first newline doesn't count
+echo '''
+  one
+  two = $two
+  three = $three
+  '''
+
+## STDOUT:
+
+  one
+  two = $two
+  three = $three
+
+one
+two = $two
+three = $three
+## END
+
+#### here doc with quotes
+
+# This has 3 right double quotes
+
+cat <<EOF
+"hello"
+""
+"""
+EOF
+
+
+## STDOUT:
+"hello"
+""
+"""
 ## END
