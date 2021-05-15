@@ -264,8 +264,8 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
       # '' and r'' and c''
       if tok.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
-                    Id.Left_CSingleQuote):
-        if tok.id == Id.Left_CSingleQuote:
+                    Id.Left_DollarSingleQuote):
+        if tok.id == Id.Left_DollarSingleQuote:
           sq_mode = lex_mode_e.SQ_C
         else:
           sq_mode = lex_mode_e.SQ_Raw

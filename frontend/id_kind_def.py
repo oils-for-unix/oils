@@ -350,7 +350,7 @@ def AddKinds(spec):
       'DoubleQuote',
       'SingleQuote',        # ''
       'RSingleQuote',       # r''
-      'CSingleQuote',       # $'' for \n escapes, and c'' in expression mode
+      'DollarSingleQuote',  # $'' for \n escapes
       'Backtick',           # `
       'DollarParen',        # $(
       'DollarBrace',        # ${

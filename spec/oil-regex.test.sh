@@ -76,18 +76,6 @@ if (x ~ /<d+> '-' <d+>/) {
 ['2020-08']
 ## END
 
-#### Named captures with _match
-shopt -s oil:all
-
-var x = 'zz 2020-08-20'
-
-if (x ~ /<d+ : year> '-' <d+ : month>/) {
-  argv.py $_match('year') $_match('month')
-}
-## STDOUT:
-['2020', '08']
-## END
-
 #### s ~ regex and s !~ regex
 shopt -s oil:basic
 
@@ -277,6 +265,18 @@ echo $pat
 (^[[:space:]]|[[:digit:]][[:digit:]])
 ## END
 
+#### Named captures with _match
+shopt -s oil:all
+
+var x = 'zz 2020-08-20'
+
+if (x ~ /<d+ : year> '-' <d+ : month>/) {
+  argv.py $_match('year') $_match('month')
+}
+## STDOUT:
+['2020', '08']
+## END
+
 #### Named Capture Decays Without Name
 shopt -s oil:all
 var pat = /<d+ : month>/
@@ -372,7 +372,6 @@ no
 #### Matching escaped tab character
 shopt -s oil:all
 
-# BUG: need C strings in array literal
 var lines=%($'aa\tbb' $'cc\tdd')
 
 var pat = / ('a' [\t] 'b') /
@@ -388,7 +387,7 @@ var pat = / 'a' dot 'b' /
 if ('axb' ~ pat ) { echo yes } else { echo no }
 
 # mu character
-if (c'a\xce\xbcb' ~ pat ) { echo yes } else { echo no }
+if ($'a\xce\xbcb' ~ pat ) { echo yes } else { echo no }
 
 if ('aZZb' ~ pat ) { echo yes } else { echo no }
 ## STDOUT:
@@ -397,17 +396,17 @@ yes
 no
 ## END
 
-#### Match non-ASCII byte denoted using c'\xff' (TODO: LANG=C)
+#### Match non-ASCII byte denoted using $'\xff' (TODO: LANG=C)
 
 # NOTE: This pattern doesn't work with en_US.UTF-8.  I think the user should
 # set LANG=C or shopt --unset libc_utf8.
 
 shopt -s oil:all
-var pat = /[ c'\xff' ]/;
+var pat = /[ $'\xff' ]/;
 
 echo $pat | od -A n -t x1
-if (c'\xff' ~ pat) { echo yes } else { echo no }
-if (c'\xfe' ~ pat) { echo yes } else { echo no }
+if ($'\xff' ~ pat) { echo yes } else { echo no }
+if ($'\xfe' ~ pat) { echo yes } else { echo no }
 
 ## STDOUT:
  5b ff 5d 0a
@@ -420,8 +419,8 @@ shopt -s oil:all
 var pat = /[ \xff ]/;
 
 echo $pat | od -A n -t x1
-if (c'\xff' ~ pat) { echo yes } else { echo no }
-if (c'\xfe' ~ pat) { echo yes } else { echo no }
+if ($'\xff' ~ pat) { echo yes } else { echo no }
+if ($'\xfe' ~ pat) { echo yes } else { echo no }
 
 ## STDOUT:
  5b ff 5d 0a
@@ -434,8 +433,8 @@ shopt -s oil:all
 var pat = /[ \u{7f} ]/;
 
 echo $pat | od -A n -t x1
-if (c'\x7f' ~ pat) { echo yes } else { echo no }
-if (c'\x7e' ~ pat) { echo yes } else { echo no }
+if ($'\x7f' ~ pat) { echo yes } else { echo no }
+if ($'\x7e' ~ pat) { echo yes } else { echo no }
 
 var pat2 = /[ \u{7f} ]/;
 var pat3 = /[ \u{0007f} ]/;
@@ -453,14 +452,14 @@ shopt -s oil:all
 var pat = /[ \u{ff} ]/;
 
 echo $pat | od -A n -t x1
-if (c'\x7f' ~ pat) { echo yes } else { echo no }
-if (c'\x7e' ~ pat) { echo yes } else { echo no }
+if ($'\x7f' ~ pat) { echo yes } else { echo no }
+if ($'\x7e' ~ pat) { echo yes } else { echo no }
 
 ## status: 1
 ## stdout-json: ""
 
 #### non-ASCII bytes must be singleton terms, e.g. '\x7f\xff' is disallowed
-var bytes = c'\x7f\xff'
+var bytes = $'\x7f\xff'
 var pat = / [ $bytes ] /
 echo $pat
 ## status: 1
@@ -556,7 +555,7 @@ if ('foof' !~ pat) { echo no }
 ## status: 1
 ## stdout-json: ""
 
-#### Instead of c'foo\\bar' use 'foo' \\ 'bar'
+#### Instead of $'foo\\bar' use 'foo' \\ 'bar'
 shopt -s oil:all
 var pat = /'foo' \\ 'bar'/
 echo $pat

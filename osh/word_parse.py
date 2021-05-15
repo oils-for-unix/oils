@@ -642,7 +642,7 @@ class WordParser(WordEmitter):
     if self.token_type in (Id.Left_SingleQuote, Id.Left_RSingleQuote):
       return self._ReadSingleQuoted(lex_mode_e.SQ_Raw)
 
-    if self.token_type == Id.Left_CSingleQuote:
+    if self.token_type == Id.Left_DollarSingleQuote:
       return self._ReadSingleQuoted(lex_mode_e.SQ_C)
 
     if self.token_type in (
