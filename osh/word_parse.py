@@ -81,6 +81,7 @@ from osh import tdop
 from osh import arith_parse
 from osh import braces
 from osh import word_
+from osh import word_compile
 from mycpp.mylib import tagswitch
 
 from typing import List, Optional, Tuple, cast
@@ -623,6 +624,11 @@ class WordParser(WordEmitter):
       tokens.pop()
       tokens.pop()
 
+    # Remove space from '''  r'''  $''' in both expression mode and command mode
+    if left_token.id in (Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
+        Id.Left_DollarTSingleQuote):
+      word_compile.RemoveLeadingSpaceSQ(tokens)
+
     return self.cur_token
 
   def _ReadDoubleQuotedLeftParts(self):
@@ -755,17 +761,17 @@ class WordParser(WordEmitter):
     part.spids.extend(spids)
     return part
 
-  def _ReadLikeDQ(self, left_dq_token, is_oil_expr, out_parts):
+  def _ReadLikeDQ(self, left_token, is_oil_expr, out_parts):
     # type: (Optional[Token], bool, List[word_part_t]) -> None
     """
     Args:
-      left_dq_token: A token if we are reading a double quoted part, or None if
+      left_token: A token if we are reading a double quoted part, or None if
         we're reading a here doc.
       is_oil_expr: Whether to disallow backticks and invalid char escapes
       out_parts: list of word_part to append to
     """
-    if left_dq_token:
-      expected_end_tokens = 3 if left_dq_token.id == Id.Left_TDoubleQuote else 1
+    if left_token:
+      expected_end_tokens = 3 if left_token.id == Id.Left_TDoubleQuote else 1
     else:
       expected_end_tokens = 1000  # here doc will break
 
@@ -810,16 +816,16 @@ class WordParser(WordEmitter):
 
       elif self.token_kind == Kind.Right:
         assert self.token_type == Id.Right_DoubleQuote, self.token_type
-        if left_dq_token:
+        if left_token:
           num_end_tokens += 1
 
         # In a here doc, the right quote is literal!
         out_parts.append(self.cur_token)
 
       elif self.token_kind == Kind.Eof:
-        if left_dq_token:
+        if left_token:
           p_die('Unexpected EOF reading double-quoted string that began here',
-                token=left_dq_token)
+                token=left_token)
         else:  # here docs will have an EOF in their token stream
           break
 
@@ -836,11 +842,16 @@ class WordParser(WordEmitter):
       out_parts.pop()
       out_parts.pop()
 
+    # Remove space from """ in both expression mode and command mode
+    if left_token and left_token.id == Id.Left_TDoubleQuote:
+      word_compile.RemoveLeadingSpaceDQ(out_parts)
+
     # Return nothing, since we appended to 'out_parts'
 
-  def _ReadDoubleQuoted(self, left_dq_token):
+  def _ReadDoubleQuoted(self, left_token):
     # type: (Token) -> double_quoted
-    """
+    """Helper function for "hello $name"
+
     Args:
       eof_type: for stopping at }, Id.Lit_RBrace
       here_doc: Whether we are reading in a here doc context
@@ -848,10 +859,10 @@ class WordParser(WordEmitter):
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
     parts = []  # type: List[word_part_t]
-    self._ReadLikeDQ(left_dq_token, False, parts)
+    self._ReadLikeDQ(left_token, False, parts)
 
-    dq_part = double_quoted(left_dq_token, parts, False)
-    dq_part.spids.append(left_dq_token.span_id)  # Left ", sort of redundant
+    dq_part = double_quoted(left_token, parts, False)
+    dq_part.spids.append(left_token.span_id)  # Left ", sort of redundant
     dq_part.spids.append(self.cur_token.span_id)  # Right "
     return dq_part
 

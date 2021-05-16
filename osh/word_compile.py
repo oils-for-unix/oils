@@ -7,13 +7,13 @@ doesn't depend on any values at runtime.
 """
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, class_literal_term, class_literal_term_t, single_quoted
+    Token, class_literal_term, class_literal_term_t, single_quoted, word_part_t
 )
 from core.pyerror import log
 from frontend import consts
 from osh import string_ops
 
-from typing import Optional
+from typing import List, Optional
 
 
 def EvalCharLiteralForRegex(tok):
@@ -143,3 +143,18 @@ def EvalSingleQuoted(part):
 # - Do you need to set a flag on the SingleQuoted part?
 #
 # TODO: do this all at compile time?
+
+# These functions may mutate tok.val.  The LOSSLESS Syntax tree can be
+# recovered with span_id.  (Is that the case with the new representation too?)
+
+def RemoveLeadingSpaceDQ(parts):
+  # type: (List[word_part_t]) -> None
+  for p in parts:
+    print(p)
+  pass
+
+
+def RemoveLeadingSpaceSQ(tokens):
+  # type: (List[Token]) -> None
+  for t in tokens:
+    print(t)
