@@ -448,6 +448,14 @@ class EqualAssertion(object):
     if actual != self.expected:
       msg = '[%s %s] Expected %r, got %r' % (shell, self.key, self.expected,
           actual)
+
+      # TODO: maybe add a flag for this.
+      if 0:
+        import difflib
+        for line in difflib.unified_diff(
+            self.expected, actual, fromfile='expected', tofile='actual'):
+          print(repr(line))
+
       return Result.FAIL, msg
     if self.qualifier == 'BUG':  # equal, but known bad
       return Result.BUG, ''

@@ -105,21 +105,37 @@ r\
 
 #### Triple Double Quotes, Expression Mode
 
+var line1 = """line1"""
+echo line1=$line1
+var line2 = """
+line2"""
+echo line2=$line2
+
 var two = 2
 var three = 3
 var x = """
   one "
   two = $two ""
-  three = $three
+   three = $three
   """
-echo $x
+echo "[$x]"
+
+var x = """
+  good
+ bad
+  """
+echo "[$x]"
 
 ## STDOUT:
-
-  one "
-  two = 2 ""
-  three = 3
-  
+line1=line1
+line2=line2
+[one "
+two = 2 ""
+ three = 3
+]
+[good
+ bad
+]
 ## END
 
 #### Triple Single Quotes, Expression Mode
@@ -163,14 +179,7 @@ var three=3
 
 echo ""a  # test lookahead
 
-echo """
-  one "
-  two = $two ""
-  three = $three
-  """
-
 echo --
-# dedent, and first newline doesn't count
 echo """
   one "
   two = $two ""
@@ -186,25 +195,32 @@ tac <<< """
 
 shopt --unset parse_triple_quote
 
+echo --
+echo """
+  one
+  two = $two
+  three = $three
+  """
+
+
 ## STDOUT:
 a
+--
+one "
+two = 2 ""
+three = 3
 
-  one "
-  two = 2 ""
-  three = 3
-  
 --
 
-  one "
-  two = 2 ""
-  three = 3
-  
+three = 3
+two = 2 ""
+one "
 --
-  
-  three = 3
-  two = 2 ""
-  one "
 
+  one
+  two = 2
+  three = 3
+  
 ## END
 
 #### raw strings and triple quotes

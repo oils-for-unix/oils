@@ -7,13 +7,15 @@ doesn't depend on any values at runtime.
 """
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, class_literal_term, class_literal_term_t, single_quoted, word_part_t
+    Token, class_literal_term, class_literal_term_t, single_quoted,
+    word_part_e, word_part_t,
 )
 from core.pyerror import log
 from frontend import consts
 from osh import string_ops
+from qsn_ import qsn_native  # IsWhitespace
 
-from typing import List, Optional
+from typing import List, Optional, cast
 
 
 def EvalCharLiteralForRegex(tok):
@@ -149,12 +151,53 @@ def EvalSingleQuoted(part):
 
 def RemoveLeadingSpaceDQ(parts):
   # type: (List[word_part_t]) -> None
-  for p in parts:
-    print(p)
-  pass
+  if len(parts) <= 1:  # We need at least 2 parts to strip anything
+    return
+
+  line_ended = False  # Think of it as a tiny state machine
+
+  # The first token may have a newline
+  UP_first = parts[0]
+  if UP_first.tag_() == word_part_e.Literal:
+    first = cast(Token, UP_first)
+    #log('T %s', first_part)
+    if qsn_native.IsWhitespace(first.val):
+      # Remove the first part.  TODO: This could be expensive if there are many
+      # lines.
+      parts.pop(0)
+    if first.val.endswith('\n'):
+      line_ended = True
+
+  UP_last = parts[-1]
+  to_strip = None
+  if UP_last.tag_() == word_part_e.Literal:
+    last = cast(Token, UP_last)
+    if qsn_native.IsWhitespace(last.val):
+      to_strip = last.val
+      # Remove the last part
+      parts.pop()
+
+  if to_strip is not None:
+    n = len(to_strip)
+    for UP_p in parts:
+      if UP_p.tag_() != word_part_e.Literal:
+        line_ended = False
+        continue
+
+      p = cast(Token, UP_p)
+
+      if line_ended:
+        if p.val.startswith(to_strip):
+          # MUTATING the part here
+          p.val = p.val[n:]
+
+      line_ended = False
+      if p.val.endswith('\n'):
+        line_ended = True
+        #log('%s', p)
 
 
 def RemoveLeadingSpaceSQ(tokens):
   # type: (List[Token]) -> None
   for t in tokens:
-    print(t)
+    log('%s', t)

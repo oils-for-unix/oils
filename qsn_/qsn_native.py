@@ -17,11 +17,13 @@ if TYPE_CHECKING:
   from frontend.lexer import Lexer
 
 
-def _IsWhitespace(s):
+def IsWhitespace(s):
   # type: (str) -> bool
   """Alternative to s.isspace() that doesn't have legacy \f \v codes.
 
   QSN is a "legacy-free" format.
+
+  Also used by osh/word_compile.py.
   """
   for ch in s:
     if ch not in ' \n\r\t':
@@ -63,7 +65,7 @@ def Parse(lexer):
 
   # Doesn't work because we want to allow literal newlines / tabs
   if tok.id == Id.Char_Literals:
-    if not _IsWhitespace(tok.val):
+    if not IsWhitespace(tok.val):
       p_die("Unexpected data after closing quote", token=tok)
     tok = lexer.Read(lex_mode_e.QSN)
 
