@@ -61,7 +61,7 @@ echo '\n'
 echo $'\n'
 
 # unicode works like this
-var unicode = c'mu = \u{3bc}'
+var unicode = $'mu = \u{3bc}'
 echo $unicode
 # but not like this
 # var unicode = 'mu = \u{3bc}' =>  Strings with backslashes should look like r'\n', c'\n' or $'\n'
@@ -78,7 +78,7 @@ echo "Hello world!" # => Hello world!
 var i_am_a_string = "I'm just a string"
 write -- $i_am_a_string
 # if you have a string with a newline in it
-var i_have_a_newline = $'it's true I really do \n'
+var i_have_a_newline = $'it\'s true I really do \n'
 # write works well with it, unlike bash's printf
 write -- $i_have_a_newline
 # you can print the content without the newline with -n
@@ -120,11 +120,18 @@ proc print_variable(passed_variable) {
 var variable_to_pass = "I'm passed"
 print_variable $variable_to_pass
 
-# to run commands conditionally you need to `run` procs
-# err_today && echo "will never be executed"
-#   ^~~~~~~~~
-# ./tour.sh:79: fatal: Can't run a proc while errexit is disabled. Use 'run' or wrap it in a process with $0 myproc 
-run err_today && echo "will never be executed"
+# If you're going to use a shell function or proc in a condition, wrap it with 'run'
+# to avoid a strict_errexit error
+proc myproc {
+  echo hi
+  return 1
+}
+
+if run myproc {
+  echo OK
+} else {
+  echo failure
+}
 
 ### external commands
 
@@ -212,7 +219,9 @@ if run err_today {
 #### word => to match any character that is not a space
 #### space => to match all the non word characters (tab, newline...)
 #### dot => to match any character
-if ("$x" ~ /digit+/) {
+
+var s = '123'
+if (s ~ /digit+/) {
   echo 'number'
 }
 
