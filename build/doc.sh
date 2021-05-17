@@ -111,6 +111,7 @@ readonly MARKDOWN_DOCS=(
   headless
   variables
   strings
+  modules
 
   # Internal stuff
   variable-scope
@@ -148,7 +149,8 @@ split-and-render() {
   #head _tmp/doc/*
   #return
 
-  cmark ${prefix}_meta.json ${prefix}_content.md > $out
+  local code_output=_tmp/code-blocks/$name.txt
+  cmark --code-output $code_output ${prefix}_meta.json ${prefix}_content.md > $out
   log "$prefix -> (doctools/cmark) -> $out"
 }
 
@@ -201,7 +203,7 @@ special() {
 }
 
 all-markdown() {
-  mkdir -p _tmp/doc
+  mkdir -p _tmp/{doc,code-blocks}  # temporary files
 
   # TODO: We can set repo_url here!  Then we don't need it for most docs.
   # split_doc.py can return {} if the doc doesn't start with ---

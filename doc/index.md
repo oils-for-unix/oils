@@ -49,6 +49,7 @@ The shell **command** language has been enhanced:
 - [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
 - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html)
+- [Modules](modules.html)
 - [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
   - [IO Builtins](io-builtins.html)
 

@@ -273,6 +273,11 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
 
     html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
 
+    if opts.code_output:
+      log('TODO: output to %s', opts.code_output)
+      with open(opts.code_output, 'w') as f:
+        f.write('TODO')
+
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
     toc_tags = opts.toc_tags
@@ -309,11 +314,6 @@ def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser('cmark.py [options]')
 
-  # TODO: Remove --blog since it's obsolete
-  p.add_option(
-      '--blog', action='store_true', default=False,
-      help='Generate a blog post')
-
   p.add_option(
       '--toc-pretty-href', action='store_true', default=False,
       help='Generate textual hrefs #like-this rather than like #toc10')
@@ -324,6 +324,12 @@ def Options():
       '--disable-fastlex', dest='disable_fastlex', action='store_true',
       default=False,
       help='Hack for old blog posts')
+
+  p.add_option(
+      '--code-output', dest='code_output',
+      default=False,
+      help='Extract and print code blocks to this file')
+
   return p
 
 
