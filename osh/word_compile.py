@@ -136,6 +136,18 @@ def EvalSingleQuoted(part):
   return s
 
 
+def IsLeadingSpace(s):
+  # type: (str) -> bool
+  """Determines if the token before ''' etc. can be stripped.
+  
+  Similar to qsn_native.IsWhitespace()
+  """
+  for ch in s:
+    if ch not in ' \t':
+      return False
+  return True
+
+
 # Whitespace stripping algorithm
 #
 # - First token should be WHITESPACE* NEWLINE.  Omit it
@@ -172,7 +184,7 @@ def RemoveLeadingSpaceDQ(parts):
   to_strip = None  # type: Optional[str]
   if UP_last.tag_() == word_part_e.Literal:
     last = cast(Token, UP_last)
-    if qsn_native.IsWhitespace(last.val):
+    if IsLeadingSpace(last.val):
       to_strip = last.val
       parts.pop()  # Remove the last part
 
@@ -223,7 +235,7 @@ def RemoveLeadingSpaceSQ(tokens):
   last = tokens[-1]
   to_strip = None  # type: Optional[str]
   if last.id in (Id.Lit_Chars, Id.Char_Literals):
-    if qsn_native.IsWhitespace(last.val):
+    if IsLeadingSpace(last.val):
       to_strip = last.val
       tokens.pop()  # Remove the last part
 
