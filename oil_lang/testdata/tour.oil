@@ -1,0 +1,227 @@
+# Command language
+
+## Simple commands
+
+### variable declaration and mutation
+
+# Declaring a variable does NOT looks like this:
+# Variable="Some string" => name=val isn't allowed when shopt 'parse_equals' is on.
+# Hint: add 'env' before it, or spaces around =
+
+# Nor like this
+# Variable = "Some string" # => same error
+
+# this is the preferred way 
+# no need for capitalization like in bash
+var variable = "Some string"
+
+# also valid but not idomatic
+set variable = "Another string"
+
+# const to declare a constant
+const immutable = "definitive"
+
+# this will not work
+# set immutable = "not so sure" =>  Can't modify constant 'immutable'
+
+# mutate a variable with setvar
+var new = "a brave new world"
+setvar new = "perhaps it's already here"
+echo $new
+
+# setglobal will create or mutate a global variable
+setglobal the_answer = 42
+echo $the_answer
+
+# there are more ways to set variable by passing them
+# to procs. This will be expanded in the procs section
+
+### Variable substitution
+
+var regular_string = "I am just a normal string"
+echo $regular_string # quotes not needed
+#### if you want to do string interpolation
+echo "$regular_string and $regular_string"
+#### you need to do it another way if you want to substitute before a _
+# this will not work "$regular_string_"
+# as it will look for the regular_string_ variable
+echo "${regular_string}_" # but this will
+
+### Parameter expansion works just like in bash
+var some_string = "I am some string"
+echo ${some_string/another/some} # => I am another string
+
+### Strings
+
+# this will not work
+# echo "\n" => Invalid char escape in double quoted string
+# this prints the characters
+echo '\n'
+# use $ to print a new line
+echo $'\n'
+
+# unicode works like this
+var unicode = c'mu = \u{3bc}'
+echo $unicode
+# but not like this
+# var unicode = 'mu = \u{3bc}' =>  Strings with backslashes should look like r'\n', c'\n' or $'\n'
+
+### builtins
+
+#### echo
+# takes at most 1 argument and prints to stdout
+echo "Hello world!" # => Hello world!
+
+#### write
+# write outputs to stdout
+# write has a -- separator to not confuse command line arguments and what you want to print
+var i_am_a_string = "I'm just a string"
+write -- $i_am_a_string
+# if you have a string with a newline in it
+var i_have_a_newline = $'it's true I really do \n'
+# write works well with it, unlike bash's printf
+write -- $i_have_a_newline
+# you can print the content without the newline with -n
+write -n -- $i_have_a_newline
+
+#### test
+# test has been improved to be a little less crytic
+
+# test if something is a directory
+test --dir /tmp || echo "Not a dir"
+test -d /tmp # still works but less readable
+
+# test if something is a file
+test --file /tmp/maybe_a_file || echo "Not a file"
+
+### Procs
+
+### think of procs as a better version of bash's functions
+### use proc for abstraction
+proc abstract() {
+  echo "I'm an abstraction"
+}
+
+### and call it without brackets
+abstract
+
+### proc can't access variables they are not given as params
+### proc print_variable() {
+###   echo $some_not_given_variable
+### }
+### print_variable
+### fatal: Undefined variable 'some_not_given_variable'
+
+proc print_variable(passed_variable) {
+  echo $passed_variable
+}
+
+### call procs with arguments without brackets
+var variable_to_pass = "I'm passed"
+print_variable $variable_to_pass
+
+# to run commands conditionally you need to `run` procs
+# err_today && echo "will never be executed"
+#   ^~~~~~~~~
+# ./tour.sh:79: fatal: Can't run a proc while errexit is disabled. Use 'run' or wrap it in a process with $0 myproc 
+run err_today && echo "will never be executed"
+
+### external commands
+
+### Ruby like blocks
+
+## Redirects
+
+## Pipelines
+
+## Control flow
+
+### general
+
+### use command subsitution to assign the result of a command to a variable
+var year = $(date -u +"%Y")
+echo $year
+
+# a failure will exit immediately
+# var year = $(date --wrong-flag +"%Y") => date: illegal option -- -
+# usage: date [-jnRu] [-d dst] [-r seconds] [-t west] [-v[+|-]val[ymwdHMS]] ...
+#             [-f fmt date | [[[mm]dd]HH]MM[[cc]yy][.ss]] [+format]
+#   var year = $(date --wrong-flag "%Y")
+#              ^~
+# ./tour.sh:38: fatal: Command sub exited with status 1 (command.Simple)
+
+
+### if
+
+# if works just like you would expect
+
+if true {
+  echo "Here I am!"
+} else {
+  echo "I'll never be"
+}
+
+# However be careful, brackets have a special meaning
+# those are for conditionals, you won't be able to 
+# run functions inside those
+proc is_it_true() {
+  false
+}
+# this won't work
+# if (! is_it_true) {
+#   echo "could be anything really"
+# }
+# Syntax error in expression (near Id.Expr_Bang)
+# to make it work you have to 'run' the proc
+# and remove the brackets
+
+if ! run is_it_true {
+  echo "could be anything really"
+}
+
+# an error in a proc will print 
+proc err_today() {
+  date --wrong-flag
+}
+
+if run err_today {
+  echo "will never be executed"
+} else {
+  # this will also print the proc error
+  # date: illegal option -- -
+  # usage: date [-jnRu] [-d dst] [-r seconds] [-t west] [-v[+|-]val[ymwdHMS]] ...
+  #           [-f fmt date | [[[mm]dd]HH]MM[[cc]yy][.ss]] [+format]
+  echo "there was an error"
+}
+
+### case
+
+### for
+
+### while
+
+## fork and wait
+
+## Expression language
+
+### Eggex
+
+#### matching happens with eggexes, which are a different take on regex
+#### you can use
+#### digit => to match numbers
+#### word => to match any character that is not a space
+#### space => to match all the non word characters (tab, newline...)
+#### dot => to match any character
+if ("$x" ~ /digit+/) {
+  echo 'number'
+}
+
+#### extract a submatch with < >
+####   if ($(date -u +"%Y-%m-%d") ~ /< digit{4} :year> '-' <digit{2} :month>!word<digit{2} :day>/) {
+if ($(date -u +"%Y-%m-%d") ~ /< digit{4} :year> '-' <digit{2} :month> '-' <digit{2} :day>/) {
+  # extract a match by number
+  const complete_match = _match(0)
+  const group_match = _match(1)
+  echo $complete_match
+  echo $group_match
+}
