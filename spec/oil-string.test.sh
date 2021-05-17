@@ -142,33 +142,30 @@ two = 2 ""
 
 var two = 2
 var three = 2
+
 var x = ''' 
   two = $two '
-   three = $three ''
-  \u{61}
-
+  three = $three ''
+   \u{61}
   '''
 echo "[$x]"
 
 var x = $''' 
   two = $two '
-   three = $three ''
-  \u{61}
-
+  three = $three ''
+   \u{61}
   '''
 echo "[$x]"
 
 ## STDOUT:
-[ 
-  two = $two '
-   three = $three ''
-  \u{61}
-  ]
-[ 
-  two = $two '
-   three = $three ''
-  a
-  ]
+[two = $two '
+three = $three ''
+ \u{61}
+]
+[two = $two '
+three = $three ''
+ a
+]
 ## END
 
 
@@ -241,24 +238,24 @@ ra
 
 echo ''a  # make sure lookahead doesn't mess up
 
+echo --
 echo '''
   two = $two
   '
   '' '
   \u{61}
   '''
+## STDOUT:
+a
+--
+two = $two
+'
+'' '
+\u{61}
 
-echo --
+## END
 
-# dedent, and first newline doesn't count
-echo '''
-  two = $two
-  '
-  '' '
-  \u{61}
-  '''
-
-echo --
+#### Triple Single Quotes, Here Doc
 
 tac <<< '''
   two = $two
@@ -267,31 +264,30 @@ tac <<< '''
   \u{61}
   '''
 
+## STDOUT:
+
+\u{61}
+'' '
+'
+two = $two
+## END
+
+#### Triple Single Quotes, disabled
+
 shopt --unset parse_triple_quote
 
+echo '''
+  two = $two
+  \u{61}
+  '''
+
 ## STDOUT:
-a
 
   two = $two
-  '
-  '' '
   \u{61}
   
---
-
-  two = $two
-  '
-  '' '
-  \u{61}
-  
---
-  
-  \u{61}
-  '' '
-  '
-  two = $two
-
 ## END
+
 
 #### $''' in command mode
 
@@ -303,14 +299,12 @@ echo $'''
   '''
 
 ## STDOUT:
+two = $two
+'
+'' '
+a
 
-  two = $two
-  '
-  '' '
-  a
-  
 ## END
-
 
 #### here doc with quotes
 

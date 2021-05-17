@@ -174,8 +174,7 @@ def RemoveLeadingSpaceDQ(parts):
     last = cast(Token, UP_last)
     if qsn_native.IsWhitespace(last.val):
       to_strip = last.val
-      # Remove the last part
-      parts.pop()
+      parts.pop()  # Remove the last part
 
   if to_strip is not None:
     n = len(to_strip)
@@ -199,5 +198,48 @@ def RemoveLeadingSpaceDQ(parts):
 
 def RemoveLeadingSpaceSQ(tokens):
   # type: (List[Token]) -> None
-  for t in tokens:
-    log('%s', t)
+  """
+  In $''', we have Char_Literals \n
+  In r''' and ''', we have Lit_Chars \n
+  """
+  if 0:  
+    log('--')
+    for tok in tokens:
+      log('tok %s', tok)
+    log('--')
+
+  if len(tokens) <= 1:  # We need at least 2 parts to strip anything
+    return
+
+  line_ended = False
+
+  first = tokens[0]
+  if first.id in (Id.Lit_Chars, Id.Char_Literals):
+    if qsn_native.IsWhitespace(first.val):
+      tokens.pop(0)  # Remove the first part
+    if first.val.endswith('\n'):
+      line_ended = True
+
+  last = tokens[-1]
+  to_strip = None
+  if last.id in (Id.Lit_Chars, Id.Char_Literals):
+    if qsn_native.IsWhitespace(last.val):
+      to_strip = last.val
+      tokens.pop()  # Remove the last part
+
+  if to_strip is not None:
+    n = len(to_strip)
+    for tok in tokens:
+      if tok.id not in (Id.Lit_Chars, Id.Char_Literals):
+        line_ended = False
+        continue
+
+      if line_ended:
+        if tok.val.startswith(to_strip):
+          # MUTATING the token here
+          tok.val = tok.val[n:]
+
+      line_ended = False
+      if tok.val.endswith('\n'):
+        line_ended = True
+        #log('yes %r', tok.val)

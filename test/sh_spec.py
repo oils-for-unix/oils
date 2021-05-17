@@ -449,7 +449,7 @@ class EqualAssertion(object):
       msg = '[%s %s] Expected %r, got %r' % (shell, self.key, self.expected,
           actual)
 
-      # TODO: maybe add a flag for this.
+      # TODO: Make this better and add a flag for it.
       if 0:
         import difflib
         for line in difflib.unified_diff(
