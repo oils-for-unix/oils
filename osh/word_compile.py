@@ -169,7 +169,7 @@ def RemoveLeadingSpaceDQ(parts):
       line_ended = True
 
   UP_last = parts[-1]
-  to_strip = None
+  to_strip = None  # type: Optional[str]
   if UP_last.tag_() == word_part_e.Literal:
     last = cast(Token, UP_last)
     if qsn_native.IsWhitespace(last.val):
@@ -221,7 +221,7 @@ def RemoveLeadingSpaceSQ(tokens):
       line_ended = True
 
   last = tokens[-1]
-  to_strip = None
+  to_strip = None  # type: Optional[str]
   if last.id in (Id.Lit_Chars, Id.Char_Literals):
     if qsn_native.IsWhitespace(last.val):
       to_strip = last.val
