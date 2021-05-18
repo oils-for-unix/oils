@@ -203,7 +203,7 @@ special() {
 }
 
 all-markdown() {
-  mkdir -p _tmp/{doc,code-blocks}  # temporary files
+  make-dirs
 
   # TODO: We can set repo_url here!  Then we don't need it for most docs.
   # split_doc.py can return {} if the doc doesn't start with ---
@@ -289,6 +289,8 @@ EOF
 # Help is both markdown and text
 #
 
+readonly TMP_DIR=_tmp/doc
+readonly CODE_BLOCK_DIR=_tmp/code-blocks
 readonly TEXT_DIR=_devbuild/help
 readonly HTML_DIR=_release/VERSION
 readonly CODE_DIR=_devbuild/gen
@@ -312,12 +314,16 @@ help-cards() {
     $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/oil-help.html
 }
 
+make-dirs() {
+  mkdir -p $TMP_DIR $CODE_BLOCK_DIR $TEXT_DIR $HTML_DIR/doc
+}
+
 all-help() {
   ### Build HTML and text help, which depends on libcmark.so
 
   log "Removing $TEXT_DIR/*"
   rm -f $TEXT_DIR/*
-  mkdir -p _tmp/doc $TEXT_DIR $HTML_DIR/doc
+  make-dirs
 
   split-and-render doc/oil-help-topics.md
   split-and-render doc/oil-help.md
