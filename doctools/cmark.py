@@ -262,6 +262,11 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
   html = md2html(in_file.read())
 
   if use_fastlex:
+    if opts.code_block_output:
+      with open(opts.code_block_output, 'w') as f:
+        f.write('# %s: code blocks extracted from Markdown/HTML\n\n' % opts.code_block_output)
+        text = oil_doc.ExtractCode(html, f)
+
     html = oil_doc.RemoveComments(html)
 
     # Hack for allowing tables without <p> in cells, which CommonMark seems to require?
@@ -272,11 +277,6 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
     html = oil_doc.ExpandLinks(html)
 
     html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
-
-    if opts.code_output:
-      log('TODO: output to %s', opts.code_output)
-      with open(opts.code_output, 'w') as f:
-        f.write('TODO')
 
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
@@ -326,7 +326,7 @@ def Options():
       help='Hack for old blog posts')
 
   p.add_option(
-      '--code-output', dest='code_output',
+      '--code-block-output', dest='code_block_output',
       default=False,
       help='Extract and print code blocks to this file')
 

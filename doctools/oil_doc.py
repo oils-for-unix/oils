@@ -406,7 +406,7 @@ def HighlightCode(s, default_highlighter):
 
             else:  # language-*: Use Pygments
 
-              # We REMOVIE the original <pre><code> because Pygments gives you a <pre> already
+              # We REMOVE the original <pre><code> because Pygments gives you a <pre> already
 
               # We just read closing </code>, and the next one should be </pre>.
               try:
@@ -432,6 +432,66 @@ def HighlightCode(s, default_highlighter):
   out.PrintTheRest()
 
   return f.getvalue()
+
+
+def ExtractCode(s, f):
+  """Print code blocks to a plain text file.
+
+  So we can at least validate the syntax.
+
+  Similar to the algorithm code above: 
+  
+  1. Collect what's inside <pre><code> ...
+  2. Decode &amp; -> &,e tc. and return it
+  """
+  out = html.Output(s, f)
+  tag_lexer = html.TagLexer(s)
+
+  block_num = 0
+  pos = 0
+  it = html.ValidTokens(s)
+
+  while True:
+    try:
+      tok_id, end_pos = next(it)
+    except StopIteration:
+      break
+
+    if tok_id == html.StartTag:
+      tag_lexer.Reset(pos, end_pos)
+      if tag_lexer.TagName() == 'pre':
+        pre_start_pos = pos
+        pos = end_pos
+
+        try:
+          tok_id, end_pos = next(it)
+        except StopIteration:
+          break
+
+        tag_lexer.Reset(pos, end_pos)
+        if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
+
+          css_class = tag_lexer.GetAttr('class')
+          code_start_pos = end_pos
+
+          out.SkipTo(code_start_pos)
+          out.Print('# block %d' % block_num)
+          out.Print('\n')
+
+          slash_code_left, slash_code_right = \
+              html.ReadUntilEndTag(it, tag_lexer, 'code')
+
+          text = html.ToText(s, code_start_pos, slash_code_left)
+          out.SkipTo(slash_code_left)
+
+          out.Print(text)
+          out.Print('\n')
+
+          block_num += 1
+
+    pos = end_pos
+
+  #out.PrintTheRest()
 
 
 class ShellSession(object):

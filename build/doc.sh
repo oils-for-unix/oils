@@ -149,8 +149,8 @@ split-and-render() {
   #head _tmp/doc/*
   #return
 
-  local code_output=_tmp/code-blocks/$name.txt
-  cmark --code-output $code_output ${prefix}_meta.json ${prefix}_content.md > $out
+  local code_out=_tmp/code-blocks/$name.txt
+  cmark --code-block-output $code_out ${prefix}_meta.json ${prefix}_content.md > $out
   log "$prefix -> (doctools/cmark) -> $out"
 }
 
