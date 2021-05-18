@@ -24,6 +24,9 @@ Oil and its syntax.  Read on to learn about:
   parsing improves error messages and makes more software engineering tools
   possible.
 
+<!-- TODO: We should talk about word lists: commands, array literals, and for
+loops -->
+
 <div id="toc">
 </div> 
 
@@ -70,8 +73,6 @@ depending on the parsing context.
 - [How to Parse Shell Like a Programming Language](//www.oilshell.org/blog/2019/02/07.html)
   - See the list of 14 lexer modes.
 - [Posts tagged #lexing]($blog-tag:lexing)
-
-
 
 ## Sigils and Sigil Pairs
 

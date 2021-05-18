@@ -5,6 +5,9 @@ in_progress: yes
 The Oil Language from 10,000 Feet
 =================================
 
+TODO: Fold this into the 'tour'.
+
+
 This document describes the Oil language.  It also discusses **future work**.
 Related Documents:
 

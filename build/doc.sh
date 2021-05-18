@@ -95,6 +95,11 @@ readonly MARKDOWN_DOCS=(
 
   index
   what-is-oil
+
+  # TODO: describe 2 languages, headless mode, etc.
+  #project-tour
+  oil-language-tour
+
   oil-overview
   oil-options
   oil-keywords
@@ -312,6 +317,11 @@ help-cards() {
 
   _make-help cards $TEXT_DIR $py_out \
     $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/oil-help.html
+}
+
+tour() {
+  split-and-render doc/oil-language-tour.md
+  bin/oil _tmp/code-blocks/oil-language-tour.txt
 }
 
 make-dirs() {
