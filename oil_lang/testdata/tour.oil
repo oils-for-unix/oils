@@ -59,6 +59,8 @@ echo ${some_string/another/some} # => I am another string
 echo '\n'
 # use $ to print a new line
 echo $'\n'
+# oil intentionally adds a more explicit syntax for 'raw' strings
+echo r'\n' #
 
 # unicode works like this
 var unicode = $'mu = \u{3bc}'
@@ -83,6 +85,10 @@ var i_have_a_newline = $'it\'s true I really do \n'
 write -- $i_have_a_newline
 # you can print the content without the newline with -n
 write -n -- $i_have_a_newline
+# with echo if you try to print the -n it will be confused as a flag
+var minus_n = '-n'
+echo $minus_n # prints nothing
+write -- $minus_n # actually works!
 
 #### test
 # test has been improved to be a little less crytic
