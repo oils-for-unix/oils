@@ -213,7 +213,7 @@ Functions:
 X [String]        find()   sub()   join() 
                   split()             $IFS, awk algorithm, regex
   [Word]          glob()   maybe()
-X [Arrays]        index()
+  [Arrays]        X index()   append()   extend()
   [Assoc Arrays]  @keys()   @values()
 X [Block]         evalblock()         procs evaluate block to namespace
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()

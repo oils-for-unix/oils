@@ -1662,6 +1662,14 @@ class CommandParser(object):
     self._Peek()
     assert self.c_id == Id.Op_LParen, self.cur_word
 
+    next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+    if next_id != Id.Op_RParen:
+      # TODO: We could support append(mylist, x) here?
+      # Parse an expression here, and then look for RParen.  It's likely be
+      # complex, because we want to disallow name-with-dashes(x, y)
+      # For now it's just _ append(mylist, x)
+      pass
+
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ShFunction)
     self._Next()
 

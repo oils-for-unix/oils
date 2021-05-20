@@ -165,7 +165,8 @@ for i in @(seq 2) {
   # Is this awkward?  We could also do setvar e[] = o to append?  What about
   # extend?
 
-  _ e.append(o)
+  #_ e.append(o)
+  _ append(e, o)
 }
 
 json write :e

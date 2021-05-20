@@ -49,6 +49,14 @@ def _Maybe(obj):
     return []
 
 
+def _Append(obj, arg):
+  obj.append(arg)
+
+
+def _Extend(obj, arg):
+  obj.extend(arg)
+
+
 class _Match(object):
   """
   _match(0) or _match():   get the whole match
@@ -167,10 +175,31 @@ def Init(mem):
   SetGlobalFunc(mem, 'all', all)
   SetGlobalFunc(mem, 'sum', sum)
 
-  # We maintain the L.sort() and sorted(L) distinction.
+  # We maintain the L.sort() aka sort(L) and sorted(L) distinction.
   # TODO: How do these interact with rows of a data frame?
   SetGlobalFunc(mem, 'sorted', sorted)
   SetGlobalFunc(mem, 'reversed', reversed)
+
+  #
+  # List/array methods
+  #
+
+  SetGlobalFunc(mem, 'append', _Append)
+  SetGlobalFunc(mem, 'extend', _Extend)
+  # count, index, insert, pop, remove
+
+  #
+  # String Methods
+  #
+
+  # TODO: strip(), lstrip(), rstrip().  What about upper() and lower() etc.?
+  # Shell has versions of those
+  # startswith, endswith
+  # find, index, cout
+  # partition, rpartition: I never seem to use these?
+
+
+
 
   # TODO: ord() should UTF-8 decode its argument
   # ord('\u100') -> 256
