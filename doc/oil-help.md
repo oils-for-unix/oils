@@ -367,7 +367,7 @@ The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible
     }
     echo $not_mutated
 
-#### push
+#### append
 
 Append a string to an array of strings:
 
@@ -408,20 +408,20 @@ When --qsn is passed, the line is check for an opening single quote.  If so,
 it's decoded as QSN.  The line must have a closing single quote, and there
 can't be any non-whitespace characters after it.
 
-#### run
+#### try
 
 Re-enable errexit, and provide fine-grained control over exit codes.
 
-    if run myfunc {  # errexit is ON during 'myfunc'
+    if try myfunc {  # errexit is ON during 'myfunc'
       echo 'success'
     }
 
-    if run --allow-status-01 -- grep pat file.txt {
+    if try --allow-status-01 -- grep pat file.txt {
       echo 'pattern found'
     }
 
     # Assign status to a variable, and return 0
-    run --assign-status :st -- mycmd
+    try --assign :st -- mycmd
     case $st in
       2) echo 'usage error' ;;
       *) echo 'OK' ;;

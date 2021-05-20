@@ -1,5 +1,5 @@
 
-#### run builtin
+#### try builtin
 shopt --set errexit strict_errexit
 
 myproc() {
@@ -12,7 +12,7 @@ case $SH in
   (*osh)
     # new semantics: the function aborts at 'false', the 'catch' builtin exits
     # with code 1, and we echo 'failed'
-    run myproc || echo "failed"
+    try myproc || echo "failed"
     ;;
   (*)
     myproc || echo "failed"
@@ -28,7 +28,7 @@ hi
 bye
 ## END
 
-#### run with !
+#### try with !
 shopt -s oil:all || true
 
 deploy() {
@@ -41,7 +41,7 @@ deploy() {
 #  echo 'failed'
 #fi
 
-if ! run deploy; then
+if ! try deploy; then
   echo 'failed'
 fi
 echo done
@@ -52,19 +52,19 @@ failed
 done
 ## END
 
-#### run -allow-status-01 with external command
+#### try -allow-status-01 with external command
 
 set -o errexit
 
 echo hi > file.txt
 
-if run --allow-status-01 -- grep pat file.txt; then
+if try --allow-status-01 -- grep pat file.txt; then
   echo 'match'
 else 
   echo 'no match'
 fi
 
-if run --allow-status-01 -- grep pat BAD; then
+if try --allow-status-01 -- grep pat BAD; then
   echo 'match'
 else 
   echo 'no match'
@@ -76,7 +76,7 @@ echo DONE
 no match
 ## END
 
-#### run -allow-status-01 with function
+#### try -allow-status-01 with function
 
 set -o errexit
 
@@ -91,7 +91,7 @@ myproc() {
 
 #myproc
 
-if run --allow-status-01 -- myproc; then
+if try --allow-status-01 -- myproc; then
   echo 'match'
 else 
   echo 'no match'
@@ -102,14 +102,14 @@ fi
 ---
 ## END
 
-#### run syntax error
+#### try syntax error
 set -o errexit
 
 # Irony: we can't fail that hard here because errexit is disabled before
 # we enable it.
 # TODO: We could special case this perhaps
 
-if run; then
+if try; then
   echo hi
 else
   echo fail
@@ -119,18 +119,18 @@ fi
 ## STDOUT:
 ## END
 
-#### run --assign-status
+#### try --assign
 set -o errexit
 
 myproc() {
   return 42
 }
 
-run --assign-status st -- myproc
+try --assign st -- myproc
 echo st=$st
 
 # colon
-run --assign-status :st -- myproc
+try --assign :st -- myproc
 echo st=$st
 
 

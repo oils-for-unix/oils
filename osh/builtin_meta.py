@@ -200,7 +200,7 @@ class Builtin(vm._Builtin):
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
-class Run_(vm._Builtin):
+class Try(vm._Builtin):
   """For the 'if myfunc' problem with errexit.
 
   --status-ok
@@ -269,8 +269,8 @@ class Run_(vm._Builtin):
           'fatal: status %d when --allow-status-01' % status,
           span_id=spids[0], status=status)
 
-    if arg.assign_status is not None:
-      var_name = arg.assign_status
+    if arg.assign is not None:
+      var_name = arg.assign
       if var_name.startswith(':'):
         var_name = var_name[1:]
 

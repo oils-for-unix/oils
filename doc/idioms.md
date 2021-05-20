@@ -455,13 +455,13 @@ Suggested workaround:
 
     "$@"
 
-Oil has a `run` builtin, which re-enables errexit without the extra process:
+Oil has a `try` builtin, which re-enables errexit without the extra process:
 
-    if run myfunc; then
+    if try myfunc; then
       echo 'success'
     fi
 
-(TODO: decide on this) Or you can also use curly braces for an implicit `run`:
+(TODO: decide on this) Or you can also use curly braces for an implicit `try`:
 
     if myfunc {
       echo 'success'
@@ -472,9 +472,9 @@ better behavior.
 
 ## Error Handling
 
-### Use the `run` Builtin With `!`, `||`, and `&&`
+### Use the `try` Builtin With `!`, `||`, and `&&`
 
-These constructs require an explicit `run`:
+These constructs require an explicit `try`:
 
 No:
 
@@ -484,9 +484,9 @@ No:
 
 Yes:
 
-    ! run myfunc
-    run myfunc || fail
-    run myfunc && echo 'success'
+    ! try myfunc
+    try myfunc || fail
+    try myfunc && echo 'success'
 
 Although `||` and `&&` are rare in idiomatic Oil code.
 

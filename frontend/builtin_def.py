@@ -54,7 +54,7 @@ _NORMAL_BUILTINS = [
     'pp',
     'use', 'opts',  # not implemented
     'fopen',
-    'run', 'fork', 'forkwait',
+    'fork', 'forkwait',
 ]
 
 
@@ -122,6 +122,7 @@ def _Init(b):
 
   b.Add('true', enum_name='true_')
   b.Add('false', enum_name='false_')
+  b.Add('try', enum_name='try_')
 
   for name in _NORMAL_BUILTINS:
     b.Add(name)

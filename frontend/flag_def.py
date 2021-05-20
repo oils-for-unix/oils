@@ -249,14 +249,14 @@ _AddShellOptions(SET_SPEC)
 
 
 RUN_SPEC = OilFlags('run', typed=True)
-RUN_SPEC.Flag('-assign-status', args.String,
+RUN_SPEC.Flag('-assign', args.String,
     help='Assign status to this variable, and return 0')
 RUN_SPEC.Flag('-allow-status-01', args.Bool,
     help='Return 0 or 1 status values, but fail for others (e.g. for grep)')
 
 # Future directions:
 # run --allow-status=0,1
-#   an arbitrary list of statuses.  Although --assign-status does this just
+#   an arbitrary list of statuses.  Although --assign does this just
 #   fine.
 # run --builtin, run --command, run --proc:
 #   to "replace" 'builtin' and # 'command'
