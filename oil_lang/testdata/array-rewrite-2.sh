@@ -33,7 +33,7 @@ argv ${flags}  # unquoted splitting
 #
 # - no quoting is necessary because of static-word-eval
 # - splice arrays with @
-# - builtin 'push' for appending
+# - builtin 'append' for appending
 #   - I might want to change the ignored delimiter character _ to something like
 #     : or :: or \\ .  Opinions?
 
@@ -45,11 +45,11 @@ setvar path = "/etc/path with spaces"
 setvar flags = %()
 
 if test -n $CONFIG_HAVE_FOO; then
-  push :flags --foo=$path
+  append :flags --foo=$path
 fi
 
 if test -n $CONFIG_HAVE_BAR; then
-  push :flags --bar
+  append :flags --bar
 fi
 
 argv @flags

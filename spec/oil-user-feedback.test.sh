@@ -94,12 +94,12 @@ if (len(branches) == 0) {
   write git branch -D @branches
 }
 
-# With "push".  Hm read --lines isn't bad.
+# With "append".  Hm read --lines isn't bad.
 var branches2 = %()
 git-branch-merged | while read --line {
   var line2 = _line.strip()  # removing leading space
   if (line2 != 'master' and not line2.startswith('*')) {
-    push :branches2 $line2
+    append :branches2 $line2
   }
 }
 

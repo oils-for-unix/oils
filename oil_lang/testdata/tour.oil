@@ -120,14 +120,14 @@ proc print_variable(passed_variable) {
 var variable_to_pass = "I'm passed"
 print_variable $variable_to_pass
 
-# If you're going to use a shell function or proc in a condition, wrap it with 'run'
+# If you're going to use a shell function or proc in a condition, wrap it with 'try'
 # to avoid a strict_errexit error
 proc myproc {
   echo hi
   return 1
 }
 
-if run myproc {
+if try myproc {
   echo OK
 } else {
   echo failure
@@ -179,10 +179,10 @@ proc is_it_true() {
 #   echo "could be anything really"
 # }
 # Syntax error in expression (near Id.Expr_Bang)
-# to make it work you have to 'run' the proc
+# to make it work you have to 'try' the proc
 # and remove the brackets
 
-if ! run is_it_true {
+if ! try is_it_true {
   echo "could be anything really"
 }
 
@@ -191,7 +191,7 @@ proc err_today() {
   date --wrong-flag
 }
 
-if run err_today {
+if try err_today {
   echo "will never be executed"
 } else {
   # this will also print the proc error
