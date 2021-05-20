@@ -123,7 +123,7 @@ class Pp(_Builtin):
     return status
 
 
-class Push(_Builtin):
+class Append(_Builtin):
   """Push args onto an array.
 
   Note: this could also be in builtins_pure.py?

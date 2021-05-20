@@ -98,8 +98,9 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 ```oil-help-topics
   [Oil Builtins]  oil-cd   oil-shopt     compatible, and takes a block
                   fork   forkwait        Replace & and (), and takes a block
-                  push                   Add elements to end of array
+                  append                 Add elements to end of array
                   pp                     Pretty print interpreter state
+                  push                   Temporary modify global settings
                   write                  Like echo, but with --, -sep, -end
                   oil-read               Buffered I/O with --line, --all, --qsn
                   run                    Re-enable errexit; exit status utils

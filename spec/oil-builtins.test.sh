@@ -1,34 +1,34 @@
 # Oil builtins
 
-#### push onto a=(1 2)
+#### append onto a=(1 2)
 shopt -s parse_at
 a=(1 2)
-push :a '3 4' '5'
+append :a '3 4' '5'
 argv.py @a
-push -- :a 6
+append -- :a 6
 argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
 ['1', '2', '3 4', '5', '6']
 ## END
 
-#### push onto var a = %(1 2)
+#### append onto var a = %(1 2)
 shopt -s parse_at
 var a = %(1 2)
-push a '3 4' '5'  # : is optional
+append a '3 4' '5'  # : is optional
 argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
 ## END
 
-#### push with invalid type
+#### append with invalid type
 s=''
-push :s a b
+append :s a b
 echo status=$?
 ## stdout: status=1
 
-#### push with invalid var name
-push - a b
+#### append with invalid var name
+append - a b
 echo status=$?
 ## stdout: status=2
 

@@ -47,6 +47,7 @@ _NORMAL_BUILTINS = [
     'bind',
 
     # Oil only
+    'append',
     'push',
     # push-registers added below
     'write', 'json',
