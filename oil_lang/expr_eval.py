@@ -509,13 +509,14 @@ class OilEvaluator(object):
       index = self._EvalIndices(node.indices)
       return obj[index]
 
-    # TODO: obj.method() should be separate
+    # Note: This is only for the obj.method() case.  We will probably change
+    # the AST and get rid of getattr().
     if node.tag == expr_e.Attribute:  # obj.attr 
       o = self.EvalExpr(node.obj)
       id_ = node.op.id
       if id_ == Id.Expr_Dot:
+        # Used for .startswith()
         name = node.attr.val
-        # TODO: Does this do the bound method thing we do NOT want?
         return getattr(o, name)
 
       if id_ == Id.Expr_RArrow:  # d->key is like d['key']

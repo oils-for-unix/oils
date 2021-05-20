@@ -83,6 +83,17 @@ git-branch-merged | while read --line {
   # Note: this can't be 'const' because const is dynamic like 'readonly'.  And
   # we don't have block scope.
   var line = _line.strip()  # removing leading space
+
+  # with glob: line ~~ '\**'           (awkward)
+  # with regex: line ~ / %start '*' /  (not terrible, but somewhat complex)
+
+  # Other ideas:
+  # line `startswith` 'a'
+  # line `endswith` 'b'
+
+  # line %startswith 'a'
+  # line %endswith 'b'
+
   if (line != 'master' and not line.startswith('*')) {
     echo $line
   }

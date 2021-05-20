@@ -562,6 +562,12 @@ class Transformer(object):
         while i < n and ISNONTERMINAL(children[i].typ):
           node = self._Trailer(node, children[i])
           i += 1
+        if node.tag_() == expr_e.Attribute:
+          # Support a.startswith(b) but not obj.field
+          attr_node = cast(attribute, node)
+          if attr_node.op.id == Id.Expr_Dot:
+            p_die("obj.field isn't valid, but obj.method() is",
+                  token=attr_node.op)
 
         if i != n:  # ['**' factor]
           op_tok = children[i].tok

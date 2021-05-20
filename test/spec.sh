@@ -921,7 +921,7 @@ oil-word-eval() {
 }
 
 oil-expr() {
-  sh-spec spec/oil-expr.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/oil-expr.test.sh --osh-failures-allowed 6 \
     $OSH_LIST "$@"
 }
 

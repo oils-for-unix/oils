@@ -621,16 +621,11 @@ HI
 ## END
 
 #### obj.method does NOT give you a bound method
-
-# TODO: Not sure how to implement this
-
 var s = 'hi'
 var method = s.upper
 echo $method
-## STDOUT:
-## END
-
-
+## status: 2
+## stdout-json: ""
 
 #### d->key
 var d = {name: 'andy'}

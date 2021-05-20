@@ -214,21 +214,6 @@ write  -sep ' ' @mylist
 1 42 3
 ## END
 
-#### setvar obj.attr = 42 (setattr)
-shopt -s oil:all
-
-# TODO: dicts and list can't have arbitrary attributes set.  But right now
-# regex objects can.  Should we change that?
-
-var myobj = /d+/
-
-setvar myobj.x = 42
-var val = myobj.x
-echo val=$val
-## STDOUT:
-val=42
-## END
-
 #### mixing assignment builtins and Oil assignment
 shopt -s oil:all
 

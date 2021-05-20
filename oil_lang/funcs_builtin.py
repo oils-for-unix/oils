@@ -49,12 +49,16 @@ def _Maybe(obj):
     return []
 
 
-def _Append(obj, arg):
-  obj.append(arg)
+def _Append(L, arg):
+  L.append(arg)
 
 
-def _Extend(obj, arg):
-  obj.extend(arg)
+def _Extend(L, arg):
+  L.extend(arg)
+
+
+def _Pop(L):
+  L.pop()
 
 
 class _Match(object):
@@ -186,7 +190,8 @@ def Init(mem):
 
   SetGlobalFunc(mem, 'append', _Append)
   SetGlobalFunc(mem, 'extend', _Extend)
-  # count, index, insert, pop, remove
+  SetGlobalFunc(mem, 'pop', _Pop)
+  # count, index, insert, remove
 
   #
   # String Methods
@@ -198,7 +203,23 @@ def Init(mem):
   # find, index, cout
   # partition, rpartition: I never seem to use these?
 
-
+  #
+  # Notes on overloaded functions
+  #  L.pop()
+  #  D.pop('key')
+  #
+  # Should we mave multiple dispatch?
+  #
+  # var vals = %(a b)
+  # = concat('--flag=', vals)  # => ['--flag=a', '--flag=b']
+  # = concat(vals, '=')        # => ['a=', 'b=']
+  #
+  # Or should we have broadcast like Julia?
+  # This can also be accomplished with builtin sub?
+  #
+  # write --qsn -- @vals | prefix 'a' | read --lines --qsn :out
+  # write --qsn -- @vals | suffix 'b' | read --lines --qsn :out
+  # 'prefix' and 'suffix' can be like 'awk'?
 
 
   # TODO: ord() should UTF-8 decode its argument
