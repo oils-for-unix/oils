@@ -244,9 +244,9 @@ proc readonly-const {
   echo x=$x
 }
 
-run --assign-status :st eval 'local-var'
+try --assign :st eval 'local-var'
 echo status=$st
-run --assign-status :st eval 'readonly-const' || true
+try --assign :st eval 'readonly-const' || true
 echo status=$st
 
 ## STDOUT:

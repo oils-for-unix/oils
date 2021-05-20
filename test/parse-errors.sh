@@ -614,12 +614,12 @@ EOF
   _error-case 'var x = $(var x = 1))'
 }
 
-push-builtin() {
+append-builtin() {
   set +o errexit
 
   # Unterminated
-  _runtime-parse-error 'push'
-  _runtime-parse-error 'push invalid-'
+  _runtime-parse-error 'append'
+  _runtime-parse-error 'append invalid-'
   #_error-case 'push notarray'  # returns status 1
 }
 
@@ -998,7 +998,7 @@ cases-in-strings() {
   invalid-brace-ranges  # osh/braces.py
 
   oil-language  # oil_lang/
-  push-builtin
+  append-builtin
   blocks
   parse_brace
   regex_literals
