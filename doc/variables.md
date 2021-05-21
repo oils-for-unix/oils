@@ -251,7 +251,7 @@ faster? I think read -line and -all are not consistent.  -->
 
 ### Reminder: Proc Scope is Flat
 
-All local variables in shell functions and procs are in the same scope.  This
+All local variables in shell functions and procs live in the same scope.  This
 includes variables declared in conditional blocks (`if` and `case`) and loops
 (`for` and `while`).
 

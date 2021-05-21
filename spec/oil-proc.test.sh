@@ -226,3 +226,29 @@ f
 g
 ## status: 2
 ## stdout-json: ""
+
+#### Procs defined inside compound statements
+
+# This is allowed for now, but shopt redefine_proc may change it.
+
+shopt --set oil:basic
+
+for x in 1 2 {
+  proc p {
+    echo 'loop'
+  }
+}
+p
+
+{
+  proc p {
+    echo 'brace'
+  }
+}
+p
+
+## STDOUT:
+loop
+brace
+## END
+

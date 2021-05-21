@@ -846,12 +846,10 @@ oil_nested_proc() {
   set +o errexit
 
   _oil-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
-  # We now only check that procs are in the right place, because BLOCKS are
-  # also used in VarChecker
-  #_oil-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
+  _oil-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
 
   # ksh function
-  #_oil-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
+  _oil-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
 
   _oil-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
 
