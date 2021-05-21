@@ -1652,7 +1652,6 @@ class CommandEvaluator(object):
     """
     status = 0
     namespace_ = None  # type: Dict[str, cell]
-    self.mem.PushTemp()  # So variables don't conflict
     try:
       self._Execute(block)  # can raise FatalRuntimeError, etc.
     except _ControlFlow as e:  # A block is more like a function.
@@ -1662,7 +1661,7 @@ class CommandEvaluator(object):
         raise
     finally:
       namespace_ = self.mem.TopNamespace()
-      self.mem.PopTemp()
+
     # This is the thing on self.mem?
     # Filter out everything beginning with _ ?
 

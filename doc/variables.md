@@ -249,6 +249,26 @@ Oil Builtins:
 <!-- TODO: should Oil builtins always behave the same way?  Isn't that a little
 faster? I think read -line and -all are not consistent.  -->
 
+### Reminder: Proc Scope is Flat
+
+All local variables in shell functions and procs are in the same scope.  This
+includes variables declared in conditional blocks (`if` and `case`) and loops
+(`for` and `while`).
+
+    proc p {  
+      for i in 1 2 3 {
+        echo $i
+      }
+      echo $i  # i is still 3
+    }
+
+It also includes Oil's first-class blocks:
+
+    var x = 42
+    cd /tmp {
+      var x = 0  # ERROR: x is already declared
+    }
+
 ## More Details
 
 ### Examples of Place Mutation

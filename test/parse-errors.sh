@@ -907,6 +907,15 @@ oil_var_decl() {
   }
   '
 
+  _oil-parse-error '
+  proc p {
+    var out = 2   # Cannot redeclare out param
+    cd /tmp { 
+      var out = 3
+    }
+  }
+  '
+
   # TODO: We COULD disallow this, but not sure it's necessary
   if false; then
     _oil-parse-error '

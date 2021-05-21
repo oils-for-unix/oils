@@ -87,18 +87,20 @@ block
 status=0
 ## END
 
-#### block has its own scope, e.g. shadows outer vars
+#### block doesn't have its own scope
 shopt -s oil:all
 var x = 1
+echo "x=$x"
 cd / {
   #set y = 5  # This would be an error because set doesn't do dynamic lookup
   var x = 42
-  echo "inner x = $x"
+  echo "x=$x"
 }
-echo "outer x = $x"
+echo "x=$x"
 ## STDOUT:
-inner x = 42
-outer x = 1
+x=1
+x=42
+x=42
 ## END
 
 #### block literal in expression mode: &(echo $PWD)

@@ -680,10 +680,7 @@ class CommandParser(object):
           # Treat { and } more like operators
           if self.c_id == Id.Lit_LBrace:
             if self.allow_block:  # Disabled for if/while condition, etc.
-              blame_tok = _KeywordToken(self.cur_word)
-              # Our own scope for 'var'
-              with ctx_VarChecker(self.var_checker, blame_tok):
-                block = self.ParseBraceGroup()
+              block = self.ParseBraceGroup()
             if 0:
               print('--')
               block.PrettyPrint()

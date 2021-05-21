@@ -538,3 +538,21 @@ myproc FOO=
 inline FOO=
 bar
 ## END
+
+#### cd blocks don't introduce new scopes
+shopt --set oil:basic
+
+var x = 42
+cd / {
+  var y, z = 0, 1
+  echo $x $y $z
+  setvar y = 43
+}
+setvar z = 44
+echo $x $y $z
+
+## STDOUT:
+42 0 1
+42 43 44
+## END
+
