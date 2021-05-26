@@ -50,9 +50,9 @@ _NORMAL_BUILTINS = [
     'append',
     'push',
     # push-registers added below
-    'write', 'json',
-    'pp',
-    'use', 'opts',  # not implemented
+    'write', 'json', 'pp',
+    'module', 'use',
+    'argparse',  # not implemented
     'fopen',
     'fork', 'forkwait',
 ]

@@ -76,8 +76,8 @@ def MakeBuiltinArgv(argv1):
   return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv), None)
 
 
-def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):
-  # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, Proc], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):
+  # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, Proc], Dict[str, bool], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
   b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
 
   b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
@@ -94,6 +94,7 @@ def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):
   b[builtin_i.shift] = builtin_assign.Shift(mem)
 
   b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
+  b[builtin_i.module] = builtin_pure.Module(modules, errfmt)
 
 
 def AddIO(b, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt):
@@ -122,6 +123,7 @@ def AddIO(b, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt):
 def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
             errfmt):
   # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, state.Mem, Dict[str, Proc], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+  """Builtins that run more code."""
 
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
@@ -362,8 +364,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   #
 
   builtins = {}  # type: Dict[int, vm._Builtin]
+  modules = {}  # type: Dict[str, bool]
 
-  AddPure(builtins, mem, procs, mutable_opts, aliases, search_path, errfmt)
+  AddPure(builtins, mem, procs, modules, mutable_opts, aliases, search_path, errfmt)
   AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
 
   builtins[builtin_i.help] = help_builtin

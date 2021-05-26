@@ -193,7 +193,7 @@ def AddOil(b, mem, cmd_ev, errfmt, procs, arena):
 
   b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
   b[builtin_i.use] = builtin_oil.Use(mem, errfmt)
-  b[builtin_i.opts] = builtin_oil.Opts(mem, errfmt)
+  b[builtin_i.argparse] = builtin_oil.ArgParse(mem, errfmt)
 
 
 def Main(lang, arg_r, environ, login_shell, loader, line_input):
@@ -425,13 +425,14 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   #
 
   builtins = {}  # type: Dict[int, vm._Builtin]
+  modules = {}  # type: Dict[str, bool]
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
       ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
-  pure.AddPure(builtins, mem, procs, mutable_opts, aliases, search_path,
-               errfmt)
+  pure.AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
+               search_path, errfmt)
   pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
   AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_state, waiter,
              tracer, search_path, errfmt)

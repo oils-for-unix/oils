@@ -522,3 +522,25 @@ class Echo(vm._Builtin):
       self.f.write('\n')
 
     return 0
+
+
+class Module(vm._Builtin):
+  """module builtin.
+
+  module main || return
+  """
+  def __init__(self, modules, errfmt):
+    # type: (Dict[str, bool], ErrorFormatter) -> None
+    self.modules = modules
+    self.f = mylib.Stdout()
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    _, arg_r = flag_spec.ParseOilCmdVal('module', cmd_val)
+    name, _ = arg_r.ReadRequired2('requires a name')
+    #log('modules %s', self.modules)
+    if name in self.modules:
+      # already defined
+      return 1
+    self.modules[name] = True
+    return 0

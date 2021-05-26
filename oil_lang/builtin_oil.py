@@ -219,10 +219,10 @@ class Env(_Builtin):
   pass
 
 
-class Opts(_Builtin):
+class ArgParse(_Builtin):
   """getopts replacement.
 
-  opts :grep_opts {
+  argparse :grep_opts {
     flag -v --invert Bool "Invert"
     flag -A --after Int "Lines after"
     flag -t --timeout Float "Seconds to wait" { default = 1.0 }

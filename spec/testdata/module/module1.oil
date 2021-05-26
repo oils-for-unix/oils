@@ -1,0 +1,4 @@
+module 'module1' || return
+source $REPO_ROOT/spec/testdata/module/common.oil
+
+echo 'module1'

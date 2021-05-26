@@ -270,6 +270,9 @@ REPR_SPEC = OilFlags('repr', typed=True)
 FORK_SPEC = OilFlags('fork', typed=True)
 FORKWAIT_SPEC = OilFlags('forkwait', typed=True)
 
+# Might want --list at some point
+MODULE_SPEC = OilFlags('module', typed=True)
+
 #
 # Tea
 #

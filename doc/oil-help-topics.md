@@ -106,8 +106,9 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   try                    Re-enable errexit; exit status utils
                   push-registers         Save registers like $?, PIPESTATUS
                   X fopen                Open multiple streams, takes a block
-                  X use                  source with namespace, file-relative 
-                  X opts                 getopts replacement, sets OPT
+                  X module               guard against duplicate 'source'
+                  X use                  change first word lookup
+                  X argparse             getopts replacement, sets OPT
                   X proc-main            main() that dispatches to proc
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv
