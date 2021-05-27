@@ -388,6 +388,16 @@ class MutableOpts(object):
     # type: () -> None
     self._Set(option_i.interactive, True)
 
+  def set_redefine_proc(self):
+    # type: () -> None
+    """For interactive shells."""
+    self._Set(option_i.redefine_proc, True)
+
+  def set_redefine_module(self):
+    # type: () -> None
+    """For interactive shells."""
+    self._Set(option_i.redefine_module, True)
+
   def set_emacs(self):
     # type: () -> None
     self._Set(option_i.emacs, True)

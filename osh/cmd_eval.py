@@ -1168,6 +1168,9 @@ class CommandEvaluator(object):
       elif case(command_e.ShFunction):
         node = cast(command__ShFunction, UP_node)
         # name_spid is node.spids[1].  Dynamic scope.
+        if node.name in self.procs and not self.exec_opts.redefine_proc():
+          e_die("Function %s was already defined (redefine_proc)", node.name,
+              span_id=node.spids[1])
         self.procs[node.name] = Proc(
             node.name, node.spids[1], proc_sig.Open(), node.body, [], True)
 
@@ -1175,6 +1178,10 @@ class CommandEvaluator(object):
 
       elif case(command_e.Proc):
         node = cast(command__Proc, UP_node)
+
+        if node.name.val in self.procs and not self.exec_opts.redefine_proc():
+          e_die("Proc %s was already defined (redefine_proc)", node.name.val,
+              span_id=node.name.span_id)
 
         defaults = None  # type: List[value_t]
         if mylib.PYTHON:

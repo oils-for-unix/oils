@@ -209,6 +209,7 @@ shopt -s parse_triple_dot
 shopt -s parse_triple_quote
 shopt -s pipefail
 shopt -s process_sub_fail
+shopt -u redefine_proc
 shopt -s sigpipe_status_ok
 shopt -s simple_word_eval
 shopt -s strict_argv
@@ -722,3 +723,65 @@ echo finished
  builtin off 141 0
 finished
 ## END
+
+#### redefine_proc for shell functions
+
+f() {
+  echo 1
+}
+echo 'first'
+
+f() {
+  echo 2
+}
+echo 'second'
+
+shopt --set oil:basic
+f() {
+  echo 3
+}
+echo 'third'
+## STDOUT:
+first
+second
+## END
+## status: 1
+
+#### redefine_proc for procs
+
+proc p {
+  echo 1
+}
+echo 'first'
+
+proc p {
+  echo 2
+}
+echo 'second'
+
+shopt --set oil:basic
+proc p {
+  echo 3
+}
+echo 'third'
+## STDOUT:
+first
+second
+## END
+## status: 1
+
+#### redefine_proc is on in interactive shell
+
+$SH -O oil:all -i --rcfile /dev/null -c "
+source $REPO_ROOT/spec/testdata/module/common.oil
+source $REPO_ROOT/spec/testdata/module/redefinition.oil
+log hi
+"
+## STDOUT:
+common
+redefinition
+## END
+## STDERR:
+hi
+## END
+

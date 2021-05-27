@@ -128,6 +128,10 @@ _BASIC_RUNTIME_OPTIONS = [
 
     # Whether status 141 in pipelines is turned into 0
     ('sigpipe_status_ok', False),
+
+    # Can procs and shell functions be redefined?  On in shell, off in Oil
+    # batch, on in interactive shell
+    ('redefine_proc', True),
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
@@ -268,6 +272,9 @@ def _Init(opt_def):
   opt_def.Add('allow_command_sub', default=True)
   # For implementing 'proc'
   opt_def.Add('dynamic_scope', default=True)
+
+  # On in interactive shell
+  opt_def.Add('redefine_module', default=False)
 
   # For disabling strict_errexit while running traps.  Because we run in the
   # main loop, the value can be "off".  Prefix with _ because it's undocumented

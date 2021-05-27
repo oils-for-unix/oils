@@ -557,6 +557,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil/%src' % lang)
 
   if flag.headless:
+    mutable_opts.set_redefine_proc()
+
     # This is like an interactive shell, so we copy some initialization from
     # below.  Note: this may need to be tweaked.
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
@@ -584,6 +586,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   if exec_opts.interactive():
     # bash: 'set -o emacs' is the default only in the interactive shell
     mutable_opts.set_emacs()
+    mutable_opts.set_redefine_proc()
 
     if line_input:
       # NOTE: We're using a different WordEvaluator here.

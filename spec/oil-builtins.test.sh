@@ -500,7 +500,9 @@ foo foo
 ## END
 
 #### module
-module main || return
+shopt --set oil:basic
+
+module 'main' || return 0
 source $REPO_ROOT/spec/testdata/module/common.oil
 source $REPO_ROOT/spec/testdata/module/module1.oil
 ## STDOUT:

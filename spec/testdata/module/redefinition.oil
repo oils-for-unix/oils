@@ -1,0 +1,9 @@
+module 'redefinition' || return 0
+
+echo 'redefinition'
+
+# duplicated definition from common.oil
+log() {
+  echo "$@" >&2
+}
+
