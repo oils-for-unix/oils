@@ -227,11 +227,10 @@ g
 ## status: 2
 ## stdout-json: ""
 
-#### Procs defined inside compound statements
-
-# This is allowed for now, but shopt redefine_proc may change it.
+#### Procs defined inside compound statements (with redefine_proc)
 
 shopt --set oil:basic
+shopt --set redefine_proc
 
 for x in 1 2 {
   proc p {

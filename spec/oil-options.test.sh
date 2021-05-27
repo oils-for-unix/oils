@@ -785,3 +785,19 @@ redefinition
 hi
 ## END
 
+
+#### redefine_module is on in interactive shell
+
+$SH -O oil:all -i --rcfile /dev/null -c "
+source $REPO_ROOT/spec/testdata/module/common.oil
+source $REPO_ROOT/spec/testdata/module/common.oil
+log hi
+"
+## STDOUT:
+common
+common
+## END
+## STDERR:
+[oil -i] Reloading module 'common'
+hi
+## END

@@ -25,7 +25,7 @@ Library file.  Top level has `module`, `source`, `const`, and `proc`.
 
     # lib-foo.oil (no shebang line necessary)
 
-    module lib-foo.oil || return  # module named after file
+    module lib-foo.oil || return 0  # module named after file
     source $_this_dir/lib-other
 
     const G_foo = {myvar: 42}
@@ -41,7 +41,7 @@ Executable file.  Top level the same 4, plus `oil-main` at the bottom.
     #/usr/local/bin/oil
 
     # deploy.oil: Deploy C++ program to a server
-    module main || return  # executable programs use 'main' guard
+    module main || return 0  # executable programs use 'main' guard
 
     source $_this_dir/lib-foo.oil
     source $_this_dir/lib-bar.oil
@@ -110,9 +110,13 @@ TODO: See Interpreter state / data model.
 
 The `$0` dispatch pattern.
 
-### Shell Options `redefine_{const,proc,module}` Expose Name Conflicts
+### Shell Options `redefine_{proc,module}` Expose Name Conflicts
 
 In batch mode, you'll get errors.
+
+But you can iteratively test in interactive mode.
+
+    source mymodule.oil  # 'module' guard will be bypassed in interactive mode
 
 ## Bundling 
 

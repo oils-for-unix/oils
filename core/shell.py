@@ -558,6 +558,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   if flag.headless:
     mutable_opts.set_redefine_proc()
+    mutable_opts.set_redefine_module()
 
     # This is like an interactive shell, so we copy some initialization from
     # below.  Note: this may need to be tweaked.
@@ -587,6 +588,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     # bash: 'set -o emacs' is the default only in the interactive shell
     mutable_opts.set_emacs()
     mutable_opts.set_redefine_proc()
+    mutable_opts.set_redefine_module()
 
     if line_input:
       # NOTE: We're using a different WordEvaluator here.

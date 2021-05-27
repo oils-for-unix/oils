@@ -24,6 +24,7 @@ from core.pyutil import stderr_line
 from core import optview
 from core import state
 from core.pyerror import log
+from core import ui
 from core import vm
 from frontend import args
 from frontend import flag_spec
@@ -35,7 +36,6 @@ from osh import word_compile
 from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
-  from core.ui import ErrorFormatter
   from core.state import MutableOpts, Mem, SearchPath
   from osh.cmd_eval import CommandEvaluator
 
@@ -55,7 +55,7 @@ class Boolean(vm._Builtin):
 
 class Alias(vm._Builtin):
   def __init__(self, aliases, errfmt):
-    # type: (Dict[str, str], ErrorFormatter) -> None
+    # type: (Dict[str, str], ui.ErrorFormatter) -> None
     self.aliases = aliases
     self.errfmt = errfmt
 
@@ -92,7 +92,7 @@ class Alias(vm._Builtin):
 
 class UnAlias(vm._Builtin):
   def __init__(self, aliases, errfmt):
-    # type: (Dict[str, str], ErrorFormatter) -> None
+    # type: (Dict[str, str], ui.ErrorFormatter) -> None
     self.aliases = aliases
     self.errfmt = errfmt
 
@@ -294,7 +294,7 @@ class GetOptsState(object):
   TODO: Handle arg smooshing behavior here too.
   """
   def __init__(self, mem, errfmt):
-    # type: (Mem, ErrorFormatter) -> None
+    # type: (Mem, ui.ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
     self._optind = -1
@@ -345,7 +345,7 @@ class GetOptsState(object):
 
 
 def _GetOpts(spec, argv, my_state, errfmt):
-  # type: (Dict[str, bool], List[str], GetOptsState, ErrorFormatter) -> Tuple[int, str]
+  # type: (Dict[str, bool], List[str], GetOptsState, ui.ErrorFormatter) -> Tuple[int, str]
   current = my_state.GetArg(argv)
   #log('current %s', current)
 
@@ -402,7 +402,7 @@ class GetOpts(vm._Builtin):
     OPTARG - argument
   """
   def __init__(self, mem, errfmt):
-    # type: (Mem, ErrorFormatter) -> None
+    # type: (Mem, ui.ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
 
@@ -529,10 +529,11 @@ class Module(vm._Builtin):
 
   module main || return
   """
-  def __init__(self, modules, errfmt):
-    # type: (Dict[str, bool], ErrorFormatter) -> None
+  def __init__(self, modules, exec_opts, errfmt):
+    # type: (Dict[str, bool], optview.Exec, ui.ErrorFormatter) -> None
     self.modules = modules
-    self.f = mylib.Stdout()
+    self.exec_opts = exec_opts
+    self.errfmt = errfmt
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -541,6 +542,10 @@ class Module(vm._Builtin):
     #log('modules %s', self.modules)
     if name in self.modules:
       # already defined
-      return 1
+      if self.exec_opts.redefine_module():
+        self.errfmt.StderrLine('[oil -i] Reloading module %r' % name)
+        return 0
+      else:
+        return 1
     self.modules[name] = True
     return 0
