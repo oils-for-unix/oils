@@ -119,3 +119,16 @@ b2 = &(echo one; echo two)
 one
 two
 ## END
+
+#### 'builtin' and 'command' with block
+shopt --set oil:basic
+builtin cd / {
+  echo "builtin $PWD"
+}
+command cd / {
+  echo "command $PWD"
+}
+## STDOUT:
+builtin /
+command /
+## END

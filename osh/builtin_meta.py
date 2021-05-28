@@ -157,7 +157,8 @@ class Command(vm._Builtin):
       return status
 
     # shift by one
-    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:], None)
+    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
+                             cmd_val.block)
 
     # If we respected do_fork here instead of passing True, the case
     # 'command date | wc -l' would take 2 processes instead of 3.  But no other
@@ -217,13 +218,13 @@ class RunProc(vm._Builtin):
     argv, spids = arg_r.Rest2()
 
     if len(argv) == 0:
-      raise error.Usage('requires arguments')
+      raise error.Usage('requires arguments', span_id=runtime.NO_SPID)
 
     name = argv[0]
     if name not in self.procs:
       self.errfmt.StderrLine('runproc: no proc named %r' % name)
       return 1
-    cmd_val2 = cmd_value.Argv(argv, spids)
+    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.block)
 
     return self.shell_ex.RunSimpleCommand(cmd_val2, True)
 
