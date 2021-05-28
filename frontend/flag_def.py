@@ -248,10 +248,10 @@ _AddShellOptions(SET_SPEC)
 #
 
 
-RUN_SPEC = OilFlags('run', typed=True)
-RUN_SPEC.Flag('-assign', args.String,
+TRY_SPEC = OilFlags('try_', typed=True)
+TRY_SPEC.Flag('-assign', args.String,
     help='Assign status to this variable, and return 0')
-RUN_SPEC.Flag('-allow-status-01', args.Bool,
+TRY_SPEC.Flag('-allow-status-01', args.Bool,
     help='Return 0 or 1 status values, but fail for others (e.g. for grep)')
 
 # Future directions:
@@ -272,6 +272,10 @@ FORKWAIT_SPEC = OilFlags('forkwait', typed=True)
 
 # Might want --list at some point
 MODULE_SPEC = OilFlags('module', typed=True)
+
+RUNPROC_SPEC = OilFlags('runproc', typed=True)
+# TODO: how to support -h?
+RUNPROC_SPEC.Flag('-help', args.Bool, help='Show all procs')
 
 #
 # Tea

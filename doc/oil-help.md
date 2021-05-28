@@ -427,6 +427,31 @@ Re-enable errexit, and provide fine-grained control over exit codes.
       *) echo 'OK' ;;
     esac
 
+#### runproc
+
+Runs a named proc with the given arguments.  It's ofen useful as the only top
+level statement in a "task file":
+
+    proc p {
+      echo hi
+    }
+    runproc @ARGV
+    
+Like 'builtin' and 'command', it affects the lookup of the first word.
+
+#### module
+
+Registers a name in the global module dict.  Returns 0 if it doesn't exist, or
+1 if it does.
+
+Use it like this in executable files:
+
+    module main || return 0   
+
+And like this in libraries:
+
+    module myfile.oil || return 0   
+
 #### push-registers
 
 Save global registers like $? on a stack.  It's useful for preventing plugins

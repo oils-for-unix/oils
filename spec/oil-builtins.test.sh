@@ -510,3 +510,35 @@ common
 module1
 ## END
 
+
+#### runproc
+f() {
+  write -- f "$@"
+}
+proc p {
+  write -- p "$@"
+}
+runproc f 1 2
+echo status=$?
+
+runproc p 3 4
+echo status=$?
+
+runproc invalid 5 6
+echo status=$?
+
+runproc
+echo status=$?
+
+## STDOUT:
+f
+1
+2
+status=0
+p
+3
+4
+status=0
+status=1
+status=2
+## END

@@ -200,6 +200,34 @@ class Builtin(vm._Builtin):
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
+class RunProc(vm._Builtin):
+
+  def __init__(self, shell_ex, procs, errfmt):
+    # type: (vm._Executor, Dict[str, Proc], ui.ErrorFormatter) -> None
+    self.shell_ex = shell_ex
+    self.procs = procs
+    self.errfmt = errfmt
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
+    attrs, arg_r = flag_spec.ParseOilCmdVal('runproc', cmd_val)
+    arg = arg_types.runproc(attrs.attrs)
+
+    argv, spids = arg_r.Rest2()
+
+    if len(argv) == 0:
+      raise error.Usage('requires arguments')
+
+    name = argv[0]
+    if name not in self.procs:
+      self.errfmt.StderrLine('runproc: no proc named %r' % name)
+      return 1
+    cmd_val2 = cmd_value.Argv(argv, spids)
+
+    return self.shell_ex.RunSimpleCommand(cmd_val2, True)
+
+
 class Try(vm._Builtin):
   """For the 'if myfunc' problem with errexit.
 
@@ -232,12 +260,12 @@ class Try(vm._Builtin):
     # type: (cmd_value__Argv) -> int
 
     # TODO: Also hard usage error here too?
-    attrs, arg_r = flag_spec.ParseOilCmdVal('run', cmd_val)
-    arg = arg_types.run(attrs.attrs)
+    attrs, arg_r = flag_spec.ParseOilCmdVal('try_', cmd_val)
+    arg = arg_types.try_(attrs.attrs)
 
     if arg_r.Peek() is None:
       # HARD ERROR, not e_usage(), because errexit is often disabled!
-      e_die("'run' expected a command to run", status=2)
+      e_die("'try' expected a command to run", status=2)
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.block)

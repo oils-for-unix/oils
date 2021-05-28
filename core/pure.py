@@ -128,6 +128,7 @@ def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
                                                      search_path)
+  builtins[builtin_i.runproc] = builtin_meta.RunProc(shell_ex, procs, errfmt)
   builtins[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, shell_ex, errfmt)
 
 

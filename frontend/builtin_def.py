@@ -55,6 +55,7 @@ _NORMAL_BUILTINS = [
     'argparse',  # not implemented
     'fopen',
     'fork', 'forkwait',
+    'runproc',
 ]
 
 

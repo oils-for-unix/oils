@@ -100,16 +100,16 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   fork   forkwait        Replace & and (), and takes a block
                   append                 Add elements to end of array
                   pp                     Pretty print interpreter state
-                  push                   Temporary modify global settings
+                  X push                 Temporary modify global settings
+                  push-registers         Save registers like $?, PIPESTATUS
                   write                  Like echo, but with --, -sep, -end
                   oil-read               Buffered I/O with --line, --all, --qsn
                   try                    Re-enable errexit; exit status utils
-                  push-registers         Save registers like $?, PIPESTATUS
+                  runproc                Run a proc; use as main entry point
+                  module                 guard against duplicate 'source'
                   X fopen                Open multiple streams, takes a block
-                  X module               guard against duplicate 'source'
                   X use                  change first word lookup
                   X argparse             getopts replacement, sets OPT
-                  X proc-main            main() that dispatches to proc
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv
 X [External Lang] BEGIN   END   when (awk)
@@ -148,6 +148,9 @@ X [Testing]       check
                   xtrace_details (-u)    Disable most tracing with +
                   dashglob (-u)          Disabled to avoid files like -rf
                   expand_aliases (-u)    Whether aliases are expanded
+                  redefine_proc (-u)     Can procs be redefined?
+  [Interactive]   redefine_module        'module' builtin always returns 0
+                  X redefine_const       Can consts be redefined?
   [Simplicity]    ... More Consistent Style
                   simple_echo            echo takes 0 or 1 arguments
                   simple_eval_builtin    eval takes exactly 1 argument
