@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, scope_e, Proc, cmd_value__Argv
+    value, value_e, scope_e, Proc
 )
 from _devbuild.gen.syntax_asdl import sh_lhs_expr, command_e
 from core import error
@@ -152,25 +152,23 @@ class Append(_Builtin):
 
 
 class Use(_Builtin):
-  """use lib, bin, env.  Respects namespaces.
+  """use bin, use dialect to control the 'first word'.
 
-  use lib foo.sh {  # "punning" on block syntax.  1 or 3 words.
-    func1
-    func2 as myalias
-  }
+  Examples:
+    use bin grep sed
+
+    use dialect ninja   # I think it must be in a 'dialect' scope
+    use dialect travis
   """
   def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'use'
 
-    # TODO:
-    # - Does shopt -s namespaces have to be on?
-    #   - I don't think so?  It only affects 'procs', not funcs.
-
     arg = arg_r.Peek()
 
-    # 'use bin' and 'use env' are for static analysis.  No-ops at runtime.
-    if arg in ('bin', 'env'):
+    # 'use bin' can be used for static analysis.  Although could it also
+    # simplify the SearchPath logic?  Maybe ensure that it is memoized?
+    if arg == 'bin':
       return 0
 
     if arg == 'lib':  # OPTIONAL lib
@@ -188,14 +186,6 @@ class Use(_Builtin):
       log('path %s', path)
 
     return 0
-
-
-class Env(_Builtin):
-  """env {} blocks are preferred over 'export'.
-
-  Should be compatible with POSIX, but also take a block.
-  """
-  pass
 
 
 class ArgParse(_Builtin):

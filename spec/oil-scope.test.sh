@@ -556,3 +556,35 @@ echo $x $y $z
 42 43 44
 ## END
 
+#### IFS=: myproc exports when it doesn't need to
+myfunc() {
+  echo myfunc IFS="$IFS"
+}
+
+proc myproc() {
+  echo myproc dollar IFS="$IFS"
+  echo myproc shellvar IFS=$shellvar('IFS')
+}
+
+IFS=: $REPO_ROOT/spec/bin/printenv.py IFS
+
+# default value
+echo "$IFS" | od -A n -t x1
+
+IFS=' z'
+echo IFS="$IFS"
+
+IFS=' x' myfunc
+
+# procs only find GLOBAL values.  Have to use shellvar('IFS') which is perhaps
+# like getvar('IFS', %dynamic)
+IFS=' x' myproc
+
+## STDOUT:
+:
+ 20 09 0a 0a
+IFS= z
+myfunc IFS= x
+myproc dollar IFS= z
+myproc shellvar IFS= x
+## END

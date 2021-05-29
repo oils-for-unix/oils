@@ -37,6 +37,26 @@ if TYPE_CHECKING:
 _ = log
 
 
+def LookupVar(mem, var_name, which_scopes=scope_e.LocalOrGlobal,
+              span_id=runtime.NO_SPID):
+  """Convert to a Python object so we can calculate on it natively."""
+
+  # Lookup WITHOUT dynamic scope.
+  val = mem.GetValue(var_name, which_scopes=which_scopes)
+  if val.tag == value_e.Undef:
+    # TODO: Location info
+    e_die('Undefined variable %r', var_name, span_id=span_id)
+
+  if val.tag == value_e.Str:
+    return val.s
+  if val.tag == value_e.MaybeStrArray:
+    return val.strs  # node: has None
+  if val.tag == value_e.AssocArray:
+    return val.d
+  if val.tag == value_e.Obj:
+    return val.obj
+
+
 class OilEvaluator(object):
   """Shared between arith and bool evaluators.
 
@@ -66,27 +86,9 @@ class OilEvaluator(object):
     assert self.shell_ex is not None
     assert self.word_ev is not None
 
-  def LookupVar(self, var_name, span_id=runtime.NO_SPID):
-    """Convert to a Python object so we can calculate on it natively."""
-
-    # Lookup WITHOUT dynamic scope.
-    val = self.mem.GetValue(var_name, which_scopes=scope_e.LocalOrGlobal)
-    if val.tag == value_e.Undef:
-      # TODO: Location info
-      e_die('Undefined variable %r', var_name, span_id=span_id)
-
-    if val.tag == value_e.Str:
-      return val.s
-    if val.tag == value_e.MaybeStrArray:
-      return val.strs  # node: has None
-    if val.tag == value_e.AssocArray:
-      return val.d
-    if val.tag == value_e.Obj:
-      return val.obj
-
   def EvalPlusEquals(self, lval, rhs_py):
     # type: (lvalue_t, Union[int, float]) -> Union[int, float]
-    lhs_py = self.LookupVar(lval.name)
+    lhs_py = LookupVar(self.mem, lval.name)
     if not isinstance(lhs_py, (int, float)):
       # TODO: Could point at the variable name
       e_die("Object of type %r doesn't support +=", lhs_py.__class__.__name__)
@@ -227,7 +229,7 @@ class OilEvaluator(object):
       raise AssertionError(id_)
 
     if node.tag == expr_e.Var:
-      return self.LookupVar(node.name.val, span_id=node.name.span_id)
+      return LookupVar(self.mem, node.name.val, span_id=node.name.span_id)
 
     if node.tag == expr_e.CommandSub:
       id_ = node.left_token.id
@@ -417,7 +419,7 @@ class OilEvaluator(object):
       values = []
       for i, e in enumerate(node.values):
         if e.tag == expr_e.Implicit:
-          v = self.LookupVar(keys[i])  # {name}
+          v = LookupVar(self.mem, keys[i])  # {name}
         else:
           v = self.EvalExpr(e)
         values.append(v)
@@ -633,7 +635,7 @@ class OilEvaluator(object):
       new_leaf = re.LiteralChars(s, node.token.span_id)
 
     elif node.tag == re_e.Splice:
-      obj = self.LookupVar(node.name.val, span_id=node.name.span_id)
+      obj = LookupVar(self.mem, node.name.val, span_id=node.name.span_id)
       if not isinstance(obj, objects.Regex):
         e_die("Can't splice object of type %r into regex", obj.__class__,
               token=node.name)

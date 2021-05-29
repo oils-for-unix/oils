@@ -196,7 +196,7 @@ X [Testing]       check
   [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
   [Exit Status]   _status   _pipeline_status   _process_sub_status
 X [Wok]           _filename   _line
-X [Builtin Sub]   _buffer
+X [Builtin Sub]   _buffer   _ESCAPER
 ```
 
 <h2 id="lib">
@@ -223,6 +223,7 @@ X [Block]         evalblock()         procs evaluate block to namespace
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()
+  [Introspection] shellvar()
 X [Codecs]        posix-sh-str   oil-str   html-utf8
 X [Hashing]       sha1   sha256 (etc.)
 ```
