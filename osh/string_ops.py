@@ -282,6 +282,9 @@ def DoUnarySuffixOp(s, op, arg, extglob):
         e_die("%s can't have an argument", ui.PrettyId(op.op_id))
       return s.upper()
 
+    elif op.op_id == Id.VOp1_Pipe:
+      e_die("%s not yet implemented", ui.PrettyId(op.op_id))
+
     else:  # e.g. ^ ^^ , ,,
       raise AssertionError(op.op_id)
 

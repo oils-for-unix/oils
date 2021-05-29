@@ -435,28 +435,35 @@ class WordParser(WordEmitter):
                               # ${@[1]} doesn't work, even though slicing does
                 | VarSymbol
 
+    NULLARY_OP  = '@Q' | '@E' | '@P' | '@A' | '@a'  # VOp0
+
     TEST_OP     = '-' | ':-' | '=' | ':=' | '+' | ':+' | '?' | ':?'
     STRIP_OP    = '#' | '##' | '%' | '%%'
     CASE_OP     = ',' | ',,' | '^' | '^^'
+    OIL_OP      = '|'                          # ${x|html}
 
-    UnaryOp     = TEST_OP | STRIP_OP | CASE_OP | ...
+    UnaryOp     = TEST_OP | STRIP_OP | CASE_OP | OIL_OP  # VOp1
     Match       = ('/' | '#' | '%') WORD       # match all / prefix / suffix
     VarExpr     = VarOf
+                | VarOf NULLARY_OP
                 | VarOf UnaryOp WORD
                 | VarOf ':' ArithExpr (':' ArithExpr )?
                 | VarOf '/' Match '/' WORD
 
-    LengthExpr  = '#' VarOf  # can't apply operators after length
+    LengthExpr  = '#' VarOf    # can't apply operators after length
 
     RefOrKeys   = '!' VarExpr  # CAN apply operators after a named ref
                                # ${!ref[0]} vs ${!keys[@]} resolved later
 
     PrefixQuery = '!' NAME ('*' | '@')  # list variable names with a prefix
 
+    BuiltinSub  = '.' WORD+    # ${.myproc 'foo' "bar"}
+
     VarSub      = LengthExpr
                 | RefOrKeys
                 | PrefixQuery
                 | VarExpr
+                | BuiltinSub
 
     NOTES:
     - Arithmetic expressions are used twice, inside subscripts ${a[x+1]} and
@@ -467,18 +474,18 @@ class WordParser(WordEmitter):
       it's also vectorized.
 
     Strictness over bash:
-    echo ${a[0][0]} doesn't do anything useful, so we disallow it from the
-    grammar
-    ! and # prefixes can't be composed, even though named refs can be composed
-    with other operators
-    '#' means 4 different things: length prefix, VarSymbol, UnaryOp to strip a
-    prefix, and it can also be a literal part of WORD.
+    - echo ${a[0][0]} doesn't do anything useful, so we disallow it from the
+      grammar
+    - ! and # prefixes can't be composed, even though named refs can be
+      composed with other operators
+    - '#' means 4 different things: length prefix, VarSymbol, UnaryOp to strip
+      a prefix, and it can also be a literal part of WORD.
 
     From the parser's point of view, the prefix # can't be combined with
     UnaryOp/slicing/matching, and the ! can.  However
 
-    ${a[@]:1:2} is not allowed
-    ${#a[@]:1:2} is allowed, but gives the wrong answer
+    - ${a[@]:1:2} is not allowed
+    - ${#a[@]:1:2} is allowed, but gives the wrong answer
     """
     if d_quoted:
       arg_lex_mode = lex_mode_e.VSub_ArgDQ

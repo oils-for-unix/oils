@@ -446,6 +446,8 @@ def AddKinds(spec):
       ('DCaret',        '^^'),
       ('Comma',         ',' ),
       ('DComma',        ',,'),
+
+      ('Pipe',          '|'),
   ])
 
   # Not in POSIX, but in Bash
