@@ -518,6 +518,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       echo ${a:-x"$@"x}
     """
+    tok = op.tok
     # NOTE: Splicing part_values is necessary because of code like
     # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
     # do_glob/do_elide setting.
@@ -527,7 +528,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         is_falsey = True
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
-        if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
+        if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
                         Id.VTest_ColonQMark, Id.VTest_ColonPlus):
           is_falsey = len(val.s) == 0
         else:
@@ -541,7 +542,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise NotImplementedError(val.tag_())
 
-    if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
+    if tok.id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
         return True
@@ -549,7 +550,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return False
 
     # Inverse of the above.
-    elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
+    elif tok.id in (Id.VTest_ColonPlus, Id.VTest_Plus):
       if is_falsey:
         return False
       else:
@@ -557,7 +558,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return True
 
     # Splice and assign
-    elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
+    elif tok.id in (Id.VTest_ColonEquals, Id.VTest_Equals):
       if is_falsey:
         # Collect new part vals.
         assign_part_vals = []  # type: List[part_value_t]
@@ -595,7 +596,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         return False
 
-    elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
+    elif tok.id in (Id.VTest_ColonQMark, Id.VTest_QMark):
       if is_falsey:
         # The arg is the error mesage
         error_part_vals = []  # type: List[part_value_t]
@@ -609,7 +610,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return False
 
     else:
-      raise NotImplementedError(op.op_id)
+      raise NotImplementedError(tok.id)
 
   def _EvalIndirectArrayExpansion(self, name, index):
     # type: (str, str) -> Optional[value_t]
@@ -780,7 +781,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (value_t, suffix_op__Unary) -> value_t
     assert val.tag != value_e.Undef
 
-    op_kind = consts.GetKind(op.op_id)
+    op_kind = consts.GetKind(op.tok.id)
 
     if op_kind == Kind.VOp1:
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
@@ -1213,7 +1214,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_op = suffix_op
     if suffix_op is not None and suffix_op.tag_() == suffix_op_e.Unary:
       suffix_op = cast(suffix_op__Unary, UP_op)
-      if consts.GetKind(suffix_op.op_id) == Kind.VTest:
+      if consts.GetKind(suffix_op.tok.id) == Kind.VTest:
         undef_check = False
 
     if undef_check:
@@ -1240,7 +1241,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(suffix_op_e.Unary):
           op = cast(suffix_op__Unary, UP_op)
-          if consts.GetKind(op.op_id) == Kind.VTest:
+          if consts.GetKind(op.tok.id) == Kind.VTest:
             # TODO: Also we need bracket_op to form lvalue here?
             # So pass 'part'?
             # bracket_op_e.ArrayIndex

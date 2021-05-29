@@ -109,7 +109,7 @@ module syntax
 
   suffix_op = 
     Nullary %Token  -- ${x@Q} or ${!prefix@} (which also has prefix_op)
-  | Unary(id op_id, word arg_word)  -- e.g. ${v:-default}
+  | Unary(Token tok, word arg_word)  -- e.g. ${v:-default}
     -- TODO: token for / to attribute errors
   | PatSub(word pat, word? replace, id replace_mode)
     -- begin is optional with ${array::1}

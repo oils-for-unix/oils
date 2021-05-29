@@ -351,12 +351,12 @@ class WordParser(WordEmitter):
     op_kind = self.token_kind
 
     if op_kind == Kind.VTest:
-      op_id = self.token_type
+      tok = self.cur_token
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_DollarBrace:
         p_die('Expected } to close ${', token=self.cur_token)
 
-      part.suffix_op = suffix_op.Unary(op_id, arg_word)
+      part.suffix_op = suffix_op.Unary(tok, arg_word)
 
     elif op_kind == Kind.VOp0:
       part.suffix_op = self.cur_token  # Nullary
@@ -364,14 +364,14 @@ class WordParser(WordEmitter):
       self._Peek()
 
     elif op_kind == Kind.VOp1:  # % %% # ## etc.
-      op_id = self.token_type
+      tok = self.cur_token
       # Weird exception that all shells have: these operators take a glob
       # pattern, so they're lexed as VSub_ArgUnquoted, not VSub_ArgDQ
       arg_word = self._ReadVarOpArg(lex_mode_e.VSub_ArgUnquoted)
       if self.token_type != Id.Right_DollarBrace:
         p_die('Expected } to close ${', token=self.cur_token)
 
-      part.suffix_op = suffix_op.Unary(op_id, arg_word)
+      part.suffix_op = suffix_op.Unary(tok, arg_word)
 
     elif op_kind == Kind.VOp2:  # / : [ ]
       if self.token_type == Id.VOp2_Slash:

@@ -2,7 +2,7 @@
 # Corner cases in var sub.  Maybe rename this file.
 
 #### Bad var sub
-echo ${a|}
+echo ${a&}
 ## stdout-json: ""
 ## status: 2
 ## OK bash/mksh status: 1

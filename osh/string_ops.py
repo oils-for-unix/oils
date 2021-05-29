@@ -240,14 +240,16 @@ def DoUnarySuffixOp(s, op, arg, extglob):
     # escaping/unescaping.
     arg = glob_.GlobUnescape(arg)
 
-    if op.op_id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
+    tok = op.tok
+
+    if tok.id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
       # explicit check for non-empty arg (len for mycpp)
       if len(arg) and s.startswith(arg):
         return s[len(arg):]
       else:
         return s
 
-    elif op.op_id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
+    elif tok.id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
       # need explicit check for non-empty arg (len for mycpp)
       if len(arg) and s.endswith(arg):
         return s[:-len(arg)]
@@ -255,38 +257,38 @@ def DoUnarySuffixOp(s, op, arg, extglob):
         return s
 
     # These operators take glob arguments, we don't implement that obscure case.
-    elif op.op_id == Id.VOp1_Comma:  # Only lowercase the first letter
+    elif tok.id == Id.VOp1_Comma:  # Only lowercase the first letter
       if arg != '':
         # TODO: location info for op
-        e_die("%s can't have an argument", ui.PrettyId(op.op_id))
+        e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
       if len(s):
         return s[0].lower() + s[1:]
       else:
         return s
 
-    elif op.op_id == Id.VOp1_DComma:
+    elif tok.id == Id.VOp1_DComma:
       if arg != '':
-        e_die("%s can't have an argument", ui.PrettyId(op.op_id))
+        e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
       return s.lower()
 
-    elif op.op_id == Id.VOp1_Caret:  # Only uppercase the first letter
+    elif tok.id == Id.VOp1_Caret:  # Only uppercase the first letter
       if arg != '':
-        e_die("%s can't have an argument", ui.PrettyId(op.op_id))
+        e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
       if len(s):
         return s[0].upper() + s[1:]
       else:
         return s
 
-    elif op.op_id == Id.VOp1_DCaret:
+    elif tok.id == Id.VOp1_DCaret:
       if arg != '':
-        e_die("%s can't have an argument", ui.PrettyId(op.op_id))
+        e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
       return s.upper()
 
-    elif op.op_id == Id.VOp1_Pipe:
-      e_die("%s not yet implemented", ui.PrettyId(op.op_id))
+    elif tok.id == Id.VOp1_Pipe:
+      e_die("%s not yet implemented", ui.PrettyId(tok.id), token=tok)
 
     else:  # e.g. ^ ^^ , ,,
-      raise AssertionError(op.op_id)
+      raise AssertionError(tok.id)
 
   # For patterns, do fnmatch() in a loop.
   #
@@ -302,7 +304,7 @@ def DoUnarySuffixOp(s, op, arg, extglob):
 
   n = len(s)
 
-  if op.op_id == Id.VOp1_Pound:  # shortest prefix
+  if tok.id == Id.VOp1_Pound:  # shortest prefix
     # 'abcd': match '', 'a', 'ab', 'abc', ...
     i = 0
     while True:
@@ -315,7 +317,7 @@ def DoUnarySuffixOp(s, op, arg, extglob):
       i = _NextUtf8Char(s, i)
     return s
 
-  elif op.op_id == Id.VOp1_DPound:  # longest prefix
+  elif tok.id == Id.VOp1_DPound:  # longest prefix
     # 'abcd': match 'abc', 'ab', 'a'
     i = n
     while True:
@@ -328,7 +330,7 @@ def DoUnarySuffixOp(s, op, arg, extglob):
       i = PreviousUtf8Char(s, i)
     return s
 
-  elif op.op_id == Id.VOp1_Percent:  # shortest suffix
+  elif tok.id == Id.VOp1_Percent:  # shortest suffix
     # 'abcd': match 'abcd', 'abc', 'ab', 'a'
     i = n
     while True:
@@ -341,7 +343,7 @@ def DoUnarySuffixOp(s, op, arg, extglob):
       i = PreviousUtf8Char(s, i)
     return s
 
-  elif op.op_id == Id.VOp1_DPercent:  # longest suffix
+  elif tok.id == Id.VOp1_DPercent:  # longest suffix
     # 'abcd': match 'abc', 'bc', 'c', ...
     i = 0
     while True:
@@ -355,7 +357,7 @@ def DoUnarySuffixOp(s, op, arg, extglob):
     return s
 
   else:
-    raise NotImplementedError(ui.PrettyId(op.op_id))
+    raise NotImplementedError(ui.PrettyId(tok.id))
 
 
 def _AllMatchPositions(s, regex):
