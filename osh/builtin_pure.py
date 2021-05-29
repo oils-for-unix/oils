@@ -611,13 +611,22 @@ class Shvar(vm._Builtin):
     #arg = arg_types.shvar(attrs.attrs)
 
     if not cmd_val.block:
+      # TODO: I think shvar LANG=C should just mutate
+      # But should there be a whitelist?
       raise error.Usage('expected a block', span_id=runtime.NO_SPID)
 
-    # TODO: Create a "restore stack" for current scope (locals)
-    pairs = []  # type: List[env_pair]
-    with state.ctx_Temp(self.mem):
-      self.cmd_ev._EvalTempEnv(pairs, state.SetExport)
-      # namespace
+    pairs = []  # type: List[Tuple[str, str]]
+    args, arg_spids = arg_r.Rest2()
+    if len(args) == 0:
+      raise error.Usage('Expected name=value', span_id=runtime.NO_SPID)
+
+    for i, arg in enumerate(args):
+      name, s = mylib.split_once(arg, '=')
+      if s is None:
+        raise error.Usage('Expected name=value', span_id=arg_spids[i])
+      pairs.append((name, s))
+
+    with state.ctx_Shvar(self.mem, pairs):
       unused = self.cmd_ev.EvalBlock(cmd_val.block)
 
     return 0

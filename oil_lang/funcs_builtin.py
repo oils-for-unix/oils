@@ -111,19 +111,6 @@ class _End(object):
     raise NotImplementedError('_end')
 
 
-class _ShellVar(object):
-  """
-  Do a dynamic lookup?
-  """
-  def __init__(self, mem):
-    self.mem = mem
-
-  def __call__(self, *args):
-    name = args[0]
-    # returns a Python object
-    return expr_eval.LookupVar(self.mem, name, which_scopes=scope_e.Dynamic)
-
-
 def Init(mem):
   # type: (Mem) -> None
   """Populate the top level namespace with some builtin functions."""
@@ -141,8 +128,6 @@ def Init(mem):
   SetGlobalFunc(mem, '_match', _Match(mem))
   SetGlobalFunc(mem, '_start', _Start(mem))
   SetGlobalFunc(mem, '_end', _End(mem))
-
-  SetGlobalFunc(mem, 'shellvar', _ShellVar(mem))
 
   #
   # Borrowed from Python

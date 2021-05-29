@@ -97,7 +97,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 
 ```oil-help-topics
   [Oil Builtins]  oil-cd   oil-shopt     compatible, and takes a block
-                  X shvar                Temporary modify global settings
+                  shvar                  Temporary modify global settings
                   push-registers         Save registers like $?, PIPESTATUS
                   fork   forkwait        Replace & and (), and takes a block
                   append                 Add elements to end of array
@@ -223,7 +223,6 @@ X [Block]         evalblock()         procs evaluate block to namespace
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()
-  [Introspection] shellvar()
 X [Codecs]        posix-sh-str   oil-str   html-utf8
 X [Hashing]       sha1   sha256 (etc.)
 ```

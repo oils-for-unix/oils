@@ -868,6 +868,36 @@ class ctx_Temp(object):
     self.mem.PopTemp()
 
 
+class ctx_Shvar(object):
+  """For shvar LANG=C _ESCAPER=posix-sh-word _DIALECT=ninja """
+
+  def __init__(self, mem, pairs):
+    # type: (Mem, List[Tuple[str, str]]) -> None
+    #log('pairs %s', pairs)
+    self.mem = mem
+    self.restore = []  # List[Tuple[str, value_t]]
+    for name, s in pairs:
+      lval = lvalue.Named(name)
+      # LocalOnly because we are only overwriting the current scope
+      old_val = self.mem.GetValue(name, scope_e.LocalOnly)
+      self.restore.append((lval, old_val))
+      self.mem.SetValue(lval, value.Str(s), scope_e.LocalOnly)
+
+    self.pairs = pairs
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, unused, traceback):
+    # type: (Any, Any, Any) -> None
+    for lval , old_val in self.restore:
+      if old_val.tag_() == value_e.Undef:
+        self.mem.Unset(lval, scope_e.LocalOnly)
+      else:
+        self.mem.SetValue(lval, old_val, scope_e.LocalOnly)
+
+
 class ctx_Registers(object):
   """For $PS1, $PS4, $PROMPT_COMMAND, traps, and headless EVAL."""
 
@@ -1698,8 +1728,8 @@ class Mem(object):
     cell, _ = self._ResolveNameOnly(name, which_scopes)
     return cell
 
-  def Unset(self, lval, strict):
-    # type: (lvalue_t, bool) -> bool
+  def Unset(self, lval, which_scopes=scope_e.Shopt):
+    # type: (lvalue_t, scope_t) -> bool
     """
     Returns:
       Whether the cell was found.
@@ -1720,8 +1750,10 @@ class Mem(object):
       else:
         raise AssertionError()
 
-    cell, name_map, cell_name = self._ResolveNameOrRef(var_name,
-                                                       self.ScopesForWriting())
+    if which_scopes == scope_e.Shopt:
+      which_scopes = self.ScopesForWriting()
+
+    cell, name_map, cell_name = self._ResolveNameOrRef(var_name, which_scopes)
     if not cell:
       return False  # 'unset' builtin falls back on functions
     if cell.readonly:
@@ -1766,9 +1798,11 @@ class Mem(object):
         elif 0 <= index and index < last_index:
           strs[index] = None
         else:
-          # note: we could have unset --strict for this case?
-          # Oil may make it strict.  Although Ousterhout specifically argues
-          # against this for Tcl!
+          # If it's not found, it's not an error.  In other words, 'unset'
+          # ensures that a value doesn't exist, regardless of whether it
+          # existed.  It's idempotent.
+          # (Ousterhout specifically argues that the strict behavior was a
+          # mistake for Tcl!)
           pass
 
       elif case(lvalue_e.Keyed):  # unset 'A["K"]'

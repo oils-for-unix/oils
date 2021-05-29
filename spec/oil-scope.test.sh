@@ -589,20 +589,125 @@ myproc dollar IFS= z
 myproc shellvar IFS= x
 ## END
 
-#### shvar
+#### shvar usage 
+shopt --set oil:basic
+shopt --unset errexit
+
+# no block
+shvar
+echo status=$?
+
+shvar {  # no arg
+  true
+}
+echo status=$?
+
+shvar foo {  # should be name=value
+  true
+}
+echo status=$?
+## STDOUT:
+status=2
+status=2
+status=2
+## END
+
+#### shvar global
+shopt --set oil:basic
+shopt --unset nounset
+
+echo _ESCAPER=$_ESCAPER
+echo _DIALECT=$_DIALECT
+
+shvar _ESCAPER=html _DIALECT=ninja {
+  echo block _ESCAPER=$_ESCAPER
+  echo block _DIALECT=$_DIALECT
+}
+
+echo _ESCAPER=$_ESCAPER
+echo _DIALECT=$_DIALECT
+
+# Now set them
+_ESCAPER=foo
+_DIALECT=bar
+
+echo ___
+
+echo _ESCAPER=$_ESCAPER
+echo _DIALECT=$_DIALECT
+
+shvar _ESCAPER=html _DIALECT=ninja {
+  echo block _ESCAPER=$_ESCAPER
+  echo block _DIALECT=$_DIALECT
+
+  shvar _ESCAPER=nested {
+    echo nested _ESCAPER=$_ESCAPER
+    echo nested _DIALECT=$_DIALECT
+  }
+}
+
+echo _ESCAPER=$_ESCAPER
+echo _DIALECT=$_DIALECT
+
+## STDOUT:
+_ESCAPER=
+_DIALECT=
+block _ESCAPER=html
+block _DIALECT=ninja
+_ESCAPER=
+_DIALECT=
+___
+_ESCAPER=foo
+_DIALECT=bar
+block _ESCAPER=html
+block _DIALECT=ninja
+nested _ESCAPER=nested
+nested _DIALECT=ninja
+_ESCAPER=foo
+_DIALECT=bar
+## END
+
+#### shvar local
+shopt --set oil:basic  # blocks
+shopt --unset simple_word_eval  # test word splitting
+
+proc foo {
+  shvar IFS=x MYTEMP=foo {
+    argv.py $s
+    echo MYTEMP=${MYTEMP:-undef}
+  }
+}
+var s = 'a b c'
+argv.py $s
+foo
+argv.py $s
+echo MYTEMP=${MYTEMP:-undef}
+## STDOUT:
+['a', 'b', 'c']
+['a b c']
+MYTEMP=foo
+['a', 'b', 'c']
+MYTEMP=undef
+## END
+
+#### shvar IFS
 shopt --set oil:basic
 
 proc myproc() {
-  echo myproc dollar IFS="$IFS"
-  echo myproc shellvar IFS=$shellvar('IFS')
+  echo "$IFS" | od -A n -t x1
 
   local mylocal=x
-  push --temp IFS=w {
-    echo IFS="$IFS"
+  shvar IFS=w {
+    echo inside IFS="$IFS"
     echo mylocal="$mylocal"  # I do NOT want a new scope!
   }
+  echo "$IFS" | od -A n -t x1
 }
 
 myproc
 ## STDOUT:
+ 20 09 0a 0a
+inside IFS=w
+mylocal=x
+ 20 09 0a 0a
 ## END

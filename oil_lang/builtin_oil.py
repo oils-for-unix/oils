@@ -35,6 +35,8 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh.cmd_eval import CommandEvaluator
 
+_ = log
+
 
 class _Builtin(vm._Builtin):
   def __init__(self, mem, errfmt):

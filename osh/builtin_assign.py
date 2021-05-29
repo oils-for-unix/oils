@@ -444,9 +444,7 @@ class Unset(vm._Builtin):
     #log('lval %s', lval)
     found = False
     try:
-      # Note: This has 'setvar' semantics.  It could be 'setref' too?
-      # So it composes?
-      found = self.mem.Unset(lval, False)
+      found = self.mem.Unset(lval)  # default scope is scope_e.Shopt
     except error.Runtime as e:
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.
