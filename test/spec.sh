@@ -971,6 +971,11 @@ oil-scope() {
     $OSH_LIST "$@"
 }
 
+oil-var-sub() {
+  sh-spec spec/oil-var-sub.test.sh --osh-failures-allowed 4 \
+    $OSH_LIST "$@"
+}
+
 oil-xtrace() {
   sh-spec spec/oil-xtrace.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"

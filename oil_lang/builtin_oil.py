@@ -129,7 +129,7 @@ class Append(_Builtin):
   Note: this could also be in builtins_pure.py?
   """
   def Run(self, cmd_val):
-    arg, arg_r = flag_spec.ParseOilCmdVal('push', cmd_val)
+    arg, arg_r = flag_spec.ParseOilCmdVal('append', cmd_val)
 
     var_name, var_spid = arg_r.ReadRequired2(
         'requires a variable name')
@@ -149,27 +149,6 @@ class Append(_Builtin):
 
     val.strs.extend(arg_r.Rest())
     return 0
-
-
-class PushRegisters(vm._Builtin):
-  def __init__(self, mem, cmd_ev):
-    # type: (state.Mem, CommandEvaluator) -> None
-    self.mem = mem
-    self.cmd_ev = cmd_ev  # To run blocks
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    #attrs, arg_r = flag_spec.ParseCmdVal('pushregisters', cmd_val)
-    #arg = arg_types.pushregisters(attrs.attrs)
-
-    if not cmd_val.block:
-      raise error.Usage('expected a block')
-
-    with state.ctx_Registers(self.mem):
-      unused = self.cmd_ev.EvalBlock(cmd_val.block)
-
-    # Return the previous value so $? isn't changed
-    return self.mem.last_status[-1]
 
 
 class Use(_Builtin):

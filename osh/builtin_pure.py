@@ -16,7 +16,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import Token
+from _devbuild.gen.syntax_asdl import Token, env_pair
 
 from core import error
 from core.pyerror import e_usage
@@ -549,3 +549,47 @@ class Module(vm._Builtin):
         return 1
     self.modules[name] = True
     return 0
+
+
+class Push(vm._Builtin):
+  def __init__(self, mem, cmd_ev):
+    # type: (state.Mem, CommandEvaluator) -> None
+    self.mem = mem
+    self.cmd_ev = cmd_ev  # To run blocks
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    attrs, arg_r = flag_spec.ParseOilCmdVal('push', cmd_val)
+    arg = arg_types.push(attrs.attrs)
+
+    if not cmd_val.block:
+      raise error.Usage('expected a block')
+
+    pairs = []  # type: List[env_pair]
+    with state.ctx_Temp(self.mem):
+      self.cmd_ev._EvalTempEnv(pairs, state.SetExport)
+      # namespace
+      unused = self.cmd_ev.EvalBlock(cmd_val.block)
+
+    return 0
+
+
+class PushRegisters(vm._Builtin):
+  def __init__(self, mem, cmd_ev):
+    # type: (state.Mem, CommandEvaluator) -> None
+    self.mem = mem
+    self.cmd_ev = cmd_ev  # To run blocks
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    #attrs, arg_r = flag_spec.ParseCmdVal('pushregisters', cmd_val)
+    #arg = arg_types.pushregisters(attrs.attrs)
+
+    if not cmd_val.block:
+      raise error.Usage('expected a block')
+
+    with state.ctx_Registers(self.mem):
+      unused = self.cmd_ev.EvalBlock(cmd_val.block)
+
+    # Return the previous value so $? isn't changed
+    return self.mem.last_status[-1]

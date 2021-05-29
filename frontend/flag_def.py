@@ -262,7 +262,13 @@ TRY_SPEC.Flag('-allow-status-01', args.Bool,
 #   to "replace" 'builtin' and # 'command'
 
 
+APPEND_SPEC = OilFlags('append', typed=True)
+
 PUSH_SPEC = OilFlags('push', typed=True)
+PUSH_SPEC.Flag('-temp', args.String,
+    help='Push a NAME=val binding')
+PUSH_SPEC.Flag('-env', args.String,
+    help='Push a NAME=val binding and set the -x flag')
 
 REPR_SPEC = OilFlags('repr', typed=True)
 

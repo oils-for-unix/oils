@@ -225,8 +225,7 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
 # TODO:
 # - Unicode support: Convert both pattern, string, and replacement to unicode,
 #   then the result back at the end.
-# - Add location info to errors.  Maybe pass spid pair all the way down.
-#   - Compile time errors for [[:space:]] ?
+# - Compile time errors for [[:space:]] ?
 
 def DoUnarySuffixOp(s, op, arg, extglob):
   # type: (str, suffix_op__Unary, str, bool) -> str
@@ -259,7 +258,6 @@ def DoUnarySuffixOp(s, op, arg, extglob):
     # These operators take glob arguments, we don't implement that obscure case.
     elif tok.id == Id.VOp1_Comma:  # Only lowercase the first letter
       if arg != '':
-        # TODO: location info for op
         e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
       if len(s):
         return s[0].lower() + s[1:]
