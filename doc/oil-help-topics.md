@@ -97,11 +97,11 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 
 ```oil-help-topics
   [Oil Builtins]  oil-cd   oil-shopt     compatible, and takes a block
+                  X shvar                Temporary modify global settings
+                  push-registers         Save registers like $?, PIPESTATUS
                   fork   forkwait        Replace & and (), and takes a block
                   append                 Add elements to end of array
                   pp                     Pretty print interpreter state
-                  X push                 Temporary modify global settings
-                  push-registers         Save registers like $?, PIPESTATUS
                   write                  Like echo, but with --, -sep, -end
                   oil-read               Buffered I/O with --line, --all, --qsn
                   try                    Re-enable errexit; exit status utils

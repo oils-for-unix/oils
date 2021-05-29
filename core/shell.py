@@ -194,7 +194,7 @@ def AddOil(b, mem, cmd_ev, errfmt, procs, arena):
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
   b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
 
-  b[builtin_i.use] = builtin_oil.Use(mem, errfmt)
+  b[builtin_i.use] = builtin_pure.Use(mem, errfmt)
   b[builtin_i.argparse] = builtin_oil.ArgParse(mem, errfmt)
 
 

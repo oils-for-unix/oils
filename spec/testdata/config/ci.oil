@@ -1,0 +1,19 @@
+# Similar to .builds/cpp.yaml for sourcehut
+
+use dialect sourcehut
+
+image = 'debian/buster'
+
+packages = %(zip wget)
+
+secrets = %(0123-abcd)
+
+task cpp {
+  cd oil
+  services/toil-worker.sh run-cpp
+}
+
+task publish-html {
+  cd oil
+  services/sourcehut.sh publish-html-assuming-key
+}

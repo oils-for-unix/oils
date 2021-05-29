@@ -552,6 +552,53 @@ class Module(vm._Builtin):
     return 0
 
 
+class Use(vm._Builtin):
+  """use bin, use dialect to control the 'first word'.
+
+  Examples:
+    use bin grep sed
+
+    use dialect ninja   # I think it must be in a 'dialect' scope
+    use dialect travis
+  """
+  def __init__(self, mem, errfmt):
+    # type: (state.Mem, ui.ErrorFormatter) -> None
+    self.mem = mem
+    self.errfmt = errfmt
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r.Next()  # skip 'use'
+
+    arg, arg_spid = arg_r.Peek2()
+    if arg is None:
+      raise error.Usage("expected 'bin' or 'dialect'",
+                        span_id=runtime.NO_SPID)
+    arg_r.Next()
+
+    if arg == 'dialect':
+      dialect = arg_r.Peek()
+      if dialect is None:
+        raise error.Usage('expected dialect name',
+                          span_id=runtime.NO_SPID)
+
+      if dialect != 'TODO':
+        pass
+      return 0
+
+    # 'use bin' can be used for static analysis.  Although could it also
+    # simplify the SearchPath logic?  Maybe ensure that it is memoized?
+    if arg == 'bin':
+      rest = arg_r.Rest()
+      for name in rest:
+        log('bin %s', name)
+      return 0
+
+    raise error.Usage("expected 'bin' or 'dialect'",
+                      span_id=arg_spid)
+
+
 class Shvar(vm._Builtin):
   def __init__(self, mem, cmd_ev):
     # type: (state.Mem, CommandEvaluator) -> None

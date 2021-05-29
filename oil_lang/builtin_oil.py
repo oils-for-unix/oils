@@ -151,43 +151,6 @@ class Append(_Builtin):
     return 0
 
 
-class Use(_Builtin):
-  """use bin, use dialect to control the 'first word'.
-
-  Examples:
-    use bin grep sed
-
-    use dialect ninja   # I think it must be in a 'dialect' scope
-    use dialect travis
-  """
-  def Run(self, cmd_val):
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip 'use'
-
-    arg = arg_r.Peek()
-
-    # 'use bin' can be used for static analysis.  Although could it also
-    # simplify the SearchPath logic?  Maybe ensure that it is memoized?
-    if arg == 'bin':
-      return 0
-
-    if arg == 'lib':  # OPTIONAL lib
-      arg_r.Next()
-
-    # Cosmetic: separator for 'use bin __ grep sed'.  Allowed for 'lib' to be
-    # consistent.
-    arg = arg_r.Peek()
-    if arg == '__':  # OPTIONAL __
-      arg_r.Next()
-
-    # Now import everything.
-    rest = arg_r.Rest()
-    for path in rest:
-      log('path %s', path)
-
-    return 0
-
-
 class ArgParse(_Builtin):
   """getopts replacement.
 
