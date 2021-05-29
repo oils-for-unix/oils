@@ -875,23 +875,31 @@ class ctx_Shvar(object):
     # type: (Mem, List[Tuple[str, str]]) -> None
     #log('pairs %s', pairs)
     self.mem = mem
-    self.restore = []  # List[Tuple[str, value_t]]
-    for name, s in pairs:
-      lval = lvalue.Named(name)
-      # LocalOnly because we are only overwriting the current scope
-      old_val = self.mem.GetValue(name, scope_e.LocalOnly)
-      self.restore.append((lval, old_val))
-      self.mem.SetValue(lval, value.Str(s), scope_e.LocalOnly)
-
-    self.pairs = pairs
+    self.restore = []  # type: List[Tuple[lvalue_t, value_t]]
+    self._Push(pairs)
 
   def __enter__(self):
     # type: () -> None
     pass
 
-  def __exit__(self, type, unused, traceback):
+  def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    for lval , old_val in self.restore:
+    self._Pop()
+
+  # Note: _Push and _Pop are separate methods because the C++ translation
+  # doesn't like when they are inline in __init__ and __exit__.
+  def _Push(self, pairs):
+    # type: (List[Tuple[str, str]]) -> None
+    for name, s in pairs:
+      lval = lvalue.Named(name)  # type: lvalue_t
+      # LocalOnly because we are only overwriting the current scope
+      old_val = self.mem.GetValue(name, scope_e.LocalOnly)
+      self.restore.append((lval, old_val))
+      self.mem.SetValue(lval, value.Str(s), scope_e.LocalOnly)
+
+  def _Pop(self):
+    # type: () -> None
+    for lval, old_val in self.restore:
       if old_val.tag_() == value_e.Undef:
         self.mem.Unset(lval, scope_e.LocalOnly)
       else:
@@ -1728,7 +1736,7 @@ class Mem(object):
     cell, _ = self._ResolveNameOnly(name, which_scopes)
     return cell
 
-  def Unset(self, lval, which_scopes=scope_e.Shopt):
+  def Unset(self, lval, which_scopes):
     # type: (lvalue_t, scope_t) -> bool
     """
     Returns:

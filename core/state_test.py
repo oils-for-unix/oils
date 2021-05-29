@@ -272,7 +272,7 @@ class MemTest(unittest.TestCase):
   def testUnset(self):
     mem = _InitMem()
     # unset a
-    mem.Unset(lvalue.Named('a'), False)
+    mem.Unset(lvalue.Named('a'), scope_e.Shopt)
 
     return  # not implemented yet
 

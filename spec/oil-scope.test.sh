@@ -557,13 +557,14 @@ echo $x $y $z
 ## END
 
 #### IFS=: myproc exports when it doesn't need to
+shopt --set oil:basic
+
 myfunc() {
   echo myfunc IFS="$IFS"
 }
 
 proc myproc() {
-  echo myproc dollar IFS="$IFS"
-  echo myproc shellvar IFS=$shellvar('IFS')
+  echo myproc IFS="$IFS"
 }
 
 IFS=: $REPO_ROOT/spec/bin/printenv.py IFS
@@ -576,17 +577,21 @@ echo IFS="$IFS"
 
 IFS=' x' myfunc
 
-# procs only find GLOBAL values.  Have to use shellvar('IFS') which is perhaps
-# like getvar('IFS', %dynamic)
+# Porblem: procs only find GLOBAL values.
 IFS=' x' myproc
+
+# Oil solution to the problem
+shvar IFS=' x' {
+  myproc
+}
 
 ## STDOUT:
 :
  20 09 0a 0a
 IFS= z
 myfunc IFS= x
-myproc dollar IFS= z
-myproc shellvar IFS= x
+myproc IFS= z
+myproc IFS= x
 ## END
 
 #### shvar usage 

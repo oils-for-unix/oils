@@ -16,7 +16,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import Token, env_pair
+from _devbuild.gen.syntax_asdl import Token
 
 from asdl import runtime
 from core import error
