@@ -48,7 +48,7 @@ _NORMAL_BUILTINS = [
 
     # Oil only
     'append',
-    'push',
+    'shvar',
     # push-registers added below
     'write', 'json', 'pp',
     'module', 'use',

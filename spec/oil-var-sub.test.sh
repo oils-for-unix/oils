@@ -32,7 +32,7 @@ shopt --set oil:basic
 
 x='echo hi 2>&1'
 
-push --temp _ESCAPER=html {
+shvar _ESCAPER=html {
   echo "code $[x]"
 }
 

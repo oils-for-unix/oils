@@ -552,7 +552,7 @@ class Module(vm._Builtin):
     return 0
 
 
-class Push(vm._Builtin):
+class Shvar(vm._Builtin):
   def __init__(self, mem, cmd_ev):
     # type: (state.Mem, CommandEvaluator) -> None
     self.mem = mem
@@ -560,12 +560,13 @@ class Push(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseOilCmdVal('push', cmd_val)
-    arg = arg_types.push(attrs.attrs)
+    attrs, arg_r = flag_spec.ParseOilCmdVal('shvar', cmd_val)
+    #arg = arg_types.shvar(attrs.attrs)
 
     if not cmd_val.block:
       raise error.Usage('expected a block', span_id=runtime.NO_SPID)
 
+    # TODO: Create a "restore stack" for current scope (locals)
     pairs = []  # type: List[env_pair]
     with state.ctx_Temp(self.mem):
       self.cmd_ev._EvalTempEnv(pairs, state.SetExport)
