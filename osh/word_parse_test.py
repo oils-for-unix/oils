@@ -136,12 +136,12 @@ class WordParserTest(unittest.TestCase):
 
     w = _assertReadWord(self, '${var#prefix}')
     self.assertEqual(1, len(w.parts))
-    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).op_id)
+    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).tok.id)
 
     w = _assertReadWord(self, '${!var#prefix}')
     self.assertEqual(1, len(w.parts))
     self.assertEqual(Id.VSub_Bang, _GetPrefixOp(self, w))
-    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).op_id)
+    self.assertEqual(Id.VOp1_Pound, _GetSuffixOp(self, w).tok.id)
 
     _assertReadWordFailure(self, '${#var#prefix}')
 
@@ -281,14 +281,14 @@ class WordParserTest(unittest.TestCase):
 
   def testUnary(self):
     w = _assertReadWord(self, '${var#}')
-    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).op_id)
+    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).tok.id)
     w = _assertReadWord(self, '${var#prefix}')
-    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).op_id)
+    self.assertTrue(Id.VOp1_Pound, _GetSuffixOp(self, w).tok.id)
 
     w = _assertReadWord(self, '${var##}')
-    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).op_id)
+    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).tok.id)
     w = _assertReadWord(self, '${var##prefix}')
-    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).op_id)
+    self.assertTrue(Id.VOp1_DPound, _GetSuffixOp(self, w).tok.id)
 
     w = _assertReadWord(self, '${var%suffix}')
     w = _assertReadWord(self, '${var%%suffix}')

@@ -358,6 +358,20 @@ class WordParser(WordEmitter):
 
       part.suffix_op = suffix_op.Unary(tok, arg_word)
 
+    elif op_kind == Kind.VOpOil:
+      tok = self.cur_token
+      arg_word = self._ReadVarOpArg(arg_lex_mode)
+      if self.token_type != Id.Right_DollarBrace:
+        p_die('Expected } to close ${', token=self.cur_token)
+
+      # This handles ${x|html} and ${x %.3f} now
+      # However I think ${x %.3f} should be statically parsed?  It can enter
+      # the printf lexer modes.
+      ok, arg, quoted = word_.StaticEval(arg_word)
+      if not ok or quoted:
+        p_die('Expected a constant argument', word=arg_word)
+      part.suffix_op = suffix_op.Static(tok, arg)
+
     elif op_kind == Kind.VOp0:
       part.suffix_op = self.cur_token  # Nullary
       self._Next(lex_mode_e.VSub_2)  # Expecting }
@@ -440,13 +454,15 @@ class WordParser(WordEmitter):
     TEST_OP     = '-' | ':-' | '=' | ':=' | '+' | ':+' | '?' | ':?'
     STRIP_OP    = '#' | '##' | '%' | '%%'
     CASE_OP     = ',' | ',,' | '^' | '^^'
-    OIL_OP      = '|'                          # ${x|html}
+    UnaryOp     = TEST_OP | STRIP_OP | CASE_OP
 
-    UnaryOp     = TEST_OP | STRIP_OP | CASE_OP | OIL_OP  # VOp1
-    Match       = ('/' | '#' | '%') WORD       # match all / prefix / suffix
+    OIL_UNARY   = '|' | ' '                 # ${x|html} and ${x %.3f}.
+                                            # SPACE is operator not %
+    Match       = ('/' | '#' | '%') WORD    # match all / prefix / suffix
     VarExpr     = VarOf
                 | VarOf NULLARY_OP
                 | VarOf UnaryOp WORD
+                | VarOf OIL_UNARY STATIC_WORD
                 | VarOf ':' ArithExpr (':' ArithExpr )?
                 | VarOf '/' Match '/' WORD
 
@@ -457,7 +473,7 @@ class WordParser(WordEmitter):
 
     PrefixQuery = '!' NAME ('*' | '@')  # list variable names with a prefix
 
-    BuiltinSub  = '.' WORD+    # ${.myproc 'foo' "bar"}
+    BuiltinSub  = '.' WORD+    # ${.myproc 'builtin' $sub}
 
     VarSub      = LengthExpr
                 | RefOrKeys
@@ -530,6 +546,12 @@ class WordParser(WordEmitter):
 
       else:  # not a prefix, '!' is the variable
         part = self._ParseVarExpr(arg_lex_mode)
+
+    elif ty == Id.VSub_Dot:
+      # Note: this will become a new builtin_sub type, so this method must
+      # return word_part_t rather than braced_var_sub.  I don't think that
+      # should cause problems.
+      p_die('TODO: ${.myproc builtin sub}', token=self.cur_token)
 
     # VS_NAME, VS_NUMBER, symbol that isn't # or !
     elif self.token_kind == Kind.VSub:

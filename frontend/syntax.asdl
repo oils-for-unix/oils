@@ -110,7 +110,8 @@ module syntax
   suffix_op = 
     Nullary %Token  -- ${x@Q} or ${!prefix@} (which also has prefix_op)
   | Unary(Token tok, word arg_word)  -- e.g. ${v:-default}
-    -- TODO: token for / to attribute errors
+    -- Oil's ${x|html} and ${x %.3f} have static arguments
+  | Static(Token tok, string arg)
   | PatSub(word pat, word? replace, id replace_mode)
     -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)

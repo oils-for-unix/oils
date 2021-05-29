@@ -232,6 +232,8 @@ def DoUnarySuffixOp(s, op, arg, extglob):
   # type: (str, suffix_op__Unary, str, bool) -> str
   """Helper for ${x#prefix} and family."""
 
+  tok = op.tok
+
   # Fast path for constant strings.
   if not glob_.LooksLikeGlob(arg):
     # It doesn't look like a glob, but we glob-escaped it (e.g. [ -> \[).  So
@@ -239,8 +241,6 @@ def DoUnarySuffixOp(s, op, arg, extglob):
     # be nice to somehow store the original string rather tahn
     # escaping/unescaping.
     arg = glob_.GlobUnescape(arg)
-
-    tok = op.tok
 
     if tok.id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
       # explicit check for non-empty arg (len for mycpp)
@@ -283,9 +283,6 @@ def DoUnarySuffixOp(s, op, arg, extglob):
       if arg != '':
         e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
       return s.upper()
-
-    elif tok.id == Id.VOp1_Pipe:
-      e_die("%s not yet implemented", ui.PrettyId(tok.id), token=tok)
 
     else:  # e.g. ^ ^^ , ,,
       raise AssertionError(tok.id)

@@ -636,6 +636,7 @@ LEXER_DEF[lex_mode_e.VSub_1] = [
   C('*', Id.VSub_Star),
   C('-', Id.VSub_Hyphen),
   C('?', Id.VSub_QMark),
+  C('.', Id.VSub_Dot),  # ${.myproc builtin sub}
 
   C('}', Id.Right_DollarBrace),
 
@@ -648,6 +649,7 @@ LEXER_DEF[lex_mode_e.VSub_1] = [
 LEXER_DEF[lex_mode_e.VSub_2] = \
     ID_SPEC.LexerPairs(Kind.VTest) + \
     ID_SPEC.LexerPairs(Kind.VOp0) + \
+    ID_SPEC.LexerPairs(Kind.VOpOil) + \
     ID_SPEC.LexerPairs(Kind.VOp1) + \
     ID_SPEC.LexerPairs(Kind.VOp2) + \
     ID_SPEC.LexerPairs(Kind.VOp3) + [

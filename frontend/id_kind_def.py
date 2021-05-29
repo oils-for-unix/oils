@@ -412,6 +412,7 @@ def AddKinds(spec):
       'Star',        # $*
       'Hyphen',      # $-
       'QMark',       # $?
+      'Dot',         # ${.myproc builtin sub}
   ])
 
   spec.AddKindPairs('VTest', [
@@ -446,8 +447,11 @@ def AddKinds(spec):
       ('DCaret',        '^^'),
       ('Comma',         ',' ),
       ('DComma',        ',,'),
+  ])
 
-      ('Pipe',          '|'),
+  spec.AddKindPairs('VOpOil', [
+      ('Pipe',          '|'),  # ${x|html}
+      ('Space',         ' '),  # ${x %.3f}
   ])
 
   # Not in POSIX, but in Bash

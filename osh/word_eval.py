@@ -8,7 +8,7 @@ from _devbuild.gen.syntax_asdl import (
     word, word_e, word_t, compound_word,
     bracket_op_e, bracket_op__ArrayIndex, bracket_op__WholeArray,
     suffix_op_e, suffix_op__PatSub, suffix_op__Slice,
-    suffix_op__Unary,
+    suffix_op__Unary, suffix_op__Static,
     sh_array_literal, single_quoted, double_quoted, simple_var_sub,
     command_sub,
     word_part_e, word_part__ArithSub, word_part__EscapedLiteral,
@@ -1264,6 +1264,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
         elif case(suffix_op_e.Slice):
           op = cast(suffix_op__Slice, UP_op)
           val = self._Slice(val, op, var_name, part)
+
+        elif case(suffix_op_e.Static):
+          op = cast(suffix_op__Static, UP_op)
+          e_die('Not implemented', token=op.tok)
+
+        else:
+          raise AssertionError()
 
     # After applying suffixes, process maybe_decay_array here.
     UP_val = val

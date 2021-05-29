@@ -56,7 +56,8 @@ class VarOpTest(unittest.TestCase):
     # Now add some ops
     part = Tok(Id.Lit_Chars, 'default')
     arg_word = compound_word([part])
-    test_op = suffix_op.Unary(Id.VTest_ColonHyphen, arg_word)
+    op_tok = Tok(Id.VTest_ColonHyphen, ':-')
+    test_op = suffix_op.Unary(op_tok, arg_word)
     unset_sub.suffix_op = test_op
     set_sub.suffix_op = test_op
 
