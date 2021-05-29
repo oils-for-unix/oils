@@ -18,6 +18,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import Token, env_pair
 
+from asdl import runtime
 from core import error
 from core.pyerror import e_usage
 from core.pyutil import stderr_line
@@ -563,7 +564,7 @@ class Push(vm._Builtin):
     arg = arg_types.push(attrs.attrs)
 
     if not cmd_val.block:
-      raise error.Usage('expected a block')
+      raise error.Usage('expected a block', span_id=runtime.NO_SPID)
 
     pairs = []  # type: List[env_pair]
     with state.ctx_Temp(self.mem):
@@ -586,7 +587,7 @@ class PushRegisters(vm._Builtin):
     #arg = arg_types.pushregisters(attrs.attrs)
 
     if not cmd_val.block:
-      raise error.Usage('expected a block')
+      raise error.Usage('expected a block', span_id=runtime.NO_SPID)
 
     with state.ctx_Registers(self.mem):
       unused = self.cmd_ev.EvalBlock(cmd_val.block)

@@ -588,3 +588,21 @@ myfunc IFS= x
 myproc dollar IFS= z
 myproc shellvar IFS= x
 ## END
+
+#### shvar
+shopt --set oil:basic
+
+proc myproc() {
+  echo myproc dollar IFS="$IFS"
+  echo myproc shellvar IFS=$shellvar('IFS')
+
+  local mylocal=x
+  push --temp IFS=w {
+    echo IFS="$IFS"
+    echo mylocal="$mylocal"  # I do NOT want a new scope!
+  }
+}
+
+myproc
+## STDOUT:
+## END
