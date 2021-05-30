@@ -7,6 +7,7 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core.pyerror import e_die
+from oil_lang import expr_eval
 from oil_lang import objects
 
 from typing import Callable, Union, TYPE_CHECKING
@@ -110,6 +111,18 @@ class _End(object):
     raise NotImplementedError('_end')
 
 
+class _Shvar_get(object):
+  """
+  Same signature as _match(), but for start positions
+  """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def __call__(self, *args):
+    name = args[0]
+    return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic)
+
+
 def Init(mem):
   # type: (Mem) -> None
   """Populate the top level namespace with some builtin functions."""
@@ -127,6 +140,8 @@ def Init(mem):
   SetGlobalFunc(mem, '_match', _Match(mem))
   SetGlobalFunc(mem, '_start', _Start(mem))
   SetGlobalFunc(mem, '_end', _End(mem))
+
+  SetGlobalFunc(mem, 'shvar_get', _Shvar_get(mem))
 
   #
   # Borrowed from Python

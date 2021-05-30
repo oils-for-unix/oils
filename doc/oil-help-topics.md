@@ -220,6 +220,7 @@ X [String]        find()   sub()   join()
   [Word]          glob()   maybe()
   [Arrays]        X index()   append()   extend()
   [Assoc Arrays]  @keys()   @values()
+  [Introspection] shvar_get()
 X [Block]         evalblock()         procs evaluate block to namespace
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()

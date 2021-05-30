@@ -728,3 +728,21 @@ inside IFS=w
 mylocal=x
  20 09 0a 0a
 ## END
+
+#### shvar_get()
+
+s='xzx zxz'
+
+proc myproc {
+  echo wrong IFS="$IFS"         # NOT what's used
+  echo shvar IFS=$shvar_get('IFS')  # what IS used: dynamic scope
+  argv.py $s
+}
+
+IFS=x
+IFS=z myproc
+## STDOUT:
+wrong IFS=x
+shvar IFS=z
+['x', 'x ', 'x']
+## END
