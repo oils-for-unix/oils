@@ -78,15 +78,15 @@ shopt --set parse_equals {
     const first_words = %( +proc/task +builtin/{echo,write,printf} )
     # Other syntaxes:
     # - no sigil: proc/task
-    # - % which are like symbols, which could confuse
-    #   const names = %( %proc/task  %builtin/{echo,write,printf} )
+    # - % which are like symbols, would be confusing
     # - other namespaces:
     #   - +alias/myalias
     #   - +option/errexit
     #   - coprocess, container?
     # - shobj_get('+option/errexit') ?  Make it first class?
 
-    const config = source_to_dict(config_path, first_words)
+    # Better name: vm_eval(config_path, first_words)
+    const config = vm_eval(config_path, first_words)
   }
 }
 

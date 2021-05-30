@@ -12,14 +12,15 @@ from oil_lang import objects
 
 from typing import Callable, Union, TYPE_CHECKING
 if TYPE_CHECKING:
+  from core import state
   from oil_lang.objects import ParameterizedArray
-  from core.state import Mem
+  #from osh import cmd_eval
 
 _ = log
 
 
 def SetGlobalFunc(mem, name, func):
-  # type: (Mem, str, Union[Callable, ParameterizedArray, type]) -> None
+  # type: (state.Mem, str, Union[Callable, ParameterizedArray, type]) -> None
   """Used by bin/oil.py to set split(), etc."""
   assert callable(func), func
   mem.SetValue(sh_lhs_expr.Name(name), value.Obj(func), scope_e.GlobalOnly)
@@ -141,8 +142,8 @@ class _BlockToDict(object):
     raise NotImplementedError()
 
 
-class _SourceToDict(object):
-  """ source_to_dict() """
+class _VmEval(object):
+  """ vm_eval() """
   def __init__(self, mem):
     self.mem = mem
 
@@ -153,19 +154,39 @@ class _SourceToDict(object):
     log('source %s', source_path)
     log('words %s', first_words)
 
-    # TODO: Copy the logic for the 'source' builtin
+    # Notes on logic for the 'source' builtin:
     # - no search_path lookup
-    # - dev.ctx_Tracer('source_to_dict')
+    # - dev.ctx_Tracer('vm_eval')
     # - add PushTemp(), and return the namespace like EvalBlock()
     #   - and it should only return the CONSTS?
     #   - and you need location info for further validation
+    # - 'source' uses cmd_ev.mem.  We do NOT want to share that, but we do want
+    #   to share fd_state, because it's the same process.
+
+    # But this is NOT like source because it should use a totally different
+    # VM!  It's a subinterpreter.
+    #
+    # vm_eval() ?
+    # - but it gets references to procs in the parent interpreter.  So it's
+    #   not totally isolated.
+    #
+    # Idea: Instead of 'first_words', should we have a 'predicate' proc that
+    #   returns 0 or 1?  It is a plugin that becomes plugged into
+    #   Executor::RunSimpleCommand()?
+    #   - You want to abstract that a bit
+    # - So this is reflection on executor.builtins and cmd_ev.procs
+    #   - what about cmd_ev.assign_builtins?
+    #
+    # Idea: for untrusted config eval, do we want a process boundary?  I think
+    # pure Oil is pretty safe, even against timing attacks, since there's no
+    # way to tie.
 
     return {'key': 'value'}
     raise NotImplementedError()
 
 
 def Init(mem):
-  # type: (Mem) -> None
+  # type: (state.Mem) -> None
   """Populate the top level namespace with some builtin functions."""
 
   #
@@ -186,7 +207,7 @@ def Init(mem):
 
   SetGlobalFunc(mem, 'block_to_str', _BlockToStr(mem))
   SetGlobalFunc(mem, 'block_to_dict', _BlockToDict(mem))
-  SetGlobalFunc(mem, 'source_to_dict', _SourceToDict(mem))
+  SetGlobalFunc(mem, 'vm_eval', _VmEval(mem))
 
   #
   # Borrowed from Python

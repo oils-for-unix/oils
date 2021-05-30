@@ -308,3 +308,19 @@ setvar L[0] = L
 (List)   [[...], 2, 3]
 ## END
 
+
+#### exit code of var, const, setvar
+var x = $(false)
+echo x=$x status=$?
+
+setvar x = "$(false)/$(echo 42; exit 42)"
+echo x=$x status=$?
+
+const y = "$(false)/$(echo 43; exit 43)/$(echo 44; exit 44)"
+echo y=$y status=$?
+
+## STDOUT:
+x= status=1
+x=/42 status=1
+x=/43/44 status=1
+## END
