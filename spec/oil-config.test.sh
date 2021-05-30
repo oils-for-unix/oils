@@ -74,16 +74,22 @@ task foo {
 
 shopt --set parse_equals { 
   shvar _DIALECT=sourcehut { # use dialect should FAIL if this isn't set
-    # TODO:
-    # - need a way to define 'task' only?
-    # - don't use 'source'?
-    #   - evalpure?
 
-    source $config_path
+    const first_words = %( +proc/task +builtin/{echo,write,printf} )
+    # Other syntaxes:
+    # - no sigil: proc/task
+    # - % which are like symbols, which could confuse
+    #   const names = %( %proc/task  %builtin/{echo,write,printf} )
+    # - other namespaces:
+    #   - +alias/myalias
+    #   - +option/errexit
+    #   - coprocess, container?
+    # - shobj_get('+option/errexit') ?  Make it first class?
+
+    const config = source_to_dict(config_path, first_words)
   }
 }
 
-const config = {key: 'val'}
 json write :config
 
 ## STDOUT:

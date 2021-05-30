@@ -4,6 +4,9 @@ use dialect sourcehut
 
 image = 'debian/buster'
 
+# This should be an error
+image = 'oops'
+
 packages = %(zip wget)
 
 secrets = %(0123-abcd)

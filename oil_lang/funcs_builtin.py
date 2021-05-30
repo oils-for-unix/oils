@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
-from core.pyerror import e_die
+from core.pyerror import e_die, log
 from oil_lang import expr_eval
 from oil_lang import objects
 
@@ -14,6 +14,8 @@ from typing import Callable, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from oil_lang.objects import ParameterizedArray
   from core.state import Mem
+
+_ = log
 
 
 def SetGlobalFunc(mem, name, func):
@@ -112,15 +114,54 @@ class _End(object):
 
 
 class _Shvar_get(object):
-  """
-  Same signature as _match(), but for start positions
-  """
+  """Look up with dynamic scope."""
   def __init__(self, mem):
     self.mem = mem
 
   def __call__(self, *args):
     name = args[0]
     return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic)
+
+
+class _BlockToStr(object):
+  """ block_to_str() """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def __call__(self, *args):
+    raise NotImplementedError()
+
+
+class _BlockToDict(object):
+  """ block_to_dict() """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def __call__(self, *args):
+    raise NotImplementedError()
+
+
+class _SourceToDict(object):
+  """ source_to_dict() """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def __call__(self, *args):
+
+    source_path = args[0]
+    first_words = args[1]
+    log('source %s', source_path)
+    log('words %s', first_words)
+
+    # TODO: Copy the logic for the 'source' builtin
+    # - no search_path lookup
+    # - dev.ctx_Tracer('source_to_dict')
+    # - add PushTemp(), and return the namespace like EvalBlock()
+    #   - and it should only return the CONSTS?
+    #   - and you need location info for further validation
+
+    return {'key': 'value'}
+    raise NotImplementedError()
 
 
 def Init(mem):
@@ -142,6 +183,10 @@ def Init(mem):
   SetGlobalFunc(mem, '_end', _End(mem))
 
   SetGlobalFunc(mem, 'shvar_get', _Shvar_get(mem))
+
+  SetGlobalFunc(mem, 'block_to_str', _BlockToStr(mem))
+  SetGlobalFunc(mem, 'block_to_dict', _BlockToDict(mem))
+  SetGlobalFunc(mem, 'source_to_dict', _SourceToDict(mem))
 
   #
   # Borrowed from Python

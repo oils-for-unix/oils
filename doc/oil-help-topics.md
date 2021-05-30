@@ -221,7 +221,7 @@ X [String]        find()   sub()   join()
   [Arrays]        X index()   append()   extend()
   [Assoc Arrays]  @keys()   @values()
   [Introspection] shvar_get()
-X [Block]         evalblock()         procs evaluate block to namespace
+X [Block]         block_to_str()   block_to_dict()   source_to_dict()
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()
