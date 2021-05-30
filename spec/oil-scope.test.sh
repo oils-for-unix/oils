@@ -557,14 +557,18 @@ echo $x $y $z
 ## END
 
 #### IFS=: myproc exports when it doesn't need to
-shopt --set oil:basic
+shopt --set parse_brace
+
+s='xzx zxz'
 
 myfunc() {
   echo myfunc IFS="$IFS"
+  argv.py $s
 }
 
 proc myproc() {
   echo myproc IFS="$IFS"
+  argv.py $s
 }
 
 IFS=: $REPO_ROOT/spec/bin/printenv.py IFS
@@ -577,7 +581,10 @@ echo IFS="$IFS"
 
 IFS=' x' myfunc
 
-# Porblem: procs only find GLOBAL values.
+# Problem: $IFS in procs only finds GLOBAL values.  But when actually
+# splitting, $IFS is a 'shvar' which respects DYNAMIC scope.
+# - TODO: shvar_get('IFS')
+
 IFS=' x' myproc
 
 # Oil solution to the problem
@@ -590,8 +597,11 @@ shvar IFS=' x' {
  20 09 0a 0a
 IFS= z
 myfunc IFS= x
+['', 'z', 'z', 'z']
 myproc IFS= z
+['', 'z', 'z', 'z']
 myproc IFS= x
+['', 'z', 'z', 'z']
 ## END
 
 #### shvar usage 
@@ -678,6 +688,7 @@ shopt --unset simple_word_eval  # test word splitting
 
 proc foo {
   shvar IFS=x MYTEMP=foo {
+    echo IFS="$IFS"
     argv.py $s
     echo MYTEMP=${MYTEMP:-undef}
   }
@@ -689,6 +700,7 @@ argv.py $s
 echo MYTEMP=${MYTEMP:-undef}
 ## STDOUT:
 ['a', 'b', 'c']
+IFS=x
 ['a b c']
 MYTEMP=foo
 ['a', 'b', 'c']
