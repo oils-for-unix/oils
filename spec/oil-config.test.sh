@@ -3,16 +3,11 @@
 # The "COWS" pattern
 
 
-#### use builtin
+#### use bin
 use
 echo status=$?
 use z
 echo status=$?
-
-use dialect
-echo dialect status=$?
-use dialect foo
-echo dialect status=$?
 
 use bin
 echo bin status=$?
@@ -22,11 +17,36 @@ echo bin status=$?
 ## STDOUT:
 status=2
 status=2
-dialect status=2
-dialect status=0
 bin status=0
 bin status=0
 ## END
+
+#### use dialect
+shopt --set parse_brace
+
+use dialect
+echo status=$?
+
+use dialect ninja
+echo status=$?
+
+shvar _DIALECT=oops {
+  use dialect ninja
+  echo status=$?
+}
+
+shvar _DIALECT=ninja {
+  use dialect ninja
+  echo status=$?
+}
+
+## STDOUT:
+status=2
+status=1
+status=1
+status=0
+## END
+
 
 #### CI config example
 shopt --set oil:basic

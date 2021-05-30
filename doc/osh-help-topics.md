@@ -163,7 +163,7 @@ X [Unsupported]   enable
 
 ```osh-help-topics
   [Shell Options] SHELLOPTS   X BASHOPTS
-  [Other Env]     HOME   PATH   IFS
+  [Other Env]     HOME   PATH
 ```
 
 
@@ -186,8 +186,9 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
                   X COMP_TYPE   COMP_ARGV
   [cd]            PWD   OLDPWD   X CDPATH
   [getopts]       OPTIND   OPTARG   X OPTERR
-  [read]          REPLY   IFS
+  [read]          REPLY
   [Functions]     X RANDOM   X SECONDS
+  [Shell Vars]    IFS   X LANG
 ```
 
 <h2 id="plugin">

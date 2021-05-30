@@ -16,6 +16,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.runtime_asdl import scope_e, value_e, value__Str
 from _devbuild.gen.syntax_asdl import Token
 
 from asdl import runtime
@@ -34,7 +35,7 @@ from qsn_ import qsn
 from mycpp import mylib
 from osh import word_compile
 
-from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.state import MutableOpts, Mem, SearchPath
@@ -578,14 +579,26 @@ class Use(vm._Builtin):
     arg_r.Next()
 
     if arg == 'dialect':
-      dialect = arg_r.Peek()
-      if dialect is None:
+      expected, e_spid = arg_r.Peek2()
+      if expected is None:
         raise error.Usage('expected dialect name',
                           span_id=runtime.NO_SPID)
 
-      if dialect != 'TODO':
-        pass
-      return 0
+      UP_actual = self.mem.GetValue('_DIALECT', scope_e.Dynamic)
+      if UP_actual.tag_() == value_e.Str:
+        actual = cast(value__Str, UP_actual).s
+        if actual == expected:
+          return 0  # OK
+        else:
+          self.errfmt.Print_(
+              'Expected dialect %r, got %r' % (expected, actual),
+              span_id=e_spid)
+
+          return 1
+      else:
+        # Not printing expected value
+        self.errfmt.Print_('Expected dialect %r' % expected, span_id=e_spid)
+        return 1
 
     # 'use bin' can be used for static analysis.  Although could it also
     # simplify the SearchPath logic?  Maybe ensure that it is memoized?

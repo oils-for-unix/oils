@@ -107,8 +107,8 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   try                    Re-enable errexit; exit status utils
                   runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
+                  use                    change first word lookup
                   X fopen                Open multiple streams, takes a block
-                  X use                  change first word lookup
                   X argparse             getopts replacement, sets OPT
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtsv
@@ -194,9 +194,10 @@ X [Testing]       check
                   ARGV   ENV   OPT
   [Platform]      OIL_VERSION
   [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
+  [Shell Vars]    _ESCAPE   _DIALECT
   [Exit Status]   _status   _pipeline_status   _process_sub_status
 X [Wok]           _filename   _line
-X [Builtin Sub]   _buffer   _ESCAPER
+X [Builtin Sub]   _buffer
 ```
 
 <h2 id="lib">
