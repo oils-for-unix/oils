@@ -85,8 +85,8 @@ shopt --set parse_equals {
     #   - coprocess, container?
     # - shobj_get('+option/errexit') ?  Make it first class?
 
-    # Better name: vm_eval(config_path, first_words)
-    const config = vm_eval(config_path, first_words)
+    # TODO: This should be bin/oven --source
+    const config = _vm_eval(config_path, first_words)
   }
 }
 

@@ -143,7 +143,7 @@ class _BlockToDict(object):
 
 
 class _VmEval(object):
-  """ vm_eval() """
+  """ _vm_eval() """
   def __init__(self, mem):
     self.mem = mem
 
@@ -207,7 +207,7 @@ def Init(mem):
 
   SetGlobalFunc(mem, 'block_to_str', _BlockToStr(mem))
   SetGlobalFunc(mem, 'block_to_dict', _BlockToDict(mem))
-  SetGlobalFunc(mem, 'vm_eval', _VmEval(mem))
+  SetGlobalFunc(mem, '_vm_eval', _VmEval(mem))
 
   #
   # Borrowed from Python
