@@ -8,7 +8,7 @@ import sys
 
 from asdl import runtime
 from core import error
-from core import pure
+from core import shell_native
 from core.pyerror import log
 from core import pyutil
 from core.pyutil import stderr_line
@@ -36,7 +36,8 @@ def main(argv):
   arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
 
   try:
-    status = pure.Main('osh', arg_r, environ, login_shell, loader, None)
+    status = shell_native.Main('osh', arg_r, environ, login_shell, loader,
+                               None)
     return status
   except error.Usage as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())

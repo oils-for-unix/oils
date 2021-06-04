@@ -22,7 +22,7 @@ from core import completion
 from core import main_loop
 from core import pyos
 from core import process
-from core import pure
+from core import shell_native
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
@@ -77,10 +77,10 @@ def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
   # type: (cmd_eval.CommandEvaluator, builtin_comp.Complete, completion.Lookup) -> None
 
   # register builtins and words
-  complete_builtin.Run(pure.MakeBuiltinArgv(['-E', '-A', 'command']))
+  complete_builtin.Run(shell_native.MakeBuiltinArgv(['-E', '-A', 'command']))
   # register path completion
   # Add -o filenames?  Or should that be automatic?
-  complete_builtin.Run(pure.MakeBuiltinArgv(['-D', '-A', 'file']))
+  complete_builtin.Run(shell_native.MakeBuiltinArgv(['-D', '-A', 'file']))
 
   # TODO: Move this into demo/slow-completion.sh
   if 1:
@@ -250,7 +250,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   help_builtin = builtin_misc.Help(loader, errfmt)
   if flag.help:
-    help_builtin.Run(pure.MakeBuiltinArgv(['%s-usage' % lang]))
+    help_builtin.Run(shell_native.MakeBuiltinArgv(['%s-usage' % lang]))
     return 0
   if flag.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
@@ -433,9 +433,10 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
       ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
-  pure.AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
-               search_path, errfmt)
-  pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
+  shell_native.AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
+                       search_path, errfmt)
+  shell_native.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx,
+                     errfmt)
   AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_state, waiter,
              tracer, search_path, errfmt)
 
@@ -455,7 +456,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
 
-  assign_b = pure.InitAssignmentBuiltins(mem, procs, errfmt)
+  assign_b = shell_native.InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
 
@@ -485,9 +486,10 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
-  pure.AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases,
-               search_path, errfmt)
-  pure.AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt)
+  shell_native.AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases,
+                       search_path, errfmt)
+  shell_native.AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev,
+                        errfmt)
   # Another block builtin
   builtins[builtin_i.json] = builtin_oil.Json(mem, cmd_ev, errfmt)
 

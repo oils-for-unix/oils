@@ -1,9 +1,8 @@
 #!/usr/bin/env python2
 """
-core/pure.py -- Pure shell interpreter without I/O.
+core/shell_native.py -- Subset of core/shell.py that we translate to C++.
 
-Note that this is a modified version of core/shell.py.  Maybe consolidate
-them.
+TODO: consolidate with core/shell.py.
 """
 from __future__ import print_function
 

@@ -10,10 +10,10 @@
 ./core/main_loop.py
 ./core/optview.py
 ./core/process.py
-./core/pure.py
 ./core/pyerror.py
 ./core/pyos.py
 ./core/pyutil.py
+./core/shell_native.py
 ./core/state.py
 ./core/ui.py
 ./core/util.py

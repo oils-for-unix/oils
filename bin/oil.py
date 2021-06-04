@@ -37,7 +37,7 @@ from core import error
 from core import main_loop
 from core import shell
 from core import optview
-from core import pure
+from core import shell_native
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
@@ -237,7 +237,7 @@ def AppBundleMain(argv):
     if first_arg in ('-h', '--help'):
       errfmt = None  # not needed here
       help_builtin = builtin_misc.Help(loader, errfmt)
-      help_builtin.Run(pure.MakeBuiltinArgv(['bundle-usage']))
+      help_builtin.Run(shell_native.MakeBuiltinArgv(['bundle-usage']))
       return 0
 
     if first_arg in ('-V', '--version'):
@@ -263,8 +263,8 @@ def AppBundleMain(argv):
 
     return status
 
-  elif main_name == 'osh-pure':
-    # TODO: pure.Main()
+  elif main_name == 'oven':
+    # TODO: oven.Main()
     pass
 
   elif main_name == 'oshc':
