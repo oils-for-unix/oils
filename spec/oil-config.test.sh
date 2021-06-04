@@ -85,7 +85,9 @@ shopt --set parse_equals {
     #   - coprocess, container?
     # - shobj_get('+option/errexit') ?  Make it first class?
 
-    # TODO: This should be bin/oven --source
+    # TODO: This should be bin/oven --source foo_dialect.oil -- foo.oil
+    # Do we also need --source-after?  or -c after?
+
     const config = _vm_eval(config_path, first_words)
   }
 }

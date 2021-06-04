@@ -44,8 +44,8 @@ readonly PY27=Python-2.7.13
 
 readonly PREPARE_DIR=_deps/cpython-full
 
-# Used by misc/bin.sh and opy/build.sh
-readonly OIL_SYMLINKS=(oil oilc osh oshc tea sh true false readlink)
+# Used by devtools/bin.sh and opy/build.sh
+readonly OIL_SYMLINKS=(oil oilc osh oshc oven tea sh true false readlink)
 readonly OPY_SYMLINKS=(opy opyc)
 
 

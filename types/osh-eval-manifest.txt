@@ -9,6 +9,7 @@
 ./core/executor.py
 ./core/main_loop.py
 ./core/optview.py
+./core/oven.py
 ./core/process.py
 ./core/pyerror.py
 ./core/pyos.py

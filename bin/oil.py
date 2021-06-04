@@ -37,9 +37,10 @@ from core import error
 from core import main_loop
 from core import shell
 from core import optview
-from core import shell_native
+from core import oven
 from core import pyutil
 from core.pyutil import stderr_line
+from core import shell_native
 from core import state
 from core import ui
 from core.pyerror import log
@@ -256,16 +257,13 @@ def AppBundleMain(argv):
     main_name = main_name[1:]
 
   if main_name in ('osh', 'sh'):
-    # TODO:
-    # - Initialize a different shell if line_input isn't present
     status = shell.Main('osh', arg_r, posix.environ, login_shell,
                         loader, line_input)
-
     return status
 
   elif main_name == 'oven':
-    # TODO: oven.Main()
-    pass
+    status = oven.Main('osh', arg_r, posix.environ, False, loader, None)
+    return status
 
   elif main_name == 'oshc':
     arg_r.Next()

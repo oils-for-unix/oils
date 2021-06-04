@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 """
-core/shell_native.py -- Subset of core/shell.py that we translate to C++.
-
-TODO: consolidate with core/shell.py.
+core/oven.py: Pure evaluator, for config files.
 """
 from __future__ import print_function
 
@@ -385,9 +383,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
 
-  shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, builtins, search_path,
-      ext_prog, waiter, tracer, job_state, fd_state, errfmt)
+  shell_ex = NullExecutor(exec_opts, mutable_opts, procs, builtins)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
@@ -489,3 +485,85 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status
+
+
+class NullExecutor(vm._Executor):
+  def __init__(self, exec_opts, mutable_opts, procs, builtins):
+    # type: (optview.Exec, state.MutableOpts, Dict[str, Proc], Dict[int, vm._Builtin]) -> None
+    vm._Executor.__init__(self)
+    self.exec_opts = exec_opts
+    self.mutable_opts = mutable_opts
+    self.procs = procs
+    self.builtins = builtins
+
+  def RunBuiltin(self, builtin_id, cmd_val):
+    # type: (int, cmd_value__Argv) -> int
+    """Run a builtin.  Also called by the 'builtin' builtin."""
+
+    builtin_func = self.builtins[builtin_id]
+
+    try:
+      status = builtin_func.Run(cmd_val)
+    except error.Usage as e:
+      status = 2
+    finally:
+      pass
+    return status
+
+  def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
+    # type: (cmd_value__Argv, bool, bool) -> int
+    argv = cmd_val.argv
+    span_id = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
+
+    arg0 = argv[0]
+
+    builtin_id = consts.LookupSpecialBuiltin(arg0)
+    if builtin_id != consts.NO_INDEX:
+      return self.RunBuiltin(builtin_id, cmd_val)
+
+    # Copied from core/executor.py
+    if call_procs:
+      proc_node = self.procs.get(arg0)
+      if proc_node is not None:
+        if (self.exec_opts.strict_errexit() and 
+            self.mutable_opts.ErrExitIsDisabled()):
+          # TODO: make errfmt a member
+          #self.errfmt.Print_('errexit was disabled for this construct',
+          #                   span_id=self.mutable_opts.errexit.spid_stack[0])
+          #stderr_line('')
+          e_die("Can't run a proc while errexit is disabled. "
+                "Use 'catch' or wrap it in a process with $0 myproc",
+                span_id=span_id)
+
+        # NOTE: Functions could call 'exit 42' directly, etc.
+        status = self.cmd_ev.RunProc(proc_node, argv[1:])
+        return status
+
+    builtin_id = consts.LookupNormalBuiltin(arg0)
+    if builtin_id != consts.NO_INDEX:
+      return self.RunBuiltin(builtin_id, cmd_val)
+
+    # See how many tests will pass
+    #if mylib.PYTHON:
+    if 0:  # osh_eval.cc will pass 1078 rather than 872 by enabling
+      import subprocess
+      try:
+        status = subprocess.call(cmd_val.argv)
+      except OSError as e:
+        log('Error running %s: %s', cmd_val.argv, e)
+        return 1
+      return status
+
+    log('Unhandled SimpleCommand')
+    f = mylib.Stdout()
+    #ast_f = fmt.DetectConsoleOutput(f)
+    # Stupid Eclipse debugger doesn't display ANSI
+    ast_f = fmt.TextOutput(f)
+    tree = cmd_val.PrettyTree()
+
+    ast_f.FileHeader()
+    fmt.PrintTree(tree, ast_f)
+    ast_f.FileFooter()
+    ast_f.write('\n')
+
+    return 0
