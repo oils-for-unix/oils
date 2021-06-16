@@ -372,7 +372,11 @@ def HighlightCode(s, default_highlighter):
             slash_code_left, slash_code_right = \
                 html.ReadUntilEndTag(it, tag_lexer, 'code')
 
-            if css_class == 'language-sh-prompt':
+            if css_class == 'language-none':
+              # Allow ```none
+              pass
+
+            elif css_class == 'language-sh-prompt':
               # Here's we're KEEPING the original <pre><code>
               # Print everything up to and including <pre><code language="...">
               out.PrintUntil(code_start_pos)
@@ -472,22 +476,27 @@ def ExtractCode(s, f):
         if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
 
           css_class = tag_lexer.GetAttr('class')
-          code_start_pos = end_pos
+          # Skip code blocks that look like ```foo
+          # Usually we use 'oil-sh' as the default_highlighter, and all those
+          # code blocks should be extracted.  TODO: maybe this should be
+          # oil-language?
+          if css_class is None:
+            code_start_pos = end_pos
 
-          out.SkipTo(code_start_pos)
-          out.Print('# block %d' % block_num)
-          out.Print('\n')
+            out.SkipTo(code_start_pos)
+            out.Print('# block %d' % block_num)
+            out.Print('\n')
 
-          slash_code_left, slash_code_right = \
-              html.ReadUntilEndTag(it, tag_lexer, 'code')
+            slash_code_left, slash_code_right = \
+                html.ReadUntilEndTag(it, tag_lexer, 'code')
 
-          text = html.ToText(s, code_start_pos, slash_code_left)
-          out.SkipTo(slash_code_left)
+            text = html.ToText(s, code_start_pos, slash_code_left)
+            out.SkipTo(slash_code_left)
 
-          out.Print(text)
-          out.Print('\n')
+            out.Print(text)
+            out.Print('\n')
 
-          block_num += 1
+            block_num += 1
 
     pos = end_pos
 

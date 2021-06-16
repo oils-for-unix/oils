@@ -321,7 +321,15 @@ help-cards() {
 
 tour() {
   split-and-render doc/oil-language-tour.md
+
+  # Check that the code runs
   bin/oil _tmp/code-blocks/oil-language-tour.txt
+
+  # My own dev tools
+  if test -d ~/vm-shared; then
+    local path=_release/VERSION/doc/oil-language-tour.html 
+    cp -v $path ~/vm-shared/$path
+  fi
 }
 
 make-dirs() {

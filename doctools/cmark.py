@@ -262,6 +262,7 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
   html = md2html(in_file.read())
 
   if use_fastlex:
+    # Note: extract code BEFORE doing the HTML highlighting.
     if opts.code_block_output:
       with open(opts.code_block_output, 'w') as f:
         f.write('# %s: code blocks extracted from Markdown/HTML\n\n' % opts.code_block_output)
@@ -276,7 +277,8 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
     # Stages of transformation.
     html = oil_doc.ExpandLinks(html)
 
-    html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
+    if 1:
+      html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
 
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
