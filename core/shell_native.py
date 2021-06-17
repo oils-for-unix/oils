@@ -13,7 +13,6 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
 
-from asdl import format as fmt
 from asdl import runtime
 
 from core import alloc
@@ -22,18 +21,17 @@ from core import error
 from core import executor
 from core import main_loop
 from core import process
-from core.pyerror import e_usage
+from core.pyerror import e_usage, log
+_ = log
 from core import pyos
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
 from core import ui
 from core import util
-from core.pyerror import log, e_die
 from core import vm
 
 from frontend import args
-from frontend import consts
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from frontend import flag_spec

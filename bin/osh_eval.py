@@ -15,6 +15,7 @@ from core import pyutil
 from core.pyutil import stderr_line
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
+_ = oven
 _ = flag_def
 
 import posix_ as posix

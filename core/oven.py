@@ -17,7 +17,6 @@ from asdl import runtime
 from core import alloc
 from core import dev
 from core import error
-from core import executor
 from core import main_loop
 from core import process
 from core.pyerror import e_usage
