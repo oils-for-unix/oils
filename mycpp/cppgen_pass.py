@@ -29,6 +29,11 @@ class UnsupportedException(Exception):
     pass
 
 
+def _SkipAssignment(var_name):
+  """Skip _ = log and unused = log"""
+  return var_name == '_' or var_name.startswith('unused')
+
+
 def _GetCTypeForCast(type_expr):
   if isinstance(type_expr, MemberExpr):
     subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
@@ -1164,7 +1169,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       for i, (lval_item, item_type) in enumerate(zip(lval_items, item_types)):
         #self.log('*** %s :: %s', lval_item, item_type)
         if isinstance(lval_item, NameExpr):
-          if lval_item.name == '_':
+          if _SkipAssignment(lval_item.name):
             continue
 
           item_c_type = get_c_type(item_type)
@@ -1186,7 +1191,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.decl and self.indent == 0 and len(o.lvalues) == 1:
           lval = o.lvalues[0]
           c_type = get_c_type(self.types[lval])
-          if not lval.name.startswith('_'):
+          if not _SkipAssignment(lval.name):
             self.decl_write('extern %s %s;\n', c_type, lval.name)
 
         # I think there are more than one when you do a = b = 1, which I never
@@ -1207,7 +1212,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if self.indent == 0:
           assert isinstance(lval, NameExpr), lval
-          if lval.name == '_':  # Skip _ = log
+          if _SkipAssignment(lval.name):
             return
 
           self.log('    GLOBAL List/Dict: %s', lval.name)
@@ -1304,7 +1309,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         if isinstance(lval, NameExpr):
-          if lval.name == '_':  # Skip _ = log
+          if _SkipAssignment(lval.name):
             return
 
           lval_type = self.types[lval]
