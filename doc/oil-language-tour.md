@@ -14,10 +14,6 @@ Rememnber, Oil is for Python and JavaScript programmers who avoid shell!  See
 the [project FAQ](//www.oilshell.org/blog/2021/01/why-a-new-shell.html) for
 more background.
 
-TODO:
-
-- Oil Language Influences
-
 <div id="toc">
 </div>
 
@@ -62,26 +58,76 @@ With rich Python-like expressions on the right:
 
 ### Complex Example
 
-## Feelings, Concepts, Sublanguages
+TODO
 
-- A Feel for Oil's Syntax.
-- Syntactic Concepts: command vs. expressions
-- Sublanguages (lexer modes)
+## Concept: Three (or Four) Interleaved Sublanguages
 
-Example: pipe character
+This document describes Oil as 3 interleaved **sublanguages**
 
-- string language: usually literal
+1. **Words** are expressions for strings, and arrays of strings.  This includes
+   substitutions like `$(hostname)` and globs like `*.sh`.
+2. **Commands** provide control flow (`if` and `for`), abstraction (`proc`),
+   I/O (pipelines), and more.
+   - Commands in Oil can also take Ruby-like blocks, e.g. `cd /tmp { echo $PWD
+     }`.
+3. **Expressions** are borrowed literally from Python.  This is a primary thing
+   that Oil adds to the Unix shell.
+
+There are also *shell builtins* like `cd` and `read`, each of which has a small
+"flag language", and may take a Ruby-like block.
+
+For example, the `|` character means different things in different places.
+
 - word language: no meaning, syntax error (e.g. in for loop)
   - or `${x|html}` ?  That is another mini-language.
 - command language: pipelines
 - expression language: means |
 
-Sublanguages:
+If you're a conceptual person, you may want to read [Syntactic
+Concepts](syntactic-concepts.html) first.
 
-- string, word, command, expression
-  - var sub is a minor language?  But | means something
+(If you know C, you may remember that it has expressions, statements, and type
+expressions, i.e. *expr*, *stmt*, *decl*.  This is roughly analogous to Oil's
+sublanguages.)
 
-## The Command Sublanguage
+## The Word Language: Expressions for (Arrays of) Strings
+
+### String Literals: Three Types of Quotes
+
+Strings appear in words, but also in expressions.
+
+#### Single- and Double-Quoted
+
+#### C-style, Multiline
+
+- Double quoted: They can have substitutions with ${} $[] etc.
+
+
+### Substitution and Splicing
+
+- variable sub - `$var`
+  - what about `${var:-default}` and so forth?
+- command sub - `$(hostname)`
+- expression sub - `$[1 + 2 * 3]`
+- TODO: builtin sub
+
+### Inline Function Calls
+
+- splicing `@myarray`
+- inline function calls like `@split(x)` and `$join()`
+
+### Brace Expansion
+
+This prints andy@example.com and bob@example.com:
+
+    write {andy,bob}@example.com   
+
+### Globs
+
+    # If nothing matches, evaluates to empty list
+    echo *.py    
+
+## The Command Language: Control Flow, Abstraction, I/O
 
 ### Simple Commands
 
@@ -206,43 +252,7 @@ Some builtins take blocks directly:
     #  mycopy y z  # ignore errors
     #}
 
-## String Literals
-
-Strings appear in words, but also in expressions.
-
-### Single- and Double-Quoted
-
-### C-style, Multiline
-
-- Double quoted: They can have substitutions with ${} $[] etc.
-
-## The Word Sublanguage
-
-### Substitution and Splicing
-
-- variable sub - `$var`
-  - what about `${var:-default}` and so forth?
-- command sub - `$(hostname)`
-- expression sub - `$[1 + 2 * 3]`
-- TODO: builtin sub
-
-### Inline Function Calls
-
-- splicing `@myarray`
-- inline function calls like `@split(x)` and `$join()`
-
-### Brace Expansion
-
-This prints andy@example.com and bob@example.com:
-
-    write {andy,bob}@example.com   
-
-### Globs
-
-    # If nothing matches, evaluates to empty list
-    echo *.py    
-
-## Python-like Expressions
+## The Expression Language: Python-like Types
 
 TODO: link docs
 
@@ -326,6 +336,7 @@ Oil is a clean language!  With these concepts
 Contrast:
 
 - [Oil Language Idioms](idioms.html) - Oil side-by-side with shell.
+- [Oil Language Influences](language-influences.html)
 - *A Tour of the Oil project*. TODO: Describe Oil, OSH, oven, the shell runtime,
   headless shell, etc.
 

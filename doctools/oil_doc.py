@@ -357,7 +357,10 @@ def HighlightCode(s, default_highlighter):
                 html.ReadUntilEndTag(it, tag_lexer, 'code')
 
             if default_highlighter is not None:
-              if default_highlighter == 'oil-sh':
+              # TODO: Refactor this to remove duplication with
+              # language-{sh-prompt,oil-sh} below
+
+              if default_highlighter in ('sh-prompt', 'oil-sh'):
                 out.PrintUntil(code_start_pos)
 
                 # Using ShPromptPlugin because it does the comment highlighting we want!
@@ -376,7 +379,7 @@ def HighlightCode(s, default_highlighter):
               # Allow ```none
               pass
 
-            elif css_class == 'language-sh-prompt':
+            elif css_class in ('language-sh-prompt', 'language-oil-sh'):
               # Here's we're KEEPING the original <pre><code>
               # Print everything up to and including <pre><code language="...">
               out.PrintUntil(code_start_pos)

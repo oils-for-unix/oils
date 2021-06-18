@@ -1,6 +1,5 @@
 ---
 in_progress: yes
-default_highlighter: oil-sh
 ---
 
 Examples of HTML Plugins
@@ -35,21 +34,57 @@ it in the front matter like this:
     My Title
     ========
 
-Right now we only allow `oil-sh`, which is a generic formatter that works for
-both shell and Oil code (detail: it's the same as `sh-prompt` for now).  This
-is what we use in [idioms.html](idioms.html) and [known
-differences](known-differences.html).
-
 ## Syntax Highlighting With Fenced Code Blocks
 
-### sh-prompt
+### sh-prompt 
+
+Highlights the `$` line.  For example, this input
+
+    ```sh-prompt
+    $ echo hi   # comment
+    hi
+    ```
+
+produces
 
 ```sh-prompt
 $ echo hi   # comment
 hi
 ```
 
-### Pygments
+### oil-sh
+
+A generic formatter that works for both shell and Oil code.  It's used in
+[idioms.html](idioms.html), [known differences](known-differences.html), and is
+now the default for the Oil blog.
+
+(Detail: it's the same as `sh-prompt` for now.  We might want to do something
+smarter.)
+
+### none (Explicit Override)
+
+To override the default highlighter with none:
+
+    ```none
+    $ echo 'no syntax highlighting'
+    ```
+
+Result:
+
+```none
+$ echo 'no syntax highlighting'
+```
+
+### Pygments Lexers
+
+Use any pygments lexer:
+
+    ```python
+    x = 42
+    print(x, file=sys.stderr)
+    ```
+
+produces
 
 ```python
 x = 42
@@ -58,25 +93,43 @@ print(x, file=sys.stderr)
 
 ### Plugins We Should Have
 
+- oil and osh.  *A Tour of Oil* could use it to show which code blocks can be
+  extracted and run.
 - Side-by-side sh and Oil
 - Side-by-side PCRE and Eggex
 - sh-session - How to replace the data?
 
 A shell session could look like this:
 
-<div shell="sh">
+    ```session-bash
+    $ echo one
+    one
 
-```
-$ echo one
-$ echo two
-```
+    $ for x in foo bar; do
+    >   echo $x
+    > done
+    foo
+    bar
+    ```
 
-</div>
+or
+
+    ```session-oil
+    $ echo one
+    one
+
+    $ for x in foo bar {
+    .   echo $x
+    . }
+    foo
+    bar
+    ```
 
 Embeddings:
 
 - Embed Image Preview of Web Page?
 - Embed Github Commit?
+  - hashdiv has this for stories
 - Graphviz
   - LaTeX (although I don't really use it)
 
