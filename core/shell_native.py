@@ -22,7 +22,7 @@ from core import executor
 from core import main_loop
 from core import process
 from core.pyerror import e_usage, log
-_ = log
+unused1 = log
 from core import pyos
 from core import pyutil
 from core.pyutil import stderr_line
@@ -33,7 +33,7 @@ from core import vm
 
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
-_ = flag_def
+unused2 = flag_def
 from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
