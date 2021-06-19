@@ -67,7 +67,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)
                   block-expr    &(echo $PWD)
-                  builtin-sub   ${.myproc arg1}  @{.otherproc arg1}
+                  builtin-sub   ${.myproc arg1}  @{.otherproc $x $y}
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
                   re-compound   ~   (group)   <capture>   sequence
@@ -108,10 +108,11 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
                   use                    change first word lookup
+                  X describe             Test harness
                   X fopen                Open multiple streams, takes a block
                   X argparse             getopts replacement, sets OPT
                   X log   X die          common functions (polyfill)
-  [Data Formats]  json   X qtsv
+  [Data Formats]  json   X qtt
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 X [Testing]       check
@@ -158,10 +159,11 @@ X [Testing]       check
                   X simple_trap          Function name only
   [Oil Breaking]  ... The Full Oil Language
                   X parse_amp            ls &2 > /dev/null, disallow >& <&
+                  X parse_brackets       lazy arg list: qtt | where [size > 42]
                   parse_at_all           @ starting any word is an operator
                   parse_equals           x = 'val' (for cleaner config blocks)
-                  parse_backslash (-u)   Bad backslashes in $'' and c''
-                  parse_backticks (-u)   Legacy syntax `echo hi`
+                  parse_backslash (-u)    Bad backslashes in $''
+                  parse_backticks (-u)    Legacy syntax `echo hi`
                   parse_dollar (-u)      Is $ allowed for \$?  Maybe $/d+/
                   parse_ignored (-u)     Parse, but ignore, certain redirects
                   X copy_env (-u)        Use $[ENV->PYTHONPATH] when false
@@ -194,7 +196,7 @@ X [Testing]       check
                   ARGV   ENV   OPT
   [Platform]      OIL_VERSION
   [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
-  [Shell Vars]    _ESCAPE   _DIALECT
+  [Shell Vars]    X _ESCAPE   _DIALECT
   [Exit Status]   _status   _pipeline_status   _process_sub_status
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer

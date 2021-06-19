@@ -119,11 +119,38 @@ or
     one
 
     $ for x in foo bar {
-    .   echo $x
-    . }
+    >   echo $x
+    > }
     foo
     bar
     ```
+
+<!--
+Workflow:
+- You should write this directly in Markdown.  Even the output.  So you know
+  what you expect.
+- Syntax highlighter:
+  - $ and > lines prefixes in bold, with the code in blue
+  - the rest of the output in black
+- Verifier
+  - Will extract:
+    1. sequences of lines that begin with $ and continue with >
+    2. expected output (not beginning with $ or >)
+  - It will run those in a CLEAN working directory, one after the other
+    - maybe it inserts 'echo __MAGIC_DELIMITER__ between them?
+    - Or you could use the headless shell!  To preserve state!
+- And then it will diff the actual output vs. the expected output
+
+Another idea: PS2 should lead with the same number of spaces as PS1:
+
+oil$ for x in foo bar {
+   .   echo $x
+   . }
+foo
+bar
+
+This looks cleaner.
+-->
 
 Embeddings:
 

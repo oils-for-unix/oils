@@ -6,91 +6,118 @@ in_progress: true
 A Tour of the Oil Language
 ==========================
 
-This doc describes the Oil language from a "clean slate" perspective.
-It doesn't assume you know how to program in shell, although shell users will
-see similarities and simplifications.
+This doc describes the [Oil language]($xref:oil-language) from a "clean slate"
+perspective.  Knowledge of Unix shell isn't assumed, but shell users will see
+similarities, simplifications, and upgrades.
 
-Rememnber, Oil is for Python and JavaScript programmers who avoid shell!  See
-the [project FAQ](//www.oilshell.org/blog/2021/01/why-a-new-shell.html) for
-more background.
+Remember, Oil is our upgrade path from [bash]($xref).  It's also for Python and
+JavaScript programmers who avoid shell!  See the [project
+FAQ](//www.oilshell.org/blog/2021/01/why-a-new-shell.html) for more background.
 
 <div id="toc">
 </div>
 
 ## Preliminaries
 
-You start Oil just like you'd start bash, fish, or Python:
+You start Oil just like you'd start bash or Python:
 
 <!-- oil-sh below skips code block extraction, since it doesn't run -->
 
-```none
+```sh-prompt
 bash$ oil                # assuming it's installed
 
 oil$ echo 'hello world'  # command typed into Oil
 hello world
 ```
 
-In the sections below, we'll save space by showing output in comments:
+If you want a compatible shell, type `osh` instead of `oil`.  This doc only
+covers the latter.
 
-    echo 'hello world'       # prints 'hello world'
+In the sections below, we'll save space by showing output in comments, with
+`=>`:
+
+    echo 'hello world'       # => hello world
+
+Multi-line output is shown like this:
+
+    echo one
+    echo two
+    # =>
+    # one
+    # two
+
 
 ## Examples
 
 ### Hello World
 
-Of course, you can also type the commands into a file `hello.oil`.  This is a
-complete Oil program, which is identical to a shell program:
+You can also type the commands into a file `hello.oil`.  This is a complete Oil
+program, which is identical to a shell program:
 
-    echo 'hello world'     # prints 'hello world'
+    echo 'hello world'     # => hello world
 
-But Oil has `const` and `var` keywords:
+Unlike shell, Oil has `const` and `var` keywords:
 
     const name = 'world'
-    echo "hello $name"     # prints 'hello world'
+    echo "hello $name"     # => hello world
 
 With rich Python-like expressions on the right:
 
     var x = 42             # an integer, not a string
-    setvar x = min(x, 0)   # mutate a var with setvar
+    setvar x = min(x, 1)   # mutate a var with setvar
 
     setvar x += 5          # Increment by 5
-    echo $x                # prints '5'
+    echo $x                # => 6
 
 ### Complex Example
 
 TODO
 
-## Concept: Three (or Four) Interleaved Sublanguages
+## Concept: Three Sublanguages (and more)
 
-This document describes Oil as 3 interleaved **sublanguages**
+Oil is best explained as three interleaved languages:
 
-1. **Words** are expressions for strings, and arrays of strings.  This includes
-   substitutions like `$(hostname)` and globs like `*.sh`.
-2. **Commands** provide control flow (`if` and `for`), abstraction (`proc`),
-   I/O (pipelines), and more.
-   - Commands in Oil can also take Ruby-like blocks, e.g. `cd /tmp { echo $PWD
-     }`.
-3. **Expressions** are borrowed literally from Python.  This is a primary thing
-   that Oil adds to the Unix shell.
+1. **Words** are expressions for strings, and arrays of strings.  This
+   includes:
+   - literals like `$'line\n'`
+   - substitutions like `$(hostname)`,
+   - globs like `*.sh`, and more.
+2. **Commands** are for
+   - control flow (`if`, `for`),
+   - abstraction (`proc`),
+   - I/O (pipelines), and more.
+3. **Expressions** on typed data are borrowed literally from Python, with some
+   JavaScript influence.  Oil's thesis is that *shell should be more like the
+   dynamic languages that "won"*.
+   - Lists: `['python', 'shell']` or `%(python shell)`
+   - Dicts: `{alice: 10, bob: 30}`
 
-There are also *shell builtins* like `cd` and `read`, each of which has a small
-"flag language", and may take a Ruby-like block.
+As an example, the `|` character means something different in each context:
 
-For example, the `|` character means different things in different places.
+- In the word language, it's only valid in a literal string like `'|'`, `"|"`,
+  or `\|`.  (It's also used in `${x|html}`, which formats a string.)
+- In the command language, it's the pipeline operator, as in `ls | wc -l`
+- In the expression language, it's the bitwise OR operator, as in Python and
+  JavaScript.
 
-- word language: no meaning, syntax error (e.g. in for loop)
-  - or `${x|html}` ?  That is another mini-language.
-- command language: pipelines
-- expression language: means |
+There are also **shell builtins** like `cd` and `read`.  They take flags like
+`cd -L` and `read --lines`, which are a bit like a language.  Some builtins and
+procs take Ruby-like block, like `cd /tmp { echo $PWD }`.
 
-If you're a conceptual person, you may want to read [Syntactic
-Concepts](syntactic-concepts.html) first.
-
-(If you know C, you may remember that it has expressions, statements, and type
-expressions, i.e. *expr*, *stmt*, *decl*.  This is roughly analogous to Oil's
-sublanguages.)
+If you're a conceptual person, skimming [Syntactic
+Concepts](syntactic-concepts.html) may help you understand the examples that
+follow.
 
 ## The Word Language: Expressions for (Arrays of) Strings
+
+Let's start with the word language.  The command
+
+    write hi ${z:-'default'}
+
+is composed of three words.  Words can also appear in expressions, like:
+
+    var y = ${z:-'default'}
+    var mylist = split(y)
 
 ### String Literals: Three Types of Quotes
 
