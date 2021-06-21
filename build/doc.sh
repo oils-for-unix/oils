@@ -15,6 +15,12 @@ set -o errexit
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 export OIL_VERSION  # for quick_ref.py
 
+THIS_DIR=$(readlink -f $(dirname $0))
+readonly THIS_DIR
+REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
+readonly REPO_ROOT
+
+
 log() {
   echo "$@" 1>&2
 }
@@ -323,7 +329,12 @@ tour() {
   split-and-render doc/oil-language-tour.md
 
   # Check that the code runs
-  bin/oil _tmp/code-blocks/oil-language-tour.txt
+  local tmp=_tmp/tour
+  rm -r -f $tmp
+  mkdir -p $tmp
+  pushd $tmp
+  $REPO_ROOT/bin/oil $REPO_ROOT/_tmp/code-blocks/oil-language-tour.txt
+  popd
 
   # My own dev tools
   if test -d ~/vm-shared; then
