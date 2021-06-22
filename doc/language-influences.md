@@ -152,6 +152,18 @@ The `@` character comes from Perl (and PowerShell):
 Perl can be viewed as a mixture of shell, awk, and sed.  Oil is a similar
 agglomeration of languages, but it's statically parsed.
 
+### Julia
+
+Multiline strings in Oil use similar whitespace stripping rules:
+
+    proc p {
+      # Because leading and trailing space are stripped, this is 2 lines long
+      var foods = '''
+      peanut
+      coconut
+      '''
+    }
+
 <!--
 
 TODO: autovivification from Perl/awk.  Is this setvar?

@@ -106,7 +106,6 @@ readonly MARKDOWN_DOCS=(
   #project-tour
   oil-language-tour
 
-  oil-overview
   oil-options
   oil-keywords
   oil-builtins
