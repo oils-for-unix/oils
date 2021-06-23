@@ -16,6 +16,7 @@ language]($xref:oil-language).  Each section has snippets labeled *No* and
   [POSIX]($xref:posix-shell-spec) and [bash]($xref).
 
 [QSN]: qsn.html
+[QTT]: qtt.html
 
 <!-- cmark.py expands this -->
 <div id="toc">
@@ -118,10 +119,10 @@ Note that `{1..3}` works in bash and Oil, but the numbers must be constant.
 
 In other words, avoid *groveling through backslashes and spaces* in shell.  
 
-Instead, emit and consume the [QSN][] and QTSV interchange formats.
+Instead, emit and consume the [QSN][] and [QTT][] interchange formats.
 
 - QSN is a JSON-like format for byte string literals
-- QTSV is a convention for embedding QSN in TSV files (not yet implemented)
+- QTT is a convention for embedding QSN in TSV files (not yet implemented)
 
 Custom parsing and serializing should be limited to "the edges" of your Oil
 programs.
@@ -145,13 +146,13 @@ builtins](io-builtins.html) respect.  (doc in progress)
 ### More Strategies For Structured Data
 
 - **Wrap** and Adapt External Tools.  Parse their output, and emit [QSN][] and
-  QTSV.
+  [QTT][].
   - These can be one-off, "bespoke" wrappers in your program, or maintained
     programs.  Use the `proc` construct and `flagspec`!
   - Example: [uxy](https://github.com/sustrik/uxy) wrappers.
   - TODO: Examples written in Oil and in other languages.
 - **Patch** Existing Tools.
-   - Enhance GNU grep, etc. to emit [QSN][] and QTSV.  Add a `--qsn` flag.
+   - Enhance GNU grep, etc. to emit [QSN][] and [QTT][].  Add a `--qsn` flag.
 - **Write Your Own** Structured Versions.
   - For example, you can write a structured subset of `ls` in Python with
     little effort.
@@ -159,7 +160,7 @@ builtins](io-builtins.html) respect.  (doc in progress)
 <!--
 
   ls -q and -Q already exist, but --qsn is probably fine
-  or --qtsv
+  or --qtt
 -->
 
 ## The `write` Builtin Is Simpler Than `printf` and `echo`

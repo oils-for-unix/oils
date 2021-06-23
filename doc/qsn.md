@@ -95,10 +95,11 @@ to be parsed.
   - `ls` has to display untrusted filenames.
   - `env` has to display untrusted byte strings.  (Most versions of `env` don't
     handle newlines well.)
-- As a building block for larger specifications, like [QTSV](qtsv.html).
+- As a building block for larger specifications, like [QTT][].
 - To transmit arbitrary bytes over channels that can only represent ASCII or
   UTF-8 (e.g. e-mail, Twitter).
 
+[QTT]: qtt.html
 [surrogate pairs]: https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF
 [coreutils]: https://www.gnu.org/software/coreutils/quotes.html
 
@@ -189,7 +190,7 @@ QSN for many applications, like printing filenames in a terminal.
 QSN decoders must enforce (at least) these syntax errors:
 
 - Literal newline or tab in a string.  Should be `\t` or `\n`.  (The lack of
-  literal tabs and newlines is essential for [QTSV](qtsv.html).)
+  literal tabs and newlines is essential for [QTT][].)
 - Invalid character escape, e.g. `\z`
 - Invalid hex escape, e.g. `\xgg`
 - Invalid unicode escape, e.g. `\u{123` (incomplete)
@@ -244,7 +245,7 @@ Comparison with Python's `repr()`:
   filenames with special characters*
 - [In-band signaling][in-band] is the fundamental problem with filenames and
 terminals.  Code (control codes) and data are intermingled.
-- [QTSV](qtsv.html) is a cleanup of CSV/TSV, built on top of QSN.
+- [QTT][] is a cleanup of CSV/TSV, built on top of QSN.
 
 [coreutils-quotes]: https://www.gnu.org/software/coreutils/quotes.html
 

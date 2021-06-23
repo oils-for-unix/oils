@@ -90,7 +90,7 @@ readonly MARKDOWN_DOCS=(
   shell-idioms
   oil-language-faq
   qsn
-  qtsv
+  qtt
   language-influences
   oil-vs-python
   syntactic-concepts
@@ -103,8 +103,7 @@ readonly MARKDOWN_DOCS=(
   index
   what-is-oil
 
-  # TODO: describe 2 languages, headless mode, etc.
-  #project-tour
+  project-tour
   oil-language-tour
 
   oil-options

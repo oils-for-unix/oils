@@ -15,6 +15,8 @@ language.  It's **our upgrade path from bash**.
 ## Preliminaries
 
 - [Why Use Oil?](/why.html)  This document is on the home page.
+- [A Tour of the Oil Project](project-tour.html).  It's a big project with
+  several components to understand!
 - [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
   tarball.
 
@@ -36,8 +38,8 @@ Reference:
 
 ## Oil is a New Shell Language
 
-- [A Tour of the Oil Language](oil-language-tour.html)  A tour of Oil.
-- [Oil Language Idioms](idioms.html).  A list of idioms you may want to use.
+- [A Tour of the Oil Language](oil-language-tour.html).  A quick introduction.
+- [Oil Language Idioms](idioms.html).  Idioms that are nicer in Oil than shell.
 - [Shell Language Deprecations](deprecations.html).  When you turn on Oil,
   there are some shell constructs you can no longer use.  We try to minimize
   the length of this list.
@@ -57,19 +59,19 @@ Reference:
 - [Syntactic Concepts](syntactic-concepts.html)
   - [Command vs. Expression Mode](command-vs-expression-mode.html).
 
-### The Command Sublanguage
+### The Command Language
 
 **Commands** are made of words, and run builtins, user-defined functions, and
 external processes.
 
 - [Command Language](command-language.html): Simple commands, redirects,
   control flow, etc.
-  - [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
+- [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
 - Pipeline Idioms.  An essential part of shell that deserves its own document.
 - [Procs, Funcs, and Blocks](oil-proc-func-block.html)
 - [Modules](modules.html).  Separting programs into files.
 
-### The Word Sublanguage
+### The Word Language
 
 **Words** are expressions for strings.
 
@@ -80,7 +82,7 @@ external processes.
 - [Special Variables](oil-special-vars.html).  Registers?
 - [Simple Word Evaluation](simple-word-eval.html).  Written for shell experts.
 
-### The Expression Sublanguage
+### The Expression Language
 
 Oil has typed **expressions**, like Python and JavaScript.
 
@@ -112,7 +114,8 @@ Oil has typed **expressions**, like Python and JavaScript.
 - [QSN](qsn.html): Quoted String Notation.  A human- and machine-readable
   format for byte strings.
   - [Framing](framing.html)
-- [QTSV](qtsv.html): An extension of TSV, built on top of QSN.
+- [QTT](qtt.html): Quoted, Typed Tables.  An extension of TSV, built on top of
+  QSN.
 
 ## Internal Details
 

@@ -150,7 +150,7 @@ Which can be used for "declarative" configuration:
     }
 
 <!--
-Future: QTSV / table literals with %{ ... }
+Future: QTT / table literals with %{ ... }
 -->
 
 ### Parens: Expression

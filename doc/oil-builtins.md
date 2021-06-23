@@ -17,68 +17,43 @@ memory.
 <div id="toc">
 </div>
 
-## More Builtins
+## New Builtins in Oil
 
-### [push]($help) appends strings to an array
+### [`append`]($help) appends strings to an array
 
 Example:
 
-```
-var a = %(1 '2 two')
-push :a three four
-echo @a  # prints 4 lines
-```
+    var a = %(1 '2 two')
+    append :a three four
+    echo @a  # prints 4 lines
 
-A more awkward way to write this:
+Here's another way to write it:
 
-```
-setvar a = %( @a three four )
-```
+    setvar a = %( @a three four )
 
-### [pp]($help) shows the value of a variable, for debugging
+Note that you can append to a string like this:
 
-This is implemented, but the output format may change.
-
-<!-- 
-
-### append
-
-You can append to a string like this:
-
-```
-var s = 'foo'
-setvar s = "${s}suffix"
-```
-
-Or maybe:
-
-```
-append :s suffix
-```
-
-But I think the more logical thing is:
-
-    echo ${s}suffix
-
-or
-
-    push :parts foo bar baz
-
-    write -sep '' -end '' @parts
+    var s = 'foo'
+    setvar s = "${s}suffix"
 
 (Note: Oil doesn't currently support the equivalent of shell's `s+=suffix`.)
 
--->
+### [`pp`]($help) pretty prints interpreter state
 
+- `pp cell` - shows the value of a variable, for debugging
+- `pp proc` - shows doc strings
+
+### `module`
+
+### `use`
+
+### `runproc`
 
 ## Shell Builtins Enhanced with Block
 
 Done:
 
 - [cd]($help)
-
-Not done:
-
 - [shopt]($help)
 
 Planned, but not implemented:
@@ -137,9 +112,17 @@ When a block is passed:
 - The directory stack for `pushd` and `popd` isn't cleared, as it is with a
   normal `cd` command.
 
+### shopt
+
+## Other Builtins That Take Blocks
+
+### fork, forkwait
+
+### argparse
+
 ## Builtin Flag Syntax
 
-(TODO: Implement this)
+TODO: Implement this, or eliminate it?
 
 Oil's builtins accept long flags like `--verbose` and short flags like `-v`.
 
@@ -166,7 +149,4 @@ See [IO Builtins](io-builtins.html).
 
 ## More
 
-Not implemented:
-
-- log, die
-
+- Not implemented: log, die
