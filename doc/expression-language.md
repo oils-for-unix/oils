@@ -2,17 +2,31 @@
 in_progress: yes
 ---
 
-The Expression Language Is Mostly Python
+Oil's Expression Language: Mostly Python
 ========================================
+
+Recall that Oil is composed of three interleaved languages: words, commands,
+and expressions.
+
+For now, this document describes things that are **not** covered in:
+
+- [A Tour of the Oil Language](oil-language-tour.html)
+- The `#expr-lang` section of [Oil Help
+  Topics](oil-help-topics.html#expr-lang)
+
+That is, it has both trivia or high-level concepts that aren't covered
+elsewhere.
+
+<div id="toc">
+</div>
+
+## Implementation Notes
 
 - Limitation:
   - Start with Str, StrArray, and AssocArray data model
   - Then add int, float, bool, null (for JSON)
   - Then add fuly recursive data model (depends on FC)
     - `value = ... | dict[str, value]`
-
-<div id="toc">
-</div>
 
 ## Literals for Primitives
 

@@ -2,10 +2,10 @@
 default_highlighter: oil-sh
 ---
 
-Quirks
-======
+OSH Quirks
+==========
 
-This document describes corner cases in Oil for compatibility.
+This document describes corner cases in OSH for compatibility.
 
 Related: [Known Differences](known-differences.html).
 
@@ -71,3 +71,8 @@ message.  But when running an external process, the message is lost:
     osh -o errexit -c 'env false'
     (silently fails with code 1)
 -->
+
+## Related 
+
+- The doc on [warts](warts.html) relates to the Oil language.
+

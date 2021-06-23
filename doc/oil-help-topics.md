@@ -33,8 +33,8 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
   [Oil Lexing]    docstring ###   X single-command ...
 ```
 
-<h2 id="command">
-  Command Language (<a class="group-link" href="oil-help.html#command">command</a>)
+<h2 id="command-lang">
+  Command Language (<a class="group-link" href="oil-help.html#command-lang">command-lang</a>)
 </h2>
 
 ```oil-help-topics
@@ -44,13 +44,13 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-block     cd /tmp { echo $PWD }
 ```
 
-<h2 id="assign">
-  Assignments and Expression Language (<a class="group-link" href="oil-help.html#assign">assign</a>)
+<h2 id="expr-lang">
+  Expression Language and Assignments (<a class="group-link" href="oil-help.html#expr-lang">expr-lang</a>)
 </h2>
 
 ```oil-help-topics
   [Keywords]      const   var   setvar   setglobal   setref
-  [Literals]      oil-numbers    42  3.14  1e100
+  [Literals]      oil-numbers    42  65_536  0xFF  0o755  0b10  3.14  1.5e-10
                   oil-string    r'[a-z]\n'  $'line\n'  
                   char-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   bool-literal  True   False   None
@@ -65,7 +65,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-ternary   '+' if x >= 0 else '-'
                   oil-index     a[3]  s[3]
                   oil-slice     a[1:-1]  s[1:-1]
-                  func-call     f(x, y)
+                  func-call     f(x, y)   s.startswith('prefix')
                   block-expr    &(echo $PWD)
                   builtin-sub   ${.myproc arg1}  @{.otherproc $x $y}
                   match-ops     ~   !~   ~~   !~~
@@ -79,8 +79,8 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   X re-multiline  ///
 ```
 
-<h2 id="word">
-  Word Language (<a class="group-link" href="oil-help.html#word">word</a>)
+<h2 id="word-lang">
+  Word Language (<a class="group-link" href="oil-help.html#word-lang">word-lang</a>)
 </h2>
 
 ```oil-help-topics

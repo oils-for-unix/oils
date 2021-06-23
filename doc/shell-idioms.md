@@ -13,6 +13,19 @@ to other Unix shells.
 
 ## Style
 
+### Use Only `"$@"`
+
+There's no reason to use anything but `"$@"`.  All the other forms like `$*`
+can be disallowed, because if you want to join to a string, you can write:
+
+   joined_str="$@"
+
+The same advice applies to arrays.  You can always use `"${myarray[@]}"`; you
+never need to use `${myarray[*]}` or any other form.
+
+Related: [Thirteen Incorrect Ways and Two Awkward Ways to Use
+Arrays](http://www.oilshell.org/blog/2016/11/06.html)
+
 ### Prefer `test` to `[`
 
 Idiomatic Oil code doesn't use "puns".

@@ -48,7 +48,6 @@ Multi-line output is shown like this:
     # one
     # two
 
-
 ## Examples
 
 ### Hello World Script
@@ -81,54 +80,6 @@ It also has Ruby-like blocks:
     }
     echo $PWD                 # prints the original directory
 
-### An Oil Module
-
-Oil can be used to write simple "shell scripts" or longer programs.  It has
-*procs* and *modules* to help with the latter.
-
-A module is just a file, like this:
-
-```none
-#!/usr/bin/env oil
-### Deploy script
-
-module main || return 0     # declaration and "include guard"
-use bin cp mkdir            # optionally declare the binaries used
-
-source $_this_dir/util.oil  # contains helpers like "log"
-
-const DEST = '/tmp'
-
-proc my-sync(@files) {
-  ### Sync files and show which ones
-
-  cp --verbose @files $DEST
-}
-
-proc main {
-  mkdir -p $DEST
-
-  log "Copying source files"
-  my-sync *.py {build,test}.sh
-
-  if test --dir /tmp/logs {
-    cd /tmp/logs
-
-    log "Copying logs"
-    my-sync *.log
-  }
-}
-
-main @ARGV                  # The only top-level statement
-```
-
-<!-- TODO: Also show flags parsing? -->
-
-For something this small, you usually wouldn't bother with the boilerplate.
-(TODO: see longer examples ...)
-
-But this example just illustrates the idea, which is that these commands appear
-at the top level: `proc`, `const`, `module`, `source`, and `use`.
 
 ## Concept: Three Sublanguages
 
@@ -140,9 +91,9 @@ Oil is best explained as three interleaved languages:
    - substitutions like `$(hostname)`,
    - globs like `*.sh`, and more.
 2. **Commands** are used for
+   - I/O (pipelines),
    - control flow (`if`, `for`),
-   - abstraction (`proc`),
-   - I/O (pipelines), and more.
+   - abstraction (`proc`), and more.
 3. **Expressions** on typed data are borrowed literally from Python, with some
    JavaScript influence.
    - Lists: `['python', 'shell']` or `%(python shell)`
@@ -248,17 +199,26 @@ varieties, as above:
 
 ### Five Kinds of Substitution
 
-Oil has syntax for substituting variables (and formatting them), commands,
-builtins, expressions, and the results of functions.
+Oil has syntax for 5 types of substitution, all of which start with `$`.  These
+constructs convert data to a **string**:
+
+1. Variables
+2. The output of commands
+3. The output of builtins
+4. Expressions
+5. The results of functions
 
 #### Variable Sub
 
 The syntax `$a` or `${a}` converts a variable to a string:
 
-    var a = 'AA'
-    echo $a                          # => AA
-    echo _${a}_                      # => _AA_
-    echo "_ $a _"                    # => _ AA _
+    var a = 'ale'
+    echo $a                          # => ale
+    echo _${a}_                      # => _ale_
+    echo "_ $a _"                    # => _ ale _
+
+This shell operator `:-` is occasionally useful:
+
     echo ${not_defined:-'default'}   # => default
 
 #### Command Sub
@@ -276,17 +236,23 @@ only capture the output of `echo`, `printf`, and `write`.
 TODO: Not implemented yet.
 
     proc p {
+      echo start
       echo "_ $1 _"
+      echo end
     }
 
-    #var s = ${.p ZZ}                 # capture stdout as a variable
-    #echo $s                          # => _ ZZ _
+    #var s = ${.p 'bean'}             # capture stdout as a variable
+    #echo $s
+    # =>
+    # start
+    # _ bean _
+    # end
 
 #### Expression Sub
 
 The `$[]` syntax evaluates an expression and converts it to a string:
 
-    echo $[a]                        # => AA
+    echo $[a]                        # => ale
     echo $[1 + 2]                    # => 3
     echo "_ $[1 + 2] _"              # => _ 3 _
 
@@ -294,18 +260,18 @@ The `$[]` syntax evaluates an expression and converts it to a string:
 
 #### Function Sub
 
-You can also turn the result of a function into a word with the shortcut
-`$f(x)`:
+As a shortcut for `$[f(x)]`, you can turn the result of a function into a
+string with `$f(x)`:
 
-    var mylist = ['a', 'b']
-    echo $join(mylist)               # => ab
+    var foods = ['pea', 'nut']
+    echo $join(foods)               # => peanut
 
-Note that function subs **cannot** be used in quotes.  You may wrap them in
-expression subs:
+Note that function subs **cannot** be used in double quotes.  Use the longer
+expression sub instead:
 
-    echo "_ $[join(mylist)] _"       # => _ ab _
+    echo "_ $[join(foods)] _"       # => _ peanut _
 
-### Arrays of Strings: Globs, Brace Expansion, and Splicing
+### Arrays of Strings: Globs, Brace Expansion, Splicing, and Splitting
 
 There are four different constructs that evaluate to a **list of strings**,
 rather than a single string.
@@ -353,6 +319,28 @@ You can also splice the result of a function returning an array:
     # bar
 
 Recall that *function sub* looks like `$join(mylist)`, and is complementary.
+
+#### Split Command Sub / Split Builtin Sub
+
+There are also variants of **command sub** and **builtin sub** that split
+first:
+
+    write @(seq 3)  # write gets 3 arguments
+    # =>
+    # 1
+    # 2
+    # 3
+
+Builtin sub isn't implemented yet:
+
+    proc digits {
+      echo '4 5'
+    }
+
+    #write @{.digits}     # write gets 2 arguments
+    # =>
+    # 4
+    # 5
 
 ## Command Language: I/O, Control Flow, Abstraction
 
@@ -443,11 +431,20 @@ If statements use curly braces, and have optional `elif` and `else` clauses:
       echo 'neither'
     }
 
+    if ! test --file README {    # The word ! inverts the exit status
+      echo 'no README'
+    }
+
 When the condition is surrounded with `()`, it's a Python-like expression
 rather than a command:
 
     if (num_eggs > 0) {
       echo 'so many eggs'
+    }
+
+    var done = false
+    if (not done) {              # negate with 'not' operator
+      echo 'not done'
     }
 
 The case statement matches a string against **glob** patterns, and executes the
@@ -547,60 +544,170 @@ TODO: List categories of builtin
 
 ## Expression Language: Python-like Types
 
-TODO: link docs
+Oil expressions will be familiar Python and JavaScript users.  They're easier
+to remember than the shell syntax to perform similar operations, like
+`${x#prefix}` and `[[ x =~ $pat ]]`.
 
 ### Types and Literals: `Bool`, `Int`, `List`, `Dict`, ...
 
-Types are capitalized
+Let's go through all the Python-like data types here.
 
-- Bool
-- Int
-- Float (deferred for first pass)
-- Str
-- List
-- Dict
+#### Null and Bool
 
-And
+JavaScript-like spellings are preferred for these three "atoms":
 
-- Block
-- Expr
+    var x = null
 
+    var b1, b2 = true, false
 
-These are the same:
+    if (b1) {
+      echo 'yes'
+    }
 
-    var x = %(one two three)
-    var y = ['one', 'two', 'three']
+For compatibility, you can also use `None`, `True`, and `False`.  But that
+breaks the rule that types are spelled with capital letters (e.g. `Str`,
+`Dict`).
+
+#### Int
+
+There are many ways to write integers:
+
+    #var small, big = 42, 65_536         # TODO: _ not supported yet
+    #echo "$small $big"                  # => 42 65536
+
+    var hex, octal, binary = 0xFF, 0o755, 0b0101
+
+Character literals can appear outside of strings, and are actually integers:
+
+    # TODO: not supported yet
+    #var newline, mu, a = \n, \u3bc, #'a'
+    #echo "$newline $mu $a"               # => 255 493 5
+
+#### Float
+
+Floats are written like you'd expect, but the initial version of the Oil
+language doesn't have them.  (Help wanted!)
+
+    var small = 1.5e-10
+    var big = 3.14
+
+#### Str
+
+See *Three Kinds of String Literals* above.  It describes `'single quoted'`,
+`"double ${quoted}"`, and $'c-style\n'` strings; as well as their multiline
+variants.  
+
+- Oil has no unicode type.  Strings in Oil are UTF-8 encoded in memory, like
+  strings in Go.
+- The syntax `%symbol` is used in eggex, and could be an interned string.
+
+#### List
+
+All lists can be expressed with Python-like literals:
+
+    var foods = ['ale', 'bean', 'corn']
+    var recursive = [1, [2, 3]]
+
+Arrays of strings can be expressed with shell-like literals:
+
+    var foods = %(ale bean corn)
+
+#### Dict
+
+Dicts have a JavaScript-like syntax with unquoted keys:
+
+    var d = {name: 'bob', age: 42}
+
+    echo $[d['name']]  # => bob
+
+    var empty = {}
+
+#### Block, Expr, ArgList
+
+These are types of code.
+
+- `Block`: an unevaluated code block.
+  - rarely-used literal: `^(ls | wc -l)`
+- `Expr`: an unevaluated expression.
+- `ArgList`: a lazily-evaluated argument list.
+  - rarely-used literal: `^[42, f(x), verbose = true]`
 
 ### Operators
 
-- arithmetic: `+ - * / // %` and `**` for exponentatiation (actually leave it out?)
-- bitwise operators: `& | ^ ~`
-- logical: `and or not`
-- comparison: `== <= >= in 'not in'` 
-  - what about `is` and `is not`?
+Operators are generally the same as in Python:
+
+    if (10 <= num_eggs and num_eggs < 20) {
+      echo 'enough'
+    }  # => enough
+
+Here are a few things Oil adds:
+
+The `->` operator lets you use unquoted keys for dicts:
+
+    echo $[d->name]    # => bob
+    echo $[d['name']]  # => bob (the same thing)
+
+Equality can be approximate:
+
+    var s = '42'
+    if (s ~== 42) {
+      echo 'equal after type conversion'
+    }  # => equal after type conversion
+
+There are pattern matching operators `~ !~` and `~~ !~~`:
+
+    if (s ~~ '*.py') {
+      echo 'Python'
+    }
+
+(See the Eggex section for an example of `~`.)
+
+Concatenation is `++` rather than `+` because it avoids confusion in the
+presence of type conversion:
+
+    var n = 42 + 1 
+    echo $n           # => 43
+
+    var y = $'ale\n' ++ "bean $n"
+    echo $y
+    # =>
+    # ale
+    # bean 43
+
+#### Summary of Operators
+
+- Arithmetic: `+ - * / // %` and `**` for exponentatiation
+  - `/` always yields a float, and `//` is integer division
+- Bitwise: `& | ^ ~`
+- Logical: `and or not`
+- Comparison: `==  <  >  <=  >=  in  'not in'` 
+  - Approximate equality: `~==`
+  - Eggex and glob match: `~  !~  ~~  !~~`
+- Ternary: `1 if x else 0`
+- Index and slice: `mylist[3]` and `mylist[1:3]`
+  - `mydict->key` is a shortcut for `mydict['key']`
+- Function and method call: `f(x, y)  s.startswith('prefix')`
+- String and List: `++` for concatenation
+  - This is a separate operator because the addition operator `+` does
+    string-to-int conversion
+
+<!-- TODO: What about list comprehensions? -->
+
 
 <!--
 - No string formatting with %
 - No @ matrix multiply
 -->
 
-### Syntax That Isn't in Python
 
-- `s ++ t` for concatenation of strings and arrays
-  - because `+` does coercion
-- `~==` for approximate equality
-- `mydict->key` as a shortcut for `mydict['key']`
-- Character/integer literals like `#'a'`, `\n` and `\u{3bc}` -- NOT tied to a
-  string.  (used in eggex)
-- `%symbol` (used in eggex)
-
-
-Concat example:
-
-    var x = 42 + 1
-    var y = $'foo\n' ++ "hello $name"
 
 ### Builtin Functions
+
+These are the "standard library" for the expression language.
+
+- `split()  join()`
+- `min()  max()`
+- ...
 
 ## Egg Expressions (Oil Regexes)
 
@@ -608,9 +715,9 @@ Concat example:
 translates to POSIX ERE syntax, for use with tools like `egrep`, `awk`, and
 `sed --regexp-extended` (GNU only).
 
-    var s = '3.14'
-    if (s ~ /d+ '.' d+/) {           # Use the ~ operator to match
-      echo "$s looks like a number"
+    var z = '3.14'
+    if (z ~ /d+ '.' d+/) {           # Use the ~ operator to match
+      echo "$z looks like a number"
     }
     # =>
     # 3.14 looks like a number
@@ -619,7 +726,7 @@ See the [Egg Expressions doc](eggex.html) for details.
 
 ## Interchange Formats (Languages for Data)
 
-### Lines of Text (traditional)
+### Lines of Text (traditional) and QSN
 
 Traditional Unix
 
@@ -676,9 +783,13 @@ More later:
 - QTT: should also allow hex float representation for exactness
 -->
 
-## The Runtime
+## The Runtime (shared by OSH and Oil)
 
-The interpreter and process model are **shared** by OSH and Oil.  This may help
+Although we talk about OSH and Oil as different languages, they both use the
+**same** interpreter under the hood.  The interpreter has various `shopt` flags
+that are flipped for different behavior, e.g. with `shopt --set oil:all`.
+
+Understanding this interpreter and its interface to the Unix kernel will help
 you understand **both** languages!
 
 ### Data Model (the interpreter)
@@ -738,6 +849,7 @@ Oil is a useful, large, and simplified language, with these concepts:
 - [Oil Language Idioms](idioms.html) - Oil side-by-side with shell.
 - [Oil Language Influences](language-influences.html) - In addition to shell,
   Python, and JavaScript, Oil is influenced by Ruby, Perl, Awk, PHP, and more.
+- [Oil Language Warts](warts.html) docuemnts syntax that may be surprising.
 - *A Tour of the Oil project*. TODO: Describe Oil, OSH, oven, the shell
   runtime, headless shell, etc.
 
@@ -790,3 +902,52 @@ echo ${.myproc arg1}      # builtin sub
   | uniq -c
   ;
 ```
+
+## Appendix: Example of an Oil Module
+
+Oil can be used to write simple "shell scripts" or longer programs.  It has
+*procs* and *modules* to help with the latter.
+
+A module is just a file, like this:
+
+```none
+#!/usr/bin/env oil
+### Deploy script
+
+module main || return 0     # declaration and "include guard"
+use bin cp mkdir            # optionally declare the binaries used
+
+source $_this_dir/util.oil  # contains helpers like "log"
+
+const DEST = '/tmp'
+
+proc my-sync(@files) {
+  ### Sync files and show which ones
+
+  cp --verbose @files $DEST
+}
+
+proc main {
+  mkdir -p $DEST
+
+  log "Copying source files"
+  my-sync *.py {build,test}.sh
+
+  if test --dir /tmp/logs {
+    cd /tmp/logs
+
+    log "Copying logs"
+    my-sync *.log
+  }
+}
+
+main @ARGV                  # The only top-level statement
+```
+
+<!-- TODO: Also show flags parsing? -->
+
+For something this small, you usually wouldn't bother with the boilerplate.
+(TODO: see longer examples ...)
+
+But this example just illustrates the idea, which is that these commands appear
+at the top level: `proc`, `const`, `module`, `source`, and `use`.

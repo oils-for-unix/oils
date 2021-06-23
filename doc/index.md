@@ -43,6 +43,7 @@ Reference:
   the length of this list.
 - [Oil Language FAQ](oil-language-faq.html).  Common questions about the
   language.
+- [Warts](warts.html).  Mostly for compatibility.
 
 Reference:
 
@@ -61,7 +62,8 @@ Reference:
 **Commands** are made of words, and run builtins, user-defined functions, and
 external processes.
 
-- Command Language: Simple commands, redirects, control flow, etc.
+- [Command Language](command-language.html): Simple commands, redirects,
+  control flow, etc.
   - [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
 - Pipeline Idioms.  An essential part of shell that deserves its own document.
 - [Procs, Funcs, and Blocks](oil-proc-func-block.html)
@@ -71,8 +73,8 @@ external processes.
 
 **Words** are expressions for strings.
 
-- [Word Language](oil-word-language.html).  Substitution, splicing, globbing,
-  brace expansion.
+- [Word Language](word-language.html).  Substitution, splicing, globbing, brace
+  expansion.
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html)
   - [Unicode](unicode.html).  Oil supports and prefers UTF-8.
 - [Special Variables](oil-special-vars.html).  Registers?
@@ -82,18 +84,21 @@ external processes.
 
 Oil has typed **expressions**, like Python and JavaScript.
 
-- [Oil Expressions](oil-expressions.html) are similar to Python and JavaScript.
-  - [Oil vs. Python](oil-vs-python.html)
+- [Expression Language](expression-language.html) are similar to Python and
+  JavaScript.
+  - [Oil vs. Python](oil-vs-python.html).  How do Oil's expressions differ from
+    Python?
 - [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
 
 ## The Oil Runtime
 
-- [Options](oil-options.html).  Parsing and runtime options turn OSH into Oil.
+- [Interpreter State](interpreter-state.html).  What's inside a shell
+  interpreter?
+  - [Options](oil-options.html).  Parsing and runtime options turn OSH into
+    Oil.
+  - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Process Model](process-model.html).  The shell language is a thin layer over
   the Unix kernel.
-- [Interpreter State](interpreter-state.html).  What's inside a shell
-  interpreteR?
-- [Variable Declaration, Mutation, and Scope](variables.html)
 - [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
   - [IO Builtins](io-builtins.html)
 - [Tracing Execution](xtrace.html).  Oil enhances shell's `set -x`.

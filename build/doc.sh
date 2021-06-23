@@ -79,6 +79,7 @@ readonly MARKDOWN_DOCS=(
   json
   simple-word-eval
   quirks
+  warts
 
   doc-toolchain
   doc-plugins
@@ -110,8 +111,11 @@ readonly MARKDOWN_DOCS=(
   oil-keywords
   oil-builtins
   command-vs-expression-mode
-  oil-expressions
-  oil-word-language
+
+  command-language
+  expression-language
+  word-language
+
   oil-special-vars
   oil-proc-func-block
   io-builtins

@@ -79,8 +79,8 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
                   declare   typeset   X let
 ```
 
-<h2 id="word">
-  Word Language (<a class="group-link" href="osh-help.html#word">word</a>)
+<h2 id="word-lang">
+  Word Language (<a class="group-link" href="osh-help.html#word-lang">word-lang</a>)
 </h2>
 
 ```osh-help-topics
