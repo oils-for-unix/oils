@@ -246,6 +246,8 @@ Oil also uses a leading `=` to print expressions in the REPL.
 
     = 1 + 2
 
+Lua's implementation as a pure ANSI C core without I/O was also influential.
+
 ### Haskell
 
 Oil also uses `++` to concatenate strings and lists:

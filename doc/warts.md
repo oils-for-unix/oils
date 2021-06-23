@@ -59,6 +59,29 @@ To disambiguate the cases, use explicit braces:
     echo "_ ${f}(x) _"  # variable f
     echo "_ $[f(x)] _"  # function call f
 
+### Two Different Syntaxes For `Block` and `ArgList` Literals
+
+Blocks look different in command vs expression mode:
+
+    cd /tmp {                   # command mode { }
+      echo $PWD
+    }
+    var myblock = ^(echo $PWD)  # expression mode ^( )
+
+So do lazily evaluated arg lists (not yet implemented):
+
+    myproc | filter [age > 10]  # command mode [ ]
+    var myexpr = ^{age > 10}    # expression mode ^{ }
+
+It would have been nicer if they were consistent, but:
+
+- `^(echo $PWD)` is consistent with `$(echo $PWD)` (eagerly evaluated)
+- Expression literals `^[42 + f(x)]` are consistent with `$[42 + f(x)]`
+  (eagerly evaluated).  So the `age > 10` has to use a different sigil pair,
+  which is `^{age > 10}`.
+- Most users won't see these literal forms very much.  They're more useful for
+  testing and frameworks rather than simple scripts/applications.
+
 ## Related 
 
 - The doc on [compatibility quirks](quirks.html) relates to the OSH language.

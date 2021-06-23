@@ -5,6 +5,11 @@ in_progress: yes
 A Tour of the Oil Project
 =========================
 
+<!--
+(under construction). TODO: Describe Oil, OSH, oven, the shell runtime,
+headless shell, etc.
+-->
+
 There are many components.
 
 <div id="toc">

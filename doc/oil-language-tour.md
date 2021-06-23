@@ -6,18 +6,46 @@ in_progress: true
 A Tour of the Oil Language
 ==========================
 
-Recall that the Oil project has both the compatible [OSH
+<!-- author's note about example names
+
+- people: alice, bob
+- nouns: ale, bean
+  - peanut, coconut
+- 42 for integers
+-->
+
+The [FAQ][] explains that the Oil **project** has both the compatible [OSH
 language]($xref:osh-language) and the new [Oil language]($xref:oil-language).
 
 This document describes the latter from a **clean slate** perspective, i.e.
 without legacy and [path dependence][].  Remember, Oil is for Python and
-JavaScript programmers who avoid shell!  See the [project
-FAQ](//www.oilshell.org/blog/2021/01/why-a-new-shell.html) for more background.
+JavaScript programmers who avoid shell!
 
 Knowledge of Unix shell isn't assumed, but shell users will see similarities,
 simplifications, and upgrades.
 
+[FAQ]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
 [path dependence]: https://en.wikipedia.org/wiki/Path_dependence
+
+**Warning**: This document is **long** because it demonstrates nearly every
+feature of the language.  You may want to read it in multiple sittings, or read
+blog posts like [The Simplest Explanation of
+Oil](https://www.oilshell.org/blog/2020/01/simplest-explanation.html) first.
+
+To summarize:
+
+1. Oil has interleaved *word*, *command*, and *expression* languages.
+   - The command language has Ruby-like *blocks*, and the expression language
+     has Python-like *data types*.
+2. Oil has two kinds of *builtins* that form the "standard library".
+3. Languages for *data* (like [JSON][]) are complementary to Oil code.
+4. OSH and Oil share both an *interpreter data model* and a *process model*
+   (provided by the Unix kernel).  Understanding these common models will make
+   you both a better shell user and Oil user.
+
+That's about it!  Keep those 4 points in mind as you read the details below.
+
+[JSON]: https://json.org
 
 <div id="toc">
 </div>
@@ -35,7 +63,7 @@ oil$ echo 'hello world'  # command typed into Oil
 hello world
 ```
 
-In the sections below, we'll save space by showing output in comments, with
+In the sections below, we'll save space by showing output **in comments**, with
 `=>`:
 
     echo 'hello world'       # => hello world
@@ -52,7 +80,7 @@ Multi-line output is shown like this:
 
 ### Hello World Script
 
-You can also type the commands into a file `hello.oil`.  This is a complete Oil
+You can also type commands into a file `hello.oil`.  This is a complete Oil
 program, which is identical to a shell program:
 
     echo 'hello world'     # => hello world
@@ -80,6 +108,15 @@ It also has Ruby-like blocks:
     }
     echo $PWD                 # prints the original directory
 
+And utilities to read and write JSON:
+
+    var d = {name: 'bob', age: 42}
+    json write :d
+    # =>
+    # {
+    #   "name": "bob",
+    #   "age": 42,
+    # }
 
 ## Concept: Three Sublanguages
 
@@ -91,13 +128,14 @@ Oil is best explained as three interleaved languages:
    - substitutions like `$(hostname)`,
    - globs like `*.sh`, and more.
 2. **Commands** are used for
-   - I/O (pipelines),
+   - I/O (pipelines, the `read` builtin),
    - control flow (`if`, `for`),
    - abstraction (`proc`), and more.
 3. **Expressions** on typed data are borrowed literally from Python, with some
    JavaScript influence.
-   - Lists: `['python', 'shell']` or `%(python shell)`
-   - Dicts: `{alice: 10, bob: 30}`
+   - Lists: `['ale', 'bean']` or `%(ale bean)`
+   - Dicts: `{name: 'bob', age: 42}`
+   - Functions: `split('ale bean')` and `join(['pea', 'nut'])`
 
 For example, this *command*
 
@@ -107,18 +145,17 @@ For example, this *command*
     # world
     # 43
 
-consists of four *words*.  And the fourth word contains an expression.
+consists of **four** *words*.  The fourth word contains an expression.
 
 *Expressions* may also have words and commands, like:
 
-    var y = $'one\n' ++ $(echo two)  # concatenate two words
+    var y = $'ale\n' ++ $(echo bean)  # concatenate two words
     write $y
     # =>
-    # one
-    # two
+    # ale
+    # bean
 
 To say it another way: Words, commands, and expressions are mutually recursive.
-
 If you're a conceptual person, skimming [Syntactic
 Concepts](syntactic-concepts.html) may help you understand the examples that
 follow.
@@ -141,13 +178,13 @@ expressions that evaluate to an **array** of strings.
 
 ### Three Kinds of String Literals
 
-You can choose the type of quote that's more convenient to write a given
+You can choose the type of quote that's most convenient to write a given
 string.
 
 #### Single-Quoted, Double-Quoted, and C-Style
 
-In single-quoted strings, all characters are **literal** (which means such
-strings can't contain single quotes.)
+In single-quoted strings, all characters are **literal** (except `'`, which
+can't be denoted):
 
     echo 'c:\Program Files\'        # => c:\Program Files\
 
@@ -156,7 +193,7 @@ Double-quoted strings allow **interpolation with `$`**.
     var person = 'alice'
     echo "hi $person, $(echo bye)"  # => hi bob, bye
 
-To denote operator characters, escape them with `\`:
+Inside double quotes, denote operators by escaping them with `\`:
 
     echo "\$ \" \\ "                # => $ " \
 
@@ -168,14 +205,14 @@ escapes**:
     #  A is A
     #  line two, with backslash \
 
-(The leading `$` does NOT mean "interpolation".  It's an unfortunate
-collision.)
+(Note that the leading `$` does **not** mean "interpolation".  It's an
+unfortunate syntax collision.)
 
 #### Multiline Strings
 
-Multiline strings are surrounded with triple quotes.  Leading whitespace is
-stripped in a convenient way, and they have single- and double-quoted
-varieties, as above:
+Multiline strings are surrounded with triple quotes.  They have single- and
+double-quoted varieties, and leading whitespace is stripped in a convenient
+way.
 
     sort <<< '''
     $2.00  # literal $, no interpolation
@@ -191,9 +228,9 @@ varieties, as above:
     expression sub: $[x + 3]
     """
     # =>
-    # var sub: 6
     # command sub: hi
     # expression sub: 9
+    # var sub: 6
 
 (Use multiline strings instead of shell's [here docs]($xref:here-doc).)
 
@@ -217,23 +254,24 @@ The syntax `$a` or `${a}` converts a variable to a string:
     echo _${a}_                      # => _ale_
     echo "_ $a _"                    # => _ ale _
 
-This shell operator `:-` is occasionally useful:
+The shell operator `:-` is occasionally useful in Oil:
 
     echo ${not_defined:-'default'}   # => default
 
 #### Command Sub
 
-The `$()` syntax runs a command and captures its `stdout`:
+The `$(echo hi)` syntax runs a command and captures its `stdout`:
 
     echo $(hostname)                 # => example.com
     echo "_ $(hostname) _"           # => _ example.com _
 
 #### Builtin Sub
 
-A builtin sub is like a command sub, but it doesn't fork a process.  It can
-only capture the output of `echo`, `printf`, and `write`.
+The syntax `${.myproc arg1}` is called a *builtin sub*.  It's like a command
+sub, but it doesn't fork a process.  It can only capture the output of `echo`,
+`printf`, and `write`.
 
-TODO: Not implemented yet.
+TODO: Not implemented yet.  It can be used in config files which can't do I/O.
 
     proc p {
       echo start
@@ -250,11 +288,11 @@ TODO: Not implemented yet.
 
 #### Expression Sub
 
-The `$[]` syntax evaluates an expression and converts it to a string:
+The `$[myexpr]` syntax evaluates an expression and converts it to a string:
 
     echo $[a]                        # => ale
-    echo $[1 + 2]                    # => 3
-    echo "_ $[1 + 2] _"              # => _ 3 _
+    echo $[1 + 2 * 3]                # => 7
+    echo "_ $[1 + 2 * 3] _"          # => _ 7 _
 
 <!-- TODO: safe substitution -->
 
@@ -266,8 +304,8 @@ string with `$f(x)`:
     var foods = ['pea', 'nut']
     echo $join(foods)               # => peanut
 
-Note that function subs **cannot** be used in double quotes.  Use the longer
-expression sub instead:
+Function subs **can't** be used in double quotes.  Use the longer expression
+sub instead:
 
     echo "_ $[join(foods)] _"       # => _ peanut _
 
@@ -292,38 +330,38 @@ If no files match, it evaluates to an empty list (option `nullglob`).
 
 The brace expansion mini-language lets you write strings without duplication:
 
-    write {andy,bob}@example.com
+    write {alice,bob}@example.com
     # =>
-    # andy@example.com
+    # alice@example.com
     # bob@example.com
 
 #### Array Splice
 
 The `@` operator splices an array into a command:
 
-    var myarray = %(one two)  
+    var myarray = %(ale bean)
     write S @myarray E
     # =>
     # S
-    # one
-    # two
+    # ale
+    # bean
     # E
 
 #### Function Splice
 
 You can also splice the result of a function returning an array:
 
-    write -- @split('foo bar')
+    write -- @split('ale bean')
     # => 
-    # foo
-    # bar
+    # ale
+    # bean
 
-Recall that *function sub* looks like `$join(mylist)`, and is complementary.
+Recall that *function sub* looks like `$join(mylist)`, which is consistent with
+*function splice*.
 
 #### Split Command Sub / Split Builtin Sub
 
-There are also variants of **command sub** and **builtin sub** that split
-first:
+There are also variants of *command sub* and *builtin sub* that split first:
 
     write @(seq 3)  # write gets 3 arguments
     # =>
@@ -349,14 +387,16 @@ Builtin sub isn't implemented yet:
 A simple command is a space-separated list of words, which are often unquoted.
 Oil looks up the first word to determine if it's a `proc` or shell builtin.
 
-    proc greet(name) {
+    echo 'hello world'   # The shell builtin 'echo'
+
+    proc greet(name) {   # A proc is a user-defined unit of code
       echo "hello $name"
     }
-    greet bob            # => hello bob
 
-    echo 'hi'            # The shell builtin 'echo' (quoting for clarity)
+    # Now the first word will resolve to the proc
+    greet alice            # => hello alice
 
-If not, then it's an external command:
+If it's neither, then it's assumed to be an external command:
 
     ls -l /tmp           # The external 'ls' command
 
@@ -386,7 +426,8 @@ Pipelines are a powerful method manipulating text:
     ls | wc -l                       # count files in this directory
     find /bin -type f | xargs wc -l  # count files in a subtree
 
-Pipelines may contain lines of text, JSON, TSV, etc.  More on that below.
+Pipelines may manipulate (lines of) text, binary data, JSON, TSV, etc.  More on
+that below.
 
 ### Variable Declaration and Mutation
 
@@ -397,8 +438,8 @@ Constants can't be modified:
 
 Modify variables with the `setvar` keyword:
 
-    var num_eggs = 12
-    setvar num_eggs = 13
+    var num_beans = 12
+    setvar num_beans = 13
 
 A more complex example:
 
@@ -406,17 +447,17 @@ A more complex example:
     setvar d->name = 'alice'        # d->name is a synonym for d['name']
     echo $[d->name]                 # => alice
 
-That's about all you need to know.
-
-Advanced users may want to use `setglobal` or `setref` in certain situations:
+That's most of what you need to know about assignments.  Advanced users may
+want to use `setglobal` or `setref` in certain situations:
 
     var g = 1
+    var h = 2
     proc demo(:out) {
       setglobal g = 42
       setref out = 43
     }
-    demo :g  # pass a reference to g
-    echo $g  # => 43
+    demo :h  # pass a reference to h
+    echo "$g $h"  # => 42 43
 
 ### Conditionals: `if`, `case`
 
@@ -435,16 +476,16 @@ If statements use curly braces, and have optional `elif` and `else` clauses:
       echo 'no README'
     }
 
-When the condition is surrounded with `()`, it's a Python-like expression
+When the condition is surrounded with `()`, it's a Python-like **expression**
 rather than a command:
 
-    if (num_eggs > 0) {
-      echo 'so many eggs'
+    if (num_beans > 0) {
+      echo 'so many beans'
     }
 
     var done = false
     if (not done) {              # negate with 'not' operator
-      echo 'not done'
+      echo "we aren't done"
     }
 
 The case statement matches a string against **glob** patterns, and executes the
@@ -463,14 +504,14 @@ corresponding blocks:
         ;;
     }
 
-(You can use shell style `if foo; then ... fi` and `case $x in ...  esac`, but
-this is discouraged in Oil.)
+(Shell style like `if foo; then ... fi` and `case $x in ...  esac` is also legal,
+but discouraged in Oil code.)
 
 ### Loops: `for`, `while`
 
-For loops iterate over words:
+For loops iterate over **words**:
 
-    for x in oil $num_eggs {pea,coco}nut {
+    for x in oil $num_beans {pea,coco}nut {
       echo $x
     }
     # =>
@@ -479,13 +520,13 @@ For loops iterate over words:
     # peanut
     # coconut
 
-Like if statements, while loops have a command variant:
+Like if statements, while loops have a **command** variant:
 
-   while test --file lock {
-     sleep 1
-   }
+    while test --file lock {
+      sleep 1
+    }
 
-and an expression variant:
+and an **expression** variant in `()`:
 
     var x = 0
     while (x > 0) {
@@ -496,8 +537,8 @@ and an expression variant:
 
 #### `break`, `continue`, `return`, `exit`
 
-The `exit` keyword (*not* a shell builtin) exits a process.  The other 3
-keywords behave like they do in Python and JavaScript.
+The `exit` **keyword** exits a process (it's not a shell builtin.)  The other 3
+control flow keywords behave like they do in Python and JavaScript.
 
 ### Abstraction: `proc` and Blocks
 
@@ -509,7 +550,7 @@ like any other command:
     }
 
     touch log.txt
-    # mycopy is a proc, so shells don't run an external command
+    # the first word 'mycopy' is resolved as a proc
     mycopy log.txt /tmp  # runs cp --verbose
 
 #### Ruby-like Blocks
@@ -527,6 +568,8 @@ Some builtins take blocks as arguments:
     #  mycopy y z  # ignore errors
     #}
 
+Procs can also take blocks: TODO.
+
 ### Builtin Commands
 
 **Shell builtins** like `cd` and `read` are the "standard library" of the
@@ -536,21 +579,26 @@ command language.  Each one takes various flags:
 
     echo foo | read --line       # read a line of stdin
     
-TODO: List categories of builtin
+Here are some categories of builtin:
 
-- I/O: `echo  printf  write  read`
-- Introspection: `type`
-- Interpreter settings: `shopt shvar`
+- I/O: `echo  write  read`
+- File system: `cd  test`
+- Processes: `fork  wait  forkwait  exec`
+- Interpreter settings: `shopt  shvar`
+- Meta: `command  builtin  runproc  type  eval`
+- Modules: `source  module`
+
+(TODO: Make a more comprehensive list.)
 
 ## Expression Language: Python-like Types
 
-Oil expressions will be familiar Python and JavaScript users.  They're easier
-to remember than the shell syntax to perform similar operations, like
-`${x#prefix}` and `[[ x =~ $pat ]]`.
+Oil expressions are more like Python and JavaScript than the shell syntax to
+perform similar operations.  For example, we write `if (x < y)` instead of `if
+[ $x -lt $y ]`.
 
 ### Types and Literals: `Bool`, `Int`, `List`, `Dict`, ...
 
-Let's go through all the Python-like data types here.
+Let's go through Oil's Python-like data types and see the syntax for literals.
 
 #### Null and Bool
 
@@ -562,7 +610,7 @@ JavaScript-like spellings are preferred for these three "atoms":
 
     if (b1) {
       echo 'yes'
-    }
+    }  # yes
 
 For compatibility, you can also use `None`, `True`, and `False`.  But that
 breaks the rule that types are spelled with capital letters (e.g. `Str`,
@@ -576,12 +624,16 @@ There are many ways to write integers:
     #echo "$small $big"                  # => 42 65536
 
     var hex, octal, binary = 0xFF, 0o755, 0b0101
+    echo "$hex $octal $binary"           # => 255 493 5
+
+<!--
+TODO: not supported yet
 
 Character literals can appear outside of strings, and are actually integers:
 
-    # TODO: not supported yet
     #var newline, mu, a = \n, \u3bc, #'a'
-    #echo "$newline $mu $a"               # => 255 493 5
+    #echo "$newline $mu $a"
+-->
 
 #### Float
 
@@ -593,11 +645,13 @@ language doesn't have them.  (Help wanted!)
 
 #### Str
 
-See *Three Kinds of String Literals* above.  It describes `'single quoted'`,
-`"double ${quoted}"`, and $'c-style\n'` strings; as well as their multiline
-variants.  
+The section *Three Kinds of String Literals* above describes `'single quoted'`,
+`"double ${quoted}"`, and `$'c-style\n'` strings; as well as their multiline
+variants.
 
-- Oil has no unicode type.  Strings in Oil are UTF-8 encoded in memory, like
+More on strings:
+
+- Oil has no Unicode type.  Strings in Oil are UTF-8 encoded in memory, like
   strings in Go.
 - The syntax `%symbol` is used in eggex, and could be an interned string.
 
@@ -622,45 +676,48 @@ Dicts have a JavaScript-like syntax with unquoted keys:
 
     var empty = {}
 
-#### Block, Expr, ArgList
+#### Block, Expr, and ArgList
 
-These are types of code.
+These types are for reflection on Oil code.  Most Oil programs won't use them
+directly.
 
 - `Block`: an unevaluated code block.
   - rarely-used literal: `^(ls | wc -l)`
 - `Expr`: an unevaluated expression.
-- `ArgList`: a lazily-evaluated argument list.
-  - rarely-used literal: `^[42, f(x), verbose = true]`
+  - rarely-used literal: `^[42 + a[i]]`
+- `ArgList`: an argument list for procs.  It's a list of `Expr`.
+  - rarely-used literal: `^{42, f(x), verbose = true}`
 
 ### Operators
 
 Operators are generally the same as in Python:
 
-    if (10 <= num_eggs and num_eggs < 20) {
+    if (10 <= num_beans and num_beans < 20) {
       echo 'enough'
     }  # => enough
 
-Here are a few things Oil adds:
-
-The `->` operator lets you use unquoted keys for dicts:
+Oil has a few things that aren't in Python.  The `->` operator lets you use
+unquoted keys for dicts:
 
     echo $[d->name]    # => bob
     echo $[d['name']]  # => bob (the same thing)
 
 Equality can be approximate:
 
-    var s = '42'
-    if (s ~== 42) {
-      echo 'equal after type conversion'
-    }  # => equal after type conversion
+<!-- TODO: Implement ~== and ~~ -->
 
-There are pattern matching operators `~ !~` and `~~ !~~`:
+    var n = '42'
+    #if (n ~== 42) {
+    #  echo 'equal after type conversion'
+    #}  # => equal after type conversion
 
-    if (s ~~ '*.py') {
-      echo 'Python'
-    }
+Pattern matching is done with `~ !~` (regular expressions) and `~~ !~~` (glob):
 
-(See the Eggex section for an example of `~`.)
+    #if (s ~~ '*.py') {
+    #  echo 'Python'
+    #}
+
+(See the Eggex section below for an example of `~`.)
 
 Concatenation is `++` rather than `+` because it avoids confusion in the
 presence of type conversion:
@@ -673,6 +730,8 @@ presence of type conversion:
     # =>
     # ale
     # bean 43
+
+<!--
 
 #### Summary of Operators
 
@@ -691,50 +750,81 @@ presence of type conversion:
   - This is a separate operator because the addition operator `+` does
     string-to-int conversion
 
-<!-- TODO: What about list comprehensions? -->
+TODO: What about list comprehensions?
 
-
-<!--
 - No string formatting with %
 - No @ matrix multiply
 -->
-
-
 
 ### Builtin Functions
 
 These are the "standard library" for the expression language.
 
-- `split()  join()`
-- `min()  max()`
-- ...
+- For explicit word evaluation: `split()  join()  glob()  maybe()`  
+- String and pattern: `find()  sub()`
+- Collections: `len()  keys()  values()  items()  append()  extend()`
+
+(TODO: Make a more comprehensive list.)
 
 ## Egg Expressions (Oil Regexes)
 
-*Eggex* is a readable and composable language for regular expressions.  It
-translates to POSIX ERE syntax, for use with tools like `egrep`, `awk`, and
-`sed --regexp-extended` (GNU only).
+*Eggex* is a language for regular expressions which is technically part of Oil's
+expression language.  It translates to POSIX ERE syntax, for use with tools
+like `egrep`, `awk`, and `sed --regexp-extended` (GNU only).
 
-    var z = '3.14'
-    if (z ~ /d+ '.' d+/) {           # Use the ~ operator to match
-      echo "$z looks like a number"
+It's designed to be readable and composable.  Short example:
+
+    var D = / digit{1,3} /
+    var ip_pattern = / D '.' D '.' D '.' D'.' /
+
+    var z = '192.168.0.1'
+    if (z ~ ip_pattern) {           # Use the ~ operator to match
+      echo "$z looks like an IP address"
     }
     # =>
-    # 3.14 looks like a number
+    # 192.168.0.1 looks like an IP address
 
 See the [Egg Expressions doc](eggex.html) for details.
 
-## Interchange Formats (Languages for Data)
+## Languages for Data (Interchange Formats)
 
-### Lines of Text (traditional) and QSN
+In the sections above, we saw that Oil **code** consists of 3 interleaved
+languages.  You're also encouraged to think of your **data** as being described in a language.
 
-Traditional Unix
+**Versionless** interchange formats often take the form of textual languages.
 
-QSN too.
+<!-- TODO: Link to concepts and patterns -->
 
-### JSON, QTT (structured)
+### Lines of Text (traditional), and QSN
 
-Tree-shaped data can be read and written as JSON:
+Traditional Unix tools like `grep` and `awk` operate on streams of lines.  Oil
+supports this style as well as any other shell.
+
+But Oil also has [QSN: Quoted String Notation][QSN], an interchange format
+which is borrowed from Rust's string literal notation.
+
+[QSN]: qsn.html
+
+It lets you encode arbitrary byte strings into a single (readable) line,
+including those with newlines and terminal escape sequenecs.
+
+Example:
+
+    # A line with a tab char in the middle
+    var a = $'pea\t' ++ $'42\n'
+
+    # Print it to stdout
+    write --qsn $a  # => 'pea\t42\n'
+
+    # Write and read
+    write --qsn $a | read --qsn --line
+    if (_line == a) {
+      echo 'serialized string to QSN and back'
+    }  # => serialized string to QSN and back
+
+### Structured: JSON, QTT
+
+**Tree-shaped** data can be read and written as [JSON][]:
 
     var d = {key: 'value'}
     json write :d                 # dump variable d as JSON
@@ -750,11 +840,24 @@ Tree-shaped data can be read and written as JSON:
     # =>
     # ['ale', 42]
 
-<!-- TODO: Fix pp cell output -->
+[JSON]: json.html
+[QTT]: qtt.html
 
-Table-shaped data can be read and written as QTT (quoted, typed table):
+<!--
+TODO:
+- Fix pp cell output
+- Use json write [d] syntax
+-->
 
-And QTT:
+**Table-shaped** data can be read and written as [QTT: Quoted, Typed
+Tables](qtt.html).  TODO: QTT isn't implemented yet!
+
+<!-- Figure out the API.  Does it work like JSON?
+
+Or I think we just implement
+- basic filter/where, select, and sortby.
+- QTT <=> sqlite conversion.  Are these drivers or what?
+  - and then let you pipe output?
 
 ```none
     var t = {food: %(ale bean), price: [5.99, 0.40]}
@@ -773,69 +876,72 @@ And QTT:
     # {name: ['bob'], age: [42]}  
 ```
 
-<!--
-
-There is also QTT space2tab or something?  Change spaces to tabs
+Do we also need QTT space2tab or something?  For writing QTT inline.
 
 More later:
 - MessagePack (e.g. for shared library extension modules)
+  - msgpack read, write?  I think user-defined function could be like this?
 - SASH: Simple and Strict HTML?  For easy processing
 - QTT: should also allow hex float representation for exactness
 -->
 
-## The Runtime (shared by OSH and Oil)
+## The Runtime Shared by OSH and Oil
 
-Although we talk about OSH and Oil as different languages, they both use the
-**same** interpreter under the hood.  The interpreter has various `shopt` flags
-that are flipped for different behavior, e.g. with `shopt --set oil:all`.
+Although we describe OSH and Oil as different languages, they use the **same**
+interpreter under the hood.  This interpreter has various `shopt` flags that
+are flipped for different behavior, e.g. with `shopt --set oil:all`.
 
 Understanding this interpreter and its interface to the Unix kernel will help
 you understand **both** languages!
 
-### Data Model (the interpreter)
+### Interpreter Data Model
 
+The [Interpreter State](interpreter-state.html) doc is **under construction**.
+It will cover:
 
-- proc namespace
-- variable namespace
-  - readonly, export, nameref flags
-  - including shvar
-- shell options
-- Various registers
-
-#### `shopt`, `shvar`, and Registers
-
-- `simple_word_eval`
-
-#### shvars
-
-- `IFS`
-- `_ESCAPE`
-- `_DIALECT`
-
-#### Registers
-
-- `$?` and `_status`
-- `_buffer`
-- `_this_dir`
+- Two separate namespaces (like Lisp 1 vs. 2):
+  - **proc** namespace for procs as the first word
+  - **variable** namespace
+- The variable namespace has a "call **stack**", for the local variables of a
+  proc.
+  - Each **stack frame** is a `{name -> cell}` mapping.
+  - A **cell** has one of the above data types: `Null`, `Bool`, `Str`, etc.
+  - A cell has `readonly`, `export`, and `nameref` **flags**.
+- Boolean shell **options** with `shopt`: `parse_paren`, `simple_word_eval`, etc.
+- **String** shell options with `shvar`: `IFS`, `_ESCAPE`, `_DIALECT`
+- **Registers** are silently modified by the interpreter
+  - `$?` and `_status`
+  - `$!` for the last PID
+  - `_buffer`
+  - `_this_dir`
 
 ### Process Model (the kernel)
 
-See Oil tracing with `-x`.
+The [Process Model](process-model.html) doc is **under construction**.  It will cover:
 
-- synchronous constructs
-- async constructs
-- some optimizations: See Oil starts fewer processes than other shells.
+- Simple Commands, `exec` 
+- Pipelines.  #[shell-the-good-parts](#blog-tag)
+- `fork`, `forkwait`
+- Command and process substitution.  (Compare with *builtin sub*).
+- Related links:
+  - [Oil's enhanced execution tracing](xtrace.html) (xtrace), which divides
+    process-based concurrency into **synchronous** and **async** constructs.
+  - [Three Comics For Understanding Unix
+    Shell](http://www.oilshell.org/blog/2020/04/comics.html) (blog)
 
-- TODO
-  - Kernel.  Comics.
-  - Coprocesses
 
-<!-- Process model additions: Capers, Headless shell -->
+<!--
+Process model additions: Capers, Headless shell 
 
+some optimizations: See Oil starts fewer processes than other shells.
+-->
 
 ## Summary
 
-Oil is a useful, large, and simplified language, with these concepts:
+Oil is a large language that evolved from Unix shell.  But it's also simpler
+than shell, so you can "forget" many of the bad parts like `[ $x -lt $y ]`.
+
+Oil has these concepts:
 
 - Word Language: for strings and arrays
 - Command Language: for I/O, abstraction, and control flow
@@ -843,6 +949,8 @@ Oil is a useful, large, and simplified language, with these concepts:
   - With Ruby-like blocks
 - Expressions: for Python-like types
   - With a standard library of *builtin functions*
+- Languages for Data
+- A Runtime Shared By OSH and Oil
 
 ## Related Docs
 
@@ -850,29 +958,9 @@ Oil is a useful, large, and simplified language, with these concepts:
 - [Oil Language Influences](language-influences.html) - In addition to shell,
   Python, and JavaScript, Oil is influenced by Ruby, Perl, Awk, PHP, and more.
 - [Oil Language Warts](warts.html) docuemnts syntax that may be surprising.
-- *A Tour of the Oil project*. TODO: Describe Oil, OSH, oven, the shell
-  runtime, headless shell, etc.
-
-Details:
-
-- [Oil Word Language](oil-word-language.html)
+- [A Tour of the Oil Project](project-tour.html) (under construction).
 
 ## Appendix: Features Not Shown
-
-### Deprecated Shell Constructs
-
-Oil and OSH are actually variants of the same interpreter, with different
-`shopt` settings.  The interpreter supports many shell constructs that are
-deprecated:
-
-- Most of what's in `${}`, like `${!indirect}`.  Use Oil functions instead.
-- Assignment builtins like `local` and `declare`.  Use Oil keywords.
-- Boolean expressions like `[[ x =~ $pat ]]`
-- Shell arithmetic like `$(( x + 1 ))` and `(( y = x ))`.  Use Oil expressions
-  instead.
-- The `until` loop can always be replaced with a `while` loop
-- Oil code uses shell's `||` and `&&` in limited circumstances, since `errexit`
-  is on by default.
 
 ### Advanced
 
@@ -880,17 +968,18 @@ These shell features are part of Oil, but aren't shown for brevity.
 
 - The `fork` and `forkwait` builtins, for concurrent execution and subshells.
 - Process Substitution: `diff <(sort left.txt) <(sort right.txt)`
-- Unevaluated blocks and expressions: `^(ls | wc-l)` and `^[42 + a[i]]`
 
 ### Not Yet Implemented
 
 TODO: We need to implement these things!
 
-- QTT support
-- Capers / coprocesses
+- QTT parser, dumper, and builtins
+- Capers: stateless coprocesses
 - Defining functions in shared libraries?  What about shell builtins?
 
 ```none
+# Unimplemented syntax:
+
 qtt | filter [size > 10]  # lazy arg lists
 echo ${x|html}            # formatters
 echo ${x %.2f}            # statically-parsed printf
@@ -903,10 +992,24 @@ echo ${.myproc arg1}      # builtin sub
   ;
 ```
 
+### Deprecated Shell Constructs
+
+The shared interpreter supports many shell constructs that are deprecated:
+
+- Most of what's in `${}`, like `${!indirect}`.  Use Oil functions instead.
+- Assignment builtins like `local` and `declare`.  Use Oil keywords.
+- Boolean expressions like `[[ x =~ $pat ]]`.  Use Oil expressions.
+- Shell arithmetic like `$(( x + 1 ))` and `(( y = x ))`.  Use Oil expressions.
+- The `until` loop can always be replaced with a `while` loop
+- Oil code uses shell's `||` and `&&` in limited circumstances, since `errexit`
+  is on by default.
+
 ## Appendix: Example of an Oil Module
 
 Oil can be used to write simple "shell scripts" or longer programs.  It has
 *procs* and *modules* to help with the latter.
+
+(TODO: Tighten up and test this this example.)
 
 A module is just a file, like this:
 
@@ -944,10 +1047,13 @@ proc main {
 main @ARGV                  # The only top-level statement
 ```
 
-<!-- TODO: Also show flags parsing? -->
+<!--
+TODO:
+- Also show flags parsing?
+- Show longer examples where it isn't boilerplate
+-->
 
 For something this small, you usually wouldn't bother with the boilerplate.
-(TODO: see longer examples ...)
 
-But this example just illustrates the idea, which is that these commands appear
-at the top level: `proc`, `const`, `module`, `source`, and `use`.
+But this example illustrates the idea, which is that these commands appear at
+the top level: `proc`, `const`, `module`, `source`, and `use`.
