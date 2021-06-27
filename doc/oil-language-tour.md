@@ -267,11 +267,15 @@ The `$(echo hi)` syntax runs a command and captures its `stdout`:
 
 #### Builtin Sub
 
-The syntax `${.myproc arg1}` is called a *builtin sub*.  It's like a command
-sub, but it doesn't fork a process.  It can only capture the output of `echo`,
-`printf`, and `write`.
+The syntax `${.myproc $s arg2}` is called a *builtin sub*.  It's similar to a command
+sub `$(myproc $s arg2)`, but it doesn't fork a process.  It can only capture
+the output of `echo`, `printf`, and `write`.
 
-TODO: Not implemented yet.  It can be used in config files which can't do I/O.
+It exists to efficiently build up long strings (like web pages) with sequences
+of **commands** rather than expressions.  It can be used in config files which
+can't perform I/O.
+
+TODO: Builtin sub isn't yet implemented.
 
     proc p {
       echo start
@@ -400,7 +404,11 @@ If it's neither, then it's assumed to be an external command:
 
     ls -l /tmp           # The external 'ls' command
 
-<!-- leaving off: aliases -->
+<!-- 
+leaving off: aliases
+
+TODO: We also need lazy arg lists: qtt | where [size > 10]
+-->
 
 You can **redirect** `stdin` and `stdout` of simple commands:
 
@@ -429,7 +437,7 @@ Pipelines are a powerful method manipulating text:
 Pipelines may manipulate (lines of) text, binary data, JSON, TSV, etc.  More on
 that below.
 
-### Variable Declaration and Mutation
+### Keywords for Variables
 
 Constants can't be modified:
 
@@ -458,6 +466,8 @@ want to use `setglobal` or `setref` in certain situations:
     }
     demo :h  # pass a reference to h
     echo "$g $h"  # => 42 43
+
+More details: [Variable Declaration and Mutation](variables.html).
 
 ### Conditionals: `if`, `case`
 
@@ -596,7 +606,7 @@ Oil expressions are more like Python and JavaScript than the shell syntax to
 perform similar operations.  For example, we write `if (x < y)` instead of `if
 [ $x -lt $y ]`.
 
-### Types and Literals: `Bool`, `Int`, `List`, `Dict`, ...
+### Types and Literals: `Int`, `List`, `Dict`, ...
 
 Let's go through Oil's Python-like data types and see the syntax for literals.
 
@@ -766,7 +776,7 @@ These are the "standard library" for the expression language.
 
 (TODO: Make a more comprehensive list.)
 
-## Egg Expressions (Oil Regexes)
+### Egg Expressions (Oil Regexes)
 
 *Eggex* is a language for regular expressions which is technically part of Oil's
 expression language.  It translates to POSIX ERE syntax, for use with tools
@@ -789,9 +799,11 @@ See the [Egg Expressions doc](eggex.html) for details.
 ## Languages for Data (Interchange Formats)
 
 In the sections above, we saw that Oil **code** consists of 3 interleaved
-languages.  You're also encouraged to think of your **data** as being described in a language.
+languages.  It's also useful to think of **data** as being described in a
+language.
 
-**Versionless** interchange formats often take the form of textual languages.
+Versionless interchange formats like JSON often take the form of textual
+languages.
 
 <!-- TODO: Link to concepts and patterns -->
 
@@ -902,14 +914,14 @@ It will cover:
 - Two separate namespaces (like Lisp 1 vs. 2):
   - **proc** namespace for procs as the first word
   - **variable** namespace
-- The variable namespace has a "call **stack**", for the local variables of a
+- The variable namespace has a **call stack**, for the local variables of a
   proc.
   - Each **stack frame** is a `{name -> cell}` mapping.
   - A **cell** has one of the above data types: `Null`, `Bool`, `Str`, etc.
   - A cell has `readonly`, `export`, and `nameref` **flags**.
-- Boolean shell **options** with `shopt`: `parse_paren`, `simple_word_eval`, etc.
-- **String** shell options with `shvar`: `IFS`, `_ESCAPE`, `_DIALECT`
-- **Registers** are silently modified by the interpreter
+- Boolean shell options with `shopt`: `parse_paren`, `simple_word_eval`, etc.
+- String shell options with `shvar`: `IFS`, `_ESCAPE`, `_DIALECT`
+- **Registers** that are silently modified by the interpreter
   - `$?` and `_status`
   - `$!` for the last PID
   - `_buffer`
