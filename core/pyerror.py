@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """
 pyerror.py -- Wrappers for raising exceptions.
 

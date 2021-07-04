@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """
 vm.py: Library for executing shell.
 """

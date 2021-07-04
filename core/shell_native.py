@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """
 core/shell_native.py -- Subset of core/shell.py that we translate to C++.
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """
 core/oven.py: Pure evaluator, for config files.
 """

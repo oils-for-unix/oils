@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """
 pyos.py -- Wrappers for the operating system.
 

@@ -1,5 +1,5 @@
 """
-ui.py
+comp_ui.py
 """
 from __future__ import print_function
 

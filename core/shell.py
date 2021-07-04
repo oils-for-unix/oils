@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """
 core/shell.py -- Entry point for the shell interpreter.
 """
