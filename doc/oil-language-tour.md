@@ -513,7 +513,7 @@ If statements have optional `elif` and `else` clauses:
 
     if test --file foo {
       echo 'foo is a file'
-      rm --verbose foo           # delete it
+      rm --verbose foo     # delete it
     } elif test --dir foo {
       echo 'foo is a directory'
     } else {
@@ -522,7 +522,7 @@ If statements have optional `elif` and `else` clauses:
 
 If statements are also used for **error handling**:
 
-    if ! cp foo /tmp {           # The word ! inverts the exit status
+    if ! cp foo /tmp {     # The word ! inverts the exit status
       echo 'error copying'
     }
 
@@ -540,7 +540,7 @@ rather than a command:
     }
 
     var done = false
-    if (not done) {              # negate with 'not' operator (contrast with !)
+    if (not done) {        # negate with 'not' operator (contrast with !)
       echo "we aren't done"
     }
 
@@ -652,11 +652,11 @@ breaks the rule that types are spelled with capital letters (e.g. `Str`,
 
 There are many ways to write integers:
 
-    #var small, big = 42, 65_536         # TODO: _ not supported yet
-    #echo "$small $big"                  # => 42 65536
+    var small, big = 42, 65_536
+    echo "$small $big"                  # => 42 65536
 
-    var hex, octal, binary = 0xFF, 0o755, 0b0101
-    echo "$hex $octal $binary"           # => 255 493 5
+    var hex, octal, binary = 0x0001_0000, 0o755, 0b0001_0101
+    echo "$hex $octal $binary"           # => 65536 493 21
 
 <!--
 TODO: not supported yet

@@ -203,17 +203,21 @@ class OilEvaluator(object):
     if node.tag == expr_e.Const:
       id_ = node.c.id
 
+      # Remove underscores from 1_000_000.  The lexer is responsible for
+      # validation.
+      c = node.c.val.replace('_', '')
+
       if id_ == Id.Expr_DecInt:
-        return int(node.c.val)
+        return int(c)
       elif id_ == Id.Expr_BinInt:
-        return int(node.c.val, 2)
+        return int(c, 2)
       elif id_ == Id.Expr_OctInt:
-        return int(node.c.val, 8)
+        return int(c, 8)
       elif id_ == Id.Expr_HexInt:
-        return int(node.c.val, 16)
+        return int(c, 16)
 
       elif id_ == Id.Expr_Float:
-        return float(node.c.val)
+        return float(c)
 
       elif id_ == Id.Expr_Null:
         return None

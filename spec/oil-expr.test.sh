@@ -305,6 +305,49 @@ echo $d $b $o $h
 123 3 83 255
 ## END
 
+#### Integer literals with underscores
+const dec = 65_536
+const bin = 0b0001_0101
+const oct = 0o001_755
+const hex = 0x0001_000f
+
+echo SHELL
+echo $dec
+echo $bin
+echo $oct
+echo $hex
+const x = 1_1 + 0b1_1 + 0o1_1 + 0x1_1
+echo sum $x
+
+echo ---
+echo PYTHON
+
+python3 -c '
+print(65_536)
+print(0b0001_0101)
+print(0o001_755)
+print(0x0001_000f)
+
+# Weird syntax
+print("sum", 1_1 + 0b1_1 + 0o1_1 + 0x1_1)
+'
+
+## STDOUT:
+SHELL
+65536
+21
+1005
+65551
+sum 40
+---
+PYTHON
+65536
+21
+1005
+65551
+sum 40
+## END
+
 #### Float Literals
 shopt -s oil:basic
 # 1+2 2.3
