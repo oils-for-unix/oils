@@ -120,45 +120,53 @@ And utilities to read and write JSON:
 
 ## Concept: Three Sublanguages
 
-Oil is best explained as three interleaved languages:
+Oil is best explained as three interleaved languages: **words**, **commands**,
+and **expressions**.
 
-1. **Words** are expressions for strings, and arrays of strings.  This
-   includes:
-   - literals like `'mystr'`
-   - substitutions like `$(hostname)`,
-   - globs like `*.sh`, and more.
-2. **Commands** are used for
-   - I/O (pipelines, the `read` builtin),
-   - control flow (`if`, `for`),
-   - abstraction (`proc`), and more.
-3. **Expressions** on typed data are borrowed literally from Python, with some
-   JavaScript influence.
-   - Lists: `['ale', 'bean']` or `%(ale bean)`
-   - Dicts: `{name: 'bob', age: 42}`
-   - Functions: `split('ale bean')` and `join(['pea', 'nut'])`
+For example, this *command*:
 
-For example, this *command*
-
-    write hello $name $[42 + 1]
+    write hello $name $[d['age'] + 1]
     # =>
     # hello
     # world
     # 43
 
-consists of **four** *words*.  The fourth word contains an expression.
+consists of **four** *words*.  The fourth word is a *expression sub* `$[]`,
+which evaluates an expression and turns it into a string.
 
-*Expressions* may also have words and commands, like:
+In the next example, the *expression* on the right hand side of `=`
+concatenates two strings:
 
-    var y = $'ale\n' ++ $(echo bean)  # concatenate two words
+    var y = $'ale\n' ++ $(echo BRAN | tr R E)  # concatenate two words
     write $y
     # =>
     # ale
-    # bean
+    # BEAN
 
-To say it another way: Words, commands, and expressions are mutually recursive.
+The second string is a *command sub*, which captures the `stdout` of a command
+as a string.
+
+All of this is to show that words, commands, and expressions are *mutually
+recursive*.  Some definitions:
+
+1. **Words** are expressions for strings, and arrays of strings.  This
+   includes:
+   - literals like `'mystr'`
+   - substitutions like `${x}` and `$(hostname)`,
+   - globs like `*.sh`
+2. **Commands** are used for
+   - I/O (pipelines, the `read` builtin),
+   - control flow (`if`, `for`),
+   - abstraction (`proc`)
+3. **Expressions** on typed data are borrowed from Python, with some JavaScript
+   influence.
+   - Lists: `['ale', 'bean']` or `%(ale bean)`
+   - Dicts: `{name: 'bob', age: 42}`
+   - Functions: `split('ale bean')` and `join(['pea', 'nut'])`
+
 If you're a conceptual person, skimming [Syntactic
-Concepts](syntactic-concepts.html) may help you understand the examples that
-follow.
+Concepts](syntactic-concepts.html) may help you understand how these
+sublanguages relate, and the examples that follow.
 
 <!--
 One way to think about these sublanguages is to note that the `|` character
@@ -277,9 +285,9 @@ can't perform I/O.
 
 TODO: Builtin sub isn't yet implemented.
 
-    proc p {
+    proc p(x) {
       echo start
-      echo "_ $1 _"
+      echo "_ $x _"
       echo end
     }
 
@@ -308,8 +316,8 @@ string with `$f(x)`:
     var foods = ['pea', 'nut']
     echo $join(foods)               # => peanut
 
-Function subs **can't** be used in double quotes.  Use the longer expression
-sub instead:
+Function subs **can't** be used in double quotes, so `echo "_ $join(foods) _"`
+is invalid.  Use the longer *expression sub* instead:
 
     echo "_ $[join(foods)] _"       # => _ peanut _
 
@@ -437,7 +445,7 @@ Pipelines are a powerful method manipulating text:
 Pipelines may manipulate (lines of) text, binary data, JSON, TSV, etc.  More on
 that below.
 
-### Keywords for Variables
+### Keywords for Using Variables
 
 Constants can't be modified:
 
@@ -456,8 +464,9 @@ A more complex example:
     echo $[d->name]                 # => alice
 
 That's most of what you need to know about assignments.  Advanced users may
-want to use `setglobal` or `setref` in certain situations:
+want to use `setglobal` or `setref` in certain situations.
 
+<!--
     var g = 1
     var h = 2
     proc demo(:out) {
@@ -466,12 +475,41 @@ want to use `setglobal` or `setref` in certain situations:
     }
     demo :h  # pass a reference to h
     echo "$g $h"  # => 42 43
+-->
 
 More details: [Variable Declaration and Mutation](variables.html).
 
-### Conditionals: `if`, `case`
+### Loops: `for`, `while`
 
-If statements use curly braces, and have optional `elif` and `else` clauses:
+For loops iterate over **words**:
+
+    for x in oil $num_beans {pea,coco}nut {
+      echo $x
+    }
+    # =>
+    # oil
+    # 13
+    # peanut
+    # coconut
+
+While loops can use a **command** as the termination condition:
+
+    while test --file lock {
+      sleep 1
+    }
+
+Or an **expression**, which is surrounded in `()`:
+
+    var x = 0
+    while (x > 0) {
+      echo "x = $x"
+      # TODO: implement this
+      #setvar x -= 1
+    }
+
+### Conditionals: `if`, `case` and Error Handling
+
+If statements have optional `elif` and `else` clauses:
 
     if test --file foo {
       echo 'foo is a file'
@@ -482,11 +520,19 @@ If statements use curly braces, and have optional `elif` and `else` clauses:
       echo 'neither'
     }
 
-    if ! test --file README {    # The word ! inverts the exit status
-      echo 'no README'
+If statements are also used for **error handling**:
+
+    if ! cp foo /tmp {           # The word ! inverts the exit status
+      echo 'error copying'
     }
 
-When the condition is surrounded with `()`, it's a Python-like **expression**
+When invoking a `proc` in the condition, wrap it with the `try` builtin:
+
+    if ! try myproc {
+      echo 'failed'
+    }
+
+As with `while` loops, the condition can be an **expression** wrapped in `()`,
 rather than a command:
 
     if (num_beans > 0) {
@@ -494,7 +540,7 @@ rather than a command:
     }
 
     var done = false
-    if (not done) {              # negate with 'not' operator
+    if (not done) {              # negate with 'not' operator (contrast with !)
       echo "we aren't done"
     }
 
@@ -517,33 +563,6 @@ corresponding blocks:
 (Shell style like `if foo; then ... fi` and `case $x in ...  esac` is also legal,
 but discouraged in Oil code.)
 
-### Loops: `for`, `while`
-
-For loops iterate over **words**:
-
-    for x in oil $num_beans {pea,coco}nut {
-      echo $x
-    }
-    # =>
-    # oil
-    # 13
-    # peanut
-    # coconut
-
-Like if statements, while loops have a **command** variant:
-
-    while test --file lock {
-      sleep 1
-    }
-
-and an **expression** variant in `()`:
-
-    var x = 0
-    while (x > 0) {
-      echo "x = $x"
-      # TODO: implement this
-      #setvar x -= 1
-    }
 
 #### `break`, `continue`, `return`, `exit`
 
@@ -579,6 +598,9 @@ Some builtins take blocks as arguments:
     #}
 
 Procs can also take blocks: TODO.
+
+For more details, see [Procs, Blocks, and Funcs](proc-block-func.html)
+(under construction).
 
 ### Builtin Commands
 
@@ -714,8 +736,6 @@ unquoted keys for dicts:
 
 Equality can be approximate:
 
-<!-- TODO: Implement ~== and ~~ -->
-
     var n = '42'
     #if (n ~== 42) {
     #  echo 'equal after type conversion'
@@ -726,6 +746,8 @@ Pattern matching is done with `~ !~` (regular expressions) and `~~ !~~` (glob):
     #if (s ~~ '*.py') {
     #  echo 'Python'
     #}
+
+TODO: Implement `~==` and `~~`!
 
 (See the Eggex section below for an example of `~`.)
 

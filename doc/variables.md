@@ -381,5 +381,5 @@ Oil:
   - Cells have a tagged value (string, array, etc.) and 3 flags (readonly,
     export, nameref).
 - Unpolished details: [variable-scope.html](variable-scope.html) and
-  [oil-proc-func-block.html](oil-proc-func-block.html)
+  [proc-block-func.html](oil-proc-block-func.html)
 

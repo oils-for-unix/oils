@@ -116,7 +116,7 @@ readonly MARKDOWN_DOCS=(
   word-language
 
   oil-special-vars
-  oil-proc-func-block
+  proc-block-func
   io-builtins
   unicode
   framing

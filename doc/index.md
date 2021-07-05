@@ -67,7 +67,7 @@ I/O, control flow, and bastraction.
   control flow, etc.
 - [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
 - Pipeline Idioms.  An essential part of shell that deserves its own document.
-- [Procs, Funcs, and Blocks](oil-proc-func-block.html)
+- [Procs, Blocks, and Funcs](proc-block-func.html)
 - [Modules](modules.html).  Separting programs into files.
 
 ### The Word Language

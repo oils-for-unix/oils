@@ -8,7 +8,7 @@ Oil Keywords
 
 Related:
 
-- [Procs and Blocks](oil-proc-func-block.html)
+- [Procs and Blocks](proc-block-func.html)
 - [Variables](variables.html)
 
 <div id="toc">
@@ -92,7 +92,7 @@ Oil:
 
 ## `proc` Disables Dynamic Scope
 
-Recall that [procs](oil-proc-func-block.html) are the way to declare shell-like
+Recall that [procs](proc-block-func.html) are the way to declare shell-like
 functions in Oil.
 
     proc p {
