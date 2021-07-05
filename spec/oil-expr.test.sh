@@ -319,28 +319,24 @@ echo $hex
 const x = 1_1 + 0b1_1 + 0o1_1 + 0x1_1
 echo sum $x
 
-echo ---
-echo PYTHON
+# This works under Python 3.6, but the continuous build has earlier versions
+if false; then
+  echo ---
+  echo PYTHON
 
-python3 -c '
-print(65_536)
-print(0b0001_0101)
-print(0o001_755)
-print(0x0001_000f)
+  python3 -c '
+  print(65_536)
+  print(0b0001_0101)
+  print(0o001_755)
+  print(0x0001_000f)
 
-# Weird syntax
-print("sum", 1_1 + 0b1_1 + 0o1_1 + 0x1_1)
-'
+  # Weird syntax
+  print("sum", 1_1 + 0b1_1 + 0o1_1 + 0x1_1)
+  '
+fi
 
 ## STDOUT:
 SHELL
-65536
-21
-1005
-65551
-sum 40
----
-PYTHON
 65536
 21
 1005

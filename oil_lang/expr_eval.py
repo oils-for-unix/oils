@@ -201,12 +201,13 @@ class OilEvaluator(object):
       print('')
 
     if node.tag == expr_e.Const:
-      id_ = node.c.id
+      # NOTE: This could all be done at PARSE TIME / COMPILE TIME.
 
       # Remove underscores from 1_000_000.  The lexer is responsible for
       # validation.
       c = node.c.val.replace('_', '')
 
+      id_ = node.c.id
       if id_ == Id.Expr_DecInt:
         return int(c)
       elif id_ == Id.Expr_BinInt:
