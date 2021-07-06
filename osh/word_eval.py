@@ -737,11 +737,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _IndirectExpansion(self, val, token):
     # type: (value_t, Token) -> value_t
     """Handles indirect expansion ${!var} and ${!a[0]}."""
-    assert val.tag != value_e.Undef
-
     UP_val = val
     with tagswitch(val) as case:
-      if case(value_e.Str):
+      if case(value_e.Undef):
+        return value.Undef()  # ${!undef} is just weird bash behavior
+
+      elif case(value_e.Str):
         val = cast(value__Str, UP_val)
         # plain variable name, like 'foo'
         if match.IsValidVarName(val.s):
@@ -1227,20 +1228,25 @@ class AbstractWordEvaluator(StringWordEvaluator):
             e_die("Array %r can't be referred to as a scalar (without @ or *)",
                   var_name, part=part)
 
+    # Here we need an intermediate representation because these features
+    # interact:
+    # - VTest
+    # - Indirect expansion
+
     # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
-    undef_check = True
+    suffix_is_test = False
     suffix_op = part.suffix_op
     UP_op = suffix_op
     if suffix_op is not None and suffix_op.tag_() == suffix_op_e.Unary:
       suffix_op = cast(suffix_op__Unary, UP_op)
       if consts.GetKind(suffix_op.tok.id) == Kind.VTest:
-        undef_check = False
-
-    if undef_check:
-      val = self._EmptyStrOrError(val, part.token)  # maybe error
+        suffix_is_test = True
 
     if part.prefix_op:
       if part.prefix_op.id == Id.VSub_Pound:  # ${#var} for length
+        if not suffix_is_test:  # undef -> '' BEFORE length
+          val = self._EmptyStrOrError(val, part.token)
+
         val = self._Length(val, part.token)
         part_val = _ValueToPartValue(val, False)  # assume it's not quoted
         part_vals.append(part_val)
@@ -1256,8 +1262,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # ${!a[@]} !
           val = self._IndirectExpansion(val, part.token)
 
+          if not suffix_is_test:  # undef -> '' AFTER indirection
+            val = self._EmptyStrOrError(val, part.token)
+
       else:
         raise AssertionError()
+
+    else:
+      if not suffix_is_test:  # undef -> '' if no prefix op
+        val = self._EmptyStrOrError(val, part.token)
 
     quoted2 = False  # another bit for @Q
     if suffix_op:
