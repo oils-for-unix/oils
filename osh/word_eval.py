@@ -1254,6 +1254,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif part.prefix_op.id == Id.VSub_Bang:
         if part.bracket_op and part.bracket_op.tag_() == bracket_op_e.WholeArray:
+          if suffix_is_test:
+            # ${!a[@]-'default'} is a non-fatal runtime error in bash.  Here
+            # it's fatal.
+            tok = cast(suffix_op__Unary, UP_op).tok
+            e_die('Test operation not allowed with ${!array[@]}', token=tok)
+
           # ${!array[@]} to get indices/keys
           val = self._Keys(val, part.token)
           # already set maybe_decay_array ABOVE

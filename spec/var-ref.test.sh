@@ -48,48 +48,55 @@ undef=default
 #### comparison to ${!array[@]} keys (similar SYNTAX)
 shopt --set compat_array  # bypass errors on ${!a} and ${!A}
 
-declare -a a=(a b c)
+declare -a a=(x y)
 argv.py "${!a[@]}"
 echo a_keys=$?
-
-argv.py "${!a[@]-'default'}"
-echo a_default=$?
 
 argv.py "${!a}"  # missing [] is equivalent to ${!a[0]} ?
 echo a_nobrackets=$?
 
 echo ---
-declare -A A=([A]=a [B]=b [C]=c)
+declare -A A=([A]=a [B]=b)
 
 argv.py ${!A[@]}
 echo A_keys=$?
-
-argv.py ${!A[@]-'default'}
-echo A_default=$?
 
 argv.py "${!A}"  # missing [] is equivalent to ${!A[0]} ?
 echo A_nobrackets=$?
 
 ## STDOUT:
-['0', '1', '2']
-['a', 'b', 'c']
-['A', 'B', 'C']
-## END
-
-# the ['a'] and [''] honestly doesn't make sense
-## BUG bash STDOUT:
-['0', '1', '2']
+['0', '1']
 a_keys=0
-a_default=1
-['a']
+['']
 a_nobrackets=0
 ---
-['A', 'B', 'C']
+['A', 'B']
 A_keys=0
-A_default=1
 ['']
 A_nobrackets=0
 ## END
+
+#### ${!a[@]-'default'} is illegal
+
+# bash disallows this when a is an array.  We make it an error because [@]
+# implies it's an array.
+
+argv.py "${!a[@]-default}"
+echo status=$?
+
+a=(x y z)
+argv.py "${!a[@]-default}"
+echo status=$?
+## status: 1
+## STDOUT:
+## END
+## BUG bash status: 0
+## BUG bash STDOUT:
+['default']
+status=0
+status=1
+## END
+
 
 #### ref to $@ with @
 set -- one two
