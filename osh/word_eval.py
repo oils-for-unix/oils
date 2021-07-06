@@ -48,7 +48,7 @@ if mylib.PYTHON:
 from typing import Optional, Tuple, List, Dict, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import speck, word_part_t
+  from _devbuild.gen.syntax_asdl import word_part_t
   from _devbuild.gen.option_asdl import builtin_t
   from core import optview
   from core.state import Mem
@@ -662,119 +662,124 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError()
 
-  def _ApplyPrefixOp(self, val, prefix_op, token):
-    # type: (value_t, speck, Token) -> value_t
-    """Handles length ${#var} and indirect ${!var}."""
+  def _Length(self, val, token):
+    # type: (value_t, Token) -> value_t
+    """Returns the length of the value, for ${#var}"""
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        # NOTE: Whether bash counts bytes or chars is affected by LANG
+        # environment variables.
+        # Should we respect that, or another way to select?  set -o
+        # count-bytes?
+
+        # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
+        try:
+          length = string_ops.CountUtf8Chars(val.s)
+        except error.Strict as e:
+          # Add this here so we don't have to add it so far down the stack.
+          # TODO: It's better to show BOTH this CODE an the actual DATA
+          # somehow.
+          e.span_id = token.span_id
+
+          if self.exec_opts.strict_word_eval():
+            raise
+          else:
+            # NOTE: Doesn't make the command exit with 1; it just returns a
+            # length of -1.
+            self.errfmt.PrettyPrintError(e, prefix='warning: ')
+            return value.Str('-1')
+
+      elif case(value_e.MaybeStrArray):
+        val = cast(value__MaybeStrArray, UP_val)
+        # There can be empty placeholder values in the array.
+        length = 0
+        for s in val.strs:
+          if s is not None:
+            length += 1
+
+      elif case(value_e.AssocArray):
+        val = cast(value__AssocArray, UP_val)
+        length = len(val.d)
+
+      else:
+        raise AssertionError()
+
+    return value.Str(str(length))
+
+  def _Keys(self, val, token):
+    # type: (value_t, Token) -> value_t
+    """Return keys of a container, for ${!array[@]}"""
+
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.MaybeStrArray):
+        val = cast(value__MaybeStrArray, UP_val)
+        # translation issue: tuple indices not supported in list comprehensions
+        #indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
+        indices = []  # type: List[str]
+        for i, s in enumerate(val.strs):
+          if s is not None:
+            indices.append(str(i))
+        return value.MaybeStrArray(indices)
+
+      elif case(value_e.AssocArray):
+        val = cast(value__AssocArray, UP_val)
+        assert val.d is not None  # for MyPy, so it's not Optional[]
+
+        # BUG: Keys aren't ordered according to insertion!
+        return value.MaybeStrArray(val.d.keys())
+
+      else:
+        raise AssertionError()
+
+  def _IndirectExpansion(self, val, token):
+    # type: (value_t, Token) -> value_t
+    """Handles indirect expansion ${!var} and ${!a[0]}."""
     assert val.tag != value_e.Undef
 
-    op_id = prefix_op.id
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        # plain variable name, like 'foo'
+        if match.IsValidVarName(val.s):
+          return self.mem.GetValue(val.s)
 
-    if op_id == Id.VSub_Pound:  # ${#var} length
-      UP_val = val
-      with tagswitch(val) as case:
-        if case(value_e.Str):
-          val = cast(value__Str, UP_val)
-          # NOTE: Whether bash counts bytes or chars is affected by LANG
-          # environment variables.
-          # Should we respect that, or another way to select?  set -o
-          # count-bytes?
+        # positional argument, like '1'
+        try:
+          return self.mem.GetArgNum(int(val.s))
+        except ValueError:
+          pass
 
-          # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
-          try:
-            length = string_ops.CountUtf8Chars(val.s)
-          except error.Strict as e:
-            # Add this here so we don't have to add it so far down the stack.
-            # TODO: It's better to show BOTH this CODE an the actual DATA
-            # somehow.
-            e.span_id = token.span_id
+        if val.s in ('@', '*'):
+          # TODO: maybe_decay_array
+          return value.MaybeStrArray(self.mem.GetArgv())
 
-            if self.exec_opts.strict_word_eval():
-              raise
-            else:
-              # NOTE: Doesn't make the command exit with 1; it just returns a
-              # length of -1.
-              self.errfmt.PrettyPrintError(e, prefix='warning: ')
-              return value.Str('-1')
+        if 1:
+          # note: case 6 in var-ref.test.sh used to pass because of this
+          # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
+          i = val.s.find('[')
+          if i >= 0 and val.s[-1] == ']':
+            name = val.s[:i]
+            index = val.s[i+1:-1]
+            result = self._EvalIndirectArrayExpansion(name, index)
+            if result is not None:
+              return result
 
-        elif case(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, UP_val)
-          # There can be empty placeholder values in the array.
-          length = 0
-          for s in val.strs:
-            if s is not None:
-              length += 1
+        # Note that bash doesn't consider this fatal.  It makes the
+        # command exit with '1', but we don't have that ability yet?
+        e_die('Bad indirect expansion: %r', val.s, token=token)
 
-        elif case(value_e.AssocArray):
-          val = cast(value__AssocArray, UP_val)
-          length = len(val.d)
+      elif case(value_e.MaybeStrArray):
+        e_die('Indirect expansion of array')
 
-        else:
-          raise AssertionError()
+      elif case(value_e.AssocArray):
+        e_die('Indirect expansion of assoc array')
 
-      return value.Str(str(length))
-
-    elif op_id == Id.VSub_Bang:  # ${!foo} "indirect expansion" or ${!array[@]}
-      # NOTES:
-      # - Could translate to eval('$' + name) or eval("\$$name")
-      # - ${!array[@]} means something completely different.  TODO: implement
-      #   that.
-      # - It might make sense to suggest implementing this with associative
-      #   arrays?
-
-      UP_val = val
-      #log('val %s', val)
-      with tagswitch(val) as case:
-        if case(value_e.Str):
-          val = cast(value__Str, UP_val)
-          # plain variable name, like 'foo'
-          if match.IsValidVarName(val.s):
-            return self.mem.GetValue(val.s)
-
-          # positional argument, like '1'
-          try:
-            return self.mem.GetArgNum(int(val.s))
-          except ValueError:
-            pass
-
-          if val.s in ('@', '*'):
-            # TODO: maybe_decay_array
-            return value.MaybeStrArray(self.mem.GetArgv())
-
-          if 1:
-            # note: case 6 in var-ref.test.sh used to pass because of this
-            # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
-            i = val.s.find('[')
-            if i >= 0 and val.s[-1] == ']':
-              name = val.s[:i]
-              index = val.s[i+1:-1]
-              result = self._EvalIndirectArrayExpansion(name, index)
-              if result is not None:
-                return result
-
-          # Note that bash doesn't consider this fatal.  It makes the
-          # command exit with '1', but we don't have that ability yet?
-          e_die('Bad indirect expansion: %r', val.s, token=token)
-
-        elif case(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, UP_val)
-          # translation issue: tuple indices not supported in list comprehensions
-          #indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
-          indices = []  # type: List[str]
-          for i, s in enumerate(val.strs):
-            if s is not None:
-              indices.append(str(i))
-          return value.MaybeStrArray(indices)
-
-        elif case(value_e.AssocArray):
-          val = cast(value__AssocArray, UP_val)
-          assert val.d is not None  # for MyPy, so it's not Optional[]
-          return value.MaybeStrArray(val.d.keys())
-
-        else:
-          raise NotImplementedError(val.tag_())
-
-    else:
-      raise AssertionError(op_id)
+      else:
+        raise NotImplementedError(val.tag_())
 
   def _ApplyUnarySuffixOp(self, val, op):
     # type: (value_t, suffix_op__Unary) -> value_t
@@ -1132,6 +1137,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # That is, we don't have both prefix and suffix operators.
     #
     # 3. Process maybe_decay_array here before returning.
+    #
+    # TODO: Intermediate representation should distinguish these cases:
+    # - ${!prefix@}   prefix query
+    # - ${!array[@]}  keys
+    # - ${!ref}       named reference
+    #
+    # I think we need several stages:
+    #
+    # 1. value: name, number, special, prefix query
+    # 2. bracket_op
+    # 3. prefix length -- this is TERMINAL
+    # 4. indirection?  Only for some of the ! cases
+    # 5. string transformation suffix ops like ##
+    # 6. test op
+    # 7. maybe_decay_array
 
     maybe_decay_array = False  # for $*, ${a[*]}, etc.
     var_name = None  # type: str  # For ${foo=default}
@@ -1220,16 +1240,24 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val = self._EmptyStrOrError(val, part.token)  # maybe error
 
     if part.prefix_op:
-      # Could be
-      # - ${#var} for length
-      #   - But not ${#var-}, because the length operator followed by a suffix
-      #     operator is a SYNTAX error.
-      # - ${!ref} or ${!ref-'default'} for indirect expansion
-      # - "${!array[@]}" or "${!array[@]-'default'} (is the latter allowed?)
-      #   - and ${!assoc[*]} (TODO: maybe_decay_array for this case)
-      #
-      # BUT NOT ${!prefix@}, because that's handled above.
-      val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
+      if part.prefix_op.id == Id.VSub_Pound:  # ${#var} for length
+        val = self._Length(val, part.token)
+        part_val = _ValueToPartValue(val, False)  # assume it's not quoted
+        part_vals.append(part_val)
+        return  # EARLY EXIT: nothing else can come after length
+
+      elif part.prefix_op.id == Id.VSub_Bang:
+        if part.bracket_op and part.bracket_op.tag_() == bracket_op_e.WholeArray:
+          # ${!array[@]} to get indices/keys
+          val = self._Keys(val, part.token)
+          # already set maybe_decay_array ABOVE
+        else:
+          # Process ${!ref}.  SURPRISE: ${!a[0]} is an indirect expansion unlike
+          # ${!a[@]} !
+          val = self._IndirectExpansion(val, part.token)
+
+      else:
+        raise AssertionError()
 
     quoted2 = False  # another bit for @Q
     if suffix_op:
