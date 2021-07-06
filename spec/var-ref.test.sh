@@ -11,6 +11,86 @@ b=c
 echo ref ${!a} ${a}
 ## stdout: ref c b
 
+#### ${!ref-default}
+ref=x
+echo x=${!ref-default}
+
+x=''
+echo x=${!ref-default}
+
+x=foo
+echo x=${!ref-default}
+
+## STDOUT:
+x=default
+x=
+x=foo
+## END
+
+#### ${!undef:-}
+# bash gives empty string, but I feel like this could be an error
+echo undef=${!undef-'default'}
+echo undef=${!undef}
+
+set -u
+echo NOUNSET
+echo undef=${!undef-'default'}
+echo undef=${!undef}
+
+## status: 1
+## STDOUT:
+undef=default
+undef=
+NOUNSET
+undef=default
+## END
+
+#### comparison to ${!array[@]} keys (similar SYNTAX)
+shopt --set compat_array  # bypass errors on ${!a} and ${!A}
+
+declare -a a=(a b c)
+argv.py "${!a[@]}"
+echo a_keys=$?
+
+argv.py "${!a[@]-'default'}"
+echo a_default=$?
+
+argv.py "${!a}"  # missing [] is equivalent to ${!a[0]} ?
+echo a_nobrackets=$?
+
+echo ---
+declare -A A=([A]=a [B]=b [C]=c)
+
+argv.py ${!A[@]}
+echo A_keys=$?
+
+argv.py ${!A[@]-'default'}
+echo A_default=$?
+
+argv.py "${!A}"  # missing [] is equivalent to ${!A[0]} ?
+echo A_nobrackets=$?
+
+## STDOUT:
+['0', '1', '2']
+['a', 'b', 'c']
+['A', 'B', 'C']
+## END
+
+# the ['a'] and [''] honestly doesn't make sense
+## BUG bash STDOUT:
+['0', '1', '2']
+a_keys=0
+a_default=1
+['a']
+a_nobrackets=0
+---
+['A', 'B', 'C']
+A_keys=0
+A_default=1
+['']
+A_nobrackets=0
+## END
+
 #### ref to $@ with @
 set -- one two
 ref='@'
@@ -241,23 +321,5 @@ f x y z
 a
 x
 y
-## END
-
-#### ${!ref-default}
-
-ref=x
-
-echo x=${!ref-default}
-
-x=''
-echo x=${!ref-default}
-
-x=foo
-echo x=${!ref-default}
-
-## STDOUT:
-x=default
-x=
-x=foo
 ## END
 

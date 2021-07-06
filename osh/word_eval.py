@@ -664,15 +664,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def _ApplyPrefixOp(self, val, prefix_op, token):
     # type: (value_t, speck, Token) -> value_t
-    """
-    Returns:
-      value
-    """
+    """Handles length ${#var} and indirect ${!var}."""
     assert val.tag != value_e.Undef
 
     op_id = prefix_op.id
 
-    if op_id == Id.VSub_Pound:  # LENGTH
+    if op_id == Id.VSub_Pound:  # ${#var} length
       UP_val = val
       with tagswitch(val) as case:
         if case(value_e.Str):
@@ -716,7 +713,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       return value.Str(str(length))
 
-    elif op_id == Id.VSub_Bang:  # ${!foo}, "indirect expansion"
+    elif op_id == Id.VSub_Bang:  # ${!foo} "indirect expansion" or ${!array[@]}
       # NOTES:
       # - Could translate to eval('$' + name) or eval("\$$name")
       # - ${!array[@]} means something completely different.  TODO: implement
@@ -725,6 +722,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       #   arrays?
 
       UP_val = val
+      #log('val %s', val)
       with tagswitch(val) as case:
         if case(value_e.Str):
           val = cast(value__Str, UP_val)
@@ -742,15 +740,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # TODO: maybe_decay_array
             return value.MaybeStrArray(self.mem.GetArgv())
 
-          # note: case 6 in var-ref.test.sh passes because of this
-          # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
-          i = val.s.find('[')
-          if i >= 0 and val.s[-1] == ']':
-            name = val.s[:i]
-            index = val.s[i+1:-1]
-            result = self._EvalIndirectArrayExpansion(name, index)
-            if result is not None:
-              return result
+          if 1:
+            # note: case 6 in var-ref.test.sh used to pass because of this
+            # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
+            i = val.s.find('[')
+            if i >= 0 and val.s[-1] == ']':
+              name = val.s[:i]
+              index = val.s[i+1:-1]
+              result = self._EvalIndirectArrayExpansion(name, index)
+              if result is not None:
+                return result
 
           # Note that bash doesn't consider this fatal.  It makes the
           # command exit with '1', but we don't have that ability yet?
@@ -1222,13 +1221,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     if part.prefix_op:
       # Could be
-      # - ${!ref-default}
-      # - "${!assoc[@]}" vs. ${!assoc[*]} (TODO: maybe_decay_array for this
-      #   case)
-      # NOTE: The length operator followed by a suffix operator is a SYNTAX
-      # error.
+      # - ${#var} for length
+      #   - But not ${#var-}, because the length operator followed by a suffix
+      #     operator is a SYNTAX error.
+      # - ${!ref} or ${!ref-'default'} for indirect expansion
+      # - "${!array[@]}" or "${!array[@]-'default'} (is the latter allowed?)
+      #   - and ${!assoc[*]} (TODO: maybe_decay_array for this case)
+      #
+      # BUT NOT ${!prefix@}, because that's handled above.
       val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
-      # note: suffix_op allowed with prefix_op, e.g. ${!1@a}
 
     quoted2 = False  # another bit for @Q
     if suffix_op:
