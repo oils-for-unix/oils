@@ -177,13 +177,18 @@ OSH spec tests:
 
 [spec-test]: \$xref:spec-test
 
-- [OSH spec tests for $metric_prev](//www.oilshell.org/release/$metric_prev/test/spec.wwz/osh.html): **1260** tests, **1116** passing, **104** failing
-- [OSH spec tests for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/test/spec.wwz/osh.html): **1393** tests, **1230** passing, **78** failing
+- [OSH spec tests for $metric_prev](//www.oilshell.org/release/$metric_prev/test/spec.wwz/survey/osh.html): **1260** tests, **1116** passing, **104** failing
+- [OSH spec tests for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/test/spec.wwz/survey/osh.html): **1393** tests, **1230** passing, **78** failing
 
 Oil spec tests:
 
-- [Oil spec tests for $metric_prev](//www.oilshell.org/release/$metric_prev/test/spec.wwz/oil.html): **1260** tests, **1116** passing, **104** failing
-- [Oil spec tests for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/test/spec.wwz/oil.html): **1393** tests, **1230** passing, **78** failing
+- [Oil spec tests for $metric_prev](//www.oilshell.org/release/$metric_prev/test/spec.wwz/oil-language/oil.html): **1260** tests, **1116** passing, **104** failing
+- [Oil spec tests for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/test/spec.wwz/oil-language/oil.html): **1393** tests, **1230** passing, **78** failing
+
+Translation progress:
+
+- [OSH C++ spec tests for $metric_prev](//www.oilshell.org/release/$metric_prev/test/spec.wwz/cpp/osh-summary.html): **1260** tests, **1116** passing, **104** failing
+- [OSH C++ spec tests for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/test/spec.wwz/cpp/osh-summary.html): **1393** tests, **1230** passing, **78** failing
 
 We have X significant lines of code:
 
@@ -196,8 +201,10 @@ And X new lines of physical code:
 
 - [src for
   $metric_prev](//www.oilshell.org/release/$metric_prev/metrics.wwz/line-counts/src.txt):
-  **20,553** lines of Python
-- [src for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/metrics.wwz/line-counts/src.txt): **23,343** lines of Python
+  **20,553** in OSH and common libraries, **4,814** in Oil
+- [src for
+  $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/metrics.wwz/line-counts/src.txt):
+  **20,553** in OSH and common libraries, **4,814** in Oil
 
 ### Benchmarks
 
@@ -218,8 +225,8 @@ $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/benchmarks.wwz/osh-runtime
 
 The lines of native code was reduced:
 
-- [nativedeps for $metric_prev](//www.oilshell.org/release/$metric_prev/metrics.wwz/line-counts/nativedeps.txt): **133,291** lines
-- [nativedeps for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/metrics.wwz/line-counts/nativedeps.txt): **130,403** lines
+- [oil-cpp for $metric_prev](//www.oilshell.org/release/$metric_prev/metrics.wwz/line-counts/oil-cpp.txt): **133,291** lines of C++
+- [oil-cpp for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/metrics.wwz/line-counts/oil-cpp.txt): **130,403** lines of C++
 
 The binary size stayed almost the same:
 

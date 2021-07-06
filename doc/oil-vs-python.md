@@ -2,36 +2,45 @@
 in_progress: true
 ---
 
-
 Oil Expressions vs. Python
 ==========================
 
-Oil's expression language borrows heavily from Python.
+Oil's expression language borrows heavily from Python.  In fact, it literally
+started with Python's `Grammar/Grammar` file.
 
-In fact, it literally started with Python's `Grammar/Grammar` file.
+This doc describes some differences, which may help Python users learn Oil.
+
+If you don't know Python, see [A Tour of the Oil
+Language](oil-language-tour.html).
 
 <div id="toc">
 </div>
 
-## Literal Syntax
+## Literals for Data Types
 
-- String literals are like shell string literals.
+- String literals are like **shell** string literals, not like Python.
   - Single quoted - `r'c:\Program Files\'` or `$'line\n'`.
   - Double Quoted
-  - `\u{3bc}` instead of `\uhhhh` and `\UHHHHHHHH`
+  - Unicode literals are `\u{3bc}` instead of `\u03bc` and `\U000003bc`
 - Dicts: come from JavaScript, with unquoted keys, and "punning".
-- lists, ints, floats: the same
-- Tuples (TODO):
+- Lists: In addition to Python-like literals `['pea', 'nut']`, there are
+  shell-like literals `%(pea nut)`.
+- Booleans / null: `true`, `false`, and `null` are preferred, but `True`,
+  `False`, and `None` are accepted for compatibility.
+- Tuples (TODO): Does Oil have true tuples?
   - Singleton tuples like `42,` are disallowed, in favor of the more explicit
     `tup(42)`.
 
-### New Literals
+Other literals like ints and floats are the same as in Python.
 
-- Lists with unquoted words: `%(one two three)`
+### New Literal Syntax
+
 - `%symbol` (used in eggex now, but could also be used as interned strings)
 - Raw character literals like `\n` and `\u{03bc}`, and also `#'a'`
-- Block `^(ls | wc -l)`
-- Unevaluated expression: `^[1 +a[i] + f(x)]`
+- Unevaluated expressions
+  - Block `^(ls | wc -l)`
+  - Unevaluated expression: `^[1 + a[i] + f(x)]`
+  - Arg list: `^{42, verbose = true}`
 
 ## Operators
 
@@ -60,28 +69,27 @@ Oil doesn't overload operators as much, and does string <-> int conversion:
 - `a < b` does numeric comparison (with conversion).  `cmp()` could be for
   strings.
 
-No "accidentally quadratic"
-
-- No `in` for array/list membership.  Only dict membership.
-- The `++=` operator on strings doesn't exist
-
 Other:
 
 - I removed the `1:5:2` syntax because `0::2` conflicts with `module::name`.
   This might have been unnecessary.
-- Egg expressions and the `~` operator rather than the `re` module.
-- The `~~` glob match operator
 
 ### New Operators
 
 - `mydict->key` as an alias for `mydict['key']`
 - `++` mentioned above
+- Pattern Matching
+  - Egg expressions and the `~` operator rather than the `re` module.
+  - The `~~` glob match operator
 
 ## Semantic Differences
 
 - Iterating over a string yields code points, not one-character strings.
   - `s[i]` returns an integer code point ("rune").
   - TODO: maybe this should be `runeAt()` and `byteAt()`?
+- No "accidentally quadratic"
+  - No `in` for array/list membership.  Only dict membership.
+  - The `++=` operator on strings doesn't exist
 
 ## Related Links
 

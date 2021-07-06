@@ -93,6 +93,7 @@ readonly MARKDOWN_DOCS=(
   qtt
   language-influences
   oil-vs-python
+  oil-vs-shell
   syntactic-concepts
   syntax-feelings
 

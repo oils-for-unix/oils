@@ -57,6 +57,10 @@ Reference:
 - [Language Influences](language-influences.html)
 - [Syntactic Concepts](syntactic-concepts.html)
   - [Command vs. Expression Mode](command-vs-expression-mode.html).
+- [Oil Language vs. Shell](oil-vs-shell.html).  How does Oil differ from
+  Bourne/POSIX shell?
+- [Oil vs. Python](oil-vs-python.html).  How do Oil's expressions differ from
+  Python?
 
 ### The Command Language
 
@@ -87,8 +91,6 @@ Oil has typed **expressions**, like Python and JavaScript.
 
 - [Expression Language](expression-language.html).  Types, literals, and
   operators.
-  - [Oil vs. Python](oil-vs-python.html).  How do Oil's expressions differ from
-    Python?
 - [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
 
 ## Languages for Data (Interchange Formats)

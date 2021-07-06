@@ -35,7 +35,7 @@ If we were starting from scratch, I would have chosen a different prefix, but
 it isn't worth the breakage and complexity.  All string literals exist in both
 command and expression mode, which is tricky to implement.
 
-### Function Sub Isn't Sllowed Double Quoted Strings
+### Function Sub Isn't Allowed in Double Quoted Strings
 
 You can do
 

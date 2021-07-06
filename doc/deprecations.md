@@ -128,4 +128,5 @@ Idioms](idioms.html).
 ## Related
 
 - [Ideas for Future Deprecations](future.html)
+- [Oil Language vs. Shell](oil-vs-shell.html)
 
