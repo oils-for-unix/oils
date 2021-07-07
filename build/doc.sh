@@ -107,7 +107,7 @@ readonly MARKDOWN_DOCS=(
   project-tour
   oil-language-tour
 
-  oil-options
+  options
   oil-keywords
   oil-builtins
   command-vs-expression-mode

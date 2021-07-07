@@ -109,8 +109,7 @@ code.
 
 - [Interpreter State](interpreter-state.html).  What's inside a shell
   interpreter?
-  - [Options](oil-options.html).  Parsing and runtime options turn OSH into
-    Oil.
+  - [Options](options.html).  Parsing and runtime options turn OSH into Oil.
   - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Process Model](process-model.html).  The shell language is a thin layer over
   the Unix kernel.

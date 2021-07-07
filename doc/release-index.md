@@ -56,6 +56,7 @@ are ready to read:
   | [Oil Language FAQ](doc/oil-language-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](doc/variables.html)
+  | [Warts](doc/warts.html)
 - Language Design:
   - [A Feel For Oil's Syntax](doc/syntax-feelings.html) 
   | [Syntactic Concepts](doc/syntactic-concepts.html) 

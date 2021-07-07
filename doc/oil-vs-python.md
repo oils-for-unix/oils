@@ -90,6 +90,8 @@ Other:
 - No "accidentally quadratic"
   - No `in` for array/list membership.  Only dict membership.
   - The `++=` operator on strings doesn't exist
+- Bools and integers are totally separate types.  Oil is like JavaScript, where
+  they aren't equal: `true !== 1`.  In Python, they are equal: `True == 1`.
 
 ## Related Links
 

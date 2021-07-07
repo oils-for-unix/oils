@@ -41,14 +41,15 @@ See [Oil Languages Idioms](idioms.html) for more rewrites.
 
 ### Command Language Differences
 
-- Curly Braces instead of `then fi` and `do done`
-- Modularity: See [Procs, Blocks, and Funcs](proc-block-func.html).
+- **Curly Braces** instead of `then fi` and `do done`
+- **[Procs and Blocks](proc-block-func.html)** for Modularity
   - Shell functions are "upgraded" into procs, e.g. with named parameters
-  - Ruby-like Blocks
-- Keywords `var`, `const`, `setvar` instead of `local`, `readonly`,
-  `myvar=foo`, etc.
+  - Ruby-like Blocks, and metaprogramming
+- **Keywords for Variables** like `var`, `const`, `setvar` instead of builtins
+  like `local`, `readonly`, `myvar=foo`, etc.
   - Array literals like `var a = %(ale bean)` instead of `local a=(ale bean)`.
-- `fork` and `forkwait` builtins instead of `&` and `()`.  Parentheses are
+- **Multiline strings** replace here docs
+- `fork` and `forkwait` **builtins** instead of `&` and `()`.  Parentheses are
   generally used for Python-like expressions, e.g. `if (x > 0) { echo
   'positive' }`
 
