@@ -233,6 +233,24 @@ two
 three
 ## END
 
+#### osh -O errexit: use -O everywhere, even for Bourne options
+$SH -O errexit -c 'shopt -p -o errexit'
+#$SH -O errexit -c 'shopt -p errexit'  # bash doesn't allow this, but Oil does
+## STDOUT:
+set -o errexit
+## END
+
+#### osh -O invalid
+$SH -O errexit -c 'echo hi'
+echo status=$?
+$SH -O invalid -c 'echo hi'
+echo status=$?
+## STDOUT:
+hi
+status=0
+status=2
+## END
+
 #### strict:all includes inherit_errexit
 shopt -s strict:all
 echo $(echo one; false; echo two)

@@ -513,7 +513,7 @@ class MutableOpts(object):
 
   def SetShoptOption(self, opt_name, b):
     # type: (str, bool) -> None
-    """ For shopt -s/-u. """
+    """ For shopt -s/-u and sh -O/+O. """
 
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options

@@ -372,18 +372,6 @@ class _FlagSpecAndMore(object):
       self.actions_short[short_flag] = args.SetOption(attr_name)
       self.plus_flags.append(short_flag)
 
-    self.actions_short['o'].Add(attr_name)  # type: ignore
-
-  def ShoptOption(self, name, help=None):
-    # type: (str, Optional[str]) -> None
-    """Register an option like shopt -s nullglob
-
-    Args:
-      name: 'nullglob'
-    """
-    attr_name = name
-    self.actions_short['O'].Add(attr_name)  # type: ignore
-
   def Action(self, short_flag, name):
     # type: (str, str) -> None
     """Register an action that can be -f or -A file.

@@ -430,11 +430,7 @@ class SetNamedOption(_Action):
   def __init__(self, shopt=False):
     # type: (bool) -> None
     self.names = []  # type: List[str]
-    self.shopt = shopt
-
-  def Add(self, name):
-    # type: (str) -> None
-    self.names.append(name)
+    self.shopt = shopt  # is it sh -o (set) or sh -O (shopt)?
 
   def OnMatch(self, attached_arg, arg_r, out):
     # type: (Optional[str], Reader, _Attributes) -> bool
@@ -448,11 +444,7 @@ class SetNamedOption(_Action):
       out.show_options = True
       return True  # quit parsing
 
-    attr_name = arg
-    # Validate the option name against a list of valid names.
-    if attr_name not in self.names:
-      e_usage('got invalid option %r' % arg, span_id=arg_r.SpanId())
-
+    attr_name = arg  # Note: validation is done elsewhere
     changes = out.shopt_changes if self.shopt else out.opt_changes
     changes.append((attr_name, b))
     return False

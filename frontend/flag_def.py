@@ -189,17 +189,10 @@ def _AddShellOptions(spec):
   for opt in option_def.All():
     if opt.builtin == 'set':
       spec.Option(opt.short_flag, opt.name)
-    elif opt.builtin == 'shopt':
-      # unimplemented options are accepted in bin/osh and in shopt -s foo
-      spec.ShoptOption(opt.name)
-    else:
-      # 'interactive' Has a cell for internal use, but isn't allowed to be
-      # modified.
-      pass
-
-  # Add strict:all, etc.
-  for name in option_def.META_OPTIONS:
-    spec.ShoptOption(name)
+    # Notes:
+    # - shopt option don't need to be registered; we validate elsewhere
+    # - 'interactive' Has a cell for internal use, but isn't allowed to be
+    # modified.
 
 
 OSH_SPEC = FlagSpecAndMore('main', typed=True)
