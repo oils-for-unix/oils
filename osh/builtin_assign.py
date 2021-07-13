@@ -301,17 +301,17 @@ class Readonly(vm._AssignBuiltin):
 class NewVar(vm._AssignBuiltin):
   """declare/typeset/local."""
 
-  def __init__(self, mem, funcs, errfmt):
+  def __init__(self, mem, procs, errfmt):
     # type: (Mem, Dict[str, Proc], ErrorFormatter) -> None
     self.mem = mem
-    self.funcs = funcs
+    self.procs = procs
     self.errfmt = errfmt
 
   def _PrintFuncs(self, names):
     # type: (List[str]) -> int
     status = 0
     for name in names:
-      if name in self.funcs:
+      if name in self.procs:
         print(name)
         # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
         # could use that too.
@@ -345,7 +345,7 @@ class NewVar(vm._AssignBuiltin):
         status = self._PrintFuncs(names)
       else:
         # bash quirk: with no names, they're printed in a different format!
-        for func_name in sorted(self.funcs):
+        for func_name in sorted(self.procs):
           print('declare -f %s' % (func_name))
       return status
 
@@ -408,11 +408,11 @@ class NewVar(vm._AssignBuiltin):
 
 class Unset(vm._Builtin):
 
-  def __init__(self, mem, exec_opts, funcs, parse_ctx, arith_ev, errfmt):
+  def __init__(self, mem, exec_opts, procs, parse_ctx, arith_ev, errfmt):
     # type: (Mem, optview.Exec, Dict[str, Proc], ParseContext, ArithEvaluator, ErrorFormatter) -> None
     self.mem = mem
     self.exec_opts = exec_opts
-    self.funcs = funcs
+    self.procs = procs
     self.parse_ctx = parse_ctx
     self.arith_ev = arith_ev
     self.errfmt = errfmt
@@ -453,8 +453,8 @@ class Unset(vm._Builtin):
       return False
 
     if proc_fallback and not found:
-      if arg in self.funcs:
-        del self.funcs[arg]
+      if arg in self.procs:
+        del self.procs[arg]
 
     return True
 
@@ -468,8 +468,8 @@ class Unset(vm._Builtin):
       spid = arg_spids[i]
 
       if arg.f:
-        if name in self.funcs:
-          del self.funcs[name]
+        if name in self.procs:
+          del self.procs[name]
 
       elif arg.v:
         if not self._UnsetVar(name, spid, False):
