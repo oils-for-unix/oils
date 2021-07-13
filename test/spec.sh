@@ -916,7 +916,7 @@ oil-builtin-try() {
 }
 
 oil-options() {
-  sh-spec spec/oil-options.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/oil-options.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 

@@ -522,16 +522,6 @@ var=val
 ## status: 2
 ## stdout-json: ""
 
-#### parse_paren allows f(x)
-shopt -s parse_paren
-func f(x) {
-  echo foo $x
-}
-f(42)
-## STDOUT:
-foo 42
-## END
-
 #### nullglob is on with oil:basic 
 write one *.zzz two
 shopt -s oil:basic
