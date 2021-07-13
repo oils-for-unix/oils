@@ -98,7 +98,7 @@ status=1
 ## END
 
 
-#### ref to $@ with @
+#### var ref to $@ with @
 set -- one two
 ref='@'
 echo ref=${!ref}
@@ -106,7 +106,7 @@ echo ref=${!ref}
 ref=one two
 ## END
 
-#### ref to $1 and $2 with 1 and 2
+#### var ref to $1 and $2 with 1 and 2
 set -- one two
 ref1='1'
 echo ref1=${!ref1}
@@ -120,13 +120,14 @@ ref2=two
 
 #### var ref with 1 and @ and *
 set -- x y
-ref=1; printf "|%s" "${!ref}" $'\n'
-ref=@; printf "|%s" "${!ref}" $'\n'
-ref=*; printf "|%s" "${!ref}" $'\n'
+ref=1; argv.py "${!ref}"
+ref=@; argv.py "${!ref}"
+ref=*; argv.py "${!ref}"  # maybe_decay_array bug?
+
 ## STDOUT:
-|x|
-|x|y|
-|x y|
+['x']
+['x', 'y']
+['x y']
 ## END
 
 #### var ref to special var BASH_SOURCE
@@ -152,7 +153,7 @@ myfunc
 ## END
 ## N-I osh status: 1
 
-#### indirection, *then* fancy expansion features
+#### Indirect expansion, *then* fancy expansion features
 check_eq() {
     [ "$1" = "$2" ] || { echo "$1 vs $2"; }
 }
@@ -206,10 +207,42 @@ check_expand '${!p@P}' '$ '
 echo ok
 ## stdout: ok
 
-#### indirection *to* an array reference
+#### var ref OF array var
+declare -a badref=(ale bean)
+echo bad=${!badref}
+## status: 1
+## STDOUT:
+## END
+## OK bash status: 0
+## OK bash stdout: bad=
+
+#### var ref TO array var
+declare -a array=(ale bean)
+
+ref=array
+ref_AT='array[@]'  # this gives you the whole thing, gah
+
+if [[ $SH == *osh ]]; then
+  # there should be errors for some of these?
+  echo ${!ref}
+  echo ${!ref_AT}
+
+  # This allows the array == array[0] behavior.  And can work for indirect
+  # references too?
+  shopt -s compat_array
+fi
+
+echo ${!ref}
+echo ${!ref_AT}
+
+## STDOUT:
+ale
+ale bean
+## END
+
+#### var ref TO array var, with subscripts
 f() {
-  printf ".%s" "${!1}"
-  echo
+  argv.py "${!1}"
 }
 f a[0]
 b=(x y)
@@ -218,13 +251,13 @@ f b[@]
 f "b[*]"
 # Also associative arrays.
 ## STDOUT:
-.
-.x
-.x.y
-.x y
+['']
+['x']
+['x', 'y']
+['x y']
 ## END
 
-#### indirection to nasty complex array references
+#### var ref to nasty complex array references
 i=0
 f() {
     ((i++))
@@ -266,7 +299,7 @@ echo end
 ## stdout: 1 end
 ## OK bash stdout: 1 7 8 9 10 11 end
 
-#### indirection *to* fancy expansion features bash disallows
+#### Indirect expansion *to* fancy expansion features bash disallows
 check_indir() {
     result="${!1}"
     desugared_result=$(eval 'echo "${'"$1"'}"')
@@ -329,4 +362,3 @@ a
 x
 y
 ## END
-

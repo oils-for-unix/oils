@@ -73,9 +73,6 @@ class ArgsTest(unittest.TestCase):
         [('errexit', False), ('nounset', False), ('pipefail', True)],
         arg.opt_changes)
 
-    self.assertRaises(
-        error.Usage, s.Parse, args.Reader(['-o', 'pipefailX']))
-
     arg_r = args.Reader(['-c', 'echo hi', '--help', '--rcfile', 'bashrc'])
     arg = s.Parse(arg_r)
     self.assertEqual('echo hi', arg.c)
