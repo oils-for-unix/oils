@@ -612,9 +612,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:
       raise NotImplementedError(tok.id)
 
-  def _EvalIndirectArrayExpansion(self, name, index):
+  def _EvalIndirectArrayExpansion(self, name, index, box):
     # type: (str, str) -> Optional[value_t]
-    """Expands ${!ref} when $ref has the form `name[index]`.
+    """Expands ${!ref} when $ref has the form 'name[index]'.
 
     Args:
       name, index: arbitrary strings
@@ -636,9 +636,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(value_e.MaybeStrArray):
         val = cast(value__MaybeStrArray, UP_val)
-        if index in ('@', '*'):
-          # TODO: maybe_decay_array
+        if index == '@':
           return value.MaybeStrArray(val.strs)
+
+        elif index == '*':
+          box[0] = True  # maybe_decay_array
+          return value.MaybeStrArray(val.strs)
+
         try:
           index_num = int(index)
         except ValueError:
@@ -734,8 +738,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError()
 
-  def _IndirectExpansion(self, val, token):
-    # type: (value_t, Token) -> value_t
+  def _IndirectExpansion(self, val, token, box):
+    # type: (value_t, Token, List[bool]) -> value_t
     """Handles indirect expansion ${!var} and ${!a[0]}."""
     UP_val = val
     with tagswitch(val) as case:
@@ -754,8 +758,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
         except ValueError:
           pass
 
-        if val.s in ('@', '*'):
-          # TODO: maybe_decay_array
+        if val.s == '@':
+          return value.MaybeStrArray(self.mem.GetArgv())
+
+        elif val.s == '*':
+          box[0] = True  # maybe_decay_array
           return value.MaybeStrArray(self.mem.GetArgv())
 
         if 1:
@@ -765,7 +772,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           if i >= 0 and val.s[-1] == ']':
             name = val.s[:i]
             index = val.s[i+1:-1]
-            result = self._EvalIndirectArrayExpansion(name, index)
+            result = self._EvalIndirectArrayExpansion(name, index, box)
             if result is not None:
               return result
 
@@ -1266,7 +1273,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
           # Process ${!ref}.  SURPRISE: ${!a[0]} is an indirect expansion unlike
           # ${!a[@]} !
-          val = self._IndirectExpansion(val, part.token)
+          box = [False]
+          val = self._IndirectExpansion(val, part.token, box)
+          if box[0]:
+            maybe_decay_array = True
 
           if not suffix_is_test:  # undef -> '' AFTER indirection
             val = self._EmptyStrOrError(val, part.token)

@@ -118,7 +118,7 @@ ref1=one
 ref2=two
 ## END
 
-#### var ref with 1 and @ and *
+#### var ref: 1, @, *
 set -- x y
 ref=1; argv.py "${!ref}"
 ref=@; argv.py "${!ref}"
@@ -247,8 +247,8 @@ f() {
 f a[0]
 b=(x y)
 f b[0]
-f b[@]
-f "b[*]"
+f 'b[@]'
+f 'b[*]'
 # Also associative arrays.
 ## STDOUT:
 ['']
