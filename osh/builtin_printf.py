@@ -127,7 +127,7 @@ class _FormatStringParser(object):
           self.token_type == Id.Unknown_Backslash):
 
         # Note: like in echo -e, we don't fail with Unknown_Backslash here
-        # when shopt -u pasre_backslash because it's at runtime rather than
+        # when shopt -u parse_backslash because it's at runtime rather than
         # parse time.
         # Users should use $'' or the future static printf ${x %.3f}.
 
@@ -413,10 +413,14 @@ class Printf(vm._Builtin):
         if backslash_c:  # 'printf %b a\cb xx' - \c terminates processing!
           break
 
-      if arg_index >= num_args:
+      if arg_index == 0:
+        # We went through ALL parts and didn't consume ANY arg.
+        # Example: print x y
         break
-      # Otherwise there are more args.  So cycle through the loop once more to
-      # implement the 'arg recycling' behavior.
+      if arg_index >= num_args:
+        # We printed all args
+        break
+      # There are more arg: Implement the 'arg recycling' behavior.
 
     return 0
 

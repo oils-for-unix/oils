@@ -822,3 +822,10 @@ status=0
 ## N-I dash STDOUT:
 [[status=2
 ## END
+
+#### Regression for 'printf x y'
+printf x y
+printf '%s\n' z
+## STDOUT:
+xz
+## END

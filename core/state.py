@@ -1309,8 +1309,8 @@ class Mem(object):
         # SetValue() protects the invariant that nameref is Undef or Str
         raise AssertionError(val.tag_())
 
-    # TODO: Respect eval_unsafe_arith here, see #881.  Maybe refactor print -v
-    # and unset into DynamicArithParser?
+    # TODO: Respect eval_unsafe_arith here (issue 881).  See how it's done in
+    # 'printf -v' with MakeArithParser
     if not match.IsValidVarName(new_name):
       # e.g. '#' or '1' or ''
       if self.exec_opts.strict_nameref():
