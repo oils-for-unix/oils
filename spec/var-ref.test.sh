@@ -244,17 +244,43 @@ ale bean
 f() {
   argv.py "${!1}"
 }
-f a[0]
-b=(x y)
-f b[0]
-f 'b[@]'
-f 'b[*]'
+f 'nonexistent[0]'
+array=(x y z)
+f 'array[0]'
+f 'array[1+1]'
+f 'array[@]'
+f 'array[*]'
 # Also associative arrays.
 ## STDOUT:
 ['']
 ['x']
-['x', 'y']
-['x y']
+['z']
+['x', 'y', 'z']
+['x y z']
+## END
+
+#### var ref TO assoc array a[key]
+declare -A assoc=([ale]=bean [corn]=dip)
+ref=assoc
+#ref_AT='assoc[@]'
+ref_SUB='assoc[ale]'
+
+# BAD DYNAMIC PARSING!  I guess we need parse_unsafe_arith?
+ref_SUB_QUOTED='assoc["al""e"]'
+
+ref_SUB_BAD='assoc[bad]'
+
+echo ref=${!ref}
+#echo ref_AT=${!ref_AT}
+echo ref_SUB=${!ref_SUB}
+echo ref_SUB_QUOTED=${!ref_SUB_QUOTED}
+echo ref_SUB_BAD=${!ref_SUB_BAD}
+
+## STDOUT:
+ref=
+ref_SUB=bean
+ref_SUB_QUOTED=bean
+ref_SUB_BAD=
 ## END
 
 #### var ref to nasty complex array references

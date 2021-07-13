@@ -748,37 +748,38 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
+        ref_str = val.s
         # plain variable name, like 'foo'
-        if match.IsValidVarName(val.s):
-          return self.mem.GetValue(val.s)
+        if match.IsValidVarName(ref_str):
+          return self.mem.GetValue(ref_str)
 
         # positional argument, like '1'
         try:
-          return self.mem.GetArgNum(int(val.s))
+          return self.mem.GetArgNum(int(ref_str))
         except ValueError:
           pass
 
-        if val.s == '@':
+        if ref_str == '@':
           return value.MaybeStrArray(self.mem.GetArgv())
 
-        elif val.s == '*':
+        elif ref_str == '*':
           box[0] = True  # maybe_decay_array
           return value.MaybeStrArray(self.mem.GetArgv())
 
-        if 1:
-          # note: case 6 in var-ref.test.sh used to pass because of this
-          # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
-          i = val.s.find('[')
-          if i >= 0 and val.s[-1] == ']':
-            name = val.s[:i]
-            index = val.s[i+1:-1]
-            result = self._EvalIndirectArrayExpansion(name, index, box)
-            if result is not None:
-              return result
+        # Otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
+        #
+        # TODO: Use a regex for this?
+        i = ref_str.find('[')
+        if i >= 0 and ref_str[-1] == ']':
+          name = ref_str[:i]
+          index = ref_str[i+1:-1]
+          result = self._EvalIndirectArrayExpansion(name, index, box)
+          if result is not None:
+            return result
 
         # Note that bash doesn't consider this fatal.  It makes the
         # command exit with '1', but we don't have that ability yet?
-        e_die('Bad indirect expansion: %r', val.s, token=token)
+        e_die('Bad indirect expansion: %r', ref_str, token=token)
 
       elif case(value_e.MaybeStrArray):
         e_die('Indirect expansion of array')
