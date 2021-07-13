@@ -9,11 +9,9 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Str, value__MaybeStrArray,
     value__AssocArray,
-    lvalue, lvalue_e, scope_e, cmd_value__Argv, cmd_value__Assign,
+    lvalue, scope_e, cmd_value__Argv, cmd_value__Assign,
 )
-from _devbuild.gen.syntax_asdl import source
 
-from core import alloc
 from core import error
 from core.pyerror import e_usage, log
 from core import state
@@ -21,17 +19,15 @@ from core import ui
 from core import vm
 from frontend import flag_spec
 from frontend import args
+from osh import sh_expr_eval
 from qsn_ import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import Proc
-  from core import optview
   from core.state import Mem
   from core.ui import ErrorFormatter
   from frontend.args import _Attributes
-  from frontend.parse_lib import ParseContext
-  from osh.sh_expr_eval import ArithEvaluator
 
 _ = log
 
@@ -408,13 +404,11 @@ class NewVar(vm._AssignBuiltin):
 
 class Unset(vm._Builtin):
 
-  def __init__(self, mem, exec_opts, procs, parse_ctx, arith_ev, errfmt):
-    # type: (Mem, optview.Exec, Dict[str, Proc], ParseContext, ArithEvaluator, ErrorFormatter) -> None
+  def __init__(self, mem, procs, unsafe_arith, errfmt):
+    # type: (Mem, Dict[str, Proc], sh_expr_eval.UnsafeArith, ErrorFormatter) -> None
     self.mem = mem
-    self.exec_opts = exec_opts
     self.procs = procs
-    self.parse_ctx = parse_ctx
-    self.arith_ev = arith_ev
+    self.unsafe_arith = unsafe_arith
     self.errfmt = errfmt
 
   def _UnsetVar(self, arg, spid, proc_fallback):
@@ -423,23 +417,7 @@ class Unset(vm._Builtin):
     Returns:
       bool: whether the 'unset' builtin should succeed with code 0.
     """
-    arena = self.parse_ctx.arena
-    a_parser = self.parse_ctx.MakeArithParser(arg)
-
-    with alloc.ctx_Location(arena, source.ArgvWord(spid)):
-      try:
-        anode = a_parser.Parse()
-      except error.Parse as e:
-        ui.PrettyPrintError(e, arena)  # show parse error
-        e_usage('Invalid unset expression', span_id=spid)
-
-    lval = self.arith_ev.EvalArithLhs(anode, spid)
-
-    # Prevent attacks like these by default:
-    #
-    # unset -v 'A["$(echo K; rm *)"]'
-    if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
-      e_usage('expected a variable name.  shopt -s eval_unsafe_arith allows expressions', span_id=spid)
+    lval = self.unsafe_arith.ParseLValue(arg, spid)
 
     #log('lval %s', lval)
     found = False
@@ -449,7 +427,7 @@ class Unset(vm._Builtin):
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.
       e.span_id = spid
-      ui.PrettyPrintError(e, arena)
+      ui.PrettyPrintError(e, self.errfmt.arena)
       return False
 
     if proc_fallback and not found:

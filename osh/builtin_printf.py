@@ -9,7 +9,7 @@ import time as time_  # avoid name conflict
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv, value_e, value__Str, value, lvalue_e
+    cmd_value__Argv, value_e, value__Str, value
 )
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_e, printf_part_t, printf_part__Literal,
@@ -20,15 +20,15 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 from asdl import runtime
 from core import alloc
 from core import error
-from core.pyerror import e_usage, e_die, p_die, log
+from core.pyerror import e_die, p_die, log
 from core import state
-from core import ui
 from core import vm
 from frontend import flag_spec
 from frontend import consts
 from frontend import match
 from frontend import reader
 from mycpp import mylib
+from osh import sh_expr_eval
 from osh import word_compile
 from qsn_ import qsn
 
@@ -37,12 +37,10 @@ import posix_ as posix
 from typing import Dict, List, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-  from core import optview
+  from core import ui
   from core.state import Mem
-  from core.ui import ErrorFormatter
   from frontend.lexer import Lexer
-  from frontend.parse_lib import ParseContext
-  from osh.sh_expr_eval import ArithEvaluator
+  from frontend import parse_lib
 
 _ = log
 
@@ -149,12 +147,11 @@ class _FormatStringParser(object):
 
 class Printf(vm._Builtin):
 
-  def __init__(self, mem, exec_opts, parse_ctx, arith_ev, errfmt):
-    # type: (Mem, optview.Exec, ParseContext, ArithEvaluator, ErrorFormatter) -> None
+  def __init__(self, mem, parse_ctx, unsafe_arith, errfmt):
+    # type: (Mem, parse_lib.ParseContext, sh_expr_eval.UnsafeArith, ui.ErrorFormatter) -> None
     self.mem = mem
-    self.exec_opts = exec_opts
     self.parse_ctx = parse_ctx
-    self.arith_ev = arith_ev
+    self.unsafe_arith = unsafe_arith
     self.errfmt = errfmt
     self.parse_cache = {}  # type: Dict[str, List[printf_part_t]]
 
@@ -438,7 +435,7 @@ class Printf(vm._Builtin):
     #log('fmt %s', fmt)
     #log('vals %s', vals)
 
-    arena = self.parse_ctx.arena
+    arena = self.errfmt.arena
     if fmt in self.parse_cache:
       parts = self.parse_cache[fmt]
     else:
@@ -471,22 +468,7 @@ class Printf(vm._Builtin):
     if arg.v is not None:
       # TODO: get the span_id for arg.v!
       v_spid = runtime.NO_SPID
-
-      arena = self.parse_ctx.arena
-      a_parser = self.parse_ctx.MakeArithParser(arg.v)
-
-      with alloc.ctx_Location(arena, source.ArgvWord(v_spid)):
-        try:
-          anode = a_parser.Parse()
-        except error.Parse as e:
-          ui.PrettyPrintError(e, arena)  # show parse error
-          e_usage('Invalid -v expression', span_id=v_spid)
-
-      lval = self.arith_ev.EvalArithLhs(anode, v_spid)
-
-      if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
-        e_usage('-v expected a variable name.  shopt -s eval_unsafe_arith allows expressions', span_id=v_spid)
-
+      lval = self.unsafe_arith.ParseLValue(arg.v, v_spid)
       state.BuiltinSetValue(self.mem, lval, value.Str(result))
     else:
       mylib.Stdout().write(result)

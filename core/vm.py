@@ -12,6 +12,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       command_t, command__Pipeline, command_sub
   )
+  from osh import sh_expr_eval
   from osh.sh_expr_eval import ArithEvaluator
   from osh.sh_expr_eval import BoolEvaluator
   from oil_lang.expr_eval import OilEvaluator
@@ -19,10 +20,20 @@ if TYPE_CHECKING:
   from osh.cmd_eval import CommandEvaluator
   from osh import prompt
   from core import dev
+  from core import state
+
+
+def InitUnsafeArith(mem, word_ev, dyn_arith):
+  # type: (state.Mem, NormalWordEvaluator, sh_expr_eval.UnsafeArith) -> None
+  """Wire up circular dependencies for UnsafeArith."""
+  if 0:
+    mem.dyn_arith = dyn_arith  # for 'declare -n' nameref expansion of a[i]
+    word_ev.dyn_arith = dyn_arith  # for ${!ref} expansion of a[i]
 
 
 def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex, prompt_ev, tracer):
   # type: (ArithEvaluator, BoolEvaluator, OilEvaluator, NormalWordEvaluator, CommandEvaluator, _Executor, prompt.Evaluator, dev.Tracer) -> None
+  """Wire up mutually recursive evaluators and runtime objects."""
   arith_ev.word_ev = word_ev
   bool_ev.word_ev = word_ev
 

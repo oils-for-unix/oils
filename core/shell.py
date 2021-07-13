@@ -472,11 +472,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # Initialize builtins that depend on evaluators
   #
 
-  # note: 'printf -v a[i]' and 'unset a[i]' require same deps
-  builtins[builtin_i.printf] = builtin_printf.Printf(mem, exec_opts, parse_ctx,
-                                                     arith_ev, errfmt)
-  builtins[builtin_i.unset] = builtin_assign.Unset(mem, exec_opts, procs,
-                                                   parse_ctx, arith_ev, errfmt)
+  unsafe_arith = sh_expr_eval.UnsafeArith(exec_opts, parse_ctx, arith_ev)
+
+  builtins[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx,
+                                                     unsafe_arith, errfmt)
+  builtins[builtin_i.unset] = builtin_assign.Unset(mem, procs, unsafe_arith,
+                                                   errfmt)
+
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev,
                                                tracer)
 

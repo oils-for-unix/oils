@@ -33,10 +33,11 @@ from core import alloc
 from core import error
 from core import state
 from core import ui
-from core.pyerror import e_die, e_strict, log
-from frontend import location
+from core.pyerror import e_die, e_strict, e_usage, log
 from frontend import consts
+from frontend import location
 from frontend import match
+from frontend import parse_lib
 from mycpp import mylib
 from mycpp.mylib import tagswitch, switch, str_cmp
 from osh import bool_stat
@@ -50,7 +51,6 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core import optview
   from core.state import Mem
-  from frontend.parse_lib import ParseContext
 
 _ = log
 
@@ -182,6 +182,58 @@ if mylib.PYTHON:
     return 'A' <= ch and ch <= 'Z'
 
 
+class UnsafeArith(object):
+  """For parsing a[i] at RUNTIME."""
+
+  def __init__(self, exec_opts, parse_ctx, arith_ev):
+    # type: (optview.Exec, parse_lib.ParseContext, ArithEvaluator) -> None
+    self.exec_opts = exec_opts
+    self.parse_ctx = parse_ctx
+    self.arith_ev = arith_ev
+
+  def ParseLValue(self, s, span_id):
+    # type: (str, int) -> lvalue_t
+    """Parse lvalue for 'unset' and 'printf -v' 
+
+    _ResolveNameOrRef currently gives you a 'cell'.  So it might not support
+    lvalue.Indexed?
+    """
+    arena = self.parse_ctx.arena
+    a_parser = self.parse_ctx.MakeArithParser(s)
+
+    with alloc.ctx_Location(arena, source.ArgvWord(span_id)):
+      try:
+        anode = a_parser.Parse()
+      except error.Parse as e:
+        ui.PrettyPrintError(e, arena)  # show parse error
+        # Exception for builtins 'unset' and 'printf'
+        e_usage('got invalid place expression', span_id=span_id)
+
+    lval = self.arith_ev.EvalArithLhs(anode, span_id)
+
+    # Prevent attacks like these by default:
+    #
+    # unset -v 'A["$(echo K; rm *)"]'
+    if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
+      e_usage('expected a var name.  shopt -s eval_unsafe_arith allows a[i]',
+              span_id=span_id)
+
+    return lval
+
+  def ParseValue(self, span_id):
+    # type: (int) -> value_t
+    """Parse value for ${!ref}
+
+    This supports:
+    - 0 to 9 for $0 to $9
+    - @ for "$@"
+    - * for "$*"
+    """
+    pass
+
+
+
+
 class ArithEvaluator(object):
   """Shared between arith and bool evaluators.
 
@@ -192,7 +244,7 @@ class ArithEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, parse_ctx, errfmt):
-    # type: (Mem, optview.Exec, Optional[ParseContext], ErrorFormatter) -> None
+    # type: (Mem, optview.Exec, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
     self.word_ev = None  # type: word_eval.StringWordEvaluator
     self.mem = mem
     self.exec_opts = exec_opts
@@ -779,7 +831,7 @@ class BoolEvaluator(ArithEvaluator):
   """
 
   def __init__(self, mem, exec_opts, parse_ctx, errfmt):
-    # type: (Mem, optview.Exec, ParseContext, ErrorFormatter) -> None
+    # type: (Mem, optview.Exec, parse_lib.ParseContext, ErrorFormatter) -> None
     ArithEvaluator.__init__(self, mem, exec_opts, parse_ctx, errfmt)
     self.always_strict = False
 
