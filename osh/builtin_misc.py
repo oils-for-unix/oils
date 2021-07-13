@@ -226,7 +226,7 @@ class Read(vm._Builtin):
     if arg.q and line.startswith("'"):
       arena = self.parse_ctx.arena
       line_reader = reader.StringLineReader(line, arena)
-      lexer = self.parse_ctx._MakeLexer(line_reader)
+      lexer = self.parse_ctx.MakeLexer(line_reader)
 
       # The parser only yields valid tokens:
       #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced

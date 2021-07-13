@@ -85,7 +85,7 @@ class Output(object):
   Invalid, EndOfStream ) = range(12)
 
 
-def _MakeLexer(rules):
+def MakeLexer(rules):
   return [
   # DOTALL is for the comment
     (re.compile(pat, re.VERBOSE | re.DOTALL), i) for
@@ -154,7 +154,7 @@ LEXER = [
   (r'.', Invalid),  # error!
 ]
 
-LEXER = _MakeLexer(LEXER)
+LEXER = MakeLexer(LEXER)
 
 
 def _Tokens(s, left_pos, right_pos):

@@ -441,7 +441,7 @@ class Printf(vm._Builtin):
     else:
       line_reader = reader.StringLineReader(fmt, arena)
       # TODO: Make public
-      lexer = self.parse_ctx._MakeLexer(line_reader)
+      lexer = self.parse_ctx.MakeLexer(line_reader)
       parser = _FormatStringParser(lexer)
 
       with alloc.ctx_Location(arena, source.ArgvWord(fmt_spid)):

@@ -256,7 +256,7 @@ class ParseContext(object):
     # type: (bool) -> None
     self.one_pass_parse = b
 
-  def _MakeLexer(self, line_reader):
+  def MakeLexer(self, line_reader):
     # type: (_Reader) -> Lexer
     """Helper function.
 
@@ -268,7 +268,7 @@ class ParseContext(object):
 
   def MakeOshParser(self, line_reader, emit_comp_dummy=False):
     # type: (_Reader, bool) -> CommandParser
-    lx = self._MakeLexer(line_reader)
+    lx = self.MakeLexer(line_reader)
     if emit_comp_dummy:
       lx.EmitCompDummy()  # A special token before EOF!
 
@@ -278,7 +278,7 @@ class ParseContext(object):
 
   def MakeWordParserForHereDoc(self, line_reader):
     # type: (_Reader) -> WordParser
-    lx = self._MakeLexer(line_reader)
+    lx = self.MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
   def MakeWordParser(self, lx, line_reader):
@@ -289,7 +289,7 @@ class ParseContext(object):
     # type: (str) -> TdopParser
     """Used for a[x+1]=foo in the CommandParser."""
     line_reader = reader.StringLineReader(code_str, self.arena)
-    lx = self._MakeLexer(line_reader)
+    lx = self.MakeLexer(line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader)
     w_parser.Init(lex_mode_e.Arith)  # Special initialization
     a_parser = tdop.TdopParser(arith_parse.Spec(), w_parser, self.parse_opts)
@@ -307,7 +307,7 @@ class ParseContext(object):
     # type: (str) -> WordParser
     """For $PS1, $PS4, etc."""
     line_reader = reader.StringLineReader(code_str, self.arena)
-    lx = self._MakeLexer(line_reader)
+    lx = self.MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
   def _ParseOil(self, lexer, start_symbol):

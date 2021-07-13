@@ -37,6 +37,7 @@ from core.pyerror import e_die, e_strict, e_usage, log
 from frontend import consts
 from frontend import location
 from frontend import match
+from frontend import reader
 from frontend import parse_lib
 from mycpp import mylib
 from mycpp.mylib import tagswitch, switch, str_cmp
@@ -196,8 +197,7 @@ class UnsafeArith(object):
     # type: (str, int) -> lvalue_t
     """Parse lvalue for 'unset' and 'printf -v' 
 
-    _ResolveNameOrRef currently gives you a 'cell'.  So it might not support
-    lvalue.Indexed?
+    It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
     """
     arena = self.parse_ctx.arena
     a_parser = self.parse_ctx.MakeArithParser(s)
@@ -283,7 +283,37 @@ class UnsafeArith(object):
     - 0 to 9 for $0 to $9
     - @ for "$@"
     - * for "$*"
+    - also $ for $$, etc.
+
+    braced_var_sub handles all of these cases: with just Token and bracket_op,
+    no prefix or suffix (no recursive references with !ref)
+
+    Related to grammar in osh/word_parse.py _ReadBracedVarSub
+
+    # Same as VarOf production, but _ParseVarOf is more like a helper
+    IndirectExpr = NAME Subscript?
+                 | NUMBER
+                 | VarSymbol
+
+    lex_mode_e.VSub_1 allows all this I guess?
+
+    Note: declare -n allows 'varname' and 'varname[i]' and 'varname[@]', but it
+    does NOT allow 0 to 9, @, *
+
+    NamerefExpr = NAME Subscript?   # this allows @ and * too
+
+    _ResolveNameOrRef currently gives you a 'cell'.  So it might not support
+    lvalue.Indexed?
     """
+    if 1:
+      arena = self.parse_ctx.arena
+      line_reader = reader.StringLineReader(ref_str, arena)
+      lexer = self.parse_ctx.MakeLexer(line_reader)
+      w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
+      # Idea:
+      #   call w_parser.ParseIndirectExpansion()
+      #   which calls self._VarOf
+
     # plain variable name, like 'foo'
     if match.IsValidVarName(ref_str):
       return self.mem.GetValue(ref_str)
