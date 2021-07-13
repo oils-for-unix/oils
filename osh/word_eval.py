@@ -412,6 +412,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator
     self.prompt_ev = None  # type: prompt.Evaluator
+
+    self.unsafe_arith = None  # type: sh_expr_eval.UnsafeArith
+
     self.tilde_ev = TildeEvaluator(mem, exec_opts)
 
     self.mem = mem  # for $HOME, $1, etc.
@@ -612,60 +615,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:
       raise NotImplementedError(tok.id)
 
-  def _EvalIndirectArrayExpansion(self, name, index, box):
-    # type: (str, str, List[bool]) -> Optional[value_t]
-    """Expands ${!ref} when $ref has the form 'name[index]'.
-
-    Args:
-      name, index: arbitrary strings
-    Returns:
-      value, or None if invalid
-    """
-    if not match.IsValidVarName(name):
-      return None
-
-    val = self.mem.GetValue(name)
-    UP_val = val
-
-    with tagswitch(val) as case:
-      if case(value_e.Undef):
-        return value.Undef()
-
-      elif case(value_e.Str):
-        return None
-
-      elif case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, UP_val)
-        if index == '@':
-          return value.MaybeStrArray(val.strs)
-
-        elif index == '*':
-          box[0] = True  # maybe_decay_array
-          return value.MaybeStrArray(val.strs)
-
-        try:
-          index_num = int(index)
-        except ValueError:
-          return None
-
-        if index_num < len(val.strs):
-          return value.Str(val.strs[index_num])
-        else:
-          return value.Undef()
-
-      elif case(value_e.AssocArray):
-        val = cast(value__AssocArray, UP_val)
-        if index in ('@', '*'):
-          raise NotImplementedError()
-        s = val.d.get(index)
-        if s is not None:
-          return value.Str(s)
-        else:
-          return value.Undef()
-
-      else:
-        raise AssertionError()
-
   def _Length(self, val, token):
     # type: (value_t, Token) -> value_t
     """Returns the length of the value, for ${#var}"""
@@ -748,43 +697,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
-        ref_str = val.s
-        # plain variable name, like 'foo'
-        if match.IsValidVarName(ref_str):
-          return self.mem.GetValue(ref_str)
+        return self.unsafe_arith.Eval(val.s, token.span_id, box)
 
-        # positional argument, like '1'
-        try:
-          return self.mem.GetArgNum(int(ref_str))
-        except ValueError:
-          pass
-
-        if ref_str == '@':
-          return value.MaybeStrArray(self.mem.GetArgv())
-
-        elif ref_str == '*':
-          box[0] = True  # maybe_decay_array
-          return value.MaybeStrArray(self.mem.GetArgv())
-
-        # Otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
-        #
-        # TODO: Use a regex for this?
-        i = ref_str.find('[')
-        if i >= 0 and ref_str[-1] == ']':
-          name = ref_str[:i]
-          index = ref_str[i+1:-1]
-          result = self._EvalIndirectArrayExpansion(name, index, box)
-          if result is not None:
-            return result
-
-        # Note that bash doesn't consider this fatal.  It makes the
-        # command exit with '1', but we don't have that ability yet?
-        e_die('Bad indirect expansion: %r', ref_str, token=token)
-
-      elif case(value_e.MaybeStrArray):
+      elif case(value_e.MaybeStrArray):  # caught earlier but OK
         e_die('Indirect expansion of array')
 
-      elif case(value_e.AssocArray):
+      elif case(value_e.AssocArray):  # caught earlier but OK
         e_die('Indirect expansion of assoc array')
 
       else:

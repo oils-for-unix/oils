@@ -46,7 +46,7 @@ from osh import word_eval
 
 import libc  # for fnmatch
 
-from typing import Tuple, Optional, cast, TYPE_CHECKING
+from typing import List, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core import optview
@@ -185,8 +185,9 @@ if mylib.PYTHON:
 class UnsafeArith(object):
   """For parsing a[i] at RUNTIME."""
 
-  def __init__(self, exec_opts, parse_ctx, arith_ev):
-    # type: (optview.Exec, parse_lib.ParseContext, ArithEvaluator) -> None
+  def __init__(self, mem, exec_opts, parse_ctx, arith_ev):
+    # type: (state.Mem, optview.Exec, parse_lib.ParseContext, ArithEvaluator) -> None
+    self.mem = mem
     self.exec_opts = exec_opts
     self.parse_ctx = parse_ctx
     self.arith_ev = arith_ev
@@ -220,18 +221,100 @@ class UnsafeArith(object):
 
     return lval
 
-  def ParseValue(self, span_id):
-    # type: (int) -> value_t
-    """Parse value for ${!ref}
+  def _EvalIndirectArrayExpansion(self, name, index, box):
+    # type: (str, str, List[bool]) -> Optional[value_t]
+    """Expands ${!ref} when $ref has the form 'name[index]'.
+
+    Args:
+      name, index: arbitrary strings
+    Returns:
+      value, or None if invalid
+    """
+    if not match.IsValidVarName(name):
+      return None
+
+    val = self.mem.GetValue(name)
+    UP_val = val
+
+    with tagswitch(val) as case:
+      if case(value_e.Undef):
+        return value.Undef()
+
+      elif case(value_e.Str):
+        return None
+
+      elif case(value_e.MaybeStrArray):
+        val = cast(value__MaybeStrArray, UP_val)
+        if index == '@':
+          return value.MaybeStrArray(val.strs)
+
+        elif index == '*':
+          box[0] = True  # maybe_decay_array
+          return value.MaybeStrArray(val.strs)
+
+        try:
+          index_num = int(index)
+        except ValueError:
+          return None
+
+        if index_num < len(val.strs):
+          return value.Str(val.strs[index_num])
+        else:
+          return value.Undef()
+
+      elif case(value_e.AssocArray):
+        val = cast(value__AssocArray, UP_val)
+        if index in ('@', '*'):
+          raise NotImplementedError()
+        s = val.d.get(index)
+        if s is not None:
+          return value.Str(s)
+        else:
+          return value.Undef()
+
+      else:
+        raise AssertionError()
+
+  def Eval(self, ref_str, span_id, box):
+    # type: (str, int, List[bool]) -> value_t
+    """Parse and evaluate value for ${!ref}
 
     This supports:
     - 0 to 9 for $0 to $9
     - @ for "$@"
     - * for "$*"
     """
-    pass
+    # plain variable name, like 'foo'
+    if match.IsValidVarName(ref_str):
+      return self.mem.GetValue(ref_str)
 
+    # positional argument, like '1'
+    try:
+      return self.mem.GetArgNum(int(ref_str))
+    except ValueError:
+      pass
 
+    if ref_str == '@':
+      return value.MaybeStrArray(self.mem.GetArgv())
+
+    elif ref_str == '*':
+      box[0] = True  # maybe_decay_array
+      return value.MaybeStrArray(self.mem.GetArgv())
+
+    # Otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
+    #
+    # TODO: Use a regex for this?
+    i = ref_str.find('[')
+    if i >= 0 and ref_str[-1] == ']':
+      name = ref_str[:i]
+      index = ref_str[i+1:-1]
+      result = self._EvalIndirectArrayExpansion(name, index, box)
+      if result is not None:
+        return result
+
+    # Note that bash doesn't consider this fatal.  It makes the
+    # command exit with '1', but we don't have that ability yet?
+    e_die('Bad indirect expansion: %r', ref_str, span_id=span_id)
 
 
 class ArithEvaluator(object):

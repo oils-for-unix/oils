@@ -23,12 +23,13 @@ if TYPE_CHECKING:
   from core import state
 
 
-def InitUnsafeArith(mem, word_ev, dyn_arith):
+def InitUnsafeArith(mem, word_ev, unsafe_arith):
   # type: (state.Mem, NormalWordEvaluator, sh_expr_eval.UnsafeArith) -> None
   """Wire up circular dependencies for UnsafeArith."""
   if 0:
-    mem.dyn_arith = dyn_arith  # for 'declare -n' nameref expansion of a[i]
-    word_ev.dyn_arith = dyn_arith  # for ${!ref} expansion of a[i]
+    mem.unsafe_arith = unsafe_arith  # for 'declare -n' nameref expansion of a[i]
+
+  word_ev.unsafe_arith = unsafe_arith  # for ${!ref} expansion of a[i]
 
 
 def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex, prompt_ev, tracer):
