@@ -62,18 +62,18 @@ def _DefineOptions(spec):
   spec.InitOptions()
 
   # bashdefault, default, filenames, nospace are used in git
-  spec.Option(None, 'bashdefault',
+  spec.Option2('bashdefault',
       help='If nothing matches, perform default bash completions')
-  spec.Option(None, 'default',
+  spec.Option2('default',
       help="If nothing matches, use readline's default filename completion")
-  spec.Option(None, 'filenames',
+  spec.Option2('filenames',
       help="The completion function generates filenames and should be "
            "post-processed")
-  spec.Option(None, 'dirnames',
+  spec.Option2('dirnames',
       help="If nothing matches, perform directory name completion")
-  spec.Option(None, 'nospace',
+  spec.Option2('nospace',
       help="Don't append a space to words completed at the end of the line")
-  spec.Option(None, 'plusdirs',
+  spec.Option2('plusdirs',
       help="After processing the compspec, attempt directory name completion "
       "and return those matches.")
 

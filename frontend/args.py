@@ -432,6 +432,10 @@ class SetNamedOption(_Action):
     self.names = []  # type: List[str]
     self.shopt = shopt  # is it sh -o (set) or sh -O (shopt)?
 
+  def ArgName(self, name):
+    # type: (str) -> None
+    self.names.append(name)
+
   def OnMatch(self, attached_arg, arg_r, out):
     # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
@@ -445,6 +449,8 @@ class SetNamedOption(_Action):
       return True  # quit parsing
 
     attr_name = arg  # Note: validation is done elsewhere
+    if len(self.names) and attr_name not in self.names:
+      e_usage('Invalid option %r' % arg)
     changes = out.shopt_changes if self.shopt else out.opt_changes
     changes.append((attr_name, b))
     return False
@@ -470,7 +476,7 @@ class SetNamedAction(_Action):
     # type: () -> None
     self.names = []  # type: List[str]
 
-  def Add(self, name):
+  def ArgName(self, name):
     # type: (str) -> None
     self.names.append(name)
 
@@ -484,7 +490,7 @@ class SetNamedAction(_Action):
 
     attr_name = arg
     # Validate the option name against a list of valid names.
-    if attr_name not in self.names:
+    if len(self.names) and attr_name not in self.names:
       e_usage('Invalid action name %r' % arg)
     out.actions.append(attr_name)
     return False

@@ -360,7 +360,7 @@ class _FlagSpecAndMore(object):
 
   def Option(self, short_flag, name, help=None):
     # type: (Optional[str], str, Optional[str]) -> None
-    """Register an option that can be -e or -o errexit.
+    """Register an option; used for -e / -o errexit.
 
     Args:
       short_flag: 'e'
@@ -371,6 +371,13 @@ class _FlagSpecAndMore(object):
       assert not short_flag.startswith('-'), short_flag
       self.actions_short[short_flag] = args.SetOption(attr_name)
       self.plus_flags.append(short_flag)
+
+    # not calling ArgName() for set -o
+
+  def Option2(self, name, help=None):
+    # type: (str, Optional[str]) -> None
+    """Register an option; used for compopt -o plusdirs, etc."""
+    self.actions_short['o'].ArgName(name)  # Validate
 
   def Action(self, short_flag, name):
     # type: (str, str) -> None
@@ -387,7 +394,7 @@ class _FlagSpecAndMore(object):
       assert not short_flag.startswith('-'), short_flag
       self.actions_short[short_flag] = args.SetAction(attr_name)
 
-    self.actions_short['A'].Add(attr_name)  # type: ignore
+    self.actions_short['A'].ArgName(attr_name)  # type: ignore
 
   # TODO: Remove this method -- args.ParseMore() instead
   def Parse(self, arg_r):
