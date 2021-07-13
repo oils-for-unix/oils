@@ -372,12 +372,13 @@ class _FlagSpecAndMore(object):
       self.actions_short[short_flag] = args.SetOption(attr_name)
       self.plus_flags.append(short_flag)
 
-    # not calling ArgName() for set -o
+    # Not validating with ArgName() for set -o.  It's done later
 
   def Option2(self, name, help=None):
     # type: (str, Optional[str]) -> None
     """Register an option; used for compopt -o plusdirs, etc."""
-    self.actions_short['o'].ArgName(name)  # Validate
+    # validate the arg name
+    self.actions_short['o'].ArgName(name)  # type: ignore
 
   def Action(self, short_flag, name):
     # type: (str, str) -> None

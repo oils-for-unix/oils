@@ -613,7 +613,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       raise NotImplementedError(tok.id)
 
   def _EvalIndirectArrayExpansion(self, name, index, box):
-    # type: (str, str) -> Optional[value_t]
+    # type: (str, str, List[bool]) -> Optional[value_t]
     """Expands ${!ref} when $ref has the form 'name[index]'.
 
     Args:
