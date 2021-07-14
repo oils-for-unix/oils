@@ -442,19 +442,39 @@ ref_to_ref=foo
 ref=foo
 ## END
 
-#### Mutually recursive namerefs
+#### Mutually recursive namerefs detected on READ
 typeset -n ref1=ref2
 typeset -n ref2=ref1
 echo defined
 echo ref1=$ref1
 echo ref2=$ref1
 ## status: 1
-## stdout-json: ""
+## STDOUT:
+defined
+## END
+## OK mksh stdout-json: ""
 ## BUG bash status: 0
 ## BUG bash STDOUT:
 defined
 ref1=
 ref2=
+## END
+
+#### Mutually recursive namerefs detected on WRITE
+typeset -n ref1=ref2
+typeset -n ref2=ref1  # not detected here
+echo defined $?
+ref1=z  # detected here
+echo mutated $?
+## status: 1
+## STDOUT:
+defined 0
+## END
+## OK mksh stdout-json: ""
+## BUG bash status: 0
+## BUG bash STDOUT:
+defined 0
+mutated 1
 ## END
 
 #### Dynamic scope with namerefs
@@ -535,6 +555,26 @@ echo ref=$ref
 ## STDOUT:
 ref=three
 ## END
+
+#### a[@] in nameref (eval_unsafe_arith)
+shopt -s eval_unsafe_arith
+
+# this confuses code and data
+typeset -n ref='a[@]'
+a=(A B C)
+echo ref=$ref  # READ through ref works
+ref=(X Y Z)    # WRITE through doesn't work
+echo status=$?
+echo ref=$ref
+echo a="${a[@]}"
+## STDOUT:
+ref=A B C
+status=1
+ref=A B C
+a=A B C
+## END
+## OK mksh status: 1
+## OK mksh stdout-json: ""
 
 #### mutate through nameref: ref[0]=
 

@@ -1278,8 +1278,8 @@ class Mem(object):
 
     raise AssertionError()
 
-  def _ResolveNameOrRef(self, name, which_scopes, ref_required=False):
-    # type: (str, scope_t, bool) -> Tuple[Optional[cell], Dict[str, cell], str]
+  def _ResolveNameOrRef(self, name, which_scopes, is_setref=False, ref_trail=None):
+    # type: (str, scope_t, bool, Optional[List[str]]) -> Tuple[Optional[cell], Dict[str, cell], str]
     """Look up a cell and namespace, but respect the nameref flag.
 
     Resolving namerefs does RECURSIVE calls.
@@ -1287,7 +1287,7 @@ class Mem(object):
     cell, name_map = self._ResolveNameOnly(name, which_scopes)
 
     if cell is None or not cell.nameref:
-      if ref_required:
+      if is_setref:
         e_die("setref requires a nameref (:out param)")
       return cell, name_map, name  # not a nameref
 
@@ -1331,13 +1331,13 @@ class Mem(object):
         cell.nameref = False
         return cell, name_map, name  # fallback
 
-    # Old "use" Check for circular namerefs.
-    #if ref_trail is None:
-    #  ref_trail = [name]
-    #else:
-    #  if new_name in ref_trail:
-    #    e_die('Circular nameref %s', ref_trail)
-    #ref_trail.append(new_name)
+    # Check for circular namerefs.
+    if ref_trail is None:
+      ref_trail = [name]
+    else:
+      if new_name in ref_trail:
+        e_die('Circular nameref %s', ' -> '.join(ref_trail))
+    ref_trail.append(new_name)
 
     # Another style of check
     #count = count or [0]
@@ -1347,8 +1347,8 @@ class Mem(object):
 
     # 'declare -n' uses dynamic scope.  'setref' uses parent scope to avoid the
     # problem of 2 procs containing the same variable name.
-    which_scopes = scope_e.Parent if ref_required else scope_e.Dynamic
-    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes)
+    which_scopes = scope_e.Parent if is_setref else scope_e.Dynamic
+    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes, ref_trail=ref_trail)
     return cell, name_map, cell_name
 
   def IsAssocArray(self, name):
@@ -1381,6 +1381,11 @@ class Mem(object):
       return
 
     str_val = cast(value__Str, val)
+
+    # TODO: We should also handle namerefs like 'a[i]'.  It's probably better
+    # to switch to the GetVar() check.  This SetValue() check duplicates the
+    # algorithm.
+
     new_name = str_val.s
     #log('_DisallowNamerefCycle %s %s name %s new_name %s', which_scopes, ref_trail, name, new_name)
 
@@ -1406,7 +1411,7 @@ class Mem(object):
     Note: in bash, PWD=/ changes the directory.  But not in dash.
     """
     keyword_id = flags >> 8  # opposite of _PackFlags
-    ref_required = keyword_id == Id.KW_SetRef
+    is_setref = keyword_id == Id.KW_SetRef
     # STRICTNESS / SANENESS:
     #
     # 1) Don't create arrays automatically, e.g. a[1000]=x
@@ -1445,7 +1450,7 @@ class Mem(object):
           # lvalue here and RECURSIVELY call SetValue()?
           cell, name_map, cell_name = self._ResolveNameOrRef(lval.name,
                                                              which_scopes,
-                                                             ref_required)
+                                                             is_setref)
 
         if cell:
           # Clear before checking readonly bit.
@@ -1498,8 +1503,9 @@ class Mem(object):
         # Note: we check for circular namerefs on WRITE like mksh, not on READ
         # like bash.
         if cell.nameref:
-          ref_trail = []  # type: List[str]
-          self._DisallowNamerefCycle(cell_name, which_scopes, ref_trail)
+          #ref_trail = []  # type: List[str]
+          #self._DisallowNamerefCycle(cell_name, which_scopes, ref_trail)
+          pass
 
       elif case(lvalue_e.Indexed):
         lval = cast(lvalue__Indexed, UP_lval)
@@ -1524,7 +1530,7 @@ class Mem(object):
         # Undef, which then turns into an INDEXED array.  (Undef means that set
         # -o nounset fails.)
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
-                                                   ref_required)
+                                                   is_setref)
         if not cell:
           self._BindNewArrayWithEntry(name_map, lval, rval, flags)
           return
@@ -1583,7 +1589,7 @@ class Mem(object):
         left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
 
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
-                                                   ref_required)
+                                                   is_setref)
         if cell.readonly:
           e_die("Can't assign to readonly associative array", span_id=left_spid)
 
