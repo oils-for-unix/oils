@@ -260,6 +260,11 @@ class UnsafeArith(object):
         e_die('Invalid var ref', span_id=span_id)
 
     #log('ParseVarRef %s', bvs_part)
+
+    # Hack: There is no ${ on the "virtual" braced_var_sub, but we can add one
+    # for error messages
+    bvs_part.spids.append(span_id)
+
     return bvs_part
 
 

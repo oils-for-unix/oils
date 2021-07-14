@@ -1043,9 +1043,49 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:
       return value.MaybeStrArray([])
 
+  def _EvalBracketOp(self, val, part, quoted, var_name, maybe_decay_array):
+    # type: (value_t, braced_var_sub, bool, Optional[str], List[bool]) -> Tuple[value_t, a_index_t]
+
+    var_index = None  # type: a_index_t
+    if part.bracket_op:
+      bracket_op = part.bracket_op
+      UP_bracket_op = bracket_op
+      with tagswitch(bracket_op) as case:
+        if case(bracket_op_e.WholeArray):
+          val = self._WholeArray(val, part, quoted, maybe_decay_array)
+
+        elif case(bracket_op_e.ArrayIndex):
+          bracket_op = cast(bracket_op__ArrayIndex, UP_bracket_op)
+          val, var_index = self._ArrayIndex(val, part)
+
+        else:
+          raise AssertionError(bracket_op.tag_())
+
+    else:  # no bracket op
+      if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
+        if CheckCompatArray(var_name, self.exec_opts,
+                            not (part.prefix_op or part.suffix_op)):
+          # for ${BASH_SOURCE}, etc.
+          val = ResolveCompatArray(val)
+        else:
+          tmp = part.suffix_op
+          # TODO: An IR for ${} might simplify these lengthy conditions
+          if (tmp and tmp.tag_() == suffix_op_e.Nullary and 
+              #cast(Token, tmp).id in (Id.VOp0_a, Id.VOp0_Q)):
+              cast(Token, tmp).id == Id.VOp0_a):
+            # ${array@a} is a string
+            pass
+          else:
+            e_die("Array %r can't be referred to as a scalar (without @ or *)",
+                  var_name, part=part)
+
+    return val, var_index
+
   def _VarRefValue(self, part, quoted, maybe_decay_array):
     # type: (braced_var_sub, bool, List[bool]) -> value_t
     """Duplicates some logic from _EvalBracedVarSub, but returns a value_t."""
+
+    var_name = None  # type: str
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
@@ -1059,21 +1099,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # $* decays
       val = self._EvalSpecialVar(part.token.id, quoted, maybe_decay_array)
 
-    if part.bracket_op:
-      bracket_op = part.bracket_op
-      UP_bracket_op = bracket_op
-      with tagswitch(bracket_op) as case:
-        if case(bracket_op_e.WholeArray):
-          val = self._WholeArray(val, part, quoted, maybe_decay_array)
-
-        elif case(bracket_op_e.ArrayIndex):
-          bracket_op = cast(bracket_op__ArrayIndex, UP_bracket_op)
-          val, var_index = self._ArrayIndex(val, part)
-          # NOTE: In the normal case, var_index is used by _ApplyTestOp?
-
-        else:
-          raise AssertionError(bracket_op.tag_())
-
+    # We don't need var_index because it's only for L-Values of test ops?
+    val, unused = self._EvalBracketOp(val, part, quoted, var_name, maybe_decay_array)
     return val
 
   def _EvalBracedVarSub(self, part, part_vals, quoted):
@@ -1113,6 +1140,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # 6. test op
     # 7. maybe_decay_array
 
+    # maybe_decay_array is for joining "${a[*]}" and unquoted ${a[@]} AFTER
+    # suffix ops are applied.  If we take the length with a prefix op, the
+    # distinction is ignored.
     maybe_decay_array = [False]  # for $*, ${a[*]}, etc.
     var_name = None  # type: str  # For ${foo=default}
 
@@ -1149,44 +1179,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # $* decays
       val = self._EvalSpecialVar(part.token.id, quoted, maybe_decay_array)
 
-    var_index = None  # type: a_index_t
-
-    # 2. Bracket: value -> (value v, bool maybe_decay_array)
-    # maybe_decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER
-    # suffix ops are applied.  If we take the length with a prefix op, the
-    # distinction is ignored.
-    if part.bracket_op:
-      bracket_op = part.bracket_op
-      UP_bracket_op = bracket_op
-      with tagswitch(bracket_op) as case:
-        if case(bracket_op_e.WholeArray):
-          val = self._WholeArray(val, part, quoted, maybe_decay_array)
-
-        elif case(bracket_op_e.ArrayIndex):
-          bracket_op = cast(bracket_op__ArrayIndex, UP_bracket_op)
-          val, var_index = self._ArrayIndex(val, part)
-          # NOTE: var_index used below by _ApplyTestOp
-
-        else:
-          raise AssertionError(bracket_op.tag_())
-
-    else:  # no bracket op
-      if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
-        if CheckCompatArray(var_name, self.exec_opts,
-                            not (part.prefix_op or part.suffix_op)):
-          # for ${BASH_SOURCE}, etc.
-          val = ResolveCompatArray(val)
-        else:
-          tmp = part.suffix_op
-          # TODO: An IR for ${} might simplify these lengthy conditions
-          if (tmp and tmp.tag_() == suffix_op_e.Nullary and 
-              #cast(Token, tmp).id in (Id.VOp0_a, Id.VOp0_Q)):
-              cast(Token, tmp).id == Id.VOp0_a):
-            # ${array@a} is a string
-            pass
-          else:
-            e_die("Array %r can't be referred to as a scalar (without @ or *)",
-                  var_name, part=part)
+    # 2. Bracket Op
+    val, var_index = self._EvalBracketOp(val, part, quoted, var_name, maybe_decay_array)
 
     # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
     suffix_is_test = False

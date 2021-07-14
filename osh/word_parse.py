@@ -1710,7 +1710,6 @@ class WordParser(WordEmitter):
     self._Peek()
     if self.token_type != Id.Eof_Real:
       p_die('Expected end of var ref', token=self.cur_token)
-
     return part
 
   def LookAhead(self):

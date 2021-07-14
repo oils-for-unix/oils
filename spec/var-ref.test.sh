@@ -212,23 +212,39 @@ echo bad=${!badref}
 ## OK bash status: 0
 ## OK bash stdout: bad=
 
-#### var ref TO array var
+#### array ref without eval_unsafe_arith
+shopt -s compat_array
+
+declare -a array=(ale bean)
+ref='array[0]'
+echo ${!ref}
+## status: 1
+## stdout-json: ""
+## N-I bash status: 0
+## N-I bash STDOUT:
+ale
+## END
+
+#### array ref without compat_array
 shopt -s eval_unsafe_arith
 
 declare -a array=(ale bean)
+ref='array'
+echo ${!ref}
+## status: 1
+## stdout-json: ""
+## N-I bash status: 0
+## N-I bash STDOUT:
+ale
+## END
 
-ref=array
-ref_AT='array[@]'  # this gives you the whole thing, gah
+#### var ref TO array var
+shopt -s eval_unsafe_arith compat_array
 
-if [[ $SH == *osh ]]; then
-  # there should be errors for some of these?
-  echo ${!ref}
-  echo ${!ref_AT}
+declare -a array=(ale bean)
 
-  # This allows the array == array[0] behavior.  And can work for indirect
-  # references too?
-  shopt -s compat_array
-fi
+ref='array'  # when compat_array is on, this is like array[0]
+ref_AT='array[@]'
 
 echo ${!ref}
 echo ${!ref_AT}
@@ -260,7 +276,7 @@ f 'array[*]'
 ## END
 
 #### var ref TO assoc array a[key]
-shopt -s eval_unsafe_arith
+shopt -s eval_unsafe_arith compat_array
 
 declare -A assoc=([ale]=bean [corn]=dip)
 ref=assoc
@@ -287,14 +303,14 @@ ref_SUB_QUOTED=bean
 ref_SUB_BAD=
 ## END
 
-#### var ref to nasty complex array references
-shopt -s eval_unsafe_arith
+#### var ref TO array with arbitrary subscripts
+shopt -s eval_unsafe_arith compat_array
 
-i=0
 f() {
-    ((i++))
-    val=$(echo "${!1}")
-    [ "$val" = y ] && echo -n "$i "
+  local val=$(echo "${!1}")
+  if test "$val" = y; then 
+    echo "works: $1"
+  fi
 }
 # Warmup: nice plain array reference
 a=(x y)
@@ -313,8 +329,6 @@ f 'a[b*]'  # operand expected
 f 'a[1"]'  # bad substitution
 #
 # Allowed: most everything else in section 3.5 "Shell Expansions".
-# tilde expansion
-( PWD=1; f 'a[~+]' ); ((i++))
 # shell parameter expansion
 b=1
 f 'a[$b]'
@@ -324,12 +338,29 @@ f 'a[${c:-1}]'
 f 'a[$(echo 1)]'
 # arithmetic expansion
 f 'a[$(( 3 - 2 ))]'
-echo end
+
 # All of these are undocumented and probably shouldn't exist,
 # though it's always possible some will turn up in the wild and
 # we'll end up implementing them.
-## stdout: 1 end
-## OK bash stdout: 1 7 8 9 10 11 end
+
+## STDOUT:
+works: a[1]
+works: a[$b]
+works: a[${c:-1}]
+works: a[$(echo 1)]
+works: a[$(( 3 - 2 ))]
+## END
+
+#### Bizarre tilde expansion in array index
+a=(x y)
+PWD=1
+ref='a[~+]'
+echo ${!ref}
+## status: 1
+## BUG bash status: 0
+## BUG bash STDOUT:
+y
+## END
 
 #### Indirect expansion TO fancy expansion features bash disallows
 shopt -s eval_unsafe_arith
