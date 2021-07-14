@@ -67,7 +67,11 @@ module runtime
   -- Used for ${a[i]=x}.  TODO: also use for lvalue/place.
   a_index = Str(string s) | Int(int i)
 
+  -- for the place in ${a[0]=a}
   VTestPlace = (string name, a_index index)
+
+  -- evaluation state for braced_var_sub 
+  VarSubState = (bool decay_array, bool array_op_nullary)
 
   -- A cell is a wrapper for a value.
   -- TODO: add spid for declaration for 'assigning const' error
