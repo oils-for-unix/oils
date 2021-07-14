@@ -1148,7 +1148,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # distinction is ignored.
     maybe_decay_array = [False]  # for $*, ${a[*]}, etc.
 
-    vtest_place = VTestPlace(None, None)  # For ${foo=default}
+    var_name = None  # type: str
+    vtest_place = VTestPlace(var_name, None)  # For ${foo=default}
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
