@@ -67,6 +67,8 @@ module runtime
   -- Used for ${a[i]=x}.  TODO: also use for lvalue/place.
   a_index = Str(string s) | Int(int i)
 
+  VTestPlace = (string name, a_index index)
+
   -- A cell is a wrapper for a value.
   -- TODO: add spid for declaration for 'assigning const' error
 

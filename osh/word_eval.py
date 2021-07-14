@@ -25,6 +25,7 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     quote_e, quote_t,
     a_index, a_index_e, a_index_t, a_index__Int, a_index__Str,
+    VTestPlace
 )
 from core import error
 from core import pyos
@@ -490,8 +491,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                    op,  # type: suffix_op__Unary
                    quoted,  # type: bool
                    part_vals,  # type: Optional[List[part_value_t]]
-                   var_name,  # type: str
-                   var_index,  # type: a_index_t
+                   vtest_place,  # type: VTestPlace
                    blame_token,  # type: Token
                    ):
     # type: (...) -> bool
@@ -566,7 +566,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # Append them to out param AND return them.
         part_vals.extend(assign_part_vals)
 
-        if var_name is None:
+        if vtest_place.name is None:
           # TODO: error context
           e_die("Can't assign to special variable")
         else:
@@ -574,10 +574,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # avoid it.
           rhs_str = _DecayPartValuesToString(assign_part_vals,
                                              self.splitter.GetJoinChar())
-          if var_index is None:  # using None when no index
-            lval = lvalue.Named(var_name)  # type: lvalue_t
+          if vtest_place.index is None:  # using None when no index
+            lval = lvalue.Named(vtest_place.name)  # type: lvalue_t
           else:
+            var_name = vtest_place.name
+            var_index = vtest_place.index
             UP_var_index = var_index
+
             with tagswitch(var_index) as case:
               if case(a_index_e.Int):
                 var_index = cast(a_index__Int, UP_var_index)
@@ -682,8 +685,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError()
 
-  def _EvalVarRef(self, val, token, quoted, box):
-    # type: (value_t, Token, bool, List[bool]) -> value_t
+  def _EvalVarRef(self, val, token, quoted, maybe_decay_array, vtest_place):
+    # type: (value_t, Token, bool, List[bool], VTestPlace) -> value_t
     """Handles indirect expansion like ${!var} and ${!a[0]}."""
     UP_val = val
     with tagswitch(val) as case:
@@ -695,7 +698,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         bvs_part = self.unsafe_arith.ParseVarRef(val.s, token.span_id)
         if not self.exec_opts.eval_unsafe_arith() and bvs_part.bracket_op:
           e_die('a[i] not allowed without shopt -s eval_unsafe_arith', token=token)
-        return self._VarRefValue(bvs_part, quoted, box)
+        return self._VarRefValue(bvs_part, quoted, maybe_decay_array, vtest_place)
 
       elif case(value_e.MaybeStrArray):  # caught earlier but OK
         e_die('Indirect expansion of array')
@@ -932,8 +935,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     return val
 
-  def _ArrayIndex(self, val, part):
-    # type: (value_t, braced_var_sub) -> Tuple[value_t, a_index_t]
+  def _ArrayIndex(self, val, part, vtest_place):
+    # type: (value_t, braced_var_sub, VTestPlace) -> value_t
     """Process a numeric array index like ${a[i+1]}"""
     var_index = None  # type: a_index_t
     bracket_op = cast(bracket_op__ArrayIndex, part.bracket_op)
@@ -953,7 +956,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case2(value_e.MaybeStrArray):
         array_val = cast(value__MaybeStrArray, UP_val)
         index = self.arith_ev.EvalToInt(anode)
-        var_index = a_index.Int(index)
+        vtest_place.index= a_index.Int(index)
 
         s = GetArrayItem(array_val.strs, index)
 
@@ -976,7 +979,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError(val.tag_())
 
-    return val, var_index
+    return val
 
   def _EvalDoubleQuoted(self, parts, part_vals):
     # type: (List[word_part_t], List[part_value_t]) -> None
@@ -1043,10 +1046,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:
       return value.MaybeStrArray([])
 
-  def _EvalBracketOp(self, val, part, quoted, var_name, maybe_decay_array):
-    # type: (value_t, braced_var_sub, bool, Optional[str], List[bool]) -> Tuple[value_t, a_index_t]
+  def _EvalBracketOp(self, val, part, quoted, maybe_decay_array, vtest_place):
+    # type: (value_t, braced_var_sub, bool, List[bool], VTestPlace) -> value_t
 
-    var_index = None  # type: a_index_t
     if part.bracket_op:
       bracket_op = part.bracket_op
       UP_bracket_op = bracket_op
@@ -1056,12 +1058,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(bracket_op_e.ArrayIndex):
           bracket_op = cast(bracket_op__ArrayIndex, UP_bracket_op)
-          val, var_index = self._ArrayIndex(val, part)
+          val = self._ArrayIndex(val, part, vtest_place)
 
         else:
           raise AssertionError(bracket_op.tag_())
 
     else:  # no bracket op
+      var_name = vtest_place.name
       if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
         if CheckCompatArray(var_name, self.exec_opts,
                             not (part.prefix_op or part.suffix_op)):
@@ -1079,28 +1082,28 @@ class AbstractWordEvaluator(StringWordEvaluator):
             e_die("Array %r can't be referred to as a scalar (without @ or *)",
                   var_name, part=part)
 
-    return val, var_index
+    return val
 
-  def _VarRefValue(self, part, quoted, maybe_decay_array):
-    # type: (braced_var_sub, bool, List[bool]) -> value_t
+  def _VarRefValue(self, part, quoted, maybe_decay_array, vtest_place):
+    # type: (braced_var_sub, bool, List[bool], VTestPlace) -> value_t
     """Duplicates some logic from _EvalBracedVarSub, but returns a value_t."""
-
-    var_name = None  # type: str
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
       var_name = part.token.val
+      vtest_place.name = var_name
       val = self.mem.GetValue(var_name)
 
     elif part.token.id == Id.VSub_Number:
       var_num = int(part.token.val)
       val = self._EvalVarNum(var_num)
+
     else:
       # $* decays
       val = self._EvalSpecialVar(part.token.id, quoted, maybe_decay_array)
 
     # We don't need var_index because it's only for L-Values of test ops?
-    val, unused = self._EvalBracketOp(val, part, quoted, var_name, maybe_decay_array)
+    val = self._EvalBracketOp(val, part, quoted, maybe_decay_array, vtest_place)
     return val
 
   def _EvalBracedVarSub(self, part, part_vals, quoted):
@@ -1144,7 +1147,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # suffix ops are applied.  If we take the length with a prefix op, the
     # distinction is ignored.
     maybe_decay_array = [False]  # for $*, ${a[*]}, etc.
-    var_name = None  # type: str  # For ${foo=default}
+
+    vtest_place = VTestPlace(None, None)  # For ${foo=default}
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
@@ -1169,6 +1173,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
           return  # EARLY RETURN
 
       var_name = part.token.val
+      vtest_place.name = var_name
+
       # TODO: LINENO can use its own span_id!
       val = self.mem.GetValue(var_name)
 
@@ -1180,7 +1186,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val = self._EvalSpecialVar(part.token.id, quoted, maybe_decay_array)
 
     # 2. Bracket Op
-    val, var_index = self._EvalBracketOp(val, part, quoted, var_name, maybe_decay_array)
+    val = self._EvalBracketOp(val, part, quoted, maybe_decay_array, vtest_place)
 
     # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
     suffix_is_test = False
@@ -1217,12 +1223,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # ${!a[@]} !
           # ${!ref} can expand into an array if ref='array[@]'
 
-          val = self._EvalVarRef(val, part.token, quoted, maybe_decay_array)
+          # Clear it now that we have a var ref
+          vtest_place.name = None
+          vtest_place.index = None
+
+          val = self._EvalVarRef(val, part.token, quoted, maybe_decay_array, vtest_place)
+
           if not suffix_is_test:  # undef -> '' AFTER indirection
             val = self._EmptyStrOrError(val, part.token)
-
-          # Can't return because we still need to apply test ops like
-          # ${!ref:-'default'}
 
       else:
         raise AssertionError()
@@ -1243,9 +1251,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         elif case(suffix_op_e.Unary):
           op = cast(suffix_op__Unary, UP_op)
           if consts.GetKind(op.tok.id) == Kind.VTest:
-            # TODO: Should we use lvalue_t instead of var_name and var_index?
-            if self._ApplyTestOp(val, op, quoted, part_vals,
-                                 var_name, var_index, part.token):
+            if self._ApplyTestOp(val, op, quoted, part_vals, vtest_place,
+                                 part.token):
               # e.g. to evaluate ${undef:-'default'}, we already appended
               # what we need
               return
