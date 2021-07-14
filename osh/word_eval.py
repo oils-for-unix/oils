@@ -688,14 +688,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Undef):
-        val = value.Undef()  # ${!undef} is just weird bash behavior
+        return value.Undef()  # ${!undef} is just weird bash behavior
 
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
         bvs_part = self.unsafe_arith.ParseVarRef(val.s, token.span_id)
         if not self.exec_opts.eval_unsafe_arith() and bvs_part.bracket_op:
           e_die('a[i] not allowed without shopt -s eval_unsafe_arith', token=token)
-        val = self._VarRefValue(bvs_part, quoted, box)
+        return self._VarRefValue(bvs_part, quoted, box)
 
       elif case(value_e.MaybeStrArray):  # caught earlier but OK
         e_die('Indirect expansion of array')
@@ -705,8 +705,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       else:
         raise NotImplementedError(val.tag_())
-
-    return val
 
   def _ApplyUnarySuffixOp(self, val, op):
     # type: (value_t, suffix_op__Unary) -> value_t
@@ -936,6 +934,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def _ArrayIndex(self, val, part):
     # type: (value_t, braced_var_sub) -> Tuple[value_t, a_index_t]
+    """Process a numeric array index like ${a[i+1]}"""
     var_index = None  # type: a_index_t
     bracket_op = cast(bracket_op__ArrayIndex, part.bracket_op)
     anode = bracket_op.expr

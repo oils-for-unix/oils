@@ -259,7 +259,7 @@ class UnsafeArith(object):
         # Exception for builtins 'unset' and 'printf'
         e_die('Invalid var ref', span_id=span_id)
 
-    log('ParseVarRef %s', bvs_part)
+    #log('ParseVarRef %s', bvs_part)
     return bvs_part
 
 
