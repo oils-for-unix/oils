@@ -137,23 +137,19 @@ echo lineno=${!ref}
 lineno=2
 ## END
 
-#### var ref to $? with '?' (not in Oil)
+#### var ref to $? with '?'
 myfunc() {
   local ref=$1
   echo ${!ref}
 }
 myfunc FUNCNAME
-myfunc '?'  # osh doesn't do this dynamically
+myfunc '?'
 ## STDOUT: 
 myfunc
 0
 ## END
-## N-I osh STDOUT: 
-myfunc
-## END
-## N-I osh status: 1
 
-#### Indirect expansion, *then* fancy expansion features
+#### Indirect expansion, THEN fancy expansion features
 check_eq() {
     [ "$1" = "$2" ] || { echo "$1 vs $2"; }
 }
@@ -217,6 +213,8 @@ echo bad=${!badref}
 ## OK bash stdout: bad=
 
 #### var ref TO array var
+shopt -s eval_unsafe_arith
+
 declare -a array=(ale bean)
 
 ref=array
@@ -241,6 +239,8 @@ ale bean
 ## END
 
 #### var ref TO array var, with subscripts
+shopt -s eval_unsafe_arith
+
 f() {
   argv.py "${!1}"
 }
@@ -260,17 +260,21 @@ f 'array[*]'
 ## END
 
 #### var ref TO assoc array a[key]
+shopt -s eval_unsafe_arith
+
 declare -A assoc=([ale]=bean [corn]=dip)
 ref=assoc
 #ref_AT='assoc[@]'
-ref_SUB='assoc[ale]'
 
-# BAD DYNAMIC PARSING!  I guess we need parse_unsafe_arith?
-ref_SUB_QUOTED='assoc["al""e"]'
+# UNQUOTED doesn't work with Oil's parser
+#ref_SUB='assoc[ale]'
+ref_SUB='assoc["ale"]'
 
-ref_SUB_BAD='assoc[bad]'
+ref_SUB_QUOTED='assoc["al"e]'
 
-echo ref=${!ref}
+ref_SUB_BAD='assoc["bad"]'
+
+echo ref=${!ref}  # compat_array: assoc is equivalent to assoc[0]
 #echo ref_AT=${!ref_AT}
 echo ref_SUB=${!ref_SUB}
 echo ref_SUB_QUOTED=${!ref_SUB_QUOTED}
@@ -284,6 +288,8 @@ ref_SUB_BAD=
 ## END
 
 #### var ref to nasty complex array references
+shopt -s eval_unsafe_arith
+
 i=0
 f() {
     ((i++))
@@ -325,7 +331,9 @@ echo end
 ## stdout: 1 end
 ## OK bash stdout: 1 7 8 9 10 11 end
 
-#### Indirect expansion *to* fancy expansion features bash disallows
+#### Indirect expansion TO fancy expansion features bash disallows
+shopt -s eval_unsafe_arith
+
 check_indir() {
     result="${!1}"
     desugared_result=$(eval 'echo "${'"$1"'}"')
@@ -361,15 +369,24 @@ echo done
 ## OK bash status: 0
 ## OK bash stdout: done
 
-#### Bad var ref with ${!a}
+#### Bad var ref
 a='bad var name'
 echo ref ${!a}
+echo status=$?
+
+## STDOUT:
+status=1
+## END
+## OK osh stdout-json: ""
+## OK osh status: 1
+
+#### Bad var ref 2
+b='/'  # really bad
+echo ref ${!b}
 echo status=$?
 ## STDOUT:
 status=1
 ## END
-
-# this error is fatal in osh
 ## OK osh stdout-json: ""
 ## OK osh status: 1
 

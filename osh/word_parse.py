@@ -1692,6 +1692,27 @@ class WordParser(WordEmitter):
       raise AssertionError(
           'Unhandled: %s (%s)' % (self.cur_token, self.token_kind))
 
+  def ParseVarRef(self):
+    # type: () -> braced_var_sub
+    """DYNAMIC parsing of what's inside ${!ref}
+
+    # Same as VarOf production
+    VarRefExpr = VarOf EOF
+    """
+    self._Next(lex_mode_e.VSub_1)
+
+    self._Peek()
+    if self.token_kind != Kind.VSub:
+      p_die('Invalid var ref', token=self.cur_token)
+
+    part = self._ParseVarOf()
+
+    self._Peek()
+    if self.token_type != Id.Eof_Real:
+      p_die('Expected end of var ref', token=self.cur_token)
+
+    return part
+
   def LookAhead(self):
     # type: () -> Id_t
     """Look ahead to the next token.

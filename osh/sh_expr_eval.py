@@ -26,6 +26,7 @@ from _devbuild.gen.syntax_asdl import (
     compound_word, Token,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
     source, word_t,
+    braced_var_sub
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
@@ -47,7 +48,7 @@ from osh import word_eval
 
 import libc  # for fnmatch
 
-from typing import List, Tuple, Optional, cast, TYPE_CHECKING
+from typing import Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core import optview
@@ -221,62 +222,8 @@ class UnsafeArith(object):
 
     return lval
 
-  def _EvalIndirectArrayExpansion(self, name, index, box):
-    # type: (str, str, List[bool]) -> Optional[value_t]
-    """Expands ${!ref} when $ref has the form 'name[index]'.
-
-    Args:
-      name, index: arbitrary strings
-    Returns:
-      value, or None if invalid
-    """
-    if not match.IsValidVarName(name):
-      return None
-
-    val = self.mem.GetValue(name)
-    UP_val = val
-
-    with tagswitch(val) as case:
-      if case(value_e.Undef):
-        return value.Undef()
-
-      elif case(value_e.Str):
-        return None
-
-      elif case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, UP_val)
-        if index == '@':
-          return value.MaybeStrArray(val.strs)
-
-        elif index == '*':
-          box[0] = True  # maybe_decay_array
-          return value.MaybeStrArray(val.strs)
-
-        try:
-          index_num = int(index)
-        except ValueError:
-          return None
-
-        if index_num < len(val.strs):
-          return value.Str(val.strs[index_num])
-        else:
-          return value.Undef()
-
-      elif case(value_e.AssocArray):
-        val = cast(value__AssocArray, UP_val)
-        if index in ('@', '*'):
-          raise NotImplementedError()
-        s = val.d.get(index)
-        if s is not None:
-          return value.Str(s)
-        else:
-          return value.Undef()
-
-      else:
-        raise AssertionError()
-
-  def Eval(self, ref_str, span_id, box):
-    # type: (str, int, List[bool]) -> value_t
+  def ParseVarRef(self, ref_str, span_id):
+    # type: (str, int) -> braced_var_sub
     """Parse and evaluate value for ${!ref}
 
     This supports:
@@ -290,11 +237,6 @@ class UnsafeArith(object):
 
     Related to grammar in osh/word_parse.py _ReadBracedVarSub
 
-    # Same as VarOf production, but _ParseVarOf is more like a helper
-    IndirectExpr = NAME Subscript?
-                 | NUMBER
-                 | VarSymbol
-
     lex_mode_e.VSub_1 allows all this I guess?
 
     Note: declare -n allows 'varname' and 'varname[i]' and 'varname[@]', but it
@@ -305,46 +247,20 @@ class UnsafeArith(object):
     _ResolveNameOrRef currently gives you a 'cell'.  So it might not support
     lvalue.Indexed?
     """
-    if 1:
-      arena = self.parse_ctx.arena
-      line_reader = reader.StringLineReader(ref_str, arena)
-      lexer = self.parse_ctx.MakeLexer(line_reader)
-      w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
-      # Idea:
-      #   call w_parser.ParseIndirectExpansion()
-      #   which calls self._VarOf
+    arena = self.parse_ctx.arena
+    line_reader = reader.StringLineReader(ref_str, arena)
+    lexer = self.parse_ctx.MakeLexer(line_reader)
+    w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
+    with alloc.ctx_Location(arena, source.ArgvWord(span_id)):
+      try:
+        bvs_part = w_parser.ParseVarRef()
+      except error.Parse as e:
+        ui.PrettyPrintError(e, arena)  # show parse error
+        # Exception for builtins 'unset' and 'printf'
+        e_die('Invalid var ref', span_id=span_id)
 
-    # plain variable name, like 'foo'
-    if match.IsValidVarName(ref_str):
-      return self.mem.GetValue(ref_str)
-
-    # positional argument, like '1'
-    try:
-      return self.mem.GetArgNum(int(ref_str))
-    except ValueError:
-      pass
-
-    if ref_str == '@':
-      return value.MaybeStrArray(self.mem.GetArgv())
-
-    elif ref_str == '*':
-      box[0] = True  # maybe_decay_array
-      return value.MaybeStrArray(self.mem.GetArgv())
-
-    # Otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
-    #
-    # TODO: Use a regex for this?
-    i = ref_str.find('[')
-    if i >= 0 and ref_str[-1] == ']':
-      name = ref_str[:i]
-      index = ref_str[i+1:-1]
-      result = self._EvalIndirectArrayExpansion(name, index, box)
-      if result is not None:
-        return result
-
-    # Note that bash doesn't consider this fatal.  It makes the
-    # command exit with '1', but we don't have that ability yet?
-    e_die('Bad indirect expansion: %r', ref_str, span_id=span_id)
+    log('ParseVarRef %s', bvs_part)
+    return bvs_part
 
 
 class ArithEvaluator(object):

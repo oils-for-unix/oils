@@ -64,17 +64,17 @@ if TYPE_CHECKING:
 # Ditto for ${FUNCNAME} and ${BASH_LINENO}.
 _STRING_AND_ARRAY = ['BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO']
 
-def CheckCompatArray(var_name, opts, is_plain_var_sub=True):
+def CheckCompatArray(var_name, exec_opts, is_plain_var_sub=True):
   # type: (str, optview.Exec, bool) -> bool
   return (
-      opts.compat_array() or
+      exec_opts.compat_array() or
       is_plain_var_sub and var_name in _STRING_AND_ARRAY
   )
 
 
 def ResolveCompatArray(val):
   # type: (value_t) -> value_t
-  """Decay ${array} to ${array[0]}."""
+  """Resolve ${array} to ${array[0]}."""
   if val.tag_() == value_e.MaybeStrArray:
     array_val = cast(value__MaybeStrArray, val)
     s = array_val.strs[0] if len(array_val.strs) else None
@@ -458,12 +458,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     assert var_num >= 0
     return self.mem.GetArgNum(var_num)
 
-  def _EvalSpecialVar(self, op_id, quoted):
-    # type: (int, bool) -> Tuple[value_t, bool]
-    """Returns (val, bool maybe_decay_array).
-
-    TODO: Should that boolean be part of the value?
-    """
+  def _EvalSpecialVar(self, op_id, quoted, maybe_decay_array):
+    # type: (int, bool, List[bool]) -> value_t
+    """Evaluate $? and so forth"""
     # $@ is special -- it need to know whether it is in a double quoted
     # context.
     #
@@ -471,16 +468,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # - If it's $@ in a normal context, return a STRING, which then will be
     # subject to splitting.
 
-    maybe_decay_array = False
-
     if op_id in (Id.VSub_At, Id.VSub_Star):
       argv = self.mem.GetArgv()
       val = value.MaybeStrArray(argv)  # type: value_t
       if op_id == Id.VSub_At:
         # "$@" evaluates to an array, $@ should be decayed
-        maybe_decay_array = not quoted
+        maybe_decay_array[0] = not quoted
       else:  # $* "$*" are both decayed
-        maybe_decay_array = True
+        maybe_decay_array[0] = True
 
     elif op_id == Id.VSub_Hyphen:
       val = value.Str(_GetDollarHyphen(self.exec_opts))
@@ -488,7 +483,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:
       val = self.mem.GetSpecialVar(op_id)
 
-    return val, maybe_decay_array
+    return val
 
   def _ApplyTestOp(self,
                    val,  # type: value_t
@@ -575,7 +570,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # TODO: error context
           e_die("Can't assign to special variable")
         else:
-          # NOTE: This decays arrays too!  'set -o strict_array' could
+          # NOTE: This decays arrays too!  'shopt -s strict_array' could
           # avoid it.
           rhs_str = _DecayPartValuesToString(assign_part_vals,
                                              self.splitter.GetJoinChar())
@@ -687,17 +682,20 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError()
 
-  def _IndirectExpansion(self, val, token, box):
-    # type: (value_t, Token, List[bool]) -> value_t
-    """Handles indirect expansion ${!var} and ${!a[0]}."""
+  def _EvalVarRef(self, val, token, quoted, box):
+    # type: (value_t, Token, bool, List[bool]) -> value_t
+    """Handles indirect expansion like ${!var} and ${!a[0]}."""
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Undef):
-        return value.Undef()  # ${!undef} is just weird bash behavior
+        val = value.Undef()  # ${!undef} is just weird bash behavior
 
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
-        return self.unsafe_arith.Eval(val.s, token.span_id, box)
+        bvs_part = self.unsafe_arith.ParseVarRef(val.s, token.span_id)
+        if not self.exec_opts.eval_unsafe_arith() and bvs_part.bracket_op:
+          e_die('a[i] not allowed without shopt -s eval_unsafe_arith', token=token)
+        val = self._VarRefValue(bvs_part, quoted, box)
 
       elif case(value_e.MaybeStrArray):  # caught earlier but OK
         e_die('Indirect expansion of array')
@@ -707,6 +705,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       else:
         raise NotImplementedError(val.tag_())
+
+    return val
 
   def _ApplyUnarySuffixOp(self, val, op):
     # type: (value_t, suffix_op__Unary) -> value_t
@@ -895,13 +895,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     return result, quoted2
 
-  def _WholeArray(self, val, part, quoted):
-    # type: (value_t, braced_var_sub, bool) -> Tuple[value_t, bool]
+  def _WholeArray(self, val, part, quoted, maybe_decay_array):
+    # type: (value_t, braced_var_sub, bool, List[bool]) -> value_t
     bracket_op = cast(bracket_op__WholeArray, part.bracket_op)
     op_id = bracket_op.op_id
 
     if op_id == Id.Lit_At:
-      maybe_decay_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
+      maybe_decay_array[0] = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
       UP_val = val
       with tagswitch(val) as case2:
         if case2(value_e.Undef):
@@ -915,7 +915,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           val = value.MaybeStrArray(val.strs)
 
     elif op_id == Id.Arith_Star:
-      maybe_decay_array = True  # both ${a[*]} and "${a[*]}" decay
+      maybe_decay_array[0] = True  # both ${a[*]} and "${a[*]}" decay
       UP_val = val
       with tagswitch(val) as case2:
         if case2(value_e.Undef):
@@ -932,7 +932,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:
       raise AssertionError(op_id)  # unknown
 
-    return val, maybe_decay_array
+    return val
 
   def _ArrayIndex(self, val, part):
     # type: (value_t, braced_var_sub) -> Tuple[value_t, a_index_t]
@@ -1044,31 +1044,65 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:
       return value.MaybeStrArray([])
 
+  def _VarRefValue(self, part, quoted, maybe_decay_array):
+    # type: (braced_var_sub, bool, List[bool]) -> value_t
+    """Duplicates some logic from _EvalBracedVarSub, but returns a value_t."""
+
+    # 1. Evaluate from (var_name, var_num, token Id) -> value
+    if part.token.id == Id.VSub_Name:
+      var_name = part.token.val
+      val = self.mem.GetValue(var_name)
+
+    elif part.token.id == Id.VSub_Number:
+      var_num = int(part.token.val)
+      val = self._EvalVarNum(var_num)
+    else:
+      # $* decays
+      val = self._EvalSpecialVar(part.token.id, quoted, maybe_decay_array)
+
+    if part.bracket_op:
+      bracket_op = part.bracket_op
+      UP_bracket_op = bracket_op
+      with tagswitch(bracket_op) as case:
+        if case(bracket_op_e.WholeArray):
+          val = self._WholeArray(val, part, quoted, maybe_decay_array)
+
+        elif case(bracket_op_e.ArrayIndex):
+          bracket_op = cast(bracket_op__ArrayIndex, UP_bracket_op)
+          val, var_index = self._ArrayIndex(val, part)
+          # NOTE: In the normal case, var_index is used by _ApplyTestOp?
+
+        else:
+          raise AssertionError(bracket_op.tag_())
+
+    return val
+
   def _EvalBracedVarSub(self, part, part_vals, quoted):
     # type: (braced_var_sub, List[part_value_t], bool) -> None
     """
     Args:
       part_vals: output param to append to.
     """
-    # We have four types of operator that interact.
+    # We have different operators that interact in a non-obvious order.
     #
-    # 1. Bracket: value -> (value, bool maybe_decay_array)
+    # 1. bracket_op: value -> (value, bool maybe_decay_array)
     #
-    # 2. Then these four cases are mutually exclusive:
+    # 2. prefix_op
+    #    a. length  ${#x}: value -> value
+    #    b. var ref ${!ref}: can expand to an array
+    # 
+    # 3. suffix_op:
+    #    a. no operator: you have a value
+    #    b. Test: value -> part_value[]
+    #    c. Other Suffix: value -> value
     #
-    #   a. Prefix length: value -> value
-    #   b. Test: value -> part_value[]
-    #   c. Other Suffix: value -> value
-    #   d. no operator: you have a value
+    # 4. Process maybe_decay_array here before returning.
     #
-    # That is, we don't have both prefix and suffix operators.
-    #
-    # 3. Process maybe_decay_array here before returning.
-    #
-    # TODO: Intermediate representation should distinguish these cases:
+    # These cases are hard to distinguish:
     # - ${!prefix@}   prefix query
     # - ${!array[@]}  keys
     # - ${!ref}       named reference
+    # - ${!ref[0]}    named reference
     #
     # I think we need several stages:
     #
@@ -1080,7 +1114,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # 6. test op
     # 7. maybe_decay_array
 
-    maybe_decay_array = False  # for $*, ${a[*]}, etc.
+    maybe_decay_array = [False]  # for $*, ${a[*]}, etc.
     var_name = None  # type: str  # For ${foo=default}
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
@@ -1114,7 +1148,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val = self._EvalVarNum(var_num)
     else:
       # $* decays
-      val, maybe_decay_array = self._EvalSpecialVar(part.token.id, quoted)
+      val = self._EvalSpecialVar(part.token.id, quoted, maybe_decay_array)
 
     var_index = None  # type: a_index_t
 
@@ -1127,11 +1161,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
       UP_bracket_op = bracket_op
       with tagswitch(bracket_op) as case:
         if case(bracket_op_e.WholeArray):
-          val, maybe_decay_array = self._WholeArray(val, part, quoted)
+          val = self._WholeArray(val, part, quoted, maybe_decay_array)
 
         elif case(bracket_op_e.ArrayIndex):
           bracket_op = cast(bracket_op__ArrayIndex, UP_bracket_op)
           val, var_index = self._ArrayIndex(val, part)
+          # NOTE: var_index used below by _ApplyTestOp
 
         else:
           raise AssertionError(bracket_op.tag_())
@@ -1153,11 +1188,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
           else:
             e_die("Array %r can't be referred to as a scalar (without @ or *)",
                   var_name, part=part)
-
-    # Here we need an intermediate representation because these features
-    # interact:
-    # - VTest
-    # - Indirect expansion
 
     # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
     suffix_is_test = False
@@ -1192,13 +1222,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
           # Process ${!ref}.  SURPRISE: ${!a[0]} is an indirect expansion unlike
           # ${!a[@]} !
-          box = [False]
-          val = self._IndirectExpansion(val, part.token, box)
-          if box[0]:
-            maybe_decay_array = True
+          # ${!ref} can expand into an array if ref='array[@]'
 
+          val = self._EvalVarRef(val, part.token, quoted, maybe_decay_array)
           if not suffix_is_test:  # undef -> '' AFTER indirection
             val = self._EmptyStrOrError(val, part.token)
+
+          # Can't return because we still need to apply test ops like
+          # ${!ref:-'default'}
 
       else:
         raise AssertionError()
@@ -1219,11 +1250,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         elif case(suffix_op_e.Unary):
           op = cast(suffix_op__Unary, UP_op)
           if consts.GetKind(op.tok.id) == Kind.VTest:
-            # TODO: Also we need bracket_op to form lvalue here?
-            # So pass 'part'?
-            # bracket_op_e.ArrayIndex
-            # you already evaluated 'key' and 'index' above, so I guess you
-            # need index_t?
+            # TODO: Should we use lvalue_t instead of var_name and var_index?
             if self._ApplyTestOp(val, op, quoted, part_vals,
                                  var_name, var_index, part.token):
               # e.g. to evaluate ${undef:-'default'}, we already appended
@@ -1253,7 +1280,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_val = val
     if val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, UP_val)
-      if maybe_decay_array:
+      if maybe_decay_array[0]:
         val = self._DecayArray(array_val)
       else:
         val = array_val
@@ -1302,7 +1329,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def _EvalSimpleVarSub(self, token, part_vals, quoted):
     # type: (Token, List[part_value_t], bool) -> None
-    maybe_decay_array = False
+
+    maybe_decay_array = [False]
 
     # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:
@@ -1322,14 +1350,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
       var_num = int(token.val[1:])
       val = self._EvalVarNum(var_num)
     else:
-      val, maybe_decay_array = self._EvalSpecialVar(token.id, quoted)
+      val = self._EvalSpecialVar(token.id, quoted, maybe_decay_array)
 
     #log('SIMPLE %s', part)
     val = self._EmptyStrOrError(val, token)
     UP_val = val
     if val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, UP_val)
-      if maybe_decay_array:
+      if maybe_decay_array[0]:
         val = self._DecayArray(array_val)
       else:
         val = array_val
