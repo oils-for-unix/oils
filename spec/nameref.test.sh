@@ -78,7 +78,7 @@ ref=bar
 ref=x
 ## END
 
-#### mutating through -n
+#### mutating through nameref: ref=
 x=XX
 y=YY
 
@@ -515,7 +515,9 @@ x=XX
 y=z
 ## END
 
-#### a[2] in nameref
+#### a[2] in nameref (eval_unsafe_arith)
+shopt -s eval_unsafe_arith
+
 typeset -n ref='a[2]'
 a=(zero one two three)
 echo ref=$ref
@@ -523,7 +525,8 @@ echo ref=$ref
 ref=two
 ## END
 
-#### a[expr] in nameref -- DYNAMIC PARSING, don't want this
+#### a[expr] in nameref (eval_unsafe_arith)
+shopt -s eval_unsafe_arith
 
 # this confuses code and data
 typeset -n ref='a[$(echo 2) + 1]'
@@ -531,6 +534,39 @@ a=(zero one two three)
 echo ref=$ref
 ## STDOUT:
 ref=three
+## END
+
+#### mutate through nameref: ref[0]=
+
+# This is DIFFERENT than the nameref itself being 'array[0]' !
+
+array=(X Y Z)
+declare -n ref=array
+ref[0]=xx
+echo ${array[@]}
+## STDOUT:
+xx Y Z
+## END
+## BUG mksh STDOUT:
+X Y Z
+## END
+
+#### @ in nameref isn't supported, unlike in ${!ref}
+shopt -s eval_unsafe_arith
+
+set -- A B
+typeset -n ref='@'  # bash gives an error here
+echo status=$?
+
+echo ref=$ref  # bash doesn't give an error here
+echo status=$?
+## status: 1
+## stdout-json: ""
+## OK bash status: 0
+## OK bash STDOUT:
+status=1
+ref=
+status=0
 ## END
 
 #### Unquoted assoc reference on RHS

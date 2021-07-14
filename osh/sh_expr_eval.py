@@ -228,16 +228,10 @@ class UnsafeArith(object):
 
     This supports:
     - 0 to 9 for $0 to $9
-    - @ for "$@"
-    - * for "$*"
-    - also $ for $$, etc.
+    - @ for "$@" etc.
 
-    braced_var_sub handles all of these cases: with just Token and bracket_op,
-    no prefix or suffix (no recursive references with !ref)
-
-    Related to grammar in osh/word_parse.py _ReadBracedVarSub
-
-    lex_mode_e.VSub_1 allows all this I guess?
+    See grammar in osh/word_parse.py, which is related to grammar in
+    osh/word_parse.py _ReadBracedVarSub
 
     Note: declare -n allows 'varname' and 'varname[i]' and 'varname[@]', but it
     does NOT allow 0 to 9, @, *
@@ -264,7 +258,6 @@ class UnsafeArith(object):
     # Hack: There is no ${ on the "virtual" braced_var_sub, but we can add one
     # for error messages
     bvs_part.spids.append(span_id)
-
     return bvs_part
 
 

@@ -44,7 +44,8 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.option_asdl import option_t
   from _devbuild.gen.runtime_asdl import cell, Proc
-  from core.alloc import Arena
+  from core import alloc
+  from osh import sh_expr_eval
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -951,13 +952,14 @@ class Mem(object):
   Modules: cmd_eval, word_eval, expr_eval, completion
   """
   def __init__(self, dollar0, argv, arena, debug_stack):
-    # type: (str, List[str], Arena, List[DebugFrame]) -> None
+    # type: (str, List[str], alloc.Arena, List[DebugFrame]) -> None
     """
     Args:
       arena: for computing BASH_SOURCE, etc.  Could be factored out
     """
     # circular dep initialized out of line
     self.exec_opts = None  # type: optview.Exec
+    self.unsafe_arith = None  # type: sh_expr_eval.UnsafeArith
 
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
@@ -1305,6 +1307,14 @@ class Mem(object):
         val = cast(value__Str, UP_val)
         new_name = val.s
 
+        if 0:  # for declare -n
+          # TODO: add location info
+          bvs_part = self.unsafe_arith.ParseVarRef(val.s, runtime.NO_SPID)
+          # This has bvs_part.token and bvs_part.bracket_op We would need to
+          # refactor _ResolveNameOrRef to return something OTHER than a cell.  I
+          # guess it could return a new lvalue/place?
+          log('bvs %s', bvs_part)
+
       else:
         # SetValue() protects the invariant that nameref is Undef or Str
         raise AssertionError(val.tag_())
@@ -1430,6 +1440,9 @@ class Mem(object):
           cell_name = lval.name
         else:
           # ref=x  # mutates THROUGH the reference
+
+          # NOTE: to implement declare -n ref='a[42]', we could return a new
+          # lvalue here and RECURSIVELY call SetValue()?
           cell, name_map, cell_name = self._ResolveNameOrRef(lval.name,
                                                              which_scopes,
                                                              ref_required)
