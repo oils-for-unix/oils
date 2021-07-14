@@ -938,7 +938,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _ArrayIndex(self, val, part, vtest_place):
     # type: (value_t, braced_var_sub, VTestPlace) -> value_t
     """Process a numeric array index like ${a[i+1]}"""
-    var_index = None  # type: a_index_t
     bracket_op = cast(bracket_op__ArrayIndex, part.bracket_op)
     anode = bracket_op.expr
 
@@ -956,7 +955,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case2(value_e.MaybeStrArray):
         array_val = cast(value__MaybeStrArray, UP_val)
         index = self.arith_ev.EvalToInt(anode)
-        vtest_place.index= a_index.Int(index)
+        vtest_place.index = a_index.Int(index)
 
         s = GetArrayItem(array_val.strs, index)
 
@@ -968,7 +967,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case2(value_e.AssocArray):
         assoc_val = cast(value__AssocArray, UP_val)
         key = self.arith_ev.EvalWordToString(anode)
-        var_index = a_index.Str(key)
+        vtest_place.index = a_index.Str(key)  # out param
         s = assoc_val.d.get(key)
 
         if s is None:
