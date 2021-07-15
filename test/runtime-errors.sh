@@ -159,6 +159,11 @@ strict_errexit_1() {
   _strict-errexit-case 'if { echo 1; echo 2; }; then echo IF; fi'
   _strict-errexit-case 'while { echo 1; echo 2; }; do echo WHILE; done'
   _strict-errexit-case 'until { echo 1; echo 2; }; do echo UNTIL; done'
+
+  # Must be separate lines for parsing options to take effect
+  _strict-errexit-case 'shopt -s oil:basic
+                        proc p { echo p }
+                        if p { echo hi }'
 }
 
 # OLD WAY OF BLAMING

@@ -592,10 +592,10 @@ Some builtins take blocks as arguments:
     }
 
     # TODO: fix crash
-    #shopt --unset errexit {
-    #  mycopy x y  # ignore errors
-    #  mycopy y z  # ignore errors
-    #}
+    shopt --unset errexit {
+      mycopy x y  # ignore errors
+      mycopy y z  # ignore errors
+    }
 
 Procs can also take blocks: TODO.
 

@@ -274,9 +274,10 @@ class Try(vm._Builtin):
     # Set in the 'except' block, e.g. if 'myfunc' failed
     failure_spid = runtime.NO_SPID
     try:
-      # Temporarily turn ON errexit, and blame the 'run' spid.  Note that
-      # 'if run myproc' disables it and then enables it!
-      with state.ctx_ErrExit(self.mutable_opts, True, cmd_val.arg_spids[0]):
+      # Temporarily turn ON errexit, but don't pass a SPID because we're
+      # ENABLING and not disabling.  Note that 'if try myproc' disables it and
+      # then enables it!
+      with state.ctx_ErrExit(self.mutable_opts, True, runtime.NO_SPID):
         # Pass do_fork=True.  Slight annoyance: the real value is a field of
         # command.Simple().  See _NoForkLast() in CommandEvaluator We have an
         # extra fork (miss out on an optimization) of code like ( status ls )

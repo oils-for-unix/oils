@@ -160,6 +160,9 @@ class ctx_Option(object):
     # type: (MutableOpts, List[int], bool) -> None
     for opt_num in opt_nums:
       mutable_opts.Push(opt_num, b)
+      if opt_num == option_i.errexit:
+        mutable_opts.errexit_disabled_spid.append(runtime.NO_SPID)  # it wasn't disabled
+
     self.mutable_opts = mutable_opts
     self.opt_nums = opt_nums
 
@@ -170,6 +173,8 @@ class ctx_Option(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     for opt_num in self.opt_nums:  # don't bother to do it in reverse order
+      if opt_num == option_i.errexit:
+        self.mutable_opts.errexit_disabled_spid.pop()
       self.mutable_opts.Pop(opt_num)
 
 
@@ -205,7 +210,6 @@ class ctx_ErrExit(object):
   """
   def __init__(self, mutable_opts, errexit_val, span_id):
     # type: (MutableOpts, bool, int) -> None
-    assert span_id != runtime.NO_SPID
     mutable_opts.PushErrExit(errexit_val, span_id)
     self.mutable_opts = mutable_opts
 
@@ -304,7 +308,7 @@ class MutableOpts(object):
     self.mem = mem
     self.opt0_array = opt0_array
     self.opt_stacks = opt_stacks
-    self.errexit_spid_stack = []  # type: List[int]
+    self.errexit_disabled_spid = []  # type: List[int]
 
     # Used for 'set -o vi/emacs'
     self.opt_hook = opt_hook
@@ -344,11 +348,16 @@ class MutableOpts(object):
   def PushErrExit(self, b, spid):
     # type: (bool, int) -> None
     self.Push(option_i.errexit, b)
-    self.errexit_spid_stack.append(spid)
+    if b:
+      assert spid == runtime.NO_SPID, spid  # was NOT disabled
+    else:
+      assert spid != runtime.NO_SPID, spid  # WAS disabled
+
+    self.errexit_disabled_spid.append(spid)
 
   def PopErrExit(self):
     # type: () -> bool
-    self.errexit_spid_stack.pop()
+    self.errexit_disabled_spid.pop()
     return self.Pop(option_i.errexit)
 
   def PushDynamicScope(self, b):
@@ -432,27 +441,34 @@ class MutableOpts(object):
     # type: () -> None
     self._Set(option_i.errexit, False)
 
-  def ErrExitIsDisabled(self):
-    # type: () -> bool
+  def ErrExitDisabledSpanId(self):
+    # type: () -> int
+    """If errexit is disabled by POSIX rules, return span ID for construct.
+
+    e.g. the spid for 'if' or '&&' etc.
+
+    Otherwise return runtime.NO_SPID
+    """
 
     # Bug fix: The errexit disabling inherently follows a STACK DISCIPLINE.
     # But we run trap handlers in the MAIN LOOP, which break this.  So just
-    # declare that it's never disabled it in a trap.
+    # declare that it's never disabled in a trap.
     if self.Get(option_i._running_trap):
-      return False
+      return runtime.NO_SPID
 
-    # Bottom of stack: true
-    # Top of stack: false
     overlay = self.opt_stacks[option_i.errexit]
+    if 0:
+      log('overlay %s', overlay)
+      log('errexit_disabled_spid %s', self.errexit_disabled_spid)
     if overlay is None or len(overlay) == 0:
-      return False
+      return runtime.NO_SPID
     else:
-      # 'catch' will make the top of the stack true
-      return self.opt0_array[option_i.errexit] and not overlay[-1]
-
-  def ErrExitSpanId(self):
-    # type: () -> int
-    return self.errexit_spid_stack[0]
+      was_on = self.opt0_array[option_i.errexit] or (True in overlay)
+      # top of stack == False means it's disabled
+      if was_on and not overlay[-1]:
+        return self.errexit_disabled_spid[-1]
+      else:
+        return runtime.NO_SPID
 
   def _SetOption(self, opt_name, b):
     # type: (str, bool) -> None

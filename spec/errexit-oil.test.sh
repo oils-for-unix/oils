@@ -651,3 +651,25 @@ cat tmp
 2
 tmp_contents
 ## END
+
+#### Regression
+case $SH in (bash|dash|ash|mksh) exit ;; esac
+
+shopt --set oil:basic
+
+shopt --unset errexit {
+  echo hi
+}
+
+proc p {
+  echo p
+}
+
+shopt --unset errexit {
+  p
+}
+## STDOUT:
+hi
+p
+## END
+## N-I bash/dash/ash/mksh stdout-json: ""

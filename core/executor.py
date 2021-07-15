@@ -209,14 +209,15 @@ class ShellExecutor(vm._Executor):
     if call_procs:
       proc_node = self.procs.get(arg0)
       if proc_node is not None:
-        if (self.exec_opts.strict_errexit() and 
-            self.mutable_opts.ErrExitIsDisabled()):
-          self.errfmt.Print_('errexit was disabled for this construct',
-                             span_id=self.mutable_opts.ErrExitSpanId())
-          self.errfmt.StderrLine('')
-          e_die("Can't run a proc while errexit is disabled. "
-                "Use 'run' or wrap it in a process with $0 myproc",
-                span_id=span_id)
+        if self.exec_opts.strict_errexit():
+          disabled_spid = self.mutable_opts.ErrExitDisabledSpanId()
+          if disabled_spid != runtime.NO_SPID:
+            self.errfmt.Print_('errexit was disabled for this construct',
+                               span_id=disabled_spid)
+            self.errfmt.StderrLine('')
+            e_die("Can't run a proc while errexit is disabled. "
+                  "Use 'try' or wrap it in a process with $0 myproc",
+                  span_id=span_id)
 
         with dev.ctx_Tracer(self.tracer, 'proc', argv):
           # NOTE: Functions could call 'exit 42' directly, etc.
