@@ -1,6 +1,6 @@
+# Run with
 #
-# Usage:
-#   ./named-ref.test.sh <function name>
+#     $ test/spec.sh nameref
 
 #### pass array by reference
 show_value() {
@@ -561,17 +561,19 @@ shopt -s eval_unsafe_arith
 
 # this confuses code and data
 typeset -n ref='a[@]'
-a=(A B C)
-echo ref=$ref  # READ through ref works
+a=('A B' C)
+argv.py ref "$ref"  # READ through ref works
 ref=(X Y Z)    # WRITE through doesn't work
 echo status=$?
-echo ref=$ref
-echo a="${a[@]}"
+argv.py 'ref[@]' "${ref[@]}"
+argv.py ref "$ref"  # JOINING mangles the array?
+argv.py 'a[@]' "${a[@]}"
 ## STDOUT:
-ref=A B C
+['ref', 'A B C']
 status=1
-ref=A B C
-a=A B C
+['ref', 'A B C']
+['ref[@]']
+['a[@]', 'A B', 'C']
 ## END
 ## OK mksh status: 1
 ## OK mksh stdout-json: ""
@@ -581,14 +583,11 @@ a=A B C
 # This is DIFFERENT than the nameref itself being 'array[0]' !
 
 array=(X Y Z)
-declare -n ref=array
+typeset -n ref=array
 ref[0]=xx
 echo ${array[@]}
 ## STDOUT:
 xx Y Z
-## END
-## BUG mksh STDOUT:
-X Y Z
 ## END
 
 #### bad mutation through nameref: ref[0]= where ref is array[0]

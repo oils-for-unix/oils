@@ -1307,14 +1307,6 @@ class Mem(object):
         val = cast(value__Str, UP_val)
         new_name = val.s
 
-        if 0:  # for declare -n
-          # TODO: add location info
-          bvs_part = self.unsafe_arith.ParseVarRef(val.s, runtime.NO_SPID)
-          # This has bvs_part.token and bvs_part.bracket_op We would need to
-          # refactor _ResolveNameOrRef to return something OTHER than a cell.  I
-          # guess it could return a new lvalue/place?
-          log('bvs %s', bvs_part)
-
       else:
         # SetValue() protects the invariant that nameref is Undef or Str
         raise AssertionError(val.tag_())
@@ -1448,6 +1440,9 @@ class Mem(object):
 
           # NOTE: to implement declare -n ref='a[42]', we could return a new
           # lvalue here and RECURSIVELY call SetValue()?
+          # 1. Call _ResolveNameOnly()
+          # 2. If nameref cell, then self.unsafe_arith.ParseVarRef() -> braced_var_sub
+          # 3. Turn that into an lvalue, and call SetValue() recursively
           cell, name_map, cell_name = self._ResolveNameOrRef(lval.name,
                                                              which_scopes,
                                                              is_setref)
@@ -1732,6 +1727,16 @@ class Mem(object):
 
     if name == 'BASHPID':  # TODO: Oil name for it
       return value.Str(str(posix.getpid()))
+
+    # In the case 'declare -n ref='a[42]', the result won't be a cell.  We need
+    # some logic for getting the subscript, e.g. what's done in word_eval.py
+    # _ArrayIndex().  Also see comment in sh_expr_eval.py.
+    #
+    # We'll get a braced_var_sub and call self.unsafe_arith.GetValue() on it.
+    # I think this might simplify the code.  We still have to detect cycles.
+    #
+    # First call _ResolveNameOnly, and if the cell is nameref, then return the
+    # result of EvalWord, which should be another value.
 
     cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
     if cell:
