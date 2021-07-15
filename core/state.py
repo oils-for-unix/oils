@@ -1331,12 +1331,6 @@ class Mem(object):
         e_die('Circular nameref %s', ' -> '.join(ref_trail))
     ref_trail.append(new_name)
 
-    # Another style of check
-    #count = count or [0]
-    #count[0] += 1
-    #if count[0] > 10:
-    #  raise RuntimeError('too many calls')
-
     # 'declare -n' uses dynamic scope.  'setref' uses parent scope to avoid the
     # problem of 2 procs containing the same variable name.
     which_scopes = scope_e.Parent if is_setref else scope_e.Dynamic
@@ -1356,40 +1350,6 @@ class Mem(object):
       if cell.val.tag_() == value_e.AssocArray:  # foo=([key]=value)
         return True
     return False
-
-  def _DisallowNamerefCycle(self, name, which_scopes, ref_trail):
-    # type: (str, scope_t, List[str]) -> None
-    """Recursively resolve names until the trail ends or a cycle is detected.
-
-    This is called in SetValue().  The other possibility is to do it during
-    _ResolveNameOrRef, but that delays the error.
-    """
-    cell, _ = self._ResolveNameOnly(name, which_scopes)
-
-    if not cell or not cell.nameref:
-      return
-
-    val = cell.val
-    if val.tag_() != value_e.Str:
-      return
-
-    str_val = cast(value__Str, val)
-
-    # TODO: We should also handle namerefs like 'a[i]'.  It's probably better
-    # to switch to the GetVar() check.  This SetValue() check duplicates the
-    # algorithm.
-
-    new_name = str_val.s
-    #log('_DisallowNamerefCycle %s %s name %s new_name %s', which_scopes, ref_trail, name, new_name)
-
-    if new_name in ref_trail:
-      if 0:
-        import traceback
-        traceback.print_stack()
-      e_die('nameref cycle: %s', ' -> '.join(ref_trail))
-    ref_trail.append(new_name)
-
-    self._DisallowNamerefCycle(new_name, which_scopes, ref_trail)
 
   def SetValue(self, lval, val, which_scopes, flags=0):
     # type: (lvalue_t, value_t, scope_t, int) -> None
@@ -1439,11 +1399,12 @@ class Mem(object):
         else:
           # ref=x  # mutates THROUGH the reference
 
-          # NOTE: to implement declare -n ref='a[42]', we could return a new
-          # lvalue here and RECURSIVELY call SetValue()?
+          # Note on how to implement declare -n ref='a[42]'
           # 1. Call _ResolveNameOnly()
-          # 2. If nameref cell, then self.unsafe_arith.ParseVarRef() -> braced_var_sub
-          # 3. Turn that into an lvalue, and call SetValue() recursively
+          # 2. If cell.nameref, call self.unsafe_arith.ParseVarRef() ->
+          #    braced_var_sub
+          # 3. Turn braced_var_sub into an lvalue, and call
+          #    self.unsafe_arith.SetValue() wrapper with ref_trail
           cell, name_map, cell_name = self._ResolveNameOrRef(lval.name,
                                                              which_scopes,
                                                              is_setref)
@@ -1495,13 +1456,6 @@ class Mem(object):
             e_die("Only strings can be exported")  # TODO: error context
           if cell.nameref:
             e_die("nameref must be a string")
-
-        # Note: we check for circular namerefs on WRITE like mksh, not on READ
-        # like bash.
-        if cell.nameref:
-          #ref_trail = []  # type: List[str]
-          #self._DisallowNamerefCycle(cell_name, which_scopes, ref_trail)
-          pass
 
       elif case(lvalue_e.Indexed):
         lval = cast(lvalue__Indexed, UP_lval)
@@ -1638,11 +1592,9 @@ class Mem(object):
 
     if which_scopes == scope_e.Shopt:
       which_scopes = self.ScopesForReading()
+    #log('which_scopes %s', which_scopes)
 
-    #log('mode %s', which_scopes)
-
-    # TODO: Short-circuit down to _ResolveNameOrRef by doing a single hash
-    # lookup:
+    # TODO: Optimize this by doing a single hash lookup:
     # COMPUTED_VARS = {'PIPESTATUS': 1, 'FUNCNAME': 1, ...}
     # if name not in COMPUTED_VARS: ...
 
@@ -1729,16 +1681,11 @@ class Mem(object):
     if name == 'BASHPID':  # TODO: Oil name for it
       return value.Str(str(posix.getpid()))
 
-    # In the case 'declare -n ref='a[42]', the result won't be a cell.  We need
-    # some logic for getting the subscript, e.g. what's done in word_eval.py
-    # _ArrayIndex().  Also see comment in sh_expr_eval.py.
-    #
-    # We'll get a braced_var_sub and call self.unsafe_arith.GetValue() on it.
-    # I think this might simplify the code.  We still have to detect cycles.
-    #
-    # First call _ResolveNameOnly, and if the cell is nameref, then return the
-    # result of EvalWord, which should be another value.
-
+    # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
+    # fix this:
+    # 1. Call self.unsafe_arith.ParseVarRef() -> braced_var_sub
+    # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
+    #    We still need a ref_trail to detect cycles.
     cell, _, _ = self._ResolveNameOrRef(name, which_scopes, False)
     if cell:
       return cell.val

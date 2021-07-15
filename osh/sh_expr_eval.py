@@ -260,6 +260,32 @@ class UnsafeArith(object):
     bvs_part.spids.append(span_id)
     return bvs_part
 
+  if 0:
+    # SKETCH of nameref support for a[i] and a[@]
+    def ParseNameref(self, ref_str, span_id):
+      # type: (str, int) -> braced_var_sub
+      """Parse and evaluate value for declare -n
+
+      This could also be a flag to w_parser.ParseVarRef()
+      """
+
+    def GetNameref(self, bvs_part):
+      # type: (braced_var_sub) -> value_t
+      """
+      state.Mem can call this wrapper?
+      Base this on _VarRefValue() in osh/word_eval.py (which takes many params)
+      It also needs a ref_trail for cycle detection.
+      """
+      pass
+
+    def SetValue(self, lval, val):
+      # type: (lvalue_t, value_t) -> None
+      """
+      state.Mem can call this wrapper?
+      Also needs a ref_trail for cycle detection.
+      """
+      pass
+
 
 class ArithEvaluator(object):
   """Shared between arith and bool evaluators.
