@@ -1278,7 +1278,7 @@ class Mem(object):
 
     raise AssertionError()
 
-  def _ResolveNameOrRef(self, name, which_scopes, is_setref=False, ref_trail=None):
+  def _ResolveNameOrRef(self, name, which_scopes, is_setref, ref_trail=None):
     # type: (str, scope_t, bool, Optional[List[str]]) -> Tuple[Optional[cell], Dict[str, cell], str]
     """Look up a cell and namespace, but respect the nameref flag.
 
@@ -1340,7 +1340,8 @@ class Mem(object):
     # 'declare -n' uses dynamic scope.  'setref' uses parent scope to avoid the
     # problem of 2 procs containing the same variable name.
     which_scopes = scope_e.Parent if is_setref else scope_e.Dynamic
-    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes, ref_trail=ref_trail)
+    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes,
+                                                       is_setref, ref_trail=ref_trail)
     return cell, name_map, cell_name
 
   def IsAssocArray(self, name):
@@ -1350,7 +1351,7 @@ class Mem(object):
     We need to know this to evaluate the index expression properly -- should it
     be coerced to an integer or not?
     """
-    cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading())
+    cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading(), False)
     if cell:
       if cell.val.tag_() == value_e.AssocArray:  # foo=([key]=value)
         return True
@@ -1738,7 +1739,7 @@ class Mem(object):
     # First call _ResolveNameOnly, and if the cell is nameref, then return the
     # result of EvalWord, which should be another value.
 
-    cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+    cell, _, _ = self._ResolveNameOrRef(name, which_scopes, False)
     if cell:
       return cell.val
 
@@ -1785,7 +1786,7 @@ class Mem(object):
     if which_scopes == scope_e.Shopt:
       which_scopes = self.ScopesForWriting()
 
-    cell, name_map, cell_name = self._ResolveNameOrRef(var_name, which_scopes)
+    cell, name_map, cell_name = self._ResolveNameOrRef(var_name, which_scopes, False)
     if not cell:
       return False  # 'unset' builtin falls back on functions
     if cell.readonly:

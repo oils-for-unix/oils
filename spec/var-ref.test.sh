@@ -465,3 +465,21 @@ a
 x
 y
 ## END
+
+#### var ref doesn't need cycle detection
+x=y
+y=x
+echo cycle=${!x}
+
+typeset -n a=b
+typeset -n b=a
+echo cycle=${a}
+## status: 1
+## STDOUT:
+cycle=x
+## END
+## OK bash status: 0
+## OK bash STDOUT:
+cycle=x
+cycle=
+## END
