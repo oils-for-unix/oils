@@ -1341,7 +1341,7 @@ class Mem(object):
     # problem of 2 procs containing the same variable name.
     which_scopes = scope_e.Parent if is_setref else scope_e.Dynamic
     cell, name_map, cell_name = self._ResolveNameOrRef(new_name, which_scopes,
-                                                       is_setref, ref_trail=ref_trail)
+                                                       False, ref_trail=ref_trail)
     return cell, name_map, cell_name
 
   def IsAssocArray(self, name):
