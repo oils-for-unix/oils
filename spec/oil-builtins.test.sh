@@ -402,13 +402,13 @@ shopt -p strict:all | head -n 3
 shopt -u errexit
 shopt -u nullglob
 --
-shopt -u errexit
-shopt -u inherit_errexit
-shopt -u nounset
+shopt -u strict_argv
+shopt -u strict_arith
+shopt -u strict_array
 --
-shopt -s errexit
-shopt -s inherit_errexit
-shopt -s nounset
+shopt -s strict_argv
+shopt -s strict_arith
+shopt -s strict_array
 ## END
 
 #### simple_test_builtin

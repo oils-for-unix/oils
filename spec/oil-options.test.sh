@@ -166,14 +166,6 @@ shopt -s strict:all
 shopt -o -p | grep -- ' -o ' | grep -v hashall
 shopt -p strict:all
 ## STDOUT:
-set -o errexit
-set -o nounset
-set -o pipefail
-shopt -s errexit
-shopt -s inherit_errexit
-shopt -s nounset
-shopt -s nullglob
-shopt -s pipefail
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
@@ -212,15 +204,6 @@ shopt -s process_sub_fail
 shopt -u redefine_proc
 shopt -s sigpipe_status_ok
 shopt -s simple_word_eval
-shopt -s strict_argv
-shopt -s strict_arith
-shopt -s strict_array
-shopt -s strict_control_flow
-shopt -s strict_errexit
-shopt -s strict_glob
-shopt -s strict_nameref
-shopt -s strict_tilde
-shopt -s strict_word_eval
 shopt -u xtrace_details
 shopt -s xtrace_rich
 ## END
@@ -251,12 +234,11 @@ status=0
 status=2
 ## END
 
-#### strict:all includes inherit_errexit
-shopt -s strict:all
+#### oil:basic includes inherit_errexit
+shopt -s oil:basic
 echo $(echo one; false; echo two)
-## STDOUT:
-one
-## END
+## status: 1
+## stdout-json: ""
 
 #### parse_brace: bad block to assignment builtin
 shopt -s oil:basic
@@ -606,13 +588,13 @@ argv.py *
 
 #### shopt -s oil:basic turns some options on and others off
 show() {
-  shopt -p | egrep 'dashglob|strict_arith'
+  shopt -p | egrep 'dashglob|simple_word_eval'
 }
 
 show
 echo ---
 
-shopt -s strict_arith
+shopt -s simple_word_eval
 show
 echo ---
 
@@ -625,16 +607,16 @@ show
 
 ## STDOUT:
 shopt -s dashglob
-shopt -u strict_arith
+shopt -u simple_word_eval
 ---
 shopt -s dashglob
-shopt -s strict_arith
+shopt -s simple_word_eval
 ---
 shopt -u dashglob
-shopt -s strict_arith
+shopt -s simple_word_eval
 ---
 shopt -s dashglob
-shopt -u strict_arith
+shopt -u simple_word_eval
 ## END
 
 #### oil:basic disables aliases

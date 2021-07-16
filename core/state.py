@@ -423,7 +423,7 @@ class MutableOpts(object):
     """Set the errexit flag, possibly deferring it.
 
     Implements the unusual POSIX "defer" behavior.  Callers: set -o errexit,
-    shopt -s oil:all, strict:all.
+    shopt -s oil:all, oil:basic
     """
     #log('Set %s', b)
 
@@ -432,6 +432,7 @@ class MutableOpts(object):
 
   def DisableErrExit(self):
     # type: () -> None
+    """Called by core/process.py to implement bash quirks."""
     self._Set(option_i.errexit, False)
 
   def ErrExitDisabledSpanId(self):
@@ -519,8 +520,6 @@ class MutableOpts(object):
       b2 = not b if opt_num in consts.DEFAULT_TRUE else b
       self.opt0_array[opt_num] = b2
 
-    self.SetDeferredErrExit(b)  # Special case for all option groups
-
   def SetShoptOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For shopt -s/-u and sh -O/+O. """
@@ -529,10 +528,12 @@ class MutableOpts(object):
     # options
     if opt_name == 'oil:basic':
       self._SetGroup(consts.OIL_BASIC, b)
+      self.SetDeferredErrExit(b)  # Special case
       return
 
     if opt_name == 'oil:all':
       self._SetGroup(consts.OIL_ALL, b)
+      self.SetDeferredErrExit(b)  # Special case
       return
 
     if opt_name == 'strict:all':

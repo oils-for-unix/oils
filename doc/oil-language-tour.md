@@ -586,15 +586,9 @@ like any other command:
 
 Some builtins take blocks as arguments:
 
-    shopt --unset errexit {  # Ignore errors
-      may-fail foo
-      may-fail bar
-    }
-
-    # TODO: fix crash
-    shopt --unset errexit {
-      mycopy x y  # ignore errors
-      mycopy y z  # ignore errors
+    shopt --unset errexit {  # ignore errors
+      mycopy x y
+      mycopy y z
     }
 
 Procs can also take blocks: TODO.
@@ -796,7 +790,7 @@ These are the "standard library" for the expression language.
 - String and pattern: `find()  sub()`
 - Collections: `len()  keys()  values()  items()  append()  extend()`
 
-(TODO: Make a more comprehensive list.)
+TODO: Make a more comprehensive list.
 
 ### Egg Expressions (Oil Regexes)
 
@@ -1005,11 +999,12 @@ These shell features are part of Oil, but aren't shown for brevity.
 
 ### Not Yet Implemented
 
-TODO: We need to implement these things!
+We need to implement these things!
 
-- QTT parser, dumper, and builtins
+- QTT parser, printer, and builtins
 - Capers: stateless coprocesses
-- Defining functions in shared libraries?  What about shell builtins?
+- Functions
+  - Defining functions in shared libraries?  What about shell builtins?
 
 ```none
 # Unimplemented syntax:

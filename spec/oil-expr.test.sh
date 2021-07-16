@@ -212,7 +212,7 @@ echo $x
 ## END
 
 #### double quoted respects strict_array
-shopt -s oil:basic
+shopt -s strict:all
 var a = %(one two three)
 var x = "-${a[@]}-"
 echo $x

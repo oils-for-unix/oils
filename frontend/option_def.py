@@ -75,9 +75,6 @@ _OTHER_SET_OPTIONS = [
 # These are RUNTIME strict options.  We also have parse time ones like
 # parse_backslash.
 _STRICT_OPTION_NAMES = [
-    # Bash options that are strict (and Oil).
-    'nullglob', 'inherit_errexit',
-
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
 
@@ -237,11 +234,17 @@ def _Init(opt_def):
   # type: (_OptionDef) -> None
 
   opt_def.Add('errexit', short_flag='e', builtin='set',
-              groups=['strict:all', 'oil:basic', 'oil:all'])
+              groups=['oil:basic', 'oil:all'])
   opt_def.Add('nounset', short_flag='u', builtin='set', 
-              groups=['strict:all', 'oil:basic', 'oil:all'])
+              groups=['oil:basic', 'oil:all'])
   opt_def.Add('pipefail', builtin='set', 
-              groups=['strict:all', 'oil:basic', 'oil:all'])
+              groups=['oil:basic', 'oil:all'])
+
+  opt_def.Add('inherit_errexit',
+              groups=['oil:basic', 'oil:all'])
+  # Hm is this subsumed by simple_word_eval?
+  opt_def.Add('nullglob',
+              groups=['oil:basic', 'oil:all'])
 
   # set -o noclobber, etc.
   for short_flag, name in _OTHER_SET_OPTIONS:
@@ -284,7 +287,7 @@ def _Init(opt_def):
 
   # shopt -s strict_arith, etc.
   for name in _STRICT_OPTION_NAMES:
-    opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
+    opt_def.Add(name, groups=['strict:all', 'oil:all'])
 
   #
   # Options that enable Oil language features
