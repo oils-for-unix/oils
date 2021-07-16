@@ -233,13 +233,12 @@ echo ok
 ## stdout: ok
 
 #### var ref OF array var
-declare -a badref=(ale bean)
-echo bad=${!badref}
-## status: 1
+foo=FOO
+declare -a confused=(foo bar)
+echo confused=${!confused}
 ## STDOUT:
+confused=FOO
 ## END
-## OK bash status: 0
-## OK bash stdout: bad=
 
 #### array ref without eval_unsafe_arith
 shopt -s compat_array
@@ -254,8 +253,8 @@ echo ${!ref}
 ale
 ## END
 
-#### array ref without compat_array
-shopt -s eval_unsafe_arith
+#### array ref with strict_array
+shopt -s eval_unsafe_arith strict_array
 
 declare -a array=(ale bean)
 ref='array'
