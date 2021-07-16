@@ -154,7 +154,9 @@ check
 ['heck']
 ## END
 
-#### operators on FUNCNAME not allowed by default
+#### strict_array: operators on FUNCNAME not allowed
+shopt -s strict_array
+
 check() {
   argv.py "${FUNCNAME}"
   argv.py "${#FUNCNAME}"
