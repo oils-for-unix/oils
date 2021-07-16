@@ -142,8 +142,6 @@ ____
 
 
 #### ${FUNCNAME} with prefix/suffix operators
-shopt -s compat_array
-
 check() {
   argv.py "${#FUNCNAME}"
   argv.py "${FUNCNAME::1}"

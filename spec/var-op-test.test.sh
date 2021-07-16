@@ -126,8 +126,6 @@ v=foo
 #### array and - and +
 case $SH in (dash) exit ;; esac
 
-shopt -s compat_array  # to refer to array as scalar
-
 empty=()
 a1=('')
 a2=('' x)
