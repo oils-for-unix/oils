@@ -1982,7 +1982,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # core/executor.py
             class_name == 'ShellExecutor' and func_name == '_MakeProcess' or
             # osh/word_eval.py
-            class_name is None and func_name == 'CheckCompatArray' or
+            class_name is None and func_name == 'ShouldArrayDecay' or
             # core/state.py
             class_name is None and func_name in ('_PackFlags', 'OshLanguageSetValue') or
             class_name == 'Mem' and

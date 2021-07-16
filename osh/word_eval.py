@@ -65,7 +65,7 @@ if TYPE_CHECKING:
 # Ditto for ${FUNCNAME} and ${BASH_LINENO}.
 _STRING_AND_ARRAY = ['BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO']
 
-def CheckCompatArray(var_name, exec_opts, is_plain_var_sub=True):
+def ShouldArrayDecay(var_name, exec_opts, is_plain_var_sub=True):
   # type: (str, optview.Exec, bool) -> bool
   """Return whether we should allow ${a} to mean ${a[0]}."""
   return (
@@ -74,7 +74,7 @@ def CheckCompatArray(var_name, exec_opts, is_plain_var_sub=True):
   )
 
 
-def ResolveCompatArray(val):
+def DecayArray(val):
   # type: (value_t) -> value_t
   """Resolve ${array} to ${array[0]}."""
   if val.tag_() == value_e.MaybeStrArray:
@@ -1066,10 +1066,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:  # no bracket op
       var_name = vtest_place.name
       if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
-        if CheckCompatArray(var_name, self.exec_opts,
+        if ShouldArrayDecay(var_name, self.exec_opts,
                             not (part.prefix_op or part.suffix_op)):
           # for ${BASH_SOURCE}, etc.
-          val = ResolveCompatArray(val)
+          val = DecayArray(val)
         else:
           if not vsub_state.is_type_query:
             e_die("Array %r can't be referred to as a scalar (without @ or *)",
@@ -1341,9 +1341,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # TODO: Special case for LINENO
       val = self.mem.GetValue(var_name)
       if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
-        if CheckCompatArray(var_name, self.exec_opts):
+        if ShouldArrayDecay(var_name, self.exec_opts):
           # for $BASH_SOURCE, etc.
-          val = ResolveCompatArray(val)
+          val = DecayArray(val)
         else:
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, token=token)
