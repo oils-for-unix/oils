@@ -208,9 +208,16 @@ class ctx_ErrExit(object):
     - ! (part of pipeline)
     - && ||
   """
-  def __init__(self, mutable_opts, errexit_val, span_id):
+  def __init__(self, mutable_opts, b, span_id):
     # type: (MutableOpts, bool, int) -> None
-    mutable_opts.PushErrExit(errexit_val, span_id)
+
+    # If we're disabling it, we need a span ID.  If not, then we should NOT
+    # have one.
+    assert b == (span_id == runtime.NO_SPID)
+
+    mutable_opts.Push(option_i.errexit, b)
+    mutable_opts.errexit_disabled_spid.append(span_id)
+
     self.mutable_opts = mutable_opts
 
   def __enter__(self):
@@ -219,7 +226,8 @@ class ctx_ErrExit(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.mutable_opts.PopErrExit()
+    self.mutable_opts.errexit_disabled_spid.pop()
+    self.mutable_opts.Pop(option_i.errexit)
 
 
 class OptHook(object):
@@ -344,21 +352,6 @@ class MutableOpts(object):
     overlay = self.opt_stacks[opt_num]
     assert overlay is not None
     return overlay.pop()
-
-  def PushErrExit(self, b, spid):
-    # type: (bool, int) -> None
-    self.Push(option_i.errexit, b)
-    if b:
-      assert spid == runtime.NO_SPID, spid  # was NOT disabled
-    else:
-      assert spid != runtime.NO_SPID, spid  # WAS disabled
-
-    self.errexit_disabled_spid.append(spid)
-
-  def PopErrExit(self):
-    # type: () -> bool
-    self.errexit_disabled_spid.pop()
-    return self.Pop(option_i.errexit)
 
   def PushDynamicScope(self, b):
     # type: (bool) -> None
