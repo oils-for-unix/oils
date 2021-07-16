@@ -475,9 +475,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val = value.MaybeStrArray(argv)  # type: value_t
       if op_id == Id.VSub_At:
         # "$@" evaluates to an array, $@ should be decayed
-        vsub_state.decay_array = not quoted
+        vsub_state.join_array = not quoted
       else:  # $* "$*" are both decayed
-        vsub_state.decay_array = True
+        vsub_state.join_array = True
 
     elif op_id == Id.VSub_Hyphen:
       val = value.Str(_GetDollarHyphen(self.exec_opts))
@@ -903,7 +903,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     op_id = bracket_op.op_id
 
     if op_id == Id.Lit_At:
-      vsub_state.decay_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
+      vsub_state.join_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
       UP_val = val
       with tagswitch(val) as case2:
         if case2(value_e.Undef):
@@ -917,7 +917,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           val = value.MaybeStrArray(val.strs)
 
     elif op_id == Id.Arith_Star:
-      vsub_state.decay_array = True  # both ${a[*]} and "${a[*]}" decay
+      vsub_state.join_array = True  # both ${a[*]} and "${a[*]}" decay
       UP_val = val
       with tagswitch(val) as case2:
         if case2(value_e.Undef):
@@ -928,7 +928,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         elif case2(value_e.MaybeStrArray):
           val = cast(value__MaybeStrArray, UP_val)
           # TODO: Is this a no-op?  Just leave 'val' alone.
-          # ${a[*]} or "${a[*]}" :  vsub_state.decay_array is always true
+          # ${a[*]} or "${a[*]}" :  vsub_state.join_array is always true
           val = value.MaybeStrArray(val.strs)
 
     else:
@@ -1071,7 +1071,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # for ${BASH_SOURCE}, etc.
           val = ResolveCompatArray(val)
         else:
-          if not vsub_state.array_op_nullary:
+          if not vsub_state.is_type_query:
             e_die("Array %r can't be referred to as a scalar (without @ or *)",
                   var_name, part=part)
 
@@ -1118,7 +1118,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     #    b. Test: value -> part_value[]
     #    c. Other Suffix: value -> value
     #
-    # 4. Process vsub_state.decay_array here before returning.
+    # 4. Process vsub_state.join_array here before returning.
     #
     # These cases are hard to distinguish:
     # - ${!prefix@}   prefix query
@@ -1134,9 +1134,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # 4. indirection?  Only for some of the ! cases
     # 5. string transformation suffix ops like ##
     # 6. test op
-    # 7. vsub_state.decay_array
+    # 7. vsub_state.join_array
 
-    # vsub_state.decay_array is for joining "${a[*]}" and unquoted ${a[@]} AFTER
+    # vsub_state.join_array is for joining "${a[*]}" and unquoted ${a[@]} AFTER
     # suffix ops are applied.  If we take the length with a prefix op, the
     # distinction is ignored.
 
@@ -1179,13 +1179,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # $* decays
       val = self._EvalSpecialVar(part.token.id, quoted, vsub_state)
 
+    # Type query ${array@a} is a STRING, not an array
+    # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
+    # ${array[@]@Q}
     # TODO: An IR for ${} might simplify these lengthy conditions
     suffix_op = part.suffix_op
     if (suffix_op and suffix_op.tag_() == suffix_op_e.Nullary and 
-        #cast(Token, tmp).id in (Id.VOp0_a, Id.VOp0_Q)):
         cast(Token, suffix_op).id == Id.VOp0_a):
-      # ${array@a} is a STRING, not an array
-      vsub_state.array_op_nullary = True
+      vsub_state.is_type_query = True
 
     # 2. Bracket Op
     val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
@@ -1218,7 +1219,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           # ${!array[@]} to get indices/keys
           val = self._Keys(val, part.token)
-          # already set vsub_State.decay_array ABOVE
+          # already set vsub_State.join_array ABOVE
         else:
           # Process ${!ref}.  SURPRISE: ${!a[0]} is an indirect expansion unlike
           # ${!a[@]} !
@@ -1277,11 +1278,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
           raise AssertionError()
 
-    # After applying suffixes, process decay_array here.
+    # After applying suffixes, process join_array here.
     UP_val = val
     if val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, UP_val)
-      if vsub_state.decay_array:
+      if vsub_state.join_array:
         val = self._DecayArray(array_val)
       else:
         val = array_val
@@ -1358,7 +1359,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_val = val
     if val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, UP_val)
-      if vsub_state.decay_array:
+      if vsub_state.join_array:
         val = self._DecayArray(array_val)
       else:
         val = array_val
