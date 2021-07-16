@@ -1065,15 +1065,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     else:  # no bracket op
       var_name = vtest_place.name
-      if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
+      if (not vsub_state.is_type_query and
+          var_name and
+          val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray)):
         if ShouldArrayDecay(var_name, self.exec_opts,
                             not (part.prefix_op or part.suffix_op)):
           # for ${BASH_SOURCE}, etc.
           val = DecayArray(val)
         else:
-          if not vsub_state.is_type_query:
-            e_die("Array %r can't be referred to as a scalar (without @ or *)",
-                  var_name, part=part)
+          e_die("Array %r can't be referred to as a scalar (without @ or *)",
+                var_name, part=part)
 
     return val
 
