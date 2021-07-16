@@ -46,8 +46,6 @@ undef=default
 ## END
 
 #### comparison to ${!array[@]} keys (similar SYNTAX)
-shopt --set compat_array  # bypass errors on ${!a} and ${!A}
-
 declare -a a=(x y)
 argv.py "${!a[@]}"
 echo a_keys=$?
@@ -170,8 +168,6 @@ echo done
 ## END
 
 #### Indirect expansion, THEN suffix operators
-shopt -s compat_array
-
 check_eq() {
   [ "$1" = "$2" ] || { echo "$1 vs $2"; }
 }
@@ -241,8 +237,6 @@ confused=FOO
 ## END
 
 #### array ref without eval_unsafe_arith
-shopt -s compat_array
-
 declare -a array=(ale bean)
 ref='array[0]'
 echo ${!ref}
@@ -267,11 +261,11 @@ ale
 ## END
 
 #### var ref TO array var
-shopt -s eval_unsafe_arith compat_array
+shopt -s eval_unsafe_arith
 
 declare -a array=(ale bean)
 
-ref='array'  # when compat_array is on, this is like array[0]
+ref='array'  # this is like array[0]
 ref_AT='array[@]'
 
 echo ${!ref}
@@ -304,7 +298,7 @@ f 'array[*]'
 ## END
 
 #### var ref TO assoc array a[key]
-shopt -s eval_unsafe_arith compat_array
+shopt -s eval_unsafe_arith
 
 declare -A assoc=([ale]=bean [corn]=dip)
 ref=assoc
@@ -318,7 +312,7 @@ ref_SUB_QUOTED='assoc["al"e]'
 
 ref_SUB_BAD='assoc["bad"]'
 
-echo ref=${!ref}  # compat_array: assoc is equivalent to assoc[0]
+echo ref=${!ref}  # assoc is equivalent to assoc[0]
 #echo ref_AT=${!ref_AT}
 echo ref_SUB=${!ref_SUB}
 echo ref_SUB_QUOTED=${!ref_SUB_QUOTED}
@@ -332,7 +326,7 @@ ref_SUB_BAD=
 ## END
 
 #### var ref TO array with arbitrary subscripts
-shopt -s eval_unsafe_arith compat_array
+shopt -s eval_unsafe_arith
 
 f() {
   local val=$(echo "${!1}")
