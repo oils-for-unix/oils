@@ -71,7 +71,7 @@ module runtime
   VTestPlace = (string name, a_index index)
 
   -- evaluation state for braced_var_sub 
-  VarSubState = (bool decay_array, bool is_type_query)
+  VarSubState = (bool join_array, bool is_type_query)
 
   -- A cell is a wrapper for a value.
   -- TODO: add spid for declaration for 'assigning const' error
