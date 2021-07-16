@@ -53,10 +53,10 @@ OK
 #### ${array@Q} and ${array[@]@Q}
 array=(x 'y\nz')
 echo ${array[@]@Q}
-shopt -s compat_array
 echo ${array@Q}
-shopt -u compat_array
+shopt -s strict_array
 echo ${array@Q}
+## status: 0
 ## STDOUT:
 'x' 'y\nz'
 'x'
