@@ -470,11 +470,12 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     if flag.parser_mem_dump is not None:
       e_usage('--parser-mem-dump can only be used with -n')
 
-    try:
-      status = main_loop.Batch(cmd_ev, c_parser, arena,
-                               cmd_flags=cmd_eval.IsMainProgram)
-    except util.UserExit as e:
-      status = e.status
+    with state.ctx_ThisDir(mem, script_name):
+      try:
+        status = main_loop.Batch(cmd_ev, c_parser, arena,
+                                 cmd_flags=cmd_eval.IsMainProgram)
+      except util.UserExit as e:
+        status = e.status
     box = [status]
     cmd_ev.MaybeRunExitTrap(box)
     status = box[0]
