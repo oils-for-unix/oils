@@ -82,6 +82,11 @@ Other:
   - Egg expressions and the `~` operator rather than the `re` module.
   - The `~~` glob match operator
 
+### Not Supported
+
+- No string formatting with `%`.  Use `${x %.3f}` instead.
+- No `@` for matrix multiply.
+
 ## Semantic Differences
 
 - Iterating over a string yields code points, not one-character strings.

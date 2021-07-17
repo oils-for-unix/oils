@@ -335,8 +335,19 @@ tour() {
   local tmp=_tmp/tour
   rm -r -f $tmp
   mkdir -p $tmp
-  pushd $tmp
-  $REPO_ROOT/bin/oil $REPO_ROOT/_tmp/code-blocks/oil-language-tour.txt
+
+  local work_dir=$REPO_ROOT/_tmp/code-blocks
+
+  # Files used by module example
+  touch $work_dir/{build,test}.sh
+
+  mkdir -p $work_dir/lib
+  cat >$work_dir/lib/util.oil <<EOF
+log() { echo "$@" 1>&2; }
+EOF
+
+  pushd $work_dir
+  $REPO_ROOT/bin/oil oil-language-tour.txt
   popd
 
   # My own dev tools
