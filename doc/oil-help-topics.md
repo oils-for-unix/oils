@@ -193,7 +193,8 @@ X [Testing]       check
 </h2>
 
 ```oil-help-topics
-                  ARGV   ENV   OPT
+                  ARGV   X ENV   X OPT
+                  _this_dir
   [Platform]      OIL_VERSION
   [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
   [Shell Vars]    X _ESCAPE   _DIALECT

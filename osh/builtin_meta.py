@@ -113,10 +113,11 @@ class Source(vm._Builtin):
       with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
         source_argv = arg_r.Rest()
         with state.ctx_Source(self.mem, path, source_argv):
-          src = source.SourcedFile(path, call_spid)
-          with alloc.ctx_Location(self.arena, src):
-            status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
-                                     cmd_flags=cmd_eval.RaiseControlFlow)
+          with state.ctx_ThisDir(self.mem, path):
+            src = source.SourcedFile(path, call_spid)
+            with alloc.ctx_Location(self.arena, src):
+              status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
+                                       cmd_flags=cmd_eval.RaiseControlFlow)
       return status
 
     except error._ControlFlow as e:

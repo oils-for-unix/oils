@@ -948,6 +948,29 @@ class ctx_Registers(object):
     self.mem.last_status.pop()
 
 
+class ctx_ThisDir(object):
+  """For $_this_dir"""
+
+  def __init__(self, mem, filename):
+    # type: (Mem, Optional[str]) -> None
+    self.do_pop = False
+    if filename is not None:  # script_name in main() may be -c, etc.
+      d = os_path.dirname(os_path.abspath(filename))
+      mem.this_dir.append(d)
+      self.do_pop = True
+
+    self.mem = mem
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    if self.do_pop:
+      self.mem.this_dir.pop()
+
+
 class Mem(object):
   """For storing variables.
 
@@ -996,6 +1019,9 @@ class Mem(object):
     self.last_status = [0]  # type: List[int]  # a stack
     self.pipe_status = [[]]  # type: List[List[int]]  # stack
     self.process_sub_status = [[]]  # type: List[List[int]]  # stack
+
+    # A stack but NOT a register?
+    self.this_dir = []  # type: List[str]
 
     # 0 is the whole match, 1..n are submatches
     self.regex_matches = [[]]  # type: List[List[str]]
@@ -1617,6 +1643,16 @@ class Mem(object):
     # "Registers"
     if name == '_status':
       return value.Str(str(self.last_status[-1]))
+
+    if name == '_this_dir':
+      if len(self.this_dir) == 0:
+        # e.g. osh -c '' doesn't have it set
+        # Should we give a custom error here?
+        # If you're at the interactive shell, 'source mymodule.oil' will still
+        # work because 'source' sets it.
+        return value.Undef()
+      else:
+        return value.Str(self.this_dir[-1])  # top of stack
 
     if name in ('PIPESTATUS', '_pipeline_status'):
       return value.MaybeStrArray([str(i) for i in self.pipe_status[-1]])

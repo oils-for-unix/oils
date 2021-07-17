@@ -604,7 +604,17 @@ TODO:
 
 Replacement for `"$@"`
 
-#### STATUS
+#### `_this_dir`
+
+The directory the current script resides in.  This knows about 3 situations:
+
+- The location of `oshrc` in an interactive shell
+- The location of the main script, e.g. in `osh myscript.sh`
+- The location of script loaded with the `source` builtin
+
+It's useful for "relative imports".
+
+#### `_status`
 
 TODO: Do we need this in expression mode?
 
@@ -613,7 +623,7 @@ TODO: Do we need this in expression mode?
     if (STATUS == 0) {
     }
 
-#### M
+#### `_match`
 
 TODO: The match
 

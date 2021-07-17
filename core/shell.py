@@ -571,10 +571,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     # NOTE: called AFTER _InitDefaultCompletions.
-    try:
-      SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
-    except util.UserExit as e:
-      return e.status
+    with state.ctx_ThisDir(mem, rc_path):
+      try:
+        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
+      except util.UserExit as e:
+        return e.status
 
     loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
     try:
@@ -633,10 +634,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     sig_state.InitInteractiveShell(display)
 
     # NOTE: called AFTER _InitDefaultCompletions.
-    try:
-      SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
-    except util.UserExit as e:
-      return e.status
+    with state.ctx_ThisDir(mem, rc_path):
+      try:
+        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
+      except util.UserExit as e:
+        return e.status
 
     line_reader.Reset()  # After sourcing startup file, render $PS1
 
@@ -674,11 +676,12 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     if flag.parser_mem_dump is not None:
       raise error.Usage('--parser-mem-dump can only be used with -n')
 
-    try:
-      status = main_loop.Batch(cmd_ev, c_parser, arena,
-                               cmd_flags=cmd_eval.IsMainProgram)
-    except util.UserExit as e:
-      status = e.status
+    with state.ctx_ThisDir(mem, script_name):
+      try:
+        status = main_loop.Batch(cmd_ev, c_parser, arena,
+                                 cmd_flags=cmd_eval.IsMainProgram)
+      except util.UserExit as e:
+        status = e.status
     box = [status]
     cmd_ev.MaybeRunExitTrap(box)
     status = box[0]
