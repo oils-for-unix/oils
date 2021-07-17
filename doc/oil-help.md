@@ -616,16 +616,31 @@ It's useful for "relative imports".
 
 #### `_status`
 
-TODO: Do we need this in expression mode?
+Alias for $?.
 
-    if ($? == 0) {
+    if (_status != 0) {
+      echo 'failed'
     }
-    if (STATUS == 0) {
-    }
+
+#### `_pipeline_status`
+
+Alias for [PIPESTATUS]($osh-help).
+
+#### `_process_sub_status`
+
+The exit status of all the process subs in the last command.
 
 #### `_match`
 
-TODO: The match
+TODO: The regex match.
+
+#### `_start`
+
+TODO
+
+#### `_end`
+
+TODO
 
 ### Platform
 

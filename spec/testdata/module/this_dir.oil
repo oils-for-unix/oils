@@ -2,6 +2,6 @@
 echo 'hi from this_dir.oil'
 
 echo -n '$_this_dir = '
-echo $_this_dir | sed 's;.*/git/oilshell/;REPLACED/git/oilshell/;'
+echo $_this_dir | sed 's;.*/oil/;REPLACED/oil/;'
 
 source $_this_dir/empty.oil

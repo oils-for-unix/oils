@@ -26,10 +26,10 @@ $SH -i --rcfile $REPO_ROOT/spec/testdata/module/this_dir.oil -c 'echo -c'
 
 ## STDOUT:
 hi from this_dir.oil
-$_this_dir = REPLACED/git/oilshell/oil/spec/testdata/module
+$_this_dir = REPLACED/oil/spec/testdata/module
 interactive
 hi from this_dir.oil
-$_this_dir = REPLACED/git/oilshell/oil/spec/testdata/module
+$_this_dir = REPLACED/oil/spec/testdata/module
 -c
 ## END
 
@@ -45,7 +45,7 @@ not yet
 source $REPO_ROOT/spec/testdata/module/this_dir.oil
 ## STDOUT:
 hi from this_dir.oil
-$_this_dir = REPLACED/git/oilshell/oil/spec/testdata/module
+$_this_dir = REPLACED/oil/spec/testdata/module
 ## END
 
 
@@ -54,7 +54,7 @@ cd /tmp
 source $REPO_ROOT/spec/testdata/module/this_dir.oil
 ## STDOUT:
 hi from this_dir.oil
-$_this_dir = REPLACED/git/oilshell/oil/spec/testdata/module
+$_this_dir = REPLACED/oil/spec/testdata/module
 ## END
 
 #### _this_dir used with relative path
@@ -62,5 +62,5 @@ cd $REPO_ROOT
 source spec/testdata/module/this_dir.oil
 ## STDOUT:
 hi from this_dir.oil
-$_this_dir = REPLACED/git/oilshell/oil/spec/testdata/module
+$_this_dir = REPLACED/oil/spec/testdata/module
 ## END
