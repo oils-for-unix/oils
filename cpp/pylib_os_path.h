@@ -12,8 +12,7 @@
 namespace os_path {
 
 Str* rstrip_slashes(Str* s);
- 
+
 }  // namespace os_path
 
 #endif  // PYLIB_OS_PATH_H
-

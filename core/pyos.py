@@ -14,10 +14,15 @@ import time
 
 import posix_ as posix
 
-from typing import Optional, Tuple, cast, Any, TYPE_CHECKING
+from typing import Optional, Tuple, Dict, cast, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
+
+
+def Environ():
+  # type: () -> Dict[str, str]
+  return posix.environ
 
 
 def Chdir(dest_dir):

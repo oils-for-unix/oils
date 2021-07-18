@@ -12,7 +12,7 @@ Str* rstrip_slashes(Str* s) {
   }
 
   int new_len = n;
-  for (int i = n-1; i >= 0; i--) {
+  for (int i = n - 1; i >= 0; i--) {
     char c = s->data_[i];
     if (c == '/') {
       new_len--;

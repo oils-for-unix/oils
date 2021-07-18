@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <pwd.h>
 #include <signal.h>
-#include <unistd.h>  // getuid()
+#include <unistd.h>  // getuid(), environ
 
 static Str* CopyStr(const char* s) {
   int n = strlen(s);
@@ -15,6 +15,36 @@ static Str* CopyStr(const char* s) {
 }
 
 namespace pyos {
+
+Dict<Str*, Str*>* Environ() {
+  auto d = new Dict<Str*, Str*>();
+
+  for (char **env = environ; *env; ++env) {
+    char* pair = *env;
+
+    char* eq = strchr(pair, '=');
+    assert(eq != nullptr);  // must look like KEY=value
+
+    int key_len = eq - pair;
+    char* buf = static_cast<char*>(malloc(key_len + 1));
+    memcpy(buf, pair, key_len);  // includes NUL terminator
+    buf[key_len] = '\0';
+
+    Str* key = new Str(buf, key_len);
+
+    int len = strlen(pair);
+    int val_len = len - key_len - 1;
+    char* buf2 = static_cast<char*>(malloc(val_len + 1));
+    memcpy(buf2, eq + 1, val_len);  // copy starting after =
+    buf2[val_len] = '\0';
+
+    Str* val = new Str(buf2, val_len);
+
+    d->set(key, val);
+  }
+
+  return d;
+}
 
 int Chdir(Str* dest_dir) {
   mylib::Str0 d(dest_dir);

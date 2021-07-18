@@ -1,5 +1,7 @@
 #include "greatest.h"
 
+#include "core_error.h"
+#include "core_pyerror.h"
 #include "core_pyos.h"    // Chdir
 #include "core_pyutil.h"  // BackslashEscape
 #include "frontend_flag_spec.h"
@@ -7,9 +9,10 @@
 #include "id.h"
 #include "libc.h"
 #include "osh_bool_stat.h"
+#include "posix.h"
 #include "pylib_os_path.h"
-#include "preamble.h"
 #include "runtime_asdl.h"  // cell, etc
+#include "time_.h"
 
 namespace Id = id_kind_asdl::Id;
 using runtime_asdl::flag_type_e;
@@ -341,6 +344,11 @@ TEST pyos_test() {
 
   err_num = pyos::Chdir(new Str("/nonexistent__"));
   ASSERT(err_num != 0);
+
+  Dict<Str*, Str*>* env = pyos::Environ();
+  Str* p = env->get(new Str("PATH"));
+  ASSERT(p != nullptr);
+  log("PATH = %s", p->data_);
 
   PASS();
 }

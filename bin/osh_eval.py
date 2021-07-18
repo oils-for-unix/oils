@@ -12,6 +12,7 @@ from core import oven  # We should be able to translate this
 unused1 = oven
 from core import shell_native
 from core.pyerror import log
+from core import pyos
 from core import pyutil
 from core.pyutil import stderr_line
 from frontend import args
@@ -28,12 +29,7 @@ def main(argv):
   loader = pyutil.GetResourceLoader()
   login_shell = False
 
-  environ = {}  # type: Dict[str, str]
-  environ['PWD'] = posix.getcwd()
-  environ['PATH'] = '/bin'  # stub
-  # No getenv()!
-  #environ['PATH'] = posix.getenv('PATH')
-  #environ = posix.environ 
+  environ = pyos.Environ()
 
   arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
 
