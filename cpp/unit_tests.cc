@@ -7,6 +7,7 @@
 #include "id.h"
 #include "libc.h"
 #include "osh_bool_stat.h"
+#include "pylib_os_path.h"
 #include "preamble.h"
 #include "runtime_asdl.h"  // cell, etc
 
@@ -344,9 +345,34 @@ TEST pyos_test() {
   PASS();
 }
 
+TEST os_path_test() {
+  // TODO: use mylib2 here, with NewStr(), StackRoots, etc.
+  Str* s = nullptr;
+
+  s = os_path::rstrip_slashes(new Str(""));
+  ASSERT(str_equals(s, new Str("")));
+
+  s = os_path::rstrip_slashes(new Str("foo"));
+  ASSERT(str_equals(s, new Str("foo")));
+
+  s = os_path::rstrip_slashes(new Str("foo/"));
+  ASSERT(str_equals(s, new Str("foo")));
+
+  s = os_path::rstrip_slashes(new Str("/foo/"));
+  ASSERT(str_equals(s, new Str("/foo")));
+
+  // special case of not stripping
+  s = os_path::rstrip_slashes(new Str("///"));
+  ASSERT(str_equals(s, new Str("///")));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
+  // TODO: use garbage collection in this test?
+
   GREATEST_MAIN_BEGIN();
   RUN_TEST(show_sizeof);
   RUN_TEST(match_test);
@@ -358,6 +384,7 @@ int main(int argc, char** argv) {
   RUN_TEST(flag_spec_test);
   RUN_TEST(bool_stat_test);
   RUN_TEST(pyos_test);
+  RUN_TEST(os_path_test);
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }

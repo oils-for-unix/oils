@@ -12,6 +12,28 @@ from pylib import os_path  # module under test
 
 class OsPathTest(unittest.TestCase):
 
+  def testDirname(self):
+    CASES = [
+        ('', 'foo'),
+        ('dir', 'dir/'),
+        ('bin', 'bin/foo'),
+        ('bin', 'bin//foo'),  # double slashes
+        ('/usr//local//bin', '/usr//local//bin//foo'),
+        ('///', '///foo'),  # special case of not stripping slashes
+        ]
+    for expected, d in CASES:
+      self.assertEqual(expected, os_path.dirname(d))
+
+  def testSplit(self):
+    CASES = [
+        (('bin', 'foo'), 'bin/foo'),
+        (('bin', 'foo'), 'bin//foo'),  # double slashes
+        (('/usr//local//bin', 'foo'), '/usr//local//bin//foo'),
+        (('///', 'foo'), '///foo'),  # special case of not stripping slashes
+        ]
+    for expected, d in CASES:
+      self.assertEqual(expected, os_path.split(d))
+
   def testBasename(self):
     self.assertEqual('bar', os_path.basename('foo/bar'))
 

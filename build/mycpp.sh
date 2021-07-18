@@ -235,6 +235,7 @@ compile-slice() {
     cpp/osh_arith_parse.cc \
     cpp/osh_bool_stat.cc \
     cpp/pgen2_parse.cc \
+    cpp/pylib_os_path.cc \
     _build/cpp/runtime_asdl.cc \
     _build/cpp/syntax_asdl.cc \
     _build/cpp/hnode_asdl.cc \

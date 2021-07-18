@@ -38,6 +38,7 @@ using id_kind_asdl::Kind_t;
 #include "osh_sh_expr_eval.h"
 #include "pgen2_parse.h"
 #include "posix.h"
+#include "pylib_os_path.h"
 #include "pylib_path_stat.h"
 #include "qsn_qsn.h"
 #include "signal_.h"

@@ -4,6 +4,7 @@ os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 
 import posix_ as posix
 
+from mycpp import mylib
 from typing import Tuple, List, Optional
 
 extsep = '.'
@@ -29,6 +30,19 @@ def join(s1, s2):
   return '%s/%s' % (s1, s2)
 
 
+if mylib.PYTHON:
+  def rstrip_slashes(s):
+    # type: (str) -> str
+    """Helper for split() and dirname()."""
+
+    # This is an awkward implementation from the Python stdlib, but we rewrite it
+    # in C++.
+    n = len(s)
+    if n and s != '/'*n:
+      s = s.rstrip('/')
+    return s
+
+
 # Split a path in head (everything up to the last '/') and tail (the
 # rest).  If the path ends in '/', tail will be empty.  If there is no
 # '/' in the path, head  will be empty.
@@ -41,8 +55,7 @@ def split(p):
     i = p.rfind('/') + 1
     head = p[:i]
     tail = p[i:]
-    if len(head) and head != '/'*len(head):
-        head = head.rstrip('/')
+    head = rstrip_slashes(head)
     return head, tail
 
 
@@ -99,8 +112,7 @@ def dirname(p):
     """Returns the directory component of a pathname"""
     i = p.rfind('/') + 1
     head = p[:i]
-    if head and head != '/'*len(head):
-        head = head.rstrip('/')
+    head = rstrip_slashes(head)
     return head
 
 
