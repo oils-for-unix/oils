@@ -1,6 +1,5 @@
 ---
 default_highlighter: oil-sh
-in_progress: true
 ---
 
 A Tour of the Oil Language
