@@ -1298,7 +1298,7 @@ def _MakeShellPairs(shells):
     elif label == 'osh_eval':
       label = 'osh_.py'  # must start with 'osh' for qualifiers
 
-    elif label == 'osh_eval.dbg':
+    elif label.startswith('osh_eval.'):  # osh_eval.{dbg,opt} etc.
       label = 'osh_.cc'
 
     shell_pairs.append((label, path))

@@ -97,6 +97,7 @@ oil-large       oil_lang/run.sh travis      -
 tea-large       tea/run.sh travis           - 
 osh-minimal     test/spec.sh osh-minimal    _tmp/spec/survey/osh-minimal.html
 EOF
+# TODO: Add build/doc.sh tour, as well as all-help, all-markdown, etc.
 }
 
 cpp-tasks() {
@@ -116,17 +117,11 @@ osh-eval-opt    build/mycpp.sh compile-slice-opt      -
 shell-benchmarks benchmarks/auto.sh travis            _tmp/benchmark-data/index.html
 mycpp-examples  mycpp/build.sh examples               mycpp/_ninja/index.html
 parse-errors    test/parse-errors.sh travis1          -
+spec-cpp        test/spec-cpp.sh travis               _tmp/spec/cpp/osh-summary.html
 EOF
-#parse-errors-native  test/parse-errors.sh travis2          -
-
-#build-examples       mycpp/setup.sh build-examples         -
-#test-examples        mycpp/setup.sh test-examples          -
-#benchmark-examples   mycpp/setup.sh benchmark-examples     -
-
-# Why is this hanging?
-#spec-cpp        test/spec-cpp.sh travis      _tmp/spec/cpp/osh-summary.html
-
-  # TODO:
+# TODO:
+# enable this
+# parse-errors-native  test/parse-errors.sh travis2          -
   # - Run build/mycpp.sh osh-eval-smoke
 }
 

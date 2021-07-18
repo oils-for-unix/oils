@@ -17,6 +17,9 @@ shopt -s failglob  # to debug TSV expansion failure below
 
 readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
+# For now use opt since it's faster, see issue #970
+readonly OSH_CC=$REPO_ROOT/_bin/osh_eval.opt
+
 # Applies everywhere
 export SPEC_JOB='cpp'
 export ASAN_OPTIONS=detect_leaks=0
@@ -40,7 +43,9 @@ osh-eval-cpp() {
   if test $# -gt 0; then
     shift
   fi
-  test/spec.sh $suite $PWD/_bin/osh_eval.dbg "$@"
+  #test/spec.sh $suite $PWD/_bin/osh_eval.dbg "$@"
+
+  test/spec.sh $suite $OSH_CC "$@"
 }
 
 osh-eval-asan() {
@@ -60,15 +65,12 @@ run-with-osh-eval() {
 
   local base_dir=_tmp/spec/$SPEC_JOB
 
-  local osh=$REPO_ROOT/_bin/osh_eval.dbg
-  #local osh=$REPO_ROOT/_bin/osh_eval.asan
-
   # Run it with 3 versions of OSH.  And output TSV so we can compare the data.
   sh-spec spec/$test_name.test.sh \
     --tsv-output $base_dir/${test_name}.tsv \
     $REPO_ROOT/bin/osh \
     $REPO_ROOT/bin/osh_eval \
-    $osh \
+    $OSH_CC \
     "$@"
 }
 
@@ -80,17 +82,24 @@ all() {
   #export MAX_PROCS=1
 
   # this is like test/spec.sh {oil,osh}-all
-  test/spec-runner.sh all-parallel osh "$@" || true  # OK if it fails
+
+  # Hack: got rid of hanging 'redirect' suite in spec-runner.sh manifest
+  # TODO: fix that and switch back to 'osh' suite
+  local suite=osh-cpp
+  test/spec-runner.sh all-parallel $suite "$@" || true  # OK if it fails
 
   html-summary
 }
 
 travis() {
   # Run serially on Travis?  It hung once
-  export MAX_PROCS=1
+  # export MAX_PROCS=1
+
+  # Hack, build with GCC because of startup time issue #970
+  CXX=gcc build/mycpp.sh compile-slice-opt
 
   # Do less work to start
-  export NUM_SPEC_TASKS=8
+  # export NUM_SPEC_TASKS=8
   all
 }
 
