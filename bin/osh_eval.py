@@ -19,9 +19,7 @@ from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 unused2 = flag_def
 
-import posix_ as posix
-
-from typing import List, Dict
+from typing import List
 
 
 def main(argv):
