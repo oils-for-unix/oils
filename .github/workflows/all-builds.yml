@@ -1,3 +1,5 @@
+# Toil wrapped in Github Actions.
+
 name: oil
 on: [push]
 jobs:
@@ -82,13 +84,62 @@ jobs:
           cd $REPO_ROOT
           services/github-actions.sh publish-html
 
-  cpp:
-    runs-on: ubuntu-latest
+  ovm-tarball:
+    runs-on: ubuntu-18.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
     steps:
-
       - name: Check out repository code
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
-      - name: 'cpp'
+      - name: install
         run: |
-          echo 'cpp'
+          # this is an overapproximation
+          build/dev.sh ubuntu-deps
+          build/dev.sh install-py2  # flake8, etc.
+          build/dev.sh install-py3  # MyPy
+
+      - name: ovm-tarball
+        run: |
+          cd $REPO_ROOT
+          services/toil-worker.sh run-ovm-tarball
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          cd $REPO_ROOT
+          services/github-actions.sh publish-html
+
+  cpp:
+    runs-on: ubuntu-18.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: install
+        run: |
+          # this is an overapproximation
+          build/dev.sh ubuntu-deps
+          build/dev.sh install-py2  # flake8, etc.
+          build/dev.sh install-py3  # MyPy
+
+      - name: cpp
+        run: |
+          cd $REPO_ROOT
+          services/toil-worker.sh run-cpp
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          cd $REPO_ROOT
+          services/github-actions.sh publish-html
