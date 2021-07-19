@@ -58,8 +58,11 @@ build-zsh() {
   local prefix=$DIR/zsh-out
   pushd $DIR/zsh-5.1.1
 
+  # FIX for Github Actions, there's "no controlling tty", so add --with-tcsetpgrp
+  # https://www.linuxfromscratch.org/blfs/view/7.5/postlfs/zsh.html
+
   # This builds config.modules
-  ./configure --disable-dynamic
+  ./configure --disable-dynamic --with-tcsetpgrp
 
   # Build a static version of ZSH
 
