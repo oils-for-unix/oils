@@ -300,7 +300,7 @@ make-job-wwz() {
   zip -r $wwz \
     index.html _tmp/toil _tmp/spec _tmp/syscall _tmp/benchmark-data \
     mycpp/_ninja/*.{html,txt,tsv} mycpp/_ninja/{tasks,gen} \
-    web/{base,spec-code,spec-tests,spec-cpp}.css
+    web/{base,spec-code,spec-tests,spec-cpp}.css web/table/table-sort.{css,js}
 }
 
 deploy-job-results() {
