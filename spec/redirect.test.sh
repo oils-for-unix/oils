@@ -394,22 +394,25 @@ cat "$TMP/f.txt"
 ## N-I mksh stdout-json: ""
 
 #### 1>&2- (Bash bug: fail to restore closed fd)
+
+# 7/2021: descriptor 8 is open on Github Actions, so use descriptor 6 instead
+
 opened=$(ls /proc/$$/fd)
 if echo "$opened" | egrep '^7$'; then
   echo "FD 7 shouldn't be open"
   echo "OPENED:"
   echo "$opened"
 fi
-if echo "$opened" | egrep '^8$'; then
-  echo "FD 8 shouldn't be open"
+if echo "$opened" | egrep '^6$'; then
+  echo "FD 6 shouldn't be open"
   echo "OPENED:"
   echo "$opened"
 fi
 
 exec 7> "$TMP/f.txt"
-: 8>&7 7>&-
+: 6>&7 7>&-
 echo hello >&7
-: 8>&7-
+: 6>&7-
 echo world >&7
 exec 7>&-
 cat "$TMP/f.txt"
