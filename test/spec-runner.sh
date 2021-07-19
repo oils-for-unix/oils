@@ -226,7 +226,7 @@ EOF
     print "<td>" osh_num_failed "</td>"
     print "<td>" osh_failures_allowed "</td>"
     print "<td>" osh_ALT_delta "</td>"
-    print "<td>" wall_secs "</td>"
+    printf("<td>%.2f</td>\n", wall_secs);
     print "</tr>"
   }
 
@@ -238,7 +238,7 @@ EOF
     print "<td>" sum_osh_num_failed "</td>" >totals
     print "<td>" sum_osh_failures_allowed "</td>" >totals
     print "<td>" sum_osh_ALT_delta "</td>" >totals
-    print "<td>" sum_wall_secs "</td>" >totals
+    printf("<td>%.2f</td>\n", sum_wall_secs) > totals
     print "</tr>" >totals
 
     print "<tfoot>"

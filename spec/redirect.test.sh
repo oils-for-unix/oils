@@ -305,8 +305,15 @@ echo DONE
 # 3/2020 note: file descriptor 9 failed on Travis, so I changed it to 8.  The
 # process state isn't necessarly clean.  TODO: Close the descriptor when OSH
 # supports it?
+# 7/2021: try descriptor 7
 
-echo hi 1>&8
+opened=$(ls /proc/$$/fd | grep 7)
+if test -n "$opened"; then
+  echo "FD 7 shouldn't be open"
+fi
+
+echo hi 1>&7
+## stdout-json: ""
 ## status: 1
 ## OK dash status: 2
 
