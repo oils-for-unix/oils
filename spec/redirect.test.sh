@@ -308,9 +308,8 @@ echo DONE
 # 7/2021: try descriptor 7
 
 opened=$(ls /proc/$$/fd)
-fd=7
-if [[ $opened == *$fd* ]]; then
-  echo "FD $fd shouldn't be open"
+if echo "$opened" | egrep '^7$'; then
+  echo "FD 7 shouldn't be open"
   echo "OPENED:"
   echo "$opened"
 fi
@@ -395,6 +394,18 @@ cat "$TMP/f.txt"
 ## N-I mksh stdout-json: ""
 
 #### 1>&2- (Bash bug: fail to restore closed fd)
+opened=$(ls /proc/$$/fd)
+if echo "$opened" | egrep '^7$'; then
+  echo "FD 7 shouldn't be open"
+  echo "OPENED:"
+  echo "$opened"
+fi
+if echo "$opened" | egrep '^8$'; then
+  echo "FD 8 shouldn't be open"
+  echo "OPENED:"
+  echo "$opened"
+fi
+
 exec 7> "$TMP/f.txt"
 : 8>&7 7>&-
 echo hello >&7
