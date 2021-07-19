@@ -114,6 +114,9 @@ home-page() {
         <a href="srht-jobs/">sr.ht Jobs</a>
       </li>
       <li>
+        <a href="github-jobs/">Github Actions Jobs</a>
+      </li>
+      <li>
         <a href="travis-jobs/">Travis Jobs</a>
       </li>
       <li>
@@ -172,7 +175,7 @@ remote-cleanup-jobs-index() {
 }
 
 init-server-html() {
-  ssh $USER@$HOST mkdir -v -p $HOST/{travis-jobs,srht-jobs,web,builds/src}
+  ssh $USER@$HOST mkdir -v -p $HOST/{travis-jobs,srht-jobs,github-jobs,web,builds/src}
 
   home-page > _tmp/index.html
 

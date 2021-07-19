@@ -153,7 +153,8 @@ def ParseJobs(stdin):
     # Metadata for "Job"
 
     meta['job-name'] = meta.get('job-name') or '?'  # Also TRAVIS_JOB_NAME
-    meta['job_num'] = meta.get('TRAVIS_JOB_NUMBER') or meta.get('JOB_ID') or '?'
+    meta['job_num'] = meta.get('TRAVIS_JOB_NUMBER') or meta.get('JOB_ID') or meta.get('GITHUB_RUN_ID') or '?'
+    # For Github, we construct $JOB_URL in services/github-actions.sh
     meta['job_url'] = meta.get('TRAVIS_JOB_WEB_URL') or meta.get('JOB_URL') or '?'
 
     filename = os.path.basename(json_path)
@@ -244,7 +245,7 @@ def ByCommitDate(row):
 def main(argv):
   action = argv[1]
 
-  if action == 'srht-index':
+  if action in ('github-index', 'srht-index'):
 
     # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
     # have Ctrl-F5)
