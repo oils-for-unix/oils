@@ -92,8 +92,9 @@ all() {
 }
 
 travis() {
-  # Run serially on Travis?  It hung once
-  # export MAX_PROCS=1
+  # On sourcehut I think the parallelism is causing contention, i.e.  overall
+  # slowdown.  It's taking ~500 seconds.
+  export MAX_PROCS=1
 
   # Hack, build with GCC because of startup time issue #970
   CXX=gcc build/mycpp.sh compile-slice-opt
