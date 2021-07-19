@@ -144,7 +144,7 @@ def ParseJobs(stdin):
 
     # Metadata for "Build".  Travis has this concept, but sourcehut doesn't.
     # A build consists of many jobs.
-    meta['git-branch'] = meta.get('TRAVIS_BRANCH') or '?'  # no data for sr.ht
+    meta['git-branch'] = meta.get('TRAVIS_BRANCH') or meta.get('GITHUB_REF') or '?'  # no data for sr.ht
     meta['commit-line'] = meta.get('commit-line') or '?'
     meta['commit-hash'] = meta.get('commit-hash') or '?'
 
@@ -231,27 +231,35 @@ INDEX_BOTTOM = '''\
 '''
 
 # Sort by descending build number
-def ByBuildNum(row):
+def ByTravisBuildNum(row):
   return int(row.get('TRAVIS_BUILD_NUMBER', 0))
 
 def ByTaskRunStartTime(row):
   return int(row.get('task-run-start-time', 0))
 
 def ByCommitDate(row):
+  # Written in the shell script
   # This is in ISO 8601 format (git log %aI), so we can sort by it.
   return row.get('commit-date', '?')
+
+def ByGithub(row):
+  # Written in the shell script
+  # This is in ISO 8601 format (git log %aI), so we can sort by it.
+  return int(row.get('GITHUB_RUN_ID', 0))
+
+
+def HtmlHead():
+  # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
+  # have Ctrl-F5)
+  html_head.Write(sys.stdout, 'Recent Jobs',
+      css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
 
 
 def main(argv):
   action = argv[1]
 
-  if action in ('github-index', 'srht-index'):
-
-    # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
-    # have Ctrl-F5)
-    html_head.Write(sys.stdout, 'Recent Jobs',
-        css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
-
+  if action == 'srht-index':
+    HtmlHead()
     print(INDEX_TOP)
 
     rows = list(ParseJobs(sys.stdin))
@@ -274,23 +282,41 @@ def main(argv):
 
     print(INDEX_BOTTOM)
 
+  elif action == 'github-index':
+    HtmlHead()
+    print(INDEX_TOP)
+
+    rows = list(ParseJobs(sys.stdin))
+
+    rows.sort(key=ByGithub, reverse=True)
+    groups = itertools.groupby(rows, key=ByGithub)
+
+    for commit_hash, group in groups:
+      jobs = list(group)
+      # Sort by start time
+      jobs.sort(key=ByTaskRunStartTime, reverse=True)
+
+      # First job
+      print(BUILD_ROW_TEMPLATE % jobs[0])
+
+      for job in jobs:
+        print(JOB_ROW_TEMPLATE % job)
+
+    print(INDEX_BOTTOM)
+
   elif action == 'travis-index':
 
-    # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
-    # have Ctrl-F5)
-    html_head.Write(sys.stdout, 'Recent Jobs',
-        css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
-
+    HtmlHead()
     print(INDEX_TOP)
     rows = list(ParseJobs(sys.stdin))
 
-    rows.sort(key=ByBuildNum, reverse=True)
-    groups = itertools.groupby(rows, key=ByBuildNum)
+    rows.sort(key=ByTravisBuildNum, reverse=True)
+    groups = itertools.groupby(rows, key=ByTravisBuildNum)
     #print(list(groups))
 
     for build_num, group in groups:
-      build_num = int(build_num)
-      log('build %d', build_num)
+      #build_num = int(build_num)
+      #log('build %d', build_num)
 
       jobs = list(group)
 
