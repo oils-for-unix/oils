@@ -307,9 +307,12 @@ echo DONE
 # supports it?
 # 7/2021: try descriptor 7
 
-opened=$(ls /proc/$$/fd | grep 7)
-if test -n "$opened"; then
-  echo "FD 7 shouldn't be open"
+opened=$(ls /proc/$$/fd)
+fd=7
+if [[ $opened == *$fd* ]]; then
+  echo "FD $fd shouldn't be open"
+  echo "OPENED:"
+  echo "$opened"
 fi
 
 echo hi 1>&7
