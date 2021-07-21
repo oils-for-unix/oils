@@ -82,6 +82,15 @@ It would have been nicer if they were consistent, but:
 - Most users won't see these literal forms very much.  They're more useful for
   testing and frameworks rather than simple scripts/applications.
 
+## In `read :x`, The Colon is a "Pseudo-Sigil"
+
+Sigils like `$` and `@` are [statically
+parsed](https://www.oilshell.org/blog/2019/02/07.html), but the optional `:` is
+dynamically parsed by every builtin that supports it.
+
+This is a minor inconsistency, but I like having a symbol for a variable to be
+mutated.
+
 ## Related 
 
 - The doc on [compatibility quirks](quirks.html) relates to the OSH language.

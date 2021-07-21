@@ -108,7 +108,7 @@ It also has Ruby-like blocks:
 And utilities to read and write JSON:
 
     var d = {name: 'bob', age: 42}
-    json write :d
+    json write :d  # :d refers to the variable d
     # =>
     # {
     #   "name": "bob",
@@ -625,6 +625,13 @@ Here are some categories of builtin:
 - Meta: `command  builtin  runproc  type  eval`
 - Modules: `source  module`
 
+Syntax quirk: builtins like `read` use the colon as a "pseudo-sigil":
+
+    var x = ''
+    whoami | read :x  # mutate variable x
+
+It's just a visual indication that the string arg is a variable name.
+
 <!-- TODO: Make a more comprehensive list. -->
 
 ## Expression Language: Python-like Types
@@ -694,14 +701,15 @@ More on strings:
 - The syntax `%symbol` is used in eggex, and could be an interned string.
 -->
 
-#### List
+#### List (and Arrays)
 
 All lists can be expressed with Python-like literals:
 
     var foods = ['ale', 'bean', 'corn']
     var recursive = [1, [2, 3]]
 
-Arrays of strings can be expressed with shell-like literals:
+As a special case, list of strings are called **arrays**.  They can be be
+expressed with shell-like literals:
 
     var foods = %(ale bean corn)
 
@@ -709,9 +717,17 @@ Arrays of strings can be expressed with shell-like literals:
 
 Dicts have a JavaScript-like syntax with unquoted keys:
 
-    var d = {name: 'bob', age: 42}
+    var d = {name: 'bob', age: 42, 'key with spaces': 'val'}
 
-    echo $[d['name']]  # => bob
+    # These are synonyms.  Fatal exception if the key doesn't exist.
+    var v1 = d['name']
+    var v2 = d->name 
+
+    # Using them in a command (with expression sub):
+    echo $[d['name']]             # => bob
+    echo $[d->name]               # => bob
+
+    echo $[d['key with spaces']]  # => val
 
     var empty = {}
 

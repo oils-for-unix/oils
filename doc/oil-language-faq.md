@@ -28,7 +28,8 @@ string.  But they are different:
   - Note that `len(x)` is an expression that evaluates to an integer, and
     `$len(x)` converts it to a string.
 
-(Note: command subs may be optimized later, as `ksh` does.)
+(Note: builtin subs like `${.myproc $x}` are meant to eliminate process
+overhead, but they're not yet implemented.)
 
 ## How can I return rich values from shell functions / Oil `proc`s?
 
@@ -38,21 +39,28 @@ There are two primary ways:
   `$(myproc)` or a pipeline like `myproc | read --line`.
 - Use an "out param" with [setref]($oil-help:setref).
 
-Oil may grow true functions with the `func` keyword at some point.  However,
-that must be done carefully, as a `proc` composes with processes, but a `func`
-doesn't.
+(Oil may grow true functions with the `func` keyword, but it will be built on
+top of `proc` and the *builtin sub* mechanism.)
 
 Send us feedback if this doesn't make sense, or if you want a longer
 explanation.
 
 ## Why doesn't a raw string work here: `${array[r'\']}` ?
 
-Oil has two array index syntax:
+This boils down to the difference between OSH and Oil, and not being able to
+mix the two.  Though they look similar, `${array[i]}` syntax (with braces) is
+fundamentally different than `$[array[i]]` syntax (with brackets).
 
-- The **legacy** shell-like syntax `${array[i]}`, which accepts shell
-  arithmetic expressions (which consist of number-like strings).
-- The [Oil expression subsitution]($oil-help:expr-sub) syntax `$[array[i]]`,
-  which accepts Oil expressions (which consist of typed data).
+- OSH supports `${array[i]}`.
+  - The index is legacy/deprecated shell arithmetic like `${array[i++]}` or
+    `${assoc["$key"]}`.
+  - The index **cannot** be a raw string like `r'\'`.
+- Oil supports both, but [expression subsitution]($oil-help:expr-sub) syntax
+  `$[array[i]]` is preferred.
+  - It accepts Oil expressions like `$[array[i + 1]` or `$[mydict[key]]`.
+  - A raw string like `r'\'` is a valid key, e.g.  `$[mydict[r'\']]`.
+
+Of course, Oil style is preferred when compatibility isn't an issue.
 
 No:
 
@@ -80,3 +88,9 @@ The issue is the same as above.  Oil expression are allowed within `$[]` but
 not `${}`.
 
 -->
+
+## Related
+
+- [Oil Language FAQ]($wiki) on the wiki has more answers.  They may be migrated
+  here at some point.
+
