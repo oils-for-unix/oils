@@ -655,9 +655,9 @@ JavaScript-like spellings are preferred for these three "atoms":
       echo 'yes'
     }  # => yes
 
-For compatibility, you can also use `None`, `True`, and `False`.  But that
-breaks the rule that types are spelled with capital letters (e.g. `Str`,
-`Dict`).
+For compatibility with Python, you can also use `None`, `True`, and `False`.
+But that breaks the rule that types are spelled with capital letters (e.g.
+`Str`, `Dict`).
 
 #### Int
 
