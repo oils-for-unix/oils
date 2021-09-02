@@ -4,7 +4,7 @@ Oil Source Code
 [git-repo]: https://github.com/oilshell/oil
 
 [![Build
-Status](https://travis-ci.org/oilshell/oil.svg)](https://travis-ci.org/oilshell/oil)
+Status](https://github.com/oilshell/oil/actions/workflows/all-builds.yml/badge.svg)](https://github.com/oilshell/oil/actions/workflows/all-builds.yml)
 
 [Oil][] is a new Unix shell.  It's our upgrade path from bash to a better
 language and runtime!  ([Why Create a New Unix Shell?][why] / [2019 FAQ][faq])
