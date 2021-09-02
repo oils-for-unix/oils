@@ -192,3 +192,18 @@ json write :e
   }
 ]
 ## END
+
+#### Invalid op on string
+shopt -s oil:all
+
+var clients = {'email': 'foo'}
+for c in @clients {
+  echo $c
+  # A user tickled this.  I think this should make the whole 'const' line fail
+  # with code 1 or 2?
+  const e = c->email
+}
+## status: 1
+## STDOUT:
+email
+## END

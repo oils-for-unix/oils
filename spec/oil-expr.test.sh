@@ -704,7 +704,29 @@ yes
 no
 ## END
 
-#### 3 ~== '3'
+#### Exact equality with == and !=
+shopt -s oil:all
+
+if (3 == 3) {
+  echo 'ok'
+}
+if (3 == '3') {
+  echo 'FAIL'
+}
+
+if (3 != 3) {
+  echo 'FAIL'
+}
+if (3 != '3') {
+  echo 'ok'
+}
+
+## STDOUT:
+ok
+ok
+## END
+
+#### Approximate equality with ~==
 shopt -s oil:all
 
 # TODO: should we have !~== too?
