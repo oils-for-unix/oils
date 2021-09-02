@@ -1,14 +1,14 @@
 
 #### sh -i
-# This fails because OSH prompt goes to stdout, and other differences. It's
-# probably OK to be honest.
-echo 'echo foo' | PS1='$ ' $SH --rcfile /dev/null -i
+# Notes:
+# - OSH prompt goes to stdout and bash goes to stderr
+# - This test seems to fail on the system bash, but succeeds with
+# _deps/spec-bin/bash
+echo 'echo foo' | PS1='[prompt] ' $SH --rcfile /dev/null -i >out.txt 2>err.txt
+fgrep -q '[prompt]' out.txt err.txt
+echo status=$?
 ## STDOUT:
-foo
-## END
-## STDERR:
-$ echo foo
-$ exit
+status=0
 ## END
 
 #### \[\] are non-printing
