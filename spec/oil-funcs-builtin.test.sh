@@ -181,7 +181,7 @@ argv.py a @maybe(n) b
 ['a', 'b']
 ## END
 
-#### @maybe on invalid type is fatal error
+#### maybe() on invalid type is fatal error
 
 # not allowed
 setvar marray = %()
@@ -189,6 +189,16 @@ argv.py a @maybe(marray) b
 echo done
 ## status: 1
 ## STDOUT:
+## END
+
+#### split() on invalid type is fatal error
+var myarray = %( --all --long )
+write -- @myarray
+write -- @split(myarray)
+## status: 1
+## STDOUT:
+--all
+--long
 ## END
 
 #### @glob(x)
@@ -208,3 +218,4 @@ ___
 a.z
 b.z
 ## END
+

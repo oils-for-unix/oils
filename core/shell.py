@@ -395,17 +395,10 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
-
-  # split() builtin
-  # TODO: Accept IFS as a named arg?  split('a b', IFS=' ')
-  funcs_builtin.SetGlobalFunc(
-      mem, 'split', lambda s, ifs=None: splitter.SplitForWordEval(s, ifs=ifs))
-
-  # glob() builtin
   # TODO: This is instantiation is duplicated in osh/word_eval.py
   globber = glob_.Globber(exec_opts)
-  funcs_builtin.SetGlobalFunc(
-      mem, 'glob', lambda s: globber.OilFuncCall(s))
+
+  funcs_builtin.Init2(mem, splitter, globber)
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.

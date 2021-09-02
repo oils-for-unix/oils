@@ -14,6 +14,8 @@ from typing import Callable, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from core import state
   from oil_lang.objects import ParameterizedArray
+  from osh import glob_
+  from osh import split
   #from osh import cmd_eval
 
 _ = log
@@ -43,8 +45,8 @@ def _Maybe(obj):
 
   # TODO: Need proper span IDs
   if not isinstance(obj, str):
-    raise e_die('maybe() passed arg of invalid type %r',
-                obj.__class__.__name__)
+    e_die('maybe() passed arg of invalid type %r',
+          obj.__class__.__name__)
 
   s = obj
   if len(s):
@@ -183,6 +185,17 @@ class _VmEval(object):
 
     return {'key': 'value'}
     raise NotImplementedError()
+
+
+def Init2(mem, splitter, globber):
+  # type: (state.Mem, split.SplitContext, glob_.Globber) -> None
+
+  # split() builtin
+  # TODO: Accept IFS as a named arg?  split('a b', IFS=' ')
+  SetGlobalFunc(mem, 'split', splitter.SplitFuncBuiltin)
+
+  # glob() builtin
+  SetGlobalFunc(mem, 'glob', lambda s: globber.OilFuncCall(s))
 
 
 def Init(mem):
