@@ -193,8 +193,9 @@ class SplitContext(object):
   def SplitFuncBuiltin(self, s, ifs=None):
     # type: (str, Optional[str]) -> List[str]
     """split() function exposed to users"""
-    if not isinstance(s, str):
-      e_die('split() passed arg of invalid type %r', s.__class__.__name__)
+    if mylib.PYTHON:  # TODO: translate s.__class__.__name__
+      if not isinstance(s, str):
+        e_die('split() passed arg of invalid type %r', s.__class__.__name__)
     return self.SplitForWordEval(s, ifs=ifs)
 
 
