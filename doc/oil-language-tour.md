@@ -415,7 +415,7 @@ If it's neither, then it's assumed to be an external command:
 <!-- 
 leaving off: aliases
 
-TODO: We also need lazy arg lists: qtt | where [size > 10]
+TODO: We also need lazy arg lists: qtt | where (size > 10)
 -->
 
 You can **redirect** `stdin` and `stdout` of simple commands:
@@ -625,14 +625,14 @@ Here are some categories of builtin:
 - Meta: `command  builtin  runproc  type  eval`
 - Modules: `source  module`
 
+<!-- TODO: Link to a comprehensive list of builtins -->
+
 Syntax quirk: builtins like `read` use the colon as a "pseudo-sigil":
 
     var x = ''
     whoami | read :x  # mutate variable x
 
 It's just a visual indication that the string arg is a variable name.
-
-<!-- TODO: Make a more comprehensive list. -->
 
 ## Expression Language: Python-like Types
 
@@ -744,7 +744,7 @@ directly.
   `Expr`.
   - rarely-used literal: `^{42, f(x), verbose = true}`
 
-<!-- TODO: implement these -->
+<!-- TODO: implement Block, Expr, ArgList types (variants of value) -->
 
 ### Operators
 
@@ -773,14 +773,17 @@ Equality can be approximate or exact:
 
 Pattern matching can be done with globs (`~~` and `!~~`):
 
-    # if (s ~~ '*.py') {
-    #   echo 'Python'
-    # }
+    const filename = 'foo.py'
+    if (filename ~~ '*.py') {
+      echo 'Python'
+    }  # => Python
+
+    if (filename !~~ '*.sh') {
+      echo 'not shell'
+    }  # => not shell
 
 or regular expressions (`~` and `!~`).  See the Eggex section below for an
-example of these operators.
-
-TODO: Implement `~==` and `~~`!
+example of the latter.
 
 Concatenation is `++` rather than `+` because it avoids confusion in the
 presence of type conversion:
@@ -827,7 +830,7 @@ are like the "standard library" for the expression language.  Examples:
 - String and pattern: `find()  sub()`
 - Collections: `len()  keys()  values()  items()  append()  extend()`
 
-<!-- TODO: Make a more comprehensive list. -->
+<!-- TODO: Make a comprehensive list of func builtins. -->
 
 ### Egg Expressions (Oil Regexes)
 
@@ -845,6 +848,10 @@ It's designed to be readable and composable.  Example:
       echo "$z looks like an IP address"
     }  # => 192.168.0.1 looks like an IP address
 
+    if (z !~ / '.255' %end /) {
+      echo "doesn't end with .255"
+    }  # => doesn't end with .255"
+
 See the [Egg Expressions doc](eggex.html) for details.
 
 ## Languages for Data (Interchange Formats)
@@ -853,7 +860,7 @@ In the sections above, we saw that Oil **code** consists of 3 interleaved
 languages.  It's also useful to think of **data** as being described in a
 language.  [JSON]($xref) is a prominent example of such a language.
 
-<!-- TODO: Link to concepts and patterns -->
+<!-- TODO: Link to slogans, fallacies, and concepts -->
 
 ### Lines of Text (traditional), and QSN
 
@@ -906,7 +913,7 @@ Example:
 <!--
 TODO:
 - Fix pp cell output
-- Use json write [d] syntax
+- Use json write (d) syntax
 -->
 
 **Table-shaped** data can be read and written as [QTT: Quoted, Typed

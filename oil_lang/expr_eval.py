@@ -378,9 +378,10 @@ class OilEvaluator(object):
           result = left is not right
 
         elif op.id == Id.Expr_DTilde:
-          e_die('~~ not implemented')
+          # no extglob in Oil language; use eggex
+          return libc.fnmatch(right, left, False)
         elif op.id == Id.Expr_NotDTilde:
-          e_die('!~~ not implemented')
+          return not libc.fnmatch(right, left, False)
 
         elif op.id == Id.Expr_TildeDEqual:
           # Approximate equality
