@@ -115,66 +115,11 @@ And utilities to read and write JSON:
     #   "age": 42,
     # }
 
-## Concept: Three Sublanguages
-
-Oil is best explained as three interleaved languages: **words**, **commands**,
-and **expressions**.
-
-For example, this *command*:
-
-    write hello $name $[d['age'] + 1]
-    # =>
-    # hello
-    # world
-    # 43
-
-consists of **four** *words*.  The fourth word is an *expression sub* `$[]`,
-a construct that evaluates an expression and turns it into a string.
-
-In the next example, the *expression* on the right hand side of `=`
-concatenates two strings:
-
-    var s = 'ale ' ++ $(echo bean | tr a-z A-Z)
-    write $s  # => ale BEAN
-
-The second string is a *command sub*, which captures the `stdout` as a string.
-
-These examples show that words, commands, and expressions are *mutually
-recursive*.  Some definitions:
-
-1. **Words** evaluate to a string, or list of strings.  This includes:
-   - literals like `'mystr'`
-   - substitutions like `${x}` and `$(hostname)`
-   - globs like `*.sh`
-2. **Commands** are used for
-   - I/O: pipelines, the `read` builtin
-   - control flow: `if`, `for`
-   - abstraction: `proc`
-3. **Expressions** on typed data are borrowed from Python, with some JavaScript
-   influence.
-   - Lists: `['ale', 'bean']` or `%(ale bean)`
-   - Dicts: `{name: 'bob', age: 42}`
-   - Functions: `split('ale bean')` and `join(['pea', 'nut'])`
-
-If you're a conceptual person, skimming [Syntactic
-Concepts](syntactic-concepts.html) may help you understand how these
-sublanguages relate, and the examples that follow.
-
-<!--
-One way to think about these sublanguages is to note that the `|` character
-means something different in each context:
-
-- In the command language, it's the pipeline operator, as in `ls | wc -l`
-- In the word language, it's only valid in a literal string like `'|'`, `"|"`,
-  or `\|`.  (It's also used in `${x|html}`, which formats a string.)
-- In the expression language, it's the bitwise OR operator, as in Python and
-  JavaScript.
--->
-
 ## Word Language: Expressions for Strings (and Arrays)
 
-Let's review the word language first.  Strings are a central concept in shell,
-so it's a rich language.
+Let's describe the word language first, and then talk about commands and
+expressions.  Words are a rich language because **strings** are a central
+concept in shell.
 
 ### Three Kinds of String Literals
 
@@ -197,8 +142,7 @@ can't be denoted):
 
     echo 'c:\Program Files\'        # => c:\Program Files\
 
-C-style strings look like `$'foo'` and respect backslash **chararacter
-escapes**:
+C-style strings look like `$'foo'` and respect backslash **character escapes**:
 
     echo $' A is \x41 \n line two, with backslash \\'
     # =>
@@ -854,11 +798,66 @@ It's designed to be readable and composable.  Example:
 
 See the [Egg Expressions doc](eggex.html) for details.
 
+## Interlude
+
+### Summary
+
+Here are the 3 languages we saw in the last 3 sections:
+
+1. **Words** evaluate to a string, or list of strings.  This includes:
+   - literals like `'mystr'`
+   - substitutions like `${x}` and `$(hostname)`
+   - globs like `*.sh`
+2. **Commands** are used for
+   - I/O: pipelines, builtins like `read`
+   - control flow: `if`, `for`
+   - abstraction: `proc`
+3. **Expressions** on typed data are borrowed from Python, with some JavaScript
+   influence.
+   - Lists: `['ale', 'bean']` or `%(ale bean)`
+   - Dicts: `{name: 'bob', age: 42}`
+   - Functions: `split('ale bean')` and `join(['pea', 'nut'])`
+
+### More Examples
+
+How does these languages work together?  Here are two examples.
+
+(1) This *command*:
+
+    write hello $name $[d['age'] + 1]
+    # =>
+    # hello
+    # world
+    # 43
+
+consists of **four** *words*.  The fourth word is an *expression sub* `$[]`.
+
+(2) The *expression* on the right hand side of `=` concatenates two strings:
+
+    var food = 'ale ' ++ $(echo bean | tr a-z A-Z)
+    write $food  # => ale BEAN
+
+The second string is a *command sub*, which captures `stdout` as a string.
+
+So words, commands, and expressions are **mutually recursive**.  If you're a
+conceptual person, skimming [Syntactic Concepts](syntactic-concepts.html) may
+help you understand this on a deeper level.
+
+<!--
+One way to think about these sublanguages is to note that the `|` character
+means something different in each context:
+
+- In the command language, it's the pipeline operator, as in `ls | wc -l`
+- In the word language, it's only valid in a literal string like `'|'`, `"|"`,
+  or `\|`.  (It's also used in `${x|html}`, which formats a string.)
+- In the expression language, it's the bitwise OR operator, as in Python and
+  JavaScript.
+-->
+
 ## Languages for Data (Interchange Formats)
 
-In the sections above, we saw that Oil **code** consists of 3 interleaved
-languages.  It's also useful to think of **data** as being described in a
-language.  [JSON]($xref) is a prominent example of such a language.
+In addition to languages for **code**, Oil also deals with languages for
+**data**.  [JSON]($xref) is a prominent example of the latter.
 
 <!-- TODO: Link to slogans, fallacies, and concepts -->
 
@@ -1013,10 +1012,11 @@ $y ]`.
 
 These concepts are central to Oil:
 
-1. Interleaved *word*, *command*, and *expression* languages
+1. Interleaved *word*, *command*, and *expression* languages.
 2. A standard library of *shell builtins*, as well as *builtin functions*
 3. Languages for *data*
 4. A *runtime* shared by OSH and Oil
+
 
 ## Related Docs
 
