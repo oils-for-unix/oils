@@ -210,27 +210,31 @@ class OilEvaluator(object):
       id_ = node.c.id
       if id_ == Id.Expr_DecInt:
         return int(c)
-      elif id_ == Id.Expr_BinInt:
+      if id_ == Id.Expr_BinInt:
         return int(c, 2)
-      elif id_ == Id.Expr_OctInt:
+      if id_ == Id.Expr_OctInt:
         return int(c, 8)
-      elif id_ == Id.Expr_HexInt:
+      if id_ == Id.Expr_HexInt:
         return int(c, 16)
 
-      elif id_ == Id.Expr_Float:
+      if id_ == Id.Expr_Float:
         return float(c)
 
-      elif id_ == Id.Expr_Null:
+      if id_ == Id.Expr_Null:
         return None
-      elif id_ == Id.Expr_True:
+      if id_ == Id.Expr_True:
         return True
-      elif id_ == Id.Expr_False:
+      if id_ == Id.Expr_False:
         return False
 
-      elif id_ == Id.Expr_Name:
+      if id_ == Id.Expr_Name:
         # for {name: 'bob'}
         # Maybe also :Symbol?
         return node.c.val
+
+      elif id_ == Id.Char_OneChar:
+        # In expression context, it's an integer
+        return consts.LookupCharInt(node.c.val[1])
 
       # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using
       # it yet.

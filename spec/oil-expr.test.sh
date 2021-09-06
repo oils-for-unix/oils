@@ -344,6 +344,20 @@ SHELL
 sum 40
 ## END
 
+#### Backslash char literal (is an integer)
+var newline = \n
+var backslash = \\
+echo "$newline $backslash"
+## STDOUT:
+10 92
+## END
+
+#### Pound char literal (is an integer)
+var ch = #'a'
+echo "[$ch]"
+## STDOUT:
+## END
+
 #### Float Literals
 shopt -s oil:basic
 # 1+2 2.3

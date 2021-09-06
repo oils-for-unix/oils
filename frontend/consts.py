@@ -191,6 +191,22 @@ def LookupCharC(c):
   return _ONE_CHAR_C[c]
 
 
+_ONE_CHAR_INT = {
+    '0': ord('\0'),
+    'n': ord('\n'),
+    'r': ord('\r'),
+    't': ord('\t'),
+    '\\': ord('\\'),
+    "'": ord("'"),
+    '"': ord('"'),
+}
+
+def LookupCharInt(c):
+  # type: (str) -> int
+  """Fatal if not present."""
+  return _ONE_CHAR_INT[c]
+
+
 # NOTE: Prompts chars and printf are consistent, e.g. \E is \e in printf, but
 # not in PS1.
 _ONE_CHAR_PROMPT = {

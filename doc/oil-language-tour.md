@@ -250,7 +250,7 @@ The `$[myexpr]` syntax evaluates an expression and converts it to a string:
     echo $[1 + 2 * 3]                # => 7
     echo "_ $[1 + 2 * 3] _"          # => _ 7 _
 
-<!-- TODO: safe substitution -->
+<!-- TODO: safe substitution with $[a] -->
 
 #### Function Sub
 
@@ -357,8 +357,6 @@ If it's neither, then it's assumed to be an external command:
     ls -l /tmp           # The external 'ls' command
 
 <!-- 
-leaving off: aliases
-
 TODO: We also need lazy arg lists: qtt | where (size > 10)
 -->
 
@@ -614,7 +612,7 @@ There are many ways to write integers:
     echo "$hex $octal $binary"           # => 65536 493 21
 
 <!--
-TODO: implement char literals
+TODO: Implement char literals
 
 Character literals can appear outside of strings, and are actually integers:
 
