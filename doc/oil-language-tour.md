@@ -611,14 +611,19 @@ There are many ways to write integers:
     var hex, octal, binary = 0x0001_0000, 0o755, 0b0001_0101
     echo "$hex $octal $binary"           # => 65536 493 21
 
-<!--
-TODO: Implement char literals
+There are three ways to write characters, but they're actually **integers**:
 
-Character literals can appear outside of strings, and are actually integers:
+    # Pound char literal
+    const a = #'A'
 
-    #var newline, mu, a = \n, \u3bc, #'a'
-    #echo "$newline $mu $a"
--->
+    # Backslash char literals
+    const newline = \n  # no quotes because it's a char/int, not a string
+    const backslash = \\  # ditto
+
+    # Unicode char literals
+    #const mu = \u{3bc}
+
+    echo "chars $a $newline $backslash"  # => chars 65 10 92
 
 #### Float
 

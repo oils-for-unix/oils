@@ -103,21 +103,19 @@ home-page() {
 
     <h1>travis-ci.oilshell.org</h1>
 
-    <p>This server receives build results from 
-       <a href="https://travis-ci.org/oilshell/oil">travis-ci.org/oilshell/oil</a>.
-       See
-       <a href="https://github.com/oilshell/oil/wiki/Travis-CI-for-Oil">Travis CI for Oil</a> for details.
+    <p>This server receives results from cloud build services.
+       See <a href="https://github.com/oilshell/oil/wiki/Toil">Toil</a> for details.
     </p>
 
     <ul>
       <li>
-        <a href="srht-jobs/">sr.ht Jobs</a>
+        <a href="srht-jobs/">sr.ht Jobs</a> from <a href="https://builds.sr.ht/~andyc">builds.sr.ht/~andyc</a>
       </li>
       <li>
-        <a href="github-jobs/">Github Actions Jobs</a>
+        <a href="github-jobs/">Github Actions Jobs</a> from <a href="https://github.com/oilshell/oil/actions/workflows/all-builds.yml">github.com/oilshell/oil/actions/workflows/all-builds.yml</a>
       </li>
       <li>
-        <a href="travis-jobs/">Travis Jobs</a>
+        <a href="travis-jobs/">Travis Jobs</a> from <a href="https://app.travis-ci.com/github/oilshell/oil">app.travis-ci.com/oilshell/oil</a>
       </li>
       <li>
         <a href="builds/">Builds</a> (not yet implemented)

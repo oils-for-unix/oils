@@ -329,6 +329,8 @@ help-cards() {
 }
 
 tour() {
+  ### Build the Oil Language Tour and execute code
+
   split-and-render doc/oil-language-tour.md
 
   # Check that the code runs
@@ -353,6 +355,20 @@ EOF
   # My own dev tools
   if test -d ~/vm-shared; then
     local path=_release/VERSION/doc/oil-language-tour.html 
+    cp -v $path ~/vm-shared/$path
+  fi
+}
+
+one() {
+  ### Iterate on one doc quickly
+
+  local doc=${1:-doc/oil-vs-python.md}
+
+  split-and-render $doc
+
+  if test -d ~/vm-shared; then
+    local out="${doc%.md}.html"
+    local path=_release/VERSION/$out
     cp -v $path ~/vm-shared/$path
   fi
 }
