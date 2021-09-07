@@ -362,6 +362,19 @@ echo "$a $A"
 97 65
 ## END
 
+#### The literal #''' isn't accepted (use \' instead)
+
+# This looks too much like triple quoted strings!
+
+echo nope
+const bad = #'''
+echo "$bad"
+
+## status: 2
+## STDOUT:
+nope
+## END
+
 #### Float Literals
 shopt -s oil:basic
 # 1+2 2.3

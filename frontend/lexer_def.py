@@ -511,10 +511,11 @@ EXPR_CHARS = [
 
   R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
 
-  # Because 'a' is a string, we use the syntax #'a' for char literals
+  # Because 'a' is a string, we use the syntax #'a' for char literals.
+  # We explicitly leave out #''' because it's confusing.
   # TODO: extend this to a valid utf-8 code point (rune), rather than a single
   # byte.
-  R(r"#'.'", Id.Char_Pound),
+  R(r"#'[^']'", Id.Char_Pound),
   _U_BRACED_CHAR,
 ] 
 
