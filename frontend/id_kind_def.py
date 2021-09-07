@@ -314,7 +314,7 @@ def AddKinds(spec):
       # Two variants of Octal: \377, and \0377.
       'Octal3', 'Octal4',
       'Unicode4', 'Unicode8',  # legacy
-      'UBraced', # Oil
+      'UBraced', 'Pound', # Oil
       'Literals',
   ])
 

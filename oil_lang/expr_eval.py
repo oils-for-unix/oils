@@ -232,9 +232,13 @@ class OilEvaluator(object):
         # Maybe also :Symbol?
         return node.c.val
 
-      elif id_ == Id.Char_OneChar:
-        # In expression context, it's an integer
-        return consts.LookupCharInt(node.c.val[1])
+      # These two could be done at COMPILE TIME
+      if id_ == Id.Char_OneChar:
+        return consts.LookupCharInt(node.c.val[1])  # It's an integer
+      if id_ == Id.Char_Pound:
+        # TODO: accept UTF-8 code point instead of single byte
+        byte = node.c.val[2]  # the a in #'a'
+        return ord(byte)  # It's an integer
 
       # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using
       # it yet.

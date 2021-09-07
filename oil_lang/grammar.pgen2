@@ -94,7 +94,9 @@ atom: (
     # TODO: Allow suffixes on floats and decimals?
   | Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt 
 
-  | Char_OneChar  # \n \\ etc.
+  | Char_OneChar  # char literal \n \\ etc.
+  | Char_Pound    # char literal #'a' etc.
+
     # TODO: Expr_Symbol for %mykey
 
   | dq_string | sq_string

@@ -345,17 +345,21 @@ sum 40
 ## END
 
 #### Backslash char literal (is an integer)
-var newline = \n
-var backslash = \\
-echo "$newline $backslash"
+const newline = \n
+const backslash = \\
+const sq = \'
+const dq = \"
+echo "$newline $backslash $sq $dq"
 ## STDOUT:
-10 92
+10 92 39 34
 ## END
 
 #### Pound char literal (is an integer)
-var ch = #'a'
-echo "[$ch]"
+const a  = #'a'
+const A = #'A'
+echo "$a $A"
 ## STDOUT:
+97 65
 ## END
 
 #### Float Literals
