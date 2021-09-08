@@ -60,9 +60,9 @@ comparison: range_expr (comp_op range_expr)*
 # Here the beginning and end are required
 range_expr: expr [':' expr]
 
-# Oil patch: removed legacy <>
+# Oil patch: removed legacy <>, use == and !==
 comp_op: (
-    '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'|
+    '<'|'>'|'==='|'>='|'<='|'!=='|'in'|'not' 'in'|'is'|'is' 'not'|
     '~' | '!~' | '~~' | '!~~' | '~=='
 )
 

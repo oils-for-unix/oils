@@ -446,7 +446,7 @@ set -x
 
 for i in 1 2 3 {
   echo $i
-  if (i == '2') {
+  if (i === '2') {
     break
   }
 }

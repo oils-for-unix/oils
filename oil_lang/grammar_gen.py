@@ -84,6 +84,8 @@ def main(argv):
       '~~': Id.Expr_DTilde,
       '!~~': Id.Expr_NotDTilde,
       '~==': Id.Expr_TildeDEqual,
+      '===': Id.Expr_TEqual,
+      '!==': Id.Expr_NotDEqual,
 
       '@': Id.Expr_At,
       '...': Id.Expr_Ellipsis,

@@ -936,8 +936,8 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('>', Id.Arith_Great),
   C('<=', Id.Arith_LessEqual),
   C('>=', Id.Arith_GreatEqual),
-  C('==', Id.Arith_DEqual),
-  C('!=', Id.Arith_NEqual),
+  C('===', Id.Expr_TEqual),
+  C('!==', Id.Expr_NotDEqual),
 
   # Bitwise operators
   C('&', Id.Arith_Amp),

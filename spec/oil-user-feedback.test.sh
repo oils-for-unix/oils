@@ -18,15 +18,15 @@ echo hi
 ## STDOUT:
 ## END
 
-#### != operator
+#### !== operator
 var a = 'bar'
 
 # NOTE: a != foo is idiomatic)
-if ($a != 'foo') {
+if ($a !== 'foo') {
   echo 'not equal'
 }
 
-if ($a != 'bar') {
+if ($a !== 'bar') {
   echo 'should not get here'
 }
 
@@ -94,12 +94,12 @@ git-branch-merged | while read --line {
   # line %startswith 'a'
   # line %endswith 'b'
 
-  if (line != 'master' and not line.startswith('*')) {
+  if (line !== 'master' and not line.startswith('*')) {
     echo $line
   }
 } | readarray -t :branches
 
-if (len(branches) == 0) {
+if (len(branches) === 0) {
   echo "No merged branches"
 } else {
   write git branch -D @branches
@@ -109,7 +109,7 @@ if (len(branches) == 0) {
 var branches2 = %()
 git-branch-merged | while read --line {
   var line2 = _line.strip()  # removing leading space
-  if (line2 != 'master' and not line2.startswith('*')) {
+  if (line2 !== 'master' and not line2.startswith('*')) {
     append :branches2 $line2
   }
 }

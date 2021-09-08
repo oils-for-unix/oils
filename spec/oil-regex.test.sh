@@ -96,7 +96,7 @@ if (s ~ '[[:digit:]]+') {
 # should this be Undef rather than ''?
 var x = _match(0)
 var y = _match(1)
-if (x == null and y == null) {
+if (x === null and y === null) {
   echo 'cleared'
 }
 

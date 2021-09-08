@@ -173,13 +173,26 @@ doc/variables.md.
 
 ### Literals
 
-#### oil-numbers
+#### bool-literal
+
+Oil uses JavaScript-like spellings for these three "atoms":
+
+    true   false   null
+
+Note that the empty string is a good "special" value in some cases.  The `null`
+value can't be interpolated into words.
+
+#### int-literal
 
     var myint = 42
     var myfloat = 3.14
     var float2 = 1e100
 
-#### oil-string
+#### rune-literal
+
+    #'a'   #'_'   \n   \\   \u{3bc}
+
+#### str-literal
 
 Oil strings appear in expression contexts, and look like shell strings:
 
@@ -191,30 +204,11 @@ strings or C-style strings:
 
     var s = 'line\n'    # parse error: ambiguous
 
-    var s = c'line\n'   # C-style string
-    var s = $'line\n'   # also accepted for compatibility
+    var s = $'line\n'   # C-style string
 
     var s = r'[a-z]\n'  # raw strings are useful for regexes (not eggexes)
 
     var unicode = 'mu = \u{3bc}'
-
-#### char-literal
-
-    #'a'   #'_'   \n   \\   \u{3bc}
-
-#### bool-literal
-
-Capital letters like Python, which avoids confusion with the builtin
-**commands** `true` and `false`:
-
-    True   False
-
-And the value that's unequal to any other:
-
-    None   null    # JSON style also accepted
-
-It's preferable to use the empty string in many cases.  The `None` value can't
-be interpolated into words.
 
 #### list-literal
 
@@ -236,6 +230,18 @@ The shell-like syntax accepts the same syntax that a command can:
 #### dict-literal
 
     {name: 'value'}
+
+#### block-literal
+
+    var myblock = ^(echo $PWD)
+
+#### expr-literal
+
+    var myexpr = ^[1 + 2*3]
+
+#### arglist
+
+    var myargs = ^{'foo', split=true}
 
 ### Operators
 
@@ -300,10 +306,6 @@ Like Python:
 Like Python:
 
     f(x, y)
-
-#### block-expr
-
-    var myblock = &(echo $PWD)
 
 ### Eggex
 

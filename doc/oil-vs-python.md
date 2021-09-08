@@ -77,20 +77,20 @@ Oil doesn't overload operators as much because it often does automatic string
 
 ### Same as Python
 
-- Arithmetic `+ - * /`, and `**` for exponentiation
+- Arithmetic `+ - * / // %`, and `**` for exponentiation
 - Comparison `< > <= =>`
-- Bitwise `& | ~ ^`
+- Bitwise `& | ~ ^ << >>`
 - Logical `and or not`
 - Ternary `0 if cond else 1`
 - Indexing: `s[i]` evaluates to an integer?
 - Slicing: `s[i:j]` evaluates to a string
-- Equality `== !=`
 - Membership `in  not in`
 - Function Call: `f(x, y)`
   - What about splat `*` and `**`?
 
 ### Changed
 
+- Equality `=== !==` because we also have `~==`
 - String Concenation: `++` (not `+`, which is always addition)
 
 ### New

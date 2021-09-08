@@ -358,7 +358,7 @@ echo "$newline $backslash $sq $dq"
 shopt -s oil:all
 
 var mu = \u{3bc}
-if (mu == 0x3bc) {  # this is the same!
+if (mu === 0x3bc) {  # this is the same!
   echo 'yes'
 }
 echo "mu $mu"
@@ -441,7 +441,7 @@ write -sep ' ' @n
 # TODO: Test this
 #var n = [i*2 for i,j in range(5)]
 
-var even = [i*2 for i in range(5) if i % 2 == 0]
+var even = [i*2 for i in range(5) if i % 2 === 0]
 write -sep ' ' @even
 ## STDOUT:
 0 2 4 6 8
@@ -748,20 +748,20 @@ yes
 no
 ## END
 
-#### Exact equality with == and !=
+#### Exact equality with === and !==
 shopt -s oil:all
 
-if (3 == 3) {
+if (3 === 3) {
   echo 'ok'
 }
-if (3 == '3') {
+if (3 === '3') {
   echo 'FAIL'
 }
 
-if (3 != 3) {
+if (3 !== 3) {
   echo 'FAIL'
 }
-if (3 != '3') {
+if (3 !== '3') {
   echo 'ok'
 }
 

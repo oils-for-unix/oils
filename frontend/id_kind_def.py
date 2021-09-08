@@ -280,7 +280,7 @@ def AddKinds(spec):
     'Bang',  # eggex !digit, ![a-z]
     'Dot', 'DColon', 'RArrow', 'RDArrow',
     'DSlash',   # integer division
-    'TildeDEqual',
+    'TEqual', 'NotDEqual', 'TildeDEqual',  # === !== ~==
     'At', 'DoubleAt',  # splice operators
     'Ellipsis',  # for varargs
     'Dollar',  # legacy regex

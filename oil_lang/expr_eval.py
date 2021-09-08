@@ -373,9 +373,9 @@ class OilEvaluator(object):
         elif op.id == Id.Arith_LessEqual:
           result = left <= right
 
-        elif op.id == Id.Arith_DEqual:
+        elif op.id == Id.Expr_TEqual:
           result = left == right
-        elif op.id == Id.Arith_NEqual:
+        elif op.id == Id.Expr_NotDEqual:
           result = left != right
 
         elif op.id == Id.Expr_In:
