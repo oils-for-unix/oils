@@ -72,14 +72,11 @@ _SIGNIFICANT_SPACE = R(r'[ \t\r]+', Id.WS_Space)
 _TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
 
 _BACKSLASH = [
-  # TODO: Should Oil make this stricter?  \a-\z, \A-\Z, \0-\9, should be
-  # written without \.
-  # But that's a lot of work since this is used in
-  # lex_mode_e.{ShCommand,VSub_ArgUnquoted,DBracket,ExtGlob,BashRegex}
-  #
   # To be conservative, we could deny a set of chars similar to
   # _LITERAL_WHITELIST_REGEX, rather than allowing all the operator characters
   # like \( and \;.
+  #
+  # strict_backslash makes this stricter.
 
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
@@ -227,7 +224,7 @@ _KEYWORDS = [
   # Tea-only
 
   # TODO: parse_tea should enable these so we can have 'setvar x = func'
-  C('func',      Id.KW_Func),  # 'def' for migration path?
+  C('func',      Id.KW_Func),
   C('data',      Id.KW_Data),
   C('enum',      Id.KW_Enum),
   C('class',     Id.KW_Class),
@@ -249,7 +246,6 @@ _CONTROL_FLOW = [
 
 # Used by oil_lang/grammar_gen.py too
 EXPR_WORDS = [
-  # TODO: Should be True/False/None to be Python compatible
   C('null', Id.Expr_Null),
   C('true', Id.Expr_True),
   C('false', Id.Expr_False),
@@ -267,8 +263,6 @@ EXPR_WORDS = [
 
   # for function literals
   C('func', Id.Expr_Func),
-  # TODO: also allow 'def' for compatibility?  At the cost of vars named
-  # 'def'?
 
   # Note: can 'virtual' just be 'override'?  What do other languages do?
   C('virtual',   Id.Expr_Virtual),
@@ -530,11 +524,7 @@ _C_STRING_COMMON = [
   # This is an incompatible extension to make Oil strings "sane" and QSN
   # compatible.  I don't want to have yet another string syntax!  A lint tool
   # could get rid of the legacy stuff like \U.
-
   _U_BRACED_CHAR,
-
-  # TODO: Also add \u{123456} here
-  # And make sure there are syntax errors
 
   R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
@@ -777,7 +767,7 @@ BRACE_RANGE_DEF = [
 ]
 
 #
-# Oil lexing.  TODO: Move to a different file?
+# Oil lexing
 #
 
 
@@ -807,7 +797,9 @@ OIL_LEFT_UNQUOTED = [
 
   C('@(', Id.Left_AtParen),         # Split Command Sub
 
-  C('&(', Id.Left_AmpParen),        # Block literals in expression mode
+  C('^(', Id.Left_CaretParen),      # Block literals in expression mode
+  C('^[', Id.Left_CaretBracket),    # Expr literals
+  C('^{', Id.Left_CaretBrace),      # ArgList literals
 
   C('%(', Id.Left_PercentParen),    # shell-like word arrays.
 
@@ -872,8 +864,6 @@ float = digitpart fraction? exponent? | fraction exponent?
 """
 }
 
-# TODO: Should all of these be Kind.Op instead of Kind.Arith?  And Kind.Expr?
-
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = \
     _VARS + OIL_LEFT_SUBS + OIL_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + \
@@ -908,9 +898,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
 
-  # TODO:
-  # - Call this Expr_PercentSymbol
-  # - Expr_ColonSymbol for interned strings
   R('%' + VAR_NAME_RE, Id.Expr_Symbol),
 
   #

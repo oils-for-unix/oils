@@ -203,7 +203,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         continue
 
       # $(  @(  &(
-      if tok.id in (Id.Left_DollarParen, Id.Left_AtParen, Id.Left_AmpParen):
+      if tok.id in (Id.Left_DollarParen, Id.Left_AtParen, Id.Left_CaretParen):
 
         left_token = tok
 

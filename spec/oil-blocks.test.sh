@@ -103,12 +103,13 @@ x=42
 x=42
 ## END
 
-#### block literal in expression mode: &(echo $PWD)
+#### block literal in expression mode: ^(echo $PWD)
 shopt -s oil:all
 
-myblock = &(echo $PWD)
-
-b2 = &(echo one; echo two)
+const myblock = ^(echo $PWD | wc -l)
+const b2 = ^(echo one; echo two)
+= myblock
+= b2
 
 # TODO:
 # Implement something like this?
