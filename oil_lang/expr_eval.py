@@ -235,6 +235,9 @@ class OilEvaluator(object):
       # These two could be done at COMPILE TIME
       if id_ == Id.Char_OneChar:
         return consts.LookupCharInt(node.c.val[1])  # It's an integer
+      if id_ == Id.Char_UBraced:
+        s = node.c.val[3:-1]  # \u{123}
+        return int(s, 16)
       if id_ == Id.Char_Pound:
         # TODO: accept UTF-8 code point instead of single byte
         byte = node.c.val[2]  # the a in #'a'

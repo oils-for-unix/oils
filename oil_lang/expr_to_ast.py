@@ -618,7 +618,8 @@ class Transformer(object):
           Id.Expr_Float):
         return expr.Const(tok)
 
-      if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False, Id.Char_OneChar, Id.Char_Pound):
+      if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False,
+                 Id.Char_OneChar, Id.Char_UBraced, Id.Char_Pound):
         return expr.Const(tok)
 
       raise NotImplementedError(Id_str(id_))

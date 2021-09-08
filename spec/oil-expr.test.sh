@@ -354,6 +354,19 @@ echo "$newline $backslash $sq $dq"
 10 92 39 34
 ## END
 
+#### \u{3bc} is char literal
+shopt -s oil:all
+
+var mu = \u{3bc}
+if (mu == 0x3bc) {  # this is the same!
+  echo 'yes'
+}
+echo "mu $mu"
+## STDOUT:
+yes
+mu 956
+## END
+
 #### Pound char literal (is an integer)
 const a  = #'a'
 const A = #'A'

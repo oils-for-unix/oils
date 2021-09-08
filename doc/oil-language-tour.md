@@ -611,19 +611,20 @@ There are many ways to write integers:
     var hex, octal, binary = 0x0001_0000, 0o755, 0b0001_0101
     echo "$hex $octal $binary"           # => 65536 493 21
 
-There are three ways to write characters, but they're actually **integers**:
+"Runes" are integers that represent Unicode code points.  The'yre not common in
+Oil code, but can make certain string algorithms more readable.
 
-    # Pound char literal
+    # Pound rune literals are similar to ord('A')
     const a = #'A'
 
-    # Backslash char literals
-    const newline = \n  # no quotes because it's a char/int, not a string
+    # Backslash rune literals can appear outside of quotes
+    const newline = \n  # Remember this is an integer
     const backslash = \\  # ditto
 
-    # Unicode char literals
-    #const mu = \u{3bc}
+    # Unicode rune literal is syntactic sugar for 0x3bc
+    const mu = \u{3bc}
 
-    echo "chars $a $newline $backslash"  # => chars 65 10 92
+    echo "chars $a $newline $backslash $mu"  # => chars 65 10 92 956
 
 #### Float
 
