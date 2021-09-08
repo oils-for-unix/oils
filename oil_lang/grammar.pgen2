@@ -92,19 +92,17 @@ atom: (
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
     # TODO: Allow suffixes on floats and decimals?
+    # You could frame it as multiplication, so 100 M is 100 * M, where
+    # M = 1_000_000
   | Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt 
 
   | Char_OneChar  # char literal \n \\ etc.
   | Char_UBraced  # char literal \u{3bc}
-  | Char_Pound    # char literal #'a' etc.
-
-    # TODO: Expr_Symbol for %mykey
+  | Char_Pound    # char literal #'A' etc.
 
   | dq_string | sq_string
+    # Expr_Symbol could be %mykey
     
-		# TODO: Char_OneChar like \n, and Expr_CharLiteral #'a' (up to 4 
-		# utf-8 encoded bytes, which are decoded into an integer!)
-
   | sh_command_sub | braced_var_sub | simple_var_sub
   | sh_array_literal
     # Anonymous function.  Is this only in Tea mode?

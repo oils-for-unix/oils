@@ -587,7 +587,7 @@ Let's go through Oil's Python-like data types and see the syntax for literals.
 
 #### Null and Bool
 
-JavaScript-like spellings are preferred for these three "atoms":
+Oil uses JavaScript-like spellings these three "atoms":
 
     var x = null
 
@@ -596,10 +596,6 @@ JavaScript-like spellings are preferred for these three "atoms":
     if (b1) {
       echo 'yes'
     }  # => yes
-
-For compatibility with Python, you can also use `None`, `True`, and `False`.
-But that breaks the rule that types are spelled with capital letters (e.g.
-`Str`, `Dict`).
 
 #### Int
 
