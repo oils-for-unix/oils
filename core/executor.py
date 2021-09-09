@@ -335,7 +335,7 @@ class ShellExecutor(vm._Executor):
     if not self.exec_opts.allow_command_sub():
       # TODO:
       # - Add spid of $(
-      # - Better hints.  Use 'run' for 'if myfunc', and 2 lines like local x;
+      # - Better hints.  Use 'try' for 'if myfunc', and 2 lines like local x;
       #   x=$(false) fo assignment builtins.
       # - Maybe we should have an error message ID that links somewhere?
 

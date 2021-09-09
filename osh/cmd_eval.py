@@ -526,7 +526,7 @@ class CommandEvaluator(object):
     if _HasManyStatuses(node):  # TODO: consolidate error message with above
       node_str = ui.CommandType(node)
       e_die("strict_errexit only allows simple commands (got %s). "
-            "Hint: use 'run'.",
+            "Hint: use 'try'.",
             node_str, span_id=location.SpanForCommand(node))
 
   def _EvalCondition(self, cond, spid):

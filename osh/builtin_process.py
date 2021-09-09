@@ -434,7 +434,7 @@ class Trap(vm._Builtin):
     # Try parsing the code first.
 
     # TODO: If simple_trap is on (for oil:basic), then it must be a function
-    # name?  And then you wrap it in 'run'?
+    # name?  And then you wrap it in 'try'?
 
     node = self._ParseTrapCode(code_str)
     if node is None:

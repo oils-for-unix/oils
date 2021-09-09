@@ -51,14 +51,15 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 ```oil-help-topics
   [Keywords]      const   var   setvar   setglobal   setref
   [Literals]      bool-literal  true   false   null
-                  int-literal   42  65_536  0xFF  0o755  0b10  3.14  1.5e-10
+                  int-literal   42  65_536  0xFF  0o755  0b10
+                  X float-lit   3.14  1.5e-10
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   str-literal   r'[a-z]\n'  $'line\n'  
                   list-literal  %(one two)  ['one', 'two', 3]
                   dict-literal  {name: 'bob'}
                   block-literal ^(echo $PWD)
-                  expr-literal  ^[1 + 2*3]
-                  arglist       ^{'foo', split=true}
+                  X expr-lit    ^[1 + 2*3]
+                  X arglist     ^{'foo', split=true}
   [Operators]     concat        s1 ++ s2,  L1 ++ L2
                   oil-equals    ===   !==   ~==   is, is not, in, not in
                   oil-compare   <  <=  >  >=  (numbers only)
@@ -69,7 +70,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-index     a[3]  s[3]
                   oil-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)   s.startswith('prefix')
-                  builtin-sub   ${.myproc arg1}  @{.otherproc $x $y}
+                  X builtin-sub ${.myproc arg1}  @{.otherproc $x $y}
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
                   re-compound   ~   (group)   <capture>   sequence
