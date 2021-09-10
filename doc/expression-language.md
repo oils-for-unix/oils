@@ -17,14 +17,39 @@ For now, this document describes things that are **not** covered in:
 That is, it has both trivia or high-level concepts that aren't covered
 elsewhere.
 
-For a short summary, see [Oil vs. Python](oil-vs-python.html).
-
 <div id="toc">
 </div>
 
-## Literals
+## Preliminaries
 
-### String Literals Come From Shell, With Less Confusion About Backslashes
+### Comparison to Python and JavaScript
+
+For a short summary, see [Oil vs. Python](oil-vs-python.html).  
+
+### Constructs Shared Between Word and Expression Languages
+
+All Substitutions: `$myvar`, `$(hostname)`, etc.
+
+Variable subs:
+
+    echo $myvar
+    var x = $myvar
+
+Command subs:
+
+    echo $(hostname)
+    var x = $(hostname)  # no quotes necessary
+    var y = "name is $(hostname)"
+
+String Literals:
+
+    echo 'foo'
+    var x = 'foo'
+    echo "hello $name"
+
+## Literals for Data Types
+
+### String Literals: Like Shell, But Less Confusion About Backslashes
 
 Oil has 3 kinds of string literal.  See the docs in the intro for detail, as
 well as the [Strings](strings.html) doc.
@@ -51,6 +76,25 @@ respect C escapes.
 Those last two caveats about floats are TODOs:
 <https://github.com/oilshell/oil/issues/483>
 
+### List Type: Both "Array" and List Literals
+
+There is a single list type, but it has two syntaxes:
+
+- `%(one two three)` for an "array" of strings.  This is equivalent to `['one',
+  'two', 'three']`.
+- `[1, [2, 'three', {}]]` for arbitrary Python-like "lists".
+
+Longer example:
+
+    var x = %(a b c)
+    var x = %(
+      'single quoted'
+      "double quoted"
+      $'c string'
+      glob/*.py
+      brace-{a,b,c}-{1..3}
+    )
+
 ### Dict Literals Look Like JavaScript
 
 Dict literals use JavaScript's rules, which are similar but not idential to
@@ -74,43 +118,53 @@ This is what ES2015 calls "shorthand object properties":
 
 - <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer>
 
-### The List Type Has Both "Array" and List Literals
+### Block, Expr, ArgList
 
-There is a single list type, but it has two syntaxes:
+TODO:
 
-- `%(one two three)` for an "array" of strings.  This is equivalent to `['one',
-  'two', 'three']`.
-- `[1, [2, 'three', {}]]` for arbitrary Python-like "lists".
+    var myblock = ^(ls | wc -l)  
 
-Longer example:
 
-    var x = %(a b c)
-    var x = %(
-      'single quoted'
-      "double quoted"
-      $'c string'
-      glob/*.py
-      brace-{a,b,c}-{1..3}
-    )
 
-## Constructs Shared Between Word and Expression Languages
+## Operators on Multiple Types
 
-### All Substitutions: `$myvar`, `$(hostname)`, etc.
+### Exact Equality `=== !==`
 
-Variable subs:
+### Approximate Equality `~==`
 
-    echo $myvar
-    var x = $myvar
+- negation should use explicit `not`
+- LHS: Str
+- RHS: Str, Int, Bool
 
-Command subs:
+    ' foo ' ~== 'foo'  # whitespace stripped on LEFT only
+    ' 42 ' ~== 42
+    ' 42.0 ' ~== 42.0
+    ' true ' ~== true  # true, false, 0, 1, and I think T, F
 
-    echo $(hostname)
-    var x = $(hostname)  # no quotes necessary
-    var y = "name is $(hostname)"
+These also involve float conversion:
 
-### String Literals : `'foo'` or `"hello $name"`
+    ' 42.0 ' ~== 42
+    ' 42 ' ~== 42.0
 
-Same rules.
+I guess this means you need:
+
+    42.0 ~== 42
+    42 ~== 42.0
+
+### Function and Method Calls
+
+    var result = add(x, y)
+    var result = foo(x, named='default')
+
+    if (s.startswith('prefix')) {
+      echo yes
+    }
+
+Use Cases:
+
+    var d = {1: 2, 3: 4}
+    const k = keys(d)
+
 
 ## Boolean Operators
 
@@ -125,6 +179,13 @@ Like Python.
 
 ## Integer Operators
 
+TODO: All of these do string -> int conversion, like
+
+    '1_000' => 1000   
+    '0xff' => 255
+    '0o010' => 8
+    '0b0001_0000' => 32
+
 ### Arithmetic `+ - * / // %` and `**`
 
 Like Python.
@@ -133,7 +194,7 @@ Like Python.
 
 Like Python.
 
-### Comparison (Chained) `<`, `<=` etc.
+## Comparison on Integers and Floats `< <= > >=`
 
 - NOTE: 
   - do we have `is` and `is not`?  Not sure I want identity in the language?
@@ -157,24 +218,22 @@ is a shortcut for
 
 Comments welcome!
 
-## Equality and Pattern Matching
-
-### Pattern Matching With Eggex and Globs
+## String Pattern Matching
 
 - Eggex: `~` `!~` 
   - Similar to bash's `[[ $x =~ $pat ]]`
 - Glob: `~~` `!~~`
   - Similar to bash's `[[ $x == *.py ]]`
 
-### Equality Is Exact or Approximate
 
-- Exact: `===`, `!==`
-- Approximate: `~==`
-  - negation should use explicit `not`
-
-## String and Array Operators
+## String and List Operators
 
 In addition to pattern matching.
+
+### Concatenation with `++`
+
+    s ++ 'suffix'
+    L ++ [1, 2] ++ %(a b)
 
 ### Indexing
 
@@ -184,9 +243,11 @@ In addition to pattern matching.
 
     var a = %(spam eggs ham)
     var second = a[1]
-    echo $second  # 'eggs'
+    echo $second  # => 'eggs'
 
-Like Python semantics.  Out of bounds is an error.
+    echo $[a[-1]]  # => ham
+
+Semantics are like Python:  Out of bounds is an error.
 
 ### Slicing
 
@@ -198,7 +259,7 @@ Like Python semantics.  Out of bounds is an error.
     var slice = a[1:3]
     write -- @slice  # eggs, ham
 
-Like Python semantics.  Out of bounds isn't an error.
+Semantics are like Python:  Out of bounds is **not** an error.
 
 ## Dict Operators
 
@@ -242,18 +303,9 @@ d.mykey  # The whole namespace is available for users
 
 However I don't like that this makes dictionaries a special case.  Thoughts?
 
-## Function and Method Calls Are Like Python
-
-    var result = add(x, y)
-    var result = foo(x, named='default')
-
-    if (s.startswith('prefix')) {
-      echo yes
-    }
-
 ## Deferred
 
-### Ranges like `1:n`
+### Ranges `1:n`
 
 Deferred because you can do `@(seq $n)`  in Oil.  We don't yet have a "fast"
 for loop?
@@ -272,8 +324,10 @@ Summary:
   n)`.  In Oil you can write `0:n`.
 * So he syntax is `0:n` for both slices (indices of collections) and ranges
   (iterables over integers).  
-* But there's no literal syntax for the "step". If you want to use the step, you have to write it out like `range(1, 100, step=2)`.
-  * (TODO: consider making step a **named** argument.  That is, it always has to be passed with a name, unlike in Python)
+* But there's no literal syntax for the "step". If you want to use the step,
+  you have to write it out like `range(1, 100, step=2)`.
+  * (TODO: consider making step a **named** argument.  That is, it always has
+    to be passed with a name, unlike in Python)
 * A syntactic difference between slices and ranges: slice endpoints can be
   **implicit**, like `a[:n]` and `a[3:]`.
 * Ranges and slices aren't unified -- that's the one failing tests.  But I'm
