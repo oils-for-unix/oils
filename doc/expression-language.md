@@ -2,8 +2,8 @@
 in_progress: yes
 ---
 
-Oil's Expression Language: Mostly Python
-========================================
+Oil's Expression Language: A Mix of Python and JavaScript
+=========================================================
 
 Recall that Oil is composed of three interleaved languages: words, commands,
 and expressions.
@@ -17,123 +17,50 @@ For now, this document describes things that are **not** covered in:
 That is, it has both trivia or high-level concepts that aren't covered
 elsewhere.
 
+For a short summary, see [Oil vs. Python](oil-vs-python.html).
+
 <div id="toc">
 </div>
 
-## Implementation Notes
+## Literals
 
-- Limitation:
-  - Start with Str, StrArray, and AssocArray data model
-  - Then add int, float, bool, null (for JSON)
-  - Then add fuly recursive data model (depends on FC)
-    - `value = ... | dict[str, value]`
+### String Literals Come From Shell, With Less Confusion About Backslashes
 
-## Literals for Primitives
+Oil has 3 kinds of string literal.  See the docs in the intro for detail, as
+well as the [Strings](strings.html) doc.
 
-### String Literals May Be r or c
+As a detail, Oil disallows this case:
 
+    $ var x = '\n'
+      var x = '\n'
+               ^~
+    [ interactive ]:1: Strings with backslashes should look like r'\n' or $'\n'
 
+In expression mode, you're forced to specify an explicit `r` or `$` when the
+string has backslashes.  This is because shell has the opposite default as
+Python: In shell, unadorned strings are raw.  In Python, unadorned strings
+respect C escapes.
 
-The last few commits implement **string literals** in expression mode.  They
-evaluate to Python-like byte strings (which may be utf-8 encoded) but have
-shell-like syntax: double-quoted strings allow `$subs` and single-quoted ones
-don't.
+### Float Literals
 
-I had originally intended for something different for Oil, but I want command context and word context to be compatible.  You can just move words to the right of `=` and it still works.
-
-```
-echo 'sq' $'c-string\n' "dq $var"
-
-# equivalent:
-var x = 'sq'
-var y = $'c-string\n'
-var z = "dq $var"
-echo $x $y $z
-```
-
-There are test cases at the end of this file:
-
-https://github.com/oilshell/oil/blob/master/spec/oil-expr.test.sh
-
-However, I dislike the shell syntax `$'\n'` for C strings.  `$` generally means substitution/interpolation, and this usage has nothing to do with it.  One of Oil's principles is **syntax should match semantics**.  Another feature is to try not to **invent new syntax**.  So a Python-like syntax is an alias:
-
-```
-var x = r'raw string\n'  # ends with backslash and n
-var y = c'c-string\n'  # ends with newline
-```
-
-In addition I have **disallowed** this case:
-
-```
-$ var x = '\n'
-  var x = '\n'
-           ^~
-[ interactive ]:1: Strings with backslashes should look like r'\n' or c'\n'
-```
-
-In expression mode, to the right of `=`, you are forced to specify an explicit `r` or `c` when the string has backslashes.  This is basically because shell has the opposite default as Python.  In shell, unadorned strings are raw.  In Python, unadorned strings respect C escapes.
-
-Let me know if this makes sense!
-
-----
-
-Ideas for things to do:
-
-- Allow C variants of double-quoted strings?  This is an odd omission from shell:
-
-```
-var x = c"$var\n"  # ends with newline
-```
-
-- Add `shopt -s parse_rawc`
-
-```
-echo r'sq' c'c-string\n'   # works the same in command mode as in expression mode, deprecating $'\n'
-```
-
-Of course, in shell
-
-```
-echo r'sq'
-```
-
-prints `rsq`, because of word joining!  So this would be a breaking change, hence the `parse_rawc` option.
-
-I'm not sure how high priority these are.  I think I want to get on to ints, floats, dicts, and lists, but let me know!
-
-
-
-### Bool, Int, Float, null literals
-
-Implemented the following last night:
-
-- `null`, `true`, `false` are our spellings instead of `None`, `True`, `False`
-  - this follows JSON/JavaScript (and C/C++ to some extent), rather than Python
-- decimal, binary, octal, hex literals.  Just like Python with `1_000_000`.
-  - Except the tiny special case: we only support `0` and not `0_000` !
 - Floating point literals are also like C/Python: `1.23e-10`.  Except:
   - A number is required before the `.` now
-  - No `1_000_000.123_456` because that was hard to implement as a hand-written Python regex.
+  - No `1_000_000.123_456` because that was hard to implement as a hand-written
+    Python regex.
 
 Those last two caveats about floats are TODOs:
-
-https://github.com/oilshell/oil/issues/483
-
-If anyone wants to work with re2c, let me know!  It's a very powerful tool.
-
-## Literals for Collections
+<https://github.com/oilshell/oil/issues/483>
 
 ### Dict Literals Look Like JavaScript
 
-The last few commits implement dict literals.  They're pretty much exactly what
-JavaScript provides, as far as I can tell.
+Dict literals use JavaScript's rules, which are similar but not idential to
+Python.
 
 The key can be either a **bare word** or **bracketed expression**.
 
 (1) For example, `{age: 30}` means what `{'age': 30}` does in Python.  That is,
 `age` is **not** the name of a variable.  This fits more with the "dict as ad
 hoc struct" philosophy.
-
 
 (2) In `{[age]: 30}`, `age` is a variable.  You can put an arbitrary expression
 in there like `{['age'.upper()]: 30}`.  (Note: Lua also has this bracketed key
@@ -145,163 +72,72 @@ the context where the dictionary is defined.
 
 This is what ES2015 calls "shorthand object properties":
 
-https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer
+- <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer>
 
-Questions/comments are welcome!
+### The List Type Has Both "Array" and List Literals
 
-### defer: List Literals Are Like Python
+There is a single list type, but it has two syntaxes:
 
-Lists are heterogeneous.  Syntax is unchanged.
+- `%(one two three)` for an "array" of strings.  This is equivalent to `['one',
+  'two', 'three']`.
+- `[1, [2, 'three', {}]]` for arbitrary Python-like "lists".
 
-I don't expect list lists to be used that much.  They're mostly for JSON
-compatibility.
+Longer example:
 
-Arrays and Tuples are preferred.
+    var x = %(a b c)
+    var x = %(
+      'single quoted'
+      "double quoted"
+      $'c string'
+      glob/*.py
+      brace-{a,b,c}-{1..3}
+    )
 
-Or maybe lists are for composite data types?  Arrays are for primitives.
+## Constructs Shared Between Word and Expression Languages
 
-### defer: Tuple Literals
+### All Substitutions: `$myvar`, `$(hostname)`, etc.
 
-I implemented tuple literals just like Python, since Oil is borrowing Python's
-grammar.
-
-https://github.com/oilshell/oil/commit/b738883bdd31aa5b0fbf640f67816d62943dc2a5
-
-However it still has the annoying one-tuple issue:
-
-```
-x = f(3,5),  # tuple of return value because of trailing comma
-x = 1,  # easier to see this way
-```
-
-The last option is kinda ugly but explicit.  The thing is: 1-tuples almost
-never occur.  So it's OK if it's ugly!
-
-```
-x = tup(42)
-```
-
-I guess there is no problem with `()` as an empty tuple? 
-
-
-
-## Two Types of Array Literals
-
-### Word Syntax for String Arrays
-
-### Expression Syntax for Typed Arrays
-
-I implemented the literal syntax for Bool, Int, Float, and Str arrays.  The semantics still need to be polished, but the syntax is there.
-
-Recall that Oil has **homogeneous string arrays**, borrowed from shell, instantiated using shell-like syntax
-
-```
-var myarray = %(bare words 'sq' "dq $var" ${other})
-```
-
-It also has Python-like **heterogeneous lists**.
-
-```
-var mylist = [1, 2, "hi", ['other', 'list']]  # Python/JavaScript/JSON-like syntax
-```
-
-In addition to sequences of heterogeneous type, they're also probably useful for sequences of compound types, as in JSON.  `[{dict: one}, {dict: two}]`
-
-Now we have **homogeneous typed arrays**, i.e. for types other than string:
-
-```
-var mybools = %[true false false]
-var myints = %[1 2 3]
-var myfloats = %[1.2 3.3]
-var mystrings = %['sq' "dq" (other.upper()) $x ${x}]
-```
-
-Important notes:
-
-
-* There are **no commas**, which is consistent with the shell array syntax.
-* Bare variables are **not allowed**.   They have to be `(x)` or `$x`.  This is to avoid confusion with the similar shell syntax, which uses "bare words".
-* Items can be literal bools, ints, floats, strings, or **parenthesized expressions**
-* The type of the **first element** determines the type of the entire array.  They are homogeneous!
-* The columns of **data frames** i.e. the `Table` type in Oil, will be arrays.
-In R they're called vectors.
-  * https://github.com/oilshell/oil/wiki/Structured-Data-in-Oil
-
-Most of these tests pass:
-
-https://github.com/oilshell/oil/blob/master/spec/oil-array.test.sh
-
-Note the important difference between these two expressions:
-
-```
-var x = %(1.0 2.0)  # these are STRINGS as in shell, like doing echo 1.0 2.0
-var y = %[1.0 2.0]  # these are floating point numbers
-```
-
-
-As part of these changes, I also implemented **generator expressions**.
-
-```
-$ bin/oil
-oil$ = Array[Int](x + 5 for x in 1:10)
-IntArray        [6, 7, 8, 9, 10, 11, 12, 13, 14]
-```
-
-Well, at least the syntax.  The semantics still need work, especially with
-regard to scope.
-
-Note that the `=` **keyword** pretty-prints the result of an expression.
-([thread](https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/pass.20and.20pp.20keywords.20implemented))
-
-
-### Shell Array Literals with %()
-
-```
-var x = %(a b c)
-var x = %(
-  'single quoted'
-  "double quoted"
-  $'c string'
-  glob/*.py
-  brace-{a,b,c}-{1..3}
-)
-```
-
-## Shared Between the Word and Expression Languages
-
-### Command Substitution: `$(hostname)` and `@(seq 3)`
-
-The `$(echo hi)` construct works in shell commands, and it also works in Oil
-expressions:
-
-    var x = $(echo hi)           # no quotes necessary
-    var x = "$(echo hi) there"
-
-### Variable Substitution: `$myvar` and `${myvar}`
+Variable subs:
 
     echo $myvar
     var x = $myvar
 
-### String Literals: `'foo'` or `"hello $name"`
+Command subs:
+
+    echo $(hostname)
+    var x = $(hostname)  # no quotes necessary
+    var y = "name is $(hostname)"
+
+### String Literals : `'foo'` or `"hello $name"`
 
 Same rules.
 
-## Operators
+## Boolean Operators
 
-### String : `~` `!~` and `~~` `!~~`
+### Logical: `not` `and` `or`
 
-### Dict: `in` for membership
+Like Python.
 
-- And `not in`
-- But strings and arrays use functions?
-  - .find() ?  It's more of an algorithm.
+### Ternary
 
-### Comparison (Chained) `==` `<=` etc.
+    var cond = true
+    var x = 'yes' if cond else 'no'
+
+## Integer Operators
+
+### Arithmetic `+ - * / // %` and `**`
+
+Like Python.
+
+### Bitwise `~ & | ^ << >>`
+
+Like Python.
+
+### Comparison (Chained) `<`, `<=` etc.
 
 - NOTE: 
   - do we have `is` and `is not`?  Not sure I want identity in the language?
   - is everything nullable too?
-
 
 https://github.com/oilshell/oil/blob/master/spec/oil-expr.test.sh#L550
 
@@ -321,18 +157,26 @@ is a shortcut for
 
 Comments welcome!
 
-### Logical: `not` `and` `or`
+## Equality and Pattern Matching
 
-### Arithmetic : + - * / div mod
+### Pattern Matching With Eggex and Globs
 
-### Bitwise: ~ & | `xor`
+- Eggex: `~` `!~` 
+  - Similar to bash's `[[ $x =~ $pat ]]`
+- Glob: `~~` `!~~`
+  - Similar to bash's `[[ $x == *.py ]]`
 
-### Ternary Operator
+### Equality Is Exact or Approximate
 
-    var mybool = true
-    var x = 'yes' if mybool else 'no'
+- Exact: `===`, `!==`
+- Approximate: `~==`
+  - negation should use explicit `not`
 
-### Index Strings and Arrays
+## String and Array Operators
+
+In addition to pattern matching.
+
+### Indexing
 
     var s = 'foo'
     var second = s[1]    # are these integers though?  maybe slicing gives you things of length 1
@@ -344,7 +188,7 @@ Comments welcome!
 
 Like Python semantics.  Out of bounds is an error.
 
-### Slice Strings and Arrays
+### Slicing
 
     var s = 'food'
     var slice = s[1:3]
@@ -356,17 +200,31 @@ Like Python semantics.  Out of bounds is an error.
 
 Like Python semantics.  Out of bounds isn't an error.
 
-### d->key is a shortcut for d['key']
+## Dict Operators
 
-> the distinction between attributes and dictionary members always seemed weird and unnecessary to me.
+### Membership with `in`
 
-I've been thinking about this for [the Oil language](http://www.oilshell.org/blog/2019/08/22.html), which is heavily influenced by Python.
+- And `not in`
+- But strings and arrays use functions?
+  - .find() ?  It's more of an algorithm.
 
-The problem is that dictionary attributes come from user data, i.e. from JSON, while methods like `.keys()` come from the interpreter, and Python allows you to provide user-defined methods like `mydict.mymethod()` too.
+### `d->key` is a shortcut for `d['key']`
+
+> the distinction between attributes and dictionary members always seemed weird
+> and unnecessary to me.
+
+I've been thinking about this for [the Oil
+language](http://www.oilshell.org/blog/2019/08/22.html), which is heavily
+influenced by Python.
+
+The problem is that dictionary attributes come from user data, i.e. from JSON,
+while methods like `.keys()` come from the interpreter, and Python allows you
+  to provide user-defined methods like `mydict.mymethod()` too.
 
 Mixing all of those things in the same namespace seems like a bad idea.
 
-In Oil I might do introduce an `->` operator, so `d->mykey` is a shortcut for `d['mykey']`.
+In Oil I might do introduce an `->` operator, so `d->mykey` is a shortcut for
+`d['mykey']`.
 
 ```
 d.keys(), d.values(), d.items()  # methods
@@ -374,7 +232,8 @@ d->mykey
 d['mykey']
 ```
 
-Maybe you could disallow user-defined attributes on dictionaries, and make them free:
+Maybe you could disallow user-defined attributes on dictionaries, and make them
+free:
 
 ```
 keys(d), values(d), items(d)
@@ -383,78 +242,50 @@ d.mykey  # The whole namespace is available for users
 
 However I don't like that this makes dictionaries a special case.  Thoughts?
 
-### Function Calls Are Like Python
+## Function and Method Calls Are Like Python
 
     var result = add(x, y)
     var result = foo(x, named='default')
 
-<!-- note: no reason to have ; right now? -->
+    if (s.startswith('prefix')) {
+      echo yes
+    }
 
-## Future
+## Deferred
 
-- "Legacy-free" command substitution with `$[echo hi]`
-- "Legacy-free" and typed literals like
-  - `%[a 'b c' "hi $name"]`
-  - `%[1 2 3]` 
-  - `%[3.14 1.50 2.33]`
-- For details, see the wiki page [Implementing the Oil Expression
-  Language](https://github.com/oilshell/oil/wiki/Implementing-the-Oil-Expression-Language)
+### Ranges like `1:n`
 
-
-Most of the operator language is now implemented (in the metacircular style).
-
-Oil's operators largely follow Python, except:
-
-- integer division `//` is `div`.  I guess this is a purely aesthetic thing.
-- Exponentation is `^` rather than `**`.  This is what R does (and I think Julia too.)
-- xor is `xor` instead of `^`.
-
-I noted that here awhile ago, and largely followed it.
-
-https://github.com/oilshell/oil/wiki/Implementing-the-Oil-Expression-Language
-
-One complication is that there's no equivalent of `//=` or `^=`, like `div=` and `xor=`.  That just feels silly.  I'm inclined to leave those out because you can always write:
-
-```
-set x = x xor y
-set x = x div d
-```
-
-I don't expect those to be particularly common.   `x |= mask` is common but I
-don't think `x ^= mask` is ?
-
-Comments welcome!
-
-https://github.com/oilshell/oil/commit/41f53e9d2180feea1c283118909a12a250efda07
-
-Comment about it here:
-
-https://lobste.rs/s/2cw6ov/say_something_you_dislike_about_language#c_c5mk2l
-
-### Ranges (deferred)
-
-This is just `@(seq $n)`  in Oil
+Deferred because you can do `@(seq $n)`  in Oil.  We don't yet have a "fast"
+for loop?
 
 OK I solved this problem in pretty much the way I said I would.
 
-The thing that convinced me is that R only has `start:end`, it doesn't have `start:end:step`.  And Julia has `start:step:end`!
+The thing that convinced me is that R only has `start:end`, it doesn't have
+`start:end:step`.  And Julia has `start:step:end`!
 
-I don't think the **step** is so useful that it has to be first class syntax.  In other words, Python's syntax is optimized for a rare case -- e.g. `a[::2]`.
+I don't think the **step** is so useful that it has to be first class syntax.
+In other words, Python's syntax is optimized for a rare case -- e.g. `a[::2]`.
 
 Summary:
 
-* Python doesn't have a special range syntax, i.e. you have to write `range(0, n)`.  In Oil you can write `0:n`.
-* So he syntax is `0:n` for both slices (indices of collections) and ranges (iterables over integers).  
+* Python doesn't have a special range syntax, i.e. you have to write `range(0,
+  n)`.  In Oil you can write `0:n`.
+* So he syntax is `0:n` for both slices (indices of collections) and ranges
+  (iterables over integers).  
 * But there's no literal syntax for the "step". If you want to use the step, you have to write it out like `range(1, 100, step=2)`.
   * (TODO: consider making step a **named** argument.  That is, it always has to be passed with a name, unlike in Python)
-* A syntactic difference between slices and ranges: slice endpoints can be **implicit**, like `a[:n]` and `a[3:]`.
-* Ranges and slices aren't unified -- that's the one failing tests.  But I'm pretty sure they should be, and they're each implemented in only 300-400 lines of C.   If anyone wants to hack on CPython, let me know!
+* A syntactic difference between slices and ranges: slice endpoints can be
+  **implicit**, like `a[:n]` and `a[3:]`.
+* Ranges and slices aren't unified -- that's the one failing tests.  But I'm
+  pretty sure they should be, and they're each implemented in only 300-400
+  lines of C.   If anyone wants to hack on CPython, let me know!
   * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/sliceobject.c
   * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/rangeobject.c
-* All these tests pass except one: https://github.com/oilshell/oil/blob/master/spec/oil-slice-range.test.sh
+* All these tests pass except one:
+  https://github.com/oilshell/oil/blob/master/spec/oil-slice-range.test.sh
 
-This is all still up for discussion!  I'm going to write a blog post about it later, but I appreciate any early feedback.
-
+This is all still up for discussion!  I'm going to write a blog post about it
+later, but I appreciate any early feedback.
 
 ```
 for (i in 0:n) {
@@ -462,9 +293,12 @@ for (i in 0:n) {
 }
 ```
 
-### Array/List Comprehensions (deferred)
+### List and Dict Comprehensions
 
-Until we have fully recursive data structures?
+List comprehensions might be useful for a "faster" for loop?  It only does
+expressions?
+
+## Appendices
 
 ### Oil vs. Tea
 
@@ -475,3 +309,12 @@ Until we have fully recursive data structures?
   - they start off as the empty slice
 - Coercsions of strings to numbers
   - `42` and `3.14` and `1e100`
+
+### Implementation Notes
+
+- Limitation:
+  - Start with Str, StrArray, and AssocArray data model
+  - Then add int, float, bool, null (for JSON)
+  - Then add fuly recursive data model (depends on FC)
+    - `value = ... | dict[str, value]`
+

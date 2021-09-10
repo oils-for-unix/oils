@@ -484,7 +484,7 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 #
 # In Oil:
 # 0x00012345 == \u{12345}
-# chr(0x012345) == chr(\u{012345}) == c'\u{012345}'
+# chr(0x00012345) == chr(\u{12345}) == $'\u{012345}'
 
 # We choose to match QSN (Rust) rather than Python or bash.
 # Technically it could be \u123456, because we're not embedded in a string, but

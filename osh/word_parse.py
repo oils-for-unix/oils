@@ -609,7 +609,7 @@ class WordParser(WordEmitter):
         # Happens in lex_mode_e.SQ: 'one\two' is ambiguous, should be
         # r'one\two' or c'one\\two'
         if no_backslashes and '\\' in tok.val:
-          p_die(r"Strings with backslashes should look like r'\n' or c'\n'",
+          p_die(r"Strings with backslashes should look like r'\n' or $'\n'",
                 token=tok)
 
         if is_oil_expr:
@@ -625,7 +625,7 @@ class WordParser(WordEmitter):
 
       elif self.token_kind == Kind.Unknown:
         tok = self.cur_token
-        # x = c'\z' is disallowed, and echo $'\z' if shopt -u parse_backslash
+        # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
         if is_oil_expr or not self.parse_opts.parse_backslash():
           p_die("Invalid char escape in C-style string literal", token=tok)
 
