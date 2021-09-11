@@ -596,9 +596,11 @@ def KeywordToken(w):
 def LiteralToken(UP_w):
   # type: (word_t) -> Optional[Token]
   """If a word consists of a literal token, return it.
-  
+
   Otherwise return None.
   """
+  # We're casting here because this function is called by the CommandParser for
+  # var, setvar, '...', etc.  It's easier to cast in one place.
   assert UP_w.tag_() == word_e.Compound
   w = cast(compound_word, UP_w)
 
