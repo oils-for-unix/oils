@@ -117,7 +117,11 @@ build-busybox() {
 
 build-yash() {
   pushd $DIR/$YASH_NAME
-  ./configure
+
+  # 9/2021: Somehow hit this on my VirtualBox VM
+  # The terminfo (curses) library is unavailable!
+  # Add the "--disable-lineedit" option and try again.
+  ./configure --disable-lineedit
   make
   popd
 }
