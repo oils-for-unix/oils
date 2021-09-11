@@ -27,3 +27,16 @@ fi
 if test -d $SPEC_DIR; then
   export PATH="$SPEC_DIR:$PATH"
 fi
+
+# Hack for misconfigured RC cluster!  Some machines have the empty string in
+# their $PATH (due to some having CUDA and others not).
+#
+# TODO: I should fix the machines, and make this a FATAL error.  The $PATH
+# leaks on purpose because we might want to run with nix-shell -- see
+# test/spec-common.sh.
+good_path=${PATH//::/:}
+if test "$good_path" != "$PATH"; then
+  #echo "Warning: Fixing PATH misconfigured with current dir: $PATH" >&2
+  PATH=$good_path
+fi
+
