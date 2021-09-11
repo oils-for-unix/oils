@@ -227,6 +227,7 @@ def AddKinds(spec):
       'TildeLike',         # tilde expansion
       'Pound',             # for comment or VarOp state
       'TPound',            # for doc comments like ###
+      'TDot',              # for multiline commands ...
       'Slash', 'Percent',  # / # % for patsub, NOT unary op
       'Colon',             # x=foo:~:~root needs tilde expansion
       'Digits',            # for lex_mode_e.Arith

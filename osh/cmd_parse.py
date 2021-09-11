@@ -401,8 +401,6 @@ class VarChecker(object):
       - no 'source'
       - shopt -u copy_env.
       - AND use lib has to be static
-
-    LATER:
     setref x:
       Should only mutate out params
 
@@ -1561,9 +1559,11 @@ class CommandParser(object):
                      | (( ArithExpr ))
 
                      # Oil extensions
+                     | const ...
                      | var ...
+                     | setglobal ...
+                     | setref ...
                      | setvar ...
-                     | set ..>
                      ;
     """
     if self.c_id == Id.Lit_LBrace:
@@ -2002,8 +2002,12 @@ class CommandParser(object):
     Note that it is left recursive and left associative.  We parse it
     iteratively with a token of lookahead.
     """
-    # TODO: _Peek() and check parse_triple_dots here.  This method is called by
-    # both _ParseCommandLine and _ParseCommandTerm.
+    self._Peek()
+    first_word_tok = word_.LiteralToken(self.cur_word)
+    if first_word_tok is not None and first_word_tok.id == Id.Lit_TDot:
+      # TODO: Change state for parse_triple_dots.  This method ParseAndOr is
+      # called by both _ParseCommandLine and _ParseCommandTerm.
+      pass
 
     child = self.ParsePipeline()
     assert child is not None

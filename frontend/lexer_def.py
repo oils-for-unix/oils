@@ -312,6 +312,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C('?', Id.Lit_QMark),
 
   C('###', Id.Lit_TPound),  # like Lit_Pound, for doc comments
+  C('...', Id.Lit_TDot),    # ... for multiline commands
 
   # For brace expansion {a,b}
   C('{', Id.Lit_LBrace),
