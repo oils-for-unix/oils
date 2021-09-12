@@ -706,14 +706,16 @@ unquoted keys for dicts:
 
 Equality can be approximate or exact:
 
-    var n = '42'
-    # if (n ~== 42) {
-    #   echo 'equal after type conversion'
-    # }  # => equal after type conversion
+    var n = ' 42 '
+    if (n ~== 42) {
+      echo 'equal after type conversion'
+    }  # => equal after type conversion
 
-    if (n == 42) {
-      echo "not reached; strings and ints aren't equal"
+    if (n === 42) {
+      echo "not reached because strings and ints aren't equal"
     }
+
+<!-- TODO: is n === 42 a type error? -->
 
 Pattern matching can be done with globs (`~~` and `!~~`):
 
@@ -884,7 +886,7 @@ Example:
 
     # Write and read
     write --qsn $mystr h| read --qsn --line
-    if (_line == mystr) {
+    if (_line === mystr) {
       echo 'serialized string to QSN and back'
     }  # => serialized string to QSN and back
 
