@@ -130,26 +130,35 @@ TODO:
 
 ### Exact Equality `=== !==`
 
+- TODO: types must be the same, e.g. `'42' === 42` is not just false, it's an
+  ERROR.
+
 ### Approximate Equality `~==`
 
-- negation should use explicit `not`
+Notes:
+
+- There's no negative form like `!==`.  Instead, use `not (a ~== b)`.
+
+Operands:
+
 - LHS: Str
 - RHS: Str, Int, Bool
 
     ' foo ' ~== 'foo'  # whitespace stripped on LEFT only
     ' 42 ' ~== 42
-    ' 42.0 ' ~== 42.0
-    ' true ' ~== true  # true, false, 0, 1, and I think T, F
+    ' TRue ' ~== true  # true, false, 0, 1, and I think T, F
 
-These also involve float conversion:
+There's currently no float conversion.  These don't work:
 
     ' 42.0 ' ~== 42
     ' 42 ' ~== 42.0
 
-I guess this means you need:
+Or these:
 
     42.0 ~== 42
     42 ~== 42.0
+
+I think `float_equals()` could be a separate function?
 
 ### Function and Method Calls
 

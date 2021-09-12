@@ -396,7 +396,32 @@ class OilEvaluator(object):
 
         elif op.id == Id.Expr_TildeDEqual:
           # Approximate equality
-          e_die('~== not implemented')
+          if not isinstance(left, str):
+            e_die('~== expects a string on the left', span_id=op.span_id)
+
+          left = left.strip()
+          if isinstance(right, str):
+            return left == right
+
+          if isinstance(right, bool):  # Python quirk: must come BEFORE int
+            left = left.lower()
+            if left in ('true', '1'):
+              left2 = True
+            elif left in ('false', '0'):
+              left2 = False
+            else:
+              return False
+
+            log('left %r left2 %r', left, left2)
+            return left2 == right
+
+          if isinstance(right, int):
+            if not left.isdigit():
+              return False
+            return int(left) == right
+
+          e_die('~== expects Str, Int, or Bool on the right',
+                span_id=op.span_id)
 
         else:
           try:

@@ -770,25 +770,77 @@ ok
 ok
 ## END
 
-#### Approximate equality with ~==
+#### Approximate equality of Str x {Str, Int, Bool} with ~==
 shopt -s oil:all
 
-# TODO: should we have !~== too?
-# Or just make it not (a ~== b)
+# Note: for now there's no !~== operator.  Use:   not (a ~== b)
+
+if (' foo ' ~== 'foo') {
+  echo Str-Str
+}
+if (' BAD ' ~== 'foo') {
+  echo FAIL
+}
+
+if ('3 ' ~== 3) {
+  echo Str-Int
+}
+if ('4 ' ~== '3') {
+  echo FAIL
+}
+
+if (' true ' ~== true) {
+  echo Str-Bool
+}
+if (' true ' ~== false) {
+  echo FAIL
+}
+
+const matrix = [
+  ' TRue ' ~== true,  # case insentiive
+  ' FALse ' ~== false,
+
+  # Note this is the opposite of exit codes :-(
+  # Maybe we should encourage 'if try' instead of 'if'
+  ' 1 ' ~== true,
+  ' 0 ' ~== false,
+]
+
+# = matrix
+if (matrix === [true, true, true, true]) {
+  echo 'bool matrix'
+}
+
+## STDOUT:
+Str-Str
+Str-Int
+Str-Bool
+bool matrix
+## END
+
+#### Wrong Types with ~==
+shopt -s oil:all
+
+# The LHS side should be a string
+
+echo one
+if (['1'] ~== ['1']) {
+  echo bad
+}
+echo two
 
 if (3 ~== 3) {
-  echo exact
-}
-if (1 ~== 3) {
-  echo FAIL
+  echo bad
 }
 
-if (3 ~== '3') {
-  echo int-str
-}
-if (3 ~== '4') {
-  echo FAIL
-}
+## status: 1
+## STDOUT:
+one
+## END
+
+
+#### Equality of ~== with Float (deferred)
+shopt -s oil:all
 
 if (42 ~== 42.0) {
   echo int-float
@@ -810,12 +862,5 @@ if (42 ~== '42.0') {
 if (42 ~== '43.0') {
   echo FAIL
 }
-
 ## STDOUT:
-exact
-int-str
-int-float
-str-float
-int-str-float
 ## END
-
