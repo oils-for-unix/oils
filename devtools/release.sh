@@ -103,6 +103,7 @@ auto-machine1() {
   $0 mycpp-examples
 }
 
+# Note: needs dep-benchmarks setup
 auto-machine2() {
   sudo -k; sudo true  # clear and re-cache credentials
 
@@ -905,6 +906,14 @@ dep-wild-testdata() {
   test/wild.sh manifest-from-archive
 }
 
+dep-benchmarks() {
+  benchmarks/osh-runtime.sh download
+  benchmarks/osh-runtime.sh extract
+
+  benchmarks/ovm-build.sh download
+  benchmarks/ovm-build.sh extract-other
+}
+
 more-release-deps() {
   # List here of deps that are NOT in services/toil-worker.sh here
   # https://github.com/oilshell/oil/issues/926
@@ -929,11 +938,7 @@ more-release-deps() {
     build/codegen.sh download-clang
     build/codegen.sh extract-clang
 
-    benchmarks/osh-runtime.sh download
-    benchmarks/osh-runtime.sh extract
-
-    benchmarks/ovm-build.sh download
-    benchmarks/ovm-build.sh extract-other
+    dep-benchmarks
   fi
 }
 
