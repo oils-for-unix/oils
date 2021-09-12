@@ -2,8 +2,8 @@
 default_highlighter: oil-sh
 ---
 
-Oil Language Idioms
-===================
+Oil vs. Shell Idioms
+====================
 
 This is an informal, lightly-organized list of recommended idioms for the [Oil
 language]($xref:oil-language).  Each section has snippets labeled *No* and

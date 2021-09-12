@@ -5,17 +5,17 @@ in_progress: yes
 Oil's Expression Language: A Mix of Python and JavaScript
 =========================================================
 
-Recall that Oil is composed of three interleaved languages: words, commands,
-and expressions.
+Recall that Oil is composed of three interleaved languages:
+[words](word-language.html), commands, and **expressions**.
 
-For now, this document describes things that are **not** covered in:
+This doc describes expressions, but only the things that are **not** in:
 
-- [A Tour of the Oil Language](oil-language-tour.html)
+- [A Tour of the Oil Language](oil-language-tour.html).  The best intro.
 - The `#expr-lang` section of [Oil Help
-  Topics](oil-help-topics.html#expr-lang)
+  Topics](oil-help-topics.html#expr-lang).  A reference.
+- [Egg Expressions](eggex.html).  A "sublanguage" this language.
 
-That is, it has both trivia or high-level concepts that aren't covered
-elsewhere.
+TODO: This doc should have example shell sessions, like the tour does.
 
 <div id="toc">
 </div>
@@ -128,37 +128,35 @@ TODO:
 
 ## Operators on Multiple Types
 
+Like JavaScript, Oil has two types of equality, but uses `===` and `~==` rather
+than `===` and `==`.
+
 ### Exact Equality `=== !==`
 
-- TODO: types must be the same, e.g. `'42' === 42` is not just false, it's an
-  ERROR.
+- TODO: types must be the same, so `'42' === 42` is not just false, but it's an
+  **error**.
 
 ### Approximate Equality `~==`
 
-Notes:
+- There's no negative form like `!==`.  Use `not (a ~== b)` instead.
+- Valid Operand Types:
+  - LHS: `Str` only
+  - RHS: `Str`, `Int`, `Bool`
 
-- There's no negative form like `!==`.  Instead, use `not (a ~== b)`.
-
-Operands:
-
-- LHS: Str
-- RHS: Str, Int, Bool
+Examples:
 
     ' foo ' ~== 'foo'  # whitespace stripped on LEFT only
     ' 42 ' ~== 42
     ' TRue ' ~== true  # true, false, 0, 1, and I think T, F
 
-There's currently no float conversion.  These don't work:
+Currently, there are no semantics for floats, so none of these work:
 
     ' 42.0 ' ~== 42
     ' 42 ' ~== 42.0
-
-Or these:
-
     42.0 ~== 42
     42 ~== 42.0
 
-I think `float_equals()` could be a separate function?
+(Should `float_equals()` be a separate function?)
 
 ### Function and Method Calls
 
@@ -227,13 +225,12 @@ is a shortcut for
 
 Comments welcome!
 
-## String Pattern Matching
+## String Pattern Matching `~` and `~~`
 
 - Eggex: `~` `!~` 
   - Similar to bash's `[[ $x =~ $pat ]]`
 - Glob: `~~` `!~~`
   - Similar to bash's `[[ $x == *.py ]]`
-
 
 ## String and List Operators
 
@@ -244,7 +241,7 @@ In addition to pattern matching.
     s ++ 'suffix'
     L ++ [1, 2] ++ %(a b)
 
-### Indexing
+### Indexing `a[i]`
 
     var s = 'foo'
     var second = s[1]    # are these integers though?  maybe slicing gives you things of length 1
@@ -258,7 +255,7 @@ In addition to pattern matching.
 
 Semantics are like Python:  Out of bounds is an error.
 
-### Slicing
+### Slicing `a[i:j]`
 
     var s = 'food'
     var slice = s[1:3]
@@ -314,52 +311,46 @@ However I don't like that this makes dictionaries a special case.  Thoughts?
 
 ## Deferred
 
-### Ranges `1:n`
-
-Deferred because you can do `@(seq $n)`  in Oil.  We don't yet have a "fast"
-for loop?
-
-OK I solved this problem in pretty much the way I said I would.
-
-The thing that convinced me is that R only has `start:end`, it doesn't have
-`start:end:step`.  And Julia has `start:step:end`!
-
-I don't think the **step** is so useful that it has to be first class syntax.
-In other words, Python's syntax is optimized for a rare case -- e.g. `a[::2]`.
-
-Summary:
-
-* Python doesn't have a special range syntax, i.e. you have to write `range(0,
-  n)`.  In Oil you can write `0:n`.
-* So he syntax is `0:n` for both slices (indices of collections) and ranges
-  (iterables over integers).  
-* But there's no literal syntax for the "step". If you want to use the step,
-  you have to write it out like `range(1, 100, step=2)`.
-  * (TODO: consider making step a **named** argument.  That is, it always has
-    to be passed with a name, unlike in Python)
-* A syntactic difference between slices and ranges: slice endpoints can be
-  **implicit**, like `a[:n]` and `a[3:]`.
-* Ranges and slices aren't unified -- that's the one failing tests.  But I'm
-  pretty sure they should be, and they're each implemented in only 300-400
-  lines of C.   If anyone wants to hack on CPython, let me know!
-  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/sliceobject.c
-  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/rangeobject.c
-* All these tests pass except one:
-  https://github.com/oilshell/oil/blob/master/spec/oil-slice-range.test.sh
-
-This is all still up for discussion!  I'm going to write a blog post about it
-later, but I appreciate any early feedback.
-
-```
-for (i in 0:n) {
-  echo $i
-}
-```
-
 ### List and Dict Comprehensions
 
 List comprehensions might be useful for a "faster" for loop?  It only does
 expressions?
+
+### Splat `*` and `**`
+
+Python allows splatting into lists:
+
+    a = [1, 2] 
+    b = [*a, 3]
+
+And dicts:
+
+    d = {'name': 'alice'}
+    d2 = {**d, age: 42}
+
+### Ranges `1:n` (vs slices)
+
+Deferred because you can use 
+
+    for i in @(seq $n) {
+      echo $i
+    }
+
+This gives you strings but that's OK for now.  We don't yet have a "fast" for
+loop.
+
+Notes:
+
+- Oil slices don't have a "step" argument.  Justification:
+  - R only has `start:end`, it doesn't have `start:end:step`
+  - Julia has `start:step:end`!
+  - I don't think the **step** is so useful that it has to be first class
+    syntax.  In other words, Python's syntax is optimized for a rare case --
+    e.g. `a[::2]`.
+- Python has slices, but it doesn't have a range syntax.  You have to write
+  `range(0, n)`. 
+- A syntactic difference between slices and ranges: slice endpoints can be
+  **implicit**, like `a[:n]` and `a[3:]`.
 
 ## Appendices
 
