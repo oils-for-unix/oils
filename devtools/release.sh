@@ -103,7 +103,7 @@ auto-machine1() {
   $0 mycpp-examples
 }
 
-# Note: needs dep-benchmarks setup
+# Note: needs dep-benchmarks to run
 auto-machine2() {
   sudo -k; sudo true  # clear and re-cache credentials
 
@@ -912,6 +912,10 @@ dep-benchmarks() {
 
   benchmarks/ovm-build.sh download
   benchmarks/ovm-build.sh extract-other
+
+  # For ovm-build benchmark.
+  build/codegen.sh download-clang
+  build/codegen.sh extract-clang
 }
 
 more-release-deps() {
@@ -933,10 +937,6 @@ more-release-deps() {
 
     # test/wild.sh
     dep-wild-testdata
-
-    # For ovm-build benchmark.
-    build/codegen.sh download-clang
-    build/codegen.sh extract-clang
 
     dep-benchmarks
   fi
