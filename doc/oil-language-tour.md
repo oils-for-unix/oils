@@ -14,9 +14,9 @@ A Tour of the Oil Language
 -->
 
 This document describes the [Oil language]($xref:oil-language) from **clean
-slate** perspective.  Knowledge of Unix shell or the compatible [OSH
-language]($xref:osh-language) isn't assumed.  But shell users will see
-similarities, simplifications, and upgrades.
+slate** perspective.  We don't assume you know Unix shell or the compatible [OSH
+language]($xref:osh-language), but shell users will see similarities,
+simplifications, and upgrades.
 
 Remember, Oil is for Python and JavaScript users who avoid shell!  See the
 [project FAQ][FAQ] for more color on that.
@@ -29,7 +29,7 @@ language.  You may want to read it in multiple sittings, or read [The Simplest
 Explanation of
 Oil](https://www.oilshell.org/blog/2020/01/simplest-explanation.html) first.
 
-A summary of what follows:
+Here's a summary of what follows:
 
 1. Oil has interleaved *word*, *command*, and *expression* languages.
    - The command language has Ruby-like *blocks*, and the expression language
@@ -40,7 +40,7 @@ A summary of what follows:
    (provided by the Unix kernel).  Understanding these common models will make
    you both a better shell user and Oil user.
 
-Keep those 4 points in mind as you read the details below.
+Keep these points in mind as you read the details below.
 
 [JSON]: https://json.org
 
@@ -89,7 +89,7 @@ Unlike shell, Oil has `const` and `var` keywords:
     const name = 'world'
     echo "hello $name"     # => hello world
 
-With rich Python-like expressions on the right:
+They take rich Python-like expressions on the right:
 
     var x = 42             # an integer, not a string
     setvar x = min(x, 1)   # mutate with the 'setvar' keyword
@@ -97,7 +97,7 @@ With rich Python-like expressions on the right:
     setvar x += 5          # Increment by 5
     echo $x                # => 6
 
-It also has Ruby-like blocks:
+Oil also has Ruby-like blocks:
 
     cd /tmp {
       echo hi > greeting.txt  # file created inside /tmp
@@ -149,8 +149,8 @@ C-style strings look like `$'foo'` and respect backslash **character escapes**:
     #  A is A
     #  line two, with backslash \
 
-(Note that the `$` before the quote does **not** mean "interpolation".  It's an
-unfortunate syntax collision.)
+(The `$` before the quote doesn't mean "interpolation".  It's an unfortunate
+syntax collision.)
 
 #### Multiline Strings
 
@@ -188,14 +188,16 @@ three varieties, and leading whitespace is stripped in a convenient way.
 
 ### Five Kinds of Substitution
 
-Oil has syntax for 5 types of substitution, all of which start with `$`.  These
-constructs convert data to a **string**:
+Oil has syntax for 5 types of substitution, all of which start with `$`.  That
+is, these things can all be converted to a **string**:
 
 1. Variables
 2. The output of commands
-3. The output of builtins (a performance optimization)
-4. Expressions
-5. The results of functions (syntactic sugar, since functions are expressions)
+3. The output of builtins and procs that invoke them (a performance
+   optimization)
+4. The value of expressions
+5. The return value of functions (which is syntactic sugar, since functions are
+   expressions)
 
 #### Variable Sub
 
@@ -547,7 +549,7 @@ Some builtins take blocks as arguments:
 For more details, see [Procs, Blocks, and Funcs](proc-block-func.html)
 (under construction).
 
-<!-- TODO: Procs can also take blocks. -->
+TODO: User-defined procs can also take blocks.
 
 ### Builtin Commands
 
@@ -636,10 +638,9 @@ See the section above called *Three Kinds of String Literals*.  It described
 `'single quoted'`, `"double ${quoted}"`, and `$'c-style\n'` strings; as well as
 their multiline variants.
 
-More on strings:
-
-- Oil has no Unicode type.  Strings in Oil are UTF-8 encoded in memory, like
-  strings in Go.
+Strings are UTF-8 encoded in memory, like strings in the [Go
+language](https://golang.org).  There isn't a separate string and unicode type,
+as in Python.
 
 <!--
 - The syntax `%symbol` is used in eggex, and could be an interned string.
@@ -652,28 +653,48 @@ All lists can be expressed with Python-like literals:
     var foods = ['ale', 'bean', 'corn']
     var recursive = [1, [2, 3]]
 
-As a special case, list of strings are called **arrays**.  They can be be
-expressed with shell-like literals:
+As a special case, list of strings are called **arrays**.  It's often more
+convenient to write them with shell-like literals:
 
+    # No quotes or commas
     var foods = %(ale bean corn)
+
+    # You can use the word language here
+    var other = %(foo $s *.py {alice,bob}@example.com)
 
 #### Dict
 
-Dicts have a JavaScript-like syntax with unquoted keys:
+Dicts use syntax that's more like JavaScript than Python.  Here's a dict
+literal:
 
-    var d = {name: 'bob', age: 42, 'key with spaces': 'val'}
+    var d = {
+      name: 'bob',  # unquoted keys are allowed
+      age: 42,
+      'key with spaces': 'val'
+    }
 
-    # These are synonyms.  Fatal exception if the key doesn't exist.
+There are two syntaxes for key lookup.  If the key doesn't exist, it's a fatal
+error.
+
     var v1 = d['name']
-    var v2 = d->name 
+    var v2 = d->name               # shorthand for the above
+    var v3 = d['key with spaces']  # no shorthand for this
 
-    # Using them in a command (with expression sub):
-    echo $[d['name']]             # => bob
-    echo $[d->name]               # => bob
+Keys names can be computed wth expressions in `[]`:
 
-    echo $[d['key with spaces']]  # => val
+    var key = 'alice'
+    var d2 = {[key ++ '_z']: 'ZZZ'}  # Computed key name
+    echo $[d2->alice_z]  # => ZZZ    # Reminder: expression sub
+
+Omitting the value causes it to be taken from a variable of the same name:
+
+    var d3 = {key}             # value is taken from the environment
+    echo "name is $[d3->key]"  # => name is alice
+
+More:
 
     var empty = {}
+    echo $len(empty)  # => 0
 
 #### Block, Expr, and ArgList
 
@@ -698,17 +719,12 @@ Operators are generally the same as in Python:
       echo 'enough'
     }  # => enough
 
-Oil has a few operators that aren't in Python.  The `->` operator lets you use
-unquoted keys for dicts:
-
-    echo $[d->name]    # => bob
-    echo $[d['name']]  # => bob (the same thing)
-
-Equality can be approximate or exact:
+Oil has a few operators that aren't in Python.  Equality can be approximate or
+exact:
 
     var n = ' 42 '
     if (n ~== 42) {
-      echo 'equal after type conversion'
+      echo 'equal after stripping whitespace and type conversion'
     }  # => equal after type conversion
 
     if (n === 42) {
@@ -717,7 +733,7 @@ Equality can be approximate or exact:
 
 <!-- TODO: is n === 42 a type error? -->
 
-Pattern matching can be done with globs (`~~` and `!~~`):
+Pattern matching can be done with globs (`~~` and `!~~`)
 
     const filename = 'foo.py'
     if (filename ~~ '*.py') {
@@ -802,9 +818,11 @@ See the [Egg Expressions doc](eggex.html) for details.
 
 ## Interlude
 
-### Summary
+Let's review what we've seen before moving onto other Oil features.
 
-Here are the 3 languages we saw in the last 3 sections:
+### Three Interleaved Languages
+
+Here are the languages we saw in the last 3 sections:
 
 1. **Words** evaluate to a string, or list of strings.  This includes:
    - literals like `'mystr'`
@@ -820,11 +838,12 @@ Here are the 3 languages we saw in the last 3 sections:
    - Dicts: `{name: 'bob', age: 42}`
    - Functions: `split('ale bean')` and `join(['pea', 'nut'])`
 
-### More Examples
+### How Do They Work Together?
 
-How does these languages work together?  Here are two examples.
+Here are two examples:
 
-(1) This *command*:
+(1) In this this *command*, there are **four** *words*.  The fourth word is an
+*expression sub* `$[]`.
 
     write hello $name $[d['age'] + 1]
     # =>
@@ -832,14 +851,12 @@ How does these languages work together?  Here are two examples.
     # world
     # 43
 
-consists of **four** *words*.  The fourth word is an *expression sub* `$[]`.
-
-(2) The *expression* on the right hand side of `=` concatenates two strings:
+(2) In this assignment, the *expression* on the right hand side of `=`
+concatenates two strings.  The first string is a literal, and the second is a
+*command sub*.
 
     var food = 'ale ' ++ $(echo bean | tr a-z A-Z)
     write $food  # => ale BEAN
-
-The second string is a *command sub*, which captures `stdout` as a string.
 
 So words, commands, and expressions are **mutually recursive**.  If you're a
 conceptual person, skimming [Syntactic Concepts](syntactic-concepts.html) may
@@ -923,7 +940,9 @@ Tables](qtt.html).  (TODO: not yet implemented.)
 <!-- Figure out the API.  Does it work like JSON?
 
 Or I think we just implement
-- basic filter/where, select, and sortby.
+- rows: 'where' or 'filter' (dplyr)
+- cols: 'select' conflicts with shell builtin; call it 'cols'?
+- sort: 'sort-by' or 'arrange' (dplyr)
 - QTT <=> sqlite conversion.  Are these drivers or what?
   - and then let you pipe output?
 
@@ -973,7 +992,7 @@ It will cover:
 - The variable namespace has a **call stack**, for the local variables of a
   proc.
   - Each **stack frame** is a `{name -> cell}` mapping.
-  - A **cell** has one of the above data types: `Null`, `Bool`, `Str`, etc.
+  - A **cell** has one of the above data types: `Bool`, `Int`, `Str`, etc.
   - A cell has `readonly`, `export`, and `nameref` **flags**.
 - Boolean shell options with `shopt`: `parse_paren`, `simple_word_eval`, etc.
 - String shell options with `shvar`: `IFS`, `_ESCAPE`, `_DIALECT`
@@ -1016,9 +1035,8 @@ These concepts are central to Oil:
 
 1. Interleaved *word*, *command*, and *expression* languages.
 2. A standard library of *shell builtins*, as well as *builtin functions*
-3. Languages for *data*
+3. Languages for *data*: JSON, QSN, and QTT
 4. A *runtime* shared by OSH and Oil
-
 
 ## Related Docs
 
@@ -1059,8 +1077,10 @@ summary:
 ```none
 # Unimplemented syntax:
 
-my-qtt | filter [size > 10]  # lazy arg lists
-qtt read :x < input.qtt      # qtt builtin
+my-qtt | where (size > 10)   # lazy arg lists
+var myarglist = ^{size > 10}
+var myexpr = ^[1 + 2*3]
+
 echo ${x|html}               # formatters
 echo ${x %.2f}               # statically-parsed printf
 
@@ -1068,9 +1088,16 @@ echo ${.myproc arg1}         # builtin sub
 
 ... cat file.txt             # convenient multiline syntax
   | sort
+    --numeric-sort
   | uniq -c
   ;
 ```
+
+Important builtins that aren't implemented:
+
+- `qtt` for [QTT](qtt.html) (analogous to JSON)
+  - selection, projection, sorting
+- `describe` for testing
 
 <!--
 
