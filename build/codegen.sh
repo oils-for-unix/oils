@@ -62,7 +62,7 @@ install-re2c() {
 }
 
 download-clang() {
-  wget --directory _deps \
+  wget --no-clobber --directory _deps \
     http://releases.llvm.org/5.0.1/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 }
 

@@ -870,6 +870,73 @@ tarball-size() {
   build/test.sh oil-tar  # Ctrl-C this, then run metrics/tarball.sh
 }
 
+dep-bloaty() {
+  wget --no-clobber --directory _deps/ \
+    https://github.com/google/bloaty/releases/download/v1.1/bloaty-1.1.tar.bz2
+
+  pushd _deps
+  if ! test -d bloaty-1.1; then
+    tar -x -j < bloaty-1.1.tar.bz2
+  fi
+
+  pushd bloaty-1.1
+  cmake -B build -G Ninja -S .  # requires 'ninja-build' package
+  cmake --build build
+  ./bloaty --help
+  popd
+
+  popd
+}
+
+dep-smoosh() {
+  local repo=~/git/languages/smoosh
+  if ! test -d $repo; then
+    local base_dir=$(dirname $repo)
+    mkdir -p $base_dir
+    pushd $base_dir
+    git clone git@github.com:mgree/smoosh.git
+    popd
+  fi
+}
+
+dep-wild-testdata() {
+  test/wild.sh fetch-archive
+  test/wild.sh extract-archive
+  test/wild.sh manifest-from-archive
+}
+
+more-release-deps() {
+  # List here of deps that are NOT in services/toil-worker.sh here
+  # https://github.com/oilshell/oil/issues/926
+
+  if false; then
+    # TODO: waiting on Ninja
+    dep-bloaty
+
+    # test/alpine.sh
+    # TODO: Did this manually
+    dep-alpine
+  fi
+
+  if false; then
+    # test/smoosh.sh
+    dep-smoosh
+
+    # test/wild.sh
+    dep-wild-testdata
+
+    # For ovm-build benchmark.
+    build/codegen.sh download-clang
+    build/codegen.sh extract-clang
+
+    benchmarks/osh-runtime.sh download
+    benchmarks/osh-runtime.sh extract
+
+    benchmarks/ovm-build.sh download
+    benchmarks/ovm-build.sh extract-other
+  fi
+}
+
 tarball-build-deps() {
   ### Tools and libs needed to build the tarball.
 

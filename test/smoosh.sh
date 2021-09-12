@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Install smoosh.  Based on a shell script by Michael Greenberg.  #
+# Install smoosh.  Based on a shell script by Michael Greenberg.
 #
 # Usage:
-#   ./smoosh.sh <function name>
+#   test/smoosh.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -19,9 +19,10 @@ export LEMLIB="$PWD/lem/library"
 
 
 # IMPORTANT: Every function uses this OCaml environment!
-
-eval $(opam config env)
-
+# TODO: make-spec doesn't need it though!
+if command -v opam; then
+  eval $(opam config env)
+fi
 
 update() {
   #cd ~/git/languages
