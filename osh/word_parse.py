@@ -138,12 +138,11 @@ class WordParser(WordEmitter):
 
     self.next_lex_mode = lex_mode_e.ShCommand
 
-    # For newline.  TODO: I think we can do this iteratively, without member
-    # state.
-    self.cursor = None  # type: word_t
+    # For consolidating \n\n -> \n
     self.cursor_was_newline = False
-
+    # For integration with pgen2
     self.buffered_word = None  # type: word_t
+    # for ### doc comments
     self.emit_doc_token = False
 
   def _Peek(self):
@@ -1198,7 +1197,7 @@ class WordParser(WordEmitter):
 
   def _NextNonSpace(self):
     # type: () -> None
-    """Same logic as _ReadWord, but for ReadForExpresion."""
+    """Same logic as _ReadWord, but for ReadForExpression."""
     while True:
       self._Next(lex_mode_e.Arith)
       self._Peek()
@@ -1613,7 +1612,7 @@ class WordParser(WordEmitter):
 
   def _ReadWord(self, lex_mode):
     # type: (lex_mode_t) -> Tuple[Optional[word_t], bool]
-    """Helper function for Read().
+    """Helper function for ReadWord().
 
     Returns:
       2-tuple (word, need_more)
@@ -1632,6 +1631,7 @@ class WordParser(WordEmitter):
     elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
       self._Next(lex_mode)
       if self.token_type == Id.Op_Newline:
+      #if 0:
         if self.cursor_was_newline:
           return no_word, True
 
@@ -1648,7 +1648,7 @@ class WordParser(WordEmitter):
 
     elif self.token_kind in (Kind.Ignored, Kind.WS):
       self._Next(lex_mode)
-      return no_word, True  # tell Read() to try again
+      return no_word, True  # tell ReadWord() to try again
 
     elif self.token_kind in (
         Kind.VSub, Kind.Lit, Kind.History, Kind.Left, Kind.KW,
@@ -1666,16 +1666,16 @@ class WordParser(WordEmitter):
 
         # The next iteration will go into Kind.Ignored and set lex state to
         # lex_mode_e.ShCommand/etc.
-        return no_word, True  # tell Read() to try again after comment
+        return no_word, True  # tell ReadWord() to try again after comment
 
-      elif self.token_type == Id.Lit_TPound:   ### doc comment
+      elif self.token_type == Id.Lit_TPound:  ### doc comment
         self._Next(lex_mode_e.Comment)
         self._Peek()
 
         if self.token_type == Id.Ignored_Comment and self.emit_doc_token:
           return cast(word_t, self.cur_token), False
 
-        return no_word, True  # tell Read() to try again after comment
+        return no_word, True  # tell ReadWord() to try again after comment
 
       else:
         # parse_raw_string: Is there an r'' at the beginning of a word?
@@ -1751,14 +1751,8 @@ class WordParser(WordEmitter):
         if not need_more:
           break
 
-    self.cursor = w
-
-    # TODO: Do consolidation of newlines in the lexer?
-    # Note that there can be an infinite (Id.Ignored_Comment Id.Op_Newline
-    # Id.Ignored_Comment Id.Op_Newline) sequence, so we have to keep track of
-    # the last non-ignored token.
-    self.cursor_was_newline = (word_.CommandId(self.cursor) == Id.Op_Newline)
-    return self.cursor
+    self.cursor_was_newline = (word_.CommandId(w) == Id.Op_Newline)
+    return w
 
   def ReadHereDocBody(self, parts):
     # type: (List[word_part_t]) -> None

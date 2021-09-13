@@ -277,10 +277,6 @@ dbg-all() {
 # prevent regressions.)
 #
 
-oil-bin() {
-  sh-spec spec/oil-bin.test.sh $OIL_LIST "$@"
-}
-
 smoke() {
   sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
@@ -865,6 +861,10 @@ all-and-smoosh() {
 # Oil Language
 #
 
+oil-bin() {
+  sh-spec spec/oil-bin.test.sh $OIL_LIST "$@"
+}
+
 oil-array() {
   sh-spec spec/oil-array.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
@@ -912,6 +912,11 @@ oil-json() {
 # Related to errexit-oil
 oil-builtin-try() {
   sh-spec spec/oil-builtin-try.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+oil-multiline() {
+  sh-spec spec/oil-multiline.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
