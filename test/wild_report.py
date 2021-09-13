@@ -32,10 +32,19 @@ import jsontemplate
 
 T = jsontemplate.Template
 
-F = {
-    'commas': lambda n: '{:,}'.format(n),
-    #'urlesc': urllib.quote_plus,
-    }
+def F(format_str):
+  # {x|commas}
+  if format_str == 'commas':
+    return lambda n: '{:,}'.format(n)
+
+  # {x|printf %.1f}
+  if format_str.startswith('printf '):
+    fmt = format_str[len('printf '):]
+    return lambda value: fmt % value
+
+  #'urlesc': urllib.quote_plus,
+  return None
+
 
 def MakeHtmlGroup(title_str, body_str):
   """Make a group of templates that we can expand with a common style."""
@@ -149,8 +158,8 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   {.end}
   <li>
     Failed to parse <b>{parse_failed|commas}</b> scripts, leaving
-    <b>{lines_parsed|commas}</b> lines parsed in <b>{parse_proc_secs}</b>
-    seconds (<b>{lines_per_sec}</b> lines/sec).
+    <b>{lines_parsed|commas}</b> lines parsed in <b>{parse_proc_secs|printf %.1f}</b>
+    seconds (<b>{lines_per_sec|printf %.1f}</b> lines/sec).
     {.if test top_level_links}
       (<a href="parse-failed.html">all failures</a>,
        <a href="parse-failed.txt">text</a>)
@@ -160,8 +169,8 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
   <li>
     Successfully parsed <b>{num_files|commas}</b> shell scripts totalling
     <b>{num_lines|commas}</b> lines
-    in <b>{parse_proc_secs}</b> seconds
-    (<b>{lines_per_sec}</b> lines/sec).
+    in <b>{parse_proc_secs|printf %.1f}</b> seconds
+    (<b>{lines_per_sec|printf %.1f}</b> lines/sec).
   </li>
 {.end}
 
@@ -216,8 +225,8 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
       {.or}
         <td class="ok">{parse_failed|commas}</td>
       {.end}
-      <td>{max_parse_secs}</td>
-      <td>{parse_proc_secs}</td>
+      <td>{max_parse_secs|printf %.2f}</td>
+      <td>{parse_proc_secs|printf %.2f}</td>
 
       {.osh2oil_failed?}
         <!-- <td class="fail">{osh2oil_failed|commas}</td> -->
@@ -524,8 +533,7 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
       entry = dict(stats)
       entry['name'] = name
       # TODO: This should be internal time
-      lines_per_sec = entry['lines_parsed'] / entry['parse_proc_secs']
-      entry['lines_per_sec'] = '%.1f' % lines_per_sec
+      entry['lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
       files.append(entry)
 
     dirs = []
@@ -533,15 +541,13 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
       entry = dict(node.dirs[name].subtree_stats)
       entry['name'] = name
       # TODO: This should be internal time
-      lines_per_sec = entry['lines_parsed'] / entry['parse_proc_secs']
-      entry['lines_per_sec'] = '%.1f' % lines_per_sec
+      entry['lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
       dirs.append(entry)
 
     # TODO: Is there a way to make this less redundant?
     st = node.subtree_stats
     try:
-      lines_per_sec = st['lines_parsed'] / st['parse_proc_secs']
-      st['lines_per_sec'] = '%.1f' % lines_per_sec
+      st['lines_per_sec'] = st['lines_parsed'] / st['parse_proc_secs']
     except KeyError:
       # This usually there were ZERO files.
       print(node, st, repr(rel_path), file=sys.stderr)
