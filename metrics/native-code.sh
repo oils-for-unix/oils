@@ -14,7 +14,8 @@ readonly OIL_BASE_DIR=_tmp/metrics/oil-native
 
 # Size profiler for binaries.
 bloaty() {
-  ~/git/other/bloaty/bloaty "$@"
+  # See devtools/release.sh dep-bloaty
+  _deps/bloaty-1.1/bloaty "$@"
 }
 
 pylibc-symbols() {

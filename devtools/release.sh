@@ -881,8 +881,9 @@ dep-bloaty() {
   fi
 
   pushd bloaty-1.1
-  cmake -B build -G Ninja -S .  # requires 'ninja-build' package
-  cmake --build build
+  # It's much slower without -G Ninja!
+  cmake -G Ninja .
+  cmake --build .
   ./bloaty --help
   popd
 
@@ -922,16 +923,16 @@ more-release-deps() {
   # List here of deps that are NOT in services/toil-worker.sh here
   # https://github.com/oilshell/oil/issues/926
 
+  # TODO: Make a container image for these.
   if false; then
-    # TODO: waiting on Ninja
+    # TODO: Did this manually
+    # test/alpine.sh
+
+    dep-alpine
+
+    # metrics/native-code.sh
     dep-bloaty
 
-    # test/alpine.sh
-    # TODO: Did this manually
-    dep-alpine
-  fi
-
-  if false; then
     # test/smoosh.sh
     dep-smoosh
 

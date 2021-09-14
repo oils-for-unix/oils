@@ -55,11 +55,11 @@ Report = function(ctx) {
 }
 
 Load = function(in_dir) {
+  # 9/2021: read.delim(...) works but somehow read.table(..., sep='\t',
+  # header=T) doesn't?
   list(
-    symbols = read.table(
-      file.path(in_dir, 'symbols.tsv'), sep='\t', header=T),
-    compileunits = read.table(
-      file.path(in_dir, 'compileunits.tsv'), sep='\t', header=T)
+    symbols = read.delim(file.path(in_dir, 'symbols.tsv')),
+    compileunits = read.delim(file.path(in_dir, 'compileunits.tsv'))
   )
 }
 
