@@ -18,7 +18,7 @@ shopt -s failglob  # to debug TSV expansion failure below
 readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
 # For now use opt since it's faster, see issue #970
-readonly OSH_CC=$REPO_ROOT/_bin/osh_eval.opt
+readonly OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/osh_eval.opt}
 
 # Applies everywhere
 export SPEC_JOB='cpp'
@@ -267,7 +267,7 @@ EOF
 
 html-summary-footer() {
   cat <<EOF
-<p><a href="osh.html">osh.html</a></p>
+<p><a href="osh-cpp.html">osh-cpp.html</a></p>
 EOF
   table-sort-end "$@"
 }

@@ -310,9 +310,6 @@ test-opy() {
 spec-all() {
   ### Run all spec tests
 
-  # TODO: Look at task files and fail all are green and red.  See
-  # 'test/spec-runner.sh all-parallel'.
-
   # Create the tests we're running
   test/smoosh.sh make-spec
 
@@ -322,6 +319,8 @@ spec-all() {
   test/spec.sh all-and-smoosh
 
   # Collect and publish stats about the C++ translation.
+  # Test the one we built in _oil-native-build
+  export OSH_CC="$REPO_ROOT/../benchmark-data/src/oil-native-$OIL_VERSION/_bin/osh_eval.opt"
   test/spec-cpp.sh all
 }
 
