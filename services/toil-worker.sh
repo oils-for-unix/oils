@@ -97,7 +97,6 @@ oil-large       oil_lang/run.sh travis      -
 tea-large       tea/run.sh travis           - 
 osh-minimal     test/spec.sh osh-minimal    _tmp/spec/survey/osh-minimal.html
 EOF
-# TODO: Add build/doc.sh tour, as well as all-help, all-markdown, etc.
 }
 
 cpp-tasks() {
@@ -149,8 +148,11 @@ EOF
 ovm-tarball-tasks() {
   ### Print tasks for the 'ovm-tarball' build
 
-  # note: dev-all needed to crawl dependencies to make tarball.
-  # The 'tour' also depends on buildings docs.
+  # notes:
+  # - dev-all needed to crawl dependencies to make tarball.
+  # - The 'tour' also depends on buildings docs.
+  # - 'all-markdown' could be published.
+  # - build/dev.sh all does 'all-help', so we don't need it explicitly
 
   # (task_name, script, action, result_html)
   cat <<EOF
@@ -160,6 +162,7 @@ spec-deps         test/spec-bin.sh all-steps             -
 dev-all           build/dev.sh all                       -
 yajl              build/dev.sh yajl-release              -
 tour              build/doc.sh tour                      -
+all-markdown      build/doc.sh all-markdown              -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec.sh osh-travis                _tmp/spec/survey/osh.html
