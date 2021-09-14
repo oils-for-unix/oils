@@ -304,11 +304,12 @@ make-job-wwz() {
   # mycpp/ : leave out bin/ for now
   # web/ : spec test HTML references this.
   #        Note that that index references /web/{base,toil}.css, outside the .wwz
-  # temporary: debug dash
+  #        osh-summary.html uses table-sort.js and ajax.js
   zip -r $wwz \
     index.html _tmp/toil _tmp/spec _tmp/syscall _tmp/benchmark-data \
     mycpp/_ninja/*.{html,txt,tsv} mycpp/_ninja/{tasks,gen} \
-    web/{base,spec-code,spec-tests,spec-cpp}.css web/table/table-sort.{css,js}
+    web/{base,spec-code,spec-tests,spec-cpp}.css web/ajax.js \
+    web/table/table-sort.{css,js}
 }
 
 deploy-job-results() {
