@@ -112,12 +112,13 @@ readonly MARKDOWN_DOCS=(
   oil-builtins
   command-vs-expression-mode
 
-  command-language
+  # 9/2021: I think this was left on my old machine
+  # command-language
   expression-language
   word-language
 
   oil-special-vars
-  proc-block-func
+  # proc-block-func
   io-builtins
   unicode
   framing
