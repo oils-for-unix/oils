@@ -153,10 +153,6 @@ _BASIC_PARSE_OPTIONS = [
     'parse_paren',  # if (x > 0) ...
     'parse_raw_string',  # echo r'\'
     'parse_triple_quote',  # for ''' and """
-    'parse_triple_dot',  # ...
-
-    # Not implemented
-    # 'parse_index_expr',  # ${a[1 + f(x)]}  -- can this just be $[]?
 ]
 
 # Extra stuff that breaks too many programs.
