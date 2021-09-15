@@ -131,7 +131,7 @@ string.
 Double-quoted strings allow **interpolation with `$`**:
 
     var person = 'alice'
-    echo "hi $person, $(echo bye)"  # => hi bob, bye
+    echo "hi $person, $(echo bye)"  # => hi alice, bye
 
 Denote operators by escaping them with `\`:
 
