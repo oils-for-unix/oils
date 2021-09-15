@@ -103,7 +103,7 @@ ParserReport = function(in_dir, out_dir) {
   cachegrind = readTsv(file.path(in_dir, 'cachegrind.tsv'))
 
   # For joining by filename
-  lines_by_filename = data_frame(
+  lines_by_filename = tibble(
       num_lines = lines$num_lines,
       filename = basename(lines$path)
   )
@@ -173,7 +173,7 @@ ParserReport = function(in_dir, out_dir) {
     select(-c(total_ms)) %>%
     spread(key = host_label, value = lines_per_ms) %>%
     # sort by parsing rate on the fast machine
-    arrange(desc(`host lenny`)) ->
+    arrange(desc(`host spring`)) ->
     times_summary
 
   Log('times_summary:')
@@ -253,7 +253,7 @@ ParserReport = function(in_dir, out_dir) {
 
   WriteDetails(distinct_hosts, distinct_shells, out_dir)
 
-  raw_data_table = data_frame(
+  raw_data_table = tibble(
     filename = basename(as.character(raw_data$path)),
     filename_HREF = benchmarkDataLink('osh-parser', filename, '')
   )
@@ -283,7 +283,7 @@ WriteDetails = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
   # Should be:
   # host_id_url
   # And then csv_to_html will be smart enough?  It should take --url flag?
-  host_table = data_frame(
+  host_table = tibble(
     host_label = distinct_hosts$host_label,
     host_id = paste(distinct_hosts$host_name,
                     distinct_hosts$host_hash, sep='-'),
@@ -291,7 +291,7 @@ WriteDetails = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
   )
   print(host_table)
 
-  shell_table = data_frame(
+  shell_table = tibble(
     shell_label = distinct_shells$shell_label,
     shell_id = paste(distinct_shells$shell_name,
                      distinct_shells$shell_hash, sep='-'),
@@ -439,7 +439,7 @@ VmBaselineReport = function(in_dir, out_dir) {
 }
 
 WriteOvmBuildDetails = function(distinct_hosts, distinct_compilers, out_dir) {
-  host_table = data_frame(
+  host_table = tibble(
     host_label = distinct_hosts$host_label,
     host_id = paste(distinct_hosts$host_name,
                     distinct_hosts$host_hash, sep='-'),
@@ -448,7 +448,7 @@ WriteOvmBuildDetails = function(distinct_hosts, distinct_compilers, out_dir) {
   print(host_table)
 
   dc = distinct_compilers
-  compiler_table = data_frame(
+  compiler_table = tibble(
     compiler_label = dc$compiler_label,
     compiler_id = paste(dc$compiler_label, dc$compiler_hash, sep='-'),
     compiler_id_HREF = benchmarkDataLink('compiler-id', compiler_id, '/')

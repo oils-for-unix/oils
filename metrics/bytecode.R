@@ -314,7 +314,7 @@ CompareCol = function(ctx) {
 Compare = function(cpython_ctx, opy_ctx) {
   Banner('CPYTHON vs. OPY')
 
-  data_frame(
+  tibble(
     table_name = c('frames', 'names', 'consts', 'flags', 'ops'),
     cpython = CompareCol(cpython_ctx),
     opy = CompareCol(opy_ctx)
