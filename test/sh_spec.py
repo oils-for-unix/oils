@@ -113,8 +113,8 @@ END_MULTILINE = 3  # STDOUT STDERR
 PLAIN_LINE = 4  # Uncommented
 EOF = 5
 
-LEX_OUTER = 0  # Ignore blank lines
-LEX_KV = 1     # Blank lines are significant
+LEX_OUTER = 0  # Ignore blank lines, e.g. for separating cases
+LEX_RAW = 1  # Blank lines are significant
 
 
 class Tokenizer(object):
@@ -132,7 +132,7 @@ class Tokenizer(object):
     if not line:  # empty
       return self.line_num, EOF, ''
 
-    if lex_mode == LEX_OUTER and not line.strip() :
+    if lex_mode == LEX_OUTER and not line.strip():
       return None
 
     if line.startswith('####'):
@@ -232,7 +232,7 @@ def ParseKeyValue(tokens, case):
 
       value_lines = []
       while True:
-        tokens.next(lex_mode=LEX_KV)  # empty lines aren't skipped
+        tokens.next(lex_mode=LEX_RAW)  # empty lines aren't skipped
         _, kind2, item2 = tokens.peek()
         if kind2 != PLAIN_LINE:
           break
@@ -276,7 +276,7 @@ def ParseCodeLines(tokens, case):
       case['code'] = ''.join(code_lines)
       return
     code_lines.append(item)
-    tokens.next()
+    tokens.next(lex_mode=LEX_RAW)
 
 
 def ParseTestCase(tokens):

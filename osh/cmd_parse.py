@@ -1995,6 +1995,20 @@ class CommandParser(object):
 
   def ParseAndOr(self):
     # type: () -> command_t
+    self._Peek()
+    if self.c_id == Id.Word_Compound:
+      first_word_tok = word_.LiteralToken(self.cur_word)
+      if first_word_tok is not None and first_word_tok.id == Id.Lit_TDot:
+        # We got '...', so parse in multiline mode
+        self._Next()
+        with word_.ctx_Multiline(self.w_parser):
+          return self._ParseAndOr()
+
+    # Parse in normal mode, not multiline
+    return self._ParseAndOr()
+
+  def _ParseAndOr(self):
+    # type: () -> command_t
     """
     and_or           : and_or ( AND_IF | OR_IF ) newline_ok pipeline
                      | pipeline
@@ -2002,14 +2016,6 @@ class CommandParser(object):
     Note that it is left recursive and left associative.  We parse it
     iteratively with a token of lookahead.
     """
-    self._Peek()
-    if self.c_id == Id.Word_Compound:
-      first_word_tok = word_.LiteralToken(self.cur_word)
-      if first_word_tok is not None and first_word_tok.id == Id.Lit_TDot:
-        # TODO: Change state for parse_triple_dots.  This method ParseAndOr is
-        # called by both _ParseCommandLine and _ParseCommandTerm.
-        pass
-
     child = self.ParsePipeline()
     assert child is not None
 

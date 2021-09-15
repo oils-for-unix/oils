@@ -131,8 +131,8 @@ source spec/testdata/bash-source-string.sh
 __
 ['spec/testdata/bash-source-string.sh']
 ['spec/testdata/bash-source-string.sh']
-['9']
-['9']
+['11']
+['11']
 ____
 ['spec/testdata/bash-source-string2.sh']
 ['spec/testdata/bash-source-string2.sh']

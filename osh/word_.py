@@ -797,3 +797,20 @@ class ctx_EmitDocToken(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     self.w_parser.EmitDocToken(False)
+
+
+class ctx_Multiline(object):
+  """For multiline commands."""
+
+  def __init__(self, w_parser):
+    # type: (WordParser) -> None
+    w_parser.Multiline(True)
+    self.w_parser = w_parser
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.w_parser.Multiline(False)

@@ -916,7 +916,7 @@ oil-builtin-try() {
 }
 
 oil-multiline() {
-  sh-spec spec/oil-multiline.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/oil-multiline.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 

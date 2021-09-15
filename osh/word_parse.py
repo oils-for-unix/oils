@@ -138,12 +138,22 @@ class WordParser(WordEmitter):
 
     self.next_lex_mode = lex_mode_e.ShCommand
 
-    # For consolidating \n\n -> \n
-    self.cursor_was_newline = False
+    # Boolean mutated by CommandParser via word_.ctx_EmitDocToken.  For ### doc
+    # comments
+    self.emit_doc_token = False
+    # Boolean mutated by CommandParser via word_.ctx_Multiline.  '...' starts
+    # multiline mode.
+    self.multiline = False 
+
+    # For detecting invalid \n\n in multiline mode.  Counts what we got
+    # directly from the lexer.
+    self.newline_state = 0
+    # For consolidating \n\n -> \n for the CALLER.  This simplifies the parsers
+    # that consume words.
+    self.returned_newline = False
+
     # For integration with pgen2
     self.buffered_word = None  # type: word_t
-    # for ### doc comments
-    self.emit_doc_token = False
 
   def _Peek(self):
     # type: () -> None
@@ -152,6 +162,13 @@ class WordParser(WordEmitter):
       self.cur_token = self.lexer.Read(self.next_lex_mode)
       self.token_type = self.cur_token.id
       self.token_kind = consts.GetKind(self.token_type)
+
+      # number of consecutive newlines, ignoring whitespace
+      if self.token_type == Id.Op_Newline:
+        self.newline_state += 1
+      elif self.token_kind != Kind.WS:
+        self.newline_state = 0
+
       self.parse_ctx.trail.AppendToken(self.cur_token)   # For completion
       self.next_lex_mode = lex_mode_e.Undefined
 
@@ -1630,9 +1647,17 @@ class WordParser(WordEmitter):
     # Allow Arith for ) at end of for loop?
     elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
       self._Next(lex_mode)
+
+      # Newlines are complicated.  See 3x2 matrix in the comment about
+      # self.multiline and self.newline_state above.
       if self.token_type == Id.Op_Newline:
-      #if 0:
-        if self.cursor_was_newline:
+        if self.multiline:
+          if self.newline_state > 1:
+            # This points at a blank line, but at least it gives the line number
+            p_die('Invalid blank line in multiline mode', token=self.cur_token)
+          return no_word, True
+
+        if self.returned_newline:  # skip
           return no_word, True
 
       return cast(word_t, self.cur_token), False
@@ -1751,7 +1776,7 @@ class WordParser(WordEmitter):
         if not need_more:
           break
 
-    self.cursor_was_newline = (word_.CommandId(w) == Id.Op_Newline)
+    self.returned_newline = (word_.CommandId(w) == Id.Op_Newline)
     return w
 
   def ReadHereDocBody(self, parts):
@@ -1774,3 +1799,7 @@ class WordParser(WordEmitter):
   def EmitDocToken(self, b):
     # type: (bool) -> None
     self.emit_doc_token = b
+
+  def Multiline(self, b):
+    # type: (bool) -> None
+    self.multiline = b

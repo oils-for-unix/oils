@@ -5,8 +5,10 @@
     hi  # comment
     there
     ;
+echo ---
 ## STDOUT:
 hi there
+---
 ## END
 
 #### ... with pipeline
@@ -18,7 +20,7 @@ hi there
 2
 ## END
 
-#### ... with comment sub
+#### ... with multiline $()
 
 # newlines mean the normal thing
 echo $(echo one
@@ -30,22 +32,89 @@ echo $(echo one
   | wc -l
   ;
 ## STDOUT:
-2
+one two
+1
 ## END
 
 #### ... with && and [[
-echo 1 && false || echo end
+echo one && false || echo two
 
-... echo one
+... echo three
  && [[ 0 -eq 0 ]]
- && echo two
+ && echo four
  && false
- || echo end
+ || echo five
+ ;
+
+echo ---
 
 ## STDOUT:
 one
 two
+three
+four
+five
+---
 ## END
+
+#### '... for' is allowed, but NOT recommended
+... for x in foo bar; do echo $x; done
+    ;
+
+... for x in foo bar; do
+      echo $x;
+    done
+    ;
+
+return
+
+# This style gets messed up because of translation, but that is EXPECTED.
+... for x in foo bar
+    do
+      echo $x;
+    done
+    ;
+
+## STDOUT:
+foo
+bar
+foo
+bar
+## END
+
+#### Blank line in multiline command is syntax error
+... echo comment
+    # comment
+    is OK
+    ;
+
+... echo blank line
+
+    is not OK
+    ;
+
+## status: 2
+## STDOUT:
+comment is OK
+## END
+
+#### Blank line with spaces and tabs isn't OK either
+... echo comment
+    # comment
+    is OK
+    ;
+
+# NOTE: invisible spaces and tabs below (:set list in vim)
+... echo blank line
+   
+    is not OK
+    ;
+## status: 2
+## STDOUT:
+comment is OK
+## END
+
+
 
 # Notes:
 # - MakeParserForCommandSub() instantiates a new WordParser, so we can safetly
@@ -71,8 +140,4 @@ two
 # disturbance to the code.
 #
 # cursor_was_newline might need more state?
-
-
-
-
 

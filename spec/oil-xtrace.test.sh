@@ -14,9 +14,9 @@ echo 3
 3
 ## END
 ## STDERR:
-4 . builtin echo 1
-4 . builtin echo 2
-5 . builtin echo 3
+5 . builtin echo 1
+5 . builtin echo 2
+6 . builtin echo 3
 ## END
 
 
