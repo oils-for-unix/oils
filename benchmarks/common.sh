@@ -9,11 +9,11 @@
 # devtools/release.sh.
 readonly OSH_OVM=${OSH_OVM:-_bin/osh}
 
-readonly MACHINE1=flanders
-readonly MACHINE2=lenny
+#readonly MACHINE1=flanders
+#readonly MACHINE2=lenny
 
-#readonly MACHINE1=broome
-#readonly MACHINE2=spring
+readonly MACHINE1=broome
+readonly MACHINE2=spring
 
 # Notes:
 # - $OSH_OVM is set by devtools/release.sh to the RELATIVE path of the

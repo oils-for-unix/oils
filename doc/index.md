@@ -37,8 +37,8 @@ Reference:
 
 ## Oil is a New Shell Language
 
-- [A Tour of the Oil Language](oil-language-tour.html).  A quick introduction.
-- [Oil Language Idioms](idioms.html).  Idioms that are nicer in Oil than shell.
+- [A Tour of the Oil Language](oil-language-tour.html).
+- [Oil vs. Shell Idioms](idioms.html).  Idioms that are nicer in Oil than shell.
 - [Shell Language Deprecations](deprecations.html).  When you turn on Oil,
   there are some shell constructs you can no longer use.  We try to minimize
   the length of this list.
@@ -72,7 +72,7 @@ I/O, control flow, and bastraction.
 - [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
 - Pipeline Idioms.  An essential part of shell that deserves its own document.
 - [Procs, Blocks, and Funcs](proc-block-func.html)
-- [Modules](modules.html).  Separting programs into files.
+- [Modules](modules.html).  Separating programs into files.
 
 ### The Word Language
 
