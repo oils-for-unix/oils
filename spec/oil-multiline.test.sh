@@ -36,6 +36,16 @@ one two
 1
 ## END
 
+#### ... inside command sub $()
+echo one $(... echo
+              two
+              three) four
+echo five
+## STDOUT:
+one two three four
+five
+## END
+
 #### ... with && and [[
 echo one && false || echo two
 

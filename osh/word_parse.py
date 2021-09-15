@@ -1104,7 +1104,7 @@ class WordParser(WordEmitter):
       p_die('Invalid proc name %s', ui.PrettyToken(self.cur_token, self.arena),
             token=self.cur_token)
 
-    # TODO: validate this more.  Disallow proc 123 { }, which isn't disallowed().
+    # TODO: validate this more.  Disallow proc 123 { }, which isn't disallowed
     # for shell functions.  Similar to IsValidVarName().
     node.name = self.cur_token
 
@@ -1133,10 +1133,6 @@ class WordParser(WordEmitter):
     ${a[a[0]]} is valid  # VS_RBRACKET vs Id.Arith_RBracket
 
     ${s : a<b?0:1 : 1}  # VS_COLON vs Id.Arith_Colon
-
-    TODO: Instead of having an eof_type.  I think we should use just run the
-    arith parser until it's done.  That will take care of both : and ].  We
-    switch the state back.
 
     See the assertion in ArithParser.Parse() -- unexpected extra input.
     """

@@ -529,16 +529,6 @@ class CommandParser(object):
     """
     if self.next_lex_mode != lex_mode_e.Undefined:
       w = self.w_parser.ReadWord(self.next_lex_mode)
-      # TODO:
-      # - For parse_triple_dots, write a state machine that does stuff like this:
-      #   - Op_Newline -> Ignored_Space
-      #   - Op_Newline Ignored_Comment Op_Newline -> Ignored_Space
-      #   - Op_Newline Ignored_Space Op_Newline -> Op_Newline
-      # - Also move WordParser cursor_was_newline here as well.
-      #   - The WordParser is used by the BoolParser, which ignores Op_Newline
-      #   - It'a also used by expr_parse.py for %(), which also ignores newlines
-      #   - So I think all the newline logic DOES belong here.
-
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
       if w.tag_() == word_e.Token:

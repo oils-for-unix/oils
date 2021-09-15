@@ -52,36 +52,43 @@ the first argument, e.g.:
 
 <h3>Oil Lexing</h3>
 
-<h4 id="single-command">single-command</h4>
+#### docstring
 
-NOT IMPLEMENTED.
+Docstrings look like this:
 
-The ... prefix starts a single command over multiple lines.  It's has a few use
-cases:
+    proc deploy {   
+      ### Deploy the app
+      echo hi
+    }
 
-Long command lines without trailing \
+#### multiline-command
+
+The ... prefix starts a single command over multiple lines.  It allows writing
+long commands without \ continuation lines, and the resulting limitations on
+where you can put comments.
+
+Single command example:
 
     ... chromium-browser
+        # comment on its own line
         --no-proxy-server
-        # comments allowed
-        --incognito
+        --incognito  # comment to the right
+        ;
 
-Long pipelines or and-or chains without trailing \ 
+Long pipelines and and-or chains:
 
     ... find .
         # exclude tests
       | grep -v '_test.py'
       | xargs wc -l
       | sort -n
+      ;
 
     ... ls /
      && ls /bin
      && ls /lib
      || error "oops"
-
-<h4 id="docstring">docstring</h4>
-
-TODO
+     ;
 
 <h2 id="command">Command Language</h2>
 

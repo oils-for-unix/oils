@@ -94,7 +94,7 @@ readonly HOST='travis-ci.oilshell.org'
 home-page() {
   ### travis-ci.oilshell.org home page
 
-  travis-html-head 'travis.ci.oilshell.org'
+  travis-html-head 'travis-ci.oilshell.org'
   cat <<EOF
   <body class="width40">
     <p id="home-link">
