@@ -5,19 +5,16 @@ in_progress: yes
 Word Language
 =============
 
-Recall that Oil is composed of three interleaved languages: words, commands,
-and expressions.
+Recall that Oil is composed of three interleaved languages: **words**,
+[commands](command-language.html), and [expressions](expression-language.html).
 
-For now, this document describes things that are **not** covered in:
+This doc describes words, but only the things that are **not** in:
 
 - [A Tour of the Oil Language](oil-language-tour.html)
 - The `#word-lang` section of [OSH Help
   Topics](osh-help-topics.html#word-lang)
 - The `#word-lang` section of [Oil Help
   Topics](oil-help-topics.html#word-lang)
-
-That is, it has both trivia or high-level concepts that aren't covered
-elsewhere.
 
 <div id="toc">
 </div>

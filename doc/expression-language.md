@@ -6,7 +6,8 @@ Oil's Expression Language: A Mix of Python and JavaScript
 =========================================================
 
 Recall that Oil is composed of three interleaved languages:
-[words](word-language.html), commands, and **expressions**.
+[words](word-language.html), [commands](command-language.html), and
+**expressions**.
 
 This doc describes expressions, but only the things that are **not** in:
 

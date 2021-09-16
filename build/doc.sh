@@ -333,11 +333,6 @@ tour() {
 
   split-and-render doc/oil-language-tour.md
 
-  # Check that the code runs
-  local tmp=_tmp/tour
-  rm -r -f $tmp
-  mkdir -p $tmp
-
   local work_dir=$REPO_ROOT/_tmp/code-blocks
 
   # Files used by module example

@@ -5,19 +5,17 @@ in_progress: yes
 Command Language
 ================
 
-Recall that Oil is composed of three interleaved languages: words, commands,
-and expressions.
+Recall that Oil is composed of three interleaved languages:
+[words](word-language.html), **commands**, and
+[expressions](expression-language.html).
 
-For now, this document describes things that are **not** covered in:
+This doc describes commands, but only the things that are **not** in:
 
 - [A Tour of the Oil Language](oil-language-tour.html)
 - The `#command-lang` section of [OSH Help
   Topics](osh-help-topics.html#command-lang)
 - The `#command-lang` section of [Oil Help
   Topics](oil-help-topics.html#command-lang)
-
-That is, it has both trivia or high-level concepts that aren't covered
-elsewhere.
 
 <div id="toc">
 </div>

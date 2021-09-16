@@ -367,17 +367,10 @@ You can **redirect** `stdin` and `stdout` of simple commands:
     echo hi > tmp.txt  # write to a file
     sort < tmp.txt
 
-<!--
-Here are a couple uses of `stderr`:
+Idioms for using stderr (identical to shell):
 
-    ls /tmp 2> error.txt
-
-    proc log(msg) {
-      echo $msg >&2  # Write message to stderr
-    }
--->
-
-<!-- later: parse_amp fixes redirects? -->
+    ls /tmp 2>errors.txt
+    echo 'fatal error' 1>&2
 
 ### Pipelines
 
@@ -388,6 +381,20 @@ Pipelines are a powerful method manipulating data streams:
 
 The stream may contain (lines of) text, binary data, JSON, TSV, and more.
 Details below.
+
+### Multiline Commands
+
+Oil's `...` prefix lets you write long commands, pipelines, and `&&` chains
+without a `\` line continuation.  When this mode is active, newlines are turned
+into spaces.
+
+    ... find /bin               # traverse this directory and
+        -type f -a -executable  # print executable files
+        # reverse sort
+      | sort -r
+        # first 30 files  <-- comments can appear on their own line
+      | head -n 30
+      ;
 
 ### Keywords for Using Variables
 
@@ -530,12 +537,16 @@ Define units of reusable code with the `proc` keyword, and invoke them just
 like any other command:
 
     proc mycopy(src, dest) {
+      ### Copy verbosely
       cp --verbose $src $dest
     }
 
     touch log.txt
     # the first word 'mycopy' is resolved as a proc
     mycopy log.txt /tmp  # runs cp --verbose
+
+The line following `###` is a "doc comment" and can be retrieved with `pp
+proc`.
 
 #### Ruby-like Blocks
 
