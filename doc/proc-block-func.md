@@ -1,0 +1,318 @@
+---
+in_progress: yes
+default_highlighter: oil-sh
+---
+
+Procs, Blocks, and Funcs
+========================
+
+Procs are shell like-functions, but they can have declared parameters, and lack
+dynamic scope.
+
+    proc p(name, age) {
+      echo "$name is $age years old"
+    }
+
+    p alice 42  # => alice is 42 years old
+
+Blocks are fragments of code within `{ }` that can be passed to builtins (and
+eventually procs):
+
+    cd /tmp {
+      echo $PWD  # prints /tmp
+    }
+    echo $PWD  # prints original dir
+
+- See [Oil Language Idioms](idioms.html) for examples of procs.
+- See [Oil Builtins](oil-builtins.html) for examples of blocks.
+
+<div id="toc">
+</div>
+
+## Procs Can Be Open Or Closed (With a Signature)
+
+Shell-like open procs that accept arbitrary numbers of arguments:
+
+    proc open {
+      write 'args are' @ARGV
+    }
+    # All valid:
+    open
+    open 1 
+    open 1 2
+
+Stricter closed procs:
+
+    proc closed(x) {
+      write 'arg is' $x
+    }
+    closed      # runtime error: missing argument
+    closed 1    # valid
+    closed 1 2  # runtime error: too many arguments
+
+### Proc Signatures
+
+TODO:
+
+* Default values for params.
+* All params are required.  Prefer `''` to `null` for string argument defaults.
+* `@` is "splice" at the call site. Or also "rest" parameters.
+* `:` for ref params
+* `&` for blocks?
+  * Procs May Accept Block Arguments
+
+<!--
+
+* Shell vs. Python composition.
+* prefix spread ... at call site. Or "rest" parameters.
+* Optional params?
+
+-->
+
+## Block Syntax
+
+These forms work:
+
+```
+cd / {
+  echo $PWD
+}
+cd / { echo $PWD }
+cd / { echo $PWD }; cd / { echo $PWD }
+```
+
+These are syntax errors:
+
+```
+a=1 { echo bad };        # assignments can't take blocks
+>out.txt { echo bad };   # bare redirects can't take blocks
+break { echo bad };      # control flow can't take blocks
+```
+
+Runtime error:
+
+```
+local a=1 { echo bad };  # assignment builtins can't take blocks
+```
+
+Caveat: Blocks Are Space Sensitive
+
+```
+cd {a,b}  # brace substitution
+cd { a,b }  # tries to run command 'a,b', which probably doesn't exist
+```
+
+Quoting of `{ }` obeys the normal rules:
+
+```
+echo 'literal braces not a block' \{ \}
+echo 'literal braces not a block' '{' '}'
+```
+
+## Block Semantics 
+
+TODO: This section has to be implemented and tested.
+
+### User Execution (like Ruby's `yield` keyword?)
+
+    proc p(&block) {
+      echo '>'
+      $block    # call it?
+                # or maybe just 'block' -- it's a new word in the "proc" namespace?
+      echo '<'
+    }
+
+    # Invoke it
+    p {
+      echo 'hello'
+    }
+    # Output:
+    # >
+    # hello
+    # <
+
+### User Evaluation (e.g. for Config Files)
+
+How to get the value?
+
+    var namespace = evalblock('name', 1+2, up=1)
+
+    # _result is set if there was a return statement!
+
+    # namespace has all vars except those prefixed with _
+    var result = namespace->_result
+
+TODO: Subinterpreters?
+
+### Control Flow
+
+- You can break out with `return`?  What about break?
+- `return` accepts Oil **expressions** (not shell-like words) ?
+
+### Setting Variables in Enclosing Scope
+
+Can block can set vars in enclosing scope?
+
+```
+setref('name', 1+2, up=1)
+```
+
+## Notes: Use Cases for Blocks
+
+### Configuration Files
+
+Evaluates to JSON (like YAML and TOML):
+
+    server foo {
+      port = 80
+    }
+
+And can also be serialized as command line flags.
+
+Replaces anti-patterns:
+
+- Docker has shell
+- Ruby DSLs like chef have shell
+- similar to HCL I think, and Jsonnet?  But it's IMPERATIVE.  Probably.  It
+  might be possible to do dataflow variables... not sure.  Maybe x = 1 is a
+  dataflow var?
+
+### Awk Dialect
+
+    BEGIN {
+      end
+    }
+
+    when x {
+    }
+
+### Make Dialect
+
+    rule foo.c : foo.bar {
+      cc -o out @srcs
+    }
+
+### Flag Parsing to replace getopts
+
+Probably use a block format.  Compare with Python's optparse.o
+
+See issue.
+
+### Unit Tests
+
+Haven't decided on this yet.
+
+    check {
+    }
+
+## Funcs
+
+In addition to shell-like procs, Oil also has Python-like functions:
+
+```
+var x = len(ARGV) + 1
+```
+
+### User-Defined Functions are Deferred
+
+For now, we only have a few builtin functions like `len()`.
+
+### Two Kinds of Composition
+
+There are two kinds of composition / code units in Oil:
+
+- funcs are like Python or JavaScript functions. They accept and return typed
+  data.
+- procs are like shell "functions".  They look like an external process, accepting an
+  `argv` array and returning exit code.  I think of `proc` as *procedure* or
+  *process*.
+
+procs are called with a "command line":
+
+    myproc arg1 arg2 arg3
+
+funcs are called with Python/JS-like Oil expressions:
+
+    var x = myfunc(42, 'foo')
+    do myfunc(42, 'foo')   # throw away the return value.
+
+This is NOT legal:
+
+    myfunc(42, 'foo')
+
+TODO: 
+
+Shell is really the "main", if that makes sense. procs can call funcs, but
+funcs won't be able to call procs (except for some limited cases like `log` and
+`die`).
+
+
+<!--
+
+Deferred Functions Look Like Julia, JavaScript, and Go
+
+-->
+
+People may tend to prefer funcs because they're more familiar. But shell
+composition with proc is very powerful!
+
+They have at least two kinds of composition that functions don't have.  See
+#[shell-the-good-parts]($blog-tag) on Bernstein chaining and "point-free"
+pipelines.
+
+<!--
+
+In summary:
+
+* func signatures look like JavaScript, Julia, and Go.
+  * named and positional are separated with `;` in the signature.
+  * The prefix `...` "spread" operator takes the place of Python's `*args` and `**kwargs`. 
+  * There are optional type annotations
+* procs are like shell functions
+	* but they also allow you to name parameters, and throw errors if the arity
+is wrong.
+	* and they take blocks.
+
+One issue is that procs take block arguments but not funcs.  This is something
+of a syntactic issue.  But I don't think it's that high priority.
+
+-->
+
+Here are some complicated examples from the tests.  It's not representative of what real code looks like, but it shows all the features.
+
+proc:
+
+```
+proc name-with-hyphen (x, y, @names) {
+  echo $x $y
+  echo names: @names
+}
+name-with-hyphen a b c
+```
+
+func:
+
+```
+shopt -s oil:basic
+
+func f(a, b=0, ...args; c, d=0, ...named) {
+  echo __ args: @args
+  echo __ named:
+  echo @named | sort
+  if (named) {
+    return [a, b, c, d]
+  } else {
+    return a + b + c + d
+  }
+}
+var a = [42, 43]
+var n = {x: 99, y: 100}
+
+echo ____
+echo string $f(0, 1, ...a, c=2, d=3)
+
+# Now get a list back
+echo ____
+echo array @f(5, 6, ...a, c=7, d=8; ...n)
+```
+
