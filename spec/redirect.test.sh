@@ -291,6 +291,8 @@ echo DONE
 
 #### Redirect to file descriptor that's not open
 # Notes:
+# - 7/2021: descriptor 7 seems to work on all CI systems.  The process state
+#   isn't clean, but we could probably close it in OSH?
 # - dash doesn't allow file descriptors greater than 9.  (This is a good
 #   thing, because the bash chapter in AOSA book mentions that juggling user
 #   vs.  system file descriptors is a huge pain.)
@@ -301,11 +303,6 @@ echo DONE
 #   then time forks the shell script.  The file descriptor table is inherited.
 #   - You actually have to set the file descriptor to something.  What do
 #   configure and debootstrap too?
-
-# 3/2020 note: file descriptor 9 failed on Travis, so I changed it to 8.  The
-# process state isn't necessarly clean.  TODO: Close the descriptor when OSH
-# supports it?
-# 7/2021: try descriptor 7
 
 opened=$(ls /proc/$$/fd)
 if echo "$opened" | egrep '^7$'; then
@@ -396,6 +393,9 @@ cat "$TMP/f.txt"
 #### 1>&2- (Bash bug: fail to restore closed fd)
 
 # 7/2021: descriptor 8 is open on Github Actions, so use descriptor 6 instead
+
+# Fix for CI systems where process state isn't clean: Close descriptors 6 and 7.
+exec 6>&- 7>&-
 
 opened=$(ls /proc/$$/fd)
 if echo "$opened" | egrep '^7$'; then
