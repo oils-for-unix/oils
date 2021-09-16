@@ -385,16 +385,20 @@ Details below.
 ### Multiline Commands
 
 Oil's `...` prefix lets you write long commands, pipelines, and `&&` chains
-without a `\` line continuation.  When this mode is active, newlines are turned
-into spaces.
+without `\` line continuations.
 
     ... find /bin               # traverse this directory and
         -type f -a -executable  # print executable files
-        # reverse sort
-      | sort -r
-        # first 30 files  <-- comments can appear on their own line
-      | head -n 30
+      | sort -r                 # reverse sort
+      | head -n 30              # limit to 30 files
       ;
+
+When this mode is active:
+
+- A single newline behaves like a space
+- A blank line (two newlines in a row) is illegal, but a line that has only a
+  comment is allowed.  This prevents confusion if you forget the `;`
+  terminator.
 
 ### Keywords for Using Variables
 
@@ -736,7 +740,7 @@ exact:
     var n = ' 42 '
     if (n ~== 42) {
       echo 'equal after stripping whitespace and type conversion'
-    }  # => equal after type conversion
+    }  # => equal after stripping whitespace type conversion
 
     if (n === 42) {
       echo "not reached because strings and ints aren't equal"

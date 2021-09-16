@@ -52,7 +52,7 @@ are ready to read:
   | [Headless Mode](doc/headless.html)
 - The Oil language:
   - [A Tour of the Oil Language](doc/oil-language-tour.html)
-  | [Oil Language Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
+  | [Oil vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
   | [Shell Language Deprecations](doc/deprecations.html)
   | [Oil Language FAQ](doc/oil-language-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)
