@@ -164,11 +164,6 @@ Multiline strings in Oil use similar whitespace stripping rules:
       '''
     }
 
-<!--
-
-TODO: autovivification from Perl/awk.  Is this setvar?
--->
-
 ### Awk
 
 Oil gets its regex match operator from Awk:
@@ -183,31 +178,21 @@ Oil gets its regex match operator from Awk:
 
 Features influenced by these languages are planned, but not implemented.
 
-### Go (flag library)
-
-The builtin flags syntax comes from Go, particularly with respect to boolean
-flags:
-
-     mybuiltin --show=0  # turn off a boolean flag that's true by default
-     mybuiltin --show    # turn it on
-
-Oil also uses a native UTF-8 representation of strings.
-
 ## Minor Influences
 
 ### Tcl
 
-Oil uses `proc` and `set`, which makes it look something like Tcl:
+Oil uses `proc` and `setvar`, which makes it look something like Tcl:
 
      proc p(x) {
-       set y = x * 2
+       setvar y = x * 2
        echo $y
      }
 
      p 3  # prints 6
 
-But this is mostly superficial: Oil isn't homoiconic like Tcl is.  It has a lot
-of syntax, and intentionally avoids dynamic parsing.
+But this is mostly superficial: Oil isn't homoiconic like Tcl is, and has a
+detailed syntax.  It intentionally avoids dynamic parsing.
 
 However, [Data Definition and Code Generation in Tcl (PDF)][config-tcl] shows
 how Tcl can be used a configuration language:
@@ -272,7 +257,7 @@ What about JS safe string interpolation?
 LATER:
 
 - R language (probably later, need help): data frames
-	- lazy evaluation like  mutate :(ms = secs * 100)
+	- lazy evaluation like  mutate (ms = secs * 100)
 - Honorable mention: Lua: reentrant interpreter.  However the use of Unix
   syscalls implies global process state.
 - Lisp: symbol types
