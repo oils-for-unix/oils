@@ -151,3 +151,29 @@ comment is OK
 #
 # cursor_was_newline might need more state?
 
+
+#### Combine multi-line command and strings
+shopt -s oil:all
+
+var x = 'one'
+
+# Print 3 args without separators
+... write --sep '' --end '' -- 
+    """
+    $x
+    """                         # 1. Double quoted
+    '''
+    two
+    three
+    '''                         # 2. Single quoted
+    $'four\n'                   # 3. C-style with explicit newline
+   | tac                        # Reverse
+   | tr a-z A-Z                 # Uppercase
+   ;
+
+## STDOUT:
+FOUR
+THREE
+TWO
+ONE
+## END

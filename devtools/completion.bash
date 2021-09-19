@@ -175,19 +175,21 @@ _comp_fallback=''
 _maybe_set_comp_fallback() {
   local _distro_script
   if test -n "$BASH_VERSION"; then 
+    # running under bash
     _distro_script='/etc/bash_completion'
   else
+    # running under OSH
     _distro_script=~/git/oilshell/bash-completion/osh_completion
   fi
   local _distro_function=_completion_loader
 
-  # NOTE: _compbacllback
   if test -f $_distro_script; then
     source $_distro_script
     if test $(type -t $_distro_function) = 'function'; then
       _comp_fallback=$_distro_function
     fi
   else
+    # log "Warning: $_distro_script not found; no completion fallback"
     _comp_fallback=''
   fi
 }

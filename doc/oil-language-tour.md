@@ -152,9 +152,9 @@ C-style strings look like `$'foo'` and respect backslash **character escapes**:
 (The `$` before the quote doesn't mean "interpolation".  It's an unfortunate
 syntax collision.)
 
-#### Multiline Strings
+#### Multi-line Strings
 
-Multiline strings are surrounded with triple quotes.  They come in the same
+Multi-line strings are surrounded with triple quotes.  They come in the same
 three varieties, and leading whitespace is stripped in a convenient way.
 
     sort <<< """
@@ -382,7 +382,7 @@ Pipelines are a powerful method manipulating data streams:
 The stream may contain (lines of) text, binary data, JSON, TSV, and more.
 Details below.
 
-### Multiline Commands
+### Multi-line Commands
 
 Oil's `...` prefix lets you write long commands, pipelines, and `&&` chains
 without `\` line continuations.
