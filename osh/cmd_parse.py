@@ -1661,22 +1661,29 @@ class CommandParser(object):
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ShFunction)
     self._Next()
 
-    self._Eat2(Id.Right_ShFunction, 'Expected ) in function definition')
+    self._Peek()
+    if self.c_id == Id.Right_ShFunction:
+      # 'f ()' implies a function definition, since invoking it with no args
+      # would just be 'f'
+      self._Next()
 
-    after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
+      after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
 
-    self._NewlineOk()
+      self._NewlineOk()
 
-    func = command.ShFunction()
-    func.name = name
-    with ctx_VarChecker(self.var_checker, blame_tok):
-      func.body = self.ParseCompoundCommand()
+      func = command.ShFunction()
+      func.name = name
+      with ctx_VarChecker(self.var_checker, blame_tok):
+        func.body = self.ParseCompoundCommand()
 
-    # matches ParseKshFunctionDef below
-    func.spids.append(left_spid)
-    func.spids.append(left_spid)  # name_spid is same as left_spid in this case
-    func.spids.append(after_name_spid)
-    return func
+      # matches ParseKshFunctionDef below
+      func.spids.append(left_spid)
+      func.spids.append(left_spid)  # name_spid is same as left_spid in this case
+      func.spids.append(after_name_spid)
+      return func
+    else:
+      p_die('Expected ) in function definition', word=self.cur_word)
+      return None
 
   def ParseKshFunctionDef(self):
     # type: () -> command__ShFunction

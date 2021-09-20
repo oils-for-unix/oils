@@ -1421,6 +1421,10 @@ class WordParser(WordEmitter):
         p_die('Unexpected token after array splice', token=self.cur_token)
       done = True
 
+    elif (is_first and self.parse_opts.parse_at() and
+          self.token_type == Id.Lit_AtLBraceDot):
+      p_die('TODO: @{.myproc builtin sub}', token=self.cur_token)
+
     elif (is_first and self.parse_opts.parse_at_all() and
           self.token_type == Id.Lit_At):
       # Because $[x] ${x} and perhaps $/x/ are reserved, it makes sense for @
