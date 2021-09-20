@@ -1634,29 +1634,21 @@ class CommandParser(object):
     """
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
-    cur_word = cast(compound_word, self.cur_word)  # caller ensures validity
-    name = word_.ShFunctionName(cur_word)
-    if len(name) == 0:
-      p_die('Invalid function name', word=cur_word)
+    word0 = cast(compound_word, self.cur_word)  # caller ensures validity
+    name = word_.ShFunctionName(word0)
+    if len(name) == 0:  # example: foo$x is invalid
+      p_die('Invalid function name', word=word0)
 
+    part0 = word0.parts[0]
     # If we got a non-empty string from ShFunctionName, this should be true.
-    part0 = cur_word.parts[0]
     assert part0.tag_() == word_part_e.Literal
-    blame_tok = cast(Token, part0)
+    blame_tok = cast(Token, part0)  # for ctx_VarChecker
 
-    self._Next()  # skip function name
+    self._Next()  # move past function name
 
     # Must be true because of lookahead
     self._Peek()
     assert self.c_id == Id.Op_LParen, self.cur_word
-
-    next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
-    if next_id != Id.Op_RParen:
-      # TODO: We could support append(mylist, x) here?
-      # Parse an expression here, and then look for RParen.  It's likely be
-      # complex, because we want to disallow name-with-dashes(x, y)
-      # For now it's just _ append(mylist, x)
-      pass
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ShFunction)
     self._Next()
@@ -1698,7 +1690,7 @@ class CommandParser(object):
 
     cur_word = cast(compound_word, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(cur_word)
-    if len(name) == 0:
+    if len(name) == 0:  # example: foo$x is invalid
       p_die('Invalid KSH-style function name', word=cur_word)
 
     name_spid = word_.LeftMostSpanForWord(self.cur_word)
@@ -1893,8 +1885,13 @@ class CommandParser(object):
       # NOTE: At the top level, only Token and Compound are possible.
       # Can this be modelled better in the type system, removing asserts?
       #
-      # TODO: Oil has parse_paren() set, and this can be a function CALL.
-      # Definitions are done with 'proc' or 'func'.
+      # TODO: This can be a proc INVOCATION!  (Doesn't even need parse_paren)
+      # Problem: We have to distinguish f( ) { echo ; } and myproc (x, y)
+      # That requires 2 tokens of lookahead, which we don't have
+      #
+      # Or maybe we don't just have ParseSimpleCommand -- we will have
+      # ParseOilCommand or something
+
       if (self.w_parser.LookAhead() == Id.Op_LParen and
           not word_.IsVarLike(cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function

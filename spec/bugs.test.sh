@@ -68,3 +68,17 @@ echo hi
 ## OK zsh status: 1
 ## OK dash/ash stdout-json: ""
 ## OK zsh stdout-json: ""
+
+#### Function name like foo$x() (regression)
+
+# Problem: $x() func call broke this error message
+foo$x()
+
+#foo$x() { echo hi; }
+
+#foo $x() { echo hi; }
+
+## status: 2
+## OK mksh/zsh status: 1
+## STDOUT:
+## END
