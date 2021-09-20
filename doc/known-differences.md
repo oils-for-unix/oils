@@ -96,11 +96,13 @@ Yes:
 
 ### Extended glob vs. Negation of boolean expression
 
-- `[[ !(a == a) ]]` is an extended glob.  
+The OSH parser distinguishes these two constructs with a space:
+
+- `[[ !(a == a) ]]` is an extended glob.
 - `[[ ! (a == a) ]]` is the negation of an equality test.
 
-In bash the rules are more complicated, and depend on `shopt -s extglob`.  The
-`extglob` setting does nothing in OSH.
+In bash, the parsing of such expressions depends on `shopt -s extglob`.  In
+OSH, `shopt -s extglob` is accepted, but doesn't affect parsing.
 
 ### Here doc terminators must be on their own line
 
