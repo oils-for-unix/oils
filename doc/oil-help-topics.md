@@ -94,8 +94,8 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   X oil-format  ${x|html}
 ```
 
-<h2 id="builtin">
-  Builtin Commands (<a class="group-link" href="oil-help.html#builtin">builtin</a>)
+<h2 id="builtins">
+  Builtin Commands (<a class="group-link" href="oil-help.html#builtins">builtins</a>)
 </h2>
 
 ```oil-help-topics

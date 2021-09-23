@@ -339,7 +339,7 @@ Not implemented.
     ~~  !~~
 
 
-<h2 id="builtin">Builtin Commands</h2>
+<h2 id="builtins">Builtin Commands</h2>
 
 ### Oil Builtins
 
@@ -403,7 +403,18 @@ The `.cell` action starts with `.` to indicate that its format is unstable.
 
 #### write
 
-    write -- @strs
+write fixes problems with shell's `echo` builtin.
+
+The default separator is a newline, and the default terminator is a
+newline.
+
+Examples:
+
+    write -- ale bean        # write two lines
+    write --qsn -- ale bean  # QSN encode, guarantees two lines
+    write -n -- ale bean     # synonym for --end '', like echo -n
+    write --sep '' --end '' -- a b        # write 2 bytes
+    write --sep $'\t' --end $'\n' -- a b  # TSV line
 
 #### oil-read
 
