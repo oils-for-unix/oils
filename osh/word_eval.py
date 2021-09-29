@@ -1485,8 +1485,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
           #
           # evaluates to word _*           to pass to glob()
           # PLUS the pattern _@(*.cc|*.h)  to pass to fnmatch()
-          s = ''
-          v = part_value.String(s, True, False)  # NOT split even when unquoted!
+
+          #s = ''
+          #v = part_value.String(s, True, False)  # NOT split even when unquoted!
+          pass
 
         else:
           # When extglob is off, treat parsed patterns as literals, so
