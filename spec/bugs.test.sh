@@ -69,16 +69,35 @@ echo hi
 ## OK dash/ash stdout-json: ""
 ## OK zsh stdout-json: ""
 
-#### Function name like foo$x() (regression)
+#### First word like foo$x() and foo$[1+2] (regression)
 
 # Problem: $x() func call broke this error message
-foo$x()
+foo$identity('z')
 
-#foo$x() { echo hi; }
+foo$[1+2]
 
-#foo $x() { echo hi; }
+echo DONE
 
 ## status: 2
 ## OK mksh/zsh status: 1
+## STDOUT:
+## END
+## OK osh status: 0
+## OK osh STDOUT:
+DONE
+## END
+
+#### Function names
+foo$x() {
+  echo hi
+}
+
+foo $x() {
+  echo hi
+}
+
+## status: 2
+## OK mksh/zsh/osh status: 1
+## BUG zsh status: 0
 ## STDOUT:
 ## END
