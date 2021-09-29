@@ -60,16 +60,18 @@ func_fnmatch(PyObject *self, PyObject *args) {
     return NULL;
   }
 
+  int flags = 0;
   // NOTE: Testing for __GLIBC__ is the version detection anti-pattern.  We
   // should really use feature detection in our configure script.  But I plan
   // to get rid of the dependency on FNM_EXTMATCH because it doesn't work on
   // musl libc (or OS X).  Instead we should compile extended globs to extended
   // regex syntax.
 #ifdef __GLIBC__
-  int flags = extglob ? FNM_EXTMATCH : 0;
+  if (extglob) {
+    flags |= FNM_EXTMATCH;
+  }
 #else
   debug("Warning: FNM_EXTMATCH is not defined");
-  int flags = 0;
 #endif
 
   int ret = fnmatch(pattern, str, flags);
