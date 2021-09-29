@@ -778,7 +778,7 @@ class ArithEvaluator(object):
       val = self.word_ev.EvalWordToString(w)
       return val.s
     else:
-      # TODO: location info for orginal
+      # TODO: location info for original
       e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
 
   def EvalShellLhs(self, node, spid, which_scopes):

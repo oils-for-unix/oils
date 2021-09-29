@@ -708,12 +708,13 @@ process-sub() {
 extended-glob() {
   # Do NOT use dash here.  Lack of brace sub means it leaves bad files on the
   # file system.
-  sh-spec spec/extended-glob.test.sh $BASH $MKSH $OSH_LIST "$@"
+  sh-spec spec/extended-glob.test.sh --osh-failures-allowed 14 \
+    $BASH $MKSH $OSH_LIST "$@"
 }
 
 # This does string matching.
 extglob-match() {
-  sh-spec spec/extglob-match.test.sh \
+  sh-spec spec/extglob-match.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

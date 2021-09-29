@@ -773,7 +773,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     regex, warnings = glob_.GlobToERE(pat_val.s)
     if len(warnings):
       # TODO:
-      # - Add 'set -o strict-glob' mode and expose warnings.
+      # - Add 'shopt -s strict_glob' mode and expose warnings.
       #   "Glob is not in CANONICAL FORM".
       # - Propagate location info back to the 'op.pat' word.
       pass
@@ -992,11 +992,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # $ a=(1 2); b=(3); $ c=(4 5)
     # $ argv "${a[@]}${b[@]}${c[@]}"
     # ['1', '234', '5']
+    #
     # Example of multiple parts
     # $ argv "${a[@]}${undef[@]:-${c[@]}}"
     # ['1', '24', '5']
-
-    #log('DQ part %s', part)
 
     # Special case for "".  The parser outputs (DoubleQuoted []), instead
     # of (DoubleQuoted [Literal '']).  This is better but it means we
@@ -1381,6 +1380,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (word_part_t, List[part_value_t], bool, bool) -> None
     """Evaluate a word part.
 
+    Called by _EvalWordToParts, EvalWordToString, and _EvalDoubleQuoted.
+
     Args:
       part_vals: Output parameter.
 
@@ -1460,22 +1461,56 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(word_part_e.ExtGlob):
         part = cast(word_part__ExtGlob, UP_part)
+        if False:
+        #if self.exec_opts.extglob():
 
-        # When we get ,(foo|bar), we pass @(foo|bar) to the glob engine.
-        op = part.op
-        if op.id == Id.ExtGlob_Comma:
-          op_str = '@('
+          # Cases:
+          #
+          # [[ $x == prefix_@(*.cc|*.h) ]] -- just pass through to fnmatch()
+          # echo prefix_@(*.cc|*.h)        -- replace with * and pass to glob()
+          #                                   then fnmatch() filter
+          # If extglob is OFF, then they can BOTH be RUNTIME errors.
+
+          # Note that extended globbing happens before globbing!  That is,
+          # extended globbing is static, while globbing is dynamic.
+
+          # TODO: If extglob is on, we should evaluate these eagerly into
+          # "quoted" and unsplit tokens!
+          # We should evaluate to an entire top level part to '*'!  And then
+          # return the actual fnmatch pattern
+          #
+          # Example:
+          #
+          # echo _,(*.cc|*.h)
+          #
+          # evaluates to word _*           to pass to glob()
+          # PLUS the pattern _@(*.cc|*.h)  to pass to fnmatch()
+          s = ''
+          v = part_value.String(s, True, False)  # NOT split even when unquoted!
+
         else:
-          op_str = op.val
-        # Do NOT split these.
-        part_vals.append(part_value.String(op_str, False, False))
+          # When extglob is off, treat parsed patterns as literals, so
+          #     echo @(*.cc|*h)  # => @(*.cc|*.h)
+          # Actually we could give a runtime error, since bash gives a syntax
+          # error?
+          # Or we can do it at parse time?
 
-        for i, w in enumerate(part.arms):
-          if i != 0:
-            part_vals.append(part_value.String('|', False, False))  # separator
-          # This flattens the tree!
-          self._EvalWordToParts(w, False, part_vals)  # eval like not quoted?
-        part_vals.append(part_value.String(')', False, False))  # closing )
+          # When we get ,(foo|bar), we pass @(foo|bar) to the glob engine.  This
+          # depends on shopt --set parse_at.
+          op = part.op
+          if op.id == Id.ExtGlob_Comma:
+            op_str = '@('
+          else:
+            op_str = op.val
+          # Do NOT split these.
+          part_vals.append(part_value.String(op_str, False, False))
+
+          for i, w in enumerate(part.arms):
+            if i != 0:
+              part_vals.append(part_value.String('|', False, False))  # separator
+            # This flattens the tree!
+            self._EvalWordToParts(w, False, part_vals)  # eval like not quoted?
+          part_vals.append(part_value.String(')', False, False))  # closing )
 
       elif case(word_part_e.Splice):
         part = cast(word_part__Splice, UP_part)
@@ -1558,6 +1593,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
         w = cast(compound_word, UP_w)
         for p in w.parts:
           self._EvalWordPart(p, part_vals, quoted=quoted, is_subst=is_subst)
+          # TODO:
+          # If it's word_part_e.ExtGlob in a glob() context, not fnmatch(),
+          # then we have to evaluate the whole word, replacing the extended
+          # glob with '*'.  Then filter it later.
+
+          # Also need to handle Array parts like "$@"_@(*.cc)
+          # EvalWordSequence2 does this with _MakeWordFrames()
 
       elif case(word_e.Empty):
         part_vals.append(part_value.String('', quoted, not quoted))

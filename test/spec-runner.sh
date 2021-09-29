@@ -52,8 +52,6 @@ manifest() {
   { _spec-names | while read t; do
       # First filter.
       case $t in
-        # This is for file system globs.  We have tests elsewhere for the [[ case.
-        (extended-glob) continue ;;
         # This was meant for ANTLR.
         (shell-grammar) continue ;;
         # Just a demo
