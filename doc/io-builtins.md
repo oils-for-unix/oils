@@ -6,25 +6,61 @@ default_highlighter: oil-sh
 I/O Builtins in Oil
 ===================
 
-In POSIX shell, the `echo`, `printf`, `read` builtins, and the `$(command sub)`
-construct, are overlapping and quirky.
+POSIX shell has overlapping and quirky constructs for doing I/O:
 
-Oil fixes this with `write`, long flags to `read`, `$(string sub)`, `@(array
-sub)`, and [QSN](qsn.html).
+- the builtins `echo`, `printf`, and `read`
+- the `$(command sub)` construct
+- Bash has `mapfile` and `readarray`
 
-TODO: Also see [JSON](json.html).
+Oil rationalizes I/O with:
 
+- A new `write` builtin
+- Long flags to `read`, like `--line` and `--all`
+- The distinction between `$(string sub)` and `@(array sub)`
+- The [QSN](qsn.html) serialization format.
 
-<!-- cmark.py expands this -->
+Oil also has orthogonal mechanisms for string processing:
+
+- `${.myproc arg}` and `@{.myproc arg}` are an optimization (TODO)
+- `${x %.2f}` as a static version of the `printf` builtin (TODO)
+- `${x|html}` for safe escaping (TODO)
+
+These are discussed in more detail the [strings](strings.html) doc.
+
+<!-- TODO: should run all this code as in tour.md -->
+
 <div id="toc">
 </div>
 
-## Summary of Constructs
+## Problems With Shell
 
-- `write`: `--sep` and `--end`
-- `read`: `--line`, `--lines`, and `--all` (or `--all-lines`?)
+- `echo` is flaky because `echo $x` is a bug.  `$x` could be `-n`.
+  - Oil's write accepts `--`.
+- `read` is flaky good because the `-r` flag to ignore `\` line continuations
+  isn't the default.  The `\` creates a mini-language that isn't understood by
+  other line-based tools like `grep` and `awk`.
+  - Oil has `read --line`.
+- There's no way to tell if `$()` strips the trailing newline,.
+  - Oil has `read --all`, as well as lastpipe being on.
+
+Example:
+
+    hostname | read --all :x
+    write -- $x
+
+## Summary of Oil features
+
+- `write`: `--qsn`, `--sep`, `--end`
+- `read`: `--qsn`, `--line`, `--lines`, and `--all` (or `--all-lines`?)
 - `$(string sub)` removes the trailing newline, if any
-- `@(array sub)` splits by `IFS=$'\n'`
+- `@(array sub)` splits by IFS
+  - TODO: should it split by `IFS=$'\n'`?
+
+### write
+
+- `-sep`: Characters to separate each argument.  (Default: newline)
+- `-end`: Characters to terminate the whole invocation.  (Default: newline)
+- `-n`: A synonym for `-end ''`.
 
 ## Buffered vs. Unbuffered
 
@@ -34,19 +70,24 @@ TODO: Also see [JSON](json.html).
 
 ## Invariants
 
+Here are some design notes on making the I/O builtins orthogonal and
+composable.  There should be clean ways to "round trip" data between the OS and
+Oil data structures.
+
+### Problem
+
     # This will get messed up with newlines, and empty strings.
-    IFS='\n'
-    @(write -- @myarray)
+    IFS=$'\n'
+    var lines1 = @(write -- @myarray)
   
     # This will give you back an array
-    @(write -q -- @myarray)
-  
+    var lines2 = @(write --qsn -- @myarray)
   
 ### Array -> QSN Lines -> Array
 
 This is one way to make a copy of an array
 
-    write -q -- @myarray | read --lines -q :otherarray
+    write --qsn -- @myarray | read --lines --qsn :otherarray
   
 In contrast, this doesn't work when the elements have newlines:
 
@@ -71,43 +112,6 @@ In contrast, this doesn't work when the elements have newlines:
 
     diff input.txt output.txt  # should be equal
 
-## read doesn't lose information, while $() and @() do
+## Related
 
-Compare:
-
-    var s = $(hostname)       # strips trailing newline
-    hostname | read --all :s  # preserves it
-
-And:
-
-    var lines = @(cat file.txt)
-    cat file.txt | read --lines :lines
-
-
-## Old
-
-Oil uses `write` and `getline` along with the QSN format.  `echo` looks more
-familiar and is OK in many cases, but isn't strictly necessary.
-
-Shell:
-
-- uses `echo` and `read`
-- `echo` isn't good because `echo $x` is a bug
-- `read` isn't good because `-r` isn't the default.  And the `\` format doesn't
-  occupy one line.
-
-Oil:
-
-- `write -- @items`
-  - `--sep $'\t'`, `--end $'\n'`  (do we need shorthand?)
-  - `-n` is a shortcut `--end ''`
-  - `write --cstr -- @items`
-- `getline`
-  - `--cstr`
-
-
-### echo
-
-- `-sep`: Characters to separate each argument.  (Default: newline)
-- `-end`: Characters to terminate the whole invocation.  (Default: newline)
-- `-n`: A synonym for `-end ''`.
+- [JSON](json.html) support.
