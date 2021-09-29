@@ -25,56 +25,99 @@
 # @(pattern-list): Matches exactly one of the patterns
 # !(pattern-list): Matches anything EXCEPT any of the patterns
 
-#### @() extended glob
+#### @() matches exactly one of the patterns
 shopt -s extglob
-touch _tmp/{foo,bar}.cc _tmp/{foo,bar,baz}.h
-echo _tmp/@(*.cc|*.h)
-## stdout: _tmp/bar.cc _tmp/bar.h _tmp/baz.h _tmp/foo.cc _tmp/foo.h
+touch {foo,bar}.cc {foo,bar,baz}.h
+echo @(*.cc|*.h)
+## stdout: bar.cc bar.h baz.h foo.cc foo.h
 
-#### ?() extended glob
-# matches the empty string too
+#### ?() matches 0 or 1
 shopt -s extglob
-touch _tmp/{foo,bar}.cc _tmp/{foo,bar,baz}.h
-echo _tmp/?(*.cc|*.h)
-## stdout: _tmp/bar.cc _tmp/bar.h _tmp/baz.h _tmp/foo.cc _tmp/foo.h
+touch {foo,bar}.cc {foo,bar,baz}.h foo. foo.hh
+echo foo.?(cc|h)
+## stdout: foo. foo.cc foo.h
 
-#### *() matches multiple copies
+#### *() matches 0 or more
 shopt -s extglob
-mkdir -p _tmp/eg1
-touch _tmp/eg1/One _tmp/eg1/OneOne _tmp/eg1/TwoTwo _tmp/eg1/OneTwo
-echo _tmp/eg1/*(One|Two)
-## stdout: _tmp/eg1/One _tmp/eg1/OneOne _tmp/eg1/OneTwo _tmp/eg1/TwoTwo
+mkdir -p eg1
+touch eg1/_ eg1/_One eg1/_OneOne eg1/_TwoTwo eg1/_OneTwo
+echo eg1/_*(One|Two)
+## stdout: eg1/_ eg1/_One eg1/_OneOne eg1/_OneTwo eg1/_TwoTwo
 
-#### !(*.h) to match everything except headers
+#### +() matches 1 or more
 shopt -s extglob
-mkdir -p _tmp/extglob2
-touch _tmp/extglob2/{foo,bar}.cc _tmp/extglob2/{foo,bar,baz}.h
-echo _tmp/extglob2/!(*.h)
-## stdout: _tmp/extglob2/bar.cc _tmp/extglob2/foo.cc
+mkdir -p eg2
+touch eg2/_ eg2/_One eg2/_OneOne eg2/_TwoTwo eg2/_OneTwo
+echo eg2/_+(One|Two)
+## stdout: eg2/_One eg2/_OneOne eg2/_OneTwo eg2/_TwoTwo
 
-#### glob spaces
+#### !(*.h|*.cc) to match everything except C++
 shopt -s extglob
-mkdir -p _tmp/eg4
-touch _tmp/eg4/a '_tmp/eg4/a b' _tmp/eg4/foo
-argv.py _tmp/eg4/@(a b|foo)
-## stdout: ['_tmp/eg4/a b', '_tmp/eg4/foo']
+mkdir -p extglob2
+touch extglob2/{foo,bar}.cc extglob2/{foo,bar,baz}.h \
+      extglob2/{foo,bar,baz}.py
+echo extglob2/!(*.h|*.cc)
+## stdout: extglob2/bar.py extglob2/baz.py extglob2/foo.py
+
+#### Nested extended glob pattern 
+shopt -s extglob
+mkdir -p eg6
+touch eg6/{ab,ac,ad,az,bc,bd}
+echo eg6/a@(!(c|d))
+echo eg6/a!(@(ab|b*))
+## STDOUT:
+eg6/ab eg6/az
+eg6/ac eg6/ad eg6/az
+## END
+
+#### Extended glob patterns with spaces
+shopt -s extglob
+mkdir -p eg4
+touch eg4/a 'eg4/a b' eg4/foo
+argv.py eg4/@(a b|foo)
+## STDOUT:
+['eg4/a b', 'eg4/foo']
+## END
+
+#### Filenames with spaces
+shopt -s extglob
+mkdir -p eg5
+touch eg5/'a b'{cd,de,ef}
+argv.py eg5/'a '@(bcd|bde|zzz)
+## STDOUT:
+['eg5/a bcd', 'eg5/a bde']
+## END
+
+#### nullglob with extended glob
+shopt -s extglob
+shopt -s nullglob  # test this too
+mkdir eg6
+argv.py eg6/@(no|matches)  # no matches
+## STDOUT:
+[]
+## END
+## BUG mksh STDOUT:
+['eg6/@(no|matches)']
+## END
+
 
 #### glob other punctuation chars (lexer mode)
 # mksh sorts them differently
 shopt -s extglob
-mkdir -p _tmp/eg5
-cd _tmp/eg5
+mkdir -p eg5
+cd eg5
 touch __{'<>','{}','|','#','&&'}
 argv.py @('__<>'|__{}|__\||__#|__&&)
 ## stdout: ['__<>', '__|', '__{}', '__&&', '__#']
 ## OK mksh stdout: ['__#', '__&&', '__<>', '__{}', '__|']
 
-#### printing extglob in variable
+#### dynamic extglob from variable
+
 # mksh does static parsing so it doesn't like this?
 shopt -s extglob
-mkdir -p _tmp/eg3
-touch _tmp/eg3/{foo,bar}
-g=_tmp/eg3/@(foo|bar)
+mkdir -p eg3
+touch eg3/{foo,bar}
+g=eg3/@(foo|bar)
 echo $g "$g"  # quoting inhibits globbing
-## stdout: _tmp/eg3/bar _tmp/eg3/foo _tmp/eg3/@(foo|bar)
-## N-I mksh stdout: _tmp/eg3/@(foo|bar) _tmp/eg3/@(foo|bar)
+## stdout: eg3/bar eg3/foo eg3/@(foo|bar)
+## N-I mksh stdout: eg3/@(foo|bar) eg3/@(foo|bar)

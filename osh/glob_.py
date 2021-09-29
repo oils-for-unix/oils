@@ -380,6 +380,19 @@ def GlobToERE(pat):
   return regex, warnings
 
 
+# Notes for implementing extglob
+# - libc glob() doesn't have any extension!
+# - Nix stdenv uses !(foo) and @(foo|bar)
+#   - can we special case these for now?
+# - !(foo|bar) -- change it to *, and then just do fnmatch() to filter the
+# result!
+# - Actually I guess we can do that for all of them.  That seems fine.
+# - But we have to get the statically parsed arg in here?
+#   - or do dynamic parsing
+#     - LooksLikeGlob() would have to respect extglob!  ugh!
+# - See 2 calls in osh/word_eval.py
+
+
 class Globber(object):
   def __init__(self, exec_opts):
     # type: (optview.Exec) -> None
@@ -391,7 +404,8 @@ class Globber(object):
     # globstar          ** for directories
     # globasciiranges   ascii or unicode char classes (unicode by default)
     # nocaseglob
-    # extglob          the !() syntax -- only respected for fnmatch(), not glob
+    # extglob          the @() !() syntax -- libc helps us with fnmatch(), but
+    #                  not glob().
     #
     # NOTE: Bash also respects the GLOBIGNORE variable, but no other shells
     # do.  Could a default GLOBIGNORE to ignore flags on the file system be
