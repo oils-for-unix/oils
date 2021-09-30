@@ -1611,23 +1611,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def EvalWordToPattern(self, UP_w):
     # type: (word_t) -> value__Str
-    #
-    # TODO:
-    #
-    # This is like EvalWordToString
-    # They share a helper that takes part_vals
-    #
-    # except if you get ExtGlob, then you return
-    # Pat object?
-
-    # pattern = (pat_kind kind, string pat)
-    # pat_kind =
-
-    # pattern = 
-    #  FnMatch(string s)
-    #  ExtGlob(string s)
-    #
-    # And then add a parameter to libc.fnmatch().  That's not that hard.
+    # Note: This could be called in case of [[ $x == @(*.cc|*.h) ]]
+    # - It would be exactly like EvalWordToString, but it would also handle the
+    #   word_part_e.ExtGlob case.
+    # - It has an assertion for the "$@" case.
+    # But it might be simpler just to use EvalWordToString for this.  The
+    # downside is for code like echo '' > @(*.cc|*.h).  But bash/mksh don't do
+    # anything special here -- they allow it!
     pass
 
   def EvalWordToString(self, UP_w, quote_kind=quote_e.Default):

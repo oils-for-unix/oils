@@ -68,6 +68,19 @@ touch extglob2/{foo,bar}.cc extglob2/{foo,bar,baz}.h \
 echo extglob2/!(*.h|*.cc)
 ## stdout: extglob2/bar.py extglob2/baz.py extglob2/foo.py
 
+#### Two adjacent alternations
+shopt -s extglob
+mkdir -p 2
+touch 2/{aa,ab,ac,ba,bb,bc,ca,cb,cc}
+echo 2/!(b)@(b|c)
+echo 2/!(b)?@(b|c)  # wildcard in between
+echo 2/!(b)a@(b|c)  # constant in between
+## STDOUT:
+2/ab 2/ac 2/cb 2/cc
+2/ab 2/ac 2/bb 2/bc 2/cb 2/cc
+2/ab 2/ac
+## END
+
 #### Nested extended glob pattern 
 shopt -s extglob
 mkdir -p eg6
