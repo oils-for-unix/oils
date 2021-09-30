@@ -61,6 +61,12 @@ if TYPE_CHECKING:
   from oil_lang import expr_eval
 
 
+# Flags for _EvalWordToParts
+QUOTED = 1 << 0
+IS_SUBST = 1 << 1
+# extended globs on the file system
+EXTGLOB_FS = 1 << 2
+
 # For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
 # Ditto for ${FUNCNAME} and ${BASH_LINENO}.
 _STRING_AND_ARRAY = ['BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO']
@@ -188,12 +194,17 @@ def _MakeWordFrames(part_vals):
     a=(1 '2 3' 4)
     x=x
     y=y
+
+    # This word
     $x"${a[@]}"$y
 
-    Three frames:
-      [ ('x', False), ('1', True) ]
-      [ ('2 3', True) ]
-      [ ('4', True), ('y', False ]
+    # Results in Three frames:
+    [ ('x', False, True), ('1', True, False) ]
+    [ ('2 3', True, False) ]
+    [ ('4', True, False), ('y', False, True) ]
+
+  Note: A frame is a 3-tuple that's identical to part_value.String()?  Maybe we
+  should make that top level type.
   """
   current = []  # type: List[Tuple[str, bool, bool]]
   frames = [current]
@@ -230,7 +241,7 @@ def _MakeWordFrames(part_vals):
   return frames
 
 
-# TODO: This could be _MakeWordFrames and then sep.join().  It's redunant.
+# TODO: This could be _MakeWordFrames and then sep.join().  It's redundant.
 def _DecayPartValuesToString(part_vals, join_char):
   # type: (List[part_value_t], str) -> str
   # Decay ${a=x"$@"x} to string.
@@ -517,6 +528,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       echo ${a:-x"$@"x}
     """
+    eval_flags = IS_SUBST
+    if quoted:
+      eval_flags |= QUOTED
+
     tok = op.tok
     # NOTE: Splicing part_values is necessary because of code like
     # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
@@ -528,7 +543,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
         if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
-                        Id.VTest_ColonQMark, Id.VTest_ColonPlus):
+                      Id.VTest_ColonQMark, Id.VTest_ColonPlus):
           is_falsey = len(val.s) == 0
         else:
           is_falsey = False
@@ -543,7 +558,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     if tok.id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
-        self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
+        self._EvalWordToParts(op.arg_word, part_vals, eval_flags)
         return True
       else:
         return False
@@ -553,7 +568,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if is_falsey:
         return False
       else:
-        self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
+        self._EvalWordToParts(op.arg_word, part_vals, eval_flags)
         return True
 
     # Splice and assign
@@ -561,9 +576,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if is_falsey:
         # Collect new part vals.
         assign_part_vals = []  # type: List[part_value_t]
-        self._EvalWordToParts(op.arg_word, quoted, assign_part_vals,
-                              is_subst=True)
-
+        self._EvalWordToParts(op.arg_word, assign_part_vals, eval_flags)
         # Append them to out param AND return them.
         part_vals.extend(assign_part_vals)
 
@@ -602,8 +615,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if is_falsey:
         # The arg is the error mesage
         error_part_vals = []  # type: List[part_value_t]
-        self._EvalWordToParts(op.arg_word, quoted, error_part_vals,
-                              is_subst=True)
+        self._EvalWordToParts(op.arg_word, error_part_vals, eval_flags)
         error_str = _DecayPartValuesToString(error_part_vals,
                                              self.splitter.GetJoinChar())
         e_die("unset variable %r", error_str, token=blame_token)
@@ -1376,6 +1388,24 @@ class AbstractWordEvaluator(StringWordEvaluator):
     self._EvalSimpleVarSub(tok, part_vals, False)
     return self._PartValsToString(part_vals, tok.span_id)
 
+  def _ExtGlobPartToString(self, part, part_vals):
+    # type: (word_part__ExtGlob, List[part_value_t]) -> None
+    """Reconstruct a string that we can pass to fnmatch(..., FNM_EXTMATCH)"""
+    op = part.op
+    if op.id == Id.ExtGlob_Comma:
+      op_str = '@('
+    else:
+      op_str = op.val
+    # Do NOT split these.
+    part_vals.append(part_value.String(op_str, False, False))
+
+    for i, w in enumerate(part.arms):
+      if i != 0:
+        part_vals.append(part_value.String('|', False, False))  # separator
+      # This flattens the tree!
+      self._EvalWordToParts(w, part_vals)  # eval like not quoted?
+    part_vals.append(part_value.String(')', False, False))  # closing )
+
   def _EvalWordPart(self, part, part_vals, quoted=False, is_subst=False):
     # type: (word_part_t, List[part_value_t], bool, bool) -> None
     """Evaluate a word part.
@@ -1383,7 +1413,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
     Called by _EvalWordToParts, EvalWordToString, and _EvalDoubleQuoted.
 
     Args:
+      part: What to evaluate
       part_vals: Output parameter.
+      quoted: was the part quoted like "$x"
+      is_subst: do_split
 
     Returns:
       None
@@ -1461,58 +1494,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(word_part_e.ExtGlob):
         part = cast(word_part__ExtGlob, UP_part)
-        if False:
-        #if self.exec_opts.extglob():
-
-          # Cases:
-          #
-          # [[ $x == prefix_@(*.cc|*.h) ]] -- just pass through to fnmatch()
-          # echo prefix_@(*.cc|*.h)        -- replace with * and pass to glob()
-          #                                   then fnmatch() filter
-          # If extglob is OFF, then they can BOTH be RUNTIME errors.
-
-          # Note that extended globbing happens before globbing!  That is,
-          # extended globbing is static, while globbing is dynamic.
-
-          # TODO: If extglob is on, we should evaluate these eagerly into
-          # "quoted" and unsplit tokens!
-          # We should evaluate to an entire top level part to '*'!  And then
-          # return the actual fnmatch pattern
-          #
-          # Example:
-          #
-          # echo _,(*.cc|*.h)
-          #
-          # evaluates to word _*           to pass to glob()
-          # PLUS the pattern _@(*.cc|*.h)  to pass to fnmatch()
-
-          #s = ''
-          #v = part_value.String(s, True, False)  # NOT split even when unquoted!
-          pass
-
-        else:
-          # When extglob is off, treat parsed patterns as literals, so
-          #     echo @(*.cc|*h)  # => @(*.cc|*.h)
-          # Actually we could give a runtime error, since bash gives a syntax
-          # error?
-          # Or we can do it at parse time?
-
-          # When we get ,(foo|bar), we pass @(foo|bar) to the glob engine.  This
-          # depends on shopt --set parse_at.
-          op = part.op
-          if op.id == Id.ExtGlob_Comma:
-            op_str = '@('
-          else:
-            op_str = op.val
-          # Do NOT split these.
-          part_vals.append(part_value.String(op_str, False, False))
-
-          for i, w in enumerate(part.arms):
-            if i != 0:
-              part_vals.append(part_value.String('|', False, False))  # separator
-            # This flattens the tree!
-            self._EvalWordToParts(w, False, part_vals)  # eval like not quoted?
-          part_vals.append(part_value.String(')', False, False))  # closing )
+        #if not self.exec_opts.extglob():
+        #  die()  # disallow at runtime?  Don't just decay
+        self._ExtGlobPartToString(part, part_vals)
 
       elif case(word_part_e.Splice):
         part = cast(word_part__Splice, UP_part)
@@ -1581,27 +1565,96 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError(part.tag_())
 
-  def _EvalWordToParts(self, w, quoted, part_vals, is_subst=False):
-    # type: (word_t, bool, List[part_value_t], bool) -> None
+  def _EvalWordToParts(self, w, part_vals, eval_flags=0):
+    # type: (word_t, List[part_value_t], int) -> None
     """Helper for EvalRhsWord, EvalWordSequence, etc.
 
     Returns:
       List of part_value.
       But note that this is a TREE.
     """
+    quoted = bool(eval_flags & QUOTED)
+    is_subst = bool(eval_flags & IS_SUBST)
+    extglob_fs = bool(eval_flags & EXTGLOB_FS)
+
     UP_w = w
     with tagswitch(w) as case:
       if case(word_e.Compound):
         w = cast(compound_word, UP_w)
-        for p in w.parts:
-          self._EvalWordPart(p, part_vals, quoted=quoted, is_subst=is_subst)
-          # TODO:
-          # If it's word_part_e.ExtGlob in a glob() context, not fnmatch(),
-          # then we have to evaluate the whole word, replacing the extended
-          # glob with '*'.  Then filter it later.
 
-          # Also need to handle Array parts like "$@"_@(*.cc)
-          # EvalWordSequence2 does this with _MakeWordFrames()
+        # Does the word have an extended glob?  This is a special case because
+        # of the way we use glob() and then fnmatch(..., FNM_EXTMATCH) to
+        # implement extended globs.  It's hard to carry that extra information
+        # all the way past the word splitting stage.
+
+        # OSH semantic limitations: If a word has an extended glob part, then
+        # 1. It can't have an array
+        # 2. Word splitting of unquoted words isn't respected
+        has_extglob = False
+        for p in w.parts:
+          if p.tag_() == word_part_e.ExtGlob:
+            has_extglob = True
+            break
+
+        if has_extglob:
+          # We need to TWO VARIANTS of the word because of the way we use libc:
+          # 1. With '*' for extglob parts
+          # 2. With _ExtGlobPartToString() for extglob parts
+
+          # [Step 1] Evaluate the word, but make note of which part_value_t
+          # comes from word_part.ExtGlob().
+          word_part_vals = []  # type: List[part_value_t]
+          num_part_vals = 0
+          extglob_indices = []  # type: List[int]
+          for p in w.parts:
+            # Notes:
+            # - DoubleQuoted parts are recursive and can append an arbitrary
+            #   number of parts
+            # - is_subst is used for ${x:-echo} and so forth.  We also have the
+            #   possibility of ${x:-@(cc|h)}
+            if extglob_fs:
+              self._EvalWordPart(p, word_part_vals, quoted=quoted, is_subst=is_subst)
+            else:
+              self._EvalWordPart(p, part_vals, quoted=quoted, is_subst=is_subst)
+            num_part_vals = len(word_part_vals)
+
+            # We rely on appending the _ExtGlobPartToString() variant
+            if p.tag_() == word_part_e.ExtGlob:
+              extglob_indices.append(num_part_vals - 1)  # index to replace with '*'
+
+          # [Step 2] Create 2 different patterns, and disallow array output
+          glob_parts = []  # type: List[str]
+          fnmatch_parts = []  # type: List[str]
+          for i, part_val in enumerate(part_vals):
+            UP_part_val = part_val
+            with tagswitch(part_val) as case:
+              if case(part_value_e.String):
+                part_val = cast(part_value__String, UP_part_val)
+                if i in extglob_indices:
+                  glob_parts.append('*')
+                else:
+                  glob_parts.append(part_val.s)
+                fnmatch_parts.append(part_val.s)  # from _ExtGlobPartToString()
+
+              elif case(part_value_e.Array):
+                # Disallow array
+                e_die("Extended globs and arrays can't appear in the same word", word=w)
+
+          glob_pat = ''.join(glob_parts)
+          fnmatch_pat = ''.join(fnmatch_parts)
+
+          # glob pattern
+          # matched = []
+          # self.globber.Expand(glob_pat, matched)
+          # filtered = [s for s in matched if libc.fnmatch(fnmatch_pat, s, True)]
+
+          # pretend it's quoted and don't do splitting
+          # new_parts = [part_value.String(s, True, False) for s in filtered]
+          # part_vals.extend(new_parts)
+        else:
+          # Normal word evaluation
+          for p in w.parts:
+            self._EvalWordPart(p, part_vals, quoted=quoted, is_subst=is_subst)
 
       elif case(word_e.Empty):
         part_vals.append(part_value.String('', quoted, not quoted))
@@ -1809,7 +1862,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     where a is [x b=a d=a]
     """
     part_vals = []  # type: List[part_value_t]
-    self._EvalWordToParts(w, False, part_vals)  # not double quoted
+    self._EvalWordToParts(w, part_vals)  # not double quoted
     frames = _MakeWordFrames(part_vals)
     argv = []  # type: List[str]
     for frame in frames:
@@ -1937,7 +1990,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         continue
 
       part_vals = []  # type: List[part_value_t]
-      self._EvalWordToParts(w, False, part_vals)  # not double quoted
+      self._EvalWordToParts(w, part_vals)  # not quoted
 
       if 0:
         log('')
@@ -1998,7 +2051,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     n = 0
     for i, w in enumerate(words):
       part_vals = []  # type: List[part_value_t]
-      self._EvalWordToParts(w, False, part_vals)  # not double quoted
+      self._EvalWordToParts(w, part_vals, EXTGLOB_FS)  # not double quoted
 
       # DYNAMICALLY detect if we're going to run an assignment builtin, and
       # change the rest of the evaluation algorithm if so.

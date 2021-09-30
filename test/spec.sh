@@ -704,11 +704,9 @@ process-sub() {
     $BASH $ZSH $OSH_LIST "$@"
 }
 
-# This does file globbing
+# This does file system globbing
 extended-glob() {
-  # Do NOT use dash here.  Lack of brace sub means it leaves bad files on the
-  # file system.
-  sh-spec spec/extended-glob.test.sh --osh-failures-allowed 14 \
+  sh-spec spec/extended-glob.test.sh --osh-failures-allowed 15 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

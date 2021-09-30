@@ -224,6 +224,21 @@ argv.py at extglob "$@"*@(.py|cc)
 ['at', 'extglob', 'a b', 'cee.cc', 'cee.py']
 ## END
 
+#### Extended glob with word splitting
+shopt -s extglob
+mkdir -p 3
+cd 3
+
+x='a b'
+touch bar.{cc,h}
+
+# OSH may disallow splitting when there's an extended glob
+argv.py $x*.@(cc|h)
+
+## STDOUT:
+['a', 'bar.cc', 'bar.h']
+## END
+
 #### In Array Literal and for loop
 shopt -s extglob
 mkdir -p eg11
