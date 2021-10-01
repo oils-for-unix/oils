@@ -464,6 +464,24 @@ class Globber(object):
     out.append(GlobUnescape(arg))
     return 1
 
+  def ExpandExtended(self, glob_pat, fnmatch_pat):
+    # type: (str, str) -> List[str]
+
+    # TODO: noglob, nullglob, dashglob, etc.
+
+    try:
+      matched = libc.glob(glob_pat)
+    except RuntimeError as e:
+      # These errors should be rare: I/O error, out of memory, or unknown
+      # There are no syntax errors.  (But see comment about globerr() in
+      # native/libc.c.)
+      # note: MyPy doesn't know RuntimeError has e.message (and e.args)
+      msg = e.message  # type: str
+      stderr_line("Error expanding glob %r: %s", glob_pat, msg)
+      raise
+    filtered = [s for s in matched if libc.fnmatch(fnmatch_pat, s, True)]
+    return filtered
+
   def OilFuncCall(self, arg):
     # type: (str) -> List[str]
     """User-facing function."""

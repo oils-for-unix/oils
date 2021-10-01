@@ -32,6 +32,8 @@ module runtime
     -- "$@" or "${a[@]}" -- never globbed or split (though other shells
     -- split them)
   | Array(string* strs)
+    -- only produced when EXTGLOB_FS flag is passed
+  | ExtGlob(part_value* part_vals)
 
   -- A static word from osh.asdl is evaluted to a dynamic value.  value
   -- instances are stored in state.Mem().

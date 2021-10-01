@@ -1,8 +1,4 @@
-#
-# Test matching with case
-#
-# Usage:
-#   ./extglob-match.test.sh <function name>
+# Test extended glob matching with [[, case, etc.
 
 #### @ matches exactly one
 shopt -s extglob  # needed for Oil, not bash
