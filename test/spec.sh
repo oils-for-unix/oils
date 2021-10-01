@@ -705,8 +705,8 @@ process-sub() {
 }
 
 # This does file system globbing
-extended-glob() {
-  sh-spec spec/extended-glob.test.sh --osh-failures-allowed 16 \
+extglob-files() {
+  sh-spec spec/extglob-files.test.sh --osh-failures-allowed 6 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
@@ -1023,7 +1023,7 @@ ble-features() {
 }
 
 toysh() {
-  sh-spec spec/toysh.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/toysh.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

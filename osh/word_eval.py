@@ -1645,10 +1645,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           glob_pat = ''.join(glob_parts)
           fnmatch_pat = ''.join(fnmatch_parts)
+          #log("glob %s fnmatch %s", glob_pat, fnmatch_pat)
           results = self.globber.ExpandExtended(glob_pat, fnmatch_pat)
-
-          new_parts = [part_value.String(s, True, False) for s in results]
-          part_vals.extend(new_parts)
+          part_vals.append(part_value.Array(results))
         else:
           part_vals.extend(word_part_vals)
 

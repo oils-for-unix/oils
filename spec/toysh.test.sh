@@ -22,7 +22,7 @@ a b c d
 ## END
 ## N-I dash/mksh/zsh stdout-json: ""
 
-#### extglob 1 - OSH only supports extglob for fnmatch()?
+#### extglob $IFS 1
 rm *  # setup
 # http://landley.net/notes.html#12-06-2020
 shopt -s extglob
@@ -47,7 +47,7 @@ ab+(  ?d)
 _tmp abc)d
 ## END
 
-#### extglob 2
+#### extglob $IFS 2
 # http://landley.net/notes.html#17-05-2020
 
 shopt -s extglob  # required for bash, not osh
