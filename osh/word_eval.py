@@ -1407,7 +1407,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if i != 0:
         part_vals.append(part_value.String('|', False, False))  # separator
       # This flattens the tree!
-      self._EvalWordToParts(w, part_vals)  # eval like not quoted?
+      self._EvalWordToParts(w, part_vals, EXTGLOB_FS)
     part_vals.append(part_value.String(')', False, False))  # closing )
 
   def _EvalWordPart(self, part, part_vals, quoted=False, is_subst=False):
@@ -1577,6 +1577,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _TranslateExtGlob(self, part_vals, w, glob_parts, fnmatch_parts):
     # type: (List[part_value_t], compound_word, List[str], List[str]) -> None
     # [Step 2] Create 2 different patterns, and disallow array output
+    #log('part_vals %s', part_vals)
     for i, part_val in enumerate(part_vals):
       UP_part_val = part_val
       with tagswitch(part_val) as case:
@@ -1633,7 +1634,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                              is_subst=is_subst)
 
         # Caller REQUESTED extglob evaluation, AND we parsed word_part.ExtGlob()
-        if extglob_fs and has_extglob:
+        if has_extglob:
+          if not extglob_fs:
+            e_die('Extended glob not allowed in this word', word=w)
+
           # Treat the WHOLE word as a pattern.  We need to TWO VARIANTS of the
           # word because of the way we use libc:
           # 1. With '*' for extglob parts

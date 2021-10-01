@@ -112,16 +112,18 @@ argv.py eg5/'a '@(bcd|bde|zzz)
 
 #### nullglob with extended glob
 shopt -s extglob
-shopt -s nullglob  # test this too
 mkdir eg6
 argv.py eg6/@(no|matches)  # no matches
+shopt -s nullglob  # test this too
+argv.py eg6/@(no|matches)  # no matches
 ## STDOUT:
+['eg6/@(no|matches)']
 []
 ## END
 ## BUG mksh STDOUT:
 ['eg6/@(no|matches)']
+['eg6/@(no|matches)']
 ## END
-
 
 #### glob other punctuation chars (lexer mode)
 # mksh sorts them differently
@@ -141,8 +143,8 @@ mkdir -p eg3
 touch eg3/{foo,bar}
 g=eg3/@(foo|bar)
 echo $g "$g"  # quoting inhibits globbing
-## stdout: eg3/bar eg3/foo eg3/@(foo|bar)
-## N-I mksh stdout: eg3/@(foo|bar) eg3/@(foo|bar)
+## mksh stdout: eg3/@(foo|bar) eg3/@(foo|bar)
+## OK bash stdout: eg3/bar eg3/foo eg3/@(foo|bar)
 
 #### Extended glob syntax in bad redirect context
 shopt -s extglob
@@ -175,11 +177,11 @@ echo ${undef:-@(foo|bar).py}
 
 ## STDOUT:
 bar.py foo.py spam.py
-bar.py foo.py
-## END
-## OK mksh STDOUT:
-bar.py foo.py spam.py
 @(foo|bar).py
+## END
+## OK bash STDOUT:
+bar.py foo.py spam.py
+bar.py foo.py
 ## END
 
 #### Extended glob in assignment builtin
@@ -197,6 +199,9 @@ status=2
 ## END
 ## OK mksh STDOUT:
 status=1
+## END
+## OK osh status: 1
+## OK osh STDOUT:
 ## END
 
 #### Extended glob in same word as array
@@ -223,6 +228,12 @@ argv.py at extglob "$@"*@(.py|cc)
 ['star', 'extglob', 'a b c.cc', 'a b c.py']
 ['at', 'extglob', 'a b', 'cee.cc', 'cee.py']
 ## END
+## N-I osh STDOUT:
+['a b', 'c']
+['star', 'glob', 'a b c.py']
+['star', 'extglob', 'a b c.cc', 'a b c.py']
+## END
+## N-I osh status: 1
 
 #### Extended glob with word splitting
 shopt -s extglob
@@ -237,6 +248,9 @@ argv.py $x*.@(cc|h)
 
 ## STDOUT:
 ['a', 'bar.cc', 'bar.h']
+## END
+## N-I osh STDOUT:
+['a b*.@(cc|h)']
 ## END
 
 #### In Array Literal and for loop
@@ -259,4 +273,14 @@ foo.py
 zzz bar.py foo.py
 ## END
 
-# TODO: Also test with shopt --set simple_word_eval
+#### No extended glob with simple_word_eval (Oil evaluation)
+shopt -s oil:all
+shopt -s extglob
+mkdir -p eg12
+cd eg12
+touch {foo,bar,spam}.py
+builtin write -- x@(fo*|bar).py
+builtin write -- @(fo*|bar).py
+## status: 1
+## STDOUT:
+## END

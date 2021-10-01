@@ -81,18 +81,17 @@ for x in @(seq 3) {
 ## END
 
 #### @() can't start in the middle of the word
-
-# TODO: This could be as syntax error?  We need filename globbing to match
-# bash.
-
 shopt -s extglob  # this makes it match in bash
 shopt -s oil:basic
 
+# This is currently a RUNTIME error when simple_word_eval is on
+
 touch foo.py
 echo f@(*.py)
+## status: 1
 ## STDOUT:
-f@(*.py)
 ## END
+## OK bash status: 0
 ## OK bash STDOUT:
 foo.py
 ## END

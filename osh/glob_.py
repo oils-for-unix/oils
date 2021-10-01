@@ -441,13 +441,13 @@ class Globber(object):
 
     n = len(results)
     if n:  # Something matched
-      for name in results:
-        # Omit files starting with - to solve the --.
-        # dash_glob turned OFF with shopt -s oil:basic.
-        if name.startswith('-') and not self.exec_opts.dashglob():
-          n -= 1
-          continue
-        out.append(name)
+      # Omit files starting with - 
+      # dashglob turned OFF with shopt -s oil:basic.
+      if not self.exec_opts.dashglob():
+        results = [s for s in results if not s.startswith('-')]
+        n = len(results)
+
+      out.extend(results)
       return n
 
     # Nothing matched
@@ -459,10 +459,10 @@ class Globber(object):
 
     if self.exec_opts.nullglob():
       return 0
-
-    # Return the original string
-    out.append(GlobUnescape(arg))
-    return 1
+    else:
+      # Return the original string
+      out.append(GlobUnescape(arg))
+      return 1
 
   def ExpandExtended(self, glob_pat, fnmatch_pat):
     # type: (str, str) -> List[str]
@@ -480,7 +480,16 @@ class Globber(object):
       stderr_line("Error expanding glob %r: %s", glob_pat, msg)
       raise
     filtered = [s for s in matched if libc.fnmatch(fnmatch_pat, s, True)]
-    return filtered
+
+    if len(filtered):
+      return filtered
+
+    if self.exec_opts.nullglob():
+      return []
+    else:
+      # Return the fnmatch_pat
+      # TODO: Crap this suffers from @() -> ,() issue
+      return [fnmatch_pat]
 
   def OilFuncCall(self, arg):
     # type: (str) -> List[str]

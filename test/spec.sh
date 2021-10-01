@@ -706,7 +706,7 @@ process-sub() {
 
 # This does file system globbing
 extglob-files() {
-  sh-spec spec/extglob-files.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/extglob-files.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
