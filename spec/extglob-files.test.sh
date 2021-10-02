@@ -320,3 +320,52 @@ builtin write -- @(fo*|bar).py
 ## status: 1
 ## STDOUT:
 ## END
+
+#### no match
+shopt -s extglob
+echo @(__nope__)
+
+# OSH has glob quoting here
+echo @(__nope__*|__nope__?|'*'|'?'|'[:alpha:]')
+
+if test $SH != osh; then
+  exit
+fi
+
+# OSH has this alias for @()
+echo ,(osh|style)
+
+## STDOUT:
+@(__nope__)
+@(__nope__*|__nope__?|*|?|[:alpha:])
+## END
+
+#### dashglob, noglob, etc.
+shopt -s extglob
+mkdir -p opts
+cd opts
+
+touch -- foo bar -dash
+echo @(*)
+
+shopt -u dashglob
+echo @(*)
+
+set -o noglob
+echo @(*)
+
+## STDOUT:
+-dash bar foo
+bar foo
+@(*)
+## END
+## N-I mksh STDOUT:
+-dash bar foo
+-dash bar foo
+@(*)
+## END
+## N-I bash STDOUT:
+bar -dash foo
+bar -dash foo
+@(*)
+## END

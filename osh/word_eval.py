@@ -1030,7 +1030,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     """
     part_vals = []  # type: List[part_value_t]
     self._EvalDoubleQuoted(dq_part.parts, part_vals)
-    return self._PartValsToString(part_vals, dq_part.left.span_id)
+    return self._ConcatPartVals(part_vals, dq_part.left.span_id)
 
   def _DecayArray(self, val):
     # type: (value__MaybeStrArray) -> value__Str
@@ -1305,8 +1305,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     part_val = _ValueToPartValue(val, quoted or quoted2)
     part_vals.append(part_val)
 
-  def _PartValsToString(self, part_vals, span_id):
+  def _ConcatPartVals(self, part_vals, span_id):
     # type: (List[part_value_t], int) -> str
+    """Helper."""
     strs = []  # type: List[str]
     for part_val in part_vals:
       UP_part_val = part_val
@@ -1343,7 +1344,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     part_vals = [] # type: List[part_value_t]
     self._EvalBracedVarSub(part, part_vals, False)
     # blame ${ location
-    return self._PartValsToString(part_vals, part.spids[0])
+    return self._ConcatPartVals(part_vals, part.spids[0])
 
   def _EvalSimpleVarSub(self, token, part_vals, quoted):
     # type: (Token, List[part_value_t], bool) -> None
@@ -1391,7 +1392,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     """
     part_vals = []  # type: List[part_value_t]
     self._EvalSimpleVarSub(tok, part_vals, False)
-    return self._PartValsToString(part_vals, tok.span_id)
+    return self._ConcatPartVals(part_vals, tok.span_id)
 
   def _EvalExtGlob(self, part, part_vals):
     # type: (word_part__ExtGlob, List[part_value_t]) -> None
@@ -1407,9 +1408,42 @@ class AbstractWordEvaluator(StringWordEvaluator):
     for i, w in enumerate(part.arms):
       if i != 0:
         part_vals.append(part_value.String('|', False, False))  # separator
-      # This flattens the tree!
+      # FLATTEN the tree of extglob "arms".
       self._EvalWordToParts(w, part_vals, EXTGLOB_NESTED)
     part_vals.append(part_value.String(')', False, False))  # closing )
+
+  def _TranslateExtGlob(self, part_vals, w, glob_parts, fnmatch_parts):
+    # type: (List[part_value_t], compound_word, List[str], List[str]) -> None
+    """Translate a flattened WORD with an ExtGlob part to string patterns.
+    
+    We need both glob and fnmatch patterns.  _EvalExtGlob does the flattening.
+    """
+    for i, part_val in enumerate(part_vals):
+      UP_part_val = part_val
+      with tagswitch(part_val) as case:
+        if case(part_value_e.String):
+          part_val = cast(part_value__String, UP_part_val)
+          if part_val.quoted:
+            s = glob_.ExtendedGlobEscape(part_val.s)
+          else:
+            # e.g. the @( and | in @(foo|bar) aren't quoted
+            s = part_val.s
+          glob_parts.append(s)
+          fnmatch_parts.append(s)  # from _EvalExtGlob()
+
+        elif case(part_value_e.Array):
+          # Disallow array
+          e_die("Extended globs and arrays can't appear in the same word", word=w)
+
+        elif case(part_value_e.ExtGlob):
+          part_val = cast(part_value__ExtGlob, UP_part_val)
+          # keep appending fnmatch_parts, but repplace glob_parts with '*'
+          self._TranslateExtGlob(part_val.part_vals, w, [], fnmatch_parts)
+          glob_parts.append('*')
+
+        else:
+          raise AssertionError()
+
 
   def _EvalWordPart(self, part, part_vals, quoted=False, is_subst=False):
     # type: (word_part_t, List[part_value_t], bool, bool) -> None
@@ -1575,39 +1609,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError(part.tag_())
 
-  def _TranslateExtGlob(self, part_vals, w, glob_parts, fnmatch_parts):
-    # type: (List[part_value_t], compound_word, List[str], List[str]) -> None
-    # [Step 2] Create 2 different patterns, and disallow array output
-    """Translate a flattened word with ExtGlob to glob and fnmatch patterns.
-
-    _EvalExtGlob does the flattening.
-    """
-    for i, part_val in enumerate(part_vals):
-      UP_part_val = part_val
-      with tagswitch(part_val) as case:
-        if case(part_value_e.String):
-          part_val = cast(part_value__String, UP_part_val)
-          if part_val.quoted:
-            s = glob_.ExtendedGlobEscape(part_val.s)
-          else:
-            # e.g. the @( and | in @(foo|bar) aren't quoted
-            s = part_val.s
-          glob_parts.append(s)
-          fnmatch_parts.append(s)  # from _EvalExtGlob()
-
-        elif case(part_value_e.Array):
-          # Disallow array
-          e_die("Extended globs and arrays can't appear in the same word", word=w)
-
-        elif case(part_value_e.ExtGlob):
-          part_val = cast(part_value__ExtGlob, UP_part_val)
-          # keep appending fnmatch_parts, but repplace glob_parts with '*'
-          self._TranslateExtGlob(part_val.part_vals, w, [], fnmatch_parts)
-          glob_parts.append('*')
-
-        else:
-          raise AssertionError()
-
   def _EvalWordToParts(self, w, part_vals, eval_flags=0):
     # type: (word_t, List[part_value_t], int) -> None
     """Helper for EvalRhsWord, EvalWordSequence, etc.
@@ -1658,7 +1659,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             fnmatch_pat = ''.join(fnmatch_parts)
             #log("glob %s fnmatch %s", glob_pat, fnmatch_pat)
 
-            results = self.globber.ExpandExtended(glob_pat, fnmatch_pat)
+            results = []  # type: List[str]
+            self.globber.ExpandExtended(glob_pat, fnmatch_pat, results)
             part_vals.append(part_value.Array(results))
           elif bool(eval_flags & EXTGLOB_NESTED):
             # We only glob at the TOP level of @(nested|@(pattern))
@@ -1674,20 +1676,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError(w.tag_())
 
-  def EvalWordToPattern(self, UP_w):
-    # type: (word_t) -> value__Str
-    # Note: This could be called in case of [[ $x == @(*.cc|*.h) ]]
-    # - It would be exactly like EvalWordToString, but it would also handle the
-    #   word_part_e.ExtGlob case.
-    # - It has an assertion for the "$@" case.
-    # But it might be simpler just to use EvalWordToString for this.  The
-    # downside is for code like echo '' > @(*.cc|*.h).  But bash/mksh don't do
-    # anything special here -- they allow it!
-    pass
-
-  def _PartValsToString2(self, part_vals, w, quote_kind, strs):
+  def _PartValsToString(self, part_vals, w, quote_kind, strs):
     # type: (List[part_value_t], compound_word, quote_t, List[str]) -> None
-    """Helper for EvalWordToString, similar to _PartValsToString() above."""
+    """Helper for EvalWordToString, similar to _ConcatPartVals() above.
+
+    Note: arg 'w' could just be a span ID
+    """
     for part_val in part_vals:
       UP_part_val = part_val
       with tagswitch(part_val) as case:
@@ -1726,7 +1720,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         elif case(part_value_e.ExtGlob):
           part_val = cast(part_value__ExtGlob, UP_part_val)
           # recursive call
-          self._PartValsToString2(part_val.part_vals, w, quote_kind, strs)
+          self._PartValsToString(part_val.part_vals, w, quote_kind, strs)
 
         else:
           raise AssertionError()
@@ -1748,7 +1742,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       self._EvalWordPart(p, part_vals, quoted=False)
 
     strs = []  # type: List[str]
-    self._PartValsToString2(part_vals, w, quote_kind, strs)
+    self._PartValsToString(part_vals, w, quote_kind, strs)
     return value.Str(''.join(strs))
 
   def EvalForPlugin(self, w):

@@ -419,22 +419,8 @@ class Globber(object):
     # do.  Could a default GLOBIGNORE to ignore flags on the file system be
     # part of the security solution?  It doesn't seem totally sound.
 
-  def Expand(self, arg, out):
+  def _Glob(self, arg, out):
     # type: (str, List[str]) -> int
-    """Given a string that could be a glob, append a list of strings to 'out'.
-
-    Returns:
-      Number of items appended.
-    """
-    if not LooksLikeGlob(arg):
-      # e.g. don't glob 'echo' because it doesn't look like a glob
-      out.append(GlobUnescape(arg))
-      return 1
-    if self.exec_opts.noglob():
-      # we didn't glob escape it in osh/word_eval.py
-      out.append(arg)
-      return 1
-
     try:
       results = libc.glob(arg)
     except RuntimeError as e:
@@ -458,6 +444,28 @@ class Globber(object):
       out.extend(results)
       return n
 
+    return 0
+
+  def Expand(self, arg, out):
+    # type: (str, List[str]) -> int
+    """Given a string that could be a glob, append a list of strings to 'out'.
+
+    Returns:
+      Number of items appended.
+    """
+    if not LooksLikeGlob(arg):
+      # e.g. don't glob 'echo' because it doesn't look like a glob
+      out.append(GlobUnescape(arg))
+      return 1
+    if self.exec_opts.noglob():
+      # we didn't glob escape it in osh/word_eval.py
+      out.append(arg)
+      return 1
+
+    n = self._Glob(arg, out)
+    if n:
+      return n
+
     # Nothing matched
     #if self.exec_opts.failglob():
       # note: to match bash, the whole command has to return 1.  But this also
@@ -472,32 +480,27 @@ class Globber(object):
       out.append(GlobUnescape(arg))
       return 1
 
-  def ExpandExtended(self, glob_pat, fnmatch_pat):
-    # type: (str, str) -> List[str]
+  def ExpandExtended(self, glob_pat, fnmatch_pat, out):
+    # type: (str, str, List[str]) -> None
+    if self.exec_opts.noglob():
+      # we didn't glob escape it in osh/word_eval.py
+      out.append(fnmatch_pat)
+      return
 
-    # TODO: noglob, nullglob, dashglob, etc.
-
-    try:
-      matched = libc.glob(glob_pat)
-    except RuntimeError as e:
-      # These errors should be rare: I/O error, out of memory, or unknown
-      # There are no syntax errors.  (But see comment about globerr() in
-      # native/libc.c.)
-      # note: MyPy doesn't know RuntimeError has e.message (and e.args)
-      msg = e.message  # type: str
-      stderr_line("Error expanding glob %r: %s", glob_pat, msg)
-      raise
-    filtered = [s for s in matched if libc.fnmatch(fnmatch_pat, s, True)]
+    tmp = []  # type: List[str]
+    n = self._Glob(glob_pat, tmp)
+    filtered = [s for s in tmp if libc.fnmatch(fnmatch_pat, s, True)]
 
     if len(filtered):
-      return filtered
+      out.extend(filtered)
+      return
 
     if self.exec_opts.nullglob():
-      return []
+      return
     else:
       # Return the fnmatch_pat
       # TODO: Crap this suffers from @() -> ,() issue
-      return [fnmatch_pat]
+      out.append(fnmatch_pat)
 
   def OilFuncCall(self, arg):
     # type: (str) -> List[str]
