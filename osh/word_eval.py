@@ -1582,15 +1582,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     _EvalExtGlob does the flattening.
     """
-
-    log('part_vals %s', part_vals)
     for i, part_val in enumerate(part_vals):
       UP_part_val = part_val
       with tagswitch(part_val) as case:
         if case(part_value_e.String):
           part_val = cast(part_value__String, UP_part_val)
-          glob_parts.append(part_val.s)
-          fnmatch_parts.append(part_val.s)  # from _EvalExtGlob()
+          if part_val.quoted:
+            s = glob_.ExtendedGlobEscape(part_val.s)
+          else:
+            # e.g. the @( and | in @(foo|bar) aren't quoted
+            s = part_val.s
+          glob_parts.append(s)
+          fnmatch_parts.append(s)  # from _EvalExtGlob()
 
         elif case(part_value_e.Array):
           # Disallow array
@@ -1650,9 +1653,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
             fnmatch_parts = []  # type: List[str]
             self._TranslateExtGlob(word_part_vals, w, glob_parts, fnmatch_parts)
 
+            #log('word_part_vals %s', word_part_vals)
             glob_pat = ''.join(glob_parts)
             fnmatch_pat = ''.join(fnmatch_parts)
             #log("glob %s fnmatch %s", glob_pat, fnmatch_pat)
+
             results = self.globber.ExpandExtended(glob_pat, fnmatch_pat)
             part_vals.append(part_value.Array(results))
           elif bool(eval_flags & EXTGLOB_NESTED):
@@ -1788,7 +1793,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
         array_words = part0.words
         words = braces.BraceExpandWords(array_words)
         strs = self.EvalWordSequence(words)
-        #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
         return value.MaybeStrArray(strs)
 
       if tag == word_part_e.AssocArrayLiteral:

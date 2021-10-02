@@ -86,6 +86,14 @@ def GlobEscape(s):
   return pyutil.BackslashEscape(s, GLOB_META_CHARS)
 
 
+def ExtendedGlobEscape(s):
+  # type: (str) -> str
+  """
+  e.g. @(arm|arm with pipe\|)
+  """
+  return pyutil.BackslashEscape(s, '|' + GLOB_META_CHARS)
+
+
 def EreCharClassEscape(s):
   # type: (str) -> str
 

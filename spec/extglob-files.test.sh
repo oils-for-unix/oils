@@ -126,15 +126,50 @@ argv.py eg6/@(no|matches)  # no matches
 ['eg6/@(no|matches)']
 ## END
 
-#### glob other punctuation chars (lexer mode)
-# mksh sorts them differently
+#### Glob other punctuation chars (lexer mode)
 shopt -s extglob
 mkdir -p eg5
 cd eg5
-touch __{'<>','{}','|','#','&&'}
-argv.py @('__<>'|__{}|__\||__#|__&&)
-## stdout: ['__<>', '__|', '__{}', '__&&', '__#']
-## OK mksh stdout: ['__#', '__&&', '__<>', '__{}', '__|']
+touch __{aa,'<>','{}','#','&&'}
+argv.py @(__aa|'__<>'|__{}|__#|__&&|)
+
+# mksh sorts them differently
+## STDOUT:
+['__#', '__&&', '__<>', '__aa', '__{}']
+## END
+## OK bash STDOUT:
+['__<>', '__{}', '__&&', '__#', '__aa']
+## END
+
+#### More glob escaping
+shopt -s extglob
+mkdir -p eg7
+cd eg7
+touch '_[:]' '_*' '_?'
+argv.py @('_[:]'|'_*'|'_?')
+argv.py @(nested|'_?'|@('_[:]'|'_*'))
+
+# mksh sorts them differently
+## STDOUT:
+['_*', '_?', '_[:]']
+['_*', '_?', '_[:]']
+## END
+## OK bash STDOUT:
+['_?', '_[:]', '_*']
+['_?', '_[:]', '_*']
+## END
+
+#### Escaping of pipe in extended glob (GNU libc bug?)
+shopt -s extglob
+mkdir -p extpipe
+cd extpipe
+touch '__|' foo
+argv.py @('foo'|__\||bar)
+argv.py @('foo'|'__|'|bar)
+## STDOUT:
+['__|', 'foo']
+['__|', 'foo']
+## END
 
 #### dynamic extglob from variable
 

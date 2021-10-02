@@ -126,6 +126,32 @@ class LibcTest(unittest.TestCase):
 
         # Neither of these
         ('--!(help|verbose)', '--verbose', 0),
+
+        # escaping *
+        ('@(ab\*)', 'ab*', 1),
+        ('@(ab\*)', 'abc', 0),
+        # escaping ?
+        ('@(ab\?)', 'ab?', 1),
+        ('@(ab\?)', 'abc', 0),
+
+        # escaping []
+        ('@(ab\[\])', 'ab[]', 1),
+        ('@(ab\[\])', 'abcd', 0),
+
+        # escaping :
+        ('@(ab\:)', 'ab:', 1),
+        ('@(ab\:)', 'abc', 0),
+
+        # escaping a is no-op
+        (r'@(\ab)', 'ab', 1),
+        (r'@(\ab)', r'\ab', 0),
+
+        #('@(ab\|)', 'ab|', 1),  # GNU libc bug?  THIS SHOULD WORK
+
+        # There's no way to escape | in extended glob???  wtf.
+        #('@(ab\|)', 'ab', 1),
+        #('@(ab\|)', 'ab\\', 1),
+        #('@(ab\|)', 'ab\\|', 1),
     ]
     for pat, s, expected in cases:
       actual = libc.fnmatch(pat, s, True)
