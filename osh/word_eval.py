@@ -65,6 +65,7 @@ if TYPE_CHECKING:
 QUOTED = 1 << 0
 IS_SUBST = 1 << 1
 EXTGLOB_FS = 1 << 2
+EXTGLOB_NESTED = 1 << 3  # for @(one|!(two|three))
 
 # For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
 # Ditto for ${FUNCNAME} and ${BASH_LINENO}.
@@ -1407,7 +1408,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if i != 0:
         part_vals.append(part_value.String('|', False, False))  # separator
       # This flattens the tree!
-      self._EvalWordToParts(w, part_vals, EXTGLOB_FS)
+      self._EvalWordToParts(w, part_vals, EXTGLOB_NESTED)
     part_vals.append(part_value.String(')', False, False))  # closing )
 
   def _EvalWordPart(self, part, part_vals, quoted=False, is_subst=False):
@@ -1614,7 +1615,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     """
     quoted = bool(eval_flags & QUOTED)
     is_subst = bool(eval_flags & IS_SUBST)
-    extglob_fs = bool(eval_flags & EXTGLOB_FS)
 
     UP_w = w
     with tagswitch(w) as case:
@@ -1640,23 +1640,26 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         # Caller REQUESTED extglob evaluation, AND we parsed word_part.ExtGlob()
         if has_extglob:
-          if not extglob_fs:
+          if bool(eval_flags & EXTGLOB_FS):
+            # Treat the WHOLE word as a pattern.  We need to TWO VARIANTS of the
+            # word because of the way we use libc:
+            # 1. With '*' for extglob parts
+            # 2. With _EvalExtGlob() for extglob parts
+
+            glob_parts = []  # type: List[str]
+            fnmatch_parts = []  # type: List[str]
+            self._TranslateExtGlob(word_part_vals, w, glob_parts, fnmatch_parts)
+
+            glob_pat = ''.join(glob_parts)
+            fnmatch_pat = ''.join(fnmatch_parts)
+            #log("glob %s fnmatch %s", glob_pat, fnmatch_pat)
+            results = self.globber.ExpandExtended(glob_pat, fnmatch_pat)
+            part_vals.append(part_value.Array(results))
+          elif bool(eval_flags & EXTGLOB_NESTED):
+            # We only glob at the TOP level of @(nested|@(pattern))
+            part_vals.extend(word_part_vals)
+          else:
             e_die('Extended glob not allowed in this word', word=w)
-
-          # Treat the WHOLE word as a pattern.  We need to TWO VARIANTS of the
-          # word because of the way we use libc:
-          # 1. With '*' for extglob parts
-          # 2. With _EvalExtGlob() for extglob parts
-
-          glob_parts = []  # type: List[str]
-          fnmatch_parts = []  # type: List[str]
-          self._TranslateExtGlob(word_part_vals, w, glob_parts, fnmatch_parts)
-
-          glob_pat = ''.join(glob_parts)
-          fnmatch_pat = ''.join(fnmatch_parts)
-          #log("glob %s fnmatch %s", glob_pat, fnmatch_pat)
-          results = self.globber.ExpandExtended(glob_pat, fnmatch_pat)
-          part_vals.append(part_value.Array(results))
         else:
           part_vals.extend(word_part_vals)
 
