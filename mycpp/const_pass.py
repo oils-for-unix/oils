@@ -245,8 +245,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(left_expr)
         self.accept(index_expr)
         self.accept(seq)
-        # Why does this cause a crash?
-        #self.accept(cond)
+        for c in cond:
+          self.accept(c)
 
     def visit_set_comprehension(self, o: 'mypy.nodes.SetComprehension') -> T:
         pass

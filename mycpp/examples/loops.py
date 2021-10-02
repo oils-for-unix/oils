@@ -49,6 +49,9 @@ def TestListComp():
   tmp = [s for s in parts if s is not None]
   print(''.join(tmp))
 
+  tmp2 = [s for s in tmp if s.startswith('-')]
+  print(''.join(tmp2))
+
 
 def TestDict():
   # type: () -> None
