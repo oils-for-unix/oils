@@ -1394,7 +1394,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def _EvalExtGlob(self, part, part_vals):
     # type: (word_part__ExtGlob, List[part_value_t]) -> None
-    """Reconstruct a string that we can pass to fnmatch(..., FNM_EXTMATCH)"""
+    """Evaluate @($x|'foo'|$(hostname)) and flatten it"""
     op = part.op
     if op.id == Id.ExtGlob_Comma:
       op_str = '@('
@@ -1577,7 +1577,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _TranslateExtGlob(self, part_vals, w, glob_parts, fnmatch_parts):
     # type: (List[part_value_t], compound_word, List[str], List[str]) -> None
     # [Step 2] Create 2 different patterns, and disallow array output
-    #log('part_vals %s', part_vals)
+    """Translate a flattened word with ExtGlob to glob and fnmatch patterns.
+
+    _EvalExtGlob does the flattening.
+    """
+
+    log('part_vals %s', part_vals)
     for i, part_val in enumerate(part_vals):
       UP_part_val = part_val
       with tagswitch(part_val) as case:

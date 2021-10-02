@@ -43,7 +43,8 @@ shopt -s extglob
 mkdir -p 1
 cd 1
 touch {foo,bar}.cc {foo,bar,baz}.h foo. foo.hh
-echo foo.?(cc|h)
+ext=cc
+echo foo.?($ext|h)
 ## stdout: foo. foo.cc foo.h
 
 #### *() matches 0 or more
@@ -57,7 +58,7 @@ echo eg1/_*(One|Two)
 shopt -s extglob
 mkdir -p eg2
 touch eg2/_ eg2/_One eg2/_OneOne eg2/_TwoTwo eg2/_OneTwo
-echo eg2/_+(One|Two)
+echo eg2/_+(One|$(echo Two))
 ## stdout: eg2/_One eg2/_OneOne eg2/_OneTwo eg2/_TwoTwo
 
 #### !(*.h|*.cc) to match everything except C++
