@@ -159,7 +159,7 @@ argv.py @(nested|'_?'|@('_[:]'|'_*'))
 ['_?', '_[:]', '_*']
 ## END
 
-#### Escaping of pipe in extended glob (GNU libc bug?)
+#### Escaping of pipe (glibc bug, see demo/glibc_fnmatch.c)
 shopt -s extglob
 mkdir -p extpipe
 cd extpipe
