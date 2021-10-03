@@ -2,6 +2,14 @@
 #include <fnmatch.h>
 #include <stdio.h>
 
+/*
+ * BUG: When FNM_EXTMATCH is passed, you should be able to escape | as \| 
+ * just like you can escape * as \*.
+ *
+ * (Remember that \| is written "\\|" in C syntax)
+ */
+
+
 void test(char* pattern, char* str) {
   int ret = fnmatch(pattern, str, FNM_EXTMATCH);
 
@@ -19,12 +27,16 @@ void test(char* pattern, char* str) {
 }
 
 int main() {
-  char* pattern = "@(spam|foo\\|)";
+  char* pattern = "@(spam|foo\\||bar\\*)";
   char* str = "spam";
 
   test(pattern, "spam");
-  test(pattern, "foo|");  // this should match, but it doesn't
-  test(pattern, "foo\\|");  // doesn't match either
+
+  test(pattern, "bar*");  // escaping works
+  test(pattern, "bar\\");  // shouldn't match
+
+  test(pattern, "foo|");  // BUG: this should match, but it doesn't
+  test(pattern, "foo\\|");  // shouldn't match and doesn't match
 
   return 0;
 }
