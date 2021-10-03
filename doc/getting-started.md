@@ -5,75 +5,98 @@ default_highlighter: oil-sh
 Getting Started
 ===============
 
-OSH is a **Unix shell** designed to run existing shell scripts.  More
-precisely, it's
+There are many ways to use Oil!
 
-1. POSIX-compatible
-2. Has features from GNU Bash, the most commonly used shell.
+- You can use it *interactively*, or you can write "shell scripts" with it.
+  Shell is the best language for *ad hoc* automation.
+- You can use it in *compatible* mode with `bin/osh`, or in *legacy-free* mode
+  with `bin/oil`.
 
-It's designed to be "stricter" than other shells.  To avoid programs that don't
-behave as intended,
+As of 2021, the [OSH language][osh-language] is mature, and the [Oil
+language][oil-language] is under development.  The interactive shell exists,
+but it will be spartan until clients for the "[headless
+shell](headless.html)" appear.  (You should still try it!)
 
-1. It produces more errors.
-2. It produces them earlier &mdash; at parse time, if possible.
+See [blog posts tagged #FAQ][blog-faqs] for more detail.
 
-"Batch" programs are most likely to run unmodified under OSH.  Interactive
-programs like `.bashrc` and bash completion scripts may require small changes.
+[oil-language]: https://www.oilshell.org/cross-ref.html?tag=oil-language#oil-language
+[osh-language]: https://www.oilshell.org/cross-ref.html?tag=osh-language#osh-language
 
-This manual covers the **differences** between OSH and other shells.  It leaves
-the details of each construct to the `help` builtin, which is also [available
-online](osh-help-topics.html) (*Warning: incomplete*).  It also doesn't cover
-the [Oil language][oil-language], which is a newer part of the Oil project.
+This doc walks you through setting up Oil, explains some concepts, and links to
+more documentation.
+
+<!-- cmark.py expands this -->
+<div id="toc">
+</div>
+
+## Setup
+
+### Downloading Oil
+
+The [releases page](https://www.oilshell.org/releases.html) links to source
+tarballs for every release.  It also links to the documentation tree, which
+includes this page.
+
+### Your Configuration Dir
+
+After running the instructions in [INSTALL](INSTALL.html), run:
+
+    mkdir -p ~/.config/oil
+
+OSH will create `osh_history` there to store your command history.
+
+### Initialization with `rc` Files
+
+You can also create your own startup files in this directory:
+
+- `bin/osh` runs `~/.config/oil/oshrc`
+- `bin/oil` runs `~/.config/oil/oilrc`
+
+These are the **only** files that are "sourced".  Other shells [have a
+confusing initialization sequence involving many files][mess] ([original][]).
+It's very hard to tell when and if `/etc/profile`, `~/.bashrc`,
+`~/.bash_profile`, etc. are executed.
+
+OSH and Oil intentionally avoid this.  If you want those files, simply `source`
+them in your `oshrc`.
+
+[mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
+
+[original]: http://www.solipsys.co.uk/new/BashInitialisationFiles.html
+
+I describe my own `oshrc` file on the Wiki: [How To Test
+OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
+
+## Tips
+
+- If you get tired of typing `~/.config/oil/oshrc`, symlink it to `~/.oshrc`.
+
+### Troubleshooting
+
+- If you're running OSH from `bash` or `zsh`, then the prompt string `$PS1` may
+  be unintentionally inherited.  Running `PS1=''` before `bin/osh` avoids this.
+  This is also true for `$PS2`, `$PS4`, etc.
+- On Arch Linux and other distros,`$LANG` may not get set without
+  `/etc/profile`.  Adding `source /etc/profile` to your `oshrc` may solve this
+  problem.
+
+### `sh` and Bash Docs Are Useful for OSH
 
 Existing educational materials for the Unix shell apply to OSH, because they
 generally don't teach the quirks that OSH disallows.  For example, much of the
 information and advice in [BashGuide][] can be used without worrying about
 which shell you're using.  See the end of this manual for more resources.
 
-[oil-language]: https://www.oilshell.org/cross-ref.html?tag=oil-language#oil-language
+For this reason, we're focusing efforts on documenting the [Oil
+language][oil-language].
 
-<!-- cmark.py expands this -->
-<div id="toc">
-</div>
+## What Is Expected to Run Under OSH
 
-## Downloading OSH
+"Batch" programs are most likely to run unmodified under OSH.  On the other
+hand, Interactive programs like `.bashrc` and bash completion scripts may
+require small changes.
 
-The [releases page](https://www.oilshell.org/releases.html) links to source
-tarballs for every release.  It also links to the documentation tree, which
-includes this manual.
-
-## Setup
-
-After running the instructions in [INSTALL](INSTALL.html), run:
-
-    mkdir -p ~/.config/oil
-
-- OSH will create `osh_history` there, to store your command history.
-- You can create your own `oshrc` there.
-
-## Startup Files
-
-On startup, the interactive shell sources **only** `~/.config/oil/oshrc`.
-
-Other shells [have a confusing initialization sequence involving many
-files][mess] ([original][]).  It's very hard to tell when and if
-`/etc/profile`, `~/.bashrc`, `~/.bash_profile`, etc. are executed.
-
-OSH intentionally avoids this.  If you want those files, simply `source` them
-in your `oshrc`.
-
-- For example, on Arch Linux and other distros,`$LANG` may not get set without
-  `/etc/profile`.  Add `source /etc/profile` to your `oshrc` may solve this
-  problem.
-- If you get tired of typing `~/.config/oil/oshrc`, symlink it to `~/.oshrc`.
-
-[mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
-
-[original]: http://www.solipsys.co.uk/new/BashInitialisationFiles.html
-
-I describe my own `oshrc` file on the wiki: [How To Test
-OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
-
+- Wiki: [What Is Expected to Run Under OSH]($wiki)
 
 ## Features Unique to OSH
 
@@ -153,7 +176,6 @@ run, and once for all recursive runs.
 (This is an environment variable rather than a flag because it needs to be
 **inherited**.)
 
-
 ### `--debug-file`
 
 Print internal debug logs to this file.  It's useful to make it a FIFO:
@@ -179,7 +201,42 @@ Related:
 
 This is implemented, but a JSON library isn't in the release build.
 
-## Exit Codes
+### More
+
+For more features unique to Oil, see [Why Use Oil?][why]
+
+[why]: https://www.oilshell.org/why.html
+
+
+## Appendix
+
+### Bugs
+
+- OSH runs shell scripts too slowly.  Speeding it up is a top priority.
+
+### Links
+
+- [Blog Posts Tagged #FAQ][blog-faqs]
+  tell you why OSH exists and how it's designed.
+- [Known Differences](known-differences.html) lists incompatibilities between
+  OSH and other shells.  They are unlikely to appear in real programs, or
+  there is a trivial workaround.
+
+[blog-faqs]: https://www.oilshell.org/blog/tags.html?tag=FAQ#FAQ
+
+External:
+
+- [GNU Bash Manual](https://www.gnu.org/software/bash/manual/).  I frequently
+  referred to this document when implementing OSH.
+- [BashGuide][].  A wiki with detailed information about bash.
+  - [BashPitfalls](https://mywiki.wooledge.org/BashPitfalls).
+- [Bash Cheat Sheet](https://devhints.io/bash).  A short overview.
+
+[BashGuide]: https://mywiki.wooledge.org/BashGuide
+
+[at-splice]: TODO
+
+### Exit Codes
 
 - `0` for **success**.
 - `1` for **runtime errors**.  Examples:
@@ -194,62 +251,4 @@ This is implemented, but a JSON library isn't in the release build.
 - POSIX exit codes:
   - `126` for permission denied when running a command (`errno EACCES`)
   - `127` for command not found
-
-## Unicode
-
-### Program Encoding
-
-Shell **programs** should be encoded in UTF-8 (or its ASCII subset).  Unicode
-characters can be encoded directly in the source:
-
-<pre>
-echo '&#x03bc;'
-</pre>
-
-or denoted in ASCII with C-escaped strings, i.e.  `$''`:
-
-    echo $'[\u03bc]'
-
-(This construct is preferred over `echo -e` because it's statically parsed.)
-
-### Data Encoding
-
-Strings in OSH are arbitrary sequences of **bytes**.  Caveats:
-
-- When passed to external programs, strings are truncated at the first `NUL`
-  (`'\0'`) byte.  This is just how Unix and C work.
-- The length operator `${#s}` and slicing `${s:1:3}` require their input to be
-  **valid UTF-8**.  Decoding errors are fatal if `shopt -s strict-word-eval` is
-  on.
-
-The GNU `iconv` program converts text from one encoding to another.
-
-Also, see [Notes on Unicode in Shell][unicode.md].
-
-[unicode.md]: https://github.com/oilshell/oil/blob/master/doc/unicode.md
-
-## Bugs
-
-- OSH runs shell scripts too slowly.  Speeding it up is a top priority.
-
-## Links
-
-- [Blog Posts Tagged #FAQ](http://www.oilshell.org/blog/tags.html?tag=FAQ#FAQ)
-  tell you why OSH exists and how it's designed.
-- [Known Differences](known-differences.html) lists incompatibilities between
-  OSH and other shells.  They are unlikely to appear in real programs, or
-  there is a trivial workaround.
-
-External:
-
-- [GNU Bash Manual](https://www.gnu.org/software/bash/manual/).  I frequently
-  referred to this document when implementing OSH.
-- [BashGuide][].  A wiki with detailed information about bash.
-  - [BashPitfalls](https://mywiki.wooledge.org/BashPitfalls).
-- [Bash Cheat Sheet](https://devhints.io/bash).  A short overview.
-
-[BashGuide]: https://mywiki.wooledge.org/BashGuide
-
-[at-splice]: TODO
-
 
