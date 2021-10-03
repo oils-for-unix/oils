@@ -376,13 +376,13 @@ parsed:
 - Statically: to avoid splitting `declare x=$y` when `$y` contains spaces.
 - Dynamically: to handle expressions like `declare $1` where `$1` is `a=b`
 
-### `shopt -s extglob` is slightly different
+### Extended globs are more static like `mksh`, and have other differences
 
-In bash, an unquoted extended glob is a syntax error unless `extglob` is on.
-In Oil, `extglob` doesn't affect parsing at all.
+That is, in OSH and mksh, something like `echo *.@(cc|h)` is an extended glob.
+But `echo $x`, where `$x` contains the pattern, is not.
 
-Also, bash sometimes respects extended globs even when `extglob` is off.  In
-Oil, they're respected if and only if `extglob` is on.
+For more details and differences, see the [Extended Glob
+section](word-language.html#extended-glob) of the Word Language doc.
 
 ### Completion
 

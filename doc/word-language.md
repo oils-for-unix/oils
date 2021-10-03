@@ -1,5 +1,6 @@
 ---
 in_progress: yes
+default_highlighter: oil-sh
 ---
 
 Word Language
@@ -187,14 +188,22 @@ This is documented in [warts](warts.html).
 
     echo @split(mystr, '/')  # split on a delimiter
 
-## Implicit Joining
+## OSH Features
+
+### Word Splitting and Empty String Elision
+
+Uses POSIX behavior for unquoted substitutions like `$x`.
+
+- The string value is split into args with `$IFS`.
+- If the string value is empty, no args are produced.
+
+### Implicit Joining
 
 Shell has odd "joining" semantics, which are supported in Oil but generally
 discouraged:
 
     set -- 'a b' 'c d'
-    argv.py X"$@"X
-    ['Xa', 'b', 'c', 'dX']
+    argv.py X"$@"X  # => ['Xa', 'b', 'c', 'dX']
 
 In Oil, the RHS of an assignment is an expression, and joining only occurs
 within double quotes:
@@ -203,9 +212,51 @@ within double quotes:
     var joined = $x$y    # parse error
     var joined = "$x$y"  # OK
 
-    # shell
+    # Shell
     joined=$x$y          # OK
     joined="$x$y"        # OK
+
+<a name="extended-glob"></a>
+### Extended Globs
+
+Extended globs in OSH are a "legacy syntax" modelled after the behavior of
+`bash` and `mksh`.  This features adds alternation, repetition, and negation to
+globs, giving the power of regexes.
+
+You can use them to match strings:
+
+    $ [[ foo.cc == *.(cc|h) ]] && echo 'matches'  # => matches
+
+Or produce lists of filename arguments:
+
+    $ touch foo.cc foo.h
+    $ echo *.@(cc|h)  # => foo.cc foo.h
+
+There are some limitations and differences:
+
+- They're only supported when Oil is built with GNU libc.
+  - GNU libc has the `FNM_EXTMATCH` extension to `fnmatch()`.  Unlike bash and
+    mksh, Oil doesn't implement its own extended glob matcher.
+- They're more **static**, like in `mksh`.  When an extended glob appears in a
+  word, we evaluate the word, match filenames, and **skip** the rest of the
+  word evaluation pipeline.  This means:
+  - Automatic word splitting is skipped in something like
+    `$unquoted/@(*.cc|h)`.
+  - You can't use arrays like `"$@"` and extended globs in the same word, e.g.
+    `"$@"_*.@(cc|h).  This is usually nonsensical anyway.
+- The `extglob` option behaves slightly differently.
+  - In `bash`, an unquoted extended glob is a syntax error unless `extglob` is
+    on.  In Oil, `extglob` doesn't affect parsing at all.
+  - `bash` sometimes respects extended globs even when `extglob` is off.  In
+    Oil, they're respected if and only if `extglob` is on.
+- They can't be used in the `PATTERN` in `${x//PATTERN/replace}`.  This is
+  because we only translate normal (non-extended) globs to regexes (in order to
+  get the position information necessary for string replacement).
+- They're not supported when `shopt --set simple_word_eval`, i.e. Oil word
+  evaluation.
+  - For similar reasons, they're also not supported in assignment builtins.
+    (This is a good thing!)
+
 
 ## Notes
 
