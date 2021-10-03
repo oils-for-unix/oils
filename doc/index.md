@@ -20,10 +20,10 @@ programmers who avoid shell.
   tarball.
 - [A Tour of the Oil Project](project-tour.html).  It's a big project with
   several components to understand!
+- [Getting Started](getting-started.html).
 
 ## OSH is a Compatible Shell
 
-- [OSH User Manual](osh-manual.html). How do I use OSH as my shell?
 - [Shell Language Idioms](shell-idioms.html).
 - For advanced users
   - [Known Differences](known-differences.html) lists differences between OSH and

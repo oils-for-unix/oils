@@ -471,7 +471,7 @@ Yes:
     # libfoo.sh
     module libfoo.sh || return 0
 
-#### Taskfile Pattern
+### Taskfile Pattern
 
 No:
 

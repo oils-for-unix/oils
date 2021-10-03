@@ -1,4 +1,8 @@
-OSH User Manual
+---
+default_highlighter: oil-sh
+---
+
+Getting Started
 ===============
 
 OSH is a **Unix shell** designed to run existing shell scripts.  More
@@ -70,66 +74,6 @@ in your `oshrc`.
 I describe my own `oshrc` file on the wiki: [How To Test
 OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
-
-## Global Execution Options
-
-All Unix shells have global options that affect execution.  There are two
-kinds:
-
-- POSIX options like `set -e`, which I prefer to write `set -o errexit`.
-- bash extensions like `shopt -s inherit_errexit`
-
-List them all with `set -o` and `shopt -p`.  Other than syntax, there's no
-essential difference between the two kinds.
-
-### shopt -s strict:all is Recommended
-
-OSH adds more options on top of those provided by POSIX and bash.  It has  a
-shortcut `shopt -s strict:all` which turns on many options at once:
-
-- `errexit`, `nounset` (`sh` modes to get more errors)
-- `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
-- `nullglob` (a `bash` mode, doesn't confuse code and data)
-- `strict_*` (`strict_array`, etc.)
-   - Strict options **disallow** certain parts of the language with **fatal
-     runtime errors**.
-
-If you want your script to be portable to other shells, use this line:
-
-    shopt -s strict:all 2>/dev/null || true  # suppress errors
-
-You can also turn individual options on or off:
-
-    shopt -s strict_array  # Set this option.  I want more fatal errors.
-    shopt -u strict_array  # Unset it.  Ignore errors and keep executing.
-
-### List of Options
-
-`strict_arith`.  Strings that don't look like integers cause a fatal error in
-arithmetic expressions.
-
-`strict_argv`.  Empty `argv` arrays are disallowed since there's no practical
-use for them.  For example, the second statement in `x=''; $x` results in a
-fatal error.
-
-`strict_array`. No implicit conversions between string an array.  In other
-words, turning this on gives you a "real" array type.
-
-`strict_control_flow`. `break` and `continue` outside of a loop are fatal
-errors.
-
-`simple_eval_builtin`.  The `eval` builtin takes exactly **one** argument.  It
-doesn't concatenate its arguments with spaces, or accept zero arguments.
-
-`strict_word_eval`.  More word evaluation errors are fatal.
-
-- String slices with negative arguments like `${s: -1}` and `${s: 1 : -1}`
-  result in a fatal error.  (NOTE: In array slices, negative start indices are
-  allowed, but negative lengths are always fatal, regardless of
-  `strict-word-eval`.)
-- UTF-8 decoding errors are fatal when computing lengths (`${#s}`) and slices.
-
-For options affecting exit codes, see the [errexit doc](errexit.html).
 
 ## Features Unique to OSH
 
@@ -234,20 +178,6 @@ Related:
 - TODO: `OSH_CRASH_DUMP_DIR`
 
 This is implemented, but a JSON library isn't in the release build.
-
-## Completion API
-
-The completion API is modeled after the [bash completion
-API](https://www.gnu.org/software/bash/manual/html_node/Command-Line-Editing.html#Command-Line-Editing)
-
-However, an incompatibility is that it deals with `argv` entries and not
-command strings.
-
-OSH moves the **responsibility for quoting** into the shell.  Completion
-plugins should not do it.
-
-- TODO: describe the `compadjust` builtin.  Derived from a cleanup of the
-  `bash-completion` project.
 
 ## Exit Codes
 

@@ -16,11 +16,10 @@ Oil 0.9.2
 This is the home page for version 0.9.2 of Oil, a Unix shell.  To use it,
 
 1. Download a source tarball.
-2. Build and install it, as described in [INSTALL][].
+2. Build it and do a "smoke test", as described in [INSTALL][].
 
-These steps take 30 to 60 seconds on most machines.  After that, you can
-assemble an `oshrc` file, which is described in [the
-manual](doc/osh-manual.html).
+These steps take 30 to 60 seconds on most machines.  After installation, see
+[Getting Started](doc/getting-started.html).
 
 Test results, metrics, and benchmarks are shown below.
 
@@ -42,11 +41,11 @@ Note: `oil-native` is a **preview** release, not a working shell.
 ## Documentation
 
 The [Doc Overview](doc/) links to all docs.  Here is the subset of them that
-are ready to read:
+are **ready to read**:
 
+- [Getting Started](doc/getting-started.html)
 - OSH:
-  - [OSH User Manual](doc/osh-manual.html)
-  | [Known Differences Between OSH and Other Shells](doc/known-differences.html)
+  - [Known Differences Between OSH and Other Shells](doc/known-differences.html)
   | [Quirks](doc/quirks.html)
   | [Tracing Execution](doc/xtrace.html)
   | [Headless Mode](doc/headless.html)

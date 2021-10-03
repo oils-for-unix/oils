@@ -9,33 +9,33 @@ Global Shell Options: Turning OSH into Oil
 This document describes global shell options, which look like this:
 
     shopt --set strict_backslash  # Oil style
+    shopt --set oil:basic         # A whole group of options
     set -o errexit                # Bourne shell style
 
-They can affect parsing or execution, and are used to gradually turn
-the [OSH language]($xref:osh-language) into the [Oil
-language]($xref:oil-language).
+They can affect parsing or execution, and are used to gradually turn the [OSH
+language]($xref:osh-language) into the [Oil language]($xref:oil-language).
 
-For example, Oil doesn't have word splitting on whitespace, use [Simple Word
-Evaluation](simple-word-eval.html) by default.  (Blog: [Oil Doesn't Require
+For example, Oil doesn't have word splitting on whitespace.  Instead, it use
+[Simple Word Evaluation](simple-word-eval.html).  (Blog: [Oil Doesn't Require
 Quoting
 Everywhere](https://www.oilshell.org/blog/2021/04/simple-word-eval.html)).
 
-This isn't the **only** use for them, but it's one of the main uses.
-
-<!--
-
-Notes:
-- OSH manual describes some options.  Could move them here.
-- Copy in frmo quick ref
--->
+This isn't the **only** use for options, but it's an important one.
 
 <div id="toc">
 </div>
 
-## Quick Start
+## What Every User Should Know (2 minutes)
 
-The **option groups** `strict:all` and `oil:basic` are "canned settings" that
-relieve you of having to know about dozens of shell options.
+When you run `bin/osh`, the **option groups** `strict:all` and `oil:basic` are
+"canned settings" that relieve you of having to know about dozens of shell
+options.
+
+Running `bin/oil` is equivalent to using `shopt --set oil:all` in `bin/osh`.
+
+Let's look at three examples.
+
+### Strict
 
 If you put this line at the top of your shell script, it will still **run under
 other shells**, but OSH will act as sort of a "runtime linter":
@@ -43,7 +43,10 @@ other shells**, but OSH will act as sort of a "runtime linter":
     # Abort on more errors, but fixes will still be compatible
     shopt -s strict:all 2>/dev/null || true 
 
-If you don't care about running under other shells, use this:
+### Basic
+
+If you want to upgrade a script, and don't care about running under other
+shells, use this:
 
     # Start enabling Oil syntax and semantics
     shopt --set oil:basic
@@ -51,20 +54,17 @@ If you don't care about running under other shells, use this:
 This second line may break a few things, but is designed to be an easy upgrade.
 See [Shell Language Deprecations](deprecations.html).
 
-Use `bin/oil` for a brand new Oil script, opting into **all** enhancements.
-Your shebang line might be `#!/usr/bin/env oil`.  This is the equivalent of
-`shopt --set oil:all`.
+### Oil
+
+If you're writing a new script, you can use `bin/oil` to get **all**
+enhancements.  Typically you use a shebang line like this:
+
+    #!/usr/bin/env oil
 
 That's all most users need to know.  For more details, see the wiki page:
 [Gradually Upgrading Shell to Oil]($wiki).
 
-## FAQ: Aren't Global Variables Bad?
-
-- Oil adds scope with Ruby-like [blocks](proc-block-func.html).
-- Like all Bourne shells, Oil uses process-based concurrency.  It doesn't have
-  shared memory.
-
-## Usage
+## Using Shell Options
 
 There are several different ways of using shell options.
 
@@ -116,48 +116,17 @@ Shell has many ways to do this, like:
     set -o                      # print all Bourne shell options
     shopt -p                    # print all bash options
     shopt -p nullglob failglob  # print selected options
+    shopt -p oil:basic          # print options in the given group
 
 TODO: Oil should enable `shopt --print` for all options.  It should have a flat
 list.
 
-## Option Groups Are Named
-
-To let you turn them all on or off at once.
-
-### List of Option Groups
-
-- `strict:all`: Help you find bugs.  Do NOT break things to improve style.
-- `oil:basic`: Allow using Oil features that are unlikely to break something,
-  or have an easy fix (example: `@foo` -> `'@foo'`, and `()` -> `forkwait`).
-  Again, do NOT break things to improve style.
-- `oil:all`: Allow even more Oil features.  And also break things to improve
-  style.  (Example: `simple_eval_builtin`).
-
-TODO: Do we need `simple:all`?
-
-### Example: `oil:all`
-
-Runnig `bin/oil` is equivalent to
-
-    shopt --set oil:all
-
-It turns on:
-
-- `errexit`, `nounset` (`sh` modes to get more errors)
-- `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
-- Oil modes:
-  - `simple_word_eval` (subsumes `nullglob` that `strict:all` includes)
-  - `command_sub_errexit`
-  - `strict_*` (`strict_array`, etc.)
-  - `parse_*` (`parse_at`, etc.)
-
 ## Kinds of Options, With Examples
 
-This is NOT FORMAL like GROUPS.  GROUPS AND Kinds are different!
+*Option groups* like `oil:basic` are baked into the interpreter.  What follows
+is an informal list of *kinds* of options, which are different categorization:
 
-They are orthogonal axes.
-
-- Groups: how much of Oil do you want to use?
+- Groups: How much of Oil do you want to use?
 - Kinds: Does this option affect parsing behavior, runtime behavior, or
   something else?
 
@@ -297,16 +266,55 @@ TODO: copy examples from spec tests
 - `command_sub_errexit`.  A error in a command sub can cause the **parent
    shell** to exit fatally.  Also see `inherit_errexit` and `strict_errexit`.
 
-## Complete List of Options
+## List of Options
+
+### Selected Options
+
+`strict_arith`.  Strings that don't look like integers cause a fatal error in
+arithmetic expressions.
+
+`strict_argv`.  Empty `argv` arrays are disallowed (because there's no
+practical use for them).  For example, the second statement in `x=''; $x`
+results in a fatal error.
+
+`strict_array`. No implicit conversions between string an array.  In other
+words, turning this on gives you a "real" array type.
+
+`strict_control_flow`. `break` and `continue` outside of a loop are fatal
+errors.
+
+`simple_eval_builtin`.  The `eval` builtin takes exactly **one** argument.  It
+doesn't concatenate its arguments with spaces, or accept zero arguments.
+
+`strict_word_eval`.  More word evaluation errors are fatal.
+
+- String slices with negative arguments like `${s: -1}` and `${s: 1 : -1}`
+  result in a fatal error.  (NOTE: In array slices, negative start indices are
+  allowed, but negative lengths are always fatal, regardless of
+  `strict_word_eval`.)
+- UTF-8 decoding errors are fatal when computing lengths (`${#s}`) and slices.
+
+For options affecting exit codes, see the [errexit doc](errexit.html).
+
+### Complete List
 
 These documents have a short description of each option:
 
 - [OSH Help Topics > option](osh-help-topics.html#option)
 - [Oil Help Topics > option](oil-help-topics.html#option)
 
-(TODO: longer descriptions.)
+(TODO: they all need descriptions.)
+
+## FAQ: Aren't Global Variables Bad?
+
+Options are technically globals, but Oil controls them in 2 ways:
+
+1. It has scoped mutation with Ruby-like [blocks](proc-block-func.html).
+    - Example: `shopt --unset errexit { false }`
+2. Like all Bourne shells, Oil uses process-based concurrency.  It doesn't have
+   shared memory.
 
 ## Related Documents
 
-- Up: [Interpreter State](interpreter-state.html), which is under construction)
+- Up: [Interpreter State](interpreter-state.html), which is under construction
 

@@ -73,23 +73,25 @@ readonly MARKDOWN_DOCS=(
   # Help index has its own rendering
 
   # polished
-  osh-manual known-differences
+  getting-started
+  known-differences
   errors
   errexit
   json
   simple-word-eval
   quirks
   warts
+  variables
+  eggex
+  deprecations
+  qsn
 
   doc-toolchain
   doc-plugins
-  eggex
-  deprecations
   future
   idioms
   shell-idioms
   oil-language-faq
-  qsn
   qtt
   language-influences
   oil-vs-python
@@ -123,7 +125,7 @@ readonly MARKDOWN_DOCS=(
   framing
   xtrace
   headless
-  variables
+  completion
   strings
   modules
 

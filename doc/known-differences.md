@@ -300,8 +300,8 @@ Yes:
     echo ${array[0]}    # explicitly choose the first element
     echo "${array[@]}"  # explicitly choose the whole array
 
-NOTE: Setting `shopt -s strict-array` further reduces the confusion between
-strings and arrays.  See [the manual](osh-manual.html) for details.
+NOTE: Setting `shopt -s strict_array` further reduces the confusion between
+strings and arrays.  See the [options doc](options.html) for details.
 
 ### Arrays aren't split inside ${}
 
@@ -391,9 +391,7 @@ except that it moves the **responsibility for quoting** out of plugins and onto
 the shell itself.  Plugins should return candidates as `argv` entries, not
 shell words.
 
-See the [OSH manual][] for details.
-
-[OSH manual]: osh-manual.html
+See the [completion doc](completion.html) for details.
 
 ## Interactive Features
 
