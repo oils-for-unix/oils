@@ -483,7 +483,8 @@ class Globber(object):
   def ExpandExtended(self, glob_pat, fnmatch_pat, out):
     # type: (str, str, List[str]) -> None
     if self.exec_opts.noglob():
-      # we didn't glob escape it in osh/word_eval.py
+      # Return the fnmatch_pat.  Note: this means we turn ,() into @(), and
+      # there is extra \ escaping compared with bash and mksh.  OK for now
       out.append(fnmatch_pat)
       return
 
@@ -498,13 +499,12 @@ class Globber(object):
     if self.exec_opts.nullglob():
       return
     else:
-      # Return the fnmatch_pat
-      # TODO: Crap this suffers from @() -> ,() issue
+      # See comment above
       out.append(fnmatch_pat)
 
   def OilFuncCall(self, arg):
     # type: (str) -> List[str]
     """User-facing function."""
     out = []  # type: List[str]
-    self.Expand(arg, out)
+    self._Glob(arg, out)
     return out

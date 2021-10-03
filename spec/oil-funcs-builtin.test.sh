@@ -202,6 +202,11 @@ write -- @split(myarray)
 ## END
 
 #### @glob(x)
+
+# empty glob
+write -- A @glob('__nope__') B
+echo ___
+
 touch -- a.z b.z -.z
 write -- @glob('?.z')
 echo ___
@@ -211,6 +216,9 @@ shopt -s dashglob
 write -- @glob('?.z')
 
 ## STDOUT:
+A
+B
+___
 a.z
 b.z
 ___
