@@ -5,8 +5,8 @@ default_highlighter: oil-sh
 Shell Language Idioms
 =====================
 
-These are like [Oil Language Idioms](idioms.html), but the advice also applies
-to other Unix shells.
+These are like the [Oil vs. Shell Idioms](idioms.html), but the advice also
+applies to other Unix shells.
 
 <div id="toc">
 </div>

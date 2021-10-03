@@ -411,9 +411,7 @@ Yes:
     f zzz :myvar        # assigns myvar to 'PREFIX-zzz'.
                         # colon is required
 
-## Curly Braces Fix Semantic Problems
-
-### Procs Don't Mess With Their Callers
+### Note: Procs Don't Mess With Their Callers
 
 That is, [dynamic scope]($xref:dynamic-scope) is turned off when procs are
 invoked.
@@ -440,15 +438,67 @@ In Oil, you have to pass params explicitly:
 Shell functions can also **mutate** variables in their caller!  But procs can't
 do this, which makes code easier to reason about.
 
-### If and `errexit`
+## Use Modules
 
-Bug in POSIX shell, which Oil's `strict_errexit` warns you of:
+Oil has a few lightweight features that make it easier to organize code into
+files.  It doesn't have "namespaces".
+
+### Relative Imports
+
+No:
+
+    # All of these are common idioms, with caveats
+    source $(dirname $0)/lib/foo.sh
+    source $(dirname ${BASH_SOURCE[0]})/lib/foo.sh
+    source $(cd $($dirname $0); pwd)/lib/foo.sh
+
+Yes:
+
+    source $_this_dir/lib/foo.sh
+
+### Include Guards
+
+No:
+
+    # libfoo.sh
+    if test -z "$__LIBFOO_SH"; then
+      return
+    fi
+    __LIBFOO_SH=1
+
+Yes:
+
+    # libfoo.sh
+    module libfoo.sh || return 0
+
+#### Taskfile Pattern
+
+No:
+
+    deploy() {
+      echo ...
+    }
+    "$@"
+
+Yes
+
+    proc deploy() {
+      echo ...
+    }
+    runproc @ARGV  # gives better error messages
+
+## Error Handling
+
+### If, shell functions, and `errexit`
+
+This is a bug in POSIX shell, which Oil's `strict_errexit` warns you of:
 
     if myfunc; then  # oops, errors not checked in myfunc
       echo 'success'
     fi
 
-Suggested workaround:
+The workaround is to use the *`$0` Dispatch Pattern*, which works in all
+shells:
 
     if $0 myfunc; then  # invoke a new shell
       echo 'success'
@@ -462,16 +512,8 @@ Oil has a `try` builtin, which re-enables errexit without the extra process:
       echo 'success'
     fi
 
-(TODO: decide on this) Or you can also use curly braces for an implicit `try`:
-
-    if myfunc {
-      echo 'success'
-    }
-
-This explicit syntax avoids breaking POSIX shell.  You have to opt in to the
-better behavior.
-
-## Error Handling
+The explicit `try` avoids breaking existing shell programs.  You have to opt in
+to the better behavior.
 
 ### Use the `try` Builtin With `!`, `||`, and `&&`
 
@@ -661,8 +703,6 @@ No:
       echo 'Python'
     fi
 
-TODO: Implement the `~~` operator.
-
 Yes:
 
     if (x ~~ '*.py') {
@@ -693,24 +733,6 @@ Yes (purely a style preference):
     }
 
 ## TODO
-
-### Source Files and Namespaces
-
-TODO
-
-<!--
-
-TODO: The `use` builtin (or keyword?) should enable this.  And there should be
-a static variant for bundling.
-
-Hypothetical example:
-
-    use lib/html.sh  # 'html' is in the 'proc' namespace
-
-    html header
-    html footer
-
--->
 
 ### Distinguish Between Variables and Functions
 
