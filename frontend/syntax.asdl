@@ -49,22 +49,22 @@ module syntax
   | Unused(string comment)     -- completion and history never show parse errors?
   | CFlag
   | Stdin(string comment)
+
     -- TODO: if it's not the main script, it's sourced, and you could provide
     -- a chain of locations back to the sourced script!
     -- MainFile(string path) or SourcedFile(string path, int spid)
   | MainFile(string path)
   | SourcedFile(string path, int spid)
-  | ArgvWord(int word_spid)    -- code parsed from a single word.
-                               -- e.g. trap, complete -W, printf
-  | ArgvCommand(int first_spid) -- first word
-  | EvalArg(int eval_spid)     -- special case for 'eval'
-                               -- The rest of the args are JOINED, so it's not
-                               -- clear where they come from.
-  | Trap(int word_spid)        -- code for the trap builtin
-                               -- $PS1 $PROMPT_COMMAND eval_unsafe_arith
-                               -- TODO: where var was last assigned
+
+    -- code parsed from a word
+    -- used for 'eval', 'trap', 'printf', 'complete -W', etc.
+  | ArgvWord(int span_id)
+
+    -- code parsed from the value of a variable
+    -- used for $PS1 $PROMPT_COMMAND eval_unsafe_arith
   | Variable(string var_name, int spid)
-    -- 3 instances of reparsing:
+
+    -- THREE instances of reparsing:
 
     -- alias expansion (location of first word)
   | Alias(string argv0, int argv0_spid)

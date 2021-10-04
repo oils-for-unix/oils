@@ -245,7 +245,8 @@ class UnsafeArith(object):
     line_reader = reader.StringLineReader(ref_str, arena)
     lexer = self.parse_ctx.MakeLexer(line_reader)
     w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
-    with alloc.ctx_Location(arena, source.ArgvWord(span_id)):
+    # don't know var name
+    with alloc.ctx_Location(arena, source.Variable(None, span_id)):
       try:
         bvs_part = w_parser.ParseVarRef()
       except error.Parse as e:

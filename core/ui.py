@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
-    source__EvalArg, source__Alias, source__LValue, source__Variable,
+    source__Alias, source__LValue, source__Variable, source__ArgvWord
 )
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
@@ -117,18 +117,35 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       source_str = '[ headless ]'
     elif case(source_e.CFlag):
       source_str = '[ -c flag ]'
-
     elif case(source_e.Stdin):
       src = cast(source__Stdin, UP_src)
       source_str = '[ stdin%s ]' % src.comment
+
     elif case(source_e.MainFile):
       src = cast(source__MainFile, UP_src)
       source_str = src.path
-
     elif case(source_e.SourcedFile):
       src = cast(source__SourcedFile, UP_src)
       # TODO: could chain of 'source' with the spid
-      source_str = src.path
+      source_str = src.path  # no [ ]
+
+    elif case(source_e.ArgvWord):
+      src = cast(source__ArgvWord, UP_src)
+      if src.span_id == runtime.NO_SPID:
+        source_str = '[ word at ? ]'
+      else:
+        span = arena.GetLineSpan(src.span_id)
+        line_num = arena.GetLineNumber(span.line_id)
+        outer_source = arena.GetLineSourceString(span.line_id)
+        source_str = '[ word at line %d of %s ]' % (line_num, outer_source)
+      # NOTE: not using _PrintCodeExcerpt
+
+    elif case(source_e.Variable):
+      src = cast(source__Variable, UP_src)
+      var_name = src.var_name if src.var_name is not None else '?'
+      source_str = '[ var %s ]' %  var_name
+      # TODO: could point to outer_source if we knew where the variable was
+      # assigned
 
     elif case(source_e.Alias):
       src = cast(source__Alias, UP_src)
@@ -155,26 +172,8 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       lbracket_col = span2.col + span2.length
       _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
 
-    elif case(source_e.EvalArg):
-      src = cast(source__EvalArg, UP_src)
-      span = arena.GetLineSpan(src.eval_spid)
-      line_num = arena.GetLineNumber(span.line_id)
-      outer_source = arena.GetLineSourceString(span.line_id)
-      source_str = '[ eval at line %d of %s ]' % (line_num, outer_source)
-
-    elif case(source_e.Trap):
-      # TODO: Look at word_spid
-      source_str = '[ trap ]'
-
-    elif case(source_e.Variable):
-      src = cast(source__Variable, UP_src)
-      # TODO: print the variable name, and look at the span ID
-      var_name = src.var_name if src.var_name is not None else '?'
-      source_str = '[ var %s ]' %  var_name
-
     else:
-      # TODO: shouldn't really get here
-      source_str = repr(src)
+      raise AssertionError()
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?

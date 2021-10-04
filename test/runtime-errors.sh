@@ -375,7 +375,7 @@ myproc() {
 bool_status() {
   set -o errexit
 
-  if run --bool-status -- myproc; then
+  if try --allow-status-01 -- myproc; then
     echo 'match'
   else
     echo 'no match'
@@ -385,7 +385,7 @@ bool_status() {
 bool_status_simple() {
   set -o errexit
 
-  if run --bool-status -- grep pat BAD; then
+  if try --allow-status-01 -- grep pat BAD; then
     echo 'match'
   else
     echo 'no match'

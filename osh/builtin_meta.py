@@ -62,7 +62,7 @@ class Eval(vm._Builtin):
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-    src = source.EvalArg(eval_spid)
+    src = source.ArgvWord(eval_spid)
     with dev.ctx_Tracer(self.tracer, 'eval', None):
       with alloc.ctx_Location(self.arena, src):
         return main_loop.Batch(self.cmd_ev, c_parser, self.arena,

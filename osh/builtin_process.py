@@ -359,8 +359,8 @@ class Trap(vm._Builtin):
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-    # TODO: the SPID should be passed through argv.  Use ArgvWord?
-    with alloc.ctx_Location(self.arena, source.Trap(runtime.NO_SPID)):
+    # TODO: the SPID should be passed through argv.
+    with alloc.ctx_Location(self.arena, source.ArgvWord(runtime.NO_SPID)):
       try:
         node = main_loop.ParseWholeFile(c_parser)
       except error.Parse as e:
