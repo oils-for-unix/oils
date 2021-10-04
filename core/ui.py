@@ -22,6 +22,7 @@ from core.pyutil import stderr_line
 from osh import word_
 from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
+from qsn_ import qsn
 
 from typing import List, Optional, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -116,10 +117,13 @@ def GetLineSourceString(arena, line_id):
 
     elif case(source_e.MainFile):
       src = cast(source__MainFile, UP_src)
-      s = src.path
+      # This will quote a file called '[ -c flag ]' to disambiguate it!
+      # also handles characters that are unprintable in a terminal.
+      s = qsn.maybe_encode(src.path)
     elif case(source_e.SourcedFile):
       src = cast(source__SourcedFile, UP_src)
-      s = src.path
+      # ditto
+      s = qsn.maybe_encode(src.path)
 
     elif case(source_e.ArgvWord):
       src = cast(source__ArgvWord, UP_src)
