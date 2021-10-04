@@ -1727,10 +1727,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         elif case(part_value_e.ExtGlob):
           part_val = cast(part_value__ExtGlob, UP_part_val)
 
-          # TODO:
-          # - respect flags for RHS of ==, case, and args to ${x%GLOB},
-          # ${x//GLOB/}
-          # - respect shopt -s extglob
+          # Extended globs are only allowed where we expect them!
+          if not bool(eval_flags & QUOTE_FNMATCH):
+            e_die('extended glob not allowed in this word', word=w)
 
           # recursive call
           self._PartValsToString(part_val.part_vals, w, eval_flags, strs)

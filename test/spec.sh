@@ -712,7 +712,7 @@ extglob-files() {
 
 # This does string matching.
 extglob-match() {
-  sh-spec spec/extglob-match.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/extglob-match.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

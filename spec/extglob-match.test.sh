@@ -22,8 +22,13 @@ FALSE
 
 #### extglob in variable
 shopt -s extglob
-g=--@(help|verbose)  # this syntax requires extglob in bash!!
+
+# this syntax requires extglob in bash!!
+# OSH never allows it
+g=--@(help|verbose)
+
 quoted='--@(help|verbose)'
+
 [[ --help == $g ]] && echo TRUE
 [[ --verbose == $g ]] && echo TRUE
 [[ -- == $g ]] || echo FALSE
@@ -40,6 +45,9 @@ FALSE
 FALSE
 FALSE
 FALSE
+## END
+## OK osh status: 1
+## OK osh STDOUT:
 ## END
 
 #### Matching literal '@(cc)'
@@ -284,22 +292,24 @@ FALSE
 TRUE
 TRUE
 ## END
-## OK osh/mksh STDOUT:
+## OK mksh STDOUT:
 TRUE
 TRUE
 TRUE
 ## END
 
+#  osh fails wth runtime error
+## OK osh status: 1
+## OK osh STDOUT:
+## END
+
 #### With extglob on, !($str) on the left or right of == has different meanings
 shopt -s extglob
-empty=''
 str='x'
 [[ 1 == !($str) ]]  && echo TRUE   # glob match
-[[ !($str) == 1 ]]  || echo FALSE  # test if empty
-# NOTE: There cannot be a space between ! and (?
+
 ## STDOUT:
 TRUE
-FALSE
 ## END
 
 #### extglob inside arg word
@@ -384,4 +394,3 @@ strip %% foo
 strip #  .py
 strip ## .py
 ## END
-

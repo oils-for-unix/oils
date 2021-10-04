@@ -6,7 +6,19 @@ case a in
   a) echo A ;;
   *) echo star ;;
 esac
-## stdout: A
+
+for x in a b; do
+  case $x in
+    # the pattern is DYNAMIC and evaluated on every iteration
+    $x) echo loop ;;
+    *) echo star ;;
+  esac
+done
+## STDOUT:
+A
+loop
+loop
+## END
 
 #### Case statement with ;;&
 # ;;& keeps testing conditions
@@ -17,7 +29,11 @@ case a in
   *) echo star2 ;;
 esac
 ## status: 0
-## stdout-json: "A\nstar\nstar2\n"
+## STDOUT: 
+A
+star
+star2
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 
@@ -29,7 +45,11 @@ case a in
   YY) echo three ;;
 esac
 ## status: 0
-## stdout-json: "A\ntwo\nthree\n"
+## STDOUT:
+A
+two
+three
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 

@@ -434,30 +434,3 @@ match1
 match2
 ## END
 
-#### extglob quoted and unquoted
-
-pat='@(foo|bar)()' 
-if [[ 'foo()' == @(foo|bar)'()' ]]; then echo lit; fi
-if [[ 'foo()' == $pat ]]; then echo pat; fi
-
-# This only affects PARSING:
-shopt -s extglob
-pat=@(foo|bar)'()'
-
-if [[ 'foo()' == @(foo|bar)'()' ]]; then echo lit2; fi
-if [[ 'foo()' == $pat ]]; then echo pat2; fi
-## STDOUT:
-lit
-pat
-lit2
-pat2
-## END
-## BUG mksh STDOUT:
-lit
-lit2
-## END
-## OK osh STDOUT:
-lit2
-pat2
-## END
-

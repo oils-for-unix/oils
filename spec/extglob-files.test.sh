@@ -171,17 +171,6 @@ argv.py @('foo'|'__|'|bar)
 ['__|', 'foo']
 ## END
 
-#### dynamic extglob from variable
-
-# mksh does static parsing so it doesn't like this?
-shopt -s extglob
-mkdir -p eg3
-touch eg3/{foo,bar}
-g=eg3/@(foo|bar)
-echo $g "$g"  # quoting inhibits globbing
-## mksh stdout: eg3/@(foo|bar) eg3/@(foo|bar)
-## OK bash stdout: eg3/bar eg3/foo eg3/@(foo|bar)
-
 #### Extended glob syntax in bad redirect context
 shopt -s extglob
 rm bad_*
@@ -193,6 +182,8 @@ echo bad_*
 ## STDOUT:
 bad_@(*.cc|*.h)
 ## END
+## OK osh status: 1
+## OK osh stdout-json: ""
 
 #### Extended glob as argument to ${undef:-} (dynamic globbing)
 
