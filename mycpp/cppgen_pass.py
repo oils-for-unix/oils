@@ -1991,6 +1991,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'SearchPath' and func_name == 'Lookup' or
             # core/ui.py
             class_name == 'ErrorFormatter' and func_name == 'Print_' or
+            func_name == 'GetLineSourceString' or
             # osh/sh_expr_eval.py
             class_name is None and func_name == 'EvalLhsAndLookup' or
             class_name == 'SplitContext' and

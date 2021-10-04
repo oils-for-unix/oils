@@ -95,8 +95,8 @@ def _PrintCodeExcerpt(line, col, length, f):
   f.write('\n')
 
 
-def GetLineSourceString(arena, line_id):
-  # type: (Arena, int) -> str
+def GetLineSourceString(arena, line_id, quote_filename=False):
+  # type: (Arena, int, bool) -> str
   """Returns a human-readable string for dev tools.
 
   This function is RECURSIVE because there may be dynamic parsing.
@@ -119,11 +119,15 @@ def GetLineSourceString(arena, line_id):
       src = cast(source__MainFile, UP_src)
       # This will quote a file called '[ -c flag ]' to disambiguate it!
       # also handles characters that are unprintable in a terminal.
-      s = qsn.maybe_encode(src.path)
+      s = src.path
+      if quote_filename:
+        s = qsn.maybe_encode(s)
     elif case(source_e.SourcedFile):
       src = cast(source__SourcedFile, UP_src)
       # ditto
-      s = qsn.maybe_encode(src.path)
+      s = src.path
+      if quote_filename:
+        s = qsn.maybe_encode(s)
 
     elif case(source_e.ArgvWord):
       src = cast(source__ArgvWord, UP_src)
@@ -132,7 +136,8 @@ def GetLineSourceString(arena, line_id):
       else:
         span = arena.GetLineSpan(src.span_id)
         line_num = arena.GetLineNumber(span.line_id)
-        outer_source = GetLineSourceString(arena, span.line_id)
+        outer_source = GetLineSourceString(arena, span.line_id,
+                                           quote_filename=quote_filename)
         s = '[ %s word at line %d of %s ]' % (src.what, line_num, outer_source)
       # Note: _PrintCodeExcerpt called above
 
@@ -147,16 +152,11 @@ def GetLineSourceString(arena, line_id):
       src = cast(source__Alias, UP_src)
       s = '[ expansion of alias %r ]' % src.argv0
 
-    # TODO:
-    # - This function should use GetLineSourceString()
-    # - should you have multiple error formats:
-    #   - single line and verbose?
-    #   - and turn on "stack" tracing?  For 'source' and more?
-
     elif case(source_e.Reparsed):
       src = cast(source__Reparsed, UP_src)
       span2 = arena.GetLineSpan(src.left_spid)
-      outer_source = GetLineSourceString(arena, span2.line_id)
+      outer_source = GetLineSourceString(arena, span2.line_id,
+                                         quote_filename=quote_filename)
       s = '[ %s in %s ]' % (src.what, outer_source)
 
     else:
@@ -167,6 +167,11 @@ def GetLineSourceString(arena, line_id):
 
 def _PrintWithSpanId(prefix, msg, span_id, arena, f):
   # type: (str, str, int, Arena, Writer) -> None
+  """
+  Should we have multiple error formats:
+  - single line and verbose?
+  - and turn on "stack" tracing?  For 'source' and more?
+  """
   line_span = arena.GetLineSpan(span_id)
   orig_col = line_span.col
   line_id = line_span.line_id
@@ -197,7 +202,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
   else:
     _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
 
-  source_str = GetLineSourceString(arena, line_id)
+  source_str = GetLineSourceString(arena, line_id, quote_filename=True)
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?

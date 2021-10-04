@@ -1666,6 +1666,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # We only glob at the TOP level of @(nested|@(pattern))
             part_vals.extend(word_part_vals)
           else:
+            # e.g. simple_word_eval, assignment builtin
             e_die('Extended glob not allowed in this word', word=w)
         else:
           part_vals.extend(word_part_vals)
