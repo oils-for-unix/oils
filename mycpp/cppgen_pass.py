@@ -2003,7 +2003,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # virtual function
             func_name == 'RunSimpleCommand' or
             # core/main_loop.py
-            func_name == 'Batch'
+            func_name == 'Batch' or
+            # osh/glob_.py
+            func_name == 'GlobUnescape'
           ):
           self._WithOneLessArg(o, class_name, ret_type)
 

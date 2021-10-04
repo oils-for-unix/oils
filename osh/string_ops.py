@@ -234,10 +234,11 @@ def DoUnarySuffixOp(s, op, arg, extglob):
   tok = op.tok
 
   # Fast path for constant strings.
+  # TODO: Should be LooksLikeExtendedGlob!
   if not glob_.LooksLikeGlob(arg):
     # It doesn't look like a glob, but we glob-escaped it (e.g. [ -> \[).  So
     # reverse it.  NOTE: We also do this check in Globber.Expand().  It would
-    # be nice to somehow store the original string rather tahn
+    # be nice to somehow store the original string rather than
     # escaping/unescaping.
     arg = glob_.GlobUnescape(arg)
 

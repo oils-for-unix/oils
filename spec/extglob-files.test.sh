@@ -326,7 +326,7 @@ shopt -s extglob
 echo @(__nope__)
 
 # OSH has glob quoting here
-echo @(__nope__*|__nope__?|'*'|'?'|'[:alpha:]')
+echo @(__nope__*|__nope__?|'*'|'?'|'[:alpha:]'|'|')
 
 if test $SH != osh; then
   exit
@@ -337,7 +337,7 @@ echo ,(osh|style)
 
 ## STDOUT:
 @(__nope__)
-@(__nope__*|__nope__?|*|?|[:alpha:])
+@(__nope__*|__nope__?|*|?|[:alpha:]||)
 ## END
 
 #### dashglob
@@ -372,9 +372,9 @@ cd _noglob
 
 set -o noglob
 echo @(*)
-echo @(__nope__*|__nope__?|'*'|'?'|'[:alpha:]')
+echo @(__nope__*|__nope__?|'*'|'?'|'[:alpha:]'|'|')
 
 ## STDOUT:
 @(*)
-@(__nope__*|__nope__?|*|?|[:alpha:])
+@(__nope__*|__nope__?|*|?|[:alpha:]||)
 ## END

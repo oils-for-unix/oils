@@ -119,8 +119,8 @@ def ExtendedRegexEscape(s):
   return pyutil.BackslashEscape(s, ERE_META_CHARS)
 
 
-def GlobUnescape(s):  # used by cmd_eval
-  # type: (str) -> str
+def GlobUnescape(s, extglob=False):
+  # type: (str, bool) -> str
   """Remove glob escaping from a string.
 
   Used when there is no glob match.
@@ -142,13 +142,10 @@ def GlobUnescape(s):  # used by cmd_eval
       c2 = s[i]
       if c2 in GLOB_META_CHARS:
         unescaped.append(c2)
+      elif c2 == '|' and extglob:  # following ExtendedGlobEscape
+        unescaped.append(c2)
       else:
-        # 'test/spec.sh glob -r 25' triggers this
         raise AssertionError("Unexpected escaped character %r" % c2)
-        # Hack to prevent crash for now.  Need to rewrite this.
-        # Fell out of the fix to issue #695 to use _DQ_BACKSLASH in VS_ArgDQ.
-        #unescaped.append(c)
-        #unescaped.append(c2)
     else:
       unescaped.append(c)
     i += 1
@@ -496,7 +493,7 @@ class Globber(object):
       return
     else:
       # See comment above
-      out.append(fnmatch_pat)
+      out.append(GlobUnescape(fnmatch_pat, extglob=True))
 
   def OilFuncCall(self, arg):
     # type: (str) -> List[str]

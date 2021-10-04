@@ -344,3 +344,22 @@ echo ${x//@(?.py)/Z}
 ## STDOUT:
 foZ
 ## END
+
+#### Extended glob in ${x%PATTERN}
+
+# OSH BUG: needs DoUnarySuffixOp() needs LooksLikeExtGlob()
+
+shopt -s extglob
+x=foo.py
+echo 'strip % ' ${x%.@(py|cc)}
+echo 'strip %%' ${x%%.@(py|cc)}
+echo 'strip # ' ${x#@(foo)}
+echo 'strip ##' ${x##@(foo)}
+
+## STDOUT:
+strip %  foo
+strip %% foo
+strip #  .py
+strip ## .py
+## END
+
