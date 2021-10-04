@@ -96,21 +96,69 @@ def _PrintCodeExcerpt(line, col, length, f):
 
 def GetLineSourceString(arena, line_id):
   # type: (Arena, int) -> str
-  """Returns a human-readable string for dev tools."""
+  """Returns a human-readable string for dev tools.
+
+  This function is RECURSIVE because there may be dynamic parsing.
+  """
   src = arena.GetLineSource(line_id)
   UP_src = src
 
-  # TODO: Make it look nicer, like core/ui.py.
-  tag = src.tag_()
-  if tag == source_e.CFlag:
-    return '-c flag'
-  if tag == source_e.MainFile:
-    src = cast(source__MainFile, UP_src)
-    return src.path
-  if tag == source_e.SourcedFile:
-    src = cast(source__SourcedFile, UP_src)
-    return src.path
-  return repr(src)
+  with tagswitch(src) as case:
+    if case(source_e.Interactive):
+      s = '[ interactive ]'  # This might need some changes
+    elif case(source_e.Headless):
+      s = '[ headless ]'
+    elif case(source_e.CFlag):
+      s = '[ -c flag ]'
+    elif case(source_e.Stdin):
+      src = cast(source__Stdin, UP_src)
+      s = '[ stdin%s ]' % src.comment
+
+    elif case(source_e.MainFile):
+      src = cast(source__MainFile, UP_src)
+      s = src.path
+    elif case(source_e.SourcedFile):
+      src = cast(source__SourcedFile, UP_src)
+      s = src.path
+
+    elif case(source_e.ArgvWord):
+      src = cast(source__ArgvWord, UP_src)
+      if src.span_id == runtime.NO_SPID:
+        s = '[ %s word at ? ]' % src.what
+      else:
+        span = arena.GetLineSpan(src.span_id)
+        line_num = arena.GetLineNumber(span.line_id)
+        outer_source = GetLineSourceString(arena, span.line_id)
+        s = '[ %s word at line %d of %s ]' % (src.what, line_num, outer_source)
+      # Note: _PrintCodeExcerpt called above
+
+    elif case(source_e.Variable):
+      src = cast(source__Variable, UP_src)
+      var_name = src.var_name if src.var_name is not None else '?'
+      s = '[ var %s ]' %  var_name
+      # TODO: could point to outer_source if we knew where the variable was
+      # assigned
+
+    elif case(source_e.Alias):
+      src = cast(source__Alias, UP_src)
+      s = '[ expansion of alias %r ]' % src.argv0
+
+    # TODO:
+    # - This function should use GetLineSourceString()
+    # - should you have multiple error formats:
+    #   - single line and verbose?
+    #   - and turn on "stack" tracing?  For 'source' and more?
+
+    elif case(source_e.Reparsed):
+      src = cast(source__Reparsed, UP_src)
+      span2 = arena.GetLineSpan(src.left_spid)
+      outer_source = GetLineSourceString(arena, span2.line_id)
+      s = '[ %s in %s ]' % (src.what, outer_source)
+
+    else:
+      raise AssertionError()
+
+  return s
 
 
 def _PrintWithSpanId(prefix, msg, span_id, arena, f):
@@ -123,81 +171,29 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
   line = arena.GetLine(line_id)
   line_num = arena.GetLineNumber(line_id)  # overwritten by source__LValue case
 
+  UP_src = src
   # LValue/backticks is the only case where we don't print this
-  if src.tag_() != source_e.Reparsed:
+  if src.tag_() == source_e.Reparsed:
+    src = cast(source__Reparsed, UP_src)
+    span2 = arena.GetLineSpan(src.left_spid)
+    line_num = arena.GetLineNumber(span2.line_id)
+
+    # We want the excerpt to look like this:
+    #   a[x+]=1
+    #       ^
+    # Rather than quoting the internal buffer:
+    #   x+
+    #     ^
+    line2 = arena.GetLine(span2.line_id)
+    lbracket_col = span2.col + span2.length
+    # NOTE: The inner line number is always 1 because of reparsing.  We
+    # overwrite it with the original span.
+    _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
+
+  else:
     _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
 
-  UP_src = src
-  with tagswitch(src) as case:
-    # TODO: Use color instead of [ ]
-    if case(source_e.Interactive):
-      source_str = '[ interactive ]'  # This might need some changes
-    elif case(source_e.Headless):
-      source_str = '[ headless ]'
-    elif case(source_e.CFlag):
-      source_str = '[ -c flag ]'
-    elif case(source_e.Stdin):
-      src = cast(source__Stdin, UP_src)
-      source_str = '[ stdin%s ]' % src.comment
-
-    elif case(source_e.MainFile):
-      src = cast(source__MainFile, UP_src)
-      source_str = src.path
-    elif case(source_e.SourcedFile):
-      src = cast(source__SourcedFile, UP_src)
-      # TODO: could chain of 'source' with the spid
-      source_str = src.path  # no [ ]
-
-    elif case(source_e.ArgvWord):
-      src = cast(source__ArgvWord, UP_src)
-      if src.span_id == runtime.NO_SPID:
-        source_str = '[ %s word at ? ]' % src.what
-      else:
-        span = arena.GetLineSpan(src.span_id)
-        line_num = arena.GetLineNumber(span.line_id)
-        outer_source = GetLineSourceString(arena, span.line_id)
-        source_str = '[ %s word at line %d of %s ]' % (
-            src.what, line_num, outer_source)
-      # Note: _PrintCodeExcerpt called above
-
-    elif case(source_e.Variable):
-      src = cast(source__Variable, UP_src)
-      var_name = src.var_name if src.var_name is not None else '?'
-      source_str = '[ var %s ]' %  var_name
-      # TODO: could point to outer_source if we knew where the variable was
-      # assigned
-
-    elif case(source_e.Alias):
-      src = cast(source__Alias, UP_src)
-      source_str = '[ expansion of alias %r ]' % src.argv0
-
-    # TODO:
-    # - This function should use GetLineSourceString()
-    # - should you have multiple error formats:
-    #   - single line and verbose?
-    #   - and turn on "stack" tracing?  For 'source' and more?
-
-    elif case(source_e.Reparsed):
-      src = cast(source__Reparsed, UP_src)
-      span2 = arena.GetLineSpan(src.left_spid)
-      line2 = arena.GetLine(span2.line_id)
-      outer_source = GetLineSourceString(arena, span2.line_id)
-      source_str = '[ %s in %s ]' % (src.what, outer_source)
-      # NOTE: The inner line number is always 1 because of reparsing.  We
-      # overwrite it with the original span.
-      line_num = arena.GetLineNumber(span2.line_id)
-
-      # We want the excerpt to look like this:
-      #   a[x+]=1
-      #       ^
-      # Rather than quoting the internal buffer:
-      #   x+
-      #     ^
-      lbracket_col = span2.col + span2.length
-      _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
-
-    else:
-      raise AssertionError()
+  source_str = GetLineSourceString(arena, line_id)
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?
