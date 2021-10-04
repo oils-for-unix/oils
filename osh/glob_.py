@@ -76,7 +76,10 @@ def LooksLikeStaticGlob(w):
 # Glob Helpers for WordParts.
 # NOTE: Escaping / doesn't work, because it's not a filename character.
 # ! : - are metachars within character classes
-GLOB_META_CHARS = r'\*?[]-:!'
+# ( ) | are extended glob characters, and it's OK to add extra \ when the
+#       underlying library doesn't support extended globs
+#       we don't need to escape the @ in @(cc), because escaping ( is enough
+GLOB_META_CHARS = r'\*?[]-:!()|'
 
 def GlobEscape(s):
   # type: (str) -> str
@@ -84,14 +87,6 @@ def GlobEscape(s):
   For SingleQuoted, DoubleQuoted, and EscapedLiteral
   """
   return pyutil.BackslashEscape(s, GLOB_META_CHARS)
-
-
-def ExtendedGlobEscape(s):
-  # type: (str) -> str
-  """
-  e.g. @(arm|arm with pipe\|)
-  """
-  return pyutil.BackslashEscape(s, '|' + GLOB_META_CHARS)
 
 
 def EreCharClassEscape(s):
@@ -119,8 +114,8 @@ def ExtendedRegexEscape(s):
   return pyutil.BackslashEscape(s, ERE_META_CHARS)
 
 
-def GlobUnescape(s, extglob=False):
-  # type: (str, bool) -> str
+def GlobUnescape(s):
+  # type: (str) -> str
   """Remove glob escaping from a string.
 
   Used when there is no glob match.
@@ -141,8 +136,6 @@ def GlobUnescape(s, extglob=False):
       i += 1
       c2 = s[i]
       if c2 in GLOB_META_CHARS:
-        unescaped.append(c2)
-      elif c2 == '|' and extglob:  # following ExtendedGlobEscape
         unescaped.append(c2)
       else:
         raise AssertionError("Unexpected escaped character %r" % c2)
@@ -493,7 +486,7 @@ class Globber(object):
       return
     else:
       # See comment above
-      out.append(GlobUnescape(fnmatch_pat, extglob=True))
+      out.append(GlobUnescape(fnmatch_pat))
 
   def OilFuncCall(self, arg):
     # type: (str) -> List[str]
