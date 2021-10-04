@@ -421,7 +421,7 @@ if [[ 'foo()' == *\(\) ]]; then echo match1; fi
 if [[ 'foo()' == *'()' ]]; then echo match2; fi
 if [[ 'foo()' == '*()' ]]; then echo match3; fi
 
-shopt -s extglob  # does NOT affect it in bash, but does in Oil
+shopt -s extglob
 
 if [[ 'foo()' == *\(\) ]]; then echo match1; fi
 if [[ 'foo()' == *'()' ]]; then echo match2; fi
@@ -433,11 +433,6 @@ match2
 match1
 match2
 ## END
-## OK osh STDOUT:
-match1
-match2
-## END
-
 
 #### extglob quoted and unquoted
 
