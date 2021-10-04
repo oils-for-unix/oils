@@ -61,7 +61,7 @@ if TYPE_CHECKING:
   from oil_lang import expr_eval
 
 
-# Flags for _EvalWordToParts
+# Flags for _EvalWordToParts and _EvalWordPart (not all are used for both)
 QUOTED = 1 << 0
 IS_SUBST = 1 << 1
 EXTGLOB_FS = 1 << 2
@@ -1020,7 +1020,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       return
 
     for p in parts:
-      self._EvalWordPart(p, part_vals, quoted=True)
+      self._EvalWordPart(p, part_vals, QUOTED)
 
   def EvalDoubleQuotedToString(self, dq_part):
     # type: (double_quoted) -> str
@@ -1444,9 +1444,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
           raise AssertionError()
 
-
-  def _EvalWordPart(self, part, part_vals, quoted=False, is_subst=False):
-    # type: (word_part_t, List[part_value_t], bool, bool) -> None
+  def _EvalWordPart(self, part, part_vals, flags):
+    # type: (word_part_t, List[part_value_t], int) -> None
     """Evaluate a word part.
 
     Called by _EvalWordToParts, EvalWordToString, and _EvalDoubleQuoted.
@@ -1460,6 +1459,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     Returns:
       None
     """
+    quoted = bool(flags & QUOTED)
+    is_subst = bool(flags & IS_SUBST)
+
     UP_part = part
     with tagswitch(part) as case:
       if case(word_part_e.ShArrayLiteral):
@@ -1639,8 +1641,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         for p in w.parts:
           if p.tag_() == word_part_e.ExtGlob:
             has_extglob = True
-          self._EvalWordPart(p, word_part_vals, quoted=quoted,
-                             is_subst=is_subst)
+          self._EvalWordPart(p, word_part_vals, eval_flags)
 
         # Caller REQUESTED extglob evaluation, AND we parsed word_part.ExtGlob()
         if has_extglob:
@@ -1740,7 +1741,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     part_vals = []  # type: List[part_value_t]
     for p in w.parts:
-      self._EvalWordPart(p, part_vals, quoted=False)
+      self._EvalWordPart(p, part_vals, 0)
 
     strs = []  # type: List[str]
     self._PartValsToString(part_vals, w, quote_kind, strs)
@@ -1882,7 +1883,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     where a is [x b=a d=a]
     """
     part_vals = []  # type: List[part_value_t]
-    self._EvalWordToParts(w, part_vals)  # not double quoted
+    self._EvalWordToParts(w, part_vals, 0)  # not double quoted
     frames = _MakeWordFrames(part_vals)
     argv = []  # type: List[str]
     for frame in frames:
@@ -2010,7 +2011,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         continue
 
       part_vals = []  # type: List[part_value_t]
-      self._EvalWordToParts(w, part_vals)  # not quoted
+      self._EvalWordToParts(w, part_vals, 0)  # not quoted
 
       if 0:
         log('')

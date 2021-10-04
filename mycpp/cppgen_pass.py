@@ -1970,8 +1970,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'WordParser' and
               func_name in ('_ParseVarExpr', '_ReadVarOpArg2') or
             class_name == 'AbstractWordEvaluator' and 
-              func_name in ('EvalWordSequence2', '_EvalWordToParts',
-                            '_EmptyStrOrError', '_EvalWordPart') or
+              func_name in ('EvalWordSequence2', '_EmptyStrOrError') or
             # virtual method in several classes
             func_name == 'EvalWordToString' or
             class_name == 'ArithEvaluator' and func_name == '_ValToIntOrError' or
