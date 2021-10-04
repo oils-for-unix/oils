@@ -196,14 +196,14 @@ class UnsafeArith(object):
 
   def ParseLValue(self, s, span_id):
     # type: (str, int) -> lvalue_t
-    """Parse lvalue for 'unset' and 'printf -v' 
+    """Parse lvalue/place for 'unset' and 'printf -v' 
 
     It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
     """
     arena = self.parse_ctx.arena
     a_parser = self.parse_ctx.MakeArithParser(s)
 
-    with alloc.ctx_Location(arena, source.ArgvWord(span_id)):
+    with alloc.ctx_Location(arena, source.ArgvWord('dynamic place', span_id)):
       try:
         anode = a_parser.Parse()
       except error.Parse as e:

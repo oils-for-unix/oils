@@ -315,6 +315,9 @@ command-sub() {
   _error-case ' 
     echo line 2
     echo ` echo '
+
+  # This is source.Reparsed('backticks', ...)
+
   # Both unclosed
   _error-case '
     echo line 2

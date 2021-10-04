@@ -444,7 +444,7 @@ class Printf(vm._Builtin):
       lexer = self.parse_ctx.MakeLexer(line_reader)
       parser = _FormatStringParser(lexer)
 
-      with alloc.ctx_Location(arena, source.ArgvWord(fmt_spid)):
+      with alloc.ctx_Location(arena, source.ArgvWord('printf', fmt_spid)):
         try:
           parts = parser.Parse()
         except error.Parse as e:

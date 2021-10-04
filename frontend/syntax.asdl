@@ -58,22 +58,17 @@ module syntax
 
     -- code parsed from a word
     -- used for 'eval', 'trap', 'printf', 'complete -W', etc.
-  | ArgvWord(int span_id)
+  | ArgvWord(string what, int span_id)
 
     -- code parsed from the value of a variable
     -- used for $PS1 $PROMPT_COMMAND eval_unsafe_arith
   | Variable(string var_name, int spid)
 
-    -- THREE instances of reparsing:
-
     -- alias expansion (location of first word)
   | Alias(string argv0, int argv0_spid)
 
-    -- reparsing in  echo `echo \"hi\"`
-  | Backticks(int left_spid, int right_spid)
-
-    -- reparsing of x+1 in a[x+1]=y
-  | LValue(int left_spid, int right_spid)
+    -- 2 kinds of reparsing: backticks, and x+1 in a[x+1]=y
+  | Reparsed(string what, int left_spid, int right_spid)
 
   -- Logically, here's our record for a physical line.  For compactness, we
   -- TRANSPOSE it into 3 parallel arrays, so this record is UNUSED.

@@ -235,7 +235,9 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
       raise NotImplementedError('%d != %d' % (span1.line_id, span2.line_id))
     a_parser = parse_ctx.MakeArithParser(code_str)
 
-    src = source.LValue(left_token.span_id, close_token.span_id)
+    # a[i+1]= is a place
+    src = source.Reparsed('array place',
+                          left_token.span_id, close_token.span_id)
     with alloc.ctx_Location(arena, src):
       index_node = a_parser.Parse()  # may raise error.Parse
 

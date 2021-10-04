@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
-    source__Alias, source__LValue, source__Variable, source__ArgvWord
+    source__Alias, source__Reparsed, source__Variable, source__ArgvWord
 )
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
@@ -123,8 +123,8 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
   line = arena.GetLine(line_id)
   line_num = arena.GetLineNumber(line_id)  # overwritten by source__LValue case
 
-  # LValue is the only case where we don't print this
-  if src.tag_() != source_e.LValue:
+  # LValue/backticks is the only case where we don't print this
+  if src.tag_() != source_e.Reparsed:
     _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
 
   UP_src = src
@@ -151,13 +151,14 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
     elif case(source_e.ArgvWord):
       src = cast(source__ArgvWord, UP_src)
       if src.span_id == runtime.NO_SPID:
-        source_str = '[ word at ? ]'
+        source_str = '[ %s word at ? ]' % src.what
       else:
         span = arena.GetLineSpan(src.span_id)
         line_num = arena.GetLineNumber(span.line_id)
         outer_source = GetLineSourceString(arena, span.line_id)
-        source_str = '[ word at line %d of %s ]' % (line_num, outer_source)
-      # NOTE: not using _PrintCodeExcerpt
+        source_str = '[ %s word at line %d of %s ]' % (
+            src.what, line_num, outer_source)
+      # Note: _PrintCodeExcerpt called above
 
     elif case(source_e.Variable):
       src = cast(source__Variable, UP_src)
@@ -171,26 +172,17 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       source_str = '[ expansion of alias %r ]' % src.argv0
 
     # TODO:
-    # - Consolidate Backticks and LValue into source.Reparsed(string comment)
-    # - ArgvWord should have string comment for 'eval', 'trap', etc.
-    # - This function should use arena.GetLineSourceString(), which is also
-    #   used by core/state.py
+    # - This function should use GetLineSourceString()
+    # - should you have multiple error formats:
+    #   - single line and verbose?
+    #   - and turn on "stack" tracing?  For 'source' and more?
 
-    # - should you have multiple line formats?
-    #   - LValue calls _PrintCodeExcerpt
-    #   - ArgvWord could do that
-    #   - Variable could if we kept track of last assignment
-    #   - Source too
-
-    elif case(source_e.Backticks):
-      #src = cast(source__Backticks, UP_src)
-      source_str = '[ backticks at ... ]'
-    elif case(source_e.LValue):
-      src = cast(source__LValue, UP_src)
+    elif case(source_e.Reparsed):
+      src = cast(source__Reparsed, UP_src)
       span2 = arena.GetLineSpan(src.left_spid)
       line2 = arena.GetLine(span2.line_id)
       outer_source = GetLineSourceString(arena, span2.line_id)
-      source_str = '[ array LValue in %s ]' % outer_source
+      source_str = '[ %s in %s ]' % (src.what, outer_source)
       # NOTE: The inner line number is always 1 because of reparsing.  We
       # overwrite it with the original span.
       line_num = arena.GetLineNumber(span2.line_id)

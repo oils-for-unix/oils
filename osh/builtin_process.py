@@ -360,7 +360,8 @@ class Trap(vm._Builtin):
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     # TODO: the SPID should be passed through argv.
-    with alloc.ctx_Location(self.arena, source.ArgvWord(runtime.NO_SPID)):
+    src = source.ArgvWord('trap', runtime.NO_SPID)
+    with alloc.ctx_Location(self.arena, src):
       try:
         node = main_loop.ParseWholeFile(c_parser)
       except error.Parse as e:
