@@ -4,10 +4,9 @@ builtin_bracket.py
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value, quote_e, quote_t
+from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import (
-    word, word_e, word_t, word__String,
-    bool_expr,
+    word, word_e, word_t, word__String, bool_expr,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 
@@ -101,8 +100,8 @@ class _WordEvaluator(word_eval.StringWordEvaluator):
     # type: () -> None
     word_eval.StringWordEvaluator.__init__(self)
 
-  def EvalWordToString(self, w, quote_kind=quote_e.Default):
-    # type: (word_t, quote_t) -> value__Str
+  def EvalWordToString(self, w, eval_flags=0):
+    # type: (word_t, int) -> value__Str
     # do_fnmatch: for the [[ == ]] semantics which we don't have!
     # I think I need another type of node
     # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a

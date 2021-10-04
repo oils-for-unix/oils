@@ -23,7 +23,6 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_t,
     assign_arg, 
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
-    quote_e, quote_t,
     a_index, a_index_e, a_index__Int, a_index__Str,
     VTestPlace, VarSubState,
 )
@@ -64,8 +63,14 @@ if TYPE_CHECKING:
 # Flags for _EvalWordToParts and _EvalWordPart (not all are used for both)
 QUOTED = 1 << 0
 IS_SUBST = 1 << 1
-EXTGLOB_FS = 1 << 2
-EXTGLOB_NESTED = 1 << 3  # for @(one|!(two|three))
+
+EXTGLOB_FILES = 1 << 2  # allow @(cc) from file system?
+EXTGLOB_MATCH = 1 << 3  # allow @(cc) in pattern matching?
+EXTGLOB_NESTED = 1 << 4  # for @(one|!(two|three))
+
+# For EvalWordToString
+QUOTE_FNMATCH = 1 << 5
+QUOTE_ERE = 1 << 6
 
 # For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
 # Ditto for ${FUNCNAME} and ${BASH_LINENO}.
@@ -350,8 +355,8 @@ class StringWordEvaluator(object):
     """Empty constructor for mycpp."""
     pass
 
-  def EvalWordToString(self, w, quote_kind=quote_e.Default):
-    # type: (word_t, quote_t) -> value__Str
+  def EvalWordToString(self, w, eval_flags=0):
+    # type: (word_t, int) -> value__Str
     raise NotImplementedError()
 
 
@@ -732,7 +737,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     if op_kind == Kind.VOp1:
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
-      arg_val = self.EvalWordToString(op.arg_word, quote_kind=quote_e.FnMatch)
+      arg_val = self.EvalWordToString(op.arg_word, QUOTE_FNMATCH)
       assert arg_val.tag == value_e.Str
 
       extglob = self.exec_opts.extglob()
@@ -773,7 +778,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (value_t, suffix_op__PatSub) -> value_t
 
     # globs are supported in the pattern
-    pat_val = self.EvalWordToString(op.pat, quote_kind=quote_e.FnMatch)
+    pat_val = self.EvalWordToString(op.pat, QUOTE_FNMATCH)
     assert pat_val.tag == value_e.Str, pat_val
 
     if op.replace:
@@ -1645,7 +1650,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         # Caller REQUESTED extglob evaluation, AND we parsed word_part.ExtGlob()
         if has_extglob:
-          if bool(eval_flags & EXTGLOB_FS):
+          if bool(eval_flags & EXTGLOB_FILES):
             # Treat the WHOLE word as a pattern.  We need to TWO VARIANTS of the
             # word because of the way we use libc:
             # 1. With '*' for extglob parts
@@ -1678,8 +1683,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError(w.tag_())
 
-  def _PartValsToString(self, part_vals, w, quote_kind, strs):
-    # type: (List[part_value_t], compound_word, quote_t, List[str]) -> None
+  def _PartValsToString(self, part_vals, w, eval_flags, strs):
+    # type: (List[part_value_t], compound_word, int, List[str]) -> None
     """Helper for EvalWordToString, similar to _ConcatPartVals() above.
 
     Note: arg 'w' could just be a span ID
@@ -1691,10 +1696,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
           part_val = cast(part_value__String, UP_part_val)
           s = part_val.s
           if part_val.quoted:
-            if quote_kind == quote_e.FnMatch:
-              # [[ foo == */"*".py ]] or case *.py) ... esac
+            if eval_flags & QUOTE_FNMATCH:
+              # [[ foo == */"*".py ]] or case (*.py) or ${x%*.py} or ${x//*.py/}
               s = glob_.GlobEscape(s)
-            elif quote_kind == quote_e.ERE:
+            elif eval_flags & QUOTE_ERE:
               s = glob_.ExtendedRegexEscape(s)
           strs.append(s)
 
@@ -1721,14 +1726,20 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(part_value_e.ExtGlob):
           part_val = cast(part_value__ExtGlob, UP_part_val)
+
+          # TODO:
+          # - respect flags for RHS of ==, case, and args to ${x%GLOB},
+          # ${x//GLOB/}
+          # - respect shopt -s extglob
+
           # recursive call
-          self._PartValsToString(part_val.part_vals, w, quote_kind, strs)
+          self._PartValsToString(part_val.part_vals, w, eval_flags, strs)
 
         else:
           raise AssertionError()
 
-  def EvalWordToString(self, UP_w, quote_kind=quote_e.Default):
-    # type: (word_t, quote_t) -> value__Str
+  def EvalWordToString(self, UP_w, eval_flags=0):
+    # type: (word_t, int) -> value__Str
     """Given a word, return a string.
 
     Apply the given quote algorithm to the word.
@@ -1744,7 +1755,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       self._EvalWordPart(p, part_vals, 0)
 
     strs = []  # type: List[str]
-    self._PartValsToString(part_vals, w, quote_kind, strs)
+    self._PartValsToString(part_vals, w, eval_flags, strs)
     return value.Str(''.join(strs))
 
   def EvalForPlugin(self, w):
@@ -2072,7 +2083,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     n = 0
     for i, w in enumerate(words):
       part_vals = []  # type: List[part_value_t]
-      self._EvalWordToParts(w, part_vals, EXTGLOB_FS)  # not double quoted
+      self._EvalWordToParts(w, part_vals, EXTGLOB_FILES)
 
       # DYNAMICALLY detect if we're going to run an assignment builtin, and
       # change the rest of the evaluation algorithm if so.

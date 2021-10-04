@@ -11,7 +11,7 @@ sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    scope_t, quote_e, quote_t,
+    scope_t,
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     value, value_e, value_t, value__Str, value__Int, value__MaybeStrArray,
     value__AssocArray, value__Obj,
@@ -911,9 +911,9 @@ class BoolEvaluator(ArithEvaluator):
         i = 0
     return i
 
-  def _EvalCompoundWord(self, word, quote_kind=quote_e.Default):
-    # type: (word_t, quote_t) -> str
-    val = self.word_ev.EvalWordToString(word, quote_kind=quote_kind)
+  def _EvalCompoundWord(self, word, eval_flags=0):
+    # type: (word_t, int) -> str
+    val = self.word_ev.EvalWordToString(word, eval_flags)
     return val.s
 
   def EvalB(self, node):
@@ -990,17 +990,16 @@ class BoolEvaluator(ArithEvaluator):
 
         op_id = node.op_id
         # Whether to glob escape
+        eval_flags = 0
         with switch(op_id) as case2:
           if case2(Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
                    Id.BoolBinary_GlobNEqual):
-            quote_kind = quote_e.FnMatch
+            eval_flags |= word_eval.QUOTE_FNMATCH
           elif case2(Id.BoolBinary_EqualTilde):
-            quote_kind = quote_e.ERE
-          else:
-            quote_kind = quote_e.Default
+            eval_flags |= word_eval.QUOTE_ERE
 
         s1 = self._EvalCompoundWord(node.left)
-        s2 = self._EvalCompoundWord(node.right, quote_kind=quote_kind)
+        s2 = self._EvalCompoundWord(node.right, eval_flags)
 
         # Now dispatch on arg type
         arg_type = consts.BoolArgType(op_id)

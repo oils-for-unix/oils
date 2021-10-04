@@ -38,7 +38,6 @@ from _devbuild.gen.syntax_asdl import (
     redir_param_e, redir_param__HereDoc, proc_sig
 )
 from _devbuild.gen.runtime_asdl import (
-    quote_e,
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray,
     redirect, redirect_arg, scope_e,
@@ -63,6 +62,7 @@ from oil_lang import objects
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_
+from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import switch, tagswitch
 
@@ -1261,12 +1261,9 @@ class CommandEvaluator(object):
         for case_arm in node.arms:
           for pat_word in case_arm.pat_list:
             # NOTE: Is it OK that we're evaluating these as we go?
-
-            # TODO: case "$@") shouldn't succeed?  That's a type error?
-            # That requires strict-array?
-
+            # TODO: test it out in a loop
             pat_val = self.word_ev.EvalWordToString(pat_word,
-                                                    quote_kind=quote_e.FnMatch)
+                                                    word_eval.QUOTE_FNMATCH)
 
             #log('Matching word %r against pattern %r', to_match, pat_val.s)
             if libc.fnmatch(pat_val.s, to_match, self.exec_opts.extglob()):

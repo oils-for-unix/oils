@@ -18,8 +18,6 @@ module runtime
   -- refactoring: cmd_value = (string* argv, int* arg_spids, other? other)
   --              other = AssignPairs(...) | Block(...)
 
-  quote = Default | FnMatch | ERE
-
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.
   part_value = 
