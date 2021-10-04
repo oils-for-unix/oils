@@ -377,11 +377,11 @@ class ArithEvaluator(object):
           return 0
 
         # For compatibility: Try to parse it as an expression and evaluate it.
-
         arena = self.parse_ctx.arena
 
         a_parser = self.parse_ctx.MakeArithParser(s)
-        with alloc.ctx_Location(arena, source.Variable(span_id)):
+        # don't know var name here
+        with alloc.ctx_Location(arena, source.Variable(None, span_id)):
           try:
             node2 = a_parser.Parse()  # may raise error.Parse
           except error.Parse as e:

@@ -234,6 +234,7 @@ class Evaluator(object):
       # $PS1!!!
       return self.default_prompt
 
+PROMPT_COMMAND = 'PROMPT_COMMAND'
 
 class UserPlugin(object):
   """For executing PROMPT_COMMAND and caching its parse tree.
@@ -251,7 +252,7 @@ class UserPlugin(object):
 
   def Run(self):
     # type: () -> None
-    val = self.mem.GetValue('PROMPT_COMMAND')
+    val = self.mem.GetValue(PROMPT_COMMAND)
     if val.tag_() != value_e.Str:
       return
 
@@ -264,8 +265,8 @@ class UserPlugin(object):
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
       # NOTE: This is similar to CommandEvaluator.ParseTrapCode().
-      # TODO: Add spid
-      with alloc.ctx_Location(self.arena, source.PromptCommand(runtime.NO_SPID)):
+      src = source.Variable(PROMPT_COMMAND, runtime.NO_SPID)
+      with alloc.ctx_Location(self.arena, src):
         try:
           node = main_loop.ParseWholeFile(c_parser)
         except error.Parse as e:

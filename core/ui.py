@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
-    source__EvalArg, source__Alias, source__LValue,
+    source__EvalArg, source__Alias, source__LValue, source__Variable,
 )
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
@@ -167,8 +167,10 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       source_str = '[ trap ]'
 
     elif case(source_e.Variable):
-      # TODO: print the variable name, and look at the span ID>
-      source_str = '[ variable ]'
+      src = cast(source__Variable, UP_src)
+      # TODO: print the variable name, and look at the span ID
+      var_name = src.var_name if src.var_name is not None else '?'
+      source_str = '[ var %s ]' %  var_name
 
     else:
       # TODO: shouldn't really get here

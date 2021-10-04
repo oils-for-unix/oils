@@ -302,9 +302,8 @@ def _SetOptionNum(opt_name):
   if opt_num == 0:
     e_usage('got invalid option %r' % opt_name)
 
-  # BUG: shopt -p -o simple_word_eval says 'shopt' doesn't own, try 'shopt'
   if opt_num not in consts.SET_OPTION_NUMS:
-    e_usage("doesn't own option %r (try 'shopt')" % opt_name)
+    e_usage("invalid option %r (try -O or shopt)" % opt_name)
 
   return opt_num
 
