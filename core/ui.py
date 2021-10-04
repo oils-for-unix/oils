@@ -94,6 +94,25 @@ def _PrintCodeExcerpt(line, col, length, f):
   f.write('\n')
 
 
+def GetLineSourceString(arena, line_id):
+  # type: (Arena, int) -> str
+  """Returns a human-readable string for dev tools."""
+  src = arena.GetLineSource(line_id)
+  UP_src = src
+
+  # TODO: Make it look nicer, like core/ui.py.
+  tag = src.tag_()
+  if tag == source_e.CFlag:
+    return '-c flag'
+  if tag == source_e.MainFile:
+    src = cast(source__MainFile, UP_src)
+    return src.path
+  if tag == source_e.SourcedFile:
+    src = cast(source__SourcedFile, UP_src)
+    return src.path
+  return repr(src)
+
+
 def _PrintWithSpanId(prefix, msg, span_id, arena, f):
   # type: (str, str, int, Arena, Writer) -> None
   line_span = arena.GetLineSpan(span_id)
@@ -136,7 +155,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       else:
         span = arena.GetLineSpan(src.span_id)
         line_num = arena.GetLineNumber(span.line_id)
-        outer_source = arena.GetLineSourceString(span.line_id)
+        outer_source = GetLineSourceString(arena, span.line_id)
         source_str = '[ word at line %d of %s ]' % (line_num, outer_source)
       # NOTE: not using _PrintCodeExcerpt
 
@@ -150,6 +169,19 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
     elif case(source_e.Alias):
       src = cast(source__Alias, UP_src)
       source_str = '[ expansion of alias %r ]' % src.argv0
+
+    # TODO:
+    # - Consolidate Backticks and LValue into source.Reparsed(string comment)
+    # - ArgvWord should have string comment for 'eval', 'trap', etc.
+    # - This function should use arena.GetLineSourceString(), which is also
+    #   used by core/state.py
+
+    # - should you have multiple line formats?
+    #   - LValue calls _PrintCodeExcerpt
+    #   - ArgvWord could do that
+    #   - Variable could if we kept track of last assignment
+    #   - Source too
+
     elif case(source_e.Backticks):
       #src = cast(source__Backticks, UP_src)
       source_str = '[ backticks at ... ]'
@@ -157,7 +189,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       src = cast(source__LValue, UP_src)
       span2 = arena.GetLineSpan(src.left_spid)
       line2 = arena.GetLine(span2.line_id)
-      outer_source = arena.GetLineSourceString(span2.line_id)
+      outer_source = GetLineSourceString(arena, span2.line_id)
       source_str = '[ array LValue in %s ]' % outer_source
       # NOTE: The inner line number is always 1 because of reparsing.  We
       # overwrite it with the original span.

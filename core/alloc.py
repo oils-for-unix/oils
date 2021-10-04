@@ -114,24 +114,6 @@ class Arena(object):
     # type: (int) -> source_t
     return self.line_srcs[line_id]
 
-  def GetLineSourceString(self, line_id):
-    # type: (int) -> str
-    """Returns a human-readable string for dev tools."""
-    src = self.line_srcs[line_id]
-    UP_src = src
-
-    # TODO: Make it look nicer, like core/ui.py.
-    tag = src.tag_()
-    if tag == source_e.CFlag:
-      return '-c flag'
-    if tag == source_e.MainFile:
-      src = cast(source__MainFile, UP_src)
-      return src.path
-    if tag == source_e.SourcedFile:
-      src = cast(source__SourcedFile, UP_src)
-      return src.path
-    return repr(src)
-
   def AddLineSpan(self, line_id, col, length):
     # type: (int, int, int) -> int
     """Save a line_span and return a new span ID for later retrieval."""

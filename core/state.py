@@ -1068,7 +1068,7 @@ class Mem(object):
         if frame.call_spid != runtime.NO_SPID:  # first frame has this issue
           span = self.arena.GetLineSpan(frame.call_spid)
           line_id = span.line_id
-          d['call_source'] = self.arena.GetLineSourceString(line_id)
+          d['call_source'] = ui.GetLineSourceString(self.arena, line_id)
           d['call_line_num'] = self.arena.GetLineNumber(line_id)
           d['call_line'] = self.arena.GetLine(line_id)
 
@@ -1136,7 +1136,7 @@ class Mem(object):
     self.var_stack.append({})
 
     span = self.arena.GetLineSpan(def_spid)
-    source_str = self.arena.GetLineSourceString(span.line_id)
+    source_str = ui.GetLineSourceString(self.arena, span.line_id)
 
     # bash uses this order: top of stack first.
     self._PushDebugStack(source_str, func_name, None)
@@ -1698,7 +1698,7 @@ class Mem(object):
             strs.append('-')  # Bash does this to line up with main?
             continue
           span = self.arena.GetLineSpan(frame.call_spid)
-          source_str = self.arena.GetLineSourceString(span.line_id)
+          source_str = ui.GetLineSourceString(self.arena, span.line_id)
           strs.append(source_str)
         return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 

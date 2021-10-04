@@ -15,6 +15,7 @@ from asdl import runtime
 from core import error
 from core import optview
 from core import state
+from core import ui
 from qsn_ import qsn
 from core.pyerror import log
 from osh import word_
@@ -104,7 +105,7 @@ class CrashDumper(object):
 
         # Could also do msg % args separately, but JavaScript won't be able to
         # render that.
-        self.error['source'] = cmd_ev.arena.GetLineSourceString(line_id)
+        self.error['source'] = ui.GetLineSourceString(cmd_ev.arena, line_id)
         self.error['line_num'] = cmd_ev.arena.GetLineNumber(line_id)
         self.error['line'] = cmd_ev.arena.GetLine(line_id)
 

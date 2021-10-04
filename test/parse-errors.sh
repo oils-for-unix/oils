@@ -970,6 +970,32 @@ oil_place_mutation() {
   '
 }
 
+#
+# Different source_t variants
+#
+
+nested_source_argvword() {
+  # source.ArgvWord
+  _runtime-parse-error '
+  code="printf % x"
+  eval $code
+  '
+}
+
+eval_parse_error() {
+  _runtime-parse-error '
+  x="echo )"
+  eval $x
+  '
+}
+
+trap_parse_error() {
+  _runtime-parse-error '
+  trap "echo )" EXIT
+  '
+}
+# Note: PROMPT_COMAND and PS1 are hard to trigger in this framework
+
 cases-in-strings() {
   set +o errexit
 
@@ -1020,6 +1046,7 @@ cases-in-strings() {
   oil_var_decl
   oil_place_mutation
   parse_at
+  nested_source_argvword
 }
 
 # Cases in their own file
