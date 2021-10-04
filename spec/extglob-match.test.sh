@@ -42,6 +42,28 @@ FALSE
 FALSE
 ## END
 
+#### Matching literal '@(cc)'
+
+# should be disallowed?
+[[ cc == @(cc) ]]
+echo status=$?
+[[ cc == '@(cc)' ]]
+echo status=$?
+
+shopt -s extglob
+
+[[ cc == @(cc) ]]
+echo status=$?
+[[ cc == '@(cc)' ]]
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+status=0
+status=1
+## END
+
 #### nested @()
 shopt -s extglob
 pat='--@(help|verbose|no-@(long|short)-option)'

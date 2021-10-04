@@ -2131,7 +2131,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return cmd_val.argv
 
 
-
 def _SplitAssignArg(arg, w):
   # type: (str, compound_word) -> Tuple[str, Optional[value__Str]]
   i = arg.find('=')
