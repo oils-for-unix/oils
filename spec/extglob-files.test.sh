@@ -340,7 +340,7 @@ echo ,(osh|style)
 @(__nope__*|__nope__?|*|?|[:alpha:])
 ## END
 
-#### dashglob, noglob, etc.
+#### dashglob
 shopt -s extglob
 mkdir -p opts
 cd opts
@@ -351,21 +351,30 @@ echo @(*)
 shopt -u dashglob
 echo @(*)
 
-set -o noglob
-echo @(*)
 
 ## STDOUT:
 -dash bar foo
 bar foo
-@(*)
 ## END
 ## N-I mksh STDOUT:
 -dash bar foo
 -dash bar foo
-@(*)
 ## END
 ## N-I bash STDOUT:
 bar -dash foo
 bar -dash foo
+## END
+
+#### noglob
+shopt -s extglob
+mkdir -p _noglob
+cd _noglob
+
+set -o noglob
+echo @(*)
+echo @(__nope__*|__nope__?|'*'|'?'|'[:alpha:]')
+
+## STDOUT:
 @(*)
+@(__nope__*|__nope__?|*|?|[:alpha:])
 ## END

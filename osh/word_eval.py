@@ -1423,7 +1423,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       with tagswitch(part_val) as case:
         if case(part_value_e.String):
           part_val = cast(part_value__String, UP_part_val)
-          if part_val.quoted:
+          if part_val.quoted and not self.exec_opts.noglob():
             s = glob_.ExtendedGlobEscape(part_val.s)
           else:
             # e.g. the @( and | in @(foo|bar) aren't quoted
