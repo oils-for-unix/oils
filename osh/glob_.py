@@ -453,10 +453,6 @@ class Globber(object):
     Returns:
       Number of items appended.
     """
-    if not LooksLikeGlob(arg):
-      # e.g. don't glob 'echo' because it doesn't look like a glob
-      out.append(GlobUnescape(arg))
-      return 1
     if self.exec_opts.noglob():
       # we didn't glob escape it in osh/word_eval.py
       out.append(arg)

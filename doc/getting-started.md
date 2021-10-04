@@ -234,8 +234,6 @@ External:
 
 [BashGuide]: https://mywiki.wooledge.org/BashGuide
 
-[at-splice]: TODO
-
 ### Exit Codes
 
 - `0` for **success**.

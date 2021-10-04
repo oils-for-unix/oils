@@ -1866,7 +1866,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     #log('split args: %r', args)
     for a in args:
-      self.globber.Expand(a, argv)
+      if glob_.LooksLikeGlob(a):
+        self.globber.Expand(a, argv)
+      else:
+        argv.append(glob_.GlobUnescape(a))
 
   def _EvalWordToArgv(self, w):
     # type: (compound_word) -> List[str]
