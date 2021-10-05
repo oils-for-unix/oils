@@ -143,15 +143,12 @@ TEST util_test() {
 
 TEST libc_test() {
   Str* s1 = (new Str("foo.py "))->strip();
-  ASSERT(libc::fnmatch(new Str("*.py"), s1, false));
-  ASSERT(!libc::fnmatch(new Str("*.py"), new Str("foo.p"), false));
+  ASSERT(libc::fnmatch(new Str("*.py"), s1));
+  ASSERT(!libc::fnmatch(new Str("*.py"), new Str("foo.p")));
 
   // extended glob
-  ASSERT(libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.py"), true));
-  ASSERT(!libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.p"), true));
-
-  // looks like extended glob, but didn't turn it on
-  ASSERT(!libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.py"), false));
+  ASSERT(libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.py")));
+  ASSERT(!libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.p")));
 
   List<Str*>* results =
       libc::regex_match(new Str("(a+).(a+)"), new Str("-abaacaaa"));
