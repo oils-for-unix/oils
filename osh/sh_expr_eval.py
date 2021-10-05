@@ -1032,10 +1032,10 @@ class BoolEvaluator(ArithEvaluator):
 
           if op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual):
             #log('Matching %s against pattern %s', s1, s2)
-            return libc.fnmatch(s2, s1, self.exec_opts.extglob())
+            return libc.fnmatch(s2, s1)
 
           if op_id == Id.BoolBinary_GlobNEqual:
-            return not libc.fnmatch(s2, s1, self.exec_opts.extglob())
+            return not libc.fnmatch(s2, s1)
 
           if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
             return s1 == s2

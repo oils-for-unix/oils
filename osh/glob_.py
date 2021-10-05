@@ -476,7 +476,7 @@ class Globber(object):
 
     tmp = []  # type: List[str]
     n = self._Glob(glob_pat, tmp)
-    filtered = [s for s in tmp if libc.fnmatch(fnmatch_pat, s, True)]
+    filtered = [s for s in tmp if libc.fnmatch(fnmatch_pat, s)]
 
     if len(filtered):
       out.extend(filtered)

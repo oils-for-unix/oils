@@ -746,7 +746,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       with tagswitch(val) as case:
         if case(value_e.Str):
           val = cast(value__Str, UP_val)
-          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s, extglob)
+          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s)
           #log('%r %r -> %r', val.s, arg_val.s, s)
           new_val = value.Str(s) # type: value_t
 
@@ -756,14 +756,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
           strs = []  # type: List[str]
           for s in val.strs:
             if s is not None:
-              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, extglob))
+              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
           new_val = value.MaybeStrArray(strs)
 
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
           strs = []
           for s in val.d.values():
-            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, extglob))
+            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
           new_val = value.MaybeStrArray(strs)
 
         else:

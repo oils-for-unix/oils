@@ -54,9 +54,8 @@ static PyObject *
 func_fnmatch(PyObject *self, PyObject *args) {
   const char *pattern;
   const char *str;
-  unsigned char extglob;
 
-  if (!PyArg_ParseTuple(args, "ssb", &pattern, &str, &extglob)) {
+  if (!PyArg_ParseTuple(args, "ss", &pattern, &str)) {
     return NULL;
   }
 
@@ -67,9 +66,7 @@ func_fnmatch(PyObject *self, PyObject *args) {
   // musl libc (or OS X).  Instead we should compile extended globs to extended
   // regex syntax.
 #ifdef __GLIBC__
-  //if (extglob) {
   flags |= FNM_EXTMATCH;
-  //}
 #else
   debug("Warning: FNM_EXTMATCH is not defined");
 #endif

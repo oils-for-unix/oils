@@ -1266,7 +1266,7 @@ class CommandEvaluator(object):
                                                     word_eval.QUOTE_FNMATCH)
 
             #log('Matching word %r against pattern %r', to_match, pat_val.s)
-            if libc.fnmatch(pat_val.s, to_match, self.exec_opts.extglob()):
+            if libc.fnmatch(pat_val.s, to_match):
               status = self._ExecuteList(case_arm.action)
               done = True  # TODO: Parse ;;& and for fallthrough and such?
               break  # Only execute action ONCE
