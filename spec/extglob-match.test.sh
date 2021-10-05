@@ -380,10 +380,10 @@ echo ${x//@(?.py)/Z}
 ## STDOUT:
 foZ
 ## END
+## N-I osh status: 1
+## N-I osh stdout-json: ""
 
 #### Extended glob in ${x%PATTERN}
-
-# OSH BUG: needs DoUnarySuffixOp() needs LooksLikeExtGlob()
 
 shopt -s extglob
 x=foo.py

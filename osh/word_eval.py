@@ -736,27 +736,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
     op_kind = consts.GetKind(op.tok.id)
 
     if op_kind == Kind.VOp1:
-      # Detect extended glob so that DoUnarySuffixOp doesn't use the fast
-      # shortcut for constant strings
-      is_extglob = False
-      w = op.arg_word
-      UP_w = w
-      if w.tag_() == word_e.Compound:
-        w = cast(compound_word, UP_w)
-        for p in w.parts:
-          if p.tag_() == word_part_e.ExtGlob:
-            is_extglob = True
-          #log('arg %s', op.arg_word)
-
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
-      arg_val = self.EvalWordToString(op.arg_word, QUOTE_FNMATCH)
+      # Detect has_extglob so that DoUnarySuffixOp doesn't use the fast
+      # shortcut for constant strings.
+      arg_val, has_extglob = self.EvalWordToPattern(op.arg_word)
       assert arg_val.tag == value_e.Str
 
       UP_val = val
       with tagswitch(val) as case:
         if case(value_e.Str):
           val = cast(value__Str, UP_val)
-          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s, is_extglob)
+          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s, has_extglob)
           #log('%r %r -> %r', val.s, arg_val.s, s)
           new_val = value.Str(s) # type: value_t
 
@@ -766,14 +756,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
           strs = []  # type: List[str]
           for s in val.strs:
             if s is not None:
-              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, is_extglob))
+              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, has_extglob))
           new_val = value.MaybeStrArray(strs)
 
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
           strs = []
           for s in val.d.values():
-            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, is_extglob))
+            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, has_extglob))
           new_val = value.MaybeStrArray(strs)
 
         else:
@@ -787,9 +777,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _PatSub(self, val, op):
     # type: (value_t, suffix_op__PatSub) -> value_t
 
-    # globs are supported in the pattern
-    pat_val = self.EvalWordToString(op.pat, QUOTE_FNMATCH)
-    assert pat_val.tag == value_e.Str, pat_val
+    pat_val, has_extglob = self.EvalWordToPattern(op.pat)
+    # Extended globs aren't supported because we only translate * ? etc. to
+    # ERE.  I don't think there's a straightforward translation from !(*.py) to
+    # ERE!  You would need an engine that supports negation?  (Derivatives?)
+    if has_extglob:
+      e_die('extended globs not supported in ${x//GLOB/}', word=op.pat)
 
     if op.replace:
       replace_val = self.EvalWordToString(op.replace)
@@ -1751,7 +1744,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (word_t, int) -> value__Str
     """Given a word, return a string.
 
-    Apply the given quote algorithm to the word.
+    Flags can contain a quoting algorithm.
     """
     if UP_w.tag_() == word_e.Empty:
       return value.Str('')
@@ -1761,11 +1754,33 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     part_vals = []  # type: List[part_value_t]
     for p in w.parts:
+      # this doesn't use eval_flags, which is slightly confusing
       self._EvalWordPart(p, part_vals, 0)
 
     strs = []  # type: List[str]
     self._PartValsToString(part_vals, w, eval_flags, strs)
     return value.Str(''.join(strs))
+
+  def EvalWordToPattern(self, UP_w):
+    # type: (word_t) -> Tuple[value__Str, bool]
+    """Like EvalWordToString, but returns whether we got ExtGlob."""
+    if UP_w.tag_() == word_e.Empty:
+      return value.Str(''), False
+
+    assert UP_w.tag_() == word_e.Compound, UP_w
+    w = cast(compound_word, UP_w)
+
+    has_extglob = False
+    part_vals = []  # type: List[part_value_t]
+    for p in w.parts:
+      # this doesn't use eval_flags, which is slightly confusing
+      self._EvalWordPart(p, part_vals, 0)
+      if p.tag_() == word_part_e.ExtGlob:
+        has_extglob = True
+
+    strs = []  # type: List[str]
+    self._PartValsToString(part_vals, w, QUOTE_FNMATCH, strs)
+    return value.Str(''.join(strs)), has_extglob
 
   def EvalForPlugin(self, w):
     # type: (compound_word) -> value__Str
