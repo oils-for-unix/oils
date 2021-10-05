@@ -20,11 +20,11 @@ inline Str* gethostname() {
   return new Str(buf);
 }
 
-inline bool fnmatch(Str* pat, Str* str, bool extglob) {
+inline bool fnmatch(Str* pat, Str* str) {
   // copy into NUL-terminated buffers
   mylib::Str0 pat0(pat);
   mylib::Str0 str0(str);
-  int flags = extglob ? FNM_EXTMATCH : 0;
+  int flags = FNM_EXTMATCH;
   bool result = ::fnmatch(pat0.Get(), str0.Get(), flags) == 0;
   return result;
 }

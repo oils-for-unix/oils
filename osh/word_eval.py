@@ -736,10 +736,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
     op_kind = consts.GetKind(op.tok.id)
 
     if op_kind == Kind.VOp1:
+      # Detect extended glob so that DoUnarySuffixOp doesn't use the fast
+      # shortcut for constant strings
       is_extglob = False
-      for p in op.arg_word.parts:
-        if p.tag_() == word_part_e.ExtGlob:
-          is_extglob = True
+      w = op.arg_word
+      UP_w = w
+      if w.tag_() == word_e.Compound:
+        w = cast(compound_word, UP_w)
+        for p in w.parts:
+          if p.tag_() == word_part_e.ExtGlob:
+            is_extglob = True
           #log('arg %s', op.arg_word)
 
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.

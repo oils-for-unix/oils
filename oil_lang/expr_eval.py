@@ -390,9 +390,9 @@ class OilEvaluator(object):
 
         elif op.id == Id.Expr_DTilde:
           # no extglob in Oil language; use eggex
-          return libc.fnmatch(right, left, False)
+          return libc.fnmatch(right, left)
         elif op.id == Id.Expr_NotDTilde:
-          return not libc.fnmatch(right, left, False)
+          return not libc.fnmatch(right, left)
 
         elif op.id == Id.Expr_TildeDEqual:
           # Approximate equality
