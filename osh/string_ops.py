@@ -227,15 +227,15 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
 #   then the result back at the end.
 # - Compile time errors for [[:space:]] ?
 
-def DoUnarySuffixOp(s, op, arg):
-  # type: (str, suffix_op__Unary, str) -> str
+def DoUnarySuffixOp(s, op, arg, is_extglob):
+  # type: (str, suffix_op__Unary, str, bool) -> str
   """Helper for ${x#prefix} and family."""
 
   tok = op.tok
 
   # Fast path for constant strings.
   # TODO: Should be LooksLikeExtendedGlob!
-  if not glob_.LooksLikeGlob(arg):
+  if not is_extglob and not glob_.LooksLikeGlob(arg):
     # It doesn't look like a glob, but we glob-escaped it (e.g. [ -> \[).  So
     # reverse it.  NOTE: We also do this check in Globber.Expand().  It would
     # be nice to somehow store the original string rather than

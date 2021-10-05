@@ -447,10 +447,14 @@ _VS_ARG_COMMON = [
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
-  _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+  _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + \
+  _VARS + _EXTGLOB_BEGIN + [
+
   _TILDE_LIKE,
-  # NOTE: added < and > so it doesn't eat <()
-  R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
+  # - doesn't match < and > so it doesn't eat <()
+  # - doesn't match  @ ! ? + * so it doesn't eat _EXTGLOB_BEGIN -- ( alone it
+  #   not enough
+  R(r'[^$`/}"\'\0\\#%<>@!?+*]+', Id.Lit_Chars),
   R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 

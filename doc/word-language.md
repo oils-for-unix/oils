@@ -234,7 +234,7 @@ Or produce lists of filename arguments:
 
 There are some limitations and differences:
 
-- They're only supported when Oil is built with GNU libc.
+- Extended globs are supported only when Oil is built with GNU libc.
   - GNU libc has the `FNM_EXTMATCH` extension to `fnmatch()`.  Unlike bash and
     mksh, Oil doesn't implement its own extended glob matcher.
 - They're more **static**, like in `mksh`.  When an extended glob appears in a
@@ -244,19 +244,21 @@ There are some limitations and differences:
     `$unquoted/@(*.cc|h)`.
   - You can't use arrays like `"$@"` and extended globs in the same word, e.g.
     `"$@"_*.@(cc|h).  This is usually nonsensical anyway.
-- The `extglob` option behaves slightly differently.
-  - In `bash`, an unquoted extended glob is a syntax error unless `extglob` is
-    on.  In Oil, `extglob` doesn't affect parsing at all.
-  - `bash` sometimes respects extended globs even when `extglob` is off.  In
-    Oil, they're respected if and only if `extglob` is on.
-- They can't be used in the `PATTERN` in `${x//PATTERN/replace}`.  This is
-  because we only translate normal (non-extended) globs to regexes (in order to
-  get the position information necessary for string replacement).
-- They're not supported when `shopt --set simple_word_eval`, i.e. Oil word
-  evaluation.
+- OSH only accepts them in **contexts** that make sense.
+  - For example, `echo foo > @(cc|h)` is a runtime error in OSH, but other
+    shells will write a file literally named `@(cc|h)`.
+  - OSH doesn't accept `${undef:-@(cc)}`.  But it does accept `${x%@(cc)}`,
+    since string strip operators like `%` accept a glob.
+- Extended globbing is always on in OSH, regardless of `shopt -s extglob`.
+  - Trivia: `bash` can't parse some extended globs unless `extglob` is on.  But
+    it parses others when it's off.
+- Extended globs can't be used in the `PATTERN` in `${x//PATTERN/replace}`.
+  This is because we only translate normal (non-extended) globs to regexes (in
+  order to get the position information necessary for string replacement).
+- They're not supported when `shopt --set simple_word_eval` (Oil word
+  evaluation).
   - For similar reasons, they're also not supported in assignment builtins.
     (This is a good thing!)
-
 
 ## Notes
 

@@ -326,6 +326,10 @@ FALSE
 TRUE
 FALSE
 ## END
+## OK osh status: 1
+## OK osh STDOUT:
+TRUE
+## END
 
 #### extglob is not detected in regex!
 shopt -s extglob

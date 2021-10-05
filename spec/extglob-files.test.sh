@@ -204,11 +204,15 @@ echo ${undef:-@(foo|bar).py}
 
 ## STDOUT:
 bar.py foo.py spam.py
+bar.py foo.py
+## END
+## OK mksh STDOUT:
+bar.py foo.py spam.py
 @(foo|bar).py
 ## END
-## OK bash STDOUT:
+## OK osh status: 1
+## OK osh STDOUT:
 bar.py foo.py spam.py
-bar.py foo.py
 ## END
 
 #### Extended glob in assignment builtin

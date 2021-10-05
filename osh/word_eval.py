@@ -736,17 +736,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
     op_kind = consts.GetKind(op.tok.id)
 
     if op_kind == Kind.VOp1:
+      is_extglob = False
+      for p in op.arg_word.parts:
+        if p.tag_() == word_part_e.ExtGlob:
+          is_extglob = True
+          #log('arg %s', op.arg_word)
+
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
       arg_val = self.EvalWordToString(op.arg_word, QUOTE_FNMATCH)
       assert arg_val.tag == value_e.Str
-
-      extglob = self.exec_opts.extglob()
 
       UP_val = val
       with tagswitch(val) as case:
         if case(value_e.Str):
           val = cast(value__Str, UP_val)
-          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s)
+          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s, is_extglob)
           #log('%r %r -> %r', val.s, arg_val.s, s)
           new_val = value.Str(s) # type: value_t
 
@@ -756,14 +760,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
           strs = []  # type: List[str]
           for s in val.strs:
             if s is not None:
-              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
+              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, is_extglob))
           new_val = value.MaybeStrArray(strs)
 
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
           strs = []
           for s in val.d.values():
-            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
+            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, is_extglob))
           new_val = value.MaybeStrArray(strs)
 
         else:
