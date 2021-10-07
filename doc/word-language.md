@@ -243,7 +243,7 @@ There are some limitations and differences:
   - Automatic word splitting is skipped in something like
     `$unquoted/@(*.cc|h)`.
   - You can't use arrays like `"$@"` and extended globs in the same word, e.g.
-    `"$@"_*.@(cc|h).  This is usually nonsensical anyway.
+    `"$@"_*.@(cc|h)`.  This is usually nonsensical anyway.
 - OSH only accepts them in **contexts** that make sense.
   - For example, `echo foo > @(cc|h)` is a runtime error in OSH, but other
     shells will write a file literally named `@(cc|h)`.
