@@ -251,32 +251,6 @@ echo 4 ${x//*\(\)/z}
 4 z
 ## END
 
-
-#### Extended globs!  (not supported in Oil)
-shopt -s extglob
-
-x='foo()' 
-echo ext ${x//*(foo|bar)/z}
-echo ext "${x//*(foo|bar)/z}"
-
-## STDOUT:
-ext z()
-ext z()
-## END
-
-# I don't get what bash is doing here!
-## BUG bash STDOUT:
-ext zz(z)
-ext zz(z)
-## END
-
-# GlobToERE doesn't support extended globs!
-
-## N-I osh STDOUT:
-ext foo()
-ext foo()
-## END
-
 #### patsub with single quotes and hyphen in character class (regression)
 
 # from Crestwave's bf.bash
