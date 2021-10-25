@@ -166,7 +166,7 @@ Shell workaround when the `"$@"` dispatch pattern is used:
 
 Better Oil Style:
 
-    if run myfunc {
+    if try myfunc {
       echo 'Success'
     }
 
