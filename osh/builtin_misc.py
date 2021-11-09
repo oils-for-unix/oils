@@ -311,7 +311,7 @@ class Read(vm._Builtin):
 
     bits = 0
     if self.stdin.isatty():
-      if arg.d:
+      if arg.d is not None:
         bits |= pyos.TERM_ICANON
       if arg.s:  # silent
         bits |= pyos.TERM_ECHO
