@@ -116,7 +116,13 @@ class TermState(object):
 
   def Restore(self):
     # type: () -> None
-    termios.tcsetattr(self.fd, termios.TCSANOW, self.orig_attrs)
+    try:
+      termios.tcsetattr(self.fd, termios.TCSANOW, self.orig_attrs)
+    except termios.error as e:
+      # Superficial fix for issue #1001.  I'm not sure why we get errno.EIO,
+      # but we can't really handle it here.  In C++ I guess we ignore the
+      # error.
+      pass
 
 
 def OsType():
