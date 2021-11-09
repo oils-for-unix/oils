@@ -107,6 +107,14 @@ cat err.txt | filter_err
 ## STDOUT:
 ## END
 
+# Other shells check this error, but let's just truncate deterministically
+
+## STDOUT:
+status=255
+status=0
+status=1
+## END
+
 # dash uses '2' as its "bad status" status!
 
 ## OK dash STDOUT:
@@ -164,6 +172,9 @@ echo status=$?
 cat err.txt | filter_err
 
 ## STDOUT:
+status=255
+status=0
+status=1
 ## END
 
 ## OK dash STDOUT:
