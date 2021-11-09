@@ -474,7 +474,7 @@ func-parsing() {
 }
 
 sh-func() {
-  sh-spec spec/sh-func.test.sh \
+  sh-spec spec/sh-func.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -620,7 +620,7 @@ strict-options() {
 }
 
 exit-status() {
-  sh-spec spec/exit-status.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/exit-status.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

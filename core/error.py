@@ -61,7 +61,9 @@ class _ControlFlow(Exception):
   def StatusCode(self):
     # type: () -> int
     assert self.IsReturn()
-    return self.arg
+    # All shells except dash do this truncation.
+    # turn 257 into 1, and -1 into 255.
+    return self.arg & 0xff
 
   def __repr__(self):
     # type: () -> str
