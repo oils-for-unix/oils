@@ -563,6 +563,8 @@ OCTAL3_RE = r'\\[0-7]{1,3}'
 PS1_DEF = [
     R(OCTAL3_RE, Id.PS_Octal3),
     R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
+    # \D{%H:%M} strftime format
+    R(r'\\D\{[^}]*\}', Id.PS_Subst),
     C(r'\[', Id.PS_LBrace),  # non-printing
     C(r'\]', Id.PS_RBrace),
     R(r'[^\\\0]+', Id.PS_Literals),

@@ -173,6 +173,40 @@ echo status=$?
 status=0
 ## END
 
+#### \A for 24 hour time
+PS1='foo \A bar'
+echo "${PS1@P}" | egrep -q 'foo [0-9][0-9]:[0-9][0-9] bar'
+echo matched=$?
+## STDOUT:
+matched=0
+## END
+
+#### \D{%H:%M} for strftime
+PS1='foo \D{%H:%M} bar'
+echo "${PS1@P}" | egrep -q 'foo [0-9][0-9]:[0-9][0-9] bar'
+echo matched=$?
+
+PS1='foo \D{%H:%M:%S} bar'
+echo "${PS1@P}" | egrep -q 'foo [0-9][0-9]:[0-9][0-9]:[0-9][0-9] bar'
+echo matched=$?
+
+## STDOUT:
+matched=0
+matched=0
+## END
+
+#### \D{} for locale specific strftime
+
+# In bash y.tab.c uses %X when string is empty
+# This doesn't seem to match exactly, but meh for now.
+
+PS1='foo \D{} bar'
+echo "${PS1@P}" | egrep -q '^foo [0-9][0-9]:[0-9][0-9]:[0-9][0-9]( ..)? bar$'
+echo matched=$?
+## STDOUT:
+matched=0
+## END
+
 #### @P with array
 $SH -c 'echo ${@@P}' dummy a b c
 echo status=$?
@@ -193,3 +227,4 @@ status=1
 status=1
 status=1
 ## END
+

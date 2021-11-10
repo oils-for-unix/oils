@@ -5,6 +5,8 @@ User interface details should go in core/ui.py.
 """
 from __future__ import print_function
 
+import time as time_
+
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
 from _devbuild.gen.syntax_asdl import (
@@ -138,7 +140,7 @@ class Evaluator(object):
         ret.append('\x02')
 
       elif id_ == Id.PS_Subst:  # \u \h \w etc.
-        ch = value[1:]
+        ch = value[1]
         if ch == '$':  # So the user can tell if they're root or not.
           r = self.cache.Get('$')
 
@@ -152,6 +154,19 @@ class Evaluator(object):
 
         elif ch == 'H':
           r = self.cache.Get('hostname')
+
+        elif ch == 'A':
+          now = time_.time()
+          r = time_.strftime('%H:%M', time_.localtime(now))
+
+        elif ch == 'D':  # \D{%H:%M} is the only one with a suffix
+          now = time_.time()
+          fmt = value[3:-1]  # \D{%H:%M}
+          if len(fmt) == 0:
+            # In bash y.tab.c uses %X when string is empty
+            # This doesn't seem to match exactly, but meh for now.
+            fmt = '%X'
+          r = time_.strftime(fmt, time_.localtime(now))
 
         elif ch == 'w':
           try:
