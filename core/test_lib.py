@@ -236,7 +236,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
       ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
   assert cmd_ev.mutable_opts is not None, cmd_ev
-  prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
+  prompt_ev = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)
 
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                       prompt_ev, tracer)
