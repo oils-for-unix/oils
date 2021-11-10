@@ -207,6 +207,20 @@ echo matched=$?
 matched=0
 ## END
 
+#### \s and \v for shell and version
+PS1='foo \s bar'
+echo "${PS1@P}" | egrep -q '^foo (bash|osh) bar$'
+echo match=$?
+
+PS1='foo \v bar'
+echo "${PS1@P}" | egrep -q '^foo [0-9.]+ bar$'
+echo match=$?
+
+## STDOUT:
+match=0
+match=0
+## END
+
 #### @P with array
 $SH -c 'echo ${@@P}' dummy a b c
 echo status=$?

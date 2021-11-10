@@ -91,12 +91,13 @@ class Evaluator(object):
   another '!' (that is, "!!" ) shall place the literal character '!' in the
   prompt.
   """
-  def __init__(self, lang, parse_ctx, mem):
-    # type: (str, ParseContext, Mem) -> None
+  def __init__(self, lang, version_str, parse_ctx, mem):
+    # type: (str, str, ParseContext, Mem) -> None
     self.word_ev = None  # type: AbstractWordEvaluator
 
     assert lang in ('osh', 'oil'), lang
     self.lang = lang
+    self.version_str = version_str
     self.parse_ctx = parse_ctx
     self.mem = mem
 
@@ -154,6 +155,12 @@ class Evaluator(object):
 
         elif ch == 'H':
           r = self.cache.Get('hostname')
+
+        elif ch == 's':
+          r = self.lang
+
+        elif ch == 'v':
+          r = self.version_str
 
         elif ch == 'A':
           now = time_.time()

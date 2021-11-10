@@ -384,7 +384,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   shell_ex = NullExecutor(exec_opts, mutable_opts, procs, builtins)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
-  prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
+  prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
 
   # Wire up circular dependencies.
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
