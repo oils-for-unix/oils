@@ -100,10 +100,6 @@ class Evaluator(object):
     self.version_str = version_str
     self.parse_ctx = parse_ctx
     self.mem = mem
-
-    # The default prompt is osh$ or oil$ for now.  bash --noprofile --norc ->
-    # 'bash-4.3$ '
-    self.default_prompt = lang + '$ '
     self.cache = _PromptEvaluatorCache()  # Cache to save syscalls / libc calls.
 
     # These caches should reduce memory pressure a bit.  We don't want to
@@ -216,7 +212,7 @@ class Evaluator(object):
     # type: (value_t) -> str
     """Perform the two evaluations that bash does.  Used by $PS1 and ${x@P}."""
     if UP_val.tag_() != value_e.Str:
-      return self.default_prompt  # no evaluation necessary
+      return ''  # e.g. if the user does 'unset PS1'
 
     val = cast(value__Str, UP_val)
 
@@ -254,7 +250,7 @@ class Evaluator(object):
     else:
       # TODO: If the lang is Oil, we should use a better prompt language than
       # $PS1!!!
-      return self.default_prompt
+      return self.lang + '$ '
 
 PROMPT_COMMAND = 'PROMPT_COMMAND'
 

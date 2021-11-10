@@ -839,6 +839,12 @@ def InitMem(mem, environ, version_str):
   mem.SetPwd(pwd)
 
 
+def InitInteractive(mem):
+  # Same default PS1 as bash
+  if mem.GetValue('PS1').tag_() == value_e.Undef:
+    SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
+
+
 class ctx_Call(object):
   """For function calls."""
 

@@ -6,9 +6,9 @@
 # _deps/spec-bin/bash
 echo 'echo foo' | PS1='[prompt] ' $SH --rcfile /dev/null -i >out.txt 2>err.txt
 fgrep -q '[prompt]' out.txt err.txt
-echo status=$?
+echo match=$?
 ## STDOUT:
-status=0
+match=0
 ## END
 
 #### \[\] are non-printing
@@ -240,5 +240,15 @@ status=0
 status=1
 status=1
 status=1
+## END
+
+#### default PS1
+#flags='--norc --noprofile'
+flags='--rcfile /dev/null'
+
+$SH $flags -i -c 'echo "_${PS1}_"'
+
+## STDOUT:
+_\s-\v\$ _
 ## END
 

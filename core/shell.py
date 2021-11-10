@@ -556,6 +556,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil/%src' % lang)
 
   if flag.headless:
+    state.InitInteractive(mem)
     mutable_opts.set_redefine_proc()
     mutable_opts.set_redefine_module()
 
@@ -585,6 +586,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     return status
 
   if exec_opts.interactive():
+    state.InitInteractive(mem)
     # bash: 'set -o emacs' is the default only in the interactive shell
     mutable_opts.set_emacs()
     mutable_opts.set_redefine_proc()
