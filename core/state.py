@@ -840,6 +840,9 @@ def InitMem(mem, environ, version_str):
 
 
 def InitInteractive(mem):
+  # type: (Mem) -> None
+  """Initialization that's only done in the interactive/headless shell."""
+
   # Same default PS1 as bash
   if mem.GetValue('PS1').tag_() == value_e.Undef:
     SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
