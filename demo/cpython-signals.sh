@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./cpython-signals.sh <function name>
+#   demo/cpython-signals.sh <function name>
 
 set -o nounset
 set -o pipefail

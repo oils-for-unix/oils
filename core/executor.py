@@ -3,6 +3,7 @@ executor.py
 """
 from __future__ import print_function
 
+import errno
 import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
@@ -17,6 +18,7 @@ from core import dev
 from core import error
 from core import process
 from core.pyerror import e_die, log
+from core import pyos
 from core import ui
 from core import vm
 from frontend import consts
@@ -370,10 +372,17 @@ class ShellExecutor(vm._Executor):
     chunks = []  # type: List[str]
     posix.close(w)  # not going to write
     while True:
-      byte_str = posix.read(r, 4096)
-      if len(byte_str) == 0:
+      n, err_num = pyos.Read(r, 4096, chunks)
+
+      if n < 0:
+        if err_num == errno.EINTR:
+          pass  # retry
+        else:
+          # Like the top level IOError handler
+          e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+
+      elif n == 0:  # EOF
         break
-      chunks.append(byte_str)
     posix.close(r)
 
     status = p.Wait(self.waiter)

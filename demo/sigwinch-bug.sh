@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./sigwinch-bug.sh <function name>
+#   demo/sigwinch-bug.sh <function name>
+#
+# Related: demo/signal-during-read.sh
 
 set -o nounset
 set -o pipefail

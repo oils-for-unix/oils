@@ -10,6 +10,8 @@ builtin_misc.py - Misc builtins.
 """
 from __future__ import print_function
 
+import errno
+
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     span_e, cmd_value__Argv, lvalue, value, scope_e)
@@ -17,8 +19,9 @@ from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import alloc
 from core import error
-from core import pyos
 from core.pyerror import e_usage, e_die, log
+from core import pyos
+from core import pyutil
 from core import state
 from core import ui
 from core import vm
@@ -43,6 +46,8 @@ if TYPE_CHECKING:
   from osh.split import SplitContext
 
 _ = log
+
+NEWLINE_CH = 10  # ord('\n')
 
 #
 # Implementation of builtins.
@@ -138,63 +143,85 @@ def _AppendParts(s, spans, max_results, join_next, parts):
   return done, join_next
 
 
-def _ReadUntilDelim(delim_char):
-  # type: (Optional[str]) -> Tuple[str, bool]
+def _ReadUntilDelim(delim_byte):
+  # type: (int) -> Tuple[str, bool]
   """Read a portion of stdin.
   
-  If delim_char is set, read until that delimiter, but don't include it.
-  If not set, read a line, and include the newline.
+  Read until that delimiter, but don't include it.
   """
   eof = False
-  chars = []  # type: List[str]
+  ch_array = []  # type: List[int]
   while True:
-    c = posix.read(0, 1)
-    if len(c) == 0:
+    ch, err_num = pyos.ReadByte(0)
+    if ch < 0:
+      if err_num == errno.EINTR:
+        pass  # retry
+      else:
+        # Like the top level IOError handler
+        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+
+    elif ch == pyos.EOF_SENTINEL:
       eof = True
       break
 
-    if c == delim_char:
+    elif ch == delim_byte:
       break
 
-    chars.append(c)
+    ch_array.append(ch)
 
-  return ''.join(chars), eof
+  return pyutil.ChArrayToString(ch_array), eof
 
 
-# sys.stdin.readline() in Python has buffering, so we need our own function.
-# TODO: Rewrite this tight loop in C (or Tea) for less garbage.
+# sys.stdin.readline() in Python has its own buffering which is incompatible
+# with shell semantics.  dash, mksh, and zsh all read a single byte at a
+# time with read(0, 1).
 
-# Note that dash, mksh, and zsh all read a single byte at a time.  It appears
-# to be required by POSIX?  Could try libc getline and make this an option.
-
-def _ReadLine():
+def _ReadLineSlowly():
   # type: () -> str
   """Read a line from stdin."""
-  # TODO: This should be an array of integers in C++
-  chars = []  # type: List[str]
+  ch_array = []  # type: List[int]
   while True:
-    c = posix.read(0, 1)
-    if len(c) == 0:
+    ch, err_num = pyos.ReadByte(0)
+
+    if ch < 0:
+      if err_num == errno.EINTR:
+        pass  # retry
+      else:
+        # Like the top level IOError handler
+        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+
+    elif ch == pyos.EOF_SENTINEL:
       break
 
-    chars.append(c)
+    ch_array.append(ch)
 
-    if c == '\n':
+    # TODO: Add option to omit newline
+    if ch == NEWLINE_CH:
       break
 
-  return ''.join(chars)
+  return pyutil.ChArrayToString(ch_array)
 
 
 def _ReadAll():
   # type: () -> str
-  """Read all of stdin."""
+  """Read all of stdin.
+
+  Similar to command sub in core/executor.py, except we might run trap handlers
+  here on EINTR.
+  """
   chunks = []  # type: List[str]
   while True:
-    c = posix.read(0, 4096)
-    if len(c) == 0:
-      break
+    n, err_num = pyos.Read(0, 4096, chunks)
 
-    chunks.append(c)
+    if n < 0:
+      if err_num == errno.EINTR:
+        pass  # retry
+      else:
+        # Like the top level IOError handler
+        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+
+    elif n == 0:  # EOF
+      break
 
   return ''.join(chunks)
 
@@ -209,7 +236,10 @@ class Read(vm._Builtin):
 
   def _Line(self, arg, var_name):
     # type: (arg_types.read, str) -> int
-    line = _ReadLine()
+    """For read --line."""
+
+    # TODO: Use buffered I/O, since --line doesn't have to be compatible?
+    line = _ReadLineSlowly()
     if len(line) == 0:  # EOF
       return 1
 
@@ -335,13 +365,21 @@ class Read(vm._Builtin):
     chunks = []  # type: List[str]
     bytes_left = n
     while bytes_left > 0:
-      chunk = posix.read(stdin_fd, n)  # read at up to N chars
-      if len(chunk) == 0:
+      n, err_num = pyos.Read(stdin_fd, n, chunks)  # read up to n bytes
+
+      if n < 0:
+        if err_num == errno.EINTR:
+          pass  # retry
+        else:
+          # Like the top level IOError handler
+          e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+
+      elif n == 0:  # EOF
         break
-      chunks.append(chunk)
-      bytes_left -= len(chunk)
-    s = ''.join(chunks)
-    return s
+
+      bytes_left -= n
+
+    return ''.join(chunks)
 
   def _Read(self, arg, names):
     # type: (arg_types.read, List[str]) -> int
@@ -371,16 +409,16 @@ class Read(vm._Builtin):
 
     if arg.Z:  # -0 is synonym for -r -d ''
       raw = True
-      delim_char = '\0'
+      delim_byte = 0
     else:
       raw = arg.r
       if arg.d is not None:
         if len(arg.d):
-          delim_char = arg.d[0]
+          delim_byte = ord(arg.d[0])
         else:
-          delim_char = '\0'  # -d '' delimits by NUL
+          delim_byte = 0  # -d '' delimits by NUL
       else:
-        delim_char = '\n'  # read a line
+        delim_byte = NEWLINE_CH  # read a line
 
     # We have to read more than one line if there is a line continuation (and
     # it's not -r).
@@ -388,7 +426,7 @@ class Read(vm._Builtin):
     join_next = False
     status = 0
     while True:
-      line, eof = _ReadUntilDelim(delim_char)
+      line, eof = _ReadUntilDelim(delim_byte)
 
       if eof:
         # status 1 to terminate loop.  (This is true even though we set
@@ -447,9 +485,10 @@ class MapFile(vm._Builtin):
 
     lines = []  # type: List[str]
     while True:
-      line = _ReadLine()
+      line = _ReadLineSlowly()
       if len(line) == 0:
         break
+      # note: at least on Linux, bash doesn't strip \r\n
       if arg.t and line.endswith('\n'):
         line = line[:-1]
       lines.append(line)
@@ -749,9 +788,23 @@ class Cat(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
+    chunks = []  # type: List[str]
     while True:
-      chunk = posix.read(0, 4096)
-      if len(chunk) == 0:
+      n, err_num = pyos.Read(0, 4096, chunks)
+
+      if n < 0:
+        if err_num == errno.EINTR:
+          pass  # retry
+        else:
+          # Like the top level IOError handler
+          e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+
+      elif n == 0:  # EOF
         break
-      mylib.Stdout().write(chunk)
+
+      # Stream it to stdout
+      assert len(chunks) == 1
+      mylib.Stdout().write(chunks[0])
+      chunks.pop()
+
     return 0

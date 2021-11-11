@@ -13,7 +13,7 @@ from pylib import os_path
 
 import posix_ as posix
 
-from typing import Any, Union, TYPE_CHECKING
+from typing import List, Any, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from mycpp import mylib
 
@@ -44,6 +44,15 @@ def IsValidCharEscape(c):
   # What about ^(...) or %(...) or /(...) .(1+2), etc.?  
 
   return ch in _PUNCT  # like ispunct() in C
+
+
+def ChArrayToString(a):
+  # type: (List[int]) -> str
+  """We avoid allocating 1 byte string objects in the C++ implementation.
+
+  'ch' is short for an integer that represents a character.
+  """
+  return ''.join(chr(c) for c in a)
 
 
 def BackslashEscape(s, meta_chars):

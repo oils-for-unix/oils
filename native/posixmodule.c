@@ -2056,24 +2056,14 @@ posix_read(PyObject *self, PyObject *args)
         Py_DECREF(buffer);
         return posix_error();
     }
-    // OVM_MAIN patch: Retry on EINTR.
-    while (1) {
-        Py_BEGIN_ALLOW_THREADS
-        n = read(fd, PyString_AsString(buffer), size);
-        Py_END_ALLOW_THREADS
-
-        if (n >= 0) {  // success
-            break;
-        } else {
-            if (PyErr_CheckSignals()) {
-                return NULL;  // Propagate KeyboardInterrupt
-            }
-            if (errno != EINTR) {
-                Py_DECREF(buffer);
-                return posix_error();
-            }
-        }
-        // Otherwise, try again on EINTR.
+    // NOTE: Unlike write(), not retrying on EINTR, because shell's 'read' builtin
+    // must handle it explicitly, run pending traps, and retry.
+    Py_BEGIN_ALLOW_THREADS
+    n = read(fd, PyString_AsString(buffer), size);
+    Py_END_ALLOW_THREADS
+    if (n < 0) {
+        Py_DECREF(buffer);
+        return posix_error();
     }
     if (n != size)
         _PyString_Resize(&buffer, n);

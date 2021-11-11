@@ -14,10 +14,55 @@ import time
 
 import posix_ as posix
 
-from typing import Optional, Tuple, Dict, cast, Any, TYPE_CHECKING
+from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
+
+
+def Read(fd, n, buf):
+  # type: (int, int, List[str]) -> Tuple[int, int]
+  """
+  C-style wrapper around Python's posix.read() that uses return values instead
+  of exceptions for errors.  We will implement this directly in C++ and not use
+  exceptions at all.
+
+  It reads n bytes from the given file descriptor and appends it to buf.
+
+  Returns:
+    (-1, errno) on failure
+    (number of bytes read, 0) on success.  Where 0 bytes read indicates EOF.
+  """
+  try:
+    chunk = posix.read(fd, n)
+  except IOError as e:
+    return -1, e.errno
+  else:
+    buf.append(chunk)
+    return len(chunk), 0
+
+
+EOF_SENTINEL = 256  # bigger than any byte
+
+def ReadByte(fd):
+  # type: (int) -> Tuple[int, int]
+  """
+  Another low level interface with a return value interface.  Used by
+  _ReadUntilDelim() and _ReadLineSlowly().
+
+  Returns:
+    failure: (-1, errno) on failure
+    success: (ch integer value or EOF_SENTINEL, 0)
+  """
+  try:
+    b = posix.read(fd, 1)
+  except IOError as e:
+    return -1, e.errno
+  else:
+    if len(b):
+      return ord(b), 0
+    else:
+      return EOF_SENTINEL, 0
 
 
 def Environ():

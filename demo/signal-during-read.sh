@@ -3,6 +3,8 @@
 # bash and zsh explicitly handle EINTR during the 'read' builtin, and run
 # pending traps!  OSH should do this too.
 
+# Related: demo/sigwinch-bug.sh
+
 handler() {
   echo "SIGHUP received"
 }
