@@ -1293,16 +1293,11 @@ class CommandEvaluator(object):
 
     return status, check_errexit
 
-  def _Execute(self, node):
-    # type: (command_t) -> int
-    """Apply redirects, call _Dispatch(), and performs the errexit check.
+  def RunPendingTraps(self):
+    # type: () -> None
 
-    Args:
-      node: syntax_asdl.command_t
-    """
-    # See core/builtin.py for the Python signal handler that appends to this
+    # See osh/builtin_process.py _TrapHandler for the code that appends to this
     # list.
-
     if len(self.trap_nodes):
       # Make a copy and clear it so we don't cause an infinite loop.
       to_run = list(self.trap_nodes)
@@ -1314,6 +1309,14 @@ class CommandEvaluator(object):
             # Trace it.  TODO: Show the trap kind too
             with dev.ctx_Tracer(self.tracer, 'trap', None):
               self._Execute(trap_node)
+
+  def _Execute(self, node):
+    # type: (command_t) -> int
+    """Apply redirects, call _Dispatch(), and performs the errexit check.
+
+    Also runs trap handlers.
+    """
+    self.RunPendingTraps()
 
     # This has to go around redirect handling because the process sub could be
     # in the redirect word:
