@@ -5,6 +5,7 @@ Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
+import errno as errno_
 import pwd
 import resource
 import signal
@@ -12,12 +13,19 @@ import select
 import termios  # for read -n
 import time
 
+from core.pyerror import e_die
+from core import pyutil
+
 import posix_ as posix
 
 from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
+
+
+EOF_SENTINEL = 256  # bigger than any byte
+NEWLINE_CH = 10  # ord('\n')
 
 
 def Read(fd, n, buf):
@@ -42,8 +50,6 @@ def Read(fd, n, buf):
     return len(chunk), 0
 
 
-EOF_SENTINEL = 256  # bigger than any byte
-
 def ReadByte(fd):
   # type: (int) -> Tuple[int, int]
   """
@@ -65,23 +71,47 @@ def ReadByte(fd):
       return EOF_SENTINEL, 0
 
 
-_STDIN = None
-
 def ReadLine():
   # type: () -> str
   """Read a line from stdin.
 
+  This is a SLOW PYTHON implementation taht calls read(0, 1) too many times.  I
+  tried to write libc.stdin_readline() which uses the getline() function, but
+  somehow that makes spec/oil-builtins.test.sh fail.  We use Python's
+  f.readline() in frontend/reader.py FileLineReader with f == stdin.
+  
+  So I think the buffers get confused:
+  - Python buffers for sys.stdin.readline()
+  - libc buffers for getline()
+  - no buffers when directly issuing read(0, 1) calls, which ReadByte() does
+
   TODO: Add keep_newline arg
   """
-  # Hack to prevent buffering of sys.stdin.readline().  Exporting
-  # PYTHONUNBUFFERED=1 doesn't seem to work.
-  # Initializing this at the top level causes problems in object cleanup, so do
-  # it locally.
-  global _STDIN
-  if _STDIN is None:
-    _STDIN = posix.fdopen(0, 'r')
+  ch_array = []  # type: List[int]
+  while True:
+    ch, err_num = ReadByte(0)
 
-  return _STDIN.readline()
+    if ch < 0:
+      if err_num == errno_.EINTR:
+        # Instead of retrying, return EOF, which is what libc.stdin_readline()
+        # did.  I think this interface is easier with getline().
+        # This causes 'read --line' to return status 1.
+        return ''
+      else:
+        # Like the top level IOError handler
+        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+
+    elif ch == EOF_SENTINEL:
+      break
+
+    else:
+      ch_array.append(ch)
+
+    # TODO: Add option to omit newline
+    if ch == NEWLINE_CH:
+      break
+
+  return pyutil.ChArrayToString(ch_array)
 
 
 def Environ():

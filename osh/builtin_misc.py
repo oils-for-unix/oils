@@ -47,8 +47,6 @@ if TYPE_CHECKING:
 
 _ = log
 
-NEWLINE_CH = 10  # ord('\n')
-
 #
 # Implementation of builtins.
 #
@@ -232,7 +230,7 @@ def _ReadLineSlowly(cmd_ev):
       ch_array.append(ch)
 
     # TODO: Add option to omit newline
-    if ch == NEWLINE_CH:
+    if ch == pyos.NEWLINE_CH:
       break
 
   return pyutil.ChArrayToString(ch_array)
@@ -242,8 +240,7 @@ def _ReadAll():
   # type: () -> str
   """Read all of stdin.
 
-  Similar to command sub in core/executor.py, except we might run trap handlers
-  here on EINTR.
+  Similar to command sub in core/executor.py.
   """
   chunks = []  # type: List[str]
   while True:
@@ -251,7 +248,9 @@ def _ReadAll():
 
     if n < 0:
       if err_num == errno_.EINTR:
-        pass  # retry
+        # Retry only.  Like read --line (and command sub), read --all doesn't
+        # run traps.  It would be a bit weird to run every 4096 bytes.
+        pass
       else:
         # Like the top level IOError handler
         e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
@@ -436,7 +435,7 @@ class Read(vm._Builtin):
         else:
           delim_byte = 0  # -d '' delimits by NUL
       else:
-        delim_byte = NEWLINE_CH  # read a line
+        delim_byte = pyos.NEWLINE_CH  # read a line
 
     # We have to read more than one line if there is a line continuation (and
     # it's not -r).

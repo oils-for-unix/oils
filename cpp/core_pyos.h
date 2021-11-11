@@ -13,6 +13,7 @@ namespace pyos {
 const int TERM_ICANON = ICANON;
 const int TERM_ECHO = ECHO;
 const int EOF_SENTINEL = 256;
+const int NEWLINE_CH = 10;
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks);
 Tuple2<int, int> ReadByte(int fd);
