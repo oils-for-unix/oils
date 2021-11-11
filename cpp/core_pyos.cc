@@ -16,6 +16,14 @@ static Str* CopyStr(const char* s) {
 
 namespace pyos {
 
+Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
+  assert(0);
+}
+
+Tuple2<int, int> ReadByte(int fd) {
+  assert(0);
+}
+
 Dict<Str*, Str*>* Environ() {
   auto d = new Dict<Str*, Str*>();
 

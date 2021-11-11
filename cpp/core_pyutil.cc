@@ -14,6 +14,10 @@ bool IsValidCharEscape(int c) {
   return ispunct(c);
 }
 
+Str* ChArrayToString(List<int>* ch_array) {
+  assert(0);
+}
+
 Str* _ResourceLoader::Get(Str* path) {
   return new Str("TODO");
 }

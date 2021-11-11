@@ -10,7 +10,7 @@ builtin_misc.py - Misc builtins.
 """
 from __future__ import print_function
 
-import errno
+import errno as errno_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
@@ -154,7 +154,7 @@ def _ReadUntilDelim(delim_byte):
   while True:
     ch, err_num = pyos.ReadByte(0)
     if ch < 0:
-      if err_num == errno.EINTR:
+      if err_num == errno_.EINTR:
         pass  # retry
       else:
         # Like the top level IOError handler
@@ -185,7 +185,7 @@ def _ReadLineSlowly():
     ch, err_num = pyos.ReadByte(0)
 
     if ch < 0:
-      if err_num == errno.EINTR:
+      if err_num == errno_.EINTR:
         pass  # retry
       else:
         # Like the top level IOError handler
@@ -216,7 +216,7 @@ def _ReadAll():
     n, err_num = pyos.Read(0, 4096, chunks)
 
     if n < 0:
-      if err_num == errno.EINTR:
+      if err_num == errno_.EINTR:
         pass  # retry
       else:
         # Like the top level IOError handler
@@ -370,7 +370,7 @@ class Read(vm._Builtin):
       n, err_num = pyos.Read(stdin_fd, n, chunks)  # read up to n bytes
 
       if n < 0:
-        if err_num == errno.EINTR:
+        if err_num == errno_.EINTR:
           pass  # retry
         else:
           # Like the top level IOError handler
@@ -795,7 +795,7 @@ class Cat(vm._Builtin):
       n, err_num = pyos.Read(0, 4096, chunks)
 
       if n < 0:
-        if err_num == errno.EINTR:
+        if err_num == errno_.EINTR:
           pass  # retry
         else:
           # Like the top level IOError handler

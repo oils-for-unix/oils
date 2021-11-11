@@ -46,13 +46,13 @@ def IsValidCharEscape(c):
   return ch in _PUNCT  # like ispunct() in C
 
 
-def ChArrayToString(a):
+def ChArrayToString(ch_array):
   # type: (List[int]) -> str
   """We avoid allocating 1 byte string objects in the C++ implementation.
 
   'ch' is short for an integer that represents a character.
   """
-  return ''.join(chr(c) for c in a)
+  return ''.join(chr(ch) for ch in ch_array)
 
 
 def BackslashEscape(s, meta_chars):
