@@ -167,7 +167,8 @@ def _ReadUntilDelim(delim_byte):
     elif ch == delim_byte:
       break
 
-    ch_array.append(ch)
+    else:
+      ch_array.append(ch)
 
   return pyutil.ChArrayToString(ch_array), eof
 
@@ -193,7 +194,8 @@ def _ReadLineSlowly():
     elif ch == pyos.EOF_SENTINEL:
       break
 
-    ch_array.append(ch)
+    else:
+      ch_array.append(ch)
 
     # TODO: Add option to omit newline
     if ch == NEWLINE_CH:

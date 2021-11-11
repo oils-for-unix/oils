@@ -35,7 +35,7 @@ def Read(fd, n, buf):
   """
   try:
     chunk = posix.read(fd, n)
-  except IOError as e:
+  except OSError as e:
     return -1, e.errno
   else:
     buf.append(chunk)
@@ -56,7 +56,7 @@ def ReadByte(fd):
   """
   try:
     b = posix.read(fd, 1)
-  except IOError as e:
+  except OSError as e:
     return -1, e.errno
   else:
     if len(b):
