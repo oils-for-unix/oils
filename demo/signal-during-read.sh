@@ -26,13 +26,28 @@ read -n 3 y
 echo
 echo "status=$? y=$y"
 
-echo 'read -d , y'
-read -d , y
+echo 'read -d , z'
+read -d , z
 echo
 echo "status=$? z=$z"
 
-echo 'read --all all'
-read --all all
+echo 'mapfile'
+mapfile
 echo
-echo "status=$? all=$all"
+echo "status=$? MAPFILE=${MAPFILE[@]}"
 
+#
+# OSH only
+#
+
+if false; then
+  echo 'read --line'
+  read --line
+  echo
+  echo "status=$? _line=$_line"
+
+  echo 'read --all'
+  read --all
+  echo
+  echo "status=$? _all=$_all"
+fi

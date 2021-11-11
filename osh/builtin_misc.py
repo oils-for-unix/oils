@@ -142,9 +142,37 @@ def _AppendParts(s, spans, max_results, join_next, parts):
   #log('PARTS %s', parts)
   return done, join_next
 
+#
+# Three read() wrappers for 'read' builtin that RunPendingTraps: _ReadN,
+# _ReadUntilDelim, and _ReadLineSlowly
+#
 
-def _ReadUntilDelim(delim_byte):
-  # type: (int) -> Tuple[str, bool]
+def _ReadN(stdin_fd, num_bytes, cmd_ev):
+  # type: (int, int, CommandEvaluator) -> str
+  chunks = []  # type: List[str]
+  bytes_left = num_bytes
+  while bytes_left > 0:
+    n, err_num = pyos.Read(stdin_fd, bytes_left, chunks)  # read up to n bytes
+
+    if n < 0:
+      if err_num == errno_.EINTR:
+        cmd_ev.RunPendingTraps()
+        # retry after running traps
+      else:
+        # Like the top level IOError handler
+        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+
+    elif n == 0:  # EOF
+      break
+
+    else:
+      bytes_left -= n
+
+  return ''.join(chunks)
+
+
+def _ReadUntilDelim(delim_byte, cmd_ev):
+  # type: (int, CommandEvaluator) -> Tuple[str, bool]
   """Read a portion of stdin.
   
   Read until that delimiter, but don't include it.
@@ -155,7 +183,8 @@ def _ReadUntilDelim(delim_byte):
     ch, err_num = pyos.ReadByte(0)
     if ch < 0:
       if err_num == errno_.EINTR:
-        pass  # retry
+        cmd_ev.RunPendingTraps()
+        # retry after running traps
       else:
         # Like the top level IOError handler
         e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
@@ -181,8 +210,8 @@ def _ReadUntilDelim(delim_byte):
 # - _ReadLineSlowly should have keep_newline (mapfile -t)
 #   - this halves memory usage!
 
-def _ReadLineSlowly():
-  # type: () -> str
+def _ReadLineSlowly(cmd_ev):
+  # type: (CommandEvaluator) -> str
   """Read a line from stdin."""
   ch_array = []  # type: List[int]
   while True:
@@ -190,7 +219,8 @@ def _ReadLineSlowly():
 
     if ch < 0:
       if err_num == errno_.EINTR:
-        pass  # retry
+        cmd_ev.RunPendingTraps()
+        # retry after running traps
       else:
         # Like the top level IOError handler
         e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
@@ -233,19 +263,21 @@ def _ReadAll():
 
 
 class Read(vm._Builtin):
-  def __init__(self, splitter, mem, parse_ctx):
-    # type: (SplitContext, Mem, ParseContext) -> None
+
+  def __init__(self, splitter, mem, parse_ctx, cmd_ev):
+    # type: (SplitContext, Mem, ParseContext, CommandEvaluator) -> None
     self.splitter = splitter
     self.mem = mem
     self.parse_ctx = parse_ctx
+    self.cmd_ev = cmd_ev
     self.stdin = mylib.Stdin()
 
   def _Line(self, arg, var_name):
     # type: (arg_types.read, str) -> int
     """For read --line."""
 
-    # Use an optimized C implementation rather than calling ReadByte() over and
-    # over like _ReadLineSlowly().
+    # Use an optimized C implementation rather than _ReadLineSlowly, which
+    # calls ReadByte() over and over.
     line = pyos.ReadLine()
     if len(line) == 0:  # EOF
       return 1
@@ -367,28 +399,6 @@ class Read(vm._Builtin):
         term.Restore()
     return status
 
-  def _ReadN(self, stdin_fd, num_bytes):
-    # type: (int, int) -> str
-    chunks = []  # type: List[str]
-    bytes_left = num_bytes
-    while bytes_left > 0:
-      n, err_num = pyos.Read(stdin_fd, bytes_left, chunks)  # read up to n bytes
-
-      if n < 0:
-        if err_num == errno_.EINTR:
-          pass  # retry
-        else:
-          # Like the top level IOError handler
-          e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
-
-      elif n == 0:  # EOF
-        break
-
-      else:
-        bytes_left -= n
-
-    return ''.join(chunks)
-
   def _Read(self, arg, names):
     # type: (arg_types.read, List[str]) -> int
 
@@ -399,7 +409,7 @@ class Read(vm._Builtin):
         name = 'REPLY'  # default variable name
 
       stdin_fd = self.stdin.fileno()
-      s = self._ReadN(stdin_fd, arg.n)
+      s = _ReadN(stdin_fd, arg.n, self.cmd_ev)
 
       state.BuiltinSetString(self.mem, name, s)
 
@@ -434,7 +444,7 @@ class Read(vm._Builtin):
     join_next = False
     status = 0
     while True:
-      line, eof = _ReadUntilDelim(delim_byte)
+      line, eof = _ReadUntilDelim(delim_byte, self.cmd_ev)
 
       if eof:
         # status 1 to terminate loop.  (This is true even though we set
@@ -474,10 +484,11 @@ class Read(vm._Builtin):
 class MapFile(vm._Builtin):
   """ mapfile / readarray """
 
-  def __init__(self, mem, errfmt):
-    # type: (Mem, ErrorFormatter) -> None
+  def __init__(self, mem, errfmt, cmd_ev):
+    # type: (Mem, ErrorFormatter, CommandEvaluator) -> None
     self.mem = mem
     self.errfmt = errfmt
+    self.cmd_ev = cmd_ev
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -493,7 +504,7 @@ class MapFile(vm._Builtin):
 
     lines = []  # type: List[str]
     while True:
-      line = _ReadLineSlowly()
+      line = _ReadLineSlowly(self.cmd_ev)
       if len(line) == 0:
         break
       # note: at least on Linux, bash doesn't strip \r\n

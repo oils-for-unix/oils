@@ -94,13 +94,8 @@ def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):
 
 def AddIO(b, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt):
   # type: (Dict[int, vm._Builtin], state.Mem, state.DirStack, optview.Exec, split.SplitContext, parse_lib.ParseContext, ui.ErrorFormatter) -> None
-  mapfile = builtin_misc.MapFile(mem, errfmt)
-
   b[builtin_i.echo] = builtin_pure.Echo(exec_opts)
-  b[builtin_i.mapfile] = mapfile
-  b[builtin_i.readarray] = mapfile
 
-  b[builtin_i.read] = builtin_misc.Read(splitter, mem, parse_ctx)
   b[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
 
   # test / [ differ by need_right_bracket
@@ -401,9 +396,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                                                      unsafe_arith, errfmt)
   builtins[builtin_i.unset] = builtin_assign.Unset(mem, procs, unsafe_arith,
                                                    errfmt)
-
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev,
                                                tracer)
+  builtins[builtin_i.read] = builtin_misc.Read(splitter, mem, parse_ctx,
+                                               cmd_ev)
+  mapfile = builtin_misc.MapFile(mem, errfmt, cmd_ev)
+  builtins[builtin_i.mapfile] = mapfile
+  builtins[builtin_i.readarray] = mapfile
 
   #source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
                                        #fd_state, tracer, errfmt)
