@@ -16,6 +16,7 @@ const int EOF_SENTINEL = 256;
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks);
 Tuple2<int, int> ReadByte(int fd);
+Str* ReadLine();
 Dict<Str*, Str*>* Environ();
 int Chdir(Str* dest_dir);
 Str* GetMyHomeDir();

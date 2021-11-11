@@ -24,6 +24,11 @@ Tuple2<int, int> ReadByte(int fd) {
   assert(0);
 }
 
+// for read --line
+Str* ReadLine() {
+  assert(0);
+}
+
 Dict<Str*, Str*>* Environ() {
   auto d = new Dict<Str*, Str*>();
 

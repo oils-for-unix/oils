@@ -177,6 +177,10 @@ def _ReadUntilDelim(delim_byte):
 # with shell semantics.  dash, mksh, and zsh all read a single byte at a
 # time with read(0, 1).
 
+# TODO:
+# - _ReadLineSlowly should have keep_newline (mapfile -t)
+#   - this halves memory usage!
+
 def _ReadLineSlowly():
   # type: () -> str
   """Read a line from stdin."""
@@ -240,8 +244,9 @@ class Read(vm._Builtin):
     # type: (arg_types.read, str) -> int
     """For read --line."""
 
-    # TODO: Use buffered I/O, since --line doesn't have to be compatible?
-    line = _ReadLineSlowly()
+    # Use an optimized C implementation rather than calling ReadByte() over and
+    # over like _ReadLineSlowly().
+    line = pyos.ReadLine()
     if len(line) == 0:  # EOF
       return 1
 
