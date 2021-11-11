@@ -81,12 +81,17 @@ class ProcessTest(unittest.TestCase):
     r = redirect(Id.Redir_Less, runtime.NO_SPID, redir_loc.Fd(0),
                  redirect_arg.Path(PATH))
 
+    class CommandEvaluator(object):
+      def RunPendingTraps(self):
+        pass
+    cmd_ev = CommandEvaluator()
+
     self.fd_state.Push([r])
-    line1, _ = builtin_misc._ReadUntilDelim(builtin_misc.NEWLINE_CH)
+    line1, _ = builtin_misc._ReadUntilDelim(builtin_misc.NEWLINE_CH, cmd_ev)
     self.fd_state.Pop()
 
     self.fd_state.Push([r])
-    line2, _ = builtin_misc._ReadUntilDelim(builtin_misc.NEWLINE_CH)
+    line2, _ = builtin_misc._ReadUntilDelim(builtin_misc.NEWLINE_CH, cmd_ev)
     self.fd_state.Pop()
 
     # sys.stdin.readline() would erroneously return 'two' because of buffering.

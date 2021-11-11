@@ -31,5 +31,30 @@ mapfile-big() {
   echo ${#MAPFILE[@]}  # verify length
 }
 
+# Hm this isn't that fast either, about 100 ms.
+python-big() {
+  time python -S -c '
+import sys
+i = 0
+for line in sys.stdin:
+  i += 1
+print(i)
+' < $BIG
+}
+
+bash-syscall() {
+  # Shows that there are tons of read(0, 1) calls!
+  seq 20 | strace -e read -- bash -c 'mapfile'
+}
+
+python-syscall() {
+  # Does read(0, 4096).  A saner way to read files
+  seq 20 | strace -e read -- python -c '
+import sys
+for line in sys.stdin:
+  print(line)
+'
+}
+
 
 "$@"
