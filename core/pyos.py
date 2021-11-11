@@ -9,7 +9,6 @@ import pwd
 import resource
 import signal
 import select
-import sys
 import termios  # for read -n
 import time
 
@@ -66,14 +65,22 @@ def ReadByte(fd):
       return EOF_SENTINEL, 0
 
 
-# Hack to prevent buffering of sys.stdin.readline().  Exporting
-# PYTHONUNBUFFERED=1 doesn't seem to work.
-_STDIN = posix.fdopen(0, 'r')
+_STDIN = None
 
-# TODO: Add keep_newline
 def ReadLine():
   # type: () -> str
-  """Read a line from stdin using buffered I/O."""
+  """Read a line from stdin.
+
+  TODO: Add keep_newline arg
+  """
+  # Hack to prevent buffering of sys.stdin.readline().  Exporting
+  # PYTHONUNBUFFERED=1 doesn't seem to work.
+  # Initializing this at the top level causes problems in object cleanup, so do
+  # it locally.
+  global _STDIN
+  if _STDIN is None:
+    _STDIN = posix.fdopen(0, 'r')
+
   return _STDIN.readline()
 
 

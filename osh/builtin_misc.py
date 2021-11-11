@@ -367,12 +367,12 @@ class Read(vm._Builtin):
         term.Restore()
     return status
 
-  def _ReadN(self, stdin_fd, n):
+  def _ReadN(self, stdin_fd, num_bytes):
     # type: (int, int) -> str
     chunks = []  # type: List[str]
-    bytes_left = n
+    bytes_left = num_bytes
     while bytes_left > 0:
-      n, err_num = pyos.Read(stdin_fd, n, chunks)  # read up to n bytes
+      n, err_num = pyos.Read(stdin_fd, bytes_left, chunks)  # read up to n bytes
 
       if n < 0:
         if err_num == errno_.EINTR:
@@ -384,7 +384,8 @@ class Read(vm._Builtin):
       elif n == 0:  # EOF
         break
 
-      bytes_left -= n
+      else:
+        bytes_left -= n
 
     return ''.join(chunks)
 
@@ -809,9 +810,10 @@ class Cat(vm._Builtin):
       elif n == 0:  # EOF
         break
 
-      # Stream it to stdout
-      assert len(chunks) == 1
-      mylib.Stdout().write(chunks[0])
-      chunks.pop()
+      else:
+        # Stream it to stdout
+        assert len(chunks) == 1
+        mylib.Stdout().write(chunks[0])
+        chunks.pop()
 
     return 0
