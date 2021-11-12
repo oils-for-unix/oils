@@ -9,27 +9,32 @@ term() {
 }
 
 main() {
-  {
-    #sleep 10
-    while true; do
-      echo '...'
-      sleep 0.2
-    done 
-  } &
+  local background=${1:-}
 
-  echo 1
+  if test -n "$background"; then
+    # shouldn't wait for this to finish!
+    sleep 3 &
+  fi
+
+  if false; then
+    {
+      while true; do
+        echo ___
+        sleep 0.2
+      done 
+    } &
+  fi
+
+  echo 'MAIN'
   echo foo | grep foo
   sleep 0.2
-
-  echo 2
-  echo bar | grep bar
-  sleep 0.2
-
-  echo 3
-  echo baz | grep baz
-  sleep 0.2
+  echo 'DONE'
 
   term
 }
 
-main
+trace() {
+  bin/osh -O oil:basic -x $0 main "$@"
+}
+
+"$@"
