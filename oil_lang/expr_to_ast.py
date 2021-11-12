@@ -1205,7 +1205,7 @@ class Transformer(object):
   def _NonRangeChars(self, p_node):
     # type: (PNode) -> class_literal_term_t
     """
-    \" \u123 '#'
+    \" \u1234 '#'
     """
     assert p_node.typ == grammar_nt.range_char, p_node
     children = p_node.children

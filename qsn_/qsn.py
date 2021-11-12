@@ -180,22 +180,21 @@ def maybe_shell_encode(s, flags=0):
   not
 
   + 'echo' 'hi'
-
-  Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
-
-  QSN constructs that shell doesn't understand:
-    \0 is ambiguous; needs to be \x00 (not \000)
-      TODO: Fix this
-
-    \u{3bc} is not understood.  bit8_display should be BIT8_UTF8, not
-    BIT8_U_ESCAPE_ESCAPE.  In that mode, low bytes are \x01 instead of \u{1},
-    and high bytes are *literal* UTF-8.
-
-  In shell, you can decode QSN with something like:
-  
-  echo -e "${q:1: -1}" | read -d ''
-  echo -e "${q:2: -1}" | read -d ''  # if it starts with $''
   """
+  # Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
+
+  # QSN constructs that shell doesn't understand:
+  #   \0 is ambiguous; needs to be \x00 (not \000)    TODO: Fix this
+  #
+  #   \u{3bc} is not understood.  This means taht bit8_display should be
+  #   BIT8_UTF8, not BIT8_U_ESCAPE.  In that mode, low bytes are \x01 instead
+  #   of \u{1}, and high bytes are *literal* UTF-8.
+  #
+  # In shell, you can decode QSN with something like:
+  # 
+  # echo -e "${q:1: -1}" | read -d ''
+  # echo -e "${q:2: -1}" | read -d ''  # if it starts with $''
+
   quote = 0  # no quotes
 
   must_quote = flags & 0b100
