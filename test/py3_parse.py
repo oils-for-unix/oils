@@ -11,9 +11,17 @@ import sys
 def main(argv):
   for filename in argv[1:]:
     with open(filename) as f:
-      # TODO: we need Python 3.8 or 3.10 because they support type_comments=True
+      contents = f.read()
       try:
-        n = ast.parse(f.read())
+
+        try:
+          # Python 3.8+ supports type_comments=True
+          # TODO: make a custom build of Python 3.10
+          n = ast.parse(contents, type_comments=True)
+        except TypeError:
+          # Fallback
+          n = ast.parse(contents)
+
       except SyntaxError as e:
         print('Error parsing %s: %s' % (filename, e))
         return 1
