@@ -5,32 +5,52 @@ py3_parse.py
 Quick test for a potential rewrite of mycpp.
 """
 import ast
+import os
 import sys
 
 
 def main(argv):
+  ast_dump = os.getenv('AST_DUMP')
+
+  # Python 3.8+ supports type_comments=True
+  # TODO: make a custom build of Python 3.10
+  try:
+    n = ast.parse('', type_comments=True)
+  except TypeError:
+    type_comments = False
+  else:
+    type_comments = True
+
   for filename in argv[1:]:
     with open(filename) as f:
       contents = f.read()
-      try:
 
-        try:
-          # Python 3.8+ supports type_comments=True
-          # TODO: make a custom build of Python 3.10
-          n = ast.parse(contents, type_comments=True)
-        except TypeError:
-          # Fallback
-          n = ast.parse(contents)
-
-      except SyntaxError as e:
-        print('Error parsing %s: %s' % (filename, e))
-        return 1
+    try:
+      if type_comments:
+        module = ast.parse(contents, type_comments=True)
       else:
+        module = ast.parse(contents)
+    except SyntaxError as e:
+      print('Error parsing %s: %s' % (filename, e))
+      return 1
 
-        print('Parsed %s: %s' % (filename, n))
-      if 0:
-        print()
-        print(ast.dump(n))
+    print('Parsed %s: %s' % (filename, module))
+
+    if type_comments:
+      for stmt in module.body:
+        if isinstance(stmt, ast.FunctionDef):
+          print()
+          print('* %s(...)' % stmt.name)
+          if stmt.type_comment:
+            # This parses with the func_type production in the grammar
+            sig = ast.parse(stmt.type_comment, mode='func_type')
+            #print('  %s' % sig)
+            print(ast.dump(sig, indent='  '))
+      print()
+
+    if ast_dump:
+      print()
+      print(ast.dump(module))
 
 
 if __name__ == '__main__':
