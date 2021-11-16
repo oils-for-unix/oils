@@ -36,6 +36,9 @@ def main(argv):
 
     print('Parsed %s: %s' % (filename, module))
 
+    # TODO:
+    # - Use Python 3.10 and match statements here!
+    # - Parse type comments out of __init__() like self.field = field
     if type_comments:
       for stmt in module.body:
         if isinstance(stmt, ast.FunctionDef):

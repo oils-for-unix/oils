@@ -16,7 +16,7 @@ from sys import exit  # mycpp translation directly calls exit(int status)!
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    job_state_e, job_state_t,
+    job_state_e, job_state_t, job_state_str,
     wait_status, wait_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
@@ -690,8 +690,10 @@ class SubProgramThunk(Thunk):
     # type: () -> str
 
     # NOTE: These can be pieces of a pipeline, so they're arbitrary nodes.
-    # TODO: We should extract the SPIDS from each node!
-    return '[subprog] %s' % ui.CommandType(self.node)
+    # TODO: Extract SPIDS from node to display source?
+
+    thunk_str = ui.CommandType(self.node)
+    return '[subprog] %s' % thunk_str
 
   def Run(self):
     # type: () -> None
@@ -831,7 +833,8 @@ class Process(Job):
 
   def __repr__(self):
     # type: () -> str
-    return '<Process %s>' % self.thunk
+    s = ' %s' % self.parent_pipeline if self.parent_pipeline else ''
+    return '<Process %s%s>' % (self.thunk, s)
 
   def AddStateChange(self, s):
     # type: (ChildStateChange) -> None
@@ -966,7 +969,15 @@ class Pipeline(Job):
 
   def __repr__(self):
     # type: () -> str
-    return '<Pipeline %s>' % ' '.join(repr(p) for p in self.procs)
+    parts = ['<Pipeline\n']
+    parts.append('  procs=%s\n' % ' '.join(repr(p) for p in self.procs))
+    parts.append('  last_thunk=%s\n' % (self.last_thunk,))
+    parts.append('  pipe_status=%s\n' % self.pipe_status)
+    parts.append('>\n')
+    return ''.join(parts)
+
+  def DisplayLine(self):
+    return 'Pipeline %s\n' % self.procs
 
   def Add(self, p):
     # type: (Process) -> None
@@ -999,8 +1010,6 @@ class Pipeline(Job):
       return
 
     r, w = posix.pipe()
-    #log('last pipe %d %d', r, w)
-
     prev = self.procs[-1]
     prev.AddStateChange(StdoutToPipe(r, w))
 
@@ -1084,7 +1093,7 @@ class Pipeline(Job):
     # ls | wc -l
     # echo foo | read line  # no need to fork
 
-    cmd_ev, node = self.last_thunk
+    cmd_ev, last_node = self.last_thunk
 
     #log('thunk %s', self.last_thunk)
     if self.last_pipe is not None:
@@ -1097,7 +1106,7 @@ class Pipeline(Job):
       # exec() rather than fork/exec().
 
       try:
-        cmd_ev.ExecuteAndCatch(node)
+        cmd_ev.ExecuteAndCatch(last_node)
       finally:
         fd_state.Pop()
       # We won't read anymore.  If we don't do this, then 'cat' in 'cat
@@ -1106,9 +1115,9 @@ class Pipeline(Job):
 
     else:
       if len(self.procs):
-        cmd_ev.ExecuteAndCatch(node)  # Background pipeline without last_pipe
+        cmd_ev.ExecuteAndCatch(last_node)  # Background pipeline without last_pipe
       else:
-        cmd_ev._Execute(node)  # singleton foreground pipeline, e.g. '! func'
+        cmd_ev._Execute(last_node)  # singleton foreground pipeline, e.g. '! func'
 
     self.pipe_status[-1] = cmd_ev.LastStatus()
     #log('pipestatus before all have finished = %s', self.pipe_status)
@@ -1140,6 +1149,11 @@ class Pipeline(Job):
       # status of pipeline is status of last process
       self.status = self.pipe_status[-1]
       self.state = job_state_e.Done
+
+
+def _JobStateStr(i):
+  # type: (job_state_t) -> str
+  return job_state_str(i)[10:]  # remove 'job_state.'
 
 
 class JobState(object):
@@ -1261,14 +1275,15 @@ class JobState(object):
       # TODO: don't use __repr__ and so forth
 
       print('Jobs:')
-      for pid, job in iteritems(self.jobs):
+      for job_id, job in iteritems(self.jobs):
         # Use the %1 syntax
-        print('%%%d %s %s' % (pid, job.State(), job))
+        print('%%%d %7s %s' % (job_id, _JobStateStr(job.State()), job))
 
       print('')
       print('Processes:')
       for pid, proc in iteritems(self.child_procs):
-        print('%d %s %s' % (pid, proc.state, proc.thunk.DisplayLine()))
+        p = ' |' if proc.parent_pipeline else ''
+        print('%d %7s %s%s' % (pid, _JobStateStr(proc.state), proc.thunk.DisplayLine(), p))
 
   def ListRecent(self):
     # type: () -> None
@@ -1408,6 +1423,8 @@ class Waiter(object):
       return True  # caller should keep waiting
 
     proc = self.job_state.child_procs[pid]
+    if 0:
+      self.job_state.List()
 
     if WIFSIGNALED(status):
       term_sig = WTERMSIG(status)
