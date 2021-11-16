@@ -223,14 +223,14 @@ class Jobs(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    # NOTE: the + and - in the jobs list mean 'current' and 'previous', and are
-    # addressed with %+ and %-.
+    attrs, arg_r = flag_spec.ParseCmdVal('jobs', cmd_val)
+    arg = arg_types.jobs(attrs.attrs)
 
-    # [6]   Running                 sleep 5 | sleep 5 &
-    # [7]-  Running                 sleep 5 | sleep 5 &
-    # [8]+  Running                 sleep 5 | sleep 5 &
+    # note: we always use 'jobs -l' format, so -l is a no-op
+    self.job_state.DisplayJobs()
+    if arg.debug:
+      self.job_state.DisplayDebug()
 
-    self.job_state.List()
     return 0
 
 

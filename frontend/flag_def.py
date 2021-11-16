@@ -172,6 +172,10 @@ TRAP_SPEC = FlagSpec('trap')
 TRAP_SPEC.ShortFlag('-p')
 TRAP_SPEC.ShortFlag('-l')
 
+JOB_SPEC = FlagSpec('jobs')
+JOB_SPEC.ShortFlag('-l', help='long format')
+JOB_SPEC.LongFlag('--debug', help='display debug info')
+
 #
 # FlagSpecAndMore
 #

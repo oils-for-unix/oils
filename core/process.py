@@ -37,7 +37,7 @@ from frontend import match
 from osh import cmd_eval
 from qsn_ import qsn
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems
+from mycpp.mylib import tagswitch, iteritems, NewStr
 
 import posix_ as posix
 from posix_ import (
@@ -778,6 +778,10 @@ class Job(object):
     # Initial state with & or Ctrl-Z is Running.
     self.state = job_state_e.Running
 
+  def DisplayJob(self, job_id, f):
+    # type: (int, mylib.Writer) -> None
+    raise NotImplementedError()
+
   def State(self):
     # type: () -> job_state_t
     return self.state
@@ -833,8 +837,22 @@ class Process(Job):
 
   def __repr__(self):
     # type: () -> str
-    s = ' %s' % self.parent_pipeline if self.parent_pipeline else ''
-    return '<Process %s%s>' % (self.thunk, s)
+
+    # note: be wary of infinite mutual recursion
+    #s = ' %s' % self.parent_pipeline if self.parent_pipeline else ''
+    #return '<Process %s%s>' % (self.thunk, s)
+    return '<Process %s>' % self.thunk
+
+  def DisplayJob(self, job_id, f):
+    # type: (int, mylib.Writer) -> None
+    if job_id == -1:
+      job_id_str = '  '
+    else:
+      job_id_str = '%%%d' % job_id
+    f.write('%s %d %7s ' % (job_id_str, self.pid, _JobStateStr(self.state)))
+    # TODO:
+    f.write(self.thunk.DisplayLine())
+    f.write('\n')
 
   def AddStateChange(self, s):
     # type: (ChildStateChange) -> None
@@ -976,8 +994,16 @@ class Pipeline(Job):
     parts.append('>\n')
     return ''.join(parts)
 
-  def DisplayLine(self):
-    return 'Pipeline %s\n' % self.procs
+  def DisplayJob(self, job_id, f):
+    # type: (int, mylib.Writer) -> None
+    for i, proc in enumerate(self.procs):
+      if i == 0:  # show job ID for first element in pipeline
+        job_id_str = '%%%d' % job_id
+      else:
+        job_id_str = '  '  # 2 spaces
+
+      f.write('%s %d %7s ' % (job_id_str, proc.pid, _JobStateStr(proc.state)))
+      f.write('TODO\n')
 
   def Add(self, p):
     # type: (Process) -> None
@@ -1153,7 +1179,7 @@ class Pipeline(Job):
 
 def _JobStateStr(i):
   # type: (job_state_t) -> str
-  return job_state_str(i)[10:]  # remove 'job_state.'
+  return NewStr(job_state_str(i))[10:]  # remove 'job_state.'
 
 
 class JobState(object):
@@ -1238,7 +1264,7 @@ class JobState(object):
     """
     return self.child_procs.get(pid)
 
-  def List(self):
+  def DisplayJobs(self):
     # type: () -> None
     """Used by the 'jobs' builtin.
 
@@ -1254,7 +1280,13 @@ class JobState(object):
     # echo hi | wc -l &   -- this starts a process which starts two processes
     #                        Wait for ONE.
     #
-    # bash GROUPS the PIDs by job.  And it has their state and code.
+    # 'jobs -l' GROUPS the PIDs by job.  It has the job number, + - indicators
+    # for %% and %-, PID, status, and "command".
+    #
+    # Every component of a pipeline is on the same line with 'jobs', but
+    # they're separated into different lines with 'jobs -l'.
+    #
+    # See demo/jobs-builtin.sh
 
     # $ jobs -l
     # [1]+ 24414 Stopped                 sleep 5
@@ -1265,25 +1297,28 @@ class JobState(object):
     # [3]- 24508 Running                 sleep 6
     #      24509                       | sleep 6
     #      24510                       | sleep 5 &
-    #
-    # zsh has VERY similar UI.
 
-    # NOTE: Jobs don't need to show state?  Because pipelines are never stopped
-    # -- only the jobs within them are.
+    # TODO:
+    # - don't use __repr__ and so forth
+    # - jobs -l shows one line per PROCESS in a pipeline
+    # - We shouldn't show processes in 'jobs' or 'jobs -l'.
+    #   - maybe we need an extension 'jobs --all' or 'jobs --history'
 
-    if mylib.PYTHON:
-      # TODO: don't use __repr__ and so forth
+    f = mylib.Stdout()
+    for job_id, job in iteritems(self.jobs):
+      # Use the %1 syntax
+      job.DisplayJob(job_id, f)
 
-      print('Jobs:')
-      for job_id, job in iteritems(self.jobs):
-        # Use the %1 syntax
-        print('%%%d %7s %s' % (job_id, _JobStateStr(job.State()), job))
+  def DisplayDebug(self):
+    # type: () -> None
 
-      print('')
-      print('Processes:')
-      for pid, proc in iteritems(self.child_procs):
-        p = ' |' if proc.parent_pipeline else ''
-        print('%d %7s %s%s' % (pid, _JobStateStr(proc.state), proc.thunk.DisplayLine(), p))
+    f = mylib.Stdout()
+    f.write('\n')
+    f.write('[debug info]\n')
+    for pid, proc in iteritems(self.child_procs):
+      proc.DisplayJob(-1, f)
+      #p = ' |' if proc.parent_pipeline else ''
+      #print('%d %7s %s%s' % (pid, _JobStateStr(proc.state), proc.thunk.DisplayLine(), p))
 
   def ListRecent(self):
     # type: () -> None

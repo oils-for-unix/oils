@@ -30,8 +30,12 @@ show_jobs() {
   echo ___
 
   # all shells support this long format which shows components of a pipeline
-  jobs -l
-  #jobs
+  #if true; then
+  if true; then
+    jobs -l
+  else
+    jobs
+  fi
 }
 
 myfunc() {
@@ -47,7 +51,13 @@ demo() {
   sleep 1 & sleep 2 & 
   show_jobs
 
-  { echo pipe1; sleep 0.5; } | cat &
+  # In jobs -l, bash, zsh, and mksh all combine this onto one line:
+  # { echo pipe1; sleep 0.5; }
+
+  { echo pipe1
+    sleep 0.5
+  } | tac | wc -l &
+
   show_jobs
 
   myfunc &
@@ -62,6 +72,28 @@ demo() {
   show_jobs
 
   ls | wc -l
+  show_jobs
+}
+
+many_jobs() {
+  sleep 0.90 &
+  sleep 0.91 &
+  sleep 0.92 &
+  sleep 0.93 &
+  sleep 0.94 &
+  sleep 0.95 &
+  sleep 0.96 &
+  sleep 0.97 &
+  sleep 0.98 &
+  sleep 0.99 &
+
+  show_jobs
+
+  # Testing this syntax
+  # Doesn't work because shells say "job %10 not created under job control"
+  # fg %10
+
+  wait
   show_jobs
 }
 
