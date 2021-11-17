@@ -905,18 +905,16 @@ class Process(Job):
   def Wait(self, waiter):
     # type: (Waiter) -> int
     """Wait for this process to finish."""
-    while True:
-      # eintr_retry == True
-      if waiter.WaitForOne(True) != 0:
+    while self.state == job_state_e.Running:
+      if waiter.WaitForOne(True) != 0:  # eintr_retry=True
         break
-      if self.state != job_state_e.Running:
-        break
+
     return self.status
 
   def JobWait(self, waiter):
     # type: (Waiter) -> wait_status_t
     # wait builtin can be interrupted
-    while True:
+    while self.state == job_state_e.Running:
       # Don't retry
       result = waiter.WaitForOne(False)
 
@@ -924,9 +922,6 @@ class Process(Job):
         return wait_status.Cancelled(result)
 
       if result == -1:  # nothing to wait for
-        break
-
-      if self.state != job_state_e.Running:
         break
 
     return wait_status.Proc(self.status)
@@ -1064,26 +1059,23 @@ class Pipeline(Job):
 
   def Wait(self, waiter):
     # type: (Waiter) -> List[int]
-    """Wait for this pipeline to finish.
+    """Wait for this pipeline to finish."""
 
-    Called by the 'wait' builtin.
-    """
-    # This is ONLY for background pipelines.  Foreground pipelines use Run(),
-    # and must account for lastpipe!
     assert self.procs, "no procs for Wait()"
-    while True:
+    # waitpid(-1) zero or more times
+    while self.state == job_state_e.Running:
       if waiter.WaitForOne(True) != 0:  # nothing to wait for
-        break
-      if self.state != job_state_e.Running:
         break
 
     return self.pipe_status
 
   def JobWait(self, waiter):
     # type: (Waiter) -> wait_status_t
+    """Called by 'wait' builtin, e.g. 'wait %1'
+    """
     # wait builtin can be interrupted
     assert self.procs, "no procs for Wait()"
-    while True:
+    while self.state == job_state_e.Running:
       # wait builtin is interruptible
       result = waiter.WaitForOne(False)
 
@@ -1091,9 +1083,6 @@ class Pipeline(Job):
         return wait_status.Cancelled(result)
 
       if result == -1:  # nothing to wait for
-        break
-
-      if self.state != job_state_e.Running:
         break
 
     return wait_status.Pipeline(self.pipe_status)
@@ -1107,10 +1096,10 @@ class Pipeline(Job):
     """
     self.Start(waiter)
 
-    # Run our portion IN PARALLEL with other processes.  This may or may not
-    # fork:
-    # ls | wc -l
-    # echo foo | read line  # no need to fork
+    # Run the last part of the pipeline IN PARALLEL with other processes.  It
+    # may or may not fork:
+    #   echo foo | read line  # no fork, the builtin runs in THIS shell process
+    #   ls | wc -l            # fork for 'wc'
 
     cmd_ev, last_node = self.last_thunk
 
@@ -1118,12 +1107,8 @@ class Pipeline(Job):
     if self.last_pipe is not None:
       r, w = self.last_pipe  # set in AddLast()
       posix.close(w)  # we will not write here
+
       fd_state.PushStdinFromPipe(r)
-
-      # TODO: determine fork_external here, so we can go BEYOND lastpipe.  Not
-      # only do we run builtins in the same process.  External processes will
-      # exec() rather than fork/exec().
-
       try:
         cmd_ev.ExecuteAndCatch(last_node)
       finally:
@@ -1139,12 +1124,24 @@ class Pipeline(Job):
         cmd_ev._Execute(last_node)  # singleton foreground pipeline, e.g. '! func'
 
     self.pipe_status[-1] = cmd_ev.LastStatus()
+    if self.AllDone():
+      self.state = job_state_e.Done
+
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
     if len(self.procs):
       return self.Wait(waiter)
     else:
       return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
+
+  def AllDone(self):
+    # type: () -> bool
+
+    # mycpp rewrite: all(status != -1 for status in self.pipe_status)
+    for status in self.pipe_status:
+      if status == -1:
+        return False
+    return True
 
   def WhenDone(self, pid, status):
     # type: (int, int) -> None
@@ -1157,14 +1154,7 @@ class Pipeline(Job):
       status = 0
 
     self.pipe_status[i] = status
-
-    # mycpp rewrite: all(status != -1 for status in self.pipe_status)
-    all_done = True
-    for status in self.pipe_status:
-      if status == -1:
-        all_done = False
-
-    if all_done:
+    if self.AllDone():
       # status of pipeline is status of last process
       self.status = self.pipe_status[-1]
       self.state = job_state_e.Done
@@ -1481,8 +1471,8 @@ class Waiter(object):
     elif WIFSTOPPED(status):
       #sig = posix.WSTOPSIG(status)
 
-      # TODO: Do something nicer here.  Implement 'fg' command.
-      # Show in jobs list.
+      # BUG: Stopping pipelines doesn't work!
+      # sleep 5 | wc -l then Ctrl-Z and fg
       log('')
       log('[PID %d] Stopped', pid)
       self.job_state.NotifyStopped(pid)  # show in 'jobs' list, enable 'fg'

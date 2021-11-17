@@ -12,6 +12,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     cmd_value, cmd_value__Argv,
     wait_status_e, wait_status__Proc, wait_status__Pipeline, wait_status__Cancelled,
+    job_state_e,
 )
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
@@ -244,14 +245,8 @@ class Fg(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    # Get job instead of PID, and then do
-    #
-    # Should we also have job.SendContinueSignal() ?
-    # - posix.killpg()
-    #
-    # job.WaitUntilDone(self.waiter)
-    # - waitpid() under the hood
-
+    # Note: 'fg' currently works with processes, but not pipelines.  See issue
+    # #360.  Part of it is that we should use posix.killpg().
     pid = self.job_state.GetLastStopped()
     if pid == -1:
       log('No job to put in the foreground')
@@ -262,6 +257,7 @@ class Fg(vm._Builtin):
     posix.kill(pid, signal.SIGCONT)
 
     job = self.job_state.JobFromPid(pid)
+    job.state = job_state_e.Running  # needed for Wait() loop to work
     status = job.Wait(self.waiter)
     #log('status = %d', status)
     return status
