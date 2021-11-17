@@ -92,9 +92,14 @@ make-release-branch() {
 # For redoing a release.  This is everything until you have to 'git pull' the
 # benchmark-data repo to make reports.
 auto-machine1() {
+  local resume=${1:-}  # workaround for spec test flakiness bug
+
   sudo -k; sudo true  # clear and re-cache credentials
 
-  $0 build-and-test
+  if test -z "$resume"; then
+    $0 build-and-test  # Note: spec tests run here
+  fi 
+
   $0 metrics  # this can catch bugs
   test/wild.sh all
   $0 test-opy
@@ -357,9 +362,7 @@ build-and-test() {
 
   # App bundle
   _release-build
-  _test-release-build
-
-  # We're now ready to run 'benchmarks/auto.sh all'.
+  _test-release-build  # Note: spec tests run here
 }
 
 _install() {
