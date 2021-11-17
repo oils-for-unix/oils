@@ -638,14 +638,14 @@ class Thunk(object):
     """Returns a status code."""
     raise NotImplementedError()
 
-  def DisplayLine(self):
+  def UserString(self):
     # type: () -> str
     """Display for the 'jobs' list."""
     raise NotImplementedError()
 
   def __repr__(self):
     # type: () -> str
-    return self.DisplayLine()
+    return self.UserString()
 
 
 class ExternalThunk(Thunk):
@@ -658,7 +658,7 @@ class ExternalThunk(Thunk):
     self.cmd_val = cmd_val
     self.environ = environ
 
-  def DisplayLine(self):
+  def UserString(self):
     # type: () -> str
 
     # NOTE: This is the format the Tracer uses.
@@ -685,7 +685,7 @@ class SubProgramThunk(Thunk):
     self.node = node
     self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
-  def DisplayLine(self):
+  def UserString(self):
     # type: () -> str
 
     # NOTE: These can be pieces of a pipeline, so they're arbitrary nodes.
@@ -735,7 +735,7 @@ class _HereDocWriterThunk(Thunk):
     self.w = w
     self.body_str = body_str
 
-  def DisplayLine(self):
+  def UserString(self):
     # type: () -> str
 
     # You can hit Ctrl-Z and the here doc writer will be suspended!  Other
@@ -842,7 +842,7 @@ class Process(Job):
     else:
       job_id_str = '%%%d' % job_id
     f.write('%s %d %7s ' % (job_id_str, self.pid, _JobStateStr(self.state)))
-    f.write(self.thunk.DisplayLine())
+    f.write(self.thunk.UserString())
     f.write('\n')
 
   def AddStateChange(self, s):
@@ -985,17 +985,18 @@ class Pipeline(Job):
         job_id_str = '  '  # 2 spaces
 
       f.write('%s %d %7s ' % (job_id_str, proc.pid, _JobStateStr(proc.state)))
-      f.write(proc.thunk.DisplayLine())
+      f.write(proc.thunk.UserString())
       f.write('\n')
 
   def DebugPrint(self):
     # type: () -> None
     print('Pipeline in state %s' % _JobStateStr(self.state))
-    for proc in self.procs:
-      print('  proc %s' % proc)
-    _, last_node = self.last_thunk
-    print('  last %s' % last_node)
-    print('  pipe_status %s' % self.pipe_status)
+    if mylib.PYTHON:  # %s for Process not allowed in C++
+      for proc in self.procs:
+        print('  proc %s' % proc)
+      _, last_node = self.last_thunk
+      print('  last %s' % last_node)
+      print('  pipe_status %s' % self.pipe_status)
 
   def Add(self, p):
     # type: (Process) -> None
@@ -1298,12 +1299,6 @@ class JobState(object):
     #      24509                       | sleep 6
     #      24510                       | sleep 5 &
 
-    # TODO:
-    # - don't use __repr__ and so forth
-    # - jobs -l shows one line per PROCESS in a pipeline
-    # - We shouldn't show processes in 'jobs' or 'jobs -l'.
-    #   - maybe we need an extension 'jobs --all' or 'jobs --history'
-
     f = mylib.Stdout()
     for job_id, job in iteritems(self.jobs):
       # Use the %1 syntax
@@ -1319,9 +1314,9 @@ class JobState(object):
     for pid, proc in iteritems(self.child_procs):
       proc.DisplayJob(-1, f)
       #p = ' |' if proc.parent_pipeline else ''
-      #print('%d %7s %s%s' % (pid, _JobStateStr(proc.state), proc.thunk.DisplayLine(), p))
+      #print('%d %7s %s%s' % (pid, _JobStateStr(proc.state), proc.thunk.UserString(), p))
 
-    if self.debug_pipelines:
+    if len(self.debug_pipelines):
       f.write('\n')
       f.write('[pipeline debug info]\n')
       for pi in self.debug_pipelines:
