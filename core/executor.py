@@ -199,14 +199,6 @@ class ShellExecutor(vm._Executor):
       #  e_die('special builtin failed', status=status)
       return status
 
-    # TODO: if shopt -s namespaces, then look up in current namespace FIRST.
-    #
-    # Then fallback on self.procs, which should be renamed self.procs?
-    #
-    # honestly there is no real chance of colllision because
-    # foo-bar() {} can't be accessed anyway
-    # functions can have hyphens, but variables can't
-
     # Builtins like 'true' can be redefined as functions.
     if call_procs:
       proc_node = self.procs.get(arg0)
@@ -284,34 +276,30 @@ class ShellExecutor(vm._Executor):
       self.mem.last_bg_pid = last_pid   # for $!
 
       job_id = self.job_state.AddJob(pi)  # show in 'jobs' list
-      # TODO: Put in tracer
-      #log('[%%%d] Started Pipeline with PID %d', job_id, last_pid)
 
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
       # have to register SIGCHLD.  But then that introduces race conditions.
       # If we haven't called Register yet, then we won't know who to notify.
 
-      #log('job state %s', self.job_state)
       p = self._MakeProcess(node)
       pid = p.Start(trace.Fork())
       self.mem.last_bg_pid = pid  # for $!
       job_id = self.job_state.AddJob(p)  # show in 'jobs' list
-      # TODO: Put in tracer
-      #log('[%%%d] Started PID %d', job_id, pid)
     return 0
 
   def RunPipeline(self, node, status_out):
     # type: (command__Pipeline, CompoundStatus) -> None
 
     pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
+    self.job_state.AddPipeline(pi)
 
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)
     for i in xrange(n - 1):
       child = node.children[i]
 
-      # TODO: maybe determine these at parse time?
+      # TODO: determine these locations at parse time?
       status_out.spids.append(location.SpanForCommand(child))
 
       p = self._MakeProcess(child)

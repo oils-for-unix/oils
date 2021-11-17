@@ -97,4 +97,14 @@ many_jobs() {
   show_jobs
 }
 
+osh-debug() {
+  # lastpipe with 'read'
+  { echo x; sleep 0.1; } | sort | read x
+  jobs --debug
+
+  # no lastpipe
+  { echo x; sleep 0.1; } | sort | wc -l
+  jobs --debug
+}
+
 "$@"

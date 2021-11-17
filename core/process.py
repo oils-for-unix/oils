@@ -643,9 +643,8 @@ class Thunk(object):
     """Display for the 'jobs' list."""
     raise NotImplementedError()
 
-  def __str__(self):
+  def __repr__(self):
     # type: () -> str
-    # For debugging
     return self.DisplayLine()
 
 
@@ -690,8 +689,9 @@ class SubProgramThunk(Thunk):
     # type: () -> str
 
     # NOTE: These can be pieces of a pipeline, so they're arbitrary nodes.
-    # TODO: Extract SPIDS from node to display source?
-
+    # TODO: Extract SPIDS from node to display source?  Note that
+    #   CompoundStatus also has locations of each pipeline component; see
+    #   Executor.RunPipeline()
     thunk_str = ui.CommandType(self.node)
     return '[subprog] %s' % thunk_str
 
@@ -786,14 +786,6 @@ class Job(object):
     # type: () -> job_state_t
     return self.state
 
-  def Send_SIGCONT(self, waiter):
-    # type: (Waiter) -> None
-    """Resume the job -- for 'fg' and 'bg' builtins.
-
-    We need to know the process group.
-    """
-    pass
-
   def JobWait(self, waiter):
     # type: (Waiter) -> wait_status_t
     """Wait for this process/pipeline to be stopped or finished."""
@@ -841,7 +833,7 @@ class Process(Job):
     # note: be wary of infinite mutual recursion
     #s = ' %s' % self.parent_pipeline if self.parent_pipeline else ''
     #return '<Process %s%s>' % (self.thunk, s)
-    return '<Process %s>' % self.thunk
+    return '<Process %s %s>' % (_JobStateStr(self.state), self.thunk)
 
   def DisplayJob(self, job_id, f):
     # type: (int, mylib.Writer) -> None
@@ -850,7 +842,6 @@ class Process(Job):
     else:
       job_id_str = '%%%d' % job_id
     f.write('%s %d %7s ' % (job_id_str, self.pid, _JobStateStr(self.state)))
-    # TODO:
     f.write(self.thunk.DisplayLine())
     f.write('\n')
 
@@ -985,15 +976,6 @@ class Pipeline(Job):
 
     self.sigpipe_status_ok = sigpipe_status_ok
 
-  def __repr__(self):
-    # type: () -> str
-    parts = ['<Pipeline\n']
-    parts.append('  procs=%s\n' % ' '.join(repr(p) for p in self.procs))
-    parts.append('  last_thunk=%s\n' % (self.last_thunk,))
-    parts.append('  pipe_status=%s\n' % self.pipe_status)
-    parts.append('>\n')
-    return ''.join(parts)
-
   def DisplayJob(self, job_id, f):
     # type: (int, mylib.Writer) -> None
     for i, proc in enumerate(self.procs):
@@ -1003,7 +985,17 @@ class Pipeline(Job):
         job_id_str = '  '  # 2 spaces
 
       f.write('%s %d %7s ' % (job_id_str, proc.pid, _JobStateStr(proc.state)))
-      f.write('TODO\n')
+      f.write(proc.thunk.DisplayLine())
+      f.write('\n')
+
+  def DebugPrint(self):
+    # type: () -> None
+    print('Pipeline in state %s' % _JobStateStr(self.state))
+    for proc in self.procs:
+      print('  proc %s' % proc)
+    _, last_node = self.last_thunk
+    print('  last %s' % last_node)
+    print('  pipe_status %s' % self.pipe_status)
 
   def Add(self, p):
     # type: (Process) -> None
@@ -1194,6 +1186,7 @@ class JobState(object):
 
     # pid -> Process.  This is for STOP notification.
     self.child_procs = {}  # type: Dict[int, Process]
+    self.debug_pipelines = []  # type: List[Pipeline]
 
     self.last_stopped_pid = -1  # type: int  # for basic 'fg' implementation
     self.job_id = 1  # Strictly increasing
@@ -1232,9 +1225,10 @@ class JobState(object):
 
   def AddJob(self, job):
     # type: (Job) -> int
-    """Add a job to the list, so it can be listed and possibly resumed.
+    """Add a background job to the list.
 
-    A job is either a process or pipeline.
+    A job is either a Process or Pipeline.  You can resume a job with 'fg',
+    kill it with 'kill', etc.
 
     Two cases:
     
@@ -1254,6 +1248,12 @@ class JobState(object):
     about it so 'jobs' can work.
     """
     self.child_procs[pid] = proc
+
+  def AddPipeline(self, pi):
+    # type: (Pipeline) -> None
+    """For debugging only."""
+    if mylib.PYTHON:
+      self.debug_pipelines.append(pi)
 
   def JobFromPid(self, pid):
     # type: (int) -> Process
@@ -1309,16 +1309,23 @@ class JobState(object):
       # Use the %1 syntax
       job.DisplayJob(job_id, f)
 
-  def DisplayDebug(self):
+  def DebugPrint(self):
     # type: () -> None
 
     f = mylib.Stdout()
     f.write('\n')
-    f.write('[debug info]\n')
+    f.write('[process debug info]\n')
+
     for pid, proc in iteritems(self.child_procs):
       proc.DisplayJob(-1, f)
       #p = ' |' if proc.parent_pipeline else ''
       #print('%d %7s %s%s' % (pid, _JobStateStr(proc.state), proc.thunk.DisplayLine(), p))
+
+    if self.debug_pipelines:
+      f.write('\n')
+      f.write('[pipeline debug info]\n')
+      for pi in self.debug_pipelines:
+        pi.DebugPrint()
 
   def ListRecent(self):
     # type: () -> None
@@ -1459,7 +1466,7 @@ class Waiter(object):
 
     proc = self.job_state.child_procs[pid]
     if 0:
-      self.job_state.List()
+      self.job_state.DebugPrint()
 
     if WIFSIGNALED(status):
       term_sig = WTERMSIG(status)

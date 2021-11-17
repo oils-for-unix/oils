@@ -229,7 +229,7 @@ class Jobs(vm._Builtin):
     # note: we always use 'jobs -l' format, so -l is a no-op
     self.job_state.DisplayJobs()
     if arg.debug:
-      self.job_state.DisplayDebug()
+      self.job_state.DebugPrint()
 
     return 0
 
