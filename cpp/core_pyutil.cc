@@ -15,7 +15,13 @@ bool IsValidCharEscape(int c) {
 }
 
 Str* ChArrayToString(List<int>* ch_array) {
-  assert(0);
+  int n = len(ch_array);
+  char* buf = static_cast<char*>(malloc(n + 1));
+  for (int i = 0; i < n; ++i) {
+    buf[i] = ch_array->index(i);
+  }
+  buf[n] = '\0';
+  return new Str(buf, n);
 }
 
 Str* _ResourceLoader::Get(Str* path) {

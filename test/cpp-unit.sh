@@ -27,6 +27,7 @@ readonly UNIT_TESTS_SRC=(
     cpp/unit_tests.cc \
     _build/cpp/arg_types.cc \
     cpp/core_pyos.cc \
+    cpp/core_pyutil.cc \
     cpp/frontend_flag_spec.cc \
     cpp/frontend_match.cc \
     cpp/libc.cc \

@@ -138,6 +138,14 @@ TEST util_test() {
   Str* escaped2 = pyutil::BackslashEscape(new Str(""), new Str(" '"));
   ASSERT(str_equals(escaped2, new Str("")));
 
+  Str* s = pyutil::ChArrayToString(new List<int>({65}));
+  ASSERT(str_equals(s, new Str("A")));
+  ASSERT_EQ_FMT(1, len(s), "%d");
+
+  Str* s2 = pyutil::ChArrayToString(new List<int>({102, 111, 111}));
+  ASSERT(str_equals(s2, new Str("foo")));
+  ASSERT_EQ_FMT(3, len(s2), "%d");
+
   PASS();
 }
 

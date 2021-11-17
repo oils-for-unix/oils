@@ -93,13 +93,17 @@ cachegrind-builds() {
   echo TODO
 }
 
+benchmark-shell-provenance() {
+  # empty label
+  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python
+}
+
 measure-shells() {
   local base_dir=../benchmark-data
 
   # capture the filename
   local provenance
-  provenance=$(benchmarks/id.sh shell-provenance '' \
-    "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python)
+  provenance=$(benchmark-shell-provenance)
 
   benchmarks/vm-baseline.sh measure \
     $provenance $base_dir/vm-baseline
