@@ -21,13 +21,13 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
 }
 
 Tuple2<int, int> ReadByte(int fd) {
-  char c;
+  int c;  // avoid unsigned issue with char
   ssize_t n = read(fd, &c, 1);
   if (n < 0) {  // read error
     return Tuple2<int, int>(-1, errno);
   } else if (n == 0) {  // EOF
     return Tuple2<int, int>(EOF_SENTINEL, 0);
-  } else { // return character
+  } else {  // return character
     return Tuple2<int, int>(c, 0);
   }
 }

@@ -5,7 +5,7 @@ Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
-import errno as errno_
+from errno import EINTR
 import pwd
 import resource
 import signal
@@ -92,7 +92,7 @@ def ReadLine():
     ch, err_num = ReadByte(0)
 
     if ch < 0:
-      if err_num == errno_.EINTR:
+      if err_num == EINTR:
         # Instead of retrying, return EOF, which is what libc.stdin_readline()
         # did.  I think this interface is easier with getline().
         # This causes 'read --line' to return status 1.

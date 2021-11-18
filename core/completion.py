@@ -55,6 +55,8 @@ from osh.string_ops import ShellQuoteB
 
 import libc
 import posix_ as posix
+from posix_ import X_OK  # translated directly to C macro
+
 from typing import (
     Dict, Tuple, List, Optional, Iterator, Union, Callable, Any, TYPE_CHECKING
 )
@@ -399,7 +401,7 @@ class FileSystemAction(CompletionAction):
         if self.exec_only:
           # TODO: Handle exception if file gets deleted in between listing and
           # check?
-          if not posix.access(path, posix.X_OK):
+          if not posix.access(path, X_OK):
             continue
 
         if self.add_slash and path_stat.isdir(path):
@@ -578,7 +580,7 @@ class ExternalCommandAction(CompletionAction):
           path = os_path.join(d, name)
           # TODO: Handle exception if file gets deleted in between listing and
           # check?
-          if not posix.access(path, posix.X_OK):
+          if not posix.access(path, X_OK):
             continue
           dir_exes.append(name)  # append the name, not the path
 

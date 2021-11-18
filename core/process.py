@@ -9,7 +9,7 @@ process.py - Launch processes and manipulate file descriptors.
 """
 from __future__ import print_function
 
-import errno as errno_  # avoid macro name conflict after translation
+from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
 import signal as signal_
 from sys import exit  # mycpp translation directly calls exit(int status)!
@@ -45,6 +45,7 @@ from posix_ import (
     WUNTRACED,
     WIFSIGNALED, WIFEXITED, WIFSTOPPED,
     WEXITSTATUS, WTERMSIG,
+    O_APPEND, O_CREAT, O_RDONLY, O_RDWR, O_WRONLY, O_TRUNC,
 )
 
 from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
@@ -135,14 +136,14 @@ class FdState(object):
     Raises:
       OSError if the path can't be found.
     """
-    fd_mode = posix.O_RDONLY
+    fd_mode = O_RDONLY
     return self._Open(path, 'r', fd_mode)
 
   if mylib.PYTHON:
     # used for util.DebugFile
     def OpenForWrite(self, path):
       # type: (str) -> mylib.Writer
-      fd_mode = posix.O_CREAT | posix.O_RDWR
+      fd_mode = O_CREAT | O_RDWR
       f = self._Open(path, 'w', fd_mode)
       # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
       # object supports both interfaces.
@@ -189,7 +190,7 @@ class FdState(object):
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
       # This seems to be ignored in dash too in savefd()?
-      if e.errno == errno_.EBADF:
+      if e.errno == EBADF:
         #log('ERROR fd %d: %s', fd, e)
         need_restore = False
       else:
@@ -221,7 +222,7 @@ class FdState(object):
         # F_DUPFD: GREATER than range
         new_fd = fcntl_.fcntl(fd1, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
       except IOError as e:
-        if e.errno == errno_.EBADF:
+        if e.errno == EBADF:
           self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
           return NO_FD
         else:
@@ -310,15 +311,15 @@ class FdState(object):
         if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
           # NOTE: This is different than >| because it respects noclobber, but
           # that option is almost never used.  See test/wild.sh.
-          mode = posix.O_CREAT | posix.O_WRONLY | posix.O_TRUNC
+          mode = O_CREAT | O_WRONLY | O_TRUNC
         elif r.op_id == Id.Redir_Clobber:  # >|
-          mode = posix.O_CREAT | posix.O_WRONLY | posix.O_TRUNC
+          mode = O_CREAT | O_WRONLY | O_TRUNC
         elif r.op_id in (Id.Redir_DGreat, Id.Redir_AndDGreat):  # >>   &>>
-          mode = posix.O_CREAT | posix.O_WRONLY | posix.O_APPEND
+          mode = O_CREAT | O_WRONLY | O_APPEND
         elif r.op_id == Id.Redir_Less:  # <
-          mode = posix.O_RDONLY
+          mode = O_RDONLY
         elif r.op_id == Id.Redir_LessGreat:  # <>
-          mode = posix.O_CREAT | posix.O_RDWR
+          mode = O_CREAT | O_RDWR
         else:
           raise NotImplementedError(r.op_id)
 
@@ -592,7 +593,7 @@ class ExternalProgram(object):
       posix.execve(argv0_path, argv, environ)
     except OSError as e:
       # Run with /bin/sh when ENOEXEC error (no shebang).  All shells do this.
-      if e.errno == errno_.ENOEXEC and should_retry:
+      if e.errno == ENOEXEC and should_retry:
         new_argv = ['/bin/sh', argv0_path]
         new_argv.extend(argv[1:])
         self._Exec('/bin/sh', new_argv, argv0_spid, environ, False)
@@ -609,9 +610,9 @@ class ExternalProgram(object):
       # unspecified.
       #
       # http://pubs.opengroup.org/onlinepubs/9699919799.2016edition/utilities/V3_chap02.html#tag_18_08_02
-      if e.errno == errno_.EACCES:
+      if e.errno == EACCES:
         status = 126
-      elif e.errno == errno_.ENOENT:
+      elif e.errno == ENOENT:
         # TODO: most shells print 'command not found', rather than strerror()
         # == "No such file or directory".  That's better because it's at the
         # end of the path search, and we're never searching for a directory.
@@ -1418,9 +1419,9 @@ class Waiter(object):
       pid, status = posix.waitpid(-1, WUNTRACED)
     except OSError as e:
       #log('wait() error: %s', e)
-      if e.errno == errno_.ECHILD:
+      if e.errno == ECHILD:
         return -1  # nothing to wait for caller should stop
-      elif e.errno == errno_.EINTR:  # Bug #858 fix
+      elif e.errno == EINTR:  # Bug #858 fix
         # Examples:
         # - 128 + SIGUSR1 = 128 + 10 = 138
         # - 128 + SIGUSR2 = 128 + 12 = 140

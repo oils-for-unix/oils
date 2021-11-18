@@ -8,39 +8,7 @@
 
 #include "mylib.h"
 
-// Save as a different name
-#define X_OK_ X_OK
-#define R_OK_ R_OK
-#define W_OK_ W_OK
-#define O_APPEND_ O_APPEND
-#define O_CREAT_ O_CREAT
-#define O_RDONLY_ O_RDONLY
-#define O_RDWR_ O_RDWR
-#define O_WRONLY_ O_WRONLY
-#define O_TRUNC_ O_TRUNC
-
-#undef X_OK
-#undef R_OK
-#undef W_OK
-#undef O_APPEND
-#undef O_CREAT
-#undef O_RDONLY
-#undef O_RDWR
-#undef O_WRONLY
-#undef O_TRUNC
-
 namespace posix {
-
-// aliases in this namespace
-extern int X_OK;
-extern int R_OK;
-extern int W_OK;
-extern int O_APPEND;
-extern int O_CREAT;
-extern int O_RDONLY;
-extern int O_RDWR;
-extern int O_WRONLY;
-extern int O_TRUNC;
 
 inline int access(Str* pathname, int mode) {
   // Are there any errno I care about?
@@ -143,7 +111,7 @@ inline void dup2(int oldfd, int newfd) {
   assert(0);
 }
 
-int open(Str* path, int mode, int perms);
+int open(Str* path, int flags, int perms);
 
 inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
   mylib::Str0 c_mode0(c_mode);

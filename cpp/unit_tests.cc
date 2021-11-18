@@ -1,3 +1,6 @@
+#include <errno.h>
+#include <fcntl.h>  // O_RDWR
+
 #include "greatest.h"
 
 #include "core_error.h"
@@ -145,6 +148,10 @@ TEST util_test() {
   Str* s2 = pyutil::ChArrayToString(new List<int>({102, 111, 111}));
   ASSERT(str_equals(s2, new Str("foo")));
   ASSERT_EQ_FMT(3, len(s2), "%d");
+
+  Str* s3 = pyutil::ChArrayToString(new List<int>({45, 206, 188, 45}));
+  ASSERT(str_equals(s3, new Str("-\xce\xbc-")));  // mu char
+  ASSERT_EQ_FMT(4, len(s3), "%d");
 
   PASS();
 }
@@ -341,6 +348,36 @@ TEST bool_stat_test() {
 }
 
 TEST pyos_test() {
+  // Write 2 bytes to this file
+  char* tmp_name = "_tmp/pyos_unit_test";
+  int fd = ::open(tmp_name, O_CREAT|O_RDWR, 0644);
+  if (fd < 0) {
+    printf("1. ERROR %s", strerror(errno));
+  }
+  ASSERT(fd > 0);
+  write(fd, "SH", 2);
+  close(fd);
+
+  // open needs an absolute path for some reason?  _tmp/pyos doesn't work
+  fd = ::open(tmp_name, O_CREAT|O_RDWR, 0644);
+  if (fd < 0) {
+    printf("2. ERROR %s", strerror(errno));
+  }
+
+  Tuple2<int, int> tup = pyos::ReadByte(fd);
+  ASSERT_EQ_FMT('S', tup.at0(), "%d");
+  ASSERT_EQ_FMT(0, tup.at1(), "%d");
+
+  tup = pyos::ReadByte(fd);
+  ASSERT_EQ_FMT('H', tup.at0(), "%d");
+  ASSERT_EQ_FMT(0, tup.at1(), "%d");
+
+  tup = pyos::ReadByte(fd);
+  ASSERT_EQ_FMT(pyos::EOF_SENTINEL, tup.at0(), "%d");
+  ASSERT_EQ_FMT(0, tup.at1(), "%d");
+
+  close(fd);
+
   // This test isn't hermetic but it should work in most places, including in a
   // container
 
@@ -354,6 +391,7 @@ TEST pyos_test() {
   Str* p = env->get(new Str("PATH"));
   ASSERT(p != nullptr);
   log("PATH = %s", p->data_);
+
 
   PASS();
 }

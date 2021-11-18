@@ -32,6 +32,7 @@ readonly UNIT_TESTS_SRC=(
     cpp/frontend_match.cc \
     cpp/libc.cc \
     cpp/osh_bool_stat.cc \
+    cpp/posix.cc \
     cpp/pylib_os_path.cc \
     mycpp/mylib.cc  # TODO: port to mylib2!
 )
@@ -58,6 +59,7 @@ cpp-unit-tests() {
     cpp/dumb_alloc.cc
 
   #gdb --args $bin "$@"
+
   $bin "$@"
 }
 

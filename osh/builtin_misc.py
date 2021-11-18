@@ -10,7 +10,7 @@ builtin_misc.py - Misc builtins.
 """
 from __future__ import print_function
 
-import errno as errno_
+from errno import EINTR
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
@@ -153,7 +153,7 @@ def _ReadN(stdin_fd, num_bytes, cmd_ev):
     n, err_num = pyos.Read(stdin_fd, bytes_left, chunks)  # read up to n bytes
 
     if n < 0:
-      if err_num == errno_.EINTR:
+      if err_num == EINTR:
         cmd_ev.RunPendingTraps()
         # retry after running traps
       else:
@@ -180,7 +180,7 @@ def _ReadUntilDelim(delim_byte, cmd_ev):
   while True:
     ch, err_num = pyos.ReadByte(0)
     if ch < 0:
-      if err_num == errno_.EINTR:
+      if err_num == EINTR:
         cmd_ev.RunPendingTraps()
         # retry after running traps
       else:
@@ -216,7 +216,7 @@ def _ReadLineSlowly(cmd_ev):
     ch, err_num = pyos.ReadByte(0)
 
     if ch < 0:
-      if err_num == errno_.EINTR:
+      if err_num == EINTR:
         cmd_ev.RunPendingTraps()
         # retry after running traps
       else:
@@ -247,7 +247,7 @@ def _ReadAll():
     n, err_num = pyos.Read(0, 4096, chunks)
 
     if n < 0:
-      if err_num == errno_.EINTR:
+      if err_num == EINTR:
         # Retry only.  Like read --line (and command sub), read --all doesn't
         # run traps.  It would be a bit weird to run every 4096 bytes.
         pass
@@ -811,7 +811,7 @@ class Cat(vm._Builtin):
       n, err_num = pyos.Read(0, 4096, chunks)
 
       if n < 0:
-        if err_num == errno_.EINTR:
+        if err_num == EINTR:
           pass  # retry
         else:
           # Like the top level IOError handler

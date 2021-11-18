@@ -90,6 +90,8 @@ cpp-skeleton() {
 
 #include "preamble.h"  // hard-coded stuff
 
+#undef errno  // for e->errno to work; see mycpp/myerror.h
+
 EOF
 
   cat "$@"
@@ -244,7 +246,6 @@ compile-slice() {
     _build/cpp/arith_parse.cc \
     _build/cpp/arg_types.cc \
     cpp/dumb_alloc.cc \
-    cpp/errno_.cc \
     cpp/fcntl_.cc \
     cpp/posix.cc \
     cpp/signal_.cc \

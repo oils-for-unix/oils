@@ -3,7 +3,7 @@ executor.py
 """
 from __future__ import print_function
 
-import errno as errno_
+from errno import EINTR
 import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
@@ -363,7 +363,7 @@ class ShellExecutor(vm._Executor):
       n, err_num = pyos.Read(r, 4096, chunks)
 
       if n < 0:
-        if err_num == errno_.EINTR:
+        if err_num == EINTR:
           pass  # retry
         else:
           # Like the top level IOError handler

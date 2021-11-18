@@ -27,7 +27,6 @@ using id_kind_asdl::Kind_t;
 #include "core_pyerror.h"
 #include "core_pyos.h"
 #include "core_pyutil.h"
-#include "errno_.h"
 #include "fcntl_.h"
 #include "frontend_flag_spec.h"
 #include "frontend_match.h"
