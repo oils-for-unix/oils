@@ -42,7 +42,6 @@ source benchmarks/common.sh
 #     lisa/
 #       HASH.txt
 #       cpuinfo.txt
-#       cpuinfo.txt
 
 # ../benchmark-data/
 #   shell-id/
@@ -192,7 +191,8 @@ dump-host-id() {
 
   _dump-if-exists /etc/lsb-release $out_dir/lsb-release.txt
 
-  cat /proc/cpuinfo > $out_dir/cpuinfo.txt
+  # remove the cpu MHz field, which changes a lot
+  grep -i -v 'cpu mhz' /proc/cpuinfo > $out_dir/cpuinfo.txt
   # mem info doesn't make a difference?  I guess it's just nice to check that
   # it's not swapping.  But shouldn't be part of the hash.
   cat /proc/meminfo > $out_dir/meminfo.txt
