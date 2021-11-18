@@ -21,7 +21,7 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
 }
 
 Tuple2<int, int> ReadByte(int fd) {
-  char buf[1];
+  unsigned char buf[1];
   ssize_t n = read(fd, &buf, 1);
   if (n < 0) {  // read error
     return Tuple2<int, int>(-1, errno);

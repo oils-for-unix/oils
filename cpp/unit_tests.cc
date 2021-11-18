@@ -216,6 +216,10 @@ TEST posix_test() {
   log("getcwd() =");
   print(cwd);
 
+  Str* message = posix::strerror(EBADF);
+  log("strerror");
+  print(message);
+
   PASS();
 }
 

@@ -53,7 +53,7 @@ inline bool isatty(int fd) {
 }
 
 inline Str* strerror(int err_num) {
-  assert(0);
+  return new Str(::strerror(err_num));
 }
 
 inline Str* uname() {
