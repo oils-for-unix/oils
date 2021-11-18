@@ -257,6 +257,14 @@ EOF
   tea/run.sh run-for-release
 }
 
+_spec-release() {
+  # Just test the release build (as opposed to Oil under CPython, which comes
+  # later.)
+  export OSH_LIST="$OSH_RELEASE_BINARY" OIL_LIST="$OIL_RELEASE_BINARY"
+  test/spec.sh osh-all
+  test/spec.sh oil-all
+}
+
 _test-release-build() {
   # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps,
   # etc.
@@ -271,11 +279,7 @@ _test-release-build() {
 
   run-other-tests
 
-  # Just test the release build (as opposed to Oil under CPython, which comes
-  # later.)
-  export OSH_LIST="$OSH_RELEASE_BINARY" OIL_LIST="$OIL_RELEASE_BINARY"
-  test/spec.sh osh-all
-  test/spec.sh oil-all
+  _spec-release
 }
 
 # NOTE: Following opy/README.md.  Right now this is a quick and dirty
