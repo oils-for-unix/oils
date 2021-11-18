@@ -365,16 +365,16 @@ TEST pyos_test() {
   }
 
   Tuple2<int, int> tup = pyos::ReadByte(fd);
+  ASSERT_EQ_FMT(0, tup.at1(), "%d");  // error code
   ASSERT_EQ_FMT('S', tup.at0(), "%d");
-  ASSERT_EQ_FMT(0, tup.at1(), "%d");
 
   tup = pyos::ReadByte(fd);
+  ASSERT_EQ_FMT(0, tup.at1(), "%d");  // error code
   ASSERT_EQ_FMT('H', tup.at0(), "%d");
-  ASSERT_EQ_FMT(0, tup.at1(), "%d");
 
   tup = pyos::ReadByte(fd);
+  ASSERT_EQ_FMT(0, tup.at1(), "%d");  // error code
   ASSERT_EQ_FMT(pyos::EOF_SENTINEL, tup.at0(), "%d");
-  ASSERT_EQ_FMT(0, tup.at1(), "%d");
 
   close(fd);
 

@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import stat
 import posix_ as posix
-from posix import X_OK, R_OK, W_OK  # refers directly to C macro
+from posix_ import X_OK, R_OK, W_OK  # refers directly to C macro
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import word_t
 from core.pyerror import e_die
