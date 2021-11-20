@@ -366,7 +366,8 @@ class Type(vm._Builtin):
     r = _ResolveNames(arg_r.Rest(), funcs, self.aliases, self.search_path)
     for kind, name in r:
       if kind is None:
-        self.errfmt.StderrLine('type: %r not found' % name)
+        if not arg.t:  # 'type -t X' is silent in this case
+          self.errfmt.StderrLine('type: %r not found' % name)
         status = 1  # nothing printed, but we fail
       else:
         if arg.t:

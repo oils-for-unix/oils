@@ -100,6 +100,17 @@ builtin
 file
 status=1
 ## END
+## STDERR:
+## END
+
+#### type -> not found
+type zz 2>err.txt
+echo status=$?
+grep -o 'not found' err.txt
+## STDOUT:
+status=1
+not found
+## END
 
 #### type -p and -P builtin -> file
 touch /tmp/{mv,tar,grep}
