@@ -617,3 +617,15 @@ argv.py "${A[@]}"
 []
 ## END
 
+
+#### Implicit increment of keys
+declare -a arr=( [30]=a b [40]=x y)
+argv.py "${!arr[@]}"
+argv.py "${arr[@]}"
+
+# osh says "expected associative array pair"
+
+## STDOUT:
+['30', '31', '40', '41']
+['a', 'b', 'x', 'y']
+## END
