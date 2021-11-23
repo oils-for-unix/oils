@@ -288,6 +288,7 @@ def AppBundleMain(argv):
   elif main_name == 'false':
     return 1
   elif main_name == 'readlink':
+    # TODO: Move this to 'internal readlink' (issue #1013)
     main_argv = arg_r.Rest()
     return readlink.main(main_argv)
   else:

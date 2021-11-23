@@ -131,6 +131,7 @@ def _Init(b):
   b.Add('push-registers', enum_name='push_registers')
 
   # Implementation detail of $(<file)
+  # TODO: change to 'internal cat' (issue 1013)
   b.Add('__cat', enum_name='cat')
 
 

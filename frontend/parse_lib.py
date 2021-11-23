@@ -365,7 +365,7 @@ class ParseContext(object):
     if 0:
       self.p_printer.Print(pnode)
 
-    self.tr.ArgList(pnode, out)
+    self.tr.ToArgList(pnode, out)
     return last_token
 
   def ParseOilExpr(self, lexer, start_symbol):

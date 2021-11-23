@@ -769,7 +769,7 @@ class Transformer(object):
       elif p_child.tok.id == Id.Op_Semi:
         do_named = True
 
-  def ArgList(self, pnode, arglist):
+  def ToArgList(self, pnode, arglist):
     # type: (PNode, ArgList) -> None
     """Transform arg lists.
 

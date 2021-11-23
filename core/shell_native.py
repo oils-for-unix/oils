@@ -69,7 +69,7 @@ def MakeBuiltinArgv(argv1):
   argv = ['']  # dummy for argv[0]
   argv.extend(argv1)
   # no location info
-  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv), None)
+  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv), None, None)
 
 
 def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):
