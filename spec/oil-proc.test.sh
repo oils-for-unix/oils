@@ -112,8 +112,8 @@ status=0
 shopt -s oil:all
 
 proc f(first, @rest) {  # @ means "the rest of the arguments"
-  write -sep ' ' -- $first
-  write -sep ' ' -- @rest        # @ means "splice this array"
+  write --sep ' ' -- $first
+  write --sep ' ' -- @rest        # @ means "splice this array"
 }
 f a b c
 ## STDOUT:

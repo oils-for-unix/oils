@@ -245,8 +245,13 @@ class _FlagSpec(object):
     self.defaults[char] = _Default(arg_type)
     self.fields[char] = typ
 
-  def LongFlag(self, long_name, arg_type=None, help=None):
-    # type: (str, Optional[int], Optional[str]) -> None
+  def LongFlag(self,
+      long_name,  # type: str
+      arg_type=None,  # type: Union[None, int, List[str]]
+      default=None,  # type: Optional[Any]
+      help=None  # type: Optional[str]
+      ):
+    # type: (...) -> None
     """Define a long flag like --verbose
 
     TODO: Need to parse boolean flags with default True, e.g. --pretty=0 or
@@ -261,7 +266,7 @@ class _FlagSpec(object):
     else:
       self.actions_long[name] = _MakeAction(arg_type, name)
 
-    self.defaults[name] = _Default(arg_type)
+    self.defaults[name] = _Default(arg_type, arg_default=default)
     self.fields[name] = typ
 
   def PlusFlag(self, char, help=None):
@@ -297,7 +302,6 @@ class _FlagSpecAndMore(object):
   """
   def __init__(self, typed=False):
     # type: (bool) -> None
-    #self.spec = FlagSpecAndMore_()
     self.typed = typed
 
     self.actions_short = {}  # type: Dict[str, args._Action]  # {'-c': _Action}

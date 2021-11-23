@@ -58,7 +58,7 @@ class Pp(_Builtin):
     self.arena = arena
 
   def Run(self, cmd_val):
-    arg, arg_r = flag_spec.ParseOilCmdVal('repr', cmd_val)
+    arg, arg_r = flag_spec.ParseCmdVal('pp', cmd_val)
 
     action, action_spid = arg_r.ReadRequired2(
         'expected an action (proc, cell, etc.)')
@@ -131,7 +131,7 @@ class Append(_Builtin):
   Note: this could also be in builtins_pure.py?
   """
   def Run(self, cmd_val):
-    arg, arg_r = flag_spec.ParseOilCmdVal('append', cmd_val)
+    arg, arg_r = flag_spec.ParseCmdVal('append', cmd_val)
 
     var_name, var_spid = arg_r.ReadRequired2(
         'requires a variable name')
@@ -305,27 +305,6 @@ class Json(vm._Builtin):
     return 0
 
 
-# TODO: Put this in flag_def.py
-WRITE_SPEC = flag_spec.OilFlags('write')
-WRITE_SPEC.Flag('-sep', args.String, default='\n',
-                help='Characters to separate each argument')
-WRITE_SPEC.Flag('-end', args.String, default='\n',
-                help='Characters to terminate the whole invocation')
-WRITE_SPEC.Flag('-n', args.Bool, default=False,
-                help="Omit newline (synonym for -end '')")
-WRITE_SPEC.Flag('-qsn', args.Bool, default=False,
-                help='Write elements in QSN format')
-
-# x means I want \x00
-# u means I want \u{1234}
-# raw is utf-8
-# might also want: maybe?
-WRITE_SPEC.Flag('-unicode', ['raw', 'u', 'x',], default='raw',
-                help='Encode QSN with these options.  '
-                     'x assumes an opaque byte string, while raw and u try to '
-                     'decode UTF-8.')
-
-
 class Write(_Builtin):
   """
   write -- @strs
@@ -335,7 +314,7 @@ class Write(_Builtin):
   write --qsn --sep $'\t' -- @strs   # this is like QTSV
   """
   def Run(self, cmd_val):
-    arg, arg_r = flag_spec.ParseOilCmdVal('write', cmd_val)
+    arg, arg_r = flag_spec.ParseCmdVal('write', cmd_val)
     #print(arg)
 
     if arg.unicode == 'raw':

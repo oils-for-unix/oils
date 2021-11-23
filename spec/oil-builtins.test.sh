@@ -32,7 +32,7 @@ append - a b
 echo status=$?
 ## stdout: status=2
 
-#### write -sep, -end, -n, varying flag syntax
+#### write --sep, --end, -n, varying flag syntax
 shopt -s oil:all
 var a = %('a b' 'c d')
 write @a
@@ -40,17 +40,13 @@ write .
 write -- @a
 write .
 
-write -sep '' -end '' @a; write
+write --sep '' --end '' @a; write
 write .
 
-write -sep '_' -- @a
-write -sep '_' -end $' END\n' -- @a
+write --sep '_' -- @a
+write --sep '_' --end $' END\n' -- @a
 
 # with =
-write -sep='_' -end=$' END\n' -- @a
-# long flags
-write --sep '_' --end $' END\n' -- @a
-# long flags with =
 write --sep='_' --end=$' END\n' -- @a
 
 write -n x
@@ -67,8 +63,6 @@ c d
 a bc d
 .
 a b_c d
-a b_c d END
-a b_c d END
 a b_c d END
 a b_c d END
 xy
@@ -197,7 +191,7 @@ seq 3 | while read --line {
   write line=$_line  # implisict
 }
 write a b | while read --line --with-eol :myline {
-  write -end '' line=$myline
+  write --end '' line=$myline
 }
 ## STDOUT:
 line=1

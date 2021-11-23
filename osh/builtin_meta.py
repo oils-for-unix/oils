@@ -213,7 +213,7 @@ class RunProc(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    attrs, arg_r = flag_spec.ParseOilCmdVal('runproc', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('runproc', cmd_val)
     arg = arg_types.runproc(attrs.attrs)
 
     argv, spids = arg_r.Rest2()

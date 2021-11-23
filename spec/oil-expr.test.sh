@@ -436,13 +436,13 @@ echo $len(two)
 shopt -s oil:all
 
 var n = [i*2 for i in range(5)]
-write -sep ' ' @n
+write --sep ' ' @n
 
 # TODO: Test this
 #var n = [i*2 for i,j in range(5)]
 
 var even = [i*2 for i in range(5) if i % 2 === 0]
-write -sep ' ' @even
+write --sep ' ' @even
 ## STDOUT:
 0 2 4 6 8
 0 4 8

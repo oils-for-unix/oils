@@ -209,7 +209,7 @@ shopt -s oil:all
 var mylist = [1,2,3]
 setvar mylist[1] = 42
 
-write  -sep ' ' @mylist
+write --sep ' ' @mylist
 ## STDOUT:
 1 42 3
 ## END

@@ -259,26 +259,51 @@ TRY_SPEC.LongFlag('--allow-status-01', args.Bool,
 #   to "replace" 'builtin' and # 'command'
 
 
-APPEND_SPEC = OilFlags('append', typed=True)
+APPEND_SPEC = FlagSpec('append')
 
-SHVAR_SPEC = OilFlags('shvar', typed=True)
+SHVAR_SPEC = FlagSpec('shvar')
 #SHVAR_SPEC.Flag('-temp', args.String,
 #    help='Push a NAME=val binding')
 #SHVAR_SPEC.Flag('-env', args.String,
 #    help='Push a NAME=val binding and set the -x flag')
 
-REPR_SPEC = OilFlags('repr', typed=True)
+PP_SPEC = FlagSpec('pp')
 
 # --verbose?
-FORK_SPEC = OilFlags('fork', typed=True)
-FORKWAIT_SPEC = OilFlags('forkwait', typed=True)
+FORK_SPEC = FlagSpec('fork')
+FORKWAIT_SPEC = FlagSpec('forkwait')
 
 # Might want --list at some point
-MODULE_SPEC = OilFlags('module', typed=True)
+MODULE_SPEC = FlagSpec('module')
 
-RUNPROC_SPEC = OilFlags('runproc', typed=True)
-# TODO: how to support -h?
-RUNPROC_SPEC.Flag('-help', args.Bool, help='Show all procs')
+RUNPROC_SPEC = FlagSpec('runproc')
+RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
+
+WRITE_SPEC = FlagSpec('write')
+WRITE_SPEC.LongFlag(
+    '--sep', args.String, default='\n',
+    help='Characters to separate each argument')
+WRITE_SPEC.LongFlag(
+    '--end', args.String, default='\n',
+    help='Characters to terminate the whole invocation')
+WRITE_SPEC.ShortFlag(
+    '-n', args.Bool,
+    help="Omit newline (synonym for -end '')")
+WRITE_SPEC.LongFlag(
+    '--qsn', args.Bool, default=False,
+    help='Write elements in QSN format')
+
+# x means I want \x00
+# u means I want \u{1234}
+# raw is utf-8
+# might also want: maybe?
+WRITE_SPEC.LongFlag(
+    '--unicode', ['raw', 'u', 'x',], default='raw',
+    help='Encode QSN with these options.  '
+         'x assumes an opaque byte string, while raw and u try to '
+         'decode UTF-8.')
+
+
 
 #
 # Tea

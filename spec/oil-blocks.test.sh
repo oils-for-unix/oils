@@ -8,7 +8,7 @@ cd / { echo $PWD; echo OLDPWD=${OLDPWD:-} }; echo done
 echo $(basename $PWD)  # restored
 cd /tmp {
   write PWD=$PWD
-  write -sep ' ' pwd builtin: $(pwd)
+  write --sep ' ' pwd builtin: $(pwd)
 }
 echo $(basename $PWD)  # restored
 ## STDOUT:

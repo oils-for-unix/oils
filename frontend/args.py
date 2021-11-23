@@ -513,12 +513,19 @@ def Parse(spec, arg_r):
 
     # Only accept -- if there are any long flags defined
     if len(spec.actions_long) and arg.startswith('--'):
-      action = spec.actions_long.get(arg[2:])
+      pos = arg.find('=', 2)
+      if pos == -1:
+        suffix = None
+        flag_name = arg[2:]  # strip off --
+      else:
+        suffix = arg[pos+1:]
+        flag_name = arg[2:pos]
+
+      action = spec.actions_long.get(flag_name)
       if action is None:
         e_usage('got invalid flag %r' % arg, span_id=arg_r.SpanId())
 
-      # TODO: attached_arg could be 'bar' for --foo=bar
-      action.OnMatch(None, arg_r, out)
+      action.OnMatch(suffix, arg_r, out)
       arg_r.Next()
       continue
 

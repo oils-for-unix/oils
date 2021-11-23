@@ -510,7 +510,7 @@ class Fork(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseOilCmdVal('fork', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('fork', cmd_val)
     arg, span_id = arg_r.Peek2()
     if arg is not None:
       e_usage('got unexpected argument %r' % arg, span_id=span_id)
@@ -529,7 +529,7 @@ class ForkWait(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseOilCmdVal('forkwait', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('forkwait', cmd_val)
     arg, span_id = arg_r.Peek2()
     if arg is not None:
       e_usage('got unexpected argument %r' % arg, span_id=span_id)

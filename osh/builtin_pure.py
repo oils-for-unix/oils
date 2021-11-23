@@ -539,7 +539,7 @@ class Module(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    _, arg_r = flag_spec.ParseOilCmdVal('module', cmd_val)
+    _, arg_r = flag_spec.ParseCmdVal('module', cmd_val)
     name, _ = arg_r.ReadRequired2('requires a name')
     #log('modules %s', self.modules)
     if name in self.modules:
@@ -620,7 +620,7 @@ class Shvar(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseOilCmdVal('shvar', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('shvar', cmd_val)
     #arg = arg_types.shvar(attrs.attrs)
 
     if not cmd_val.block:
