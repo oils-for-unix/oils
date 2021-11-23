@@ -399,7 +399,6 @@ def main(argv):
   specs = {}
   specs.update(flag_spec.FLAG_SPEC)
   specs.update(flag_spec.FLAG_SPEC_AND_MORE)
-  specs.update(flag_spec.OIL_SPEC)
   #log('SPECS %s', specs)
 
   for spec_name in sorted(specs):
