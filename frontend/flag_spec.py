@@ -129,9 +129,14 @@ def _FlagType(arg_type):
 
 def _MakeAction(arg_type, name, quit_parsing_flags=False):
   # type: (Union[None, int, List[str]], str, bool) -> args._Action
-  if arg_type == args.Int:
+
+  if arg_type == args.Bool:
     assert not quit_parsing_flags
-    action = args.SetToInt(name)  # type: args._Action
+    action = args.SetToTrue(name)  # type: args._Action
+
+  elif arg_type == args.Int:
+    assert not quit_parsing_flags
+    action = args.SetToInt(name)
 
   elif arg_type == args.Float:
     assert not quit_parsing_flags
@@ -242,6 +247,12 @@ class _FlagSpec(object):
 
   def LongFlag(self, long_name, arg_type=None, help=None):
     # type: (str, Optional[int], Optional[str]) -> None
+    """Define a long flag like --verbose
+
+    TODO: Need to parse boolean flags with default True, e.g. --pretty=0 or
+    --validate=0
+    """
+    assert long_name.startswith('--'), long_name
     typ = _FlagType(arg_type)
 
     name = long_name[2:]  # key for parsing
@@ -439,22 +450,16 @@ class _OilFlagSpec(object):
 
   --flag=false  --flag=FALSE  --flag=0  --flag=f  --flag=F  --flag=False
 
-  Disallow triple dashes though.
+  Notes on deleting OilFlags:
 
-  FlagSet ?  That is just spec.
-
-  spec.Arg('action') -- make it required!
-
-  spec.Action()  # make it required, and set to 'action' or 'subaction'?
-
-  if arg.action ==
-
-    prefix= suffix= should be kwargs I think
-    Or don't even share the actions?
-
-  What about global options?  --verbose?
-
-  You can just attach that to every spec, like DefineOshCommonOptions(spec).
+  - The LongFlag() method of FlagSpec() should have the same API
+    - it needs a 'default' value
+  - Do we need the regex in ParseOil?  For --foo=bar?
+    - Yes --rcfile=z isn't allowed; it's only --rcfile z
+    - Actually bash has this problem too; it's inconsistent with GNU
+      tools
+  - Get rid of self.typed everywhere too.  Do the builtins have to
+    change at all?
   """
   def __init__(self, typed=False):
     # type: (bool) -> None
@@ -482,10 +487,11 @@ class _OilFlagSpec(object):
     else:
       self.arity1[attr_name] = _MakeAction(arg_type, attr_name)
 
-    if self.typed:
-      self.defaults[attr_name] = _Default(arg_type, arg_default=default)
-    else:
-      self.defaults[attr_name] = args.PyToValue(default)
+    de = _Default(arg_type, arg_default=default) \
+        if self.typed else args.PyToValue(default)
+    #log('typed %s', self.typed)
+    #log('de %r', de)
+    self.defaults[attr_name] = de
 
     #log('%s %s', name, arg_type)
     typ = _FlagType(arg_type)

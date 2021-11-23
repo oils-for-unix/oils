@@ -262,7 +262,7 @@ class Try(vm._Builtin):
     # type: (cmd_value__Argv) -> int
 
     # TODO: Also hard usage error here too?
-    attrs, arg_r = flag_spec.ParseOilCmdVal('try_', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('try_', cmd_val)
     arg = arg_types.try_(attrs.attrs)
 
     if arg_r.Peek() is None:

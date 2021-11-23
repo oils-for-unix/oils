@@ -196,21 +196,15 @@ _STDIN = posix.fdopen(0)
 class Json(vm._Builtin):
   """Json I/O.
 
-  -indent pretty prints it.  Is the default indent 2?  -pretty=0 can turn it
-  off.
+    -indent pretty prints it.
+    -pretty=0 turns off.
 
-  json echo :myobj
-
-  json echo -indent 2 :myobj :other_obj {
-    x = 1
-    d = {name: 'andy'}
-  }
+  TODO: prefer typed args
+    json write ({key: 'value'})
+  over this reference:
+    json write :myobj
 
   json read :x < foo.tsv2
-
-  How about:
-      json echo &myobj 
-  Well that will get confused with a redirect.
   """
   def __init__(self, mem, cmd_ev, errfmt):
     # type: (state.Mem, CommandEvaluator, ErrorFormatter) -> None
