@@ -63,7 +63,7 @@ class Exec(vm._Builtin):
 
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'exec'
-    _ = EXEC_SPEC.Parse(arg_r)  # no flags now, but accepts --
+    _ = args.Parse(EXEC_SPEC, arg_r)  # no flags now, but accepts --
 
     # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
     if arg_r.AtEnd():

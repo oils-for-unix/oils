@@ -225,7 +225,7 @@ class Json(vm._Builtin):
     arg_r.Next()
 
     if action == 'write':
-      arg = JSON_WRITE_SPEC.Parse(arg_r)
+      arg = args.Parse(JSON_WRITE_SPEC, arg_r)
 
       # GetValue() of each name and print it.
 
@@ -270,7 +270,7 @@ class Json(vm._Builtin):
         print(yajl.dump(namespace))
 
     elif action == 'read':
-      arg = JSON_READ_SPEC.Parse(arg_r)
+      arg = args.Parse(JSON_READ_SPEC, arg_r)
       # TODO:
       # Respect -validate=F
 

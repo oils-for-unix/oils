@@ -337,7 +337,7 @@ class CompGen(vm._Builtin):
   def Run(self, cmd_val):
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
-    arg = COMPGEN_SPEC.Parse(arg_r)
+    arg = flag_spec.ParseMore('compgen', arg_r)
 
     if arg_r.AtEnd():
       to_complete = ''
@@ -398,7 +398,7 @@ class CompOpt(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
-    arg = COMPOPT_SPEC.Parse(arg_r)
+    arg = flag_spec.ParseMore('compopt', arg_r)
 
     if not self.comp_state.currently_completing:  # bash also checks this.
       self.errfmt.Print('compopt: not currently executing a completion function')
