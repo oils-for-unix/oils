@@ -31,7 +31,7 @@ def _ParseCmdVal(spec, cmd_val):
   """
   arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
   arg_r.Next()  # move past the builtin name
-  return spec.Parse(arg_r), arg_r.i
+  return args.Parse(spec, arg_r), arg_r.i
 
 
 class ArgsTest(unittest.TestCase):
@@ -54,7 +54,7 @@ class ArgsTest(unittest.TestCase):
     # don't parse args afterward
     arg_r = args.Reader(
         ['-c', 'echo hi', '-e', '-o', 'nounset', 'foo', '--help'])
-    arg = s.Parse(arg_r)
+    arg = args.ParseMore(s, arg_r)
 
     self.assertEqual(['foo', '--help'], arg_r.Rest())
     self.assertEqual('echo hi', arg.c)
@@ -65,7 +65,7 @@ class ArgsTest(unittest.TestCase):
         [('errexit', True), ('nounset', True)], arg.opt_changes)
 
     arg_r = args.Reader(['+e', '+o', 'nounset', '-o', 'pipefail', 'foo'])
-    arg = s.Parse(arg_r)
+    arg = args.ParseMore(s, arg_r)
 
     self.assertEqual(['foo'], arg_r.Rest())
     self.assertEqual(None, arg.i)
@@ -74,14 +74,14 @@ class ArgsTest(unittest.TestCase):
         arg.opt_changes)
 
     arg_r = args.Reader(['-c', 'echo hi', '--help', '--rcfile', 'bashrc'])
-    arg = s.Parse(arg_r)
+    arg = args.ParseMore(s, arg_r)
     self.assertEqual('echo hi', arg.c)
     self.assertEqual(True, arg.help)
     self.assertEqual('bashrc', arg.rcfile)
 
     # This is an odd syntax!
     arg_r = args.Reader(['-euo', 'pipefail'])
-    arg = s.Parse(arg_r)
+    arg = args.ParseMore(s, arg_r)
     self.assertEqual(
         [('errexit', True), ('nounset', True), ('pipefail', True)],
         arg.opt_changes)
@@ -89,7 +89,7 @@ class ArgsTest(unittest.TestCase):
 
     # Even weirder!
     arg_r = args.Reader(['+oeu', 'pipefail'])
-    arg = s.Parse(arg_r)
+    arg = args.ParseMore(s, arg_r)
     self.assertEqual(
         [('pipefail', False), ('errexit', False), ('nounset', False)],
         arg.opt_changes)
@@ -97,7 +97,7 @@ class ArgsTest(unittest.TestCase):
 
     # Even weirder!
     arg_r = args.Reader(['+oo', 'pipefail', 'errexit'])
-    arg = s.Parse(arg_r)
+    arg = args.ParseMore(s, arg_r)
     self.assertEqual(
         [('pipefail', False), ('errexit', False)],
         arg.opt_changes)
@@ -105,7 +105,7 @@ class ArgsTest(unittest.TestCase):
 
     # Now this is an arg.  Gah.
     arg_r = args.Reader(['+o', 'pipefail', 'errexit'])
-    arg = s.Parse(arg_r)
+    arg = args.ParseMore(s, arg_r)
     self.assertEqual([('pipefail', False)], arg.opt_changes)
     self.assertEqual(['errexit'], arg_r.Rest())
 
@@ -117,11 +117,11 @@ class ArgsTest(unittest.TestCase):
     s.LongFlag('--ast-format', ['text', 'html'])
 
     arg_r = args.Reader(['--ast-format', 'text'])
-    arg = s.Parse(arg_r)
+    arg = args.ParseMore(s, arg_r)
     self.assertEqual('text', arg.ast_format)
 
     self.assertRaises(
-        error.Usage, s.Parse, args.Reader(['--ast-format', 'oops']))
+        error.Usage, args.Parse, s, args.Reader(['--ast-format', 'oops']))
 
   def testFlagSpec(self):
     s = flag_spec._FlagSpec()

@@ -257,12 +257,6 @@ class _FlagSpec(object):
     # '+' or '-'.  TODO: Should we make it a bool?
     self.fields[char] = flag_type_e.Str
 
-  # TODO: Remove this method -- args.Parse() instead
-  def Parse(self, arg_r):
-    # type: (args.Reader) -> args._Attributes
-    """For builtins to read args after we parse flags."""
-    return args.Parse(self, arg_r)
-
 
 class _FlagSpecAndMore(object):
   """Parser for 'set' and 'sh', which both need to process shell options.

@@ -286,7 +286,7 @@ class Complete(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
-    arg = COMPLETE_SPEC.Parse(arg_r)
+    arg = flag_spec.ParseMore('complete', arg_r)
     # TODO: process arg.opt_changes
     #log('arg %s', arg)
 
@@ -436,7 +436,7 @@ class CompAdjust(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
-    arg = COMPADJUST_SPEC.Parse(arg_r)
+    arg = flag_spec.ParseMore('compadjust', arg_r)
     var_names = arg_r.Rest()  # Output variables to set
     for name in var_names:
       # Ironically we could complete these
