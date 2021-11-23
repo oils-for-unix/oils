@@ -45,7 +45,7 @@ parse() {
 
 compile() {
   bin/opyc compile $FILE _tmp/opyc-compile-1
-  bin/opyc compile -emit-docstring=0 $FILE _tmp/opyc-compile-2
+  bin/opyc compile --emit-docstring=0 $FILE _tmp/opyc-compile-2
   ls -l _tmp/opyc-compile-*
 }
 

@@ -79,7 +79,7 @@ compile-manifest() {
     log "     $full_src_path"
 
     # Save space by omitting docstring.
-    $py $THIS_DIR/../bin/opyc compile -emit-docstring=0 $full_src_path $dest
+    $py $THIS_DIR/../bin/opyc compile --emit-docstring=0 $full_src_path $dest
 
     local rel_py_path=${rel_dest_path%.pyc}.py   # .pyc -> py
 

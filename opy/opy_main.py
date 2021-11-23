@@ -441,7 +441,7 @@ def OpyCommandMain(argv):
     arg_r = args.Reader(argv)
     opt = args.Parse(compile_spec, arg_r)
     py_path = arg_r.ReadRequired('Expected path to Python input')
-    out_path = arg.ReadRequired('Expected output path')
+    out_path = arg_r.ReadRequired('Expected output path')
 
     # Compile to Python bytecode (TODO: remove ovm_codegen.py)
     mode = 'exec'
