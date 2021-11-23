@@ -44,12 +44,14 @@ banner() {
   echo -----
 }
 
-readonly -a UNIT_TESTS=( {asdl,build,core,doctools,frontend,lazylex,mycpp,native,oil_lang,osh,pylib,qsn_,test,tools}/*_test.py )
+readonly -a PY2_UNIT_TESTS=( {asdl,build,core,doctools,frontend,lazylex,native,oil_lang,osh,pylib,qsn_,test,tools}/*_test.py )
 
-tests-to-run() {
+readonly -a PY3_UNIT_TESTS=( mycpp/*_test.py )
+
+py2-tests() {
   local minimal=${1:-}
 
-  for t in "${UNIT_TESTS[@]}"; do
+  for t in "${PY2_UNIT_TESTS[@]}"; do
     # For Travis after build/dev.sh minimal: if we didn't build fastlex.so,
     # then skip a unit test that will fail.
 
@@ -65,6 +67,20 @@ tests-to-run() {
 
     echo $t
   done
+}
+
+py3-tests() {
+  for t in "${PY3_UNIT_TESTS[@]}"; do
+    echo $t
+  done
+}
+
+all-tests() {
+  py2-tests "$@"
+
+  # TODO: This only PRINTS the tests.  It doesn't actually run them, but we
+  # need a different PYTHONPATH here.
+  py3-tests
 }
 
 # Exits 255 if a test fails.
@@ -84,7 +100,7 @@ run-test-and-maybe-abort() {
 all() {
   ### Run unit tests after build/dev.sh all
 
-  time tests-to-run "$@" | xargs -n 1 -- $0 run-test-and-maybe-abort
+  time all-tests "$@" | xargs -n 1 -- $0 run-test-and-maybe-abort
   echo
   echo "All unit tests passed."
 }
@@ -92,7 +108,7 @@ all() {
 minimal() {
   ### Run unit tests after build/dev.sh minimal
 
-  time tests-to-run T | xargs -n 1 -- $0 run-test-and-maybe-abort
+  time py2-tests T | xargs -n 1 -- $0 run-test-and-maybe-abort
   echo
   echo "Minimal unit tests passed."
 }
@@ -158,7 +174,7 @@ run-all-and-log() {
   # There are no functions here, so disabline errexit is safe.
   # Note: In Oil, this could use shopt { }.
   set +o errexit
-  time tests-to-run | xargs -n 1 -- $0 run-test-and-log $tasks_csv
+  time all-tests | xargs -n 1 -- $0 run-test-and-log $tasks_csv
   status=$?
   set -o errexit
 
