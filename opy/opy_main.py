@@ -302,15 +302,18 @@ def OpyCommandMain(argv):
     compiler = None
 
   # TODO: Also have a run_spec for 'opyc run'.
-  compile_spec = flag_spec.OilFlags('opy')
-  compile_spec.Flag('-emit-docstring', args.Bool, default=True,
-                    help='Whether to emit docstrings')
-  compile_spec.Flag('-fast-ops', args.Bool, default=True,
-                    help='Whether to emit LOAD_FAST, STORE_FAST, etc.')
-  compile_spec.Flag('-oil-subset', args.Bool, default=False,
-                    help='Only allow the constructs necessary to implement'
-                    'Oil. Example: using multiple inheritance will abort '
-                    'compilation.')
+  compile_spec = flag_spec.FlagSpec('opy')
+  compile_spec.LongFlag(
+      '--emit-docstring', args.Bool, default=True,
+      help='Whether to emit docstrings')
+  compile_spec.LongFlag(
+      '--fast-ops', args.Bool, default=True,
+      help='Whether to emit LOAD_FAST, STORE_FAST, etc.')
+  compile_spec.LongFlag(
+      '--oil-subset', args.Bool, default=False,
+      help='Only allow the constructs necessary to implement'
+      'Oil. Example: using multiple inheritance will abort '
+      'compilation.')
 
   #
   # Actions
@@ -391,20 +394,23 @@ def OpyCommandMain(argv):
     printer.Print(pnode)
 
   elif action == 'ast':  # output AST
-    opt, i = compile_spec.ParseArgv(argv)
-    py_path = argv[i]
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
+    py_path = arg_r.ReadRequired('Expected path to Python input')
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='ast')
 
   elif action == 'symbols':  # output symbols
-    opt, i = compile_spec.ParseArgv(argv)
-    py_path = argv[i]
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
+    py_path = arg_r.ReadRequired('Expected path to Python input')
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='symbols')
 
   elif action == 'cfg':  # output Control Flow Graph
-    opt, i = compile_spec.ParseArgv(argv)
-    py_path = argv[i]
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
+    py_path = arg_r.ReadRequired('Expected path to Python input')
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='cfg')
 
@@ -412,10 +418,10 @@ def OpyCommandMain(argv):
     # spec.Arg('action', ['foo', 'bar'])
     # But that leads to some duplication.
 
-    opt, i = compile_spec.ParseArgv(argv)
-
-    py_path = argv[i]
-    out_path = argv[i+1]
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
+    py_path = arg_r.ReadRequired('Expected path to Python input')
+    out_path = arg_r.ReadRequired('Expected output path')
 
     with open(py_path) as f:
       co = compiler.Compile(f, opt, 'exec')
@@ -431,9 +437,11 @@ def OpyCommandMain(argv):
   elif action == 'compile-ovm':
     # NOTE: obsolete
     from ovm2 import oheap2
-    opt, i = compile_spec.ParseArgv(argv)
-    py_path = argv[i]
-    out_path = argv[i+1]
+
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
+    py_path = arg_r.ReadRequired('Expected path to Python input')
+    out_path = arg.ReadRequired('Expected output path')
 
     # Compile to Python bytecode (TODO: remove ovm_codegen.py)
     mode = 'exec'
@@ -457,8 +465,10 @@ def OpyCommandMain(argv):
     log('Wrote only the bytecode to %r', out_path)
 
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
-    opt, i = compile_spec.ParseArgv(argv)
-    py_expr = argv[i]
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
+    py_expr = arg_r.ReadRequired('Expected Python expression')
+
     f = skeleton.StringInput(py_expr, '<eval input>')
     co = compiler.Compile(f, opt, 'eval')
 

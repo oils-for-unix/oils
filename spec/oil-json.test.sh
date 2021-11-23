@@ -12,7 +12,7 @@ json write :myvar
 #### json write ARRAY
 a=(foo.cc foo.h)
 json write :a
-json write -indent 0 :a
+json write --indent 0 :a
 ## STDOUT:
 [
   "foo.cc",
@@ -30,9 +30,9 @@ json write -indent 0 :a
 
 var mydict = {name: "bob", age: 30}
 
-json write -pretty=0 :mydict
+json write --pretty=0 :mydict
 # ignored
-json write -pretty=F -indent 4 :mydict
+json write --pretty=F --indent 4 :mydict
 ## STDOUT:
 {"age":30,"name":"bob"}
 {"age":30,"name":"bob"}

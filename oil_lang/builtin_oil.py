@@ -175,16 +175,19 @@ class ArgParse(_Builtin):
     raise NotImplementedError()
 
 
-JSON_WRITE_SPEC = flag_spec.OilFlags('json-write', typed=True)
-JSON_WRITE_SPEC.Flag('-pretty', args.Bool, default=True,
-                     help='Whitespace in output (default true)')
-JSON_WRITE_SPEC.Flag('-indent', args.Int, default=2,
-                     help='Indent JSON by this amount')
+JSON_WRITE_SPEC = flag_spec.FlagSpec('json-write')
+JSON_WRITE_SPEC.LongFlag(
+    '--pretty', args.Bool, default=True,
+    help='Whitespace in output (default true)')
+JSON_WRITE_SPEC.LongFlag(
+    '--indent', args.Int, default=2,
+    help='Indent JSON by this amount')
 
-JSON_READ_SPEC = flag_spec.OilFlags('json-read', typed=True)
+JSON_READ_SPEC = flag_spec.FlagSpec('json-read')
 # yajl has this option
-JSON_READ_SPEC.Flag('-validate', args.Bool, default=True,
-                     help='Validate UTF-8')
+JSON_READ_SPEC.LongFlag(
+    '--validate', args.Bool, default=True,
+    help='Validate UTF-8')
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 

@@ -298,6 +298,10 @@ class Str : public gc_heap::Obj {
     return -1;
   }
 
+  int find(Str* needle, int pos) {
+    assert(0);
+  }
+
   int rfind(Str* needle) {
     assert(needle->len_ == 1);  // Oil's usage
     char c = needle->data_[0];

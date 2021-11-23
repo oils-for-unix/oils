@@ -309,8 +309,8 @@ WRITE_SPEC.LongFlag(
 # Tea
 #
 
-TEA_MAIN_SPEC = OilFlags('tea_main', typed=True)
-TEA_MAIN_SPEC.Flag('-n', args.Bool)  # Parse
-TEA_MAIN_SPEC.Flag('-c', args.String)  # Command snippet
-TEA_MAIN_SPEC.Flag('-translate', args.Bool)
+TEA_MAIN_SPEC = FlagSpec('tea_main')
+TEA_MAIN_SPEC.ShortFlag('-n', args.Bool)  # Parse
+TEA_MAIN_SPEC.ShortFlag('-c', args.String)  # Command snippet
+TEA_MAIN_SPEC.LongFlag('--translate', args.Bool)
 

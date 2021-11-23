@@ -43,7 +43,7 @@ def Main(arg_r):
     tea --cpp-out myprog myprog.tea lib.tea
   """
   try:
-    attrs = flag_spec.ParseOil('tea_main', arg_r)
+    attrs = flag_spec.Parse('tea_main', arg_r)
   except error.Usage as e:
     stderr_line('tea usage error: %s', e.msg)
     return 2

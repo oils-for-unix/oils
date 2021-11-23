@@ -515,7 +515,7 @@ def Parse(spec, arg_r):
     if len(spec.actions_long) and arg.startswith('--'):
       pos = arg.find('=', 2)
       if pos == -1:
-        suffix = None
+        suffix = None  # type: Optional[str]
         flag_name = arg[2:]  # strip off --
       else:
         suffix = arg[pos+1:]

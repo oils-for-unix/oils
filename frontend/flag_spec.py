@@ -132,7 +132,7 @@ def _MakeAction(arg_type, name, quit_parsing_flags=False):
 
   if arg_type == args.Bool:
     assert not quit_parsing_flags
-    action = args.SetToTrue(name)  # type: args._Action
+    action = args.SetAttachedBool(name)  # type: args._Action
 
   elif arg_type == args.Int:
     assert not quit_parsing_flags
@@ -158,10 +158,15 @@ def _MakeAction(arg_type, name, quit_parsing_flags=False):
 def _Default(arg_type, arg_default=None):
   # type: (Union[None, int, List[str]], Optional[str]) -> value_t
 
-  # for enum or string
-  # note: not using this for integers yet
   if arg_default is not None:
-    return value.Str(arg_default)  # early return
+    if isinstance(arg_default, bool):
+      return value.Bool(arg_default)
+    elif isinstance(arg_default, int):
+      return value.Int(arg_default)
+    elif isinstance(arg_default, str):
+      return value.Str(arg_default)
+    else:
+      raise AssertionError(arg_default)
 
   if arg_type is None:
     default = value.Bool(False)  # type: value_t
@@ -252,11 +257,7 @@ class _FlagSpec(object):
       help=None  # type: Optional[str]
       ):
     # type: (...) -> None
-    """Define a long flag like --verbose
-
-    TODO: Need to parse boolean flags with default True, e.g. --pretty=0 or
-    --validate=0
-    """
+    """Define a long flag like --verbose or --validate=0"""
     assert long_name.startswith('--'), long_name
     typ = _FlagType(arg_type)
 

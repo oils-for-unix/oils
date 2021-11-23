@@ -19,9 +19,14 @@ from mycpp.mylib import switch, tagswitch
 
 
 def CString(s):
-  # HACK for now
+  # HACKS for now
+
   assert '"' not in s, s
   assert '\\' not in s, s
+
+  # For the default of write --end
+  if s == '\n':
+    return '"\\n"'
 
   return '"%s"' % s
 
@@ -148,7 +153,7 @@ def _WriteDefaults(cc_f, defaults_name, defaults):
     elif val.tag_() == value_e.Str:
       # NOTE: 'osh' FlagSpecAndMore_ has default='nice' and default='abbrev-text'
       typ = 'Str'
-      v = '{.s = "%s"}' % val.s
+      v = '{.s = %s}' % CString(val.s)
 
     else:
       raise AssertionError(val)
