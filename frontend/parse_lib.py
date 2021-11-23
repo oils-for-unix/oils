@@ -4,7 +4,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
-    Token, compound_word, expr_t, word_t, redir, arg_list, name_type,
+    Token, compound_word, expr_t, word_t, redir, ArgList, name_type,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -354,7 +354,7 @@ class ParseContext(object):
     return ast_node, last_token
 
   def ParseOilArgList(self, lexer, out):
-    # type: (Lexer, arg_list) -> Token
+    # type: (Lexer, ArgList) -> Token
     """ $f(x, y) """
     if self.parsing_expr:
       # TODO: get rid of parsing_expr

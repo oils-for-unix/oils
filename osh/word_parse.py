@@ -68,7 +68,7 @@ from _devbuild.gen.syntax_asdl import (
 
     place_expr_e, place_expr__Var,
 
-    expr_t, source, arg_list,
+    expr_t, source, ArgList,
 )
 from core import alloc
 from core.pyerror import p_die
@@ -1353,7 +1353,7 @@ class WordParser(WordEmitter):
     return node
 
   def _ParseCallArguments(self, arglist):
-    # type: (arg_list) -> None
+    # type: (ArgList) -> None
 
     # Needed so ) doesn't get translated to something else
     self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)
@@ -1406,7 +1406,7 @@ class WordParser(WordEmitter):
 
       next_id = self.lexer.LookAhead(lex_mode)
       if next_id == Id.Op_LParen:  # @arrayfunc(x)
-        arglist = arg_list()
+        arglist = ArgList()
         self._ParseCallArguments(arglist)
         part2 = word_part.FuncCall(splice_token, arglist)
       else:
@@ -1503,7 +1503,7 @@ class WordParser(WordEmitter):
 
           next_id = self.lexer.LookAhead(lex_mode)
           if next_id == Id.Op_LParen:
-            arglist = arg_list()
+            arglist = ArgList()
             self._ParseCallArguments(arglist)
             part = word_part.FuncCall(vsub_token, arglist)
 

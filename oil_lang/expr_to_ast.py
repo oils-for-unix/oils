@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     posix_class, perl_class,
     name_type, place_expr, place_expr_e, place_expr_t, type_expr_t,
     comprehension, subscript, attribute, proc_sig, proc_sig_t, param,
-    named_arg, arg_list,
+    named_arg, ArgList,
     variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
@@ -127,7 +127,7 @@ class Transformer(object):
     # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
     if op_tok.id == Id.Op_LParen:
-      arglist = arg_list()
+      arglist = ArgList()
       if len(children) == 2:  # ()
         return expr.FuncCall(base, arglist)
 
@@ -708,7 +708,7 @@ class Transformer(object):
         "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
   def _Argument(self, p_node, do_named, arglist):
-    # type: (PNode, bool, arg_list) -> None
+    # type: (PNode, bool, ArgList) -> None
     """
     argument: (
       test [comp_for]
@@ -758,7 +758,7 @@ class Transformer(object):
     raise NotImplementedError()
 
   def _Arglist(self, children, arglist):
-    # type: (List[PNode], arg_list) -> None
+    # type: (List[PNode], ArgList) -> None
     """
     arglist: argument (',' argument)* [','] [';' argument (',' argument)* [',']]
     """
@@ -770,7 +770,7 @@ class Transformer(object):
         do_named = True
 
   def ArgList(self, pnode, arglist):
-    # type: (PNode, arg_list) -> None
+    # type: (PNode, ArgList) -> None
     """Transform arg lists.
 
     oil_arglist: '(' [arglist] ')'

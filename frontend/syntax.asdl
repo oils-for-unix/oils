@@ -138,7 +138,7 @@ module syntax
   sh_array_literal = (Token left, word* words) attributes (int* spids)
 
   -- Used in both expr and a word_part
-  arg_list = (expr* positional, named_arg* named)
+  ArgList = (expr* positional, named_arg* named)
 
   word_part = 
     ShArrayLiteral %sh_array_literal
@@ -171,7 +171,7 @@ module syntax
     -- @myarray
   | Splice(Token name)
     -- $strfunc(x) and @arrayfunc(x)
-  | FuncCall(Token name, arg_list args)
+  | FuncCall(Token name, ArgList args)
     -- $[d->key], etc.
   | ExprSub(Token left, expr child)
   attributes (int* spids)
@@ -437,7 +437,7 @@ module syntax
   | Binary(Token op, expr left, expr right)
     -- x < 4 < 3 and (x < 4) < 3
   | Compare(expr left, speck* ops, expr* comparators)
-  | FuncCall(expr func, arg_list args)
+  | FuncCall(expr func, ArgList args)
 
     -- TODO: Need a representation for method call.  We don't just want
     -- Attribute() and then Call()

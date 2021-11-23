@@ -3,7 +3,7 @@
 module runtime
 {
   -- import these types from syntax.asdl
-  use syntax { command re redir_loc BraceGroup Token proc_sig }
+  use syntax { ArgList command re redir_loc BraceGroup Token proc_sig }
 
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
@@ -11,12 +11,13 @@ module runtime
 
   -- note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(string* argv, int* arg_spids, BraceGroup? block)
+    Argv(string* argv, int* arg_spids, ArgList? typed_args, BraceGroup? block)
   | Assign(int builtin_id,
            string* argv, int* arg_spids,
            assign_arg* pairs)
-  -- refactoring: cmd_value = (string* argv, int* arg_spids, other? other)
-  --              other = AssignPairs(...) | Block(...)
+  -- refactoring: cmd_value = (string* argv, int* arg_spids, more_args? more)
+  --              more_args = Assign(assign_arg* pairs) 
+  --                        | Proc(arg_list? typed_args, BraceGroup? block)
 
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.
