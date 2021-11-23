@@ -317,19 +317,4 @@ args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
 #endif
 }
 
-Tuple2<args::_Attributes*, args::Reader*> ParseOilCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
-#ifdef CPP_UNIT_TEST
-  return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
-#else
-  auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
-  arg_r->Next();  // move past the builtin name
-
-  flag_spec::_OilFlagSpec* spec = LookupFlagSpecOil(spec_name);
-  assert(spec);  // should always be found
-  return Tuple2<args::_Attributes*, args::Reader*>(args::ParseOil(spec, arg_r),
-                                                   arg_r);
-#endif
-}
-
 }  // namespace flag_spec
