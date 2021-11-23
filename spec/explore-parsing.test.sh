@@ -10,3 +10,11 @@ fun 0 1 2 3 4 5 6 7 8
 fun() { echo ${##}; }
 fun 0 1 2 3 4 5 6 7 8 9
 ## stdout: 2
+
+#### Is \r considered whitespace?
+echo -e 'echo\rTEST' > myscript
+$SH myscript
+
+## status: 127
+## STDOUT:
+## END

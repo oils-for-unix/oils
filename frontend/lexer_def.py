@@ -61,7 +61,7 @@ def R(pat, tok_type):
 SHOULD_HIJACK_RE = r'#!.*sh[ \t\r\n][^\0]*'
 
 
-_SIGNIFICANT_SPACE = R(r'[ \t\r]+', Id.WS_Space)
+_SIGNIFICANT_SPACE = R(r'[ \t]+', Id.WS_Space)
 
 # Tilde expansion chars are Lit_Chars, but WITHOUT the /.  The NEXT token (if
 # any) after this TildeLike token should start with a /.
