@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from frontend import args
 from frontend.flag_spec import (
-    FlagSpec, FlagSpecAndMore, OilFlags, _FlagSpecAndMore
+    FlagSpec, FlagSpecAndMore, _FlagSpecAndMore
 )
 from frontend import option_def
 

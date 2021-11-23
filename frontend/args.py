@@ -7,7 +7,6 @@ We have 3 types of flag parsing here:
 
   FlagSpecAndMore() -- e.g. for 'sh +u -o errexit' and 'set +u -o errexit'
   FlagSpec() -- for echo -en, read -t1.0, etc.
-  OilFlags() -- for oshc/opyc/oilc, and probably Oil builtins.
 
 Examples:
   set -opipefail  # not allowed, space required
@@ -34,8 +33,6 @@ NOTES about builtins:
 
 TODO:
   - Autogenerate help from help='' fields.  Usage line like FlagSpec('echo [-en]')
-  - FlagSpecAndMore can support --foo=bar (use what OilFlag does)
-  - Remove OilFlags in favor of adding --foo=bar support to FlagSpec/
 
 GNU notes:
 
@@ -77,7 +74,7 @@ if TYPE_CHECKING:
 String = 1
 Int = 2
 Float = 3  # e.g. for read -t timeout value
-Bool = 4  # OilFlags has explicit boolean type
+Bool = 4
 
 
 class _Attributes(object):
@@ -370,8 +367,6 @@ class SetToString(_ArgAction):
 
 class SetAttachedBool(_Action):
   """This is the Go-like syntax of --verbose=1, --verbose, or --verbose=0.
-
-  Used in OilFlags only now.
   """
 
   def __init__(self, name):
@@ -676,68 +671,3 @@ def ParseMore(spec, arg_r):
     break  # it's a regular arg
 
   return out
-
-
-# - A flag can start with one or two dashes, but not three
-# - It can have internal dashes
-# - It must not be - or --
-#
-# Or should you just use libc.regex_match?  And extract groups?
-
-# Using POSIX ERE syntax, not Python.  The second group should start with '='.
-_FLAG_ERE = '^--?([a-zA-Z0-9][a-zA-Z0-9\-]*)(=.*)?$'
-
-
-# TODO: translate after getting rid of regex
-def ParseOil(spec, arg_r):
-  # type: (flag_spec._OilFlagSpec, Reader) -> _Attributes
-  raise AssertionError()
-
-
-if mylib.PYTHON:
-  try:
-    import libc  # OilFlags uses regexes right now.
-  except ImportError:  # circular dependecy with arg_gen
-    libc = None
-
-  def ParseOil(spec, arg_r):
-    # type: (flag_spec._OilFlagSpec, Reader) -> _Attributes
-    out = _Attributes(spec.defaults)
-
-    while not arg_r.AtEnd():
-      arg = arg_r.Peek()
-      if arg == '--':
-        out.saw_double_dash = True
-        arg_r.Next()
-        break
-
-      if arg == '-':  # a valid argument
-        break
-
-      # TODO: Use FLAG_RE above
-      if arg.startswith('-'):
-        m = libc.regex_match(_FLAG_ERE, arg)
-        if m is None:
-          e_usage('Invalid flag syntax: %r' % arg)
-        _, flag, val = m  # group 0 is ignored; the whole match
-
-        # TODO: we don't need arity 1 or 0?  Booleans are like --verbose=1,
-        # --verbose (equivalent to turning it on) or --verbose=0.
-
-        name = flag.replace('-', '_')
-        if name in spec.arity1:  # e.g. read -t1.0
-          action = spec.arity1[name]
-          if val.startswith('='):
-            suffix = val[1:]  # could be empty, but remove = if any
-          else:
-            suffix = None
-          action.OnMatch(suffix, arg_r, out)
-        else:
-          e_usage("doesn't accept flag %r" % arg)
-
-        arg_r.Next()  # next arg
-
-      else:  # a regular arg
-        break
-
-    return out

@@ -20,7 +20,6 @@ _ = log
 # Similar to frontend/{option,builtin}_def.py
 FLAG_SPEC = {}
 FLAG_SPEC_AND_MORE = {}
-OIL_SPEC = {}
 
 
 def FlagSpec(builtin_name):
@@ -38,16 +37,6 @@ def FlagSpecAndMore(name, typed=False):
   """
   arg_spec = _FlagSpecAndMore(typed=typed)
   FLAG_SPEC_AND_MORE[name] = arg_spec
-  return arg_spec
-
-
-def OilFlags(name, typed=False):
-  # type: (str, bool) -> _OilFlagSpec
-  """
-  For set, bin/oil.py ("main"), compgen -A, complete -A, etc.
-  """
-  arg_spec = _OilFlagSpec(typed=typed)
-  OIL_SPEC[name] = arg_spec
   return arg_spec
 
 
@@ -81,23 +70,6 @@ def ParseMore(spec_name, arg_r):
   """Parse argv using a given FlagSpecAndMore."""
   spec = FLAG_SPEC_AND_MORE[spec_name]
   return spec.Parse(arg_r)
-
-
-def ParseOil(spec_name, arg_r):
-  # type: (str, args.Reader) -> args._Attributes
-  """Parse argv using a given FlagSpec."""
-  spec = OIL_SPEC[spec_name]
-  return args.ParseOil(spec, arg_r)
-
-
-def ParseOilCmdVal(spec_name, cmd_val):
-  # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, args.Reader]
-  """Parse argv using a given FlagSpecAndMore."""
-  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-  arg_r.Next()  # move past the builtin name
-
-  spec = OIL_SPEC[spec_name]
-  return args.ParseOil(spec, arg_r), arg_r
 
 
 def All():
@@ -417,97 +389,3 @@ class _FlagSpecAndMore(object):
   def Parse(self, arg_r):
     # type: (args.Reader) -> args._Attributes
     return args.ParseMore(self, arg_r)
-
-
-class _OilFlagSpec(object):
-  """Parser for oil command line tools and builtins.
-
-  Tools:
-    oshc ACTION [OPTION]... ARGS...
-    oilc ACTION [OPTION]... ARG...
-    opyc ACTION [OPTION]... ARG...
-
-  Builtins:
-    test -file /
-    test -dir /
-    Optionally accept test --file.
-
-  Usage:
-    spec = args.OilFlags()
-    spec.Flag('-no-docstring')  # no short flag for simplicity?
-    opts, i = spec.Parse(argv)
-
-  Another idea:
-
-    input = ArgInput(argv)
-    action = input.ReadRequired(error='An action is required')
-
-  The rest should be similar to Go flags.
-  https://golang.org/pkg/flag/
-
-  -flag
-  -flag=x
-  -flag x (non-boolean only)
-
-  --flag
-  --flag=x
-  --flag x (non-boolean only)
-
-  --flag=false  --flag=FALSE  --flag=0  --flag=f  --flag=F  --flag=False
-
-  Notes on deleting OilFlags:
-
-  - The LongFlag() method of FlagSpec() should have the same API
-    - it needs a 'default' value
-  - Do we need the regex in ParseOil?  For --foo=bar?
-    - Yes --rcfile=z isn't allowed; it's only --rcfile z
-    - Actually bash has this problem too; it's inconsistent with GNU
-      tools
-  - Get rid of self.typed everywhere too.  Do the builtins have to
-    change at all?
-  """
-  def __init__(self, typed=False):
-    # type: (bool) -> None
-    self.arity1 = {}  # type: Dict[str, args._Action]
-    self.defaults = {}  # type: Dict[str, value_t]  # attr name -> default value
-    # (flag name, string) tuples, in order
-    self.help_strings = []  # type: List[Tuple[str, str]]
-
-    # For code generation.  Not used at runtime.
-    self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
-    self.typed = typed
-
-  def Flag(self, name, arg_type, default=None, help=None):
-    # type: (str, int, Optional[Any], Optional[str]) -> None
-    """
-    Args:
-      name: e.g. '-no-docstring'
-      arg_type: e.g. Str
-    """
-    assert name.startswith('-') and not name.startswith('--'), name
-
-    attr_name = name[1:].replace('-', '_')
-    if arg_type == args.Bool:
-      self.arity1[attr_name] = args.SetAttachedBool(attr_name)
-    else:
-      self.arity1[attr_name] = _MakeAction(arg_type, attr_name)
-
-    de = _Default(arg_type, arg_default=default) \
-        if self.typed else args.PyToValue(default)
-    #log('typed %s', self.typed)
-    #log('de %r', de)
-    self.defaults[attr_name] = de
-
-    #log('%s %s', name, arg_type)
-    typ = _FlagType(arg_type)
-    self.fields[attr_name] = typ
-
-  def Parse(self, arg_r):
-    # type: (args.Reader) -> args._Attributes
-    return args.ParseOil(self, arg_r)
-
-  def ParseArgv(self, argv):
-    # type: (List[str]) -> Tuple[args._Attributes, int]
-    """For opy/opy_main.py -- no location info available."""
-    arg_r = args.Reader(argv)
-    return self.Parse(arg_r), arg_r.i
