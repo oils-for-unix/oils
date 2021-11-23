@@ -80,7 +80,9 @@ class Exec(vm._Builtin):
       raise SystemExit(127)  # exec builtin never returns
 
     # shift off 'exec'
-    c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_spids[i:], cmd_val.block)
+    c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_spids[i:],
+                        cmd_val.typed_args, cmd_val.block)
+
     self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
     assert False, "This line should never be reached" # makes mypy happy
 
