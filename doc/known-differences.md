@@ -44,6 +44,19 @@ a parse error.  Use an explicit `eval` for these rare use cases.
 
 Related: [A 30-year-old security problem](https://www.oilshell.org/blog/2019/01/18.html#a-story-about-a-30-year-old-security-problem) / [Simple Word Evaluation](simple-word-eval.html)
 
+### Array Indices Are Static unless `shopt -s eval_unsafe_arith`
+
+If you have a variable like `code='1+2'`, OSH doesn't accept
+
+    a[$code]=value  # dynamic parsing and evaluation in bash, mksh, zsh
+
+or
+
+    echo ${a[$code]}  # ditto
+
+by default.  If you want this behavior, you can turn on `shopt -s
+eval_unsafe_arith`.
+
 ### printf '%d' and other numeric formats require a valid integer
 
 In other shells, `printf %d invalid_integer` prints `0` and a warning.  OSH
@@ -284,6 +297,8 @@ These don't:
   keywords and not builtins.
 - `{ echo one; echo two; }`
 - `for`, `while`, `case`, functions, etc.
+
+### Array Indices Aren't Dynamically Parsed
 
 ### Array References Must be Explicit
 

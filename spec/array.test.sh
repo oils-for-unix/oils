@@ -108,7 +108,7 @@ argv.py "${a[-1]}" "${a[-2]}" "${a[-5]}"  # last one out of bounds
 ## N-I mksh stdout: ['', '', '']
 
 #### Negative index and sparse array
-shopt -s eval_unsafe_arith
+shopt -s eval_unsafe_arith  # for unset
 a=(0 1 2 3 4)
 unset a[1]
 unset a[4]
@@ -146,7 +146,7 @@ echo ${a[@]}
 ## END
 
 #### Negative index and sparse array
-shopt -s eval_unsafe_arith
+shopt -s eval_unsafe_arith  # for unset
 a=(0 1)
 unset 'a[-1]'  # remove last element
 a+=(2 3)
@@ -588,4 +588,50 @@ echo ${#a[@]}
 ## STDOUT:
 foo
 1
+## END
+
+
+#### Dynamic parsing of LHS a[$code]=value (eval_unsafe_arith)
+shopt -s eval_unsafe_arith  # 
+
+declare -a array
+array[x=1]='one'
+
+code='y=2'
+#code='1+2'  # doesn't work either
+array[$code]='two'
+
+argv.py "${array[@]}"
+echo x=$x
+echo y=$y
+
+## STDOUT:
+['one', 'two']
+x=1
+y=2
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+
+#### Dynamic parsing of RHS ${a[$code]} (eval_unsafe_arith)
+shopt -s eval_unsafe_arith
+
+declare -a array
+array=(zero one two three)
+
+echo ${array[1+2]}
+
+code='1+2'
+echo ${array[$code]}
+
+## STDOUT:
+three
+three
+## END
+
+# it still dynamically parses
+
+## OK zsh STDOUT:
+two
+two
 ## END
