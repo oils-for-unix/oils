@@ -69,7 +69,7 @@ def ParseMore(spec_name, arg_r):
   # type: (str, args.Reader) -> args._Attributes
   """Parse argv using a given FlagSpecAndMore."""
   spec = FLAG_SPEC_AND_MORE[spec_name]
-  return spec.Parse(arg_r)
+  return args.ParseMore(spec, arg_r)
 
 
 def All():
@@ -384,8 +384,3 @@ class _FlagSpecAndMore(object):
       self.actions_short[short_flag] = args.SetAction(attr_name)
 
     self.actions_short['A'].ArgName(attr_name)  # type: ignore
-
-  # TODO: Remove this method -- args.ParseMore() instead
-  def Parse(self, arg_r):
-    # type: (args.Reader) -> args._Attributes
-    return args.ParseMore(self, arg_r)

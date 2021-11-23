@@ -247,7 +247,7 @@ Oil Builtins:
 - [run]($oil-help) `--assign-status`
 
 <!-- TODO: should Oil builtins always behave the same way?  Isn't that a little
-faster? I think read -line and -all are not consistent.  -->
+faster? I think read --line and --all are not consistent.  -->
 
 ### Reminder: Proc Scope is Flat
 

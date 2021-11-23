@@ -504,8 +504,9 @@ def OpyCommandMain(argv):
     out.Close()
 
   elif action == 'dis':
-    opt, i = compile_spec.ParseArgv(argv)
-    path = argv[i]
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
+    path = arg_r.ReadRequired('Expected path')
     v = dis_tool.Visitor()
 
     if path.endswith('.py'):

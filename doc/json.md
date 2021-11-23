@@ -66,8 +66,8 @@ Usage:
     json write FLAGS* VAR_NAME+
     
     Flags:
-      -indent=2     Indentation size
-      -pretty=true  Whether to add newlines for readability
+      --indent=2     Indentation size
+      --pretty=true  Whether to add newlines for readability
 
 Examples:
 
@@ -83,13 +83,13 @@ $ json write :d
   "count": 42
 }
 
-$ json write -indent 4 :d
+$ json write --indent 4 :d
 {
     "name": "bob",
     "count": 42
 }
 
-$ json write -pretty=F :d
+$ json write --pretty=F :d
 {"name": "bob", "count": 42}
 ```
 

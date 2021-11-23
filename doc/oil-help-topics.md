@@ -105,7 +105,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   fork   forkwait        Replace & and (), and takes a block
                   append                 Add elements to end of array
                   pp                     Pretty print interpreter state
-                  write                  Like echo, but with --, -sep, -end
+                  write                  Like echo, but with --, --sep, --end
                   oil-read               Buffered I/O with --line, --all, --qsn
                   try                    Re-enable errexit; exit status utils
                   runproc                Run a proc; use as main entry point
