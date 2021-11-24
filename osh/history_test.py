@@ -41,9 +41,15 @@ class HistoryEvaluatorTest(unittest.TestCase):
 
   def testInvalidHistoryItems(self):
     hist_ev = _MakeHistoryEvaluator([
-      'echo ( a )',
+      '(',
     ])
-    # If you can't parse a command, then it's an error
+    # If you can't parse a command, then it uses the "trail", which is somewhat
+    # ill-defined, but causes an error in this case.
+    self.assertRaises(util.HistoryError, hist_ev.Eval, 'echo !$')
+
+    hist_ev = _MakeHistoryEvaluator([
+      'a( )',
+    ])
     self.assertRaises(util.HistoryError, hist_ev.Eval, 'echo !$')
 
   def testReplacements(self):

@@ -44,6 +44,8 @@ class Evaluator(object):
       return line
 
     tokens = match.HistoryTokens(line)
+    #self.debug_f.log('tokens %r', tokens)
+
     # Common case: no history expansion.
     if all(id_ == Id.History_Other for (id_, _) in tokens):
       return line
@@ -60,10 +62,11 @@ class Evaluator(object):
         out = val
 
       elif id_ == Id.History_Op:
+        # all operations get a part of the previous line
         prev = self.readline_mod.get_history_item(history_len)
 
         ch = val[1]
-        if ch == '!':
+        if ch == '!':  # !!
           out = prev
         else:
           self.parse_ctx.trail.Clear()  # not strictly necessary?
@@ -72,21 +75,25 @@ class Evaluator(object):
           try:
             c_parser.ParseLogicalLine()
           except error.Parse as e:
-            #from core import ui
-            #ui.PrettyPrintError(e, self.parse_ctx.arena)
-
-            # Invalid command in history.  TODO: We should never enter these.
+            # Invalid command in history.  bash uses a separate, approximate
+            # history lexer which allows invalid commands, and will retrieve
+            # parts of them.  I guess we should too!
             self.debug_f.log(
                 "Couldn't parse historical command %r: %s", prev, e)
 
           # NOTE: We're using the trail rather than the return value of
-          # ParseLogicalLine because it handles cases like 
+          # ParseLogicalLine() because it handles cases like 
+          #
           # $ for i in 1 2 3; do sleep ${i}; done
           # $ echo !$
           # which should expand to 'echo ${i}'
+          #
+          # Although the approximate bash parser returns 'done'.
+          # TODO: The trail isn't particularly well-defined, so maybe this
+          # isn't a great idea.
 
           words = self.parse_ctx.trail.words
-          #self.debug_f.log('TRAIL WORDS: %s', words)
+          self.debug_f.log('TRAIL words: %s', words)
 
           if ch == '^':
             try:
