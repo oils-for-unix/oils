@@ -74,7 +74,18 @@ class LineLexer(object):
       line_id = self.line_id
     return self.arena.AddLineSpan(line_id, self.line_pos, 0)
 
-  def LookAhead(self, lex_mode):
+  def LookAheadOne(self, lex_mode):
+    # type: (lex_mode_t) -> Id_t
+    """Look ahead exactly one token in the given lexer mode."""
+    pos = self.line_pos
+    n = len(self.line)
+    if pos == n:
+      return Id.Unknown_Tok
+    else:
+      tok_type, _ = match.OneToken(lex_mode, self.line, pos)
+      return tok_type
+
+  def LookPastSpace(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
     """Look ahead in current line for non-space token, using given lexer mode.
 
@@ -94,14 +105,14 @@ class LineLexer(object):
       if pos == n:
         # We don't allow lookahead while already at end of line, because it
         # would involve interacting with the line reader, and we never need
-        # it.  In the OUTER mode, there is an explicit newline token, but
-        # ARITH doesn't have it.
+        # it.  In lex_mode_e.ShCommand, there is an explicit newline token, but
+        # lex_mode_e.Arith doesn't have it.
         return Id.Unknown_Tok
 
       tok_type, end_pos = match.OneToken(lex_mode, self.line, pos)
 
       # NOTE: Instead of hard-coding this token, we could pass it in.
-      # LookAhead(lex_mode, past_token_type)
+      # LookPastSpace(lex_mode, past_token_type)
       # WS_Space only appears in the ShCommand state! 
       if tok_type != Id.WS_Space:
         break
@@ -211,9 +222,13 @@ class Lexer(object):
     # type: () -> bool
     return self.line_lexer.MaybeUnreadOne()
 
-  def LookAhead(self, lex_mode):
+  def LookAheadOne(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
-    return self.line_lexer.LookAhead(lex_mode)
+    return self.line_lexer.LookAheadOne(lex_mode)
+
+  def LookPastSpace(self, lex_mode):
+    # type: (lex_mode_t) -> Id_t
+    return self.line_lexer.LookPastSpace(lex_mode)
 
   def LookAheadFuncParens(self, unread):
     # type: (int) -> bool

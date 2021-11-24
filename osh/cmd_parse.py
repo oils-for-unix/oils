@@ -1189,7 +1189,7 @@ class CommandParser(object):
     for_spid = _KeywordSpid(self.cur_word)
     self._Eat(Id.KW_For)
 
-    if self.w_parser.LookAhead() == Id.Op_LParen:
+    if self.w_parser.LookPastSpace() == Id.Op_LParen:
       # for (x in y) { }
       # NOTE: parse_paren NOT required since it would have been a syntax error.
       lvalue, iterable, _ = (
@@ -1222,7 +1222,7 @@ class CommandParser(object):
     """
     self._Next()  # skip keyword
 
-    if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
+    if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
       cond = condition.Oil(enode)  # type: condition_t
@@ -1377,7 +1377,7 @@ class CommandParser(object):
       elif_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Next()  # skip elif
       if (self.parse_opts.parse_paren() and
-          self.w_parser.LookAhead() == Id.Op_LParen):
+          self.w_parser.LookPastSpace() == Id.Op_LParen):
         enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
         # NOTE: OilCondition could have spids of ( and ) ?
         cond = condition.Oil(enode)  # type: condition_t
@@ -1484,7 +1484,7 @@ class CommandParser(object):
     self._Next()  # skip if
 
     # Remove ambiguity with if cd / {
-    if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
+    if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
       cond = condition.Oil(enode)  # type: condition_t
@@ -1906,7 +1906,7 @@ class CommandParser(object):
           tok = cast(Token, part0)
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
           if (match.IsValidVarName(tok.val) and
-              self.w_parser.LookAhead() == Id.Lit_Equals):
+              self.w_parser.LookPastSpace() == Id.Lit_Equals):
             self.var_checker.Check(Id.KW_Const, tok)
 
             enode = self.w_parser.ParseBareDecl()

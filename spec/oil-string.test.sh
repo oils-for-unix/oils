@@ -84,6 +84,9 @@ cc	dd
 # Ignored prefix
 echo r'\'
 
+# space
+write r '' end
+
 # These use shell rules!
 echo ra'\'
 echo raw'\'
@@ -96,6 +99,9 @@ write unset r'\'
 
 ## STDOUT:
 \
+r
+
+end
 ra\
 raw\
 r\

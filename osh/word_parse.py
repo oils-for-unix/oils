@@ -309,7 +309,7 @@ class WordParser(WordEmitter):
     """
     # Lookahead to see if we get @ or *.  Otherwise read a full arithmetic
     # expression.
-    next_id = self.lexer.LookAhead(lex_mode_e.Arith)
+    next_id = self.lexer.LookPastSpace(lex_mode_e.Arith)
     if next_id in (Id.Lit_At, Id.Arith_Star):
       op = bracket_op.WholeArray(next_id)  # type: bracket_op_t
 
@@ -531,7 +531,7 @@ class WordParser(WordEmitter):
 
     if ty == Id.VSub_Pound:
       # Disambiguate
-      next_id = self.lexer.LookAhead(lex_mode_e.VSub_1)
+      next_id = self.lexer.LookPastSpace(lex_mode_e.VSub_1)
       if next_id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
         # e.g. a name, '#' is the prefix
         self._Next(lex_mode_e.VSub_1)
@@ -547,7 +547,7 @@ class WordParser(WordEmitter):
         part = self._ParseVarExpr(arg_lex_mode)
 
     elif ty == Id.VSub_Bang:
-      next_id = self.lexer.LookAhead(lex_mode_e.VSub_1)
+      next_id = self.lexer.LookPastSpace(lex_mode_e.VSub_1)
       if next_id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
         # e.g. a name, '!' is the prefix
         # ${!a} -- this is a ref
@@ -1384,7 +1384,7 @@ class WordParser(WordEmitter):
       parts.append(part)
       # Unfortunately it's awkward to pull the check for a=(1 2) up to
       # _ReadWord.
-      next_id = self.lexer.LookAhead(lex_mode)
+      next_id = self.lexer.LookPastSpace(lex_mode)
       if next_id == Id.Op_LParen:
         self.lexer.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
         part2 = self._ReadArrayLiteral()
@@ -1709,7 +1709,7 @@ class WordParser(WordEmitter):
         if (self.parse_opts.parse_raw_string() and
             self.token_type == Id.Lit_Chars and
             self.cur_token.val == 'r'):
-          if self.lexer.LookAhead(lex_mode_e.ShCommand) == Id.Left_SingleQuote:
+          if self.lexer.LookAheadOne(lex_mode_e.ShCommand) == Id.Left_SingleQuote:
             self._Next(lex_mode_e.ShCommand)
 
         w = self._ReadCompoundWord(lex_mode)
@@ -1739,7 +1739,7 @@ class WordParser(WordEmitter):
       p_die('Expected end of var ref', token=self.cur_token)
     return part
 
-  def LookAhead(self):
+  def LookPastSpace(self):
     # type: () -> Id_t
     """Look ahead to the next token.
 
@@ -1748,7 +1748,7 @@ class WordParser(WordEmitter):
     """
     assert self.token_type != Id.Undefined_Tok
     if self.cur_token.id == Id.WS_Space:
-      id_ = self.lexer.LookAhead(lex_mode_e.ShCommand)
+      id_ = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
     else:
       id_ = self.cur_token.id
     return id_
