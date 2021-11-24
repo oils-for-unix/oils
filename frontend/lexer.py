@@ -9,7 +9,7 @@ lexer.py - Library for lexing.
 """
 
 from _devbuild.gen.syntax_asdl import Token, line_span
-from _devbuild.gen.types_asdl import lex_mode_t
+from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind
 from asdl import runtime
 from core.pyerror import log
@@ -54,7 +54,7 @@ class LineLexer(object):
     # type: () -> bool
     """Return True if we can unread one character, or False otherwise.
 
-    NOTE: Only call this when you know the last token was exactly on character!
+    NOTE: Only call this when you know the last token was exactly one character!
     """
     if self.line_pos == 0:
       return False
@@ -105,6 +105,17 @@ class LineLexer(object):
       pos = end_pos
 
     return tok_type
+
+  def LookAheadFuncParens(self, unread):
+    # type: (int) -> bool
+    """
+    Args:
+      unread: either 0 or 1, for the number of characters to go back
+    """
+    pos = self.line_pos - unread
+    assert pos > 0
+    tok_type, end_pos = match.OneToken(lex_mode_e.FuncParens, self.line, pos)
+    return tok_type == Id.LookAhead_FuncParens
 
   def ByteLookAhead(self):
     # type: () -> str
@@ -201,6 +212,10 @@ class Lexer(object):
     {}
     """
     return self.line_lexer.LookAhead(lex_mode)
+
+  def LookAheadFuncParens(self, unread):
+    # type: (int) -> bool
+    return self.line_lexer.LookAheadFuncParens(unread)
 
   def ByteLookAhead(self):
     # type: () -> str

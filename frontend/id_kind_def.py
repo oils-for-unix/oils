@@ -513,6 +513,9 @@ def AddKinds(spec):
   # dynamically-resolved builtins.
   spec.AddKind('ControlFlow', ['Break', 'Continue', 'Return', 'Exit'])
 
+  # Special Kind for lookahead in the lexer.  It's never seen by anything else.
+  spec.AddKind('LookAhead', ['FuncParens'])
+
   # For parsing globs and converting them to regexes.
   spec.AddKind('Glob', [
       'LBracket', 'RBracket',

@@ -1747,9 +1747,26 @@ class WordParser(WordEmitter):
     """
     assert self.token_type != Id.Undefined_Tok
     if self.cur_token.id == Id.WS_Space:
-      return self.lexer.LookAhead(lex_mode_e.ShCommand)
+      id_ = self.lexer.LookAhead(lex_mode_e.ShCommand)
     else:
-      return self.cur_token.id
+      id_ = self.cur_token.id
+    return id_
+
+  def LookAheadFuncParens(self):
+    # type: () -> bool
+    """Special lookahead for f( ) { echo hi; } to check for ( )
+    """
+    assert self.token_type != Id.Undefined_Tok
+
+    # We have to handle 2 cases because we buffer a token
+    if self.cur_token.id == Id.Op_LParen:  # saw funcname(
+      return self.lexer.LookAheadFuncParens(1)  # go back one char
+
+    elif self.cur_token.id == Id.WS_Space:  # saw funcname WHITESPACE
+      return self.lexer.LookAheadFuncParens(0)
+
+    else:
+      return False
 
   def ReadWord(self, lex_mode):
     # type: (lex_mode_t) -> word_t

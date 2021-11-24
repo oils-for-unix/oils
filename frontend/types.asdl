@@ -17,6 +17,7 @@ module types {
   | ExtGlob
   | VSub_1 | VSub_2 | VSub_ArgUnquoted | VSub_ArgDQ
   | BashRegex | BashRegexChars
+  | FuncParens -- for Id.LookAhead_FuncParens
 
   -- Two for printf builtin
 

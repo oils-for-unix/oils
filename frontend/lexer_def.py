@@ -999,3 +999,12 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # NOTE: Unused
   C('@@', Id.Expr_DoubleAt),
 ] + _EXPR_NEWLINE_COMMENT + _EXPR_ARITH_SHARED
+
+
+LEXER_DEF[lex_mode_e.FuncParens] = [
+  # () with spaces
+  R(r'[ \t]*\([ \t]*\)', Id.LookAhead_FuncParens),
+  # anything else
+  R(r'[^\0]', Id.Unknown_Tok)
+]
+

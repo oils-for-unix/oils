@@ -1894,7 +1894,7 @@ class CommandParser(object):
       # Or maybe we don't just have ParseSimpleCommand -- we will have
       # ParseOilCommand or something
 
-      if (self.w_parser.LookAhead() == Id.Op_LParen and
+      if (self.w_parser.LookAheadFuncParens() and
           not word_.IsVarLike(cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
 
