@@ -76,7 +76,7 @@ class LineLexer(object):
 
   def LookAhead(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
-    """Look ahead for a non-space token, using the given lexer mode.
+    """Look ahead in current line for non-space token, using given lexer mode.
 
     Does NOT advance self.line_pos.
 
@@ -84,6 +84,8 @@ class LineLexer(object):
       lex_mode_e.Arith -- for ${a[@]} vs ${a[1+2]}
       lex_mode_e.VSub_1
       lex_mode_e.ShCommand
+
+    Note: Only ShCommand emits Id.WS_Space, but other lexer modes don't.
     """
     pos = self.line_pos
     n = len(self.line)
@@ -98,8 +100,9 @@ class LineLexer(object):
 
       tok_type, end_pos = match.OneToken(lex_mode, self.line, pos)
 
-      # NOTE: Instead of hard-coding this token, we could pass it in.  This
-      # one only appears in OUTER state!  LookAhead(lex_mode, past_token_type)
+      # NOTE: Instead of hard-coding this token, we could pass it in.
+      # LookAhead(lex_mode, past_token_type)
+      # WS_Space only appears in the ShCommand state! 
       if tok_type != Id.WS_Space:
         break
       pos = end_pos
@@ -108,9 +111,21 @@ class LineLexer(object):
 
   def LookAheadFuncParens(self, unread):
     # type: (int) -> bool
-    """
+    """For finding the () in 'f ( ) { echo hi; }'
+
     Args:
       unread: either 0 or 1, for the number of characters to go back
+
+    The lookahead is limited to the current line, which sacrifices a rare
+    corner case.  This not recognized as a function:
+
+        foo\
+        () {}
+
+    whereas this is
+
+        foo()
+        {}
     """
     pos = self.line_pos - unread
     assert pos > 0
@@ -119,6 +134,7 @@ class LineLexer(object):
 
   def ByteLookAhead(self):
     # type: () -> str
+    """Lookahead a single byte.  Useful when you know the token is one char."""
     pos = self.line_pos
     if pos == len(self.line):
       return ''
@@ -197,20 +213,6 @@ class Lexer(object):
 
   def LookAhead(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
-    """Look ahead in the current line for the next non-space token.
-
-    NOTE: Limiting lookahead to the current line makes the code a lot simpler
-    at the cost of a rare (and superfluous) corner case.  This is not
-    recognized as a function:
-
-    foo\
-    () {}
-
-    Of course, this is the proper way to break it:
-
-    foo()
-    {}
-    """
     return self.line_lexer.LookAhead(lex_mode)
 
   def LookAheadFuncParens(self, unread):
