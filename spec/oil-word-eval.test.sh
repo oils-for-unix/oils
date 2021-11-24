@@ -51,6 +51,20 @@ bool expr true
 bool splice true
 ## END
 
+#### echo $f (x) with space is syntax error
+shopt -s oil:basic
+echo $identity (true)
+## status: 2
+## STDOUT:
+## END
+
+#### echo @f (x) with space is syntax error
+shopt -s oil:basic
+echo @identity (['foo', 'bar'])
+## status: 2
+## STDOUT:
+## END
+
 #### echo $x for various types
 const mybool = true
 const myint = 42

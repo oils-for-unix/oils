@@ -1404,8 +1404,9 @@ class WordParser(WordEmitter):
 
       splice_token = self.cur_token
 
-      next_id = self.lexer.LookAhead(lex_mode)
-      if next_id == Id.Op_LParen:  # @arrayfunc(x)
+      # BUG: Shouldn't accept whitespace like $_match (x) !
+      next_byte = self.lexer.ByteLookAhead()
+      if next_byte == '(':  # @arrayfunc(x)
         arglist = ArgList()
         self._ParseCallArguments(arglist)
         part2 = word_part.FuncCall(splice_token, arglist)
@@ -1501,8 +1502,8 @@ class WordParser(WordEmitter):
           #   but "--name=$f(x)" not allowed?  This would BREAK EXISTING CODE.
           #   It would need a parse option.
 
-          next_id = self.lexer.LookAhead(lex_mode)
-          if next_id == Id.Op_LParen:
+          next_byte = self.lexer.ByteLookAhead()
+          if next_byte == '(':
             arglist = ArgList()
             self._ParseCallArguments(arglist)
             part = word_part.FuncCall(vsub_token, arglist)
