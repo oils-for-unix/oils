@@ -226,7 +226,7 @@ class LexerTest(unittest.TestCase):
         if t.id == Id.Eof_Real:
           break
 
-  def testLookAhead(self):
+  def testLookPastSpace(self):
     # I think this is the usage pattern we care about.  Peek and Next() past
     # the function; then Peek() the next token.  Then Lookahead in that state.
     lexer = _InitLexer('fun()')
@@ -234,12 +234,10 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(lex_mode_e.ShCommand)
     self.assertTokensEqual(Tok(Id.Lit_Chars, 'fun'), t)
 
-    #self.assertEqual(Id.Op_LParen, lexer.LookAhead())
-
     t = lexer.Read(lex_mode_e.ShCommand)
     self.assertTokensEqual(Tok(Id.Op_LParen, None), t)
 
-    self.assertEqual(Id.Op_RParen, lexer.LookAhead(lex_mode_e.ShCommand))
+    self.assertEqual(Id.Op_RParen, lexer.LookPastSpace(lex_mode_e.ShCommand))
 
     lexer = _InitLexer('fun ()')
 
@@ -249,7 +247,7 @@ class LexerTest(unittest.TestCase):
     t = lexer.Read(lex_mode_e.ShCommand)
     self.assertTokensEqual(Tok(Id.WS_Space, None), t)
 
-    self.assertEqual(Id.Op_LParen, lexer.LookAhead(lex_mode_e.ShCommand))
+    self.assertEqual(Id.Op_LParen, lexer.LookPastSpace(lex_mode_e.ShCommand))
 
   def testPushHint(self):
     # Extglob use case
@@ -301,31 +299,31 @@ class LineLexerTest(unittest.TestCase):
     t = l.Read(lex_mode_e.VSub_ArgUnquoted)
     self.assertEqual(Id.Left_SingleQuote, t.id)
 
-  def testLookAhead(self):
+  def testLookPastSpace(self):
     # Lines always end with '\n'
     l = LineLexer('', self.arena)
-    self.assertEqual(Id.Unknown_Tok, l.LookAhead(lex_mode_e.ShCommand))
+    self.assertEqual(Id.Unknown_Tok, l.LookPastSpace(lex_mode_e.ShCommand))
 
     l = LineLexer('foo', self.arena)
     self.assertTokensEqual(
         Tok(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.ShCommand))
-    self.assertEqual(Id.Unknown_Tok, l.LookAhead(lex_mode_e.ShCommand))
+    self.assertEqual(Id.Unknown_Tok, l.LookPastSpace(lex_mode_e.ShCommand))
 
     l = LineLexer('foo  bar', self.arena)
     self.assertTokensEqual(
         Tok(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.ShCommand))
-    self.assertEqual(Id.Lit_Chars, l.LookAhead(lex_mode_e.ShCommand))
+    self.assertEqual(Id.Lit_Chars, l.LookPastSpace(lex_mode_e.ShCommand))
 
     # No lookahead; using the cursor!
     l = LineLexer('fun(', self.arena)
     self.assertTokensEqual(
         Tok(Id.Lit_Chars, 'fun'), l.Read(lex_mode_e.ShCommand))
-    self.assertEqual(Id.Op_LParen, l.LookAhead(lex_mode_e.ShCommand))
+    self.assertEqual(Id.Op_LParen, l.LookPastSpace(lex_mode_e.ShCommand))
 
     l = LineLexer('fun  (', self.arena)
     self.assertTokensEqual(
         Tok(Id.Lit_Chars, 'fun'), l.Read(lex_mode_e.ShCommand))
-    self.assertEqual(Id.Op_LParen, l.LookAhead(lex_mode_e.ShCommand))
+    self.assertEqual(Id.Op_LParen, l.LookPastSpace(lex_mode_e.ShCommand))
 
 
 class RegexTest(unittest.TestCase):
