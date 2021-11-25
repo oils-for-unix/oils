@@ -649,6 +649,27 @@ proc_sig() {
   _oil-parse-error 'proc foo::bar { echo hi }'
 }
 
+proc_arg_list() {
+  set +o errexit
+  _should-parse 'json write (x)'
+
+  _should-parse 'json write (x, y); echo hi'
+
+  _should-parse '
+json write (x, name = "value")
+echo hi
+'
+
+  # can't be empty
+  _oil-parse-error 'json write ()'
+  _oil-parse-error 'json write ( )'
+
+  # should have a space
+  _oil-parse-error 'json write(x)'
+  _oil-parse-error 'json write()'
+  _oil-parse-error 'f(x)'  # test short name
+}
+
 regex_literals() {
   set +o errexit
 
@@ -1039,6 +1060,7 @@ cases-in-strings() {
   parse_brace
   regex_literals
   proc_sig
+  proc_arg_list
   oil_expr
   oil_string_literals
   parse_backticks

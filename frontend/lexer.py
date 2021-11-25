@@ -152,6 +152,21 @@ class LineLexer(object):
     else:
       return self.line[pos]
 
+  def ByteLookBack(self):
+    # type: () -> int
+    """A little hack for stricter proc arg list syntax.
+
+    There has to be a space before the paren.
+    
+    Yes: json write (x)
+     No: json write(x)
+    """
+    pos = self.line_pos - 2
+    if pos < 0:
+      return -1
+    else:
+      return ord(self.line[pos])
+
   def Read(self, lex_mode):
     # type: (lex_mode_t) -> Token
     # Inner loop optimization
@@ -237,6 +252,10 @@ class Lexer(object):
   def ByteLookAhead(self):
     # type: () -> str
     return self.line_lexer.ByteLookAhead()
+
+  def ByteLookBack(self):
+    # type: () -> int
+    return self.line_lexer.ByteLookBack()
 
   def EmitCompDummy(self):
     # type: () -> None

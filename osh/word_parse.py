@@ -1352,8 +1352,9 @@ class WordParser(WordEmitter):
     node.spids.append(paren_spid)
     return node
 
-  def _ParseCallArguments(self, arglist):
+  def _ParseInlineCallArgs(self, arglist):
     # type: (ArgList) -> None
+    """For $f(x) and @arrayfunc(x)."""
 
     # Needed so ) doesn't get translated to something else
     self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)
@@ -1362,6 +1363,13 @@ class WordParser(WordEmitter):
 
     # Call into expression language.
     self.parse_ctx.ParseOilArgList(self.lexer, arglist)
+
+  def ParseProcCallArgs(self):
+    # type: () -> ArgList
+    self.lexer.MaybeUnreadOne()
+    arg_list = ArgList()
+    self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
+    return arg_list
 
   def _MaybeReadWholeWord(self, is_first, lex_mode, parts):
     # type: (bool, lex_mode_t, List[word_part_t]) -> bool
@@ -1407,7 +1415,7 @@ class WordParser(WordEmitter):
       next_id = self.lexer.LookAheadOne(lex_mode)
       if next_id == Id.Op_LParen:  # @arrayfunc(x)
         arglist = ArgList()
-        self._ParseCallArguments(arglist)
+        self._ParseInlineCallArgs(arglist)
         part2 = word_part.FuncCall(splice_token, arglist)
       else:
         part2 = word_part.Splice(splice_token)
@@ -1504,7 +1512,7 @@ class WordParser(WordEmitter):
           next_id = self.lexer.LookAheadOne(lex_mode)
           if next_id == Id.Op_LParen:
             arglist = ArgList()
-            self._ParseCallArguments(arglist)
+            self._ParseInlineCallArgs(arglist)
             part = word_part.FuncCall(vsub_token, arglist)
 
             # Unlike @arrayfunc(x), it makes sense to allow $f(1)$f(2)
@@ -1742,8 +1750,12 @@ class WordParser(WordEmitter):
     # type: () -> Id_t
     """Look ahead to the next token.
 
-    For the command parser to recognize func () { } and array= (1 2 3).  And
-    probably coprocesses.
+    For the CommandParser to recognize
+       array= (1 2 3)
+       Oil for (  versus  bash for ((
+       Oil if (  versus  if test
+       Oil while (  versus  while test
+       Oil bare assignment 'grep ='  versus 'grep foo'
     """
     assert self.token_type != Id.Undefined_Tok
     if self.cur_token.id == Id.WS_Space:

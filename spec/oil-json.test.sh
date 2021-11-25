@@ -90,3 +90,10 @@ pp cell y
 pipeline status = 1
 ## END
 
+#### json write expression
+json write ([1,2,3])
+## STDOUT:
+[1, 2, 3]
+## END
+
+

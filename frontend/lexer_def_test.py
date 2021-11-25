@@ -294,7 +294,7 @@ class LineLexerTest(unittest.TestCase):
     self.assertTokensEqual(
         Tok(Id.Op_Newline, None), l.Read(lex_mode_e.ShCommand))
 
-  def testRead_VS_ARG_UNQ(self):
+  def testRead_VSub_ArgUnquoted(self):
     l = LineLexer("'hi'", self.arena)
     t = l.Read(lex_mode_e.VSub_ArgUnquoted)
     self.assertEqual(Id.Left_SingleQuote, t.id)

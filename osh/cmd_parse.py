@@ -59,6 +59,9 @@ if TYPE_CHECKING:
   from osh.word_parse import WordParser
 
 
+TAB_CH = 9  # ord('\t')
+SPACE_CH = 32 # ord(' ')
+
 def _KeywordSpid(w):
   # type: (word_t) -> int
   """
@@ -684,6 +687,26 @@ class CommandParser(object):
 
         w = cast(compound_word, self.cur_word)  # Kind.Word ensures this
         words.append(w)
+
+      elif self.c_id == Id.Op_LParen:
+        # 1. Check that there's a preceding space
+        prev_byte = self.lexer.ByteLookBack()
+        if prev_byte not in (SPACE_CH, TAB_CH):
+          p_die('Space required before (', word=self.cur_word)
+
+        # 2. Check that it's not ().  We disallow this because it's a no-op and
+        #    there could be confusion with shell func defs.
+        # For some reason we need to call lexer.LookPastSpace, not
+        # w_parser.LookPastSpace.  I think this is because we're at (, which is
+        # an operator token.  All the other cases are like 'x=', which is PART
+        # of a word, and we don't know if it will end.
+        next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
+        if next_id == Id.Op_RParen:
+          p_die('Empty arg list not allowed', word=self.cur_word)
+
+        arg_list = self.w_parser.ParseProcCallArgs()
+        # TODO: attach this result
+        #print(arg_list)
 
       elif self.parse_opts.parse_amp() and self.c_id == Id.Op_Amp:
         # TODO:
