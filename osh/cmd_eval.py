@@ -1196,10 +1196,10 @@ class CommandEvaluator(object):
           UP_sig = node.sig
           if UP_sig.tag_() == proc_sig_e.Closed:
             sig = cast(proc_sig__Closed, UP_sig)
-            defaults = [None] * len(sig.params)
-            for i, param in enumerate(sig.params):
-              if param.default_val:
-                py_val = self.expr_ev.EvalExpr(param.default_val)
+            defaults = [None] * len(sig.untyped)
+            for i, p in enumerate(sig.untyped):
+              if p.default_val:
+                py_val = self.expr_ev.EvalExpr(p.default_val)
                 defaults[i] = _PyObjectToVal(py_val)
      
         self.procs[node.name.val] = Proc(
@@ -1588,10 +1588,10 @@ class CommandEvaluator(object):
       n_args = len(argv)
       UP_sig = sig
 
-      if UP_sig.tag_() == proc_sig_e.Closed:  # proc is-closed []
+      if UP_sig.tag_() == proc_sig_e.Closed:  # proc is-closed ()
         sig = cast(proc_sig__Closed, UP_sig)
-        for i, p in enumerate(sig.params):
-          is_out_param = p.prefix is not None and p.prefix.id == Id.Arith_Colon
+        for i, p in enumerate(sig.untyped):
+          is_out_param = p.ref is not None
 
           param_name = p.name.val
           if i < n_args:
@@ -1625,7 +1625,7 @@ class CommandEvaluator(object):
           self.mem.SetValue(lvalue.Named(param_name), val, scope_e.LocalOnly,
                             flags=flags)
 
-        n_params = len(sig.params)
+        n_params = len(sig.untyped)
         if sig.rest:
           leftover = value.MaybeStrArray(argv[n_params:])
           self.mem.SetValue(

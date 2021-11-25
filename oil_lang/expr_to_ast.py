@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     posix_class, perl_class,
     name_type, place_expr, place_expr_e, place_expr_t, type_expr_t,
     comprehension, subscript, attribute, proc_sig, proc_sig_t, param,
-    named_arg, ArgList,
+    named_arg, ArgList, TypedParam, UntypedParam,
     variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
@@ -795,9 +795,12 @@ class Transformer(object):
     return None
 
   def _ProcParam(self, pnode):
-    # type: (PNode) -> param
+    # type: (PNode) -> Tuple[Optional[Token], Token, Optional[Token], Optional[expr_t]]
     """
-    proc_param: [':'] Expr_Name ['=' expr]
+    proc_param: (
+        ':' Expr_Name | '@' Expr_Name |
+        Expr_Name [ Expr_Name ] ['=' expr]  # type is either Expr or Block
+    )
     """
     assert pnode.typ == grammar_nt.proc_param
 
@@ -805,56 +808,63 @@ class Transformer(object):
     tok0 = children[0].tok
     n = len(children)
 
-    prefix_tok = None  # type: Token
-    i = 0
-    if tok0.id == Id.Arith_Colon:
-      prefix_tok = tok0
+    prefix = None  # type: Optional[Token]
+    name = None  # type: Optional[Token]
+    typ = None  # type: Optional[Token]
+    default_val = None  # type Optional[expr_t]
+
+    if tok0.id in (Id.Arith_Colon, Id.Expr_At):
+      prefix = tok0
+      name = children[1].tok
+      return prefix, name, typ, default_val
+
+    name = children[0].tok
+    if n == 1:
+      return prefix, name, typ, default_val
+
+    i = 1
+    tok1 = children[1].tok
+    if tok1.id == Id.Expr_Name:
+      typ = tok1
       i += 1
 
-    child = children[i]
-    if child.tok.id == Id.Expr_Name:
-      name_tok = child.tok
-      default_val = None  # type: expr_t
-      i += 1
-      if i < n and children[i].tok.id == Id.Arith_Equal:  # proc p(x = 1+2*3)
-        i += 1
-        default_val = self.Expr(children[i])
-
-      # No type_expr for procs
-      type_ = None  # type: type_expr_t
-      return param(prefix_tok, name_tok, type_, default_val)
-
-    raise AssertionError(Id_str(tok0.id))
+    if i + 1 == n - 1:
+      assert children[i].tok.id == Id.Arith_Equal
+      default_val = self.Expr(children[i+1])
+    return prefix, name, typ, default_val
 
   def _ProcParams(self, p_node):
     # type: (PNode) -> proc_sig_t
     """
-    proc_params: proc_param (',' proc_param)* [',' '@' Expr_Name]
+    proc_params: (proc_param ',')* [ proc_param  [','] ]
     """
     children = p_node.children
     n = len(children)
 
-    params = []  # type: List[param]
+    untyped = []  # type: List[UntypedParam]
     rest = None  # type: Optional[Token]
-    block = None  # type: Optional[Token]
+    typed = []  # type: List[TypedParam]
+
+    state = 0
 
     i = 0
     while i < n:
-      p = children[i]
-      if ISNONTERMINAL(p.typ):
-        params.append(self._ProcParam(p))
+      prefix, name, typ, default_val = self._ProcParam(children[i])
+
+      # TODO: enforce the order of params.  It should look like
+      # untyped* rest? typed*, which is while / if / while!
+      if prefix and prefix.id == Id.Expr_At:
+        rest = name
+      elif typ is None:
+        untyped.append(UntypedParam(prefix, name, default_val))
       else:
-        if p.tok.id == Id.Expr_At:  # @args
-          i += 1
-          rest = children[i].tok
-        elif p.tok.id == Id.Arith_Amp:  # &block
-          i += 1
-          block = children[i].tok
-        else:
-          raise AssertionError(Id_str(p.tok.id))
+        if typ.val not in ('Expr', 'Block'):
+          p_die('proc param types should be Expr or Block', token=typ)
+        typed.append(TypedParam(name, typ, default_val))
+
       i += 2
 
-    return proc_sig.Closed(params, rest, block)
+    return proc_sig.Closed(untyped, rest, typed)
 
   def _FuncParam(self, pnode):
     # type: (PNode) -> param

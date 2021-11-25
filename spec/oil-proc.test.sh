@@ -133,13 +133,13 @@ x y z
 #### Proc with block arg
 
 # TODO: Test more of this
-proc f(x, y, &block) {
+proc f(x, y, block Block) {
   echo F
 }
 f a b
 
 # With varargs and block
-proc g(x, y, @rest, &block) {
+proc g(x, y, @rest, block Block) {
   echo G
 }
 g a b c d

@@ -339,23 +339,34 @@ oil_expr_sub: testlist ']'
 #   func: optional list
 #   proc: disallowed -- it's always int
 
-# proc params can't have types.  Note: optional : sets the nameref flag.
-proc_param: [':'] Expr_Name ['=' expr]
+# proc_params is an overapproximation of what's allowed in the signature.  It
+# really should look like 
+#
+#   untyped_params* typed_param*
+#
+# where untyped_params are     mystr            :myref        @rest
+# and typed_params are         myblock Block    myexpr Expr
+#
+# Example:                     proc p(x, :out, @rest, cond Expr, block Block) {
+#
+# These two styles are hard to express within the LL(1) constraint, so we
+# have a single proc_param production and then sort it out in expr_to_ast.py.
+#
+# Note: might want typed splat ... later
 
-# This is an awkward way of writing that we have params, then '@', then '^' --
-# all optional.  If they appear, @ and ^ have to be last, in that order.
-proc_params: (
-  (proc_param ',')*
-  [ (proc_param | '&' Expr_Name | '@' Expr_Name [',' '&' Expr_Name]) [','] ]
+proc_param: (
+    ':' Expr_Name | '@' Expr_Name |
+    Expr_Name [Expr_Name] ['=' expr]  # type is either Expr or Block
 )
+
+proc_params: (proc_param ',')* [ proc_param  [','] ]
 
 # Note: we might have proc name-with-hyphens, so we can't parse the name in
 # expression mode.
-
-# TODO: :(x, y) for lazy (typed) expressions as params
 oil_proc: ['(' [proc_params] ')'] '{'  # opening { for pgen2
 
 func_param: Expr_Name [type_expr] ['=' expr]
+
 # This is an awkward way of writing that '...' has to come last.
 func_params: (
    (func_param ',')*

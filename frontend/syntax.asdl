@@ -343,14 +343,18 @@ module syntax
 
   import_name = (Token name, Token? alias)
 
-  -- 'open' is for proc p { }; closed is for proc p [] { }
+  -- ref is always ':' or empty
+  UntypedParam = (Token? ref, Token name, expr? default_val)
+  -- type is Expr or Block
+  TypedParam = (Token name, Token type, expr? default_val)
+
+  -- 'open' is for proc p { }; closed is for proc p () { }
   proc_sig =
     Open
-  | Closed(param* params, Token? rest, Token? block)
+  | Closed(UntypedParam* untyped, Token? rest, TypedParam* typed)
 
   -- prefix is : for out param, @ for proc splat, ... for func splat
-  -- & for block.  Probably use List[Expr] for lazy arg lists instead of
-  -- another sigil.
+  -- procs only have types Expr, Block (and Str is implicit)
   param = (Token? prefix, Token name, type_expr? type, expr? default_val)
 
   --

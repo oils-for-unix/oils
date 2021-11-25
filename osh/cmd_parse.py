@@ -1752,9 +1752,14 @@ class CommandParser(object):
       self.w_parser.ParseProc(node)
       if node.sig.tag_() == proc_sig_e.Closed:  # Register params
         sig = cast(proc_sig__Closed, node.sig)
-        for param in sig.params:
-          # Treat params as variables.
+
+        # Treat params as variables.
+        for param in sig.untyped:
           self.var_checker.Check(Id.KW_Var, param.name)
+        if sig.rest:
+          self.var_checker.Check(Id.KW_Var, sig.rest)
+        for param2 in sig.typed:
+          self.var_checker.Check(Id.KW_Var, param2.name)
 
           # We COULD register __out here but it would require a different API.
           #if param.prefix and param.prefix.id == Id.Arith_Colon:
