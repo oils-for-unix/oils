@@ -904,7 +904,7 @@ oil-command-sub() {
 }
 
 oil-json() {
-  sh-spec spec/oil-json.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/oil-json.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
@@ -925,7 +925,7 @@ oil-options() {
 }
 
 oil-word-eval() {
-  sh-spec spec/oil-word-eval.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/oil-word-eval.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 

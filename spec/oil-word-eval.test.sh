@@ -51,17 +51,18 @@ bool expr true
 bool splice true
 ## END
 
-#### echo $f (x) with space is syntax error
+#### echo $f (x) with space is runtime error
 shopt -s oil:basic
 echo $identity (true)
-## status: 2
+## status: 1
 ## STDOUT:
 ## END
 
-#### echo @f (x) with space is syntax error
+#### echo @f (x) with space is runtime error
 shopt -s oil:basic
-echo @identity (['foo', 'bar'])
-## status: 2
+const a = %(a b)
+echo @a (['foo', 'bar'])
+## status: 1
 ## STDOUT:
 ## END
 

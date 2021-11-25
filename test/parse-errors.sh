@@ -655,10 +655,28 @@ proc_arg_list() {
 
   _should-parse 'json write (x, y); echo hi'
 
+  # named arg
   _should-parse '
 json write (x, name = "value")
 echo hi
 '
+
+  # with block on same line
+  _oil-should-parse 'json write (x) { echo hi }'
+
+  # with block
+  _oil-should-parse '
+json write (x) {
+  echo hi
+}'
+
+  # multiple lines
+  _should-parse 'json write (
+    x,
+    y,
+    z
+  )'
+
 
   # can't be empty
   _oil-parse-error 'json write ()'
