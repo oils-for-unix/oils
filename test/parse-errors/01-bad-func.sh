@@ -11,4 +11,6 @@
 #
 # Does -bash: mean interactive?  Grep the source.
 
-foo (ls)
+# Used to be foo (ls) but that is now a typed arg list
+foo (,)
+
