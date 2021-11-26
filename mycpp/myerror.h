@@ -12,7 +12,7 @@
 // TODO: Replace with #prgram with something portable
 // I think we just need to rewrite e.errno -> e.errno_ in mycpp.
 
-#pragma push_macro("errno");
+#pragma push_macro("errno")
 #undef errno
 
 // Base class that mycpp generates.
@@ -21,7 +21,7 @@ class _OSError {
   int errno;
 };
 
-#pragma pop_macro("errno");
+#pragma pop_macro("errno")
 
 class IOError : public _OSError {};
 

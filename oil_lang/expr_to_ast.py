@@ -811,7 +811,7 @@ class Transformer(object):
     prefix = None  # type: Optional[Token]
     name = None  # type: Optional[Token]
     typ = None  # type: Optional[Token]
-    default_val = None  # type Optional[expr_t]
+    default_val = None  # type: Optional[expr_t]
 
     if tok0.id in (Id.Arith_Colon, Id.Expr_At):
       prefix = tok0
