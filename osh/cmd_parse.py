@@ -2214,7 +2214,7 @@ class CommandParser(object):
       elif self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
         done = True
 
-      elif self.c_kind == Kind.Op:
+      elif self.c_kind != Kind.Word:
         # e.g. f() { echo (( x )) ; }
         # but can't fail on 'fi fi', see osh/cmd_parse_test.py
         p_die("Invalid word while parsing command list", word=self.cur_word)
