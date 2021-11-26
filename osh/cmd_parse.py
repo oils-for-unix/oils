@@ -692,7 +692,13 @@ class CommandParser(object):
         # 1. Check that there's a preceding space
         prev_byte = self.lexer.ByteLookBack()
         if prev_byte not in (SPACE_CH, TAB_CH):
-          p_die('Space required before (', word=self.cur_word)
+          if self.parse_opts.parse_at():
+            p_die('Space required before (', word=self.cur_word)
+          else:
+            # inline func call like @sorted(x) is invalid in OSH, but the
+            # solution isn't a space
+            p_die('Unexpected left paren (might need a space before it)',
+                  word=self.cur_word)
 
         # 2. Check that it's not ().  We disallow this because it's a no-op and
         #    there could be confusion with shell func defs.
@@ -2127,7 +2133,7 @@ class CommandParser(object):
 
       else:
         # e.g. echo a(b)
-        p_die('Unexpected word while parsing command line',
+        p_die('Invalid word while parsing command line',
               word=self.cur_word)
 
       children.append(child)
@@ -2209,8 +2215,8 @@ class CommandParser(object):
         done = True
 
       else:
-        #p_die("OOPS", word=self.cur_word)
-        pass  # e.g. "} done", "fi fi", ") fi", etc. is OK
+        # e.g. f() { echo (( x )) ; }
+        p_die("Invalid word while parsing command list", word=self.cur_word)
 
       children.append(child)
 

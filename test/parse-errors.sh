@@ -884,6 +884,36 @@ parse_at() {
   _oil-parse-error 'echo @"foo"'
 }
 
+invalid_parens() {
+  set +o errexit
+
+  # compatible extension in both langauges
+  local s='write -- $f(x)'
+  _should-parse "$s"
+  _oil-should-parse "$s"
+
+  # requires parse_at
+  local s='write -- @sorted(x)'
+  _error-case "$s"  # this is a parse error, but BAD message!
+  _oil-should-parse "$s"
+
+  local s='
+f() {
+  write -- @sorted(x)
+}
+'
+  _error-case "$s"
+  _oil-should-parse "$s"
+
+  # Analogous bad bug
+  local s='
+f() {
+  write -- @sorted (( z ))
+}
+'
+  _error-case "$s"
+}
+
 oil_nested_proc() {
   set +o errexit
 
@@ -1089,6 +1119,7 @@ cases-in-strings() {
   oil_var_decl
   oil_place_mutation
   parse_at
+  invalid_parens
   nested_source_argvword
 }
 
