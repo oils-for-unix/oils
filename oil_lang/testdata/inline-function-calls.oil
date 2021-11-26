@@ -76,7 +76,7 @@ split-join-demo() {
   unset IFS
 
   echo '+ Since there is no word splitting of unquoted $(ls), here is an idiom:'
-  write @split( $(ls ~ | grep b) )
+  write @split( $(write bin/ lib/ | grep b) )
 }
 
 types-demo() {
