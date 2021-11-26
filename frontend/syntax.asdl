@@ -261,7 +261,7 @@ module syntax
     NoOp
     -- Note: do_fork is semantic, not syntactic
   | Simple(word* words, redir* redirects, env_pair* more_env,
-           ArgList typed_args, BraceGroup? block, bool do_fork)
+           ArgList? typed_args, BraceGroup? block, bool do_fork)
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)

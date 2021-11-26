@@ -601,6 +601,7 @@ class CommandEvaluator(object):
         UP_cmd_val = cmd_val
         if UP_cmd_val.tag_() == cmd_value_e.Argv:
           cmd_val = cast(cmd_value__Argv, UP_cmd_val)
+          cmd_val.typed_args = node.typed_args
           cmd_val.block = node.block  # may be None
         else:
           if node.block:

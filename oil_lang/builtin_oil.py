@@ -229,6 +229,14 @@ class Json(vm._Builtin):
 
       # GetValue() of each name and print it.
 
+      # TODO:
+      # - check that there's one positional arg (generalize this later)
+      # - evaluate it
+      #   - need an expression evaluator!
+      # - then print the object
+      if 0:
+        log('%s', cmd_val.typed_args)
+
       for var_name in arg_r.Rest():
         if var_name.startswith(':'):
           var_name = var_name[1:]
