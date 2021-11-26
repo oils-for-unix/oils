@@ -26,7 +26,7 @@ simple-demo() {
   echo
 
   # NOTE: Oil's echo builtin takes --, and requires it here
-  write -- "--length=$len(myarray)"
+  write -- "--length=$[len(myarray)]"
   echo
 
   echo '+ Just as you can splice @myarray'
@@ -54,15 +54,15 @@ split-join-demo() {
   echo
 
   echo '+ Another way of doing it, without creating another variable:'
-  write -sep '' -- @parts
+  write --sep '' -- @parts
   echo
 
   var j = join(parts, ":")
   #var a = split(j)
   #repr j a
 
-  write -sep '' "j => " $j
-  write -sep '' 'When IFS is the default, split(j) => '
+  write --sep '' "j => " $j
+  write --sep '' 'When IFS is the default, split(j) => '
   write @split(j)
   echo
 

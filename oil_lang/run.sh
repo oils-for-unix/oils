@@ -48,7 +48,7 @@ all-passing() {
 
   for prog in oil_lang/testdata/*.oil; do
     echo ---
-    bin/oil $prog
+    bin/oil $prog all
   done
 }
 
@@ -62,7 +62,7 @@ demo() {
 
   bin/osh oil_lang/testdata/hello.osh
 
-  bin/osh oil_lang/testdata/inline-function-calls.sh all
+  bin/osh oil_lang/testdata/inline-function-calls.oil all
 
   bin/osh oil_lang/testdata/sigil-pairs.sh
 
