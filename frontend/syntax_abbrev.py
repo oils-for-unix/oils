@@ -103,7 +103,11 @@ def _braced_var_sub(obj):
 def _command__Simple(obj):
   # type: (command__Simple) -> hnode_t
   p_node = runtime.NewRecord('C')
-  if obj.redirects or obj.more_env or obj.block or obj.do_fork == False:
+  if (obj.redirects or
+      obj.more_env or
+      obj.typed_args or
+      obj.block or
+      obj.do_fork == False):
     return None  # we have other fields to display; don't abbreviate
 
   p_node.abbrev = True

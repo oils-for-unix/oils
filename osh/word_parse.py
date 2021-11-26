@@ -1368,6 +1368,7 @@ class WordParser(WordEmitter):
     # type: () -> ArgList
     self.lexer.MaybeUnreadOne()
     arg_list = ArgList()
+    arg_list.spids.append(self.cur_token.span_id)
     self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
     return arg_list
 

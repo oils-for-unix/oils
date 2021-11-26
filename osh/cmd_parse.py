@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import (
     command__WhileUntil, command__Case, command__If, command__ShFunction,
     command__Subshell, command__DBracket, command__DParen,
     command__CommandList, command__Proc,
-    BraceGroup,
+    ArgList, BraceGroup,
     case_arm,
 
     sh_lhs_expr, sh_lhs_expr_t,
@@ -319,8 +319,8 @@ def _SplitSimpleCommandPrefix(words):
   return preparsed_list, suffix_words
 
 
-def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
-  # type: (PreParsedList, List[compound_word], List[redir], Optional[BraceGroup]) -> command__Simple
+def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, typed_args, block):
+  # type: (PreParsedList, List[compound_word], List[redir], Optional[ArgList], Optional[BraceGroup]) -> command__Simple
   """Create an command.Simple node."""
 
   # FOO=(1 2 3) ls is not allowed.
@@ -348,7 +348,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
   more_env = []  # type: List[env_pair]
   _AppendMoreEnv(preparsed_list, more_env)
   # do_fork by default
-  node = command.Simple(words3, redirects, more_env, block, True)
+  node = command.Simple(words3, redirects, more_env, typed_args, block, True)
   return node
 
 
@@ -658,10 +658,11 @@ class CommandParser(object):
     return redirects
 
   def _ScanSimpleCommand(self):
-    # type: () -> Tuple[List[redir], List[compound_word], Optional[BraceGroup]]
+    # type: () -> Tuple[List[redir], List[compound_word], Optional[ArgList], Optional[BraceGroup]]
     """First pass: Split into redirects and words."""
     redirects = []  # type: List[redir]
     words = []  # type: List[compound_word]
+    typed_args = None  # type: Optional[ArgList]
     block = None  # type: Optional[BraceGroup]
     while True:
       self._Peek()
@@ -710,9 +711,7 @@ class CommandParser(object):
         if next_id == Id.Op_RParen:
           p_die('Empty arg list not allowed', word=self.cur_word)
 
-        arg_list = self.w_parser.ParseProcCallArgs()
-        # TODO: attach this result
-        #print(arg_list)
+        typed_args = self.w_parser.ParseProcCallArgs()
 
       elif self.parse_opts.parse_amp() and self.c_id == Id.Op_Amp:
         # TODO:
@@ -723,7 +722,7 @@ class CommandParser(object):
         break
 
       self._Next()
-    return redirects, words, block
+    return redirects, words, typed_args, block
 
   def _MaybeExpandAliases(self, words):
     # type: (List[compound_word]) -> Optional[command_t]
@@ -957,12 +956,17 @@ class CommandParser(object):
     here_end vs filename is a matter of whether we test that it's quoted.  e.g.
     <<EOF vs <<'EOF'.
     """
-    redirects, words, block = self._ScanSimpleCommand()
-    block_spid = block.spids[0] if block else runtime.NO_SPID
+    redirects, words, typed_args, block = self._ScanSimpleCommand()
+
+    typed_spid = runtime.NO_SPID  # location of block or typed data
+    if block:
+      typed_spid = block.spids[0]
+    if typed_args:
+      typed_spid = typed_args.spids[0]  # takes precedence
 
     if len(words) == 0:  # e.g.  >out.txt  # redirect without words
-      if block:
-        p_die("Unexpected block", span_id=block_spid)
+      if typed_spid != runtime.NO_SPID:
+        p_die("Unexpected typed args", span_id=typed_spid)
       simple = command.Simple()  # no words, more_env, or block,
       simple.redirects = redirects
       return simple
@@ -986,8 +990,8 @@ class CommandParser(object):
     self.parse_ctx.trail.SetLatestWords(suffix_words, redirects)
 
     if len(suffix_words) == 0:
-      if block:
-        p_die("Unexpected block", span_id=block_spid)
+      if typed_spid != runtime.NO_SPID:
+        p_die("Unexpected typed args", span_id=typed_spid)
 
       # ShAssignment: No suffix words like ONE=1 a[x]=1 TWO=2
       pairs = []  # type: List[assign_pair]
@@ -1002,8 +1006,8 @@ class CommandParser(object):
     kind, kw_token = word_.KeywordToken(suffix_words[0])
 
     if kind == Kind.ControlFlow:
-      if block:
-        p_die("Unexpected block", span_id=block_spid)
+      if typed_spid != runtime.NO_SPID:
+        p_die("Unexpected typed args", span_id=typed_spid)
       if not self.parse_opts.parse_ignored() and len(redirects):
         p_die("Control flow shouldn't have redirects", token=kw_token)
 
@@ -1034,10 +1038,10 @@ class CommandParser(object):
         exp = command.ExpandedAlias(expanded_node, redirects, more_env)
         return exp
 
-    # TODO check that we don't have env1=x x[1]=y env2=z here.
+    # TODO: check that we don't have env1=x x[1]=y env2=z here.
 
     # FOO=bar printenv.py FOO
-    node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block)
+    node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects, typed_args, block)
     return node
 
   def ParseBraceGroup(self):

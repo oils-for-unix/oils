@@ -138,7 +138,7 @@ module syntax
   sh_array_literal = (Token left, word* words) attributes (int* spids)
 
   -- Used in both expr and a word_part
-  ArgList = (expr* positional, named_arg* named)
+  ArgList = (expr* positional, named_arg* named) attributes (int* spids)
 
   word_part = 
     ShArrayLiteral %sh_array_literal
@@ -261,12 +261,12 @@ module syntax
     NoOp
     -- Note: do_fork is semantic, not syntactic
   | Simple(word* words, redir* redirects, env_pair* more_env,
-           BraceGroup? block, bool do_fork)
+           ArgList typed_args, BraceGroup? block, bool do_fork)
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
   | Sentence(command child, Token terminator)
-    -- NOTE: Only represents "bare assignment".
+    -- Note: Only represents "bare assignment"
   | ShAssignment(assign_pair* pairs, redir* redirects)
   | ControlFlow(Token token, word? arg_word)
     -- Note: There are spids for every pipeline operator, parallel to
