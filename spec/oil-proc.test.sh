@@ -174,17 +174,17 @@ f
 
 #### Out param / setref
 
-# TODO: Implement the :out syntax, and setref, using the nameref flag
-
 proc f(input, :out) {  # : means accept a string "reference"
-  setref out = "PREFIX-$in"
+  setref out = "PREFIX-$input"
 }
 
-var myvar = 'zzz'
-f zzz :myvar        # : means pass a string "reference" (optional)
+var myvar = 'value'
+echo myvar=$myvar
+f zzz :myvar   # : means that it's the name of a variable
 echo myvar=$myvar
 
 ## STDOUT:
+myvar=value
 myvar=PREFIX-zzz
 ## END
 
