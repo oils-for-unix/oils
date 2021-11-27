@@ -31,6 +31,7 @@ from core import vm
 from frontend import args
 from frontend import flag_spec
 from frontend import match
+from frontend import typed_args
 from qsn_ import qsn
 from mycpp import mylib
 from osh import word_compile
@@ -213,7 +214,8 @@ class Shopt(vm._Builtin):
       self.mutable_opts.ShowShoptOptions(opt_names)
       return 0
 
-    if cmd_val.block:
+    block = typed_args.GetOneBlock(cmd_val.typed_args)
+    if block:
       opt_nums = []  # type: List[int]
       for name in opt_names:
         index = match.MatchOption(name)
@@ -223,7 +225,7 @@ class Shopt(vm._Builtin):
         opt_nums.append(index)
 
       with state.ctx_Option(self.mutable_opts, opt_nums, b):
-        unused = self.cmd_ev.EvalBlock(cmd_val.block)
+        unused = self.cmd_ev.EvalBlock(block)
       return 0  # cd also returns 0
 
     # Otherwise, set options.
@@ -623,7 +625,8 @@ class Shvar(vm._Builtin):
     attrs, arg_r = flag_spec.ParseCmdVal('shvar', cmd_val)
     #arg = arg_types.shvar(attrs.attrs)
 
-    if not cmd_val.block:
+    block = typed_args.GetOneBlock(cmd_val.typed_args)
+    if not block:
       # TODO: I think shvar LANG=C should just mutate
       # But should there be a whitelist?
       raise error.Usage('expected a block', span_id=runtime.NO_SPID)
@@ -640,7 +643,7 @@ class Shvar(vm._Builtin):
       pairs.append((name, s))
 
     with state.ctx_Shvar(self.mem, pairs):
-      unused = self.cmd_ev.EvalBlock(cmd_val.block)
+      unused = self.cmd_ev.EvalBlock(block)
 
     return 0
 
@@ -656,11 +659,12 @@ class PushRegisters(vm._Builtin):
     #attrs, arg_r = flag_spec.ParseCmdVal('pushregisters', cmd_val)
     #arg = arg_types.pushregisters(attrs.attrs)
 
-    if not cmd_val.block:
+    block = typed_args.GetOneBlock(cmd_val.typed_args)
+    if not block:
       raise error.Usage('expected a block', span_id=runtime.NO_SPID)
 
     with state.ctx_Registers(self.mem):
-      unused = self.cmd_ev.EvalBlock(cmd_val.block)
+      unused = self.cmd_ev.EvalBlock(block)
 
     # Return the previous value so $? isn't changed
     return self.mem.last_status[-1]

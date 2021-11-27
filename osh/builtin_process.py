@@ -29,6 +29,7 @@ from frontend import args
 from frontend import flag_spec
 from frontend import reader
 from frontend import signal_def
+from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import iteritems, tagswitch
 
@@ -81,7 +82,7 @@ class Exec(vm._Builtin):
 
     # shift off 'exec'
     c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_spids[i:],
-                        cmd_val.typed_args, cmd_val.block)
+                        cmd_val.typed_args)
 
     self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
     assert False, "This line should never be reached" # makes mypy happy
@@ -517,10 +518,11 @@ class Fork(vm._Builtin):
     if arg is not None:
       e_usage('got unexpected argument %r' % arg, span_id=span_id)
 
-    if cmd_val.block is None:
+    block = typed_args.GetOneBlock(cmd_val.typed_args)
+    if block is None:
       e_usage('expected a block')
 
-    return self.shell_ex.RunBackgroundJob(cmd_val.block)
+    return self.shell_ex.RunBackgroundJob(block)
 
 
 class ForkWait(vm._Builtin):
@@ -536,7 +538,8 @@ class ForkWait(vm._Builtin):
     if arg is not None:
       e_usage('got unexpected argument %r' % arg, span_id=span_id)
 
-    if cmd_val.block is None:
+    block = typed_args.GetOneBlock(cmd_val.typed_args)
+    if block is None:
       e_usage('expected a block')
 
-    return self.shell_ex.RunSubshell(cmd_val.block)
+    return self.shell_ex.RunSubshell(block)

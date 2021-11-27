@@ -270,13 +270,6 @@ class Json(vm._Builtin):
         if extra_newline:
           sys.stdout.write('\n')
 
-      # TODO: Accept a block.  They aren't hooked up yet.
-      if cmd_val.block:
-        # TODO: flatten value.{Str,Obj} into a flat dict?
-        namespace = self.cmd_ev.EvalBlock(cmd_val.block)
-
-        print(yajl.dump(namespace))
-
     elif action == 'read':
       arg = args.Parse(JSON_READ_SPEC, arg_r)
       # TODO:

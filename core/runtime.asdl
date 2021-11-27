@@ -13,13 +13,10 @@ module runtime
 
   -- note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(string* argv, int* arg_spids, ArgList? typed_args, BraceGroup? block)
+    Argv(string* argv, int* arg_spids, ArgList? typed_args)
   | Assign(int builtin_id,
            string* argv, int* arg_spids,
            assign_arg* pairs)
-  -- refactoring: cmd_value = (string* argv, int* arg_spids, more_args? more)
-  --              more_args = Assign(assign_arg* pairs) 
-  --                        | Proc(arg_list? typed_args, BraceGroup? block)
 
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.

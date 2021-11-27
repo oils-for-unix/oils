@@ -159,7 +159,7 @@ class Command(vm._Builtin):
 
     # shift by one
     cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
-                             cmd_val.typed_args, cmd_val.block)
+                             cmd_val.typed_args)
 
     # If we respected do_fork here instead of passing True, the case
     # 'command date | wc -l' would take 2 processes instead of 3.  But no other
@@ -198,7 +198,7 @@ class Builtin(vm._Builtin):
       return 1
 
     cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
-                              cmd_val.typed_args, cmd_val.block)
+                              cmd_val.typed_args)
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
@@ -225,8 +225,8 @@ class RunProc(vm._Builtin):
     if name not in self.procs:
       self.errfmt.StderrLine('runproc: no proc named %r' % name)
       return 1
-    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args, cmd_val.block)
 
+    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
     return self.shell_ex.RunSimpleCommand(cmd_val2, True)
 
 
@@ -270,7 +270,7 @@ class Try(vm._Builtin):
       e_die("'try' expected a command to run", status=2)
 
     argv, spids = arg_r.Rest2()
-    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args, cmd_val.block)
+    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
 
     # Set in the 'except' block, e.g. if 'myfunc' failed
     failure_spid = runtime.NO_SPID

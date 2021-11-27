@@ -31,7 +31,7 @@ from _devbuild.gen.syntax_asdl import (
     command__Simple, command__Subshell, command__TimeBlock, command__VarDecl,
     command__WhileUntil,
     condition_e, condition_t, condition__Shell, condition__Oil,
-    BraceGroup,
+    BraceGroup, expr__BlockArg, ArgList,
     assign_op_e,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
@@ -601,8 +601,27 @@ class CommandEvaluator(object):
         UP_cmd_val = cmd_val
         if UP_cmd_val.tag_() == cmd_value_e.Argv:
           cmd_val = cast(cmd_value__Argv, UP_cmd_val)
-          cmd_val.typed_args = node.typed_args
-          cmd_val.block = node.block  # may be None
+
+          typed_args = None  # type: ArgList
+          if node.typed_args:
+            # Copy positional args because we may append an arg
+            typed_args = ArgList(list(node.typed_args.positional), node.typed_args.named)
+            typed_args.spids = node.typed_args.spids
+
+            # the block is the last argument
+            if node.block:
+              block_expr = expr__BlockArg(node.block)
+              typed_args.positional.append(block_expr)
+              # ArgList already has a spid in this case
+          else:
+            if node.block:
+              # create ArgList for the block
+              typed_args = ArgList()
+              block_expr = expr__BlockArg(node.block)
+              typed_args.positional.append(block_expr)
+              typed_args.spids.append(node.block.spids[0])
+          cmd_val.typed_args = typed_args
+       
         else:
           if node.block:
             e_die("ShAssignment builtins don't accept blocks",

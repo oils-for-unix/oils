@@ -3,7 +3,10 @@
 # Test of the standalone parser.
 #
 # Usage:
-#   ./osh_parse.sh <function name>
+#   types/oil-slice.sh <function name>
+#
+# Example:
+#   types/oil-slice.sh travis-setup  # for generating osh-eval-manifest.txt
 
 set -o nounset
 set -o pipefail
@@ -103,8 +106,11 @@ typecheck-all() {
   fi
 }
 
-# The manifest needs to be checked in because we don't have
-# _deps/cpython-full on Travis to crawl dependencies.
+# Generate types/osh-eval-manifest.txt.
+#
+# It needs to be checked in because we don't have _deps/cpython-full on Travis
+# to crawl dependencies.
+
 travis-setup() {
   # TODO: add stat.py back.  Why does it cause errors?
   local exclude='vendor|__future__|mylib.py|/stat.py'

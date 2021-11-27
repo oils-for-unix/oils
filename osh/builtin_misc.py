@@ -27,6 +27,7 @@ from core import ui
 from core import vm
 from frontend import flag_spec
 from frontend import reader
+from frontend import typed_args
 from mycpp import mylib
 from osh import word_compile
 from pylib import os_path
@@ -575,10 +576,11 @@ class Cd(vm._Builtin):
     # Other shells use global variables.
     self.mem.SetPwd(real_dest_dir)
 
-    if cmd_val.block:
+    block = typed_args.GetOneBlock(cmd_val.typed_args)
+    if block:
       self.dir_stack.Push(real_dest_dir)
       try:
-        unused = self.cmd_ev.EvalBlock(cmd_val.block)
+        unused = self.cmd_ev.EvalBlock(block)
       finally:  # TODO: Change this to a context manager.
         # note: it might be more consistent to use an exception here.
         if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):

@@ -225,9 +225,9 @@ class ShellExecutor(vm._Executor):
 
     environ = self.mem.GetExported()  # Include temporary variables
 
-    if cmd_val.block:
-      e_die('Unexpected block passed to external command %r', arg0,
-            span_id=cmd_val.block.spids[0])
+    if cmd_val.typed_args:
+      e_die('Unexpected typed args passed to external command %r', arg0,
+            span_id=cmd_val.typed_args.spids[0])
 
     # Resolve argv[0] BEFORE forking.
     argv0_path = self.search_path.CachedLookup(arg0)

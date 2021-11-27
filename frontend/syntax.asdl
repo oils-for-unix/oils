@@ -434,6 +434,8 @@ module syntax
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
+  | BlockArg(BraceGroup block)
+
   | Lambda(name_type* params, expr body)
 
     -- TODO: speck op

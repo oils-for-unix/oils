@@ -40,6 +40,7 @@
 ./frontend/option_def.py
 ./frontend/parse_lib.py
 ./frontend/reader.py
+./frontend/typed_args.py
 ./oil_lang/expr_parse.py
 ./oil_lang/expr_to_ast.py
 ./oil_lang/objects.py
