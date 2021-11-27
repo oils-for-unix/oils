@@ -1572,8 +1572,8 @@ class CommandEvaluator(object):
         if is_return:  # explicit 'return' in the trap handler!
           mut_status[0] = self.LastStatus()
 
-  def RunProc(self, proc, argv):
-    # type: (Proc, List[str]) -> int
+  def RunProc(self, proc, argv, arg0_spid):
+    # type: (Proc, List[str], int) -> int
     """Run a shell "functions".
 
     For SimpleCommand and registered completion hooks.
@@ -1633,9 +1633,11 @@ class CommandEvaluator(object):
               lvalue.Named(sig.rest.val), leftover, scope_e.LocalOnly)
         else:
           if n_args > n_params:
-            raise TypeError(
+            self.errfmt.Print_(
                 "proc %r expected %d arguments, but got %d" %
-                (proc.name, n_params, n_args))
+                (proc.name, n_params, n_args), span_id=arg0_spid)
+            # This should be status 2 because it's like a usage error.
+            return 2
 
       # Redirects still valid for functions.
       # Here doc causes a pipe and Process(SubProgramThunk).
@@ -1693,7 +1695,7 @@ class CommandEvaluator(object):
     # type: (Proc, List[str]) -> int
     # TODO: Change this to run Oil procs and funcs too
     try:
-      status = self.RunProc(proc, argv)
+      status = self.RunProc(proc, argv, runtime.NO_SPID)
     except error.FatalRuntime as e:
       ui.PrettyPrintError(e, self.arena)
       status = e.ExitStatus()

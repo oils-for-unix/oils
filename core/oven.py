@@ -513,7 +513,7 @@ class NullExecutor(vm._Executor):
   def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
     argv = cmd_val.argv
-    span_id = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
+    arg0_spid = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
 
     arg0 = argv[0]
 
@@ -534,12 +534,12 @@ class NullExecutor(vm._Executor):
             #self.errfmt.StderrLine('')
             e_die("Can't run a proc while errexit is disabled. "
                   "Use 'try' or wrap it in a process with $0 myproc",
-                  span_id=span_id)
+                  span_id=arg0_spid)
 
         # TODO: make tracer a member
         #with dev.ctx_Tracer(self.tracer, 'proc', argv):
         # NOTE: Functions could call 'exit 42' directly, etc.
-        status = self.cmd_ev.RunProc(proc_node, argv[1:])
+        status = self.cmd_ev.RunProc(proc_node, argv[1:], arg0_spid)
         return status
 
     builtin_id = consts.LookupNormalBuiltin(arg0)

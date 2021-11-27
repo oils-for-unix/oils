@@ -447,7 +447,7 @@ class ShellFuncAction(CompletionAction):
     comp_words = []
     for a in comp.partial_argv:
       AdjustArg(a, [':', '='], comp_words)
-    if comp.index == -1:  # cmopgen
+    if comp.index == -1:  # compgen
       comp_cword = comp.index
     else:
       comp_cword = len(comp_words) - 1  # weird invariant

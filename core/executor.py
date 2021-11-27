@@ -171,12 +171,12 @@ class ShellExecutor(vm._Executor):
       procs: whether to look up procs.
     """
     argv = cmd_val.argv
-    span_id = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
+    arg0_spid = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
 
     # This happens when you write "$@" but have no arguments.
     if len(argv) == 0:
       if self.exec_opts.strict_argv():
-        e_die("Command evaluated to an empty argv array", span_id=span_id)
+        e_die("Command evaluated to an empty argv array", span_id=arg0_spid)
       else:
         return 0  # status 0, or skip it?
 
@@ -187,7 +187,7 @@ class ShellExecutor(vm._Executor):
       # command readonly is disallowed, for technical reasons.  Could relax it
       # later.
       self.errfmt.Print_("Can't run assignment builtin recursively",
-                        span_id=span_id)
+                        span_id=arg0_spid)
       return 1
 
     builtin_id = consts.LookupSpecialBuiltin(arg0)
@@ -211,11 +211,11 @@ class ShellExecutor(vm._Executor):
             self.errfmt.StderrLine('')
             e_die("Can't run a proc while errexit is disabled. "
                   "Use 'try' or wrap it in a process with $0 myproc",
-                  span_id=span_id)
+                  span_id=arg0_spid)
 
         with dev.ctx_Tracer(self.tracer, 'proc', argv):
           # NOTE: Functions could call 'exit 42' directly, etc.
-          status = self.cmd_ev.RunProc(proc_node, argv[1:])
+          status = self.cmd_ev.RunProc(proc_node, argv[1:], arg0_spid)
         return status
 
     builtin_id = consts.LookupNormalBuiltin(arg0)
@@ -232,7 +232,7 @@ class ShellExecutor(vm._Executor):
     # Resolve argv[0] BEFORE forking.
     argv0_path = self.search_path.CachedLookup(arg0)
     if argv0_path is None:
-      self.errfmt.Print_('%r not found' % arg0, span_id=span_id)
+      self.errfmt.Print_('%r not found' % arg0, span_id=arg0_spid)
       return 127
 
     # Normal case: ls /

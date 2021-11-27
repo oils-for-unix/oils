@@ -19,13 +19,12 @@ proc f() {
 f
 echo status=$?
 
-# TODO: This should abort, or have status 1
 f a b
-echo status=$?
+echo status=$?  # status 2 because it's a usage error
 
-## status: 1
 ## STDOUT:
 status=42
+status=2
 ## END
 
 #### Open proc has "$@"
