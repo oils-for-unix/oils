@@ -60,8 +60,7 @@ echo $identity (true)
 
 #### echo @f (x) with space is runtime error
 shopt -s oil:basic
-const a = %(a b)
-echo @a (['foo', 'bar'])
+echo @identity (['foo', 'bar'])
 ## status: 1
 ## STDOUT:
 ## END
