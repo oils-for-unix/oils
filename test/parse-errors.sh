@@ -653,6 +653,11 @@ proc_arg_list() {
   set +o errexit
   _should-parse 'json write (x)'
 
+  _should-parse 'echo $(json write (x))'  # relies on lexer.PushHint()
+
+  # nested expression parsing
+  # _should-parse 'var result  = $(json write (x))'
+
   _should-parse 'json write (x, y); echo hi'
 
   # named arg

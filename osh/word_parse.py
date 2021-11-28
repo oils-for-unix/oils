@@ -1367,6 +1367,8 @@ class WordParser(WordEmitter):
   def ParseProcCallArgs(self):
     # type: () -> ArgList
     self.lexer.MaybeUnreadOne()
+    self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)
+
     arg_list = ArgList()
     arg_list.spids.append(self.cur_token.span_id)
     self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
