@@ -1,18 +1,17 @@
 # Test out Oil's JSON support.
 
 #### json write STRING
-myvar='foo'
-json write myvar
-json write :myvar
+json write ('foo')
+var s = 'foo'
+json write (s)
 ## STDOUT:
 "foo"
 "foo"
 ## END
 
 #### json write ARRAY
-a=(foo.cc foo.h)
-json write :a
-json write --indent 0 :a
+json write (%(foo.cc foo.h))
+json write --indent 0 (['foo.cc', 'foo.h'])
 ## STDOUT:
 [
   "foo.cc",
@@ -30,9 +29,9 @@ json write --indent 0 :a
 
 var mydict = {name: "bob", age: 30}
 
-json write --pretty=0 :mydict
+json write --pretty=0 (mydict)
 # ignored
-json write --pretty=F --indent 4 :mydict
+json write --pretty=F --indent 4 (mydict)
 ## STDOUT:
 {"age":30,"name":"bob"}
 {"age":30,"name":"bob"}
@@ -41,8 +40,8 @@ json write --pretty=F --indent 4 :mydict
 #### json write in command sub
 shopt -s oil:all  # for echo
 var mydict = {name: "bob", age: 30}
-json write :mydict
-var x = $(json write :mydict)
+json write (mydict)
+var x = $(json write (mydict))
 echo $x
 ## STDOUT:
 {
@@ -91,9 +90,27 @@ pipeline status = 1
 ## END
 
 #### json write expression
-json write ([1,2,3])
+json write --pretty=0 ([1,2,3])
+echo status=$?
+
+json write (5, 6)  # to many args
+echo status=$?
 ## STDOUT:
-[1, 2, 3]
+[1,2,3]
+status=0
+status=2
 ## END
 
+#### json write evaluation error
 
+#var block = ^(echo hi)
+#json write (block) 
+#echo status=$?
+
+# undefined var
+json write (a) 
+echo status=$?
+
+## status: 1
+## STDOUT:
+## END

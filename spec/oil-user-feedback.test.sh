@@ -180,7 +180,7 @@ for i in @(seq 2) {
   _ append(e, o)
 }
 
-json write :e
+json write (e)
 
 ## STDOUT:
 [

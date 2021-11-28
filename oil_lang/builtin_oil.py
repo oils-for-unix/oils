@@ -23,7 +23,7 @@ from core import vm
 from frontend import flag_spec
 from frontend import args
 from frontend import match
-from mycpp.mylib import tagswitch
+from frontend import typed_args
 from qsn_ import qsn
 
 import yajl
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
   from core.alloc import Arena
   from core.ui import ErrorFormatter
   from osh.cmd_eval import CommandEvaluator
+  from oil_lang import expr_eval
 
 _ = log
 
@@ -209,10 +210,11 @@ class Json(vm._Builtin):
 
   json read :x < foo.tsv2
   """
-  def __init__(self, mem, cmd_ev, errfmt):
-    # type: (state.Mem, CommandEvaluator, ErrorFormatter) -> None
+  def __init__(self, mem, cmd_ev, expr_ev, errfmt):
+    # type: (state.Mem, CommandEvaluator, expr_eval.ExprEvaluator, ErrorFormatter) -> None
     self.mem = mem
     self.cmd_ev = cmd_ev
+    self.expr_ev = expr_ev
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -234,41 +236,21 @@ class Json(vm._Builtin):
       # - evaluate it
       #   - need an expression evaluator!
       # - then print the object
-      if 0:
-        log('%s', cmd_val.typed_args)
 
-      for var_name in arg_r.Rest():
-        if var_name.startswith(':'):
-          var_name = var_name[1:]
+      expr = typed_args.RequiredExpr(cmd_val.typed_args)
+      obj = self.expr_ev.EvalExpr(expr)
 
-        val = self.mem.GetValue(var_name)
-        with tagswitch(val) as case:
-          if case(value_e.Undef):
-            # TODO: blame the right span_id
-            self.errfmt.Print("no variable named %r is defined", var_name)
-            return 1
-          elif case(value_e.Str):
-            obj = val.s
-          elif case(value_e.MaybeStrArray):
-            obj = val.strs
-          elif case(value_e.AssocArray):
-            obj = val.d
-          elif case(value_e.Obj):
-            obj = val.obj
-          else:
-            raise AssertionError(val)
+      if arg.pretty:
+        indent = arg.indent 
+        extra_newline = False
+      else:
+        # How yajl works: if indent is -1, then everything is on one line.
+        indent = -1
+        extra_newline = True
 
-        if arg.pretty:
-          indent = arg.indent 
-          extra_newline = False
-        else:
-          # How yajl works: if indent is -1, then everything is on one line.
-          indent = -1
-          extra_newline = True
-
-        j = yajl.dump(obj, sys.stdout, indent=indent)
-        if extra_newline:
-          sys.stdout.write('\n')
+      j = yajl.dump(obj, sys.stdout, indent=indent)
+      if extra_newline:
+        sys.stdout.write('\n')
 
     elif action == 'read':
       arg = args.Parse(JSON_READ_SPEC, arg_r)

@@ -121,6 +121,34 @@ one
 two
 ## END
 
+#### block arg as typed expression
+
+shopt -s oil:all
+
+# literal
+cd /tmp (^(echo $PWD))
+
+const myblock = ^(echo $PWD)
+cd /tmp (myblock)
+
+## STDOUT:
+/tmp
+/tmp
+## END
+
+#### Pass invalid typed args
+
+cd /tmp (42)  # should be a block
+echo status=$?
+
+cd /tmp (1, 2)
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+## END
+
 #### 'builtin' and 'command' with block
 shopt --set oil:basic
 builtin cd / {
