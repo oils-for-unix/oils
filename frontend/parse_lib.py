@@ -227,8 +227,8 @@ class ParseContext(object):
     self.arena = arena
     self.parse_opts = parse_opts
     self.aliases = aliases
+    self.oil_grammar = oil_grammar
 
-    self.e_parser = expr_parse.ExprParser(self, oil_grammar)
     # NOTE: The transformer is really a pure function.
     if oil_grammar:
       self.tr = expr_to_ast.Transformer(oil_grammar)
@@ -241,8 +241,6 @@ class ParseContext(object):
 
     if mylib.PYTHON:
       self.p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
-
-    self.parsing_expr = False  # "single-threaded" state
 
     # Completion state lives here since it may span multiple parsers.
     self.trail = _BaseTrail()  # no-op by default
@@ -312,26 +310,16 @@ class ParseContext(object):
 
   def _ParseOil(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[PNode, Token]
-    """Helper Oil expression parsing."""
-    self.parsing_expr = True
-    try:
-      return self.e_parser.Parse(lexer, start_symbol)
-    finally:
-      self.parsing_expr = False
+    """Helper for Oil expression parsing."""
+
+    # TODO: maybe pool these ExprParser instances to reduce allocations?
+    e_parser = expr_parse.ExprParser(self, self.oil_grammar)
+    return e_parser.Parse(lexer, start_symbol)
 
   def ParseVarDecl(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command__VarDecl, Token]
     """ var mylist = [1, 2, 3] """
-
-    # TODO: We do need re-entrancy for var x = @[ (1+2) ] and such
-    if self.parsing_expr:
-      p_die("ShAssignment expression can't be nested like this", token=kw_token)
-
-    self.parsing_expr = True
-    try:
-      pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_var_decl)
-    finally:
-      self.parsing_expr = False
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_var_decl)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -343,10 +331,7 @@ class ParseContext(object):
   def ParsePlaceMutation(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command__PlaceMutation, Token]
     """ setvar d['a'] += 1 """
-
-    # TODO: Create an ExprParser so it's re-entrant.
-    pnode, last_token = self.e_parser.Parse(lexer,
-                                            grammar_nt.oil_place_mutation)
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_place_mutation)
     if 0:
       self.p_printer.Print(pnode)
     ast_node = self.tr.MakePlaceMutation(pnode)
@@ -356,10 +341,6 @@ class ParseContext(object):
   def ParseOilArgList(self, lexer, out):
     # type: (Lexer, ArgList) -> Token
     """ $f(x, y) """
-    if self.parsing_expr:
-      # TODO: get rid of parsing_expr
-      raise AssertionError()
-
     pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_arglist)
 
     if 0:
@@ -371,7 +352,7 @@ class ParseContext(object):
   def ParseOilExpr(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[expr_t, Token]
     """ if (x > 0) { ... }, while, etc. """
-    pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
+    pnode, last_token = self._ParseOil(lexer, start_symbol)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -382,7 +363,7 @@ class ParseContext(object):
   def ParseOilForExpr(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[List[name_type], expr_t, Token]
     """ for (x Int, y Int in foo) """
-    pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
+    pnode, last_token = self._ParseOil(lexer, start_symbol)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -393,7 +374,7 @@ class ParseContext(object):
   def ParseProc(self, lexer, out):
     # type: (Lexer, command__Proc) -> Token
     """ proc f(x, y, @args) { """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_proc)
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_proc)
 
     if 0:
       self.p_printer.Print(pnode)
