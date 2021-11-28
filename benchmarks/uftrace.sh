@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./uftrace.sh <function name>
+#   benchmarks/uftrace.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-#uftrace() {
-#  ~/src/uftrace-0.8.1/uftrace "$@"
-#}
-
 download() {
   wget --directory _deps \
     https://github.com/namhyung/uftrace/archive/v0.9.3.tar.gz
+}
+
+build() {
+  cd _deps/uftrace-0.9.3
+  ./configure
+  make
+
+  # It can't find some files unless we do this
+  echo 'Run sudo make install'
 }
 
 python-demo() {
@@ -54,11 +59,17 @@ replay() {
 # creates uftrace.data dir
 osh-eval() {
   local path=${1:-benchmarks/testdata/configure-coreutils}
-  local cmd=(_bin/osh_eval.uftrace -n $path)
+  #local cmd=(_bin/osh_eval.uftrace -n $path)
+  #local cmd=(_bin/osh_eval.uftrace -c 'echo hi')
 
-  local cmd=(_bin/osh_eval.uftrace -c 'echo hi')
+  local cmd=(_bin/osh_eval.uftrace _tmp/a)
 
-  uftrace record "${cmd[@]}"
+  local flags=(-F process::Process::RunWait -F process::Process::Process)
+
+  uftrace record "${flags[@]}" "${cmd[@]}" || true
+
+  # Hint: ls -l uftrace.data to make sure this filtering worked!
+  ls -l uftrace.data
 }
 
 by-call() {
