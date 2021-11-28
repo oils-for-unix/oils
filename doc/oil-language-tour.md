@@ -108,7 +108,7 @@ Oil also has Ruby-like blocks:
 And utilities to read and write JSON:
 
     var d = {name: 'bob', age: 42}
-    json write :d  # :d refers to the variable d
+    json write (d)
     # =>
     # {
     #   "name": "bob",
@@ -927,7 +927,7 @@ Example:
 **Tree-shaped** data can be read and written as [JSON][]:
 
     var d = {key: 'value'}
-    json write :d                 # dump variable d as JSON
+    json write (d)                # dump variable d as JSON
     # =>
     # {
     #   "key": "value"

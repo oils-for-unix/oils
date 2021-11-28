@@ -229,6 +229,9 @@ class Json(vm._Builtin):
     if action == 'write':
       arg = args.Parse(JSON_WRITE_SPEC, arg_r)
 
+      if not arg_r.AtEnd():
+        e_usage('write got too many args', span_id=arg_r.SpanId())
+
       # GetValue() of each name and print it.
 
       # TODO:
@@ -260,6 +263,9 @@ class Json(vm._Builtin):
       var_name, name_spid = arg_r.ReadRequired2("expected variable name")
       if var_name.startswith(':'):
         var_name = var_name[1:]
+
+      if not arg_r.AtEnd():
+        e_usage('read got too many args', span_id=arg_r.SpanId())
 
       if not match.IsValidVarName(var_name):
         raise error.Usage('got invalid variable name %r' % var_name,

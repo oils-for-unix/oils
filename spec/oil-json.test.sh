@@ -54,12 +54,15 @@ echo $x
 }
 ## END
 
-#### json read passed bad args
+#### json read passed invalid args
 json read
 echo status=$?
 json read 'z z'
 echo status=$?
+json read a b c
+echo status=$?
 ## STDOUT:
+status=2
 status=2
 status=2
 ## END
