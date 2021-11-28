@@ -385,7 +385,7 @@ class ParseContext(object):
   def ParseFunc(self, lexer, out):
     # type: (Lexer, command__Func) -> Token
     """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.named_func)
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.named_func)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -396,7 +396,7 @@ class ParseContext(object):
   def ParseDataType(self, lexer, out):
     # type: (Lexer, command__Data) -> Token
     """ data Point(x Int, y Int) """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_data)
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.tea_data)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -407,7 +407,7 @@ class ParseContext(object):
   def ParseEnum(self, lexer, out):
     # type: (Lexer, command__Enum) -> Token
     """ enum cflow { Break, Continue, Return(status Int) } """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_enum)
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.tea_enum)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -418,7 +418,7 @@ class ParseContext(object):
   def ParseClass(self, lexer, out):
     # type: (Lexer, command__Class) -> Token
     """ class Lexer { var Token; func Next() { echo } } """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_class)
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.tea_class)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -429,7 +429,7 @@ class ParseContext(object):
   def ParseImport(self, lexer, out):
     # type: (Lexer, command__Import) -> Token
     """ use 'foo/bar' as spam, Foo, Z as Y """
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.tea_import)
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.tea_import)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -444,7 +444,7 @@ class ParseContext(object):
       line_lexer = lexer.LineLexer('', self.arena)
       lx = lexer.Lexer(line_lexer, line_reader)
 
-      pnode, last_token = self.e_parser.Parse(lx, grammar_nt.tea_module)
+      pnode, last_token = self._ParseOil(lx, grammar_nt.tea_module)
 
       if 1:
         self.p_printer.Print(pnode)
