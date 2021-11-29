@@ -198,6 +198,7 @@ EOF
 other-tests-tasks() {
   cat <<EOF
 dump-distro       services/toil-worker.sh dump-distro     -
+opyc              test/opyc.sh all-passing                -
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
 osh2oil           test/osh2oil.sh travis                  -

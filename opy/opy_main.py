@@ -545,10 +545,11 @@ def OpyCommandMain(argv):
     #logging.basicConfig(level=level)
     #logging.basicConfig(level=logging.DEBUG)
 
-    opt, i = compile_spec.ParseArgv(argv)
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
 
-    py_path = argv[i]
-    opy_argv = argv[i:]
+    opy_argv = arg_r.Rest()  # ensure we have argv[0]!
+    py_path = arg_r.ReadRequired('Expected path to Python input')
 
     if py_path.endswith('.py'):
       with open(py_path) as f:
@@ -565,9 +566,11 @@ def OpyCommandMain(argv):
       raise error.Usage('Invalid path %r' % py_path)
 
   elif action == 'run-ovm':  # Compile and run, without writing pyc file
-    opt, i = compile_spec.ParseArgv(argv)
-    py_path = argv[i]
-    opy_argv = argv[i+1:]
+    arg_r = args.Reader(argv)
+    opt = args.Parse(compile_spec, arg_r)
+
+    py_path = arg_r.ReadRequired('Expected path to Python input')
+    opy_argv = arg_r.Rest()
 
     if py_path.endswith('.py'):
       #mode = 'exec'
