@@ -39,6 +39,17 @@ class TextOutput(ColorOutput):
     # Note: translated into an initializer list.
     ColorOutput.__init__(self, f)
     print('TextOutput constructor')
+    self.i = 0  # field only in derived class
+
+  def MutateField(self):
+    # type: () -> None
+    self.num_chars = 42
+    self.i = 43
+
+  def PrintFields(self):
+    # type: () -> None
+    print("num_chars = %d" % self.num_chars)  # field from base
+    print("i = %d" % self.i)  # field from derived
 
 
 class Base(object):
@@ -89,6 +100,9 @@ def run_tests():
   out.write('foo\n')
   out.write('bar\n')
   log('Wrote %d bytes', out.num_chars)
+
+  out.MutateField()
+  out.PrintFields()
 
   #b = Base()
   d = Derived()

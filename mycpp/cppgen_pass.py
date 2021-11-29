@@ -283,6 +283,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # This is all in the 'decl' phase.
       self.member_vars = {}  # type: Dict[str, Type]
       self.current_class_name = None  # for prototypes
+      self.current_method_name = None
 
       self.imported_names = set()  # For module::Foo() vs. self.foo
 
@@ -1418,11 +1419,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(o.rvalue)
           self.write(';\n')
 
-          # Collect statements that look like self.foo = 1
-          if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
-            #log('    lval.name %s', lval.name)
-            lval_type = self.types[lval]
-            self.member_vars[lval.name] = lval_type
+          if self.current_method_name in ('__init__', 'Reset'):
+            # Collect statements that look like self.foo = 1
+            # Only do this in __init__ so that a derived class mutating a field
+            # from the base calss doesn't cause duplicate C++ fields.  (C++
+            # allows two fields of the same name!)
+            #
+            # HACK for WordParser: also include Reset().  We could change them
+            # all up front but I kinda like this.
+
+            if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
+              #log('    lval.name %s', lval.name)
+              lval_type = self.types[lval]
+              self.member_vars[lval.name] = lval_type
 
         elif isinstance(lval, IndexExpr):  # a[x] = 1
           # d->set(x, 1) for both List and Dict
@@ -2111,23 +2120,37 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # Constructor is named after class
             if isinstance(stmt, FuncDef):
-              if stmt.name() == '__init__':
+              method_name = stmt.name()
+              if method_name == '__init__':
                 self.decl_write_ind('%s(', o.name)
                 self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
                 self.decl_write(');\n')
 
-                # Must visit these for member vars!
+                # Visit for member vars
+                self.current_method_name = method_name
                 self.accept(stmt.body)
+                self.current_method_name = None
                 continue
 
-              if stmt.name() == '__enter__':
+              if method_name == '__enter__':
                 continue
 
-              if stmt.name() == '__exit__':
+              if method_name == '__exit__':
                 # Turn it into a destructor with NO ARGS
                 self.decl_write_ind('~%s();\n', o.name)
                 continue
 
+              if method_name == '__repr__':
+                # skip during declaration, just like visit_func_def does during definition
+                continue
+
+              # Any other function: Visit for member vars
+              self.current_method_name = method_name
+              self.accept(stmt)
+              self.current_method_name = None
+              continue
+
+            # Do we need this?  I think everything under a class is a method?
             self.accept(stmt)
 
           self.current_class_name = None
@@ -2149,6 +2172,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.current_class_name = o.name
 
+        #
         # Now we're visiting for definitions (not declarations).
         #
         block = o.defs

@@ -7,7 +7,7 @@ from __future__ import print_function
 import time as time_  # avoid name conflict
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.runtime_asdl import (
     cmd_value__Argv, value_e, value__Str, value
 )
@@ -61,12 +61,14 @@ class _FormatStringParser(object):
     # type: (Lexer) -> None
     self.lexer = lexer
 
+    # uninitialized values
+    self.cur_token = None  # type: Token
+    self.token_type = Id.Undefined_Tok  # type: Id_t
+    self.token_kind = Kind.Undefined  # type: Kind_t
+
   def _Next(self, lex_mode):
     # type: (lex_mode_t) -> None
-    """Set the next lex state, but don't actually read a token.
-
-    We need this for proper interactive parsing.
-    """
+    """Advance a token."""
     self.cur_token = self.lexer.Read(lex_mode)
     self.token_type = self.cur_token.id
     self.token_kind = consts.GetKind(self.token_type)

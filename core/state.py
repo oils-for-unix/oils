@@ -1014,6 +1014,8 @@ class Mem(object):
     # CALL_SOURCE, and BASH_LINENO.
     self.debug_stack = debug_stack
 
+    self.pwd = None  # type: Optional[str]
+
     self.current_spid = runtime.NO_SPID
 
     self.line_num = value.Str('')
