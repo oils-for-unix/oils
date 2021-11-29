@@ -126,8 +126,14 @@ run-for-release() {
 }
 
 travis() {
+  # TODO: use devtools/release.sh test-opy
+  # That's really what we want to prevent from failing.
+
+  make _build/opy/py27.grammar.marshal
+
   # flag_spec.py defines types in runtime.asdl
-  build/dev.sh oil-asdl-to-py
+  build/dev.sh minimal
+
   all-passing
 }
 
