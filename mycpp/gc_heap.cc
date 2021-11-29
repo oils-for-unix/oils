@@ -38,7 +38,12 @@ void Space::Init(int space_size) {
   begin_ = static_cast<char*>(malloc(space_size));
 #endif
   size_ = space_size;
+
+#ifndef NO_GC_HACK
+  // When not collecting, we need a huge 400 MiB heap.  Try to save startup
+  // time by not doing this.
   Clear();
+#endif
 }
 
 void Space::Free() {
