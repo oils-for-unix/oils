@@ -108,7 +108,11 @@ class Space {
     // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
     // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
     // it makes sense to zero the slabs instead?
+#ifndef NO_GC_HACK
+    // When not collecting, we need a huge 400 MiB heap.  Try to save startup
+    // time by not doing this.
     memset(begin_, 0, size_);
+#endif
   }
 
 #if GC_PROTECT

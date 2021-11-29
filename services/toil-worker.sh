@@ -115,7 +115,7 @@ osh-eval-demo   build/mycpp.sh osh-eval-demo          -
 osh-eval-opt    build/mycpp.sh compile-slice-opt      -
 shell-benchmarks benchmarks/auto.sh travis            _tmp/benchmark-data/index.html
 mycpp-examples  mycpp/build.sh examples               mycpp/_ninja/index.html
-parse-errors    test/parse-errors.sh travis1          -
+parse-errors    test/parse-errors.sh travis2          -
 spec-cpp        test/spec-cpp.sh travis               _tmp/spec/cpp/osh-summary.html
 EOF
 # TODO:

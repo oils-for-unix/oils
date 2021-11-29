@@ -467,12 +467,17 @@ cmd-parse() {
 
   _error-case 'foo()'
 
-  # Unquoted (.  What happened here?
-  _error-case '[ ( x ]'
-
   # parse_ignored
   _should-parse 'break >out'
   _oil-parse-error 'break >out'
+
+  if is-oil-native; then
+    echo 'Skipping some cmd-parse cases on oil-native'
+    return
+  fi
+
+  # Unquoted (
+  _error-case '[ ( x ]'
 }
 
 append() {
@@ -651,6 +656,12 @@ proc_sig() {
 
 proc_arg_list() {
   set +o errexit
+
+  if is-oil-native; then
+    echo 'Skipping proc_arg_list cases on oil-native'
+    return
+  fi
+
   _should-parse 'json write (x)'
 
   _should-parse 'echo $(json write (x))'  # relies on lexer.PushHint()
@@ -891,6 +902,11 @@ parse_at() {
 
 invalid_parens() {
   set +o errexit
+
+  if is-oil-native; then
+    echo 'skipping invalid_parens on oil-native'
+    return
+  fi
 
   # compatible extension in both langauges
   local s='write -- $f(x)'
@@ -1135,6 +1151,17 @@ cases-in-files() {
 
   for t in test/parse-errors/*.sh; do
     banner $t
+
+    if is-oil-native; then
+      case $t in
+        */01-bad-func.sh)
+          echo "Skipping file $t oil-native"
+          continue
+          ;;
+      esac
+    fi
+
+
     $SH $t
 
     local status=$?

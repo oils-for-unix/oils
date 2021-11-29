@@ -180,7 +180,7 @@ compile() {
       ;;
   esac
 
-  # Avoid memset().  TODO: avoid this hack!
+  # Avoid memset().  TODO: remove this hack!
   flags="$flags -D NO_GC_HACK"
 
   # flags are split
