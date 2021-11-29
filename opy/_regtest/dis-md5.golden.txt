@@ -23,8 +23,8 @@
    378 2226c7aa5b87eaa7c57de044a22fbcaa _tmp/regtest/spec/bin/printenv.pyc
    477 4645f7d19c10bb1ed8ad498163b8f01a _tmp/regtest/build/setup.pyc
    514 e2050fe49ffc0eab5a2d39683a6e2cd6 _tmp/regtest/build/testdata/lib.pyc
+   517 b504f9f0b142d9f9cd6660908a8da664 _tmp/regtest/benchmarks/fake_libc.pyc
    522 b2861a5ee9b6ca670b04fcbeb99224c5 _tmp/regtest/build/setup_fastlex.pyc
-   535 d15858f4eb47788c0e0c2ab0f59bea50 _tmp/regtest/benchmarks/fake_libc.pyc
    591 5de4a8b995e624fedfeafe098fff0124 _tmp/regtest/opy/tests/genexpr_simple.pyc
    656 ced2ed2e11738285ebd68a84e55b637f _tmp/regtest/opy/misc/ccompile.pyc
    729 8eb9ebee346215cef080cab2f479bc45 _tmp/regtest/spec/bin/stdout_stderr.pyc
@@ -144,8 +144,8 @@
   8446 4324c87d51e43290bd5482e67c2657e3 _tmp/regtest/core/lexer_gen.pyc
   8772 dd457acd09a56788020dc6220938b37d _tmp/regtest/encodings/aliases.pyc
   8959 308d4ede181d043e131a756db794417e _tmp/regtest/opy/misc/inspect_pyc.pyc
-  9033 b9798d36245f6a67d0ae7ae65b3e0ea2 _tmp/regtest/core/lexer.pyc
   9037 9544b3b5375bc9d2ff35a099b816c8c5 _tmp/regtest/asdl/encode.pyc
+  9042 46ce00cd7486c1f38bb1cca0ebfeaf93 _tmp/regtest/core/lexer.pyc
   9077 b27358bd884cbeb54c05d5b7483c1fe2 _tmp/regtest/core/completion_test.pyc
   9248 fc8491b32f4b453c1014adf28acd7de5 _tmp/regtest/asdl/py_meta.pyc
   9320 990ddd712c22fe9a538b693b48bdcbfe _tmp/regtest/asdl/tdop.pyc
