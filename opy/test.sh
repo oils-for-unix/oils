@@ -223,7 +223,7 @@ gold() {
     $script > _tmp/gold-cpython.txt 2>&1
 
     # As a test, disable LOAD_FAST, etc.  The output should still be the same.
-    ../bin/opyc run -fast-ops=0 $script > _tmp/gold-opy-byterun.txt 2>&1
+    ../bin/opyc run --fast-ops=0 $script > _tmp/gold-opy-byterun.txt 2>&1
 
     if diff -u _tmp/gold-{cpython,opy-byterun}.txt; then
       echo "OK $script"

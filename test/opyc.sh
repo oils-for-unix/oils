@@ -125,5 +125,11 @@ run-for-release() {
   run-other-suite-for-release opyc all-passing
 }
 
+travis() {
+  # flag_spec.py defines types in runtime.asdl
+  build/dev.sh oil-asdl-to-py
+  all-passing
+}
+
 
 "$@"
