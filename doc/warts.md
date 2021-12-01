@@ -59,28 +59,31 @@ To disambiguate the cases, use explicit braces:
     echo "_ ${f}(x) _"  # variable f
     echo "_ $[f(x)] _"  # function call f
 
-### Two Different Syntaxes For `Block` and `ArgList` Literals
+### Two Different Syntaxes For `Block` and `Expr` Literals
 
 Blocks look different in command vs expression mode:
 
     cd /tmp {                   # command mode { }
       echo $PWD
     }
-    var myblock = ^(echo $PWD)  # expression mode ^( )
+    var myblock = ^(echo $PWD)  # expression mode, lazy ^( )
 
-So do lazily evaluated arg lists (not yet implemented):
+So do expressions:
 
-    myproc | filter (age > 10)  # command mode ( )
-    var myexpr = ^{age > 10}    # expression mode ^{ }
+    myproc | where (age > 10)   # command mode, lazy ( )
+    var myval = age > 10        # expression mode
+    var myexpr = ^[age > 10]    # expression mode, lazy ^[ ]
 
-It would have been nicer if they were consistent, but:
+It would have been nicer if they were consistent, but shell is already
+inconsistent with `$(echo hi)` and `{ echo hi; }`.
 
-- `^(echo $PWD)` is consistent with `$(echo $PWD)` (eagerly evaluated)
-- Expression literals `^[42 + f(x)]` are consistent with `$[42 + f(x)]`
-  (eagerly evaluated).  So the `age > 10` has to use a different sigil pair,
-  which is `^{age > 10}`.
-- Most users won't see these literal forms very much.  They're more useful for
-  testing and frameworks rather than simple scripts/applications.
+There is consistency in other directions:
+
+- `^(echo $PWD)` is consistent with shell's eagerly evaluated `$(echo $PWD)`.
+- `^[42 + f(x)]` is consistent with expression sub `$[42 + f(x)]`.
+
+Most users won't see these literal forms very much.  They're more useful for
+testing and frameworks rather than simple scripts/applications.
 
 ## In `read :x`, The Colon is a "Pseudo-Sigil"
 

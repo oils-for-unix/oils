@@ -122,7 +122,18 @@ The `_` keyword evaluates an expression and throws away the result:
 
 Think of it as a shortcut for `_ = expr` (throwaway assignment).
 
-#### oil-block
+#### typed-arg
+
+Internal commands (procs and builtins) accept typed arguments.
+
+    json write (myobj)
+
+TODO: Implement these
+
+    eval (myblock)
+    assert (x > 0)
+
+#### block-arg
 
 Blocks can be passed to builtins (and procs eventually):
 

@@ -38,10 +38,11 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 </h2>
 
 ```oil-help-topics
-                  proc          proc p (x, y, @rest, &block) { echo hi }
+                  proc          proc p (x, :out, @rest, e Expr, b Block) { c }
                   equal =       = 1 + 2*3
                   underscore _  _ mylist.append(42)
-                  oil-block     cd /tmp { echo $PWD }
+                  typed-arg     json write (x)
+                  block-arg     cd /tmp { echo $PWD }
 ```
 
 <h2 id="expr-lang">
@@ -59,7 +60,6 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   dict-literal  {name: 'bob'}
                   block-literal ^(echo $PWD)
                   X expr-lit    ^[1 + 2*3]
-                  X arglist     ^{'foo', split=true}
   [Operators]     concat        s1 ++ s2,  L1 ++ L2
                   oil-equals    ===   !==   ~==   is, is not, in, not in
                   oil-compare   <  <=  >  >=  (numbers only)
