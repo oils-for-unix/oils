@@ -93,22 +93,19 @@ For example, command substitution is available in both:
     echo $(hostname)      # command mode
     var x = $(hostname)   # expression mode
 
-Array literals only make sense in expression mode:
+So are raw and C-style string literals:
+
+    echo $'foo\n'  # the bash-compatible way to do it
+    var s = $'foo\n'
+
+    echo r'c:\Program Files\'
+    var raw = r'c:\Program Files\'
+
+But array literals only make sense in expression mode:
 
     var myarray = %(one two three)
 
     echo one two three  # no array literal needed
-
-The `$''` syntax for C-style strings makes sense in command mode:
-
-    echo $'foo\n'  # the bash-compatible way to do it
-
-but in expression mode, we prefer `r''` and `c''`:
-
-    var raw      = r'c:\Program Files\'
-    var newlines = c'foo\n'
-
-    var newlines = $'foo\n'  # also accepted
 
 A sigil pair often changes the **lexer mode** to parse what's inside.
 
