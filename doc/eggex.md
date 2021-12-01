@@ -360,7 +360,7 @@ Splitting:
 
 No:
 
-    / c'foo\tbar' /   # Match 7 characters including a tab, but it's hard to read
+    / $'foo\tbar' /   # Match 7 characters including a tab, but it's hard to read
     / r'foo\tbar' /   # The string must contain 8 chars including '\' and 't'
 
 Yes:
