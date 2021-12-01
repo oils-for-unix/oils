@@ -70,7 +70,7 @@ Blocks look different in command vs expression mode:
 
 So do lazily evaluated arg lists (not yet implemented):
 
-    myproc | filter [age > 10]  # command mode [ ]
+    myproc | filter (age > 10)  # command mode ( )
     var myexpr = ^{age > 10}    # expression mode ^{ }
 
 It would have been nicer if they were consistent, but:

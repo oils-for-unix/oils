@@ -358,9 +358,11 @@ If it's neither, then it's assumed to be an external command:
 
     ls -l /tmp           # The external 'ls' command
 
-<!-- 
-TODO: We also need lazy arg lists: qtt | where (size > 10)
--->
+Commands accept traditional string arguments, as well as typed arguments in
+parentheses:
+
+    # 'write' is a string arg; 'x' is a typed expression arg
+    json write (x)
 
 You can **redirect** `stdin` and `stdout` of simple commands:
 
@@ -561,10 +563,10 @@ Some builtins take blocks as arguments:
       mycopy bean /bin
     }
 
-For more details, see [Procs, Blocks, and Funcs](proc-block-func.html)
-(under construction).
+Blocks are a special case of typed arguments.  For more details, see [Procs,
+Blocks, and Funcs](proc-block-func.html) (under construction).
 
-TODO: User-defined procs can also take blocks.
+TODO: User-defined procs can also take typed args and blocks.
 
 ### Builtin Commands
 
