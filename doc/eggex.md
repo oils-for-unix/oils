@@ -226,11 +226,11 @@ See note below: POSIX ERE has no non-capturing groups.
 
 Capture with `<pat>`:
 
-    < d+ >        # Becomes M.group(1)
+    < d+ >        # Becomes _match(1)
 
 Add a variable after `:` for named capture:
 
-    < d+ : myvar>  # Becomes M.group('myvar')
+    < d+ : myvar>  # Becomes _match('myvar')
 
 ### Character Class Literals Use `[]`
 
@@ -323,13 +323,13 @@ You can spread regexes over multiple lines and add comments:
 Testing and extracting matches:
 
     if (mystr ~ pat) {
-      echo ${M.group(1)}
+      echo $_match(1)
     }
 
 Iterative matching:
 
     for (mystr ~ pat) {  # Saves state like JavaScript's "sticky" bit
-      echo ${M.group(1)}
+      echo $_match(1)
     }
 
 Slurping all like Python:
