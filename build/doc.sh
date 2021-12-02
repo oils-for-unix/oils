@@ -332,8 +332,9 @@ help-cards() {
 
 tour() {
   ### Build the Oil Language Tour and execute code
+  local name=${1:-oil-language-tour}
 
-  split-and-render doc/oil-language-tour.md
+  split-and-render doc/$name.md
 
   local work_dir=$REPO_ROOT/_tmp/code-blocks
 
@@ -346,12 +347,12 @@ log() { echo "$@" 1>&2; }
 EOF
 
   pushd $work_dir
-  $REPO_ROOT/bin/oil oil-language-tour.txt
+  $REPO_ROOT/bin/oil $name.txt
   popd
 
   # My own dev tools
   if test -d ~/vm-shared; then
-    local path=_release/VERSION/doc/oil-language-tour.html 
+    local path=_release/VERSION/doc/$name.html
     cp -v $path ~/vm-shared/$path
   fi
 }

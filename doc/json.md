@@ -1,14 +1,12 @@
+---
+default_highlighter: oil-sh
+---
+
 JSON in Oil
 ===========
 
 [JSON](https://www.json.org/) is used by both web services and command line
 tools, so a modern Unix shell needs support for it.
-
-This page describes Oil's JSON support as of December 2019 ([version
-0.7.pre8](/release/0.7.pre8)).  It will likely expand over time, depending on
-[user feedback](https://github.com/oilshell/oil/wiki/Where-To-Send-Feedback).
-
-(Note: the `help` builtin will provide shorter, reference-style documentation.)
 
 <!-- cmark.py expands this -->
 <div id="toc">
@@ -63,50 +61,46 @@ Notes:
 
 Usage:
 
-    json write FLAGS* VAR_NAME+
+    json write FLAGS* (EXPR)
     
+    EXPR is an expression that evaluates to a serializable object.
+
     Flags:
       --indent=2     Indentation size
       --pretty=true  Whether to add newlines for readability
 
 Examples:
 
-```
-# Create a Dict.  As in JavaScript, keys don't require quotes.
-$ var d = {name: "bob", age: 42}
+    # Create a Dict.  As in JavaScript, keys don't require quotes.
+    $ var d = {name: "bob", age: 42}
 
-# Print the Dict as JSON.  By default, newlines are added for readability, with
-# 2 space indentation.
-$ json write :d
-{
-  "name": "bob",
-  "count": 42
-}
+    # Print the Dict as JSON.  By default, newlines are added for readability,
+    # with 2 space indentation.
+    $ json write (d)
+    {
+      "name": "bob",
+      "count": 42
+    }
 
-$ json write --indent 4 :d
-{
-    "name": "bob",
-    "count": 42
-}
+    $ json write --indent 4 (d)
+    {
+        "name": "bob",
+        "count": 42
+    }
 
-$ json write --pretty=F :d
-{"name": "bob", "count": 42}
-```
+    $ json write --pretty=F (d)
+    {"name": "bob", "count": 42}
 
 Notes:
 
-- `-indent` is ignored if `-pretty` is false.
-- The `json` builtin is part of the Oil language, so it uses Oil's **flag
-  syntax**, which is based on Go's.  In particular, boolean flags are written
-  `-pretty=F` rather than `-pretty F`, but you can write `-indent=4` or
-  `-indent 4`.
+- `--indent` is ignored if `--pretty` is false.
 
 ## Other Data Structures Can Be Printed as JSON
 
 Oil arrays and shell arrays both serialize to a list of strings:
 
     $ declare sharray=( foo.txt *.py )
-    $ json write :sharray
+    $ json write (sharray)
     [  
        "foo.txt",
        "one.py",
@@ -114,7 +108,7 @@ Oil arrays and shell arrays both serialize to a list of strings:
     ]
 
     $ var oilarray = %( foo.txt *.py )
-    $ json write :oilarray
+    $ json write (oilarray)
     [  
        "foo.txt",
        "one.py",
@@ -124,7 +118,7 @@ Oil arrays and shell arrays both serialize to a list of strings:
 Bash-style associative arrays are printed like `Dict[Str, Str]`:
 
     $ declare -A assoc=(["key"]=value)
-    $ json write :assoc
+    $ json write (assoc)
     {
       "key": "value"
     }

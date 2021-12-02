@@ -338,23 +338,25 @@ Help](oil-help-topics.html) is a better reference for users.
     @(seq 3)     Split Command Sub  Command        cmd,expr
 
     ^(echo hi)   Block Literal      Command        expr
-    { echo hi }  Block Literal      Command        cmd
+    { echo hi }  Block Literal      Command        cmd          shell requires ;
 
     >(sort -n)   Process Sub        Command        cmd          rare
     <(echo hi)   Process Sub        Command        cmd          rare
 
     %(array lit) Array Literal      Words          expr
 
-    ${.echo hi}  Builtin Sub        Words          cmd,expr     Not implemented
-    @{.echo hi}  Builtin Sub        Words          cmd,expr     Not implemented
+    ${.echo hi}  Builtin Sub        Words          cmd,expr     not implemented
+    @{.echo hi}  Builtin Sub        Words          cmd,expr     not implemented
 
     $[42 + a[i]] Stringify Expr     Expression     cmd
-    ^[42 + a[i]] Lazy Expression    Expression     expr         Not implemented
+    ^[42 + a[i]] Lazy Expression    Expression     expr         not implemented
+
+    ${x %2d}     Var Sub            Formatting     cmd,expr     not implemented
 
     json (x)     Typed Arg List     Argument       cmd
                                     Expressions
 
-    $/d+/        Inline Eggex       Eggex Expr     cmd          Not implemented
+    $/d+/        Inline Eggex       Eggex Expr     cmd          not implemented
 
     r'' r""      Raw String         String         expr         cmd when shopt
                  Literal                                        parse_raw_string
@@ -364,7 +366,9 @@ Help](oil-help-topics.html) is a better reference for users.
 
     #'a'         Char Literal       UTF-8 char     expr
 
-    ${x %.3f}    Shell Var Sub      Shell          cmd,expr     mostly deprecated
+Discouraged / Deprecated
+
+    ${x%%pre}    Shell Var Sub      Shell          cmd,expr     mostly deprecated
     $((1+2))     Shell Arith Sub    Shell Arith    cmd          deprecated
 
     @(*.py|*.sh) Extended Glob      Glob Words     cmd          deprecated
