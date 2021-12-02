@@ -332,7 +332,7 @@ This table is mainly for Oil language designers.  Many constructs aren't
 implemented, but we reserve space for them.  The [Oil
 Help](oil-help-topics.html) is a better reference for users.
 
-    Example      Description        What's Inside  Lexer Modes  Notes
+    Example      Description        What's Inside  Where Valid  Notes
 
     $(hostname)  Command Sub        Command        cmd,expr
     @(seq 3)     Split Command Sub  Command        cmd,expr
@@ -349,7 +349,7 @@ Help](oil-help-topics.html) is a better reference for users.
     @{.echo hi}  Builtin Sub        Words          cmd,expr     Not implemented
 
     $[42 + a[i]] Stringify Expr     Expression     cmd
-    ^[1 + 2]     Lazy Expression    Expression     expr         Not implemented
+    ^[42 + a[i]] Lazy Expression    Expression     expr         Not implemented
 
     json (x)     Typed Arg List     Argument       cmd
                                     Expressions
@@ -367,20 +367,22 @@ Help](oil-help-topics.html) is a better reference for users.
     ${x %.3f}    Shell Var Sub      Shell          cmd,expr     mostly deprecated
     $((1+2))     Shell Arith Sub    Shell Arith    cmd          deprecated
 
-    ,(*.py|*.sh) Extended Glob      Glob Words     cmd          deprecated
+    @(*.py|*.sh) Extended Glob      Glob Words     cmd          deprecated
     +(...)
     *(...)
     ?(...)
     !(...)
 
-Unused sigil pairs:
+    ,(*.py|*.sh) Extended Glob      Glob Words     cmd          break conflict
+                                                                with split command
+                                                                sub
 
-    ~()   -()   =()   ;()   /()  
-
-Lexer Modes:
+Key to "where valid" column:
 
 - `cmd` means `lex_mode_e.ShCommand`
 - `expr` means `lex_mode_e.Expr`
 
+Some unused sigil pairs:
 
+    ~()   -()   =()   ;()   /()  
 
