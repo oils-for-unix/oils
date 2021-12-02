@@ -356,13 +356,13 @@ Help](oil-help-topics.html) is a better reference for users.
 
     $/d+/        Inline Eggex       Eggex Expr     cmd          Not implemented
 
-    #'a'         Char Literal       UTF-8 char     expr
-
     r'' r""      Raw String         String         expr         cmd when shopt
                  Literal                                        parse_raw_string
 
     $''          C-escaped String   String         cmd,expr
                  Literal
+
+    #'a'         Char Literal       UTF-8 char     expr
 
     ${x %.3f}    Shell Var Sub      Shell          cmd,expr     mostly deprecated
     $((1+2))     Shell Arith Sub    Shell Arith    cmd          deprecated
@@ -384,5 +384,5 @@ Key to "where valid" column:
 
 Some unused sigil pairs:
 
-    ~()   -()   =()   ;()   /()  
+    ~()   -()   =()   ;()   /()   &()   _()   .()
 
