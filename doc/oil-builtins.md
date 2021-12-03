@@ -6,6 +6,9 @@ default_highlighter: oil-sh
 Oil Builtins
 ============
 
+<!-- TODO: This doc could be an alternative categorization to the auto-genrated
+     builtin-index.md ? -->
+
 This is an **overview** of [shell builtins]($xref:shell-builtin) that are
 unique to Oil.  A full description of each builtin will be available in the
 [help pages](help-index.html).
@@ -120,32 +123,11 @@ When a block is passed:
 
 ### argparse
 
-## Builtin Flag Syntax
-
-TODO: Implement this, or eliminate it?
-
-Oil's builtins accept long flags like `--verbose` and short flags like `-v`.
-
-They behave like the popular GNU utilities on Linux distros, except that
-`-long` (single hyphen) means the same thing as `--long`.  It's not a shortcut
-for `-l -o -n -g` or `-l=ong`.  (This rule is consistent with the [Go flags
-  package][goflags].)
-
-[goflags]: https://golang.org/pkg/flag/
-
-In addition, all of these are equivalent:
-
-- `-sep x`
-- `-sep=x`
-- `--sep x`
-- `--sep=x`
-
-(Trivia: Oil's flag syntax avoids the issue where `set -oo errexit nounset` is
-a confusing equivalent to `set -o errexit -o nounset`.)
-
 ## I/O Builtins
 
 See [IO Builtins](io-builtins.html).
+
+And [JSON](json.html).
 
 ## More
 

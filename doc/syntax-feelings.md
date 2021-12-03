@@ -334,6 +334,8 @@ Help](oil-help-topics.html) is a better reference for users.
 
     Example      Description        What's Inside  Where Valid  Notes
 
+    ${x %2d}     Var Sub            Formatting     cmd,expr     not implemented
+
     $(hostname)  Command Sub        Command        cmd,expr
     @(seq 3)     Split Command Sub  Command        cmd,expr
 
@@ -351,14 +353,12 @@ Help](oil-help-topics.html) is a better reference for users.
     $[42 + a[i]] Stringify Expr     Expression     cmd
     ^[42 + a[i]] Lazy Expression    Expression     expr         not implemented
 
-    ${x %2d}     Var Sub            Formatting     cmd,expr     not implemented
-
     json (x)     Typed Arg List     Argument       cmd
                                     Expressions
 
     $/d+/        Inline Eggex       Eggex Expr     cmd          not implemented
 
-    r'' r""      Raw String         String         expr         cmd when shopt
+    r''          Raw String         String         expr         cmd when shopt
                  Literal                                        parse_raw_string
 
     $''          C-escaped String   String         cmd,expr
@@ -388,5 +388,5 @@ Key to "where valid" column:
 
 Some unused sigil pairs:
 
-    ~()   -()   =()   ;()   /()   &()   _()   .()
+    ~()   -()   =()   /()   _()   .()
 
