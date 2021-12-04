@@ -136,7 +136,7 @@ These are discussed in the next two sections, but here's a summary.
 
     read --line --qsn :myline     # read a single line
 
-That is, take advantage of the the invariants that the [IO
+That is, take advantage of the invariants that the [IO
 builtins](io-builtins.html) respect.  (doc in progress)
 
 <!--
