@@ -27,7 +27,7 @@ contain newlines, but not `NUL` (`\0`).
 
 ### NUL as delimiter: `read -0`
 
-So naturally we also support the the format that `find -print0` emits, and
+So naturally we also support the format that `find -print0` emits, and
 `xargs -0` consumes.
 
 ## Solutions That Can Express Arbitrary Bytes

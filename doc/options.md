@@ -100,7 +100,7 @@ For compatibility, these styles works in Oil:
 
 ### Setting Options Via Command Line Flags
 
-You typically invoke the `shopt` builtin at the the top of a script, but you
+You typically invoke the `shopt` builtin at the top of a script, but you
 can also set options at the command line:
 
     osh -O errexit -c 'shopt -p -o'  # turn on Bourne option
