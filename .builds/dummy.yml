@@ -12,7 +12,7 @@ packages:
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 tasks:
-  - docker-test: |
+  - container-test: |
       # apparently docker.io is the namespace for hub.docker.com
       podman run docker.io/oilshell/toil-dummy
   - dummy: |

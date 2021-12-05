@@ -8,7 +8,11 @@ set -o pipefail
 set -o errexit
 
 build() {
-  sudo docker build --tag oilshell/toil-dummy --file dummy.Dockerfile .
+  # Uh this is not the default on Linux!
+  # http://jpetazzo.github.io/2021/11/30/docker-build-container-images-antipatterns/
+  #
+  # It is more parallel and has colored output.
+  sudo DOCKER_BUILDKIT=1 docker build --tag oilshell/toil-dummy --file dummy.Dockerfile .
 }
 
 push() {
