@@ -222,8 +222,8 @@ class UnsafeArith(object):
 
     return lval
 
-  def ParseVarRef(self, ref_str, span_id):
-    # type: (str, int) -> braced_var_sub
+  def ParseVarRef(self, ref_str, token):
+    # type: (str, Token) -> braced_var_sub
     """Parse and evaluate value for ${!ref}
 
     This supports:
@@ -241,51 +241,25 @@ class UnsafeArith(object):
     _ResolveNameOrRef currently gives you a 'cell'.  So it might not support
     lvalue.Indexed?
     """
+    static_ref_spid = token.span_id
+
     arena = self.parse_ctx.arena
     line_reader = reader.StringLineReader(ref_str, arena)
     lexer = self.parse_ctx.MakeLexer(line_reader)
     w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
     # don't know var name
-    with alloc.ctx_Location(arena, source.Variable(None, span_id)):
+    with alloc.ctx_Location(arena, source.Variable(token.val, static_ref_spid)):
       try:
         bvs_part = w_parser.ParseVarRef()
       except error.Parse as e:
         ui.PrettyPrintError(e, arena)  # show parse error
         # Exception for builtins 'unset' and 'printf'
-        e_die('Invalid var ref', span_id=span_id)
-
-    #log('ParseVarRef %s', bvs_part)
+        e_die('Invalid var ref', span_id=static_ref_spid)
 
     # Hack: There is no ${ on the "virtual" braced_var_sub, but we can add one
     # for error messages
-    bvs_part.spids.append(span_id)
+    bvs_part.spids.append(static_ref_spid)
     return bvs_part
-
-  if 0:
-    # SKETCH of nameref support for a[i] and a[@]
-    def ParseNameref(self, ref_str, span_id):
-      # type: (str, int) -> braced_var_sub
-      """Parse and evaluate value for declare -n
-
-      This could also be a flag to w_parser.ParseVarRef()
-      """
-
-    def GetNameref(self, bvs_part):
-      # type: (braced_var_sub) -> value_t
-      """
-      state.Mem can call this wrapper?
-      Base this on _VarRefValue() in osh/word_eval.py (which takes many params)
-      It also needs a ref_trail for cycle detection.
-      """
-      pass
-
-    def SetValue(self, lval, val):
-      # type: (lvalue_t, value_t) -> None
-      """
-      state.Mem can call this wrapper?
-      Also needs a ref_trail for cycle detection.
-      """
-      pass
 
 
 class ArithEvaluator(object):

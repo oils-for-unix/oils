@@ -3,7 +3,7 @@
 # This idiom discussed on
 # https://github.com/NixOS/nixpkgs/pull/147629
 
-shopt -s eval_unsafe_arith  # required for OSH
+shopt -s eval_unsafe_arith 2>/dev/null  # required for OSH
 
 show() {
   echo show
@@ -83,6 +83,7 @@ show
 set -u
 shopt -s eval_unsafe_arith || true 2>/dev/null
 
+#preHooks=()
 hookSlice="preHooks[@]"
 
 argv.py ${!hookSlice+"${!hookSlice}"}

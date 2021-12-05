@@ -143,10 +143,22 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
 
     elif case(source_e.Variable):
       src = cast(source__Variable, UP_src)
-      var_name = src.var_name if src.var_name is not None else '?'
-      s = '[ var %s ]' %  var_name
-      # TODO: could point to outer_source if we knew where the variable was
-      # assigned
+
+      if src.var_name is None:
+        var_name = '?'
+      else:
+        var_name = repr(src.var_name) 
+
+      if src.span_id == runtime.NO_SPID:
+        where = '?'
+      else:
+        span = arena.GetLineSpan(src.span_id)
+        line_num = arena.GetLineNumber(span.line_id)
+        outer_source = GetLineSourceString(arena, span.line_id,
+                                           quote_filename=quote_filename)
+        where = 'line %d of %s' % (line_num, outer_source)
+
+      s = '[ var %s at %s ]' % (var_name, where)
 
     elif case(source_e.Alias):
       src = cast(source__Alias, UP_src)

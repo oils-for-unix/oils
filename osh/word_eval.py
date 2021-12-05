@@ -715,7 +715,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
-        bvs_part = self.unsafe_arith.ParseVarRef(val.s, token.span_id)
+        bvs_part = self.unsafe_arith.ParseVarRef(val.s, token)
         if not self.exec_opts.eval_unsafe_arith() and bvs_part.bracket_op:
           e_die('a[i] not allowed without shopt -s eval_unsafe_arith', token=token)
         return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)

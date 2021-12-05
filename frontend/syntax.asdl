@@ -62,7 +62,7 @@ module syntax
 
     -- code parsed from the value of a variable
     -- used for $PS1 $PROMPT_COMMAND eval_unsafe_arith
-  | Variable(string var_name, int spid)
+  | Variable(string var_name, int span_id)
 
     -- alias expansion (location of first word)
   | Alias(string argv0, int argv0_spid)
