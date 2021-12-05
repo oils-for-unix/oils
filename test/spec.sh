@@ -1013,7 +1013,7 @@ oil-user-feedback() {
 }
 
 nix-idioms() {
-  sh-spec spec/nix-idioms.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/nix-idioms.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
