@@ -16,6 +16,7 @@ push() {
 }
 
 smoke() {
+  sudo docker run oilshell/toil-dummy
   sudo docker run oilshell/toil-dummy python2 -c 'print("python2")'
 }
 

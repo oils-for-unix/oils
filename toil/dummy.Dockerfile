@@ -5,4 +5,4 @@ FROM debian
 # zip: for publishing toil
 RUN apt update && apt install -y gcc git zip python2
 
-CMD ["sh", "-c", "echo hi"]
+CMD ["sh", "-c", "echo 'oilshell/toil-dummy'"]

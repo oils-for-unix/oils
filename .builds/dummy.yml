@@ -3,9 +3,12 @@ packages:
   # for utf-8
   - locales
   - zip
+  - docker.io  # Debian Buster name for Docker package 
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 tasks:
+  - docker-test: |
+      sudo docker run oilshell/toil-dummy
   - dummy: |
       cd oil
       services/toil-worker.sh run-dummy
