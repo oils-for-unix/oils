@@ -1012,14 +1012,19 @@ oil-user-feedback() {
     $OIL_LIST "$@"
 }
 
+nix-idioms() {
+  sh-spec spec/nix-idioms.test.sh --osh-failures-allowed 0 \
+    $BASH $OSH_LIST "$@"
+}
+
 ble-idioms() {
   sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 0 \
-          $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
+    $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 ble-features() {
   sh-spec spec/ble-features.test.sh --osh-failures-allowed 0 \
-          $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
+    $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
 }
 
 toysh() {
