@@ -309,7 +309,8 @@ make-job-wwz() {
     index.html _tmp/toil _tmp/spec _tmp/syscall _tmp/benchmark-data \
     mycpp/_ninja/*.{html,txt,tsv} mycpp/_ninja/{tasks,gen} \
     web/{base,spec-code,spec-tests,spec-cpp}.css web/ajax.js \
-    web/table/table-sort.{css,js}
+    web/table/table-sort.{css,js} \
+    _release/oil.tar
 }
 
 deploy-job-results() {
