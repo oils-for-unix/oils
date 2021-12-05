@@ -3,7 +3,8 @@ packages:
   - zip
   - python2-dev  # for posix_.so, etc.
   - libreadline-dev  # for build/dev.sh minimal
-  - r-base-core
+  - r-base-core  # for 'r-libs'
+  - python3  # for 'py3-parse'
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 tasks:

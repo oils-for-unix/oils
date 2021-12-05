@@ -67,6 +67,7 @@ dummy-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
+dump-distro   services/toil-worker.sh dump-distro   -
 dump-env      services/toil-worker.sh dump-env      -
 dump-timezone services/toil-worker.sh dump-timezone -
 dump-locale   services/toil-worker.sh dump-locale   -

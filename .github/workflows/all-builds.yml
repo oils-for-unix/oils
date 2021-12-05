@@ -5,6 +5,7 @@ on: [push]
 jobs:
   dummy:
     runs-on: ubuntu-latest
+    container: oilshell/toil-dummy
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
