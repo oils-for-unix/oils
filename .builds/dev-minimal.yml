@@ -1,4 +1,4 @@
-image: debian/buster
+image: debian/bullseye
 # doesn't have python2-dev!
 #image: ubuntu/18.04
 

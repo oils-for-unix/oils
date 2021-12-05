@@ -162,13 +162,13 @@ tarball-deps      devtools/release.sh tarball-build-deps -
 spec-deps         test/spec-bin.sh all-steps             -
 dev-all           build/dev.sh all                       -
 yajl              build/dev.sh yajl-release              -
-tour              build/doc.sh tour                      -
+tour              build/doc.sh tour                      _release/VERSION/doc/oil-language-tour.html
 all-markdown      build/doc.sh all-markdown              -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec.sh osh-travis                _tmp/spec/survey/osh.html
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
-build-tarball     build/test.sh oil-tar                  -
+test-tarball      build/test.sh oil-tar                  -
 EOF
 }
 

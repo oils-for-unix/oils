@@ -1,4 +1,4 @@
-image: debian/buster
+image: debian/bullseye
 packages:
   - zip
   - python2-dev  # for posix_.so, etc.

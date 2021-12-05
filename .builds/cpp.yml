@@ -1,4 +1,4 @@
-image: debian/buster
+image: debian/bullseye
 
 packages:
   # for toil
