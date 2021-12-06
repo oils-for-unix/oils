@@ -3,9 +3,9 @@
 name: oil
 on: [push]
 jobs:
-  dummy:
+  dummy_orig:
     runs-on: ubuntu-latest
-    container: oilshell/toil-dummy
+    # container: oilshell/toil-dummy
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -16,6 +16,50 @@ jobs:
         run: |
           cd $REPO_ROOT
           services/toil-worker.sh run-dummy
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          cd $REPO_ROOT
+          services/github-actions.sh publish-html
+
+  dummy:
+    runs-on: ubuntu-20.04
+    # container: oilshell/toil-dummy
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      - name: install
+        run: |
+          # It's already installed
+          # sudo apt-get install -y podman
+
+          # Hack for Docker.  We write this file from inside the container and
+          # outside.
+          dir=$REPO_ROOT/_tmp/toil
+          mkdir -p $dir
+          sudo chmod --verbose 777 $dir
+          ls -l -d $dir
+
+      - name: dummy
+        run: |
+          # Podman gets rid of _tmp/toil permission error.
+          # We write into that directory afterward and then deploy the whole
+          # thing.
+          docker=docker
+          #docker=podman
+
+          time $docker pull docker.io/oilshell/toil-dummy
+          # apparently docker.io is the namespace for hub.docker.com
+          $docker run \
+              --mount "type=bind,source=$REPO_ROOT,target=/app" \
+              docker.io/oilshell/toil-dummy \
+              sh -c 'cd /app; services/toil-worker.sh run-dummy'
 
       - name: publish-html
         env:

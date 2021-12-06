@@ -322,6 +322,11 @@ deploy-job-results() {
 
   make-job-wwz $job_id
 
+  # Debug permissions.  When using docker rather than podman, these dirs can be
+  # owned by root and we can't write into them.
+  ls -l -d _tmp/toil
+  ls -l _tmp/toil
+
   date +%s > _tmp/toil/task-deploy-start-time.txt
 
   services/env_to_json.py _tmp/toil "$@" > $job_id.json
