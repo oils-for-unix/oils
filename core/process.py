@@ -1462,6 +1462,9 @@ class Waiter(object):
       if term_sig == signal_.SIGINT:
         print('')
 
+      if pid == self.job_state.last_stopped_pid:
+        self.job_state.last_stopped_pid = -1
+
       proc.WhenDone(pid, status)
 
     elif WIFEXITED(status):
