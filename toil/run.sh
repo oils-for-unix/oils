@@ -24,4 +24,11 @@ smoke() {
   sudo docker run oilshell/toil-dummy python2 -c 'print("python2")'
 }
 
+mount-test() {
+  # mount Oil directory as /app
+  sudo docker run \
+    --mount "type=bind,source=$PWD/../,target=/app" \
+    oilshell/toil-dummy sh -c 'ls -l /app'
+}
+
 "$@"

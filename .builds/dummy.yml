@@ -16,8 +16,11 @@ tasks:
       # apparently docker.io is the namespace for hub.docker.com
       podman run docker.io/oilshell/toil-dummy
   - dummy: |
-      cd oil
-      services/toil-worker.sh run-dummy
+      podman run \
+          --mount "type=bind,source=$PWD/oil,target=/app" \
+          docker.io/oilshell/toil-dummy \
+          sh -c 'cd /app; services/toil-worker.sh run-dummy'
+  # Relies on SSH key, so do it outside the container
   - publish-html: |
       cd oil
       services/sourcehut.sh publish-html-assuming-ssh-key
