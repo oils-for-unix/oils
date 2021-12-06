@@ -1,0 +1,15 @@
+image: debian/bullseye
+packages:
+  # for utf-8
+  - locales
+  - zip
+  - python2  # needed for bullseye, but not buster
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+tasks:
+  - dummy: |
+      cd oil
+      services/toil-worker.sh run-dummy
+  - publish-html: |
+      cd oil
+      services/sourcehut.sh publish-html-assuming-ssh-key
