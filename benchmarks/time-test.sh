@@ -176,7 +176,7 @@ test-rusage() {
   # Blow up memory size for testing
   local py='a=[42]*500000; print "python"'
 
-  time-tool --tsv -o $out --rusage -- python -c "$py"
+  time-tool --tsv -o $out --rusage -- python2 -c "$py"
   cat $out | count-lines-and-cols 1 5
 
   #time-tool --tsv -o $out --rusage -- bin/osh -c 'echo osh'

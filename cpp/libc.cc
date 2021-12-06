@@ -2,6 +2,7 @@
 
 #include "libc.h"
 #include <glob.h>
+#include <locale.h>
 #include <regex.h>
 
 namespace libc {

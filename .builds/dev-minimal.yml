@@ -17,7 +17,8 @@ packages:
   - zsh
 
   - python-setuptools  # travis doesn't need this?
-  - python-pip
+  # Removed in Debian bullseye
+  # - python-pip
 
   # Python3 for mypy
   - python3-setuptools
