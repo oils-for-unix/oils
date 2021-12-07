@@ -35,7 +35,7 @@ This README is at the root of the [git repo][git-repo].
 
 [Contributing]: https://github.com/oilshell/oil/wiki/Contributing
 [oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
-[blog]: http://www.oilshell.org/blog/
+[blog]: https://www.oilshell.org/blog/
 
 ### Quick Start on Linux
 
@@ -234,7 +234,7 @@ This is very different than the **developer build** of Oil.
 ## More info
 
 * [The blog][blog] has updates on the project status.
-* [Oil Home Page](http://www.oilshell.org/)
+* [Oil Home Page](https://www.oilshell.org/)
 * [oilshell.zulipchat.com][] is for any kind of discussion
 * Subscribe for updates:
   * [/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/)
