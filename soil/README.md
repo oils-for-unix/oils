@@ -3,6 +3,10 @@ Soil
 
 Continuous testing on many platforms.
 
+## Server Setup
+
+    soil/web-init.sh deploy  # deploy static assets and tools
+
 ## Directory structure
 
     soil/

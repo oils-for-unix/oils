@@ -58,37 +58,6 @@ cleanup-jobs-index() {
 
 
 #
-# Release
-#
-
-readonly USER='travis_admin'
-readonly HOST='travis-ci.oilshell.org'
-
-soil-web-manifest() {
-  PYTHONPATH=. /usr/bin/env python2 \
-    build/app_deps.py py-manifest soil.web \
-  | grep oilshell/oil  # only stuff in the repo
-
-  # Add a shell script
-  echo $PWD/soil/web.sh soil/web.sh
-  echo $PWD/soil/common.sh soil/common.sh
-}
-
-# Also used in test/wild.sh
-multi() { ~/git/tree-tools/bin/multi "$@"; }
-
-deploy() {
-  soil-web-manifest | multi cp _tmp/soil-web
-  tree _tmp/soil-web
-  rsync --archive --verbose _tmp/soil-web/ $USER@$HOST:soil-web/
-}
-
-remote-test() {
-  ssh $USER@$HOST \
-    soil-web/soil/web.sh smoke-test '~/travis-ci.oilshell.org/jobs'
-}
-
-#
 # Dev Tools
 #
 

@@ -32,19 +32,6 @@ set -o errexit
 
 source soil/common.sh
 
-html-head() {
-  PYTHONPATH=. doctools/html_head.py "$@"
-}
-
-travis-html-head() {
-  local title="$1"
-
-  local base_url='../../web'
-
-  # These files live at the root.  Bust cache.
-  html-head --title "$title" "/web/base.css?cache=0" "/web/soil.css?cache=0" 
-}
-
 #
 # Key Generation: One Time Setup
 #
@@ -76,55 +63,6 @@ deploy-public-key() {
 
   # TODO: or append it?
   scp rsa_travis.pub travis_admin@travis-ci.oilshell.org:.ssh/authorized_keys
-}
-
-# Notes on setting up travis-ci.oilshell.org
-#
-# - Create the domain and user with dreamhost
-# - Set it up to serve out of .wwz files (in dreamhost repo)
-# - Deploy public key.  (Private key is encrypted and included in the repo.)
-
-#
-# Run inside the Travis build
-#
-
-readonly USER='travis_admin'
-readonly HOST='travis-ci.oilshell.org'
-
-home-page() {
-  ### travis-ci.oilshell.org home page
-
-  travis-html-head 'travis-ci.oilshell.org'
-  cat <<EOF
-  <body class="width40">
-    <p id="home-link">
-      <a href="//oilshell.org/">oilshell.org</a>
-    </p>
-
-    <h1>travis-ci.oilshell.org</h1>
-
-    <p>This server receives results from cloud build services.
-       See <a href="https://github.com/oilshell/oil/wiki/Toil">Toil</a> for details.
-    </p>
-
-    <ul>
-      <li>
-        <a href="srht-jobs/">sr.ht Jobs</a> from <a href="https://builds.sr.ht/~andyc">builds.sr.ht/~andyc</a>
-      </li>
-      <li>
-        <a href="github-jobs/">Github Actions Jobs</a> from <a href="https://github.com/oilshell/oil/actions/workflows/all-builds.yml">github.com/oilshell/oil/actions/workflows/all-builds.yml</a>
-      </li>
-      <li>
-        <a href="travis-jobs/">Travis Jobs</a> from <a href="https://app.travis-ci.com/github/oilshell/oil">app.travis-ci.com/oilshell/oil</a>
-      </li>
-      <li>
-        <a href="builds/">Builds</a> (not yet implemented)
-      </li>
-    </ul>
-
-  </body>
-</html>
-EOF
 }
 
 #
@@ -170,16 +108,6 @@ remote-cleanup-jobs-index() {
   local prefix=$1
   # clean it up for real!
   sshq soil-web/soil/web.sh cleanup-jobs-index "$prefix" false
-}
-
-init-server-html() {
-  ssh $USER@$HOST mkdir -v -p $HOST/{travis-jobs,srht-jobs,github-jobs,web,builds/src}
-
-  home-page > _tmp/index.html
-
-  # note: duplicating CSS
-  scp _tmp/index.html $USER@$HOST:$HOST/
-  scp web/{base,soil}.css $USER@$HOST:$HOST/web
 }
 
 decrypt-key() {
@@ -230,7 +158,7 @@ format-wwz-index() {
   local job_id=$1
   local tsv=${2:-_tmp/soil/INDEX.tsv}
 
-  travis-html-head "$job_id results"
+  soil-html-head "$job_id results"
 
   cat <<EOF
   <body class="width40">
@@ -344,7 +272,7 @@ deploy-job-results() {
 }
 
 format-jobs-index() {
-  travis-html-head 'Recent Jobs (raw data)'
+  soil-html-head 'Recent Jobs (raw data)'
 
   cat <<EOF
   <body class="width40">

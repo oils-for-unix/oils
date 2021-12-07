@@ -84,8 +84,8 @@ all() {
   wc -l devtools/release*.sh | sort --numeric
   echo
 
-  echo 'SERVICES'
-  wc -l services/*.{sh,py} | sort --numeric
+  echo 'SOIL'
+  wc -l soil/*.{sh,py} | sort --numeric
   echo
 
   echo 'BENCHMARKS'
