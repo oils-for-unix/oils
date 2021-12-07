@@ -23,4 +23,4 @@ RUN pip install --user flake8 typing
 # MyPy requires Python 3, but Oil requires Python 2.
 RUN pip3 install --user mypy
 
-CMD ["sh", "-c", "echo 'hello from oilshell/toil-dev-minimal buildkit'"]
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-dev-minimal buildkit'"]

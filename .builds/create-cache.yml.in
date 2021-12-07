@@ -27,10 +27,10 @@ secrets:
 tasks:
   - create-cache: |
       cd oil
-      services/toil-worker.sh run-create-cache
+      soil/worker.sh run-create-cache
   - publish-html: |
       cd oil
-      services/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key
 
 artifacts:
   # relative to home dir

@@ -31,7 +31,7 @@ secrets:
 tasks:
   - cpp: |
       cd oil
-      services/toil-worker.sh run-cpp
+      soil/worker.sh run-cpp
   - publish-html: |
       cd oil
-      services/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key

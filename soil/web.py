@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-toil_web.py
+soil/web.py
 
 Each job assigned an ID.  THe job generates:
 
@@ -154,7 +154,7 @@ def ParseJobs(stdin):
 
     meta['job-name'] = meta.get('job-name') or '?'  # Also TRAVIS_JOB_NAME
     meta['job_num'] = meta.get('TRAVIS_JOB_NUMBER') or meta.get('JOB_ID') or meta.get('GITHUB_RUN_ID') or '?'
-    # For Github, we construct $JOB_URL in services/github-actions.sh
+    # For Github, we construct $JOB_URL in soil/github-actions.sh
     meta['job_url'] = meta.get('TRAVIS_JOB_WEB_URL') or meta.get('JOB_URL') or '?'
 
     filename = os.path.basename(json_path)
@@ -252,7 +252,7 @@ def HtmlHead():
   # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
   # have Ctrl-F5)
   html_head.Write(sys.stdout, 'Recent Jobs',
-      css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
+      css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
 
 
 def main(argv):

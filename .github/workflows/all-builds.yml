@@ -15,7 +15,7 @@ jobs:
       - name: dummy
         run: |
           cd $REPO_ROOT
-          services/toil-worker.sh run-dummy
+          soil/worker.sh run-dummy
 
       - name: publish-html
         env:
@@ -23,7 +23,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          services/github-actions.sh publish-html
+          soil/github-actions.sh publish-html
 
   dummy:
     runs-on: ubuntu-20.04
@@ -59,7 +59,7 @@ jobs:
           $docker run \
               --mount "type=bind,source=$REPO_ROOT,target=/app/oil" \
               $image \
-              sh -c 'cd /app/oil; services/toil-worker.sh run-dummy'
+              sh -c 'cd /app/oil; soil/worker.sh run-dummy'
 
       - name: publish-html
         env:
@@ -67,7 +67,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          services/github-actions.sh publish-html
+          soil/github-actions.sh publish-html
 
   dev-minimal:
     # https://github.com/actions/virtual-environments
@@ -98,7 +98,7 @@ jobs:
           $docker run \
               --mount "type=bind,source=$REPO_ROOT,target=/app/oil" \
               $image \
-              sh -c 'cd /app/oil; services/toil-worker.sh run-dev-minimal'
+              sh -c 'cd /app/oil; soil/worker.sh run-dev-minimal'
 
       - name: publish-html
         env:
@@ -106,7 +106,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          services/github-actions.sh publish-html
+          soil/github-actions.sh publish-html
 
   other-tests:
     runs-on: ubuntu-18.04
@@ -126,7 +126,7 @@ jobs:
       - name: other-tests
         run: |
           cd $REPO_ROOT
-          services/toil-worker.sh run-other-tests
+          soil/worker.sh run-other-tests
 
       - name: publish-html
         env:
@@ -134,7 +134,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          services/github-actions.sh publish-html
+          soil/github-actions.sh publish-html
 
   ovm-tarball:
     runs-on: ubuntu-18.04
@@ -156,7 +156,7 @@ jobs:
       - name: ovm-tarball
         run: |
           cd $REPO_ROOT
-          services/toil-worker.sh run-ovm-tarball
+          soil/worker.sh run-ovm-tarball
 
       - name: publish-html
         env:
@@ -164,7 +164,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          services/github-actions.sh publish-html
+          soil/github-actions.sh publish-html
 
   cpp:
     runs-on: ubuntu-18.04
@@ -186,7 +186,7 @@ jobs:
       - name: cpp
         run: |
           cd $REPO_ROOT
-          services/toil-worker.sh run-cpp
+          soil/worker.sh run-cpp
 
       - name: publish-html
         env:
@@ -194,4 +194,4 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          services/github-actions.sh publish-html
+          soil/github-actions.sh publish-html

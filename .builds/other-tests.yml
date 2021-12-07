@@ -10,7 +10,7 @@ secrets:
 tasks:
   - other-tests: |
       cd oil
-      services/toil-worker.sh run-other-tests
+      soil/worker.sh run-other-tests
   - publish-html: |
       cd oil
-      services/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key

@@ -20,8 +20,8 @@ tasks:
       podman run \
           --mount "type=bind,source=$PWD/oil,target=/app/oil" \
           docker.io/oilshell/toil-dummy \
-          sh -c 'cd /app/oil; services/toil-worker.sh run-dummy'
+          sh -c 'cd /app/oil; soil/worker.sh run-dummy'
   # Relies on SSH key, so do it outside the container
   - publish-html: |
       cd oil
-      services/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key

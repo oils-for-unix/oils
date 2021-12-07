@@ -3,7 +3,7 @@
 # Automation for Travis CI.
 #
 # Usage:
-#   services/travis.sh <function name>
+#   soil/travis.sh <function name>
 #
 # This contains setup for travis-ci.oilshell.org (the server), as well as the
 # client, which is an ephemeral machine for each Travis run.
@@ -30,7 +30,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source services/common.sh
+source soil/common.sh
 
 html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"
@@ -42,7 +42,7 @@ travis-html-head() {
   local base_url='../../web'
 
   # These files live at the root.  Bust cache.
-  html-head --title "$title" "/web/base.css?cache=0" "/web/toil.css?cache=0" 
+  html-head --title "$title" "/web/base.css?cache=0" "/web/soil.css?cache=0" 
 }
 
 #
@@ -67,7 +67,7 @@ encrypt-private-key() {
   # 'travis login' first
 
   #travis encrypt-file ./rsa_travis --add
-  travis encrypt-file ./rsa_travis services/rsa_travis.enc --add
+  travis encrypt-file ./rsa_travis soil/rsa_travis.enc --add
 }
 
 deploy-public-key() {
@@ -129,17 +129,17 @@ EOF
 
 #
 # ~/
-#   toil-web/
+#   soil-web/
 #    doctools/
 #      html_head.py
-#    services/
-#      toil_web.py
-#      toil-web.sh
+#    soil/
+#      web.py
+#      web.sh
 #   travis-ci.oilshell.org/
 #     index.html
 #     web/
 #       base.css
-#       toil.css
+#       soil.css
 #     jobs/
 #       index.html   # rewritten on every job
 #       1581.1.wwz   # build 1581 has multiple jobs
@@ -163,13 +163,13 @@ sshq() {
 
 remote-rewrite-jobs-index() {
   local prefix=$1
-  sshq toil-web/services/toil-web.sh rewrite-jobs-index "$prefix"
+  sshq soil-web/soil/web.sh rewrite-jobs-index "$prefix"
 }
 
 remote-cleanup-jobs-index() {
   local prefix=$1
   # clean it up for real!
-  sshq toil-web/services/toil-web.sh cleanup-jobs-index "$prefix" false
+  sshq soil-web/soil/web.sh cleanup-jobs-index "$prefix" false
 }
 
 init-server-html() {
@@ -179,14 +179,14 @@ init-server-html() {
 
   # note: duplicating CSS
   scp _tmp/index.html $USER@$HOST:$HOST/
-  scp web/{base,toil}.css $USER@$HOST:$HOST/web
+  scp web/{base,soil}.css $USER@$HOST:$HOST/web
 }
 
 decrypt-key() {
   local out=$1
   openssl aes-256-cbc \
     -K $encrypted_a65247dffca0_key -iv $encrypted_a65247dffca0_iv \
-    -in services/rsa_travis.enc -out $out -d
+    -in soil/rsa_travis.enc -out $out -d
 }
 
 scp-results() {
@@ -228,7 +228,7 @@ format-wwz-index() {
   ### What's displayed in $ID.wwz/index.html
 
   local job_id=$1
-  local tsv=${2:-_tmp/toil/INDEX.tsv}
+  local tsv=${2:-_tmp/soil/INDEX.tsv}
 
   travis-html-head "$job_id results"
 
@@ -253,7 +253,7 @@ format-wwz-index() {
 EOF
   cat $tsv | while read status elapsed task script action result_html; do
     echo "<tr>"
-    echo "  <td><code><a href="_tmp/toil/logs/$task.txt">$task</a></code></td>"
+    echo "  <td><code><a href="_tmp/soil/logs/$task.txt">$task</a></code></td>"
     printf -v elapsed_str '%.2f' $elapsed
     echo "  <td>$elapsed_str</td>"
 
@@ -288,7 +288,7 @@ EOF
 
 # TODO: Extract this into a proper test
 test-format-wwz-index() {
-  services/toil-worker.sh run-dummy
+  soil/worker.sh run-dummy
   format-wwz-index DUMMY_JOB_ID
 }
 
@@ -297,16 +297,16 @@ make-job-wwz() {
 
   local wwz=$job_id.wwz
 
-  local index=_tmp/toil/INDEX.tsv 
+  local index=_tmp/soil/INDEX.tsv 
   format-wwz-index $job_id $index > index.html
 
-  # _tmp/toil: Logs are in _tmp, see services/toil-worker.sh
+  # _tmp/soil: Logs are in _tmp, see soil/worker.sh
   # mycpp/ : leave out bin/ for now
   # web/ : spec test HTML references this.
-  #        Note that that index references /web/{base,toil}.css, outside the .wwz
+  #        Note that that index references /web/{base,soil}.css, outside the .wwz
   #        osh-summary.html uses table-sort.js and ajax.js
   zip -r $wwz \
-    index.html _tmp/toil _tmp/spec _tmp/syscall _tmp/benchmark-data \
+    index.html _tmp/soil _tmp/spec _tmp/syscall _tmp/benchmark-data \
     mycpp/_ninja/*.{html,txt,tsv} mycpp/_ninja/{tasks,gen} \
     web/{base,spec-code,spec-tests,spec-cpp}.css web/ajax.js \
     web/table/table-sort.{css,js} \
@@ -324,15 +324,15 @@ deploy-job-results() {
 
   # Debug permissions.  When using docker rather than podman, these dirs can be
   # owned by root and we can't write into them.
-  ls -l -d _tmp/toil
-  ls -l _tmp/toil
+  ls -l -d _tmp/soil
+  ls -l _tmp/soil
 
-  date +%s > _tmp/toil/task-deploy-start-time.txt
+  date +%s > _tmp/soil/task-deploy-start-time.txt
 
-  services/env_to_json.py _tmp/toil "$@" > $job_id.json
+  soil/env_to_json.py _tmp/soil "$@" > $job_id.json
 
   # So we don't have to unzip it
-  cp _tmp/toil/INDEX.tsv $job_id.tsv
+  cp _tmp/soil/INDEX.tsv $job_id.tsv
 
   # Copy wwz, tsv, json
   scp-results "$prefix" $job_id.*
@@ -430,8 +430,8 @@ publish-html-assuming-ssh-key() {
   # note: we could speed jobs up by doing this separately?
   remote-cleanup-jobs-index 'travis-'
 
-  # toil-worker.sh recorded this for us
-  return $(cat _tmp/toil/exit-status.txt)
+  # soil/worker.sh recorded this for us
+  return $(cat _tmp/soil/exit-status.txt)
 }
 
 publish-html() {

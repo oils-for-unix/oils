@@ -32,7 +32,7 @@ secrets:
 tasks:
   - ovm-tarball: |
       cd oil
-      services/toil-worker.sh run-ovm-tarball
+      soil/worker.sh run-ovm-tarball
   - publish-html: |
       cd oil
-      services/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key

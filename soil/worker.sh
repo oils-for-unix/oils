@@ -3,13 +3,13 @@
 # Run continuous build tasks.
 #
 # Usage:
-#   ./toil-worker.sh <function name>
+#   soil/worker.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-source services/common.sh
+source soil/common.sh
 
 time-tsv() {
   benchmarks/time_.py --tsv "$@"
@@ -67,11 +67,11 @@ dummy-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-distro   services/toil-worker.sh dump-distro   -
-dump-env      services/toil-worker.sh dump-env      -
-dump-timezone services/toil-worker.sh dump-timezone -
-dump-locale   services/toil-worker.sh dump-locale   -
-dump-hardware services/toil-worker.sh dump-hardware -
+dump-distro   soil/worker.sh dump-distro   -
+dump-env      soil/worker.sh dump-env      -
+dump-timezone soil/worker.sh dump-timezone -
+dump-locale   soil/worker.sh dump-locale   -
+dump-hardware soil/worker.sh dump-hardware -
 EOF
 }
 
@@ -106,7 +106,7 @@ cpp-tasks() {
 
   # consts_gen.py needs types_asdl.py
   cat <<EOF
-dump-versions   services/toil-worker.sh dump-versions -
+dump-versions   soil/worker.sh dump-versions -
 build-minimal   build/dev.sh minimal                  -
 cpp-unit-deps   test/cpp-unit.sh deps                 -
 cpp-unit-all    test/cpp-unit.sh all                  -
@@ -158,7 +158,7 @@ ovm-tarball-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-locale       services/toil-worker.sh dump-locale    -
+dump-locale       soil/worker.sh dump-locale    -
 tarball-deps      devtools/release.sh tarball-build-deps -
 spec-deps         test/spec-bin.sh all-steps             -
 dev-all           build/dev.sh all                       -
@@ -178,7 +178,7 @@ create-cache-tasks() {
   cat <<EOF
 tarball-deps      devtools/release.sh tarball-build-deps -
 spec-deps         test/spec-bin.sh all-steps             -
-compress-deps     services/sourcehut.sh compress-deps    -
+compress-deps     soil/sourcehut.sh compress-deps        -
 EOF
 }
 
@@ -199,7 +199,7 @@ EOF
 # Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
-dump-distro       services/toil-worker.sh dump-distro     -
+dump-distro       soil/worker.sh dump-distro     -
 opyc              test/opyc.sh travis                     -
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
@@ -212,7 +212,7 @@ EOF
 }
 
 run-tasks() {
-  ### Run the tasks on stdin and write _tmp/toil/INDEX.tsv.
+  ### Run the tasks on stdin and write _tmp/soil/INDEX.tsv.
   local out_dir=$1  # should already exist
 
   mkdir -p $out_dir/logs
@@ -277,10 +277,10 @@ run-tasks() {
 }
 
 allow-job-failure() {
-  # Note: toil_web.py will still count failures in INDEX.tsv.  This just
+  # Note: soil-web will still count failures in INDEX.tsv.  This just
   # prevents Travis from failing.
 
-  local out='_tmp/toil/exit-status.txt '
+  local out='_tmp/soil/exit-status.txt '
   log "*** ALLOWING JOB FAILURE by overwriting $out ***"
   echo 0 > $out
 }
@@ -330,7 +330,7 @@ save-metadata() {
 job-main() {
   local job_name=$1
 
-  local out_dir=_tmp/toil
+  local out_dir=_tmp/soil
   mkdir -p $out_dir
   save-metadata $job_name $out_dir
 
@@ -355,7 +355,7 @@ run-dev-all-nix() {
   ### Travis job dev-all-nix
 
   local job_name='dev-all-nix'
-  local out_dir=_tmp/toil
+  local out_dir=_tmp/soil
   mkdir -p $out_dir/metadata
   save-metadata $job_name $out_dir/metadata
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Wrapper for services/toil_web.py.
+# Wrapper for soil/web.py.
 #
 # Usage:
-#   services/toil-web.sh <function name>
+#   soil/web.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -11,19 +11,10 @@ set -o errexit
 
 readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
-source $REPO_ROOT/services/common.sh
+source $REPO_ROOT/soil/common.sh
 
-# On the server
-#
-# toil-web/
-#   bin/
-#     toil-web.sh
-#   doctools/
-#   services/
-
-
-toil-web() {
-  PYTHONPATH=$REPO_ROOT $REPO_ROOT/services/toil_web.py "$@"
+soil-web() {
+  PYTHONPATH=$REPO_ROOT $REPO_ROOT/soil/web.py "$@"
 }
 
 rewrite-jobs-index() {
@@ -32,7 +23,7 @@ rewrite-jobs-index() {
 
   local dir=~/travis-ci.oilshell.org/${prefix}jobs
 
-  log "toil-web: Rewriting ${prefix}jobs/index.html"
+  log "soil-web: Rewriting ${prefix}jobs/index.html"
 
   local tmp=/tmp/$$.index.html
 
@@ -40,7 +31,7 @@ rewrite-jobs-index() {
   # 2020-03-20__...
 
   # suppress SIGPIPE failure
-  { ls $dir/*.json || true; } | tail -n -100 | toil-web ${prefix}index > $tmp
+  { ls $dir/*.json || true; } | tail -n -100 | soil-web ${prefix}index > $tmp
   echo status=${PIPESTATUS[@]}
 
   mv -v $tmp $dir/index.html
@@ -55,10 +46,10 @@ cleanup-jobs-index() {
   # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
   case $dry_run in
     false)
-      ls $dir/*.json | toil-web cleanup | xargs --no-run-if-empty -- rm -v 
+      ls $dir/*.json | soil-web cleanup | xargs --no-run-if-empty -- rm -v 
       ;;
     true)
-      ls $dir/*.json | toil-web cleanup
+      ls $dir/*.json | soil-web cleanup
       ;;
     *)
       log 'Expected true or false for dry_run'
@@ -73,28 +64,28 @@ cleanup-jobs-index() {
 readonly USER='travis_admin'
 readonly HOST='travis-ci.oilshell.org'
 
-toil-web-manifest() {
+soil-web-manifest() {
   PYTHONPATH=. /usr/bin/env python2 \
-    build/app_deps.py py-manifest services.toil_web \
+    build/app_deps.py py-manifest soil.web \
   | grep oilshell/oil  # only stuff in the repo
 
   # Add a shell script
-  echo $PWD/services/toil-web.sh services/toil-web.sh
-  echo $PWD/services/common.sh services/common.sh
+  echo $PWD/soil/web.sh soil/web.sh
+  echo $PWD/soil/common.sh soil/common.sh
 }
 
 # Also used in test/wild.sh
 multi() { ~/git/tree-tools/bin/multi "$@"; }
 
 deploy() {
-  toil-web-manifest | multi cp _tmp/toil-web
-  tree _tmp/toil-web
-  rsync --archive --verbose _tmp/toil-web/ $USER@$HOST:toil-web/
+  soil-web-manifest | multi cp _tmp/soil-web
+  tree _tmp/soil-web
+  rsync --archive --verbose _tmp/soil-web/ $USER@$HOST:soil-web/
 }
 
 remote-test() {
   ssh $USER@$HOST \
-    toil-web/services/toil-web.sh smoke-test '~/travis-ci.oilshell.org/jobs'
+    soil-web/soil/web.sh smoke-test '~/travis-ci.oilshell.org/jobs'
 }
 
 #
@@ -118,7 +109,7 @@ local-test() {
 smoke-test() {
   ### Run on remote machine
   local dir=${1:-_tmp/jobs}
-  ls $dir/*.json | index 
+  ls $dir/*.json | soil-web srht-index 
 }
 
 "$@"

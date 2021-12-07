@@ -12,10 +12,10 @@
   ], 
   "tasks": [
     {
-      "create-cache": "cd oil\nservices/toil-worker.sh run-create-cache\n"
+      "create-cache": "cd oil\nsoil/worker.sh run-create-cache\n"
     }, 
     {
-      "publish-html": "cd oil\nservices/sourcehut.sh publish-html-assuming-ssh-key\n"
+      "publish-html": "cd oil\nsoil/sourcehut.sh publish-html-assuming-ssh-key\n"
     }
   ], 
   "secrets": [

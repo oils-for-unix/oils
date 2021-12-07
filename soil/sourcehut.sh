@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 # Reuse some stuff
-source services/travis.sh
+source soil/travis.sh
 
 # Relevant docs:
 #
@@ -41,9 +41,9 @@ publish-html-assuming-ssh-key() {
   # note: we could speed jobs up by doing this separately?
   remote-cleanup-jobs-index 'srht-'
 
-  # toil-worker.sh recorded this for us
+  # soil/worker.sh recorded this for us
   local status
-  status=$(cat _tmp/toil/exit-status.txt)
+  status=$(cat _tmp/soil/exit-status.txt)
 
   log "Exiting with saved status $status"
 

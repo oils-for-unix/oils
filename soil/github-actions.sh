@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   services/github-actions.sh <function name>
+#   soil/github-actions.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
 # Reuse some stuff
-source services/travis.sh
+source soil/travis.sh
 
 # Relevant docs:
 #
@@ -53,9 +53,9 @@ publish-html-assuming-ssh-key() {
   # note: we could speed jobs up by doing this separately?
   remote-cleanup-jobs-index 'github-'
 
-  # toil-worker.sh recorded this for us
+  # soil/worker.sh recorded this for us
   local status
-  status=$(cat _tmp/toil/exit-status.txt)
+  status=$(cat _tmp/soil/exit-status.txt)
 
   log "Exiting with saved status $status"
 
@@ -76,7 +76,7 @@ publish-html-assuming-ssh-key() {
 # Instead of SSH, we should use curl to POST a .zip file to PHP script on
 # travis-ci.oilshell.org?
 
-# Overwrites the function in services/travis.sh
+# Overwrites the function in soil/travis.sh
 publish-html() {
   local privkey=/tmp/rsa_github_actions
 
