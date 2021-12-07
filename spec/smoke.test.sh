@@ -94,7 +94,7 @@ fun "a b" "c d"
 ## stdout: ['a', 'b', 'c', 'd', 'a', 'b', 'c', 'd']
 
 #### failed command
-ls /nonexistent
+ls /nonexistent-zzZZ
 ## status: 2
 
 #### subshell

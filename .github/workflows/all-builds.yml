@@ -53,13 +53,13 @@ jobs:
           # thing.
           docker=docker
           #docker=podman
+          image=docker.io/oilshell/toil-dummy
 
-          time $docker pull docker.io/oilshell/toil-dummy
-          # apparently docker.io is the namespace for hub.docker.com
+          time $docker pull $image
           $docker run \
-              --mount "type=bind,source=$REPO_ROOT,target=/app" \
-              docker.io/oilshell/toil-dummy \
-              sh -c 'cd /app; services/toil-worker.sh run-dummy'
+              --mount "type=bind,source=$REPO_ROOT,target=/app/oil" \
+              $image \
+              sh -c 'cd /app/oil; services/toil-worker.sh run-dummy'
 
       - name: publish-html
         env:
@@ -72,7 +72,7 @@ jobs:
   dev-minimal:
     # https://github.com/actions/virtual-environments
     # there's no python-pip on ubuntu-latest?
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -83,15 +83,22 @@ jobs:
 
       - name: install
         run: |
-          build/dev.sh ubuntu-deps
-
-          build/dev.sh install-py2  # flake8, etc.
-          build/dev.sh install-py3  # MyPy
+          # Hack for Docker
+          dir=$REPO_ROOT/_tmp/toil
+          mkdir -p $dir
+          sudo chmod --verbose 777 $dir
+          ls -l -d $dir
 
       - name: dev-minimal
         run: |
-          cd $REPO_ROOT
-          services/toil-worker.sh run-dev-minimal
+          docker=docker
+          image=docker.io/oilshell/toil-dev-minimal
+
+          time $docker pull $image
+          $docker run \
+              --mount "type=bind,source=$REPO_ROOT,target=/app/oil" \
+              $image \
+              sh -c 'cd /app/oil; services/toil-worker.sh run-dev-minimal'
 
       - name: publish-html
         env:

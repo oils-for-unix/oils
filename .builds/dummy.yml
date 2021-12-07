@@ -1,3 +1,4 @@
+# Debian bullseye has podman
 image: debian/bullseye
 packages:
   # for utf-8
@@ -17,9 +18,9 @@ tasks:
       time podman pull docker.io/oilshell/toil-dummy
       # apparently docker.io is the namespace for hub.docker.com
       podman run \
-          --mount "type=bind,source=$PWD/oil,target=/app" \
+          --mount "type=bind,source=$PWD/oil,target=/app/oil" \
           docker.io/oilshell/toil-dummy \
-          sh -c 'cd /app; services/toil-worker.sh run-dummy'
+          sh -c 'cd /app/oil; services/toil-worker.sh run-dummy'
   # Relies on SSH key, so do it outside the container
   - publish-html: |
       cd oil

@@ -181,7 +181,7 @@ set -x
 # HACK: sort because xtrace output has non-determinism.
 # This is arguably a bug -- see issue #995.
 # The real fix might be to sys.stderr.flush() in few places?
-sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt | sort >&2
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt | LANG=C sort >&2
 
 ## STDOUT:
 foo=bar
@@ -190,8 +190,8 @@ foo=bar
   . 12345 builtin echo bar
 . builtin echo 'foo=bar'
 . builtin set '+x'
-| command sub 12345
 ; process 12345: status 0
+| command sub 12345
 ## END
 
 #### process sub (nondeterministic)
