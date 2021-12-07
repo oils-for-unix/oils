@@ -178,7 +178,8 @@ shell, of course!
                       # moved to tests/ if automated.
       old/            # A junk drawer.
     web/              # HTML/JS/CSS for tests and tools
-    services/         # Integration with cloud services (e.g. Travis CI)
+    soil/             # Multi-cloud continuous build (e.g. sourcehut, Github)
+    services/         # Other cloud services
 
 ### Temp Dirs
 

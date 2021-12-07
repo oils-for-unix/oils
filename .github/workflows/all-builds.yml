@@ -36,30 +36,12 @@ jobs:
 
       - name: install
         run: |
-          # It's already installed
-          # sudo apt-get install -y podman
-
-          # Hack for Docker.  We write this file from inside the container and
-          # outside.
-          dir=$REPO_ROOT/_tmp/soil
-          mkdir -p $dir
-          sudo chmod --verbose 777 $dir
-          ls -l -d $dir
+          soil/host-shim.sh docker-mount-perms $REPO_ROOT
 
       - name: dummy
         run: |
-          # Podman gets rid of _tmp/soil permission error.
-          # We write into that directory afterward and then deploy the whole
-          # thing.
-          docker=docker
-          #docker=podman
-          image=docker.io/oilshell/soil-dummy
-
-          time $docker pull $image
-          $docker run \
-              --mount "type=bind,source=$REPO_ROOT,target=/app/oil" \
-              $image \
-              sh -c 'cd /app/oil; soil/worker.sh run-dummy'
+          cd $REPO_ROOT
+          soil/host-shim.sh run-task docker $REPO_ROOT dummy
 
       - name: publish-html
         env:
@@ -83,22 +65,12 @@ jobs:
 
       - name: install
         run: |
-          # Hack for Docker
-          dir=$REPO_ROOT/_tmp/soil
-          mkdir -p $dir
-          sudo chmod --verbose 777 $dir
-          ls -l -d $dir
+          soil/host-shim.sh docker-mount-perms $REPO_ROOT
 
       - name: dev-minimal
         run: |
-          docker=docker
-          image=docker.io/oilshell/soil-dev-minimal
-
-          time $docker pull $image
-          $docker run \
-              --mount "type=bind,source=$REPO_ROOT,target=/app/oil" \
-              $image \
-              sh -c 'cd /app/oil; soil/worker.sh run-dev-minimal'
+          cd $REPO_ROOT
+          soil/host-shim.sh run-task docker $REPO_ROOT dev-minimal
 
       - name: publish-html
         env:

@@ -84,7 +84,6 @@ dev-minimal-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-link-busybox-ash    test/spec.sh link-busybox-ash -
 build-minimal       build/dev.sh minimal          -
 repo-overview       metrics/source-code.sh all    -
 lint                test/lint.sh travis           -

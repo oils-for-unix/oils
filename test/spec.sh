@@ -236,7 +236,12 @@ tea-all() {
 }
 
 osh-minimal() {
-  check-shells-exist  # e.g. depends on link-busybox-ash
+  ### Some tests that work on the minimal build.  Run by Soil.
+
+  # dev-minimal CI task needs this done first
+  link-busybox-ash
+
+  check-shells-exist
 
   # oil-json: for testing yajl
   cat >_tmp/spec/SUITE-osh-minimal.txt <<EOF
