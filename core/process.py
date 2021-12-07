@@ -1215,6 +1215,34 @@ class JobState(object):
     # This be GetCurrent()?  %+ in bash?  That's what 'fg' takes.
     return self.last_stopped_pid
 
+  def NotifyContinue(self, pid, waiter):
+    # type: (int) -> None
+    if pid == self.last_stopped_pid:
+        self.last_stopped_pid = -1
+    job = self.JobFromPid(pid)
+    # needed for Wait() loop to work
+    job.state = job_state_e.Running
+    return job.Wait(waiter)
+
+  def NotifyDone(self, pid):
+    # type: (int) -> None
+    """Process and Pipeline can call this."""
+    # Problem: This only happens after an explicit wait().
+    # I think the main_loop in bash waits without blocking?
+    log('JobState NotifyDone %d', pid)
+
+    if pid == self.last_stopped_pid:
+      self.last_stopped_pid = -1
+
+    if pid in self.jobs:
+      del self.jobs[pid]
+    else:
+      # I believe it is reasonable to ignore this. `waitpid` will return the
+      # status of any child process whose state changes. Some of these child
+      # processes will neither have been stopped nor backgrounded, so they will
+      # never have been added to the dict.
+      return
+
   def AddJob(self, job):
     # type: (Job) -> int
     """Add a background job to the list.
@@ -1326,20 +1354,6 @@ class JobState(object):
         return False
     return True
 
-  def MaybeRemove(self, pid):
-    # type: (int) -> None
-    """Process and Pipeline can call this."""
-    # Problem: This only happens after an explicit wait()?
-    # I think the main_loop in bash waits without blocking?
-    log('JobState MaybeRemove %d', pid)
-
-    # TODO: Enabling this causes a failure in spec/background.
-    if 0:
-      try:
-        del self.jobs[pid]
-      except KeyError:
-        # This should never happen?
-        log("AssertionError: PID %d should have never been in the job list", pid)
 
 
 class Waiter(object):
@@ -1462,14 +1476,13 @@ class Waiter(object):
       if term_sig == signal_.SIGINT:
         print('')
 
-      if pid == self.job_state.last_stopped_pid:
-        self.job_state.last_stopped_pid = -1
-
+      self.job_state.NotifyDone(pid)
       proc.WhenDone(pid, status)
 
     elif WIFEXITED(status):
       status = WEXITSTATUS(status)
       #log('exit status: %s', status)
+      self.job_state.NotifyDone(pid)
       proc.WhenDone(pid, status)
 
     elif WIFSTOPPED(status):
