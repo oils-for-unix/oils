@@ -21,7 +21,7 @@ set -o errexit
 
 source test/common.sh  # die
 source benchmarks/common.sh  # default value of OSH_OVM
-source services/common.sh  # find-dir-html
+source soil/common.sh  # find-dir-html
 
 _banner() {
   echo -----

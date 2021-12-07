@@ -135,7 +135,6 @@ readonly MARKDOWN_DOCS=(
   process-model
   architecture-notes
   parser-architecture
-  toil
 )
 
 readonly TIMESTAMP=$(date)

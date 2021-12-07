@@ -16,7 +16,7 @@ secrets:
 
 tasks:
   - dev-minimal: |
-      image=docker.io/oilshell/toil-dev-minimal
+      image=docker.io/oilshell/soil-dev-minimal
       time podman pull $image
       podman run \
           --mount "type=bind,source=$PWD/oil,target=/app/oil" \

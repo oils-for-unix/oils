@@ -1,7 +1,7 @@
 image: debian/bullseye
 
 packages:
-  # for toil
+  # for soil
   - zip
 
   # retrieving deps

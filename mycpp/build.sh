@@ -13,7 +13,7 @@ readonly THIS_DIR=$(dirname $(readlink -f $0))
 readonly REPO_ROOT=$THIS_DIR/..
 
 source $THIS_DIR/common.sh  # MYPY_REPO
-source $REPO_ROOT/services/common.sh  # find-dir-html
+source $REPO_ROOT/soil/common.sh  # find-dir-html
 
 all-ninja() {
   # Don't use clang for benchmarks.
