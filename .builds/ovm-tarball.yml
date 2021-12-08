@@ -1,4 +1,4 @@
-image: debian/bullseye
+image: debian/buster
 
 packages:
   # for soil

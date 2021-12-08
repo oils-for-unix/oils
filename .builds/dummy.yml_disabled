@@ -1,8 +1,6 @@
 # Debian bullseye has podman
 image: debian/bullseye
 packages:
-  # for utf-8
-  - locales
   # for publishing
   - python2
   - zip
@@ -10,13 +8,15 @@ packages:
   - podman
   - uidmap
   - slirp4netns
-  # - docker.io  # Debian Buster name for Docker package 
+
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
+
 tasks:
   - dummy: |
       cd oil
       soil/host-shim.sh run-task podman $PWD dummy
+
   # Relies on SSH key, so do it outside the container
   - publish-html: |
       cd oil
