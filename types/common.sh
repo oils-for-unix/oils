@@ -1,19 +1,7 @@
 # types/common.sh
 
 mypy_() {
-  ### Version of mypy that PIP installs
-
-  # Try 3 locations:
-  # - system prefix
-  # - global pip install prefix
-  # - user pip install prefix
-  #
-  # Which of these search paths should take precedence is an open
-  # question.
-  #
-  # XXX: Is there a shell idiom for parsing a colon-separated path
-  # list?
-  local system=/usr/bin/mypy
+  local system=mypy
   local pip_global=/usr/local/bin/mypy
   local pip_user=~/.local/bin/mypy
 
