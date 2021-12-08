@@ -1196,7 +1196,7 @@ class JobState(object):
   #
   # [job_id, flag, pgid, job_state, node]
 
-  def NotifyStopped(self, pid):
+  def WhenStopped(self, pid):
     # type: (int) -> None
 
     # TODO: Look up the PID.
@@ -1215,7 +1215,7 @@ class JobState(object):
     # This be GetCurrent()?  %+ in bash?  That's what 'fg' takes.
     return self.last_stopped_pid
 
-  def NotifyContinue(self, pid, waiter):
+  def WhenContinued(self, pid, waiter):
     # type: (int) -> None
     if pid == self.last_stopped_pid:
         self.last_stopped_pid = -1
@@ -1224,7 +1224,7 @@ class JobState(object):
     job.state = job_state_e.Running
     return job.Wait(waiter)
 
-  def NotifyDone(self, pid):
+  def WhenDone(self, pid):
     # type: (int) -> None
     """Process and Pipeline can call this."""
     # Problem: This only happens after an explicit wait().
@@ -1476,13 +1476,13 @@ class Waiter(object):
       if term_sig == signal_.SIGINT:
         print('')
 
-      self.job_state.NotifyDone(pid)
+      self.job_state.WhenDone(pid)
       proc.WhenDone(pid, status)
 
     elif WIFEXITED(status):
       status = WEXITSTATUS(status)
       #log('exit status: %s', status)
-      self.job_state.NotifyDone(pid)
+      self.job_state.WhenDone(pid)
       proc.WhenDone(pid, status)
 
     elif WIFSTOPPED(status):
@@ -1492,7 +1492,7 @@ class Waiter(object):
       # sleep 5 | wc -l then Ctrl-Z and fg
       log('')
       log('[PID %d] Stopped', pid)
-      self.job_state.NotifyStopped(pid)  # show in 'jobs' list, enable 'fg'
+      self.job_state.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'
       proc.WhenStopped()
 
     else:
