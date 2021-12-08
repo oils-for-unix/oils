@@ -1197,7 +1197,7 @@ class JobState(object):
   # [job_id, flag, pgid, job_state, node]
 
   def WhenStopped(self, pid):
-    # type: (int) -> int
+    # type: (int) -> None
 
     # TODO: Look up the PID.
     # And display it in the table?
@@ -1216,7 +1216,7 @@ class JobState(object):
     return self.last_stopped_pid
 
   def WhenContinued(self, pid, waiter):
-    # type: (int) -> int
+    # type: (int, Waiter) -> int
     if pid == self.last_stopped_pid:
         self.last_stopped_pid = -1
     job = self.JobFromPid(pid)
