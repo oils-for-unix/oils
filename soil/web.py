@@ -264,8 +264,12 @@ def main(argv):
 
     rows = list(ParseJobs(sys.stdin))
 
-    # sourcehut doesn't have a build number.  So we use commit date.  BUG: This
-    # can be wrong on a VM!
+    # sourcehut doesn't have a build number.  So we use commit date.
+    # Problems:
+    # - Rebase can result in different commits with the same commit date
+    # - Committing on a VM can cause commits "in the past", leading to wrong
+    # sorting
+    # TODO: Try sorting by commit date, and then grouping by commit hash.
     rows.sort(key=ByCommitDate, reverse=True)
     groups = itertools.groupby(rows, key=ByCommitDate)
 

@@ -55,7 +55,7 @@ fetch-issues() {
 }
 
 issues-table() {
-  cat _tmp/issues.json | devtools/github_issues.py
+  cat _tmp/issues.json | services/github_issues.py
 }
 
 write-template() {
