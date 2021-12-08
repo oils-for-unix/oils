@@ -1229,8 +1229,6 @@ class JobState(object):
     """Process and Pipeline can call this."""
     # Problem: This only happens after an explicit wait().
     # I think the main_loop in bash waits without blocking?
-    log('JobState NotifyDone %d', pid)
-
     if pid == self.last_stopped_pid:
       self.last_stopped_pid = -1
 
