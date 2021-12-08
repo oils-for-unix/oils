@@ -1,8 +1,10 @@
-FROM debian
+FROM debian:buster-slim
 
-# gcc: time-helper is needed
-# git: for checking out code
-# zip: for soil web publishing
-RUN apt update && apt install -y gcc git zip python2
+RUN apt-get update 
+
+# Copy this file into the container so we can run it.
+WORKDIR /app
+COPY soil/image-deps.sh .
+RUN ./image-deps.sh dummy
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-dummy buildkit'"]
