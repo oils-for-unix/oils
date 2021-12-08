@@ -43,6 +43,9 @@ bool str_equals(Str* left, Str* right);
 namespace mylib {
 template <typename V>
 void dict_remove(Dict<Str*, V>* haystack, Str* needle);
+
+template <typename V>
+void dict_remove(Dict<int, V>* haystack, int needle);
 };
 
 extern Str* kEmptyString;
@@ -1035,7 +1038,6 @@ inline void mysort(std::vector<Str*>* v) {
 
 namespace mylib {  // MyPy artifact
 
-// TODO: how to do the int version of this?  Do you need an extra bit?
 template <typename V>
 inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
   int pos = find_by_key(haystack->items_, needle);
@@ -1043,6 +1045,12 @@ inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
     return;
   }
   haystack->items_[pos].first = nullptr;
+}
+
+// TODO: how to do the int version of this?  Do you need an extra bit?
+template <typename V>
+inline void dict_remove(Dict<int, V>* haystack, int needle) {
+  assert(0);
 }
 
 // A class for interfacing Str* slices with C functions that expect a NUL

@@ -11,8 +11,8 @@ import signal  # for calculating numbers
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     cmd_value, cmd_value__Argv,
-    wait_status_e, wait_status__Proc, wait_status__Pipeline, wait_status__Cancelled,
-    job_state_e,
+    wait_status_e, wait_status__Proc, wait_status__Pipeline,
+    wait_status__Cancelled,
 )
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
