@@ -1,6 +1,10 @@
 image: debian/buster
 
 packages:
+  # Might need locale-gen since locale -a isn't showing en_US.UTF-8 like on Ubuntu?
+  # https://serverfault.com/questions/54591/how-to-install-change-locale-on-debian
+  - locales
+
   # for soil
   - zip
 
@@ -19,12 +23,12 @@ packages:
   # test/spec-runner.sh needs this
   - gawk
 
-environment:
+#environment:
   # matches native/libc.c
   # not sure if/why we need 3 vars
-  LANG: C.UTF-8
-  LANGUAGE: C.UTF-8
-  LC_ALL: C.UTF-8
+  #LANG: C.UTF-8
+  #LANGUAGE: C.UTF-8
+  #LC_ALL: C.UTF-8
 
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
