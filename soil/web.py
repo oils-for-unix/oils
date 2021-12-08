@@ -242,6 +242,9 @@ def ByCommitDate(row):
   # This is in ISO 8601 format (git log %aI), so we can sort by it.
   return row.get('commit-date', '?')
 
+def ByCommitHash(row):
+  return row.get('commit-hash', '?')
+
 def ByGithub(row):
   # Written in the shell script
   # This is in ISO 8601 format (git log %aI), so we can sort by it.
@@ -264,14 +267,13 @@ def main(argv):
 
     rows = list(ParseJobs(sys.stdin))
 
-    # sourcehut doesn't have a build number.  So we use commit date.
-    # Problems:
-    # - Rebase can result in different commits with the same commit date
-    # - Committing on a VM can cause commits "in the past", leading to wrong
-    # sorting
-    # TODO: Try sorting by commit date, and then grouping by commit hash.
+    # sourcehut doesn't have a build number.
+    # - Sort by commit date.  (Minor problem: Committing on a VM with bad block
+    #   can cause commits "in the past")
+    # - Group by commit hash.  Because 'git rebase' can cause two different
+    # commits with the same date.
     rows.sort(key=ByCommitDate, reverse=True)
-    groups = itertools.groupby(rows, key=ByCommitDate)
+    groups = itertools.groupby(rows, key=ByCommitHash)
 
     for commit_hash, group in groups:
       jobs = list(group)
