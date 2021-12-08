@@ -1196,7 +1196,7 @@ class JobState(object):
   #
   # [job_id, flag, pgid, job_state, node]
 
-  def NotifyStopped(self, pid):
+  def WhenStopped(self, pid):
     # type: (int) -> None
 
     # TODO: Look up the PID.
@@ -1214,6 +1214,32 @@ class JobState(object):
 
     # This be GetCurrent()?  %+ in bash?  That's what 'fg' takes.
     return self.last_stopped_pid
+
+  def WhenContinued(self, pid, waiter):
+    # type: (int, Waiter) -> int
+    if pid == self.last_stopped_pid:
+        self.last_stopped_pid = -1
+    job = self.JobFromPid(pid)
+    # needed for Wait() loop to work
+    job.state = job_state_e.Running
+    return job.Wait(waiter)
+
+  def WhenDone(self, pid):
+    # type: (int) -> None
+    """Process and Pipeline can call this."""
+    # Problem: This only happens after an explicit wait().
+    # I think the main_loop in bash waits without blocking?
+    if pid == self.last_stopped_pid:
+      self.last_stopped_pid = -1
+
+    if pid in self.jobs:
+      del self.jobs[pid]
+    else:
+      # I believe it is reasonable to ignore this. `waitpid` will return the
+      # status of any child process whose state changes. Some of these child
+      # processes will neither have been stopped nor backgrounded, so they will
+      # never have been added to the dict.
+      return
 
   def AddJob(self, job):
     # type: (Job) -> int
@@ -1326,20 +1352,6 @@ class JobState(object):
         return False
     return True
 
-  def MaybeRemove(self, pid):
-    # type: (int) -> None
-    """Process and Pipeline can call this."""
-    # Problem: This only happens after an explicit wait()?
-    # I think the main_loop in bash waits without blocking?
-    log('JobState MaybeRemove %d', pid)
-
-    # TODO: Enabling this causes a failure in spec/background.
-    if 0:
-      try:
-        del self.jobs[pid]
-      except KeyError:
-        # This should never happen?
-        log("AssertionError: PID %d should have never been in the job list", pid)
 
 
 class Waiter(object):
@@ -1462,11 +1474,13 @@ class Waiter(object):
       if term_sig == signal_.SIGINT:
         print('')
 
+      self.job_state.WhenDone(pid)
       proc.WhenDone(pid, status)
 
     elif WIFEXITED(status):
       status = WEXITSTATUS(status)
       #log('exit status: %s', status)
+      self.job_state.WhenDone(pid)
       proc.WhenDone(pid, status)
 
     elif WIFSTOPPED(status):
@@ -1476,7 +1490,7 @@ class Waiter(object):
       # sleep 5 | wc -l then Ctrl-Z and fg
       log('')
       log('[PID %d] Stopped', pid)
-      self.job_state.NotifyStopped(pid)  # show in 'jobs' list, enable 'fg'
+      self.job_state.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'
       proc.WhenStopped()
 
     else:

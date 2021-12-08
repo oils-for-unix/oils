@@ -258,12 +258,7 @@ class Fg(vm._Builtin):
     # TODO: Print job ID rather than the PID
     log('Continue PID %d', pid)
     posix.kill(pid, signal.SIGCONT)
-
-    job = self.job_state.JobFromPid(pid)
-    job.state = job_state_e.Running  # needed for Wait() loop to work
-    status = job.Wait(self.waiter)
-    #log('status = %d', status)
-    return status
+    return self.job_state.WhenContinued(pid, self.waiter)
 
 
 class Bg(vm._Builtin):
