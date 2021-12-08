@@ -48,4 +48,25 @@ mount-test() {
     oilshell/soil-$name sh -c 'ls -l /app'
 }
 
+# This shows CREATED, command CREATED BY, size
+# It's a human readable size though
+#
+# This doesn't really have anything better
+# https://gist.github.com/MichaelSimons/fb588539dcefd9b5fdf45ba04c302db6
+#
+# It's annoying that the remote registry API is different than the local API.
+
+layers() {
+  local name=${1:-dummy}
+
+  # Gah this still prints 237M, not the exact number of bytes!
+  # --format ' {{ .Size }} ' 
+  sudo docker history --no-trunc oilshell/soil-$name
+
+  echo $'Size\tVirtual Size'
+  sudo docker inspect oilshell/soil-$name \
+    | jq --raw-output '.[0] | [.Size, .VirtualSize] | @tsv' \
+    | commas
+}
+
 "$@"

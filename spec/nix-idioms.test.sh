@@ -95,3 +95,19 @@ done
 ## STDOUT:
 []
 ## END
+
+#### Undefined string var is fatal, INCONSISTENT with array
+hookSlice='preHooks'
+
+argv.py ${!hookSlice}
+
+set -u
+
+argv.py ${!hookSlice}
+
+echo end
+
+## status: 1
+## STDOUT:
+[]
+## END
