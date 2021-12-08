@@ -15,12 +15,8 @@ secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 tasks:
   - dummy: |
-      time podman pull docker.io/oilshell/soil-dummy
-      # apparently docker.io is the namespace for hub.docker.com
-      podman run \
-          --mount "type=bind,source=$PWD/oil,target=/app/oil" \
-          docker.io/oilshell/soil-dummy \
-          sh -c 'cd /app/oil; soil/worker.sh run-dummy'
+      cd oil
+      soil/host-shim.sh run-task podman $PWD dummy
   # Relies on SSH key, so do it outside the container
   - publish-html: |
       cd oil

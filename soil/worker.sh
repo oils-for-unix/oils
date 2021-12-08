@@ -96,6 +96,7 @@ oil-spec            test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
 tea-spec            test/spec.sh tea-all-serial _tmp/spec/tea-language/tea.html
 oil-large           oil_lang/run.sh travis      -
 tea-large           tea/run.sh travis           - 
+link-busybox-ash    test/spec.sh link-busybox-ash -
 osh-minimal         test/spec.sh osh-minimal    _tmp/spec/survey/osh-minimal.html
 EOF
 }

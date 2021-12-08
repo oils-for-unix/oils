@@ -22,7 +22,8 @@ run-task() {
   local repo_root=$2
   local task=$3  # e.g. dev-minimal
 
-  local image=docker.io/oilshell/soil-$task
+  # docker.io is the namespace for hub.docker.com
+  local image="docker.io/oilshell/soil-$task"
 
   time $docker pull $image
 

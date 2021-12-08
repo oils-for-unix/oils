@@ -238,9 +238,8 @@ tea-all() {
 osh-minimal() {
   ### Some tests that work on the minimal build.  Run by Soil.
 
-  # dev-minimal CI task needs this done first
-  link-busybox-ash
-
+  # depends on link-busybox-ash, then source dev-shell.sh at the top of this
+  # file
   check-shells-exist
 
   # oil-json: for testing yajl

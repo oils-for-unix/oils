@@ -16,12 +16,9 @@ secrets:
 
 tasks:
   - dev-minimal: |
-      image=docker.io/oilshell/soil-dev-minimal
-      time podman pull $image
-      podman run \
-          --mount "type=bind,source=$PWD/oil,target=/app/oil" \
-          $image \
-          sh -c 'cd /app/oil; soil/worker.sh run-dev-minimal'
+      cd oil
+      soil/host-shim.sh run-task podman $PWD dev-minimal
+  # Relies on SSH key, so do it outside the container
   - publish-html: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key
