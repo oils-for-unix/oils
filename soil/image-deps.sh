@@ -48,4 +48,33 @@ dev-minimal-py() {
   pip3 install --user mypy pexpect
 }
 
+other-tests() {
+  local -a packages=(
+    # common
+    git
+    python2
+
+    libreadline-dev
+    python2-dev  # osh2oil needs build/dev.sh minimal
+
+    python3  # for py3-parse
+
+    r-base-core  # for r-libs
+  )
+
+  apt-get install -y "${packages[@]}"
+}
+
+other-tests-R() {
+  readonly R_PATH=~/R  # duplicates what's in test/common.sh
+
+  # Install to a directory that doesn't require root.  This requires setting
+  # R_LIBS_USER.  Or library(dplyr, lib.loc = "~/R", but the former is preferable.
+  mkdir -p ~/R
+
+  # Note: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  See R 4.0
+  # installation below.
+  INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
+}
+
 "$@"

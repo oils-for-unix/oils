@@ -213,7 +213,7 @@ opyc              test/opyc.sh travis                     -
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
 osh2oil           test/osh2oil.sh travis                  -
-r-libs            build/dev.sh travis-r-libs              -
+R-test            devtools/R-test.sh soil-task            -
 xargs-test        test/other.sh xargs-test                -
 csv2html-test     test/other.sh csv2html-test             -
 py3-parse         test/py3_parse.sh parse-all             -

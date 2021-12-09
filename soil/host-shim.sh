@@ -39,4 +39,10 @@ run-task() {
       sh -c "cd /app/oil; soil/worker.sh run-$task"
 }
 
+local-test() {
+  ### Something I can run locally.  This is fast.
+
+  run-task docker $PWD dummy
+}
+
 "$@"

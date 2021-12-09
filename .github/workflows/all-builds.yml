@@ -92,13 +92,12 @@ jobs:
 
       - name: install
         run: |
-          # this is an overapproximation
-          build/dev.sh ubuntu-deps
+          soil/host-shim.sh docker-mount-perms $REPO_ROOT
 
       - name: other-tests
         run: |
           cd $REPO_ROOT
-          soil/worker.sh run-other-tests
+          soil/host-shim.sh run-task docker $REPO_ROOT other-tests
 
       - name: publish-html
         env:

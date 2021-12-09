@@ -1,16 +1,24 @@
+# Debian bullseye has podman
 image: debian/bullseye
 packages:
+  # for running soil on the host
+  - python2
+  - time
   - zip
-  - python2-dev  # for posix_.so, etc.
-  - libreadline-dev  # for build/dev.sh minimal
-  - r-base-core  # for 'r-libs'
-  - python3  # for 'py3-parse'
+  # podman and its missing dependencies
+  - podman
+  - uidmap
+  - slirp4netns
+
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
+
 tasks:
   - other-tests: |
       cd oil
-      soil/worker.sh run-other-tests
+      soil/host-shim.sh run-task podman $PWD other-tests
+
+  # Relies on SSH key, so do it outside the container
   - publish-html: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key

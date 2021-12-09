@@ -11,7 +11,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh  # R_PATH
+source build/common.sh  # for log
 
 export PYTHONPATH='.:vendor/'
 
@@ -84,34 +84,6 @@ release-ubuntu-deps() {
   # cloc is used for line counts
   # valgrind/cachegrind for benchmarks
   sudo apt install r-base-core cloc valgrind
-}
-
-show-r() {
-  set -x
-  which R
-  R --version
-  set +x
-}
-
-r-packages() {
-
-  # Install to a directory that doesn't require root.  This requires setting
-  # R_LIBS_USER.  Or library(dplyr, lib.loc = "~/R", but the former is preferable.
-  mkdir -p ~/R
-
-  # Note: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  See R 4.0
-  # installation below.
-  INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
-}
-
-test-r-packages() {
-  R_LIBS_USER=$R_PATH Rscript -e 'library(dplyr)'
-}
-
-travis-r-libs() {
-  show-r
-  r-packages
-  test-r-packages
 }
 
 # 3/2021: For installing dplyr on Ubuntu Xenial 16.04 LTS, which has an old R version
