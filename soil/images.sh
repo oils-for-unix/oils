@@ -30,6 +30,8 @@ smoke() {
   local name=${1:-dummy}
   sudo docker run oilshell/soil-$name
   sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
+
+  #sudo docker run oilshell/soil-$name python3 -c 'import pexpect; print(pexpect)'
 }
 
 cmd() {

@@ -37,10 +37,13 @@ dev-minimal() {
 }
 
 dev-minimal-py() {
+  # Python 2 packages for linting linting Python 2 code.
   pip install --user flake8 typing
 
-  # MyPy requires Python 3, but Oil requires Python 2.
-  pip3 install --user mypy
+  # Python 3 packages
+  # - MyPy requires Python 3
+  # - pexpect is for test/interactive.py
+  pip3 install --user mypy pexpect
 }
 
 "$@"

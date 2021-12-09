@@ -1,5 +1,4 @@
-#!/usr/bin/env python2
-
+#!/usr/bin/env python3
 """
 Test OSH in interactive mode.
 
@@ -19,7 +18,6 @@ Exit Code:
 Debug Mode:
 - shows osh output
 - halts on failure
-
 """
 
 import pexpect
@@ -76,10 +74,9 @@ class InteractiveTest(object):
 
   def __enter__(self):
     if DEBUG:
-      print self.description
+      print(self.description)
     else:
-      # note, trailing comma to suppress newline.
-      print self.description,
+      print(self.description, end='')
 
     self.shell = pexpect.spawn(self.cmdline, timeout=TIMEOUT)
 
@@ -99,9 +96,9 @@ class InteractiveTest(object):
       # show result of test
       if tb:
         g_failures += 1
-        print "... Fail"
+        print("... Fail")
       else:
-        print "... OK"
+        print("... OK")
       # Allow other tests to keep running
       return True
     else:
