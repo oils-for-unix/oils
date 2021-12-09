@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 """
 classes.py - Test out inheritance.  Based on asdl/format.py.
 """

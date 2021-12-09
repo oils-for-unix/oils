@@ -14,9 +14,9 @@ secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
 tasks:
-  - ovm-tarball: |
+  - cpp: |
       cd oil
-      soil/host-shim.sh run-task podman $PWD ovm-tarball
+      soil/host-shim.sh run-task podman $PWD cpp
 
   # Relies on SSH key, so do it outside the container
   - publish-html: |

@@ -41,7 +41,7 @@ hello-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python bash dash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash dash $OSH_CC |
   while read fields; do
     echo 'hello _ _' | xargs -n 3 -- echo "$fields"
   done
@@ -52,7 +52,7 @@ fib-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python bash dash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash dash $OSH_CC |
   while read fields; do
     echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
   done
@@ -61,7 +61,7 @@ fib-tasks() {
 word_freq-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python bash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash $OSH_CC |
   while read fields; do
     # BUG: osh_eval differs on these two.  Looks like it's related to
     # backslashes!
@@ -74,7 +74,7 @@ word_freq-tasks() {
 assoc_array-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python bash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash $OSH_CC |
   while read fields; do
     for n in 1000 2000 3000; do
       echo "word_freq 10 $n" | xargs -n 3 -- echo "$fields"
@@ -86,7 +86,7 @@ bubble_sort-tasks() {
   # Note: this is quadratic, but bubble sort itself is quadratic!
   local provenance=$1
 
-  cat $provenance | filter-provenance python bash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash $OSH_CC |
   while read fields; do
     echo 'bubble_sort int   200' | xargs -n 3 -- echo "$fields"
     echo 'bubble_sort bytes 200' | xargs -n 3 -- echo "$fields"
@@ -126,7 +126,7 @@ array_ref-tasks() {
 palindrome-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python bash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash $OSH_CC |
   while read fields; do
     echo 'palindrome unicode _' | xargs -n 3 -- echo "$fields"
     echo 'palindrome bytes   _' | xargs -n 3 -- echo "$fields"
@@ -157,7 +157,7 @@ readonly -a TIME_PREFIX=(benchmarks/time_.py --tsv --append --rusage)
 ext() {
   local ext
   case $runtime in 
-    (python)
+    (python2)
       echo 'py'
       ;;
     (*sh | *osh*)
@@ -285,7 +285,7 @@ task-all() {
   while read _ host host_hash runtime runtime_hash _ arg1 arg2; do
     local file
     case $runtime in 
-      (python)
+      (python2)
         file='py'
         ;;
       (*sh | *osh*)
@@ -520,6 +520,5 @@ EOF
 </html>
 EOF
 }
-
 
 "$@"

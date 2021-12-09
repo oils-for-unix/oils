@@ -1,4 +1,4 @@
-# Toil wrapped in Github Actions.
+# Soil wrapped in Github Actions.
 
 name: oil
 on: [push]
@@ -81,7 +81,7 @@ jobs:
           soil/github-actions.sh publish-html
 
   other-tests:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -108,7 +108,7 @@ jobs:
           soil/github-actions.sh publish-html
 
   ovm-tarball:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -119,15 +119,12 @@ jobs:
 
       - name: install
         run: |
-          # this is an overapproximation
-          build/dev.sh ubuntu-deps
-          build/dev.sh install-py2  # flake8, etc.
-          build/dev.sh install-py3  # MyPy
+          soil/host-shim.sh docker-mount-perms $REPO_ROOT
 
       - name: ovm-tarball
         run: |
           cd $REPO_ROOT
-          soil/worker.sh run-ovm-tarball
+          soil/host-shim.sh run-task docker $REPO_ROOT ovm-tarball
 
       - name: publish-html
         env:
@@ -149,15 +146,12 @@ jobs:
 
       - name: install
         run: |
-          # this is an overapproximation
-          build/dev.sh ubuntu-deps
-          build/dev.sh install-py2  # flake8, etc.
-          build/dev.sh install-py3  # MyPy
+          soil/host-shim.sh docker-mount-perms $REPO_ROOT
 
       - name: cpp
         run: |
           cd $REPO_ROOT
-          soil/worker.sh run-cpp
+          soil/host-shim.sh run-task docker $REPO_ROOT cpp
 
       - name: publish-html
         env:

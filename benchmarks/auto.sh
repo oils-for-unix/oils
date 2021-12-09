@@ -47,7 +47,7 @@ osh-parser-quick() {
 
   local c_prov prov
   c_prov=$(benchmarks/id.sh shell-provenance no-host \
-    "${OTHER_SHELLS[@]}" $osh_eval python)
+    "${OTHER_SHELLS[@]}" $osh_eval python2)
   prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $osh_eval)
 
   # normally done on one machine
@@ -82,7 +82,7 @@ cachegrind-shells() {
   # Python is considered a shell for benchmarks/compute
   local provenance
   provenance=$(benchmarks/id.sh shell-provenance no-host \
-    "${OTHER_SHELLS[@]}" $osh_eval python)
+    "${OTHER_SHELLS[@]}" $osh_eval python2)
 
   benchmarks/osh-parser.sh measure-cachegrind \
     $provenance $base_dir/osh-parser $osh_eval
@@ -95,7 +95,7 @@ cachegrind-builds() {
 
 benchmark-shell-provenance() {
   # empty label
-  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python
+  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2
 }
 
 measure-shells() {

@@ -17,8 +17,7 @@ dummy() {
 dev-minimal() {
   local -a packages=(
     # common
-    git
-    python2
+    git python2
 
     libreadline-dev
     procps  # pgrep used by test/interactive
@@ -51,8 +50,7 @@ dev-minimal-py() {
 other-tests() {
   local -a packages=(
     # common
-    git
-    python2
+    git python2
 
     libreadline-dev
     python2-dev  # osh2oil needs build/dev.sh minimal
@@ -76,5 +74,83 @@ other-tests-R() {
   # installation below.
   INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
 }
+
+cpp() {
+  local -a packages=(
+    # common
+    git python2
+
+    # retrieving deps -- TODO: move to build time
+    wget
+
+    # line_input.so needs this
+    libreadline-dev
+    python2-dev
+
+    python3-pip
+    # for MyPy virtualenv for requirements.txt -- TODO: move to build time.
+    python3-venv
+
+    ninja-build
+    # to create mycpp/_ninja/index.html
+    gawk
+
+    # for stable benchmarks
+    valgrind
+    # the shell benchmarks compare shells
+    busybox-static mksh zsh
+  )
+
+  apt-get install -y "${packages[@]}"
+}
+
+cpp-source-deps() {
+  echo TODO
+
+  # Remove these from runtime:
+  #
+  # cpp-unit-deps
+  #
+  # mycpp-pip
+  # mycpp-git
+}
+
+ovm-tarball() {
+  local -a packages=(
+    # common
+    git python2
+
+    # line_input.so needs this
+    libreadline-dev
+    python2-dev
+
+    # retrieving deps -- TODO: move to build time
+    wget
+    # for syscall measurements
+    strace
+
+    # for cmark and yajl
+    cmake
+
+    # test/spec-runner.sh needs this
+    gawk
+  )
+
+  apt-get install -y "${packages[@]}"
+}
+
+ovm-tarball-source-deps() {
+  echo TODO
+
+  # TODO: Move the ln /usr/bin/python here
+  #
+  # Run it LOCALLY with the tasks that are failing
+
+  # Remove these from runtime:
+  #
+  # spec-deps
+  # tarball-deps
+}
+
 
 "$@"

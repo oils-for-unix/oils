@@ -28,8 +28,12 @@ push() {
 smoke() {
   ### Smoke test of container
   local name=${1:-dummy}
-  sudo docker run oilshell/soil-$name
+
+  #sudo docker run oilshell/soil-$name
   sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
+
+  # Python 2.7 build/prepare.sh requires this
+  #sudo docker run oilshell/soil-$name python -V
 
   #sudo docker run oilshell/soil-$name python3 -c 'import pexpect; print(pexpect)'
 }

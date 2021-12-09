@@ -190,7 +190,6 @@ find-src() {
 
 find-py() {
   find-src  \
-    -name 'mycpp' -a -prune -o \
     -name 'build' -a -prune -o \
     -name '*.py' -a -print "$@"
 }
@@ -252,7 +251,7 @@ bad-bash() {
 print-first-line() {
   local path=$1
 
-  read line < $path
+  read line < "$path"
   echo "$path: $line"  # like grep output
 }
 
@@ -260,13 +259,13 @@ check-shebangs() {
   set +o errexit
 
   if true; then
-    find-py | xargs -n 1 -- $0 print-first-line | egrep "$BAD_PY"
+    find-py | xargs -d $'\n' -n 1 -- $0 print-first-line | egrep "$BAD_PY"
     if test $? -ne 1; then
       die "FAIL: Found bad Python shebangs"
     fi
   fi
 
-  find-sh | xargs -n 1 -- $0 print-first-line | egrep "$BAD_BASH"
+  find-sh | xargs -d $'\n' -n 1 -- $0 print-first-line | egrep "$BAD_BASH"
   if test $? -ne 1; then
     die "FAIL: Found bad bash shebangs"
   fi

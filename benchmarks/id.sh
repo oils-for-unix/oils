@@ -98,7 +98,7 @@ dump-shell-id() {
       ;;
 
     # not a shell, but useful for benchmarks/compute
-    python)
+    python2)
       $sh -V 2> $out_dir/version.txt
       ;;
     *)
