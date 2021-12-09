@@ -3,12 +3,11 @@
 Test OSH in interactive mode.
 
 Usage (run from project root):
-- ./test/interactive.py
+
+    test/interactive.py
 
 Env Vars:
 - OSH_TEST_INTERACTIVE_SHELL: override default shell path (default, bin/osh)
-- OSH_TEST_INTERACTIVE_DEBUG: enable debug mode if set, see below
-  (default, diabled)
 - OSH_TEST_INTERACTIVE_TIMEOUT: override default timeout (default, 2 seconds)
 
 Exit Code:
@@ -19,6 +18,7 @@ Debug Mode:
 - shows osh output
 - halts on failure
 """
+from __future__ import print_function
 
 import pexpect
 import signal
@@ -27,8 +27,9 @@ import os
 
 
 SHELL = os.environ.get("OSH_TEST_INTERACTIVE_SHELL", "bin/osh")
-DEBUG = "OSH_TEST_INTERACTIVE_DEBUG" in os.environ
-TIMEOUT = int(os.environ.get("OSH_TEST_INTERACTIVE_TIMEOUT", 2))
+TIMEOUT = int(os.environ.get("OSH_TEST_INTERACTIVE_TIMEOUT", 3))
+DEBUG = True
+#DEBUG = False
 
 # keep track of failures so we can report exit status
 global g_failures
@@ -38,7 +39,10 @@ g_failures = 0
 def get_pid_by_name(name):
   """Return the pid of the process matching `name`."""
   # XXX: make sure this is restricted to subprocesses under us.
-  return int(pexpect.run("pgrep cat").split()[-1])
+  # This could be problematic on the continuous build if many tests are running
+  # in parallel.
+  output = pexpect.run('pgrep --exact --newest cat')
+  return int(output.split()[-1])
 
 
 # XXX: osh.sendcontrol("z") does not suspend the foreground process :(
@@ -67,8 +71,8 @@ class InteractiveTest(object):
      ...
   """
 
-  def __init__(self, description, cmdline=SHELL):
-    self.cmdline = cmdline
+  def __init__(self, description, program=SHELL):
+    self.program = program
     self.shell = None
     self.description = description
 
@@ -78,7 +82,14 @@ class InteractiveTest(object):
     else:
       print(self.description, end='')
 
-    self.shell = pexpect.spawn(self.cmdline, timeout=TIMEOUT)
+    #env = dict(os.environ)
+    #env['PS1'] = 'test$ '
+    env = None
+
+    # Python 3: encoding required
+    self.shell = pexpect.spawn(
+        self.program, ['--rcfile', '/dev/null'], env=env, encoding='utf-8',
+        timeout=TIMEOUT)
 
     # suppress output when DEBUG is not set.
     if DEBUG:
@@ -117,7 +128,10 @@ with InteractiveTest("Regression test for issue #1004") as osh:
   osh.expect(r".*\$")
   osh.sendline("fg")
   osh.expect(r"Continue PID \d+")
-  osh.sendcontrol("c")
+
+  #osh.sendcontrol("c")
+  osh.sendintr()  # SIGINT
+
   osh.expect(r".*\$")
   osh.sendline("fg")
   osh.expect("No job to put in the foreground")
@@ -140,7 +154,10 @@ with InteractiveTest("Test resuming a killed process") as osh:
 with InteractiveTest("Regression test for issue #721") as osh:
   osh.expect(r".*\$")
   osh.sendline("cat")
-  osh.sendcontrol("c")
+
+  #osh.sendcontrol("c")
+  osh.sendintr()  # SIGINT
+
   osh.expect(r".*\$")
   osh.sendline("fg")
   osh.expect("No job to put in the foreground")

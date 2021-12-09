@@ -20,9 +20,11 @@ dev-minimal() {
     git
     python2
 
-    gawk
     libreadline-dev
-    python2-dev 
+    procps  # pgrep used by test/interactive
+    gawk
+
+    python2-dev  # for building Python extensions
 
     python-pip  # flake8 typing
     python3-setuptools  # mypy

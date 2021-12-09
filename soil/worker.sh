@@ -90,15 +90,23 @@ lint                test/lint.sh travis           -
 typecheck-slice     types/oil-slice.sh travis     -
 typecheck-other     types/run.sh travis           -
 unit                test/unit.sh travis           -
-interactive         test/interactive.py           -
+interactive         test/interactive.sh soil      -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 oil-runtime-errors  test/oil-runtime-errors.sh run-all-with-osh  -
 oil-spec            test/spec.sh oil-all-serial   _tmp/spec/oil-language/oil.html
 tea-spec            test/spec.sh tea-all-serial   _tmp/spec/tea-language/tea.html
 oil-large           oil_lang/run.sh travis        -
-tea-large           tea/run.sh travis             - 
+tea-large           tea/run.sh travis             -
 link-busybox-ash    test/spec.sh link-busybox-ash -
 osh-minimal         test/spec.sh osh-minimal      _tmp/spec/survey/osh-minimal.html
+EOF
+}
+
+# Redefinition for quicker cloud debugging
+DISABLED_dev-minimal-tasks() {
+  cat <<EOF
+build-minimal       build/dev.sh minimal          -
+interactive         test/interactive.sh soil      -
 EOF
 }
 
@@ -355,6 +363,8 @@ run-other-tests() { job-main 'other-tests'; }
 run-ovm-tarball() { job-main 'ovm-tarball'; }
 
 run-create-cache() { job-main 'create-cache'; }
+
+run-local() { job-main 'local'; }
 
 run-app-tests() { job-main 'app-tests'; }
 
