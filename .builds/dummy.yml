@@ -1,8 +1,9 @@
 # Debian bullseye has podman
 image: debian/bullseye
 packages:
-  # for publishing
+  # for running soil on the host
   - python2
+  - time
   - zip
   # podman and its missing dependencies
   - podman

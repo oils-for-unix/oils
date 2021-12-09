@@ -22,6 +22,7 @@ import datetime
 import json
 import itertools
 import os
+import re
 import sys
 from doctools import html_head
 
@@ -73,6 +74,38 @@ def PrettyTime(now, start_time):
   return "%d years ago" % (delta / SECS_IN_DAY / 365)
 
 
+def _MinutesSeconds(num_seconds):
+  num_seconds = round(num_seconds)  # round to integer
+  minutes = num_seconds / 60
+  seconds = num_seconds % 60
+  return '%d:%02d' % (minutes, seconds)
+
+
+LINE_RE = re.compile(r'(\w+)[ ]+([\d.]+)')
+
+def _ParsePullTime(time_p_str):
+  """
+  Given time -p output like
+
+  real 0.01
+  user 0.02
+  sys 0.02
+
+  Return the real time as a string, or - if we don't know it.
+  """
+  if time_p_str is None:
+    return '-'
+
+  for line in time_p_str.splitlines():
+    m = LINE_RE.match(line)
+    if m:
+      name, value = m.groups()
+      if name == 'real':
+        return _MinutesSeconds(float(value))
+
+  return '-'  # Not found
+
+
 def ParseJobs(stdin):
   for line in stdin:
     json_path = line.strip()
@@ -115,10 +148,9 @@ def ParseJobs(stdin):
       s_html = '<span class="fail">FAIL</span><br/><span class="fail-detail">%s</span>' % fail_html
     meta['status_html'] = s_html
 
-    total_elapsed = int(total_elapsed)
-    minutes = total_elapsed / 60
-    seconds = total_elapsed % 60
-    meta['elapsed_str'] = '%d:%02d' % (minutes, seconds)
+    meta['run_time_str'] = _MinutesSeconds(total_elapsed)
+
+    meta['pull_time_str'] = _ParsePullTime(meta.get('image-pull-time'))
 
     # Note: this isn't a Unix timestamp
     #microseconds = int(meta['TRAVIS_TIMER_START_TIME']) / 1e6
@@ -165,7 +197,7 @@ def ParseJobs(stdin):
 
 BUILD_ROW_TEMPLATE = '''\
 <tr class="spacer">
-  <td colspan=5></td>
+  <td colspan=6></td>
 </tr>
 <tr class="commit-row">
   <td colspan=2>
@@ -173,12 +205,12 @@ BUILD_ROW_TEMPLATE = '''\
     &nbsp;
     <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
   </td>
-  <td class="commit-line" colspan=3>
+  <td class="commit-line" colspan=4>
     <code>%(commit-line)s</code>
   </td>
 </tr>
 <tr class="spacer">
-  <td colspan=5><td/>
+  <td colspan=6><td/>
 </tr>
 '''
 
@@ -188,7 +220,8 @@ JOB_ROW_TEMPLATE = '''\
   <td>%(job_num)s</td>
   <td> <code><a href="%(basename)s.wwz/">%(job-name)s</a></code> </td>
   <td><a href="%(job_url)s">%(start_time_str)s</a></td>
-  <td>%(elapsed_str)s</td>
+  <td>%(pull_time_str)s</td>
+  <td>%(run_time_str)s</td>
   <td>%(status_html)s</td>
   <!-- todo; spec details
   <td> </td>
@@ -211,11 +244,9 @@ INDEX_TOP = '''
           <td>Job #</td>
           <td>Job Name</td>
           <td>Start Time</td>
-          <td>Elapsed</td>
+          <td>Pull Time</td>
+          <td>Run Time</td>
           <td>Status</td>
-          <!--
-          <td>Details</td>
-          -->
         </tr>
       </thead>
 '''
