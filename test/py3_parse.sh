@@ -30,7 +30,8 @@ parse-one() {
 
 parse-all() {
   # qsn_/qsn.py has some kind of unicode excapes, probably easy to fix
-  all-files | egrep '\.py$' | xargs --verbose -- $0 parse-one
+  # .pyi files need to be parsed too
+  all-files | egrep '\.py$|\.pyi$' | xargs --verbose -- $0 parse-one
 }
 
 "$@"
