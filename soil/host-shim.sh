@@ -25,7 +25,13 @@ run-task() {
   # docker.io is the namespace for hub.docker.com
   local image="docker.io/oilshell/soil-$task"
 
-  time $docker pull $image
+  local metadata_dir=$repo_root/_tmp/soil
+
+  mkdir -p $metadata_dir  # may not exist yet
+
+  # Use external time command in POSIX format, so it's consistent between hosts
+  command time -p -o $metadata_dir/image-pull-time.txt \
+    $docker pull $image
 
   $docker run \
       --mount "type=bind,source=$repo_root,target=/app/oil" \

@@ -311,6 +311,10 @@ _run-dev-all-nix() {
 }
 
 save-metadata() {
+  ### Write metadata files to be saved as JSON
+
+  # NOTE: host-shim.sh also writes image-pull-time.txt
+
   local job_name=$1
   local meta_dir=$2
 
