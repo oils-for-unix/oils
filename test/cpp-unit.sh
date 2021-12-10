@@ -12,7 +12,7 @@ set -o errexit
 source build/mycpp.sh  # for compile function
 
 # Copied from devtools/release.sh tarball-build-deps
-# for the dev-minimal toil task to run C++ unit tests
+# for the 'cpp' toil job
 deps() {
   local d1='_deps/re2c-1.0.3'
   if test -d $d1; then

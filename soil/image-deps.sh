@@ -7,6 +7,28 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+#
+# Common Helpers
+#
+
+download-re2c() {
+  mkdir -p _deps
+  wget --directory _deps \
+    https://github.com/skvadrik/re2c/releases/download/1.0.3/re2c-1.0.3.tar.gz
+}
+
+install-re2c() {
+  cd _deps
+  tar -x -z < re2c-1.0.3.tar.gz
+  cd re2c-1.0.3
+  ./configure
+  make
+}
+
+#
+# Image definitions: dummy, dev-minimal, other-tests, ovm-tarball, cpp
+#
+
 dummy() {
   # gcc: time-helper is needed
   # git: for checking out code
@@ -105,11 +127,10 @@ cpp() {
 }
 
 cpp-source-deps() {
-  echo TODO
+  download-re2c
+  install-re2c
 
-  # Remove these from runtime:
-  #
-  # cpp-unit-deps
+  # TODO: Remove these from runtime:
   #
   # mycpp-pip
   # mycpp-git
@@ -118,7 +139,7 @@ cpp-source-deps() {
 ovm-tarball() {
   local -a packages=(
     # common
-    git python2
+    gcc git python2
 
     # line_input.so needs this
     libreadline-dev
@@ -151,6 +172,5 @@ ovm-tarball-source-deps() {
   # spec-deps
   # tarball-deps
 }
-
 
 "$@"

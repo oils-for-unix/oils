@@ -6,8 +6,7 @@
 #   build/codegen.sh <function name>
 #
 # Examples:
-#   build/codegen.sh download-re2c
-#   build/codegen.sh install-re2c
+#   build/codegen.sh types-gen
 #
 # We want a single step build from the git tree, but we also want the generated
 # code to be distributed in the release tarball.
@@ -27,39 +26,6 @@ export PYTHONPATH='.:vendor/'
 if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 're2c'
 fi
-
-# Files
-#
-# native/lex.c -- calls generated function?
-# osh/lex.py  -- needs a wrapper for FindLongestMatch?
-
-#
-#  ReadToken(lexer_mode, line, s) -> (t, e)
-
-# NOTE: These are in _devbuild because fastlex.so need them, and fastlex.so is
-# needed for the Makefile to properly crawl dependencies.
-#
-# _devbuild/
-#   gen/
-#     osh-types.h - lex_mode_e
-#     id_kind.h - Id
-#     osh-lex.h
-#   tmp/
-#    osh-lex.re2c.c
-
-download-re2c() {
-  mkdir -p _deps
-  wget --directory _deps \
-    https://github.com/skvadrik/re2c/releases/download/1.0.3/re2c-1.0.3.tar.gz
-}
-
-install-re2c() {
-  cd _deps
-  tar -x -z < re2c-1.0.3.tar.gz
-  cd re2c-1.0.3
-  ./configure
-  make
-}
 
 download-clang() {
   wget --no-clobber --directory _deps \

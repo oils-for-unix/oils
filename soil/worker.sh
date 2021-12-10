@@ -78,8 +78,6 @@ EOF
 dev-minimal-tasks() {
   ### Print tasks for the 'dev-minimal' build
 
-  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
-  # build-minimal
   # repo overview is suggested by README.md
 
   # (task_name, script, action, result_html)
@@ -113,11 +111,13 @@ EOF
 cpp-tasks() {
   # (task_name, script, action, result_html)
 
+  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
+  # build-minimal
+
   # consts_gen.py needs types_asdl.py
   cat <<EOF
 dump-versions   soil/worker.sh dump-versions -
 build-minimal   build/dev.sh minimal                  -
-cpp-unit-deps   test/cpp-unit.sh deps                 -
 cpp-unit-all    test/cpp-unit.sh all                  -
 mycpp-git       mycpp/deps.sh git-clone               -
 mycpp-pip       mycpp/deps.sh pip-install             -
@@ -179,15 +179,6 @@ syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.t
 osh-spec          test/spec.sh osh-travis                _tmp/spec/survey/osh.html
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      build/test.sh oil-tar                  -
-EOF
-}
-
-
-create-cache-tasks() {
-  cat <<EOF
-tarball-deps      devtools/release.sh tarball-build-deps -
-spec-deps         test/spec-bin.sh all-steps             -
-compress-deps     soil/sourcehut.sh compress-deps        -
 EOF
 }
 
@@ -361,8 +352,6 @@ run-dev-minimal() { job-main 'dev-minimal'; }
 run-other-tests() { job-main 'other-tests'; }
 
 run-ovm-tarball() { job-main 'ovm-tarball'; }
-
-run-create-cache() { job-main 'create-cache'; }
 
 run-local() { job-main 'local'; }
 
