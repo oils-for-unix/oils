@@ -16,7 +16,7 @@ secrets:
 tasks:
   - dev-minimal: |
       cd oil
-      soil/host-shim.sh run-task podman $PWD dev-minimal
+      soil/host-shim.sh run-job podman $PWD dev-minimal
 
   # Relies on SSH key, so do it outside the container
   - publish-html: |

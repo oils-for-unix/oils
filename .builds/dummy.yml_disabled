@@ -16,7 +16,7 @@ secrets:
 tasks:
   - dummy: |
       cd oil
-      soil/host-shim.sh run-task podman $PWD dummy
+      soil/host-shim.sh run-job podman $PWD dummy
 
   # Relies on SSH key, so do it outside the container
   - publish-html: |

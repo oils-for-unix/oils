@@ -17,7 +17,7 @@ docker-mount-perms() {
   ls -l -d $dir
 }
 
-run-task() {
+run-job() {
   local docker=$1  # docker or podman
   local repo_root=$2
   local task=$3  # e.g. dev-minimal
@@ -53,7 +53,7 @@ local-test() {
   cd $fresh_clone
   git checkout $branch
 
-  sudo $0 run-task docker $fresh_clone $task
+  sudo $0 run-job docker $fresh_clone $task
 }
 
 "$@"
