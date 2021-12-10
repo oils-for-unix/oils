@@ -119,8 +119,11 @@ orig() {
 }
 
 new() {
-  eval "NIX_LDFLAGS$role_post"+='" -L$1/lib64"'
-  export "NIX_LDFLAGS$role_post"
+  local var_name="NIX_LDFLAGS$role_post"
+  local value=" -L$1/lib64"
+
+  eval "$var_name"+='$value'
+  export "$var_name"
 }
 
 role_post='_foo'
