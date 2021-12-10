@@ -127,8 +127,22 @@ cpp() {
 }
 
 cpp-source-deps() {
-  download-re2c
-  install-re2c
+  # Uh this doesn't work because it's created in the directory we're mounting!
+  # At runtime we mount the newly cloned repo.
+  #
+  # Should we create _deps in a different place?  And them symlink it?
+  # build/dev-shell won't be able to find it
+  #
+  # Problem: during the build step, our WORKDIR is /app
+  #
+  # Should it be /app/oil ?  But then the bind mount will hide it?
+  #
+  # Maybe we need ../_oil-deps or ~/oil-deps/{re2c,spec-bin,R}
+  # It should be parallel to the repo though
+
+  echo TODO
+  #download-re2c
+  #install-re2c
 
   # TODO: Remove these from runtime:
   #
@@ -140,6 +154,10 @@ ovm-tarball() {
   local -a packages=(
     # common
     gcc git python2
+
+    # This is a separate package needed for re2c.  TODO: remove when we've
+    # built it into the image.
+    g++
 
     # line_input.so needs this
     libreadline-dev
@@ -161,10 +179,9 @@ ovm-tarball() {
 }
 
 ovm-tarball-source-deps() {
-  echo TODO
+  # I think building Python needs this
+  ln -s /usr/bin/python2 /usr/bin/python
 
-  # TODO: Move the ln /usr/bin/python here
-  #
   # Run it LOCALLY with the tasks that are failing
 
   # Remove these from runtime:

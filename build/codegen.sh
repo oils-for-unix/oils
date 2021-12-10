@@ -27,6 +27,21 @@ if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 're2c'
 fi
 
+# TODO: Delete these once soil/image-deps.sh handles it
+download-re2c() {
+  mkdir -p _deps
+  wget --directory _deps \
+    https://github.com/skvadrik/re2c/releases/download/1.0.3/re2c-1.0.3.tar.gz
+}
+
+install-re2c() {
+  cd _deps
+  tar -x -z < re2c-1.0.3.tar.gz
+  cd re2c-1.0.3
+  ./configure
+  make
+}
+
 download-clang() {
   wget --no-clobber --directory _deps \
     http://releases.llvm.org/5.0.1/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz

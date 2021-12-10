@@ -41,8 +41,19 @@ run-task() {
 
 local-test() {
   ### Something I can run locally.  This is fast.
+  local task=${1:-dummy}
 
-  run-task docker $PWD dummy
+  local branch=$(git rev-parse --abbrev-ref HEAD)
+
+  local fresh_clone=/tmp/oil
+  rm -r -f -v $fresh_clone
+
+  local this_repo=$PWD
+  git clone $this_repo $fresh_clone
+  cd $fresh_clone
+  git checkout $branch
+
+  sudo $0 run-task docker $fresh_clone $task
 }
 
 "$@"
