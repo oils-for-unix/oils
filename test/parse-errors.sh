@@ -1189,13 +1189,13 @@ with-oil-native() {
     run-other-suite-for-release parse-errors all $out
 }
 
-travis1() {
+soil-run-py() {
   ### run with Python. output _tmp/other/parse-errors.txt
 
   all
 }
 
-travis2() {
+soil-run-cpp() {
   ### run with C++.  output: _tmp/other/oil-parse-errors-oil-native.txt
 
   # Done in _oil-native-build on the benchmark-data version

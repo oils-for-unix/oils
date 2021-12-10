@@ -91,7 +91,7 @@ all() {
   html-summary
 }
 
-travis() {
+soil-run() {
   # Hack, build with GCC because of startup time issue #970
   CXX=gcc build/mycpp.sh compile-slice-opt
 

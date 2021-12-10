@@ -258,7 +258,7 @@ osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
 oil-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
 tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 
-osh-travis() {
+soil-run-osh() {
   check-shells-exist  # e.g. depends on link-busybox-ash
   osh-all-serial
 }

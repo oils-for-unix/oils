@@ -6,7 +6,7 @@
 #   types/oil-slice.sh <function name>
 #
 # Example:
-#   types/oil-slice.sh travis-setup  # for generating osh-eval-manifest.txt
+#   types/oil-slice.sh soil-setup  # for generating osh-eval-manifest.txt
 
 set -o nounset
 set -o pipefail
@@ -111,7 +111,7 @@ typecheck-all() {
 # It needs to be checked in because we don't have _deps/cpython-full on Travis
 # to crawl dependencies.
 
-travis-setup() {
+soil-setup() {
   # TODO: add stat.py back.  Why does it cause errors?
   local exclude='vendor|__future__|mylib.py|/stat.py'
 
@@ -119,7 +119,7 @@ travis-setup() {
   egrep -v "$exclude" $OSH_EVAL_DEPS | tee $OSH_EVAL_MANIFEST
 }
 
-travis() {
+soil-run() {
   if test -n "${TRAVIS_SKIP:-}"; then
     echo "TRAVIS_SKIP: Skipping $0"
     return

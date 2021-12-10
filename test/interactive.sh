@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-soil() {
+soil-run() {
   # Run it a few times to test flakiness
 
   local n=5

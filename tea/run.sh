@@ -48,8 +48,8 @@ all() {
   usage-test
 }
 
-travis() {
-  ### Used by services/toil-worker.sh.  Prints to stdout.
+soil-run() {
+  ### Used by soil/worker.sh.  Prints to stdout.
   all
 }
 

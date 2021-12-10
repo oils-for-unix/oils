@@ -84,17 +84,18 @@ dev-minimal-tasks() {
   cat <<EOF
 build-minimal       build/dev.sh minimal          -
 repo-overview       metrics/source-code.sh all    -
-lint                test/lint.sh travis           -
-typecheck-slice     types/oil-slice.sh travis     -
-typecheck-other     types/run.sh travis           -
-unit                test/unit.sh travis           -
-interactive         test/interactive.sh soil      -
+lint                test/lint.sh soil-run         -
+typecheck-slice     types/oil-slice.sh soil-run   -
+typecheck-other     types/run.sh soil-run         -
+unit                test/unit.sh soil-run         -
+interactive         test/interactive.sh soil-run  -
+parse-errors        test/parse-errors.sh soil-run-py  -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 oil-runtime-errors  test/oil-runtime-errors.sh run-all-with-osh  -
 oil-spec            test/spec.sh oil-all-serial   _tmp/spec/oil-language/oil.html
 tea-spec            test/spec.sh tea-all-serial   _tmp/spec/tea-language/tea.html
-oil-large           oil_lang/run.sh travis        -
-tea-large           tea/run.sh travis             -
+oil-large           oil_lang/run.sh soil-run      -
+tea-large           tea/run.sh soil-run           -
 link-busybox-ash    test/spec.sh link-busybox-ash -
 osh-minimal         test/spec.sh osh-minimal      _tmp/spec/survey/osh-minimal.html
 EOF
@@ -125,10 +126,10 @@ mycpp-pip       mycpp/deps.sh pip-install             -
 build-osh-eval  build/dev.sh oil-cpp                  -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
 osh-eval-opt    build/mycpp.sh compile-slice-opt      -
-shell-benchmarks benchmarks/auto.sh travis            _tmp/benchmark-data/index.html
+shell-benchmarks benchmarks/auto.sh soil-run          _tmp/benchmark-data/index.html
 mycpp-examples  mycpp/build.sh examples               mycpp/_ninja/index.html
-parse-errors    test/parse-errors.sh travis2          -
-spec-cpp        test/spec-cpp.sh travis               _tmp/spec/cpp/osh-summary.html
+parse-errors    test/parse-errors.sh soil-run-cpp     -
+spec-cpp        test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 }
 
@@ -146,7 +147,7 @@ dev-all-nix-tasks() {
   cat <<EOF
 build-all       build/dev.sh all            -
 oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
-osh-spec        test/spec.sh osh-travis     _tmp/spec/survey/osh.html
+osh-spec        test/spec.sh soil-run-osh   _tmp/spec/survey/osh.html
 EOF
 }
 
@@ -173,7 +174,7 @@ tour              build/doc.sh tour                      _release/VERSION/doc/oi
 all-markdown      build/doc.sh all-markdown              -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
-osh-spec          test/spec.sh osh-travis                _tmp/spec/survey/osh.html
+osh-spec          test/spec.sh soil-run-osh              _tmp/spec/survey/osh.html
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      build/test.sh oil-tar                  -
 EOF
@@ -197,11 +198,11 @@ EOF
 other-tests-tasks() {
   cat <<EOF
 dump-distro       soil/worker.sh dump-distro     -
-opyc              test/opyc.sh travis                     -
+opyc              test/opyc.sh soil-run                   -
 time-test         benchmarks/time-test.sh all-passing     -
-csv-concat-test   devtools/csv-concat-test.sh travis      -
-osh2oil           test/osh2oil.sh travis                  -
-R-test            devtools/R-test.sh soil-task            -
+csv-concat-test   devtools/csv-concat-test.sh soil-run    -
+osh2oil           test/osh2oil.sh soil-run                -
+R-test            devtools/R-test.sh soil-run             -
 xargs-test        test/other.sh xargs-test                -
 csv2html-test     test/other.sh csv2html-test             -
 py3-parse         test/py3_parse.sh parse-all             -
@@ -303,7 +304,7 @@ _run-dev-all-nix() {
     test/spec.sh builtin-completion -v -t
   fi
 
-  test/spec.sh osh-travis
+  test/spec.sh soil-run-osh
 
 }
 

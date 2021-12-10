@@ -163,7 +163,7 @@ demo-tasks() {
   done
 }
 
-travis() {
+soil-run() {
   local base_dir=_tmp/benchmark-data
   mkdir -p $base_dir
 

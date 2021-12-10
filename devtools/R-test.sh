@@ -16,7 +16,7 @@ test-r-packages() {
   R_LIBS_USER=$R_PATH Rscript -e 'library(dplyr)'
 }
 
-soil-task() {
+soil-run() {
   show-r
   test-r-packages
 }

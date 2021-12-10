@@ -39,7 +39,7 @@ EOF
   fi
 }
 
-travis() {
+soil-run() {
   cd devtools
   test-good
 }

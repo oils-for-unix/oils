@@ -143,7 +143,7 @@ typecheck-more-oil() {
   more-oil-manifest | xargs -- $0 typecheck-files
 }
 
-travis() {
+soil-run() {
   if test -n "${TRAVIS_SKIP:-}"; then
     echo "TRAVIS_SKIP: Skipping $0"
     return

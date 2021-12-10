@@ -125,7 +125,7 @@ run-for-release() {
   run-other-suite-for-release opyc all-passing
 }
 
-travis() {
+soil-run() {
   # TODO: use devtools/release.sh test-opy
   # That's really what we want to prevent from failing.
 
