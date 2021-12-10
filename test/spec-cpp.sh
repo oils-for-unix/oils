@@ -15,7 +15,8 @@ source web/table/html.sh
 
 shopt -s failglob  # to debug TSV expansion failure below
 
-readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+readonly REPO_ROOT
 
 # For now use opt since it's faster, see issue #970
 readonly OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/osh_eval.opt}
