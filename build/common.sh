@@ -42,7 +42,7 @@ readonly CLANG_LINK_FLAGS=''
 
 readonly PY27=Python-2.7.13
 
-readonly PREPARE_DIR=_deps/cpython-full
+readonly PREPARE_DIR=$_REPO_ROOT/../oil_DEPS/cpython-full
 
 # Used by devtools/bin.sh and opy/build.sh
 readonly OIL_SYMLINKS=(oil oilc osh oshc oven tea sh true false readlink)

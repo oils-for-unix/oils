@@ -31,7 +31,7 @@ from doctools import oil_doc
 # I think normally you'd just patch/substitute this path during the Nix build.
 # See note in shell.nix
 this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
-libname = os.environ.get('_NIX_SHELL_LIBCMARK', os.path.join(this_dir, '../_deps/libcmark.so'))
+libname = os.environ.get('_NIX_SHELL_LIBCMARK', os.path.join(this_dir, '../../oil_DEPS/libcmark.so'))
 
 cmark = ctypes.CDLL(libname)
 

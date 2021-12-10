@@ -14,6 +14,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+readonly REPO_ROOT
+
+readonly TAR_DIR=$REPO_ROOT/_cache
+readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS
+
 readonly CMARK_VERSION=0.29.0
 readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 
@@ -36,20 +42,19 @@ install-pygments() {
 }
 
 download() {
-  mkdir -p _deps
-  wget --no-clobber --directory _deps $URL
+  mkdir -p $TAR_DIR
+  wget --no-clobber --directory $TAR_DIR $URL
 }
 
-readonly CMARK_DIR=_deps/cmark-$CMARK_VERSION
-
 extract() {
-  pushd _deps
-  tar -x -z < $(basename $URL)
+  mkdir -p $DEPS_DIR
+  pushd $DEPS_DIR
+  tar -x -z < $TAR_DIR/$(basename $URL)
   popd
 }
 
 build() {
-  pushd $CMARK_DIR
+  pushd $DEPS_DIR/cmark-$CMARK_VERSION
   # GNU make calls cmake?
   make
 
@@ -66,8 +71,8 @@ build() {
 
 make-symlink() {
   #sudo make install
-  ln -s -f -v cmark-$CMARK_VERSION/build/src/libcmark.so _deps/
-  ls -l _deps/libcmark.so
+  ln -s -f -v $DEPS_DIR/cmark-$CMARK_VERSION/build/src/libcmark.so $DEPS_DIR/
+  ls -l $DEPS_DIR/libcmark.so
 }
 
 demo-theirs() {
