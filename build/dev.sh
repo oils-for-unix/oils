@@ -257,7 +257,6 @@ py-ext() {
   log ''
   log "$setup_script -> $name.so"
 
-  mkdir -p _devbuild/py-ext
   local arch
   arch=$(uname -m)
 

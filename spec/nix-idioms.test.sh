@@ -111,3 +111,38 @@ echo end
 ## STDOUT:
 []
 ## END
+
+#### export with dynamic var name +=
+
+orig() {
+  export NIX_LDFLAGS${role_post}+=" -L$1/lib64"
+}
+
+new() {
+  eval "NIX_LDFLAGS$role_post"+='" -L$1/lib64"'
+  export "NIX_LDFLAGS$role_post"
+}
+
+role_post='_foo'
+
+# set -u
+
+if test -n "${BASH_VERSION:-}"; then
+  orig one
+fi
+
+declare -p NIX_LDFLAGS_foo  # inspect it
+unset NIX_LDFLAGS_foo
+
+new one
+
+declare -p NIX_LDFLAGS_foo  # inspect it
+
+## STDOUT:
+declare -x NIX_LDFLAGS_foo=" -Lone/lib64"
+declare -x NIX_LDFLAGS_foo=" -Lone/lib64"
+## END
+## OK osh STDOUT:
+declare -x NIX_LDFLAGS_foo=' -Lone/lib64'
+## END
+
