@@ -43,6 +43,22 @@ cd /
 echo $PWD
 ## stdout: /
 
+#### cd BAD/..
+
+# Odd divergence in shells: dash and mksh normalize the path and don't check
+# this error.
+# TODO: I would like OSH to behave like bash and zsh, but it separting chdir_arg and
+# pwd_arg breaks case 17.
+
+cd nonexistent_ZZ/..
+echo status=$?
+## STDOUT:
+status=1
+## END
+## BUG dash/mksh STDOUT:
+status=0
+## END
+
 #### $OLDPWD
 cd /
 cd $TMP

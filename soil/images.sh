@@ -48,10 +48,17 @@ cmd() {
 mount-test() {
   local name=${1:-dummy}
 
+  local -a argv
+  if test $# -le 1; then
+    argv=(sh -c 'ls -l /app/oil')
+  else
+    argv=( "${@:2}" )  # index 2 not 1, weird shell behavior
+  fi
+
   # mount Oil directory as /app
   sudo docker run \
-    --mount "type=bind,source=$PWD/../,target=/app" \
-    oilshell/soil-$name sh -c 'ls -l /app'
+    --mount "type=bind,source=$PWD,target=/app/oil" \
+    oilshell/soil-$name "${argv[@]}"
 }
 
 # This shows CREATED, command CREATED BY, size

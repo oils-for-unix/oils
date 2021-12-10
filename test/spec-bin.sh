@@ -24,8 +24,12 @@ set -o errexit
 
 source test/spec-common.sh
 
-readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly DIR=$THIS_DIR/../_deps/spec-bin
+REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+readonly REPO_ROOT
+
+# This dir is a sibling to the repo to make it easier to use containers
+#readonly DIR=$REPO_ROOT/../oil_DEPS/spec-bin
+readonly DIR=$REPO_ROOT/_deps/spec-bin
 
 # The authoritative versions!
 download() {
