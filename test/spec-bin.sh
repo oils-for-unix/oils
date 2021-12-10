@@ -28,13 +28,13 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 # This dir is a sibling to the repo to make it easier to use containers
-#readonly DIR=$REPO_ROOT/../oil_DEPS/spec-bin
-readonly DIR=$REPO_ROOT/_deps/spec-bin
+readonly TAR_DIR=$REPO_ROOT/_cache/spec-bin
+readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS/spec-bin
 
 # The authoritative versions!
 download() {
-  mkdir -p $DIR
-  wget --no-clobber --directory $DIR \
+  mkdir -p $TAR_DIR
+  wget --no-clobber --directory $TAR_DIR \
     https://www.oilshell.org/blob/spec-bin/bash-4.4.tar.gz \
     https://www.oilshell.org/blob/spec-bin/$BUSYBOX_NAME.tar.bz2 \
     https://www.oilshell.org/blob/spec-bin/$DASH_NAME.tar.gz \
@@ -44,13 +44,14 @@ download() {
 }
 
 extract-all() {
-  pushd $DIR
+  mkdir -p $DEPS_DIR
+  pushd $DEPS_DIR
 
   # Remove name collision: _deps/spec-bin/mksh could be a FILE and a DIRECTORY.
   # This is unfortunately how their tarball is laid out.
-  rm --verbose -r -f $DIR/mksh $DIR/mksh-R52c
+  rm --verbose -r -f $DEPS_DIR/mksh $DEPS_DIR/mksh-R52c
 
-  for archive in *.tar.* *.tgz; do
+  for archive in $TAR_DIR/*.tar.* $TAR_DIR/*.tgz; do
     echo $archive
     tar --extract --file $archive
   done
@@ -59,8 +60,8 @@ extract-all() {
 }
 
 build-zsh() {
-  local prefix=$DIR/zsh-out
-  pushd $DIR/zsh-5.1.1
+  local prefix=$DEPS_DIR/zsh-out
+  pushd $DEPS_DIR/zsh-5.1.1
 
   # FIX for Github Actions, there's "no controlling tty", so add --with-tcsetpgrp
   # https://www.linuxfromscratch.org/blfs/view/7.5/postlfs/zsh.html
@@ -93,34 +94,34 @@ build-zsh() {
 # busybox: make defconfig (default config); make
 
 build-bash() {
-  pushd $DIR/bash-4.4
+  pushd $DEPS_DIR/bash-4.4
   ./configure
   make
   popd
 }
 
 build-dash() {
-  pushd $DIR/$DASH_NAME
+  pushd $DEPS_DIR/$DASH_NAME
   ./configure
   make
   popd
 }
 
 build-mksh() {
-  pushd $DIR/mksh-R52c
+  pushd $DEPS_DIR/mksh-R52c
   sh Build.sh
   popd
 }
 
 build-busybox() {
-  pushd $DIR/$BUSYBOX_NAME
+  pushd $DEPS_DIR/$BUSYBOX_NAME
   make defconfig
   make
   popd
 }
 
 build-yash() {
-  pushd $DIR/$YASH_NAME
+  pushd $DEPS_DIR/$YASH_NAME
 
   # 9/2021: Somehow hit this on my VirtualBox VM
   # The terminfo (curses) library is unavailable!
@@ -142,7 +143,7 @@ build-all() {
 }
 
 copy-all() {
-  pushd $DIR
+  pushd $DEPS_DIR
   cp -f -v bash-4.4/bash .
   cp -f -v $DASH_NAME/src/dash .
   cp -f -v mksh-R52c/mksh .
@@ -161,12 +162,12 @@ copy-all() {
 
 test-all() {
   for sh in bash dash zsh mksh ash yash; do
-    $DIR/$sh -c 'echo "Hello from $0"'
+    $DEPS_DIR/$sh -c 'echo "Hello from $0"'
 
     # bash and zsh depend on libtinfo, but others don't
     # ash and zsh depend on libm, but others don't
     # bash and zsh depend on libdl, but others don't
-    ldd $DIR/$sh
+    ldd $DEPS_DIR/$sh
   done
 }
 
@@ -221,8 +222,8 @@ publish-tmp() {
 all-steps() {
   # Uncomment to rebuild the Travis cache in _deps/
   #if false; then
-  if test -d $DIR; then
-    echo "$DIR exists: skipping build of shells"
+  if test -d $DEPS_DIR; then
+    echo "$DEPS_DIR exists: skipping build of shells"
   else
     download     # Get the right version of every tarball
     extract-all  # Extract source
