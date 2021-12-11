@@ -10,16 +10,23 @@ and run independently of the python codebase.
 
 Run all commands from within the `pgen-native` source tree.
 
+To rebuild and run all the tests:
+
+```
+$ make
+```
+
 ### Build
 
-```
-make
-```
-
-### Run
 
 ```
-./parser
+$ make all
+```
+
+### Run The Tests
+
+```
+./test
 ```
 
 ### Clean

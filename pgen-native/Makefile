@@ -13,13 +13,16 @@ OBJS := parser.o \
 	parsetok.o \
 	main.o
 
-.PHONY: parser
-parser: $(OBJS)
-	gcc -o parser $^ $(CFLAGS) $(LDFLAGS)
+run: all
+	./test
 
-all: clean parser
+all: clean test
+
+.PHONY: parser
+test: $(OBJS)
+	gcc -o test $^ $(CFLAGS) $(LDFLAGS)
 
 .PHONY: clean
 clean:
 	rm -rf *.o
-	rm parser
+	rm -f test
