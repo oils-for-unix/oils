@@ -153,8 +153,8 @@ cd $REPO_ROOT
 compgen -A directory p | sort
 ## STDOUT:
 pgen2
-pylib
 py-yajl
+pylib
 ## END
 
 #### compgen -A file

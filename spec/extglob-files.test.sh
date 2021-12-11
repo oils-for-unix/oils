@@ -137,9 +137,6 @@ argv.py @(__aa|'__<>'|__{}|__#|__&&|)
 ## STDOUT:
 ['__#', '__&&', '__<>', '__aa', '__{}']
 ## END
-## OK bash STDOUT:
-['__<>', '__{}', '__&&', '__#', '__aa']
-## END
 
 #### More glob escaping
 shopt -s extglob
@@ -153,10 +150,6 @@ argv.py @(nested|'_?'|@('_[:]'|'_*'))
 ## STDOUT:
 ['_*', '_?', '_[:]']
 ['_*', '_?', '_[:]']
-## END
-## OK bash STDOUT:
-['_?', '_[:]', '_*']
-['_?', '_[:]', '_*']
 ## END
 
 #### Escaping of pipe (glibc bug, see demo/glibc_fnmatch.c)
@@ -351,13 +344,9 @@ echo @(*)
 -dash bar foo
 bar foo
 ## END
-## N-I mksh STDOUT:
+## N-I bash/mksh STDOUT:
 -dash bar foo
 -dash bar foo
-## END
-## N-I bash STDOUT:
-bar -dash foo
-bar -dash foo
 ## END
 
 #### noglob

@@ -34,6 +34,10 @@ aaa aBC DEF
 ## END
 
 #### Lower Case glob
+
+# Hm with C.UTF-8, this does no case folding?
+export LC_ALL=en_US.UTF-8
+
 x='ABC DEF'
 echo ${x,[d-f]}
 echo ${x,,[d-f]}  # This seems buggy, it doesn't include F?

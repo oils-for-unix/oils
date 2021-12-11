@@ -39,7 +39,7 @@ echo $ABC
 ## STDOUT:
 abc)d
 ab+( ?d)
-abc)d _tmp
+_tmp abc)d
 ## END
 ## OK mksh STDOUT:
 abc)d

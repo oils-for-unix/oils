@@ -189,9 +189,8 @@ _μ_ and _μ_
 _μ_ and _μ_
 ## END
 
-#### Can't substitute one unicode character when LANG=C
-export LANG='C'
-export LC_CTYPE='C'
+#### Can't substitute one unicode character when LC_ALL=C
+export LC_ALL='C'
 
 s='_μ_ and _μ_'
 
