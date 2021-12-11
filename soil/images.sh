@@ -17,7 +17,7 @@ build() {
   #
   # It is more parallel and has colored output.
   sudo DOCKER_BUILDKIT=1 \
-    docker build --tag oilshell/soil-$name --file soil/$name.Dockerfile .
+    docker build --tag oilshell/soil-$name --file soil/Dockerfile.$name .
 }
 
 push() {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-env_to_json.py: Dump selected environment variables as JSON.
+collect_json.py: Dump files and selected environment variables as JSON.
 """
 from __future__ import print_function
 

@@ -257,7 +257,7 @@ deploy-job-results() {
 
   date +%s > _tmp/soil/task-deploy-start-time.txt
 
-  soil/env_to_json.py _tmp/soil "$@" > $job_id.json
+  soil/collect_json.py _tmp/soil "$@" > $job_id.json
 
   # So we don't have to unzip it
   cp _tmp/soil/INDEX.tsv $job_id.tsv
