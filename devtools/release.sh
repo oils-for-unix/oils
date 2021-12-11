@@ -949,39 +949,6 @@ more-release-deps() {
   fi
 }
 
-tarball-build-deps() {
-  ### Tools and libs needed to build the tarball.
-
-  # On Travis, the _devbuild and _deps dirs should be cached.
-
-  local d0='_deps/cpython-full'
-  #if false; then
-  if test -d $d0; then
-    echo "$d0 exists: skipping build/prepare.sh"
-  else
-    build/prepare.sh configure
-    build/prepare.sh build-python
-  fi
-
-  local d1='../oil_DEPS/re2c-1.0.3'
-  if test -d $d1; then
-    echo "$d1 exists: skipping re2c"
-  else
-    soil/deps-tar.sh download-re2c
-    soil/deps-tar.sh build-re2c
-  fi
-
-  local d2='_deps/cmark-0.29.0'  # CMARK_VERSION
-  if test -d $d2; then
-    echo "$d2 exists: skipping cmark"
-  else
-    doctools/cmark.sh download
-    doctools/cmark.sh extract
-    doctools/cmark.sh build
-    doctools/cmark.sh make-symlink
-  fi
-}
-
 # This is a hack because the Makefile dependencies aren't correct.
 quick-oil-tarball() {
   make clean-repo

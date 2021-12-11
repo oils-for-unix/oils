@@ -13,6 +13,7 @@ RUN soil/deps-apt.sh cpp
 # a sibling of the runtime bind mount /app/oil.
 
 COPY soil/deps-tar.sh /app/tmp/soil/deps-tar.sh
-RUN soil/deps-tar.sh cpp
+
+RUN soil/deps-tar.sh layer-re2c
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-cpp buildkit'"]

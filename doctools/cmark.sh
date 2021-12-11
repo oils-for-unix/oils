@@ -41,44 +41,6 @@ install-pygments() {
   echo TODO
 }
 
-download() {
-  mkdir -p $TAR_DIR
-  wget --no-clobber --directory $TAR_DIR $URL
-}
-
-extract() {
-  pushd $TAR_DIR
-  tar -x -z < $(basename $URL)
-  popd
-}
-
-build() {
-  mkdir -p $DEPS_DIR/cmark
-  pushd $DEPS_DIR/cmark
-
-  # Configure
-  cmake $TAR_DIR/cmark-0.29.0/
-
-  # Compile
-  make
-
-  # This tests with Python 3, but we're using cmark via Python 2.
-  # It crashes on some systems due to the renaming of cgi.escape -> html.escape
-  # (issue 792)
-  # The 'demo-ours' test is good enough for us.
-  #make test
-
-  popd
-
-  # Binaries are in build/src
-}
-
-make-symlink() {
-  #sudo make install
-  ln -s -f -v $DEPS_DIR/cmark/src/libcmark.so $DEPS_DIR/
-  ls -l $DEPS_DIR/libcmark.so
-}
-
 demo-theirs() {
   echo '*hi*' | cmark
 }

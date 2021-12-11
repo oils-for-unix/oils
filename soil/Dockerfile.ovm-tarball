@@ -9,7 +9,19 @@ WORKDIR /app/tmp
 COPY soil/deps-apt.sh /app/tmp/soil/deps-apt.sh
 RUN soil/deps-apt.sh ovm-tarball
 
+# TODO: Figure out a better way to handle deps?
+COPY Python-2.7.13/ /app/tmp/Python-2.7.13/
+COPY build/common.sh /app/tmp/build/common.sh
 COPY soil/deps-tar.sh /app/tmp/soil/deps-tar.sh
-RUN soil/deps-tar.sh ovm-tarball
+
+RUN soil/deps-tar.sh layer-python-symlink
+RUN soil/deps-tar.sh layer-cmark
+RUN soil/deps-tar.sh layer-re2c
+RUN soil/deps-tar.sh layer-cpython
+
+COPY test/spec-common.sh /app/tmp/test/spec-common.sh
+COPY test/spec-bin.sh /app/tmp/test/spec-bin.sh
+
+RUN test/spec-bin.sh all-steps
 
 CMD ["sh", "-c", "echo 'hello from oilshell/ovm-tarball buildkit'"]

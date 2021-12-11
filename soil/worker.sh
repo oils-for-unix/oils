@@ -165,8 +165,6 @@ ovm-tarball-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-locale       soil/worker.sh dump-locale    -
-tarball-deps      devtools/release.sh tarball-build-deps -
-spec-deps         test/spec-bin.sh all-steps             -
 dev-all           build/dev.sh all                       -
 yajl              build/dev.sh yajl-release              -
 tour              build/doc.sh tour                      _release/VERSION/doc/oil-language-tour.html
