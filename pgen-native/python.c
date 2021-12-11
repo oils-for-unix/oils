@@ -11,8 +11,8 @@
 #include <string.h>
 
 
-const int Py_VerboseFlag = 1;
-const int Py_DebugFlag = 1;
+int Py_VerboseFlag = 1;
+int Py_DebugFlag = 1;
 
 
 // Error
