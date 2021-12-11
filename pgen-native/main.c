@@ -14,7 +14,7 @@ int main (int argc, char **argv) {
 	  PyParser_ParseString(
 		  test_string,
 		  &python_grammar,
-		  expr,
+		  eval_input,
 		  &err));
 
  exit:
