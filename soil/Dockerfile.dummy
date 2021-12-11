@@ -2,9 +2,11 @@ FROM debian:buster-slim
 
 RUN apt-get update 
 
-# Copy this file into the container so we can run it.
-WORKDIR /app
-COPY soil/image-deps.sh .
-RUN ./image-deps.sh dummy
+WORKDIR /app/tmp
+
+# Copy build scripts file into the container and run them
+
+COPY soil/deps-apt.sh /app/tmp/soil/deps-apt.sh
+RUN soil/deps-apt.sh dummy
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-dummy buildkit'"]

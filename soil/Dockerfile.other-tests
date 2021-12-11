@@ -2,12 +2,14 @@ FROM debian:buster-slim
 
 RUN apt-get update 
 
-# Copy this file into the container so we can run it.
-WORKDIR /app
-COPY soil/image-deps.sh .
+WORKDIR /app/tmp
 
-RUN ./image-deps.sh other-tests
+# Copy build scripts into the container and run them
 
-RUN ./image-deps.sh other-tests-R
+COPY soil/deps-apt.sh /app/tmp/soil/deps-apt.sh
+RUN soil/deps-apt.sh other-tests
+
+COPY soil/deps-R.sh /app/tmp/soil/deps-R.sh
+RUN soil/deps-R.sh other-tests
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-other-tests buildkit'"]

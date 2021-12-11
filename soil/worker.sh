@@ -119,7 +119,6 @@ cpp-tasks() {
   cat <<EOF
 dump-versions   soil/worker.sh dump-versions -
 build-minimal   build/dev.sh minimal                  -
-cpp-unit-dpes   test/cpp-unit.sh deps                 -
 cpp-unit-all    test/cpp-unit.sh all                  -
 mycpp-git       mycpp/deps.sh git-clone               -
 mycpp-pip       mycpp/deps.sh pip-install             -

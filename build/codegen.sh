@@ -21,36 +21,11 @@ set -o errexit
 
 source build/common.sh
 
-REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
-readonly REPO_ROOT
-
 export PYTHONPATH='.:vendor/'
 
 if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 're2c'
 fi
-
-readonly DEPS_DIR=$PWD/../oil_DEPS
-
-# TODO: Delete these once soil/image-deps.sh handles it
-download-re2c() {
-  # local cache of remote files
-  mkdir -p _cache
-  wget --no-clobber --directory _cache \
-    https://github.com/skvadrik/re2c/releases/download/1.0.3/re2c-1.0.3.tar.gz
-}
-
-build-re2c() {
-  cd $REPO_ROOT/_cache
-  tar -x -z < re2c-1.0.3.tar.gz
-  mkdir -p $DEPS_DIR/re2c
-  cd $DEPS_DIR/re2c
-  $REPO_ROOT/_cache/re2c-1.0.3/configure
-  make
-}
-
-# TODO: remove this
-install-re2c() { build-re2c "$@"; }
 
 download-clang() {
   wget --no-clobber --directory _deps \

@@ -2,12 +2,14 @@ FROM debian:buster-slim
 
 RUN apt-get update
 
-# Copy this file into the container so we can run it.
-WORKDIR /app
-COPY soil/image-deps.sh .
+WORKDIR /app/tmp
 
-RUN ./image-deps.sh dev-minimal
+# Copy build scripts into the container and run them
 
-RUN ./image-deps.sh dev-minimal-py
+COPY soil/deps-apt.sh /app/tmp/soil/deps-apt.sh
+RUN soil/deps-apt.sh dev-minimal
+
+COPY soil/deps-py.sh /app/tmp/soil/deps-py.sh
+RUN soil/deps-py.sh dev-minimal
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-dev-minimal buildkit'"]

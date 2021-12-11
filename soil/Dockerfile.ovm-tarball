@@ -2,12 +2,14 @@ FROM debian:buster-slim
 
 RUN apt-get update 
 
-# Copy this file into the container so we can run it.
-WORKDIR /app
-COPY soil/image-deps.sh .
+WORKDIR /app/tmp
 
-RUN ./image-deps.sh ovm-tarball
+# Copy build scripts into the container and run them
 
-RUN ./image-deps.sh ovm-tarball-source-deps
+COPY soil/deps-apt.sh /app/tmp/soil/deps-apt.sh
+RUN soil/deps-apt.sh ovm-tarball
+
+COPY soil/deps-tar.sh /app/tmp/soil/deps-tar.sh
+RUN soil/deps-tar.sh ovm-tarball
 
 CMD ["sh", "-c", "echo 'hello from oilshell/ovm-tarball buildkit'"]

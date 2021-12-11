@@ -963,12 +963,12 @@ tarball-build-deps() {
     build/prepare.sh build-python
   fi
 
-  local d1='_deps/re2c-1.0.3'
+  local d1='../oil_DEPS/re2c-1.0.3'
   if test -d $d1; then
     echo "$d1 exists: skipping re2c"
   else
-    build/codegen.sh download-re2c
-    build/codegen.sh install-re2c
+    soil/deps-tar.sh download-re2c
+    soil/deps-tar.sh build-re2c
   fi
 
   local d2='_deps/cmark-0.29.0'  # CMARK_VERSION
