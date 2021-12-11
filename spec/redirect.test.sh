@@ -654,9 +654,15 @@ cat file1
 ## N-I mksh/dash status: 1
 
 #### redirection from directory doesn't crash
+
+# This tickles an infinite loop bug in our version of mksh!  TODO: ugprade the
+# version and enable this
+case $SH in (mksh) return ;; esac
+
 cd $TMP
 mkdir -p dir
 read x < ./dir
 echo status=$?
 ## stdout: status=1
-## OK mksh stdout: status=2
+# OK mksh stdout: status=2
+## OK mksh stdout-json: ""
