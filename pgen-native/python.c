@@ -12,7 +12,7 @@
 
 
 int Py_VerboseFlag = 1;
-int Py_DebugFlag = 1;
+int Py_DebugFlag = 0;
 
 
 // Error
