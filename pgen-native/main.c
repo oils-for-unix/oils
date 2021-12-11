@@ -3,23 +3,40 @@
 #include "tokenizer.h"
 
 
-static const char *test_string = "3 * 2 + 1";
+static const char *tests[] = {
+    "1",
+    "3 * 2 + 1",
+    "1 + 2 * 3",
+    "foo",
+    "foo()",
+    "foo(1)",
+    "def double(x): return x * 2",
+    "lambda x: x * 2",
+    // XXX: don't touch this
+    NULL
+};
+
+
+static void parse_one(const char *str) {
+    perrdetail err;
+
+    // XXX: Fix this memory leak
+    // XXX: inspect the error return value
+    PyNode_ListTree(
+	PyParser_ParseString(
+	    str,
+	    &python_grammar,
+	    eval_input,
+	    &err));
+
+    fprintf(stdout, "\n");
+}
 
 
 int main (int argc, char **argv) {
-  perrdetail err;
-
-  // XXX: Ignoring this memory leak for now;
-  PyNode_ListTree(
-	  PyParser_ParseString(
-		  test_string,
-		  &python_grammar,
-		  eval_input,
-		  &err));
-
- exit:
-  return 0;
-
- err:
-  return -1;
+    for (const char **i = tests; *i != NULL; i++) {
+	// XXX: handle errors
+	parse_one(*i);
+    }
+    return 0;
 }
