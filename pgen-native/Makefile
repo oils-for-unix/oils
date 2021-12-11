@@ -1,4 +1,4 @@
-CFLAGS := -Wall
+CFLAGS := -Wall -g
 
 OBJS := parser.o \
 	tokenizer.o \
