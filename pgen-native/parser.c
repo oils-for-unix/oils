@@ -13,6 +13,11 @@
 #include "parser.h"
 #include "errcode.h"
 
+#include <string.h>
+
+
+#define Py_DEBUG 1
+
 
 #ifdef Py_DEBUG
 extern int Py_DebugFlag;
