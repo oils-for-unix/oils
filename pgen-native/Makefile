@@ -13,6 +13,7 @@ OBJS := parser.o \
 	parsetok.o \
 	main.o
 
+.PHONY: parser
 parser: $(OBJS)
 	gcc -o parser $^ $(CFLAGS) $(LDFLAGS)
 
