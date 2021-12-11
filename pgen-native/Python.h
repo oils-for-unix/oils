@@ -10,7 +10,8 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <stddef.h>
+//#include <stddef.h>
+#include <unistd.h>
 // XXX: Remove instances of these later
 #define PyAPI_FUNC(x) extern x
 #define PyAPI_DATA(x) extern x
@@ -21,7 +22,7 @@
 #define PGEN
 
 // Types
-typedef size_t Py_ssize_t;
+typedef ssize_t Py_ssize_t;
 
 extern int Py_VerboseFlag;
 extern int Py_DebugFlag;
