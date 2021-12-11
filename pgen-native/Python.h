@@ -23,8 +23,8 @@
 // Types
 typedef size_t Py_ssize_t;
 
-extern const int Py_VerboseFlag;
-extern const int Py_DebugFlag;
+extern int Py_VerboseFlag;
+extern int Py_DebugFlag;
 
 
 void Py_FatalError(const char *err);

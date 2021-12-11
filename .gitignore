@@ -3,6 +3,7 @@
 tags
 .vagrant
 .mypy_cache/
+_cache/
 _chroot/
 _tmp/
 _bin/
@@ -33,3 +34,11 @@ TODO*.txt
 uftrace.data
 release-*.txt
 asdl.txt
+
+# pgen-specific stuff, this is probably temporary
+pgen-native/*.o
+pgen-native/parser
+
+
+# emacs temp files
+*~

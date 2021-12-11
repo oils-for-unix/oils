@@ -9,6 +9,8 @@ OBJS := parser.o \
 	python.o \
 	acceler.o \
         listnode.o \
+	python_grammar.o \
+	parsetok.o \
 	main.o
 
 parser: $(OBJS)
@@ -19,3 +21,4 @@ all: clean parser
 .PHONY: clean
 clean:
 	rm -rf *.o
+	rm parser
