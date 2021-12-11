@@ -652,3 +652,11 @@ cat file1
 ## stdout: foo
 ## N-I mksh/dash stdout-json: ""
 ## N-I mksh/dash status: 1
+
+#### redirection from directory doesn't crash
+cd $TMP
+mkdir -p dir
+read x < ./dir
+echo status=$?
+## stdout: status=1
+## OK mksh stdout: status=2
