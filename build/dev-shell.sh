@@ -7,7 +7,7 @@
 # Note: assumes that $REPO_ROOT is $PWD.
 
 # build/codegen.sh builds binaries
-readonly RE2C_DIR="$PWD/../oil_DEPS/re2c-1.0.3"
+readonly RE2C_DIR="$PWD/../oil_DEPS/re2c"
 
 # FALLBACK without test/spec-bin: test/spec.sh link-busybox-ash
 readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"

@@ -44,14 +44,13 @@ download() {
 }
 
 extract-all() {
-  mkdir -p $DEPS_DIR
-  pushd $DEPS_DIR
+  pushd $TAR_DIR
 
   # Remove name collision: _deps/spec-bin/mksh could be a FILE and a DIRECTORY.
   # This is unfortunately how their tarball is laid out.
-  rm --verbose -r -f $DEPS_DIR/mksh $DEPS_DIR/mksh-R52c
+  rm --verbose -r -f mksh mksh-R52c
 
-  for archive in $TAR_DIR/*.tar.* $TAR_DIR/*.tgz; do
+  for archive in *.tar.* *.tgz; do
     echo $archive
     tar --extract --file $archive
   done
@@ -60,14 +59,14 @@ extract-all() {
 }
 
 build-zsh() {
-  local prefix=$DEPS_DIR/zsh-out
-  pushd $DEPS_DIR/zsh-5.1.1
+  mkdir -p $DEPS_DIR/_zsh
+  pushd $DEPS_DIR/_zsh
 
   # FIX for Github Actions, there's "no controlling tty", so add --with-tcsetpgrp
   # https://www.linuxfromscratch.org/blfs/view/7.5/postlfs/zsh.html
 
   # This builds config.modules
-  ./configure --disable-dynamic --with-tcsetpgrp
+  $TAR_DIR/zsh-5.1.1/configure --disable-dynamic --with-tcsetpgrp
 
   # Build a static version of ZSH
 
@@ -94,40 +93,55 @@ build-zsh() {
 # busybox: make defconfig (default config); make
 
 build-bash() {
-  pushd $DEPS_DIR/bash-4.4
-  ./configure
+  mkdir -p $DEPS_DIR/_bash
+  pushd $DEPS_DIR/_bash
+  $TAR_DIR/bash-4.4/configure
   make
   popd
 }
 
 build-dash() {
-  pushd $DEPS_DIR/$DASH_NAME
-  ./configure
+  mkdir -p $DEPS_DIR/_dash
+  pushd $DEPS_DIR/_dash
+
+  $TAR_DIR/$DASH_NAME/configure
   make
   popd
 }
 
 build-mksh() {
-  pushd $DEPS_DIR/mksh-R52c
-  sh Build.sh
+  mkdir -p $DEPS_DIR/_mksh
+  pushd $DEPS_DIR/_mksh
+
+  sh $TAR_DIR/mksh-R52c/Build.sh
+
   popd
 }
 
 build-busybox() {
-  pushd $DEPS_DIR/$BUSYBOX_NAME
-  make defconfig
+  mkdir -p $DEPS_DIR/_busybox
+  pushd $DEPS_DIR/_busybox
+
+  # Out of tree instructions from INSTALL
+  make KBUILD_SRC=$TAR_DIR/$BUSYBOX_NAME -f $TAR_DIR/$BUSYBOX_NAME/Makefile defconfig
   make
+
   popd
 }
 
 build-yash() {
-  pushd $DEPS_DIR/$YASH_NAME
+  # yash isn't written with autotools or cmake
+  # It seems like it has to be configured and built in the same dir.
+
+  pushd $TAR_DIR/$YASH_NAME
 
   # 9/2021: Somehow hit this on my VirtualBox VM
   # The terminfo (curses) library is unavailable!
   # Add the "--disable-lineedit" option and try again.
-  ./configure --disable-lineedit
+  ./configure --disable-lineedit --prefix=$DEPS_DIR/_yash
   make
+  make install
+
   popd
 }
 
@@ -144,11 +158,11 @@ build-all() {
 
 copy-all() {
   pushd $DEPS_DIR
-  cp -f -v bash-4.4/bash .
-  cp -f -v $DASH_NAME/src/dash .
-  cp -f -v mksh-R52c/mksh .
-  cp -f -v $BUSYBOX_NAME/busybox .
-  cp -f -v $YASH_NAME/yash .
+  cp -f -v _bash/bash .
+  cp -f -v _dash/src/dash .
+  cp -f -v _mksh/mksh .
+  cp -f -v _busybox/busybox .
+  cp -f -v _yash/bin/yash .
 
   ln -s -f -v busybox ash
 
@@ -156,7 +170,7 @@ copy-all() {
   #ln -s -f -v zsh-out/bin/zsh .
 
   # Static binary
-  cp -f -v zsh-5.1.1/Src/zsh .
+  cp -f -v _zsh/Src/zsh .
   popd
 }
 

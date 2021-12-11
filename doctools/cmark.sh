@@ -47,15 +47,19 @@ download() {
 }
 
 extract() {
-  mkdir -p $DEPS_DIR
-  pushd $DEPS_DIR
-  tar -x -z < $TAR_DIR/$(basename $URL)
+  pushd $TAR_DIR
+  tar -x -z < $(basename $URL)
   popd
 }
 
 build() {
-  pushd $DEPS_DIR/cmark-$CMARK_VERSION
-  # GNU make calls cmake?
+  mkdir -p $DEPS_DIR/cmark
+  pushd $DEPS_DIR/cmark
+
+  # Configure
+  cmake $TAR_DIR/cmark-0.29.0/
+
+  # Compile
   make
 
   # This tests with Python 3, but we're using cmark via Python 2.
@@ -71,7 +75,7 @@ build() {
 
 make-symlink() {
   #sudo make install
-  ln -s -f -v $DEPS_DIR/cmark-$CMARK_VERSION/build/src/libcmark.so $DEPS_DIR/
+  ln -s -f -v $DEPS_DIR/cmark/src/libcmark.so $DEPS_DIR/
   ls -l $DEPS_DIR/libcmark.so
 }
 
