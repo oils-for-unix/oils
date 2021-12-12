@@ -9,4 +9,7 @@ WORKDIR /home/uke/tmp
 COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
 RUN soil/deps-apt.sh dummy
 
+RUN useradd --create-home uke && chown -R uke /home/uke
+USER uke
+
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-dummy buildkit'"]

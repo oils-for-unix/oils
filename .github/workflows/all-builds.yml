@@ -41,7 +41,7 @@ jobs:
       - name: dummy
         run: |
           cd $REPO_ROOT
-          soil/host-shim.sh run-job docker $REPO_ROOT dummy
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT dummy
 
       - name: publish-html
         env:
