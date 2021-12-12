@@ -42,6 +42,7 @@ func_realpath(PyObject *self, PyObject *args) {
   char target[PATH_MAX + 1];
   char *status = realpath(symlink, target);
 
+  // TODO: Throw exception like IOError here
   if (status == NULL) {
     debug("error from realpath()");
     Py_RETURN_NONE;

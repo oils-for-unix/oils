@@ -124,7 +124,7 @@ jobs:
       - name: ovm-tarball
         run: |
           cd $REPO_ROOT
-          soil/host-shim.sh run-job docker $REPO_ROOT ovm-tarball
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT ovm-tarball
 
       - name: publish-html
         env:

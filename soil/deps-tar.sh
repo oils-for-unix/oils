@@ -124,12 +124,8 @@ build-python() {
 }
 
 #
-# Image Definitions
+# Layer Definitions
 #
-
-layer-python-symlink() {
-  ln -s -f -v /usr/bin/python2 /usr/bin/python
-}
 
 layer-cmark() {
   download-cmark

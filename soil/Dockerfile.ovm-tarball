@@ -2,25 +2,30 @@ FROM debian:buster-slim
 
 RUN apt-get update 
 
-WORKDIR /app/tmp
+WORKDIR /home/uke/tmp
 
 # Copy build scripts into the container and run them
 
-COPY soil/deps-apt.sh /app/tmp/soil/deps-apt.sh
+COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
 RUN soil/deps-apt.sh ovm-tarball
 
-# TODO: Figure out a better way to handle deps?
-COPY Python-2.7.13/ /app/tmp/Python-2.7.13/
-COPY build/common.sh /app/tmp/build/common.sh
-COPY soil/deps-tar.sh /app/tmp/soil/deps-tar.sh
+# Run as root
+RUN soil/deps-apt.sh layer-python-symlink
 
-RUN soil/deps-tar.sh layer-python-symlink
+RUN useradd --create-home uke && chown -R uke /home/uke
+USER uke
+
+# TODO: Figure out a better way to handle deps?
+COPY Python-2.7.13/ /home/uke/tmp/Python-2.7.13/
+COPY build/common.sh /home/uke/tmp/build/common.sh
+COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
+
 RUN soil/deps-tar.sh layer-cmark
 RUN soil/deps-tar.sh layer-re2c
 RUN soil/deps-tar.sh layer-cpython
 
-COPY test/spec-common.sh /app/tmp/test/spec-common.sh
-COPY test/spec-bin.sh /app/tmp/test/spec-bin.sh
+COPY test/spec-common.sh /home/uke/tmp/test/spec-common.sh
+COPY test/spec-bin.sh /home/uke/tmp/test/spec-bin.sh
 
 RUN test/spec-bin.sh all-steps
 

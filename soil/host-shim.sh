@@ -39,6 +39,30 @@ run-job() {
       sh -c "cd /app/oil; soil/worker.sh run-$task"
 }
 
+# TODO: migrate all containers to /home/uke
+run-job-uke() {
+  local docker=$1  # docker or podman
+  local repo_root=$2
+  local task=$3  # e.g. dev-minimal
+
+  # docker.io is the namespace for hub.docker.com
+  local image="docker.io/oilshell/soil-$task"
+
+  local metadata_dir=$repo_root/_tmp/soil
+
+  mkdir -p $metadata_dir  # may not exist yet
+
+  # Use external time command in POSIX format, so it's consistent between hosts
+  command time -p -o $metadata_dir/image-pull-time.txt \
+    $docker pull $image
+
+  $docker run \
+      --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
+      $image \
+      sh -c "cd /home/uke/oil; soil/worker.sh run-$task"
+}
+
+
 local-test() {
   ### Something I can run locally.  This is fast.
   local task=${1:-dummy}

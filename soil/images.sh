@@ -50,14 +50,14 @@ mount-test() {
 
   local -a argv
   if test $# -le 1; then
-    argv=(sh -c 'ls -l /app/oil')
+    argv=(sh -c 'ls -l /home/uke/oil')
   else
     argv=( "${@:2}" )  # index 2 not 1, weird shell behavior
   fi
 
   # mount Oil directory as /app
   sudo docker run \
-    --mount "type=bind,source=$PWD,target=/app/oil" \
+    --mount "type=bind,source=$PWD,target=/home/uke/oil" \
     oilshell/soil-$name "${argv[@]}"
 }
 

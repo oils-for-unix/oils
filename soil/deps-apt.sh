@@ -7,6 +7,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+layer-python-symlink() {
+  ### A special layer for building CPython; done as root
+  ln -s -f -v /usr/bin/python2 /usr/bin/python
+}
+
 dummy() {
   # gcc: time-helper is needed
   # git: for checking out code
@@ -86,6 +91,9 @@ ovm-tarball() {
   local -a packages=(
     # common
     gcc git python2
+
+    # spec tests need the 'time' command, not the shell builtin
+    time
 
     # This is a separate package needed for re2c.  TODO: remove when we've
     # built it into the image.

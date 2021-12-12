@@ -16,7 +16,7 @@ secrets:
 tasks:
   - ovm-tarball: |
       cd oil
-      soil/host-shim.sh run-job podman $PWD ovm-tarball
+      soil/host-shim.sh run-job-uke podman $PWD ovm-tarball
 
   # Relies on SSH key, so do it outside the container
   - publish-html: |
