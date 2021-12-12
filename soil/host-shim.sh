@@ -21,11 +21,12 @@ mount-perms() {
   ### Ensure that the guest can write to bind mount
 
   local repo_root=$1
-  local meta_dir=$repo_root/_tmp/soil
 
-  mkdir -p $meta_dir
-  sudo chmod --verbose 777 $repo_root $meta_dir
-  ls -l -d $repo_root $meta_dir
+  mkdir -p $repo_root/_tmp/soil
+
+  local -a dirs=($repo_root $repo_root/_tmp $repo_root/_tmp/soil)
+  sudo chmod --verbose 777 "${dirs[@]}"
+  ls -l -d "${dirs[@]}"
 }
 
 run-job() {
