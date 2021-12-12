@@ -14,6 +14,10 @@ secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
 tasks:
+  - mount-perms: |
+      cd oil
+      soil/host-shim.sh mount-perms $PWD
+
   - ovm-tarball: |
       cd oil
       soil/host-shim.sh run-job-uke podman $PWD ovm-tarball

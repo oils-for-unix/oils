@@ -17,6 +17,17 @@ docker-mount-perms() {
   ls -l -d $dir
 }
 
+mount-perms() {
+  ### Ensure that the guest can write to bind mount
+
+  local repo_root=$1
+  local meta_dir=$repo_root/_tmp/soil
+
+  mkdir -p $meta_dir
+  sudo chmod --verbose 777 $repo_root $meta_dir
+  ls -l -d $repo_root $meta_dir
+}
+
 run-job() {
   local docker=$1  # docker or podman
   local repo_root=$2
@@ -50,10 +61,8 @@ run-job-uke() {
 
   local metadata_dir=$repo_root/_tmp/soil
 
-  # Hack because the host creates this dir as a different user, and the guest
-  # needs to write into it.
   mkdir -v -p $metadata_dir
-  chmod -v 777 $metadata_dir
+  #chmod -v 777 $metadata_dir
 
   # Use external time command in POSIX format, so it's consistent between hosts
   command time -p -o $metadata_dir/image-pull-time.txt \
@@ -80,6 +89,7 @@ local-test() {
   cd $fresh_clone
   git checkout $branch
 
+  sudo $0 mount-perms $fresh_clone
   sudo $0 run-job docker $fresh_clone $task
 }
 
@@ -97,6 +107,7 @@ local-test-uke() {
   cd $fresh_clone
   git checkout $branch
 
+  sudo $0 mount-perms $fresh_clone
   sudo $0 run-job-uke docker $fresh_clone $task
 }
 

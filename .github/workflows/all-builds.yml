@@ -36,7 +36,7 @@ jobs:
 
       - name: install
         run: |
-          soil/host-shim.sh docker-mount-perms $REPO_ROOT
+          soil/host-shim.sh mount-perms $REPO_ROOT
 
       - name: dummy
         run: |
@@ -119,7 +119,7 @@ jobs:
 
       - name: install
         run: |
-          soil/host-shim.sh docker-mount-perms $REPO_ROOT
+          soil/host-shim.sh mount-perms $REPO_ROOT
 
       - name: ovm-tarball
         run: |
