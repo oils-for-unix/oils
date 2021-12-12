@@ -22,11 +22,13 @@ mount-perms() {
 
   local repo_root=$1
 
-  mkdir -p $repo_root/_tmp/soil
+  mkdir -p "$repo_root/_tmp/soil"
 
-  local -a dirs=($repo_root $repo_root/_tmp $repo_root/_tmp/soil)
-  sudo chmod --verbose 777 "${dirs[@]}"
-  ls -l -d "${dirs[@]}"
+  # We have to chmod all dirs because build/dev.sh all creates
+  # build/temp.linux-*, for example
+
+  time find "$repo_root" -name .git -a -prune -o -type d -a -print \
+    | xargs -d $'\n' -- chmod --verbose 777
 }
 
 run-job() {
