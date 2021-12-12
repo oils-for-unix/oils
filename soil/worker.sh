@@ -334,7 +334,11 @@ job-main() {
   local job_name=$1
 
   local out_dir=_tmp/soil
-  mkdir -p $out_dir
+
+  log "job-main: running as $(whoami) in directory $PWD"
+  mkdir -v -p $out_dir
+  ls -l -d $out_dir
+
   save-metadata $job_name $out_dir
 
   ${job_name}-tasks | run-tasks $out_dir

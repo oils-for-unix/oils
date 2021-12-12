@@ -50,7 +50,10 @@ run-job-uke() {
 
   local metadata_dir=$repo_root/_tmp/soil
 
-  mkdir -p $metadata_dir  # may not exist yet
+  # Hack because the host creates this dir as a different user, and the guest
+  # needs to write into it.
+  mkdir -v -p $metadata_dir
+  chmod -v 777 $metadata_dir
 
   # Use external time command in POSIX format, so it's consistent between hosts
   command time -p -o $metadata_dir/image-pull-time.txt \
@@ -78,6 +81,28 @@ local-test() {
   git checkout $branch
 
   sudo $0 run-job docker $fresh_clone $task
+}
+
+local-test-uke() {
+  ### Something I can run locally.  This is fast.
+  local task=${1:-dummy}
+
+  local branch=$(git rev-parse --abbrev-ref HEAD)
+
+  local fresh_clone=/tmp/oil
+  rm -r -f -v $fresh_clone
+
+  local this_repo=$PWD
+  git clone $this_repo $fresh_clone
+  cd $fresh_clone
+  git checkout $branch
+
+  sudo $0 run-job-uke docker $fresh_clone $task
+}
+
+cleanup() {
+  sudo rm -r -f -v _tmp/soil
+  sudo rm -r -f -v /tmp/oil
 }
 
 "$@"
