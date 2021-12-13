@@ -206,6 +206,8 @@ OSH_SPEC.LongFlag('--help')
 OSH_SPEC.LongFlag('--version')
 
 OSH_SPEC.ShortFlag('-i')  # interactive
+OSH_SPEC.ShortFlag('-l')  # login - currently no-op
+OSH_SPEC.LongFlag('--login')  # login - currently no-op
 OSH_SPEC.LongFlag('--headless')  # accepts ECMD, etc.
 
 # TODO: -h too
