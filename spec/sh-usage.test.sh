@@ -81,3 +81,14 @@ warned=0
 warned=1
 warned=1
 ## END
+
+#### accepts -l flag
+$SH -l -c 'exit 0'
+## status: 0
+
+
+#### accepts --login flag (dash and mksh don't accept long flags)
+$SH --login -c 'exit 0'
+## status: 0
+## OK dash status: 2
+## OK mksh status: 1
