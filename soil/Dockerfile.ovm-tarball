@@ -7,10 +7,14 @@ WORKDIR /home/uke/tmp
 # Copy build scripts into the container and run them
 
 COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
+
+RUN soil/deps-apt.sh layer-for-soil
+
 RUN soil/deps-apt.sh ovm-tarball
 
-# Run as root
 RUN soil/deps-apt.sh layer-python-symlink
+
+RUN soil/deps-apt.sh layer-locales
 
 RUN useradd --create-home uke && chown -R uke /home/uke
 USER uke
@@ -29,4 +33,4 @@ COPY test/spec-bin.sh /home/uke/tmp/test/spec-bin.sh
 
 RUN test/spec-bin.sh all-steps
 
-CMD ["sh", "-c", "echo 'hello from oilshell/ovm-tarball buildkit'"]
+CMD ["sh", "-c", "echo 'hello from oilshell/ovm-tarball'"]

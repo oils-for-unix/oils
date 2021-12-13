@@ -12,18 +12,22 @@ layer-python-symlink() {
   ln -s -f -v /usr/bin/python2 /usr/bin/python
 }
 
-dummy() {
+layer-for-soil() {
   # gcc: time-helper is needed
   # git: for checking out code
   # python2: for various tools
   apt-get install -y gcc git python2
 }
 
+layer-locales() {
+  apt-get install -y locales
+  # uncomment in a file
+  sed -i 's/# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+  locale-gen --purge en_US.UTF-8
+}
+
 dev-minimal() {
   local -a packages=(
-    # common
-    git python2
-
     libreadline-dev
     procps  # pgrep used by test/interactive
     gawk
@@ -42,6 +46,7 @@ dev-minimal() {
 
 }
 
+# TODO: use layer-for-soil
 other-tests() {
   local -a packages=(
     # common
@@ -58,6 +63,7 @@ other-tests() {
   apt-get install -y "${packages[@]}"
 }
 
+# TODO: use layer-for-soil
 cpp() {
   local -a packages=(
     # common
@@ -89,9 +95,6 @@ cpp() {
 
 ovm-tarball() {
   local -a packages=(
-    # common
-    gcc git python2
-
     # spec tests need the 'time' command, not the shell builtin
     time
 

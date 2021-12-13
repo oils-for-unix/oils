@@ -45,6 +45,11 @@ cmd() {
   sudo docker run oilshell/soil-$name "$@"
 }
 
+utf8() {
+  # needed for a spec test, not the default on Debian
+  cmd dummy bash -c 'LC_ALL=en_US.UTF-8'
+}
+
 mount-test() {
   local name=${1:-dummy}
 

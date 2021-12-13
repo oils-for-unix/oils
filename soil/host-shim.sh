@@ -25,9 +25,10 @@ mount-perms() {
   mkdir -p "$repo_root/_tmp/soil"
 
   # We have to chmod all dirs because build/dev.sh all creates
-  # build/temp.linux-*, for example
+  # build/temp.linux-*, for example.  Also can't exclude .git/ because
+  # submodules need it.
 
-  time find "$repo_root" -name .git -a -prune -o -type d -a -print \
+  time find "$repo_root" -type d -a -print \
     | xargs -d $'\n' -- chmod --verbose 777
 }
 
@@ -108,6 +109,7 @@ local-test-uke() {
   local this_repo=$PWD
   git clone $this_repo $fresh_clone
   cd $fresh_clone
+  git submodule update --init --recursive
   git checkout $branch
 
   sudo $0 mount-perms $fresh_clone
