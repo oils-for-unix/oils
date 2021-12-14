@@ -195,6 +195,10 @@ number-cases() {
 
 by-input() {
   ### Run cases that vary by input reader
+  if ! strace true; then
+    echo "Aborting because we couldn't run strace"
+    return
+  fi
 
   local suite='by-input'
 
@@ -293,6 +297,11 @@ readonly MAX_CASES=100
 
 by-code() {
   ### Run cases that vary by code snippet
+
+  if ! strace true; then
+    echo "Aborting because we couldn't run strace"
+    return
+  fi
 
   local max_cases=${1:-$MAX_CASES}
 

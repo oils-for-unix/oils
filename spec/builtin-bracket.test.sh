@@ -414,12 +414,14 @@ status=1
 
 #### -G and -O for effective user ID and group ID
 
-test -O $REPO_ROOT/bin
+mkdir -p $TMP/bin
+
+test -O $TMP/bin
 echo status=$?
 test -O __nonexistent__
 echo status=$?
 
-test -G $REPO_ROOT/bin
+test -G $TMP/bin
 echo status=$?
 test -G __nonexistent__
 echo status=$?
@@ -433,25 +435,28 @@ status=1
 
 #### -u for setuid, -g too
 
-# This test is not hermetic
+touch $TMP/setuid $TMP/setgid
+chmod u+s $TMP/setuid
+chmod g+s $TMP/setgid
 
-test -u /tmp
+test -u $TMP/setuid
 echo status=$?
 
-test -u $(which sudo)
+test -u $TMP/setgid
 echo status=$?
 
-test -g /tmp
+test -g $TMP/setuid
 echo status=$?
 
-test -g $(which sudo)
+test -g $TMP/setgid
 echo status=$?
+
 
 ## STDOUT:
-status=1
 status=0
 status=1
 status=1
+status=0
 ## END
 
 #### -v to test variable
