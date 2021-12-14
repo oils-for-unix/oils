@@ -152,6 +152,7 @@ false___
 cd $REPO_ROOT
 compgen -A directory p | sort
 ## STDOUT:
+pgen-native
 pgen2
 py-yajl
 pylib
