@@ -91,7 +91,7 @@ need-typechecking() {
   # It shows all the files that are not included in
   # $MORE_OIL_MANIFEST or $OSH_PARSE_MANIFEST, and thus are not yet
   # typechecked by typecheck-more-oil here or
-  # `types/osh_parse.sh travis`.
+  # `types/oil-slice.sh soil-run`.
   comm -2 -3 \
     <(checkable-files | sort | grep '.py$' | sed 's@^@./@') \
     <({ more-oil-manifest; osh-eval-manifest; } | sort) \

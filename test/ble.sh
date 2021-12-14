@@ -48,10 +48,4 @@ run-tests() {
   echo DONE
 }
 
-travis() {
-  clone
-  build
-  run-tests
-}
-
 "$@"
