@@ -34,7 +34,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
 
-      - name: install
+      - name: mount-perms
         run: |
           soil/host-shim.sh mount-perms $REPO_ROOT
 
@@ -63,9 +63,9 @@ jobs:
         with:
           submodules: recursive
 
-      - name: install
+      - name: mount-perms
         run: |
-          soil/host-shim.sh docker-mount-perms $REPO_ROOT
+          soil/host-shim.sh mount-perms $REPO_ROOT
 
       - name: dev-minimal
         run: |
@@ -90,9 +90,9 @@ jobs:
         with:
           submodules: recursive
 
-      - name: install
+      - name: mount-perms
         run: |
-          soil/host-shim.sh docker-mount-perms $REPO_ROOT
+          soil/host-shim.sh mount-perms $REPO_ROOT
 
       - name: other-tests
         run: |
@@ -117,7 +117,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: install
+      - name: mount-perms
         run: |
           soil/host-shim.sh mount-perms $REPO_ROOT
 
@@ -144,9 +144,9 @@ jobs:
         with:
           submodules: recursive
 
-      - name: install
+      - name: mount-perms
         run: |
-          soil/host-shim.sh docker-mount-perms $REPO_ROOT
+          soil/host-shim.sh mount-perms $REPO_ROOT
 
       - name: cpp
         run: |
