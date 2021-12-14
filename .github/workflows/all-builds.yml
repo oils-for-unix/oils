@@ -70,7 +70,7 @@ jobs:
       - name: dev-minimal
         run: |
           cd $REPO_ROOT
-          soil/host-shim.sh run-job docker $REPO_ROOT dev-minimal
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT dev-minimal
 
       - name: publish-html
         env:
@@ -97,7 +97,7 @@ jobs:
       - name: other-tests
         run: |
           cd $REPO_ROOT
-          soil/host-shim.sh run-job docker $REPO_ROOT other-tests
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT other-tests
 
       - name: publish-html
         env:
@@ -151,7 +151,7 @@ jobs:
       - name: cpp
         run: |
           cd $REPO_ROOT
-          soil/host-shim.sh run-job docker $REPO_ROOT cpp
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT cpp
 
       - name: publish-html
         env:

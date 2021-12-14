@@ -20,7 +20,7 @@ tasks:
 
   - other-tests: |
       cd oil
-      soil/host-shim.sh run-job podman $PWD other-tests
+      soil/host-shim.sh run-job-uke podman $PWD other-tests
 
   # Relies on SSH key, so do it outside the container
   - publish-html: |
