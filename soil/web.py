@@ -17,6 +17,7 @@ TODO:
 """
 from __future__ import print_function
 
+import cgi
 import csv
 import datetime
 import json
@@ -236,7 +237,7 @@ INDEX_TOP = '''
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
-    <h1>Recent Jobs</h1>
+    <h1>%(title)s</h1>
 
     <table>
       <thead>
@@ -282,19 +283,25 @@ def ByGithub(row):
   return int(row.get('GITHUB_RUN_ID', 0))
 
 
-def HtmlHead():
+def HtmlHead(title):
   # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
   # have Ctrl-F5)
-  html_head.Write(sys.stdout, 'Recent Jobs',
+  html_head.Write(sys.stdout, title,
       css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
+
+
+def IndexTop(title):
+  d = {'title': cgi.escape(title)}
+  print(INDEX_TOP % d)
 
 
 def main(argv):
   action = argv[1]
 
   if action == 'srht-index':
-    HtmlHead()
-    print(INDEX_TOP)
+    title = 'Recent Jobs (sourcehut)'
+    HtmlHead(title)
+    IndexTop(title)
 
     rows = list(ParseJobs(sys.stdin))
 
@@ -320,8 +327,9 @@ def main(argv):
     print(INDEX_BOTTOM)
 
   elif action == 'github-index':
-    HtmlHead()
-    print(INDEX_TOP)
+    title = 'Recent Jobs (Github Actions)'
+    HtmlHead(title)
+    IndexTop(title)
 
     rows = list(ParseJobs(sys.stdin))
 
@@ -342,9 +350,10 @@ def main(argv):
     print(INDEX_BOTTOM)
 
   elif action == 'travis-index':
+    title = 'Recent Jobs (Travis CI)'
+    HtmlHead(title)
+    IndexTop(title)
 
-    HtmlHead()
-    print(INDEX_TOP)
     rows = list(ParseJobs(sys.stdin))
 
     rows.sort(key=ByTravisBuildNum, reverse=True)

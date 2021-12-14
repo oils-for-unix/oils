@@ -32,6 +32,9 @@ build() {
   # http://jpetazzo.github.io/2021/11/30/docker-build-container-images-antipatterns/
   #
   # It is more parallel and has colored output.
+  #
+  # TODO: add tag=2021-12-01__v1 ?  Later it can be more automated
+
   sudo DOCKER_BUILDKIT=1 \
     docker build "${flags[@]}" --tag oilshell/soil-$name --file soil/Dockerfile.$name .
 }

@@ -22,7 +22,8 @@ source soil/common.sh  # for USER and HOST
 home-page() {
   ### travis-ci.oilshell.org home page
 
-  soil-html-head 'travis-ci.oilshell.org'
+  local title='Soil on travis-ci.oilshell.org'
+  soil-html-head "$title"
 
   cat <<EOF
   <body class="width40">
@@ -30,7 +31,7 @@ home-page() {
       <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
-    <h1>Soil on travis-ci.oilshell.org</h1>
+    <h1>$title</h1>
 
     <p>This server receives results from cloud build services.
        See <a href="https://github.com/oilshell/oil/wiki/Soil">Soil</a> for details.
