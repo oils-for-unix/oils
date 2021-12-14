@@ -46,12 +46,8 @@ dev-minimal() {
 
 }
 
-# TODO: use layer-for-soil
 other-tests() {
   local -a packages=(
-    # common
-    git python2
-
     libreadline-dev
     python2-dev  # osh2oil needs build/dev.sh minimal
 
@@ -63,12 +59,8 @@ other-tests() {
   apt-get install -y "${packages[@]}"
 }
 
-# TODO: use layer-for-soil
 cpp() {
   local -a packages=(
-    # common
-    git python2
-
     # retrieving deps -- TODO: move to build time
     wget
 

@@ -9,15 +9,31 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# BUGS in Docker.
+#
+# https://stackoverflow.com/questions/69173822/docker-build-uses-wrong-dockerfile-content-bug
+
+prune() {
+  sudo docker builder prune -f
+}
+
 build() {
   local name=${1:-dummy}
+  local use_cache=${2:-}  # OFF by default
+
+  local -a flags
+  if test -n "$use_cache"; then
+    flags=()
+  else
+    flags=('--no-cache=true')
+  fi
 
   # Uh BuildKit is not the default on Linux!
   # http://jpetazzo.github.io/2021/11/30/docker-build-container-images-antipatterns/
   #
   # It is more parallel and has colored output.
   sudo DOCKER_BUILDKIT=1 \
-    docker build --tag oilshell/soil-$name --file soil/Dockerfile.$name .
+    docker build "${flags[@]}" --tag oilshell/soil-$name --file soil/Dockerfile.$name .
 }
 
 push() {
@@ -47,7 +63,7 @@ cmd() {
 
 utf8() {
   # needed for a spec test, not the default on Debian
-  cmd dummy bash -c 'LC_ALL=en_US.UTF-8'
+  cmd ovm-tarball bash -c 'LC_ALL=en_US.UTF-8; echo $LC_ALL'
 }
 
 mount-test() {
