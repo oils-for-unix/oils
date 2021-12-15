@@ -15,8 +15,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+          name: "dummy"
+          command: |
+            soil/worker.sh job-main dummy
+            # TODO: publish with our key
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
