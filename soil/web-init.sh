@@ -22,7 +22,8 @@ source soil/common.sh  # for USER and HOST
 home-page() {
   ### travis-ci.oilshell.org home page
 
-  local title='Soil on travis-ci.oilshell.org'
+  local domain=${1:-'travis-ci.oilshell.org'}
+  local title="Soil on $domain"
   soil-html-head "$title"
 
   cat <<EOF
@@ -37,20 +38,66 @@ home-page() {
        See <a href="https://github.com/oilshell/oil/wiki/Soil">Soil</a> for details.
     </p>
 
-    <ul>
-      <li>
-        <a href="srht-jobs/">sr.ht Jobs</a> from <a href="https://builds.sr.ht/~andyc">builds.sr.ht/~andyc</a>
-      </li>
-      <li>
-        <a href="github-jobs/">Github Actions Jobs</a> from <a href="https://github.com/oilshell/oil/actions/workflows/all-builds.yml">github.com/oilshell/oil/actions/workflows/all-builds.yml</a>
-      </li>
-      <li>
-        <a href="travis-jobs/">Travis Jobs</a> from <a href="https://app.travis-ci.com/github/oilshell/oil">app.travis-ci.com/oilshell/oil</a>
-      </li>
-      <li>
-        <a href="builds/">Builds</a> (not yet implemented)
-      </li>
-    </ul>
+    <table>
+      <thead>
+				<tr>
+          <td>Recent Jobs</td>
+          <td>Service Home</td>
+          <td>Config</td>
+				</tr>
+      </thead>
+
+      <tr>
+        <td>
+          <a href="srht-jobs/">sr.ht</a> 
+        </td>
+        <td>
+          <a href="https://builds.sr.ht/~andyc">builds.sr.ht</a>
+        </td>
+        <td></td>
+      </tr>
+
+      <tr>
+        <td>
+          <a href="github-jobs/">Github Actions</a> 
+        </td>
+        <td>
+          <a href="https://github.com/oilshell/oil/actions/workflows/all-builds.yml">github.com</a>
+        </td>
+        <td></td>
+      </tr>
+
+      <tr>
+        <td>
+          <a href="circle-jobs/">Circle CI</a> 
+        </td>
+        <td>
+          <a href="https://app.circleci.com/pipelines/github/oilshell/oil">app.circleci.com</a>
+        </td>
+        <td></td>
+      </tr>
+
+      <tr>
+        <td>
+          <a href="cirrus-jobs/">Cirrus</a> 
+        </td>
+        <td>
+          <a href="https://cirrus-ci.com/github/oilshell/oil">cirrus-ci.com</a>
+        </td>
+        <td></td>
+      </tr>
+
+      <tr>
+        <td>
+          <a href="travis-jobs/">Travis CI</a> (obsolete)
+        </td>
+        <td>
+          <a href="https://app.travis-ci.com/github/oilshell/oil">app.travis-ci.com</a>
+        </td>
+        <td></td>
+      </tr>
+
+    </table>
 
   </body>
 </html>
@@ -58,13 +105,16 @@ EOF
 }
 
 deploy-data() {
-  ssh $USER@$HOST mkdir -v -p $HOST/{travis-jobs,srht-jobs,github-jobs,web,builds/src}
+  local user=${1:-$USER}
+  local host=${2:-$HOST}
 
-  home-page > _tmp/index.html
+  ssh $user@$host mkdir -v -p $host/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web}
+
+  home-page "$host" > _tmp/index.html
 
   # note: duplicating CSS
-  scp _tmp/index.html $USER@$HOST:$HOST/
-  scp web/{base,soil}.css $USER@$HOST:$HOST/web
+  scp _tmp/index.html $user@$host:$host/
+  scp web/{base,soil}.css $user@$host:$host/web
 }
 
 soil-web-manifest() {
