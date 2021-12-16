@@ -79,8 +79,8 @@ class Pp(_Builtin):
 
         cell = self.mem.GetCell(name)
         if cell is None:
-          self.errfmt.Print("Couldn't find a variable named %r" % name,
-                            span_id=spids[i])
+          self.errfmt.Print_("Couldn't find a variable named %r" % name,
+                             span_id=spids[i])
           status = 1
         else:
           sys.stdout.write('%s = ' % name)
@@ -147,7 +147,7 @@ class Append(_Builtin):
     val = self.mem.GetValue(var_name)
     # TODO: value.Obj too
     if val.tag != value_e.MaybeStrArray:
-      self.errfmt.Print("%r isn't an array", var_name, span_id=var_spid)
+      self.errfmt.Print_("%r isn't an array" % var_name, span_id=var_spid)
       return 1
 
     val.strs.extend(arg_r.Rest())
@@ -285,7 +285,7 @@ class Json(vm._Builtin):
 
         obj = yajl.load(_STDIN)
       except ValueError as e:
-        self.errfmt.Print('json read: %s', e, span_id=action_spid)
+        self.errfmt.Print_('json read: %s' % e, span_id=action_spid)
         return 1
 
       self.mem.SetValue(

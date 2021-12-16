@@ -296,16 +296,6 @@ class ErrorFormatter(object):
     else:
       return runtime.NO_SPID
 
-  if mylib.PYTHON:
-    def Print(self, msg, *args, **kwargs):
-      # type: (str, *Any, **Any) -> None
-      """Print a message with a code quotation based on the given span_id."""
-      span_id = kwargs.pop('span_id', self.CurrentLocation())
-      prefix = kwargs.pop('prefix', '')
-      if args:
-        msg = msg % args
-      _PrintWithOptionalSpanId(prefix, msg, span_id, self.arena)
-
   def PrefixPrint(self, msg, prefix, span_id=runtime.NO_SPID):
     # type: (str, str, int) -> None
     """Print a hard-coded message with a prefix."""
@@ -313,10 +303,7 @@ class ErrorFormatter(object):
 
   def Print_(self, msg, span_id=runtime.NO_SPID):
     # type: (str, int) -> None
-    """Print a hard-coded message.
-
-    TODO: Rename this to Print(), and other variants to Printf.
-    """
+    """Print a hard-coded message."""
     if span_id == runtime.NO_SPID:
       span_id = self.CurrentLocation()
     _PrintWithOptionalSpanId('', msg, span_id, self.arena)

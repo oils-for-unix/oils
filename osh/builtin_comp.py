@@ -401,7 +401,7 @@ class CompOpt(vm._Builtin):
     arg = flag_spec.ParseMore('compopt', arg_r)
 
     if not self.comp_state.currently_completing:  # bash also checks this.
-      self.errfmt.Print('compopt: not currently executing a completion function')
+      self.errfmt.Print_('compopt: not currently executing a completion function')
       return 1
 
     self.comp_state.dynamic_opts.update(arg.opt_changes)

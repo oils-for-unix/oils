@@ -21,11 +21,11 @@ class UiTest(unittest.TestCase):
     errfmt = ui.ErrorFormatter(arena)
 
     # no location info
-    errfmt.Print('hello')
+    errfmt.Print_('hello')
 
     errfmt.PushLocation(span_id)
-    errfmt.Print('zero')
-    errfmt.Print('zero', span_id=spid1)
+    errfmt.Print_('zero')
+    errfmt.Print_('zero', span_id=spid1)
 
 
 if __name__ == '__main__':

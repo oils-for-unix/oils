@@ -569,7 +569,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # tokens.
 
         # Others:
-        # - errfmt.Print
         # - debug_f.log()?
         # Maybe I should rename them all printf()
         # or fprintf()?  Except p_die() has extra args
