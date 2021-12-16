@@ -40,7 +40,7 @@ Str* ReadLine() {
 Dict<Str*, Str*>* Environ() {
   auto d = new Dict<Str*, Str*>();
 
-  for (char **env = environ; *env; ++env) {
+  for (char** env = environ; *env; ++env) {
     char* pair = *env;
 
     char* eq = strchr(pair, '=');

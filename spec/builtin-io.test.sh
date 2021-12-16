@@ -697,3 +697,65 @@ find . -type f -a -print0 | { read -r -d ''; echo "[$REPLY]"; }
 ## N-I dash/zsh/mksh STDOUT:
 ## END
 
+
+#### redirection from directory is non-fatal error)
+
+# This tickles an infinite loop bug in our version of mksh!  TODO: ugprade the
+# version and enable this
+case $SH in (mksh) return ;; esac
+
+cd $TMP
+mkdir -p dir
+read x < ./dir
+echo status=$?
+
+## STDOUT:
+status=1
+## END
+# OK mksh stdout: status=2
+## OK mksh stdout-json: ""
+
+#### read -n from directory
+
+case $SH in (dash|ash) return ;; esac  # not implemented
+
+# same hanging bug
+case $SH in (mksh) return ;; esac
+
+mkdir -p dir
+read -n 3 x < ./dir
+echo status=$?
+## STDOUT:
+status=1
+## END
+## OK mksh stdout-json: ""
+## N-I dash/ash stdout-json: ""
+
+#### mapfile from directory (bash doesn't handle errors)
+case $SH in (dash|ash|mksh|zsh) return ;; esac  # not implemented
+
+mkdir -p dir
+mapfile $x < ./dir
+echo status=$?
+## STDOUT:
+status=1
+## END
+## BUG bash STDOUT:
+status=0
+## END
+## N-I dash/ash/mksh/zsh stdout-json: ""
+
+#### Redirect to directory
+echo foo > ./dir
+echo status=$?
+printf foo > ./dir
+echo status=$?
+## STDOUT:
+status=1
+status=1
+## END
+## OK dash STDOUT:
+status=2
+status=2
+## END
+

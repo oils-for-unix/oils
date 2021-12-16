@@ -354,7 +354,7 @@ TEST bool_stat_test() {
 TEST pyos_test() {
   // Write 2 bytes to this file
   char* tmp_name = "_tmp/pyos_unit_test";
-  int fd = ::open(tmp_name, O_CREAT|O_RDWR, 0644);
+  int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
     printf("1. ERROR %s", strerror(errno));
   }
@@ -363,7 +363,7 @@ TEST pyos_test() {
   close(fd);
 
   // open needs an absolute path for some reason?  _tmp/pyos doesn't work
-  fd = ::open(tmp_name, O_CREAT|O_RDWR, 0644);
+  fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
     printf("2. ERROR %s", strerror(errno));
   }
@@ -395,7 +395,6 @@ TEST pyos_test() {
   Str* p = env->get(new Str("PATH"));
   ASSERT(p != nullptr);
   log("PATH = %s", p->data_);
-
 
   PASS();
 }

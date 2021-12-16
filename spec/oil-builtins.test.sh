@@ -285,6 +285,22 @@ echo "[$x]"
 ]
 ## END
 
+#### read --line from directory is an error (EISDIR)
+mkdir -p ./dir
+read --line < ./dir
+echo status=$?
+## STDOUT:
+status=1
+## END
+
+#### read --all from directory is an error (EISDIR)
+mkdir -p ./dir
+read --all < ./dir
+echo status=$?
+## STDOUT:
+status=1
+## END
+
 #### read -0 is like read -r -d ''
 set -o errexit
 

@@ -8,7 +8,7 @@
 
 // Needed for the field below to be valid
 // https://stackoverflow.com/questions/14261534/temporarily-overwrite-a-macro-in-c-preprocessor
-// 
+//
 // TODO: Replace with #prgram with something portable
 // I think we just need to rewrite e.errno -> e.errno_ in mycpp.
 

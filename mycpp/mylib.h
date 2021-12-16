@@ -46,7 +46,7 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle);
 
 template <typename V>
 void dict_remove(Dict<int, V>* haystack, int needle);
-};
+};  // namespace mylib
 
 extern Str* kEmptyString;
 

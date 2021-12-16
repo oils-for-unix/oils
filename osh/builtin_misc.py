@@ -158,8 +158,7 @@ def _ReadN(stdin_fd, num_bytes, cmd_ev):
         cmd_ev.RunPendingTraps()
         # retry after running traps
       else:
-        # Like the top level IOError handler
-        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+        raise pyos.ReadError(err_num)
 
     elif n == 0:  # EOF
       break
@@ -185,8 +184,7 @@ def _ReadUntilDelim(delim_byte, cmd_ev):
         cmd_ev.RunPendingTraps()
         # retry after running traps
       else:
-        # Like the top level IOError handler
-        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+        raise pyos.ReadError(err_num)
 
     elif ch == pyos.EOF_SENTINEL:
       eof = True
@@ -221,8 +219,7 @@ def _ReadLineSlowly(cmd_ev):
         cmd_ev.RunPendingTraps()
         # retry after running traps
       else:
-        # Like the top level IOError handler
-        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+        raise pyos.ReadError(err_num)
 
     elif ch == pyos.EOF_SENTINEL:
       break
@@ -253,8 +250,7 @@ def _ReadAll():
         # run traps.  It would be a bit weird to run every 4096 bytes.
         pass
       else:
-        # Like the top level IOError handler
-        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+        raise pyos.ReadError(err_num)
 
     elif n == 0:  # EOF
       break
@@ -264,12 +260,13 @@ def _ReadAll():
 
 class Read(vm._Builtin):
 
-  def __init__(self, splitter, mem, parse_ctx, cmd_ev):
-    # type: (SplitContext, Mem, ParseContext, CommandEvaluator) -> None
+  def __init__(self, splitter, mem, parse_ctx, cmd_ev, errfmt):
+    # type: (SplitContext, Mem, ParseContext, CommandEvaluator, ErrorFormatter) -> None
     self.splitter = splitter
     self.mem = mem
     self.parse_ctx = parse_ctx
     self.cmd_ev = cmd_ev
+    self.errfmt = errfmt
     self.stdin = mylib.Stdin()
 
   def _Line(self, arg, var_name):
@@ -328,6 +325,16 @@ class Read(vm._Builtin):
     return 0
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    try:
+      status = self._Run(cmd_val)
+    except pyos.ReadError as e:  # different paths for read -d, etc.
+      # location defaults to 'read'
+      self.errfmt.Print_("read error: %s" % posix.strerror(e.err_num))
+      status = 1
+    return status
+
+  def _Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val)
     arg = arg_types.read(attrs.attrs)
@@ -504,7 +511,12 @@ class MapFile(vm._Builtin):
 
     lines = []  # type: List[str]
     while True:
-      line = _ReadLineSlowly(self.cmd_ev)
+      # bash uses this slow algorithm; Oil could provide read --all-lines
+      try:
+        line = _ReadLineSlowly(self.cmd_ev)
+      except pyos.ReadError as e:
+        self.errfmt.Print_("read error: %s" % posix.strerror(e.err_num))
+        return 1
       if len(line) == 0:
         break
       # note: at least on Linux, bash doesn't strip \r\n
@@ -818,6 +830,7 @@ class Cat(vm._Builtin):
         else:
           # Like the top level IOError handler
           e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+          # TODO: Maybe just return 1?
 
       elif n == 0:  # EOF
         break

@@ -28,6 +28,15 @@ EOF_SENTINEL = 256  # bigger than any byte
 NEWLINE_CH = 10  # ord('\n')
 
 
+class ReadError(Exception):
+  """Wraps errno returned by read().  Used by 'read' and 'mapfile' builtins.
+  """
+
+  def __init__(self, err_num):
+    # type: (int) -> None
+    self.err_num = err_num
+
+
 def Read(fd, n, buf):
   # type: (int, int, List[str]) -> Tuple[int, int]
   """
@@ -98,8 +107,7 @@ def ReadLine():
         # This causes 'read --line' to return status 1.
         return ''
       else:
-        # Like the top level IOError handler
-        e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+        raise ReadError(err_num)
 
     elif ch == EOF_SENTINEL:
       break

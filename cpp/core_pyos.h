@@ -23,6 +23,13 @@ int Chdir(Str* dest_dir);
 Str* GetMyHomeDir();
 Str* GetHomeDir(Str* user_name);
 
+class ReadError {
+ public:
+  ReadError(int err_num_) : err_num(err_num_) {
+  }
+  int err_num;
+};
+
 inline Str* GetUserName(int uid) {
   assert(0);
 }
