@@ -3,7 +3,7 @@
 # Count lines of code in various ways.
 #
 # Usage:
-#   ./count.sh <function name>
+#   metrics/source-code.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -174,15 +174,16 @@ osh-counts() {
 
 cpp-counts() {
   echo 'Hand-Written C++ Code, like OS bindings'
+  echo '(the small C++ files correspond to larger Python files, like osh/arith_parse.py)'
   ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | xargs wc -l | sort --numeric
   echo
 
-  echo 'Old mycpp Runtime'
+  echo 'Old mycpp Runtime (no garbage collection)'
   wc -l mycpp/mylib.{cc,h} | sort --numeric
   echo
 
-  echo 'New garbage-collected Runtime'
-  wc -l mycpp/gc_heap.* mycpp/mylib2.*  | sort --numeric
+  echo 'New Garbage-Collected Runtime'
+  wc -l mycpp/gc_heap.* mycpp/mylib2.* mycpp/my_runtime.* | sort --numeric
   echo
 
   echo 'Unit tests in C++'
@@ -190,8 +191,8 @@ cpp-counts() {
   echo
 
   # NOTE: this excludes .re2c.h file
-  echo '# what the translator produces'
   echo 'Generated C+ Code'
+  echo '(produced by many translators including mycpp)'
   wc -l _build/cpp/*.{cc,h} _devbuild/gen/*.h | sort --numeric
   echo
 }
@@ -199,7 +200,7 @@ cpp-counts() {
 for-compiler-engineer() {
   cpp-counts
 
-  echo '# prototype of the translator written on top of MyPy'
+  echo '# prototype of the translator: a hack on top of the MyPy frontend'
   mycpp-counts
 
   echo '# the input to the translator: statically-typed Python'
