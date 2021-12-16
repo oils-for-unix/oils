@@ -1997,7 +1997,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                             '_ResolveNameOrRef') or
             class_name == 'SearchPath' and func_name == 'Lookup' or
             # core/ui.py
-            class_name == 'ErrorFormatter' and func_name == 'Print_' or
+            class_name == 'ErrorFormatter' and
+              func_name in ('Print_', 'PrintMessage') or
             func_name == 'GetLineSourceString' or
             # osh/sh_expr_eval.py
             class_name is None and func_name == 'EvalLhsAndLookup' or

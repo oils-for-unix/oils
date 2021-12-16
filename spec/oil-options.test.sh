@@ -781,12 +781,14 @@ $SH -O oil:all -i --rcfile /dev/null -c "
 source $REPO_ROOT/spec/testdata/module/common.oil
 source $REPO_ROOT/spec/testdata/module/common.oil
 log hi
-"
+" 2>stderr.txt
+echo status=$?
+
+# Make sure there are two lines
+wc -l stderr.txt
 ## STDOUT:
 common
 common
-## END
-## STDERR:
-[oil -i] Reloading module 'common'
-hi
+status=0
+2 stderr.txt
 ## END

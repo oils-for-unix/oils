@@ -24,7 +24,7 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
 from qsn_ import qsn
 
-from typing import List, Optional, cast, Any, TYPE_CHECKING
+from typing import List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen import arg_types
   from core.alloc import Arena
