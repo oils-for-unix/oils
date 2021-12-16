@@ -66,6 +66,12 @@ osh-cloc() {
   asdl-cloc "${ASDL_FILES[@]}"
 }
 
+mycpp-counts() {
+  echo 'MYCPP translator'
+  ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | xargs wc -l | sort --numeric
+  echo
+}
+
 # TODO: Sum up all the support material.  It's more than Oil itself!  Turn
 # everything into an array.  An hash table of arrays would be useful here.
 all() {
@@ -109,9 +115,7 @@ all() {
     xargs wc -l | sort --numeric
   echo
 
-  echo 'MYCPP'
-  ls mycpp/*.py | filter-py | xargs wc -l | sort --numeric
-  echo
+  mycpp-counts
 
   echo 'PGEN2 (parser generator)'
   ls pgen2/*.py | filter-py | xargs wc -l | sort --numeric
@@ -155,43 +159,51 @@ all() {
   wc -l {osh,frontend,core,native,tools}/*_test.py | sort --numeric
   echo
 
-  echo 'OSH (and common libraries)'
-  osh-files | xargs wc -l | sort --numeric
-  echo
+  osh-counts
 
   echo 'Oil Language (and Tea)'
   oil-lang-files | xargs wc -l | sort --numeric
   echo
+}
 
-  return
-
-  # Doesn't work after build/dev.sh minimal
-  cpp
-
-  # TODO: Import docs
-
-  echo 'DOCS'
-  wc -l README.md doc/* | sort --numeric
+osh-counts() {
+  echo 'OSH (and common libraries)'
+  osh-files | xargs wc -l | sort --numeric
   echo
 }
 
-cpp() {
-  # NOTE: Could exclude .re2c.h file
-  echo '[ C++ ] Generated Code'
-  wc -l _build/cpp/*.{cc,h} _devbuild/gen/*.h | sort --numeric
-  echo
-
-  echo '[ C++ ] Hand-Written Code'
+cpp-counts() {
+  echo 'Hand-Written C++ Code, like OS bindings'
   ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | xargs wc -l | sort --numeric
   echo
 
-  echo '[ C++ ] mycpp Runtime'
+  echo 'Old mycpp Runtime'
   wc -l mycpp/mylib.{cc,h} | sort --numeric
   echo
 
-  echo '[ C++ ] Unit tests'
-  wc -l mycpp/mylib_test.cc cpp/unit_tests.cc | sort --numeric
+  echo 'New garbage-collected Runtime'
+  wc -l mycpp/gc_heap.* mycpp/mylib2.*  | sort --numeric
   echo
+
+  echo 'Unit tests in C++'
+  wc -l mycpp/*_test.cc cpp/unit_tests.cc | sort --numeric
+  echo
+
+  # NOTE: this excludes .re2c.h file
+  echo '# what the translator produces'
+  echo 'Generated C+ Code'
+  wc -l _build/cpp/*.{cc,h} _devbuild/gen/*.h | sort --numeric
+  echo
+}
+
+for-compiler-engineer() {
+  cpp-counts
+
+  echo '# prototype of the translator written on top of MyPy'
+  mycpp-counts
+
+  echo '# the input to the translator: statically-typed Python'
+  osh-counts
 }
 
 
