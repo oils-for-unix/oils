@@ -547,7 +547,7 @@ class Module(vm._Builtin):
     if name in self.modules:
       # already defined
       if self.exec_opts.redefine_module():
-        self.errfmt.StderrLine('[oil -i] Reloading module %r' % name)
+        self.errfmt.PrintMessage('(interactive) Reloading module %r' % name)
         return 0
       else:
         return 1

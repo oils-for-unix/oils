@@ -177,13 +177,18 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
   return s
 
 
-def _PrintWithSpanId(prefix, msg, span_id, arena, f):
-  # type: (str, str, int, Arena, Writer) -> None
+def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
+  # type: (str, str, int, Arena, bool) -> None
   """
   Should we have multiple error formats:
   - single line and verbose?
   - and turn on "stack" tracing?  For 'source' and more?
   """
+  f = mylib.Stderr()
+  if span_id == runtime.NO_SPID:  # When does this happen?
+    f.write('[??? no location ???] %s%s\n' % (prefix, msg))
+    return
+
   line_span = arena.GetLineSpan(span_id)
   orig_col = line_span.col
   line_id = line_span.line_id
@@ -192,42 +197,34 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
   line = arena.GetLine(line_id)
   line_num = arena.GetLineNumber(line_id)  # overwritten by source__LValue case
 
-  UP_src = src
-  # LValue/backticks is the only case where we don't print this
-  if src.tag_() == source_e.Reparsed:
-    src = cast(source__Reparsed, UP_src)
-    span2 = arena.GetLineSpan(src.left_spid)
-    line_num = arena.GetLineNumber(span2.line_id)
+  if show_code:
+    UP_src = src
+    # LValue/backticks is the only case where we don't print this
+    if src.tag_() == source_e.Reparsed:
+      src = cast(source__Reparsed, UP_src)
+      span2 = arena.GetLineSpan(src.left_spid)
+      line_num = arena.GetLineNumber(span2.line_id)
 
-    # We want the excerpt to look like this:
-    #   a[x+]=1
-    #       ^
-    # Rather than quoting the internal buffer:
-    #   x+
-    #     ^
-    line2 = arena.GetLine(span2.line_id)
-    lbracket_col = span2.col + span2.length
-    # NOTE: The inner line number is always 1 because of reparsing.  We
-    # overwrite it with the original span.
-    _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
+      # We want the excerpt to look like this:
+      #   a[x+]=1
+      #       ^
+      # Rather than quoting the internal buffer:
+      #   x+
+      #     ^
+      line2 = arena.GetLine(span2.line_id)
+      lbracket_col = span2.col + span2.length
+      # NOTE: The inner line number is always 1 because of reparsing.  We
+      # overwrite it with the original span.
+      _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
 
-  else:
-    _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
+    else:
+      _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
 
   source_str = GetLineSourceString(arena, line_id, quote_filename=True)
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?
   f.write('%s:%d: %s%s\n' % (source_str, line_num, prefix, msg))
-
-
-def _PrintWithOptionalSpanId(prefix, msg, span_id, arena):
-  # type: (str, str, int, Arena) -> None
-  f = mylib.Stderr()
-  if span_id == runtime.NO_SPID:  # When does this happen?
-    f.write('[??? no location ???] %s%s\n' % (prefix, msg))
-  else:
-    _PrintWithSpanId(prefix, msg, span_id, arena, f)
 
 
 def _pp(err, arena, prefix):
@@ -248,7 +245,7 @@ def _pp(err, arena, prefix):
   # that is OK.
   # Problem: the column for Eof could be useful.
 
-  _PrintWithOptionalSpanId(prefix, msg, span_id, arena)
+  _PrintWithSpanId(prefix, msg, span_id, arena, True)
 
 
 def PrettyPrintError(err, arena, prefix=''):
@@ -298,23 +295,34 @@ class ErrorFormatter(object):
 
   def PrefixPrint(self, msg, prefix, span_id=runtime.NO_SPID):
     # type: (str, str, int) -> None
-    """Print a hard-coded message with a prefix."""
-    _PrintWithOptionalSpanId(prefix, msg, span_id, self.arena)
+    """Print a hard-coded message with a prefix, and quote code."""
+    _PrintWithSpanId(prefix, msg, span_id, self.arena, show_code=True)
 
   def Print_(self, msg, span_id=runtime.NO_SPID):
     # type: (str, int) -> None
-    """Print a hard-coded message."""
+    """Print a hard-coded message, and quote code."""
     if span_id == runtime.NO_SPID:
       span_id = self.CurrentLocation()
-    _PrintWithOptionalSpanId('', msg, span_id, self.arena)
+    _PrintWithSpanId('', msg, span_id, self.arena, show_code=True)
+
+  def PrintMessage(self, msg, span_id=runtime.NO_SPID):
+    # type: (str, int) -> None
+    """Print a message WITHOUT quoting code."""
+    if span_id == runtime.NO_SPID:
+      span_id = self.CurrentLocation()
+    _PrintWithSpanId('', msg, span_id, self.arena, show_code=False)
 
   def StderrLine(self, msg):
     # type: (str) -> None
+    """Just print to stderr."""
     stderr_line(msg)
 
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None
-    """Print an exception that was caught."""
+    """Print an exception that was caught.
+
+    TODO: should this respect CurrentLocation()?
+    """
     _pp(err, self.arena, prefix)
 
 

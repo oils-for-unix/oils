@@ -330,7 +330,7 @@ class Read(vm._Builtin):
       status = self._Run(cmd_val)
     except pyos.ReadError as e:  # different paths for read -d, etc.
       # location defaults to 'read'
-      self.errfmt.Print_("read error: %s" % posix.strerror(e.err_num))
+      self.errfmt.PrintMessage("read error: %s" % posix.strerror(e.err_num))
       status = 1
     return status
 
@@ -515,7 +515,7 @@ class MapFile(vm._Builtin):
       try:
         line = _ReadLineSlowly(self.cmd_ev)
       except pyos.ReadError as e:
-        self.errfmt.Print_("read error: %s" % posix.strerror(e.err_num))
+        self.errfmt.PrintMessage("mapfile: read() error: %s" % posix.strerror(e.err_num))
         return 1
       if len(line) == 0:
         break

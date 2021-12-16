@@ -223,7 +223,7 @@ class RunProc(vm._Builtin):
 
     name = argv[0]
     if name not in self.procs:
-      self.errfmt.StderrLine('runproc: no proc named %r' % name)
+      self.errfmt.PrintMessage('runproc: no proc named %r' % name)
       return 1
 
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
@@ -367,7 +367,7 @@ class Type(vm._Builtin):
     for kind, name in r:
       if kind is None:
         if not arg.t:  # 'type -t X' is silent in this case
-          self.errfmt.StderrLine('type: %r not found' % name)
+          self.errfmt.PrintMessage('type: %r not found' % name)
         status = 1  # nothing printed, but we fail
       else:
         if arg.t:
