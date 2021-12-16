@@ -13,7 +13,6 @@ import select
 import termios  # for read -n
 import time
 
-from core.pyerror import e_die
 from core import pyutil
 
 import posix_ as posix
