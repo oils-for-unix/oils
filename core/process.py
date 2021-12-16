@@ -134,7 +134,7 @@ class FdState(object):
       A Python file object.  The caller is responsible for Close().
 
     Raises:
-      OSError if the path can't be found.
+      IOError or OSError if the path can't be found.  (This is Python-induced wart)
     """
     fd_mode = O_RDONLY
     return self._Open(path, 'r', fd_mode)
@@ -158,9 +158,7 @@ class FdState(object):
     posix.close(fd)
 
     # Return a Python file handle
-    # Might raise IOError.  Python-induced wart: we have to handle BOTH IOError
-    # and OSError at higher levels.
-    f = posix.fdopen(new_fd, c_mode)
+    f = posix.fdopen(new_fd, c_mode)  # may raise IOError.
     return f
 
   def _WriteFdToMem(self, fd_name, fd):
@@ -569,7 +567,7 @@ class ExternalProgram(object):
     if len(self.hijack_shebang):
       try:
         f = self.fd_state.Open(argv0_path)
-      except OSError as e:
+      except (IOError, OSError) as e:
         pass
       else:
         try:

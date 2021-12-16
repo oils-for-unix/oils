@@ -439,7 +439,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       try:
         f = fd_state.Open(script_name)
         #f = mylib.open(script_name)
-      except OSError as e:
+      except (IOError, OSError) as e:
         stderr_line("osh: Couldn't open %r: %s", script_name,
                     pyutil.strerror(e))
         return 1

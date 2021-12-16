@@ -109,7 +109,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev):
 
   try:
     f = fd_state.Open(rc_path)
-  except OSError as e:
+  except (IOError, OSError) as e:
     # TODO: Could warn about nonexistent explicit --rcfile?
     if e.errno != errno.ENOENT:
       raise  # Goes to top level.  Handle this better?
@@ -539,7 +539,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       arena.PushSource(source.MainFile(script_name))
       try:
         f = fd_state.Open(script_name)
-      except OSError as e:
+      except (IOError, OSError) as e:
         stderr_line("osh: Couldn't open %r: %s", script_name,
                     posix.strerror(e.errno))
         return 1
