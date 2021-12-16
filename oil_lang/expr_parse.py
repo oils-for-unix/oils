@@ -80,7 +80,13 @@ def _Classify(gr, tok):
   if typ in gr.tokens:
     return gr.tokens[typ]
 
-  type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % ui.PrettyId(tok.id))
+  if tok.id == Id.Unknown_DEqual:
+    p_die('Use === to be exact, or ~== to convert types', token=tok)
+
+  if tok.id == Id.Unknown_Tok:
+    type_str = ''
+  else:
+    type_str = ' (%s)' % ui.PrettyId(tok.id)
   p_die('Unexpected token in expression mode%s', type_str, token=tok)
 
 

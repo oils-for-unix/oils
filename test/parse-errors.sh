@@ -744,6 +744,13 @@ oil_expr() {
   _oil-parse-error 'name=val'
 }
 
+oil_expr_more() {
+  set +o errexit
+
+  # user must choose === or ~==
+  _oil-parse-error 'if (5 == 5) { echo yes }'
+}
+
 oil_string_literals() {
   set +o errexit
 
@@ -1131,6 +1138,7 @@ cases-in-strings() {
   proc_sig
   proc_arg_list
   oil_expr
+  oil_expr_more
   oil_string_literals
   parse_backticks
   parse_dollar

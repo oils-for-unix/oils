@@ -934,6 +934,8 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('===', Id.Expr_TEqual),
   C('!==', Id.Expr_NotDEqual),
 
+  C('==', Id.Unknown_DEqual),  # user must choose === or ~==
+
   # Bitwise operators
   C('&', Id.Arith_Amp),
   C('|', Id.Arith_Pipe),
