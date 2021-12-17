@@ -75,8 +75,28 @@ wc-text() {
 }
 
 wc-html() {
-  # TODO: Invoke wc_html.py
-  xargs wc -l "$@" | sort --numeric
+  # Create HTML
+  xargs wc -l "$@" | metrics/wc_html.py
+}
+
+header-html() {
+  echo "<h2>$1</h2>"
+}
+
+comment-html() {
+  echo "<p>$1</p>"
+}
+
+html-head() {
+  PYTHONPATH=. doctools/html_head.py "$@"
+}
+
+metrics-html-head() {
+  local title="$1"
+
+  local base_url='../../../web'
+
+  html-head --title "$title" "$base_url/base.css" "$base_url/line-counts.css" 
 }
 
 #
@@ -89,7 +109,7 @@ osh-counts() {
   local count=${3:-wc-text}
 
   $header 'OSH (and common libraries)'
-  $comment '(the input to the translator: statically-typed Python)'
+  $comment 'This is the input to the translator, written in statically-typed Python.'
   osh-files | $count
   echo
 }
@@ -99,8 +119,9 @@ cpp-counts() {
   local comment=${2:-true}
   local count=${3:-wc-text}
 
-  $header 'Hand-Written C++ Code, like OS bindings'
-  $comment '(the small C++ files correspond to larger Python files, like osh/arith_parse.py)'
+  $header 'Hand-written C++ Code, like OS bindings'
+  $comment 'The small C++ files correspond to larger Python files, like osh/arith_parse.py.'
+
   ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | $count
   echo
 
@@ -115,10 +136,17 @@ cpp-counts() {
   $header 'Unit tests in C++'
   ls mycpp/*_test.cc cpp/unit_tests.cc | $count
   echo
+}
+
+gen-cpp-counts() {
+  local header=${1:-echo}
+  local comment=${2:-true}
+  local count=${3:-wc-text}
 
   # NOTE: this excludes .re2c.h file
   $header 'Generated C+ Code'
-  $comment '(produced by many translators including mycpp)'
+  $comment 'This code is produced by many translators, including mycpp.
+            Other translators are Zephyr ASDL and re2c.'
   ls _build/cpp/*.{cc,h} _devbuild/gen/*.h | $count
   echo
 }
@@ -128,12 +156,12 @@ mycpp-counts() {
   local comment=${2:-true}
   local count=${3:-wc-text}
 
-  $header 'MYCPP translator'
-  $comment '(prototype of the translator: a hack on top of the MyPy frontend)'
+  $header 'mycpp translator'
+  $comment 'This is a prototype (a hack on top of the MyPy frontend).'
   ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | $count
   echo
 
-  $header 'MYCPP testdata'
+  $header 'mycpp testdata'
   ls mycpp/examples/*.py | $count
   echo
 }
@@ -147,15 +175,13 @@ for-translation() {
   local comment=${2:-true}
   local count=${3:-wc-text}
 
-  cpp-counts "$@"
-
   mycpp-counts "$@"
 
-  osh-counts "$@"
-}
+  cpp-counts "$@"
 
-for-translation-html() {
-  for-translation 'echo' 'echo' 'wc-html'
+  osh-counts "$@"
+
+  gen-cpp-counts "$@"
 }
 
 all() {
@@ -234,7 +260,7 @@ all() {
 
   $header 'OTHER CODE GENERATORS'
   ls */*_gen.py | $count
-  $header
+  echo
 
   $header 'GENERATED CODE (for app bundle)'
   ls _devbuild/gen/*.{py,h} | $count
@@ -244,7 +270,7 @@ all() {
   ls tools/*.py | filter-py | $count
   echo
 
-  $header echo 'DOC TOOLS'
+  $header 'DOC TOOLS'
   ls {doctools,lazylex}/*.py | filter-py | $count
   echo
 
@@ -253,9 +279,61 @@ all() {
   echo
 }
 
-all-html() {
-  all 'echo' 'echo' 'wc-html'
+#
+# HTML Versions
+#
+
+for-translation-html() {
+  local title='Code Overview: Translating Oil to C++'
+
+  metrics-html-head "$title"
+  echo '  <body class="width40">'
+
+  echo "<h1>$title</h1>"
+
+  for-translation header-html comment-html wc-html
+
+  echo '  </body>'
+  echo '</html>'
 }
+
+all-html() {
+  local title='Code Overview'
+
+  metrics-html-head "$title"
+  echo '  <body class="width40">'
+
+  echo "<h1>$title</h1>"
+
+  all header-html comment-html wc-html
+
+  echo '  </body>'
+  echo '</html>'
+}
+
+write-reports() {
+  # TODO:
+  # - Put these in the right directory.
+  # - Link from release page
+
+  local dir=_tmp/metrics/line-counts
+
+  mkdir -v -p $dir
+
+  for-translation-html > $dir/for-translation.html
+  all-html > $dir/all.html
+
+  cat >$dir/index.html <<EOF
+<a href="for-translation.html">for-translation</a> <br/>
+<a href="all.html">all</a> <br/>
+EOF
+
+  ls -l $dir/*.html
+}
+
+#
+# Misc
+#
 
 # count instructions, for fun
 instructions() {

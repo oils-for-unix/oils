@@ -17,9 +17,6 @@ html-head() {
 
 soil-html-head() {
   local title="$1"
-
-  local base_url='../../web'
-
   # These files live at the root.  Bust cache.
   html-head --title "$title" "/web/base.css?cache=0" "/web/soil.css?cache=0" 
 }

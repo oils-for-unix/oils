@@ -124,7 +124,7 @@ mycpp-git       mycpp/deps.sh git-clone               -
 mycpp-pip       mycpp/deps.sh pip-install             -
 build-osh-eval  build/dev.sh oil-cpp                  -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
-metrics         metrics/source-code.sh for-compiler-engineer -
+metrics         metrics/source-code.sh write-reports _tmp/metrics/line-counts/index.html
 osh-eval-opt    build/mycpp.sh compile-slice-opt      -
 shell-benchmarks benchmarks/auto.sh soil-run          _tmp/benchmark-data/index.html
 mycpp-examples  mycpp/build.sh examples               mycpp/_ninja/index.html
