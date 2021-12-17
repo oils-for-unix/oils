@@ -67,25 +67,210 @@ osh-cloc() {
 }
 
 #
-# Variants
+# Two variants: text and html
 #
 
-wc-text() {
-  xargs wc -l "$@" | sort --numeric
+category-text() {
+  local header=$1
+  local comment=$2
+
+  echo "$header"
+  # omit comment
+
+  # stdin is the files
+  xargs wc -l | sort --numeric
+  echo
 }
 
-wc-html() {
-  # Create HTML
-  xargs wc -l "$@" | metrics/wc_html.py
+# This is overly clever ...
+shopt -s lastpipe
+SECTION_ID=0  # mutable global
+
+category-html() {
+  xargs wc -l | metrics/line_counts.py $((++SECTION_ID)) "$@"
 }
 
-header-html() {
-  echo "<h2>$1</h2>"
+#
+# Functions That Count
+#
+
+# Note this style is OVERLY ABSTRACT, but it's hard to do better in shell.  We
+# want to parameterize over text and HTML.  In Oil I think we would use this:
+#
+# proc p1 {
+#   category 'OSH (and common libraries)' {
+#     comment = 'This is the input'
+#     osh-files | read --lines :files
+#   }
+# }
+#
+# This produces a series of dicts that looks like
+# { name: 'OSH ...', comment: "This ...", files: %(one two three) }
+#
+# Then we iterate over the categories and produce text or HTML.
+
+osh-counts() {
+  local count=$1
+  shift
+
+  osh-files | $count \
+    'OSH (and common libraries)' \
+    'This is the input to the translator, written in statically-typed Python.' \
+    "$@"
 }
 
-comment-html() {
-  echo "<p>$1</p>"
+cpp-counts() {
+  local count=$1
+  shift
+
+  ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | $count \
+    'Hand-written C++ Code, like OS bindings' \
+    'The small C++ files correspond to larger Python files, like osh/arith_parse.py.' \
+    "$@"
+
+  ls mycpp/mylib.{cc,h} | $count \
+    'Old mycpp Runtime' \
+    'This implementation has no garbage collection; it allocates memory forever.' \
+    "$@"
+
+  ls mycpp/gc_heap.* mycpp/mylib2.* mycpp/my_runtime.* | $count \
+    'New Garbage-Collected Runtime' \
+    '' \
+    "$@"
+
+  ls mycpp/*_test.cc cpp/unit_tests.cc | $count \
+    'Unit tests in C++' \
+    '' \
+    "$@"
 }
+
+gen-cpp-counts() {
+  local count=$1
+  shift
+
+  # NOTE: this excludes .re2c.h file
+  ls _build/cpp/*.{cc,h} _devbuild/gen/*.h | $count \
+    'Generated C+ Code' \
+    'mycpp generates only the big file _build/cpp/osh_eval.cc.  Other code generators, including Zephyr ASDL and re2c, produce the other files.' \
+    "$@"
+}
+
+mycpp-counts() {
+  local count=$1
+  shift
+
+  ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | $count \
+    'mycpp translator' \
+    "This prototype uses the MyPy frontend to translate statically-typed Python to C++.  The generated C++ makes use of a small runtime for things like List<T>, Dict<K, V>, and Python's len()." \
+    "$@"
+
+  ls mycpp/examples/*.py | $count \
+    'mycpp testdata' \
+    'Small Python examples that translate to C++, compile, and run.' \
+    "$@"
+}
+
+#
+# Top Level Summaries
+#
+
+for-translation() {
+  local count=$1
+  shift
+
+  mycpp-counts $count "$@"
+
+  cpp-counts $count "$@"
+
+  osh-counts $count "$@"
+
+  gen-cpp-counts $count "$@"
+}
+
+overview() {
+  local count=$1
+  shift
+
+  osh-counts $count "$@"
+
+  oil-lang-files | $count \
+    'Oil Language (and Tea)' '' "$@"
+
+  ls pylib/*.py | filter-py | $count \
+    "Code borrowed from Python's stdlib" '' "$@"
+
+  ls qsn_/*.py | filter-py | $count \
+    'QSN library' '' "$@"
+
+  ls spec/*.test.sh | $count \
+    'Spec Tests' '' "$@"
+
+  ls {osh,oil_lang,frontend,core,native}/*_test.py | $count \
+    'Language Unit Tests' '' "$@"
+
+  ls {build,test,asdl,pylib,tools}/*_test.py | $count \
+    'Other Unit Tests' '' "$@"
+
+  ls test/gold/*.sh | $count \
+    'Gold Tests' '' "$@"
+
+  mycpp-counts $count "$@"
+
+  # Leaving off cpp-counts since that requires a C++ build
+
+  ls build/*.{mk,sh,py} Makefile *.mk configure install | filter-py | $count \
+    'Build Automation' '' "$@"
+
+  ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py | $count \
+    'Test Automation' '' "$@"
+
+  ls devtools/release*.sh | $count \
+    'Release Automation' '' "$@"
+
+  ls soil/*.{sh,py} | $count \
+    'Soil (multi-cloud continuous build with containers)' '' "$@"
+
+  ls benchmarks/*.{sh,py,R} | $count \
+    'Benchmarks' '' "$@"
+
+  ls metrics/*.{sh,R} | $count \
+    'Metrics' '' "$@"
+
+  ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' | $count \
+    'Zephyr ASDL' '' "$@"
+
+  ls pgen2/*.py | filter-py | $count \
+    'pgen2 (parser generator)' '' "$@"
+
+  ls */*_gen.py | $count \
+    'Other Code Generators' '' "$@"
+
+  ls _devbuild/gen/*.{py,h} | $count \
+    'Generated Python Code' \
+    'For the Python App Bundle.' \
+    "$@"
+
+  ls tools/*.py | filter-py | $count \
+    'Tools' '' "$@"
+
+  ls {doctools,lazylex}/*.py | filter-py | $count \
+    'Dco Tools' '' "$@"
+
+  ls web/*.js web/*/*.{js,py} | $count \
+    'Web' '' "$@"
+}
+
+for-translation-text() {
+  for-translation category-text
+}
+
+overview-text() {
+  overview category-text
+}
+
+#
+# HTML Versions
+#
 
 html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"
@@ -96,219 +281,55 @@ metrics-html-head() {
 
   local base_url='../../../web'
 
-  html-head --title "$title" "$base_url/base.css" "$base_url/line-counts.css" 
+  html-head --title "$title" "$base_url/base.css" "$base_url/table/table-sort.css" "$base_url/line-counts.css" 
 }
 
-#
-# Helper functions
-#
-
-osh-counts() {
-  local header=${1:-echo}
-  local comment=${2:-true}
-  local count=${3:-wc-text}
-
-  $header 'OSH (and common libraries)'
-  $comment 'This is the input to the translator, written in statically-typed Python.'
-  osh-files | $count
-  echo
+tsv2html() {
+  web/table/csv2html.py --tsv "$@"
 }
 
-cpp-counts() {
-  local header=${1:-echo}
-  local comment=${2:-true}
-  local count=${3:-wc-text}
+counts-html() {
+  local name=$1
+  local title=$2
 
-  $header 'Hand-written C++ Code, like OS bindings'
-  $comment 'The small C++ files correspond to larger Python files, like osh/arith_parse.py.'
+  local tmp_dir=_tmp/metrics/line-counts/$name
 
-  ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | $count
-  echo
+  rm -r -f -v $tmp_dir >& 2
+  mkdir -v -p $tmp_dir >& 2
 
-  $header 'Old mycpp Runtime (no garbage collection)'
-  ls mycpp/mylib.{cc,h} | $count
-  echo
+  echo $'category\tcategory_HREF\ttotal_lines\tnum_files' > $tmp_dir/INDEX.tsv
 
-  $header 'New Garbage-Collected Runtime'
-  ls mycpp/gc_heap.* mycpp/mylib2.* mycpp/my_runtime.* | $count
-  echo
+  echo $'column_name\ttype
+category\tstring
+category_HREF\tstring
+total_lines\tinteger
+num_files\tinteger' >$tmp_dir/INDEX.schema.tsv 
 
-  $header 'Unit tests in C++'
-  ls mycpp/*_test.cc cpp/unit_tests.cc | $count
-  echo
+  # Generate the HTML
+  $name category-html $tmp_dir
+
+  metrics-html-head "$title"
+  echo '  <body class="width40">'
+
+  echo "<h1>$title</h1>"
+
+  tsv2html $tmp_dir/INDEX.tsv
+
+  # All the parts
+  cat $tmp_dir/*.html
+
+  echo '  </body>'
+  echo '</html>'
 }
-
-gen-cpp-counts() {
-  local header=${1:-echo}
-  local comment=${2:-true}
-  local count=${3:-wc-text}
-
-  # NOTE: this excludes .re2c.h file
-  $header 'Generated C+ Code'
-  $comment 'This code is produced by many translators, including mycpp.
-            Other translators are Zephyr ASDL and re2c.'
-  ls _build/cpp/*.{cc,h} _devbuild/gen/*.h | $count
-  echo
-}
-
-mycpp-counts() {
-  local header=${1:-echo}
-  local comment=${2:-true}
-  local count=${3:-wc-text}
-
-  $header 'mycpp translator'
-  $comment 'This is a prototype (a hack on top of the MyPy frontend).'
-  ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | $count
-  echo
-
-  $header 'mycpp testdata'
-  ls mycpp/examples/*.py | $count
-  echo
-}
-
-#
-# Top Level Summaries
-#
-
-for-translation() {
-  local header=${1:-echo}
-  local comment=${2:-true}
-  local count=${3:-wc-text}
-
-  mycpp-counts "$@"
-
-  cpp-counts "$@"
-
-  osh-counts "$@"
-
-  gen-cpp-counts "$@"
-}
-
-all() {
-  local header=${1:-echo}
-  local comment=${2:-true}
-  local count=${3:-wc-text}
-
-  osh-counts "$@"
-
-  $header 'Oil Language (and Tea)'
-  oil-lang-files | $count
-  echo
-
-  $header 'BORROWED FROM STDLIB'
-  ls pylib/*.py | filter-py | $count
-  echo
-
-  $header 'QSN library'
-  ls qsn_/*.py | filter-py | $count
-  echo
-
-  $header 'SPEC TESTS'
-  ls spec/*.test.sh | $count
-  echo
-
-  $header 'OIL UNIT TESTS'
-  ls {osh,frontend,core,native,tools}/*_test.py | $count
-  echo
-
-  $header 'OTHER UNIT TESTS'
-  ls {build,test,asdl,pylib,tools}/*_test.py | $count
-  echo
-
-  $header 'GOLD TESTS'
-  ls test/gold/*.sh | $count
-  echo
-
-  mycpp-counts "$@"
-
-  # Leaving off cpp-counts since that requires a C++ build
-
-  $header 'BUILD AUTOMATION'
-  ls build/*.{mk,sh,py} Makefile *.mk configure install |
-    filter-py | $count
-  echo
-
-  $header 'TEST AUTOMATION'
-  ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py |
-    $count
-  echo
-
-  $header 'RELEASE AUTOMATION'
-  ls devtools/release*.sh | $count
-  echo
-
-  $header 'SOIL (multi-cloud continuous build with containers)'
-  ls soil/*.{sh,py} | $count
-  echo
-
-  $header 'BENCHMARKS'
-  ls benchmarks/*.{sh,py,R} | $count
-  echo
-
-  $header 'METRICS'
-  ls metrics/*.{sh,R} | $count
-  echo
-
-  $header 'ASDL'
-  ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' |
-    $count
-  echo
-
-  $header 'PGEN2 (parser generator)'
-  ls pgen2/*.py | filter-py | $count
-  echo
-
-  $header 'OTHER CODE GENERATORS'
-  ls */*_gen.py | $count
-  echo
-
-  $header 'GENERATED CODE (for app bundle)'
-  ls _devbuild/gen/*.{py,h} | $count
-  echo
-
-  $header 'TOOLS'
-  ls tools/*.py | filter-py | $count
-  echo
-
-  $header 'DOC TOOLS'
-  ls {doctools,lazylex}/*.py | filter-py | $count
-  echo
-
-  $header 'WEB'
-  ls web/*.js web/*/*.{js,py} | $count
-  echo
-}
-
-#
-# HTML Versions
-#
 
 for-translation-html() {
   local title='Code Overview: Translating Oil to C++'
-
-  metrics-html-head "$title"
-  echo '  <body class="width40">'
-
-  echo "<h1>$title</h1>"
-
-  for-translation header-html comment-html wc-html
-
-  echo '  </body>'
-  echo '</html>'
+  counts-html for-translation "$title"
 }
 
-all-html() {
-  local title='Code Overview'
-
-  metrics-html-head "$title"
-  echo '  <body class="width40">'
-
-  echo "<h1>$title</h1>"
-
-  all header-html comment-html wc-html
-
-  echo '  </body>'
-  echo '</html>'
+overview-html() {
+  local title='Overview of Oil Code'
+  counts-html overview "$title"
 }
 
 write-reports() {
@@ -321,14 +342,15 @@ write-reports() {
   mkdir -v -p $dir
 
   for-translation-html > $dir/for-translation.html
-  all-html > $dir/all.html
+
+  overview-html > $dir/overview.html
 
   cat >$dir/index.html <<EOF
 <a href="for-translation.html">for-translation</a> <br/>
-<a href="all.html">all</a> <br/>
+<a href="overview.html">overview</a> <br/>
 EOF
 
-  ls -l $dir/*.html
+  ls -l $dir
 }
 
 #

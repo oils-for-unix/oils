@@ -235,8 +235,9 @@ make-job-wwz() {
   #        osh-summary.html uses table-sort.js and ajax.js
   zip -r $wwz \
     index.html _tmp/soil _tmp/spec _tmp/syscall _tmp/benchmark-data \
+    _tmp/metrics \
     mycpp/_ninja/*.{html,txt,tsv} mycpp/_ninja/{tasks,gen} \
-    web/{base,spec-code,spec-tests,spec-cpp}.css web/ajax.js \
+    web/{base,spec-code,spec-tests,spec-cpp,line-counts}.css web/ajax.js \
     web/table/table-sort.{css,js} \
     _release/oil.tar _release/VERSION/doc
 }

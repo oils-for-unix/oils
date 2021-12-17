@@ -101,7 +101,7 @@ page](https://www.oilshell.org/releases.html).
 
 Try this to show a summary of what's in the repo and their line counts:
 
-    $ metrics/source-code.sh all
+    $ metrics/source-code.sh overview-text
 
 (Other functions in this file may be useful as well.)
 
