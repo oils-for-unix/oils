@@ -146,8 +146,8 @@ More docs:
     type of source file.
   - [oil-cpp](metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
     `oil-native` tarball.
-  - [for-compiler-engineer](metrics.wwz/line-counts/for-compiler-engineer.txt).
-    An overview of the code we need help with.
+  - [for-translation](metrics.wwz/line-counts/for-translation.txt).
+    An overview of the "compile engineer" project.
 - `oil-native`.
   - [overview](metrics.wwz/oil-native/overview.txt) - Binary code size reported
     by [Bloaty][].

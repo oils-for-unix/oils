@@ -66,147 +66,196 @@ osh-cloc() {
   asdl-cloc "${ASDL_FILES[@]}"
 }
 
-mycpp-counts() {
-  echo 'MYCPP translator'
-  ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | xargs wc -l | sort --numeric
-  echo
+#
+# Variants
+#
+
+wc-text() {
+  xargs wc -l "$@" | sort --numeric
 }
 
-# TODO: Sum up all the support material.  It's more than Oil itself!  Turn
-# everything into an array.  An hash table of arrays would be useful here.
-all() {
-
-  echo 'BUILD AUTOMATION'
-  ls build/*.{mk,sh,py} Makefile *.mk configure install |
-    filter-py | xargs wc -l | sort --numeric
-  echo
-
-  echo 'TEST AUTOMATION'
-  ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py |
-    xargs wc -l | sort --numeric
-  echo
-
-  echo 'RELEASE AUTOMATION'
-  wc -l devtools/release*.sh | sort --numeric
-  echo
-
-  echo 'SOIL'
-  wc -l soil/*.{sh,py} | sort --numeric
-  echo
-
-  echo 'BENCHMARKS'
-  wc -l benchmarks/*.{sh,py,R} | sort --numeric
-  echo
-
-  echo 'METRICS'
-  wc -l metrics/*.{sh,R} | sort --numeric
-  echo
-
-  echo 'SPEC TESTS'
-  wc -l spec/*.test.sh | sort --numeric
-  echo
-
-  echo 'GOLD TESTS'
-  wc -l test/gold/*.sh | sort --numeric
-  echo
-
-  echo 'ASDL'
-  ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' |
-    xargs wc -l | sort --numeric
-  echo
-
-  mycpp-counts
-
-  echo 'PGEN2 (parser generator)'
-  ls pgen2/*.py | filter-py | xargs wc -l | sort --numeric
-  echo
-
-  echo 'QSN'
-  ls qsn_/*.py | filter-py | xargs wc -l | sort --numeric
-  echo
-
-  echo 'DOC TOOLS'
-  ls {doctools,lazylex}/*.py | filter-py | xargs wc -l | sort --numeric
-  echo
-
-  # NOTE: OPy is counted separately.
-
-  echo 'CODE GENERATORS'
-  wc -l */*_gen.py | sort --numeric
-  echo
-
-  echo 'GENERATED CODE (for app bundle)'
-  wc -l _devbuild/gen/*.{py,h} | sort --numeric
-  echo
-
-  echo 'TOOLS'
-  ls tools/*.py | filter-py | xargs wc -l | sort --numeric
-  echo
-
-  echo 'WEB'
-  ls web/*.js web/*/*.{js,py} | xargs wc -l | sort --numeric
-  echo
-
-  echo 'BORROWED FROM STDLIB'
-  ls pylib/*.py | filter-py | xargs wc -l | sort --numeric
-  echo
-
-  echo 'OTHER UNIT TESTS'
-  wc -l {build,test,asdl,pylib,tools}/*_test.py | sort --numeric
-  echo
-
-  echo 'OIL UNIT TESTS'
-  wc -l {osh,frontend,core,native,tools}/*_test.py | sort --numeric
-  echo
-
-  osh-counts
-
-  echo 'Oil Language (and Tea)'
-  oil-lang-files | xargs wc -l | sort --numeric
-  echo
+wc-html() {
+  # TODO: Invoke wc_html.py
+  xargs wc -l "$@" | sort --numeric
 }
+
+#
+# Helper functions
+#
 
 osh-counts() {
-  echo 'OSH (and common libraries)'
-  osh-files | xargs wc -l | sort --numeric
+  local header=${1:-echo}
+  local comment=${2:-true}
+  local count=${3:-wc-text}
+
+  $header 'OSH (and common libraries)'
+  $comment '(the input to the translator: statically-typed Python)'
+  osh-files | $count
   echo
 }
 
 cpp-counts() {
-  echo 'Hand-Written C++ Code, like OS bindings'
-  echo '(the small C++ files correspond to larger Python files, like osh/arith_parse.py)'
-  ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | xargs wc -l | sort --numeric
+  local header=${1:-echo}
+  local comment=${2:-true}
+  local count=${3:-wc-text}
+
+  $header 'Hand-Written C++ Code, like OS bindings'
+  $comment '(the small C++ files correspond to larger Python files, like osh/arith_parse.py)'
+  ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | $count
   echo
 
-  echo 'Old mycpp Runtime (no garbage collection)'
-  wc -l mycpp/mylib.{cc,h} | sort --numeric
+  $header 'Old mycpp Runtime (no garbage collection)'
+  ls mycpp/mylib.{cc,h} | $count
   echo
 
-  echo 'New Garbage-Collected Runtime'
-  wc -l mycpp/gc_heap.* mycpp/mylib2.* mycpp/my_runtime.* | sort --numeric
+  $header 'New Garbage-Collected Runtime'
+  ls mycpp/gc_heap.* mycpp/mylib2.* mycpp/my_runtime.* | $count
   echo
 
-  echo 'Unit tests in C++'
-  wc -l mycpp/*_test.cc cpp/unit_tests.cc | sort --numeric
+  $header 'Unit tests in C++'
+  ls mycpp/*_test.cc cpp/unit_tests.cc | $count
   echo
 
   # NOTE: this excludes .re2c.h file
-  echo 'Generated C+ Code'
-  echo '(produced by many translators including mycpp)'
-  wc -l _build/cpp/*.{cc,h} _devbuild/gen/*.h | sort --numeric
+  $header 'Generated C+ Code'
+  $comment '(produced by many translators including mycpp)'
+  ls _build/cpp/*.{cc,h} _devbuild/gen/*.h | $count
   echo
 }
 
-for-compiler-engineer() {
-  cpp-counts
+mycpp-counts() {
+  local header=${1:-echo}
+  local comment=${2:-true}
+  local count=${3:-wc-text}
 
-  echo '# prototype of the translator: a hack on top of the MyPy frontend'
-  mycpp-counts
+  $header 'MYCPP translator'
+  $comment '(prototype of the translator: a hack on top of the MyPy frontend)'
+  ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | $count
+  echo
 
-  echo '# the input to the translator: statically-typed Python'
-  osh-counts
+  $header 'MYCPP testdata'
+  ls mycpp/examples/*.py | $count
+  echo
 }
 
+#
+# Top Level Summaries
+#
+
+for-translation() {
+  local header=${1:-echo}
+  local comment=${2:-true}
+  local count=${3:-wc-text}
+
+  cpp-counts "$@"
+
+  mycpp-counts "$@"
+
+  osh-counts "$@"
+}
+
+for-translation-html() {
+  for-translation 'echo' 'echo' 'wc-html'
+}
+
+all() {
+  local header=${1:-echo}
+  local comment=${2:-true}
+  local count=${3:-wc-text}
+
+  osh-counts "$@"
+
+  $header 'Oil Language (and Tea)'
+  oil-lang-files | $count
+  echo
+
+  $header 'BORROWED FROM STDLIB'
+  ls pylib/*.py | filter-py | $count
+  echo
+
+  $header 'QSN library'
+  ls qsn_/*.py | filter-py | $count
+  echo
+
+  $header 'SPEC TESTS'
+  ls spec/*.test.sh | $count
+  echo
+
+  $header 'OIL UNIT TESTS'
+  ls {osh,frontend,core,native,tools}/*_test.py | $count
+  echo
+
+  $header 'OTHER UNIT TESTS'
+  ls {build,test,asdl,pylib,tools}/*_test.py | $count
+  echo
+
+  $header 'GOLD TESTS'
+  ls test/gold/*.sh | $count
+  echo
+
+  mycpp-counts "$@"
+
+  # Leaving off cpp-counts since that requires a C++ build
+
+  $header 'BUILD AUTOMATION'
+  ls build/*.{mk,sh,py} Makefile *.mk configure install |
+    filter-py | $count
+  echo
+
+  $header 'TEST AUTOMATION'
+  ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py |
+    $count
+  echo
+
+  $header 'RELEASE AUTOMATION'
+  ls devtools/release*.sh | $count
+  echo
+
+  $header 'SOIL (multi-cloud continuous build with containers)'
+  ls soil/*.{sh,py} | $count
+  echo
+
+  $header 'BENCHMARKS'
+  ls benchmarks/*.{sh,py,R} | $count
+  echo
+
+  $header 'METRICS'
+  ls metrics/*.{sh,R} | $count
+  echo
+
+  $header 'ASDL'
+  ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' |
+    $count
+  echo
+
+  $header 'PGEN2 (parser generator)'
+  ls pgen2/*.py | filter-py | $count
+  echo
+
+  $header 'OTHER CODE GENERATORS'
+  ls */*_gen.py | $count
+  $header
+
+  $header 'GENERATED CODE (for app bundle)'
+  ls _devbuild/gen/*.{py,h} | $count
+  echo
+
+  $header 'TOOLS'
+  ls tools/*.py | filter-py | $count
+  echo
+
+  $header echo 'DOC TOOLS'
+  ls {doctools,lazylex}/*.py | filter-py | $count
+  echo
+
+  $header 'WEB'
+  ls web/*.js web/*/*.{js,py} | $count
+  echo
+}
+
+all-html() {
+  all 'echo' 'echo' 'wc-html'
+}
 
 # count instructions, for fun
 instructions() {

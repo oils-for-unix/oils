@@ -531,7 +531,7 @@ line-counts() {
   metrics/source-code.sh all > $out/src.txt  # Count repo lines
 
   metrics/source-code.sh osh-cloc > $out/osh-cloc.txt
-  metrics/source-code.sh for-compiler-engineer > $out/for-compiler-engineer.txt
+  metrics/source-code.sh for-translation > $out/for-translation.txt
 
   local opy_out=$out/opy.txt
   pushd opy
