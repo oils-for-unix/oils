@@ -527,11 +527,8 @@ line-counts() {
   metrics/tarball.sh linecount-nativedeps > $out/nativedeps.txt
   metrics/tarball.sh linecount-oil-cpp > $out/oil-cpp.txt
 
-  # My arbitrary categorization.
-  metrics/source-code.sh all > $out/src.txt  # Count repo lines
-
+  metrics/source-code.sh write-reports  # for-translation and overview
   metrics/source-code.sh osh-cloc > $out/osh-cloc.txt
-  metrics/source-code.sh for-translation > $out/for-translation.txt
 
   local opy_out=$out/opy.txt
   pushd opy

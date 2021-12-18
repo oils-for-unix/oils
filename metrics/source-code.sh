@@ -174,7 +174,7 @@ mycpp-counts() {
 # Top Level Summaries
 #
 
-for-translation() {
+_for-translation() {
   local count=$1
   shift
 
@@ -187,7 +187,7 @@ for-translation() {
   gen-cpp-counts $count "$@"
 }
 
-overview() {
+_overview() {
   local count=$1
   shift
 
@@ -261,12 +261,12 @@ overview() {
     'Web' '' "$@"
 }
 
-for-translation-text() {
-  for-translation category-text
+for-translation() {
+  _for-translation category-text
 }
 
-overview-text() {
-  overview category-text
+overview() {
+  _overview category-text
 }
 
 #
@@ -307,7 +307,7 @@ total_lines\tinteger
 num_files\tinteger' >$tmp_dir/INDEX.schema.tsv 
 
   # Generate the HTML
-  $name category-html $tmp_dir
+  "_$name" category-html $tmp_dir
 
   metrics-html-head "$title"
   echo '  <body class="width40">'

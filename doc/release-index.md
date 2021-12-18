@@ -140,14 +140,14 @@ More docs:
 ## Metrics
 
 - Lines of source, counted in different ways:
+  - [overview](metrics.wwz/line-counts/overview.html).  The whole Oil repo organized by
+    type of source file.
+  - [for-translation](metrics.wwz/line-counts/for-translation.html).
+    An overview of the "compile engineer" project.
   - [osh-cloc](metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
     libraries, as measured by the [cloc][] tool.
-  - [src](metrics.wwz/line-counts/src.txt).  The whole Oil repo organized by
-    type of source file.
   - [oil-cpp](metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
     `oil-native` tarball.
-  - [for-translation](metrics.wwz/line-counts/for-translation.txt).
-    An overview of the "compile engineer" project.
 - `oil-native`.
   - [overview](metrics.wwz/oil-native/overview.txt) - Binary code size reported
     by [Bloaty][].

@@ -83,7 +83,7 @@ dev-minimal-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 build-minimal       build/dev.sh minimal          -
-repo-overview       metrics/source-code.sh all    -
+repo-overview       metrics/source-code.sh overview  -
 lint                test/lint.sh soil-run         -
 typecheck-slice     types/oil-slice.sh soil-run   -
 typecheck-other     types/run.sh soil-run         -
