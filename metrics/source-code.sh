@@ -125,7 +125,7 @@ cpp-counts() {
 
   ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | $count \
     'Hand-written C++ Code' \
-    'Includes OS bindings.  ANd small C++ files that correspond to larger Python files, like osh/arith_parse.py.' \
+    'Includes OS bindings.  And small C++ files that correspond to larger Python files, like osh/arith_parse.py.' \
     "$@"
 
   ls mycpp/mylib.{cc,h} | $count \
@@ -160,12 +160,12 @@ mycpp-counts() {
   shift
 
   ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | $count \
-    'mycpp translator' \
-    "This prototype uses the MyPy frontend to translate statically-typed Python to C++.  The generated C++ makes use of a small runtime for things like List<T>, Dict<K, V>, and Python's len()." \
+    'mycpp Translator' \
+    "This prototype uses the MyPy frontend to translate statically-typed Python to C++.  The generated C++ makes use of a small runtime for things like List[T], Dict[K, V], and Python's len()." \
     "$@"
 
   ls mycpp/examples/*.py | $count \
-    'mycpp testdata' \
+    'mycpp Test Data' \
     'Small Python examples that translate to C++, compile, and run.' \
     "$@"
 }
@@ -198,9 +198,6 @@ _overview() {
 
   ls pylib/*.py | filter-py | $count \
     "Code Borrowed from Python's stdlib" '' "$@"
-
-  ls qsn_/*.py | filter-py | $count \
-    'QSN Library' '' "$@"
 
   ls spec/*.test.sh | $count \
     'Spec Tests' '' "$@"
@@ -315,6 +312,8 @@ num_files\tinteger' >$tmp_dir/INDEX.schema.tsv
   echo "<h1>$title</h1>"
 
   tsv2html $tmp_dir/INDEX.tsv
+
+  echo '<hr/>'
 
   # All the parts
   cat $tmp_dir/*.html

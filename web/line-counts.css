@@ -9,3 +9,12 @@
 .summary {
   font-weight: bold;
 }
+
+h3 {
+  color: darkgreen;
+  margin-left: 2em;
+}
+
+#INDEX {
+  margin: 0 auto;
+}
