@@ -64,7 +64,7 @@ def main(argv):
   with open(html, 'w') as f:
     print('''\
 <a name="%(anchor)s"></a>
-<h3>%(title)s</h3>
+<h2>%(title)s</h2>
 <p>%(comment)s</p>
 ''' % record, file=f)
 

@@ -10,7 +10,8 @@
   font-weight: bold;
 }
 
-h3 {
+h2 {
+  font-size: large;
   color: darkgreen;
   margin-left: 2em;
 }

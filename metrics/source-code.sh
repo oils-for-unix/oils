@@ -115,7 +115,7 @@ osh-counts() {
 
   osh-files | $count \
     'OSH (and common libraries)' \
-    'This is the input to the translator, written in statically-typed Python.' \
+    'This is the input to the translators, written in statically-typed Python.  Note that bash is at least 140K lines of code, and OSH implements a large part of bash and more.' \
     "$@"
 }
 
@@ -125,7 +125,7 @@ cpp-counts() {
 
   ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | $count \
     'Hand-written C++ Code' \
-    'Includes OS bindings.  And small C++ files that correspond to larger Python files, like osh/arith_parse.py.' \
+    'Includes OS bindings.  Small C++ files like cpp/osh_arith_parse.{cc,h} correspond to larger Python files like osh/arith_parse.py.' \
     "$@"
 
   ls mycpp/mylib.{cc,h} | $count \
@@ -135,12 +135,12 @@ cpp-counts() {
 
   ls mycpp/gc_heap.* mycpp/mylib2.* mycpp/my_runtime.* | $count \
     'New Garbage-Collected Runtime' \
-    '' \
+    'Uses a simple Cheney / semi-space collector.' \
     "$@"
 
   ls mycpp/*_test.cc cpp/unit_tests.cc | $count \
     'Unit tests in C++' \
-    '' \
+    'The goal is to make the spec tests pass, but unit tests are helpful too.' \
     "$@"
 }
 
@@ -161,12 +161,47 @@ mycpp-counts() {
 
   ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | $count \
     'mycpp Translator' \
-    "This prototype uses the MyPy frontend to translate statically-typed Python to C++.  The generated C++ makes use of a small runtime for things like List[T], Dict[K, V], and Python's len()." \
+    "This prototype uses the MyPy frontend to translate statically-typed Python to C++.  The generated code calls a small runtime which implements things like List[T], Dict[K, V], and Python's len()." \
     "$@"
 
   ls mycpp/examples/*.py | $count \
     'mycpp Test Data' \
     'Small Python examples that translate to C++, compile, and run.' \
+    "$@"
+}
+
+code-generator-counts() {
+  local count=$1
+  shift
+
+  ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' | $count \
+    'Zephyr ASDL' \
+    'A DSL for algebraic data types, borrowed from Python.  Oil is the most strongly typed Bourne shell implementation!' \
+    "$@"
+
+  ls pgen2/*.py | filter-py | $count \
+    'pgen2 Parser Generator' \
+    'An LL(1) parser generator used to parse Oil expressions.  Also borrowed from CPython.' \
+    "$@"
+
+  ls */*_gen.py | $count \
+    'Other Code Generators' \
+    'In order to make Oil statically typed, we had to abandon Python reflection and use C++ source code generation instead.  The lexer, flag definitions, and constants can be easily compiled to C++.' \
+    "$@"
+}
+
+spec-gold-counts() {
+  local count=$1
+  shift
+
+  ls spec/*.test.sh | $count \
+    'Spec Tests' \
+    'A comprehensive test suite that compares OSH against other shells.  If OSH passes these tests in BOTH Python and C++, it means that the translation works.' \
+    "$@"
+
+  ls test/gold/*.sh | $count \
+    'Gold Tests' \
+    'Another suite that tests shells "from the outside".  Instead of making explicit assertions, we verify that OSH behaves like bash.' \
     "$@"
 }
 
@@ -180,11 +215,15 @@ _for-translation() {
 
   mycpp-counts $count "$@"
 
+  code-generator-counts $count "$@"
+
   cpp-counts $count "$@"
 
   osh-counts $count "$@"
 
   gen-cpp-counts $count "$@"
+
+  spec-gold-counts $count "$@"
 }
 
 _overview() {
@@ -199,8 +238,7 @@ _overview() {
   ls pylib/*.py | filter-py | $count \
     "Code Borrowed from Python's stdlib" '' "$@"
 
-  ls spec/*.test.sh | $count \
-    'Spec Tests' '' "$@"
+  spec-gold-counts $count "$@"
 
   ls {osh,oil_lang,frontend,core,native}/*_test.py | $count \
     'Language Unit Tests' '' "$@"
@@ -208,10 +246,9 @@ _overview() {
   ls {build,test,asdl,pylib,tools}/*_test.py | $count \
     'Other Unit Tests' '' "$@"
 
-  ls test/gold/*.sh | $count \
-    'Gold Tests' '' "$@"
-
   mycpp-counts $count "$@"
+
+  code-generator-counts $count "$@"
 
   # Leaving off cpp-counts since that requires a C++ build
 
@@ -233,15 +270,6 @@ _overview() {
 
   ls metrics/*.{sh,R} | $count \
     'Metrics' '' "$@"
-
-  ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' | $count \
-    'Zephyr ASDL' '' "$@"
-
-  ls pgen2/*.py | filter-py | $count \
-    'pgen2 Parser Generator' '' "$@"
-
-  ls */*_gen.py | $count \
-    'Other Code Generators' '' "$@"
 
   ls _devbuild/gen/*.{py,h} | $count \
     'Generated Python Code' \
@@ -315,6 +343,11 @@ num_files\tinteger' >$tmp_dir/INDEX.schema.tsv
 
   echo '<hr/>'
 
+  echo '<h2>Related Documents</h2>
+        <p>The <a href="https://www.oilshell.org/release/latest/doc/README.html">README for oilshell/oil</a>
+           has another overview of the repository.
+        </p>'
+
   # All the parts
   cat $tmp_dir/*.html
 
@@ -323,7 +356,7 @@ num_files\tinteger' >$tmp_dir/INDEX.schema.tsv
 }
 
 for-translation-html() {
-  local title='Code Overview: Translating Oil to C++'
+  local title='Overview: Translating Oil to C++'
   counts-html for-translation "$title"
 }
 
@@ -333,10 +366,6 @@ overview-html() {
 }
 
 write-reports() {
-  # TODO:
-  # - Put these in the right directory.
-  # - Link from release page
-
   local dir=_tmp/metrics/line-counts
 
   mkdir -v -p $dir
