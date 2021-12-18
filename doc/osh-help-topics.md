@@ -151,7 +151,7 @@ X [Unsupported]   enable
 
 ```osh-help-topics
   [Errors]        nounset   pipefail   errexit   inherit_errexit
-  [Globbing]      noglob   nullglob   X failglob   dashglob
+  [Globbing]      noglob   nullglob   failglob   dashglob
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other Option]  X noclobber

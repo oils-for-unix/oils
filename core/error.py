@@ -153,6 +153,13 @@ if mylib.PYTHON:
     argument.
     """
 
+  class FailGlob(Exception):
+    """Raised when a glob matches nothing when failglob is set."""
+
+    def __init__(self, glob):
+      self.glob = glob
+      self.msg = 'No match: %s' % glob
+
 
   class Strict(FatalRuntime):
     """Depending on shell options, these errors may be caught and ignored.

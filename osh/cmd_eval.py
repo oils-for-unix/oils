@@ -594,7 +594,6 @@ class CommandEvaluator(object):
         # Note: Individual WORDS can fail
         # - $() and <() can have failures.  This can happen in DBracket,
         #   DParen, etc. too
-        # - we could catch the 'failglob' exception here and return 1, e.g. *.bad
         # - Tracing: this can start processes for proc sub and here docs!
         cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
@@ -1539,6 +1538,9 @@ class CommandEvaluator(object):
     except error.Parse as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
+    except error.FailGlob as e:
+      status = 1
+      self.errfmt.StderrLine(e.msg)
     except error.ErrExit as e:
       err = e
       is_errexit = True

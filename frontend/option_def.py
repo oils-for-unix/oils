@@ -258,7 +258,7 @@ def _Init(opt_def):
   #
 
   # shopt options that aren't in any groups.
-  opt_def.Add('failglob')  # not implemented.
+  opt_def.Add('failglob')
   opt_def.Add('extglob')
 
   # Compatibility
