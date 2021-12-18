@@ -23,9 +23,6 @@ def main(argv):
   comment = argv[3]
   tmp_dir = argv[4]
 
-  #log('ARGV %s ', argv)
-  #log('PREFIX %s ', prefix)
-
   total_lines = None
   rows = []
 
@@ -50,6 +47,7 @@ def main(argv):
   record = {
       'id': id_,
       'total_lines': total_lines,
+      'total_lines_str': '{:,}'.format(total_lines),
       'num_files': num_files,
       'title': title,
       'anchor': anchor,
@@ -58,28 +56,35 @@ def main(argv):
 
   with open(index_tsv, 'a') as f:
     # The link looks like #i01
-    f.write('%(title)s\t#%(anchor)s\t%(total_lines)d\t%(num_files)s\n' % record)
+    f.write('%(title)s\t#%(anchor)s\t%(total_lines)d\t%(num_files)d\n' % record)
 
   # Write our HTML
   html = os.path.join(tmp_dir, '%02d.html' % int(id_))
 
   with open(html, 'w') as f:
-    print('<a name="%(anchor)s"></a>' % record, file=f)
-    print('<h2>%(title)s</h2>' % record, file=f)
-    print('<p>%(comment)s</p>' % record, file=f)
+    print('''\
+<a name="%(anchor)s"></a>
+<h2>%(title)s</h2>
+<p>%(comment)s</p>
+''' % record, file=f)
 
-    print('<div class="wc">', file=f)
+    # Note: not using csv2html.py directly, since it's too many small files.
 
-    # TODO:
-    # - Could make a table out of this
-    # - Link path to source code
+    print('''\
+<div class="wc">
+  <pre class="counts">''', file=f)
 
-    print('<pre>', file=f)
     for count, rel_path in rows:
       count_str = '{:,}'.format(count)
-      print('%6s %s' % (count_str, rel_path), file=f)
-    print('</pre>', file=f)
-    print('</div>', file=f)
+      url = 'https://github.com/oilshell/oil/blob/master/%s' % rel_path
+      print('<a href="%s">%-40s</a> %10s' % (url, rel_path, count_str), file=f)
+
+    summary = '<span class="summary">%(total_lines_str)s lines in %(num_files)d files</span>' % record
+    print('', file=f)
+    print(summary, end='', file=f)
+    print('''\
+  </pre>
+</div>''' % record, file=f)
 
 
 if __name__ == '__main__':

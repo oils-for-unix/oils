@@ -124,8 +124,8 @@ cpp-counts() {
   shift
 
   ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | $count \
-    'Hand-written C++ Code, like OS bindings' \
-    'The small C++ files correspond to larger Python files, like osh/arith_parse.py.' \
+    'Hand-written C++ Code' \
+    'Includes OS bindings.  ANd small C++ files that correspond to larger Python files, like osh/arith_parse.py.' \
     "$@"
 
   ls mycpp/mylib.{cc,h} | $count \
@@ -151,7 +151,7 @@ gen-cpp-counts() {
   # NOTE: this excludes .re2c.h file
   ls _build/cpp/*.{cc,h} _devbuild/gen/*.h | $count \
     'Generated C+ Code' \
-    'mycpp generates only the big file _build/cpp/osh_eval.cc.  Other code generators, including Zephyr ASDL and re2c, produce the other files.' \
+    'mycpp generates the big file _build/cpp/osh_eval.cc.  Other programs like Zephyr ASDL and re2c generate other files.' \
     "$@"
 }
 
@@ -197,10 +197,10 @@ overview() {
     'Oil Language (and Tea)' '' "$@"
 
   ls pylib/*.py | filter-py | $count \
-    "Code borrowed from Python's stdlib" '' "$@"
+    "Code Borrowed from Python's stdlib" '' "$@"
 
   ls qsn_/*.py | filter-py | $count \
-    'QSN library' '' "$@"
+    'QSN Library' '' "$@"
 
   ls spec/*.test.sh | $count \
     'Spec Tests' '' "$@"
@@ -228,7 +228,8 @@ overview() {
     'Release Automation' '' "$@"
 
   ls soil/*.{sh,py} | $count \
-    'Soil (multi-cloud continuous build with containers)' '' "$@"
+    'Soil' \
+    'Multi-cloud continuous build with containers.' '' "$@"
 
   ls benchmarks/*.{sh,py,R} | $count \
     'Benchmarks' '' "$@"
@@ -240,7 +241,7 @@ overview() {
     'Zephyr ASDL' '' "$@"
 
   ls pgen2/*.py | filter-py | $count \
-    'pgen2 (parser generator)' '' "$@"
+    'pgen2 Parser Generator' '' "$@"
 
   ls */*_gen.py | $count \
     'Other Code Generators' '' "$@"
@@ -254,7 +255,7 @@ overview() {
     'Tools' '' "$@"
 
   ls {doctools,lazylex}/*.py | filter-py | $count \
-    'Dco Tools' '' "$@"
+    'Doc Tools' '' "$@"
 
   ls web/*.js web/*/*.{js,py} | $count \
     'Web' '' "$@"

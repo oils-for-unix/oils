@@ -1,3 +1,11 @@
-.collapse {
-  display: none;
+.counts a {
+  text-decoration: none;  /* turn off underline */
+}
+
+.counts {
+  font-size: large;
+}
+
+.summary {
+  font-weight: bold;
 }
