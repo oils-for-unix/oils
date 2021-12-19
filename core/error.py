@@ -153,11 +153,8 @@ if mylib.PYTHON:
     argument.
     """
 
-  class FailGlob(Exception):
+  class FailGlob(_ErrorWithLocation):
     """Raised when a glob matches nothing when failglob is set."""
-
-    def __init__(self, glob):
-      self.glob = glob
 
 
   class Strict(FatalRuntime):

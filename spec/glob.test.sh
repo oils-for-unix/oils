@@ -214,6 +214,7 @@ echo status=$?
 ## N-I dash/mksh/ash STDOUT:
 ['*.ZZ']
 ## END
+## N-I dash/mksh/ash status: 127
 
 
 #### shopt -s failglob exits properly in loop context with set -e

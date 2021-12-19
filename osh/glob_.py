@@ -455,7 +455,7 @@ class Globber(object):
 
     # Nothing matched
     if self.exec_opts.failglob():
-      raise error.FailGlob(arg)
+      raise error.FailGlob('no match')
 
     if self.exec_opts.nullglob():
       return 0
