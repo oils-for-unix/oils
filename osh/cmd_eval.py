@@ -595,12 +595,7 @@ class CommandEvaluator(object):
         # - $() and <() can have failures.  This can happen in DBracket,
         #   DParen, etc. too
         # - Tracing: this can start processes for proc sub and here docs!
-        try:
-          cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
-        except error.FailGlob as e:
-          e.word = words[0]
-          ui.PrettyPrintError(e, self.arena)
-          return 1, True
+        cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
         UP_cmd_val = cmd_val
         if UP_cmd_val.tag_() == cmd_value_e.Argv:
@@ -1100,12 +1095,7 @@ class CommandEvaluator(object):
           iter_list = self.mem.GetArgv()
         else:
           words = braces.BraceExpandWords(node.iter_words)
-          try:
-            iter_list = self.word_ev.EvalWordSequence(words)
-          except error.FailGlob as e:
-            e.span_id = node.spids[0]
-            ui.PrettyPrintError(e, self.arena)
-            return 1, True
+          iter_list = self.word_ev.EvalWordSequence(words)
 
         status = 0  # in case we don't loop
         self.loop_level += 1
@@ -1371,7 +1361,14 @@ class CommandEvaluator(object):
         if self.shell_ex.PushRedirects(redirects):
           # Asymmetry because of applying redirects can fail.
           with vm.ctx_Redirect(self.shell_ex):
-            status, check_errexit = self._Dispatch(node, pipeline_st)
+            try:
+              status, check_errexit = self._Dispatch(node, pipeline_st)
+            except error.FailGlob as e:
+              # handle this error here as it can occur in many places
+              # in _Dispatch
+              e.span_id = self.mem.CurrentSpanId()
+              ui.PrettyPrintError(e, self.arena)
+              status, check_errexit = 1, True
 
           codes = pipeline_st.codes 
           if len(codes):  # Did we run a pipeline?

@@ -201,6 +201,23 @@ status=0
 status=0
 ## END
 
+#### shopt -s failglob in array literal context
+myarr=(*.ZZ)
+echo "${myarr[@]}"
+shopt -s failglob
+myarr=(*.ZZ)
+echo status=$?
+## STDOUT:
+*.ZZ
+status=1
+## END
+## N-I mksh STDOUT:
+*.ZZ
+status=0
+## END
+## N-I dash/ash stdout-json: ""
+## N-I dash/ash status: 2
+
 #### shopt -s failglob exits properly in command context with set -e
 set -e
 argv.py *.ZZ
@@ -215,7 +232,6 @@ echo status=$?
 ['*.ZZ']
 ## END
 ## N-I dash/mksh/ash status: 127
-
 
 #### shopt -s failglob exits properly in loop context with set -e
 set -e
