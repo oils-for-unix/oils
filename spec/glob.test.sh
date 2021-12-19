@@ -201,6 +201,39 @@ status=0
 status=0
 ## END
 
+#### shopt -s failglob exits properly in command context with set -e
+set -e
+argv.py *.ZZ
+shopt -s failglob
+argv.py *.ZZ
+echo status=$?
+## STDOUT:
+['*.ZZ']
+## END
+## status: 1
+## N-I dash/mksh/ash STDOUT:
+['*.ZZ']
+## END
+
+
+#### shopt -s failglob exits properly in loop context with set -e
+set -e
+for x in *.ZZ; do echo $x; done
+echo status=$?
+shopt -s failglob
+for x in *.ZZ; do echo $x; done
+echo status=$?
+## STDOUT:
+*.ZZ
+status=0
+## END
+## status: 1
+## N-I dash/mksh/ash STDOUT:
+*.ZZ
+status=0
+## END
+## N-I dash/mksh/ash status: 127
+
 #### Don't glob flags on file system with GLOBIGNORE
 # This is a bash-specific extension.
 expr $0 : '.*/osh$' >/dev/null && exit 99  # disabled until cd implemented
@@ -292,7 +325,7 @@ touch $TMP/__a__
 touch $TMP/__μ__
 cd $TMP
 
-echo __?__ 
+echo __?__
 
 ## STDOUT:
 __a__ __μ__
@@ -318,4 +351,3 @@ other
 other
 other
 ## END
-

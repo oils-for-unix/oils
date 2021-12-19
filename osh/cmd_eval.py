@@ -1361,7 +1361,12 @@ class CommandEvaluator(object):
         if self.shell_ex.PushRedirects(redirects):
           # Asymmetry because of applying redirects can fail.
           with vm.ctx_Redirect(self.shell_ex):
-            status, check_errexit = self._Dispatch(node, pipeline_st)
+            try:
+              status, check_errexit = self._Dispatch(node, pipeline_st)
+            except error.FailGlob as e:
+              self.errfmt.StderrLine('No match: %s' % e.glob)
+              status = 1
+              check_errexit = True
 
           codes = pipeline_st.codes 
           if len(codes):  # Did we run a pipeline?
@@ -1538,9 +1543,6 @@ class CommandEvaluator(object):
     except error.Parse as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
-    except error.FailGlob as e:
-      status = 1
-      self.errfmt.StderrLine(e.msg)
     except error.ErrExit as e:
       err = e
       is_errexit = True

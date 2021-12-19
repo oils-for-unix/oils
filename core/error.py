@@ -158,7 +158,6 @@ if mylib.PYTHON:
 
     def __init__(self, glob):
       self.glob = glob
-      self.msg = 'No match: %s' % glob
 
 
   class Strict(FatalRuntime):
