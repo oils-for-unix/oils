@@ -455,7 +455,7 @@ class Globber(object):
 
     # Nothing matched
     if self.exec_opts.failglob():
-      raise error.FailGlob('no match')
+      raise error.FailGlob('Pattern %r matched no files' % arg)
 
     if self.exec_opts.nullglob():
       return 0

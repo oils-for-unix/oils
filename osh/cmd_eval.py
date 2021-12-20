@@ -1367,7 +1367,7 @@ class CommandEvaluator(object):
               # handle this error here as it can occur in many places
               # in _Dispatch
               e.span_id = self.mem.CurrentSpanId()
-              ui.PrettyPrintError(e, self.arena)
+              ui.PrettyPrintError(e, self.arena, prefix='failglob: ')
               status, check_errexit = 1, True
 
           codes = pipeline_st.codes 
