@@ -252,16 +252,24 @@ status=0
 ## N-I dash/mksh/ash status: 127
 
 #### shopt -s failglob behavior on single line with semicolon
-# bash behaves differently for two commands separated by a semicolon
-# than for two commands separated by a newline. This behavior doesn't
-# make sense or seem to be intentional, so osh does not mimic it.
+# bash behaves differently when commands are separated by a semicolon than when
+# separated by a newline. This behavior doesn't make sense or seem to be
+# intentional, so osh does not mimic it.
+
 shopt -s failglob
 echo *.ZZ; echo status=$? # bash doesn't execute the second part!
 echo *.ZZ
 echo status=$? # bash executes this
+
 ## STDOUT:
 status=1
 ## END
+
+## OK osh STDOUT:
+status=1
+status=1
+## END
+
 ## N-I dash/mksh/ash STDOUT:
 *.ZZ
 status=0

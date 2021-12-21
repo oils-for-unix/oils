@@ -362,3 +362,30 @@ echo @(__nope__*|__nope__?|'*'|'?'|'[:alpha:]'|'|')
 @(*)
 @(__nope__*|__nope__?|*|?|[:alpha:]||)
 ## END
+
+#### failglob
+shopt -s extglob
+
+rm -f _failglob/*
+mkdir -p _failglob
+cd _failglob
+
+shopt -s failglob
+echo @(*)
+echo status=$?
+
+touch foo
+echo @(*)
+echo status=$?
+
+## STDOUT:
+status=1
+foo
+status=0
+## END
+## N-I mksh STDOUT:
+@(*)
+status=0
+foo
+status=0
+## END

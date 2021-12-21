@@ -442,7 +442,7 @@ class Globber(object):
     """Given a string that could be a glob, append a list of strings to 'out'.
 
     Returns:
-      Number of items appended.
+      Number of items appended, or -1 for fatal failglob error.
     """
     if self.exec_opts.noglob():
       # we didn't glob escape it in osh/word_eval.py
@@ -455,7 +455,7 @@ class Globber(object):
 
     # Nothing matched
     if self.exec_opts.failglob():
-      raise error.FailGlob('Pattern %r matched no files' % arg)
+      return -1
 
     if self.exec_opts.nullglob():
       return 0
@@ -465,26 +465,31 @@ class Globber(object):
       return 1
 
   def ExpandExtended(self, glob_pat, fnmatch_pat, out):
-    # type: (str, str, List[str]) -> None
+    # type: (str, str, List[str]) -> int
     if self.exec_opts.noglob():
       # Return the fnmatch_pat.  Note: this means we turn ,() into @(), and
       # there is extra \ escaping compared with bash and mksh.  OK for now
       out.append(fnmatch_pat)
-      return
+      return 1
 
     tmp = []  # type: List[str]
-    n = self._Glob(glob_pat, tmp)
+    self._Glob(glob_pat, tmp)
     filtered = [s for s in tmp if libc.fnmatch(fnmatch_pat, s)]
+    n = len(filtered)
 
-    if len(filtered):
+    if n:
       out.extend(filtered)
-      return
+      return n
+
+    if self.exec_opts.failglob():
+      return -1  # nothing matched
 
     if self.exec_opts.nullglob():
-      return
+      return 0
     else:
       # See comment above
       out.append(GlobUnescape(fnmatch_pat))
+      return 1
 
   def OilFuncCall(self, arg):
     # type: (str) -> List[str]

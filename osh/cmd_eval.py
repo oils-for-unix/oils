@@ -1364,11 +1364,13 @@ class CommandEvaluator(object):
             try:
               status, check_errexit = self._Dispatch(node, pipeline_st)
             except error.FailGlob as e:
-              # handle this error here as it can occur in many places
-              # in _Dispatch
-              e.span_id = self.mem.CurrentSpanId()
+              # Handle this error here as it's raised in many places in
+              # _Dispatch.
+              if not e.HasLocation():  # Last resort!
+                e.span_id = self.mem.CurrentSpanId()
               ui.PrettyPrintError(e, self.arena, prefix='failglob: ')
-              status, check_errexit = 1, True
+              status = 1
+              check_errexit = True
 
           codes = pipeline_st.codes 
           if len(codes):  # Did we run a pipeline?

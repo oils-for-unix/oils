@@ -26,6 +26,7 @@ from _devbuild.gen.runtime_asdl import (
     a_index, a_index_e, a_index__Int, a_index__Str,
     VTestPlace, VarSubState,
 )
+from asdl import runtime
 from core import error
 from core import pyos
 from core import pyutil
@@ -1672,7 +1673,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
             #log("glob %s fnmatch %s", glob_pat, fnmatch_pat)
 
             results = []  # type: List[str]
-            self.globber.ExpandExtended(glob_pat, fnmatch_pat, results)
+            n = self.globber.ExpandExtended(glob_pat, fnmatch_pat, results)
+            if n < 0:
+              span_id = word_.LeftMostSpanForWord(w)
+              raise error.FailGlob(
+                  'Extended glob %r matched no files' % fnmatch_pat, span_id=span_id)
+
             part_vals.append(part_value.Array(results))
           elif bool(eval_flags & EXTGLOB_NESTED):
             # We only glob at the TOP level of @(nested|@(pattern))
@@ -1907,7 +1913,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
     #log('split args: %r', args)
     for a in args:
       if glob_.LooksLikeGlob(a):
-        self.globber.Expand(a, argv)
+        # TODO: It would be better to carry span IDs through the frame
+        n = self.globber.Expand(a, argv)
+        if n < 0:
+          raise error.FailGlob('Pattern %r matched no files' % a,
+                               span_id=runtime.NO_SPID)
       else:
         argv.append(glob_.GlobUnescape(a))
 
@@ -2044,6 +2054,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if glob_.LooksLikeStaticGlob(w):
         val = self.EvalWordToString(w)  # respects strict-array
         num_appended = self.globber.Expand(val.s, strs)
+        if num_appended < 0:
+          raise error.FailGlob('Pattern %r matched no files' % val.s,
+                               span_id=word_spid)
         for _ in xrange(num_appended):
           spids.append(word_spid)
         continue

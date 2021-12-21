@@ -93,17 +93,16 @@ class Parse : public _ErrorWithLocation {
 
 class RedirectEval : public _ErrorWithLocation {
  public:
-  RedirectEval(Str* user_str, int span_id)
-      : _ErrorWithLocation(user_str, span_id) {
-  }
-  RedirectEval(Str* user_str, Token* token)
-      : _ErrorWithLocation(user_str, token) {
-  }
-  RedirectEval(Str* user_str, word_part_t* part)
-      : _ErrorWithLocation(user_str, part) {
-  }
+  // code only uses this variant
   RedirectEval(Str* user_str, word_t* word)
       : _ErrorWithLocation(user_str, word) {
+  }
+};
+
+class FailGlob : public _ErrorWithLocation {
+ public:
+  // code only uses this variant
+  FailGlob(Str* user_str, int span_id) : _ErrorWithLocation(user_str, span_id) {
   }
 };
 
