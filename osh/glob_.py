@@ -10,7 +10,6 @@ from _devbuild.gen.syntax_asdl import (
     glob_part_e, glob_part, glob_part_t,
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
-from core import error
 from core import pyutil
 from core.pyutil import stderr_line
 from core.pyerror import log

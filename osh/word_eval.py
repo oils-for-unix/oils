@@ -1913,9 +1913,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     #log('split args: %r', args)
     for a in args:
       if glob_.LooksLikeGlob(a):
-        # TODO: It would be better to carry span IDs through the frame
         n = self.globber.Expand(a, argv)
         if n < 0:
+          # TODO: location info, with span IDs carried through the frame
           raise error.FailGlob('Pattern %r matched no files' % a,
                                span_id=runtime.NO_SPID)
       else:
@@ -1980,7 +1980,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             e_die('LHS array not allowed in assignment builtin', word=w)
           tok_val = left_token.val
           if tok_val[-2] == '+':
-            e_die('+= not allowed in assignment builtin', word=w)
+            e_die('+= not allowed in assignment builtin', token=left_token)
 
           var_name = tok_val[:-1]
           if part_offset == len(w.parts):
@@ -2186,6 +2186,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
 def _SplitAssignArg(arg, w):
   # type: (str, compound_word) -> Tuple[str, Optional[value__Str]]
+
+  # TODO: support +=
   i = arg.find('=')
   prefix = arg[:i]
   if i != -1 and match.IsValidVarName(prefix):
