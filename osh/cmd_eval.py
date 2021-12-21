@@ -594,7 +594,6 @@ class CommandEvaluator(object):
         # Note: Individual WORDS can fail
         # - $() and <() can have failures.  This can happen in DBracket,
         #   DParen, etc. too
-        # - we could catch the 'failglob' exception here and return 1, e.g. *.bad
         # - Tracing: this can start processes for proc sub and here docs!
         cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
@@ -1362,7 +1361,14 @@ class CommandEvaluator(object):
         if self.shell_ex.PushRedirects(redirects):
           # Asymmetry because of applying redirects can fail.
           with vm.ctx_Redirect(self.shell_ex):
-            status, check_errexit = self._Dispatch(node, pipeline_st)
+            try:
+              status, check_errexit = self._Dispatch(node, pipeline_st)
+            except error.FailGlob as e:
+              # handle this error here as it can occur in many places
+              # in _Dispatch
+              e.span_id = self.mem.CurrentSpanId()
+              ui.PrettyPrintError(e, self.arena, prefix='failglob: ')
+              status, check_errexit = 1, True
 
           codes = pipeline_st.codes 
           if len(codes):  # Did we run a pipeline?

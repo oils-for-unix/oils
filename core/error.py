@@ -153,6 +153,9 @@ if mylib.PYTHON:
     argument.
     """
 
+  class FailGlob(_ErrorWithLocation):
+    """Raised when a glob matches nothing when failglob is set."""
+
 
   class Strict(FatalRuntime):
     """Depending on shell options, these errors may be caught and ignored.

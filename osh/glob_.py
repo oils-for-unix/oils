@@ -10,6 +10,7 @@ from _devbuild.gen.syntax_asdl import (
     glob_part_e, glob_part, glob_part_t,
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
+from core import error
 from core import pyutil
 from core.pyutil import stderr_line
 from core.pyerror import log
@@ -453,11 +454,8 @@ class Globber(object):
       return n
 
     # Nothing matched
-    #if self.exec_opts.failglob():
-      # note: to match bash, the whole command has to return 1.  But this also
-      # happens in for loop and array literal contexts.  It might not be worth
-      # it?
-    #  raise NotImplementedError()
+    if self.exec_opts.failglob():
+      raise error.FailGlob('Pattern %r matched no files' % arg)
 
     if self.exec_opts.nullglob():
       return 0

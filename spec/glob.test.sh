@@ -201,6 +201,74 @@ status=0
 status=0
 ## END
 
+#### shopt -s failglob in array literal context
+myarr=(*.ZZ)
+echo "${myarr[@]}"
+shopt -s failglob
+myarr=(*.ZZ)
+echo status=$?
+## STDOUT:
+*.ZZ
+status=1
+## END
+## N-I mksh STDOUT:
+*.ZZ
+status=0
+## END
+## N-I dash/ash stdout-json: ""
+## N-I dash/ash status: 2
+
+#### shopt -s failglob exits properly in command context with set -e
+set -e
+argv.py *.ZZ
+shopt -s failglob
+argv.py *.ZZ
+echo status=$?
+## STDOUT:
+['*.ZZ']
+## END
+## status: 1
+## N-I dash/mksh/ash STDOUT:
+['*.ZZ']
+## END
+## N-I dash/mksh/ash status: 127
+
+#### shopt -s failglob exits properly in loop context with set -e
+set -e
+for x in *.ZZ; do echo $x; done
+echo status=$?
+shopt -s failglob
+for x in *.ZZ; do echo $x; done
+echo status=$?
+## STDOUT:
+*.ZZ
+status=0
+## END
+## status: 1
+## N-I dash/mksh/ash STDOUT:
+*.ZZ
+status=0
+## END
+## N-I dash/mksh/ash status: 127
+
+#### shopt -s failglob behavior on single line with semicolon
+# bash behaves differently for two commands separated by a semicolon
+# than for two commands separated by a newline. This behavior doesn't
+# make sense or seem to be intentional, so osh does not mimic it.
+shopt -s failglob
+echo *.ZZ; echo status=$? # bash doesn't execute the second part!
+echo *.ZZ
+echo status=$? # bash executes this
+## STDOUT:
+status=1
+## END
+## N-I dash/mksh/ash STDOUT:
+*.ZZ
+status=0
+*.ZZ
+status=0
+## END
+
 #### Don't glob flags on file system with GLOBIGNORE
 # This is a bash-specific extension.
 expr $0 : '.*/osh$' >/dev/null && exit 99  # disabled until cd implemented
@@ -292,7 +360,7 @@ touch $TMP/__a__
 touch $TMP/__μ__
 cd $TMP
 
-echo __?__ 
+echo __?__
 
 ## STDOUT:
 __a__ __μ__
@@ -318,4 +386,3 @@ other
 other
 other
 ## END
-
