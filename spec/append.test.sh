@@ -124,3 +124,65 @@ A+=a printenv.py A
 ## BUG bash status: 0
 ## BUG mksh stdout: a
 ## BUG mksh status: 0
+
+#### += on undefined variable
+
+s+=foo
+echo s=$s
+
+# bash and mksh agree that this does NOT respect set -u.
+# I think that's a mistake, but += is a legacy construct, so let's copy it.
+
+set -u
+
+t+=foo
+echo t=$t
+t+=foo
+echo t=$t
+## STDOUT:
+s=foo
+t=foo
+t=foofoo
+## END
+
+#### typeset s+= 
+
+typeset s+=foo
+echo s=$s
+
+# bash and mksh agree that this does NOT respect set -u.
+# I think that's a mistake, but += is a legacy construct, so let's copy it.
+
+set -u
+
+typeset t+=foo
+echo t=$t
+typeset t+=foo
+echo t=$t
+## STDOUT:
+s=foo
+t=foo
+t=foofoo
+## END
+
+#### typeset s${dyn}+= 
+
+dyn=x
+
+typeset s${dyn}+=foo
+echo sx=$sx
+
+# bash and mksh agree that this does NOT respect set -u.
+# I think that's a mistake, but += is a legacy construct, so let's copy it.
+
+set -u
+
+typeset t${dyn}+=foo
+echo tx=$tx
+typeset t${dyn}+=foo
+echo tx=$tx
+## STDOUT:
+sx=foo
+tx=foo
+tx=foofoo
+## END

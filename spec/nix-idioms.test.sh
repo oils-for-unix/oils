@@ -78,7 +78,7 @@ show
 ## status: 1
 
 
-#### Undefined array
+#### ${!ref} to undefined array
 
 set -u
 shopt -s eval_unsafe_arith || true 2>/dev/null
@@ -96,7 +96,7 @@ done
 []
 ## END
 
-#### Undefined string var is fatal, INCONSISTENT with array
+#### ${!ref} to undefined string var is fatal, INCONSISTENT with array
 hookSlice='preHooks'
 
 argv.py ${!hookSlice}
