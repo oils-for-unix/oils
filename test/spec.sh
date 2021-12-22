@@ -664,8 +664,8 @@ type-compat() {
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec spec/append.test.sh --osh-failures-allowed 2 \
-    $BASH $MKSH $OSH_LIST "$@" 
+  sh-spec spec/append.test.sh --osh-failures-allowed 5 \
+    $BASH $MKSH $ZSH $OSH_LIST "$@" 
 }
 
 # associative array -- mksh and zsh implement different associative arrays.

@@ -1978,6 +1978,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           if left_token.id != Id.Lit_VarLike:
             # (not guaranteed since started_pairs is set twice)
             e_die('LHS array not allowed in assignment builtin', word=w)
+
           tok_val = left_token.val
           if tok_val[-2] == '+':
             e_die('+= not allowed in assignment builtin', token=left_token)

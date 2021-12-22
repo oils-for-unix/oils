@@ -1,3 +1,4 @@
+# spec/append.test.sh: Test +=
 
 #### Append string to string
 s='abc'
@@ -15,9 +16,12 @@ argv.py "${a[@]}"
 s='abc'
 s+=(d e f)
 echo $s
-## BUG bash/mksh stdout: abc
-## BUG bash/mksh status: 0
 ## status: 1
+## stdout-json: ""
+## BUG bash/mksh status: 0
+## BUG bash/mksh stdout: abc
+## OK zsh status: 0
+## OK zsh stdout: abc d e f
 
 #### Append string to array should be disallowed
 # They treat this as implicit index 0.  We disallow this on the LHS, so we will
@@ -25,9 +29,12 @@ echo $s
 a=(x y )
 a+=z
 argv.py "${a[@]}"
-## OK bash/mksh stdout: ['xz', 'y']
-## OK bash/mksh status: 0
 ## status: 1
+## stdout-json: ""
+## OK bash/mksh status: 0
+## OK bash/mksh stdout: ['xz', 'y']
+## OK zsh status: 0
+## OK zsh stdout: ['x', 'y', 'z']
 
 #### Append string to array element
 # They treat this as implicit index 0.  We disallow this on the LHS, so we will
@@ -35,8 +42,9 @@ argv.py "${a[@]}"
 a=(x y )
 a[1]+=z
 argv.py "${a[@]}"
-## stdout: ['x', 'yz']
 ## status: 0
+## stdout: ['x', 'yz']
+## BUG zsh stdout: ['xz', 'y']
 
 #### Append to last element
 # Works in bash, but not mksh.  It seems like bash is doing the right thing.
@@ -70,42 +78,6 @@ s1+='d'
 echo $s1 $s2
 ## stdout: abcd abc
 
-#### Append to nonexistent string
-f() {
-  local a+=a
-  echo $a
-
-  b+=b
-  echo $b
-
-  readonly c+=c
-  echo $c
-
-  export d+=d
-  echo $d
-
-  # Not declared anywhere
-  e[1]+=e
-  echo ${e[1]}
-
-  # Declare is the same, but mksh doesn't support it
-  #declare e+=e
-  #echo $e
-}
-f
-## STDOUT:
-a
-b
-c
-d
-e
-## END
-
-# += is invalid on assignment builtins
-## OK osh stdout-json: ""
-## OK osh status: 1
-
-
 #### Append to nonexistent array is allowed
 
 ## TODO: strict_array could get rid of this?
@@ -120,10 +92,10 @@ argv.py "${y[@]}"
 A=a
 A+=a printenv.py A
 ## status: 2
-## BUG bash stdout: aa
-## BUG bash status: 0
-## BUG mksh stdout: a
+## BUG bash/zsh status: 0
+## BUG bash/zsh stdout: aa
 ## BUG mksh status: 0
+## BUG mksh stdout: a
 
 #### += on undefined variable
 
@@ -164,6 +136,8 @@ s=foo
 t=foo
 t=foofoo
 ## END
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
 
 #### typeset s${dyn}+= 
 
@@ -186,3 +160,89 @@ sx=foo
 tx=foo
 tx=foofoo
 ## END
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
+
+#### export readonly +=
+
+export e+=foo
+echo e=$e
+
+readonly r+=bar
+echo r=$r
+
+set -u
+
+export e+=foo
+echo e=$e
+
+#readonly r+=foo
+#echo r=$e
+
+## STDOUT:
+e=foo
+r=bar
+e=foofoo
+## END
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
+
+#### local +=
+
+f() {
+  local s+=foo
+  echo s=$s
+
+  set -u
+  local s+=foo
+  echo s=$s
+}
+
+f
+## STDOUT:
+s=foo
+s=foofoo
+## END
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
+
+#### assign builtin appending array: declare d+=(d e)
+
+declare d+=(d e)
+echo "${d[@]}"
+declare d+=(c l)
+echo "${d[@]}"
+
+export e+=(e x)
+echo "${e[@]}"
+
+export e+=(p o)
+echo "${e[@]}"
+
+readonly r+=(r e)
+echo "${r[@]}"
+# can't do this again
+
+f() {
+  local l+=(l o)
+  echo "${l[@]}"
+
+  local l+=(c a)
+  echo "${l[@]}"
+}
+
+f
+
+## STDOUT:
+d e
+d e c l
+e x
+e x p o
+r e
+l o
+l o c a
+## END
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
