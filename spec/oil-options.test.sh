@@ -2,16 +2,16 @@
 
 #### simple_word_eval doesn't split, glob, or elide empty
 mkdir mydir
-touch foo.txt bar.txt spam.txt
+touch foo.z bar.z spam.z
 spaces='a b'
 dir=mydir
-glob=*.txt
+glob=*.z
 prefix=sp
 set -- 'x y' z
 
 for i in 1 2; do
   local empty=
-  argv.py $spaces $glob $empty $prefix*.txt
+  argv.py $spaces $glob $empty $prefix*.z
 
   # arrays still work too, with this weird rule
   argv.py -"$@"-
@@ -19,9 +19,9 @@ for i in 1 2; do
   shopt -s simple_word_eval
 done
 ## STDOUT:
-['a', 'b', 'bar.txt', 'foo.txt', 'spam.txt', 'spam.txt']
+['a', 'b', 'bar.z', 'foo.z', 'spam.z', 'spam.z']
 ['-x y', 'z-']
-['a b', '*.txt', '', 'spam.txt']
+['a b', '*.z', '', 'spam.z']
 ['-x y', 'z-']
 ## END
 

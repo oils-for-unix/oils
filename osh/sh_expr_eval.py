@@ -75,26 +75,19 @@ _ = log
 #
 
 
-def _LookupVar(name, mem, exec_opts):
-  # type: (str, Mem, optview.Exec) -> value_t
-  val = mem.GetValue(name)
-  # By default, undefined variables are the ZERO value.  TODO: Respect
-  # nounset and raise an exception.
-  if val.tag_() == value_e.Undef and exec_opts.nounset():
-    e_die('Undefined variable %r', name)  # TODO: need token
-  return val
-
-
 def OldValue(lval, mem, exec_opts):
-  # type: (lvalue_t, Mem, optview.Exec) -> value_t
-  """
-  Used by s+='x' and (( i += 1 ))
+  # type: (lvalue_t, Mem, Optional[optview.Exec]) -> value_t
+  """Look up for augmented assignment.
 
-  TODO: We need a stricter and less ambiguous version for Oil.
+  For s+=val and (( i += 1 ))
 
-  Problem:
+  Args:
+    lval: value we need to 
+    exec_opts: can be None if we don't want to check set -u!
+      Because s+=val doesn't check it.
 
-  - why does lvalue have Indexed and Keyed, while sh_lhs_expr only has
+  TODO: A stricter and less ambiguous version for Oil.
+  - Problem: why does lvalue have Indexed and Keyed, while sh_lhs_expr only has
     IndexedName?
     - should I have lvalue.Named and lvalue.Indexed only?
     - and Indexed uses the index_t type?
@@ -117,7 +110,9 @@ def OldValue(lval, mem, exec_opts):
     else:
       raise AssertionError()
 
-  val = _LookupVar(var_name, mem, exec_opts)
+  val = mem.GetValue(var_name)
+  if exec_opts and exec_opts.nounset() and val.tag_() == value_e.Undef:
+    e_die('Undefined variable %r', var_name)  # TODO: location info
 
   UP_val = val
   with tagswitch(lval) as case:
@@ -491,7 +486,11 @@ class ArithEvaluator(object):
     with tagswitch(node) as case:
       if case(arith_expr_e.VarRef):  # $(( x ))  (can be array)
         tok = cast(Token, UP_node)
-        return _LookupVar(tok.val, self.mem, self.exec_opts)
+        var_name = tok.val
+        val = self.mem.GetValue(var_name)
+        if val.tag_() == value_e.Undef and self.exec_opts.nounset():
+          e_die('Undefined variable %r', var_name, token=tok)
+        return val
 
       elif case(arith_expr_e.Word):  # $(( $x )) $(( ${x}${y} )), etc.
         w = cast(compound_word, UP_node)
@@ -640,7 +639,7 @@ class ArithEvaluator(object):
                     ui.ValType(left))
 
           if s is None:
-            val = value.Undef()  # type: value_t
+            val = value.Undef()
           else:
             val = value.Str(s)
 

@@ -860,7 +860,8 @@ class CommandEvaluator(object):
             val = self.word_ev.EvalRhsWord(pair.rhs)
 
             lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, which_scopes)
-            old_val = sh_expr_eval.OldValue(lval, self.mem, self.exec_opts)
+            # do not respect set -u
+            old_val = sh_expr_eval.OldValue(lval, self.mem, None)
 
             UP_old_val = old_val
             UP_val = val

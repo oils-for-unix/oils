@@ -664,7 +664,7 @@ type-compat() {
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec spec/append.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/append.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@" 
 }
 
