@@ -12,7 +12,36 @@ a+=(t 'u v')
 argv.py "${a[@]}"
 ## stdout: ['x', 'y', 't', 'u v']
 
-#### Append array to string should be an error
+#### Append string to undefined variable
+
+s+=foo
+echo s=$s
+
+# bash and mksh agree that this does NOT respect set -u.
+# I think that's a mistake, but += is a legacy construct, so let's copy it.
+
+set -u
+
+t+=foo
+echo t=$t
+t+=foo
+echo t=$t
+## STDOUT:
+s=foo
+t=foo
+t=foofoo
+## END
+
+#### Append to array to undefined variable
+
+## TODO: strict_array could get rid of this?
+y+=(c d)
+argv.py "${y[@]}"
+## STDOUT:
+['c', 'd']
+## END
+
+#### error: s+=(my array)
 s='abc'
 s+=(d e f)
 echo $s
@@ -23,7 +52,8 @@ echo $s
 ## OK zsh status: 0
 ## OK zsh stdout: abc d e f
 
-#### Append string to array should be disallowed
+#### error: myarray+=s
+
 # They treat this as implicit index 0.  We disallow this on the LHS, so we will
 # also disallow it on the RHS.
 a=(x y )
@@ -36,7 +66,43 @@ argv.py "${a[@]}"
 ## OK zsh status: 0
 ## OK zsh stdout: ['x', 'y', 'z']
 
-#### Append string to array element
+#### error: typeset s+=(my array)
+typeset s='abc'
+
+# bash just ignores this?  wtf
+typeset s+=(d e f)
+echo $s
+
+## status: 1
+## stdout-json: ""
+## BUG bash status: 0
+## BUG bash STDOUT:
+abc
+## END
+
+#### error: typeset myarray+=s
+typeset a=(x y)
+typeset a+=s
+argv.py "${a[@]}"
+
+## status: 1
+## stdout-json: ""
+## BUG bash status: 0
+## BUG bash STDOUT:
+['xs', 'y']
+## END
+
+#### error: append used like env prefix
+# This should be an error in other shells but it's not.
+A=a
+A+=a printenv.py A
+## status: 2
+## BUG bash/zsh status: 0
+## BUG bash/zsh stdout: aa
+## BUG mksh status: 0
+## BUG mksh stdout: a
+
+#### myarray[1]+=s - Append to element
 # They treat this as implicit index 0.  We disallow this on the LHS, so we will
 # also disallow it on the RHS.
 a=(x y )
@@ -46,7 +112,7 @@ argv.py "${a[@]}"
 ## stdout: ['x', 'yz']
 ## BUG zsh stdout: ['xz', 'y']
 
-#### Append to last element
+#### myarray[-1]+=s - Append to last element
 # Works in bash, but not mksh.  It seems like bash is doing the right thing.
 # a[-1] is allowed on the LHS.  mksh doesn't have negative indexing?
 a=(1 '2 3')
@@ -77,45 +143,6 @@ s2=$s1
 s1+='d'
 echo $s1 $s2
 ## stdout: abcd abc
-
-#### Append to nonexistent array is allowed
-
-## TODO: strict_array could get rid of this?
-y+=(c d)
-argv.py "${y[@]}"
-## STDOUT:
-['c', 'd']
-## END
-
-#### Append used like env prefix is a parse error
-# This should be an error in other shells but it's not.
-A=a
-A+=a printenv.py A
-## status: 2
-## BUG bash/zsh status: 0
-## BUG bash/zsh stdout: aa
-## BUG mksh status: 0
-## BUG mksh stdout: a
-
-#### += on undefined variable
-
-s+=foo
-echo s=$s
-
-# bash and mksh agree that this does NOT respect set -u.
-# I think that's a mistake, but += is a legacy construct, so let's copy it.
-
-set -u
-
-t+=foo
-echo t=$t
-t+=foo
-echo t=$t
-## STDOUT:
-s=foo
-t=foo
-t=foofoo
-## END
 
 #### typeset s+= 
 
