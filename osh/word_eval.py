@@ -120,6 +120,38 @@ def GetArrayItem(strs, index):
   return s
 
 
+def _SplitAssignArg(arg, word_spid):
+  # type: (str, int) -> assign_arg
+
+  # TODO: Might be better to lex this at runtimem, reusing the Lit_VarLike
+  # pattern.  It does all the same validation.
+
+  left_end = arg.find('+=')
+  if left_end == -1:
+    left_end = arg.find('=')
+    right_begin = left_end + 1
+    append = False
+  else:
+    right_begin = left_end + 2  # after =
+    append = True
+
+  if left_end == -1 :
+    if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
+      left = arg
+      right = None  # type: Optional[value__Str]
+    else:
+      e_die("Invalid variable name %r", arg, span_id=word_spid)
+  else:
+    left = arg[:left_end]
+    if match.IsValidVarName(left):
+      right = value.Str(arg[right_begin:])
+    else:
+      e_die("Invalid variable name %r", left, span_id=word_spid)
+
+  #log('ret %s', assign_arg(left, right, append, word_spid))
+  return assign_arg(left, right, append, word_spid)
+
+
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().
 def _BackslashEscape(s):
   # type: (str) -> str
@@ -1981,9 +2013,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           tok_val = left_token.val
           if tok_val[-2] == '+':
-            e_die('+= not allowed in assignment builtin', token=left_token)
+            var_name = tok_val[:-2]
+            append = True
+          else:
+            var_name = tok_val[:-1]
+            append = False
 
-          var_name = tok_val[:-1]
           if part_offset == len(w.parts):
             rhs_word = word.Empty()  # type: word_t
           else:
@@ -1994,14 +2029,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           with state.ctx_AssignBuiltin(self.mutable_opts):
             right = self.EvalRhsWord(rhs_word)
-          arg2 = assign_arg(var_name, right, word_spid)
+
+          arg2 = assign_arg(var_name, right, append, word_spid)
+
           assign_args.append(arg2)
 
         else:  # e.g. export $dynamic
           argv = self._EvalWordToArgv(w)
           for arg in argv:
-            left, right = _SplitAssignArg(arg, w)
-            arg2 = assign_arg(left, right, word_spid)
+            arg2 = _SplitAssignArg(arg, word_spid)
             assign_args.append(arg2)
 
       else:
@@ -2018,8 +2054,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           else:  # e.g. export $dynamic 
             if eval_to_pairs:
-              left, right = _SplitAssignArg(arg, w)
-              arg2 = assign_arg(left, right, word_spid)
+              arg2 = _SplitAssignArg(arg, word_spid)
               assign_args.append(arg2)
               started_pairs = True
             else:
@@ -2183,22 +2218,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     assert UP_cmd_val.tag_() == cmd_value_e.Argv
     cmd_val = cast(cmd_value__Argv, UP_cmd_val)
     return cmd_val.argv
-
-
-def _SplitAssignArg(arg, w):
-  # type: (str, compound_word) -> Tuple[str, Optional[value__Str]]
-
-  # TODO: support +=
-  i = arg.find('=')
-  prefix = arg[:i]
-  if i != -1 and match.IsValidVarName(prefix):
-    return prefix, value.Str(arg[i+1:])
-  else:
-    if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
-      no_str = None  # type: Optional[value__Str]
-      return arg, no_str
-    else:
-      e_die("Invalid variable name %r", arg, word=w)
 
 
 class NormalWordEvaluator(AbstractWordEvaluator):

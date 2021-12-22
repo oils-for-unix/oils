@@ -173,6 +173,46 @@ def _HasManyStatuses(node):
   return True
 
 
+def PlusEquals(old_val, val):
+  # type: (value_t, value_t) -> value_t
+  """Implement s+=val, typeset s+=val, etc."""
+
+  UP_old_val = old_val
+  UP_val = val
+
+  old_tag = old_val.tag_()
+  tag = val.tag_()
+
+  if old_tag == value_e.Undef and tag == value_e.Str:
+    pass  # val is RHS
+  elif old_tag == value_e.Undef and tag == value_e.MaybeStrArray:
+    pass  # val is RHS
+
+  elif old_tag == value_e.Str and tag == value_e.Str:
+    old_val = cast(value__Str, UP_old_val)
+    str_to_append = cast(value__Str, UP_val)
+    val = value.Str(old_val.s + str_to_append.s)
+
+  elif old_tag == value_e.Str and tag == value_e.MaybeStrArray:
+    e_die("Can't append array to string")
+
+  elif old_tag == value_e.MaybeStrArray and tag == value_e.Str:
+    e_die("Can't append string to array")
+
+  elif (old_tag == value_e.MaybeStrArray and
+        tag == value_e.MaybeStrArray):
+    old_val = cast(value__MaybeStrArray, UP_old_val)
+    to_append = cast(value__MaybeStrArray, UP_val)
+
+    # TODO: MUTATE the existing value for efficiency?
+    strs = []  # type: List[str]
+    strs.extend(old_val.strs)
+    strs.extend(to_append.strs)
+    val = value.MaybeStrArray(strs)
+
+  return val
+
+
 class CommandEvaluator(object):
   """Executes the program by tree-walking.
 
@@ -857,44 +897,13 @@ class CommandEvaluator(object):
 
           if pair.op == assign_op_e.PlusEqual:
             assert pair.rhs, pair.rhs  # I don't think a+= is valid?
-            val = self.word_ev.EvalRhsWord(pair.rhs)
+            rhs = self.word_ev.EvalRhsWord(pair.rhs)
 
             lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, which_scopes)
             # do not respect set -u
             old_val = sh_expr_eval.OldValue(lval, self.mem, None)
 
-            UP_old_val = old_val
-            UP_val = val
-
-            old_tag = old_val.tag_()
-            tag = val.tag_()
-
-            if old_tag == value_e.Undef and tag == value_e.Str:
-              pass  # val is RHS
-            elif old_tag == value_e.Undef and tag == value_e.MaybeStrArray:
-              pass  # val is RHS
-
-            elif old_tag == value_e.Str and tag == value_e.Str:
-              old_val = cast(value__Str, UP_old_val)
-              str_to_append = cast(value__Str, UP_val)
-              val = value.Str(old_val.s + str_to_append.s)
-
-            elif old_tag == value_e.Str and tag == value_e.MaybeStrArray:
-              e_die("Can't append array to string")
-
-            elif old_tag == value_e.MaybeStrArray and tag == value_e.Str:
-              e_die("Can't append string to array")
-
-            elif (old_tag == value_e.MaybeStrArray and
-                  tag == value_e.MaybeStrArray):
-              old_val = cast(value__MaybeStrArray, UP_old_val)
-              to_append = cast(value__MaybeStrArray, UP_val)
-
-              # TODO: MUTATE the existing value for efficiency?
-              strs = []  # type: List[str]
-              strs.extend(old_val.strs)
-              strs.extend(to_append.strs)
-              val = value.MaybeStrArray(strs)
+            val = PlusEquals(old_val, rhs)
 
           else:  # plain assignment
             lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, which_scopes)

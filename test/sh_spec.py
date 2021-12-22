@@ -653,8 +653,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       case_env = sh_env[shell_index]
       if opts.pyann_out_dir:
         case_env = dict(case_env)
-        case_env['PYANN_OUT'] = os.path.join(
-            opts.pyann_out_dir, '%d.json' % i)
+        case_env['PYANN_OUT'] = os.path.join(opts.pyann_out_dir, '%d.json' % i)
 
       try:
         p = subprocess.Popen(argv, env=case_env, cwd=env['TMP'],
@@ -694,7 +693,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
           if msg:
             messages.append(msg)
 
-        if cell_result != Result.PASS:
+        if cell_result != Result.PASS or opts.details:
           d = (i, sh_label, actual['stdout'], actual['stderr'], messages)
           out.AddDetails(d)
 
@@ -1195,6 +1194,9 @@ def Options():
   p.add_option(
       '-v', '--verbose', dest='verbose', action='store_true', default=False,
       help='Show details about test failures')
+  p.add_option(
+      '-d', '--details', dest='details', action='store_true', default=False,
+      help='Show details even for successful cases')
   p.add_option(
       '-t', '--trace', dest='trace', action='store_true', default=False,
       help='trace execution of shells to diagnose hangs')

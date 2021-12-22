@@ -9,7 +9,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Str, value__MaybeStrArray,
     value__AssocArray,
-    lvalue, scope_e, cmd_value__Argv, cmd_value__Assign,
+    lvalue, scope_e, cmd_value__Argv, cmd_value__Assign, assign_arg,
 )
 
 from core import error
@@ -20,6 +20,7 @@ from core import vm
 from frontend import flag_spec
 from frontend import args
 from osh import sh_expr_eval
+from osh import cmd_eval
 from qsn_ import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
@@ -191,6 +192,31 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     return 1
 
 
+def _ExportReadonly(mem, pair, flags):
+  # type: (Mem, assign_arg, int) -> None
+  """ For 'export' and 'readonly' to respect += and flags.
+
+  Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.  That is, it
+  respects shopt --unset dynamic_scope.
+
+  Used for assignment builtins, (( a = b )), {fd}>out, ${x=}, etc.
+  """
+  which_scopes = mem.ScopesForWriting()
+
+  lval = lvalue.Named(pair.var_name)
+  if pair.plus_eq:
+    old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
+    # When 'export e+=', then rval is value.Str('')
+    # When 'export foo', the pair.plus_eq flag is false.
+    assert pair.rval is not None
+    val = cmd_eval.PlusEquals(old_val, pair.rval)
+  else:
+    # NOTE: when rval is None, only flags are changed
+    val = pair.rval
+
+  mem.SetValue(lval, val, which_scopes, flags=flags)
+
+
 class Export(vm._AssignBuiltin):
   def __init__(self, mem, errfmt):
     # type: (Mem, ErrorFormatter) -> None
@@ -222,9 +248,7 @@ class Export(vm._AssignBuiltin):
         self.mem.ClearFlag(pair.var_name, state.ClearExport)
     else:
       for pair in cmd_val.pairs:
-        # NOTE: when rval is None, only flags are changed
-        state.OshLanguageSetValue(self.mem, lvalue.Named(pair.var_name), pair.rval,
-                            flags=state.SetExport)
+        _ExportReadonly(self.mem, pair, state.SetExport)
 
     return 0
 
@@ -288,8 +312,7 @@ class Readonly(vm._AssignBuiltin):
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      state.OshLanguageSetValue(self.mem, lvalue.Named(pair.var_name), rval,
-                          flags=state.SetReadOnly)
+      _ExportReadonly(self.mem, pair, state.SetReadOnly)
 
     return 0
 
@@ -391,9 +414,17 @@ class NewVar(vm._AssignBuiltin):
           if old_val.tag_() != value_e.AssocArray:
             rval = value.AssocArray({})
 
-      rval = _ReconcileTypes(rval, arg.a, arg.A, pair.spid)
-      self.mem.SetValue(lvalue.Named(pair.var_name), rval, which_scopes,
-                        flags=flags)
+      lval = lvalue.Named(pair.var_name)
+      if pair.plus_eq:
+        old_val = sh_expr_eval.OldValue(lval, self.mem, None)  # ignore set -u
+        # When 'typeset e+=', then rval is value.Str('')
+        # When 'typeset foo', the pair.plus_eq flag is false.
+        assert pair.rval is not None
+        rval = cmd_eval.PlusEquals(old_val, pair.rval)
+      else:
+        rval = _ReconcileTypes(rval, arg.a, arg.A, pair.spid)
+
+      self.mem.SetValue(lval, rval, which_scopes, flags=flags)
 
     return status
 

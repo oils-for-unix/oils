@@ -66,30 +66,41 @@ argv.py "${a[@]}"
 ## OK zsh status: 0
 ## OK zsh stdout: ['x', 'y', 'z']
 
-#### error: typeset s+=(my array)
+#### typeset s+=(my array)  -- compat_array
 typeset s='abc'
-
-# bash just ignores this?  wtf
-typeset s+=(d e f)
 echo $s
 
+typeset s+=(d e f)
+echo status=$?
+argv.py "${s[@]}"
+
 ## status: 1
-## stdout-json: ""
-## BUG bash status: 0
-## BUG bash STDOUT:
+## STDOUT:
 abc
+## END
+## OK bash status: 0
+## OK bash STDOUT:
+abc
+status=0
+['abc', 'd', 'e', 'f']
 ## END
 
 #### error: typeset myarray+=s
 typeset a=(x y)
+argv.py "${a[@]}"
 typeset a+=s
 argv.py "${a[@]}"
 
 ## status: 1
-## stdout-json: ""
+## STDOUT:
+['x', 'y']
+## END
 ## BUG bash status: 0
 ## BUG bash STDOUT:
+['x', 'y']
 ['xs', 'y']
+## END
+## N-I mksh STDOUT:
 ## END
 
 #### error: append used like env prefix
@@ -240,12 +251,6 @@ echo "${d[@]}"
 declare d+=(c l)
 echo "${d[@]}"
 
-export e+=(e x)
-echo "${e[@]}"
-
-export e+=(p o)
-echo "${e[@]}"
-
 readonly r+=(r e)
 echo "${r[@]}"
 # can't do this again
@@ -263,8 +268,6 @@ f
 ## STDOUT:
 d e
 d e c l
-e x
-e x p o
 r e
 l o
 l o c a
@@ -273,3 +276,16 @@ l o c a
 ## N-I mksh stdout-json: ""
 ## N-I zsh status: 1
 ## N-I zsh stdout-json: ""
+
+#### export+=array disallowed
+
+export e+=(e x)
+echo "${e[@]}"
+
+## status: 1
+## STDOUT:
+## END
+## BUG bash status: 0
+## BUG bash STDOUT:
+e x
+## END
