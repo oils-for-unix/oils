@@ -34,7 +34,6 @@ class WordEvalTest(unittest.TestCase):
 
   def testEvalWordSequence_Errors(self):
     CASES = [
-        'readonly a+=1',
         'readonly a[x]=1',
         'readonly $binding a[x]=1',
         # There's no word elision!  This will be a parse error
