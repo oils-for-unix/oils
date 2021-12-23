@@ -252,7 +252,7 @@ def PrettyPrintError(err, arena, prefix=''):
   # type: (_ErrorWithLocation, Arena, str) -> None
   """
   Args:
-    prefix: in osh/cmd_eval.py we want to print 'fatal'
+    prefix: e.g. fatal, warning, errexit
   """
   _pp(err, arena, prefix)
 
@@ -265,6 +265,14 @@ def PrettyPrintError(err, arena, prefix=''):
 # --error-ui.
 
 class ErrorFormatter(object):
+  """Print errors with code excerpts.
+
+  Philosophy:
+  - There should be zero or one code quotation when a shell exits non-zero.
+    Showing the same line twice is noisy.
+  - When running parallel processes, avoid interleaving multi-line code
+    quotations.  (TODO: turn off in child processes?)
+  """
 
   def __init__(self, arena):
     # type: (Arena) -> None

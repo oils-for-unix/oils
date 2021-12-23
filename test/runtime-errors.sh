@@ -832,6 +832,55 @@ EOF
   assert $? -eq 0
 }
 
+separator() {
+  echo
+  echo '$'
+}
+
+show_some_errors() {
+  ### A representative set of errors
+
+  # two quotations of same location: not found then errexit
+  bin/oil -c 'zz'
+
+  separator
+
+  # two quotations, different location
+  bin/oil -c 'echo hi > ""'
+
+  separator
+
+  bin/oil -c 'shopt -s failglob; echo *.ZZZZ'
+
+  separator
+
+  # one location
+  bin/oil -c 'ls /x; echo $?'
+
+  separator
+
+  # fatal 
+  bin/oil -c 'echo $undef'
+
+  separator
+
+  bin/oil -c 'try --allow-status-01 grep'
+
+  separator
+
+  bin/oil -c 'ls | false | wc -l'
+
+  separator
+
+  bin/oil -c 'ls | { echo hi; ( exit 42 ); } | wc -l'
+
+  separator
+
+  # Showing errors for THREE PIDs here!  That is technically correct, but
+  # noisy.
+  bin/oil -c '{ echo one; false; } | { false; echo two; }'
+}
+
 #
 # TEST DRIVER
 #

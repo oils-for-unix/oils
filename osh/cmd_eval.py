@@ -1360,7 +1360,7 @@ class CommandEvaluator(object):
       try:
         redirects = self._EvalRedirects(node)
       except error.RedirectEval as e:
-        ui.PrettyPrintError(e, self.arena)
+        self.errfmt.PrettyPrintError(e)
         redirects = None
 
       if redirects is None:  # evaluation error
@@ -1378,7 +1378,7 @@ class CommandEvaluator(object):
               # _Dispatch.
               if not e.HasLocation():  # Last resort!
                 e.span_id = self.mem.CurrentSpanId()
-              ui.PrettyPrintError(e, self.arena, prefix='failglob: ')
+              self.errfmt.PrettyPrintError(e, prefix='failglob: ')
               status = 1
               check_errexit = True
 
@@ -1572,10 +1572,11 @@ class CommandEvaluator(object):
       if not err.HasLocation():  # Last resort!
         err.span_id = self.mem.CurrentSpanId()
 
-      if is_errexit and not self.exec_opts.verbose_errexit():
-        pass  # Suppress error
+      if is_errexit:
+        if self.exec_opts.verbose_errexit():
+          self.errfmt.PrettyPrintError(err, prefix='errexit: ')
       else:
-        ui.PrettyPrintError(err, self.arena, prefix='fatal: ')
+        self.errfmt.PrettyPrintError(err, prefix='fatal: ')
 
     # Problem: We have no idea here if a SUBSHELL (or pipeline comment) already
     # created a crash dump.  So we get 2 or more of them.
@@ -1734,7 +1735,7 @@ class CommandEvaluator(object):
     try:
       status = self.RunProc(proc, argv, runtime.NO_SPID)
     except error.FatalRuntime as e:
-      ui.PrettyPrintError(e, self.arena)
+      self.errfmt.PrettyPrintError(e)
       status = e.ExitStatus()
     except _ControlFlow as e:
       # shouldn't be able to exit the shell from a completion hook!

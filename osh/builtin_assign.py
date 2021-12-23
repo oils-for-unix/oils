@@ -458,7 +458,7 @@ class Unset(vm._Builtin):
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.
       e.span_id = spid
-      ui.PrettyPrintError(e, self.errfmt.arena)
+      self.errfmt.PrettyPrintError(e)
       return False
 
     if proc_fallback and not found:

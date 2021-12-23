@@ -454,7 +454,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     try:
       node = main_loop.ParseWholeFile(c_parser)
     except error.Parse as e:
-      ui.PrettyPrintError(e, arena)
+      errfmt.PrettyPrintError(e)
       status = 2
 
     if status == 0 :

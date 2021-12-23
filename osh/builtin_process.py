@@ -359,7 +359,7 @@ class Trap(vm._Builtin):
       try:
         node = main_loop.ParseWholeFile(c_parser)
       except error.Parse as e:
-        ui.PrettyPrintError(e, self.arena)
+        self.errfmt.PrettyPrintError(e)
         return None
 
     return node

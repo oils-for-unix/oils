@@ -53,6 +53,7 @@ def ParseWholeFile(c_parser):
 def main(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
+  errfmt = ui.ErrorFormatter()
 
   opt0_array = state.InitOpts()
   no_stack = None  # type: List[bool]  # for mycpp
@@ -109,7 +110,7 @@ def main(argv):
     #node = main_loop.ParseWholeFile(c_parser)
     node = ParseWholeFile(c_parser)
   except error.Parse as e:
-    ui.PrettyPrintError(e, arena)
+    errfmt.PrettyPrintError(e)
     return 2
   assert node is not None
 

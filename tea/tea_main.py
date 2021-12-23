@@ -50,6 +50,7 @@ def Main(arg_r):
   arg = arg_types.tea_main(attrs.attrs)
 
   arena = alloc.Arena()
+  errfmt = ui.ErrorFormatter(arena)
 
   if arg.c is not None:
     arena.PushSource(source.CFlag())
@@ -90,7 +91,7 @@ def Main(arg_r):
       parse_ctx.ParseTeaModule(line_reader)
       status = 0
     except error.Parse as e:
-      ui.PrettyPrintError(e, arena)
+      errfmt.PrettyPrintError(e)
       status = 2
   else:
     e_usage("Tea doesn't run anything yet.  Pass -n to parse.")

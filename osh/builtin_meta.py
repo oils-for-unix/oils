@@ -297,7 +297,7 @@ class Try(vm._Builtin):
         self.errfmt.StderrLine('')
 
       raise error.ErrExit(
-          'fatal: status %d when --allow-status-01' % status,
+          'status %d when --allow-status-01' % status,
           span_id=spids[0], status=status)
 
     if arg.assign is not None:
