@@ -22,7 +22,6 @@ from core import error
 from core.pyerror import e_usage
 from core import main_loop
 from core.pyutil import stderr_line
-from core import ui
 from core import vm
 from core.pyerror import log
 from frontend import args

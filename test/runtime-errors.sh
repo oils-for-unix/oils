@@ -838,7 +838,7 @@ separator() {
 }
 
 show_some_errors() {
-  ### A representative set of errors
+  ### A representative set of errors.  For consolidating code quotations
 
   # two quotations of same location: not found then errexit
   bin/oil -c 'zz'
@@ -851,6 +851,11 @@ show_some_errors() {
   separator
 
   bin/oil -c 'shopt -s failglob; echo *.ZZZZ'
+
+  separator
+
+  # This one is a "nested" error
+  bin/oil -c 'eval "x("'
 
   separator
 
@@ -878,7 +883,7 @@ show_some_errors() {
 
   # Showing errors for THREE PIDs here!  That is technically correct, but
   # noisy.
-  bin/oil -c '{ echo one; false; } | { false; echo two; }'
+  bin/oil -c '{ echo one; false; } | { false; wc -l; }'
 }
 
 #

@@ -100,7 +100,7 @@ class Source(vm._Builtin):
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except (IOError, OSError) as e:
       self.errfmt.Print_('source %r failed: %s' % (path, pyutil.strerror(e)),
-                        span_id=cmd_val.arg_spids[1])
+                         span_id=cmd_val.arg_spids[1])
       return 1
 
     try:

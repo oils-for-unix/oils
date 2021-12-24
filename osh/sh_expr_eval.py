@@ -189,20 +189,21 @@ class UnsafeArith(object):
     self.parse_ctx = parse_ctx
     self.arith_ev = arith_ev
 
+    self.arena = self.parse_ctx.arena
+
   def ParseLValue(self, s, span_id):
     # type: (str, int) -> lvalue_t
     """Parse lvalue/place for 'unset' and 'printf -v' 
 
     It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
     """
-    arena = self.parse_ctx.arena
     a_parser = self.parse_ctx.MakeArithParser(s)
 
-    with alloc.ctx_Location(arena, source.ArgvWord('dynamic place', span_id)):
+    with alloc.ctx_Location(self.arena, source.ArgvWord('dynamic place', span_id)):
       try:
         anode = a_parser.Parse()
       except error.Parse as e:
-        ui.PrettyPrintError(e, arena)  # show parse error
+        ui.PrettyPrintError(e, self.arena)  # show parse error
         # Exception for builtins 'unset' and 'printf'
         e_usage('got invalid place expression', span_id=span_id)
 
@@ -238,16 +239,15 @@ class UnsafeArith(object):
     """
     static_ref_spid = token.span_id
 
-    arena = self.parse_ctx.arena
-    line_reader = reader.StringLineReader(ref_str, arena)
+    line_reader = reader.StringLineReader(ref_str, self.arena)
     lexer = self.parse_ctx.MakeLexer(line_reader)
     w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
     # don't know var name
-    with alloc.ctx_Location(arena, source.Variable(token.val, static_ref_spid)):
+    with alloc.ctx_Location(self.arena, source.Variable(token.val, static_ref_spid)):
       try:
         bvs_part = w_parser.ParseVarRef()
       except error.Parse as e:
-        ui.PrettyPrintError(e, arena)  # show parse error
+        ui.PrettyPrintError(e, self.arena)  # show parse error
         # Exception for builtins 'unset' and 'printf'
         e_die('Invalid var ref', span_id=static_ref_spid)
 
@@ -273,6 +273,8 @@ class ArithEvaluator(object):
     self.exec_opts = exec_opts
     self.parse_ctx = parse_ctx
     self.errfmt = errfmt
+
+    self.arena = parse_ctx.arena
 
   def CheckCircularDeps(self):
     # type: () -> None
@@ -347,15 +349,13 @@ class ArithEvaluator(object):
           return 0
 
         # For compatibility: Try to parse it as an expression and evaluate it.
-        arena = self.parse_ctx.arena
-
         a_parser = self.parse_ctx.MakeArithParser(s)
         # don't know var name here
-        with alloc.ctx_Location(arena, source.Variable(None, span_id)):
+        with alloc.ctx_Location(self.arena, source.Variable(None, span_id)):
           try:
             node2 = a_parser.Parse()  # may raise error.Parse
           except error.Parse as e:
-            ui.PrettyPrintError(e, arena)
+            self.errfmt.PrettyPrintError(e)
             e_die('Parse error in recursive arithmetic', span_id=e.span_id)
 
         # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
@@ -381,7 +381,6 @@ class ArithEvaluator(object):
       with tagswitch(val) as case:
         if case(value_e.Undef):  # 'nounset' already handled before got here
           # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
-          #log('blame_word %s   arena %s', blame_word, self.arena)
           e_strict('Undefined value in arithmetic context', span_id=span_id)
 
         elif case(value_e.Int):

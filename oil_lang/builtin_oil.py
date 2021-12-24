@@ -33,7 +33,6 @@ from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.ui import ErrorFormatter
-  from osh.cmd_eval import CommandEvaluator
   from oil_lang import expr_eval
 
 _ = log
@@ -198,22 +197,14 @@ _STDIN = posix.fdopen(0)
 
 
 class Json(vm._Builtin):
-  """Json I/O.
+  """JSON read and write
 
-    -indent pretty prints it.
-    -pretty=0 turns off.
-
-  TODO: prefer typed args
-    json write ({key: 'value'})
-  over this reference:
-    json write :myobj
-
-  json read :x < foo.tsv2
+    --pretty=0 writes it on a single line
+    --indent=2 controls multiline indentation
   """
-  def __init__(self, mem, cmd_ev, expr_ev, errfmt):
-    # type: (state.Mem, CommandEvaluator, expr_eval.ExprEvaluator, ErrorFormatter) -> None
+  def __init__(self, mem, expr_ev, errfmt):
+    # type: (state.Mem, expr_eval.ExprEvaluator, ErrorFormatter) -> None
     self.mem = mem
-    self.cmd_ev = cmd_ev
     self.expr_ev = expr_ev
     self.errfmt = errfmt
 
@@ -231,14 +222,6 @@ class Json(vm._Builtin):
 
       if not arg_r.AtEnd():
         e_usage('write got too many args', span_id=arg_r.SpanId())
-
-      # GetValue() of each name and print it.
-
-      # TODO:
-      # - check that there's one positional arg (generalize this later)
-      # - evaluate it
-      #   - need an expression evaluator!
-      # - then print the object
 
       expr = typed_args.RequiredExpr(cmd_val.typed_args)
       obj = self.expr_ev.EvalExpr(expr)

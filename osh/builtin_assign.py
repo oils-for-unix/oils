@@ -15,7 +15,6 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core.pyerror import e_usage, log
 from core import state
-from core import ui
 from core import vm
 from frontend import flag_spec
 from frontend import args
