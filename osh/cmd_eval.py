@@ -328,7 +328,17 @@ class CommandEvaluator(object):
       with tagswitch(node) as case:
         if case(command_e.Simple):
           node = cast(command__Simple, UP_node)
-          desc = 'Command'  # simple command
+          # It would be nice to print "Command 'ls'" failed.  But it's complex
+          # because we could be here for several reasons:
+          #
+          #   ls /x          # command actually failed
+          #   ls > ""        # error.RedirectEval
+          #   ls *Z          # error.FailGlob
+          #   sort <(ls /x)  # process sub failure
+          #
+          # Possible solution: _Dispatch() and _Execute() should share a new
+          # CommandFailure type, which includes CompoundStatus for pipeline_st.
+          desc = 'Command'
           span_id = location.SpanForCommand(node)
 
         elif case(command_e.ShAssignment):

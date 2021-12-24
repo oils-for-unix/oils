@@ -110,7 +110,7 @@ class ShellExecutor(vm._Executor):
     #   interleaved.
     # - We could turn the `exit` builtin into a FatalRuntimeError exception and
     #   get this check for "free".
-    thunk = process.SubProgramThunk(self.cmd_ev, node, self.errfmt,
+    thunk = process.SubProgramThunk(self.cmd_ev, node,
                                     inherit_errexit=inherit_errexit)
     p = process.Process(thunk, self.job_state, self.tracer)
     return p

@@ -678,11 +678,10 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
   """A subprogram that can be executed in another process."""
 
-  def __init__(self, cmd_ev, node, errfmt, inherit_errexit=True):
-    # type: (CommandEvaluator, command_t, ui.ErrorFormatter, bool) -> None
+  def __init__(self, cmd_ev, node, inherit_errexit=True):
+    # type: (CommandEvaluator, command_t, bool) -> None
     self.cmd_ev = cmd_ev
     self.node = node
-    self.errfmt = errfmt
     self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
   def UserString(self):
@@ -698,7 +697,7 @@ class SubProgramThunk(Thunk):
   def Run(self):
     # type: () -> None
 
-    self.errfmt.OneLineErrExit()  # don't quote code in child processes
+    #self.errfmt.OneLineErrExit()  # don't quote code in child processes
 
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:

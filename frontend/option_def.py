@@ -241,6 +241,8 @@ def _Init(opt_def):
   # Hm is this subsumed by simple_word_eval?
   opt_def.Add('nullglob',
               groups=['oil:basic', 'oil:all'])
+  opt_def.Add('verbose_errexit',
+              groups=['oil:basic', 'oil:all'])
 
   # set -o noclobber, etc.
   for short_flag, name in _OTHER_SET_OPTIONS:
@@ -265,7 +267,6 @@ def _Init(opt_def):
   opt_def.Add('eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
   opt_def.Add('parse_dynamic_arith')  # dynamic LHS
   opt_def.Add('compat_array')  # ${array} is ${array[0]}
-  opt_def.Add('verbose_errexit', default=True)
 
   # For implementing strict_errexit
   opt_def.Add('allow_command_sub', default=True)

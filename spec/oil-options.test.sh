@@ -203,6 +203,7 @@ shopt -s process_sub_fail
 shopt -u redefine_proc
 shopt -s sigpipe_status_ok
 shopt -s simple_word_eval
+shopt -s verbose_errexit
 shopt -u xtrace_details
 shopt -s xtrace_rich
 ## END
