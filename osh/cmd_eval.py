@@ -328,34 +328,44 @@ class CommandEvaluator(object):
       with tagswitch(node) as case:
         if case(command_e.Simple):
           node = cast(command__Simple, UP_node)
-          reason = 'command in '
+          desc = 'Command'  # simple command
           span_id = location.SpanForCommand(node)
+
         elif case(command_e.ShAssignment):
           node = cast(command__ShAssignment, UP_node)
-          reason = 'assignment in '
+          # Note: This happens rarely: when errexit and inherit_errexit are on,
+          # but command_sub_errexit is off!
+          desc = 'Assignment'
           span_id = self._SpanIdForShAssignment(node)
 
         # Note: a subshell often doesn't fail on its own.
         elif case(command_e.Subshell):
           node = cast(command__Subshell, UP_node)
-          reason = 'subshell invoked from '
+          desc = 'Subshell'
           span_id = node.spids[0]
+
         elif case(command_e.Pipeline):
           node = cast(command__Pipeline, UP_node)
           # The whole pipeline can fail separately
           # TODO: We should show which element of the pipeline failed!
-          reason = 'pipeline invoked from '
+          desc = 'Pipeline'
           span_id = node.spids[0]  # spid of !, or first |
+
         else:
           # NOTE: The fallback of CurrentSpanId() fills this in.
-          reason = ''
+          desc = ui.CommandType(node)
           span_id = runtime.NO_SPID
 
-      # override if explicitly passed, e.g. for process sub
+      # Override if explicitly passed.
+      # Note: this produces better results for process sub
+      #   echo <(sort x)
+      # and different results for some pipelines:
+      #   { ls; false; } | wc -l; echo hi  # Point to | or first { ?
       if blame_spid != runtime.NO_SPID:
         span_id = blame_spid
+        #pass
 
-      msg = 'Exiting with status %d (%sPID %d)' % (status, reason, posix.getpid())
+      msg = '%s failed with status %d' % (desc, status)
       raise error.ErrExit(msg, span_id=span_id, status=status)
 
   def _EvalRedirect(self, r):
@@ -1373,29 +1383,28 @@ class CommandEvaluator(object):
             try:
               status, check_errexit = self._Dispatch(node, pipeline_st)
             except error.FailGlob as e:
-              # Handle this error here as it's raised in many places in
-              # _Dispatch.
               if not e.HasLocation():  # Last resort!
                 e.span_id = self.mem.CurrentSpanId()
               self.errfmt.PrettyPrintError(e, prefix='failglob: ')
               status = 1
               check_errexit = True
 
+          # Compute status from @PIPESTATUS
           codes = pipeline_st.codes 
           if len(codes):  # Did we run a pipeline?
             self.mem.SetPipeStatus(codes)
 
             if self.exec_opts.pipefail():
-              # The status is that of the LAST command that is non-zero.
+              # The status is that of the last command that is non-zero.
               status = 0
               for i, st in enumerate(codes):
                 if st != 0:
                   status = st
                   errexit_spid = pipeline_st.spids[i]
             else:
-              status = codes[-1]  # status of last one is pipeline status
+              # The status is that of last command, period.
+              status = codes[-1]
 
-            #log('pi st %d', status)
             if pipeline_st.negated:
               status = 1 if status == 0 else 0
 
@@ -1403,17 +1412,17 @@ class CommandEvaluator(object):
           # Error applying redirects, e.g. bad file descriptor.
           status = 1
 
+    # Compute status from _process_sub_status
     if len(process_sub_st.codes):
       codes = process_sub_st.codes
       self.mem.SetProcessSubStatus(codes)
       if status == 0 and self.exec_opts.process_sub_fail():
-        # Choose the LAST one, consistent with pipefail
+        # Choose the LAST non-zero status, consistent with pipefail above.
         for i, st in enumerate(codes):
           if st != 0:
             status = st
             errexit_spid = process_sub_st.spids[i]
 
-    #log('set %d', status)
     self.mem.SetLastStatus(status)
 
     # NOTE: Bash says that 'set -e' checking is done after each 'pipeline'.
@@ -1573,7 +1582,7 @@ class CommandEvaluator(object):
 
       if is_errexit:
         if self.exec_opts.verbose_errexit():
-          self.errfmt.PrintErrExit(err)
+          self.errfmt.PrintErrExit(err, posix.getpid())
       else:
         self.errfmt.PrettyPrintError(err, prefix='fatal: ')
 

@@ -678,10 +678,11 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
   """A subprogram that can be executed in another process."""
 
-  def __init__(self, cmd_ev, node, inherit_errexit=True):
-    # type: (CommandEvaluator, command_t, bool) -> None
+  def __init__(self, cmd_ev, node, errfmt, inherit_errexit=True):
+    # type: (CommandEvaluator, command_t, ui.ErrorFormatter, bool) -> None
     self.cmd_ev = cmd_ev
     self.node = node
+    self.errfmt = errfmt
     self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
   def UserString(self):
@@ -696,6 +697,8 @@ class SubProgramThunk(Thunk):
 
   def Run(self):
     # type: () -> None
+
+    self.errfmt.OneLineErrExit()  # don't quote code in child processes
 
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:
@@ -805,7 +808,6 @@ class Process(Job):
     Args:
       thunk: Thunk instance
       job_state: for process bookkeeping
-      parent_pipeline: For updating PIPESTATUS
     """
     Job.__init__(self)
     assert isinstance(thunk, Thunk), thunk
@@ -824,6 +826,7 @@ class Process(Job):
 
   def Init_ParentPipeline(self, pi):
     # type: (Pipeline) -> None
+    """For updating PIPESTATUS."""
     self.parent_pipeline = pi
 
   def __repr__(self):

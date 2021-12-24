@@ -106,11 +106,11 @@ class ShellExecutor(vm._Executor):
     # only really matters when executing 'exit 42', because the child shell
     # inherits errexit and will be verbose.  Other notes:
     #
-    # - We might want errors to fit on a single line so they don't get
-    # interleaved.
+    # - We might want errors to fit on a single line so they don't get #
+    #   interleaved.
     # - We could turn the `exit` builtin into a FatalRuntimeError exception and
-    # get this check for "free".
-    thunk = process.SubProgramThunk(self.cmd_ev, node,
+    #   get this check for "free".
+    thunk = process.SubProgramThunk(self.cmd_ev, node, self.errfmt,
                                     inherit_errexit=inherit_errexit)
     p = process.Process(thunk, self.job_state, self.tracer)
     return p
@@ -380,8 +380,7 @@ class ShellExecutor(vm._Executor):
     # waiting until the command is over!
     if self.exec_opts.command_sub_errexit():
       if status != 0:
-        msg = 'Command sub exited with status %d (%s)' % (
-            status, ui.CommandType(node))
+        msg = 'Command Sub exited with status %d' % status
         raise error.ErrExit(
             msg, span_id=cs_part.left_token.span_id, status=status)
 

@@ -280,6 +280,13 @@ class ErrorFormatter(object):
     self.last_spid = runtime.NO_SPID  # last resort for location info
     self.spid_stack = []  # type: List[int]
 
+    self.one_line_errexit = False  # root process
+
+  def OneLineErrExit(self):
+    # type: () -> None
+    """Used by SubprogramThunk."""
+    self.one_line_errexit = True
+
   # A stack used for the current builtin.  A fallback for UsageError.
   # TODO: Should we have PushBuiltinName?  Then we can have a consistent style
   # like foo.sh:1: (compopt) Not currently executing.
@@ -338,16 +345,33 @@ class ErrorFormatter(object):
     """
     _pp(err, self.arena, prefix)
 
-  def PrintErrExit(self, err):
-    # type: (_ErrorWithLocation) -> None
+  def PrintErrExit(self, err, pid):
+    # type: (_ErrorWithLocation, int) -> None
 
     # TODO:
-    # - Don't quote code in child processes (e.g. pipelines)?  Just print the PID
-    #   - error.ErrExit() might need a PID?
     # - Don't quote code if you already quoted something on the same line?
     #   - _PrintWithSpanId calculates the line_id.  So you need to remember that?
     #   - return it here?
-    self.PrettyPrintError(err, prefix='errexit: ')
+    prefix = 'errexit PID %d: ' % pid
+    self.PrettyPrintError(err, prefix=prefix)
+
+    if 0:
+      msg = err.UserErrorString()
+      span_id = word_.SpanIdFromError(err)
+
+      # Don't quote code in child processes.
+      # Hm this rule sometimes fail to quote code, see test/runtime-errors.sh
+      # errexit_multiple_processes
+      # Like ( exit 42 ) in the middle of a pipeline.  But it's still more
+      # helpful than most shells.
+      # This kind of conflicts with the rule of showing the most SPECIFIC error
+      # though.
+      # Alternative rule: parent process uses multiple lines only if
+      # process.Process returns SUCCESS?
+
+      show_code = not self.one_line_errexit
+      show_code = True
+      _PrintWithSpanId(prefix, msg, span_id, self.arena, show_code)
 
 
 def PrintAst(node, flag):

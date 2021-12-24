@@ -140,9 +140,7 @@ _sep() {
   echo '---------------------------'
 }
 
-errexit_examples() {
-  ### A representative set of errors.  For consolidating code quotations
-
+errexit_one_process() {
   # two quotations of same location: not found then errexit
   bin/oil -c 'zz'
 
@@ -157,27 +155,16 @@ errexit_examples() {
 
   _sep
 
-  # This one is a "nested" error
-  bin/oil -c 'eval "x("'
-
-  _sep
-
   # one location
   bin/oil -c 'ls /x; echo $?'
 
   _sep
 
-  # command_sub_errexit.  Hm this gives 2 errors as well
-  bin/oil -c 'echo t=$(true) f=$(false)'
-
-  # This only gives one error?
-  _sep
-  bin/osh -c 'set -e; shopt -s command_sub_errexit; echo t=$(true) f=$(false)'
-  #return
+  bin/oil -c 'declare cmd=ls; $cmd /x; echo $?'
 
   _sep
 
-  # fatal 
+  # one location
   bin/oil -c 'echo $undef'
 
   _sep
@@ -186,28 +173,7 @@ errexit_examples() {
 
   _sep
 
-  bin/oil -c 'ls | false | wc -l'
-
-  _sep
-
-  bin/oil -c 'ls | { echo hi; ( exit 42 ); } | wc -l'
-
-  _sep
-
-  # Showing errors for THREE PIDs here!  That is technically correct, but
-  # noisy.
-  bin/oil -c '{ echo one; false; } | { false; wc -l; }'
-
-  _sep
-
-  # realistic example
-  bin/oil -c '{ ls; false; } |
-wc -l
-'
-
-  _sep
-
-  # Show multiple errors, and then errexit
+  # Show multiple "nested" errors, and then errexit
   bin/osh -c '
 eval "("
 echo status=$?
@@ -218,7 +184,43 @@ echo status=$?
 set -e
 false
 '
+}
 
+errexit_multiple_processes() {
+  ### A representative set of errors.  For consolidating code quotations
+
+
+  # command_sub_errexit.  Hm this gives 2 errors as well, because of inherit_errexit
+  bin/oil -c 'echo t=$(true) f=$(false; true)'
+  #return
+
+  _sep
+
+  bin/oil -c 'ls | false | wc -l'
+
+  _sep
+
+  # note: need trailing echo to prevent pipeline optimization
+  bin/oil -c 'ls | { echo hi; ( exit 42 ); } | wc -l; echo'
+
+  _sep
+
+  # Showing errors for THREE PIDs here!  That is technically correct, but
+  # noisy.
+  bin/oil -c '{ echo one; ( exit 42 ); } |\
+{ false; wc -l; }'
+
+  _sep
+
+  # realistic example
+  bin/oil -c '{ ls; false; } \
+| wc -l
+'
+
+  _sep
+
+  # Three errors!
+  bin/oil -c '{ ls; ( false; true ); } | wc -l; echo hi'
 }
 
 
@@ -957,10 +959,9 @@ all() {
 
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
-    failed_command errexit_usage_error errexit_subshell errexit_pipeline \
-    errexit_dbracket \
-    errexit_alias \
-    errexit_examples \
+    failed_command \
+    errexit_usage_error errexit_subshell errexit_pipeline errexit_dbracket errexit_alias \
+    errexit_one_process errexit_multiple_processes \
     command_sub_errexit process_sub_fail \
     pipefail pipefail_group pipefail_subshell pipefail_no_words pipefail_func \
     pipefail_while pipefail_multiple \
