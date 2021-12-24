@@ -153,7 +153,7 @@ if mylib.PYTHON:
     argument.
     """
 
-  class FailGlob(_ErrorWithLocation):
+  class FailGlob(FatalRuntime):
     """Raised when a glob matches nothing when failglob is set."""
 
 
@@ -175,8 +175,6 @@ if mylib.PYTHON:
     OIL_STRICT_DIE=1  # abort the program at level 1 and above
     """
 
-
-if mylib.PYTHON:
   class ErrExit(FatalRuntime):
     """For set -e.
 

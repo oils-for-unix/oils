@@ -53,7 +53,7 @@ def ParseWholeFile(c_parser):
 def main(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
-  errfmt = ui.ErrorFormatter()
+  errfmt = ui.ErrorFormatter(arena)
 
   opt0_array = state.InitOpts()
   no_stack = None  # type: List[bool]  # for mycpp

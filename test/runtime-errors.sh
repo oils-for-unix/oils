@@ -167,6 +167,16 @@ errexit_examples() {
 
   _sep
 
+  # command_sub_errexit.  Hm this gives 2 errors as well
+  bin/oil -c 'echo t=$(true) f=$(false)'
+
+  # This only gives one error?
+  _sep
+  bin/osh -c 'set -e; shopt -s command_sub_errexit; echo t=$(true) f=$(false)'
+  #return
+
+  _sep
+
   # fatal 
   bin/oil -c 'echo $undef'
 
@@ -951,6 +961,7 @@ all() {
     errexit_dbracket \
     errexit_alias \
     errexit_examples \
+    command_sub_errexit process_sub_fail \
     pipefail pipefail_group pipefail_subshell pipefail_no_words pipefail_func \
     pipefail_while pipefail_multiple \
     core_process osh_state \
@@ -969,7 +980,7 @@ all() {
     builtin_exec \
     strict_word_eval_warnings strict_arith_warnings \
     strict_control_flow_warnings control_flow_subshell \
-    command_sub_errexit process_sub_fail bool_status bool_status_simple \
+    bool_status bool_status_simple \
     qsn_decode; do
 
     _run_test $t ''  # don't assert status

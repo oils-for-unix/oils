@@ -355,9 +355,8 @@ class CommandEvaluator(object):
       if blame_spid != runtime.NO_SPID:
         span_id = blame_spid
 
-      raise error.ErrExit(
-          'Exiting with status %d (%sPID %d)' % (status, reason, posix.getpid()),
-          span_id=span_id, status=status)
+      msg = 'Exiting with status %d (%sPID %d)' % (status, reason, posix.getpid())
+      raise error.ErrExit(msg, span_id=span_id, status=status)
 
   def _EvalRedirect(self, r):
     # type: (redir) -> redirect
