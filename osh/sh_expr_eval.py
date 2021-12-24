@@ -274,8 +274,6 @@ class ArithEvaluator(object):
     self.parse_ctx = parse_ctx
     self.errfmt = errfmt
 
-    self.arena = parse_ctx.arena
-
   def CheckCircularDeps(self):
     # type: () -> None
     assert self.word_ev is not None
@@ -344,6 +342,8 @@ class ArithEvaluator(object):
 
       # note: 'test' and '[' never evaluate recursively
       if self.exec_opts.eval_unsafe_arith() and self.parse_ctx:
+        arena = self.parse_ctx.arena
+
         # Special case so we don't get EOF error
         if len(s.strip()) == 0:
           return 0
@@ -351,7 +351,7 @@ class ArithEvaluator(object):
         # For compatibility: Try to parse it as an expression and evaluate it.
         a_parser = self.parse_ctx.MakeArithParser(s)
         # don't know var name here
-        with alloc.ctx_Location(self.arena, source.Variable(None, span_id)):
+        with alloc.ctx_Location(arena, source.Variable(None, span_id)):
           try:
             node2 = a_parser.Parse()  # may raise error.Parse
           except error.Parse as e:
@@ -857,7 +857,7 @@ class BoolEvaluator(ArithEvaluator):
   """
 
   def __init__(self, mem, exec_opts, parse_ctx, errfmt):
-    # type: (Mem, optview.Exec, parse_lib.ParseContext, ErrorFormatter) -> None
+    # type: (Mem, optview.Exec, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
     ArithEvaluator.__init__(self, mem, exec_opts, parse_ctx, errfmt)
     self.always_strict = False
 

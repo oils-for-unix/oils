@@ -135,6 +135,83 @@ errexit_alias() {
   foo /nonexistent
 }
 
+_sep() {
+  echo
+  echo '---------------------------'
+}
+
+errexit_examples() {
+  ### A representative set of errors.  For consolidating code quotations
+
+  # two quotations of same location: not found then errexit
+  bin/oil -c 'zz'
+
+  _sep
+
+  # two quotations, different location
+  bin/oil -c 'echo hi > ""'
+
+  _sep
+
+  bin/oil -c 'shopt -s failglob; echo *.ZZZZ'
+
+  _sep
+
+  # This one is a "nested" error
+  bin/oil -c 'eval "x("'
+
+  _sep
+
+  # one location
+  bin/oil -c 'ls /x; echo $?'
+
+  _sep
+
+  # fatal 
+  bin/oil -c 'echo $undef'
+
+  _sep
+
+  bin/oil -c 'try --allow-status-01 grep'
+
+  _sep
+
+  bin/oil -c 'ls | false | wc -l'
+
+  _sep
+
+  bin/oil -c 'ls | { echo hi; ( exit 42 ); } | wc -l'
+
+  _sep
+
+  # Showing errors for THREE PIDs here!  That is technically correct, but
+  # noisy.
+  bin/oil -c '{ echo one; false; } | { false; wc -l; }'
+
+  _sep
+
+  # realistic example
+  bin/oil -c '{ ls; false; } |
+wc -l
+'
+
+  _sep
+
+  # Show multiple errors, and then errexit
+  bin/osh -c '
+eval "("
+echo status=$?
+
+eval ")"
+echo status=$?
+
+set -e
+false
+'
+
+}
+
+
 _strict-errexit-case() {
   local code=$1
   banner "[strict_errexit] $code"
@@ -832,60 +909,6 @@ EOF
   assert $? -eq 0
 }
 
-separator() {
-  echo
-  echo '$'
-}
-
-show_some_errors() {
-  ### A representative set of errors.  For consolidating code quotations
-
-  # two quotations of same location: not found then errexit
-  bin/oil -c 'zz'
-
-  separator
-
-  # two quotations, different location
-  bin/oil -c 'echo hi > ""'
-
-  separator
-
-  bin/oil -c 'shopt -s failglob; echo *.ZZZZ'
-
-  separator
-
-  # This one is a "nested" error
-  bin/oil -c 'eval "x("'
-
-  separator
-
-  # one location
-  bin/oil -c 'ls /x; echo $?'
-
-  separator
-
-  # fatal 
-  bin/oil -c 'echo $undef'
-
-  separator
-
-  bin/oil -c 'try --allow-status-01 grep'
-
-  separator
-
-  bin/oil -c 'ls | false | wc -l'
-
-  separator
-
-  bin/oil -c 'ls | { echo hi; ( exit 42 ); } | wc -l'
-
-  separator
-
-  # Showing errors for THREE PIDs here!  That is technically correct, but
-  # noisy.
-  bin/oil -c '{ echo one; false; } | { false; wc -l; }'
-}
-
 #
 # TEST DRIVER
 #
@@ -927,6 +950,7 @@ all() {
     failed_command errexit_usage_error errexit_subshell errexit_pipeline \
     errexit_dbracket \
     errexit_alias \
+    errexit_examples \
     pipefail pipefail_group pipefail_subshell pipefail_no_words pipefail_func \
     pipefail_while pipefail_multiple \
     core_process osh_state \

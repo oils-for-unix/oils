@@ -327,11 +327,27 @@ class ErrorFormatter(object):
 
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None
-    """Print an exception that was caught.
+    """Print an exception that was caught, with a code quotation.
 
-    TODO: should this respect CurrentLocation()?
+    Unlike other methods, this doesn't use the CurrentLocation() fallback.
+    That only applies to builtins; instead we check e.HasLocation() at a higher
+    level, in CommandEvaluator.
+
+    Also ui.PrettyPrintError() is a free function and doesn't have access to
+    the current location.
     """
     _pp(err, self.arena, prefix)
+
+  def PrintErrExit(self, err):
+    # type: (_ErrorWithLocation) -> None
+
+    # TODO:
+    # - Don't quote code in child processes (e.g. pipelines)?  Just print the PID
+    #   - error.ErrExit() might need a PID?
+    # - Don't quote code if you already quoted something on the same line?
+    #   - _PrintWithSpanId calculates the line_id.  So you need to remember that?
+    #   - return it here?
+    self.PrettyPrintError(err, prefix='errexit: ')
 
 
 def PrintAst(node, flag):

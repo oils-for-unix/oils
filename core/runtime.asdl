@@ -103,7 +103,7 @@ module runtime
   -- For OSH assignment, evaluated from osh_ast.lhs_expr
   -- TODO: Rename this to sh_place?
   lvalue = 
-    Named(string name)
+    Named(string name)  -- would be efficient if Str were first class variant
   | Indexed(string name, int index)
   | Keyed(string name, string key)
 

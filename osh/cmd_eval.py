@@ -558,7 +558,7 @@ class CommandEvaluator(object):
       return
 
     if len(node_list) > 1:
-      e_die('strict_errexit only allows a single command.  Hint: use "run".',
+      e_die("strict_errexit only allows a single command.  Hint: use 'try'.",
             span_id=location.SpanForCommand(node_list[0]))
 
     assert len(node_list) > 0
@@ -1574,7 +1574,7 @@ class CommandEvaluator(object):
 
       if is_errexit:
         if self.exec_opts.verbose_errexit():
-          self.errfmt.PrettyPrintError(err, prefix='errexit: ')
+          self.errfmt.PrintErrExit(err)
       else:
         self.errfmt.PrettyPrintError(err, prefix='fatal: ')
 
