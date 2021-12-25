@@ -29,7 +29,7 @@ import posix_ as posix
 from typing import cast, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
-      cmd_value__Argv, CompoundStatus, CommandStatus, Proc
+      cmd_value__Argv, CommandStatus, StatusArray, Proc
   )
   from _devbuild.gen.syntax_asdl import command_t
   from core import optview
@@ -507,7 +507,7 @@ class ShellExecutor(vm._Executor):
       raise AssertionError()
 
   def MaybeWaitOnProcessSubs(self, frame, compound_st):
-    # type: (_ProcessSubFrame, CompoundStatus) -> None
+    # type: (_ProcessSubFrame, StatusArray) -> None
 
     # Wait in the same order that they were evaluated.  That seems fine.
     for fd in frame.to_close:
@@ -537,7 +537,7 @@ class ShellExecutor(vm._Executor):
     self.process_sub_stack.append(_ProcessSubFrame())
 
   def PopProcessSub(self, compound_st):
-    # type: (CompoundStatus) -> None
+    # type: (StatusArray) -> None
     """
     This method is called by a context manager, which means we always wait() on
     the way out, which I think is the right thing.  We don't always set

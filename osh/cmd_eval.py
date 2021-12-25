@@ -42,7 +42,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray,
     redirect, redirect_arg, scope_e,
     cmd_value_e, cmd_value__Argv, cmd_value__Assign,
-    CommandStatus, CompoundStatus, Proc
+    CommandStatus, StatusArray, Proc
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -335,9 +335,6 @@ class CommandEvaluator(object):
           #   ls > ""        # error.RedirectEval
           #   ls *Z          # error.FailGlob
           #   sort <(ls /x)  # process sub failure
-          #
-          # Possible solution: _Dispatch() and _Execute() should share a new
-          # CommandFailure type, which includes CompoundStatus for pipeline_st.
           desc = 'Command'
           span_id = location.SpanForCommand(node)
 
@@ -1377,7 +1374,7 @@ class CommandEvaluator(object):
     #     { echo one; echo two; } > >(tac)
 
     cmd_st = CommandStatus()
-    process_sub_st = CompoundStatus()
+    process_sub_st = StatusArray()
 
     errexit_spid = runtime.NO_SPID
     check_errexit = True

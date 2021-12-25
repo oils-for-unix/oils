@@ -57,6 +57,16 @@ class _ErrorWithLocation : public std::exception {
         part(nullptr),
         word(word) {
   }
+  _ErrorWithLocation(Str* user_str, int span_id, int exit_status,
+                     bool show_code)
+      : user_str_(user_str),
+        span_id(span_id),
+        token(nullptr),
+        part(nullptr),
+        word(nullptr),
+        exit_status(exit_status),
+        show_code(show_code) {
+  }
 
   Str* UserErrorString() {
     return user_str_;
@@ -77,6 +87,9 @@ class _ErrorWithLocation : public std::exception {
   syntax_asdl::Token* token;
   syntax_asdl::word_part_t* part;
   syntax_asdl::word_t* word;
+
+  int exit_status;
+  bool show_code;
 };
 
 class Parse : public _ErrorWithLocation {
@@ -110,6 +123,9 @@ class FatalRuntime : public _ErrorWithLocation {
  public:
   FatalRuntime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
   }
+  FatalRuntime(Str* user_str, int span_id, int status)
+      : _ErrorWithLocation(user_str, span_id, status, false) {
+  }
 };
 
 class Strict : public FatalRuntime {
@@ -122,9 +138,11 @@ class Strict : public FatalRuntime {
 class ErrExit : public _ErrorWithLocation {
  public:
   ErrExit(Str* user_str, int span_id, int status)
-      : _ErrorWithLocation(user_str, span_id), exit_status(status) {
+      : _ErrorWithLocation(user_str, span_id, status, false) {
   }
-  int exit_status;
+  ErrExit(Str* user_str, int span_id, int status, bool show_code)
+      : _ErrorWithLocation(user_str, span_id, status, show_code) {
+  }
 };
 
 // Stub

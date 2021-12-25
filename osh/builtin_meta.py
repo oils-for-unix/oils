@@ -299,8 +299,10 @@ class Try(vm._Builtin):
         self.errfmt.Print_('(original failure)', span_id=failure_spid)
         self.errfmt.StderrLine('')
 
-      e_die('status %d when --allow-status-01' % status,
-            span_id=spids[0], status=status)
+      # for some reason this translates better than e_die()
+      raise error.FatalRuntime(
+          'status %d when --allow-status-01' % status,
+          span_id=spids[0], status=status)
 
     if arg.assign is not None:
       var_name = arg.assign

@@ -131,10 +131,8 @@ module runtime
     bool dynamic_scope
   )
 
-  -- An exit status with location info.  For process sub and pipelines.
-  -- Only pipelines can be negated.
-  -- TODO: we could have beginning and end spids?
-  CompoundStatus = (bool negated, int* codes, int* spids)
+  -- An exit status with location info.  For process sub.
+  StatusArray = (int* codes, int* spids)
 
   CommandStatus = (
     -- set for atoms

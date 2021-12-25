@@ -3,7 +3,7 @@ vm.py: Library for executing shell.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import CompoundStatus, CommandStatus
+from _devbuild.gen.runtime_asdl import CommandStatus, StatusArray
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
@@ -126,7 +126,7 @@ class _Executor(object):
     pass
 
   def PopProcessSub(self, compound_st):
-    # type: (CompoundStatus) -> None
+    # type: (StatusArray) -> None
     pass
 
 
@@ -193,7 +193,7 @@ class ctx_ProcessSub(object):
     diff <(seq 3) <(seq 4) > >(tac)
   """
   def __init__(self, shell_ex, process_sub_status):
-    # type: (_Executor, CompoundStatus) -> None
+    # type: (_Executor, StatusArray) -> None
     shell_ex.PushProcessSub()
     self.shell_ex = shell_ex
     self.process_sub_status = process_sub_status
