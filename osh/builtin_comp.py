@@ -2,7 +2,7 @@
 builtin_comp.py - Completion builtins
 """
 
-from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.runtime_asdl import value_e, value__MaybeStrArray
 from core import completion
 from core import error
 from core import ui
@@ -15,7 +15,7 @@ from frontend import lexer_def
 from frontend import option_def
 from core import state
 
-from typing import Dict, List, Iterator, TYPE_CHECKING
+from typing import Dict, List, Iterator, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.completion import Lookup, OptionState, Api, UserSpec
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
   from core.state import Mem
   from frontend.args import _Attributes
   from frontend.parse_lib import ParseContext
+  from frontend.flag_spec import _FlagSpecAndMore
   from osh.cmd_eval import CommandEvaluator
   from osh.split import SplitContext
   from osh.word_eval import NormalWordEvaluator
@@ -39,6 +40,7 @@ if mylib.PYTHON:
 
 
 def _DefineFlags(spec):
+  # type: (_FlagSpecAndMore) -> None
   spec.ShortFlag('-F', args.String, help='Complete with this function')
   spec.ShortFlag('-W', args.String, help='Complete with these words')
   spec.ShortFlag('-P', args.String,
@@ -58,6 +60,7 @@ filterpat is removed.
 
 
 def _DefineOptions(spec):
+  # type: (_FlagSpecAndMore) -> None
   """Common -o options for complete and compgen."""
   spec.InitOptions()
 
@@ -79,6 +82,7 @@ def _DefineOptions(spec):
 
 
 def _DefineActions(spec):
+  # type: (_FlagSpecAndMore) -> None
   """Common -A actions for complete and compgen."""
 
   # NOTE: git-completion.bash uses -f and -v. 
@@ -120,6 +124,7 @@ class SpecBuilder(object):
                word_ev,  # type: NormalWordEvaluator
                splitter,  # type: SplitContext
                comp_lookup,  # type: Lookup
+               errfmt  # type: ui.ErrorFormatter
                ):
     # type: (...) -> None
     """
@@ -132,6 +137,7 @@ class SpecBuilder(object):
     self.word_ev = word_ev
     self.splitter = splitter
     self.comp_lookup = comp_lookup
+    self.errfmt = errfmt
 
   def Build(self, argv, arg, base_opts):
     # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
@@ -221,23 +227,22 @@ class SpecBuilder(object):
       #   happen early.
       w_parser = self.parse_ctx.MakeWordParserForPlugin(arg.W)
 
-      arena = self.parse_ctx.arena
       try:
         arg_word = w_parser.ReadForPlugin()
       except error.Parse as e:
-        ui.PrettyPrintError(e, arena)
+        self.errfmt.PrettyPrintError(e)
         raise  # Let 'complete' or 'compgen' return 2
 
       a = completion.DynamicWordsAction(
-          self.word_ev, self.splitter, arg_word, arena)
+          self.word_ev, self.splitter, arg_word, self.errfmt)
       actions.append(a)
 
-    extra_actions = []
+    extra_actions = []  # type: List[completion.CompletionAction]
     if base_opts.get('plusdirs'):
       extra_actions.append(completion.FileSystemAction(dirs_only=True))
 
     # These only happen if there were zero shown.
-    else_actions = []
+    else_actions = []  # type: List[completion.CompletionAction]
     if base_opts.get('default'):
       else_actions.append(completion.FileSystemAction())
     if base_opts.get('dirnames'):
@@ -335,6 +340,7 @@ class CompGen(vm._Builtin):
     self.spec_builder = spec_builder
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
     arg = flag_spec.ParseMore('compgen', arg_r)
@@ -447,9 +453,9 @@ class CompAdjust(vm._Builtin):
     # TODO: How does the user test a completion function programmatically?  Set
     # COMP_ARGV?
     val = self.mem.GetValue('COMP_ARGV')
-    if val.tag != value_e.MaybeStrArray:
+    if val.tag_() != value_e.MaybeStrArray:
       raise error.Usage("COMP_ARGV should be an array")
-    comp_argv = val.strs
+    comp_argv = cast(value__MaybeStrArray, val).strs
 
     # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur
     # "outside" of words.

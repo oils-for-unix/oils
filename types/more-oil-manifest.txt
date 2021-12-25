@@ -6,5 +6,8 @@
 ./core/executor.py
 ./core/shell.py
 ./osh/builtin_process.py
+# Flag problems
 #./osh/builtin_comp.py
+# Iterator problems
+#./core/completion.py
 ./tea/tea_main.py

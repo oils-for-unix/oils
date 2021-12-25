@@ -74,7 +74,8 @@ class State(object):
 
   def __init__(self):
     # type: () -> None
-    self.line_until_tab = None  # original line, truncated
+    # original line, truncated
+    self.line_until_tab = None  # type: Optional[str]
 
     # Start offset in EVERY candidate to display.  We send fully-completed
     # LINES to readline because we don't want it to do its own word splitting.

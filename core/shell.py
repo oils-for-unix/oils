@@ -492,7 +492,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.json] = builtin_oil.Json(mem, expr_ev, errfmt)
 
   spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
-                                          comp_lookup)
+                                          comp_lookup, errfmt)
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
   builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)

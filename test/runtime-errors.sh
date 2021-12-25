@@ -155,6 +155,18 @@ errexit_one_process() {
 
   _sep
 
+  # TODO: duplication quotation here
+  bin/oil -c 'cd /x'
+
+  _sep
+
+  bin/osh -c './README.md; echo hi'
+
+  _sep
+
+  # TODO: duplication quotation here
+  bin/oil -c './README.md; echo hi'
+
   # one location
   bin/oil -c 'ls /x; echo $?'
 

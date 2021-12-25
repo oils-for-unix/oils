@@ -242,7 +242,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                       prompt_ev, tracer)
 
   spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
-                                          comp_lookup)
+                                          comp_lookup, errfmt)
   # Add some builtins that depend on the executor!
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
