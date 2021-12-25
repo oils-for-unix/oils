@@ -42,7 +42,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray,
     redirect, redirect_arg, scope_e,
     cmd_value_e, cmd_value__Argv, cmd_value__Assign,
-    CompoundStatus, Proc
+    CommandStatus, CompoundStatus, Proc
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -609,8 +609,8 @@ class CommandEvaluator(object):
 
     return b
 
-  def _Dispatch(self, node, pipeline_st):
-    # type: (command_t, CompoundStatus) -> Tuple[int, bool]
+  def _Dispatch(self, node, cmd_st):
+    # type: (command_t, CommandStatus) -> None
     """Switch on the command_t variants and execute them."""
 
     # If we call RunCommandSub in a recursive call to the executor, this will
@@ -618,13 +618,11 @@ class CommandEvaluator(object):
     # command.
     self.check_command_sub_status = False
 
-    check_errexit = False  # for errexit
-
     UP_node = node
     with tagswitch(node) as case:
       if case(command_e.Simple):
         node = cast(command__Simple, UP_node)
-        check_errexit = True
+        cmd_st.check_errexit = True
 
         # Find span_id for a basic implementation of $LINENO, e.g.
         # PS4='+$SOURCE_NAME:$LINENO:'
@@ -725,7 +723,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.Pipeline):
         node = cast(command__Pipeline, UP_node)
-        check_errexit = True
+        cmd_st.check_errexit = True
         if len(node.stderr_indices):
           e_die("|& isn't supported", span_id=node.spids[0])
 
@@ -734,21 +732,21 @@ class CommandEvaluator(object):
         # recorded in c_status.
         if node.negated:
           self._StrictErrExit(node)
-          pipeline_st.negated = True
+          cmd_st.pipe_negated = True
           # spid of !
           with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
-            self.shell_ex.RunPipeline(node, pipeline_st)
+            self.shell_ex.RunPipeline(node, cmd_st)
 
           # errexit is disabled for !.
-          check_errexit = False
+          cmd_st.check_errexit = False
         else:
-          self.shell_ex.RunPipeline(node, pipeline_st)
+          self.shell_ex.RunPipeline(node, cmd_st)
 
         status = -1  # INVALID value because the caller will compute it
 
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
-        check_errexit = True
+        cmd_st.check_errexit = True
         status = self.shell_ex.RunSubshell(node.child)
 
       elif case(command_e.DBracket):
@@ -758,7 +756,7 @@ class CommandEvaluator(object):
 
         self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
-        check_errexit = True
+        cmd_st.check_errexit = True
         result = self.bool_ev.EvalB(node.expr)
         status = 0 if result else 1
 
@@ -769,7 +767,7 @@ class CommandEvaluator(object):
 
         self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
-        check_errexit = True
+        cmd_st.check_errexit = True
         i = self.arith_ev.EvalToInt(node.child)
         status = 1 if i == 0 else 0
 
@@ -1034,17 +1032,17 @@ class CommandEvaluator(object):
       elif case(command_e.CommandList):
         node = cast(command__CommandList, UP_node)
         status = self._ExecuteList(node.children)
-        check_errexit = False
+        cmd_st.check_errexit = False
 
       elif case(command_e.DoGroup):
         node = cast(command__DoGroup, UP_node)
         status = self._ExecuteList(node.children)
-        check_errexit = False  # not real statements
+        cmd_st.check_errexit = False  # not real statements
 
       elif case(command_e.BraceGroup):
         node = cast(BraceGroup, UP_node)
         status = self._ExecuteList(node.children)
-        check_errexit = False
+        cmd_st.check_errexit = False
 
       elif case(command_e.AndOr):
         node = cast(command__AndOr, UP_node)
@@ -1077,7 +1075,7 @@ class CommandEvaluator(object):
 
           if i == n - 1:  # errexit handled differently for last child
             status = self._Execute(child)
-            check_errexit = True
+            cmd_st.check_errexit = True
           else:
             # blame the right && or ||
             self._StrictErrExit(child)
@@ -1339,7 +1337,9 @@ class CommandEvaluator(object):
       else:
         raise NotImplementedError(node.tag_())
 
-    return status, check_errexit
+    # Return to caller.  Note the only case that didn't set it was Pipeline,
+    # which set cmd_st.pipe_status.
+    cmd_st.simple_status = status
 
   def RunPendingTraps(self):
     # type: () -> None
@@ -1370,8 +1370,9 @@ class CommandEvaluator(object):
     # in the redirect word:
     #     { echo one; echo two; } > >(tac)
 
-    pipeline_st = CompoundStatus()
+    cmd_st = CommandStatus()
     process_sub_st = CompoundStatus()
+
     errexit_spid = runtime.NO_SPID
     check_errexit = True
 
@@ -1382,16 +1383,19 @@ class CommandEvaluator(object):
         self.errfmt.PrettyPrintError(e)
         redirects = None
 
-      if redirects is None:  # evaluation error
+      if redirects is None:  # Error evaluating redirect words
         status = 1
 
       else:
-        # If there are no redirects, push/pop is a no-op.
         if self.shell_ex.PushRedirects(redirects):
-          # Asymmetry because of applying redirects can fail.
+          # This pops redirects.  There is an asymmetry because applying
+          # redirects can fail.
           with vm.ctx_Redirect(self.shell_ex):
             try:
-              status, check_errexit = self._Dispatch(node, pipeline_st)
+              self._Dispatch(node, cmd_st)
+
+              status = cmd_st.simple_status
+              check_errexit = cmd_st.check_errexit
             except error.FailGlob as e:
               if not e.HasLocation():  # Last resort!
                 e.span_id = self.mem.CurrentSpanId()
@@ -1400,7 +1404,7 @@ class CommandEvaluator(object):
               check_errexit = True
 
           # Compute status from @PIPESTATUS
-          codes = pipeline_st.codes 
+          codes = cmd_st.pipe_status
           if len(codes):  # Did we run a pipeline?
             self.mem.SetPipeStatus(codes)
 
@@ -1410,16 +1414,16 @@ class CommandEvaluator(object):
               for i, st in enumerate(codes):
                 if st != 0:
                   status = st
-                  errexit_spid = pipeline_st.spids[i]
+                  errexit_spid = cmd_st.pipe_spids[i]
             else:
               # The status is that of last command, period.
               status = codes[-1]
 
-            if pipeline_st.negated:
+            if cmd_st.pipe_negated:
               status = 1 if status == 0 else 0
 
         else:
-          # Error applying redirects, e.g. bad file descriptor.
+          # I/O error when applying redirects, e.g. bad file descriptor.
           status = 1
 
     # Compute status from _process_sub_status

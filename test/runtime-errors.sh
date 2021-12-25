@@ -184,6 +184,14 @@ echo status=$?
 set -e
 false
 '
+
+  _sep
+
+  # Primitives
+  bin/oil -c '[[ 0 -eq 1 ]]'
+
+  _sep
+  bin/oil -c '(( 0 ))'
 }
 
 errexit_multiple_processes() {
@@ -221,6 +229,23 @@ errexit_multiple_processes() {
 
   # Three errors!
   bin/oil -c '{ ls; ( false; true ); } | wc -l; echo hi'
+
+  _sep
+  bin/oil -c 'ls <(sort YY) <(zz); echo hi'
+
+  # 2 kinds of errors
+  _sep
+  bin/oil -c 'zz <(sort YY) <(sort ZZ); echo hi'
+
+  # This one has badly interleaved errors!
+  _sep
+  bin/oil -c 'yy | zz'
+
+  _sep
+  bin/oil -c 'echo $([[ 0 -eq 1 ]])'
+
+  _sep
+  bin/oil -c 'var y = $([[ 0 -eq 1 ]])'
 }
 
 

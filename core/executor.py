@@ -28,7 +28,9 @@ import posix_ as posix
 
 from typing import cast, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, CompoundStatus, Proc
+  from _devbuild.gen.runtime_asdl import (
+      cmd_value__Argv, CompoundStatus, CommandStatus, Proc
+  )
   from _devbuild.gen.syntax_asdl import command_t
   from core import optview
   from core import state
@@ -289,7 +291,7 @@ class ShellExecutor(vm._Executor):
     return 0
 
   def RunPipeline(self, node, status_out):
-    # type: (command__Pipeline, CompoundStatus) -> None
+    # type: (command__Pipeline, CommandStatus) -> None
 
     pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
     self.job_state.AddPipeline(pi)
@@ -300,7 +302,7 @@ class ShellExecutor(vm._Executor):
       child = node.children[i]
 
       # TODO: determine these locations at parse time?
-      status_out.spids.append(location.SpanForCommand(child))
+      status_out.pipe_spids.append(location.SpanForCommand(child))
 
       p = self._MakeProcess(child)
       p.Init_ParentPipeline(pi)
@@ -309,10 +311,10 @@ class ShellExecutor(vm._Executor):
     last_child = node.children[n-1]
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
     pi.AddLast((self.cmd_ev, last_child))
-    status_out.spids.append(location.SpanForCommand(last_child))
+    status_out.pipe_spids.append(location.SpanForCommand(last_child))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
-      status_out.codes = pi.Run(self.waiter, self.fd_state)
+      status_out.pipe_status = pi.Run(self.waiter, self.fd_state)
 
   def RunSubshell(self, node):
     # type: (command_t) -> int

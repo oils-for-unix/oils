@@ -3,7 +3,7 @@ vm.py: Library for executing shell.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import CompoundStatus
+from _devbuild.gen.runtime_asdl import CompoundStatus, CommandStatus
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
@@ -94,7 +94,7 @@ class _Executor(object):
     return 0
 
   def RunPipeline(self, node, status_out):
-    # type: (command__Pipeline, CompoundStatus) -> None
+    # type: (command__Pipeline, CommandStatus) -> None
     pass
 
   def RunSubshell(self, node):
