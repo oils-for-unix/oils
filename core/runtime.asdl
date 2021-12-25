@@ -141,15 +141,16 @@ module runtime
     bool check_errexit,
 
     -- for atoms like ls  ((  [[
-    int simple_status,
+    -- Not using this yet because the return value is baked in everywhere
+    -- int simple_status,
 
     -- for pipeline
     bool pipe_negated,
     int* pipe_status,
     int* pipe_spids,
 
-    -- so we don't duplicate errexit code quotation
-    bool error_shown,
+    -- By default, don't show the code on errexit.  Sometimes we want to.
+    bool show_code
   )
 
   wait_status =

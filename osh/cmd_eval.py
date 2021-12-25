@@ -312,8 +312,8 @@ class CommandEvaluator(object):
     # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
     return node.spids[0]
 
-  def _CheckStatus(self, status, node, blame_spid):
-    # type: (int, command_t, int) -> None
+  def _CheckStatus(self, status, cmd_st, node, blame_spid):
+    # type: (int, CommandStatus, command_t, int) -> None
     """Raises error.ErrExit, maybe with location info attached."""
     if self.exec_opts.errexit() and status != 0:
       # NOTE: Sometimes location info is duplicated.
@@ -343,6 +343,7 @@ class CommandEvaluator(object):
 
         elif case(command_e.ShAssignment):
           node = cast(command__ShAssignment, UP_node)
+          cmd_st.show_code = True  # leaf
           # Note: This happens rarely: when errexit and inherit_errexit are on,
           # but command_sub_errexit is off!
           desc = 'Assignment'
@@ -351,11 +352,13 @@ class CommandEvaluator(object):
         # Note: a subshell often doesn't fail on its own.
         elif case(command_e.Subshell):
           node = cast(command__Subshell, UP_node)
+          cmd_st.show_code = True  # not sure about this, e.g. ( exit 42 )
           desc = 'Subshell'
           span_id = node.spids[0]
 
         elif case(command_e.Pipeline):
           node = cast(command__Pipeline, UP_node)
+          cmd_st.show_code = True  # not sure about this
           # The whole pipeline can fail separately
           # TODO: We should show which element of the pipeline failed!
           desc = 'Pipeline'
@@ -376,7 +379,8 @@ class CommandEvaluator(object):
         #pass
 
       msg = '%s failed with status %d' % (desc, status)
-      raise error.ErrExit(msg, span_id=span_id, status=status)
+      raise error.ErrExit(msg, span_id=span_id, status=status,
+                          show_code=cmd_st.show_code)
 
   def _EvalRedirect(self, r):
     # type: (redir) -> redirect
@@ -525,15 +529,15 @@ class CommandEvaluator(object):
       result.append(self._EvalRedirect(redir))
     return result
 
-  def _RunSimpleCommand(self, cmd_val, do_fork):
-    # type: (cmd_value_t, bool) -> int
+  def _RunSimpleCommand(self, cmd_val, cmd_st, do_fork):
+    # type: (cmd_value_t, CommandStatus, bool) -> int
     """Private interface to run a simple command (including assignment)."""
     UP_cmd_val = cmd_val
     with tagswitch(UP_cmd_val) as case:
       if case(cmd_value_e.Argv):
         cmd_val = cast(cmd_value__Argv, UP_cmd_val)
         self.tracer.OnSimpleCommand(cmd_val.argv)
-        return self.shell_ex.RunSimpleCommand(cmd_val, do_fork)
+        return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, do_fork)
 
       elif case(cmd_value_e.Assign):
         cmd_val = cast(cmd_value__Assign, UP_cmd_val)
@@ -610,7 +614,7 @@ class CommandEvaluator(object):
     return b
 
   def _Dispatch(self, node, cmd_st):
-    # type: (command_t, CommandStatus) -> None
+    # type: (command_t, CommandStatus) -> int
     """Switch on the command_t variants and execute them."""
 
     # If we call RunCommandSub in a recursive call to the executor, this will
@@ -690,13 +694,13 @@ class CommandEvaluator(object):
           if cmd_val.tag_() == cmd_value_e.Assign or is_other_special:
             # Special builtins have their temp env persisted.
             self._EvalTempEnv(node.more_env, 0)
-            status = self._RunSimpleCommand(cmd_val, node.do_fork)
+            status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
           else:
             with state.ctx_Temp(self.mem):
               self._EvalTempEnv(node.more_env, state.SetExport)
-              status = self._RunSimpleCommand(cmd_val, node.do_fork)
+              status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
         else:
-          status = self._RunSimpleCommand(cmd_val, node.do_fork)
+          status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
 
       elif case(command_e.ExpandedAlias):
         node = cast(command__ExpandedAlias, UP_node)
@@ -757,6 +761,7 @@ class CommandEvaluator(object):
         self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
         cmd_st.check_errexit = True
+        cmd_st.show_code = True  # this is a "leaf" for errors
         result = self.bool_ev.EvalB(node.expr)
         status = 0 if result else 1
 
@@ -768,6 +773,7 @@ class CommandEvaluator(object):
         self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
         cmd_st.check_errexit = True
+        cmd_st.show_code = True  # this is a "leaf" for errors
         i = self.arith_ev.EvalToInt(node.child)
         status = 1 if i == 0 else 0
 
@@ -954,7 +960,7 @@ class CommandEvaluator(object):
         # Set a flag in mem?   self.mem.last_status or
         if self.check_command_sub_status:
           last_status = self.mem.LastStatus()
-          self._CheckStatus(last_status, node, runtime.NO_SPID)
+          self._CheckStatus(last_status, cmd_st, node, runtime.NO_SPID)
           status = last_status  # A global assignment shouldn't clear $?.
         else:
           status = 0
@@ -1339,7 +1345,7 @@ class CommandEvaluator(object):
 
     # Return to caller.  Note the only case that didn't set it was Pipeline,
     # which set cmd_st.pipe_status.
-    cmd_st.simple_status = status
+    return status
 
   def RunPendingTraps(self):
     # type: () -> None
@@ -1392,9 +1398,7 @@ class CommandEvaluator(object):
           # redirects can fail.
           with vm.ctx_Redirect(self.shell_ex):
             try:
-              self._Dispatch(node, cmd_st)
-
-              status = cmd_st.simple_status
+              status = self._Dispatch(node, cmd_st)
               check_errexit = cmd_st.check_errexit
             except error.FailGlob as e:
               if not e.HasLocation():  # Last resort!
@@ -1449,7 +1453,8 @@ class CommandEvaluator(object):
     #   - e.g. arith sub, command sub?  I don't want arith sub.
     # - ControlFlow: always raises, it has no status.
     if check_errexit:
-      self._CheckStatus(status, node, errexit_spid)
+      #log('cmd_st %s', cmd_st)
+      self._CheckStatus(status, cmd_st, node, errexit_spid)
 
     return status
 

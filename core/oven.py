@@ -57,7 +57,7 @@ import posix_ as posix
 from typing import List, Dict, Optional, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc, CommandStatus
   from core import optview
   from oil_lang import expr_eval
   from pgen2 import grammar
@@ -510,8 +510,8 @@ class NullExecutor(vm._Executor):
       pass
     return status
 
-  def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
-    # type: (cmd_value__Argv, bool, bool) -> int
+  def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
+    # type: (cmd_value__Argv, CommandStatus, bool, bool) -> int
     argv = cmd_val.argv
     arg0_spid = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
 

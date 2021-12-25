@@ -103,6 +103,7 @@ if mylib.PYTHON:
       # Runtime errors have a default status of 1.  Parse errors return 2
       # explicitly.
       self.exit_status = kwargs.pop('status', 1)  # type: int
+      self.show_code = kwargs.pop('show_code', False)  # type: bool
       if kwargs:
         raise AssertionError('Invalid keyword args %s' % kwargs)
 

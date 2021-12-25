@@ -181,8 +181,9 @@ echo status=$?
 eval ")"
 echo status=$?
 
-set -e
+set -e; shopt -s verbose_errexit
 false
+echo DONE
 '
 
   _sep

@@ -85,14 +85,21 @@ def PrettyDir(dir_name, home_dir):
 
 def _PrintCodeExcerpt(line, col, length, f):
   # type: (str, int, int, Writer) -> None
-  f.write('  '); f.write(line.rstrip())
-  f.write('\n  ')
+
+  buf = mylib.BufWriter()
+
+  buf.write('  '); buf.write(line.rstrip())
+  buf.write('\n  ')
   # preserve tabs
   for c in line[:col]:
-    f.write('\t' if c == '\t' else ' ')
-  f.write('^')
-  f.write('~' * (length-1))
-  f.write('\n')
+    buf.write('\t' if c == '\t' else ' ')
+  buf.write('^')
+  buf.write('~' * (length-1))
+  buf.write('\n')
+
+  # Do this all in a single write() call so it's less likely to be
+  # interleaved.  See test/runtime-errors.sh errexit_multiple_processes
+  f.write(buf.getvalue())
 
 
 def GetLineSourceString(arena, line_id, quote_filename=False):
@@ -353,25 +360,12 @@ class ErrorFormatter(object):
     #   - _PrintWithSpanId calculates the line_id.  So you need to remember that?
     #   - return it here?
     prefix = 'errexit PID %d: ' % pid
-    self.PrettyPrintError(err, prefix=prefix)
+    #self.PrettyPrintError(err, prefix=prefix)
 
-    if 0:
+    if 1:
       msg = err.UserErrorString()
       span_id = word_.SpanIdFromError(err)
-
-      # Don't quote code in child processes.
-      # Hm this rule sometimes fail to quote code, see test/runtime-errors.sh
-      # errexit_multiple_processes
-      # Like ( exit 42 ) in the middle of a pipeline.  But it's still more
-      # helpful than most shells.
-      # This kind of conflicts with the rule of showing the most SPECIFIC error
-      # though.
-      # Alternative rule: parent process uses multiple lines only if
-      # process.Process returns SUCCESS?
-
-      show_code = not self.one_line_errexit
-      show_code = True
-      _PrintWithSpanId(prefix, msg, span_id, self.arena, show_code)
+      _PrintWithSpanId(prefix, msg, span_id, self.arena, err.show_code)
 
 
 def PrintAst(node, flag):

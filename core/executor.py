@@ -157,20 +157,17 @@ class ShellExecutor(vm._Executor):
 
     return status
 
-  def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
-    # type: (cmd_value__Argv, bool, bool) -> int
-    """
-    Run builtins, functions, external commands
+  def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
+    # type: (cmd_value__Argv, CommandStatus, bool, bool) -> int
+    """Run builtins, functions, external commands
 
-    Oil and other languages might have different, simpler rules.  No special
-    builtins, etc.
-
-    Oil might have OIL_PATH = @( ... ) or something.
-
-    Interpreters might want to define all their own builtins.
+    Possible variations:
+    - Oil might have different, simpler rules.  No special builtins, etc.
+    - Oil might have OIL_PATH = @( ... ) or something.
+    - Interpreters might want to define all their own builtins.
 
     Args:
-      procs: whether to look up procs.
+      call_procs: whether to look up procs.
     """
     argv = cmd_val.argv
     arg0_spid = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
@@ -189,11 +186,12 @@ class ShellExecutor(vm._Executor):
       # command readonly is disallowed, for technical reasons.  Could relax it
       # later.
       self.errfmt.Print_("Can't run assignment builtin recursively",
-                        span_id=arg0_spid)
+                         span_id=arg0_spid)
       return 1
 
     builtin_id = consts.LookupSpecialBuiltin(arg0)
     if builtin_id != consts.NO_INDEX:
+      cmd_st.show_code = True  # this is a "leaf" for errors
       status = self.RunBuiltin(builtin_id, cmd_val)
       # TODO: Enable this and fix spec test failures.
       # Also update _SPECIAL_BUILTINS in osh/builtin.py.
@@ -223,6 +221,7 @@ class ShellExecutor(vm._Executor):
     builtin_id = consts.LookupNormalBuiltin(arg0)
 
     if builtin_id != consts.NO_INDEX:
+      cmd_st.show_code = True  # this is a "leaf" for errors
       return self.RunBuiltin(builtin_id, cmd_val)
 
     environ = self.mem.GetExported()  # Include temporary variables
@@ -242,6 +241,8 @@ class ShellExecutor(vm._Executor):
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
       status = p.RunWait(self.waiter, trace.External(cmd_val.argv))
+      cmd_st.show_code = True  # this is a "leaf" for errors
+      # TODO: add message command 'ls' failed
       return status
 
     self.tracer.OnExec(cmd_val.argv)

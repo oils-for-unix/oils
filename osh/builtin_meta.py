@@ -5,7 +5,7 @@ builtin_meta.py - Builtins that call back into the interpreter.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import alloc
@@ -165,7 +165,8 @@ class Command(vm._Builtin):
     # 'command date | wc -l' would take 2 processes instead of 3.  But no other
     # shell does that, and this rare case isn't worth the bookkeeping.
     # See test/syscall
-    return self.shell_ex.RunSimpleCommand(cmd_val, True, call_procs=False)
+    cmd_st = CommandStatus()
+    return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, True, call_procs=False)
 
 
 class Builtin(vm._Builtin):
@@ -227,7 +228,8 @@ class RunProc(vm._Builtin):
       return 1
 
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
-    return self.shell_ex.RunSimpleCommand(cmd_val2, True)
+    cmd_st = CommandStatus()
+    return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
 
 class Try(vm._Builtin):
@@ -284,7 +286,8 @@ class Try(vm._Builtin):
         # extra fork (miss out on an optimization) of code like ( status ls )
         # or forkwait { status ls }, but that is NOT idiomatic code.  status is
         # for functions.
-        status = self.shell_ex.RunSimpleCommand(cmd_val2, True)
+        cmd_st = CommandStatus()  # TODO: take param
+        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
         #log('st %d', status)
     except error.ErrExit as e:  # from function call
       #log('e %d', e.exit_status)
@@ -298,7 +301,7 @@ class Try(vm._Builtin):
 
       raise error.ErrExit(
           'status %d when --allow-status-01' % status,
-          span_id=spids[0], status=status)
+          span_id=spids[0], status=status, show_code=True)
 
     if arg.assign is not None:
       var_name = arg.assign

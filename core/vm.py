@@ -85,8 +85,8 @@ class _Executor(object):
     """
     return 0
 
-  def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
-    # type: (cmd_value__Argv, bool, bool) -> int
+  def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
+    # type: (cmd_value__Argv, CommandStatus, bool, bool) -> int
     return 0
 
   def RunBackgroundJob(self, node):
