@@ -474,7 +474,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.unset] = builtin_assign.Unset(mem, procs, unsafe_arith,
                                                    errfmt)
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev,
-                                               tracer)
+                                               tracer, errfmt)
   builtins[builtin_i.read] = builtin_misc.Read(splitter, mem, parse_ctx,
                                                cmd_ev, errfmt)
   mapfile = builtin_misc.MapFile(mem, errfmt, cmd_ev)
