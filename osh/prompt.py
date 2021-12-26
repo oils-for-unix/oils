@@ -259,11 +259,12 @@ class UserPlugin(object):
 
   Similar to core/dev.py:Tracer, which caches $PS4.
   """
-  def __init__(self, mem, parse_ctx, cmd_ev):
-    # type: (Mem, ParseContext, CommandEvaluator) -> None
+  def __init__(self, mem, parse_ctx, cmd_ev, errfmt):
+    # type: (Mem, ParseContext, CommandEvaluator, ui.ErrorFormatter) -> None
     self.mem = mem
     self.parse_ctx = parse_ctx
     self.cmd_ev = cmd_ev
+    self.errfmt = errfmt
 
     self.arena = parse_ctx.arena
     self.parse_cache = {}  # type: Dict[str, command_t]
@@ -288,7 +289,7 @@ class UserPlugin(object):
         try:
           node = main_loop.ParseWholeFile(c_parser)
         except error.Parse as e:
-          ui.PrettyPrintError(e, self.arena)
+          self.errfmt.PrettyPrintError(e)
           return  # don't execute
 
       self.parse_cache[prompt_cmd] = node

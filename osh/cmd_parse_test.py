@@ -16,13 +16,14 @@ from osh import word_
 
 def _assertParseMethod(test, code_str, method, expect_success=True):
   arena = test_lib.MakeArena('<cmd_parse_test>')
+  errfmt = ui.ErrorFormatter(arena)
   c_parser = test_lib.InitCommandParser(code_str, arena=arena)
   m = getattr(c_parser, method)
   try:
     node = m()
 
   except error.Parse as e:
-    ui.PrettyPrintError(e, arena)
+    errfmt.PrettyPrintError(e)
     if expect_success:
       test.fail('%r failed' % code_str)
     node = None
@@ -36,12 +37,13 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
 
 def _assert_ParseCommandListError(test, code_str):
   arena = test_lib.MakeArena('<cmd_parse_test>')
+  errfmt = ui.ErrorFormatter(arena)
   c_parser = test_lib.InitCommandParser(code_str, arena=arena)
 
   try:
     node = c_parser._ParseCommandLine()
   except error.Parse as e:
-    ui.PrettyPrintError(e, arena)
+    errfmt.PrettyPrintError(e)
   else:
     print('UNEXPECTED:')
     node.PrettyPrint()

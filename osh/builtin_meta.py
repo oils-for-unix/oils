@@ -36,13 +36,14 @@ if TYPE_CHECKING:
 
 class Eval(vm._Builtin):
 
-  def __init__(self, parse_ctx, exec_opts, cmd_ev, tracer):
-    # type: (ParseContext, optview.Exec, CommandEvaluator, dev.Tracer) -> None
+  def __init__(self, parse_ctx, exec_opts, cmd_ev, tracer, errfmt):
+    # type: (ParseContext, optview.Exec, CommandEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.exec_opts = exec_opts
     self.cmd_ev = cmd_ev
     self.tracer = tracer
+    self.errfmt = errfmt
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -65,7 +66,7 @@ class Eval(vm._Builtin):
     src = source.ArgvWord('eval', eval_spid)
     with dev.ctx_Tracer(self.tracer, 'eval', None):
       with alloc.ctx_Location(self.arena, src):
-        return main_loop.Batch(self.cmd_ev, c_parser, self.arena,
+        return main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
                                cmd_flags=cmd_eval.RaiseControlFlow)
 
 
@@ -116,7 +117,7 @@ class Source(vm._Builtin):
           with state.ctx_ThisDir(self.mem, path):
             src = source.SourcedFile(path, call_spid)
             with alloc.ctx_Location(self.arena, src):
-              status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
+              status = main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
                                        cmd_flags=cmd_eval.RaiseControlFlow)
       return status
 

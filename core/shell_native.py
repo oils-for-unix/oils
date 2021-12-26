@@ -392,7 +392,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # Initialize builtins that depend on evaluators
   #
 
-  unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, parse_ctx, arith_ev)
+  unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, parse_ctx, arith_ev,
+                                          errfmt)
   vm.InitUnsafeArith(mem, word_ev, unsafe_arith)
 
   builtins[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx,
@@ -400,7 +401,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.unset] = builtin_assign.Unset(mem, procs, unsafe_arith,
                                                    errfmt)
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev,
-                                               tracer)
+                                               tracer, errfmt)
   builtins[builtin_i.read] = builtin_misc.Read(splitter, mem, parse_ctx,
                                                cmd_ev, errfmt)
   mapfile = builtin_misc.MapFile(mem, errfmt, cmd_ev)
@@ -472,7 +473,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
     with state.ctx_ThisDir(mem, script_name):
       try:
-        status = main_loop.Batch(cmd_ev, c_parser, arena,
+        status = main_loop.Batch(cmd_ev, c_parser, errfmt,
                                  cmd_flags=cmd_eval.IsMainProgram)
       except util.UserExit as e:
         status = e.status

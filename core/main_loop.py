@@ -30,7 +30,6 @@ import posix_ as posix
 
 from typing import cast, Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.alloc import Arena
   from core.comp_ui import _IDisplay
   from core.ui import ErrorFormatter
   from frontend import parse_lib
@@ -133,7 +132,7 @@ if mylib.PYTHON:
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
       # Status is unused; $_ can be queried by the headless client
-      unused_status = Batch(self.cmd_ev, c_parser, self.parse_ctx.arena, 0)
+      unused_status = Batch(self.cmd_ev, c_parser, self.errfmt, 0)
 
       return ''  # result is always 'OK ' since there was no protocol error
 
@@ -280,8 +279,8 @@ if mylib.PYTHON:
     return status
 
 
-def Batch(cmd_ev, c_parser, arena, cmd_flags=0):
-  # type: (CommandEvaluator, CommandParser, Arena, int) -> int
+def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
+  # type: (CommandEvaluator, CommandParser, ui.ErrorFormatter, int) -> int
   """Loop for batch execution.
 
   Returns:
@@ -311,7 +310,7 @@ def Batch(cmd_ev, c_parser, arena, cmd_flags=0):
         c_parser.CheckForPendingHereDocs()  # can raise ParseError
         break
     except error.Parse as e:
-      ui.PrettyPrintError(e, arena)
+      errfmt.PrettyPrintError(e)
       status = 2
       break
 

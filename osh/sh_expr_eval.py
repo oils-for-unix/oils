@@ -182,12 +182,13 @@ if mylib.PYTHON:
 class UnsafeArith(object):
   """For parsing a[i] at RUNTIME."""
 
-  def __init__(self, mem, exec_opts, parse_ctx, arith_ev):
-    # type: (state.Mem, optview.Exec, parse_lib.ParseContext, ArithEvaluator) -> None
+  def __init__(self, mem, exec_opts, parse_ctx, arith_ev, errfmt):
+    # type: (state.Mem, optview.Exec, parse_lib.ParseContext, ArithEvaluator, ui.ErrorFormatter) -> None
     self.mem = mem
     self.exec_opts = exec_opts
     self.parse_ctx = parse_ctx
     self.arith_ev = arith_ev
+    self.errfmt = errfmt
 
     self.arena = self.parse_ctx.arena
 
@@ -203,7 +204,7 @@ class UnsafeArith(object):
       try:
         anode = a_parser.Parse()
       except error.Parse as e:
-        ui.PrettyPrintError(e, self.arena)  # show parse error
+        self.errfmt.PrettyPrintError(e)
         # Exception for builtins 'unset' and 'printf'
         e_usage('got invalid place expression', span_id=span_id)
 
@@ -242,13 +243,15 @@ class UnsafeArith(object):
     line_reader = reader.StringLineReader(ref_str, self.arena)
     lexer = self.parse_ctx.MakeLexer(line_reader)
     w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
-    # don't know var name
     with alloc.ctx_Location(self.arena, source.Variable(token.val, static_ref_spid)):
       try:
         bvs_part = w_parser.ParseVarRef()
       except error.Parse as e:
-        ui.PrettyPrintError(e, self.arena)  # show parse error
-        # Exception for builtins 'unset' and 'printf'
+        # This prints the inner location
+        self.errfmt.PrettyPrintError(e)
+
+        # this affects builtins 'unset' and 'printf'
+        # TODO: Don't print outer location?
         e_die('Invalid var ref', span_id=static_ref_spid)
 
     # Hack: There is no ${ on the "virtual" braced_var_sub, but we can add one

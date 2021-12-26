@@ -62,7 +62,6 @@ from typing import (
 )
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token, compound_word
-  from core.alloc import Arena
   from core.comp_ui import State
   from core.state import Mem
   from core.util import _DebugFile

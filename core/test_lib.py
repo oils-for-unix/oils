@@ -257,6 +257,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   CommandEvaluator.
   """
   arena = parse_ctx.arena
+  errfmt = ui.ErrorFormatter(arena)
 
   comp_lookup = comp_lookup or completion.Lookup()
   mem = mem or state.Mem('', [], arena, [])
@@ -272,7 +273,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   cmd_ev = InitCommandEvaluator(parse_ctx=parse_ctx, comp_lookup=comp_lookup,
                                 arena=arena, mem=mem, aliases=aliases)
 
-  main_loop.Batch(cmd_ev, c_parser, arena)  # Parse and execute!
+  main_loop.Batch(cmd_ev, c_parser, errfmt)  # Parse and execute!
   return cmd_ev
 
 

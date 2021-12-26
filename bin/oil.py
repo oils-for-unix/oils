@@ -99,11 +99,12 @@ def OshCommandMain(argv):
     return 0
 
   arena = alloc.Arena()
+  errfmt = ui.ErrorFormatter(arena)
   try:
     script_name = argv[1]
     arena.PushSource(source.MainFile(script_name))
   except IndexError:
-    arena.PushSource(source.Stdin())
+    arena.PushSource(source.Stdin(''))
     f = sys.stdin
   else:
     try:
@@ -133,7 +134,7 @@ def OshCommandMain(argv):
   try:
     node = main_loop.ParseWholeFile(c_parser)
   except error.Parse as e:
-    ui.PrettyPrintError(e, arena)
+    errfmt.PrettyPrintError(e)
     return 2
   assert node is not None
 

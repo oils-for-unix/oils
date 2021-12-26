@@ -305,7 +305,7 @@ class Read(vm._Builtin):
         with alloc.ctx_Location(arena, source.Stdin('')):
           tokens = qsn_native.Parse(lexer)
       except error.Parse as e:
-        ui.PrettyPrintError(e, arena)
+        self.errfmt.PrettyPrintError(e)
         return 1
       tmp = [word_compile.EvalCStringToken(t) for t in tokens]
       line = ''.join(tmp)

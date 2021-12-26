@@ -91,8 +91,8 @@ def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
     comp_lookup.RegisterName('slowc', {}, C1)
 
 
-def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev):
-  # type: (process.FdState, str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator) -> None
+def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
+  # type: (process.FdState, str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator, ui.ErrorFormatter) -> None
 
   # Right now this is called when the shell is interactive.  (Maybe it should
   # be called on login_shel too.)
@@ -121,7 +121,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev):
 
   with alloc.ctx_Location(arena, source.SourcedFile(rc_path)):
     # TODO: handle status, e.g. 2 for ParseError
-    status = main_loop.Batch(cmd_ev, rc_c_parser, arena)
+    status = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
   f.close()
 
@@ -465,7 +465,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # Initialize builtins that depend on evaluators
   #
 
-  unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, parse_ctx, arith_ev)
+  unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, parse_ctx, arith_ev,
+                                          errfmt)
   vm.InitUnsafeArith(mem, word_ev, unsafe_arith)
 
   builtins[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx,
@@ -570,7 +571,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     # NOTE: called AFTER _InitDefaultCompletions.
     with state.ctx_ThisDir(mem, rc_path):
       try:
-        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
+        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
       except util.UserExit as e:
         return e.status
 
@@ -634,13 +635,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     # NOTE: called AFTER _InitDefaultCompletions.
     with state.ctx_ThisDir(mem, rc_path):
       try:
-        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
+        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
       except util.UserExit as e:
         return e.status
 
     line_reader.Reset()  # After sourcing startup file, render $PS1
 
-    prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev)
+    prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)
     try:
       status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
                                      prompt_plugin, errfmt)
@@ -676,7 +677,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
     with state.ctx_ThisDir(mem, script_name):
       try:
-        status = main_loop.Batch(cmd_ev, c_parser, arena,
+        status = main_loop.Batch(cmd_ev, c_parser, errfmt,
                                  cmd_flags=cmd_eval.IsMainProgram)
       except util.UserExit as e:
         status = e.status

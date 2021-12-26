@@ -234,36 +234,6 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
   f.write('%s:%d: %s%s\n' % (source_str, line_num, prefix, msg))
 
 
-def _pp(err, arena, prefix):
-  # type: (_ErrorWithLocation, Arena, str) -> None
-  """
-  Called by free function PrettyPrintError and method PrettyPrintError.  This
-  is a HACK for mycpp translation.  C++ can't find a free function
-  PrettyPrintError() when called within a METHOD of the same name.
-  """
-  msg = err.UserErrorString()
-  span_id = word_.SpanIdFromError(err)
-
-  # TODO: Should there be a special span_id of 0 for EOF?  runtime.NO_SPID
-  # means there is no location info, but 0 could mean that the location is EOF.
-  # So then you query the arena for the last line in that case?
-  # Eof_Real is the ONLY token with 0 span, because it's invisible!
-  # Well Eol_Tok is a sentinel with a span_id of runtime.NO_SPID.  I think
-  # that is OK.
-  # Problem: the column for Eof could be useful.
-
-  _PrintWithSpanId(prefix, msg, span_id, arena, True)
-
-
-def PrettyPrintError(err, arena, prefix=''):
-  # type: (_ErrorWithLocation, Arena, str) -> None
-  """
-  Args:
-    prefix: e.g. fatal, warning, errexit
-  """
-  _pp(err, arena, prefix)
-
-
 # TODO:
 # - ColorErrorFormatter
 # - BareErrorFormatter?  Could just display the foo.sh:37:8: and not quotation.
@@ -346,11 +316,19 @@ class ErrorFormatter(object):
     Unlike other methods, this doesn't use the CurrentLocation() fallback.
     That only applies to builtins; instead we check e.HasLocation() at a higher
     level, in CommandEvaluator.
-
-    Also ui.PrettyPrintError() is a free function and doesn't have access to
-    the current location.
     """
-    _pp(err, self.arena, prefix)
+    msg = err.UserErrorString()
+    span_id = word_.SpanIdFromError(err)
+
+    # TODO: Should there be a special span_id of 0 for EOF?  runtime.NO_SPID
+    # means there is no location info, but 0 could mean that the location is EOF.
+    # So then you query the arena for the last line in that case?
+    # Eof_Real is the ONLY token with 0 span, because it's invisible!
+    # Well Eol_Tok is a sentinel with a span_id of runtime.NO_SPID.  I think
+    # that is OK.
+    # Problem: the column for Eof could be useful.
+
+    _PrintWithSpanId(prefix, msg, span_id, self.arena, True)
 
   def PrintErrExit(self, err, pid):
     # type: (_ErrorWithLocation, int) -> None
@@ -362,10 +340,9 @@ class ErrorFormatter(object):
     prefix = 'errexit PID %d: ' % pid
     #self.PrettyPrintError(err, prefix=prefix)
 
-    if 1:
-      msg = err.UserErrorString()
-      span_id = word_.SpanIdFromError(err)
-      _PrintWithSpanId(prefix, msg, span_id, self.arena, err.show_code)
+    msg = err.UserErrorString()
+    span_id = word_.SpanIdFromError(err)
+    _PrintWithSpanId(prefix, msg, span_id, self.arena, err.show_code)
 
 
 def PrintAst(node, flag):
