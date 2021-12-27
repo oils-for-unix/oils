@@ -107,9 +107,10 @@ class _FdFrame(object):
 
 
 class FdState(object):
-  """This is for the current process, as opposed to child processes.
-
-  For example, you can do 'myfunc > out.txt' without forking.
+  """File descriptor state for the current process.
+  
+  For example, you can do 'myfunc > out.txt' without forking.  Child processes
+  inherit our state.
   """
   def __init__(self, errfmt, job_state, mem, tracer, waiter):
     # type: (ErrorFormatter, JobState, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
@@ -483,7 +484,6 @@ class FdState(object):
 
 
 class ChildStateChange(object):
-
   def __init__(self):
     # type: () -> None
     """Empty constructor for mycpp."""
@@ -533,6 +533,8 @@ class StdoutToPipe(ChildStateChange):
 
 
 class ExternalProgram(object):
+  """The capability to execute an external program like 'ls'. """
+
   def __init__(self,
                hijack_shebang,  # type: str
                fd_state,  # type: FdState
@@ -583,9 +585,6 @@ class ExternalProgram(object):
             pass
         finally:
           f.close()
-
-    # TODO: If there is an error, like the file isn't executable, then we should
-    # exit, and the parent will reap it.  Should it capture stderr?
 
     try:
       posix.execve(argv0_path, argv, environ)

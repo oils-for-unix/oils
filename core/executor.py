@@ -241,8 +241,12 @@ class ShellExecutor(vm._Executor):
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
       status = p.RunWait(self.waiter, trace.External(cmd_val.argv))
-      cmd_st.show_code = True  # this is a "leaf" for errors
+
+      # this is close to a "leaf" for errors
+      # problem: permission denied EACCESS prints duplicate messages
       # TODO: add message command 'ls' failed
+      cmd_st.show_code = True
+
       return status
 
     self.tracer.OnExec(cmd_val.argv)

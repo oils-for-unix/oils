@@ -170,6 +170,7 @@ class SpecBuilder(object):
         # directory, and external commands in $PATH.
 
         actions.append(_FixedWordsAction(consts.BUILTIN_NAMES))
+        # TODO: Fix bug #1064.  These should be dynamic.
         actions.append(_FixedWordsAction(list(self.parse_ctx.aliases)))
         actions.append(_FixedWordsAction(list(cmd_ev.procs)))
         actions.append(_FixedWordsAction(lexer_def.OSH_KEYWORD_NAMES))
