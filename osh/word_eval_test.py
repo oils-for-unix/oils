@@ -14,6 +14,7 @@ import unittest
 
 from core import error
 from core import test_lib
+from osh import word_eval
 from osh.cmd_parse_test import assertParseSimpleCommand
 
 import libc
@@ -35,30 +36,6 @@ def InitEvaluator():
 class RegexTest(unittest.TestCase):
 
   def testSplitAssignArg(self):
-    from frontend import lexer_def
-
-    # Complex ERE to handle +=.
-    #
-    # Use libc because we want submatch extraction, which I haven't used in
-    # re2c.
-
-    pat = '^(' + lexer_def.VAR_NAME_RE + ')((=|\+=)(.*))?$'
-
-    # Eggex:
-    # must use < > for grouping because there is no non-capturing group.
-    #
-    # VarName = /
-    #   [a-z A-Z _]
-    #   [a-z A-Z 0-9 _]*
-    # /
-    #
-    # SplitArg = /
-    #   %begin
-    #   < VarName >
-    #   < < '=' | '+=' > < dot* > > ?
-    #   %end
-    # /
-
     CASES = [
         ('s',       ['s', '', '']),
         ('value',   ['value', '', '']),
@@ -76,7 +53,7 @@ class RegexTest(unittest.TestCase):
     ]
 
     for s, expected in CASES:
-      actual = libc.regex_match(pat, s)
+      actual = libc.regex_match(word_eval.ASSIGN_ARG_RE, s)
       if actual is None:
         self.assertEqual(expected, actual)  # no match
       else:

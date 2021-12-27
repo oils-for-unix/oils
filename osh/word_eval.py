@@ -46,6 +46,8 @@ from osh import word_compile
 if mylib.PYTHON:
   from oil_lang import objects
 
+import libc
+
 from typing import Optional, Tuple, List, Dict, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -120,44 +122,52 @@ def GetArrayItem(strs, index):
   return s
 
 
+# Use libc to parse NAME, NAME=value, and NAME+=value.  We want submatch
+# extraction, but I haven't used that in re2c, and we would need a new kind of
+# binding.
+#
+ASSIGN_ARG_RE = '^([a-zA-Z_][a-zA-Z0-9_]*)((=|\+=)(.*))?$'
+
+# Eggex equivalent:
+#
+# VarName = /
+#   [a-z A-Z _ ]
+#   [a-z A-Z 0-9 _ ]*
+# /
+#
+# SplitArg = /
+#   %begin
+#   < VarName >
+#   < < '=' | '+=' > < dot* > > ?
+#   %end
+# /
+# Note: must use < > for grouping because there is no non-capturing group.
+
 def _SplitAssignArg(arg, word_spid):
   # type: (str, int) -> assign_arg
-  """
-  Grammar:
+  """Dynamically parse argument to declare, export, etc.
 
-  VAR_NAME_RE (('=' | '+=') .*)?
+  This is a fallback to the static parsing done below.
   """
-  # TODO: Might be better to lex this at runtime, reusing the Lit_VarLike
-  # pattern.  It does all the same validation.
+  # Note: it would be better to cache regcomp(), but we don't have an API for
+  # that, and it probably isn't a bottleneck now
+  m = libc.regex_match(ASSIGN_ARG_RE, arg)
+  if m is None:
+    e_die("Assignment builtin expected NAME=value, got %r", arg, span_id=word_spid)
 
-  left_end = arg.find('+')  # first char in += because of mycpp lib limitation
-  if left_end == -1:
-    left_end = arg.find('=')
-    right_begin = left_end + 1
+  var_name = m[1]
+  # m[2] is used for grouping; ERE doesn't have non-capturing groups
+
+  op = m[3]
+  if len(op):  # declare NAME=
+    val = value.Str(m[4])  # type: Optional[value_t]
+    append = op[0] == '+'
+  else:  # declare NAME
+    val = None  # no operator
     append = False
-  else:
-    n = len(arg)
-    if left_end < n - 1 and arg[left_end + 1] == '=':
-      right_begin = left_end + 2  # after =
-      append = True
-    else:
-      e_die("Bad assign arg %r", arg, span_id=word_spid)
-
-  if left_end == -1 :
-    if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
-      left = arg
-      right = None  # type: Optional[value__Str]
-    else:
-      e_die("Invalid variable name %r", arg, span_id=word_spid)
-  else:
-    left = arg[:left_end]
-    if match.IsValidVarName(left):
-      right = value.Str(arg[right_begin:])
-    else:
-      e_die("Invalid variable name %r", left, span_id=word_spid)
 
   #log('ret %s', assign_arg(left, right, append, word_spid))
-  return assign_arg(left, right, append, word_spid)
+  return assign_arg(var_name, val, append, word_spid)
 
 
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().
