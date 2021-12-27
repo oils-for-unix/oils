@@ -122,18 +122,26 @@ def GetArrayItem(strs, index):
 
 def _SplitAssignArg(arg, word_spid):
   # type: (str, int) -> assign_arg
+  """
+  Grammar:
 
-  # TODO: Might be better to lex this at runtimem, reusing the Lit_VarLike
+  VAR_NAME_RE (('=' | '+=') .*)?
+  """
+  # TODO: Might be better to lex this at runtime, reusing the Lit_VarLike
   # pattern.  It does all the same validation.
 
-  left_end = arg.find('+=')
+  left_end = arg.find('+')  # first char in += because of mycpp lib limitation
   if left_end == -1:
     left_end = arg.find('=')
     right_begin = left_end + 1
     append = False
   else:
-    right_begin = left_end + 2  # after =
-    append = True
+    n = len(arg)
+    if left_end < n - 1 and arg[left_end + 1] == '=':
+      right_begin = left_end + 2  # after =
+      append = True
+    else:
+      e_die("Bad assign arg %r", arg, span_id=word_spid)
 
   if left_end == -1 :
     if match.IsValidVarName(arg):  # local foo   # foo becomes undefined

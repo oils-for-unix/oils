@@ -16,6 +16,8 @@ from core import error
 from core import test_lib
 from osh.cmd_parse_test import assertParseSimpleCommand
 
+import libc
+
 
 def InitEvaluator():
   word_ev = test_lib.InitWordEvaluator()
@@ -28,6 +30,60 @@ def InitEvaluator():
 
   word_ev.mem.SetArgv(['x', 'foo', 'spam=eggs'])
   return word_ev
+
+
+class RegexTest(unittest.TestCase):
+
+  def testSplitAssignArg(self):
+    from frontend import lexer_def
+
+    # Complex ERE to handle +=.
+    #
+    # Use libc because we want submatch extraction, which I haven't used in
+    # re2c.
+
+    pat = '^(' + lexer_def.VAR_NAME_RE + ')((=|\+=)(.*))?$'
+
+    # Eggex:
+    # must use < > for grouping because there is no non-capturing group.
+    #
+    # VarName = /
+    #   [a-z A-Z _]
+    #   [a-z A-Z 0-9 _]*
+    # /
+    #
+    # SplitArg = /
+    #   %begin
+    #   < VarName >
+    #   < < '=' | '+=' > < dot* > > ?
+    #   %end
+    # /
+
+    CASES = [
+        ('s',       ['s', '', '']),
+        ('value',   ['value', '', '']),
+
+        ('s!',      None),
+        ('!',       None),
+        ('=s',      None),
+
+        ('s=',      ['s', '=', '']),
+        ('s=val',   ['s', '=', 'val']),
+        ('s=+',     ['s', '=', '+']),
+
+        ('s+=val!', ['s', '+=', 'val!']),
+        ('s+=+',    ['s', '+=', '+']),
+    ]
+
+    for s, expected in CASES:
+      actual = libc.regex_match(pat, s)
+      if actual is None:
+        self.assertEqual(expected, actual)  # no match
+      else:
+        _, var_name, _, op, value = actual
+        self.assertEqual(expected[0], var_name)
+        self.assertEqual(expected[1], op)
+        self.assertEqual(expected[2], value)
 
 
 class WordEvalTest(unittest.TestCase):
