@@ -35,7 +35,6 @@ from core import ui
 from qsn_ import qsn
 from core.pyerror import log, e_die
 from frontend import consts
-from frontend import match
 from mycpp.mylib import tagswitch
 from mycpp import mylib
 from osh import braces
