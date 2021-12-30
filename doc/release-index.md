@@ -140,16 +140,16 @@ More docs:
 ## Metrics
 
 - Lines of source, counted in different ways:
-  - [overview](metrics.wwz/line-counts/overview.html).  The whole Oil repo organized by
+  - [overview](pub/metrics.wwz/line-counts/overview.html).  The whole Oil repo organized by
     type of source file.
-  - [for-translation](metrics.wwz/line-counts/for-translation.html).
+  - [for-translation](pub/metrics.wwz/line-counts/for-translation.html).
     An overview of the "compile engineer" project.
-  - [osh-cloc](metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
+  - [osh-cloc](pub/metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
     libraries, as measured by the [cloc][] tool.
-  - [oil-cpp](metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
+  - [oil-cpp](pub/metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
     `oil-native` tarball.
 - `oil-native`.
-  - [overview](metrics.wwz/oil-native/overview.txt) - Binary code size reported
+  - [overview](pub/metrics.wwz/oil-native/overview.txt) - Binary code size reported
     by [Bloaty][].
 
 
@@ -202,23 +202,23 @@ the release.
 
 ### OPy / OVM Metrics
 
-- [OPy Line Counts](metrics.wwz/line-counts/opy.txt).
+- [OPy Line Counts](pub/metrics.wwz/line-counts/opy.txt).
 - Lines of dependencies:
-  - [pydeps](metrics.wwz/line-counts/pydeps.txt).  Oil code plus the Python
+  - [pydeps](pub/metrics.wwz/line-counts/pydeps.txt).  Oil code plus the Python
     standard library.
-  - [nativedeps](metrics.wwz/line-counts/nativedeps.txt).  Oil code plus a
+  - [nativedeps](pub/metrics.wwz/line-counts/nativedeps.txt).  Oil code plus a
     slice of CPython.
 - Bytecode Metrics
-  - [overview](metrics.wwz/bytecode/overview.txt) - Compare OPy vs. CPython.
-  - [oil-with-opy](metrics.wwz/bytecode/oil-with-opy.txt) - Oil compiled with
+  - [overview](pub/metrics.wwz/bytecode/overview.txt) - Compare OPy vs. CPython.
+  - [oil-with-opy](pub/metrics.wwz/bytecode/oil-with-opy.txt) - Oil compiled with
     OPy.
-  - [oil-with-cpython](metrics.wwz/bytecode/oil-with-cpython.txt) - Oil
+  - [oil-with-cpython](pub/metrics.wwz/bytecode/oil-with-cpython.txt) - Oil
     compiled with CPython (for comparison).
-  - [src-bin-ratio-with-opy](metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
+  - [src-bin-ratio-with-opy](pub/metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
     How big is the compiled output?
 - OVM / CPython
-  - [overview](metrics.wwz/ovm/overview.txt) - An analysis of GCC's
+  - [overview](pub/metrics.wwz/ovm/overview.txt) - An analysis of GCC's
     compilation of [OVM][] (a subset of CPython).  [Bloaty][] provides the
     underlying data.
-  - [cpython-defs/overview](metrics.wwz/cpython-defs/overview.txt) - We try to
+  - [cpython-defs/overview](pub/metrics.wwz/cpython-defs/overview.txt) - We try to
     ship as little of CPython as possible, and this is what's left.

@@ -470,8 +470,11 @@ compress() {
   time zip -r -q $out .  # recursive, quiet
   popd
 
+  # NOTE: must be /pub/metrics.wwz so that relative URLs like
+  # ../../../web/line-counts.css work.  The Soil UI also relies on such
+  # relative URLs.
   log "--- metrics"
-  local out="$root/metrics.wwz"
+  local out="$root/pub/metrics.wwz"
   pushd _tmp/metrics
   time zip -r -q $out .  # recursive, quiet
   popd
@@ -595,7 +598,7 @@ add-date-and-links() {
 
 build-tree() {
   local root=_release/VERSION
-  mkdir -p $root/{doc,test}
+  mkdir -p $root/{doc,test,pub}
 
   # Metadata
   cp -v _build/release-date.txt oil-version.txt $root
