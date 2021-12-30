@@ -39,6 +39,7 @@ oil-python-sources() {
   # mycpp: exclude Python 3 sources
   find $repo_root \
     -name _tmp -a -prune -o \
+    -name _cache -a -prune -o \
     -name _chroot -a -prune -o \
     -name _clone -a -prune -o \
     -name _deps -a -prune -o \

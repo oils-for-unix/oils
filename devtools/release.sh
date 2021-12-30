@@ -190,8 +190,7 @@ _dev-build() {
 }
 
 _release-build() {
-  build/prepare.sh configure
-  build/prepare.sh build-python
+  # NOTE: soil/deps-tar.sh {configre,build}-python is assumed
 
   # Build the oil tar
   $0 oil
@@ -346,7 +345,7 @@ build-and-test() {
   # TODO: Log this whole thing?  Include logs with the /release/ page?
 
   # Before doing anything
-  test/lint.sh travis
+  test/lint.sh soil-run
 
   _clean
   _dev-build
