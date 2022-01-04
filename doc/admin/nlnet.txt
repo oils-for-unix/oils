@@ -1,0 +1,132 @@
+
+Thematic Call: Open Call
+
+
+Andy Chu
+andy@oilshell.org
+<redacted>
+Independent
+USA
+
+Oil Shell
+https://www.oilshell.org/
+
+> Abstract: Can you explain the whole project and its expected outcome(s)
+
+Oil is a new Unix shell -- it's our upgrade path from GNU bash to a better language and runtime. It's also for Python and JavaScript users who avoid shell.
+
+It has run thousands of lines of unmodified bash programs for years, and has many enhancements, but the runtime is too SLOW.
+
+I'm applying to fund a "compiler engineer" to finish translating the code from statically typed Python to C++.  This will let it match the speed of bash and existing shells.
+
+This work is already HALF DONE (passing ~1100 of 1900 spec tests), and low risk / high reward.  When it's done, we'll have a compatible shell with many new features that everyone can use immediately!  
+
+Four Features That Justify a New Unix Shell: http://www.oilshell.org/blog/2020/10/osh-features.html
+
+1. Reliable Error Handling
+2. Safe Processing of User-Supplied Data
+3. Eliminating Quoting Hell
+4. Static Parsing Enables Better Error Messages and Tools
+
+In addition, it's written in a high level language an has an open development process.
+
+It's relevant to these calls:
+
+- User-Operated Internet - A mess of shell scripts is the first thing I ran into while trying to host my own Internet services!  This took me years to learn, and I've heard the same from others.  Oil cleans up shell's sharp edges, and adds features.
+- NGI Assure - All Linux distros and Unix package managers are big piles of shell scripts!  Oil is different because it's written like programming language, and doesn't confuse code and data (which is what led to the disruptive 2014 ShellShock vulnerability).  Most shells are written like textual interface that evolved haphazardly into a language.
+
+I will find the compiler engineer with an open call on my blog, and through my professional contacts (Google, Electronic Arts).
+
+Project FAQ: http://www.oilshell.org/blog/2021/01/why-a-new-shell.html
+
+
+> Have you been involved with projects or organisations relevant to this project before? And if so, can you tell us a bit about your contributions?
+
+I created this project in 2016 and have been its lead developer and designer since then.
+
+I write a blog about the project, which regularly has tens of thousands of readers: https://www.oilshell.org/blog/
+
+Comments from Hacker News, Reddit, lobste.rs, etc.: http://www.oilshell.org/blog/2018/01/31.html
+
+I also review all contributions.  Github tells me that there have been 49 total contributors: https://github.com/oilshell/oil
+
+I've released it regularly since 2017: https://www.oilshell.org/releases.html
+
+It's packaged in many distros and has users, despite being slow.
+
+
+Requested Amount: 50,000 Euros
+
+> Explain what the requested budget will be used for?
+> Does the project have other funding sources, both past and present?
+> (If you want, you can in addition attach a budget at the bottom of the form)
+
+I'll use the 50,000 euros to partially fund a compiler engineer position.
+
+This task can benefit from a dedicated and experienced professional.  I've done half of it  myself, writing ~10K lines of working code, so I know it's feasible.  However, it's going too slowly and I'd like to accelerate it with the help of a specialist.
+
+See rough progress assessments on the project in general here: http://www.oilshell.org/blog/2021/12/backlog-assess.html
+
+The project has not had funding before.  However I plan to raise money via my blog to cover the remainder of the salary.
+
+None of this money will go to me personally.  (Although I work on Oil full time, my living expenses are covered by my savings.)
+
+Important: This funding will cover the "OSH language" -- the compatible shell with many enhancements.  If the project is accepted and succeeds, I will apply to fund the "Oil language" in the future.  OSH is much closer to "done" than Oil.  (The whole project is called Oil, but there is one part called "the Oil language".)
+
+I've tallied line counts for the compiler engineer to help them assess the amount of work:
+
+https://www.oilshell.org/release/0.9.6/pub/metrics.wwz/line-counts/for-translation.html
+
+- ~4300 lines in the prototype of the translator
+- ~1800 lines in old mycpp runtime
+- ~3100 lines in new garbage collected runtime
+- ~2300 lines of other hand-written C++ code
+- ~2200 lines of mycpp testdata
+
+(An experienced engineer can "own" this amount of code in 6-12 months of full-time work.)
+
+Compare your own project with existing or historical efforts.
+
+I made a large list of alternative shells: https://github.com/oilshell/oil/wiki/Alternative-Shells
+
+which was circulated widely: https://news.ycombinator.com/item?id=26121592
+
+Oil is the ONLY project that's a compatible upgrade from bash, and arguably the only one that's an upgrade from POSIX shell.
+
+bash is the most popular shell in the world, and we need a successor to it, or at least an independent implementation.  Every Linux distro is a big pile of shell scripts!
+
+Nix is interested in using OSH, but it needs to be faster: https://github.com/NixOS/rfcs/pull/99#
+
+
+> What are significant technical challenges you expect to solve during the project, if any?)
+
+From a compiler perspective, the project is simple and conservative, e.g. much simpler than say PyPy.  It will probably end up around 15K to 20K lines of code in total (not 200K like many compilers).
+
+Most of the difficulty / time spent has been in debugging the garbage collector in C++.
+
+
+> Describe the ecosystem of the project, and how you will engage with relevant actors and promote the outcomes?
+
+The project already has attention from highly technical users, and is packaged in several distros.  The blog has thousands of regular readers.
+
+It needs more documentation to reach more people.  Having the help of a compiler engineer will allow me to focus on documentation.
+
+There have also been a few events:
+
+- January 2019: BayLISA Talk on Oil (90 minutes).  Very well received
+  - https://www.oilshell.org/blog/2019/01/18.html
+- June 2019: Invited AMA (group interview) on reddit/r/linux with 120 comments: 
+  - http://www.oilshell.org/blog/2019/06/17.html
+- June 2021: HotOS Panel on Unix shell
+  - http://www.oilshell.org/blog/2021/06/hotos-shell-panel.html
+
+I hope the project will grow, and more events will be justified.
+
+I've also talked with Python creator Guido van Rossum about the project, and will ask him for leads on finding the right compiler engineer:
+
+https://twitter.com/gvanrossum/status/995862193609551872
+
+"Amazing. A bash implementation in Python, by my ex-coworker (at Google) Andy Chu."
+
+
+
