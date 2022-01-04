@@ -15,7 +15,7 @@ from frontend import lexer_def
 from frontend import option_def
 from core import state
 
-from typing import Dict, List, Iterator, cast, TYPE_CHECKING
+from typing import Dict, List, Iterator, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.completion import Lookup, OptionState, Api, UserSpec
@@ -116,6 +116,23 @@ class _FixedWordsAction(completion.CompletionAction):
         yield name
 
 
+class _DynamicDictAction(completion.CompletionAction):
+  """For completing from proc and aliases dicts, which are mutable.
+
+  Note: this is the same as _FixedWordsAction now, but won't be when the code
+  is statically typed!
+  """
+  def __init__(self, d):
+    # type: (Dict[str, Any]) -> None
+    self.d = d
+
+  def Matches(self, comp):
+    # type: (Api) -> Iterator[str]
+    for name in sorted(self.d):
+      if name.startswith(comp.to_complete):
+        yield name
+
+
 class SpecBuilder(object):
 
   def __init__(self,
@@ -158,7 +175,7 @@ class SpecBuilder(object):
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
     for name in arg.actions:
       if name == 'alias':
-        a = _FixedWordsAction(list(self.parse_ctx.aliases))  # type: completion.CompletionAction
+        a = _DynamicDictAction(self.parse_ctx.aliases)  # type: completion.CompletionAction
 
       elif name == 'binding':
         # TODO: Where do we get this from?
@@ -170,9 +187,8 @@ class SpecBuilder(object):
         # directory, and external commands in $PATH.
 
         actions.append(_FixedWordsAction(consts.BUILTIN_NAMES))
-        # TODO: Fix bug #1064.  These should be dynamic.
-        actions.append(_FixedWordsAction(list(self.parse_ctx.aliases)))
-        actions.append(_FixedWordsAction(list(cmd_ev.procs)))
+        actions.append(_DynamicDictAction(self.parse_ctx.aliases))
+        actions.append(_DynamicDictAction(cmd_ev.procs))
         actions.append(_FixedWordsAction(lexer_def.OSH_KEYWORD_NAMES))
         actions.append(completion.FileSystemAction(exec_only=True))
 
@@ -186,7 +202,7 @@ class SpecBuilder(object):
         a = completion.FileSystemAction()
 
       elif name == 'function':
-        a = _FixedWordsAction(list(cmd_ev.procs))
+        a = _DynamicDictAction(cmd_ev.procs)
 
       elif name == 'job':
         a = _FixedWordsAction(['jobs-not-implemented'])
