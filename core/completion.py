@@ -526,7 +526,7 @@ class VariablesAction(CompletionAction):
 class ExternalCommandAction(CompletionAction):
   """Complete commands in $PATH.
 
-  This is PART of compge -A command.
+  This is PART of compgen -A command.
   """
   def __init__(self, mem):
     # type: (Mem) -> None
