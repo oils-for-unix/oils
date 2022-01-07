@@ -61,37 +61,42 @@ opy-dev-snippet() {
   sh-snippet opy_.py $action
 }
 
-make-bin-links() {
-  # bin/ is for running with the Python interpreter.  _bin/ is for running with
-  # OVM app bundles.
-  mkdir -p bin _bin
+make-bin-stubs() {
+  ### bin/ is for running with the Python interpreter.
+  mkdir -p bin
 
   for link in "${OIL_SYMLINKS[@]}"; do
-    set -x
-    whoami
-    ls -l bin/$link
-
     # bin/ shell wrapper
     oil-dev-snippet $link > bin/$link
     chmod +x bin/$link
     echo "Wrote bin/$link"
-
-    # _bin/ symlink
-    ln -s -f --verbose oil.ovm _bin/$link
   done
 
   for link in "${OPY_SYMLINKS[@]}"; do
     opy-dev-snippet $link > bin/$link
     chmod +x bin/$link
     echo "Wrote bin/$link"
-
-    # _bin/ symlink
-    ln -s -f --verbose opy.ovm _bin/$link
   done
 
   make-osh-dbg
 
   make-osh-eval
+}
+
+make-bin-links() {
+  ### _bin/ is for running with OVM app bundles.
+
+  mkdir -p _bin
+
+  for link in "${OIL_SYMLINKS[@]}"; do
+    # _bin/ symlink
+    ln -s -f --verbose oil.ovm _bin/$link
+  done
+
+  for link in "${OPY_SYMLINKS[@]}"; do
+    # _bin/ symlink
+    ln -s -f --verbose opy.ovm _bin/$link
+  done
 }
 
 "$@"
