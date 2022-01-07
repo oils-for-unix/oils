@@ -181,8 +181,8 @@ EOF
 # Reuse ovm-tarball container
 app-tests-tasks() {
   cat <<EOF
-yajl              build/dev.sh yajl-release               -
 dev-all           build/dev.sh all                        -
+yajl              build/dev.sh yajl-release               -
 ble-clone         test/ble.sh clone                       -
 ble-build         test/ble.sh build                       -
 ble-test          test/ble.sh run-tests                   -
