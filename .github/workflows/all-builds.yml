@@ -134,6 +134,33 @@ jobs:
           cd $REPO_ROOT
           soil/github-actions.sh publish-html
 
+  app-tests:
+    runs-on: ubuntu-20.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: mount-perms
+        run: |
+          soil/host-shim.sh mount-perms $REPO_ROOT
+
+      - name: app-tests
+        run: |
+          cd $REPO_ROOT
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT app-tests
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          cd $REPO_ROOT
+          soil/github-actions.sh publish-html
+
   cpp:
     runs-on: ubuntu-18.04
     env:

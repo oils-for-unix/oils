@@ -29,8 +29,13 @@ run-job-uke() {
   local repo_root=$2
   local task=$3  # e.g. dev-minimal
 
-  # docker.io is the namespace for hub.docker.com
-  local image="docker.io/oilshell/soil-$task"
+  if test "$task" = 'app-tests'; then
+    # Hack to reuse this container for build/dev.sh all
+    local image="docker.io/oilshell/soil-ovm-tarball"
+  else
+    # docker.io is the namespace for hub.docker.com
+    local image="docker.io/oilshell/soil-$task"
+  fi
 
   local metadata_dir=$repo_root/_tmp/soil
 

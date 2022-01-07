@@ -178,9 +178,9 @@ test-tarball      build/test.sh oil-tar                  -
 EOF
 }
 
+# Reuse ovm-tarball container
 app-tests-tasks() {
   cat <<EOF
-tarball-deps      devtools/release.sh tarball-build-deps  -
 yajl              build/dev.sh yajl-release               -
 dev-all           build/dev.sh all                        -
 ble-clone         test/ble.sh clone                       -
