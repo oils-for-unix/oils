@@ -67,6 +67,10 @@ make-bin-links() {
   mkdir -p bin _bin
 
   for link in "${OIL_SYMLINKS[@]}"; do
+    set -x
+    whoami
+    ls -l bin/$link
+
     # bin/ shell wrapper
     oil-dev-snippet $link > bin/$link
     chmod +x bin/$link
