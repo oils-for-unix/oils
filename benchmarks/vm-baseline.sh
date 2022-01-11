@@ -35,8 +35,9 @@ measure() {
     local sh_name=$(basename $sh_path)
 
     # There is a race condition on the status but sleep helps.
+    # Bug fix: ALIVE to prevent exec optimization in OSH and zsh.
     local out="$out_dir/${sh_name}-${shell_hash}.txt"
-    $sh_path -c 'sleep 0.001; cat /proc/$$/status' > $out
+    $sh_path -c 'sleep 0.001; cat /proc/$$/status; echo ALIVE' > $out
   done
 
   echo
