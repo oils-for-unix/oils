@@ -629,3 +629,16 @@ argv.py ${d['0']} ${d['foo']} ${d['bar']}
 ## N-I dash/ash/yash/mksh stdout-json: ""
 
 ## N-I zsh stdout: ['1', 'hello', 'world']
+
+#### [compat_array] ${alpha@a}
+declare -A alpha=(['1']=2)
+echo type=${alpha@a}
+shopt -s compat_array
+echo type=${alpha@a}
+## STDOUT:
+type=A
+type=A
+## END
+## N-I mksh/zsh status: 1
+## N-I dash/ash/yash status: 2
+## N-I dash/ash/yash/mksh/zsh stdout-json: ""
