@@ -87,9 +87,6 @@ manifest() {
     {tea}>_tmp/spec/SUITE-tea.txt \
     {both}>_tmp/spec/SUITE-osh-oil.txt
 
-  # WORKAROUND for now
-  grep -v redirect _tmp/spec/SUITE-osh.txt > _tmp/spec/SUITE-osh-cpp.txt
-
   #ls -l /proc/$$/fd
 
   # Used to use this obscure bash syntax.  How do we do this in Oil?  Probably

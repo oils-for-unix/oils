@@ -84,10 +84,7 @@ all() {
 
   # this is like test/spec.sh {oil,osh}-all
 
-  # Hack: got rid of hanging 'redirect' suite in spec-runner.sh manifest
-  # TODO: fix that and switch back to 'osh' suite
-  local suite=osh-cpp
-  test/spec-runner.sh all-parallel $suite "$@" || true  # OK if it fails
+  test/spec-runner.sh all-parallel osh "$@" || true  # OK if it fails
 
   html-summary
 }
