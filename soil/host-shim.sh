@@ -29,9 +29,13 @@ run-job-uke() {
   local repo_root=$2
   local task=$3  # e.g. dev-minimal
 
+  local -a flags=()
+
   if test "$task" = 'app-tests'; then
     # Hack to reuse this container for build/dev.sh all
     local image="docker.io/oilshell/soil-ovm-tarball"
+    # allocate pseudo TTY, otherwise fails on opening /dev/tty 
+    flags=( -t )
   else
     # docker.io is the namespace for hub.docker.com
     local image="docker.io/oilshell/soil-$task"
@@ -46,7 +50,7 @@ run-job-uke() {
   command time -p -o $metadata_dir/image-pull-time.txt \
     $docker pull $image
 
-  $docker run \
+  $docker run "${flags[@]}" \
       --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
       $image \
       sh -c "cd /home/uke/oil; soil/worker.sh run-$task"
