@@ -41,11 +41,20 @@ shopt -s eval_unsafe_arith
 y=a=123 n=a=321
 echo $((1?(y):(n))):$((a))
 echo $((0?(y):(n))):$((a))
-## stdout-json: "123:123\n321:321\n"
-## BUG ash stdout-json: "123:123\n321:123\n"
+## STDOUT:
+123:123
+321:321
+## END
+## BUG ash STDOUT:
+123:321
+321:321
+## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
-## N-I yash stdout-json: "a=123:0\na=321:0\n"
+## N-I yash STDOUT: 
+a=123:0
+a=321:0
+## END
 
 #### recursive arith: side effects
 # In Zsh and Busybox sh, the side effect of inner arithmetic

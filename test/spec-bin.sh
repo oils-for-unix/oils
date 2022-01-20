@@ -211,26 +211,18 @@ download-original-source() {
   _wget https://downloads.sourceforge.net/project/zsh/zsh/5.3.1/zsh-5.3.1.tar.xz
 
   _wget https://osdn.net/dl/yash/yash-2.49.tar.xz
+
+  _wget https://www.busybox.net/downloads/busybox-1.35.0.tar.bz2
 }
 
 publish-mirror() {
   ### Mirror the source tarballs at oilshell.org/blob/spec-bin
   local user=$1
-  local host=$user.org
-
   local file=$2
 
-  local dest=$user@$host:oilshell.org/blob/spec-bin
+  local dest=$user@oilshell.org:oilshell.org/blob/spec-bin
 
   scp $file $dest
-}
-
-publish-tmp() {
-  local name=$1  # required
-
-  local dest=oilshell.org/share/2018-10-06-tmp/
-  ssh ${name}@${name}.org mkdir -p $dest
-  scp _deps/re2c-1.0.3/re2c ${name}@${name}.org:$dest
 }
 
 all-steps() {

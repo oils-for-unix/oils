@@ -4,7 +4,7 @@
 
 SPEC_JOB=${SPEC_JOB:-survey}
 
-readonly BUSYBOX_NAME='busybox-1.31.1'
+readonly BUSYBOX_NAME='busybox-1.35.0'
 readonly DASH_NAME='dash-0.5.10.2'
 readonly YASH_NAME='yash-2.49'
 
