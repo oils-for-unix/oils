@@ -636,6 +636,10 @@ compile-oil-native() {
 
 compile-oil-native-opt() {
   compile-slice osh_eval '.opt'
+
+  local in=_bin/osh_eval.opt
+  local out=$in.stripped
+  strip -o $out $in
 }
 
 # Demo for the oil-native tarball.
@@ -648,18 +652,16 @@ tarball-demo() {
 
   time compile-slice osh_eval '.opt'
 
-  local in=_bin/osh_eval.opt
-  local out=$in.stripped
-  strip -o $out $in
+  local bin=_bin/osh_eval.opt.stripped
 
-  ls -l $out
+  ls -l $bin
 
   echo
-  echo "You can now run $out.  Example:"
+  echo "You can now run $bin.  Example:"
   echo
 
   set -o xtrace
-  $out -n -c 'echo "hello $name"'
+  $bin -n -c 'echo "hello $name"'
 }
 
 audit-tuple() {
