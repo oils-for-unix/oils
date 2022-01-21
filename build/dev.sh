@@ -237,7 +237,8 @@ oil-cpp() {
   oil-asdl-to-cpp
   arith-parse-cpp-gen
   build/codegen.sh flag-gen-cpp
-  build/mycpp.sh osh-eval  # used to be osh-parse
+
+  build/translate.sh osh-eval  # translate with mycpp
 
   build/native.sh osh-eval-dbg
 
