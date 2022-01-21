@@ -88,33 +88,3 @@ $SH --login -c 'exit 0'
 ## status: 0
 ## OK dash status: 2
 ## OK mksh status: 1
-
-#### $PATH is set if unset at startup
-
-# Get absolute path before changing PATH
-sh=$(which $SH)
-
-old_path=$PATH
-unset PATH
-
-$sh -c 'echo $PATH' > path.txt
-
-PATH=$old_path
-
-# looks like PATH=/usr/bin:/bin for mksh, but more complicated for others
-# cat path.txt
-
-# should contain /usr/bin
-if egrep -q '(^|:)/usr/bin($|:)' path.txt; then
-  echo yes
-fi
-
-# should contain /bin
-if egrep -q '(^|:)/bin($|:)' path.txt ; then
-  echo yes
-fi
-
-## STDOUT:
-yes
-yes
-## END

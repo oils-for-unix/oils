@@ -459,6 +459,11 @@ vars-bash() {
     $BASH $OSH_LIST "$@"
 }
 
+vars-special() {
+  sh-spec spec/vars-special.test.sh --osh-failures-allowed 6 \
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+}
+
 # This is bash/OSH only
 builtin-completion() {
   sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 1 \
@@ -542,11 +547,6 @@ redirect() {
 posix() {
   sh-spec spec/posix.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
-}
-
-special-vars() {
-  sh-spec spec/special-vars.test.sh --osh-failures-allowed 6 \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 introspect() {
