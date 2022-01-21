@@ -90,8 +90,10 @@ all() {
 }
 
 soil-run() {
+
   # Hack, build with GCC because of startup time issue #970
-  CXX=gcc build/mycpp.sh compile-slice-opt
+  # TODO: Use Ninja!
+  CXX=gcc build/mycpp.sh compile-oil-native-opt
 
   # Do less work to start
   # export NUM_SPEC_TASKS=8

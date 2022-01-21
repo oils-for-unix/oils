@@ -124,13 +124,21 @@ mycpp-git       mycpp/deps.sh git-clone               -
 mycpp-pip       mycpp/deps.sh pip-install             -
 build-osh-eval  build/dev.sh oil-cpp                  -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
+compile-osh-eval build/native.sh soil-run             -
 metrics         metrics/source-code.sh write-reports _tmp/metrics/line-counts/index.html
-osh-eval-opt    build/mycpp.sh compile-slice-opt      -
 shell-benchmarks benchmarks/auto.sh soil-run          _tmp/benchmark-data/index.html
 mycpp-examples  mycpp/build.sh examples               mycpp/_ninja/index.html
 parse-errors    test/parse-errors.sh soil-run-cpp     -
 spec-cpp        test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
+
+# Notes on steps that depend on the binary:
+#   compile-osh-eval: compiles a few variant of osh_eval in parallel
+#   shell-benchmarks: uses _bin/osh_eval.opt.stripped
+#   parse-errors: uses _bin/osh_eval.asan
+#   spec-cpp: DUPLICATE work because we don't use Ninja.  Thre is a hack with CXX=gcc.
+#   TODO: do we need GCC and Clang variants, like _bin/osh_eval.{gcc,clang}.* ?
+
 }
 
 

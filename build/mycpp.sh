@@ -213,25 +213,8 @@ mycpp-demo() {
   _tmp/$name
 }
 
-compile-slice() {
-  local name=${1:-osh_eval}
-  # Add -opt to make it opt
-  local suffix=${2:-.dbg}
-
-  shift 2
-
-  mkdir -p _bin
-
-  # Not ready for this yet.  Need list_contains() etc.
-  if test -n "${GC:-}"; then
-    local -a runtime=(mycpp/{gc_heap,mylib2,my_runtime}.cc)
-  else
-    local -a runtime=(mycpp/{gc_heap,mylib}.cc)
-  fi
-
-  # Note: can't use globs here because we have _test.cc
-  time compile _bin/$name$suffix _build/cpp/${name}.cc \
-    "${runtime[@]}" \
+# what osh_eval.cc needs to compile
+readonly -a DEPS_CC=(
     cpp/core_pyos.cc \
     cpp/core_pyutil.cc \
     cpp/frontend_flag_spec.cc \
@@ -253,51 +236,67 @@ compile-slice() {
     cpp/posix.cc \
     cpp/signal_.cc \
     cpp/libc.cc \
-    "$@"
+)
 
-  #2>&1 | tee _tmp/compile.log
-}
+readonly -a GC_RUNTIME=( mycpp/{gc_heap,mylib2,my_runtime}.cc )
 
-compile-slice-opt() {
+readonly -a OLD_RUNTIME=( mycpp/{gc_heap,mylib}.cc )
+
+compile-slice() {
+  ### Build done outside ninja in _bin/
+
   local name=${1:-osh_eval}
-  compile-slice $name '.opt'
+  # Add -opt to make it opt
+  local suffix=${2:-.dbg}
 
-  local opt=_bin/$name.opt
-  local stripped=_bin/$name.opt.stripped 
-  local symbols=_bin/$name.opt.symbols 
+  shift 2
 
-  # As done in the Makefile for Python app bundle
-  strip -o $stripped $opt
+  mkdir -p _bin
 
-  # Move the symbols elsewhere and add a link to them.
-  if command -v objcopy > /dev/null; then
-    objcopy --only-keep-debug $opt $symbols
-    objcopy --add-gnu-debuglink=$symbols $stripped
+  local -a runtime
+  if test -n "${GC:-}"; then
+    # Not ready for this yet.  Need list_contains() etc.
+    runtime=( "${GC_RUNTIME[@]}" )
+  else
+    runtime=( "${OLD_RUNTIME[@]}" )
   fi
+
+  # Note: can't use globs here because we have _test.cc
+  time compile _bin/$name$suffix _build/cpp/${name}.cc \
+    "${runtime[@]}" "${DEPS_CC[@]}" \
+    "$@"
 }
 
-compile-slice-dbg() { compile-slice "${1:-}" '.dbg'; }
-compile-slice-alloclog() { compile-slice "${1:-}" '.alloclog'; }
-compile-slice-asan() { compile-slice "${1:-}" '.asan'; }
-compile-slice-uftrace() { compile-slice "${1:-}" '.uftrace'; }
-compile-slice-tcmalloc() { compile-slice "${1:-}" '.tcmalloc'; }
-compile-slice-malloc() { compile-slice "${1:-}" '.malloc'; }
+ninja-compile() {
+  # Invoked by ninja (also in _bin/)
 
-all-variants() {
-  local name=${1:-osh_eval}
+  local in=$1
+  local out=$2
 
-  compile-slice $name ''  # .dbg version is default
-  compile-slice-opt $name
+  local -a runtime
+  if test -n "${GC:-}"; then
+    # Not ready for this yet.  Need list_contains() etc.
+    runtime=( "${GC_RUNTIME[@]}" )
+  else
+    runtime=( "${OLD_RUNTIME[@]}" )
+  fi
 
-  compile-slice-alloclog $name
-  compile-slice-asan $name
-  compile-slice-uftrace $name
-  compile-slice-tcmalloc $name
+  # Note: can't use globs here because we have _test.cc
+  time compile $out $in \
+    "${runtime[@]}" "${DEPS_CC[@]}"
+}
 
-  # show show linking against libasan, libtcmalloc, etc
-  ldd _bin/$name*
-  echo
-  ls -l _bin/$name*
+strip_() {
+  ### Invoked by ninja
+
+  local in=$1
+  local stripped=$2
+  local symbols=$3
+
+  strip -o $stripped $in
+
+  objcopy --only-keep-debug $in $symbols
+  objcopy --add-gnu-debuglink=$symbols $stripped
 }
 
 readonly TMP=_devbuild/tmp
@@ -317,7 +316,7 @@ osh-eval-manifest() {
 }
 
 osh-eval() {
-  ### Translate bin/osh_eval.py
+  ### Translate bin/osh_eval.py -> _build/cpp/osh_eval.{cc,h}
 
   local name=${1:-osh_eval}
 
@@ -346,7 +345,7 @@ osh-eval() {
 
   cpp-skeleton $name $raw > $cc
 
-  compile-slice 'osh_eval' '.dbg'
+  #compile-slice 'osh_eval' '.dbg'
 }
 
 # TODO: Fix all this code to use mylib2/my_runtime
@@ -636,28 +635,31 @@ compile-oil-native() {
 }
 
 compile-oil-native-opt() {
-  compile-slice-opt osh_eval ''
-}
-
-compile-oil-native-asan() {
-  compile-slice-asan osh_eval ''
+  compile-slice osh_eval '.opt'
 }
 
 # Demo for the oil-native tarball.
+# Notes:
+# - This should not rely on Ninja!  Ninja is for the dev build.
+# - It should also not require 'objcopy'
+
 tarball-demo() {
   mkdir -p _bin
 
-  time compile-oil-native-opt
+  time compile-slice osh_eval '.opt'
 
-  local bin=_bin/osh_eval.opt.stripped
-  ls -l $bin
+  local in=_bin/osh_eval.opt
+  local out=$in.stripped
+  strip -o $out $in
+
+  ls -l $out
 
   echo
-  echo "You can now run $bin.  Example:"
+  echo "You can now run $out.  Example:"
   echo
 
   set -o xtrace
-  $bin -n -c 'echo "hello $name"'
+  $out -n -c 'echo "hello $name"'
 }
 
 audit-tuple() {

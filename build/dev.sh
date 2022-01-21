@@ -239,8 +239,11 @@ oil-cpp() {
   build/codegen.sh flag-gen-cpp
   build/mycpp.sh osh-eval  # used to be osh-parse
 
+  build/native.sh osh-eval-dbg
+
   echo
   wc -l _build/cpp/*
+  ls -l _bin
 }
 
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c

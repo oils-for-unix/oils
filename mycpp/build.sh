@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Entry points for services/toil-worker.sh, and wrappers around Ninja.
+# Entry points for soil/worker.sh, and wrappers around Ninja.
 #
 # Usage:
 #   ./build.sh <function name>
@@ -36,7 +36,7 @@ all-ninja() {
 }
 
 examples() {
-  # invoked by services/toil-worker.sh
+  # invoked by soil/worker.sh
   all-ninja
 }
 

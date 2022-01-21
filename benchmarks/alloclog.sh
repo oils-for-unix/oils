@@ -4,8 +4,8 @@
 #   benchmarks/sizelog.sh <function name>
 #
 # Example:
-#   $ build/mycpp.sh compile-slice-alloclog ''
-#   $ benchmarks/alloclog.sh alloc-hist
+#   ninja _ninja/osh_eval.alloclog
+#   benchmarks/alloclog.sh alloc-hist
 
 set -o nounset
 set -o pipefail
@@ -53,6 +53,8 @@ length-hist() {
 }
 
 build-variants() {
+  # TODO: use Ninja
+
   #build/mycpp.sh compile-slice-sizelog ''  # 
   build/mycpp.sh compile-slice-opt ''  # dumb_alloc
 

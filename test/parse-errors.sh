@@ -1207,7 +1207,7 @@ soil-run-cpp() {
   ### run with C++.  output: _tmp/other/oil-parse-errors-oil-native.txt
 
   # Done in _oil-native-build on the benchmark-data version
-  build/mycpp.sh compile-oil-native-asan
+  build/native osh-eval-asan
 
   ASAN_OPTIONS='detect_leaks=0' SH=_bin/osh_eval.asan all
 }
