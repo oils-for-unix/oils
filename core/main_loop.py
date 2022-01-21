@@ -253,7 +253,13 @@ if mylib.PYTHON:
           ui.PrintAst(node, flag)
           break
 
-        is_return, _ = cmd_ev.ExecuteAndCatch(node)
+        try:
+          is_return, _ = cmd_ev.ExecuteAndCatch(node)
+        except KeyboardInterrupt:  # issue 467, Ctrl-C during $(sleep 1)
+          is_return = False
+          display.EraseLines()
+          status = 130  # 128 + 2
+          break
 
         status = cmd_ev.LastStatus()
         if is_return:

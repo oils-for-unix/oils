@@ -20,10 +20,11 @@ Debug Mode:
 """
 from __future__ import print_function
 
+import os
 import pexpect
 import signal
 import sys
-import os
+import time
 
 
 SHELL = os.environ.get("OSH_TEST_INTERACTIVE_SHELL", "bin/osh")
@@ -117,56 +118,116 @@ class InteractiveTest(object):
       pass
 
 
-### Test Cases Below ##########################################################
+def main(argv):
+  with InteractiveTest('Ctrl-C during external command') as osh:
+    osh.sendline('sleep 5')
+
+    time.sleep(0.1)
+    osh.sendintr()  # SIGINT
+
+    osh.expect(r'.*\$')  # expect prompt
+
+    osh.sendline('echo status=$?')
+    osh.expect('status=130')
+
+  with InteractiveTest('Ctrl-C during read builtin') as osh:
+    osh.sendline('read')
+
+    time.sleep(0.1)
+    osh.sendintr()  # SIGINT
+
+    osh.expect(r'.*\$')  # expect prompt
+
+    osh.sendline('echo status=$?')
+    osh.expect('status=130')
+
+  with InteractiveTest('Ctrl-C during wait builtin') as osh:
+    osh.sendline('sleep 5 &')
+    osh.sendline('wait')
+
+    time.sleep(0.1)
+    osh.sendintr()  # SIGINT
+
+    osh.expect(r'.*\$')  # expect prompt
+
+    osh.sendline('echo status=$?')
+    # TODO: Should be exit code 130 like bash
+    osh.expect('status=0')
+
+  with InteractiveTest('Ctrl-C during pipeline') as osh:
+    osh.sendline('sleep 5 | cat')
+
+    time.sleep(0.1)
+    osh.sendintr()  # SIGINT
+
+    osh.expect(r'.*\$')  # expect prompt
+
+    osh.sendline('echo status=$?')
+    osh.expect('status=130')
+
+  with InteractiveTest("Ctrl-C during Command Sub (issue 467)") as osh:
+    osh.sendline('`sleep 5`')
+
+    time.sleep(0.1)
+    osh.sendintr()  # SIGINT
+
+    osh.expect(r'.*\$')  # expect prompt
+
+    osh.sendline('echo status=$?')
+    # TODO: This should be status 130 like bash
+    osh.expect('status=0')
+
+  with InteractiveTest("fg twice should not result in fatal error (issue 1004)") as osh:
+    osh.expect(r'.*\$ ')
+    osh.sendline("cat")
+    stop_process__hack("cat")
+    osh.expect("\r\n\\[PID \\d+\\] Stopped")
+    osh.expect(r".*\$")
+    osh.sendline("fg")
+    osh.expect(r"Continue PID \d+")
+
+    #osh.sendcontrol("c")
+    osh.sendintr()  # SIGINT
+
+    osh.expect(r".*\$")
+    osh.sendline("fg")
+    osh.expect("No job to put in the foreground")
+
+  with InteractiveTest('Test resuming a killed process') as osh:
+    osh.expect(r'.*\$ ')
+    osh.sendline("cat")
+    stop_process__hack("cat")
+    osh.expect("\r\n\\[PID \\d+\\] Stopped")
+    osh.expect(r".*\$")
+    osh.sendline("fg")
+    osh.expect(r"Continue PID \d+")
+    kill_process("cat")
+    osh.expect(r".*\$")
+    osh.sendline("fg")
+    osh.expect("No job to put in the foreground")
 
 
-with InteractiveTest("Regression test for issue #1004") as osh:
-  osh.expect(r'.*\$ ')
-  osh.sendline("cat")
-  stop_process__hack("cat")
-  osh.expect("\r\n\\[PID \\d+\\] Stopped")
-  osh.expect(r".*\$")
-  osh.sendline("fg")
-  osh.expect(r"Continue PID \d+")
+  with InteractiveTest('Call fg after process exits (issue 721)') as osh:
+    osh.expect(r".*\$")
+    osh.sendline("cat")
 
-  #osh.sendcontrol("c")
-  osh.sendintr()  # SIGINT
+    #osh.sendcontrol("c")
+    osh.sendintr()  # SIGINT
 
-  osh.expect(r".*\$")
-  osh.sendline("fg")
-  osh.expect("No job to put in the foreground")
+    osh.expect(r".*\$")
+    osh.sendline("fg")
+    osh.expect("No job to put in the foreground")
+    osh.expect(r".*\$")
+    osh.sendline("fg")
+    osh.expect("No job to put in the foreground")
+    osh.expect(r".*\$")
 
-
-with InteractiveTest("Test resuming a killed process") as osh:
-  osh.expect(r'.*\$ ')
-  osh.sendline("cat")
-  stop_process__hack("cat")
-  osh.expect("\r\n\\[PID \\d+\\] Stopped")
-  osh.expect(r".*\$")
-  osh.sendline("fg")
-  osh.expect(r"Continue PID \d+")
-  kill_process("cat")
-  osh.expect(r".*\$")
-  osh.sendline("fg")
-  osh.expect("No job to put in the foreground")
+  return 1 if g_failures else 0
 
 
-with InteractiveTest("Regression test for issue #721") as osh:
-  osh.expect(r".*\$")
-  osh.sendline("cat")
-
-  #osh.sendcontrol("c")
-  osh.sendintr()  # SIGINT
-
-  osh.expect(r".*\$")
-  osh.sendline("fg")
-  osh.expect("No job to put in the foreground")
-  osh.expect(r".*\$")
-  osh.sendline("fg")
-  osh.expect("No job to put in the foreground")
-  osh.expect(r".*\$")
-
-
-### Don't touch this ##########################################################
-
-exit(1 if g_failures else 0)
+if __name__ == '__main__':
+  try:
+    sys.exit(main(sys.argv))
+  except RuntimeError as e:
+    print('FATAL: %s' % e, file=sys.stderr)
+    sys.exit(1)
