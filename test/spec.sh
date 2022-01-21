@@ -454,6 +454,11 @@ builtin-bash() {
     $BASH $OSH_LIST "$@"
 }
 
+vars-bash() {
+  sh-spec spec/vars-bash.test.sh --osh-failures-allowed 1 \
+    $BASH $OSH_LIST "$@"
+}
+
 # This is bash/OSH only
 builtin-completion() {
   sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 1 \
@@ -605,7 +610,7 @@ var-sub-quote() {
 
 sh-usage() {
   sh-spec spec/sh-usage.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 sh-options() {

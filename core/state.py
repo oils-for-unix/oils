@@ -821,6 +821,12 @@ def _InitVarsFromEnv(mem, environ):
   mem.SetValue(
       lvalue.Named('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
 
+  val = mem.GetValue('PATH')
+  if val.tag_() == value_e.Undef:
+    # Setting PATH to these two dirs match what zsh and mksh do.  bash and dash
+    # add {,/usr/,/usr/local}/{bin,sbin}
+    SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
+
 
 def InitMem(mem, environ, version_str):
   # type: (Mem, Dict[str, str], str) -> None
@@ -831,6 +837,7 @@ def InitMem(mem, environ, version_str):
   SetGlobalString(mem, 'OIL_VERSION', version_str)
   _InitDefaults(mem)
   _InitVarsFromEnv(mem, environ)
+
   # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
   # it can't be modified by users.
   val = mem.GetValue('PWD')
