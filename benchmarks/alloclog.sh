@@ -53,14 +53,11 @@ length-hist() {
 }
 
 build-variants() {
-  # TODO: use Ninja
+  build/native_graph.py
 
-  #build/mycpp.sh compile-slice-sizelog ''  # 
-  build/mycpp.sh compile-slice-opt ''  # dumb_alloc
-
-  build/mycpp.sh compile-slice-malloc ''  # GNU libc malloc
-
-  build/mycpp.sh compile-slice-tcmalloc ''
+  # opt uses dumb_alloc
+  # TODO: might want _bin/osh_eval.tcmalloc, which depends on a system library
+  ninja _bin/osh_eval.{opt,malloc}
 }
 
 time-mem() {

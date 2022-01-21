@@ -14,7 +14,7 @@ source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 
 # -Wpedantic flags the flexible array char opaque[] pattern;
 CPPFLAGS="$CXXFLAGS -O0 -g -fsanitize=address -Wpedantic"
-export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
+# export ASAN_OPTIONS='detect_leaks=0'
 
 deps() {
   # needed to compile with -m32

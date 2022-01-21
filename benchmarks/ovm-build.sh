@@ -245,7 +245,7 @@ build-task() {
           ;;
       esac
 
-      CXX=$cxx "${TIME_PREFIX[@]}" -- build/mycpp.sh $func
+      CXX=$cxx "${TIME_PREFIX[@]}" -- build/native-steps.sh $func
 
       local target=$action
       cp -v $target $bin_dir

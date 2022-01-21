@@ -40,12 +40,12 @@ def main(argv):
   n.newline()
 
   n.rule('ninja-compile',
-         command='build/mycpp.sh ninja-compile $in $out',
+         command='build/native-steps.sh ninja-compile $in $out',
          description='ninja-compile $in $out')
   n.newline()
   # 1 input and 2 outputs
   n.rule('strip',
-         command='build/mycpp.sh strip_ $in $out',
+         command='build/native-steps.sh strip_ $in $out',
          description='strip $in $out')
   n.newline()
 

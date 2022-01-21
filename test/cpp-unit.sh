@@ -9,7 +9,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/mycpp.sh  # for compile function
+source build/native-steps.sh  # for compile function
+
+# https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
+export ASAN_OPTIONS='detect_leaks=0'
 
 # Copied from devtools/release.sh tarball-build-deps
 # for the 'cpp' toil job

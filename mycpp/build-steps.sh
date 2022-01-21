@@ -17,7 +17,7 @@ readonly THIS_DIR=$(dirname $(readlink -f $0))
 readonly REPO_ROOT=$THIS_DIR/..
 
 source $THIS_DIR/common.sh
-source $REPO_ROOT/build/common.sh  # for CXX
+source $REPO_ROOT/build/common.sh  # for CXX, ASAN_SYMBOLIZER_PATH
 
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
 
@@ -156,9 +156,8 @@ task() {
 
   case $bin in
     _ninja/bin/*.asan)
-      # copied from run.sh and build/mycpp.sh
+      # We could detect leaks when GC is turned on?
       export ASAN_OPTIONS='detect_leaks=0'
-      export ASAN_SYMBOLIZER_PATH="$REPO_ROOT/$CLANG_DIR_RELATIVE/bin/llvm-symbolizer"
       ;;
 
     examples/parse.py)

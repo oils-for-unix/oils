@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-#
 # Usage:
 #   source test/common.sh
 

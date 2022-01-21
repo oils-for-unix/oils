@@ -8,7 +8,7 @@ oil-$VERSION.tar.{gz,xz} to get a working Oil shell.
 
 To try oil-native, run:
 
-    build/mycpp.sh tarball-demo
+    build/native.sh tarball-demo
     
 All you need is a C++ compiler.
 

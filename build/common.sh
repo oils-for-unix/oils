@@ -1,4 +1,9 @@
-#!/usr/bin/env bash
+# Usage:
+#   source build/common.sh
+
+# Include guard.
+test -n "${__BUILD_COMMON_SH:-}" && return
+readonly __BUILD_COMMON_SH=1
 
 set -o nounset
 set -o pipefail
@@ -20,6 +25,9 @@ readonly CLANG_DIR_RELATIVE='_deps/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.0
 readonly CLANG_DIR=$_REPO_ROOT/$CLANG_DIR_RELATIVE
 readonly CLANG=$CLANG_DIR/bin/clang  # used by benchmarks/{id,ovm-build}.sh
 readonly CLANGXX=$CLANG_DIR/bin/clang++
+
+# I'm not sure if there's a GCC version of this?
+export ASAN_SYMBOLIZER_PATH=$CLANG_DIR_RELATIVE/bin/llvm-symbolizer
 
 # equivalent of 'cc' for C++ langauge
 # https://stackoverflow.com/questions/172587/what-is-the-difference-between-g-and-gcc

@@ -12,7 +12,7 @@ set -o errexit
 source build/common.sh  # CXXFLAGS, etc.
 
 CPPFLAGS="$CXXFLAGS -g -fsanitize=address"  # for debugging tests
-export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
+# export ASAN_OPTIONS='detect_leaks=0'
 
 export PYTHONPATH='.:vendor/'
 
