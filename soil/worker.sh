@@ -31,8 +31,8 @@ dump-versions() {
   set +o errexit
 
   set -x
-  which python
-  python -V
+  which python2
+  python2 -V
 
   which python3
   python3 -V
@@ -117,19 +117,19 @@ cpp-tasks() {
 
   # consts_gen.py needs types_asdl.py
   cat <<EOF
-dump-versions   soil/worker.sh dump-versions -
-build-minimal   build/dev.sh minimal                  -
-cpp-unit-all    test/cpp-unit.sh all                  -
-mycpp-git       mycpp/deps.sh git-clone               -
-mycpp-pip       mycpp/deps.sh pip-install             -
-build-osh-eval  build/dev.sh oil-cpp                  -
-osh-eval-demo   build/mycpp.sh osh-eval-demo          -
+dump-versions    soil/worker.sh dump-versions -
+build-minimal    build/dev.sh minimal                  -
+cpp-unit-all     test/cpp-unit.sh all                  -
+mycpp-git        mycpp/deps.sh git-clone               -
+mycpp-pip        mycpp/deps.sh pip-install             -
+build-osh-eval   build/dev.sh oil-cpp                  -
+osh-eval-demo    build/mycpp.sh osh-eval-demo          -
 compile-osh-eval build/native.sh soil-run             -
-metrics         metrics/source-code.sh write-reports _tmp/metrics/line-counts/index.html
+metrics          metrics/source-code.sh write-reports _tmp/metrics/line-counts/index.html
 shell-benchmarks benchmarks/auto.sh soil-run          _tmp/benchmark-data/index.html
-mycpp-examples  mycpp/build.sh examples               mycpp/_ninja/index.html
-parse-errors    test/parse-errors.sh soil-run-cpp     -
-spec-cpp        test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
+mycpp-examples   mycpp/build.sh examples               mycpp/_ninja/index.html
+parse-errors     test/parse-errors.sh soil-run-cpp     -
+spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 
 # Notes on steps that depend on the binary:

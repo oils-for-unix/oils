@@ -27,6 +27,12 @@ osh-eval-asan() {
   ninja _bin/osh_eval.asan
 }
 
+osh-eval-opt() {
+  ### Invoked by test/parse-errors.sh
+  build/native_graph.py
+  ninja _bin/osh_eval.opt.stripped
+}
+
 soil-run() {
   ### Invoked by soil/worker.sh
 

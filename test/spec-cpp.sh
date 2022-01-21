@@ -19,7 +19,7 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 # For now use opt since it's faster, see issue #970
-readonly OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/osh_eval.opt}
+readonly OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/osh_eval.opt.stripped}
 
 # Applies everywhere
 export SPEC_JOB='cpp'
@@ -90,10 +90,7 @@ all() {
 }
 
 soil-run() {
-
-  # Hack, build with GCC because of startup time issue #970
-  # TODO: Use Ninja!
-  CXX=gcc build/mycpp.sh compile-oil-native-opt
+  build/native.sh osh-eval-opt
 
   # Do less work to start
   # export NUM_SPEC_TASKS=8
