@@ -4,14 +4,22 @@ sh=$(which $SH)
 
 unset SHELL
 
-$SH -c 'echo SHELL=$SHELL'
+prog='
+if test -n "$SHELL"; then
+  # the exact value is different on CI, so do not assert
+  echo SHELL is set
+  echo SHELL=$SHELL >&2
+fi
+'
+
+$SH -c "$prog"
 
 # make it a login shell
-$SH -l -c 'echo SHELL=$SHELL'
+$SH -l -c "$prog"
 
 ## STDOUT:
-SHELL=/bin/bash
-SHELL=/bin/bash
+SHELL is set
+SHELL is set
 ## END
 ## N-I dash/mksh/zsh STDOUT:
 SHELL=
