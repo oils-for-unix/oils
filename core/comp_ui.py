@@ -518,6 +518,11 @@ class NiceDisplay(_IDisplay):
 
   def OnWindowChange(self):
     # type: () -> None
+    """
+    Note: SIGWINCH handler in core/pyos.py no longer calls this.
+    The shell process should probably handle SIGWINCH only when blocked in
+    readline().
+    """
     # Only do it for the NEXT completion.  The signal handler can be run in
     # between arbitrary bytecodes, and we don't want a single completion
     # display to be shown with different widths.

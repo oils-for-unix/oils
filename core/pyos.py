@@ -282,7 +282,10 @@ class SignalState(object):
 
     # Register a callback to receive terminal width changes.
     # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
-    signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
+    #signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
+
+    # Disabled because it causes wait builtin to abort (issue 1067)
+    signal.signal(signal.SIGWINCH, signal.SIG_IGN)
 
   def AddUserTrap(self, sig_num, handler):
     # type: (int, Any) -> None
