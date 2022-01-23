@@ -609,16 +609,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
                                            comp_ui_state, comp_ctx, debug_f)
 
-      term_width = 0
-      if flag.completion_display == 'nice':
-        try:
-          term_width = libc.get_terminal_width()
-        except IOError:  # stdin not a terminal
-          pass
+      if flag.completion_display == 'z_readline':
+        display = comp_ui.ZshLikeDisplay(comp_ui_state, prompt_state,
+                                         debug_f, line_input)  # type: comp_ui._IDisplay
 
-      if term_width != 0:
-        display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
-                                      debug_f, line_input)  # type: comp_ui._IDisplay
+      elif flag.completion_display == 'b_readline':
+        raise error.Usage('b_readline style not implemented')
+
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 

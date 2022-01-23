@@ -39,9 +39,6 @@
 /* Define if you have readline 4.0 */
 #define HAVE_RL_PRE_INPUT_HOOK 1
 
-/* Define if you have readline 4.0 */
-#define HAVE_RL_RESIZE_TERMINAL 1
-
 /* ------------------------------------------------------------------------- */
 
 #if defined(HAVE_SETLOCALE)
@@ -673,6 +670,17 @@ py_resize_terminal(PyObject *self, PyObject *noarg)
     Py_RETURN_NONE;
 }
 
+/* Added for OSH.  We need to call this in our SIGWINCH handler so global
+ * variables in readline get updated. */
+static PyObject *
+py_get_screen_size(PyObject *self, PyObject *noarg)
+{
+    int rows = -1;  // a hint that it failed
+    int cols = -1;
+    rl_get_screen_size(&rows, &cols);
+    return Py_BuildValue("(i,i)", rows, cols);
+}
+
 /* Exported function to insert text into the line buffer */
 
 static PyObject *
@@ -754,7 +762,15 @@ static struct PyMethodDef readline_methods[] = {
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     {"clear_history", py_clear_history, METH_NOARGS, doc_clear_history},
 #endif
+
+    // TODO: why aren't these in
+    // build/oil-defs/native/line_input.c/readline_methods.def?
+
+    // OVM_MAIN.  No longer need this?
     {"resize_terminal", py_resize_terminal, METH_NOARGS, ""},
+    // OVM_MAIN.  Added this so we don't handle SIGWINCH
+    {"get_screen_size", py_get_screen_size, METH_NOARGS, ""},
+
     {0, 0}
 };
 #endif
@@ -817,6 +833,9 @@ on_pre_input_hook()
 }
 #endif
 
+static volatile sig_atomic_t sigwinch_received;
+// User handler that we temporarily replace, e.g. for trap 'echo X' SIGWINCH
+static PyOS_sighandler_t sigwinch_ohandler;
 
 /* C function to call the Python completion_display_matches */
 
@@ -841,8 +860,15 @@ on_completion_display_matches_hook(char **matches,
             goto error;
     }
 
+    // Do the reverse of what happens in in call_readline.  When we run shell
+    // code, we may want SIGWINCH to be SIG_IGN.
+    PyOS_sighandler_t temp = PyOS_setsig(SIGWINCH, sigwinch_ohandler);
+
     r = PyObject_CallFunction(completion_display_matches_hook,
                               "sOi", matches[0], m, max_length);
+
+    PyOS_sighandler_t restored = PyOS_setsig(SIGWINCH, temp);
+    assert(restored == sigwinch_ohandler);
 
     Py_DECREF(m); m=NULL;
 
@@ -865,19 +891,18 @@ on_completion_display_matches_hook(char **matches,
 
 #endif
 
-#ifdef HAVE_RL_RESIZE_TERMINAL
-static volatile sig_atomic_t sigwinch_received;
-static PyOS_sighandler_t sigwinch_ohandler;
-
 static void
 readline_sigwinch_handler(int signum)
 {
+    // set flag for input select() loop to check
     sigwinch_received = 1;
+
+    // call the original handler
     if (sigwinch_ohandler &&
-            sigwinch_ohandler != SIG_IGN && sigwinch_ohandler != SIG_DFL)
+        sigwinch_ohandler != SIG_IGN && sigwinch_ohandler != SIG_DFL) {
         sigwinch_ohandler(signum);
+    }
 }
-#endif
 
 /* C function to call the Python completer. */
 
@@ -980,10 +1005,6 @@ setup_readline(void)
     /* Bind both ESC-TAB and ESC-ESC to the completion function */
     rl_bind_key_in_map ('\t', rl_complete, emacs_meta_keymap);
     rl_bind_key_in_map ('\033', rl_complete, emacs_meta_keymap);
-#ifdef HAVE_RL_RESIZE_TERMINAL
-    /* Set up signal handler for window resize */
-    sigwinch_ohandler = PyOS_setsig(SIGWINCH, readline_sigwinch_handler);
-#endif
     /* Set our hook functions */
     rl_startup_hook = on_startup_hook;
 #ifdef HAVE_RL_PRE_INPUT_HOOK
@@ -1055,11 +1076,6 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 #ifdef HAVE_RL_CATCH_SIGNAL
     rl_catch_signals = 0;
 #endif
-    /* OVM_MAIN: Oil is handling SIGWINCH, so readline shouldn't handle it.
-     * Without this line, strace reveals that GNU readline is constantly
-     * turning it on and off.
-     * */
-    rl_catch_sigwinch = 0;
 
     rl_callback_handler_install (prompt, rlhandler);
     FD_ZERO(&selectset);
@@ -1077,13 +1093,11 @@ readline_until_enter_or_signal(char *prompt, int *signal)
             struct timeval *timeoutp = NULL;
             if (PyOS_InputHook)
                 timeoutp = &timeout;
-#ifdef HAVE_RL_RESIZE_TERMINAL
             /* Update readline's view of the window size after SIGWINCH */
             if (sigwinch_received) {
                 sigwinch_received = 0;
                 rl_resize_terminal();
             }
-#endif
             FD_SET(fileno(rl_instream), &selectset);
             /* select resets selectset if no input was available */
             has_input = select(fileno(rl_instream) + 1, &selectset,
@@ -1183,7 +1197,15 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 #endif
     }
 
+    /* OVM_MAIN: This handle is active while we're NOT executing shell code
+     * It sets a flag for the select() loop to check
+     */
+    sigwinch_ohandler = PyOS_setsig(SIGWINCH, readline_sigwinch_handler);
+
     p = readline_until_enter_or_signal(prompt, &signal);
+
+    PyOS_sighandler_t restored = PyOS_setsig(SIGWINCH, sigwinch_ohandler);
+    assert(restored == readline_sigwinch_handler);
 
     /* we got an interrupt signal */
     if (signal) {
