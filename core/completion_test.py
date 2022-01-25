@@ -170,7 +170,7 @@ class CompletionTest(unittest.TestCase):
           '/tmp/oil_comp_test/three',
           '/tmp/oil_comp_test/two',
           ]),
-        ('./b', ['./benchmarks/', './bin/', './build/']),
+        ('./o', ['./oil-version.txt', './oil_lang/', './opy/', './osh/']),
     ]
 
     a = completion.FileSystemAction(add_slash=True)

@@ -8,6 +8,7 @@ import pprint
 import unittest
 
 from sh_spec import *  # module under test
+import spec_lib
 
 TEST1 = """\
 #### Env binding in readonly/declare disallowed
@@ -116,7 +117,7 @@ class ShSpecTest(unittest.TestCase):
     print(CreateAssertions(self.CASE1, 'bash'))
 
   def testRunCases(self):
-    o = Options()
+    o = spec_lib.Options()
     opts, _ = o.parse_args([])
 
     shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]
