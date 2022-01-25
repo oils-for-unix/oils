@@ -42,13 +42,8 @@ def get_pid_by_name(name):
   # XXX: make sure this is restricted to subprocesses under us.
   # This could be problematic on the continuous build if many tests are running
   # in parallel.
-  output = pexpect.run('pgrep --exact --newest %s' % name)
+  output = pexpect.run('pgrep --exact --newest cat')
   return int(output.split()[-1])
-
-
-def send_signal(name, sig_num):
-  """Kill the most recent process matching `name`."""
-  os.kill(get_pid_by_name(name), sig_num)
 
 
 # XXX: osh.sendcontrol("z") does not suspend the foreground process :(
@@ -57,7 +52,12 @@ def send_signal(name, sig_num):
 # appears to do nothing?
 def stop_process__hack(name):
   """Send sigstop to the most recent process matching `name`"""
-  send_signal(name, signal.SIGSTOP)
+  os.kill(get_pid_by_name(name), signal.SIGSTOP)
+
+
+def kill_process(name):
+  """Kill the most recent process matching `name`."""
+  os.kill(get_pid_by_name(name), signal.SIGINT)
 
 
 class InteractiveTest(object):
@@ -119,22 +119,6 @@ class InteractiveTest(object):
 
 
 def main(argv):
-  with InteractiveTest('wait builtin then SIGWINCH (issue 1067)') as osh:
-    osh.sendline('sleep 1 &')
-    osh.sendline('wait')
-
-    time.sleep(0.1)
-
-    # simulate window size change
-    osh.kill(signal.SIGWINCH)
-
-    osh.expect(r'.*\$')  # expect prompt
-
-    osh.sendline('echo status=$?')
-    osh.expect('status=0')
-
-  #return
-
   with InteractiveTest('Ctrl-C during external command') as osh:
     osh.sendline('sleep 5')
 
@@ -217,7 +201,7 @@ def main(argv):
     osh.expect(r".*\$")
     osh.sendline("fg")
     osh.expect(r"Continue PID \d+")
-    send_signal("cat", signal.SIGINT)
+    kill_process("cat")
     osh.expect(r".*\$")
     osh.sendline("fg")
     osh.expect("No job to put in the foreground")
