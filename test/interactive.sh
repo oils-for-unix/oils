@@ -9,8 +9,24 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+export PYTHONPATH=.
+
+run() {
+  ### Wrapper for PYTHONPATH
+
+  test/interactive.py "$@"
+}
+
+all() {
+  ### What we want to pass
+
+  # TODO: source build/dev-shell.sh to get this?
+
+  run bin/osh ../oil_DEPS/spec-bin/bash
+}
+
 soil-run() {
-  # Run it a few times to test flakiness
+  ### Run it a few times to work around flakiness
 
   local n=5
   echo "Running $n times"

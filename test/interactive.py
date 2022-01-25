@@ -2,9 +2,9 @@
 """
 Test OSH in interactive mode.
 
-Usage (run from project root):
+To invoke this file, run the shell wrapper:
 
-    test/interactive.py
+    test/interactive.sh all
 
 Env Vars:
 - OSH_TEST_INTERACTIVE_SHELL: override default shell path (default, bin/osh)
@@ -26,6 +26,8 @@ import signal
 import sys
 import time
 
+from test import spec_lib  # Using this for a common interface
+
 
 SHELL = os.environ.get("OSH_TEST_INTERACTIVE_SHELL", "bin/osh")
 TIMEOUT = int(os.environ.get("OSH_TEST_INTERACTIVE_TIMEOUT", 3))
@@ -42,8 +44,13 @@ def get_pid_by_name(name):
   # XXX: make sure this is restricted to subprocesses under us.
   # This could be problematic on the continuous build if many tests are running
   # in parallel.
-  output = pexpect.run('pgrep --exact --newest cat')
+  output = pexpect.run('pgrep --exact --newest %s' % name)
   return int(output.split()[-1])
+
+
+def send_signal(name, sig_num):
+  """Kill the most recent process matching `name`."""
+  os.kill(get_pid_by_name(name), sig_num)
 
 
 # XXX: osh.sendcontrol("z") does not suspend the foreground process :(
@@ -52,12 +59,7 @@ def get_pid_by_name(name):
 # appears to do nothing?
 def stop_process__hack(name):
   """Send sigstop to the most recent process matching `name`"""
-  os.kill(get_pid_by_name(name), signal.SIGSTOP)
-
-
-def kill_process(name):
-  """Kill the most recent process matching `name`."""
-  os.kill(get_pid_by_name(name), signal.SIGINT)
+  send_signal(name, signal.SIGSTOP)
 
 
 class InteractiveTest(object):
@@ -78,18 +80,27 @@ class InteractiveTest(object):
     self.description = description
 
   def __enter__(self):
-    if DEBUG:
-      print(self.description)
-    else:
-      print(self.description, end='')
+    if 0:
+      if DEBUG:
+        print(self.description)
+      else:
+        print(self.description, end='')
 
     #env = dict(os.environ)
     #env['PS1'] = 'test$ '
     env = None
 
+    sh_argv = ['--rcfile', '/dev/null']
+
+    # Why the heck is --norc different from --rcfile /dev/null in bash???  This
+    # makes it so the prompt of the parent shell doesn't leak.  Very annoying.
+    if self.program == 'bash':
+      sh_argv.append('--norc')
+    #print(sh_argv)
+
     # Python 3: encoding required
     self.shell = pexpect.spawn(
-        self.program, ['--rcfile', '/dev/null'], env=env, encoding='utf-8',
+        self.program, sh_argv, env=env, encoding='utf-8',
         timeout=TIMEOUT)
 
     # suppress output when DEBUG is not set.
@@ -118,111 +129,199 @@ class InteractiveTest(object):
       pass
 
 
+
+CASES = []
+
+def register(skip_shells=None):
+  if skip_shells is None:
+    skip_shells = []
+
+  def decorator(func):
+    CASES.append((func.__doc__, func, skip_shells))
+    return func
+  return decorator
+
+
+# TODO: Make this pass in OSH
+@register(skip_shells=['osh'])
+def a(sh):
+  'wait builtin then SIGWINCH (issue 1067)'
+
+  sh.sendline('sleep 1 &')
+  sh.sendline('wait')
+
+  time.sleep(0.1)
+
+  # simulate window size change
+  sh.kill(signal.SIGWINCH)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=0')
+
+
+@register()
+def b(sh):
+  'Ctrl-C during external command'
+
+  sh.sendline('sleep 5')
+
+  time.sleep(0.1)
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=130')
+
+
+@register()
+def c(sh):
+  'Ctrl-C during read builtin'
+
+  sh.sendline('read')
+
+  time.sleep(0.1)
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=130')
+
+
+# TODO: make it work on bash
+@register(skip_shells=['bash'])
+def d(sh):
+  'Ctrl-C during wait builtin'
+
+  sh.sendline('sleep 5 &')
+  sh.sendline('wait')
+
+  time.sleep(0.1)
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  # TODO: Should be exit code 130 like bash
+  sh.expect('status=0')
+
+
+@register()
+def e(sh):
+  'Ctrl-C during pipeline'
+  sh.sendline('sleep 5 | cat')
+
+  time.sleep(0.1)
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=130')
+
+
+# TODO: make it work on bash
+@register(skip_shells=['bash'])
+def f(sh):
+  'Ctrl-C during Command Sub (issue 467)'
+  sh.sendline('`sleep 5`')
+
+  time.sleep(0.1)
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  # TODO: This should be status 130 like bash
+  sh.expect('status=0')
+
+
+@register(skip_shells=['bash'])
+def g(sh):
+  'fg twice should not result in fatal error (issue 1004)'
+  sh.expect(r'.*\$ ')
+  sh.sendline("cat")
+  stop_process__hack("cat")
+  sh.expect("\r\n\\[PID \\d+\\] Stopped")
+  sh.expect(r".*\$")
+  sh.sendline("fg")
+  sh.expect(r"Continue PID \d+")
+
+  #sh.sendcontrol("c")
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r".*\$")
+  sh.sendline("fg")
+  sh.expect("No job to put in the foreground")
+
+
+@register(skip_shells=['bash'])
+def h(sh):
+  'Test resuming a killed process'
+  sh.expect(r'.*\$ ')
+  sh.sendline("cat")
+  stop_process__hack("cat")
+  sh.expect("\r\n\\[PID \\d+\\] Stopped")
+  sh.expect(r".*\$")
+  sh.sendline("fg")
+  sh.expect(r"Continue PID \d+")
+  send_signal("cat", signal.SIGINT)
+  sh.expect(r".*\$")
+  sh.sendline("fg")
+  sh.expect("No job to put in the foreground")
+
+
+@register(skip_shells=['bash'])
+def j(sh):
+  'Call fg after process exits (issue 721)'
+
+  sh.expect(r".*\$")
+  sh.sendline("cat")
+
+  #osh.sendcontrol("c")
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r".*\$")
+  sh.sendline("fg")
+  sh.expect("No job to put in the foreground")
+  sh.expect(r".*\$")
+  sh.sendline("fg")
+  sh.expect("No job to put in the foreground")
+  sh.expect(r".*\$")
+
+
+
 def main(argv):
-  with InteractiveTest('Ctrl-C during external command') as osh:
-    osh.sendline('sleep 5')
+  # NOTE: Some options are ignored
+  o = spec_lib.Options()
+  opts, argv = o.parse_args(argv)
 
-    time.sleep(0.1)
-    osh.sendintr()  # SIGINT
+  shells = argv[1:]
+  shell_pairs = spec_lib.MakeShellPairs(shells)
 
-    osh.expect(r'.*\$')  # expect prompt
+  if 0:
+    print(shell_pairs)
+    print(CASES)
 
-    osh.sendline('echo status=$?')
-    osh.expect('status=130')
+  for i, (desc, func, skip_shells) in enumerate(CASES):
+    for shell_label, shell_path in shell_pairs:
+      skip = shell_label in skip_shells
+      skip_str = 'SKIP' if skip else ''
 
-  with InteractiveTest('Ctrl-C during read builtin') as osh:
-    osh.sendline('read')
+      print()
+      print('%s\t%d\t%s\t%s' % (skip_str, i, shell_label, desc))
+      print()
 
-    time.sleep(0.1)
-    osh.sendintr()  # SIGINT
+      if skip:
+        continue
 
-    osh.expect(r'.*\$')  # expect prompt
+      with InteractiveTest(desc, program=shell_path) as sh:
+        func(sh)
 
-    osh.sendline('echo status=$?')
-    osh.expect('status=130')
-
-  with InteractiveTest('Ctrl-C during wait builtin') as osh:
-    osh.sendline('sleep 5 &')
-    osh.sendline('wait')
-
-    time.sleep(0.1)
-    osh.sendintr()  # SIGINT
-
-    osh.expect(r'.*\$')  # expect prompt
-
-    osh.sendline('echo status=$?')
-    # TODO: Should be exit code 130 like bash
-    osh.expect('status=0')
-
-  with InteractiveTest('Ctrl-C during pipeline') as osh:
-    osh.sendline('sleep 5 | cat')
-
-    time.sleep(0.1)
-    osh.sendintr()  # SIGINT
-
-    osh.expect(r'.*\$')  # expect prompt
-
-    osh.sendline('echo status=$?')
-    osh.expect('status=130')
-
-  with InteractiveTest("Ctrl-C during Command Sub (issue 467)") as osh:
-    osh.sendline('`sleep 5`')
-
-    time.sleep(0.1)
-    osh.sendintr()  # SIGINT
-
-    osh.expect(r'.*\$')  # expect prompt
-
-    osh.sendline('echo status=$?')
-    # TODO: This should be status 130 like bash
-    osh.expect('status=0')
-
-  with InteractiveTest("fg twice should not result in fatal error (issue 1004)") as osh:
-    osh.expect(r'.*\$ ')
-    osh.sendline("cat")
-    stop_process__hack("cat")
-    osh.expect("\r\n\\[PID \\d+\\] Stopped")
-    osh.expect(r".*\$")
-    osh.sendline("fg")
-    osh.expect(r"Continue PID \d+")
-
-    #osh.sendcontrol("c")
-    osh.sendintr()  # SIGINT
-
-    osh.expect(r".*\$")
-    osh.sendline("fg")
-    osh.expect("No job to put in the foreground")
-
-  with InteractiveTest('Test resuming a killed process') as osh:
-    osh.expect(r'.*\$ ')
-    osh.sendline("cat")
-    stop_process__hack("cat")
-    osh.expect("\r\n\\[PID \\d+\\] Stopped")
-    osh.expect(r".*\$")
-    osh.sendline("fg")
-    osh.expect(r"Continue PID \d+")
-    kill_process("cat")
-    osh.expect(r".*\$")
-    osh.sendline("fg")
-    osh.expect("No job to put in the foreground")
-
-
-  with InteractiveTest('Call fg after process exits (issue 721)') as osh:
-    osh.expect(r".*\$")
-    osh.sendline("cat")
-
-    #osh.sendcontrol("c")
-    osh.sendintr()  # SIGINT
-
-    osh.expect(r".*\$")
-    osh.sendline("fg")
-    osh.expect("No job to put in the foreground")
-    osh.expect(r".*\$")
-    osh.sendline("fg")
-    osh.expect("No job to put in the foreground")
-    osh.expect(r".*\$")
-
-  return 1 if g_failures else 0
+  return 0
 
 
 if __name__ == '__main__':

@@ -61,6 +61,7 @@ import subprocess
 import sys
 import time
 
+from test import spec_lib
 from doctools import html_head
 
 
@@ -1188,125 +1189,6 @@ def MakeTestEnv(opts):
   return env
 
 
-def Options():
-  """Returns an option parser instance."""
-  p = optparse.OptionParser('sh_spec.py [options] TEST_FILE shell...')
-  p.add_option(
-      '-v', '--verbose', dest='verbose', action='store_true', default=False,
-      help='Show details about test failures')
-  p.add_option(
-      '-d', '--details', dest='details', action='store_true', default=False,
-      help='Show details even for successful cases')
-  p.add_option(
-      '-t', '--trace', dest='trace', action='store_true', default=False,
-      help='trace execution of shells to diagnose hangs')
-  p.add_option(
-      '-r', '--range', dest='range', default=None,
-      help='Execute only a given test range, e.g. 5-10, 5-, -10, or 5')
-  p.add_option(
-      '--regex', dest='regex', default=None,
-      help='Execute only tests whose description matches a given regex '
-           '(case-insensitive)')
-  p.add_option(
-      '--list', dest='do_list', action='store_true', default=None,
-      help='Just list tests')
-  p.add_option(
-      '-p', '--print', dest='do_print', action='store_true', default=None,
-      help="Print test code, but don't run it")
-  p.add_option(
-      '--format', dest='format', choices=['ansi', 'html'],
-      default='ansi', help="Output format (default 'ansi')")
-  p.add_option(
-      '--tsv-output', dest='tsv_output', default=None,
-      help="Write a TSV log to this file.  Subsumes --stats-file.")
-  p.add_option(
-      '--stats-file', dest='stats_file', default=None,
-      help="File to write stats to")
-  p.add_option(
-      '--stats-template', dest='stats_template', default='',
-      help="Python format string for stats")
-  p.add_option(
-      '--osh-failures-allowed', dest='osh_failures_allowed', type='int',
-      default=0, help="Allow this number of osh failures")
-
-  p.add_option(
-      '--path-env', dest='path_env', default='',
-      help="The full PATH, for finding binaries used in tests.")
-  p.add_option(
-      '--tmp-env', dest='tmp_env', default='',
-      help="A temporary directory that the tests can use.")
-
-  # Notes:
-  # - utf-8 is the Ubuntu default
-  # - this flag has limited usefulness.  It may be better to simply export LANG=
-  #   in this test case itself.
-  p.add_option(
-      '--lang-env', dest='lang_env', default='en_US.UTF-8',
-      help="The LANG= setting, which affects various libc functions.")
-  p.add_option(
-      '--env-pair', dest='env_pair', default=[], action='append',
-      help='A key=value pair to add to the environment')
-
-  p.add_option(
-      '--timeout', dest='timeout', default='',
-      help="Prefix shell invocation with 'timeout N'")
-  p.add_option(
-      '--timeout-bin', dest='timeout_bin', default=None,
-      help="Use the smoosh timeout binary at this location.")
-
-  p.add_option(
-      '--posix', dest='posix', default=False, action='store_true',
-      help='Pass -o posix to the shell (when applicable)')
-
-  p.add_option(
-      '--sh-env-var-name', dest='sh_env_var_name', default='SH',
-      help="Set this environment variable to the path of the shell")
-  p.add_option(
-      '--rm-tmp', dest='rm_tmp', default=False, action='store_true',
-      help='clear the tmp dir after running each test case')
-
-  p.add_option(
-      '--pyann-out-dir', dest='pyann_out_dir', default=None,
-      help='Run OSH with PYANN_OUT=$dir/$case_num.json')
-
-  return p
-
-
-def _MakeShellPairs(shells):
-  shell_pairs = []
-  saw_osh = False
-  saw_oil = False
-  for path in shells:
-    if 'osh_eval' in path:
-      name = path
-    else:
-      name, _ = os.path.splitext(path)
-    label = os.path.basename(name)
-
-    if label == 'osh':
-      # change the second 'osh' to 'osh_ALT' so it's distinct
-      if saw_osh:
-        label = 'osh_ALT'
-      else:
-        saw_osh = True
-
-    elif label == 'oil':
-      if saw_oil:
-        label = 'oil_ALT'
-      else:
-        saw_oil = True
-
-    # Custom names for translation
-    elif label == 'osh_eval':
-      label = 'osh_.py'  # must start with 'osh' for qualifiers
-
-    elif label.startswith('osh_eval.'):  # osh_eval.{dbg,opt} etc.
-      label = 'osh_.cc'
-
-    shell_pairs.append((label, path))
-  return shell_pairs
-
-
 def main(argv):
   # First check if bash is polluting the environment.  Tests rely on the
   # environment.
@@ -1317,7 +1199,7 @@ def main(argv):
   if v is not None:
     raise AssertionError('got $PPID = %s' % v)
 
-  o = Options()
+  o = spec_lib.Options()
   opts, argv = o.parse_args(argv)
 
   try:
@@ -1327,7 +1209,7 @@ def main(argv):
     return 1
 
   shells = argv[2:]
-  shell_pairs = _MakeShellPairs(shells)
+  shell_pairs = spec_lib.MakeShellPairs(shells)
 
   with open(test_file) as f:
     tokens = Tokenizer(f)
