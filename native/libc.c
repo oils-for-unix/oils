@@ -383,7 +383,6 @@ static PyMethodDef methods[] = {
   {"gethostname", socket_gethostname, METH_NOARGS, ""},
 
   // ioctl() to get the terminal width.
-  // NOTE: NO LONGER USED since we get let GNU readline keep track of it.
   {"get_terminal_width", func_get_terminal_width, METH_NOARGS, ""},
 
   // Get the display width of a string. Throw an exception if the string is invalid UTF8.

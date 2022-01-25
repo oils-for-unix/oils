@@ -217,9 +217,7 @@ OSH_SPEC.LongFlag('--ast-format',
     default='abbrev-text')
 
 # Defines completion style.
-OSH_SPEC.LongFlag('--completion-display',
-    ['minimal', 'b_readline', 'z_readline'], default='z_readline')
-
+OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
 # TODO: Add option for Oil prompt style?  RHS prompt?
 
 # Don't reparse a[x+1] and ``.  Only valid in -n mode.

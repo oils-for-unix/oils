@@ -8,10 +8,7 @@ import sys
 
 from core import ansi
 from core import completion
-from core.pyerror import log
-
 import libc
-import line_input
 
 from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -104,7 +101,6 @@ class _IDisplay(object):
     try:
       self._PrintCandidates(*args)
     except Exception as e:
-      log('Unexpected exception from _PrintCandidates')
       if 0:
         import traceback
         traceback.print_exc()
@@ -300,7 +296,7 @@ def _PrintLong(matches,  # type: List[str]
   return num_lines
 
 
-class ZshLikeDisplay(_IDisplay):
+class NiceDisplay(_IDisplay):
   """Methods to display completion candidates and other messages.
 
   This object has to remember how many lines we last drew, in order to erase
@@ -311,6 +307,7 @@ class ZshLikeDisplay(_IDisplay):
   - displaying descriptions of flags and builtins
   """
   def __init__(self,
+               term_width,  # type: int
                comp_state,  # type: State
                prompt_state,  # type: PromptState
                debug_f,  # type: _DebugFile
@@ -327,6 +324,7 @@ class ZshLikeDisplay(_IDisplay):
     _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
                        debug_f)
     self.readline_mod = readline_mod
+    self.term_width = term_width
     self.width_is_dirty = False
 
     self.bold_line = bold_line
@@ -375,10 +373,7 @@ class ZshLikeDisplay(_IDisplay):
     # Variables set by the completion generator.  They should always exist,
     # because we can't get "matches" without calling that function.
     display_pos = self.comp_state.display_pos
-
-    self.debug_f.log(
-        'ZshLikeDisplay::_PrintCandidates term_width = %d, display_pos = %d',
-        term_width, display_pos)
+    self.debug_f.log('DISPLAY POS in _PrintCandidates = %d', display_pos)
 
     self.f.write('\n')
 
@@ -414,7 +409,7 @@ class ZshLikeDisplay(_IDisplay):
     # Calculate max length after stripping prefix.
     max_match_len = max(len(m) for m in to_display)
 
-    # TODO: ZshLikeDisplay should truncate when max_match_len > term_width?
+    # TODO: NiceDisplay should truncate when max_match_len > term_width?
     # Also truncate when a single candidate is super long?
 
     # Print and go back up.  But we have to ERASE these before hitting enter!
@@ -509,10 +504,17 @@ class ZshLikeDisplay(_IDisplay):
     self.f.flush()  # Without this, output will look messed up
 
   def _GetTerminalWidth(self):
-    # This function doesn't make syscalls; it queries globals inside GNU
-    # readline
-    _, cols = line_input.get_screen_size()
-    return cols
+    # type: () -> int
+    if self.width_is_dirty:
+      try:
+        self.term_width = libc.get_terminal_width()
+      except IOError:
+        # This shouldn't raise IOError because we did it at startup!  Under
+        # rare circumstances stdin can change, e.g. if you do exec <&
+        # input.txt.  So we have a fallback.
+        self.term_width = 80
+      self.width_is_dirty = False
+    return self.term_width
 
   def OnWindowChange(self):
     # type: () -> None

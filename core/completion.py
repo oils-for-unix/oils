@@ -504,7 +504,7 @@ class ShellFuncAction(CompletionAction):
     if val.tag_() != value_e.MaybeStrArray:
       log('ERROR: COMPREPLY should be an array, got %s', val)
       return []
-    #self.log('COMPREPLY %s', val)
+    self.log('COMPREPLY %s', val)
 
     # Return this all at once so we don't have a generator.  COMPREPLY happens
     # all at once anyway.

@@ -22,10 +22,6 @@ class LineInputTest(unittest.TestCase):
   def testMatchOshToken(self):
     print(dir(line_input))
 
-  def testGetScreenSize(self):
-    screen_size = line_input.get_screen_size()
-    print('screen size %s' % (screen_size,))
-
 
 if __name__ == '__main__':
   unittest.main()
