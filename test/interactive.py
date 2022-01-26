@@ -387,6 +387,8 @@ def PrintResults(shell_pairs, results):
   out_f = AnsiOutput(f)
   out_f.WriteHeader([shell_label for shell_label, _ in shell_pairs])
 
+  status = 0
+
   for row in results:
 
     case_num = row[0]
@@ -398,6 +400,7 @@ def PrintResults(shell_pairs, results):
       if cell == Result.SKIP:
         f.write('SKIP\t')
       elif cell == Result.FAIL:
+        status = 1
         f.write('%sFAIL%s\t' % (ansi.BOLD + ansi.RED, ansi.RESET))
       elif cell == Result.OK:
         f.write('%sok%s\t' % (ansi.BOLD + ansi.GREEN, ansi.RESET))
@@ -406,6 +409,8 @@ def PrintResults(shell_pairs, results):
 
     f.write(desc)
     f.write('\n')
+
+  return status
 
 
 def main(argv):
@@ -442,9 +447,10 @@ def main(argv):
 
   RunCases(CASES, case_predicate, shell_pairs, results)
 
-  PrintResults(shell_pairs, results)
+  status = PrintResults(shell_pairs, results)
 
-  return 0
+  # Were there any failures?
+  return status
 
 
 if __name__ == '__main__':
