@@ -88,7 +88,6 @@ lint                test/lint.sh soil-run         -
 typecheck-slice     types/oil-slice.sh soil-run   -
 typecheck-other     types/run.sh soil-run         -
 unit                test/unit.sh soil-run         -
-interactive         test/interactive.sh soil-run  -
 parse-errors        test/parse-errors.sh soil-run-py  -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 oil-runtime-errors  test/oil-runtime-errors.sh run-all-with-osh  -
@@ -180,6 +179,7 @@ tour              build/doc.sh tour                      _release/VERSION/doc/oi
 all-markdown      build/doc.sh all-markdown              -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
+interactive       test/interactive.sh soil-run           -
 osh-spec          test/spec.sh soil-run-osh              _tmp/spec/survey/osh.html
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      build/test.sh oil-tar                  -

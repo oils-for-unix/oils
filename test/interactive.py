@@ -30,16 +30,6 @@ from core import ansi
 from test import spec_lib  # Using this for a common interface
 
 
-SHELL = os.environ.get("OSH_TEST_INTERACTIVE_SHELL", "bin/osh")
-TIMEOUT = int(os.environ.get("OSH_TEST_INTERACTIVE_TIMEOUT", 3))
-DEBUG = True
-#DEBUG = False
-
-# keep track of failures so we can report exit status
-global g_failures
-g_failures = 0
-
-
 def get_pid_by_name(name):
   """Return the pid of the process matching `name`."""
   # XXX: make sure this is restricted to subprocesses under us.
@@ -79,9 +69,12 @@ def register(skip_shells=None):
 #
 # TODO:
 # - Fold code from demo/
-#   - bug-858-trap.sh
-#   - sigwinch-bug.sh
-#   - signal-during-read.sh -- actually 5 kinds of read
+#   - sigwinch-bug.sh -- invokes $OSH with different snippets, then manual window resize
+#   - signal-during-read.sh -- bash_read and osh_read with manual kill -HUP $PID
+#     trap handler HUP
+#   - bug-858-trap.sh -- wait and kill -USR1 $PID
+#     trap handler USR1
+#     trap handler USR2
 # - Fill out this TEST MATRIX.
 #
 # A. Which shell?  osh, bash, dash, etc.
@@ -189,13 +182,29 @@ def t2(sh):
   sh.expect('status=130')
 
 
-# TODO: fix on OSH
-@register(skip_shells=['osh'])
-def t3(sh):
+@register()
+def c_wait(sh):
   'Ctrl-C during wait builtin'
 
   sh.sendline('sleep 5 &')
   sh.sendline('wait')
+
+  time.sleep(0.1)
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  # TODO: Should be exit code 130 like bash
+  sh.expect('status=130')
+
+
+@register()
+def c_wait_n(sh):
+  'Ctrl-C during wait -n builtin'
+
+  sh.sendline('sleep 5 &')
+  sh.sendline('wait -n')
 
   time.sleep(0.1)
   sh.sendintr()  # SIGINT
@@ -345,11 +354,7 @@ def RunCases(cases, case_predicate, shell_pairs, results):
 
       # Python 3: encoding required
       sh = pexpect.spawn(
-          shell_path, sh_argv, env=env, encoding='utf-8', timeout=TIMEOUT)
-
-      # suppress output when DEBUG is not set.
-      if DEBUG:
-        sh.logfile = sys.stdout
+          shell_path, sh_argv, env=env, encoding='utf-8', timeout=1.0)
 
       # Generally don't want local echo, it gets confusing fast.
       sh.setecho(False)
@@ -433,7 +438,7 @@ def main(argv):
     print(shell_pairs)
     print(CASES)
 
-  results = []  # type: List[Dict[shell_label, result]]
+  results = []  # each row is a list
 
   RunCases(CASES, case_predicate, shell_pairs, results)
 
