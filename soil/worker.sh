@@ -62,16 +62,36 @@ dump-distro() {
   apt-cache policy r-base-core
 }
 
+dump-user-host() {
+  echo -n 'whoami = '
+  whoami
+  echo
+
+  echo "PWD = $PWD"
+  echo
+
+  echo -n 'hostname = '
+  hostname
+  echo
+
+  uname -a
+  echo
+
+  who
+  echo
+}
+
 dummy-tasks() {
   ### Print tasks that execute quickly
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-distro   soil/worker.sh dump-distro   -
-dump-env      soil/worker.sh dump-env      -
-dump-timezone soil/worker.sh dump-timezone -
-dump-locale   soil/worker.sh dump-locale   -
-dump-hardware soil/worker.sh dump-hardware -
+dump-distro      soil/worker.sh dump-distro   -
+dump-user-host   soil/worker.sh dump-user-host     -
+dump-env         soil/worker.sh dump-env      -
+dump-timezone    soil/worker.sh dump-timezone -
+dump-locale      soil/worker.sh dump-locale   -
+dump-hardware    soil/worker.sh dump-hardware -
 EOF
 }
 
@@ -82,6 +102,7 @@ dev-minimal-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
+dump-user-host      soil/worker.sh dump-user-host -
 build-minimal       build/dev.sh minimal          -
 repo-overview       metrics/source-code.sh overview  -
 lint                test/lint.sh soil-run         -
