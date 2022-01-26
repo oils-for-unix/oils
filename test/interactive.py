@@ -63,74 +63,6 @@ def stop_process__hack(name):
   send_signal(name, signal.SIGSTOP)
 
 
-class InteractiveTest(object):
-  """Define a test case for the interactive shell.
-
-  This is implemented as a context-manager wrapper around
-  pexpect.spawn, use like this:
-
-  with InteractiveTest("Describe the test") as osh:
-     osh.sendline(...)
-     osh.expect(...)
-     ...
-  """
-
-  def __init__(self, description, program=SHELL):
-    self.program = program
-    self.shell = None
-    self.description = description
-
-  def __enter__(self):
-    if 0:
-      if DEBUG:
-        print(self.description)
-      else:
-        print(self.description, end='')
-
-    #env = dict(os.environ)
-    #env['PS1'] = 'test$ '
-    env = None
-
-    sh_argv = ['--rcfile', '/dev/null']
-
-    # Why the heck is --norc different from --rcfile /dev/null in bash???  This
-    # makes it so the prompt of the parent shell doesn't leak.  Very annoying.
-    if self.program == 'bash':
-      sh_argv.append('--norc')
-    #print(sh_argv)
-
-    # Python 3: encoding required
-    self.shell = pexpect.spawn(
-        self.program, sh_argv, env=env, encoding='utf-8',
-        timeout=TIMEOUT)
-
-    # suppress output when DEBUG is not set.
-    if DEBUG:
-      self.shell.logfile = sys.stdout
-
-    # generally don't want local echo, it gets confusing fast.
-    self.shell.setecho(False)
-    return self.shell
-
-  def __exit__(self, t, v, tb):
-    global g_failures
-    self.shell.close()
-
-    if not DEBUG:
-      # show result of test
-      if tb:
-        g_failures += 1
-        print("... Fail")
-      else:
-        print("... OK")
-      # Allow other tests to keep running
-      return True
-    else:
-      # Fail fast when in debug mode.
-      pass
-
-
-
 CASES = []
 
 def register(skip_shells=None):
@@ -142,10 +74,62 @@ def register(skip_shells=None):
     return func
   return decorator
 
+#
+# Test Cases
+#
+# TODO:
+# - Fold code from demo/
+#   - bug-858-trap.sh
+#   - sigwinch-bug.sh
+#   - signal-during-read.sh -- actually 5 kinds of read
+# - Fill out this TEST MATRIX.
+#
+# A. Which shell?  osh, bash, dash, etc.
+#
+# B. What mode is it in?
+#
+#    1. Interactive (stdin is a terminal)
+#    2. Non-interactive
+#
+# C. What is the main thread of the shell doing?
+#
+#    1. waiting for external process: sleep 1
+#    2. wait builtin:                 sleep 5 & wait
+#       variants: wait -n: this matters when testing exit code
+#    3. read builtin                  read
+#       variants: FIVE kinds, read -d, read -n, etc.
+#    4. computation, e.g. fibonacci with $(( a + b ))
+#
+# if interactive:
+#    5. keyboard input from terminal with select()
+#
+#    Another way to categorize the main loop:
+#    1. running script code
+#    2. running trap code
+#    3. running TAB completion plugin code
+#
+# D. What is it interrupted by?
+#
+#    1. SIGINT
+#    2. SIGTSTP
+#    3. SIGWINCH
+#    4. SIGUSR1 -- doesn't this quit?
+#
+# if interactive:
+#    1. SIGINT  Ctrl-C from terminal (relies on signal distribution to child?)
+#    2. SIGTSTP Ctrl-Z from terminal
+#
+# E. What is the signal state?
+#
+#    1. no trap handlers installed
+#    2. trap 'echo X' SIGWINCH
+#    3. trap 'echo X' SIGINT ?
+
 
 # TODO: Make this pass in OSH
-@register(skip_shells=['osh'])
-def a(sh):
+#@register(skip_shells=['osh'])
+@register()
+def t0(sh):
   'wait builtin then SIGWINCH (issue 1067)'
 
   sh.sendline('sleep 1 &')
@@ -163,7 +147,7 @@ def a(sh):
 
 
 @register()
-def b(sh):
+def t1(sh):
   'Ctrl-C during external command'
 
   sh.sendline('sleep 5')
@@ -178,7 +162,7 @@ def b(sh):
 
 
 @register()
-def c(sh):
+def t2(sh):
   'Ctrl-C during read builtin'
 
   sh.sendline('read')
@@ -194,7 +178,7 @@ def c(sh):
 
 # TODO: fix on OSH
 @register(skip_shells=['osh'])
-def d(sh):
+def t3(sh):
   'Ctrl-C during wait builtin'
 
   sh.sendline('sleep 5 &')
@@ -211,7 +195,7 @@ def d(sh):
 
 
 @register()
-def e(sh):
+def t4(sh):
   'Ctrl-C during pipeline'
   sh.sendline('sleep 5 | cat')
 
@@ -224,9 +208,8 @@ def e(sh):
   sh.expect('status=130')
 
 
-# TODO: make it work on OSH
 @register(skip_shells=['osh'])
-def f(sh):
+def t5(sh):
   'Ctrl-C during Command Sub (issue 467)'
   sh.sendline('`sleep 5`')
 
@@ -241,7 +224,7 @@ def f(sh):
 
 
 @register(skip_shells=['bash'])
-def g(sh):
+def t6(sh):
   'fg twice should not result in fatal error (issue 1004)'
   sh.expect(r'.*\$ ')
   sh.sendline("cat")
@@ -260,7 +243,7 @@ def g(sh):
 
 
 @register(skip_shells=['bash'])
-def h(sh):
+def t7(sh):
   'Test resuming a killed process'
   sh.expect(r'.*\$ ')
   sh.sendline("cat")
@@ -276,7 +259,7 @@ def h(sh):
 
 
 @register(skip_shells=['bash'])
-def j(sh):
+def t8(sh):
   'Call fg after process exits (issue 721)'
 
   sh.expect(r".*\$")
@@ -312,6 +295,7 @@ class AnsiOutput(object):
 class Result(object):
   SKIP = 1
   OK = 2
+  FAIL = 3
 
 
 def RunCases(cases, case_predicate, shell_pairs, results):
@@ -333,11 +317,40 @@ def RunCases(cases, case_predicate, shell_pairs, results):
         result_row.append(Result.SKIP)
         continue
 
-      with InteractiveTest(desc, program=shell_path) as sh:
-        func(sh)
+      env = None
+      sh_argv = ['--rcfile', '/dev/null']
 
-      # TODO: Failing will raise an exception and we won't print anything?
-      result_row.append(Result.OK)
+      # Why the heck is --norc different from --rcfile /dev/null in bash???  This
+      # makes it so the prompt of the parent shell doesn't leak.  Very annoying.
+      if shell_label == 'bash':
+        sh_argv.append('--norc')
+      #print(sh_argv)
+
+      # Python 3: encoding required
+      sh = pexpect.spawn(
+          shell_path, sh_argv, env=env, encoding='utf-8', timeout=TIMEOUT)
+
+      # suppress output when DEBUG is not set.
+      if DEBUG:
+        sh.logfile = sys.stdout
+
+      # Generally don't want local echo, it gets confusing fast.
+      sh.setecho(False)
+
+      ok = True
+      try:
+        func(sh)
+      except Exception as e:
+        import traceback
+        print(e)
+        result_row.append(Result.FAIL)
+        ok = False
+
+      finally:
+        sh.close()
+
+      if ok:
+        result_row.append(Result.OK)
 
     result_row.append(desc)
     results.append(result_row) 
@@ -362,6 +375,8 @@ def PrintResults(shell_pairs, results):
     for cell in row[1:-1]:
       if cell == Result.SKIP:
         f.write('SKIP\t')
+      elif cell == Result.FAIL:
+        f.write('%sFAIL%s\t' % (ansi.BOLD + ansi.RED, ansi.RESET))
       elif cell == Result.OK:
         f.write('%sok%s\t' % (ansi.BOLD + ansi.GREEN, ansi.RESET))
       else:
@@ -375,6 +390,12 @@ def main(argv):
   # NOTE: Some options are ignored
   o = spec_lib.Options()
   opts, argv = o.parse_args(argv)
+
+  # List test cases and return
+  if opts.do_list:
+    for i, (desc, _, _) in enumerate(CASES):
+      print('%d\t%s' % (i, desc))
+    return
 
   shells = argv[1:]
   shell_pairs = spec_lib.MakeShellPairs(shells)
