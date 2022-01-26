@@ -26,6 +26,7 @@ import signal
 import sys
 import time
 
+from core import ansi
 from test import spec_lib  # Using this for a common interface
 
 
@@ -191,8 +192,8 @@ def c(sh):
   sh.expect('status=130')
 
 
-# TODO: make it work on bash
-@register(skip_shells=['bash'])
+# TODO: fix on OSH
+@register(skip_shells=['osh'])
 def d(sh):
   'Ctrl-C during wait builtin'
 
@@ -206,7 +207,7 @@ def d(sh):
 
   sh.sendline('echo status=$?')
   # TODO: Should be exit code 130 like bash
-  sh.expect('status=0')
+  sh.expect('status=130')
 
 
 @register()
@@ -223,8 +224,8 @@ def e(sh):
   sh.expect('status=130')
 
 
-# TODO: make it work on bash
-@register(skip_shells=['bash'])
+# TODO: make it work on OSH
+@register(skip_shells=['osh'])
 def f(sh):
   'Ctrl-C during Command Sub (issue 467)'
   sh.sendline('`sleep 5`')
@@ -236,7 +237,7 @@ def f(sh):
 
   sh.sendline('echo status=$?')
   # TODO: This should be status 130 like bash
-  sh.expect('status=0')
+  sh.expect('status=130')
 
 
 @register(skip_shells=['bash'])
@@ -293,20 +294,33 @@ def j(sh):
   sh.expect(r".*\$")
 
 
+class AnsiOutput(object):
 
-def main(argv):
-  # NOTE: Some options are ignored
-  o = spec_lib.Options()
-  opts, argv = o.parse_args(argv)
+  def __init__(self, f):
+    self.f = f
 
-  shells = argv[1:]
-  shell_pairs = spec_lib.MakeShellPairs(shells)
+  def WriteHeader(self, sh_labels):
+    self.f.write(ansi.BOLD)
+    self.f.write('case\t')  # case number
+    for sh_label in sh_labels:
+      self.f.write(sh_label)
+      self.f.write('\t')
+    self.f.write(ansi.RESET)
+    self.f.write('\n')
 
-  if 0:
-    print(shell_pairs)
-    print(CASES)
 
-  for i, (desc, func, skip_shells) in enumerate(CASES):
+class Result(object):
+  SKIP = 1
+  OK = 2
+
+
+def RunCases(cases, case_predicate, shell_pairs, results):
+  for i, (desc, func, skip_shells) in enumerate(cases):
+    if not case_predicate(i, desc):
+      continue
+
+    result_row = [i]
+
     for shell_label, shell_path in shell_pairs:
       skip = shell_label in skip_shells
       skip_str = 'SKIP' if skip else ''
@@ -316,10 +330,73 @@ def main(argv):
       print()
 
       if skip:
+        result_row.append(Result.SKIP)
         continue
 
       with InteractiveTest(desc, program=shell_path) as sh:
         func(sh)
+
+      # TODO: Failing will raise an exception and we won't print anything?
+      result_row.append(Result.OK)
+
+    result_row.append(desc)
+    results.append(result_row) 
+
+
+def PrintResults(shell_pairs, results):
+  f = sys.stderr
+
+  f.write('\n')
+
+  # TODO: Might want an HTML version too
+  out_f = AnsiOutput(f)
+  out_f.WriteHeader([shell_label for shell_label, _ in shell_pairs])
+
+  for row in results:
+
+    case_num = row[0]
+    desc = row[-1]
+
+    f.write('%d\t' % case_num)
+
+    for cell in row[1:-1]:
+      if cell == Result.SKIP:
+        f.write('SKIP\t')
+      elif cell == Result.OK:
+        f.write('%sok%s\t' % (ansi.BOLD + ansi.GREEN, ansi.RESET))
+      else:
+        raise AssertionError(cell)
+
+    f.write(desc)
+    f.write('\n')
+
+
+def main(argv):
+  # NOTE: Some options are ignored
+  o = spec_lib.Options()
+  opts, argv = o.parse_args(argv)
+
+  shells = argv[1:]
+  shell_pairs = spec_lib.MakeShellPairs(shells)
+
+  if opts.range:
+    begin, end = spec_lib.ParseRange(opts.range)
+    case_predicate = spec_lib.RangePredicate(begin, end)
+  elif opts.regex:
+    desc_re = re.compile(opts.regex, re.IGNORECASE)
+    case_predicate = spec_lib.RegexPredicate(desc_re)
+  else:
+    case_predicate = lambda i, case: True
+
+  if 0:
+    print(shell_pairs)
+    print(CASES)
+
+  results = []  # type: List[Dict[shell_label, result]]
+
+  RunCases(CASES, case_predicate, shell_pairs, results)
+
+  PrintResults(shell_pairs, results)
 
   return 0
 

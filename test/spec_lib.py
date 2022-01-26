@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import optparse
 import os
+import re
 import sys
 
 
@@ -43,6 +44,42 @@ def MakeShellPairs(shells):
 
     shell_pairs.append((label, path))
   return shell_pairs
+
+
+RANGE_RE = re.compile('(\d+) \s* - \s* (\d+)', re.VERBOSE)
+
+
+def ParseRange(range_str):
+  try:
+    d = int(range_str)
+    return d, d  # singleton range
+  except ValueError:
+    m = RANGE_RE.match(range_str)
+    if not m:
+      raise RuntimeError('Invalid range %r' % range_str)
+    b, e = m.groups()
+    return int(b), int(e)
+
+
+class RangePredicate(object):
+  """Zero-based indexing, inclusive ranges."""
+
+  def __init__(self, begin, end):
+    self.begin = begin
+    self.end = end
+
+  def __call__(self, i, case):
+    return self.begin <= i <= self.end
+
+
+class RegexPredicate(object):
+  """Filter by name."""
+
+  def __init__(self, desc_re):
+    self.desc_re = desc_re
+
+  def __call__(self, i, case):
+    return bool(self.desc_re.search(case['desc']))
 
 
 def Options():

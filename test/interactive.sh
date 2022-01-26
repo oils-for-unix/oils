@@ -22,7 +22,7 @@ all() {
 
   # TODO: source build/dev-shell.sh to get this?
 
-  run bin/osh ../oil_DEPS/spec-bin/bash
+  run bin/osh ../oil_DEPS/spec-bin/bash "$@"
 }
 
 soil-run() {

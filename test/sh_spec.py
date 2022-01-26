@@ -717,42 +717,6 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
   return stats
 
 
-RANGE_RE = re.compile('(\d+) \s* - \s* (\d+)', re.VERBOSE)
-
-
-def ParseRange(range_str):
-  try:
-    d = int(range_str)
-    return d, d  # singleton range
-  except ValueError:
-    m = RANGE_RE.match(range_str)
-    if not m:
-      raise RuntimeError('Invalid range %r' % range_str)
-    b, e = m.groups()
-    return int(b), int(e)
-
-
-class RangePredicate(object):
-  """Zero-based indexing, inclusive ranges."""
-
-  def __init__(self, begin, end):
-    self.begin = begin
-    self.end = end
-
-  def __call__(self, i, case):
-    return self.begin <= i <= self.end
-
-
-class RegexPredicate(object):
-  """Filter by name."""
-
-  def __init__(self, desc_re):
-    self.desc_re = desc_re
-
-  def __call__(self, i, case):
-    return bool(self.desc_re.search(case['desc']))
-
-
 # ANSI color constants
 _RESET = '\033[0;0m'
 _BOLD = '\033[1m'
@@ -1225,11 +1189,11 @@ def main(argv):
     return
 
   if opts.range:
-    begin, end = ParseRange(opts.range)
-    case_predicate = RangePredicate(begin, end)
+    begin, end = spec_lib.ParseRange(opts.range)
+    case_predicate = spec_lib.RangePredicate(begin, end)
   elif opts.regex:
     desc_re = re.compile(opts.regex, re.IGNORECASE)
-    case_predicate = RegexPredicate(desc_re)
+    case_predicate = spec_lib.RegexPredicate(desc_re)
   else:
     case_predicate = lambda i, case: True
 
