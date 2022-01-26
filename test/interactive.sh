@@ -25,6 +25,15 @@ all() {
   test/interactive.py bin/osh ../oil_DEPS/spec-bin/bash "$@"
 }
 
+all-dev-minimal() {
+  ### Use system bash rather than spec-bin/bash.
+
+  # This is a hack for the 'dev-minimal' task in Soil.  We don't have spec-bin,
+  # and the ovm-tarball container doesn't have python3 :-( Really we should
+  # build another container, but this is OK for now.
+  test/interactive.py bin/osh bash "$@"
+}
+
 soil-run() {
   ### Run it a few times to work around flakiness
 
@@ -40,7 +49,9 @@ soil-run() {
     echo -----
 
     set +o errexit
-    all
+
+    all-dev-minimal
+
     status=$?
     set -o errexit
 
