@@ -127,7 +127,6 @@ def register(skip_shells=None):
 
 
 # TODO: Make this pass in OSH
-#@register(skip_shells=['osh'])
 @register()
 def t0(sh):
   'wait builtin then SIGWINCH (issue 1067)'
@@ -162,10 +161,24 @@ def t1(sh):
 
 
 @register()
+def t4(sh):
+  'Ctrl-C during pipeline'
+  sh.sendline('sleep 5 | cat')
+
+  time.sleep(0.1)
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=130')
+
+
+@register()
 def t2(sh):
   'Ctrl-C during read builtin'
 
-  sh.sendline('read')
+  sh.sendline('read myvar')
 
   time.sleep(0.1)
   sh.sendintr()  # SIGINT
@@ -195,20 +208,6 @@ def t3(sh):
 
 
 @register()
-def t4(sh):
-  'Ctrl-C during pipeline'
-  sh.sendline('sleep 5 | cat')
-
-  time.sleep(0.1)
-  sh.sendintr()  # SIGINT
-
-  sh.expect(r'.*\$')  # expect prompt
-
-  sh.sendline('echo status=$?')
-  sh.expect('status=130')
-
-
-@register(skip_shells=['osh'])
 def t5(sh):
   'Ctrl-C during Command Sub (issue 467)'
   sh.sendline('`sleep 5`')
@@ -277,6 +276,22 @@ def t8(sh):
   sh.expect(r".*\$")
 
 
+@register()
+def t9(sh):
+  'syntax error makes status=2'
+
+  sh.sendline('syntax ) error')
+
+  #time.sleep(0.1)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=2')  # osh, bash, dash
+
+  # mksh gives status=1, and zsh doesn't give anything?
+
+
 class AnsiOutput(object):
 
   def __init__(self, f):
@@ -318,8 +333,10 @@ def RunCases(cases, case_predicate, shell_pairs, results):
         continue
 
       env = None
-      sh_argv = ['--rcfile', '/dev/null']
 
+      sh_argv = []
+      if shell_label in ('bash', 'osh'):
+        sh_argv.extend(['--rcfile', '/dev/null'])
       # Why the heck is --norc different from --rcfile /dev/null in bash???  This
       # makes it so the prompt of the parent shell doesn't leak.  Very annoying.
       if shell_label == 'bash':
@@ -398,6 +415,9 @@ def main(argv):
     return
 
   shells = argv[1:]
+  if not shells:
+    raise RuntimeError('Expected shells to run')
+
   shell_pairs = spec_lib.MakeShellPairs(shells)
 
   if opts.range:

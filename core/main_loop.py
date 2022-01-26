@@ -234,8 +234,8 @@ if mylib.PYTHON:
         except error.Parse as e:
           display.EraseLines()
           errfmt.PrettyPrintError(e)
-          # NOTE: This should set the status interactively!  Bash does this.
           status = 2
+          cmd_ev.mem.SetLastStatus(status)
           break
         except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
           # Here we must print a newline BEFORE EraseLines()
@@ -259,6 +259,7 @@ if mylib.PYTHON:
           is_return = False
           display.EraseLines()
           status = 130  # 128 + 2
+          cmd_ev.mem.SetLastStatus(status)
           break
 
         status = cmd_ev.LastStatus()

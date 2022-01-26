@@ -15,14 +15,14 @@ run() {
   ### Wrapper for PYTHONPATH
 
   test/interactive.py "$@"
+
 }
 
 all() {
-  ### What we want to pass
+  ### Run all tests
 
-  # TODO: source build/dev-shell.sh to get this?
-
-  run bin/osh ../oil_DEPS/spec-bin/bash "$@"
+  # TODO: source build/dev-shell.sh to change $PATH?
+  test/interactive.py bin/osh ../oil_DEPS/spec-bin/bash "$@"
 }
 
 soil-run() {
@@ -30,11 +30,6 @@ soil-run() {
 
   local n=5
   echo "Running $n times"
-
-  # In the CI image we run as root :-(
-  # We don't want 'root# ' as the prompt!
-
-  export PS1='test-sh$ '
 
   local num_success=0
   local status=0
@@ -45,7 +40,7 @@ soil-run() {
     echo -----
 
     set +o errexit
-    test/interactive.py
+    all
     status=$?
     set -o errexit
 
