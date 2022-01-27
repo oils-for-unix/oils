@@ -168,7 +168,8 @@ class Wait(vm._Builtin):
         # Not sure it matters since you can now Ctrl-C it.
 
         result = self.waiter.WaitForOne()
-        if result == process.W1_ECHILD:  # nothing to wait for, or interrupted.  status is 0
+        if result == process.W1_ECHILD:
+          # nothing to wait for, or interrupted.  status is 0
           break  
         elif result >= 0:  # signal
           status = 128 + result

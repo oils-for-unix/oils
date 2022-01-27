@@ -1355,8 +1355,8 @@ class JobState(object):
 
 # WaitForOne() return values
 
-W1_OK = 0      # waitpid(-1) returned
-W1_ECHILD = -1  # no processes to wait for
+W1_OK = -2      # waitpid(-1) returned
+W1_ECHILD = -3  # no processes to wait for
 # result > 0:   # a signal number that we exited with!
 
 
