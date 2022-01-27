@@ -126,14 +126,14 @@ class Wait(vm._Builtin):
     job_ids, arg_spids = arg_r.Rest2()
 
     if arg.n:
-      #log('*** wait -n')
-      # wait -n returns the exit status of the JOB.
-      # You don't know WHICH process, which is odd.
 
-      # TODO: this should wait for the next JOB, which may be multiple
-      # processes.
+      # Right now wait -n waits for one process, but it should wait for the
+      # next JOB (which can be multiple processes).
+
       # Bash has a wait_for_any_job() function, which loops until the jobs
       # table changes.
+
+      # Idea:
       #
       # target_count = self.job_state.NumRunning() - 1
       # while True:
@@ -143,7 +143,8 @@ class Wait(vm._Builtin):
       #   if self.job_state.NumRunning == target_count:
       #     break
       #    
-      #log('wait next')
+      # But note that it can be interrupted by a signal and will return say
+      # status=156 for SIGWINCH
 
       result = self.waiter.WaitForOne(False)
       if result == 0:  # OK
@@ -151,7 +152,7 @@ class Wait(vm._Builtin):
       elif result == -1:  # nothing to wait for
         return 127
       else:
-        return result  # signal
+        return result  # signal, e.g. SIGHUP is 129 = 128 + 1
 
     if len(job_ids) == 0:
       #log('*** wait')

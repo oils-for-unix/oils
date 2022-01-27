@@ -1064,7 +1064,7 @@ class Pipeline(Job):
     assert self.procs, "no procs for Wait()"
     # waitpid(-1) zero or more times
     while self.state == job_state_e.Running:
-      if waiter.WaitForOne(True) != 0:  # nothing to wait for
+      if waiter.WaitForOne(True) != 0:  # eintr_retry=True
         break
 
     return self.pipe_status
@@ -1386,12 +1386,10 @@ class Waiter(object):
     # type: (bool) -> int
     """Wait until the next process returns (or maybe Ctrl-C).
 
-    Args:
-      Should be True to prevent zombies
-
     Returns:
       -1      Nothing to wait for
-      0       OK, job mutated
+      0       Caller should keep waiting.  Either waitpid() succeeded, or we
+              got EINTR when eintr_retry == True.
       >= 128  Interrupted with signal
 
       In the interactive shell, we return 0 if we get a Ctrl-C, so the caller
@@ -1401,6 +1399,8 @@ class Waiter(object):
       wait -n  -- WaitForOne() just once
       wait     -- WaitForOne() in a loop
       wait $!  -- job.JobWait()
+      Process::Wait()
+      Pipeline::Wait()
 
     Comparisons:
       bash: jobs.c waitchld() Has a special case macro(!) CHECK_WAIT_INTR for
@@ -1409,15 +1409,12 @@ class Waiter(object):
       dash: jobs.c waitproc() uses sigfillset(), sigprocmask(), etc.  Runs in a
       loop while (gotsigchld), but that might be a hack for System V!
 
-    You could imagine a clean API like posix::wait_for_one() 
+    Should we have a cleaner API like named posix::wait_for_one() ?
 
     wait_result =
       ECHILD                     -- nothing to wait for
     | Done(int pid, int status)  -- process done
     | EINTR(bool sigint)         -- may or may not retry
-
-    But I think we want to keep KeyboardInterrupt as an exception for now.
-
     """
     # This is a list of async jobs
     try:
@@ -1429,7 +1426,7 @@ class Waiter(object):
       #   problems for other WaitForOne callers?
       pid, status = posix.waitpid(-1, WUNTRACED)
     except OSError as e:
-      #log('wait() error: %s', e)
+      #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
       if e.errno == ECHILD:
         return -1  # nothing to wait for caller should stop
       elif e.errno == EINTR:  # Bug #858 fix
@@ -1437,8 +1434,8 @@ class Waiter(object):
         # - 128 + SIGUSR1 = 128 + 10 = 138
         # - 128 + SIGUSR2 = 128 + 12 = 140
         if eintr_retry:
-          # Caller should keep waiting.  Note: only Process::Wait() calls this?
-          # It might not be necessary anymore?
+          # Caller should keep waiting.  Process::Wait() and Pipeline::Wait()
+          # use this as another termination condition.
           return 0
         else:
           return 128 + self.sig_state.last_sig_num

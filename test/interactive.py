@@ -122,7 +122,7 @@ def register(skip_shells=None):
 
 
 @register()
-def trapped_1(sh):
+def sighup_trapped_wait(sh):
   'trapped SIGHUP during wait builtin'
 
   sh.sendline("trap 'echo HUP' HUP")
@@ -140,7 +140,7 @@ def trapped_1(sh):
 
 
 @register()
-def trapped_sigint(sh):
+def sigint_trapped_wait(sh):
   'trapped SIGINT during wait builtin'
 
   # This is different than Ctrl-C during wait builtin, because it's trapped!
@@ -185,6 +185,23 @@ def sigwinch_untrapped_wait(sh):
 
   sh.sendline('sleep 1 &')
   sh.sendline('wait')
+
+  time.sleep(0.1)
+
+  # simulate window size change
+  sh.kill(signal.SIGWINCH)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=0')
+
+
+@register()
+def sigwinch_untrapped_external(sh):
+  'untrapped SIGWINCH during external command'
+
+  sh.sendline('sleep 0.5')  # slower than timeout
 
   time.sleep(0.1)
 
@@ -362,21 +379,6 @@ def t9(sh):
   # mksh gives status=1, and zsh doesn't give anything?
 
 
-class AnsiOutput(object):
-
-  def __init__(self, f):
-    self.f = f
-
-  def WriteHeader(self, sh_labels):
-    self.f.write(ansi.BOLD)
-    self.f.write('case\t')  # case number
-    for sh_label in sh_labels:
-      self.f.write(sh_label)
-      self.f.write('\t')
-    self.f.write(ansi.RESET)
-    self.f.write('\n')
-
-
 class Result(object):
   SKIP = 1
   OK = 2
@@ -445,17 +447,26 @@ def PrintResults(shell_pairs, results):
   if f.isatty():
     fail_color = ansi.BOLD + ansi.RED
     ok_color = ansi.BOLD + ansi.GREEN
+    bold = ansi.BOLD
     reset = ansi.RESET
   else:
     fail_color = ''
     ok_color = ''
+    bold = ''
     reset = ''
 
   f.write('\n')
 
   # TODO: Might want an HTML version too
-  out_f = AnsiOutput(f)
-  out_f.WriteHeader([shell_label for shell_label, _ in shell_pairs])
+  sh_labels = [shell_label for shell_label, _ in shell_pairs]
+
+  f.write(bold)
+  f.write('case\t')  # case number
+  for sh_label in sh_labels:
+    f.write(sh_label)
+    f.write('\t')
+  f.write(reset)
+  f.write('\n')
 
   num_failures = 0
 
