@@ -1436,7 +1436,12 @@ class Waiter(object):
         # Examples:
         # - 128 + SIGUSR1 = 128 + 10 = 138
         # - 128 + SIGUSR2 = 128 + 12 = 140
-        return 0 if eintr_retry else (128 + self.sig_state.last_sig_num)
+        if eintr_retry:
+          # Caller should keep waiting.  Note: only Process::Wait() calls this?
+          # It might not be necessary anymore?
+          return 0
+        else:
+          return 128 + self.sig_state.last_sig_num
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()

@@ -21,6 +21,7 @@ from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
+  from osh.builtin_process import _TrapHandler
 
 
 EOF_SENTINEL = 256  # bigger than any byte
@@ -240,6 +241,23 @@ def InputAvailable(fd):
   return len(r) != 0
 
 
+class SigwinchHandler(object):
+  """Wrapper to call user handler."""
+
+  def __init__(self, display):
+    # type: (_IDisplay) -> None
+    self.display = display
+    self.user_handler = None  # type: _TrapHandler
+
+  def __call__(self, sig_num, unused_frame):
+    # type: (int, Any) -> None
+    """For Python's signal module."""
+
+    self.display.OnWindowChange()
+    if self.user_handler:
+      self.user_handler(sig_num, unused_frame)
+
+
 def SignalState_AfterForkingChild():
   # type: () -> None
   """Not a member of SignalState since we didn't do dependency injection."""
@@ -261,9 +279,7 @@ class SignalState(object):
 
   def __init__(self):
     # type: () -> None
-    # Before doing anything else, save the original handler that raises
-    # KeyboardInterrupt.
-    self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
+    self.sigwinch_handler = None  # type: SigwinchHandler
     self.last_sig_num = 0  # MUTABLE GLOBAL, for interrupted 'wait'
 
   def InitShell(self):
@@ -282,15 +298,30 @@ class SignalState(object):
 
     # Register a callback to receive terminal width changes.
     # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
-    signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
+
+    # This is ALWAYS on, which means that it can cause EINTR, and wait() and
+    # read() have to handle it
+    self.sigwinch_handler = SigwinchHandler(display)
+    signal.signal(signal.SIGWINCH, self.sigwinch_handler)
 
   def AddUserTrap(self, sig_num, handler):
     # type: (int, Any) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
-    signal.signal(sig_num, handler)
+
+    if sig_num == signal.SIGWINCH:
+      assert self.sigwinch_handler is not None
+      self.sigwinch_handler.user_handler = handler
+    else:
+      signal.signal(sig_num, handler)
+    # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
 
   def RemoveUserTrap(self, sig_num):
     # type: (int) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     # Restore default
-    signal.signal(sig_num, signal.SIG_DFL)
+    if sig_num == signal.SIGWINCH:
+      assert self.sigwinch_handler is not None
+      self.sigwinch_handler.user_handler = None
+    else:
+      signal.signal(sig_num, signal.SIG_DFL)
+    # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
