@@ -24,6 +24,8 @@ if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
   from osh.builtin_process import _TrapHandler
 
+_ = log
+
 
 EOF_SENTINEL = 256  # bigger than any byte
 NEWLINE_CH = 10  # ord('\n')

@@ -67,7 +67,9 @@ run-with-osh-eval() {
   local base_dir=_tmp/spec/$SPEC_JOB
 
   # Run it with 3 versions of OSH.  And output TSV so we can compare the data.
+  # 2022-01: Try 10 second timeout.
   sh-spec spec/$test_name.test.sh \
+    --timeout 10 \
     --tsv-output $base_dir/${test_name}.tsv \
     $REPO_ROOT/bin/osh \
     $REPO_ROOT/bin/osh_eval \
