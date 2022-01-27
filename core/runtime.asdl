@@ -155,7 +155,7 @@ module runtime
     Proc(int code)
   | Pipeline(int* codes)
     -- because the 'wait' builtin is interruptible
-  | Cancelled(int code)
+  | Cancelled(int sig_num)
 
   -- For word splitting (in frontend/consts.py and osh/split.py)
   span = Black | Delim | Backslash

@@ -918,7 +918,7 @@ class Process(Job):
     while self.state == job_state_e.Running:
       result = waiter.WaitForOne()
 
-      if result > 0:  # signal
+      if result >= 0:  # signal
         return wait_status.Cancelled(result)
 
       if result == W1_ECHILD:
@@ -1079,7 +1079,7 @@ class Pipeline(Job):
     while self.state == job_state_e.Running:
       result = waiter.WaitForOne()
 
-      if result > 0:  # signal
+      if result >= 0:  # signal
         return wait_status.Cancelled(result)
 
       if result == W1_ECHILD:
@@ -1402,11 +1402,11 @@ class Waiter(object):
       will try again.
 
     Callers:
-      wait -n  -- WaitForOne() just once
-      wait     -- WaitForOne() in a loop
-      wait $!  -- job.JobWait()
-      Process::Wait()
-      Pipeline::Wait()
+      wait -n          -- loop until there is one fewer process (TODO)
+      wait             -- loop until there are no processes
+      wait $!          -- loop until job state is Done (process or pipeline)
+      Process::Wait()  -- loop until Process state is done
+      Pipeline::Wait() -- loop until Pipeline state is done
 
     Comparisons:
       bash: jobs.c waitchld() Has a special case macro(!) CHECK_WAIT_INTR for
@@ -1435,10 +1435,7 @@ class Waiter(object):
       if e.errno == ECHILD:
         return W1_ECHILD  # nothing to wait for caller should stop
       elif e.errno == EINTR:  # Bug #858 fix
-        # Examples:
-        # - 128 + SIGUSR1 = 128 + 10 = 138
-        # - 128 + SIGUSR2 = 128 + 12 = 140
-        return 128 + self.sig_state.last_sig_num
+        return self.sig_state.last_sig_num  # e.g. 1 for SIGHUP
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()

@@ -147,13 +147,16 @@ class Wait(vm._Builtin):
       # But note that it can be interrupted by a signal and will return say
       # status=156 for SIGWINCH
 
+      # TODO: WaitForOne() in a loop and ignore SIGWINCH here.  We run until we
+      # reach a STATE.
+
       result = self.waiter.WaitForOne()
       if result == process.W1_OK:
         return self.waiter.last_status
       elif result == process.W1_ECHILD:  # nothing to wait for
         return 127
       else:
-        return result  # signal, e.g. SIGHUP is 129 = 128 + 1
+        return 128 + result  # signal, e.g. SIGHUP is 129 = 128 + 1
 
     if len(job_ids) == 0:
       #log('*** wait')
@@ -167,8 +170,8 @@ class Wait(vm._Builtin):
         result = self.waiter.WaitForOne()
         if result == process.W1_ECHILD:  # nothing to wait for, or interrupted.  status is 0
           break  
-        elif result > 0:  # signal
-          status = result
+        elif result >= 0:  # signal
+          status = 128 + result
           break
 
         i += 1
@@ -217,7 +220,7 @@ class Wait(vm._Builtin):
           status = wait_status.codes[-1]
         elif case(wait_status_e.Cancelled):
           wait_status = cast(wait_status__Cancelled, UP_wait_status)
-          status = wait_status.code
+          status = 128 + wait_status.sig_num
         else:
           raise AssertionError()
 
