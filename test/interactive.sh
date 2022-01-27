@@ -18,11 +18,14 @@ run() {
 
 }
 
+readonly FAILURES_ALLOWED=3
+
 all() {
   ### Run all tests
 
   # TODO: source build/dev-shell.sh to change $PATH?
-  test/interactive.py bin/osh ../oil_DEPS/spec-bin/bash "$@"
+  test/interactive.py --osh-failures-allowed $FAILURES_ALLOWED \
+    bin/osh ../oil_DEPS/spec-bin/bash "$@"
 }
 
 all-dev-minimal() {
@@ -31,7 +34,8 @@ all-dev-minimal() {
   # This is a hack for the 'dev-minimal' task in Soil.  We don't have spec-bin,
   # and the ovm-tarball container doesn't have python3 :-( Really we should
   # build another container, but this is OK for now.
-  test/interactive.py bin/osh bash "$@"
+  test/interactive.py --osh-failures-allowed $FAILURES_ALLOWED \
+    bin/osh bash "$@"
 }
 
 soil-run() {

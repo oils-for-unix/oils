@@ -11,6 +11,13 @@ import re
 import sys
 
 
+def log(msg, *args):
+  # type: (str, *Any) -> None
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
+
 def MakeShellPairs(shells):
   shell_pairs = []
   saw_osh = False

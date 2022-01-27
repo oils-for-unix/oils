@@ -29,6 +29,8 @@ import time
 from core import ansi
 from test import spec_lib  # Using this for a common interface
 
+log = spec_lib.log
+
 
 def get_pid_by_name(name):
   """Return the pid of the process matching `name`."""
@@ -121,7 +123,7 @@ def register(skip_shells=None):
 
 @register()
 def trapped_1(sh):
-  'trapped SIG during wait builtin'
+  'trapped SIGHUP during wait builtin'
 
   sh.sendline("trap 'echo HUP' HUP")
   sh.sendline('sleep 1 &')
@@ -129,7 +131,6 @@ def trapped_1(sh):
 
   time.sleep(0.1)
 
-  # simulate window size change
   sh.kill(signal.SIGHUP)
 
   sh.expect(r'.*\$')  # expect prompt
@@ -160,7 +161,26 @@ def trapped_sigint(sh):
 
 
 @register()
-def sigwinch_1(sh):
+def sigwinch_trapped_wait(sh):
+  'trapped SIGWINCH during wait builtin'
+
+  sh.sendline("trap 'echo WINCH' WINCH")
+  sh.sendline('sleep 1 &')
+  sh.sendline('wait')
+
+  time.sleep(0.1)
+
+  # simulate window size change
+  sh.kill(signal.SIGWINCH)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=156')
+
+
+@register()
+def sigwinch_untrapped_wait(sh):
   'untrapped SIGWINCH during wait builtin (issue 1067)'
 
   sh.sendline('sleep 1 &')
@@ -223,35 +243,37 @@ def t2(sh):
 
 @register()
 def c_wait(sh):
-  'Ctrl-C during wait builtin'
+  'Ctrl-C (untrapped) during wait builtin'
 
   sh.sendline('sleep 5 &')
   sh.sendline('wait')
 
   time.sleep(0.1)
+
+  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
   sh.sendintr()  # SIGINT
 
   sh.expect(r'.*\$')  # expect prompt
 
   sh.sendline('echo status=$?')
-  # TODO: Should be exit code 130 like bash
   sh.expect('status=130')
 
 
 @register()
 def c_wait_n(sh):
-  'Ctrl-C during wait -n builtin'
+  'Ctrl-C (untrapped) during wait -n builtin'
 
   sh.sendline('sleep 5 &')
   sh.sendline('wait -n')
 
   time.sleep(0.1)
+
+  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
   sh.sendintr()  # SIGINT
 
   sh.expect(r'.*\$')  # expect prompt
 
   sh.sendline('echo status=$?')
-  # TODO: Should be exit code 130 like bash
   sh.expect('status=130')
 
 
@@ -435,7 +457,7 @@ def PrintResults(shell_pairs, results):
   out_f = AnsiOutput(f)
   out_f.WriteHeader([shell_label for shell_label, _ in shell_pairs])
 
-  status = 0
+  num_failures = 0
 
   for row in results:
 
@@ -448,7 +470,7 @@ def PrintResults(shell_pairs, results):
       if cell == Result.SKIP:
         f.write('SKIP\t')
       elif cell == Result.FAIL:
-        status = 1
+        num_failures += 1
         f.write('%sFAIL%s\t' % (fail_color, reset))
       elif cell == Result.OK:
         f.write('%sok%s\t' % (ok_color, reset))
@@ -458,7 +480,7 @@ def PrintResults(shell_pairs, results):
     f.write(desc)
     f.write('\n')
 
-  return status
+  return num_failures
 
 
 def main(argv):
@@ -495,10 +517,14 @@ def main(argv):
 
   RunCases(CASES, case_predicate, shell_pairs, results)
 
-  status = PrintResults(shell_pairs, results)
+  num_failures = PrintResults(shell_pairs, results)
 
-  # Were there any failures?
-  return status
+  if opts.osh_failures_allowed != num_failures:
+    log('test/interactive: Expected %d failures, got %d', opts.osh_failures_allowed, num_failures)
+    return 1
+
+  return 0
+
 
 
 if __name__ == '__main__':

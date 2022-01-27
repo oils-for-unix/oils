@@ -64,6 +64,8 @@ import time
 from test import spec_lib
 from doctools import html_head
 
+log = spec_lib.log
+
 
 # Magic strings for other variants of OSH.
 
@@ -80,12 +82,6 @@ OTHER_OIL = ('oil_ALT',)
 
 class ParseError(Exception):
   pass
-
-
-def log(msg, *args):
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
 
 
 # EXAMPLES:
