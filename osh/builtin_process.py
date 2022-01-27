@@ -155,6 +155,7 @@ class Wait(vm._Builtin):
 
     if len(job_ids) == 0:
       #log('*** wait')
+      status = 0
       i = 0
       while True:
         # BUG: If there is a STOPPED process, this will hang forever, because
@@ -162,13 +163,17 @@ class Wait(vm._Builtin):
         # Not sure it matters since you can now Ctrl-C it.
 
         result = self.waiter.WaitForOne(False)
-        if result != 0:
-          break  # nothing to wait for, or interrupted
+        if result == -1:  # nothing to wait for, or interrupted.  status is 0
+          break  
+        elif result > 128:  # signal
+          status = result
+          break
+
         i += 1
         if self.job_state.NoneAreRunning():
           break
 
-      return 0 if result == -1 else result
+      return status
 
     # Get list of jobs.  Then we need to check if they are ALL stopped.
     # Returns the exit code of the last one on the COMMAND LINE, not the exit

@@ -119,10 +119,50 @@ def register(skip_shells=None):
 #    3. trap 'echo X' SIGINT ?
 
 
+@register()
+def trapped_1(sh):
+  'trapped SIG during wait builtin'
+
+  sh.sendline("trap 'echo HUP' HUP")
+  sh.sendline('sleep 1 &')
+  sh.sendline('wait')
+
+  time.sleep(0.1)
+
+  # simulate window size change
+  sh.kill(signal.SIGHUP)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=129')
+
+
+@register()
+def trapped_sigint(sh):
+  'trapped SIGINT during wait builtin'
+
+  # This is different than Ctrl-C during wait builtin, because it's trapped!
+
+  sh.sendline("trap 'echo INT' INT")
+  sh.sendline('sleep 1 &')
+  sh.sendline('wait')
+
+  time.sleep(0.1)
+
+  # simulate window size change
+  sh.kill(signal.SIGINT)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=130')
+
+
 # TODO: Make this pass in OSH
 @register()
-def t0(sh):
-  'wait builtin then SIGWINCH (issue 1067)'
+def sigwinch_1(sh):
+  'SIGWINCH during wait builtin (issue 1067)'
 
   sh.sendline('sleep 1 &')
   sh.sendline('wait')
@@ -379,7 +419,16 @@ def RunCases(cases, case_predicate, shell_pairs, results):
 
 
 def PrintResults(shell_pairs, results):
-  f = sys.stderr
+  f = sys.stdout
+
+  if f.isatty():
+    fail_color = ansi.BOLD + ansi.RED
+    ok_color = ansi.BOLD + ansi.GREEN
+    reset = ansi.RESET
+  else:
+    fail_color = ''
+    ok_color = ''
+    reset = ''
 
   f.write('\n')
 
@@ -401,9 +450,9 @@ def PrintResults(shell_pairs, results):
         f.write('SKIP\t')
       elif cell == Result.FAIL:
         status = 1
-        f.write('%sFAIL%s\t' % (ansi.BOLD + ansi.RED, ansi.RESET))
+        f.write('%sFAIL%s\t' % (fail_color, reset))
       elif cell == Result.OK:
-        f.write('%sok%s\t' % (ansi.BOLD + ansi.GREEN, ansi.RESET))
+        f.write('%sok%s\t' % (ok_color, reset))
       else:
         raise AssertionError(cell)
 
