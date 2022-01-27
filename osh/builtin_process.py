@@ -23,6 +23,7 @@ from core.pyerror import e_usage
 from core import main_loop
 from core.pyutil import stderr_line
 from core import process  # W1_OK, W1_ECHILD
+from core import pyos
 from core import vm
 from core.pyerror import log
 from frontend import args
@@ -39,7 +40,6 @@ from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core.process import ExternalProgram, FdState, JobState, Waiter
-  from core.pyos import SignalState
   from core.state import Mem, SearchPath
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
@@ -171,7 +171,7 @@ class Wait(vm._Builtin):
         if result == process.W1_ECHILD:
           # nothing to wait for, or interrupted.  status is 0
           break  
-        elif result >= 0:  # signal
+        elif result >= 0 and result != pyos.UNTRAPPED_SIGWINCH:  # signal
           status = 128 + result
           break
 
@@ -289,10 +289,20 @@ class Bg(vm._Builtin):
 class _TrapHandler(object):
   """A function that is called by Python's signal module.
 
-  Similar to process.SubProgramThunk."""
+  Similar to process.SubProgramThunk.
+
+  TODO: In C++ we can't use this type of handling.  We cannot append to a
+  garbage-colleted list inside a signal handler!
+
+  Instead I think we need to append to a global array of size 1024 for the last
+  signal number caught.
+
+  Then in the main loop we will have RunPendingTraps() that iterates over this
+  list, runs corresponding handlers, and then clears the list.
+  """
 
   def __init__(self, node, nodes_to_run, sig_state, tracer):
-    # type: (command_t, List[command_t], SignalState, dev.Tracer) -> None
+    # type: (command_t, List[command_t], pyos.SignalState, dev.Tracer) -> None
     self.node = node
     self.nodes_to_run = nodes_to_run
     self.sig_state = sig_state
@@ -345,7 +355,7 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 class Trap(vm._Builtin):
   def __init__(self, sig_state, traps, nodes_to_run, parse_ctx, tracer, errfmt):
-    # type: (SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, dev.Tracer, ErrorFormatter) -> None
+    # type: (pyos.SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, dev.Tracer, ErrorFormatter) -> None
     self.sig_state = sig_state
     self.traps = traps
     self.nodes_to_run = nodes_to_run

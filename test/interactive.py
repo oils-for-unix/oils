@@ -198,6 +198,24 @@ def sigwinch_untrapped_wait(sh):
 
 
 @register()
+def sigwinch_untrapped_wait_n(sh):
+  'untrapped SIGWINCH during wait -n'
+
+  sh.sendline('sleep 1 &')
+  sh.sendline('wait -n')
+
+  time.sleep(0.1)
+
+  # simulate window size change
+  sh.kill(signal.SIGWINCH)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=0')
+
+
+@register()
 def sigwinch_untrapped_external(sh):
   'untrapped SIGWINCH during external command'
 

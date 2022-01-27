@@ -14,6 +14,7 @@ import termios  # for read -n
 import time
 
 from core import pyutil
+from core.pyerror import log
 
 import posix_ as posix
 
@@ -241,17 +242,24 @@ def InputAvailable(fd):
   return len(r) != 0
 
 
+UNTRAPPED_SIGWINCH = -1
+
 class SigwinchHandler(object):
   """Wrapper to call user handler."""
 
-  def __init__(self, display):
-    # type: (_IDisplay) -> None
+  def __init__(self, display, sig_state):
+    # type: (_IDisplay, SignalState) -> None
     self.display = display
+    self.sig_state = sig_state
     self.user_handler = None  # type: _TrapHandler
 
   def __call__(self, sig_num, unused_frame):
     # type: (int, Any) -> None
     """For Python's signal module."""
+
+    # SENTINEL for UNTRAPPED SIGWINCH.  If it's trapped, self.user_handler
+    # will overwrite it with signal.SIGWINCH.
+    self.sig_state.last_sig_num = UNTRAPPED_SIGWINCH
 
     self.display.OnWindowChange()
     if self.user_handler:
@@ -301,7 +309,7 @@ class SignalState(object):
 
     # This is ALWAYS on, which means that it can cause EINTR, and wait() and
     # read() have to handle it
-    self.sigwinch_handler = SigwinchHandler(display)
+    self.sigwinch_handler = SigwinchHandler(display, self)
     signal.signal(signal.SIGWINCH, self.sigwinch_handler)
 
   def AddUserTrap(self, sig_num, handler):

@@ -1435,6 +1435,7 @@ class Waiter(object):
       if e.errno == ECHILD:
         return W1_ECHILD  # nothing to wait for caller should stop
       elif e.errno == EINTR:  # Bug #858 fix
+        #log('WaitForOne() => %d', self.sig_state.last_sig_num)
         return self.sig_state.last_sig_num  # e.g. 1 for SIGHUP
       else:
         # The signature of waitpid() means this shouldn't happen
