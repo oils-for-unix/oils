@@ -159,10 +159,9 @@ def trapped_sigint(sh):
   sh.expect('status=130')
 
 
-# TODO: Make this pass in OSH
 @register()
 def sigwinch_1(sh):
-  'SIGWINCH during wait builtin (issue 1067)'
+  'untrapped SIGWINCH during wait builtin (issue 1067)'
 
   sh.sendline('sleep 1 &')
   sh.sendline('wait')

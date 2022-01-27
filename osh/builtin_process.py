@@ -165,7 +165,7 @@ class Wait(vm._Builtin):
         result = self.waiter.WaitForOne(False)
         if result == -1:  # nothing to wait for, or interrupted.  status is 0
           break  
-        elif result > 128:  # signal
+        elif result >= 128:  # signal
           status = result
           break
 
