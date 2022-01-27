@@ -22,6 +22,7 @@ from core import error
 from core.pyerror import e_usage
 from core import main_loop
 from core.pyutil import stderr_line
+from core import process  # W1_OK, W1_ECHILD
 from core import vm
 from core.pyerror import log
 from frontend import args
@@ -146,10 +147,10 @@ class Wait(vm._Builtin):
       # But note that it can be interrupted by a signal and will return say
       # status=156 for SIGWINCH
 
-      result = self.waiter.WaitForOne(False)
-      if result == 0:  # OK
+      result = self.waiter.WaitForOne()
+      if result == process.W1_OK:
         return self.waiter.last_status
-      elif result == -1:  # nothing to wait for
+      elif result == process.W1_ECHILD:  # nothing to wait for
         return 127
       else:
         return result  # signal, e.g. SIGHUP is 129 = 128 + 1
@@ -163,10 +164,10 @@ class Wait(vm._Builtin):
         # we don't get ECHILD.
         # Not sure it matters since you can now Ctrl-C it.
 
-        result = self.waiter.WaitForOne(False)
-        if result == -1:  # nothing to wait for, or interrupted.  status is 0
+        result = self.waiter.WaitForOne()
+        if result == process.W1_ECHILD:  # nothing to wait for, or interrupted.  status is 0
           break  
-        elif result >= 128:  # signal
+        elif result > 0:  # signal
           status = result
           break
 

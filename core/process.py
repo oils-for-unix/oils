@@ -906,7 +906,8 @@ class Process(Job):
     # type: (Waiter) -> int
     """Wait for this process to finish."""
     while self.state == job_state_e.Running:
-      if waiter.WaitForOne(True) != 0:  # eintr_retry=True
+      # signals are ignored
+      if waiter.WaitForOne() == W1_ECHILD:
         break
 
     return self.status
@@ -915,13 +916,12 @@ class Process(Job):
     # type: (Waiter) -> wait_status_t
     # wait builtin can be interrupted
     while self.state == job_state_e.Running:
-      # Don't retry
-      result = waiter.WaitForOne(False)
+      result = waiter.WaitForOne()
 
       if result > 0:  # signal
         return wait_status.Cancelled(result)
 
-      if result == -1:  # nothing to wait for
+      if result == W1_ECHILD:
         break
 
     return wait_status.Proc(self.status)
@@ -1064,7 +1064,8 @@ class Pipeline(Job):
     assert self.procs, "no procs for Wait()"
     # waitpid(-1) zero or more times
     while self.state == job_state_e.Running:
-      if waiter.WaitForOne(True) != 0:  # eintr_retry=True
+      # signals are ignored
+      if waiter.WaitForOne() == W1_ECHILD:
         break
 
     return self.pipe_status
@@ -1076,13 +1077,12 @@ class Pipeline(Job):
     # wait builtin can be interrupted
     assert self.procs, "no procs for Wait()"
     while self.state == job_state_e.Running:
-      # wait builtin is interruptible
-      result = waiter.WaitForOne(False)
+      result = waiter.WaitForOne()
 
       if result > 0:  # signal
         return wait_status.Cancelled(result)
 
-      if result == -1:  # nothing to wait for
+      if result == W1_ECHILD:
         break
 
     return wait_status.Pipeline(self.pipe_status)
@@ -1353,6 +1353,13 @@ class JobState(object):
 
 
 
+# WaitForOne() return values
+
+W1_OK = 0      # waitpid(-1) returned
+W1_ECHILD = -1  # no processes to wait for
+# result > 0:   # a signal number that we exited with!
+
+
 class Waiter(object):
   """A capability to wait for processes.
 
@@ -1382,15 +1389,14 @@ class Waiter(object):
     self.tracer = tracer
     self.last_status = 127  # wait -n error code
 
-  def WaitForOne(self, eintr_retry):
-    # type: (bool) -> int
+  def WaitForOne(self):
+    # type: () -> int
     """Wait until the next process returns (or maybe Ctrl-C).
 
     Returns:
-      -1      Nothing to wait for
-      0       Caller should keep waiting.  Either waitpid() succeeded, or we
-              got EINTR when eintr_retry == True.
-      >= 128  Interrupted with signal
+      W1_ECHILD     Nothing to wait for
+      W1_OK         Caller should keep waiting
+      result > 0    Signal interrupted with
 
       In the interactive shell, we return 0 if we get a Ctrl-C, so the caller
       will try again.
@@ -1421,24 +1427,18 @@ class Waiter(object):
       # Notes:
       # - The arg -1 makes it like wait(), which waits for any process.
       # - WUNTRACED is necessary to get stopped jobs.  What about WCONTINUED?
-      # - Unlike other syscalls, we do NOT try on EINTR, because the 'wait'
-      #   builtin should be interruptable.  This doesn't appear to cause any
-      #   problems for other WaitForOne callers?
+      # - We don't retry on EINTR, because the 'wait' builtin should be
+      #   interruptable.
       pid, status = posix.waitpid(-1, WUNTRACED)
     except OSError as e:
       #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
       if e.errno == ECHILD:
-        return -1  # nothing to wait for caller should stop
+        return W1_ECHILD  # nothing to wait for caller should stop
       elif e.errno == EINTR:  # Bug #858 fix
         # Examples:
         # - 128 + SIGUSR1 = 128 + 10 = 138
         # - 128 + SIGUSR2 = 128 + 12 = 140
-        if eintr_retry:
-          # Caller should keep waiting.  Process::Wait() and Pipeline::Wait()
-          # use this as another termination condition.
-          return 0
-        else:
-          return 128 + self.sig_state.last_sig_num
+        return 128 + self.sig_state.last_sig_num
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()
@@ -1450,7 +1450,7 @@ class Waiter(object):
         # Caller should keep waiting.  If we run 'sleep 3' and hit Ctrl-C, both
         # processes will get SIGINT, but the shell has to wait again to get the
         # exit code.
-        return 0
+        return W1_OK
       else:
         raise  # abort a batch script
 
@@ -1461,7 +1461,7 @@ class Waiter(object):
     # any knowledge of such processes, so print a warning.
     if pid not in self.job_state.child_procs:
       stderr_line("osh: PID %d stopped, but osh didn't start it", pid)
-      return True  # caller should keep waiting
+      return W1_OK
 
     proc = self.job_state.child_procs[pid]
     if 0:
@@ -1499,4 +1499,4 @@ class Waiter(object):
 
     self.last_status = status  # for wait -n
     self.tracer.OnProcessEnd(pid, status)
-    return 0  # caller should keep waiting
+    return W1_OK

@@ -215,6 +215,23 @@ def sigwinch_untrapped_external(sh):
 
 
 @register()
+def sigwinch_untrapped_pipeline(sh):
+  'untrapped SIGWINCH during pipeline'
+
+  sh.sendline('sleep 0.5 | echo x')  # slower than timeout
+
+  time.sleep(0.1)
+
+  # simulate window size change
+  sh.kill(signal.SIGWINCH)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo pipestatus=${PIPESTATUS[@]}')
+  sh.expect('pipestatus=0 0')
+
+
+@register()
 def t1(sh):
   'Ctrl-C during external command'
 
