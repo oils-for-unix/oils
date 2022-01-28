@@ -173,7 +173,7 @@ ParserReport = function(in_dir, out_dir) {
     select(-c(total_ms)) %>%
     spread(key = host_label, value = lines_per_ms) %>%
     # sort by parsing rate on the fast machine
-    arrange(desc(`host spring`)) ->
+    arrange(desc(`host lenny`)) ->
     times_summary
 
   Log('times_summary:')
