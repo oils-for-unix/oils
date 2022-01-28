@@ -1344,7 +1344,7 @@ class JobState(object):
     pass
 
   def NumRunning(self):
-    # type: () -> bool
+    # type: () -> int
     """Return the number of running jobs.  Used by 'wait' and 'wait -n'."""
     count = 0
     for _, job in iteritems(self.jobs):  # mycpp rewite: from itervalues()
