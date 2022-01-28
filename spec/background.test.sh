@@ -17,8 +17,8 @@ wait
 # The 127 is STILL overloaded.  Copying bash for now.
 wait -n
 ## status: 127
-## OK dash status: 2
-## OK mksh status: 1
+## N-I dash status: 2
+## N-I mksh status: 1
 
 #### wait with jobspec syntax %nonexistent
 wait %nonexistent
@@ -105,15 +105,19 @@ echo "status=$?"  # third job I think
 ## stdout: status=7
 
 #### wait -n
+case $SH in (dash|mksh) return ;; esac
+
 { sleep 0.09; exit 9; } &
 { sleep 0.03; exit 3; } &
 wait -n
 echo "status=$?"
 wait -n
 echo "status=$?"
-## stdout-json: "status=3\nstatus=9\n"
-## N-I dash stdout-json: "status=2\nstatus=2\n"
-## N-I mksh stdout-json: "status=1\nstatus=1\n"
+## STDOUT: 
+status=3
+status=9
+## END
+## N-I dash/mksh stdout-json: ""
 
 #### Async for loop
 for i in 1 2 3; do

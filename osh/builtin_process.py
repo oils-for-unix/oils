@@ -127,46 +127,36 @@ class Wait(vm._Builtin):
     job_ids, arg_spids = arg_r.Rest2()
 
     if arg.n:
+      # Loop until there is one fewer process running, there's nothing to wait
+      # for, or there's a signal
+      target = self.job_state.NumRunning() - 1
+      status = 0
+      while True:
+        result = self.waiter.WaitForOne()
+        if result == process.W1_OK:
+          status = self.waiter.last_status
+        elif result == process.W1_ECHILD:
+          # nothing to wait for, or interrupted
+          status = 127
+          break  
+        elif result >= 0 and result != pyos.UNTRAPPED_SIGWINCH:  # signal
+          status = 128 + result
+          break
 
-      # Right now wait -n waits for one process, but it should wait for the
-      # next JOB (which can be multiple processes).
+        if self.job_state.NumRunning() == target:
+          break
 
-      # Bash has a wait_for_any_job() function, which loops until the jobs
-      # table changes.
-
-      # Idea:
-      #
-      # target_count = self.job_state.NumRunning() - 1
-      # while True:
-      #   if not self.waiter.WaitForOne():
-      #     break
-      #
-      #   if self.job_state.NumRunning == target_count:
-      #     break
-      #    
-      # But note that it can be interrupted by a signal and will return say
-      # status=156 for SIGWINCH
-
-      # TODO: WaitForOne() in a loop and ignore SIGWINCH here.  We run until we
-      # reach a STATE.
-
-      result = self.waiter.WaitForOne()
-      if result == process.W1_OK:
-        return self.waiter.last_status
-      elif result == process.W1_ECHILD:  # nothing to wait for
-        return 127
-      else:
-        return 128 + result  # signal, e.g. SIGHUP is 129 = 128 + 1
+      return status
 
     if len(job_ids) == 0:
       #log('*** wait')
-      status = 0
-      i = 0
-      while True:
-        # BUG: If there is a STOPPED process, this will hang forever, because
-        # we don't get ECHILD.
-        # Not sure it matters since you can now Ctrl-C it.
 
+      # BUG: If there is a STOPPED process, this will hang forever, because we
+      # don't get ECHILD.  Not sure it matters since you can now Ctrl-C it.
+      # But how to fix this?
+
+      status = 0
+      while True:
         result = self.waiter.WaitForOne()
         if result == process.W1_ECHILD:
           # nothing to wait for, or interrupted.  status is 0
@@ -175,8 +165,7 @@ class Wait(vm._Builtin):
           status = 128 + result
           break
 
-        i += 1
-        if self.job_state.NoneAreRunning():
+        if self.job_state.NumRunning() == 0:
           break
 
       return status

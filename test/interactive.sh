@@ -18,7 +18,7 @@ run() {
 
 }
 
-readonly FAILURES_ALLOWED=3
+readonly FAILURES_ALLOWED=1
 
 all() {
   ### Run all tests

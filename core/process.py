@@ -1343,14 +1343,14 @@ class JobState(object):
     """For jobs -n, which I think is also used in the interactive prompt."""
     pass
 
-  def NoneAreRunning(self):
+  def NumRunning(self):
     # type: () -> bool
-    """Test if all jobs are done.  Used by 'wait' builtin."""
+    """Return the number of running jobs.  Used by 'wait' and 'wait -n'."""
+    count = 0
     for _, job in iteritems(self.jobs):  # mycpp rewite: from itervalues()
       if job.State() == job_state_e.Running:
-        return False
-    return True
-
+        count += 1
+    return count
 
 
 # WaitForOne() return values
