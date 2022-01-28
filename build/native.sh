@@ -9,12 +9,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly THIS_DIR=$(dirname $(readlink -f $0))
-readonly REPO_ROOT=$THIS_DIR/..
-
-#source $THIS_DIR/common.sh  # MYPY_REPO
-source $REPO_ROOT/soil/common.sh  # find-dir-html
-
 #
 # Wrapper functions that don't use Ninja
 #
@@ -103,7 +97,7 @@ all-ninja() {
   local status=$?
   set -o errexit
 
-  find-dir-html _bin
+  ls -l _bin/
 
   # Now we want to zip up
   return $status
