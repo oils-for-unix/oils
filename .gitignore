@@ -14,7 +14,10 @@ _clone/
 _deps/
 # for mycpp
 _gen/
+_ninja/
 _release/
+build.ninja
+.ninja_*
 fanos.so
 fastlex.so
 libc.so
@@ -23,6 +26,7 @@ posix_.so
 yajl.so
 # Python build support
 build/temp.*
+
 
 # my own automation
 local.sh  

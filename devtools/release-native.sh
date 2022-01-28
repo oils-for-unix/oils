@@ -48,6 +48,7 @@ make-tar() {
   # NOTE: Could move this to the Makefile, which will make it
   mkdir -p _release 
 
+  # TODO: This could skip compiling oil-native
   build/dev.sh oil-cpp
 
   # TODO:

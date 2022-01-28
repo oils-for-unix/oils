@@ -160,11 +160,12 @@ pylib
 
 #### compgen -A file
 cd $REPO_ROOT
-compgen -A file b | sort
+compgen -A file o | sort
 ## STDOUT:
-benchmarks
-bin
-build
+oil-version.txt
+oil_lang
+opy
+osh
 ## END
 
 #### compgen -A user
