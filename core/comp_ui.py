@@ -553,7 +553,9 @@ def InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
 
   # The 'atexit' module is a small wrapper around sys.exitfunc.
   atexit.register(_MaybeWriteHistoryFile, history_filename)
-  readline_mod.parse_and_bind("tab: complete")
+  readline_mod.parse_and_bind('tab: complete')
+
+  readline_mod.parse_and_bind('set horizontal-scroll-mode on')
 
   # How does this map to C?
   # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45

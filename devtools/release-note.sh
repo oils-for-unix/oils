@@ -14,7 +14,7 @@ set -o errexit
 source devtools/release-version.sh  # for escape-segements
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.9.4'
+readonly PREV_VERSION='0.9.6'
 
 # adapted from release-version.sh
 _git-changelog-body() {
