@@ -3,13 +3,31 @@
 # Wrapper for test cases in spec/stateful
 #
 # Usage:
-#   test/interactive.sh <function name>
+#   test/stateful.sh <function name>
+#
+# Examples:
+#
+#   test/stateful.sh all
+#   test/stateful.sh signals -r 0-1   # run a range of tests
+#   test/stateful.sh signals --list   # list tests
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
 export PYTHONPATH=.
+
+readonly OSH=bin/osh
+
+# This uses ../oil_DEPS/spec-bin/{bash,dash} if they exist
+source build/dev-shell.sh
+
+# Use system shells until the Soil CI container has spec-bin
+
+# The ovm-tarball container that has spec-bin doesn't have python3 :-(  Really
+# we should build another container
+readonly BASH=bash
+readonly DASH=dash
 
 run() {
   ### Wrapper for PYTHONPATH
@@ -18,24 +36,30 @@ run() {
 
 }
 
-readonly FAILURES_ALLOWED=1
+signals() {
+  spec/stateful/signals.py --osh-failures-allowed 1 \
+    $OSH bash "$@"
+}
+
+interactive() {
+  spec/stateful/interactive.py \
+    $OSH bash dash "$@"
+}
+
+job-control() {
+  spec/stateful/job_control.py \
+    $OSH bash "$@"
+}
 
 all() {
   ### Run all tests
 
-  # TODO: source build/dev-shell.sh to change $PATH?
-  spec/stateful/signals.py --osh-failures-allowed $FAILURES_ALLOWED \
-    bin/osh ../oil_DEPS/spec-bin/bash "$@"
-}
+  # TODO: The reports for each file should be written and uploaded.
+  # Can we reuse the test/spec table?
 
-all-dev-minimal() {
-  ### Use system bash rather than spec-bin/bash.
-
-  # This is a hack for the 'dev-minimal' task in Soil.  We don't have spec-bin,
-  # and the ovm-tarball container doesn't have python3 :-( Really we should
-  # build another container, but this is OK for now.
-  spec/stateful/signals.py --osh-failures-allowed $FAILURES_ALLOWED \
-    bin/osh bash "$@"
+  signals
+  interactive
+  job-control
 }
 
 soil-run() {
@@ -54,7 +78,7 @@ soil-run() {
 
     set +o errexit
 
-    all-dev-minimal
+    all
 
     status=$?
     set -o errexit
