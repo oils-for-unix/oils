@@ -1445,6 +1445,7 @@ class Waiter(object):
       # running.  Not sure if there's any real difference.  bash and dash
       # handle SIGINT pretty differently.
       if self.exec_opts.interactive():
+        # TODO: fix status=130 bug here
         # Caller should keep waiting.  If we run 'sleep 3' and hit Ctrl-C, both
         # processes will get SIGINT, but the shell has to wait again to get the
         # exit code.

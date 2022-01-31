@@ -109,7 +109,7 @@ lint                test/lint.sh soil-run            -
 typecheck-slice     types/oil-slice.sh soil-run      -
 typecheck-other     types/run.sh soil-run            -
 unit                test/unit.sh soil-run            -
-interactive         test/interactive.sh soil-run     -
+stateful            test/stateful.sh soil-run     -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 oil-runtime-errors  test/oil-runtime-errors.sh run-all-with-osh  -

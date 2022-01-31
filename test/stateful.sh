@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Wrapper for test/interactive.py
+# Wrapper for test cases in spec/stateful
 #
 # Usage:
 #   test/interactive.sh <function name>
@@ -14,7 +14,7 @@ export PYTHONPATH=.
 run() {
   ### Wrapper for PYTHONPATH
 
-  test/interactive.py "$@"
+  spec/stateful/harness.py "$@"
 
 }
 
@@ -24,7 +24,7 @@ all() {
   ### Run all tests
 
   # TODO: source build/dev-shell.sh to change $PATH?
-  test/interactive.py --osh-failures-allowed $FAILURES_ALLOWED \
+  spec/stateful/harness.py --osh-failures-allowed $FAILURES_ALLOWED \
     bin/osh ../oil_DEPS/spec-bin/bash "$@"
 }
 
@@ -34,7 +34,7 @@ all-dev-minimal() {
   # This is a hack for the 'dev-minimal' task in Soil.  We don't have spec-bin,
   # and the ovm-tarball container doesn't have python3 :-( Really we should
   # build another container, but this is OK for now.
-  test/interactive.py --osh-failures-allowed $FAILURES_ALLOWED \
+  spec/stateful/harness.py --osh-failures-allowed $FAILURES_ALLOWED \
     bin/osh bash "$@"
 }
 
