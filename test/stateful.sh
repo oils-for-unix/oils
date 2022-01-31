@@ -135,14 +135,16 @@ all() {
 
   mkdir -p $BASE_DIR
 
-  # TODO: The reports for each file should be written and uploaded.
-
-  set +o errexit
   manifest | xargs -n 1 -- $0 run-file
-  set -o errexit
 
   # Returns whether all passed
+  set +o errexit
   html-summary > $BASE_DIR/index.html
+  local status=$?
+
+  set -o errexit
+
+  return $status
 }
 
 soil-run() {
@@ -159,12 +161,8 @@ soil-run() {
     echo "Iteration $i"
     echo -----
 
-    set +o errexit
-
     all
-
     status=$?
-    set -o errexit
 
     if test "$status" -eq 0; then
       num_success=$((num_success + 1))
