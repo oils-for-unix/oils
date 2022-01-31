@@ -292,7 +292,7 @@ def t5(sh):
 
 if __name__ == '__main__':
   try:
-    harness.main(sys.argv)
+    sys.exit(harness.main(sys.argv))
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

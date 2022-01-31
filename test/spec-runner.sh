@@ -96,7 +96,7 @@ manifest() {
   #ls -l _tmp/spec/SUITE-*.txt
 }
 
-run-cases() {
+run-file() {
   local spec_name=$1
 
   log "__ $spec_name"
@@ -321,7 +321,7 @@ _all-parallel() {
 
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
-  head -n $NUM_SPEC_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-cases
+  head -n $NUM_SPEC_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-file
   set -o errexit
 
   #ls -l _tmp/spec
@@ -336,7 +336,7 @@ _all-parallel() {
 all-parallel() {
   ### Run spec tests in parallel.
 
-  # Note that this function doesn't fail because 'run-cases' saves the status
+  # Note that this function doesn't fail because 'run-file' saves the status
   # to a file.
 
   time $0 _all-parallel "$@"
