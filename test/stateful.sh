@@ -15,10 +15,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh  # run-task-with-status
+source test/common.sh  # log
 
 # This uses ../oil_DEPS/spec-bin/{bash,dash} if they exist
-
 # The ovm-tarball container that has spec-bin doesn't have python3 :-(  Really
 # we should build another container
 source build/dev-shell.sh
@@ -52,6 +51,17 @@ signals
 EOF
 }
 
+run-task-with-status() {
+  ### like function in test/common.sh, but failure not suppressed
+  local out_file=$1
+  shift
+
+  benchmarks/time_.py \
+    --tsv \
+    --output $out_file \
+    -- "$@"
+}
+
 run-file() {
   local spec_name=$1
 
@@ -61,7 +71,6 @@ run-file() {
   local spec_runner=${SPEC_RUNNER:-test/spec.sh}
   local base_dir=$BASE_DIR
 
-  # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
   run-task-with-status \
     $base_dir/${spec_name}.task.txt \
     $0 $spec_name | tee $base_dir/${spec_name}.log.txt
@@ -77,8 +86,9 @@ html-summary() {
   <body class="width50">
 
 <p id="home-link">
-  <a href="..">Up</a> |
-  <a href="/">oilshell.org</a>
+  <!-- up to .wwz index -->
+  <a href="../..">Up</a> |
+  <a href="/">Home</a>
 </p>
 
     <h1>Stateful Tests with <a href="//www.oilshell.org/cross-ref.html#pexpect">pexpect</a> </h1>
@@ -135,7 +145,7 @@ all() {
 
   mkdir -p $BASE_DIR
 
-  manifest | xargs -n 1 -- $0 run-file
+  manifest | xargs -n 1 -- $0 flaky-workaround run-file
 
   # Returns whether all passed
   set +o errexit
@@ -147,21 +157,29 @@ all() {
   return $status
 }
 
-soil-run() {
-  ### Run it a few times to work around flakiness
+flaky-workaround() {
+  ### If a command fails, see if it can succeed 2 out of the next 4 times
 
-  local n=5
-  echo "Running $n times"
+  set +o errexit
+
+  "$@"
+  local status=$?
+  if test $status -eq 0; then
+    return 0  # early return
+  fi
+
+  local n=4
+  echo "Failed.  Retrying $n times"
 
   local num_success=0
   local status=0
 
   for i in $(seq $n); do
     echo -----
-    echo "Iteration $i"
+    echo "Retry number $i"
     echo -----
 
-    all
+    "$@"
     status=$?
 
     if test "$status" -eq 0; then
@@ -174,8 +192,17 @@ soil-run() {
   done
 
   # This test is flaky, so only require 2 of 5 successes
-  echo "test/interactive FAIL: got $num_success successes after $n tries"
+  echo "FAIL: got $num_success successes after $n tries"
+
+  set -o errexit
+
   return 1
+}
+
+soil-run() {
+  ### Run it a few times to work around flakiness
+
+  all
 }
 
 "$@"
