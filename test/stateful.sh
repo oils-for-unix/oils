@@ -51,7 +51,7 @@ signals
 EOF
 }
 
-run-task-with-status() {
+UNUSED_run-task-with-status() {
   ### like function in test/common.sh, but failure not suppressed
   local out_file=$1
   shift
@@ -165,7 +165,8 @@ all() {
   return $status
 }
 
-# UNUSED since it inhibits the 
+# UNUSED since 'flaky-workaround run-task-with-status' doesn't compose correctly.
+# run-task-with-status writes a file with the status and exits 0.
 
 flaky-workaround() {
   ### If a command fails, see if it can succeed 2 out of the next 4 times
