@@ -145,17 +145,27 @@ all() {
 
   mkdir -p $BASE_DIR
 
-  manifest | xargs -n 1 -- $0 flaky-workaround run-file
+  manifest | xargs -n 1 -- $0 run-file
 
   # Returns whether all passed
   set +o errexit
   html-summary > $BASE_DIR/index.html
   local status=$?
 
+  # TODO:
+  # If it failed, html-summary should also write
+  # _tmp/stateful/failed-manifest.txt
+
+  # Then run those to see if they succeed 2 of 4 times?  It would be nice to
+  # report it all on a single table, but also not run too many times.  I guess
+  # "retry number" can be another column in the table.
+
   set -o errexit
 
   return $status
 }
+
+# UNUSED since it inhibits the 
 
 flaky-workaround() {
   ### If a command fails, see if it can succeed 2 out of the next 4 times
