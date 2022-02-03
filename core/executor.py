@@ -138,13 +138,6 @@ class ShellExecutor(vm._Executor):
       # e.g. 'type' doesn't accept flag '-x'
       self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
-    except KeyboardInterrupt:
-      if self.exec_opts.interactive():
-        print('')  # newline after ^C
-        status = 130  # 128 + 2 for SIGINT
-      else:
-        # Abort a batch script
-        raise
     finally:
       # Flush stdout after running ANY builtin.  This is very important!
       # Silence errors like we did from 'echo'.

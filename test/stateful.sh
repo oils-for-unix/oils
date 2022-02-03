@@ -29,6 +29,11 @@ readonly BASE_DIR=_tmp/stateful
 signals() {
   spec/stateful/signals.py \
     $OSH bash "$@"
+
+  # They now pass for dash and mksh, with wait -n and PIPESTATUS skipped.
+  # zsh doesn't work now, but could if the prompt was changed to $ ?
+
+    #$OSH bash dash mksh "$@"
 }
 
 interactive() {

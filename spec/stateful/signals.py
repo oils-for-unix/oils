@@ -143,7 +143,8 @@ def sigwinch_untrapped_wait(sh):
   sh.expect('status=0')
 
 
-@register()
+# dash and mksh don't have pipestatus
+@register(skip_shells=['dash', 'mksh'])
 def sigwinch_untrapped_wait_n(sh):
   'untrapped SIGWINCH during wait -n'
 
@@ -178,7 +179,8 @@ def sigwinch_untrapped_external(sh):
   sh.expect('status=0')
 
 
-@register()
+# dash doesn't have pipestatus
+@register(skip_shells=['dash'])
 def sigwinch_untrapped_pipeline(sh):
   'untrapped SIGWINCH during pipeline'
 
@@ -223,6 +225,12 @@ def t4(sh):
   sh.sendline('echo status=$?')
   sh.expect('status=130')
 
+
+# TODO:
+# - Expand this to call kinds of reads
+#   - note that mksh only has some of them
+# - Expand to trapped and untrapped
+# - Expand to Ctrl-C vs. SIGWINCH
 
 @register()
 def t2(sh):
@@ -273,6 +281,24 @@ def c_wait_n(sh):
 
   sh.sendline('echo status=$?')
   sh.expect('status=130')
+
+
+@register()
+def c_wait_line(sh):
+  'Ctrl-C (untrapped) cancels entire interactive line'
+
+  # the echo should be cancelled
+  sh.sendline('sleep 10 & wait; echo status=$?')
+
+  time.sleep(0.1)
+
+  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
+  sh.sendintr()  # SIGINT
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo done=$?')
+  sh.expect('done=130')
 
 
 @register()

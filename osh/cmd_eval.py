@@ -289,12 +289,6 @@ class CommandEvaluator(object):
         e.span_id = self.errfmt.CurrentLocation()
       self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
-    except KeyboardInterrupt:
-      if self.exec_opts.interactive():
-        print('')  # newline after ^C
-        status = 130  # 128 + 2 for SIGINT
-      else:
-        raise
     finally:
       try:
         sys.stdout.flush()
