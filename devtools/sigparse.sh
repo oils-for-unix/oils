@@ -56,14 +56,18 @@ compare-shells() {
     echo "---- $sh -i ----"
     echo
 
-    # Why does this cause 'stopped' ???  A stray signal.  Similar to spec test
-    # problems.
-    if test $sh = 'osh'; then
-      echo 'SKIPPING INTERACTIVE OSH (TODO: fix)'
-      continue
-    fi
+    # NOTE: If we don't set --rcfile, somehow this parent shell gets
+    # [2]+ Stopped   devtools/sigparse.sh compare-shells
+    # Seems related to spec test flakiness.
 
-    $sh -i -c 'script=$1; $script report $$' -- $0
+    local more_flags=''
+    case $sh in
+      (bash|osh)
+        more_flags='--rcfile /dev/null'
+        ;;
+    esac
+
+    $sh $more_flags -i -c 'script=$1; $script report $$' -- $0
   done
 }
 
