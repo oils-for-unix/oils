@@ -27,7 +27,7 @@ export PYTHONPATH=.
 readonly BASE_DIR=_tmp/stateful
 
 signals() {
-  spec/stateful/signals.py --osh-failures-allowed 1 \
+  spec/stateful/signals.py \
     $OSH bash "$@"
 }
 

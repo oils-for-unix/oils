@@ -1440,18 +1440,6 @@ class Waiter(object):
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()
-    except KeyboardInterrupt:
-      # NOTE: Another way to handle this is to disable SIGINT when a process is
-      # running.  Not sure if there's any real difference.  bash and dash
-      # handle SIGINT pretty differently.
-      if self.exec_opts.interactive():
-        # TODO: fix status=130 bug here
-        # Caller should keep waiting.  If we run 'sleep 3' and hit Ctrl-C, both
-        # processes will get SIGINT, but the shell has to wait again to get the
-        # exit code.
-        return W1_OK
-      else:
-        raise  # abort a batch script
 
     # All child processes are supposed to be in this dict.  But this may
     # legitimately happen if a grandchild outlives the child (its parent).
