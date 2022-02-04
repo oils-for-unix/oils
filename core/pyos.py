@@ -285,9 +285,9 @@ def SignalState_AfterForkingChild():
 
   # More signals from
   # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
+  # (but not SIGCHLD)
   signal.signal(signal.SIGTTOU, signal.SIG_DFL)
   signal.signal(signal.SIGTTIN, signal.SIG_DFL)
-  signal.signal(signal.SIGCHLD, signal.SIG_DFL)
 
 
 class SignalState(object):
@@ -314,9 +314,9 @@ class SignalState(object):
 
     # More signals from
     # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
+    # (but not SIGCHLD)
     signal.signal(signal.SIGTTOU, signal.SIG_IGN)
     signal.signal(signal.SIGTTIN, signal.SIG_IGN)
-    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
 
     # Register a callback to receive terminal width changes.
     # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
