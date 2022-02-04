@@ -26,25 +26,27 @@ export PYTHONPATH=.
 
 readonly BASE_DIR=_tmp/stateful
 
-signals() {
+signals-quick() {
   spec/stateful/signals.py \
     $OSH bash "$@"
 
-  # They now pass for dash and mksh, with wait -n and PIPESTATUS skipped.
-  # zsh doesn't work now, but could if the prompt was changed to $ ?
-
-    #$OSH bash dash mksh "$@"
 }
+# They now pass for dash and mksh, with wait -n and PIPESTATUS skipped.
+# zsh doesn't work now, but could if the prompt was changed to $ ?
+signals() { signals-quick dash mksh "$@"; }
 
-interactive() {
+interactive-quick() {
   spec/stateful/interactive.py \
-    $OSH bash dash "$@"
+    $OSH bash "$@"
 }
+# Doesn't work in mksh or zsh
+interactive() { interactive-quick dash "$@"; }
 
-job-control() {
+job-control-quick() {
   spec/stateful/job_control.py \
     $OSH bash "$@"
 }
+job-control() { job-control-quick dash "$@"; }
 
 manifest() {
   ### List all tests

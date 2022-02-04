@@ -4,14 +4,12 @@ spec/stateful/job_control.py
 """
 from __future__ import print_function
 
-import fcntl
-import pty
 import signal
 import sys
 import time
 
 import harness
-from harness import register, stop_process__hack, send_signal, expect_prompt
+from harness import register, stop_process__hack, expect_prompt
 from test.spec_lib import log
 
 
@@ -24,8 +22,31 @@ from test.spec_lib import log
 # Generated from C header file
 TIOCSIG = 0x40045436
 
+
+def ctrl_c(sh):
+  sh.sendcontrol('c')
+  #fcntl.ioctl(sh.child_fd, TIOCSIG, signal.SIGINT)
+
+
+def ctrl_z(sh):
+  sh.sendcontrol('z')
+  #fcntl.ioctl(sh.child_fd, TIOCSIG, signal.SIGTSTP)
+
+
+def expect_no_job(sh):
+  """Helper function."""
+  if sh.shell_label == 'osh':
+    sh.expect('No job to put in the foreground')
+  elif sh.shell_label == 'dash':
+    sh.expect('.*fg: No current job')
+  elif sh.shell_label == 'bash':
+    sh.expect('.*fg: current: no such job.*')
+  else:
+    raise AssertionError()
+
+
 @register()
-def t6(sh):
+def bug_1004(sh):
   'fg twice should not result in fatal error (issue 1004)'
 
   expect_prompt(sh)
@@ -37,8 +58,7 @@ def t6(sh):
     os.system('ls -l /proc/%s/fd' % os.getpid())
 
   if 0:
-    # TODO: Make this work for OSH!
-    fcntl.ioctl(sh.child_fd, TIOCSIG, signal.SIGTSTP)
+    ctrl_z(sh)
   else:
     stop_process__hack('cat')
 
@@ -57,62 +77,68 @@ def t6(sh):
   else:
     sh.expect('cat')
 
-  if 1:
-    # Ctrl-C to terminal
-    fcntl.ioctl(sh.child_fd, TIOCSIG, signal.SIGINT)
-  else:
-    sh.sendintr()  # SIGINT
-
+  # Ctrl-C to terminal
+  ctrl_c(sh)
   expect_prompt(sh)
+
   sh.sendline('fg')
 
-  if sh.shell_label == 'osh':
-    sh.expect("No job to put in the foreground")
-  elif sh.shell_label == 'dash':
-    sh.expect('.*fg: No current job')
-  elif sh.shell_label == 'bash':
-    sh.expect('.*fg: current: no such job.*')
-  else:
-    raise AssertionError()
+  expect_no_job(sh)
 
 
-@register(skip_shells=['bash'])
+@register()
 def t7(sh):
   'Test resuming a killed process'
   expect_prompt(sh)
+
   sh.sendline('cat')
-  stop_process__hack('cat')
+  if 0:
+    ctrl_z(sh)
+  else:
+    stop_process__hack('cat')
 
-  sh.expect("\r\n\\[PID \\d+\\] Stopped")
+  sh.expect('.*Stopped.*')
+
+  sh.sendline('')  # needed for dash for some reason
   expect_prompt(sh)
 
   sh.sendline('fg')
-  sh.expect(r'Continue PID \d+')
 
-  send_signal("cat", signal.SIGINT)
+  if sh.shell_label == 'osh':
+    sh.expect(r'Continue PID \d+')
+  else:
+    sh.expect('cat')
+
+  ctrl_c(sh)
   expect_prompt(sh)
 
   sh.sendline('fg')
-  sh.expect('No job to put in the foreground')
+  expect_no_job(sh)
 
 
-@register(skip_shells=['bash'])
-def t8(sh):
-  'Call fg after process exits (issue 721)'
+@register()
+def bug_721(sh):
+  'Call fg twice after process exits (issue 721)'
+
+  # This test seems flaky under bash for some reason
 
   expect_prompt(sh)
   sh.sendline('cat')
 
-  #osh.sendcontrol("c")
-  sh.sendintr()  # SIGINT
+  time.sleep(0.1)
+
+  ctrl_c(sh)
   expect_prompt(sh)
 
   sh.sendline('fg')
-  sh.expect("No job to put in the foreground")
-  expect_prompt(sh)
+  expect_no_job(sh)
+
+  #sh.sendline('')
+  #expect_prompt(sh)
 
   sh.sendline('fg')
-  sh.expect('No job to put in the foreground')
+  expect_no_job(sh)
+
   expect_prompt(sh)
 
 
