@@ -26,6 +26,11 @@ export PYTHONPATH=.
 
 readonly BASE_DIR=_tmp/stateful
 
+run() {
+  ### for PYTHONPATH
+  "$@"
+}
+
 signals-quick() {
   spec/stateful/signals.py \
     $OSH bash "$@"

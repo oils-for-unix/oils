@@ -148,26 +148,13 @@ def bug_1005(sh):
 
   expect_prompt(sh)
 
-  return
-
   sh.sendline('sleep 10')
 
-  # This is NOT right.  The Ctrl-Z goes to the TERMINAL, and the TERMINAL sends
-  # it to both the shell process and the sleep process.  The shell process
-  # should ignore it.
+  time.sleep(0.1)
 
-  # Section 19.6 of APUE: SIGTSTP can't be delivered to a process!!
-  # Section 19.7: Signal generation with ioctl TIOCSIG!
-
-  #sh.kill(signal.SIGTSTP)
-
-  # This distribute Ctrl-Z to the whole process group?  Why doesn't it work?
-  sh.sendcontrol('z')
+  ctrl_z(sh)
   sh.expect(r'.*Stopped.*')
 
-  #sh.expect(r'\^Z')
-
-  return
   sh.sendline('wait')
   sh.sendline('echo status=$?')
   sh.expect(r"status=0")

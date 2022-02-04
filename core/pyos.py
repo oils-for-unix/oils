@@ -271,6 +271,11 @@ class SigwinchHandler(object):
 def SignalState_AfterForkingChild():
   # type: () -> None
   """Not a member of SignalState since we didn't do dependency injection."""
+
+  # Note: this happens in BOTH interactive and non-interactive shells.
+  # We technically don't need to do most of it in non-interactive, since we
+  # did not change state in InitInteractiveShell().
+
   # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
   # shouldn't have this.
   # https://docs.python.org/2/library/signal.html

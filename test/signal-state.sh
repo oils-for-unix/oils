@@ -1,20 +1,23 @@
 #!/usr/bin/env bash
 #
-# Parse signal format in /proc.
+# Test kernel state: which signals caught, ignored, etc.
 #
 # Copied from:
 # https://unix.stackexchange.com/questions/85364/how-can-i-check-what-signals-a-process-is-listening-to
 #
 # Usage:
-#   devtools/sigparse.sh <function name>
+#   test/signal-state.sh <function name>
 
 sigparse() {
+  # Parse signal format in /proc.
+  local hex_mask=$1
+
   local i=0
 
   # bits="$(printf "16i 2o %X p" "0x$1" | dc)" # variant for busybox
 
   # hex to binary.  Could also do this with Python.
-  bits="$(printf "ibase=16; obase=2; %X\n" "0x$1" | bc)"
+  bits="$(printf 'ibase=16; obase=2; %X\n' "0x$hex_mask" | bc)"
   while test -n "$bits"; do
     i=$((i + 1))
     case "$bits" in
@@ -33,7 +36,18 @@ report() {
   done
 }
 
+do-child() {
+  echo
+  echo 'BACKGROUND CHILD'
+  $sh -c 'script=$1; sleep 0.5 & { sleep 0.2; $script report $!; }' -- $0
+
+  # TODO: I think we need a foreground child too.  It can just be a C program that
+  # prints its own PID, and then waits for a byte on stdin before it exits?
+}
+
 compare-shells() {
+  local do_child=${1:-}
+
   local -a shells=(bash dash mksh zsh bin/osh)
 
   # Hm non-interactive shells have consistency.
@@ -46,6 +60,10 @@ compare-shells() {
     echo
 
     $sh -c 'script=$1; $script report $$' -- $0
+
+    if test -n "$do_child"; then
+      do-child $sh
+    fi
   done
 
   echo
@@ -68,6 +86,10 @@ compare-shells() {
     esac
 
     $sh $more_flags -i -c 'script=$1; $script report $$' -- $0
+
+    if test -n "$do_child"; then
+      do-child $sh
+    fi
   done
 }
 
