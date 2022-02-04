@@ -19,12 +19,17 @@ from test import spec_lib  # Using this for a common interface
 log = spec_lib.log
 
 
+def expect_prompt(sh):
+  sh.expect(r'.*\$')
+
+
 def get_pid_by_name(name):
   """Return the pid of the process matching `name`."""
   # XXX: make sure this is restricted to subprocesses under us.
   # This could be problematic on the continuous build if many tests are running
   # in parallel.
   output = pexpect.run('pgrep --exact --newest %s' % name)
+  #log('pgrep output %r' % output)
   return int(output.split()[-1])
 
 
@@ -95,6 +100,8 @@ def RunCases(cases, case_predicate, shell_pairs, results):
       sh = pexpect.spawn(
           shell_path, sh_argv, env=env, encoding='utf-8', timeout=1.0)
 
+      sh.shell_label = shell_label  # for tests to use
+
       # Generally don't want local echo, it gets confusing fast.
       sh.setecho(False)
 
@@ -103,7 +110,7 @@ def RunCases(cases, case_predicate, shell_pairs, results):
         func(sh)
       except Exception as e:
         import traceback
-        print(e)
+        traceback.print_exc(file=sys.stderr)
         result_row.append(Result.FAIL)
         ok = False
 
