@@ -271,17 +271,23 @@ class SigwinchHandler(object):
 def SignalState_AfterForkingChild():
   # type: () -> None
   """Not a member of SignalState since we didn't do dependency injection."""
-  # Respond to Ctrl-\ (core dump)
-  signal.signal(signal.SIGQUIT, signal.SIG_DFL)
-
   # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
   # shouldn't have this.
   # https://docs.python.org/2/library/signal.html
   # See Python/pythonrun.c.
   signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
+  # Respond to Ctrl-\ (core dump)
+  signal.signal(signal.SIGQUIT, signal.SIG_DFL)
+
   # Child processes should get Ctrl-Z.
   signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+
+  # More signals from
+  # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
+  signal.signal(signal.SIGTTOU, signal.SIG_DFL)
+  signal.signal(signal.SIGTTIN, signal.SIG_DFL)
+  signal.signal(signal.SIGCHLD, signal.SIG_DFL)
 
 
 class SignalState(object):
@@ -305,6 +311,12 @@ class SignalState(object):
 
     # This prevents Ctrl-Z from suspending OSH in interactive mode.
     signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+
+    # More signals from
+    # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
+    signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+    signal.signal(signal.SIGTTIN, signal.SIG_IGN)
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
 
     # Register a callback to receive terminal width changes.
     # NOTE: In line_input.c, we turned off rl_catch_sigwinch.

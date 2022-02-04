@@ -34,7 +34,7 @@ report() {
 }
 
 compare-shells() {
-  local -a shells=(bash dash mksh zsh osh)
+  local -a shells=(bash dash mksh zsh bin/osh)
 
   # Hm non-interactive shells have consistency.
   # SIGCHLD and SIGINT are caught in bash, dash, zsh, mksh.  mksh catches
@@ -62,7 +62,7 @@ compare-shells() {
 
     local more_flags=''
     case $sh in
-      (bash|osh)
+      (bash|bin/osh)
         more_flags='--rcfile /dev/null'
         ;;
     esac
