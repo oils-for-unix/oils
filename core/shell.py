@@ -630,7 +630,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-    sig_state.InitInteractiveShell(display)
+    sig_state.InitInteractiveShell(display, my_pid)
 
     # NOTE: called AFTER _InitDefaultCompletions.
     with state.ctx_ThisDir(mem, rc_path):

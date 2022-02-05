@@ -308,8 +308,8 @@ class SignalState(object):
     """Always called when initializing the shell process."""
     pass
 
-  def InitInteractiveShell(self, display):
-    # type: (_IDisplay) -> None
+  def InitInteractiveShell(self, display, my_pid):
+    # type: (_IDisplay, int) -> None
     """Called when initializing an interactive shell."""
     # The shell itself should ignore Ctrl-\.
     signal.signal(signal.SIGQUIT, signal.SIG_IGN)
@@ -330,6 +330,16 @@ class SignalState(object):
     # read() have to handle it
     self.sigwinch_handler = SigwinchHandler(display, self)
     signal.signal(signal.SIGWINCH, self.sigwinch_handler)
+
+    try:
+      # Put the interactive shell in its own process group, named by its PID
+      posix.setpgid(my_pid, my_pid)
+      # Attach the terminal (stdin) to the progress group
+      posix.tcsetpgrp(0, my_pid)
+
+    except (IOError, OSError) as e:
+      # For some reason setpgid() fails with Operation Not Permitted (EPERM) under pexpect?
+      pass
 
   def AddUserTrap(self, sig_num, handler):
     # type: (int, Any) -> None

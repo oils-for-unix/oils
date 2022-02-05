@@ -38,12 +38,14 @@ def send_signal(name, sig_num):
   os.kill(get_pid_by_name(name), sig_num)
 
 
-# XXX: osh.sendcontrol("z") does not suspend the foreground process :(
-#
-# why does osh.sendcontrol("c") generate SIGINT, while osh.sendcontrol("z")
-# appears to do nothing?
 def stop_process__hack(name):
-  """Send sigstop to the most recent process matching `name`"""
+  """Send sigstop to the most recent process matching `name`
+
+  Hack in place of sh.sendcontrol('z'), which sends SIGTSTP.  Why doesn't OSH
+  respond to this, or why don't the child processes respond?
+
+  TODO: Fix OSH and get rid of this hack.
+  """
   send_signal(name, signal.SIGSTOP)
 
 
