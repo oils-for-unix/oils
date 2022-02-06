@@ -209,7 +209,7 @@ flaky-workaround() {
       num_success=$((num_success + 1))
     fi
     if test "$num_success" -ge 2; then
-      echo "test/interactive OK: 2 of $i tries succeeded"
+      echo "test/stateful.sh OK: 2 of $i tries succeeded"
       return 0
     fi
   done

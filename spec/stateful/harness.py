@@ -216,7 +216,7 @@ def main(argv):
   num_failures = PrintResults(shell_pairs, results)
 
   if opts.osh_failures_allowed != num_failures:
-    log('test/interactive: Expected %d failures, got %d', opts.osh_failures_allowed, num_failures)
+    log('%s: Expected %d failures, got %d', sys.argv[0], opts.osh_failures_allowed, num_failures)
     return 1
 
   return 0

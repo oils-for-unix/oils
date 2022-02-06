@@ -20,46 +20,82 @@ show_group_session() {
   #   - it's always the same number, so it's misleading to associate with a process
   #   - see APUE section on setpgid(), tcsetgprp()
 
-  if true; then
-    echo '[foreground pipeline]'
-    ps -o pid,ppid,pgid,sid,tpgid,comm | cat | _tmp/cat2
-  fi
+  local kind=$1
 
-  # Test background pipeline
-  if false; then
-    # For interactive shells, the TPGID is different here.
-    # Foreground: it matches the PGID of 'ps | cat | cat2'
-    # Background: it matches the PGID of bash!
+  case $kind in
+    *fgpipe*)
+      echo '[foreground pipeline]'
+      ps -o pid,ppid,pgid,sid,tpgid,comm | cat | _tmp/cat2
+      ;;
 
-    echo '[background pipeline]'
-    ps -o pid,ppid,pgid,sid,tpgid,comm | cat | _tmp/cat2 &
-    wait
-  fi
+    *bgpipe*)
+      # For interactive shells, the TPGID is different here.
+      # Foreground: it matches the PGID of 'ps | cat | cat2'
+      # Background: it matches the PGID of bash!
 
-  # Test plain process
-  if false; then
-    echo '[single process]'
-    ps -o pid,ppid,pgid,sid,comm
-  fi
+      echo '[background pipeline]'
+      ps -o pid,ppid,pgid,sid,tpgid,comm | cat | _tmp/cat2 &
+      wait
+      ;;
+
+    *fgproc*)
+      echo '[single process]'
+      ps -o pid,ppid,pgid,sid,comm
+      ;;
+
+    *csub*)
+      # does NOT create a new process group.  So what happens when it's
+      # interrupted?
+      echo '[command sub]'
+      local x
+      x=$(ps -o pid,ppid,pgid,sid,comm)
+      echo "$x"
+      ;;
+
+    *psub*)
+      echo '[process sub]'
+      # use 'eval' as workaround for syntax error in dash and mksh
+      eval 'cat <(ps -o pid,ppid,pgid,sid,comm)'
+      # RESULTS
+      # zsh: ps and cat are in their own process groups distinct from the shell!
+      # bash: cat is in its own process group, but ps is in one with bash.  Hm
+      ;;
+
+  esac
 }
 
 compare_shells() {
-  for sh in dash bash mksh zsh bin/osh; do
-  #for sh in dash bash; do
+  ### Pass tasks, any of fgproc-fgpipe-bgpipe
+
+  #for sh in dash bash mksh zsh bin/osh; do
+  for sh in dash bash bin/osh; do
+
+  # for psub
+  #for sh in bash zsh bin/osh; do
     echo -----
     echo $sh
     echo -----
 
     echo 'NON-INTERACTIVE'
-    $sh $0 show_group_session
+    $sh $0 show_group_session "$@"
     echo
 
+    local more_flags=''
+    case $sh in
+      (bash|bin/osh)
+        more_flags='--rcfile /dev/null'
+        ;;
+    esac
+
     echo INTERACTIVE
-    $sh -i -c '. $0; show_group_session' $0
+    $sh $more_flags -i -c '. $0; show_group_session "$@"' $0 "$@"
     echo
   done
 }
 
-if test $(basename $0) = 'group-session.sh'; then
-  "$@"
-fi
+# We might be sourced by INTERACTIVE, so avoid running anything in that case.
+case $1 in
+  setup|show_group_session|compare_shells)
+    "$@"
+    ;;
+esac
