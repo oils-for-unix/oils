@@ -21,6 +21,11 @@ demo() {
   # NOTE: there is only one negation.  You can't mix them.
   [[ 0 == [^[:alpha:]] ]]
 
+  if test -n "${BASH_VERSION:-}"; then
+    #echo hi
+    true
+  fi
+
   echo
   echo 'ALL PASSED'
 }

@@ -202,6 +202,7 @@ all-markdown      build/doc.sh all-markdown              -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec.sh soil-run-osh              _tmp/spec/survey/osh.html
+gold              test/gold.sh all-passing               -
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      build/test.sh oil-tar                  -
 EOF

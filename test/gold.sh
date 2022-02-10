@@ -30,10 +30,12 @@ _compare() {
   "$@" >_tmp/shebang.txt
   local expected_status=$?
 
-  PATH="$PWD/bin:$PATH" $OSH "$@" >_tmp/osh.txt
+  $OSH "$@" >_tmp/osh.txt
   local osh_status=$?
 
   set -o errexit
+
+  #md5sum _tmp/shebang.txt _tmp/osh.txt
 
   if ! diff -u _tmp/shebang.txt _tmp/osh.txt; then
     echo FAIL
@@ -102,7 +104,12 @@ export-case() { _compare $GOLD_DIR/export.sh; }
 glob() { _compare $GOLD_DIR/glob.sh; }
 no-op() { _compare metrics/source-code.sh; }
 complex-here-docs() { _compare $GOLD_DIR/complex-here-docs.sh; }
+big-here-doc() { _compare $GOLD_DIR/big-here-doc.sh; }
+case-in-subshell() { _compare $GOLD_DIR/case-in-subshell.sh; }
+command-sub() { _compare $GOLD_DIR/command-sub.sh; }
+command-sub-2() { _compare $GOLD_DIR/command-sub-2.sh; }
 
+char-class() { _compare $GOLD_DIR/char-class.sh demo; }
 strip-op-char-class() { _compare $GOLD_DIR/strip-op-char-class.sh; }
 
 # Similar tests for backslash escaping.
@@ -164,10 +171,18 @@ readonly -a PASSING=(
   no-op
   complex-here-docs
 
+  # BUG IN OSH!
+  # big-here-doc
+
+  case-in-subshell
+  command-sub
+  command-sub-2
+
   echo-e
   dollar-sq
   word-eval
 
+  char-class
   strip-op-char-class
   abuild
 
