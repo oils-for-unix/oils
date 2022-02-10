@@ -202,7 +202,8 @@ def PrintResults(shell_pairs, result_table, flaky):
 
       retries = flaky[case_num, shell_label]
       if retries != -1:
-        extra_row[j] = '%d/4 ok' % retries
+        # the first of 5 failed
+        extra_row[j] = '%d/5 ok' % retries
 
       if cell == Result.SKIP:
         f.write('SKIP\t')
