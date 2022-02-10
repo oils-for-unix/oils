@@ -74,7 +74,7 @@ run-file() {
 
   run-task-with-status \
     $base_dir/${spec_name}.task.txt \
-    $0 $spec_name | tee $base_dir/${spec_name}.log.txt
+    $0 $spec_name >$base_dir/${spec_name}.log.txt 2>&1
 }
 
 html-summary() {
