@@ -131,6 +131,8 @@ readlink-case() {
   $GOLD_DIR/readlink.sh compare
 }
 
+errexit() { _compare $GOLD_DIR/errexit.sh all; }
+
 # Hm this isn't tickling the bug?
 errexit-confusion() {
   _compare $GOLD_DIR/errexit-confusion.sh run-for-release-OLD
@@ -192,6 +194,7 @@ readonly -a PASSING=(
   gen-module-init
   readlink-case
 
+  errexit
   errexit-confusion
 
   parse-help

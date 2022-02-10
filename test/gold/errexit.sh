@@ -106,4 +106,16 @@ test-func-with-and() {
   succeed && echo "OK 3"
 }
 
+all() {
+  compgen -A function | egrep '^test-' | while read func; do
+    echo
+    echo "--- $func ---"
+    echo
+    set +o errexit
+    $0 $func
+    echo status=$?
+    set -o errexit
+  done
+}
+
 "$@"
