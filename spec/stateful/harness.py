@@ -68,65 +68,96 @@ class Result(object):
   FAIL = 3
 
 
-def RunCases(cases, case_predicate, shell_pairs, results):
-  for i, (desc, func, skip_shells) in enumerate(cases):
-    if not case_predicate(i, desc):
+def RunOnce(shell_path, shell_label, func):
+  sh_argv = []
+  if shell_label in ('bash', 'osh'):
+    sh_argv.extend(['--rcfile', '/dev/null'])
+  # Why the heck is --norc different from --rcfile /dev/null in bash???  This
+  # makes it so the prompt of the parent shell doesn't leak.  Very annoying.
+  if shell_label == 'bash':
+    sh_argv.append('--norc')
+  #print(sh_argv)
+
+  # Python 3: encoding required
+  sh = pexpect.spawn(
+      shell_path, sh_argv, encoding='utf-8', timeout=1.0)
+
+  sh.shell_label = shell_label  # for tests to use
+
+  # Generally don't want local echo, it gets confusing fast.
+  sh.setecho(False)
+
+  ok = True
+  try:
+    func(sh)
+  except Exception as e:
+    import traceback
+    traceback.print_exc(file=sys.stderr)
+    return Result.FAIL
+    ok = False
+
+  finally:
+    sh.close()
+
+  if ok:
+    return Result.OK
+
+
+def RunCase(shell_path, shell_label, func):
+  result = RunOnce(shell_path, shell_label, func)
+
+  if result == Result.OK:
+    return result, -1  # short circuit for speed
+
+  elif result == Result.FAIL:
+    log('\tFAILED first time: Retrying 4 times')
+
+    # No retry 4 times
+    num_success = 0
+    for i in range(4):
+      log('\tRetry %d', i)
+      result = RunOnce(shell_path, shell_label, func)
+      if result == Result.OK:
+        num_success += 1
+
+    if num_success >= 2:
+      return Result.OK, num_success
+    else:
+      return Result.FAIL, num_success
+
+  else:
+    raise AssertionError(result)
+
+
+def RunCases(cases, case_predicate, shell_pairs, result_table, flaky):
+  for case_num, (desc, func, skip_shells) in enumerate(cases):
+    if not case_predicate(case_num, desc):
       continue
 
-    result_row = [i]
+    result_row = [case_num]
 
     for shell_label, shell_path in shell_pairs:
       skip = shell_label in skip_shells
       skip_str = 'SKIP' if skip else ''
 
       print()
-      print('%s\t%d\t%s\t%s' % (skip_str, i, shell_label, desc))
+      print('%s\t%d\t%s\t%s' % (skip_str, case_num, shell_label, desc))
       print()
 
       if skip:
         result_row.append(Result.SKIP)
         continue
 
-      env = None
+      result, retries = RunCase(shell_path, shell_label, func)
+      flaky[case_num, shell_label] = retries
 
-      sh_argv = []
-      if shell_label in ('bash', 'osh'):
-        sh_argv.extend(['--rcfile', '/dev/null'])
-      # Why the heck is --norc different from --rcfile /dev/null in bash???  This
-      # makes it so the prompt of the parent shell doesn't leak.  Very annoying.
-      if shell_label == 'bash':
-        sh_argv.append('--norc')
-      #print(sh_argv)
-
-      # Python 3: encoding required
-      sh = pexpect.spawn(
-          shell_path, sh_argv, env=env, encoding='utf-8', timeout=1.0)
-
-      sh.shell_label = shell_label  # for tests to use
-
-      # Generally don't want local echo, it gets confusing fast.
-      sh.setecho(False)
-
-      ok = True
-      try:
-        func(sh)
-      except Exception as e:
-        import traceback
-        traceback.print_exc(file=sys.stderr)
-        result_row.append(Result.FAIL)
-        ok = False
-
-      finally:
-        sh.close()
-
-      if ok:
-        result_row.append(Result.OK)
+      result_row.append(result)
 
     result_row.append(desc)
-    results.append(result_row) 
+    result_table.append(result_row) 
 
 
-def PrintResults(shell_pairs, results):
+def PrintResults(shell_pairs, result_table, flaky):
   f = sys.stdout
 
   if f.isatty():
@@ -155,19 +186,28 @@ def PrintResults(shell_pairs, results):
 
   num_failures = 0
 
-  for row in results:
+  for row in result_table:
 
     case_num = row[0]
     desc = row[-1]
 
     f.write('%d\t' % case_num)
 
-    for cell in row[1:-1]:
+    num_shells = len(row) - 2 
+    extra_row = [''] * num_shells
+
+    for j, cell in enumerate(row[1:-1]):
+      shell_label = sh_labels[j]
+
+      retries = flaky[case_num, shell_label]
+      if retries != -1:
+        extra_row[j] = '%d/4 ok' % retries
+
       if cell == Result.SKIP:
         f.write('SKIP\t')
       elif cell == Result.FAIL:
         num_failures += 1
-        f.write('%sFAIL%s\t' % (fail_color, reset))
+        f.write('%sFAIL%s\t' % (fail_color, reset ))
       elif cell == Result.OK:
         f.write('%sok%s\t' % (ok_color, reset))
       else:
@@ -175,6 +215,11 @@ def PrintResults(shell_pairs, results):
 
     f.write(desc)
     f.write('\n')
+
+    if any(extra_row):
+      for cell in extra_row:
+        f.write('\t%s' % cell)
+      f.write('\n')
 
   return num_failures
 
@@ -209,11 +254,12 @@ def main(argv):
     print(shell_pairs)
     print(CASES)
 
-  results = []  # each row is a list
+  result_table = []  # each row is a list
+  flaky = {}  # (case_num, shell) -> (succeeded, attempted)
 
-  RunCases(CASES, case_predicate, shell_pairs, results)
+  RunCases(CASES, case_predicate, shell_pairs, result_table, flaky)
 
-  num_failures = PrintResults(shell_pairs, results)
+  num_failures = PrintResults(shell_pairs, result_table, flaky)
 
   if opts.osh_failures_allowed != num_failures:
     log('%s: Expected %d failures, got %d', sys.argv[0], opts.osh_failures_allowed, num_failures)

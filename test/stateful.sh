@@ -48,7 +48,7 @@ interactive-quick() {
 interactive() { interactive-quick dash "$@"; }
 
 job-control-quick() {
-  spec/stateful/job_control.py \
+  spec/stateful/job_control.py --osh-failures-allowed 1 \
     $OSH bash "$@"
 }
 job-control() { job-control-quick dash "$@"; }
@@ -61,17 +61,6 @@ interactive
 job-control
 signals
 EOF
-}
-
-UNUSED_run-task-with-status() {
-  ### like function in test/common.sh, but failure not suppressed
-  local out_file=$1
-  shift
-
-  benchmarks/time_.py \
-    --tsv \
-    --output $out_file \
-    -- "$@"
 }
 
 run-file() {
@@ -175,51 +164,6 @@ all() {
   set -o errexit
 
   return $status
-}
-
-# UNUSED since 'flaky-workaround run-task-with-status' doesn't compose correctly.
-# run-task-with-status writes a file with the status and exits 0.
-
-flaky-workaround() {
-  ### If a command fails, see if it can succeed 2 out of the next 4 times
-
-  set +o errexit
-
-  "$@"
-  local status=$?
-  if test $status -eq 0; then
-    return 0  # early return
-  fi
-
-  local n=4
-  echo "Failed.  Retrying $n times"
-
-  local num_success=0
-  local status=0
-
-  for i in $(seq $n); do
-    echo -----
-    echo "Retry number $i"
-    echo -----
-
-    "$@"
-    status=$?
-
-    if test "$status" -eq 0; then
-      num_success=$((num_success + 1))
-    fi
-    if test "$num_success" -ge 2; then
-      echo "test/stateful.sh OK: 2 of $i tries succeeded"
-      return 0
-    fi
-  done
-
-  # This test is flaky, so only require 2 of 5 successes
-  echo "FAIL: got $num_success successes after $n tries"
-
-  set -o errexit
-
-  return 1
 }
 
 soil-run() {
