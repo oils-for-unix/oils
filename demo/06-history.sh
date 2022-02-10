@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./history.sh <function name>
+#   demo/06-history.sh <function name>
+#
+# TODO: move into test/gold -- OSH doesn't have histexpand.
 
 set -o nounset
 set -o pipefail

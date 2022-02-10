@@ -20,6 +20,7 @@ test-readlink() {
   readlink -f libc.so
   echo $?
 
+  # busybox 1.35.0 changed behavior here!  It now matches GNU readlink.
   readlink -f /nonexistent
   echo $?
 
@@ -37,10 +38,9 @@ test-readlink() {
 # For this readlink gold test, we need a custom test driver.
 compare() {
   mkdir -p _tmp/gold-bin
-  ln -s -f /bin/busybox _tmp/gold-bin/readlink
+  ln -s -f -v $PWD/../oil_DEPS/spec-bin/busybox _tmp/gold-bin/readlink
 
-  _tmp/gold-bin/readlink --help 2>/dev/null
-  if test $? -ne 0; then
+  if ! _tmp/gold-bin/readlink --help; then
     echo "busybox readlink not working"
   fi
 

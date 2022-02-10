@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./unicode.sh <function name>
+#   demo/04-unicode.sh <function name>
 # 
 # TODO: Test what happens if you read binary data into a $(command sub)
 # - internal NUL
 # - invalid utf-8 sequence
+#
+# It would be nice to move some of this into test/gold?  It depends on the
+# locale.
 
 set -o nounset
 set -o pipefail

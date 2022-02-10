@@ -127,9 +127,7 @@ declare() { _compare $GOLD_DIR/declare.sh demo; }
 # Needs declare -p
 scope() { _compare $GOLD_DIR/scope.sh; }
 
-readlink-case() {
-  $GOLD_DIR/readlink.sh compare
-}
+test-readlink() { $GOLD_DIR/readlink.sh compare; }
 
 errexit() { _compare $GOLD_DIR/errexit.sh all; }
 
@@ -194,7 +192,9 @@ readonly -a PASSING=(
   one-spec-test
   html-summary
   gen-module-init
-  readlink-case
+
+  # TODO: make it match new busybox version and GNU readlink!
+  # test-readlink
 
   errexit
   errexit-confusion

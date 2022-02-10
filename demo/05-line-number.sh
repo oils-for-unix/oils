@@ -3,6 +3,9 @@
 # Demo of line numbers, inspired by:
 #
 # http://lists.gnu.org/archive/html/bug-bash/2016-12/msg00119.html
+#
+# TODO: would be nice to move into test/gold, but OSH doesn't have the ERR trap
+# yet
 
 # This doesn't appear necessary:
 #shopt -s extdebug
