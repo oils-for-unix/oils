@@ -146,6 +146,7 @@ def RunCases(cases, case_predicate, shell_pairs, result_table, flaky):
 
       if skip:
         result_row.append(Result.SKIP)
+        flaky[case_num, shell_label] = -1
         continue
 
       result, retries = RunCase(shell_path, shell_label, func)
