@@ -38,7 +38,7 @@ class HarnessTest(unittest.TestCase):
         (1, 'dash'): -1,
         }
 
-    harness.PrintResults(shell_pairs, result_table, flaky)
+    harness.PrintResults(shell_pairs, result_table, flaky, 4)
 
 
 if __name__ == '__main__':

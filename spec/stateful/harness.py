@@ -160,7 +160,7 @@ def RunCases(cases, case_predicate, shell_pairs, result_table, flaky,
     result_table.append(result_row) 
 
 
-def PrintResults(shell_pairs, result_table, flaky):
+def PrintResults(shell_pairs, result_table, flaky, num_retries):
   f = sys.stdout
 
   if f.isatty():
@@ -202,10 +202,10 @@ def PrintResults(shell_pairs, result_table, flaky):
     for j, cell in enumerate(row[1:-1]):
       shell_label = sh_labels[j]
 
-      retries = flaky[case_num, shell_label]
-      if retries != -1:
+      num_success = flaky[case_num, shell_label]
+      if num_success != -1:
         # the first of 5 failed
-        extra_row[j] = '%d/5 ok' % retries
+        extra_row[j] = '%d/%d ok' % (num_success, num_retries+1)
 
       if cell == Result.SKIP:
         f.write('SKIP\t')
@@ -263,7 +263,7 @@ def main(argv):
 
   RunCases(CASES, case_predicate, shell_pairs, result_table, flaky, opts.num_retries)
 
-  num_failures = PrintResults(shell_pairs, result_table, flaky)
+  num_failures = PrintResults(shell_pairs, result_table, flaky, num_retries)
 
   if opts.osh_failures_allowed != num_failures:
     log('%s: Expected %d failures, got %d', sys.argv[0], opts.osh_failures_allowed, num_failures)

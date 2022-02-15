@@ -2,18 +2,15 @@
 #
 # Run real shell code with osh and bash, and compare the results.
 #
-# Limitation: If a script shells out to another bash script, osh won't be run.
-# TODO: --hijack-shebang or just 'sed' all the scripts in a repo?
-#
 # Usage:
-#   ./gold-test.sh <function name>
+#   test/gold.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-source test/common.sh  # for $OSH
+source test/common.sh  # $OSH, run-all
 
 readonly GOLD_DIR='test/gold'
 
@@ -25,11 +22,10 @@ readonly GOLD_DIR='test/gold'
 _compare() {
   set +o errexit
 
-  # NOTE: This will be wrong with OSH_HIJACK_SHEBANG!
-
   "$@" >_tmp/shebang.txt
   local expected_status=$?
 
+  export OSH_HIJACK_SHEBANG=$OSH
   $OSH "$@" >_tmp/osh.txt
   local osh_status=$?
 
@@ -51,36 +47,30 @@ _compare() {
   return 0
 }
 
-# Uses
-# - { busybox || true; } | head
-# - $1
-version-text() {
-  _compare test/spec.sh version-text
-}
-
 # Uses {core,osh}/*.py
-count() {
-  _compare metrics/source-code.sh all
+test-count() {
+  _compare metrics/source-code.sh for-translation
+  _compare metrics/source-code.sh overview
 }
 
 # Uses $(cd $(dirname $0) && pwd)
-one-spec-test() {
+test-spec-file() {
   _compare test/spec.sh builtin-special
 }
 
 # Uses redirect of functions.
-html-summary() {
+test-html-summary() {
   # BUG: in the devtools/release.sh process, there's nothing to summarize here
   # because _tmp/spec is deleted.
   _compare test/spec-runner.sh html-summary osh
 }
 
-gen-module-init() {
+test-gen-module-init() {
   local modules='time datetime'
   _compare build/actions.sh gen-module-init $modules
 }
 
-wild() {
+test-wild() {
   _compare test/wild.sh all '^distro/usr-bin'
 }
 
@@ -89,55 +79,61 @@ wild() {
 #
 # A bin/osh app bundle also behaves differently.  Maybe because of the internal
 # environment variables.
-startup-benchmark() {
+# FAILS
+
+FAIL-test-startup-benchmark() {
   _compare benchmarks/startup.sh compare-strace
 }
 
-configure() { _compare ./configure; }
-configure-bug() { _compare $GOLD_DIR/configure-bug.sh; }
-nix() { _compare $GOLD_DIR/nix.sh isElfSimpleWithStdin; }
-and-or() { _compare $GOLD_DIR/and-or.sh test-simple; }
+test-configure() { _compare ./configure; }
+test-configure-bug() { _compare $GOLD_DIR/configure-bug.sh; }
+test-nix() { _compare $GOLD_DIR/nix.sh isElfSimpleWithStdin; }
+test-and-or() { _compare $GOLD_DIR/and-or.sh test-simple; }
 
-comments() { _compare $GOLD_DIR/comments.sh; }
-readonly_() { _compare $GOLD_DIR/readonly.sh; }
-export-case() { _compare $GOLD_DIR/export.sh; }
-glob() { _compare $GOLD_DIR/glob.sh; }
-no-op() { _compare metrics/source-code.sh; }
-complex-here-docs() { _compare $GOLD_DIR/complex-here-docs.sh; }
-big-here-doc() { _compare $GOLD_DIR/big-here-doc.sh; }
-case-in-subshell() { _compare $GOLD_DIR/case-in-subshell.sh; }
-command-sub() { _compare $GOLD_DIR/command-sub.sh; }
-command-sub-2() { _compare $GOLD_DIR/command-sub-2.sh; }
+test-comments() { _compare $GOLD_DIR/comments.sh; }
+test-readonly_() { _compare $GOLD_DIR/readonly.sh; }
+test-export-case() { _compare $GOLD_DIR/export.sh; }
+test-glob() { _compare $GOLD_DIR/glob.sh; }
+test-no-op() { _compare metrics/source-code.sh; }
+test-complex-here-docs() { _compare $GOLD_DIR/complex-here-docs.sh; }
+
+# FAILS
+FAIL-test-big-here-doc() { _compare $GOLD_DIR/big-here-doc.sh; }
+
+test-case-in-subshell() { _compare $GOLD_DIR/case-in-subshell.sh; }
+test-command-sub() { _compare $GOLD_DIR/command-sub.sh; }
+test-command-sub-2() { _compare $GOLD_DIR/command-sub-2.sh; }
 
 char-class() { _compare $GOLD_DIR/char-class.sh demo; }
 strip-op-char-class() { _compare $GOLD_DIR/strip-op-char-class.sh; }
 
 # Similar tests for backslash escaping.
-echo-e() { _compare $GOLD_DIR/echo-e.sh; }
-dollar-sq() { _compare $GOLD_DIR/dollar-sq.sh; }
-word-eval() { _compare $GOLD_DIR/word-eval.sh; }
+FAIL-test-echo-e() { _compare $GOLD_DIR/echo-e.sh; }
 
-abuild() {
+test-dollar-sq() { _compare $GOLD_DIR/dollar-sq.sh; }
+test-word-eval() { _compare $GOLD_DIR/word-eval.sh; }
+
+test-abuild() {
   _compare $GOLD_DIR/abuild.sh is_function is_function
 }
 
 # Needs declare -p
-declare() { _compare $GOLD_DIR/declare.sh demo; }
+FAIL-test-declare() { _compare $GOLD_DIR/declare.sh demo; }
 
 # Needs declare -p
-scope() { _compare $GOLD_DIR/scope.sh; }
+FAIL-test-scope() { _compare $GOLD_DIR/scope.sh; }
 
-test-readlink() { $GOLD_DIR/readlink.sh compare; }
+FAIL-test-readlink() { $GOLD_DIR/readlink.sh compare; }
 
-errexit() { _compare $GOLD_DIR/errexit.sh all; }
+test-errexit() { _compare $GOLD_DIR/errexit.sh all; }
 
 # Hm this isn't tickling the bug?
-errexit-confusion() {
+test-errexit-confusion() {
   _compare $GOLD_DIR/errexit-confusion.sh run-for-release-OLD
   _compare $GOLD_DIR/errexit-confusion.sh run-for-release-FIXED
 }
 
-parse-help() {
+test-parse-help() {
   local dir=benchmarks/parse-help
 
   # This is not hermetic since it calls 'ls'
@@ -151,68 +147,27 @@ _ostype() {
   echo $OSTYPE
 }
 
-ostype() {
+FAIL-test-ostype() {
   _compare $0 _ostype
 }
 
-readonly -a PASSING=(
-  # FLAKY: This one differs by timestamp
-  #version-text
+# TODO:
+# - Add --allowed-failures mechanism
+#   - and maybe a timeout
+#
+# Does it make sense to have some sort of TAP-like test protocol?
+# - Probably not when it's one test cases per process
+# - But spec/ and spec/stateful have multiple test cases per file
 
-  configure
-  configure-bug
-  nix
-  and-or
-
-  comments
-  readonly_
-  export-case
-  glob
-  no-op
-  complex-here-docs
-
-  # BUG IN OSH!
-  # big-here-doc
-
-  case-in-subshell
-  command-sub
-  command-sub-2
-
-  # Fails on continuous build?
-  # echo-e
-
-  dollar-sq
-  word-eval
-
-  char-class
-  strip-op-char-class
-  abuild
-
-  count
-  one-spec-test
-  html-summary
-  gen-module-init
-
-  # TODO: make it match new busybox version and GNU readlink!
-  # test-readlink
-
-  errexit
-  errexit-confusion
-
-  parse-help
-
-  # This one takes a little long, but it's realistic.
-  #wild
-
-  # There are slight differences in the number of syscalls reported.  Not sure
-  # of the cause.
-  #startup-benchmark
-)
-
-all-passing() {
-  run-all "${PASSING[@]}"
+manifest() {
+  compgen -A function | egrep '^test-' 
 }
 
+all-passing() {
+  manifest | xargs --verbose -- $0 run-all
+}
+
+# TODO: Turn it into a table?
 run-for-release() {
   run-other-suite-for-release gold all-passing
 }
