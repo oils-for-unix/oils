@@ -87,15 +87,49 @@ def bug_1004(sh):
 
 
 @register()
-def t7(sh):
-  'Test resuming a killed process'
+def stopped_process(sh):
+  'Resuming a stopped process'
   expect_prompt(sh)
 
   sh.sendline('cat')
+
+  time.sleep(0.1)  # seems necessary
+
   if 0:
     ctrl_z(sh)
   else:
     stop_process__hack('cat')
+
+  sh.expect('.*Stopped.*')
+
+  sh.sendline('')  # needed for dash for some reason
+  expect_prompt(sh)
+
+  sh.sendline('fg')
+
+  if sh.shell_label == 'osh':
+    sh.expect(r'Continue PID \d+')
+  else:
+    sh.expect('cat')
+
+  ctrl_c(sh)
+  expect_prompt(sh)
+
+  sh.sendline('fg')
+  expect_no_job(sh)
+
+
+@register()
+def stopped_pipeline(sh):
+  'Resuming a stopped pipeline (issue 1087)'
+  expect_prompt(sh)
+
+  sh.sendline('sleep 10 | cat | cat')
+
+  time.sleep(0.1)  # seems necessary
+
+  ctrl_z(sh)
+  # stop_process__hack doesn't work here
 
   sh.expect('.*Stopped.*')
 
@@ -144,7 +178,7 @@ def bug_721(sh):
 
 @register()
 def bug_1005(sh):
-  'sleep 10 then Ctrl-Z then wait should not hang'
+  'sleep 10 then Ctrl-Z then wait should not hang (issue 1005)'
 
   expect_prompt(sh)
 

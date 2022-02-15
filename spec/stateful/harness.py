@@ -103,22 +103,23 @@ def RunOnce(shell_path, shell_label, func):
     return Result.OK
 
 
-def RunCase(shell_path, shell_label, func):
+def RunCase(shell_path, shell_label, func, num_retries):
   result = RunOnce(shell_path, shell_label, func)
 
   if result == Result.OK:
     return result, -1  # short circuit for speed
 
   elif result == Result.FAIL:
-    log('\tFAILED first time: Retrying 4 times')
-
-    # No retry 4 times
     num_success = 0
-    for i in range(4):
-      log('\tRetry %d', i)
-      result = RunOnce(shell_path, shell_label, func)
-      if result == Result.OK:
-        num_success += 1
+    if num_retries:
+      log('\tFAILED first time: Retrying 4 times')
+      for i in range(num_retries):
+        log('\tRetry %d of %d', i+1, num_retries)
+        result = RunOnce(shell_path, shell_label, func)
+        if result == Result.OK:
+          num_success += 1
+    else:
+      log('\tFAILED')
 
     if num_success >= 2:
       return Result.OK, num_success
@@ -129,7 +130,8 @@ def RunCase(shell_path, shell_label, func):
     raise AssertionError(result)
 
 
-def RunCases(cases, case_predicate, shell_pairs, result_table, flaky):
+def RunCases(cases, case_predicate, shell_pairs, result_table, flaky,
+             num_retries):
   for case_num, (desc, func, skip_shells) in enumerate(cases):
     if not case_predicate(case_num, desc):
       continue
@@ -149,7 +151,7 @@ def RunCases(cases, case_predicate, shell_pairs, result_table, flaky):
         flaky[case_num, shell_label] = -1
         continue
 
-      result, retries = RunCase(shell_path, shell_label, func)
+      result, retries = RunCase(shell_path, shell_label, func, num_retries)
       flaky[case_num, shell_label] = retries
 
       result_row.append(result)
@@ -259,7 +261,7 @@ def main(argv):
   result_table = []  # each row is a list
   flaky = {}  # (case_num, shell) -> (succeeded, attempted)
 
-  RunCases(CASES, case_predicate, shell_pairs, result_table, flaky)
+  RunCases(CASES, case_predicate, shell_pairs, result_table, flaky, opts.num_retries)
 
   num_failures = PrintResults(shell_pairs, result_table, flaky)
 

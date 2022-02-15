@@ -170,4 +170,9 @@ def Options():
       '--pyann-out-dir', dest='pyann_out_dir', default=None,
       help='Run OSH with PYANN_OUT=$dir/$case_num.json')
 
+  # spec/stateful only
+  p.add_option(
+      '--num-retries', dest='num_retries', default=4, type='int',
+      help='Number of retries (for spec/stateful only)')
+
   return p
