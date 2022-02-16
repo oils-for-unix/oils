@@ -263,7 +263,7 @@ def main(argv):
 
   RunCases(CASES, case_predicate, shell_pairs, result_table, flaky, opts.num_retries)
 
-  num_failures = PrintResults(shell_pairs, result_table, flaky, num_retries)
+  num_failures = PrintResults(shell_pairs, result_table, flaky, opts.num_retries)
 
   if opts.osh_failures_allowed != num_failures:
     log('%s: Expected %d failures, got %d', sys.argv[0], opts.osh_failures_allowed, num_failures)
