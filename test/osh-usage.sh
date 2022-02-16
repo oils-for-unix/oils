@@ -12,7 +12,7 @@ set -o errexit
 source test/common.sh
 
 # Doesn't work in release automation!
-manual-oheap-test() {
+FAIL-test-manual-oheap() {
   # Not dumping to terminal
   if bin/osh -n --ast-format oheap -c 'echo hi'; then
     die "Should have failed"
@@ -20,7 +20,7 @@ manual-oheap-test() {
   echo OK
 }
 
-ast-formats() {
+test-ast-formats() {
   bin/osh -n -c 'echo hi'
   bin/osh -n --ast-format text -c 'echo hi'
   bin/osh -n --ast-format abbrev-html -c 'echo hi'
@@ -35,7 +35,7 @@ ast-formats() {
 }
 
 # Read from a file.
-osh-file() {
+test-osh-file() {
   echo ===== Hello
   cat >_tmp/smoke-prog.sh <<EOF
 echo hi
@@ -63,7 +63,7 @@ EOF
 }
 
 # Read from stdin.
-osh-stdin() {
+test-osh-stdin() {
   $OSH < _tmp/smoke-prog.sh
 
   echo ===== EMPTY
@@ -95,7 +95,7 @@ myfunc() {
 EOF
 }
 
-osh-interactive() {
+test-osh-interactive() {
   set +o errexit
   echo 'echo hi' | $OSH -i
   assert $? -eq 0
@@ -117,7 +117,7 @@ osh-interactive() {
   assert $? -eq 2
 }
 
-help() {
+test-help() {
   set +o errexit
 
   # TODO: Test the oil.ovm binary as well as bin/oil.py.
@@ -142,13 +142,13 @@ help() {
   assert $? -eq 0
 }
 
-exit-builtin-interactive() {
+test-exit-builtin-interactive() {
   set +o errexit
   echo 'echo one; exit 42; echo two' | bin/osh -i
   assert $? -eq 42
 }
 
-rc-file() {
+test-rc-file() {
   set +o errexit
 
   local rc=_tmp/testrc
@@ -166,7 +166,7 @@ rc-file() {
   assert $? -eq 0
 }
 
-noexec-fails-properly() {
+test-noexec-fails-properly() {
   set +o errexit
   local tmp=_tmp/osh-usage-noexec.txt
   bin/osh -n -c 'echo; echo; |' > $tmp
@@ -176,26 +176,14 @@ noexec-fails-properly() {
   echo "$tmp appears empty, as expected"
 }
 
-version() {
+test-version() {
   set +o errexit
   bin/osh --version
   assert $? -eq 0
 }
 
-readonly -a PASSING=(
-  ast-formats
-  osh-file
-  osh-stdin
-  osh-interactive
-  exit-builtin-interactive
-  rc-file
-  help
-  noexec-fails-properly
-  version
-)
-
 all-passing() {
-  run-all "${PASSING[@]}"
+  test-func-manifest | xargs --verbose -- $0 run-all
 }
 
 run-for-release() {

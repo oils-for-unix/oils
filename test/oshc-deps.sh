@@ -18,7 +18,7 @@ assert-deps() {
   bin/oshc deps | diff -u /dev/fd/3 - || fail
 }
 
-usage() {
+test-usage() {
   set +o errexit
 
   # missing required subcommand
@@ -46,7 +46,9 @@ usage() {
   set -o errexit
 }
 
-deps() {
+FAIL-test-deps() {
+  # Run on ourselves
+
   bin/oshc deps $0
   test $? -eq 0 || fail
 
@@ -87,13 +89,8 @@ grep
 DEPS
 }
 
-readonly -a PASSING=(
-  usage
-  #deps
-)
-
 all-passing() {
-  run-all "${PASSING[@]}"
+  test-func-manifest | xargs --verbose -- $0 run-all
 }
 
 run-for-release() {

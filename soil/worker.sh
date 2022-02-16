@@ -110,6 +110,7 @@ typecheck-slice     types/oil-slice.sh soil-run      -
 typecheck-other     types/run.sh soil-run            -
 unit                test/unit.sh soil-run            -
 stateful            test/stateful.sh soil-run        _tmp/stateful/index.html
+arena               test/arena.sh all-passing              -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 oil-runtime-errors  test/oil-runtime-errors.sh run-all-with-osh  -
@@ -194,7 +195,7 @@ ovm-tarball-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-locale       soil/worker.sh dump-locale    -
+dump-locale       soil/worker.sh dump-locale             -
 dev-all           build/dev.sh all                       -
 yajl              build/dev.sh yajl-release              -
 tour              build/doc.sh tour                      _release/VERSION/doc/oil-language-tour.html
@@ -203,7 +204,7 @@ syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.tx
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec.sh soil-run-osh              _tmp/spec/survey/osh.html
 gold              test/gold.sh all-passing               -
-arena             test/arena.sh all-passing              -
+osh-usage         test/osh-usage.sh all-passing          -
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      build/test.sh oil-tar                  -
 EOF
@@ -226,7 +227,7 @@ EOF
 # Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
-dump-distro       soil/worker.sh dump-distro     -
+dump-distro       soil/worker.sh dump-distro              -
 opyc              test/opyc.sh soil-run                   -
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh soil-run    -
