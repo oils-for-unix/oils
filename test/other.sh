@@ -22,7 +22,7 @@ xargs-test() {
 
 csv2html-test() {
   pushd web/table
-  ./csv2html-test.sh
+  ./csv2html-test.sh all
   popd
 }
 

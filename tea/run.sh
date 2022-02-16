@@ -27,12 +27,12 @@ parse-one() {
   if test $? -ne 0; then return 255; fi  # make xargs quit
 }
 
-parse-all-tea() {
+test-parse-all-tea() {
   # Parse with the Oil binary
   tea-files | xargs --verbose -n 1 -- $0 parse-one
 }
 
-usage-test() {
+test-usage() {
   local prog='data Point(x Int, y Int)'
 
   bin/oil -O parse_tea -n -c "echo 'hi'; $prog"
@@ -43,19 +43,14 @@ usage-test() {
   echo "$prog" | bin/tea -n
 }
 
-all() {
-  parse-all-tea
-  usage-test
-}
-
 soil-run() {
   ### Used by soil/worker.sh.  Prints to stdout.
-  all
+  run-test-funcs
 }
 
 run-for-release() {
   ### Used by devtools/release.sh.  Writes a file.
-  run-other-suite-for-release tea-large all
+  run-other-suite-for-release tea-large run-test-funcs
 }
 
 "$@"

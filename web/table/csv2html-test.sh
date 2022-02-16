@@ -9,6 +9,7 @@ set -o errexit
 
 readonly REPO_ROOT=$(readlink -f $(dirname $0))/../..
 
+source $REPO_ROOT/test/common.sh
 source $REPO_ROOT/web/table/html.sh
 
 
@@ -147,18 +148,11 @@ EOF
 
 }
 
-if test $# -eq 0; then
+all() {
   link-static
+  echo
+  run-test-funcs
+}
 
-  test-no-schema
-  echo '--'
-  test-schema
-  echo '--'
-  test-precision
-  echo '--'
-  test-row-css-class
-else
-  "$@"
-fi
-
+"$@"
 

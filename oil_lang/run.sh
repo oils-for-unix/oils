@@ -19,14 +19,12 @@ parse-one() {
   if test $? -ne 0; then return 255; fi  # make xargs quit
 }
 
-parse-all-osh() {
+test-parse-osh() {
   find oil_lang/testdata -name '*.sh' -o -name '*.osh' \
     | xargs -n 1 -- $0 parse-one
 }
 
-all-passing() {
-  ### Run all the examples
-
+test-run-osh() {
   for prog in oil_lang/testdata/*.{sh,osh}; do
     echo $prog
 
@@ -45,7 +43,9 @@ all-passing() {
     echo ---
     bin/osh $prog
   done
+}
 
+test-run-oil() {
   for prog in oil_lang/testdata/*.oil; do
     echo ---
     bin/oil $prog all
@@ -73,19 +73,14 @@ demo() {
   bin/osh oil_lang/testdata/assign.osh
 }
 
-all() {
-  parse-all-osh
-  all-passing
-}
-
 soil-run() {
   ### Used by soil/worker.sh.  Prints to stdout.
-  all
+  run-test-funcs
 }
 
 run-for-release() {
   ### Used by devtools/release.sh.  Writes a file.
-  run-other-suite-for-release oil-large all
+  run-other-suite-for-release oil-large run-test-funcs
 }
 
 "$@"
