@@ -230,7 +230,7 @@ other-tests-tasks() {
   cat <<EOF
 dump-distro       soil/worker.sh dump-distro              -
 opyc              test/opyc.sh soil-run                   -
-time-test         benchmarks/time-test.sh all-passing     -
+time-test         benchmarks/time-test.sh soil-run        -
 csv-concat-test   devtools/csv-concat-test.sh soil-run    -
 osh2oil           test/osh2oil.sh soil-run                -
 R-test            devtools/R-test.sh soil-run             -

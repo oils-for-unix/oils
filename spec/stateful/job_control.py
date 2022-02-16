@@ -87,6 +87,50 @@ def bug_1004(sh):
 
 
 @register()
+def bug_721(sh):
+  'Call fg twice after process exits (issue 721)'
+
+  # This test seems flaky under bash for some reason
+
+  expect_prompt(sh)
+  sh.sendline('cat')
+
+  time.sleep(0.1)
+
+  ctrl_c(sh)
+  expect_prompt(sh)
+
+  sh.sendline('fg')
+  expect_no_job(sh)
+
+  #sh.sendline('')
+  #expect_prompt(sh)
+
+  sh.sendline('fg')
+  expect_no_job(sh)
+
+  expect_prompt(sh)
+
+
+@register()
+def bug_1005(sh):
+  'sleep 10 then Ctrl-Z then wait should not hang (issue 1005)'
+
+  expect_prompt(sh)
+
+  sh.sendline('sleep 10')
+
+  time.sleep(0.1)
+
+  ctrl_z(sh)
+  sh.expect(r'.*Stopped.*')
+
+  sh.sendline('wait')
+  sh.sendline('echo status=$?')
+  sh.expect(r"status=0")
+
+
+@register()
 def stopped_process(sh):
   'Resuming a stopped process'
   expect_prompt(sh)
@@ -148,50 +192,6 @@ def stopped_pipeline(sh):
 
   sh.sendline('fg')
   expect_no_job(sh)
-
-
-@register()
-def bug_721(sh):
-  'Call fg twice after process exits (issue 721)'
-
-  # This test seems flaky under bash for some reason
-
-  expect_prompt(sh)
-  sh.sendline('cat')
-
-  time.sleep(0.1)
-
-  ctrl_c(sh)
-  expect_prompt(sh)
-
-  sh.sendline('fg')
-  expect_no_job(sh)
-
-  #sh.sendline('')
-  #expect_prompt(sh)
-
-  sh.sendline('fg')
-  expect_no_job(sh)
-
-  expect_prompt(sh)
-
-
-@register()
-def bug_1005(sh):
-  'sleep 10 then Ctrl-Z then wait should not hang (issue 1005)'
-
-  expect_prompt(sh)
-
-  sh.sendline('sleep 10')
-
-  time.sleep(0.1)
-
-  ctrl_z(sh)
-  sh.expect(r'.*Stopped.*')
-
-  sh.sendline('wait')
-  sh.sendline('echo status=$?')
-  sh.expect(r"status=0")
 
 
 if __name__ == '__main__':
