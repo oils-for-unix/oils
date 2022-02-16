@@ -11,9 +11,8 @@ set -o errexit
 
 source test/common.sh
 
-# Doesn't work in release automation!
-FAIL-test-manual-oheap() {
-  # Not dumping to terminal
+DISABLED-test-oheap() {
+  # OHeap was disabled
   if bin/osh -n --ast-format oheap -c 'echo hi'; then
     die "Should have failed"
   fi

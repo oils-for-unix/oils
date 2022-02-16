@@ -48,7 +48,9 @@ interactive-quick() {
 interactive() { interactive-quick dash "$@"; }
 
 job-control-quick() {
-  spec/stateful/job_control.py --osh-failures-allowed 2 \
+  # This test seems flakier on Github Actions.  Does a larger timeout fix it?
+
+  spec/stateful/job_control.py --osh-failures-allowed 2 --pexpect-timeout 2.0 \
     $OSH bash "$@"
 }
 job-control() { job-control-quick dash "$@"; }

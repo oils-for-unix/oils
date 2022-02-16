@@ -172,7 +172,12 @@ def Options():
 
   # spec/stateful only
   p.add_option(
-      '--num-retries', dest='num_retries', default=4, type='int',
+      '--num-retries', dest='num_retries', 
+      type='int', default=4, 
       help='Number of retries (for spec/stateful only)')
+  p.add_option(
+      '--pexpect-timeout', dest='pexpect_timeout', 
+      type='float', default=1.0, 
+      help='In seconds')
 
   return p

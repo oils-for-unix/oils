@@ -46,12 +46,13 @@ test-usage() {
   set -o errexit
 }
 
-FAIL-test-deps() {
-  # Run on ourselves
-
+test-ourselves() {
+  ### This shows an errror but doesn't exit 0
   bin/oshc deps $0
   test $? -eq 0 || fail
+}
 
+test-deps() {
   # Have to go inside a condition
   assert-deps <<EOF 3<<DEPS
 if { grep foo bar; } then
@@ -75,7 +76,9 @@ grep foo bar
 EOF
 grep
 DEPS
+}
 
+DISABLED-test-deps-2() {
   # g is used before defined, NOT OK
   assert-deps <<EOF 3<<DEPS
 g
@@ -87,6 +90,7 @@ EOF
 g
 grep
 DEPS
+
 }
 
 run-for-release() {
