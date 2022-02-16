@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-source test/common.sh  # $OSH, run-all
+source test/common.sh  # $OSH, run-test-funcs
 
 readonly GOLD_DIR='test/gold'
 
@@ -152,20 +152,16 @@ FAIL-test-ostype() {
 }
 
 # TODO:
-# - Add --allowed-failures mechanism
-#   - and maybe a timeout
-#
-# Does it make sense to have some sort of TAP-like test protocol?
-# - Probably not when it's one test cases per process
-# - But spec/ and spec/stateful have multiple test cases per file
-
-all-passing() {
-  test-func-manifest | xargs --verbose -- $0 run-all
-}
+# - Run the failing tests, and add an --allowed-failures mechanism
+# - and a timeout for big-here-doc
 
 # TODO: Turn it into a table?
 run-for-release() {
-  run-other-suite-for-release gold all-passing
+  run-other-suite-for-release gold run-test-funcs
+}
+
+soil-run() {
+  run-test-funcs
 }
 
 "$@"

@@ -89,12 +89,12 @@ grep
 DEPS
 }
 
-all-passing() {
-  test-func-manifest | xargs --verbose -- $0 run-all
+run-for-release() {
+  run-other-suite-for-release oshc-deps run-test-funcs
 }
 
-run-for-release() {
-  run-other-suite-for-release oshc-deps all-passing
+soil-run() {
+  run-test-funcs
 }
 
 "$@"

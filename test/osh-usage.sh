@@ -182,12 +182,12 @@ test-version() {
   assert $? -eq 0
 }
 
-all-passing() {
-  test-func-manifest | xargs --verbose -- $0 run-all
+run-for-release() {
+  run-other-suite-for-release osh-usage run-test-funcs
 }
 
-run-for-release() {
-  run-other-suite-for-release osh-usage all-passing
+soil-run() {
+  run-test-funcs
 }
 
 "$@"

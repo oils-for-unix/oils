@@ -105,12 +105,8 @@ FAIL-test-help() {
   bin/opyc --help
 }
 
-all-passing() {
-  test-func-manifest | xargs --verbose -- $0 run-all
-}
-
 run-for-release() {
-  run-other-suite-for-release opyc all-passing
+  run-other-suite-for-release opyc run-test-funcs
 }
 
 soil-run() {
@@ -123,7 +119,7 @@ soil-run() {
   # Has to come after the previous step
   make _build/opy/py27.grammar.marshal
 
-  all-passing
+  run-test-funcs
 }
 
 

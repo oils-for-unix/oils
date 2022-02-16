@@ -49,12 +49,12 @@ FAIL-test-wild() {
   cat $MANIFEST | xargs -n 2 -- $0 _compare-wild
 }
 
-all-passing() {
-  test-func-manifest | xargs --verbose -- $0 run-all
+run-for-release() {
+  run-other-suite-for-release arena run-test-funcs
 }
 
-run-for-release() {
-  run-other-suite-for-release arena all-passing
+soil-run() {
+  run-test-funcs
 }
 
 "$@"

@@ -64,10 +64,13 @@ run-task-with-status-test() {
   test "$(wc -l < _tmp/status.txt)" = '1' || die "Expected only one line"
 }
 
-# TODO: We should run them like $0?  To get more fine-grained reporting.
-run-all() {
-  for t in "$@"; do
-    # fail calls 'exit 1'
+test-func-manifest() {
+  ### Shell funcs that start with 'test-' are cases that will pass or fail
+  compgen -A function | egrep '^test-' 
+}
+
+run-test-funcs() {
+  test-func-manifest | while read t; do
     $t
     echo "OK  $t"
   done
@@ -127,11 +130,6 @@ date-and-git-info() {
 
 html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"
-}
-
-test-func-manifest() {
-  ### Shell funcs that start with 'test-' are cases that will pass or fail
-  compgen -A function | egrep '^test-' 
 }
 
 filename=$(basename $0)

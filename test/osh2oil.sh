@@ -1348,7 +1348,13 @@ list-all-tests() {
 }
 
 all-passing() {
-  run-all "${PASSING[@]}"
+  for t in "${PASSING[@]}"; do
+    $t
+    echo "OK  $t"
+  done
+
+  echo
+  echo "All $0 tests passed."
 }
 
 run-for-release() {

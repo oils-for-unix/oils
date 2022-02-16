@@ -214,7 +214,7 @@ test-print-header() {
     --print-header --rusage --stdout DUMMY --tsv --field a --field b
   assert $? -eq 0
 
-  set -x
+  #set -x
   head _tmp/time-test-1
 }
 
@@ -253,23 +253,8 @@ test-time-helper() {
   assert $? -eq 2
 }
 
-
-all-passing() {
-  test-usage
-  test-csv
-  test-tsv
-  test-append
-  # Spews some errors
-  test-bad-tsv-chars
-  test-stdout
-  test-rusage
-  test-maxrss
-  test-print-header
-
-  test-time-helper
-
-  echo
-  echo "All tests in $0 passed."
+soil-run() {
+  run-test-funcs
 }
 
 "$@"
