@@ -129,6 +129,11 @@ html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"
 }
 
+test-func-manifest() {
+  ### Shell funcs that start with 'test-' are cases that will pass or fail
+  compgen -A function | egrep '^test-' 
+}
+
 filename=$(basename $0)
 if test "$filename" = 'common.sh'; then
   "$@"

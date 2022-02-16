@@ -14,42 +14,42 @@ source test/common.sh
 readonly FILE=osh/word_compile_test.py  # choose a small one
 
 # NOTE: We don't really use the 'lex' action.
-lex() {
+test-lex() {
   bin/opyc lex $FILE
 }
 
-ast() {
+test-ast() {
   bin/opyc ast $FILE
 }
 
-symbols() {
+test-symbols() {
   bin/opyc symbols $FILE
 }
 
-cfg() {
+test-cfg() {
   bin/opyc cfg $FILE
 }
 
 # This should be tested by opy/test.sh gold
-run() {
+test-run() {
   bin/opyc run opy/gold/fib_recursive.py
 } 
 
-dis() {
+test-dis() {
   bin/opyc dis $FILE
 }
 
-parse() {
+test-parse() {
   bin/opyc parse $FILE
 }
 
-compile() {
+test-compile() {
   bin/opyc compile $FILE _tmp/opyc-compile-1
   bin/opyc compile --emit-docstring=0 $FILE _tmp/opyc-compile-2
   ls -l _tmp/opyc-compile-*
 }
 
-parse-with() {
+test-parse-with() {
   local -a exprs
 
   readonly TESTDATA=pgen2/testdata
@@ -100,25 +100,13 @@ parse-with() {
   echo 'DONE'
 }
 
-help() {
+FAIL-test-help() {
   # Doesn't work yet.
   bin/opyc --help
 }
 
-readonly -a PASSING=(
-  lex
-  ast
-  symbols
-  cfg
-  run
-  dis
-  parse
-  parse-with
-  compile
-)
-
 all-passing() {
-  run-all "${PASSING[@]}"
+  test-func-manifest | xargs --verbose -- $0 run-all
 }
 
 run-for-release() {

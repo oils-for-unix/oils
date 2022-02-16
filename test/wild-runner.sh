@@ -184,10 +184,6 @@ make-report() {
   _link $PWD/web _tmp
 }
 
-test-wild-report() {
-  egrep -- '^oil|^perf-tools' $MANIFEST | wild-report summarize-dirs
-}
-
 if test "$(basename $0)" = 'wild-runner.sh'; then
   "$@"
 fi

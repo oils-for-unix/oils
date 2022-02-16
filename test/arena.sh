@@ -22,7 +22,7 @@ _compare() {
   fi
 }
 
-here-doc() {
+test-here-doc() {
   _compare test/arena/here-dq.sh
   _compare test/arena/here-sq.sh
   _compare test/arena/here-multiple.sh
@@ -32,7 +32,7 @@ here-doc() {
   #_compare test/arena/here-dq-indented.sh
 }
 
-tilde() {
+test-tilde() {
   _compare test/arena/tilde.sh
 }
 
@@ -43,19 +43,14 @@ _compare-wild() {
   _compare $abs_path
 }
 
-# Run on wild corpus
-wild() {
+# Run on wild corpus.  I think this never passed?
+FAIL-test-wild() {
   wc -l $MANIFEST
   cat $MANIFEST | xargs -n 2 -- $0 _compare-wild
 }
 
-readonly -a PASSING=(
-  here-doc
-  tilde
-)
-
 all-passing() {
-  run-all "${PASSING[@]}"
+  test-func-manifest | xargs --verbose -- $0 run-all
 }
 
 run-for-release() {

@@ -159,12 +159,8 @@ FAIL-test-ostype() {
 # - Probably not when it's one test cases per process
 # - But spec/ and spec/stateful have multiple test cases per file
 
-manifest() {
-  compgen -A function | egrep '^test-' 
-}
-
 all-passing() {
-  manifest | xargs --verbose -- $0 run-all
+  test-func-manifest | xargs --verbose -- $0 run-all
 }
 
 # TODO: Turn it into a table?
