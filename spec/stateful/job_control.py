@@ -67,11 +67,9 @@ def bug_1004(sh):
   #sh.expect("\r\n\\[PID \\d+\\] Stopped")
 
   sh.sendline('')  # needed for dash
-
   expect_prompt(sh)
 
   sh.sendline('fg')
-
   if sh.shell_label == 'osh':
     sh.expect(r'Continue PID \d+')
   else:
@@ -97,6 +95,7 @@ def bug_721(sh):
 
   time.sleep(0.1)
 
+  log('Ctrl-C')
   ctrl_c(sh)
   expect_prompt(sh)
 
@@ -109,6 +108,8 @@ def bug_721(sh):
   sh.sendline('fg')
   expect_no_job(sh)
 
+  log('End')
+  sh.sendline('')
   expect_prompt(sh)
 
 

@@ -138,6 +138,34 @@ all-in-one() {
 # NOTE: Show options like this:
 # python -m unittest discover -h
 
+#
+# TODO: Move to test/common.sh
+#
+
+time-tsv() {
+  benchmarks/time_.py --tsv "$@"
+}
+
+tsv-row() {
+  ### Usage: tsv-row a b c
+  local i=0
+  for cell in "$@"; do
+    if test $i -ne 0; then
+      echo -n $'\t'
+    fi
+
+    # note: if this were QTT, then it would be quoted
+    echo -n "$cell"
+
+    i=$((i + 1))
+  done
+
+  echo  # newline
+}
+
+tsv2html() {
+  web/table/csv2html.py --tsv "$@"
+}
 
 
 #
@@ -145,16 +173,15 @@ all-in-one() {
 #
 
 run-test-and-log() {
-  local tasks_csv=$1
-  local t=$2
+  local tasks_tsv=$1
+  local rel_path=$2
 
-  # NOTE: $t is assumed to be a relative path here!
-  local log=_tmp/unit/$t.txt
-  mkdir -p $(dirname $log)
+  local log=_tmp/unit/$rel_path.txt
+  mkdir -p "$(dirname $log)"
 
-  benchmarks/time_.py --append --out $tasks_csv \
-    --field $t --field "$t.txt" -- \
-    $t >$log 2>&1
+  time-tsv --append --out $tasks_tsv \
+    --field $rel_path --field "$rel_path.txt" -- \
+    $rel_path >$log 2>&1
 }
 
 run-all-and-log() {
@@ -162,26 +189,26 @@ run-all-and-log() {
   mkdir -p $out_dir
   rm -r -f $out_dir/*
 
-  local tasks_csv=$out_dir/tasks.csv
+  local tasks_tsv=$out_dir/tasks.tsv
 
   local status=0
 
   # TODO: I need to write a schema too?  Or change csv2html.py to support HREF
   # in NullSchema.
 
-  echo 'status,elapsed_secs,test,test_HREF' > $tasks_csv
+  tsv-row 'status' 'elapsed_secs' 'test' 'test_HREF' > $tasks_tsv
 
   # There are no functions here, so disabline errexit is safe.
   # Note: In Oil, this could use shopt { }.
   set +o errexit
-  time all-tests | xargs -n 1 -- $0 run-test-and-log $tasks_csv
+  time all-tests | xargs -n 1 -- $0 run-test-and-log $tasks_tsv
   status=$?
   set -o errexit
 
   if test $status -ne 0; then
-    cat $tasks_csv
+    cat $tasks_tsv
     echo
-    echo "*** Some tests failed.  See $tasks_csv ***"
+    echo "*** Some tests failed.  See $tasks_tsv ***"
     echo
 
     return $status
@@ -216,7 +243,7 @@ print-report() {
 
 EOF
 
-  web/table/csv2html.py $in_dir/report.csv
+  tsv2html $in_dir/report.tsv
 
   cat <<EOF
   </body>
@@ -229,8 +256,6 @@ EOF
 # - elapsed seconds -> milliseconds
 # - Need a link to the log for the test name (done, but no schema)
 # - schema for right-justifying numbers
-
-# TODO: Also get rid of osh highlighting!
 
 write-report() {
   local out=_tmp/unit/index.html

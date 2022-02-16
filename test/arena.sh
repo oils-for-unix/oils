@@ -44,7 +44,7 @@ _compare-wild() {
 }
 
 # Run on wild corpus.  I think this never passed?
-FAIL-test-wild() {
+DISABLED-test-wild() {
   wc -l $MANIFEST
   cat $MANIFEST | xargs -n 2 -- $0 _compare-wild
 }

@@ -9,7 +9,7 @@ options(stringsAsFactors = F)
 source('benchmarks/common.R')
 
 UnitTestReport = function(in_dir, out_dir) {
-  tasks = read.csv(file.path(in_dir, 'tasks.csv'))
+  tasks = readTsv(file.path(in_dir, 'tasks.tsv'))
 
   tasks %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
@@ -24,7 +24,7 @@ UnitTestReport = function(in_dir, out_dir) {
     tasks
 
   precision = SamePrecision(0)
-  writeCsv(tasks, file.path(out_dir, 'report'), precision)
+  writeTsv(tasks, file.path(out_dir, 'report'), precision)
 }
 
 main = function(argv) {

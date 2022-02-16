@@ -272,7 +272,7 @@ def OpyCommandMain(argv):
   try:
     action = argv[0]
   except IndexError:
-    raise error.Usage('opy: Missing required subcommand.')
+    raise error.Usage('Missing required subcommand.')
 
   argv = argv[1:]  # TODO: Should I do input.ReadRequiredArg()?
                    # That will shift the input.

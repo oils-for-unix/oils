@@ -148,6 +148,7 @@ class TestRunner(object):
         print()
         print('%s\t%d\t%s\t%s' % (skip_str, case_num, shell_label, desc))
         print()
+        sys.stdout.flush()  # prevent interleaving
 
         if skip:
           result_row.append(Result.SKIP)
