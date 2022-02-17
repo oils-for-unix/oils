@@ -164,8 +164,7 @@ class TestRunner(object):
       result_table.append(result_row) 
 
 
-def PrintResults(shell_pairs, result_table, flaky, num_retries):
-  f = sys.stdout
+def PrintResults(shell_pairs, result_table, flaky, num_retries, f):
 
   if f.isatty():
     fail_color = ansi.BOLD + ansi.RED
@@ -268,7 +267,13 @@ def main(argv):
   r = TestRunner(opts.num_retries, opts.pexpect_timeout)
   r.RunCases(CASES, case_predicate, shell_pairs, result_table, flaky)
 
-  num_failures = PrintResults(shell_pairs, result_table, flaky, opts.num_retries)
+  if opts.results_out:
+    results_f = open(opts.results_out, 'w')
+  else:
+    results_f = sys.stdout
+  num_failures = PrintResults(shell_pairs, result_table, flaky, opts.num_retries, results_f)
+
+  results_f.close()
 
   if opts.osh_failures_allowed != num_failures:
     log('%s: Expected %d failures, got %d', sys.argv[0], opts.osh_failures_allowed, num_failures)

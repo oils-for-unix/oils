@@ -16,6 +16,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh  # log
+source test/tsv-lib.sh
 
 # This uses ../oil_DEPS/spec-bin/{bash,dash} if they exist
 # The ovm-tarball container that has spec-bin doesn't have python3 :-(  Really
@@ -31,26 +32,28 @@ run() {
   "$@"
 }
 
-signals-quick() {
-  spec/stateful/signals.py \
-    $OSH bash "$@"
+# Hack for testing the harness
+#readonly FIRST='-r 0'
+readonly FIRST=''
 
+signals-quick() {
+  spec/stateful/signals.py $FIRST \
+    $OSH bash "$@"
 }
+
 # They now pass for dash and mksh, with wait -n and PIPESTATUS skipped.
 # zsh doesn't work now, but could if the prompt was changed to $ ?
 signals() { signals-quick dash mksh "$@"; }
 
 interactive-quick() {
-  spec/stateful/interactive.py \
+  spec/stateful/interactive.py $FIRST \
     $OSH bash "$@"
 }
 # Doesn't work in mksh or zsh
 interactive() { interactive-quick dash "$@"; }
 
 job-control-quick() {
-  # This test seems flakier on Github Actions.  Does a larger timeout fix it?
-
-  spec/stateful/job_control.py --osh-failures-allowed 2 --pexpect-timeout 2.0 \
+  spec/stateful/job_control.py $FIRST --osh-failures-allowed 2 \
     $OSH bash "$@"
 }
 job-control() { job-control-quick dash "$@"; }
@@ -74,9 +77,13 @@ run-file() {
   local spec_runner=${SPEC_RUNNER:-test/spec.sh}
   local base_dir=$BASE_DIR
 
-  run-task-with-status \
-    $base_dir/${spec_name}.task.txt \
-    $0 $spec_name >$base_dir/${spec_name}.log.txt 2>&1
+  local log_filename=$spec_name.log.txt
+  local results_filename=$spec_name.results.txt
+
+  time-tsv -o $base_dir/${spec_name}.task.txt \
+    --field $spec_name --field $log_filename --field $results_filename -- \
+    $0 $spec_name --results-out $base_dir/$results_filename \
+    >$base_dir/$log_filename 2>&1 || true
 }
 
 html-summary() {
@@ -100,6 +107,7 @@ html-summary() {
       <thead>
         <tr>
           <td>Task</td>
+          <td>Log</td>
           <td>Elapsed</td>
           <td>Status</td>
         </tr>
@@ -111,9 +119,10 @@ EOF
   shopt -s lastpipe  # to mutate all_passed in while
 
   manifest | while read spec_name; do
-    read status elapsed < $BASE_DIR/${spec_name}.task.txt
+    read status elapsed _ log_filename results_filename < $BASE_DIR/${spec_name}.task.txt
     echo '<tr>'
-    echo "<td> <a href="$spec_name.log.txt">$spec_name</a> </td>"
+    echo "<td> <a href="$results_filename">$spec_name</a> </td>"
+    echo "<td> <a href="$log_filename">Log</a> </td>"
     echo "<td>$elapsed</td>"
 
     case $status in

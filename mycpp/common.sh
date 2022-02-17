@@ -14,7 +14,3 @@ if test -z "${REPO_ROOT:-}"; then
 fi
 
 readonly MYPY_REPO=$REPO_ROOT/_clone/mypy
-
-time-tsv() {
-  $REPO_ROOT/benchmarks/time_.py --tsv "$@"
-}

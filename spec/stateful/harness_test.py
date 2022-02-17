@@ -4,6 +4,7 @@ harness_test.py: Tests for harness.py
 """
 from __future__ import print_function
 
+import sys
 import unittest
 
 import harness  # module under test
@@ -38,7 +39,7 @@ class HarnessTest(unittest.TestCase):
         (1, 'dash'): -1,
         }
 
-    harness.PrintResults(shell_pairs, result_table, flaky, 4)
+    harness.PrintResults(shell_pairs, result_table, flaky, 4, sys.stdout)
 
 
 if __name__ == '__main__':

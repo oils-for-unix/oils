@@ -17,6 +17,7 @@ readonly THIS_DIR=$(dirname $(readlink -f $0))
 readonly REPO_ROOT=$THIS_DIR/..
 
 source $THIS_DIR/common.sh
+source $REPO_ROOT/test/tsv-lib.sh
 source $REPO_ROOT/build/common.sh  # for CXX, ASAN_SYMBOLIZER_PATH
 
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
