@@ -55,13 +55,13 @@ writeCsv = function(table, prefix, precision_func = NULL, tsv = F) {
   }
 
   getFieldType = function(field_name) { typeof(table[[field_name]]) }
+  types_list = lapply(names(table), getFieldType)
 
   if (is.null(precision_func)) {
     precision_func = function(column_name) { 1 }
   }
-
-  types_list = lapply(names(table), getFieldType)
   precision_list = lapply(names(table), precision_func)
+
   #print(precision_list)
 
   schema = tibble(

@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 # Reuse some stuff
-source soil/travis.sh
+source soil/web-remote.sh
 
 # Relevant docs:
 #
