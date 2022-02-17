@@ -9,7 +9,7 @@ import sys
 import time
 
 import harness
-from harness import register
+from harness import register, expect_prompt
 
 
 #
@@ -68,18 +68,36 @@ from harness import register
 
 
 @register()
+def sigusr1_trapped_prompt(sh):
+  'Trapped SIGUSR1 while waiting at prompt (bug 1080)'
+  expect_prompt(sh)
+
+  sh.sendline("trap 'echo zzz-USR1' USR1")
+  expect_prompt(sh)
+
+  sh.kill(signal.SIGUSR1)
+
+  # bash and dash need another blank line, mksh doesn't
+  sh.sendline('')
+
+  sh.expect('zzz-USR1')
+
+
+@register()
 def sighup_trapped_wait(sh):
   'trapped SIGHUP during wait builtin'
 
   sh.sendline("trap 'echo HUP' HUP")
+  expect_prompt(sh)
   sh.sendline('sleep 1 &')
+  # TODO: expect something like [1] 24370
   sh.sendline('wait')
 
   time.sleep(0.1)
 
   sh.kill(signal.SIGHUP)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=129')
