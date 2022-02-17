@@ -82,11 +82,17 @@ run-file() {
 
   time-tsv -o $base_dir/${spec_name}.task.txt \
     --field $spec_name --field $log_filename --field $results_filename -- \
-    $0 $spec_name --results-out $base_dir/$results_filename \
+    $0 $spec_name --results-file $base_dir/$results_filename \
     >$base_dir/$log_filename 2>&1 || true
 }
 
 html-summary() {
+  ### Summarize all files
+
+  # Note: In retrospect, it would be better if every process writes a "long"
+  # TSV file of results.
+  # And then we concatenate them and write the "wide" summary here.
+
   html-head --title 'Stateful Tests' \
     ../../web/base.css ../../web/spec-tests.css
 
@@ -106,9 +112,9 @@ html-summary() {
     <table>
       <thead>
         <tr>
-          <td>Task</td>
+          <td>Test File</td>
           <td>Log</td>
-          <td>Elapsed</td>
+          <td>Elapsed seconds</td>
           <td>Status</td>
         </tr>
       </thead>
@@ -119,11 +125,18 @@ EOF
   shopt -s lastpipe  # to mutate all_passed in while
 
   manifest | while read spec_name; do
+
+    # Note: in test/spec-runner.sh, an awk script creates this table.  It reads
+    # *.task.txt and *.stats.txt.  I could add --stats-file to harness.py
+    # with pass/fail stats
     read status elapsed _ log_filename results_filename < $BASE_DIR/${spec_name}.task.txt
+
     echo '<tr>'
     echo "<td> <a href="$results_filename">$spec_name</a> </td>"
     echo "<td> <a href="$log_filename">Log</a> </td>"
-    echo "<td>$elapsed</td>"
+
+    printf -v elapsed_str '%.2f' $elapsed
+    echo "<td>$elapsed_str</td>"
 
     case $status in
       (0)  # exit code 0 is success
@@ -163,14 +176,6 @@ all() {
   set +o errexit
   html-summary > $BASE_DIR/index.html
   local status=$?
-
-  # TODO:
-  # If it failed, html-summary should also write
-  # _tmp/stateful/failed-manifest.txt
-
-  # Then run those to see if they succeed 2 of 4 times?  It would be nice to
-  # report it all on a single table, but also not run too many times.  I guess
-  # "retry number" can be another column in the table.
 
   set -o errexit
 

@@ -180,7 +180,7 @@ def Options():
       type='float', default=1.0, 
       help='In seconds')
   p.add_option(
-      '--results-out', dest='results_out', default=None,
+      '--results-file', dest='results_file', default=None,
       help='Write table of results to this file.  Default is stdout.')
 
   return p

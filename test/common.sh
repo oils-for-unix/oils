@@ -52,12 +52,6 @@ run-task-with-status() {
   # '{"status": %x, "wall_secs": %e, "user_secs": %U, "kernel_secs": %S}' \
 }
 
-test-run-task-with-status() {
-  run-task-with-status _tmp/status.txt sh -c 'sleep 0.1; exit 1' || true
-  cat _tmp/status.txt
-  test "$(wc -l < _tmp/status.txt)" = '1' || die "Expected only one line"
-}
-
 list-test-funcs() {
   ### Shell funcs that start with 'test-' are cases that will pass or fail
   compgen -A function | egrep '^test-' 
@@ -125,13 +119,3 @@ date-and-git-info() {
 html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"
 }
-
-filename=$(basename $0)
-if test "$filename" = 'common.sh'; then
-  if test $# -eq 0; then
-    # Run tests in this file
-    run-test-funcs
-  else
-    "$@"
-  fi
-fi

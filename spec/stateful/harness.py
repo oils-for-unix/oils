@@ -166,6 +166,10 @@ class TestRunner(object):
 
 def PrintResults(shell_pairs, result_table, flaky, num_retries, f):
 
+  # Note: In retrospect, it would be better if every process writes a "long"
+  # TSV file of results.
+  # And then we concatenate them and write the "wide" summary here.
+
   if f.isatty():
     fail_color = ansi.BOLD + ansi.RED
     ok_color = ansi.BOLD + ansi.GREEN
@@ -267,8 +271,8 @@ def main(argv):
   r = TestRunner(opts.num_retries, opts.pexpect_timeout)
   r.RunCases(CASES, case_predicate, shell_pairs, result_table, flaky)
 
-  if opts.results_out:
-    results_f = open(opts.results_out, 'w')
+  if opts.results_file:
+    results_f = open(opts.results_file, 'w')
   else:
     results_f = sys.stdout
   num_failures = PrintResults(shell_pairs, result_table, flaky, opts.num_retries, results_f)
