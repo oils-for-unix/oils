@@ -17,6 +17,7 @@ set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh
+source test/tsv-lib.sh
 
 export PYTHONPATH='.:vendor'  # repo root and vendor subdir
 
@@ -137,36 +138,6 @@ all-in-one() {
 
 # NOTE: Show options like this:
 # python -m unittest discover -h
-
-#
-# TODO: Move to test/common.sh
-#
-
-time-tsv() {
-  benchmarks/time_.py --tsv "$@"
-}
-
-tsv-row() {
-  ### Usage: tsv-row a b c
-  local i=0
-  for cell in "$@"; do
-    if test $i -ne 0; then
-      echo -n $'\t'
-    fi
-
-    # note: if this were QTT, then it would be quoted
-    echo -n "$cell"
-
-    i=$((i + 1))
-  done
-
-  echo  # newline
-}
-
-tsv2html() {
-  web/table/csv2html.py --tsv "$@"
-}
-
 
 #
 # For _release/VERSION

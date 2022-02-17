@@ -9,6 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh
+source test/tsv-lib.sh
+
 filter-py() {
   grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py$'
 }
@@ -310,10 +313,6 @@ metrics-html-head() {
   html-head --title "$title" "$base_url/base.css" "$base_url/table/table-sort.css" "$base_url/line-counts.css" 
 }
 
-tsv2html() {
-  web/table/csv2html.py --tsv "$@"
-}
-
 counts-html() {
   local name=$1
   local title=$2
@@ -323,7 +322,7 @@ counts-html() {
   rm -r -f -v $tmp_dir >& 2
   mkdir -v -p $tmp_dir >& 2
 
-  echo $'category\tcategory_HREF\ttotal_lines\tnum_files' > $tmp_dir/INDEX.tsv
+  tsv-row category category_HREF total_lines num_files > $tmp_dir/INDEX.tsv
 
   echo $'column_name\ttype
 category\tstring

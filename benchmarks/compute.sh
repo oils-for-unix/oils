@@ -30,6 +30,7 @@ set -o pipefail
 set -o errexit
 
 source benchmarks/common.sh  # filter-provenance
+source test/tsv-lib.sh
 
 readonly BASE_DIR=_tmp/compute
 readonly OSH_CC=_bin/osh_eval.opt.stripped
@@ -275,7 +276,12 @@ task-all() {
   mkdir -p $tmp_dir $raw_dir/$task_name
 
   # header
-  echo $'status\telapsed_secs\tuser_secs\tsys_secs\tmax_rss_KiB\tstdout_md5sum\thost_name\thost_hash\truntime_name\truntime_hash\ttask_name\targ1\targ2' > $times_tsv
+  tsv-row \
+    status elapsed_secs user_secs sys_secs max_rss_KiB \
+    stdout_md5sum \
+    host_name host_hash \
+    runtime_name runtime_hash \
+    task_name arg1 arg2 > $times_tsv
 
   local task_id=0
 
@@ -416,10 +422,6 @@ stage1() {
   done
   csv-concat ${raw[@]} > $times_tsv
   wc -l $times_tsv
-}
-
-tsv2html() {
-  csv2html --tsv "$@"
 }
 
 print-report() {

@@ -36,6 +36,7 @@ set -o errexit
 
 source benchmarks/common.sh  # for log, etc.
 source build/common.sh  # for $CLANG
+source test/tsv-lib.sh
 
 readonly BASE_DIR=_tmp/ovm-build
 readonly TAR_DIR=$PWD/_deps/ovm-build # Make it absolute
@@ -96,7 +97,7 @@ extract-oil() {
 
 sizes-tsv() {
   # host_label matches the times.tsv file output by report.R
-  echo $'host_label\tnum_bytes\tpath'
+  tsv-row host_label num_bytes path
   local host=$(hostname)
   find "$@" -maxdepth 0 -printf "$host\t%s\t%p\n"
 }
@@ -315,7 +316,6 @@ oil-historical-tasks() {
 }
 
 # action is 'configure', a target name, etc.
-readonly HEADER=$'status\telapsed_secs\thost_name\thost_hash\tcompiler_path\tcompiler_hash\tsrc_dir\taction'
 readonly NUM_COLUMNS=7  # 5 from provenence, then tarball/target
 
 measure() {
@@ -334,8 +334,11 @@ measure() {
 
   # TODO: the $times_out calculation is duplicated in build-task()
 
-  # Write Header of the CSV file that is appended to.
-  echo "$HEADER" > $times_out
+  # Write header of the TSV file that is appended to.
+  tsv-row \
+    status elapsed_secs \
+    host_name host_hash compiler_path compiler_hash \
+    src_dir action > $times_out
 
   local t1=$BASE_DIR/oil-tasks.txt
   local t2=$BASE_DIR/other-shell-tasks.txt

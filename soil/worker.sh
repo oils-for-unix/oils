@@ -10,10 +10,7 @@ set -o pipefail
 set -o errexit
 
 source soil/common.sh
-
-time-tsv() {
-  benchmarks/time_.py --tsv "$@"
-}
+source test/tsv-lib.sh
 
 dump-timezone() {
 
@@ -279,7 +276,7 @@ run-tasks() {
     # show the last line
 
     echo
-    echo $'status\telapsed\ttask\tscript\taction\tresult_html'
+    tsv-row status elapsed task script action result_html
     tail -n 1 $tsv
     echo
     log "status=$status max_status=$max_status"
