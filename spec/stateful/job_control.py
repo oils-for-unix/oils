@@ -55,6 +55,7 @@ def bug_1004(sh):
   time.sleep(0.1)
 
   if 0:
+    import os
     os.system('ls -l /proc/%s/fd' % os.getpid())
 
   if 0:

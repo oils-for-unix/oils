@@ -331,15 +331,17 @@ class SignalState(object):
     self.sigwinch_handler = SigwinchHandler(display, self)
     signal.signal(signal.SIGWINCH, self.sigwinch_handler)
 
-    try:
-      # Put the interactive shell in its own process group, named by its PID
-      posix.setpgid(my_pid, my_pid)
-      # Attach the terminal (stdin) to the progress group
-      posix.tcsetpgrp(0, my_pid)
+    # This doesn't make any tests pass, and we might punt on job control
+    if 0:
+      try:
+        # Put the interactive shell in its own process group, named by its PID
+        posix.setpgid(my_pid, my_pid)
+        # Attach the terminal (stdin) to the progress group
+        posix.tcsetpgrp(0, my_pid)
 
-    except (IOError, OSError) as e:
-      # For some reason setpgid() fails with Operation Not Permitted (EPERM) under pexpect?
-      pass
+      except (IOError, OSError) as e:
+        # For some reason setpgid() fails with Operation Not Permitted (EPERM) under pexpect?
+        pass
 
   def AddUserTrap(self, sig_num, handler):
     # type: (int, Any) -> None
