@@ -143,7 +143,7 @@ class Wait(vm._Builtin):
             # nothing to wait for, or interrupted
             status = 127
             break  
-          elif result >= 0 and result != pyos.UNTRAPPED_SIGWINCH:  # signal
+          elif result >= 0:  # signal
             status = 128 + result
             break
 
@@ -162,7 +162,7 @@ class Wait(vm._Builtin):
         if result == process.W1_ECHILD:
           # nothing to wait for, or interrupted.  status is 0
           break  
-        elif result >= 0 and result != pyos.UNTRAPPED_SIGWINCH:  # signal
+        elif result >= 0:  # signal
           status = 128 + result
           break
 

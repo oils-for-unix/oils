@@ -211,6 +211,25 @@ def sigwinch_untrapped_wait_n(sh):
   sh.expect('status=0')
 
 
+# dash and mksh don't have pipestatus
+@register()
+def sigwinch_untrapped_wait_pid(sh):
+  'untrapped SIGWINCH during wait $!'
+
+  sh.sendline('sleep 1 &')
+  sh.sendline('wait $!')
+
+  time.sleep(0.1)
+
+  # simulate window size change
+  sh.kill(signal.SIGWINCH)
+
+  sh.expect(r'.*\$')  # expect prompt
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=0')
+
+
 @register()
 def sigwinch_untrapped_external(sh):
   'untrapped SIGWINCH during external command'
