@@ -39,28 +39,43 @@ def main(argv):
   SignalState(parent_pid)
   log('===')
 
-  pid = os.fork()
-  if pid == 0:
-    child_pid = os.getpid()
+  line = raw_input()
 
-    log('---')
-    SignalState(child_pid)
-    signal.signal(signal.SIGTSTP, signal.SIG_DFL)
-    SignalState(child_pid)
-    log('---')
+  if line.startswith('sleep'):
+    pid = os.fork()
+    if pid == 0:
+      child_pid = os.getpid()
 
-    log('sleep 1 in child %d', child_pid)
-    time.sleep(1)
+      log('---')
+      SignalState(child_pid)
+      signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+      SignalState(child_pid)
+      log('---')
 
-  elif pid < 0:
-    raise AssertionError()
+      log('sleep 1 in child %d', child_pid)
+      os.execve('/bin/sleep', ['sleep', '1'], {})
+
+    elif pid < 0:
+      raise AssertionError()
+
+    else:
+      log('parent spawned %d', pid)
+
+      log('waiting')
+      pid, status = os.waitpid(-1, os.WUNTRACED)
+      log('wait => pid %d exited with status %d', pid, status)
+
+      if os.WIFEXITED(status):
+        log('EXITED')
+
+      if os.WIFSIGNALED(status):
+        log('SIGNALED')
+
+      elif os.WIFSTOPPED(status):
+        log('STOPPED')
 
   else:
-    log('parent spawned %d', pid)
-
-    log('waiting')
-    result = os.waitpid(-1, 0)
-    log('wait => %s', result)
+    log('BAD COMMAND')
 
 
 if __name__ == '__main__':

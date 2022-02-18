@@ -33,20 +33,15 @@ def get_pid_by_name(name):
   return int(output.split()[-1])
 
 
-def send_signal(name, sig_num):
-  """Kill the most recent process matching `name`."""
-  os.kill(get_pid_by_name(name), sig_num)
-
-
-def stop_process__hack(name):
-  """Send sigstop to the most recent process matching `name`
+def stop_process__hack(name, sig_num=signal.SIGSTOP):
+  """Send SIGSTOP to the most recent process matching `name`
 
   Hack in place of sh.sendcontrol('z'), which sends SIGTSTP.  Why doesn't OSH
   respond to this, or why don't the child processes respond?
 
   TODO: Fix OSH and get rid of this hack.
   """
-  send_signal(name, signal.SIGSTOP)
+  os.kill(get_pid_by_name(name), sig_num)
 
 
 # Mutated by each test file.
@@ -235,10 +230,45 @@ def PrintResults(shell_pairs, result_table, flaky, num_retries, f):
   return num_failures
 
 
+def TestStop(exe):
+  p = pexpect.spawn(exe, encoding='utf-8', timeout=2.0)
+
+  # Show output
+  p.logfile = sys.stdout
+  #p.setecho(True)
+
+  p.sendline('sleep')
+  p.expect('in child')
+
+  import time
+  time.sleep(0.1)
+
+  # Stop it
+
+  if 0: # does NOT work -- why?
+    p.sendcontrol('z')
+  if 0: # does NOT work
+    stop_process__hack('sleep', sig_num=signal.SIGTSTP)
+  if 1:
+    # WORKS
+    stop_process__hack('sleep', sig_num=signal.SIGSTOP)
+
+  # These will kill the parent, not the sleep child
+  #p.kill(signal.SIGTSTP)
+  #p.kill(signal.SIGSTOP)
+
+  p.expect('wait =>')
+  p.close()
+
+
 def main(argv):
   # NOTE: Some options are ignored
   o = spec_lib.Options()
   opts, argv = o.parse_args(argv)
+
+  if argv and argv[1] == 'test-stop':  # Hack for testing
+    TestStop(argv[2])
+    return
 
   # List test cases and return
   if opts.do_list:

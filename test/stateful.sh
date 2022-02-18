@@ -190,4 +190,12 @@ soil-run() {
   all
 }
 
+#
+# Debugging
+#
+
+test-stop() {
+  python3 spec/stateful/harness.py test-stop demo/cpython/fork_signal_state.py
+}
+
 "$@"

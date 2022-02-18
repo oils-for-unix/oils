@@ -54,11 +54,23 @@ def bug_1004(sh):
 
   time.sleep(0.1)
 
-  if 0:
-    import os
-    os.system('ls -l /proc/%s/fd' % os.getpid())
+  debug = False
+  #debug = True
 
-  if 0:
+  if debug:
+    import os
+    #os.system('ls -l /proc/%s/fd' % os.getpid())
+
+    # From test/group-session.sh
+    log('harness PID = %d', os.getpid())
+    import subprocess
+    #os.system('ps -o pid,ppid,pgid,sid,tpgid,comm')
+
+    # the child shell is NOT LISTED here because it's associated WITH A
+    # DIFFERENT TERMINAL.
+    subprocess.call(['ps', '-o', 'pid,ppid,pgid,sid,tpgid,comm'])
+
+  if debug:
     ctrl_z(sh)
   else:
     stop_process__hack('cat')
