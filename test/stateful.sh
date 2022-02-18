@@ -80,6 +80,8 @@ run-file() {
   local log_filename=$spec_name.log.txt
   local results_filename=$spec_name.results.txt
 
+  # TODO: I want allowed failures here
+
   time-tsv -o $base_dir/${spec_name}.task.txt \
     --field $spec_name --field $log_filename --field $results_filename -- \
     $0 $spec_name --results-file $base_dir/$results_filename \

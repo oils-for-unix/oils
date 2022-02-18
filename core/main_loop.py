@@ -269,6 +269,8 @@ if mylib.PYTHON:
 
         break  # QUIT LOOP after one iteration.
 
+      cmd_ev.RunPendingTraps()  # Run trap handlers even if we get just ENTER
+
       # Cleanup after every command (or failed command).
 
       # Reset internal newline state.

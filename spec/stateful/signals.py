@@ -70,6 +70,17 @@ from harness import register, expect_prompt
 @register()
 def sigusr1_trapped_prompt(sh):
   'Trapped SIGUSR1 while waiting at prompt (bug 1080)'
+
+  # Notes on shell behavior:
+  # bash and dash:
+  # - If there are multiple USR1 signals, only one handler is run.
+  # - The handlers aren't run in between PS1 and PS2.  There has to be another
+  #   command.  So it's run in the InteractiveLoop and not the LineReader.
+  # zsh and mksh:
+  # - It's printed immediately!  You don't even have to hit ENTER.  That's
+  #   probably because the line editor is integrated in both shells.
+  # I think it's OK t match bash and dash.
+
   expect_prompt(sh)
 
   sh.sendline("trap 'echo zzz-USR1' USR1")
@@ -77,10 +88,30 @@ def sigusr1_trapped_prompt(sh):
 
   sh.kill(signal.SIGUSR1)
 
-  # bash and dash need another blank line, mksh doesn't
+  # send an empty line
   sh.sendline('')
+  sh.expect('zzz-USR1')
+
+
+@register()
+def sigmultiple_trapped_prompt(sh):
+  'Trapped USR1 and USR2 while waiting at prompt'
+
+  expect_prompt(sh)
+
+  sh.sendline("trap 'echo zzz-USR1' USR1")
+  expect_prompt(sh)
+  sh.sendline("trap 'echo zzz-USR2' USR2")
+  expect_prompt(sh)
+
+  sh.kill(signal.SIGUSR1)
+  sh.kill(signal.SIGUSR2)
+
+  sh.sendline('echo hi')
 
   sh.expect('zzz-USR1')
+  sh.expect('zzz-USR2')
+  sh.sendline('hi')
 
 
 @register()
