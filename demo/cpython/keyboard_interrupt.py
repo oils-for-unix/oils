@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-py_signals.py
+keyboard_interrupt.py: How to replace KeyboardInterrupt
 """
 from __future__ import print_function
 

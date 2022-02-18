@@ -27,17 +27,17 @@ show_group_session() {
 
   case $kind in (*fgproc*)
     echo '[foreground process]'
-    ps -o pid,ppid,pgid,sid,tgid,comm
+    ps -o pid,ppid,pgid,sid,tpgid,comm
     ;;
   esac
 
   case $kind in (*bgproc*)
     echo '[background process]'
-    ps -o pid,ppid,pgid,sid,tgid,comm &
+    ps -o pid,ppid,pgid,sid,tpgid,comm &
     wait
 
     # - Gets its own PGID
-    # - Hm UNLIKE bgpipe it also gets its own TGID?  Seems consistent in all
+    # - Hm UNLIKE bgpipe it also gets its own TPGID?  Seems consistent in all
     #   shells.  Why is that?
     ;;
   esac
