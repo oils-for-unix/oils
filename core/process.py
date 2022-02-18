@@ -1355,9 +1355,11 @@ class JobState(object):
 
 # WaitForOne() return values
 
+# -1: pyos.UNTRAPPED_SIGWINCH
 W1_OK = -2      # waitpid(-1) returned
 W1_ECHILD = -3  # no processes to wait for
 # result > 0:   # a signal number that we exited with!
+                # ignoring untrapped SIGWINCH
 
 
 class Waiter(object):

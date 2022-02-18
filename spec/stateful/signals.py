@@ -149,7 +149,7 @@ def sigint_trapped_wait(sh):
   # simulate window size change
   sh.kill(signal.SIGINT)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=130')
@@ -168,7 +168,7 @@ def sigwinch_trapped_wait(sh):
   # simulate window size change
   sh.kill(signal.SIGWINCH)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=156')
@@ -186,7 +186,7 @@ def sigwinch_untrapped_wait(sh):
   # simulate window size change
   sh.kill(signal.SIGWINCH)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=0')
@@ -205,7 +205,7 @@ def sigwinch_untrapped_wait_n(sh):
   # simulate window size change
   sh.kill(signal.SIGWINCH)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=0')
@@ -224,7 +224,7 @@ def sigwinch_untrapped_wait_pid(sh):
   # simulate window size change
   sh.kill(signal.SIGWINCH)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=0')
@@ -241,7 +241,7 @@ def sigwinch_untrapped_external(sh):
   # simulate window size change
   sh.kill(signal.SIGWINCH)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=0')
@@ -259,7 +259,7 @@ def sigwinch_untrapped_pipeline(sh):
   # simulate window size change
   sh.kill(signal.SIGWINCH)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo pipestatus=${PIPESTATUS[@]}')
   sh.expect('pipestatus=0 0')
@@ -274,7 +274,7 @@ def t1(sh):
   time.sleep(0.1)
   sh.sendintr()  # SIGINT
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=130')
@@ -288,7 +288,7 @@ def t4(sh):
   time.sleep(0.1)
   sh.sendintr()  # SIGINT
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=130')
@@ -309,7 +309,7 @@ def t2(sh):
   time.sleep(0.1)
   sh.sendintr()  # SIGINT
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=130')
@@ -327,7 +327,7 @@ def c_wait(sh):
   # TODO: actually send Ctrl-C through the terminal, not SIGINT?
   sh.sendintr()  # SIGINT
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=130')
@@ -345,7 +345,7 @@ def c_wait_n(sh):
   # TODO: actually send Ctrl-C through the terminal, not SIGINT?
   sh.sendintr()  # SIGINT
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   sh.expect('status=130')
@@ -363,7 +363,7 @@ def c_wait_line(sh):
   # TODO: actually send Ctrl-C through the terminal, not SIGINT?
   sh.sendintr()  # SIGINT
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo done=$?')
   sh.expect('done=130')
@@ -377,7 +377,7 @@ def t5(sh):
   time.sleep(0.1)
   sh.sendintr()  # SIGINT
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
   # TODO: This should be status 130 like bash

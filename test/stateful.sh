@@ -53,7 +53,7 @@ interactive-quick() {
 interactive() { interactive-quick dash "$@"; }
 
 job-control-quick() {
-  spec/stateful/job_control.py $FIRST --osh-failures-allowed 2 \
+  spec/stateful/job_control.py $FIRST --osh-failures-allowed 1 \
     $OSH bash "$@"
 }
 job-control() { job-control-quick dash "$@"; }
