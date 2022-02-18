@@ -129,22 +129,23 @@ class Wait(vm._Builtin):
     if arg.n:
       # Loop until there is one fewer process running, there's nothing to wait
       # for, or there's a signal
-      target = self.job_state.NumRunning() - 1
-      status = 0
-      while True:
-        result = self.waiter.WaitForOne()
-        if result == process.W1_OK:
-          status = self.waiter.last_status
-        elif result == process.W1_ECHILD:
-          # nothing to wait for, or interrupted
-          status = 127
-          break  
-        elif result >= 0 and result != pyos.UNTRAPPED_SIGWINCH:  # signal
-          status = 128 + result
-          break
-
-        if self.job_state.NumRunning() == target:
-          break
+      n = self.job_state.NumRunning()
+      if n == 0:
+        status = 127
+      else:
+        target = n - 1
+        status = 0
+        while self.job_state.NumRunning() > target:
+          result = self.waiter.WaitForOne()
+          if result == process.W1_OK:
+            status = self.waiter.last_status
+          elif result == process.W1_ECHILD:
+            # nothing to wait for, or interrupted
+            status = 127
+            break  
+          elif result >= 0 and result != pyos.UNTRAPPED_SIGWINCH:  # signal
+            status = 128 + result
+            break
 
       return status
 
@@ -156,16 +157,13 @@ class Wait(vm._Builtin):
       # But how to fix this?
 
       status = 0
-      while True:
+      while self.job_state.NumRunning() != 0:
         result = self.waiter.WaitForOne()
         if result == process.W1_ECHILD:
           # nothing to wait for, or interrupted.  status is 0
           break  
         elif result >= 0 and result != pyos.UNTRAPPED_SIGWINCH:  # signal
           status = 128 + result
-          break
-
-        if self.job_state.NumRunning() == 0:
           break
 
       return status

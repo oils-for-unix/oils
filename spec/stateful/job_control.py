@@ -95,7 +95,6 @@ def bug_721(sh):
 
   time.sleep(0.1)
 
-  log('Ctrl-C')
   ctrl_c(sh)
   expect_prompt(sh)
 
@@ -108,7 +107,6 @@ def bug_721(sh):
   sh.sendline('fg')
   expect_no_job(sh)
 
-  log('End')
   sh.sendline('')
   expect_prompt(sh)
 
@@ -122,13 +120,37 @@ def bug_1005(sh):
   sh.sendline('sleep 10')
 
   time.sleep(0.1)
+  if 1:  # TODO: remove hack for OSH
+    stop_process__hack('sleep')
+  else:
+    ctrl_z(sh)
 
-  ctrl_z(sh)
   sh.expect(r'.*Stopped.*')
 
   sh.sendline('wait')
   sh.sendline('echo status=$?')
-  sh.expect(r"status=0")
+  sh.expect('status=0')
+
+
+@register(skip_shells=['dash'])
+def bug_1005_wait_n(sh):
+  'sleep 10 then Ctrl-Z then wait -n should not hang'
+
+  expect_prompt(sh)
+
+  sh.sendline('sleep 10')
+
+  time.sleep(0.1)
+  if 1:  # TODO: remove hack for OSH
+    stop_process__hack('sleep')
+  else:
+    ctrl_z(sh)
+
+  sh.expect(r'.*Stopped.*')
+
+  sh.sendline('wait -n')
+  sh.sendline('echo status=$?')
+  sh.expect('status=127')
 
 
 @register()

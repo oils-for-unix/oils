@@ -1361,6 +1361,9 @@ class CommandEvaluator(object):
 
     Also runs trap handlers.
     """
+    # TODO: Do this in "leaf" nodes?  SimpleCommand, DBracket, DParen should
+    # call self.DoTick()?  That will RunPendingTraps and check the Ctrl-C flag,
+    # and maybe throw an exception.
     self.RunPendingTraps()
 
     # This has to go around redirect handling because the process sub could be

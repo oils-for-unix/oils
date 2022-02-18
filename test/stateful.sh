@@ -37,7 +37,7 @@ run() {
 readonly FIRST=''
 
 signals-quick() {
-  spec/stateful/signals.py $FIRST --osh-failures-allowed 1 \
+  spec/stateful/signals.py $FIRST \
     $OSH bash "$@"
 }
 
