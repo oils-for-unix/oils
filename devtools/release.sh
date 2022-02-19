@@ -602,6 +602,16 @@ add-date-and-links() {
   '
 }
 
+modify-pages() {
+  local release_date
+  release_date=$(cat _build/release-date.txt)
+
+  local root=_release/VERSION
+
+  add-date-and-links $release_date < _tmp/release-index.html > $root/index.html
+  add-date-and-links $release_date < _tmp/release-quality.html > $root/quality.html
+}
+
 build-tree() {
   local root=_release/VERSION
   mkdir -p $root/{doc,test,pub}
@@ -609,16 +619,11 @@ build-tree() {
   # Metadata
   cp -v _build/release-date.txt oil-version.txt $root
 
-  local release_date
-  release_date=$(cat _build/release-date.txt)
-
   # Docs
-
   # Writes _release/VERSION and _tmp/release-index.html
   build/doc.sh run-for-release
 
-  # Note: this truncates the date!
-  add-date-and-links $release_date < _tmp/release-index.html > $root/index.html
+  modify-pages
 
   # Problem: You can't preview it without .wwz!
   # Maybe have local redirects VERSION/test/wild/ to 

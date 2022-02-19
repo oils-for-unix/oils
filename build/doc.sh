@@ -212,9 +212,9 @@ special() {
   render-only 'README.md' '../web/base.css ../web/manual.css ../web/toc.css' 'Oil Source Code'
   render-only 'INSTALL.txt' '../web/base.css ../web/install.css' 'Installing Oil'
 
-  #
-
+  # These pages aren't in doc/
   split-and-render doc/release-index.md _tmp/release-index.html
+  split-and-render doc/release-quality.md _tmp/release-quality.html
 }
 
 all-markdown() {
