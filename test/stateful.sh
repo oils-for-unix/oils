@@ -6,10 +6,13 @@
 #   test/stateful.sh <function name>
 #
 # Examples:
+#   test/stateful.sh signals -r 0-1               # run a range of tests
+#   test/stateful.sh signals --list               # list tests
+#   test/stateful.sh job-control --num-retries 0
 #
-#   test/stateful.sh all
-#   test/stateful.sh signals -r 0-1   # run a range of tests
-#   test/stateful.sh signals --list   # list tests
+#   test/stateful.sh signals-quick                # not all shells
+#
+#   test/stateful.sh soil-run
 
 set -o nounset
 set -o pipefail

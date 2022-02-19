@@ -4,6 +4,7 @@ sh_spec_test.py: Tests for sh_spec.py
 """
 
 import cStringIO
+import optparse
 import pprint
 import unittest
 
@@ -117,7 +118,9 @@ class ShSpecTest(unittest.TestCase):
     print(CreateAssertions(self.CASE1, 'bash'))
 
   def testRunCases(self):
-    o = spec_lib.Options()
+    o = optparse.OptionParser()
+    spec_lib.DefineCommon(o)
+    spec_lib.DefineShSpec(o)
     opts, _ = o.parse_args([])
 
     shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]

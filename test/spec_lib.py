@@ -89,18 +89,12 @@ class RegexPredicate(object):
     return bool(self.desc_re.search(case['desc']))
 
 
-def Options():
-  """Returns an option parser instance."""
-  p = optparse.OptionParser('%s [options] TEST_FILE shell...' % sys.argv[0])
+
+def DefineCommon(p):
+  """Flags shared between sh_spec.py and stateful/harness.py."""
   p.add_option(
       '-v', '--verbose', dest='verbose', action='store_true', default=False,
       help='Show details about test failures')
-  p.add_option(
-      '-d', '--details', dest='details', action='store_true', default=False,
-      help='Show details even for successful cases')
-  p.add_option(
-      '-t', '--trace', dest='trace', action='store_true', default=False,
-      help='trace execution of shells to diagnose hangs')
   p.add_option(
       '-r', '--range', dest='range', default=None,
       help='Execute only a given test range, e.g. 5-10, 5-, -10, or 5')
@@ -112,23 +106,46 @@ def Options():
       '--list', dest='do_list', action='store_true', default=None,
       help='Just list tests')
   p.add_option(
+      '--osh-failures-allowed', dest='osh_failures_allowed', type='int',
+      default=0, help="Allow this number of osh failures")
+
+
+def DefineStateful(p):
+  p.add_option(
+      '--num-retries', dest='num_retries', 
+      type='int', default=4, 
+      help='Number of retries (for spec/stateful only)')
+  p.add_option(
+      '--pexpect-timeout', dest='pexpect_timeout', 
+      type='float', default=1.0, 
+      help='In seconds')
+  p.add_option(
+      '--results-file', dest='results_file', default=None,
+      help='Write table of results to this file.  Default is stdout.')
+
+
+def DefineShSpec(p):
+  p.add_option(
+      '-d', '--details', dest='details', action='store_true', default=False,
+      help='Show details even for successful cases')
+  p.add_option(
+      '-t', '--trace', dest='trace', action='store_true', default=False,
+      help='trace execution of shells to diagnose hangs')
+  p.add_option(
       '-p', '--print', dest='do_print', action='store_true', default=None,
       help="Print test code, but don't run it")
   p.add_option(
       '--format', dest='format', choices=['ansi', 'html'],
       default='ansi', help="Output format (default 'ansi')")
   p.add_option(
-      '--tsv-output', dest='tsv_output', default=None,
-      help="Write a TSV log to this file.  Subsumes --stats-file.")
-  p.add_option(
       '--stats-file', dest='stats_file', default=None,
       help="File to write stats to")
   p.add_option(
+      '--tsv-output', dest='tsv_output', default=None,
+      help="Write a TSV log to this file.  Subsumes --stats-file.")
+  p.add_option(
       '--stats-template', dest='stats_template', default='',
       help="Python format string for stats")
-  p.add_option(
-      '--osh-failures-allowed', dest='osh_failures_allowed', type='int',
-      default=0, help="Allow this number of osh failures")
 
   p.add_option(
       '--path-env', dest='path_env', default='',
@@ -169,18 +186,3 @@ def Options():
   p.add_option(
       '--pyann-out-dir', dest='pyann_out_dir', default=None,
       help='Run OSH with PYANN_OUT=$dir/$case_num.json')
-
-  # spec/stateful only
-  p.add_option(
-      '--num-retries', dest='num_retries', 
-      type='int', default=4, 
-      help='Number of retries (for spec/stateful only)')
-  p.add_option(
-      '--pexpect-timeout', dest='pexpect_timeout', 
-      type='float', default=1.0, 
-      help='In seconds')
-  p.add_option(
-      '--results-file', dest='results_file', default=None,
-      help='Write table of results to this file.  Default is stdout.')
-
-  return p

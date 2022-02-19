@@ -8,6 +8,7 @@ To invoke this file, run the shell wrapper:
 """
 from __future__ import print_function
 
+import optparse
 import os
 import pexpect
 import signal
@@ -299,11 +300,12 @@ def TestStop(exe):
 
 
 def main(argv):
-  # NOTE: Some options are ignored
-  o = spec_lib.Options()
-  opts, argv = o.parse_args(argv)
+  p = optparse.OptionParser('%s [options] TEST_FILE shell...' % sys.argv[0])
+  spec_lib.DefineCommon(p)
+  spec_lib.DefineStateful(p)
+  opts, argv = p.parse_args(argv)
 
-  if argv and argv[1] == 'test-stop':  # Hack for testing
+  if len(argv) == 2 and argv[1] == 'test-stop':  # Hack for testing
     TestStop(argv[2])
     return
 
@@ -342,12 +344,14 @@ def main(argv):
     results_f = open(opts.results_file, 'w')
   else:
     results_f = sys.stdout
-  num_failures = PrintResults(shell_pairs, result_table, flaky, opts.num_retries, results_f)
+  num_failures = PrintResults(shell_pairs, result_table, flaky,
+                              opts.num_retries, results_f)
 
   results_f.close()
 
   if opts.osh_failures_allowed != num_failures:
-    log('%s: Expected %d failures, got %d', sys.argv[0], opts.osh_failures_allowed, num_failures)
+    log('%s: Expected %d failures, got %d', sys.argv[0],
+        opts.osh_failures_allowed, num_failures)
     return 1
 
   return 0

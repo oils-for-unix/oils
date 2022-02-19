@@ -1159,13 +1159,15 @@ def main(argv):
   if v is not None:
     raise AssertionError('got $PPID = %s' % v)
 
-  o = spec_lib.Options()
-  opts, argv = o.parse_args(argv)
+  p = optparse.OptionParser('%s [options] TEST_FILE shell...' % sys.argv[0])
+  spec_lib.DefineCommon(p)
+  spec_lib.DefineShSpec(p)
+  opts, argv = p.parse_args(argv)
 
   try:
     test_file = argv[1]
   except IndexError:
-    o.print_usage()
+    p.print_usage()
     return 1
 
   shells = argv[2:]
