@@ -13,20 +13,16 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly THIS_DIR=$(dirname $(readlink -f $0))
-readonly REPO_ROOT=$THIS_DIR/..
+THIS_DIR=$(dirname $(readlink -f $0))
+readonly THIS_DIR
+REPO_ROOT=$THIS_DIR/..
+readonly REPO_ROOT
 
 source $THIS_DIR/common.sh
+source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 source $REPO_ROOT/build/common.sh  # for CXX, ASAN_SYMBOLIZER_PATH
 
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
-
-time-tsv() {
-  ### Run a task and output TSV
-
-  # Duplicated from test/tsv-lib.sh because we're rooted at mycpp
-  $REPO_ROOT/benchmarks/time_.py --tsv "$@"
-}
 
 asdl-tool() {
   export GC=1  # asdl/tool.py reads this

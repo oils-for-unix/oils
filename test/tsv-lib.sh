@@ -3,14 +3,19 @@
 # Usage:
 #   source test/tsv-lib.sh
 
+if test -z "${REPO_ROOT:-}"; then
+  echo "${BASH_SOURCE[0]}: \$REPO_ROOT must be set before sourcing" >&2
+  exit 2
+fi
+
 time-tsv() {
   ### Run a task and output TSV
-  benchmarks/time_.py --tsv "$@"
+  $REPO_ROOT/benchmarks/time_.py --tsv "$@"
 }
 
 tsv2html() {
   ### Convert TSV to an HTML table
-  web/table/csv2html.py --tsv "$@"
+  $REPO_ROOT/web/table/csv2html.py --tsv "$@"
 }
 
 tsv-row() {

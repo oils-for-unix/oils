@@ -70,10 +70,6 @@ test-gen-module-init() {
   _compare build/actions.sh gen-module-init $modules
 }
 
-test-wild() {
-  _compare test/wild.sh all '^distro/usr-bin'
-}
-
 # NOTE: zsh behaves differently under sh and bin/osh!  Looks like it is an
 # inherited file descriptor issue.
 #

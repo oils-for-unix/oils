@@ -34,9 +34,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+readonly REPO_ROOT
+
+source test/tsv-lib.sh  # uses REPO_ROOT
 source benchmarks/common.sh  # for log, etc.
 source build/common.sh  # for $CLANG
-source test/tsv-lib.sh
 
 readonly BASE_DIR=_tmp/ovm-build
 readonly TAR_DIR=$PWD/_deps/ovm-build # Make it absolute
