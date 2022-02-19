@@ -102,7 +102,7 @@ html-summary() {
   # And then we concatenate them and write the "wide" summary here.
 
   html-head --title 'Stateful Tests' \
-    ../../web/base.css ../../web/spec-tests.css
+    ../../../web/base.css ../../../web/spec-tests.css
 
   # Similar to test/spec-runner.sh and soil format-wwz-index
 
