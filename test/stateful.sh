@@ -18,6 +18,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd $(dirname $0)/.. && pwd)  # tsv-lib.sh uses this
+readonly REPO_ROOT
+
 source test/common.sh  # log
 source test/tsv-lib.sh
 

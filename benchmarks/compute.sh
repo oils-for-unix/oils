@@ -29,8 +29,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+readonly REPO_ROOT
+
 source benchmarks/common.sh  # filter-provenance
-source test/tsv-lib.sh
+source test/tsv-lib.sh  # tsv2html
 
 readonly BASE_DIR=_tmp/compute
 readonly OSH_CC=_bin/osh_eval.opt.stripped

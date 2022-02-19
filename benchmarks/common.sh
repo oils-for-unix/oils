@@ -57,11 +57,6 @@ csv2html() {
   web/table/csv2html.py --css-class-pattern 'special ^osh' "$@"
 }
 
-# TODO: Conslidate with test/tsv-lib.sh
-tsv2html() {
-  web/table/csv2html.py --tsv "$@"
-}
-
 # also in metrics/source-code.sh
 hist() { sort | uniq -c | sort -n; }
 
