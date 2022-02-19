@@ -65,9 +65,10 @@ class Result(object):
 
 class TestRunner(object):
 
-  def __init__(self, num_retries, pexpect_timeout):
+  def __init__(self, num_retries, pexpect_timeout, verbose):
     self.num_retries = num_retries
     self.pexpect_timeout = pexpect_timeout
+    self.verbose = verbose
 
   def RunOnce(self, shell_path, shell_label, func):
     sh_argv = []
@@ -87,6 +88,9 @@ class TestRunner(object):
 
     # Generally don't want local echo, it gets confusing fast.
     sh.setecho(False)
+
+    if self.verbose:
+      sh.logfile = sys.stdout
 
     ok = True
     try:
@@ -231,25 +235,58 @@ def PrintResults(shell_pairs, result_table, flaky, num_retries, f):
 
 
 def TestStop(exe):
+  if 0:
+    p = pexpect.spawn('/bin/dash', encoding='utf-8', timeout=2.0)
+
+    # Show output
+    p.logfile = sys.stdout
+    #p.setecho(True)
+
+    p.expect(r'.*\$')
+    p.sendline('sleep 2')
+
+    import time
+    time.sleep(0.1)
+
+    # Ctrl-C works for the child here
+    p.sendcontrol('c')
+    p.sendline('echo status=$?')
+    p.expect('status=130')
+
+    p.close()
+
+    return
+
+  # Note: pty.fork() calls os.setsid()
+  # How does that affect signaling and the process group?
+
   p = pexpect.spawn(exe, encoding='utf-8', timeout=2.0)
 
   # Show output
   p.logfile = sys.stdout
   #p.setecho(True)
 
-  p.sendline('sleep')
+  p.sendline('sleep 2')
   p.expect('in child')
 
   import time
   time.sleep(0.1)
 
+  log('Harness PID %d', os.getpid())
+
+  #input()
+
   # Stop it
 
+  if 1:
+    # Main process gets KeyboardInterrupt
+    # hm but child process doesn't get interrupted?  why not?
+    p.sendcontrol('c')
   if 0: # does NOT work -- why?
     p.sendcontrol('z')
   if 0: # does NOT work
     stop_process__hack('sleep', sig_num=signal.SIGTSTP)
-  if 1:
+  if 0:
     # WORKS
     stop_process__hack('sleep', sig_num=signal.SIGSTOP)
 
@@ -298,7 +335,7 @@ def main(argv):
   result_table = []  # each row is a list
   flaky = {}  # (case_num, shell) -> (succeeded, attempted)
 
-  r = TestRunner(opts.num_retries, opts.pexpect_timeout)
+  r = TestRunner(opts.num_retries, opts.pexpect_timeout, opts.verbose)
   r.RunCases(CASES, case_predicate, shell_pairs, result_table, flaky)
 
   if opts.results_file:

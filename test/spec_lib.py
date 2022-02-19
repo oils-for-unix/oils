@@ -91,7 +91,7 @@ class RegexPredicate(object):
 
 def Options():
   """Returns an option parser instance."""
-  p = optparse.OptionParser('sh_spec.py [options] TEST_FILE shell...')
+  p = optparse.OptionParser('%s [options] TEST_FILE shell...' % sys.argv[0])
   p.add_option(
       '-v', '--verbose', dest='verbose', action='store_true', default=False,
       help='Show details about test failures')

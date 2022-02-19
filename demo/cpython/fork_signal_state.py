@@ -24,6 +24,9 @@ def SignalState(pid):
 
 
 def main(argv):
+  if 1:  # ignore Ctrl-C
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
   parent_pid = os.getpid()
   log('parent is %d', parent_pid)
 
@@ -33,11 +36,12 @@ def main(argv):
 
   # test/group-session.sh shows PGID and TPGID (controlling tty process group ID)
 
-  log('===')
-  SignalState(parent_pid)
-  signal.signal(signal.SIGTSTP, signal.SIG_IGN)
-  SignalState(parent_pid)
-  log('===')
+  if 1:
+    log('===')
+    SignalState(parent_pid)
+    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+    SignalState(parent_pid)
+    log('===')
 
   line = raw_input()
 
@@ -46,14 +50,15 @@ def main(argv):
     if pid == 0:
       child_pid = os.getpid()
 
-      log('---')
-      SignalState(child_pid)
-      signal.signal(signal.SIGTSTP, signal.SIG_DFL)
-      SignalState(child_pid)
-      log('---')
+      if 1:
+        log('---')
+        SignalState(child_pid)
+        signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+        SignalState(child_pid)
+        log('---')
 
-      log('sleep 1 in child %d', child_pid)
-      os.execve('/bin/sleep', ['sleep', '1'], {})
+      log('sleep 2 in child %d', child_pid)
+      os.execve('/bin/sleep', ['sleep', '2'], {})
 
     elif pid < 0:
       raise AssertionError()
