@@ -1,8 +1,10 @@
 ---
 css_files: web/base.css web/toc.css web/release-index.css 
+all_docs_url: -
+version_url: -
 ---
 
-Oil 0.9.7 Quality
+Oil 0.9.8 Quality
 =================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
@@ -11,7 +13,7 @@ Oil 0.9.7 Quality
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is a supplement to the [release index](index.html).
+This is a supplement to the [main release page](index.html).
 
 <div id="toc">
 </div>
