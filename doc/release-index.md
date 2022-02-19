@@ -80,6 +80,8 @@ More docs:
 - Spec Tests
   - [OSH Survey](test/spec.wwz/survey/osh.html).  Test OSH with existing
     shells, and compare their behavior.
+  - [Stateful Tests](test/spec.wwz/stateful/index.html).  Tests that use
+    [pexpect]($xref).
   - [OSH in C++](test/spec.wwz/cpp/osh-summary.html).  The progress of Oil's
     C++ translation.
   - [Oil Language](test/spec.wwz/oil-language/oil.html).  The legacy-free

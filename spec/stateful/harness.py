@@ -305,7 +305,7 @@ def main(argv):
   spec_lib.DefineStateful(p)
   opts, argv = p.parse_args(argv)
 
-  if len(argv) == 2 and argv[1] == 'test-stop':  # Hack for testing
+  if len(argv) >= 2 and argv[1] == 'test-stop':  # Hack for testing
     TestStop(argv[2])
     return
 

@@ -97,13 +97,15 @@ auto-machine1() {
   sudo -k; sudo true  # clear and re-cache credentials
 
   if test -z "$resume"; then
-    $0 build-and-test  # Note: spec tests run here
+    # Note: spec tests run here
+    # _test-release-build -> _spec-release
+    $0 build-and-test
   fi 
 
   $0 metrics  # this can catch bugs
   test/wild.sh all
   $0 test-opy
-  $0 spec-all
+  $0 spec-all  # spec tests run here again
   $0 benchmark-run do_cachegrind
   $0 mycpp-examples
 }
@@ -262,6 +264,8 @@ _spec-release() {
   export OSH_LIST="$OSH_RELEASE_BINARY" OIL_LIST="$OIL_RELEASE_BINARY"
   test/spec.sh osh-all
   test/spec.sh oil-all
+
+  # Eventually we should run spec tests against the oil-native tarball here
 }
 
 _test-release-build() {
@@ -317,6 +321,8 @@ test-opy() {
 
 spec-all() {
   ### Run all spec tests
+
+  test/stateful.sh soil-run  # Same as CI
 
   # Create the tests we're running
   test/smoosh.sh make-spec

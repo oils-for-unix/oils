@@ -36,10 +36,11 @@ def main(argv):
 
   # test/group-session.sh shows PGID and TPGID (controlling tty process group ID)
 
-  if 1:
+  if 0:
     log('===')
     SignalState(parent_pid)
-    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+  signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+  if 0:
     SignalState(parent_pid)
     log('===')
 
@@ -50,10 +51,11 @@ def main(argv):
     if pid == 0:
       child_pid = os.getpid()
 
-      if 1:
+      if 0:
         log('---')
         SignalState(child_pid)
-        signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+      signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+      if 0:
         SignalState(child_pid)
         log('---')
 

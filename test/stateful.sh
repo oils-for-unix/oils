@@ -28,7 +28,7 @@ source build/dev-shell.sh
 
 export PYTHONPATH=.
 
-readonly BASE_DIR=_tmp/stateful
+readonly BASE_DIR=_tmp/spec/stateful
 
 run() {
   ### for PYTHONPATH
@@ -199,6 +199,15 @@ soil-run() {
 
 test-stop() {
   python3 spec/stateful/harness.py test-stop demo/cpython/fork_signal_state.py
+}
+
+strace-py-fork() {
+  rm -f -v _tmp/py-fork.*
+  strace -ff -o _tmp/py-fork demo/cpython/fork_signal_state.py
+  ls -l _tmp/py-fork.*
+
+  # I see rt_sigaction(SIGSTP, ...) which is good
+  # so yeah this seems perfectly fine -- why is it ignoring SIGTSTP?  :-(
 }
 
 "$@"
