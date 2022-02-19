@@ -5,25 +5,55 @@ interactive.py
 from __future__ import print_function
 
 import sys
+import time
 
 import harness
-from harness import register
+from harness import register, expect_prompt
 
 
 @register()
-def t9(sh):
+def syntax_error(sh):
   'syntax error makes status=2'
 
   sh.sendline('syntax ) error')
 
   #time.sleep(0.1)
 
-  sh.expect(r'.*\$')  # expect prompt
+  expect_prompt(sh)
 
   sh.sendline('echo status=$?')
-  sh.expect('status=2')  # osh, bash, dash
 
-  # mksh gives status=1, and zsh doesn't give anything?
+  if sh.shell_label == 'mksh':
+    # mksh gives status=1, and zsh doesn't give anything?
+    sh.expect('status=1')
+  else:
+    sh.expect('status=2')  # osh, bash, dash
+
+
+@register()
+def syntax_error(sh):
+  'notification about background job (issue 1093)'
+
+  expect_prompt(sh)
+
+  sh.sendline('sleep 0.1 &')
+
+  if sh.shell_label == 'bash':
+    # e.g. [1] 12345
+    # not using trailing + because pexpect doc warns about that case
+    # dash doesn't print this
+    sh.expect(r'\[\d+\]')
+
+  expect_prompt(sh)
+
+  # Wait until after it stops and then hit enter
+  time.sleep(0.2)
+  sh.sendline('')
+
+  sh.expect(r'.*Done.*')
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=0')
 
 
 if __name__ == '__main__':

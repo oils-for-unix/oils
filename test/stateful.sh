@@ -49,11 +49,11 @@ signals-quick() {
 signals() { signals-quick dash mksh "$@"; }
 
 interactive-quick() {
-  spec/stateful/interactive.py $FIRST \
+  spec/stateful/interactive.py $FIRST --osh-failures-allowed 1 \
     $OSH bash "$@"
 }
-# Doesn't work in mksh or zsh
-interactive() { interactive-quick dash "$@"; }
+# Doesn't work in zsh
+interactive() { interactive-quick dash mksh "$@"; }
 
 job-control-quick() {
   spec/stateful/job_control.py $FIRST --osh-failures-allowed 1 \
