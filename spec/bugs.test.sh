@@ -101,3 +101,24 @@ foo $x() {
 ## BUG zsh status: 0
 ## STDOUT:
 ## END
+
+
+#### file with NUL byte
+echo -e 'echo one \0 echo two' > tmp.sh
+$SH tmp.sh
+## STDOUT:
+one echo two
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 127
+## OK bash stdout-json: ""
+## OK bash status: 126
+## OK zsh stdout-json: "one \u0000echo two\n"
+
+#### fastlex: PS1 format string that's incomplete / with NUL byte
+
+x=$'\\D{%H:%M'  # leave off trailing }
+echo x=${x@P}
+
+## STDOUT:
+## END

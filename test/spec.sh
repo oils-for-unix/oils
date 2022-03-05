@@ -1021,6 +1021,11 @@ oil-user-feedback() {
     $OIL_LIST "$@"
 }
 
+oil-bugs() {
+  sh-spec spec/oil-bugs.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
 nix-idioms() {
   sh-spec spec/nix-idioms.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"

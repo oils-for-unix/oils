@@ -27,20 +27,22 @@ readonly DEPS_DIR
 # re2c dependency
 #
 
+readonly RE2C_VERSION=3.0
+
 download-re2c() {
   # local cache of remote files
   mkdir -p _cache
   wget --no-clobber --directory _cache \
-    https://github.com/skvadrik/re2c/releases/download/1.0.3/re2c-1.0.3.tar.gz
+    https://github.com/skvadrik/re2c/releases/download/$RE2C_VERSION/re2c-$RE2C_VERSION.tar.xz
 }
 
 build-re2c() {
   cd $REPO_ROOT/_cache
-  tar -x -z < re2c-1.0.3.tar.gz
+  tar -x --xz < re2c-$RE2C_VERSION.tar.xz
 
   mkdir -p $DEPS_DIR/re2c
   cd $DEPS_DIR/re2c
-  $REPO_ROOT/_cache/re2c-1.0.3/configure
+  $REPO_ROOT/_cache/re2c-$RE2C_VERSION/configure
   make
 }
 

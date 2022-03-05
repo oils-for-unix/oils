@@ -39,6 +39,10 @@ class MatchTest(unittest.TestCase):
     self.assertEqual(
         True, match.ShouldHijack('#!/usr/bin/env sh\n'))
 
+    # fastlex bug: should not allow \0
+    self.assertEqual(
+        False, match.ShouldHijack('#!/usr/bin/env \0 sh\n'))
+
   def testBraceRangeLexer(self):
     lex = match.BraceRangeLexer('1..3')
     while True:
