@@ -6,13 +6,17 @@ $SH tmp.oil
 echo $'var x = #\' ' > incomplete.oil
 $SH incomplete.oil
 
+## status: 2
 ## STDOUT:
 ## END
 
 #### fastlex: NUL byte inside shebang line
 
+# Hm this test doesn't really tickle the bug
+
 echo $'#! /usr/bin/env \x00 sh \necho hi' > tmp.oil
 env OSH_HIJACK_SHEBANG=1 $SH tmp.oil
 
 ## STDOUT:
+hi
 ## END

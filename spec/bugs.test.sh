@@ -109,6 +109,9 @@ $SH tmp.sh
 ## STDOUT:
 one echo two
 ## END
+## OK osh STDOUT:
+one
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 127
 ## OK bash stdout-json: ""
@@ -116,9 +119,22 @@ one echo two
 ## OK zsh stdout-json: "one \u0000echo two\n"
 
 #### fastlex: PS1 format string that's incomplete / with NUL byte
+case $SH in bash) exit ;; esac
 
 x=$'\\D{%H:%M'  # leave off trailing }
 echo x=${x@P}
 
 ## STDOUT:
+x=\D{%H:%M
 ## END
+
+## bash just ignores the missing }
+## BUG bash stdout-json: ""
+
+# These shells don't understand @P
+
+## N-I dash/ash stdout-json: ""
+## N-I dash/ash status: 2
+
+## N-I zsh stdout-json: ""
+## N-I zsh status: 1
