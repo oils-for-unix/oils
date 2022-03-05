@@ -174,6 +174,7 @@ TRAP_SPEC.ShortFlag('-l')
 
 JOB_SPEC = FlagSpec('jobs')
 JOB_SPEC.ShortFlag('-l', help='long format')
+JOB_SPEC.ShortFlag('-p', help='prints PID only')
 JOB_SPEC.LongFlag('--debug', help='display debug info')
 
 #

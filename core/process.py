@@ -778,8 +778,8 @@ class Job(object):
     # Initial state with & or Ctrl-Z is Running.
     self.state = job_state_e.Running
 
-  def DisplayJob(self, job_id, f):
-    # type: (int, mylib.Writer) -> None
+  def DisplayJob(self, job_id, f, opts):
+    # type: (int, mylib.Writer, Dict[str, bool]) -> None
     raise NotImplementedError()
 
   def State(self):
@@ -835,15 +835,18 @@ class Process(Job):
     #return '<Process %s%s>' % (self.thunk, s)
     return '<Process %s %s>' % (_JobStateStr(self.state), self.thunk)
 
-  def DisplayJob(self, job_id, f):
-    # type: (int, mylib.Writer) -> None
+  def DisplayJob(self, job_id, f, opts):
+    # type: (int, mylib.Writer, Dict[str, bool]) -> None
     if job_id == -1:
       job_id_str = '  '
     else:
       job_id_str = '%%%d' % job_id
-    f.write('%s %d %7s ' % (job_id_str, self.pid, _JobStateStr(self.state)))
-    f.write(self.thunk.UserString())
-    f.write('\n')
+    if opts["p"]:
+      f.write('%d\n' % self.pid)
+    else:
+      f.write('%s %d %7s ' % (job_id_str, self.pid, _JobStateStr(self.state)))
+      f.write(self.thunk.UserString())
+      f.write('\n')
 
   def AddStateChange(self, s):
     # type: (ChildStateChange) -> None
@@ -971,17 +974,20 @@ class Pipeline(Job):
 
     self.sigpipe_status_ok = sigpipe_status_ok
 
-  def DisplayJob(self, job_id, f):
-    # type: (int, mylib.Writer) -> None
+  def DisplayJob(self, job_id, f, opts):
+    # type: (int, mylib.Writer, Dict[str, bool]) -> None
     for i, proc in enumerate(self.procs):
       if i == 0:  # show job ID for first element in pipeline
         job_id_str = '%%%d' % job_id
       else:
         job_id_str = '  '  # 2 spaces
 
-      f.write('%s %d %7s ' % (job_id_str, proc.pid, _JobStateStr(proc.state)))
-      f.write(proc.thunk.UserString())
-      f.write('\n')
+      if opts["p"]:
+        f.write('%d\n' % proc.pid)
+      else:
+        f.write('%s %d %7s ' % (job_id_str, proc.pid, _JobStateStr(proc.state)))
+        f.write(proc.thunk.UserString())
+        f.write('\n')
 
   def DebugPrint(self):
     # type: () -> None
@@ -1172,6 +1178,7 @@ class JobState(object):
     # type: () -> None
 
     # pid -> Job instance
+    # ERROR: This implication is incorrect, jobs are numbered from 1, 2, ... in the dict! 
     # This is for display in 'jobs' builtin and for %+ %1 lookup.
     self.jobs = {}  # type: Dict[int, Job]
 
@@ -1281,8 +1288,8 @@ class JobState(object):
     """
     return self.child_procs.get(pid)
 
-  def DisplayJobs(self):
-    # type: () -> None
+  def DisplayJobs(self, opts):
+    # type: (Dict[str, bool]) -> None
     """Used by the 'jobs' builtin.
 
     https://pubs.opengroup.org/onlinepubs/9699919799/utilities/jobs.html
@@ -1318,7 +1325,7 @@ class JobState(object):
     f = mylib.Stdout()
     for job_id, job in iteritems(self.jobs):
       # Use the %1 syntax
-      job.DisplayJob(job_id, f)
+      job.DisplayJob(job_id, f, opts)
 
   def DebugPrint(self):
     # type: () -> None
