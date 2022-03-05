@@ -152,3 +152,17 @@ begin
 end
 status=42
 ## END
+
+#### jobs builtin prints 2 lines with 2 jobs
+sleep 0.1 & 
+sleep 0.1 & 
+
+# dash doesn't print if it's not a terminal?
+jobs | wc -l
+
+## STDOUT:
+2
+## END
+## BUG dash STDOUT:
+0
+## END
