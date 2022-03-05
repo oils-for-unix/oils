@@ -6,7 +6,7 @@ It consists of a series of lexer modes, each with a regex -> Id mapping.
 After changing this file, run:
 
     build/dev.sh all
-    
+
 or at least:
 
     build/dev.sh fastlex
@@ -58,7 +58,7 @@ def R(pat, tok_type):
 
 # See unit tests in frontend/match_test.py.
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.
-SHOULD_HIJACK_RE = r'#!.*sh[ \t\r\n][^\0]*'
+SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
 
 
 _SIGNIFICANT_SPACE = R(r'[ \t]+', Id.WS_Space)
@@ -515,9 +515,9 @@ EXPR_CHARS = [
   # We explicitly leave out #''' because it's confusing.
   # TODO: extend this to a valid utf-8 code point (rune), rather than a single
   # byte.
-  R(r"#'[^']'", Id.Char_Pound),
+  R(r"#'[^'\0]'", Id.Char_Pound),
   _U_BRACED_CHAR,
-] 
+]
 
 # Shared between echo -e and $''.
 _C_STRING_COMMON = [
@@ -564,7 +564,7 @@ PS1_DEF = [
     R(OCTAL3_RE, Id.PS_Octal3),
     R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
     # \D{%H:%M} strftime format
-    R(r'\\D\{[^}]*\}', Id.PS_Subst),
+    R(r'\\D\{[^}\0]*\}', Id.PS_Subst),
     C(r'\[', Id.PS_LBrace),  # non-printing
     C(r'\]', Id.PS_RBrace),
     R(r'[^\\\0]+', Id.PS_Literals),
@@ -625,7 +625,7 @@ LEXER_DEF[lex_mode_e.PrintfPercent] = [
   C('.', Id.Format_Dot),
   # We support dsq.  The others we parse to display an error message.
   R('[disqbcouxXeEfFgG]', Id.Format_Type),
-  R('\([^()]*\)T', Id.Format_Time),
+  R('\([^()\0]*\)T', Id.Format_Time),
   R(r'[^\0]', Id.Unknown_Tok),  # any other char
 ]
 
@@ -744,7 +744,7 @@ HISTORY_DEF = [
   # Search by prefix of substring (optional '?').
   # NOTE: there are no numbers allowed here!  Bash doesn't seem to support it.
   # No hyphen since it conflits with $-1 too.
-  # 
+  #
   # Required trailing whitespace is there to avoid conflict with [!charclass]
   # and ${!indirect}.  This is a simpler hack than the one bash has.  See
   # frontend/lex_test.py.
@@ -859,7 +859,7 @@ _EXPR_NEWLINE_COMMENT = [
 
 # This is the same as far as I can tell?
 
-# This is a hand-written re2c rule to "refine" the Id.Expr_Float token to 
+# This is a hand-written re2c rule to "refine" the Id.Expr_Float token to
 # include undescores: 1_000.234_567
 
 LEXER_REFINEMENTS = {
@@ -955,8 +955,8 @@ LEXER_DEF[lex_mode_e.Expr] = \
 
   C('=', Id.Arith_Equal),
 
-  C('+=', Id.Arith_PlusEqual), 
-  C('-=', Id.Arith_MinusEqual), 
+  C('+=', Id.Arith_PlusEqual),
+  C('-=', Id.Arith_MinusEqual),
   C('*=', Id.Arith_StarEqual),
   C('/=', Id.Arith_SlashEqual),
   C('%=', Id.Arith_PercentEqual),
