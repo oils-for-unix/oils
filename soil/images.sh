@@ -4,6 +4,12 @@
 #
 # Usage:
 #   soil/images.sh <function name>
+#
+# Example: Rebuild an image:
+#
+#   soil/images.sh build cpp
+#   soil/images.sh smoke cpp
+#   soil/images.sh push cpp
 
 set -o nounset
 set -o pipefail
