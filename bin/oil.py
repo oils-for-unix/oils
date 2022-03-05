@@ -257,7 +257,7 @@ def AppBundleMain(argv):
     login_shell = True
     main_name = main_name[1:]
 
-  if main_name in ('osh', 'sh'):
+  if main_name.endswith('sh'):  # sh, osh, bash imply OSH
     status = shell.Main('osh', arg_r, posix.environ, login_shell,
                         loader, line_input)
     return status
