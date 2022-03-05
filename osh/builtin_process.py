@@ -1,4 +1,4 @@
-#!/usr/bin/env python#2
+#!/usr/bin/env python2
 """
 builtin_process.py - Builtins that deal with processes or modify process state.
 
