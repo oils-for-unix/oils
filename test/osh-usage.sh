@@ -181,6 +181,27 @@ test-version() {
   assert $? -eq 0
 }
 
+DISABLED-test-symlink() {
+  local tmp=_tmp/osh-usage
+  mkdir -p $tmp
+
+  local repo_root=$PWD
+
+  # requires 'make'
+  local bundle=$PWD/_bin/oil.ovm 
+  #local bundle=$repo_root/bin/oil.py
+
+  ln -s -f -v $bundle $tmp/osh
+  ln -s -f -v $bundle $tmp/bash
+
+  cd $tmp
+
+  ./osh -c 'echo $OIL_VERSION'
+  assert $? -eq 0
+  ./bash -c 'echo $OIL_VERSION'
+  assert $? -eq 0
+}
+
 run-for-release() {
   run-other-suite-for-release osh-usage run-test-funcs
 }
