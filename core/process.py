@@ -976,18 +976,18 @@ class Pipeline(Job):
 
   def DisplayJob(self, job_id, f, opts):
     # type: (int, mylib.Writer, Dict[str, bool]) -> None
-    for i, proc in enumerate(self.procs):
-      if i == 0:  # show job ID for first element in pipeline
-        job_id_str = '%%%d' % job_id
-      else:
-        job_id_str = '  '  # 2 spaces
+    if opts["p"]:
+      f.write('%d\n' % self.procs[0].pid)
+    else: # WARNING: Assumes `jobs -l`, but it's different considering pipes, should be fixed in other PRs
+      for i, proc in enumerate(self.procs):
+        if i == 0:  # show job ID for first element in pipeline
+          job_id_str = '%%%d' % job_id
+        else:
+          job_id_str = '  '  # 2 spaces
 
-      if opts["p"]:
-        f.write('%d\n' % proc.pid)
-      else:
-        f.write('%s %d %7s ' % (job_id_str, proc.pid, _JobStateStr(proc.state)))
-        f.write(proc.thunk.UserString())
-        f.write('\n')
+          f.write('%s %d %7s ' % (job_id_str, proc.pid, _JobStateStr(proc.state)))
+          f.write(proc.thunk.UserString())
+          f.write('\n')
 
   def DebugPrint(self):
     # type: () -> None
