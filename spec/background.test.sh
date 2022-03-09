@@ -166,3 +166,23 @@ jobs | wc -l
 ## BUG dash STDOUT:
 0
 ## END
+
+#### counting jobs
+sleep 0.5 & > /dev/null 2>&1
+words=`jobs -p | wc -w` > /dev/null 2>&1
+lines=`jobs -p | wc -l` > /dev/null 2>&1
+[ $words = $lines ] > /dev/null 2>&1
+echo status=$?
+## STDOUT:
+status=0
+## END
+
+#### jobs -p should only count pipe leaders
+sleep 0.1 | cat &
+jobs -p | wc -l
+## STDOUT:
+1
+## END
+## BUG dash STDOUT:
+0
+## END
