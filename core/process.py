@@ -70,6 +70,11 @@ NO_FD = -1
 # bookkeeping), and dash/zsh (10) and mksh (24)
 _SHELL_MIN_FD = 100
 
+# Style for 'jobs' builtin
+STYLE_DEFAULT = 0
+STYLE_LONG = 1
+STYLE_PID_ONLY = 2
+
 
 def SaveFd(fd):
   # type: (int) -> int
@@ -778,8 +783,8 @@ class Job(object):
     # Initial state with & or Ctrl-Z is Running.
     self.state = job_state_e.Running
 
-  def DisplayJob(self, job_id, f, opts):
-    # type: (int, mylib.Writer, Dict[str, bool]) -> None
+  def DisplayJob(self, job_id, f, style):
+    # type: (int, mylib.Writer, int) -> None
     raise NotImplementedError()
 
   def State(self):
@@ -835,13 +840,13 @@ class Process(Job):
     #return '<Process %s%s>' % (self.thunk, s)
     return '<Process %s %s>' % (_JobStateStr(self.state), self.thunk)
 
-  def DisplayJob(self, job_id, f, opts):
-    # type: (int, mylib.Writer, Dict[str, bool]) -> None
+  def DisplayJob(self, job_id, f, style):
+    # type: (int, mylib.Writer, int) -> None
     if job_id == -1:
       job_id_str = '  '
     else:
       job_id_str = '%%%d' % job_id
-    if opts["p"]:
+    if style == STYLE_PID_ONLY:
       f.write('%d\n' % self.pid)
     else:
       f.write('%s %d %7s ' % (job_id_str, self.pid, _JobStateStr(self.state)))
@@ -974,11 +979,12 @@ class Pipeline(Job):
 
     self.sigpipe_status_ok = sigpipe_status_ok
 
-  def DisplayJob(self, job_id, f, opts):
-    # type: (int, mylib.Writer, Dict[str, bool]) -> None
-    if opts["p"]:
+  def DisplayJob(self, job_id, f, style):
+    # type: (int, mylib.Writer, int) -> None
+    if style == STYLE_PID_ONLY:
       f.write('%d\n' % self.procs[0].pid)
-    else: # WARNING: Assumes `jobs -l`, but it's different considering pipes, should be fixed in other PRs
+    else:
+      # Note: this is STYLE_LONG.
       for i, proc in enumerate(self.procs):
         if i == 0:  # show job ID for first element in pipeline
           job_id_str = '%%%d' % job_id
@@ -1288,8 +1294,8 @@ class JobState(object):
     """
     return self.child_procs.get(pid)
 
-  def DisplayJobs(self, opts):
-    # type: (Dict[str, bool]) -> None
+  def DisplayJobs(self, style):
+    # type: (int) -> None
     """Used by the 'jobs' builtin.
 
     https://pubs.opengroup.org/onlinepubs/9699919799/utilities/jobs.html
@@ -1325,7 +1331,7 @@ class JobState(object):
     f = mylib.Stdout()
     for job_id, job in iteritems(self.jobs):
       # Use the %1 syntax
-      job.DisplayJob(job_id, f, opts)
+      job.DisplayJob(job_id, f, style)
 
   def DebugPrint(self):
     # type: () -> None
@@ -1335,7 +1341,7 @@ class JobState(object):
     f.write('[process debug info]\n')
 
     for pid, proc in iteritems(self.child_procs):
-      proc.DisplayJob(-1, f)
+      proc.DisplayJob(-1, f, STYLE_DEFAULT)
       #p = ' |' if proc.parent_pipeline else ''
       #print('%d %7s %s%s' % (pid, _JobStateStr(proc.state), proc.thunk.UserString(), p))
 

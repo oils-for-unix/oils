@@ -227,16 +227,15 @@ class Jobs(vm._Builtin):
     attrs, arg_r = flag_spec.ParseCmdVal('jobs', cmd_val)
     arg = arg_types.jobs(attrs.attrs)
 
-    # NOTE: we always use 'jobs -l' format, so -l is a no-op
-    # On jobs -l -p and jobs -p -l
-    # I've tried bash, zsh, mksh, and busybox ash, bash and mksh behaved the same, and everything else is different. 
-    # Here I just take the busybox ash's way because it's simple.
-    #if arg.p:  # lists process IDs only 
-    args = {"p": arg.p, "l": arg.l} 
-    # I really want to pass arg to DisplayJobs directly but this will couple everything together.
-    self.job_state.DisplayJobs(args)
-    #else:
-    #  self.job_state.DisplayJobs()
+    if arg.l:
+      style = process.STYLE_LONG
+    elif arg.p:
+      style = process.STYLE_PID_ONLY
+    else:
+      style = process.STYLE_DEFAULT
+
+    self.job_state.DisplayJobs(style)
+
     if arg.debug:
       self.job_state.DebugPrint()
 

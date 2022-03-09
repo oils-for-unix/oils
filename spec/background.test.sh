@@ -153,9 +153,9 @@ end
 status=42
 ## END
 
-#### jobs builtin prints 2 lines with 2 jobs
+#### jobs prints one line per job
 sleep 0.1 & 
-sleep 0.1 & 
+sleep 0.1 | cat & 
 
 # dash doesn't print if it's not a terminal?
 jobs | wc -l
@@ -167,22 +167,16 @@ jobs | wc -l
 0
 ## END
 
-#### counting jobs
-sleep 0.5 & > /dev/null 2>&1
-words=`jobs -p | wc -w` > /dev/null 2>&1
-lines=`jobs -p | wc -l` > /dev/null 2>&1
-[ $words = $lines ] > /dev/null 2>&1
-echo status=$?
-## STDOUT:
-status=0
-## END
-
-#### jobs -p should only count pipe leaders
+#### jobs -p prints one line per job
+sleep 0.1 &
 sleep 0.1 | cat &
-jobs -p | wc -l
+
+jobs -p > tmp.txt
+
+cat tmp.txt | wc -l  # 2 lines, one for each job
+cat tmp.txt | wc -w  # each line is a single "word"
+
 ## STDOUT:
-1
-## END
-## BUG dash STDOUT:
-0
+2
+2
 ## END
