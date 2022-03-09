@@ -138,3 +138,18 @@ x=\D{%H:%M
 
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 1
+
+
+#### 'echo' and printf to disk full
+
+# Inspired by https://blog.sunfishcode.online/bugs-in-hello-world/
+
+echo hi > /dev/full
+echo status=$?
+printf '%s\n' hi > /dev/full
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+## END
