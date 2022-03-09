@@ -176,3 +176,13 @@ echo status=$?
 ## STDOUT:
 status=0
 ## END
+
+#### jobs -p should only count pipe leaders
+sleep 0.1 | cat &
+jobs -p | wc -l
+## STDOUT:
+1
+## END
+## BUG dash STDOUT:
+0
+## END
