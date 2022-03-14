@@ -92,7 +92,7 @@ The `source` just concatenates both.
 
 This is like a Lisp 2.
 
-Oil doesn't deviate from this!  It builds some fthings on top.
+Oil doesn't deviate from this!  It builds some things on top.
 
 TODO: See Interpreter state / data model.
 

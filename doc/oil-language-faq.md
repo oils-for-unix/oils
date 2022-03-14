@@ -55,7 +55,7 @@ fundamentally different than `$[array[i]]` syntax (with brackets).
   - The index is legacy/deprecated shell arithmetic like `${array[i++]}` or
     `${assoc["$key"]}`.
   - The index **cannot** be a raw string like `r'\'`.
-- Oil supports both, but [expression subsitution]($oil-help:expr-sub) syntax
+- Oil supports both, but [expression substitution]($oil-help:expr-sub) syntax
   `$[array[i]]` is preferred.
   - It accepts Oil expressions like `$[array[i + 1]` or `$[mydict[key]]`.
   - A raw string like `r'\'` is a valid key, e.g.  `$[mydict[r'\']]`.
@@ -74,7 +74,7 @@ A similar issue exists with arithmetic.
 
 Old:
 
-    echo $((1 + 2))   # shell arithemtic
+    echo $((1 + 2))   # shell arithmetic
 
 New:
 

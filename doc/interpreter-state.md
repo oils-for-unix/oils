@@ -203,7 +203,7 @@ Another important type:
 
 ### Shell Builtins
 
-Oil supports various shell and bash operations to view the interpretr state.
+Oil supports various shell and bash operations to view the interpreter state.
 
 - `set` prints variables and their values
 - `set -o` prints options

@@ -45,7 +45,7 @@ f() {
 
 That illustrates some of the good parts of shell.  The bad parts still run as well!
 
-However, Oil is a brand new language.  Due to some tricks I practied while
+However, Oil is a brand new language.  Due to some tricks I practiced while
 #[parsing-shell][], like lexer modes, very few compromises had to be made.
 
 - Linux kernel?
@@ -92,7 +92,7 @@ Shell Script
 ### What Should It Be Used For?
 
 - System Administration / Distributed Systems / Cloud / Containers
-  - particularly gluging together build systems and package managers in
+  - Particularly glueing together build systems and package managers in
     different languages.  It's a "meta" tool.
 - Scientific Computing / Data Science / "Data Engineering"  -- gluing things
   together that weren't meant to be glued together
@@ -108,7 +108,7 @@ Shell Script
   rewrites on Zulip.
 - Posts tagged #[oil-language][]
   - Particularly two posts on [Translating Shell to Oil][osh-to-oil].  (As
-    noted in the last post, the project is no longer focuse don translation.)
+    noted in the last post, the project is no longer focused on translation.)
   - arrays I did sigils
 - [2019 FAQ][faq-what-happened]
 - Implementing the Oil Expression language (wkki)

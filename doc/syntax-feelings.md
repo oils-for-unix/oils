@@ -281,7 +281,7 @@ Eggex:
     / [a-f A-F 0-9] /         # char classes use []
 
     / digit+ ('ms' | 'us') /  # non-capturing group
-                              # Consistent with arithmetric expressions!
+                              # Consistent with arithmetic expressions!
     < digit+ >                # capturing group
     < digit+ : hour >         # named capture
 

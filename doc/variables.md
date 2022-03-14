@@ -362,7 +362,7 @@ Oil:
 - Julia 1.5 (August 2020): [The return of "soft scope" in the
   REPL](https://julialang.org/blog/2020/08/julia-1.5-highlights/#the_return_of_soft_scope_in_the_repl).
   - In contrast to Julia, Oil behaves the same in batch mode vs. interactive
-    mode, and doens't print warnings.  However, it behaves differently at the
+    mode, and doesn't print warnings.  However, it behaves differently at the
     top level.  For this reason, we recommend using only `setvar` in
     interactive shells, and only `const` in the global scope of programs.
 - Racket: [The Top Level is Hopeless](https://gist.github.com/samth/3083053)
@@ -376,7 +376,7 @@ Oil:
 
 - [Oil Keywords](oil-keywords.html)
 - [Interpreter State](interpreter-state.html)
-  - The shell has a stack of namesapces.
+  - The shell has a stack of namespaces.
   - Each namespace contains {variable name -> cell} bindings.
   - Cells have a tagged value (string, array, etc.) and 3 flags (readonly,
     export, nameref).

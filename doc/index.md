@@ -65,7 +65,7 @@ Reference:
 ### The Command Language
 
 **Commands** are made of words, keywords, and other operators.  They're for
-I/O, control flow, and bastraction.
+I/O, control flow, and abstraction.
 
 - [Command Language](command-language.html): Simple commands, redirects,
   control flow, etc.

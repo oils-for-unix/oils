@@ -73,7 +73,7 @@ to be parsed.
 
 - QSN can represent **any byte sequence**.
 - Given a QSN-encoded string, any 2 decoders must produce the same byte string.
-  (On the other hand, encoders have flexiblity with regard to escaping.)
+  (On the other hand, encoders have flexibility with regard to escaping.)
 - An encoded string always fits on a **single line**.  Newlines must be encoded as
   `\n`, not literal.
 - A encoded string always fits in a **TSV cell**.  Tabs must be encoded as `\t`,

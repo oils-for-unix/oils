@@ -187,7 +187,7 @@ NotImplementedError
 
     s=$(cat invalid.txt)
     echo ${#s}  # code points
-    echo ${s:1:3}  # code opints
+    echo ${s:1:3}  # code points
 
 - Slicing: Index is negative.  ${foo: -4} and ${foo: 1 : -4} aren't supported
   right now, unlike bash and zsh.

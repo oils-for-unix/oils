@@ -250,7 +250,7 @@ When both `inherit_errexit` and `command_sub_errexit` are on, this code
 
 will print `0` and touch the file `one`.
 
-1. The command sub aborts at `false` (`inherrit_errexit), and
+1. The command sub aborts at `false` (`inherit_errexit`), and
 2. The parent process aborts after the command sub fails (`command_sub_errexit`).
 
 ### Recap/Summary

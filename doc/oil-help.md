@@ -460,7 +460,7 @@ Re-enable errexit, and provide fine-grained control over exit codes.
 
 #### runproc
 
-Runs a named proc with the given arguments.  It's ofen useful as the only top
+Runs a named proc with the given arguments.  It's often useful as the only top
 level statement in a "task file":
 
     proc p {

@@ -141,7 +141,7 @@ is an informal list of *kinds* of options, which are different categorization:
   - `~typo` is a runtime error.
 - `simple_*`: Break things to improve style.
   - `simple_eval_builtin`, `simple_echo`.
-  - `simple_word_eval` is the most aggresive
+  - `simple_word_eval` is the most aggressive
 
 ### Strict Options Produce More Errors
 

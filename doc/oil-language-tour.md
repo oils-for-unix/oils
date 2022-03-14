@@ -697,7 +697,7 @@ error.
     var v2 = d->name               # shorthand for the above
     var v3 = d['key with spaces']  # no shorthand for this
 
-Keys names can be computed wth expressions in `[]`:
+Keys names can be computed with expressions in `[]`:
 
     var key = 'alice'
     var d2 = {[key ++ '_z']: 'ZZZ'}  # Computed key name
@@ -908,7 +908,7 @@ which is borrowed from Rust's string literal notation.
 [QSN]: qsn.html
 
 It lets you encode arbitrary byte strings into a single (readable) line,
-including those with newlines and terminal escape sequenecs.
+including those with newlines and terminal escape sequences.
 
 Example:
 
@@ -1062,7 +1062,7 @@ These concepts are central to Oil:
   Python, and JavaScript, Oil is influenced by Ruby, Perl, Awk, PHP, and more.
 - [A Feel For Oil's Syntax](syntax-feelings.html) - Some thoughts that may help
   you remember the syntax.
-- [Oil Language Warts](warts.html) docuemnts syntax that may be surprising.
+- [Oil Language Warts](warts.html) documents syntax that may be surprising.
 - [A Tour of the Oil Project](project-tour.html) (under construction).
 
 ## Appendix: Features Not Shown

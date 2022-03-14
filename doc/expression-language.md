@@ -98,7 +98,7 @@ Longer example:
 
 ### Dict Literals Look Like JavaScript
 
-Dict literals use JavaScript's rules, which are similar but not idential to
+Dict literals use JavaScript's rules, which are similar but not identical to
 Python.
 
 The key can be either a **bare word** or **bracketed expression**.
@@ -362,7 +362,7 @@ Notes:
   - though I think strings should be non-nullable value types?  They are
     slices.
   - they start off as the empty slice
-- Coercsions of strings to numbers
+- Coercions of strings to numbers
   - `42` and `3.14` and `1e100`
 
 ### Implementation Notes
@@ -370,6 +370,6 @@ Notes:
 - Limitation:
   - Start with Str, StrArray, and AssocArray data model
   - Then add int, float, bool, null (for JSON)
-  - Then add fuly recursive data model (depends on FC)
+  - Then add fully recursive data model (depends on FC)
     - `value = ... | dict[str, value]`
 

@@ -66,7 +66,7 @@ Shell also has contexts where it evaluates words to a **single string**, rather
 than a sequence, like:
 
 ```sh
-# RHS of Assignemnt
+# RHS of Assignment
 x="${not_array[@]}"
 x=*.py  # not a glob
 
@@ -112,7 +112,7 @@ This is a recap of [A Feel for Oil's Syntax](syntax-feelings.html).
 
 Examples:
 
-- All subsitutions: var, command, arith
+- All substitutions: var, command, arith
   - TODO: Do we have `$[a[x+1]]` as an expression substitution?
   - Or `$[ /pat+ /]`?
   - I don't think so.

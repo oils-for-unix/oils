@@ -24,7 +24,7 @@ Related: [How We Build Oil's Documentation](doc-toolchain.html).
 
 ## Syntax Highlighting Specified In Front matter
 
-If every `pre` block in a document needs the same higlighter, you can specify
+If every `pre` block in a document needs the same highlighter, you can specify
 it in the front matter like this:
 
     ---

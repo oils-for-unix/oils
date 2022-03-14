@@ -91,7 +91,7 @@ Oil doesn't overload operators as much because it often does automatic string
 ### Changed
 
 - Equality `=== !==` because we also have `~==`
-- String Concenation: `++` (not `+`, which is always addition)
+- String Concatenation: `++` (not `+`, which is always addition)
 
 ### New
 

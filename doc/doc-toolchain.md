@@ -104,7 +104,7 @@ Use Markdown's fenced code blocks like this:
     hello world
     ```
 
-Or you can set `default_highlighter` for blocks indented by 4 sapces.
+Or you can set `default_highlighter` for blocks indented by 4 spaces.
 
 Again see [doc-plugins.md][] for examples.
 

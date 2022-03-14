@@ -617,14 +617,14 @@ Format specifiers:
     %i  Same as %d.
     %o  Print as unsigned octal number.
     %u  Print as unsigned decimal number.
-    %x  Print as unsigned hexadecimal numbe with lower-case hex-digits (a-f).
+    %x  Print as unsigned hexadecimal number with lower-case hex-digits (a-f).
     %X  Same as %x, but with upper-case hex-digits (A-F).
     %f  Print as floating point number.
     %e  Print as a double number, in "±e" format (lower-case e).
     %E  Same as %e, but with an upper-case E.
     %g  Interprets the argument as double, but prints it like %f or %e.
     %G  Same as %g, but print it like %E.
-    %c  Print as a single char, onlye the first character is printed.
+    %c  Print as a single char, only the first character is printed.
     %s  Print as string
     %n  The number of characters printed so far is stored in the variable named
         in the argument.
@@ -1110,7 +1110,7 @@ to aliases like:
     
 Functions are less likely to cause parsing problems.
 
-- Quoting like `\ls` or `'ls'` disables alias expansino
+- Quoting like `\ls` or `'ls'` disables alias expansion
 - To remove an existing alias, use [unalias]($osh-help).
 
 TODO: Turn off aliases in Oil.

@@ -23,7 +23,7 @@ Shell Features:
 Oil Features:
 
 - Escaping for safety: `${x|html}`, etc.
-- Buffers for effiency and readability: `${.myproc arg1}`, etc.
+- Buffers for efficiency and readability: `${.myproc arg1}`, etc.
   - (buffers are PHP-like)
 
 <div id="toc">
