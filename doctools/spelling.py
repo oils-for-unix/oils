@@ -6,6 +6,7 @@ Filter the output of 'lynx -dump' into a list of words to spell check.
 """
 from __future__ import print_function
 
+from collections import Counter
 import optparse
 import re
 import sys
@@ -69,17 +70,21 @@ def main(argv):
   elif action == 'check':
     word_files = argv[1:]
 
-    from collections import Counter
     d = Counter()
 
     for path in word_files:
-      print(path)
       with open(path) as f:
         for word in WordList(f):
           d[word] += 1
 
+    print('')
+    print('Most common words')
+    print('')
     for word, count in d.most_common()[:20]:
       print('%10d %s' % (count, word))
+
+    print('')
+    print('Least common words')
     print('')
     for word, count in d.most_common()[-20:]:
       print('%10d %s' % (count, word))
@@ -92,12 +97,15 @@ def main(argv):
       for w in WordList(f):
         known_words[w] = True
 
+    print('')
+    print('Potential Misspellings')
+    print('')
+
     for path in word_files:
 
       print()
       print('\t%s' % path)
       print()
-
 
       with open(path) as f:
         unknown = {}
