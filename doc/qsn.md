@@ -26,7 +26,7 @@ Examples:
 'my favorite song.mp3'
 'bob<span class=q>\t</span>1.0<span class=q>\n</span>carol<span class=q>\t</span>2.0<span class=q>\n</span>'     <span class=comment># tabs and newlines</span>
 'BEL = <span class=q>\x07</span>'                 <span class=comment># byte escape</span>
-'mu = <span class=q>\u{03bc}</span>'              <span class=comment># char escapes are encoded in UTF-8</span>
+'mu = <span class=q>\u{03bc}</span>'              <span class=comment># Unicode char escape</span>
 'mu = &#x03bc;'                     <span class=comment># represented literally, not escaped</span>
 </pre>
 
