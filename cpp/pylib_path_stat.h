@@ -5,9 +5,14 @@
 
 namespace path_stat {
 
-// This function takes varargs.  Add other varargs variants?
 inline bool exists(Str* path) {
-  assert(0);
+  mylib::Str0 path0(path);
+  struct stat st;
+  if (::stat(path0.Get(), &st) < 0) {
+    return false;
+  } else {
+    return true;
+  }
 }
 
 }  // namespace path_stat
