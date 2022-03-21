@@ -71,7 +71,12 @@ inline void lstat() {
 }
 
 inline Tuple2<int, int> pipe() {
-  assert(0);
+  int fd[2];
+  if (::pipe(fd) < 0) {
+    // TODO: handle errno
+    assert(0);
+  }
+  return Tuple2<int, int>(fd[0], fd[1]);
 }
 
 inline int close(int fd) {
@@ -108,7 +113,10 @@ inline Tuple2<int, int> waitpid(int pid, int options) {
 
 // Can we use fcntl instead?
 inline void dup2(int oldfd, int newfd) {
-  assert(0);
+  if (::dup2(oldfd, newfd) < 0) {
+    // TODO: handle errno
+    assert(0);
+  }
 }
 
 int open(Str* path, int flags, int perms);

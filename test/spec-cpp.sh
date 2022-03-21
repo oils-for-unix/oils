@@ -77,6 +77,16 @@ run-with-osh-eval() {
     "$@"
 }
 
+run-with-osh-eval-dbg() {
+  ### Quicker development loop with debug build
+
+  # TODO: build/native_graph.py doesn't correctly declare the cpp/*.{h,cc}
+  # dependencies
+  ninja _bin/osh_eval.dbg
+  local bin=$PWD/_bin/osh_eval.dbg
+  env OSH_CC=$bin $0 run-with-osh-eval "$@"
+}
+
 all() {
   ### Run all tests with osh_eval and its translatino
   export SPEC_RUNNER='test/spec-cpp.sh run-with-osh-eval'
