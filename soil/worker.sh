@@ -264,11 +264,15 @@ run-tasks() {
 
     local log_path=$out_dir/logs/$task_name.txt 
 
+    # 10 minutes per task
+    # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
+    local timeout_secs=600
+
     set +o errexit
     time-tsv -o $tsv --append --time-fmt '%.2f' \
       --field $task_name --field $script --field $action \
       --field $result_html -- \
-      $script $action >$log_path 2>&1
+      timeout $timeout_secs $script $action >$log_path 2>&1
     status=$?
     set -o errexit
 
@@ -385,8 +389,6 @@ run-dev-minimal() { job-main 'dev-minimal'; }
 run-other-tests() { job-main 'other-tests'; }
 
 run-ovm-tarball() { job-main 'ovm-tarball'; }
-
-run-local() { job-main 'local'; }
 
 run-app-tests() { job-main 'app-tests'; }
 
