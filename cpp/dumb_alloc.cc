@@ -52,7 +52,6 @@ int gMemPos2 = 0;
 int gNumMalloc = 0;
 int gNumFree = 0;
 
-#ifdef DUMB_ALLOC
 void* dumb_malloc(size_t size) noexcept {
   char* p = &(kMem2[gMemPos2]);
 #ifdef ALLOC_LOG
@@ -67,12 +66,11 @@ void dumb_free(void* p) noexcept {
   // fprintf(stderr, "free\n");
   ++gNumFree;
 }
-#endif
 
 namespace dumb_alloc {
 
 void Summarize() {
-#ifdef DUMB_ALLOC
+#ifdef DUMB_ALLOC_VERBOSE
   fprintf(stderr, "\n");
   fprintf(stderr, "dumb_alloc:\n");
   fprintf(stderr, "\tgNumNew = %d\n", gNumNew);
