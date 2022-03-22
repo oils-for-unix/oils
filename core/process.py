@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
-from fcntl import F_DUPFD, F_GETFD, FD_CLOEXEC
+from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
 import signal as signal_
 from sys import exit  # mycpp translation directly calls exit(int status)!
 
@@ -187,30 +187,25 @@ class FdState(object):
     # type: (int) -> bool
     """Save fd to a new location and remember to restore it later."""
     #log('---- _PushSave %s', fd)
-    need_restore = True
+    ok = True
     try:
       new_fd = SaveFd(fd)
     except IOError as e:
+      ok = False
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
       # This seems to be ignored in dash too in savefd()?
-      if e.errno == EBADF:
-        #log('ERROR fd %d: %s', fd, e)
-        need_restore = False
-      else:
+      if e.errno != EBADF:
         raise
-    else:
+    if ok:
       posix.close(fd)
-      fcntl_.fcntl(new_fd, fcntl_.F_SETFD, FD_CLOEXEC)
-
-    #pyutil.ShowFdState()
-    if need_restore:
+      fcntl_.fcntl(new_fd, F_SETFD, FD_CLOEXEC)
       self.cur_frame.saved.append(_RedirFrame(new_fd, fd, True))
     else:
       # if we got EBADF, we still need to close the original on Pop()
       self._PushClose(fd)
 
-    return need_restore
+    return ok
 
   def _PushDup(self, fd1, loc):
     # type: (int, redir_loc_t) -> int
@@ -571,23 +566,28 @@ class ExternalProgram(object):
   def _Exec(self, argv0_path, argv, argv0_spid, environ, should_retry):
     # type: (str, List[str], int, Dict[str, str], bool) -> None
     if len(self.hijack_shebang):
+      ok = True
       try:
         f = self.fd_state.Open(argv0_path)
       except (IOError, OSError) as e:
-        pass
-      else:
+        ok = False
+      if ok:
         try:
-          # Test if the shebang looks like a shell.  The file might be binary
-          # with no newlines, so read 80 bytes instead of readline().
-          line = f.read(80)  # type: ignore  # TODO: fix this
+          # Test if the shebang looks like a shell.  TODO: The file might be
+          # binary with no newlines, so read 80 bytes instead of readline().
+
+          #line = f.read(80)  # type: ignore  # TODO: fix this
+          line = f.readline()
+
           if match.ShouldHijack(line):
-            argv = [self.hijack_shebang, argv0_path] + argv[1:]
+            argv = [self.hijack_shebang, argv0_path]
+            argv.extend(argv[1:])
             argv0_path = self.hijack_shebang
-            self.debug_f.log('Hijacked: %s', argv)
+            self.debug_f.log('Hijacked: %s', argv0_path)
           else:
             #self.debug_f.log('Not hijacking %s (%r)', argv, line)
             pass
-        finally:
+        finally:  # TODO: use context manager
           f.close()
 
     try:

@@ -104,9 +104,15 @@ Id_t BracketOther(Str* s) {
 bool IsValidVarName(Str* s) {
   // cstring-TODO: input isn't NUL-terminated
 
-  // Call generated function.  Note: this relies on operator overloading.
   return ::IsValidVarName(reinterpret_cast<const unsigned char*>(s->data_),
                           s->len_);
+}
+
+bool ShouldHijack(Str* s) {
+  // cstring-TODO: input isn't NUL-terminated
+
+  return ::ShouldHijack(reinterpret_cast<const unsigned char*>(s->data_),
+                        s->len_);
 }
 
 int MatchOption(Str* s) {
