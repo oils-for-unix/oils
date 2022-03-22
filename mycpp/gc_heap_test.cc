@@ -207,9 +207,9 @@ TEST list_test() {
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
   ASSERT_EQ_FMT(32, list1->slab_->obj_len_, "%d");
 
-  ASSERT_EQ_FMT(11, list1->index(0), "%d");
-  ASSERT_EQ_FMT(22, list1->index(1), "%d");
-  ASSERT_EQ_FMT(33, list1->index(2), "%d");
+  ASSERT_EQ_FMT(11, list1->index_(0), "%d");
+  ASSERT_EQ_FMT(22, list1->index_(1), "%d");
+  ASSERT_EQ_FMT(33, list1->index_(2), "%d");
 
   log("extending");
   auto more2 = NewList<int>(std::initializer_list<int>{44, 55, 66, 77});
@@ -223,16 +223,16 @@ TEST list_test() {
   // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
   ASSERT_EQ_FMT(64, list1->slab_->obj_len_, "%d");
 
-  ASSERT_EQ_FMT(11, list1->index(0), "%d");
-  ASSERT_EQ_FMT(22, list1->index(1), "%d");
-  ASSERT_EQ_FMT(33, list1->index(2), "%d");
-  ASSERT_EQ_FMT(44, list1->index(3), "%d");
-  ASSERT_EQ_FMT(55, list1->index(4), "%d");
-  ASSERT_EQ_FMT(66, list1->index(5), "%d");
-  ASSERT_EQ_FMT(77, list1->index(6), "%d");
+  ASSERT_EQ_FMT(11, list1->index_(0), "%d");
+  ASSERT_EQ_FMT(22, list1->index_(1), "%d");
+  ASSERT_EQ_FMT(33, list1->index_(2), "%d");
+  ASSERT_EQ_FMT(44, list1->index_(3), "%d");
+  ASSERT_EQ_FMT(55, list1->index_(4), "%d");
+  ASSERT_EQ_FMT(66, list1->index_(5), "%d");
+  ASSERT_EQ_FMT(77, list1->index_(6), "%d");
 
   list1->append(88);
-  ASSERT_EQ_FMT(88, list1->index(7), "%d");
+  ASSERT_EQ_FMT(88, list1->index_(7), "%d");
   ASSERT_EQ_FMT(8, len(list1), "%d");
 
   int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_.begin_;
@@ -251,8 +251,8 @@ TEST list_test() {
   list2->append(str1);
   list2->append(str2);
   ASSERT_EQ(2, len(list2));
-  ASSERT(str_equals(str1, list2->index(0)));
-  ASSERT(str_equals(str2, list2->index(1)));
+  ASSERT(str_equals(str1, list2->index_(0)));
+  ASSERT(str_equals(str2, list2->index_(1)));
 
   PASS();
 }
@@ -280,19 +280,19 @@ GLOBAL_LIST(Str*, 2, gList3, {gFoo COMMA gFoo});
 
 TEST global_list_test() {
   ASSERT_EQ(3, len(gList));
-  ASSERT_EQ_FMT(5, gList->index(0), "%d");
-  ASSERT_EQ_FMT(6, gList->index(1), "%d");
-  ASSERT_EQ_FMT(7, gList->index(2), "%d");
+  ASSERT_EQ_FMT(5, gList->index_(0), "%d");
+  ASSERT_EQ_FMT(6, gList->index_(1), "%d");
+  ASSERT_EQ_FMT(7, gList->index_(2), "%d");
 
   ASSERT_EQ(4, len(gList2));
-  ASSERT_EQ_FMT(5, gList2->index(0), "%d");
-  ASSERT_EQ_FMT(4, gList2->index(1), "%d");
-  ASSERT_EQ_FMT(3, gList2->index(2), "%d");
-  ASSERT_EQ_FMT(2, gList2->index(3), "%d");
+  ASSERT_EQ_FMT(5, gList2->index_(0), "%d");
+  ASSERT_EQ_FMT(4, gList2->index_(1), "%d");
+  ASSERT_EQ_FMT(3, gList2->index_(2), "%d");
+  ASSERT_EQ_FMT(2, gList2->index_(3), "%d");
 
   ASSERT_EQ(2, len(gList3));
-  ASSERT(str_equals(gFoo, gList3->index(0)));
-  ASSERT(str_equals(gFoo, gList3->index(1)));
+  ASSERT(str_equals(gFoo, gList3->index_(0)));
+  ASSERT(str_equals(gFoo, gList3->index_(1)));
 
   PASS();
 }
@@ -316,7 +316,7 @@ TEST dict_test() {
   ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
   ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
 
-  ASSERT_EQ(nullptr, dict1->index_);
+  ASSERT_EQ(nullptr, dict1->entry_);
   ASSERT_EQ(nullptr, dict1->keys_);
   ASSERT_EQ(nullptr, dict1->values_);
 
@@ -327,21 +327,21 @@ TEST dict_test() {
   ASSERT(diff2 < 1024);
 
   dict1->set(42, 5);
-  ASSERT_EQ(5, dict1->index(42));
+  ASSERT_EQ(5, dict1->index_(42));
   ASSERT_EQ(1, len(dict1));
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 
-  ASSERT_EQ_FMT(32, dict1->index_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, dict1->entry_->obj_len_, "%d");
   ASSERT_EQ_FMT(32, dict1->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(32, dict1->values_->obj_len_, "%d");
 
   dict1->set(42, 99);
-  ASSERT_EQ(99, dict1->index(42));
+  ASSERT_EQ(99, dict1->index_(42));
   ASSERT_EQ(1, len(dict1));
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 
   dict1->set(43, 10);
-  ASSERT_EQ(10, dict1->index(43));
+  ASSERT_EQ(10, dict1->index_(43));
   ASSERT_EQ(2, len(dict1));
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 
@@ -350,7 +350,7 @@ TEST dict_test() {
     log("i = %d, capacity = %d", i, dict1->capacity_);
 
     // make sure we didn't lose old entry after resize
-    ASSERT_EQ(10, dict1->index(43));
+    ASSERT_EQ(10, dict1->index_(43));
   }
 
   Str* foo = nullptr;
@@ -362,9 +362,9 @@ TEST dict_test() {
   dict2->set(foo, bar);
 
   ASSERT_EQ(1, len(dict2));
-  ASSERT(str_equals(bar, dict2->index(foo)));
+  ASSERT(str_equals(bar, dict2->index_(foo)));
 
-  ASSERT_EQ_FMT(32, dict2->index_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, dict2->entry_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict2->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict2->values_->obj_len_, "%d");
 
@@ -373,7 +373,7 @@ TEST dict_test() {
   dict_si->set(foo, 42);
   ASSERT_EQ(1, len(dict_si));
 
-  ASSERT_EQ_FMT(32, dict_si->index_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_si->entry_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict_si->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(32, dict_si->values_->obj_len_, "%d");
 
@@ -384,7 +384,7 @@ TEST dict_test() {
 
   ASSERT_EQ(1, len(dict_is));
 
-  ASSERT_EQ_FMT(32, dict_is->index_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_is->entry_->obj_len_, "%d");
   ASSERT_EQ_FMT(32, dict_is->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict_is->values_->obj_len_, "%d");
 
@@ -768,8 +768,8 @@ TEST compile_time_masks_test() {
   // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
   // There is a trick with __VA_ARGS__ I don't understand.
 
-  ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, index_),
-            offsetof(gc_heap::_DummyDict, index_));
+  ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, entry_),
+            offsetof(gc_heap::_DummyDict, entry_));
   ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, keys_),
             offsetof(gc_heap::_DummyDict, keys_));
   ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, values_),
