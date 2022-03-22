@@ -580,8 +580,9 @@ class ExternalProgram(object):
           line = f.readline()
 
           if match.ShouldHijack(line):
-            argv = [self.hijack_shebang, argv0_path]
-            argv.extend(argv[1:])
+            h_argv = [self.hijack_shebang, argv0_path]
+            h_argv.extend(argv[1:])
+            argv = h_argv
             argv0_path = self.hijack_shebang
             self.debug_f.log('Hijacked: %s', argv0_path)
           else:

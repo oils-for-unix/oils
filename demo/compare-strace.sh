@@ -72,4 +72,23 @@ interactive() {
   strace -c $sh -i -c "$code"
 }
 
+#
+# Translation tests
+#
+
+_compare() {
+  local code=$1
+
+  rm -f -v _tmp/py* _tmp/cpp*
+
+  strace -ff -o _tmp/py -- _bin/osh -c "$code"
+  strace -ff -o _tmp/cpp -- _bin/osh_eval.dbg -c "$code"
+
+  wc -l _tmp/py* _tmp/cpp*
+}
+
+command-sub() {
+  _compare 'echo $(echo hi)'
+}
+
 "$@"
