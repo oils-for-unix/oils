@@ -263,7 +263,7 @@ inline bool list_contains(List<T>* haystack, T needle) {
 
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
-    if (haystack->index(i) == needle) {
+    if (haystack->index_(i) == needle) {
       return true;
     }
   }
@@ -276,7 +276,7 @@ inline bool list_contains(List<Str*>* haystack, Str* needle) {
 
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
-    if (str_equals(haystack->index(i), needle)) {
+    if (str_equals(haystack->index_(i), needle)) {
       return true;
     }
   }
@@ -312,7 +312,7 @@ class StrIter {
   bool Done() {
     return i_ >= len_;
   }
-  Str* Value() {  // similar to index()
+  Str* Value() {  // similar to index_()
     Str* result = NewStr(1);
     result->data_[0] = s_->data_[i_];
     // assert(result->data_[1] == '\0');
@@ -376,7 +376,7 @@ class ReverseListIter {
 };
 
 // TODO:
-// - Look at index_ to see if an item is deleted (or is a tombstone once we
+// - Look at entry_ to see if an item is deleted (or is a tombstone once we
 // have hash chaining)
 
 template <class K, class V>
@@ -405,7 +405,7 @@ class DictIter {
       if (pos >= D_->capacity_) {
         return -1;
       }
-      int index = D_->index_->items_[pos];
+      int index = D_->entry_->items_[pos];
       if (index == gc_heap::kDeletedEntry) {
         ++pos;
         continue;  // increment again

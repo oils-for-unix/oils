@@ -25,7 +25,7 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
   if (pos == -1) {
     return;
   }
-  haystack->index_->items_[pos] = gc_heap::kDeletedEntry;
+  haystack->entry_->items_[pos] = gc_heap::kDeletedEntry;
   // Zero out for GC.  These could be nullptr or 0
   haystack->keys_->items_[pos] = 0;
   haystack->values_->items_[pos] = 0;

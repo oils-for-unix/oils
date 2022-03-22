@@ -572,7 +572,7 @@ class Str : public gc_heap::Obj {
     // log("GC Str()");
   }
 
-  Str* index(int i);
+  Str* index_(int i);
   Str* slice(int begin);
   Str* slice(int begin, int end);
 
@@ -777,7 +777,7 @@ class List : public gc_heap::Obj {
   }
 
   // Implements L[i]
-  T index(int i) {
+  T index_(int i) {
     if (i < 0) {
       i += len_;
     }
@@ -854,7 +854,7 @@ class List : public gc_heap::Obj {
     assert(i == 0);  // only support popping the first item
 
     len_--;
-    T result = index(0);
+    T result = index_(0);
 
     // Shift everything by one
     memmove(slab_->items_, slab_->items_ + 1, len_ * sizeof(T));
@@ -1015,7 +1015,7 @@ void List<T>::append(T item) {
 // Dict<K, V>
 //
 
-// Non-negative entries in index_ are array indices into keys_ and values_.
+// Non-negative entries in entry_ are array indices into keys_ and values_.
 // There are two special negative entries.
 
 // index that means this Dict item was deleted (a tombstone).
@@ -1023,7 +1023,7 @@ const int kDeletedEntry = -1;
 
 // index that means this Dict entry is free.  Because we have Dict[int, int],
 // we can't use a sentinel entry in keys_.  It has to be a sentinel entry in
-// index_.
+// entry_.
 const int kEmptyEntry = -2;
 
 // Helper for keys() and values()
@@ -1063,14 +1063,14 @@ class _DummyDict {
   OBJ_HEADER()
   int len_;
   int capacity_;
-  void* index_;
+  void* entry_;
   void* keys_;
   void* values_;
 };
 
 // A list has one Slab pointer which we need to follow.
 constexpr uint16_t maskof_Dict() {
-  return maskbit(offsetof(_DummyDict, index_)) |
+  return maskbit(offsetof(_DummyDict, entry_)) |
          maskbit(offsetof(_DummyDict, keys_)) |
          maskbit(offsetof(_DummyDict, values_));
 }
@@ -1081,7 +1081,7 @@ class Dict : public gc_heap::Obj {
   Dict() : gc_heap::Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
     assert(len_ == 0);
     assert(capacity_ == 0);
-    assert(index_ == nullptr);
+    assert(entry_ == nullptr);
     assert(keys_ == nullptr);
     assert(values_ == nullptr);
   }
@@ -1122,20 +1122,20 @@ class Dict : public gc_heap::Obj {
 
       if (self->keys_ != nullptr) {
         // Right now the index is the same size as keys and values.
-        memcpy(new_i->items_, self->index_->items_, self->len_ * sizeof(int));
+        memcpy(new_i->items_, self->entry_->items_, self->len_ * sizeof(int));
 
         memcpy(new_k->items_, self->keys_->items_, self->len_ * sizeof(K));
         memcpy(new_v->items_, self->values_->items_, self->len_ * sizeof(V));
       }
 
-      self->index_ = new_i;
+      self->entry_ = new_i;
       self->keys_ = new_k;
       self->values_ = new_v;
     }
   }
 
   // d[key] in Python: raises KeyError if not found
-  V index(K key) {
+  V index_(K key) {
     int pos = position_of_key(key);
     if (pos == -1) {
       assert(0);
@@ -1172,18 +1172,18 @@ class Dict : public gc_heap::Obj {
   void set(K key, V val);
 
   List<K>* keys() {
-    return ListFromDictSlab<K>(index_, keys_, capacity_);
+    return ListFromDictSlab<K>(entry_, keys_, capacity_);
   }
 
   // For AssocArray transformations
   List<V>* values() {
-    return ListFromDictSlab<V>(index_, values_, capacity_);
+    return ListFromDictSlab<V>(entry_, values_, capacity_);
   }
 
   void clear() {
     // Maintain invariant
     for (int i = 0; i < capacity_; ++i) {
-      index_->items_[i] = kEmptyEntry;
+      entry_->items_[i] = kEmptyEntry;
     }
 
     memset(keys_->items_, 0, len_ * sizeof(K));    // zero for GC scan
@@ -1209,7 +1209,7 @@ class Dict : public gc_heap::Obj {
     StackRoots _roots({&self});
 
     for (int i = 0; i < self->capacity_; ++i) {
-      int special = self->index_->items_[i];  // NOT an index now
+      int special = self->entry_->items_[i];  // NOT an index now
       if (special == kDeletedEntry) {
         continue;  // keep searching
       }
@@ -1228,7 +1228,7 @@ class Dict : public gc_heap::Obj {
   int capacity_;  // number of entries before resizing
 
   // These 3 slabs are resized at the same time.
-  Slab<int>* index_;  // NOW: kEmptyEntry, kDeletedEntry, or 0.
+  Slab<int>* entry_;  // NOW: kEmptyEntry, kDeletedEntry, or 0.
                       // LATER: indices which are themselves indexed by // hash
                       // value % capacity_
   Slab<K>* keys_;     // Dict<int, V>
@@ -1272,7 +1272,7 @@ void dict_set(Dict<K, V>* self, K key, V val) {
   self->keys_->items_[self->len_] = key;
   self->values_->items_[self->len_] = val;
 
-  self->index_->items_[self->len_] = 0;  // new special value
+  self->entry_->items_[self->len_] = 0;  // new special value
 
   ++self->len_;
 }
@@ -1286,7 +1286,7 @@ void dict_set(Dict<K*, V>* self, K* key, V val) {
   self->keys_->items_[self->len_] = key;
   self->values_->items_[self->len_] = val;
 
-  self->index_->items_[self->len_] = 0;  // new special value
+  self->entry_->items_[self->len_] = 0;  // new special value
 
   ++self->len_;
 }
@@ -1300,7 +1300,7 @@ void dict_set(Dict<K, V*>* self, K key, V* val) {
   self->keys_->items_[self->len_] = key;
   self->values_->items_[self->len_] = val;
 
-  self->index_->items_[self->len_] = 0;  // new special value
+  self->entry_->items_[self->len_] = 0;  // new special value
 
   ++self->len_;
 }
@@ -1314,7 +1314,7 @@ void dict_set(Dict<K*, V*>* self, K* key, V* val) {
   self->keys_->items_[self->len_] = key;
   self->values_->items_[self->len_] = val;
 
-  self->index_->items_[self->len_] = 0;  // new special value
+  self->entry_->items_[self->len_] = 0;  // new special value
 
   ++self->len_;
 }

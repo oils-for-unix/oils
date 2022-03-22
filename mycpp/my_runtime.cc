@@ -315,7 +315,7 @@ bool Str::endswith(Str* s) {
 }
 
 // Get a string with one character
-Str* Str::index(int i) {
+Str* Str::index_(int i) {
   if (i < 0) {
     i = len(this) + i;
   }
@@ -486,7 +486,7 @@ Str* Str::join(List<Str*>* items) {
     return kEmptyString;
   }
   for (int i = 0; i < num_parts; ++i) {
-    result_len += len(items->index(i));
+    result_len += len(items->index_(i));
   }
   int sep_len = len(self);
   // add length of all the separators
@@ -506,12 +506,12 @@ Str* Str::join(List<Str*>* items) {
       // log("len_ %d", len_);
     }
 
-    int n = len(items->index(i));
+    int n = len(items->index_(i));
     if (n < 0) {
       log("n: %d", n);
       assert(0);
     }
-    memcpy(p_result, items->index(i)->data_, n);  // copy the list item
+    memcpy(p_result, items->index_(i)->data_, n);  // copy the list item
     p_result += n;
   }
 

@@ -168,7 +168,7 @@ void Print(List<Str*>* parts) {
   log("---");
   log("len = %d", len(parts));
   for (int i = 0; i < len(parts); ++i) {
-    mylib::Str0 s0(parts->index(i));
+    mylib::Str0 s0(parts->index_(i));
     printf("%d [", i);
     fputs(s0.Get(), stdout);
     fputs("]\n", stdout);
@@ -186,34 +186,34 @@ TEST test_list_funcs() {
   auto ints = new List<int>({4, 5, 6});
   log("-- before pop(0)");
   for (int i = 0; i < len(ints); ++i) {
-    log("ints[%d] = %d", i, ints->index(i));
+    log("ints[%d] = %d", i, ints->index_(i));
   }
   ASSERT_EQ(3, len(ints));  // [4, 5, 6]
   ints->pop(0);             // [5, 6]
 
   ASSERT_EQ(2, len(ints));
-  ASSERT_EQ_FMT(5, ints->index(0), "%d");
-  ASSERT_EQ_FMT(6, ints->index(1), "%d");
+  ASSERT_EQ_FMT(5, ints->index_(0), "%d");
+  ASSERT_EQ_FMT(6, ints->index_(1), "%d");
 
   ints->reverse();
   ASSERT_EQ(2, len(ints));  // [6, 5]
 
-  ASSERT_EQ_FMT(6, ints->index(0), "%d");
-  ASSERT_EQ_FMT(5, ints->index(1), "%d");
+  ASSERT_EQ_FMT(6, ints->index_(0), "%d");
+  ASSERT_EQ_FMT(5, ints->index_(1), "%d");
 
   ints->append(9);  // [6, 5, 9]
   ASSERT_EQ(3, len(ints));
 
   ints->reverse();  // [9, 5, 6]
-  ASSERT_EQ(9, ints->index(0));
-  ASSERT_EQ(5, ints->index(1));
-  ASSERT_EQ(6, ints->index(2));
+  ASSERT_EQ(9, ints->index_(0));
+  ASSERT_EQ(5, ints->index_(1));
+  ASSERT_EQ(6, ints->index_(2));
 
   ints->set(0, 42);
   ints->set(1, 43);
   log("-- after mutation");
   for (int i = 0; i < len(ints); ++i) {
-    log("ints[%d] = %d", i, ints->index(i));
+    log("ints[%d] = %d", i, ints->index_(i));
   }
 
   auto L = list_repeat<Str*>(nullptr, 3);
@@ -221,8 +221,8 @@ TEST test_list_funcs() {
 
   auto L2 = list_repeat<bool>(true, 3);
   log("list_repeat length = %d", len(L2));
-  log("item 0 %d", L2->index(0));
-  log("item 1 %d", L2->index(1));
+  log("item 0 %d", L2->index_(0));
+  log("item 1 %d", L2->index_(1));
 
   auto strs = new List<Str*>();
   strs->append(new Str("c"));
@@ -233,10 +233,10 @@ TEST test_list_funcs() {
 
   strs->sort();
   ASSERT_EQ(4, len(strs));  // ['', 'a', 'b', 'c']
-  ASSERT(str_equals(kEmptyString, strs->index(0)));
-  ASSERT(str_equals(new Str("a"), strs->index(1)));
-  ASSERT(str_equals(new Str("b"), strs->index(2)));
-  ASSERT(str_equals(new Str("c"), strs->index(3)));
+  ASSERT(str_equals(kEmptyString, strs->index_(0)));
+  ASSERT(str_equals(new Str("a"), strs->index_(1)));
+  ASSERT(str_equals(new Str("b"), strs->index_(2)));
+  ASSERT(str_equals(new Str("c"), strs->index_(3)));
 
   auto a = new Str("a");
   auto aa = new Str("aa");
@@ -336,13 +336,13 @@ TEST test_dict() {
   // Dict d {{"key", 1}, {"val", 2}};
   Dict<int, Str*>* d = new Dict<int, Str*>();
   d->set(1, new Str("foo"));
-  log("d[1] = %s", d->index(1)->data_);
+  log("d[1] = %s", d->index_(1)->data_);
 
   auto d2 = new Dict<Str*, int>();
   Str* key = new Str("key");
   d2->set(key, 42);
 
-  log("d2['key'] = %d", d2->index(key));
+  log("d2['key'] = %d", d2->index_(key));
   d2->set(new Str("key2"), 2);
   d2->set(new Str("key3"), 3);
 
@@ -372,15 +372,15 @@ TEST test_dict() {
   d3->set(new Str("b"), 11);
   d3->set(new Str("c"), 12);
   d3->set(new Str("a"), 10);
-  ASSERT_EQ(10, d3->index(new Str("a")));
-  ASSERT_EQ(11, d3->index(new Str("b")));
-  ASSERT_EQ(12, d3->index(new Str("c")));
+  ASSERT_EQ(10, d3->index_(new Str("a")));
+  ASSERT_EQ(11, d3->index_(new Str("b")));
+  ASSERT_EQ(12, d3->index_(new Str("c")));
   ASSERT_EQ(3, len(d3));
 
   auto keys = sorted(d3);
-  ASSERT(str_equals0("a", keys->index(0)));
-  ASSERT(str_equals0("b", keys->index(1)));
-  ASSERT(str_equals0("c", keys->index(2)));
+  ASSERT(str_equals0("a", keys->index_(0)));
+  ASSERT(str_equals0("b", keys->index_(1)));
+  ASSERT(str_equals0("c", keys->index_(2)));
   ASSERT_EQ(3, len(keys));
 
   auto keys3 = d3->keys();

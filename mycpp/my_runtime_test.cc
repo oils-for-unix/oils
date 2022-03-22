@@ -187,7 +187,7 @@ void Print(List<Str*>* parts) {
   log("len = %d", len(parts));
   for (int i = 0; i < len(parts); ++i) {
     printf("%d [", i);
-    Str* s = parts->index(i);
+    Str* s = parts->index_(i);
     int n = len(s);
     fwrite(s->data_, sizeof(char), n, stdout);
     fputs("]\n", stdout);
@@ -209,32 +209,32 @@ TEST str_split_test() {
   s = NewStr(":");
   parts = s->split(sep);
   ASSERT_EQ_FMT(2, len(parts), "%d");
-  ASSERT(str_equals(kEmptyString, parts->index(0)));
-  ASSERT(str_equals(kEmptyString, parts->index(1)));
+  ASSERT(str_equals(kEmptyString, parts->index_(0)));
+  ASSERT(str_equals(kEmptyString, parts->index_(1)));
   Print(parts);
 
   s = NewStr("::");
   parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
-  ASSERT(str_equals(kEmptyString, parts->index(0)));
-  ASSERT(str_equals(kEmptyString, parts->index(1)));
-  ASSERT(str_equals(kEmptyString, parts->index(2)));
+  ASSERT(str_equals(kEmptyString, parts->index_(0)));
+  ASSERT(str_equals(kEmptyString, parts->index_(1)));
+  ASSERT(str_equals(kEmptyString, parts->index_(2)));
   Print(parts);
 
   s = NewStr("a:b");
   parts = s->split(sep);
   ASSERT_EQ(2, len(parts));
   Print(parts);
-  ASSERT(str_equals0("a", parts->index(0)));
-  ASSERT(str_equals0("b", parts->index(1)));
+  ASSERT(str_equals0("a", parts->index_(0)));
+  ASSERT(str_equals0("b", parts->index_(1)));
 
   s = NewStr("abc:def:");
   parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
   Print(parts);
-  ASSERT(str_equals0("abc", parts->index(0)));
-  ASSERT(str_equals0("def", parts->index(1)));
-  ASSERT(str_equals(kEmptyString, parts->index(2)));
+  ASSERT(str_equals0("abc", parts->index_(0)));
+  ASSERT(str_equals0("def", parts->index_(1)));
+  ASSERT(str_equals(kEmptyString, parts->index_(2)));
 
   s = NewStr(":abc:def:");
   parts = s->split(sep);
@@ -261,9 +261,9 @@ TEST str_methods_test() {
   ASSERT(!(NewStr(""))->isdigit());
 
   log("slice()");
-  ASSERT(str_equals0("f", kStrFood->index(0)));
+  ASSERT(str_equals0("f", kStrFood->index_(0)));
 
-  ASSERT(str_equals0("d", kStrFood->index(-1)));
+  ASSERT(str_equals0("d", kStrFood->index_(-1)));
 
   ASSERT(str_equals0("ood", kStrFood->slice(1)));
   ASSERT(str_equals0("oo", kStrFood->slice(1, 3)));
@@ -426,15 +426,15 @@ TEST list_methods_test() {
 
   List<int>* slice1 = ints->slice(1);
   ASSERT_EQ(3, len(slice1));
-  ASSERT_EQ(6, slice1->index(0));
+  ASSERT_EQ(6, slice1->index_(0));
 
   List<int>* slice2 = ints->slice(-4, -2);
   ASSERT_EQ(2, len(slice2));
-  ASSERT_EQ(5, slice2->index(0));
+  ASSERT_EQ(5, slice2->index_(0));
 
   log("-- before pop(0)");
   for (int i = 0; i < len(ints); ++i) {
-    log("ints[%d] = %d", i, ints->index(i));
+    log("ints[%d] = %d", i, ints->index_(i));
   }
   ASSERT_EQ(4, len(ints));  // [5, 6, 7, 8]
 
@@ -442,36 +442,36 @@ TEST list_methods_test() {
 
   ints->pop();  // [5, 6, 7]
   ASSERT_EQ(3, len(ints));
-  ASSERT_EQ_FMT(5, ints->index(0), "%d");
-  ASSERT_EQ_FMT(6, ints->index(1), "%d");
-  ASSERT_EQ_FMT(7, ints->index(2), "%d");
+  ASSERT_EQ_FMT(5, ints->index_(0), "%d");
+  ASSERT_EQ_FMT(6, ints->index_(1), "%d");
+  ASSERT_EQ_FMT(7, ints->index_(2), "%d");
 
   log("pop(0)");
 
   ints->pop(0);  // [6, 7]
   ASSERT_EQ(2, len(ints));
-  ASSERT_EQ_FMT(6, ints->index(0), "%d");
-  ASSERT_EQ_FMT(7, ints->index(1), "%d");
+  ASSERT_EQ_FMT(6, ints->index_(0), "%d");
+  ASSERT_EQ_FMT(7, ints->index_(1), "%d");
 
   ints->reverse();
   ASSERT_EQ(2, len(ints));  // [7, 6]
 
-  ASSERT_EQ_FMT(7, ints->index(0), "%d");
-  ASSERT_EQ_FMT(6, ints->index(1), "%d");
+  ASSERT_EQ_FMT(7, ints->index_(0), "%d");
+  ASSERT_EQ_FMT(6, ints->index_(1), "%d");
 
   ints->append(9);  // [7, 6, 9]
   ASSERT_EQ(3, len(ints));
 
   ints->reverse();  // [9, 6, 7]
-  ASSERT_EQ(9, ints->index(0));
-  ASSERT_EQ(6, ints->index(1));
-  ASSERT_EQ(7, ints->index(2));
+  ASSERT_EQ(9, ints->index_(0));
+  ASSERT_EQ(6, ints->index_(1));
+  ASSERT_EQ(7, ints->index_(2));
 
   auto other = NewList<int>(std::initializer_list<int>{-1, -2});
   ints->extend(other);  // [9, 6, 7, 1, 2]
   ASSERT_EQ(5, len(ints));
-  ASSERT_EQ(-2, ints->index(4));
-  ASSERT_EQ(-1, ints->index(3));
+  ASSERT_EQ(-2, ints->index_(4));
+  ASSERT_EQ(-1, ints->index_(3));
 
   ints->clear();
   ASSERT_EQ(0, len(ints));
@@ -490,8 +490,8 @@ TEST list_funcs_test() {
 
   auto L2 = list_repeat<bool>(true, 3);
   log("list_repeat length = %d", len(L2));
-  log("item 0 %d", L2->index(0));
-  log("item 1 %d", L2->index(1));
+  log("item 0 %d", L2->index_(0));
+  log("item 1 %d", L2->index_(1));
 
   // Not implemented since we don't use it in Oil.
   // ints->sort();
@@ -554,10 +554,10 @@ TEST sort_test() {
 
   strs->sort();  // ['', 'a', 'aa', 'b']
   ASSERT_EQ(4, len(strs));
-  ASSERT(str_equals(kEmptyString, strs->index(0)));
-  ASSERT(str_equals0("a", strs->index(1)));
-  ASSERT(str_equals0("aa", strs->index(2)));
-  ASSERT(str_equals0("b", strs->index(3)));
+  ASSERT(str_equals(kEmptyString, strs->index_(0)));
+  ASSERT(str_equals0("a", strs->index_(1)));
+  ASSERT(str_equals0("aa", strs->index_(2)));
+  ASSERT(str_equals0("b", strs->index_(3)));
 
   PASS();
 }
@@ -625,12 +625,12 @@ TEST dict_methods_test() {
 
   d = Alloc<Dict<int, Str*>>();
   d->set(1, kStrFoo);
-  ASSERT(str_equals0("foo", d->index(1)));
+  ASSERT(str_equals0("foo", d->index_(1)));
 
   d2 = Alloc<Dict<Str*, int>>();
   key = NewStr("key");
   d2->set(key, 42);
-  ASSERT_EQ(42, d2->index(key));
+  ASSERT_EQ(42, d2->index_(key));
 
   PASS();
 
@@ -643,22 +643,22 @@ TEST dict_methods_test() {
   ASSERT_EQ_FMT(3, len(keys), "%d");
 
   // Retain insertion order
-  ASSERT(str_equals0("key", keys->index(0)));
-  ASSERT(str_equals0("key2", keys->index(1)));
-  ASSERT(str_equals0("key3", keys->index(2)));
+  ASSERT(str_equals0("key", keys->index_(0)));
+  ASSERT(str_equals0("key2", keys->index_(1)));
+  ASSERT(str_equals0("key3", keys->index_(2)));
 
   mylib::dict_remove(d2, NewStr("key"));
   ASSERT_EQ_FMT(2, len(d2), "%d");
 
   auto keys2 = d2->keys();
   ASSERT_EQ_FMT(2, len(keys2), "%d");
-  ASSERT(str_equals0("key2", keys2->index(0)));
-  ASSERT(str_equals0("key3", keys2->index(1)));
+  ASSERT(str_equals0("key2", keys2->index_(0)));
+  ASSERT(str_equals0("key3", keys2->index_(1)));
 
   auto values = d2->values();
   ASSERT_EQ_FMT(2, len(values), "%d");
-  ASSERT_EQ(2, values->index(0));
-  ASSERT_EQ(3, values->index(1));
+  ASSERT_EQ(2, values->index_(0));
+  ASSERT_EQ(3, values->index_(1));
 
   int j = 0;
   for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
@@ -695,16 +695,16 @@ TEST dict_methods_test() {
   d3->set(NewStr("b"), 11);
   d3->set(NewStr("c"), 12);
   d3->set(NewStr("a"), 10);
-  ASSERT_EQ(10, d3->index(NewStr("a")));
-  ASSERT_EQ(11, d3->index(NewStr("b")));
-  ASSERT_EQ(12, d3->index(NewStr("c")));
+  ASSERT_EQ(10, d3->index_(NewStr("a")));
+  ASSERT_EQ(11, d3->index_(NewStr("b")));
+  ASSERT_EQ(12, d3->index_(NewStr("c")));
   ASSERT_EQ(3, len(d3));
 
   auto keys3 = sorted(d3);
   ASSERT_EQ(3, len(keys3));
-  ASSERT(str_equals0("a", keys3->index(0)));
-  ASSERT(str_equals0("b", keys3->index(1)));
-  ASSERT(str_equals0("c", keys3->index(2)));
+  ASSERT(str_equals0("a", keys3->index_(0)));
+  ASSERT(str_equals0("b", keys3->index_(1)));
+  ASSERT(str_equals0("c", keys3->index_(2)));
 
   auto keys4 = d3->keys();
   ASSERT(list_contains(keys4, a));
@@ -761,7 +761,7 @@ TEST dict_iters_test() {
 
   keys = d2->keys();
   for (int i = 0; i < len(keys); ++i) {
-    printf("k %s\n", keys->index(i)->data_);
+    printf("k %s\n", keys->index_(i)->data_);
   }
 
   log("  iterating over Dict");
