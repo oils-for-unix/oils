@@ -105,12 +105,7 @@ inline void write(int fd, Str* value) {
 }
 
 // Can we use fcntl instead?
-inline void dup2(int oldfd, int newfd) {
-  if (::dup2(oldfd, newfd) < 0) {
-    // TODO: handle errno
-    assert(0);
-  }
-}
+void dup2(int oldfd, int newfd);
 
 int open(Str* path, int flags, int perms);
 

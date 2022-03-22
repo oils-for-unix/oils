@@ -168,9 +168,9 @@ TEST libc_test() {
   List<Str*>* results =
       libc::regex_match(new Str("(a+).(a+)"), new Str("-abaacaaa"));
   ASSERT_EQ_FMT(3, len(results), "%d");
-  ASSERT(str_equals(new Str("abaa"), results->index(0)));  // whole match
-  ASSERT(str_equals(new Str("a"), results->index(1)));
-  ASSERT(str_equals(new Str("aa"), results->index(2)));
+  ASSERT(str_equals(new Str("abaa"), results->index_(0)));  // whole match
+  ASSERT(str_equals(new Str("a"), results->index_(1)));
+  ASSERT(str_equals(new Str("aa"), results->index_(2)));
 
   results = libc::regex_match(new Str("z+"), new Str("abaacaaa"));
   ASSERT_EQ(nullptr, results);
@@ -192,7 +192,7 @@ TEST libc_test() {
   // This depends on the file system
   auto files = libc::glob(new Str("*.md"));
   ASSERT_EQ_FMT(1, len(files), "%d");
-  print(files->index(0));  // should get README.md only
+  print(files->index_(0));  // should get README.md only
 
   auto files2 = libc::glob(new Str("*.pyzzz"));
   ASSERT_EQ_FMT(0, len(files2), "%d");

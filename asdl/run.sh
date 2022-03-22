@@ -173,7 +173,7 @@ gen-cpp-test() {
 
   wc -l $prefix* $prefix2*
 
-  local bin=_tmp/gen_cpp_test
+  local bin=_bin/gen_cpp_test
 
   # BUG: This doesn't link without the translation of asdl/runtime.py.
 

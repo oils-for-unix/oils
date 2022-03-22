@@ -18,7 +18,7 @@ Str* ChArrayToString(List<int>* ch_array) {
   int n = len(ch_array);
   unsigned char* buf = static_cast<unsigned char*>(malloc(n + 1));
   for (int i = 0; i < n; ++i) {
-    buf[i] = ch_array->index(i);
+    buf[i] = ch_array->index_(i);
   }
   buf[n] = '\0';
   return new Str(reinterpret_cast<char*>(buf), n);

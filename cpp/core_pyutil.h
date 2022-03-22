@@ -3,8 +3,9 @@
 #ifndef CORE_PYUTIL_H
 #define CORE_PYUTIL_H
 
-#include "myerror.h"  // #undef errno
 #include "mylib.h"
+
+class _OSError;  // forward declaration (from myerror.h)
 
 namespace pyutil {
 
