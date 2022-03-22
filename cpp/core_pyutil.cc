@@ -44,4 +44,11 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
   assert(0);
 }
 
+// Avoid conflict with field
+#undef errno
+
+Str* strerror(_OSError* e) {
+  return new Str(::strerror(e->errno));
+}
+
 }  // namespace pyutil

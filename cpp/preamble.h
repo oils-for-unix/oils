@@ -1,6 +1,9 @@
 // preamble.h: declarations to run osh_eval.cc
 
-#include "myerror.h"  // do this before 'errno' macro is defined
+// clang-format off
+#include "myerror.h"     // do this before 'errno' macro is defined
+// clang-format on
+
 #include <sys/wait.h>    // WIFSIGNALED, etc. called DIRECTLY
 #include "dumb_alloc.h"  // change the allocator
 // TODO: Need #if GC

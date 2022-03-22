@@ -3,9 +3,8 @@
 #ifndef CORE_PYUTIL_H
 #define CORE_PYUTIL_H
 
+#include "myerror.h"  // for _OSError; must come first
 #include "mylib.h"
-
-class _OSError;  // forward declaration (from myerror.h)
 
 namespace pyutil {
 
@@ -25,9 +24,7 @@ Str* GetVersion(_ResourceLoader* loader);
 
 Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader);
 
-inline Str* strerror(_OSError* e) {
-  assert(0);
-}
+Str* strerror(_OSError* e);
 
 inline Str* BackslashEscape(Str* s, Str* meta_chars) {
   int upper_bound = s->len_ * 2;
