@@ -1,3 +1,7 @@
+// clang-format off
+#include "core_pyutil.h"  // for BackslashEscape; must come first because of 'errno' issue
+// clang-format on
+
 #include <errno.h>
 #include <fcntl.h>  // O_RDWR
 
@@ -6,7 +10,6 @@
 #include "core_error.h"
 #include "core_pyerror.h"
 #include "core_pyos.h"    // Chdir
-#include "core_pyutil.h"  // BackslashEscape
 #include "frontend_flag_spec.h"
 #include "frontend_match.h"
 #include "id.h"
