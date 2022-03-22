@@ -15,7 +15,11 @@ class _OSError {
   int errno;
 };
 
-class IOError : public _OSError {};
+class IOError : public _OSError {
+ public:
+  IOError(int err_num) : _OSError(err_num) {
+  }
+};
 
 class OSError : public _OSError {
  public:

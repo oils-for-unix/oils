@@ -11,6 +11,7 @@ from __future__ import print_function
 
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
+from fcntl import F_DUPFD, F_GETFD, FD_CLOEXEC
 import signal as signal_
 from sys import exit  # mycpp translation directly calls exit(int status)!
 
@@ -77,7 +78,7 @@ STYLE_PID_ONLY = 2
 
 def SaveFd(fd):
   # type: (int) -> int
-  saved = fcntl_.fcntl(fd, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
+  saved = fcntl_.fcntl(fd, F_DUPFD, _SHELL_MIN_FD)  # type: int
   return saved
 
 
@@ -163,7 +164,7 @@ class FdState(object):
     posix.close(fd)
 
     # Return a Python file handle
-    f = posix.fdopen(new_fd, c_mode)  # may raise IOError.
+    f = posix.fdopen(new_fd, c_mode)  # may raise IOError
     return f
 
   def _WriteFdToMem(self, fd_name, fd):
@@ -200,7 +201,7 @@ class FdState(object):
         raise
     else:
       posix.close(fd)
-      fcntl_.fcntl(new_fd, fcntl_.F_SETFD, fcntl_.FD_CLOEXEC)
+      fcntl_.fcntl(new_fd, fcntl_.F_SETFD, FD_CLOEXEC)
 
     #pyutil.ShowFdState()
     if need_restore:
@@ -208,7 +209,6 @@ class FdState(object):
     else:
       # if we got EBADF, we still need to close the original on Pop()
       self._PushClose(fd)
-      #pass
 
     return need_restore
 
@@ -223,7 +223,7 @@ class FdState(object):
       fd2_name = cast(redir_loc__VarName, UP_loc).name
       try:
         # F_DUPFD: GREATER than range
-        new_fd = fcntl_.fcntl(fd1, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
+        new_fd = fcntl_.fcntl(fd1, F_DUPFD, _SHELL_MIN_FD)  # type: int
       except IOError as e:
         if e.errno == EBADF:
           self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
@@ -243,7 +243,7 @@ class FdState(object):
 
       # Check the validity of fd1 before _PushSave(fd2)
       try:
-        fcntl_.fcntl(fd1, fcntl_.F_GETFD)
+        fcntl_.fcntl(fd1, F_GETFD)
       except IOError as e:
         self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
         raise

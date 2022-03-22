@@ -9,7 +9,7 @@
 
 #include "core_error.h"
 #include "core_pyerror.h"
-#include "core_pyos.h"    // Chdir
+#include "core_pyos.h"  // Chdir
 #include "frontend_flag_spec.h"
 #include "frontend_match.h"
 #include "id.h"
