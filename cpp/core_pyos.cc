@@ -5,7 +5,7 @@
 #include <pwd.h>
 #include <signal.h>
 #include <sys/wait.h>  // waitpid()
-#include <unistd.h>  // getuid(), environ
+#include <unistd.h>    // getuid(), environ
 
 static Str* CopyStr(const char* s) {
   int n = strlen(s);
@@ -27,7 +27,16 @@ Tuple2<int, int> WaitPid() {
 }
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
-  assert(0);
+  char* buf = static_cast<char*>(malloc(n));
+  int length = ::read(fd, &buf, n);
+  if (length < 0) {
+    return Tuple2<int, int>(-1, errno);
+  } else {
+    Str* s = new Str(buf, length);
+    free(buf);
+    chunks->append(s);
+    return Tuple2<int, int>(length, 0);
+  }
 }
 
 Tuple2<int, int> ReadByte(int fd) {

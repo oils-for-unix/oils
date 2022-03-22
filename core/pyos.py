@@ -56,14 +56,14 @@ class ReadError(Exception):
     self.err_num = err_num
 
 
-def Read(fd, n, buf):
+def Read(fd, n, chunks):
   # type: (int, int, List[str]) -> Tuple[int, int]
   """
   C-style wrapper around Python's posix.read() that uses return values instead
   of exceptions for errors.  We will implement this directly in C++ and not use
   exceptions at all.
 
-  It reads n bytes from the given file descriptor and appends it to buf.
+  It reads n bytes from the given file descriptor and appends it to chunks.
 
   Returns:
     (-1, errno) on failure
@@ -74,7 +74,7 @@ def Read(fd, n, buf):
   except OSError as e:
     return -1, e.errno
   else:
-    buf.append(chunk)
+    chunks.append(chunk)
     return len(chunk), 0
 
 

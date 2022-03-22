@@ -218,7 +218,28 @@ class Str : public gc_heap::Obj {
 
   // Used for CommandSub in osh/cmd_exec.py
   Str* rstrip(Str* chars) {
-    assert(0);
+    assert(chars->len_ == 1);
+    char c = chars->data_[0];
+
+    int last = len_ - 1;
+    int i = last;
+    bool done = false;
+    while (i > 0 && !done) {
+      if (data_[i] == c) {
+        i--;
+      } else {
+        done = true;
+        break;
+      }
+    }
+    if (i == last) {  // nothing stripped
+      return this;
+    }
+    int new_len = i + 1;
+    char* buf = static_cast<char*>(malloc(new_len + 1));
+    memcpy(buf, data_, new_len);
+    buf[new_len] = '\0';
+    return new Str(buf, new_len);
   }
 
   Str* rstrip() {
