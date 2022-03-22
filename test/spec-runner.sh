@@ -34,10 +34,9 @@ _spec-names() {
     name = array[1]
     print name
   }
-  '
-  # only gawk does this kind of extraction
+  ' | sort  # sort AFTER gawk extracts names
 
-  # Oil:
+  # Gawk-like extraction in Oil:
   #
   # for t in spec/*.test.sh {
   #   if (t ~ / 'spec/' <dot* : name> '.test.sh' /) {

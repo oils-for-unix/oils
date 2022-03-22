@@ -180,12 +180,12 @@ console-summary() {
 
 summary-csv-row() {
   ### Print one row or the last total row
-
   if test $# -eq 1; then
-    local tsv_path=$1
-    local spec_name=$(basename "$tsv_path" .tsv)
+    local spec_name=$1
+    local -a tsv_files=(_tmp/spec/cpp/$spec_name.tsv)
   else
     local spec_name='TOTAL'
+    local -a tsv_files=( "$@" )
   fi
 
   awk -v spec_name=$spec_name '
@@ -231,23 +231,21 @@ END {
          num_cpp,
          num_py - num_cpp)
 }
-  ' "$@"
+' "${tsv_files[@]}"
 }
 
 summary-csv() {
   # Can't go at the top level because files might not exist!
-  readonly TSV=(_tmp/spec/cpp/*.tsv)
-
   cat <<EOF
 ROW_CSS_CLASS,name,name_HREF,osh,osh_eval.py,delta_py,osh_eval.cpp,delta_cpp
 EOF
 
   # total row rows goes at the TOP, so it's in <thead> and not sorted.
-  summary-csv-row "${TSV[@]}"
+  summary-csv-row _tmp/spec/cpp/*.tsv
 
-  for file in "${TSV[@]}"; do
-    summary-csv-row $file
-  done
+  while read spec_name; do
+    summary-csv-row $spec_name
+  done < _tmp/spec/SUITE-osh.txt
 }
 
 html-summary-header() {
@@ -269,7 +267,9 @@ html-summary-header() {
 
 <h1>Passing Spec Tests</h1>
 
-<p>These numbers measure the progress of Oil's C++ translation.</p>
+<p>These numbers measure the progress of Oil's C++ translation.
+Compare with <a href="osh.html">osh.html</a>.
+</p>
 
 EOF
 }
