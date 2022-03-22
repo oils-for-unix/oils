@@ -394,13 +394,17 @@ hi
 
 
 #### exit codes for traps are isolated
-trap 'echo USR1; ( exit 42)' USR1
-echo status=$?
-kill -USR1 $$
-echo status=$?
+trap 'echo USR1 trap status=$?; ( exit 42 )' USR1
+
+echo before=$?
+
+# Equivalent to 'kill -USR1 $$' except OSH doesn't have "kill" yet.
+# /bin/kill doesn't exist on Debian unless 'procps' is installed.
+sh -c "kill -USR1 $$"
+echo after=$?
 
 ## STDOUT:
-status=0
-USR1
-status=0
+before=0
+USR1 trap status=0
+after=0
 ## END
