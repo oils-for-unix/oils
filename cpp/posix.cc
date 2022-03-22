@@ -1,6 +1,7 @@
 // posix.cc: Replacement for native/posixmodule.c
 
 #include "posix.h"
+#include "myerror.h"  // OSError
 
 #include <fcntl.h>     // open
 #include <sys/wait.h>  // WUNTRACED

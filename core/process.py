@@ -42,7 +42,6 @@ from mycpp.mylib import tagswitch, iteritems, NewStr
 import posix_ as posix
 from posix_ import (
     # translated by mycpp and directly called!  No wrapper!
-    WUNTRACED,
     WIFSIGNALED, WIFEXITED, WIFSTOPPED,
     WEXITSTATUS, WTERMSIG,
     O_APPEND, O_CREAT, O_RDONLY, O_RDWR, O_WRONLY, O_TRUNC,
@@ -1247,7 +1246,7 @@ class JobState(object):
     if pid in self.jobs:
       del self.jobs[pid]
     else:
-      # I believe it is reasonable to ignore this. `waitpid` will return the
+      # I believe it is reasonable to ignore this. 'waitpid' will return the
       # status of any child process whose state changes. Some of these child
       # processes will neither have been stopped nor backgrounded, so they will
       # never have been added to the dict.
@@ -1437,19 +1436,13 @@ class Waiter(object):
     | Done(int pid, int status)  -- process done
     | EINTR(bool sigint)         -- may or may not retry
     """
-    # This is a list of async jobs
-    try:
-      # Notes:
-      # - The arg -1 makes it like wait(), which waits for any process.
-      # - WUNTRACED is necessary to get stopped jobs.  What about WCONTINUED?
-      # - We don't retry on EINTR, because the 'wait' builtin should be
-      #   interruptable.
-      pid, status = posix.waitpid(-1, WUNTRACED)
-    except OSError as e:
+    pid, status = pyos.WaitPid()
+    if pid < 0:  # error case
+      errno = status
       #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
-      if e.errno == ECHILD:
+      if errno == ECHILD:
         return W1_ECHILD  # nothing to wait for caller should stop
-      elif e.errno == EINTR:  # Bug #858 fix
+      elif errno == EINTR:  # Bug #858 fix
         #log('WaitForOne() => %d', self.sig_state.last_sig_num)
         return self.sig_state.last_sig_num  # e.g. 1 for SIGHUP
       else:

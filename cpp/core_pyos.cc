@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <pwd.h>
 #include <signal.h>
+#include <sys/wait.h>  // waitpid()
 #include <unistd.h>  // getuid(), environ
 
 static Str* CopyStr(const char* s) {
@@ -15,6 +16,15 @@ static Str* CopyStr(const char* s) {
 }
 
 namespace pyos {
+
+Tuple2<int, int> WaitPid() {
+  int status;
+  int result = ::waitpid(-1, &status, WUNTRACED);
+  if (result < 0) {
+    return Tuple2<int, int>(-1, errno);
+  }
+  return Tuple2<int, int>(result, status);
+}
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
   assert(0);

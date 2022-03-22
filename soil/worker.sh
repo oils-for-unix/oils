@@ -264,9 +264,9 @@ run-tasks() {
 
     local log_path=$out_dir/logs/$task_name.txt 
 
-    # 10 minutes per task
+    # 15 minutes per task
     # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
-    local timeout_secs=600
+    local timeout_secs=900
 
     set +o errexit
     time-tsv -o $tsv --append --time-fmt '%.2f' \

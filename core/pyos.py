@@ -17,6 +17,7 @@ from core import pyutil
 from core.pyerror import log
 
 import posix_ as posix
+from posix_ import WUNTRACED
 
 from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
 
@@ -29,6 +30,21 @@ _ = log
 
 EOF_SENTINEL = 256  # bigger than any byte
 NEWLINE_CH = 10  # ord('\n')
+
+
+def WaitPid():
+  # type: () -> Tuple[int, int]
+  try:
+    # Notes:
+    # - The arg -1 makes it like wait(), which waits for any process.
+    # - WUNTRACED is necessary to get stopped jobs.  What about WCONTINUED?
+    # - We don't retry on EINTR, because the 'wait' builtin should be
+    #   interruptable.
+    pid, status = posix.waitpid(-1, WUNTRACED)
+  except OSError as e:
+    return -1, e.errno
+
+  return pid, status
 
 
 class ReadError(Exception):
