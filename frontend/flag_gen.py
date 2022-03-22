@@ -207,32 +207,32 @@ class %s {
 
       with switch(typ) as case:
         if case(flag_type_e.Bool):
-          init_vals.append('static_cast<value__Bool*>(attrs->index(new Str("%s")))->b' % field_name)
+          init_vals.append('static_cast<value__Bool*>(attrs->index_(new Str("%s")))->b' % field_name)
           field_decls.append('bool %s;' % field_name)
 
         elif case(flag_type_e.Str):
           # TODO: This code is ugly and inefficient!  Generate something
           # better.  At least get rid of 'new' everywhere?
           init_vals.append('''\
-attrs->index(new Str("%s"))->tag_() == value_e::Undef
+attrs->index_(new Str("%s"))->tag_() == value_e::Undef
       ? nullptr
-      : static_cast<value__Str*>(attrs->index(new Str("%s")))->s''' % (
+      : static_cast<value__Str*>(attrs->index_(new Str("%s")))->s''' % (
               field_name, field_name))
 
           field_decls.append('Str* %s;' % field_name)
 
         elif case(flag_type_e.Int):
           init_vals.append('''\
-attrs->index(new Str("%s"))->tag_() == value_e::Undef
+attrs->index_(new Str("%s"))->tag_() == value_e::Undef
       ? -1
-      : static_cast<value__Int*>(attrs->index(new Str("%s")))->i''' % (field_name, field_name))
+      : static_cast<value__Int*>(attrs->index_(new Str("%s")))->i''' % (field_name, field_name))
           field_decls.append('int %s;' % field_name)
 
         elif case(flag_type_e.Float):
           init_vals.append('''\
-attrs->index(new Str("%s"))->tag_() == value_e::Undef
+attrs->index_(new Str("%s"))->tag_() == value_e::Undef
       ? -1
-      : static_cast<value__Float*>(attrs->index(new Str("%s")))->f''' % (field_name, field_name))
+      : static_cast<value__Float*>(attrs->index_(new Str("%s")))->f''' % (field_name, field_name))
           field_decls.append('float %s;' % field_name)
 
         else:

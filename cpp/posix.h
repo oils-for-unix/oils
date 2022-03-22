@@ -134,7 +134,7 @@ inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   // Annoying const_cast
   // https://stackoverflow.com/questions/190184/execv-and-const-ness
   for (int i = 0; i < n; ++i) {
-    _argv[i] = const_cast<char*>(argv->index(i)->data_);
+    _argv[i] = const_cast<char*>(argv->index_(i)->data_);
   }
   _argv[n] = nullptr;
 

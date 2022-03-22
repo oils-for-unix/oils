@@ -1082,7 +1082,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(o.index)  # method call
         else:
           # it's hard syntactically to do (*a)[0], so do it this way.
-          self.write('->index(')
+          self.write('->index_(')
           self.accept(o.index)
           self.write(')')
 

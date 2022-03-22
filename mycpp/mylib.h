@@ -118,7 +118,7 @@ class Str : public gc_heap::Obj {
   }
 
   // Get a string with one character
-  Str* index(int i) {
+  Str* index_(int i) {
     if (i < 0) {
       i = len_ + i;
     }
@@ -406,13 +406,26 @@ class List : public gc_heap::Obj {
     v_[index] = value;
   }
 
-  T index(int i) const {
+  // L[i]
+  T index_(int i) const {
     if (i < 0) {
       // User code doesn't result in mylist[-1], but Oil's own code does
       int j = v_.size() + i;
       return v_.at(j);
     }
     return v_.at(i);  // checked version
+  }
+
+  // L.index(i) -- Python method
+  int index(T value) const {
+    int len = v_.size();
+    for (int i = 0; i < len; i++) {
+      // TODO: this doesn't work for strings!
+      if (v_[i] == value) {
+        return i;
+      }
+    }
+    throw new ValueError();
   }
 
   // L[begin:]
@@ -696,10 +709,10 @@ class Dict : public gc_heap::Obj {
   }
 
   // d[key] in Python: raises KeyError if not found
-  V index(K key) {
+  V index_(K key) {
     int pos = find(key);
     if (pos == -1) {
-      assert(0);
+      throw new KeyError();
     } else {
       return items_[pos].second;
     }
@@ -976,7 +989,7 @@ inline bool str_contains(Str* haystack, Str* needle) {
 inline bool list_contains(List<Str*>* haystack, Str* needle) {
   int n = haystack->v_.size();
   for (int i = 0; i < n; ++i) {
-    if (str_equals(haystack->index(i), needle)) {
+    if (str_equals(haystack->index_(i), needle)) {
       return true;
     }
   }
@@ -994,7 +1007,7 @@ template <typename T>
 List<T>* list(List<T>* other) {
   auto result = new List<T>();
   for (int i = 0; i < len(other); ++i) {
-    result->set(i, other->index(i));
+    result->set(i, other->index_(i));
   }
   return result;
 }
@@ -1005,7 +1018,7 @@ template <typename T>
 inline bool list_contains(List<T>* haystack, T needle) {
   int n = haystack->v_.size();
   for (int i = 0; i < n; ++i) {
-    if (haystack->index(i) == needle) {
+    if (haystack->index_(i) == needle) {
       return true;
     }
   }
