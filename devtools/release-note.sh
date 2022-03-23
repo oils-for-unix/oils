@@ -72,28 +72,11 @@ print-template() {
 ---
 title: Release of Oil $OIL_VERSION
 date: $(date +%Y/%m/%d)
-css_file: blog-bundle-v4.css
+css_file: blog-bundle-v5.css
 tags: oil-release
 comments_url: TODO
 published: no
 ---
-
-<!-- copied from web/changelog.css -->
-<style>
-.checksum {
-  font-family: monospace;
-}
-.issue-num {
-  font-family: monospace;
-  width: 3em;
-}
-.issue-title {
-  font-family: sans-serif;
-}
-.subject {
-  font-family: sans-serif;
-}
-</style>
 
 This is the latest version of Oil, a Unix shell that's our upgrade path from
 [bash][]:
