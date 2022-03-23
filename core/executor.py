@@ -355,7 +355,7 @@ class ShellExecutor(vm._Executor):
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
 
-    _ = p.Start(trace.CommandSub())
+    p.Start(trace.CommandSub())
     #log('Command sub started %d', pid)
 
     chunks = []  # type: List[str]

@@ -28,15 +28,20 @@ Tuple2<int, int> WaitPid() {
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
   char* buf = static_cast<char*>(malloc(n));
-  int length = ::read(fd, &buf, n);
+  int length = ::read(fd, buf, n);
   if (length < 0) {
-    return Tuple2<int, int>(-1, errno);
-  } else {
-    Str* s = new Str(buf, length);
     free(buf);
-    chunks->append(s);
+    return Tuple2<int, int>(-1, errno);
+  }
+  if (length == 0) {
+    free(buf);
     return Tuple2<int, int>(length, 0);
   }
+  Str* s = new Str(buf, length);
+  // MYLIB_LEGACY: the buffer is now owned by the Str instance
+  // free(buf);
+  chunks->append(s);
+  return Tuple2<int, int>(length, 0);
 }
 
 Tuple2<int, int> ReadByte(int fd) {

@@ -402,7 +402,7 @@ class FdState(object):
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
-          _ = here_proc.Start(trace.HereDoc())
+          here_proc.Start(trace.HereDoc())
           #log('Started %s as %d', here_proc, pid)
           self._PushWait(here_proc)
 

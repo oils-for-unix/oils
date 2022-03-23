@@ -355,8 +355,25 @@ TEST bool_stat_test() {
 }
 
 TEST pyos_test() {
+  // This test isn't hermetic but it should work in most places, including in a
+  // container
+  int err_num = pyos::Chdir(new Str("/"));
+  ASSERT(err_num == 0);
+
+  err_num = pyos::Chdir(new Str("/nonexistent__"));
+  ASSERT(err_num != 0);
+
+  Dict<Str*, Str*>* env = pyos::Environ();
+  Str* p = env->get(new Str("PATH"));
+  ASSERT(p != nullptr);
+  log("PATH = %s", p->data_);
+
+  PASS();
+}
+
+TEST pyos_readbyte_test() {
   // Write 2 bytes to this file
-  char* tmp_name = "_tmp/pyos_unit_test";
+  char* tmp_name = "_tmp/pyos_ReadByte";
   int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
     printf("1. ERROR %s", strerror(errno));
@@ -365,7 +382,6 @@ TEST pyos_test() {
   write(fd, "SH", 2);
   close(fd);
 
-  // open needs an absolute path for some reason?  _tmp/pyos doesn't work
   fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
     printf("2. ERROR %s", strerror(errno));
@@ -385,19 +401,37 @@ TEST pyos_test() {
 
   close(fd);
 
-  // This test isn't hermetic but it should work in most places, including in a
-  // container
+  PASS();
+}
 
-  int err_num = pyos::Chdir(new Str("/"));
-  ASSERT(err_num == 0);
+TEST pyos_read_test() {
+  char* tmp_name = "_tmp/pyos_Read";
+  int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
+  if (fd < 0) {
+    printf("1. ERROR %s", strerror(errno));
+  }
+  ASSERT(fd > 0);
+  write(fd, "SH", 2);
+  close(fd);
 
-  err_num = pyos::Chdir(new Str("/nonexistent__"));
-  ASSERT(err_num != 0);
+  // open needs an absolute path for some reason?  _tmp/pyos doesn't work
+  fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
+  if (fd < 0) {
+    printf("2. ERROR %s", strerror(errno));
+  }
 
-  Dict<Str*, Str*>* env = pyos::Environ();
-  Str* p = env->get(new Str("PATH"));
-  ASSERT(p != nullptr);
-  log("PATH = %s", p->data_);
+  List<Str*>* chunks = new List<Str*>();
+  Tuple2<int, int> tup = pyos::Read(fd, 4096, chunks);
+  ASSERT_EQ_FMT(2, tup.at0(), "%d");  // error code
+  ASSERT_EQ_FMT(0, tup.at1(), "%d");
+  ASSERT_EQ_FMT(1, len(chunks), "%d");
+
+  tup = pyos::Read(fd, 4096, chunks);
+  ASSERT_EQ_FMT(0, tup.at0(), "%d");  // error code
+  ASSERT_EQ_FMT(0, tup.at1(), "%d");
+  ASSERT_EQ_FMT(1, len(chunks), "%d");
+
+  close(fd);
 
   PASS();
 }
@@ -440,8 +474,13 @@ int main(int argc, char** argv) {
   RUN_TEST(exceptions);
   RUN_TEST(flag_spec_test);
   RUN_TEST(bool_stat_test);
-  RUN_TEST(pyos_test);
+  RUN_TEST(pyos_readbyte_test);
+  RUN_TEST(pyos_read_test);
   RUN_TEST(os_path_test);
+
+  // Must come last because it does chdir()
+  RUN_TEST(pyos_test);
+
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }

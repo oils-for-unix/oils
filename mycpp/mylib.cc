@@ -398,10 +398,14 @@ void BufWriter::format_r(Str* s) {
 void CFileWriter::write(Str* s) {
   // note: throwing away the return value
   fwrite(s->data_, s->len_, 1, f_);
+
+  // Note: we should consider using write() directly to avoid buffering
+  // problems?
+  // fflush(f_);
 }
 
 void CFileWriter::flush() {
-  ::fflush(f_);
+  fflush(f_);
 }
 
 bool CFileWriter::isatty() {

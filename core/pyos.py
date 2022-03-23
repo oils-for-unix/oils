@@ -74,8 +74,10 @@ def Read(fd, n, chunks):
   except OSError as e:
     return -1, e.errno
   else:
-    chunks.append(chunk)
-    return len(chunk), 0
+    length = len(chunk)
+    if length:
+      chunks.append(chunk)
+    return length, 0
 
 
 def ReadByte(fd):
