@@ -100,8 +100,8 @@ inline void _exit(int status) {
   exit(status);
 }
 
-inline void write(int fd, Str* value) {
-  assert(0);
+inline void write(int fd, Str* s) {
+  ::write(fd, s->data_, s->len_);
 }
 
 // Can we use fcntl instead?
