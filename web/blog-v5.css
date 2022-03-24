@@ -50,7 +50,8 @@ p code, div code, li code, h2 code, h3 code {
 blockquote {
   font-family: sans-serif;
   font-size: medium;  /* seems to look better */
-  color: darkblue;
+  font-style: italic;
+  color: black;
 
   margin: 0;
   border-left: 10px solid #ccc;
