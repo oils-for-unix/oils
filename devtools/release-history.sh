@@ -7,6 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # R_PATH
+
 readonly ROOT=../oilshell.org__deploy
 readonly BASE_DIR=_tmp/release-history
 
@@ -38,7 +40,7 @@ extract-totals() {
   IFS=$'\t' read -a header
   #argv "${header[@]}"
 
-  print-row release_date version survey_total cpp_total
+  print-row release_date version osh_py_passing osh_cc_passing
 
   local i=0
   while IFS=$'\t' read -a row; do
@@ -68,13 +70,13 @@ extract-totals() {
     unzip -q -o $spec_wwz $cpp_summary_path
     popd > /dev/null
 
-    local survey_total
-    survey_total=$(survey-total $d/$survey_path)  # strip trailing newline
+    local osh_py_passing
+    osh_py_passing=$(osh-py-passing $d/$survey_path)  # strip trailing newline
 
-    local cpp_total
-    cpp_total=$(cpp-summary-total $d/$cpp_summary_path)
+    local osh_cpp_passing
+    osh_cpp_passing=$(osh-cc-passing $d/$cpp_summary_path)
 
-    print-row "$release_date" $version $survey_total $cpp_total
+    print-row "$release_date" $version $osh_py_passing $osh_cpp_passing
 
     #argv "${row[@]}"
 
@@ -90,7 +92,7 @@ normalize() {
   hxnormalize -x $path > $path.xml || true
 }
 
-survey-total() {
+osh-py-passing() {
   ### Given a file, print the Python total to stdout
 
   local path=$1
@@ -99,7 +101,7 @@ survey-total() {
   hxselect -s $'\n' -c '.totals:nth-child(1) td:nth-child(3)' < $path.xml | head -n 1
 }
 
-cpp-summary-total() {
+osh-cc-passing() {
   ### Given a file, print the C++ total to stdout
 
   local path=$1
@@ -117,13 +119,19 @@ spec-tsv() {
 
   < $BASE_DIR/wwz.tsv extract-totals $BASE_DIR | tee $BASE_DIR/spec.tsv
 
-  wc -l $BASE_DIR/spec.tsv
   echo
-  cat $BASE_DIR/spec.tsv | pretty-tsv
-
-  #find $BASE_DIR
+  wc -l $BASE_DIR/*.tsv
 }
 
+show-tsv() {
+  cat $BASE_DIR/wwz.tsv | pretty-tsv
+  echo
+  cat $BASE_DIR/spec.tsv | pretty-tsv
+}
+
+report() {
+  R_LIBS_USER=$R_PATH devtools/release-history.R $BASE_DIR/spec.tsv $BASE_DIR
+}
 
 deps-apt() { 
   # https://superuser.com/questions/528709/command-line-css-selector-tool
@@ -131,7 +139,7 @@ deps-apt() {
 }
 
 # MEH these tools have bad error messages.
-demo() {
+test-parsing() {
   unzip -l $ROOT/release/0.9.8/test/spec.wwz || echo status=$?
 
   # Annoying syntax for this command
@@ -143,9 +151,9 @@ demo() {
   # hxnormalize makes it XML.
   # NOTE: syntax error on "<tr class=>", but it correctly ignores it
   echo 'PYTHON'
-  survey-total _tmp/osh.html 
+  osh-py-passing _tmp/osh.html 
 
-  cpp-summary-total _tmp/osh-summary.html 
+  osh-cc-passing _tmp/osh-summary.html 
   echo 'CPP'
 
 
