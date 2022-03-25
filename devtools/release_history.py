@@ -18,7 +18,6 @@ def main(argv):
 
   print('\t'.join(HEADER))
 
-
   for release_dir in sys.stdin:
     release_dir = release_dir.strip()
 
@@ -26,12 +25,7 @@ def main(argv):
     m = VERSION_RE.search(release_dir)
     assert m is not None
 
-    # For now, just do 0.8 and 0.9
     version = m.group(0)
-    v2 = m.group(1)
-    v3 = m.group(2)
-    if v2 not in ('8', '9'):
-      continue
 
     p = os.path.join(release_dir, 'release-date.txt')
     with open(p) as f:
@@ -48,11 +42,30 @@ def main(argv):
     with open(spec_wwz) as f:
       z = zipfile.ZipFile(f)
 
-      survey_path = 'survey/osh.html'
+      survey_path = '-'
+
+      p1 = 'survey/osh.html'
       try:
-        z.getinfo(survey_path)
+        z.getinfo(p1)
+        survey_path = p1
       except KeyError:
-        survey_path = '-'
+        pass
+
+      if survey_path == '-':
+        p2 = 'osh.html'
+        try:
+          z.getinfo(p2)
+          survey_path = p2
+        except KeyError:
+          pass
+
+      if survey_path == '-':
+        p3 = 'index.html'
+        try:
+          z.getinfo(p3)
+          survey_path = p3
+        except KeyError:
+          pass
 
       cpp_summary_path = 'cpp/osh-summary.html'
       try:

@@ -13,16 +13,54 @@ Log = function(fmt, ...) {
   cat('\n')
 }
 
-LoadAll = function(input, ctx) {
-  d = read.delim(input)
-  d$date = as.POSIXct(d$release_date)
+LoadAll = function(in_dir, ctx) {
+  wwz = read.delim(file.path(in_dir, 'wwz.tsv'))
+  Log('wwz rows: %d', nrow(wwz))
 
-  ctx$spec = d
+  n1 = nrow(wwz %>% filter(spec_wwz != '-'))
+  Log('Number of spec.wwz: %d', n1)
 
-  print(ctx$spec)
+  n2 = nrow(wwz %>% filter(survey_path != '-'))
+  Log('Number of survey_path: %d', n2)
+
+  n3 = nrow(wwz %>% filter(cpp_summary_path != '-'))
+  Log('Number of cpp_summary_path: %d', n3)
+
+  print(summary(wwz))
+
+  ctx$wwz = wwz
+
+  Log('----')
+
+
+  spec = read.delim(file.path(in_dir, 'spec.tsv'))
+  spec$date = as.POSIXct(spec$release_date)
+
+  Log('spec rows: %d', nrow(spec))
+
+  n1 = nrow(spec %>% filter(!is.na(osh_py_passing)))
+  Log('Number of osh_py_passing: %d', n1)
+
+  n2 = nrow(spec %>% filter(!is.na(osh_cc_passing)))
+  Log('Number of osh_cc_passing: %d', n2)
+
+  print(summary(spec))
+
+  # Version errata:
+  #
+  # - 0.7.pre4 -- oil-* spec tests were somehow counted here, seems a bit buggy
+  #   Delete it because it breaks the monotonicity of the graph
+  # - 0.9.1 had stale benchmarks, but spec tests seem OK
+
+  Log("Removing bad value in 0.7.pre4")
+  spec[spec$version == "0.7.pre4", 'osh_py_passing'] = NA
+
+  ctx$spec = spec
+
 }
 
 ProcessAll = function(ctx) {
+
   long = gather(ctx$spec, impl, num_passing, c('osh_py_passing', 'osh_cc_passing'))
 
   print(head(long))
@@ -30,7 +68,7 @@ ProcessAll = function(ctx) {
   g = ggplot(long, aes(date, num_passing, group = impl, color = impl)) + 
     xlab('release date') +
     ylab('number of passing spec tests') +
-    scale_color_hue(labels = c('C++', 'Python')) +
+    scale_color_hue(labels = c('Generated C++', 'Python source')) +
     ggtitle('Progress on the Middle-Out Implementation of OSH') +
     geom_line() +
     geom_point()
@@ -50,14 +88,14 @@ WriteAll = function(ctx, out_dir) {
 }
 
 main = function(argv) {
-  input = argv[[1]]
-  output = argv[[2]]
+  in_dir = argv[[1]]
+  out_dir = argv[[2]]
 
   ctx = new.env()
 
-  LoadAll(input, ctx)
+  LoadAll(in_dir, ctx)
   ProcessAll(ctx)
-  WriteAll(ctx, output)
+  WriteAll(ctx, out_dir)
 
   Log('PID %d done', Sys.getpid())
 }
