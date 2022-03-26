@@ -91,4 +91,9 @@ command-sub() {
   _compare 'echo $(echo hi)'
 }
 
+redirect() {
+  _compare 'echo hi > _tmp/redir'
+}
+
+
 "$@"

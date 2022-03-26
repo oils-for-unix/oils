@@ -399,9 +399,12 @@ void CFileWriter::write(Str* s) {
   // note: throwing away the return value
   fwrite(s->data_, s->len_, 1, f_);
 
-  // Note: we should consider using write() directly to avoid buffering
-  // problems?
-  // fflush(f_);
+  // Necessary for 'echo hi > x' to work.  Otherwise it gets buffered so the
+  // write() happens AFTER ~ctx_Redirect().
+  //
+  // TODO: use write() directly to avoid buffering problems?  But we also want
+  // fast command sub like ${.echo x}
+  fflush(f_);
 }
 
 void CFileWriter::flush() {

@@ -52,8 +52,9 @@ ovm-dbg() {
 # NOTE: This wasn't that useful because it doesn't give line numbers?
 
 replay() {
-  # Just strace from this module.
-  uftrace replay -F FindModule
+  #uftrace replay -F vm::ctx_Redirect::ctx_Redirect
+
+  uftrace replay -F cmd_eval::CommandEvaluator::_Execute
 }
 
 # creates uftrace.data dir
@@ -62,9 +63,11 @@ osh-eval() {
   #local cmd=(_bin/osh_eval.uftrace -n $path)
   #local cmd=(_bin/osh_eval.uftrace -c 'echo hi')
 
-  local cmd=(_bin/osh_eval.uftrace _tmp/a)
+  #local cmd=(_bin/osh_eval.uftrace _tmp/a)
+  local cmd=(_bin/osh_eval.uftrace -c 'echo hi > _tmp/redir')
 
-  local flags=(-F process::Process::RunWait -F process::Process::Process)
+  #local flags=(-F process::Process::RunWait -F process::Process::Process)
+  local flags=()
 
   uftrace record "${flags[@]}" "${cmd[@]}" || true
 
