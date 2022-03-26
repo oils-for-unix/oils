@@ -164,6 +164,10 @@ report() {
   R_LIBS_USER=$R_PATH devtools/release-history.R $BASE_DIR $BASE_DIR
 }
 
+copy() {
+  cp -v $BASE_DIR/spec-test-history.png ../oilshell.org__deploy/blog/2022/03
+}
+
 deps-apt() { 
   # https://superuser.com/questions/528709/command-line-css-selector-tool
   sudo apt-get install html-xml-utils
