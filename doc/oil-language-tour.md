@@ -481,7 +481,7 @@ If statements test the exit code of a command, and have optional `elif` and
       echo 'neither'
     }
 
-Invert with the exit with `!`:
+Invert the exit code with `!`:
 
     if ! grep alice /etc/passwd { 
       echo 'alice is not a user'

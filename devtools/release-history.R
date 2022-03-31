@@ -109,7 +109,7 @@ ProcessAll = function(ctx) {
     ylim(0, NA) +
     theme(legend.position = 'bottom') +
     # lower luminance to make it darker
-    scale_color_hue(labels = c('Generated C++', 'Python source'), l = 40) +
+    scale_color_hue(labels = c('Fast Generated C++', 'Python Source (executable spec)'), l = 40) +
     ggtitle('Progress on the Middle-Out Implementation of https://oilshell.org',
             subtitle = "Weissman score: 99") +
     geom_line() +
