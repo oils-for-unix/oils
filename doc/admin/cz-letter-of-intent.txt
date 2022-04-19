@@ -1,0 +1,155 @@
+2022-04-19
+
+
+c. Proposal Summary/Scope of Work
+Provide a short summary of the work being proposed (maximum of 500 words)
+
+The Unix shell is a central user interface and glue language in all kinds of
+scientific computing, particularly in bioinformatics.
+
+Oil is a new open source Unix shell. It's meant to be our upgrade path from GNU
+bash, the most popular shell in the world. Home page: https://www.oilshell.org/
+
+It runs your existing scripts, and allows you to upgrade them to the new Oil
+language, which is designed to be familiar to Python and JavaScript users.
+
+In the last few years, we've released a correct but slow implementation dozens
+of times, and gotten regular feedback from users.
+
+Now we need a COMPILER ENGINEER to finish semi-automatically translating the
+code to fast C++. This plot is a quick way to see this:
+https://www.oilshell.org/blog/2022/03/spec-test-history.png
+
+Blog post with this plot: https://www.oilshell.org/blog/2022/03/middle-out.html
+
+Roughly speaking, we'll have a competitive replacement for / upgrade to bash
+when the red line meets the blue line!
+
+So the work is already more than half done, and I would consider it low risk /
+high reward. Addressing the speed issue will allow us to aggressively add new
+features and polish the documentation.
+
+Our FAQ has over 178K views, having been featured in many places like Hacker
+News: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
+
+-----
+
+I've drafted the job requirements here:
+https://github.com/oilshell/oil/wiki/Compiler-Engineer-Job
+
+I will use my professional network (having worked at Google and EA) to find the
+compiler engineer, who will be skilled in compilers, C++ and Python.
+
+Python creator Guido van Rossum knows about Oil:
+
+https://twitter.com/gvanrossum/status/995862193609551872
+
+"Amazing. A bash implementation in Python, by my ex-coworker (at Google) Andy
+Chu"
+
+A few years ago he introduced me to 2 compiler engineers working at Dropbox,
+who may be good candidates for the job. However they are highly employed and
+would need to be compensated.
+
+
+
+
+
+
+d. Value to Biomedical Users
+Described the expected value the proposed work to the biomedical research community (maximum of 250 words)
+
+If batch computation on Unix systems is a bottleneck in your lab's "scientific
+discovery loop", then a better Unix shell will make you more productive! You
+can run more experiments with less staff.
+
+Oil treats Unix shell like a real programming language, rather than a mystery
+handed off from one researcher to the next.
+
+Moreover, the software that underlies published experiments is heterogeneous: a
+mix of programs written in different languages, at different times, by
+different people.
+
+The Unix shell glues it all together and provides an interactive interface.
+It's also a powerful interface for using remote computers.
+
+But shell is showing its age and has been neglected by industry and academia.
+It has fundamental flaws like a lack of robust error handling, which lead to
+productivity loss, expensive training, and even erroneous scientific results.
+
+Oil fixes these problems, and adds much-needed features that will be familiar
+to Python, JavaScript, and R users.
+
+Four Features That Justify a New Unix Shell:
+http://www.oilshell.org/blog/2020/10/osh-features.html
+
+A Tour of the Oil Language:
+https://www.oilshell.org/release/latest/doc/oil-language-tour.html
+
+----
+
+Similar sentiments from a third party at https://datacarpentry.org/2015-11-04-ACUNS/shell-intro/
+
+- For most bioinformatics tools, you have to use the shell. There is no
+	graphical interface. If you want to work in metagenomics or genomics you're
+  going to need to use the shell.
+- The shell gives you power ... When you need to do things tens to hundreds of
+  times, knowing how to use the shell is transformative.
+- To use remote computers or cloud computing, you need to use the shell.
+
+
+
+f. Landscape Analysis
+
+Briefly describe the other software tools (either proprietary or open source)
+that the audience for this proposal primarily uses. How do the software
+project(s) in this proposal compare to these other tools in terms of user base
+size, usage, and maturity? How do existing tools and the project(s) in this
+proposal interact? (maximum of 250 words)
+
+
+I made a list of alternative shells:
+https://github.com/oilshell/oil/wiki/Alternative-Shells
+
+Oil is the ONLY shell that is compatible with bash.  This effort took years,
+and the work is largely DONE, and documented extensively on the blog.  It runs
+thousands of lines of unmodified bash scripts.
+
+Compatibility is important because users (including scientific users) don't
+have time to rewrite working shell scripts in a different language.  It's
+expensive, just as it's expensive to rewrite C code in another language.
+
+But it's easy to run existing code under a new shell, and desirable if it
+provides better error handling, debugging, and new features.
+
+------
+
+Scientific workflow languages like CWL, WDL, and Snakemake are increasingly
+popular [1].  However, they generally wrap Unix shell rather than replace it.
+So shell is complementary to these higher level tools.
+
+There are also many such languages, and each one may be especially suited for a
+particular HPC problem domain.
+
+In contrast, Unix shell is ubiquitous in all scientific computing domains, in
+both academia and industry.  For example, here are some organizations that are
+teaching shell (found through Google):
+
+https://curriculumfellows.hms.harvard.edu/classes/introduction-command-line-interface-shell-bash-unix-linux
+
+http://chemlabs.princeton.edu/researchcomputing/wp-content/uploads/sites/21/2018/09/hpc-getting-started-chem-workshop.pdf
+
+https://bioinformatics.uconn.edu/unix-basics/#
+
+https://www.melbournebioinformatics.org.au/tutorials/tutorials/unix/unix/
+
+http://williamslab.bscb.cornell.edu/?page_id=235
+
+Shell is also widely used in machine learning.  It has the same flavor of
+gluing together disparate data sets and tools that you find in the natural
+sciences.
+
+-----
+
+[1] "A review of bioinformatic pipeline frameworks" https://academic.oup.com/bib/article/18/3/530/2562749
+
