@@ -162,7 +162,8 @@ def _HasManyStatuses(node):
   UP_node = node
   with tagswitch(node) as case:
     # command subs in words are detected by allow_command_sub in ctx_ErrExit
-    if case(command_e.Simple, command_e.DBracket, command_e.DParen):
+    if case(command_e.Simple, command_e.ShAssignment, command_e.DBracket,
+        command_e.DParen):
       return False
 
     elif case(command_e.Pipeline):

@@ -291,9 +291,32 @@ strict_errexit_1() {
   _strict-errexit-case 'shopt -s oil:basic
                         proc p { echo p }
                         if p { echo hi }'
+
+  # issue #1107
+  _strict-errexit-case '
+myfunc() {
+  return 1
+}
+
+foo=$(true)
+
+# test assignment without proc
+while bar=$(false)
+do
+  echo yes
+done
+
+# issue 1007 was caused using command.ShAssignment, rather than the more common
+# command.Sentence with ;
+while spam=$(myfunc)
+do
+  echo yes
+done
+'
 }
 
 # OLD WAY OF BLAMING
+# Note: most of these don't fail
 strict_errexit_2() {
   # Test out all the location info
 

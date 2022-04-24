@@ -9,9 +9,10 @@ TODO: Move some of osh/word_ here.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    command_e, command_t, command__Simple, command__Pipeline, command__AndOr,
-    command__DoGroup, command__Sentence, command__Subshell,
-    command__WhileUntil, command__If, command__Case, command__TimeBlock,
+    command_e, command_t, command__Simple, command__ShAssignment,
+    command__Pipeline, command__AndOr, command__DoGroup, command__Sentence,
+    command__Subshell, command__WhileUntil, command__If, command__Case,
+    command__TimeBlock,
     BraceGroup,
 
     arith_expr_e, arith_expr_t, compound_word, Token,
@@ -44,6 +45,10 @@ def SpanForCommand(node):
       return word_.LeftMostSpanForWord(node.words[0])
     elif len(node.redirects):
       return node.redirects[0].op.span_id
+
+  if tag == command_e.ShAssignment:
+    node = cast(command__ShAssignment, UP_node)
+    return node.spids[0]
 
   if tag == command_e.Pipeline:
     node = cast(command__Pipeline, UP_node)
