@@ -515,6 +515,44 @@ Oil has a `try` builtin, which re-enables errexit without the extra process:
 The explicit `try` avoids breaking existing shell programs.  You have to opt in
 to the better behavior.
 
+<!--
+
+TODO:
+- consider 'bool' builtin to replace try -allow-status-01
+- Also document these idioms:
+  - handling error from "atom": external process or builtin
+  - handling error from internal proc 
+  - boolean external process like grep
+  - boolean internal proc like 'proc mypred'
+
+TODO: should 'runproc' replace try?
+
+set -e
+ls /bad  # whole script fails
+
+if ! ls /bad {
+  echo 'failed'
+}
+
+proc badproc {
+  # this is like "return 1"
+  error 1 "fail"
+}
+
+badproc  # whole script fails
+
+if ! try badproc {
+  echo 'failed'
+}
+
+// Boolean
+
+if bool grep PAT myfile.txt {
+  echo 'found'
+}
+
+-->
+
 ### Use the `try` Builtin With `!`, `||`, and `&&`
 
 These constructs require an explicit `try`:

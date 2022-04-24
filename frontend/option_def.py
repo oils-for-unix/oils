@@ -269,7 +269,7 @@ def _Init(opt_def):
   opt_def.Add('compat_array')  # ${array} is ${array[0]}
 
   # For implementing strict_errexit
-  opt_def.Add('allow_command_sub', default=True)
+  opt_def.Add('allow_csub_psub', default=True)
   # For implementing 'proc'
   opt_def.Add('dynamic_scope', default=True)
 

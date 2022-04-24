@@ -183,10 +183,10 @@ class ctx_AssignBuiltin(object):
   """local x=$(false) is disallowed."""
   def __init__(self, mutable_opts):
     # type: (MutableOpts) -> None
-    self.do_pop = False
+    self.strict = False
     if mutable_opts.Get(option_i.strict_errexit):
-      mutable_opts.Push(option_i.allow_command_sub, False)
-      self.do_pop = True
+      mutable_opts.Push(option_i.allow_csub_psub, False)
+      self.strict = True
 
     self.mutable_opts = mutable_opts
 
@@ -196,8 +196,8 @@ class ctx_AssignBuiltin(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    if self.do_pop:
-      self.mutable_opts.Pop(option_i.allow_command_sub)
+    if self.strict:
+      self.mutable_opts.Pop(option_i.allow_csub_psub)
 
 
 class ctx_ErrExit(object):
@@ -219,6 +219,11 @@ class ctx_ErrExit(object):
     mutable_opts.Push(option_i.errexit, b)
     mutable_opts.errexit_disabled_spid.append(span_id)
 
+    self.strict = False
+    if mutable_opts.Get(option_i.strict_errexit):
+      mutable_opts.Push(option_i.allow_csub_psub, False)
+      self.strict = True
+
     self.mutable_opts = mutable_opts
 
   def __enter__(self):
@@ -229,6 +234,9 @@ class ctx_ErrExit(object):
     # type: (Any, Any, Any) -> None
     self.mutable_opts.errexit_disabled_spid.pop()
     self.mutable_opts.Pop(option_i.errexit)
+
+    if self.strict:
+      self.mutable_opts.Pop(option_i.allow_csub_psub)
 
 
 class OptHook(object):
@@ -443,26 +451,33 @@ class MutableOpts(object):
 
     Otherwise return runtime.NO_SPID
     """
-
     # Bug fix: The errexit disabling inherently follows a STACK DISCIPLINE.
     # But we run trap handlers in the MAIN LOOP, which break this.  So just
     # declare that it's never disabled in a trap.
     if self.Get(option_i._running_trap):
       return runtime.NO_SPID
 
-    overlay = self.opt_stacks[option_i.errexit]
-    if 0:
-      log('overlay %s', overlay)
-      log('errexit_disabled_spid %s', self.errexit_disabled_spid)
-    if overlay is None or len(overlay) == 0:
+    if len(self.errexit_disabled_spid) == 0:
       return runtime.NO_SPID
-    else:
-      was_on = self.opt0_array[option_i.errexit] or (True in overlay)
-      # top of stack == False means it's disabled
-      if was_on and not overlay[-1]:
-        return self.errexit_disabled_spid[-1]
-      else:
+
+    return self.errexit_disabled_spid[-1]
+
+    # Old complex logic.  It turns out we don't need to detect whether it was
+    # actually disabled.  These are the "strict_errexit without errexit" cases
+    # in spec/errexit-oil.
+    if 0:
+      overlay = self.opt_stacks[option_i.errexit]
+      # log('overlay %s', overlay)
+      # log('errexit_disabled_spid %s', self.errexit_disabled_spid)
+      if overlay is None or len(overlay) == 0:
         return runtime.NO_SPID
+      else:
+        was_on = self.opt0_array[option_i.errexit] or (True in overlay)
+        # top of stack == False means it's disabled
+        if was_on and not overlay[-1]:
+          return self.errexit_disabled_spid[-1]
+        else:
+          return runtime.NO_SPID
 
   def _SetOption(self, opt_name, b):
     # type: (str, bool) -> None

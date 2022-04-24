@@ -93,39 +93,65 @@ status=0
 ## N-I dash/bash/mksh/ash stdout-json: ""
 
 
-#### strict_errexit allows pipeline because you can set -o pipefail
-case $SH in (dash|ash) exit ;; esac
-
+#### strict_errexit disallows pipeline
 set -o errexit
-set -o pipefail
 shopt -s strict_errexit || true
 
 if echo 1 | grep 1; then
   echo one
 fi
 
-#{ echo 3; exit 3; } | grep 3
-#echo status ${PIPESTATUS[@]}
-
-if { echo 5; exit 5; } | grep 5; then
-  echo 'should not succeed'
-else
-  echo status ${PIPESTATUS[@]}
-fi
-## STDOUT:
+## status: 1
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
 1
 one
-5
-status 5 0
 ## END
-## N-I dash/ash stdout-json: ""
 
-#### strict_errexit does NOT affect inside of function
+#### strict_errexit allows singleton pipeline
+set -o errexit
+shopt -s strict_errexit || true
+
+if ! false; then
+  echo yes
+fi
+
+## STDOUT:
+yes
+## END
+
+#### strict_errexit without errexit proc
+myproc() {
+  echo myproc
+}
+myproc || true
+
+# This should be a no-op I guess
+shopt -s strict_errexit || true
+myproc || true
+
+## status: 1
+## STDOUT:
+myproc
+## END
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+myproc
+myproc
+## END
+
+#### strict_errexit without errexit proc / command sub
+
+# Implementation quirk:
+# - The proc check happens only if errexit WAS on and is disabled
+# - But 'shopt --unset allow_csub_psub' happens if it was never on
+
 shopt -s strict_errexit || true
 
 p() {
   echo before
   local x
+  # This line fails, which is a bit weird, but errexit
   x=$(false)
   echo x=$x
 }
@@ -134,58 +160,42 @@ if p; then
   echo ok
 fi
 
-shopt -s command_sub_errexit || true
-
-if p; then
-  echo ok
-fi
-
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+before
+x=
+ok
+## END
 ## status: 1
 ## STDOUT:
-before
-x=
-ok
-before
-## END
-## OK dash/bash/mksh/ash status: 0
-## OK dash/bash/mksh/ash STDOUT:
-before
-x=
-ok
-before
-x=
-ok
 ## END
 
-#### strict_errexit does NOT affect inside of proc
-shopt -s strict_errexit
+#### strict_errexit and errexit disabled
+case $SH in (dash|bash|mksh|ash) exit ;; esac
 
-proc p() {
+shopt -s parse_brace strict_errexit || true
+
+p() {
   echo before
-  const x = $(false)
+  local x
+  # This line fails, which is a bit weird, but errexit
+  x=$(false)
   echo x=$x
 }
 
-if p; then
-  echo ok
-fi
-
-shopt -s command_sub_errexit
-
-if p; then
-  echo ok
-fi
-
-## status: 1
+set -o errexit
+shopt --unset errexit {
+  # It runs normally here, because errexit was disabled (just not by a
+  # conditional)
+  p
+}
+## N-I dash/bash/mksh/ash STDOUT:
+## END
 ## STDOUT:
 before
 x=
-ok
-before
 ## END
-## N-I dash/bash/mksh/ash stdout-json: ""
-## N-I dash/bash/ash status: 2
-## N-I mksh status: 1
+
 
 #### command sub with command_sub_errexit only
 set -o errexit
@@ -520,22 +530,6 @@ before
 after
 ## N-I dash/bash/mksh/ash status: 0
 
-#### strict_errexit without errexit
-myproc() {
-  echo myproc
-}
-myproc || true
-
-# This should be a no-op I guess
-shopt -s strict_errexit || true
-myproc || true
-
-## STDOUT:
-myproc
-myproc
-## END
-
-
 #### What's in strict:all?
 
 # inherit_errexit, strict_errexit, but not command_sub_errexit!
@@ -673,3 +667,68 @@ hi
 p
 ## END
 ## N-I bash/dash/ash/mksh stdout-json: ""
+
+#### ShAssignment used as conditional
+
+while x=$(false)
+do   
+  echo while
+done
+
+if x=$(false)
+then
+  echo if
+fi
+
+if x=$(true)
+then
+  echo yes
+fi
+
+# Same thing with errexit -- NOT affected
+set -o errexit
+
+while x=$(false)
+do   
+  echo while
+done
+
+if x=$(false)
+then
+  echo if
+fi
+
+if x=$(true)
+then
+  echo yes
+fi
+
+# Same thing with strict_errexit -- NOT affected
+shopt -s strict_errexit || true
+
+while x=$(false)
+do   
+  echo while
+done
+
+if x=$(false)
+then
+  echo if
+fi
+
+if x=$(true)
+then
+  echo yes
+fi
+
+## status: 1
+## STDOUT:
+yes
+yes
+## END
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+yes
+yes
+yes
+## END

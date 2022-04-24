@@ -23,6 +23,7 @@ from core import ui
 from core import vm
 from frontend import consts
 from frontend import location
+from osh import word_
 
 import posix_ as posix
 
@@ -322,14 +323,9 @@ class ShellExecutor(vm._Executor):
   def RunCommandSub(self, cs_part):
     # type: (command_sub) -> str
 
-    if not self.exec_opts.allow_command_sub():
-      # TODO:
-      # - Add spid of $(
-      # - Better hints.  Use 'try' for 'if myfunc', and 2 lines like local x;
-      #   x=$(false) fo assignment builtins.
-      # - Maybe we should have an error message ID that links somewhere?
-
-      e_die("Command subs not allowed here because status wouldn't be checked (strict_errexit).")
+    if not self.exec_opts.allow_csub_psub():
+      e_die("Command subs not allowed here because status wouldn't be checked (strict_errexit).",
+            span_id=word_.LeftMostSpanForPart(cs_part))
 
     node = cs_part.child
 
@@ -445,6 +441,10 @@ class ShellExecutor(vm._Executor):
       shopt -s process_sub_fail
       _process_sub_status
     """
+    if not self.exec_opts.allow_csub_psub():
+      e_die("Process subs not allowed here because status wouldn't be checked (strict_errexit).",
+            span_id=word_.LeftMostSpanForPart(cs_part))
+
     p = self._MakeProcess(cs_part.child)
 
     r, w = posix.pipe()

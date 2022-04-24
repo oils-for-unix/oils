@@ -153,24 +153,34 @@ def _HasManyStatuses(node):
   # type: (command_t) -> bool
   """
   Code patterns that are bad for POSIX errexit.  For Oil's strict_errexit.
+
+  Note: The other part of strict_errexit is shopt --unset allow_csub_psub
   """
+  # Sentence check is for   if false;   versus   if false
   if node.tag_() == command_e.Sentence:
     node1 = cast(command__Sentence, node)
     return _HasManyStatuses(node1.child)
 
-  # allow list under strict_errexit
   UP_node = node
   with tagswitch(node) as case:
-    # command subs in words are detected by allow_command_sub in ctx_ErrExit
-    if case(command_e.Simple, command_e.ShAssignment, command_e.DBracket,
-        command_e.DParen):
+    if case(command_e.Simple, command_e.DBracket, command_e.DParen):
       return False
 
     elif case(command_e.Pipeline):
-      # TODO: Allow it because set -o pipefail takes all exit codes into
-      # account.
-      return False
+      node = cast(command__Pipeline, UP_node)
+      if len(node.children) == 1:
+        # '! false' is a pipeline that we want to ALLOW
+        # '! ( echo subshell )' is DISALLWOED
+        return _HasManyStatuses(node.children[0])
+      else:
+        # Multiple parts like 'ls | wc' is disallowed
+        return True
 
+    # - ShAssignment could be allowed, but its exit code will always be 0 without command subs
+    # - Naively, (non-singleton) pipelines could be allowed because pipefail.
+    #   BUT could be a proc executed inside a child process, which causes a
+    #   problem: the strict_errexit check has to occur at runtime and there's
+    #   no way to signal it ot the parent.
   return True
 
 
@@ -556,8 +566,7 @@ class CommandEvaluator(object):
 
     if _HasManyStatuses(node):
       node_str = ui.CommandType(node)
-      e_die("strict_errexit only allows simple commands (got %s). "
-            "Hint: use 'try'.",
+      e_die("strict_errexit only allows simple commands in conditionals (got %s). ",
             node_str, span_id=location.SpanForCommand(node))
 
   def _StrictErrExitList(self, node_list):
@@ -580,8 +589,7 @@ class CommandEvaluator(object):
     node = node_list[0]
     if _HasManyStatuses(node):  # TODO: consolidate error message with above
       node_str = ui.CommandType(node)
-      e_die("strict_errexit only allows simple commands (got %s). "
-            "Hint: use 'try'.",
+      e_die("strict_errexit only allows simple commands in conditionals (got %s). ",
             node_str, span_id=location.SpanForCommand(node))
 
   def _EvalCondition(self, cond, spid):

@@ -291,8 +291,56 @@ strict_errexit_1() {
   _strict-errexit-case 'shopt -s oil:basic
                         proc p { echo p }
                         if p { echo hi }'
+}
 
-  # issue #1107
+strict_errexit_conditionals() {
+  # this works, even though this is a subshell
+  _strict-errexit-case '
+myfunc() { return 1; }
+
+while ( myfunc )
+do
+  echo yes
+done
+'
+
+  # Conditional - Proc - Child Interpreter Problem (command sub)
+  # Same problem here.  A proc run in a command sub LOSES the exit code.
+  _strict-errexit-case '
+myfunc() { return 1; }
+
+while test "$(myfunc)" != ""
+do
+  echo yes
+done
+'
+
+  # Process Sub is be disallowed; it could invoke a proc!
+  _strict-errexit-case '
+myfunc() { return 1; }
+
+if cat <(ls)
+then
+  echo yes
+fi
+'
+
+  # Conditional - Proc - Child Interpreter Problem (pipeline)
+  _strict-errexit-case '
+myfunc() {
+  return 1
+}
+
+set -o pipefail
+while myfunc | cat
+do
+  echo yes
+done
+'
+
+  # regression for issue #1107 bad error message
+  # Also revealed #1113: the strict_errexit check was handled inside the
+  # command sub process!
   _strict-errexit-case '
 myfunc() {
   return 1
@@ -317,42 +365,43 @@ done
 
 # OLD WAY OF BLAMING
 # Note: most of these don't fail
-strict_errexit_2() {
+strict_errexit_old() {
   # Test out all the location info
 
   # command.Pipeline.
-  #_strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
-  #_strict-errexit-case 'if ! ls | wc -l; then echo Pipeline; fi'
+  _strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
+  _strict-errexit-case 'if ! ls | wc -l; then echo Pipeline; fi'
 
-  # This one is logical
+  # This one is ALLOWED
   #_strict-errexit-case 'if ! ls; then echo Pipeline; fi'
 
   # command.AndOr
-  #_strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
+  _strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
 
   # command.DoGroup
   _strict-errexit-case '! for x in a; do echo $x; done'
 
   # command.BraceGroup
   _strict-errexit-case '_func() { echo; }; ! _func'
-  _strict-errexit-case '! { echo brace; }'
+  _strict-errexit-case '! { echo brace; }; echo "should not get here"'
 
   # command.Subshell
-  _strict-errexit-case '! ( echo subshell )'
+  _strict-errexit-case '! ( echo subshell ); echo "should not get here"'
 
   # command.WhileUntil
-  _strict-errexit-case '! while false; do echo while; done'
+  _strict-errexit-case '! while false; do echo while; done; echo "should not get here"'
 
   # command.If
-  #_strict-errexit-case '! if true; then false; fi'
+  _strict-errexit-case '! if true; then false; fi; echo "should not get here"'
 
   # command.Case
-  _strict-errexit-case '! case x in x) echo x;; esac'
+  _strict-errexit-case '! case x in x) echo x;; esac; echo "should not get here"'
 
   # command.TimeBlock
-  _strict-errexit-case '! time echo hi'
+  _strict-errexit-case '! time echo hi; echo "should not get here"'
 
-  _strict-errexit-case '! echo $(echo hi)'
+  # Command Sub
+  _strict-errexit-case '! echo $(echo hi); echo "should not get here"'
 }
 
 pipefail() {
@@ -1012,7 +1061,7 @@ all() {
 
   # TODO: Move more tests here so we check errors!  _error-case needs it.
   for t in \
-    strict_errexit_1 strict_errexit_2 \
+    strict_errexit_1 strict_errexit_conditionals strict_errexit_old \
     unset_expr \
     divzero; do
     _run_test $t yes
