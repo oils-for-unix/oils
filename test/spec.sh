@@ -15,7 +15,7 @@ if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 'dash', etc.
 fi
 
-REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 readonly REPO_ROOT
 
 # TODO: Get rid of this indirection.

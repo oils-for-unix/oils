@@ -465,7 +465,7 @@ class MutableOpts(object):
     # Old complex logic.  It turns out we don't need to detect whether it was
     # actually disabled.  These are the "strict_errexit without errexit" cases
     # in spec/errexit-oil.
-    if 0:
+    """
       overlay = self.opt_stacks[option_i.errexit]
       # log('overlay %s', overlay)
       # log('errexit_disabled_spid %s', self.errexit_disabled_spid)
@@ -478,6 +478,7 @@ class MutableOpts(object):
           return self.errexit_disabled_spid[-1]
         else:
           return runtime.NO_SPID
+    """
 
   def _SetOption(self, opt_name, b):
     # type: (str, bool) -> None
