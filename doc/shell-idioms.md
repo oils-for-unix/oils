@@ -108,7 +108,7 @@ Yes:
 The `strict_errexit` feature warns you when you would **lose errors** in shell
 code.
 
-### The `local d=$(date %x)` Problem
+### The `local d=$(date %x)` Pitfall
 
 No:
 
@@ -141,7 +141,7 @@ Yes:
     export d2
  
 
-### The `if myfunc` Problem
+### The `if myfunc` Pitfall
 
 No:
 
@@ -166,7 +166,10 @@ Shell workaround when the `"$@"` dispatch pattern is used:
 
 Better Oil Style:
 
-    if try myfunc {
+    try myfunc
+    if (_status === 0) 
       echo 'Success'
     }
+
+(TODO: Implement `try`.)
 

@@ -177,7 +177,7 @@ X [Testing]       check
                   eval_unsafe_arith      Recursively parse and evaluate
                   parse_dynamic_arith    LHS can contain variables
                   verbose_errexit        Whether to print detailed errors
-  [More Options]  allow_command_sub      For implementing strict_errexit
+  [More Options]  allow_csub_psub        For implementing strict_errexit
                   dynamic_scope          For implementing 'proc'
 ```
 
