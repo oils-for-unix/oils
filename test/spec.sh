@@ -918,8 +918,8 @@ oil-json() {
 }
 
 # Related to errexit-oil
-oil-builtin-try() {
-  sh-spec spec/oil-builtin-try.test.sh --osh-failures-allowed 0 \
+oil-builtin-error() {
+  sh-spec spec/oil-builtin-error.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
