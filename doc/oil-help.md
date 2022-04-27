@@ -458,13 +458,22 @@ Set the `_status` variable to the exit status of the block, and returns 0.
     }
 
     # Shortcut for a single command
-
     try grep PATTERN FILE.txt
     case $_status in
       (0) echo 'found' ;;
       (1) echo 'not found' ;;
       (*) echo "error $_status" ;;
     esac
+
+#### boolstatus
+
+Runs a command and requires the exit code to be 0 or 1.
+
+    if boolstatus egrep '[0-9]+' myfile {  # may abort
+      echo 'found'               # status 0 means found
+    } else {
+      echo 'not found'           # status 1 means not found
+    }
 
 #### runproc
 

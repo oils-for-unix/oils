@@ -489,48 +489,44 @@ Yes
 
 ## Error Handling
 
-### If, shell functions, and `errexit`
+### If and `!` For Builtins and External Commands
 
-POSIX shell has the *Disabled `errexit` Pitfall*:
+These idioms are OK in both shell and Oil:
 
-    # Oops, errors aren't checked in myfunc.  Oil's strict_errexit disallows
-    # this construct.
-    if myfunc; then
+    if ! test -d /bin {
+      echo 'not a directory'
+    }
+
+    if ! cp foo /tmp {
+      echo 'error copying'  # any non-zero status
+    }
+
+### Pitfall: If, shell functions, and `errexit`
+
+When the command is a shell function, you should't not use `if` directly.
+
+**No**.  POSIX shell has the *Disabled `errexit` Pitfall*, which is detected by
+Oil's strict_errexit.
+
+    if myfunc; then  # errors not checked in body of myfunc
       echo 'success'
     fi
 
-A workaround is to use the *`$0` Dispatch Pattern*, which works in all shells:
+**Yes**.  The *`$0` Dispatch Pattern* is a workaround that works in all shells.
 
     if $0 myfunc; then  # invoke a new shell
       echo 'success'
     fi
 
-    "$@"
+    "$@"  # Run the function $1 with args $2 ...
 
-You can also use Oil's `try` builtin, which sets the special variable
-`_status` and returns `0`:
+**Yes**.  Oil's try builtin sets the special `_status` variable and returns
+`0`.
 
-    try myfunc  # doesn't abort because it sets _status instead of $?
+    try myfunc  # doesn't abort
     if (_status === 0) {
       echo 'success'
     fi
-
-<!--
-
-TODO:
-- Also document these idioms:
-  - handling error from "atom": external process or builtin
-  - handling error from internal proc (try)
-  - boolean external process like grep (boolstatus)
-  - boolean internal proc like 'proc mypred'
-
-// Boolean
-
-if boolstatus grep PAT myfile.txt {
-  echo 'found'
-}
-
--->
 
 ### `try` Also Takes a Block
 
@@ -575,7 +571,7 @@ And Expressions:
 
 ### `boolstatus` to Distinguish Errors from False
 
-`grep` has 3 different return values, so this is probably not what you want:
+**No**, this is subtly wrong.  `grep` has 3 different return values.
 
     if egrep '[0-9]+' myfile {       
       echo 'found'               # status 0 means found
@@ -583,10 +579,9 @@ And Expressions:
       echo 'not found OR ERROR'  # any non-zero status
     }
 
-Fix it with the `boolstatus` builtin:
+**Yes**.  `boolstatus` aborts the program if `egrep` doesn't return 0 or 1.
 
-    # Abort the program if egrep doesn't return 0 or 1
-    if boolstatus egrep '[0-9]+' myfile {
+    if boolstatus egrep '[0-9]+' myfile {  # may abort
       echo 'found'               # status 0 means found
     } else {
       echo 'not found'           # status 1 means not found
