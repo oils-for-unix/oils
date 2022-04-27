@@ -600,6 +600,17 @@ Yes:
     mkdir /tmp/dest
     cp foo /tmp/dest
 
+### Ignore an Error
+
+No:
+
+    ls /bad || true  # OK for external commands
+    myproc || true   # suffers from the "Disabled errexit Pitfall"
+
+Yes:
+
+    try ls /bad
+    try myfunc
 
 ## Use Oil Expressions, Initializations, and Assignments (var, setvar)
 

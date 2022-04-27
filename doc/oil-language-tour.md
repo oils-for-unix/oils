@@ -538,8 +538,9 @@ Procs use this style (because of shell's *Disabled `errexit` Pitfall*):
       echo 'failed'
     }
 
-See [Idioms > Error Handling](idioms.html#error-handling) for more examples, as
-well as [Oil Fixes Shell's Error Handling](error-handling.html).
+See [Oil vs. Shell Idioms > Error Handling](idioms.html#error-handling) for
+more examples, as well as [Oil Fixes Shell's Error
+Handling](error-handling.html).
 
 #### `break`, `continue`, `return`, `exit`
 

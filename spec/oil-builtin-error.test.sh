@@ -1,14 +1,26 @@
 #### try usage error
-set -o errexit
 
 # Irony: we can't fail that hard here because errexit is disabled before
 # we enable it.
 # TODO: We could special case this perhaps
 
 try
+echo status=$?
 
-## status: 2
+try -z
+echo status=$?
+
+try --zoo
+echo status=$?
+
+# -- is allowed
+try -- echo hi
+
 ## STDOUT:
+status=2
+status=2
+status=2
+hi
 ## END
 
 #### try sets _status

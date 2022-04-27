@@ -9,23 +9,25 @@ Oil Fixes Shell's Error Handling (`errexit`)
 Synopsis:
 
 - POSIX shell has **fundamental** problems with error handling.  With `set -e`
-  (`errexit`), you're *damned if you do and damned if you don't*.
+  aka `errexit`, you're *damned if you do and damned if you don't*.
 - GNU [bash]($xref) fixes some of those problems, but **adds its own**, e.g.
-  related to command subs, process subs, and assignment builtins.
-- Oil **fixes all of the problems** by adding new global options, builtins, and
+  related to process subs, command subs, and assignment builtins.
+- Oil **fixes all the problems** by adding new global options, builtins, and
   special variables.  They are largely hidden behind a nice new interface, e.g.
   `try` and `_status`.
 
-If you disagree with this claim, file a bug.  In particular:
+If you find a hole in this claim, please [file a bug][].  More specifically:
 
-- Oil never silently ignores an error.  That is, it never loses an exit code
-  (unlke shell).
+- Oil never silently ignores an error.  Unlike shell, it never loses an exit
+  code.
 - There's never a reason to write an Oil script without `set -e`, which is on
   by default.
 
 This document explains how Oil makes these guarantees.  We first review shell error
-handling, and then show idiomatic Oil code.  Finally, we explain the details
-that make it possible.
+handling, and then show idiomatic Oil code.  Finally, we look under the hood at
+the underlying mechanisms.
+
+[file a bug]: https://github.com/oilshell/oil/issues
 
 <div id="toc">
 </div>
@@ -34,128 +36,186 @@ that make it possible.
 
 ### POSIX Shell
 
-- The special variable `$?` is the "last exit status".
-- If you `set -e` (aka `set -o errexit`), then the shell will abort if `$?` is nonzero.
-  - The is subject to the "Disabled `errexit` Quirk", which I describe below.
+- The special variable `$?` is the exit status of the last "command".
+- If `errexit` is enabled, then the shell will abort if `$?` is nonzero.
+  - This is subject to the "Disabled `errexit` Quirk", which I describe below.
 
-A big caveat (language design bug) is that `$?` and `set -e` work on the basis
-of grammatical **commands**, which causes the pitfalls explained below.
+These mechanisms are fundamentally incomplete.
 
 ### Bash
 
-- `set -o pipefail`
-- `${PIPESTATUS[@]}` so you have access to the exit codes from all processes in a pipeline.
-- `shopt -s inherit_errexit` to fix a bash-specific bug with command subs.
+Bash is better about handling the failure of pipelines like `ls /nonexistent |
+wc`.
 
-There are still bugs.
+- The `${PIPESTATUS[@]}` variable has the exit codes of all processes in a
+  pipeline.
+- When `set -o pipefail` is enabled, `$?` takes into account all processes in a
+  pipeline.  Without this setting, the failure of `ls` would be ignored.
+- `shopt -s inherit_errexit` fixes a bash-specific bug with command subs.
+
+But there are many other places where bash will lose an exit code.
 
 ## Fundamental Problems With The Language
 
-There are many details.  But these are fundamental issues.
+Shell error handling is complex, but here are 3 fundamental issues you should
+remember.
 
-### `$?` Is Tied to Top-Level "Commands"
+### `$?` Doesn't Correspond to Commands or Processes
 
-The POSIX shell grammar has a "command" rule.
+Each process and shell builtin has an exit status.  But the definition of `$?`
+is obscure: it's tied to the `command` rule in the POSIX shell grammar, which
+does **not** correspond to a single process with an exit status.
 
-For example, this is actually a single command with a single exit status:
+We saw that `pipefail` fixes one case:
 
-    local x=$(date %d)    
+    ls /nonexistent | wc   # 2 proceses, 2 exit codes, but just one $?
 
-So is the conditional of `if` or `while`:
+But there are others:
 
-    if myfunc; then
-      echo 'success'
-    fi
+    local x=$(false)                 # 2 exit codes, but just one $?
+    diff <(sort left) <(sort right)  # 3 exit codes, but just one $?
 
-Pipelines, command subs, process subs all have issues.  See Appendix.
+### What Does `$?` Mean?  It's Overloaded
 
-### `$?` Is Overloaded: OK-Error or True-False?
+- **OK or Error**. Tools like `cp` return `0` for success and non-zero for
+  failure.
+- **True, False, or Error**. Builtins like `test` and commands like `grep`
+  return `0` for true, `1` for false, or a number greater than `2` for an
+  error.
 
-`grep`.
-
+Oil's error handling constructs must accomodate this fundamental confusion.
 
 ### The "Disabled `errexit` Quirk" 
 
-In Conditional Contexts
+Here's an example an **important bug** in the design of the shell language:
 
-TODO: This is important to understand.
+    set -o errexit     # don't ignore errors
 
-Here's some background for understanding the additional `errexit` options
-described below.
+    myfunc() {
+      ls /bad          # fails with status 1
+      echo 'should not get here'
+    }
 
-In all Unix shells, the `errexit` check is disabled in these situations:
- 
+    # Correct: script fails before echo
+    myfunc
+    # => ls: '/bad': no such file or directory
+
+    # Surprise!
+    if myfunc; then
+      echo OK
+    fi
+    # => ls: '/bad': no such file or directory
+    # => should not get here
+
+We see the message because the shell **silently disables** `errexit` while
+executing the condition of `if`.  The fundamental problems we mentioned that
+cause this:
+
+1. It's unclear whether you are testing for success/failure or true/false.
+2. `if` tests a single exit status, but every statement in a function has an
+   exit status.  Which one do you use?
+
+This quirk occurs in all "conditional" contexts:
+
 1. The condition of the `if`, `while`, and `until`  constructs
-2. A command/pipeline prefixed by `!`
+2. A command/pipeline prefixed by `!` (negation)
 3. Every clause in `||` and `&&` except the last.
-
-Now consider this situation:
-
-1. `errexit` is **on**
-2. The shell disables it one of those three situations
-3. While disabled, the user touches it with `set -o errexit` (or `+o` to turn
-   it off).
-
-Surprising behavior: Unix shells **ignore** the `set` builtin for awhile,
-delaying its execution until **after** the temporary disablement.
-
 
 ## Oil Error Handling: The Big Picture 
 
-You don't have to worry about all this stuff. Here is "The User Interface".
+We've reviewed how POSIX shell and bash work, and reviewed fundamental problems
+with the shell language.
+
+But when you're using Oil, you don't have to worry about all this.
 
 ### Oil Fails On Every Error
 
-In other words, It doesn't lose an exit status.
+You don't have to explicitly check errors, and errors won't be ignored.
+Examples:
 
-Normal Code Doesn't check errors.
+    shopt --set oil:basic     # Enable good error handling in bin/osh
+                              # It's the default in bin/oil.
 
-    shopt --set oil:basic  # or use bin/oil
+    local date=$(date %d)     # 'date' failure is fatal
 
-    echo $(date %d)   # failure of 'date' is fatal
+    echo $(date %d)           # ditto
 
-    ls /bad | wc      # failure of 'ls' is fatal
+    echo $(date %d) $(ls > F) # 'date' fails before execution of 'ls'
 
-    yes | head        # no SIGPIPE problem
+    ls /bad | wc              # failure of 'ls' is fatal
 
-### You Can Check Errors With `try`, Then Inspect `_status`
+    diff <(sort A) <(sort B)  # failure of 'sort' is fatal
 
-Sometimes you want to check errors.
+On the other hand, you won't experience this problem caused by `pipefail`:
 
-Proc:
+    yes | head                # doesn't fail due to SIGPIPE
 
-    try myfunc /bad
+The details are explained below.
+
+### Handle Errors With `try`
+
+You may want to **handle failure** instead of aborting the shell.  In this
+case, use the `try` builtin, and inspect the `_status` variable it sets.
+
+    try {                 # try takes a block of commands
+      ls /lib
+      ls /bad             # stops at first failure
+      ls /bin
+    }                     # After try, $? is always 0
     if (_status !== 0) {
       echo 'failed'
     }
 
-Two Commands:
+Note that `_status` is different than `$?`, and idiomatic Oil programs don't
+look at `$?`.
+
+You can omit `{ }` when invoking a single command.  Here's how to invoke a
+function without the *Disabled `errexit` Quirk*:
+
+    try myfunc            # Unlike 'myfunc', doesn't abort on error
+    if (_status !== 0) {
+      echo 'failed'
+    }
+
+Fatal errors in expressions are turned into exit codes, which can be examined with try:
 
     try {
-      ls /bin
-      ls /bad
+      var d = {}
+      setvar x = d['nonexistent']  # exception: missing key
+      var y = 42 / 0               # exception: divide by zero
     }
     if (_status !== 0) {
-      echo 'failed'
+      echo 'error'
     }
 
-
-Pipeline:
+You also have fine-grained control over every process in a pipeline:
 
     try {
       ls /bad | wc
     }
-    write -- @_pipeline_status
+    write -- @_pipeline_status  # every exit status
 
-Process Sub:
+And each process substitution:
 
     try {
       diff <(sort left.txt) <(sort right.txt)
     }
-    write -- @_process_sub_status
+    write -- @_process_sub_status  # every exit status
 
-### `boolstatus`
+### `boolstatus` Enforces 0 or 1 Status
 
+The `boolstatus` builtin helps with the *True, False, or Error* problem:
+
+    if boolstatus grep PATTERN FILE.txt {
+      echo 'found'      # status 0 means 'found'
+    } else {
+      echo 'not found'  # status 1 means 'not found'
+    }
+
+Rather than confusing **error** with **false**, `boolstatus` will abort the
+program if `grep` doesn't return 0 or 1.
+
+<!--
 There are some tools like `grep` that return a boolean status:
 
 - `0` means true (pattern found)
@@ -167,19 +227,17 @@ be confused with a logical **false**.
 
 The `boolstatus` builtin addresses this issue.  If the status isn't `0` or `1`,
 it aborts the whole program:
-
-    # An error in grep will ABORT, executing neither branch of the if.
-    if boolstatus grep PATTERN FILE.txt {
-      echo 'found'
-    } else {
-      echo 'not found'
-    }
+-->
 
 ## Reference: Global Options
 
-You don't have to know all this stuff!
+You **don't** need to read the rest of this doc to use Oil.
 
-TODO: link to global options doc.
+But some users may be curious about the many mechanisms under the hood.  We
+implement the `errexit` option from POSIX, bash options like `pipefail` and
+`inherit_errexit`, and add [more options of our own](options.html).
+
+They're all hidden behind `oil:basic` (or `bin/oil`).
 
 ### `command_sub_errexit` Adds Errors Not Available In Other Shells
 
@@ -198,9 +256,9 @@ will print `0` and touch the file `one`.
 2. The parent process aborts after the command sub fails (`command_sub_errexit`).
 
 
-### `process_sub_fail` Allows More Failure
+### `process_sub_fail` Is Analogous to `pipefail`
 
-Needed so that pipefail works.
+Needed so that `errexit` works.
 
 ### `strict_errexit` Disallows Two Pitfalls
 
@@ -260,48 +318,68 @@ Rather than something like:
       echo 'failed'
     }
 
-### `sigpipe_status_ok` Ignores A Common Issue
+### `sigpipe_status_ok` Ignores an Issue With `pipefail`
 
-Related to `pipeefail`.
+Related to `pipefail`.
 
 ### More
 
-- `verbose_errexit`.  TODO: Do we need this?
+- `verbose_errexit` controls whether
 
 ## Reference: Exit Status of New Language Constructs
 
-- `var`, `const`, `setvar`.
-  - `1` if an exception occured, or `0` otherwise.
-- The `_` keyword behaves the same way.
+Each "command" in the shell grammar has a rule for its exit status.  Oil adds
+new types of grammatical commands:
+
+- `var`, `const`, `setvar`, and the `_` keyword.  Their status is `1` if an
+  exception occured, or `0` otherwise.
+- An expression sub like like `echo $[1 / 0]` will raise an internal exception,
+  which causes the command to fail with status 1.
+  
+TODO: implement these rules.  Maybe consider status 3?
 
 ## Summary
 
-TODO: Transcribe [Reliable Error
-Handling](//www.oilshell.org/blog/2020/10/osh-features.html#reliable-error-handling).
+Oil's has two new **builtins** that relate to errors:
 
-Builtins (TODO)
+1. `try` lets you explicitly handle errors when `errexit` is on.
+1. The less common `boolstatus` enforces a true/false meaning.
 
-- The `try` builtin, which will take a block
-- The `boolstatus` builtin, for `grep`
+And 3 **special variables**:
 
-Special variables
+1. The `_status` integer, which is set by `try`.
+   - Remember that it's distinct from `$?`, and idiomatic Oil programs don't use
+     `$?`.
+1. The `_pipeline_status` array (an alias for bash's `PIPESTATUS`)
+1. The `_process_sub_status` array for process substitutions.
 
-- `_pipeline_status` is an alias for `PIPESTATUS`
-- `_process_sub_status` is analogous, for `<(sort left.txt)`
-- `_status`, which is set by `try`
+Oil supports all of these **global options**:
 
-More shell options:
+- From POSIX shell:
+  - `errexit`
+- From [bash]($xref):
+  - `pipefail`, `inherit_errexit`
+- New:
+  - `process_sub_fail` is analogous to `pipefail`.
+  - `command_sub_errexit` allows failure in the middle of commands.
+  - `strict_errexit` prevents 2 common pitfalls.
+  - `sigpipe_status_ok` ignores a spurious failure.
+  - `verbose_errexit` controls whether error messages are printed.
 
-- `process_sub_fail` is analogous to `pipefail`.
-- `command_sub_errexit`
-- `strict_errexit`
-- `sigpipe_status_ok` -- for `yes | head`
-- Set them all with `shopt --set oil:basic`, or use `bin/oil`.
+When using `bin/osh`, set them all with `shopt --set oil:basic`.  Or use
+`bin/oil`, where they are on by default.
+
+<!--
+Related 2020 blog post [Reliable Error
+Handling](https://www.oilshell.org/blog/2020/10/osh-features.html#reliable-error-handling).
+-->
+
 
 ### Related Documents
 
-- [Shell Idioms](shell-idioms.html).  There's a section  on fixing
-  `strict_errexit` problems.
+- [Oil vs. Shell Idioms](idioms.html) shows more examples of `try` and `boolstatus`.
+- [Shell Idioms](shell-idioms.html) has a section  on fixing `strict_errexit`
+  problems.
 
 Good articles on `errexit`:
 
@@ -315,22 +393,26 @@ Spec Test Suites:
 
 ## Appendix: Examples Of Pitfalls
 
-### The `if myfunc` Pitfall (`strict_errexit`)
+#### The `if myfunc` Pitfall (`strict_errexit`)
 
 TODO: show transcript
 
-### The `local x=$(false)` Pitfall (`strict_errexit`)
+#### The `local x=$(false)` Pitfall (`strict_errexit`)
 
 TODO: show transcript
 
 Background: In shell, `local` is a builtin rather than a keyword, which means
 `local foo=$(false)` behaves differently than than `foo=$(false)`.
 
-### The `pipefail SIGPIPE` Pitfall (`sigpipe_status_ok`)
+#### The `pipefail SIGPIPE` Pitfall (`sigpipe_status_ok`)
 
 An extra error where you didn't expect it.
 
-### More Pitfalls
+#### Another Grammatical Quirk
+
+`set -o failglob` depends on `;` or newline.
+
+#### More Pitfalls
 
 - The Trailing `&&` pitfall
   - `test -d /bin && echo found`
@@ -340,8 +422,7 @@ An extra error where you didn't expect it.
   - Solution: Always use `i=$((i + 1))`.  This also has the advantage of being POSIX.
   - In Oil, `setvar i += 1` is preferred.
 
-
-## Appendix: Shell Behavior
+## Appendix: Shell Execution Model
 
 Here's some background knowledge on Unix shell, which will motivate the
 improvements in Oil.
@@ -385,59 +466,4 @@ This rule causes a lot of problems:
   after `ls | grep foo`, the variable `$?` is set to the exit status of `grep`.
   - If `set -o pipefail`, then the status of a pipeline is the maximum of any
     status.
-
-## Idioms (TODO:move)
-
-TODO: Maybe move to `idioms`.md`
-
-### Handle Error Explicitly
-
-Oil
-
-    try {
-      my-complex-func
-    }
-    echo $_status
-
-There's no way to do this in shell!
-
-Shell
-
-    set +o errexit
-
-    my-complex-func
-    status=$?
-
-    set -o errexit
-
-### Ignore Error
-
-Shell:
-
-    ls /bad || true   # this is OK
-
-
-Oil:
-
-    try ls /bad
-
-
-### Style Guide (TODO: move)
-
-No:
-
-    if myfunc ...             # internal exit codes would be thrown away
-
-    if ls | wc -l ;           # first exit code would be thrown away
-
-
-Yes:
-
-    if external-command ...   # e.g. grep
-    if builtin ...            # e.g. test
-    if $0 myfunc ...          # $0 pattern
-
-The `$0 myfunc` pattern wraps the function in an external command.
-
-<!-- TODO: link to blog post explaining it -->
 

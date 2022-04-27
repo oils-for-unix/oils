@@ -73,41 +73,31 @@ TODO:
 
 These forms work:
 
-```
-cd / {
-  echo $PWD
-}
-cd / { echo $PWD }
-cd / { echo $PWD }; cd / { echo $PWD }
-```
+    cd / {
+      echo $PWD
+    }
+    cd / { echo $PWD }
+    cd / { echo $PWD }; cd / { echo $PWD }
 
 These are syntax errors:
 
-```
-a=1 { echo bad };        # assignments can't take blocks
->out.txt { echo bad };   # bare redirects can't take blocks
-break { echo bad };      # control flow can't take blocks
-```
+    a=1 { echo bad };        # assignments can't take blocks
+    >out.txt { echo bad };   # bare redirects can't take blocks
+    break { echo bad };      # control flow can't take blocks
 
 Runtime error:
 
-```
-local a=1 { echo bad };  # assignment builtins can't take blocks
-```
+    local a=1 { echo bad };  # assignment builtins can't take blocks
 
 Caveat: Blocks Are Space Sensitive
 
-```
-cd {a,b}  # brace substitution
-cd { a,b }  # tries to run command 'a,b', which probably doesn't exist
-```
+    cd {a,b}  # brace substitution
+    cd { a,b }  # tries to run command 'a,b', which probably doesn't exist
 
 Quoting of `{ }` obeys the normal rules:
 
-```
-echo 'literal braces not a block' \{ \}
-echo 'literal braces not a block' '{' '}'
-```
+    echo 'literal braces not a block' \{ \}
+    echo 'literal braces not a block' '{' '}'
 
 ## Block Semantics 
 
@@ -146,8 +136,9 @@ TODO: Subinterpreters?
 
 ### Control Flow
 
-- You can break out with `return`?  What about break?
-- `return` accepts Oil **expressions** (not shell-like words) ?
+- `break` and `continue` are disallowed inside blocks.
+- You can exit a block early with `return` (not the enclosing function).
+- `exit` is identical: it exits the program.
 
 ### Setting Variables in Enclosing Scope
 
