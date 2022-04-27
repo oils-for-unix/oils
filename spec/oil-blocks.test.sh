@@ -161,3 +161,104 @@ command cd / {
 builtin /
 command /
 ## END
+
+
+#### Consistency: Control Flow and Blocks
+shopt --set parse_brace
+
+# "Invalid control flow at top level"
+eval '
+  cd / {
+    echo cd
+    break
+  }
+'
+echo cd no loop $?
+
+# warning: "Unexpected control flow in block" (strict_control_flow)
+eval '
+while true {
+  cd / {
+    echo cd
+    break
+  }
+}
+'
+echo cd loop $?
+
+eval '
+while true {
+  shopt --unset errexit {
+    echo shopt
+    continue
+  }
+}
+'
+echo shopt continue $?
+
+eval '
+while true {
+  shvar FOO=foo {
+    echo shvar
+    continue
+  }
+}
+'
+echo shvar continue $?
+
+
+eval '
+while true {
+  try {
+    echo try
+    break
+  }
+}
+'
+echo try break $?
+
+## STDOUT:
+cd
+cd no loop 0
+cd
+cd loop 1
+shopt
+shopt continue 1
+shvar
+shvar continue 1
+try
+try break 1
+## END
+
+#### Consistency: Exit Status and Blocks
+shopt --set parse_brace
+
+cd / {
+  false 
+}
+echo cd=$?
+
+shopt --unset errexit {
+  false
+}
+echo shopt=$?
+
+shvar FOO=foo {
+  echo "  FOO=$FOO"
+  false
+}
+echo shvar=$?
+
+try {
+  false
+}
+echo try=$?
+
+## STDOUT:
+cd=0
+shopt=0
+  FOO=foo
+shvar=0
+try=0
+## END
+

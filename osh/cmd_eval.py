@@ -1741,10 +1741,11 @@ class CommandEvaluator(object):
     try:
       self._Execute(block)  # can raise FatalRuntimeError, etc.
     except _ControlFlow as e:  # A block is more like a function.
+      # return in a block
       if e.IsReturn():
         status = e.StatusCode()
       else:
-        raise
+        e_die('Unexpected control flow in block', token=e.token)
     finally:
       namespace_ = self.mem.TopNamespace()
 
