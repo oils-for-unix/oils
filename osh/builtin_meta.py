@@ -12,7 +12,7 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
-from core.pyerror import e_die, e_usage, log
+from core.pyerror import e_usage, log
 from core import pyutil  # strerror
 from core import state
 from core import vm

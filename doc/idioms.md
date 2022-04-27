@@ -491,14 +491,15 @@ Yes
 
 ### If, shell functions, and `errexit`
 
-This is a bug in POSIX shell, which Oil's `strict_errexit` warns you of:
+POSIX shell has the *Disabled `errexit` Pitfall*:
 
-    if myfunc; then  # oops, errors not checked in myfunc
+    # Oops, errors aren't checked in myfunc.  Oil's strict_errexit disallows
+    # this construct.
+    if myfunc; then
       echo 'success'
     fi
 
-The workaround is to use the *`$0` Dispatch Pattern*, which works in all
-shells:
+A workaround is to use the *`$0` Dispatch Pattern*, which works in all shells:
 
     if $0 myfunc; then  # invoke a new shell
       echo 'success'
@@ -506,14 +507,13 @@ shells:
 
     "$@"
 
-Oil has a `try` builtin, which re-enables errexit without the extra process:
+You can also use Oil's `try` builtin, which sets the special variable
+`_status` and returns `0`:
 
-    if try myfunc; then
+    try myfunc  # doesn't abort because it sets _status instead of $?
+    if (_status === 0) {
       echo 'success'
     fi
-
-The explicit `try` avoids breaking existing shell programs.  You have to opt in
-to the better behavior.
 
 <!--
 
@@ -524,51 +524,73 @@ TODO:
   - boolean external process like grep (boolstatus)
   - boolean internal proc like 'proc mypred'
 
-TODO: should 'runproc' replace try?
-
-set -e
-ls /bad  # whole script fails
-
-if ! ls /bad {
-  echo 'failed'
-}
-
-proc badproc {
-  # this is like "return 1"
-  error 1 "fail"
-}
-
-badproc  # whole script fails
-
-if ! try badproc {
-  echo 'failed'
-}
-
 // Boolean
 
-if bool grep PAT myfile.txt {
+if boolstatus grep PAT myfile.txt {
   echo 'found'
 }
 
 -->
 
-### Use the `try` Builtin With `!`, `||`, and `&&`
+### `try` Also Takes a Block
 
-These constructs require an explicit `try`:
+A block arg is useful for multiple commands:
 
-No:
+    try {              # stops at the first error
+      chmod +x myfile
+      cp myfile /bin
+    }
+    if (_status !== 0) {
+      echo 'error'
+    }
 
-    ! myfunc
-    myfunc || fail
-    myfunc && echo 'success'
+Pipelines:
 
-Yes:
+    try {
+      ls /nonexistent | wc
+    }
+    # You can examine the status of each part of the pipeline
+    if (_pipeline_status[0] !== 0) {
+      echo 'ls failed'
+    }
 
-    ! try myfunc
-    try myfunc || fail
-    try myfunc && echo 'success'
+Process substitution:
 
-Although `||` and `&&` are rare in idiomatic Oil code.
+    try {
+      diff <(sort left.txt) <(sort right.txt)
+    }
+    # You can examine the status of each process sub
+    if (_process_sub_status[0] !== 0) {
+      echo 'first process sub failed'
+    }
+
+And Expressions:
+
+    try {
+      var x = 42 / 0
+    }
+    if (_status !== 0) {
+      echo 'divide by zero'
+    }
+
+### `boolstatus` to Distinguish Errors from False
+
+`grep` has 3 different return values, so this is probably not what you want:
+
+    if egrep '[0-9]+' myfile {       
+      echo 'found'               # status 0 means found
+    } else {
+      echo 'not found OR ERROR'  # any non-zero status
+    }
+
+Fix it with the `boolstatus` builtin:
+
+    # Abort the program if egrep doesn't return 0 or 1
+    if boolstatus egrep '[0-9]+' myfile {
+      echo 'found'               # status 0 means found
+    } else {
+      echo 'not found'           # status 1 means not found
+    }
 
 ### Don't use `&&` Outside of `if` / `while`
 

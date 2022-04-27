@@ -520,17 +520,26 @@ but discouraged in Oil code.)
 
 ### Error Handling
 
-If statements are also used for **error handling**:
+If statements are also used for **error handling**.  Builtins and external
+commands use this style:
+
+    if ! test -d /bin {
+      echo 'not a directory'
+    }
 
     if ! cp foo /tmp {
-      echo 'error copying'
+      echo 'error copying'  # any non-zero status
     }
 
-When invoking a `proc` in the condition, wrap it with the `try` builtin:
+Procs use this style (because of shell's *Disabled `errexit` Pitfall*):
 
-    if ! try myproc {
+    try myproc
+    if (_status !== 0) {
       echo 'failed'
     }
+
+See [Idioms > Error Handling](idioms.html#error-handling) for more examples, as
+well as [Oil Fixes Shell's Error Handling](error-handling.html).
 
 #### `break`, `continue`, `return`, `exit`
 
