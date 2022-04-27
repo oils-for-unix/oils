@@ -294,7 +294,8 @@ doesn't concatenate its arguments with spaces, or accept zero arguments.
   `strict_word_eval`.)
 - UTF-8 decoding errors are fatal when computing lengths (`${#s}`) and slices.
 
-For options affecting exit codes, see the [errexit doc](errexit.html).
+For options affecting exit codes, see the [error handling
+doc](error-handling.html).
 
 ### Complete List
 

@@ -115,7 +115,7 @@ code.
   the Unix kernel.
 - [Tracing Execution](xtrace.html).  Oil enhances shell's `set -x`.
 - Errors
-  - [Error Handling with `errexit`](errexit.html)
+  - [Oil Fixes Shell's Error Handling (`errexit`)](error-handling.html)
   - [Error List](errors.html) 
 - [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
   - [IO Builtins](io-builtins.html)

@@ -76,7 +76,7 @@ readonly MARKDOWN_DOCS=(
   getting-started
   known-differences
   errors
-  errexit
+  error-handling
   json
   simple-word-eval
   quirks

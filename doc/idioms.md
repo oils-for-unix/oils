@@ -783,7 +783,7 @@ Yes (purely a style preference):
   other than Oil.
 - [Shell Language Deprecations](deprecations.html).  Shell constructs that Oil
   users should avoid.
-- [Error Handling with `set -e` / `errexit`](errexit.html).  Oil fixes the
+- [Oil Fixes Shell's Error Handling (`errexit`)](error-handling.html).  Oil fixes the
   flaky error handling in POSIX shell and bash.
 - TODO: Go through more of the [Pure Bash
   Bible](https://github.com/dylanaraps/pure-bash-bible).  Oil provides
