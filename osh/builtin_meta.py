@@ -266,29 +266,23 @@ class Try(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    # TODO: Also hard usage error here too?
     attrs, arg_r = flag_spec.ParseCmdVal('try_', cmd_val)
     arg = arg_types.try_(attrs.attrs)
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block:
-      failed = False
+      status = 0  # success by default
       try:
         with state.ctx_ErrExit(self.mutable_opts, True, runtime.NO_SPID):
           unused = self.cmd_ev.EvalBlock(block)
       except error.ErrExit as e:
         status = e.ExitStatus()
-        failed = True
-
-      if not failed:
-        status = self.mem.LastStatus()
 
       self.mem.SetTryStatus(status)
       return 0
 
     if arg_r.Peek() is None:
-      # HARD ERROR, not e_usage(), because errexit is often disabled!
-      e_die("'try' expects a block or command argv", status=2)
+      e_usage('expects a block or command argv')
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
@@ -333,12 +327,10 @@ class BoolStatus(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    # TODO: Also hard usage error here too?
     _, arg_r = flag_spec.ParseCmdVal('boolstatus', cmd_val)
 
     if arg_r.Peek() is None:
-      # HARD ERROR, not e_usage(), because errexit is often disabled!
-      e_die("'boolstatus' expected a command to run", status=2)
+      e_usage('expected a command to run')
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
