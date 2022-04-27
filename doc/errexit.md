@@ -156,6 +156,25 @@ Process Sub:
 
 ### `boolstatus`
 
+There are some tools like `grep` that return a boolean status:
+
+- `0` means true (pattern found)
+- `1` means false (pattern not found)
+- Other statuses indicate an error, like `2` for a syntax error in the pattern.
+
+But the `if` statement tests for zero or non-zero status.  An **error** could
+be confused with a logical **false**.
+
+The `boolstatus` builtin addresses this issue.  If the status isn't `0` or `1`,
+it aborts the whole program:
+
+    # An error in grep will ABORT, executing neither branch of the if.
+    if boolstatus grep PATTERN FILE.txt {
+      echo 'found'
+    } else {
+      echo 'not found'
+    }
+
 ## Reference: Global Options
 
 You don't have to know all this stuff!

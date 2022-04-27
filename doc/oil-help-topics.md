@@ -107,7 +107,8 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   pp                     Pretty print interpreter state
                   write                  Like echo, but with --, --sep, --end
                   oil-read               Buffered I/O with --line, --all, --qsn
-                  try                    Re-enable errexit; exit status utils
+                  try                    Run with errexit and set _status
+                  boolstatus             Enforce 0 or 1 exit status
                   runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
                   use                    change first word lookup

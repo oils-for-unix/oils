@@ -254,6 +254,8 @@ TRY_SPEC.LongFlag('--assign', args.String,
 TRY_SPEC.LongFlag('--allow-status-01', args.Bool,
     help='Return 0 or 1 status values, but fail for others (e.g. for grep)')
 
+BOOLSTATUS_SPEC = FlagSpec('boolstatus')
+
 # Future directions:
 # run --allow-status=0,1
 #   an arbitrary list of statuses.  Although --assign does this just

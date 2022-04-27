@@ -52,56 +52,6 @@ failed
 done
 ## END
 
-#### try -allow-status-01 with external command
-
-set -o errexit
-
-echo hi > file.txt
-
-if try --allow-status-01 -- grep pat file.txt; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
-if try --allow-status-01 -- grep pat BAD; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
-echo DONE
-## status: 2
-## STDOUT:
-no match
-## END
-
-#### try -allow-status-01 with function
-
-set -o errexit
-
-echo hi > file.txt
-
-myproc() {
-  echo ---
-  grep pat BAD  # exits with code 2
-  #grep pat file.txt
-  echo ---
-}
-
-#myproc
-
-if try --allow-status-01 -- myproc; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
-## status: 2
-## STDOUT:
----
-## END
-
 #### try syntax error
 set -o errexit
 
@@ -138,3 +88,107 @@ echo st=$st
 st=42
 st=42
 ## END
+
+#### boolstatus with external command
+
+set -o errexit
+
+echo hi > file.txt
+
+if boolstatus grep pat file.txt; then
+  echo 'match'
+else 
+  echo 'no match'
+fi
+
+# file doesn't exist
+if boolstatus grep pat BAD; then
+  echo 'match'
+else 
+  echo 'no match'
+fi
+
+echo DONE
+## status: 2
+## STDOUT:
+no match
+## END
+
+#### boolstatus disallows procs with strict_errexit
+set -o errexit
+shopt -s strict_errexit
+
+echo hi > file.txt
+
+not-found() {
+  echo not-found
+  grep pat file.txt
+  echo not-found
+}
+
+bad() {
+  echo bad
+  grep pat BAD  # exits with code 2
+  echo bad
+}
+
+if boolstatus not-found; then
+  echo 'match'
+else 
+  echo 'no match'
+fi
+
+if boolstatus bad; then
+  echo 'match'
+else 
+  echo 'no match'
+fi
+
+## status: 1
+## STDOUT:
+## END
+
+#### boolstatus can call a function without strict_errexit (not recommended)
+set -o errexit
+
+echo hi > file.txt
+
+not-found() {
+  echo not-found
+  grep pat file.txt
+  local status=$?
+  if test "$status" -ne 0; then
+    return $status
+  fi
+  echo not-found
+}
+
+bad() {
+  echo bad
+  grep pat BAD  # exits with code 2
+  local status=$?
+  if test "$status" -ne 0; then
+    return $status
+  fi
+  echo bad
+}
+
+if boolstatus not-found; then
+  echo 'match'
+else 
+  echo 'no match'
+fi
+
+if boolstatus bad; then
+  echo 'match'
+else 
+  echo 'no match'
+fi
+
+## status: 2
+## STDOUT:
+not-found
+no match
+bad
+## END
+

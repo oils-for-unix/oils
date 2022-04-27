@@ -120,6 +120,7 @@ def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
                                                      search_path)
   builtins[builtin_i.runproc] = builtin_meta.RunProc(shell_ex, procs, errfmt)
   builtins[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, shell_ex, errfmt)
+  builtins[builtin_i.boolstatus] = builtin_meta.BoolStatus(mutable_opts, mem, shell_ex, errfmt)
 
 
 def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, errfmt):

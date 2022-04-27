@@ -236,21 +236,19 @@ class RunProc(vm._Builtin):
 class Try(vm._Builtin):
   """For the 'if myfunc' problem with errexit.
 
-  --status-ok
-    for SIGPIPE problem
-    TODO: I think we want sigpipe_status_ok instead of this
   --allow-status-01
     because 'grep' returns 0, 1, or 2 (true, false, usage error)
-  --assign-status
+  --assign
     To check exit codes in a more detailed way rather than relying on errexit
-  --push-status
-    TODO: for the headless shell to avoid clobbering $! with commands
 
-  if run deploy {
-    echo "success"
-  }
-  if ! run deploy {
-    echo "failed"
+  TODO: Implement new block builtin
+
+  try ls /bad
+  try {
+    var x = 1 / 0
+
+    ls | wc -l
+    diff <(sort left.txt) <(sort right.txt)
   }
   """
 
@@ -312,6 +310,39 @@ class Try(vm._Builtin):
 
       state.BuiltinSetString(self.mem, var_name, str(status))
       return self.mem.LastStatus()
+
+    return status
+
+
+class BoolStatus(vm._Builtin):
+  def __init__(self, mutable_opts, mem, shell_ex, errfmt):
+    # type: (state.MutableOpts, state.Mem, vm._Executor, ui.ErrorFormatter) -> None
+    self.mutable_opts = mutable_opts
+    self.mem = mem
+    self.shell_ex = shell_ex
+    self.errfmt = errfmt
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
+    # TODO: Also hard usage error here too?
+    _, arg_r = flag_spec.ParseCmdVal('boolstatus', cmd_val)
+
+    if arg_r.Peek() is None:
+      # HARD ERROR, not e_usage(), because errexit is often disabled!
+      e_die("'boolstatus' expected a command to run", status=2)
+
+    argv, spids = arg_r.Rest2()
+    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
+
+    cmd_st = CommandStatus()
+    status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+
+    if status not in (0, 1):
+      # for some reason this translates better than e_die()
+      raise error.FatalRuntime(
+          'boolstatus expected status 0 or 1, got %d' % status,
+          span_id=spids[0], status=status)
 
     return status
 
