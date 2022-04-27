@@ -1687,8 +1687,11 @@ class Mem(object):
 
     # "Registers"
     if name == '_status':
-      # TODO: value.Int()
-      return value.Obj(self.TryStatus())
+      if mylib.PYTHON:
+        # TODO: value.Int()
+        return value.Obj(self.TryStatus())
+      else:
+        return value.Undef()  # STUB
 
     if name == '_this_dir':
       if len(self.this_dir) == 0:
@@ -1704,6 +1707,7 @@ class Mem(object):
       return value.MaybeStrArray([str(i) for i in self.pipe_status[-1]])
 
     if name == '_process_sub_status':  # Oil naming convention
+      # TODO: Shouldn't these be real integers?
       return value.MaybeStrArray([str(i) for i in self.process_sub_status[-1]])
 
     if name == 'BASH_REMATCH':
