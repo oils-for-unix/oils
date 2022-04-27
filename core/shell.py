@@ -489,7 +489,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   shell_native.AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases,
                        search_path, errfmt)
   shell_native.AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev,
-                        errfmt)
+                        shell_ex, errfmt)
   builtins[builtin_i.json] = builtin_oil.Json(mem, expr_ev, errfmt)
 
   spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,

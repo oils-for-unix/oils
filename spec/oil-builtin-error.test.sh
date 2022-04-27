@@ -1,92 +1,227 @@
-
-#### try builtin
-shopt --set errexit strict_errexit
-
-myproc() {
-  echo hi
-  false
-  echo bye
-}
-
-case $SH in
-  (*osh)
-    # new semantics: the function aborts at 'false', the 'catch' builtin exits
-    # with code 1, and we echo 'failed'
-    try myproc || echo "failed"
-    ;;
-  (*)
-    myproc || echo "failed"
-    ;;
-esac
-
-## STDOUT:
-hi
-failed
-## END
-## N-I dash/bash/mksh/ash STDOUT:
-hi
-bye
-## END
-
-#### try with !
-shopt -s oil:all || true
-
-deploy() {
-  echo 'one'
-  false
-  echo 'two'
-}
-
-#if ! deploy; then
-#  echo 'failed'
-#fi
-
-if ! try deploy; then
-  echo 'failed'
-fi
-echo done
-
-## STDOUT:
-one
-failed
-done
-## END
-
-#### try syntax error
+#### try usage error
 set -o errexit
 
 # Irony: we can't fail that hard here because errexit is disabled before
 # we enable it.
 # TODO: We could special case this perhaps
 
-if try; then
-  echo hi
-else
-  echo fail
-fi
+try
 
 ## status: 2
 ## STDOUT:
 ## END
 
-#### try --assign
+#### try sets _status
+myproc() {
+  echo 'myproc'
+  return 42
+}
+
+try myproc
+echo dollar=$?
+echo _status=$_status
+
+( exit 9 )
+echo dollar=$?
+echo _status=$_status
+
+## STDOUT:
+myproc
+dollar=0
+_status=42
+dollar=9
+_status=42
+## END
+
+
+#### try with and without errexit
+shopt --set parse_brace
+
+myproc() {
+  echo before
+  false
+  echo after
+}
+
+try myproc
+echo status=$_status
+
+echo ---
+try {
+  echo 'block'
+  myproc
+}
+echo status=$_status
+
+echo ===
 set -o errexit
+
+try myproc
+echo status=$_status
+
+echo ---
+try {
+  echo 'block'
+  myproc
+}
+echo status=$_status
+
+## STDOUT:
+before
+status=1
+---
+block
+before
+status=1
+===
+before
+status=1
+---
+block
+before
+status=1
+## END
+
+#### try takes a block
+shopt --set parse_brace
+
+myproc() {
+  echo 'myproc'
+  return 42
+}
+
+try {
+  myproc
+}
+echo dollar=$?
+echo _status=$_status
+
+# It works the same with errexit
+set -o errexit
+
+try {
+  myproc
+}
+echo dollar=$?
+echo _status=$_status
+
+## STDOUT:
+myproc
+dollar=0
+_status=42
+myproc
+dollar=0
+_status=42
+## END
+
+#### try with _pipeline_status and PIPESTATUS
+shopt --set parse_brace parse_at
+set -o errexit
+
+try {
+  ls /bad | wc -l
+}
+echo p @_pipeline_status
+echo p @PIPESTATUS
+echo _status=$_status  # 0 because pipefail is off
+
+echo ---
+set -o pipefail
+try {
+  ls /bad | wc -l
+}
+echo p @_pipeline_status
+echo p @PIPESTATUS
+echo _status=$_status  # changed to 2 because of pipefail
+
+## STDOUT:
+0
+p 2 0
+p 2 0
+_status=0
+---
+0
+p 2 0
+p 2 0
+_status=2
+## END
+
+#### try with _process_sub_status
+shopt --set parse_brace parse_at
+set -o errexit
+
+touch right.txt
+
+try {
+  diff -q <(sort OOPS) <(sort right.txt)
+}
+echo p @_process_sub_status
+echo _status=$_status
+
+echo ---
+shopt --set process_sub_fail
+try {
+  diff -q <(sort OOPS) <(sort right.txt)
+}
+echo p @_process_sub_status
+echo _status=$_status  # changed to 2 because of process_sub_fail
+
+## STDOUT:
+p 2 0
+_status=0
+---
+p 2 0
+_status=2
+## END
+
+#### try error handling idioms
+shopt --set parse_paren parse_brace parse_at
 
 myproc() {
   return 42
 }
 
-try --assign st -- myproc
-echo st=$st
+try myproc
+if (_status === 0) {
+  echo 'OK'
+}
 
-# colon
-try --assign :st -- myproc
-echo st=$st
+try myproc
+if (_status !== 0) {
+  echo 'fail'
+}
 
+try {
+  ls /nonexistent | wc -l
+}
+# make sure it's integer comparison
+if (_pipeline_status[0] !== 0) {
+  echo 'pipeline failed:' @_pipeline_status
+}
+
+try {
+  diff <(sort XX) <(sort YY)
+}
+# make sure it's integer comparison
+if (_process_sub_status[0] !== 0) {
+  echo 'process sub failed:' @_process_sub_status
+}
 
 ## STDOUT:
-st=42
-st=42
+fail
+0
+pipeline failed: 2 0
+process sub failed: 2 2
+## END
+
+#### try can handled failed var, setvar, etc.
+
+try {
+  var x = 1 / 0
+}
+echo _status=$_status
+## STDOUT:
+_status=1
 ## END
 
 #### boolstatus with external command

@@ -959,6 +959,7 @@ class ctx_Registers(object):
     # PS1 also does.
     last = mem.last_status[-1]
     mem.last_status.append(last)
+    mem.try_status.append(0)
 
     # TODO: We should also copy these values!  Turn the whole thing into a
     # frame.
@@ -977,6 +978,7 @@ class ctx_Registers(object):
     self.mem.regex_matches.pop()
     self.mem.process_sub_status.pop()
     self.mem.pipe_status.pop()
+    self.mem.try_status.pop()
     self.mem.last_status.pop()
 
 
@@ -1051,6 +1053,7 @@ class Mem(object):
     # - Call it self.reg_stack?  with ctx_Registers
     # - push-registers builtin
     self.last_status = [0]  # type: List[int]  # a stack
+    self.try_status = [0]  # type: List[int]  # a stack
     self.pipe_status = [[]]  # type: List[List[int]]  # stack
     self.process_sub_status = [[]]  # type: List[List[int]]  # stack
 
@@ -1144,6 +1147,10 @@ class Mem(object):
     # type: () -> int
     return self.last_status[-1]
 
+  def TryStatus(self):
+    # type: () -> int
+    return self.try_status[-1]
+
   def PipeStatus(self):
     # type: () -> List[int]
     return self.pipe_status[-1]
@@ -1151,6 +1158,10 @@ class Mem(object):
   def SetLastStatus(self, x):
     # type: (int) -> None
     self.last_status[-1] = x
+
+  def SetTryStatus(self, x):
+    # type: (int) -> None
+    self.try_status[-1] = x
 
   def SetPipeStatus(self, x):
     # type: (List[int]) -> None
@@ -1676,7 +1687,8 @@ class Mem(object):
 
     # "Registers"
     if name == '_status':
-      return value.Str(str(self.last_status[-1]))
+      # TODO: value.Int()
+      return value.Obj(self.TryStatus())
 
     if name == '_this_dir':
       if len(self.this_dir) == 0:

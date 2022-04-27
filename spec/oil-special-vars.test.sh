@@ -1,21 +1,3 @@
-#### _status
-
-shopt --unset errexit {
-
-  ( exit 3 )
-  echo status=$_status
-
-  ( exit 4 )
-
-  var st = $_status
-  echo st=$st
-}
-
-## STDOUT:
-status=3
-st=4
-## END
-
 #### _this_dir in main and oshrc
 
 $SH $REPO_ROOT/spec/testdata/module/this_dir.oil

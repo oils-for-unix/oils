@@ -19,6 +19,7 @@ from core import vm
 from frontend import flag_spec
 from frontend import consts
 from frontend import reader
+from frontend import typed_args
 from osh import cmd_eval
 
 _ = log
@@ -234,27 +235,32 @@ class RunProc(vm._Builtin):
 
 
 class Try(vm._Builtin):
-  """For the 'if myfunc' problem with errexit.
+  """Allows explicit handling of errors.
 
-  --assign
-    To check exit codes in a more detailed way rather than relying on errexit
-
-  TODO: Implement new block builtin
+  Takes command argv, or a block:
 
   try ls /bad
+
   try {
     var x = 1 / 0
 
     ls | wc -l
+
     diff <(sort left.txt) <(sort right.txt)
   }
+
+  TODO:
+  - Set _error_str (e.UserErrorString()) 
+  - Set _error_location (span_id)
+  - These coudl be used by a 'raise' builtin?  Or 'reraise'
   """
 
-  def __init__(self, mutable_opts, mem, shell_ex, errfmt):
-    # type: (state.MutableOpts, state.Mem, vm._Executor, ui.ErrorFormatter) -> None
+  def __init__(self, mutable_opts, mem, cmd_ev, shell_ex, errfmt):
+    # type: (state.MutableOpts, state.Mem, cmd_eval.CommandEvaluator, vm._Executor, ui.ErrorFormatter) -> None
     self.mutable_opts = mutable_opts
     self.mem = mem
     self.shell_ex = shell_ex
+    self.cmd_ev = cmd_ev
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -264,9 +270,25 @@ class Try(vm._Builtin):
     attrs, arg_r = flag_spec.ParseCmdVal('try_', cmd_val)
     arg = arg_types.try_(attrs.attrs)
 
+    block = typed_args.GetOneBlock(cmd_val.typed_args)
+    if block:
+      failed = False
+      try:
+        with state.ctx_ErrExit(self.mutable_opts, True, runtime.NO_SPID):
+          unused = self.cmd_ev.EvalBlock(block)
+      except error.ErrExit as e:
+        status = e.ExitStatus()
+        failed = True
+
+      if not failed:
+        status = self.mem.LastStatus()
+
+      self.mem.SetTryStatus(status)
+      return 0
+
     if arg_r.Peek() is None:
       # HARD ERROR, not e_usage(), because errexit is often disabled!
-      e_die("'try' expected a command to run", status=2)
+      e_die("'try' expects a block or command argv", status=2)
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
@@ -286,20 +308,20 @@ class Try(vm._Builtin):
         cmd_st = CommandStatus()  # TODO: take param
         status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
         #log('st %d', status)
-    except error.ErrExit as e:  # from function call
-      #log('e %d', e.exit_status)
-      status = e.exit_status
+    except error.ErrExit as e:
+      status = e.ExitStatus()
       failure_spid = e.span_id
 
-    if arg.assign is not None:
-      var_name = arg.assign
-      if var_name.startswith(':'):
-        var_name = var_name[1:]
+      # TODO: should we allow the equivalent of "raise" ?  e.g. 
+      # try foo
+      # if (_status != 0) {
+      #   echo 'hello'
+      #   raise  # reads _status, _error_str, and _error_location ?
+      # }
 
-      state.BuiltinSetString(self.mem, var_name, str(status))
-      return self.mem.LastStatus()
-
-    return status
+    # special variable
+    self.mem.SetTryStatus(status)
+    return 0
 
 
 class BoolStatus(vm._Builtin):
