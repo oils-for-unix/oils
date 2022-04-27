@@ -236,8 +236,6 @@ class RunProc(vm._Builtin):
 class Try(vm._Builtin):
   """For the 'if myfunc' problem with errexit.
 
-  --allow-status-01
-    because 'grep' returns 0, 1, or 2 (true, false, usage error)
   --assign
     To check exit codes in a more detailed way rather than relying on errexit
 
@@ -293,16 +291,6 @@ class Try(vm._Builtin):
       status = e.exit_status
       failure_spid = e.span_id
 
-    if arg.allow_status_01 and status not in (0, 1):
-      if failure_spid != runtime.NO_SPID:
-        self.errfmt.Print_('(original failure)', span_id=failure_spid)
-        self.errfmt.StderrLine('')
-
-      # for some reason this translates better than e_die()
-      raise error.FatalRuntime(
-          'status %d when --allow-status-01' % status,
-          span_id=spids[0], status=status)
-
     if arg.assign is not None:
       var_name = arg.assign
       if var_name.startswith(':'):
@@ -315,10 +303,8 @@ class Try(vm._Builtin):
 
 
 class BoolStatus(vm._Builtin):
-  def __init__(self, mutable_opts, mem, shell_ex, errfmt):
-    # type: (state.MutableOpts, state.Mem, vm._Executor, ui.ErrorFormatter) -> None
-    self.mutable_opts = mutable_opts
-    self.mem = mem
+  def __init__(self, shell_ex, errfmt):
+    # type: (vm._Executor, ui.ErrorFormatter) -> None
     self.shell_ex = shell_ex
     self.errfmt = errfmt
 

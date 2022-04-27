@@ -251,8 +251,6 @@ _AddShellOptions(SET_SPEC)
 TRY_SPEC = FlagSpec('try_')
 TRY_SPEC.LongFlag('--assign', args.String,
     help='Assign status to this variable, and return 0')
-TRY_SPEC.LongFlag('--allow-status-01', args.Bool,
-    help='Return 0 or 1 status values, but fail for others (e.g. for grep)')
 
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
 
