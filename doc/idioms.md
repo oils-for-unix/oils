@@ -518,11 +518,10 @@ to the better behavior.
 <!--
 
 TODO:
-- consider 'bool' builtin to replace try -allow-status-01
 - Also document these idioms:
   - handling error from "atom": external process or builtin
-  - handling error from internal proc 
-  - boolean external process like grep
+  - handling error from internal proc (try)
+  - boolean external process like grep (boolstatus)
   - boolean internal proc like 'proc mypred'
 
 TODO: should 'runproc' replace try?

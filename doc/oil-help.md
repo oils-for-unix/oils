@@ -441,21 +441,29 @@ can't be any non-whitespace characters after it.
 
 #### try
 
-Re-enable errexit, and provide fine-grained control over exit codes.
+Run a block of code, stopping at the first error (i.e. errexit is enabled).
+Set the `_status` variable to the exit status of the block, and returns 0.
 
-    if try myfunc {  # errexit is ON during 'myfunc'
-      echo 'success'
+    try {
+      ls /nonexistent
+
+      ls | wc -l
+
+      diff <(sort left.txt) <(sort right.txt)
+
+      var x = 1 / 0
+    }
+    if (_status !== 0) {
+      echo 'error'
     }
 
-    if try --allow-status-01 -- grep pat file.txt {
-      echo 'pattern found'
-    }
+    # Shortcut for a single command
 
-    # Assign status to a variable, and return 0
-    try --assign :st -- mycmd
-    case $st in
-      2) echo 'usage error' ;;
-      *) echo 'OK' ;;
+    try grep PATTERN FILE.txt
+    case $_status in
+      (0) echo 'found' ;;
+      (1) echo 'not found' ;;
+      (*) echo "error $_status" ;;
     esac
 
 #### runproc
