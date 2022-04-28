@@ -5,6 +5,13 @@ default_highlighter: oil-sh
 Oil Fixes Shell's Error Handling (`errexit`)
 ============================================
 
+<style>
+  .faq {
+    font-style: italic;
+    color: purple;
+  }
+</style>
+
 POSIX shell has fundamental problems with error handling.  With `set -e` aka
 `errexit`, you're [damned if you do and damned if you don't][bash-faq].
 
@@ -224,19 +231,27 @@ The `boolstatus` builtin helps with the *True / False / Error* problem:
 Rather than confusing **error** with **false**, `boolstatus` will abort the
 program if `grep` doesn't return 0 or 1.
 
-<!--
-There are some tools like `grep` that return a boolean status:
+### FAQ on Language Design
 
-- `0` means true (pattern found)
-- `1` means false (pattern not found)
-- Other statuses indicate an error, like `2` for a syntax error in the pattern.
+<div class="faq">
 
-But the `if` statement tests for zero or non-zero status.  An **error** could
-be confused with a logical **false**.
+Why is there `try` but no `catch`?
 
-The `boolstatus` builtin addresses this issue.  If the status isn't `0` or `1`,
-it aborts the whole program:
--->
+</div>
+
+First, it offers more flexibility:
+
+- The handler usually inspects `_status`, but it may also inspect
+  `_pipeline_status` or `_process_sub_status`.
+- The handler may use `case` instead of `if`, e.g. to distinguish true / false
+  / error.
+
+Second, it makes the language smaller:
+
+- `try` / `catch` would require specially parsed keywords.  But our `try` is a
+  shell builtin that takes a block, like `cd` or `shopt`.
+- The builtin also lets us write either `try ls` or `try { ls }`, which is hard
+  with a keyword.
 
 ## Reference: Global Options
 
@@ -267,7 +282,7 @@ parent `echo` command will be `1`, so if `errexit` is on, the shell will abort.
 
 Similarly, in this example, `sort` will fail if the file doesn't exist.
 
-    diff <(sort left.txt) $(sort right.txt)  # any failures are ignored
+    diff <(sort left.txt) <(sort right.txt)  # any failures are ignored
 
 But there's no way to see this error in bash.  Oil adds `process_sub_fail`,
 which folds the failure into `$?` so `errexit` can do its job.
@@ -303,8 +318,8 @@ So `strict_errexit` is quite strict, but it leads to clear and simple code.
 In any conditional context, `strict_errexit` disallows:
 
 1. All commands except `((`, `[[`, and some simple commands (e.g. `echo foo`).
-   - Detail: `! ls` is technically a pipeline.  We have to allow it, while
-     disallowing `find | grep foo`.
+   - Detail: `! ls` is considered a pipeline in the shell grammar.  We have to
+     allow it, while disallowing `find | grep foo`.
 2. Function/proc invocations (which are a special case of simple
    commands.)
 3. Command sub and process sub (`shopt --unset allow_csub_psub`)
@@ -362,10 +377,14 @@ is on unless you're using OSH.
 When `verbose_errexit` is on, the shell prints errors to `stderr` when the
 `errexit` rule is triggered.
 
-### Mini-FAQ
+### FAQ on Options
 
-- Why is there no `_command_sub_status`?  And why is `command_sub_errexit`
-named differently than `process_sub_fail` / `pipefail`?
+<div class="faq">
+
+Why is there no `_command_sub_status`?  And why is `command_sub_errexit` named
+differently than `process_sub_fail` and `pipefail`?
+
+</div>
 
 Command subs are executed **serially**, while process subs and pipeline parts
 run **in parallel**.
@@ -375,7 +394,11 @@ The parallel constructs must wait until all parts are done and save statuses in
 an array.  Afterward, they determine `$?` based on the value of `pipefail` and
 `process_sub_fail`.
 
-- Why is `strict_errexit` a different option than `command_sub_errexit`?
+<div class="faq">
+
+Why is `strict_errexit` a different option than `command_sub_errexit`?
+
+</div>
 
 Because `shopt --set strict:all` can be used to improve scripts that are run
 under other shells like [bash]($xref).  It's like a runtime linter that
@@ -403,7 +426,7 @@ TODO: implement these rules.  Maybe consider status 3?
 
 ## Summary
 
-Oil uses three shell mechanisms to fix error handling once and for all.
+Oil uses three mechanisms to fix error handling once and for all.
 
 It has two new **builtins** that relate to errors:
 
@@ -444,8 +467,8 @@ Handling](https://www.oilshell.org/blog/2020/10/osh-features.html#reliable-error
 ## Related Docs
 
 - [Oil vs. Shell Idioms](idioms.html) shows more examples of `try` and `boolstatus`.
-- [Shell Idioms](shell-idioms.html) has a section  on fixing `strict_errexit`
-  problems.
+- [Shell Idioms](shell-idioms.html) has a section on fixing `strict_errexit`
+  problems in Bourne shell.
 
 Good articles on `errexit`:
 
@@ -542,7 +565,7 @@ Surprisingly, bare assignments take on the value of any command subs:
 
 But assignment builtins have the problem again:
 
-    local x=($false)  # exit code is clobbered, so $? is 0
+    local x=$(false)  # exit code is clobbered, so $? is 0
 
 So shell is confusing and inconsistent, but Oil fixes all these problems.  You
 never lose the exit code of `false`.

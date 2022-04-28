@@ -330,13 +330,13 @@ Yes:
 
 No:
 
-    myproc &
+    myfunc &
 
     { sleep 1; echo one; sleep 2; } &
 
 Yes:
 
-    fork { myproc }
+    fork { myfunc }
 
     fork { sleep 1; echo one; sleep 2 }
 
@@ -524,7 +524,7 @@ Yes:
 No:
 
     ls /bad || true  # OK because ls is external
-    myproc || true   # suffers from the "disabled errexit pitfall"
+    myfunc || true   # suffers from the "disabled errexit pitfall"
 
 Yes:
 
