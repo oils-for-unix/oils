@@ -1,13 +1,12 @@
 ---
-in_progress: yes
 default_highlighter: oil-sh
 ---
 
 Oil Fixes Shell's Error Handling (`errexit`)
 ============================================
 
-POSIX shell has **fundamental** problems with error handling.  With `set -e`
-aka `errexit`, you're [damned if you do and damned if you don't][bash-faq].
+POSIX shell has fundamental problems with error handling.  With `set -e` aka
+`errexit`, you're [damned if you do and damned if you don't][bash-faq].
 
 GNU [bash]($xref) fixes some of the problems, but **adds its own**, e.g. with
 respect to process subs, command subs, and assignment builtins.
@@ -38,7 +37,7 @@ Oil code, and look under the hood at the underlying mechanisms.
 - The special variable `$?` is the exit status of the last "command".  It's a
   number between `0` and `255`.
 - If `errexit` is enabled, the shell will abort if `$?` is nonzero.
-  - This is subject to the *Disabled `errexit` Quirk*, which I describe below.
+  - This is subject to the *disabled `errexit` pitfall*, which I describe below.
 
 These mechanisms are fundamentally incomplete.
 
@@ -87,10 +86,11 @@ conventions:
 
 Oil's error handling constructs must deal with this fundamental inconsistency.
 
-### Design Mistake: The "Disabled `errexit` Quirk" 
+### The Disabled `errexit` Pitfall (`if myfunc`)
 
 Here's an example of a bad interaction between the `if` statement, shell
-functions, and `errexit`.  It's a flaw in the shell language.
+functions, and `errexit`.  It's a **mistake** in the design of the shell
+language.
 
     set -o errexit     # don't ignore errors
 
@@ -174,7 +174,7 @@ Note that `_status` is different than `$?`, and that idiomatic Oil programs
 don't look at `$?`.
 
 You can omit `{ }` when invoking a single command.  Here's how to invoke a
-function without the *Disabled `errexit` Quirk*:
+function without the *disabled `errexit` pitfall*:
 
     try myfunc            # Unlike 'myfunc', doesn't abort on error
     if (_status !== 0) {
@@ -253,7 +253,7 @@ The following sections explain Oil's new options.
 ### `command_sub_errexit` Adds More Errors
 
 In all Bourne shells, the status of command subs is lost, so errors are ignored
-(details in the [appendix](#appendix-shell-execution-model)).  For example:
+(details in the [appendix](#quirky-behavior-of)).  For example:
 
     echo $(date X) $(date Y)  # 2 failures, both ignored
     echo                      # program continues
@@ -275,10 +275,6 @@ which folds the failure into `$?` so `errexit` can do its job.
 You can also inspect the special `_process_sub_status` array variable with
 custom error logic.
 
-(The difference between command subs and process subs / pipelines is that the
-former are run *serially* and the latter are run in *parallel*.  This affects
-the error handling mechanism.)
-
 ### `strict_errexit` Flags Two Problems
 
 Like other `strict_*` options, Oil's `strict_errexit` improves your shell
@@ -289,18 +285,20 @@ like a linter *at runtime*, so it can catch things that [ShellCheck][] can't.
 
 `strict_errexit` disallows code that exhibits these problems:
 
-1. The *Disabled `errexit` Quirk*, which I showed above.  I also think of it as
+1. The *disabled `errexit` pitfall*, which I showed above.  I also think of it as
    the `if myfunc` pitfall.
 1. The `local x=$(false)` pitfall.  The exit code of `false` is lost, for
    reasons described in the appendix.
 
 There's also a "meta" problem where disallowing bad code in child processes run
 from conditionals is impossible!  If the child fails with an **error**, the
-parent `if` might confuse it for **false**.
+parent `if` might confuse it for **false**.  (See this `if myfunc | grep`
+example in [Oil vs. Shell Idioms > Does a Pipeline
+Succeed?](idioms.html#does-a-pipeline-succeed))
 
 So `strict_errexit` is quite strict, but it leads to clear and simple code.
 
-#### Rules to Prevent the Disabled `errexit` Quirk
+#### Rules to Prevent the Disabled `errexit` Pitfall
 
 In any conditional context, `strict_errexit` disallows:
 
@@ -364,6 +362,29 @@ is on unless you're using OSH.
 When `verbose_errexit` is on, the shell prints errors to `stderr` when the
 `errexit` rule is triggered.
 
+### Mini-FAQ
+
+- Why is there no `_command_sub_status`?  And why is `command_sub_errexit`
+named differently than `process_sub_fail` / `pipefail`?
+
+Command subs are executed **serially**, while process subs and pipeline parts
+run **in parallel**.
+
+So a command sub can "abort" its parent command, setting `$?` immediately.
+The parallel constructs must wait until all parts are done and save statuses in
+an array.  Afterward, they determine `$?` based on the value of `pipefail` and
+`process_sub_fail`.
+
+- Why is `strict_errexit` a different option than `command_sub_errexit`?
+
+Because `shopt --set strict:all` can be used to improve scripts that are run
+under other shells like [bash]($xref).  It's like a runtime linter that
+disallows dangerous constructs.
+
+On the other hand, if you write code with `command_sub_errexit` on, it's
+impossible to get the same failures under bash.  So `command_sub_errexit` is
+not a `strict_*` option, and it's meant for OSH-only / Oil-only code.
+
 ## Reference: Exit Status of Oil "Commands"
 
 Each "command" in the shell grammar has a rule for its exit status.  Here are
@@ -387,9 +408,9 @@ Oil uses three shell mechanisms to fix error handling once and for all.
 It has two new **builtins** that relate to errors:
 
 1. `try` lets you explicitly handle errors when `errexit` is on.
-1. `boolstatus` enforces a true/false meaning (this builtin is less common).
+1. `boolstatus` enforces a true/false meaning.  (This builtin is less common).
 
-And three **special variables**:
+It has three **special variables**:
 
 1. The `_status` integer, which is set by `try`.
    - Remember that it's distinct from `$?`, and that idiomatic Oil programs
@@ -420,7 +441,7 @@ Handling](https://www.oilshell.org/blog/2020/10/osh-features.html#reliable-error
 -->
 
 
-### Related Docs
+## Related Docs
 
 - [Oil vs. Shell Idioms](idioms.html) shows more examples of `try` and `boolstatus`.
 - [Shell Idioms](shell-idioms.html) has a section  on fixing `strict_errexit`
@@ -439,17 +460,24 @@ Spec Test Suites:
 - <https://www.oilshell.org/release/latest/test/spec.wwz/survey/errexit.html>
 - <https://www.oilshell.org/release/latest/test/spec.wwz/survey/errexit-oil.html>
 
-These docs aren't about error handling, but they're similarly painstaking
-backward-compatible overhauls of shell:
+These docs aren't about error handling, but they're also painstaking
+backward-compatible overhauls of shell!
 
 - [Simple Word Evaluation in Unix Shell](simple-word-eval.html)
 - [Egg Expressions (Oil Regexes)](eggex.html)
 
-## Appendix: List Of Pitfalls
+For reference, this work on error handling was described in [Four Features That
+Justify a New Unix
+Shell](https://www.oilshell.org/blog/2020/10/osh-features.html) (October 2020).
+Since then, we changed `try` and `_status` to be more powerful and general.
+
+## Appendices
+
+### List Of Pitfalls
 
 We showed examples of these pitfalls above:
 
-1. The Disabled `errexit` Quirk, aka the `if myfunc` Pitfall.  (`strict_errexit`)
+1. The *disabled `errexit` pitfall*, aka the `if myfunc` Pitfall.  (`strict_errexit`)
 2. The `local x=$(false)` Pitfall (`strict_errexit`)
 3. The `yes | head` Pitfall. (`sigpipe_status_ok`)
 
@@ -465,7 +493,7 @@ Here are more error handling pitfalls don't require changes to Oil:
    - Solution: Use `i=$((i + 1))`, which is valid POSIX shell.
    - In Oil, use `setvar i += 1`.
 
-#### bash: `errexit` is disabled in command subs (`inherit_errexit`)
+#### 6. In bash, `errexit` is disabled in command subs (`inherit_errexit`)
 
 Example:
 
@@ -473,7 +501,7 @@ Example:
     shopt -s inherit_errexit  # needed to avoid 'touch two'
     echo $(touch one; false; touch two)
 
-#### bash: Grammatical Quirk With `set -o failglob`
+#### 7. Bash has a grammatical quirk with `set -o failglob`
 
 Like the definition of `$?`, this is a quirk that relates to the shell's
 **grammar**.  Consider this program:
@@ -497,9 +525,7 @@ in different **productions of the grammar**, and produce distinct syntax trees.
 (A related quirk is that this same difference can affect the number of
 processes that shells start!)
 
-## Appendix: Shell Execution Model
-
-Here are some details on the quirks of `$?`.
+### Quirky Behavior of `$?`
 
 Simple commands have an obvious behavior:
 

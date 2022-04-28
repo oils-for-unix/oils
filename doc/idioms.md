@@ -445,16 +445,33 @@ files.  It doesn't have "namespaces".
 
 ### Relative Imports
 
+Suppose we are running `bin/mytool`, and we want `BASE_DIR` to be the root of
+the repository so we can do a relative import of `lib/foo.sh`.
+
 No:
 
     # All of these are common idioms, with caveats
-    source $(dirname $0)/lib/foo.sh
-    source $(dirname ${BASH_SOURCE[0]})/lib/foo.sh
-    source $(cd $($dirname $0); pwd)/lib/foo.sh
+    BASE_DIR=$(dirname $0)/..
+
+    BASE_DIR=$(dirname ${BASH_SOURCE[0]})/..
+
+    BASE_DIR=$(cd $($dirname $0)/.. && pwd)
+
+    BASE_DIR=$(dirname (dirname $(readlink -f $0)))
+
+    source $BASE_DIR/lib/foo.sh
 
 Yes:
 
-    source $_this_dir/lib/foo.sh
+    const BASE_DIR = "$this_dir/.."
+
+    source $BASE_DIR/lib/foo.sh
+
+    # Or simply:
+    source $_this_dir/../lib/foo.sh
+
+The value of `_this_dir` is the directory that contains the currently executing
+file.
 
 ### Include Guards
 
@@ -489,24 +506,75 @@ Yes
 
 ## Error Handling
 
-### If and `!` For Builtins and External Commands
+### Don't Use `&&` Outside of `if` / `while`
+
+It's implicit because `errexit` is on in Oil.
+
+No:
+
+    mkdir /tmp/dest && cp foo /tmp/dest
+
+Yes:
+
+    mkdir /tmp/dest
+    cp foo /tmp/dest
+
+### Ignore an Error
+
+No:
+
+    ls /bad || true  # OK because ls is external
+    myproc || true   # suffers from the "disabled errexit pitfall"
+
+Yes:
+
+    try ls /bad
+    try myfunc
+
+### Retrieve A Command's Status When `errexit` is On
+
+No:
+
+    # set -e is enabled earlier
+
+    set +e
+    mycommand  # this ignores errors when mycommand is a function
+    status=$?  # save it before it changes
+    set -e
+
+    echo $status
+
+Yes:
+
+    try mycommand
+    echo $_status
+
+### Does a Builtin Or External Command Succeed?
 
 These idioms are OK in both shell and Oil:
-
-    if ! test -d /bin {
-      echo 'not a directory'
-    }
 
     if ! cp foo /tmp {
       echo 'error copying'  # any non-zero status
     }
 
-### Pitfall: If, shell functions, and `errexit`
+    if ! test -d /bin {
+      echo 'not a directory'
+    }
 
-When the command is a shell function, you should't not use `if` directly.
+To be consistent with the idioms below, you can also write them like this:
 
-**No**.  POSIX shell has the *Disabled `errexit` Pitfall*, which is detected by
-Oil's strict_errexit.
+    try cp foo /tmp
+    if (_status !== 0) {
+      echo 'error copying'
+    }
+
+### Does a Function Succeed?
+
+When the command is a shell function, you should't use `if myfunc` directly.
+This is because shell has the *disabled `errexit` pitfall*, which is detected
+by Oil's `strict_errexit`.
+
+**No**:
 
     if myfunc; then  # errors not checked in body of myfunc
       echo 'success'
@@ -518,7 +586,7 @@ Oil's strict_errexit.
       echo 'success'
     fi
 
-    "$@"  # Run the function $1 with args $2 ...
+    "$@"  # Run the function $1 with args $2, $3, ...
 
 **Yes**.  Oil's try builtin sets the special `_status` variable and returns
 `0`.
@@ -540,36 +608,73 @@ A block arg is useful for multiple commands:
       echo 'error'
     }
 
-Pipelines:
+
+### Does a Pipeline Succeed?
+
+No:
+
+    if ps | grep python; then
+      echo 'fouund'
+    fi
+
+This is technically correct when `pipefail` is on, but it's impossible for
+Oil's `strict_errexit` to distinguish it from `if myfunc | grep python` ahead
+of time.  If you know what you're doing, you can disable `strict_errexit`.
+
+Yes:
 
     try {
-      ls /nonexistent | wc
+      ps | grep python
     }
-    # You can examine the status of each part of the pipeline
+    if (_status === 0) {
+      echo 'found'
+    }
+
+    # You can also examine the status of each part of the pipeline
     if (_pipeline_status[0] !== 0) {
-      echo 'ls failed'
+      echo 'ps failed'
     }
 
-Process substitution:
+### Does a Command With Process Subs Succeed?
+
+Similar to the pipeline example above:
+
+No:
+
+    if ! comm <(sort left.txt) <(sort right.txt); then
+      echo 'error'
+    fi
+
+Yes:
 
     try {
-      diff <(sort left.txt) <(sort right.txt)
+      comm <(sort left.txt) <(sort right.txt)
     }
-    # You can examine the status of each process sub
+    if (_status !== 0) {
+      echo 'error'
+    }
+
+    # You can also examine the status of each process sub
     if (_process_sub_status[0] !== 0) {
       echo 'first process sub failed'
     }
 
-And Expressions:
+(I used `comm` in this example because it doesn't have a true / false / error
+status like `diff`.)
+
+### Handle Errors in Oil Expressions
 
     try {
       var x = 42 / 0
+      echo "result is $[42 / 0]"
     }
     if (_status !== 0) {
       echo 'divide by zero'
     }
 
-### `boolstatus` to Distinguish Errors from False
+### Test Boolean Statuses, like `grep`, `diff`, `test`
+
+Oil's `boolstatus` builtin distinguishes **error** from **false**.
 
 **No**, this is subtly wrong.  `grep` has 3 different return values.
 
@@ -586,31 +691,6 @@ And Expressions:
     } else {
       echo 'not found'           # status 1 means not found
     }
-
-### Don't use `&&` Outside of `if` / `while`
-
-It's implicit because `errexit` is on in Oil.
-
-No:
-
-    mkdir /tmp/dest && cp foo /tmp/dest
-
-Yes:
-
-    mkdir /tmp/dest
-    cp foo /tmp/dest
-
-### Ignore an Error
-
-No:
-
-    ls /bad || true  # OK for external commands
-    myproc || true   # suffers from the "Disabled errexit Pitfall"
-
-Yes:
-
-    try ls /bad
-    try myfunc
 
 ## Use Oil Expressions, Initializations, and Assignments (var, setvar)
 
