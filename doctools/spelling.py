@@ -41,7 +41,7 @@ def SplitWords(contents):
 def WordList(f):
   for line in f:
     # no special characters allowed
-    yield line.strip().lower()
+    yield line.strip()
 
 
 def Options():
@@ -112,7 +112,7 @@ def main(argv):
         for w in WordList(f):
           #if d.get(word) == 1:
           #  print(word)
-          if w not in known_words:
+          if w.lower() not in known_words:
             unknown[w] = True
 
         if unknown:
