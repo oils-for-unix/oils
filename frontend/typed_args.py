@@ -13,6 +13,13 @@ from mycpp.mylib import tagswitch
 from typing import Optional, cast, TYPE_CHECKING
 
 
+def DoesNotAccept(arg_list):
+  # type: (Optional[ArgList]) -> None
+  if arg_list is not None:
+    span_id = arg_list.spids[0]
+    e_usage('got unexpected typed args', span_id=span_id)
+
+
 def RequiredExpr(arg_list):
   # type: (Optional[ArgList]) -> Optional[expr_t]
   if arg_list is None:

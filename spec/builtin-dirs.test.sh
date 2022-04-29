@@ -20,14 +20,42 @@ pwd=/
 ## N-I dash/mksh status: 127
 ## N-I dash/mksh stdout-json: ""
 
+#### pushd usage
+pushd -z
+echo status=$?
+pushd /tmp >/dev/null
+echo status=$?
+pushd -- /tmp >/dev/null
+echo status=$?
+## STDOUT:
+status=2
+status=0
+status=0
+## END
+## OK zsh STDOUT:
+status=1
+status=0
+status=0
+## END
+
 #### popd usage error
 pushd / >/dev/null
 popd zzz
 echo status=$?
+
+popd -- >/dev/null
+echo status=$?
+
+popd -z
+echo status=$?
 ## STDOUT:
+status=2
+status=0
 status=2
 ## END
 ## BUG zsh STDOUT:
+status=0
+status=0
 status=0
 ## END
 

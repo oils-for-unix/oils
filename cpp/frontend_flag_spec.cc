@@ -290,6 +290,13 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 #endif
 }
 
+// With optional arg
+Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
+    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val, bool accept_typed_args) {
+  // TODO: disallow typed args!
+  ParseCmdVal(spec_name, cmd_val);
+}
+
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
 #ifdef CPP_UNIT_TEST

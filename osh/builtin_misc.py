@@ -538,7 +538,7 @@ class Cd(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseCmdVal('cd', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('cd', cmd_val, accept_typed_args=True)
     arg = arg_types.cd(attrs.attrs)
 
     dest_dir, arg_spid = arg_r.Peek2()
@@ -636,20 +636,26 @@ class Pushd(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    num_args = len(cmd_val.argv) - 1
-    if num_args == 0:
+    _, arg_r = flag_spec.ParseCmdVal('pushd', cmd_val)
+
+    dir_arg, dir_arg_spid = arg_r.Peek2()
+    if dir_arg is None:
       # TODO: It's suppose to try another dir before doing this?
       self.errfmt.Print_('pushd: no other directory')
+      # bash oddly returns 1, not 2
       return 1
-    elif num_args > 1:
-      e_usage('got too many arguments')
+
+    arg_r.Next()
+    extra, extra_spid = arg_r.Peek2()
+    if extra is not None:
+      e_usage('got too many arguments', span_id=extra_spid)
 
     # TODO: 'cd' uses normpath?  Is that inconsistent?
-    dest_dir = os_path.abspath(cmd_val.argv[1])
+    dest_dir = os_path.abspath(dir_arg)
     err_num = pyos.Chdir(dest_dir)
     if err_num != 0:
       self.errfmt.Print_("pushd: %r: %s" % (dest_dir, posix.strerror(err_num)),
-                         span_id=cmd_val.arg_spids[1])
+                         span_id=dir_arg_spid)
       return 1
 
     self.dir_stack.Push(dest_dir)
@@ -687,8 +693,11 @@ class Popd(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    if len(cmd_val.arg_spids) > 1:
-      e_usage('got extra argument', span_id=cmd_val.arg_spids[1])
+    _, arg_r = flag_spec.ParseCmdVal('pushd', cmd_val)
+
+    extra, extra_spid = arg_r.Peek2()
+    if extra is not None:
+      e_usage('got extra argument', span_id=extra_spid)
 
     if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):
       return 1  # error

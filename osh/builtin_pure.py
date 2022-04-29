@@ -53,6 +53,9 @@ class Boolean(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
+
+    # These ignore regular args, but shouldn't accept typed args.
+    typed_args.DoesNotAccept(cmd_val.typed_args)
     return self.status
 
 
@@ -182,7 +185,8 @@ class Shopt(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseCmdVal('shopt', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('shopt', cmd_val,
+                                         accept_typed_args=True)
 
     arg = arg_types.shopt(attrs.attrs)
     opt_names = arg_r.Rest()
@@ -622,8 +626,7 @@ class Shvar(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseCmdVal('shvar', cmd_val)
-    #arg = arg_types.shvar(attrs.attrs)
+    _, arg_r = flag_spec.ParseCmdVal('shvar', cmd_val, accept_typed_args=True)
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if not block:

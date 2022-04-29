@@ -262,3 +262,36 @@ shvar=0
 try=0
 ## END
 
+#### Consistency: Unwanted Blocks Are Errors
+shopt --set parse_brace
+
+true { echo BAD }
+echo true $?
+
+false ( 42, 43 )
+echo false $?
+
+echo { echo BAD }
+echo echo block $?
+
+echo ( 42, 43 )
+echo echo args $?
+
+command echo 'command block' { echo BAD }
+echo command echo $?
+
+builtin echo 'builtin block' { echo BAD }
+echo builtin echo $?
+
+pushd $TMP { echo BAD }
+echo pushd $?
+
+## STDOUT:
+true 2
+false 2
+echo block 2
+echo args 2
+command echo 2
+builtin echo 2
+pushd 2
+## END

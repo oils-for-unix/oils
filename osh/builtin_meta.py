@@ -145,7 +145,10 @@ class Command(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseCmdVal('command', cmd_val)
+
+    # accept_typed_args=True because we invoke other builtins
+    attrs, arg_r = flag_spec.ParseCmdVal('command', cmd_val,
+                                         accept_typed_args=True)
     arg = arg_types.command(attrs.attrs)
     if arg.v:
       status = 0
@@ -215,10 +218,8 @@ class RunProc(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-
-    attrs, arg_r = flag_spec.ParseCmdVal('runproc', cmd_val)
-    arg = arg_types.runproc(attrs.attrs)
-
+    _, arg_r = flag_spec.ParseCmdVal('runproc', cmd_val,
+                                     accept_typed_args=True)
     argv, spids = arg_r.Rest2()
 
     if len(argv) == 0:
@@ -265,9 +266,7 @@ class Try(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-
-    attrs, arg_r = flag_spec.ParseCmdVal('try_', cmd_val)
-    arg = arg_types.try_(attrs.attrs)
+    _, arg_r = flag_spec.ParseCmdVal('try_', cmd_val, accept_typed_args=True)
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block:

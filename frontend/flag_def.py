@@ -137,6 +137,9 @@ CD_SPEC = FlagSpec('cd')
 CD_SPEC.ShortFlag('-L')
 CD_SPEC.ShortFlag('-P')
 
+PUSHD_SPEC = FlagSpec('pushd')
+
+POPD_SPEC = FlagSpec('popd')
 
 DIRS_SPEC = FlagSpec('dirs')
 DIRS_SPEC.ShortFlag('-c')

@@ -552,3 +552,18 @@ status=0
 status=1
 status=2
 ## END
+
+#### runproc typed args
+shopt --set parse_brace
+
+proc p {
+  echo hi
+}
+
+# The block is ignored for now
+runproc p { 
+  echo myblock 
+}
+## STDOUT:
+hi
+## END
