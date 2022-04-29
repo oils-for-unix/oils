@@ -222,7 +222,7 @@ more examples.
 
 The `boolstatus` builtin helps with the *True / False / Error* problem:
 
-    if boolstatus grep PATTERN FILE.txt {  # may abort the program
+    if boolstatus grep 'class' *.py {  # may abort the program
       echo 'found'      # status 0 means 'found'
     } else {
       echo 'not found'  # status 1 means 'not found'
@@ -230,6 +230,19 @@ The `boolstatus` builtin helps with the *True / False / Error* problem:
 
 Rather than confusing **error** with **false**, `boolstatus` will abort the
 program if `grep` doesn't return 0 or 1.
+
+You can think of this as a shortcut for
+
+    try grep 'class' *.py
+    case $_status {
+      (0) echo 'found'
+          ;;
+      (1) echo 'not found'
+          ;;
+      (*) echo 'fatal'
+          exit $_status
+          ;;
+    }
 
 ### FAQ on Language Design
 

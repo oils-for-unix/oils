@@ -678,7 +678,7 @@ Oil's `boolstatus` builtin distinguishes **error** from **false**.
 
 **No**, this is subtly wrong.  `grep` has 3 different return values.
 
-    if egrep '[0-9]+' myfile {       
+    if grep 'class' *.py {       
       echo 'found'               # status 0 means found
     } else {
       echo 'not found OR ERROR'  # any non-zero status
@@ -686,10 +686,23 @@ Oil's `boolstatus` builtin distinguishes **error** from **false**.
 
 **Yes**.  `boolstatus` aborts the program if `egrep` doesn't return 0 or 1.
 
-    if boolstatus egrep '[0-9]+' myfile {  # may abort
+    if boolstatus grep 'class' *.py {  # may abort
       echo 'found'               # status 0 means found
     } else {
       echo 'not found'           # status 1 means not found
+    }
+
+More flexible style:
+
+    try grep 'class' *.py
+    case $_status {
+      (0) echo 'found'
+          ;;
+      (1) echo 'not found'
+          ;;
+      (*) echo 'fatal'
+          exit $_status
+          ;;
     }
 
 ## Use Oil Expressions, Initializations, and Assignments (var, setvar)
@@ -734,7 +747,7 @@ Yes:
 
 ### Initialize and Assign Arrays
 
-Container literals in Oil look like `%(one two)` and `%{key: 'value'}`.
+Arrays in Oil look like `%(my array)` and `['my', 'array']`.
 
 No:
 
@@ -746,6 +759,14 @@ Yes:
     var myarray = %(one two three)
     setvar myarray[3] = 'THREE'
 
+    var same = ['one', 'two', 'three']
+    var typed = [1, 2, true, false, null]
+
+
+### Initialize and Assign Dicts
+
+Dicts in Oil look like `{key: 'value'}`.
+
 No:
 
     local -A myassoc=(['key']=value ['k2']=v2)
@@ -755,10 +776,10 @@ No:
 Yes:
 
     # keys don't need to be quoted
-    var myassoc = %{key: 'value', k2: 'v2'}
+    var myassoc = {key: 'value', k2: 'v2'}
     setvar myassoc['key'] = 'V'
 
-### Expressions on Arrays
+### Get Values From Arrays and Dicts
 
 No:
 
