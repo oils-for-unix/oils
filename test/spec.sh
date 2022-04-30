@@ -884,7 +884,7 @@ oil-array() {
 }
 
 oil-assign() {
-  sh-spec spec/oil-assign.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/oil-assign.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 

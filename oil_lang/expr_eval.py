@@ -14,6 +14,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from asdl import runtime
 from core import error
+from core import state
 from core.pyerror import e_die, log
 from frontend import consts
 from oil_lang import objects
@@ -68,6 +69,7 @@ class OilEvaluator(object):
 
   def __init__(self,
                mem,  # type: Mem
+               mutable_opts,  # type: state.MutableOpts
                funcs,  # type: Dict
                splitter,  # type: split.SplitContext
                errfmt,  # type: ErrorFormatter
@@ -77,8 +79,9 @@ class OilEvaluator(object):
     self.word_ev = None  # type: StringWordEvaluator
 
     self.mem = mem
-    self.splitter = splitter
+    self.mutable_opts = mutable_opts
     self.funcs = funcs
+    self.splitter = splitter
     self.errfmt = errfmt
 
   def CheckCircularDeps(self):
@@ -188,6 +191,12 @@ class OilEvaluator(object):
 
   def EvalExpr(self, node):
     # type: (expr_t) -> Any
+    """Public API for _EvalExpr that ensures that command_sub_errexit is on."""
+    with state.ctx_OilExpr(self.mutable_opts):
+      return self._EvalExpr(node)
+
+  def _EvalExpr(self, node):
+    # type: (expr_t) -> Any
     """
     This is a naive PyObject evaluator!  It uses the type dispatch of the host
     Python interpreter.
@@ -197,7 +206,7 @@ class OilEvaluator(object):
       storing in Mem.
     """
     if 0:
-      print('EvalExpr()')
+      print('_EvalExpr()')
       node.PrettyPrint()
       print('')
 
@@ -291,7 +300,7 @@ class OilEvaluator(object):
       return self.word_ev.EvalSimpleVarSubToString(node.token)
 
     if node.tag == expr_e.Unary:
-      child = self.EvalExpr(node.child)
+      child = self._EvalExpr(node.child)
       if node.op.id == Id.Arith_Minus:
         return -child
       if node.op.id == Id.Arith_Tilde:
@@ -302,8 +311,8 @@ class OilEvaluator(object):
       raise NotImplementedError(node.op.id)
 
     if node.tag == expr_e.Binary:
-      left = self.EvalExpr(node.left)
-      right = self.EvalExpr(node.right)
+      left = self._EvalExpr(node.left)
+      right = self._EvalExpr(node.right)
 
       if node.op.id == Id.Arith_Plus:
         return left + right
@@ -353,21 +362,21 @@ class OilEvaluator(object):
       raise NotImplementedError(node.op.id)
 
     if node.tag == expr_e.Range:  # 1:10  or  1:10:2
-      lower = self.EvalExpr(node.lower)
-      upper = self.EvalExpr(node.upper)
+      lower = self._EvalExpr(node.lower)
+      upper = self._EvalExpr(node.upper)
       return xrange(lower, upper)
 
     if node.tag == expr_e.Slice:  # a[:0]
-      lower = self.EvalExpr(node.lower) if node.lower else None
-      upper = self.EvalExpr(node.upper) if node.upper else None
+      lower = self._EvalExpr(node.lower) if node.lower else None
+      upper = self._EvalExpr(node.upper) if node.upper else None
       return slice(lower, upper)
 
     if node.tag == expr_e.Compare:
-      left = self.EvalExpr(node.left)
+      left = self._EvalExpr(node.left)
       result = True  # Implicit and
       for op, right_expr in zip(node.ops, node.comparators):
 
-        right = self.EvalExpr(right_expr)
+        right = self._EvalExpr(right_expr)
 
         if op.id == Id.Arith_Less:
           result = left < right
@@ -450,28 +459,28 @@ class OilEvaluator(object):
       return result
  
     if node.tag == expr_e.IfExp:
-      b = self.EvalExpr(node.test)
+      b = self._EvalExpr(node.test)
       if b:
-        return self.EvalExpr(node.body)
+        return self._EvalExpr(node.body)
       else:
-        return self.EvalExpr(node.orelse)
+        return self._EvalExpr(node.orelse)
 
     if node.tag == expr_e.List:
-      return [self.EvalExpr(e) for e in node.elts]
+      return [self._EvalExpr(e) for e in node.elts]
 
     if node.tag == expr_e.Tuple:
-      return tuple(self.EvalExpr(e) for e in node.elts)
+      return tuple(self._EvalExpr(e) for e in node.elts)
 
     if node.tag == expr_e.Dict:
       # NOTE: some keys are expr.Const
-      keys = [self.EvalExpr(e) for e in node.keys]
+      keys = [self._EvalExpr(e) for e in node.keys]
 
       values = []
       for i, e in enumerate(node.values):
         if e.tag == expr_e.Implicit:
           v = self.LookupVar(keys[i])  # {name}
         else:
-          v = self.EvalExpr(e)
+          v = self._EvalExpr(e)
         values.append(v)
 
       return dict(zip(keys, values))
@@ -484,7 +493,7 @@ class OilEvaluator(object):
       #   Hm... lexical or dynamic scope is an issue.
       result = []
       comp = node.generators[0]
-      obj = self.EvalExpr(comp.iter)
+      obj = self._EvalExpr(comp.iter)
 
       # TODO: Handle x,y etc.
       iter_name = comp.lhs[0].name.val
@@ -503,19 +512,19 @@ class OilEvaluator(object):
             lvalue.Named(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
 
         if comp.cond:
-          b = self.EvalExpr(comp.cond)
+          b = self._EvalExpr(comp.cond)
         else:
           b = True
 
         if b:
-          item = self.EvalExpr(node.elt)  # e.g. x*2
+          item = self._EvalExpr(node.elt)  # e.g. x*2
           result.append(item)
 
       return result
 
     if node.tag == expr_e.GeneratorExp:
       comp = node.generators[0]
-      obj = self.EvalExpr(comp.iter)
+      obj = self._EvalExpr(comp.iter)
 
       # TODO: Support (x for x, y in ...)
       iter_name = comp.lhs[0].name.val
@@ -535,12 +544,12 @@ class OilEvaluator(object):
               lvalue.Named(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
 
           if comp.cond:
-            b = self.EvalExpr(comp.cond)
+            b = self._EvalExpr(comp.cond)
           else:
             b = True
 
           if b:
-            item = self.EvalExpr(node.elt)  # e.g. x*2
+            item = self._EvalExpr(node.elt)  # e.g. x*2
             yield item
 
       return _gen()
@@ -551,13 +560,13 @@ class OilEvaluator(object):
       #return objects.Lambda(node, None)
 
     if node.tag == expr_e.FuncCall:
-      func = self.EvalExpr(node.func)
+      func = self._EvalExpr(node.func)
       pos_args, named_args = self.EvalArgList(node.args)
       ret = func(*pos_args, **named_args)
       return ret
 
     if node.tag == expr_e.Subscript:
-      obj = self.EvalExpr(node.obj)
+      obj = self._EvalExpr(node.obj)
       index = self._EvalIndices(node.indices)
       try:
         result = obj[index]
@@ -573,7 +582,7 @@ class OilEvaluator(object):
     # Note: This is only for the obj.method() case.  We will probably change
     # the AST and get rid of getattr().
     if node.tag == expr_e.Attribute:  # obj.attr 
-      o = self.EvalExpr(node.obj)
+      o = self._EvalExpr(node.obj)
       id_ = node.op.id
       if id_ == Id.Expr_Dot:
         # Used for .startswith()
@@ -605,7 +614,7 @@ class OilEvaluator(object):
       return objects.Regex(self.EvalRegex(node.regex))
 
     if node.tag == expr_e.ArrayLiteral:  # obj.attr 
-      items = [self.EvalExpr(item) for item in node.items]
+      items = [self._EvalExpr(item) for item in node.items]
       if items:
         # Determine type at runtime?  If we have something like @[(i) (j)]
         # then we don't know its type until runtime.

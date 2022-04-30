@@ -200,6 +200,22 @@ class ctx_AssignBuiltin(object):
       self.mutable_opts.Pop(option_i.allow_csub_psub)
 
 
+class ctx_OilExpr(object):
+  """ Command sub must fail in 'mystring' ++ $(false) """
+  def __init__(self, mutable_opts):
+    # type: (MutableOpts) -> None
+    mutable_opts.Push(option_i.command_sub_errexit, True)
+    self.mutable_opts = mutable_opts
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.mutable_opts.Pop(option_i.command_sub_errexit)
+
+
 class ctx_ErrExit(object):
   """Manages the errexit setting.
 

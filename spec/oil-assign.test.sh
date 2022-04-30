@@ -314,19 +314,38 @@ setvar L[0] = L
 # NOTE: This feels PROBLEMATIC without command_sub_errexit feels like it should
 # be the last one ...
 
+$SH -c '
 var x = $(false)
-echo x=$x status=$?
+echo inside=$?
+'
+echo outside=$?
 
-setvar x = "$(false)/$(echo 42; exit 42)"
-echo x=$x status=$?
+$SH -c '
+setvar x = $(false)
+echo inside=$?
+'
+echo outside=$?
 
-const y = "$(false)/$(echo 43; exit 43)/$(echo 44; exit 44)"
-echo y=$y status=$?
+# Argument list
+$SH -c '
+_ split( $(false) )
+echo inside=$?
+'
+echo outside=$?
+
+# Place expression
+$SH -c '
+var d = {}
+setvar d[ $(false) ] = 42
+echo inside=$?
+'
+echo outside=$?
 
 ## STDOUT:
-x= status=1
-x=/42 status=1
-y=/43/44 status=1
+outside=1
+outside=1
+outside=1
+outside=1
 ## END
 
 

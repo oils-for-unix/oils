@@ -444,7 +444,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
-  expr_ev = expr_eval.OilEvaluator(mem, procs, splitter, errfmt)
+  expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
 

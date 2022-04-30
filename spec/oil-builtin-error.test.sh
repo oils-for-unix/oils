@@ -280,6 +280,24 @@ hi
 _status=3
 ## END
 
+#### try with failed command sub within expression 
+shopt --set parse_brace
+
+try {
+  echo hi
+  var x = $(exit 42)  # errexit
+  echo bye
+}
+echo try $_status
+
+# Note that there's no way to retrieve this status WITHOUT try
+# var x = $(exit 42)  # errexit
+
+## STDOUT:
+hi
+try 42
+## END
+
 #### Uncaught expression error exits status 3
 $SH -c '
 
