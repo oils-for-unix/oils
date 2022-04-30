@@ -184,3 +184,12 @@ if mylib.PYTHON:
 
   class Expr(FatalRuntime):
     """ e.g. KeyError, IndexError, ZeroDivisionError """
+
+    def ExitStatus(self):
+      # type: () -> int
+      """For both the caught and uncaught case.
+      
+      Caught: try sets _status register to 3
+      Uncaught: shell exits with status 3
+      """
+      return 3

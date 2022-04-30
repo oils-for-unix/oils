@@ -128,11 +128,10 @@ oil_expr_eval() {
   _error-case 'var x = "z" ++ $(false)'
   #_error-case 'var x = "z" ++ $(exit 42)'
 
-  _expr-error-case 'case $[42 / 0] { (*) echo hi;; }; echo OK'
+  _expr-error-case 'case $[42 / 0] { (*) echo hi ;; }; echo OK'
 
   _expr-error-case 'var d = {}; for x in $[d->zzz] { echo hi }'
 }
-
 
 _run-test() {
   local name=$1

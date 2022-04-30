@@ -165,7 +165,7 @@ On the other hand, you won't experience this problem caused by `pipefail`:
 
 The details are explained below.
 
-### Handle Errors With `try`
+### `try` Handles Command Errors
 
 You may want to **handle failure** instead of aborting the shell.  In this
 case, use the `try` builtin and inspect the `_status` variable it sets.
@@ -179,8 +179,12 @@ case, use the `try` builtin and inspect the `_status` variable it sets.
       echo 'failed'
     }
 
-Note that `_status` is different than `$?`, and that idiomatic Oil programs
-don't look at `$?`.
+Note that:
+
+- The `_status` variable is different than `$?`.
+  - The leading `_` is a PHP-like convention for special variables /
+    "registers" in Oil.
+- Idiomatic Oil programs don't look at `$?`.
 
 You can omit `{ }` when invoking a single command.  Here's how to invoke a
 function without the *disabled `errexit` pitfall*:
@@ -188,18 +192,6 @@ function without the *disabled `errexit` pitfall*:
     try myfunc            # Unlike 'myfunc', doesn't abort on error
     if (_status !== 0) {
       echo 'failed'
-    }
-
-Exceptions while evaluating expressions are turned into "command" exit codes,
-which can be examined the same way:
-
-    var d = {}                     # empty dict
-    try {
-      setvar x = d['nonexistent']  # exception: missing key
-      var y = 42 / 0               # exception: divide by zero
-    }
-    if (_status !== 0) {
-      echo 'expression error'
     }
 
 You also have fine-grained control over every process in a pipeline:
@@ -219,6 +211,30 @@ And each process substitution:
 
 See [Oil vs. Shell Idioms > Error Handling](idioms.html#error-handling) for
 more examples.
+
+### And Expression Errors
+
+Certain expressions produce fatal errors, like:
+
+    var x = 42 / 0  # divide by zero
+
+The `try` builtin also handles them:
+
+    try {
+       var x = 42 / 0
+    }
+    if (_status !== 0) {
+      echo 'divide by zero'
+    }
+
+More examples: 
+
+- Index out of bounds `a[i]` 
+- Nonexistent key `d->foo` or `d['foo']`.
+
+Such expression evaluation errors result in status `3`, which is an arbitrary non-zero
+status that's not used by other shells.  Status `2` is generally for syntax
+errors and status `1` is for most runtime failures.
 
 ### `boolstatus` Enforces 0 or 1 Status
 
@@ -423,24 +439,6 @@ On the other hand, if you write code with `command_sub_errexit` on, it's
 impossible to get the same failures under bash.  So `command_sub_errexit` is
 not a `strict_*` option, and it's meant for OSH-only / Oil-only code.
 
-## Reference: Exit Status of Oil "Commands"
-
-Each "command" in the shell grammar has a rule for its exit status.  Here are
-the rules for Oil's new command types:
-
-- `proc`.  As with defining shell functions, defining a `proc` never fails.  It
-  always exits `0`.
-- `var`, `const`, `setvar`, and the `_` keyword.  If an exception occurs during
-  expression evaluation, the status is `3`.  Otherwise it's `0`.
-
-Similarly, an expression sub like like `echo $[1 / 0]` will raise an internal
-exception, and the status of `echo` will be `3`.  (This is similar to what
-happens when a redirect fails.)
-
-Note: The status `3` is an arbitrary non-zero status that's not used by other
-shells.  Status `2` is generally for syntax errors and status `1` is for most
-runtime failures.
-  
 ## Summary
 
 Oil uses three mechanisms to fix error handling once and for all.

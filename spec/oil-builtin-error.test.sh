@@ -264,6 +264,11 @@ key 3
 arrow 3
 ## END
 
+# nothing on stderr because it's caught!
+
+## STDERR:
+## END
+
 #### try can handled failed expr sub
 shopt --set parse_brace
 
@@ -278,6 +283,8 @@ echo _status=$_status
 ## STDOUT:
 hi
 _status=3
+## END
+## STDERR:
 ## END
 
 #### try with failed command sub within expression 

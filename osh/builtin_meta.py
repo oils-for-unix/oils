@@ -253,7 +253,13 @@ class Try(vm._Builtin):
   TODO:
   - Set _error_str (e.UserErrorString()) 
   - Set _error_location (span_id)
-  - These coudl be used by a 'raise' builtin?  Or 'reraise'
+  - These could be used by a 'raise' builtin?  Or 'reraise'
+
+  try foo
+  if (_status != 0) {
+    echo 'hello'
+    raise  # reads _status, _error_str, and _error_location ?
+  }
   """
 
   def __init__(self, mutable_opts, mem, cmd_ev, shell_ex, errfmt):
@@ -274,6 +280,8 @@ class Try(vm._Builtin):
       try:
         with state.ctx_ErrExit(self.mutable_opts, True, runtime.NO_SPID):
           unused = self.cmd_ev.EvalBlock(block)
+      except error.Expr as e:
+        status = e.ExitStatus()
       except error.ErrExit as e:
         status = e.ExitStatus()
 
@@ -286,8 +294,7 @@ class Try(vm._Builtin):
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
 
-    # Set in the 'except' block, e.g. if 'myfunc' failed
-    failure_spid = runtime.NO_SPID
+    #failure_spid = runtime.NO_SPID
     try:
       # Temporarily turn ON errexit, but don't pass a SPID because we're
       # ENABLING and not disabling.  Note that 'if try myproc' disables it and
@@ -301,16 +308,11 @@ class Try(vm._Builtin):
         cmd_st = CommandStatus()  # TODO: take param
         status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
         #log('st %d', status)
+    except error.Expr as e:
+      status = e.ExitStatus()
     except error.ErrExit as e:
       status = e.ExitStatus()
-      failure_spid = e.span_id
-
-      # TODO: should we allow the equivalent of "raise" ?  e.g. 
-      # try foo
-      # if (_status != 0) {
-      #   echo 'hello'
-      #   raise  # reads _status, _error_str, and _error_location ?
-      # }
+      #failure_spid = e.span_id
 
     # special variable
     self.mem.SetTryStatus(status)
