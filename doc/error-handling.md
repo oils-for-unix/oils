@@ -143,19 +143,21 @@ But when you're using Oil, you don't have to worry about any of this!
 
 This means you don't have to explicitly check for errors.  Examples:
 
-    shopt --set oil:basic      # Enable good error handling in bin/osh
-                               # It's the default in bin/oil.
+    shopt --set oil:basic       # Enable good error handling in bin/osh
+                                # It's the default in bin/oil.
+    shopt --set strict_errexit  # Disallow bad shell error handling.
+                                # Also the default in bin/oil.
 
-    local date=$(date X)       # 'date' failure is fatal
-    # => date: invalid date 'X'
+    local date=$(date X)        # 'date' failure is fatal
+    # => date: invalid date 'X' 
 
-    echo $(date X)             # ditto
+    echo $(date X)              # ditto
 
-    echo $(date X) $(ls > F)   # 'ls' isn't executed; 'date' fails first
+    echo $(date X) $(ls > F)    # 'ls' isn't executed; 'date' fails first
 
-    ls /bad | wc               # failure of 'ls' is fatal
+    ls /bad | wc                # failure of 'ls' is fatal
 
-    diff <(sort A) <(sort B)   # failure of 'sort' is fatal
+    diff <(sort A) <(sort B)    # failure of 'sort' is fatal
 
 On the other hand, you won't experience this problem caused by `pipefail`:
 
