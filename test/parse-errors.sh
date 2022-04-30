@@ -739,12 +739,10 @@ oil_expr() {
   _oil-parse-error '= 42,'
   _oil-parse-error '= (42,)'
 
-  # parse_equals
-  _oil-parse-error '
-shopt --set parse_equals
-=a
-'
+  # Disallowed unconditionally
+  _oil-parse-error '=a'
 
+  # parse_equals
   _oil-parse-error '
 shopt --set parse_equals
 name=val

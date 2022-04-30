@@ -180,7 +180,7 @@ f() {
 ## stdout-json: ""
 ## OK mksh status: 1
 
-#### =word is not allowed
+#### leading =word is not allowed regardless of shopt -s parse_equals
 =word
 ## OK osh status: 2
 ## status: 127
