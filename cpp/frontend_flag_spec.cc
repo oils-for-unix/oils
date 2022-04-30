@@ -292,7 +292,8 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 
 // With optional arg
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val, bool accept_typed_args) {
+    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val,
+    bool accept_typed_args) {
   // TODO: disallow typed args!
   ParseCmdVal(spec_name, cmd_val);
 }

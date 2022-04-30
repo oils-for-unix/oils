@@ -1403,6 +1403,9 @@ class CommandEvaluator(object):
             try:
               status = self._Dispatch(node, cmd_st)
               check_errexit = cmd_st.check_errexit
+            except error.Expr as e:
+              self.errfmt.PrettyPrintError(e, prefix='expression: ')
+              status = 3
             except error.FailGlob as e:
               if not e.HasLocation():  # Last resort!
                 e.span_id = self.mem.CurrentSpanId()

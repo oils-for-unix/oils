@@ -181,3 +181,6 @@ if mylib.PYTHON:
 
     Travels between WordEvaluator and CommandEvaluator.
     """
+
+  class Expr(FatalRuntime):
+    """ e.g. KeyError, IndexError, ZeroDivisionError """

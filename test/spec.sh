@@ -643,6 +643,11 @@ errexit-oil() {
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
+fatal-errors() {
+  sh-spec spec/fatal-errors.test.sh --osh-failures-allowed 0 \
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+}
+
 # 
 # Non-POSIX extensions: arrays, brace expansion, [[, ((, etc.
 #

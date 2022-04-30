@@ -145,6 +145,19 @@ class ErrExit : public _ErrorWithLocation {
   }
 };
 
+// Stub: the parts that raise aren't translated
+class Expr : public _ErrorWithLocation {
+#if 0
+ public:
+  Expr(Str* user_str, int span_id)
+      : _ErrorWithLocation(user_str, span_id) {
+  }
+  Expr(Str* user_str, Token* token)
+      : _ErrorWithLocation(user_str, token) {
+  }
+#endif
+};
+
 // Stub
 class Runtime : public _ErrorWithLocation {
  public:

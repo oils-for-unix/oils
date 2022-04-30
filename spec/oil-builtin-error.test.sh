@@ -227,13 +227,57 @@ process sub failed: 2 2
 ## END
 
 #### try can handled failed var, setvar, etc.
+shopt --set parse_brace
 
 try {
+  echo hi
   var x = 1 / 0
+  echo 'should not get here'
+}
+echo div $_status
+
+try {
+  var a = []
+  setvar item = a[1]
+  echo 'should not get here'
+}
+echo index $_status
+
+try {
+  var d = {}
+  setvar item = d['mykey']
+  echo 'should not get here'
+}
+echo key $_status
+
+try {
+  setvar item = d->mykey
+  echo 'should not get here'
+}
+echo arrow $_status
+
+## STDOUT:
+hi
+div 3
+index 3
+key 3
+arrow 3
+## END
+
+#### try can handled failed expr sub
+shopt --set parse_brace
+
+try {
+  echo hi
+
+  var d = {}
+  echo "result = $[d->BAD]"
+  echo 'should not get here'
 }
 echo _status=$_status
 ## STDOUT:
-_status=1
+hi
+_status=3
 ## END
 
 #### boolstatus with external command

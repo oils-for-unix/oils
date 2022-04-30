@@ -13,6 +13,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e,
 )
 from asdl import runtime
+from core import error
 from core.pyerror import e_die, log
 from frontend import consts
 from oil_lang import objects
@@ -311,9 +312,13 @@ class OilEvaluator(object):
       if node.op.id == Id.Arith_Star:
         return left * right
       if node.op.id == Id.Arith_Slash:
-        # NOTE: from __future__ import division changes 5/2!
-        # But just make it explicit.
-        return float(left) / right  # floating point division
+        # NOTE: does not depend on from __future__ import division
+        try:
+          result = float(left) / right  # floating point division
+        except ZeroDivisionError:
+          raise error.Expr('divide by zero', token=node.op)
+
+        return result
 
       if node.op.id == Id.Expr_DSlash:
         return left // right  # integer divison
@@ -554,7 +559,16 @@ class OilEvaluator(object):
     if node.tag == expr_e.Subscript:
       obj = self.EvalExpr(node.obj)
       index = self._EvalIndices(node.indices)
-      return obj[index]
+      try:
+        result = obj[index]
+      except KeyError:
+        # TODO: expr.Subscript has no error location
+        raise error.Expr('dict entry not found', span_id=runtime.NO_SPID)
+      except IndexError:
+        # TODO: expr.Subscript has no error location
+        raise error.Expr('index out of range', span_id=runtime.NO_SPID)
+
+      return result
 
     # Note: This is only for the obj.method() case.  We will probably change
     # the AST and get rid of getattr().
@@ -568,7 +582,12 @@ class OilEvaluator(object):
 
       if id_ == Id.Expr_RArrow:  # d->key is like d['key']
         name = node.attr.val
-        return o[name]
+        try:
+          result = o[name]
+        except KeyError:
+          raise error.Expr('dict entry not found', token=node.op)
+
+        return result
 
       if id_ == Id.Expr_DColon:  # StaticName::member
         raise NotImplementedError(id_)

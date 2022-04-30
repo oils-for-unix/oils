@@ -429,14 +429,16 @@ the rules for Oil's new command types:
 - `proc`.  As with defining shell functions, defining a `proc` never fails.  It
   always exits `0`.
 - `var`, `const`, `setvar`, and the `_` keyword.  If an exception occurs during
-  expression evaluation, the status is `1`.  Otherwise it's `0`.
+  expression evaluation, the status is `3`.  Otherwise it's `0`.
 
 Similarly, an expression sub like like `echo $[1 / 0]` will raise an internal
-exception, and the status of `echo` will be `1`.  (This is similar to what
+exception, and the status of `echo` will be `3`.  (This is similar to what
 happens when a redirect fails.)
-  
-TODO: implement these rules.  Maybe consider status 3?
 
+Note: The status `3` is an arbitrary non-zero status that's not used by other
+shells.  Status `2` is generally for syntax errors and status `1` is for most
+runtime failures.
+  
 ## Summary
 
 Oil uses three mechanisms to fix error handling once and for all.

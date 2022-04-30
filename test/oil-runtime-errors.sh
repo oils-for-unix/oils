@@ -15,16 +15,29 @@ banner() {
   echo
 }
 
-_error-case() {
+_error-case-X() {
+  local expected_status=$1
+  shift
+
   banner "$@"
   echo
   $OIL -c "$@"
 
   # NOTE: This works with osh, not others.
   local status=$?
-  if test $status != 1; then
-    die "Expected status 1, got $status"
+  if test $status != $expected_status; then
+    die "Expected status $expected_status, got $status"
   fi
+}
+
+_error-case() {
+  ### Expect status 1
+  _error-case-X 1 "$@"
+}
+
+_expr-error-case() {
+  ### Expect status 3
+  _error-case-X 3 "$@"
 }
 
 _should-run() {
@@ -98,6 +111,29 @@ oil_word_eval() {
   _error-case 'const x = [1, 2]; echo $x'
 }
 
+oil_expr_eval() {
+  set +o errexit
+
+  _expr-error-case 'echo $[42 / 0 ]'
+
+  _expr-error-case 'var d = {}; var item = d->nonexistent'
+
+  _expr-error-case 'var d = {}; var item = d["nonexistent"]'
+
+  _expr-error-case 'var a = []; setvar item = a[1]'
+
+  _expr-error-case 'const x = 42 / 0'
+
+  # command sub as part of expression retains its exit code
+  _error-case 'var x = "z" ++ $(false)'
+  #_error-case 'var x = "z" ++ $(exit 42)'
+
+  _expr-error-case 'case $[42 / 0] { (*) echo hi;; }; echo OK'
+
+  _expr-error-case 'var d = {}; for x in $[d->zzz] { echo hi }'
+}
+
+
 _run-test() {
   local name=$1
 
@@ -106,7 +142,7 @@ _run-test() {
 
 run-all-with-osh() {
   local status=0
-  for t in regex_literals undefined_vars oil_word_eval; do
+  for t in regex_literals undefined_vars oil_word_eval oil_expr_eval; do
     _run-test $t
     status=$?
     if test $status != 0; then
