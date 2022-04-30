@@ -157,10 +157,11 @@ _BASIC_PARSE_OPTIONS = [
 
 # Extra stuff that breaks too many programs.
 _AGGRESSIVE_PARSE_OPTIONS = [
-    ('parse_equals', False),   # x = 'var'
     ('parse_at_all', False),   # @ starting any word, e.g. @[] @{} @@ @_ @-
 
-    # Legacy syntax that is removed
+    # Legacy syntax that is removed.  These options are distinct from strict_*
+    # because they don't help you avoid bugs in bash programs.  They just makes
+    # the language more consistent.
     ('parse_backslash', True),
     ('parse_backticks', True),
     ('parse_dollar', True),
@@ -300,6 +301,9 @@ def _Init(opt_def):
     opt_def.Add(name, default=default, groups=['oil:all'])
   for name, default in _AGGRESSIVE_RUNTIME_OPTIONS:
     opt_def.Add(name, default=default, groups=['oil:all'])
+
+  # For configuration files.  bin/oven?
+  opt_def.Add('parse_equals')
 
   # Off by default.
   opt_def.Add('parse_tea')

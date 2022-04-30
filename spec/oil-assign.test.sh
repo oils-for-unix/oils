@@ -48,7 +48,7 @@ proc f {
 ## END
 
 #### top-level dynamic check: const can't be be mutated
-shopt -s oil:all
+shopt -s oil:all parse_equals
 
 x = 'foo'
 echo x=$x
@@ -215,7 +215,7 @@ write --sep ' ' @mylist
 ## END
 
 #### mixing assignment builtins and Oil assignment
-shopt -s oil:all
+shopt -s oil:all parse_equals
 
 proc local-var {
   local x=1
@@ -309,7 +309,11 @@ setvar L[0] = L
 ## END
 
 
-#### exit code of var, const, setvar
+#### exit code of var, const, setvar with command sub
+
+# NOTE: This feels PROBLEMATIC without command_sub_errexit feels like it should
+# be the last one ...
+
 var x = $(false)
 echo x=$x status=$?
 
@@ -322,5 +326,5 @@ echo y=$y status=$?
 ## STDOUT:
 x= status=1
 x=/42 status=1
-x=/43/44 status=1
+y=/43/44 status=1
 ## END

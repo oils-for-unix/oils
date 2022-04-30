@@ -1945,6 +1945,7 @@ class CommandParser(object):
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookPastSpace() == Id.Lit_Equals):
+            # bare declaration is equivalent to 'const'
             self.var_checker.Check(Id.KW_Const, tok)
 
             enode = self.w_parser.ParseBareDecl()

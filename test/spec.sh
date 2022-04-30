@@ -889,7 +889,7 @@ oil-assign() {
 }
 
 oil-blocks() {
-  sh-spec spec/oil-blocks.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/oil-blocks.test.sh --osh-failures-allowed 3 \
     $OSH_LIST "$@"
 }
 

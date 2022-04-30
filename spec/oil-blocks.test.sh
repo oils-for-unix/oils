@@ -295,3 +295,36 @@ command echo 2
 builtin echo 2
 pushd 2
 ## END
+
+#### Block with Bare Assignments
+
+# oil:all has parse_equals
+# is there any way to turn on parse_equals only in config blocks?
+# but we don't know what's a block ahead of time
+# I think we would have to check at runtime.  Look at VarChecker
+
+shopt --set oil:all
+
+proc rule(s, b Block) {
+  echo "rule $s"
+}
+
+proc myrules(name) { 
+  rule $name-python { 
+    kind = 'python'
+  }
+
+  rule $name-cc {
+    kind = 'cc'  # should NOT conflict
+  }
+}
+
+myrules foo
+myrules bar
+
+## STDOUT:
+rule foo-python
+rule foo-cc
+rule bar-ypthon
+rule bar-cc
+## END

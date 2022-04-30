@@ -503,7 +503,7 @@ k2
 ## END
 
 #### parse_equals: allows bare assignment
-shopt -s oil:all  # including nice options
+shopt -s parse_equals
 x = 1 + 2*3
 echo $x
 ## STDOUT:
@@ -511,13 +511,13 @@ echo $x
 ## END
 
 #### parse_equals: disallows ENV=val mycommand
-shopt -s oil:all
+shopt -s parse_equals
 ENV=val echo hi
 ## status: 2
 ## stdout-json: ""
 
 #### parse_equals: disallows var=val
-shopt -s oil:all
+shopt -s parse_equals
 var=val
 ## status: 2
 ## stdout-json: ""

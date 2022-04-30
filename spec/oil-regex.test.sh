@@ -636,7 +636,7 @@ echo $pat
 # octdigit     ::=  "0"..."7"
 # hexdigit     ::=  digit | "a"..."f" | "A"..."F"
 
-shopt -s oil:all
+shopt -s oil:all parse_equals  # Hm will need 'const'
 
 DecDigit = / [0-9] /
 BinDigit = / [0-1] /

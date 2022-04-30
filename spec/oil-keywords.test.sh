@@ -15,7 +15,7 @@ _ append(strs, 'c')
 write -- @strs
 
 # integer types too
-L = [5, 6]
+const L = [5, 6]
 _ append(L, 7)
 write -- @L
 
