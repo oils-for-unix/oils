@@ -289,16 +289,29 @@ Note: these may be valid in Tea, but not Oil
     setvar x.foo, x.bar = foo, bar
 -->
 
-### Syntactic Sugar: Omit `const`
+### Bare Assignment
 
-In Oil, but not OSH, you can omit `const` when there's only one variable:
+`shopt --set parse_equals` is currently **off** in both OSH and Oil.  It allows
+constants to be declared without the `const` keyword:
 
     const x = 'foo'
 
-    x = 'foo'  # Same thing.  This is NOT a mutation as in C or Java.
+    x = 'foo'  # Similar.  This is NOT a mutation as in C or Java.
 
-To prevent confusion, `x=foo` (no spaces) is disallowed in Oil.  Use the `env`
-command instead:
+However, it doesn't do a static check for *'const' already defined in proc*.
+It will be used for future config-like use cases:
+
+    subdomain app.example.com {  # subdomain proc takes a string and block
+      root = '/home/www/bin/'    # no var or const keyword necessary
+    }
+
+    subdomain docs.example.com {
+      root = '/home/www/docs/'   # not a redefinition
+                                 # blocks may or may not introduce a new scope
+    }
+
+When it's enabled, `x=foo` (no spaces) is disallowed to prevent confusiong.
+Use the `env` command instead:
 
     env PYTHONPATH=. ./foo.py  # good
     PYTHONPATH=. ./foo.py`.    # disallowed because it would be confusing

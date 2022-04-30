@@ -328,3 +328,28 @@ x= status=1
 x=/42 status=1
 y=/43/44 status=1
 ## END
+
+
+#### Bare Assignment Does Dynamic Checks, not Static
+shopt --set parse_equals
+
+proc bare {
+  x = 3
+  echo x=$x
+  x = 4  # already defined
+  echo x=$x
+}
+
+bare
+
+# Compare with this STATIC check
+proc myconst {
+  # const x = 3
+  # const x = 4  # already defined
+  echo x=$x
+}
+
+## status: 1
+## STDOUT:
+x=3
+## END

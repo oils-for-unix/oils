@@ -325,6 +325,6 @@ myrules bar
 ## STDOUT:
 rule foo-python
 rule foo-cc
-rule bar-ypthon
+rule bar-python
 rule bar-cc
 ## END
