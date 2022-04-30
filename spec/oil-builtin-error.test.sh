@@ -280,6 +280,19 @@ hi
 _status=3
 ## END
 
+#### Uncaught expression error exits status 3
+$SH -c '
+
+# errexit does not need to be!
+
+var x = 42 / 0
+echo inside=$?
+'
+echo outside=$?
+## STDOUT:
+outside=3
+## END
+
 #### boolstatus with external command
 
 set -o errexit

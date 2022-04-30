@@ -975,7 +975,7 @@ class CommandParser(object):
     part0 = words[0].parts[0]
     if part0.tag_() == word_part_e.Literal:
       tok = cast(Token, part0)
-      if tok.id == Id.Lit_Equals:
+      if self.parse_opts.parse_equals() and tok.id == Id.Lit_Equals:
         p_die("=word isn't allowed when shopt 'parse_equals' is on.\n"
               "Hint: add a space after = to pretty print an expression", token=tok)
 

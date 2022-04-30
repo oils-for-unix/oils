@@ -86,7 +86,7 @@ regex_literals() {
 undefined_vars() {
   set +o errexit
 
-  _error-case 'echo hi; y = 2 + x + 3'
+  _error-case 'echo hi; const y = 2 + x + 3'
   _error-case 'if (x) { echo hello }'
   _error-case 'if ($x) { echo hi }'
   _error-case 'if (${x}) { echo hi }'

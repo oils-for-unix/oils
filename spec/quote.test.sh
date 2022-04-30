@@ -218,12 +218,12 @@ echo $w $x $y
 case $SH in (*osh) ;; (*) exit  ;; esac
 shopt -s oil:all
 
-w = c'\uZ'
+const w = c'\uZ'
 
-x = c'\u{03bc'
+const x = c'\u{03bc'
 
 # Also invalid
-y = c'\z'
+const y = c'\z'
 
 ## stdout-json: ""
 ## status: 2

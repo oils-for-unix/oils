@@ -740,8 +740,16 @@ oil_expr() {
   _oil-parse-error '= (42,)'
 
   # parse_equals
-  _oil-parse-error '=a'
-  _oil-parse-error 'name=val'
+  _oil-parse-error '
+shopt --set parse_equals
+=a
+'
+
+  _oil-parse-error '
+shopt --set parse_equals
+name=val
+'
+
 }
 
 oil_expr_more() {
@@ -764,7 +772,7 @@ echo parse_backslash $'\u{03bc'
 EOF
   # Not in Oil
   _oil-parse-error-here <<'EOF'
-bad = $'\u{03bc'
+const bad = $'\u{03bc'
 EOF
 
   # Test single quoted
@@ -772,7 +780,7 @@ EOF
 echo $'\z'
 EOF
   _oil-parse-error-here <<'EOF'
-bad = $'\z'
+const bad = $'\z'
 EOF
 
   # Octal not allowed
@@ -780,28 +788,28 @@ EOF
 echo $'\101'
 EOF
   _oil-parse-error-here <<'EOF'
-bad = $'\101'
+const bad = $'\101'
 EOF
 
   # \xH not allowed
   _oil-parse-error-here <<'EOF'
-bad = c'\xf'
+const bad = c'\xf'
 EOF
 
   _should-parse 'echo "\z"'
   # Double quoted is an error
   _error-case2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
   _oil-parse-error 'echo "\z"'  # not in Oil
-  _oil-parse-error 'bad = "\z"'  # not in expression mode
+  _oil-parse-error 'const bad = "\z"'  # not in expression mode
 
   # C style escapes not respected
   _should-parse 'echo "\u1234"'  # ok in OSH
   _oil-parse-error 'echo "\u1234"'  # not in Oil
-  _oil-parse-error 'bad = "\u1234"'
+  _oil-parse-error 'const bad = "\u1234"'
 
   _should-parse 'echo "`echo hi`"'
   _oil-parse-error 'echo "`echo hi`"'
-  _oil-parse-error 'bad = "`echo hi`"'
+  _oil-parse-error 'const bad = "`echo hi`"'
 
   # We want these to be tested under OSH, but they won't work under Oil native!
   if is-oil-native; then
@@ -891,7 +899,7 @@ oil_to_make_nicer() {
   # _oil-parse-error "x = c'\\uz'"
 
   # Dict pair split
-  _oil-parse-error ' d = { name:
+  _oil-parse-error 'const d = { name:
 42 }'
 
   #_oil-parse-error ' d = %{}'
@@ -987,15 +995,6 @@ oil_var_decl() {
     var x = 1
     echo hi
     const x = 2  # Cannot redeclare local
-  }
-  '
-
-  # implicit const
-  _oil-parse-error '
-  proc p {
-    x = 1
-    echo hi
-    x = 2   # Cannot redeclare local
   }
   '
 

@@ -1,6 +1,6 @@
 # hello.oil
 
 const x = 40
-y = 2  # no const keyword
+const y = 2
 
 echo "hello $[x + y]"  # hello 42
