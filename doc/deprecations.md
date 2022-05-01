@@ -8,8 +8,8 @@ Shell Language Deprecations
 When you turn on Oil, there are some shell constructs you can no longer use.
 We try to minimize the length of this list.
 
-You **don't** need to read this doc if you plan on using Oil in its default 
-POSIX- and bash-compatible mode.  **Oil is compatible by default**.
+You **don't** need to read this doc if you're using `bin/osh`, which is Oil in
+its default POSIX- and bash-compatible mode.  **OSH is compatible by default**.
 
 <!-- cmark.py expands this -->
 <div id="toc">
@@ -59,8 +59,6 @@ Justification: We're using parentheses for Oil expressions like
 
 and subshells are uncommon.  Oil has blocks to save and restore state.
 
-TODO: Implement `forkwait`.
-
 ### Some Extended Globs Can't Be Used (`shopt -s parse_at`)
 
 No:
@@ -77,11 +75,14 @@ explicitly split command subs like `@(seq 3)` to work.
 That is, Oil doesn't have implicit word splitting.  Instead, it uses [simple
 word evaluation](simple-word-eval.html).
 
-TODO: Implement this.
-
 ### Minor Breakages
 
 - `@foo` must be quoted `'@foo'` to preserve meaning (`shopt -s parse_at`)
+- `=x` is disallowed as the first word in a command to avoid confusion with
+  Oil's `=` operator.
+  - It could be quoted like `'=x'`, but there's almost no reason to do that.
+
+<!--
 
 ## Later (`shopt -s oil:all`, under  `bin/oil`)
 
@@ -115,18 +116,19 @@ this is valid Oil syntax:
       root = "/home/$USER/www/"
     }
 
+-->
+
 ## That's It
 
 This is the list of major features that's broken when you upgrade from OSH to
 Oil.  Again, we try to minimize this list, and there are two tiers.
 
 There are other features that are **discouraged**, like `$(( x + 1 ))`, `((
-i++))`, `[[ $s =~ $pat ]]`, and `${s%%prefix}`.  These have better alternatives
-in the Oil expression language, but they can still be used.  See [Oil Language
+i++ ))`, `[[ $s =~ $pat ]]`, and `${s%%prefix}`.  These have better alternatives
+in the Oil expression language, but they can still be used.  See [Oil vs. Shell
 Idioms](idioms.html).
 
 ## Related
 
 - [Ideas for Future Deprecations](future.html)
-- [Oil Language vs. Shell](oil-vs-shell.html)
 

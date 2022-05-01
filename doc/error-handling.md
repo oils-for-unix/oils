@@ -10,6 +10,16 @@ Oil Fixes Shell's Error Handling (`errexit`)
     font-style: italic;
     color: purple;
   }
+
+  /* copied from web/blog.css */
+  .attention {
+    text-align: center;
+    background-color: #DEE;
+    padding: 1px 0.5em;
+
+    /* to match p tag etc. */
+    margin-left: 2em;
+  }
 </style>
 
 POSIX shell has fundamental problems with error handling.  With `set -e` aka
@@ -44,7 +54,7 @@ Oil code, and look under the hood at the underlying mechanisms.
 - The special variable `$?` is the exit status of the last "command".  It's a
   number between `0` and `255`.
 - If `errexit` is enabled, the shell will abort if `$?` is nonzero.
-  - This is subject to the *disabled `errexit` pitfall*, which I describe below.
+  - This is subject to the *Disabled `errexit` Pitfall*, which I describe below.
 
 These mechanisms are fundamentally incomplete.
 
@@ -137,7 +147,7 @@ with `strict_errexit`, and add new error handling mechanisms.
 We've reviewed how POSIX shell and bash work, and showed fundamental problems
 with the shell language.
 
-But when you're using Oil, you don't have to worry about any of this!
+But when you're using Oil, **you don't have to worry about any of this**!
 
 ### Oil Fails On Every Error
 
@@ -187,7 +197,7 @@ Note that:
 - Idiomatic Oil programs don't look at `$?`.
 
 You can omit `{ }` when invoking a single command.  Here's how to invoke a
-function without the *disabled `errexit` pitfall*:
+function without the *Disabled `errexit` Pitfall*:
 
     try myfunc            # Unlike 'myfunc', doesn't abort on error
     if (_status !== 0) {
@@ -209,8 +219,12 @@ And each process substitution:
     write -- @_process_sub_status  # every exit status
 
 
+<div class="attention">
+
 See [Oil vs. Shell Idioms > Error Handling](idioms.html#error-handling) for
 more examples.
+
+</div>
 
 ### And Expression Errors
 
@@ -286,8 +300,12 @@ Second, it makes the language smaller:
 
 ## Reference: Global Options
 
+<div class="attention">
+
 **Most users can skip the rest of this doc.**  You don't need to know all the
 details to use Oil.
+
+</div>
 
 Under the hood, we implement the `errexit` option from POSIX, bash options like
 `pipefail` and `inherit_errexit`, and add more options of our
@@ -331,7 +349,7 @@ like a linter *at runtime*, so it can catch things that [ShellCheck][] can't.
 
 `strict_errexit` disallows code that exhibits these problems:
 
-1. The *disabled `errexit` pitfall*, which I showed above.  I also think of it as
+1. The *Disabled `errexit` Pitfall*, which I showed above.  I also think of it as
    the `if myfunc` pitfall.
 1. The `local x=$(false)` pitfall.  The exit code of `false` is lost, for
    reasons described in the appendix.
@@ -515,7 +533,7 @@ Since then, we changed `try` and `_status` to be more powerful and general.
 
 We showed examples of these pitfalls above:
 
-1. The *disabled `errexit` pitfall*, aka the `if myfunc` Pitfall.  (`strict_errexit`)
+1. The *Disabled `errexit` Pitfall* (`if myfunc`).  (`strict_errexit`)
 2. The `local x=$(false)` Pitfall (`strict_errexit`)
 3. The `yes | head` Pitfall. (`sigpipe_status_ok`)
 

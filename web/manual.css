@@ -5,7 +5,8 @@
   body {
     font-size: large;
   }
-  p, ul, ol, pre {
+  /* Indent most text.  Bug fix: only indent top level ol and ul.  */
+  p, pre, body > ol, body > ul {
     margin-left: 2em;
   }
 }

@@ -5,16 +5,8 @@ in_progress: true
 Ideas for Future Deprecations
 =============================
 
-These are some ideas, extracted from [Shell Language
-Deprecations](deprecations.html).
-
-These breakages may never happen, as they require a significant new lexer mode.
-If they do, you will want to avoid the following syntax:
-
-- the character sequences `$/`, `'''`, `"""` anywhere
-
-I expect that those sequences are rare, so this change would break few
-programs.
+These are some **ideas** extracted from [Shell Language
+Deprecations](deprecations.html).  These breakages may never happen!
 
 <!-- cmark.py expands this -->
 <div id="toc">

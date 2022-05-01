@@ -506,6 +506,9 @@ Yes
 
 ## Error Handling
 
+[Oil Fixes Shell's Error Handling (`errexit`)](error-handling.html) once and
+for all!  Here's a comperhensive list of error handling idioms.
+
 ### Don't Use `&&` Outside of `if` / `while`
 
 It's implicit because `errexit` is on in Oil.
@@ -519,12 +522,15 @@ Yes:
     mkdir /tmp/dest
     cp foo /tmp/dest
 
+It also avoids the *Trailing `&&` Pitfall* mentioned at the end of the [error
+handling](error-handling.html) doc.
+
 ### Ignore an Error
 
 No:
 
     ls /bad || true  # OK because ls is external
-    myfunc || true   # suffers from the "disabled errexit pitfall"
+    myfunc || true   # suffers from the "Disabled errexit Pitfall"
 
 Yes:
 
@@ -571,7 +577,7 @@ To be consistent with the idioms below, you can also write them like this:
 ### Does a Function Succeed?
 
 When the command is a shell function, you should't use `if myfunc` directly.
-This is because shell has the *disabled `errexit` pitfall*, which is detected
+This is because shell has the *Disabled `errexit` Pitfall*, which is detected
 by Oil's `strict_errexit`.
 
 **No**:

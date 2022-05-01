@@ -531,16 +531,16 @@ commands use this style:
       echo 'error copying'  # any non-zero status
     }
 
-Procs use this style (because of shell's *Disabled `errexit` Pitfall*):
+Procs use this style (because of shell's *disabled `errexit` pitfall*):
 
     try myproc
     if (_status !== 0) {
       echo 'failed'
     }
 
-See [Oil vs. Shell Idioms > Error Handling](idioms.html#error-handling) for
-more examples, as well as [Oil Fixes Shell's Error
-Handling](error-handling.html).
+For a complete list of examples, see [Oil vs. Shell Idioms > Error
+Handling](idioms.html#error-handling).  For design goals and a reference, see
+[Oil Fixes Shell's Error Handling](error-handling.html).
 
 #### `break`, `continue`, `return`, `exit`
 
@@ -636,7 +636,7 @@ There are many ways to write integers:
     var hex, octal, binary = 0x0001_0000, 0o755, 0b0001_0101
     echo "$hex $octal $binary"           # => 65536 493 21
 
-"Runes" are integers that represent Unicode code points.  The'yre not common in
+"Runes" are integers that represent Unicode code points.  They're not common in
 Oil code, but can make certain string algorithms more readable.
 
     # Pound rune literals are similar to ord('A')
@@ -1104,20 +1104,10 @@ summary:
 ```none
 # Unimplemented syntax:
 
-my-qtt | where (size > 10)   # lazy arg lists
-var myarglist = ^{size > 10}
-var myexpr = ^[1 + 2*3]
-
 echo ${x|html}               # formatters
 echo ${x %.2f}               # statically-parsed printf
 
 echo ${.myproc arg1}         # builtin sub
-
-... cat file.txt             # convenient multiline syntax
-  | sort
-    --numeric-sort
-  | uniq -c
-  ;
 ```
 
 Important builtins that aren't implemented:
@@ -1125,6 +1115,7 @@ Important builtins that aren't implemented:
 - `qtt` for [QTT](qtt.html) (analogous to JSON)
   - selection, projection, sorting
 - `describe` for testing
+- `argparse` to parse flags
 
 <!--
 
