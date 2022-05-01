@@ -441,7 +441,7 @@ case $SH in
     # note: version string is mutable like in bash.  I guess that's useful for
     # testing?  We might want a strict mode to eliminate that?
 
-    echo $OIL_VERSION | egrep -o '[0-9]\.[0-9]\.' > /dev/null
+    echo $OIL_VERSION | egrep -o '[0-9]+\.[0-9]+\.' > /dev/null
     echo matched=$?
     ;;
   (*)

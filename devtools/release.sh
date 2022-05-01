@@ -69,7 +69,7 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 OIL_VERSION=$(head -n 1 oil-version.txt)
 readonly OIL_VERSION
 
-REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
 readonly REPO_ROOT
 
 # Dir is defined in build/test.sh.
