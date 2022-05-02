@@ -625,7 +625,8 @@ No:
 
 This is technically correct when `pipefail` is on, but it's impossible for
 Oil's `strict_errexit` to distinguish it from `if myfunc | grep python` ahead
-of time.  If you know what you're doing, you can disable `strict_errexit`.
+of time (the ["meta" pitfall](error-handling.html#the-meta-pitfall)).  If you
+know what you're doing, you can disable `strict_errexit`.
 
 Yes:
 

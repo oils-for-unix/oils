@@ -142,6 +142,26 @@ This quirk occurs in all "conditional" contexts:
 We can't fix this decades-old bug in shell.  Instead we disallow dangerous code
 with `strict_errexit`, and add new error handling mechanisms.
 
+### The Meta Pitfall
+
+Strangely enough, I encountered an error handling pitfall while trying to
+disallow shell's error handling pitfalls!  The *meta pitfall* arises from a
+combination of the issues above:
+
+1. The `if` statement tests for zero or non-zero status.
+1. The condition of an `if` may start child processes.  For example, in `if
+   myfunc | grep foo`,  the `myfunc` invocation must be run in a subshell.
+1. But you may want an external processes to return true / false / error status
+   codes, and that
+   includes **the shell itself**.  When any of the `strict_` options encounters
+   bad code, it aborts the shell with **error** status `1`, not boolean
+   **false** `1`.
+
+The result of this fundamental issue with the Unix process model is that
+`strict_errexit` is quite strict.  On the other hand, the resulting style is
+straightforward and explicit.  Earlier attempts allowed code that is too
+subtle.
+
 ## Oil Error Handling: The Big Picture 
 
 We've reviewed how POSIX shell and bash work, and showed fundamental problems
@@ -175,7 +195,7 @@ On the other hand, you won't experience this problem caused by `pipefail`:
 
 The details are explained below.
 
-### `try` Handles Command Errors
+### `try` Handles Command and Expression Errors
 
 You may want to **handle failure** instead of aborting the shell.  In this
 case, use the `try` builtin and inspect the `_status` variable it sets.
@@ -219,6 +239,8 @@ And each process substitution:
     write -- @_process_sub_status  # every exit status
 
 
+&nbsp;
+
 <div class="attention">
 
 See [Oil vs. Shell Idioms > Error Handling](idioms.html#error-handling) for
@@ -226,11 +248,11 @@ more examples.
 
 </div>
 
-### And Expression Errors
+&nbsp;
 
 Certain expressions produce fatal errors, like:
 
-    var x = 42 / 0  # divide by zero
+    var x = 42 / 0  # divide by zero will abort shell
 
 The `try` builtin also handles them:
 
@@ -298,7 +320,14 @@ Second, it makes the language smaller:
 - The builtin also lets us write either `try ls` or `try { ls }`, which is hard
   with a keyword.
 
-## Reference: Global Options
+Another way to remember this is that there are **three parts** to handling an
+error, each of which has independent choices:
+
+1. Does `try` take a simple command or a block?  For example, `try ls` versus
+   `try { ls; var x = 42 / n }`
+2. Which status do you want to inspect?
+3. Inspect it with `if` or `case`?  As mentioned, `boolstatus` is a special
+   case of `try / case`.
 
 <div class="attention">
 
@@ -307,10 +336,15 @@ details to use Oil.
 
 </div>
 
+&nbsp;
+
+## Reference: Global Options
+
+
 Under the hood, we implement the `errexit` option from POSIX, bash options like
 `pipefail` and `inherit_errexit`, and add more options of our
-own.  They're all hidden behind [option groups](options.html) `oil:basic` and
-`oil:all`.
+own.  They're all hidden behind [option groups](options.html) like `strict:all`
+and `oil:basic`.
 
 The following sections explain Oil's new options.
 
@@ -322,8 +356,9 @@ In all Bourne shells, the status of command subs is lost, so errors are ignored
     echo $(date X) $(date Y)  # 2 failures, both ignored
     echo                      # program continues
 
-The `command_sub_errexit` option makes this an error.  The status `$?` of the
-parent `echo` command will be `1`, so if `errexit` is on, the shell will abort.
+The `command_sub_errexit` option makes both `date` invocations an an error.
+The status `$?` of the parent `echo` command will be `1`, so if `errexit` is
+on, the shell will abort.
 
 (Other shells should implement `command_sub_errexit`!)
 
@@ -336,8 +371,8 @@ Similarly, in this example, `sort` will fail if the file doesn't exist.
 But there's no way to see this error in bash.  Oil adds `process_sub_fail`,
 which folds the failure into `$?` so `errexit` can do its job.
 
-You can also inspect the special `_process_sub_status` array variable with
-custom error logic.
+You can also inspect the special `_process_sub_status` array variable to
+implement custom error logic.
 
 ### `strict_errexit` Flags Two Problems
 
@@ -354,14 +389,6 @@ like a linter *at runtime*, so it can catch things that [ShellCheck][] can't.
 1. The `local x=$(false)` pitfall.  The exit code of `false` is lost, for
    reasons described in the appendix.
 
-There's also a "meta" problem where disallowing bad code in child processes run
-from conditionals is impossible!  If the child fails with an **error**, the
-parent `if` might confuse it for **false**.  (See this `if myfunc | grep`
-example in [Oil vs. Shell Idioms > Does a Pipeline
-Succeed?](idioms.html#does-a-pipeline-succeed))
-
-So `strict_errexit` is quite strict, but it leads to clear and simple code.
-
 #### Rules to Prevent the Disabled `errexit` Pitfall
 
 In any conditional context, `strict_errexit` disallows:
@@ -373,25 +400,16 @@ In any conditional context, `strict_errexit` disallows:
    commands.)
 3. Command sub and process sub (`shopt --unset allow_csub_psub`)
 
-This means that you should check the exit status of functions differently.
-
-No:
-
-    if ! myfunc; then  # function calls in conditionals are disallowed
-      echo 'failed'
-    fi
-
-Yes:
-
-    try myfunc
-    if (_status !== 0) {
-      echo 'failed'
-    }
+This means that you should check the exit status of functions and pipeline
+differently.  See [Does a Function
+Succeed?](idioms.html#does-a-function-succeed), [Does a Pipeline
+Succeed?](idioms.html#does-a-pipeline-succeed), and other [Oil vs. Shell
+Idioms](idioms.html).
 
 #### Rule to Prevent the `local x=$(false)` Pitfall
 
-- Command Subs and process subs are disallowed in assignment builtins (`local`,
-  `declare`, `readonly`, `export`)
+- Command Subs and process subs are disallowed in assignment builtins: `local`,
+  `declare` aka `typeset`, `readonly`, and `export`.
 
 No:
 
