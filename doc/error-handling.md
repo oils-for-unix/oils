@@ -329,6 +329,21 @@ error, each of which has independent choices:
 3. Inspect it with `if` or `case`?  As mentioned, `boolstatus` is a special
    case of `try / case`.
 
+<div class="faq">
+
+Why `boolstatus`?  Can't you just change what `if` means in Oil?
+
+</div>
+
+I've learned the hard way that when there's a shell **semantics** change, there
+must be a **syntax** change.  In general, you should be able to read code on
+its own, without context.
+
+Readers shouldn't have to constantly look up whether `oil:basic` is on.  There
+are some cases where this is necessary, but it should be minimized.
+
+Also, both `if foo` and `if boolstatus foo` are useful in idiomatic Oil code.
+
 <div class="attention">
 
 **Most users can skip the rest of this doc.**  You don't need to know all the
