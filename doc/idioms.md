@@ -530,7 +530,7 @@ handling](error-handling.html) doc.
 No:
 
     ls /bad || true  # OK because ls is external
-    myfunc || true   # suffers from the "Disabled errexit Pitfall"
+    myfunc || true   # suffers from the "Disabled errexit Quirk"
 
 Yes:
 
@@ -577,7 +577,7 @@ To be consistent with the idioms below, you can also write them like this:
 ### Does a Function Succeed?
 
 When the command is a shell function, you should't use `if myfunc` directly.
-This is because shell has the *Disabled `errexit` Pitfall*, which is detected
+This is because shell has the *Disabled `errexit` Quirk*, which is detected
 by Oil's `strict_errexit`.
 
 **No**:

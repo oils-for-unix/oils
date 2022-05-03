@@ -531,7 +531,7 @@ commands use this style:
       echo 'error copying'  # any non-zero status
     }
 
-Procs use this style (because of shell's *disabled `errexit` pitfall*):
+Procs use this style (because of shell's *disabled `errexit` quirk*):
 
     try myproc
     if (_status !== 0) {
