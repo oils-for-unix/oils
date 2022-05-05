@@ -22,21 +22,11 @@ Oil Fixes Shell's Error Handling (`errexit`)
   }
 </style>
 
-POSIX shell has fundamental problems with error handling.  With `set -e` aka
-`errexit`, you're [damned if you do and damned if you don't][bash-faq].
+Oil is unlike other shells:
 
-GNU [bash]($xref) fixes some of the problems, but **adds its own**, e.g. with
-respect to process subs, command subs, and assignment builtins.
-
-Oil **fixes all the problems** with new builtin commands, special variables,
-and global options.  You see a simple interface with `try` and `_status`.  More
-specifically:
-
-- Oil never silently ignores an error.  It never loses an exit code.
+- It never silently ignores an error, and it never loses an exit code.
 - There's no reason to write an Oil script without `errexit`, which is on by
   default.
-
-If you find an issue that Oil doesn't handle, please [file a bug][].
 
 This document explains how Oil makes these guarantees.  We first review shell
 error handling, and discuss its fundamental problems.  Then we show idiomatic
@@ -48,6 +38,17 @@ Oil code, and look under the hood at the underlying mechanisms.
 </div>
 
 ## Review of Shell Error Handling Mechanisms
+
+POSIX shell has fundamental problems with error handling.  With `set -e` aka
+`errexit`, you're [damned if you do and damned if you don't][bash-faq].
+
+GNU [bash]($xref) fixes some of the problems, but **adds its own**, e.g. with
+respect to process subs, command subs, and assignment builtins.
+
+Oil fixes all the problems by adding new builtin commands, special variables,
+and global options.  But you see a simple interface with `try` and `_status`.
+
+Let's review a few concepts before discussing Oil.
 
 ### POSIX Shell
 
@@ -70,6 +71,8 @@ Bash improves error handling for pipelines like `ls /bad | wc`.
   handling in command sub child processes.  This fixes a bash-specific bug.
 
 But there are still places where bash will lose an exit code.
+
+&nbsp;
 
 ## Fundamental Problems
 
@@ -131,7 +134,7 @@ cause the *Error or False Pitfall*:
     # => grep: Unmatched ( or \(
     # => not found is a lie
 
-That is, the `else` clause confuses grep's **error** status 2 with **false**
+That is, the `else` clause conflates grep's **error** status 2 and **false**
 status 1.
 
 Strangely enough, I encountered this pitfall while trying to disallow shell's
@@ -152,6 +155,8 @@ appendix](#disabled-errexit-quirk-if-myfunc-pitfall).
 
 We can't fix this decades-old bug in shell.  Instead we disallow dangerous code
 with `strict_errexit`, and add new error handling mechanisms.
+
+&nbsp;
 
 ## Oil Error Handling: The Big Picture 
 
@@ -339,8 +344,8 @@ Also, both `if foo` and `if boolstatus foo` are useful in idiomatic Oil code.
 
 <div class="attention">
 
-**Most users can skip the rest of this doc.**  You don't need to know all the
-details to use Oil.
+**Most users can skip to [the summary](#summary).**  You don't need to know all
+the details to use Oil.
 
 </div>
 
@@ -471,7 +476,7 @@ an array.  Afterward, they determine `$?` based on the value of `pipefail` and
 
 <div class="faq">
 
-Why is `strict_errexit` a different option than `command_sub_errexit`?
+Why are `strict_errexit` and `command_sub_errexit` different options?
 
 </div>
 
@@ -481,7 +486,7 @@ disallows dangerous constructs.
 
 On the other hand, if you write code with `command_sub_errexit` on, it's
 impossible to get the same failures under bash.  So `command_sub_errexit` is
-not a `strict_*` option, and it's meant for OSH-only / Oil-only code.
+not a `strict_*` option, and it's meant for code that runs only under Oil.
 
 <div class="faq">
 
@@ -494,6 +499,8 @@ What's the difference between bash's `inherit_errexit` and Oil's
   command sub.
 - `command_sub_errexit` enables failure in the **parent** process, after the
   command sub has finished.
+
+&nbsp;
 
 ## Summary
 
@@ -565,6 +572,8 @@ For reference, this work on error handling was described in [Four Features That
 Justify a New Unix
 Shell](https://www.oilshell.org/blog/2020/10/osh-features.html) (October 2020).
 Since then, we changed `try` and `_status` to be more powerful and general.
+
+&nbsp;
 
 ## Appendices
 
@@ -715,3 +724,12 @@ But assignment builtins have the problem again:
 
 So shell is confusing and inconsistent, but Oil fixes all these problems.  You
 never lose the exit code of `false`.
+
+
+&nbsp;
+
+## Acknowledgments
+
+- Thank you to `ca2013` for extensive review and proofreading of this doc.
+
+
