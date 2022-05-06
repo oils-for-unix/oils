@@ -134,6 +134,15 @@ How to get the value?
 
 TODO: Subinterpreters?
 
+### Errors
+
+Generally, errors occur *inside* blocks, not outside:
+
+    cd /tmp {
+       cp myfile /bad   # error happens here
+       echo 'done'
+    }                   # not here
+
 ### Control Flow
 
 - `break` and `continue` are disallowed inside blocks.

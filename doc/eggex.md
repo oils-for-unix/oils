@@ -543,22 +543,18 @@ Python, etc.  That means they **cannot** be used this way.
 
 [perl6-regex]: https://docs.perl6.org/language/regexes
 
-### With Parsing Expression Grammars?  (PEGs)
+### What About Eggex versus Parsing Expression Grammars?  (PEGs)
 
-PEGs are more comparable to [context-free grammars]($xref:cfg) than regexes and
-[regular languages]($xref:regular-language).  Eggex is focused on the latter.
-
-The PEG is model is more resource intensive, but it can recognize more
-languages, and it can recognize recursive structure.
-
-Related:
+The short answer is that they can be complementary: PEGs are closer to
+**parsing**, while eggex and [regular languages]($xref:regular-language) are
+closer to **lexing**.  Related:
 
 - [When Are Lexer Modes Useful?](https://www.oilshell.org/blog/2017/12/17.html)
 - [Why Lexing and Parsing Should Be
   Separate](https://github.com/oilshell/oil/wiki/Why-Lexing-and-Parsing-Should-Be-Separate) (wiki)
 
-PEGs are closer to parsing, while eggex is closer to lexing.  The two can often
-be combined.
+The PEG model is more resource intensive, but it can recognize more languages,
+and it can recognize recursive structure (trees).
 
 ### Why Don't `dot`, `%start`, and `%end` Have More Precise Names?
 

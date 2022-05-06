@@ -327,6 +327,25 @@ error, each of which has independent choices:
 
 <div class="faq">
 
+Why is `_status` different from `$?`
+
+</div>
+
+This avoids special cases in the interpreter for `try`, which is again a
+builtin that takes a block.
+
+The exit status of `try` is always `0`.  If it returned a non-zero status, the
+`errexit` rule would trigger, and you wouldn't be able to handle the error!
+
+Generally, [errors occur *inside* blocks, not
+outside](proc-block-func.html#errors).
+
+Again, idiomatic Oil scripts never look at `$?`, which is only used to trigger
+shell's `errexit` rule.  Instead they invoke `try` and inspect `_status` when
+they want to handle errors.
+
+<div class="faq">
+
 Why `boolstatus`?  Can't you just change what `if` means in Oil?
 
 </div>
