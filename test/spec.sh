@@ -582,7 +582,7 @@ var-op-slice() {
 }
 
 var-op-bash() {
-  sh-spec spec/var-op-bash.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/var-op-bash.test.sh --osh-failures-allowed 5 \
     $BASH $OSH_LIST "$@"
 }
 
