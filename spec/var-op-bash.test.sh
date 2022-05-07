@@ -46,6 +46,21 @@ ABC DEF
 ABC deF
 ## END
 
+#### ${x@u} U l L upper / lower case (bash 5.1 feature)
+
+# https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
+
+x='abc def'
+echo "${x@u}"
+
+# TODO: we need to upgrade the spec tests to bash 5.1 (or bash 5.2 is coming
+# out soon)
+
+## N-I bash status: 1
+## N-I bash STDOUT:
+## END
+
+
 #### ${x@Q}
 x="FOO'BAR spam\"eggs"
 eval "new=${x@Q}"
