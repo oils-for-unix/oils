@@ -899,7 +899,7 @@ oil-config() {
 }
 
 oil-builtins() {
-  sh-spec spec/oil-builtins.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/oil-builtins.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
@@ -1028,6 +1028,11 @@ oil-user-feedback() {
 
 oil-bugs() {
   sh-spec spec/oil-bugs.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
+oil-with-sh() {
+  sh-spec spec/oil-with-sh.test.sh --osh-failures-allowed 3 \
     $OIL_LIST "$@"
 }
 

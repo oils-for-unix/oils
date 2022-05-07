@@ -212,9 +212,24 @@ read --line --qsn <<EOF
 EOF
 write --qsn --unicode u -- "$_line"
 
+echo '$' | read --line --qsn
+write --qsn -- "$_line"
+
 ## STDOUT:
 'foo\n'
 'foo\tbar hex=\u{1} mu=\u{3bc}'
+'$'
+## END
+
+#### read --line --qsn accepts optional $''
+
+# PROBLEM: is it limited to $'  ?  What about $3.99 ?
+# I think you just check for those 2 chars
+
+echo $'$\'foo\'' | read --line --qsn
+write -- "$_line"
+## STDOUT:
+foo
 ## END
 
 #### read --line --with-eol --qsn
