@@ -174,14 +174,14 @@ var t2 = t[:2, 3:4]
 (Str)   'TODO: Table Slicing'
 ## END
 
-#### Slice with Range
+#### Index a list with a range, not a slice.  TODO: Figure out semantics
 shopt -s oil:all
 var mylist = [1,2,3,4,5]
 var r = 1:3
 var myslice = mylist[r]
-write @myslice
+## status: 3
 ## STDOUT:
-a
+TODO
 ## END
 
 #### Range with list constructor

@@ -95,6 +95,9 @@ if mylib.PYTHON:
       self.args = args
       # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
       # args.
+      # TODO: Remove these and create a location type.  I think
+      # word_.SpanIdFromError() or LocationFromeError can be called when
+      # CREATING this exception, not in core/ui.py.
       self.span_id = kwargs.pop('span_id', NO_SPID)  # type: int
       self.token = kwargs.pop('token', None)  # type: Token
       self.part = kwargs.pop('part', None)  # type: word_part_t

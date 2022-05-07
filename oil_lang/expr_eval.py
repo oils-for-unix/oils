@@ -192,8 +192,13 @@ class OilEvaluator(object):
   def EvalExpr(self, node):
     # type: (expr_t) -> Any
     """Public API for _EvalExpr that ensures that command_sub_errexit is on."""
-    with state.ctx_OilExpr(self.mutable_opts):
-      return self._EvalExpr(node)
+    try:
+      with state.ctx_OilExpr(self.mutable_opts):
+        return self._EvalExpr(node)
+    except TypeError as e:
+      # TODO: Add location info.  Right now we blame the variable name for
+      # 'var' and 'setvar', etc.
+      raise error.Expr('Type error in expression: %s' % str(e))
 
   def _EvalExpr(self, node):
     # type: (expr_t) -> Any

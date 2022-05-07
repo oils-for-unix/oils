@@ -788,15 +788,7 @@ class CommandEvaluator(object):
 
             # Note: there's only one LHS
             vd_lval = lvalue.Named(node.lhs[0].name.val)  # type: lvalue_t
-            try:
-              py_val = self.expr_ev.EvalExpr(node.rhs)
-            except TypeError as e:
-              # TODO: We need better location info, as we blame the var name now
-              # This also relies on errors from CPython, so the errors aren't
-              # great.  For example 'mystr->bad' says "string indices must be
-              # integers" because it's really mystr['bad']
-              e_die('Type error in expression: %s', str(e))
-
+            py_val = self.expr_ev.EvalExpr(node.rhs)
             val = _PyObjectToVal(py_val)  # type: value_t
 
             self.mem.SetValue(vd_lval, val, scope_e.LocalOnly, 

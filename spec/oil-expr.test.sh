@@ -154,11 +154,10 @@ TODO
 var s = "123"
 
 # lex_mode_e.ShCommand -> Expr -> ShCommand -> Expr
-var x = $(echo 'len\n' $len(s))
+var x = $(echo $'len\n' $len(s))
 echo $x
 ## STDOUT:
-len
-3
+len 3
 ## END
 
 
@@ -863,4 +862,35 @@ if (42 ~== '43.0') {
   echo FAIL
 }
 ## STDOUT:
+## END
+
+#### Type Errors
+shopt --set parse_brace
+
+# TODO: It might be nice to get a message
+try {
+  var x = {} + []
+}
+echo $_status
+
+try {
+  setvar x = {} + 3
+}
+echo $_status
+
+try {
+  _ 'foo' ++ 3
+}
+echo $_status
+
+try {
+  = 'foo' ++ 3
+}
+echo $_status
+
+## STDOUT:
+3
+3
+3
+3
 ## END

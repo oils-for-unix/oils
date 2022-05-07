@@ -203,7 +203,7 @@ for c in @clients {
   # with code 1 or 2?
   const e = c->email
 }
-## status: 1
+## status: 3
 ## STDOUT:
 email
 ## END
