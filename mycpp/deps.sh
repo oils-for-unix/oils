@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Dependencies for mycpp.  Invoked by services/toil-worker.sh, and can also be
+# Dependencies for mycpp.  Invoked by services/worker.sh, and can also be
 # invoked manually.
 #
 # Usage:
@@ -11,20 +11,16 @@
 #   ./deps.sh git-clone
 #
 #   This clones the MyPy repo and switches to the release-0.730 branch.  As of
-#   March 2021, that's the latest release I've tested against. It also installs
+#   May 2022, that's the latest release I've tested against. It also installs
 #   typeshed.
 #
-#   If you don't have Python 3.6, then build one from a source tarball and then
-#   install it.  (NOTE: mypyc tests require the libsqlite3-dev dependency.
-#   It's probably not necessary for running mycpp.)
-# 
 #   ./deps.sh pip-install
 #
 # To build and run tests and benchmarks:
 #
 #   ./build_graph.py
-#   ninja logs-equal       # compare logs
-#   ninja benchmark-table  # make at able of time/memory usage
+#   ninja logs-equal       # test for correctness by comparing stdout
+#   ninja benchmark-table  # make a table of time/memory usage
 #
 # To build and run one example:
 #
@@ -33,6 +29,18 @@
 # To list targets:
 #
 #   ninja -t targets
+#
+# Unfortunately, you may need to clean the build, since some dependencies
+# aren't accounted for:
+#
+#   ./build.sh clean
+#
+# Troubleshooting:
+#
+#   If you don't have Python 3.6, then build one from a source tarball and then
+#   install it.  (NOTE: mypyc tests require the libsqlite3-dev dependency.
+#   It's probably not necessary for running mycpp.)
+# 
 
 set -o nounset
 set -o pipefail

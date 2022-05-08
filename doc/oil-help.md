@@ -514,9 +514,10 @@ from interfering with user code.  Example:
 
 Current list of registers:
 
-    BASH_REMATCH   aka  _match()
-    $?             aka  _status
-    PIPESTATUS     aka  _pipeline_status
+    BASH_REMATCH        aka  _match()
+    $?             
+    _status             set by try builtin     
+    PIPESTATUS          aka  _pipeline_status
     _process_sub_status
 
 ### Data Formats
@@ -664,9 +665,10 @@ It's useful for "relative imports".
 
 #### `_status`
 
-Alias for $?.
+Set by the `try` builtin.
 
-    if (_status != 0) {
+    try ls /bad
+    if (_status !== 0) {
       echo 'failed'
     }
 

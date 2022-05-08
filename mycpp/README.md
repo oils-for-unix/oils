@@ -4,12 +4,47 @@ mycpp
 This is an experimental Python-to-C++ translator based on MyPy.  It only
 handles the small subset of Python that Oil uses.
 
-It's inspired by both mypyc and Shed Skin.  
+It's inspired by both mypyc and Shed Skin.  These posts give background:
 
-To run it, you'll need the MyPy source repository, as well as a virtualenv
-containing MyPy's dependencies.
+- [Brief Descriptions of a Python to C++ Translator](https://www.oilshell.org/blog/2022/05/mycpp.html)
+- [Oil Is Being Implemented "Middle Out"](https://www.oilshell.org/blog/2022/03/middle-out.html)
 
-See the instructions at the top of `deps.sh` for details.
+## Running It
+
+To run it, it helps to have a Debian / Ubuntu-ish machine.  Follow the
+instructions at
+
+    https://github.com/oilshell/oil/wiki/Contributing
+
+to create the "dev build" first, which is DISTINCT from oil-native.  Make sure
+you can run:
+
+    oil$ build/dev.sh all
+
+This will give you a working shell in Python:
+
+    oil$ bin/osh -c 'echo hi'
+    hi
+
+To run mycpp, you'll need the MyPy source repository, as well as a virtualenv
+containing MyPy's dependencies.  The instructions at the top of `deps.sh` give
+details:
+
+    oil$ mycpp/deps.sh git-clone
+    oil$ mycpp/deps.sh pip-install
+
+To build oil-native, use:
+
+    oil$ build/dev.sh oil-cpp  # translate and compile, may take 30 seconds
+
+    oil$ _bin/osh_eval.dbg -c 'echo hi'
+    hi
+
+To run the tests and benchmarks, follow the instructions at the top of `deps.sh`.
+
+If you have problems, post a message on `#oil-dev` at
+`https://oilshell.zulipchat.com`.  Not many people have contributed to `mycpp`,
+so I can use your feedback!
 
 ## Notes on the Algorithm / Architecture
 

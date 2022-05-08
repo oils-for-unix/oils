@@ -22,7 +22,7 @@ TODO: There should be a character for "no links past here?"
 This is the online help for the OSH language.  It underlies the `help` builtin.
 
 For example, typing `help if` in the shell shows you how to use the `if`
-statement.  A link to this same text appears in the [`command`](#command)
+statement.  A link to this same text appears in the [`command-lang`](#command-lang)
 **group** below, under the `[Conditional]` **section**.
 
 To view this index inside the shell, use:
@@ -34,9 +34,7 @@ feature is **unimplemented**.
 
 You may also want to browse [Oil Help Topics](oil-help-topics.html).
 
-<div id="toc">
-</div>
-
+&nbsp;
 
 <h2 id="overview">
   Overview (<a class="group-link" href="osh-help.html#overview">overview</a>)

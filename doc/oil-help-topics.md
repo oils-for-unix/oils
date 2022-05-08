@@ -9,8 +9,8 @@ Oil Help Topics
 This is the online help for the Oil language.  It underlies the `help` builtin.
 
 For example, typing `help proc` in the shell shows you how to use the `proc`
-statement.  A link to this same text appears in the [`command`](#command)
-**group** below.
+statement.  A link to this same text appears in the
+[`command-lang`](#command-lang) **group** below.
 
 To view this index inside the shell, use:
 
@@ -21,8 +21,7 @@ feature is **unimplemented**.
 
 You may also want to browse [OSH Help Topics](osh-help-topics.html).
 
-<div id="toc">
-</div>
+&nbsp;
 
 <h2 id="overview">
   Overview (<a class="group-link" href="oil-help.html#overview">overview</a>)

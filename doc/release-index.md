@@ -44,6 +44,8 @@ The [Doc Overview](doc/) links to all docs.  Here is the subset of them that
 are **ready to read**:
 
 - [Getting Started](doc/getting-started.html)
+- [FAQ on Documentation](doc/faq-doc.html).  **Look here if you can't find
+  something.**
 - OSH:
   - [Known Differences Between OSH and Other Shells](doc/known-differences.html)
   | [Quirks](doc/quirks.html)

@@ -104,7 +104,7 @@ readonly MARKDOWN_DOCS=(
   # data-model and command-vs-expression-mode span both OSH and Oil.
 
   index
-  what-is-oil
+  faq-doc
 
   project-tour
   oil-language-tour
