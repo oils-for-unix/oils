@@ -16,31 +16,13 @@
 #
 #   ./deps.sh pip-install
 #
-# To build and run tests and benchmarks:
-#
-#   ./build_graph.py
-#   ninja logs-equal       # test for correctness by comparing stdout
-#   ninja benchmark-table  # make a table of time/memory usage
-#
-# To build and run one example:
-#
-#   ninja _ninja/tasks/test/fib_iter.py.task.txt
-#
-# To list targets:
-#
-#   ninja -t targets
-#
-# Unfortunately, you may need to clean the build, since some dependencies
-# aren't accounted for:
-#
-#   ./build.sh clean
+#   Installs Python packages that MyPy depends on.
 #
 # Troubleshooting:
 #
 #   If you don't have Python 3.6, then build one from a source tarball and then
 #   install it.  (NOTE: mypyc tests require the libsqlite3-dev dependency.
 #   It's probably not necessary for running mycpp.)
-# 
 
 set -o nounset
 set -o pipefail

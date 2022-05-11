@@ -9,21 +9,20 @@ It's inspired by both mypyc and Shed Skin.  These posts give background:
 - [Brief Descriptions of a Python to C++ Translator](https://www.oilshell.org/blog/2022/05/mycpp.html)
 - [Oil Is Being Implemented "Middle Out"](https://www.oilshell.org/blog/2022/03/middle-out.html)
 
-## Running It
+## Instructions
 
-To run it, it helps to have a Debian / Ubuntu-ish machine.  Follow the
-instructions at
+### Translating and Compiling `oil-native`
 
-    https://github.com/oilshell/oil/wiki/Contributing
-
-to create the "dev build" first, which is DISTINCT from oil-native.  Make sure
-you can run:
+Running `mycpp` is best done on a Debian / Ubuntu-ish machine.  Follow the
+instructions at <https://github.com/oilshell/oil/wiki/Contributing> to create
+the "dev build" first, which is DISTINCT from `oil-native`.  Make sure you can
+run:
 
     oil$ build/dev.sh all
 
-This will give you a working shell in Python:
+This will give you a working shell:
 
-    oil$ bin/osh -c 'echo hi'
+    oil$ bin/osh -c 'echo hi'  # running interpreted Python
     hi
 
 To run mycpp, you'll need the MyPy source repository, as well as a virtualenv
@@ -37,7 +36,7 @@ To build oil-native, use:
 
     oil$ build/dev.sh oil-cpp  # translate and compile, may take 30 seconds
 
-    oil$ _bin/osh_eval.dbg -c 'echo hi'
+    oil$ _bin/osh_eval.dbg -c 'echo hi'  # running compiled C++ !
     hi
 
 To run the tests and benchmarks, follow the instructions at the top of `deps.sh`.
@@ -45,6 +44,28 @@ To run the tests and benchmarks, follow the instructions at the top of `deps.sh`
 If you have problems, post a message on `#oil-dev` at
 `https://oilshell.zulipchat.com`.  Not many people have contributed to `mycpp`,
 so I can use your feedback!
+
+
+### Run Tests and Benchmarks
+
+    ./build_graph.py
+    ninja logs-equal       # test for correctness by comparing stdout
+    ninja benchmark-table  # make a table of time/memory usage
+
+To build and run one example, like `fib_iter`:
+
+    ninja _ninja/tasks/test/fib_iter.py.task.txt
+
+To list targets:
+
+    ninja -t targets
+
+### Clean
+
+Unfortunately, you may need to clean the build, since some dependencies
+aren't accounted for:
+
+  ./build.sh clean
 
 ## Notes on the Algorithm / Architecture
 
@@ -147,7 +168,5 @@ Not using:
 - Instead of `Tuple[str, int]`, use an ASDL record `(str s, int i)`
 - `for x in [1, 2, 3]` is not allowed.  Assign it to a temporary variable
   first, so it can be picked up in StackRoots().
-
-
 
 
