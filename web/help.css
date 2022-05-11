@@ -13,13 +13,8 @@
 .help-body h4 {
   font-size: 1em;
 
-  text-align: center;
-  /*
-  text-align: right;
-  margin-right: 3em;
-  */
+  margin-left: 3em;
 
-  /* margin-left: 2em; */
   /* font-family: monospace; */
 
   color: darkblue;  /* different than blog */

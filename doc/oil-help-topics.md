@@ -19,9 +19,11 @@ To view this index inside the shell, use:
 An <span style="color: darkred">X</span> next to a help topic means that the
 feature is **unimplemented**.
 
-You may also want to browse [OSH Help Topics](osh-help-topics.html).
+- Down: [Oil Help on One Big Page](oil-help.html)
+- Lateral: [OSH Help Topics](osh-help-topics.html)
 
 &nbsp;
+
 
 <h2 id="overview">
   Overview (<a class="group-link" href="oil-help.html#overview">overview</a>)
@@ -69,7 +71,6 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-index     a[3]  s[3]
                   oil-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)   s.startswith('prefix')
-                  X builtin-sub ${.myproc arg1}  @{.otherproc $x $y}
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
                   re-compound   ~   (group)   <capture>   sequence
@@ -89,6 +90,7 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   inline-call   $strfunc(x, y) @arrayfunc(z)
                   splice        @myarray @ARGV
                   expr-sub      echo $[42 + a[i]]
+                  X builtin-sub ${.myproc arg1}  @{.otherproc $x $y}
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
 ```
@@ -98,27 +100,26 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 </h2>
 
 ```oil-help-topics
-  [Oil Builtins]  oil-cd   oil-shopt     compatible, and takes a block
+  [Memory]        append                 Add elements to end of array
+                  X argparse             getopts replacement, sets OPT
+                  pp                     Pretty print interpreter state
+  [Handle Errors] try                    Run with errexit and set _status
+                  boolstatus             Enforce 0 or 1 exit status
+  [Shell State]   oil-cd   oil-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
                   push-registers         Save registers like $?, PIPESTATUS
-                  fork   forkwait        Replace & and (), and takes a block
-                  append                 Add elements to end of array
-                  pp                     Pretty print interpreter state
-                  write                  Like echo, but with --, --sep, --end
-                  oil-read               Buffered I/O with --line, --all, --qsn
-                  try                    Run with errexit and set _status
-                  boolstatus             Enforce 0 or 1 exit status
-                  runproc                Run a proc; use as main entry point
+  [Modules]       runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
                   use                    change first word lookup
-                  X describe             Test harness
+  [I/O]           oil-read               Buffered I/O with --line, --all, --qsn
+                  write                  Like echo, but with --, --sep, --end
+                  fork   forkwait        Replace & and (), and takes a block
                   X fopen                Open multiple streams, takes a block
-                  X argparse             getopts replacement, sets OPT
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtt
+X [Testing]       X describe             Test harness
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
-X [Testing]       check
 ```
 
 <h2 id="option">
@@ -194,12 +195,12 @@ X [Testing]       check
 </h2>
 
 ```oil-help-topics
-                  ARGV   X ENV   X OPT
+  [Shell Vars]    ARGV   X ENV   X OPT
+                  X _ESCAPE   _DIALECT
                   _this_dir
   [Platform]      OIL_VERSION
-  [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
-  [Shell Vars]    X _ESCAPE   _DIALECT
   [Exit Status]   _status   _pipeline_status   _process_sub_status
+  [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer
 ```
@@ -218,7 +219,7 @@ X [Wok]           _field()
 Functions:
 
 ```oil-help-topics
-  [Collections]   len()   copy()
+  [Collections]   len()
 X [String]        find()   sub()   join() 
                   split()             $IFS, awk algorithm, regex
   [Word]          glob()   maybe()

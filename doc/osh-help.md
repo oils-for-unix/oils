@@ -662,6 +662,8 @@ Flags:
 
 ### Run Code
 
+These builtins accept shell code and run it.
+
 #### source
 
     source SCRIPT ARG*
@@ -709,15 +711,51 @@ Prefer passing the name of a shell function to `trap`.
 
 ### Set Options
 
+The `set` and `shopt` builtins set global shell options.  Oil code should use
+the more natural `shopt`.
+
 #### set
 
-The set builtin modifies the shell's configuration and behavior.
+    set FLAG* ARG*
+
+Sets global shell options. Short style:
+
+    set -e
+
+Long style:
+
+    set -o errexit
+
+Set the arguments array:
+
+    set -- 1 2 3
 
 #### shopt
 
-The shopt builtin configures the shell.
+    shopt FLAG* OPTION* BLOCK?
+
+Sets global shell options.
+
+Flags:
+
+    -s --set    Turn the named options on
+    -u --unset  Turn the named options off
+    -p          Print option values
+    -q          Return 0 if the option is true, else 1
+
+Examples: 
+
+    shopt --set errexit
+
+You can set or unset multiple options with the groups `strict:all`,
+`oil:basic`, and `oil:all`.
+
+If a block is passed, then the mutated options are pushed onto a stack, the
+block is executed, and then options are restored to their original state.
 
 ### Working Dir
+
+These 5 builtins deal with the working directory of the shell.
 
 #### cd
 
@@ -784,32 +822,33 @@ Flags:
 
 ### Completion
 
+These builtins implement Oil's bash-compatible autocompletion system.
+
 #### complete
 
-The complete builtin registers completion policies for different commands.
+Registers completion policies for different commands.
 
 #### compgen
 
-The compgen builtin generates completion candidates inside a user-defined
-completion function.
+Generates completion candidates inside a user-defined completion function.
 
 It can also be used in scripts, i.e. outside a completion function.
 
 #### compopt
 
-The compopt builtin changes completion options inside a user-defined completion
-function.
+Changes completion options inside a user-defined completion function.
 
 #### compadjust
 
-The compadjust builtin adjusts COMP_ARGV according to specified delimiters,
-and optionally set variables cur, prev, words (an array), and cword.  May also
-set 'split'.
+Adjusts `COMP_ARGV` according to specified delimiters, and optionally set
+variables cur, prev, words (an array), and cword.  May also set 'split'.
 
 This is an OSH extension that makes it easier to run the bash-completion
 project.
 
 <h3>Shell Process</h3>
+
+These builtins mutate the state of the shell process.
 
 #### exec
 
@@ -836,7 +875,7 @@ If no MODE, show the current mask.
     times
 
 Shows the user and system time used by the shell and its child processes.
-                
+
 ### Child Process
 
 #### jobs
@@ -997,15 +1036,11 @@ Notes:
 
 #### kill
 
-TODO
+Unimplemented.
 
-<!-- bash accepts job control syntax -->
+<!-- Note: 'kill' accepts job control syntax -->
 
-#### enable
-
-Bash has this, but OSH won't implement it.
-
-<h3>Introspection</h3>
+### Introspection
 
 #### help
 
@@ -1113,8 +1148,6 @@ Functions are less likely to cause parsing problems.
 - Quoting like `\ls` or `'ls'` disables alias expansion
 - To remove an existing alias, use [unalias]($osh-help).
 
-TODO: Turn off aliases in Oil.
-
 #### unalias
 
     unalias NAME
@@ -1145,6 +1178,13 @@ Flags:
     -w
     -p
     -s -->
+
+
+### Unsupported
+
+#### enable
+
+Bash has this, but OSH won't implement it.
 
 
 <h2 id="option">Shell Options</h2>

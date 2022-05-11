@@ -144,7 +144,10 @@ Blocks can be passed to builtins (and procs eventually):
 
 Compare with [sh-block]($osh-help).
 
-<h2 id="assign">Assigning Variables</h2>
+<h2 id="expr">Expression Language and Assignments</h2>
+
+
+### Keywords
 
 #### const 
 
@@ -179,15 +182,6 @@ Creates or mutates a global variable.
 Mutates a variable through a named reference.  See examples in
 doc/variables.md.
 
-<h2 id="word">Word Language</h2>
-
-#### inline-call
-
-#### splice
-
-#### expr-sub
-
-<h2 id="expr">Oil Expression Language</h2>
 
 ### Literals
 
@@ -253,13 +247,9 @@ The shell-like syntax accepts the same syntax that a command can:
 
     var myblock = ^(echo $PWD)
 
-#### expr-literal
+#### expr-lit
 
     var myexpr = ^[1 + 2*3]
-
-#### arglist
-
-    var myargs = ^{'foo', split=true}
 
 ### Operators
 
@@ -288,6 +278,8 @@ The shell-like syntax accepts the same syntax that a command can:
 #### oil-logical
 
     not  and  or
+
+Note that these are distinct from `!  &&  ||`.
 
 #### oil-arith
 
@@ -325,6 +317,11 @@ Like Python:
 
     f(x, y)
 
+
+#### match-ops
+
+    ~   !~   ~~   !~~
+
 ### Eggex
 
 #### re-literal
@@ -343,49 +340,19 @@ Like Python:
 
 Not implemented.
 
-#### re-glob-ops
 
-Not implemented.
+<h2 id="word">Word Language</h2>
 
-    ~~  !~~
+#### inline-call
+
+#### splice
+
+#### expr-sub
 
 
 <h2 id="builtins">Builtin Commands</h2>
 
-### Oil Builtins
-
-#### oil-cd
-
-It takes a block:
-
-    cd / {
-      echo $PWD
-    }
-
-#### oil-shopt
-
-It takes a block:
-
-    shopt --unset errexit {
-      false
-      echo 'ok'
-    }
-
-#### fork
-
-The preferred alternative to shell's `&`.
-
-    fork { sleep 1 }
-    wait -n
-
-#### forkwait
-
-The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible.
-
-    forkwait {
-      not_mutated=zzz
-    }
-    echo $not_mutated
+### Memory
 
 #### append
 
@@ -412,32 +379,7 @@ Examples:
 
 The `.cell` action starts with `.` to indicate that its format is unstable.
 
-#### write
-
-write fixes problems with shell's `echo` builtin.
-
-The default separator is a newline, and the default terminator is a
-newline.
-
-Examples:
-
-    write -- ale bean        # write two lines
-    write --qsn -- ale bean  # QSN encode, guarantees two lines
-    write -n -- ale bean     # synonym for --end '', like echo -n
-    write --sep '' --end '' -- a b        # write 2 bytes
-    write --sep $'\t' --end $'\n' -- a b  # TSV line
-
-#### oil-read
-
-    read --line             # default var is $_line
-    read --line --with-eol  # keep the \n
-    read --line --qsn       # decode QSN too
-    read --all              # whole file including newline; var is $_all
-    read -0                 # read until NUL, synonym for read -r -d ''
-
-When --qsn is passed, the line is check for an opening single quote.  If so,
-it's decoded as QSN.  The line must have a closing single quote, and there
-can't be any non-whitespace characters after it.
+### Handle Errors
 
 #### try
 
@@ -475,6 +417,59 @@ Runs a command and requires the exit code to be 0 or 1.
       echo 'not found'           # status 1 means not found
     }
 
+
+
+### Shell State
+
+#### oil-cd
+
+It takes a block:
+
+    cd / {
+      echo $PWD
+    }
+
+#### oil-shopt
+
+It takes a block:
+
+    shopt --unset errexit {
+      false
+      echo 'ok'
+    }
+
+#### shvar
+
+Execute a block with a global variable set.
+
+    shvar IFS=/ {
+      echo "ifs is $IFS"
+    }
+    echo "ifs restored to $IFS"
+
+#### push-registers
+
+Save global registers like $? on a stack.  It's useful for preventing plugins
+from interfering with user code.  Example:
+
+    status_42         # returns 42 and sets $?
+    push-registers {  # push a new frame
+      status_43       # top of stack changed here
+      echo done
+    }                 # stack popped
+    echo $?           # 42, read from new top-of-stack
+
+Current list of registers:
+
+    BASH_REMATCH        aka  _match()
+    $?             
+    _status             set by the try builtin
+    PIPESTATUS          aka  _pipeline_status
+    _process_sub_status
+
+
+### Modules
+
 #### runproc
 
 Runs a named proc with the given arguments.  It's often useful as the only top
@@ -500,31 +495,89 @@ And like this in libraries:
 
     module myfile.oil || return 0   
 
-#### push-registers
+#### use
 
-Save global registers like $? on a stack.  It's useful for preventing plugins
-from interfering with user code.  Example:
+Make declarations about the current file.
 
-    status_42         # returns 42 and sets $?
-    push-registers {  # push a new frame
-      status_43       # top of stack changed here
-      echo done
-    }                 # stack popped
-    echo $?           # 42, read from new top-of-stack
+For files that contain embedded DSLs:
 
-Current list of registers:
+    use dialect ninja  # requires that _DIALECT is set to 'ninja'
 
-    BASH_REMATCH        aka  _match()
-    $?             
-    _status             set by try builtin     
-    PIPESTATUS          aka  _pipeline_status
-    _process_sub_status
+An accepted declaration that tools can use, but isn't used by Oil:
+
+    use bin grep sed
+
+### I/O
+
+#### oil-read
+
+Oil adds buffered, line-oriented I/O to shell's `read`.
+
+    read --line             # default var is $_line
+    read --line --with-eol  # keep the \n
+    read --line --qsn       # decode QSN too
+    read --all              # whole file including newline; var is $_all
+    read -0                 # read until NUL, synonym for read -r -d ''
+
+When --qsn is passed, the line is check for an opening single quote.  If so,
+it's decoded as QSN.  The line must have a closing single quote, and there
+can't be any non-whitespace characters after it.
+
+#### write
+
+write fixes problems with shell's `echo` builtin.
+
+The default separator is a newline, and the default terminator is a
+newline.
+
+Examples:
+
+    write -- ale bean        # write two lines
+    write --qsn -- ale bean  # QSN encode, guarantees two lines
+    write -n -- ale bean     # synonym for --end '', like echo -n
+    write --sep '' --end '' -- a b        # write 2 bytes
+    write --sep $'\t' --end $'\n' -- a b  # TSV line
+
+#### fork
+
+The preferred alternative to shell's `&`.
+
+    fork { sleep 1 }
+    wait -n
+
+#### forkwait
+
+The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible.
+
+    forkwait {
+      not_mutated=zzz
+    }
+    echo $not_mutated
+
+
 
 ### Data Formats
 
-### External Lang
+#### json
+
+Write JSON:
+
+    var d = {name: 'bob', age: 42}
+    json write (d)
+
+Read JSON into a variable:
+
+    var x = ''
+    json read :x < myfile.txt
+
 
 ### Testing
+
+TODO: describe
+
+### External Lang
+
+TODO: when
 
 <h2 id="option">Shell Options</h2>
 
@@ -649,9 +702,15 @@ TODO:
 
 <h2 id="special">Special Variables</h2>
 
-#### ARGV
+### Shell Vars
+
+#### `ARGV`
 
 Replacement for `"$@"`
+
+#### `_DIALECT`
+
+Name of a dialect being evaluated.
 
 #### `_this_dir`
 
@@ -662,6 +721,17 @@ The directory the current script resides in.  This knows about 3 situations:
 - The location of script loaded with the `source` builtin
 
 It's useful for "relative imports".
+
+### Platform
+
+#### OIL_VERSION
+
+The version of Oil that is being run, e.g. `0.9.0`.
+
+<!-- TODO: specify comparison algorithm. -->
+
+### Exit Status
+
 
 #### `_status`
 
@@ -680,27 +750,23 @@ Alias for [PIPESTATUS]($osh-help).
 
 The exit status of all the process subs in the last command.
 
-#### `_match`
+### Tracing
 
-TODO: The regex match.
+#### SHX_indent
 
-#### `_start`
+#### SHX_punct
 
-TODO
-
-#### `_end`
-
-TODO
-
-### Platform
-
-#### OIL_VERSION
-
-The version of Oil that is being run, e.g. `0.9.0`.
-
-TODO: comparison algorithm.
+#### SHX_pid_str
 
 <h2 id="lib">Oil Libraries</h2>
+
+### Pattern
+
+#### `_match()`
+
+#### `_start()`
+
+#### `_end()`
 
 ### Collections
 
@@ -710,21 +776,32 @@ TODO: comparison algorithm.
 - `len(myarray)` is the number of elements
 - `len(assocarray)` is the number of pairs
 
-`copy()`:
-
-```
-var d = {name: value}
-
-var alias = d  # illegal, because it can create ownership problems
-               # reference cycles
-var new = copy(d)  # valid
-```
-
-### Pattern
-
-    _match()   _start()   _end()
-
 ### String
+
+find sub join split
+
+### Word
+
+glob maybe
+
+### Arrays
+
+- `index(A, item)` is like the awk function
+- `append()` is a more general version of the `append` builtin
+- `extend()`
+
+### Assoc Arrays
+
+- `keys()`
+- `values()`
+
+### Introspection
+
+#### `shvar_get()`
+
+TODO
+
+### Config Gen
 
 ### Better Syntax
 
@@ -738,23 +815,10 @@ These functions give better syntax to existing shell constructs.
 - `lower()` for `${x,,}`
 - `strftime()`: hidden in `printf`
 
-### Arrays
 
-- `index(A, item)` is like the awk function
+### Codecs
 
-### Assoc Arrays
-
-- `@names()`
-- `values()`.  Problem: these aren't all strings?
-
-### Block
-
-<h3>libc</h3>
-
-<h4 id="strftime">strftime()</h4>
-
-Useful for logging callbacks.  NOTE: bash has this with the obscure printf
-'%(...)' syntax.
+TODO
 
 ### Hashing
 

@@ -32,7 +32,8 @@ To view this index inside the shell, use:
 An <span style="color: darkred">X</span> next to a help topic means that the
 feature is **unimplemented**.
 
-You may also want to browse [Oil Help Topics](oil-help-topics.html).
+- Down: [OSH Help on One Big Page](osh-help.html)
+- Lateral: [Oil Help Topics](oil-help-topics.html)
 
 &nbsp;
 
@@ -133,7 +134,7 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
   [Working Dir]   cd   pwd   pushd   popd   dirs
   [Completion]    complete   compgen   compopt   compadjust
   [Shell Process] exec   X logout 
-                  umask   X ulimit   X times
+                  umask   X ulimit   times
   [Child Process] jobs   wait   ampersand &
                   fg   X bg   X kill   X disown 
   [External]      test [   getopts
