@@ -24,11 +24,12 @@ programmers who avoid shell.
 
 ## OSH is a Compatible Shell
 
+These docs are for advanced users:
+
+- [Known Differences](known-differences.html) lists differences between OSH and
+  other shells.  
+- [Quirks](quirks.html) for compatibility.
 - [Shell Language Idioms](shell-idioms.html).
-- For advanced users
-  - [Known Differences](known-differences.html) lists differences between OSH and
-    other shells.  
-  - [Quirks](quirks.html) for compatibility.
 
 Reference:
 
@@ -51,7 +52,7 @@ Reference:
 - [Oil Help Topics](oil-help-topics.html) (incomplete).  This document
   underlies the `help` builtin.
 
-### Notes on Language Design
+### Language Design
 
 - [A Feel For Oil's Syntax](syntax-feelings.html)
 - [Language Influences](language-influences.html)
@@ -121,23 +122,15 @@ code.
   - [IO Builtins](io-builtins.html)
 - [Headless Mode](headless.html).  For alternative UIs on top of Oil.
 
-## Internal Details
-
-- [Notes on Oil's Architecture](architecture-notes.html)
-  - [Parser Architecture](parser-architecture.html)
 
 ## For Contributors
 
 - [README.md](README.html).  If you want to modify Oil, start here.  We
   welcome contributions!
-- [Toil](toil.html).  Continuous testing on many platforms.
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
-<!--
+### Internal Details
 
-Discarded, maybe delete these
-
-[What is Oil?](what-is-oil.html)  High-level descriptions of the project.
-
--->
+- [Notes on Oil's Architecture](architecture-notes.html)
+  - [Parser Architecture](parser-architecture.html)

@@ -141,32 +141,40 @@ readonly TIMESTAMP=$(date)
 
 split-and-render() {
   local src=${1:-doc/known-differences.md}
+  local out=${2:-}
 
-  local name=$(basename $src .md)
-  local out=${2:-_release/VERSION/doc/$name.html}
+  local rel_path=${src%'.md'}  # doc/known-differences
+  local tmp_prefix=_tmp/$rel_path  # temp dir for splitting
 
-  local prefix=_tmp/doc/$name
+  local out=${2:-_release/VERSION/$rel_path.html}
+  local web_url=${3:-'../web'}
+
+  mkdir -v -p $(dirname $out) $tmp_prefix
 
   # Also add could add css_files.  The one in the file takes precedence always?
 
   # css_files: a space-separated list
   # all_docs_url: so we link from doc/foo.html -> doc/
 
+  local css_files="$web_url/base.css $web_url/manual.css $web_url/toc.css $web_url/language.css $web_url/code.css"
+
   doctools/split_doc.py \
     -v build_timestamp="$TIMESTAMP" \
     -v oil_version="$OIL_VERSION" \
-    -v css_files='../web/base.css ../web/manual.css ../web/toc.css ../web/language.css ../web/code.css' \
+    -v css_files="$css_files" \
     -v all_docs_url='.' \
     -v repo_url="$src" \
-    $src $prefix
+    $src $tmp_prefix
 
   #ls -l _tmp/doc
   #head _tmp/doc/*
   #return
 
-  local code_out=_tmp/code-blocks/$name.txt
-  cmark --code-block-output $code_out ${prefix}_meta.json ${prefix}_content.md > $out
-  log "$prefix -> (doctools/cmark) -> $out"
+  local code_out=_tmp/code-blocks/$rel_path.txt
+  mkdir -v -p $(dirname $code_out)
+
+  cmark --code-block-output $code_out ${tmp_prefix}_meta.json ${tmp_prefix}_content.md > $out
+  log "$tmp_prefix -> (doctools/cmark) -> $out"
 }
 
 # Special case for README
@@ -230,6 +238,12 @@ all-markdown() {
   done
 
   special
+}
+
+all-ref() {
+  for d in doc/ref/*.md; do
+    split-and-render $d '' '../../web'
+  done
 }
 
 # TODO: This could use some CSS.
