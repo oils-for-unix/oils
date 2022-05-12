@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/common.sh  # CLANGXX
+
 #
 # Wrapper functions that don't use Ninja
 #
@@ -17,6 +19,11 @@ set -o errexit
 # This is the demo we're releasing to users!
 compile-oil-native() {
   build/native-steps.sh compile-slice osh_eval ''
+}
+
+compile-quickly() {
+  ### For the fast possible development experience
+  CXX=$CLANGXX compile-oil-native
 }
 
 compile-oil-native-asan() {

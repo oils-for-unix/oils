@@ -34,8 +34,11 @@ readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS/spec-bin
 # The authoritative versions!
 download() {
   mkdir -p $TAR_DIR
+
+  # TODO: upgrade zsh and mksh
+
   wget --no-clobber --directory $TAR_DIR \
-    https://www.oilshell.org/blob/spec-bin/bash-4.4.tar.gz \
+    https://www.oilshell.org/blob/spec-bin/$BASH_NAME.tar.gz \
     https://www.oilshell.org/blob/spec-bin/$BUSYBOX_NAME.tar.bz2 \
     https://www.oilshell.org/blob/spec-bin/$DASH_NAME.tar.gz \
     https://www.oilshell.org/blob/spec-bin/mksh-R52c.tgz \
@@ -95,7 +98,7 @@ build-zsh() {
 build-bash() {
   mkdir -p $DEPS_DIR/_bash
   pushd $DEPS_DIR/_bash
-  $TAR_DIR/bash-4.4/configure
+  $TAR_DIR/$BASH_NAME/configure
   make
   popd
 }
@@ -190,25 +193,26 @@ test-all() {
 #
 
 _wget() {
-  wget --no-clobber --directory _tmp/src "$@"
+  wget --no-clobber --directory $TAR_DIR "$@"
 }
 
 download-original-source() {
-  mkdir -p _tmp/src
+  # Note: downloading from oilshell.org/blob/spec-bin also uses this dir
+  mkdir -p $TAR_DIR
 
   # https://tiswww.case.edu/php/chet/bash/bashtop.html - 9/2016 release
   # https://ftp.gnu.org/gnu/bash/
-  _wget https://ftp.gnu.org/gnu/bash/bash-4.4.tar.gz
+  _wget https://ftp.gnu.org/gnu/bash/bash-5.1.tar.gz
 
-  # https://www.mirbsd.org/mksh.htm - no dates given
-  _wget https://www.mirbsd.org/MirOS/dist/mir/mksh/mksh-R54.tgz
+  # https://www.mirbsd.org/mksh.htm
+  _wget https://www.mirbsd.org/MirOS/dist/mir/mksh/mksh-R59.tgz
 
   # https://tracker.debian.org/pkg/dash  -- old versions
   # http://www.linuxfromscratch.org/blfs/view/svn/postlfs/dash.html
   _wget http://gondor.apana.org.au/~herbert/dash/files/dash-0.5.10.2.tar.gz
 
   # http://zsh.sourceforge.net/News/ - 12/2016 release
-  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.3.1/zsh-5.3.1.tar.xz
+  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.8.1/zsh-5.8.1.tar.xz
 
   _wget https://osdn.net/dl/yash/yash-2.49.tar.xz
 

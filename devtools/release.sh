@@ -888,6 +888,7 @@ tarball-size() {
   build/test.sh oil-tar  # Ctrl-C this, then run metrics/tarball.sh
 }
 
+# TODO: move to ../oil_DEPS
 dep-bloaty() {
   wget --no-clobber --directory _deps/ \
     https://github.com/google/bloaty/releases/download/v1.1/bloaty-1.1.tar.bz2
