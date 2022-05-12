@@ -11,6 +11,7 @@ packages:
   - slirp4netns
 
 secrets:
+  # SSH key for publishing HTML
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
 tasks:

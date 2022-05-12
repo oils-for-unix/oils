@@ -356,8 +356,9 @@ clean() {
   rm -r -f --verbose _devbuild/py-ext
 }
 
-# No fastlex, because we don't want to require re2c installation.
-_minimal() {
+py-source() {
+  ### Generate Python source code
+
   mkdir -p _tmp _devbuild/gen
 
   # need -r because Python 3 puts a __pycache__ here
@@ -377,7 +378,10 @@ _minimal() {
   # Needed on Travis.
   oil-grammar
   find-grammar
+}
 
+# No fastlex, because we don't want to require re2c installation.
+py-extensions() {
   pylibc
   line-input
   posix_
@@ -388,7 +392,8 @@ _minimal() {
 }
 
 minimal() {
-  _minimal
+  py-source
+  py-extensions
 
   cat <<EOF
 

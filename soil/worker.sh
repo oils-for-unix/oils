@@ -101,9 +101,13 @@ pea-tasks() {
   # We need a later version of Python 3 / MyPy both to type check and
   # to parse
 
+  # Run py-source so we can type check generated code
+  # We need to type check more than we translate
+
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host           -
+py-source           build/dev.sh py-source                  -
 check-types         test/py3_parse.sh check-types           -
 parse-all           test/py3_parse.sh parse-all             -
 EOF
