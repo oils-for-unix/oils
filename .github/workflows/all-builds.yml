@@ -53,7 +53,6 @@ jobs:
 
   dev-minimal:
     # https://github.com/actions/virtual-environments
-    # there's no python-pip on ubuntu-latest?
     runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
@@ -71,6 +70,33 @@ jobs:
         run: |
           cd $REPO_ROOT
           soil/host-shim.sh run-job-uke docker $REPO_ROOT dev-minimal
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          cd $REPO_ROOT
+          soil/github-actions.sh publish-html
+
+  pea:
+    runs-on: ubuntu-20.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: mount-perms
+        run: |
+          soil/host-shim.sh mount-perms $REPO_ROOT
+
+      - name: pea
+        run: |
+          cd $REPO_ROOT
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT pea
 
       - name: publish-html
         env:

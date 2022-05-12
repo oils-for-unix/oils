@@ -349,7 +349,7 @@ tour() {
 
   split-and-render doc/$name.md
 
-  local work_dir=$REPO_ROOT/_tmp/code-blocks
+  local work_dir=$REPO_ROOT/_tmp/code-blocks/doc
 
   # Files used by module example
   touch $work_dir/{build,test}.sh

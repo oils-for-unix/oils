@@ -1,0 +1,28 @@
+# Debian bullseye has podman
+image: debian/bullseye
+packages:
+  # for running soil on the host
+  - python2
+  - time
+  - zip
+  # podman and its missing dependencies
+  - podman
+  - uidmap
+  - slirp4netns
+
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+
+tasks:
+  - mount-perms: |
+      cd oil
+      soil/host-shim.sh mount-perms $PWD
+
+  - pea: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD pea
+
+  # Relies on SSH key, so do it outside the container
+  - publish-html: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
