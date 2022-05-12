@@ -92,16 +92,42 @@ symlink-cmark() {
 }
 
 #
-# CPython dependency for 'make'
+# CPython 3.10 dependency for Pea
+#
+
+readonly PY3_VERSION=3.10.4
+readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
+
+download-py3() {
+  mkdir -p $REPO_ROOT/_cache
+  wget --no-clobber --directory $REPO_ROOT/_cache $PY3_URL
+}
+
+extract-py3() {
+  pushd $REPO_ROOT/_cache
+  tar -x --xz < $(basename $PY3_URL)
+  popd
+}
+
+symlink-py3() {
+  ln -s -f -v $DEPS_DIR/py3/python $DEPS_DIR/python3
+  ls -l $DEPS_DIR/python3
+}
+
+test-py3() {
+  $DEPS_DIR/python3 -c 'import sys; print(sys.version)'
+}
+
+#
+# OVM slice -- CPython dependency for 'make'
 #
 
 configure-python() {
   local dir=${1:-$PREPARE_DIR}
+  local conf=${2:-$PWD/$PY27/configure}
 
   rm -r -f $dir
   mkdir -p $dir
-
-  local conf=$PWD/$PY27/configure 
 
   pushd $dir 
   time $conf
@@ -152,6 +178,20 @@ layer-re2c() {
 layer-cpython() {
   configure-python
   build-python
+}
+
+# For pea and type checking
+layer-py3() {
+  # Dockerfile.pea copies it
+  # download-py3
+
+  extract-py3
+
+  local dir=$DEPS_DIR/py3
+  configure-python $dir $REPO_ROOT/_cache/Python-$PY3_VERSION/configure
+  build-python $dir
+
+  symlink-py3
 }
 
 "$@"

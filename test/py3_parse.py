@@ -9,6 +9,7 @@ import os
 import sys
 
 
+#def main(argv) -> None:
 def main(argv):
   ast_dump = os.getenv('AST_DUMP')
 

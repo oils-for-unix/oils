@@ -161,10 +161,9 @@ soil-run() {
   typecheck-more-oil
 }
 
-# Alias for convenience
-check-osh-parse() {
-  types/osh-parse.sh check-some
-}
+#
+# PyAnnotate
+#
 
 collect-types() {
   export PYTHONPATH=".:$PYANN_REPO"

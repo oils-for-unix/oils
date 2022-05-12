@@ -46,6 +46,10 @@ dev-minimal() {
 
 }
 
+pea() {
+  apt-get install -y python3-pip
+}
+
 other-tests() {
   local -a packages=(
     libreadline-dev

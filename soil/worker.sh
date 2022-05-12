@@ -95,6 +95,20 @@ dump-hardware    soil/worker.sh dump-hardware   -
 EOF
 }
 
+pea-tasks() {
+  ### Print tasks for the 'pea' build
+
+  # We need a later version of Python 3 / MyPy both to type check and
+  # to parse
+
+  # (task_name, script, action, result_html)
+  cat <<EOF
+dump-user-host      soil/worker.sh dump-user-host           -
+check-types         test/py3_parse.sh check-types           -
+parse-all           test/py3_parse.sh parse-all             -
+EOF
+}
+
 dev-minimal-tasks() {
   ### Print tasks for the 'dev-minimal' build
 
@@ -236,7 +250,6 @@ osh2oil           test/osh2oil.sh soil-run                -
 R-test            devtools/R-test.sh soil-run             -
 xargs-test        test/other.sh xargs-test                -
 csv2html-test     test/other.sh csv2html-test             -
-py3-parse         test/py3_parse.sh parse-all             -
 EOF
 }
 
@@ -389,6 +402,8 @@ run-dev-minimal() { job-main 'dev-minimal'; }
 run-other-tests() { job-main 'other-tests'; }
 
 run-ovm-tarball() { job-main 'ovm-tarball'; }
+
+run-pea() { job-main 'pea'; }
 
 run-app-tests() { job-main 'app-tests'; }
 

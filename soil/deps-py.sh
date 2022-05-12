@@ -17,4 +17,8 @@ dev-minimal() {
   pip3 install --user mypy pexpect
 }
 
+pea() {
+  pip3 install --user mypy
+}
+
 "$@"
