@@ -433,7 +433,9 @@ time-helper() {
 all() {
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
-  _minimal
+  py-source
+  py-extensions
+
   fastlex
   time-helper
   build/doc.sh all-help
