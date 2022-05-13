@@ -69,23 +69,24 @@ aren't accounted for:
 
 ## Notes on the Algorithm / Architecture
 
-(1) One `const_pass.py`.  Collect string constants.
+There are four passes over the MyPy AST.
+
+(1) `const_pass.py`: Collect string constants 
+
+Turn turn the constant in `myfunc("foo")` into top-level `GLOBAL_STR(str1,
+"foo")`.
   
-(2) Three `cppgen_pass.py` variants.  For each module, Declare and define
-   classes and functions.
+(2) Three passes in `cppgen_pass.py`.
 
 (a) Forward Declaration Pass.
 
     class Foo;
     class Bar;
 
-More work in this pass:
-
-- Determine which methods should be declared `virtual` in their declarations
-  (written in the next pass)
+This pass also determines which methods should be declared `virtual` in their
+declarations.  The `virtual` keyword is written in the next pass.
 
 (b) Declaration Pass.
-
 
     class Foo {
       void method();
@@ -97,7 +98,7 @@ More work in this pass:
 More work in this pass:
 
 - Collect member variables and write them at the end of the definition
-- Collect locals for "hoisting".  Written in pass #3.
+- Collect locals for "hoisting".  Written in the next pass.
 - Creates `fmtN()` functions to compile Python's `%` formatting operator.
 
 (c) Definition Pass.
@@ -111,44 +112,60 @@ More work in this pass:
 
 Note: I really wish we were not using visitors, but that's inherited from MyPy.
 
-## C++ Features We Use
+## Translation Notes
 
-It would be nice to generate plain C, but it would also be significantly more
-work because we use several C++ features.
+### Major Features
 
-And IMO the generated code is more readable in C++.  For example, classes and
-methods preserve the structure of the source.  And if we didn't have
-namespaces, we'd have to use long generated function names.
+- Instantiating objects &rarr; `gc_heap::Alloc<T>(...)`
+- Collections
+  - `str` &rarr; `Str*`
+  - `List[T]` &rarr; `List<T>*`
+  - `Dict[K, V]` &rarr; `Dict<K, V>*`
+  - Semantic change: a `Tuple[str, int]` is a **value type** that can only be
+    returned from a function.  If you want a garbage-collected **reference
+    type**, use an ASDL record `(string s, int i)`
+- Classes and inheritance
+  - `__init__` method becomes a constructor.  Note: initializer lists not used.
+  - Detect `virtual` methods
+  - TODO: could we detect `abstract` methods? (`NotImplementedError`)
+- Python Exceptions &rarr; C++ exceptions
+- Scope-based resource management
+  - `with ctx_Foo(...)` &rarr; C++ constructors and destructors
+- Python Modules &rarr; C++ namespace (we assume a 2-level hierarchy)
+- A "clever" hack: `with tagswitch(d) as case` &rarr; `switch / case`
+  - We don't have Python 3 pattern matching
 
-- switch / case
-- Templates for `List`, `Dict`, `Tuple`, etc.
-  - Also `Alloc<T>`
-- Inheritance (for "modules")
-  - Virtual Methods
-  - Abstract Methods
-  - Initializer lists in constructors
-- Exceptions
-- Constructors and destructors, for scoped-based resource management.
-- Namespaces for Python modules
-- Some Function Overloading for `format_r` ?
+### Minor Translations
+
+- `s1 == s2` &rarr; `str_equals(s1, s2)`
+- `d.iteritems()` is rewritten `mylib.iteritems()` &rarr; `DictIter`
+  - TODO: can we be smarter about this?
+- `reversed(mylist)` &rarr; `ReverseListIter`
+- `[None] * 3` &rarr; `list_repeat(nullptr, 3)`
+- Omit:
+  - If the LHS of an assignment is `_`, then the statement is omitted
+    - This is for `_ = log`, which shuts up Python lint warnings for 'unused
+      import'
+  - Code under `if __name__ == '__main__'`
+
+## C++ Features Used
+
+- For ASDL: type-safe enums, i.e. `enum class`
+- `nullptr`
+- `static_cast` and `reinterpret_cast`
+- Some Function Overloading for `format_r`?
   - Do we need this for equality and hashing?
-- ASDL: type-safe enums, i.e. `enum class`
-- Minor:
-  - `nullptr`
-  - `static_cast` and `reinterpret_cast`
+- `offsetof` for introspection of field positions for garbage collection
+- `std::initializer_list` for `StackRoots()`
+  - Should we get rid of this?
 
-Not using:
+### Not Used
 
 - I/O Streams, RTTI, etc.
 - `const`
+- No smart pointers for now
 
-## Translation Notes
-
-- A `Tuple[str, int]` is a **value type** that can only be returned from a function.
-  If you want a garbage-collected **reference type**, use an ASDL record
-  `(string s, int i)`
-
-## Notes on mylib
+## Notes on the Runtime (`mylib`)
 
 - A `Str` is immutable, and can be used as a key to a `Dict` (at the Python
   level), and thus an `AssocArray` (at the Oil level).
@@ -156,11 +173,39 @@ Not using:
   build it with repeated calls to`write()`, and then call `getvalue()` at the
   end.
 
-## Limitations Due to Garbage Collection
+## `mycpp` Limitations
 
-- `for x in [1, 2, 3]` is not allowed.  Assign it to a temporary variable
-  first, so it can be picked up in `StackRoots()`.
+### Due to the Translation or C++ language
+
+- C++ doesn't have `try / except / else`, or `finally`
+  - This usually requires some rewriting
+- `if mylist` tests if the pointer is non-NULL; use `if len(mylist)` for
+  non-empty test
+- Functions can have at most one keyword / optional argument.
+  - We generate two methods: `f(x)` which calls `f(x, y)` with the default
+    value of `y`
+  - If there are two or more optional arguments:
+    - For classes, you can use the "builder pattern", i.e. add an
+      `Init_MyMember()` method
+    - If the arguments are booleans, translate it to a single bitfield argument
+- C++ has nested scope and Python has flat function scope.  Can cause name
+  collisions.
+  - Could enforce this if it becomes a problem
+
+### Due to Garbage Collection
+
+- Big limitation: I think `f(g(x))` is not allowed if g() returns a
+  pointer!  Due to `StackRoots`.
+  - TODO: enforce this or translate it.
+- Likewise `for x in [1, 2, 3]` is not allowed.  Assign it to a temporary
+  variable first, so it can be picked up in `StackRoots()`.
 - Generally constructors should only assign members.  They shouldn't call
-  functions or raise exceptions.  (TODO: we could enforce this.)
+  functions or raise exceptions.
+  - TODO: we could enforce this.
 
+## Gotchas
 
+- C++ classes can have 2 member variables of the same name!  From the base
+  class and derived class.
+- Failing to declare methods `virtual` can involve the wrong one being called
+  at runtime
