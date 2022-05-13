@@ -216,6 +216,92 @@ compile() {
   fi
 }
 
+cxx-oil() {
+  ### Compile one translation unit.  Invoked by build.ninja
+
+  local in=$1
+  local out=$2
+
+  local flags="$CPPFLAGS"
+  local link_flags=''
+  case $out in
+    (build/obj/opt/*)
+      flags="$CPPFLAGS -O2 -g -D DUMB_ALLOC"
+      # To debug crash with 8 byte alignment
+      #flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
+      ;;
+    (build/obj/uftrace/*)
+      # -O0 creates a A LOT more data.  But sometimes we want to see the
+      # structure of the code.
+      # vector::size(), std::forward, len(), etc. are not inlined.
+      # Also List::List, Tuple2::at0, etc.
+      #local opt='-O2'
+      local opt='-O0'
+
+      # Do we want DUMB_ALLOC here?
+      flags="$CPPFLAGS $opt -g -pg"
+      ;;
+    (build/obj/malloc/*)
+      flags="$CPPFLAGS -O2 -g"
+      ;;
+    (build/obj/tcmalloc/*)
+      flags="$CPPFLAGS -O2 -g -D TCMALLOC"
+      link_flags='-ltcmalloc'
+      ;;
+    (build/obj/asan/*)
+      # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
+      flags="$CPPFLAGS -O0 -g -fsanitize=address"
+      ;;
+    (_build/obj/alloclog/*)
+      # debug flags
+      flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
+      ;;
+    (_build/obj/dbg/*)
+      # debug flags
+      flags="$CPPFLAGS -O0 -g"
+      ;;
+  esac
+
+  # Avoid memset().  TODO: remove this hack!
+  flags="$flags -D NO_GC_HACK"
+
+  # hack for osh_eval_stubs.h
+  flags="$flags -D OSH_EVAL"
+
+  # TODO: make a variant for this
+  # flags="$flags -ftime-trace"
+
+  # -fPIC is always needed?
+  $CXX \
+    $flags \
+    -fPIC \
+    -I . \
+    -I mycpp \
+    -I cpp \
+    -I _build/cpp \
+    -I _devbuild/gen \
+    -o $out \
+    -c $in
+}
+
+link() {
+  ### Link oil-native.  Invoked by build.ninja
+
+  local out=$1
+  shift
+  # rest are inputs
+
+  local link_flags=''
+  case $out in
+    (*.tcmalloc)
+      link_flags='-ltcmalloc'
+      ;;
+  esac
+
+  time $CXX -o $out $link_flags "$@"
+}
+
+
 # what osh_eval.cc needs to compile
 readonly -a DEPS_CC=(
     cpp/core_pyos.cc \

@@ -124,6 +124,14 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
   - Semantic change: a `Tuple[str, int]` is a **value type** that can only be
     returned from a function.  If you want a garbage-collected **reference
     type**, use an ASDL record `(string s, int i)`
+- Python's polymorphic iteration &rarr; `StrIter`, `ListIter<T>`, `DictIter<K,
+  V`
+  - `d.iteritems()` is rewritten `mylib.iteritems()` &rarr; `DictIter`
+    - TODO: can we be smarter about this?
+  - `reversed(mylist)` &rarr; `ReverseListIter`
+- Collection literals turn into initializer lists
+  - And there is a C++ type inference issue which requires an explicit
+    `std::initializer_list<int>{1, 2, 3}`, not just `{1, 2, 3}`
 - Classes and inheritance
   - `__init__` method becomes a constructor.  Note: initializer lists not used.
   - Detect `virtual` methods
@@ -138,9 +146,6 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 ### Minor Translations
 
 - `s1 == s2` &rarr; `str_equals(s1, s2)`
-- `d.iteritems()` is rewritten `mylib.iteritems()` &rarr; `DictIter`
-  - TODO: can we be smarter about this?
-- `reversed(mylist)` &rarr; `ReverseListIter`
 - `[None] * 3` &rarr; `list_repeat(nullptr, 3)`
 - Omit:
   - If the LHS of an assignment is `_`, then the statement is omitted
