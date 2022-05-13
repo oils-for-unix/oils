@@ -22,6 +22,92 @@ if test "$CXX" = "$CLANGXX"; then
   CPPFLAGS="$CPPFLAGS -ferror-limit=1000"
 fi
 
+# chrome://tracing
+# https://aras-p.info/blog/2019/01/16/time-trace-timeline-flame-chart-profiler-for-Clang/
+ftime-trace-demo() {
+  local dir=_tmp/ftime-trace
+  mkdir -p $dir
+  rm -f -v $dir/*
+
+  echo ' int foo() { return 32; } ' > $dir/lib.cc
+  echo ' int main() { return 42; } ' > $dir/main.cc
+
+  #$CLANGXX --version
+
+  # Compiler annoyances:
+  # - -ftime-trace is IGNORED without -c, which means compile without linking
+  # - Can't specify -o with multiple source files
+
+  set -x
+  $CLANGXX -ftime-trace -o $dir/main.o -c $dir/main.cc 
+  $CLANGXX -ftime-trace -o $dir/lib.o -c $dir/lib.cc
+  set +x
+  echo
+
+  ls -l $dir
+  echo
+
+  # .o file is 'relocatable', otherwise it's 'executable'
+  file $dir/*
+  echo
+}
+
+preprocessor-demo() {
+  local dir=_tmp/preprocess
+  mkdir -p $dir
+  rm -f -v $dir/*
+
+  echo '
+#include <stdio.h>
+int foo() { return 32; }
+' > $dir/lib.cc
+
+  # Create a file that gets included twice
+  { 
+    echo '#ifndef LIB2_H'
+    echo '#define LIB2_H'
+
+    echo '#include <vector>' 
+
+    # This doesn't make a difference!  The preprocessor strips comments
+    for i in $(seq 1000); do
+      echo '// comment'
+    done
+
+    for i in $(seq 1000); do
+      echo "int foo$i() { return $i; }"
+    done
+
+    echo '#endif  // LIB2_H'
+  } > $dir/lib2.h
+
+  echo '
+#include <vector>
+#include "lib2.h"  // transitive include
+
+inline int bar() { return 1; }
+' > $dir/lib.h
+
+  # wow 12K files for <vector>
+  echo '
+#include <vector>
+#include "lib.h"
+#include "lib2.h"  // duplicate include
+
+int main() { return 42; }
+' > $dir/main.cc
+
+  $CXX -E $dir/lib.cc > $dir/lib.post.cc
+
+  $CXX -E $dir/main.cc > $dir/main.post.cc
+
+  wc -l $dir/*.post.cc
+
+  # make sure the file compiles
+  $CXX -o $dir/main $dir/main.cc
+}
+
+
 compile() {
   ### Invoked by build.ninja, and by test/cpp-unit.sh
 
@@ -81,17 +167,53 @@ compile() {
   # Avoid memset().  TODO: remove this hack!
   flags="$flags -D NO_GC_HACK"
 
-  # flags are split
-  $CXX $flags \
-    -I . \
-    -I mycpp \
-    -I cpp \
-    -I _build/cpp \
-    -I _devbuild/gen \
-    -o $out \
-    "$@" \
-    $link_flags \
-    -lstdc++
+  if false; then
+    # With new Clang:
+    # - 5.3 seconds for osh_eval.cc
+    # - 1.3 seconds for syntax_asdl.cc -- hm how to speed this up
+    # - 14ms for cpp/signal_.cc, a tiny file
+    # So yeah parallelizing this is good.  TODO: use Ninja
+
+    mkdir -p _build/obj
+
+    local -a objects=()
+    for src in "$@"; do
+
+      local obj=_build/obj/$(basename $src .cc).o
+
+      echo "--- $src"
+
+      # need -fPIC for some reason
+      time $CXX $flags \
+        -fPIC \
+        -ftime-trace \
+        -I . \
+        -I mycpp \
+        -I cpp \
+        -I _build/cpp \
+        -I _devbuild/gen \
+        -o $obj \
+        -c $src \
+
+      objects=("${objects[@]}" "$obj")
+    done
+
+    echo "=== link ${objects[@]}"
+    time cc -o $out "${objects[@]}" $link_flags -lstdc++
+
+  else
+    # flags are split
+    $CXX $flags \
+      -I . \
+      -I mycpp \
+      -I cpp \
+      -I _build/cpp \
+      -I _devbuild/gen \
+      -o $out \
+      "$@" \
+      $link_flags \
+      -lstdc++
+  fi
 }
 
 # what osh_eval.cc needs to compile

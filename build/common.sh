@@ -18,10 +18,10 @@ readonly _THIS_DIR
 _REPO_ROOT=$(cd $_THIS_DIR/.. && pwd)  # oilshell/oil
 readonly _REPO_ROOT
 
-readonly CLANG_DIR_RELATIVE='_deps/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04'
+#readonly CLANG_DIR_RELATIVE='_deps/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04'
 
 # New version is slightly slower -- 13 seconds vs. 11.6 seconds on oil-native
-#readonly CLANG_DIR_RELATIVE='../oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04'
+readonly CLANG_DIR_RELATIVE='../oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04'
 
 readonly CLANG_DIR=$_REPO_ROOT/$CLANG_DIR_RELATIVE
 readonly CLANG=$CLANG_DIR/bin/clang  # used by benchmarks/{id,ovm-build}.sh
