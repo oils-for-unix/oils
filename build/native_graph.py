@@ -38,8 +38,8 @@ GC vs. no GC -- two runtimes
 
 TODO
 
-- .d dependencies
-- generate shell script
+- Fix bloated binary: strip unused symbols
+- Make a rule for regenerating build.ninja?
 
 - delete compile-slice and fix other entry points in build/native.sh
 

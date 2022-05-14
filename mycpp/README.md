@@ -124,16 +124,20 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
   - Semantic change: a `Tuple[str, int]` is a **value type** that can only be
     returned from a function.  If you want a garbage-collected **reference
     type**, use an ASDL record `(string s, int i)`
+- Collection literals turn into initializer lists
+  - And there is a C++ type inference issue which requires an explicit
+    `std::initializer_list<int>{1, 2, 3}`, not just `{1, 2, 3}`
 - Python's polymorphic iteration &rarr; `StrIter`, `ListIter<T>`, `DictIter<K,
   V`
   - `d.iteritems()` is rewritten `mylib.iteritems()` &rarr; `DictIter`
     - TODO: can we be smarter about this?
   - `reversed(mylist)` &rarr; `ReverseListIter`
-- Collection literals turn into initializer lists
-  - And there is a C++ type inference issue which requires an explicit
-    `std::initializer_list<int>{1, 2, 3}`, not just `{1, 2, 3}`
+- Python's `in` operator:
+  - `s in mystr` &rarr; `str_contains(mystr, s)`
+  - `x in mylist` &rarr; `list_contains(mylist, x)`
 - Classes and inheritance
-  - `__init__` method becomes a constructor.  Note: initializer lists not used.
+  - `__init__` method becomes a constructor.  Note: initializer lists aren't
+    used.
   - Detect `virtual` methods
   - TODO: could we detect `abstract` methods? (`NotImplementedError`)
 - Python Exceptions &rarr; C++ exceptions
@@ -147,7 +151,7 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 
 - `s1 == s2` &rarr; `str_equals(s1, s2)`
 - `[None] * 3` &rarr; `list_repeat(nullptr, 3)`
-- Omit:
+- Omitted:
   - If the LHS of an assignment is `_`, then the statement is omitted
     - This is for `_ = log`, which shuts up Python lint warnings for 'unused
       import'

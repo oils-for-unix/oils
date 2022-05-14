@@ -219,12 +219,14 @@ compile() {
 cxx-oil() {
   ### Compile one translation unit.  Invoked by build.ninja
 
+  # Supports CXXFLAGS
+
   local in=$1
   local out=$2
   local dotd=${3:-}  # optional .d file
 
-  local flags="$CPPFLAGS"
-  local link_flags=''
+  local flags=""
+
   case $out in
     (build/obj/opt/*)
       flags="$CPPFLAGS -O2 -g -D DUMB_ALLOC"
@@ -247,7 +249,6 @@ cxx-oil() {
       ;;
     (build/obj/tcmalloc/*)
       flags="$CPPFLAGS -O2 -g -D TCMALLOC"
-      link_flags='-ltcmalloc'
       ;;
     (build/obj/asan/*)
       # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
@@ -263,6 +264,20 @@ cxx-oil() {
       ;;
   esac
 
+  # needed to strip unused symbols
+  # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
+  #
+  # Hm this still does not produce as small a binary as compiling everything in
+  # one go!
+  #
+  # one CXX:                       1.38 MB 
+  # multiple CXX with these flags: 1.84 MB
+  # multiple CXX without:          2.04 MB
+
+  # Also -flto makes it bigger?  wtf.
+
+  flags="$flags -fdata-sections -ffunction-sections"
+
   # Avoid memset().  TODO: remove this hack!
   flags="$flags -D NO_GC_HACK"
 
@@ -274,18 +289,21 @@ cxx-oil() {
     flags="$flags -MD -MF $dotd"
   fi
 
+  local more_flags=${CXXFLAGS:-}
+  if test -n "$more_flags"; then
+    flags="$flags $more_flags"
+  fi
+
   # TODO: make a variant for this
   # flags="$flags -ftime-trace"
 
-  # -fPIC is always needed?
   $CXX \
-    $flags \
-    -fPIC \
     -I . \
     -I mycpp \
     -I cpp \
     -I _build/cpp \
     -I _devbuild/gen \
+    $flags \
     -o $out \
     -c $in
 }
@@ -304,7 +322,7 @@ link() {
       ;;
   esac
 
-  time $CXX -o $out $link_flags "$@"
+  time $CXX -o $out $link_flags -Wl,--gc-sections "$@"
 }
 
 

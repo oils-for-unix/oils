@@ -102,6 +102,14 @@ collect-and-report() {
   report metrics $base_dir $dbg $opt | tee $base_dir/overview.txt
 }
 
+oil-native() {
+  ### Report on the ones we just built
+
+  collect-and-report $OIL_BASE_DIR _bin/osh_eval.{dbg,opt}
+
+  ls -l $OIL_BASE_DIR
+}
+
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 run-for-release() {

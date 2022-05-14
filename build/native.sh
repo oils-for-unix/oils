@@ -29,6 +29,14 @@ compile-quickly() {
   CXX=$CLANGXX ninja _bin/osh_eval.dbg
 }
 
+clang-size() {
+  clean
+  CXX=$CLANGXX ninja _bin/osh_eval.opt.stripped
+  ls -l _bin/
+
+  # Oh geez even worse; it's 2.38 MB even with --gc-sections! What happened?
+}
+
 compile-oil-native-asan() {
   build/native-steps.sh compile-slice osh_eval '.asan'
 }
