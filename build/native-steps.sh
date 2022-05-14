@@ -221,6 +221,7 @@ cxx-oil() {
 
   local in=$1
   local out=$2
+  local dotd=${3:-}  # optional .d file
 
   local flags="$CPPFLAGS"
   local link_flags=''
@@ -267,6 +268,11 @@ cxx-oil() {
 
   # hack for osh_eval_stubs.h
   flags="$flags -D OSH_EVAL"
+
+  # https://ninja-build.org/manual.html#ref_headers
+  if test -n "$dotd"; then
+    flags="$flags -MD -MF $dotd"
+  fi
 
   # TODO: make a variant for this
   # flags="$flags -ftime-trace"
