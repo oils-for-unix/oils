@@ -216,24 +216,49 @@ compile() {
   fi
 }
 
-cxx-oil() {
-  ### Compile one translation unit.  Invoked by build.ninja
+cxx=''         # MUTABLE GLOBAL compiler
+flags=''       # MUTABLE GLOBAL compile flags
+link_flags=''  # MUTABLE GLOBAL link flags
 
-  # Supports CXXFLAGS
+setglobal_cxx() {
+  local compiler=$1
 
-  local in=$1
-  local out=$2
-  local dotd=${3:-}  # optional .d file
+  case $compiler in 
+    (cxx)   cxx='c++'    ;;
+    (clang) cxx=$CLANGXX ;;
+  esac
+}
 
-  local flags=""
 
-  case $out in
-    (build/obj/opt/*)
-      flags="$CPPFLAGS -O2 -g -D DUMB_ALLOC"
+setglobal_compile_flags() {
+  local variant=$1
+  local dotd=${2:-}
+
+  flags="
+    $CPPFLAGS
+    -I . 
+    -I mycpp 
+    -I cpp 
+    -I _build/cpp 
+    -I _devbuild/gen 
+  "
+
+  case $variant in
+    (dbg)
+      # debug flags
+      flags="$flags -O0 -g"
+      ;;
+    (asan)
+      # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
+      flags="$flags -O0 -g -fsanitize=address"
+      ;;
+    (opt)
+      flags="$flags -O2 -g -D DUMB_ALLOC"
       # To debug crash with 8 byte alignment
       #flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
       ;;
-    (build/obj/uftrace/*)
+
+    (uftrace)
       # -O0 creates a A LOT more data.  But sometimes we want to see the
       # structure of the code.
       # vector::size(), std::forward, len(), etc. are not inlined.
@@ -242,25 +267,18 @@ cxx-oil() {
       local opt='-O0'
 
       # Do we want DUMB_ALLOC here?
-      flags="$CPPFLAGS $opt -g -pg"
+      flags="$flags $opt -g -pg"
       ;;
-    (build/obj/malloc/*)
-      flags="$CPPFLAGS -O2 -g"
+
+    (malloc)
+      flags="$flags -O2 -g"
       ;;
-    (build/obj/tcmalloc/*)
-      flags="$CPPFLAGS -O2 -g -D TCMALLOC"
+    (tcmalloc)
+      flags="$flags -O2 -g -D TCMALLOC"
       ;;
-    (build/obj/asan/*)
-      # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
-      flags="$CPPFLAGS -O0 -g -fsanitize=address"
-      ;;
-    (_build/obj/alloclog/*)
+    (alloclog)
       # debug flags
-      flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
-      ;;
-    (_build/obj/dbg/*)
-      # debug flags
-      flags="$CPPFLAGS -O0 -g"
+      flags="$flags -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
       ;;
   esac
 
@@ -289,6 +307,7 @@ cxx-oil() {
     flags="$flags -MD -MF $dotd"
   fi
 
+  # external
   local more_flags=${CXXFLAGS:-}
   if test -n "$more_flags"; then
     flags="$flags $more_flags"
@@ -297,32 +316,75 @@ cxx-oil() {
   # TODO: make a variant for this
   # flags="$flags -ftime-trace"
 
-  $CXX \
-    -I . \
-    -I mycpp \
-    -I cpp \
-    -I _build/cpp \
-    -I _devbuild/gen \
-    $flags \
-    -o $out \
-    -c $in
+}
+
+setglobal_link_flags() {
+  local variant=$1
+
+  case $variant in
+    (tcmalloc)
+      link_flags='-ltcmalloc'
+      ;;
+    (asan)
+      link_flags='-fsanitize=address'
+      ;;
+  esac
+
+  link_flags="$link_flags -Wl,--gc-sections "
+}
+
+compile-one() {
+  ### Compile one translation unit.  Invoked by build.ninja
+
+  # Supports CXXFLAGS
+
+  local compiler=$1
+  local variant=$2
+  local in=$3
+  local out=$4
+  local dotd=${5:-}  # optional .d file
+
+  setglobal_compile_flags "$variant" "$dotd"
+
+  if test $compiler = 'clang'; then
+    # mutate global
+    flags="$flags -fPIC"  # clang needs -fPIC?
+  fi
+
+  setglobal_cxx $compiler
+
+  "$cxx" $flags -o "$out" -c "$in"
 }
 
 link() {
   ### Link oil-native.  Invoked by build.ninja
 
-  local out=$1
-  shift
+  local compiler=$1
+  local variant=$2
+  local out=$3
+  shift 3
   # rest are inputs
 
-  local link_flags=''
-  case $out in
-    (*.tcmalloc)
-      link_flags='-ltcmalloc'
-      ;;
-  esac
+  setglobal_link_flags $variant
 
-  time $CXX -o $out $link_flags -Wl,--gc-sections "$@"
+  setglobal_cxx $compiler
+
+  "$cxx" -o "$out" $link_flags "$@"
+}
+
+compile-and-link() {
+  local compiler=$1
+  local variant=$2
+  local out=$3
+  shift 3
+
+  setglobal_compile_flags "$variant" ""
+
+  setglobal_link_flags $variant
+
+  setglobal_cxx $compiler
+
+  "$cxx" -o "$out" $flags "$@" $link_flags
 }
 
 

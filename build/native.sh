@@ -26,12 +26,12 @@ compile-oil-native() {
 
 compile-quickly() {
   ### For the fast possible development experience
-  CXX=$CLANGXX ninja _bin/osh_eval.dbg
+  CXX=$CLANGXX ninja _bin/cxx-dbg-separate/osh_eval
 }
 
 clang-size() {
   clean
-  CXX=$CLANGXX ninja _bin/osh_eval.opt.stripped
+  CXX=$CLANGXX ninja _bin/clang-opt-separate/osh_eval.stripped
   ls -l _bin/
 
   # Oh geez even worse; it's 2.38 MB even with --gc-sections! What happened?
@@ -82,26 +82,27 @@ soil-run() {
 
   build/native_graph.py
 
-  # TODO: do we need to force a GCC variant?
-  ninja _bin/osh_eval.{dbg,opt,opt.stripped,asan}
+  ninja _bin/cxx-dbg-separate/osh_eval \
+        _bin/cxx-asan-separate/osh_eval \
+        _bin/cxx-opt-separate/osh_eval.stripped
 }
 
 osh-eval-dbg() {
   ### Invoked by build/dev.sh oil-cpp
   build/native_graph.py
-  ninja _bin/osh_eval.dbg
+  ninja _bin/cxx-dbg-separate/osh_eval
 }
 
 osh-eval-asan() {
   ### Invoked by test/parse-errors.sh
   build/native_graph.py
-  ninja _bin/osh_eval.asan
+  ninja _bin/cxx-asan-separate/osh_eval
 }
 
 osh-eval-opt() {
   ### Invoked by test/parse-errors.sh
   build/native_graph.py
-  ninja _bin/osh_eval.opt.stripped
+  ninja _bin/cxx-opt-separate/osh_eval.stripped
 }
 
 all-ninja() {
@@ -125,7 +126,7 @@ all-ninja() {
 
 osh-eval-demo() {
   osh-eval-dbg
-  types/oil-slice.sh demo _bin/osh_eval.dbg
+  types/oil-slice.sh demo _bin/cxx-dbg-separate/osh_eval
 }
 
 #

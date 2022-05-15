@@ -177,7 +177,6 @@ EOF
 #   shell-benchmarks: uses _bin/osh_eval.opt.stripped
 #   parse-errors: uses _bin/osh_eval.asan
 #   spec-cpp: DUPLICATE work because we don't use Ninja.  Thre is a hack with CXX=gcc.
-#   TODO: do we need GCC and Clang variants, like _bin/osh_eval.{gcc,clang}.* ?
 
 }
 

@@ -105,7 +105,7 @@ collect-and-report() {
 oil-native() {
   ### Report on the ones we just built
 
-  collect-and-report $OIL_BASE_DIR _bin/osh_eval.{dbg,opt}
+  collect-and-report $OIL_BASE_DIR _bin/cxx-{dbg,opt}-together/osh_eval
 
   ls -l $OIL_BASE_DIR
 }
@@ -121,7 +121,7 @@ run-for-release() {
   collect-and-report $OVM_BASE_DIR $dbg $opt
 
   local bin_dir="../benchmark-data/src/oil-native-$OIL_VERSION"
-  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/osh_eval.{dbg,opt}
+  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-together/osh_eval
 }
 
 "$@"
