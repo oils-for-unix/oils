@@ -19,7 +19,7 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 # For now use opt since it's faster, see issue #970
-readonly OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-opt-separate/osh_eval.stripped}
+readonly OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-opt/osh_eval.stripped}
 
 # Applies everywhere
 export SPEC_JOB='cpp'
@@ -49,12 +49,12 @@ osh-eval-cpp() {
 }
 
 osh-eval-asan() {
-  _bin/cxx-asan-separate/osh_eval "$@"
+  _bin/cxx-asan/osh_eval "$@"
 }
 
 asan-smoke() {
-  _bin/cxx-asan-separate/osh_eval -c 'echo hi'
-  echo 'echo hi' | _bin/cxx-asan-separate/osh_eval
+  _bin/cxx-asan/osh_eval -c 'echo hi'
+  echo 'echo hi' | _bin/cxx-asan/osh_eval
 }
 
 run-with-osh-eval() {
@@ -81,7 +81,7 @@ run-with-osh-eval-dbg() {
 
   # TODO: build/native_graph.py doesn't correctly declare the cpp/*.{h,cc}
   # dependencies
-  local rel_path=_bin/cxx-dbg-separate/osh_eval
+  local rel_path=_bin/cxx-dbg/osh_eval
   ninja $rel_path
   env OSH_CC=$PWD/$rel_path$0 run-with-osh-eval "$@"
 }

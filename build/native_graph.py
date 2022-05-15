@@ -8,7 +8,7 @@ _build/   # input source
   cpp/
     osh_eval.{h,cc}
   obj/
-    # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...} (separate is implied)
+    # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
 
     cxx-asan/
       osh_eval.o
@@ -19,17 +19,17 @@ _build/   # input source
 
 _bin/   # output binaries
   # The _bin folder is a 3-tuple
-  {cxx,clang}-{dbg,opt,asan ...}-{separate,together}
+  {cxx,clang}-{dbg,opt,asan ...}-{,together}
     osh_eval
 
-  _bin/cxx-opt-together/osh_eval.stripped   # this is the main one
+  _bin/cxx-opt/osh_eval.stripped   # this is the main one
 
+  cxx-opt/
+    osh_eval
+    osh_eval.{stripped,symbols}
   cxx-opt-together/
     osh_eval
     osh_eval.stripped
-  cxx-opt-separate/
-    osh_eval
-    osh_eval.{stripped,symbols}
 
 Runtime options:
 
@@ -37,8 +37,6 @@ Runtime options:
   FTIME_TRACE  genreate .json files
 
 TODO
-
-- Do 'together' build, with 'compile-and-link' rule
 
 - Rules for generated code
   - for build.ninja
@@ -176,13 +174,13 @@ def NinjaGraph(n):
         # e.g. _build/obj/dbg/posix.o
         base_name, _ = os.path.splitext(os.path.basename(src))
 
-        obj = '_build/obj/%s-%s-separate/%s.o' % (compiler, variant, base_name)
+        obj = '_build/obj/%s-%s/%s.o' % (compiler, variant, base_name)
         objects.append(obj)
 
         n.build(obj, 'compile-one', src, variables=ninja_vars)
         n.newline()
 
-      bin_separate = '_bin/%s-%s-separate/osh_eval' % (compiler, variant)
+      bin_separate = '_bin/%s-%s/osh_eval' % (compiler, variant)
       binaries.append(bin_separate)
 
       #
@@ -202,7 +200,7 @@ def NinjaGraph(n):
 
           binaries.append(stripped)
 
-  n.default(['_bin/cxx-dbg-separate/osh_eval'])
+  n.default(['_bin/cxx-dbg/osh_eval'])
 
   # All groups
   n.build(['all'], 'phony', binaries)
@@ -220,7 +218,7 @@ def ShellFunctions(f):
     print('  ### Compile %s build of oil-native' % variant, file=f)
     print('', file=f)
 
-    print('  mkdir -p _build/obj/%s' % variant, file=f)
+    print('  mkdir -p _build/obj/cxx-%s' % variant, file=f)
     print('', file=f)
 
     objects = []
@@ -228,16 +226,16 @@ def ShellFunctions(f):
       # e.g. _build/obj/dbg/posix.o
       base_name, _ = os.path.splitext(os.path.basename(src))
 
-      obj = '_build/obj/%s/%s.o' % (variant, base_name)
+      obj = '_build/obj/cxx-%s/%s.o' % (variant, base_name)
       objects.append(obj)
 
-      print('  compile-one %s %s' % (src, obj), file=f)
+      print('  compile-one cxx %s %s %s' % (variant, src, obj), file=f)
 
     print('', file=f)
 
-    b = '_bin/osh_eval.%s' % variant
+    b = '_bin/cxx-%s/osh_eval' % variant
     # note: can't have spaces in filenames
-    print('  link %s %s' % (b, ' '.join(objects)), file=f)
+    print('  link cxx %s %s %s' % (variant, b, ' '.join(objects)), file=f)
     print('', file=f)
 
     # Strip opt binary

@@ -1190,7 +1190,7 @@ all() {
 with-oil-native() {
   local src_root=$1
   local out=_tmp/other/parse-errors-oil-native.txt
-  ASAN_OPTIONS='detect_leaks=0' SH=$src_root/_bin/osh_eval.asan \
+  ASAN_OPTIONS='detect_leaks=0' SH=$src_root/_bin/cxx-asan/osh_eval \
     run-other-suite-for-release parse-errors all $out
 }
 
@@ -1206,7 +1206,7 @@ soil-run-cpp() {
   # Done in _oil-native-build on the benchmark-data version
   build/native.sh osh-eval-asan
 
-  ASAN_OPTIONS='detect_leaks=0' SH=_bin/osh_eval.asan all
+  ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh_eval all
 }
 
 run-for-release() {

@@ -346,7 +346,8 @@ compile-one() {
 
   setglobal_compile_flags "$variant" "$dotd"
 
-  if test $compiler = 'clang'; then
+  # TODO: exactly when is -fPIC needed?
+  if test $compiler = 'clang' && test $variant != 'opt'; then
     # mutate global
     flags="$flags -fPIC"  # clang needs -fPIC?
   fi

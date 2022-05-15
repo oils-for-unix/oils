@@ -35,6 +35,7 @@ manifest() {
     mycpp/common.h \
     _devbuild/gen/*.h \
     _build/cpp/ \
+    _build/oil-native.sh \
     -name _bin -a -prune -o -type f -a -print
 }
 
