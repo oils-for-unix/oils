@@ -221,13 +221,13 @@ build-task() {
       cp -v $target $bin_dir
       ;;
 
-    _bin/osh_eval.*)
+    _bin/cxx-*/osh_eval*)
       case $action in
-        _bin/osh_eval.dbg)
-          local func='compile-oil-native'
+        _bin/cxx-dbg/osh_eval)
+          local func='dbg'
           ;;
-        _bin/osh_eval.opt.stripped)
-          local func='compile-oil-native-opt'
+        _bin/cxx-opt/osh_eval.stripped)
+          local func='opt'
           ;;
         *)
           die "Invalid target"
@@ -249,7 +249,7 @@ build-task() {
           ;;
       esac
 
-      CXX=$cxx "${TIME_PREFIX[@]}" -- build/native.sh $func
+      CXX=$cxx "${TIME_PREFIX[@]}" -- _build/oil-native.sh $func
 
       local target=$action
       cp -v $target $bin_dir
@@ -284,8 +284,8 @@ oil-tasks() {
     echo "$line" $oil_dir _bin/oil.ovm
     echo "$line" $oil_dir _bin/oil.ovm-dbg
 
-    echo "$line" $oil_native_dir _bin/osh_eval.dbg
-    echo "$line" $oil_native_dir _bin/osh_eval.opt.stripped
+    echo "$line" $oil_native_dir _bin/cxx-dbg/osh_eval
+    echo "$line" $oil_native_dir _bin/cxx-opt/osh_eval.stripped
   done
 }
 

@@ -107,118 +107,17 @@ int main() { return 42; }
   $CXX -o $dir/main $dir/main.cc
 }
 
+#
+# Mutable GLOBALS
+#
 
-compile() {
-  ### Invoked by build.ninja, and by test/cpp-unit.sh
+cxx=''         # compiler
+flags=''       # compile flags
+link_flags=''  # link flags
 
-  local out=$1
-  shift
-
-  local flags="$CPPFLAGS"
-  local link_flags=''
-  case $out in
-    *.opt)
-      flags="$CPPFLAGS -O2 -g -D DUMB_ALLOC"
-      # To debug crash with 8 byte alignment
-      #flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
-      ;;
-    *.uftrace)
-      # -O0 creates a A LOT more data.  But sometimes we want to see the
-      # structure of the code.
-      # vector::size(), std::forward, len(), etc. are not inlined.
-      # Also List::List, Tuple2::at0, etc.
-      #local opt='-O2'
-      local opt='-O0'
-
-      # Do we want DUMB_ALLOC here?
-      flags="$CPPFLAGS $opt -g -pg"
-      ;;
-    *.malloc)
-      flags="$CPPFLAGS -O2 -g"
-      ;;
-    *.tcmalloc)
-      flags="$CPPFLAGS -O2 -g -D TCMALLOC"
-      link_flags='-ltcmalloc'
-      ;;
-    *.asan)
-      # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
-      flags="$CPPFLAGS -O0 -g -fsanitize=address"
-      ;;
-    *.alloclog)
-      # debug flags
-      flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
-      ;;
-    *.dbg)
-      # debug flags
-      flags="$CPPFLAGS -O0 -g"
-      ;;
-  esac
-
-  # Hack to remove optview::Exec
-  case $out in
-    *osh_parse*)
-      flags="$flags -D OSH_PARSE"
-      ;;
-    *osh_eval*)
-      flags="$flags -D OSH_EVAL"
-      ;;
-  esac
-
-  # Avoid memset().  TODO: remove this hack!
-  flags="$flags -D NO_GC_HACK"
-
-  if false; then
-    # With new Clang:
-    # - 5.3 seconds for osh_eval.cc
-    # - 1.3 seconds for syntax_asdl.cc -- hm how to speed this up
-    # - 14ms for cpp/signal_.cc, a tiny file
-    # So yeah parallelizing this is good.  TODO: use Ninja
-
-    mkdir -p _build/obj
-
-    local -a objects=()
-    for src in "$@"; do
-
-      local obj=_build/obj/$(basename $src .cc).o
-
-      echo "--- $src"
-
-      # need -fPIC for some reason
-      time $CXX $flags \
-        -fPIC \
-        -ftime-trace \
-        -I . \
-        -I mycpp \
-        -I cpp \
-        -I _build/cpp \
-        -I _devbuild/gen \
-        -o $obj \
-        -c $src \
-
-      objects=("${objects[@]}" "$obj")
-    done
-
-    echo "=== link ${objects[@]}"
-    time cc -o $out "${objects[@]}" $link_flags -lstdc++
-
-  else
-    # flags are split
-    $CXX $flags \
-      -I . \
-      -I mycpp \
-      -I cpp \
-      -I _build/cpp \
-      -I _devbuild/gen \
-      -o $out \
-      "$@" \
-      $link_flags \
-      -lstdc++
-  fi
-}
-
-cxx=''         # MUTABLE GLOBAL compiler
-flags=''       # MUTABLE GLOBAL compile flags
-link_flags=''  # MUTABLE GLOBAL link flags
+#
+# Functions to set them
+#
 
 setglobal_cxx() {
   local compiler=$1
@@ -228,7 +127,6 @@ setglobal_cxx() {
     (clang) cxx=$CLANGXX ;;
   esac
 }
-
 
 setglobal_compile_flags() {
   local variant=$1
@@ -388,80 +286,6 @@ compile-and-link() {
   "$cxx" -o "$out" $flags "$@" $link_flags
 }
 
-
-# what osh_eval.cc needs to compile
-readonly -a DEPS_CC=(
-    cpp/core_pyos.cc \
-    cpp/core_pyutil.cc \
-    cpp/frontend_flag_spec.cc \
-    cpp/frontend_match.cc \
-    cpp/frontend_tdop.cc \
-    cpp/osh_arith_parse.cc \
-    cpp/osh_bool_stat.cc \
-    cpp/pgen2_parse.cc \
-    cpp/pylib_os_path.cc \
-    _build/cpp/runtime_asdl.cc \
-    _build/cpp/syntax_asdl.cc \
-    _build/cpp/hnode_asdl.cc \
-    _build/cpp/id_kind_asdl.cc \
-    _build/cpp/consts.cc \
-    _build/cpp/arith_parse.cc \
-    _build/cpp/arg_types.cc \
-    cpp/dumb_alloc.cc \
-    cpp/fcntl_.cc \
-    cpp/posix.cc \
-    cpp/signal_.cc \
-    cpp/libc.cc \
-)
-
-readonly -a GC_RUNTIME=( mycpp/{gc_heap,mylib2,my_runtime}.cc )
-
-readonly -a OLD_RUNTIME=( mycpp/{gc_heap,mylib}.cc )
-
-compile-slice() {
-  ### Build done outside ninja in _bin/
-
-  local name=${1:-osh_eval}
-  # Add -opt to make it opt
-  local suffix=${2:-.dbg}
-
-  shift 2
-
-  mkdir -p _bin
-
-  local -a runtime
-  if test -n "${GC:-}"; then
-    # Not ready for this yet.  Need list_contains() etc.
-    runtime=( "${GC_RUNTIME[@]}" )
-  else
-    runtime=( "${OLD_RUNTIME[@]}" )
-  fi
-
-  # Note: can't use globs here because we have _test.cc
-  time compile _bin/$name$suffix _build/cpp/${name}.cc \
-    "${runtime[@]}" "${DEPS_CC[@]}" \
-    "$@"
-}
-
-ninja-compile() {
-  # Invoked by ninja (also in _bin/)
-
-  local in=$1
-  local out=$2
-
-  local -a runtime
-  if test -n "${GC:-}"; then
-    # Not ready for this yet.  Need list_contains() etc.
-    runtime=( "${GC_RUNTIME[@]}" )
-  else
-    runtime=( "${OLD_RUNTIME[@]}" )
-  fi
-
-  # Note: can't use globs here because we have _test.cc
-  time compile $out $in \
-    "${runtime[@]}" "${DEPS_CC[@]}"
-}
-
 strip_() {
   ### Invoked by ninja
 
@@ -475,6 +299,7 @@ strip_() {
   objcopy --add-gnu-debuglink=$symbols $stripped
 }
 
+# test/cpp-unit.sh sources this
 if test $(basename $0) = 'native-steps.sh'; then
   "$@"
 fi

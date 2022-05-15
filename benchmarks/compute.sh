@@ -36,7 +36,7 @@ source benchmarks/common.sh  # filter-provenance
 source test/tsv-lib.sh  # tsv2html
 
 readonly BASE_DIR=_tmp/compute
-readonly OSH_CC=_bin/osh_eval.opt.stripped
+readonly OSH_CC=_bin/cxx-opt/osh_eval.stripped
 
 TIMEFORMAT='%U'
 

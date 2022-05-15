@@ -87,8 +87,8 @@ extract-for-benchmarks() {
 
   # For benchmarks
   pushd oil-native-$OIL_VERSION
-  build/native.sh compile-oil-native
-  build/native.sh compile-oil-native-opt
+  _build/oil-native.sh dbg
+  _build/oil-native.sh opt
   popd
 
   git add oil-native-$OIL_VERSION

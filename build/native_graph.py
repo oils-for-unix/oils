@@ -42,9 +42,6 @@ TODO
   - for build.ninja
   - _build/oil-native.sh
 - Should you make a bloaty report for the separate build too?
-
-- delete compile-slice, and replace with _build/oil-native.sh
-  - fix other entry points in build/native.sh
 """
 
 from __future__ import print_function
@@ -218,7 +215,7 @@ def ShellFunctions(f):
     print('  ### Compile %s build of oil-native' % variant, file=f)
     print('', file=f)
 
-    print('  mkdir -p _build/obj/cxx-%s' % variant, file=f)
+    print('  mkdir -p _build/obj/cxx-%s _bin/cxx-%s' % (variant, variant), file=f)
     print('', file=f)
 
     objects = []

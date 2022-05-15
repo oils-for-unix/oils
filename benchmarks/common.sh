@@ -28,8 +28,8 @@ readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Needed to run on flanders
 readonly root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
-readonly OSH_EVAL_BENCHMARK_DATA=$root/_bin/osh_eval.opt.stripped
-readonly OSH_EVAL_IN_TREE=_bin/osh_eval.opt.stripped
+readonly OSH_EVAL_BENCHMARK_DATA=$root/_bin/cxx-opt/osh_eval.stripped
+readonly OSH_EVAL_IN_TREE=_bin/cxx-opt/osh_eval.stripped
 
 
 # NOTE: This is in {build,test}/common.sh too.
@@ -80,7 +80,7 @@ filter-provenance() {
   # create a regex bash|dash
   local pat=$(echo "$@" | sed 's/ /|/g')
 
-  # Anchor it at the end only.  For _bin/osh_eval.opt.stripped and the
+  # Anchor it at the end only.  For _bin/cxx-opt/osh_eval.stripped and the
   # ../benchmark-data one.
   pat="($pat)$"
 

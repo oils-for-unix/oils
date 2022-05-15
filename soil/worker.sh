@@ -174,8 +174,8 @@ EOF
 
 # Notes on steps that depend on the binary:
 #   compile-osh-eval: compiles a few variant of osh_eval in parallel
-#   shell-benchmarks: uses _bin/osh_eval.opt.stripped
-#   parse-errors: uses _bin/osh_eval.asan
+#   shell-benchmarks: uses _bin/cxx-opt/osh_eval.stripped
+#   parse-errors: uses _bin/cxx-asan/osh_eval
 #   spec-cpp: DUPLICATE work because we don't use Ninja.  Thre is a hack with CXX=gcc.
 
 }

@@ -334,7 +334,7 @@ spec-all() {
 
   # Collect and publish stats about the C++ translation.
   # Test the one we built in _oil-native-build
-  export OSH_CC="$REPO_ROOT/../benchmark-data/src/oil-native-$OIL_VERSION/_bin/osh_eval.opt.stripped"
+  export OSH_CC="$REPO_ROOT/../benchmark-data/src/oil-native-$OIL_VERSION/_bin/cxx-opt/osh_eval.stripped"
   test/spec-cpp.sh all
 }
 
@@ -383,10 +383,11 @@ _install() {
 
 _oil-native-build() {
   local dest="../benchmark-data/src/oil-native-$OIL_VERSION"
+
   pushd $dest
-  build/native.sh compile-oil-native-opt
+  build/native.sh osh-eval-opt
   # To run tests later
-  build/native.sh compile-oil-native-asan
+  build/native.sh osh-eval-asan
   popd
 }
 

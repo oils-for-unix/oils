@@ -48,10 +48,6 @@ osh-eval-cpp() {
   test/spec.sh $suite $OSH_CC "$@"
 }
 
-osh-eval-asan() {
-  _bin/cxx-asan/osh_eval "$@"
-}
-
 asan-smoke() {
   _bin/cxx-asan/osh_eval -c 'echo hi'
   echo 'echo hi' | _bin/cxx-asan/osh_eval
@@ -83,7 +79,7 @@ run-with-osh-eval-dbg() {
   # dependencies
   local rel_path=_bin/cxx-dbg/osh_eval
   ninja $rel_path
-  env OSH_CC=$PWD/$rel_path$0 run-with-osh-eval "$@"
+  env OSH_CC=$PWD/$rel_path $0 run-with-osh-eval "$@"
 }
 
 all() {

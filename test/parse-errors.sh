@@ -20,7 +20,7 @@ banner() {
 
 is-oil-native() {
   case $SH in
-    *osh_*.asan)
+    *osh_eval*)
       return 0
       ;;
   esac
