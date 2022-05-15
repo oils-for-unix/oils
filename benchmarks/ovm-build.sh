@@ -186,6 +186,7 @@ build-task() {
     --field "$src_dir" --field "$action"
   )
   local bin_base_dir=$PWD/$BASE_DIR/bin
+
   local bin_dir="$bin_base_dir/$(basename $compiler_path)"
   mkdir -p $bin_dir
 
@@ -248,6 +249,13 @@ build-task() {
           die "Invalid compiler"
           ;;
       esac
+
+      # TODO: reconcile with _bin/{cxx,clang}-dbg
+      # - the OVM build doesn't have cxx/clang dirs
+      # - but the oil-native build does
+      #
+      # The oil-native.sh functions should take a 'compiler' and 'variant'
+      # argument
 
       CXX=$cxx "${TIME_PREFIX[@]}" -- _build/oil-native.sh $func
 

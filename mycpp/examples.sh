@@ -13,13 +13,13 @@ compile-with-asdl() {
   local flags
   case $variant in
     (asan)
-      flags="$CXXFLAGS $ASAN_FLAGS"
+      flags="$BASE_CXXFLAGS $ASAN_FLAGS"
       ;;
     (opt)
-      flags="$CXXFLAGS -O2 -g"
+      flags="$BASE_CXXFLAGS -O2 -g"
       ;;
     (*)
-      flags="$CXXFLAGS"
+      flags="$BASE_CXXFLAGS"
       ;;
   esac
 

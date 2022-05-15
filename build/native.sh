@@ -13,7 +13,33 @@ source build/common.sh  # CLANGXX
 
 compile-quickly() {
   ### For the fast possible development experience
+
+  build/native_graph.py
   ninja _bin/clang-dbg/osh_eval
+}
+
+compiler-trace-build() {
+  ### Output _build/obj/clang-dbg/*.json files
+
+  local variant=${1:-dbg}
+
+  build/native_graph.py
+
+  # Only clang supports -ftime-trace
+  CXXFLAGS='-ftime-trace' ninja _bin/clang-$variant/osh_eval
+}
+
+cpu-perf-build() {
+  local compiler=${1:-cxx}
+
+  # Technically -fno-omit-frame-pointer may slow things down, but it was in the
+  # noise on parsing configure-coreutils.  I think this is what Brendan Gregg
+  # says should always be on.
+  #
+  # Note: this could be a variant, similar to uftrace variant, which uses -pg
+
+  build/native_graph.py
+  CXXFLAGS='-fno-omit-frame-pointer' ninja _bin/${compiler}-opt/osh_eval.stripped
 }
 
 # Demo for the oil-native tarball.

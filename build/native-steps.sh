@@ -11,16 +11,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/common.sh  # for $CXXFLAGS
-
-# for 'perf'.  Technically this may slow things down, but it was in the noise
-# on parsing configure-coreutils.
-CPPFLAGS="$CXXFLAGS -fno-omit-frame-pointer"
-
-# this flag is only valid in Clang, doesn't work in continuous build
-if test "$CXX" = "$CLANGXX"; then
-  CPPFLAGS="$CPPFLAGS -ferror-limit=1000"
-fi
+source build/common.sh  # for $BASE_CXXFLAGS
 
 # chrome://tracing
 # https://aras-p.info/blog/2019/01/16/time-trace-timeline-flame-chart-profiler-for-Clang/
@@ -133,7 +124,7 @@ setglobal_compile_flags() {
   local dotd=${2:-}
 
   flags="
-    $CPPFLAGS
+    $BASE_CXXFLAGS
     -I . 
     -I mycpp 
     -I cpp 
@@ -141,9 +132,17 @@ setglobal_compile_flags() {
     -I _devbuild/gen 
   "
 
+  #
+  # Environment variables respected
+  #
+
+  local more_flags=${CXXFLAGS:-}
+  if test -n "$more_flags"; then
+    flags="$flags $more_flags"
+  fi
+
   case $variant in
     (dbg)
-      # debug flags
       flags="$flags -O0 -g"
       ;;
     (asan)
@@ -182,15 +181,8 @@ setglobal_compile_flags() {
 
   # needed to strip unused symbols
   # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
-  #
-  # Hm this still does not produce as small a binary as compiling everything in
-  # one go!
-  #
-  # one CXX:                       1.38 MB 
-  # multiple CXX with these flags: 1.84 MB
-  # multiple CXX without:          2.04 MB
 
-  # Also -flto makes it bigger?  wtf.
+  # Note: -ftlo doesn't do anything for size?
 
   flags="$flags -fdata-sections -ffunction-sections"
 
@@ -204,16 +196,6 @@ setglobal_compile_flags() {
   if test -n "$dotd"; then
     flags="$flags -MD -MF $dotd"
   fi
-
-  # external
-  local more_flags=${CXXFLAGS:-}
-  if test -n "$more_flags"; then
-    flags="$flags $more_flags"
-  fi
-
-  # TODO: make a variant for this
-  # flags="$flags -ftime-trace"
-
 }
 
 setglobal_link_flags() {
@@ -248,6 +230,11 @@ compile-one() {
   if test $compiler = 'clang' && test $variant != 'opt'; then
     # mutate global
     flags="$flags -fPIC"  # clang needs -fPIC?
+  fi
+
+  # this flag is only valid in Clang, doesn't work in continuous build
+  if test "$compiler" = 'clang'; then
+    flags="$flags -ferror-limit=1000"
   fi
 
   setglobal_cxx $compiler

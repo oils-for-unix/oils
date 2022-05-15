@@ -9,9 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/common.sh  # CXXFLAGS, etc.
+source build/common.sh  # BASE_CXXFLAGS, etc.
 
-CPPFLAGS="$CXXFLAGS -g -fsanitize=address"  # for debugging tests
+CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
 # export ASAN_OPTIONS='detect_leaks=0'
 
 export PYTHONPATH='.:vendor/'

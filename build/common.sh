@@ -36,7 +36,7 @@ CXX=${CXX:-'c++'}
 
 # Compiler flags we want everywhere.
 # note: -Weverything is more than -Wall, but too many errors now.
-CXXFLAGS='-std=c++11 -Wall'
+BASE_CXXFLAGS='-std=c++11 -Wall'
 
 readonly CLANG_COV_FLAGS='-fprofile-instr-generate -fcoverage-mapping'
 readonly CLANG_LINK_FLAGS=''

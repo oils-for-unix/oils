@@ -20,7 +20,7 @@ readonly REPO_ROOT
 
 source $THIS_DIR/common.sh
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
-source $REPO_ROOT/build/common.sh  # for CXX, ASAN_SYMBOLIZER_PATH
+source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PATH
 
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
 
@@ -110,7 +110,7 @@ compile() {
 
   #argv COMPILE "$variant" "$out" "$more_cxx_flags"
 
-  local flags="$CXXFLAGS $more_cxx_flags"
+  local flags="$BASE_CXXFLAGS $more_cxx_flags"
 
   case $out in
     (*/bin/unit/*)

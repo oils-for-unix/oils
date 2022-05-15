@@ -10,10 +10,10 @@ set -o errexit
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
 
-source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
+source $REPO_ROOT/build/common.sh  # $BASE_CXXFLAGS, $CLANG_DIR_RELATIVE, $PREPARE_DIR
 
 # -Wpedantic flags the flexible array char opaque[] pattern;
-CPPFLAGS="$CXXFLAGS -O0 -g -fsanitize=address -Wpedantic"
+CPPFLAGS="$BASE_CXXFLAGS -O0 -g -fsanitize=address -Wpedantic"
 # export ASAN_OPTIONS='detect_leaks=0'
 
 deps() {
@@ -83,7 +83,7 @@ target-lang-m32() {
   local bin=_bin/target_lang_32
 
   # constexpr restrictions lifted
-  $CXX -o $bin $CXXFLAGS -m32 \
+  $CXX -o $bin $BASE_CXXFLAGS -m32 \
     demo/target_lang.cc ../cpp/dumb_alloc.cc -I ../cpp
   $bin "$@"
 }
