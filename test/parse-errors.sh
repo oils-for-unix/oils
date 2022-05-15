@@ -78,12 +78,10 @@ _should-parse-here() { _should-parse "$(cat)"; }
 _runtime-parse-error() {
   ### Assert that a parse error happens at runtime
 
-  case $SH in
-    *osh_*.asan)
-      echo 'skipping _runtime-parse-error'
-      return
-      ;;
-  esac
+  if is-oil-native; then
+    echo 'skipping _runtime-parse-error'
+    return
+  fi
 
   banner "$@"
   echo
@@ -606,8 +604,10 @@ invalid-brace-ranges() {
 oil-language() {
   set +o errexit
 
-  # disabled until we port the parser
-  case $SH in *osh_*.asan) return ;; esac
+  if is-oil-native; then
+    echo 'Skipping oil-language'
+    return
+  fi
 
   # Unterminated
   _error-case 'var x = 1 + '
