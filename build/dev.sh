@@ -11,7 +11,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/common.sh  # for log
+source build/common.sh  # for log, $CLANGXX
 
 export PYTHONPATH='.:vendor/'
 
@@ -242,11 +242,16 @@ oil-cpp() {
 
   build/translate.sh osh-eval  # translate with mycpp
 
-  build/native.sh osh-eval-dbg
+  if test -f "$CLANGXX"; then
+    time build/native.sh compile-quickly  # Clang compiles more quickly
+  else
+    time build/native.sh osh-eval-dbg
+  fi
 
   echo
   wc -l _build/cpp/*
-  ls -l _bin
+  echo
+  ls -l _bin/*/osh_eval*
 }
 
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
