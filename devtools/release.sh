@@ -385,7 +385,11 @@ _oil-native-build() {
   local dest="../benchmark-data/src/oil-native-$OIL_VERSION"
 
   pushd $dest
+
+  # This should be identical to _build/oil-native.sh opt, which uses shell
+  # rather than Ninja
   build/native.sh osh-eval-opt
+
   # To run tests later
   build/native.sh osh-eval-asan
   popd
