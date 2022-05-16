@@ -224,11 +224,11 @@ build-task() {
 
     _bin/cxx-*/osh_eval*)
       case $action in
-        _bin/cxx-dbg/osh_eval)
-          local func='dbg'
+        _bin/*-dbg-sh/osh_eval)
+          local variant='dbg'
           ;;
-        _bin/cxx-opt/osh_eval.stripped)
-          local func='opt'
+        _bin/*-opt-sh/osh_eval.stripped)
+          local variant='opt'
           ;;
         *)
           die "Invalid target"
@@ -236,29 +236,24 @@ build-task() {
       esac
 
       # Change the C compiler into the corresponding C++ compiler
+      local compiler
       case $compiler_path in 
         *gcc)
-          cxx=${compiler_path//gcc/g++}
+          # note: we take provenance of /usr/bin/gcc, but the shell script runs 'c++'
+          compiler='cxx'
           ;;
         *clang)
-          # clang -> clang++.  There is also a 'clang' in the path so we can't
-          # substitute.
-          cxx="${compiler_path}++"
+          # note: we take provenance of bin/clang, but shell script runs bin/clang++
+          compiler=$CLANGXX
           ;;
         *)
           die "Invalid compiler"
           ;;
       esac
 
-      # TODO: reconcile with _bin/{cxx,clang}-dbg
-      # - the OVM build doesn't have cxx/clang dirs
-      # - but the oil-native build does
-      #
-      # The oil-native.sh functions should take a 'compiler' and 'variant'
-      # argument
+      "${TIME_PREFIX[@]}" -- _build/oil-native.sh $compiler $variant
 
-      CXX=$cxx "${TIME_PREFIX[@]}" -- _build/oil-native.sh $func
-
+      # e.g. cp _bin/clang-dbg-sh/osh_eval _tmp/ovm-build/bin/clang/
       local target=$action
       cp -v $target $bin_dir
       ;;
@@ -292,8 +287,8 @@ oil-tasks() {
     echo "$line" $oil_dir _bin/oil.ovm
     echo "$line" $oil_dir _bin/oil.ovm-dbg
 
-    echo "$line" $oil_native_dir _bin/cxx-dbg/osh_eval
-    echo "$line" $oil_native_dir _bin/cxx-opt/osh_eval.stripped
+    echo "$line" $oil_native_dir _bin/cxx-dbg-sh/osh_eval
+    echo "$line" $oil_native_dir _bin/cxx-opt-sh/osh_eval.stripped
   done
 }
 

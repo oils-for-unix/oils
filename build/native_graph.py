@@ -216,46 +216,49 @@ def ShellFunctions(f):
   print('source build/native-steps.sh', file=f)
   print('', file=f)
 
-  for variant in ['dbg', 'opt']:
-    print('%s() {' % variant, file=f)
-    print('  ### Compile %s build of oil-native' % variant, file=f)
-    print('', file=f)
+  print('main() {', file=f)
+  print('  ### Compile oil-native into _bin/$compiler-$variant-sh/ (not with ninja)', file=f)
+  print('', file=f)
 
-    print('  mkdir -p _build/obj/cxx-%s _bin/cxx-%s' % (variant, variant), file=f)
-    print('', file=f)
+  print('  local compiler=${1:-cxx}  # default is system compiler', file=f)
+  print('  local variant=${2:-opt}   # default is optimized build', file=f)
+  print('', file=f)
 
-    objects = []
-    for src in DEPS_CC + OLD_RUNTIME:
-      # e.g. _build/obj/dbg/posix.o
-      base_name, _ = os.path.splitext(os.path.basename(src))
+  print('  mkdir -p "_build/obj/$compiler-$variant-sh" "_bin/$compiler-$variant-sh"', file=f)
+  print('', file=f)
 
-      obj = '_build/obj/cxx-%s/%s.o' % (variant, base_name)
-      objects.append(obj)
+  objects = []
+  for src in DEPS_CC + OLD_RUNTIME:
+    # e.g. _build/obj/dbg/posix.o
+    base_name, _ = os.path.splitext(os.path.basename(src))
 
-      print('  compile-one cxx %s %s %s' % (variant, src, obj), file=f)
+    obj_quoted = '"_build/obj/$compiler-$variant-sh/%s.o"' % base_name
+    objects.append(obj_quoted)
 
-    print('', file=f)
+    print('  compile-one "$compiler" "$variant" \\', file=f)
+    print('    %s %s' % (src, obj_quoted), file=f)
 
-    b = '_bin/cxx-%s/osh_eval' % variant
-    # note: can't have spaces in filenames
-    print('  link cxx %s %s %s' % (variant, b, ' '.join(objects)), file=f)
-    print('', file=f)
+  print('', file=f)
 
-    # Strip opt binary
-    if variant == 'opt':
-      stripped = b + '.stripped'
-      print('  strip -o %s %s' % (stripped, b), file=f)
-      print('  ls -l %s' % stripped, file=f)
-      print('', file=f)
-    else:
-      print('  ls -l %s' % b, file=f)
-      print('', file=f)
+  b = '_bin/$compiler-$variant-sh/osh_eval'
+  # note: can't have spaces in filenames
+  print('  link "$compiler" "$variant" "%s" \\' % b, file=f)
+  # put each object on its own line, and indent by 4
+  print('    %s' % (' \\\n    '.join(objects)), file=f)
+  print('', file=f)
 
-    print('}', file=f)
-    print('', file=f)
+  # Strip opt binary
+  # TODO: provide a way for the user to get symbols?
+
+  print('  if test "$variant" = opt; then', file=f)
+  print('    strip -o "%s.stripped" "%s"' % (b, b), file=f)
+  print('  fi', file=f)
+
+  print('}', file=f)
+  print('', file=f)
 
   # TODO: print better help
-  print('"$@"', file=f)
+  print('main "$@"', file=f)
 
 
 def main(argv):
