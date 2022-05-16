@@ -894,7 +894,7 @@ oil-blocks() {
 }
 
 oil-config() {
-  sh-spec spec/oil-config.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/oil-config.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 

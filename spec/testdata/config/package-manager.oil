@@ -1,0 +1,18 @@
+package unzip
+
+
+package cppunit {
+  version = ">1"
+}
+
+# Problem:
+# version is a nested proc ... hm.
+# so 'proc package' needs to be able to inject 'proc/version' into that
+# namespace.
+#
+# - It has to push it an evaluate the block in a context.
+# - Just like bin/oil has to push it and evaluate the block in a context.
+
+package cppunit {
+  version = ">1"
+}

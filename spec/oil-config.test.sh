@@ -48,13 +48,13 @@ status=0
 ## END
 
 
-#### CI config example
+#### CI config with task blocks
 shopt --set oil:basic
 
 # this could be ci.coil too
 var config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
 
-proc task(name, &block) {
+proc task(name, block Block) {
   echo "task name=$name"
 
   # Note: we DON'T use evalblock here!
@@ -75,26 +75,56 @@ task foo {
 shopt --set parse_equals { 
   shvar _DIALECT=sourcehut { # use dialect should FAIL if this isn't set
 
+    # maybe '-external' for external commands?
+    # +external/echo to allow just one?
+    # That is similar to 'use bin'
+
     const first_words = %( +proc/task +builtin/{echo,write,printf} )
-    # Other syntaxes:
+
+    # Possible syntaxes:
     # - no sigil: proc/task
     # - % which are like symbols, would be confusing
     # - other namespaces:
     #   - +alias/myalias
     #   - +option/errexit
     #   - coprocess, container?
-    # - shobj_get('+option/errexit') ?  Make it first class?
+    # - shopt_get('+option/errexit') ?  Make it first class?
 
-    # TODO: This should be bin/oven --source foo_dialect.oil -- foo.oil
+    # TODO: This should be bin/oven --source ci_dialect.oil -- myconfig.oil
     # Do we also need --source-after?  or -c after?
+
+    # Or we can do bin/oil --source ci_dialect.oil -- myconfig.oil
 
     const config = _vm_eval(config_path, first_words)
   }
 }
 
-json write :config
+json write (config)
 
 ## STDOUT:
 {"image": "debian/buster"}
+## END
+
+#### Dict Blocks
+
+# first words has to be dynamic I think?
+#
+# push-proc package user {
+#   const config = _vm_eval('spec/testdata/config/package-manger.oil')
+# }
+#
+# Implement with ctx_Proc().  Yeah that needs to be a stack just ilke the
+# option stack!
+#
+# Or
+#
+# push --proc package --proc user --no-external {
+#
+# }
+
+const config = _vm_eval('spec/testdata/config/package-manager.oil', %(package user))
+
+## STDOUT:
+TODO
 ## END
 
