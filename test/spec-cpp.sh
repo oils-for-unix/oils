@@ -371,4 +371,10 @@ one-off() {
   #run-with-osh-eval builtin-io -r 54 -v  # to_float()
 }
 
+repro() {
+  test/spec.sh alias -r 0 -p > _tmp/a
+  ninja _bin/clang-dbg/osh_eval
+  _bin/clang-dbg/osh_eval _tmp/a
+}
+
 "$@"
