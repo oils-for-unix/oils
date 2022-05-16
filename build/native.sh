@@ -29,19 +29,6 @@ compiler-trace-build() {
   CXXFLAGS='-ftime-trace' ninja _bin/clang-$variant/osh_eval
 }
 
-cpu-perf-build() {
-  local compiler=${1:-cxx}
-
-  # Technically -fno-omit-frame-pointer may slow things down, but it was in the
-  # noise on parsing configure-coreutils.  I think this is what Brendan Gregg
-  # says should always be on.
-  #
-  # Note: this could be a variant, similar to uftrace variant, which uses -pg
-
-  build/native_graph.py
-  CXXFLAGS='-fno-omit-frame-pointer' ninja _bin/${compiler}-opt/osh_eval.stripped
-}
-
 # Demo for the oil-native tarball.
 # Notes:
 # - This should not rely on Ninja!  Ninja is for the dev build.

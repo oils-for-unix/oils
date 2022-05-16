@@ -35,8 +35,14 @@ export ASAN_SYMBOLIZER_PATH=$CLANG_DIR_RELATIVE/bin/llvm-symbolizer
 CXX=${CXX:-'c++'}
 
 # Compiler flags we want everywhere.
-# note: -Weverything is more than -Wall, but too many errors now.
-BASE_CXXFLAGS='-std=c++11 -Wall'
+# - -Weverything is more than -Wall, but too many errors now.
+# - -fno-omit-frame-pointer is what Brendan Gregg says should always be on.
+#   Omitting the frame pointer might be neglibly faster, but reduces
+#   observability.  It's required for the 'perf' tool and other kinds of tracing.
+#   Anecdotally the speed difference was in the noise on parsing
+#   configure-coreutils.  
+
+BASE_CXXFLAGS='-std=c++11 -Wall -fno-omit-frame-pointer'
 
 readonly CLANG_COV_FLAGS='-fprofile-instr-generate -fcoverage-mapping'
 readonly CLANG_LINK_FLAGS=''
