@@ -128,3 +128,61 @@ const config = _vm_eval('spec/testdata/config/package-manager.oil', %(package us
 TODO
 ## END
 
+#### Turn off external binaries with shvar PATH='' {}
+shopt --set parse_brace
+
+echo hi > file
+
+# TODO: Fix this cache
+# This CACHES the lookup.  Bad.
+# Do we turn this off in Oil?
+cp -v file /tmp
+echo status=$?
+
+# TODO: implement this, and call it whenever shvar mutates PATH?
+# what about when PATH is mutated?   No leave it out for now.
+
+hash -d  # clear the cache
+
+shvar PATH='' {
+  cp -v file /tmp
+  echo status=$?
+
+  # this also doesn't work
+  command cp -v file /tmp
+  echo status=$?
+}
+
+# Now it's available again
+cp -v file /tmp >&2
+echo status=$?
+
+## STDOUT:
+status=127
+status=127
+status=0
+## END
+
+#### More shvar PATH=''
+shopt --set parse_brace command_sub_errexit
+
+shvar PATH='' {
+  ( cp -v file /tmp >&2 )
+  echo status=$?
+
+  forkwait {
+    cp -v file /tmp >&2
+  }
+  echo status=$?
+
+  try {
+    true $(cp -v file /tmp >&2)
+  }
+  echo _status $_status
+}
+
+## STDOUT:
+status=127
+status=127
+_status 127
+## END
