@@ -25,9 +25,16 @@ def MakeShellPairs(shells):
   for path in shells:
     if 'osh_eval' in path:
       name = path
+      if '_bin' in path:
+        label = 'osh_.cc'
+      elif 'bin' in path:
+        label = 'osh_.py'
+      else:
+        raise AssertionError(path)
     else:
       name, _ = os.path.splitext(path)
-    label = os.path.basename(name)
+      label = os.path.basename(name)
+    #log('path = %s, label = %s', path, label)
 
     if label == 'osh':
       # change the second 'osh' to 'osh_ALT' so it's distinct
@@ -41,13 +48,6 @@ def MakeShellPairs(shells):
         label = 'oil_ALT'
       else:
         saw_oil = True
-
-    # Custom names for translation
-    elif label == 'osh_eval':
-      label = 'osh_.py'  # must start with 'osh' for qualifiers
-
-    elif label.startswith('osh_eval.'):  # osh_eval.{dbg,opt} etc.
-      label = 'osh_.cc'
 
     shell_pairs.append((label, path))
   return shell_pairs

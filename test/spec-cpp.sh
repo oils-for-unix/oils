@@ -377,4 +377,8 @@ repro() {
   _bin/clang-dbg/osh_eval _tmp/a
 }
 
+repro-all() {
+  env OSH_CC=$REPO_ROOT/_bin/clang-dbg/osh_eval $0 all
+}
+
 "$@"

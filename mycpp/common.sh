@@ -13,4 +13,4 @@ if test -z "${REPO_ROOT:-}"; then
   exit 1
 fi
 
-readonly MYPY_REPO=$REPO_ROOT/../oil_DEPS/_clone/mypy
+readonly MYPY_REPO=$REPO_ROOT/../oil_DEPS/mypy
