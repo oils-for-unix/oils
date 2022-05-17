@@ -23,4 +23,19 @@ sourcehut() {
   log "Wrote $out"
 }
 
+bug() {
+  # This is wrong: should be 100, not "1e2"
+
+  devtools/yaml2json.py <<EOF
+{"foo": 1e2}
+EOF
+
+  # Uh this is also wrong
+  devtools/yaml2json.py <<EOF
+%YAML 1.2
+---
+{"foo": 1e2}
+EOF
+}
+
 "$@"
