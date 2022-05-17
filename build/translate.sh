@@ -26,7 +26,7 @@ mycpp() {
     set +o pipefail
     set +o errexit
 
-    source $REPO_ROOT/../oil_DEPS/mycpp-venv/bin/activate
+    source $MYCPP_VENV/bin/activate
     time PYTHONPATH=$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
       mycpp/mycpp_main.py "$@"
   )

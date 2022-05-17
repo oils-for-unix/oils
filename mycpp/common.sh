@@ -14,3 +14,4 @@ if test -z "${REPO_ROOT:-}"; then
 fi
 
 readonly MYPY_REPO=$REPO_ROOT/../oil_DEPS/mypy
+readonly MYCPP_VENV=$REPO_ROOT/../oil_DEPS/mycpp-venv

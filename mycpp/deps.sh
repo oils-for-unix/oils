@@ -42,7 +42,7 @@ git-clone() {
 }
 
 create-venv() {
-  local dir=$REPO_ROOT/../oil_DEPS/mycpp-venv
+  local dir=$MYCPP_VENV
   python3 -m venv $dir
 
   ls -l $dir
@@ -66,7 +66,7 @@ pip-install() {
   set +o nounset
   set +o pipefail
   set +o errexit
-  source $REPO_ROOT/../oil_DEPS/mycpp-venv/bin/activate
+  source $MYCPP_VENV/bin/activate
 
   mypy-deps      # install deps in virtual env
 

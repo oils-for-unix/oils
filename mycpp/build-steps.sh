@@ -93,7 +93,7 @@ translate() {
 
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different
   # PYTHONPATH.
-  ( source _tmp/mycpp-venv/bin/activate
+  ( source $MYCPP_VENV/bin/activate
     # flags may be empty
     time PYTHONPATH=$MYPY_REPO ./mycpp_main.py "$@" > $out
   )
@@ -214,7 +214,7 @@ benchmark-table() {
 
 # Use repo in the virtualenv
 mypy() {
-  ( source _tmp/mycpp-venv/bin/activate
+  ( source $MYCPP_VENV/bin/activate
     PYTHONPATH=$MYPY_REPO python3 -m mypy "$@";
   )
 }
