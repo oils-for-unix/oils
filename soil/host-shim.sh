@@ -81,7 +81,7 @@ local-test-uke() {
 
   local branch=$(git rev-parse --abbrev-ref HEAD)
 
-  local fresh_clone=/tmp/oil  # TODO: /tmp/soil-$task
+  local fresh_clone=/tmp/soil-$task
   rm -r -f -v $fresh_clone
 
   local this_repo=$PWD
@@ -97,14 +97,13 @@ local-test-uke() {
 local-shell() {
   local task=${1:-cpp}
 
-  local repo_root=/tmp/oil  # TODO: /tmp/soil-$task
+  local repo_root=/tmp/soil-$task
   # Run bash as debug shell
   sudo $0 run-job-uke docker $repo_root $task bash
 }
 
 cleanup() {
-  sudo rm -r -f -v _tmp/soil
-  sudo rm -r -f -v /tmp/oil
+  sudo rm -r -f -v _tmp/soil /tmp/soil-*
 }
 
 "$@"

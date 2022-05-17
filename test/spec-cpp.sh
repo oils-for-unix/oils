@@ -75,8 +75,6 @@ run-with-osh-eval() {
 run-with-osh-eval-dbg() {
   ### Quicker development loop with debug build
 
-  # TODO: build/native_graph.py doesn't correctly declare the cpp/*.{h,cc}
-  # dependencies
   local rel_path=_bin/cxx-dbg/osh_eval
   ninja $rel_path
   env OSH_CC=$PWD/$rel_path $0 run-with-osh-eval "$@"
@@ -97,7 +95,7 @@ all() {
 }
 
 soil-run() {
-  build/native.sh osh-eval-opt
+  ninja _bin/cxx-opt/osh_eval.stripped
 
   # Do less work to start
   # export NUM_SPEC_TASKS=8

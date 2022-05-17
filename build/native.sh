@@ -14,7 +14,6 @@ source build/common.sh  # CLANGXX
 compile-quickly() {
   ### For the fast possible development experience
 
-  build/native_graph.py
   ninja _bin/clang-dbg/osh_eval
 }
 
@@ -22,8 +21,6 @@ compiler-trace-build() {
   ### Output _build/obj/clang-dbg/*.json files
 
   local variant=${1:-dbg}
-
-  build/native_graph.py
 
   # Only clang supports -ftime-trace
   CXXFLAGS='-ftime-trace' ninja _bin/clang-$variant/osh_eval
@@ -58,36 +55,14 @@ tarball-demo() {
 soil-run() {
   ### Invoked by soil/worker.sh
 
-  build/native_graph.py
-
   ninja _bin/cxx-dbg/osh_eval \
         _bin/cxx-asan/osh_eval \
         _bin/cxx-opt/osh_eval.stripped
 }
 
-osh-eval-dbg() {
-  ### Invoked by build/dev.sh oil-cpp
-  build/native_graph.py
-  ninja _bin/cxx-dbg/osh_eval
-}
-
-osh-eval-asan() {
-  ### Invoked by test/parse-errors.sh
-  build/native_graph.py
-  ninja _bin/cxx-asan/osh_eval
-}
-
-osh-eval-opt() {
-  ### Invoked by test/spec-cpp.sh
-  build/native_graph.py
-  ninja _bin/cxx-opt/osh_eval.stripped
-}
-
 all-ninja() {
   # Don't use clang for benchmarks.
   # export CXX=c++
-
-  build/native_graph.py
 
   set +o errexit
 
@@ -102,9 +77,10 @@ all-ninja() {
   return $status
 }
 
-osh-eval-demo() {
-  osh-eval-dbg
-  types/oil-slice.sh demo _bin/cxx-dbg/osh_eval
+osh-eval-smoke() {
+  local bin=_bin/cxx-dbg/osh_eval
+  ninja $bin
+  types/oil-slice.sh demo $bin
 }
 
 #

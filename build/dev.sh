@@ -245,7 +245,7 @@ oil-cpp() {
   if test -f "$CLANGXX"; then
     time build/native.sh compile-quickly  # Clang compiles more quickly
   else
-    time build/native.sh osh-eval-dbg
+    time ninja _bin/cxx-dbg/osh_eval
   fi
 
   echo

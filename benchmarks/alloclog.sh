@@ -53,11 +53,9 @@ length-hist() {
 }
 
 build-variants() {
-  build/native_graph.py
-
   # opt uses dumb_alloc
-  # TODO: might want _bin/osh_eval.tcmalloc, which depends on a system library
-  ninja _bin/osh_eval.{opt,malloc}
+  # TODO: might want _bin/cxx-tcmalloc/osh_eval, which depends on a system library
+  ninja _bin/cxx-{opt,malloc}.osh_eval
 }
 
 time-mem() {

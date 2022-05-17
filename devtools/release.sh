@@ -386,12 +386,7 @@ _oil-native-build() {
 
   pushd $dest
 
-  # This should be identical to _build/oil-native.sh opt, which uses shell
-  # rather than Ninja
-  build/native.sh osh-eval-opt
-
-  # To run tests later
-  build/native.sh osh-eval-asan
+  ninja _bin/cxx-opt/osh_eval.stripped _bin/cxx-asan/osh_eval
   popd
 }
 
