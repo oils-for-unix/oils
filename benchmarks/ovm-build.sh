@@ -42,7 +42,7 @@ source benchmarks/common.sh  # for log, etc.
 source build/common.sh  # for $CLANG
 
 readonly BASE_DIR=_tmp/ovm-build
-readonly TAR_DIR=$PWD/_deps/ovm-build # Make it absolute
+readonly TAR_DIR=$PWD/_deps/ovm-build  # Make it absolute
 
 #
 # Dependencies
@@ -243,8 +243,10 @@ build-task() {
           compiler='cxx'
           ;;
         *clang)
-          # note: we take provenance of bin/clang, but shell script runs bin/clang++
-          compiler=$CLANGXX
+          # Note on slight mess: benchmarks/id.sh takes the provenanec of
+          # $CLANG.  We translate that to 'clang' here, and
+          # _build/oil-native.sh uses $CLANGXX.
+          compiler='clang'
           ;;
         *)
           die "Invalid compiler"
