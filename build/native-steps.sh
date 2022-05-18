@@ -16,6 +16,12 @@ readonly REPO_ROOT
 
 . build/common.sh  # for $BASE_CXXFLAGS
 
+line_count() {
+  local out=$1
+  shift  # rest are inputs
+  wc -l "$@" | sort -n | tee $out
+}
+
 #
 # Mutable GLOBALS
 #
@@ -149,10 +155,15 @@ compile_one() {
 
   setglobal_compile_flags "$variant" "$dotd"
 
-  # TODO: exactly when is -fPIC needed?
+  case $out in
+    (_build/preprocessed/*)
+      flags="$flags -E"
+      ;;
+  esac
+
+  # TODO: exactly when is -fPIC needed?  Clang needs it sometimes?
   if test $compiler = 'clang' && test $variant != 'opt'; then
-    # mutate global
-    flags="$flags -fPIC"  # clang needs -fPIC?
+    flags="$flags -fPIC"
   fi
 
   # this flag is only valid in Clang, doesn't work in continuous build

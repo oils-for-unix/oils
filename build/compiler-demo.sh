@@ -16,7 +16,7 @@ source $REPO_ROOT/build/common.sh
 
 # chrome://tracing
 # https://aras-p.info/blog/2019/01/16/time-trace-timeline-flame-chart-profiler-for-Clang/
-ftime-trace-demo() {
+ftime-trace() {
   local dir=_tmp/ftime-trace
   mkdir -p $dir
   rm -f -v $dir/*
@@ -44,7 +44,7 @@ ftime-trace-demo() {
   echo
 }
 
-preprocessor-demo() {
+preprocessor() {
   local dir=_tmp/preprocess
   mkdir -p $dir
   rm -f -v $dir/*
@@ -59,7 +59,11 @@ int foo() { return 32; }
     echo '#ifndef LIB2_H'
     echo '#define LIB2_H'
 
+    # ~13K lines
     echo '#include <vector>' 
+
+    # Almost 32K lines!
+    #echo '#include <unordered_map>' 
 
     # This doesn't make a difference!  The preprocessor strips comments
     for i in $(seq 1000); do

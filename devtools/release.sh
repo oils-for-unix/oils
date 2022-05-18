@@ -333,8 +333,8 @@ spec-all() {
   test/spec.sh all-and-smoosh
 
   # Collect and publish stats about the C++ translation.
-  # Test the one we built in _oil-native-build
-  export OSH_CC="$REPO_ROOT/../benchmark-data/src/oil-native-$OIL_VERSION/_bin/cxx-opt/osh_eval.stripped"
+  # Test the one we built in _oil-native-tarball-build
+  export OSH_CC="$REPO_ROOT/../benchmark-data/src/oil-native-$OIL_VERSION/_bin/cxx-opt-sh/osh_eval.stripped"
   test/spec-cpp.sh all
 }
 
@@ -367,7 +367,7 @@ build-and-test() {
   # For benchmarks
   # This builds the tarball in ../benchmark-data.  (Could we combine these
   # steps?)
-  _oil-native-build
+  _oil-native-tarball-build
 
   # App bundle
   _release-build
@@ -381,7 +381,7 @@ _install() {
   sudo apt install python-dev
 }
 
-_oil-native-build() {
+_oil-native-tarball-build() {
   local dest="../benchmark-data/src/oil-native-$OIL_VERSION"
 
   pushd $dest
@@ -391,14 +391,15 @@ _oil-native-build() {
   popd
 }
 
-# Run before benchmarks/auto.sh all.  We just build, and assume we tested.
 benchmark-build() {
+  ### Build function on machine 2.
+
   if test -n "$HAVE_ROOT"; then
     _install
   fi
   _clean
   _dev-build
-  _oil-native-build
+  _oil-native-tarball-build
 
   _release-build
 }

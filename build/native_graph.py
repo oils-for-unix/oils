@@ -11,6 +11,11 @@ Directory structure:
 _build/   # input source
   cpp/
     osh_eval.{h,cc}
+  preprocessed/
+    posix.cc
+  metrics/
+    preprocessed.txt  # count of all the files
+
   obj/
     # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
 
@@ -117,7 +122,20 @@ def NinjaGraph(n):
          description='native_graph')
   n.newline()
 
-  # 'together'b uild
+  # Preprocess one translation unit
+  n.rule('preprocess',
+         # compile_one detects the _build/preprocessed path
+         command='build/native-steps.sh compile_one $compiler $variant $in $out',
+         description='compile_one $compiler $variant $in $out')
+  n.newline()
+
+  # Preprocess one translation unit
+  n.rule('line_count',
+         command='build/native-steps.sh line_count $out $in',
+         description='line_count $out $in')
+  n.newline()
+
+  # 'together' build
   n.rule('compile_and_link',
          # multiple outputs
          command='build/native-steps.sh compile_and_link $compiler $variant $out $in',
@@ -165,6 +183,30 @@ def NinjaGraph(n):
 
       ninja_vars = [('compiler', compiler), ('variant', variant)]
 
+      sources = DEPS_CC + OLD_RUNTIME
+
+      #
+      # See how much input we're feeding to the compiler.  Test C++ template
+      # explosion, e.g. <unordered_map>
+      #
+
+      preprocessed = []
+      for src in sources:
+        # e.g. _build/obj/dbg/posix.o
+        base_name, _ = os.path.splitext(os.path.basename(src))
+
+        pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, base_name)
+        preprocessed.append(pre)
+
+        n.build(pre, 'preprocess', [src], implicit=[BUILD_NINJA],
+                variables=ninja_vars)
+        n.newline()
+
+      n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
+              'line_count', preprocessed, implicit=[BUILD_NINJA],
+              variables=ninja_vars)
+      n.newline()
+
       #
       # TOGETHER
       #
@@ -172,7 +214,6 @@ def NinjaGraph(n):
       bin_together = '_bin/%s-%s-together/osh_eval' % (compiler, variant)
       binaries.append(bin_together)
 
-      sources = DEPS_CC + OLD_RUNTIME
       n.build(bin_together, 'compile_and_link',
               sources, implicit=[BUILD_NINJA], variables=ninja_vars)
       n.newline()
@@ -230,8 +271,12 @@ def ShellFunctions(f):
   print('  ### Compile oil-native into _bin/$compiler-$variant-sh/ (not with ninja)', file=f)
   print('', file=f)
 
-  print('  local compiler=${1:-cxx}  # default is system compiler', file=f)
-  print('  local variant=${2:-opt}   # default is optimized build', file=f)
+  print('  local compiler=${1:-cxx}   # default is system compiler', file=f)
+  print('  local variant=${2:-opt}    # default is optimized build', file=f)
+
+  # TODO: implement this
+  print('  local skip_rebuild=${3:-}  # if the output exists, skip build', file=f)
+
   print('', file=f)
 
   print('  mkdir -p "_build/obj/$compiler-$variant-sh" "_bin/$compiler-$variant-sh"', file=f)
