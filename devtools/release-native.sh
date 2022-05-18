@@ -72,8 +72,9 @@ test-tar() {
   cd $tmp
   tar -x < ../../_release/oil-native-$OIL_VERSION.tar
 
-  cd oil-native-$OIL_VERSION
+  pushd oil-native-$OIL_VERSION
   build/native.sh tarball-demo
+  popd
 }
 
 extract-for-benchmarks() {
@@ -87,8 +88,8 @@ extract-for-benchmarks() {
 
   # For benchmarks
   pushd oil-native-$OIL_VERSION
-  _build/oil-native.sh cxx dbg
-  _build/oil-native.sh cxx opt
+  _build/oil-native.sh '' dbg SKIP_REBUILD
+  _build/oil-native.sh '' opt SKIP_REBUILD
   popd
 
   git add oil-native-$OIL_VERSION

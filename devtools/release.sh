@@ -66,17 +66,16 @@ set -o errexit
 
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-OIL_VERSION=$(head -n 1 oil-version.txt)
-readonly OIL_VERSION
-
 REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
-readonly REPO_ROOT
+OIL_VERSION=$(head -n 1 oil-version.txt)
+
+source devtools/common.sh  # banner
+source benchmarks/common.sh  # BENCHMARK_DATA_OIL_NATIVE, OSH_EVAL_BENCHMARK_DATA
+                             # redefines OIL_VERSION as readonly
 
 # Dir is defined in build/test.sh.
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
 readonly OIL_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/oil
-
-source devtools/common.sh  # banner
 
 log() {
   echo "$@" 1>&2
@@ -332,10 +331,11 @@ spec-all() {
   export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
   test/spec.sh all-and-smoosh
 
+  # Build $OSH_EVAL_BENCHMARK_DATA
+  _build-oil-native-benchmark-data
+
   # Collect and publish stats about the C++ translation.
-  # Test the one we built in _oil-native-tarball-build
-  export OSH_CC="$REPO_ROOT/../benchmark-data/src/oil-native-$OIL_VERSION/_bin/cxx-opt-sh/osh_eval.stripped"
-  test/spec-cpp.sh all
+  OSH_CC="$OSH_EVAL_BENCHMARK_DATA" test/spec-cpp.sh all
 }
 
 # For quickly debugging failures that don't happen in dev mode.
@@ -364,11 +364,6 @@ build-and-test() {
   # This builds the tarball from _tmp/native-tar-test
   devtools/release-native.sh test-tar
 
-  # For benchmarks
-  # This builds the tarball in ../benchmark-data.  (Could we combine these
-  # steps?)
-  _oil-native-tarball-build
-
   # App bundle
   _release-build
   _test-release-build  # Note: spec tests run here
@@ -381,13 +376,9 @@ _install() {
   sudo apt install python-dev
 }
 
-_oil-native-tarball-build() {
-  local dest="../benchmark-data/src/oil-native-$OIL_VERSION"
-
-  pushd $dest
-
-  build/native_graph.py  # Create it for the first time
-  ninja _bin/cxx-opt/osh_eval.stripped _bin/cxx-asan/osh_eval
+_build-oil-native-benchmark-data() {
+  pushd $BENCHMARK_DATA_OIL_NATIVE
+  _build/oil-native.sh '' '' SKIP_REBUILD
   popd
 }
 
@@ -399,8 +390,6 @@ benchmark-build() {
   fi
   _clean
   _dev-build
-  _oil-native-tarball-build
-
   _release-build
 }
 
@@ -408,6 +397,7 @@ benchmark-build() {
 benchmark-run() {
   local do_cachegrind=${1:-}
 
+  _build-oil-native-benchmark-data
   OSH_OVM=$OSH_RELEASE_BINARY benchmarks/auto.sh all "$do_cachegrind"
 }
 

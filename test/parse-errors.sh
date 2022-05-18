@@ -1188,9 +1188,16 @@ all() {
 }
 
 with-oil-native() {
-  local src_root=$1
+  readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+  local dir="../benchmark-data/src/oil-native-$OIL_VERSION"
+
+  # Maybe rebuild it
+  pushd $dir
+  _build/oil-native.sh '' '' SKIP_REBUILD
+  popd
+
   local out=_tmp/other/parse-errors-oil-native.txt
-  ASAN_OPTIONS='detect_leaks=0' SH=$src_root/_bin/cxx-asan/osh_eval \
+  SH=$dir/_bin/cxx-opt-sh/osh_eval.stripped \
     run-other-suite-for-release parse-errors all $out
 }
 
@@ -1216,8 +1223,7 @@ run-for-release() {
 
   run-other-suite-for-release parse-errors all
 
-  readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-  with-oil-native "../benchmark-data/src/oil-native-$OIL_VERSION"
+  with-oil-native 
 }
 
 "$@"

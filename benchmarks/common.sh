@@ -27,10 +27,10 @@ readonly SHELLS=( ${OTHER_SHELLS[@]} bin/osh $OSH_OVM )
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Needed to run on flanders
-readonly root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
+readonly BENCHMARK_DATA_OIL_NATIVE=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
 
 # Build by shell scripts
-readonly OSH_EVAL_BENCHMARK_DATA=$root/_bin/cxx-opt-sh/osh_eval.stripped
+readonly OSH_EVAL_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/_bin/cxx-opt-sh/osh_eval.stripped
 
 # build by Ninja
 readonly OSH_EVAL_IN_TREE=_bin/cxx-opt/osh_eval.stripped
