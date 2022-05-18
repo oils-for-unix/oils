@@ -113,7 +113,11 @@ measure-sizes() {
   # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
   # in R.
 
-  sizes-tsv $BASE_DIR/bin/*/osh_eval.{dbg,opt.stripped} \
+  # clang/osh_eval
+  # clang/osh_eval.stripped
+  # gcc/osh_eval
+  # gcc/osh_eval.stripped
+  sizes-tsv $BASE_DIR/bin/*/{osh_eval,osh_eval.stripped} \
     > ${prefix}.native-sizes.tsv
 
   sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode-opy.zip \
@@ -126,10 +130,6 @@ measure-sizes() {
     > ${prefix}.other-shell-sizes.tsv
 
   log "Wrote ${prefix}.*.tsv"
-
-  # Native portion, but it's not separated out by compiler.  We can just
-  # subtract.
-  #$TAR_DIR/oil-$OIL_VERSION/_build/oil/ovm* \
 }
 
 #

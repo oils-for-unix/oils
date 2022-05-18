@@ -37,7 +37,7 @@ compiler-trace-build() {
 tarball-demo() {
   mkdir -p _bin
 
-  time _build/oil-native.sh opt
+  time _build/oil-native.sh
 
   local bin=_bin/cxx-opt/osh_eval.stripped
 
