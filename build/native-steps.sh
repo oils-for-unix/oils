@@ -34,6 +34,7 @@ setglobal_cxx() {
   case $compiler in 
     (cxx)   cxx='c++'    ;;
     (clang) cxx=$CLANGXX ;;
+    (*)     die "Invalid compiler $compiler" ;;
   esac
 }
 
@@ -94,6 +95,10 @@ setglobal_compile_flags() {
     (alloclog)
       # debug flags
       flags="$flags -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
+      ;;
+
+    (*)
+      die "Invalid variant $variant"
       ;;
   esac
 
