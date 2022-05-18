@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/native-steps.sh  # for compile-and-link function
+source build/native-steps.sh  # for compile_and_link function
 
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
@@ -45,7 +45,7 @@ cpp-unit-tests-asan() {
 
   local bin=_bin/unit_tests.asan
   mkdir -p _bin
-  compile-and-link cxx asan $bin -D CPP_UNIT_TEST "${UNIT_TESTS_SRC[@]}"
+  compile_and_link cxx asan $bin -D CPP_UNIT_TEST "${UNIT_TESTS_SRC[@]}"
 
   $bin "$@"
 }
@@ -57,7 +57,7 @@ cpp-unit-tests() {
   local bin=_bin/unit_tests.dbg  # can't be ASAN; it has its own allocator
   mkdir -p _bin
 
-  compile-and-link cxx dbg $bin -D CPP_UNIT_TEST -D DUMB_ALLOC \
+  compile_and_link cxx dbg $bin -D CPP_UNIT_TEST -D DUMB_ALLOC \
     "${UNIT_TESTS_SRC[@]}" \
     cpp/dumb_alloc.cc
 

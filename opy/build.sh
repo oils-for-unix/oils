@@ -49,7 +49,7 @@ _compile-tree() {
     if test $version = ccompile; then
       misc/ccompile.py $src_tree/${rel_path} $dest
     elif test $version = opy; then
-      $THIS_DIR/../bin/opyc compile $src_tree/${rel_path} $dest
+      $REPO_ROOT/bin/opyc compile $src_tree/${rel_path} $dest
     else
       die "bad"
     fi
@@ -80,7 +80,7 @@ compile-manifest() {
     log "     $full_src_path"
 
     # Save space by omitting docstring.
-    $py $THIS_DIR/../bin/opyc compile --emit-docstring=0 $full_src_path $dest
+    $py $REPO_ROOT/bin/opyc compile --emit-docstring=0 $full_src_path $dest
 
     local rel_py_path=${rel_dest_path%.pyc}.py   # .pyc -> py
 
@@ -133,11 +133,10 @@ EOF
 # - This could be part of the Travis build.  It will ensure no Python 2
 # print statements sneak in.
 oil-repo() {
-  local repo_root=$(cd $THIS_DIR/.. && pwd)
-  local files=( $(oil-python-sources $repo_root) )  # array
+  local files=( $(oil-python-sources $REPO_ROOT) )  # array
 
-  _compile-tree $repo_root _tmp/repo-with-cpython/ ccompile "${files[@]}"
-  _compile-tree $repo_root _tmp/repo-with-opy/ opy "${files[@]}"
+  _compile-tree $REPO_ROOT _tmp/repo-with-cpython/ ccompile "${files[@]}"
+  _compile-tree $REPO_ROOT _tmp/repo-with-opy/ opy "${files[@]}"
 
   _fill-oil-tree _tmp/repo-with-cpython
   _fill-oil-tree _tmp/repo-with-opy
@@ -154,7 +153,7 @@ _oil-bin-manifest() {
 }
 
 oil-bin() {
-  pushd $THIS_DIR/.. >/dev/null
+  pushd $REPO_ROOT >/dev/null
   _oil-bin-manifest | compile-manifest _tmp/oil-with-opy
   popd >/dev/null
 }

@@ -245,6 +245,7 @@ oil-cpp() {
 
   build/translate.sh osh-eval  # translate with mycpp
 
+  build/native_graph.py  # Create it for the first time
   if test -f "$CLANGXX"; then
     time build/native.sh compile-quickly  # Clang compiles more quickly
   else

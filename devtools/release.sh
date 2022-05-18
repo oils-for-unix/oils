@@ -386,6 +386,7 @@ _oil-native-build() {
 
   pushd $dest
 
+  build/native_graph.py  # Create it for the first time
   ninja _bin/cxx-opt/osh_eval.stripped _bin/cxx-asan/osh_eval
   popd
 }
