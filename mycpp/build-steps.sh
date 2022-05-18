@@ -13,12 +13,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-THIS_DIR=$(dirname $(readlink -f $0))
-readonly THIS_DIR
-REPO_ROOT=$THIS_DIR/..
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 readonly REPO_ROOT
 
-source $THIS_DIR/common.sh
+source $REPO_ROOT/mycpp/common.sh
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PATH
 

@@ -12,10 +12,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly THIS_DIR=$(cd $(dirname $0) && pwd)
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+readonly REPO_ROOT
 
-source $THIS_DIR/common.sh  # oil-python-sources
-source $THIS_DIR/../build/common.sh  # for OIL_SYMLINKS
+source $REPO_ROOT/opy/common.sh  # oil-python-sources
+source $REPO_ROOT/build/common.sh  # for OIL_SYMLINKS
 
 md5-manifest() {
   local tree=$1
@@ -86,23 +87,6 @@ compile-manifest() {
     # .pyc manifest to include in zip files
     echo $dest $rel_dest_path
     echo $full_src_path $rel_py_path
-  done
-}
-
-# UNUSED
-make-mains() {
-  local dir=${1:-_tmp/oil-opy}
-
-  # Have to use shells cripts rather than symlinks because .pyc files aren't
-  # executable.
-  # TODO: Use oil.ovm instead of system Python.
-  for link in "${OIL_SYMLINKS[@]}"; do
-    { echo '#!/bin/sh'
-      echo "main=$link"
-      echo 'exec python $(dirname $0)/oil.pyc $main "$@"'
-    } >$dir/bin/$link
-
-    chmod --verbose +x $dir/bin/$link
   done
 }
 

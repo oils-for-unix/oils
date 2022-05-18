@@ -9,6 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+readonly REPO_ROOT
+
 source build/common.sh  # BASE_CXXFLAGS, etc.
 
 CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests

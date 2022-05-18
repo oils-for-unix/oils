@@ -8,95 +8,13 @@
 #   build/native-steps.sh <function name>
 
 set -o nounset
-set -o pipefail
 set -o errexit
+#eval 'set -o pipefail'
 
-source build/common.sh  # for $BASE_CXXFLAGS
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+readonly REPO_ROOT
 
-# chrome://tracing
-# https://aras-p.info/blog/2019/01/16/time-trace-timeline-flame-chart-profiler-for-Clang/
-ftime-trace-demo() {
-  local dir=_tmp/ftime-trace
-  mkdir -p $dir
-  rm -f -v $dir/*
-
-  echo ' int foo() { return 32; } ' > $dir/lib.cc
-  echo ' int main() { return 42; } ' > $dir/main.cc
-
-  #$CLANGXX --version
-
-  # Compiler annoyances:
-  # - -ftime-trace is IGNORED without -c, which means compile without linking
-  # - Can't specify -o with multiple source files
-
-  set -x
-  $CLANGXX -ftime-trace -o $dir/main.o -c $dir/main.cc 
-  $CLANGXX -ftime-trace -o $dir/lib.o -c $dir/lib.cc
-  set +x
-  echo
-
-  ls -l $dir
-  echo
-
-  # .o file is 'relocatable', otherwise it's 'executable'
-  file $dir/*
-  echo
-}
-
-preprocessor-demo() {
-  local dir=_tmp/preprocess
-  mkdir -p $dir
-  rm -f -v $dir/*
-
-  echo '
-#include <stdio.h>
-int foo() { return 32; }
-' > $dir/lib.cc
-
-  # Create a file that gets included twice
-  { 
-    echo '#ifndef LIB2_H'
-    echo '#define LIB2_H'
-
-    echo '#include <vector>' 
-
-    # This doesn't make a difference!  The preprocessor strips comments
-    for i in $(seq 1000); do
-      echo '// comment'
-    done
-
-    for i in $(seq 1000); do
-      echo "int foo$i() { return $i; }"
-    done
-
-    echo '#endif  // LIB2_H'
-  } > $dir/lib2.h
-
-  echo '
-#include <vector>
-#include "lib2.h"  // transitive include
-
-inline int bar() { return 1; }
-' > $dir/lib.h
-
-  # wow 12K files for <vector>
-  echo '
-#include <vector>
-#include "lib.h"
-#include "lib2.h"  // duplicate include
-
-int main() { return 42; }
-' > $dir/main.cc
-
-  $CXX -E $dir/lib.cc > $dir/lib.post.cc
-
-  $CXX -E $dir/main.cc > $dir/main.post.cc
-
-  wc -l $dir/*.post.cc
-
-  # make sure the file compiles
-  $CXX -o $dir/main $dir/main.cc
-}
+. build/common.sh  # for $BASE_CXXFLAGS
 
 #
 # Mutable GLOBALS
@@ -213,7 +131,7 @@ setglobal_link_flags() {
   link_flags="$link_flags -Wl,--gc-sections "
 }
 
-compile-one() {
+compile_one() {
   ### Compile one translation unit.  Invoked by build.ninja
 
   # Supports CXXFLAGS
@@ -258,7 +176,7 @@ link() {
   "$cxx" -o "$out" $link_flags "$@"
 }
 
-compile-and-link() {
+compile_and_link() {
   local compiler=$1
   local variant=$2
   local out=$3

@@ -105,7 +105,11 @@ collect-and-report() {
 oil-native() {
   ### Report on the ones we just built
 
-  collect-and-report $OIL_BASE_DIR _bin/cxx-{dbg,opt}-together/osh_eval
+  # TODO: could compare GCC and Clang
+  local -a targets=(_bin/cxx-{dbg,opt}/osh_eval)
+  ninja "${targets[@]}"
+
+  collect-and-report $OIL_BASE_DIR "${targets[@]}"
 
   ls -l $OIL_BASE_DIR
 }

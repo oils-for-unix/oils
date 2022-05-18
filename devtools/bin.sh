@@ -3,13 +3,15 @@
 # Manage the bin/ directory.
 #
 # Usage:
-#   ./bin.sh <function name>
+#   devtools/bin.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/common.sh  # for OIL_SYMLINKS and OPY_SYMLINKS
+# Used by devtools/bin.sh and opy/build.sh
+readonly OIL_SYMLINKS=(oil oilc osh oshc oven tea sh true false readlink)
+readonly OPY_SYMLINKS=(opy opyc)
 
 # For osh-dbg.
 ovm-snippet() {

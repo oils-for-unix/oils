@@ -7,8 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+readonly REPO_ROOT
 
 source $REPO_ROOT/build/common.sh  # $BASE_CXXFLAGS, $CLANG_DIR_RELATIVE, $PREPARE_DIR
 

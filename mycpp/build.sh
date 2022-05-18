@@ -16,9 +16,7 @@ source $THIS_DIR/common.sh  # MYPY_REPO
 source $REPO_ROOT/soil/common.sh  # find-dir-html
 
 all-ninja() {
-  # Don't use clang for benchmarks.
-  export CXX=c++
-
+  # TODO: add "self" edge
   cd $THIS_DIR
   ./build_graph.py
 

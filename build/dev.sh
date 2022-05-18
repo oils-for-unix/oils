@@ -11,6 +11,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+readonly REPO_ROOT
+
 source build/common.sh  # for log, $CLANGXX
 
 export PYTHONPATH='.:vendor/'

@@ -15,13 +15,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/common.sh  # $PREPARE_DIR, $PY27
-
 REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
-DEPS_DIR=$REPO_ROOT/../oil_DEPS
-readonly DEPS_DIR
+readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS
+
+source build/common.sh  # $PREPARE_DIR, $PY27
 
 #
 # re2c dependency

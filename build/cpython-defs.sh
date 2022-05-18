@@ -19,6 +19,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+readonly REPO_ROOT
+
+source build/common.sh  # $PY27
 source test/common.sh  # R_PATH
 
 readonly BASE_DIR=_tmp/cpython-defs
@@ -123,8 +127,6 @@ extract-methods() {
   }
   ' "$@"
 }
-
-source build/common.sh  # $PY27
 
 preprocess() {
   # TODO: Use PREPROC_FLAGS from build/compile.sh.

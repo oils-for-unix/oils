@@ -1,14 +1,29 @@
 #!/usr/bin/env bash
 #
+# Compile OVM tarball.
+#
 # Usage:
-#   ./compile.sh <function name>
+#   build/compile.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+readonly REPO_ROOT
+
 source build/common.sh
+
+source-detected-config-or-die() {
+  if ! source _build/detected-config.sh; then
+    # Make this error stand out.
+    echo
+    echo "FATAL: can't find _build/detected-config.h.  Run './configure'"
+    echo
+    exit 1
+  fi
+}
 
 # NOTES on trying to delete certain modules:
 #
