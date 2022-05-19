@@ -39,7 +39,7 @@ Examples:
 
     # 'json read' is valid at the end of a pipeline (because Oil implements
     # shopt -s lastpipe)
-    echo '{"count": 42}' | json read :myvar
+    $ echo '{"count": 42}' | json read :myvar
 
     # Failure with invalid input data
     $ echo '[ "incomplete"' | json read :myvar < invalid.json
@@ -94,6 +94,28 @@ Examples:
 Notes:
 
 - `--indent` is ignored if `--pretty` is false.
+
+## Filter Data Structures with Oil Expressions
+
+Once your data is deserialized, you can use Oil expression to operate on it.
+
+    $ echo '{"counts": [42, 99]}' | json read :d
+
+    $ = d['counts']
+    (List)   [42, 99]
+
+    $ = d['counts'][1]
+    (Int)    99
+
+    # d->counts is a synonym for d["counts"]
+    $ json write (d->counts)
+    [
+      42,
+      99
+    ]
+
+Note: It may more efficient to filter large data structures with tools like
+`jq` first.
 
 ## Other Data Structures Can Be Printed as JSON
 
