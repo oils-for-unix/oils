@@ -38,4 +38,10 @@ regtest-verify-golden() {
   popd
 }
 
+count-lines() {
+  pushd opy
+  ./count.sh all
+  popd
+}
+
 "$@"

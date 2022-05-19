@@ -134,7 +134,6 @@ the "experimental" version of Oil.
 
 #### OPy / OVM Metrics
 
-- [OPy Line Counts](pub/metrics.wwz/line-counts/opy.txt).
 - Lines of dependencies:
   - [pydeps](pub/metrics.wwz/line-counts/pydeps.txt).  Oil code plus the Python
     standard library.

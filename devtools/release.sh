@@ -176,7 +176,6 @@ _clean-tmp-dirs() {
   rm -r -f \
     _tmp/{spec,unit,gold,parse-errors,osh2oil,wild/www} \
     _tmp/{metrics,important-source-code} \
-    _tmp/opy-test \
     _tmp/{compute,osh-parser,osh-runtime,vm-baseline,ovm-build,oheap,syscall} \
     _tmp/oil-tar-test
 }
@@ -226,7 +225,6 @@ readonly -a OTHER_TESTS=(
   oil-runtime-errors
   arena
   osh-usage oshc-deps
-  opyc
   syscall
 )
 
@@ -490,11 +488,6 @@ line-counts() {
 
   metrics/source-code.sh write-reports  # for-translation and overview
   metrics/source-code.sh osh-cloc > $out/osh-cloc.txt
-
-  local opy_out=$out/opy.txt
-  pushd opy
-  ./count.sh all > $opy_out
-  popd
 }
 
 metrics() {
