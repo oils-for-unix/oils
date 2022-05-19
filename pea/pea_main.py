@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-py3_parse.py
+pea_main.py
 
-Quick test for a potential rewrite of mycpp.
+A potential rewrite of mycpp.
 """
 import ast
 from ast import Module, ClassDef, FunctionDef

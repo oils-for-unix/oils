@@ -427,6 +427,10 @@ _python-symbols() {
   mkdir -p $out_dir
   local out=${out_dir}/${name}-symbols.txt
 
+  # To debug what version we're running eci
+  /usr/bin/env python2 -V
+  echo
+
   # Run this from the repository root.
   PYTHONPATH='.:vendor/' CALLGRAPH=1 $main | tee $out
 

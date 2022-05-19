@@ -1187,20 +1187,6 @@ all() {
   cases-in-files
 }
 
-with-oil-native() {
-  readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-  local dir="../benchmark-data/src/oil-native-$OIL_VERSION"
-
-  # Maybe rebuild it
-  pushd $dir
-  _build/oil-native.sh '' '' SKIP_REBUILD
-  popd
-
-  local out=_tmp/other/parse-errors-oil-native.txt
-  SH=$dir/_bin/cxx-opt-sh/osh_eval.stripped \
-    run-other-suite-for-release parse-errors all $out
-}
-
 soil-run-py() {
   ### run with Python. output _tmp/other/parse-errors.txt
 
@@ -1216,14 +1202,26 @@ soil-run-cpp() {
   ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh_eval all
 }
 
-# TODO: Don't test ASAN build.  Test tarball build.
+release-oil-native() {
+  readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+  local dir="../benchmark-data/src/oil-native-$OIL_VERSION"
+
+  # Maybe rebuild it
+  pushd $dir
+  _build/oil-native.sh '' '' SKIP_REBUILD
+  popd
+
+  local out=_tmp/other/parse-errors-oil-native.txt
+  SH=$dir/_bin/cxx-opt-sh/osh_eval.stripped \
+    run-other-suite-for-release parse-errors all $out
+}
 
 run-for-release() {
   ### Test with bin/osh and the ASAN binary.
 
   run-other-suite-for-release parse-errors all
 
-  with-oil-native 
+  release-oil-native
 }
 
 "$@"

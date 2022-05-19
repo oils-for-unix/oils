@@ -29,7 +29,7 @@ all-files() {
 
 parse-one() {
   # Use PY3 because Python 3.8 and above has type comments
-  $PY3 test/py3_parse.py "$@"
+  $PY3 pea/pea_main.py "$@"
 }
 
 parse-all() {
@@ -55,11 +55,7 @@ check-types() {
   local pip3_lib_path
   pip3_lib_path=$(pip3-lib-path)
 
-  PYTHONPATH=$pip3_lib_path ../oil_DEPS/python3 ~/.local/bin/mypy test/py3_parse.py
-}
-
-soil-run() {
-  check-types
+  PYTHONPATH=$pip3_lib_path ../oil_DEPS/python3 ~/.local/bin/mypy pea/pea_main.py
 }
 
 "$@"

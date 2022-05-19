@@ -108,8 +108,8 @@ pea-tasks() {
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host           -
 py-source           build/dev.sh py-source                  -
-check-types         test/py3_parse.sh check-types           -
-parse-all           test/py3_parse.sh parse-all             -
+check-types         pea/test.sh check-types           -
+parse-all           pea/test.sh parse-all             -
 EOF
 }
 

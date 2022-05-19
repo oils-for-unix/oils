@@ -55,7 +55,7 @@ _compile-tree() {
     fi
   done
 
-  tree $dest_tree
+  #tree $dest_tree
   md5-manifest $dest_tree
 }
 
