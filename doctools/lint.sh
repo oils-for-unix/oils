@@ -39,8 +39,6 @@ manifest() {
     _tmp/unit
     #_tmp/spec
     _tmp/osh-parser
-
-    #_tmp/test-opy _tmp/metrics \ 
   )
   # There are a lot of empty <pre></pre> here which I don't care about
   # _tmp/spec \

@@ -48,12 +48,16 @@ oil-python-sources() {
     -name testdata -a -prune -o \
     -name Python-2.7.13 -a -prune -o \
     -name py-yajl -a -prune -o \
+    -name 'py3_parse.py' -a -prune -o \
     -name '*.py' -a -printf "$fmt"
+
+  # TODO: move type-annotated files to pea/, and get rid of py3_parse.py hack
 }
 
 opyc-run() {
   ../bin/opyc run "$@"
 }
+
 opyc-compile() {
   ../bin/opyc compile "$@"
 }

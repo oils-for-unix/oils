@@ -132,19 +132,6 @@ coverage/                  code coverage in Python and C
 These links describe the CPython / "[OVM]($xref)" build, which should become
 the "experimental" version of Oil.
 
-#### OPy Tests
-
-The OPy compiler is used to compile Oil to bytecode, but isn't itself part of
-the release.
-
-- [build-oil-repo](test/opy.wwz/build-oil-repo.txt)
-  | [test-gold](test/opy.wwz/test-gold.txt)
-  | [regtest-compile](test/opy.wwz/regtest-compile.txt)
-  | [regtest-verify-golden](test/opy.wwz/regtest-verify-golden.txt)
-- Tree-shaking: [Symbols in Oil](test/opy.wwz/oil-symbols.txt)
-  | [Symbols in OPy](test/opy.wwz/opy-symbols.txt)
-- [other/opyc](test/other.wwz/opyc.txt)
-
 #### OPy / OVM Metrics
 
 - [OPy Line Counts](pub/metrics.wwz/line-counts/opy.txt).

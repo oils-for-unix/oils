@@ -13,7 +13,6 @@
 #   build/test.sh oil-tar T  # extract, build, install
 #                            # for cpython-defs source scanning and dogfood
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
-#   opy/regtest.sh verify-golden, because that one tends to be flaky
 #   build/cpython-defs.sh {oil-py-names,filter-methods}
 #     (regenerate C source)
 #
@@ -27,7 +26,6 @@
 #   [switch benchmarks-data repo] commit src/oil-native-* and push to flanders.
 #   $0 metrics  # this can catch bugs, operates on FINAL tarball
 #   test/wild.sh all (3-4 minutes on fast machine, outside OSH_HIJACK_SHEBANG)
-#   $0 test-opy (2 minutes on fast machine)
 #   $0 spec-all  # tests 2 OSH binaries
 #   benchmarks:
 #     Sync up oilshell/benchmark-data repo.
@@ -92,6 +90,7 @@ make-release-branch() {
 # benchmark-data repo to make reports.
 auto-machine1() {
   local resume=${1:-}  # workaround for spec test flakiness bug
+  local resume2=${2:-}  # skip past metrics and wild tests
 
   sudo -k; sudo true  # clear and re-cache credentials
 
@@ -101,9 +100,11 @@ auto-machine1() {
     $0 build-and-test
   fi 
 
-  $0 metrics  # this can catch bugs
-  test/wild.sh all
-  $0 test-opy
+  if test -z "$resume2"; then
+    $0 metrics  # this can catch bugs
+    test/wild.sh all
+  fi
+
   $0 spec-all  # spec tests run here again
   $0 benchmark-run do_cachegrind
   $0 mycpp-examples
@@ -284,40 +285,6 @@ _test-release-build() {
   _spec-release
 }
 
-# NOTE: Following opy/README.md.  Right now this is a quick and dirty
-# verification.  For example we found out something about the golden checksums
-# for the OPy regtest!
-test-opy() {
-  local out=$PWD/_tmp/test-opy
-
-  mkdir -p $out
-
-  metrics/source-code.sh oil-python-symbols $out
-  metrics/source-code.sh opy-python-symbols $out
-
-  pushd opy
-
-  local step=''
-
-  step='build-oil-repo'
-  echo "--- $step ---"
-  time ./build.sh oil-repo > $out/$step.txt 2>&1
-  echo $?
-
-  step='test-gold'
-  echo "--- $step ---"
-  time ./test.sh gold > $out/$step.txt 2>&1
-  echo $?
-
-  # NOTE: This is sensitive to Python 2.7.12 vs .13 vs .14.  Ideally we would
-  # remove that.
-  # NOTE: There is no indication if this fails!
-  ./regtest.sh compile-all > $out/regtest-compile.txt
-  ./regtest.sh verify-golden > $out/regtest-verify-golden.txt
-
-  popd
-}
-
 spec-all() {
   ### Run all spec tests
 
@@ -459,12 +426,6 @@ compress() {
   log "--- test/wild"
   local out="$root/test/wild.wwz"
   pushd _tmp/wild/www
-  time zip -r -q $out .  # recursive, quiet
-  popd
-
-  log "--- test/opy"
-  local out="$root/test/opy.wwz"
-  pushd _tmp/test-opy
   time zip -r -q $out .  # recursive, quiet
   popd
 

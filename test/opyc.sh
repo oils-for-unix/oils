@@ -110,9 +110,6 @@ run-for-release() {
 }
 
 soil-run() {
-  # TODO: use devtools/release.sh test-opy
-  # That's really what we want to prevent from failing.
-
   # flag_spec.py defines types in runtime.asdl
   build/dev.sh minimal
 
@@ -121,6 +118,5 @@ soil-run() {
 
   run-test-funcs
 }
-
 
 "$@"

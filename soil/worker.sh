@@ -245,14 +245,20 @@ EOF
 # Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
-dump-distro       soil/worker.sh dump-distro              -
-opyc              test/opyc.sh soil-run                   -
-time-test         benchmarks/time-test.sh soil-run        -
-csv-concat-test   devtools/csv-concat-test.sh soil-run    -
-osh2oil           test/osh2oil.sh soil-run                -
-R-test            devtools/R-test.sh soil-run             -
-xargs-test        test/other.sh xargs-test                -
-csv2html-test     test/other.sh csv2html-test             -
+dump-distro            soil/worker.sh dump-distro                 -
+time-test              benchmarks/time-test.sh soil-run           -
+csv-concat-test        devtools/csv-concat-test.sh soil-run       -
+osh2oil                test/osh2oil.sh soil-run                   -
+R-test                 devtools/R-test.sh soil-run                -
+xargs-test             test/other.sh xargs-test                   -
+csv2html-test          test/other.sh csv2html-test                -
+oil-python-symbols     metrics/source-code.sh oil-python-symbols  -
+opy-python-symbols     metrics/source-code.sh opy-python-symbols  -
+opyc                   test/opyc.sh soil-run                      -
+build-oil-repo         opy/soil.sh build-oil-repo                 -
+test-gold              opy/soil.sh test-gold                      -
+regtest-compile        opy/soil.sh regtest-compile                -
+regtest-verify-golden  opy/soil.sh regtest-verify-golden          -
 EOF
 }
 
