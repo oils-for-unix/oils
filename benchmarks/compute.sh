@@ -36,7 +36,9 @@ source benchmarks/common.sh  # filter-provenance
 source test/tsv-lib.sh  # tsv2html
 
 readonly BASE_DIR=_tmp/compute
-readonly OSH_CC=_bin/cxx-opt/osh_eval.stripped
+
+# Passed to awk in filter-provenance.  TODO: This could be a parameter
+readonly OIL_NATIVE_REGEX='osh_eval(\.stripped)?'
 
 TIMEFORMAT='%U'
 
@@ -45,7 +47,7 @@ hello-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash dash $OIL_NATIVE_REGEX |
   while read fields; do
     echo 'hello _ _' | xargs -n 3 -- echo "$fields"
   done
@@ -56,7 +58,7 @@ fib-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash dash $OIL_NATIVE_REGEX |
   while read fields; do
     echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
   done
@@ -65,7 +67,7 @@ fib-tasks() {
 word_freq-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python2 bash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash $OIL_NATIVE_REGEX |
   while read fields; do
     # BUG: osh_eval differs on these two.  Looks like it's related to
     # backslashes!
@@ -78,7 +80,7 @@ word_freq-tasks() {
 assoc_array-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python2 bash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash $OIL_NATIVE_REGEX |
   while read fields; do
     for n in 1000 2000 3000; do
       echo "word_freq 10 $n" | xargs -n 3 -- echo "$fields"
@@ -90,7 +92,7 @@ bubble_sort-tasks() {
   # Note: this is quadratic, but bubble sort itself is quadratic!
   local provenance=$1
 
-  cat $provenance | filter-provenance python2 bash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash $OIL_NATIVE_REGEX |
   while read fields; do
     echo 'bubble_sort int   200' | xargs -n 3 -- echo "$fields"
     echo 'bubble_sort bytes 200' | xargs -n 3 -- echo "$fields"
@@ -130,7 +132,7 @@ array_ref-tasks() {
 palindrome-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python2 bash $OSH_CC |
+  cat $provenance | filter-provenance python2 bash $OIL_NATIVE_REGEX |
   while read fields; do
     echo 'palindrome unicode _' | xargs -n 3 -- echo "$fields"
     echo 'palindrome bytes   _' | xargs -n 3 -- echo "$fields"
@@ -140,7 +142,7 @@ palindrome-tasks() {
 parse_help-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance bash $OSH_CC |
+  cat $provenance | filter-provenance bash $OIL_NATIVE_REGEX |
   while read fields; do
     echo 'parse_help ls-short _' | xargs -n 3 -- echo "$fields"
     echo 'parse_help ls       _' | xargs -n 3 -- echo "$fields"

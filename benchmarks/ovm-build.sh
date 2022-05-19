@@ -196,7 +196,7 @@ build-task() {
   # protects against basic errors.
 
   case $action in
-    configure)
+    (configure)
       "${TIME_PREFIX[@]}" -- ./configure
 
       # Cleaning here relies on the ORDER of tasks.txt.  configure happens
@@ -205,15 +205,15 @@ build-task() {
       make clean
       ;;
 
-    make)
+    (make)
       "${TIME_PREFIX[@]}" -- make CC=$compiler_path
 
       local target
       case $src_dir in
-        */bash*)
+        (*/bash*)
           target=bash
           ;;
-        */dash*)
+        (*/dash*)
           target=src/dash
           ;;
       esac
@@ -222,12 +222,12 @@ build-task() {
       cp -v $target $bin_dir
       ;;
 
-    _bin/cxx-*/osh_eval*)
+    (osh_eval*)
       case $action in
-        _bin/*-dbg-sh/osh_eval)
+        (osh_eval)
           local variant='dbg'
           ;;
-        _bin/*-opt-sh/osh_eval.stripped)
+        (osh_eval.stripped)
           local variant='opt'
           ;;
         *)
@@ -238,11 +238,11 @@ build-task() {
       # Change the C compiler into the corresponding C++ compiler
       local compiler
       case $compiler_path in 
-        *gcc)
+        (*gcc)
           # note: we take provenance of /usr/bin/gcc, but the shell script runs 'c++'
           compiler='cxx'
           ;;
-        *clang)
+        (*clang)
           # Note on slight mess: benchmarks/id.sh takes the provenanec of
           # $CLANG.  We translate that to 'clang' here, and
           # _build/oil-native.sh uses $CLANGXX.
@@ -255,9 +255,9 @@ build-task() {
 
       "${TIME_PREFIX[@]}" -- _build/oil-native.sh $compiler $variant
 
-      # e.g. cp _bin/clang-dbg-sh/osh_eval _tmp/ovm-build/bin/clang/
-      local target=$action
-      cp -v $target $bin_dir
+      # e.g. cp _bin/clang-opt-sh/osh_eval.stripped _tmp/ovm-build/bin/clang/
+      local filename=$action
+      cp -v _bin/$compiler-$variant-sh/$filename $bin_dir
       ;;
 
     *)
@@ -289,8 +289,8 @@ oil-tasks() {
     echo "$line" $oil_dir _bin/oil.ovm
     echo "$line" $oil_dir _bin/oil.ovm-dbg
 
-    echo "$line" $oil_native_dir _bin/cxx-dbg-sh/osh_eval
-    echo "$line" $oil_native_dir _bin/cxx-opt-sh/osh_eval.stripped
+    echo "$line" $oil_native_dir osh_eval
+    echo "$line" $oil_native_dir osh_eval.stripped
   done
 }
 
@@ -305,7 +305,7 @@ other-shell-tasks() {
   cat $provenance | while read line; do
     case $line in
       # Skip clang for now.
-      *clang*)
+      (*clang*)
         continue
         ;;
     esac

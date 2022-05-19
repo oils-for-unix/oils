@@ -9,7 +9,7 @@
 readonly MACHINE1=broome
 readonly MACHINE2=lenny
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+OIL_VERSION=$(head -n 1 oil-version.txt)
 readonly BENCHMARK_DATA_OIL_NATIVE=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
 readonly OSH_EVAL_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/_bin/cxx-opt-sh/osh_eval.stripped
 
@@ -73,7 +73,7 @@ filter-provenance() {
 
   # Anchor it at the end only.  For _bin/cxx-opt/osh_eval.stripped and the
   # ../benchmark-data one.
-  pat="($pat)$"
+  pat="($pat)\$"
 
   # 4th column is the shell
   awk -v pat="$pat" '$4 ~ pat { print }'

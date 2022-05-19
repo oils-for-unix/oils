@@ -63,7 +63,7 @@ ShellLabels = function(shell_name, shell_hash) {
   for (i in 1:length(shell_name)) {
     if (shell_name[i] == 'osh') {
       label = GetOshLabel(shell_hash[i])
-    } else if (shell_name[i] == 'osh_eval.opt.stripped') {
+    } else if (shell_name[i] == 'osh_eval.stripped') {
       label = 'oil-native'
     } else {
       label = shell_name[i]
@@ -515,7 +515,7 @@ OvmBuildReport = function(in_dir, out_dir) {
     mutate(native_code_size = num_bytes - bytecode_size) ->
     sizes
 
-  # paths look like _tmp/ovm-build/bin/clang/osh_eval.dbg 
+  # paths look like _tmp/ovm-build/bin/clang/osh_eval.stripped
   native_sizes %>%
     select(c(host_label, path, num_bytes)) %>%
     mutate(host_label = paste("host ", host_label),
