@@ -255,8 +255,8 @@ csv2html-test          test/other.sh csv2html-test                -
 oil-python-symbols     metrics/source-code.sh oil-python-symbols  -
 opy-python-symbols     metrics/source-code.sh opy-python-symbols  -
 opyc                   test/opyc.sh soil-run                      -
-build-oil-repo         opy/soil.sh build-oil-repo                 -
 test-gold              opy/soil.sh test-gold                      -
+build-oil-repo         opy/soil.sh build-oil-repo                 -
 regtest-compile        opy/soil.sh regtest-compile                -
 regtest-verify-golden  opy/soil.sh regtest-verify-golden          -
 EOF

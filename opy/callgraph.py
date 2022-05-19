@@ -424,7 +424,13 @@ class Symbols(object):
         third = func
         #third = ''
         #print('  %s [%s] %s' % (func.__name__, '.'.join(ref), third))
-        print('  %s' % func.__name__)
+        try:
+          print('  %s' % func.__name__)
+        except AttributeError: 
+          # In the CI, when we don't have fastlex, we get _MatchOshToken_Slow()
+          # instances
+          print("  NOTE: %s found at top level, but it's not a simple function" % func)
+
         PrintSig('    %s', func)
 
       classes = [(c.Name(), c) for c in src.classes]

@@ -101,9 +101,11 @@ compile-manifest() {
 _fill-oil-tree() {
   local dir=${1:-_tmp/repo-with-opy}
 
-  mkdir -p $dir/_devbuild/help
-  # For help text.
-  cp -v ../_devbuild/help/* $dir/_devbuild/help
+  if test -d ../_devbuild/help; then  # doesn't exist in CI
+    mkdir -p $dir/_devbuild/help
+    # For help text.
+    cp -v ../_devbuild/help/* $dir/_devbuild/help
+  fi
 
   cp -v ../asdl/*.asdl $dir/asdl
   ln -v -s -f $PWD/../{libc,fastlex}.so $dir
@@ -128,10 +130,8 @@ EOF
 
 # Compile with both compile() and OPy.
 # TODO:
-# - What about the standard library?  The whole app bundle should be
-# compiled with OPy.
-# - This could be part of the Travis build.  It will ensure no Python 2
-# print statements sneak in.
+# - What about the standard library?  The whole app bundle should be compiled
+# with OPy.
 oil-repo() {
   local files=( $(oil-python-sources $REPO_ROOT) )  # array
 

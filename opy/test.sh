@@ -218,6 +218,9 @@ opy-speed-test() {
 # Although some of these are mostly there for disassembly.
 gold() {
   set +o errexit
+
+  mkdir -p _tmp
+
   for script in gold/*.py; do
 
     $script > _tmp/gold-cpython.txt 2>&1

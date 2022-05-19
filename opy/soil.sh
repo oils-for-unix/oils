@@ -11,15 +11,15 @@ set -o errexit
 
 REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
 
-build-oil-repo() {
-  pushd opy
-  ./build.sh oil-repo 
-  popd
-}
-
 test-gold() {
   pushd opy
   ./test.sh gold
+  popd
+}
+
+build-oil-repo() {
+  pushd opy
+  ./build.sh oil-repo 
   popd
 }
 
