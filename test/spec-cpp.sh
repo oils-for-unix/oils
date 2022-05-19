@@ -19,7 +19,7 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 # For now use opt since it's faster, see issue #970
-readonly OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-opt/osh_eval.stripped}
+OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-opt/osh_eval.stripped}
 
 # Applies everywhere
 export SPEC_JOB='cpp'
@@ -77,7 +77,7 @@ run-with-osh-eval-dbg() {
 
   local rel_path=_bin/cxx-dbg/osh_eval
   ninja $rel_path
-  env OSH_CC=$PWD/$rel_path $0 run-with-osh-eval "$@"
+  OSH_CC=$PWD/$rel_path $0 run-with-osh-eval "$@"
 }
 
 all() {
@@ -376,7 +376,7 @@ repro() {
 }
 
 repro-all() {
-  env OSH_CC=$REPO_ROOT/_bin/clang-dbg/osh_eval $0 all
+  OSH_CC=$REPO_ROOT/_bin/clang-dbg/osh_eval $0 all
 }
 
 "$@"

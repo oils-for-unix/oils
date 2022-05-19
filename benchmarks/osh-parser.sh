@@ -219,7 +219,7 @@ measure() {
     > $times_out
 
   local tasks=$BASE_DIR/tasks.txt
-  print-tasks $provenance "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA > $tasks
+  print-tasks $provenance "${SHELLS[@]}" $OIL_NATIVE > $tasks
 
   # Run them all
   cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $raw_dir
@@ -230,7 +230,6 @@ measure() {
 measure-cachegrind() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
-  local osh_eval=${3:-$OSH_EVAL_BENCHMARK_DATA}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -259,7 +258,7 @@ measure-cachegrind() {
   # zsh weirdly forks during zsh -n, which complicates our cachegrind
   # measurement.  So just ignore it.  (This can be seen with
   # strace -e fork -f -- zsh -n $file)
-  print-tasks $provenance bash dash mksh $osh_eval > $ctasks
+  print-tasks $provenance bash dash mksh $OIL_NATIVE > $ctasks
 
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $raw_dir
 

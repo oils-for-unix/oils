@@ -41,14 +41,10 @@ osh-parser-quick() {
 
   local base_dir=${1:-../benchmark-data}
 
-  # NOTE: This has to match benchmarks/osh-parser.sh print-tasks, which calls
-  # filter-provenance on OSH_EVAL_BENCHMARK_DATA
-  local osh_eval=$OSH_EVAL_BENCHMARK_DATA
-
   local c_prov prov
   c_prov=$(benchmarks/id.sh shell-provenance no-host \
-    "${OTHER_SHELLS[@]}" $osh_eval python2)
-  prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $osh_eval)
+    "${OTHER_SHELLS[@]}" $OIL_NATIVE python2)
+  prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OIL_NATIVE)
 
   # normally done on one machine
   benchmarks/osh-parser.sh measure $prov $base_dir/osh-parser
@@ -77,15 +73,14 @@ osh-parser-dup-testdata() {
 
 cachegrind-shells() {
   local base_dir=${1:-../benchmark-data}
-  local osh_eval=${2:-$OSH_EVAL_BENCHMARK_DATA}
 
   # Python is considered a shell for benchmarks/compute
   local provenance
   provenance=$(benchmarks/id.sh shell-provenance no-host \
-    "${OTHER_SHELLS[@]}" $osh_eval python2)
+    "${OTHER_SHELLS[@]}" $OIL_NATIVE python2)
 
   benchmarks/osh-parser.sh measure-cachegrind \
-    $provenance $base_dir/osh-parser $osh_eval
+    $provenance $base_dir/osh-parser $OIL_NATIVE
 
 }
 
@@ -95,7 +90,7 @@ cachegrind-builds() {
 
 benchmark-shell-provenance() {
   # empty label
-  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2
+  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OIL_NATIVE python2
 }
 
 measure-shells() {
@@ -134,8 +129,8 @@ all() {
   # - During release, this happens on machine1, but not machine2
   # - Depends on oil-native being built
   if test -n "$do_cachegrind"; then
-    cachegrind-shells '' $OSH_EVAL_BENCHMARK_DATA
-    cachegrind-builds '' $OSH_EVAL_BENCHMARK_DATA
+    cachegrind-shells '' $OIL_NATIVE
+    cachegrind-builds '' $OIL_NATIVE
   fi
 
   measure-shells
@@ -163,11 +158,13 @@ demo-tasks() {
   done
 }
 
+readonly OSH_EVAL_IN_TREE=_bin/cxx-opt/osh_eval.stripped
+
 soil-run() {
   local base_dir=_tmp/benchmark-data
   mkdir -p $base_dir
 
-  cachegrind-shells $base_dir $OSH_EVAL_IN_TREE
+  OIL_NATIVE=$OSH_EVAL_IN_TREE cachegrind-shells $base_dir
 
   find-dir-html $base_dir
 }

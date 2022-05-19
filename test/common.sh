@@ -5,11 +5,8 @@
 test -n "${__TEST_COMMON_SH:-}" && return
 readonly __TEST_COMMON_SH=1
 
-
-# TODO: Remove/rename this.  The release process might use the release binary
-# instead of this dev binary.  test/spec.sh already has its own scheme.
-# This is analogous to $OSH_OVM in benchmarks/common.sh.  
-readonly OSH=${OSH:-bin/osh}
+# Used by test/{gold,osh-usage,stateful,wild-runner}
+OSH=${OSH:-bin/osh}
 
 # For xargs -P in spec-runner.sh, wild-runner.sh.
 MAX_PROCS=${MAX_PROCS:-$(( $(nproc) - 1 ))}

@@ -16,26 +16,13 @@
 #   build/cpython-defs.sh {oil-py-names,filter-methods}
 #     (regenerate C source)
 #
-# Shortcut for below: $0 auto-machine1
+# Run on each machine:
+#   $0 auto-machine1
+#   $0 auto-machine2
 #
-#   TODO: Make sure benchmark-data directory is clean!
-#   sudo -k; sudo true  # clear and re-cache credentials
-#   $0 build-and-test  # build FINAL tarball, run unit/osh2oil suites, etc.
-#     prereq: build/codegen.sh {download,install}-re2c
-#     test/gold.sh run-for-release (outside OSH_HIJACK_SHEBANG)
+# In between:
 #   [switch benchmarks-data repo] commit src/oil-native-* and push to flanders.
-#   $0 metrics  # this can catch bugs, operates on FINAL tarball
-#   test/wild.sh all (3-4 minutes on fast machine, outside OSH_HIJACK_SHEBANG)
-#   $0 spec-all  # tests 2 OSH binaries
-#   benchmarks:
-#     Sync up oilshell/benchmark-data repo.
-#     flanders: $0 benchmark-build, then $0 benchmark-run
-#     - for stability, restart flanders
-#     - prereqs:
-#       - benchmarks/osh-runtime.sh {download,extract}
-#       - benchmarks/ovm-build.sh {download,extract-oil,extract-other}
-#       - build/codegen.sh {download,extract}-clang (for OVM build benchmarks)
-#     lisa: $0 benchmark-run
+#   TODO: Make sure benchmark-data directory is clean!
 #
 # Resume manual work
 #

@@ -3,38 +3,25 @@
 # Common functions for benchmarks.
 #
 
-# What binary the benchmarks will run.  It should be a RELATIVE path,
-# because there's a hack to make it absolute in benchmarks/osh-runtime.sh.
-# TODO: consolidate with OSH_OVM in test/common.sh.  This is overridden by
-# devtools/release.sh.
-readonly OSH_OVM=${OSH_OVM:-_bin/osh}
-
 #readonly MACHINE1=flanders
 #readonly MACHINE2=lenny
 
 readonly MACHINE1=broome
 readonly MACHINE2=lenny
 
-# Notes:
-# - $OSH_OVM is set by devtools/release.sh to the RELATIVE path of the
-#   tar-built one.  Instead of the default of $PWD/_bin/osh.
-# - These are NOT the versions of bash/dash/etc. in _tmp/spec-bin!  I
-#   guess we should test distro-provided binaries.
+readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+readonly BENCHMARK_DATA_OIL_NATIVE=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
+readonly OSH_EVAL_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/_bin/cxx-opt-sh/osh_eval.stripped
+
+#
+# Binaries we want to test, which can be overridden
+#
+
+OSH_OVM=${OSH_OVM:-_bin/osh}  # This is overridden by devtools/release.sh.
+OIL_NATIVE=${OIL_NATIVE:-$OSH_EVAL_BENCHMARK_DATA}
 
 readonly OTHER_SHELLS=( bash dash mksh zsh )
 readonly SHELLS=( ${OTHER_SHELLS[@]} bin/osh $OSH_OVM )
-
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-
-# Needed to run on flanders
-readonly BENCHMARK_DATA_OIL_NATIVE=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
-
-# Build by shell scripts
-readonly OSH_EVAL_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/_bin/cxx-opt-sh/osh_eval.stripped
-
-# build by Ninja
-readonly OSH_EVAL_IN_TREE=_bin/cxx-opt/osh_eval.stripped
-
 
 # NOTE: This is in {build,test}/common.sh too.
 die() {
