@@ -9,6 +9,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
+
+source build/common.sh
+
 # Used in build/common.sh
 download-clang() {
   wget --no-clobber --directory _cache \
@@ -22,8 +26,6 @@ extract-clang() {
 }
 
 test-clang() {
-  source build/common.sh
-
   $CLANGXX --version
 }
 

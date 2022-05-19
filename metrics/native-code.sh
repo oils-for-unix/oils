@@ -124,7 +124,7 @@ run-for-release() {
 
   collect-and-report $OVM_BASE_DIR $dbg $opt
 
-  # Similar to paths in benchmarks/common.sh
+  # TODO: consolidate with benchmarks/common.sh, OSH_EVAL_BENCHMARK_DATA
   # For some reason _bin/cxx-opt/ and _bin/cxx-opt-sh can differ by a few bytes
   local bin_dir="../benchmark-data/src/oil-native-$OIL_VERSION"
   collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/osh_eval
