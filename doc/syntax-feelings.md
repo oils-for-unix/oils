@@ -224,8 +224,27 @@ And are used in type expressions:
 
 -->
 
+## Spaces Around `=` ?
 
-## Identifier Naming Conventions
+In Oil, *your own* variables look like this:
+
+    const x = 42
+    var s = 'foo'
+    setvar s = 'bar'
+
+In contrast, special shell variables are written with a single `NAME=value`
+argument:
+
+    shvar PATH=/tmp {
+      temporary
+    }
+
+Which is similar to the syntax of the `env` command:
+
+    env PYTHONPATH=/tmp ./myscript.py
+
+
+## Naming Conventions for Identifiers
 
 `kebab-case` is for procs and filenames:
 
@@ -251,7 +270,7 @@ External programs also accept environment variables in `CAPS`:
 (In progress) Global variables that are **silently mutated** by the
 interpreter start with `_`:
 
-    _argv   _status   _pipe_status   _line
+    _argv   _status   _pipeline_status   _line
 
 As do functions to access such mutable vars:
 
