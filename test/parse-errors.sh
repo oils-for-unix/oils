@@ -1095,6 +1095,22 @@ oil_place_mutation() {
   '
 }
 
+oil_for() {
+  set +o errexit
+
+  _oil-should-parse '
+  for x in (obj) {
+    echo $x
+  }
+  '
+
+  _oil-parse-error '
+  for x in (obj); do
+    echo $x
+  done
+  '
+}
+
 #
 # Different source_t variants
 #
@@ -1173,6 +1189,7 @@ cases-in-strings() {
   oil_nested_proc
   oil_var_decl
   oil_place_mutation
+  oil_for
   parse_at
   invalid_parens
   nested_source_argvword

@@ -6,7 +6,7 @@ cmd_parse_test.py: Tests for cmd_parse.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import command_e
+from _devbuild.gen.syntax_asdl import command_e, for_iter_e
 from core import error
 from core import test_lib
 from core import ui
@@ -625,7 +625,7 @@ for i in 1 2 3; do
   echo $i
 done
 """)
-    self.assertEqual(3, len(node.iter_words))
+    self.assertEqual(3, len(node.iterable.words))
 
     # Don't iterate over anything!
     node = assert_ParseCommandList(self, """\
@@ -633,14 +633,13 @@ for i in ; do
   echo $i
 done
 """)
-    self.assertEqual(0, len(node.iter_words))
-    self.assertEqual(False, node.do_arg_iter)
+    self.assertEqual(0, len(node.iterable.words))
 
     # Iterate over the default
     node = assert_ParseCommandList(self, """\
 for i; do echo $i; done
 """)
-    self.assertEqual(True, node.do_arg_iter)
+    self.assertEqual(for_iter_e.Args, node.iterable.tag_())
 
     # Iterate over the default, over multiple lines
     node = assert_ParseCommandList(self, """\
@@ -649,7 +648,7 @@ do
   echo $i
 done
 """)
-    self.assertEqual(True, node.do_arg_iter)
+    self.assertEqual(for_iter_e.Args, node.iterable.tag_())
 
   def testParseForExpression(self):
     node = assert_ParseCommandList(self, """\

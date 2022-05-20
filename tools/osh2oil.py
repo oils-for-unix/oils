@@ -775,9 +775,9 @@ class OilPrinter(object):
         self.f.write('for %s in @Argv ' % node.iter_name)
         self.cursor.SkipUntil(node.body.spids[0])
       else:
-        self.cursor.PrintUntil(in_spid + 1)  # 'for x in' and then space
+        self.cursor.PrintUntil(in_spid + 2)  # 'for x in ' and then space
         self.f.write('[')
-        for w in node.iter_words:
+        for w in node.iterable.words:
           self.DoWordInCommand(w, local_symbols)
         self.f.write(']')
         #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)

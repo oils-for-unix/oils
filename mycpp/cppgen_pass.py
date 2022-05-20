@@ -2334,6 +2334,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 'command_e', 'command', 
                 'condition_e', 'condition', 
+                'for_iter_e', 'for_iter', 
                 'arith_expr_e', 'arith_expr',
                 'bool_expr_e', 'bool_expr',
                 'expr_e', 'expr',

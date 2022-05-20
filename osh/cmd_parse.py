@@ -1186,15 +1186,23 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id == Id.KW_In:
+      in_spid = word_.LeftMostSpanForWord(self.cur_word)  # for translation only
+
       self._Next()  # skip in
+      if self.w_parser.LookPastSpace() == Id.Op_LParen:
+        enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+        node.iterable = for_iter.Oil(enode)
 
-      # TODO: Do _Peek() here?
-      in_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
-      iter_words, semi_spid = self.ParseForWords()
+        # For simplicity, we don't accept for x in (obj); do ...
+        self._Peek()
+        if self.c_id != Id.Lit_LBrace:
+          p_die('Expected { after iterable expression', word=self.cur_word)
+      else:
+        iter_words, semi_spid = self.ParseForWords()
 
-      words2 = braces.BraceDetectAll(iter_words)
-      words3 = word_.TildeDetectAll(words2)
-      node.iterable = for_iter.Words(words3)
+        words2 = braces.BraceDetectAll(iter_words)
+        words3 = word_.TildeDetectAll(words2)
+        node.iterable = for_iter.Words(words3)
 
     elif self.c_id == Id.Op_Semi:  # for x; do
       node.iterable = for_iter.Args()  # implicitly loop over "$@"
