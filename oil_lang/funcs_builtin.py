@@ -124,8 +124,11 @@ class _Shvar_get(object):
     return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic)
 
 
-class _BlockToStr(object):
-  """ block_to_str() """
+class _ParseConfig(object):
+  """ parse_config()
+
+  type: (str) -> command_t
+  """
   def __init__(self, mem):
     self.mem = mem
 
@@ -133,8 +136,17 @@ class _BlockToStr(object):
     raise NotImplementedError()
 
 
-class _BlockToDict(object):
-  """ block_to_dict() """
+class _EvalToDict(object):
+  """ eval_to_dict() """
+  def __init__(self, mem):
+    self.mem = mem
+
+  def __call__(self, *args):
+    return {'TODO': 'eval_to_dict()'}
+
+
+class _BlockAsStr(object):
+  """ block_as_str() """
   def __init__(self, mem):
     self.mem = mem
 
@@ -216,9 +228,21 @@ def Init(mem):
 
   SetGlobalFunc(mem, 'shvar_get', _Shvar_get(mem))
 
-  SetGlobalFunc(mem, 'block_to_str', _BlockToStr(mem))
-  SetGlobalFunc(mem, 'block_to_dict', _BlockToDict(mem))
-  SetGlobalFunc(mem, '_vm_eval', _VmEval(mem))
+  # Takes a filename.  Note that parse_equals should be on.
+  SetGlobalFunc(mem, 'parse_config', _ParseConfig(mem))
+
+  # for top level namespace, and the default for lower case 'server' blocks
+  #
+  # Security: You need a whole different VM?  User should not be able to modify
+  # PATH or anything else.  Yeah you get a new state.Mem(), but you copy some
+  # procs with push-procs
+
+  # command_t -> Dict
+  SetGlobalFunc(mem, 'eval_to_dict', _EvalToDict(mem))
+
+  # for upper case TASK blocks
+  # command_t -> Str
+  SetGlobalFunc(mem, 'block_as_str', _BlockAsStr(mem))
 
   #
   # Borrowed from Python

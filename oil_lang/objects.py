@@ -26,7 +26,7 @@ else:
 _ = log
 
 
-# These are for data frames?
+# TODO: remove these
 
 class BoolArray(BoolList):
   """
@@ -71,45 +71,6 @@ class AssocArray(AssocArrayDict):
   pass
 
 
-class Table(TableDict):
-  """A table is our name for a data frame. 
-  
-  It's represented by a dict of arrays.
-
-  Notes:
-
-  - Can we do table[rowexpr, columnexpr] slicing?
-
-    t[name == 'bob',]              # A 1-tuple isn't good?
-    t[name == 'bob', :]            # This is better
-    t[name == 'bob', @(name age)]  # Select columns
-
-  Problem: it would require lazy evaluation.
-
-  - We don't need Ellipsis because we only have two dimensions.
-
-  print(b[...,1]) #Equivalent to b[: ,: ,1 ] 
-  """
-  def __init__(self):
-    # type: () -> None
-    pass
-
-  def __getitem__(self, index):
-    # type: (Any) -> Any
-    """
-    TODO: Accept slices here.
-
-    d['mycol']  # returns a vector
-    d->mycol
-
-    d[rowexpr, colexpr]  # how to implement this?
-    """
-    # Shows the slice objects
-    #log('index %s', index)
-
-    return 'TODO: Table Slicing'
-
-
 class Func(object):
   """An Oil function declared with 'func'."""
   def __init__(self, node, pos_defaults, named_defaults, cmd_ev):
@@ -124,39 +85,6 @@ class Func(object):
     raise NotImplementedError()
     # Moved to tea
     #return self.cmd_ev.RunOilFunc(self, args, kwargs)
-
-
-class Lambda(object):
-  """An Oil function like |x| x+1 """
-  def __init__(self, node, cmd_ev):
-    # type: (expr__Lambda, CommandEvaluator) -> None
-    self.node = node
-    self.cmd_ev = cmd_ev
-
-  def __call__(self, *args, **kwargs):
-    # type: (*Any, **Any) -> Any
-    raise NotImplementedError()
-    # Moved to tea
-    # return self.cmd_ev.RunLambda(self.node, args, kwargs)
-
-
-class Module(object):
-  """An Oil module.
-
-  The 'use' keyword creates an object of this type in the current namespace.
-
-  It holds both variables and functions.
-
-  But it doesn't have "$@" or anything else that Mem has?
-  Mem also has introspection.  For function calls and such.
-  Maybe that only applies to 'proc' and not 'func'.
-  """
-  def __init__(self, name):
-    # type: (str) -> None
-    self.name = name
-    self.docstring = ''
-    # items
-    self.attrs = {} # type: Dict[str, Any]
 
 
 class Regex(object):

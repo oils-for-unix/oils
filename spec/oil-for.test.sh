@@ -119,3 +119,31 @@ k
 k2
 ## END
 
+
+
+#### parse_unquoted eliminates confusion
+
+shopt --unset parse_unquoted
+
+var mylist = ['foo', 'bar']
+
+for x in mylist {
+  echo BAD $x
+}
+
+shopt --set parse_unquoted
+
+for x in (mylist) {
+  echo $x
+}
+
+for x in 'mylist' {
+  echo OK $x
+}
+
+## STDOUT:
+BAD mylist
+foo
+bar
+OK mylist
+## END

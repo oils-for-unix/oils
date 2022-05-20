@@ -95,7 +95,8 @@ shopt --set parse_equals {
 
     # Or we can do bin/oil --source ci_dialect.oil -- myconfig.oil
 
-    const config = _vm_eval(config_path, first_words)
+    const config = parse_config(config_path)
+    const block = eval_to_dict(first_words)
   }
 }
 
@@ -122,7 +123,8 @@ json write (config)
 #
 # }
 
-const config = _vm_eval('spec/testdata/config/package-manager.oil', %(package user))
+const config = parse_config('spec/testdata/config/package-manager.oil')
+const block = eval_to_dict(%(package user))
 
 ## STDOUT:
 TODO
