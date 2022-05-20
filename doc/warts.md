@@ -35,6 +35,23 @@ If we were starting from scratch, I would have chosen a different prefix, but
 it isn't worth the breakage and complexity.  All string literals exist in both
 command and expression mode, which is tricky to implement.
 
+### Two Left Parens Should be Separated By Space
+
+No:
+
+    if ((x + 1) < n) {  # note ((
+      echo 'less'
+    }
+
+Yes:
+
+    if ( (x + 1) < n) {  # add a space
+      echo 'less'
+    }
+
+This is because the `((` token is for bash arithmetic, which is disallowed in
+Oil.
+
 ### Function Sub Isn't Allowed in Double Quoted Strings
 
 You can do

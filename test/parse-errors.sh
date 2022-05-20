@@ -885,6 +885,30 @@ parse_backslash() {
   _should-parse 'echo \. \- \/ \a \Z \0 \9'
 }
 
+parse_dparen() {
+  set +o errexit
+
+  _oil-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
+
+  # Accepted workaround: add space
+  _oil-should-parse 'if ( (1 > 0 and 43 > 42) ) { echo yes }'
+
+  # Bash (( construct
+  local bad
+
+  bad='((1 > 0 && 43 > 42))'
+  _should-parse "$bad"
+  _oil-parse-error "$bad"
+
+  bad='if ((1 > 0 && 43 > 42)); then echo yes; fi'
+  _should-parse "$bad"
+  _oil-parse-error "$bad"
+
+  bad='for ((x = 1; x < 5; ++x)); do echo $x; done'
+  _should-parse "$bad"
+  _oil-parse-error "$bad"
+}
+
 oil_to_make_nicer() {
   set +o errexit
 
@@ -1140,6 +1164,7 @@ cases-in-strings() {
   parse_backticks
   parse_dollar
   parse_backslash
+  parse_dparen
   oil_to_make_nicer
   oil_nested_proc
   oil_var_decl

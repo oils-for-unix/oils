@@ -1241,6 +1241,10 @@ class CommandParser(object):
     else:
       self._Peek()
       if self.c_id == Id.Op_DLeftParen:
+        if not self.parse_opts.parse_dparen():
+          p_die("Bash for loops aren't allowed (parse_dparen)",
+                word=self.cur_word)
+
         # for (( i = 0; i < 10; i++)
         n1 = self._ParseForExprLoop()
         n1.redirects = self._ParseRedirectList()
@@ -1628,6 +1632,9 @@ class CommandParser(object):
       n6.redirects = self._ParseRedirectList()
       return n6
     if self.c_id == Id.Op_DLeftParen:
+      if not self.parse_opts.parse_dparen():
+        p_die('You may want a space between parens (parse_dparen)',
+              word=self.cur_word)
       n7 = self.ParseDParen()
       n7.redirects = self._ParseRedirectList()
       return n7
