@@ -14,6 +14,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     condition, condition_t,
+    for_iter,
     command, command_t,
     command__Simple, command__DoGroup, command__ForExpr, command__ForEach,
     command__WhileUntil, command__Case, command__If, command__ShFunction,
@@ -1168,7 +1169,6 @@ class CommandParser(object):
   def _ParseForEachLoop(self, for_spid):
     # type: (int) -> command__ForEach
     node = command.ForEach()
-    node.do_arg_iter = False
     node.spids.append(for_spid)  # for $LINENO and error fallback
 
     ok, iter_name, quoted = word_.StaticEval(self.cur_word)
@@ -1194,14 +1194,14 @@ class CommandParser(object):
 
       words2 = braces.BraceDetectAll(iter_words)
       words3 = word_.TildeDetectAll(words2)
-      node.iter_words = words3
+      node.iterable = for_iter.Words(words3)
 
     elif self.c_id == Id.Op_Semi:  # for x; do
-      node.do_arg_iter = True  # implicit for loop
+      node.iterable = for_iter.Args()  # implicitly loop over "$@"
       self._Next()
 
     elif self.c_id == Id.KW_Do:
-      node.do_arg_iter = True  # implicit for loop
+      node.iterable = for_iter.Args()  # implicitly loop over "$@"
       # do not advance
 
     else:  # for foo BAD

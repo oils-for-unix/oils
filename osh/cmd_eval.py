@@ -35,7 +35,8 @@ from _devbuild.gen.syntax_asdl import (
     assign_op_e,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
-    redir_param_e, redir_param__HereDoc, proc_sig
+    redir_param_e, redir_param__HereDoc, proc_sig,
+    for_iter_e, for_iter__Words, for_iter__Oil,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
@@ -1120,11 +1121,24 @@ class CommandEvaluator(object):
         self.mem.SetCurrentSpanId(node.spids[0])  # for x in $LINENO
 
         iter_name = node.iter_name
-        if node.do_arg_iter:
-          iter_list = self.mem.GetArgv()
-        else:
-          words = braces.BraceExpandWords(node.iter_words)
-          iter_list = self.word_ev.EvalWordSequence(words)
+
+        iter_list = None  # type: List[str]
+
+        iterable = node.iterable
+
+        UP_iterable = iterable
+        with tagswitch(node.iterable) as case:
+          if case (for_iter_e.Args):
+            iter_list = self.mem.GetArgv()
+
+          elif case(for_iter_e.Words):
+            iterable = cast(for_iter__Words, UP_iterable)
+            words = braces.BraceExpandWords(iterable.words)
+            iter_list = self.word_ev.EvalWordSequence(words)
+
+          elif case(for_iter_e.Oil):
+            iterable = cast(for_iter__Oil, UP_iterable)
+            raise AssertionError()
 
         status = 0  # in case we don't loop
         self.loop_level += 1
