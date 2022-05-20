@@ -980,10 +980,14 @@ class CommandParser(object):
               "to pretty print an expression", token=tok)
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
-    if self.parse_opts.parse_equals() and len(preparsed_list):
+    if not self.parse_opts.parse_sh_assign() and len(preparsed_list):
       left_token, _, _, _ = preparsed_list[0]
-      p_die("name=val isn't allowed when shopt 'parse_equals' is on.\n"
-            "Hint: add 'env' before it, or spaces around =", token=left_token)
+      if suffix_words:  # PYTHONPATH=. foo.py
+        p_die('Use env to set the environment (parse_sh_assign)',
+              token=left_token)
+      else:  # x=y
+        p_die('Use const or var/setvar to assign in Oil (parse_sh_assign)',
+              token=left_token)
 
     # Set a reference to words and redirects for completion.  We want to
     # inspect this state after a failed parse.

@@ -506,18 +506,24 @@ k2
 shopt -s parse_equals
 x = 1 + 2*3
 echo $x
+
+# still allowed since we didn't unset parse_sh_assign
+y=foo
+echo $y
+
 ## STDOUT:
 7
+foo
 ## END
 
-#### parse_equals: disallows ENV=val mycommand
-shopt -s parse_equals
+#### parse_sh_assign: disallows ENV=val mycommand
+shopt --set oil:all
 ENV=val echo hi
 ## status: 2
 ## stdout-json: ""
 
-#### parse_equals: disallows var=val
-shopt -s parse_equals
+#### parse_sh_assign: disallows var=val
+shopt --set oil:all
 var=val
 ## status: 2
 ## stdout-json: ""

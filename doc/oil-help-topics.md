@@ -167,7 +167,9 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_backslash (-u)    Bad backslashes in $''
                   parse_backticks (-u)    Legacy syntax `echo hi`
                   parse_dollar (-u)      Is $ allowed for \$?  Maybe $/d+/
+                  parse_dparen (-u)      Is (( legacy arithmetic allowed?
                   parse_ignored (-u)     Parse, but ignore, certain redirects
+                  parse_sh_assign (-u)   Are legacy a=b and PATH=. cmd allowed?
                   X copy_env (-u)        Use $[ENV->PYTHONPATH] when false
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
