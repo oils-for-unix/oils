@@ -894,3 +894,23 @@ echo $_status
 3
 3
 ## END
+
+#### Lambda not implemented
+const f = |x| x + 1
+
+## status: 2
+## STDOUT:
+## END
+
+#### Anonymous function expression not implemented (Tea)
+
+# Note: this results in a expr.Lambda node.  But it's not parsed.
+
+const f = func(x) {
+  myfunc(x)
+  return x + 1
+}
+
+## status: 2
+## STDOUT:
+## END

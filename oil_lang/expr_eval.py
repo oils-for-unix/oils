@@ -559,10 +559,10 @@ class OilEvaluator(object):
 
       return _gen()
 
-    if node.tag == expr_e.Lambda:
-      raise NotImplementedError()
-      # This used to depend on cmd_ev, but we no longer have it.
-      #return objects.Lambda(node, None)
+    if node.tag == expr_e.Lambda:  # |x| x+1 syntax is reserved
+      # TODO: Location information for |, or func
+      # Note: anonymous functions also evaluate to a Lambda, but they shouldn't
+      e_die('Lambda reserved but not implemented', status=2)
 
     if node.tag == expr_e.FuncCall:
       func = self._EvalExpr(node.func)
