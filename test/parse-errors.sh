@@ -888,11 +888,6 @@ parse_backslash() {
 parse_dparen() {
   set +o errexit
 
-  _oil-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
-
-  # Accepted workaround: add space
-  _oil-should-parse 'if ( (1 > 0 and 43 > 42) ) { echo yes }'
-
   # Bash (( construct
   local bad
 
@@ -907,6 +902,15 @@ parse_dparen() {
   bad='for ((x = 1; x < 5; ++x)); do echo $x; done'
   _should-parse "$bad"
   _oil-parse-error "$bad"
+
+  if is-oil-native; then
+    echo 'Skipping parse_dparen cases'
+    return
+  fi
+  _oil-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
+
+  # Accepted workaround: add space
+  _oil-should-parse 'if ( (1 > 0 and 43 > 42) ) { echo yes }'
 }
 
 oil_to_make_nicer() {
