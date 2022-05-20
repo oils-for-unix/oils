@@ -26,29 +26,7 @@ else:
 _ = log
 
 
-# TODO: remove these
-
-class BoolArray(BoolList):
-  """
-  var b = @[true false false]
-  var b = @[T F F]
-  """
-  pass
-
-class IntArray(IntList):
-  """
-  var b = @[1 2 3 -42]
-  """
-  pass
-
-
-class FloatArray(FloatList):
-  """
-  var b = @[1.1 2.2 3.9]
-  """
-  pass
-
-
+# TODO: Consolidate with value_t
 class StrArray(StrList):
   """
   local oldarray=(a b c)  # only strings, but deprecated

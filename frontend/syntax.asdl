@@ -425,7 +425,6 @@ module syntax
     -- @(one 'two' "$three")
   | ShArrayLiteral %sh_array_literal
     -- @[a b c] @[1 2 3] @[(1+1) (2+2)]
-  | ArrayLiteral(Token left, expr* items)
   | RegexLiteral(Token left, re regex, Token* flags, Token? trans_pref)
 
   | SimpleVarSub %simple_var_sub
