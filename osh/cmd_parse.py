@@ -982,7 +982,7 @@ class CommandParser(object):
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
     if not self.parse_opts.parse_sh_assign() and len(preparsed_list):
       left_token, _, _, _ = preparsed_list[0]
-      if suffix_words:  # PYTHONPATH=. foo.py
+      if len(suffix_words):  # PYTHONPATH=. foo.py
         p_die('Use env to set the environment (parse_sh_assign)',
               token=left_token)
       else:  # x=y
