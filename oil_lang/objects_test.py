@@ -11,9 +11,8 @@ from oil_lang import objects  # module under test
 
 class ObjectsTest(unittest.TestCase):
 
-  def testArrays(self):
-    a = objects.IntArray([1, 2, 3])
-    print(a)
+  def testRegex(self):
+    a = objects.Regex(None)
 
 
 if __name__ == '__main__':

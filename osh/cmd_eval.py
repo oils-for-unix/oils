@@ -25,7 +25,7 @@ from _devbuild.gen.syntax_asdl import (
     command__AndOr, command__Case, command__CommandList, command__ControlFlow,
     command__DBracket, command__DoGroup, command__DParen,
     command__ExpandedAlias, command__Expr, command__ForEach, command__ForExpr,
-    command__Func, command__If, command__NoOp, command__OilForIn,
+    command__If, command__NoOp, command__OilForIn,
     command__Pipeline, command__PlaceMutation, command__Proc,
     command__Sentence, command__ShAssignment, command__ShFunction,
     command__Simple, command__Subshell, command__TimeBlock, command__VarDecl,

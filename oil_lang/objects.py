@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+
 """
 objects.py
 
@@ -9,11 +9,10 @@ from __future__ import print_function
 from core.pyerror import log
 from oil_lang import regex_translate
 
-from typing import TYPE_CHECKING, List, Dict, Any, Optional
+from typing import TYPE_CHECKING, List, Optional
 if TYPE_CHECKING:
   StrList = List[str]
-  from _devbuild.gen.syntax_asdl import re_t, command__Func, expr__Lambda
-  from osh.cmd_eval import CommandEvaluator
+  from _devbuild.gen.syntax_asdl import re_t
 else:
   StrList = list
 

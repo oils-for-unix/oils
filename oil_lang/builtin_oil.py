@@ -323,16 +323,22 @@ class Write(_Builtin):
     return 0
 
 
-class Qtsv(_Builtin):
-  """QTSV I/O.
+class Qtt(_Builtin):
+  """QTT I/O.
 
-  # Takes a block.
-  tsv2 echo :var1 :var2 {
-    # Does this make sense?
-    x = %(a b c)
-    age = [1, 2, 3]
-  }
+  # Cut down a file and read it into memory as a dict
+  cat foo.qtt | select %(name age) | qtt read :filtered
 
-  tsv2 read :x < foo.tsv2
+  # Literal by column
+  # I guess it has to detect the types
+  qtt write ({name: %(foo bar), age: [10, 20]})
+
+  # Literal by row.  Will throw a syntax error.
+  # Good for unit tests and so forth.
+  qtt prettify :x <<< '''
+  name  age:Int
+  bob   20 
+  carol 30
+  '''
   """
   pass
