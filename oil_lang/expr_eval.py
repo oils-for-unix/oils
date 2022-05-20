@@ -282,6 +282,7 @@ class OilEvaluator(object):
       words = braces.BraceExpandWords(node.words)
       strs = self.word_ev.EvalWordSequence(words)
       #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+      # TODO: unify with value_t
       return objects.StrArray(strs)
 
     if node.tag == expr_e.DoubleQuoted:
@@ -491,6 +492,11 @@ class OilEvaluator(object):
       return dict(zip(keys, values))
 
     if node.tag == expr_e.ListComp:
+      e_die('List comprehension reserved but not implemented', status=2)
+
+      #
+      # TODO: Move this code to the new for loop
+      #
 
       # TODO:
       # - Consolidate with command_e.OilForIn in osh/cmd_eval.py?
@@ -528,10 +534,15 @@ class OilEvaluator(object):
       return result
 
     if node.tag == expr_e.GeneratorExp:
+      e_die('Generator expression reserved but not implemented', status=2)
+
+      #
+      # TODO: Move this code to the new for loop
+      #
+
       comp = node.generators[0]
       obj = self._EvalExpr(comp.iter)
 
-      # TODO: Support (x for x, y in ...)
       iter_name = comp.lhs[0].name.val
 
       it = obj.__iter__()

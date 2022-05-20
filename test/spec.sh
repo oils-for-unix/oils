@@ -1036,6 +1036,11 @@ oil-bugs() {
     $OIL_LIST "$@"
 }
 
+oil-reserved() {
+  sh-spec spec/oil-reserved.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
 oil-with-sh() {
   sh-spec spec/oil-with-sh.test.sh --osh-failures-allowed 3 \
     $OIL_LIST "$@"

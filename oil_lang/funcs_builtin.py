@@ -8,12 +8,10 @@ from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core.pyerror import e_die, log
 from oil_lang import expr_eval
-from oil_lang import objects
 
 from typing import Callable, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from core import state
-  from oil_lang.objects import ParameterizedArray
   from osh import glob_
   from osh import split
   #from osh import cmd_eval
@@ -22,7 +20,7 @@ _ = log
 
 
 def SetGlobalFunc(mem, name, func):
-  # type: (state.Mem, str, Union[Callable, ParameterizedArray, type]) -> None
+  # type: (state.Mem, str, Union[Callable, type]) -> None
   """Used by bin/oil.py to set split(), etc."""
   assert callable(func), func
   mem.SetValue(sh_lhs_expr.Name(name), value.Obj(func), scope_e.GlobalOnly)

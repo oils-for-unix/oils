@@ -431,22 +431,6 @@ echo $len(two)
 2
 ## END
 
-#### List comprehension (deferred)
-shopt -s oil:all
-
-var n = [i*2 for i in range(5)]
-write --sep ' ' @n
-
-# TODO: Test this
-#var n = [i*2 for i,j in range(5)]
-
-var even = [i*2 for i in range(5) if i % 2 === 0]
-write --sep ' ' @even
-## STDOUT:
-0 2 4 6 8
-0 4 8
-## END
-
 #### in, not in
 var d = [1,2,3]
 var b = 1 in d
@@ -895,22 +879,3 @@ echo $_status
 3
 ## END
 
-#### Lambda not implemented
-const f = |x| x + 1
-
-## status: 2
-## STDOUT:
-## END
-
-#### Anonymous function expression not implemented (Tea)
-
-# Note: this results in a expr.Lambda node.  But it's not parsed.
-
-const f = func(x) {
-  myfunc(x)
-  return x + 1
-}
-
-## status: 2
-## STDOUT:
-## END

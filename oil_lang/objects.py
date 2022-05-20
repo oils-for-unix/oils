@@ -9,9 +9,8 @@ from __future__ import print_function
 from core.pyerror import log
 from oil_lang import regex_translate
 
-from typing import Union, TYPE_CHECKING, List, Dict, Any, Optional
+from typing import TYPE_CHECKING, List, Dict, Any, Optional
 if TYPE_CHECKING:
-  from typing import Type
   BoolList = List[bool]
   IntList = List[int]
   FloatList = List[float]
@@ -25,29 +24,6 @@ else:
   AssocArrayDict = TableDict = dict
 
 _ = log
-
-
-class ParameterizedArray(object):
-  """
-  Parameterized
-  For Array[Bool]
-  """
-  def __getitem__(self, typ):
-    # type: (type) -> Union[Type[BoolArray], Type[IntArray], Type[FloatArray], Type[StrArray]]
-    if typ is bool:
-      return BoolArray
-    if typ is int:
-      return IntArray
-    if typ is float:
-      return FloatArray
-    if typ is str:
-      return StrArray
-    raise AssertionError('typ: %s' % typ)
-
-  def __call__(self):
-    # type: () -> None
-    # Array(1 2 3)
-    raise AssertionError("Arrays need a parameterized type")
 
 
 # These are for data frames?
