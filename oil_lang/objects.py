@@ -11,22 +11,17 @@ from oil_lang import regex_translate
 
 from typing import TYPE_CHECKING, List, Dict, Any, Optional
 if TYPE_CHECKING:
-  BoolList = List[bool]
-  IntList = List[int]
-  FloatList = List[float]
   StrList = List[str]
-  TableDict = Dict[Any, List[Any]]
-  AssocArrayDict = Dict[Any, Any]
   from _devbuild.gen.syntax_asdl import re_t, command__Func, expr__Lambda
   from osh.cmd_eval import CommandEvaluator
 else:
-  BoolList = IntList = FloatList = StrList = list
-  AssocArrayDict = TableDict = dict
+  StrList = list
 
 _ = log
 
 
 # TODO: Consolidate with value_t
+# Use value.Obj for now
 class StrArray(StrList):
   """
   local oldarray=(a b c)  # only strings, but deprecated
@@ -41,28 +36,6 @@ class StrArray(StrList):
   In C, do both of them have the same physical representation?
   """
   pass
-
-
-# TODO: Maybe use this so that 'pp my_assoc_array' works?  Or does it even
-# matter how it was defined?
-class AssocArray(AssocArrayDict):
-  pass
-
-
-class Func(object):
-  """An Oil function declared with 'func'."""
-  def __init__(self, node, pos_defaults, named_defaults, cmd_ev):
-    # type: (command__Func, List[Any], Dict[str, Any], CommandEvaluator) -> None
-    self.node = node
-    self.pos_defaults = pos_defaults
-    self.named_defaults = named_defaults
-    self.cmd_ev = cmd_ev
-
-  def __call__(self, *args, **kwargs):
-    # type: (*Any, **Any) -> Any
-    raise NotImplementedError()
-    # Moved to tea
-    #return self.cmd_ev.RunOilFunc(self, args, kwargs)
 
 
 class Regex(object):

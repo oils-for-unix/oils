@@ -12,10 +12,26 @@ from __future__ import print_function
 import sys
 
 
+class Func(object):
+
+  def __init__(self, node, pos_defaults, named_defaults, cmd_ev):
+    # type: (command__Func, List[Any], Dict[str, Any], CommandEvaluator) -> None
+    self.node = node
+    self.pos_defaults = pos_defaults
+    self.named_defaults = named_defaults
+    self.cmd_ev = cmd_ev
+
+  def __call__(self, *args, **kwargs):
+    # type: (*Any, **Any) -> Any
+    raise NotImplementedError()
+    # Moved to tea
+    #return self.cmd_ev.RunOilFunc(self, args, kwargs)
+
+
 class TeaEvaluator(object):
 
   def RunOilFunc(self, func, args, kwargs):
-    # type: (objects.Func, Tuple[Any, ...], Dict[str, Any]) -> Any
+    # type: (Func, Tuple[Any, ...], Dict[str, Any]) -> Any
     """Run an Oil function.
 
     var x = abs(y)   do f(x)   @split(mystr)   @join(myarray)
@@ -119,4 +135,3 @@ class TeaEvaluator(object):
     finally:
       self.mem.PopTemp()
     return return_val
-

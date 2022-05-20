@@ -130,15 +130,19 @@ if mylib.PYTHON:
     """
     if isinstance(py_val, str):  # var s = "hello $name"
       val = value.Str(py_val)  # type: Any
-    elif isinstance(py_val, objects.StrArray):  # var a = @(a b)
+
+    elif isinstance(py_val, objects.StrArray):  # var a = %(a b)
       # It's safe to convert StrArray to MaybeStrArray.
       val = value.MaybeStrArray(py_val)
+
     elif isinstance(py_val, dict):  # var d = {name: "bob"}
       # TODO: Is this necessary?  Shell assoc arrays aren't nested and don't have
       # arbitrary values.
       val = value.AssocArray(py_val)
+
     else:
       val = value.Obj(py_val)
+
     return val
 
 
@@ -1250,31 +1254,6 @@ class CommandEvaluator(object):
             node.name.val, node.name.span_id, node.sig, node.body, defaults,
             False)  # no dynamic scope
 
-        status = 0
-
-      elif case(command_e.Func):
-        node = cast(command__Func, UP_node)
-        # TODO: These should be piped into the tea evaluator ...
-
-        # Note: funcs have the Python pitfall where mutable objects shouldn't be
-        # used as default args.
-
-        if mylib.PYTHON:
-          pos_defaults = [None] * len(node.pos_params)
-          for i, param in enumerate(node.pos_params):
-            if param.default_val:
-              py_val = self.expr_ev.EvalExpr(param.default_val)
-              pos_defaults[i] = _PyObjectToVal(py_val)
-
-          named_defaults = {}
-          for i, param in enumerate(node.named_params):
-            if param.default_val:
-              obj = self.expr_ev.EvalExpr(param.default_val)
-              named_defaults[param.name.val] = value.Obj(obj)
-
-          obj = objects.Func(node, pos_defaults, named_defaults, self)
-          self.mem.SetValue(
-              lvalue.Named(node.name.val), value.Obj(obj), scope_e.GlobalOnly)
         status = 0
 
       elif case(command_e.If):
