@@ -403,7 +403,7 @@ suite: '{' [Op_Newline] [func_items] '}'
 func_item: (
   ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
 
-  # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
+  # TODO: if/switch, with, try/except/throw, etc.
 | 'while' test suite
 | 'for' name_type_list 'in' test suite
 

@@ -62,23 +62,23 @@ if mylib.PYTHON:
       self._Print(pnode, 0, 0)
 
 
-def _Classify(gr, tok):
-  # type: (Grammar, Token) -> int
+def _Classify(gr, tok, tea_keywords):
+  # type: (Grammar, Token, bool) -> int
 
   # We have to match up what ParserGenerator.make_grammar() did when
   # calling make_label() and make_first().  See classify() in
   # opy/pgen2/driver.py.
 
-  # 'x' and 'for' are both tokenized as Expr_Name.  This handles the 'for'
-  # case.
-  if tok.id == Id.Expr_Name:
+  # Special case for top-level Tea keywords like data/enum/class, etc.
+  # TODO: Do this more elegantly at grammar build time.
+  if tea_keywords and tok.id == Id.Expr_Name:
     if tok.val in gr.keywords:
+      #log('NEW %r', gr.keywords[tok.val])
       return gr.keywords[tok.val]
 
   # This handles 'x'.
-  typ = tok.id
-  if typ in gr.tokens:
-    return gr.tokens[typ]
+  if tok.id in gr.tokens:
+    return gr.tokens[tok.id]
 
   if tok.id == Id.Unknown_DEqual:
     p_die('Use === to be exact, or ~== to convert types', token=tok)
@@ -103,8 +103,8 @@ _OTHER_BALANCE = {
 }
 
 
-def _PushOilTokens(parse_ctx, gr, p, lex):
-  # type: (ParseContext, Grammar, parse.Parser, Lexer) -> Token
+def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
+  # type: (ParseContext, Grammar, parse.Parser, Lexer, bool) -> Token
   """Push tokens onto pgen2's parser.
 
   Returns the last token so it can be reused/seen by the CommandParser.
@@ -152,7 +152,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
     assert tok.id < 256, Id_str(tok.id)
 
-    ilabel = _Classify(gr, tok)
+    ilabel = _Classify(gr, tok, tea_keywords)
     #log('tok = %s, ilabel = %d', tok, ilabel)
 
     if p.addtoken(tok.id, tok, ilabel):
@@ -202,7 +202,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         assert not done  # can't end the expression
 
         # Now push the closing )
-        ilabel = _Classify(gr, close_tok)
+        ilabel = _Classify(gr, close_tok, tea_keywords)
         done = p.addtoken(tok.id, close_tok, ilabel)
         assert not done  # can't end the expression
 
@@ -231,7 +231,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         assert not done  # can't end the expression
 
         # Now push the closing )
-        ilabel = _Classify(gr, right_token)
+        ilabel = _Classify(gr, right_token, tea_keywords)
         done = p.addtoken(right_token.id, right_token, ilabel)
         assert not done  # can't end the expression
 
@@ -303,10 +303,11 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 class ExprParser(object):
   """A wrapper around a pgen2 parser."""
 
-  def __init__(self, parse_ctx, gr):
-    # type: (ParseContext, Grammar) -> None
+  def __init__(self, parse_ctx, gr, tea_keywords):
+    # type: (ParseContext, Grammar, bool) -> None
     self.parse_ctx = parse_ctx
     self.gr = gr
+    self.tea_keywords = tea_keywords
     # Reused multiple times.
     self.push_parser = parse.Parser(gr)
 
@@ -317,7 +318,7 @@ class ExprParser(object):
     self.push_parser.setup(start_symbol)
     try:
       last_token = _PushOilTokens(self.parse_ctx, self.gr, self.push_parser,
-                                  lexer)
+                                  lexer, self.tea_keywords)
     except parse.ParseError as e:
       #log('ERROR %s', e)
       # TODO:
@@ -330,6 +331,5 @@ class ExprParser(object):
 
       p_die('Syntax error in expression (near %s)', ui.PrettyId(e.tok.id),
             token=e.tok)
-      #raise error.Parse('Syntax error in expression', token=e.tok)
 
     return self.push_parser.rootnode, last_token

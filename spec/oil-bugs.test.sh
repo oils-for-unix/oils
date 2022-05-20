@@ -20,3 +20,17 @@ env OSH_HIJACK_SHEBANG=1 $SH tmp.oil
 ## STDOUT:
 hi
 ## END
+
+#### Tea keywords don't interfere with Oil expressions
+
+var d = {data: 'foo'}
+
+echo $[d->data]
+
+var e = {enum: 1, class: 2, import: 3, const: 4, var: 5, set: 6}
+echo $len(e)
+
+## STDOUT:
+foo
+6
+## END

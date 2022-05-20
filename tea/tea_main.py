@@ -77,7 +77,7 @@ def Main(arg_r):
   loader = pyutil.GetResourceLoader()
   oil_grammar = pyutil.LoadOilGrammar(loader)
 
-  # Not used in tea, but OK...
+  # Not used in Tea, but OK...
   opt0_array = state.InitOpts()
   no_stack = None  # type: List[bool]  # for mycpp
   opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
