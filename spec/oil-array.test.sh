@@ -71,14 +71,15 @@ write status=$?
 status=0
 ## END
 
-#### typeof should show the type
+#### printing type of array with pp and =
 var b = %(true)
 # pp cell should show the type of the object?
 pp cell b
-#typeof b
+= b
 
 var empty = %()
 pp cell empty
+= empty
 
 ## STDOUT:
 Array[Bool]
