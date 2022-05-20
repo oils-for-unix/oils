@@ -94,3 +94,28 @@ for i item in a b c {
 3 c
 ## END
 
+
+#### Iterate over shell data structures
+
+# TODO: use new style
+
+declare array=(one two three)
+for (item in array) {
+  echo $item
+}
+
+echo ---
+
+declare -A A=([k]=v [k2]=v2)  # iterate over keys
+for (key in A) {
+  echo $key
+} | sort
+## STDOUT:
+one
+two
+three
+---
+k
+k2
+## END
+

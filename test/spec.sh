@@ -959,7 +959,7 @@ oil-string() {
 }
 
 oil-slice-range() {
-  sh-spec spec/oil-slice-range.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/oil-slice-range.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
@@ -974,12 +974,12 @@ oil-proc() {
 }
 
 oil-for() {
-  sh-spec spec/oil-for.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/oil-for.test.sh --osh-failures-allowed 8 \
     $OIL_LIST "$@"
 }
 
 oil-funcs-builtin() {
-  sh-spec spec/oil-funcs-builtin.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/oil-funcs-builtin.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 

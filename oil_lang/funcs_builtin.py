@@ -226,18 +226,12 @@ def Init(mem):
   # Borrowed from Python
   #
 
-  SetGlobalFunc(mem, 'Table', objects.Table)
-  # TODO: remove this
-  SetGlobalFunc(mem, 'Array', objects.ParameterizedArray())
-
   # Types:
   # Should the constructors be Python compatible, and types be capital?
   SetGlobalFunc(mem, 'Bool', bool)
   SetGlobalFunc(mem, 'Int', int)
 
   SetGlobalFunc(mem, 'Float', float)
-
-  SetGlobalFunc(mem, 'Tuple', tuple)
 
   SetGlobalFunc(mem, 'Str', str)
   SetGlobalFunc(mem, 'List', list)
@@ -247,6 +241,8 @@ def Init(mem):
   SetGlobalFunc(mem, 'identity', lambda x: x)
 
   # Singleton tuple!
+  # TODO: remove this and the trailing comma message for 3,
+  # A trailing comma can just be a syntax error?
   SetGlobalFunc(mem, 'tup', lambda x: (x,))
 
   SetGlobalFunc(mem, 'len', len)
@@ -278,6 +274,7 @@ def Init(mem):
   # List/array methods
   #
 
+  # TODO: Universal function call syntax can change this?
   SetGlobalFunc(mem, 'append', _Append)
   SetGlobalFunc(mem, 'extend', _Extend)
   SetGlobalFunc(mem, 'pop', _Pop)
@@ -293,8 +290,8 @@ def Init(mem):
   # find, index, cout
   # partition, rpartition: I never seem to use these?
 
-  #
   # Notes on overloaded functions
+  #
   #  L.pop()
   #  D.pop('key')
   #
@@ -334,20 +331,11 @@ def Init(mem):
 
   # Other builtins:
 
-  # Exceptions:
-  #   IndexError
-  #   KeyError
-  #   IOError (should be same as OSError)
-  #   StopIteration
-  #   RuntimeError
-
   # There's also float.hex() and float.fromhex()
 
   # Types:
-  #   type()
+  #   type()     -- similar to = operator
   #   callable() -- test if it's callable
-  #   isinstance()
-  #   issubclass()
   #
   # All Objects:  (Ruby has Kernel?)
   #   id() - unique ID
@@ -377,7 +365,6 @@ def Init(mem):
   #
   # Other Types:
   # - set() -- I think the dict type will subsume this
-  # - slice() -- never needed it
   # - these seem confusing
   #   - memoryview()
   #   - bytearray()
@@ -414,17 +401,20 @@ def Init(mem):
   # - JavaScript can use # JSON.
 
   # NOTE:
-  # json and tsv2 are styled as BUILTINS
-  #   python: json.load, dump
-  #   js: JSON.parse, stringify
-  #   better: read, write
+  # json and qtt are styled as BUILTINS
+  #   python: json.load, json.dump
+  #   js: JSON.parse, JSON.stringify
+  #   Oil:
+  #     json read :x < foo.json
+  #     qtt read :x < foo.qtt
+
+  # This loads a STRING into mytable?  Or maybe it's tagged with a type so you
+  # can slice differently?
   #
-  # json read :x < foo.json
-  # tsv2 read :x < foo.tsv2
-  #
-  # json write -indent 2 :mydict > out.txt
-  # tsv2 write -indent 2 :mytable > out.txt
-  #
+  # qtt prettify :mytable < '''
+  # name age:Int
+  # bob  40
+  # '''
 
   #
   # Awk

@@ -40,17 +40,6 @@ write $a $b
 42
 ## END
 
-#### Tuple()
-
-# TODO: does Oil have tuples?  I think I want to defer this.
-
-var a = Tuple()
-= a
-
-## STDOUT:
-()
-## END
-
 #### Dict()
 # TODO: more testing
 var a = Dict()

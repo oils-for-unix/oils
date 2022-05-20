@@ -146,28 +146,24 @@ var b = a[:]
 (List)   [1, 2, 3]
 ## END
 
-#### Slices with Multiple Dimensions (with Table/data frame)
+#### Slices with Multiple Dimensions (for QTT)
 
-# This parses, but it isn't hashable.  We need a type with operator overloading
-# to handle this, which we don't have.
-#
-# Data frames could be:
-#
-# df[3:5, :]    rows 3 to 5, all cols
-#
-# df[3:5, %(name age)]    rows 3 to 5, two cols
-
-#var b = d[3,1:]
-
-# TODO: We don't have col=value syntax
-var t = Table()
+qtt pretty :mytable <<< '''
+name  age:Int
+alice 42
+bob   31
+carol 20
+'''
 
 # Cut off the first two rows
-var t1 = t[2:, :]
+var t1 = mytable[2:, :]
 = t1
 
-var t2 = t[:2, 3:4]
+var t2 = mytable[:2, 3:4]
 = t2
+
+var t3 = mytable[:2, %(name age)]
+= t3
 
 ## STDOUT:
 (Str)   'TODO: Table Slicing'
