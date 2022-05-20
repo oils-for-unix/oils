@@ -45,7 +45,8 @@ write $a $b
 # TODO: does Oil have tuples?  I think I want to defer this.
 
 var a = Tuple()
-write $a
+= a
+
 ## STDOUT:
 ()
 ## END
@@ -134,30 +135,6 @@ write @x
 2
 1
 0
-## END
-
-#### enumerate()
-# TODO: need new for loop syntax
-for (i, a in enumerate( %(a b c) )) {
-  write $i $a
-}
-## STDOUT:
-0 a
-1 b
-2 c
-## END
-
-#### zip()
-write $zip
-var a = %(1 2 3)
-var b = %(a b c)
-for (item in zip(a, b)) {
-  write $item
-}
-## STDOUT:
-1 a
-2 b
-3 c
 ## END
 
 #### @split(x) respects IFS

@@ -238,6 +238,7 @@ def Init(mem):
   SetGlobalFunc(mem, 'Float', float)
 
   SetGlobalFunc(mem, 'Tuple', tuple)
+
   SetGlobalFunc(mem, 'Str', str)
   SetGlobalFunc(mem, 'List', list)
   SetGlobalFunc(mem, 'Dict', dict)
@@ -258,16 +259,11 @@ def Init(mem):
   # round()
   # divmod() - probably useful?  Look at the implementation
 
+  # TODO: Consolidate with explicit 1:2 syntax
   # Return an iterable like Python 3.  Used for 'step' param.
   SetGlobalFunc(mem, 'range', xrange)
   # For the 'step' param.
   SetGlobalFunc(mem, 'slice', slice)
-
-  # Not the best API, but requires no new syntax, and is familiar to Python
-  # users.
-  SetGlobalFunc(mem, 'enumerate', enumerate)
-  # I never use this, but it's familiar
-  SetGlobalFunc(mem, 'zip', zip)
 
   SetGlobalFunc(mem, 'any', any)
   SetGlobalFunc(mem, 'all', all)

@@ -973,6 +973,11 @@ oil-proc() {
     $OSH_LIST "$@"
 }
 
+oil-for() {
+  sh-spec spec/oil-for.test.sh --osh-failures-allowed 7 \
+    $OIL_LIST "$@"
+}
+
 oil-funcs-builtin() {
   sh-spec spec/oil-funcs-builtin.test.sh --osh-failures-allowed 3 \
     $OIL_LIST "$@"
