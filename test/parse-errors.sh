@@ -1126,6 +1126,16 @@ oil_case() {
     (*.py) echo "python" ;;
   }
   '
+
+  # parse_sloppy_case
+
+  _oil-parse-error '
+  case $x {
+    (*.py) echo "python" ;;
+    *.sh) echo "shell" ;;
+  }
+  '
+
 }
 
 oil_for() {
@@ -1149,26 +1159,26 @@ oil_for() {
   '
 
   _oil-should-parse '
-  for x y in SPAM; do
+  for x y in SPAM EGGS; do
     echo $x
   done
   '
 
   _oil-parse-error '
-  for x y z in SPAM; do
+  for x y z in SPAM EGGS; do
     echo $x
   done
   '
 
   _oil-parse-error '
-  for w x y z in SPAM; do
+  for w x y z in SPAM EGGS; do
     echo $x
   done
   '
 
   # Test the other styles
   _oil-should-parse '
-  for x y in SPAM
+  for x y in SPAM EGGS
   do
     echo $x
   done

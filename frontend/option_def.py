@@ -167,9 +167,10 @@ _AGGRESSIVE_PARSE_OPTIONS = [
     ('parse_dollar', True),
     ('parse_ignored', True),
 
-    ('parse_sh_assign', True),  # disallow x=y and PYTHONPATH=y
-    ('parse_dparen', True),     # disallow bash's ((
-    ('parse_bare_word', True),   # 'case bare' and 'for x in bare'
+    ('parse_sh_assign', True),    # disallow x=y and PYTHONPATH=y
+    ('parse_dparen', True),       # disallow bash's ((
+    ('parse_bare_word', True),    # 'case bare' and 'for x in bare'
+    ('parse_sloppy_case', True),  # case patterns must be (*.py), not *.py)
 
     # Failed experiment for $[echo hi], myarray = %[one two], etc.
     # I turned Lit_LBracket in to Op_LBracket.  But there were several issues:

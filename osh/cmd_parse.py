@@ -1316,6 +1316,9 @@ class CommandParser(object):
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
     if self.c_id == Id.Op_LParen:
       self._Next()
+    else:
+      if not self.parse_opts.parse_sloppy_case():
+        p_die("Expected left paren (parse_sloppy_case)", word=self.cur_word)
 
     pat_words = []  # type: List[word_t]
     while True:
