@@ -135,16 +135,14 @@ shopt --set parse_brace
 
 echo hi > file
 
-# TODO: Fix this cache
-# This CACHES the lookup.  Bad.
-# Do we turn this off in Oil?
-cp -v file /tmp
+# Note: this CACHES the lookup, so shvar has to clear cache when modifying it
+cp -v file /tmp >&2
 echo status=$?
 
 # TODO: implement this, and call it whenever shvar mutates PATH?
 # what about when PATH is mutated?   No leave it out for now.
 
-hash -d  # clear the cache
+# hash -r  # clear the cache, no longer necessary
 
 shvar PATH='' {
   cp -v file /tmp
@@ -160,6 +158,7 @@ cp -v file /tmp >&2
 echo status=$?
 
 ## STDOUT:
+status=0
 status=127
 status=127
 status=0

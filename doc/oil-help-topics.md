@@ -111,6 +111,7 @@ feature is **unimplemented**.
   [Shell State]   oil-cd   oil-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
                   push-registers         Save registers like $?, PIPESTATUS
+                  X push-procs           Limit the procs visible
   [Modules]       runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
                   use                    change first word lookup
@@ -120,7 +121,13 @@ feature is **unimplemented**.
                   X fopen                Open multiple streams, takes a block
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtt
-X [Testing]       X describe             Test harness
+X [QTT]           where                  pick rows; dplyr filter()
+                  select                 pick columns
+                  group-by               add a column with a group ID [ext]
+                  sort-by                sort by columns; dplyr arrange() [ext]
+                  summarize              count, sum, histogram, etc. [ext]
+X [Testing]       describe               Test harness
+                  assert                 takes an expression
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 ```
@@ -233,7 +240,7 @@ X [String]        find()   sub()   join()
   [Arrays]        X index()   append()   extend()
   [Assoc Arrays]  @keys()   @values()
   [Introspection] shvar_get()
-X [Config Gen]    parse_file()   eval_to_dict()   block_to_str()   
+X [Config Gen]    parse_config()   eval_to_dict()   block_to_str()   
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()

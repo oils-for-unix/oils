@@ -183,11 +183,11 @@ def AddProcess(
   b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
 
 
-def AddOil(b, mem, cmd_ev, errfmt, procs, arena):
-  # type: (Dict[int, vm._Builtin], state.Mem, cmd_eval.CommandEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
+def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
+  # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
   b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
 
-  b[builtin_i.shvar] = builtin_pure.Shvar(mem, cmd_ev)
+  b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
   b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
@@ -452,7 +452,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
 
-  AddOil(builtins, mem, cmd_ev, errfmt, procs, arena)
+  AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)

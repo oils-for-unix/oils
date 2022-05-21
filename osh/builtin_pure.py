@@ -619,9 +619,10 @@ class Use(vm._Builtin):
 
 
 class Shvar(vm._Builtin):
-  def __init__(self, mem, cmd_ev):
-    # type: (state.Mem, CommandEvaluator) -> None
+  def __init__(self, mem, search_path, cmd_ev):
+    # type: (state.Mem, SearchPath, CommandEvaluator) -> None
     self.mem = mem
+    self.search_path = search_path  # to clear PATH
     self.cmd_ev = cmd_ev  # To run blocks
 
   def Run(self, cmd_val):
@@ -644,6 +645,10 @@ class Shvar(vm._Builtin):
       if s is None:
         raise error.Usage('Expected name=value', span_id=arg_spids[i])
       pairs.append((name, s))
+
+      # Important fix: shvar PATH='' { } must make all binaries invisible
+      if name == 'PATH': 
+        self.search_path.ClearCache()
 
     with state.ctx_Shvar(self.mem, pairs):
       unused = self.cmd_ev.EvalBlock(block)
