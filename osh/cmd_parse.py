@@ -1186,12 +1186,12 @@ class CommandParser(object):
       if num_iter_names > 3:
         p_die('Expected at most 3 loop variables', word=self.cur_word)
 
-      self._Next()  # skip past name
+      self._Next()
 
       self._Peek()
       # 'in' or ';' or a newline marks the end of variable names
       # Problem: 'var' is KW_Var and is a valid loop name
-      if self.c_id == Id.KW_In or self.c_kind == Kind.Op:
+      if self.c_id in (Id.KW_In, Id.KW_Do) or self.c_kind == Kind.Op:
         break
 
     self._NewlineOk()
@@ -1223,13 +1223,13 @@ class CommandParser(object):
         if num_iter_names > 2:
           p_die('Expected at most 2 loop variables', span_id=for_spid)
 
-    elif self.c_id == Id.Op_Semi:  # for x; do
-      node.iterable = for_iter.Args()  # implicitly loop over "$@"
-      self._Next()
-
     elif self.c_id == Id.KW_Do:
       node.iterable = for_iter.Args()  # implicitly loop over "$@"
       # do not advance
+
+    elif self.c_id == Id.Op_Semi:  # for x; do
+      node.iterable = for_iter.Args()  # implicitly loop over "$@"
+      self._Next()
 
     else:  # for foo BAD
       p_die('Unexpected word after for loop variable', word=self.cur_word)

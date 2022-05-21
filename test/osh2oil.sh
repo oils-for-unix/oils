@@ -30,14 +30,14 @@ args-vars() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo one "$@" two
 OSH
-echo one @Argv two
+echo one @ARGV two
 OIL
 
   # These are all the same.  Join by first char of IFS.
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo one $* "__$*__" $@ two
 OSH
-echo one $ifsjoin(Argv) "__$ifsjoin(Argv)__" $ifsjoin(Argv) two
+echo one $ifsjoin(ARGV) "__$ifsjoin(ARGV)__" $ifsjoin(ARGV) two
 OIL
 
   osh0-oil3 << 'OSH' 3<< 'OIL'
@@ -73,7 +73,7 @@ special-vars() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo ${?} ${#} ${@}
 OSH
-echo $(Status) $(len(Argv)) @Argv
+echo $(Status) $(len(ARGV)) @ARGV
 OIL
 
   # How to do $1 and then 0?
@@ -87,23 +87,23 @@ OIL
 }
 
 arg-array() {
-  # Only "$@" goes to @Argv
+  # Only "$@" goes to @ARGV
   # "__$@__" should be
   #
-  # "__$Argv[0]" @Argv[1:-1] "$Argv[-1]__"
+  # "__$ARGV[0]" @ARGV[1:-1] "$ARGV[-1]__"
   # 
   # But this is probably too rare to really happen.  Just remove it.
 
-  # Yeah the rest go to $join(Argv)
+  # Yeah the rest go to $join(ARGV)
   # does join respect IFS though?  Have to work that out.
-  # or maybe $ifsjoin(Argv) -- make explicit the global variable.
+  # or maybe $ifsjoin(ARGV) -- make explicit the global variable.
 
   # NOTE: This is with autosplit?  What about without splitting?
 
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo $@ $* "$@" "$*" "__$@__" "__$*__"
 OSH
-echo $ifsjoin(Argv) $ifsjoin(Argv) @Argv "$ifsjoin(Argv)" "__$ifsjoin(Argv)__" "__$ifsjoin(Argv)__"
+echo $ifsjoin(ARGV) $ifsjoin(ARGV) @ARGV "$ifsjoin(ARGV)" "__$ifsjoin(ARGV)__" "__$ifsjoin(ARGV)__"
 OIL
 }
 
@@ -252,7 +252,7 @@ export-readonly() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 export "$@"
 OSH
-sh-builtin export @Argv
+sh-builtin export @ARGV
 OIL
 
   # Separate definition and attribute?
@@ -680,7 +680,7 @@ and-or() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 ls && echo "$@" || die "foo"
 OSH
-ls && echo @Argv || die "foo"
+ls && echo @ARGV || die "foo"
 OIL
 }
 
@@ -786,7 +786,7 @@ for x; do
   echo $x
 done
 OSH
-for x in @Argv {
+for x in @ARGV {
   echo $x
 }
 OIL
@@ -803,7 +803,7 @@ do
   echo $x
 done
 OSH
-for x in @Argv
+for x in @ARGV
 {
   echo $x
 }

@@ -5,6 +5,7 @@
 # My tests
 
 #### Empty for loop is allowed
+set -- a b
 for x in; do
   echo hi
   echo $x
@@ -12,11 +13,17 @@ done
 ## stdout-json: ""
 
 #### Empty for loop without in.  Do can be on the same line I guess.
+set -- a b
 for x do
   echo hi
   echo $x
 done
-## stdout-json: ""
+## STDOUT:
+hi
+a
+hi
+b
+## END
 
 #### Empty case statement
 case foo in

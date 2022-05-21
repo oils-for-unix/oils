@@ -772,7 +772,7 @@ class OilPrinter(object):
 
       if in_spid == runtime.NO_SPID:
         #self.cursor.PrintUntil()  # 'for x' and then space
-        self.f.write('for %s in @Argv ' % node.iter_name)
+        self.f.write('for %s in @ARGV ' % node.iter_names[0])
         self.cursor.SkipUntil(node.body.spids[0])
       else:
         self.cursor.PrintUntil(in_spid + 2)  # 'for x in ' and then space
@@ -1062,7 +1062,7 @@ class OilPrinter(object):
               # NOTE: This is off for double quoted part.  Hack to subtract 1.
               self.cursor.PrintUntil(left_spid)
               self.cursor.SkipUntil(right_spid + 1)  # " then $@ then "
-              self.f.write('@Argv')
+              self.f.write('@ARGV')
               return  # Done replacing
 
             # "$1" -> $1, "$foo" -> $foo
@@ -1203,7 +1203,7 @@ class OilPrinter(object):
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_At:  # $@
-        self.f.write('$ifsjoin(Argv)')
+        self.f.write('$ifsjoin(ARGV)')
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Pound:  # $#
@@ -1216,7 +1216,7 @@ class OilPrinter(object):
 
       elif op_id == Id.VSub_Star:  # $*
         # PEDANTIC: Depends if quoted or unquoted
-        self.f.write('$ifsjoin(Argv)')
+        self.f.write('$ifsjoin(ARGV)')
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_Hyphen:  # $*
