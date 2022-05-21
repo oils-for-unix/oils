@@ -189,6 +189,7 @@ def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
 
   b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
   b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
+  b[builtin_i.push_procs] = builtin_pure.PushProcs(mem, cmd_ev)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
   b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)

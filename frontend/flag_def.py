@@ -309,6 +309,9 @@ WRITE_SPEC.LongFlag(
          'x assumes an opaque byte string, while raw and u try to '
          'decode UTF-8.')
 
+PUSH_REGISTERS_SPEC = FlagSpec('push-registers')
+PUSH_PROCS_SPEC = FlagSpec('push-procs')
+
 
 
 #

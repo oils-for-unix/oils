@@ -187,3 +187,28 @@ status=127
 status=127
 _status 127
 ## END
+
+#### push-procs
+shopt --set parse_brace
+
+f() { echo F; }
+g() { echo G; }
+h() { echo H; }
+
+push-procs f g {
+  f
+  echo status=$?
+  g
+  echo status=$?
+  h
+  echo status=$?
+}
+
+## STDOUT:
+F
+status=0
+G
+status=0
+status=127
+## END
+

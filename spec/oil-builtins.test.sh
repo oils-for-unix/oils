@@ -514,7 +514,11 @@ push-registers {
   [[ bar =~ (.*) ]]
   echo ${BASH_REMATCH[@]}
 }
-echo status=$?  # push-registers will return 42
+# WEIRD SEMANTIC TO REVISIT: push-registers is "SILENT" as far as exit code
+# This is for the headless shell, but hasn't been tested.
+# Better method: maybe we should provide a way of SETTING $?
+
+echo status=$?
 
 echo ${BASH_REMATCH[@]}
 ## STDOUT:
@@ -523,6 +527,28 @@ bar bar
 status=42
 foo foo
 ## END
+
+#### push-registers usage
+shopt --set parse_brace
+
+push-registers
+echo status=$?
+
+push-registers a b
+echo status=$?
+
+push-registers a b {  # hm extra args are ignored
+  echo hi
+}
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+hi
+status=0
+## END
+
 
 #### module
 shopt --set oil:basic
