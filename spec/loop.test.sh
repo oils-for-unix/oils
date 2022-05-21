@@ -31,6 +31,17 @@ done
 ## BUG zsh stdout: hi
 ## BUG zsh status: 1
 
+#### the word 'in' can be the loop variable
+
+for in in a b c; do
+  echo $in
+done
+## STDOUT:
+a
+b
+c
+## END
+
 #### Tilde expansion within for loop
 HOME=/home/bob
 for name in ~/src ~/git; do

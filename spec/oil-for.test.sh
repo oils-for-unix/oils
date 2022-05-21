@@ -54,6 +54,12 @@ for i bad bad in a b c {
 }
 ## status: 2
 
+#### Any for loop can't have 4 indiecs
+for a b c d in (['foo']) {
+  echo $i $item
+}
+## status: 2
+
 #### Expression for loop with index: list
 for i item in (['spam', 'eggs']) {
   echo "$i $item"

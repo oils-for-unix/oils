@@ -443,15 +443,6 @@ cmd-parse() {
   _error-case 'FOO=1 break'
   _error-case 'break 1 2'
 
-  _error-case 'for x in &'
-
-  _error-case 'for (( i=0; i<10; i++ )) ls'
-
-  _error-case 'for $x in 1 2 3; do echo $i; done'
-  _error-case 'for x.y in 1 2 3; do echo $i; done'
-  _error-case 'for x in 1 2 3; &'
-  _error-case 'for foo BAD'
-
   _error-case 'x"y"() { echo hi; }'
 
   _error-case 'function x"y" { echo hi; }'
@@ -1095,7 +1086,29 @@ oil_place_mutation() {
   '
 }
 
+shell_for() {
+  set +o errexit
+
+  _error-case 'for x in &'
+
+  _error-case 'for (( i=0; i<10; i++ )) ls'
+
+  # ( is invalid
+  _error-case 'for ( i=0; i<10; i++ )'
+
+  _error-case 'for $x in 1 2 3; do echo $i; done'
+  _error-case 'for x.y in 1 2 3; do echo $i; done'
+  _error-case 'for x in 1 2 3; &'
+  _error-case 'for foo BAD'
+
+  # BUG fix: var is a valid name
+  _should-parse 'for var in x; do echo $var; done'
+}
+
+
 oil_for() {
+  set +o errexit
+
   if is-oil-native; then
     echo 'skipping oil_for'
     return
@@ -1112,6 +1125,35 @@ oil_for() {
     echo $x
   done
   '
+
+  _oil-should-parse '
+  for x y in SPAM; do
+    echo $x
+  done
+  '
+
+  _oil-parse-error '
+  for x y z in SPAM; do
+    echo $x
+  done
+  '
+
+  _oil-parse-error '
+  for w x y z in SPAM; do
+    echo $x
+  done
+  '
+
+  # Test the other styles
+  _oil-should-parse '
+  for x y in SPAM
+  do
+    echo $x
+  done
+  '
+
+  # for shell compatibility, allow this
+  _oil-should-parse 'for const in (x) { echo $var }'
 }
 
 #
@@ -1193,6 +1235,7 @@ cases-in-strings() {
   oil_var_decl
   oil_place_mutation
   oil_for
+  shell_for
   parse_at
   invalid_parens
   nested_source_argvword

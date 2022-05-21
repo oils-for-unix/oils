@@ -1171,19 +1171,28 @@ class CommandParser(object):
     node = command.ForEach()
     node.spids.append(for_spid)  # for $LINENO and error fallback
 
-    id_ = word_.CommandId(self.cur_word)
-    if id_ != Id.Word_Compound:  # error: for (
-      p_die('Expected loop variable name', word=self.cur_word)
+    num_iter_names = 0
+    while True:
+      ok, iter_name, quoted = word_.StaticEval(self.cur_word)
 
-    ok, iter_name, quoted = word_.StaticEval(self.cur_word)
+      if not ok or quoted:  # error: for $x
+        p_die('Expected loop variable (a constant word)', word=self.cur_word)
+      if not match.IsValidVarName(iter_name):  # error: for -
+        p_die("Invalid loop variable name", word=self.cur_word)
 
-    if not ok or quoted:  # error: for $x
-      p_die('Loop variable should be a constant word', word=self.cur_word)
-    if not match.IsValidVarName(iter_name):  # error: for -
-      p_die("Invalid loop variable name", word=self.cur_word)
+      node.iter_names.append(iter_name)
+      num_iter_names += 1
 
-    node.iter_names.append(iter_name)
-    self._Next()  # skip past name
+      if num_iter_names > 3:
+        p_die('Expected at most 3 loop variables', word=self.cur_word)
+
+      self._Next()  # skip past name
+
+      self._Peek()
+      # 'in' or ';' or a newline marks the end of variable names
+      # Problem: 'var' is KW_Var and is a valid loop name
+      if self.c_id == Id.KW_In or self.c_kind == Kind.Op:
+        break
 
     self._NewlineOk()
 
@@ -1209,6 +1218,10 @@ class CommandParser(object):
         words2 = braces.BraceDetectAll(iter_words)
         words3 = word_.TildeDetectAll(words2)
         node.iterable = for_iter.Words(words3)
+
+        # Now that we know there are words, do an extra check
+        if num_iter_names > 2:
+          p_die('Expected at most 2 loop variables', span_id=for_spid)
 
     elif self.c_id == Id.Op_Semi:  # for x; do
       node.iterable = for_iter.Args()  # implicitly loop over "$@"
