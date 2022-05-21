@@ -48,15 +48,17 @@ Language](oil-language-tour.html).
 - Unevaluated expressions
   - Block `^(ls | wc -l)`
   - Unevaluated expression: `^[1 + a[i] + f(x)]`
-  - Arg list: `^{42, verbose = true}`
 
 <!--
 `%symbol` (used in eggex now, but could also be used as interned strings)
 -->
 
-### Removed
+### Not Supported
 
 - No tuple type for now.  We might want Go-like multiple return values.
+- Iterators.  Instead we have a fixed for loop.
+- List comprehensions and generator expressions
+- Lambdas
 
 <!--
 - Tuples (TODO): Does Oil have true tuples?
@@ -149,4 +151,3 @@ closer to Python.
 ## TODO
 
 - `100 MiB`?  This should be multiplication?
-- Unevaluated Expr, Block, ArgList

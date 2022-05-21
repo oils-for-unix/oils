@@ -40,6 +40,9 @@ feature is **unimplemented**.
 
 ```oil-help-topics
                   proc          proc p (x, :out, @rest, e Expr, b Block) { c }
+                  oil-if        if (x > 0) { echo }
+                  oil-while     while (x > 0) { echo }
+                  oil-for       for i item in (mylist) { echo }
                   equal =       = 1 + 2*3
                   underscore _  _ mylist.append(42)
                   typed-arg     json write (x)
@@ -166,6 +169,7 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_backslash (-u)    Bad backslashes in $''
                   parse_backticks (-u)    Legacy syntax `echo hi`
+                  parse_bare_word (-u)   'case unquoted' and 'for x in unquoted'
                   parse_dollar (-u)      Is $ allowed for \$?  Maybe $/d+/
                   parse_dparen (-u)      Is (( legacy arithmetic allowed?
                   parse_ignored (-u)     Parse, but ignore, certain redirects
@@ -228,7 +232,7 @@ X [String]        find()   sub()   join()
   [Arrays]        X index()   append()   extend()
   [Assoc Arrays]  @keys()   @values()
   [Introspection] shvar_get()
-X [Config Gen]    block_to_str()   block_to_dict()   vm_eval()
+X [Config Gen]    parse_file()   eval_to_dict()   block_to_str()   
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()

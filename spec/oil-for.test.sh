@@ -134,31 +134,16 @@ k2
 
 
 
-#### parse_unquoted eliminates confusion
+#### parse_bare_word eliminates confusion
 
-shopt --unset parse_unquoted
+shopt --unset parse_bare_word
 
-var mylist = ['foo', 'bar']
-
-for x in mylist {
-  echo BAD $x
+for x in mylist {  # THIS FAILS
+  echo "BAD $x"
 }
 
-shopt --set parse_unquoted
-
-for x in (mylist) {
-  echo $x
-}
-
-for x in 'mylist' {
-  echo OK $x
-}
-
+## status: 2
 ## STDOUT:
-BAD mylist
-foo
-bar
-OK mylist
 ## END
 
 
@@ -172,4 +157,17 @@ for x in (42) {
 ## status: 3
 ## STDOUT:
 hi
+## END
+
+#### Oil for with brace substitution and glob
+
+touch {foo,bar}.py
+for i file in *.py {README,foo}.md {
+  echo "$i $file"
+}
+## STDOUT:
+0 bar.py
+1 foo.py
+2 README.md
+3 foo.md
 ## END

@@ -973,8 +973,13 @@ oil-proc() {
     $OSH_LIST "$@"
 }
 
+oil-case() {
+  sh-spec spec/oil-case.test.sh --osh-failures-allowed 1 \
+    $OIL_LIST "$@"
+}
+
 oil-for() {
-  sh-spec spec/oil-for.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/oil-for.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 

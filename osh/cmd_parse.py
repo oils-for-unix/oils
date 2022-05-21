@@ -1214,6 +1214,11 @@ class CommandParser(object):
           p_die('Expected { after iterable expression', word=self.cur_word)
       else:
         iter_words, semi_spid = self.ParseForWords()
+        if not self.parse_opts.parse_bare_word() and len(iter_words) == 1:
+          ok, s, quoted = word_.StaticEval(iter_words[0])
+          if ok and match.IsValidVarName(s) and not quoted:
+            p_die('Surround this word with either parens or quotes (parse_bare_word)',
+                  word=iter_words[0])
 
         words2 = braces.BraceDetectAll(iter_words)
         words3 = word_.TildeDetectAll(words2)
@@ -1384,7 +1389,14 @@ class CommandParser(object):
     self._Next()  # skip case
 
     self._Peek()
-    case_node.to_match = self.cur_word
+    to_match = self.cur_word
+    if not self.parse_opts.parse_bare_word():
+      ok, s, quoted = word_.StaticEval(to_match)
+      if ok and not quoted:
+        p_die("This is a constant string.  You may want a variable like $x (parse_bare_word)",
+              word=to_match)
+
+    case_node.to_match = to_match
     self._Next()
 
     self._NewlineOk()

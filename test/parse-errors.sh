@@ -1105,6 +1105,28 @@ shell_for() {
   _should-parse 'for var in x; do echo $var; done'
 }
 
+oil_case() {
+  set +o errexit
+
+  _oil-should-parse '
+  case $foo {
+    (*.py) echo "python" ;;
+  }
+  '
+
+  _oil-should-parse '
+  case "foo" {
+    (*.py) echo "python" ;;
+  }
+  '
+
+  # parse_bare_word
+  _oil-parse-error '
+  case foo {
+    (*.py) echo "python" ;;
+  }
+  '
+}
 
 oil_for() {
   set +o errexit
@@ -1154,6 +1176,39 @@ oil_for() {
 
   # for shell compatibility, allow this
   _oil-should-parse 'for const in (x) { echo $var }'
+}
+
+oil_for_parse_bare_word() {
+  set +o errexit
+
+  if is-oil-native; then
+    echo 'skipping oil_for'
+    return
+  fi
+
+  _oil-parse-error '
+  for x in bare {
+    echo $x
+  }
+  '
+
+  _oil-should-parse '
+  for x in a b {
+    echo $x
+  }
+  '
+
+  _oil-should-parse '
+  for x in *.py {
+    echo $x
+  }
+  '
+
+  _oil-should-parse '
+  for x in "quoted" {
+    echo $x
+  }
+  '
 }
 
 #
@@ -1234,7 +1289,9 @@ cases-in-strings() {
   oil_nested_proc
   oil_var_decl
   oil_place_mutation
+  oil_case
   oil_for
+  oil_for_parse_bare_word
   shell_for
   parse_at
   invalid_parens

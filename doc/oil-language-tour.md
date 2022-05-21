@@ -723,7 +723,7 @@ More:
     var empty = {}
     echo $len(empty)  # => 0
 
-#### Block, Expr, and ArgList
+#### Block and Expr
 
 These types are for reflection on Oil code.  Most Oil programs won't use them
 directly.
@@ -732,9 +732,6 @@ directly.
   - rarely-used literal: `^(ls | wc -l)`
 - `Expr`: an unevaluated expression.
   - rarely-used literal: `^[42 + a[i]]`
-- `ArgList`: an argument list for procs.  It's a list of lazily evaluated
-  `Expr`.
-  - rarely-used literal: `^{42, f(x), verbose = true}`
 
 <!-- TODO: implement Block, Expr, ArgList types (variants of value) -->
 
