@@ -312,6 +312,7 @@ WRITE_SPEC.LongFlag(
 PUSH_REGISTERS_SPEC = FlagSpec('push-registers')
 PUSH_PROCS_SPEC = FlagSpec('push-procs')
 
+FOPEN_SPEC = FlagSpec('fopen')
 
 
 #

@@ -118,7 +118,7 @@ feature is **unimplemented**.
   [I/O]           oil-read               Buffered I/O with --line, --all, --qsn
                   write                  Like echo, but with --, --sep, --end
                   fork   forkwait        Replace & and (), and takes a block
-                  X fopen                Open multiple streams, takes a block
+                  fopen                  Open multiple streams, takes a block
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtt
 X [QTT]           where                  pick rows; dplyr filter()

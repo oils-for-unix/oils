@@ -608,3 +608,48 @@ runproc p {
 ## STDOUT:
 hi
 ## END
+
+
+#### fopen
+shopt --set parse_brace
+
+proc p {
+  echo 'proc'
+}
+
+fopen >out.txt {
+  p
+  echo 'builtin'
+}
+
+cat out.txt
+
+echo ---
+
+fopen <out.txt {
+  tac
+}
+
+# Awkward bash syntax, but we'll live with it
+fopen {left}>left.txt {right}>right.txt {
+  echo 1 >& $left
+  echo 1 >& $right
+
+  echo 2 >& $left
+  echo 2 >& $right
+
+  echo 3 >& $left
+}
+
+echo ---
+comm -23 left.txt right.txt
+
+## STDOUT:
+proc
+builtin
+---
+builtin
+proc
+---
+3
+## END

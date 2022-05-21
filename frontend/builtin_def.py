@@ -46,17 +46,24 @@ _NORMAL_BUILTINS = [
     'alias', 'unalias',
     'bind',
 
-    # Oil only
+    #
+    # Oil
+    #
     'append',
-    'shvar',
-    # push-registers added below
     'write', 'json', 'pp',
     'module', 'use',
-    'argparse',  # not implemented
-    'fopen',
+
+    # take a block
+    # push-registers and push-procs added below
     'fork', 'forkwait',
+    'fopen',
+    'shvar',
+
     'runproc',
     'boolstatus',
+
+    'argparse',  # not implemented
+    'describe',  # not implemented
 ]
 
 

@@ -666,7 +666,6 @@ class PushProcs(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('push-procs', cmd_val,
                                      accept_typed_args=True)
-    #arg = arg_types.pushregisters(attrs.attrs)
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if not block:
@@ -701,3 +700,30 @@ class PushRegisters(vm._Builtin):
     # TODO: Revisit this.  It might be better to provide the headless shell
     # with a way to SET $? instead.  Needs to be tested/prototyped.
     return self.mem.last_status[-1]
+
+
+class Fopen(vm._Builtin):
+  """
+  This builtin does nothing but run a block.  It's used solely for its redirects
+
+  fopen >out.txt {
+    echo hi
+  }
+  """
+
+  def __init__(self, mem, cmd_ev):
+    # type: (state.Mem, CommandEvaluator) -> None
+    self.mem = mem
+    self.cmd_ev = cmd_ev  # To run blocks
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    _, arg_r = flag_spec.ParseCmdVal('fopen', cmd_val,
+                                     accept_typed_args=True)
+
+    block = typed_args.GetOneBlock(cmd_val.typed_args)
+    if not block:
+      raise error.Usage('expected a block', span_id=runtime.NO_SPID)
+
+    unused = self.cmd_ev.EvalBlock(block)
+    return 0
