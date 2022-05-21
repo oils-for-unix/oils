@@ -326,6 +326,12 @@ class Write(_Builtin):
 class Qtt(_Builtin):
   """QTT I/O.
 
+  cat foo.qtt | qtt read-rows {
+    # first reads schema line, and the processes
+    # process _row
+  }
+  qtt write-row (mydict)
+
   # Cut down a file and read it into memory as a dict
   cat foo.qtt | select %(name age) | qtt read :filtered
 
@@ -335,10 +341,12 @@ class Qtt(_Builtin):
 
   # Literal by row.  Will throw a syntax error.
   # Good for unit tests and so forth.
-  qtt prettify :x <<< '''
+  qtt tabify :x <<< '''
   name  age:Int
   bob   20 
   carol 30
   '''
+
+
   """
   pass

@@ -121,11 +121,11 @@ feature is **unimplemented**.
                   fopen                  Open multiple streams, takes a block
                   X log   X die          common functions (polyfill)
   [Data Formats]  json   X qtt
-X [QTT]           where                  pick rows; dplyr filter()
-                  select                 pick columns
+X [QTT]           rows                   pick rows; dplyr filter()
+                  cols                   pick columns ('select' already taken)
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
-                  summarize              count, sum, histogram, etc. [ext]
+                  summary                count, sum, histogram, etc. [ext]
 X [Testing]       describe               Test harness
                   assert                 takes an expression
 X [External Lang] BEGIN   END   when (awk)

@@ -297,6 +297,30 @@ Yes:
       echo $PWD
     }
 
+### Batch I/O
+
+No:
+
+    echo 1 > out.txt   
+    echo 2 >> out.txt  # appending is less efficient
+                       # because open() and close()
+
+No:
+
+    { echo 1
+      echo 2
+    } > out.txt
+
+Yes:
+
+    fopen > out.txt {
+      echo 1
+      echo 2
+    }
+
+The `fopen` builtin is syntactic sugar -- it lets you see redirects before the
+code that uses them.
+
 ### Temporarily Set Shell Options
 
 No:

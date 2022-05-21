@@ -436,18 +436,69 @@ want to use `setglobal` or `setref` in certain situations.
 
 More details: [Variable Declaration and Mutation](variables.html).
 
-### Loops: `for`, `while`
+### `for` Loop
 
-For loops iterate over **words**:
+Shell-style for loops iterate over **words**:
 
-    for x in oil $num_beans {pea,coco}nut {
-      echo $x
+    for word in 'oil' $num_beans {pea,coco}nut {
+      echo $word
     }
     # =>
     # oil
     # 13
     # peanut
     # coconut
+
+You can also request the loop index:
+
+    for i word in README.md *.py {
+      echo "$i - $word"
+    }
+    # =>
+    # 0 - README.md
+    # 1 - __init__.py
+
+To iterate over a typed data, use parentheses around an **expression**.  The
+expression should evaluate to either a `List` or `Dict`.
+
+<!-- TODO: call it a map once it's ordered -->
+
+    var foods = ['ale', 'bean']
+    for item in (foods) {
+      echo $item
+    }
+    # =>
+    # ale
+    # bean
+
+Again you can request the index:
+
+    for i item in (foods) {
+      echo "$i - $item"
+    }
+    # =>
+    # 0 - ale
+    # 1 - bean
+
+Likewise, here's the most general form of the dictionary loop:
+
+    var mydict = {pea: 42, nut: 10}
+    for i k v in (mydict) {
+      echo "$i - $k - $v"
+    }
+    # =>
+    # 0 - pea - 42
+    # 1 - nut - 10
+
+There are two simpler forms:
+
+- One variable gives you the key: `for k in (mydict)`
+- Two variables gives you the key and value: `for k v in (mydict)`
+
+(One way to think of it: `for` loops in Oil have the functionality Python's
+`enumerate()`, `items()`, `keys()`, and `values()`.)
+
+### `while` Loop
 
 While loops can use a **command** as the termination condition:
 

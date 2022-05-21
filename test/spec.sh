@@ -988,6 +988,11 @@ oil-funcs-builtin() {
     $OIL_LIST "$@"
 }
 
+oil-funcs-external() {
+  sh-spec spec/oil-funcs-external.test.sh --osh-failures-allowed 3 \
+    $OIL_LIST "$@"
+}
+
 oil-special-vars() {
   sh-spec spec/oil-special-vars.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
