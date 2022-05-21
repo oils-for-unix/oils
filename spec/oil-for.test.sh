@@ -102,14 +102,14 @@ for i item in a b c {
 # TODO: use new style
 
 declare array=(one two three)
-for (item in array) {
+for item in (array) {
   echo $item
 }
 
 echo ---
 
 declare -A A=([k]=v [k2]=v2)  # iterate over keys
-for (key in A) {
+for key in (A) {
   echo $key
 } | sort
 ## STDOUT:

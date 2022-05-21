@@ -25,7 +25,7 @@ from _devbuild.gen.syntax_asdl import (
     command__AndOr, command__Case, command__CommandList, command__ControlFlow,
     command__DBracket, command__DoGroup, command__DParen,
     command__ExpandedAlias, command__Expr, command__ForEach, command__ForExpr,
-    command__If, command__NoOp, command__OilForIn,
+    command__If, command__NoOp,
     command__Pipeline, command__PlaceMutation, command__Proc,
     command__Sentence, command__ShAssignment, command__ShFunction,
     command__Simple, command__Subshell, command__TimeBlock, command__VarDecl,
@@ -527,7 +527,7 @@ class CommandEvaluator(object):
         # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
         # command_e.Sentence, # command_e.TimeBlock, command_e.ShFunction,
         # Oil:
-        # command_e.VarDecl, command_e.PlaceMutation, command_e.OilForIn,
+        # command_e.VarDecl, command_e.PlaceMutation,
         # command_e.Proc, command_e.Func, command_e.Expr,
         # command_e.BareDecl
         redirects = []
@@ -1255,41 +1255,6 @@ class CommandEvaluator(object):
 
         finally:
           self.loop_level -= 1
-
-      elif case(command_e.OilForIn):
-        node = cast(command__OilForIn, UP_node)
-        # NOTE: This is a metacircular implementation using the iterable
-        # protocol.
-        status = 0
-
-        if mylib.PYTHON:
-          obj = self.expr_ev.EvalExpr(node.iterable)
-          if isinstance(obj, str):
-            e_die("Strings aren't iterable")
-          else:
-            it = obj.__iter__()
-
-          body = node.body
-          iter_name = node.lhs[0].name.val  # TODO: proper lvalue
-          while True:
-            try:
-              loop_val = it.next()
-            except StopIteration:
-              break
-            self.mem.SetValue(lvalue.Named(iter_name),
-                              _PyObjectToVal(loop_val), scope_e.LocalOnly)
-
-            # Copied from above
-            try:
-              status = self._Execute(body)
-            except _ControlFlow as e:
-              if e.IsBreak():
-                status = 0
-                break
-              elif e.IsContinue():
-                status = 0
-              else:  # return needs to pop up more
-                raise
 
       elif case(command_e.ShFunction):
         node = cast(command__ShFunction, UP_node)

@@ -1171,11 +1171,15 @@ class CommandParser(object):
     node = command.ForEach()
     node.spids.append(for_spid)  # for $LINENO and error fallback
 
+    id_ = word_.CommandId(self.cur_word)
+    if id_ != Id.Word_Compound:
+      p_die('Expected loop variable name', word=self.cur_word)
+
     ok, iter_name, quoted = word_.StaticEval(self.cur_word)
+
     if not ok or quoted:
-      p_die("Loop variable name should be a constant", word=self.cur_word)
-    if not match.IsValidVarName(iter_name):
-      p_die("Invalid loop variable name", word=self.cur_word)
+      p_die('Loop variable should be a constant word', word=self.cur_word)
+
     node.iter_name = iter_name
     self._Next()  # skip past name
 
@@ -1234,34 +1238,21 @@ class CommandParser(object):
     for_spid = _KeywordSpid(self.cur_word)
     self._Eat(Id.KW_For)
 
-    if self.w_parser.LookPastSpace() == Id.Op_LParen:
-      # for (x in y) { }
-      # NOTE: parse_paren NOT required since it would have been a syntax error.
-      lvalue, iterable, _ = (
-          self.parse_ctx.ParseOilForExpr(self.lexer, grammar_nt.oil_for)
-      )
-      self._Peek()
-      if self.c_id == Id.Lit_LBrace:
-        body = self.ParseBraceGroup()  # type: command_t
-      else:
-        body = self.ParseDoGroup()
-      return command.OilForIn(lvalue, iterable, body)
-    else:
-      self._Peek()
-      if self.c_id == Id.Op_DLeftParen:
-        if not self.parse_opts.parse_dparen():
-          p_die("Bash for loops aren't allowed (parse_dparen)",
-                word=self.cur_word)
+    self._Peek()
+    if self.c_id == Id.Op_DLeftParen:
+      if not self.parse_opts.parse_dparen():
+        p_die("Bash for loops aren't allowed (parse_dparen)",
+              word=self.cur_word)
 
-        # for (( i = 0; i < 10; i++)
-        n1 = self._ParseForExprLoop()
-        n1.redirects = self._ParseRedirectList()
-        return n1
-      else:
-        # for x in a b; do echo hi; done
-        n2 = self._ParseForEachLoop(for_spid)
-        n2.redirects = self._ParseRedirectList()
-        return n2
+      # for (( i = 0; i < 10; i++)
+      n1 = self._ParseForExprLoop()
+      n1.redirects = self._ParseRedirectList()
+      return n1
+    else:
+      # for x in a b; do echo hi; done
+      n2 = self._ParseForEachLoop(for_spid)
+      n2.redirects = self._ParseRedirectList()
+      return n2
 
   def ParseWhileUntil(self, keyword):
     # type: (Token) -> command__WhileUntil

@@ -78,35 +78,6 @@ implicit
 (List)   ['4', '5']
 ## END
 
-#### Range loop
-for (i in 1:3) {
-  echo "i = $i"
-}
-var lower = -3
-var upper = 2
-for (i in lower:upper) {
-  echo $i
-}
-## STDOUT:
-i = 1
-i = 2
--3
--2
--1
-0
-1
-## END
-
-#### Explicit range with step
-for (i in range(1, 7, 2)) {
-  echo $i
-}
-## STDOUT:
-1
-3
-5
-## END
-
 #### Explicit slice with step
 shopt -s oil:all
 var mylist = [0,1,2,3,4,5,6,7,8]
