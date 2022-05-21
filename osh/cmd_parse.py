@@ -1190,8 +1190,8 @@ class CommandParser(object):
 
       self._Next()  # skip in
       if self.w_parser.LookPastSpace() == Id.Op_LParen:
-        enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-        node.iterable = for_iter.Oil(enode)
+        enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+        node.iterable = for_iter.Oil(enode, last_token)
 
         # For simplicity, we don't accept for x in (obj); do ...
         self._Peek()

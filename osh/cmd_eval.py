@@ -37,6 +37,7 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig_e, proc_sig__Closed,
     redir_param_e, redir_param__HereDoc, proc_sig,
     for_iter_e, for_iter__Words, for_iter__Oil,
+    Token, expr_t
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
@@ -1120,13 +1121,16 @@ class CommandEvaluator(object):
         node = cast(command__ForEach, UP_node)
         self.mem.SetCurrentSpanId(node.spids[0])  # for x in $LINENO
 
-        iter_name = node.iter_name
+        # for the 2 kinds of shell loop
+        iter_list = None  # type: List[str]  
 
-        iter_list = None  # type: List[str]
+        # for Oil loop
+        iter_expr = None  # type: expr_t
+        iter_blame = None  # type: Token
 
         iterable = node.iterable
-
         UP_iterable = iterable
+
         with tagswitch(node.iterable) as case:
           if case (for_iter_e.Args):
             iter_list = self.mem.GetArgv()
@@ -1138,29 +1142,81 @@ class CommandEvaluator(object):
 
           elif case(for_iter_e.Oil):
             iterable = cast(for_iter__Oil, UP_iterable)
-            raise AssertionError()
+            iter_expr = iterable.e
+            iter_expr_blame = iterable.blame
 
+        iter_name = node.iter_name
         status = 0  # in case we don't loop
-        self.loop_level += 1
-        try:
-          for x in iter_list:
-            #log('> ForEach setting %r', x)
-            self.mem.SetValue(lvalue.Named(iter_name), value.Str(x),
-                              scope_e.LocalOnly)
-            #log('<')
 
+        if iter_list is None:  # for_expr.Oil
+          if mylib.PYTHON:
+            obj = self.expr_ev.EvalExpr(iter_expr)
+
+            self.loop_level += 1
             try:
-              status = self._Execute(node.body)  # last one wins
-            except _ControlFlow as e:
-              if e.IsBreak():
-                status = 0
-                break
-              elif e.IsContinue():
-                status = 0
-              else:  # return needs to pop up more
-                raise
-        finally:
-          self.loop_level -= 1
+              if isinstance(obj, list):
+                for item in obj:
+                  #log('> ForEach setting %r', x)
+                  self.mem.SetValue(lvalue.Named(iter_name), value.Obj(item),
+                                    scope_e.LocalOnly)
+                  #log('<')
+
+                  try:
+                    status = self._Execute(node.body)  # last one wins
+                  except _ControlFlow as e:
+                    if e.IsBreak():
+                      status = 0
+                      break
+                    elif e.IsContinue():
+                      status = 0
+                    else:  # return needs to pop up more
+                      raise
+
+              elif isinstance(obj, dict):
+                for key in obj:
+                  #log('> ForEach setting %r', key)
+                  self.mem.SetValue(lvalue.Named(iter_name), value.Obj(key),
+                                    scope_e.LocalOnly)
+                  #log('<')
+
+                  try:
+                    status = self._Execute(node.body)  # last one wins
+                  except _ControlFlow as e:
+                    if e.IsBreak():
+                      status = 0
+                      break
+                    elif e.IsContinue():
+                      status = 0
+                    else:  # return needs to pop up more
+                      raise
+
+              else:
+                raise error.Expr("Expected list or dict, got %r" % type(obj),
+                                 token=iter_expr_blame)
+
+            finally:
+              self.loop_level -= 1
+        else:
+          self.loop_level += 1
+          try:
+            for x in iter_list:
+              #log('> ForEach setting %r', x)
+              self.mem.SetValue(lvalue.Named(iter_name), value.Str(x),
+                                scope_e.LocalOnly)
+              #log('<')
+
+              try:
+                status = self._Execute(node.body)  # last one wins
+              except _ControlFlow as e:
+                if e.IsBreak():
+                  status = 0
+                  break
+                elif e.IsContinue():
+                  status = 0
+                else:  # return needs to pop up more
+                  raise
+          finally:
+            self.loop_level -= 1
 
       elif case(command_e.ForExpr):
         node = cast(command__ForExpr, UP_node)

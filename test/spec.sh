@@ -974,7 +974,7 @@ oil-proc() {
 }
 
 oil-for() {
-  sh-spec spec/oil-for.test.sh --osh-failures-allowed 9 \
+  sh-spec spec/oil-for.test.sh --osh-failures-allowed 7 \
     $OIL_LIST "$@"
 }
 

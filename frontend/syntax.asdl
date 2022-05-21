@@ -254,10 +254,10 @@ module syntax
   if_arm = (condition cond, command* action, int* spids)
 
   for_iter = 
-    Args                -- for x; do echo $x; done -- implicit "$@"
-  | Words(word* words)  -- for x in 'foo' *.py { echo $x }
-                        -- like ShArrayLiteral, but no location for %(
-  | Oil(expr e)         -- for x in (mylist) { echo $x }
+    Args                      -- for x; do echo $x; done -- implicit "$@"
+  | Words(word* words)        -- for x in 'foo' *.py { echo $x }
+                              -- like ShArrayLiteral, but no location for %(
+  | Oil(expr e, Token blame)  -- for x in (mylist) { echo $x }
 
   -- TODO: Make field names consistent: child vs expr, etc.
   BraceGroup = (Token? doc_token, command* children, redir* redirects)

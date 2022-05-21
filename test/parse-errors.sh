@@ -1096,7 +1096,10 @@ oil_place_mutation() {
 }
 
 oil_for() {
-  set +o errexit
+  if is-oil-native; then
+    echo 'skipping oil_for'
+    return
+  fi
 
   _oil-should-parse '
   for x in (obj) {

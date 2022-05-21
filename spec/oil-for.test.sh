@@ -3,7 +3,7 @@
 #### For loop over expression: list
 var mylist = [1, 2, 3]
 for item in (mylist) {
-  echo "item $i"
+  echo "item $item"
 }
 
 ## STDOUT:
@@ -13,18 +13,20 @@ item 3
 ## END
 
 #### For loop over expression: dict
+
 var mydict = {name: 'bob', age: 40}
 for key in (mydict) {
   echo "key $key"
-}
+} | sort  # TODO: Fix iteration order
+
 
 ## STDOUT:
-key name
 key age
+key name
 ## END
 
 
-#### For loop over expression: range
+#### For loop over expression: range (low priority)
 var myrange = 0:3
 for i in (myrange) {
   echo "i $key"
@@ -148,3 +150,15 @@ bar
 OK mylist
 ## END
 
+
+#### Object that's not iterable
+
+echo hi
+for x in (42) {
+  echo $x
+}
+
+## status: 3
+## STDOUT:
+hi
+## END
