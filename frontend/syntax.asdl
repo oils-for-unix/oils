@@ -287,7 +287,8 @@ module syntax
   | Subshell(command child, redir* redirects)
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
-  | ForEach(string iter_name, for_iter iterable, command body,
+    -- up to 3 iterations variables
+  | ForEach(string* iter_names, for_iter iterable, command body,
             redir* redirects)
     -- C-style for loop.  Any of the 3 expressions can be omitted.
     -- Note: body is required, but only optional here because of initialization

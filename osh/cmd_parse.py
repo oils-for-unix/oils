@@ -1172,15 +1172,17 @@ class CommandParser(object):
     node.spids.append(for_spid)  # for $LINENO and error fallback
 
     id_ = word_.CommandId(self.cur_word)
-    if id_ != Id.Word_Compound:
+    if id_ != Id.Word_Compound:  # error: for (
       p_die('Expected loop variable name', word=self.cur_word)
 
     ok, iter_name, quoted = word_.StaticEval(self.cur_word)
 
-    if not ok or quoted:
+    if not ok or quoted:  # error: for $x
       p_die('Loop variable should be a constant word', word=self.cur_word)
+    if not match.IsValidVarName(iter_name):  # error: for -
+      p_die("Invalid loop variable name", word=self.cur_word)
 
-    node.iter_name = iter_name
+    node.iter_names.append(iter_name)
     self._Next()  # skip past name
 
     self._NewlineOk()

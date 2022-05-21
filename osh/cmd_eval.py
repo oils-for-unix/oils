@@ -1145,7 +1145,7 @@ class CommandEvaluator(object):
             iter_expr = iterable.e
             iter_expr_blame = iterable.blame
 
-        iter_name = node.iter_name
+        iter_name = node.iter_names[0]
         status = 0  # in case we don't loop
 
         if iter_list is None:  # for_expr.Oil
