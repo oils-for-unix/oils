@@ -536,40 +536,6 @@ class OilEvaluator(object):
     if node.tag == expr_e.GeneratorExp:
       e_die('Generator expression reserved but not implemented', status=2)
 
-      #
-      # TODO: Move this code to the new for loop
-      #
-
-      comp = node.generators[0]
-      obj = self._EvalExpr(comp.iter)
-
-      iter_name = comp.lhs[0].name.val
-
-      it = obj.__iter__()
-
-      # TODO: There is probably a much better way to do this!
-      #       The scope of the loop variable is wrong, etc.
-
-      def _gen():
-        while True:
-          try:
-            loop_val = it.next()  # e.g. x
-          except StopIteration:
-            break
-          self.mem.SetValue(
-              lvalue.Named(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
-
-          if comp.cond:
-            b = self._EvalExpr(comp.cond)
-          else:
-            b = True
-
-          if b:
-            item = self._EvalExpr(node.elt)  # e.g. x*2
-            yield item
-
-      return _gen()
-
     if node.tag == expr_e.Lambda:  # |x| x+1 syntax is reserved
       # TODO: Location information for |, or func
       # Note: anonymous functions also evaluate to a Lambda, but they shouldn't

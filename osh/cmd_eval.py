@@ -1145,21 +1145,38 @@ class CommandEvaluator(object):
             iter_expr = iterable.e
             iter_expr_blame = iterable.blame
 
-        iter_name = node.iter_names[0]
         status = 0  # in case we don't loop
 
         if iter_list is None:  # for_expr.Oil
           if mylib.PYTHON:
             obj = self.expr_ev.EvalExpr(iter_expr)
 
+            # TODO: Once expr_eval.py is statically typed, consolidate this
+            # with the shell-style loop.
             self.loop_level += 1
             try:
               if isinstance(obj, list):
+
+                n = len(node.iter_names)
+                assert n > 0
+                if n == 1:
+                  i_name = None
+                  val_name = lvalue.Named(node.iter_names[0])
+                elif n == 2:
+                  i_name = lvalue.Named(node.iter_names[0])
+                  val_name = lvalue.Named(node.iter_names[1])
+                else:
+                  # This is similar to a parse error
+                  e_die('List iteration expects at most 2 loop variables',
+                        span_id=node.spids[0], status=2)
+
+                index =0
                 for item in obj:
-                  #log('> ForEach setting %r', x)
-                  self.mem.SetValue(lvalue.Named(iter_name), value.Obj(item),
+                  if i_name:
+                    self.mem.SetValue(i_name, value.Obj(index),
+                                      scope_e.LocalOnly)
+                  self.mem.SetValue(val_name, value.Obj(item),
                                     scope_e.LocalOnly)
-                  #log('<')
 
                   try:
                     status = self._Execute(node.body)  # last one wins
@@ -1171,13 +1188,39 @@ class CommandEvaluator(object):
                       status = 0
                     else:  # return needs to pop up more
                       raise
+                  index += 1
 
               elif isinstance(obj, dict):
+
+                n = len(node.iter_names)
+                assert n > 0
+                if n == 1:
+                  i_name = None
+                  key_name = lvalue.Named(node.iter_names[0])
+                  val_name = None
+                elif n == 2:
+                  i_name = None
+                  key_name = lvalue.Named(node.iter_names[0])
+                  val_name = lvalue.Named(node.iter_names[1])
+                elif n == 3:
+                  i_name = lvalue.Named(node.iter_names[0])
+                  key_name = lvalue.Named(node.iter_names[1])
+                  val_name = lvalue.Named(node.iter_names[2])
+                else:
+                  # already checked at parse time
+                  assert False
+
+                index = 0
                 for key in obj:
-                  #log('> ForEach setting %r', key)
-                  self.mem.SetValue(lvalue.Named(iter_name), value.Obj(key),
+                  self.mem.SetValue(key_name, value.Obj(key),
                                     scope_e.LocalOnly)
-                  #log('<')
+                  if val_name:
+                    dict_value = obj[key]
+                    self.mem.SetValue(val_name, value.Obj(dict_value),
+                                      scope_e.LocalOnly)
+                  if i_name:
+                    self.mem.SetValue(i_name, value.Obj(index),
+                                      scope_e.LocalOnly)
 
                   try:
                     status = self._Execute(node.body)  # last one wins
@@ -1189,6 +1232,8 @@ class CommandEvaluator(object):
                       status = 0
                     else:  # return needs to pop up more
                       raise
+
+                  index += 1
 
               else:
                 raise error.Expr("Expected list or dict, got %r" % type(obj),
@@ -1199,9 +1244,29 @@ class CommandEvaluator(object):
         else:
           self.loop_level += 1
           try:
+
+            n = len(node.iter_names)
+            assert n > 0
+            if n == 1:
+              i_name = None
+              val_name = lvalue.Named(node.iter_names[0])
+            elif n == 2:
+              i_name = lvalue.Named(node.iter_names[0])
+              val_name = lvalue.Named(node.iter_names[1])
+            else:
+              # This is similar to a parse error
+              e_die('List iteration expects at most 2 loop variables',
+                    span_id=node.spids[0], status=2)
+
+            index = 0
             for x in iter_list:
               #log('> ForEach setting %r', x)
-              self.mem.SetValue(lvalue.Named(iter_name), value.Str(x),
+              if mylib.PYTHON:
+                # value.Obj not available in C++
+                if i_name:
+                  self.mem.SetValue(i_name, value.Obj(index),
+                                    scope_e.LocalOnly)
+              self.mem.SetValue(val_name, value.Str(x),
                                 scope_e.LocalOnly)
               #log('<')
 
@@ -1215,6 +1280,7 @@ class CommandEvaluator(object):
                   status = 0
                 else:  # return needs to pop up more
                   raise
+              index += 1
           finally:
             self.loop_level -= 1
 

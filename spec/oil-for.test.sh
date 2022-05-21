@@ -40,13 +40,19 @@ i 2
 
 #### Shell for loop with index (equivalent of enumerate())
 for i item in a b c {
-  echo $i $item
+  echo "$i $item"
 }
 ## STDOUT:
 0 a
 1 b
 2 c
 ## END
+
+#### 3 indices with (mylist) is a runtime error
+for i item bad in (['foo', 'bar']) {
+  echo "$i $item $bad"
+}
+## status: 2
 
 #### Shell for loop can't have 3 indices 
 for i bad bad in a b c {
@@ -69,39 +75,38 @@ for i item in (['spam', 'eggs']) {
 1 eggs
 ## END
 
-#### Expression for loop with index: dict
+#### Expression for loop with index: dict (TODO: define dict iter order)
 for key value in ({name: 'bob', age: 40}) {
   echo "pair $key $value"
-}
+} | sort
 ## STDOUT:
-pair name bob
 pair age 40
+pair name bob
 ## END
 
-#### dict: index key value loop
+#### dict: index key value loop (TODO: define dict iter order)
 for i key value in ({name: 'bob', age: 40}) {
   echo "entry $i $key $value"
-}
+} | sort
 ## STDOUT:
-entry 0 name bob
-entry 1 age 40
+entry 0 age 40
+entry 1 name bob
 ## END
+
 
 #### Equivalent of zip()
 
-var array = %(1 2 3)
+var array = %(d e f)
 
 for i item in a b c {
-  echo $i $item
-  echo $[array[i]]
+  echo "$i $item $[array[i]]"
 }
 
 ## STDOUT:
-1 a
-2 b
-3 c
+0 a d
+1 b e
+2 c f
 ## END
-
 
 #### Iterate over shell data structures
 
