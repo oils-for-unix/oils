@@ -1178,7 +1178,10 @@ class CommandParser(object):
       if not ok or quoted:  # error: for $x
         p_die('Expected loop variable (a constant word)', word=self.cur_word)
       if not match.IsValidVarName(iter_name):  # error: for -
-        p_die("Invalid loop variable name", word=self.cur_word)
+        # TODO: consider commas?
+        if iter_name.endswith(','):
+          p_die('Remove comma; loop variables are separated by spaces', word=self.cur_word)
+        p_die('Invalid loop variable name %r', iter_name, word=self.cur_word)
 
       node.iter_names.append(iter_name)
       num_iter_names += 1

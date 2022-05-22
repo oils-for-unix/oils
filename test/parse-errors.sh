@@ -1164,6 +1164,20 @@ oil_for() {
   done
   '
 
+  # NO COMMA!
+  _oil-parse-error '
+  for x, y in SPAM EGGS; do
+    echo $x
+  done
+  '
+
+  # Bad loop variable name
+  _oil-parse-error '
+  for x-y in SPAM EGGS; do
+    echo $x
+  done
+  '
+
   _oil-parse-error '
   for x y z in SPAM EGGS; do
     echo $x
