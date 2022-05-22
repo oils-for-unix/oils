@@ -38,3 +38,40 @@ echo first ${a[0]}
 ## END
 
 
+#### Splice nested List
+
+var mylist = ["ls", {name: 42}]
+
+# What should happen here?  I think it should be an error
+@mylist
+
+## STDOUT:
+## END
+
+#### Splice nested Dict
+
+var d ={name: [1, 2, 3]}
+echo ${d[@]}
+
+## STDOUT:
+## END
+
+
+#### Concatenate shell arrays and ${#a}
+
+var a = %(a)
+var b = %(b)
+
+echo "len a ${#a[@]}"
+echo "len b ${#b[@]}"
+
+pp cell a
+
+var c = a ++ b
+pp cell c  # shouldn't be value.Obj!
+
+echo ${#c[@]}
+
+## STDOUT:
+## END
+

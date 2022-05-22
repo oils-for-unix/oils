@@ -1052,7 +1052,7 @@ oil-reserved() {
 }
 
 oil-with-sh() {
-  sh-spec spec/oil-with-sh.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/oil-with-sh.test.sh --osh-failures-allowed 6 \
     $OIL_LIST "$@"
 }
 
