@@ -16,7 +16,6 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, scope_e, Proc
 )
 from _devbuild.gen.syntax_asdl import sh_lhs_expr, command_e
-from _devbuild.gen.runtime_asdl import value__MaybeStrArray, value__Obj
 from core import error
 from core.pyerror import log, e_usage
 from core import state
@@ -27,13 +26,10 @@ from frontend import match
 from frontend import typed_args
 from qsn_ import qsn
 
-from mycpp import mylib
-from mycpp.mylib import tagswitch
-
 import yajl
 import posix_ as posix
 
-from typing import TYPE_CHECKING, Dict, cast
+from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.ui import ErrorFormatter
@@ -135,7 +131,7 @@ class Append(_Builtin):
   Note: this could also be in builtins_pure.py?
   """
   def Run(self, cmd_val):
-    _, arg_r = flag_spec.ParseCmdVal('append', cmd_val)
+    arg, arg_r = flag_spec.ParseCmdVal('append', cmd_val)
 
     var_name, var_spid = arg_r.ReadRequired2(
         'requires a variable name')
@@ -145,25 +141,15 @@ class Append(_Builtin):
 
     if not match.IsValidVarName(var_name):
       raise error.Usage('got invalid variable name %r' % var_name,
-                        span_id=var_spid)
+                            span_id=var_spid)
 
     val = self.mem.GetValue(var_name)
-    UP_val = val
-    with tagswitch(val) as case:
-      if case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, UP_val)
-        val.strs.extend(arg_r.Rest())
+    # TODO: value.Obj too
+    if val.tag != value_e.MaybeStrArray:
+      self.errfmt.Print_("%r isn't an array" % var_name, span_id=var_spid)
+      return 1
 
-      # TODO: Drop reliance on CPython -- then this will just be value_t.List
-      elif case(value_e.Obj):
-        val = cast(value__Obj, UP_val)
-        if mylib.PYTHON:
-          val.obj.extend(arg_r.Rest())
-
-      else:
-        self.errfmt.Print_("%r isn't an array" % var_name, span_id=var_spid)
-        return 1
-
+    val.strs.extend(arg_r.Rest())
     return 0
 
 

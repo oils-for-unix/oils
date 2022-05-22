@@ -133,7 +133,7 @@ class _ParseConfig(object):
     self.mem = mem
 
   def __call__(self, *args):
-    raise NotImplementedError('parse_config()')
+    raise NotImplementedError()
 
 
 class _EvalToDict(object):
