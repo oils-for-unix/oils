@@ -197,9 +197,8 @@ def Init2(mem, splitter, globber):
 
 
 def Init3(mem, config_parser):
-  # type: (funcs.ConfigParser) -> None
-
-  SetGlobalFunc(mem, 'parse_config', lambda path: config_parser.ParseFile(path))
+  # type: (state.Mem, funcs.ConfigParser) -> None
+  SetGlobalFunc(mem, 'parse_config', config_parser.ParseFile)
 
 
 def Init(mem):

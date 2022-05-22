@@ -1185,17 +1185,16 @@ class CommandParser(object):
 
       node.iter_names.append(iter_name)
       num_iter_names += 1
-
-      if num_iter_names > 3:
-        p_die('Expected at most 3 loop variables', word=self.cur_word)
-
       self._Next()
 
       self._Peek()
-      # 'in' or ';' or a newline marks the end of variable names
-      # Problem: 'var' is KW_Var and is a valid loop name
+      # 'in' or 'do' or ';' or Op_Newline marks the end of variable names
+      # Subtlety: 'var' is KW_Var and is a valid loop name
       if self.c_id in (Id.KW_In, Id.KW_Do) or self.c_kind == Kind.Op:
         break
+
+      if num_iter_names == 3:
+        p_die('Unexpected word after 3 loop variables', word=self.cur_word)
 
     self._NewlineOk()
 
