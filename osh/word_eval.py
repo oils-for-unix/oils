@@ -180,8 +180,8 @@ def _BackslashEscape(s):
 
 
 if mylib.PYTHON:
-  def _Stringify(py_val):
-    # type: (Any) -> str
+  def _Stringify(py_val, span_id=runtime.NO_SPID):
+    # type: (Any, int) -> str
     """ For predictably converting between Python objects and strings.
 
     We don't want to tie our sematnics to the Python interpreter too much.
@@ -192,10 +192,13 @@ if mylib.PYTHON:
     if isinstance(py_val, objects.Regex):  # TODO: This should be a variant of value_t?
       return py_val.AsPosixEre()
 
-    if not isinstance(py_val, (int, float, str)):
-      e_die("Expected function to return a bool, int, float, or string.  Got %s", type(py_val))
+    if isinstance(py_val, (int, float, str)):
+      return str(py_val)
 
-    return str(py_val)
+    # TODO: location info
+    e_die('Expected Bool, Int, or Str.  Got %s', type(py_val),
+          span_id=span_id)
+
 
 
 def _ValueToPartValue(val, quoted):
@@ -228,9 +231,23 @@ def _ValueToPartValue(val, quoted):
     elif case(value_e.Obj):
       if mylib.PYTHON:
         val = cast(value__Obj, UP_val)
-        return part_value.String(_Stringify(val.obj), quoted, not quoted)
-      # Not in C++
-      raise AssertionError()
+        obj = val.obj
+
+        # TODO: get rid of these tests when interpreter is typed
+        if callable(obj):
+          return part_value.String(_Stringify(obj), quoted, not quoted)
+
+        # TODO: These cases should be value_e.Str and value_e.List
+        elif isinstance(obj, (str, int, float, bool, objects.Regex)):
+          return part_value.String(_Stringify(obj), quoted, not quoted)
+
+        elif isinstance(obj, list):
+          return part_value.Array([_Stringify(item) for item in obj])
+
+        else:
+          raise AssertionError('%s %s' % (type(obj), obj))
+      else:
+        raise AssertionError()  # for MyPy
 
     else:
       # Undef should be caught by _EmptyStrOrError().
@@ -723,6 +740,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case(value_e.AssocArray):
         val = cast(value__AssocArray, UP_val)
         length = len(val.d)
+
+      elif case(value_e.Obj):
+        val = cast(value__Obj, UP_val)
+        if mylib.PYTHON:
+          if isinstance(val.obj, (list, dict)):
+            length = len(val.obj)
+          else:
+            raise AssertionError()
 
       else:
         raise AssertionError()

@@ -283,7 +283,7 @@ class OilEvaluator(object):
       strs = self.word_ev.EvalWordSequence(words)
       #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
       # TODO: unify with value_t
-      return objects.StrArray(strs)
+      return strs
 
     if node.tag == expr_e.DoubleQuoted:
       # In an ideal world, I would *statically* disallow:

@@ -48,19 +48,18 @@ module runtime
   | AssocArray(map[string, string] d)
 
   | Bool(bool b)
-  | Float(float f) -- For flags only now.  TODO: ASDL needs float type.
+  | Float(float f) -- Only used for flags now
 
     -- / d+ /
+    -- TODO: get rid of oil_lang.objects.Regex
   | Eggex(re expr, string as_ere)
 
     -- &(echo one; echo two)
   | Block(command body)
     -- Is Proc separate?  Or should Block be a "open Proc"?
 
-    -- Tea stuff: Func, Data, Enum, Class, and maybe File?
-
-    -- A Python-style object.  'any' is not currently type checked.
-    -- TODO: Remove this
+    -- Hacky wrapper for CPython object:
+    --   str, list, dict, bool, int, callable, etc.
   | Obj(any obj)
 
   -- What is valid in arrays or assoc arrays a[i] or A[i] in shell.
