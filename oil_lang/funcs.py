@@ -37,11 +37,14 @@ class ConfigParser(object):
   def ParseFile(self, path):
     # type: (str) -> value_t
 
+    call_spid = runtime.NO_SPID  # TODO: location info
+
     # TODO: need to close the file!
     try:
       f = self.fd_state.Open(path)
     except (IOError, OSError) as e:
-      raise error.Expr("Couldn't open %r: %s" % (path, posix.strerror(e.errno)))
+      msg = posix.strerror(e.errno)
+      raise error.Expr("Couldn't open %r: %s" % (path, msg), span_id=call_spid)
 
     arena = self.parse_ctx.arena
     line_reader = reader.FileLineReader(f, arena)
@@ -51,8 +54,6 @@ class ConfigParser(object):
 
     # TODO: CommandParser needs parse_opts
     c_parser = self.parse_ctx.MakeConfigParser(line_reader)
-
-    call_spid = runtime.NO_SPID  # TODO: location info
 
     # TODO: Should there be a separate config file source?
     src = source.SourcedFile(path, call_spid)

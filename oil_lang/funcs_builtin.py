@@ -7,7 +7,6 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core.pyerror import e_die, log
-from frontend import parse_lib
 from oil_lang import expr_eval
 
 from typing import Callable, Union, TYPE_CHECKING
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
   from core import state
   from osh import glob_
   from osh import split
-  #from osh import cmd_eval
+  from oil_lang import funcs
 
 _ = log
 
