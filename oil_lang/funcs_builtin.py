@@ -7,6 +7,7 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core.pyerror import e_die, log
+from frontend import parse_lib
 from oil_lang import expr_eval
 
 from typing import Callable, Union, TYPE_CHECKING
@@ -124,18 +125,6 @@ class _Shvar_get(object):
     return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic)
 
 
-class _ParseConfig(object):
-  """ parse_config()
-
-  type: (str) -> command_t
-  """
-  def __init__(self, mem):
-    self.mem = mem
-
-  def __call__(self, *args):
-    raise NotImplementedError()
-
-
 class _EvalToDict(object):
   """ eval_to_dict() """
   def __init__(self, mem):
@@ -208,6 +197,12 @@ def Init2(mem, splitter, globber):
   SetGlobalFunc(mem, 'glob', lambda s: globber.OilFuncCall(s))
 
 
+def Init3(mem, config_parser):
+  # type: (funcs.ConfigParser) -> None
+
+  SetGlobalFunc(mem, 'parse_config', lambda path: config_parser.ParseFile(path))
+
+
 def Init(mem):
   # type: (state.Mem) -> None
   """Populate the top level namespace with some builtin functions."""
@@ -228,10 +223,7 @@ def Init(mem):
 
   SetGlobalFunc(mem, 'shvar_get', _Shvar_get(mem))
 
-  # Takes a filename.  Note that parse_equals should be on.
-  SetGlobalFunc(mem, 'parse_config', _ParseConfig(mem))
-
-  # for top level namespace, and the default for lower case 'server' blocks
+  # For top level namespace, and the default for lower case 'server' blocks
   #
   # Security: You need a whole different VM?  User should not be able to modify
   # PATH or anything else.  Yeah you get a new state.Mem(), but you copy some

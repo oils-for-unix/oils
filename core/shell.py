@@ -41,6 +41,7 @@ from frontend import parse_lib
 
 from oil_lang import expr_eval
 from oil_lang import builtin_oil
+from oil_lang import funcs
 from oil_lang import funcs_builtin
 
 from osh import builtin_assign
@@ -401,6 +402,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   globber = glob_.Globber(exec_opts)
 
   funcs_builtin.Init2(mem, splitter, globber)
+
+  config_parser = funcs.ConfigParser(fd_state, parse_ctx, errfmt)
+  funcs_builtin.Init3(mem, config_parser)
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.

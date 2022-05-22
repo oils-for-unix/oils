@@ -100,6 +100,13 @@ shopt --set parse_equals {
   }
 }
 
+= config
+= block
+
+return
+
+# Why does this crash?
+
 json write (config)
 
 ## STDOUT:
@@ -123,7 +130,10 @@ json write (config)
 #
 # }
 
-const config = parse_config('spec/testdata/config/package-manager.oil')
+const path = "$REPO_ROOT/spec/testdata/config/package-manager.oil"
+#ls $path
+
+const config = parse_config(path)
 const block = eval_to_dict(%(package user))
 
 ## STDOUT:

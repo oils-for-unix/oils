@@ -37,6 +37,7 @@ from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
 
+from oil_lang import funcs
 from osh import builtin_assign
 from osh import builtin_bracket
 from osh import builtin_meta
@@ -337,6 +338,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
+
+  config_parser = funcs.ConfigParser(fd_state, parse_ctx, errfmt)
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.

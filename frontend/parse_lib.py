@@ -274,6 +274,13 @@ class ParseContext(object):
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
     return c_parser
 
+  def MakeConfigParser(self, line_reader):
+    # type: (_Reader) -> CommandParser
+    lx = self.MakeLexer(line_reader)
+    w_parser = word_parse.WordParser(self, lx, line_reader)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
+    return c_parser
+
   def MakeWordParserForHereDoc(self, line_reader):
     # type: (_Reader) -> WordParser
     lx = self.MakeLexer(line_reader)

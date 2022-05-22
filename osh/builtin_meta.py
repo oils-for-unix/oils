@@ -98,6 +98,7 @@ class Source(vm._Builtin):
     resolved = self.search_path.Lookup(path, exec_required=False)
     if resolved is None:
       resolved = path
+    # TODO: need to close the file!
     try:
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except (IOError, OSError) as e:

@@ -43,6 +43,7 @@
 ./frontend/typed_args.py
 ./oil_lang/expr_parse.py
 ./oil_lang/expr_to_ast.py
+./oil_lang/funcs.py
 ./oil_lang/objects.py
 ./oil_lang/regex_translate.py
 ./osh/arith_parse.py

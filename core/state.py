@@ -307,6 +307,25 @@ def MakeOpts(mem, opt_hook):
   return parse_opts, exec_opts, mutable_opts
 
 
+def _SetGroup(opt0_array, opt_nums, b):
+  # type: (List[bool], List[int], bool) -> None
+  for opt_num in opt_nums:
+    b2 = not b if opt_num in consts.DEFAULT_TRUE else b
+    opt0_array[opt_num] = b2
+
+
+def MakeOilOpts():
+  # type: () -> optview.Parse
+  opt0_array = InitOpts()
+  _SetGroup(opt0_array, consts.OIL_ALL, True)
+
+  no_stack = None  # type: List[bool]
+  opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
+
+  parse_opts = optview.Parse(opt0_array, opt_stacks)
+  return parse_opts
+
+
 def _ShoptOptionNum(opt_name):
   # type: (str) -> option_t
   opt_num = match.MatchOption(opt_name)
@@ -546,12 +565,6 @@ class MutableOpts(object):
         new_val = value.Str(':'.join(names))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
-  def _SetGroup(self, opt_nums, b):
-    # type: (List[int], bool) -> None
-    for opt_num in opt_nums:
-      b2 = not b if opt_num in consts.DEFAULT_TRUE else b
-      self.opt0_array[opt_num] = b2
-
   def SetShoptOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For shopt -s/-u and sh -O/+O. """
@@ -559,17 +572,17 @@ class MutableOpts(object):
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
     if opt_name == 'oil:basic':
-      self._SetGroup(consts.OIL_BASIC, b)
+      _SetGroup(self.opt0_array, consts.OIL_BASIC, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
     if opt_name == 'oil:all':
-      self._SetGroup(consts.OIL_ALL, b)
+      _SetGroup(self.opt0_array, consts.OIL_ALL, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
     if opt_name == 'strict:all':
-      self._SetGroup(consts.STRICT_ALL, b)
+      _SetGroup(self.opt0_array, consts.STRICT_ALL, b)
       return
 
     opt_num = _ShoptOptionNum(opt_name)

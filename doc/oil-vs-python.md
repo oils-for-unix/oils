@@ -53,18 +53,16 @@ Language](oil-language-tour.html).
 `%symbol` (used in eggex now, but could also be used as interned strings)
 -->
 
-### Not Supported
+### Omitted
 
-- No tuple type for now.  We might want Go-like multiple return values.
-- Iterators.  Instead we have a fixed for loop.
-- List comprehensions and generator expressions
-- Lambdas
-
-<!--
-- Tuples (TODO): Does Oil have true tuples?
-  - Singleton tuples like `42,` are disallowed, in favor of the more explicit
-    `tup(42)`.
--->
+- Iterators.
+  - Instead we have for loop that works on lists and dicts.
+  - It flexibly accepts up to 3 loop variables, taking the place of Python's
+    `enumerate()`, `keys()`, `values()`, and `items()`.
+- List comprehensions and generator expressions.  QTT over pipes should address
+  these use cases.
+- Lambdas.  Functions are often external and don't have lexical scope.
+- TODO: No tuple type for now.  We might want Go-like multiple return values.
 
 ## Operators
 
