@@ -1257,7 +1257,7 @@ class Mem(object):
 
   def TopNamespace(self):
     # type: () -> Dict[str, runtime_asdl.cell]
-    """For evalblock()."""
+    """For eval_to_dict()."""
     return self.var_stack[-1]
 
   def _PushDebugStack(self, bash_source, func_name, source_name):

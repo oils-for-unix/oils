@@ -339,7 +339,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   splitter = split.SplitContext(mem)
 
-  config_parser = funcs.ConfigParser(fd_state, parse_ctx, errfmt)
+  parse_config = funcs.ParseConfig(fd_state, parse_ctx, errfmt)
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.

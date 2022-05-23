@@ -52,17 +52,69 @@ status=0
 
 const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
 const block = parse_config(config_path)
+
 # Are blocks opaque?
 {
   = block
 } | wc -l | read n
 
 # Just make sure we got more than one line?
-test $n -gt 1
-echo status=$?
+if test "$n" -gt 1; then
+  echo "OK"
+fi
 
 ## STDOUT:
-status=0
+OK
+## END
+
+#### Block param binding
+shopt --set parse_brace
+
+proc package(name, b Block) {
+  = b
+
+  var d = eval_to_dict(b)
+
+  # NAME and TYPE?
+  setvar d->name = name
+  setvar d->type = 'package'
+
+  # Now where does d go?
+
+
+  # Every time you do eval_to_dict, it clears _config?
+
+  # Another option: HAY_CONFIG
+
+  if ('package_list' not in _config) {
+    setvar _config->package_list = []
+  }
+  _ append(_config->package_list, d)
+}
+
+# push-vars (_config) { ?  So it's not global?
+# Or make it a register.
+
+package unzip {
+  version = 1
+}
+
+## STDOUT:
+## END
+
+
+#### eval_to_dict()
+
+const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
+const block = parse_config(config_path)
+
+shvar _DIALECT=sourcehut {
+  const d = eval_to_dict(block)
+}
+
+= d 
+
+## STDOUT:
 ## END
 
 

@@ -403,9 +403,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   funcs_builtin.Init2(mem, splitter, globber)
 
-  config_parser = funcs.ConfigParser(fd_state, parse_ctx, errfmt)
-  funcs_builtin.Init3(mem, config_parser)
-
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
   crash_dump_dir = environ.get('OSH_CRASH_DUMP_DIR', '')
@@ -459,6 +456,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                                      assign_b, arena, cmd_deps)
 
   AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
+
+  parse_config = funcs.ParseConfig(fd_state, parse_ctx, errfmt)
+  eval_to_dict = funcs.EvalToDict(cmd_ev)
+  funcs_builtin.Init3(mem, parse_config, eval_to_dict)
+
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)

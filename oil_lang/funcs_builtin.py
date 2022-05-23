@@ -124,15 +124,6 @@ class _Shvar_get(object):
     return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic)
 
 
-class _EvalToDict(object):
-  """ eval_to_dict() """
-  def __init__(self, mem):
-    self.mem = mem
-
-  def __call__(self, *args):
-    return {'TODO': 'eval_to_dict()'}
-
-
 class _BlockAsStr(object):
   """ block_as_str() """
   def __init__(self, mem):
@@ -196,9 +187,10 @@ def Init2(mem, splitter, globber):
   SetGlobalFunc(mem, 'glob', lambda s: globber.OilFuncCall(s))
 
 
-def Init3(mem, config_parser):
-  # type: (state.Mem, funcs.ConfigParser) -> None
-  SetGlobalFunc(mem, 'parse_config', config_parser.ParseFile)
+def Init3(mem, config_parser, eval_to_dict):
+  # type: (state.Mem, funcs.ParseConfig, funcs.EvalToDict) -> None
+  SetGlobalFunc(mem, 'parse_config', config_parser.Call)
+  SetGlobalFunc(mem, 'eval_to_dict', eval_to_dict.Call)
 
 
 def Init(mem):
@@ -226,9 +218,6 @@ def Init(mem):
   # Security: You need a whole different VM?  User should not be able to modify
   # PATH or anything else.  Yeah you get a new state.Mem(), but you copy some
   # procs with push-procs
-
-  # command_t -> Dict
-  SetGlobalFunc(mem, 'eval_to_dict', _EvalToDict(mem))
 
   # for upper case TASK blocks
   # command_t -> Str

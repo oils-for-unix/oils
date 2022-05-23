@@ -977,6 +977,11 @@ class CommandEvaluator(object):
             oil_name = OIL_TYPE_NAMES.get(class_name, class_name)
             print('(%s)   %s' % (oil_name, repr(obj)))
 
+            # BUG FIX related to forking!  Note that BUILTINS flush, but
+            # keywords don't flush.  So we have to beware of keywords that
+            # print.  TODO: Or avoid Python's print() altogether.
+            sys.stdout.flush()
+
         # TODO: What about exceptions?  They just throw?
         status = 0
 
@@ -1830,6 +1835,8 @@ class CommandEvaluator(object):
     # because it's an int and values of the namespace dict should be
     # cells, so I've commented it out.
     #namespace['_returned'] = status
+
+    # TODO: Have to get rid of the cells
     return namespace_
 
   def RunFuncForCompletion(self, proc, argv):

@@ -4,8 +4,8 @@ use dialect sourcehut
 
 image = 'debian/buster'
 
-# This should be an error
-image = 'oops'
+# This should be an error, YUP
+# image = 'oops'
 
 packages = %(zip wget)
 
