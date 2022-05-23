@@ -1178,8 +1178,11 @@ class CommandParser(object):
       # Hack that makes the language more familiar:
       # - 'x, y' is accepted, but not 'x,y' or 'x ,y'
       # - 'x y' is also accepted but not idiomatic.
-      if w.parts[-1].id == Id.Lit_Comma:
-        w.parts.pop()
+      UP_w = w
+      if w.tag_() == word_e.Compound:
+        w = cast(compound_word, UP_w)
+        if word_.LiteralId(w.parts[-1]) == Id.Lit_Comma:
+          w.parts.pop()
 
       ok, iter_name, quoted = word_.StaticEval(w)
       if not ok or quoted:  # error: for $x
@@ -1341,6 +1344,14 @@ class CommandParser(object):
         self._Next()
       else:
         break
+
+    if not self.parse_opts.parse_bare_word() and len(pat_words) == 1:
+      # case $x in (foo) should be ('foo') -- otherwise it looks like a
+      # variable name.
+      ok, s, quoted = word_.StaticEval(pat_words[0])
+      if ok and match.IsValidVarName(s) and not quoted:
+        p_die('Constant pattern should be quoted (parse_bare_word)',
+               word=pat_words[0])
 
     rparen_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_CasePat)

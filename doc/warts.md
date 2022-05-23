@@ -52,6 +52,27 @@ Yes:
 This is because the `((` token is for bash arithmetic, which is disallowed in
 Oil.
 
+### Case Patterns are in Parens, But They're Words, Not Expressions
+
+Code inside `()` without sigils is usually parsed as an expression:
+
+    if (x > 0) { echo 'positive' }
+    while (x > 0) { echo 'hi' }
+    for x in (mydict) { echo 'hi' }
+
+See [Command vs. Expression Mode](command-vs-expression-mode.html).  But this
+isn't true of case patterns, which are parsed as words:
+
+    case $x {
+      (*.py) echo 'Python' ;;
+      (*.sh) echo 'Shell'  ;;
+      (*)    echo 'Other'  ;;
+    }
+
+This syntax, including the `;;` operator, is inherited from shell.  (Aside: In
+Oil, the left paren is required.  Matchin parens are easier for tools to
+understand.)
+
 ### Function Sub Isn't Allowed in Double Quoted Strings
 
 You can do

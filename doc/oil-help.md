@@ -103,6 +103,68 @@ scope (TODO):
 
 Compare with [sh-func]($osh-help).
 
+#### oil-if
+
+Command or expression:
+
+    if (x > 0) {
+      echo 'positive'
+    }
+
+#### oil-case
+
+    case $x {
+      # balanced parens around patterns
+      (*.py)     echo 'Python' ;;
+      ('README') echo 'README' ;;  # consatnt words must be quoted
+      (*)        echo 'Other'  ;;
+    }
+
+#### oil-while
+
+Command or expression:
+
+    var x = 5
+    while (x < 0) {
+      setvar x -= 1
+    }
+
+#### oil-for
+
+Two forms for shell-style loops:
+
+    for name in *.py {
+      echo "$name"
+    }
+
+    for i, name in *.py {
+      echo "$i $name"
+    }
+
+Two forms for expressions that evaluate to a `List`:
+
+    for item in (mylist) {
+      echo "$item"
+    }
+
+    for i, item in (mylist) {
+      echo "$i $item"
+    }
+
+Three forms for expressions that evaluate to a `Dict`:
+
+    for key in (mydict) {
+      echo "$key"
+    }
+
+    for key, value in (mydict) {
+      echo "$key $value"
+    }
+
+    for i, key, value in (mydict) {
+      echo "$i $key $value"
+    }
+
 #### equal
 
 The `=` keyword evaluates an expression and shows the result:

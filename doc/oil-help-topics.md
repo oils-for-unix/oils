@@ -41,6 +41,7 @@ feature is **unimplemented**.
 ```oil-help-topics
                   proc          proc p (x, :out, @rest, e Expr, b Block) { c }
                   oil-if        if (x > 0) { echo }
+                  oil-case      case $x { ('build') do build ;; }
                   oil-while     while (x > 0) { echo }
                   oil-for       for i, item in (mylist) { echo }
                   equal =       = 1 + 2*3

@@ -558,8 +558,8 @@ corresponding block:
         echo 'python'
         rm --verbose $s
         ;;
-      (*.sh)
-        echo 'shell'
+      ('README')       # constant words should be quoted
+        echo 'README'
         ;;
       (*)
         echo 'neither'

@@ -84,16 +84,19 @@ Throw away the value:
 Expressions appear inside `()`:
 
     if (x > 0) { 
-      echo positive
+      echo 'positive'
     }
     
     while (x > 0) {
       setvar x -= 1
     }
     
-    for (k, v in mydict) { 
-      echo $x $y
+    for k, v in (mydict) { 
+      echo "$k $v"
     }
+
+(The syntax of `case` breaks this rule.  It's a [wart inherited from
+shell](warts.html#case-patterns-are-in-parens-but-theyre-words-not-expressions).)
 
 ## From Expression Mode to Command Mode
 
