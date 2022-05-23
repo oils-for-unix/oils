@@ -190,7 +190,6 @@ def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
 
   b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
   b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
-  b[builtin_i.push_procs] = builtin_pure.PushProcs(mem, cmd_ev)
   b[builtin_i.fopen] = builtin_pure.Fopen(mem, cmd_ev)
 
   b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
@@ -291,6 +290,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   funcs_builtin.Init(mem)
 
   procs = {}  # type: Dict[str, Proc]
+  hay_state = state.Hay()
 
   if attrs.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])
@@ -425,7 +425,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   modules = {}  # type: Dict[str, bool]
 
   shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, builtins, search_path,
+      mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
       ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
   shell_native.AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
@@ -457,9 +457,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 
-  parse_config = funcs.ParseConfig(fd_state, parse_ctx, errfmt)
-  eval_to_dict = funcs.EvalToDict(cmd_ev)
-  funcs_builtin.Init3(mem, parse_config, eval_to_dict)
+  parse_config = funcs.ParseHay(fd_state, parse_ctx, errfmt)
+  eval_to_dict = funcs.EvalHay(hay_state, cmd_ev)
+  block_as_str = funcs.BlockAsStr(arena)
+  hay_result = funcs.HayResult(hay_state)
+  funcs_builtin.Init3(mem, parse_config, eval_to_dict, block_as_str, hay_result)
 
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
@@ -497,7 +499,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   shell_native.AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases,
                        search_path, errfmt)
   shell_native.AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev,
-                        shell_ex, errfmt)
+                        shell_ex, hay_state, errfmt)
   builtins[builtin_i.json] = builtin_oil.Json(mem, expr_ev, errfmt)
 
   spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,

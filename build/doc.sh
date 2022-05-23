@@ -78,6 +78,7 @@ readonly MARKDOWN_DOCS=(
   errors
   error-handling
   json
+  hay
   simple-word-eval
   quirks
   warts

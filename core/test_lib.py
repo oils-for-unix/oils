@@ -231,8 +231,9 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
   waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
 
+  hay_state = state.Hay()
   shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, builtins, search_path,
+      mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
       ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
   assert cmd_ev.mutable_opts is not None, cmd_ev

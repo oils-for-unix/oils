@@ -190,4 +190,7 @@ module runtime
 
   -- tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ
+
+  -- Hay "first word" namespace
+  hay_node = (map[string, hay_node] children)
 }

@@ -4,6 +4,8 @@ vm.py: Library for executing shell.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import CommandStatus, StatusArray
+from core.pyerror import log
+
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
@@ -21,6 +23,8 @@ if TYPE_CHECKING:
   from osh import prompt
   from core import dev
   from core import state
+
+_ = log
 
 
 def InitUnsafeArith(mem, word_ev, unsafe_arith):

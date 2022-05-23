@@ -34,9 +34,10 @@ from frontend import match
 from frontend import typed_args
 from qsn_ import qsn
 from mycpp import mylib
+from mycpp.mylib import iteritems, tagswitch
 from osh import word_compile
 
-from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.state import MutableOpts, Mem, SearchPath
@@ -656,28 +657,6 @@ class Shvar(vm._Builtin):
     return 0
 
 
-class PushProcs(vm._Builtin):
-  def __init__(self, mem, cmd_ev):
-    # type: (state.Mem, CommandEvaluator) -> None
-    self.mem = mem
-    self.cmd_ev = cmd_ev  # To run blocks
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    _, arg_r = flag_spec.ParseCmdVal('push-procs', cmd_val,
-                                     accept_typed_args=True)
-
-    block = typed_args.GetOneBlock(cmd_val.typed_args)
-    if not block:
-      raise error.Usage('expected a block', span_id=runtime.NO_SPID)
-
-    # TODO: ctx
-    #with state.ctx_Registers(self.mem):
-    unused = self.cmd_ev.EvalBlock(block)
-
-    return 0
-
-
 class PushRegisters(vm._Builtin):
   def __init__(self, mem, cmd_ev):
     # type: (state.Mem, CommandEvaluator) -> None
@@ -727,3 +706,175 @@ class Fopen(vm._Builtin):
 
     unused = self.cmd_ev.EvalBlock(block)
     return 0
+
+
+if mylib.PYTHON:
+
+  class HayNode(vm._Builtin):
+    """
+    The FIXED builtin that is run after 'hay define'
+
+    It evaluates a SUBTREE
+
+    Example:
+
+      haynode package cppunit {
+        version = '1.0'
+
+        haynode user {
+        }
+      }
+
+    And where is the output stored?
+    """
+
+    def __init__(self, hay_state, mem, cmd_ev):
+      # type: (state.Hay, state.Mem, CommandEvaluator) -> None
+      self.hay_state = hay_state
+      self.mem = mem  # for new context
+      self.cmd_ev = cmd_ev  # To run blocks
+
+    def Run(self, cmd_val):
+      # type: (cmd_value__Argv) -> int
+      #_, arg_r = flag_spec.ParseCmdVal('hay-dummy', cmd_val,
+      #                                 accept_typed_args=True)
+
+      arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+
+      hay_name, arg0_spid = arg_r.Peek2()
+      if hay_name == 'haynode':  # haynode package glib { ... }
+        arg_r.Next()
+        hay_name = None  # don't validate
+
+      # Should we call hay_state.AddChild() so it can be mutated?
+      result = self.hay_state.MakeResultNode()  # type: Dict[str, Any]
+
+      node_type, _ = arg_r.Peek2()
+      result['type'] = node_type
+
+      arg_r.Next()
+      name, name_spid = arg_r.Peek2()
+      if name is None:  # package { ... } is not valid
+        e_usage('expected name argument', span_id=arg0_spid)
+      result['name'] = name
+
+      if node_type.isupper():  # TASK build { ... }
+        block = typed_args.GetOneBlock(cmd_val.typed_args)
+        if block is None:
+          e_usage('command node requires a block argument')
+        result['block'] = block  # UNEVALUATED block
+
+      else:
+        block = typed_args.GetOneBlock(cmd_val.typed_args)
+        if block:  # 'package foo' is OK
+          if node_type.isupper():  # TASK build { ... }
+            result['block'] = block  # UNEVALUATED block
+          else:
+            result['children'] = []
+
+            # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
+            with state.ctx_Temp(self.mem):
+              with state.ctx_Hay(self.hay_state, hay_name):
+                # Note: we want all haynode invocations in the block to appear as
+                # our 'children', recursively
+                block_attrs = self.cmd_ev.EvalBlock(block)
+
+            attrs = {}  # type: Dict[str, Any]
+            for name, cell in iteritems(block_attrs):
+              val = cell.val
+              UP_val = val
+              with tagswitch(val) as case:
+                if case(value_e.Str):
+                  val = cast(value__Str, UP_val)
+                  obj = val.s
+                else:
+                  obj = None
+
+              attrs[name] = obj
+
+            result['attrs'] = attrs
+
+      return 0
+
+
+  _HAY_ACTION_ERROR = "builtin expects 'define', 'clear' or 'pp'"
+
+  class Hay(vm._Builtin):
+    """
+    hay define -- package user
+    hay define --under user -- foo bar
+
+    hay pp
+
+    hay push-defs {
+      var config = eval_to_dict(block)
+    }
+    """
+    def __init__(self, hay_state, cmd_ev, shell_ex):
+      # type: (state.Hay, CommandEvaluator, vm._Executor) -> None
+      self.hay_state = hay_state
+      self.cmd_ev = cmd_ev  # To run blocks
+      self.shell_ex = shell_ex  # To mutate shell_ex.procs
+
+    def Run(self, cmd_val):
+      # type: (cmd_value__Argv) -> int
+      arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+      arg_r.Next()  # skip 'hay'
+
+      action, action_spid = arg_r.Peek2()
+      if action is None:
+        e_usage(_HAY_ACTION_ERROR, span_id=action_spid)
+      arg_r.Next()
+
+      if action == 'define':
+        # TODO: parse --under
+        #arg, arg_r = flag_spec.ParseCmdVal('hay-define', cmd_val)
+
+        # arg = args.Parse(JSON_WRITE_SPEC, arg_r)
+
+        # TODO: --under flag
+        first, _ = arg_r.Peek2()
+        if first is None:
+          e_usage('define expected a name', span_id=action_spid)
+
+        for name in arg_r.Rest():
+          self.hay_state.Define(name, '')
+
+      elif action == 'clear':
+        # - hay clear defs
+        # - hay clear result
+
+        second, second_spid = arg_r.Peek2()
+        if second is None:
+          e_usage("clear expected 'defs' or 'result'", span_id=action_spid)
+
+        if second == 'defs':
+          self.hay_state.ClearDefs()
+        elif second == 'result':
+          self.hay_state.ClearResult()
+        else:
+          # TODO: make sure strings are de-duplicated
+          e_usage("clear expected 'defs' or 'result'", span_id=second_spid)
+
+        # If no args, should it clear both?
+
+      elif action == 'pp':
+        # - hay pp defs
+        # - hay pp result
+
+        from pprint import pprint
+
+        second, second_spid = arg_r.Peek2()
+        if second is None:
+          e_usage("pp expected 'defs' or 'result'", span_id=action_spid)
+        if second == 'defs':
+          pprint(self.hay_state.root_defs)
+        elif second == 'result':
+          pprint(self.hay_state.Result())
+        else:
+          e_usage("pp expected 'defs' or 'result'", span_id=second_spid)
+
+      else:
+        e_usage(_HAY_ACTION_ERROR, span_id=action_spid)
+
+      return 0

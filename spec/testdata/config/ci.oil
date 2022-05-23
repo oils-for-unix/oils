@@ -11,12 +11,12 @@ packages = %(zip wget)
 
 secrets = %(0123-abcd)
 
-task cpp {
+TASK cpp {
   cd oil
   services/toil-worker.sh run-cpp
 }
 
-task publish-html {
+TASK publish-html {
   cd oil
   services/sourcehut.sh publish-html-assuming-key
 }

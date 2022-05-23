@@ -124,15 +124,6 @@ class _Shvar_get(object):
     return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic)
 
 
-class _BlockAsStr(object):
-  """ block_as_str() """
-  def __init__(self, mem):
-    self.mem = mem
-
-  def __call__(self, *args):
-    raise NotImplementedError()
-
-
 class _VmEval(object):
   """ _vm_eval() """
   def __init__(self, mem):
@@ -187,10 +178,17 @@ def Init2(mem, splitter, globber):
   SetGlobalFunc(mem, 'glob', lambda s: globber.OilFuncCall(s))
 
 
-def Init3(mem, config_parser, eval_to_dict):
-  # type: (state.Mem, funcs.ParseConfig, funcs.EvalToDict) -> None
-  SetGlobalFunc(mem, 'parse_config', config_parser.Call)
-  SetGlobalFunc(mem, 'eval_to_dict', eval_to_dict.Call)
+def Init3(mem, config_parser, eval_to_dict, block_as_str, hay_result):
+  # type: (state.Mem, funcs.ParseHay, funcs.EvalHay, funcs.BlockAsStr, funcs.HayResult) -> None
+  SetGlobalFunc(mem, 'parse_hay', config_parser.Call)
+  SetGlobalFunc(mem, 'eval_hay', eval_to_dict.Call)
+
+  # For interactive use.  eval_hay() is simpler during batch use.
+  SetGlobalFunc(mem, '_hay_result', hay_result.Call)
+
+  # for upper case TASK blocks: command_t -> Str
+  SetGlobalFunc(mem, 'block_as_str', block_as_str.Call)
+
 
 
 def Init(mem):
@@ -212,16 +210,6 @@ def Init(mem):
   SetGlobalFunc(mem, '_end', _End(mem))
 
   SetGlobalFunc(mem, 'shvar_get', _Shvar_get(mem))
-
-  # For top level namespace, and the default for lower case 'server' blocks
-  #
-  # Security: You need a whole different VM?  User should not be able to modify
-  # PATH or anything else.  Yeah you get a new state.Mem(), but you copy some
-  # procs with push-procs
-
-  # for upper case TASK blocks
-  # command_t -> Str
-  SetGlobalFunc(mem, 'block_as_str', _BlockAsStr(mem))
 
   #
   # Borrowed from Python

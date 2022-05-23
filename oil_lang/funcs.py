@@ -22,13 +22,12 @@ from typing import TYPE_CHECKING, cast, Any, Dict
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import value_t
-  from _devbuild.gen.syntax_asdl import command_t
   from core import process
   from frontend import parse_lib
   from osh import cmd_eval
 
 
-class ParseConfig(object):
+class ParseHay(object):
   """ parse_config() """
 
   def __init__(self, fd_state, parse_ctx, errfmt):
@@ -71,10 +70,12 @@ class ParseConfig(object):
     return value.Block(node)
 
 
-class EvalToDict(object):
+class EvalHay(object):
   """ eval_to_dict() """
-  def __init__(self, cmd_ev):
-    # type: (cmd_eval.CommandEvaluator) -> None
+
+  def __init__(self, hay_state, cmd_ev):
+    # type: (state.Hay, cmd_eval.CommandEvaluator) -> None
+    self.hay_state = hay_state
     self.cmd_ev = cmd_ev
 
   if mylib.PYTHON:
@@ -91,9 +92,32 @@ class EvalToDict(object):
       block = cast(value__Block, UP_block)
       top_namespace = self.cmd_ev.EvalBlock(block.body)
 
-      # TODO: get rid of cells, value.Str() etc.
-      # _
-      return top_namespace
+      return self.hay_state.Result()
 
       # Note: we should discourage the unvalidated top namesapce for files?  It
       # needs more validation.
+
+
+class BlockAsStr(object):
+  """ block_as_str() """
+
+  def __init__(self, arena):
+    # type: (alloc.Arena) -> None
+    self.arena = arena
+
+  def Call(self, block):
+    # type: (value_t) -> value_t
+    return block
+
+
+class HayResult(object):
+  """ hay_result() """
+
+  def __init__(self, hay_state):
+    # type: (state.Hay) -> None
+    self.hay_state = hay_state
+
+  if mylib.PYTHON:
+    def Call(self):
+      # type: () -> Dict[str, Any]
+      return self.hay_state.Result()

@@ -1,7 +1,6 @@
-# Oil Configuration
+# Configuration
 #
-# The "COWS" pattern
-
+# Hay: Hay Ain't YAML
 
 #### use bin
 use
@@ -47,11 +46,170 @@ status=1
 status=0
 ## END
 
+#### hay builtin usage
+shopt --set parse_brace
 
-#### parse_config() 
+hay define
+echo status=$?
+
+hay define -- package user
+echo status=$?
+
+hay pp defs | wc -l | read n
+echo read $?
+test $n -gt 0
+echo greater $?
+
+## STDOUT:
+status=2
+status=0
+read 0
+greater 0
+## END
+
+#### haynode builtin can define nodes
+shopt --set parse_paren parse_brace parse_equals
+
+# It prints JSON by default?  What about the code blocks?
+# Or should there be a --json flag?
+
+haynode parent alice {
+  age = '50'
+  
+  haynode child bob {
+    age = '10'
+  }
+
+  haynode child carol {
+    age = '20'
+  }
+
+  other = 'str'
+}
+
+# _hay_result() is mutated regsiter
+var result = _hay_result()
+
+#= result
+write -- 'level 0 children' $len(result['children'])
+write -- 'level 1 children' $len(result['children'][0]['children']) 
+
+hay clear result
+
+setvar result = _hay_result()
+write -- 'level 0 children' $len(result['children'])
+
+## STDOUT:
+level 0 children
+1
+level 1 children
+2
+level 0 children
+0
+## END
+
+
+#### haynode: node name is required
+shopt --set parse_brace parse_equals
+
+haynode package
+echo status=$?
+
+haynode package {
+  version = '1.0'
+}
+echo status=$?
+
+hay define package
+
+package
+echo status=$?
+
+package {
+  version = '1.0'
+}
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+status=2
+status=2
+## END
+
+#### haynode: shell nodes require block args; attribute nodes don't
+
+shopt --set parse_brace parse_equals
+
+hay define package TASK
+
+package glibc > /dev/null
+echo status=$?
+
+TASK build
+echo status=$?
+
+## STDOUT:
+status=0
+status=2
+## END
+
+
+
+#### hay define --under
+set -o errexit
+shopt --set parse_brace parse_equals
+
+hay define package user TASK
+
+hay define --under package -- license
+
+hay pp defs > /dev/null
+
+# shvar PATH=
+# shopt --unset allow_side_effects
+
+package cppunit
+echo status=$?
+
+package unzip {
+  version = '1.0'
+
+  license {
+    echo hi
+  }
+}
+echo status=$?
+
+user bob
+echo status=$?
+
+TASK build {
+  configure
+}
+echo status=$?
+
+hay pp defs
+
+hay clear defs
+
+hay pp defs
+
+# TODO: Test printing it to JSON?
+# Problem: we can't retroactively do hay_eval?
+
+## STDOUT:
+status=0
+status=0
+status=0
+status=0
+## END
+
+
+#### parse_hay() 
 
 const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
-const block = parse_config(config_path)
+const block = parse_hay(config_path)
 
 # Are blocks opaque?
 {
@@ -67,123 +225,44 @@ fi
 OK
 ## END
 
-#### Block param binding
+
+#### parse_hay() then shvar _DIALECT= { eval_hay() }
 shopt --set parse_brace
 
-proc package(name, b Block) {
-  = b
-
-  var d = eval_to_dict(b)
-
-  # NAME and TYPE?
-  setvar d->name = name
-  setvar d->type = 'package'
-
-  # Now where does d go?
-
-
-  # Every time you do eval_to_dict, it clears _config?
-
-  # Another option: HAY_CONFIG
-
-  if ('package_list' not in _config) {
-    setvar _config->package_list = []
-  }
-  _ append(_config->package_list, d)
-}
-
-# push-vars (_config) { ?  So it's not global?
-# Or make it a register.
-
-package unzip {
-  version = 1
-}
-
-## STDOUT:
-## END
-
-
-#### eval_to_dict()
+hay define TASK
 
 const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
-const block = parse_config(config_path)
+const block = parse_hay(config_path)
 
 shvar _DIALECT=sourcehut {
-  const d = eval_to_dict(block)
+  const d = eval_hay(block)
 }
 
-= d 
+const children = d['children']
+write 'level 0 children' $len(children) ---
+write 'child 0' $[children[0]->type] $[children[0]->name] ---
+write 'child 1' $[children[1]->type] $[children[1]->name] ---
+
+#= d 
+
+#pp cell d
 
 ## STDOUT:
+level 0 children
+2
+---
+child 0
+TASK
+cpp
+---
+child 1
+TASK
+publish-html
+---
 ## END
 
 
-#### CI config with task blocks
-shopt --set oil:basic
-
-# this could be ci.coil too
-const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
-
-proc task(name, block Block) {
-  echo "task name=$name"
-
-  # Note: we DON'T use evalblock here!
-  #
-  # Instead we really want blockstring? or blockstr() ?
-  # blockcodestr() ?  We validate the literal code and put it in JSON
-
-  # Note that we accept Oil in addition to shell, but we should probably
-  # accept shell.
-  #
-  # You could have 'sh-task' and 'oil-task' ?
-}
-
-task foo {
-  echo 'running task foo'
-}
-
-shopt --set parse_equals { 
-  shvar _DIALECT=sourcehut { # use dialect should FAIL if this isn't set
-
-    # maybe '-external' for external commands?
-    # +external/echo to allow just one?
-    # That is similar to 'use bin'
-
-    const first_words = %( +proc/task +builtin/{echo,write,printf} )
-
-    # Possible syntaxes:
-    # - no sigil: proc/task
-    # - % which are like symbols, would be confusing
-    # - other namespaces:
-    #   - +alias/myalias
-    #   - +option/errexit
-    #   - coprocess, container?
-    # - shopt_get('+option/errexit') ?  Make it first class?
-
-    # TODO: This should be bin/oven --source ci_dialect.oil -- myconfig.oil
-    # Do we also need --source-after?  or -c after?
-
-    # Or we can do bin/oil --source ci_dialect.oil -- myconfig.oil
-
-    const config = parse_config(config_path)
-    const block = eval_to_dict(first_words)
-  }
-}
-
-= config
-= block
-
-return
-
-# Why does this crash?
-
-json write (config)
-
-## STDOUT:
-{"image": "debian/buster"}
-## END
-
-#### Dict Blocks
+#### Attribute Blocks
 
 # first words has to be dynamic I think?
 #
@@ -203,11 +282,18 @@ json write (config)
 const path = "$REPO_ROOT/spec/testdata/config/package-manager.oil"
 #ls $path
 
-const config = parse_config(path)
-const block = eval_to_dict(%(package user))
+const block = parse_hay(path)
+
+hay define package
+const d = eval_hay(block)
+write 'level 0 children' $len(d['children'])
+write 'level 1 children' $len(d['children'][1]['children'])
 
 ## STDOUT:
-TODO
+level 0 children
+3
+level 1 children
+0
 ## END
 
 #### Turn off external binaries with shvar PATH='' {}
@@ -268,27 +354,55 @@ status=127
 _status 127
 ## END
 
-#### push-procs
+#### Block param binding
 shopt --set parse_brace
 
-f() { echo F; }
-g() { echo G; }
-h() { echo H; }
+proc package(name, b Block) {
+  = b
 
-push-procs f g {
-  f
-  echo status=$?
-  g
-  echo status=$?
-  h
-  echo status=$?
+  var d = eval_hay(b)
+
+  # NAME and TYPE?
+  setvar d->name = name
+  setvar d->type = 'package'
+
+  # Now where does d go?
+
+
+  # Every time you do eval_hay, it clears _config?
+
+  # Another option: HAY_CONFIG
+
+  if ('package_list' not in _config) {
+    setvar _config->package_list = []
+  }
+  _ append(_config->package_list, d)
+}
+
+# push-vars (_config) { ?  So it's not global?
+# Or make it a register.
+
+package unzip {
+  version = 1
 }
 
 ## STDOUT:
-F
-status=0
-G
-status=0
-status=127
 ## END
 
+
+#### Proc that doesn't take a block
+shopt --set parse_brace
+
+proc task(name) {
+  echo "task name=$name"
+}
+
+task foo {
+  echo 'running task foo'
+}
+# This should be an error
+echo status=$?
+
+## STDOUT:
+status=1
+## END

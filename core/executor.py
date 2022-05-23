@@ -8,6 +8,7 @@ import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import redirect, trace
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
@@ -58,6 +59,7 @@ class ShellExecutor(vm._Executor):
       exec_opts,  # type: optview.Exec
       mutable_opts,  # type: state.MutableOpts
       procs,  # type: Dict[str, Proc]
+      hay_state,  # type: state.Hay
       builtins,  # type: Dict[int, _Builtin]
       search_path,  # type: state.SearchPath
       ext_prog,  # type: process.ExternalProgram
@@ -73,6 +75,7 @@ class ShellExecutor(vm._Executor):
     self.exec_opts = exec_opts
     self.mutable_opts = mutable_opts  # for IsDisabled(), not mutating
     self.procs = procs
+    self.hay_state = hay_state
     self.builtins = builtins
     self.search_path = search_path
     self.ext_prog = ext_prog
@@ -217,6 +220,9 @@ class ShellExecutor(vm._Executor):
     if builtin_id != consts.NO_INDEX:
       cmd_st.show_code = True  # this is a "leaf" for errors
       return self.RunBuiltin(builtin_id, cmd_val)
+
+    if self.hay_state.Resolve(arg0):
+      return self.RunBuiltin(builtin_i.haynode, cmd_val)
 
     environ = self.mem.GetExported()  # Include temporary variables
 

@@ -124,12 +124,15 @@ def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
   builtins[builtin_i.boolstatus] = builtin_meta.BoolStatus(shell_ex, errfmt)
 
 
-def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex, errfmt):
-  # type: (Dict[int, vm._Builtin], state.Mem, state.MutableOpts, state.DirStack, cmd_eval.CommandEvaluator, vm._Executor, ui.ErrorFormatter) -> None
+def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex, hay_state, errfmt):
+  # type: (Dict[int, vm._Builtin], state.Mem, state.MutableOpts, state.DirStack, cmd_eval.CommandEvaluator, vm._Executor, state.Hay, ui.ErrorFormatter) -> None
   # These builtins take blocks, and thus need cmd_ev.
   builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
   builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
   builtins[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, cmd_ev, shell_ex, errfmt)
+  if mylib.PYTHON:
+    builtins[builtin_i.hay] = builtin_pure.Hay(hay_state, cmd_ev, shell_ex)
+    builtins[builtin_i.haynode] = builtin_pure.HayNode(hay_state, mem, cmd_ev)
 
 
 def InitAssignmentBuiltins(mem, procs, errfmt):
@@ -237,6 +240,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   state.InitMem(mem, environ, version_str)
 
   procs = {}  # type: Dict[str, Proc]
+  hay_tree = state.Hay()
 
   if attrs.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])
@@ -339,7 +343,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   splitter = split.SplitContext(mem)
 
-  parse_config = funcs.ParseConfig(fd_state, parse_ctx, errfmt)
+  parse_config = funcs.ParseHay(fd_state, parse_ctx, errfmt)
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
@@ -382,7 +386,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                                      assign_b, arena, cmd_deps)
 
   shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, builtins, search_path,
+      mem, exec_opts, mutable_opts, procs, hay_tree, builtins, search_path,
       ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
@@ -419,7 +423,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
           errfmt)
-  AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex, errfmt)
+  AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex, hay_tree, errfmt)
 
   #builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
   #                                                cmd_deps.trap_nodes,

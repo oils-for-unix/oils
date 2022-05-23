@@ -112,7 +112,6 @@ feature is **unimplemented**.
   [Shell State]   oil-cd   oil-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
                   push-registers         Save registers like $?, PIPESTATUS
-                  X push-procs           Limit the procs visible
   [Modules]       runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
                   use                    change first word lookup
@@ -121,6 +120,7 @@ feature is **unimplemented**.
                   fork   forkwait        Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
                   X log   X die          common functions (polyfill)
+  [Hay Config]    hay   haynode          For DSLs and config files
   [Data Formats]  json   X qtt
 X [QTT]           rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
@@ -241,7 +241,7 @@ X [String]        find()   sub()   join()
   [Arrays]        X index()   append()   extend()
   [Assoc Arrays]  @keys()   @values()
   [Introspection] shvar_get()
-X [Config Gen]    parse_config()   eval_to_dict()   block_to_str()   
+X [Hay Config]    parse_hay()   eval_hay()   _hay_result()   block_as_str()   
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()

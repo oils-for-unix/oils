@@ -16,7 +16,7 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
-    scope_e, scope_t,
+    scope_e, scope_t, hay_node
 )
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
@@ -253,6 +253,111 @@ class ctx_ErrExit(object):
 
     if self.strict:
       self.mutable_opts.Pop(option_i.allow_csub_psub)
+
+
+class ctx_Hay(object):
+  """For hay push-defs { ... }
+
+  Two pieces of functionality:
+
+  - update ex.hay_current based on the ex.hay_root
+    - this is the INPUT namespace
+
+  - update _config?
+    - and CHILDREN
+  """
+  def __init__(self, hay_state, hay_name):
+    # type: (Hay, Optional[str]) -> None
+    #log('pairs %s', pairs)
+    self.hay_state = hay_state
+    self.hay_state.Push(hay_name)
+
+  def __enter__(self):
+    # type: () -> None
+    return
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.hay_state.Pop()
+
+
+class Hay(object):
+  """State for DSLs."""
+
+  def __init__(self):
+    # type: () -> None
+    self.root_defs = hay_node()
+    self.cur_defs = self.root_defs  # Same as ClearDefs()
+    self.def_stack = [self.root_defs]
+
+    # same as ClearResult()
+    self.result_stack = [{'source': None, 'children': []}]  # type: List[Dict[str, Any]]
+
+  if mylib.PYTHON:  # TODO: hay results should be a value_t tree
+
+    def MakeResultNode(self):
+      # type: () -> Dict[str, Any]
+      """Called by haynode builtin."""
+
+      d = {}  # type: Dict[str, Any]
+      assert 'children' in self.result_stack[-1], self.result_stack[-1]
+      self.result_stack[-1]['children'].append(d)
+
+      if 0:
+        log('  cur_children %s', self.cur_children)
+        log('  result_stack %s', self.result_stack)
+      return d
+
+    def Result(self):
+      # type: () -> Dict[str, Any]
+      """ Called by eval_attr_block() """
+      #log('  result_stack %s', self.result_stack)
+      return self.result_stack[0]
+
+    def ClearResult(self):
+      # type: () -> None
+      self.result_stack = [{'source': None, 'children': []}]
+
+  def Resolve(self, first_word):
+    # type: (str) -> bool
+    return first_word in self.cur_defs.children
+
+  def Define(self, name, under):
+    # type: (str, str) -> None
+    assert under == ''
+    self.root_defs.children[name] = hay_node()  # register
+
+  def ClearDefs(self):
+    # type: () -> None
+    self.root_defs = hay_node()
+
+  def Push(self, hay_name):
+    # type: (Optional[str]) -> None
+    """
+    package cppunit { }   # pushes a namespace
+    haynode package cppunit { }   # just assumes every TYPE 'package' is valid
+    """
+    if mylib.PYTHON:
+      top = self.result_stack[-1]
+      self.result_stack.append(top['children'][-1])
+
+    #log('> PUSH')
+    if hay_name is None:
+      self.def_stack.append(self.cur_defs)  # no-op
+    else:
+      # Caller should ensure this
+      assert hay_name in self.cur_defs.children, hay_name
+
+      self.cur_defs = self.cur_defs.children[hay_name]
+      self.def_stack.append(self.cur_defs)
+
+  def Pop(self):
+    # type: () -> None
+    self.def_stack.pop()
+    self.cur_defs = self.def_stack[-1]
+
+    if mylib.PYTHON:
+      self.result_stack.pop()
 
 
 class OptHook(object):

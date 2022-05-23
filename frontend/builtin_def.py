@@ -51,10 +51,11 @@ _NORMAL_BUILTINS = [
     #
     'append',
     'write', 'json', 'pp',
+    'hay', 'haynode',
     'module', 'use',
 
     # take a block
-    # push-registers and push-procs added below
+    # push-registers added below
     'fork', 'forkwait',
     'fopen',
     'shvar',
@@ -137,7 +138,6 @@ def _Init(b):
     b.Add(name)
 
   b.Add('push-registers', enum_name='push_registers')
-  b.Add('push-procs', enum_name='push_procs')
 
   # Implementation detail of $(<file)
   # TODO: change to 'internal cat' (issue 1013)
