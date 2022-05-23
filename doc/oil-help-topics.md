@@ -42,7 +42,7 @@ feature is **unimplemented**.
                   proc          proc p (x, :out, @rest, e Expr, b Block) { c }
                   oil-if        if (x > 0) { echo }
                   oil-while     while (x > 0) { echo }
-                  oil-for       for i item in (mylist) { echo }
+                  oil-for       for i, item in (mylist) { echo }
                   equal =       = 1 + 2*3
                   underscore _  _ mylist.append(42)
                   typed-arg     json write (x)

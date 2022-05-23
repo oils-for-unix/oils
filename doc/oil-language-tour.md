@@ -451,7 +451,7 @@ Shell-style for loops iterate over **words**:
 
 You can also request the loop index:
 
-    for i word in README.md *.py {
+    for i, word in README.md *.py {
       echo "$i - $word"
     }
     # =>
@@ -473,7 +473,7 @@ expression should evaluate to either a `List` or `Dict`.
 
 Again you can request the index:
 
-    for i item in (foods) {
+    for i, item in (foods) {
       echo "$i - $item"
     }
     # =>
@@ -483,7 +483,7 @@ Again you can request the index:
 Likewise, here's the most general form of the dictionary loop:
 
     var mydict = {pea: 42, nut: 10}
-    for i k v in (mydict) {
+    for i, k, v in (mydict) {
       echo "$i - $k - $v"
     }
     # =>
@@ -493,7 +493,7 @@ Likewise, here's the most general form of the dictionary loop:
 There are two simpler forms:
 
 - One variable gives you the key: `for k in (mydict)`
-- Two variables gives you the key and value: `for k v in (mydict)`
+- Two variables gives you the key and value: `for k, v in (mydict)`
 
 (One way to think of it: `for` loops in Oil have the functionality Python's
 `enumerate()`, `items()`, `keys()`, and `values()`.)

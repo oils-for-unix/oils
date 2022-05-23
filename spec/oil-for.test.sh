@@ -39,7 +39,7 @@ i 2
 ## END
 
 #### Shell for loop with index (equivalent of enumerate())
-for i item in a b c {
+for i, item in a b c {
   echo "$i $item"
 }
 ## STDOUT:
@@ -49,25 +49,25 @@ for i item in a b c {
 ## END
 
 #### 3 indices with (mylist) is a runtime error
-for i item bad in (['foo', 'bar']) {
+for i, item bad in (['foo', 'bar']) {
   echo "$i $item $bad"
 }
 ## status: 2
 
 #### Shell for loop can't have 3 indices 
-for i bad bad in a b c {
+for i, bad, bad in a b c {
   echo $i $item
 }
 ## status: 2
 
 #### Any for loop can't have 4 indiecs
-for a b c d in (['foo']) {
+for a, b, c, d in (['foo']) {
   echo $i $item
 }
 ## status: 2
 
 #### Expression for loop with index: list
-for i item in (['spam', 'eggs']) {
+for i, item in (['spam', 'eggs']) {
   echo "$i $item"
 }
 ## STDOUT:
@@ -76,7 +76,7 @@ for i item in (['spam', 'eggs']) {
 ## END
 
 #### Expression for loop with index: dict (TODO: define dict iter order)
-for key value in ({name: 'bob', age: 40}) {
+for key, value in ({name: 'bob', age: 40}) {
   echo "pair $key $value"
 } | sort
 ## STDOUT:
@@ -85,7 +85,7 @@ pair name bob
 ## END
 
 #### dict: index key value loop (TODO: define dict iter order)
-for i key value in ({name: 'bob', age: 40}) {
+for i, key, value in ({name: 'bob', age: 40}) {
   echo "entry $i $key $value"
 } | sort
 ## STDOUT:
@@ -98,7 +98,7 @@ entry 1 name bob
 
 var array = %(d e f)
 
-for i item in a b c {
+for i, item in a b c {
   echo "$i $item $[array[i]]"
 }
 
@@ -162,7 +162,7 @@ hi
 #### Oil for with brace substitution and glob
 
 touch {foo,bar}.py
-for i file in *.py {README,foo}.md {
+for i, file in *.py {README,foo}.md {
   echo "$i $file"
 }
 ## STDOUT:

@@ -1159,13 +1159,6 @@ oil_for() {
   '
 
   _oil-should-parse '
-  for x y in SPAM EGGS; do
-    echo $x
-  done
-  '
-
-  # NO COMMA!
-  _oil-parse-error '
   for x, y in SPAM EGGS; do
     echo $x
   done
@@ -1178,21 +1171,22 @@ oil_for() {
   done
   '
 
+  # Too many indices
   _oil-parse-error '
-  for x y z in SPAM EGGS; do
+  for x, y, z in SPAM EGGS; do
     echo $x
   done
   '
 
   _oil-parse-error '
-  for w x y z in SPAM EGGS; do
+  for w, x, y, z in SPAM EGGS; do
     echo $x
   done
   '
 
-  # Test the other styles
+  # Old style
   _oil-should-parse '
-  for x y in SPAM EGGS
+  for x, y in SPAM EGGS
   do
     echo $x
   done

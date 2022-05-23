@@ -1173,15 +1173,23 @@ class CommandParser(object):
 
     num_iter_names = 0
     while True:
-      ok, iter_name, quoted = word_.StaticEval(self.cur_word)
+      w = self.cur_word
 
+      # Hack that makes the language more familiar:
+      # - 'x, y' is accepted, but not 'x,y' or 'x ,y'
+      # - 'x y' is also accepted but not idiomatic.
+      if w.parts[-1].id == Id.Lit_Comma:
+        w.parts.pop()
+
+      ok, iter_name, quoted = word_.StaticEval(w)
       if not ok or quoted:  # error: for $x
-        p_die('Expected loop variable (a constant word)', word=self.cur_word)
+        p_die('Expected loop variable (a constant word)', word=w)
+
       if not match.IsValidVarName(iter_name):  # error: for -
         # TODO: consider commas?
-        if iter_name.endswith(','):
-          p_die('Remove comma; loop variables are separated by spaces', word=self.cur_word)
-        p_die('Invalid loop variable name %r', iter_name, word=self.cur_word)
+        if ',' in iter_name:
+          p_die('Loop variables look like x, y (fix spaces)', word=w)
+        p_die('Invalid loop variable name %r', iter_name, word=w)
 
       node.iter_names.append(iter_name)
       num_iter_names += 1
