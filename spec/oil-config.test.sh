@@ -48,11 +48,29 @@ status=0
 ## END
 
 
+#### parse_config() 
+
+const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
+const block = parse_config(config_path)
+# Are blocks opaque?
+{
+  = block
+} | wc -l | read n
+
+# Just make sure we got more than one line?
+test $n -gt 1
+echo status=$?
+
+## STDOUT:
+status=0
+## END
+
+
 #### CI config with task blocks
 shopt --set oil:basic
 
 # this could be ci.coil too
-var config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
+const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
 
 proc task(name, block Block) {
   echo "task name=$name"

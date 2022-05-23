@@ -54,6 +54,7 @@ from osh import word_
 from typing import Optional, List, Dict, Any, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
+  from core import optview
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext, AliasesInFlight
   from frontend.reader import _Reader
@@ -462,21 +463,22 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, parse_ctx, w_parser, lexer, line_reader):
-    # type: (ParseContext, WordParser, Lexer, _Reader) -> None
+  def __init__(self, parse_ctx, parse_opts, w_parser, lexer, line_reader):
+    # type: (ParseContext, optview.Parse, WordParser, Lexer, _Reader) -> None
     self.parse_ctx = parse_ctx
     self.aliases = parse_ctx.aliases  # aliases to expand at parse time
 
+    self.parse_opts = parse_opts
     self.w_parser = w_parser  # type: WordParser  # for normal parsing
     self.lexer = lexer  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
+
     self.arena = parse_ctx.arena  # for adding here doc and alias spans
     self.eof_id = Id.Eof_Real
     self.aliases_in_flight = []  # type: AliasesInFlight
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
-    self.parse_opts = parse_ctx.parse_opts
     # Note: VarChecker is instantiated with each CommandParser, which means
     # that two 'proc foo' -- inside a command sub and outside -- don't
     # conflict, because they use different CommandParser instances.  I think

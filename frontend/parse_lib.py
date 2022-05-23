@@ -10,6 +10,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
 from core.pyerror import p_die
+from core import state
 from frontend import lexer
 from frontend import reader
 from frontend import match
@@ -271,14 +272,17 @@ class ParseContext(object):
       lx.EmitCompDummy()  # A special token before EOF!
 
     w_parser = word_parse.WordParser(self, lx, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
+    c_parser = cmd_parse.CommandParser(self, self.parse_opts, w_parser, lx,
+                                       line_reader)
     return c_parser
 
   def MakeConfigParser(self, line_reader):
     # type: (_Reader) -> CommandParser
     lx = self.MakeLexer(line_reader)
+    parse_opts = state.MakeOilOpts()
     w_parser = word_parse.WordParser(self, lx, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
+    c_parser = cmd_parse.CommandParser(self, parse_opts, w_parser, lx,
+                                       line_reader)
     return c_parser
 
   def MakeWordParserForHereDoc(self, line_reader):
@@ -304,7 +308,8 @@ class ParseContext(object):
     # type: (_Reader, Lexer, Id_t) -> CommandParser
     """To parse command sub, we want a fresh word parser state."""
     w_parser = word_parse.WordParser(self, lexer, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader)
+    c_parser = cmd_parse.CommandParser(self, self.parse_opts, w_parser, lexer,
+                                       line_reader)
     c_parser.Init_EofId(eof_id)
     return c_parser
 
