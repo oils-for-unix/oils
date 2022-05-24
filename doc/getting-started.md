@@ -90,6 +90,19 @@ which shell you're using.  See the end of this manual for more resources.
 For this reason, we're focusing efforts on documenting the [Oil
 language][oil-language].
 
+## Oilshell Usage
+|       Task    |  Usage  |
+| -------------  | ------------- |
+| **Runnning a script as initially written for other shells.** </br>(Usually not even minimal quoting/spacing adjustments needed. A bit more may only be required due to implementing the "Common Subset" of consistent and sane shell execution compatibility. For example, if the script was using some inconsistent associative array patterns, or relied on dynamic parsing.) </br>Also already working:</br> Oil language idioms with negligible impact on shell execution compatibility (`proc` and Oil expressions in `const`, `var`, `setvar`) | Execute script in osh interpreter:</br>`osh my.sh`</br></br> Or, adapt script, and let it begin with: </br>```#!/bin/osh``` | 
+| **...to also run all sourced files in osh.** |Execute script like this:<br/> `OSH_HIJACK_SHEBANG=osh osh my.sh`</br></br>Or, adapt script to begin with:</br>`#!/bin/osh` </br> `export OSH_HIJACK_SHEBANG=/bin/osh` |
+| **...to lint shell fragilities.** <br/> * Improved scripts will run with less errors in other shells.</br> (The example enables all strict options at once. Individual strict_* options allow fixing issue by issue.) | Add a line near the top of the script, to set a shell option with error fallback:</br> <!-- the pipe symbol seemed to break the markdown markup: -->"shopt --set strict:all  2>/dev/null &vert;&vert; true"</br> *After that* execute the script in osh:</br>`osh my.sh` |
+| **...to allow using the Oil language idioms.**  <br/> * Only a minimized amount of legacy syntax will break. </br>(Mostly only some quoting/spacing adaption needed, except where [Simple Word Evaluation](http://www.oilshell.org/release/latest/doc/simple-word-eval.html) now requires adding explicit split/glob functions to previously correctly unquoted variables)</br> Also useful to source libs? | Adapt script to begin with: </br>`#!/bin/osh` </br> `shopt --set oil:upgrade` |
+| **...to let the script stop on every unhandled command failure.**<br/>  * Will ensure to catch errors that are silently dropped by other shells.  | Add this option near the top of the script: </br> `shopt --set inherit_errexit` |
+| Coming pretty close to the Oil interpreter. </br>(Intersection of osh & strict & oil.) | `#!/bin/osh` </br>  `shopt --set oil:upgrade strict:all`</br><!-- prevent line breaks: --> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| **Using all of the Oil interpeter.** </br>(Have everything parsed as Oil syntax,</br> only unavoidable Oil language warts remaining.)  | Adapt script to begin with:</br> `#!/bin/osh` </br> `shopt --set oil:all`</br></br> Or, simply use:</br> `#!/bin/oil` |
+  
+
+
 ## What Is Expected to Run Under OSH
 
 "Batch" programs are most likely to run unmodified under OSH.  On the other
