@@ -172,7 +172,18 @@ class ArgParse(_Builtin):
   opt.file
   """
   def Run(self, cmd_val):
-    raise NotImplementedError()
+    return 0
+
+
+class Describe(_Builtin):
+  """Builtin test frameowrk.
+
+  TODO: Can this be user code?
+
+  It would test out Oil blocks well.
+  """
+  def Run(self, cmd_val):
+    return 0
 
 
 JSON_WRITE_SPEC = flag_spec.FlagSpec('json-write')

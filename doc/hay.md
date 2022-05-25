@@ -10,6 +10,7 @@ Slogans
 
 - Hay Ain't YAML
   - although also Tcl, Lua, Python, Ruby
+- It evaluates to JSON + Shell Scripts
 - A mix of declarative and imperative
 - DSLs, Config Files, and More
 - For Dialects of Oil
@@ -80,7 +81,7 @@ It's statically typed, except for attrs, which are controlled by the user.
 
 See Wiki.
 
-## Patterns
+## Patterns / Style
 
 ### Dicts vs. Blocks
 
@@ -115,6 +116,17 @@ I think we can support `source with:
     shopt --set sandbox:all
     shopt --unset sandbox_source_builtin  # ?
 
+### No Flags
+
+Hay words shouldn't take flags or `--`.  Flags are for key-value pairs, and
+that is already covered by blocks.
+
+
+### Parallel Loading?
+
+- I think you could use `xargs -P` to spawn processes with `parse_hay()` and
+  `eval_hay()` and print JSON?
+  - But
 
 ## FAQ
 
@@ -127,10 +139,11 @@ Because there's no TYPE and NAME on the file.
 
 - Config Dialect on wiki -- see use cases
 - Alternatives / Prior Art
-  - Tcl 
+  - Tcl   -- data definition and code generation in TCL has the NAME TYPE
+    ATTRIBUTES "meta" schema.
+    - compare with HTML which is TYPE ATTRIBUTES CHILDREN
   - Lua
   - Python
   - Ruby
   - YAML
   - Custom languages
-

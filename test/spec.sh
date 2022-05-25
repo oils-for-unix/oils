@@ -894,13 +894,23 @@ oil-blocks() {
 }
 
 oil-config() {
-  sh-spec spec/oil-config.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/oil-config.test.sh --osh-failures-allowed 12 \
     $OSH_LIST "$@"
 }
 
 oil-builtins() {
   sh-spec spec/oil-builtins.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
+}
+
+oil-builtin-argparse() {
+  sh-spec spec/oil-builtin-argparse.test.sh --osh-failures-allowed 1 \
+    $OIL_LIST "$@"
+}
+
+oil-builtin-describe() {
+  sh-spec spec/oil-builtin-describe.test.sh --osh-failures-allowed 1 \
+    $OIL_LIST "$@"
 }
 
 oil-builtin-pp() {

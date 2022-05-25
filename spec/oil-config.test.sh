@@ -155,6 +155,57 @@ status=2
 ## END
 
 
+#### File is evaluated with shopt -s oil:all
+shopt --set parse_brace parse_equals
+
+hay define package user TASK
+
+const x = 'foo bar'
+
+package foo {
+  # set -e should be active!
+  #false
+
+  version = '1.0'
+
+  # simple_word_eval should be active!
+  write -- $x
+}
+## STDOUT:
+foo bar
+## END
+
+
+#### Dynamic Scope Allows Reuse ?
+shopt --set oil:all parse_equals
+
+const URL_PATH = 'downloads/foo.tar.gz'
+
+hay define package
+
+package foo {
+  # this is a global
+  location = "https://example.com/$URL_PATH"
+  backup = "https://archive.example.com/$URL_PATH"
+}
+
+hay define deps/package
+
+deps spam {
+  const URL_PATH = 'downloads/spam.tar.gz'
+
+  package foo {
+    # this is a global
+    location = "https://example.com/$URL_PATH"
+    backup = "https://archive.example.com/$URL_PATH"
+  }
+}
+
+= _hay_result()
+
+## STDOUT:
+## END
+
 
 #### hay define --under
 set -o errexit
@@ -206,7 +257,7 @@ status=0
 ## END
 
 
-#### parse_hay() 
+#### parse_hay()
 
 const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
 const block = parse_hay(config_path)
@@ -226,7 +277,7 @@ OK
 ## END
 
 
-#### parse_hay() then shvar _DIALECT= { eval_hay() }
+#### Code Blocks: parse_hay() then shvar _DIALECT= { eval_hay() }
 shopt --set parse_brace
 
 hay define TASK
@@ -243,10 +294,6 @@ write 'level 0 children' $len(children) ---
 write 'child 0' $[children[0]->type] $[children[0]->name] ---
 write 'child 1' $[children[1]->type] $[children[1]->name] ---
 
-#= d 
-
-#pp cell d
-
 ## STDOUT:
 level 0 children
 2
@@ -262,25 +309,9 @@ publish-html
 ## END
 
 
-#### Attribute Blocks
-
-# first words has to be dynamic I think?
-#
-# push-proc package user {
-#   const config = _vm_eval('spec/testdata/config/package-manger.oil')
-# }
-#
-# Implement with ctx_Proc().  Yeah that needs to be a stack just ilke the
-# option stack!
-#
-# Or
-#
-# push --proc package --proc user --no-external {
-#
-# }
+#### Attribute / Data Blocks (package-manager)
 
 const path = "$REPO_ROOT/spec/testdata/config/package-manager.oil"
-#ls $path
 
 const block = parse_hay(path)
 
@@ -295,6 +326,162 @@ level 0 children
 level 1 children
 0
 ## END
+
+
+#### Typed Args to Blocks
+
+shopt --set oil:all parse_equals
+
+hay define when
+
+# Hm I get 'too many typed args'
+# Ah this is because of 'haynode'
+# 'haynode' could silently pass through blocks and typed args?
+
+when NAME (x > 0) { 
+  version = '1.0'
+  other = 'str'
+}
+
+= _hay_result()
+
+## STDOUT:
+## END
+
+
+#### Conditional Inside Blocks
+shopt --set oil:all parse_equals
+
+hay define rule
+
+const DEBUG = true
+
+# TODO: should rule :foo assign a variable?
+
+rule one {
+  if (DEBUG) {
+    deps = 'foo'
+  } else {
+    deps = 'bar'
+  }
+}
+
+= _hay_result()
+
+## STDOUT:
+## END
+
+
+#### Conditional Outisde Block
+shopt --set oil:all parse_equals
+
+hay define rule
+
+const DEBUG = true
+
+if (DEBUG) {
+  rule two {
+    deps = 'spam'
+  } 
+} else {
+  rule two {
+    deps = 'bar'
+  } 
+}
+
+= _hay_result()
+
+## STDOUT:
+## END
+
+
+#### Iteration Inside Block
+shopt --set oil:all parse_equals
+
+hay define rule
+
+rule foo {
+  var d = {}
+  for name in spam eggs ham {
+    setvar d->name = true
+  }
+}
+
+= _hay_result()
+
+## STDOUT:
+TODO
+## END
+
+
+#### Iteration Outside Block
+shopt --set oil:all parse_equals
+
+hay define rule
+
+for name in spam eggs ham {
+  rule $name {
+    path = "/usr/bin/$name"
+  }
+}
+
+= _hay_result()
+
+## STDOUT:
+TODO
+## END
+
+
+#### Proc Inside Block
+shopt --set oil:all parse_equals
+
+hay define rule
+
+# Does this do anything?
+# Maybe setref?
+proc p(name, :out) {
+  echo 'p'
+  setref out = name
+}
+
+rule hello {
+  var eggs = ''
+  var bar = ''
+
+  p spam :eggs
+  p foo :bar
+}
+
+= _hay_result()
+
+## STDOUT:
+TODO
+## END
+
+
+
+#### Proc That Defines Block
+shopt --set oil:all parse_equals
+
+hay define rule
+
+proc myrule(name) 
+  rule $name {
+    path = "/usr/bin/$name"
+  }
+}
+
+myrule spam
+myrule eggs
+myrule ham
+
+= _hay_result()
+
+
+## STDOUT:
+TODO
+## END
+
 
 #### Turn off external binaries with shvar PATH='' {}
 shopt --set parse_brace
@@ -367,10 +554,7 @@ proc package(name, b Block) {
   setvar d->type = 'package'
 
   # Now where does d go?
-
-
   # Every time you do eval_hay, it clears _config?
-
   # Another option: HAY_CONFIG
 
   if ('package_list' not in _config) {
@@ -378,9 +562,6 @@ proc package(name, b Block) {
   }
   _ append(_config->package_list, d)
 }
-
-# push-vars (_config) { ?  So it's not global?
-# Or make it a register.
 
 package unzip {
   version = 1

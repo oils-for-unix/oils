@@ -197,6 +197,7 @@ def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
 
   b[builtin_i.use] = builtin_pure.Use(mem, errfmt)
   b[builtin_i.argparse] = builtin_oil.ArgParse(mem, errfmt)
+  b[builtin_i.describe] = builtin_oil.Describe(mem, errfmt)
 
 
 def Main(lang, arg_r, environ, login_shell, loader, line_input):
