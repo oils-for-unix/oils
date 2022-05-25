@@ -173,7 +173,6 @@ X [External Lang] BEGIN   END   when (awk)
                   X simple_trap          Function name only
   [Oil Breaking]  ... The Full Oil Language
                   parse_at_all           @ starting any word is an operator
-                  parse_equals           x = 'val' (for cleaner config blocks)
                   parse_backslash (-u)    Bad backslashes in $''
                   parse_backticks (-u)    Legacy syntax `echo hi`
                   parse_bare_word (-u)   'case unquoted' and 'for x in unquoted'
@@ -188,6 +187,7 @@ X [External Lang] BEGIN   END   when (awk)
                                          ... getopts
                   X old_syntax (-u)      [[   $(( ))  ${x%prefix}   ${a[@]}
                                          $$
+  [Hay Breaking]  parse_equals           x = 'val' (for cleaner config blocks)
   [Compatibility] compat_array           ${array} is ${array[0]}
                   eval_unsafe_arith      Recursively parse and evaluate
                   parse_dynamic_arith    LHS can contain variables

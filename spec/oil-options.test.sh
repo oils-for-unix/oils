@@ -494,8 +494,8 @@ echo $y
 foo
 ## END
 
-#### parse_sh_assign: disallows ENV=val mycommand
-shopt --set oil:all
+#### parse_equals: disallows ENV=val mycommand
+shopt --set parse_equals
 ENV=val echo hi
 ## status: 2
 ## stdout-json: ""
