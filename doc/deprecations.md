@@ -6,7 +6,7 @@ Shell Language Deprecations
 ===========================
 
 When you turn on Oil language features, then there are a few shell constructs you can no longer use.
-But we try to minimize the length of this list.
+But we try to keep the length of this list down to a minimum.
 
 NOTE: The **`bin/osh`** interpreter, which is Oil in its default POSIX-
 and bash-compatible mode **is compatible by default**.
