@@ -5,23 +5,22 @@ default_highlighter: oil-sh
 Shell Language Deprecations
 ===========================
 
-When you turn on Oil, there are some shell constructs you can no longer use.
-We try to minimize the length of this list.
+When you turn on Oil language features, then there are a few shell constructs you can no longer use.
+But we try to minimize the length of this list.
 
-You **don't** need to read this doc if you're using `bin/osh`, which is Oil in
-its default POSIX- and bash-compatible mode.  **OSH is compatible by default**.
+NOTE: The **`bin/osh`** interpreter, which is Oil in its default POSIX-
+and bash-compatible mode **is compatible by default**.
 
 <!-- cmark.py expands this -->
 <div id="toc">
 </div>
 
-## Right Now (`shopt -s oil:basic`)
+## Oil language upgrade mode (`shopt --set oil:basic`)
 
-Here are two things that Oil users should know about, one major and one minor:
-The meaning of the POSIX construct `()` has changed, and the meaning of the
-bash construct `@()` has changed.
 
-### Use `forkwait` for subshells rather than `()` (`shopt -s parse_paren`)
+### Soft Deprecations
+
+#### Use `forkwait` for subshells rather than `()` (`shopt -s parse_subshell`)
 
 Subshells are **uncommon** in idiomatic Oil code, so they have the awkward name
 `forkwait`.  Think of it as a sequence of the `fork` builtin (for `&`) and the
@@ -39,7 +38,7 @@ Yes:
     }
     echo $not_mutated
 
-You don't need a subshell for some idioms:
+However, you don't even need a subshell for some idioms:
 
 No:
 
@@ -59,7 +58,13 @@ Justification: We're using parentheses for Oil expressions like
 
 and subshells are uncommon.  Oil has blocks to save and restore state.
 
-### Some Extended Globs Can't Be Used (`shopt -s parse_at`)
+
+
+
+### Hard Deprecations (Disallowed Syntax)
+
+
+#### The "@()" Extended Globs changed to ",()" (`shopt -s parse_at`)
 
 No:
 
@@ -75,16 +80,23 @@ explicitly split command subs like `@(seq 3)` to work.
 That is, Oil doesn't have implicit word splitting.  Instead, it uses [simple
 word evaluation](simple-word-eval.html).
 
-### Minor Breakages
+#### "@..." strings need quoting
 
-- `@foo` must be quoted `'@foo'` to preserve meaning (`shopt -s parse_at`)
-- `=x` is disallowed as the first word in a command to avoid confusion with
+`@foo` must be quoted `'@foo'` to preserve meaning (`shopt -s parse_at`)
+
+#### No first-words beginning with "="
+
+`=x` is disallowed as the first word in a command to avoid confusion with
   Oil's `=` operator.
   - It could be quoted like `'=x'`, but there's almost no reason to do that.
 
-<!--
 
-## Later (`shopt -s oil:all`, under  `bin/oil`)
+
+
+
+<!--    https://github.com/oilshell/oil/issues/678
+
+## Oil language interpretter (`shopt -s oil:all`, under  `bin/oil`)
 
 This is for the "legacy-free" Oil language.  These options **break more code**.
 
@@ -117,6 +129,9 @@ this is valid Oil syntax:
     }
 
 -->
+
+
+
 
 ## That's It
 
