@@ -37,7 +37,6 @@ from core import error
 from core import main_loop
 from core import shell
 from core import optview
-from core import oven
 from core import pyutil
 from core.pyutil import stderr_line
 from core import shell_native
@@ -260,10 +259,6 @@ def AppBundleMain(argv):
   if main_name.endswith('sh'):  # sh, osh, bash imply OSH
     status = shell.Main('osh', arg_r, posix.environ, login_shell,
                         loader, line_input)
-    return status
-
-  elif main_name == 'oven':
-    status = oven.Main('osh', arg_r, posix.environ, False, loader, None)
     return status
 
   elif main_name == 'oshc':

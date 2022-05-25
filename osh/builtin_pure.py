@@ -19,6 +19,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import scope_e, value_e, value__Str
 from _devbuild.gen.syntax_asdl import Token
 
+from asdl import format as fmt
 from asdl import runtime
 from core import error
 from core.pyerror import e_usage
@@ -718,14 +719,17 @@ if mylib.PYTHON:
 
     Example:
 
-      haynode package cppunit {
+      package cppunit {
         version = '1.0'
-
-        haynode user {
-        }
+        user bob
       }
 
-    And where is the output stored?
+    is short for
+
+      haynode package cppunit {
+        version = '1.0'
+        haynode user bob
+      }
     """
 
     def __init__(self, hay_state, mem, cmd_ev):
@@ -802,13 +806,11 @@ if mylib.PYTHON:
   class Hay(vm._Builtin):
     """
     hay define -- package user
-    hay define --under user -- foo bar
-
-    hay pp
-
-    hay push-defs {
-      var config = eval_to_dict(block)
-    }
+    hay define -- user/foo user/bar  # second level
+    hay clear defs
+    hay clear result
+    hay pp defs
+    hay pp result
     """
     def __init__(self, hay_state, cmd_ev, shell_ex):
       # type: (state.Hay, CommandEvaluator, vm._Executor) -> None
@@ -827,12 +829,10 @@ if mylib.PYTHON:
       arg_r.Next()
 
       if action == 'define':
-        # TODO: parse --under
+        # TODO: accept --
         #arg, arg_r = flag_spec.ParseCmdVal('hay-define', cmd_val)
 
         # arg = args.Parse(JSON_WRITE_SPEC, arg_r)
-
-        # TODO: --under flag
         first, _ = arg_r.Peek2()
         if first is None:
           e_usage('define expected a name', span_id=action_spid)
@@ -862,14 +862,18 @@ if mylib.PYTHON:
         # - hay pp defs
         # - hay pp result
 
-        from pprint import pprint
-
         second, second_spid = arg_r.Peek2()
         if second is None:
           e_usage("pp expected 'defs' or 'result'", span_id=action_spid)
+
         if second == 'defs':
-          pprint(self.hay_state.root_defs)
+          tree = self.hay_state.root_defs.PrettyTree()
+          ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
+          fmt.PrintTree(tree, ast_f)
+          ast_f.write('\n')
         elif second == 'result':
+          # TODO: How to print this?  ASDL should be able to print value.Block() etc.
+          from pprint import pprint
           pprint(self.hay_state.Result())
         else:
           e_usage("pp expected 'defs' or 'result'", span_id=second_spid)

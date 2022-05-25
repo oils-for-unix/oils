@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 
 # Used by devtools/bin.sh and opy/build.sh
-readonly OIL_SYMLINKS=(oil oilc osh oshc oven tea sh true false readlink)
+readonly OIL_SYMLINKS=(oil oilc osh oshc tea sh true false readlink)
 readonly OPY_SYMLINKS=(opy opyc)
 
 # For osh-dbg.

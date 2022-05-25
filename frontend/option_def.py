@@ -307,7 +307,7 @@ def _Init(opt_def):
   for name, default in _AGGRESSIVE_RUNTIME_OPTIONS:
     opt_def.Add(name, default=default, groups=['oil:all'])
 
-  # For configuration files.  bin/oven?
+  # For configuration files
   opt_def.Add('parse_equals')
 
   # Off by default.
