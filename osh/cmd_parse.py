@@ -978,12 +978,16 @@ class CommandParser(object):
               "to pretty print an expression", token=tok)
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
-    if not self.parse_opts.parse_sh_assign() and len(preparsed_list):
+    if len(preparsed_list):
       left_token, _, _, _ = preparsed_list[0]
-      if len(suffix_words):  # PYTHONPATH=. foo.py
-        p_die('Use env to set the environment (parse_sh_assign)',
+
+      # Disallow 'PYTHONPATH=. foo.py' when bare assignment 'PYTHONPATH = "."' is on
+      if self.parse_opts.parse_equals() and len(suffix_words):
+        p_die('Use env to set the environment (parse_equals is on)',
               token=left_token)
-      else:  # x=y
+
+      # Disallow X=Y when setvar X = 'Y' is idiomatic.  (Space sensitivity is bad.)
+      if not self.parse_opts.parse_sh_assign() and len(suffix_words) == 0:
         p_die('Use const or var/setvar to assign in Oil (parse_sh_assign)',
               token=left_token)
 
