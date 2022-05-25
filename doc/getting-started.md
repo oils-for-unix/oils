@@ -234,19 +234,3 @@ External:
 
 [BashGuide]: https://mywiki.wooledge.org/BashGuide
 
-### Exit Codes
-
-- `0` for **success**.
-- `1` for **runtime errors**.  Examples:
-  - `echo foo > out.txt` and `out.txt` can't be opened.
-  - `fg` and there's not job to put in the foreground.
-- `2` for **parse errors**.  This means that we didn't *attempt* to do
-  anything, rather than doing something and it fails.  Examples:
-  - A language parse error, like `echo $(`.
-  - Builtin usage error, like `read -z`.
-- `0` for **true**, and `1` for **false**.  Example:
-  - `test -f foo` and `foo` isn't a file.
-- POSIX exit codes:
-  - `126` for permission denied when running a command (`errno EACCES`)
-  - `127` for command not found
-
