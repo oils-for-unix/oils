@@ -171,26 +171,6 @@ _AGGRESSIVE_PARSE_OPTIONS = [
     ('parse_dparen', True),       # disallow bash's ((
     ('parse_bare_word', True),    # 'case bare' and 'for x in bare'
     ('parse_sloppy_case', True),  # case patterns must be (*.py), not *.py)
-
-    # Failed experiment for $[echo hi], myarray = %[one two], etc.
-    # I turned Lit_LBracket in to Op_LBracket.  But there were several issues:
-    # 1) it was too "modal", didn't work in OSH mode
-    # 2) resulting parse # errors needed more polish
-    # 3) Introducing two new syntaxes for NEW constructs isn't a good idea.
-    # 4) Although I wanted [] to mean array/sequence, () is for commands.
-    #    We could possibly do %[one two] in expression mode with some effort.
-    # 'parse_brackets',
-
-    # Does this one require OilCommand mode?
-    # Two rules: '&('  and  '&' + _VAR_NAME_RE
-
-    # echo foo > &2
-    # echo foo &2 > &1
-    # maybe:
-    #   myprog foo &2 &1 > out.txt
-    #   fopen &left > left.txt &right > right.txt {
-    #   }
-    ('parse_amp', False),
 ]
 
 # No-ops for bash compatibility

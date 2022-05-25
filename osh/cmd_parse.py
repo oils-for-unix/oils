@@ -716,11 +716,6 @@ class CommandParser(object):
 
         typed_args = self.w_parser.ParseProcCallArgs()
 
-      elif self.parse_opts.parse_amp() and self.c_id == Id.Op_Amp:
-        # TODO:
-        # myprog &2 > &1 should be parsed
-        p_die('TODO: Parse Redirect', word=self.cur_word)
-
       else:
         break
 

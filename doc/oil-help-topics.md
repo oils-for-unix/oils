@@ -172,7 +172,6 @@ X [External Lang] BEGIN   END   when (awk)
                   simple_test_builtin    3 args or fewer; use test not [
                   X simple_trap          Function name only
   [Oil Breaking]  ... The Full Oil Language
-                  X parse_amp            ls &2 > /dev/null, disallow >& <&
                   parse_at_all           @ starting any word is an operator
                   parse_equals           x = 'val' (for cleaner config blocks)
                   parse_backslash (-u)    Bad backslashes in $''
