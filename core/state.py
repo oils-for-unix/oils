@@ -741,7 +741,7 @@ class MutableOpts(object):
       opt_nums.extend(consts.VISIBLE_SHOPT_NUMS)
 
     for opt_num in opt_nums:
-      b = self.opt0_array[opt_num]
+      b = self.Get(opt_num)
       print('shopt -%s %s' % ('s' if b else 'u', consts.OptionName(opt_num)))
 
 

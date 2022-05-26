@@ -30,6 +30,7 @@ from core.pyerror import log
 from core import ui
 from core import vm
 from frontend import args
+from frontend import consts
 from frontend import flag_spec
 from frontend import match
 from frontend import typed_args
@@ -223,11 +224,25 @@ class Shopt(vm._Builtin):
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block:
       opt_nums = []  # type: List[int]
-      for name in opt_names:
-        index = match.MatchOption(name)
+      for opt_name in opt_names:
+        # TODO: could consolidate with checks in core/state.py and option
+        # lexer?
+        if opt_name == 'oil:basic':
+          opt_nums.extend(consts.OIL_BASIC)
+          continue
+
+        if opt_name == 'oil:all':
+          opt_nums.extend(consts.OIL_ALL)
+          continue
+
+        if opt_name == 'strict:all':
+          opt_nums.extend(consts.STRICT_ALL)
+          continue
+
+        index = match.MatchOption(opt_name)
         if index == 0:
           # TODO: compute span_id
-          e_usage('got invalid option %r' % name)
+          e_usage('got invalid option %r' % opt_name)
         opt_nums.append(index)
 
       with state.ctx_Option(self.mutable_opts, opt_nums, b):
@@ -235,12 +250,12 @@ class Shopt(vm._Builtin):
       return 0  # cd also returns 0
 
     # Otherwise, set options.
-    for name in opt_names:
+    for opt_name in opt_names:
       #if arg.o:
       #  self.mutable_opts.SetOption(name, b)
       #else:
       # We allow set -o options here
-      self.mutable_opts.SetShoptOption(name, b)
+      self.mutable_opts.SetShoptOption(opt_name, b)
 
     return 0
 

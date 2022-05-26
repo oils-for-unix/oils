@@ -923,6 +923,11 @@ oil-builtin-process() {
     $OSH_LIST "$@"
 }
 
+oil-builtin-shopt() {
+  sh-spec spec/oil-builtin-shopt.test.sh --osh-failures-allowed 1 \
+    $OSH_LIST "$@"
+}
+
 oil-command-sub() {
   sh-spec spec/oil-command-sub.test.sh $OSH_LIST "$@"
 }
