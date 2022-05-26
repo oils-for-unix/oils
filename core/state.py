@@ -441,7 +441,6 @@ def _ShoptOptionNum(opt_name):
     e_usage('got invalid option %r' % opt_name)
 
   # Note: we relaxed this for Oil so we can do 'shopt --unset errexit' consistently
-  # 'set' is for assignment!
   #if opt_num not in consts.SHOPT_OPTION_NUMS:
   #  e_usage("doesn't own option %r (try 'set')" % opt_name)
 

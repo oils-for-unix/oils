@@ -83,6 +83,16 @@ See Wiki.
 
 ## Patterns / Style
 
+
+### Attributes vs. Functions
+
+Choose:
+
+    user alice  # Only if the proc creates a RECORD
+
+    user = 'alice'  # for plain attributes
+
+
 ### Dicts vs. Blocks
 
 Superficially they are similar:

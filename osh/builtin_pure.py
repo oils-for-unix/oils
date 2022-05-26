@@ -747,10 +747,11 @@ if mylib.PYTHON:
       }
     """
 
-    def __init__(self, hay_state, mem, cmd_ev):
-      # type: (state.Hay, state.Mem, CommandEvaluator) -> None
+    def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
+      # type: (state.Hay, MutableOpts, state.Mem, CommandEvaluator) -> None
       self.hay_state = hay_state
       self.mem = mem  # for new context
+      self.mutable_opts = mutable_opts
       self.cmd_ev = cmd_ev  # To run blocks
 
     def Run(self, cmd_val):
@@ -793,10 +794,12 @@ if mylib.PYTHON:
 
             # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
             with state.ctx_Temp(self.mem):
-              with state.ctx_Hay(self.hay_state, hay_name):
-                # Note: we want all haynode invocations in the block to appear as
-                # our 'children', recursively
-                block_attrs = self.cmd_ev.EvalBlock(block)
+              # haynode blocks run with shopt -s oil:all
+              with state.ctx_Option(self.mutable_opts, consts.OIL_ALL, True):
+                with state.ctx_Hay(self.hay_state, hay_name):
+                  # Note: we want all haynode invocations in the block to appear as
+                  # our 'children', recursively
+                  block_attrs = self.cmd_ev.EvalBlock(block)
 
             attrs = {}  # type: Dict[str, Any]
             for name, cell in iteritems(block_attrs):
