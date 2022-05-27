@@ -307,6 +307,10 @@ class OilMethodFilter(object):
     #   __getnewargs__.
     # - Do we need __sizeof__?  Is that for sys.getsizeof()?
 
+    # 5/2022: avoid regression?  Not sure why this was getting deleted
+    if method_name == '__getitem__':
+      return True
+
     # NOTE: LoadOilGrammar needs marshal.loads().
     # False positive for yajl.dumps() and load()
     if basename == 'marshal.c' and method_name in ('dump', 'dumps', 'load'):

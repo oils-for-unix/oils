@@ -5,7 +5,6 @@ from __future__ import print_function
 
 from frontend import consts
 from frontend import option_def
-from frontend import match
 
 from typing import List
 
