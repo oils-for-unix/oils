@@ -196,6 +196,7 @@ shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
 shopt -s parse_paren
+shopt -s parse_proc
 shopt -s parse_raw_string
 shopt -s parse_triple_quote
 shopt -s pipefail
@@ -722,6 +723,7 @@ second
 ## status: 1
 
 #### redefine_proc for procs
+shopt --set parse_proc
 
 proc p {
   echo 1

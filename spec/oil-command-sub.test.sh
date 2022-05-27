@@ -16,9 +16,10 @@ status=0
 ## END
 
 #### split command sub @() in expression mode
+shopt --set parse_proc parse_at
+
 var x = @(seq 3)
 
-shopt -s parse_at
 write -- @x
 ## STDOUT:
 1

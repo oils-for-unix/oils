@@ -1,6 +1,7 @@
 # Demonstrations for users.  Could go in docs.
 
 #### GetValue scope and shopt --unset dynamic_scope
+shopt --set parse_proc
 
 f() {
   echo "sh x=$x"
@@ -32,6 +33,8 @@ x=global
 
 
 #### SetValue scope and shopt --unset dynamic_scope
+shopt --set parse_proc
+
 f() {
   x=f
 }
@@ -272,6 +275,7 @@ x=
 
 
 #### shell assignments 'neutered' inside 'proc'
+shopt --set parse_proc
 
 # They can't mutate globals or anything higher on the stack
 
@@ -303,6 +307,7 @@ e=SH g=SH
 ## END
 
 #### setglobal still allows setting globals
+shopt --set parse_proc
 
 proc p {
   setglobal new_global = 'p'
@@ -319,6 +324,7 @@ g=p new_global=p
 ## END
 
 #### setref with :out param
+shopt --set parse_proc
 
 proc set-it(:s, val) {
   #pp cell __s
@@ -347,6 +353,7 @@ foo-TT
 ## END
 
 #### setref with conflicting variable name
+shopt --set parse_proc
 
 proc set-it(:s, val) {
   #pp cell __s
@@ -370,6 +377,8 @@ oops=foo-zz
 
 
 #### setref of regular param is a fatal error
+shopt --set parse_proc
+
 proc set-it(:s, val) {
   setref val = 'oops'
 }
@@ -383,6 +392,7 @@ echo $s
 ## END
 
 #### setref equivalent without pgen2 syntax, using open proc
+shopt --set parse_proc
 
 # This is kind of what we compile to.  Ref params get an extra __ prefix?  then
 # that means you can't really READ them either?  I think that's OK.
@@ -421,6 +431,7 @@ foo-TT
 ## END
 
 #### setref a, b = 'one', 'two'
+shopt --set parse_proc
 
 proc p(x, :a, :b) {
   setref a, b = "${x}1", "${x}2"
@@ -458,6 +469,7 @@ c
 
 #### unset inside proc uses local scope
 shopt --set parse_brace
+shopt --set parse_proc
 
 f() {
   unset x
@@ -520,6 +532,8 @@ x= y=
 ## END
 
 #### Temp Bindings
+shopt --set parse_proc
+
 myfunc() {
   echo myfunc FOO=$FOO
 }
@@ -557,6 +571,7 @@ echo $x $y $z
 ## END
 
 #### IFS=: myproc exports when it doesn't need to
+shopt --set parse_proc
 shopt --set parse_brace
 
 s='xzx zxz'
@@ -730,6 +745,7 @@ mylocal=x
 ## END
 
 #### shvar_get()
+shopt --set parse_proc
 
 s='xzx zxz'
 

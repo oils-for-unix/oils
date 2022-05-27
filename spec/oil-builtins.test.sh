@@ -13,7 +13,7 @@ argv.py @a
 ## END
 
 #### append onto var a = %(1 2)
-shopt -s parse_at
+shopt -s parse_at parse_proc
 var a = %(1 2)
 append a '3 4' '5'  # : is optional
 argv.py @a
@@ -147,6 +147,8 @@ status=2
 ## END
 
 #### read :x :y is allowed
+shopt --set parse_proc
+
 echo 'foo bar' | read :x :y
 echo x=$x y=$y
 
@@ -169,6 +171,8 @@ x=foo y=bar
 ## END
 
 #### Idiom for returning 'read'
+shopt --set parse_proc
+
 proc p(:out) {
   #var tmp = ''
 
@@ -461,6 +465,8 @@ module1
 
 
 #### runproc
+shopt --set parse_proc
+
 f() {
   write -- f "$@"
 }
@@ -493,7 +499,7 @@ status=2
 ## END
 
 #### runproc typed args
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 proc p {
   echo hi
@@ -509,7 +515,7 @@ hi
 
 
 #### fopen
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 proc p {
   echo 'proc'

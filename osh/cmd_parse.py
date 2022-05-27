@@ -1920,8 +1920,15 @@ class CommandParser(object):
       p_die('Unexpected word when parsing command', word=self.cur_word)
 
     # Oil Extensions
+
     if self.c_id == Id.KW_Proc:  # proc p { ... }
-      return self.ParseOilProc()
+      # proc is hidden because of the 'local reasoning' principle
+      # Code inside procs should be Oil, full stop.  That means oil:upgrade is
+      # on.
+      if self.parse_opts.parse_proc():
+        return self.ParseOilProc()
+      else:
+        p_die('Enable Oil to use procs (parse_proc)', word=self.cur_word)
 
     if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
       keyword_id = self.c_id

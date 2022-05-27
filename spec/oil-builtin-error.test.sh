@@ -47,7 +47,7 @@ _status=42
 
 
 #### try with and without errexit
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 myproc() {
   echo before
@@ -227,7 +227,7 @@ process sub failed: 2 2
 ## END
 
 #### try can handled failed var, setvar, etc.
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 try {
   echo hi
@@ -270,7 +270,7 @@ arrow 3
 ## END
 
 #### try can handled failed expr sub
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 try {
   echo hi
@@ -288,7 +288,7 @@ _status=3
 ## END
 
 #### try with failed command sub within expression 
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 try {
   echo hi
@@ -307,6 +307,7 @@ try 42
 
 #### Uncaught expression error exits status 3
 $SH -c '
+shopt --set parse_proc
 
 # errexit does not need to be!
 

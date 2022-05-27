@@ -153,6 +153,7 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
+                  parse_proc             proc p { ... }
                   parse_raw_string       echo r'\' (command mode)
                   parse_triple_quote     """  '''  r'''  $''' in command mode
                   command_sub_errexit    Synchronous errexit check

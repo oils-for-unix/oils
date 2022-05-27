@@ -1,6 +1,8 @@
 # Oil Functions
 
 #### Open proc (any number of args)
+shopt --set parse_proc
+
 proc f {
   var x = 42
   return $x
@@ -13,6 +15,8 @@ status=42
 ## END
 
 #### Closed proc with no args, passed too many
+shopt --set parse_proc
+
 proc f() {
   return 42
 }
@@ -59,6 +63,8 @@ ARGV
 
 
 #### Proc with default args
+shopt --set parse_proc
+
 proc f(x='foo') {
   echo x=$x
 }
@@ -68,6 +74,7 @@ x=foo
 ## END
 
 #### Proc with explicit args
+shopt --set parse_proc
 
 # doesn't require oil:all
 proc f(x, y, z) {
@@ -121,6 +128,8 @@ b c
 ## END
 
 #### Proc name-with-hyphen
+shopt --set parse_proc
+
 proc name-with-hyphen {
   echo "$@"
 }
@@ -130,6 +139,7 @@ x y z
 ## END
 
 #### Proc with block arg
+shopt --set parse_proc
 
 # TODO: Test more of this
 proc f(x, y, block Block) {
@@ -138,6 +148,8 @@ proc f(x, y, block Block) {
 f a b
 
 # With varargs and block
+shopt --set parse_proc
+
 proc g(x, y, @rest, block Block) {
   echo G
 }
@@ -148,6 +160,7 @@ G
 ## END
 
 #### proc returning wrong type
+shopt --set parse_proc
 
 # this should print an error message
 proc f {
@@ -160,6 +173,7 @@ f
 ## END
 
 #### proc returning invalid string
+shopt --set parse_proc
 
 # this should print an error message
 proc f {
@@ -172,6 +186,7 @@ f
 ## END
 
 #### Out param / setref
+shopt --set parse_proc
 
 proc f(input, :out) {  # : means accept a string "reference"
   setref out = "PREFIX-$input"
@@ -197,6 +212,8 @@ p
 ## END
 
 #### procs are in same namespace as shell functions
+shopt --set parse_proc
+
 myfunc() {
   echo hi
 }
@@ -213,6 +230,7 @@ declare -f myproc
 
 
 #### Nested proc is disallowed at parse time
+shopt --set parse_proc
 
 # NOTE: we can disallow this in Oil statically ...
 proc f {

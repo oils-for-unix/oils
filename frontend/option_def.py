@@ -149,6 +149,7 @@ _AGGRESSIVE_RUNTIME_OPTIONS = [
 # Stuff that doesn't break too many programs.
 _BASIC_PARSE_OPTIONS = [
     'parse_at',  # @foo, @array(a, b)
+    'parse_proc',  # proc p { ... }
     'parse_brace',  # cd /bin { ... }
     'parse_paren',  # if (x > 0) ...
     'parse_raw_string',  # echo r'\'
