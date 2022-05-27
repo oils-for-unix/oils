@@ -323,9 +323,11 @@ class Hay(object):
     # type: (str) -> bool
     return first_word in self.cur_defs.children
 
-  def Define(self, name, under):
-    # type: (str, str) -> None
-    assert under == ''
+  def DefinePath(self, path):
+    # type: (List[str]) -> None
+
+    # TODO: Do the rest
+    name = path[0]
     self.root_defs.children[name] = hay_node()  # register
 
   def ClearDefs(self):

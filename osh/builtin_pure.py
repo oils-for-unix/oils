@@ -862,12 +862,33 @@ if mylib.PYTHON:
         if first is None:
           e_usage('define expected a name', span_id=action_spid)
 
-        for name in arg_r.Rest():
-          self.hay_state.Define(name, '')
+        names, name_spids = arg_r.Rest2()
+        for i, name in enumerate(names):
+          path = name.split('/')
+          for p in path:
+            if len(p) == 0:
+              e_usage("got invalid path %r.  Parts can't be empty." % name,
+                      span_id=name_spids[i])
+          self.hay_state.DefinePath(path)
+
+      elif action == 'eval':
+        # TODO: 
+        # hay eval :myvar { ... }
+        #
+        # - turn on oil:all
+        # - set _running_hay -- so that hay "first words" are visible
+        # - and then set the variable name to the result
+        # - then CLEAR the result
+        #
+        # I think sandboxing is orthogonal:
+        # shopt --set sandbox:all { hay eval { ... } }
+        # shopt --set sandbox:all { var d = eval_hay(myblock) }
+        pass
 
       elif action == 'clear':
-        # - hay clear defs
-        # - hay clear result
+        # - hay clear defs -- don't quite need this either?
+        # - hay clear result -- TODO: don't really need this, as eval_hay() and
+        #   'hay eval' both do it
 
         second, second_spid = arg_r.Peek2()
         if second is None:

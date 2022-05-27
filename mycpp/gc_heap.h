@@ -22,14 +22,55 @@
 // It's a semi-space collector using the Cheney algorithm.  (Later we may add a
 // "large object space", managed by mark-and-sweep after each copy step.)
 
-// Design:
-// - Immutable Slab<T> and Str (Str may have a hash value and other fields).
-// - Mutable List and Dict that point to Slab
-//   - List::append() and extend() can realloc
-//   - Dict::set() can realloc and rehash
+// Influences / Prior art:
+//
+// - OCaml / ZINC machine - statically typed, everything is a pointer (no value
+//   types).
+// - femtolisp - Cheney collector; used to bootstrap Juliia.
+// - Other: ES shell, Lua, Python and especially Python dicts.
 
-// TODO:
-// - Dicts should actually use hashing!  Test computational complexity.
+// Design:
+//
+// - Graph of application types:
+//   - Str*
+//   - List<T>*
+//   - Dict<K, V>*
+//   - User-defined classes, which may have a vtable pointer.
+// - Graph of GC nodes: everything is an Obj* with an 8 byte header
+//   - 1 byte heap tag, for Cheney
+//   - 1 byte type tag for Zephyr ASDL unions
+//   - 2 byte / 16-bit field bit mask for following pointers on user-defined
+//     classes and List / Dict "headers"
+//   - 4 bytes length for Cheney to determine how much to copy.
+//
+// Operations that resize:
+//
+// - List::append() and extend() can realloc
+// - Dict::set() can realloc and rehash (TODO)
+//
+// Important Types:
+//
+// - Slab<T> to trace the object graph.  Slab<int> is opaque, but Slab<T*>
+//   requires tracing.
+//   - A List<T> is a fixed-size structure, with int fields and a pointer
+//     to a single Slab<T> (the items).
+//   - A Dict<K, V> is also fixed-size, with pointers to 3 slabs: the index
+//     Slab<int>, the keys Slab<K>, and the index Slab<V>.
+//
+// "Ghost" layout types:
+//
+// - LayoutFixed - for walking up to 16 fields of a user-defined type.
+// - LayoutForwarded - for storing the forwarding pointer that the Cheney
+//   algorithm uses.
+//
+// Stack rooting API:
+//
+//   StackRoots _roots({&mystr, &mydict, &mylist});
+//
+// This pushes local variables onto the global data structure managed by the
+// GC.
+
+// TODO: Dicts should actually use hashing!  Test computational complexity.
 
 // Memory allocation APIs:
 //
@@ -42,10 +83,6 @@
 //   The untyped internal API.  For NewStr() and NewSlab().
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- shouldn't be in Oil?
-
-// Stack rooting API:
-//
-//   StackRoots _roots({mystr, mydict, mylist});
 
 // Slab Sizing with 8-byte slab header
 //
