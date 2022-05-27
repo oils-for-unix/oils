@@ -307,6 +307,11 @@ bugs() {
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
+TODO-deprecate() {
+  sh-spec spec/TODO-deprecate.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
 blog1() {
   sh-spec spec/blog1.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
