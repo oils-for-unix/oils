@@ -305,7 +305,8 @@ types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
 types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id);
 id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
 
-types_asdl::opt_group_t MatchOptionGroup(Str* s);
+types_asdl::opt_group_t OptionGroupNum(Str* s);
+option_asdl::option_t OptionNum(Str* s);
 option_asdl::builtin_t LookupNormalBuiltin(Str* s);
 option_asdl::builtin_t LookupAssignBuiltin(Str* s);
 option_asdl::builtin_t LookupSpecialBuiltin(Str* s);
@@ -407,7 +408,10 @@ Kind GetKind(id_kind_asdl::Id_t id) {
 """)
 
       pairs = consts.OPTION_GROUPS.items()
-      GenStringLookup('types_asdl::opt_group_t', 'MatchOptionGroup', pairs, f)
+      GenStringLookup('types_asdl::opt_group_t', 'OptionGroupNum', pairs, f)
+
+      pairs = [(opt.name, opt.index) for opt in option_def.All()]
+      GenStringLookup('option_asdl::option_t', 'OptionNum', pairs, f)
 
       b = builtin_def.BuiltinDict()
       GenBuiltinLookup(b, 'LookupNormalBuiltin', 'normal', f)

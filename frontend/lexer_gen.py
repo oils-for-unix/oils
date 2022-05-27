@@ -437,11 +437,6 @@ def main(argv):
     TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
     #TranslateSimpleLexer('MatchQsnToken', lexer_def.QSN_DEF)
 
-    # TODO: Move this to frontend/consts_gen.py, like LookupNormalBuiltin()
-    # e.g. "pipefail" -> option_i::pipefail
-    pairs = [(opt.name, opt.index) for opt in option_def.All()]
-    StringToInt('MatchOption', pairs)
-
     TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
 

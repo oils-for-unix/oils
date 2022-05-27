@@ -204,7 +204,7 @@ class Shopt(vm._Builtin):
 
     if arg.q:  # query values
       for name in opt_names:
-        index = match.MatchOption(name)
+        index = consts.OptionNum(name)
         if index == 0:
           return 2  # bash gives 1 for invalid option; 2 is better
         if not self.mutable_opts.opt0_array[index]:
@@ -228,7 +228,7 @@ class Shopt(vm._Builtin):
       for opt_name in opt_names:
         # TODO: could consolidate with checks in core/state.py and option
         # lexer?
-        opt_group = consts.MatchOptionGroup(opt_name)
+        opt_group = consts.OptionGroupNum(opt_name)
         if opt_group == opt_group_i.OilUpgrade:
           opt_nums.extend(consts.OIL_UPGRADE)
           continue
@@ -241,7 +241,7 @@ class Shopt(vm._Builtin):
           opt_nums.extend(consts.STRICT_ALL)
           continue
 
-        index = match.MatchOption(opt_name)
+        index = consts.OptionNum(opt_name)
         if index == 0:
           # TODO: compute span_id
           e_usage('got invalid option %r' % opt_name)

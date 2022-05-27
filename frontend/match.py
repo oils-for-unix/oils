@@ -143,7 +143,6 @@ if fastlex:
   #QSN_MATCHER = _MatchQsnToken_Fast
   IsValidVarName = fastlex.IsValidVarName
   ShouldHijack = fastlex.ShouldHijack
-  MatchOption = fastlex.MatchOption
 else:
   OneToken = _MatchOshToken_Slow(lexer_def.LEXER_DEF)
   ECHO_MATCHER = _MatchTokenSlow(lexer_def.ECHO_E_DEF)
@@ -166,11 +165,6 @@ else:
   def ShouldHijack(s):
     # type: (str) -> bool
     return bool(_SHOULD_HIJACK_RE.match(s))
-
-  _OPTION_DICT = option_def.OptionDict()
-  def MatchOption(s):
-    # type: (str) -> int
-    return _OPTION_DICT.get(s, 0)  # 0 means not found
 
 
 class SimpleLexer(object):

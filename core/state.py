@@ -437,7 +437,7 @@ def MakeOilOpts():
 
 def _ShoptOptionNum(opt_name):
   # type: (str) -> option_t
-  opt_num = match.MatchOption(opt_name)
+  opt_num = consts.OptionNum(opt_name)
   if opt_num == 0:
     e_usage('got invalid option %r' % opt_name)
 
@@ -450,7 +450,7 @@ def _ShoptOptionNum(opt_name):
 
 def _SetOptionNum(opt_name):
   # type: (str) -> option_t
-  opt_num = match.MatchOption(opt_name)
+  opt_num = consts.OptionNum(opt_name)
   if opt_num == 0:
     e_usage('got invalid option %r' % opt_name)
 
@@ -629,7 +629,7 @@ class MutableOpts(object):
     assert '_' not in opt_name
     assert opt_name in consts.SET_OPTION_NAMES
 
-    opt_num = match.MatchOption(opt_name)
+    opt_num = consts.OptionNum(opt_name)
     assert opt_num != 0, opt_name
 
     if opt_num == option_i.errexit:
@@ -679,7 +679,7 @@ class MutableOpts(object):
 
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
-    opt_group = consts.MatchOptionGroup(opt_name)
+    opt_group = consts.OptionGroupNum(opt_name)
     if opt_group == opt_group_i.OilUpgrade:
       _SetGroup(self.opt0_array, consts.OIL_UPGRADE, b)
       self.SetDeferredErrExit(b)  # Special case
@@ -722,7 +722,7 @@ class MutableOpts(object):
     # Respect option gropus.
     opt_nums = []  # type: List[int]
     for opt_name in opt_names:
-      opt_group = consts.MatchOptionGroup(opt_name)
+      opt_group = consts.OptionGroupNum(opt_name)
       if opt_group == opt_group_i.OilUpgrade:
         opt_nums.extend(consts.OIL_UPGRADE)
       elif opt_group == opt_group_i.OilAll:
@@ -730,7 +730,7 @@ class MutableOpts(object):
       elif opt_group == opt_group_i.StrictAll:
         opt_nums.extend(consts.STRICT_ALL)
       else:
-        index = match.MatchOption(opt_name)
+        index = consts.OptionNum(opt_name)
         # Minor incompatibility with bash: we validate everything before
         # printing.
         if index == 0:

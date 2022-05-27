@@ -160,9 +160,16 @@ OPTION_GROUPS = {
     'oil:basic': opt_group_i.OilUpgrade,
 }
 
-def MatchOptionGroup(s):
+def OptionGroupNum(s):
   # type: (str) -> int
   return OPTION_GROUPS.get(s, NO_INDEX)  # 0 for not found
+
+
+_OPTION_DICT = option_def.OptionDict()
+
+def OptionNum(s):
+  # type: (str) -> int
+  return _OPTION_DICT.get(s, 0)  # 0 means not found
 
 
 #
