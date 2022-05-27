@@ -125,15 +125,16 @@ class UnAlias(vm._Builtin):
     return status
 
 
-def SetShellOpts(exec_opts, opt_changes, shopt_changes):
+def SetOptionsFromFlags(exec_opts, opt_changes, shopt_changes):
   # type: (MutableOpts, List[Tuple[str, bool]], List[Tuple[str, bool]]) -> None
-  """Used by bin/oil.py too."""
+  """Used by core/shell.py"""
 
+  # We can set ANY option with -o.  -O is too annoying to type.
   for opt_name, b in opt_changes:
-    exec_opts.SetOption(opt_name, b)
+    exec_opts.SetAnyOption(opt_name, b)
 
   for opt_name, b in shopt_changes:
-    exec_opts.SetShoptOption(opt_name, b)
+    exec_opts.SetAnyOption(opt_name, b)
 
 
 class Set(vm._Builtin):
@@ -174,7 +175,14 @@ class Set(vm._Builtin):
       self.exec_opts.ShowOptions([])
       return 0
 
-    SetShellOpts(self.exec_opts, arg.opt_changes, arg.shopt_changes)
+    # Note: set -o nullglob is not valid.  The 'shopt' builtin is preferred in
+    # Oil, and we want code to be consistent.
+    for opt_name, b in arg.opt_changes:
+      self.exec_opts.SetOldOption(opt_name, b)
+
+    for opt_name, b in arg.shopt_changes:
+      self.exec_opts.SetAnyOption(opt_name, b)
+
     # Hm do we need saw_double_dash?
     if arg.saw_double_dash or not arg_r.AtEnd():
       self.mem.SetArgv(arg_r.Rest())
@@ -253,11 +261,8 @@ class Shopt(vm._Builtin):
 
     # Otherwise, set options.
     for opt_name in opt_names:
-      #if arg.o:
-      #  self.mutable_opts.SetOption(name, b)
-      #else:
       # We allow set -o options here
-      self.mutable_opts.SetShoptOption(opt_name, b)
+      self.mutable_opts.SetAnyOption(opt_name, b)
 
     return 0
 

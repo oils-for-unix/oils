@@ -248,9 +248,10 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # Set these BEFORE processing flags, so they can be overridden.
   if lang == 'oil':
-    mutable_opts.SetShoptOption('oil:all', True)
+    mutable_opts.SetAnyOption('oil:all', True)
 
-  builtin_pure.SetShellOpts(mutable_opts, attrs.opt_changes, attrs.shopt_changes)
+  builtin_pure.SetOptionsFromFlags(mutable_opts, attrs.opt_changes,
+                                   attrs.shopt_changes)
   # feedback between runtime and parser
   aliases = {}  # type: Dict[str, str]
 

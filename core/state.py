@@ -435,7 +435,7 @@ def MakeOilOpts():
   return parse_opts
 
 
-def _ShoptOptionNum(opt_name):
+def _AnyOptionNum(opt_name):
   # type: (str) -> option_t
   opt_num = consts.OptionNum(opt_name)
   if opt_num == 0:
@@ -455,7 +455,7 @@ def _SetOptionNum(opt_name):
     e_usage('got invalid option %r' % opt_name)
 
   if opt_num not in consts.SET_OPTION_NUMS:
-    e_usage("invalid option %r (try -O or shopt)" % opt_name)
+    e_usage("invalid option %r (try shopt)" % opt_name)
 
   return opt_num
 
@@ -488,7 +488,7 @@ class MutableOpts(object):
     for opt_num in consts.SET_OPTION_NUMS:
       name = consts.OptionName(opt_num) 
       if name in lookup:
-        self._SetOption(name, True)
+        self._SetOldOption(name, True)
 
   def Push(self, opt_num, b):
     # type: (int, bool) -> None
@@ -623,7 +623,7 @@ class MutableOpts(object):
           return runtime.NO_SPID
     """
 
-  def _SetOption(self, opt_name, b):
+  def _SetOldOption(self, opt_name, b):
     # type: (str, bool) -> None
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
@@ -643,11 +643,11 @@ class MutableOpts(object):
 
     success = self.opt_hook.OnChange(self.opt0_array, opt_name, b)
 
-  def SetOption(self, opt_name, b):
+  def SetOldOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
     _ = _SetOptionNum(opt_name)  # validate it
-    self._SetOption(opt_name, b)
+    self._SetOldOption(opt_name, b)
 
     UP_val = self.mem.GetValue('SHELLOPTS')
     assert UP_val.tag == value_e.Str, UP_val
@@ -673,7 +673,7 @@ class MutableOpts(object):
         new_val = value.Str(':'.join(names))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
-  def SetShoptOption(self, opt_name, b):
+  def SetAnyOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For shopt -s/-u and sh -O/+O. """
 
@@ -694,7 +694,7 @@ class MutableOpts(object):
       _SetGroup(self.opt0_array, consts.STRICT_ALL, b)
       return
 
-    opt_num = _ShoptOptionNum(opt_name)
+    opt_num = _AnyOptionNum(opt_name)
 
     if opt_num == option_i.errexit:
       self.SetDeferredErrExit(b)

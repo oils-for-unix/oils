@@ -235,6 +235,31 @@ status=0
 status=2
 ## END
 
+#### osh -o new_option is also accepted
+
+$SH -o nullglob -c 'echo nullglob'
+echo $? flag nullglob
+
+$SH -o oil:upgrade -c 'proc p { echo upgrade }; p'
+echo $? flag oil:upgrade
+
+# Should disallow these
+
+set -o nullglob
+echo $? set builtin nullglob
+set -o oil:upgrade
+echo $? set builtin oil:upgrade
+
+## STDOUT:
+nullglob
+0 flag nullglob
+upgrade
+0 flag oil:upgrade
+2 set builtin nullglob
+2 set builtin oil:upgrade
+## END
+
+
 #### oil:upgrade includes inherit_errexit
 shopt -s oil:upgrade
 echo $(echo one; false; echo two)
