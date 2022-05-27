@@ -15,7 +15,8 @@ from asdl import gen_python
 #from core.pyerror import log
 
 # Special cases like Id
-_SIMPLE = ['state', 'emit', 'char_kind']
+# TODO: Put this in the ASDL schema!
+_SIMPLE = ['state', 'emit', 'char_kind', 'opt_group']
 
 
 class UserType(object):

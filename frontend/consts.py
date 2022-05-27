@@ -5,7 +5,7 @@ consts.py
 from __future__ import print_function
 
 from _devbuild.gen.types_asdl import (
-    redir_arg_type_e, redir_arg_type_t, bool_arg_type_t
+    redir_arg_type_e, redir_arg_type_t, bool_arg_type_t, opt_group_i
 )
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind_t
 from frontend import builtin_def
@@ -22,7 +22,7 @@ NO_INDEX = 0  # for Resolve
 
 # Used as consts::STRICT_ALL, etc.  Do it explicitly to satisfy MyPy.
 STRICT_ALL = option_def.STRICT_ALL
-OIL_BASIC = option_def.OIL_BASIC
+OIL_UPGRADE = option_def.OIL_UPGRADE
 OIL_ALL = option_def.OIL_ALL
 DEFAULT_TRUE = option_def.DEFAULT_TRUE
 
@@ -149,6 +149,20 @@ def OptionName(opt_num):
   # type: (option_t) -> str
   """Get the name from an index."""
   return option_def.OPTION_NAMES[opt_num]
+
+
+OPTION_GROUPS = {
+    'strict:all': opt_group_i.StrictAll,
+    'oil:upgrade': opt_group_i.OilUpgrade,
+    'oil:all': opt_group_i.OilAll,
+
+    # ALIAS to deprecate
+    'oil:basic': opt_group_i.OilUpgrade,
+}
+
+def MatchOptionGroup(s):
+  # type: (str) -> int
+  return OPTION_GROUPS.get(s, NO_INDEX)  # 0 for not found
 
 
 #

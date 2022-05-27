@@ -4,6 +4,8 @@ module types {
   bool_arg_type = Undefined | Path | Int | Str | Other
   redir_arg_type = Path | Desc | Here
 
+  opt_group = StrictAll | OilUpgrade | OilAll
+
   -- Fifteen lexer modes for OSH
 
   lex_mode =
@@ -31,7 +33,6 @@ module types {
   | QSN
 
   -- TODO:
-  -- * Multiline strings.  May require some parsing too.
   -- * Tagged strings.  Are these raw by default?
 
   -- More possibilities

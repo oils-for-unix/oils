@@ -438,7 +438,7 @@ def main(argv):
     #TranslateSimpleLexer('MatchQsnToken', lexer_def.QSN_DEF)
 
     # TODO: Move this to frontend/consts_gen.py, like LookupNormalBuiltin()
-    # e.g. "pipefail" -> option-I::pipefail
+    # e.g. "pipefail" -> option_i::pipefail
     pairs = [(opt.name, opt.index) for opt in option_def.All()]
     StringToInt('MatchOption', pairs)
 

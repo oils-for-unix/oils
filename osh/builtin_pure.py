@@ -18,6 +18,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import scope_e, value_e, value__Str
 from _devbuild.gen.syntax_asdl import Token
+from _devbuild.gen.types_asdl import opt_group_i
 
 from asdl import format as fmt
 from asdl import runtime
@@ -227,15 +228,16 @@ class Shopt(vm._Builtin):
       for opt_name in opt_names:
         # TODO: could consolidate with checks in core/state.py and option
         # lexer?
-        if opt_name == 'oil:basic':
-          opt_nums.extend(consts.OIL_BASIC)
+        opt_group = consts.MatchOptionGroup(opt_name)
+        if opt_group == opt_group_i.OilUpgrade:
+          opt_nums.extend(consts.OIL_UPGRADE)
           continue
 
-        if opt_name == 'oil:all':
+        if opt_group == opt_group_i.OilAll:
           opt_nums.extend(consts.OIL_ALL)
           continue
 
-        if opt_name == 'strict:all':
+        if opt_group == opt_group_i.StrictAll:
           opt_nums.extend(consts.STRICT_ALL)
           continue
 

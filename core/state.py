@@ -18,6 +18,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     scope_e, scope_t, hay_node
 )
+from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core import error
@@ -573,7 +574,7 @@ class MutableOpts(object):
     """Set the errexit flag, possibly deferring it.
 
     Implements the unusual POSIX "defer" behavior.  Callers: set -o errexit,
-    shopt -s oil:all, oil:basic
+    shopt -s oil:all, oil:upgrade
     """
     #log('Set %s', b)
 
@@ -678,17 +679,18 @@ class MutableOpts(object):
 
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
-    if opt_name == 'oil:basic':
-      _SetGroup(self.opt0_array, consts.OIL_BASIC, b)
+    opt_group = consts.MatchOptionGroup(opt_name)
+    if opt_group == opt_group_i.OilUpgrade:
+      _SetGroup(self.opt0_array, consts.OIL_UPGRADE, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
-    if opt_name == 'oil:all':
+    if opt_group == opt_group_i.OilAll:
       _SetGroup(self.opt0_array, consts.OIL_ALL, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
-    if opt_name == 'strict:all':
+    if opt_group == opt_group_i.StrictAll:
       _SetGroup(self.opt0_array, consts.STRICT_ALL, b)
       return
 
@@ -720,11 +722,12 @@ class MutableOpts(object):
     # Respect option gropus.
     opt_nums = []  # type: List[int]
     for opt_name in opt_names:
-      if opt_name == 'oil:basic':
-        opt_nums.extend(consts.OIL_BASIC)
-      elif opt_name == 'oil:all':
+      opt_group = consts.MatchOptionGroup(opt_name)
+      if opt_group == opt_group_i.OilUpgrade:
+        opt_nums.extend(consts.OIL_UPGRADE)
+      elif opt_group == opt_group_i.OilAll:
         opt_nums.extend(consts.OIL_ALL)
-      elif opt_name == 'strict:all':
+      elif opt_group == opt_group_i.StrictAll:
         opt_nums.extend(consts.STRICT_ALL)
       else:
         index = match.MatchOption(opt_name)

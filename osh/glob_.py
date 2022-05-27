@@ -426,7 +426,7 @@ class Globber(object):
     n = len(results)
     if n:  # Something matched
       # Omit files starting with - 
-      # dashglob turned OFF with shopt -s oil:basic.
+      # dashglob turned OFF with shopt -s oil:upgrade.
       if not self.exec_opts.dashglob():
         results = [s for s in results if not s.startswith('-')]
         n = len(results)

@@ -216,19 +216,19 @@ def _Init(opt_def):
   # type: (_OptionDef) -> None
 
   opt_def.Add('errexit', short_flag='e', builtin='set',
-              groups=['oil:basic', 'oil:all'])
+              groups=['oil:upgrade', 'oil:all'])
   opt_def.Add('nounset', short_flag='u', builtin='set', 
-              groups=['oil:basic', 'oil:all'])
+              groups=['oil:upgrade', 'oil:all'])
   opt_def.Add('pipefail', builtin='set', 
-              groups=['oil:basic', 'oil:all'])
+              groups=['oil:upgrade', 'oil:all'])
 
   opt_def.Add('inherit_errexit',
-              groups=['oil:basic', 'oil:all'])
+              groups=['oil:upgrade', 'oil:all'])
   # Hm is this subsumed by simple_word_eval?
   opt_def.Add('nullglob',
-              groups=['oil:basic', 'oil:all'])
+              groups=['oil:upgrade', 'oil:all'])
   opt_def.Add('verbose_errexit',
-              groups=['oil:basic', 'oil:all'])
+              groups=['oil:upgrade', 'oil:all'])
 
   # set -o noclobber, etc.
   for short_flag, name in _OTHER_SET_OPTIONS:
@@ -277,10 +277,10 @@ def _Init(opt_def):
   #
 
   for name in _BASIC_PARSE_OPTIONS:
-    opt_def.Add(name, groups=['oil:basic', 'oil:all'])
+    opt_def.Add(name, groups=['oil:upgrade', 'oil:all'])
   # shopt -s simple_word_eval, etc.
   for name, default in _BASIC_RUNTIME_OPTIONS:
-    opt_def.Add(name, default=default, groups=['oil:basic', 'oil:all'])
+    opt_def.Add(name, default=default, groups=['oil:upgrade', 'oil:all'])
 
   for name, default in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, default=default, groups=['oil:all'])
@@ -365,14 +365,14 @@ VISIBLE_SHOPT_NUMS = [
     if opt.builtin == 'shopt' and opt.implemented
 ]
 
-OIL_BASIC = [opt.index for opt in _SORTED if 'oil:basic' in opt.groups]
+OIL_UPGRADE = [opt.index for opt in _SORTED if 'oil:upgrade' in opt.groups]
 OIL_ALL = [opt.index for opt in _SORTED if 'oil:all' in opt.groups]
 STRICT_ALL = [opt.index for opt in _SORTED if 'strict:all' in opt.groups]
 DEFAULT_TRUE = [opt.index for opt in _SORTED if opt.default]
 #print([opt.name for opt in _SORTED if opt.default])
 
 
-META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
+META_OPTIONS = ['strict:all', 'oil:upgrade', 'oil:all']  # Passed to flag parser
 
 # For printing option names to stdout.  Wrapped by frontend/consts.
 OPTION_NAMES = dict((opt.index, opt.name) for opt in _SORTED)
