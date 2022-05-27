@@ -1,7 +1,7 @@
 # Demonstrations for users.  Could go in docs.
 
 #### Iterate over command sub output with split()
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 output=$(echo '1 one'; echo '2 two')
 
@@ -28,7 +28,7 @@ ___
 ## END
 
 #### split with explicit IFS argument
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 # demonstrate that -- is not special to 'write'
 output=$(echo '1 one'; echo --; echo '2 two')
@@ -45,7 +45,7 @@ done
 ## END
 
 #### split on \0 delimiters
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 output=$(echo $'1 one\x002 two\x00')
 

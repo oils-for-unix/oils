@@ -77,7 +77,7 @@ if (x ~ /<d+> '-' <d+>/) {
 ## END
 
 #### s ~ regex and s !~ regex
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 var s = 'foo'
 if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
@@ -109,7 +109,7 @@ cleared
 ## END
 
 #### _start() and _end()
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 var s = 'foo123bar'
 if (s ~ /digit+/) {

@@ -74,7 +74,7 @@ shopt --set oil:all {
 }
 echo ---
 
-shopt --set oil:basic {
+shopt --set oil:upgrade {
   shopt -p | grep errexit
 }
 echo ---

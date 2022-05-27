@@ -15,7 +15,7 @@ its default POSIX- and bash-compatible mode.  **OSH is compatible by default**.
 <div id="toc">
 </div>
 
-## Right Now (`shopt -s oil:basic`)
+## Right Now (`shopt -s oil:upgrade`)
 
 Here are two things that Oil users should know about, one major and one minor:
 The meaning of the POSIX construct `()` has changed, and the meaning of the

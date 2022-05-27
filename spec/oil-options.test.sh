@@ -177,11 +177,11 @@ shopt -s strict_tilde
 shopt -s strict_word_eval
 ## END
 
-#### shopt -s oil:basic
-shopt -s oil:basic
+#### shopt -s oil:upgrade
+shopt -s oil:upgrade
 # normal option names
 shopt -o -p | grep -- ' -o ' | grep -v hashall
-shopt -p oil:basic
+shopt -p oil:upgrade
 ## STDOUT:
 set -o errexit
 set -o nounset
@@ -208,8 +208,8 @@ shopt -u xtrace_details
 shopt -s xtrace_rich
 ## END
 
-#### osh -O oil:basic 
-$SH -O oil:basic -c 'var x = %(one two three); write @x'
+#### osh -O oil:upgrade 
+$SH -O oil:upgrade -c 'var x = %(one two three); write @x'
 ## STDOUT:
 one
 two
@@ -234,14 +234,14 @@ status=0
 status=2
 ## END
 
-#### oil:basic includes inherit_errexit
-shopt -s oil:basic
+#### oil:upgrade includes inherit_errexit
+shopt -s oil:upgrade
 echo $(echo one; false; echo two)
 ## status: 1
 ## stdout-json: ""
 
 #### parse_brace: bad block to assignment builtin
-shopt -s oil:basic
+shopt -s oil:upgrade
 # This is a fatal programming error.  It's unlike passing an extra arg?
 local x=y { echo 'bad block' }
 echo status=$?
@@ -249,7 +249,7 @@ echo status=$?
 ## stdout-json: ""
 
 #### parse_brace: bad block to external program
-shopt -s oil:basic
+shopt -s oil:upgrade
 # This is a fatal programming error.  It's unlike passing an extra arg?
 ls { echo 'bad block' }
 echo status=$?
@@ -257,7 +257,7 @@ echo status=$?
 ## stdout-json: ""
 
 #### parse_brace: cd { } in pipeline
-shopt -s oil:basic
+shopt -s oil:upgrade
 cd /tmp {
   pwd
   pwd
@@ -269,7 +269,7 @@ cd /tmp {
 
 
 #### parse_brace: if accepts blocks
-shopt -s oil:basic
+shopt -s oil:upgrade
 shopt -u errexit  # don't need strict_errexit check!
 
 if test -n foo {
@@ -338,7 +338,7 @@ three
 ## END
 
 #### parse_brace: while/until
-shopt -s oil:basic
+shopt -s oil:upgrade
 while true {
   echo one
   break
@@ -355,7 +355,7 @@ three
 ## END
 
 #### parse_brace: for-in loop
-shopt -s oil:basic
+shopt -s oil:upgrade
 for x in one two {
   echo $x
 }
@@ -373,7 +373,7 @@ four
 ## END
 
 #### parse_brace case
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 var files = %(foo.py 'foo test.sh')
 for name in "${files[@]}" ; do
@@ -404,7 +404,7 @@ shell
 ## END
 
 #### parse_paren: if statement
-shopt -s oil:basic
+shopt -s oil:upgrade
 var x = 1
 if (x < 42) {
   echo less
@@ -432,7 +432,7 @@ other
 ## END
 
 #### parse_paren: while statement
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 # ksh style
 var x = 1
@@ -506,9 +506,9 @@ var=val
 ## status: 2
 ## stdout-json: ""
 
-#### nullglob is on with oil:basic 
+#### nullglob is on with oil:upgrade 
 write one *.zzz two
-shopt -s oil:basic
+shopt -s oil:upgrade
 write __
 write one *.zzz two
 ## STDOUT:
@@ -558,7 +558,7 @@ touch -- file -v
 
 argv.py *
 
-shopt -s oil:basic  # turns OFF dashglob
+shopt -s oil:upgrade  # turns OFF dashglob
 argv.py *
 
 shopt -s dashglob  # turn it ON
@@ -570,7 +570,7 @@ argv.py *
 ['-v', 'file']
 ## END
 
-#### shopt -s oil:basic turns some options on and others off
+#### shopt -s oil:upgrade turns some options on and others off
 show() {
   shopt -p | egrep 'dashglob|simple_word_eval'
 }
@@ -582,11 +582,11 @@ shopt -s simple_word_eval
 show
 echo ---
 
-shopt -s oil:basic  # strict_arith should still be on after this!
+shopt -s oil:upgrade  # strict_arith should still be on after this!
 show
 echo ---
 
-shopt -u oil:basic  # strict_arith should still be on after this!
+shopt -u oil:upgrade  # strict_arith should still be on after this!
 show
 
 ## STDOUT:
@@ -603,12 +603,12 @@ shopt -s dashglob
 shopt -u simple_word_eval
 ## END
 
-#### oil:basic disables aliases
+#### oil:upgrade disables aliases
 
 alias x='echo hi'
 x
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 x
 echo status=$?
@@ -635,7 +635,7 @@ echo ${PIPESTATUS[@]}
 yes | status_141
 echo ${PIPESTATUS[@]}
 
-shopt --set oil:basic  # sigpipe_status_ok
+shopt --set oil:upgrade  # sigpipe_status_ok
 shopt --unset errexit
 
 yes | head -n 1
@@ -666,7 +666,7 @@ status=0 pipestatus=0 141
 
 #### printf | head regression (sigpipe_status_ok)
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 
 bad() {
@@ -710,7 +710,7 @@ f() {
 }
 echo 'second'
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 f() {
   echo 3
 }
@@ -733,7 +733,7 @@ proc p {
 }
 echo 'second'
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 proc p {
   echo 3
 }

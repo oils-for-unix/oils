@@ -748,7 +748,7 @@ Examples:
     shopt --set errexit
 
 You can set or unset multiple options with the groups `strict:all`,
-`oil:basic`, and `oil:all`.
+`oil:upgrade`, and `oil:all`.
 
 If a block is passed, then the mutated options are pushed onto a stack, the
 block is executed, and then options are restored to their original state.

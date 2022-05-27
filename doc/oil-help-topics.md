@@ -138,7 +138,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```oil-help-topics
-  [Option Groups] strict:all   oil:basic   oil:all
+  [Option Groups] strict:all   oil:upgrade   oil:all
   [Strictness]    ... More Runtime Errors
                   strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)

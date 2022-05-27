@@ -184,7 +184,7 @@ z=foo
 ## END
 
 #### read --line --with-eol
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 # Hm this preserves the newline?
 seq 3 | while read --line {
@@ -395,7 +395,7 @@ status=2
 
 
 #### push-registers
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 
 status_code() {
@@ -449,7 +449,7 @@ status=0
 
 
 #### module
-shopt --set oil:basic
+shopt --set oil:upgrade
 
 module 'main' || return 0
 source $REPO_ROOT/spec/testdata/module/common.oil

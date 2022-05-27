@@ -186,7 +186,7 @@ echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'
 
 #### Oil extension of \u{1234} to match QSN
 
-#shopt -s oil:basic
+#shopt -s oil:upgrade
 
 # This is technically an incompatibility
 

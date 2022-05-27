@@ -288,7 +288,7 @@ strict_errexit_1() {
   _strict-errexit-case 'until { echo 1; echo 2; }; do echo UNTIL; done'
 
   # Must be separate lines for parsing options to take effect
-  _strict-errexit-case 'shopt -s oil:basic
+  _strict-errexit-case 'shopt -s oil:upgrade
                         proc p { echo p }
                         if p { echo hi }'
 }

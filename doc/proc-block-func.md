@@ -293,7 +293,7 @@ name-with-hyphen a b c
 func:
 
 ```
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 func f(a, b=0, ...args; c, d=0, ...named) {
   echo __ args: @args

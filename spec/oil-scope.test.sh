@@ -446,7 +446,7 @@ var myarray = %(a b c)
 set1 :a zzz
 set1 :myarray z
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 #write -- @a
 write -- @myarray
 
@@ -540,7 +540,7 @@ bar
 ## END
 
 #### cd blocks don't introduce new scopes
-shopt --set oil:basic
+shopt --set oil:upgrade
 
 var x = 42
 cd / {
@@ -605,7 +605,7 @@ myproc IFS= x
 ## END
 
 #### shvar usage 
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 
 # no block
@@ -628,7 +628,7 @@ status=2
 ## END
 
 #### shvar global
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset nounset
 
 echo _ESCAPER=$_ESCAPER
@@ -683,7 +683,7 @@ _DIALECT=bar
 ## END
 
 #### shvar local
-shopt --set oil:basic  # blocks
+shopt --set oil:upgrade  # blocks
 shopt --unset simple_word_eval  # test word splitting
 
 proc foo {
@@ -708,7 +708,7 @@ MYTEMP=undef
 ## END
 
 #### shvar IFS
-shopt --set oil:basic
+shopt --set oil:upgrade
 
 proc myproc() {
   echo "$IFS" | od -A n -t x1
