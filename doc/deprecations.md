@@ -50,11 +50,11 @@ Yes:
     }
     echo $PWD  # restored
 
-Justification: Instead of wasting a terse and short syntax for something rarely necesary in the command language (a cryptic speciality), in Oil the parentheses are used to place Oil expressions into conditional clauses (`shopt --set parse_paren`):
+We're using parentheses for Oil expressions like
 
     if (x > 0) { echo 'positive' }
 
-So using `forkwait` for subshells makes the usage of that rare and discouraged subshells mechanism obvious, and allows that parenthesis can attain their consisten meaning: Denoting conditions that are written as Oil expressions.
+So using `forkwait` for subshells allows that parenthesis can attain a consistent meaning: They denote conditions that are defined by Oil expressions.
 
 
 
