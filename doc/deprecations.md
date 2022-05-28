@@ -18,7 +18,7 @@ NOTE: The **`bin/osh`** interpreter, which is the POSIX- and bash-compatible mod
 
 ## Discouraged Syntax (Deprecations)
 
-### Spawning subshells with `()` -- instead use the more telling `forkwait` (`shopt -s parse_subshell`)
+### Spawning subshells with `()`: Use the more telling `forkwait` instead (`shopt --set parse_subshell`)
 
 In idiomatic Oil code subshells are **uncommon**. Where necessary use `forkwait`.
 
@@ -58,7 +58,7 @@ So using `forkwait` for subshells makes the usage of that rare and discouraged s
 
 
 
-## Minor Breakages (New Meanings and Disallowed Syntax.)
+## Minor Breakages: New Meanings and Disallowed Syntax.
 
 
 ### The Extended Glob `@()` changed to `,()` (`shopt --set parse_at`)
