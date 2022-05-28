@@ -5,11 +5,9 @@ default_highlighter: oil-sh
 Shell Language Deprecations when Upgrading to Oil (`oil:upgrade`)
 ===========================
 
-When you turn on the Oil language features there are a few shell constructs which continue to work, but whose use is now discouraged (i.e. deprecations). They are deprecated because they have some suboptmal property that was deemed large enough to warrant implementing an improved solution in Oil.
+When you turn on the Oil language features there are a few shell constructs which continue to work, but whose use is now discouraged (i.e. deprecations).
 
-We try to keep the alternatives to be as compatible or similar as possible, wherever it makes sense, and any breakage or required syntax adjustments to a minimum.
-
-Nevertheless, it couldn't be avoided that there are some, but very few and minor cases, in which legacy shell syntax is so ambiguous, inconsistent, or conflicting, that it simply had to be completely disallowed or redefined in the Oil shell. Fortunately, these are also rarely used things, so only very few people should actually have to deal with them.
+We try to minimize the length of this list.
 
 NOTE: The **`bin/osh`** interpreter, which is the POSIX- and bash-compatible mode of the Oil-shell **is backwards-compatible by default**.
 
@@ -22,7 +20,7 @@ NOTE: The **`bin/osh`** interpreter, which is the POSIX- and bash-compatible mod
 
 ### Spawning subshells with `()` -- instead use the more telling `forkwait` (`shopt -s parse_subshell`)
 
-Subshells are a computationally costly concept to create a separate execution environment for commands. In idiomatic Oil code they should really be **uncommon**, because Oil provides much more efficient alternatives. Where it's really necessary to spawn a separte subshell in Oil, this should be done using `forkwait`.
+In idiomatic Oil code subshells are **uncommon**. Where necessary use `forkwait`.
 
 Think of it as a sequence of the `fork` builtin (for `&`) and the `wait` builtin.
 
@@ -60,7 +58,7 @@ So using `forkwait` for subshells makes the usage of that rare and discouraged s
 
 
 
-## Minor Breakages (New meanings, or disallowed Syntax.)
+## Minor Breakages (New Meanings and Disallowed Syntax.)
 
 
 ### The Extended Glob `@()` changed to `,()` (`shopt --set parse_at`)
