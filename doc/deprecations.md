@@ -5,26 +5,28 @@ default_highlighter: oil-sh
 Shell Language Deprecations
 ===========================
 
-When you turn on Oil language features, then there are a few shell constructs you can no longer use.
-But we try to keep the length of this list down to a minimum.
+When you turn on the Oil language features there are a few shell constructs which continue to work, but whose use is now discouraged (i.e. deprecations). They are deprecated because they have some suboptmal property that was deemed large enough to warrant implementing an improved solution in Oil.
 
-NOTE: The **`bin/osh`** interpreter, which is Oil in its default POSIX-
-and bash-compatible mode **is compatible by default**.
+We try to keep the alternatives to be as compatible or similar as possible, wherever it makes sense, and any breakage or required syntax adjustments to a minimum.
+
+Nevertheless, it couldn't be avoided that there are some, but very few and minor cases, in which legacy shell syntax is so ambiguous, inconsistent, or conflicting, that it simply had to be completely disallowed or redefined in the Oil shell. Fortunately, these are also rarely used things, so only very few people should actually have to deal with them.
+
+NOTE: The **`bin/osh`** interpreter, which is the POSIX- and bash-compatible mode of the Oil-shell **is backwards-compatible by default**.
 
 <!-- cmark.py expands this -->
 <div id="toc">
 </div>
 
-## Oil language upgrade mode (`shopt --set oil:basic`)
+## Upgrading to Oil (`oil:upgrade`)
 
 
-### Soft Deprecations
+### Deprecations
 
-#### Use `forkwait` for subshells rather than `()` (`shopt -s parse_subshell`)
+#### subshell spawning `()` should be done with the telling `forkwait` (`shopt -s parse_subshell`)
 
-Subshells are **uncommon** in idiomatic Oil code, so they have the awkward name
-`forkwait`.  Think of it as a sequence of the `fork` builtin (for `&`) and the
-`wait` builtin.
+Subshells are a computationally costly concept to create a separate execution environment for commands. In idiomatic Oil code they should really be **uncommon**, because Oil provides much more efficient alternatives. Where it's really necessary to spawn a separte subshell in Oil, this should be done using `forkwait`.
+
+Think of it as a sequence of the `fork` builtin (for `&`) and the `wait` builtin.
 
 No:
 
@@ -38,7 +40,7 @@ Yes:
     }
     echo $not_mutated
 
-However, you don't even need a subshell for some idioms:
+However, in most cases you shouldn't even need a subshell:
 
 No:
 
@@ -52,16 +54,16 @@ Yes:
     }
     echo $PWD  # restored
 
-Justification: We're using parentheses for Oil expressions like
+Justification: Besides beeing a terse short syntax syntax for something rarely necesary in the command language (a cryptic speciality), Oil is using parentheses to denote Oil expressions in conditional clauses:
 
     if (x > 0) { echo 'positive' }
 
-and subshells are uncommon.  Oil has blocks to save and restore state.
+So using `forkwait` for subshells makes the usage of that rare and discouraged subshells mechanism obvious, and allows that parenthesis can attain their consisten meaning: Denoting conditions that are written as Oil expressions.
 
 
 
+## Minor Breakages (Disallowed Syntax)
 
-### Hard Deprecations (Disallowed Syntax)
 
 
 #### The "@()" Extended Globs changed to ",()" (`shopt -s parse_at`)
