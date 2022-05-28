@@ -2,7 +2,7 @@
 default_highlighter: oil-sh
 ---
 
-Shell Language Deprecations
+Shell Language Deprecations when Upgrading to Oil (`oil:upgrade`)
 ===========================
 
 When you turn on the Oil language features there are a few shell constructs which continue to work, but whose use is now discouraged (i.e. deprecations). They are deprecated because they have some suboptmal property that was deemed large enough to warrant implementing an improved solution in Oil.
@@ -17,12 +17,10 @@ NOTE: The **`bin/osh`** interpreter, which is the POSIX- and bash-compatible mod
 <div id="toc">
 </div>
 
-## Upgrading to Oil (`oil:upgrade`)
 
+## Discouraged Syntax (Deprecations)
 
-### Deprecations
-
-#### subshell spawning `()` should be done with the telling `forkwait` (`shopt -s parse_subshell`)
+### Spawning subshells with `()` -- instead use the more telling `forkwait` (`shopt -s parse_subshell`)
 
 Subshells are a computationally costly concept to create a separate execution environment for commands. In idiomatic Oil code they should really be **uncommon**, because Oil provides much more efficient alternatives. Where it's really necessary to spawn a separte subshell in Oil, this should be done using `forkwait`.
 
@@ -54,7 +52,7 @@ Yes:
     }
     echo $PWD  # restored
 
-Justification: Besides beeing a terse short syntax syntax for something rarely necesary in the command language (a cryptic speciality), Oil is using parentheses to denote Oil expressions in conditional clauses:
+Justification: Instead of wasting a terse and short syntax for something rarely necesary in the command language (a cryptic speciality), in Oil the parentheses are used to place Oil expressions into conditional clauses (`shopt --set parse_paren`):
 
     if (x > 0) { echo 'positive' }
 
@@ -62,11 +60,10 @@ So using `forkwait` for subshells makes the usage of that rare and discouraged s
 
 
 
-## Minor Breakages (Disallowed Syntax)
+## Minor Breakages (New meanings, or disallowed Syntax.)
 
 
-
-#### The "@()" Extended Globs changed to ",()" (`shopt -s parse_at`)
+### The Extended Glob `@()` changed to `,()` (`shopt --set parse_at`)
 
 No:
 
@@ -82,11 +79,11 @@ explicitly split command subs like `@(seq 3)` to work.
 That is, Oil doesn't have implicit word splitting.  Instead, it uses [simple
 word evaluation](simple-word-eval.html).
 
-#### "@..." strings need quoting
+### `@...` strings need quoting
 
 `@foo` must be quoted `'@foo'` to preserve meaning (`shopt -s parse_at`)
 
-#### No first-words beginning with "="
+### No first-words beginning with `=`
 
 `=x` is disallowed as the first word in a command to avoid confusion with
   Oil's `=` operator.
