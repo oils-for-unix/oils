@@ -554,7 +554,7 @@ after
 #### What's in strict:all?
 
 # inherit_errexit, strict_errexit, but not command_sub_errexit!
-# for that you need oil:basic!
+# for that you need oil:upgrade!
 
 set -o errexit
 shopt -s strict:all || true
@@ -670,7 +670,7 @@ tmp_contents
 #### Regression
 case $SH in (bash|dash|ash|mksh) exit ;; esac
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 
 shopt --unset errexit {
   echo hi

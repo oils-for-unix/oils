@@ -117,7 +117,7 @@ difference is that `bin/oil` has the **option group** `oil:all` on by default.
 
 Nonetheless, here are two examples.
 
-The `parse_at` option (in group `oil:basic`) turns `@` into the **splice
+The `parse_at` option (in group `oil:upgrade`) turns `@` into the **splice
 operator** when it's at the front of a word:
 
 ```sh-prompt

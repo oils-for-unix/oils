@@ -132,7 +132,7 @@ def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex, hay_state
   builtins[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, cmd_ev, shell_ex, errfmt)
   if mylib.PYTHON:
     builtins[builtin_i.hay] = builtin_pure.Hay(hay_state, cmd_ev, shell_ex)
-    builtins[builtin_i.haynode] = builtin_pure.HayNode(hay_state, mem, cmd_ev)
+    builtins[builtin_i.haynode] = builtin_pure.HayNode(hay_state, mutable_opts, mem, cmd_ev)
 
 
 def InitAssignmentBuiltins(mem, procs, errfmt):
@@ -248,9 +248,10 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # Set these BEFORE processing flags, so they can be overridden.
   if lang == 'oil':
-    mutable_opts.SetShoptOption('oil:all', True)
+    mutable_opts.SetAnyOption('oil:all', True)
 
-  builtin_pure.SetShellOpts(mutable_opts, attrs.opt_changes, attrs.shopt_changes)
+  builtin_pure.SetOptionsFromFlags(mutable_opts, attrs.opt_changes,
+                                   attrs.shopt_changes)
   # feedback between runtime and parser
   aliases = {}  # type: Dict[str, str]
 

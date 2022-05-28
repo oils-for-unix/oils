@@ -138,7 +138,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```oil-help-topics
-  [Option Groups] strict:all   oil:basic   oil:all
+  [Option Groups] strict:all   oil:upgrade   oil:all
   [Strictness]    ... More Runtime Errors
                   strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)
@@ -153,6 +153,7 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
+                  parse_proc             proc p { ... }
                   parse_raw_string       echo r'\' (command mode)
                   parse_triple_quote     """  '''  r'''  $''' in command mode
                   command_sub_errexit    Synchronous errexit check
@@ -172,9 +173,7 @@ X [External Lang] BEGIN   END   when (awk)
                   simple_test_builtin    3 args or fewer; use test not [
                   X simple_trap          Function name only
   [Oil Breaking]  ... The Full Oil Language
-                  X parse_amp            ls &2 > /dev/null, disallow >& <&
                   parse_at_all           @ starting any word is an operator
-                  parse_equals           x = 'val' (for cleaner config blocks)
                   parse_backslash (-u)    Bad backslashes in $''
                   parse_backticks (-u)    Legacy syntax `echo hi`
                   parse_bare_word (-u)   'case unquoted' and 'for x in unquoted'
@@ -189,6 +188,7 @@ X [External Lang] BEGIN   END   when (awk)
                                          ... getopts
                   X old_syntax (-u)      [[   $(( ))  ${x%prefix}   ${a[@]}
                                          $$
+  [Hay Breaking]  parse_equals           x = 'val' (for cleaner config blocks)
   [Compatibility] compat_array           ${array} is ${array[0]}
                   eval_unsafe_arith      Recursively parse and evaluate
                   parse_dynamic_arith    LHS can contain variables
@@ -241,7 +241,7 @@ X [String]        find()   sub()   join()
   [Arrays]        X index()   append()   extend()
   [Assoc Arrays]  @keys()   @values()
   [Introspection] shvar_get()
-X [Hay Config]    parse_hay()   eval_hay()   _hay_result()   block_as_str()   
+X [Hay Config]    parse_hay()   eval_hay()   block_as_str()   
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()

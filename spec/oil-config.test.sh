@@ -68,7 +68,7 @@ greater 0
 ## END
 
 #### haynode builtin can define nodes
-shopt --set parse_paren parse_brace parse_equals
+shopt --set parse_paren parse_brace parse_equals parse_proc
 
 # It prints JSON by default?  What about the code blocks?
 # Or should there be a --json flag?
@@ -110,7 +110,7 @@ level 0 children
 
 
 #### haynode: node name is required
-shopt --set parse_brace parse_equals
+shopt --set parse_brace parse_equals parse_proc
 
 haynode package
 echo status=$?
@@ -139,7 +139,7 @@ status=2
 
 #### haynode: shell nodes require block args; attribute nodes don't
 
-shopt --set parse_brace parse_equals
+shopt --set parse_brace parse_equals parse_proc
 
 hay define package TASK
 
@@ -156,7 +156,7 @@ status=2
 
 
 #### File is evaluated with shopt -s oil:all
-shopt --set parse_brace parse_equals
+shopt --set parse_brace parse_equals parse_proc
 
 hay define package user TASK
 
@@ -209,7 +209,7 @@ deps spam {
 
 #### hay define --under
 set -o errexit
-shopt --set parse_brace parse_equals
+shopt --set parse_brace parse_equals parse_proc
 
 hay define package user TASK
 
@@ -258,6 +258,7 @@ status=0
 
 
 #### parse_hay()
+shopt --set parse_proc
 
 const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
 const block = parse_hay(config_path)
@@ -278,7 +279,7 @@ OK
 
 
 #### Code Blocks: parse_hay() then shvar _DIALECT= { eval_hay() }
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 hay define TASK
 
@@ -310,6 +311,7 @@ publish-html
 
 
 #### Attribute / Data Blocks (package-manager)
+shopt --set parse_proc
 
 const path = "$REPO_ROOT/spec/testdata/config/package-manager.oil"
 
@@ -484,7 +486,7 @@ TODO
 
 
 #### Turn off external binaries with shvar PATH='' {}
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 echo hi > file
 
@@ -518,7 +520,7 @@ status=0
 ## END
 
 #### More shvar PATH=''
-shopt --set parse_brace command_sub_errexit
+shopt --set parse_brace command_sub_errexit parse_proc
 
 shvar PATH='' {
   ( cp -v file /tmp >&2 )
@@ -542,7 +544,7 @@ _status 127
 ## END
 
 #### Block param binding
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 proc package(name, b Block) {
   = b
@@ -572,7 +574,7 @@ package unzip {
 
 
 #### Proc that doesn't take a block
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 proc task(name) {
   echo "task name=$name"

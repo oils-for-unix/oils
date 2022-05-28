@@ -1,7 +1,7 @@
 # fork and forkwait
 
 #### fork and forkwait usage  errors
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 
 fork
@@ -38,7 +38,7 @@ status=2
 ## END
 
 #### forkwait
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 
 old=$PWD
@@ -59,7 +59,7 @@ ok
 ## END
 
 #### fork
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 
 old=$PWD

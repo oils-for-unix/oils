@@ -13,7 +13,7 @@ argv.py @a
 ## END
 
 #### append onto var a = %(1 2)
-shopt -s parse_at
+shopt -s parse_at parse_proc
 var a = %(1 2)
 append a '3 4' '5'  # : is optional
 argv.py @a
@@ -147,6 +147,8 @@ status=2
 ## END
 
 #### read :x :y is allowed
+shopt --set parse_proc
+
 echo 'foo bar' | read :x :y
 echo x=$x y=$y
 
@@ -169,6 +171,8 @@ x=foo y=bar
 ## END
 
 #### Idiom for returning 'read'
+shopt --set parse_proc
+
 proc p(:out) {
   #var tmp = ''
 
@@ -184,7 +188,7 @@ z=foo
 ## END
 
 #### read --line --with-eol
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 # Hm this preserves the newline?
 seq 3 | while read --line {
@@ -334,108 +338,6 @@ echo "[$REPLY]"
 [./a\b\c\d]
 ## END
 
-
-#### shopt supports long flags
-shopt -p nullglob
-
-shopt --set nullglob
-shopt -p nullglob
-
-shopt --unset nullglob
-shopt -p nullglob
-## STDOUT:
-shopt -u nullglob
-shopt -s nullglob
-shopt -u nullglob
-## END
-
-#### shopt supports 'set' options
-shopt -p errexit
-
-shopt --set errexit
-false
-
-echo should not get here
-## status: 1
-## STDOUT:
-shopt -u errexit
-## END
-
-
-#### shopt and block
-shopt --set oil:all
-
-echo one
-
-shopt --unset errexit {
-  echo two
-  false
-  echo three
-}
-
-false
-echo 'should not get here'
-
-## status: 1
-## STDOUT:
-one
-two
-three
-## END
-
-#### shopt and block status
-shopt --set oil:all
-
-shopt --unset errexit {
-  false
-}
-# this is still 0, even though last command was 1
-echo status=$?
-
-## STDOUT:
-status=0
-## END
-
-#### shopt usage error
-shopt --set oil:all
-
-echo one
-shopt --set a {
-  echo two
-}
-echo status=$?
-## status: 2
-## STDOUT:
-one
-## END
-
-#### shopt --print
-
-# TODO: It would be nice to print long flags ...
-
-shopt -p errexit
-shopt -p nullglob
-
-echo --
-shopt -p strict:all | head -n 3
-
-echo --
-shopt --set strict:all
-shopt -p strict:all | head -n 3
-
-## STDOUT:
-shopt -u errexit
-shopt -u nullglob
---
-shopt -u strict_argv
-shopt -u strict_arith
-shopt -u strict_array
---
-shopt -s strict_argv
-shopt -s strict_arith
-shopt -s strict_array
-## END
-
 #### simple_test_builtin
 
 test -n "foo"
@@ -497,7 +399,7 @@ status=2
 
 
 #### push-registers
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 
 status_code() {
@@ -551,7 +453,7 @@ status=0
 
 
 #### module
-shopt --set oil:basic
+shopt --set oil:upgrade
 
 module 'main' || return 0
 source $REPO_ROOT/spec/testdata/module/common.oil
@@ -563,6 +465,8 @@ module1
 
 
 #### runproc
+shopt --set parse_proc
+
 f() {
   write -- f "$@"
 }
@@ -595,7 +499,7 @@ status=2
 ## END
 
 #### runproc typed args
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 proc p {
   echo hi
@@ -611,7 +515,7 @@ hi
 
 
 #### fopen
-shopt --set parse_brace
+shopt --set parse_brace parse_proc
 
 proc p {
   echo 'proc'

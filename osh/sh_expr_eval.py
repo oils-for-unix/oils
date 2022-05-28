@@ -946,7 +946,7 @@ class BoolEvaluator(ArithEvaluator):
 
           # See whether 'set -o' options have been set
           if op_id == Id.BoolUnary_o:
-            index = match.MatchOption(s)
+            index = consts.OptionNum(s)
             if index == 0:
               return False
             else:

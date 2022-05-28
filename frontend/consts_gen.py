@@ -43,6 +43,11 @@ def GenBuiltinLookup(b, func_name, kind, f):
   #log('%r %r', func_name, kind)
 
   pairs = [(b.name, b.index) for b in _BUILTINS if b.kind == kind]
+
+  GenStringLookup('builtin_t', func_name, pairs, f)
+
+
+def GenStringLookup(type_name, func_name, pairs, f):
   #log('%s', pairs)
 
   groups = collections.defaultdict(list)
@@ -62,13 +67,13 @@ def GenBuiltinLookup(b, func_name, kind, f):
   # Size optimization: don't repeat constants literally?
 
   f.write("""\
-builtin_t %s(Str* s) {
+%s %s(Str* s) {
   int len = s->len_;
   if (len == 0) return 0;  // consts.NO_INDEX
 
   const char* data = s->data_;
   switch (data[0]) {
-""" % func_name) 
+""" % (type_name, func_name))
 
   for first_char in sorted(groups):
     pairs = groups[first_char]
@@ -264,7 +269,7 @@ from asdl import pybase
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 
     LIST_INT = [
-        'STRICT_ALL', 'OIL_BASIC', 'OIL_ALL', 'DEFAULT_TRUE',
+        'STRICT_ALL', 'OIL_UPGRADE', 'OIL_ALL', 'DEFAULT_TRUE',
         'PARSE_OPTION_NUMS', 'SHOPT_OPTION_NUMS', 'SET_OPTION_NUMS',
         'VISIBLE_SHOPT_NUMS',
         ]
@@ -300,6 +305,8 @@ types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
 types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id);
 id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
 
+types_asdl::opt_group_t OptionGroupNum(Str* s);
+option_asdl::option_t OptionNum(Str* s);
 option_asdl::builtin_t LookupNormalBuiltin(Str* s);
 option_asdl::builtin_t LookupAssignBuiltin(Str* s);
 option_asdl::builtin_t LookupSpecialBuiltin(Str* s);
@@ -399,6 +406,12 @@ Kind GetKind(id_kind_asdl::Id_t id) {
   }
 }
 """)
+
+      pairs = consts.OPTION_GROUPS.items()
+      GenStringLookup('types_asdl::opt_group_t', 'OptionGroupNum', pairs, f)
+
+      pairs = [(opt.name, opt.index) for opt in option_def.All()]
+      GenStringLookup('option_asdl::option_t', 'OptionNum', pairs, f)
 
       b = builtin_def.BuiltinDict()
       GenBuiltinLookup(b, 'LookupNormalBuiltin', 'normal', f)

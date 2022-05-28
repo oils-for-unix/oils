@@ -3,8 +3,8 @@ optview.py
 """
 from __future__ import print_function
 
+from frontend import consts
 from frontend import option_def
-from frontend import match
 
 from typing import List
 
@@ -15,7 +15,7 @@ class _Getter(object):
     # type: (List[bool], List[List[bool]], str) -> None
     self.opt0_array = opt0_array
     self.opt_stacks = opt_stacks
-    self.num = match.MatchOption(opt_name)
+    self.num = consts.OptionNum(opt_name)
     assert self.num != 0, opt_name
 
   def __call__(self):

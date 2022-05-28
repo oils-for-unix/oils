@@ -69,7 +69,7 @@ echo $double
 ## END
 
 #### C strings in %() array literals
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 var lines=%($'aa\tbb' $'cc\tdd')
 write @lines

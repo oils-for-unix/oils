@@ -150,7 +150,7 @@ status=2
 ## END
 
 #### 'builtin' and 'command' with block
-shopt --set oil:basic
+shopt --set oil:upgrade
 builtin cd / {
   echo "builtin $PWD"
 }

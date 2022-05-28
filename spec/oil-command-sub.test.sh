@@ -16,9 +16,10 @@ status=0
 ## END
 
 #### split command sub @() in expression mode
+shopt --set parse_proc parse_at
+
 var x = @(seq 3)
 
-shopt -s parse_at
 write -- @x
 ## STDOUT:
 1
@@ -63,7 +64,7 @@ c
 ## END
 
 #### Idiomatic for loop using @(seq $n)
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 for x in @(seq 3) {
   echo "[$x]"
@@ -82,7 +83,7 @@ for x in @(seq 3) {
 
 #### @() can't start in the middle of the word
 shopt -s extglob  # this makes it match in bash
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 # This is currently a RUNTIME error when simple_word_eval is on
 
@@ -97,7 +98,7 @@ foo.py
 ## END
 
 #### @() can't have any tokens after it
-shopt -s oil:basic
+shopt -s oil:upgrade
 
 write -- @(seq 2)
 write -- @(seq 3)x

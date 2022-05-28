@@ -110,13 +110,6 @@ TEST match_test() {
   }
 #endif
 
-  // Similar to native/fastlex_test.py.  Just test that it matched
-  ASSERT_EQ(0, match::MatchOption(new Str("")));
-  ASSERT(match::MatchOption(new Str("pipefail")) > 0);
-
-  ASSERT_EQ(0, match::MatchOption(new Str("pipefai")));
-  ASSERT_EQ(0, match::MatchOption(new Str("pipefail_")));
-
   ASSERT_EQ(Id::BoolUnary_G, match::BracketUnary(new Str("-G")));
   ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(new Str("-Gz")));
   ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(new Str("")));

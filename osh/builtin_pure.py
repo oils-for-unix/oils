@@ -18,6 +18,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import scope_e, value_e, value__Str
 from _devbuild.gen.syntax_asdl import Token
+from _devbuild.gen.types_asdl import opt_group_i
 
 from asdl import format as fmt
 from asdl import runtime
@@ -30,6 +31,7 @@ from core.pyerror import log
 from core import ui
 from core import vm
 from frontend import args
+from frontend import consts
 from frontend import flag_spec
 from frontend import match
 from frontend import typed_args
@@ -123,15 +125,16 @@ class UnAlias(vm._Builtin):
     return status
 
 
-def SetShellOpts(exec_opts, opt_changes, shopt_changes):
+def SetOptionsFromFlags(exec_opts, opt_changes, shopt_changes):
   # type: (MutableOpts, List[Tuple[str, bool]], List[Tuple[str, bool]]) -> None
-  """Used by bin/oil.py too."""
+  """Used by core/shell.py"""
 
+  # We can set ANY option with -o.  -O is too annoying to type.
   for opt_name, b in opt_changes:
-    exec_opts.SetOption(opt_name, b)
+    exec_opts.SetAnyOption(opt_name, b)
 
   for opt_name, b in shopt_changes:
-    exec_opts.SetShoptOption(opt_name, b)
+    exec_opts.SetAnyOption(opt_name, b)
 
 
 class Set(vm._Builtin):
@@ -172,7 +175,14 @@ class Set(vm._Builtin):
       self.exec_opts.ShowOptions([])
       return 0
 
-    SetShellOpts(self.exec_opts, arg.opt_changes, arg.shopt_changes)
+    # Note: set -o nullglob is not valid.  The 'shopt' builtin is preferred in
+    # Oil, and we want code to be consistent.
+    for opt_name, b in arg.opt_changes:
+      self.exec_opts.SetOldOption(opt_name, b)
+
+    for opt_name, b in arg.shopt_changes:
+      self.exec_opts.SetAnyOption(opt_name, b)
+
     # Hm do we need saw_double_dash?
     if arg.saw_double_dash or not arg_r.AtEnd():
       self.mem.SetArgv(arg_r.Rest())
@@ -202,7 +212,7 @@ class Shopt(vm._Builtin):
 
     if arg.q:  # query values
       for name in opt_names:
-        index = match.MatchOption(name)
+        index = consts.OptionNum(name)
         if index == 0:
           return 2  # bash gives 1 for invalid option; 2 is better
         if not self.mutable_opts.opt0_array[index]:
@@ -223,11 +233,26 @@ class Shopt(vm._Builtin):
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block:
       opt_nums = []  # type: List[int]
-      for name in opt_names:
-        index = match.MatchOption(name)
+      for opt_name in opt_names:
+        # TODO: could consolidate with checks in core/state.py and option
+        # lexer?
+        opt_group = consts.OptionGroupNum(opt_name)
+        if opt_group == opt_group_i.OilUpgrade:
+          opt_nums.extend(consts.OIL_UPGRADE)
+          continue
+
+        if opt_group == opt_group_i.OilAll:
+          opt_nums.extend(consts.OIL_ALL)
+          continue
+
+        if opt_group == opt_group_i.StrictAll:
+          opt_nums.extend(consts.STRICT_ALL)
+          continue
+
+        index = consts.OptionNum(opt_name)
         if index == 0:
           # TODO: compute span_id
-          e_usage('got invalid option %r' % name)
+          e_usage('got invalid option %r' % opt_name)
         opt_nums.append(index)
 
       with state.ctx_Option(self.mutable_opts, opt_nums, b):
@@ -235,12 +260,9 @@ class Shopt(vm._Builtin):
       return 0  # cd also returns 0
 
     # Otherwise, set options.
-    for name in opt_names:
-      #if arg.o:
-      #  self.mutable_opts.SetOption(name, b)
-      #else:
+    for opt_name in opt_names:
       # We allow set -o options here
-      self.mutable_opts.SetShoptOption(name, b)
+      self.mutable_opts.SetAnyOption(opt_name, b)
 
     return 0
 
@@ -732,10 +754,11 @@ if mylib.PYTHON:
       }
     """
 
-    def __init__(self, hay_state, mem, cmd_ev):
-      # type: (state.Hay, state.Mem, CommandEvaluator) -> None
+    def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
+      # type: (state.Hay, MutableOpts, state.Mem, CommandEvaluator) -> None
       self.hay_state = hay_state
       self.mem = mem  # for new context
+      self.mutable_opts = mutable_opts
       self.cmd_ev = cmd_ev  # To run blocks
 
     def Run(self, cmd_val):
@@ -778,10 +801,12 @@ if mylib.PYTHON:
 
             # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
             with state.ctx_Temp(self.mem):
-              with state.ctx_Hay(self.hay_state, hay_name):
-                # Note: we want all haynode invocations in the block to appear as
-                # our 'children', recursively
-                block_attrs = self.cmd_ev.EvalBlock(block)
+              # haynode blocks run with shopt -s oil:all
+              with state.ctx_Option(self.mutable_opts, consts.OIL_ALL, True):
+                with state.ctx_Hay(self.hay_state, hay_name):
+                  # Note: we want all haynode invocations in the block to appear as
+                  # our 'children', recursively
+                  block_attrs = self.cmd_ev.EvalBlock(block)
 
             attrs = {}  # type: Dict[str, Any]
             for name, cell in iteritems(block_attrs):
@@ -837,12 +862,33 @@ if mylib.PYTHON:
         if first is None:
           e_usage('define expected a name', span_id=action_spid)
 
-        for name in arg_r.Rest():
-          self.hay_state.Define(name, '')
+        names, name_spids = arg_r.Rest2()
+        for i, name in enumerate(names):
+          path = name.split('/')
+          for p in path:
+            if len(p) == 0:
+              e_usage("got invalid path %r.  Parts can't be empty." % name,
+                      span_id=name_spids[i])
+          self.hay_state.DefinePath(path)
+
+      elif action == 'eval':
+        # TODO: 
+        # hay eval :myvar { ... }
+        #
+        # - turn on oil:all
+        # - set _running_hay -- so that hay "first words" are visible
+        # - and then set the variable name to the result
+        # - then CLEAR the result
+        #
+        # I think sandboxing is orthogonal:
+        # shopt --set sandbox:all { hay eval { ... } }
+        # shopt --set sandbox:all { var d = eval_hay(myblock) }
+        pass
 
       elif action == 'clear':
-        # - hay clear defs
-        # - hay clear result
+        # - hay clear defs -- don't quite need this either?
+        # - hay clear result -- TODO: don't really need this, as eval_hay() and
+        #   'hay eval' both do it
 
         second, second_spid = arg_r.Peek2()
         if second is None:

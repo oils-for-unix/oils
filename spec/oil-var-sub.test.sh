@@ -28,7 +28,7 @@ builtin sub
 ## END
 
 #### $[x] with _ESCAPER
-shopt --set oil:basic
+shopt --set oil:upgrade
 
 x='echo hi 2>&1'
 

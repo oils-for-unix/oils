@@ -307,6 +307,11 @@ bugs() {
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
+TODO-deprecate() {
+  sh-spec spec/TODO-deprecate.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
 blog1() {
   sh-spec spec/blog1.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
@@ -880,12 +885,12 @@ oil-bin() {
 
 oil-array() {
   sh-spec spec/oil-array.test.sh --osh-failures-allowed 1 \
-    $OSH_LIST "$@"
+    $OIL_LIST "$@"
 }
 
 oil-assign() {
   sh-spec spec/oil-assign.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
+    $OIL_LIST "$@"
 }
 
 oil-blocks() {
@@ -894,7 +899,7 @@ oil-blocks() {
 }
 
 oil-config() {
-  sh-spec spec/oil-config.test.sh --osh-failures-allowed 12 \
+  sh-spec spec/oil-config.test.sh --osh-failures-allowed 11 \
     $OSH_LIST "$@"
 }
 
@@ -920,6 +925,11 @@ oil-builtin-pp() {
 
 oil-builtin-process() {
   sh-spec spec/oil-builtin-process.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+oil-builtin-shopt() {
+  sh-spec spec/oil-builtin-shopt.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 

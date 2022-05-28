@@ -716,11 +716,6 @@ class CommandParser(object):
 
         typed_args = self.w_parser.ParseProcCallArgs()
 
-      elif self.parse_opts.parse_amp() and self.c_id == Id.Op_Amp:
-        # TODO:
-        # myprog &2 > &1 should be parsed
-        p_die('TODO: Parse Redirect', word=self.cur_word)
-
       else:
         break
 
@@ -983,12 +978,16 @@ class CommandParser(object):
               "to pretty print an expression", token=tok)
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
-    if not self.parse_opts.parse_sh_assign() and len(preparsed_list):
+    if len(preparsed_list):
       left_token, _, _, _ = preparsed_list[0]
-      if len(suffix_words):  # PYTHONPATH=. foo.py
-        p_die('Use env to set the environment (parse_sh_assign)',
+
+      # Disallow 'PYTHONPATH=. foo.py' when bare assignment 'PYTHONPATH = "."' is on
+      if self.parse_opts.parse_equals() and len(suffix_words):
+        p_die('Use env to set the environment (parse_equals is on)',
               token=left_token)
-      else:  # x=y
+
+      # Disallow X=Y when setvar X = 'Y' is idiomatic.  (Space sensitivity is bad.)
+      if not self.parse_opts.parse_sh_assign() and len(suffix_words) == 0:
         p_die('Use const or var/setvar to assign in Oil (parse_sh_assign)',
               token=left_token)
 
@@ -1642,14 +1641,6 @@ class CommandParser(object):
                      | time_clause
                      | [[ BoolExpr ]]
                      | (( ArithExpr ))
-
-                     # Oil extensions
-                     | const ...
-                     | var ...
-                     | setglobal ...
-                     | setref ...
-                     | setvar ...
-                     ;
     """
     if self.c_id == Id.Lit_LBrace:
       n1 = self.ParseBraceGroup()
@@ -1694,22 +1685,6 @@ class CommandParser(object):
     # bash extensions: no redirects
     if self.c_id == Id.KW_Time:
       return self.ParseTime()
-
-    # Oil extensions
-    if self.c_id in (Id.KW_Var, Id.KW_Const):
-      keyword_id = self.c_id
-      kw_token = word_.LiteralToken(self.cur_word)
-      self._Next()
-      n8 = self.w_parser.ParseVarDecl(kw_token)
-      for lhs in n8.lhs:
-        self.var_checker.Check(keyword_id, lhs.name)
-      return n8
-
-    if self.c_id in (Id.KW_SetVar, Id.KW_SetRef, Id.KW_SetGlobal):
-      kw_token = word_.LiteralToken(self.cur_word)
-      self._Next()
-      n9 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
-      return n9
 
     # Happens in function body, e.g. myfunc() oops
     p_die('Unexpected word while parsing compound command', word=self.cur_word)
@@ -1920,17 +1895,64 @@ class CommandParser(object):
                      | compound_command   # Oil edit: io_redirect* folded in
                      | function_def
                      | ksh_function_def
+
+                     # Oil extensions
+                     | proc NAME ...
+                     | const ...
+                     | var ...
+                     | setglobal ...
+                     | setref ...
+                     | setvar ...
+                     | _ EXPR
+                     | = EXPR
                      ;
+
+    Note: the reason const / var are not part of compound_command is because
+    they can't be alone in a shell function body.
+
+    Example:
+    This is valid shell   f() if true; then echo hi; fi  
+    This is invalid       f() var x = 1
     """
     self._Peek()
 
     if self._AtSecondaryKeyword():
       p_die('Unexpected word when parsing command', word=self.cur_word)
 
+    # Oil Extensions
+
+    if self.c_id == Id.KW_Proc:  # proc p { ... }
+      # proc is hidden because of the 'local reasoning' principle
+      # Code inside procs should be Oil, full stop.  That means oil:upgrade is
+      # on.
+      if self.parse_opts.parse_proc():
+        return self.ParseOilProc()
+      else:
+        p_die('Enable Oil to use procs (parse_proc)', word=self.cur_word)
+
+    if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
+      keyword_id = self.c_id
+      kw_token = word_.LiteralToken(self.cur_word)
+      self._Next()
+      n8 = self.w_parser.ParseVarDecl(kw_token)
+      for lhs in n8.lhs:
+        self.var_checker.Check(keyword_id, lhs.name)
+      return n8
+
+    if self.c_id in (Id.KW_SetVar, Id.KW_SetRef, Id.KW_SetGlobal):
+      kw_token = word_.LiteralToken(self.cur_word)
+      self._Next()
+      n9 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
+      return n9
+
+    if self.c_id in (Id.Lit_Underscore, Id.Lit_Equals):  # = 42 + 1
+      keyword = _KeywordToken(self.cur_word)
+      self._Next()
+      enode = self.w_parser.ParseCommandExpr()
+      return command.Expr(speck(keyword.id, keyword.span_id), enode)
+
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
-    if self.c_id == Id.KW_Proc:
-      return self.ParseOilProc()
 
     # Top-level keywords to hide: func, data, enum, class/mod.  Not sure about
     # 'use'.
@@ -1964,16 +1986,8 @@ class CommandParser(object):
 
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
-        Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time,
-        Id.KW_Var, Id.KW_Const, Id.KW_SetVar, Id.KW_SetGlobal,
-        Id.KW_SetRef):
+        Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time):
       return self.ParseCompoundCommand()
-
-    if self.c_id in (Id.Lit_Underscore, Id.Lit_Equals):
-      keyword = _KeywordToken(self.cur_word)
-      self._Next()
-      enode = self.w_parser.ParseCommandExpr()
-      return command.Expr(speck(keyword.id, keyword.span_id), enode)
 
     # Sytnax error for '}' starting a line, which all shells disallow.
     if self.c_id == Id.Lit_RBrace:

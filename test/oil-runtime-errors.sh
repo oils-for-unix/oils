@@ -136,7 +136,7 @@ oil_expr_eval() {
 _run-test() {
   local name=$1
 
-  bin/osh -O oil:basic -- $0 $name
+  bin/osh -O oil:upgrade -- $0 $name
 }
 
 run-all-with-osh() {

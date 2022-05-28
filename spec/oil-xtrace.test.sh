@@ -1,7 +1,7 @@
 # Oil xtrace
 
 #### Customize PS4
-shopt -s oil:basic
+shopt -s oil:upgrade
 set -x
 
 # Reuse the default
@@ -21,7 +21,7 @@ echo 3
 
 
 #### xtrace_details doesn't show [[ ]] etc.
-shopt -s oil:basic
+shopt -s oil:upgrade
 set -x
 
 dir=/
@@ -36,7 +36,7 @@ cd /
 ## END
 
 #### xtrace_details AND xtrace_rich on
-shopt -s oil:basic xtrace_details
+shopt -s oil:upgrade xtrace_details
 shopt --unset errexit
 set -x
 
@@ -56,7 +56,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## END
 
 #### proc and shell function
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 shfunc() {
@@ -80,7 +80,7 @@ p 2
 ## END
 
 #### eval
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 eval 'echo 1; echo 2'
@@ -98,7 +98,7 @@ eval 'echo 1; echo 2'
 #### source
 echo 'echo source-argv: "$@"' > lib.sh
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 source lib.sh 1 2 3
@@ -113,7 +113,7 @@ source-argv: 1 2 3
 ## END
 
 #### external and builtin
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 set -x
 
@@ -135,7 +135,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## END
 
 #### subshell
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 set -x
 
@@ -169,7 +169,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## END
 
 #### command sub
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 {
@@ -195,7 +195,7 @@ foo=bar
 ## END
 
 #### process sub (nondeterministic)
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 set -x
 
@@ -232,7 +232,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
 ## END
 
 #### pipeline (nondeterministic)
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 myfunc() {
@@ -275,7 +275,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
 
 # Hm extra tracing
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 : begin
@@ -293,7 +293,7 @@ set -x
 
 #### Background pipeline (separate code path)
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 set -x
 
@@ -338,14 +338,14 @@ status=0
 ## END
 
 #### Background process with fork and & (nondeterministic)
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 {
   sleep 0.1 &
   wait
 
-  shopt -s oil:basic
+  shopt -s oil:upgrade
 
   fork {
     sleep 0.1
@@ -366,7 +366,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
   ; process 12345: status 0
 . builtin fork
 . builtin set '+x'
-. builtin shopt -s 'oil:basic'
+. builtin shopt -s 'oil:upgrade'
 < wait
 < wait
 > wait
@@ -378,7 +378,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
 # others: redirects?
 
 #### here doc
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 set -x
 
@@ -411,7 +411,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 # BUG: This trace shows an extra process?
 
-shopt --set oil:basic
+shopt --set oil:upgrade
 shopt --unset errexit
 set -x
 
@@ -444,7 +444,7 @@ zz
 ## END
 
 #### Control Flow
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 for i in 1 2 3 {
@@ -464,7 +464,7 @@ for i in 1 2 3 {
 ## END
 
 #### QSN encoded argv
-shopt --set oil:basic
+shopt --set oil:upgrade
 set -x
 
 echo $'one two\n' $'\u03bc'

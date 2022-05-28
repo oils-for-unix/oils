@@ -136,14 +136,14 @@ write @range(10, 15, 2)
 ## END
 
 #### Wrong sigil $range() shows representation of iterator?
-shopt -s oil:basic
+shopt -s oil:upgrade
 echo $range(10, 15, 2)
 ## STDOUT:
 TODO
 ## END
 
 #### Wrong sigil @max(3, 4)
-shopt -s oil:basic
+shopt -s oil:upgrade
 write @max(3, 4)
 ## STDOUT:
 TODO
@@ -191,7 +191,7 @@ gt=0
 ## END
 
 #### Parse { var x = 42 }
-shopt -s oil:basic
+shopt -s oil:upgrade
 g() { var x = 42 }
 
 var x = 1
@@ -269,7 +269,7 @@ a b c
 
 
 #### null / true / false
-shopt -s oil:basic
+shopt -s oil:upgrade
 var n = null
 if (n) {
   echo yes
@@ -388,7 +388,7 @@ nope
 ## END
 
 #### Float Literals
-shopt -s oil:basic
+shopt -s oil:upgrade
 # 1+2 2.3
 var x = 1.2 + 23.0e-1  # 3.5
 if (x < 3.9) {
@@ -403,7 +403,7 @@ great
 ## END
 
 #### Float Literals with _ (requires re2c refinement)
-shopt -s oil:basic
+shopt -s oil:upgrade
 # 1+2 + 2.3
 # add this _ here
 var x = 1.2 + 2_3.0e-1  # 3.5
@@ -446,7 +446,7 @@ true
 ## END
 
 #### Chained Comparisons
-shopt -s oil:basic
+shopt -s oil:upgrade
 if (1 < 2 < 3) {
   echo '123'
 }

@@ -601,16 +601,16 @@ oil-language() {
   fi
 
   # Unterminated
-  _error-case 'var x = 1 + '
+  _oil-parse-error 'var x = 1 + '
 
-  _error-case 'var x = * '
+  _oil-parse-error 'var x = * '
 
-  _error-case 'var x = @($(cat <<EOF
+  _oil-parse-error 'var x = @($(cat <<EOF
 here doc
 EOF
 ))'
 
-  _error-case 'var x = $(var x = 1))'
+  _oil-parse-error 'var x = $(var x = 1))'
 }
 
 append-builtin() {
@@ -806,9 +806,9 @@ EOF
     return
   fi
 
-  _error-case 'setvar x = "\z"'
+  _oil-parse-error 'setvar x = "\z"'
 
-  _error-case-here <<'EOF'
+  _oil-parse-error <<'EOF'
 setvar x = $'\z'
 EOF
 
@@ -1044,7 +1044,7 @@ oil_var_decl() {
     return
   fi
 
-  _should-parse '
+  _oil-should-parse '
   var x = 1
   proc p {
     echo hi
@@ -1079,7 +1079,7 @@ oil_place_mutation() {
     return
   fi
 
-  _should-parse '
+  _oil-should-parse '
   proc p(x) {
     setvar x = "X"  # is mutating params allowed?  I guess why not.
   }

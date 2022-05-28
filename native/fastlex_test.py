@@ -51,21 +51,6 @@ class LexTest(unittest.TestCase):
     line = 'end of file\0'
     TokenizeLineOuter(line)
 
-  def testMatchOption(self):
-    #log('MatchOption')
-    CASES = [
-        ('', False),
-        ('pipefail', True),
-        ('foo', False),
-        ('pipefai', False),
-        ('pipefail_', False),
-        ('strict_errexit', True),
-    ]
-    for s, expected_bool in CASES:
-      result = fastlex.MatchOption(s)
-      self.assertEqual(expected_bool, bool(result))
-      print('case %r, result = %s' % (s, result))
-
   def testOutOfBounds(self):
     print(MatchOshToken(lex_mode_e.ShCommand, 'line', 3))
     # It's an error to point to the end of the buffer!  Have to be one behind

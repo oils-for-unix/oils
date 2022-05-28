@@ -7,7 +7,6 @@
 #   $() command sub
 #   %() string array
 #   $[] expr sub
-#   %[] primitive typed array
 #
 # Also used:
 #   ${} for ${x %.3f} and ${x|html}
@@ -17,11 +16,11 @@
 
 # Helpers
 
-proc argv {
+argv() {
   python -c 'import sys;print(sys.argv[1:])' @ARGV
 }
 
-proc show {
+show() {
   echo '====='
   argv @ARGV
   echo

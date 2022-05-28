@@ -1,6 +1,8 @@
 # Test out Oil's JSON support.
 
 #### json write STRING
+shopt --set parse_proc
+
 json write ('foo')
 var s = 'foo'
 json write (s)
@@ -24,9 +26,9 @@ json write --indent 0 (['foo.cc', 'foo.h'])
 ## END
 
 #### json write compact format
+shopt --set parse_proc
 
 # TODO: ORDER of keys should be PRESERVED
-
 var mydict = {name: "bob", age: 30}
 
 json write --pretty=0 (mydict)

@@ -18,6 +18,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     scope_e, scope_t, hay_node
 )
+from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core import error
@@ -322,9 +323,11 @@ class Hay(object):
     # type: (str) -> bool
     return first_word in self.cur_defs.children
 
-  def Define(self, name, under):
-    # type: (str, str) -> None
-    assert under == ''
+  def DefinePath(self, path):
+    # type: (List[str]) -> None
+
+    # TODO: Do the rest
+    name = path[0]
     self.root_defs.children[name] = hay_node()  # register
 
   def ClearDefs(self):
@@ -434,14 +437,13 @@ def MakeOilOpts():
   return parse_opts
 
 
-def _ShoptOptionNum(opt_name):
+def _AnyOptionNum(opt_name):
   # type: (str) -> option_t
-  opt_num = match.MatchOption(opt_name)
+  opt_num = consts.OptionNum(opt_name)
   if opt_num == 0:
     e_usage('got invalid option %r' % opt_name)
 
   # Note: we relaxed this for Oil so we can do 'shopt --unset errexit' consistently
-  # 'set' is for assignment!
   #if opt_num not in consts.SHOPT_OPTION_NUMS:
   #  e_usage("doesn't own option %r (try 'set')" % opt_name)
 
@@ -450,12 +452,12 @@ def _ShoptOptionNum(opt_name):
 
 def _SetOptionNum(opt_name):
   # type: (str) -> option_t
-  opt_num = match.MatchOption(opt_name)
+  opt_num = consts.OptionNum(opt_name)
   if opt_num == 0:
     e_usage('got invalid option %r' % opt_name)
 
   if opt_num not in consts.SET_OPTION_NUMS:
-    e_usage("invalid option %r (try -O or shopt)" % opt_name)
+    e_usage("invalid option %r (try shopt)" % opt_name)
 
   return opt_num
 
@@ -488,7 +490,7 @@ class MutableOpts(object):
     for opt_num in consts.SET_OPTION_NUMS:
       name = consts.OptionName(opt_num) 
       if name in lookup:
-        self._SetOption(name, True)
+        self._SetOldOption(name, True)
 
   def Push(self, opt_num, b):
     # type: (int, bool) -> None
@@ -574,7 +576,7 @@ class MutableOpts(object):
     """Set the errexit flag, possibly deferring it.
 
     Implements the unusual POSIX "defer" behavior.  Callers: set -o errexit,
-    shopt -s oil:all, oil:basic
+    shopt -s oil:all, oil:upgrade
     """
     #log('Set %s', b)
 
@@ -623,13 +625,13 @@ class MutableOpts(object):
           return runtime.NO_SPID
     """
 
-  def _SetOption(self, opt_name, b):
+  def _SetOldOption(self, opt_name, b):
     # type: (str, bool) -> None
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
     assert opt_name in consts.SET_OPTION_NAMES
 
-    opt_num = match.MatchOption(opt_name)
+    opt_num = consts.OptionNum(opt_name)
     assert opt_num != 0, opt_name
 
     if opt_num == option_i.errexit:
@@ -643,11 +645,11 @@ class MutableOpts(object):
 
     success = self.opt_hook.OnChange(self.opt0_array, opt_name, b)
 
-  def SetOption(self, opt_name, b):
+  def SetOldOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
     _ = _SetOptionNum(opt_name)  # validate it
-    self._SetOption(opt_name, b)
+    self._SetOldOption(opt_name, b)
 
     UP_val = self.mem.GetValue('SHELLOPTS')
     assert UP_val.tag == value_e.Str, UP_val
@@ -673,27 +675,28 @@ class MutableOpts(object):
         new_val = value.Str(':'.join(names))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
-  def SetShoptOption(self, opt_name, b):
+  def SetAnyOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For shopt -s/-u and sh -O/+O. """
 
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
-    if opt_name == 'oil:basic':
-      _SetGroup(self.opt0_array, consts.OIL_BASIC, b)
+    opt_group = consts.OptionGroupNum(opt_name)
+    if opt_group == opt_group_i.OilUpgrade:
+      _SetGroup(self.opt0_array, consts.OIL_UPGRADE, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
-    if opt_name == 'oil:all':
+    if opt_group == opt_group_i.OilAll:
       _SetGroup(self.opt0_array, consts.OIL_ALL, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
-    if opt_name == 'strict:all':
+    if opt_group == opt_group_i.StrictAll:
       _SetGroup(self.opt0_array, consts.STRICT_ALL, b)
       return
 
-    opt_num = _ShoptOptionNum(opt_name)
+    opt_num = _AnyOptionNum(opt_name)
 
     if opt_num == option_i.errexit:
       self.SetDeferredErrExit(b)
@@ -721,14 +724,15 @@ class MutableOpts(object):
     # Respect option gropus.
     opt_nums = []  # type: List[int]
     for opt_name in opt_names:
-      if opt_name == 'oil:basic':
-        opt_nums.extend(consts.OIL_BASIC)
-      elif opt_name == 'oil:all':
+      opt_group = consts.OptionGroupNum(opt_name)
+      if opt_group == opt_group_i.OilUpgrade:
+        opt_nums.extend(consts.OIL_UPGRADE)
+      elif opt_group == opt_group_i.OilAll:
         opt_nums.extend(consts.OIL_ALL)
-      elif opt_name == 'strict:all':
+      elif opt_group == opt_group_i.StrictAll:
         opt_nums.extend(consts.STRICT_ALL)
       else:
-        index = match.MatchOption(opt_name)
+        index = consts.OptionNum(opt_name)
         # Minor incompatibility with bash: we validate everything before
         # printing.
         if index == 0:
@@ -741,7 +745,7 @@ class MutableOpts(object):
       opt_nums.extend(consts.VISIBLE_SHOPT_NUMS)
 
     for opt_num in opt_nums:
-      b = self.opt0_array[opt_num]
+      b = self.Get(opt_num)
       print('shopt -%s %s' % ('s' if b else 'u', consts.OptionName(opt_num)))
 
 

@@ -28,6 +28,7 @@ array = (cell exported:F readonly:F nameref:F val:(value.MaybeStrArray strs:[_ _
 
 
 #### pp proc
+shopt --set oil:upgrade
 
 # This has to be a separate file because sh_spec.py strips comments!
 . $REPO_ROOT/spec/testdata/doc-comments.sh

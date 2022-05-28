@@ -173,13 +173,13 @@ x=xx
 # Python doesn't allow you to have annotation on each variable!
 # https://www.python.org/dev/peps/pep-0526/#where-annotations-aren-t-allowed
 var x Int, y Int = 3, 4
-echo x=$x y=$y
+echo "x=$x y=$y"
 
 setvar x, y = 1, 9
-echo x=$x y=$y
+echo "x=$x y=$y"
 
 setvar y, x = x, y
-echo x=$x y=$y
+echo "x=$x y=$y"
 
 ## STDOUT:
 x=3 y=4
@@ -314,27 +314,36 @@ setvar L[0] = L
 # NOTE: This feels PROBLEMATIC without command_sub_errexit feels like it should
 # be the last one ...
 
-$SH -c '
+run() {
+  $REPO_ROOT/bin/osh -O parse_proc -c "$@"
+
+  # Identical
+  # $SH +O oil:all -O parse_proc -c "$@"
+}
+
+set +o errexit
+
+run '
 var x = $(false)
 echo inside=$?
 '
 echo outside=$?
 
-$SH -c '
+run '
 setvar x = $(false)
 echo inside=$?
 '
 echo outside=$?
 
 # Argument list
-$SH -c '
+run '
 _ split( $(false) )
 echo inside=$?
 '
 echo outside=$?
 
 # Place expression
-$SH -c '
+run '
 var d = {}
 setvar d[ $(false) ] = 42
 echo inside=$?
