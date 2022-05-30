@@ -5,6 +5,9 @@ default_highlighter: oil-sh
 Getting Started
 ===============
 
+The [releases page](https://www.oilshell.org/releases.html) links to downloads
+and documentation (incl. this page) for every release.
+
 There are many ways to use Oil!
 
 - You can use it *interactively*, or you can write "shell scripts" with it.
@@ -29,13 +32,30 @@ more documentation.
 <div id="toc">
 </div>
 
-## Setup
+## Oilshell Usage
 
-### Downloading Oil
+### `sh` and Bash Docs Are Useful for OSH
 
-The [releases page](https://www.oilshell.org/releases.html) links to source
-tarballs for every release.  It also links to the documentation tree, which
-includes this page.
+Existing educational materials for the Unix shell apply to OSH, because they
+generally don't teach the quirks that OSH disallows.  For example, much of the
+information and advice in [BashGuide][] can be used without worrying about
+which shell you're using.  See the end of this manual for more resources.
+
+For this reason, we're focusing the documenting efforts on the [Oil
+language][oil-language].
+
+
+### What Is Expected to Run Under OSH
+
+"Batch" programs are most likely to run unmodified under OSH.  On the other
+hand, Interactive programs like `.bashrc` and bash completion scripts may
+require small changes.
+
+- Wiki: [What Is Expected to Run Under OSH]($wiki)
+
+
+
+## Configuration
 
 ### Your Configuration Dir
 
@@ -67,11 +87,10 @@ them in your `oshrc`.
 I describe my own `oshrc` file on the Wiki: [How To Test
 OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
-## Tips
 
 - If you get tired of typing `~/.config/oil/oshrc`, symlink it to `~/.oshrc`.
 
-### Troubleshooting
+## Troubleshooting
 
 - If you're running OSH from `bash` or `zsh`, then the prompt string `$PS1` may
   be unintentionally inherited.  Running `PS1=''` before `bin/osh` avoids this.
@@ -80,23 +99,9 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
   `/etc/profile`.  Adding `source /etc/profile` to your `oshrc` may solve this
   problem.
 
-### `sh` and Bash Docs Are Useful for OSH
 
-Existing educational materials for the Unix shell apply to OSH, because they
-generally don't teach the quirks that OSH disallows.  For example, much of the
-information and advice in [BashGuide][] can be used without worrying about
-which shell you're using.  See the end of this manual for more resources.
 
-For this reason, we're focusing efforts on documenting the [Oil
-language][oil-language].
 
-## What Is Expected to Run Under OSH
-
-"Batch" programs are most likely to run unmodified under OSH.  On the other
-hand, Interactive programs like `.bashrc` and bash completion scripts may
-require small changes.
-
-- Wiki: [What Is Expected to Run Under OSH]($wiki)
 
 ## Features Unique to OSH
 
@@ -201,11 +206,18 @@ Related:
 
 This is implemented, but a JSON library isn't in the release build.
 
-### More
+
+
+
+
+## Features Unique to Oil
 
 For more features unique to Oil, see [Why Use Oil?][why]
 
 [why]: https://www.oilshell.org/why.html
+
+
+
 
 
 ## Appendix
