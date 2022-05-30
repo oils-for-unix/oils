@@ -22,8 +22,6 @@ See [blog posts tagged #FAQ][blog-faqs] for more detail.
 [oil-language]: https://www.oilshell.org/cross-ref.html?tag=oil-language#oil-language
 [osh-language]: https://www.oilshell.org/cross-ref.html?tag=osh-language#osh-language
 
-This doc walks you through setting up Oil, explains some concepts, and links to
-more documentation.
 
 <!-- cmark.py expands this -->
 <div id="toc">
@@ -78,15 +76,15 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
 
 <table>
-  <tr>
-     <td>
+<thead>  <tr>
+     <th>
        Task
-     </td>
-     <td>
+     </th>
+     <th>
        Usage
-     </td>
-  </tr>
-  <tr>
+     </th>
+ </tr></thead>
+ <tbody> <tr>
      <td>
        **Running an existing script** as initially written for other shells. </br>* Usually not even minimal quoting/spacing adjustments needed. <br/><br/>(Adjustments may only be required due to implementing the "Common Subset" of consistent and sane shell execution compatibility. For example, if a script was using an inconsistent associative array pattern, or relied on dynamic parsing.) </br></br>NB: By default, basic Oil language features without a side-effect beyond occupying namespace do already work as well (e.g. `const`/`var`/`setvar` incl. Oil expressions, `read --line/all/qsn/-0/...`, `write`, etc). So, these only break in other shells if not shipping a fallback.
      </td>
@@ -126,6 +124,7 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
        Adapt script to begin with:</br> `#!/usr/bin/env osh` </br> `shopt --set oil:all`</br></br> Or, simply use:</br> `#!/usr/bin/env oil`
      </td>
   </tr>
+</tbody>
 </table>
 
 
