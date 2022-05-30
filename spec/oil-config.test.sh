@@ -67,37 +67,68 @@ read 0
 greater 0
 ## END
 
+#### _hay() register
+shopt --set parse_paren parse_brace parse_equals parse_proc
+
+hay define user
+
+var result = {}
+
+hay eval :result {
+
+  user alice
+  # = _hay()
+  write -- $len(_hay()['children'])
+
+  user bob
+  setvar result = _hay()
+  write -- $len(_hay()['children'])
+
+}
+
+# TODO: Should be cleared here
+setvar result = _hay()
+write -- $len(_hay()['children'])
+
+## STDOUT:
+1
+2
+0
+## END
+
+
 #### haynode builtin can define nodes
 shopt --set parse_paren parse_brace parse_equals parse_proc
 
 # It prints JSON by default?  What about the code blocks?
 # Or should there be a --json flag?
 
-haynode parent alice {
-  age = '50'
-  
-  haynode child bob {
-    age = '10'
-  }
+hay eval :result {
+  haynode parent alice {
+    age = '50'
+    
+    haynode child bob {
+      age = '10'
+    }
 
-  haynode child carol {
-    age = '20'
-  }
+    haynode child carol {
+      age = '20'
+    }
 
-  other = 'str'
+    other = 'str'
+  }
 }
-
-# _hay_result() is mutated regsiter
-var result = _hay_result()
 
 #= result
 write -- 'level 0 children' $len(result['children'])
 write -- 'level 1 children' $len(result['children'][0]['children']) 
 
-hay clear result
-
-setvar result = _hay_result()
+hay eval :result {
+  haynode parent foo
+  haynode parent bar
+}
 write -- 'level 0 children' $len(result['children'])
+
 
 ## STDOUT:
 level 0 children
@@ -105,7 +136,7 @@ level 0 children
 level 1 children
 2
 level 0 children
-0
+2
 ## END
 
 
@@ -155,28 +186,32 @@ status=2
 ## END
 
 
-#### File is evaluated with shopt -s oil:all
+#### hay eval with shopt -s oil:all
 shopt --set parse_brace parse_equals parse_proc
 
 hay define package user TASK
 
 const x = 'foo bar'
 
-package foo {
-  # set -e should be active!
-  #false
+hay eval :result {
+  package foo {
+    # set -e should be active!
+    #false
 
-  version = '1.0'
+    version = '1.0'
 
-  # simple_word_eval should be active!
-  write -- $x
+    # simple_word_eval should be active!
+    write -- $x
+  }
 }
+
 ## STDOUT:
 foo bar
 ## END
 
 
-#### Dynamic Scope Allows Reuse ?
+#### Scope of Variables Inside Hay Blocks
+
 shopt --set oil:all parse_equals
 
 const URL_PATH = 'downloads/foo.tar.gz'
@@ -184,78 +219,83 @@ const URL_PATH = 'downloads/foo.tar.gz'
 hay define package
 
 package foo {
-  # this is a global
-  location = "https://example.com/$URL_PATH"
-  backup = "https://archive.example.com/$URL_PATH"
+  echo "location = https://example.com/$URL_PATH"
+  echo "backup = https://archive.example.com/$URL_PATH"
 }
 
 hay define deps/package
 
+# Note: PushTemp() happens here
 deps spam {
+  # OVERRIDE
   const URL_PATH = 'downloads/spam.tar.gz'
+
+  const URL2 = 'downloads/spam.tar.xz'
 
   package foo {
     # this is a global
-    location = "https://example.com/$URL_PATH"
-    backup = "https://archive.example.com/$URL_PATH"
+    echo "deps location https://example.com/$URL_PATH"
+    echo "deps backup https://archive.example.com/$URL2"
   }
 }
 
-= _hay_result()
+echo "AFTER $URL_PATH"
 
 ## STDOUT:
+location = https://example.com/downloads/foo.tar.gz
+backup = https://archive.example.com/downloads/foo.tar.gz
+deps location https://example.com/downloads/spam.tar.gz
+deps backup https://archive.example.com/downloads/spam.tar.xz
+AFTER downloads/foo.tar.gz
 ## END
 
 
-#### hay define --under
-set -o errexit
+#### hay define
 shopt --set parse_brace parse_equals parse_proc
 
-hay define package user TASK
-
-hay define --under package -- license
+hay define package/license user TASK
 
 hay pp defs > /dev/null
 
-# shvar PATH=
-# shopt --unset allow_side_effects
+hay eval :result {
+  user bob
+  echo "user $?"
 
-package cppunit
-echo status=$?
+  package cppunit
+  echo "package $?"
 
-package unzip {
-  version = '1.0'
+  TASK build {
+    configure
+  }
+  echo "TASK $?"
 
-  license {
-    echo hi
+  package unzip {
+    version = '1.0'
+
+    license FOO {
+      echo 'inside'
+    }
+    echo "license $?"
+
+    license BAR
+    echo "license $?"
+
+    zz foo
+    echo 'should not get here'
   }
 }
-echo status=$?
 
-user bob
-echo status=$?
+echo 'ditto'
 
-TASK build {
-  configure
-}
-echo status=$?
-
-hay pp defs
-
-hay clear defs
-
-hay pp defs
-
-# TODO: Test printing it to JSON?
-# Problem: we can't retroactively do hay_eval?
-
+## status: 127
 ## STDOUT:
-status=0
-status=0
-status=0
-status=0
+user 0
+package 0
+TASK 0
+inside
+license 0
+license 0
 ## END
-
 
 #### parse_hay()
 shopt --set parse_proc

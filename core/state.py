@@ -257,7 +257,7 @@ class ctx_ErrExit(object):
 
 
 class ctx_Hay(object):
-  """For hay push-defs { ... }
+  """
 
   Two pieces of functionality:
 
@@ -325,10 +325,12 @@ class Hay(object):
 
   def DefinePath(self, path):
     # type: (List[str]) -> None
-
-    # TODO: Do the rest
-    name = path[0]
-    self.root_defs.children[name] = hay_node()  # register
+    """Fill a tree from the given path."""
+    current = self.root_defs
+    for name in path:
+      if name not in current.children:
+        current.children[name] = hay_node()
+      current = current.children[name]
 
   def ClearDefs(self):
     # type: () -> None

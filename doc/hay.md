@@ -31,7 +31,7 @@ Use case examples
 
 - `parse_hay()`
 - `eval_hay()`
-- `_hay_result()`  -- mutated register
+- `_hay()`  -- for interactive debugging
 - `block_as_str()`
   - or `shell_block_str()`.  Takes an unevaluated node BACK to a string
   - uses arena
@@ -40,14 +40,16 @@ Use case examples
 
 - `hay` builtin
   - `hay define`
+  - `hay eval`
   - `hay pp`
     - `hay pp defs`
     - `hay pp result`
-- `haynode ` is "aliased" by other types
+- `haynode` builtin is "aliased" by other types
 
 ## Options
 
 - `parse_equals` is very important
+- `_running_hay`
 - `sandbox:all` ?
 
 ## Schema for Output

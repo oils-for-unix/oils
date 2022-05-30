@@ -4,6 +4,7 @@ funcs.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import value, value_e, value__Block
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
@@ -12,6 +13,7 @@ from core import error
 from core import main_loop
 from core import state
 from core import ui
+from frontend import consts
 from frontend import reader
 
 from mycpp import mylib
@@ -73,9 +75,10 @@ class ParseHay(object):
 class EvalHay(object):
   """ eval_to_dict() """
 
-  def __init__(self, hay_state, cmd_ev):
-    # type: (state.Hay, cmd_eval.CommandEvaluator) -> None
+  def __init__(self, hay_state, mutable_opts, cmd_ev):
+    # type: (state.Hay, state.MutableOpts, cmd_eval.CommandEvaluator) -> None
     self.hay_state = hay_state
+    self.mutable_opts = mutable_opts
     self.cmd_ev = cmd_ev
 
   if mylib.PYTHON:
@@ -90,7 +93,12 @@ class EvalHay(object):
 
       UP_block = block
       block = cast(value__Block, UP_block)
-      top_namespace = self.cmd_ev.EvalBlock(block.body)
+
+      # TODO: consolidate this
+      with state.ctx_Option(self.mutable_opts, consts.OIL_ALL, True):
+        # This makes hay names visible?  And external invisible?
+        with state.ctx_Option(self.mutable_opts, [option_i._running_hay], True):
+          unused = self.cmd_ev.EvalBlock(block.body)
 
       return self.hay_state.Result()
 

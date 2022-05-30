@@ -183,8 +183,8 @@ def Init3(mem, config_parser, eval_to_dict, block_as_str, hay_result):
   SetGlobalFunc(mem, 'parse_hay', config_parser.Call)
   SetGlobalFunc(mem, 'eval_hay', eval_to_dict.Call)
 
-  # For interactive use.  eval_hay() is simpler during batch use.
-  SetGlobalFunc(mem, '_hay_result', hay_result.Call)
+  # For interactive debugging.  'eval_hay()' and 'hay eval' are the main APIs.
+  SetGlobalFunc(mem, '_hay', hay_result.Call)
 
   # for upper case TASK blocks: command_t -> Str
   SetGlobalFunc(mem, 'block_as_str', block_as_str.Call)

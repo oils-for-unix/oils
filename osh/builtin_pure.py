@@ -16,7 +16,8 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import scope_e, value_e, value__Str
+from _devbuild.gen.option_asdl import option_i
+from _devbuild.gen.runtime_asdl import scope_e, value, value_e, value__Str, lvalue
 from _devbuild.gen.syntax_asdl import Token
 from _devbuild.gen.types_asdl import opt_group_i
 
@@ -754,17 +755,14 @@ if mylib.PYTHON:
       }
     """
 
-    def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
-      # type: (state.Hay, MutableOpts, state.Mem, CommandEvaluator) -> None
+    def __init__(self, hay_state, mem, cmd_ev):
+      # type: (state.Hay, state.Mem, CommandEvaluator) -> None
       self.hay_state = hay_state
-      self.mem = mem  # for new context
-      self.mutable_opts = mutable_opts
+      self.mem = mem  # for PushTemp
       self.cmd_ev = cmd_ev  # To run blocks
 
     def Run(self, cmd_val):
       # type: (cmd_value__Argv) -> int
-      #_, arg_r = flag_spec.ParseCmdVal('hay-dummy', cmd_val,
-      #                                 accept_typed_args=True)
 
       arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
 
@@ -801,12 +799,10 @@ if mylib.PYTHON:
 
             # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
             with state.ctx_Temp(self.mem):
-              # haynode blocks run with shopt -s oil:all
-              with state.ctx_Option(self.mutable_opts, consts.OIL_ALL, True):
-                with state.ctx_Hay(self.hay_state, hay_name):
-                  # Note: we want all haynode invocations in the block to appear as
-                  # our 'children', recursively
-                  block_attrs = self.cmd_ev.EvalBlock(block)
+              with state.ctx_Hay(self.hay_state, hay_name):
+                # Note: we want all haynode invocations in the block to appear as
+                # our 'children', recursively
+                block_attrs = self.cmd_ev.EvalBlock(block)
 
             attrs = {}  # type: Dict[str, Any]
             for name, cell in iteritems(block_attrs):
@@ -818,7 +814,6 @@ if mylib.PYTHON:
                   obj = val.s
                 else:
                   obj = None
-
               attrs[name] = obj
 
             result['attrs'] = attrs
@@ -837,11 +832,12 @@ if mylib.PYTHON:
     hay pp defs
     hay pp result
     """
-    def __init__(self, hay_state, cmd_ev, shell_ex):
-      # type: (state.Hay, CommandEvaluator, vm._Executor) -> None
+    def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
+      # type: (state.Hay, MutableOpts, state.Mem, CommandEvaluator) -> None
       self.hay_state = hay_state
+      self.mutable_opts = mutable_opts
+      self.mem = mem
       self.cmd_ev = cmd_ev  # To run blocks
-      self.shell_ex = shell_ex  # To mutate shell_ex.procs
 
     def Run(self, cmd_val):
       # type: (cmd_value__Argv) -> int
@@ -872,18 +868,36 @@ if mylib.PYTHON:
           self.hay_state.DefinePath(path)
 
       elif action == 'eval':
-        # TODO: 
         # hay eval :myvar { ... }
         #
         # - turn on oil:all
         # - set _running_hay -- so that hay "first words" are visible
-        # - and then set the variable name to the result
-        # - then CLEAR the result
-        #
-        # I think sandboxing is orthogonal:
-        # shopt --set sandbox:all { hay eval { ... } }
-        # shopt --set sandbox:all { var d = eval_hay(myblock) }
-        pass
+        # - then set the variable name to the result
+
+        var_name, name_spid = arg_r.ReadRequired2("expected variable name")
+        if var_name.startswith(':'):
+          var_name = var_name[1:]
+          # TODO: This could be fatal?
+
+        block = typed_args.GetOneBlock(cmd_val.typed_args)
+        if not block:  # 'package foo' is OK
+          e_usage('eval expected a block')
+
+        # TODO: Use a context manager to make this safe.
+        self.hay_state.ClearResult()
+
+        with state.ctx_Option(self.mutable_opts, consts.OIL_ALL, True):
+          # This makes hay names visible?  And external invisible?
+          with state.ctx_Option(self.mutable_opts, [option_i._running_hay], True):
+          #with state.ctx_HayEval(self.hay_state):
+            # Note: we want all haynode invocations in the block to appear as
+            # our 'children', recursively
+            unused = self.cmd_ev.EvalBlock(block)
+
+        result = self.hay_state.Result()
+
+        self.mem.SetValue(
+            lvalue.Named(var_name), value.Obj(result), scope_e.LocalOnly)
 
       elif action == 'clear':
         # - hay clear defs -- don't quite need this either?
