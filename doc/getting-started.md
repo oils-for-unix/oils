@@ -98,7 +98,7 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
        **...and, lint shell fragilities.** <br/> * Improved scripts will run with less errors in other shells.</br><br/>NB: The example on the right enables all strict options at once, but individual strict_* options allow fixing issue by issue.
      </td>
      <td>
-       Add a line near the top of the script, to set a shell option with error fallback (keep #!/shebang):</br> <!-- the pipe symbol seemed to break the markdown markup: -->"shopt --set strict:all  2>/dev/null &vert;&vert; true"</br><br/> *After that* execute the script in osh:</br>`osh my.sh`
+       Add a line near the top of the script, to set a shell option with error fallback (keep #!/shebang):</br>`shopt --set strict:all  2>/dev/null || true`</br><br/> *After that* execute the script in osh:</br>`osh my.sh`
      </td>
   </tr>
     <tr>
