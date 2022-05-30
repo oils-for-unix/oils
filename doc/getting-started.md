@@ -5,12 +5,9 @@ default_highlighter: oil-sh
 Getting Started
 ===============
 
-The [releases page](https://www.oilshell.org/releases.html) links to downloads
-and documentation (incl. this page) for every release.
+Oilshell can be used for different things!
 
-There are many ways to use Oil!
-
-- You can use it *interactively*, or you can write "shell scripts" with it.
+- You can use it *interactively*, or run and write "shell scripts" in it.
   Shell is the best language for *ad hoc* automation.
 - You can use it in *compatible* mode with `bin/osh`, or in *legacy-free* mode
   with `bin/oil`.
@@ -32,34 +29,18 @@ more documentation.
 <div id="toc">
 </div>
 
-## Oilshell Usage
+## Install / Setup / Config (move this into INSTALL ?)
 
-### `sh` and Bash Docs Are Useful for OSH
+### Download
 
-Existing educational materials for the Unix shell apply to OSH, because they
-generally don't teach the quirks that OSH disallows.  For example, much of the
-information and advice in [BashGuide][] can be used without worrying about
-which shell you're using.  See the end of this manual for more resources.
+The [releases page](https://www.oilshell.org/releases.html) links to downloads
+and documentation (incl. this page) for every release.
 
-For this reason, we're focusing the documenting efforts on the [Oil
-language][oil-language].
+After downloading follow the instructions in [INSTALL](INSTALL.html)
 
+### Optional Configuration Directory
 
-### What Is Expected to Run Under OSH
-
-"Batch" programs are most likely to run unmodified under OSH.  On the other
-hand, Interactive programs like `.bashrc` and bash completion scripts may
-require small changes.
-
-- Wiki: [What Is Expected to Run Under OSH]($wiki)
-
-
-
-## Configuration
-
-### Your Configuration Dir
-
-After running the instructions in [INSTALL](INSTALL.html), run:
+After creating the directory:
 
     mkdir -p ~/.config/oil
 
@@ -89,6 +70,86 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
 
 - If you get tired of typing `~/.config/oil/oshrc`, symlink it to `~/.oshrc`.
+
+
+
+
+## Oilshell (OSH/Oil) Usage
+
+
+<table>
+  <tr>
+     <td>
+       Task
+     </td>
+     <td>
+       Usage
+     </td>
+  </tr>
+  <tr>
+     <td>
+       **Running an existing script** as initially written for other shells. </br>* Usually not even minimal quoting/spacing adjustments needed. <br/><br/>(Adjustments may only be required due to implementing the "Common Subset" of consistent and sane shell execution compatibility. For example, if a script was using an inconsistent associative array pattern, or relied on dynamic parsing.) </br></br>NB: By default, basic Oil language features without a side-effect beyond occupying namespace do already work as well (e.g. `const`/`var`/`setvar` incl. Oil expressions, `read --line/all/qsn/-0/...`, `write`, etc). So, these only break in other shells if not shipping a fallback.
+     </td>
+     <td>
+       Execute script in osh interpreter:</br>`osh my.sh`</br><br/></br> Or, adapt script, and let it begin with: </br>```#!/usr/bin/env osh```
+     </td>
+  </tr>
+    <tr>
+     <td>
+       **...and, lint shell fragilities.** <br/> * Improved scripts will run with less errors in other shells.</br><br/>NB: The example on the right enables all strict options at once, but individual strict_* options allow fixing issue by issue.
+     </td>
+     <td>
+       Add a line near the top of the script, to set a shell option with error fallback (keep #!/shebang):</br> <!-- the pipe symbol seemed to break the markdown markup: -->"shopt --set strict:all  2>/dev/null &vert;&vert; true"</br><br/> *After that* execute the script in osh:</br>`osh my.sh`
+     </td>
+  </tr>
+    <tr>
+     <td>
+       **...and, allow adding new Oil language syntax.**  <br/> * Only a minimized amount of legacy code will need adjustments. <br/> * However, adding new syntax/semantics to a script will drop compatibility with other shells.</br><br/>(The adjustments needed in legacy code should mostly be just quoting/spacing, for disambiguation. Except, the requirement for proper error handling, and to add explicit split/glob functions to variables due to [Simple Word Evaluation](http://www.oilshell.org/release/latest/doc/simple-word-eval.html) default. Of course only where variables were originally left correctly(!) unquoted and split/globbed.)
+     </td>
+     <td>
+       Adapt script to begin with: </br>`#!/usr/bin/env osh` </br> `shopt --set oil:upgrade`
+     </td>
+  </tr>
+    <tr>
+     <td>
+       Coming pretty close to the Oil interpreter. <br/>(Intersection of osh & oil & strict.)
+     </td>
+     <td>
+       `#!/usr/bin/env osh` </br>  `shopt --set oil:upgrade strict:all`</br><!-- prevent line breaks: --> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+     </td>
+  </tr>
+    <tr>
+     <td>
+       **Using all of the Oil interpeter.** </br>* Implements all positive features of classic shells, compatibly. </br>* All identified pitfalls removed. </br>* Gracefully adding the best from Python, JavaScript and others.<br/><br/> (Everything parsed as Oil syntax. Only unavoidable Oil language warts remain.) 
+     </td>
+     <td>
+       Adapt script to begin with:</br> `#!/usr/bin/env osh` </br> `shopt --set oil:all`</br></br> Or, simply use:</br> `#!/usr/bin/env oil`
+     </td>
+  </tr>
+</table>
+
+
+### What Is Expected to Run Under OSH
+
+"Batch" programs are most likely to run unmodified under OSH.  On the other
+hand, Interactive programs like `.bashrc` and bash completion scripts may
+require small changes.
+
+- Wiki: [What Is Expected to Run Under OSH]($wiki)
+
+
+### `sh` and Bash Docs Are Useful for OSH
+
+Existing educational materials for the Unix shell apply to OSH, because they
+generally don't teach the quirks that OSH disallows.  For example, much of the
+information and advice in [BashGuide][] can be used without worrying about
+which shell you're using.  See the end of this manual for more resources.
+
+For this reason, we're focusing the documenting efforts on the [Oil
+language][oil-language].
+
+
+
 
 ## Troubleshooting
 
