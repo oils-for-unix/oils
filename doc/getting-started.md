@@ -5,11 +5,11 @@ default_highlighter: oil-sh
 Getting Started
 ===============
 
-Oilshell can be used for different things!
+Oilshell provides different things!
 
-- You can use it *interactively*, or run and write "shell scripts" in it.
-  Shell is the best language for *ad hoc* automation.
-- You can use it in *compatible* mode with `bin/osh`, or in *legacy-free* mode
+- You can use it *interactively*, or run and write "shell scripts" in it.</br>
+  (Shell is the best language for *ad hoc* automation.)
+- You can use its *compatible* language mode with `bin/osh`, or its *legacy-free* language mode
   with `bin/oil`.
 
 As of 2021, the [OSH language][osh-language] is mature, and the [Oil
@@ -72,7 +72,7 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
 
 
-## Oilshell (OSH/Oil) Usage
+## Oilshell Usage (as osh and oil)
 
 
 <table>
