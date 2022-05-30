@@ -1,7 +1,7 @@
-/* oilshell/oil/web/blog-v5.css 
+/* oilshell/oil/web/blog-v6.css 
  *
- * Made OBSOLETE by blog-v6.css.  Could be deleted, but it may be in an HTTP
- * cache somewhere.
+ * Blog style as of May 2022.  Added spacing to avoid manual &nbsp;
+ * Did not change font size, though it annoys me on Chrome Linux
  */
 
 @media screen and (min-width: 801px) {
@@ -27,19 +27,22 @@ h1 {
 h2 {
   /* x-large is too big; causes most titles to wrap badly (on Chrome/Firefox desktop). */
   font-size: 1.2em;
+  padding-top: 2em;  /* separate sections */
 }
 
 h3 {
   margin: 0em;
   color: darkgreen;
   font-size: 1.0em;  /* Similar to default h4 */
+
+  padding-top: 1em;  /* separate sections */
 }
 
 /* Same as h4, but doesn't appear in TOC */
 h4 {
   margin: 0em;
-  color: darkgreen;
   font-size: 1.0em;
+  padding-top: 1em;  /* separate sections */
 }
 
 /* Exclude <pre><code>.  Is there a better way to do this?  */

@@ -165,7 +165,7 @@ report() {
 }
 
 copy() {
-  cp -v $BASE_DIR/spec-test-history.png ../oilshell.org__deploy/blog/2022/03
+  cp -v $BASE_DIR/spec-test-history-2.png ../oilshell.org__deploy/blog/2022/03
 }
 
 deps-apt() { 

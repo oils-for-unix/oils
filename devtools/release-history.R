@@ -110,7 +110,7 @@ ProcessAll = function(ctx) {
     theme(legend.position = 'bottom') +
     # lower luminance to make it darker
     scale_color_hue(labels = c('Fast Generated C++', 'Python Source (executable spec)'), l = 40) +
-    ggtitle('Progress on the Middle-Out Implementation of https://oilshell.org',
+    ggtitle('Middle-Out Progress on https://oilshell.org',
             subtitle = "Weissman score: 99") +
     geom_line() +
     geom_point()
@@ -132,9 +132,9 @@ ProcessAll = function(ctx) {
 }
 
 WriteAll = function(ctx, out_dir) {
-  png_path = file.path(out_dir, 'spec-test-history.png')
+  png_path = file.path(out_dir, 'spec-test-history-2.png')
 
-  png(png_path, width=800, height=600)
+  png(png_path, width=700, height=600)
   print(ctx$plot)
   dev.off()
   Log('Wrote %s', png_path)
