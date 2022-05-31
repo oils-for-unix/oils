@@ -4,7 +4,6 @@ funcs.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import value, value_e, value__Block
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
@@ -13,7 +12,6 @@ from core import error
 from core import main_loop
 from core import state
 from core import ui
-from frontend import consts
 from frontend import reader
 
 from mycpp import mylib

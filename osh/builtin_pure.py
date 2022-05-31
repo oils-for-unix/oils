@@ -16,7 +16,6 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import scope_e, value, value_e, value__Str, lvalue
 from _devbuild.gen.syntax_asdl import Token
 from _devbuild.gen.types_asdl import opt_group_i

@@ -347,6 +347,19 @@ class Hay(object):
     self.result_stack = [{'source': None, 'children': []}]  # type: List[Dict[str, Any]]
     self.output = None  # type: Dict[str, Any]
 
+  def PushEval(self):
+    # type: () -> None
+    self.output = None  # clear it to make sure
+
+  def PopEval(self):
+    # type: () -> None
+
+    # Save it
+    self.output = self.result_stack[0]
+
+    # Now reset
+    self.result_stack = [{'source': None, 'children': []}]
+
   if mylib.PYTHON:  # TODO: hay results should be a value_t tree
 
     def MakeResultNode(self):
@@ -361,19 +374,6 @@ class Hay(object):
         log('  cur_children %s', self.cur_children)
         log('  result_stack %s', self.result_stack)
       return d
-
-    def PushEval(self):
-      # type: () -> None
-      self.output = None  # clear it to make sure
-
-    def PopEval(self):
-      # type: () -> None
-
-      # Save it
-      self.output = self.result_stack[0]
-
-      # Now reset
-      self.result_stack = [{'source': None, 'children': []}]
 
     def Result(self):
       # type: () -> Dict[str, Any]
