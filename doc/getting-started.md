@@ -88,7 +88,7 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
  </tr></thead>
  <tbody> <tr>
      <td>
-       **Running an existing script** as initially written for other shells. </br>* Usually not even minimal quoting/spacing adjustments needed. <br/><br/>(Adjustments may only be required due to implementing the "Common Subset" of consistent and sane shell execution compatibility. For example, if a script was using an inconsistent associative array pattern, or relied on dynamic parsing.) </br></br>NB: By default, basic Oil language features without a side-effect beyond occupying namespace do already work as well (e.g. `const`/`var`/`setvar` incl. Oil expressions, `read --line/all/qsn/-0/...`, `write`, etc). So, these only break in other shells if not shipping a fallback.
+       **Running an existing script** as initially written for other shells. </br>* Usually not even minimal quoting/spacing adjustments needed. <br/><br/>([Particular adjustments](https://www.oilshell.org/release/latest/doc/known-differences.html) may only be required due to implementing the "Common Subset" of consistent and sane shell execution compatibility. For example, if a script was using an inconsistent associative array pattern, or relied on dynamic parsing.) </br></br>NB: By default, basic Oil language features without a side-effect beyond occupying namespace do already work as well (e.g. `const`/`var`/`setvar` incl. Oil expressions, `read --line/all/qsn/-0/...`, `write`, etc). So, these only break in other shells if not shipping a fallback.
      </td>
      <td>
        Execute script in osh interpreter:</br>`osh my.sh`</br><br/></br> Or, adapt script, and let it begin with: </br>```#!/usr/bin/env osh```
