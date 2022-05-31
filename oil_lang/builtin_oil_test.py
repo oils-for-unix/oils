@@ -130,6 +130,28 @@ class YajlTest(unittest.TestCase):
       u = yajl.loads('"\xFF"')
       print(repr(u))
 
+  def testOrdered(self):
+    from collections import OrderedDict
+
+    # Order is lost
+    d1 = OrderedDict({'a': 1, 'b': 2, 'c': 3})
+
+    # Preserved
+    d = OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    d['a'] = 42
+    d['d'] = 50
+
+    #d = OrderedDict([('z', 1), ('y', 2), ('x', 3)])
+    #d['a'] = 42
+    #d['z'] = 50
+
+    actual = yajl.dumps(d)
+    self.assertEqual('{"a":42,"b":2,"c":3,"d":50}', actual)
+
+    #
+    # More tests in py-yajl/tests/unit.py
+    #
+
 
 if __name__ == '__main__':
   unittest.main()

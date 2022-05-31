@@ -350,9 +350,9 @@ yajl() {
   pushd py-yajl >/dev/null
   python2 setup.py --quiet build_ext --inplace
 
-  # DISABLED.  It causes a lot of spew.  And yajl will not make it into oil-native.
-  # Adapted from py-yajl/runtests.sh
-  # python2 tests/unit.py
+  # This causes a lot of spew
+  echo 'Running py-yajl unit tests'
+  python2 tests/unit.py >/dev/null 2>&1
 
   # Hm this test doesn't make any assertions.
   zcat test_data/issue_11.gz | python2 tests/issue_11.py >/dev/null

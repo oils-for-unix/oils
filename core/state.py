@@ -276,10 +276,32 @@ class ctx_HayNode(object):
 class ctx_HayEval(object):
   """
   - Turn on shopt oil:all and _running_hay
-  - Any other sandboxing?
   - Disallow recursive 'hay eval'
-  - Clear result
-  - Also PushTemp for scope?
+  - Ensure result is isolated for 'hay eval :result'
+
+  More leakage:
+
+  External:
+  - execute programs (ext_prog)
+  - redirect
+  - pipelines, subshell, & etc?
+    - do you have to put _running_hay() checks everywhere?
+
+  Internal:
+
+  - state.Mem()
+    - should we at least PushTemp()?
+    - But then they can do setglobal
+  - Option state
+
+  - Disallow all builtins except echo/write/printf?
+    - maybe could do that at the top level
+    - source builtin, read builtin
+    - cd / pushd / popd
+    - trap -- hm yeah this one is bad
+
+  - procs?  Not strictly necessary
+    - you should be able to define them, but not call the user ...
 
   """
   def __init__(self, hay_state, mutable_opts):
