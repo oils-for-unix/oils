@@ -129,7 +129,10 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 </tbody>
 </table>
 
-
+ 
+ For more information see: https://www.oilshell.org/release/latest#Documentation
+ 
+ 
 ### What Is Expected to Run Under OSH
 
 "Batch" programs are most likely to run unmodified under OSH.  On the other
