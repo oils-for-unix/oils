@@ -10,8 +10,9 @@ Oilshell provides a **multi-purpose interpreter** runtime.
 - You can use it *interactively*, or run and write "shell scripts" for it.</br>
   (Shell is the best language for *ad hoc* automation.)
   
-- You can start it for a language that's *compatible* with other shells (using `bin/osh`),</br>
-  or for the much improved *legacy-free* oil language (using `bin/oil`).
+- You can start it to use a language that's *compatible* with other shells (using `bin/osh`),</br>
+  or, to use the much improved Oil language, a very coherent *pitfall-freed* shell upgrade with</br>
+  selected python/js/etc. features (using `bin/oil`).
 
 As of 2021, the [OSH language][osh-language] is mature, and the [Oil
 language][oil-language] is under development.  The interactive shell exists,
