@@ -107,6 +107,28 @@ hay eval :foo {
 foo
 ## END
 
+#### hay names only visible in 'hay eval' block
+shopt --set parse_brace
+shopt --unset errexit
+
+hay define package
+
+package cppunit
+echo status=$?
+
+hay eval :result {
+  package cppunit
+  echo status=$?
+}
+
+package cppunit
+echo status=$?
+
+## STDOUT:
+status=127
+status=0
+status=127
+## END
 
 #### _hay() register
 shopt --set parse_paren parse_brace parse_equals parse_proc
@@ -184,29 +206,43 @@ level 0 children
 #### haynode: node name is required
 shopt --set parse_brace parse_equals parse_proc
 
-haynode package
-echo status=$?
-
-haynode package {
-  version = '1.0'
+try {
+  hay eval :result {
+    haynode package
+  }
 }
-echo status=$?
+echo "status $_status"
+
+try {
+  haynode package {
+    version = '1.0'
+  }
+}
+echo "status $_status"
 
 hay define package
 
-package
-echo status=$?
-
-package {
-  version = '1.0'
+try {
+  hay eval :result {
+    package
+  }
 }
-echo status=$?
+echo "status $_status"
+
+try {
+  hay eval :result {
+    package {
+      version = '1.0'
+    }
+  }
+}
+echo "status $_status"
 
 ## STDOUT:
-status=2
-status=2
-status=2
-status=2
+status 2
+status 2
+status 2
+status 2
 ## END
 
 #### haynode: shell nodes require block args; attribute nodes don't
@@ -215,15 +251,24 @@ shopt --set parse_brace parse_equals parse_proc
 
 hay define package TASK
 
-package glibc > /dev/null
-echo status=$?
+try {
+  hay eval :result {
+    package glibc > /dev/null
+  }
+}
+echo "status $_status"
 
-TASK build
-echo status=$?
+
+try {
+  hay eval :result {
+    TASK build
+  }
+}
+echo "status $_status"
 
 ## STDOUT:
-status=0
-status=2
+status 0
+status 2
 ## END
 
 
@@ -255,32 +300,36 @@ foo bar
 
 shopt --set oil:all parse_equals
 
-const URL_PATH = 'downloads/foo.tar.gz'
-
 hay define package
 
-package foo {
-  echo "location = https://example.com/$URL_PATH"
-  echo "backup = https://archive.example.com/$URL_PATH"
-}
+hay eval :result {
 
-hay define deps/package
-
-# Note: PushTemp() happens here
-deps spam {
-  # OVERRIDE
-  const URL_PATH = 'downloads/spam.tar.gz'
-
-  const URL2 = 'downloads/spam.tar.xz'
+  const URL_PATH = 'downloads/foo.tar.gz'
 
   package foo {
-    # this is a global
-    echo "deps location https://example.com/$URL_PATH"
-    echo "deps backup https://archive.example.com/$URL2"
+    echo "location = https://example.com/$URL_PATH"
+    echo "backup = https://archive.example.com/$URL_PATH"
   }
-}
 
-echo "AFTER $URL_PATH"
+  hay define deps/package
+
+  # Note: PushTemp() happens here
+  deps spam {
+    # OVERRIDE
+    const URL_PATH = 'downloads/spam.tar.gz'
+
+    const URL2 = 'downloads/spam.tar.xz'
+
+    package foo {
+      # this is a global
+      echo "deps location https://example.com/$URL_PATH"
+      echo "deps backup https://archive.example.com/$URL2"
+    }
+  }
+
+  echo "AFTER $URL_PATH"
+
+}
 
 ## STDOUT:
 location = https://example.com/downloads/foo.tar.gz

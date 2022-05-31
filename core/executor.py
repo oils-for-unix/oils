@@ -221,7 +221,7 @@ class ShellExecutor(vm._Executor):
       cmd_st.show_code = True  # this is a "leaf" for errors
       return self.RunBuiltin(builtin_id, cmd_val)
 
-    if self.hay_state.Resolve(arg0):
+    if self.exec_opts._running_hay() and self.hay_state.Resolve(arg0):
       return self.RunBuiltin(builtin_i.haynode, cmd_val)
 
     environ = self.mem.GetExported()  # Include temporary variables
