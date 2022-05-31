@@ -27,6 +27,22 @@ Use case examples
 - Attribute blocks look like `package cppunit { version = '1.0' }`
 - Shell blocks have a type that is ALL CAPS, like `TASK build { ... }`
 
+### Shell vs Oil
+
+Oil style, statically parsed:
+
+    TASK build {
+      cp @deps /tmp
+    }
+
+Shell style?  But then we need 2 args.
+
+    TASK build '''
+
+      cp "${deps[@]}" /tmp
+
+    '''
+
 ## Functions
 
 - `parse_hay()`
@@ -40,10 +56,9 @@ Use case examples
 
 - `hay` builtin
   - `hay define`
-  - `hay eval`
-  - `hay pp`
-    - `hay pp defs`
-    - `hay pp result`
+  - `hay pp` -- for debugging
+  - `hay rest`
+  - `hay eval { ... }`
 - `haynode` builtin is "aliased" by other types
 
 ## Options

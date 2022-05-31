@@ -94,11 +94,8 @@ class EvalHay(object):
       UP_block = block
       block = cast(value__Block, UP_block)
 
-      # TODO: consolidate this
-      with state.ctx_Option(self.mutable_opts, consts.OIL_ALL, True):
-        # This makes hay names visible?  And external invisible?
-        with state.ctx_Option(self.mutable_opts, [option_i._running_hay], True):
-          unused = self.cmd_ev.EvalBlock(block.body)
+      with state.ctx_HayEval(self.hay_state, self.mutable_opts):
+        unused = self.cmd_ev.EvalBlock(block.body)
 
       return self.hay_state.Result()
 
@@ -118,7 +115,7 @@ class BlockAsStr(object):
     return block
 
 
-class HayResult(object):
+class HayFunc(object):
   """ hay_result() """
 
   def __init__(self, hay_state):
@@ -128,4 +125,4 @@ class HayResult(object):
   if mylib.PYTHON:
     def Call(self):
       # type: () -> Dict[str, Any]
-      return self.hay_state.Result()
+      return self.hay_state.HayRegister()

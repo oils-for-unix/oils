@@ -256,17 +256,8 @@ class ctx_ErrExit(object):
       self.mutable_opts.Pop(option_i.allow_csub_psub)
 
 
-class ctx_Hay(object):
-  """
-
-  Two pieces of functionality:
-
-  - update ex.hay_current based on the ex.hay_root
-    - this is the INPUT namespace
-
-  - update _config?
-    - and CHILDREN
-  """
+class ctx_HayNode(object):
+  """ haynode builtin makes new names in the tree visible """
   def __init__(self, hay_state, hay_name):
     # type: (Hay, Optional[str]) -> None
     #log('pairs %s', pairs)
@@ -282,6 +273,45 @@ class ctx_Hay(object):
     self.hay_state.Pop()
 
 
+class ctx_HayEval(object):
+  """
+  - Turn on shopt oil:all and _running_hay
+  - Any other sandboxing?
+  - Disallow recursive 'hay eval'
+  - Clear result
+  - Also PushTemp for scope?
+
+  """
+  def __init__(self, hay_state, mutable_opts):
+    # type: (Hay, MutableOpts) -> None
+    #log('pairs %s', pairs)
+    self.hay_state = hay_state
+    self.mutable_opts = mutable_opts
+
+    if mutable_opts.Get(option_i._running_hay):
+      # This blames the right 'hay' location
+      e_die("Recursive 'hay eval' not allowed")
+
+    for opt_num in consts.OIL_ALL:
+      mutable_opts.Push(opt_num, True)
+    mutable_opts.Push(option_i._running_hay, True)
+
+    self.hay_state.PushEval()
+
+  def __enter__(self):
+    # type: () -> None
+    return
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+
+    self.hay_state.PopEval()
+
+    self.mutable_opts.Pop(option_i._running_hay)
+    for opt_num in consts.OIL_ALL:
+      self.mutable_opts.Pop(opt_num)
+
+
 class Hay(object):
   """State for DSLs."""
 
@@ -293,6 +323,7 @@ class Hay(object):
 
     # same as ClearResult()
     self.result_stack = [{'source': None, 'children': []}]  # type: List[Dict[str, Any]]
+    self.output = None  # type: Dict[str, Any]
 
   if mylib.PYTHON:  # TODO: hay results should be a value_t tree
 
@@ -309,15 +340,28 @@ class Hay(object):
         log('  result_stack %s', self.result_stack)
       return d
 
+    def PushEval(self):
+      # type: () -> None
+      self.output = None  # clear it to make sure
+
+    def PopEval(self):
+      # type: () -> None
+
+      # Save it
+      self.output = self.result_stack[0]
+
+      # Now reset
+      self.result_stack = [{'source': None, 'children': []}]
+
     def Result(self):
       # type: () -> Dict[str, Any]
       """ Called by eval_attr_block() """
-      #log('  result_stack %s', self.result_stack)
-      return self.result_stack[0]
+      return self.output
 
-    def ClearResult(self):
-      # type: () -> None
-      self.result_stack = [{'source': None, 'children': []}]
+    def HayRegister(self):
+      # type: () -> Dict[str, Any]
+      """ Called by _hay() function """
+      return self.result_stack[0]
 
   def Resolve(self, first_word):
     # type: (str) -> bool
@@ -335,6 +379,7 @@ class Hay(object):
   def ClearDefs(self):
     # type: () -> None
     self.root_defs = hay_node()
+    self.cur_defs = self.root_defs
 
   def Push(self, hay_name):
     # type: (Optional[str]) -> None

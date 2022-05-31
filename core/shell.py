@@ -463,8 +463,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   parse_config = funcs.ParseHay(fd_state, parse_ctx, errfmt)
   eval_to_dict = funcs.EvalHay(hay_state, mutable_opts, cmd_ev)
   block_as_str = funcs.BlockAsStr(arena)
-  hay_result = funcs.HayResult(hay_state)
-  funcs_builtin.Init3(mem, parse_config, eval_to_dict, block_as_str, hay_result)
+  hay_func = funcs.HayFunc(hay_state)
+  funcs_builtin.Init3(mem, parse_config, eval_to_dict, block_as_str, hay_func)
 
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.

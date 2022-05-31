@@ -799,7 +799,7 @@ if mylib.PYTHON:
 
             # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
             with state.ctx_Temp(self.mem):
-              with state.ctx_Hay(self.hay_state, hay_name):
+              with state.ctx_HayNode(self.hay_state, hay_name):
                 # Note: we want all haynode invocations in the block to appear as
                 # our 'children', recursively
                 block_attrs = self.cmd_ev.EvalBlock(block)
@@ -883,60 +883,24 @@ if mylib.PYTHON:
         if not block:  # 'package foo' is OK
           e_usage('eval expected a block')
 
-        # TODO: Use a context manager to make this safe.
-        self.hay_state.ClearResult()
-
-        with state.ctx_Option(self.mutable_opts, consts.OIL_ALL, True):
-          # This makes hay names visible?  And external invisible?
-          with state.ctx_Option(self.mutable_opts, [option_i._running_hay], True):
-          #with state.ctx_HayEval(self.hay_state):
-            # Note: we want all haynode invocations in the block to appear as
-            # our 'children', recursively
-            unused = self.cmd_ev.EvalBlock(block)
+        with state.ctx_HayEval(self.hay_state, self.mutable_opts):
+          # Note: we want all haynode invocations in the block to appear as
+          # our 'children', recursively
+          unused = self.cmd_ev.EvalBlock(block)
 
         result = self.hay_state.Result()
 
         self.mem.SetValue(
             lvalue.Named(var_name), value.Obj(result), scope_e.LocalOnly)
 
-      elif action == 'clear':
-        # - hay clear defs -- don't quite need this either?
-        # - hay clear result -- TODO: don't really need this, as eval_hay() and
-        #   'hay eval' both do it
-
-        second, second_spid = arg_r.Peek2()
-        if second is None:
-          e_usage("clear expected 'defs' or 'result'", span_id=action_spid)
-
-        if second == 'defs':
-          self.hay_state.ClearDefs()
-        elif second == 'result':
-          self.hay_state.ClearResult()
-        else:
-          # TODO: make sure strings are de-duplicated
-          e_usage("clear expected 'defs' or 'result'", span_id=second_spid)
-
-        # If no args, should it clear both?
+      elif action == 'reset':
+        self.hay_state.ClearDefs()
 
       elif action == 'pp':
-        # - hay pp defs
-        # - hay pp result
-
-        second, second_spid = arg_r.Peek2()
-        if second is None:
-          e_usage("pp expected 'defs' or 'result'", span_id=action_spid)
-
-        if second == 'defs':
-          tree = self.hay_state.root_defs.PrettyTree()
-          ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
-          fmt.PrintTree(tree, ast_f)
-          ast_f.write('\n')
-        elif second == 'result':
-          # TODO: How to print this?  ASDL should be able to print value.Block() etc.
-          from pprint import pprint
-          pprint(self.hay_state.Result())
-        else:
-          e_usage("pp expected 'defs' or 'result'", span_id=second_spid)
+        tree = self.hay_state.root_defs.PrettyTree()
+        ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
+        fmt.PrintTree(tree, ast_f)
+        ast_f.write('\n')
 
       else:
         e_usage(_HAY_ACTION_ERROR, span_id=action_spid)

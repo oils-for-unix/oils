@@ -55,7 +55,7 @@ echo status=$?
 hay define -- package user
 echo status=$?
 
-hay pp defs | wc -l | read n
+hay pp | wc -l | read n
 echo read $?
 test $n -gt 0
 echo greater $?
@@ -66,6 +66,47 @@ status=0
 read 0
 greater 0
 ## END
+
+#### hay reset
+shopt --set parse_brace
+
+hay define package
+
+hay eval :a {
+  package foo
+  echo "package $?"
+}
+
+hay reset  # no more names
+
+echo "reset $?"
+
+hay eval :b {
+  package foo
+  echo "package $?"
+}
+
+## status: 127
+## STDOUT:
+package 0
+reset 0
+## END
+
+
+#### hay eval can't be nested
+shopt --set parse_brace
+
+hay eval :foo {
+  echo foo
+  hay eval :bar {
+    echo bar
+  }
+}
+## status: 1
+## STDOUT:
+foo
+## END
+
 
 #### _hay() register
 shopt --set parse_paren parse_brace parse_equals parse_proc
