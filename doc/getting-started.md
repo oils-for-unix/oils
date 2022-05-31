@@ -5,13 +5,13 @@ default_highlighter: oil-sh
 Getting Started
 ===============
 
-Oilshell provides a multi-purpose runtime-interpreter.
+Oilshell provides a **multi-purpose interpreter** runtime.
 
-- You can use it *interactively*, or run and write "shell scripts" in it.</br>
+- You can use it *interactively*, or run and write "shell scripts" for it.</br>
   (Shell is the best language for *ad hoc* automation.)
   
-- You can use a language that's *compatible* with other shells in `bin/osh`,</br>
-  or the much improved *legacy-free* oil language in `bin/oil`.
+- You can start it for a language that's *compatible* with other shells (using `bin/osh`),</br>
+  or for the much improved *legacy-free* oil language (using `bin/oil`).
 
 As of 2021, the [OSH language][osh-language] is mature, and the [Oil
 language][oil-language] is under development.  The interactive shell exists,
