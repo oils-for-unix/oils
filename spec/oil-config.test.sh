@@ -47,7 +47,6 @@ status=0
 ## END
 
 #### hay builtin usage
-shopt --set parse_brace
 
 hay define
 echo status=$?
@@ -130,6 +129,41 @@ status=0
 status=127
 ## END
 
+#### hay eval and JSON
+shopt --set parse_brace parse_equals
+
+hay define package user
+
+hay eval :result {
+  package foo {
+    a = 42
+    b = true
+    c = null
+  }
+
+  user alice
+}
+
+# Note: using jq to normalize
+json write (result) | jq .
+
+## STDOUT:
+{
+  "source": null,
+  "children": [
+    {
+      "type": "package",
+      "name": "foo"
+    },
+    {
+      "type": "user",
+      "name": "alice"
+    }
+  ]
+}
+## END
+
+
 #### _hay() register
 shopt --set parse_paren parse_brace parse_equals parse_proc
 
@@ -205,6 +239,9 @@ level 0 children
 
 #### haynode: node name is required
 shopt --set parse_brace parse_equals parse_proc
+
+# should we make it name or block required?
+# license { ... } might be useful?
 
 try {
   hay eval :result {

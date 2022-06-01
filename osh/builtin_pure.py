@@ -803,7 +803,7 @@ if mylib.PYTHON:
                 # our 'children', recursively
                 block_attrs = self.cmd_ev.EvalBlock(block)
 
-            attrs = {}  # type: Dict[str, Any]
+            attrs = mylib.MakeDict()  # type: Dict[str, Any]
             for name, cell in iteritems(block_attrs):
               val = cell.val
               UP_val = val

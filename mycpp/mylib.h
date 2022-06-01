@@ -1127,6 +1127,10 @@ inline Str* NewStr(const char* s) {
   return new Str(s);
 }
 
+inline Dict<Str*, void*>* MakeDict() {
+  assert(0);
+}
+
 class LineReader {
  public:
   virtual Str* readline() = 0;

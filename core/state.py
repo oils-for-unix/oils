@@ -344,8 +344,16 @@ class Hay(object):
     self.def_stack = [self.root_defs]
 
     # same as ClearResult()
-    self.result_stack = [{'source': None, 'children': []}]  # type: List[Dict[str, Any]]
+    node = self._MakeOutputNode()
+    self.result_stack = [node]  # type: List[Dict[str, Any]]
     self.output = None  # type: Dict[str, Any]
+
+  def _MakeOutputNode(self):
+    # type: () -> Dict[str, Any]
+    d = mylib.MakeDict()  # ORDERED
+    d['source'] = None  
+    d['children'] = []
+    return d
 
   def PushEval(self):
     # type: () -> None
@@ -358,7 +366,8 @@ class Hay(object):
     self.output = self.result_stack[0]
 
     # Now reset
-    self.result_stack = [{'source': None, 'children': []}]
+    node = self._MakeOutputNode()
+    self.result_stack = [node]
 
   if mylib.PYTHON:  # TODO: hay results should be a value_t tree
 
@@ -366,7 +375,7 @@ class Hay(object):
       # type: () -> Dict[str, Any]
       """Called by haynode builtin."""
 
-      d = {}  # type: Dict[str, Any]
+      d = mylib.MakeDict()  # type: Dict[str, Any]
       assert 'children' in self.result_stack[-1], self.result_stack[-1]
       self.result_stack[-1]['children'].append(d)
 
@@ -1240,7 +1249,8 @@ class Mem(object):
 
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
-    self.var_stack = [{}]  # type: List[Dict[str, cell]]
+    frame = mylib.MakeDict()  # type: Dict[str, cell]
+    self.var_stack = [frame]
 
     self.arena = arena
 
@@ -1389,7 +1399,8 @@ class Mem(object):
     # type: (str, int, List[str]) -> None
     """For function calls."""
     self.argv_stack.append(_ArgFrame(argv))
-    self.var_stack.append({})
+    frame = mylib.MakeDict()  # type: Dict[str, cell]
+    self.var_stack.append(frame)
 
     span = self.arena.GetLineSpan(def_spid)
     source_str = ui.GetLineSourceString(self.arena, span.line_id)
@@ -1425,7 +1436,8 @@ class Mem(object):
     Also for PS4 evaluation with more variables.
     """
     # We don't want the 'read' builtin to write to this frame!
-    self.var_stack.append({})
+    frame = mylib.MakeDict()
+    self.var_stack.append(frame)
     self._PushDebugStack(None, None, None)
 
   def PopTemp(self):

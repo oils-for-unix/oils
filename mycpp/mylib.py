@@ -3,8 +3,9 @@ runtime.py
 """
 from __future__ import print_function
 
-import sys
 import cStringIO
+import collections
+import sys
 
 from typing import Tuple, Any
 
@@ -14,8 +15,18 @@ PYTHON = True
 
 
 def NewStr(s):
-  """Hack to translate conar char* s to Str * in C++."""
+  """Hack to translate const char* s to Str * in C++."""
   return s
+
+
+def MakeDict():
+  """Make dictionaries ordered in Python, e.g. for JSON.
+  
+  In C++, our Dict implementation should be ordered.
+
+  TODO: can this be the same as NewDict?
+  """
+  return collections.OrderedDict()
 
 
 # C code ignores this!
