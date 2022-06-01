@@ -777,6 +777,18 @@ class Dict : public gc_heap::Obj {
   }
 };
 
+template <typename K, typename V>
+Dict<K, V>* NewDict() {
+  auto self = gc_heap::Alloc<Dict<K, V>>();
+  return self;
+}
+
+template <typename K, typename V>
+Dict<K, V>* NewDict(std::initializer_list<K> keys,
+                    std::initializer_list<V> values) {
+  assert(0);
+}
+
 #endif  // MYLIB_LEGACY
 
 template <class A, class B>

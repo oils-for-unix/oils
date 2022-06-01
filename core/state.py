@@ -32,7 +32,7 @@ from core import optview
 from frontend import consts
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems
+from mycpp.mylib import tagswitch, iteritems, NewDict
 from osh import split
 from pylib import os_path
 from pylib import path_stat
@@ -350,7 +350,7 @@ class Hay(object):
 
   def _MakeOutputNode(self):
     # type: () -> Dict[str, Any]
-    d = mylib.MakeDict()  # ORDERED
+    d = NewDict()
     d['source'] = None  
     d['children'] = []
     return d
@@ -375,7 +375,7 @@ class Hay(object):
       # type: () -> Dict[str, Any]
       """Called by haynode builtin."""
 
-      d = mylib.MakeDict()  # type: Dict[str, Any]
+      d = NewDict()  # type: Dict[str, Any]
       assert 'children' in self.result_stack[-1], self.result_stack[-1]
       self.result_stack[-1]['children'].append(d)
 
@@ -1249,7 +1249,7 @@ class Mem(object):
 
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
-    frame = mylib.MakeDict()  # type: Dict[str, cell]
+    frame = NewDict()  # type: Dict[str, cell]
     self.var_stack = [frame]
 
     self.arena = arena
@@ -1399,7 +1399,7 @@ class Mem(object):
     # type: (str, int, List[str]) -> None
     """For function calls."""
     self.argv_stack.append(_ArgFrame(argv))
-    frame = mylib.MakeDict()  # type: Dict[str, cell]
+    frame = NewDict()  # type: Dict[str, cell]
     self.var_stack.append(frame)
 
     span = self.arena.GetLineSpan(def_spid)
@@ -1436,7 +1436,7 @@ class Mem(object):
     Also for PS4 evaluation with more variables.
     """
     # We don't want the 'read' builtin to write to this frame!
-    frame = mylib.MakeDict()
+    frame = NewDict()  # type: Dict[str, cell]
     self.var_stack.append(frame)
     self._PushDebugStack(None, None, None)
 

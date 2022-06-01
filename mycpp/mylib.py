@@ -6,7 +6,7 @@ from __future__ import print_function
 import cStringIO
 import sys
 
-from pylib import collections_
+import collections_  # copy in this dir
 
 from typing import Tuple, Any
 
@@ -20,7 +20,7 @@ def NewStr(s):
   return s
 
 
-def MakeDict():
+def NewDict():
   """Make dictionaries ordered in Python, e.g. for JSON.
   
   In C++, our Dict implementation should be ordered.

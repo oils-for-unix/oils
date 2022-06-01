@@ -1020,12 +1020,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
 
     def _WriteDictElements(self, o, key_type, val_type):
-        # TODO: use initializer_list<K> and initializer_list<V> perhaps?  Do
-        # we want global data being initialized?  Not sure if we'll have
-        # initialization order problems.  Can't really make them constexpr
-        # because of the Str problem.
-
-        # Hm there is some type inference problem with Alloc<Dict<K,V>({})
+        # Ran into a limit of C++ type inference.  Somehow you need
+        # std::initializer_list{} here, not just {}
         self.write('std::initializer_list<%s>{' % get_c_type(key_type))
         for i, item in enumerate(o.items):
           pass
@@ -1217,14 +1213,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.log('    GLOBAL List/Dict: %s', lval.name)
 
-          # TODO: Change this to
-          #
-          # - GLOBAL_LIST(name, int, {42, 0})
-          # - GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
-          # - GLOBAL_INSTANCE(name, Token, ...)
-          #
-          # So that they can have Tag::Global
-
           lval_type = self.types[lval]
 
           if isinstance(o.rvalue, ListExpr):
@@ -1241,6 +1229,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             self.write(');\n')
             return
+
+          # d = {} at the TOP LEVEL
+          # TODO: Change this to
+          # - GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
+          # So it has Tag::Global
 
           if isinstance(o.rvalue, DictExpr):
             key_type, val_type = lval_type.args
@@ -1259,11 +1252,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Then a pointer to it
             self.write('Dict<%s, %s>* %s = &%s;\n', key_c_type, val_c_type,
                 lval.name, temp_name)
-
             return
 
-          # Global instances, e.g. EOL_TOK = Token(...)
-          # TODO: Needs Tag::Global
+          # TODO: Change this to
+          # - GLOBAL_INSTANCE(name, Token, ...)
+          # for Tag::Global
           if isinstance(o.rvalue, CallExpr):
             call_expr = o.rvalue
             if self._IsInstantiation(call_expr):
@@ -1281,32 +1274,55 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                   temp_name)
               return
 
-        #    src = cast(source__SourcedFile, src)
-        # -> source__SourcedFile* src = static_cast<source__SourcedFile>(src)
-        if isinstance(o.rvalue, CallExpr) and o.rvalue.callee.name == 'cast':
-          assert isinstance(lval, NameExpr)
-          call = o.rvalue
-          type_expr = call.args[0]
-          subtype_name = _GetCTypeForCast(type_expr)
+        #
+        # Non-top-level
+        #
 
-          cast_kind = _GetCastKind(self.module_path, subtype_name)
+        if isinstance(o.rvalue, CallExpr):
+          #    d = NewDict()  # type: Dict[int, int]
+          # -> auto* d = NewDict<int, int>();
+          if o.rvalue.callee.name == 'NewDict':
 
-          # HACK: Distinguish between UP cast and DOWN cast.
-          # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
-          # _t is the base type, so that means it's an upcast.
-          if isinstance(type_expr, NameExpr) and type_expr.name.endswith('_t'):
-            if self.decl:
-              self.local_var_list.append((lval.name, subtype_name))
-            self.write_ind(
-                '%s = %s<%s>(', lval.name, cast_kind, subtype_name)
-          else:
-            self.write_ind(
-                '%s %s = %s<%s>(', subtype_name, lval.name, cast_kind,
-                subtype_name)
+            lval_type = self.types[lval]
 
-          self.accept(call.args[1])  # variable being casted
-          self.write(');\n')
-          return
+            key_type, val_type = lval_type.args
+
+            key_c_type = get_c_type(key_type)
+            val_c_type = get_c_type(val_type)
+
+            self.write_ind('auto* %s = NewDict<%s, %s>();\n',
+                           lval.name, key_c_type, val_c_type)
+            # Doesn't take elememnts
+            #self._WriteDictElements(o.rvalue, key_type, val_type)
+            #self.write(');\n')
+            return
+
+          #    src = cast(source__SourcedFile, src)
+          # -> source__SourcedFile* src = static_cast<source__SourcedFile>(src)
+          if o.rvalue.callee.name == 'cast':
+            assert isinstance(lval, NameExpr)
+            call = o.rvalue
+            type_expr = call.args[0]
+            subtype_name = _GetCTypeForCast(type_expr)
+
+            cast_kind = _GetCastKind(self.module_path, subtype_name)
+
+            # HACK: Distinguish between UP cast and DOWN cast.
+            # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
+            # _t is the base type, so that means it's an upcast.
+            if isinstance(type_expr, NameExpr) and type_expr.name.endswith('_t'):
+              if self.decl:
+                self.local_var_list.append((lval.name, subtype_name))
+              self.write_ind(
+                  '%s = %s<%s>(', lval.name, cast_kind, subtype_name)
+            else:
+              self.write_ind(
+                  '%s %s = %s<%s>(', subtype_name, lval.name, cast_kind,
+                  subtype_name)
+
+            self.accept(call.args[1])  # variable being casted
+            self.write(');\n')
+            return
 
         if isinstance(lval, NameExpr):
           if _SkipAssignment(lval.name):
@@ -2290,7 +2306,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if name in ('log', 'p_die', 'e_die', 'e_strict', 'e_usage',
                       'stderr_line'):
             continue    # do nothing
-          if name in ('switch', 'tagswitch', 'iteritems', 'str_cmp'):  # mylib
+
+          # mylib
+          if name in ('switch', 'tagswitch', 'iteritems', 'str_cmp',
+                      'NewDict'):
             continue  # do nothing
 
           if '.' in o.id:
@@ -2421,7 +2440,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #self.log('%s %s %s', lval_name, c_type, is_param)
             if lval_name not in roots and CTypeIsManaged(c_type):
               roots.append(lval_name)
-          self.log('roots %s', roots)
+          #self.log('roots %s', roots)
 
           if len(roots):
             self.write_ind('StackRoots _roots({');

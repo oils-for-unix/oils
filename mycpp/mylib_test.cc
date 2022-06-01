@@ -423,6 +423,11 @@ TEST test_dict() {
     print(key);
   }
 
+  // Testing NewDict() stub for ordered dicts ... hm.
+  //
+  // Dict<int, int>* frame = nullptr;
+  // frame = NewDict<int, int>();
+
   PASS();
 }
 

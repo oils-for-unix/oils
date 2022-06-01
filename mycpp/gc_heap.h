@@ -1400,4 +1400,5 @@ inline int len(const gc_heap::Dict<K, V>* d) {
 
 #endif  // MYLIB_LEGACY
 
+
 #endif  // GC_HEAP_H

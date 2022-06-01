@@ -37,7 +37,7 @@ from frontend import match
 from frontend import typed_args
 from qsn_ import qsn
 from mycpp import mylib
-from mycpp.mylib import iteritems, tagswitch
+from mycpp.mylib import iteritems, tagswitch, NewDict
 from osh import word_compile
 
 from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
@@ -803,7 +803,7 @@ if mylib.PYTHON:
                 # our 'children', recursively
                 block_attrs = self.cmd_ev.EvalBlock(block)
 
-            attrs = mylib.MakeDict()  # type: Dict[str, Any]
+            attrs = NewDict()  # type: Dict[str, Any]
             for name, cell in iteritems(block_attrs):
               val = cell.val
               UP_val = val

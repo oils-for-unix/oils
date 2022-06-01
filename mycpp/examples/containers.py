@@ -5,7 +5,7 @@ container_types.py
 from __future__ import print_function
 
 import os
-from mylib import log
+from mylib import log, NewDict, iteritems
 
 from typing import List, Tuple, Dict, Optional
 
@@ -128,6 +128,14 @@ def DictDemo():
 
   # TODO: fix this
   # log("gdict = %d", len(gdict))
+
+  ordered = NewDict()  # type: Dict[str, int]
+  ordered['a'] = 10
+  ordered['b'] = 11
+  ordered['c'] = 12
+  ordered['a'] = 50
+  for k, v in iteritems(ordered):
+    log("%s %d", k, v)
 
 
 def run_tests():
