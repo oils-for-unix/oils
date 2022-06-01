@@ -4,8 +4,9 @@ runtime.py
 from __future__ import print_function
 
 import cStringIO
-import collections
 import sys
+
+from pylib import collections_
 
 from typing import Tuple, Any
 
@@ -26,7 +27,7 @@ def MakeDict():
 
   TODO: can this be the same as NewDict?
   """
-  return collections.OrderedDict()
+  return collections_.OrderedDict()
 
 
 # C code ignores this!
