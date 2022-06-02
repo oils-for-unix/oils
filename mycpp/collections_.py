@@ -159,7 +159,11 @@ class OrderedDict(dict):
 
     def __repr__(self, _repr_running={}):
         'od.__repr__() <==> repr(od)'
-        call_key = id(self), _get_ident()
+        #call_key = id(self), _get_ident()
+
+        # Oil patch: we don't have threads
+        call_key = id(self)
+
         if call_key in _repr_running:
             return '...'
         _repr_running[call_key] = 1
@@ -200,26 +204,9 @@ class OrderedDict(dict):
         while comparison to a regular mapping is order-insensitive.
 
         '''
-        if isinstance(other, OrderedDict):
-            return dict.__eq__(self, other) and all(_imap(_eq, self, other))
-        return dict.__eq__(self, other)
+        # removed _imap code
+        raise AssertionError('not supported')
 
     def __ne__(self, other):
         'od.__ne__(y) <==> od!=y'
         return not self == other
-
-    # -- the following methods support python 3.x style dictionary views --
-
-    def viewkeys(self):
-        "od.viewkeys() -> a set-like object providing a view on od's keys"
-        return KeysView(self)
-
-    def viewvalues(self):
-        "od.viewvalues() -> an object providing a view on od's values"
-        return ValuesView(self)
-
-    def viewitems(self):
-        "od.viewitems() -> a set-like object providing a view on od's items"
-        return ItemsView(self)
-
-
