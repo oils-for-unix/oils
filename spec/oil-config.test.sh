@@ -136,24 +136,42 @@ hay define package user
 
 hay eval :result {
   package foo {
-    a = 42
-    b = true
-    c = null
+    # not doing floats now
+    int = 42
+    bool = true
+    mynull = null
+    mystr = $'spam\n'
+
+    mylist = [5, 'foo', {}]
+    # TODO: Dict literals need to be in insertion order!
+    #mydict = {alice: 10, bob: 20}
   }
 
   user alice
 }
 
 # Note: using jq to normalize
-json write (result) | jq .
+json write (result) | jq . > out.txt
 
-## STDOUT:
+diff out.txt - <<EOF
 {
   "source": null,
   "children": [
     {
       "type": "package",
-      "name": "foo"
+      "name": "foo",
+      "children": [],
+      "attrs": {
+        "int": 42,
+        "bool": true,
+        "mynull": null,
+        "mystr": "spam\n",
+        "mylist": [
+          5,
+          "foo",
+          {}
+        ]
+      }
     },
     {
       "type": "user",
@@ -161,6 +179,12 @@ json write (result) | jq .
     }
   ]
 }
+EOF
+
+echo "diff $?"
+
+## STDOUT:
+diff 0
 ## END
 
 
