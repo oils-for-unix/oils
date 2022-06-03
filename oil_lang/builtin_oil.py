@@ -245,7 +245,8 @@ class Json(vm._Builtin):
         indent = -1
         extra_newline = True
 
-      j = yajl.dump(obj, sys.stdout, indent=indent)
+      j = yajl.dumps(obj, indent=indent)
+      sys.stdout.write(j)
       if extra_newline:
         sys.stdout.write('\n')
 

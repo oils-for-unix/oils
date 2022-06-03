@@ -129,7 +129,7 @@ status=0
 status=127
 ## END
 
-#### hay eval and JSON
+#### hay eval attr node, and JSON
 shopt --set parse_brace parse_equals
 
 hay define package user
@@ -159,7 +159,9 @@ diff -u - out.txt <<EOF
   "children": [
     {
       "type": "package",
-      "name": "foo",
+      "args": [
+        "foo"
+      ],
       "children": [],
       "attrs": {
         "int": 42,
@@ -175,7 +177,9 @@ diff -u - out.txt <<EOF
     },
     {
       "type": "user",
-      "name": "alice"
+      "args": [
+        "alice"
+      ]
     }
   ]
 }
@@ -185,6 +189,23 @@ echo "diff $?"
 
 ## STDOUT:
 diff 0
+## END
+
+#### hay eval shell node, and JSON
+shopt --set parse_brace parse_equals
+
+hay define TASK
+
+hay eval :result {
+  TASK build {
+    echo hi
+  }
+}
+
+#= result
+json write (result)
+
+## STDOUT:
 ## END
 
 
@@ -346,7 +367,7 @@ status 2
 #### hay eval with shopt -s oil:all
 shopt --set parse_brace parse_equals parse_proc
 
-hay define package user TASK
+hay define package
 
 const x = 'foo bar'
 
@@ -411,7 +432,7 @@ AFTER downloads/foo.tar.gz
 ## END
 
 
-#### hay define
+#### hay define and then an error
 shopt --set parse_brace parse_equals parse_proc
 
 hay define package/license user TASK
@@ -493,8 +514,10 @@ shvar _DIALECT=sourcehut {
 
 const children = d['children']
 write 'level 0 children' $len(children) ---
-write 'child 0' $[children[0]->type] $[children[0]->name] ---
-write 'child 1' $[children[1]->type] $[children[1]->name] ---
+
+# TODO: Do we need @[] for array expression sub?
+write 'child 0' $[children[0]->type] $join(children[0]->args) ---
+write 'child 1' $[children[1]->type] $join(children[1]->args) ---
 
 ## STDOUT:
 level 0 children

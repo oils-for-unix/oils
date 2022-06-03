@@ -781,15 +781,15 @@ if mylib.PYTHON:
       result['type'] = node_type
 
       arg_r.Next()
-      name, name_spid = arg_r.Peek2()
+      arguments = arg_r.Rest()
 
       block = typed_args.GetOneBlock(cmd_val.typed_args)
 
       # package { ... } is not valid
-      if name is None and block is None:
-        e_usage('expected name or block', span_id=arg0_spid)
+      if len(arguments) == 0 and block is None:
+        e_usage('expected at least 1 arg, or a block', span_id=arg0_spid)
 
-      result['name'] = name
+      result['args'] = arguments
 
       if node_type.isupper():  # TASK build { ... }
         if block is None:
@@ -891,7 +891,7 @@ if mylib.PYTHON:
         # - set _running_hay -- so that hay "first words" are visible
         # - then set the variable name to the result
 
-        var_name, name_spid = arg_r.ReadRequired2("expected variable name")
+        var_name, _ = arg_r.ReadRequired2("expected variable name")
         if var_name.startswith(':'):
           var_name = var_name[1:]
           # TODO: This could be fatal?
