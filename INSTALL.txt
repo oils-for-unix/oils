@@ -9,7 +9,13 @@ This file describes how to configure, build, and install it from source code.
 Quick Start
 -----------
 
-If you haven't already done so, extract the tarball:
+If you haven't already done so, download the source code from 
+the [releases page](https://www.oilshell.org/releases.html).
+
+To get interactive features, install GNU readline library development 
+packages (see software requirements below).
+
+Extract the tarball:
  
     tar -x --xz < oil-0.10.1.tar.xz
     cd oil-0.10.1
@@ -47,14 +53,14 @@ This parses and prints a syntax tree for the 'configure' script.
 
     osh -n configure
 
-More Documentation
+Documentation
 ------------------
 
 Every release has a home page with links, e.g.
 
     https://oilshell.org/release/0.10.1/
 
-System Requirements
+Software Requirements
 -------------------
 
 Roughly speaking, you need:
