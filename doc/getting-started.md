@@ -35,7 +35,7 @@ If you haven't already done so, the downloads and install instructions
 can be found on the [releases page](https://www.oilshell.org/releases.html).
 
 
-## Oilshell Usage (as osh and oil)
+## Usage (as osh and oil)
 
 
 <table>
