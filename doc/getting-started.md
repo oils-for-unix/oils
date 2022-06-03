@@ -7,11 +7,11 @@ Getting Started
 
 Oilshell provides a **multi-purpose interpreter** runtime.
 
-- You can use it *interactively*, or run and write "shell scripts" for it.</br>
+- You can use it *interactively*, or run and write "shell scripts" for it.<br>
   (Shell is the best language for *ad hoc* automation.)
   
-- You can start it to use a language that's *compatible* with other shells (using `bin/osh`),</br>
-  or, to use the much improved Oil language, a very coherent *pitfall-freed* shell upgrade with</br>
+- You can start it to use a language that's *compatible* with other shells (using `bin/osh`),<br>
+  or, to use the much improved Oil language, a very coherent *pitfall-freed* shell upgrade with<br>
   selected python/js/etc. features (using `bin/oil`).
 
 As of 2021, the [OSH language][osh-language] is mature, and the [Oil
@@ -52,42 +52,42 @@ can be found on the [releases page](https://www.oilshell.org/releases.html).
   <tbody>
     <tr>
       <td>
-         **Running an existing script** as initially written for other shells. </br>* Usually not even minimal quoting/spacing adjustments needed. <br/><br/>([Particular adjustments](https://www.oilshell.org/release/latest/doc/known-differences.html) may only be required due to implementing the "Common Subset" of consistent and sane shell execution compatibility. For example, if a script was using an inconsistent associative array pattern, or relied on dynamic parsing.) </br></br>NB: By default, basic Oil language features without a side-effect beyond occupying namespace do already work as well (e.g. `const`/`var`/`setvar` incl. Oil expressions, `read --line/all/qsn/-0/...`, `write`, etc). So, these only break in other shells if not shipping a fallback.
+         **Running an existing script** as initially written for other shells. <br>* Usually not even minimal quoting/spacing adjustments needed. <br><br>([Particular adjustments](https://www.oilshell.org/release/latest/doc/known-differences.html) may only be required due to implementing the "Common Subset" of consistent and sane shell execution compatibility. For example, if a script was using an inconsistent associative array pattern, or relied on dynamic parsing.) <br><br>NB: By default, basic Oil language features without a side-effect beyond occupying namespace do already work as well (e.g. `const`/`var`/`setvar` incl. Oil expressions, `read --line/all/qsn/-0/...`, `write`, etc). So, these only break in other shells if not shipping a fallback.
       </td>
       <td>
-        Execute script in osh interpreter:</br>`osh my.sh`</br><br/></br> Or, adapt script, and let it begin with: </br>```#!/usr/bin/env osh```
-      </td>
-    </tr>
-    <tr>
-      <td>
-         **...and, lint shell fragilities.** <br/> * Improved scripts will run with less errors in other shells.</br><br/>NB: The example on the right enables all strict options at once, but individual strict_* options allow fixing issue by issue.
-      </td>
-      <td>
-        Add a line near the top of the script, to set a shell option with error fallback (keep #!/shebang):</br>`shopt --set strict:all  2>/dev/null || true`</br><br/> *After that* execute the script in osh:</br>`osh my.sh`
+        Execute script in osh interpreter:<br>`osh my.sh`<br><br><br> Or, adapt script, and let it begin with: <br>```#!/usr/bin/env osh```
       </td>
     </tr>
     <tr>
       <td>
-        **...and, allow adding new Oil language syntax.**  <br/> * Adjustments to legacy code will only be needed for a [minimized amount of limited syntax](https://www.oilshell.org/release/latest/doc/deprecations.html). <br/> * However, adding new syntax/semantics to a script will drop compatibility with other shells.</br><br/>(The adjustments needed in legacy code should mostly be just quoting/spacing, for disambiguation. Except, requirements for proper error handling, and for explicit split/glob functions on variables due to the default [Simple Word Evaluation](http://www.oilshell.org/release/latest/doc/simple-word-eval.html). Of course only where variables were originally left correctly(!) unquoted and split/globbed.)
+         **...and, lint shell fragilities.** <br> * Improved scripts will run with less errors in other shells.<br><br>NB: The example on the right enables all strict options at once, but individual strict_* options allow fixing issue by issue.
       </td>
       <td>
-        Adapt script to begin with: </br>`#!/usr/bin/env osh` </br> `shopt --set oil:upgrade`
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Coming pretty close to the Oil interpreter. <br/>(Intersection of osh & oil & strict.)
-      </td>
-      <td>
-        `#!/usr/bin/env osh` </br>  `shopt --set oil:upgrade strict:all`</br><!-- prevent line breaks: --> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        Add a line near the top of the script, to set a shell option with error fallback (keep #!/shebang):<br>`shopt --set strict:all  2>/dev/null || true`<br><br> *After that* execute the script in osh:<br>`osh my.sh`
       </td>
     </tr>
     <tr>
       <td>
-        **Using all of the Oil interpeter.** </br>* Implements all positive features of classic shells, compatibly. </br>* All identified pitfalls removed. </br>* Gracefully adding the best from Python, JavaScript and others.<br/><br/> (Everything parsed as Oil syntax. Only unavoidable Oil language warts remain.) 
+        **...and, allow adding new Oil language syntax.**  <br> * Adjustments to legacy code will only be needed for a [minimized amount of limited syntax](https://www.oilshell.org/release/latest/doc/deprecations.html). <br> * However, adding new syntax/semantics to a script will drop compatibility with other shells.<br><br>(The adjustments needed in legacy code should mostly be just quoting/spacing, for disambiguation. Except, requirements for proper error handling, and for explicit split/glob functions on variables due to the default [Simple Word Evaluation](http://www.oilshell.org/release/latest/doc/simple-word-eval.html). Of course only where variables were originally left correctly(!) unquoted and split/globbed.)
       </td>
       <td>
-        Adapt script to begin with:</br> `#!/usr/bin/env osh` </br> `shopt --set oil:all`</br></br> Or, simply use:</br> `#!/usr/bin/env oil`
+        Adapt script to begin with: <br>`#!/usr/bin/env osh` <br> `shopt --set oil:upgrade`
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Coming pretty close to the Oil interpreter. <br>(Intersection of osh & oil & strict.)
+      </td>
+      <td>
+        `#!/usr/bin/env osh` <br>  `shopt --set oil:upgrade strict:all`<br><!-- prevent line breaks: --> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+    </tr>
+    <tr>
+      <td>
+        **Using all of the Oil interpeter.** <br>* Implements all positive features of classic shells, compatibly. <br>* All identified pitfalls removed. <br>* Gracefully adding the best from Python, JavaScript and others.<br><br> (Everything parsed as Oil syntax. Only unavoidable Oil language warts remain.) 
+      </td>
+      <td>
+        Adapt script to begin with:<br> `#!/usr/bin/env osh` <br> `shopt --set oil:all`<br><br> Or, simply use:<br> `#!/usr/bin/env oil`
       </td>
     </tr>
   </tbody>
