@@ -775,7 +775,7 @@ if mylib.PYTHON:
         hay_name = None  # don't validate
 
       # Should we call hay_state.AddChild() so it can be mutated?
-      result = self.hay_state.MakeResultNode()  # type: Dict[str, Any]
+      result = NewDict()
 
       node_type, _ = arg_r.Peek2()
       result['type'] = node_type
@@ -792,44 +792,47 @@ if mylib.PYTHON:
           e_usage('command node requires a block argument')
         result['block'] = block  # UNEVALUATED block
 
+        # Append after validation
+        self.hay_state.AppendResult(result)
+
       else:
+        # Must be done before EvalBlock
+        self.hay_state.AppendResult(result)
+
         block = typed_args.GetOneBlock(cmd_val.typed_args)
         if block:  # 'package foo' is OK
-          if node_type.isupper():  # TASK build { ... }
-            result['block'] = block  # UNEVALUATED block
-          else:
-            result['children'] = []
+          result['children'] = []
 
-            # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
-            with state.ctx_Temp(self.mem):
-              with state.ctx_HayNode(self.hay_state, hay_name):
-                # Note: we want all haynode invocations in the block to appear as
-                # our 'children', recursively
-                block_attrs = self.cmd_ev.EvalBlock(block)
+          # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
+          with state.ctx_Temp(self.mem):
+            with state.ctx_HayNode(self.hay_state, hay_name):
+              # Note: we want all haynode invocations in the block to appear as
+              # our 'children', recursively
+              block_attrs = self.cmd_ev.EvalBlock(block)
 
-            attrs = NewDict()  # type: Dict[str, Any]
-            for name, cell in iteritems(block_attrs):
-              val = cell.val
-              UP_val = val
-              with tagswitch(val) as case:
-                # similar to LookupVar in oil_lang/expr_eval.py
-                if case(value_e.Str):
-                  val = cast(value__Str, UP_val)
-                  obj = val.s  # type: Any
-                elif case(value_e.MaybeStrArray):
-                  val = cast(value__MaybeStrArray, UP_val)
-                  obj = val.strs
-                elif case(value_e.AssocArray):
-                  val = cast(value__AssocArray, UP_val)
-                  obj = val.d
-                elif case(value_e.Obj):
-                  val = cast(value__Obj, UP_val)
-                  obj = val.obj
-                else:
-                  e_die("Can't serialize value of type %d", val.tag_())
-              attrs[name] = obj
+          attrs = NewDict()  # type: Dict[str, Any]
+          for name, cell in iteritems(block_attrs):
+            val = cell.val
+            UP_val = val
+            with tagswitch(val) as case:
+              # similar to LookupVar in oil_lang/expr_eval.py
+              if case(value_e.Str):
+                val = cast(value__Str, UP_val)
+                obj = val.s  # type: Any
+              elif case(value_e.MaybeStrArray):
+                val = cast(value__MaybeStrArray, UP_val)
+                obj = val.strs
+              elif case(value_e.AssocArray):
+                val = cast(value__AssocArray, UP_val)
+                obj = val.d
+              elif case(value_e.Obj):
+                val = cast(value__Obj, UP_val)
+                obj = val.obj
+              else:
+                e_die("Can't serialize value of type %d", val.tag_())
+            attrs[name] = obj
 
-            result['attrs'] = attrs
+          result['attrs'] = attrs
 
       return 0
 

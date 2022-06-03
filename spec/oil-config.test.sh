@@ -153,7 +153,7 @@ hay eval :result {
 # Note: using jq to normalize
 json write (result) | jq . > out.txt
 
-diff out.txt - <<EOF
+diff -u - out.txt <<EOF
 {
   "source": null,
   "children": [
@@ -261,7 +261,7 @@ level 0 children
 ## END
 
 
-#### haynode: node name is required
+#### haynode: usage errors (name or block required)
 shopt --set parse_brace parse_equals parse_proc
 
 # should we make it name or block required?
@@ -272,23 +272,40 @@ try {
     haynode package
   }
 }
-echo "status $_status"
+echo "haynode $_status"
+var result = _hay()
+echo "LEN $[len(result['children'])]"
 
 try {
-  haynode package {
-    version = '1.0'
+  hay eval :result {
+    haynode package {
+      version = '1.0'
+    }
   }
 }
-echo "status $_status"
+echo "haynode $_status"
+var result = _hay()
+echo "LEN $[len(result['children'])]"
 
-hay define package
+try {
+  hay eval :result {
+    haynode TASK build
+  }
+}
+echo "haynode TASK $_status"
+var result = _hay()
+echo "LEN $[len(result['children'])]"
+
+echo ---
+hay define package TASK
 
 try {
   hay eval :result {
     package
   }
 }
-echo "status $_status"
+echo "define $_status"
+echo "LEN $[len(result['children'])]"
 
 try {
   hay eval :result {
@@ -297,13 +314,31 @@ try {
     }
   }
 }
-echo "status $_status"
+echo "define $_status"
+echo "LEN $[len(result['children'])]"
+
+try {
+  hay eval :result {
+    TASK build
+  }
+}
+echo "define $_status"
+echo "LEN $[len(result['children'])]"
 
 ## STDOUT:
-status 2
-status 2
-status 2
-status 2
+haynode 2
+LEN 0
+haynode 2
+LEN 0
+haynode TASK 2
+LEN 0
+---
+define 2
+LEN 0
+define 2
+LEN 0
+define 2
+LEN 0
 ## END
 
 #### haynode: shell nodes require block args; attribute nodes don't

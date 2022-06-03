@@ -371,22 +371,14 @@ class Hay(object):
 
   if mylib.PYTHON:  # TODO: hay results should be a value_t tree
 
-    def MakeResultNode(self):
-      # type: () -> Dict[str, Any]
+    def AppendResult(self, d):
+      # type: (Dict[str, Any]) -> None
       """Called by haynode builtin."""
-
-      d = NewDict()  # type: Dict[str, Any]
-      assert 'children' in self.result_stack[-1], self.result_stack[-1]
       self.result_stack[-1]['children'].append(d)
-
-      if 0:
-        log('  cur_children %s', self.cur_children)
-        log('  result_stack %s', self.result_stack)
-      return d
 
     def Result(self):
       # type: () -> Dict[str, Any]
-      """ Called by eval_attr_block() """
+      """ Called by hay eval and eval_hay() """
       return self.output
 
     def HayRegister(self):
