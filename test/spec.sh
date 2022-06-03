@@ -898,8 +898,13 @@ oil-blocks() {
     $OSH_LIST "$@"
 }
 
-oil-config() {
-  sh-spec spec/oil-config.test.sh --osh-failures-allowed 10 \
+hay() {
+  sh-spec spec/hay.test.sh --osh-failures-allowed 10 \
+    $OSH_LIST "$@"
+}
+
+hay-isolation() {
+  sh-spec spec/hay-isolation.test.sh --osh-failures-allowed 10 \
     $OSH_LIST "$@"
 }
 

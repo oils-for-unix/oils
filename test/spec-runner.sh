@@ -69,7 +69,7 @@ manifest() {
 
       # Now split into two.
       case $t in
-        (oil-*)
+        (oil-*|hay*)
           echo $t >& $oil
           ;;
         (tea-*)
