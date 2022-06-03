@@ -5,7 +5,7 @@ default_highlighter: oil-sh
 Getting Started
 ===============
 
-Oilshell provides a **multi-purpose interpreter** runtime.
+The project provides a **multi-purpose interpreter** (runtime).
 
 - You can use it *interactively*, or run and write "shell scripts" for it.<br>
   (Shell is the best language for *ad hoc* automation.)
