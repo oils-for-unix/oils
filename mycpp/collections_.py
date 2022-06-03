@@ -168,9 +168,16 @@ class OrderedDict(dict):
             return '...'
         _repr_running[call_key] = 1
         try:
-            if not self:
-                return '%s()' % (self.__class__.__name__,)
-            return '%s(%r)' % (self.__class__.__name__, self.items())
+            # Oil patch: use <> as a subtle indicator of OrderedDict
+            parts = ['<']
+            for i, key in enumerate(self):
+              if i != 0:
+                parts.append(', ')
+              parts.append('%r: ' % key)
+              parts.append('%r' % self[key])
+            parts.append('>')
+            return ''.join(parts)
+
         finally:
             del _repr_running[call_key]
 

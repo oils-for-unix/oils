@@ -904,7 +904,7 @@ hay() {
 }
 
 hay-isolation() {
-  sh-spec spec/hay-isolation.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/hay-isolation.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 

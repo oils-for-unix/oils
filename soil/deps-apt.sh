@@ -40,6 +40,9 @@ dev-minimal() {
 
     # Note: osh-minimal task needs shells; not using spec-bin for now
     busybox-static mksh zsh
+
+    # for oil-spec task
+    jq
   )
 
   apt-get install -y "${packages[@]}"
