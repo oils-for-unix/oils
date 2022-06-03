@@ -782,12 +782,16 @@ if mylib.PYTHON:
 
       arg_r.Next()
       name, name_spid = arg_r.Peek2()
-      if name is None:  # package { ... } is not valid
-        e_usage('expected name argument', span_id=arg0_spid)
+
+      block = typed_args.GetOneBlock(cmd_val.typed_args)
+
+      # package { ... } is not valid
+      if name is None and block is None:
+        e_usage('expected name or block', span_id=arg0_spid)
+
       result['name'] = name
 
       if node_type.isupper():  # TASK build { ... }
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
         if block is None:
           e_usage('command node requires a block argument')
         result['block'] = block  # UNEVALUATED block
@@ -799,7 +803,6 @@ if mylib.PYTHON:
         # Must be done before EvalBlock
         self.hay_state.AppendResult(result)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
         if block:  # 'package foo' is OK
           result['children'] = []
 
@@ -837,16 +840,14 @@ if mylib.PYTHON:
       return 0
 
 
-  _HAY_ACTION_ERROR = "builtin expects 'define', 'clear' or 'pp'"
+  _HAY_ACTION_ERROR = "builtin expects 'define', 'reset' or 'pp'"
 
   class Hay(vm._Builtin):
     """
     hay define -- package user
     hay define -- user/foo user/bar  # second level
-    hay clear defs
-    hay clear result
-    hay pp defs
-    hay pp result
+    hay pp
+    hay reset
     """
     def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
       # type: (state.Hay, MutableOpts, state.Mem, CommandEvaluator) -> None
@@ -910,7 +911,7 @@ if mylib.PYTHON:
             lvalue.Named(var_name), value.Obj(result), scope_e.LocalOnly)
 
       elif action == 'reset':
-        self.hay_state.ClearDefs()
+        self.hay_state.Reset()
 
       elif action == 'pp':
         tree = self.hay_state.root_defs.PrettyTree()

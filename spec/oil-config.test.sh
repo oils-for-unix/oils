@@ -272,28 +272,17 @@ try {
     haynode package
   }
 }
-echo "haynode $_status"
+echo "haynode attr $_status"
 var result = _hay()
 echo "LEN $[len(result['children'])]"
 
-try {
-  hay eval :result {
-    haynode package {
-      version = '1.0'
-    }
-  }
-}
-echo "haynode $_status"
-var result = _hay()
-echo "LEN $[len(result['children'])]"
-
+# requires block arg
 try {
   hay eval :result {
     haynode TASK build
   }
 }
-echo "haynode TASK $_status"
-var result = _hay()
+echo "haynode code $_status"
 echo "LEN $[len(result['children'])]"
 
 echo ---
@@ -304,17 +293,7 @@ try {
     package
   }
 }
-echo "define $_status"
-echo "LEN $[len(result['children'])]"
-
-try {
-  hay eval :result {
-    package {
-      version = '1.0'
-    }
-  }
-}
-echo "define $_status"
+echo "define attr $_status"
 echo "LEN $[len(result['children'])]"
 
 try {
@@ -322,22 +301,18 @@ try {
     TASK build
   }
 }
-echo "define $_status"
+echo "define code $_status"
 echo "LEN $[len(result['children'])]"
 
 ## STDOUT:
-haynode 2
+haynode attr 2
 LEN 0
-haynode 2
-LEN 0
-haynode TASK 2
+haynode code 2
 LEN 0
 ---
-define 2
+define attr 2
 LEN 0
-define 2
-LEN 0
-define 2
+define code 2
 LEN 0
 ## END
 

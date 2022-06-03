@@ -399,10 +399,15 @@ class Hay(object):
         current.children[name] = hay_node()
       current = current.children[name]
 
-  def ClearDefs(self):
+  def Reset(self):
     # type: () -> None
+
+    # reset definitions
     self.root_defs = hay_node()
     self.cur_defs = self.root_defs
+
+    # reset output
+    self.PopEval()
 
   def Push(self, hay_name):
     # type: (Optional[str]) -> None
