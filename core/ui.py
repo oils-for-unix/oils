@@ -13,7 +13,8 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
-    source__Alias, source__Reparsed, source__Variable, source__ArgvWord
+    source__Alias, source__Reparsed, source__Variable, source__ArgvWord,
+    source__Synthetic
 )
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
@@ -177,6 +178,10 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
       outer_source = GetLineSourceString(arena, span2.line_id,
                                          quote_filename=quote_filename)
       s = '[ %s in %s ]' % (src.what, outer_source)
+
+    elif case(source_e.Synthetic):
+      src = cast(source__Synthetic, UP_src)
+      s = '-- %s' % src.s  # use -- to say it came from a flag
 
     else:
       raise AssertionError()

@@ -240,7 +240,7 @@ OSH_SPEC.LongFlag('--runtime-mem-dump', args.String)
 OSH_SPEC.LongFlag('--rcfile', args.String)
 
 # e.g. to pass data on stdin but pretend that it came from a .hay file
-OSH_SPEC.LongFlag('--location-file', args.String)
+OSH_SPEC.LongFlag('--location-str', args.String)
 OSH_SPEC.LongFlag('--location-start-line', args.Int)
 
 _AddShellOptions(OSH_SPEC)
@@ -316,7 +316,6 @@ WRITE_SPEC.LongFlag(
 PUSH_REGISTERS_SPEC = FlagSpec('push-registers')
 
 FOPEN_SPEC = FlagSpec('fopen')
-
 
 #
 # Tea

@@ -21,7 +21,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     value__Obj
 )
-from _devbuild.gen.syntax_asdl import Token
+from _devbuild.gen.syntax_asdl import Token, command_e, BraceGroup
 from _devbuild.gen.types_asdl import opt_group_i
 
 from asdl import format as fmt
@@ -761,8 +761,9 @@ if mylib.PYTHON:
     def __init__(self, hay_state, mem, cmd_ev):
       # type: (state.Hay, state.Mem, CommandEvaluator) -> None
       self.hay_state = hay_state
-      self.mem = mem  # for PushTemp
+      self.mem = mem  # isolation with mem.PushTemp
       self.cmd_ev = cmd_ev  # To run blocks
+      self.arena = cmd_ev.arena  # To extract code strings
 
     def Run(self, cmd_val):
       # type: (cmd_value__Argv) -> int
@@ -794,7 +795,34 @@ if mylib.PYTHON:
       if node_type.isupper():  # TASK build { ... }
         if block is None:
           e_usage('command node requires a block argument')
-        result['block'] = block  # UNEVALUATED block
+
+        if 0:  # self.hay_state.to_expr ?
+          result['expr'] = block  # UNEVALUATED block
+        else:
+          # We can only extract code if the block arg is literal like package
+          # foo { ... }, not if it's like package foo (myblock)
+
+          brace_group = None  # type: BraceGroup
+          with tagswitch(block) as case:
+            if case(command_e.BraceGroup):
+              brace_group = cast(BraceGroup, block)
+
+          if brace_group:
+            # BraceGroup has spid for {
+            line_span = self.arena.GetLineSpan(brace_group.spids[0])
+            src = self.arena.GetLineSource(line_span.line_id)
+            line_num = self.arena.GetLineNumber(line_span.line_id)
+
+            result['location_file'] = ui.GetLineSourceString(self.arena,
+                                                             line_span.line_id)
+            result['location_start_line'] = line_num
+
+            # Between { and }
+            code_str = self.arena.GetCodeString(brace_group.spids[0],
+                                                brace_group.spids[1])
+            result['code_str'] = code_str
+          else:
+            result['error'] = "Can't find code if block arg isn't literal like { }"
 
         # Append after validation
         self.hay_state.AppendResult(result)

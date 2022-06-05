@@ -2,12 +2,21 @@
 
 #### oil usage
 
-try {
-  $SH --location-file foo.hay --location-start-line 42 -c 'echo ()' 2>err.txt
-}
+set +o errexit
 
-cat err.txt | grep -o '^foo.hay:42: Unexpected'
+$SH --location-str foo.hay --location-start-line 42 -c 'echo ()' 2>err.txt
+
+cat err.txt | grep -o -- '-- foo.hay:42: Unexpected'
+
+
+# common idiom is to use -- to say it came from a file
+$SH --location-str '[ stdin ]' --location-start-line 10 -c 'echo "line 10";
+echo ()' 2>err.txt
+
+cat err.txt | fgrep -o -- '-- [ stdin ]:11: Unexpected'
 
 ## STDOUT:
-foo.hay:42: Unexpected
+-- foo.hay:42: Unexpected
+line 10
+-- [ stdin ]:11: Unexpected
 ## END

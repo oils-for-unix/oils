@@ -559,8 +559,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       line_reader = reader.FileLineReader(f, arena)
 
   # Pretend it came from somewhere else
-  if flag.location_file:
-    src = source.MainFile(flag.location_file)
+  if flag.location_str:
+    src = source.Synthetic(flag.location_str)
     if flag.location_start_line != -1:
       line_reader.SetLineOffset(flag.location_start_line)
 

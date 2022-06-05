@@ -70,6 +70,9 @@ module syntax
     -- 2 kinds of reparsing: backticks, and x+1 in a[x+1]=y
   | Reparsed(string what, int left_spid, int right_spid)
 
+    -- For --location-str
+  | Synthetic(string s)
+
   -- Logically, here's our record for a physical line.  For compactness, we
   -- TRANSPOSE it into 3 parallel arrays, so this record is UNUSED.
   -- line_record = (int line_num, string val, source src)

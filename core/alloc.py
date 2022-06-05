@@ -108,6 +108,35 @@ class Arena(object):
       self.line_num_strs[line_num] = s
     return s
 
+  def GetCodeString(self, lbrace_spid, rbrace_spid):
+    # type: (int, int) -> str
+    left_span = self.GetLineSpan(lbrace_spid)
+    right_span = self.GetLineSpan(rbrace_spid)
+
+    assert self.line_srcs[left_span.line_id] == self.line_srcs[right_span.line_id]
+
+    left_id = left_span.line_id
+    right_id = right_span.line_id
+    assert left_id <= right_id
+
+    left_col = left_span.col
+    right_col = right_span.col
+
+    parts = []
+
+    # first incomplete line
+    parts.append(' ' * left_col)  # pad with spaces so column numbers are the same
+    parts.append(self.line_vals[left_id][left_col+1:])
+
+    # all the complete lines
+    for line_id in xrange(left_id + 1, right_id):
+      parts.append(self.line_vals[line_id])
+
+    # last incomplete line
+    parts.append(self.line_vals[right_id][:right_col])
+
+    return ''.join(parts)
+
   def GetLineSource(self, line_id):
     # type: (int) -> source_t
     return self.line_srcs[line_id]
