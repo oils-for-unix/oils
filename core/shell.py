@@ -521,13 +521,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
 
   if flag.c is not None:
-    arena.PushSource(source.CFlag())
+    src = source.CFlag()
     line_reader = reader.StringLineReader(flag.c, arena)  # type: reader._Reader
     if flag.i:  # -c and -i can be combined
       mutable_opts.set_interactive()
 
   elif flag.i:  # force interactive
-    arena.PushSource(source.Stdin(' -i'))
+    src = source.Stdin(' -i')
     line_reader = py_reader.InteractiveLineReader(
         arena, prompt_ev, hist_ev, line_input, prompt_state)
     mutable_opts.set_interactive()
@@ -535,21 +535,21 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   else:
     if script_name is None:
       if flag.headless:
-        arena.PushSource(source.Headless())
+        src = source.Headless()
         line_reader = None  # unused!
         # Not setting '-i' flag for now.  Some people's bashrc may want it?
       else:
         stdin = mylib.Stdin()
         if stdin.isatty():
-          arena.PushSource(source.Interactive())
+          src = source.Interactive()
           line_reader = py_reader.InteractiveLineReader(
               arena, prompt_ev, hist_ev, line_input, prompt_state)
           mutable_opts.set_interactive()
         else:
-          arena.PushSource(source.Stdin(''))
+          src = source.Stdin('')
           line_reader = reader.FileLineReader(stdin, arena)
     else:
-      arena.PushSource(source.MainFile(script_name))
+      src = source.MainFile(script_name)
       try:
         f = fd_state.Open(script_name)
       except (IOError, OSError) as e:
@@ -557,6 +557,14 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                     posix.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)
+
+  # Pretend it came from somewhere else
+  if flag.location_file:
+    src = source.MainFile(flag.location_file)
+    if flag.location_line_offset != -1:
+      line_reader.SetLineOffset(flag.location_line_offset)
+
+  arena.PushSource(src)
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.

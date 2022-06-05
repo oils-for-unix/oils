@@ -24,6 +24,11 @@ class _Reader(object):
     self.arena = arena
     self.line_num = 1  # physical line numbers start from 1
 
+  def SetLineOffset(self, n):
+    # type: (int) -> None
+    """For --location-line-offset"""
+    self.line_num = n
+
   def _GetLine(self):
     # type: () -> Optional[str]
     raise NotImplementedError()

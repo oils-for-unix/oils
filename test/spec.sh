@@ -879,6 +879,10 @@ all-and-smoosh() {
 # Oil Language
 #
 
+oil-usage() {
+  sh-spec spec/oil-usage.test.sh $OIL_LIST "$@"
+}
+
 oil-bin() {
   sh-spec spec/oil-bin.test.sh $OIL_LIST "$@"
 }
