@@ -8,7 +8,7 @@ import time
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import source, source_t
 
 from asdl import runtime
 
@@ -521,7 +521,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
 
   if flag.c is not None:
-    src = source.CFlag()
+    src = source.CFlag()  # type: source_t
     line_reader = reader.StringLineReader(flag.c, arena)  # type: reader._Reader
     if flag.i:  # -c and -i can be combined
       mutable_opts.set_interactive()
@@ -561,8 +561,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # Pretend it came from somewhere else
   if flag.location_file:
     src = source.MainFile(flag.location_file)
-    if flag.location_line_offset != -1:
-      line_reader.SetLineOffset(flag.location_line_offset)
+    if flag.location_start_line != -1:
+      line_reader.SetLineOffset(flag.location_start_line)
 
   arena.PushSource(src)
 

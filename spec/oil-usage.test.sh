@@ -3,7 +3,7 @@
 #### oil usage
 
 try {
-  $SH --location-file foo.hay --location-line-offset 42 -c 'echo ()' 2>err.txt
+  $SH --location-file foo.hay --location-start-line 42 -c 'echo ()' 2>err.txt
 }
 
 cat err.txt | grep -o '^foo.hay:42: Unexpected'

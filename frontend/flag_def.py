@@ -241,7 +241,7 @@ OSH_SPEC.LongFlag('--rcfile', args.String)
 
 # e.g. to pass data on stdin but pretend that it came from a .hay file
 OSH_SPEC.LongFlag('--location-file', args.String)
-OSH_SPEC.LongFlag('--location-line-offset', args.Int)
+OSH_SPEC.LongFlag('--location-start-line', args.Int)
 
 _AddShellOptions(OSH_SPEC)
 
