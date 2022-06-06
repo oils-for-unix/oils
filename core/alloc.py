@@ -122,7 +122,7 @@ class Arena(object):
     left_col = left_span.col  # 0-based indices
     right_col = right_span.col
 
-    parts = []
+    parts = []  # type: List[str]
     parts.append(' ' * (left_col+1))  # pad with spaces so column numbers are the same
 
     if left_id == right_id:

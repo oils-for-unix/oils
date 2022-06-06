@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./oil-runtime-errors.sh <function name>
+#   test/oil-runtime-errors.sh <function name>
 
 # NOTE: No set -o errexit, etc.
 
@@ -14,6 +14,22 @@ banner() {
   echo ===== CASE: "$@" =====
   echo
 }
+
+_osh-error-case-X() {
+  local expected_status=$1
+  shift
+
+  banner "$@"
+  echo
+  $OSH -c "$@"
+
+  # NOTE: This works with osh, not others.
+  local status=$?
+  if test $status != $expected_status; then
+    die "Expected status $expected_status, got $status"
+  fi
+}
+
 
 _error-case-X() {
   local expected_status=$1
@@ -130,6 +146,80 @@ test-oil-expr-eval() {
   _expr-error-case 'case $[42 / 0] { (*) echo hi ;; }; echo OK'
 
   _expr-error-case 'var d = {}; for x in $[d->zzz] { echo hi }'
+}
+
+test-hay() {
+  _error-case-X 127 '
+hay define package user TASK
+
+hay eval :result {
+  package foo {
+    oops
+  }
+
+  bad 2
+}
+'
+
+  ### forgot parse_equals: tries to execute version as command
+  _error-case-X 127 '
+hay define package user TASK
+
+hay eval :result {
+  package foo {
+    version = 1
+  }
+}
+'
+
+  ### shell assignment
+  _error-case-X 2 '
+hay define package user TASK
+
+hay eval :result {
+  package foo {
+    version=1
+  }
+}
+'
+
+  # forgot hay eval -- error message is about 'unexpected typed args, which
+  # isn't great'
+  # TODO: add a hint about 'hay eval'
+
+  _error-case-X 1 '
+hay define package TASK
+
+package foo {
+  echo "forgot hay eval"
+}
+'
+}
+
+
+test-hay-osh() {
+   # forgot parse_brace
+  _osh-error-case-X 2 '
+hay define package TASK
+
+package foo {
+  version = 1
+}
+'
+
+   # forgot parse_equals
+  _osh-error-case-X 127 '
+shopt --set parse_brace
+
+hay define package TASK
+
+hay eval :result {
+  package foo {
+    version = 1
+  }
+}
+'
+
 }
 
 soil-run() {

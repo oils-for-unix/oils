@@ -673,7 +673,7 @@ class OilPrinter(object):
       # { echo hi; } -> do { echo hi }
       # For now it might be OK to keep 'do { echo hi; }
       #left_spid, right_spid = node.spids
-      (left_spid,) = node.spids
+      left_spid, _ = node.spids
 
       self.cursor.PrintUntil(left_spid)
       self.cursor.SkipUntil(left_spid + 1)
