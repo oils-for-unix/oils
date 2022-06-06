@@ -131,7 +131,7 @@ stateful            test/stateful.sh soil-run                    _tmp/spec/state
 arena               test/arena.sh soil-run                       -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
-oil-runtime-errors  test/oil-runtime-errors.sh run-all-with-osh  -
+oil-runtime-errors  test/oil-runtime-errors.sh soil-run          -
 oil-spec            test/spec.sh oil-all-serial                  _tmp/spec/oil-language/oil.html
 tea-spec            test/spec.sh tea-all-serial                  _tmp/spec/tea-language/tea.html
 oil-large           oil_lang/run.sh soil-run                     -

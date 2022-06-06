@@ -51,8 +51,7 @@ _should-run() {
   fi
 }
 
-
-regex_literals() {
+test-regex-literals() {
   set +o errexit
 
   _should-run "var sq = / 'foo'+ /"
@@ -83,7 +82,7 @@ regex_literals() {
   '
 }
 
-undefined_vars() {
+test-undefined-vars() {
   set +o errexit
 
   _error-case 'echo hi; const y = 2 + x + 3'
@@ -98,7 +97,7 @@ undefined_vars() {
   _error-case 'setvar a = undef'  # PlaceMutation
 }
 
-oil_word_eval() {
+test-oil-word-eval() {
   set +o errexit
 
   _error-case 'echo $maybe("foo")'
@@ -111,7 +110,7 @@ oil_word_eval() {
   _error-case 'const x = [1, 2]; echo $x'
 }
 
-oil_expr_eval() {
+test-oil-expr-eval() {
   set +o errexit
 
   _expr-error-case 'echo $[42 / 0 ]'
@@ -133,27 +132,12 @@ oil_expr_eval() {
   _expr-error-case 'var d = {}; for x in $[d->zzz] { echo hi }'
 }
 
-_run-test() {
-  local name=$1
-
-  bin/osh -O oil:upgrade -- $0 $name
-}
-
-run-all-with-osh() {
-  local status=0
-  for t in regex_literals undefined_vars oil_word_eval oil_expr_eval; do
-    _run-test $t
-    status=$?
-    if test $status != 0; then
-      die "*** Test $t failed with status $status"
-    fi
-  done
-
-  return 0 
+soil-run() {
+  run-test-funcs
 }
 
 run-for-release() {
-  run-other-suite-for-release oil-runtime-errors run-all-with-osh
+  run-other-suite-for-release oil-runtime-errors run-test-funcs
 }
 
 "$@"
