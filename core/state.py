@@ -502,9 +502,6 @@ def MakeOilOpts():
   opt0_array = InitOpts()
   _SetGroup(opt0_array, consts.OIL_ALL, True)
 
-  # shopt -- set parse_equals
-  opt0_array[option_i.parse_equals] = True
-
   no_stack = None  # type: List[bool]
   opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
 

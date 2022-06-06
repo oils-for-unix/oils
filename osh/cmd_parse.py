@@ -479,6 +479,7 @@ class CommandParser(object):
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
+    self.allow_block_attrs = False
     # Note: VarChecker is instantiated with each CommandParser, which means
     # that two 'proc foo' -- inside a command sub and outside -- don't
     # conflict, because they use different CommandParser instances.  I think
@@ -667,6 +668,10 @@ class CommandParser(object):
     words = []  # type: List[compound_word]
     typed_args = None  # type: Optional[ArgList]
     block = None  # type: Optional[BraceGroup]
+
+    first_word_caps = False  # does first word look like Caps, but not CAPS
+
+    i = 0
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:
@@ -678,7 +683,13 @@ class CommandParser(object):
           # Treat { and } more like operators
           if self.c_id == Id.Lit_LBrace:
             if self.allow_block:  # Disabled for if/while condition, etc.
+
+              # allow x = 42
+              if first_word_caps:
+                self.allow_block_attrs = True
               block = self.ParseBraceGroup()
+              self.allow_block_attrs = False
+
             if 0:
               print('--')
               block.PrettyPrint()
@@ -691,6 +702,13 @@ class CommandParser(object):
 
         w = cast(compound_word, self.cur_word)  # Kind.Word ensures this
         words.append(w)
+        if i == 0:
+          ok, word_str, quoted = word_.StaticEval(w)
+          # Foo { a = 1 } is OK, but not foo { a = 1 } or FOO { a = 1 }
+          if (ok and len(word_str) and
+              word_str[0].isupper() and not word_str.isupper()):
+            first_word_caps = True
+            #log('W %s', word_str)
 
       elif self.c_id == Id.Op_LParen:
         # 1. Check that there's a preceding space
@@ -720,6 +738,7 @@ class CommandParser(object):
         break
 
       self._Next()
+      i += 1
     return redirects, words, typed_args, block
 
   def _MaybeExpandAliases(self, words):
@@ -980,11 +999,6 @@ class CommandParser(object):
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
     if len(preparsed_list):
       left_token, _, _, _ = preparsed_list[0]
-
-      # Disallow 'PYTHONPATH=. foo.py' when bare assignment 'PYTHONPATH = "."' is on
-      if self.parse_opts.parse_equals() and len(suffix_words):
-        p_die('Use env to set the environment (parse_equals is on)',
-              token=left_token)
 
       # Disallow X=Y when setvar X = 'Y' is idiomatic.  (Space sensitivity is bad.)
       if not self.parse_opts.parse_sh_assign() and len(suffix_words) == 0:
@@ -2014,7 +2028,7 @@ class CommandParser(object):
           not word_.IsVarLike(cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
 
-      # Parse x = 1+2*3 when parse_equals is set.
+      # Parse x = 1+2*3 when inside HayNode { } blocks
       parts = cur_word.parts
       if self.parse_opts.parse_equals() and len(parts) == 1:
         part0 = parts[0]
@@ -2024,12 +2038,17 @@ class CommandParser(object):
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookPastSpace() == Id.Lit_Equals):
 
-            # Note: no static var_checker.Check() for bare assignment
-            enode = self.w_parser.ParseBareDecl()
-            self._Next()  # Somehow this is necessary
-            # TODO: Use BareDecl here.  Well, do that when we treat it as const
-            # or lazy.
-            return command.VarDecl(None, [name_type(tok, None)], enode)
+            if self.allow_block_attrs:
+              # Note: no static var_checker.Check() for bare assignment
+              enode = self.w_parser.ParseBareDecl()
+              self._Next()  # Somehow this is necessary
+              # TODO: Use BareDecl here.  Well, do that when we treat it as const
+              # or lazy.
+              return command.VarDecl(None, [name_type(tok, None)], enode)
+            else:
+              self._Next()
+              self._Peek()
+              p_die('Unexpected = (Hint: use const/var/setvar, or quote it)', word=self.cur_word)
 
       # echo foo
       # f=(a b c)  # array

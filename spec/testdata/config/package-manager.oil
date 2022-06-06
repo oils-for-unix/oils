@@ -1,7 +1,7 @@
-package unzip
+Package unzip
 
 
-package cppunit {
+Package cppunit {
   version = ">1"
 }
 
@@ -13,6 +13,6 @@ package cppunit {
 # - It has to push it an evaluate the block in a context.
 # - Just like bin/oil has to push it and evaluate the block in a context.
 
-package cppunit {
+Package cppunit {
   version = ">1"
 }

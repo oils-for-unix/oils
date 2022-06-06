@@ -733,12 +733,6 @@ oil_expr() {
   # Disallowed unconditionally
   _oil-parse-error '=a'
 
-  # parse_equals
-  _oil-parse-error '
-shopt --set parse_equals
-name=val
-'
-
 }
 
 oil_expr_more() {
@@ -747,6 +741,60 @@ oil_expr_more() {
   # user must choose === or ~==
   _oil-parse-error 'if (5 == 5) { echo yes }'
 }
+
+oil_hay_assign() {
+  set +o errexit
+
+  _oil-parse-error '
+name=val
+'
+
+  _oil-parse-error '
+name = val
+'
+
+  _oil-parse-error '
+rule {
+  x = 42
+}
+'
+
+  _oil-parse-error '
+RULE {
+  x = 42
+}
+'
+
+  _oil-should-parse '
+Rule {
+  x = 42
+}
+'
+
+  _oil-should-parse '
+Rule X Y {
+  x = 42
+}
+'
+
+  _oil-should-parse '
+RULe {   # inconsistent but OK
+  x = 42
+}
+'
+
+  _oil-parse-error '
+hay eval :result {
+
+  Rule {
+    foo = 42
+  }
+
+  bar = 43   # parse error here
+}
+'
+}
+
 
 oil_string_literals() {
   set +o errexit
@@ -1298,6 +1346,7 @@ cases-in-strings() {
   proc_arg_list
   oil_expr
   oil_expr_more
+  oil_hay_assign
   oil_string_literals
   parse_backticks
   parse_dollar

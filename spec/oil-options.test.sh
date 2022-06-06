@@ -195,6 +195,7 @@ shopt -s nounset
 shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
+shopt -s parse_equals
 shopt -s parse_paren
 shopt -s parse_proc
 shopt -s parse_raw_string
@@ -505,32 +506,6 @@ done
 one
 two
 ## END
-
-#### parse_equals: allows bare assignment
-shopt -s parse_equals
-x = 1 + 2*3
-echo $x
-
-# still allowed since we didn't unset parse_sh_assign
-y=foo
-echo $y
-
-## STDOUT:
-7
-foo
-## END
-
-#### parse_equals: disallows ENV=val mycommand
-shopt --set parse_equals
-ENV=val echo hi
-## status: 2
-## stdout-json: ""
-
-#### parse_sh_assign: disallows var=val
-shopt --set oil:all
-var=val
-## status: 2
-## stdout-json: ""
 
 #### nullglob is on with oil:upgrade 
 write one *.zzz two

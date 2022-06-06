@@ -2,14 +2,14 @@
 
 use dialect sourcehut
 
-image = 'debian/buster'
+const image = 'debian/buster'
 
 # This should be an error, YUP
 # image = 'oops'
 
-packages = %(zip wget)
+const packages = %(zip wget)
 
-secrets = %(0123-abcd)
+const secrets = %(0123-abcd)
 
 TASK cpp {
   cd oil

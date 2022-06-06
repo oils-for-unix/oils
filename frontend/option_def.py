@@ -151,6 +151,11 @@ _BASIC_PARSE_OPTIONS = [
     'parse_at',  # @foo, @array(a, b)
     'parse_proc',  # proc p { ... }
     'parse_brace',  # cd /bin { ... }
+
+    # bare assignment 'x = 42' is allowed in Hay { } blocks, but disallowed
+    # everywhere else.  It's not a command 'x' with arg '='.
+    'parse_equals',
+
     'parse_paren',  # if (x > 0) ...
     'parse_raw_string',  # echo r'\'
     'parse_triple_quote',  # for ''' and """
@@ -288,9 +293,6 @@ def _Init(opt_def):
     opt_def.Add(name, default=default, groups=['oil:all'])
   for name, default in _AGGRESSIVE_RUNTIME_OPTIONS:
     opt_def.Add(name, default=default, groups=['oil:all'])
-
-  # For configuration files
-  opt_def.Add('parse_equals')
 
   # Off by default.
   opt_def.Add('parse_tea')

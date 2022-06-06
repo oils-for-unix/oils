@@ -48,9 +48,9 @@ proc f {
 ## END
 
 #### top-level dynamic check: const can't be be mutated
-shopt -s oil:all parse_equals
+shopt -s oil:all
 
-x = 'foo'
+const x = 'foo'
 echo x=$x
 const x = 'bar'
 echo x=$x
@@ -225,7 +225,7 @@ proc local-var {
 
 proc readonly-const {
   readonly x=1
-  x = 2
+  const x = 2
   echo x=$x
 }
 
@@ -357,27 +357,3 @@ outside=1
 outside=1
 ## END
 
-
-#### Bare Assignment Does Dynamic Checks, not Static
-shopt --set parse_equals
-
-proc bare {
-  x = 3
-  echo x=$x
-  x = 4  # already defined
-  echo x=$x
-}
-
-bare
-
-# Compare with this STATIC check
-proc myconst {
-  # const x = 3
-  # const x = 4  # already defined
-  echo x=$x
-}
-
-## status: 1
-## STDOUT:
-x=3
-## END

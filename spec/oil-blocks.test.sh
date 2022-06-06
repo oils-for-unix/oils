@@ -305,16 +305,16 @@ pushd 2
 
 shopt --set oil:all
 
-proc rule(s, b Block) {
+proc Rule(s, b Block) {
   echo "rule $s"
 }
 
 proc myrules(name) { 
-  rule $name-python { 
+  Rule $name-python { 
     kind = 'python'
   }
 
-  rule $name-cc {
+  Rule $name-cc {
     kind = 'cc'  # should NOT conflict
   }
 }

@@ -149,9 +149,10 @@ X [External Lang] BEGIN   END   when (awk)
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
-  [Oil Basic]     ... Start Migrating to Oil
+  [Oil Upgrade]   ... Migrate Existing Code to Oil
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
+                  parse_equals           x = 'val' in Caps { } config blocks
                   parse_paren            if (x > 0) ...
                   parse_proc             proc p { ... }
                   parse_raw_string       echo r'\' (command mode)
@@ -188,7 +189,6 @@ X [External Lang] BEGIN   END   when (awk)
                                          ... getopts
                   X old_syntax (-u)      [[   $(( ))  ${x%prefix}   ${a[@]}
                                          $$
-  [Hay Breaking]  parse_equals           x = 'val' (for cleaner config blocks)
   [Compatibility] compat_array           ${array} is ${array[0]}
                   eval_unsafe_arith      Recursively parse and evaluate
                   parse_dynamic_arith    LHS can contain variables

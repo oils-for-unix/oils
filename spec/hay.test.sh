@@ -132,10 +132,10 @@ status=127
 #### hay eval attr node, and JSON
 shopt --set parse_brace parse_equals
 
-hay define package user
+hay define Package User
 
 hay eval :result {
-  package foo {
+  Package foo {
     # not doing floats now
     int = 42
     bool = true
@@ -147,7 +147,7 @@ hay eval :result {
     #mydict = {alice: 10, bob: 20}
   }
 
-  user alice
+  User alice
 }
 
 # Note: using jq to normalize
@@ -158,7 +158,7 @@ diff -u - out.txt <<EOF
   "source": null,
   "children": [
     {
-      "type": "package",
+      "type": "Package",
       "args": [
         "foo"
       ],
@@ -176,7 +176,7 @@ diff -u - out.txt <<EOF
       }
     },
     {
-      "type": "user",
+      "type": "User",
       "args": [
         "alice"
       ]
@@ -271,18 +271,20 @@ shopt --set parse_paren parse_brace parse_equals parse_proc
 # Or should there be a --json flag?
 
 hay eval :result {
+
+  # note that 'const' is required because haynode isn't capitalized
   haynode parent alice {
-    age = '50'
+    const age = '50'
     
     haynode child bob {
-      age = '10'
+      const age = '10'
     }
 
     haynode child carol {
-      age = '20'
+      const age = '20'
     }
 
-    other = 'str'
+    const other = 'str'
   }
 }
 
@@ -392,12 +394,12 @@ status 2
 #### hay eval with shopt -s oil:all
 shopt --set parse_brace parse_equals parse_proc
 
-hay define package
+hay define Package
 
 const x = 'foo bar'
 
 hay eval :result {
-  package foo {
+  Package foo {
     # set -e should be active!
     #false
 
@@ -460,15 +462,15 @@ AFTER downloads/foo.tar.gz
 #### hay define and then an error
 shopt --set parse_brace parse_equals parse_proc
 
-hay define package/license user TASK
+hay define Package/License User TASK
 
 hay pp defs > /dev/null
 
 hay eval :result {
-  user bob
+  User bob
   echo "user $?"
 
-  package cppunit
+  Package cppunit
   echo "package $?"
 
   TASK build {
@@ -476,15 +478,15 @@ hay eval :result {
   }
   echo "TASK $?"
 
-  package unzip {
+  Package unzip {
     version = '1.0'
 
-    license FOO {
+    License FOO {
       echo 'inside'
     }
     echo "license $?"
 
-    license BAR
+    License BAR
     echo "license $?"
 
     zz foo
@@ -566,7 +568,7 @@ const path = "$REPO_ROOT/spec/testdata/config/package-manager.oil"
 
 const block = parse_hay(path)
 
-hay define package
+hay define Package
 const d = eval_hay(block)
 write 'level 0 children' $len(d['children'])
 write 'level 1 children' $len(d['children'][1]['children'])

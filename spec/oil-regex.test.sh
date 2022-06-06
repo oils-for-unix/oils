@@ -636,19 +636,19 @@ echo $pat
 # octdigit     ::=  "0"..."7"
 # hexdigit     ::=  digit | "a"..."f" | "A"..."F"
 
-shopt -s oil:all parse_equals  # Hm will need 'const'
+shopt -s oil:all
 
-DecDigit = / [0-9] /
-BinDigit = / [0-1] /
-OctDigit = / [0-7] /
-HexDigit = / [0-9 a-f A-F] /  # note: not splicing Digit into character class
+const DecDigit = / [0-9] /
+const BinDigit = / [0-1] /
+const OctDigit = / [0-7] /
+const HexDigit = / [0-9 a-f A-F] /  # note: not splicing Digit into character class
 
-DecInt   = / [1-9] ('_'? DecDigit)* | '0'+ ('_'? '0')* /
-BinInt   = / '0' [b B] ('_'? BinDigit)+ /
-OctInt   = / '0' [o O] ('_'? OctDigit)+ /
-HexInt   = / '0' [x X] ('_'? HexDigit)+ /
+const DecInt   = / [1-9] ('_'? DecDigit)* | '0'+ ('_'? '0')* /
+const BinInt   = / '0' [b B] ('_'? BinDigit)+ /
+const OctInt   = / '0' [o O] ('_'? OctDigit)+ /
+const HexInt   = / '0' [x X] ('_'? HexDigit)+ /
 
-Integer  = / %start (DecInt | BinInt | OctInt | HexInt) %end /
+const Integer  = / %start (DecInt | BinInt | OctInt | HexInt) %end /
 
 #echo $Integer
 
