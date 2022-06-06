@@ -119,21 +119,25 @@ class Arena(object):
     right_id = right_span.line_id
     assert left_id <= right_id
 
-    left_col = left_span.col
+    left_col = left_span.col  # 0-based indices
     right_col = right_span.col
 
     parts = []
+    parts.append(' ' * (left_col+1))  # pad with spaces so column numbers are the same
 
-    # first incomplete line
-    parts.append(' ' * left_col)  # pad with spaces so column numbers are the same
-    parts.append(self.line_vals[left_id][left_col+1:])
+    if left_id == right_id:
+      # the single line
+      parts.append(self.line_vals[left_id][left_col+1:right_col])
+    else:
+      # first incomplete line
+      parts.append(self.line_vals[left_id][left_col+1:])
 
-    # all the complete lines
-    for line_id in xrange(left_id + 1, right_id):
-      parts.append(self.line_vals[line_id])
+      # all the complete lines
+      for line_id in xrange(left_id + 1, right_id):
+        parts.append(self.line_vals[line_id])
 
-    # last incomplete line
-    parts.append(self.line_vals[right_id][:right_col])
+      # last incomplete line
+      parts.append(self.line_vals[right_id][:right_col])
 
     return ''.join(parts)
 

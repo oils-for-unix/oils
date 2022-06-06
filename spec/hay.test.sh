@@ -197,13 +197,38 @@ shopt --set parse_brace parse_equals
 hay define TASK
 
 hay eval :result {
-  TASK build {
-    echo hi
+  TASK { echo hi }
+
+  TASK {
+    echo one
+    echo two
   }
 }
 
 #= result
-json write (result)
+json write (result) | jq . > out.txt
+
+diff -u - out.txt <<'EOF'
+{
+  "source": null,
+  "children": [
+    {
+      "type": "TASK",
+      "args": [],
+      "location_str": "[ stdin ]",
+      "location_start_line": 6,
+      "code_str": "         echo hi "
+    },
+    {
+      "type": "TASK",
+      "args": [],
+      "location_str": "[ stdin ]",
+      "location_start_line": 8,
+      "code_str": "        \n    echo one\n    echo two\n  "
+    }
+  ]
+}
+EOF
 
 ## STDOUT:
 ## END

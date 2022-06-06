@@ -813,8 +813,9 @@ if mylib.PYTHON:
             src = self.arena.GetLineSource(line_span.line_id)
             line_num = self.arena.GetLineNumber(line_span.line_id)
 
-            result['location_file'] = ui.GetLineSourceString(self.arena,
-                                                             line_span.line_id)
+            # for the user to pass back to --location-str
+            result['location_str'] = ui.GetLineSourceString(self.arena,
+                                                            line_span.line_id)
             result['location_start_line'] = line_num
 
             # Between { and }
