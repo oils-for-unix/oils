@@ -848,21 +848,29 @@ class Transformer(object):
     state = 0
 
     i = 0
-    while i < n:
-      prefix, name, typ, default_val = self._ProcParam(children[i])
+    # TODO: enforce the order of params.  It should look like
+    # untyped* rest? typed*, which is while / if / while!
+    prefix, name, typ, default_val = self._ProcParam(children[i])
 
-      # TODO: enforce the order of params.  It should look like
-      # untyped* rest? typed*, which is while / if / while!
-      if prefix and prefix.id == Id.Expr_At:
-        rest = name
-      elif typ is None:
-        untyped.append(UntypedParam(prefix, name, default_val))
-      else:
-        if typ.val not in ('Expr', 'Block'):
-          p_die('proc param types should be Expr or Block', token=typ)
-        typed.append(TypedParam(name, typ, default_val))
-
+    while typ is None and not (prefix and prefix.id == Id.Expr_At) and i < n:
+      untyped.append(UntypedParam(prefix, name, default_val))
       i += 2
+      if i < n:
+        prefix, name, typ, default_val = self._ProcParam(children[i])
+
+    if prefix and prefix.id == Id.Expr_At and i < n:
+      rest = name
+      i += 2
+      if i < n:
+        prefix, name, typ, default_val = self._ProcParam(children[i])
+
+    while i < n:
+      if typ and (typ.val not in ('Expr', 'Block')):
+        p_die('proc param types should be Expr or Block', token=typ)
+      typed.append(TypedParam(name, typ, default_val))
+      i += 2
+      if i < n:
+        prefix, name, typ, default_val = self._ProcParam(children[i])
 
     return proc_sig.Closed(untyped, rest, typed)
 
