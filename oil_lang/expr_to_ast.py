@@ -848,8 +848,6 @@ class Transformer(object):
     state = 0
 
     i = 0
-    # TODO: enforce the order of params.  It should look like
-    # untyped* rest? typed*, which is while / if / while!
     prefix, name, typ, default_val = self._ProcParam(children[i])
 
     while typ is None and not (prefix and prefix.id == Id.Expr_At) and i < n:
