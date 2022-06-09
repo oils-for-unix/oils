@@ -865,7 +865,7 @@ class Transformer(object):
         prefix, name, typ, default_val = self._ProcParam(children[i])
 
     while i < n:
-      if typ and (typ.val not in ('Expr', 'Block')):
+      if (typ and (typ.val not in ('Expr', 'Block'))) or (prefix and prefix.id == Id.Expr_At):
         p_die('proc param types should be Expr or Block', token=typ)
       typed.append(TypedParam(name, typ, default_val))
       i += 2

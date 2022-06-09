@@ -268,3 +268,73 @@ loop
 brace
 ## END
 
+
+#### Proc with untyped* args
+
+shopt -s oil:all
+
+proc f(foo, bar) {
+  write params $foo $bar
+}
+f a b
+## STDOUT:
+params
+a
+b
+## END
+
+
+#### Proc with untyped* rest? args
+
+shopt -s oil:all
+
+proc f(foo, bar, @rest) {
+  write --sep ' ' -- $foo
+  write --sep ' ' -- $bar
+  write --sep ' ' -- @rest        # @ means "splice this array"
+}
+f a b c
+## STDOUT:
+a
+b
+c
+## END
+
+
+#### Proc with untyped* rest? typed* rest? args
+
+shopt -s oil:all
+
+proc f(foo, @rest, bar, @rest) {
+}
+f a b c d e
+echo status=$?
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
+
+
+#### Proc with untyped* rest? typed* args
+
+shopt -s oil:all
+
+proc p(foo, bar, @rest, b) {
+  echo hi
+}
+p a b c d
+## STDOUT:
+hi
+## END
+
+
+#### Proc with untyped* rest? typed* rest? args
+
+shopt -s oil:all
+
+proc p(foo, bar, @rest, @rest2, b Block) {
+}
+f a b c d e
+echo status=$?
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
