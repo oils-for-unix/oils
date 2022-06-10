@@ -4,7 +4,11 @@ Oil Source Code
 [git-repo]: https://github.com/oilshell/oil
 
 [![Build
-Status](https://github.com/oilshell/oil/actions/workflows/all-builds.yml/badge.svg)](https://github.com/oilshell/oil/actions/workflows/all-builds.yml)
+Status](https://github.com/oilshell/oil/actions/workflows/all-builds.yml/badge.svg)](https://github.com/oilshell/oil/actions/workflows/all-builds.yml) <a href="https://gitpod.io/from-referrer/">
+  <img src="https://img.shields.io/badge/Contribute%20with-Gitpod-908a85?logo=gitpod" alt="Contribute with Gitpod" />
+</a>
+
+
 
 [Oil][] is a new Unix shell.  It's our upgrade path from bash to a better
 language and runtime!  ([Why Create a New Unix Shell?][why] / [2019 FAQ][faq])
