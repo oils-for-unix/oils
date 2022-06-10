@@ -745,6 +745,10 @@ oil_expr_more() {
 oil_hay_assign() {
   set +o errexit
 
+  if _is-oil-native; then
+    return
+  fi
+
   _oil-parse-error '
 name=val
 '

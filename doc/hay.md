@@ -6,68 +6,167 @@ in_progress: true
 Hay - Domain-Specific Languages in Oil
 =====================================
 
-Slogans
+Hay is a way of using the syntax of the Oil shell to declare **data** and
+interleaved **code**.  Example:
 
-- Hay Ain't YAML
+    hay define Package/TASK  # declare a tree of Hay node types
+
+    Package cpython {        # a node that contains data
+      version = '3.9'
+
+      TASK build {           # a child node that contains code
+        ./configure
+        make
+      }
+    }
+
+This evaluates to a JSON tree, which you can consume from programs in any
+language (including Oil):
+
+    { "type": "Package",
+      "args": [ "cpython" ],
+      "attrs": { "version": "3.9" },
+      "children": [
+         { "type": "TASK",
+           "args": [ "build" ],
+           "code_str": "  ./configure\n  make\n"
+         }
+      ]
+    }
+
+Slogans:
+
+- *Oil Adds the Missing Declarative Part to Shell*
+  - It evaluates to JSON + Shell Scripts.
+- *Hay Ain't YAML*
+
+This describes how to use Hay, and gives motivating examples.
+
+<!--
   - although also Tcl, Lua, Python, Ruby
-- It evaluates to JSON + Shell Scripts
-- A mix of declarative and imperative
 - DSLs, Config Files, and More
 - For Dialects of Oil
 
 Use case examples
-
+-->
 
 <!-- cmark.py expands this -->
 <div id="toc">
 </div>
 
-## Concepts and Conventions
+## Use Cases
 
-- Attribute blocks look like `package cppunit { version = '1.0' }`
-- Shell blocks have a type that is ALL CAPS, like `TASK build { ... }`
+A common pattern in Unix and distributed systems is to mix data and shell code.
 
-### Shell vs Oil
+- init systems
+  - sysvinit embedded metadata in the **filename**
+  - Systemd
+- build systems
+  - Make
+  - CMake
+- Docker
+- Cluster managers like Kubernetes
+  - these are like a "distributed init"
+- YAML: CI services run in containers / VMs.
 
-Oil style, statically parsed:
+See Wiki for more.
+
+### Prior Art
+
+- UCL is based on Nginx config.
+  - Oil is roughly "puning"
+- HCL and UCL are similar, and HCL is for configuring cloud services.
+- Nix has its own language to configure Linux distros.
+- YAML uses JSON as a subset.
+
+The biggest difference are the ways to interleave **code** with data:
+
+- Code on the **outside** of hay blocks: "Staged programming" /
+  graph metaprogramming.
+  - Oil has an imperative programming model.  It's a little like Starlark.
+  - Guile / GNU Make.
+  - Tensorflow.
+- Code on the **inside**: unevaluated code that you can execute in **another
+  context**, like on a remote machine, Linux container, or virtual machine.
+
+## Overview of Features
+
+### Two Kinds of Nodes
+
+**Data**. Attribute blocks have a type that starts with a capital letter:
+
+    Package cpython {
+      version = '3.9'
+    }`
+
+**Code**. Shell blocks have a type that is ALL CAPS:
 
     TASK build {
-      cp @deps /tmp
+      ./configure
+      make
     }
 
-Shell style?  But then we need 2 args.
+### Bare Assignment
+
+In Oil, you assign variables like this:
+
+    const version = '3.9'
+
+Hay attribute nodes are a **special case** where this syntax is allowed:
+
+    Package cpython {
+       version = '3.9'   # no 'const', only within the block!
+    }
+
+### Oil versus Shell
+
+Hay files are parsed as Oil, not OSH.  That includes code nodes:
+
+    TASK build {
+      cp @deps /tmp   # Oil splicing syntax
+    }
+
+If you want to use shell, you can use two arguments, the second of which is a
+multi-line string:
 
     TASK build '''
-
       cp "${deps[@]}" /tmp
-
     '''
 
-## Functions
+## Three Ways to Use Hay
 
-- `parse_hay()`
-- `eval_hay()`
-- `_hay()`  -- for interactive debugging
-- `block_as_str()`
-  - or `shell_block_str()`.  Takes an unevaluated node BACK to a string
-  - uses arena
+### Inline: Not Sandboxed
 
-## Builtins
+### Inline: Sandboxed with `hay eval { }`
 
-- `hay` builtin
-  - `hay define`
-  - `hay pp` -- for debugging
-  - `hay rest`
-  - `hay eval { ... }`
-- `haynode` builtin is "aliased" by other types
+### Separate File: Sandboxed with `parse_hay()` and `eval_hay()`
 
-## Options
+## Interleaving Hay and Oil
 
-- `parse_equals` is very important
-- `_running_hay`
-- `sandbox:all` ?
+- Graph programming
+- Staged Programming
 
-## Schema for Output
+### Conditionals
+
+- YAML and Go templates.
+
+### Iteration
+
+### Abstraction with `proc`
+
+## Security Model
+
+### First Stage of Evaluation
+
+- Best effort
+
+### Second Stage of Evaluation
+
+- Use it
+
+## Reference
+
+### Schema for Output
 
 It's statically typed, except for attrs, which are controlled by the user.
 
@@ -76,32 +175,51 @@ It's statically typed, except for attrs, which are controlled by the user.
 
     Node =
       # package cppunit { version = '1.0'; user bob }
-      Attr (type Str,
-            name Str,
+      Data (type Str,
+            args Str[],  # list of strings
             attrs Map[Str, Any],
             children List[Node])
+
       # TASK build { configure; make }
-    | Shell(type Str,
-            name Str,
-            block Block)
+    | Code(type Str,
+            args Str[],
+            location_str Str,
+            location_start_line Int,
+            code_str Str)
 
 
-- So Attr nodes may or may not be leaf nodes.
-- Shell nodes are always leaf nodes.
+Note that:
 
-## Conditionals, Iteration, Abstraction
+- Code nodes are always leaf nodes.
+- Data nodes may or may not be leaf nodes.
 
-- Graph programming
-- Staged Programming
+### Shell Builtins
 
-## Use Cases
+- `hay` builtin
+  - `hay define`
+  - `hay pp` -- for debugging
+  - `hay reset`
+  - `hay eval { ... }`
+- `haynode` builtin is "aliased" by other names: `Package` and `TASK`
+  
+### Functions
 
-See Wiki.
+- `parse_hay()`
+- `eval_hay()`
+- `_hay()`  -- for interactive debugging
 
-## Patterns / Style
+### Options
+
+- `parse_brace` is very important
+- `parse_equals` inside attribute nodes
+- `_running_hay`
+- `sandbox:all` ?
 
 
-### Attributes vs. Functions
+
+## Style
+
+### Attributes vs. Procs
 
 Choose:
 
@@ -109,6 +227,11 @@ Choose:
 
     user = 'alice'  # for plain attributes
 
+
+### Attributes vs. Flags
+
+Hay words shouldn't take flags or `--`.  Flags are for key-value pairs, and
+that is already covered by blocks.
 
 ### Dicts vs. Blocks
 
@@ -135,6 +258,13 @@ If you only want one object you can use a dict, like:
       }
     }
 
+
+## Usage Patterns
+
+### Using Oil for the Second Stage
+
+### Using Python for the Second Stage
+
 ### Debian `.d` Dirs
 
 I think we can support `source with:
@@ -142,12 +272,6 @@ I think we can support `source with:
 
     shopt --set sandbox:all
     shopt --unset sandbox_source_builtin  # ?
-
-### No Flags
-
-Hay words shouldn't take flags or `--`.  Flags are for key-value pairs, and
-that is already covered by blocks.
-
 
 ### Parallel Loading?
 
