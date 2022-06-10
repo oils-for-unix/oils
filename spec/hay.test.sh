@@ -101,32 +101,100 @@ hay eval :foo {
     echo bar
   }
 }
-## status: 1
+## status: 127
 ## STDOUT:
 foo
 ## END
 
-#### hay names only visible in 'hay eval' block
-shopt --set parse_brace
+#### hay names at top level
+shopt --set parse_brace parse_at
 shopt --unset errexit
 
-hay define package
+hay define Package
 
-package cppunit
+Package one
 echo status=$?
 
+setvar args = _hay()['children'][0]['args']
+write --sep ' ' $len(_hay()['children']) @args
+
 hay eval :result {
-  package cppunit
+  Package two
   echo status=$?
 }
 
-package cppunit
+setvar args = result['children'][0]['args']
+write --sep ' ' $len(result['children']) @args
+
+Package three
 echo status=$?
 
+setvar args = _hay()['children'][0]['args']
+write --sep ' ' $len(_hay()['children']) $[_hay()['children'][0]['args'][0]]
+
 ## STDOUT:
-status=127
 status=0
-status=127
+1 one
+status=0
+1 two
+status=0
+1 three
+## END
+
+#### builtins an externals not available in hay eval
+shopt --set parse_brace
+shopt --unset errexit
+
+hay define Package
+
+try {
+  hay eval :result {
+    Package foo {
+      /bin/ls
+    }
+  }
+}
+echo "status $_status"
+
+try {
+  hay eval :result {
+    cd /tmp
+  }
+}
+echo "status $_status"
+
+## STDOUT:
+status 127
+status 127
+## END
+
+#### procs in hay eval
+shopt --set parse_brace parse_at parse_proc
+
+hay define Package
+
+proc outside {
+  echo outside
+  Package OUT
+}
+
+hay eval :result {
+  outside
+
+  proc inside {
+    echo inside
+  }
+
+  inside
+}
+
+const args = result['children'][0]['args']
+write --sep ' ' -- $len(result['children']) @args
+
+## STDOUT:
+outside
+inside
+1 OUT
 ## END
 
 #### hay eval attr node, and JSON
@@ -420,6 +488,7 @@ foo bar
 shopt --set oil:all parse_equals
 
 hay define package
+hay define deps/package
 
 hay eval :result {
 
@@ -429,8 +498,6 @@ hay eval :result {
     echo "location = https://example.com/$URL_PATH"
     echo "backup = https://archive.example.com/$URL_PATH"
   }
-
-  hay define deps/package
 
   # Note: PushTemp() happens here
   deps spam {

@@ -745,7 +745,7 @@ oil_expr_more() {
 oil_hay_assign() {
   set +o errexit
 
-  if _is-oil-native; then
+  if is-oil-native; then
     return
   fi
 

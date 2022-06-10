@@ -215,14 +215,31 @@ class ShellExecutor(vm._Executor):
           status = self.cmd_ev.RunProc(proc_node, argv[1:], arg0_spid)
         return status
 
+    # Notes:
+    # - procs shadow hay names
+    # - hay names shadow normal builtins?  Should we limit to CAPS or no?
+    if self.hay_state.Resolve(arg0):
+      return self.RunBuiltin(builtin_i.haynode, cmd_val)
+
     builtin_id = consts.LookupNormalBuiltin(arg0)
+
+    if self.exec_opts._running_hay():
+      # Hay: limit the builtins that can be run
+      # - declare 'use dialect'
+      # - echo and write for debugging
+      # - no JSON?
+      if builtin_id in (
+          builtin_i.haynode, builtin_i.use, builtin_i.echo, builtin_i.write):
+        cmd_st.show_code = True  # this is a "leaf" for errors
+        return self.RunBuiltin(builtin_id, cmd_val)
+
+      self.errfmt.Print_('Unknown command %r while running hay' % arg0,
+                         span_id=arg0_spid)
+      return 127
 
     if builtin_id != consts.NO_INDEX:
       cmd_st.show_code = True  # this is a "leaf" for errors
       return self.RunBuiltin(builtin_id, cmd_val)
-
-    if self.exec_opts._running_hay() and self.hay_state.Resolve(arg0):
-      return self.RunBuiltin(builtin_i.haynode, cmd_val)
 
     environ = self.mem.GetExported()  # Include temporary variables
 

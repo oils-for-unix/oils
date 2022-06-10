@@ -343,7 +343,6 @@ class Hay(object):
     self.cur_defs = self.root_defs  # Same as ClearDefs()
     self.def_stack = [self.root_defs]
 
-    # same as ClearResult()
     node = self._MakeOutputNode()
     self.result_stack = [node]  # type: List[Dict[str, Any]]
     self.output = None  # type: Dict[str, Any]
@@ -357,15 +356,20 @@ class Hay(object):
 
   def PushEval(self):
     # type: () -> None
-    self.output = None  # clear it to make sure
+
+    # remove previous results
+    node = self._MakeOutputNode()
+    self.result_stack = [node]
+
+    self.output = None  # remove last reuslt
 
   def PopEval(self):
     # type: () -> None
 
-    # Save it
+    # Save the result
     self.output = self.result_stack[0]
 
-    # Now reset
+    # Clear results
     node = self._MakeOutputNode()
     self.result_stack = [node]
 
