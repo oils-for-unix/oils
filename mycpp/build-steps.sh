@@ -161,14 +161,9 @@ task() {
       export ASAN_OPTIONS='detect_leaks=0'
       ;;
 
-    examples/parse.py)
-      # imports mycpp.mylib
-      export PYTHONPATH=".:$REPO_ROOT/vendor:$REPO_ROOT"
-      ;;
-
     examples/*.py)
-      # for running most examples
-      export PYTHONPATH=".:$REPO_ROOT/vendor"
+      # we import mycpp.mylib and pylib.collections_
+      export PYTHONPATH=".:$REPO_ROOT/vendor:$REPO_ROOT"
       ;;
   esac
 

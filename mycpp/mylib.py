@@ -6,7 +6,7 @@ from __future__ import print_function
 import cStringIO
 import sys
 
-import collections_  # copy in this dir
+from pylib import collections_
 
 from typing import Tuple, Any
 
