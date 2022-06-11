@@ -56,3 +56,81 @@ status=127
 _status 127
 ## END
 
+
+#### builtins and externals not available in hay eval
+shopt --set parse_brace
+shopt --unset errexit
+
+hay define Package
+
+try {
+  hay eval :result {
+    Package foo {
+      /bin/ls
+    }
+  }
+}
+echo "status $_status"
+
+try {
+  hay eval :result {
+    cd /tmp
+  }
+}
+echo "status $_status"
+
+## STDOUT:
+status 127
+status 127
+## END
+
+#### procs in hay eval
+shopt --set parse_brace parse_at parse_proc
+
+hay define Package
+
+proc outside {
+  echo outside
+  Package OUT
+}
+
+hay eval :result {
+  outside
+
+  proc inside {
+    echo inside
+  }
+
+  inside
+}
+
+const args = result['children'][0]['args']
+write --sep ' ' -- $len(result['children']) @args
+
+## STDOUT:
+outside
+inside
+1 OUT
+## END
+
+
+#### variables mutated within hay eval don't persist
+shopt --set parse_brace
+
+hay define Package
+
+setvar x = 42
+
+hay eval :result {
+  Package foo
+
+  setvar x = 1
+}
+
+echo "x = $x"
+
+## STDOUT:
+x = 42
+## END
+
+

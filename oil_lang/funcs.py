@@ -73,10 +73,11 @@ class ParseHay(object):
 class EvalHay(object):
   """ eval_to_dict() """
 
-  def __init__(self, hay_state, mutable_opts, cmd_ev):
-    # type: (state.Hay, state.MutableOpts, cmd_eval.CommandEvaluator) -> None
+  def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
+    # type: (state.Hay, state.MutableOpts, state.Mem, cmd_eval.CommandEvaluator) -> None
     self.hay_state = hay_state
     self.mutable_opts = mutable_opts
+    self.mem = mem
     self.cmd_ev = cmd_ev
 
   if mylib.PYTHON:
@@ -92,7 +93,7 @@ class EvalHay(object):
       UP_block = block
       block = cast(value__Block, UP_block)
 
-      with state.ctx_HayEval(self.hay_state, self.mutable_opts):
+      with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
         unused = self.cmd_ev.EvalBlock(block.body)
 
       return self.hay_state.Result()

@@ -929,7 +929,7 @@ if mylib.PYTHON:
         if not block:  # 'package foo' is OK
           e_usage('eval expected a block')
 
-        with state.ctx_HayEval(self.hay_state, self.mutable_opts):
+        with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
           # Note: we want all haynode invocations in the block to appear as
           # our 'children', recursively
           unused = self.cmd_ev.EvalBlock(block)

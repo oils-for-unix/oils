@@ -1,0 +1,35 @@
+# A way that programs could annotate procs and external commands
+
+hay define Sig
+
+Sig grep {
+  pure = true
+}
+
+Sig foo {
+  pure = false
+}
+
+proc foo {
+  echo 'where is my sig?'
+}
+
+case ${1:-} {
+
+  # Is this a good pattern?
+  # You have to run it twice, which is not great.
+
+  (''|sigs)
+    json write (_hay())
+    ;;
+
+  ('procs')
+    pp proc
+    ;;
+
+  # TODO: would be nice to validate this
+  (*)
+    @ARGV
+    ;;
+}
+

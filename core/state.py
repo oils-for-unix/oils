@@ -304,11 +304,11 @@ class ctx_HayEval(object):
     - you should be able to define them, but not call the user ...
 
   """
-  def __init__(self, hay_state, mutable_opts):
-    # type: (Hay, MutableOpts) -> None
-    #log('pairs %s', pairs)
+  def __init__(self, hay_state, mutable_opts, mem):
+    # type: (Hay, MutableOpts, Mem) -> None
     self.hay_state = hay_state
     self.mutable_opts = mutable_opts
+    self.mem = mem
 
     if mutable_opts.Get(option_i._running_hay):
       # This blames the right 'hay' location
@@ -319,6 +319,7 @@ class ctx_HayEval(object):
     mutable_opts.Push(option_i._running_hay, True)
 
     self.hay_state.PushEval()
+    self.mem.PushTemp()
 
   def __enter__(self):
     # type: () -> None
@@ -327,6 +328,7 @@ class ctx_HayEval(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
 
+    self.mem.PopTemp()
     self.hay_state.PopEval()
 
     self.mutable_opts.Pop(option_i._running_hay)
