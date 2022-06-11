@@ -940,7 +940,7 @@ Yes (purely a style preference):
 
 - [Shell Language Idioms](shell-idioms.html).  This advice applies to shells
   other than Oil.
-- [Shell Language Deprecations](deprecations.html).  Shell constructs that Oil
+- [What Breaks When You Upgrade to Oil](upgrade-breakage.html).  Shell constructs that Oil
   users should avoid.
 - [Oil Fixes Shell's Error Handling (`errexit`)](error-handling.html).  Oil fixes the
   flaky error handling in POSIX shell and bash.

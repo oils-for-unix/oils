@@ -310,8 +310,8 @@ It will be used for future config-like use cases:
                                  # blocks may or may not introduce a new scope
     }
 
-When it's enabled, `x=foo` (no spaces) is disallowed to prevent confusiong.
-Use the `env` command instead:
+When it's enabled, `x=foo` (no spaces) is disallowed to prevent confusion.  Use
+the `env` command instead:
 
     env PYTHONPATH=. ./foo.py  # good
     PYTHONPATH=. ./foo.py`.    # disallowed because it would be confusing

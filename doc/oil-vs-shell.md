@@ -99,5 +99,6 @@ Here's an incomplete list of bash features that are preserved:
 
 - [Oil Languages Idioms](idioms.html) shows example of Oil and shell side by
   side.
-- [Shell Language Deprecations](deprecations.html).  These are breaking changes.
+- [What Breaks When You Upgrade to Oil](upgrade-breakage.html).  These are
+  breaking changes.
 - [Oil Expressions vs. Python](oil-vs-python.html)

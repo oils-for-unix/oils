@@ -84,12 +84,11 @@ readonly MARKDOWN_DOCS=(
   warts
   variables
   eggex
-  deprecations
+  upgrade-breakage
   qsn
 
   doc-toolchain
   doc-plugins
-  future
   idioms
   shell-idioms
   oil-language-faq

@@ -43,7 +43,7 @@ other shells**, but OSH will act as sort of a "runtime linter":
     # Abort on more errors, but fixes will still be compatible
     shopt -s strict:all 2>/dev/null || true 
 
-### Basic
+### Upgrade
 
 If you want to upgrade a script, and don't care about running under other
 shells, use this:
@@ -52,7 +52,7 @@ shells, use this:
     shopt --set oil:upgrade
 
 This second line may break a few things, but is designed to be an easy upgrade.
-See [Shell Language Deprecations](deprecations.html).
+See [What Breaks When You Upgrade to Oil](upgrade-breakage.html).
 
 ### Oil
 

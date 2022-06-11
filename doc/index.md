@@ -40,9 +40,9 @@ Reference:
 
 - [A Tour of the Oil Language](oil-language-tour.html).
 - [Oil vs. Shell Idioms](idioms.html).  Idioms that are nicer in Oil than shell.
-- [Shell Language Deprecations](deprecations.html).  When you turn on Oil,
-  there are some shell constructs you can no longer use.  We try to minimize
-  the length of this list.
+- [What Breaks When You Upgrade to Oil](upgrade-breakage.html).  When you turn
+  on Oil, there are some shell constructs you can no longer use.  We try to
+  minimize the length of this list.
 - [Oil Language FAQ](oil-language-faq.html).  Common questions about the
   language.
 - [Warts](warts.html).  Mostly for compatibility.

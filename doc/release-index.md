@@ -54,7 +54,7 @@ are **ready to read**:
 - The Oil language:
   - [A Tour of the Oil Language](doc/oil-language-tour.html)
   | [Oil vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
-  | [Shell Language Deprecations](doc/deprecations.html)
+  | [What Breaks When You Upgrade to Oil](doc/upgrade-breakage.html)
   | [Oil Language FAQ](doc/oil-language-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
   | [Oil Fixes Shell's Error Handling](doc/error-handling.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)
