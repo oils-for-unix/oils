@@ -844,6 +844,12 @@ if mylib.PYTHON:
 
           attrs = NewDict()  # type: Dict[str, Any]
           for name, cell in iteritems(block_attrs):
+
+            # User can hide variables with _ suffix
+            # e.g. for i_ in foo bar { echo $i_ }
+            if name.endswith('_'):
+              continue
+
             val = cell.val
             UP_val = val
             with tagswitch(val) as case:

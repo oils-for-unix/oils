@@ -70,8 +70,9 @@ hay define Rule
 
 Rule foo {
   var d = {}
-  for name in spam eggs ham {
-    setvar d[name] = true
+  # private var with _
+  for name_ in spam eggs ham {
+    setvar d[name_] = true
   }
 }
 
@@ -79,7 +80,7 @@ json write (_hay()) | jq '.children[0].attrs' > actual.txt
 
 # For loop name leaks!  Might want to make it "name_" instead!
 
-cat actual.txt
+#cat actual.txt
 
 diff -u - actual.txt <<EOF
 {
