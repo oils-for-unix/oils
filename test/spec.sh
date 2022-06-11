@@ -898,17 +898,22 @@ oil-assign() {
 }
 
 oil-blocks() {
-  sh-spec spec/oil-blocks.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/oil-blocks.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
 hay() {
-  sh-spec spec/hay.test.sh --osh-failures-allowed 9 \
+  sh-spec spec/hay.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
 hay-isolation() {
   sh-spec spec/hay-isolation.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+hay-meta() {
+  sh-spec spec/hay-meta.test.sh --osh-failures-allowed 6 \
     $OSH_LIST "$@"
 }
 

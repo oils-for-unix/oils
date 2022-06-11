@@ -429,7 +429,7 @@ foo bar
 
 #### Scope of Variables Inside Hay Blocks
 
-shopt --set oil:all parse_equals
+shopt --set oil:all
 
 hay define package
 hay define deps/package
@@ -592,9 +592,9 @@ level 1 children
 ## END
 
 
-#### Typed Args to Blocks
+#### Typed Args to Hay Node
 
-shopt --set oil:all parse_equals
+shopt --set oil:all
 
 hay define when
 
@@ -603,192 +603,12 @@ hay define when
 # 'haynode' could silently pass through blocks and typed args?
 
 when NAME (x > 0) { 
-  version = '1.0'
-  other = 'str'
+  const version = '1.0'
+  const other = 'str'
 }
 
-= _hay_result()
+= _hay()
 
 ## STDOUT:
 ## END
 
-
-#### Conditional Inside Blocks
-shopt --set oil:all parse_equals
-
-hay define rule
-
-const DEBUG = true
-
-# TODO: should rule :foo assign a variable?
-
-rule one {
-  if (DEBUG) {
-    deps = 'foo'
-  } else {
-    deps = 'bar'
-  }
-}
-
-= _hay_result()
-
-## STDOUT:
-## END
-
-
-#### Conditional Outisde Block
-shopt --set oil:all parse_equals
-
-hay define rule
-
-const DEBUG = true
-
-if (DEBUG) {
-  rule two {
-    deps = 'spam'
-  } 
-} else {
-  rule two {
-    deps = 'bar'
-  } 
-}
-
-= _hay_result()
-
-## STDOUT:
-## END
-
-
-#### Iteration Inside Block
-shopt --set oil:all parse_equals
-
-hay define rule
-
-rule foo {
-  var d = {}
-  for name in spam eggs ham {
-    setvar d->name = true
-  }
-}
-
-= _hay_result()
-
-## STDOUT:
-TODO
-## END
-
-
-#### Iteration Outside Block
-shopt --set oil:all parse_equals
-
-hay define rule
-
-for name in spam eggs ham {
-  rule $name {
-    path = "/usr/bin/$name"
-  }
-}
-
-= _hay_result()
-
-## STDOUT:
-TODO
-## END
-
-
-#### Proc Inside Block
-shopt --set oil:all parse_equals
-
-hay define rule
-
-# Does this do anything?
-# Maybe setref?
-proc p(name, :out) {
-  echo 'p'
-  setref out = name
-}
-
-rule hello {
-  var eggs = ''
-  var bar = ''
-
-  p spam :eggs
-  p foo :bar
-}
-
-= _hay_result()
-
-## STDOUT:
-TODO
-## END
-
-
-
-#### Proc That Defines Block
-shopt --set oil:all parse_equals
-
-hay define rule
-
-proc myrule(name) 
-  rule $name {
-    path = "/usr/bin/$name"
-  }
-}
-
-myrule spam
-myrule eggs
-myrule ham
-
-= _hay_result()
-
-
-## STDOUT:
-TODO
-## END
-
-#### Block param binding
-shopt --set parse_brace parse_proc
-
-proc package(name, b Block) {
-  = b
-
-  var d = eval_hay(b)
-
-  # NAME and TYPE?
-  setvar d->name = name
-  setvar d->type = 'package'
-
-  # Now where does d go?
-  # Every time you do eval_hay, it clears _config?
-  # Another option: HAY_CONFIG
-
-  if ('package_list' not in _config) {
-    setvar _config->package_list = []
-  }
-  _ append(_config->package_list, d)
-}
-
-package unzip {
-  version = 1
-}
-
-## STDOUT:
-## END
-
-
-#### Proc that doesn't take a block
-shopt --set parse_brace parse_proc
-
-proc task(name) {
-  echo "task name=$name"
-}
-
-task foo {
-  echo 'running task foo'
-}
-# This should be an error
-echo status=$?
-
-## STDOUT:
-status=1
-## END

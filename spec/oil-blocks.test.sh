@@ -328,3 +328,50 @@ rule foo-cc
 rule bar-python
 rule bar-cc
 ## END
+
+#### Block param binding
+shopt --set parse_brace parse_proc
+
+proc package(name, b Block) {
+  = b
+
+  var d = eval_hay(b)
+
+  # NAME and TYPE?
+  setvar d->name = name
+  setvar d->type = 'package'
+
+  # Now where does d go?
+  # Every time you do eval_hay, it clears _config?
+  # Another option: HAY_CONFIG
+
+  if ('package_list' not in _config) {
+    setvar _config->package_list = []
+  }
+  _ append(_config->package_list, d)
+}
+
+package unzip {
+  version = 1
+}
+
+## STDOUT:
+## END
+
+
+#### Proc that doesn't take a block
+shopt --set parse_brace parse_proc
+
+proc task(name) {
+  echo "task name=$name"
+}
+
+task foo {
+  echo 'running task foo'
+}
+# This should be an error
+echo status=$?
+
+## STDOUT:
+status=1
+## END
