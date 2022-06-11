@@ -40,7 +40,7 @@ Python.
 
 In Oil:
 
-- `if (x > 0)` is used for expressions
+- Use `if (x > 0)` for true/false expressions
 - Use the `forkwait` builtin for subshells, which are uncommon.  
   - It's like a sequence of the `fork` builtin (replacing `&`) and the `wait`
     builtin.
