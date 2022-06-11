@@ -65,15 +65,11 @@ def _DefaultValue(typ):
   default = None
 
   if type_name == 'map':
-    default = 'OrderedDict()'
-    #k_type = _GetCppType(typ.children[0])
-    #v_type = _GetCppType(typ.children[1])
-    #return 'new Dict<%s, %s>()' % (k_type, v_type)
+    # need this cast for MyPy
+    default = "cast('%s', OrderedDict())" % _MyPyType(typ)
 
   elif type_name == 'array':
     default = '[]'
-    #c_type = _GetCppType(typ.children[0])
-    #return 'new List<%s>()' % (c_type)
 
   elif type_name == 'maybe':
     child_typ = typ.children[0]
@@ -81,9 +77,6 @@ def _DefaultValue(typ):
       default = "''"
     else:
       default = 'None'
-
-    # TODO: maybe[int] and maybe[simple_sum] are invalid
-    #default = _DefaultValue(typ.children[0])
 
   elif type_name == 'int':
     #default = '-1'
@@ -320,15 +313,21 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     # TODO: Use the field_desc rather than the parse tree, for consistency.
     for f in all_fields:
-      default = _DefaultValue(f.typ)
+      d_str = _DefaultValue(f.typ)
 
-      # PROBLEM: Optional ints can't be zero!
-      # self.span_id = span_id or runtime.NO_SPID
-      # I don't want to add if statements checking against None?
-      # For now don't use optional ints.  We don't need it.
+      # PROBLEM: Optional ints are not supported.  I don't want to add if
+      # statements checking against None.  And 0 and -1 are valid values.
 
-      default_str = (' if %s is not None else %s' % (f.name, default)) if default else ''
-      self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str))
+      if d_str:
+        expr_str = ' if %s is not None else %s' % (f.name, d_str)
+        if 'OrderedDict' in d_str:
+          # OrderedDict() is not typed
+          expr_str += '  # type: ignore'
+      else:
+        expr_str = ''
+
+      # don't wrap the type comment
+      self.Emit('    self.%s = %s%s' % (f.name, f.name, expr_str), reflow=False)
 
     self.Emit('')
     if not self.pretty_print_methods:
