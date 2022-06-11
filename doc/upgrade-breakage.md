@@ -11,7 +11,12 @@ Only a few things break when you put this at the top of a shell script:
 
 This doc enumerates and explains them.
 
-On the other hand, there are many good things that happen:
+<div id="toc">
+</div>
+
+## Reasons for Upgrading
+
+First, let's emphasize the **good** things that happen when you upgrade:
 
 - You can write `if (x > 0)` instead of `if [ "$x" -gt 0 ]`.
 - You can pass blocks to commands, like `cd /tmp { echo $PWD }`
@@ -20,32 +25,29 @@ On the other hand, there are many good things that happen:
 - [Reliable Error Handling](error-handling.html) becomes the default.
 - ... and more
 
-You can also use `bin/osh` indefinitely, which means you **don't** have to read
-this doc.
+You can also use `bin/osh` indefinitely, in which case you **don't** need to
+read this doc.  [OSH]($xref:osh-language) is a highly compatible Unix shell.
 
-<div id="toc">
-</div>
+## Syntax Changes
 
-## Change in Syntax
-
-You're unlikely to hit these problems, but they're worth noting.
+Now onto the breakages.  Most of them are **unlikely**, but worth noting.
 
 ### `if ( )` and `while ( )` take expressions, not subshells
 
-Code like `if ( ls )` is valid shell, but it's almost always a
-**misuse** of the language.  Parentheses mean **subshell**, not grouping as in
-C or Python.
+Code like `if ( ls /tmp )` is valid shell, but it's almost always a **misuse**
+of the language.  Parentheses mean **subshell**, not grouping as in C or
+Python.
 
 In Oil:
 
 - `if (x > 0)` is used for expressions
-- the `forkwait` builtin is for subshells, which are uncommon.  
-  - Think of it as a sequence of the `fork` builtin (replaces `&`) and the
-    `wait` builtin.
+- Use the `forkwait` builtin for subshells, which are uncommon.  
+  - It's like a sequence of the `fork` builtin (replacing `&`) and the `wait`
+    builtin.
 
 No:
 
-    ( not_mutated=foo )
+    ( not_changed=foo )
     echo $not_changed
 
 Yes:
@@ -91,7 +93,7 @@ Use this Oil alias instead:
 
 (Option `parse_at` is part of group `oil:upgrade`.)
 
-### `r'c:\Users\'` is a raw string `'c:\Users\'`
+### `r'c:\Users\'` is a raw string
 
 The meaning of `\` within string literals can be confusing, so Oil
 distinguishes them like this:
@@ -115,7 +117,7 @@ Instead, write `'rfoo'` if that's what you mean.
 
 ## Deprecated
 
-### Extended Globs in Commands and Arrays
+### Extended Globs in Word Evaluation
 
 Like regular globs, the extended glob syntax is used in two ways:
 
@@ -127,7 +129,7 @@ Like regular globs, the extended glob syntax is used in two ways:
    - arrays like `local -a myarray=( !(*.cc|*.h) )`
    - Shell-style `for` loops
 
-Extended globs are **not** implemented in [Simple Word
+Extended globs are **not** supported in [Simple Word
 Evaluation](simple-word-eval.html), so you can't use them in the second way.
 
 Instead of extended globs, use the `find` command or [Egg
@@ -137,17 +139,7 @@ expressions](eggex.html).
 
 ## More Quotes May Be Needed
 
-### Unconditionally Changed
-
-- To avoid confusion with Oil's `=` operator, a word like `=x` can't be the first word in a command.
-  To invoke such commands, quote them like `'=x'`.
-- Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
-  as command names, quote them like `'proc'`.
-
-There is very little reason to use commands like `'=x` and `proc`, so you will
-likely never run into this!
-
-### Gated by Options
+### With `oil:upgrade` Options
 
 Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
 `@foo` to a command, quote it like `'@foo'`.
@@ -157,6 +149,16 @@ to a directory named `{`, quote it like `cd '{'`.
 
 Option `parse_equals`.  A statement like `x = 42` is a "bare assignment" or
 attribute.  To pass `=` to a command `x`, quote it like `x '='`.
+
+### Unconditionally
+
+- To avoid confusion with Oil's `=` operator, a word like `=x` can't be the first word in a command.
+  To invoke such commands, quote them like `'=x'`.
+- Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
+  as command names, quote them like `'proc'`.
+
+There is very little reason to use commands like `'=x'` and `'proc'`, so you
+will likely never run into this!
 
 ## Summary
 
@@ -168,8 +170,7 @@ There are other features that are **discouraged**, like `$(( x + 1 ))`, `(( i++
 the Oil expression language, but they can still be used.  See [Oil vs. Shell
 Idioms](idioms.html).
 
-## Related
-
-- [Known Differences Between OSH and Other Shells](known-differences.html)
+Also related: [Known Differences Between OSH and Other
+Shells](known-differences.html).
 
 
