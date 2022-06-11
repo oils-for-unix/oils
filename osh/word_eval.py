@@ -35,7 +35,7 @@ from core import ui
 from qsn_ import qsn
 from core.pyerror import log, e_die
 from frontend import consts
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, NewDict
 from mycpp import mylib
 from osh import braces
 from osh import glob_
@@ -1886,7 +1886,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       if tag == word_part_e.AssocArrayLiteral:
         part0 = cast(word_part__AssocArrayLiteral, UP_part0)
-        d = {}  # type: Dict[str, str]
+        d = NewDict()  # type: Dict[str, str]
         n = len(part0.pairs)
         i = 0
         while i < n:

@@ -17,7 +17,7 @@ item 3
 var mydict = {name: 'bob', age: 40}
 for key in (mydict) {
   echo "key $key"
-} | sort  # TODO: Fix iteration order
+}
 
 
 ## STDOUT:
@@ -78,7 +78,7 @@ for i, item in (['spam', 'eggs']) {
 #### Expression for loop with index: dict (TODO: define dict iter order)
 for key, value in ({name: 'bob', age: 40}) {
   echo "pair $key $value"
-} | sort
+}
 ## STDOUT:
 pair age 40
 pair name bob
@@ -87,7 +87,7 @@ pair name bob
 #### dict: index key value loop (TODO: define dict iter order)
 for i, key, value in ({name: 'bob', age: 40}) {
   echo "entry $i $key $value"
-} | sort
+}
 ## STDOUT:
 entry 0 age 40
 entry 1 name bob
@@ -122,7 +122,7 @@ echo ---
 declare -A A=([k]=v [k2]=v2)  # iterate over keys
 for key in (A) {
   echo $key
-} | sort
+}
 ## STDOUT:
 one
 two

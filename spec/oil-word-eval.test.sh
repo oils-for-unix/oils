@@ -9,7 +9,7 @@ argv.py @a
 #### Splice in assoc array
 shopt -s oil:upgrade
 declare -A A=(['foo']=bar, ['spam']=eggs)
-write -- @A | sort
+write -- @A
 ## STDOUT:
 foo
 spam

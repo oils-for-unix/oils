@@ -65,7 +65,7 @@ def _DefaultValue(typ):
   default = None
 
   if type_name == 'map':
-    default = '{}'
+    default = 'OrderedDict()'
     #k_type = _GetCppType(typ.children[0])
     #v_type = _GetCppType(typ.children[1])
     #return 'new Dict<%s, %s>()' % (k_type, v_type)

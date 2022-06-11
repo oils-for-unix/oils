@@ -218,6 +218,7 @@ namespace %s {
     # TODO: Remove Any once we stop using it
     f.write("""\
 from asdl import pybase
+from pylib.collections_ import OrderedDict
 from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
 """)
 
