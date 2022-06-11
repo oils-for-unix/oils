@@ -14,9 +14,10 @@ This doc enumerates and explains them.
 On the other hand, there are many good things that happen:
 
 - You can write `if (x > 0)` instead of `if [ "$x" -gt 0 ]`.
-- [Reliable Error Handling](error-handling.html) becomes the default.
+- You can pass blocks to commands, like `cd /tmp { echo $PWD }`
 - [Simple Word Evaluation](simple-word-eval.html): You can write `$var` instead
   of `"$var"`, and splice arrays with `@myarray`.
+- [Reliable Error Handling](error-handling.html) becomes the default.
 - ... and more
 
 You can also use `bin/osh` indefinitely, which means you **don't** have to read
@@ -32,8 +33,8 @@ You're unlikely to hit these problems, but they're worth noting.
 ### `if ( )` and `while ( )` take expressions, not subshells
 
 Code like `if ( ls )` is valid shell, but it's almost always a
-misunderstanding.  Parentheses mean **subshell**, not grouping as in C or
-Python.
+**misuse** of the language.  Parentheses mean **subshell**, not grouping as in
+C or Python.
 
 In Oil:
 
@@ -54,8 +55,8 @@ Yes:
     }
     echo $not_changed
 
-Note that in Oil, the idiom of running commands in a different directory
-doesn't require subshells:
+Note that the idiom of running commands in a different dir no longer requires
+a subshell:
 
 No:
 
@@ -70,11 +71,11 @@ Yes:
     echo $PWD  # restored
 
 
-- `shopt --set parse_paren` is part of group `oil:upgrade`
+(Option `parse_paren` is part of group `oil:upgrade`.)
 
 ### `@()` is spliced command sub, not extended glob 
 
-Oil doesn't have explicit word splitting, so we want `@(seq 3)` to be
+Oil doesn't have implicit word splitting, so we want `@(seq 3)` to be
 consistent with `$(hostname)`.  They're related in the same way that `@myarray`
 and `$mystr` are.
 
@@ -88,7 +89,7 @@ Use this Oil alias instead:
 
     echo ,(*.cc|*.h)
 
-- `shopt --set parse_at` is part of group `oil:upgrade`
+(Option `parse_at` is part of group `oil:upgrade`.)
 
 ### `r'c:\Users\'` is a raw string `'c:\Users\'`
 
@@ -110,7 +111,7 @@ The prefix **changes** the meaning of commands like:
 
 Instead, write `'rfoo'` if that's what you mean.
 
-- `shopt --set parse_raw_string` is part of group `oil:upgrade`
+(Option `parse_raw_string` is part of group `oil:upgrade`.)
 
 ## Deprecated
 
@@ -124,6 +125,7 @@ Like regular globs, the extended glob syntax is used in two ways:
 2. Word Evaluation
    - commands like `cp !(*.cc|*.h) /tmp`
    - arrays like `local -a myarray=( !(*.cc|*.h) )`
+   - Shell-style `for` loops
 
 Extended globs are **not** implemented in [Simple Word
 Evaluation](simple-word-eval.html), so you can't use them in the second way.
@@ -131,34 +133,30 @@ Evaluation](simple-word-eval.html), so you can't use them in the second way.
 Instead of extended globs, use the `find` command or [Egg
 expressions](eggex.html).
 
-- `shopt --set simple_word_eval` is part of group `oil:upgrade`
+(Option `simple_word_eval` is part of group `oil:upgrade`.)
 
 ## More Quotes May Be Needed
 
-Most of the following syntax changes are unlikely.
+### Unconditionally Changed
 
-`shopt --set parse_at`
+- To avoid confusion with Oil's `=` operator, a word like `=x` can't be the first word in a command.
+  To invoke such commands, quote them like `'=x'`.
+- Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
+  as command names, quote them like `'proc'`.
 
-- In Oil, `@` is used to splice arrays.  If you want to pass a string `@foo` to
-  a command, then quote it like `'@foo'`.
+There is very little reason to use commands like `'=x` and `proc`, so you will
+likely never run into this!
 
-`shopt --set parse_brace`
+### Gated by Options
 
-- Braces after commands start block arguments.  If you want to change to a
-  directory named `{`, then quote it like `cd '{'`.
+Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
+`@foo` to a command, quote it like `'@foo'`.
 
-`shopt --set parse_equals`
+Option `parse_brace`.  Braces after commands start block arguments.  To change
+to a directory named `{`, quote it like `cd '{'`.
 
-- `x = 42` is a "bare assignment" or attribute.  If you want to pass `=` to a
-  command `x`, then quote it like `x '='`.
-
-Unconditionally changed:
-
-- To avoid confusion with Oil's `=` operator, `=x` is disallowed as the first
-  word in a command.
-  - Quote it like `'=x'` if that's what you mean.
-- Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To
-  use them as command names (discouraged), quote them like `'proc'`.
+Option `parse_equals`.  A statement like `x = 42` is a "bare assignment" or
+attribute.  To pass `=` to a command `x`, quote it like `x '='`.
 
 ## Summary
 
