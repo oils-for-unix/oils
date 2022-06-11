@@ -15,7 +15,20 @@ Rule one {
   }
 }
 
-= _hay()
+json write (_hay()) | jq '.children[0]' > actual.txt
+
+diff -u - actual.txt <<EOF
+{
+  "type": "Rule",
+  "args": [
+    "one"
+  ],
+  "children": [],
+  "attrs": {
+    "deps": "foo"
+  }
+}
+EOF
 
 ## STDOUT:
 ## END
@@ -38,7 +51,13 @@ if (DEBUG) {
   } 
 }
 
-= _hay()
+json write (_hay()) | jq '.children[0].attrs' > actual.txt
+
+diff -u - actual.txt <<EOF
+{
+  "deps": "spam"
+}
+EOF
 
 ## STDOUT:
 ## END
@@ -52,14 +71,28 @@ hay define Rule
 Rule foo {
   var d = {}
   for name in spam eggs ham {
-    setvar d->name = true
+    setvar d[name] = true
   }
 }
 
-= _hay()
+json write (_hay()) | jq '.children[0].attrs' > actual.txt
+
+# For loop name leaks!  Might want to make it "name_" instead!
+
+cat actual.txt
+
+diff -u - actual.txt <<EOF
+{
+  "d": {
+    "spam": true,
+    "eggs": true,
+    "ham": true
+  }
+}
+EOF
+
 
 ## STDOUT:
-TODO
 ## END
 
 
@@ -74,20 +107,29 @@ for name in spam eggs ham {
   }
 }
 
-json write (_hay())
+json write (_hay()) | jq '.children[].attrs' > actual.txt
+
+diff -u - actual.txt <<EOF
+{
+  "path": "/usr/bin/spam"
+}
+{
+  "path": "/usr/bin/eggs"
+}
+{
+  "path": "/usr/bin/ham"
+}
+EOF
 
 ## STDOUT:
-TODO
 ## END
 
 
 #### Proc Inside Block
 shopt --set oil:all
 
-hay define rule
+hay define rule  # lower case allowed
 
-# Does this do anything?
-# Maybe setref?
 proc p(name, :out) {
   echo 'p'
   setref out = name
@@ -101,10 +143,18 @@ rule hello {
   p foo :bar
 }
 
-= _hay()
+json write (_hay()) | jq '.children[0].attrs' > actual.txt
+
+diff -u - actual.txt <<EOF
+{
+  "eggs": "spam",
+  "bar": "foo"
+}
+EOF
 
 ## STDOUT:
-TODO
+p
+p
 ## END
 
 
@@ -130,10 +180,20 @@ myrule spam
 myrule eggs
 myrule ham
 
-= _hay()
+json write (_hay()) | jq '.children[].attrs' > actual.txt
 
+diff -u - actual.txt <<EOF
+{
+  "path": "/usr/bin/spam"
+}
+{
+  "path": "/usr/bin/eggs"
+}
+{
+  "path": "/usr/bin/ham"
+}
+EOF
 
 ## STDOUT:
-TODO
 ## END
 

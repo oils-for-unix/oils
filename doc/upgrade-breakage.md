@@ -32,7 +32,7 @@ read this doc.  [OSH]($xref:osh-language) is a highly compatible Unix shell.
 
 Now onto the breakages.  Most of them are **unlikely**, but worth noting.
 
-### `if ( )` and `while ( )` take expressions, not subshells
+### `if ( )` and `while ( )` take expressions, not subshell commands
 
 Code like `if ( ls /tmp )` is valid shell, but it's almost always a **misuse**
 of the language.  Parentheses mean **subshell**, not grouping as in C or
@@ -93,7 +93,7 @@ Use this Oil alias instead:
 
 (Option `parse_at` is part of group `oil:upgrade`.)
 
-### `r'c:\Users\'` is a raw string
+### `r'c:\Users\'` is a raw string, not joined strings
 
 The meaning of `\` within string literals can be confusing, so Oil
 distinguishes them like this:
@@ -115,7 +115,7 @@ Instead, write `'rfoo'` if that's what you mean.
 
 (Option `parse_raw_string` is part of group `oil:upgrade`.)
 
-## Deprecated
+## Unsupported
 
 ### Extended Globs in Word Evaluation
 
@@ -130,10 +130,11 @@ Like regular globs, the extended glob syntax is used in two ways:
    - Shell-style `for` loops
 
 Extended globs are **not** supported in [Simple Word
-Evaluation](simple-word-eval.html), so you can't use them in the second way.
+Evaluation](simple-word-eval.html), so you can't use them in the second way
+after upgrading.
 
-Instead of extended globs, use the `find` command or [Egg
-expressions](eggex.html).
+You may want to use the `find` command or [Egg expressions](eggex.html)
+instead.
 
 (Option `simple_word_eval` is part of group `oil:upgrade`.)
 
