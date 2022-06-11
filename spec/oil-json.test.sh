@@ -35,8 +35,8 @@ json write --pretty=0 (mydict)
 # ignored
 json write --pretty=F --indent 4 (mydict)
 ## STDOUT:
-{"age":30,"name":"bob"}
-{"age":30,"name":"bob"}
+{"name":"bob","age":30}
+{"name":"bob","age":30}
 ## END
 
 #### json write in command sub
@@ -47,12 +47,12 @@ var x = $(json write (mydict))
 echo $x
 ## STDOUT:
 {
-  "age": 30,
-  "name": "bob"
+  "name": "bob",
+  "age": 30
 }
 {
-  "age": 30,
-  "name": "bob"
+  "name": "bob",
+  "age": 30
 }
 ## END
 

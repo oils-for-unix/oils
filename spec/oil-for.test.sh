@@ -21,8 +21,8 @@ for key in (mydict) {
 
 
 ## STDOUT:
-key age
 key name
+key age
 ## END
 
 
@@ -80,8 +80,8 @@ for key, value in ({name: 'bob', age: 40}) {
   echo "pair $key $value"
 }
 ## STDOUT:
-pair age 40
 pair name bob
+pair age 40
 ## END
 
 #### dict: index key value loop (TODO: define dict iter order)
@@ -89,8 +89,8 @@ for i, key, value in ({name: 'bob', age: 40}) {
   echo "entry $i $key $value"
 }
 ## STDOUT:
-entry 0 age 40
-entry 1 name bob
+entry 0 name bob
+entry 1 age 40
 ## END
 
 

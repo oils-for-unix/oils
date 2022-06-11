@@ -913,7 +913,7 @@ hay-isolation() {
 }
 
 hay-meta() {
-  sh-spec spec/hay-meta.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/hay-meta.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 

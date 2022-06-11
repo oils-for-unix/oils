@@ -20,6 +20,7 @@ from frontend import consts
 from oil_lang import objects
 from osh import braces
 from osh import word_compile
+from mycpp.mylib import NewDict
 
 import libc
 
@@ -489,7 +490,10 @@ class OilEvaluator(object):
           v = self._EvalExpr(e)
         values.append(v)
 
-      return dict(zip(keys, values))
+      d = NewDict()
+      for k, v in zip(keys, values):
+        d[k] = v
+      return d
 
     if node.tag == expr_e.ListComp:
       e_die('List comprehension reserved but not implemented', status=2)
