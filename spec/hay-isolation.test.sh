@@ -134,3 +134,36 @@ x = 42
 ## END
 
 
+
+#### hay at top level allows arbitrary commands
+shopt --set parse_brace
+
+hay define Package
+
+Package $(seq 2) {
+  seq 3 4
+}
+
+json write (_hay()) | jq '.children[0].args' > actual.txt
+
+diff -u - actual.txt <<EOF
+[
+  "1",
+  "2"
+]
+EOF
+
+hay eval :result {
+  echo inside
+  Package $(seq 2) {
+    seq 3 4
+  }
+}
+
+## status: 127
+## STDOUT:
+3
+4
+inside
+## END
+

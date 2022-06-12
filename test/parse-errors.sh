@@ -797,6 +797,25 @@ hay eval :result {
   bar = 43   # parse error here
 }
 '
+
+  _oil-parse-error '
+hay define TASK
+
+TASK build {
+  foo = 42
+}
+'
+
+  # CODE node nested inside Attr node.
+  _oil-parse-error '
+hay define Package/TASK
+
+Package libc {
+  TASK build {
+    foo = 42
+  }
+}
+'
 }
 
 
