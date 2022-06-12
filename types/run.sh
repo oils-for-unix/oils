@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./typed.sh <function name>
+#   types/run.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -40,7 +40,10 @@ pyann-patched() {
 typed-demo-asdl() {
   asdl/run.sh gen-typed-demo-asdl
 
-  typecheck --strict \
+  # We want to exclude ONLY pylib.collections_, but somehow --exclude
+  # '.*collections_\.py' does not do it.  So --follow-imports=silent.  Tried
+  # --verbose too
+  typecheck --strict --follow-imports=silent \
     _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
 
   PYTHONPATH=$PY_PATH asdl/typed_demo.py "$@"
@@ -50,8 +53,7 @@ check-arith() {
   # NOTE: There are still some Any types here!  We don't want them for
   # translation.
 
-  local strict='--strict'
-  MYPYPATH=. PYTHONPATH=$PY_PATH typecheck $strict \
+  MYPYPATH=. PYTHONPATH=$PY_PATH typecheck --strict \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 

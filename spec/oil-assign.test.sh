@@ -292,10 +292,10 @@ setvar d['name'] = 'mystr'
 setvar d['name'] = d
 = d
 ## STDOUT:
-(Dict)   {'name': 'foo'}
-(Dict)   {'name': 123}
-(Dict)   {'name': 'mystr'}
-(Dict)   {'name': {...}}
+(OrderedDict)   <'name': 'foo'>
+(OrderedDict)   <'name': 123>
+(OrderedDict)   <'name': 'mystr'>
+(OrderedDict)   <'name': ...>
 ## END
 
 #### circular list
