@@ -141,6 +141,37 @@ status=0
 1 three
 ## END
 
+#### Parsing Nested Attributes nodes (bug fix)
+
+shopt --set parse_brace parse_equals
+
+hay define Package/License
+
+Package glibc {
+  version = '1.0'
+
+  License {
+    path = 'LICENSE.txt'
+  }
+
+  other = 'foo'
+}
+
+json write (_hay()) | jq '.children[0].children[0].attrs' > actual.txt
+
+diff -u - actual.txt <<EOF
+{
+  "path": "LICENSE.txt"
+}
+EOF
+
+invalid = 'syntax'  # parse error
+
+## status: 2
+## STDOUT:
+## END
+
+
 #### hay eval attr node, and JSON
 shopt --set parse_brace parse_equals
 

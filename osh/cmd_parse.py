@@ -479,7 +479,7 @@ class CommandParser(object):
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
-    self.allow_block_attrs = False
+    self.allow_block_attrs = 0  # stack counter
     # Note: VarChecker is instantiated with each CommandParser, which means
     # that two 'proc foo' -- inside a command sub and outside -- don't
     # conflict, because they use different CommandParser instances.  I think
@@ -686,9 +686,10 @@ class CommandParser(object):
 
               # allow x = 42
               if first_word_caps:
-                self.allow_block_attrs = True
+                self.allow_block_attrs += 1
               block = self.ParseBraceGroup()
-              self.allow_block_attrs = False
+              if first_word_caps:
+                self.allow_block_attrs -= 1
 
             if 0:
               print('--')
@@ -2038,7 +2039,7 @@ class CommandParser(object):
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookPastSpace() == Id.Lit_Equals):
 
-            if self.allow_block_attrs:
+            if self.allow_block_attrs > 0:
               # Note: no static var_checker.Check() for bare assignment
               enode = self.w_parser.ParseBareDecl()
               self._Next()  # Somehow this is necessary

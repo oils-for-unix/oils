@@ -11,6 +11,12 @@ source types/common.sh
 
 readonly PY_PATH='.:vendor/'  # note: could consolidate with other scripts
 
+banner() {
+  echo "  -----"
+  echo "  $@"
+  echo "  -----"
+}
+
 deps() {
   set -x
   #pip install typing pyannotate
@@ -53,7 +59,7 @@ check-arith() {
   # NOTE: There are still some Any types here!  We don't want them for
   # translation.
 
-  MYPYPATH=. PYTHONPATH=$PY_PATH typecheck --strict \
+  MYPYPATH=. PYTHONPATH=$PY_PATH typecheck --strict --follow-imports=silent \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 
@@ -64,11 +70,11 @@ typed-arith-asdl() {
   export PYTHONPATH=$PY_PATH
   asdl/typed_arith_parse_test.py
 
-  echo '---'
+  banner 'parse'
   asdl/typed_arith_parse.py parse '40+2'
   echo
 
-  echo '---'
+  banner 'eval'
   asdl/typed_arith_parse.py eval '40+2+5'
   echo
 }
@@ -155,11 +161,14 @@ soil-run() {
   mypy_ --version
   set +x
 
+  banner 'typed-arith-asdl'
+  typed-arith-asdl
+
+  banner 'typed-demo-asdl'
   typed-demo-asdl
-  # Avoid spew on Travis.
-  typed-arith-asdl > /dev/null
 
   # Ad hoc list of additional files
+  banner 'typecheck-more-oil'
   typecheck-more-oil
 }
 
