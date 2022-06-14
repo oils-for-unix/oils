@@ -43,7 +43,7 @@ In Oil the parens in `if (x > 0)` denote a true/false expression.
 
 ### Simple Word Eval, no implicit split/glob/maybe
 
-Variables are expanded reliably *without* implicitly and often surprisingly getting
+Option `simple_word_eval`.  Variables are expanded reliably *without* implicitly and often surprisingly getting
 split, globbed, and omitted if empty (sensible default).
 
 Where string-magic-based, i.e. not array/dict-based, operation is really wanted or needed,
