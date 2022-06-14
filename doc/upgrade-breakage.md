@@ -115,9 +115,9 @@ Instead, write `'rfoo'` if that's what you mean.
 
 (Option `parse_raw_string` is part of group `oil:upgrade`.)
 
-## Unsupported Syntax
+## Unsupported Syntax, improved alternatives
 
-### No Extended Globs in Word Evaluation, but eggex
+### No Extended Globs in Simple Word Evaluation
 
 Like regular globs, the extended glob syntax is used in two ways:
 
