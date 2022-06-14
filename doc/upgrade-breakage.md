@@ -145,10 +145,10 @@ instead.
 Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
 as command names, quote them like `'proc'`.
 
-### `=foo` as first-word, is too similar to `= foo`
+### `=foo` as first-word (too similar to `= foo`)
 
-To avoid confusion with Oil's `=` operator, a word like `=foo` can't be the first word in a command.
-To invoke such commands, quote them like `'=x'`.
+To avoid confusion with Oil's `=` operator, words starting with `=` can't be the first word in a command.
+To invoke such commands, quote them like `'=foo'`.
 
 There is very little reason to use commands like `'proc'` an, `'=x'`, so you
 will likely never run into this!
