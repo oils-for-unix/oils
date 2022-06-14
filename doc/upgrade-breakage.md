@@ -138,7 +138,7 @@ instead.
 
 (Option `simple_word_eval` is part of group `oil:upgrade`.)
 
-## Syntax Parsed, if not quoted (usually ok)
+## Some Quotes May Be Needed (rare occasions)
 
 ### `@foo` as command or argument (now splice)
 
