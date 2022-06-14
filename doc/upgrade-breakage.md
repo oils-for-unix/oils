@@ -34,46 +34,11 @@ Now onto the breakages.  Most of them are **unlikely**, but worth noting.
 
 ### `if ( )` and `while ( )` take expressions, not subshell commands
 
-Code like `if ( ls /tmp )` is valid shell, but it's almost always a **misuse**
+Option `parse_paren`.  Code like `if ( ls /tmp )` is valid shell, but it's almost always a **misuse**
 of the language.  Parentheses mean **subshell**, not grouping as in C or
 Python.
 
-In Oil:
-
-- Use `if (x > 0)` for true/false expressions
-- Use the `forkwait` builtin for subshells, which are uncommon.  
-  - It's like a sequence of the `fork` builtin (replacing `&`) and the `wait`
-    builtin.
-
-No:
-
-    ( not_changed=foo )
-    echo $not_changed
-
-Yes:
-
-    forkwait {
-      setvar not_changed = 'foo'
-    }
-    echo $not_changed
-
-Note that the idiom of running commands in a different dir no longer requires
-a subshell:
-
-No:
-
-    ( cd /tmp; echo $PWD )
-    echo $PWD  # still the original value
-
-Yes:
-
-    cd /tmp {
-      echo $PWD 
-    }
-    echo $PWD  # restored
-
-
-(Option `parse_paren` is part of group `oil:upgrade`.)
+In Oil the parens in `if (x > 0)` denote a true/false expression.
 
 
 ### Simple Word Eval, no implicit split/glob/maybe
