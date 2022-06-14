@@ -138,7 +138,7 @@ instead.
 
 (Option `simple_word_eval` is part of group `oil:upgrade`.)
 
-## Some Strings Now Parsed, if not quoted (rarely a problem)
+## Parsed as Oil Syntax, if not quoted (rarely a problem)
 
 ### New first-word keywords (e.g. `proc`, `const`, `var`, `setvar`)
 
