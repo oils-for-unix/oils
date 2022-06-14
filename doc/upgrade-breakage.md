@@ -52,9 +52,9 @@ use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or the non-split
 
 ### `@()` is spliced command sub, not extended glob 
 
-Option `parse_at`.  As Oil doesn't have implicit word splitting, we want `@(seq 3)` to be the splitting
-variant of the command sub `$(seq 3)`.  They're related in the same way as `@myarray`
-and `$mystr` are.
+Option `parse_at`.  As Oil doesn't have implicit word splitting, we wanted `@(seq 3)` to be the splitting
+variant of the command sub `$(seq 3)`.  So, they're now related in the same way as `@myarray`
+and `$mystr`.
 
 This means that `@()` is no longer an extended glob, however `,()` is its substitute.
 
