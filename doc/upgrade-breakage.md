@@ -145,7 +145,7 @@ instead.
 Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
 as command names, quote them like `'proc'`.
 
-### `=foo` as first-word (too similar to `= foo`)
+### `=foo` as command (too similar to `= foo`)
 
 To avoid confusion with Oil's `=` operator, words starting with `=` can't be the first word in a command.
 To invoke such commands, quote them like `'=foo'`.
@@ -153,12 +153,12 @@ To invoke such commands, quote them like `'=foo'`.
 There is very little reason to use commands like `'proc'` an, `'=x'`, so you
 will likely never run into this!
 
-### `@foo` as argument (splices)
+### `@foo` as command or argument (now splice)
 
 Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
 `@foo` to a command, quote it like `'@foo'`.
 
-### `{` as argument (blocks)
+### `{` as argument (now block)
 
 Option `parse_brace`.  Braces after commands start block arguments.  To change
 to a directory named `{`, quote it like `cd '{'`.
