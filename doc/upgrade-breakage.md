@@ -138,15 +138,19 @@ instead.
 
 (Option `simple_word_eval` is part of group `oil:upgrade`.)
 
-## More Quotes May Be Needed
+## Rare strings parsed, if not quoted
 
-### With `oil:upgrade` Options
+### '@foo' as argument (parse_at)
 
 Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
 `@foo` to a command, quote it like `'@foo'`.
 
+### '{' as argument (parse_brace)
+
 Option `parse_brace`.  Braces after commands start block arguments.  To change
 to a directory named `{`, quote it like `cd '{'`.
+
+### '=foo' as first-word or argument (parse_equals)
 
 Option `parse_equals`.  A statement like `x = 42` is a "bare assignment" or
 attribute.  To pass `=` to a command `x`, quote it like `x '='`.
