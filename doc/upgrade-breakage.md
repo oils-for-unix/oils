@@ -35,7 +35,7 @@ Now onto the breakages.  Most of them are **unlikely**, but worth noting.
 ### `if ( )` and `while ( )` take expressions, not subshell commands
 
 Option `parse_paren`.  Code like `if ( ls /tmp )` is valid shell, but it's almost always a **misuse**
-of the language.  Parentheses mean **subshell**, not grouping as in C or
+of the language.  Because parentheses mean **subshell**, not grouping as in C or
 Python.
 
 In Oil the parens in `if (x > 0)` denote a true/false expression.
@@ -51,11 +51,11 @@ use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or the non-split
 
 ### `@()` is spliced command sub, not extended glob 
 
-As Oil doesn't have implicit word splitting, we want `@(seq 3)` to be
-consistent with `$(hostname)`.  They're related in the same way that `@myarray`
+As Oil doesn't have implicit word splitting, we want `@(seq 3)` to be the splitting
+variant of the command sub `$(seq 3)`.  They're related in the same way as `@myarray`
 and `$mystr` are.
 
-This means that `@()` is no longer extended glob, and `,()` is an alias.
+This means that `@()` is no longer an extended glob, however `,()` is its substitute.
 
 No:
 
@@ -101,7 +101,7 @@ Like regular globs, the extended glob syntax is used in two ways:
    - Bash boolean expressions like `[[ x == !(*.cc|*.h) ]]`
 2. Word Evaluation
    - commands like `cp !(*.cc|*.h) /tmp`
-   - arrays like `local -a myarray=( !(*.cc|*.h) )`
+   - array definitions like `local -a myarray=( !(*.cc|*.h) )`
    - Shell-style `for` loops
 
 Extended globs are **not** supported in [Simple Word
