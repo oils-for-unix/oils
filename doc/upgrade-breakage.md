@@ -115,7 +115,12 @@ Instead, write `'rfoo'` if that's what you mean.
 
 (Option `parse_raw_string` is part of group `oil:upgrade`.)
 
-## Unsupported Syntax, improved alternatives
+## Disabled Syntax, improved alternatives
+
+### No Implicit Split/Glob/Maybe of Variables
+
+Expanded variables are *not* automatically split, globbed, and omitted if empty (sensible default).
+Where needed use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or its non-splitting `$` counterpart.
 
 ### No Extended Globs in Simple Word Evaluation
 
