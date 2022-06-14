@@ -117,7 +117,7 @@ Instead, write `'rfoo'` if that's what you mean.
 
 ## Unsupported Syntax
 
-### No Extended Globs in Word Evaluation
+### No Extended Globs in Word Evaluation, but eggex
 
 Like regular globs, the extended glob syntax is used in two ways:
 
