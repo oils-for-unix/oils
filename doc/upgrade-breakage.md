@@ -75,9 +75,18 @@ Yes:
 
 (Option `parse_paren` is part of group `oil:upgrade`.)
 
+
+### Simple Word Eval, no implicit split/glob/maybe
+
+Expanded variables are *not* automatically split, globbed, and omitted if empty (sensible default).
+
+Where string-based, not array/dict-based, operation is really wanted or needed,
+use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or its non-splitting `$` counterpart.
+
+
 ### `@()` is spliced command sub, not extended glob 
 
-Oil doesn't have implicit word splitting, so we want `@(seq 3)` to be
+As Oil doesn't have implicit word splitting, we want `@(seq 3)` to be
 consistent with `$(hostname)`.  They're related in the same way that `@myarray`
 and `$mystr` are.
 
@@ -115,12 +124,8 @@ Instead, write `'rfoo'` if that's what you mean.
 
 (Option `parse_raw_string` is part of group `oil:upgrade`.)
 
+
 ## Disabled Syntax, improved alternatives
-
-### No Implicit Split/Glob/Maybe of Variables
-
-Expanded variables are *not* automatically split, globbed, and omitted if empty (sensible default).
-Where needed use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or its non-splitting `$` counterpart.
 
 ### No Extended Globs in Simple Word Evaluation
 
