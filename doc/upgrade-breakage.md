@@ -46,7 +46,7 @@ In Oil the parens in `if (x > 0)` denote a true/false expression.
 Expanded variables are *not* automatically split, globbed, and omitted if empty (sensible default).
 
 Where string-based, not array/dict-based, operation is really wanted or needed,
-use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or its non-splitting `$` counterpart.
+use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or the non-splitting `$` counterparts of the last two.
 
 
 ### `@()` is spliced command sub, not extended glob 
