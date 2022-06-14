@@ -54,7 +54,7 @@ src() {
 
 CASE-hello() {
 
-  desc "print the string 'hello world'"
+  desc "Print a string"
 
   # TODO:
   # - need to group these into a row somehow ...
@@ -63,31 +63,123 @@ CASE-hello() {
   # - show output in the HTML too
   #   - save that in a dir and then escape it
 
-  src oil <<EOF
+  src oil <<'EOF'
 # oil requires quotes
 echo 'hello world'
-echo "hello world"
+
+const name = 'world'
+echo "hello $name"
 EOF
 
-  # single quotes not supported?
-  src shpp <<EOF
+  src shpp <<'EOF'
 # no single quotes
 echo hello world
-echo "hello world"
+
+name = "world"
+echo "hello ${name}"  # braces required
 EOF
 }
 
 CASE-pipeline() {
-  desc 'Pipeline'
+  desc 'Pipeline and Glob'
+
+  touch src{1,2,3,4,5}
 
   src oil <<EOF
-seq 5 | sort -r | head -n 3
+ls src* | sort -r | head -n 3
 EOF
 
   src shpp <<EOF
-seq 5 | sort -r | head -n 3
+ls src* | sort -r | head -n 3
 EOF
 
+}
+
+CASE-try() {
+  desc 'Error Handling'
+
+  src oil <<'EOF'
+# TODO: Oil could expose strerror() like shpp
+
+try zzz
+if (_status === 127) {
+  echo "zzz not installed"
+}
+EOF
+
+  src shpp <<'EOF'
+try {
+  zzz
+} catch InvalidCmdException as ex {
+  print("zzz not installed [msg: ", ex, "]")
+}
+EOF
+}
+
+CASE-read() {
+  desc 'Read User Input'
+
+  src oil <<'EOF'
+echo hello | read --line
+
+# _line starts with _, so it's a
+# "register" mutated by the interpreter
+echo "line: $_line"
+EOF
+
+  src shpp <<'EOF'
+# not sure how to feed stdin
+
+line = read()
+print("line: ", line)
+EOF
+}
+
+# TODO: Sort by section
+CASE-ZZ-array() {
+  desc 'Use Arrays'
+
+  touch {foo,bar}.py
+
+  src oil <<'EOF'
+const array1 = ['physics', 'chemistry', 1997, 2000]
+const array2 = [1, 2, 3, 4, 5, 6, 7]
+
+write -- "array1[0]: $[array1[0]]"
+
+# TODO: Oil needs @[]
+const slice = array2[1:5]
+write -- "array2[1:5]" @slice
+
+# use the word language: bare words, glob, brace expansion
+const shell_style = %( README.md *.py {alice,bob}@example.com )
+write -- @shell_style
+EOF
+
+  src shpp <<'EOF'
+array1 = ["physics", "chemistry", 1997, 2000];
+array2 = [1, 2, 3, 4, 5, 6, 7 ];
+
+print("array1[0]: ", array1[0])
+print("array2[1:5]: ", array2[1:5])
+EOF
+
+}
+
+CASE-path() {
+  desc 'Test if path exists'
+
+  src oil <<'EOF'
+if test --exists /bin/grep {
+  echo 'file exists'
+}
+EOF
+
+  src shpp <<'EOF'
+if path("/bin/grep").exists() {
+  echo "file exists"
+}
+EOF
 }
 
 test-one() {
@@ -117,7 +209,7 @@ test-all() {
 }
 
 html-escape() {
-  sed 's/&/&amp;/g; s/</&lt;/g; s/>/&gt;/g' "$@"
+  sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' "$@"
 }
 
 html-footer() {
@@ -173,7 +265,7 @@ _html-all() {
   echo '<body class="width50">'
 
   cmark <<EOF
-# Shell vs. Shell
+# Shell Design Comparison
 
 This is a friendly comparison of the syntax of different shells!
 

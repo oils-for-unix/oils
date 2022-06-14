@@ -136,6 +136,10 @@ mycpp-benchmarks() {
   doc-preview $1 _tmp/mycpp-benchmarks/index.html oilshell.org/preview/benchmarks/mycpp
 }
 
+shell-vs-shell() {
+  doc-preview $1 _tmp/shell-vs-shell/index.html oilshell.org/preview/shell-vs-shell
+}
+
 file-to-share() {
   local user=$1
   local host=oilshell.org
