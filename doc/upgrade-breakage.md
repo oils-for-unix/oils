@@ -138,7 +138,7 @@ instead.
 
 (Option `simple_word_eval` is part of group `oil:upgrade`.)
 
-## New Strings Parsed, if not quoted (rarely a problem)
+## Some Strings Now Parsed, if not quoted (rarely a problem)
 
 ### New first-word keywords (e.g. `proc`, `const`, `var`, `setvar`)
 
@@ -153,17 +153,17 @@ To invoke such commands, quote them like `'=x'`.
 There is very little reason to use commands like `'proc'` an, `'=x'`, so you
 will likely never run into this!
 
-### `@foo` as argument (parse_at)
+### `@foo` as argument (splices)
 
 Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
 `@foo` to a command, quote it like `'@foo'`.
 
-### `{` as argument (parse_brace)
+### `{` as argument (blocks)
 
 Option `parse_brace`.  Braces after commands start block arguments.  To change
 to a directory named `{`, quote it like `cd '{'`.
 
-### `=foo` as argument (parse_equals)
+### `=` as argument (bare assignments)
 
 Option `parse_equals`.  A statement like `x = 42` is a "bare assignment" or
 attribute.  To pass `=` to a command `x`, quote it like `x '='`.
