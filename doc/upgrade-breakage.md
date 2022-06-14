@@ -140,7 +140,7 @@ instead.
 
 ## Parsed as Oil Syntax, if not quoted (rarely a problem)
 
-### New first-word keywords (e.g. `proc`, `const`, `var`, `setvar`)
+### New first-word keywords (`proc`, `var` etc.)
 
 Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
 as command names, quote them like `'proc'`.
