@@ -5,7 +5,7 @@ default_highlighter: oil-sh
 What Breaks When You Upgrade to Oil
 ===================================
 
-Only a few things break when you put this at the top of a shell script:
+Only a few things break when you enable this option group at the top of a shell script:
 
     shopt --set oil:upgrade
 
@@ -52,7 +52,7 @@ use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or the non-split
 
 ### `@()` is spliced command sub, not extended glob 
 
-As Oil doesn't have implicit word splitting, we want `@(seq 3)` to be the splitting
+Option `parse_at`.  As Oil doesn't have implicit word splitting, we want `@(seq 3)` to be the splitting
 variant of the command sub `$(seq 3)`.  They're related in the same way as `@myarray`
 and `$mystr` are.
 
@@ -66,11 +66,10 @@ Use this Oil alias instead:
 
     echo ,(*.cc|*.h)
 
-(Option `parse_at` is part of group `oil:upgrade`.)
 
 ### `r'c:\Users\'` is a raw string, not joined strings
 
-The meaning of `\` within string literals can be confusing, so Oil
+Option `parse_raw_string`.  The meaning of `\` within string literals can be confusing, so Oil
 distinguishes them like this:
 
 - `$'foo\n'` 
@@ -88,7 +87,6 @@ The prefix **changes** the meaning of commands like:
 
 Instead, write `'rfoo'` if that's what you mean.
 
-(Option `parse_raw_string` is part of group `oil:upgrade`.)
 
 
 ## Disabled Syntax, improved alternatives
