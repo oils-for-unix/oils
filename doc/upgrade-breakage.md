@@ -93,7 +93,7 @@ Instead, write `'rfoo'` if that's what you mean.
 
 ### No Extended Globs in Simple Word Evaluation
 
-Like regular globs, the extended glob syntax is used in two ways:
+Option `simple_word_eval`.  Like regular globs, the extended glob syntax is used in two ways:
 
 1. Pattern matching 
    - `case` 
@@ -110,7 +110,6 @@ after upgrading.
 You may want to use the `find` command or [Egg expressions](eggex.html)
 instead.
 
-(Option `simple_word_eval` is part of group `oil:upgrade`.)
 
 ## Few Quotes May Be Needed (rare occasions)
 
