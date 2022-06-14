@@ -150,6 +150,11 @@ Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
 Option `parse_brace`.  Braces after commands start block arguments.  To change
 to a directory named `{`, quote it like `cd '{'`.
 
+### `=` as argument within blocks (bare assignments)
+
+Option `parse_equals`.  A statement like `x = 42` within a block is a "bare assignment" of a constant or
+attribute.  To pass `=` to a command `foo`, quote it as in `foo '='`.
+
 ### New first-word keywords (`proc`, `var` etc.)
 
 Oil has new keywords like `proc`, `const`, `var`, `setvar`, and `=`.  To use them
@@ -160,13 +165,10 @@ as command names, quote them like `'proc'`.
 To avoid confusion with Oil's `=` operator, words starting with `=` can't be the first word in a command.
 To invoke such commands, quote them like `'=foo'`.
 
-There is very little reason to use commands like `'proc'` an, `'=x'`, so you
-will likely never run into this!
+There is very little reason for external commands like `'proc'` or `'=foo'`, so you
+will likely never run into these!
 
-### `=` as argument within blocks (bare assignments)
 
-Option `parse_equals`.  A statement like `x = 42` within a block is a "bare assignment" of a constant or
-attribute.  To pass `=` to a command `foo`, quote it as in `foo '='`.
 
 
 ## Summary
