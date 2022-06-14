@@ -11,6 +11,9 @@ Only a few things break when you enable this option group at the top of a shell 
 
 This doc enumerates and explains them.
 
+In case you only want to use the `bin/osh` defaults, you **don't** need to read this doc.
+[OSH]($xref:osh-language) is a highly compatible Unix shell.
+
 <div id="toc">
 </div>
 
@@ -25,8 +28,6 @@ First, let's emphasize the **good** things that happen when you upgrade:
 - [Reliable Error Handling](error-handling.html) becomes the default.
 - ... and more
 
-In case you only want to use `bin/osh` defaults you **don't** need to read this doc.
-[OSH]($xref:osh-language) is a highly compatible Unix shell.
 
 ## Syntax Changes
 
