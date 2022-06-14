@@ -311,6 +311,52 @@ class PygmentsPlugin(_Plugin):
     out.Print(highlighted)
 
 
+def SimpleHighlightCode(s):
+  """
+  Simple highlighting for test/shell-vs-shell.sh
+  """
+
+  f = cStringIO.StringIO()
+  out = html.Output(s, f)
+
+  tag_lexer = html.TagLexer(s)
+
+  pos = 0
+
+  it = html.ValidTokens(s)
+
+  while True:
+    try:
+      tok_id, end_pos = next(it)
+    except StopIteration:
+      break
+
+    if tok_id == html.StartTag:
+
+      tag_lexer.Reset(pos, end_pos)
+      if tag_lexer.TagName() == 'pre':
+        pre_start_pos = pos
+        pre_end_pos = end_pos
+
+        slash_pre_right, slash_pre_right = \
+            html.ReadUntilEndTag(it, tag_lexer, 'pre')
+
+        out.PrintUntil(pre_end_pos)
+
+        # Using ShPromptPlugin because it does the comment highlighting we want!
+        plugin = ShPromptPlugin(s, pre_start_pos, slash_pre_right)
+        plugin.PrintHighlighted(out)
+
+        out.SkipTo(slash_pre_right)
+
+    pos = end_pos
+
+  out.PrintTheRest()
+
+  return f.getvalue()
+
+
+
 def HighlightCode(s, default_highlighter):
   """
   Algorithm:
@@ -552,3 +598,22 @@ class ShellSession(object):
       s: an HTML string.
     """
     pass
+
+
+
+def main(argv):
+  action = argv[1]
+
+  if action == 'highlight':
+    # for test/shell-vs-shell.sh
+
+    html = sys.stdin.read()
+    out = SimpleHighlightCode(html)
+    print(out)
+
+  else:
+    raise RuntimeError('Invalid action %r' % action)
+
+
+if __name__ == '__main__':
+  main(sys.argv)
