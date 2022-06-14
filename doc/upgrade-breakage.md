@@ -41,13 +41,13 @@ Python.
 In Oil the parens in `if (x > 0)` denote a true/false expression.
 
 
-### Simple Word Eval, no implicit split/glob/maybe
+### Simple Word Eval, may need explicit split/glob/maybe
 
 Option `simple_word_eval`.  Variables are expanded reliably *without* implicitly and often surprisingly getting
 split, globbed, and omitted if empty (sensible default).
 
 Where string-magic-based, i.e. not array/dict-based, operation is really wanted or needed,
-use an explicit `@split()` (shortcut `@`), `@glob()`,`@maybe()` or the non-splitting `$` counterparts of the last two.
+add an explicit `@split()` (shortcut `@..`), `@glob()`,`@maybe()` or the non-splitting `$`-counterparts of the last two.
 
 
 ### `@()` is spliced command sub, not extended glob 
