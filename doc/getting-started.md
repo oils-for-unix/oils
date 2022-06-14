@@ -68,7 +68,7 @@ can be found on the [releases page](https://www.oilshell.org/releases.html).
     </tr>
     <tr>
       <td>
-        **...and, allow adding new Oil language syntax.**  <br> * Adjustments to legacy code will only be needed for a [minimized amount of limited syntax](https://www.oilshell.org/release/latest/doc/deprecations.html). <br> * However, adding new syntax/semantics to a script will drop compatibility with other shells.<br><br>(The adjustments needed in legacy code should mostly be just quoting/spacing, for disambiguation. Except, requirements for proper error handling, and for explicit split/glob functions on variables due to the default [Simple Word Evaluation](http://www.oilshell.org/release/latest/doc/simple-word-eval.html). Of course only where variables were originally left correctly(!) unquoted and split/globbed.)
+        **...and, allow adding new Oil language syntax.**  <br> * Adjustments to legacy code will only be needed for a [minimized amount of limited syntax](https://www.oilshell.org/release/latest/doc/upgrade-breakage.html). <br> * However, adding new syntax/semantics to a script will drop compatibility with other shells.<br><br>(The adjustments needed in legacy code should mostly be just quoting/spacing, for disambiguation. Except, requirements for proper error handling, and for explicit split/glob/maybe functions on variables due to the default [Simple Word Evaluation](http://www.oilshell.org/release/latest/doc/simple-word-eval.html). Of course only where variables were originally left correctly(!) unquoted and split/globbed.)
       </td>
       <td>
         Adapt script to begin with: <br>`#!/usr/bin/env osh` <br> `shopt --set oil:upgrade`
