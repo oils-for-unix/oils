@@ -25,8 +25,8 @@ First, let's emphasize the **good** things that happen when you upgrade:
 - [Reliable Error Handling](error-handling.html) becomes the default.
 - ... and more
 
-You can also use `bin/osh` indefinitely, in which case you **don't** need to
-read this doc.  [OSH]($xref:osh-language) is a highly compatible Unix shell.
+In case you only want to use `bin/osh` defaults you **don't** need to read this doc.
+[OSH]($xref:osh-language) is a highly compatible Unix shell.
 
 ## Syntax Changes
 
