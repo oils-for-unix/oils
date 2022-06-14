@@ -115,9 +115,9 @@ Instead, write `'rfoo'` if that's what you mean.
 
 (Option `parse_raw_string` is part of group `oil:upgrade`.)
 
-## Unsupported
+## Unsupported Syntax
 
-### Extended Globs in Word Evaluation
+### No Extended Globs in Word Evaluation
 
 Like regular globs, the extended glob syntax is used in two ways:
 
@@ -138,32 +138,37 @@ instead.
 
 (Option `simple_word_eval` is part of group `oil:upgrade`.)
 
-## Rare strings parsed, if not quoted
+## New Strings Parsed, if not quoted (rarely a problem)
 
-### '@foo' as argument (parse_at)
+### New first-word keywords (e.g. `proc`, `const`, `var`, `setvar`)
+
+Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
+as command names, quote them like `'proc'`.
+
+### `=foo` as first-word, is too similar to `= foo`
+
+To avoid confusion with Oil's `=` operator, a word like `=foo` can't be the first word in a command.
+To invoke such commands, quote them like `'=x'`.
+
+There is very little reason to use commands like `'proc'` an, `'=x'`, so you
+will likely never run into this!
+
+### `@foo` as argument (parse_at)
 
 Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
 `@foo` to a command, quote it like `'@foo'`.
 
-### '{' as argument (parse_brace)
+### `{` as argument (parse_brace)
 
 Option `parse_brace`.  Braces after commands start block arguments.  To change
 to a directory named `{`, quote it like `cd '{'`.
 
-### '=foo' as first-word or argument (parse_equals)
+### `=foo` as argument (parse_equals)
 
 Option `parse_equals`.  A statement like `x = 42` is a "bare assignment" or
 attribute.  To pass `=` to a command `x`, quote it like `x '='`.
 
-### Unconditionally
 
-- To avoid confusion with Oil's `=` operator, a word like `=x` can't be the first word in a command.
-  To invoke such commands, quote them like `'=x'`.
-- Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
-  as command names, quote them like `'proc'`.
-
-There is very little reason to use commands like `'=x'` and `'proc'`, so you
-will likely never run into this!
 
 ## Summary
 
