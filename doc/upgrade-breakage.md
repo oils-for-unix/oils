@@ -142,7 +142,7 @@ instead.
 
 ### New first-word keywords (`proc`, `var` etc.)
 
-Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
+Oil has new keywords like `proc`, `const`, `var`, `setvar`, and `=`.  To use them
 as command names, quote them like `'proc'`.
 
 ### `=foo` as command (too similar to `= foo`)
