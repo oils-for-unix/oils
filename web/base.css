@@ -53,8 +53,7 @@ ol { padding-left: 1.2em; }
   font-weight: bold;
 }
 
-#why-sponsor { color: darkgreen; }
 #why-sponsor a:link { text-decoration: none }
 #why-sponsor a:hover { text-decoration: underline }
-#why-sponsor a:visited { color: darkgreen; }
+#why-sponsor a { color: darkgreen; }
 

@@ -40,6 +40,7 @@ def Header(meta, f, draft_warning=False):
 ''' % meta)
 
   f.write('''\
+      <span id="why-sponsor"><a href="/why-sponsor.html">Why Sponsor Oil?</a></span> |
       <a href="https://github.com/oilshell/oil/blob/master/%(repo_url)s" id="source-link">source</a> |
 ''' % meta)
 
