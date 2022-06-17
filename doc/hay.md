@@ -1,6 +1,5 @@
 ---
 default_highlighter: oil-sh
-in_progress: true
 ---
 
 Hay - Custom Languages for Unix Systems
@@ -19,9 +18,10 @@ various ways:
 
 Slogans:
 
-- *Hay Ain't YAML*. It evaluates to [JSON][] + Shell Scripts.
-- *We need a better **control plane** language for the cloud*
-- *Oil adds the missing declarative part to shell*
+- *Hay Ain't YAML*.
+  - It evaluates to [JSON][] + Shell Scripts.
+- *We need a better **control plane** language for the cloud*.
+- *Oil adds the missing declarative part to shell*.
 
 This doc describes how to use Hay, with motivating examples.
 
@@ -88,8 +88,8 @@ Here are some DSLs in the same area:
 
 - [YAML][] is a data format that is (surprisingly) the de-facto control plane
   language for the cloud.  It's an approximate superset of [JSON][].
-- [UCL][] (universal config language) is influenced by the [Nginx][] config
-  file syntax.
+- [UCL][] (universal config language) is a library influenced by the [Nginx][]
+  config file syntax.
   - [HCL][] (HashiCorp config language) is similar, and is used to configure
     cloud services.
 - [Nix][] has a *functional* language to configure Linux distros.  In contrast,
@@ -416,7 +416,7 @@ about state?  Common variants:
 Again, these collections of services are all **shaped** similarly, but the
 flags **vary** based on where binaries are physically running.
 
-### Prior Art
+### Concepts: Metaprogramming, Dynamic Types
 
 This model can be referred to as ["graph metaprogramming" or "staged
 programming"][build-ci-comments].
@@ -461,7 +461,7 @@ Or on the outside:
     }
 
 
-### Iteration For Variants
+### Iteration
 
 Iteration can also go on the inside of a block:
 
@@ -469,18 +469,18 @@ Iteration can also go on the inside of a block:
       inputs = []  # populate with all .cc files except one
 
       # variables ending with _ are "hidden" from block evaluation
-      for file_ in *.cc {
-        if file_ != 'skipped.cc' {
-          _ append(inputs, file_)
+      for name_ in *.cc {
+        if name_ != 'skipped.cc' {
+          _ append(inputs, name_)
         }
       }
     }
 
 Or on the outside:
 
-    for file_ in *.cc {                # loop
-      Rule $(basename $file_ .cc).o {  # node
-        inputs = [file_]
+    for name_ in *.cc {                # loop
+      Rule $(basename $name_ .cc).o {  # node
+        inputs = [name_]
       }
     }
 
@@ -565,8 +565,8 @@ Assigning attributes and invoking procs can look similar:
     }
 
 The first style is better for typed data like integers and dictionaries.  The
-latter style isn't useful in this case, but it could be if `version 1.0`
-created complex Hay nodes.
+latter style isn't useful here, but it could be if `version 1.0` created
+complex Hay nodes.
 
 ### Attributes vs. Flags
 
@@ -598,12 +598,11 @@ Superficially, dicts and blocks are similar:
       }
     }
 
-I would use dicts in cases where you don't know the names or types up front,
-e.g.
+Use dicts in cases where you don't know the names or types up front, like
 
     files = {'README.md': true, '__init__.py': false}
 
-and blocks when there's a **schema**.  Blocks are also different because:
+Use blocks when there's a **schema**.  Blocks are also different because:
 
 - You can use `if` statements and `for` loops in them.
 - You can call `TASK build; TASK test` within a block, creating multiple
