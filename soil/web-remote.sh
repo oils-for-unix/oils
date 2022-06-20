@@ -58,19 +58,38 @@ remote-cleanup-jobs-index() {
   sshq soil-web/soil/web.sh cleanup-jobs-index "$prefix" false
 }
 
+readonly USER_HOST='travis_admin@travis-ci.oilshell.org'
+
 scp-results() {
   # could also use Travis known_hosts addon?
   local prefix=$1  # srht- or ''
   shift
 
   scp -o StrictHostKeyChecking=no "$@" \
-    "travis_admin@travis-ci.oilshell.org:travis-ci.oilshell.org/${prefix}jobs/"
+    "$USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
+}
+
+
+scp-status-api() {
+  local run_id=${1:-TEST2-github-run-id}
+  local job_name=$2
+  local file=$3
+
+  local remote_path="travis-ci.oilshell.org/status-api/github/$run_id/$job_name"
+
+  ssh -o StrictHostKeyChecking=no \
+    $USER_HOST "mkdir -p $(dirname $remote_path)"
+
+  # the consumer should check if these are all zero
+  # note: the file gets RENAMED
+  scp -o StrictHostKeyChecking=no $file \
+    "$USER_HOST:$remote_path"
 }
 
 list-remote-results() {
   local prefix=$1
   ssh -o StrictHostKeyChecking=no \
-    travis_admin@travis-ci.oilshell.org ls "travis-ci.oilshell.org/${prefix}jobs/"
+    $USER_HOST ls "travis-ci.oilshell.org/${prefix}jobs/"
 }
 
 # Dummy that doesn't depend on results

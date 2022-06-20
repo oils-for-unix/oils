@@ -49,7 +49,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          soil/github-actions.sh publish-html
+          soil/github-actions.sh publish-html dummy
 
   dev-minimal:
     # https://github.com/actions/virtual-environments
@@ -77,7 +77,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          soil/github-actions.sh publish-html
+          soil/github-actions.sh publish-html dev-minimal
 
   pea:
     runs-on: ubuntu-20.04
@@ -104,7 +104,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          soil/github-actions.sh publish-html
+          soil/github-actions.sh publish-html pea
 
   other-tests:
     runs-on: ubuntu-20.04
@@ -131,7 +131,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          soil/github-actions.sh publish-html
+          soil/github-actions.sh publish-html other-tests
 
   ovm-tarball:
     runs-on: ubuntu-20.04
@@ -158,7 +158,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          soil/github-actions.sh publish-html
+          soil/github-actions.sh publish-html ovm-tarball
 
   app-tests:
     runs-on: ubuntu-20.04
@@ -185,7 +185,7 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          soil/github-actions.sh publish-html
+          soil/github-actions.sh publish-html app-tests
 
   cpp:
     runs-on: ubuntu-18.04
@@ -211,5 +211,30 @@ jobs:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
+          cd $REPO_ROOT
+          soil/github-actions.sh publish-html cpp
+
+  maybe-merge-to-master:
+    runs-on: ubuntu-18.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    needs: [dummy, dev-minimal, cpp, ovm-tarball, pea, other-tests, app-tests]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: maybe-merge
+        run: |
+          cd $REPO_ROOT
+          soil/worker.sh run-maybe-merge
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          # NOTE: does not publish to status API
           cd $REPO_ROOT
           soil/github-actions.sh publish-html

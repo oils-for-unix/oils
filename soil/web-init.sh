@@ -108,7 +108,7 @@ deploy-data() {
   local user=${1:-$USER}
   local host=${2:-$HOST}
 
-  ssh $user@$host mkdir -v -p $host/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web}
+  ssh $user@$host mkdir -v -p $host/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github}
 
   home-page "$host" > _tmp/index.html
 

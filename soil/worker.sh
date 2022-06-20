@@ -106,8 +106,8 @@ pea-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-user-host      soil/worker.sh dump-user-host           -
-py-source           build/dev.sh py-source                  -
+dump-user-host      soil/worker.sh dump-user-host     -
+py-source           build/dev.sh py-source            -
 check-types         pea/test.sh check-types           -
 parse-all           pea/test.sh parse-all             -
 EOF
@@ -260,6 +260,15 @@ test-gold              opy/soil.sh test-gold                      -
 build-oil-repo         opy/soil.sh build-oil-repo                 -
 regtest-compile        opy/soil.sh regtest-compile                -
 regtest-verify-golden  opy/soil.sh regtest-verify-golden          -
+EOF
+}
+
+# Redefinition for quicker cloud debugging
+maybe-merge-tasks() {
+  cat <<EOF
+dump-env            soil/worker.sh dump-env           -
+dump-user-host      soil/worker.sh dump-user-host     -
+maybe-merge         soil/maybe-merge.sh soil-run      -
 EOF
 }
 
@@ -418,6 +427,8 @@ run-pea() { job-main 'pea'; }
 run-app-tests() { job-main 'app-tests'; }
 
 run-cpp() { job-main 'cpp'; }
+
+run-maybe-merge() { job-main 'maybe-merge'; }
 
 run-dev-all-nix() {
   ### Travis job dev-all-nix

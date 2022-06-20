@@ -27,6 +27,8 @@ keygen() {
 #
 
 publish-html-assuming-ssh-key() {
+  local job_name=${1:-}  # to publish to status-api
+
   if true; then
     # https://docs.github.com/en/actions/reference/environment-variables
 
@@ -44,6 +46,12 @@ publish-html-assuming-ssh-key() {
   else
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
+
+  if test -n "$job_name"; then
+    scp-status-api "$GITHUB_RUN_ID" "$job_name" _tmp/soil/exit-status.txt
+  fi
+
+  #deploy
 
   write-jobs-raw 'github-'
 
@@ -77,6 +85,8 @@ publish-html-assuming-ssh-key() {
 
 # Overwrites the function in soil/travis.sh
 publish-html() {
+  ### Publish job HTML, and optionally status-api
+
   local privkey=/tmp/rsa_github_actions
 
   if test -n "${TOIL_KEY:-}"; then
@@ -90,7 +100,8 @@ publish-html() {
   eval "$(ssh-agent -s)"
   ssh-add $privkey
 
-  publish-html-assuming-ssh-key
+  # $1 can be the job name
+  publish-html-assuming-ssh-key "$@"
 }
 
 "$@"
