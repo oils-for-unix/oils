@@ -5,11 +5,14 @@ default_highlighter: oil-sh
 What Breaks When You Upgrade to Oil
 ===================================
 
-Only a few things break when you put this at the top of a shell script:
+Only a few things break when you enable this option group at the top of a shell script:
 
     shopt --set oil:upgrade
 
 This doc enumerates and explains them.
+
+In case you only want to use the `bin/osh` defaults, you **don't** need to read this doc.
+[OSH]($xref:osh-language) is a highly compatible Unix shell.
 
 <div id="toc">
 </div>
@@ -25,8 +28,6 @@ First, let's emphasize the **good** things that happen when you upgrade:
 - [Reliable Error Handling](error-handling.html) becomes the default.
 - ... and more
 
-You can also use `bin/osh` indefinitely, in which case you **don't** need to
-read this doc.  [OSH]($xref:osh-language) is a highly compatible Unix shell.
 
 ## Syntax Changes
 
@@ -34,54 +35,29 @@ Now onto the breakages.  Most of them are **unlikely**, but worth noting.
 
 ### `if ( )` and `while ( )` take expressions, not subshell commands
 
-Code like `if ( ls /tmp )` is valid shell, but it's almost always a **misuse**
-of the language.  Parentheses mean **subshell**, not grouping as in C or
+Option `parse_paren`.  Code like `if ( ls /tmp )` is valid shell, but it's almost always a **misuse**
+of the language.  Because parentheses mean **subshell**, not grouping as in C or
 Python.
 
-In Oil:
-
-- Use `if (x > 0)` for true/false expressions
-- Use the `forkwait` builtin for subshells, which are uncommon.  
-  - It's like a sequence of the `fork` builtin (replacing `&`) and the `wait`
-    builtin.
-
-No:
-
-    ( not_changed=foo )
-    echo $not_changed
-
-Yes:
-
-    forkwait {
-      setvar not_changed = 'foo'
-    }
-    echo $not_changed
-
-Note that the idiom of running commands in a different dir no longer requires
-a subshell:
-
-No:
-
-    ( cd /tmp; echo $PWD )
-    echo $PWD  # still the original value
-
-Yes:
-
-    cd /tmp {
-      echo $PWD 
-    }
-    echo $PWD  # restored
+In Oil the parens in `if (x > 0)` denote a true/false expression.
 
 
-(Option `parse_paren` is part of group `oil:upgrade`.)
+### Simple Word Eval, may need explicit split/glob/maybe
+
+Option `simple_word_eval`.  Variables are expanded reliably *without* implicitly and often surprisingly getting
+split, globbed, and omitted if empty (sensible default).
+
+Where string-magic-based, i.e. not array/dict-based, operation is really wanted or needed,
+add an explicit `@split()` (shortcut `@..`), `@glob()`,`@maybe()` or the non-splitting `$`-counterparts of the last two.
+
 
 ### `@()` is spliced command sub, not extended glob 
 
-Oil doesn't have implicit word splitting, so we want `@(seq 3)` to be
-consistent with `$(hostname)`.  They're related in the same way that `@myarray`
-and `$mystr` are.
+Option `parse_at`.  As Oil doesn't have implicit word splitting, we wanted `@(seq 3)` to be the splitting
+variant of the command sub `$(seq 3)`.  So, they're now related in the same way as `@myarray`
+and `$mystr`.
 
-This means that `@()` is no longer extended glob, and `,()` is an alias.
+This means that `@()` is no longer an extended glob, however `,()` is its substitute.
 
 No:
 
@@ -91,11 +67,10 @@ Use this Oil alias instead:
 
     echo ,(*.cc|*.h)
 
-(Option `parse_at` is part of group `oil:upgrade`.)
 
 ### `r'c:\Users\'` is a raw string, not joined strings
 
-The meaning of `\` within string literals can be confusing, so Oil
+Option `parse_raw_string`.  The meaning of `\` within string literals can be confusing, so Oil
 distinguishes them like this:
 
 - `$'foo\n'` 
@@ -113,20 +88,20 @@ The prefix **changes** the meaning of commands like:
 
 Instead, write `'rfoo'` if that's what you mean.
 
-(Option `parse_raw_string` is part of group `oil:upgrade`.)
 
-## Unsupported
 
-### Extended Globs in Word Evaluation
+## Disabled Syntax, improved alternatives
 
-Like regular globs, the extended glob syntax is used in two ways:
+### No Extended Globs in Simple Word Evaluation
+
+Option `simple_word_eval`.  Like regular globs, the extended glob syntax is used in two ways:
 
 1. Pattern matching 
    - `case` 
    - Bash boolean expressions like `[[ x == !(*.cc|*.h) ]]`
 2. Word Evaluation
    - commands like `cp !(*.cc|*.h) /tmp`
-   - arrays like `local -a myarray=( !(*.cc|*.h) )`
+   - array definitions like `local -a myarray=( !(*.cc|*.h) )`
    - Shell-style `for` loops
 
 Extended globs are **not** supported in [Simple Word
@@ -136,30 +111,39 @@ after upgrading.
 You may want to use the `find` command or [Egg expressions](eggex.html)
 instead.
 
-(Option `simple_word_eval` is part of group `oil:upgrade`.)
 
-## More Quotes May Be Needed
+## Few Quotes May Be Needed (rare occasions)
 
-### With `oil:upgrade` Options
+### `@foo` as command or argument (now splice)
 
 Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
 `@foo` to a command, quote it like `'@foo'`.
 
+### `{` as argument (now block)
+
 Option `parse_brace`.  Braces after commands start block arguments.  To change
 to a directory named `{`, quote it like `cd '{'`.
 
-Option `parse_equals`.  A statement like `x = 42` is a "bare assignment" or
-attribute.  To pass `=` to a command `x`, quote it like `x '='`.
+### `=` as argument within blocks (bare assignments)
 
-### Unconditionally
+Option `parse_equals`.  A statement like `x = 42` within a block is a "bare assignment" of a constant or
+attribute.  To pass `=` to a command `foo`, quote it as in `foo '='`.
 
-- To avoid confusion with Oil's `=` operator, a word like `=x` can't be the first word in a command.
-  To invoke such commands, quote them like `'=x'`.
-- Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
-  as command names, quote them like `'proc'`.
+### New first-word keywords (`proc`, `var` etc.)
 
-There is very little reason to use commands like `'=x'` and `'proc'`, so you
-will likely never run into this!
+Oil has new keywords like `proc`, `const`, `var`, `setvar`, and `=`.  To use them
+as command names, quote them like `'proc'`.
+
+### `=foo` as command (too similar to `= foo`)
+
+To avoid confusion with Oil's `=` operator, words starting with `=` can't be the first word in a command.
+To invoke such commands, quote them like `'=foo'`.
+
+There is very little reason for external commands like `'proc'` or `'=foo'`, so you
+will likely never run into these!
+
+
+
 
 ## Summary
 
