@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "frameobject.h"
+#include <ctype.h>
 
 #define MODULE_NAME "_warnings"
 
