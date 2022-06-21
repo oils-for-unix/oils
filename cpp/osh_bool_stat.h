@@ -31,6 +31,9 @@ inline bool DoUnaryOp(Id_t op_id, Str* s) {
   case Id::BoolUnary_e:
     return true;
 
+  case Id::BoolUnary_f:
+    return S_ISREG(mode);
+
   case Id::BoolUnary_k:
     return (mode & S_ISVTX) != 0;
   }
