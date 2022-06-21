@@ -94,12 +94,15 @@ all-status-zero() {
   return 0
 }
 
+list-soil-jobs() {
+  cat soil/worker.sh
+}
+
 soil-run() {
   local github_token=${1:-}  # SOIL_GITHUB_API_TOKEN
   local run_id=${2:-}  # $GITHUB_RUN_ID
-  local jobs=${3:-'dummy pea other-tests'}  # minimal set of jobs to wait for
-  local commit_hash=${4:-}  # GITHUB_SHA
-  local to_branch=${5:-}  # defaults to master
+  local commit_hash=${3:-}  # GITHUB_SHA
+  local to_branch=${4:-}  # defaults to master
 
   if test -z "$run_id"; then
     # GITHUB_RUN_ID is set by Github Actions
@@ -125,6 +128,9 @@ soil-run() {
 
   # These tiny files are written by each Soil task
   local url_base="http://travis-ci.oilshell.org/status-api/github/$run_id"
+
+  #local jobs='dummy pea other-tests'  # minimal set of jobs to wait for
+  local jobs=$(soil/worker.sh list-jobs)
 
   local -a args=()
   for job in $jobs; do  # relies on word splitting

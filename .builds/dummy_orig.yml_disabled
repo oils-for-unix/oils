@@ -9,7 +9,7 @@ secrets:
 tasks:
   - dummy: |
       cd oil
-      soil/worker.sh run-dummy
+      soil/worker.sh JOB-dummy
   - publish-html: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key

@@ -414,23 +414,23 @@ job-main() {
   ${job_name}-tasks | run-tasks $out_dir
 }
 
-run-dummy() { job-main 'dummy'; }
+JOB-dummy() { job-main 'dummy'; }
 
-run-dev-minimal() { job-main 'dev-minimal'; }
+JOB-dev-minimal() { job-main 'dev-minimal'; }
 
-run-other-tests() { job-main 'other-tests'; }
+JOB-other-tests() { job-main 'other-tests'; }
 
-run-ovm-tarball() { job-main 'ovm-tarball'; }
+JOB-ovm-tarball() { job-main 'ovm-tarball'; }
 
-run-pea() { job-main 'pea'; }
+JOB-pea() { job-main 'pea'; }
 
-run-app-tests() { job-main 'app-tests'; }
+JOB-app-tests() { job-main 'app-tests'; }
 
-run-cpp() { job-main 'cpp'; }
+JOB-cpp() { job-main 'cpp'; }
 
-run-maybe-merge() { job-main 'maybe-merge'; }
+JOB-maybe-merge() { job-main 'maybe-merge'; }
 
-run-dev-all-nix() {
+JOB-dev-all-nix() {
   ### Travis job dev-all-nix
 
   local job_name='dev-all-nix'
@@ -444,6 +444,10 @@ run-dev-all-nix() {
     --argstr test "none" \
     --argstr cleanup "none" \
     --run "$0 _run-dev-all-nix"
+}
+
+list-jobs() {
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'dev-all-nix|maybe-merge'
 }
 
 "$@"

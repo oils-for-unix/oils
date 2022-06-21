@@ -15,7 +15,7 @@ jobs:
       - name: dummy
         run: |
           cd $REPO_ROOT
-          soil/worker.sh run-dummy
+          soil/worker.sh JOB-dummy
 
       - name: publish-html
         env:
@@ -218,9 +218,9 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       REPO_ROOT: ${{ github.workspace }}
-    #needs: ['dummy', 'dev-minimal', 'cpp', 'ovm-tarball', 'pea', 'other-tests', 'app-tests']
-    # List of tasks to wait on. This is duplicated in soil/maybe-merge.sh
-    needs: ['dummy', 'pea', 'other-tests']
+    # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
+    needs: ['dummy', 'dev-minimal', 'cpp', 'ovm-tarball', 'pea', 'other-tests', 'app-tests']
+    #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -230,7 +230,7 @@ jobs:
           SOIL_GITHUB_API_TOKEN: ${{ secrets.SOIL_GITHUB_API_TOKEN }}
         run: |
           cd $REPO_ROOT
-          soil/worker.sh run-maybe-merge
+          soil/worker.sh JOB-maybe-merge
 
       - name: publish-html
         env:

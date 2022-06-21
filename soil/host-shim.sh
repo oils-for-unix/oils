@@ -66,7 +66,7 @@ run-job-uke() {
     
     args=(bash)
   else
-    args=(sh -c "cd /home/uke/oil; soil/worker.sh run-$task")
+    args=(sh -c "cd /home/uke/oil; soil/worker.sh JOB-$task")
   fi
 
   $docker run "${flags[@]}" \
