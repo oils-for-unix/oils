@@ -23,6 +23,11 @@ sourcehut() {
   log "Wrote $out"
 }
 
+github-actions() {
+  ### Validate and print to stdout
+  devtools/yaml2json.py .github/workflows/all-builds.yml
+}
+
 bug() {
   # This is wrong: should be 100, not "1e2"
 

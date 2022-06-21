@@ -21,7 +21,7 @@ def main(argv):
     obj = yaml.safe_load(sys.stdin)
 
   elif len(argv) == 1:
-    with open(argv[1]) as f:
+    with open(argv[0]) as f:
       obj = yaml.safe_load(f)
 
   else:

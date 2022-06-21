@@ -1,7 +1,11 @@
 # Soil wrapped in Github Actions.
 
 name: oil
-on: [push]
+on:
+  # don't run CI on master because we test soil-staging and auto-merge.
+  push:
+    branches-ignore:
+      - master
 jobs:
   dummy_orig:
     runs-on: ubuntu-latest
