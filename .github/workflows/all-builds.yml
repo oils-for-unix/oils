@@ -220,7 +220,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     #needs: ['dummy', 'dev-minimal', 'cpp', 'ovm-tarball', 'pea', 'other-tests', 'app-tests']
     # List of tasks to wait on. This is duplicated in soil/maybe-merge.sh
-    needs: ['dummy', 'pea']
+    needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2

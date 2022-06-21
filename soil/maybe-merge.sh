@@ -97,7 +97,7 @@ all-status-zero() {
 soil-run() {
   local github_token=${1:-}  # SOIL_GITHUB_API_TOKEN
   local run_id=${2:-}  # $GITHUB_RUN_ID
-  local jobs=${3:-'dummy pea'}  # minimal set of jobs to wait for
+  local jobs=${3:-'dummy pea other-tests'}  # minimal set of jobs to wait for
   local commit_hash=${4:-}  # GITHUB_SHA
   local to_branch=${5:-}  # defaults to master
 
