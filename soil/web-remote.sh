@@ -58,6 +58,10 @@ remote-cleanup-jobs-index() {
   sshq soil-web/soil/web.sh cleanup-jobs-index "$prefix" false
 }
 
+remote-cleanup-status-api() {
+  sshq soil-web/soil/web.sh cleanup-status-api false
+}
+
 readonly USER_HOST='travis_admin@travis-ci.oilshell.org'
 
 scp-results() {

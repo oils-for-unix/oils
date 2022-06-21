@@ -51,14 +51,14 @@ publish-html-assuming-ssh-key() {
     scp-status-api "$GITHUB_RUN_ID" "$job_name" _tmp/soil/exit-status.txt
   fi
 
-  #deploy
-
   write-jobs-raw 'github-'
 
   remote-rewrite-jobs-index 'github-'
 
   # note: we could speed jobs up by doing this separately?
   remote-cleanup-jobs-index 'github-'
+
+  remote-cleanup-status-api
 
   # soil/worker.sh recorded this for us
   local status

@@ -57,6 +57,27 @@ cleanup-jobs-index() {
   esac
 }
 
+cleanup-status-api() {
+  ### cleanup the files used for maybe-merge
+
+  local dry_run=${1:-true}
+
+  local dir=~/travis-ci.oilshell.org/status-api/github
+
+  cd $dir
+  case $dry_run in
+    false)
+      # delete all but the last 30
+      ls | head -n -30 | xargs --no-run-if-empty -- rm -r -f -v
+      ;;
+    true)
+      ls | head -n -30
+      ;;
+    *)
+      log 'Expected true or false for dry_run'
+  esac
+}
+
 
 #
 # Dev Tools

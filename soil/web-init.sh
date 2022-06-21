@@ -99,6 +99,14 @@ home-page() {
 
     </table>
 
+    <h1>Links</h1>
+
+    <ul>
+      <li>
+        <a href="status-api/github/">static-api/github/</a>
+      </li>
+    </ul>
+
   </body>
 </html>
 EOF
