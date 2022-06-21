@@ -330,6 +330,10 @@ class OilMethodFilter(object):
     if basename == '_warnings.c' and method_name == 'warn':
       return False
 
+    if basename == 'dictobject.c' and method_name in (
+        'iterkeys', 'itervalues', 'copy', 'fromkeys', 'popitem', 'setdefault'):
+      return False
+
     if basename == 'tupleobject.c' and method_name == 'index':
       return False
 
@@ -337,7 +341,10 @@ class OilMethodFilter(object):
       # false positive from arg.translate
       return False
 
-    if basename == 'setobject.c' and method_name == 'pop':
+    if basename == 'setobject.c' and method_name in ('pop', 'copy'):
+      return False
+
+    if basename == 'frozensetobject.c' and method_name == 'copy':
       return False
 
     if basename == 'sliceobject.c' and method_name == 'indices':

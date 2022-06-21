@@ -105,12 +105,13 @@ class OrderedDict(dict):
 
     def iterkeys(self):
         'od.iterkeys() -> an iterator over the keys in od'
-        return iter(self)
+        # PATCH: not used in Oil
+        raise AssertionError()
 
     def itervalues(self):
         'od.itervalues -> an iterator over the values in od'
-        for k in self:
-            yield self[k]
+        # PATCH: not used in Oil
+        raise AssertionError()
 
     def iteritems(self):
         'od.iteritems -> an iterator over the (key, value) pairs in od'
@@ -141,21 +142,16 @@ class OrderedDict(dict):
 
     def setdefault(self, key, default=None):
         'od.setdefault(k[,d]) -> od.get(k,d), also set od[k]=d if k not in od'
-        if key in self:
-            return self[key]
-        self[key] = default
-        return default
+        # PATCH: not used in Oil
+        raise AssertionError()
 
     def popitem(self, last=True):
         '''od.popitem() -> (k, v), return and remove a (key, value) pair.
         Pairs are returned in LIFO order if last is true or FIFO order if false.
 
         '''
-        if not self:
-            raise KeyError('dictionary is empty')
-        key = next(reversed(self) if last else iter(self))
-        value = self.pop(key)
-        return key, value
+        # PATCH: not used in Oil
+        raise AssertionError()
 
     def __repr__(self, _repr_running={}):
         'od.__repr__() <==> repr(od)'
@@ -181,19 +177,10 @@ class OrderedDict(dict):
         finally:
             del _repr_running[call_key]
 
-    def __reduce__(self):
-        'Return state information for pickling'
-        items = [[k, self[k]] for k in self]
-        inst_dict = vars(self).copy()
-        for k in vars(OrderedDict()):
-            inst_dict.pop(k, None)
-        if inst_dict:
-            return (self.__class__, (items,), inst_dict)
-        return self.__class__, (items,)
-
     def copy(self):
         'od.copy() -> a shallow copy of od'
-        return self.__class__(self)
+        # PATCH: not used in Oil
+        raise AssertionError()
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
@@ -201,10 +188,8 @@ class OrderedDict(dict):
         If not specified, the value defaults to None.
 
         '''
-        self = cls()
-        for key in iterable:
-            self[key] = value
-        return self
+        # PATCH: not used in Oil
+        raise AssertionError()
 
     def __eq__(self, other):
         '''od.__eq__(y) <==> od==y.  Comparison to another OD is order-sensitive
