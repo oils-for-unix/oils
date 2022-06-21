@@ -64,7 +64,7 @@ cleanup-status-api() {
 
   local dir=~/travis-ci.oilshell.org/status-api/github
 
-  cd $dir
+  pushd $dir
   case $dry_run in
     false)
       # delete all but the last 30
@@ -76,6 +76,7 @@ cleanup-status-api() {
     *)
       log 'Expected true or false for dry_run'
   esac
+  popd
 }
 
 
