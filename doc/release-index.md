@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oil 0.10.1
+Oil 0.11.0
 ============
 
 <!-- NOTE: This file is published to /release/$VERSION/index.html -->
@@ -13,7 +13,7 @@ Oil 0.10.1
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.10.1 of Oil, a Unix shell.  To use it,
+This is the home page for version 0.11.0 of Oil, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build it and do a "smoke test", as described in [INSTALL][].
@@ -59,6 +59,7 @@ are **ready to read**:
   | [Oil Fixes Shell's Error Handling](doc/error-handling.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](doc/variables.html)
+  | [Hay - Custom Languages for Unix Systems](doc/hay.html)
   | [Warts](doc/warts.html)
 - Language Design:
   - [A Feel For Oil's Syntax](doc/syntax-feelings.html) 
