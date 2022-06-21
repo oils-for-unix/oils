@@ -280,7 +280,7 @@ def t1(sh):
   sh.expect('status=130')
 
 
-@register()
+@register(skip_shells=['mksh'])
 def t4(sh):
   'Ctrl-C during pipeline'
   sh.sendline('sleep 5 | cat')
