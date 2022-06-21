@@ -70,6 +70,8 @@ inline bool DoUnaryOp(Id_t op_id, Str* s) {
 
 
   assert(0);
+
+  return false;
 }
 
 inline bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
