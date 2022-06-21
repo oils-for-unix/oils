@@ -9,15 +9,14 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly THIS_DIR=$(dirname $(readlink -f $0))
-readonly REPO_ROOT=$THIS_DIR/..
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source $THIS_DIR/common.sh  # MYPY_REPO
+source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 source $REPO_ROOT/soil/common.sh  # find-dir-html
 
 all-ninja() {
-  # TODO: add "self" edge
-  cd $THIS_DIR
+  pushd $REPO_ROOT/mycpp >/dev/null
+
   ./build_graph.py
 
   set +o errexit
@@ -28,6 +27,8 @@ all-ninja() {
   set -o errexit
 
   find-dir-html _ninja
+
+  popd >/dev/null
 
   # Now we want to zip up
   return $status
