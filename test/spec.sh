@@ -296,8 +296,7 @@ prompt() {
 }
 
 osh-only() {
-  # Hm this breaks the release process unless I allow 2 failures.  Confusing.
-  sh-spec spec/osh-only.test.sh --osh-failures-allowed 2  \
+  sh-spec spec/osh-only.test.sh --osh-failures-allowed 0  \
     $OSH_LIST "$@"
 }
 
@@ -679,7 +678,7 @@ type-compat() {
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec spec/append.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/append.test.sh --osh-failures-allowed 0 \
     $BASH $MKSH $ZSH $OSH_LIST "$@" 
 }
 
@@ -993,7 +992,7 @@ oil-expr-sub() {
 }
 
 oil-string() {
-  sh-spec spec/oil-string.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/oil-string.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
@@ -1013,7 +1012,7 @@ oil-proc() {
 }
 
 oil-case() {
-  sh-spec spec/oil-case.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/oil-case.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 

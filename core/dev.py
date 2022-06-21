@@ -23,6 +23,8 @@ from pylib import os_path
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
 
+import yajl
+
 import posix_ as posix
 
 from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
@@ -150,10 +152,9 @@ class CrashDumper(object):
       }
 
       path = os_path.join(self.crash_dump_dir, '%d-osh-crash-dump.json' % my_pid)
+      json_str = yajl.dumps(d, indent=2)
       with open(path, 'w') as f:
-        import json
-        json.dump(d, f, indent=2)
-        #print(repr(d), file=f)
+        print(json_str, file=f)
       log('[%d] Wrote crash dump to %s', my_pid, path)
 
 

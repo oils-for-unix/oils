@@ -46,7 +46,7 @@ for dump in $TMP/*.json; do
   # Workaround for test issue: release binaries leave empty files because they
   # don't have the json module.
   if test -s $dump; then  # non-empty
-    python -m json.tool $dump > /dev/null
+    python2 -m json.tool $dump > /dev/null
     echo "OK $dump" >&2
     (( ++ok ))
   fi
