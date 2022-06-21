@@ -218,14 +218,16 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       REPO_ROOT: ${{ github.workspace }}
-    needs: [dummy, dev-minimal, cpp, ovm-tarball, pea, other-tests, app-tests]
+    #needs: ['dummy', 'dev-minimal', 'cpp', 'ovm-tarball', 'pea', 'other-tests', 'app-tests']
+    # List of tasks to wait on. This is duplicated in soil/maybe-merge.sh
+    needs: ['dummy', 'pea']
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-        with:
-          submodules: recursive
 
       - name: maybe-merge
+        env:
+          SOIL_GITHUB_API_TOKEN: ${{ secrets.SOIL_GITHUB_API_TOKEN }}
         run: |
           cd $REPO_ROOT
           soil/worker.sh run-maybe-merge
