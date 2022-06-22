@@ -26,7 +26,15 @@ rewrite-jobs-index() {
 
   log "soil-web: Rewriting ${prefix}jobs/index.html"
 
-  local tmp=/tmp/$$.index.html
+  # Fix for bug #1169: don't create the temp file on a different file system,
+  # which /tmp may be.
+  #
+  # When the source and target are on different systems, I believe 'mv' falls
+  # back to 'cp', which has this race condition:
+  #
+  # https://unix.stackexchange.com/questions/116280/cannot-create-regular-file-filename-file-exists
+
+  local tmp=$$.index.html
 
   # Limit to last 100 jobs.  Glob is in alphabetical order and jobs look like
   # 2020-03-20__...
