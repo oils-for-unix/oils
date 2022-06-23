@@ -4,6 +4,7 @@
 #define OSH_BOOL_STAT_H
 
 #include <sys/stat.h>
+#include <fcntl.h> // AT_* Constants
 
 #include "mylib.h"
 #include "syntax_asdl.h"
@@ -18,26 +19,101 @@ bool isatty(Str* fd_str, word_t* blame_word);
 inline bool DoUnaryOp(Id_t op_id, Str* s) {
   mylib::Str0 path(s);
 
-  // TODO: also call lstat(), etc.
-  struct stat st;
-  if (stat(path.Get(), &st) < 0) {
-    return false;
+  const char *zPath = path.Get();
+
+  if (op_id == Id::BoolUnary_h ||
+      op_id == Id::BoolUnary_L )
+  {
+    struct stat st;
+    if (lstat(zPath, &st) < 0) {
+      return false;
+    }
+
+    return S_ISLNK(st.st_mode);
   }
-  auto mode = st.st_mode;
+  else
+  {
+    struct stat st;
+    if (stat(zPath, &st) < 0) {
+      return false;
+    }
 
-  switch (op_id) {
-  // synonyms for existence
-  case Id::BoolUnary_a:
-  case Id::BoolUnary_e:
-    return true;
+    auto mode = st.st_mode;
 
-  case Id::BoolUnary_f:
-    return S_ISREG(mode);
+    switch (op_id) {
+    // synonyms for existence
+    case Id::BoolUnary_a:
+    case Id::BoolUnary_e:
+      return true;
 
-  case Id::BoolUnary_k:
-    return (mode & S_ISVTX) != 0;
+    case Id::BoolUnary_s:
+      return st.st_size != 0;
+
+    case Id::BoolUnary_d:
+      return S_ISDIR(mode);
+
+    case Id::BoolUnary_f:
+      return S_ISREG(mode);
+
+    case Id::BoolUnary_k:
+      return (mode & S_ISVTX) != 0;
+
+    case Id::BoolUnary_p:
+      return S_ISFIFO(mode);
+
+    case Id::BoolUnary_O:
+      return st.st_uid == geteuid();
+
+    case Id::BoolUnary_G:
+      return st.st_gid == getegid();
+
+    case Id::BoolUnary_u:
+      return mode & S_ISUID;
+
+    case Id::BoolUnary_g:
+      return mode & S_ISGID;
+
+
+    // NOTE(Jesse): This implementation MAY have a bug.  On my system (Ubuntu
+    // 20.04) it returns a correct result if the user is root (elevated with
+    // sudo) and no execute bits are set for a file.
+    //
+    // A bug worked around in the python `posix` module here is that the above
+    // (working) scenario is not always the case.
+    //
+    // https://github.com/python/cpython/blob/8d999cbf4adea053be6dbb612b9844635c4dfb8e/Modules/posixmodule.c#L2547
+    //
+    // As well as the dash source code found here (relative to this repo root):
+    //
+    // _cache/spec-bin/dash-0.5.10.2/src/bltin/test.c
+    // See `test_file_access()`
+    //
+    // We could also use the `stat` struct to manually compute the permissions,
+    // as shown in the above `test.c`, though the code is somewhat obtuse.
+    //
+    // There is further discussion of this issue in:
+    // https://github.com/oilshell/oil/pull/1168
+    //
+    // And a bug filed for it at:
+    //
+    // https://github.com/oilshell/oil/issues/1170
+    //
+      case Id::BoolUnary_x:
+        return faccessat(AT_FDCWD, zPath, X_OK, AT_EACCESS) == 0;
+    //
+
+    case Id::BoolUnary_r:
+      return faccessat(AT_FDCWD, zPath, R_OK, AT_EACCESS) == 0;
+
+    case Id::BoolUnary_w:
+      return faccessat(AT_FDCWD, zPath, W_OK, AT_EACCESS) == 0;
+    }
   }
+
+
   assert(0);
+
+  return false;
 }
 
 inline bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
@@ -61,6 +137,8 @@ inline bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
     return m1 > m2;
   case Id::BoolBinary_ot:
     return m1 < m2;
+  case Id::BoolBinary_ef:
+    return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
   }
 
   assert(0);
