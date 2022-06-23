@@ -14,6 +14,21 @@ import os
 import sys
 
 
+class TypeSyntaxError(Exception):
+
+  def __init__(self, lineno, code_str):
+    self.lineno = lineno
+    self.code_str = code_str
+
+
+def ParseFuncType(stmt):
+  try:
+    # This parses with the func_type production in the grammar
+    return ast.parse(stmt.type_comment, mode='func_type')
+  except SyntaxError:
+    raise TypeSyntaxError(stmt.lineno, stmt.type_comment)
+
+
 def DoBlock(stmts: List[stmt], stats: dict[str, int], indent=0) -> None:
   """e.g. body of function, method, etc."""
 
@@ -29,7 +44,12 @@ def DoBlock(stmts: List[stmt], stats: dict[str, int], indent=0) -> None:
 
         if stmt.type_comment:
           # This parses with the func_type production in the grammar
-          typ = ast.parse(stmt.type_comment)
+          try:
+            typ = ast.parse(stmt.type_comment)
+          except SyntaxError as e:
+            # New syntax error
+            raise TypeSyntaxError(stmt.lineno, stmt.type_comment)
+
           print('%s  TYPE: Assign' % ind_str)
           print(ast.dump(typ, indent='  '))
 
@@ -51,8 +71,7 @@ def DoClass(cls: ClassDef, stats: dict[str, int]) -> None:
         print('    ARGS')
         print(ast.dump(stmt.args, indent='  '))
         if stmt.type_comment:
-          # This parses with the func_type production in the grammar
-          sig = ast.parse(stmt.type_comment, mode='func_type')
+          sig = ParseFuncType(stmt)
           print('    TYPE: method')
           print(ast.dump(sig, indent='  '))
         print()
@@ -74,8 +93,7 @@ def DoModule(module: Module, stats: dict[str, int]) -> None:
         print('  ARGS')
         print(ast.dump(stmt.args, indent='  '))
         if stmt.type_comment:
-          # This parses with the func_type production in the grammar
-          sig = ast.parse(stmt.type_comment, mode='func_type')
+          sig = ParseFuncType(stmt)
           print('  TYPE: func')
           print(ast.dump(sig, indent='  '))
         print()
@@ -114,15 +132,22 @@ def main(argv: list[str]) -> int:
 
     try:
       # Python 3.8+ supports type_comments=True
-      module = ast.parse(contents, type_comments=True)
+      module = ast.parse(contents, filename=filename, type_comments=True)
     except SyntaxError as e:
+      # This raises an exception for some reason
+      #e.print_file_and_line()
       print('Error parsing %s: %s' % (filename, e))
       return 1
 
     print('Parsed %s: %s' % (filename, module))
     print()
 
-    DoModule(module, stats)
+    try:
+      DoModule(module, stats)
+    except TypeSyntaxError as e:
+      print('Type comment syntax error on line %d of %s: %r' %
+            (e.lineno, filename, e.code_str))
+      return 1
 
   print(stats)
   return 0
