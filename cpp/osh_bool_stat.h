@@ -4,6 +4,7 @@
 #define OSH_BOOL_STAT_H
 
 #include <sys/stat.h>
+#include <fcntl.h> // AT_* Constants
 
 #include "mylib.h"
 #include "syntax_asdl.h"
@@ -73,25 +74,39 @@ inline bool DoUnaryOp(Id_t op_id, Str* s) {
       return mode & S_ISGID;
 
 
-    // NOTE(Jesse): The python OSH interpreter implements -r, -w, -x (in bool_stat.py)
-    // using posix.access(), which is effectively a thunk to C access().
+    // NOTE(Jesse): This implementation MAY have a bug.  On my system (Ubuntu
+    // 20.04) it returns a correct result if the user is root (elevated with
+    // sudo) and no execute bits are set for a file.
+    //
+    // A bug worked around in the python `posix` module here is that the above
+    // (working) scenario is not always the case.
     //
     // https://github.com/python/cpython/blob/8d999cbf4adea053be6dbb612b9844635c4dfb8e/Modules/posixmodule.c#L2547
     //
-    // We cannot use the `stat` struct because the python analogue for these
-    // checks permission for the _calling_process_, which would end up being
-    // pretty obtuse if we used the information contained in the `stat` struct.
-    // It contains rwx information for owner, group, and other; we'd have
-    // to figure out which of those our process belonged to.
+    // As well as the dash source code found here (relative to this repo root):
+    //
+    // _cache/spec-bin/dash-0.5.10.2/src/bltin/test.c
+    // See `test_file_access()`
+    //
+    // We could also use the `stat` struct to manually compute the permissions,
+    // as shown in the above `test.c`, though the code is somewhat obtuse.
+    //
+    // There is further discussion of this issue in:
+    // https://github.com/oilshell/oil/pull/1168
+    //
+    // And a bug filed for it at:
+    //
+    // https://github.com/oilshell/oil/issues/1170
+    //
       case Id::BoolUnary_x:
-        return access(zPath, X_OK) == 0;
+        return faccessat(AT_FDCWD, zPath, X_OK, AT_EACCESS) == 0;
     //
-      case Id::BoolUnary_r:
-        return access(zPath, R_OK) == 0;
-    //
-      case Id::BoolUnary_w:
-        return access(zPath, W_OK) == 0;
-    // end note
+
+    case Id::BoolUnary_r:
+      return faccessat(AT_FDCWD, zPath, R_OK, AT_EACCESS) == 0;
+
+    case Id::BoolUnary_w:
+      return faccessat(AT_FDCWD, zPath, W_OK, AT_EACCESS) == 0;
     }
   }
 
