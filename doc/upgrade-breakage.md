@@ -25,8 +25,8 @@ First, let's emphasize the **good** things that happen when you upgrade:
 - [Reliable Error Handling](error-handling.html) becomes the default.
 - ... and more
 
-You can also use `bin/osh` indefinitely, in which case you **don't** need to
-read this doc.  [OSH]($xref:osh-language) is a highly compatible Unix shell.
+You can also use `bin/osh` indefinitely, in which case you don't need to read
+this doc.  [OSH]($xref:osh-language) is a highly compatible Unix shell.
 
 ## Syntax Changes
 
@@ -34,41 +34,30 @@ Now onto the breakages.  Most of them are **unlikely**, but worth noting.
 
 ### `if ( )` and `while ( )` take expressions, not subshell commands
 
-Code like `if ( ls /tmp )` is valid shell, but it's almost always a **misuse**
-of the language.  Parentheses mean **subshell**, not grouping as in C or
-Python.
+Code like `if ( ls /tmp )` is valid shell, but it's almost always a misuse of
+the language.  Parentheses mean **subshell**, not grouping as in C or Python.
 
 In Oil:
 
 - Use `if (x > 0)` for true/false expressions
-- Use the `forkwait` builtin for subshells, which are uncommon.  
-  - It's like a sequence of the `fork` builtin (replacing `&`) and the `wait`
-    builtin.
+- Use the `forkwait` builtin for subshells, which are uncommon.  (It's like
+  invoking the `fork` builtin, then the `wait` builtin.)
 
 No:
 
-    ( not_changed=foo )
-    echo $not_changed
+    ( cd /tmp; rm *.sh )
 
 Yes:
 
     forkwait {
-      setvar not_changed = 'foo'
+      cd /tmp
+      rm *.sh
     }
-    echo $not_changed
 
-Note that the idiom of running commands in a different dir no longer requires
-a subshell:
+Better:
 
-No:
-
-    ( cd /tmp; echo $PWD )
-    echo $PWD  # still the original value
-
-Yes:
-
-    cd /tmp {
-      echo $PWD 
+    cd /tmp {  # no process created
+      rm *.sh
     }
     echo $PWD  # restored
 
@@ -174,4 +163,7 @@ Idioms](idioms.html).
 Also related: [Known Differences Between OSH and Other
 Shells](known-differences.html).
 
+## Acknowledgments
+
+- Thank you to `ca2013` for reviewing this doc.
 

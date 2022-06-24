@@ -339,16 +339,20 @@ Yes:
 
 No:
 
-    ( not_mutated=foo )
-    echo $not_mutated
+    ( cd /tmp; rm *.sh )
 
 Yes:
 
-    var not_mutated = 'bar'
     forkwait {
-      setvar not_mutated = 'foo'
+      cd /tmp
+      rm *.sh
     }
-    echo $not_mutated
+
+Better:
+
+    cd /tmp {  # no process created
+      rm *.sh
+    }
 
 ### Use the `fork` builtin for async, not `&`
 
