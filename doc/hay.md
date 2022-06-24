@@ -84,21 +84,32 @@ environment, then execute shell code within it.
 A goal of Hay is to restore the **simplicity** of Unix to distributed systems.
 It's all just **code and data**!
 
+<!--
+
+### Analogies
+
+Maybe replace this section.
+
+TODO:
+- Go templates / YAML
+- CMake / Ninja
+- Autotools (m4) / Make
+
+-->
+
 Here are some DSLs in the same area:
 
 - [YAML][] is a data format that is (surprisingly) the de-facto control plane
   language for the cloud.  It's an approximate superset of [JSON][].
-- [UCL][] (universal config language) is a library influenced by the [Nginx][]
-  config file syntax.
-  - [HCL][] (HashiCorp config language) is similar, and is used to configure
-    cloud services.
+- [UCL][] (universal config language) and [HCL][] (HashiCorp config language)
+  are influenced by the [Nginx][] config file syntax.
 - [Nix][] has a *functional* language to configure Linux distros.  In contrast,
   Hay is multi-paradigm and imperative.
 - The [Starlark][] language is a dialect of Python used by the [Bazel][] build
   system.
-  - It uses imperative code to specify variants of a graph, and you can use
+  - It uses imperative code to specify build graph variants, and you can use
     this pattern in Hay.  That is, if statements, for loops, and functions are
-    all idiomatic and useful in Starlark and Hay.
+    useful in Starlark and Hay.
 
 And some general purpose languages:
 
@@ -106,8 +117,12 @@ And some general purpose languages:
   "blocks"](http://radar.oreilly.com/2014/04/make-magic-with-ruby-dsls.html)
   inspired Oil.  They're used in systems like Vagrant (VM dev environments) and
   Rake (a build system).
-- [Tcl](https://en.wikipedia.org/wiki/Tcl) commands can also be used to define
-  data, though it's more "stringly typed" than Oil and [JSON]($xref).
+- In [Lisp][], code and data are expressed with the same syntax, and can be
+  interleaved.
+  - [G-Expressions](https://guix.gnu.org/manual/en/html_node/G_002dExpressions.html)
+    in Guix use a *staged evaluation model*, like Hay.
+
+More on the wiki: [Survey of Config Languages]($wiki).
 
 [YAML]: $xref:YAML
 [UCL]: https://github.com/vstakhov/libucl
@@ -119,23 +134,27 @@ And some general purpose languages:
 [Bazel]: https://bazel.build/
 
 [Ruby]: https://www.ruby-lang.org/en/
+[Lisp]: https://en.wikipedia.org/wiki/Lisp_(programming_language)
 
 
 ### Comparison
 
-The biggest difference is that Hay is **embedded in a shell**, and uses the
-same syntax.  This means:
+Hay looks similar to [UCL][] and [HCL][], but a big difference is that it's
+**embedded in a shell**.  In other words, Hay languages are *internal DSLs*,
+while the languages above are *external*.
 
-1. It's not a parsing library you embed in another program.  Instead, you use
+This means:
+
+1. You can **interleave** shell code with Hay data.  There are many uses for
+   this, which we'll discuss below.
+   - On the other hand, you can configure simple systems with plain data like
+     [JSON][].  Hay is for when that stops working!
+1. Hay isn't a library you embed in another program.  Instead, you use
    Unix-style **process-based** composition.
    - For example, [HCL][] is written in Go, which may be hard to embed in a C
      or Rust program.
    - Note that a process is a good **security** boundary.  It can be
      additionally run in an OS container or VM.
-2. You can **interleave** shell code with Hay data.  There are many uses
-   for this, which we'll discuss below.
-   - Early in their development, systems can often use key-value pairs like
-     YAML or JSON.  Hay is for when that stops working!
 
 <!--
    - Code on the **outside** of Hay blocks may use the ["staged programming" / "graph metaprogramming" pattern][build-ci-comments] mentioned above.
@@ -187,25 +206,21 @@ They eagerly evaluate a block in a new **stack frame** and turn it into an
     # ... {"attrs": {"version": "3.9"}} ...
 
 These blocks have a special rule to allow *bare assignments* like `version =
-'3.9'`.  In contrast, Oil code requires keywords like `const` and `var`.
+'3.9'`.  That is, you don't need keywords like `const` or `var`.
 
 (3) In contrast to these two types of Hay nodes, Oil builtins that take a block
-often evaluate it eagerly:
+usually evaluate it eagerly:
 
     cd /tmp {  # run in a new directory
       echo $PWD
     }
 
-    fork {  # run in an async process
-      sleep 3
-    }
-
-In contrast to Hay `SHELL` and `Attr` nodes, builtins are spelled with lower
-case letters.
+Builtins are spelled with `lower` case letters, so `SHELL` and `Attr` nodes
+won't be confused with them.
 
 ### Two Stages of Evaluation
 
-So Hay is designed to be used with a "staged execution" model:
+So Hay is designed to be used with a *staged evaluation model*:
 
 1. The first stage follows the rules above:
    - Tree of Hay nodes &rarr; [JSON]($xref) + Unevaluated shell.
