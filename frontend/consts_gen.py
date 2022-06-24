@@ -360,7 +360,6 @@ int RedirDefaultFd(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
-
   return -1;
 }
 """)
@@ -392,7 +391,7 @@ types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id) {
         b = bool_arg_type_str(BOOL_ARG_TYPES[id_]).replace('.', '_e::')
         out('  case %s: return %s;' % (a, b))
       out("""\
-      }
+  }
   return bool_arg_type_e::Undefined;
 }
 """)
@@ -408,7 +407,6 @@ Kind GetKind(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
-
   return Kind::Undefined;
 }
 """)
