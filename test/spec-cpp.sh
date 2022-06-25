@@ -18,8 +18,8 @@ shopt -s failglob  # to debug TSV expansion failure below
 REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
-# For now use opt since it's faster, see issue #970
-OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-opt/osh_eval.stripped}
+# Run with debug binary by default
+OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-dbg/osh_eval}
 
 # Applies everywhere
 export SPEC_JOB='cpp'
@@ -49,8 +49,9 @@ osh-eval-cpp() {
 }
 
 asan-smoke() {
-  _bin/cxx-asan/osh_eval -c 'echo hi'
-  echo 'echo hi' | _bin/cxx-asan/osh_eval
+  ninja _bin/cxx-asan/osh_eval
+  _bin/cxx-asan/osh_eval -c 'echo -c'
+  echo 'echo stdin' | _bin/cxx-asan/osh_eval
 }
 
 run-with-osh-eval() {
@@ -72,14 +73,6 @@ run-with-osh-eval() {
     "$@"
 }
 
-run-with-osh-eval-dbg() {
-  ### Quicker development loop with debug build
-
-  local rel_path=_bin/cxx-dbg/osh_eval
-  ninja $rel_path
-  OSH_CC=$PWD/$rel_path $0 run-with-osh-eval "$@"
-}
-
 all() {
   ### Run all tests with osh_eval and its translatino
   export SPEC_RUNNER='test/spec-cpp.sh run-with-osh-eval'
@@ -95,11 +88,14 @@ all() {
 }
 
 soil-run() {
-  ninja _bin/cxx-opt/osh_eval.stripped
+  local opt_bin=_bin/cxx-opt/osh_eval.stripped
+
+  # Run with optimized binary since it's faster
+  ninja $opt_bin
 
   # Do less work to start
   # export NUM_SPEC_TASKS=8
-  all
+  OSH_CC=$REPO_ROOT/$opt_bin all
 }
 
 console-row() {

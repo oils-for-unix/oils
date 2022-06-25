@@ -36,7 +36,7 @@ To build oil-native, use:
 
     oil$ build/dev.sh oil-cpp  # translate and compile, may take 30 seconds
 
-    oil$ _bin/osh_eval.dbg -c 'echo hi'  # running compiled C++ !
+    oil$ _bin/cxx-dbg/osh_eval -c 'echo hi'  # running compiled C++ !
     hi
 
 To run the tests and benchmarks, follow the instructions at the top of `deps.sh`.
