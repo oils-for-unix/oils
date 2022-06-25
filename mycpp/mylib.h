@@ -311,19 +311,15 @@ class Str : public gc_heap::Obj {
 
   Str* replace(Str* old, Str* new_str);
 
-  int find(Str* needle) {
+  int find(Str* needle, int pos = 0) {
     assert(needle->len_ == 1);  // Oil's usage
     char c = needle->data_[0];
-    for (int i = 0; i < len_; ++i) {
+    for (int i = pos; i < len_; ++i) {
       if (data_[i] == c) {
         return i;
       }
     }
     return -1;
-  }
-
-  int find(Str* needle, int pos) {
-    assert(0);
   }
 
   int rfind(Str* needle) {
