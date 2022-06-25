@@ -17,4 +17,14 @@ pull-pr() {
    git fetch origin pull/$pr_id/head:pr/$pr_id
 }
 
+log-staging() {
+  ### log: for working with the merge bot
+  git log soil-staging..
+}
+
+diff-staging() {
+  ### diff: for working with the merge bot
+  git diff soil-staging..
+}
+
 "$@"

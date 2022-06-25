@@ -76,53 +76,89 @@ any language, including Oil:
       ]
     }
 
-That is, a package build system can use the metadata to create a build
-environment, then execute shell code within it.
+That is, a package manager can use the attributes to create a build
+environment, then execute shell code within it.  This is a *staged evaluation
+model*.
 
-## Prior Art
+## Understanding Hay
 
 A goal of Hay is to restore the **simplicity** of Unix to distributed systems.
 It's all just **code and data**!
 
-<!--
+This means that it's a bit abstract, so here are a few ways of understanding
+it.
 
 ### Analogies
 
-Maybe replace this section.
+The relation between Hay and Oil is like the relationship between:
 
-TODO:
-- Go templates / YAML
-- CMake / Ninja
-- Autotools (m4) / Make
+- [YAML][] / [Go templates][], which are used in Helm config for Kubernetes.
+  - YAML data specifies a **service**, and templates specify **variants**.
+- Two common ways of building C and C++ code:
+  - [Make]($xref:make) / [Autotools]($xref:autotools)
+  - [Ninja]($xref:ninja) / [CMake][]
+  - Make and Ninja specify a **build graph**, while autotools and CMake detect
+    a **configured variant** with respect to your system.
 
--->
+Each of these pairs is *70's-style macro programming* &mdash; a stringly-typed
+language generating another stringly-typed language, with all the associated
+problems.
 
-Here are some DSLs in the same area:
+In contrast, Hay and Oil are really the same language, with the same syntax,
+and the same Python- and JavaScript-like dynamic **types**.  Hay is just Oil
+that **builds up data** instead of executing commands.
 
-- [YAML][] is a data format that is (surprisingly) the de-facto control plane
-  language for the cloud.  It's an approximate superset of [JSON][].
-- [UCL][] (universal config language) and [HCL][] (HashiCorp config language)
-  are influenced by the [Nginx][] config file syntax.
-- [Nix][] has a *functional* language to configure Linux distros.  In contrast,
-  Hay is multi-paradigm and imperative.
-- The [Starlark][] language is a dialect of Python used by the [Bazel][] build
-  system.
-  - It uses imperative code to specify build graph variants, and you can use
-    this pattern in Hay.  That is, if statements, for loops, and functions are
-    useful in Starlark and Hay.
+(Counterpoint: Ninja is intended for code generation, and it makes sense for
+Oil to generate simple languages.)
 
-And some general purpose languages:
 
-- [Ruby][]'s use of [first-class
-  "blocks"](http://radar.oreilly.com/2014/04/make-magic-with-ruby-dsls.html)
-  inspired Oil.  They're used in systems like Vagrant (VM dev environments) and
-  Rake (a build system).
-- In [Lisp][], code and data are expressed with the same syntax, and can be
-  interleaved.
-  - [G-Expressions](https://guix.gnu.org/manual/en/html_node/G_002dExpressions.html)
-    in Guix use a *staged evaluation model*, like Hay.
+[Go templates]: https://pkg.go.dev/text/template
+[CMake]: https://cmake.org
 
-More on the wiki: [Survey of Config Languages]($wiki).
+### Prior Art
+
+See the [Survey of Config Languages]($wiki) on the wiki, which puts them in
+these categories:
+
+1. Languages for String Data
+   - INI, XML, [YAML][], ...
+1. Languages for Typed Data 
+   - [JSON][], TOML, ...
+1. Programmable String-ish Languages 
+   - Go templates, CMake, autotools/m4, ...
+1. Programmable Typed Data 
+   - Nix expressions, Starlark, Cue, ...
+1. Internal DSLs in General Purpose Languages
+   - Hay, Guile Scheme for Guix, Ruby blocks, ...
+
+Excerpts:
+
+[YAML][] is a data format that is (surprisingly) the de-facto control plane
+language for the cloud.  It's an approximate superset of [JSON][].
+
+[UCL][] (universal config language) and [HCL][] (HashiCorp config language) are
+influenced by the [Nginx][] config file syntax.  If you can read any of these
+languages, you can read Hay.
+
+[Nix][] has a [functional language][nix-lang] to configure Linux distros.  In
+contrast, Hay is multi-paradigm and imperative.
+
+[nix-lang]: https://nixos.wiki/wiki/Nix_Expression_Language
+
+The [Starlark][] language is a dialect of Python used by the [Bazel][] build
+system.  It uses imperative code to specify build graph variants, and you can
+use this same pattern in Hay.  That is, if statements, for loops, and functions
+are useful in Starlark and Hay.
+
+[Ruby][]'s use of [first-class
+blocks](http://radar.oreilly.com/2014/04/make-magic-with-ruby-dsls.html)
+inspired Oil.  They're used in systems like Vagrant (VM dev environments) and
+Rake (a build system).
+
+In [Lisp][], code and data are expressed with the same syntax, and can be
+interleaved.
+[G-Expressions](https://guix.gnu.org/manual/en/html_node/G_002dExpressions.html)
+in Guix use a *staged evaluation model*, like Hay.
 
 [YAML]: $xref:YAML
 [UCL]: https://github.com/vstakhov/libucl
@@ -139,16 +175,16 @@ More on the wiki: [Survey of Config Languages]($wiki).
 
 ### Comparison
 
-Hay looks similar to [UCL][] and [HCL][], but a big difference is that it's
+The biggest difference between Hay and [UCL][] / [HCL][] is that it's
 **embedded in a shell**.  In other words, Hay languages are *internal DSLs*,
-while the languages above are *external*.
+while those languages are *external*.
 
 This means:
 
-1. You can **interleave** shell code with Hay data.  There are many uses for
-   this, which we'll discuss below.
-   - On the other hand, you can configure simple systems with plain data like
-     [JSON][].  Hay is for when that stops working!
+1. You can **interleave** shell code with Hay data.  We'll discuss the many
+   uses of this below.
+   - On the other hand, it's OK to configure simple systems with plain data
+     like [JSON][].  Hay is for when that stops working!
 1. Hay isn't a library you embed in another program.  Instead, you use
    Unix-style **process-based** composition.
    - For example, [HCL][] is written in Go, which may be hard to embed in a C
@@ -229,8 +265,8 @@ So Hay is designed to be used with a *staged evaluation model*:
    execute shell inside a VM, inside a Linux container, or on a remote machine.
 
 These two stages conceptually different, but use the **same** syntax and
-evaluator!  The evaluator runs in a mode where it **builds up data** rather
-than executing commands.
+evaluator!  Again, the evaluator runs in a mode where it **builds up data**
+rather than executing commands.
 
 ### Result Schema
 

@@ -19,7 +19,7 @@ version-0.10.0() {
 
 version-0.11.0() {
   cp -v \
-    _release/VERSION/doc/{idioms,upgrade-breakage}.html \
+    _release/VERSION/doc/{idioms,upgrade-breakage,hay}.html \
     ../oilshell.org__deploy/release/0.11.0/doc/
 }
 
