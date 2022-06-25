@@ -55,7 +55,9 @@ cleanup-jobs-index() {
   # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
   case $dry_run in
     false)
-      ls $dir/*.json | soil-web cleanup | xargs --no-run-if-empty -- rm -v 
+      # Bug fix: there is a race here when 2 jobs complete at the same time.
+      # So use rm -f to ignore failure if the file was already deleted.
+      ls $dir/*.json | soil-web cleanup | xargs --no-run-if-empty -- rm -f -v
       ;;
     true)
       ls $dir/*.json | soil-web cleanup
