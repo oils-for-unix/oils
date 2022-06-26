@@ -15,7 +15,6 @@ readonly REPO_ROOT
 source build/common.sh  # BASE_CXXFLAGS, etc.
 
 CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
-# export ASAN_OPTIONS='detect_leaks=0'
 
 export PYTHONPATH='.:vendor/'
 
@@ -167,6 +166,8 @@ EOF
 # TODO: These two tests should be built with Ninja.
 
 gen-cpp-test() {
+  export ASAN_OPTIONS='detect_leaks=0'
+
   local prefix=_tmp/typed_arith_asdl
   asdl/tool.py cpp asdl/typed_arith.asdl $prefix
 
@@ -205,6 +206,9 @@ gc-test() {
   # Depends on hnode_asdl.h.  TODO: Should be hnode_asdl.gc.h
   # build/dev.sh oil-asdl-to-cpp
 
+  local prefix2=_tmp/demo_lib_asdl.gc
+  PRETTY_PRINT_METHODS='' GC=1 asdl/tool.py cpp asdl/demo_lib.asdl $prefix2
+
   local prefix3=_tmp/typed_demo_asdl.gc
   PRETTY_PRINT_METHODS='' GC=1 asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
 
@@ -218,6 +222,7 @@ gc-test() {
     -o $bin \
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \
+    _tmp/demo_lib_asdl.gc.cc \
     _tmp/typed_demo_asdl.gc.cc 
     #asdl/runtime.cc \
 

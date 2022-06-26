@@ -210,23 +210,67 @@ oil-asdl-to-cpp() {
   gen-asdl-cpp frontend/syntax.asdl
 }
 
-test-hnode() {
+test-hnode-asdl-gc() {
+  ### Test that hnode can compile by itself
+
   local dir=_build/asdl-test
   mkdir  -p $dir
-  cat >$dir/hnode_test.cc <<'EOF'
+  cat >$dir/hnode_asdl_test.cc <<'EOF'
 #include "hnode_asdl.gc.h"
 
 int main() {
-  printf("hi\n");
-  return 42;
+  printf("hnode_asdl_test\n");
+  return 0;
 }
 EOF
 
-  $CXX -I mycpp -I _build/cpp -o _bin/hnode_test \
+  local bin=_bin/hnode_asdl_test
+  $CXX -I mycpp -I _build/cpp -o $bin \
     _build/cpp/hnode_asdl.gc.cc \
-    $dir/hnode_test.cc
+    $dir/hnode_asdl_test.cc
 
-  _bin/hnode_test
+  $bin
+}
+
+test-one-asdl-gc() {
+  local name=$1
+
+  local dir=_build/asdl-test
+  mkdir  -p $dir
+  cat >$dir/${name}_asdl_test.cc <<EOF
+#include "${name}_asdl.gc.h"
+
+int main() {
+  printf("${name}_asdl_test\\n");
+  return 0;
+}
+EOF
+
+  local bin=_bin/${name}_asdl_test
+
+  # BUG: ASDL runtime needs to be translated again!
+  # It should not use mylib.h; it should use mylib2.h!
+
+  # needs -I . for asdl/runtime.gc.h
+
+  #$CXX \
+  $CLANGXX -ferror-limit=10 \
+    -I . -I cpp -I mycpp -I _build/cpp -o $bin \
+    _build/cpp/${name}_asdl.gc.cc \
+    asdl/runtime.gc.cc \
+    $dir/${name}_asdl_test.cc
+
+  $bin
+}
+
+test-all-asdl-gc() {
+  ### Test that types can compile by itself
+
+  test-hnode-asdl-gc
+
+  test-one-asdl-gc types
+  test-one-asdl-gc runtime
+  test-one-asdl-gc syntax
 }
 
 oil-asdl-to-cpp-gc() {
@@ -235,7 +279,6 @@ oil-asdl-to-cpp-gc() {
   mkdir -p _build/cpp _devbuild/tmp
 
   PRETTY_PRINT_METHODS='' gen-asdl-cpp 'asdl/hnode.asdl' _build/cpp/hnode_asdl.gc
-  return
 
   # no dependency on Id
   gen-asdl-cpp frontend/types.asdl _build/cpp/types_asdl.gc

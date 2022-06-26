@@ -18,7 +18,9 @@
 #include <vector>
 
 #include "common.h"
-#define MYLIB_LEGACY 1
+
+// if this file is even included, we're using the old mylib
+#define USING_OLD_MYLIB 1
 #include "gc_heap.h"  // for Obj
 
 #ifdef DUMB_ALLOC
@@ -98,7 +100,7 @@ class RuntimeError {
 // Data Types
 //
 
-#ifdef MYLIB_LEGACY
+#ifdef USING_OLD_MYLIB
 class Str : public gc_heap::Obj {
  public:
   Str(const char* data, int len)
@@ -785,7 +787,7 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
   assert(0);
 }
 
-#endif  // MYLIB_LEGACY
+#endif  // USING_OLD_MYLIB
 
 template <class A, class B>
 class Tuple2 {
@@ -854,7 +856,7 @@ class Tuple4 {
 // Overloaded free function len()
 //
 
-#ifdef MYLIB_LEGACY
+#ifdef USING_OLD_MYLIB
 inline int len(const Str* s) {
   return s->len_;
 }
@@ -893,7 +895,7 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
-#if MYLIB_LEGACY
+#if USING_OLD_MYLIB
 inline bool str_equals(Str* left, Str* right) {
   if (left->len_ == right->len_) {
     return memcmp(left->data_, right->data_, left->len_) == 0;

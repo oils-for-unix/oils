@@ -121,6 +121,9 @@ setglobal_compile_flags() {
   # hack for osh_eval_stubs.h
   flags="$flags -D OSH_EVAL"
 
+  # QSN is a special case used by the ASDL runtime
+  flags="$flags -D USING_OLD_QSN"
+
   # https://ninja-build.org/manual.html#ref_headers
   if test -n "$dotd"; then
     flags="$flags -MD -MF $dotd"

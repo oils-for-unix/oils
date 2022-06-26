@@ -591,12 +591,12 @@ inline Slab<T>* NewSlab(int len) {
   return slab;
 }
 
-#ifdef MYLIB_LEGACY
+#ifdef USING_OLD_MYLIB
 #define GLOBAL_STR(name, val) Str* name = new Str(val);
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 #endif
 
-#ifndef MYLIB_LEGACY
+#ifndef USING_OLD_MYLIB
 
 //
 // Str
@@ -1373,7 +1373,7 @@ void Dict<K, V>::set(K key, V val) {
 void ShowFixedChildren(Obj* obj);
 #endif
 
-#endif  // MYLIB_LEGACY
+#endif  // USING_OLD_MYLIB
 
 }  // namespace gc_heap
 
@@ -1381,7 +1381,7 @@ void ShowFixedChildren(Obj* obj);
 // Functions
 //
 
-#ifndef MYLIB_LEGACY
+#ifndef USING_OLD_MYLIB
 
 // Do some extra calculation to avoid storing redundant lengths.
 inline int len(const gc_heap::Str* s) {
@@ -1398,7 +1398,7 @@ inline int len(const gc_heap::Dict<K, V>* d) {
   return d->len_;
 }
 
-#endif  // MYLIB_LEGACY
+#endif  // USING_OLD_MYLIB
 
 
 #endif  // GC_HEAP_H
