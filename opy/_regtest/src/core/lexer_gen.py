@@ -211,7 +211,7 @@ static inline void MatchToken(int lex_mode, unsigned char* line, int line_len,
   unsigned char* p = line + start_pos;  /* modified by re2c */
   //printf("p: %p q: %p\n", p, q);
 
-  __attribute__((unused)) unsigned char* YYMARKER;  /* why do we need this? */
+  unsigned char* YYMARKER;  /* why do we need this? */
   switch (lex_mode)  {
 """)
 
