@@ -66,7 +66,7 @@ TEST show_sizeof() {
       alignof(flag_spec::_FlagSpecAndMore));
 
   // throw off the alignment
-  auto i = new bool[1];
+  __attribute__((unused)) auto i = new bool[1];
 
   auto out = new flag_spec::_FlagSpecAndMore();
   log("sizeof(out) = %d", sizeof(out));
@@ -334,7 +334,7 @@ TEST flag_spec_test() {
 TEST bool_stat_test() {
   int fail = 0;
   try {
-    bool b1 = bool_stat::isatty(new Str("invalid"), nullptr);
+    bool_stat::isatty(new Str("invalid"), nullptr);
   } catch (error::FatalRuntime* e) {
     fail++;
   }
@@ -366,7 +366,7 @@ TEST pyos_test() {
 
 TEST pyos_readbyte_test() {
   // Write 2 bytes to this file
-  char* tmp_name = "_tmp/pyos_ReadByte";
+  const char* tmp_name = "_tmp/pyos_ReadByte";
   int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
     printf("1. ERROR %s", strerror(errno));
@@ -398,7 +398,7 @@ TEST pyos_readbyte_test() {
 }
 
 TEST pyos_read_test() {
-  char* tmp_name = "_tmp/pyos_Read";
+  const char* tmp_name = "_tmp/pyos_Read";
   int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
     printf("1. ERROR %s", strerror(errno));

@@ -299,7 +299,7 @@ class ShellExecutor(vm._Executor):
       last_pid = pi.LastPid()
       self.mem.last_bg_pid = last_pid   # for $!
 
-      job_id = self.job_state.AddJob(pi)  # show in 'jobs' list
+      self.job_state.AddJob(pi)  # show in 'jobs' list
 
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -309,7 +309,7 @@ class ShellExecutor(vm._Executor):
       p = self._MakeProcess(node)
       pid = p.Start(trace.Fork())
       self.mem.last_bg_pid = pid  # for $!
-      job_id = self.job_state.AddJob(p)  # show in 'jobs' list
+      self.job_state.AddJob(p)  # show in 'jobs' list
     return 0
 
   def RunPipeline(self, node, status_out):
@@ -495,7 +495,7 @@ class ShellExecutor(vm._Executor):
     p.AddStateChange(redir)
 
     # Fork, letting the child inherit the pipe file descriptors.
-    pid = p.Start(trace.ProcessSub())
+    p.Start(trace.ProcessSub())
 
     ps_frame = self.process_sub_stack[-1]
 

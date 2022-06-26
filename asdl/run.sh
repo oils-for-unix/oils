@@ -222,7 +222,7 @@ gc-test() {
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
   $CXX $CPPFLAGS \
-    -I . -I _tmp -I mycpp -I _build/cpp -I cpp \
+    -I . -I $dir -I mycpp -I _build/cpp -I cpp \
     -o $bin \
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \

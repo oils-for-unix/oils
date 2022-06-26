@@ -43,8 +43,10 @@ CXX=${CXX:-'c++'}
 #   observability.  It's required for the 'perf' tool and other kinds of tracing.
 #   Anecdotally the speed difference was in the noise on parsing
 #   configure-coreutils.  
+# - TODO(6/22): Disabled invalid-offsetof for now, but we should enable it after
+#   progress on the garbage collector.  It could catch bugs.
 
-BASE_CXXFLAGS='-std=c++11 -Wall -fno-omit-frame-pointer'
+BASE_CXXFLAGS='-std=c++11 -Wall -Wno-invalid-offsetof -fno-omit-frame-pointer'
 
 readonly CLANG_COV_FLAGS='-fprofile-instr-generate -fcoverage-mapping'
 readonly CLANG_LINK_FLAGS=''

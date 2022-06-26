@@ -8,7 +8,6 @@
 inline Str* repr(void* obj) {
   assert(0);
 }
-
 // runtime.h: translated from Python by mycpp
 
 #ifndef RUNTIME_H

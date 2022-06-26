@@ -576,40 +576,13 @@ if mylib.PYTHON:  # So we don't translate it
 
 
 #
-# QTSV -- A Safe, Unix-y Interchange Format For Tables
-#
-# - Why?  Because CSV and TSV records can span records.
-# - Because data frames need to be transported between Pandas and R without
-#   using types.
-#
+# QTT -- A Safe, Unix-y Interchange Format For Tables
 
-def maybe_tsv_encode(s, bit8_display):
+def maybe_qtt_encode(s, bit8_display):
   # type: (str, int) -> str
   """
   TSV2 needs different quoting rules?
 
-    Numbers like 0.3 and 0.3ef would be ambiguous otherwise
-    Or you could have a typed column?  No it's better to have redundancy.
-    But for 'ls' you don't care
-    $ ls
-    0.3
-    0.3af
-    That is acceptable.
-
+  Numbers like 0.3 and 0.3e1 would be ambiguous otherwise
   """
-  pass
-
-
-def tsv_decode(s):
-  # type: (str) -> str
-  """
-  Logic:
-
-  If we're looking at ', then call decode().
-
-  Otherwise return until the next space/tab/newline or ' or \?
-  \ can only appear within quotes.
-
-  abc
-  """
-  pass
+  raise NotImplementedError()

@@ -156,8 +156,7 @@ extern int B3_2;
 extern int B4_2;
 extern int B4_3;
 bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts);
-Str* maybe_tsv_encode(Str* s, int bit8_display);
-Str* tsv_decode(Str* s);
+Str* maybe_qtt_encode(Str* s, int bit8_display);
 
 }  // declare namespace qsn
 
@@ -1127,16 +1126,10 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
   return valid_utf8;
 }
 
-Str* maybe_tsv_encode(Str* s, int bit8_display) {
+Str* maybe_qtt_encode(Str* s, int bit8_display) {
   StackRoots _roots({&s});
 
-  ;  // pass
-}
-
-Str* tsv_decode(Str* s) {
-  StackRoots _roots({&s});
-
-  ;  // pass
+  throw Alloc<NotImplementedError>();
 }
 
 }  // define namespace qsn

@@ -27,4 +27,8 @@ diff-staging() {
   git diff soil-staging..
 }
 
+rebase-staging() {
+  git rebase -i soil-staging
+}
+
 "$@"
