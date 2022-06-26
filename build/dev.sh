@@ -234,8 +234,14 @@ EOF
 
 test-one-asdl-gc() {
   local name=$1
+  shift
+
+  echo "==="
+  echo "test-one-asdl-gc $name"
+  echo "==="
 
   local dir=_build/asdl-test
+
   mkdir  -p $dir
   cat >$dir/${name}_asdl_test.cc <<EOF
 #include "${name}_asdl.gc.h"
@@ -258,7 +264,11 @@ EOF
     -I . -I cpp -I mycpp -I _build/cpp -o $bin \
     _build/cpp/${name}_asdl.gc.cc \
     asdl/runtime.gc.cc \
-    $dir/${name}_asdl_test.cc
+    mycpp/gc_heap.cc \
+    mycpp/my_runtime.cc \
+    mycpp/mylib2.cc \
+    $dir/${name}_asdl_test.cc \
+    "$@"
 
   $bin
 }
@@ -266,11 +276,18 @@ EOF
 test-all-asdl-gc() {
   ### Test that types can compile by itself
 
-  test-hnode-asdl-gc
+  # Invoke ASDL compiler on everything
+  oil-asdl-to-cpp-gc
 
+  # Now make sure they can compile
+  test-hnode-asdl-gc
   test-one-asdl-gc types
-  test-one-asdl-gc runtime
-  test-one-asdl-gc syntax
+
+  # syntax.asdl is a 'use' dependency; 'id' is implicit
+  # there is no GC variant for id_kind_asdl
+  test-one-asdl-gc runtime _build/cpp/syntax_asdl.gc.cc _build/cpp/id_kind_asdl.cc
+
+  test-one-asdl-gc syntax _build/cpp/id_kind_asdl.cc
 }
 
 oil-asdl-to-cpp-gc() {

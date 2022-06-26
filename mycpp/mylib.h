@@ -1133,12 +1133,20 @@ class Str0 {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
+// emulate gc_heap API for ASDL
+
 inline Str* NewStr(const char* s) {
   return new Str(s);
 }
 
-inline Dict<Str*, void*>* MakeDict() {
-  assert(0);
+template <typename T>
+List<T>* NewList() {
+  return new List<T>();
+}
+
+template <typename T>
+List<T>* NewList(std::initializer_list<T> init) {
+  return new List<T>(init);
 }
 
 class LineReader {

@@ -108,8 +108,15 @@ using id_kind_asdl::Id_t;
 using gc_heap::Obj;
 using gc_heap::Dict;
 using gc_heap::List;
-using gc_heap::NewStr;
+using gc_heap::NewList;
 using gc_heap::Str;
+using gc_heap::NewStr;
+""")
+      else:
+        # compatibility shim for ASDL
+        f.write("""\
+using mylib::NewStr;
+using mylib::NewList;
 """)
 
       for use in schema_ast.uses:
@@ -168,11 +175,11 @@ tags_to_types = \\
         if pretty_print_methods:
           f.write("""\
 #include "asdl/runtime%s.h"  // generated code uses wrappers here
-  """ % dot_gc)
+""" % dot_gc)
 
         # To call pretty-printing methods
         for use in schema_ast.uses:
-          f.write('#include "%s_asdl%s.h"  // ASDL use\n' % (use.mod_name, dot_gc))
+          f.write('#include "%s_asdl%s.h"  // "use" in ASDL \n' % (use.mod_name, dot_gc))
 
         if pretty_print_methods:
           f.write("""\
@@ -185,7 +192,7 @@ using hnode_asdl::hnode__Leaf;
 using hnode_asdl::field;
 using hnode_asdl::color_e;
 
-  """)
+""")
 
         if app_types:
           f.write('using id_kind_asdl::Id_str;\n')

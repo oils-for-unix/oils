@@ -184,7 +184,10 @@ gen-cpp-test() {
   # BUG: This doesn't link without the translation of asdl/runtime.py.
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
-  $CXX $CPPFLAGS \
+  # $CLANGXX -ferror-limit=10 \
+  $CXX \
+    $CPPFLAGS \
+    -D USING_OLD_QSN \
     -I . -I _tmp -I mycpp -I _build/cpp -I cpp \
     -o $bin \
     asdl/gen_cpp_test.cc \
