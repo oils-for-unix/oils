@@ -207,7 +207,7 @@ gc-test() {
   export ASAN_OPTIONS='detect_leaks=0'
 
   # for hnode_asdl.gc.cc
-  build/dev.sh oil-asdl-to-cpp
+  build/dev.sh oil-asdl-to-cpp-gc
 
   local dir=_build/gc-test
   mkdir -p $dir
