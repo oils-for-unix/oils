@@ -219,7 +219,7 @@ test-hnode-asdl-gc() {
 #include "hnode_asdl.gc.h"
 
 int main() {
-  printf("hnode_asdl_test\n");
+  printf("hnode_asdl_test passes\n");
   return 0;
 }
 EOF
@@ -247,7 +247,7 @@ test-one-asdl-gc() {
 #include "${name}_asdl.gc.h"
 
 int main() {
-  printf("${name}_asdl_test\\n");
+  printf("${name}_asdl_test passes\\n");
   return 0;
 }
 EOF

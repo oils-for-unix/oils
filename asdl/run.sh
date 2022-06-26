@@ -202,22 +202,23 @@ gen-cpp-test() {
   $bin "$@"
 }
 
-# TODO: Make this use mylib2.sh and the garbage collector!
-# Right now it's just compiling things in without activating it.
-
 gc-test() {
-  # Depends on hnode_asdl.h.  TODO: Should be hnode_asdl.gc.h
-  # build/dev.sh oil-asdl-to-cpp
+  # TODO: remove this after it works with the garbage collector!
+  export ASAN_OPTIONS='detect_leaks=0'
 
-  local prefix2=_tmp/demo_lib_asdl.gc
-  PRETTY_PRINT_METHODS='' GC=1 asdl/tool.py cpp asdl/demo_lib.asdl $prefix2
+  # for hnode_asdl.gc.cc
+  build/dev.sh oil-asdl-to-cpp
 
-  local prefix3=_tmp/typed_demo_asdl.gc
-  PRETTY_PRINT_METHODS='' GC=1 asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
+  local dir=_build/gc-test
+  mkdir -p $dir
+
+  local prefix2=$dir/demo_lib_asdl.gc
+  GC=1 asdl/tool.py cpp asdl/demo_lib.asdl $prefix2
+
+  local prefix3=$dir/typed_demo_asdl.gc
+  GC=1 asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
 
   local bin=_bin/asdl_gc_test
-
-  # BUG: This doesn't link without the translation of asdl/runtime.py.
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
   $CXX $CPPFLAGS \
@@ -225,9 +226,12 @@ gc-test() {
     -o $bin \
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \
-    _tmp/demo_lib_asdl.gc.cc \
-    _tmp/typed_demo_asdl.gc.cc 
-    #asdl/runtime.cc \
+    mycpp/my_runtime.cc \
+    mycpp/mylib2.cc \
+    asdl/runtime.gc.cc \
+    $dir/demo_lib_asdl.gc.cc \
+    $dir/typed_demo_asdl.gc.cc \
+    _build/cpp/hnode_asdl.gc.cc
 
   #gdb -batch -ex run -ex bt --args $bin "$@"
 
