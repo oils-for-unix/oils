@@ -360,6 +360,7 @@ int RedirDefaultFd(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
+  InvalidCodePath();
 }
 """)
 
@@ -375,6 +376,7 @@ types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
+  InvalidCodePath();
 }
 """)
 
@@ -390,6 +392,7 @@ types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
+  InvalidCodePath();
 }
 """)
 
@@ -404,6 +407,7 @@ Kind GetKind(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
+  InvalidCodePath();
 }
 """)
 

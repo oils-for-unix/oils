@@ -209,7 +209,7 @@ static inline void %s(const unsigned char* line, int line_len,
   const unsigned char* p = line + start_pos;  /* modified by re2c */
 
   /* Echo and History lexer apparently need this, but others don't */
-  const unsigned char* YYMARKER;
+  __attribute__((unused)) const unsigned char* YYMARKER;
 
   for (;;) {
     /*!re2c
@@ -241,7 +241,7 @@ static inline int %s(const unsigned char* s, int len) {
   const unsigned char* p = s;  /* modified by re2c */
   const unsigned char* end = s + len;
 
-  const unsigned char* YYMARKER;
+  __attribute__((unused)) const unsigned char* YYMARKER;
   int id;
 
   for (;;) {
@@ -272,8 +272,6 @@ def StringToInt(func_name, name_def):
 static inline void %s(const unsigned char* s, int len, int* id) {
   const unsigned char* p = s;  /* modified by re2c */
   const unsigned char* end = s + len;
-
-  const unsigned char* YYMARKER;
 
   //fprintf(stderr, "*** s = %%s\n", s);
 
@@ -325,7 +323,7 @@ static inline void MatchOshToken(int lex_mode, const unsigned char* line, int li
   const unsigned char* p = line + start_pos;  /* modified by re2c */
   //printf("p: %p q: %p\n", p, q);
 
-  const unsigned char* YYMARKER;  /* why do we need this? */
+  __attribute__((unused)) const unsigned char* YYMARKER;  /* why do we need this? */
   switch (lex_mode)  {
 """)
 
@@ -405,7 +403,7 @@ static inline int %s(const unsigned char* s, int len) {
   const unsigned char* end = s + len;
 
   /* MatchBraceRangeToken needs this, but others don't */
-  const unsigned char* YYMARKER;
+  __attribute__((unused)) const unsigned char* YYMARKER;
 
   /*!re2c
   re2c:define:YYCTYPE = "unsigned char";

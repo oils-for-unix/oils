@@ -50,7 +50,7 @@ void _CreateDefaults(DefaultPair_c* in,
       val = new value__Float(pair->val.f);
       break;
     case flag_type_e::Str: {
-      char* s = pair->val.s;
+      const char* s = pair->val.s;
       if (s == nullptr) {
         val = new value__Undef();
       } else {

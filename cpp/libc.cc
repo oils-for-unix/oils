@@ -79,10 +79,10 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
 
   int outlen = pat.re_nsub + 1;  // number of captures
 
-  int match;
   const char* s0 = str0.Get();
   regmatch_t* pmatch = (regmatch_t*)malloc(sizeof(regmatch_t) * outlen);
-  if (match = (regexec(&pat, s0, outlen, pmatch, 0) == 0)) {
+  int match = regexec(&pat, s0, outlen, pmatch, 0) == 0;
+  if (match) {
     int i;
     for (i = 0; i < outlen; i++) {
       int len = pmatch[i].rm_eo - pmatch[i].rm_so;
