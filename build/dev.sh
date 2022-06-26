@@ -150,7 +150,9 @@ gen-asdl-cpp() {
   # abbrev module is optional
   asdl/tool.py cpp $asdl_path $out_prefix $debug_info
 
-  echo "$asdl_path -> $out_prefix and $debug_info"
+  # TODO: expand when .gc is the only thing generated
+  #local -a out_files=( $out_prefix* )
+  echo "$asdl_path -> $out_prefix* and $debug_info"
 }
 
 # TODO: syntax.asdl and runtime.asdl are mutually recursive.
@@ -208,12 +210,32 @@ oil-asdl-to-cpp() {
   gen-asdl-cpp frontend/syntax.asdl
 }
 
+test-hnode() {
+  local dir=_build/asdl-test
+  mkdir  -p $dir
+  cat >$dir/hnode_test.cc <<'EOF'
+#include "hnode_asdl.gc.h"
+
+int main() {
+  printf("hi\n");
+  return 42;
+}
+EOF
+
+  $CXX -I mycpp -I _build/cpp -o _bin/hnode_test \
+    _build/cpp/hnode_asdl.gc.cc \
+    $dir/hnode_test.cc
+
+  _bin/hnode_test
+}
+
 oil-asdl-to-cpp-gc() {
   export GC=1
 
   mkdir -p _build/cpp _devbuild/tmp
 
   PRETTY_PRINT_METHODS='' gen-asdl-cpp 'asdl/hnode.asdl' _build/cpp/hnode_asdl.gc
+  return
 
   # no dependency on Id
   gen-asdl-cpp frontend/types.asdl _build/cpp/types_asdl.gc

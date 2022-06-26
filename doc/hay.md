@@ -76,38 +76,90 @@ any language, including Oil:
       ]
     }
 
-That is, a package build system can use the metadata to create a build
-environment, then execute shell code within it.
+That is, a package manager can use the attributes to create a build
+environment, then execute shell code within it.  This is a *staged evaluation
+model*.
 
-## Prior Art
+## Understanding Hay
 
 A goal of Hay is to restore the **simplicity** of Unix to distributed systems.
 It's all just **code and data**!
 
-Here are some DSLs in the same area:
+This means that it's a bit abstract, so here are a few ways of understanding
+it.
 
-- [YAML][] is a data format that is (surprisingly) the de-facto control plane
-  language for the cloud.  It's an approximate superset of [JSON][].
-- [UCL][] (universal config language) is a library influenced by the [Nginx][]
-  config file syntax.
-  - [HCL][] (HashiCorp config language) is similar, and is used to configure
-    cloud services.
-- [Nix][] has a *functional* language to configure Linux distros.  In contrast,
-  Hay is multi-paradigm and imperative.
-- The [Starlark][] language is a dialect of Python used by the [Bazel][] build
-  system.
-  - It uses imperative code to specify variants of a graph, and you can use
-    this pattern in Hay.  That is, if statements, for loops, and functions are
-    all idiomatic and useful in Starlark and Hay.
+### Analogies
 
-And some general purpose languages:
+The relation between Hay and Oil is like the relationship between these pairs
+of languages:
 
-- [Ruby][]'s use of [first-class
-  "blocks"](http://radar.oreilly.com/2014/04/make-magic-with-ruby-dsls.html)
-  inspired Oil.  They're used in systems like Vagrant (VM dev environments) and
-  Rake (a build system).
-- [Tcl](https://en.wikipedia.org/wiki/Tcl) commands can also be used to define
-  data, though it's more "stringly typed" than Oil and [JSON]($xref).
+- [YAML][] / [Go templates][], which are used in Helm config for Kubernetes.
+  - YAML data specifies a **service**, and templates specify **variants**.
+- Two common ways of building C and C++ code:
+  - [Make]($xref:make) / [Autotools]($xref:autotools)
+  - [Ninja]($xref:ninja) / [CMake][]
+  - Make and Ninja specify a **build graph**, while autotools and CMake detect
+    a **configured variant** with respect to your system.
+
+Each of these is *70's-style macro programming* &mdash; a stringly-typed
+language generating another stringly-typed language, with all the associated
+problems.
+
+In contrast, Hay and Oil are really the same language, with the same syntax,
+and the same Python- and JavaScript-like dynamic **types**.  Hay is just Oil
+that **builds up data** instead of executing commands.
+
+(Counterpoint: Ninja is intended for code generation, and it makes sense for
+Oil to generate simple languages.)
+
+
+[Go templates]: https://pkg.go.dev/text/template
+[CMake]: https://cmake.org
+
+### Prior Art
+
+See the [Survey of Config Languages]($wiki) on the wiki, which puts them in
+these categories:
+
+1. Languages for String Data
+   - INI, XML, [YAML][], ...
+1. Languages for Typed Data 
+   - [JSON][], TOML, ...
+1. Programmable String-ish Languages 
+   - Go templates, CMake, autotools/m4, ...
+1. Programmable Typed Data 
+   - Nix expressions, Starlark, Cue, ...
+1. Internal DSLs in General Purpose Languages
+   - Hay, Guile Scheme for Guix, Ruby blocks, ...
+
+Excerpts:
+
+[YAML][] is a data format that is (surprisingly) the de-facto control plane
+language for the cloud.  It's an approximate superset of [JSON][].
+
+[UCL][] (universal config language) and [HCL][] (HashiCorp config language) are
+influenced by the [Nginx][] config file syntax.  If you can read any of these
+languages, you can read Hay.
+
+[Nix][] has a [functional language][nix-lang] to configure Linux distros.  In
+contrast, Hay is multi-paradigm and imperative.
+
+[nix-lang]: https://nixos.wiki/wiki/Nix_Expression_Language
+
+The [Starlark][] language is a dialect of Python used by the [Bazel][] build
+system.  It uses imperative code to specify build graph variants, and you can
+use this same pattern in Hay.  That is, if statements, for loops, and functions
+are useful in Starlark and Hay.
+
+[Ruby][]'s use of [first-class
+blocks](http://radar.oreilly.com/2014/04/make-magic-with-ruby-dsls.html)
+inspired Oil.  They're used in systems like Vagrant (VM dev environments) and
+Rake (a build system).
+
+In [Lisp][], code and data are expressed with the same syntax, and can be
+interleaved.
+[G-Expressions](https://guix.gnu.org/manual/en/html_node/G_002dExpressions.html)
+in Guix use a *staged evaluation model*, like Hay.
 
 [YAML]: $xref:YAML
 [UCL]: https://github.com/vstakhov/libucl
@@ -119,23 +171,27 @@ And some general purpose languages:
 [Bazel]: https://bazel.build/
 
 [Ruby]: https://www.ruby-lang.org/en/
+[Lisp]: https://en.wikipedia.org/wiki/Lisp_(programming_language)
 
 
 ### Comparison
 
-The biggest difference is that Hay is **embedded in a shell**, and uses the
-same syntax.  This means:
+The biggest difference between Hay and [UCL][] / [HCL][] is that it's
+**embedded in a shell**.  In other words, Hay languages are *internal DSLs*,
+while those languages are *external*.
 
-1. It's not a parsing library you embed in another program.  Instead, you use
+This means:
+
+1. You can **interleave** shell code with Hay data.  We'll discuss the many
+   uses of this below.
+   - On the other hand, it's OK to configure simple systems with plain data
+     like [JSON][].  Hay is for when that stops working!
+1. Hay isn't a library you embed in another program.  Instead, you use
    Unix-style **process-based** composition.
    - For example, [HCL][] is written in Go, which may be hard to embed in a C
      or Rust program.
    - Note that a process is a good **security** boundary.  It can be
      additionally run in an OS container or VM.
-2. You can **interleave** shell code with Hay data.  There are many uses
-   for this, which we'll discuss below.
-   - Early in their development, systems can often use key-value pairs like
-     YAML or JSON.  Hay is for when that stops working!
 
 <!--
    - Code on the **outside** of Hay blocks may use the ["staged programming" / "graph metaprogramming" pattern][build-ci-comments] mentioned above.
@@ -187,25 +243,21 @@ They eagerly evaluate a block in a new **stack frame** and turn it into an
     # ... {"attrs": {"version": "3.9"}} ...
 
 These blocks have a special rule to allow *bare assignments* like `version =
-'3.9'`.  In contrast, Oil code requires keywords like `const` and `var`.
+'3.9'`.  That is, you don't need keywords like `const` or `var`.
 
 (3) In contrast to these two types of Hay nodes, Oil builtins that take a block
-often evaluate it eagerly:
+usually evaluate it eagerly:
 
     cd /tmp {  # run in a new directory
       echo $PWD
     }
 
-    fork {  # run in an async process
-      sleep 3
-    }
-
-In contrast to Hay `SHELL` and `Attr` nodes, builtins are spelled with lower
-case letters.
+Builtins are spelled with `lower` case letters, so `SHELL` and `Attr` nodes
+won't be confused with them.
 
 ### Two Stages of Evaluation
 
-So Hay is designed to be used with a "staged execution" model:
+So Hay is designed to be used with a *staged evaluation model*:
 
 1. The first stage follows the rules above:
    - Tree of Hay nodes &rarr; [JSON]($xref) + Unevaluated shell.
@@ -214,8 +266,8 @@ So Hay is designed to be used with a "staged execution" model:
    execute shell inside a VM, inside a Linux container, or on a remote machine.
 
 These two stages conceptually different, but use the **same** syntax and
-evaluator!  The evaluator runs in a mode where it **builds up data** rather
-than executing commands.
+evaluator!  Again, the evaluator runs in a mode where it **builds up data**
+rather than executing commands.
 
 ### Result Schema
 
@@ -226,22 +278,22 @@ Here's a description of the result of Hay evaluation (the first stage).
 
     NodeResult =
       # package cpython { version = '3.9' }
-      Attr (type Str,
-            args List[Str],
-            attrs Map[Str, Any],
-            children List[NodeResult])
+      Attr (type                Str,
+            args                List[Str],
+            attrs               Map[Str, Any],
+            children            List[NodeResult])
 
       # TASK build { ./configure; make }
-    | Shell(type Str,
-            args List[Str],
-            location_str Str,
+    | Shell(type                Str,
+            args                List[Str],
+            location_str        Str,
             location_start_line Int,
-            code_str Str)
+            code_str            Str)
 
 
 Notes:
 
-- Except for user-defined attributes, it's statically typed.
+- Except for user-defined attributes, the result is statically typed.
 - Shell nodes are always leaf nodes.
 - Attr nodes may or may not be leaf nodes.
 
@@ -267,6 +319,7 @@ result of Hay evaluation with the `_hay()` function.
     echo 'bye'  # other shell code
 
     const result = _hay()
+    json write (result)
 
 In this case, there are no restrictions on the commands you can run.
 
@@ -278,11 +331,10 @@ You can put hay definitions in their own file:
 
     Rule mylib.o {
       inputs = ['mylib.c']
-
-      echo 'hi'  # allowed for debugging
-
-      # ls /tmp/$(whoami) would fail due to restrictions on hay evaluation
     }
+
+    echo 'hi'  # allowed for debugging
+    # ls /tmp/$(whoami) would fail due to restrictions on hay evaluation
 
 In this case, you can use `echo` and `write`, but the interpreted is
 **restricted** (see below).
@@ -333,7 +385,7 @@ Even with `eval_hay()` and `hay eval`, the config file is evaluated in the
 - External commands aren't allowed
 - Builtins other than `echo` and `write` aren't allowed
   - For example, the `.hay` file can't invoke `shopt` to change global shell
-    optoins
+    options
 - A new stack frame is created, so the `.hay` file can't mutate your locals
   - However it can still mutate globals with `setglobal`!
 
@@ -384,12 +436,8 @@ Hay is parsed and evaluated with option group `oil:all`, which includes
 
 ## Usage: Interleaving Hay and Oil
 
-Why would you want to interleave data and code?  There are several reasons, but
-one is to naturally express **variants** of a configuration.
-
-### Why?  Build and Service Variants
-
-Here are some examples.
+Why would you want to interleave data and code?  One reason is to naturally
+express variants of a configuration.  Here are some examples.
 
 **Build variants**.  There are many variants of the Oil binary:
 
@@ -416,22 +464,14 @@ about state?  Common variants:
 Again, these collections of services are all **shaped** similarly, but the
 flags **vary** based on where binaries are physically running.
 
-### Concepts: Metaprogramming, Dynamic Types
+---
 
 This model can be referred to as ["graph metaprogramming" or "staged
-programming"][build-ci-comments].
+programming"][build-ci-comments].  In Oil, it's done with dynamically typed
+data like integers and dictionaries.  In contrast, systems like CMake and
+autotools are more stringly typed.
 
 [build-ci-comments]: https://www.oilshell.org/blog/2021/04/build-ci-comments.html
-
-In Oil, it's done with **dynamically typed data** like integers and
-dictionaries.  In contrast, these systems are more **stringly typed**:
-
-- autotools + Make, or CMake + Ninja.  These are the "standard" ways of
-  building C and C++.
-  - GNU Make also supports Guile Scheme as a metaprogramming language.
-- Go templates and [YAML]($xref), as used in Helm and Kubernetes.
-
----
 
 The following **examples** are meant to be "evocative"; they're not based on
 real code.  Again, user feedback can improve them!
@@ -440,8 +480,8 @@ real code.  Again, user feedback can improve them!
 
 Conditionals can go on the inside of a block:
 
-    Service auth.example.com {   # node taking a block
-      if (variant == 'local') {  # condition
+    Service auth.example.com {    # node taking a block
+      if (variant === 'local') {  # condition
         port = 8001
       } else {
         port = 80
@@ -450,12 +490,12 @@ Conditionals can go on the inside of a block:
 
 Or on the outside:
 
-    Service web {              # node
+    Service web {               # node
       root = '/home/www'
     }
 
-    if (variant == 'local') {  # condition
-      Service auth-local {     # node
+    if (variant === 'local') {  # condition
+      Service auth-local {      # node
         port = 8001
       }
     }
@@ -470,7 +510,7 @@ Iteration can also go on the inside of a block:
 
       # variables ending with _ are "hidden" from block evaluation
       for name_ in *.cc {
-        if name_ != 'skipped.cc' {
+        if name_ !== 'skipped.cc' {
           _ append(inputs, name_)
         }
       }
@@ -507,7 +547,8 @@ Procs can wrap blocks:
       }
     }
 
-    myrule mylib  # invoke proc
+    myrule foo  # call proc
+    myrule bar  # call proc
 
 Or they can be invoked from within blocks:
 
@@ -516,19 +557,38 @@ Or they can be invoked from within blocks:
     }
 
     Service foo {      # node
-      set-port 80 :p1  # invoke proc
-      set-port 81 :p2  # invoke proc
+      set-port 80 :p1  # call proc
+      set-port 81 :p2  # call proc
     }
 
 ## More Usage Patterns
 
 ### Using Oil for the Second Stage
 
-TODO: Show example of consuming Hay JSON in Oil.
+The general pattern is:
+
+    ./my-evaluator.oil my-config.hay | json read :result
+
+The evaluator does the following:
+
+1. Sets up the execution context with `hay define`
+1. Parses `my-config.hay` with `parse_hay()`
+1. Evaluates it with `eval_hay()`
+1. Prints the result as JSON.
+
+Then a separate Oil processes reads this JSON and executes application code.
+
+TODO: Show code example.
 
 ### Using Python for the Second Stage
 
-TODO: Show example of consuming Hay JSON in Python.
+In Python, you would:
+
+1. Use the `subprocess` module to invoke `./my-evaluator.oil my-config.hay`. 
+2. Use the `json` module to parse the result.
+3. Then execute application code using the data.
+
+TODO: Show code example.
 
 ### Debian `.d` Dirs
 

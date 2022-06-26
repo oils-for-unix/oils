@@ -164,6 +164,8 @@ EOF
   ls -l _tmp/asdl_bad*
 }
 
+# TODO: These two tests should be built with Ninja.
+
 gen-cpp-test() {
   local prefix=_tmp/typed_arith_asdl
   asdl/tool.py cpp asdl/typed_arith.asdl $prefix
@@ -206,7 +208,7 @@ gc-test() {
   local prefix3=_tmp/typed_demo_asdl.gc
   PRETTY_PRINT_METHODS='' GC=1 asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
 
-  local bin=_tmp/gen_cpp_test
+  local bin=_bin/asdl_gc_test
 
   # BUG: This doesn't link without the translation of asdl/runtime.py.
 
@@ -220,6 +222,7 @@ gc-test() {
     #asdl/runtime.cc \
 
   #gdb -batch -ex run -ex bt --args $bin "$@"
+
   $bin "$@"
 }
 

@@ -339,16 +339,20 @@ Yes:
 
 No:
 
-    ( not_mutated=foo )
-    echo $not_mutated
+    ( cd /tmp; rm *.sh )
 
 Yes:
 
-    var not_mutated = 'bar'
     forkwait {
-      setvar not_mutated = 'foo'
+      cd /tmp
+      rm *.sh
     }
-    echo $not_mutated
+
+Better:
+
+    cd /tmp {  # no process created
+      rm *.sh
+    }
 
 ### Use the `fork` builtin for async, not `&`
 
@@ -644,7 +648,7 @@ A block arg is useful for multiple commands:
 No:
 
     if ps | grep python; then
-      echo 'fouund'
+      echo 'found'
     fi
 
 This is technically correct when `pipefail` is on, but it's impossible for

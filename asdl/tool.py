@@ -163,9 +163,12 @@ tags_to_types = \\
 
 #include "%s.h"
 #include <assert.h>
-#include "asdl/runtime%s.h"  // generated code uses wrappers here
+""" % (out_prefix, ns))
 
-""" % (out_prefix, ns, dot_gc))
+        if pretty_print_methods:
+          f.write("""\
+#include "asdl/runtime%s.h"  // generated code uses wrappers here
+  """ % dot_gc)
 
         # To call pretty-printing methods
         for use in schema_ast.uses:

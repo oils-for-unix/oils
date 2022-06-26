@@ -72,7 +72,7 @@ print-template() {
 ---
 title: Release of Oil $OIL_VERSION
 date: $(date +%Y/%m/%d)
-css_file: blog-bundle-v5.css
+css_file: blog-bundle-v6.css
 tags: oil-release
 comments_url: TODO
 published: no
