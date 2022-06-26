@@ -648,7 +648,7 @@ A block arg is useful for multiple commands:
 No:
 
     if ps | grep python; then
-      echo 'fouund'
+      echo 'found'
     fi
 
 This is technically correct when `pipefail` is on, but it's impossible for

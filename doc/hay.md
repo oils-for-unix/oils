@@ -90,7 +90,8 @@ it.
 
 ### Analogies
 
-The relation between Hay and Oil is like the relationship between:
+The relation between Hay and Oil is like the relationship between these pairs
+of languages:
 
 - [YAML][] / [Go templates][], which are used in Helm config for Kubernetes.
   - YAML data specifies a **service**, and templates specify **variants**.
@@ -100,7 +101,7 @@ The relation between Hay and Oil is like the relationship between:
   - Make and Ninja specify a **build graph**, while autotools and CMake detect
     a **configured variant** with respect to your system.
 
-Each of these pairs is *70's-style macro programming* &mdash; a stringly-typed
+Each of these is *70's-style macro programming* &mdash; a stringly-typed
 language generating another stringly-typed language, with all the associated
 problems.
 
@@ -277,22 +278,22 @@ Here's a description of the result of Hay evaluation (the first stage).
 
     NodeResult =
       # package cpython { version = '3.9' }
-      Attr (type Str,
-            args List[Str],
-            attrs Map[Str, Any],
-            children List[NodeResult])
+      Attr (type                Str,
+            args                List[Str],
+            attrs               Map[Str, Any],
+            children            List[NodeResult])
 
       # TASK build { ./configure; make }
-    | Shell(type Str,
-            args List[Str],
-            location_str Str,
+    | Shell(type                Str,
+            args                List[Str],
+            location_str        Str,
             location_start_line Int,
-            code_str Str)
+            code_str            Str)
 
 
 Notes:
 
-- Except for user-defined attributes, it's statically typed.
+- Except for user-defined attributes, the result is statically typed.
 - Shell nodes are always leaf nodes.
 - Attr nodes may or may not be leaf nodes.
 
@@ -318,6 +319,7 @@ result of Hay evaluation with the `_hay()` function.
     echo 'bye'  # other shell code
 
     const result = _hay()
+    json write (result)
 
 In this case, there are no restrictions on the commands you can run.
 
@@ -329,11 +331,10 @@ You can put hay definitions in their own file:
 
     Rule mylib.o {
       inputs = ['mylib.c']
-
-      echo 'hi'  # allowed for debugging
-
-      # ls /tmp/$(whoami) would fail due to restrictions on hay evaluation
     }
+
+    echo 'hi'  # allowed for debugging
+    # ls /tmp/$(whoami) would fail due to restrictions on hay evaluation
 
 In this case, you can use `echo` and `write`, but the interpreted is
 **restricted** (see below).
@@ -384,7 +385,7 @@ Even with `eval_hay()` and `hay eval`, the config file is evaluated in the
 - External commands aren't allowed
 - Builtins other than `echo` and `write` aren't allowed
   - For example, the `.hay` file can't invoke `shopt` to change global shell
-    optoins
+    options
 - A new stack frame is created, so the `.hay` file can't mutate your locals
   - However it can still mutate globals with `setglobal`!
 
@@ -435,12 +436,8 @@ Hay is parsed and evaluated with option group `oil:all`, which includes
 
 ## Usage: Interleaving Hay and Oil
 
-Why would you want to interleave data and code?  There are several reasons, but
-one is to naturally express **variants** of a configuration.
-
-### Why?  Build and Service Variants
-
-Here are some examples.
+Why would you want to interleave data and code?  One reason is to naturally
+express variants of a configuration.  Here are some examples.
 
 **Build variants**.  There are many variants of the Oil binary:
 
@@ -467,22 +464,14 @@ about state?  Common variants:
 Again, these collections of services are all **shaped** similarly, but the
 flags **vary** based on where binaries are physically running.
 
-### Concepts: Metaprogramming, Dynamic Types
+---
 
 This model can be referred to as ["graph metaprogramming" or "staged
-programming"][build-ci-comments].
+programming"][build-ci-comments].  In Oil, it's done with dynamically typed
+data like integers and dictionaries.  In contrast, systems like CMake and
+autotools are more stringly typed.
 
 [build-ci-comments]: https://www.oilshell.org/blog/2021/04/build-ci-comments.html
-
-In Oil, it's done with **dynamically typed data** like integers and
-dictionaries.  In contrast, these systems are more **stringly typed**:
-
-- autotools + Make, or CMake + Ninja.  These are the "standard" ways of
-  building C and C++.
-  - GNU Make also supports Guile Scheme as a metaprogramming language.
-- Go templates and [YAML]($xref), as used in Helm and Kubernetes.
-
----
 
 The following **examples** are meant to be "evocative"; they're not based on
 real code.  Again, user feedback can improve them!
@@ -491,8 +480,8 @@ real code.  Again, user feedback can improve them!
 
 Conditionals can go on the inside of a block:
 
-    Service auth.example.com {   # node taking a block
-      if (variant == 'local') {  # condition
+    Service auth.example.com {    # node taking a block
+      if (variant === 'local') {  # condition
         port = 8001
       } else {
         port = 80
@@ -501,12 +490,12 @@ Conditionals can go on the inside of a block:
 
 Or on the outside:
 
-    Service web {              # node
+    Service web {               # node
       root = '/home/www'
     }
 
-    if (variant == 'local') {  # condition
-      Service auth-local {     # node
+    if (variant === 'local') {  # condition
+      Service auth-local {      # node
         port = 8001
       }
     }
@@ -521,7 +510,7 @@ Iteration can also go on the inside of a block:
 
       # variables ending with _ are "hidden" from block evaluation
       for name_ in *.cc {
-        if name_ != 'skipped.cc' {
+        if name_ !== 'skipped.cc' {
           _ append(inputs, name_)
         }
       }
@@ -558,7 +547,8 @@ Procs can wrap blocks:
       }
     }
 
-    myrule mylib  # invoke proc
+    myrule foo  # call proc
+    myrule bar  # call proc
 
 Or they can be invoked from within blocks:
 
@@ -567,19 +557,38 @@ Or they can be invoked from within blocks:
     }
 
     Service foo {      # node
-      set-port 80 :p1  # invoke proc
-      set-port 81 :p2  # invoke proc
+      set-port 80 :p1  # call proc
+      set-port 81 :p2  # call proc
     }
 
 ## More Usage Patterns
 
 ### Using Oil for the Second Stage
 
-TODO: Show example of consuming Hay JSON in Oil.
+The general pattern is:
+
+    ./my-evaluator.oil my-config.hay | json read :result
+
+The evaluator does the following:
+
+1. Sets up the execution context with `hay define`
+1. Parses `my-config.hay` with `parse_hay()`
+1. Evaluates it with `eval_hay()`
+1. Prints the result as JSON.
+
+Then a separate Oil processes reads this JSON and executes application code.
+
+TODO: Show code example.
 
 ### Using Python for the Second Stage
 
-TODO: Show example of consuming Hay JSON in Python.
+In Python, you would:
+
+1. Use the `subprocess` module to invoke `./my-evaluator.oil my-config.hay`. 
+2. Use the `json` module to parse the result.
+3. Then execute application code using the data.
+
+TODO: Show code example.
 
 ### Debian `.d` Dirs
 
