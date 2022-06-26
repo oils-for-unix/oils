@@ -14,7 +14,6 @@ bool_arg_type_e.Other = bool_arg_type_e(5, 'Other')
 class redir_arg_type_e(py_meta.SimpleObj):
   ASDL_TYPE = TYPE_LOOKUP.ByTypeName('redir_arg_type')
 
-redir_arg_type_e.Unknown = redir_arg_type_e(0, 'Unknown')
 redir_arg_type_e.Path = redir_arg_type_e(1, 'Path')
 redir_arg_type_e.Desc = redir_arg_type_e(2, 'Desc')
 redir_arg_type_e.Here = redir_arg_type_e(3, 'Here')
