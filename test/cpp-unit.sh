@@ -74,6 +74,7 @@ all() {
   cpp-unit-tests
   cpp-unit-tests-asan
 
+  # TODO: These tests should be built by Ninja.
   asdl/run.sh gen-cpp-test
   asdl/run.sh gc-test  # integration between ASDL and the GC heap
 }
