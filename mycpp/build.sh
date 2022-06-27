@@ -24,7 +24,7 @@ all-ninja() {
   local status=$?
   set -o errexit
 
-  find-dir-html _ninja
+  find-dir-html _test
 
   # Now we want to zip up
   return $status
@@ -45,13 +45,8 @@ run-for-release() {
 # Utilities
 #
 
-config() {
-  ./build_graph.py
-  cat build.ninja
-}
-
 clean() {
-  rm --verbose -r -f _ninja
+  rm --verbose -r -f _test
 }
 
 "$@"

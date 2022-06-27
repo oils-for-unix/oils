@@ -6,10 +6,22 @@ Runtime options:
 
   CXXFLAGS     Additional flags to pass to the C++ compiler
 
+Phony targets
+
+  osh-eval-all   # all variants of the binary
+  mycpp-all      # all mycpp/examples
+  mycpp-typecheck, etc.
+
+  TODO: unit tests
+
 Directory structure:
 
+_test/ 
+  bin/
+    unit/
+
 _build/   # input source
-  cpp/
+  cpp/    # _build/gen is more cnosistent, but it would take a lot of renaming
     osh_eval.{h,cc}
   preprocessed/
     posix.cc
@@ -253,7 +265,7 @@ def NinjaGraph(n):
   n.default(['_bin/cxx-dbg/osh_eval'])
 
   # All groups
-  n.build(['all'], 'phony', binaries)
+  n.build(['osh-eval-all'], 'phony', binaries)
 
 
 def ShellFunctions(f, argv0):

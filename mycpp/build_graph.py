@@ -8,7 +8,6 @@ Code Layout:
 
   mycpp/
     build_graph.py  # This file describes dependencies programmatically
-    build.ninja     # Generated build description ('rule' and 'build')
     build-steps.sh  # Invoked by Ninja rules
 
     build.sh        # wrappers invoked by the Toil and devtools/release.sh
@@ -21,14 +20,20 @@ Code Layout:
 
 Output Layout:
 
-  _ninja/
+  _test/
+    bin/          # binaries
+      examples/   # many variants
+        cgi.asan  # for testing
+        cgi.opt   # for benchmarking
+        classes.asan
+        classes.opt
+      examples-stripped/  # not really used
+        cgi.opt
+      unit/       # unit tests
+        gc_heap_test.gc_debug
     gen/ 
       varargs_raw.cc
       varargs.cc
-    bin/          # binaries
-      examples/   # many variants
-      examples-stripped/
-      unit/       # unit tests
     tasks/        # *.txt and *.task.txt for .wwz
       typecheck/  # optionally run
       test/       # py, gc_debug, asan, opt
@@ -40,7 +45,7 @@ Output Layout:
       compile/
 
   Phony Targets
-    typecheck, strip, bencmark-table, etc. (See phony dict below)
+    typecheck, strip, benchmark-table, etc. (See phony dict below)
 
 Also:
 
@@ -94,7 +99,7 @@ def ShouldSkipBuild(name):
       # - qsn_qsn.h is incompatible.  This is also an issue with
       #   'asdl/run.sh gc-test'
 
-      # Problem: asdl/runtime.gc.c has str0, so does _ninja/gen/parse.cc
+      # Problem: asdl/runtime.gc.c has str0, so does _test/gen/parse.cc
       # Somehow that problem doesn't occur with Str* str0 = new Str("");
       'parse',
       ]:
@@ -164,7 +169,7 @@ EXAMPLES_PY = {
 }
 
 EXAMPLES_CC = {
-    'parse': ['_ninja/asdl/expr_asdl.gc.cc', 'asdl/runtime.gc.cc'],
+    'parse': ['_test/asdl/expr_asdl.gc.cc', 'asdl/runtime.gc.cc'],
 }
 
 def NinjaGraph(n):
@@ -227,20 +232,20 @@ def NinjaGraph(n):
 
   # Groups of targets.  Not all of these are run by default.
   phony = {
-      'unit': [],
-      'typecheck': [],  # optional: for debugging only.  translation does it.
+      'mycpp-unit': [],
+      'mycpp-typecheck': [],  # optional: for debugging only.  translation does it.
 
       # Note: unused
-      'test': [],  # test examples (across variants, including Python)
+      'mycpp-test': [],  # test examples (across variants, including Python)
 
       'benchmark-table': [],
 
       # Compare logs for tests AND benchmarks.
       # It's a separate task because we have multiple variants to compare, and
       # the timing of test/benchmark tasks should NOT include comparison.
-      'logs-equal': [],
+      'mycpp-logs-equal': [],
 
-      'strip': [],  # optional: strip binaries.  To see how big they are.
+      'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
   }
 
   #
@@ -252,7 +257,7 @@ def NinjaGraph(n):
 
     # TODO: doesn't run under pure 'asan' because of -D GC_DEBUG, etc.
     for variant in ['gc_debug']:  # , 'asan', 'opt']:
-      b = '_ninja/bin/unit/%s.%s' % (test_name, variant)
+      b = '_test/bin/unit/%s.%s' % (test_name, variant)
 
       if test_name == 'target_lang':  # SPECIAL CASE
         main_cc = 'mycpp/demo/target_lang.cc'
@@ -263,28 +268,28 @@ def NinjaGraph(n):
               variables=[('variant', variant), ('more_cxx_flags', "''")])
       n.newline()
 
-      prefix = '_ninja/tasks/unit/%s.%s' % (test_name, variant)
+      prefix = '_test/tasks/unit/%s.%s' % (test_name, variant)
       task_out = '%s.task.txt' % prefix
       log_out = '%s.log.txt' % prefix
       n.build([task_out, log_out], 'task', b)
       n.newline()
 
-      phony['unit'].append(task_out)
+      phony['mycpp-unit'].append(task_out)
 
   #
   # ASDL schema that examples/parse.py depends on
   #
 
-  p = '_ninja/asdl/expr_asdl.py'
+  p = '_test/asdl/expr_asdl.py'
   n.build(p, 'asdl-mypy', 'mycpp/examples/expr.asdl')
   EXAMPLES_PY['parse'].append(p)
 
   # This is annoying
-  for p in ['_ninja/__init__.py', '_ninja/asdl/__init__.py']:
+  for p in ['_test/__init__.py', '_test/asdl/__init__.py']:
     n.build(p, 'touch')
     EXAMPLES_PY['parse'].append(p)
 
-  prefix = '_ninja/asdl/expr_asdl.gc'
+  prefix = '_test/asdl/expr_asdl.gc'
   n.build([prefix + '.cc', prefix + '.h'], 'asdl-cpp', 'mycpp/examples/expr.asdl',
           variables=[('out_prefix', prefix)])
 
@@ -304,7 +309,7 @@ def NinjaGraph(n):
     # TODO: make a phony target for these, since they're not strictly necessary.
     # Translation does everything that type checking does.  Type checking only
     # is useful for debugging.
-    t = '_ninja/tasks/typecheck/%s.log.txt' % ex
+    t = '_test/tasks/typecheck/%s.log.txt' % ex
     main_py = 'mycpp/examples/%s.py' % ex
 
     # expr.asdl needs to import pylib.collections_, which doesn't type check
@@ -314,11 +319,11 @@ def NinjaGraph(n):
             EXAMPLES_PY.get(ex, []) + [main_py],
             variables=[('main_py', main_py), ('skip_imports', skip_imports)])
     n.newline()
-    phony['typecheck'].append(t)
+    phony['mycpp-typecheck'].append(t)
 
     # Run Python.
     for mode in ['test', 'benchmark']:
-      prefix = '_ninja/tasks/%s/%s.py' % (mode, ex)
+      prefix = '_test/tasks/%s/%s.py' % (mode, ex)
       task_out = '%s.task.txt' % prefix
 
       if mode == 'benchmark':
@@ -341,7 +346,7 @@ def NinjaGraph(n):
 
       n.newline()
 
-    raw = '_ninja/gen/%s_raw.cc' % ex
+    raw = '_test/gen/%s_raw.cc' % ex
 
     # Translate to C++
     n.build(raw, 'translate',
@@ -352,7 +357,7 @@ def NinjaGraph(n):
     preamble_path = p if os.path.exists(p) else "''"
 
     # Make a translation unit
-    n.build('_ninja/gen/%s.cc' % ex, 'wrap-cc', raw,
+    n.build('_test/gen/%s.cc' % ex, 'wrap-cc', raw,
             variables=[('name', ex), ('preamble_path', preamble_path)])
 
     n.newline()
@@ -361,22 +366,22 @@ def NinjaGraph(n):
 
     # Compile C++. TODO: Can also parameterize by CXX: Clang or GCC.
     for variant in ['gc_debug', 'asan', 'opt']:
-      b = '_ninja/bin/examples/%s.%s' % (ex, variant)
+      b = '_test/bin/examples/%s.%s' % (ex, variant)
       n.build(
           b, 'compile',
-          ['_ninja/gen/%s.cc' % ex] + RUNTIME + EXAMPLES_CC.get(ex, []),
+          ['_test/gen/%s.cc' % ex] + RUNTIME + EXAMPLES_CC.get(ex, []),
           variables=[
               ('variant', variant), ('more_cxx_flags', more_cxx_flags)
           ])
       n.newline()
 
       if variant == 'opt':
-        stripped = '_ninja/bin/examples-stripped/%s.%s' % (ex, variant)
+        stripped = '_test/bin/examples-stripped/%s.%s' % (ex, variant)
         # no symbols
         n.build([stripped, ''], 'strip', [b],
                 variables=[('variant', variant)])
         n.newline()
-        phony['strip'].append(stripped)
+        phony['mycpp-strip'].append(stripped)
 
     # minimal
     MATRIX = [
@@ -386,7 +391,7 @@ def NinjaGraph(n):
 
     # Run the binary in two ways
     for mode, variant in MATRIX:
-      task_out = '_ninja/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
+      task_out = '_test/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
 
       if mode == 'benchmark':
         if ShouldSkipBenchmark(ex):
@@ -399,28 +404,28 @@ def NinjaGraph(n):
           log('Skipping test of %s', ex)
           continue
 
-      log_out = '_ninja/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
-      py_log_out = '_ninja/tasks/%s/%s.py.log.txt' % (mode, ex)
+      log_out = '_test/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
+      py_log_out = '_test/tasks/%s/%s.py.log.txt' % (mode, ex)
 
       to_compare.append(log_out)
       to_compare.append(py_log_out)
 
       n.build([task_out, log_out], 'example-task',
-              '_ninja/bin/examples/%s.%s' % (ex, variant),
+              '_test/bin/examples/%s.%s' % (ex, variant),
               variables=[
-                ('bin', '_ninja/bin/examples/%s.%s' % (ex, variant)),
+                ('bin', '_test/bin/examples/%s.%s' % (ex, variant)),
                 ('name', ex), ('impl', 'C++')])
       n.newline()
 
   # Compare the log of all examples
-  out = '_ninja/logs-equal.txt'
+  out = '_test/logs-equal.txt'
   n.build([out], 'logs-equal', to_compare)
   n.newline()
 
-  phony['logs-equal'].append(out)
+  phony['mycpp-logs-equal'].append(out)
 
   # Timing of benchmarks
-  out = '_ninja/benchmark-table.tsv'
+  out = '_test/benchmark-table.tsv'
   n.build([out], 'benchmark-table', benchmark_tasks)
   n.newline()
 
@@ -438,8 +443,6 @@ def NinjaGraph(n):
       n.newline()
 
       phony_real.append(name)
-
-  n.default(['unit', 'logs-equal', 'benchmark-table'])
 
   # All groups
   n.build(['mycpp-all'], 'phony', phony_real)

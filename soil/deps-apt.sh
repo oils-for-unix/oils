@@ -80,7 +80,7 @@ cpp() {
     python3-venv
 
     ninja-build
-    # to create mycpp/_ninja/index.html
+    # to create mycpp/_test/index.html
     gawk
 
     # for stable benchmarks

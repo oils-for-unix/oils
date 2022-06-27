@@ -4,7 +4,7 @@
 #   benchmarks/sizelog.sh <function name>
 #
 # Example:
-#   ninja _ninja/osh_eval.alloclog
+#   ninja _test/osh_eval.alloclog
 #   benchmarks/alloclog.sh alloc-hist
 
 set -o nounset

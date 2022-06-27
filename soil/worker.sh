@@ -168,7 +168,7 @@ compile-osh-eval build/native.sh soil-run              -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh oil-native-preprocessed -
 shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
-mycpp-examples   mycpp/build.sh examples               mycpp/_ninja/index.html
+mycpp-examples   mycpp/build.sh examples               mycpp/_test/index.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF

@@ -150,7 +150,7 @@ task() {
   # The rest of the args are passed as flags to time-tsv
 
   case $bin in
-    (_ninja/bin/*.asan)
+    (_test/bin/*.asan)
       # We could detect leaks when GC is turned on?
       export ASAN_OPTIONS='detect_leaks=0'
       ;;
@@ -162,7 +162,7 @@ task() {
   esac
 
   case $task_out in
-    (_ninja/tasks/benchmark/*)
+    (_test/tasks/benchmark/*)
       export BENCHMARK=1
       ;;
   esac

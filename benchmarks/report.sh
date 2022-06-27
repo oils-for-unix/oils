@@ -85,10 +85,10 @@ compute() {
 mycpp-examples() {
   # ./run.sh benchmark-all  in the mycpp/ dir produces this
   local base_dir=${1:-_tmp/mycpp-examples}
-  local in_tsv=_ninja/benchmark-table.tsv
+  local in_tsv=_test/benchmark-table.tsv
 
   # Force SERIAL reexecution
-  rm -r -f --verbose _ninja/tasks/benchmark/
+  rm -r -f --verbose _test/tasks/benchmark/
 
   ninja mycpp-all -j 1 $in_tsv
 
