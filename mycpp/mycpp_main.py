@@ -125,7 +125,7 @@ def main(argv):
      
   paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
 
-  log('\tmycpp: loading %s', ' '.join(paths))
+  log('\tmycpp: LOADING %s', ' '.join(paths))
 
   if 0:
     print(opts)

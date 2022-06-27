@@ -1,6 +1,4 @@
-"""
-Copied from mypyc/crash.py
-"""
+# Our copy of mypy/mypyc/crash.py, patched to write to stderr
 
 from typing import Iterator
 MYPY = False
@@ -30,8 +28,8 @@ def crash_report(module_path: str, line: int) -> 'NoReturn':
             tb = tb[i + 1:]
             break
     tb2 = traceback.extract_tb(sys.exc_info()[2])[1:]
-    print('Traceback (most recent call last):')
+    print('Traceback (most recent call last):', file=sys.stderr)
     for s in traceback.format_list(tb + tb2):
-        print(s.rstrip('\n'))
-    print('{}:{}: {}: {}'.format(module_path, line, type(err).__name__, err))
+        print(s.rstrip('\n'), file=sys.stderr)
+    print('{}:{}: {}: {}'.format(module_path, line, type(err).__name__, err), file=sys.stderr)
     raise SystemExit(2)
