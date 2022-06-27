@@ -429,22 +429,17 @@ Kind GetKind(id_kind_asdl::Id_t id) {
       GenCharLookup('LookupCharC', consts._ONE_CHAR_C, f, required=True)
       GenCharLookup('LookupCharPrompt', consts._ONE_CHAR_PROMPT, f)
 
-      # OptionName() is a bit redundant with ADSL's option_str(), but we can
-      # remove that.
+      # OptionName() is a bit redundant with ADSL's debug print option_str(),
+      # but the latter should get stripped from the binary
       out("""\
 Str* OptionName(option_asdl::option_t opt_num) {
   const char* s;
   switch (opt_num) {
 """)
-      # These are the only ones we use
-      set_opts = [
-          (opt.index, opt.name) for opt in option_def.All()
-          if opt.builtin == 'set'
-      ]
 
-      for index, name in set_opts:
-        out('  case %s:' % index)
-        out('    s = "%s";' % name)
+      for opt in option_def.All():
+        out('  case %s:' % opt.index)
+        out('    s = "%s";' % opt.name)
         out('    break;')
 
       out("""\
