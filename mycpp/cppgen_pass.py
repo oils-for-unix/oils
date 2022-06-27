@@ -371,8 +371,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # built-in primitives.
             return
 
-        self.log('')
-        self.log('mypyfile %s', o.fullname())
+        #self.log('')
+        #self.log('mypyfile %s', o.fullname())
 
         mod_parts = o.fullname().split('.')
         if self.forward_decl:
@@ -1211,7 +1211,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if _SkipAssignment(lval.name):
             return
 
-          self.log('    GLOBAL List/Dict: %s', lval.name)
+          #self.log('    GLOBAL List/Dict: %s', lval.name)
 
           lval_type = self.types[lval]
 
@@ -1263,7 +1263,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               temp_name = 'gobj%d' % self.unique_id
               self.unique_id += 1
 
-              self.log('INSTANCE lval %s rval %s', lval, call_expr)
+              #self.log('INSTANCE lval %s rval %s', lval, call_expr)
 
               self.write('%s %s', call_expr.callee.name, temp_name)
               # C c;, not C c(); which is most vexing parse
@@ -1590,7 +1590,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # This should be a dict
           iterated_over = args[0]
 
-          log('------------ ITERITEMS OVER %s', iterated_over)
+          #log('------------ ITERITEMS OVER %s', iterated_over)
 
         else:
           item_type = o.inferred_item_type
@@ -2614,7 +2614,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # DUMMY to prevent compile errors
         # TODO: Remove this
         if not caught:
-          self.write_ind('catch (std::exception) { }')
+          self.write_ind('catch (std::exception) { }\n')
 
         #if o.else_body:
         #  raise AssertionError('try/else not supported')

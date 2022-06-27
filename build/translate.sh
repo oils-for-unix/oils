@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < argc; ++i) {
     args->append(Alloc<Str>(argv[i]));
   }
-  int status;
+  int status = 0;
 
   // For benchmarking
   char* repeat = getenv("REPEAT");

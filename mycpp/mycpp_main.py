@@ -125,6 +125,8 @@ def main(argv):
      
   paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
 
+  log('\tmycpp: loading %s', ' '.join(paths))
+
   if 0:
     print(opts)
     print(paths)
@@ -209,7 +211,7 @@ def main(argv):
   to_compile = filtered
 
   import pickle
-  if 1:
+  if 0:
     for name, module in to_compile:
       log('to_compile %s', name)
 
@@ -280,12 +282,12 @@ using gc_heap::NewDict;
 #include "mycpp/%s.h"
 """ % (os.path.basename(opts.header_out), guard, guard, header_name))
 
-  log('\tFORWARD DECL')
+  log('\tmycpp pass: FORWARD DECL')
 
   # Forward declarations first.
   # class Foo; class Bar;
   for name, module in to_compile:
-    log('forward decl name %s', name)
+    #log('forward decl name %s', name)
     if name in to_header:
       out_f = header_f
     else:
@@ -306,12 +308,12 @@ using gc_heap::NewDict;
   # TODO: This could be a class with 2 members
   fmt_ids = {'_counter': 0}
 
-  log('\tDECL')
+  log('\tmycpp pass: PROTOTYPES')
 
   # First generate ALL C++ declarations / "headers".
   # class Foo { void method(); }; class Bar { void method(); };
   for name, module in to_compile:
-    log('decl name %s', name)
+    #log('decl name %s', name)
     if name in to_header:
       out_f = header_f
     else:
@@ -327,7 +329,7 @@ using gc_heap::NewDict;
 #endif  // %s
 """ % guard)
 
-  log('\tDEFINITION')
+  log('\tmycpp pass: IMPL')
 
   # Now the definitions / implementations.
   # void Foo:method() { ... }
