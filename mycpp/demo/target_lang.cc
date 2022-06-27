@@ -14,12 +14,12 @@
 //   - C++ 20 coroutines (but we're almost certainly not using this)
 
 #include <sys/mman.h>  // mmap()
+
 #include <initializer_list>
 #include <memory>  // shared_ptr
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
-
-#include <stdexcept>
 
 #include "cpp/dumb_alloc.h"
 #define MYLIB_LEGACY 1

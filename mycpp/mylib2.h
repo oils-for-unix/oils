@@ -10,10 +10,10 @@
 #include "my_runtime.h"  // Tuple2
 
 using gc_heap::Alloc;
-using gc_heap::StackRoots;
 using gc_heap::kZeroMask;
 using gc_heap::maskbit;
 using gc_heap::maskbit_v;
+using gc_heap::StackRoots;
 
 namespace mylib {
 

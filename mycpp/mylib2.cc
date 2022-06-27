@@ -2,13 +2,14 @@
 
 #include "mylib2.h"
 
-#include <errno.h>       // errno global
-#include <unistd.h>      // isatty
+#include <errno.h>   // errno global
+#include <unistd.h>  // isatty
+
 #include "my_runtime.h"  // kIntBufSize
 
-using gc_heap::StackRoots;
 using gc_heap::gHeap;
 using gc_heap::kStrHeaderSize;
+using gc_heap::StackRoots;
 
 mylib::BufWriter gBuf;
 

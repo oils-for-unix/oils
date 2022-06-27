@@ -3,9 +3,8 @@
 #ifndef MATCH_H
 #define MATCH_H
 
-#include "mycpp/mylib.h"
-
 #include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
+#include "mycpp/mylib.h"
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 
 #include "_build/cpp/syntax_asdl.h"

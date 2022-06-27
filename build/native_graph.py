@@ -73,6 +73,7 @@ DEPS_CC = [
     'cpp/osh_arith_parse.cc',
     'cpp/osh_bool_stat.cc',
     'cpp/pgen2_parse.cc',
+    'cpp/pylib_path_stat.cc',
     'cpp/pylib_os_path.cc',
     'cpp/dumb_alloc.cc',
     'cpp/fcntl_.cc',

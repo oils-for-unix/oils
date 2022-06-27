@@ -4,9 +4,9 @@
 
 #include <errno.h>
 #include <unistd.h>  // isatty
+
 #include <cassert>
 #include <cstdio>
-
 #include <exception>  // std::exception
 
 Str* kEmptyString = new Str("", 0);

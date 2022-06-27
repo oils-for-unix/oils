@@ -142,9 +142,9 @@ class Space {
   void Free();
 
   void Clear() {
-  // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
-  // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
-  // it makes sense to zero the slabs instead?
+    // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
+    // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
+    // it makes sense to zero the slabs instead?
 #ifndef NO_GC_HACK
     // When not collecting, we need a huge 400 MiB heap.  Try to save startup
     // time by not doing this.
@@ -218,8 +218,8 @@ class Heap {
     }
 
 #if GC_DEBUG
-      // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
-      //    space_size_);
+    // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+    //    space_size_);
 #endif
 
     Collect();  // Try to free some space.
@@ -384,25 +384,25 @@ class Local {
     gHeap.PopRoot();
   }
 
-    // This cast operator overload allows:
-    //
-    // Local<Str> s = NewStr("foo");
-    // node->mystr = s;  // convert from Local to raw
-    //
-    // As well as:
-    //
-    // Local<List<Str*>> strings = Alloc<List<Str*>>();
-    // strings->append(NewStr("foo"));  // convert from local to raw
-    //
-    // The heap should NOT have locals!  List<Str> and not List<Local<Str>>.
-    //
-    // Note: This could be considered dangerous if we don't maintain
-    // discipline.
-    //
-    // https://www.informit.com/articles/article.aspx?p=31529&seqNum=7
-    //
-    // Putting .get() at the call site in mycpp is more explicit. The
-    // readability of the generated code is important!
+  // This cast operator overload allows:
+  //
+  // Local<Str> s = NewStr("foo");
+  // node->mystr = s;  // convert from Local to raw
+  //
+  // As well as:
+  //
+  // Local<List<Str*>> strings = Alloc<List<Str*>>();
+  // strings->append(NewStr("foo"));  // convert from local to raw
+  //
+  // The heap should NOT have locals!  List<Str> and not List<Local<Str>>.
+  //
+  // Note: This could be considered dangerous if we don't maintain
+  // discipline.
+  //
+  // https://www.informit.com/articles/article.aspx?p=31529&seqNum=7
+  //
+  // Putting .get() at the call site in mycpp is more explicit. The
+  // readability of the generated code is important!
 #if 1
   operator T*() {
     return raw_pointer_;
@@ -422,7 +422,7 @@ class Local {
     raw_pointer_ = moved;
   }
 
-    // Dereference to get the real value.  Doesn't seem like we need this.
+  // Dereference to get the real value.  Doesn't seem like we need this.
 #if 0
   T operator*() const {
     //log("operator*");
@@ -1399,6 +1399,5 @@ inline int len(const gc_heap::Dict<K, V>* d) {
 }
 
 #endif  // USING_OLD_MYLIB
-
 
 #endif  // GC_HEAP_H

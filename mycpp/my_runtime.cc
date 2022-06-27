@@ -1,14 +1,16 @@
 // my_runtime.cc
 
 #include "my_runtime.h"
-#include "mylib2.h"  // BufWriter
 
 #include <ctype.h>  // isspace(), isdigit()
+
 #include <cstdarg>  // va_list, etc.
 #include <vector>
 
-using gc_heap::StackRoots;
+#include "mylib2.h"  // BufWriter
+
 using gc_heap::kEmptyString;
+using gc_heap::StackRoots;
 
 // Translation of Python's print().
 void print(Str* s) {

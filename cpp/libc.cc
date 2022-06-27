@@ -1,6 +1,7 @@
 // libc.cc: Replacement for native/libcmodule.c
 
 #include "libc.h"
+
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>

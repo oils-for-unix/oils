@@ -117,9 +117,8 @@
 
 #include <cstddef>  // max_align_t
 #include <initializer_list>
-#include <vector>
-
 #include <stdexcept>
+#include <vector>
 
 void log(const char* fmt, ...) {
   va_list args;

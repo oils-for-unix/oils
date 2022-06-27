@@ -27,7 +27,7 @@ inline size_t aligned(size_t n) {
   return (n + kMask) & ~kMask;
 }
 
-  // This global interface is silly ...
+// This global interface is silly ...
 
 #ifdef DUMB_ALLOC
 void* operator new(size_t size) {

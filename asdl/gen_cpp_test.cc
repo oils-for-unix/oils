@@ -3,10 +3,9 @@
 
 #include "asdl/runtime.h"
 #include "mycpp/mylib.h"
-#include "vendor/greatest.h"
-
 #include "typed_arith_asdl.h"
 #include "typed_demo_asdl.h"  // has simple Sum, etc
+#include "vendor/greatest.h"
 
 using typed_arith_asdl::pipeline;
 

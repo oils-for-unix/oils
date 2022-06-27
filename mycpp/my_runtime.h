@@ -10,10 +10,10 @@
 #ifndef MY_RUNTIME_H
 #define MY_RUNTIME_H
 
-#include "gc_heap.h"
-
 #include <algorithm>  // min(), sort()
 #include <climits>    // CHAR_BIT
+
+#include "gc_heap.h"
 
 // TODO: Don't use 'using' in header
 using gc_heap::Dict;

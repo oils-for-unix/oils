@@ -4,15 +4,14 @@
 #include "asdl/runtime.gc.h"
 #include "mycpp/gc_heap.h"
 #include "mycpp/mylib2.h"
-#include "vendor/greatest.h"
-
 #include "typed_demo_asdl.gc.h"
+#include "vendor/greatest.h"
 
 using gc_heap::Alloc;
 using gc_heap::NewStr;
 
-using hnode_asdl::hnode_t;
 using hnode_asdl::hnode_str;
+using hnode_asdl::hnode_t;
 
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::word;

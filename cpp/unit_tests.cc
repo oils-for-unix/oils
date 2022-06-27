@@ -5,10 +5,8 @@
 #include <errno.h>
 #include <fcntl.h>  // O_RDWR
 
-#include "_devbuild/gen/id.h"
 #include "_build/cpp/runtime_asdl.h"  // cell, etc
-#include "vendor/greatest.h"
-
+#include "_devbuild/gen/id.h"
 #include "core_error.h"
 #include "core_pyerror.h"
 #include "core_pyos.h"  // Chdir
@@ -19,6 +17,7 @@
 #include "posix.h"
 #include "pylib_os_path.h"
 #include "time_.h"
+#include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;
 using runtime_asdl::flag_type_e;
@@ -95,8 +94,8 @@ TEST match_test() {
     log("val = %s", t.at1()->data_);
   }
 
-    // BUG: cstring-TODO: Truncated string causes read past len_
-    // Need a length check!
+  // BUG: cstring-TODO: Truncated string causes read past len_
+  // Need a length check!
 #if 0
   match::SimpleLexer* lex2 = match::BraceRangeLexer(new Str("1234", 2));
   while (true) {

@@ -4,10 +4,10 @@
 #include "mycpp/myerror.h"  // for IOError
 // clang-format on
 
+#include "fcntl_.h"
+
 #include <errno.h>
 #include <fcntl.h>  // the system header
-
-#include "fcntl_.h"
 
 namespace fcntl_ {
 

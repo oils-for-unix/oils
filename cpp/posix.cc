@@ -6,6 +6,7 @@
 
 #include "posix.h"
 
+#include <errno.h>
 #include <fcntl.h>     // open
 #include <sys/wait.h>  // WUNTRACED
 #include <unistd.h>

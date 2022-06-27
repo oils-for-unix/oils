@@ -4,17 +4,16 @@
 #define MYLIB_H
 
 #include <assert.h>
-#include <ctype.h>    // isalpha(), isdigit()
-#include <stdlib.h>   // malloc
-#include <string.h>   // strlen
+#include <ctype.h>   // isalpha(), isdigit()
+#include <stdlib.h>  // malloc
+#include <string.h>  // strlen
+
 #include <algorithm>  // sort()
 // https://stackoverflow.com/questions/3882346/forward-declare-file
 #include <climits>  // CHAR_BIT
 #include <cstdint>
 #include <cstdio>  // FILE*
 #include <initializer_list>
-#include <memory>  // shared_ptr
-#include <unordered_map>
 #include <vector>
 
 #include "common.h"

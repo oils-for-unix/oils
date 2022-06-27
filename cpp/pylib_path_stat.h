@@ -3,17 +3,11 @@
 #ifndef PYLIB_PATH_STAT_H
 #define PYLIB_PATH_STAT_H
 
+class Str;
+
 namespace path_stat {
 
-inline bool exists(Str* path) {
-  mylib::Str0 path0(path);
-  struct stat st;
-  if (::stat(path0.Get(), &st) < 0) {
-    return false;
-  } else {
-    return true;
-  }
-}
+bool exists(Str* path);
 
 }  // namespace path_stat
 
