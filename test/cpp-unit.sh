@@ -71,15 +71,14 @@ all() {
   build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
   build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
 
-  # test each ASDL file on its own, perhaps with the garbage-collected ASDL runtime
-  build/dev.sh test-all-asdl-gc
-
   cpp-unit-tests
   cpp-unit-tests-asan
 
-  # TODO: These tests should be built by Ninja.
-  asdl/run.sh gen-cpp-test
-  asdl/run.sh gc-test  # integration between ASDL and the GC heap
+  asdl/test.sh gen-cpp-test
+  asdl/test.sh gc-test  # integration between ASDL and the GC heap
+
+  # test each ASDL file on its own, perhaps with the garbage-collected ASDL runtime
+  asdl/test.sh all-asdl-gc
 }
 
 "$@"

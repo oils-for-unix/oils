@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Automation for ASDL.
+# Junk drawer for ASDL.
 #
 # Usage:
 #   asdl/run.sh <function name>
@@ -9,12 +9,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
-source build/common.sh  # BASE_CXXFLAGS, etc.
-
-CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
+source build/common.sh
 
 export PYTHONPATH='.:vendor/'
 
@@ -40,41 +38,14 @@ gen-typed-arith-asdl() {
 }
 
 #
-# Test specific schemas
-#
-
-arith-both() { py-cpp asdl/arith.asdl; }
-osh-both() { py-cpp osh/osh.asdl; }
-
-#
 # Native Code
 #
-
-cxx() {
-  local CXX=$CLANGXX
-  local opt_flag='-O2'
-  #local opt_flag='-O0'
-
-  # -Winline
-  # http://stackoverflow.com/questions/10631283/how-will-i-know-whether-inline-function-is-actually-replaced-at-the-place-where
-
-  $CXX -Winline $opt_flag -std=c++11 "$@"
-}
 
 # http://www.commandlinefu.com/commands/view/6004/print-stack-trace-of-a-core-file-without-needing-to-enter-gdb-interactively
 # http://stackoverflow.com/questions/4521015/how-to-pass-arguments-and-redirect-stdin-from-a-file-to-program-run-in-gdb
 gdb-trace() {
   # -args goes before the executable
   gdb -batch -ex "run" -ex "bt" -args "$@" 2>&1 
-}
-
-a4() {
-  local data=_tmp/a4.bin
-  asdl-arith-encode 'array[99]' $data
-  gdb-trace _tmp/typed_arith_demo $data
-
-  asdl-arith-encode 'array[5:10] * 5' $data
-  gdb-trace _tmp/typed_arith_demo $data
 }
 
 # http://stackoverflow.com/questions/22769246/disassemble-one-function-using-objdump
@@ -161,81 +132,6 @@ EOF
   asdl/tool.py cpp _tmp/bad.asdl _tmp/asdl_bad
 
   ls -l _tmp/asdl_bad*
-}
-
-# TODO: These two tests should be built with Ninja.
-
-gen-cpp-test() {
-  export ASAN_OPTIONS='detect_leaks=0'
-
-  local prefix=_tmp/typed_arith_asdl
-  asdl/tool.py cpp asdl/typed_arith.asdl $prefix
-
-  local prefix2=_tmp/demo_lib_asdl
-  asdl/tool.py cpp asdl/demo_lib.asdl $prefix2
-
-  local prefix3=_tmp/typed_demo_asdl
-  asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
-
-  wc -l $prefix* $prefix2*
-
-  local bin=_bin/gen_cpp_test
-
-  # BUG: This doesn't link without the translation of asdl/runtime.py.
-
-  # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
-  # $CLANGXX -ferror-limit=10 \
-  $CXX \
-    $CPPFLAGS \
-    -D USING_OLD_QSN \
-    -I . -I _tmp \
-    -o $bin \
-    asdl/gen_cpp_test.cc \
-    asdl/runtime.cc \
-    mycpp/mylib.cc \
-    mycpp/gc_heap.cc \
-    _build/cpp/hnode_asdl.cc \
-    _tmp/typed_arith_asdl.cc \
-    _tmp/typed_demo_asdl.cc 
-
-  #gdb -batch -ex run -ex bt --args $bin "$@"
-  $bin "$@"
-}
-
-gc-test() {
-  # TODO: remove this after it works with the garbage collector!
-  export ASAN_OPTIONS='detect_leaks=0'
-
-  # for hnode_asdl.gc.cc
-  build/dev.sh oil-asdl-to-cpp-gc
-
-  local dir=_build/gc-test
-  mkdir -p $dir
-
-  local prefix2=$dir/demo_lib_asdl.gc
-  GC=1 asdl/tool.py cpp asdl/demo_lib.asdl $prefix2
-
-  local prefix3=$dir/typed_demo_asdl.gc
-  GC=1 asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
-
-  local bin=_bin/asdl_gc_test
-
-  # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
-  $CXX $CPPFLAGS \
-    -I . -I $dir \
-    -o $bin \
-    asdl/gc_test.cc \
-    mycpp/gc_heap.cc \
-    mycpp/my_runtime.cc \
-    mycpp/mylib2.cc \
-    asdl/runtime.gc.cc \
-    $dir/demo_lib_asdl.gc.cc \
-    $dir/typed_demo_asdl.gc.cc \
-    _build/cpp/hnode_asdl.gc.cc
-
-  #gdb -batch -ex run -ex bt --args $bin "$@"
-
-  $bin "$@"
 }
 
 "$@"

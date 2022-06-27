@@ -455,7 +455,8 @@ List<Str*>* Str::split(Str* sep) {
 
   result = NewList<Str*>(nullptr, breaks.size() - 1);  // reserve enough space
   place = reinterpret_cast<char*>(gHeap.Allocate(num_bytes));
-  for (int i = 1; i < breaks.size(); ++i) {
+  int n = breaks.size();
+  for (int i = 1; i < n; ++i) {
     int prev_pos = breaks[i - 1];
     int part_len = breaks[i] - prev_pos - 1;
     if (part_len > 0) {
