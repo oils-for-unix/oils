@@ -236,6 +236,8 @@ def _ValueToPartValue(val, quoted):
       # Undef should be caught by _EmptyStrOrError().
       raise AssertionError(val.tag_())
 
+  raise AssertionError('for -Wreturn-type in C++')
+
 
 def _MakeWordFrames(part_vals):
   # type: (List[part_value_t]) -> List[List[Tuple[str, bool, bool]]]

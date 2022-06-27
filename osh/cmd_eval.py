@@ -465,6 +465,8 @@ class CommandEvaluator(object):
       else:
         raise AssertionError('Unknown redirect type')
 
+    raise AssertionError('for -Wreturn-type in C++')
+
   def _EvalRedirects(self, node):
     # type: (command_t) -> List[redirect]
     """Evaluate redirect nodes to concrete objects.
@@ -783,12 +785,11 @@ class CommandEvaluator(object):
         i = self.arith_ev.EvalToInt(node.child)
         status = 1 if i == 0 else 0
 
-      # TODO: Change x = 1 + 2*3 into its own Decl node.
       elif case(command_e.VarDecl):
         node = cast(command__VarDecl, UP_node)
 
         if mylib.PYTHON:
-          # x = 'foo' is a shortcut for const x = 'foo'
+          # x = 'foo' in Hay blocks
           if node.keyword is None or node.keyword.id == Id.KW_Const:
             self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
 
@@ -799,7 +800,6 @@ class CommandEvaluator(object):
 
             self.mem.SetValue(vd_lval, val, scope_e.LocalOnly, 
                               flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
-            status = 0
 
           else:
             self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
@@ -826,7 +826,8 @@ class CommandEvaluator(object):
               self.mem.SetValue(vd_lval, val, scope_e.LocalOnly,
                                 flags=_PackFlags(node.keyword.id))
 
-          status = 0
+        # outside mylib.PYTHON
+        status = 0
 
       elif case(command_e.PlaceMutation):
 

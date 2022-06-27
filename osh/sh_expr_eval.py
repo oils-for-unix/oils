@@ -731,6 +731,8 @@ class ArithEvaluator(object):
       else:
         raise AssertionError(node.tag_())
 
+    raise AssertionError('for -Wreturn-type in C++')
+
   def EvalWordToString(self, node):
     # type: (arith_expr_t) -> str
     """

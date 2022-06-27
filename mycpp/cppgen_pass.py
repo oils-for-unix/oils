@@ -2565,6 +2565,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write_ind(';  // pass\n')
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
+        # C++ compiler is aware of assert(0) for unreachable code
+        if (o.expr and 
+            isinstance(o.expr, CallExpr) and
+            o.expr.callee.name == 'AssertionError'):
+          self.write_ind('assert(0);  // AssertionError\n')
+          return
+
         self.write_ind('throw ')
         # it could be raise -> throw ; .  OSH uses that.
         if o.expr:

@@ -270,7 +270,8 @@ class ShellExecutor(vm._Executor):
 
     # Already forked for pipeline: ls / | wc -l
     self.ext_prog.Exec(argv0_path, cmd_val, environ)  # NEVER RETURNS
-    assert False, "This line should never be reached" # makes mypy happy
+
+    raise AssertionError('for -Wreturn-type in C++')
 
   def RunBackgroundJob(self, node):
     # type: (command_t) -> int

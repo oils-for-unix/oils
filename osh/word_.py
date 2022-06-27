@@ -298,6 +298,8 @@ def LeftMostSpanForWord(w):
     else:
       raise AssertionError(w.tag_())
 
+  raise AssertionError('for -Wreturn-type in C++')
+
 
 def RightMostSpanForWord(w):
   # type: (word_t) -> int
@@ -322,6 +324,8 @@ def RightMostSpanForWord(w):
 
     else:
       raise AssertionError(w.tag_())
+
+  raise AssertionError('for -Wreturn-type in C++')
 
 
 # From bash, general.c, unquoted_tilde_word():

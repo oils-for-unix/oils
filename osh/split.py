@@ -167,6 +167,8 @@ class SplitContext(object):
         # TODO: Raise proper error
         raise AssertionError("IFS shouldn't be an array")
 
+    raise AssertionError('for -Wreturn-type in C++')
+
   def Escape(self, s):
     # type: (str) -> str
     """Escape IFS chars."""

@@ -106,30 +106,30 @@ class Source(vm._Builtin):
                          span_id=cmd_val.arg_spids[1])
       return 1
 
-    try:
-      line_reader = reader.FileLineReader(f, self.arena)
-      c_parser = self.parse_ctx.MakeOshParser(line_reader)
+    line_reader = reader.FileLineReader(f, self.arena)
+    c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-      # A sourced module CAN have a new arguments array, but it always shares
-      # the same variable scope as the caller.  The caller could be at either a
-      # global or a local scope.
-      with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
-        source_argv = arg_r.Rest()
-        with state.ctx_Source(self.mem, path, source_argv):
-          with state.ctx_ThisDir(self.mem, path):
-            src = source.SourcedFile(path, call_spid)
-            with alloc.ctx_Location(self.arena, src):
+    # A sourced module CAN have a new arguments array, but it always shares
+    # the same variable scope as the caller.  The caller could be at either a
+    # global or a local scope.
+    with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
+      source_argv = arg_r.Rest()
+      with state.ctx_Source(self.mem, path, source_argv):
+        with state.ctx_ThisDir(self.mem, path):
+          src = source.SourcedFile(path, call_spid)
+          with alloc.ctx_Location(self.arena, src):
+            try:
               status = main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
                                        cmd_flags=cmd_eval.RaiseControlFlow)
-      return status
+            except error._ControlFlow as e:
+              if e.IsReturn():
+                status = e.StatusCode()
+              else:
+                raise
+            finally:
+              f.close()
 
-    except error._ControlFlow as e:
-      if e.IsReturn():
-        return e.StatusCode()
-      else:
-        raise
-    finally:
-      f.close()
+    return status
 
 
 class Command(vm._Builtin):
