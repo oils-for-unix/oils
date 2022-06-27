@@ -233,7 +233,7 @@ namespace id_kind_asdl {
     with open(out_prefix + '.cc', 'w') as f:
       f.write("""\
 #include <assert.h>
-#include "id_kind_asdl.h"
+#include "_build/cpp/id_kind_asdl.h"
 
 namespace id_kind_asdl {
 
@@ -284,11 +284,11 @@ from asdl import pybase
 #ifndef CONSTS_H
 #define CONSTS_H
 
-#include "mylib.h"
-#include "id_kind_asdl.h"
-#include "option_asdl.h"
-#include "runtime_asdl.h"
-#include "types_asdl.h"
+#include "mycpp/mylib.h"
+#include "_build/cpp/id_kind_asdl.h"
+#include "_build/cpp/option_asdl.h"
+#include "_build/cpp/runtime_asdl.h"
+#include "_build/cpp/types_asdl.h"
 
 namespace consts {
 """)
@@ -329,7 +329,7 @@ Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_
         print(fmt % args, file=f)
 
       out("""\
-#include "consts.h"
+#include "_build/cpp/consts.h"
 
 namespace Id = id_kind_asdl::Id;
 using id_kind_asdl::Kind;

@@ -6,8 +6,8 @@
 #include <sys/stat.h>
 #include <fcntl.h> // AT_* Constants
 
-#include "mylib.h"
-#include "syntax_asdl.h"
+#include "_build/cpp/syntax_asdl.h"
+#include "mycpp/mylib.h"
 
 namespace bool_stat {
 

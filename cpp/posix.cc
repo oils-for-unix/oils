@@ -1,7 +1,7 @@
 // posix.cc: Replacement for native/posixmodule.c
 
 // clang-format off
-#include "myerror.h"  // for OSError; must come first
+#include "mycpp/myerror.h"  // for OSError; must come first
 // clang-format on
 
 #include "posix.h"

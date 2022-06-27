@@ -1,29 +1,29 @@
 // preamble.h: declarations to run osh_eval.cc
 
 // clang-format off
-#include "myerror.h"     // do this before 'errno' macro is defined
+#include "mycpp/myerror.h"     // do this before 'errno' macro is defined
 // clang-format on
 
 #include <sys/wait.h>    // WIFSIGNALED, etc. called DIRECTLY
 #include "dumb_alloc.h"  // change the allocator
 // TODO: Need #if GC
-#include "mylib.h"  // runtime library e.g. with Python data structures
+#include "mycpp/mylib.h"  // runtime library e.g. with Python data structures
 
-#include "id_kind_asdl.h"  // syntax.asdl depends on this
+#include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
 
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this
 using id_kind_asdl::Kind_t;
 
-#include "option_asdl.h"
-#include "runtime_asdl.h"
-#include "syntax_asdl.h"
-#include "types_asdl.h"
+#include "_build/cpp/option_asdl.h"
+#include "_build/cpp/runtime_asdl.h"
+#include "_build/cpp/syntax_asdl.h"
+#include "_build/cpp/types_asdl.h"
 
-// _build/cpp
-#include "arg_types.h"
-#include "consts.h"
-#include "core_optview.h"
-#include "grammar_nt.h"
+#include "_build/cpp/arg_types.h"
+#include "_build/cpp/consts.h"
+#include "_build/cpp/core_optview.h"
+
+#include "_devbuild/gen/grammar_nt.h"
 
 // oil/cpp
 #include "core_error.h"

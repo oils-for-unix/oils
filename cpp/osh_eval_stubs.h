@@ -5,9 +5,9 @@
 
 // Hacky stubs
 
-#include "id_kind_asdl.h"
-#include "runtime_asdl.h"
-#include "syntax_asdl.h"
+#include "_build/cpp/id_kind_asdl.h"
+#include "_build/cpp/runtime_asdl.h"
+#include "_build/cpp/syntax_asdl.h"
 
 namespace vm {
 class _Executor;

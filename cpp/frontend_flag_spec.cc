@@ -1,10 +1,11 @@
 // frontend_flag_spec.cc
 
 #include "frontend_flag_spec.h"
-#include "arg_types.h"
+
+#include "_build/cpp/arg_types.h"
 
 #ifndef CPP_UNIT_TEST
-#include "osh_eval.h"  // args::Reader, etc.
+#include "_build/cpp/osh_eval.h"  // args::Reader, etc.
 #endif
 
 namespace flag_spec {

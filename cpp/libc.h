@@ -6,7 +6,7 @@
 #include <fnmatch.h>
 #include <unistd.h>  // gethostname()
 
-#include "mylib.h"
+#include "mycpp/mylib.h"
 
 namespace libc {
 

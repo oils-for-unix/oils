@@ -11,7 +11,7 @@ set -o nounset
 set -o errexit
 #eval 'set -o pipefail'
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 . build/common.sh  # for $BASE_CXXFLAGS
@@ -48,14 +48,7 @@ setglobal_compile_flags() {
   local variant=$1
   local dotd=${2:-}
 
-  flags="
-    $BASE_CXXFLAGS
-    -I . 
-    -I mycpp 
-    -I cpp 
-    -I _build/cpp 
-    -I _devbuild/gen 
-  "
+  flags="$BASE_CXXFLAGS -I $REPO_ROOT"
 
   #
   # Environment variables respected

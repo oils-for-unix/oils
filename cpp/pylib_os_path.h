@@ -4,9 +4,9 @@
 #define PYLIB_OS_PATH_H
 
 #if 1  // TODO: switch this off
-#include "mylib.h"
+#include "mycpp/mylib.h"
 #else
-#include "mylib2.h"
+#include "mycpp/mylib2.h"
 #endif
 
 namespace os_path {

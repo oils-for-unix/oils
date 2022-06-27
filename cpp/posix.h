@@ -5,7 +5,7 @@
 
 #include <unistd.h>
 
-#include "mylib.h"
+#include "mycpp/mylib.h"
 
 namespace posix {
 

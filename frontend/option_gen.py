@@ -78,7 +78,7 @@ namespace option_asdl {
     with open(out_prefix + '.cc', 'w') as f:
       f.write("""\
 #include <assert.h>
-#include "option_asdl.h"
+#include "_build/cpp/option_asdl.h"
 
 namespace option_asdl {
 

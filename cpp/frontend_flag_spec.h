@@ -3,9 +3,9 @@
 #ifndef FRONTEND_FLAG_SPEC_H
 #define FRONTEND_FLAG_SPEC_H
 
-#include "id_kind_asdl.h"
-#include "mylib.h"
-#include "runtime_asdl.h"
+#include "_build/cpp/id_kind_asdl.h"
+#include "_build/cpp/runtime_asdl.h"
+#include "mycpp/mylib.h"
 
 // Forward declarations (can't include osh_eval.h)
 namespace args {

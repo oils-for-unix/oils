@@ -3,9 +3,8 @@
 #ifndef CORE_ERROR_H
 #define CORE_ERROR_H
 
-#include "mylib.h"
-
-#include "syntax_asdl.h"
+#include "_build/cpp/syntax_asdl.h"
+#include "mycpp/mylib.h"
 
 namespace runtime {
 extern int NO_SPID;

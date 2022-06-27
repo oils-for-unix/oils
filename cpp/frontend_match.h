@@ -3,13 +3,13 @@
 #ifndef MATCH_H
 #define MATCH_H
 
-#include "mylib.h"
+#include "mycpp/mylib.h"
 
-#include "id_kind_asdl.h"  // syntax.asdl depends on this
+#include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 
-#include "syntax_asdl.h"
-#include "types_asdl.h"
+#include "_build/cpp/syntax_asdl.h"
+#include "_build/cpp/types_asdl.h"
 
 namespace match {
 

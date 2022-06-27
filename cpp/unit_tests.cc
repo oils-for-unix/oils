@@ -7,17 +7,18 @@
 
 #include "greatest.h"
 
+#include "_devbuild/gen/id.h"
+#include "_build/cpp/runtime_asdl.h"  // cell, etc
+
 #include "core_error.h"
 #include "core_pyerror.h"
 #include "core_pyos.h"  // Chdir
 #include "frontend_flag_spec.h"
 #include "frontend_match.h"
-#include "id.h"
 #include "libc.h"
 #include "osh_bool_stat.h"
 #include "posix.h"
 #include "pylib_os_path.h"
-#include "runtime_asdl.h"  // cell, etc
 #include "time_.h"
 
 namespace Id = id_kind_asdl::Id;

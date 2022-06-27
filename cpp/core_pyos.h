@@ -5,8 +5,8 @@
 
 #include <termios.h>
 
-#include "mylib.h"
-#include "syntax_asdl.h"
+#include "_build/cpp/syntax_asdl.h"
+#include "mycpp/mylib.h"
 
 namespace pyos {
 

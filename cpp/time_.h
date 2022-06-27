@@ -4,7 +4,7 @@
 #define TIME_H
 
 #include <time.h>
-#include "mylib.h"
+#include "mycpp/mylib.h"
 
 namespace time_ {
 

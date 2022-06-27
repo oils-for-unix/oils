@@ -176,8 +176,8 @@ def Cpp(specs, header_f, cc_f):
 #ifndef ARG_TYPES_H
 #define ARG_TYPES_H
 
-#include "frontend_flag_spec.h"  // for FlagSpec_c
-#include "mylib.h"
+#include "cpp/frontend_flag_spec.h"  // for FlagSpec_c
+#include "mycpp/mylib.h"
 
 namespace value_e = runtime_asdl::value_e;
 using runtime_asdl::value__Bool;

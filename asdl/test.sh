@@ -35,9 +35,6 @@ gen-cpp-test() {
 
   local bin=_bin/gen_cpp_test
 
-  # BUG: This doesn't link without the translation of asdl/runtime.py.
-
-  # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
   # $CLANGXX -ferror-limit=10 \
   $CXX \
     $CPPFLAGS \
@@ -118,6 +115,8 @@ EOF
 }
 
 one-asdl-gc() {
+  ### Test that an Oil ASDL file can compile by itself
+
   local name=$1
   shift
 
@@ -161,7 +160,7 @@ EOF
 }
 
 all-asdl-gc() {
-  ### Test that types can compile by itself
+  ### All ASDL compilation tests
 
   # Invoke ASDL compiler on everything
   build/dev.sh oil-asdl-to-cpp-gc

@@ -3,9 +3,9 @@
 #ifndef PGEN2_PARSE_H
 #define PGEN2_PARSE_H
 
-#include "id_kind_asdl.h"
-#include "mylib.h"
-#include "syntax_asdl.h"
+#include "_build/cpp/id_kind_asdl.h"
+#include "_build/cpp/syntax_asdl.h"
+#include "mycpp/mylib.h"
 
 // Hacky forward declaration for translated pgen2/pnode.py
 // Note: it's probably better to express PNode in ASDL, like Token.

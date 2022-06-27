@@ -4,9 +4,9 @@
 
 // This order is required to get it to compile, despite clang-format
 // clang-format off
-#include "osh-types.h"
-#include "id.h"
-#include "osh-lex.h"
+#include "_devbuild/gen/osh-types.h"
+#include "_devbuild/gen/id.h"
+#include "_devbuild/gen/osh-lex.h"
 // clang-format on
 
 #ifdef DUMB_ALLOC

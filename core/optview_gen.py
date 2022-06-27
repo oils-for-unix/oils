@@ -23,8 +23,8 @@ def main(argv):
 #ifndef OPTVIEW_H
 #define OPTVIEW_H
 
-#include "mylib.h"
-#include "option_asdl.h"
+#include "_build/cpp/option_asdl.h"
+#include "mycpp/mylib.h"
 
 namespace optview {
 

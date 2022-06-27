@@ -39,7 +39,7 @@ cpp-skeleton() {
   cat <<EOF
 // $name.cc: translated from Python by mycpp
 
-#include "preamble.h"  // hard-coded stuff
+#include "cpp/preamble.h"  // hard-coded stuff
 
 #undef errno  // for e->errno to work; see mycpp/myerror.h
 

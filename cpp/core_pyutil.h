@@ -3,8 +3,8 @@
 #ifndef CORE_PYUTIL_H
 #define CORE_PYUTIL_H
 
-#include "myerror.h"  // for _OSError; must come first
-#include "mylib.h"
+#include "mycpp/myerror.h"  // for _OSError; must come first
+#include "mycpp/mylib.h"
 
 namespace pyutil {
 
