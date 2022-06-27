@@ -3,7 +3,7 @@
 # Automation for ASDL.
 #
 # Usage:
-#   ./run.sh <function name>
+#   asdl/run.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -188,7 +188,7 @@ gen-cpp-test() {
   $CXX \
     $CPPFLAGS \
     -D USING_OLD_QSN \
-    -I . -I _tmp -I mycpp -I _build/cpp -I cpp \
+    -I . -I _tmp \
     -o $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
@@ -222,7 +222,7 @@ gc-test() {
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
   $CXX $CPPFLAGS \
-    -I . -I $dir -I mycpp -I _build/cpp -I cpp \
+    -I . -I $dir \
     -o $bin \
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \

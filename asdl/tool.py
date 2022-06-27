@@ -83,23 +83,23 @@ def main(argv):
 """)
       if gc:
         f.write("""
-#include "gc_heap.h"  // for new object header
+#include "mycpp/gc_heap.h"  // for new object header
 """)
       else:
         f.write("""
-#include "mylib.h"  // for old Str, List, etc.
+#include "mycpp/mylib.h"  // for old Str, List, etc.
 """)
 
       if pretty_print_methods:
         f.write("""\
-#include "hnode_asdl%s.h"
+#include "_build/cpp/hnode_asdl%s.h"
 using hnode_asdl::hnode_t;
 
 """ % dot_gc)
 
       if app_types:
         f.write("""\
-#include "id_kind_asdl.h"
+#include "_build/cpp/id_kind_asdl.h"
 using id_kind_asdl::Id_t;
 
 """)

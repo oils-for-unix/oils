@@ -234,7 +234,7 @@ def main(argv):
   f.write("""\
 // BEGIN mycpp output
 
-#include "%s.h"
+#include "mycpp/%s.h"
 
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
@@ -243,8 +243,8 @@ using gc_heap::StackRoots;
 
   if gc:
     f.write("""\
-#include "my_runtime.h"
-#include "mylib2.h"
+#include "mycpp/my_runtime.h"
+#include "mycpp/mylib2.h"
 
 using gc_heap::NewStr;
 using gc_heap::NewList;
@@ -277,7 +277,7 @@ using gc_heap::NewDict;
 #ifndef %s
 #define %s
 
-#include "%s.h"
+#include "mycpp/%s.h"
 """ % (os.path.basename(opts.header_out), guard, guard, header_name))
 
   log('\tFORWARD DECL')

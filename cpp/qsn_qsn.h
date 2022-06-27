@@ -4,9 +4,9 @@
 #define QSN_QSN_H
 
 #ifdef USING_OLD_QSN
-#include "mylib.h"
+#include "mycpp/mylib.h"
 #else
-#include "mylib2.h"
+#include "mycpp/mylib2.h"
 #endif
 
 namespace qsn {

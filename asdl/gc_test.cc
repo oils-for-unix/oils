@@ -1,11 +1,11 @@
 // asdl/gc_test.cc
 
-#include "greatest.h"
-
-#include "gc_heap.h"
-#include "mylib2.h"
+#include "_build/cpp/hnode_asdl.gc.h"
 #include "asdl/runtime.gc.h"
-#include "hnode_asdl.gc.h"
+#include "cpp/greatest.h"
+#include "mycpp/gc_heap.h"
+#include "mycpp/mylib2.h"
+
 #include "typed_demo_asdl.gc.h"
 
 using gc_heap::Alloc;

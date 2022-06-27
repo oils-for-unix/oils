@@ -2,7 +2,7 @@
 
 // BEGIN mycpp output
 
-#include "mylib.h"
+#include "mycpp/mylib.h"
 
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
@@ -318,7 +318,7 @@ void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
             css_class = str11;
           }
           else {
-            throw Alloc<AssertionError>();
+            assert(0);  // AssertionError
           }
         }
       }
@@ -366,7 +366,7 @@ void AnsiOutput::PushColor(hnode_asdl::color_t e_color) {
             this->f->write(ansi::GREEN);
           }
           else {
-            throw Alloc<AssertionError>();
+            assert(0);  // AssertionError
           }
         }
       }
@@ -592,7 +592,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
         this->_PrintRecord(node, f, indent);
       }
       else {
-        throw Alloc<AssertionError>();
+        assert(0);  // AssertionError
       }
     }
   }
@@ -684,7 +684,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
           return _TrySingleLineObj(node, f, max_chars);
         }
         else {
-          throw Alloc<AssertionError>();
+          assert(0);  // AssertionError
         }
       }
     }
@@ -1095,7 +1095,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                               state = Start;
                             }
                             else {
-                              throw Alloc<AssertionError>();
+                              assert(0);  // AssertionError
                             }
                           }
                         }
@@ -1105,7 +1105,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                 }
               }
               else {
-                throw Alloc<AssertionError>();
+                assert(0);  // AssertionError
               }
             }
           }
