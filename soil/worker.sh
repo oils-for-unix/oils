@@ -165,7 +165,8 @@ mycpp-pip        mycpp/deps.sh pip-install             -
 build-osh-eval   build/dev.sh oil-cpp                  -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 compile-osh-eval build/native.sh soil-run              -
-metrics          metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
+line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
+preprocessed     metrics/source-code.sh oil-native-preprocessed -
 shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
 mycpp-examples   mycpp/build.sh examples               mycpp/_ninja/index.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -

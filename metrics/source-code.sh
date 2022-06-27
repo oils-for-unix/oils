@@ -72,6 +72,18 @@ osh-cloc() {
   asdl-cloc "${ASDL_FILES[@]}"
 }
 
+oil-native-preprocessed() {
+  build/native_graph.py
+
+  # Clang has slightly fewer lines, but it's not on the CI machine
+  #local -a files=(_build/preprocessed/{cxx,clang}-{dbg,opt}.txt)
+
+  local -a files=(_build/preprocessed/cxx-{dbg,opt}.txt)
+
+  ninja "${files[@]}"
+  head -n 100 "${files[@]}"
+}
+
 #
 # Two variants: text and html
 #

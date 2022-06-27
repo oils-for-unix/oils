@@ -169,9 +169,6 @@ def NinjaGraph(n):
 
   binaries = []
 
-  # all rules need an edge to the self
-  n.build(BUILD_NINJA, 'native_graph', ['build/native_graph.py'])
-
   n.newline()
 
   for compiler in ['cxx', 'clang']:
@@ -198,13 +195,11 @@ def NinjaGraph(n):
         pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, base_name)
         preprocessed.append(pre)
 
-        n.build(pre, 'preprocess', [src], implicit=[BUILD_NINJA],
-                variables=ninja_vars)
+        n.build(pre, 'preprocess', [src], variables=ninja_vars)
         n.newline()
 
       n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
-              'line_count', preprocessed, implicit=[BUILD_NINJA],
-              variables=ninja_vars)
+              'line_count', preprocessed, variables=ninja_vars)
       n.newline()
 
       #
@@ -215,7 +210,7 @@ def NinjaGraph(n):
       binaries.append(bin_together)
 
       n.build(bin_together, 'compile_and_link',
-              sources, implicit=[BUILD_NINJA], variables=ninja_vars)
+              sources, variables=ninja_vars)
       n.newline()
 
       #
@@ -230,8 +225,7 @@ def NinjaGraph(n):
         obj = '_build/obj/%s-%s/%s.o' % (compiler, variant, base_name)
         objects.append(obj)
 
-        n.build(obj, 'compile_one', [src], implicit=[BUILD_NINJA],
-                variables=ninja_vars)
+        n.build(obj, 'compile_one', [src], variables=ninja_vars)
         n.newline()
 
       bin_separate = '_bin/%s-%s/osh_eval' % (compiler, variant)
@@ -241,7 +235,7 @@ def NinjaGraph(n):
       # SEPARATE: Link objects into binary
       #
 
-      n.build(bin_separate, 'link', objects, implicit=[BUILD_NINJA], variables=ninja_vars)
+      n.build(bin_separate, 'link', objects, variables=ninja_vars)
       n.newline()
 
       # Strip the .opt binary
@@ -249,7 +243,7 @@ def NinjaGraph(n):
         for b in [bin_together, bin_separate]:
           stripped = b + '.stripped'
           symbols = b + '.symbols'
-          n.build([stripped, symbols], 'strip', [b], implicit=[BUILD_NINJA])
+          n.build([stripped, symbols], 'strip', [b])
           n.newline()
 
           binaries.append(stripped)
