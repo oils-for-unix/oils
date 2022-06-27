@@ -88,13 +88,12 @@ mycpp-examples() {
   local in_tsv=_ninja/benchmark-table.tsv
 
   # Force SERIAL reexecution
-  pushd mycpp
   rm -r -f --verbose _ninja/tasks/benchmark/
-  ninja -j 1 $in_tsv
-  popd 
+
+  ninja -f mycpp.ninja -j 1 $in_tsv
 
   mkdir -p $base_dir/raw
-  cp -v mycpp/$in_tsv $base_dir/raw
+  cp -v $in_tsv $base_dir/raw
 
   local dir2=$base_dir/stage2
   mkdir -p $dir2

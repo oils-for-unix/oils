@@ -94,6 +94,9 @@ def ShouldSkipBuild(name):
       # - expr.asdl when GC=1
       # - qsn_qsn.h is incompatible.  This is also an issue with
       #   'asdl/run.sh gc-test'
+
+      # Problem: asdl/runtime.gc.c has str0, so does _ninja/gen/parse.cc
+      # Somehow that problem doesn't occur with Str* str0 = new Str("");
       'parse',
       ]:
     return True
@@ -157,20 +160,12 @@ TRANSLATE_FILES = {
     'modules': ['mycpp/testpkg/module1.py', 'mycpp/testpkg/module2.py'],
 }
 
-EXAMPLE_CXXFLAGS = {
-    # TODO: simplify this
-    'varargs': "'-I .'",
-
-    'parse': "'-I ../cpp -I ../_build/cpp'",
-}
-
 EXAMPLES_PY = {
     'parse': [],  # added dynamically
 }
 
 EXAMPLES_CC = {
-    # for now, we don't include the header
-    'parse': ['_ninja/asdl/expr_asdl.cc'],
+    'parse': ['_ninja/asdl/expr_asdl.gc.cc', 'asdl/runtime.gc.cc'],
 }
 
 def main(argv):
@@ -221,8 +216,8 @@ def main(argv):
          description='example-task $name $impl $bin $out')
   n.newline()
   n.rule('typecheck',
-         command='mycpp/build-steps.sh typecheck $main_py $out',
-         description='typecheck $main_py $out')
+         command='mycpp/build-steps.sh typecheck $main_py $out $skip_imports',
+         description='typecheck $main_py $out $skip_imports')
   n.newline()
   n.rule('logs-equal',
          command='mycpp/build-steps.sh logs-equal $out $in',
@@ -288,7 +283,7 @@ def main(argv):
   #
 
   p = '_ninja/asdl/expr_asdl.py'
-  n.build(p, 'asdl-mypy', 'examples/expr.asdl')
+  n.build(p, 'asdl-mypy', 'mycpp/examples/expr.asdl')
   EXAMPLES_PY['parse'].append(p)
 
   # This is annoying
@@ -296,8 +291,8 @@ def main(argv):
     n.build(p, 'touch')
     EXAMPLES_PY['parse'].append(p)
 
-  prefix = '_ninja/asdl/expr_asdl'
-  n.build([prefix + '.cc', prefix + '.h'], 'asdl-cpp', 'examples/expr.asdl',
+  prefix = '_ninja/asdl/expr_asdl.gc'
+  n.build([prefix + '.cc', prefix + '.h'], 'asdl-cpp', 'mycpp/examples/expr.asdl',
           variables=[('out_prefix', prefix)])
 
   #
@@ -318,9 +313,13 @@ def main(argv):
     # is useful for debugging.
     t = '_ninja/tasks/typecheck/%s.log.txt' % ex
     main_py = 'mycpp/examples/%s.py' % ex
+
+    # expr.asdl needs to import pylib.collections_, which doesn't type check
+    skip_imports = 'T' if (ex == 'parse') else "''"
+
     n.build([t], 'typecheck', 
             EXAMPLES_PY.get(ex, []) + [main_py],
-            variables=[('main_py', main_py)])
+            variables=[('main_py', main_py), ('skip_imports', skip_imports)])
     n.newline()
     phony['typecheck'].append(t)
 
@@ -365,7 +364,7 @@ def main(argv):
 
     n.newline()
 
-    more_cxx_flags = EXAMPLE_CXXFLAGS.get(ex, "''")
+    more_cxx_flags = "''"
 
     # Compile C++. TODO: Can also parameterize by CXX: Clang or GCC.
     for variant in ['gc_debug', 'asan', 'opt']:

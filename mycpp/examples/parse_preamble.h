@@ -1,6 +1,4 @@
-#include "_ninja/asdl/expr_asdl.h"
-#include "qsn_qsn.h"
-
-Str* repr(void* obj) {
-  return new Str("TODO: repr()");
-}
+#include "asdl/runtime.gc.h"
+#include "_ninja/asdl/expr_asdl.gc.h"
+#include "cpp/qsn_qsn.h"
+// #include "mycpp/gc_heap.h"

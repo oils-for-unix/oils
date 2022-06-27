@@ -124,11 +124,8 @@ osh-eval() {
 }
 
 #
-# One off for ASDL runtime
+# One off for ASDL runtime.  This is only used in tests!
 #
-
-
-# TODO: Put this in Ninja?  Make a GC variant asdl/runtime.gc.h.
 
 asdl-runtime() {
   ### Translate ASDL deps for unit tests
@@ -193,6 +190,7 @@ EOF
 }
 
 asdl-runtime-gc() {
+  ### Garbage-collected variant in asdl/runtime.gc.*
   GC=1 asdl-runtime '.gc'
 }
 

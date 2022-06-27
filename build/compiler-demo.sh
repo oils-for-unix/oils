@@ -103,4 +103,51 @@ int main() { return 42; }
   $CXX -o $dir/main $dir/main.cc
 }
 
+duplicate-symbols() {
+  local dir=_tmp/duplicate-symbols
+  rm -f -v $dir/*
+  mkdir -p $dir
+
+  echo '
+#ifdef GC
+  #include "mycpp/gc_heap.h"
+  using gc_heap::Str;
+#else
+  #include "mycpp/mylib.h"
+#endif
+
+GLOBAL_STR(str0, "hi");
+
+int* g1 = new int[100];
+
+' > $dir/lib.cc
+
+  # Why is it OK to link asdl/runtime.cc and _build/cpp/osh_eval.cc together?
+  #
+  # Oh they are NOT linked together.  asdl/runtime.cc is only for tests!
+
+  echo '
+#ifdef GC
+  #include "mycpp/gc_heap.h"
+  using gc_heap::Str;
+#else
+  #include "mycpp/mylib.h"
+#endif
+
+GLOBAL_STR(str0, "hi");
+
+// int* g1 = new int[100];
+int* g2 = new int[100];
+
+int main() {
+  printf("hi\n");
+}
+' > $dir/main.cc
+
+  local flags='-D GC'
+  $CXX -I . -o $dir/main $flags $dir/lib.cc $dir/main.cc
+
+  $dir/main
+}
+
 "$@"

@@ -37,7 +37,7 @@ asdl-mypy() {
 asdl-cpp() {
   local in=$1
   local out_prefix=$2
-  asdl-tool cpp $in $out_prefix
+  GC=1 asdl-tool cpp $in $out_prefix
 }
 
 gen-main() {
@@ -210,11 +210,17 @@ typecheck() {
   ### Typecheck without translation
   local main_py=$1
   local out=$2
+  local skip_imports=${3:-}
 
-  # Note: MYPYPATH added for examples/parse.py, which uses mycpp.mylib
-  #MYPYPATH="$REPO_ROOT:$REPO_ROOT/native" \
+  if test -n "$skip_imports"; then
+    local more_flags='--follow-imports=silent'
+  else
+    local more_flags=''
+  fi
+
+  # $more_flags can be empty
   MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" \
-    mypy --py2 --strict $main_py > $out
+    mypy --py2 --strict $more_flags $main_py > $out
 }
 
 lines() {
