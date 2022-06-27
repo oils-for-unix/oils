@@ -1,10 +1,10 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
+#include "_build/asdl-test/typed_arith_asdl.h"
+#include "_build/asdl-test/typed_demo_asdl.h"  // has simple Sum, etc
 #include "asdl/runtime.h"
 #include "mycpp/mylib.h"
-#include "typed_arith_asdl.h"
-#include "typed_demo_asdl.h"  // has simple Sum, etc
 #include "vendor/greatest.h"
 
 using typed_arith_asdl::pipeline;

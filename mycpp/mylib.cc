@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <unistd.h>  // isatty
 
+#include <algorithm>  // sort()
 #include <cassert>
 #include <cstdio>
 #include <exception>  // std::exception
@@ -217,6 +218,10 @@ Str* StrIter::Value() {
 }
 
 namespace mylib {
+
+void mysort(std::vector<Str*>* v) {
+  std::sort(v->begin(), v->end(), _cmp);
+}
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   assert(delim->len_ == 1);

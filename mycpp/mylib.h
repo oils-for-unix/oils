@@ -8,7 +8,6 @@
 #include <stdlib.h>  // malloc
 #include <string.h>  // strlen
 
-#include <algorithm>  // sort()
 // https://stackoverflow.com/questions/3882346/forward-declare-file
 #include <climits>  // CHAR_BIT
 #include <cstdint>
@@ -1086,9 +1085,7 @@ inline bool _cmp(Str* a, Str* b) {
   return str_cmp(a, b) < 0;
 }
 
-inline void mysort(std::vector<Str*>* v) {
-  std::sort(v->begin(), v->end(), _cmp);
-}
+void mysort(std::vector<Str*>* v);
 
 //
 // Buf is StringIO

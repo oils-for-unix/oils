@@ -19,16 +19,21 @@ asdl-tool() {
   PYTHONPATH='.:vendor/' asdl/tool.py "$@"
 }
 
+readonly TMP_DIR='_build/asdl-test'
+
 gen-cpp-test() {
   export ASAN_OPTIONS='detect_leaks=0'
 
-  local prefix=_tmp/typed_arith_asdl
+  local dir=$TMP_DIR
+  mkdir -p $dir
+
+  local prefix=$dir/typed_arith_asdl
   asdl-tool cpp asdl/typed_arith.asdl $prefix
 
-  local prefix2=_tmp/demo_lib_asdl
+  local prefix2=$dir/demo_lib_asdl
   asdl-tool cpp asdl/demo_lib.asdl $prefix2
 
-  local prefix3=_tmp/typed_demo_asdl
+  local prefix3=$dir/typed_demo_asdl
   asdl-tool cpp asdl/typed_demo.asdl $prefix3
 
   wc -l $prefix* $prefix2*
@@ -39,7 +44,7 @@ gen-cpp-test() {
   $CXX \
     $CPPFLAGS \
     -D USING_OLD_QSN \
-    -I . -I _tmp \
+    -I "$REPO_ROOT" \
     -o $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
@@ -60,7 +65,7 @@ gc-test() {
   # for hnode_asdl.gc.cc
   build/dev.sh oil-asdl-to-cpp-gc
 
-  local dir=_build/gc-test
+  local dir=$TMP_DIR
   mkdir -p $dir
 
   local prefix2=$dir/demo_lib_asdl.gc
@@ -73,7 +78,7 @@ gc-test() {
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
   $CXX $CPPFLAGS \
-    -I . -I $dir \
+    -I "$REPO_ROOT" \
     -o $bin \
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \
@@ -92,7 +97,7 @@ gc-test() {
 hnode-asdl-gc() {
   ### Test that hnode can compile by itself
 
-  local dir=_build/asdl-test
+  local dir=$TMP_DIR
   mkdir  -p $dir _bin
 
   cat >$dir/hnode_asdl_test.cc <<'EOF'
@@ -106,7 +111,7 @@ EOF
 
   local bin=_bin/hnode_asdl_test
   $CXX \
-    -I $REPO_ROOT \
+    -I "$REPO_ROOT" \
     -o $bin \
     _build/cpp/hnode_asdl.gc.cc \
     $dir/hnode_asdl_test.cc
@@ -126,7 +131,7 @@ one-asdl-gc() {
     echo ---
   fi
 
-  local dir=_build/asdl-test
+  local dir=$TMP_DIR
   mkdir  -p $dir _bin
 
   cat >$dir/${name}_asdl_test.cc <<EOF
@@ -140,13 +145,10 @@ EOF
 
   local bin=_bin/${name}_asdl_test
 
-  # BUG: ASDL runtime needs to be translated again!
-  # It should not use mylib.h; it should use mylib2.h!
-
   # $CLANGXX -ferror-limit=10 \
   $CXX \
     $BASE_CXXFLAGS \
-    -I $REPO_ROOT \
+    -I "$REPO_ROOT" \
     -o $bin \
     _build/cpp/${name}_asdl.gc.cc \
     asdl/runtime.gc.cc \
