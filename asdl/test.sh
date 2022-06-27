@@ -51,8 +51,8 @@ gen-cpp-test() {
     mycpp/mylib.cc \
     mycpp/gc_heap.cc \
     _build/cpp/hnode_asdl.cc \
-    _tmp/typed_arith_asdl.cc \
-    _tmp/typed_demo_asdl.cc 
+    $dir/typed_arith_asdl.cc \
+    $dir/typed_demo_asdl.cc 
 
   #gdb -batch -ex run -ex bt --args $bin "$@"
   $bin "$@"
@@ -85,9 +85,9 @@ gc-test() {
     mycpp/my_runtime.cc \
     mycpp/mylib2.cc \
     asdl/runtime.gc.cc \
+    _build/cpp/hnode_asdl.gc.cc \
     $dir/demo_lib_asdl.gc.cc \
-    $dir/typed_demo_asdl.gc.cc \
-    _build/cpp/hnode_asdl.gc.cc
+    $dir/typed_demo_asdl.gc.cc
 
   #gdb -batch -ex run -ex bt --args $bin "$@"
 

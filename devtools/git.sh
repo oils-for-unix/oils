@@ -31,4 +31,21 @@ rebase-staging() {
   git rebase -i soil-staging
 }
 
+merge-to-staging() {
+  local do_push=${1:-T}  # pass F to disable
+
+  local branch=$(git rev-parse --abbrev-ref HEAD)
+
+  if test "$do_push" = T; then
+    git checkout soil-staging &&
+    git merge $branch &&
+    git push &&
+    git checkout $branch
+  else
+    git checkout soil-staging &&
+    git merge $branch &&
+    git checkout $branch
+  fi
+}
+
 "$@"
