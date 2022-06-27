@@ -2,7 +2,7 @@
 
 #include <exception>
 
-#include "gc_heap.h"
+#include "mycpp/gc_heap.h"
 
 using gc_heap::Str;
 

@@ -204,6 +204,10 @@ def main(argv):
     if name.startswith('oil.'):
       name = name[4:]
 
+    # ditto with testpkg.module1
+    if name.startswith('mycpp.'):
+      name = name[6:]
+
     if name not in seen:  # remove dupe
       filtered.append((name, module))
       seen.add(name)
@@ -258,6 +262,7 @@ using gc_heap::NewDict;
     f.write('\n')
 
   # Collect constants and then emit code.
+  log('\tmycpp pass: CONST')
   for name, module in to_compile:
     pass1.visit_mypy_file(module)
 

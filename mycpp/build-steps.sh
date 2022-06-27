@@ -93,7 +93,7 @@ translate() {
   # PYTHONPATH.
   ( source $MYCPP_VENV/bin/activate
     # flags may be empty
-    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py "$@" > $out
+    time MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" PYTHONPATH=$MYPY_REPO mycpp/mycpp_main.py "$@" > $out
   )
 }
 
@@ -155,9 +155,9 @@ task() {
       export ASAN_OPTIONS='detect_leaks=0'
       ;;
 
-    examples/*.py)
+    mycpp/examples/*.py)
       # we import mycpp.mylib and pylib.collections_
-      export PYTHONPATH=".:$REPO_ROOT/vendor:$REPO_ROOT"
+      export PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT"
       ;;
   esac
 

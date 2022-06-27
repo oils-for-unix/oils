@@ -15,20 +15,16 @@ source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 source $REPO_ROOT/soil/common.sh  # find-dir-html
 
 all-ninja() {
-  pushd $REPO_ROOT/mycpp >/dev/null
-
-  ./build_graph.py
+  mycpp/build_graph.py
 
   set +o errexit
 
   # includes non-essential stuff like type checking alone, stripping
-  ninja all
+  ninja -f mycpp.ninja all
   local status=$?
   set -o errexit
 
   find-dir-html _ninja
-
-  popd >/dev/null
 
   # Now we want to zip up
   return $status

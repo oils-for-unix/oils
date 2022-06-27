@@ -2294,12 +2294,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           else:
             self.imported_names.add(name)
 
-        # A heuristic that works for the OSH import style.
-        #
-        # from core.pyerror import log => using core::util::log
-        # from core import util => NOT translated
-
         for name, alias in o.names:
+
+          #self.log('ImportFrom id: %s name: %s alias: %s', o.id, name, alias)
 
           # TODO: Should these be moved to core/pylib.py or something?
           # They are varargs functions that have to be rewritten.
@@ -2312,8 +2309,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                       'NewDict'):
             continue  # do nothing
 
+          # A heuristic that works for the Oil import style.
           if '.' in o.id:
-            last_dotted = o.id.split('.')[-1]
+            # from core.pyerror import log => using core::util::log
+            translate_import = True
+          else:
+            # from core import util => NOT translated
+            # We just rely on 'util' being defined.
+            translate_import = False
+
+          if translate_import:
+            dotted_parts = o.id.split('.')
+            last_dotted = dotted_parts[-1]
 
             # Omit this:
             #   from _devbuild.gen import grammar_nt
@@ -2397,9 +2404,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # using runtime_asdl::emit_e = EMIT;
                 self.write_ind('using %s = %s::%s;\n', alias, last_dotted, name)
               else:
-                #   from _devbuild.gen.id_kind_asdl import Id
-                # -> using id_kind_asdl::Id.
-                self.write_ind('using %s::%s;\n', last_dotted, name)
+                if 0:
+                  self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
+                else:
+                  #   from _devbuild.gen.id_kind_asdl import Id
+                  # -> using id_kind_asdl::Id.
+                  self.write_ind('using %s::%s;\n', last_dotted, name)
           else:
             # If we're importing a module without an alias, we don't need to do
             # anything.  'namespace cmd_eval' is already defined.
