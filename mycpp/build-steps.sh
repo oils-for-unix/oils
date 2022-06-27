@@ -110,12 +110,6 @@ compile() {
 
   local flags="$BASE_CXXFLAGS $more_cxx_flags"
 
-  case $out in
-    (*/bin/unit/*)
-      flags+=' -I ../cpp'  # for greatest.h
-      ;;
-  esac
-
   case $variant in
     (asan)
       flags+=" $ASAN_FLAGS"  # from run.sh
@@ -136,7 +130,7 @@ compile() {
   # probably exceptions too.
 
   set -x
-  $CXX -o $out $flags -I $REPO_ROOT -I . "$@" -lstdc++
+  $CXX -o $out $flags -I $REPO_ROOT "$@" -lstdc++
 }
 
 strip_() {

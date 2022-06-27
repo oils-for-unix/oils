@@ -468,7 +468,6 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
   Str* prefix = nullptr;
   int prefix_len;
   bool all_fit;
-  int i;
   Str* name = nullptr;
   hnode_asdl::hnode_t* val = nullptr;
   Str* ind1 = nullptr;
@@ -504,7 +503,6 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
     f->write(node->node_type);
     f->PopColor();
     f->write(str21);
-    i = 0;
     for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::field* field = it.Value();
       StackRoots _for({&field    });
@@ -544,7 +542,6 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
           f->write(str28);
           this->PrintNode(val, f, ((indent + INDENT) + INDENT));
         }
-        i += 1;
       }
       f->write(str29);
     }

@@ -7,8 +7,8 @@
 // - Integrate with mycpp and run mycpp/examples/
 //   - Make sure the benchmarks show less heap usage.
 
-#include "gc_heap.h"
-#include "greatest.h"
+#include "cpp/greatest.h"
+#include "mycpp/gc_heap.h"
 
 // Types
 using gc_heap::Heap;

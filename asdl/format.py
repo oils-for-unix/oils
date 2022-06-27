@@ -315,7 +315,6 @@ class _PrettyPrinter(object):
       f.PopColor()
 
       f.write('\n')
-      i = 0
       for field in node.fields:
         name = field.name
         val = field.val
@@ -351,7 +350,6 @@ class _PrettyPrinter(object):
           else:
             f.write('\n')
             self.PrintNode(val, f, indent+INDENT+INDENT)
-          i += 1
 
         f.write('\n')  # separate fields
 

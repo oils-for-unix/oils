@@ -214,12 +214,13 @@ test-hnode-asdl-gc() {
   ### Test that hnode can compile by itself
 
   local dir=_build/asdl-test
-  mkdir  -p $dir
+  mkdir  -p $dir _bin
+
   cat >$dir/hnode_asdl_test.cc <<'EOF'
 #include "_build/cpp/hnode_asdl.gc.h"
 
 int main() {
-  printf("hnode_asdl_test passes\n");
+  printf("OK hnode_asdl_test\n");
   return 0;
 }
 EOF
@@ -238,18 +239,20 @@ test-one-asdl-gc() {
   local name=$1
   shift
 
-  echo "==="
-  echo "test-one-asdl-gc $name"
-  echo "==="
+  if false; then
+    echo ---
+    echo "test-one-asdl-gc $name"
+    echo ---
+  fi
 
   local dir=_build/asdl-test
+  mkdir  -p $dir _bin
 
-  mkdir  -p $dir
   cat >$dir/${name}_asdl_test.cc <<EOF
 #include "_build/cpp/${name}_asdl.gc.h"
 
 int main() {
-  printf("${name}_asdl_test passes\\n");
+  printf("OK ${name}_asdl_test\\n");
   return 0;
 }
 EOF

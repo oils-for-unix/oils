@@ -2,10 +2,10 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "gc_heap.h"
-#include "greatest.h"
-#include "my_runtime.h"
-#include "mylib2.h"  // gBuf
+#include "cpp/greatest.h"
+#include "mycpp/gc_heap.h"
+#include "mycpp/my_runtime.h"
+#include "mycpp/mylib2.h"  // gBuf
 
 using gc_heap::Alloc;
 using gc_heap::Dict;

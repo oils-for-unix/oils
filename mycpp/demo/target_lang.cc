@@ -21,10 +21,10 @@
 
 #include <stdexcept>
 
-#include "dumb_alloc.h"
+#include "cpp/dumb_alloc.h"
+#include "cpp/greatest.h"
 #define MYLIB_LEGACY 1
-#include "gc_heap.h"
-#include "greatest.h"
+#include "mycpp/gc_heap.h"
 
 using std::unordered_map;
 

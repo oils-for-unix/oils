@@ -353,7 +353,7 @@ def main(argv):
     n.build(raw, 'translate',
             TRANSLATE_FILES.get(ex, []) + ['examples/%s.py' % ex])
 
-    p = 'examples/%s_preamble.h' % ex
+    p = 'mycpp/examples/%s_preamble.h' % ex
     # Ninja empty string!
     preamble_path = p if os.path.exists(p) else "''"
 
