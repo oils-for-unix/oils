@@ -111,13 +111,13 @@ compile() {
   local flags="$BASE_CXXFLAGS $more_cxx_flags"
 
   case $variant in
-    (asan)
+    ('asan')
       flags+=" $ASAN_FLAGS"  # from run.sh
       ;;
-    (opt)
+    ('opt')
       flags+=' -O2 -g'  # -g so you can debug crashes?
       ;;
-    (gc_debug)
+    ('gc_debug')
       # TODO: GC_REPORT and GC_VERBOSE instead?
       flags+=' -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC'
       ;;
@@ -150,19 +150,19 @@ task() {
   # The rest of the args are passed as flags to time-tsv
 
   case $bin in
-    _ninja/bin/*.asan)
+    (_ninja/bin/*.asan)
       # We could detect leaks when GC is turned on?
       export ASAN_OPTIONS='detect_leaks=0'
       ;;
 
-    mycpp/examples/*.py)
+    (mycpp/examples/*.py)
       # we import mycpp.mylib and pylib.collections_
       export PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT"
       ;;
   esac
 
   case $task_out in
-    _ninja/tasks/benchmark/*)
+    (_ninja/tasks/benchmark/*)
       export BENCHMARK=1
       ;;
   esac

@@ -214,12 +214,14 @@ strip_() {
 
   local in=$1
   local stripped=$2
-  local symbols=$3
+  local symbols=${3:-}
 
   strip -o $stripped $in
 
-  objcopy --only-keep-debug $in $symbols
-  objcopy --add-gnu-debuglink=$symbols $stripped
+  if test -n "$symbols"; then
+    objcopy --only-keep-debug $in $symbols
+    objcopy --add-gnu-debuglink=$symbols $stripped
+  fi
 }
 
 # test/cpp-unit.sh sources this

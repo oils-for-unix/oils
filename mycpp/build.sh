@@ -15,12 +15,12 @@ source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 source $REPO_ROOT/soil/common.sh  # find-dir-html
 
 all-ninja() {
-  mycpp/build_graph.py
+  build/native_graph.py
 
   set +o errexit
 
   # includes non-essential stuff like type checking alone, stripping
-  ninja -f mycpp.ninja all
+  ninja mycpp-all
   local status=$?
   set -o errexit
 

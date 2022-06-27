@@ -113,7 +113,7 @@ typecheck-all() {
 
 soil-setup() {
   # TODO: add stat.py back.  Why does it cause errors?
-  local exclude='vendor|__future__|mylib.py|/stat.py'
+  local exclude='vendor|__future__|mylib.py|/stat.py|pylib/collections_.py'
 
   osh-eval-deps
   egrep -v "$exclude" $OSH_EVAL_DEPS | tee $OSH_EVAL_MANIFEST
