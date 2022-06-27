@@ -71,6 +71,9 @@ all() {
   build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
   build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
 
+  # test each ASDL file on its own, perhaps with the garbage-collected ASDL runtime
+  build/dev.sh test-all-asdl-gc
+
   cpp-unit-tests
   cpp-unit-tests-asan
 

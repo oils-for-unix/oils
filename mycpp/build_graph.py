@@ -147,6 +147,8 @@ UNIT_TESTS = {
 
     # lives in demo/target_lang.cc
     'target_lang': ['../cpp/dumb_alloc.cc', 'gc_heap.cc'],
+
+    # there is also demo/{gc_heap,square_heap}.cc
 }
 
 TRANSLATE_FILES = {

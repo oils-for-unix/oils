@@ -136,7 +136,7 @@ compile() {
   # probably exceptions too.
 
   set -x
-  $CXX -o $out $flags -I . "$@" -lstdc++
+  $CXX -o $out $flags -I $REPO_ROOT -I . "$@" -lstdc++
 }
 
 strip_() {

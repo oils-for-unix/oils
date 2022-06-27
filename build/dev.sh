@@ -11,7 +11,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh  # for log, $CLANGXX
@@ -216,7 +216,7 @@ test-hnode-asdl-gc() {
   local dir=_build/asdl-test
   mkdir  -p $dir
   cat >$dir/hnode_asdl_test.cc <<'EOF'
-#include "hnode_asdl.gc.h"
+#include "_build/cpp/hnode_asdl.gc.h"
 
 int main() {
   printf("hnode_asdl_test passes\n");
@@ -225,7 +225,9 @@ int main() {
 EOF
 
   local bin=_bin/hnode_asdl_test
-  $CXX -I mycpp -I _build/cpp -o $bin \
+  $CXX \
+    -I $REPO_ROOT \
+    -o $bin \
     _build/cpp/hnode_asdl.gc.cc \
     $dir/hnode_asdl_test.cc
 
@@ -244,7 +246,7 @@ test-one-asdl-gc() {
 
   mkdir  -p $dir
   cat >$dir/${name}_asdl_test.cc <<EOF
-#include "${name}_asdl.gc.h"
+#include "_build/cpp/${name}_asdl.gc.h"
 
 int main() {
   printf("${name}_asdl_test passes\\n");
@@ -257,11 +259,11 @@ EOF
   # BUG: ASDL runtime needs to be translated again!
   # It should not use mylib.h; it should use mylib2.h!
 
-  # needs -I . for asdl/runtime.gc.h
-
   #$CXX \
   $CLANGXX -ferror-limit=10 \
-    -I . -I cpp -I mycpp -I _build/cpp -o $bin \
+    $BASE_CXXFLAGS \
+    -I $REPO_ROOT \
+    -o $bin \
     _build/cpp/${name}_asdl.gc.cc \
     asdl/runtime.gc.cc \
     mycpp/gc_heap.cc \
