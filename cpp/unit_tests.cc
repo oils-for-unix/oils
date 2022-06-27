@@ -5,10 +5,9 @@
 #include <errno.h>
 #include <fcntl.h>  // O_RDWR
 
-#include "greatest.h"
-
 #include "_devbuild/gen/id.h"
 #include "_build/cpp/runtime_asdl.h"  // cell, etc
+#include "vendor/greatest.h"
 
 #include "core_error.h"
 #include "core_pyerror.h"

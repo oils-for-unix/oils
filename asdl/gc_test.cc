@@ -2,9 +2,9 @@
 
 #include "_build/cpp/hnode_asdl.gc.h"
 #include "asdl/runtime.gc.h"
-#include "cpp/greatest.h"
 #include "mycpp/gc_heap.h"
 #include "mycpp/mylib2.h"
+#include "vendor/greatest.h"
 
 #include "typed_demo_asdl.gc.h"
 

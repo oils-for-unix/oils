@@ -2,9 +2,9 @@
 //
 // And with GC_DEBUG defined.
 
-#include "cpp/greatest.h"
 #include "mycpp/gc_heap.h"
 #include "mycpp/my_runtime.h"
+#include "vendor/greatest.h"
 //#include "mylib2.h"  // gBuf
 
 using gc_heap::Alloc;

@@ -7,8 +7,8 @@
 // - Integrate with mycpp and run mycpp/examples/
 //   - Make sure the benchmarks show less heap usage.
 
-#include "cpp/greatest.h"
 #include "mycpp/gc_heap.h"
+#include "vendor/greatest.h"
 
 // Types
 using gc_heap::Heap;
@@ -849,7 +849,8 @@ TEST vtable_test() {
 
     ASSERT_EQ_FMT(Tag::Opaque, header->heap_tag_, "%d");
     ASSERT_EQ_FMT(0, header->field_mask_, "%d");
-    ASSERT_EQ_FMT(sizeof(DerivedObj), header->obj_len_, "%d");
+    // casts get rid of warning
+    ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len_, "%d");
   } else {
     ASSERT(false);  // shouldn't get here
   }

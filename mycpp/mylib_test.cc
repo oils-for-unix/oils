@@ -2,8 +2,8 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "cpp/greatest.h"
 #include "mycpp/mylib.h"
+#include "vendor/greatest.h"
 
 // TODO: Could use ASSERT_EQ_T to customize equality and print difference.
 //

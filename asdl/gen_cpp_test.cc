@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 #include "asdl/runtime.h"
-#include "cpp/greatest.h"
 #include "mycpp/mylib.h"
+#include "vendor/greatest.h"
 
 #include "typed_arith_asdl.h"
 #include "typed_demo_asdl.h"  // has simple Sum, etc

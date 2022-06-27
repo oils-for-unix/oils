@@ -1,8 +1,8 @@
 #include "mylib2.h"
 
-#include "cpp/greatest.h"
 #include "mycpp/gc_heap.h"
 #include "mycpp/my_runtime.h"
+#include "vendor/greatest.h"
 
 using gc_heap::Alloc;
 using gc_heap::NewStr;
