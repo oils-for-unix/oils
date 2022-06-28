@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/NINJA-steps.sh  # for compile_and_link function
+source cpp/NINJA-steps.sh  # for compile_and_link function
 
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
