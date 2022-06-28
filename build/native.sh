@@ -59,7 +59,7 @@ tarball-demo() {
 soil-run() {
   ### Invoked by soil/worker.sh
 
-  build/NINJA_config.py
+  ./NINJA_config.py
 
   ninja _bin/cxx-dbg/osh_eval \
         _bin/cxx-asan/osh_eval \
@@ -77,7 +77,7 @@ osh-eval-smoke() {
 #
 
 config() {
-  build/NINJA_config.py
+  ./NINJA_config.py
   cat build.ninja
 }
 
@@ -87,7 +87,7 @@ clean() {
 }
 
 gen-oil-native-sh() {
-  build/NINJA_config.py shell
+  ./NINJA_config.py shell
   chmod +x _build/oil-native.sh
   ls -l _build/oil-native.sh
 }

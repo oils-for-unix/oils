@@ -14,8 +14,8 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 source $REPO_ROOT/soil/common.sh  # find-dir-html
 
-all-ninja() {
-  build/NINJA_config.py
+soil-run() {
+  ./NINJA_config.py
 
   set +o errexit
 
@@ -30,15 +30,11 @@ all-ninja() {
   return $status
 }
 
-examples() {
-  # invoked by soil/worker.sh
-  all-ninja
-}
-
 run-for-release() {
   # invoked by devtools/release.sh
 
-  all-ninja
+  ./NINJA_config.py
+  ninja mycpp-all
 }
 
 #

@@ -19,9 +19,7 @@ source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PAT
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
 
 asdl-tool() {
-  export GC=1  # asdl/tool.py reads this
-
-  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
+  GC=1 PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
 }
 
 asdl-mypy() {
@@ -46,7 +44,7 @@ int main(int argc, char **argv) {
   // gc_heap::gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
 
   if (getenv("BENCHMARK")) {
-    fprintf(stderr, "Benchmarking...\n");
+    fprintf(stderr, "Benchmarking...\\n");
     $main_module::run_benchmarks();
   } else {
     $main_module::run_tests();
