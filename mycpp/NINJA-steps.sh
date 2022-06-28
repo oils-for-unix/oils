@@ -3,11 +3,7 @@
 # Build steps invoked by Ninja.
 #
 # Usage:
-#   ./build-steps.sh <function name>
-#
-# TODO: build/actions.sh should be renamed build/build-steps.sh?  "actions"
-# implies a side effect, where as "steps" largely know their outputs an outputs
-# largely
+#   mycpp/NINJA-steps.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -129,7 +125,7 @@ compile() {
   # Note: needed -lstdc++ for 'operator new', which we're no longer using.  But
   # probably exceptions too.
 
-  set -x
+  #set -x
   $CXX -o $out $flags -I $REPO_ROOT "$@" -lstdc++
 }
 

@@ -133,39 +133,39 @@ def NinjaGraph(n, u):
   # Preprocess one translation unit
   n.rule('preprocess',
          # compile_one detects the _build/preprocessed path
-         command='build/native-steps.sh compile_one $compiler $variant $in $out',
+         command='build/NINJA-steps.sh compile_one $compiler $variant $in $out',
          description='compile_one $compiler $variant $in $out')
   n.newline()
 
   # Preprocess one translation unit
   n.rule('line_count',
-         command='build/native-steps.sh line_count $out $in',
+         command='build/NINJA-steps.sh line_count $out $in',
          description='line_count $out $in')
   n.newline()
 
   # 'together' build
   n.rule('compile_and_link',
          # multiple outputs
-         command='build/native-steps.sh compile_and_link $compiler $variant $out $in',
+         command='build/NINJA-steps.sh compile_and_link $compiler $variant $out $in',
          description='compile_and_link $compiler $variant $out $in')
   n.newline()
 
   # Compile one translation unit
   n.rule('compile_one',
-         command='build/native-steps.sh compile_one $compiler $variant $in $out $out.d',
+         command='build/NINJA-steps.sh compile_one $compiler $variant $in $out $out.d',
          depfile='$out.d',
          description='compile_one $compiler $variant $in $out')
   n.newline()
 
   # Link objects together
   n.rule('link',
-         command='build/native-steps.sh link $compiler $variant $out $in',
+         command='build/NINJA-steps.sh link $compiler $variant $out $in',
          description='link $compiler $variant $out $in')
   n.newline()
 
   # 1 input and 2 outputs
   n.rule('strip',
-         command='build/native-steps.sh strip_ $in $out',
+         command='build/NINJA-steps.sh strip_ $in $out',
          description='strip $in $out')
   n.newline()
 
@@ -281,7 +281,7 @@ def ShellFunctions(f, argv0):
 # Could run with /bin/sh, but use bash for now, bceause dash has bad errors messages!
 #!/bin/sh
 
-. build/native-steps.sh
+. build/NINJA-steps.sh
 
 main() {
   ### Compile oil-native into _bin/$compiler-$variant-sh/ (not with ninja)

@@ -1,14 +1,14 @@
 #!/usr/bin/env python2
 """
-mycpp/build_graph.py
+mycpp/NINJA_subgraph.py
 
 This is a library invoked by build/native_graph.py.
 
 Code Layout:
 
   mycpp/
-    build_graph.py  # This file describes dependencies programmatically
-    build-steps.sh  # Invoked by Ninja rules
+    NINJA_subgraph.py  # This file describes dependencies programmatically
+    NINJA-steps.sh     # Invoked by Ninja rules
 
     build.sh        # wrappers invoked by the Toil and devtools/release.sh
 
@@ -185,46 +185,46 @@ def NinjaGraph(n, u):
          description='touch $out')
   n.newline()
   n.rule('asdl-mypy',
-         command='mycpp/build-steps.sh asdl-mypy $in $out',
+         command='mycpp/NINJA-steps.sh asdl-mypy $in $out',
          description='asdl-mypy $in $out')
   n.newline()
   n.rule('asdl-cpp',
-         command='mycpp/build-steps.sh asdl-cpp $in $out_prefix',
+         command='mycpp/NINJA-steps.sh asdl-cpp $in $out_prefix',
          description='asdl-cpp $in $out_prefix')
   n.newline()
   n.rule('translate',
-         command='mycpp/build-steps.sh translate $out $in',
+         command='mycpp/NINJA-steps.sh translate $out $in',
          description='translate $out $in')
   n.newline()
   n.rule('wrap-cc',
-         command='mycpp/build-steps.sh wrap-cc $name $in $preamble_path $out',
+         command='mycpp/NINJA-steps.sh wrap-cc $name $in $preamble_path $out',
          description='wrap-cc $name $in $preamble_path $out')
   n.newline()
   n.rule('compile',
          # note: $in can be MULTIPLE files, shell-quoted
-         command='mycpp/build-steps.sh compile $variant $out $more_cxx_flags $in',
+         command='mycpp/NINJA-steps.sh compile $variant $out $more_cxx_flags $in',
          description='compile $variant $out $more_cxx_flags $in')
   n.newline()
   n.rule('task',
          # note: $out can be MULTIPLE FILES, shell-quoted
-         command='mycpp/build-steps.sh task $in $out',
+         command='mycpp/NINJA-steps.sh task $in $out',
          description='task $in $out')
   n.newline()
   n.rule('example-task',
          # note: $out can be MULTIPLE FILES, shell-quoted
-         command='mycpp/build-steps.sh example-task $name $impl $bin $out',
+         command='mycpp/NINJA-steps.sh example-task $name $impl $bin $out',
          description='example-task $name $impl $bin $out')
   n.newline()
   n.rule('typecheck',
-         command='mycpp/build-steps.sh typecheck $main_py $out $skip_imports',
+         command='mycpp/NINJA-steps.sh typecheck $main_py $out $skip_imports',
          description='typecheck $main_py $out $skip_imports')
   n.newline()
   n.rule('logs-equal',
-         command='mycpp/build-steps.sh logs-equal $out $in',
+         command='mycpp/NINJA-steps.sh logs-equal $out $in',
          description='logs-equal $out $in')
   n.newline()
   n.rule('benchmark-table',
-         command='mycpp/build-steps.sh benchmark-table $out $in',
+         command='mycpp/NINJA-steps.sh benchmark-table $out $in',
          description='benchmark-table $out $in')
   n.newline()
 

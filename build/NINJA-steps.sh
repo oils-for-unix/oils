@@ -5,7 +5,7 @@
 # Also some non-Ninja wrappers.
 #
 # Usage:
-#   build/native-steps.sh <function name>
+#   build/NINJA-steps.sh <function name>
 
 set -o nounset
 set -o errexit
@@ -225,6 +225,6 @@ strip_() {
 }
 
 # test/cpp-unit.sh sources this
-if test $(basename $0) = 'native-steps.sh'; then
+if test $(basename $0) = 'NINJA-steps.sh'; then
   "$@"
 fi

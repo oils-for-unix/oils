@@ -1,7 +1,7 @@
 # examples.sh: Hooks for specific files
 
 # COPIED FROM DEFUNCT run.sh.  Because some examples require it.  NOT
-# TESTED.  TODO: Fold this into Ninja's build-steps.sh.
+# TESTED.  TODO: Delete after it runs under Ninja.
 
 # -I with ASDL files.
 compile-with-asdl() {

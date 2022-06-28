@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/native-steps.sh  # for compile_and_link function
+source build/NINJA-steps.sh  # for compile_and_link function
 
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
@@ -28,7 +28,11 @@ readonly UNIT_TESTS_SRC=(
     mycpp/mylib.cc  # TODO: port to mylib2!
 )
 
-# TODO: fold these two variants into Ninja
+# Note: It would be nice to fold these 2 variants into Ninja, but we don't have
+# fine-grained dependencies for say _build/cpp/arg_types.cc and
+# cpp/frontend_flag_spec.cc.
+#
+# Ditto with the tests in asdl/test.sh.
 
 cpp-unit-tests-asan() {
   ### Run unit tests in the cpp/ dir
@@ -50,8 +54,6 @@ cpp-unit-tests() {
   compile_and_link cxx dbg $bin -D CPP_UNIT_TEST -D DUMB_ALLOC \
     "${UNIT_TESTS_SRC[@]}" \
     cpp/dumb_alloc.cc
-
-  #gdb --args $bin "$@"
 
   $bin "$@"
 }
