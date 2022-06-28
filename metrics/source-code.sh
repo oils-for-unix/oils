@@ -470,6 +470,12 @@ NotImplementedError() {
   grep NotImplementedError */*.py
 }
 
+py-ext() {
+  # for the py-source build
+  # 35 imports
+  osh-files | xargs -- egrep 'import (fanos|libc|line_input|posix_|yajl)'
+}
+
 if test $(basename $0) = 'source-code.sh'; then
   "$@"
 fi

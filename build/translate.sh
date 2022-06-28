@@ -77,18 +77,51 @@ EOF
 
 }
 
-osh-eval-manifest() {
-  # _devbuild is ASDL stuff
-  # frontend metaprogramming: */*_def.py
-  # core/process.py - not ready
-  # pyutil.py -- Python only (Resource Loader, etc.)
-  # pgen2/parse.py: prefer hand-written C
+osh-eval-xmanifest() {
+  # TODO:
+  # - Unify this with types/oil-slice.sh soil-setup.  It calls build/actions.sh app-deps
+  # egrep as well.
+  # - We check it in because we base it on _devbuild/cpython-full, which isn't
+  # available in the dev-minimal task.
 
-  # TODO: could be pyoptview,pyconsts,pymatch,pyflag
+  # Exclude:
+  #   _devbuild is code we generate in C++, and don't need to translate, e.g. ASDL
+  #   frontend metaprogramming: */*_def.py */*_spec.py
+  #   asdl/py* core/py* - not translated
+  #   pgen2/parse.py: prefer hand-written C
+  #
+  # TODO: rename to pyoptview,pyconsts,pymatch,py_path_stat,py_bool_stat.py
+  #
+  # Hm then the C++ file would be cpp/pylib_py_path_stat.py
 
-  local exclude='_devbuild/|.*_def\.py|core/py.*\.py|pybase.py|optview.py|match.py|path_stat.py|bool_stat.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py'
+  local exclude=_tmp/osh-eval.egrep.txt 
 
-  egrep -v "$exclude" types/osh-eval-manifest.txt
+  cat > $exclude <<'EOF'
+_devbuild/
+.*_def\.py
+.*_spec\.py
+asdl/py.*
+core/py.*
+core/optview.py
+frontend/consts.py
+frontend/match.py
+pylib/path_stat.py
+osh/bool_stat.py
+pgen2/parse.py
+oil_lang/objects.py
+EOF
+
+  egrep -v -f $exclude types/osh-eval-manifest.txt
+}
+
+compare-manifest() {
+  osh-eval-xmanifest > _tmp/translate.txt
+
+  diff -u types/osh-eval-manifest.txt _tmp/translate.txt || true
+
+  wc -l _tmp/translate.txt
+
+  echo asdl/py*.py core/py*.py
 }
 
 osh-eval() {
@@ -115,7 +148,7 @@ osh-eval() {
       --to-header frontend.args \
       --to-header asdl.runtime \
       --to-header asdl.format \
-      $(osh-eval-manifest) > $raw 
+      $(osh-eval-xmanifest) > $raw 
   fi
 
   cpp-skeleton $name $raw > $cc

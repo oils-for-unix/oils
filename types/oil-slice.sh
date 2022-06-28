@@ -13,7 +13,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-source types/common.sh
+source types/common.sh  # $MYPY_FLAGS
 
 demo() {
   export PYTHONPATH='.:vendor/'
@@ -39,41 +39,6 @@ demo() {
     'echo "hello"x $$ ${$} $((1 + 2 * 3)) {foo,bar}@example.com'
 
   $osh_eval -c 'for x in 1 2 3; do echo $x; done'
-}
-
-osh-eval() {
-  PYTHONPATH=. bin/osh_eval.py "$@"
-}
-
-readonly OSH_EVAL_DEPS='_tmp/osh_eval-deps.txt'
-
-deps() {
-  local prog=$1
-
-  local pythonpath='.:vendor'
-  local out=_build/$prog
-  mkdir -p $out
-  build/actions.sh app-deps $prog "$pythonpath" bin.$prog
-
-  ls -l $out
-
-  #head -n 30 $out/*
-
-  echo ---
-
-  # Around 16K lines, after stripping down the 'typing' module.
-
-  awk '
-  $1 ~ /^.*\.py$/ { print $1 }
-  ' $out/app-deps-cpython.txt \
-    | grep -v __init__ | sort | tee _tmp/${prog}-deps.txt | xargs wc -l | sort -n
-}
-
-osh-parse-deps() { deps osh_parse; }
-osh-eval-deps() { deps osh_eval; }
-
-egrep-deps() {
-  cat $OSH_EVAL_DEPS | xargs -- egrep "$@"
 }
 
 typecheck-all() {
@@ -106,26 +71,17 @@ typecheck-all() {
   fi
 }
 
-# Generate types/osh-eval-manifest.txt.
-#
-# It needs to be checked in because we don't have _deps/cpython-full on Travis
-# to crawl dependencies.
-
-soil-setup() {
-  # TODO: add stat.py back.  Why does it cause errors?
-  local exclude='vendor|__future__|mylib.py|/stat.py|pylib/collections_.py'
-
-  osh-eval-deps
-  egrep -v "$exclude" $OSH_EVAL_DEPS | tee $OSH_EVAL_MANIFEST
-}
-
 soil-run() {
   if test -n "${TRAVIS_SKIP:-}"; then
     echo "TRAVIS_SKIP: Skipping $0"
     return
   fi
 
-  typecheck-all $OSH_EVAL_MANIFEST
+  # Figure out what to type check
+  build/app-deps.sh osh-eval
+  echo
+
+  typecheck-all _build/app-deps/osh_eval/typecheck.txt
 }
 
 "$@"

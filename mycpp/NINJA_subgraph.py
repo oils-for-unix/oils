@@ -99,8 +99,6 @@ def ShouldSkipBuild(name):
       # - qsn_qsn.h is incompatible.  This is also an issue with
       #   'asdl/run.sh gc-test'
 
-      # Problem: asdl/runtime.gc.c has str0, so does _test/gen/parse.cc
-      # Somehow that problem doesn't occur with Str* str0 = new Str("");
       'parse',
       ]:
     return True
@@ -110,8 +108,11 @@ def ShouldSkipBuild(name):
 
 def ExamplesToBuild():
 
-  filenames = os.listdir('mycpp/examples')
-  py = [name[:-3] for name in filenames if name.endswith('.py')]
+  filenames = os.listdir('mycpp/examples') 
+  py = [
+      name[:-3] for name in filenames
+      if name.endswith('.py') and name != '__init__.py'
+  ]
 
   to_test = [name for name in py if not ShouldSkipBuild(name)]
 

@@ -1,0 +1,12 @@
+_devbuild/
+.*_def\.py
+.*_spec\.py
+asdl/py.*
+core/py.*
+core/optview.py
+frontend/consts.py
+frontend/match.py
+pgen2/parse.py
+pylib/path_stat.py
+oil_lang/objects.py
+osh/bool_stat.py

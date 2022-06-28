@@ -311,24 +311,22 @@ base-classes() {
 translation() {
   set +o errexit
 
-  local out=_tmp/ik.txt
-  build/translate.sh osh-eval-manifest \
+  build/translate.sh osh-eval-xmanifest \
     | xargs egrep -n 'IndexError|KeyError'
   local status=$?
 
-  if test $status -eq 0; then
-    die "Shouldn't have matched"
-  fi
+  #if test $status -eq 0; then
+  #  die "Shouldn't have matched"
+  #fi
+
+  echo
 
   # See what we have to translate to 'with' in Python
   # 36 different occurrences.  OK it's doable.
-  build/translate.sh osh-eval-manifest \
+  build/translate.sh osh-eval-xmanifest \
     | xargs egrep -n 'finally:'
     #| xargs egrep -n -A 1 'finally:'
 
-   echo
-  build/translate.sh osh-eval-manifest \
-    | xargs egrep -n "in \('"
 }
  
 "$@"
