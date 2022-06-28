@@ -15,17 +15,20 @@ set -o errexit
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 manifest() {
-  # Skip _bin/heap, etc.
-
-  # TODO: Invoke the compiler to get all headers, like we do with CPython.
+  # TODO:
+  # - Invoke the compiler to get all headers, like we do with CPython.
+  # - Needs to be updated for the new GC runtime
+  # - Provide a way to run C++ tests?  Unit tests and smoke tests alike.
+  # - MESSY: Are we using asdl/runtime?  It contains the SAME DEFINITIONS as
+  #   _build/cpp/osh_eval.h.  We use it to run ASDL unit tests without
+  #   depending on Oil.
 
   find \
     LICENSE.txt \
     README-native.txt \
     asdl/runtime.h \
     build/common.sh \
-    build/native*.sh \
-    ./NINJA_config.py \
+    build/native.sh \
     cpp/ \
     mycpp/common.sh \
     mycpp/mylib.{cc,h} \
@@ -51,12 +54,6 @@ make-tar() {
 
   # TODO: This could skip compiling oil-native
   build/dev.sh oil-cpp
-
-  # TODO:
-  # - Provide a way to run C++ tests?  Unit tests and smoke tests alike.
-  # - MESSY: asdl/runtime.h contains the SAME DEFINITIONS as
-  #   _build/cpp/osh_eval.h.  But we use it to run ASDL unit tests without
-  #   depending on Oil.
 
   manifest | xargs -- tar --create --transform "$sed_expr" --file $out
 

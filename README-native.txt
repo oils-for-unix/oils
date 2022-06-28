@@ -1,7 +1,7 @@
 oil-native
 ==========
 
-This preview release contains a shell PARSER in C++, not a working shell!
+This is a preview of Oil's translation to C++, not a working shell!
 
 Visit http://www.oilshell.org/releases.html and download
 oil-$VERSION.tar.{gz,xz} to get a working Oil shell.

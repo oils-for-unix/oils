@@ -1,8 +1,6 @@
 Oil Source Code
 ===============
 
-[git-repo]: https://github.com/oilshell/oil
-
 [![Build
 Status](https://github.com/oilshell/oil/actions/workflows/all-builds.yml/badge.svg)](https://github.com/oilshell/oil/actions/workflows/all-builds.yml) <a href="https://gitpod.io/from-referrer/">
   <img src="https://img.shields.io/badge/Contribute%20with-Gitpod-908a85?logo=gitpod" alt="Contribute with Gitpod" />
@@ -11,17 +9,19 @@ Status](https://github.com/oilshell/oil/actions/workflows/all-builds.yml/badge.s
 
 
 [Oil][] is a new Unix shell.  It's our upgrade path from bash to a better
-language and runtime!  ([Why Create a New Unix Shell?][why] / [2019 FAQ][faq])
+language and runtime!  It's also for Python and JavaScript users who avoid
+shell.  ([Why Create a New Unix Shell?][why])
 
 [Oil]: https://www.oilshell.org/
 [why]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
-[faq]: https://www.oilshell.org/blog/2019/06/17.html
 
 It's written in Python, so the code is short and easy to change.  But we
 automatically translate it to C++ with custom tools, to make it fast and small.
 The deployed executable doesn't depend on Python.
 
 This README is at the root of the [git repo][git-repo].
+
+[git-repo]: https://github.com/oilshell/oil
 
 <div id="toc">
 </div>
@@ -57,7 +57,7 @@ Python program that you can quickly run and change!  Try it interactively:
   with `bin/oil`.
 
 Let us know if any of these things don't work!  [The continuous
-build](http://travis-ci.oilshell.org/jobs/) tests them at every commit.
+build](http://travis-ci.oilshell.org/) tests them at every commit.
 
 ### Dev Build vs. Release Build
 
@@ -121,6 +121,7 @@ languages, Zephyr ASDL, and a statically-typed subset of Python.
     oil_lang/         # Oil parser and evaluator
     core/             # Other code shared between Oil and OSH
     pylib/            # Borrowed from the Python standard library.
+    qsn_/             # QSN serialization format
     tools/            # User-facing tools, e.g. the osh2oil translator
 
 ### DSLs / Code Generators
@@ -130,22 +131,26 @@ Here are the tools that transform that high-level code to efficient code:
     asdl/             # ASDL implementation, derived from CPython
     pgen2/            # Parser Generator, borrowed from CPython
     mycpp/            # Experimental translator from typed Python to C++.
-                      # Depends on MyPy.
+                      # Depends on MyPy.  See mycpp/README.md
+    pea/              # Perhaps a cleaner version of mycpp
     opy/              # Python compiler in Python (mycpp/ will replace it)
-      lib/            # Common code
-      compiler2/      # Bytecode compiler
-      byterun/        # Metacircular bytecode VM in Python
-      gold/           # tests
-      byterun/        # Unused bytecode interpreter
 
-### Native Code
+### Native Code and Build System
 
 We have native code to support both the dev build (running under CPython) and
 the oil-native build (pure C++):
 
-    Python-2.7.13/    # CPython is the initial basis for the Oil VM
-    native/           # Python extension modules, e.g. libc.c
+    NINJA_config.py   # Generates build.ninja and TASK.sh
+
     cpp/              # C++ code which complements the mycpp translation
+      NINJA-steps.sh
+      NINJA_subgraph.py
+    mycpp/            # Runtime for the translator
+      NINJA-steps.sh
+      NINJA_subgraph.py
+
+    Python-2.7.13/    # For the slow Python build
+    native/           # Python extension modules, e.g. libc.c
 
 ### Several Kinds of Tests
 
@@ -162,7 +167,7 @@ Unit tests are named `foo_test.py` and live next to `foo.py`.
     spec/             # Spec test cases
       bin/            # tools used in many spec tests
       testdata/       # scripts for specific test cases
-      errors/         # TODO: migrate these bad shell scripts
+      stateful/       # Tests that use pexpect
     types/            # Scripts for running MyPy and PyAnnotate, etc.
 
 ### Dev Tools and Scripts
@@ -192,20 +197,10 @@ above create and use these dirs.
 
     _bin/             # Native executables are put here
     _build/           # Temporary build files
+    _cache/           # Dev dependency tarballs
     _devbuild/        # Developer build files not deleted upon 'make clean'
       gen/            # Generated Python and C code
     _deps/            # build dependencies like re2c
-    _tmp/             # Test suites and other temp files
-      spec/
-      wild/
-        raw/
-        www/
-      osh-parser/
-      osh-runtime/
-      vm-baseline/
-      oheap/
-      startup/
-      ...
     _release/         # Source release tarballs are put here
       VERSION/        # Published at oilshell.org/release/$VERSION/
         benchmarks/
@@ -217,6 +212,20 @@ above create and use these dirs.
           ...
         web/          # Static files, copy of $REPO_ROOT/web
           table/
+    _test/            # Unit tests, mycpp examples
+      bin/
+        unit/
+    _tmp/             # Output of other test suites; temp files
+      spec/
+      wild/
+        raw/
+        www/
+      osh-parser/
+      osh-runtime/
+      vm-baseline/
+      oheap/
+      startup/
+      ...
 
 ### Build System for End Users
 

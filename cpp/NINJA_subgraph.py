@@ -21,12 +21,9 @@ _test/
     unit/
 
 _build/   # input source
-  cpp/    # _build/gen is more cnosistent, but it would take a lot of renaming
+
+  cpp/    # _build/gen is more consistent, but it would take a lot of renaming
     osh_eval.{h,cc}
-  preprocessed/
-    posix.cc
-  metrics/
-    preprocessed.txt  # count of all the files
 
   obj/
     # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
@@ -38,16 +35,24 @@ _build/   # input source
     cxx-dbg/
     cxx-opt/
 
+  preprocessed/
+    cxx-dbg/
+      posix.cc
+    cxx-dbg.txt  # line counts
+
+
 _bin/   # output binaries
-  # The _bin folder is a 3-tuple
-  {cxx,clang}-{dbg,opt,asan ...}-{,together}
+  # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh,together}
     osh_eval
 
   cxx-opt/
     osh_eval
     osh_eval.stripped              # The end user binary
     osh_eval.symbols
-  cxx-opt-together/                # Do we still need this?
+
+  cxx-opt-sh/                      # with shell script
+
+  cxx-opt-together/                # one compiler invocation, could delete
     osh_eval
     osh_eval.{stripped,symbols}
 
@@ -65,6 +70,7 @@ from __future__ import print_function
 
 import os
 import sys
+
 
 def log(msg, *args):
   if args:

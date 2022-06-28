@@ -39,11 +39,19 @@ To build oil-native, use:
     oil$ _bin/cxx-dbg/osh_eval -c 'echo hi'  # running compiled C++ !
     hi
 
-To run the tests and benchmarks, follow the instructions at the top of `deps.sh`.
+To run the tests and benchmarks:
+
+    oil$ ./NINJA_config.py
+    oil$ ninja mycpp-all
+    ... 200+ tasks run ...
 
 If you have problems, post a message on `#oil-dev` at
 `https://oilshell.zulipchat.com`.  Not many people have contributed to `mycpp`,
 so I can use your feedback!
+
+Related: [Oil Native Quick
+Start](https://github.com/oilshell/oil/wiki/Oil-Native-Quick-Start) on the
+wiki.
 
 
 ### Run Tests and Benchmarks
