@@ -16,8 +16,8 @@ _tmp/
 !opy/_regtest/src/_devbuild/
 
 build.ninja
-ninja.sh
 .ninja_*
+TASK.sh
 
 fanos.so
 fastlex.so
