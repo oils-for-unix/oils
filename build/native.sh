@@ -59,26 +59,11 @@ tarball-demo() {
 soil-run() {
   ### Invoked by soil/worker.sh
 
+  build/NINJA_config.py
+
   ninja _bin/cxx-dbg/osh_eval \
         _bin/cxx-asan/osh_eval \
         _bin/cxx-opt/osh_eval.stripped
-}
-
-all-ninja() {
-  # Don't use clang for benchmarks.
-  # export CXX=c++
-
-  set +o errexit
-
-  # includes non-essential stuff like type checking alone, stripping
-  ninja all
-  local status=$?
-  set -o errexit
-
-  ls -l _bin/
-
-  # Now we want to zip up
-  return $status
 }
 
 osh-eval-smoke() {
@@ -92,7 +77,7 @@ osh-eval-smoke() {
 #
 
 config() {
-  build/native_graph.py
+  build/NINJA_config.py
   cat build.ninja
 }
 
@@ -102,7 +87,7 @@ clean() {
 }
 
 gen-oil-native-sh() {
-  build/native_graph.py shell
+  build/NINJA_config.py shell
   chmod +x _build/oil-native.sh
   ls -l _build/oil-native.sh
 }

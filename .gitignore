@@ -3,19 +3,17 @@
 tags
 .vagrant
 .mypy_cache/
-_cache/
-_chroot/
-_tmp/
 _bin/
 _build/
-_devbuild/
+_cache/
+_chroot/
 _clone/
-!opy/_regtest/src/_devbuild/
 _deps/
-# for mycpp
-_gen/
-_ninja/
+_devbuild/
 _release/
+_test/
+_tmp/
+!opy/_regtest/src/_devbuild/
 *.ninja
 .ninja_*
 fanos.so
@@ -26,7 +24,6 @@ posix_.so
 yajl.so
 # Python build support
 build/temp.*
-
 
 # my own automation
 local.sh  
@@ -42,7 +39,6 @@ asdl.txt
 # pgen-specific stuff, this is probably temporary
 pgen-native/*.o
 pgen-native/parser
-
 
 # emacs temp files
 *~

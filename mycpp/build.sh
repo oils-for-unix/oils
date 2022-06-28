@@ -15,7 +15,7 @@ source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 source $REPO_ROOT/soil/common.sh  # find-dir-html
 
 all-ninja() {
-  build/native_graph.py
+  build/NINJA_config.py
 
   set +o errexit
 

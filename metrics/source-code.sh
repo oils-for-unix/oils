@@ -73,7 +73,7 @@ osh-cloc() {
 }
 
 oil-native-preprocessed() {
-  build/native_graph.py
+  build/NINJA_config.py
 
   # Clang has slightly fewer lines, but it's not on the CI machine
   #local -a files=(_build/preprocessed/{cxx,clang}-{dbg,opt}.txt)

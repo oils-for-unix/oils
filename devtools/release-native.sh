@@ -25,7 +25,7 @@ manifest() {
     asdl/runtime.h \
     build/common.sh \
     build/native*.sh \
-    build/native_graph.py \
+    build/NINJA_config.py \
     cpp/ \
     mycpp/common.sh \
     mycpp/mylib.{cc,h} \
