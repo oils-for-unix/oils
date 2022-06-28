@@ -2,7 +2,7 @@
 """
 soil/web.py
 
-Each job assigned an ID.  THe job generates:
+Each job is assigned an ID.  The job generates:
 
 - $ID.json  # metadata
 - $ID.tsv   # benchmarks/time.py output.  Success/failure for each task.

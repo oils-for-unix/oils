@@ -14,8 +14,11 @@ _release/
 _test/
 _tmp/
 !opy/_regtest/src/_devbuild/
-*.ninja
+
+build.ninja
+ninja.sh
 .ninja_*
+
 fanos.so
 fastlex.so
 libc.so
