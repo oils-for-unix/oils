@@ -883,7 +883,7 @@ inline int len(const List<T>* L) {
 
 template <typename K, typename V>
 inline int len(const Dict<K, V>* d) {
-  assert(0);
+  return d->items_.size();
 }
 
 template <typename V>

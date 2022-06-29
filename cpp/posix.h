@@ -4,6 +4,7 @@
 #define POSIX_H
 
 #include <unistd.h>
+#include <sys/utsname.h> // uname
 
 #include "mycpp/mylib.h"
 
@@ -56,7 +57,15 @@ inline Str* strerror(int err_num) {
 }
 
 inline Str* uname() {
-  assert(0);
+  Str *result = 0; // TODO(Jesse): Is it safe to return a 0 pointer here?
+
+  utsname un = {};
+  if (::uname(&un) == 0)
+  {
+    result = mylib::NewStr(un.sysname);
+  }
+
+  return result;
 }
 
 // TODO: write proper signatures
@@ -70,10 +79,12 @@ inline void lstat() {
 }
 
 inline Tuple2<int, int> pipe() {
-  int fd[2];
+  int fd[2] = {0, 0};
+
   if (::pipe(fd) < 0) {
-    // TODO: handle errno
-    assert(0);
+    // TODO(Jesse): Should the caller get told that pipe failed?  We return two
+    // 0 fds, which might be enough of a clue.
+    NotImplemented();
   }
   return Tuple2<int, int>(fd[0], fd[1]);
 }
