@@ -10,7 +10,7 @@
 namespace time_ {
 
 inline void* tzset() {
-  assert(0);
+  NotImplemented();
 }
 
 inline int time() {
@@ -19,11 +19,11 @@ inline int time() {
 
 // TODO: Should these be bigger integers?
 inline int localtime(int ts) {
-  assert(0);
+  NotImplemented();
 }
 
 inline Str* strftime(Str* s, int ts) {
-  assert(0);
+  NotImplemented();
 }
 
 }  // namespace time_

@@ -36,11 +36,11 @@ List<Str*>* regex_match(Str* pattern, Str* str);
 Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos);
 
 inline void print_time(double real, double user, double sys) {
-  assert(0);
+  NotImplemented();
 }
 
 inline Str* realpath(Str* path) {
-  assert(0);
+  NotImplemented();
 }
 
 }  // namespace libc
