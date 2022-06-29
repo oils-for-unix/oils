@@ -19,13 +19,21 @@ parse-one() {
   $PY3 pea/pea_main.py "$@"
 }
 
-parse-all() {
-  build/app-deps.sh osh-eval
+all-files() {
+  # Can't run this on Soil because we only have build/dev.sh py-source, not
+  # 'minimal'
+  # build/app-deps.sh osh-eval
 
-  # qsn_/qsn.py has some kind of unicode excapes, probably easy to fix
-  # .pyi files need to be parsed too
-  time cat _build/app-deps/osh_eval/typecheck.txt \
-    | xargs --verbose -- $0 parse-one
+  cat pea/osh-eval-typecheck.txt
+
+  for path in */*.pyi; do
+    echo $path
+  done
+}
+
+parse-all() {
+
+  time all-files | xargs --verbose -- $0 parse-one
 }
 
 dump-sys-path() {

@@ -40,6 +40,10 @@ pylib/collections_.py
 EOF
 
   # On top of the filters above, exclude these from translation
+
+  # Note: renaming files to pyoptview, pyconsts.py, pymatch.py, py_path_stat.py
+  # etc. would make this filter cleaner.
+
   cat >$FILTER_DIR/filter-translate.txt <<'EOF'
 _devbuild/
 .*_def\.py
@@ -123,6 +127,10 @@ osh-eval() {
   cat $dir/typecheck.txt | egrep -v -f $FILTER_DIR/filter-translate.txt > $dir/translate.txt
 
   wc -l $dir/*
+}
+
+pea-hack() {
+  cp -v $DIR/osh_eval/typecheck.txt pea/osh-eval-typecheck.txt
 }
 
 "$@"
