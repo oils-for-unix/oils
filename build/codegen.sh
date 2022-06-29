@@ -30,16 +30,6 @@ if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 're2c'
 fi
 
-download-clang() {
-  wget --no-clobber --directory _deps \
-    http://releases.llvm.org/5.0.1/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz
-}
-
-extract-clang() {
-  cd _deps
-  time tar -x --xz < clang*.tar.xz
-}
-
 types-gen() {
   local out=_devbuild/gen/osh-types.h
   asdl/tool.py c frontend/types.asdl "$@" > $out

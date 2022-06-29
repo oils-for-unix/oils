@@ -119,14 +119,16 @@ def DoModule(module: Module, stats: dict[str, int]) -> None:
 
 def main(argv: list[str]) -> int:
 
+  files = argv[1:]
   stats: dict[str, int] = {
+      'num_files': len(files),
       'num_funcs': 0,
       'num_classes': 0,
       'num_methods': 0,
       'num_assign': 0,
   }
 
-  for filename in argv[1:]:
+  for filename in files:
     with open(filename) as f:
       contents = f.read()
 

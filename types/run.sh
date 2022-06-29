@@ -100,9 +100,13 @@ need-typechecking() {
   # $MORE_OIL_MANIFEST or $OSH_PARSE_MANIFEST, and thus are not yet
   # typechecked by typecheck-more-oil here or
   # `types/oil-slice.sh soil-run`.
+
+  build/app-deps.sh osh-eval
+  echo
+
   comm -2 -3 \
-    <(checkable-files | sort | grep '.py$' | sed 's@^@./@') \
-    <({ more-oil-manifest; osh-eval-manifest; } | sort) \
+    <(checkable-files | sort | grep '.py$') \
+    <({ more-oil-manifest; cat _build/app-deps/osh_eval/typecheck.txt; } | sort) \
     | xargs wc -l | sort -n
 }
 

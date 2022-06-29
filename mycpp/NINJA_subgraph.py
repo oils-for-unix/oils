@@ -334,13 +334,13 @@ def NinjaGraph(n, u):
 
       if mode == 'benchmark':
         if ShouldSkipBenchmark(ex):
-          log('Skipping benchmark of %s', ex)
+          #log('Skipping benchmark of %s', ex)
           continue
         benchmark_tasks.append(task_out)
 
       elif mode == 'test':
         if ShouldSkipTest(ex):
-          log('Skipping test of %s', ex)
+          #log('Skipping test of %s', ex)
           continue
 
       log_out = '%s.log.txt' % prefix
@@ -401,13 +401,13 @@ def NinjaGraph(n, u):
 
       if mode == 'benchmark':
         if ShouldSkipBenchmark(ex):
-          log('Skipping benchmark of %s', ex)
+          #log('Skipping benchmark of %s', ex)
           continue
         benchmark_tasks.append(task_out)
 
       elif mode == 'test':
         if ShouldSkipTest(ex):
-          log('Skipping test of %s', ex)
+          #log('Skipping test of %s', ex)
           continue
 
       log_out = '_test/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)

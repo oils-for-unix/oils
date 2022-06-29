@@ -74,55 +74,8 @@ int main(int argc, char **argv) {
   return status;
 }
 EOF
-
 }
 
-osh-eval-xmanifest() {
-  # TODO:
-  # - Unify this with types/oil-slice.sh soil-setup.  It calls build/actions.sh app-deps
-  # egrep as well.
-  # - We check it in because we base it on _devbuild/cpython-full, which isn't
-  # available in the dev-minimal task.
-
-  # Exclude:
-  #   _devbuild is code we generate in C++, and don't need to translate, e.g. ASDL
-  #   frontend metaprogramming: */*_def.py */*_spec.py
-  #   asdl/py* core/py* - not translated
-  #   pgen2/parse.py: prefer hand-written C
-  #
-  # TODO: rename to pyoptview,pyconsts,pymatch,py_path_stat,py_bool_stat.py
-  #
-  # Hm then the C++ file would be cpp/pylib_py_path_stat.py
-
-  local exclude=_tmp/osh-eval.egrep.txt 
-
-  cat > $exclude <<'EOF'
-_devbuild/
-.*_def\.py
-.*_spec\.py
-asdl/py.*
-core/py.*
-core/optview.py
-frontend/consts.py
-frontend/match.py
-pylib/path_stat.py
-osh/bool_stat.py
-pgen2/parse.py
-oil_lang/objects.py
-EOF
-
-  egrep -v -f $exclude types/osh-eval-manifest.txt
-}
-
-compare-manifest() {
-  osh-eval-xmanifest > _tmp/translate.txt
-
-  diff -u types/osh-eval-manifest.txt _tmp/translate.txt || true
-
-  wc -l _tmp/translate.txt
-
-  echo asdl/py*.py core/py*.py
-}
 
 osh-eval() {
   ### Translate bin/osh_eval.py -> _build/cpp/osh_eval.{cc,h}
@@ -140,15 +93,18 @@ osh-eval() {
   # TODO: Fix mylib-audit
   # export GC=1
 
+  build/app-deps.sh osh-eval
+
   #if false; then
   if true; then
     # relies on splitting
-    mycpp \
-      --header-out $h \
-      --to-header frontend.args \
-      --to-header asdl.runtime \
-      --to-header asdl.format \
-      $(osh-eval-xmanifest) > $raw 
+    cat _build/app-deps/osh_eval/translate.txt | xargs -- \
+      $0 mycpp \
+        --header-out $h \
+        --to-header frontend.args \
+        --to-header asdl.runtime \
+        --to-header asdl.format \
+    > $raw 
   fi
 
   cpp-skeleton $name $raw > $cc

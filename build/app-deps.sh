@@ -125,19 +125,4 @@ osh-eval() {
   wc -l $dir/*
 }
 
-compare-osh-eval() {
-  ### Compare with old method
-
-  # 77
-  wc -l types/osh-eval-manifest.txt
-
-  diff -u \
-    <(sed 's;\./;;g' types/osh-eval-manifest.txt | LC_ALL=C sort) \
-    $DIR/osh_eval/typecheck.txt
-
-  diff -u \
-    <(build/translate.sh osh-eval-xmanifest | sed 's;\./;;g' | LC_ALL=C sort) \
-    $DIR/osh_eval/translate.txt
-}
-
 "$@"

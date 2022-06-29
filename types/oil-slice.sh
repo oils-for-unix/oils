@@ -6,7 +6,7 @@
 #   types/oil-slice.sh <function name>
 #
 # Example:
-#   types/oil-slice.sh soil-setup  # for generating osh-eval-manifest.txt
+#   types/oil-slice.sh soil-run
 
 set -o nounset
 set -o pipefail

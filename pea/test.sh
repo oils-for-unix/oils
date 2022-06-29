@@ -14,28 +14,18 @@ source types/common.sh
 # not using build/dev-shell.sh for now
 readonly PY3=../oil_DEPS/python3
 
-all-files() {
-  # Files that are reported as part of the source code.
-  metrics/source-code.sh osh-files
-  metrics/source-code.sh oil-lang-files
-
-  # Files that are type checked.  This includes transitive deps.
-  # TODO: Remove duplicates!  Unlike the ones above, these start with '.'
-  #
-  # This file is created by types/oil-slice.sh deps
-  osh-eval-manifest
-  # more-oil-manifest
-}
-
 parse-one() {
   # Use PY3 because Python 3.8 and above has type comments
   $PY3 pea/pea_main.py "$@"
 }
 
 parse-all() {
+  build/app-deps.sh osh-eval
+
   # qsn_/qsn.py has some kind of unicode excapes, probably easy to fix
   # .pyi files need to be parsed too
-  all-files | egrep '\.py$|\.pyi$' | xargs --verbose -- $0 parse-one
+  time cat _build/app-deps/osh_eval/typecheck.txt \
+    | xargs --verbose -- $0 parse-one
 }
 
 dump-sys-path() {
