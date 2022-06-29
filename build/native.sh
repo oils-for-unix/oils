@@ -17,7 +17,18 @@ source build/common.sh  # CLANGXX
 compile-quickly() {
   ### For the fast possible development experience
 
-  ninja _bin/clang-dbg/osh_eval
+  if test -f "$CLANGXX"; then
+    ninja _bin/clang-dbg/osh_eval
+  else
+    echo ""
+    echo " Error: Unable to locate clang at ($CLANGXX)"
+    echo ""
+    echo "        To install clang at the specified path, run the following commands:"
+    echo ""
+    echo "        soil/deps-binary.sh download-clang"
+    echo "        soil/deps-binary.sh extract-clang"
+    echo ""
+  fi
 }
 
 compiler-trace-build() {

@@ -512,7 +512,7 @@ Str* Str::join(List<Str*>* items) {
     int n = len(items->index_(i));
     if (n < 0) {
       log("n: %d", n);
-      assert(0);
+      InvalidCodePath();
     }
     memcpy(p_result, items->index_(i)->data_, n);  // copy the list item
     p_result += n;

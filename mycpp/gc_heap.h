@@ -163,7 +163,7 @@ class Space {
       return;
     }
     log("p = %p isn't between %p and %p", begin_, begin_ + size_);
-    assert(0);
+    InvalidCodePath();
   }
 #endif
 
@@ -823,7 +823,7 @@ class List : public gc_heap::Obj {
     }
 
     log("i = %d, len_ = %d", i, len_);
-    assert(0);  // Out of bounds
+    InvalidCodePath();  // Out of bounds
   }
 
   // Implements L[i] = item
@@ -1175,7 +1175,7 @@ class Dict : public gc_heap::Obj {
   V index_(K key) {
     int pos = position_of_key(key);
     if (pos == -1) {
-      assert(0);
+      assert(0); // NOTE(Jesse): Should we really crash if asking for a key not in a dict?
     } else {
       return values_->items_[pos];
     }
