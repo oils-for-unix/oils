@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 readonly PY_PATH='.:vendor/'
 
 # Temporary
@@ -62,7 +64,7 @@ filter() {
   local filter_name=$1
 
   # select what's in the repo; eliminating stdlib stuff
-  grep 'oilshell/oil' \
+  fgrep "$REPO_ROOT" \
     | awk '{ print $2 }' \
     | egrep -v -f $FILTER_DIR/filter-$filter_name.txt \
     | LC_ALL=C sort

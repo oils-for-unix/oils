@@ -97,6 +97,9 @@ local-test-uke() {
 local-shell() {
   local task=${1:-cpp}
 
+  # Note: this currently requires local-test-uke first.  TODO: Remove that
+  # restriction.
+
   local repo_root=/tmp/soil-$task
   # Run bash as debug shell
   sudo $0 run-job-uke docker $repo_root $task bash
