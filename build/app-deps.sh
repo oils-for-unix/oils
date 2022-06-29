@@ -108,7 +108,16 @@ mycpp-example-parse() {
     build/app_deps.py py-manifest mycpp.examples.parse  \
   > $dir/all.txt
 
-  cat $dir/all.txt | filter mycpp-example | tee $dir/repo.txt
+  local ty=mycpp/examples/parse.typecheck.txt
+  local tr=mycpp/examples/parse.translate.txt
+
+  cat $dir/all.txt | filter typecheck > $ty
+
+  cat $ty | egrep -v -f $FILTER_DIR/filter-translate.txt > $tr
+
+  wc -l $ty $tr
+
+  #head $ty $tr
 }
 
 osh-eval() {

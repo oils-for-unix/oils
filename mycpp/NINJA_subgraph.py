@@ -93,13 +93,6 @@ def ShouldSkipBuild(name):
       # Maybe give up on these?  pgen2_demo might be useful later.
       'lexer_main', 
       'pgen2_demo',
-
-      # TODO: make this compile.  It's a realistic example.
-      # - expr.asdl when GC=1
-      # - qsn_qsn.h is incompatible.  This is also an issue with
-      #   'asdl/run.sh gc-test'
-
-      'parse',
       ]:
     return True
 
@@ -121,7 +114,9 @@ def ExamplesToBuild():
 
 def ShouldSkipTest(name):
   # '%5d' doesn't work yet.  TODO: fix this.
-  if name == 'strings':
+  if name in (
+      'strings',
+    ):
     return True
 
   return False
@@ -143,6 +138,10 @@ def ShouldSkipBenchmark(name):
   if name == 'files':
     return True
 
+  # This crashes with an assertion -- probably because ASDL has no GC header!
+  if name == 'parse':
+    return True
+
   return False
 
 
@@ -161,7 +160,15 @@ UNIT_TESTS = {
 }
 
 TRANSLATE_FILES = {
-    'modules': ['mycpp/testpkg/module1.py', 'mycpp/testpkg/module2.py'],
+    # TODO: We could also use app_deps.py here
+    # BUG: modules.py must be listed last.  Order matters with inheritance
+    # across modules!
+    'modules': [
+      'mycpp/testpkg/module1.py',
+      'mycpp/testpkg/module2.py',
+      'mycpp/examples/modules.py', 
+    ],
+    'parse': [],  # added dynamically from mycpp/examples/parse.translate.txt
 }
 
 EXAMPLES_PY = {
@@ -169,7 +176,7 @@ EXAMPLES_PY = {
 }
 
 EXAMPLES_CC = {
-    'parse': ['_test/asdl/expr_asdl.gc.cc', 'asdl/runtime.gc.cc'],
+    'parse': ['_test/asdl/expr_asdl.gc.cc'],
 }
 
 def NinjaGraph(n, u):
@@ -229,9 +236,15 @@ def NinjaGraph(n, u):
          description='benchmark-table $out $in')
   n.newline()
 
+  # For simplicity, this is committed to the repo.  We could also have
+  # build/dev.sh minimal generate it?
+  with open('mycpp/examples/parse.translate.txt') as f:
+    for line in f:
+      path = line.strip()
+      TRANSLATE_FILES['parse'].append(path)
+
   examples = ExamplesToBuild()
   #examples = ['cgi', 'containers', 'fib_iter']
-  #examples = ['cgi']
 
   # Groups of targets.  Not all of these are run by default.
   phony = {
@@ -286,15 +299,6 @@ def NinjaGraph(n, u):
   # ASDL schema that examples/parse.py depends on
   #
 
-  p = '_test/asdl/expr_asdl.py'
-  n.build(p, 'asdl-mypy', 'mycpp/examples/expr.asdl')
-  EXAMPLES_PY['parse'].append(p)
-
-  # This is annoying
-  for p in ['_test/__init__.py', '_test/asdl/__init__.py']:
-    n.build(p, 'touch')
-    EXAMPLES_PY['parse'].append(p)
-
   prefix = '_test/asdl/expr_asdl.gc'
   n.build([prefix + '.cc', prefix + '.h'], 'asdl-cpp', 'mycpp/examples/expr.asdl',
           variables=[('out_prefix', prefix)])
@@ -322,6 +326,7 @@ def NinjaGraph(n, u):
     skip_imports = 'T' if (ex == 'parse') else "''"
 
     n.build([t], 'typecheck', 
+            # TODO: Use mycpp/examples/parse.typecheck.txt
             EXAMPLES_PY.get(ex, []) + [main_py],
             variables=[('main_py', main_py), ('skip_imports', skip_imports)])
     n.newline()
@@ -355,8 +360,11 @@ def NinjaGraph(n, u):
     raw = '_test/gen/%s_raw.cc' % ex
 
     # Translate to C++
-    n.build(raw, 'translate',
-            TRANSLATE_FILES.get(ex, []) + ['mycpp/examples/%s.py' % ex])
+    if ex in TRANSLATE_FILES:
+      to_translate = TRANSLATE_FILES[ex]
+    else:
+      to_translate = ['mycpp/examples/%s.py' % ex]
+    n.build(raw, 'translate', to_translate)
 
     p = 'mycpp/examples/%s_preamble.h' % ex
     # Ninja empty string!

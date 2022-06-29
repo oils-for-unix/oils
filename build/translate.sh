@@ -14,7 +14,9 @@ readonly REPO_ROOT
 
 source mycpp/common.sh  # MYPY_REPO
 
-readonly TEMP_DIR=_devbuild/tmp
+# _build/tmp/osh_eval_raw.cc won't be included in the tarball
+# _build/cpp/osh_eval.cc is in the tarball
+readonly TEMP_DIR=_build/tmp
 
 mycpp() {
   ### Run mycpp (in a virtualenv because it depends on Python 3 / MyPy)

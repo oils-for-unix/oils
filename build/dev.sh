@@ -131,7 +131,7 @@ gen-asdl-py() {
   # abbrev module is optional
   asdl/tool.py mypy "$@" > $tmp
 
-  # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
+  # BUG: MUST BE DONE ATOMICALLY; otherwise the Python interpreter can
   # import an empty file!
   mv $tmp $out
 
@@ -177,6 +177,9 @@ oil-asdl-to-py() {
   # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
   # AST module later?
   gen-asdl-py frontend/syntax.asdl 'frontend.syntax_abbrev'
+
+  # For tests
+  gen-asdl-py 'mycpp/examples/expr.asdl'
 }
 
 arith-parse-cpp-gen() {

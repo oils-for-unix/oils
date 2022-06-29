@@ -177,7 +177,7 @@ mycpp-counts() {
   local count=$1
   shift
 
-  ls mycpp/*.py | grep -v 'build_graph.py' | filter-py | $count \
+  ls mycpp/*.py | grep -v 'NINJA_subgraph.py' | filter-py | $count \
     'mycpp Translator' \
     "This prototype uses the MyPy frontend to translate statically-typed Python to C++.  The generated code calls a small runtime which implements things like List[T], Dict[K, V], and Python's len()." \
     "$@"
@@ -269,6 +269,9 @@ _overview() {
   code-generator-counts $count "$@"
 
   # Leaving off cpp-counts since that requires a C++ build
+
+  ls NINJA*.py */NINJA*.{py,sh} | $count \
+    'Incremental C++ Build' '' "$@"
 
   ls build/*.{mk,sh,py} Makefile *.mk configure install | filter-py | $count \
     'Build Automation' '' "$@"
