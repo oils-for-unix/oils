@@ -16,7 +16,7 @@ readonly PY3=../oil_DEPS/python3
 
 parse-one() {
   # Use PY3 because Python 3.8 and above has type comments
-  $PY3 pea/pea_main.py "$@"
+  $PY3 pea/pea_main.py parse "$@"
 }
 
 all-files() {

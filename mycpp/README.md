@@ -49,15 +49,18 @@ If you have problems, post a message on `#oil-dev` at
 `https://oilshell.zulipchat.com`.  Not many people have contributed to `mycpp`,
 so I can use your feedback!
 
-Related: [Oil Native Quick
+Related:
+
+- [Oil Native Quick
 Start](https://github.com/oilshell/oil/wiki/Oil-Native-Quick-Start) on the
 wiki.
+- [Oil Dev Cheat Sheet](https://github.com/oilshell/oil/wiki/Oil-Native-Quick-Start)
 
 
 ### Run Tests and Benchmarks
 
-    ./build_graph.py
-    ninja logs-equal       # test for correctness by comparing stdout
+    oil$ ./NINJA_config.py
+    ninja mycpp-logs-equal       # test for correctness by comparing stdout
     ninja benchmark-table  # make a table of time/memory usage
 
 To build and run one example, like `fib_iter`:
@@ -66,14 +69,14 @@ To build and run one example, like `fib_iter`:
 
 To list targets:
 
-    ninja -t targets
+    ninja -t targets all
 
 ### Clean
 
 Unfortunately, you may need to clean the build, since some dependencies
 aren't accounted for:
 
-    ./build.sh clean
+    mycpp/build.sh clean
 
 ## Notes on the Algorithm / Architecture
 
@@ -122,10 +125,17 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 
 ## Translation Notes
 
+### "Creative Hacks"
+
+- `with tagswitch(d) as case` &rarr; `switch / case`
+  - We don't have Python 3 pattern matching
+- Scope-based resource management
+  - `with ctx_Foo(...)` &rarr; C++ constructors and destructors
+
 ### Major Features
 
 - Instantiating objects &rarr; `gc_heap::Alloc<T>(...)`
-- Collections
+- Statically Typed Python Collections
   - `str` &rarr; `Str*`
   - `List[T]` &rarr; `List<T>*`
   - `Dict[K, V]` &rarr; `Dict<K, V>*`
@@ -149,11 +159,7 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
   - Detect `virtual` methods
   - TODO: could we detect `abstract` methods? (`NotImplementedError`)
 - Python Exceptions &rarr; C++ exceptions
-- Scope-based resource management
-  - `with ctx_Foo(...)` &rarr; C++ constructors and destructors
 - Python Modules &rarr; C++ namespace (we assume a 2-level hierarchy)
-- A "clever" hack: `with tagswitch(d) as case` &rarr; `switch / case`
-  - We don't have Python 3 pattern matching
 
 ### Minor Translations
 
@@ -165,32 +171,23 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
       import'
   - Code under `if __name__ == '__main__'`
 
-## C++ Features Used
+### Hard-Coded Lists To Get Rid Of
 
-- For ASDL: type-safe enums, i.e. `enum class`
-- `nullptr`
-- `static_cast` and `reinterpret_cast`
-- Some Function Overloading for `format_r`?
-  - Do we need this for equality and hashing?
-- `offsetof` for introspection of field positions for garbage collection
-- `std::initializer_list` for `StackRoots()`
-  - Should we get rid of this?
+- `mycpp_main.py`
+  - `ModulesToCompile()` -- some files have to be ordered first, like the ASDL
+    runtime.
+    - TODO: Pea can respect parameter order?  So we do that outside the project?
+    - Another ordering constraint comes from **inheritance**.  The forward
+      declaration is NOT sufficient in that case.
+- `cppgen_pass.py`
+  - lists of functions with default arguments (we only allow 1)
+  - lists of modules vs. types: `module.Func()` vs. `sum_type.Variant()`
+  - `_GetCastKind()` has some hard-coded names
 
-### Not Used
 
-- I/O Streams, RTTI, etc.
-- `const`
-- No smart pointers for now
+Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
 
-## Notes on the Runtime (`mylib`)
-
-- A `Str` is immutable, and can be used as a key to a `Dict` (at the Python
-  level), and thus an `AssocArray` (at the Oil level).
-- A `BufWriter` is mutable.  It's an alias for `cStringIO.StringIO()`.  You
-  build it with repeated calls to`write()`, and then call `getvalue()` at the
-  end.
-
-## `mycpp` Limitations
+## Limitations Requiring Source Rewrites
 
 ### Due to the Translation or C++ language
 
@@ -220,9 +217,41 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
   functions or raise exceptions.
   - TODO: we could enforce this.
 
-## Gotchas
+## C++
+
+### Interactions Between C++ and Garbage Collection
+
+- TODO: Link to a wiki page.  The `f(g())` problem, etc.
+
+### Gotchas
 
 - C++ classes can have 2 member variables of the same name!  From the base
   class and derived class.
 - Failing to declare methods `virtual` can involve the wrong one being called
   at runtime
+
+### Features Used
+
+- For ASDL: type-safe enums, i.e. `enum class`
+- `nullptr`
+- `static_cast` and `reinterpret_cast`
+- Some Function Overloading for `format_r`?
+  - Do we need this for equality and hashing?
+- `offsetof` for introspection of field positions for garbage collection
+- `std::initializer_list` for `StackRoots()`
+  - Should we get rid of this?
+
+### Not Used
+
+- I/O Streams, RTTI, etc.
+- `const`
+- No smart pointers for now
+
+## Notes on the Runtime (`mylib`)
+
+- A `Str` is immutable, and can be used as a key to a `Dict` (at the Python
+  level), and thus an `AssocArray` (at the Oil level).
+- A `BufWriter` is mutable.  It's an alias for `cStringIO.StringIO()`.  You
+  build it with repeated calls to`write()`, and then call `getvalue()` at the
+  end.
+

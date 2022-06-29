@@ -99,7 +99,7 @@ mycpp() {
 }
 
 mycpp-example-parse() {
-  ### mycpp/examples/parse
+  ### Manifests for mycpp/examples/parse are committed to git
 
   local dir=$DIR/parse
   mkdir -p $dir

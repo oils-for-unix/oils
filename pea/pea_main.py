@@ -119,37 +119,58 @@ def DoModule(module: Module, stats: dict[str, int]) -> None:
 
 def main(argv: list[str]) -> int:
 
-  files = argv[1:]
-  stats: dict[str, int] = {
-      'num_files': len(files),
-      'num_funcs': 0,
-      'num_classes': 0,
-      'num_methods': 0,
-      'num_assign': 0,
-  }
+  action = argv[1]
 
-  for filename in files:
-    with open(filename) as f:
-      contents = f.read()
+  if action == 'parse':
 
-    try:
-      # Python 3.8+ supports type_comments=True
-      module = ast.parse(contents, filename=filename, type_comments=True)
-    except SyntaxError as e:
-      # This raises an exception for some reason
-      #e.print_file_and_line()
-      print('Error parsing %s: %s' % (filename, e))
-      return 1
+    files = argv[2:]
+    stats: dict[str, int] = {
+        'num_files': len(files),
+        'num_funcs': 0,
+        'num_classes': 0,
+        'num_methods': 0,
+        'num_assign': 0,
+    }
 
-    print('Parsed %s: %s' % (filename, module))
-    print()
+    for filename in files:
+      with open(filename) as f:
+        contents = f.read()
 
-    try:
-      DoModule(module, stats)
-    except TypeSyntaxError as e:
-      print('Type comment syntax error on line %d of %s: %r' %
-            (e.lineno, filename, e.code_str))
-      return 1
+      try:
+        # Python 3.8+ supports type_comments=True
+        module = ast.parse(contents, filename=filename, type_comments=True)
+      except SyntaxError as e:
+        # This raises an exception for some reason
+        #e.print_file_and_line()
+        print('Error parsing %s: %s' % (filename, e))
+        return 1
+
+      print('Parsed %s: %s' % (filename, module))
+      print()
+
+      try:
+        DoModule(module, stats)
+      except TypeSyntaxError as e:
+        print('Type comment syntax error on line %d of %s: %r' %
+              (e.lineno, filename, e.code_str))
+        return 1
+
+  elif action == 'cpp':
+    files = argv[2:]
+
+    def ParseAll(files: list[str]):
+      pass
+
+    # Parse them all up front?
+    prog = ParseAll(files)
+
+    #ConstPass(prog)
+    #ForwardDeclPass(prog)
+    #PrototypesPass(prog)
+    #ImplPass(prog)
+
+  else:
+    raise RuntimeError('Invalid action %r' % action)
 
   print(stats)
   return 0
