@@ -75,7 +75,7 @@ wrap-cc() {
   } > $out
 }
 
-translate() {
+translate-mycpp() {
   ### Translate Python/MyPy to C++.
 
   local out=$1
@@ -89,6 +89,13 @@ translate() {
     # flags may be empty
     time MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" PYTHONPATH=$MYPY_REPO mycpp/mycpp_main.py "$@" > $out
   )
+}
+
+translate-pea() {
+  local out=$1
+  shift  # rest of args are inputs
+
+  pea/test.sh translate-cpp "$@" > $out
 }
 
 compile() {

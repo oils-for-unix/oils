@@ -19,6 +19,12 @@ parse-one() {
   $PY3 pea/pea_main.py parse "$@"
 }
 
+translate-cpp() {
+  ### Used by mycpp/NINJA-steps.sh
+
+  $PY3 pea/pea_main.py cpp "$@"
+}
+
 all-files() {
   # Can't run this on Soil because we only have build/dev.sh py-source, not
   # 'minimal'
@@ -53,7 +59,8 @@ check-types() {
   local pip3_lib_path
   pip3_lib_path=$(pip3-lib-path)
 
-  PYTHONPATH=$pip3_lib_path ../oil_DEPS/python3 ~/.local/bin/mypy pea/pea_main.py
+  PYTHONPATH=$pip3_lib_path ../oil_DEPS/python3 \
+    ~/.local/bin/mypy --strict pea/pea_main.py
 }
 
 "$@"

@@ -31,9 +31,14 @@ Output Layout:
         cgi.opt
       unit/       # unit tests
         gc_heap_test.gc_debug
-    gen/ 
+
+    gen-mycpp/  # rewrite
       varargs_raw.cc
       varargs.cc
+    gen-pea/
+      varargs_raw.cc
+      varargs.cc
+
     tasks/        # *.txt and *.task.txt for .wwz
       typecheck/  # optionally run
       test/       # py, gc_debug, asan, opt
@@ -179,6 +184,98 @@ EXAMPLES_CC = {
     'parse': ['_test/asdl/expr_asdl.gc.cc'],
 }
 
+
+def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
+  raw = '_test/gen-%s/%s_raw.cc' % (translator, ex)
+
+  # Translate to C++
+  if ex in TRANSLATE_FILES:
+    to_translate = TRANSLATE_FILES[ex]
+  else:
+    to_translate = ['mycpp/examples/%s.py' % ex]
+  n.build(raw, 'translate-%s' % translator, to_translate)
+
+  p = 'mycpp/examples/%s_preamble.h' % ex
+  # Ninja empty string!
+  preamble_path = p if os.path.exists(p) else "''"
+
+  cc_src = '_test/gen-%s/%s.cc' % (translator, ex)
+  # Make a translation unit
+  n.build(cc_src, 'wrap-cc', raw,
+          variables=[('name', ex), ('preamble_path', preamble_path)])
+  n.newline()
+
+  if translator == 'pea':
+    phony['pea-translate'].append(cc_src)
+
+  more_cxx_flags = "''"
+
+  if translator == 'mycpp':
+    variants = ['gc_debug', 'asan', 'opt']
+  else:
+    variants = ['gc_debug']  # just do one for now
+
+  # Compile C++.
+  for variant in variants:
+    b = '_test/bin/examples-%s/%s.%s' % (translator, ex, variant)
+    n.build(
+        b, 'compile',
+        [cc_src] + RUNTIME + EXAMPLES_CC.get(ex, []),
+        variables=[
+            ('variant', variant), ('more_cxx_flags', more_cxx_flags)
+        ])
+    n.newline()
+
+    if translator == 'pea':
+      phony['pea-compile'].append(b)
+
+    if variant == 'opt':
+      stripped = '_test/bin/examples-%s/%s.%s.stripped' % (translator, ex, variant)
+      # no symbols
+      n.build([stripped, ''], 'strip', [b],
+              variables=[('variant', variant)])
+      n.newline()
+      phony['mycpp-strip'].append(stripped)
+
+  # Don't run it for now; just compile
+  if translator == 'pea':
+    return
+
+  # minimal
+  MATRIX = [
+      ('test', 'asan'),
+      ('benchmark', 'opt'),
+  ]
+
+  # Run the binary in two ways
+  for mode, variant in MATRIX:
+    task_out = '_test/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
+
+    if mode == 'benchmark':
+      if ShouldSkipBenchmark(ex):
+        #log('Skipping benchmark of %s', ex)
+        continue
+      benchmark_tasks.append(task_out)
+
+    elif mode == 'test':
+      if ShouldSkipTest(ex):
+        #log('Skipping test of %s', ex)
+        continue
+
+    cc_log_out = '_test/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
+    py_log_out = '_test/tasks/%s/%s.py.log.txt' % (mode, ex)
+
+    to_compare.append(cc_log_out)
+    to_compare.append(py_log_out)
+
+    n.build([task_out, cc_log_out], 'example-task',
+            '_test/bin/examples-%s/%s.%s' % (translator, ex, variant),
+            variables=[
+              ('bin', '_test/bin/examples-%s/%s.%s' % (translator, ex, variant)),
+              ('name', ex), ('impl', 'C++')])
+    n.newline()
+
+
 def NinjaGraph(n, u):
 
   n.comment('Translate, compile, and test mycpp examples.')
@@ -200,10 +297,17 @@ def NinjaGraph(n, u):
          command='mycpp/NINJA-steps.sh asdl-cpp $in $out_prefix',
          description='asdl-cpp $in $out_prefix')
   n.newline()
-  n.rule('translate',
-         command='mycpp/NINJA-steps.sh translate $out $in',
-         description='translate $out $in')
+
+  # Two translators
+  n.rule('translate-mycpp',
+         command='mycpp/NINJA-steps.sh translate-mycpp $out $in',
+         description='translate-mycpp $out $in')
   n.newline()
+  n.rule('translate-pea',
+         command='mycpp/NINJA-steps.sh translate-pea $out $in',
+         description='translate-pea $out $in')
+  n.newline()
+
   n.rule('wrap-cc',
          command='mycpp/NINJA-steps.sh wrap-cc $name $in $preamble_path $out',
          description='wrap-cc $name $in $preamble_path $out')
@@ -251,9 +355,6 @@ def NinjaGraph(n, u):
       'mycpp-unit': [],
       'mycpp-typecheck': [],  # optional: for debugging only.  translation does it.
 
-      # Note: unused
-      'mycpp-test': [],  # test examples (across variants, including Python)
-
       'benchmark-table': [],
 
       # Compare logs for tests AND benchmarks.
@@ -262,6 +363,10 @@ def NinjaGraph(n, u):
       'mycpp-logs-equal': [],
 
       'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
+
+      'pea-translate': [],
+      'pea-compile': [],
+      # TODO: eventually we will have pea-logs-equal, and pea-benchmark-table
   }
 
   #
@@ -357,79 +462,8 @@ def NinjaGraph(n, u):
 
       n.newline()
 
-    raw = '_test/gen/%s_raw.cc' % ex
-
-    # Translate to C++
-    if ex in TRANSLATE_FILES:
-      to_translate = TRANSLATE_FILES[ex]
-    else:
-      to_translate = ['mycpp/examples/%s.py' % ex]
-    n.build(raw, 'translate', to_translate)
-
-    p = 'mycpp/examples/%s_preamble.h' % ex
-    # Ninja empty string!
-    preamble_path = p if os.path.exists(p) else "''"
-
-    # Make a translation unit
-    n.build('_test/gen/%s.cc' % ex, 'wrap-cc', raw,
-            variables=[('name', ex), ('preamble_path', preamble_path)])
-
-    n.newline()
-
-    more_cxx_flags = "''"
-
-    # Compile C++. TODO: Can also parameterize by CXX: Clang or GCC.
-    for variant in ['gc_debug', 'asan', 'opt']:
-      b = '_test/bin/examples/%s.%s' % (ex, variant)
-      n.build(
-          b, 'compile',
-          ['_test/gen/%s.cc' % ex] + RUNTIME + EXAMPLES_CC.get(ex, []),
-          variables=[
-              ('variant', variant), ('more_cxx_flags', more_cxx_flags)
-          ])
-      n.newline()
-
-      if variant == 'opt':
-        stripped = '_test/bin/examples-stripped/%s.%s' % (ex, variant)
-        # no symbols
-        n.build([stripped, ''], 'strip', [b],
-                variables=[('variant', variant)])
-        n.newline()
-        phony['mycpp-strip'].append(stripped)
-
-    # minimal
-    MATRIX = [
-        ('test', 'asan'),
-        ('benchmark', 'opt'),
-    ]
-
-    # Run the binary in two ways
-    for mode, variant in MATRIX:
-      task_out = '_test/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
-
-      if mode == 'benchmark':
-        if ShouldSkipBenchmark(ex):
-          #log('Skipping benchmark of %s', ex)
-          continue
-        benchmark_tasks.append(task_out)
-
-      elif mode == 'test':
-        if ShouldSkipTest(ex):
-          #log('Skipping test of %s', ex)
-          continue
-
-      log_out = '_test/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
-      py_log_out = '_test/tasks/%s/%s.py.log.txt' % (mode, ex)
-
-      to_compare.append(log_out)
-      to_compare.append(py_log_out)
-
-      n.build([task_out, log_out], 'example-task',
-              '_test/bin/examples/%s.%s' % (ex, variant),
-              variables=[
-                ('bin', '_test/bin/examples/%s.%s' % (ex, variant)),
-                ('name', ex), ('impl', 'C++')])
-      n.newline()
+    for translator in ['mycpp', 'pea']:
+      TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony)
 
   # Compare the log of all examples
   out = '_test/logs-equal.txt'
@@ -449,15 +483,20 @@ def NinjaGraph(n, u):
   # Write phony rules we accumulated
   #
 
-  phony_real = []
+  mycpp_all = []
+  pea_all = []
   for name in sorted(phony):
     deps = phony[name]
     if deps:
       n.build([name], 'phony', deps)
       n.newline()
 
-      phony_real.append(name)
+      if name.startswith('mycpp-'):
+        mycpp_all.append(name)
+      if name.startswith('pea-'):
+        pea_all.append(name)
 
   # All groups
-  n.build(['mycpp-all'], 'phony', phony_real)
+  n.build(['mycpp-all'], 'phony', mycpp_all)
+  n.build(['pea-all'], 'phony', pea_all)
 

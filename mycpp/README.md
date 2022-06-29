@@ -59,24 +59,24 @@ wiki.
 
 ### Run Tests and Benchmarks
 
-    oil$ ./NINJA_config.py
-    ninja mycpp-logs-equal       # test for correctness by comparing stdout
-    ninja benchmark-table  # make a table of time/memory usage
+    $ ./NINJA_config.py
+    $ ninja mycpp-logs-equal       # test for correctness by comparing stdout
+    $ ninja benchmark-table  # make a table of time/memory usage
 
 To build and run one example, like `fib_iter`:
 
-    ninja _ninja/tasks/test/fib_iter.py.task.txt
+    $ ninja _ninja/tasks/test/fib_iter.py.task.txt
 
 To list targets:
 
-    ninja -t targets all
+    $ ninja -t targets all
 
 ### Clean
 
 Unfortunately, you may need to clean the build, since some dependencies
 aren't accounted for:
 
-    mycpp/build.sh clean
+    $ mycpp/build.sh clean
 
 ## Notes on the Algorithm / Architecture
 

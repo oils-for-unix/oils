@@ -5,31 +5,33 @@ pea_main.py
 A potential rewrite of mycpp.
 """
 import ast
-from ast import stmt, Module, ClassDef, FunctionDef, Assign
+from ast import AST, stmt, Module, ClassDef, FunctionDef, Assign
 import collections
 
-from typing import List
+from typing import Optional, List
 
+import optparse
 import os
 import sys
 
 
 class TypeSyntaxError(Exception):
 
-  def __init__(self, lineno, code_str):
+  def __init__(self, lineno: int, code_str: str):
     self.lineno = lineno
     self.code_str = code_str
 
 
-def ParseFuncType(stmt):
+def ParseFuncType(st: stmt) -> AST:
+  assert st.type_comment  # caller checks this
   try:
     # This parses with the func_type production in the grammar
-    return ast.parse(stmt.type_comment, mode='func_type')
+    return ast.parse(st.type_comment, mode='func_type')
   except SyntaxError:
-    raise TypeSyntaxError(stmt.lineno, stmt.type_comment)
+    raise TypeSyntaxError(st.lineno, st.type_comment)
 
 
-def DoBlock(stmts: List[stmt], stats: dict[str, int], indent=0) -> None:
+def DoBlock(stmts: List[stmt], stats: dict[str, int], indent: int=0) -> None:
   """e.g. body of function, method, etc."""
 
   #print('STMTS %s' % stmts)
@@ -117,6 +119,28 @@ def DoModule(module: Module, stats: dict[str, int]) -> None:
     print(ast.dump(module))
 
 
+def Options() -> optparse.OptionParser:
+  """Returns an option parser instance."""
+
+  p = optparse.OptionParser()
+  p.add_option(
+      '-v', '--verbose', dest='verbose', action='store_true', default=False,
+      help='Show details about translation')
+
+  # Control which modules are exported to the header.
+  # - It's used for asdl/runtime.h, which is useful for tests ONLY
+  # - TODO: Should we get rid of _build/cpp/osh_eval.h?  Not sure it's used
+  p.add_option(
+      '--to-header', dest='to_header', action='append', default=[],
+      help='Export this module to a header, e.g. frontend.args')
+
+  p.add_option(
+      '--header-out', dest='header_out', default=None,
+      help='Write this header')
+
+  return p
+
+
 def main(argv: list[str]) -> int:
 
   action = argv[1]
@@ -155,10 +179,12 @@ def main(argv: list[str]) -> int:
               (e.lineno, filename, e.code_str))
         return 1
 
+    print(stats)
+
   elif action == 'cpp':
     files = argv[2:]
 
-    def ParseAll(files: list[str]):
+    def ParseAll(files: list[str]) -> list[AST]:
       pass
 
     # Parse them all up front?
@@ -169,10 +195,11 @@ def main(argv: list[str]) -> int:
     #PrototypesPass(prog)
     #ImplPass(prog)
 
+    print('// PEA C++')
+
   else:
     raise RuntimeError('Invalid action %r' % action)
 
-  print(stats)
   return 0
 
 
