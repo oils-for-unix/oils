@@ -115,7 +115,7 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
     }
   }
 
-  assert(0);
+  InvalidCodePath();
 
   return false;
 }
@@ -145,7 +145,7 @@ bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
     return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
   }
 
-  assert(0);
+  InvalidCodePath();
 }
 
 }  // namespace bool_stat

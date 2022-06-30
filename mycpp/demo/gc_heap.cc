@@ -276,6 +276,8 @@ class AtomEntry {
 class AtomTable {
  public:
   int Intern(Slice_2 slice) {
+    // TODO(Jesse): Does this get called?
+    // Is this NotImplemented() or InvalidCodePath() ??
     assert(0);
   }
 

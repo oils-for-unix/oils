@@ -50,11 +50,11 @@ inline Str* UEscape(int codepoint) {
 }
 #else
 inline Str* XEscape(Str* ch) {
-  assert(0);
+  NotImplemented(); // Unused
 }
 
 inline Str* UEscape(int codepoint) {
-  assert(0);
+  NotImplemented(); // Unused
 }
 #endif
 

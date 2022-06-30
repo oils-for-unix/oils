@@ -61,7 +61,7 @@ class LineReader : gc_heap::Obj {
     return false;
   }
   virtual int fileno() {
-    assert(0);  // shouldn't be called here
+    NotImplemented(); // Uncalled
   }
 };
 

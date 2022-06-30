@@ -352,12 +352,16 @@ class Local {
 
   // IMPLICIT conversion.  No 'explicit'.
   Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
+    // TODO(Jesse): Does this get called?
+    // Is this NotImplemented() or InvalidCodePath() ??
     assert(0);
     // gHeap.PushRoot(this);
   }
 
   // Copy constructor, e.g. f(mylocal) where f(Local<T> param);
   Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
+    // TODO(Jesse): Does this get called?
+    // Is this NotImplemented() or InvalidCodePath() ??
     assert(0);
     // gHeap.PushRoot(this);
   }
@@ -633,11 +637,11 @@ class Str : public gc_heap::Obj {
   bool isupper();
 
   Str* upper() {
-    assert(0);
+    NotImplemented(); // Uncalled
   }
 
   Str* lower() {
-    assert(0);
+    NotImplemented(); // Uncalled
   }
 
   // Other options for fast comparison / hashing / string interning:
@@ -1175,7 +1179,7 @@ class Dict : public gc_heap::Obj {
   V index_(K key) {
     int pos = position_of_key(key);
     if (pos == -1) {
-      assert(0); // NOTE(Jesse): Should we really crash if asking for a key not in a dict?
+      InvalidCodePath(); // NOTE(Jesse): Should we really crash if asking for a key not in a dict?
     } else {
       return values_->items_[pos];
     }

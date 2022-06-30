@@ -62,11 +62,11 @@ inline Str* uname() {
 // TODO: write proper signatures
 // stat returns stat_result
 inline void stat() {
-  assert(0);
+  NotImplemented(); // Uncalled
 }
 
 inline void lstat() {
-  assert(0);
+  NotImplemented(); // Uncalled
 }
 
 inline Tuple2<int, int> pipe() {
@@ -84,12 +84,7 @@ inline int close(int fd) {
 }
 
 inline int putenv(Str* name, Str* value) {
-  assert(0);
-}
-
-// TODO: errors
-inline int chdir(Str* path) {
-  assert(0);
+  NotImplemented();
 }
 
 inline int fork() {

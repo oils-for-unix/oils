@@ -232,7 +232,7 @@ Str* Str::strip() {
 
 // Used for CommandSub in osh/cmd_exec.py
 Str* Str::rstrip(Str* chars) {
-  assert(0);
+  NotImplemented(); // Uncalled
 }
 
 Str* Str::rstrip() {
