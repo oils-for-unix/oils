@@ -7,12 +7,53 @@ A potential rewrite of mycpp.
 import ast
 from ast import AST, stmt, Module, ClassDef, FunctionDef, Assign
 import collections
-
-from typing import Optional, List
-
 import optparse
 import os
+from pprint import pprint
 import sys
+import time
+
+from typing import Optional, Any
+
+
+START_TIME = time.time()
+
+def log(msg: str, *args: Any) -> None:
+  if args:
+    msg = msg % args
+  print('%.2f %s' % (time.time() - START_TIME, msg), file=sys.stderr)
+
+
+class Program:
+  """The whole program."""
+
+  def __init__(self) -> None:
+    self.modules: list[AST] = []
+
+    # As we parse, we add modules, and fill in the dictionaries with parsed
+    # types.  Then other passes can retrieve the types with the same
+    # dictionaries.
+
+    # right now types are modules?  Could change that
+    self.func_types: dict[FunctionDef, AST] = {}  
+    self.method_types : dict[FunctionDef, AST] = {}  
+    self.class_types : dict[ClassDef, Module] = {}  
+    self.assign_types : dict[Assign, Module] = {}  
+
+    self.stats: dict[str, int] = {
+        # parsing stats
+        'num_files': 0,
+        'num_funcs': 0,
+        'num_classes': 0,
+        'num_methods': 0,
+        'num_assign': 0,
+
+        # ConstPass stats
+        'num_strings': 0,
+    }
+
+  def PrintStats(self) -> None:
+    pprint(self.stats)
 
 
 class TypeSyntaxError(Exception):
@@ -31,18 +72,20 @@ def ParseFuncType(st: stmt) -> AST:
     raise TypeSyntaxError(st.lineno, st.type_comment)
 
 
-def DoBlock(stmts: List[stmt], stats: dict[str, int], indent: int=0) -> None:
+def ParseBlock(stmts: list[stmt], prog: Program, indent: int=0) -> None:
   """e.g. body of function, method, etc."""
 
   #print('STMTS %s' % stmts)
 
   ind_str = '  ' * indent
 
+  # TODO: Change to a visitor?  So you get all assignments recursively.
+
   for stmt in stmts:
     match stmt:
       case Assign():
-        print('%s* Assign' % ind_str)
-        print(ast.dump(stmt, indent='  '))
+        #print('%s* Assign' % ind_str)
+        #print(ast.dump(stmt, indent='  '))
 
         if stmt.type_comment:
           # This parses with the func_type production in the grammar
@@ -52,34 +95,35 @@ def DoBlock(stmts: List[stmt], stats: dict[str, int], indent: int=0) -> None:
             # New syntax error
             raise TypeSyntaxError(stmt.lineno, stmt.type_comment)
 
-          print('%s  TYPE: Assign' % ind_str)
-          print(ast.dump(typ, indent='  '))
+          prog.assign_types[stmt] = typ
 
-        stats['num_assign'] += 1
+          #print('%s  TYPE: Assign' % ind_str)
+          #print(ast.dump(typ, indent='  '))
+
+        prog.stats['num_assign'] += 1
 
       case _:
         pass
 
 
-def DoClass(cls: ClassDef, stats: dict[str, int]) -> None:
-  # TODO:
-  # - Parse type comments out of __init__() like self.field = field
-  print('* class %s(...)' % cls.name)
-  print()
+def ParseClass(cls: ClassDef, prog: Program) -> None:
+  #print('* class %s(...)' % cls.name)
+  #print()
   for stmt in cls.body:
     match stmt:
       case FunctionDef():
-        print('  * method %s(...)' % stmt.name)
-        print('    ARGS')
-        print(ast.dump(stmt.args, indent='  '))
+        #print('  * method %s(...)' % stmt.name)
+        #print('    ARGS')
+        #print(ast.dump(stmt.args, indent='  '))
         if stmt.type_comment:
           sig = ParseFuncType(stmt)
-          print('    TYPE: method')
-          print(ast.dump(sig, indent='  '))
-        print()
-        stats['num_methods'] += 1
+          prog.method_types[stmt] = sig
+          #print('    TYPE: method')
+          #print(ast.dump(sig, indent='  '))
+        #print()
+        prog.stats['num_methods'] += 1
 
-        DoBlock(stmt.body, stats, indent=1)
+        ParseBlock(stmt.body, prog, indent=1)
 
       case _:
         # Import, Assign, etc.
@@ -87,36 +131,33 @@ def DoClass(cls: ClassDef, stats: dict[str, int]) -> None:
         pass
 
 
-def DoModule(module: Module, stats: dict[str, int]) -> None:
+def ParseModule(module: Module, prog: Program) -> None:
   for stmt in module.body:
     match stmt:
       case FunctionDef():
-        print('* func %s(...)' % stmt.name)
-        print('  ARGS')
-        print(ast.dump(stmt.args, indent='  '))
+        #print('* func %s(...)' % stmt.name)
+        #print('  ARGS')
+        #print(ast.dump(stmt.args, indent='  '))
         if stmt.type_comment:
           sig = ParseFuncType(stmt)
-          print('  TYPE: func')
-          print(ast.dump(sig, indent='  '))
-        print()
-        stats['num_funcs'] += 1
+          prog.func_types[stmt] = sig
 
-        DoBlock(stmt.body, stats, indent=0)
+          #print('  TYPE: func')
+          #print(ast.dump(sig, indent='  '))
+        #print()
+        prog.stats['num_funcs'] += 1
+
+        ParseBlock(stmt.body, prog, indent=0)
 
       case ClassDef():
-        DoClass(stmt, stats)
-        stats['num_classes'] += 1
+        ParseClass(stmt, prog)
+        prog.stats['num_classes'] += 1
 
       case _:
         # Import, Assign, etc.
         #print(stmt)
         # if __name__ == '__main__'
         pass
-
-  ast_dump = os.getenv('AST_DUMP')
-  if ast_dump:
-    print()
-    print(ast.dump(module))
 
 
 def Options() -> optparse.OptionParser:
@@ -141,6 +182,56 @@ def Options() -> optparse.OptionParser:
   return p
 
 
+class ConstVisitor(ast.NodeVisitor):
+
+  def __init__(self, const_lookup: dict[str, int]):
+    ast.NodeVisitor.__init__(self)
+    self.const_lookup = const_lookup
+    self.str_id = 0
+
+  def visit_Constant(self, o: ast.Constant) -> None:
+    if isinstance(o.value, str):
+      self.const_lookup[o.value] = self.str_id
+      self.str_id += 1
+
+
+def ParseFiles(files: list[str], prog: Program) -> bool:
+
+  for filename in files:
+    with open(filename) as f:
+      contents = f.read()
+
+    try:
+      # Python 3.8+ supports type_comments=True
+      module = ast.parse(contents, filename=filename, type_comments=True)
+    except SyntaxError as e:
+      # This raises an exception for some reason
+      #e.print_file_and_line()
+      print('Error parsing %s: %s' % (filename, e))
+      return False
+
+    prog.modules.append(module)
+
+    #print('Parsed %s: %s' % (filename, module))
+    #print()
+
+    try:
+      ParseModule(module, prog)
+    except TypeSyntaxError as e:
+      print('Type comment syntax error on line %d of %s: %r' %
+            (e.lineno, filename, e.code_str))
+      return False
+
+    prog.stats['num_files'] += 1
+
+  #prog.PrintStats()
+  if 0:
+    print(prog.func_types)
+    print(prog.method_types)
+
+  return True
+
+
 def main(argv: list[str]) -> int:
 
   action = argv[1]
@@ -148,53 +239,42 @@ def main(argv: list[str]) -> int:
   if action == 'parse':
 
     files = argv[2:]
-    stats: dict[str, int] = {
-        'num_files': len(files),
-        'num_funcs': 0,
-        'num_classes': 0,
-        'num_methods': 0,
-        'num_assign': 0,
-    }
 
-    for filename in files:
-      with open(filename) as f:
-        contents = f.read()
+    prog = Program()
 
-      try:
-        # Python 3.8+ supports type_comments=True
-        module = ast.parse(contents, filename=filename, type_comments=True)
-      except SyntaxError as e:
-        # This raises an exception for some reason
-        #e.print_file_and_line()
-        print('Error parsing %s: %s' % (filename, e))
-        return 1
+    # module -> class/method, func; and recursive visitor for Assign
+    log('Pea begin')
+    if not ParseFiles(files, prog):
+      return 1
+    log('Parsed %d files and their type comments', len(files))
+    prog.PrintStats()
 
-      print('Parsed %s: %s' % (filename, module))
-      print()
+    const_lookup: dict[str, int] = {}  
 
-      try:
-        DoModule(module, stats)
-      except TypeSyntaxError as e:
-        print('Type comment syntax error on line %d of %s: %r' %
-              (e.lineno, filename, e.code_str))
-        return 1
+    v = ConstVisitor(const_lookup)
+    for module in prog.modules:
+      v.visit(module)
 
-    print(stats)
+    log('Collected %d constants', len(const_lookup))
+
+    # TODO: respect header_out for these two passes
+
+    # module -> class
+    log('Forward Declarations') 
+
+    # module -> class/method, func
+    log('Prototypes') 
+
+    # module -> class/method, func; then probably a fully recursive thing
+    log('Implementation') 
+
+    #prog.PrintStats()
+
+    log('Done')
+
 
   elif action == 'cpp':
     files = argv[2:]
-
-    def ParseAll(files: list[str]) -> list[AST]:
-      pass
-
-    # Parse them all up front?
-    prog = ParseAll(files)
-
-    #ConstPass(prog)
-    #ForwardDeclPass(prog)
-    #PrototypesPass(prog)
-    #ImplPass(prog)
-
     print('// PEA C++')
 
   else:

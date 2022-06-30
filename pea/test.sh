@@ -25,6 +25,10 @@ translate-cpp() {
   $PY3 pea/pea_main.py cpp "$@"
 }
 
+translate-test() {
+  translate-cpp bin/osh_eval.py
+}
+
 all-files() {
   # Can't run this on Soil because we only have build/dev.sh py-source, not
   # 'minimal'
