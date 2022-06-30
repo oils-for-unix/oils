@@ -3,5 +3,5 @@
 
 // For hnode::External in asdl/format.py
 inline Str* repr(void* obj) {
-  assert(0);
+  NotImplemented(); // Uncalled
 }

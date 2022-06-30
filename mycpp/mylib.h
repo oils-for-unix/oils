@@ -335,11 +335,11 @@ class Str : public gc_heap::Obj {
   }
 
   Str* upper() {
-    assert(0);
+    NotImplemented();
   }
 
   Str* lower() {
-    assert(0);
+    NotImplemented();
   }
 
   Str* ljust(int width, Str* fillchar);
@@ -496,8 +496,9 @@ class List : public gc_heap::Obj {
   // TODO: Don't accept arbitrary index?
   T pop(int index) {
     if (v_.size() == 0) {
-      // TODO: Handle this better?
-      assert(0);
+      // TODO(Jesse): Probably shouldn't crash if we try to pop a List with
+      // nothing on it
+      InvalidCodePath();
     }
 
     T result = v_.at(index);
@@ -786,7 +787,8 @@ Dict<K, V>* NewDict() {
 template <typename K, typename V>
 Dict<K, V>* NewDict(std::initializer_list<K> keys,
                     std::initializer_list<V> values) {
-  assert(0);
+  // TODO(Jesse): Is this NotImplemented() or InvalidCodePath() ?
+  assert(0); // Uncalled
 }
 
 #endif  // USING_OLD_MYLIB
@@ -956,7 +958,7 @@ inline Str* str(int i) {
 }
 
 inline Str* str(double f) {  // TODO: should be double
-  assert(0);
+  NotImplemented(); // Uncalled
 }
 
 // Display a quoted representation of a string.  word_.Pretty() uses it.
@@ -987,7 +989,7 @@ inline bool to_bool(Str* s) {
 }
 
 inline double to_float(Str* s) {
-  assert(0);
+  NotImplemented();
 }
 
 // e.g. ('a' in 'abc')
@@ -1097,7 +1099,7 @@ inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
 // TODO: how to do the int version of this?  Do you need an extra bit?
 template <typename V>
 inline void dict_remove(Dict<int, V>* haystack, int needle) {
-  assert(0);
+  NotImplemented();
 }
 
 // A class for interfacing Str* slices with C functions that expect a NUL
@@ -1158,8 +1160,9 @@ class LineReader {
   virtual bool isatty() {
     return false;
   }
+
   virtual int fileno() {
-    assert(0);  // shouldn't be called here
+    NotImplemented();
   }
 };
 
