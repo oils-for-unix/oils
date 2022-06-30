@@ -87,11 +87,6 @@ inline int putenv(Str* name, Str* value) {
   NotImplemented();
 }
 
-// TODO: errors
-inline int chdir(Str* path) {
-  NotImplemented(); // Uncalled
-}
-
 inline int fork() {
   return ::fork();
 }
