@@ -109,6 +109,7 @@ pea-tasks() {
 dump-user-host      soil/worker.sh dump-user-host     -
 py-source           build/dev.sh py-source            -
 check-types         pea/test.sh check-types           -
+run-tests           pea/test.sh run-tests             -
 parse-all           pea/test.sh parse-all             -
 EOF
 }
