@@ -725,6 +725,7 @@
 6 _tmp/spec/cpp/errexit-oil.tsv
 7 _tmp/spec/cpp/errexit-oil.tsv
 9 _tmp/spec/cpp/errexit-oil.tsv
+10 _tmp/spec/cpp/errexit-oil.tsv
 11 _tmp/spec/cpp/errexit-oil.tsv
 12 _tmp/spec/cpp/errexit-oil.tsv
 13 _tmp/spec/cpp/errexit-oil.tsv
@@ -1181,12 +1182,15 @@
 19 _tmp/spec/cpp/sh-options.tsv
 21 _tmp/spec/cpp/sh-options.tsv
 22 _tmp/spec/cpp/sh-options.tsv
+23 _tmp/spec/cpp/sh-options.tsv
 25 _tmp/spec/cpp/sh-options.tsv
 27 _tmp/spec/cpp/sh-options.tsv
 30 _tmp/spec/cpp/sh-options.tsv
 31 _tmp/spec/cpp/sh-options.tsv
 35 _tmp/spec/cpp/sh-options.tsv
 36 _tmp/spec/cpp/sh-options.tsv
+37 _tmp/spec/cpp/sh-options.tsv
+38 _tmp/spec/cpp/sh-options.tsv
 39 _tmp/spec/cpp/sh-options.tsv
 40 _tmp/spec/cpp/sh-options.tsv
 41 _tmp/spec/cpp/sh-options.tsv
@@ -1244,6 +1248,7 @@
 9 _tmp/spec/cpp/tilde.tsv
 10 _tmp/spec/cpp/tilde.tsv
 12 _tmp/spec/cpp/tilde.tsv
+0 _tmp/spec/cpp/TODO-deprecate.tsv
 0 _tmp/spec/cpp/toysh-posix.tsv
 3 _tmp/spec/cpp/toysh-posix.tsv
 5 _tmp/spec/cpp/toysh-posix.tsv
@@ -1268,6 +1273,8 @@
 1 _tmp/spec/cpp/var-num.tsv
 5 _tmp/spec/cpp/var-num.tsv
 6 _tmp/spec/cpp/var-num.tsv
+0 _tmp/spec/cpp/var-op-bash.tsv
+1 _tmp/spec/cpp/var-op-bash.tsv
 6 _tmp/spec/cpp/var-op-bash.tsv
 8 _tmp/spec/cpp/var-op-bash.tsv
 9 _tmp/spec/cpp/var-op-bash.tsv
@@ -1374,6 +1381,7 @@
 0 _tmp/spec/cpp/var-ref.tsv
 1 _tmp/spec/cpp/var-ref.tsv
 2 _tmp/spec/cpp/var-ref.tsv
+3 _tmp/spec/cpp/var-ref.tsv
 4 _tmp/spec/cpp/var-ref.tsv
 5 _tmp/spec/cpp/var-ref.tsv
 6 _tmp/spec/cpp/var-ref.tsv

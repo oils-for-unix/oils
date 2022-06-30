@@ -20,7 +20,7 @@ allow_errors()
   true
 }
 
-./test/spec-cpp.sh all
+test/spec-cpp.sh all
 
 for filename in _tmp/spec/cpp/*.tsv; do
 

@@ -47,7 +47,12 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle);
 
 template <typename V>
 void dict_remove(Dict<int, V>* haystack, int needle);
+
+inline Str* NewStr(const char* s);
+inline Str* NewStr(const char* s, int len);
+
 };  // namespace mylib
+
 
 extern Str* kEmptyString;
 
@@ -100,6 +105,13 @@ class RuntimeError {
 //
 
 #ifdef USING_OLD_MYLIB
+
+enum transform_op
+{
+  lower,
+  upper,
+};
+
 class Str : public gc_heap::Obj {
  public:
   Str(const char* data, int len)
@@ -335,11 +347,34 @@ class Str : public gc_heap::Obj {
   }
 
   Str* upper() {
-    NotImplemented();
+    return transform(transform_op::upper);
   }
 
   Str* lower() {
-    NotImplemented();
+    return transform(transform_op::lower);
+  }
+
+  Str* transform(transform_op op)
+  {
+    char* new_buf = static_cast<char*>(malloc(len_));
+    for (int char_index = 0; char_index <= len_; ++char_index)
+    {
+      switch (op)
+      {
+        case transform_op::upper:
+        {
+          new_buf[char_index] = toupper(data_[char_index]);
+        } break;
+
+        case transform_op::lower:
+        {
+          new_buf[char_index] = tolower(data_[char_index]);
+        } break;
+      }
+
+    }
+
+    return mylib::NewStr(new_buf, len_);
   }
 
   Str* ljust(int width, Str* fillchar);
@@ -1139,6 +1174,10 @@ class Str0 {
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 // emulate gc_heap API for ASDL
+
+inline Str* NewStr(const char* s, int len) {
+  return new Str(s, len);
+}
 
 inline Str* NewStr(const char* s) {
   return new Str(s);
