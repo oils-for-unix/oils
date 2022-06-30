@@ -38,7 +38,7 @@ from frontend import match
 from osh import cmd_eval
 from qsn_ import qsn
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems, NewStr
+from mycpp.mylib import tagswitch, iteritems, CWrap
 
 import posix_ as posix
 from posix_ import (
@@ -1174,7 +1174,7 @@ class Pipeline(Job):
 
 def _JobStateStr(i):
   # type: (job_state_t) -> str
-  return NewStr(job_state_str(i))[10:]  # remove 'job_state.'
+  return CWrap(job_state_str(i))[10:]  # remove 'job_state.'
 
 
 class JobState(object):

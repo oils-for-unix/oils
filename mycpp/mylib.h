@@ -1138,11 +1138,11 @@ class Str0 {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
-// emulate gc_heap API for ASDL
-
-inline Str* NewStr(const char* s) {
+inline Str* CWrap(const char* s) {
   return new Str(s);
 }
+
+// emulate gc_heap API for ASDL
 
 template <typename T>
 List<T>* NewList() {
