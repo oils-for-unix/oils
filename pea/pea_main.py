@@ -17,6 +17,8 @@ import time
 import typing
 from typing import Optional, Any
 
+from mycpp import pass_state
+
 
 START_TIME = time.time()
 
@@ -49,6 +51,27 @@ class Program:
     self.class_types : dict[ClassDef, Module] = {}  
     self.assign_types : dict[Assign, Module] = {}  
 
+    # like mycpp: type and variable string.  TODO: We shouldn't flatten it to a
+    # C type until later.
+    #
+    # Note: ImplPass parses the types.  So I guess this could be limited to
+    # that?
+    # DoFunctionMethod() could make two passes?
+    # 1. collect vars
+    # 2. print code
+
+    self.local_vars : dict[FunctionDef, list[tuple[str, str]]] = {}
+
+    # ForwardDeclPass:
+    #   OnMethod()
+    #   OnSubclass()
+
+    # Then
+    # Calculate()
+    #
+    # PrototypesPass: # IsVirtual
+    self.virtual = pass_state.Virtual()
+
     self.stats: dict[str, int] = {
         # parsing stats
         'num_files': 0,
@@ -62,7 +85,7 @@ class Program:
     }
 
   def PrintStats(self) -> None:
-    pprint(self.stats)
+    pprint(self.stats, stream=sys.stderr)
 
 
 class TypeSyntaxError(Exception):
@@ -72,37 +95,29 @@ class TypeSyntaxError(Exception):
     self.code_str = code_str
 
 
-class ParsePass:
+def ParseFiles(files: list[str], prog: Program) -> bool:
 
-  def __init__(self, prog: Program) -> None:
-    self.prog = prog
+  for filename in files:
+    with open(filename) as f:
+      contents = f.read()
 
-  def ParseFiles(self, files: list[str]) -> bool:
+    try:
+      # Python 3.8+ supports type_comments=True
+      module = ast.parse(contents, filename=filename, type_comments=True)
+    except SyntaxError as e:
+      # This raises an exception for some reason
+      #e.print_file_and_line()
+      print('Error parsing %s: %s' % (filename, e))
+      return False
 
-    for filename in files:
-      with open(filename) as f:
-        contents = f.read()
+    tmp = os.path.basename(filename)
+    namespace, _ = os.path.splitext(tmp)
 
-      try:
-        # Python 3.8+ supports type_comments=True
-        module = ast.parse(contents, filename=filename, type_comments=True)
-      except SyntaxError as e:
-        # This raises an exception for some reason
-        #e.print_file_and_line()
-        print('Error parsing %s: %s' % (filename, e))
-        return False
+    prog.py_files.append(PyFile(filename, namespace, module))
 
-      tmp = os.path.basename(filename)
-      namespace, _ = os.path.splitext(tmp)
+    prog.stats['num_files'] += 1
 
-      self.prog.py_files.append(PyFile(filename, namespace, module))
-
-      #print('Parsed %s: %s' % (filename, module))
-      #print()
-
-      self.prog.stats['num_files'] += 1
-
-    return True
+  return True
 
 
 class ConstVisitor(ast.NodeVisitor):
@@ -120,17 +135,25 @@ class ConstVisitor(ast.NodeVisitor):
 
 class ForwardDeclPass:
   """Emit forward declarations."""
-  # TODO: We can just do this in the ParsePass.
+  # TODO: Move this to ParsePass after comparing with mycpp.
 
   def __init__(self, f: typing.IO[str]) -> None:
     self.f = f
 
-  def DoModule(self, module: ast.Module) -> None:
-    for stmt in module.body:
+  def DoPyFile(self, py_file: PyFile) -> None:
+
+    # TODO: could omit empty namespaces
+    namespace = py_file.namespace
+    self.f.write(f'namespace {namespace} {{  // forward declare\n')
+
+    for stmt in py_file.module.body:
       match stmt:
         case ClassDef():
           class_name = stmt.name
           self.f.write(f'  class {class_name};\n')
+
+    self.f.write(f'}}  // forward declare {namespace}\n')
+    self.f.write('\n')
 
 
 def _ParseFuncType(st: stmt) -> AST:
@@ -150,46 +173,36 @@ class PrototypesPass:
     self.f = f
 
   def DoClass(self, cls: ClassDef) -> None:
-    #print('* class %s(...)' % cls.name)
-    #print()
     for stmt in cls.body:
       match stmt:
         case FunctionDef():
-          #print('  * method %s(...)' % stmt.name)
-          #print('    ARGS')
-          #print(ast.dump(stmt.args, indent='  '))
           if stmt.type_comment:
-            sig = _ParseFuncType(stmt)
-            self.prog.method_types[stmt] = sig
-            #print('    TYPE: method')
-            #print(ast.dump(sig, indent='  '))
-          #print()
+            sig = _ParseFuncType(stmt)  # may raise
+
+            print('METHOD')
+            print(ast.dump(sig, indent='  '))
+            # TODO: We need to print virtual here
+
+            self.prog.method_types[stmt] = sig  # save for ImplPass
           self.prog.stats['num_methods'] += 1
 
-          #self.DoBlock(stmt.body, indent=1)
-
+        # TODO: assert that there aren't top-level statements?
         case _:
-          # Import, Assign, etc.
-          # print(stmt)
           pass
 
-  def DoModule(self, module: Module) -> None:
-    for stmt in module.body:
+  def DoPyFile(self, py_file: PyFile) -> None:
+    for stmt in py_file.module.body:
       match stmt:
         case FunctionDef():
-          #print('* func %s(...)' % stmt.name)
-          #print('  ARGS')
-          #print(ast.dump(stmt.args, indent='  '))
           if stmt.type_comment:
-            sig = _ParseFuncType(stmt)
-            self.prog.func_types[stmt] = sig
+            sig = _ParseFuncType(stmt)  # may raise
 
-            #print('  TYPE: func')
-            #print(ast.dump(sig, indent='  '))
-          #print()
+            print('FUNC')
+            print(ast.dump(sig, indent='  '))
+
+            self.prog.func_types[stmt] = sig  # save for ImplPass
+
           self.prog.stats['num_funcs'] += 1
-
-          #self.DoBlock(stmt.body, indent=0)
 
         case ClassDef():
           self.DoClass(stmt)
@@ -198,26 +211,31 @@ class PrototypesPass:
         case _:
           # Import, Assign, etc.
           #print(stmt)
+
+          # TODO: omit __name__ == '__main__' etc.
           # if __name__ == '__main__'
           pass
 
 
 class ImplPass:
-  """Emit function and method bodies."""
+  """Emit function and method bodies.
+
+  Algorithm:
+    collect local variables first
+  """
 
   def __init__(self, prog: Program, f: typing.IO[str]) -> None:
     self.prog = prog
     self.f = f
 
+  # TODO: needs to be fully recursive, so you get bodies of loops, etc.
   def DoBlock(self, stmts: list[stmt], indent: int=0) -> None:
-
     """e.g. body of function, method, etc."""
+
 
     #print('STMTS %s' % stmts)
 
     ind_str = '  ' * indent
-
-    # TODO: Change to a visitor?  So you get all assignments recursively.
 
     for stmt in stmts:
       match stmt:
@@ -244,23 +262,20 @@ class ImplPass:
           pass
 
   def DoClass(self, cls: ClassDef) -> None:
-    #print('* class %s(...)' % cls.name)
-    #print()
     for stmt in cls.body:
       match stmt:
         case FunctionDef():
           self.DoBlock(stmt.body, indent=1)
 
         case _:
-          # Import, Assign, etc.
-          # print(stmt)
           pass
 
-  def DoModule(self, module: ast.Module) -> None:
-    for stmt in module.body:
+  def DoPyFile(self, py_file: PyFile) -> None:
+    for stmt in py_file.module.body:
       match stmt:
         case ClassDef():
           self.DoClass(stmt)
+
         case FunctionDef():
           self.DoBlock(stmt.body, indent=1)
 
@@ -292,19 +307,26 @@ def main(argv: list[str]) -> int:
   action = argv[1]
 
   if action == 'parse':
-
     files = argv[2:]
 
-    prog = Program()
+    # TODO:
+    # pass_state.Virtual
+    #   this loops over functions and methods.  But it has to be done BEFORE
+    #   the PrototypesPass, or we need two passes.  Gah!
+    #   Could it be done in ConstVisitor?  ConstVirtualVisitor?
 
-    # module -> class/method, func; and recursive visitor for Assign
+    # local_vars 
+
+    prog = Program()
     log('Pea begin')
 
-    pass1 = ParsePass(prog)
-    if not pass1.ParseFiles(files):
+    if not ParseFiles(files, prog):
       return 1
     log('Parsed %d files and their type comments', len(files))
     prog.PrintStats()
+    print()
+
+    # This is the first pass
 
     const_lookup: dict[str, int] = {}  
 
@@ -314,48 +336,48 @@ def main(argv: list[str]) -> int:
 
     log('Collected %d constants', len(const_lookup))
 
-    # module -> class
-    log('Forward Declarations') 
-
     # TODO: respect header_out for these two passes
     out_f = sys.stdout
 
+    # ForwardDeclPass: module -> class
     # TODO: Move trivial ForwardDeclPass into ParsePass, BEFORE constants,
     # after comparing output with mycpp. 
     pass2 = ForwardDeclPass(out_f)
     for py_file in prog.py_files:
       namespace = py_file.namespace
+      pass2.DoPyFile(py_file)
 
-      # TODO: could omit empty namespaces
-      out_f.write(f'namespace {namespace} {{  // forward declare\n')
-      pass2.DoModule(py_file.module)
-      out_f.write(f'}}  // forward declare {namespace}\n')
-      out_f.write('\n')
+    log('Wrote forward declarations') 
+    prog.PrintStats()
+    print()
 
     try:
-      # module -> class/method, func
-      log('Prototypes') 
+      # PrototypesPass: module -> class/method, func
 
       pass3 = PrototypesPass(prog, out_f)
       for py_file in prog.py_files:
-        pass3.DoModule(py_file.module)  # parses type comments in signatures
+        pass3.DoPyFile(py_file)  # parses type comments in signatures
 
-      # module -> class/method, func; then probably a fully recursive thing
-      log('Implementation') 
+      log('Wrote prototypes') 
+      prog.PrintStats()
+      print()
+
+      # ImplPass: module -> class/method, func; then probably a fully recursive thing
 
       pass4 = ImplPass(prog, out_f)
       for py_file in prog.py_files:
-        pass4.DoModule(py_file.module)  # parses type comments in assignments
+        pass4.DoPyFile(py_file)  # parses type comments in assignments
+
+      log('Wrote implementation') 
+      prog.PrintStats()
+      print()
 
     except TypeSyntaxError as e:
       print('Type comment syntax error on line %d of %s: %r' %
             (e.lineno, py_file.filename, e.code_str))
       return 1
 
-    #prog.PrintStats()
-
     log('Done')
-
 
   elif action == 'cpp':
     files = argv[2:]
@@ -369,7 +391,7 @@ def main(argv: list[str]) -> int:
 
 if __name__ == '__main__':
   try:
-    main(sys.argv)
+    sys.exit(main(sys.argv))
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

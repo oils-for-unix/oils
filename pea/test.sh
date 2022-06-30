@@ -9,6 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # run-test-funcs
 source types/common.sh
 
 # not using build/dev-shell.sh for now
@@ -16,17 +17,13 @@ readonly PY3=../oil_DEPS/python3
 
 parse-one() {
   # Use PY3 because Python 3.8 and above has type comments
-  $PY3 pea/pea_main.py parse "$@"
+  PYTHONPATH=. $PY3 pea/pea_main.py parse "$@"
 }
 
 translate-cpp() {
   ### Used by mycpp/NINJA-steps.sh
 
-  $PY3 pea/pea_main.py cpp "$@"
-}
-
-test-translate() {
-  translate-cpp bin/osh_eval.py
+  PYTHONPATH=. $PY3 pea/pea_main.py cpp "$@"
 }
 
 all-files() {
@@ -42,7 +39,6 @@ all-files() {
 }
 
 parse-all() {
-
   time all-files | xargs --verbose -- $0 parse-one
 }
 
@@ -67,17 +63,31 @@ check-types() {
     ~/.local/bin/mypy --strict pea/pea_main.py
 }
 
+test-translate() {
+  translate-cpp bin/osh_eval.py
+}
+
 test-syntax-error() {
   set +o errexit
 
   # error in Python syntax
   parse-one pea/testdata/py_err.py
+  assert $? -eq 1
 
   # error in signature
   parse-one pea/testdata/sig_err.py
+  assert $? -eq 1
 
   # error in assignment
   parse-one pea/testdata/assign_err.py
+  assert $? -eq 1
+}
+
+run-tests() {
+  # Making this separate for soil/worker.sh
+
+  echo 'Running test functions'
+  run-test-funcs
 }
 
 "$@"
