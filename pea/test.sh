@@ -25,7 +25,7 @@ translate-cpp() {
   $PY3 pea/pea_main.py cpp "$@"
 }
 
-translate-test() {
+test-translate() {
   translate-cpp bin/osh_eval.py
 }
 
@@ -65,6 +65,19 @@ check-types() {
 
   PYTHONPATH=$pip3_lib_path ../oil_DEPS/python3 \
     ~/.local/bin/mypy --strict pea/pea_main.py
+}
+
+test-syntax-error() {
+  set +o errexit
+
+  # error in Python syntax
+  parse-one pea/testdata/py_err.py
+
+  # error in signature
+  parse-one pea/testdata/sig_err.py
+
+  # error in assignment
+  parse-one pea/testdata/assign_err.py
 }
 
 "$@"
