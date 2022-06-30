@@ -13,6 +13,7 @@ from pprint import pprint
 import sys
 import time
 
+import typing
 from typing import Optional, Any
 
 
@@ -28,7 +29,7 @@ class Program:
   """The whole program."""
 
   def __init__(self) -> None:
-    self.modules: list[AST] = []
+    self.modules: list[tuple[str, Module]] = []
 
     # As we parse, we add modules, and fill in the dictionaries with parsed
     # types.  Then other passes can retrieve the types with the same
@@ -72,92 +73,126 @@ def ParseFuncType(st: stmt) -> AST:
     raise TypeSyntaxError(st.lineno, st.type_comment)
 
 
-def ParseBlock(stmts: list[stmt], prog: Program, indent: int=0) -> None:
-  """e.g. body of function, method, etc."""
+class ParsePass:
 
-  #print('STMTS %s' % stmts)
+  def __init__(self, prog: Program) -> None:
+    self.prog = prog
 
-  ind_str = '  ' * indent
+  def DoBlock(self, stmts: list[stmt], indent: int=0) -> None:
+    """e.g. body of function, method, etc."""
 
-  # TODO: Change to a visitor?  So you get all assignments recursively.
+    #print('STMTS %s' % stmts)
 
-  for stmt in stmts:
-    match stmt:
-      case Assign():
-        #print('%s* Assign' % ind_str)
-        #print(ast.dump(stmt, indent='  '))
+    ind_str = '  ' * indent
 
-        if stmt.type_comment:
-          # This parses with the func_type production in the grammar
-          try:
-            typ = ast.parse(stmt.type_comment)
-          except SyntaxError as e:
-            # New syntax error
-            raise TypeSyntaxError(stmt.lineno, stmt.type_comment)
+    # TODO: Change to a visitor?  So you get all assignments recursively.
 
-          prog.assign_types[stmt] = typ
+    for stmt in stmts:
+      match stmt:
+        case Assign():
+          #print('%s* Assign' % ind_str)
+          #print(ast.dump(stmt, indent='  '))
 
-          #print('%s  TYPE: Assign' % ind_str)
-          #print(ast.dump(typ, indent='  '))
+          if stmt.type_comment:
+            # This parses with the func_type production in the grammar
+            try:
+              typ = ast.parse(stmt.type_comment)
+            except SyntaxError as e:
+              # New syntax error
+              raise TypeSyntaxError(stmt.lineno, stmt.type_comment)
 
-        prog.stats['num_assign'] += 1
+            self.prog.assign_types[stmt] = typ
 
-      case _:
-        pass
+            #print('%s  TYPE: Assign' % ind_str)
+            #print(ast.dump(typ, indent='  '))
 
+          self.prog.stats['num_assign'] += 1
 
-def ParseClass(cls: ClassDef, prog: Program) -> None:
-  #print('* class %s(...)' % cls.name)
-  #print()
-  for stmt in cls.body:
-    match stmt:
-      case FunctionDef():
-        #print('  * method %s(...)' % stmt.name)
-        #print('    ARGS')
-        #print(ast.dump(stmt.args, indent='  '))
-        if stmt.type_comment:
-          sig = ParseFuncType(stmt)
-          prog.method_types[stmt] = sig
-          #print('    TYPE: method')
-          #print(ast.dump(sig, indent='  '))
-        #print()
-        prog.stats['num_methods'] += 1
+        case _:
+          pass
 
-        ParseBlock(stmt.body, prog, indent=1)
+  def DoClass(self, cls: ClassDef) -> None:
+    #print('* class %s(...)' % cls.name)
+    #print()
+    for stmt in cls.body:
+      match stmt:
+        case FunctionDef():
+          #print('  * method %s(...)' % stmt.name)
+          #print('    ARGS')
+          #print(ast.dump(stmt.args, indent='  '))
+          if stmt.type_comment:
+            sig = ParseFuncType(stmt)
+            self.prog.method_types[stmt] = sig
+            #print('    TYPE: method')
+            #print(ast.dump(sig, indent='  '))
+          #print()
+          self.prog.stats['num_methods'] += 1
 
-      case _:
-        # Import, Assign, etc.
-        # print(stmt)
-        pass
+          self.DoBlock(stmt.body, indent=1)
 
+        case _:
+          # Import, Assign, etc.
+          # print(stmt)
+          pass
 
-def ParseModule(module: Module, prog: Program) -> None:
-  for stmt in module.body:
-    match stmt:
-      case FunctionDef():
-        #print('* func %s(...)' % stmt.name)
-        #print('  ARGS')
-        #print(ast.dump(stmt.args, indent='  '))
-        if stmt.type_comment:
-          sig = ParseFuncType(stmt)
-          prog.func_types[stmt] = sig
+  def DoModule(self, module: Module) -> None:
+    for stmt in module.body:
+      match stmt:
+        case FunctionDef():
+          #print('* func %s(...)' % stmt.name)
+          #print('  ARGS')
+          #print(ast.dump(stmt.args, indent='  '))
+          if stmt.type_comment:
+            sig = ParseFuncType(stmt)
+            self.prog.func_types[stmt] = sig
 
-          #print('  TYPE: func')
-          #print(ast.dump(sig, indent='  '))
-        #print()
-        prog.stats['num_funcs'] += 1
+            #print('  TYPE: func')
+            #print(ast.dump(sig, indent='  '))
+          #print()
+          self.prog.stats['num_funcs'] += 1
 
-        ParseBlock(stmt.body, prog, indent=0)
+          self.DoBlock(stmt.body, indent=0)
 
-      case ClassDef():
-        ParseClass(stmt, prog)
-        prog.stats['num_classes'] += 1
+        case ClassDef():
+          self.DoClass(stmt)
+          self.prog.stats['num_classes'] += 1
 
-      case _:
-        # Import, Assign, etc.
-        #print(stmt)
-        # if __name__ == '__main__'
-        pass
+        case _:
+          # Import, Assign, etc.
+          #print(stmt)
+          # if __name__ == '__main__'
+          pass
+
+  def ParseFiles(self, files: list[str]) -> bool:
+
+    for filename in files:
+      with open(filename) as f:
+        contents = f.read()
+
+      try:
+        # Python 3.8+ supports type_comments=True
+        module = ast.parse(contents, filename=filename, type_comments=True)
+      except SyntaxError as e:
+        # This raises an exception for some reason
+        #e.print_file_and_line()
+        print('Error parsing %s: %s' % (filename, e))
+        return False
+
+      self.prog.modules.append((filename, module))
+
+      #print('Parsed %s: %s' % (filename, module))
+      #print()
+
+      try:
+        self.DoModule(module)
+      except TypeSyntaxError as e:
+        print('Type comment syntax error on line %d of %s: %r' %
+              (e.lineno, filename, e.code_str))
+        return False
+
+      self.prog.stats['num_files'] += 1
+
+    return True
 
 
 def Options() -> optparse.OptionParser:
@@ -195,41 +230,62 @@ class ConstVisitor(ast.NodeVisitor):
       self.str_id += 1
 
 
-def ParseFiles(files: list[str], prog: Program) -> bool:
+class ForwardDeclPass:
+  """Emit forward declarations."""
 
-  for filename in files:
-    with open(filename) as f:
-      contents = f.read()
+  def __init__(self, f: typing.IO[str]) -> None:
+    self.f = f
 
-    try:
-      # Python 3.8+ supports type_comments=True
-      module = ast.parse(contents, filename=filename, type_comments=True)
-    except SyntaxError as e:
-      # This raises an exception for some reason
-      #e.print_file_and_line()
-      print('Error parsing %s: %s' % (filename, e))
-      return False
+  def DoModule(self, module: ast.Module) -> None:
+    for stmt in module.body:
+      match stmt:
+        case ClassDef():
+          class_name = stmt.name
+          self.f.write(f'  class {class_name};\n')
 
-    prog.modules.append(module)
 
-    #print('Parsed %s: %s' % (filename, module))
-    #print()
+class PrototypesPass:
+  """Emit function prototypes."""
 
-    try:
-      ParseModule(module, prog)
-    except TypeSyntaxError as e:
-      print('Type comment syntax error on line %d of %s: %r' %
-            (e.lineno, filename, e.code_str))
-      return False
+  def __init__(self, f: typing.IO[str]) -> None:
+    self.f = f
 
-    prog.stats['num_files'] += 1
+  def DoClass(self, stmt: ClassDef) -> None:
+    pass
 
-  #prog.PrintStats()
-  if 0:
-    print(prog.func_types)
-    print(prog.method_types)
+  # TODO: Might need DoMethod(class_name, ... ) etc.
+  def DoFunction(self, stmt: FunctionDef) -> None:
+    pass
 
-  return True
+  def DoModule(self, module: ast.Module) -> None:
+    for stmt in module.body:
+      match stmt:
+        case ClassDef():
+          self.DoClass(stmt)
+        case FunctionDef():
+          self.DoFunction(stmt)
+
+
+class ImplPass:
+  """Emit function and method bodies."""
+
+  def __init__(self, f: typing.IO[str]) -> None:
+    self.f = f
+
+  def DoClass(self, stmt: ClassDef) -> None:
+    pass
+
+  # TODO: Might need DoMethod(class_name, ... ) etc.
+  def DoFunction(self, stmt: FunctionDef) -> None:
+    pass
+
+  def DoModule(self, module: ast.Module) -> None:
+    for stmt in module.body:
+      match stmt:
+        case ClassDef():
+          self.DoClass(stmt)
+        case FunctionDef():
+          self.DoFunction(stmt)
 
 
 def main(argv: list[str]) -> int:
@@ -244,7 +300,9 @@ def main(argv: list[str]) -> int:
 
     # module -> class/method, func; and recursive visitor for Assign
     log('Pea begin')
-    if not ParseFiles(files, prog):
+
+    pass1 = ParsePass(prog)
+    if not pass1.ParseFiles(files):
       return 1
     log('Parsed %d files and their type comments', len(files))
     prog.PrintStats()
@@ -252,21 +310,43 @@ def main(argv: list[str]) -> int:
     const_lookup: dict[str, int] = {}  
 
     v = ConstVisitor(const_lookup)
-    for module in prog.modules:
+    for _, module in prog.modules:
       v.visit(module)
 
     log('Collected %d constants', len(const_lookup))
 
-    # TODO: respect header_out for these two passes
-
     # module -> class
     log('Forward Declarations') 
+
+    # TODO: respect header_out for these two passes
+    out_f = sys.stdout
+
+    pass2 = ForwardDeclPass(out_f)
+    for filename, module in prog.modules:
+      tmp = os.path.basename(filename)
+      namespace, _ = os.path.splitext(tmp)
+
+      # TODO: could omit empty namespaces
+      out_f.write(f'namespace {namespace} {{  // forward declare\n')
+      pass2.DoModule(module)
+      out_f.write(f'}}  // forward declare {namespace}\n')
+      out_f.write('\n')
 
     # module -> class/method, func
     log('Prototypes') 
 
+    pass3 = PrototypesPass(out_f)
+    for filename, module in prog.modules:
+      # TODO: share namespace calculation
+      pass3.DoModule(module)
+
     # module -> class/method, func; then probably a fully recursive thing
     log('Implementation') 
+
+    pass4 = ImplPass(out_f)
+    for filename, module in prog.modules:
+      # TODO: share namespace calculation
+      pass4.DoModule(module)
 
     #prog.PrintStats()
 
