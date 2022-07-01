@@ -12,6 +12,14 @@
 #include "_build/cpp/syntax_asdl.h"
 #include "mycpp/mylib.h"
 #include "time_.h"
+#include "mycpp/myerror.h"
+
+#include <cerrno> // Must come after "mycpp/myerror.h" because the error struct
+                  // has a member named errno.  That member can't be changed
+                  // because it has to match the python error structure, which
+                  // has an errno member.
+
+
 
 namespace pyos {
 
@@ -43,17 +51,25 @@ inline Str* GetUserName(int uid) {
   {
     result = new Str(pw->pw_name);
   }
+  else
+  {
+    throw new IOError(errno);
+  }
 
   return result;
 }
 
 inline Str* OsType() {
-  Str *result = kEmptyString; // TODO(Jesse): Should we set this to "unknown" or something?
+  Str *result = kEmptyString;
 
   utsname un = {};
   if (::uname(&un) == 0)
   {
     result = new Str(un.sysname);
+  }
+  else
+  {
+    throw new IOError(errno);
   }
 
   return result;
@@ -61,7 +77,10 @@ inline Str* OsType() {
 
 inline Tuple3<double, double, double> Time() {
   rusage ru; // NOTE(Jesse): Doesn't have to be cleared to 0.  The kernel clears unused fields.
-  ::getrusage(RUSAGE_SELF, &ru);
+  if (::getrusage(RUSAGE_SELF, &ru) == -1)
+  {
+    throw new IOError(errno);
+  }
 
   time_t t = time_::time();
   auto result = Tuple3<double, double, double>((double)t, (double)ru.ru_utime.tv_sec, (double)ru.ru_stime.tv_sec);
@@ -72,7 +91,7 @@ inline void PrintTimes() {
   tms t;
   if (times(&t) == -1)
   {
-    printf("Error during time()");
+    throw new IOError(errno);
   }
   else
   {

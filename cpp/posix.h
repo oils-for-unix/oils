@@ -82,7 +82,7 @@ inline int close(int fd) {
 
 inline int putenv(Str* name, Str* value) {
   int env_string_size = name->len_ + value->len_ + 1; // NOTE(Jesse): +1 for the '=' between them
-  char* env_string = reinterpret_cast<char*>(malloc(env_string_size));
+  char* env_string = static_cast<char*>(malloc(env_string_size));
   snprintf(env_string, env_string_size, "%s=%s", name->data_, value->data_);
   return ::putenv(env_string);
 }

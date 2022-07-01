@@ -5,7 +5,7 @@
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/errexit-oil.html
-(/home/scallywag/work/oil/cpp/core_pyos.h:108: bool pyos::InputAvailable(int): Assertion `0' failed.) _tmp/spec/cpp/builtin-io.html
+(/home/scallywag/work/oil/cpp/core_pyos.h:127: bool pyos::InputAvailable(int): Assertion `0' failed.) _tmp/spec/cpp/builtin-io.html
 (/home/scallywag/work/oil/mycpp/gc_heap.h:267: void gc_heap::Heap::PushRoot(gc_heap::Obj**): Assertion `roots_top_ &lt; kMaxRoots' failed.) _tmp/spec/cpp/alias.html
 (/home/scallywag/work/oil/mycpp/gc_heap.h:267: void gc_heap::Heap::PushRoot(gc_heap::Obj**): Assertion `roots_top_ &lt; kMaxRoots' failed.) _tmp/spec/cpp/ble-idioms.html
 (/home/scallywag/work/oil/mycpp/mylib.h:350: Str* Str::upper(): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/var-op-bash.html
