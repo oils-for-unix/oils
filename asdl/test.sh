@@ -111,6 +111,7 @@ EOF
 
   local bin=_bin/hnode_asdl_test
   $CXX \
+    $CPPFLAGS \
     -I "$REPO_ROOT" \
     -o $bin \
     _build/cpp/hnode_asdl.gc.cc \
@@ -147,7 +148,7 @@ EOF
 
   # $CLANGXX -ferror-limit=10 \
   $CXX \
-    $BASE_CXXFLAGS \
+    $CPPFLAGS \
     -I "$REPO_ROOT" \
     -o $bin \
     _build/cpp/${name}_asdl.gc.cc \

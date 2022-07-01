@@ -5,8 +5,12 @@
 
 #ifdef USING_OLD_QSN
 #include "mycpp/mylib.h"
+using mylib::BlankStr;
+using mylib::OverAllocatedStr;
 #else
 #include "mycpp/mylib2.h"
+using gc_heap::BlankStr;
+using gc_heap::OverAllocatedStr;
 #endif
 
 namespace qsn {
@@ -34,29 +38,23 @@ inline bool IsPlainChar(Str* ch) {
          ('0' <= c && c <= '9');
 }
 
-#ifdef USING_OLD_QSN
 inline Str* XEscape(Str* ch) {
-  assert(ch->len_ == 1);
-  char* buf = static_cast<char*>(malloc(4 + 1));
-  sprintf(buf, "\\x%02x", ch->data_[0] & 0xff);
-  return new Str(buf);
+  assert(len(ch) == 1);
+  Str* result = BlankStr(4);
+  sprintf(result->data(), "\\x%02x", ch->data_[0] & 0xff);
+  return result;
 }
 
 inline Str* UEscape(int codepoint) {
-  // maximum length: 3 + 6 + 1 + NUL == 11
-  char* buf = static_cast<char*>(malloc(10 + 1));
-  sprintf(buf, "\\u{%x}", codepoint);
-  return new Str(buf);
+  // maximum length:
+  // 3 for \u{
+  // 6 for codepoint
+  // 1 for }
+  Str* result = OverAllocatedStr(10);
+  int n = sprintf(result->data(), "\\u{%x}", codepoint);
+  result->SetObjLenFromStrLen(n);  // truncate to what we wrote
+  return result;
 }
-#else
-inline Str* XEscape(Str* ch) {
-  NotImplemented(); // Unused
-}
-
-inline Str* UEscape(int codepoint) {
-  NotImplemented(); // Unused
-}
-#endif
 
 }  // namespace qsn
 

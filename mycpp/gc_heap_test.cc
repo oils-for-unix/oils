@@ -16,6 +16,7 @@ using gc_heap::Heap;
 using gc_heap::Obj;
 using gc_heap::Param;
 
+using gc_heap::BlankStr;
 using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::GlobalStr;
@@ -23,7 +24,7 @@ using gc_heap::List;
 using gc_heap::Local;
 using gc_heap::NewDict;
 using gc_heap::NewList;
-using gc_heap::CopyStr;
+using gc_heap::OverAllocatedStr;
 using gc_heap::Slab;
 using gc_heap::StackRoots;
 using gc_heap::Str;
@@ -73,6 +74,39 @@ class LayoutForwarded : public Obj {
  public:
   Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
 };
+
+TEST test_str_creation() {
+
+  Str* s = CopyStr("foo");
+  ASSERT_EQ(3, len(s));
+  ASSERT_EQ(0, strcmp("foo", s->data_));
+
+  // String with internal NUL
+  Str* s2 = CopyStr("foo\0bar", 7);
+  ASSERT_EQ(7, len(s2));
+  ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
+
+  Str* s3 = BlankStr(1);
+  ASSERT_EQ(1, len(s3));
+  ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
+
+  // Test truncating a string
+  Str* s4 = OverAllocatedStr(7);
+  // LENGTH IS NOT YET SET -- CALLER IS RESPONSIBLE
+  // ASSERT_EQ(7, len(s4));
+  ASSERT_EQ(0, memcmp("\0\0\0\0\0\0\0\0", s4->data_, 8));
+
+  // Hm annoying that we have to do a const_cast
+  memcpy(s4->data(), "foo", 3);
+  strcpy(s4->data(), "foo");
+  s4->SetObjLenFromStrLen(3);
+
+  ASSERT_EQ(3, len(s4));
+  ASSERT_EQ(0, strcmp("foo", s4->data_));
+
+  PASS();
+}
+
 
 // Doesn't really test anything
 TEST sizeof_test() {
@@ -899,10 +933,11 @@ TEST protect_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  // Should be done once per thread
   gHeap.Init(kInitialSize);
 
   GREATEST_MAIN_BEGIN();
+
+  RUN_TEST(test_str_creation);
 
   RUN_TEST(sizeof_test);
   RUN_TEST(roundup_test);

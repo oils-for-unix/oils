@@ -41,7 +41,7 @@ class UnitTestWriter(object):
     self.f.write("""\
 %s() {
   ninja %s
-  run-test %s
+  run-test %s "$@"
 }
 """ % (func_name, ninja_target, ninja_target))
 

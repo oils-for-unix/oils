@@ -111,6 +111,18 @@ class Str : public gc_heap::Obj {
   explicit Str(const char* data) : Str(data, strlen(data)) {
   }
 
+  // emulating gc_heap API
+  void SetObjLenFromStrLen(int len) {
+    len_ = len;
+  }
+
+  // Usage:
+  // Str* s = OverAllocatedStr(10);
+  // strcpy(s->data(), "foo");
+  char* data() {
+    return const_cast<char*>(data_);
+  }
+
   // Important invariant: the buffer is of size len+1, so data[len] is OK to
   // access!  Not just data[len-1].  We use that to test if it's a C string.
   // note: "foo" and "foo\0" are both NUL-terminated.
@@ -1140,12 +1152,27 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 // Emulate GC API so we can reuse bindings
 
-inline Str* CopyStr(const char* s) {
-  return new Str(s);
+inline Str* BlankStr(int len) {
+  char* buf = static_cast<char*>(malloc(len + 1));
+  memset(buf, 0, len + 1);
+  return new Str(buf, len);
+}
+
+inline Str* OverAllocatedStr(int len) {
+  // Here they are identical, but in gc_heap.cc they're different
+  return BlankStr(len);
 }
 
 inline Str* CopyStr(const char* s, int len) {
-  return new Str(s, len);
+  // take ownership (but still leaks)
+  char* buf = static_cast<char*>(malloc(len + 1));
+  memcpy(buf, s, len);
+  buf[len] = '\0';
+  return new Str(buf, len);
+}
+
+inline Str* CopyStr(const char* s) {
+  return CopyStr(s, strlen(s));
 }
 
 // emulate gc_heap API for ASDL

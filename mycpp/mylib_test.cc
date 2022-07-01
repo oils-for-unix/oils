@@ -6,6 +6,38 @@
 
 #include "vendor/greatest.h"
 
+// Emulating the gc_heap API.  COPIED from gc_heap_test.cc
+TEST test_str_creation() {
+
+  Str* s = mylib::CopyStr("foo");
+  ASSERT_EQ(3, len(s));
+  ASSERT_EQ(0, strcmp("foo", s->data_));
+
+  // String with internal NUL
+  Str* s2 = mylib::CopyStr("foo\0bar", 7);
+  ASSERT_EQ(7, len(s2));
+  ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
+
+  Str* s3 = mylib::BlankStr(1);
+  ASSERT_EQ(1, len(s3));
+  ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
+
+  // Test truncating a string
+  Str* s4 = mylib::OverAllocatedStr(7);
+  ASSERT_EQ(7, len(s4));
+  ASSERT_EQ(0, memcmp("\0\0\0\0\0\0\0\0", s4->data_, 8));
+
+  // Hm annoying that we have to do a const_cast
+  memcpy(s4->data(), "foo", 3);
+  strcpy(s4->data(), "foo");
+  s4->SetObjLenFromStrLen(3);
+
+  ASSERT_EQ(3, len(s4));
+  ASSERT_EQ(0, strcmp("foo", s4->data_));
+
+  PASS();
+}
+
 // TODO: Could use ASSERT_EQ_T to customize equality and print difference.
 //
 // Example:
@@ -493,6 +525,8 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(test_str_creation);
+
   RUN_TEST(test_str0);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_funcs);
@@ -505,6 +539,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_sizeof);
 
   RUN_TEST(test_list_tuple);
+
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

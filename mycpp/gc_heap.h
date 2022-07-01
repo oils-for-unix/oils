@@ -613,6 +613,12 @@ class Str : public gc_heap::Obj {
     // log("GC Str()");
   }
 
+  char* data() {
+    return data_;
+  };
+
+  void SetObjLenFromStrLen(int str_len);
+
   Str* index_(int i);
   Str* slice(int begin);
   Str* slice(int begin, int end);
@@ -666,6 +672,12 @@ class Str : public gc_heap::Obj {
   DISALLOW_COPY_AND_ASSIGN(Str)
 };
 
+constexpr int kStrHeaderSize = offsetof(Str, data_);
+
+inline void Str::SetObjLenFromStrLen(int str_len) {
+  obj_len_ = kStrHeaderSize + str_len + 1;  // NUL terminator
+}
+
 template <int N>
 class GlobalStr {
   // A template type with the same layout as Str with length N-1 (which needs a
@@ -678,10 +690,6 @@ class GlobalStr {
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
-
-// This is the same as offsetof(Str, data_), but doesn't give a warning,
-// because of the inheritance?
-constexpr int kStrHeaderSize = offsetof(GlobalStr<1>, data_);
 
 extern Str* kEmptyString;
 
@@ -720,6 +728,15 @@ inline Str* BlankStr(int len) {
   void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
   auto s = new (place) Str();
   s->SetObjLen(obj_len);  // So the GC can copy it
+  return s;
+}
+
+// Like BlankStr, but allocate more than you need, e.g. for snprintf() to write
+// into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
+inline Str* OverAllocatedStr(int len) {
+  int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
+  void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
+  auto s = new (place) Str();
   return s;
 }
 
