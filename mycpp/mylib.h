@@ -19,7 +19,7 @@
 #include "common.h"
 
 // if this file is even included, we're using the old mylib
-#define USING_OLD_MYLIB 1
+#define LEAKY_MYLIB 1
 #include "gc_heap.h"  // for Obj
 
 #ifdef DUMB_ALLOC
@@ -47,9 +47,6 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle);
 
 template <typename V>
 void dict_remove(Dict<int, V>* haystack, int needle);
-
-inline Str* NewStr(const char* s);
-inline Str* NewStr(const char* s, int len);
 
 };  // namespace mylib
 
@@ -104,14 +101,13 @@ class RuntimeError {
 // Data Types
 //
 
-#ifdef USING_OLD_MYLIB
-
 enum transform_op
 {
   lower,
   upper,
 };
 
+#ifdef LEAKY_MYLIB
 class Str : public gc_heap::Obj {
  public:
   Str(const char* data, int len)
@@ -121,6 +117,18 @@ class Str : public gc_heap::Obj {
   }
 
   explicit Str(const char* data) : Str(data, strlen(data)) {
+  }
+
+  // emulating gc_heap API
+  void SetObjLenFromStrLen(int len) {
+    len_ = len;
+  }
+
+  // Usage:
+  // Str* s = OverAllocatedStr(10);
+  // strcpy(s->data(), "foo");
+  char* data() {
+    return const_cast<char*>(data_);
   }
 
   // Important invariant: the buffer is of size len+1, so data[len] is OK to
@@ -826,7 +834,7 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
   assert(0); // Uncalled
 }
 
-#endif  // USING_OLD_MYLIB
+#endif  // LEAKY_MYLIB
 
 template <class A, class B>
 class Tuple2 {
@@ -895,7 +903,7 @@ class Tuple4 {
 // Overloaded free function len()
 //
 
-#ifdef USING_OLD_MYLIB
+#ifdef LEAKY_MYLIB
 inline int len(const Str* s) {
   return s->len_;
 }
@@ -934,7 +942,7 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
-#if USING_OLD_MYLIB
+#if LEAKY_MYLIB
 inline bool str_equals(Str* left, Str* right) {
   if (left->len_ == right->len_) {
     return memcmp(left->data_, right->data_, left->len_) == 0;
@@ -1173,15 +1181,32 @@ class Str0 {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
+// Emulate GC API so we can reuse bindings
+
+inline Str* BlankStr(int len) {
+  char* buf = static_cast<char*>(malloc(len + 1));
+  memset(buf, 0, len + 1);
+  return new Str(buf, len);
+}
+
+inline Str* OverAllocatedStr(int len) {
+  // Here they are identical, but in gc_heap.cc they're different
+  return BlankStr(len);
+}
+
+inline Str* CopyStr(const char* s, int len) {
+  // take ownership (but still leaks)
+  char* buf = static_cast<char*>(malloc(len + 1));
+  memcpy(buf, s, len);
+  buf[len] = '\0';
+  return new Str(buf, len);
+}
+
+inline Str* CopyStr(const char* s) {
+  return CopyStr(s, strlen(s));
+}
+
 // emulate gc_heap API for ASDL
-
-inline Str* NewStr(const char* s, int len) {
-  return new Str(s, len);
-}
-
-inline Str* NewStr(const char* s) {
-  return new Str(s);
-}
 
 template <typename T>
 List<T>* NewList() {

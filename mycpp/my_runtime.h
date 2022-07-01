@@ -16,9 +16,10 @@
 #include "gc_heap.h"
 
 // TODO: Don't use 'using' in header
+using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::List;
-using gc_heap::NewStr;
+using gc_heap::BlankStr;
 using gc_heap::StackRoots;
 using gc_heap::Str;
 
@@ -154,11 +155,11 @@ inline double to_float(Str* s) {
 const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 inline Str* str(int i) {
-  // We use a static buffer first rather than NewStr(n), because we don't know
-  // what n is until we call snprintf().
+  // Use a static buffer first because we don't know what n is until we call
+  // snprintf().
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%d", i);
-  return NewStr(buf, length);  // copy buf
+  return CopyStr(buf, length);
 }
 
 inline Str* str(double f) {  // TODO: should be double
@@ -173,7 +174,7 @@ inline int ord(Str* s) {
 }
 
 inline Str* chr(int i) {
-  auto result = NewStr(1);
+  auto result = BlankStr(1);
   result->data_[0] = i;
   return result;
 }
@@ -315,7 +316,7 @@ class StrIter {
     return i_ >= len_;
   }
   Str* Value() {  // similar to index_()
-    Str* result = NewStr(1);
+    Str* result = BlankStr(1);
     result->data_[0] = s_->data_[i_];
     // assert(result->data_[1] == '\0');
     return result;

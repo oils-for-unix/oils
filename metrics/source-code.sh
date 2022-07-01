@@ -141,7 +141,7 @@ cpp-counts() {
   local count=$1
   shift
 
-  ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | $count \
+  ls cpp/*.{cc,h} | egrep -v 'greatest.h|_test.cc' | $count \
     'Hand-written C++ Code' \
     'Includes OS bindings.  Small C++ files like cpp/osh_arith_parse.{cc,h} correspond to larger Python files like osh/arith_parse.py.' \
     "$@"
@@ -156,7 +156,7 @@ cpp-counts() {
     'Uses a simple Cheney / semi-space collector.' \
     "$@"
 
-  ls mycpp/*_test.cc cpp/unit_tests.cc | $count \
+  ls mycpp/*_test.cc cpp/*_test.cc | $count \
     'Unit tests in C++' \
     'The goal is to make the spec tests pass, but unit tests are helpful too.' \
     "$@"
