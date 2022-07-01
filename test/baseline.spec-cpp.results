@@ -466,6 +466,7 @@
 48 _tmp/spec/cpp/builtin-io.tsv
 50 _tmp/spec/cpp/builtin-io.tsv
 51 _tmp/spec/cpp/builtin-io.tsv
+54 _tmp/spec/cpp/builtin-io.tsv
 56 _tmp/spec/cpp/builtin-io.tsv
 58 _tmp/spec/cpp/builtin-io.tsv
 59 _tmp/spec/cpp/builtin-io.tsv
@@ -504,6 +505,9 @@
 35 _tmp/spec/cpp/builtin-printf.tsv
 38 _tmp/spec/cpp/builtin-printf.tsv
 39 _tmp/spec/cpp/builtin-printf.tsv
+45 _tmp/spec/cpp/builtin-printf.tsv
+46 _tmp/spec/cpp/builtin-printf.tsv
+47 _tmp/spec/cpp/builtin-printf.tsv
 48 _tmp/spec/cpp/builtin-printf.tsv
 0 _tmp/spec/cpp/builtins2.tsv
 1 _tmp/spec/cpp/builtins2.tsv
@@ -522,6 +526,7 @@
 5 _tmp/spec/cpp/builtins.tsv
 8 _tmp/spec/cpp/builtins.tsv
 9 _tmp/spec/cpp/builtins.tsv
+10 _tmp/spec/cpp/builtins.tsv
 11 _tmp/spec/cpp/builtins.tsv
 12 _tmp/spec/cpp/builtins.tsv
 13 _tmp/spec/cpp/builtins.tsv
@@ -532,6 +537,8 @@
 19 _tmp/spec/cpp/builtins.tsv
 20 _tmp/spec/cpp/builtins.tsv
 21 _tmp/spec/cpp/builtins.tsv
+22 _tmp/spec/cpp/builtins.tsv
+23 _tmp/spec/cpp/builtins.tsv
 24 _tmp/spec/cpp/builtins.tsv
 25 _tmp/spec/cpp/builtins.tsv
 26 _tmp/spec/cpp/builtins.tsv
@@ -712,6 +719,7 @@
 8 _tmp/spec/cpp/errexit.tsv
 9 _tmp/spec/cpp/errexit.tsv
 10 _tmp/spec/cpp/errexit.tsv
+11 _tmp/spec/cpp/errexit.tsv
 12 _tmp/spec/cpp/errexit.tsv
 13 _tmp/spec/cpp/errexit.tsv
 14 _tmp/spec/cpp/errexit.tsv
@@ -1004,8 +1012,10 @@
 10 _tmp/spec/cpp/prompt.tsv
 11 _tmp/spec/cpp/prompt.tsv
 12 _tmp/spec/cpp/prompt.tsv
+13 _tmp/spec/cpp/prompt.tsv
 14 _tmp/spec/cpp/prompt.tsv
 15 _tmp/spec/cpp/prompt.tsv
+16 _tmp/spec/cpp/prompt.tsv
 17 _tmp/spec/cpp/prompt.tsv
 18 _tmp/spec/cpp/prompt.tsv
 0 _tmp/spec/cpp/quote.tsv
