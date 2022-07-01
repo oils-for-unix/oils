@@ -110,12 +110,12 @@ using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewList;
 using gc_heap::Str;
-using gc_heap::NewStr;
+using gc_heap::CopyStr;
 """)
       else:
         # compatibility shim for ASDL
         f.write("""\
-using mylib::NewStr;
+using mylib::CopyStr;
 using mylib::NewList;
 """)
 

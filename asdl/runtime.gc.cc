@@ -10,7 +10,7 @@ using gc_heap::StackRoots;
 #include "mycpp/my_runtime.h"
 #include "mycpp/mylib2.h"
 
-using gc_heap::NewStr;
+using gc_heap::BlankStr;
 using gc_heap::NewList;
 using gc_heap::NewDict;
 #include "runtime.gc.h"

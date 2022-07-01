@@ -16,13 +16,15 @@ using gc_heap::Heap;
 using gc_heap::Obj;
 using gc_heap::Param;
 
+using gc_heap::BlankStr;
+using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::GlobalStr;
 using gc_heap::List;
 using gc_heap::Local;
 using gc_heap::NewDict;
 using gc_heap::NewList;
-using gc_heap::NewStr;
+using gc_heap::OverAllocatedStr;
 using gc_heap::Slab;
 using gc_heap::StackRoots;
 using gc_heap::Str;
@@ -72,6 +74,39 @@ class LayoutForwarded : public Obj {
  public:
   Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
 };
+
+TEST test_str_creation() {
+
+  Str* s = CopyStr("foo");
+  ASSERT_EQ(3, len(s));
+  ASSERT_EQ(0, strcmp("foo", s->data_));
+
+  // String with internal NUL
+  Str* s2 = CopyStr("foo\0bar", 7);
+  ASSERT_EQ(7, len(s2));
+  ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
+
+  Str* s3 = BlankStr(1);
+  ASSERT_EQ(1, len(s3));
+  ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
+
+  // Test truncating a string
+  Str* s4 = OverAllocatedStr(7);
+  // LENGTH IS NOT YET SET -- CALLER IS RESPONSIBLE
+  // ASSERT_EQ(7, len(s4));
+  ASSERT_EQ(0, memcmp("\0\0\0\0\0\0\0\0", s4->data_, 8));
+
+  // Hm annoying that we have to do a const_cast
+  memcpy(s4->data(), "foo", 3);
+  strcpy(s4->data(), "foo");
+  s4->SetObjLenFromStrLen(3);
+
+  ASSERT_EQ(3, len(s4));
+  ASSERT_EQ(0, strcmp("foo", s4->data_));
+
+  PASS();
+}
+
 
 // Doesn't really test anything
 TEST sizeof_test() {
@@ -137,8 +172,8 @@ TEST str_test() {
   Str* str2 = nullptr;
   StackRoots _roots({&str1, &str2});
 
-  str1 = NewStr("");
-  str2 = NewStr("one\0two", 7);
+  str1 = CopyStr("");
+  str2 = CopyStr("one\0two", 7);
 
   ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag_, "%d");
   ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->obj_len_, "%d");
@@ -242,10 +277,10 @@ TEST list_test() {
   log("list1_ = %p", list1);
   log("list1->slab_ = %p", list1->slab_);
 
-  auto str1 = NewStr("foo");
+  auto str1 = CopyStr("foo");
   StackRoots _roots5({&str1});
   log("str1 = %p", str1);
-  auto str2 = NewStr("bar");
+  auto str2 = CopyStr("bar");
   StackRoots _roots6({&str2});
   log("str2 = %p", str2);
 
@@ -357,8 +392,8 @@ TEST dict_test() {
   Str* foo = nullptr;
   Str* bar = nullptr;
   StackRoots _roots3({&foo, &bar});
-  foo = NewStr("foo");
-  bar = NewStr("bar");
+  foo = CopyStr("foo");
+  bar = CopyStr("bar");
 
   dict2->set(foo, bar);
 
@@ -389,7 +424,7 @@ TEST dict_test() {
   ASSERT_EQ_FMT(32, dict_is->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict_is->values_->obj_len_, "%d");
 
-  auto two = NewStr("two");
+  auto two = CopyStr("two");
   StackRoots _roots6({&two});
 
   auto dict3 =
@@ -484,11 +519,11 @@ TEST slab_trace_test() {
   ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
 
   // +2: slab and string
-  strings->append(NewStr("yo"));
+  strings->append(CopyStr("yo"));
   ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
   // +1 string
-  strings->append(NewStr("bar"));
+  strings->append(CopyStr("bar"));
   ASSERT_EQ_FMT(4, gHeap.num_live_objs_, "%d");
 
   // -1: remove reference to "bar"
@@ -558,9 +593,9 @@ void ShowRoots(const Heap& heap) {
 }
 
 Str* myfunc() {
-  Local<Str> str1(NewStr("foo"));
-  Local<Str> str2(NewStr("foo"));
-  Local<Str> str3(NewStr("foo"));
+  Local<Str> str1(CopyStr("foo"));
+  Local<Str> str2(CopyStr("foo"));
+  Local<Str> str3(CopyStr("foo"));
 
   log("myfunc roots_top = %d", gHeap.roots_top_);
   ShowRoots(gHeap);
@@ -595,7 +630,7 @@ TEST local_test() {
     // invokes operator*, but I don't think we need it!
     // log("point.y = %d", (*p).y_);
 
-    Local<Str> str2(NewStr("bar"));
+    Local<Str> str2(CopyStr("bar"));
     ASSERT_EQ(2, gHeap.roots_top_);
 
     myfunc();
@@ -685,7 +720,7 @@ TEST stack_roots_test() {
 
   gc_heap::StackRoots _roots({&s, &L});
 
-  s = NewStr("foo");
+  s = CopyStr("foo");
   // L = nullptr;
   L = NewList<int>();
 
@@ -721,13 +756,13 @@ TEST field_mask_test() {
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
 
-  auto key = NewStr("foo");
+  auto key = CopyStr("foo");
   StackRoots _roots9({&key});
   d->set(key, 3);
 
-  // oops this is bad?  Because NewStr() might move d in the middle of the
+  // oops this is bad?  Because CopyStr() might move d in the middle of the
   // expression!  Gah!
-  // d->set(NewStr("foo"), 3);
+  // d->set(CopyStr("foo"), 3);
 
   log("Dict mask = %d", d->field_mask_);
 
@@ -737,7 +772,7 @@ TEST field_mask_test() {
   auto L2 = NewList<Str*>();
   StackRoots _roots3({&L2});
 
-  auto s = NewStr("foo");
+  auto s = CopyStr("foo");
   StackRoots _roots4({&s});
 
   L2->append(s);
@@ -751,7 +786,7 @@ TEST repro2() {
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
 
-  auto key = NewStr("foo");
+  auto key = CopyStr("foo");
   StackRoots _roots9({&key});
   d->set(key, 3);
 
@@ -898,10 +933,11 @@ TEST protect_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  // Should be done once per thread
   gHeap.Init(kInitialSize);
 
   GREATEST_MAIN_BEGIN();
+
+  RUN_TEST(test_str_creation);
 
   RUN_TEST(sizeof_test);
   RUN_TEST(roundup_test);
