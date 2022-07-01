@@ -113,7 +113,7 @@ compile() {
 
   case $variant in
     ('asan')
-      flags+=" $ASAN_FLAGS"  # from run.sh
+      flags+=" $ASAN_FLAGS"
       ;;
     ('opt')
       flags+=' -O2 -g'  # -g so you can debug crashes?

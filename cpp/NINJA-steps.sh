@@ -45,19 +45,22 @@ setglobal_cxx() {
 }
 
 setglobal_compile_flags() {
+  ### Set flags based on $variant $more_cxx_flags and $dotd
+
   local variant=$1
-  local dotd=${2:-}
+  local more_cxx_flags=$2
+  local dotd=${3:-}
 
-  flags="$BASE_CXXFLAGS -I $REPO_ROOT"
+  # Args from Ninja/shell respected
+  flags="$BASE_CXXFLAGS $more_cxx_flags"
 
-  #
   # Environment variables respected
-  #
-
-  local more_flags=${CXXFLAGS:-}
-  if test -n "$more_flags"; then
-    flags="$flags $more_flags"
+  local env_flags=${CXXFLAGS:-}
+  if test -n "$env_flags"; then
+    flags="$flags $env_flags"
   fi
+
+  flags="$flags -I $REPO_ROOT"
 
   case $variant in
     (dbg)
@@ -141,15 +144,14 @@ setglobal_link_flags() {
 compile_one() {
   ### Compile one translation unit.  Invoked by build.ninja
 
-  # Supports CXXFLAGS
-
   local compiler=$1
   local variant=$2
-  local in=$3
-  local out=$4
-  local dotd=${5:-}  # optional .d file
+  local more_cxx_flags=$3
+  local in=$4
+  local out=$5
+  local dotd=${6:-}  # optional .d file
 
-  setglobal_compile_flags "$variant" "$dotd"
+  setglobal_compile_flags "$variant" "$more_cxx_flags" "$dotd"
 
   case $out in
     (_build/preprocessed/*)
@@ -197,10 +199,11 @@ link() {
 compile_and_link() {
   local compiler=$1
   local variant=$2
-  local out=$3
+  local more_cxx_flags=$3
+  local out=$4
   shift 3
 
-  setglobal_compile_flags "$variant" ""
+  setglobal_compile_flags "$variant" "$more_cxx_flags" ""  # no dotd
 
   setglobal_link_flags $variant
 

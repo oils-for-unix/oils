@@ -130,8 +130,8 @@ def NinjaGraph(n, u):
   # Preprocess one translation unit
   n.rule('preprocess',
          # compile_one detects the _build/preprocessed path
-         command='cpp/NINJA-steps.sh compile_one $compiler $variant $in $out',
-         description='compile_one $compiler $variant $in $out')
+         command='cpp/NINJA-steps.sh compile_one $compiler $variant $more_cxx_flags $in $out',
+         description='compile_one $compiler $variant $more_cxx_flags $in $out')
   n.newline()
 
   # Preprocess one translation unit
@@ -143,15 +143,15 @@ def NinjaGraph(n, u):
   # 'together' build
   n.rule('compile_and_link',
          # multiple outputs
-         command='cpp/NINJA-steps.sh compile_and_link $compiler $variant $out $in',
-         description='compile_and_link $compiler $variant $out $in')
+         command='cpp/NINJA-steps.sh compile_and_link $compiler $variant $more_cxx_flags $out $in',
+         description='compile_and_link $compiler $variant $more_cxx_flags $out $in')
   n.newline()
 
   # Compile one translation unit
   n.rule('compile_one',
-         command='cpp/NINJA-steps.sh compile_one $compiler $variant $in $out $out.d',
+         command='cpp/NINJA-steps.sh compile_one $compiler $variant $more_cxx_flags $in $out $out.d',
          depfile='$out.d',
-         description='compile_one $compiler $variant $in $out')
+         description='compile_one $compiler $variant $more_cxx_flags $in $out')
   n.newline()
 
   # Link objects together
@@ -183,7 +183,8 @@ def NinjaGraph(n, u):
         # 'tcmalloc'
         ]:
 
-      ninja_vars = [('compiler', compiler), ('variant', variant)]
+      # empty
+      ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")]
 
       sources = DEPS_CC + OLD_RUNTIME
 
@@ -286,6 +287,9 @@ main() {
   local compiler=${1:-cxx}   # default is system compiler
   local variant=${2:-opt}    # default is optimized build
   local skip_rebuild=${3:-}  # if the output exists, skip build'
+
+  # TODO: Generate this from Ninja vars
+  local more_cxx_flags=''
 ''' % argv0, file=f)
 
   out = '_bin/$compiler-$variant-sh/osh_eval'
@@ -314,7 +318,7 @@ main() {
     obj_quoted = '"_build/obj/$compiler-$variant-sh/%s.o"' % base_name
     objects.append(obj_quoted)
 
-    print('  compile_one "$compiler" "$variant" \\', file=f)
+    print('  compile_one "$compiler" "$variant" "$more_cxx_flags" \\', file=f)
     print('    %s %s' % (src, obj_quoted), file=f)
 
   print('', file=f)
