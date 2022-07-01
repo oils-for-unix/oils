@@ -40,7 +40,10 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(qsn_test);
+  // Can stress test it like this
+  for (int i = 0; i < 10; ++i) {
+    RUN_TEST(qsn_test);
+  }
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

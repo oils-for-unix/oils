@@ -68,11 +68,6 @@ gc-binding-test() {
   local bin=_bin/gc_binding_test${leaky_mode}.dbg  # can't be ASAN; it has its own allocator
   mkdir -p _bin
 
-  # HACK: 
-  # cpp/NINJA-steps.sh compile_and_link does -D LEAKY_BINDINGS, so unset it FIRST
-  #   to run in GC mode.  Then we might reset it for leaky mode.
-  # compare with mycpp/NINJA-step.sh compile, which only runs in GC mode
-  # TODO: consolidate them
 
   local more_flags=''
   if test -n "$leaky_mode"; then
@@ -80,9 +75,17 @@ gc-binding-test() {
     more_flags='-D LEAKY_BINDINGS -D LEAKY_TEST_MODE'
   fi
 
+  # HACK: 
+  # cpp/NINJA-steps.sh compile_and_link does -D LEAKY_BINDINGS, so unset it FIRST
+  #   to run in GC mode.  Then we might reset it for leaky mode.
+  #   also -U NO_GC_HACK
+  # compare with mycpp/NINJA-step.sh compile, which only runs in GC mode
+  # TODO: move these flags out
+
     #// -D GC_DEBUG -D GC_VERBOSE \
   compile_and_link cxx dbg $bin \
-    -D DUMB_ALLOC -U LEAKY_BINDINGS \
+    -U LEAKY_BINDINGS -U NO_GC_HACK \
+    -D DUMB_ALLOC \
     -D GC_EVERY_ALLOC -D GC_PROTECT \
     $more_flags \
     "${GC_TEST_SRC[@]}" \
