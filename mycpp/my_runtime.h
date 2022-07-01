@@ -16,6 +16,7 @@
 #include "gc_heap.h"
 
 // TODO: Don't use 'using' in header
+using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewStr;
@@ -158,7 +159,7 @@ inline Str* str(int i) {
   // what n is until we call snprintf().
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%d", i);
-  return NewStr(buf, length);  // copy buf
+  return CopyStr(buf, length);
 }
 
 inline Str* str(double f) {  // TODO: should be double

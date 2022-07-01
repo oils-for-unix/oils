@@ -23,7 +23,7 @@ using gc_heap::List;
 using gc_heap::Local;
 using gc_heap::NewDict;
 using gc_heap::NewList;
-using gc_heap::NewStr;
+using gc_heap::CopyStr;
 using gc_heap::Slab;
 using gc_heap::StackRoots;
 using gc_heap::Str;
@@ -139,7 +139,7 @@ TEST str_test() {
   StackRoots _roots({&str1, &str2});
 
   str1 = CopyStr("");
-  str2 = NewStr("one\0two", 7);
+  str2 = CopyStr("one\0two", 7);
 
   ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag_, "%d");
   ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->obj_len_, "%d");

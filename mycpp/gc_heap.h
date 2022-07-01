@@ -77,8 +77,8 @@
 // - gc_heap::Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
-// - NewStr, NewList, NewDict: gc_heap::Alloc() doesn't work for these types
-//   for various reasons
+// - NewStr(length), CopyStr(), NewList, NewDict: gc_heap::Alloc() doesn't work
+//   for these types for various reasons
 // - Heap::Allocate()
 //   The untyped internal API.  For NewStr() and NewSlab().
 // - malloc() -- for say yajl to use.  Manually deallocated.
@@ -723,7 +723,7 @@ inline Str* NewStr(int len) {
   return s;
 }
 
-inline Str* NewStr(const char* data, int len) {
+inline Str* CopyStr(const char* data, int len) {
   // Problem: if data points inside a Str, it's often invalidated!
   Str* s = NewStr(len);
 
@@ -737,7 +737,7 @@ inline Str* NewStr(const char* data, int len) {
 
 // CHOPPED OFF at internal NUL.  Use explicit length if you have a NUL.
 inline Str* CopyStr(const char* data) {
-  return NewStr(data, strlen(data));
+  return CopyStr(data, strlen(data));
 }
 
 bool str_equals(Str* left, Str* right);

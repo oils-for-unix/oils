@@ -35,19 +35,19 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
 inline Str* hex_lower(int i) {
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%x", i);
-  return NewStr(buf, length);  // copy buf
+  return CopyStr(buf, length);  // copy buf
 }
 
 inline Str* hex_upper(int i) {
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%X", i);
-  return NewStr(buf, length);  // copy buf
+  return CopyStr(buf, length);  // copy buf
 }
 
 inline Str* octal(int i) {
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%o", i);
-  return NewStr(buf, length);  // copy buf
+  return CopyStr(buf, length);  // copy buf
 }
 
 class LineReader : gc_heap::Obj {
@@ -152,7 +152,7 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue() {
     if (data_) {
-      Str* ret = gc_heap::NewStr(data_, len_);
+      Str* ret = gc_heap::CopyStr(data_, len_);
       reset();  // Invalidate this instance
       return ret;
     } else {

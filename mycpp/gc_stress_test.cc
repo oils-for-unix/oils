@@ -12,7 +12,7 @@ using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewList;
-using gc_heap::NewStr;
+using gc_heap::CopyStr;
 using gc_heap::StackRoots;
 using gc_heap::Str;
 // using gc_heap::kEmptyString;

@@ -55,7 +55,7 @@ TEST str_to_int_test() {
   ASSERT_EQ_FMT(345, i, "%d");
 
   // Hack to test slicing.  Truncated "345" at "34".
-  ok = _str_to_int(NewStr("345", 2), &i, 10);
+  ok = _str_to_int(CopyStr("345", 2), &i, 10);
   ASSERT(ok);
   ASSERT_EQ_FMT(34, i, "%d");
 
@@ -178,7 +178,7 @@ TEST str_replace_test() {
   print(s);
 
   // Explicit length because of \0
-  expected = NewStr("foo\0bXXr", 8);
+  expected = CopyStr("foo\0bXXr", 8);
   ASSERT(str_equals(expected, s));
 
   PASS();
@@ -340,8 +340,8 @@ TEST str_methods_test() {
   ASSERT(str_equals0("foodfoo", kEmptyString->join(L1)));
 
   // Join by NUL
-  expected = NewStr("food\0foo", 8);
-  arg = NewStr("\0", 1);
+  expected = CopyStr("food\0foo", 8);
+  arg = CopyStr("\0", 1);
   result = arg->join(L1);
   ASSERT(str_equals(expected, result));
 
@@ -391,7 +391,7 @@ TEST str_funcs_test() {
   ASSERT(str_equals0("'\"double\"'", repr(CopyStr("\"double\""))));
 
   // this one is truncated
-  s = NewStr("NUL \x00 NUL", 9);
+  s = CopyStr("NUL \x00 NUL", 9);
   ASSERT(str_equals0("'NUL \\x00 NUL'", repr(s)));
 
   result = repr(CopyStr("tab\tline\nline\r\n"));
@@ -580,11 +580,11 @@ TEST contains_test() {
   Str* nul = nullptr;
   StackRoots _roots({&s, &nul});
 
-  s = NewStr("foo\0 ", 5);
+  s = CopyStr("foo\0 ", 5);
   ASSERT(str_contains(s, kSpace));
 
   // this ends with a NUL, but also has a NUL terinator.
-  nul = NewStr("\0", 1);
+  nul = CopyStr("\0", 1);
   ASSERT(str_contains(s, nul));
   ASSERT(!str_contains(kSpace, nul));
 
