@@ -32,22 +32,25 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
   haystack->len_--;
 }
 
+// These 3 functions use a static buffer first because we don't know what n is
+// until we call snprintf().
+
 inline Str* hex_lower(int i) {
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%x", i);
-  return CopyStr(buf, length);  // copy buf
+  return CopyStr(buf, length);
 }
 
 inline Str* hex_upper(int i) {
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%X", i);
-  return CopyStr(buf, length);  // copy buf
+  return CopyStr(buf, length);
 }
 
 inline Str* octal(int i) {
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%o", i);
-  return CopyStr(buf, length);  // copy buf
+  return CopyStr(buf, length);
 }
 
 class LineReader : gc_heap::Obj {

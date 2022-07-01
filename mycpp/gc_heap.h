@@ -540,7 +540,7 @@ class Obj {
         obj_len_(obj_len) {
   }
 
-  void SetCellLength(int obj_len) {
+  void SetObjLen(int obj_len) {
     this->obj_len_ = obj_len;
   }
 
@@ -595,12 +595,12 @@ inline Slab<T>* NewSlab(int len) {
   return slab;
 }
 
-#ifdef USING_OLD_MYLIB
+#ifdef LEAKY_MYLIB
 #define GLOBAL_STR(name, val) Str* name = new Str(val);
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 #endif
 
-#ifndef USING_OLD_MYLIB
+#ifndef LEAKY_MYLIB
 
 //
 // Str
@@ -719,7 +719,7 @@ inline Str* NewStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
   auto s = new (place) Str();
-  s->SetCellLength(obj_len);  // So the GC can copy it
+  s->SetObjLen(obj_len);  // So the GC can copy it
   return s;
 }
 
@@ -1377,7 +1377,7 @@ void Dict<K, V>::set(K key, V val) {
 void ShowFixedChildren(Obj* obj);
 #endif
 
-#endif  // USING_OLD_MYLIB
+#endif  // LEAKY_MYLIB
 
 }  // namespace gc_heap
 
@@ -1385,7 +1385,7 @@ void ShowFixedChildren(Obj* obj);
 // Functions
 //
 
-#ifndef USING_OLD_MYLIB
+#ifndef LEAKY_MYLIB
 
 // Do some extra calculation to avoid storing redundant lengths.
 inline int len(const gc_heap::Str* s) {
@@ -1402,6 +1402,6 @@ inline int len(const gc_heap::Dict<K, V>* d) {
   return d->len_;
 }
 
-#endif  // USING_OLD_MYLIB
+#endif  // LEAKY_MYLIB
 
 #endif  // GC_HEAP_H

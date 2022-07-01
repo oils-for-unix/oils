@@ -155,8 +155,8 @@ inline double to_float(Str* s) {
 const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 inline Str* str(int i) {
-  // We use a static buffer first rather than NewStr(n), because we don't know
-  // what n is until we call snprintf().
+  // Use a static buffer first because we don't know what n is until we call
+  // snprintf().
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%d", i);
   return CopyStr(buf, length);
