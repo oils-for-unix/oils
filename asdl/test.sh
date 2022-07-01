@@ -43,7 +43,7 @@ gen-cpp-test() {
   # $CLANGXX -ferror-limit=10 \
   $CXX \
     $CPPFLAGS \
-    -D USING_OLD_QSN \
+    -D LEAKY_BINDINGS \
     -I "$REPO_ROOT" \
     -o $bin \
     asdl/gen_cpp_test.cc \

@@ -14,7 +14,6 @@
 #include "frontend_match.h"
 #include "libc.h"
 #include "osh_bool_stat.h"
-#include "qsn_qsn.h"
 #include "posix.h"
 #include "pylib_os_path.h"
 #include "time_.h"
@@ -452,18 +451,6 @@ TEST os_path_test() {
   PASS();
 }
 
-TEST qsn_test() {
-  Str* x = qsn::XEscape(CopyStr("a"));
-  log("XEscape %s", x->data_);
-  ASSERT(str_equals(x, CopyStr("\\x61")));
-
-  Str* u = qsn::UEscape(0x61);
-  log("UEScape %s", u->data_);
-  ASSERT(str_equals(u, CopyStr("\\u{61}")));
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -482,7 +469,6 @@ int main(int argc, char** argv) {
   RUN_TEST(pyos_readbyte_test);
   RUN_TEST(pyos_read_test);
   RUN_TEST(os_path_test);
-  RUN_TEST(qsn_test);
 
   // Must come last because it does chdir()
   RUN_TEST(pyos_test);

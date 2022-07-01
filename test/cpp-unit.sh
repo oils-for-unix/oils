@@ -14,8 +14,8 @@ source cpp/NINJA-steps.sh  # for compile_and_link function
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
 
-readonly UNIT_TESTS_SRC=(
-    cpp/unit_tests.cc \
+readonly LEAKY_TEST_SRC=(
+    cpp/leaky_binding_test.cc \
     _build/cpp/arg_types.cc \
     cpp/core_pyos.cc \
     cpp/core_pyutil.cc \
@@ -34,28 +34,66 @@ readonly UNIT_TESTS_SRC=(
 #
 # Ditto with the tests in asdl/test.sh.
 
-cpp-unit-tests-asan() {
-  ### Run unit tests in the cpp/ dir
-
-  local bin=_bin/unit_tests.asan
+leaky-binding-test-asan() {
+  local bin=_bin/leaky_binding_test.asan
   mkdir -p _bin
-  compile_and_link cxx asan $bin -D CPP_UNIT_TEST "${UNIT_TESTS_SRC[@]}"
+
+  compile_and_link cxx asan $bin -D CPP_UNIT_TEST \
+    "${LEAKY_TEST_SRC[@]}"
 
   $bin "$@"
 }
 
-cpp-unit-tests() {
-  ### Run unit tests with dumb allocator
-  # Exposes allocator alignment issues
-
-  local bin=_bin/unit_tests.dbg  # can't be ASAN; it has its own allocator
+leaky-binding-test() {
+  local bin=_bin/leaky_binding_test.dbg  # can't be ASAN; it has its own allocator
   mkdir -p _bin
 
+  # dumb_alloc.cc exposes allocator alignment issues?
+
   compile_and_link cxx dbg $bin -D CPP_UNIT_TEST -D DUMB_ALLOC \
-    "${UNIT_TESTS_SRC[@]}" \
+    "${LEAKY_TEST_SRC[@]}" \
     cpp/dumb_alloc.cc
 
   $bin "$@"
+}
+
+readonly GC_TEST_SRC=(
+    cpp/gc_binding_test.cc
+    mycpp/gc_heap.cc
+)
+
+gc-binding-test() {
+  local leaky_mode=${1:-}
+
+  local bin=_bin/gc_binding_test${leaky_mode}.dbg  # can't be ASAN; it has its own allocator
+  mkdir -p _bin
+
+  # HACK: 
+  # cpp/NINJA-steps.sh compile_and_link does -D LEAKY_BINDINGS, so unset it FIRST
+  #   to run in GC mode.  Then we might reset it for leaky mode.
+  # compare with mycpp/NINJA-step.sh compile, which only runs in GC mode
+  # TODO: consolidate them
+
+  local more_flags=''
+  if test -n "$leaky_mode"; then
+    # LEAKY_BINDINGS is in the qsn_qsn.h header; LEAKY_TEST_MODE is gc_binding_test.cc
+    more_flags='-D LEAKY_BINDINGS -D LEAKY_TEST_MODE'
+  fi
+
+    #// -D GC_DEBUG -D GC_VERBOSE \
+  compile_and_link cxx dbg $bin \
+    -D DUMB_ALLOC -U LEAKY_BINDINGS \
+    -D GC_EVERY_ALLOC -D GC_PROTECT \
+    $more_flags \
+    "${GC_TEST_SRC[@]}" \
+    cpp/dumb_alloc.cc
+
+  $bin "$@"
+}
+
+all-gc-binding-test() {
+  gc-binding-test        # normal GC mode
+  gc-binding-test '.leaky'  # test in leaky mode too
 }
 
 all() {
@@ -63,8 +101,10 @@ all() {
   build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
   build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
 
-  cpp-unit-tests
-  cpp-unit-tests-asan
+  leaky-binding-test
+  leaky-binding-test-asan
+
+  all-gc-binding-test
 
   asdl/test.sh gen-cpp-test
   asdl/test.sh gc-test  # integration between ASDL and the GC heap

@@ -725,7 +725,7 @@ extern Str* kEmptyString;
 // New string of a certain length, to be filled in
 inline Str* BlankStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
+  void* place = gHeap.Allocate(obj_len);
   auto s = new (place) Str();
   s->SetObjLen(obj_len);  // So the GC can copy it
   return s;
@@ -735,7 +735,7 @@ inline Str* BlankStr(int len) {
 // into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
+  void* place = gHeap.Allocate(obj_len);
   auto s = new (place) Str();
   return s;
 }
