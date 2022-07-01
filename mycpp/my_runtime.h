@@ -19,7 +19,7 @@
 using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::List;
-using gc_heap::NewStr;
+using gc_heap::BlankStr;
 using gc_heap::StackRoots;
 using gc_heap::Str;
 
@@ -174,7 +174,7 @@ inline int ord(Str* s) {
 }
 
 inline Str* chr(int i) {
-  auto result = NewStr(1);
+  auto result = BlankStr(1);
   result->data_[0] = i;
   return result;
 }
@@ -316,7 +316,7 @@ class StrIter {
     return i_ >= len_;
   }
   Str* Value() {  // similar to index_()
-    Str* result = NewStr(1);
+    Str* result = BlankStr(1);
     result->data_[0] = s_->data_[i_];
     // assert(result->data_[1] == '\0');
     return result;

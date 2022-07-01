@@ -77,10 +77,10 @@
 // - gc_heap::Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
-// - NewStr(length), CopyStr(), NewList, NewDict: gc_heap::Alloc() doesn't work
+// - BlankStr(length), CopyStr(), NewList, NewDict: gc_heap::Alloc() doesn't work
 //   for these types for various reasons
 // - Heap::Allocate()
-//   The untyped internal API.  For NewStr() and NewSlab().
+//   The untyped internal API.  For BlankStr() and NewSlab().
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- shouldn't be in Oil?
 
@@ -371,7 +371,7 @@ class Local {
 
     // Note: we could try to avoid PushRoot() as an optimization.  Example:
     //
-    // Local<Str> a = NewStr("foo");
+    // Local<Str> a = CopyStr("foo");
     // Local<Str> b;
     // b = a;  // invokes operator=, it's already a root
     //
@@ -390,13 +390,13 @@ class Local {
 
   // This cast operator overload allows:
   //
-  // Local<Str> s = NewStr("foo");
+  // Local<Str> s = CopyStr("foo");
   // node->mystr = s;  // convert from Local to raw
   //
   // As well as:
   //
   // Local<List<Str*>> strings = Alloc<List<Str*>>();
-  // strings->append(NewStr("foo"));  // convert from local to raw
+  // strings->append(CopyStr("foo"));  // convert from local to raw
   //
   // The heap should NOT have locals!  List<Str> and not List<Local<Str>>.
   //
@@ -608,7 +608,7 @@ inline Slab<T>* NewSlab(int len) {
 
 class Str : public gc_heap::Obj {
  public:
-  // Don't call this directly.  Call NewStr() instead, which calls this.
+  // Don't call this directly.  Call BlankStr() instead, which calls this.
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
     // log("GC Str()");
   }
@@ -715,7 +715,7 @@ extern Str* kEmptyString;
 //
 
 // New string of a certain length, to be filled in
-inline Str* NewStr(int len) {
+inline Str* BlankStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
   auto s = new (place) Str();
@@ -725,9 +725,9 @@ inline Str* NewStr(int len) {
 
 inline Str* CopyStr(const char* data, int len) {
   // Problem: if data points inside a Str, it's often invalidated!
-  Str* s = NewStr(len);
+  Str* s = BlankStr(len);
 
-  // log("NewStr s->data_ %p len = %d", s->data_, len);
+  // log("BlankStr s->data_ %p len = %d", s->data_, len);
   // log("sizeof(Str) = %d", sizeof(Str));
   memcpy(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed

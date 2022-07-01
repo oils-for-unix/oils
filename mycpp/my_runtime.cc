@@ -92,7 +92,7 @@ Str* str_concat(Str* a, Str* b) {
   assert(len_a >= 0);
   assert(len_b >= 0);
 
-  result = NewStr(len_a + len_b);
+  result = BlankStr(len_a + len_b);
   char* buf = result->data_;
   memcpy(buf, a->data_, len_a);
   memcpy(buf + len_a, b->data_, len_b);
@@ -110,7 +110,7 @@ Str* str_repeat(Str* s, int times) {
   }
   int part_len = len(s);
   int result_len = part_len * times;
-  Str* result = NewStr(result_len);
+  Str* result = BlankStr(result_len);
 
   char* p_result = result->data_;
   for (int i = 0; i < times; i++) {
@@ -225,7 +225,7 @@ Str* Str::strip() {
   }
 
   int new_len = right_pos - left_pos + 1;
-  result = NewStr(new_len);
+  result = BlankStr(new_len);
   memcpy(result->data_, self->data_ + left_pos, new_len);
   return result;
 }
@@ -249,7 +249,7 @@ Str* Str::rstrip() {
     return this;
   }
   int new_len = right_pos + 1;
-  result = NewStr(new_len);
+  result = BlankStr(new_len);
   memcpy(result->data_, self->data_, new_len);
   return result;
 }
@@ -265,7 +265,7 @@ Str* Str::ljust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    Str* result = NewStr(width);
+    Str* result = BlankStr(width);
     char c = fillchar->data_[0];
     memcpy(result->data_, self->data_, length);
     for (int i = length; i < width; ++i) {
@@ -287,7 +287,7 @@ Str* Str::rjust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    Str* result = NewStr(width);
+    Str* result = BlankStr(width);
     char c = fillchar->data_[0];
     for (int i = 0; i < num_fill; ++i) {
       result->data_[i] = c;
@@ -324,7 +324,7 @@ Str* Str::index_(int i) {
   assert(i >= 0);
   assert(i < len(this));  // had a problem here!
 
-  Str* result = NewStr(1);
+  Str* result = BlankStr(1);
   char* buf = result->data_;
   buf[0] = data_[i];
   assert(buf[1] == '\0');
@@ -352,7 +352,7 @@ Str* Str::slice(int begin, int end) {
     end = len(this) + end;
   }
   int new_len = end - begin;
-  Str* result = NewStr(new_len);
+  Str* result = BlankStr(new_len);
   char* buf = result->data_;
   memcpy(buf, data_ + begin, new_len);
   assert(buf[new_len] == '\0');
@@ -391,7 +391,7 @@ Str* Str::replace(Str* old, Str* new_str) {
       len_this - (replace_count * len(old)) + (replace_count * len(new_str));
 
   // Second pass to copy into new 'result'
-  result = NewStr(result_len);
+  result = BlankStr(result_len);
   // log("  alloc result = %p", result);
   // log("  result = %p", result);
   // log("  self AFTER %p", self);
@@ -462,7 +462,7 @@ List<Str*>* Str::split(Str* sep) {
     int prev_pos = breaks[i - 1];
     int part_len = breaks[i] - prev_pos - 1;
     if (part_len > 0) {
-      // like NewStr(), but IN PLACE
+      // like BlankStr(), but IN PLACE
       int obj_len = kStrHeaderSize + part_len + 1;  // NUL terminator
       Str* part = new (place) Str();                // placement new
       part->SetObjLen(obj_len);                 // So the GC can copy it
@@ -498,7 +498,7 @@ Str* Str::join(List<Str*>* items) {
   // log("len: %d", len);
   // log("v.size(): %d", v.size());
 
-  result = NewStr(result_len);
+  result = BlankStr(result_len);
   char* p_result = result->data_;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
