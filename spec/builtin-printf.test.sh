@@ -829,3 +829,44 @@ printf '%s\n' z
 ## STDOUT:
 xz
 ## END
+
+#### bash truncates long strftime string at 128
+
+case $SH in (ash|dash|mksh|zsh) exit ;; esac
+
+strftime-format() {
+  local n=$1
+
+  # Prints increasingly long format strings:
+  # %(%Y)T %(%Y)T %(%Y%Y)T ...
+
+  echo -n '%('
+  for i in $(seq $n); do
+    echo -n '%Y'
+  done
+  echo -n ')T'
+}
+
+printf $(strftime-format 1) | wc --bytes
+printf $(strftime-format 10) | wc --bytes
+printf $(strftime-format 30) | wc --bytes
+printf $(strftime-format 31) | wc --bytes
+printf $(strftime-format 32) | wc --bytes
+
+## STDOUT:
+4
+40
+120
+124
+0
+## END
+## OK osh STDOUT:
+4
+40
+120
+124
+128
+## END
+
+## N-I ash/dash/mksh/zsh STDOUT:
+## END

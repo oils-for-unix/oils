@@ -229,6 +229,9 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
     if translator == 'pea':
       phony['pea-compile'].append(b)
 
+    if translator == 'mycpp' and variant == 'gc_debug':
+      phony['gc_debug'].append(b)
+
     if variant == 'opt':
       stripped = '_test/bin/examples-%s/%s.%s.stripped' % (translator, ex, variant)
       # no symbols
@@ -236,6 +239,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
               variables=[('variant', variant)])
       n.newline()
       phony['mycpp-strip'].append(stripped)
+
 
   # Don't run it for now; just compile
   if translator == 'pea':
@@ -363,6 +367,9 @@ def NinjaGraph(n, u):
       'mycpp-logs-equal': [],
 
       'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
+
+      # examples
+      'gc_debug': [],
 
       'pea-translate': [],
       'pea-compile': [],
