@@ -210,39 +210,21 @@ Str* Str::join(List<Str*>* items) {
 
 
   Str* Str::upper() {
-    Str* self = this;
-    Str* result = 0;
-
-    /* StackRoots stroots = {&result, &self}; */
-
-    result = mylib::BlankStr(self->len_);
-
-    // TODO(Jesse): Have to cast off const-ness .. this is intolerable in the
-    // long-run.  How should we deal?
-    char *buffer = (char*)result->data_;
-
-    for (int char_index = 0; char_index <= self->len_; ++char_index)
+    Str *result = mylib::BlankStr(len_);
+    char *buffer = result->data();
+    for (int char_index = 0; char_index < len_; ++char_index)
     {
-      buffer[char_index] = toupper(self->data_[char_index]);
+      buffer[char_index] = toupper(data_[char_index]);
     }
     return result;
   }
 
   Str* Str::lower() {
-    Str* self = this;
-    Str* result = 0;
-
-    /* StackRoots stroots = {&result, &self}; */
-
-    result = mylib::BlankStr(self->len_);
-
-    // TODO(Jesse): Have to cast off const-ness .. this is intolerable in the
-    // long-run.  How should we deal?
-    char *buffer = (char*)result->data_;
-
-    for (int char_index = 0; char_index <= self->len_; ++char_index)
+    Str *result = mylib::BlankStr(len_);
+    char *buffer = result->data();
+    for (int char_index = 0; char_index < len_; ++char_index)
     {
-      buffer[char_index] = tolower(self->data_[char_index]);
+      buffer[char_index] = tolower(data_[char_index]);
     }
     return result;
   }
