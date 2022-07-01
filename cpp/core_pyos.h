@@ -41,7 +41,7 @@ inline Str* GetUserName(int uid) {
 
   if (passwd *pw = getpwuid(uid))
   {
-    result = NewStr(pw->pw_name);
+    result = new Str(pw->pw_name);
   }
 
   return result;
@@ -53,7 +53,7 @@ inline Str* OsType() {
   utsname un = {};
   if (::uname(&un) == 0)
   {
-    result = mylib::NewStr(un.sysname);
+    result = new Str(un.sysname);
   }
 
   return result;

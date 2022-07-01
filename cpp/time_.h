@@ -53,7 +53,7 @@ inline Str* strftime(Str* s, time_t ts) {
     // size of the string produced (including the null) exceeds (buf_size) the
     // function returns 0.
     //
-    result = NewStr(buffer, size_of_result + 1);
+    result = new Str(buffer, size_of_result + 1);
   }
 
   return result;

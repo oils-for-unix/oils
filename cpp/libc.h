@@ -12,6 +12,12 @@
 
 namespace libc {
 
+inline Str* realpath(Str* path) {
+  assert(path->IsNulTerminated());
+  char *rp = ::realpath(path->data_, 0);
+  return new Str(rp);
+}
+
 inline Str* gethostname() {
   char* buf = static_cast<char*>(malloc(HOST_NAME_MAX + 1));
   int result = ::gethostname(buf, PATH_MAX);
@@ -42,12 +48,6 @@ inline void print_time(double real_time, double user_time, double system_time) {
   printf("%1.2fs user %1.2fs system BUG cpu %1.3f total", user_time, system_time, real_time); //0.05s user 0.03s system 2% cpu 3.186 total
 }
 
-inline Str* realpath(Str* path) {
-  assert(path->IsNulTerminated());
-  char *rp = ::realpath(path->data_, 0);
-
-  return mylib::NewStr(rp);
-}
 
 }  // namespace libc
 
