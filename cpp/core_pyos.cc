@@ -20,6 +20,8 @@ Tuple2<int, int> WaitPid() {
 }
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
+  // TODO: Use garbage-collected APIs instead of malloc()
+
   char* buf = static_cast<char*>(malloc(n));
   int length = ::read(fd, buf, n);
   if (length < 0) {
@@ -31,7 +33,7 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
     return Tuple2<int, int>(length, 0);
   }
   Str* s = new Str(buf, length);
-  // MYLIB_LEGACY: the buffer is now owned by the Str instance
+  // LEAKY_MYLIB: the buffer is now owned by the Str instance
   // free(buf);
   chunks->append(s);
   return Tuple2<int, int>(length, 0);
@@ -68,7 +70,7 @@ Dict<Str*, Str*>* Environ() {
     memcpy(buf, pair, key_len);  // includes NUL terminator
     buf[key_len] = '\0';
 
-    Str* key = new Str(buf, key_len);
+    Str* key = CopyStr(buf, key_len);
 
     int len = strlen(pair);
     int val_len = len - key_len - 1;
@@ -76,7 +78,7 @@ Dict<Str*, Str*>* Environ() {
     memcpy(buf2, eq + 1, val_len);  // copy starting after =
     buf2[val_len] = '\0';
 
-    Str* val = new Str(buf2, val_len);
+    Str* val = CopyStr(buf2, val_len);
 
     d->set(key, val);
   }

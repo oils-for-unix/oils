@@ -1138,8 +1138,14 @@ class Str0 {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
+// Emulate GC API so we can reuse bindings
+
 inline Str* CopyStr(const char* s) {
   return new Str(s);
+}
+
+inline Str* CopyStr(const char* s, int len) {
+  return new Str(s, len);
 }
 
 // emulate gc_heap API for ASDL

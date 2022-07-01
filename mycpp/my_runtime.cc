@@ -465,7 +465,7 @@ List<Str*>* Str::split(Str* sep) {
       // like NewStr(), but IN PLACE
       int obj_len = kStrHeaderSize + part_len + 1;  // NUL terminator
       Str* part = new (place) Str();                // placement new
-      part->SetCellLength(obj_len);                 // So the GC can copy it
+      part->SetObjLen(obj_len);                 // So the GC can copy it
       memcpy(part->data_, self->data_ + prev_pos + 1, part_len);
       result->set(i - 1, part);
       place += aligned(obj_len);
