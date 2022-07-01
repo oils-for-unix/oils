@@ -8,14 +8,6 @@
 #include <sys/wait.h>  // waitpid()
 #include <unistd.h>    // getuid(), environ
 
-static Str* CopyStr(const char* s) {
-  int n = strlen(s);
-  char* buf = static_cast<char*>(malloc(n + 1));
-  strcpy(buf, s);  // includes NUL terminator
-
-  return new Str(s, n);
-}
-
 namespace pyos {
 
 Tuple2<int, int> WaitPid() {

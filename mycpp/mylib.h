@@ -1138,7 +1138,7 @@ class Str0 {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
-inline Str* CWrap(const char* s) {
+inline Str* CopyStr(const char* s) {
   return new Str(s);
 }
 

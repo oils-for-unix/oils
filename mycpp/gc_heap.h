@@ -736,7 +736,7 @@ inline Str* NewStr(const char* data, int len) {
 }
 
 // CHOPPED OFF at internal NUL.  Use explicit length if you have a NUL.
-inline Str* CWrap(const char* data) {
+inline Str* CopyStr(const char* data) {
   return NewStr(data, strlen(data));
 }
 

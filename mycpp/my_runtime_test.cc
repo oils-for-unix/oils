@@ -9,7 +9,7 @@
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;
-using gc_heap::CWrap;
+using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::gHeap;
 using gc_heap::kEmptyString;
@@ -33,7 +33,7 @@ TEST print_test() {
 TEST formatter_test() {
   gBuf.reset();
   gBuf.write_const("[", 1);
-  gBuf.format_s(CWrap("bar"));
+  gBuf.format_s(CopyStr("bar"));
   gBuf.write_const("]", 1);
   log("value = %s", gBuf.getvalue()->data_);
 
@@ -50,7 +50,7 @@ TEST str_to_int_test() {
   int i;
   bool ok;
 
-  ok = _str_to_int(CWrap("345"), &i, 10);
+  ok = _str_to_int(CopyStr("345"), &i, 10);
   ASSERT(ok);
   ASSERT_EQ_FMT(345, i, "%d");
 
@@ -59,63 +59,63 @@ TEST str_to_int_test() {
   ASSERT(ok);
   ASSERT_EQ_FMT(34, i, "%d");
 
-  ok = _str_to_int(CWrap("1234567890"), &i, 10);
+  ok = _str_to_int(CopyStr("1234567890"), &i, 10);
   ASSERT(ok);
   ASSERT(i == 1234567890);
 
   // overflow
-  ok = _str_to_int(CWrap("12345678901234567890"), &i, 10);
+  ok = _str_to_int(CopyStr("12345678901234567890"), &i, 10);
   ASSERT(!ok);
 
   // underflow
-  ok = _str_to_int(CWrap("-12345678901234567890"), &i, 10);
+  ok = _str_to_int(CopyStr("-12345678901234567890"), &i, 10);
   ASSERT(!ok);
 
   // negative
-  ok = _str_to_int(CWrap("-123"), &i, 10);
+  ok = _str_to_int(CopyStr("-123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Leading space is OK!
-  ok = _str_to_int(CWrap(" -123"), &i, 10);
+  ok = _str_to_int(CopyStr(" -123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Trailing space is OK!  NOTE: This fails!
-  ok = _str_to_int(CWrap(" -123  "), &i, 10);
+  ok = _str_to_int(CopyStr(" -123  "), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Empty string isn't an integer
-  ok = _str_to_int(CWrap(""), &i, 10);
+  ok = _str_to_int(CopyStr(""), &i, 10);
   ASSERT(!ok);
 
-  ok = _str_to_int(CWrap("xx"), &i, 10);
+  ok = _str_to_int(CopyStr("xx"), &i, 10);
   ASSERT(!ok);
 
   // Trailing garbage
-  ok = _str_to_int(CWrap("42a"), &i, 10);
+  ok = _str_to_int(CopyStr("42a"), &i, 10);
   ASSERT(!ok);
 
-  i = to_int(CWrap("ff"), 16);
+  i = to_int(CopyStr("ff"), 16);
   ASSERT(i == 255);
 
   // strtol allows 0x prefix
-  i = to_int(CWrap("0xff"), 16);
+  i = to_int(CopyStr("0xff"), 16);
   ASSERT(i == 255);
 
   // TODO: test ValueError here
-  // i = to_int(CWrap("0xz"), 16);
+  // i = to_int(CopyStr("0xz"), 16);
 
-  i = to_int(CWrap("0"), 16);
+  i = to_int(CopyStr("0"), 16);
   ASSERT(i == 0);
 
-  i = to_int(CWrap("077"), 8);
+  i = to_int(CopyStr("077"), 8);
   ASSERT_EQ_FMT(63, i, "%d");
 
   bool caught = false;
   try {
-    i = to_int(CWrap("zzz"));
+    i = to_int(CopyStr("zzz"));
   } catch (ValueError* e) {
     caught = true;
   }
@@ -157,9 +157,9 @@ TEST str_replace_test() {
   Str* expected = nullptr;
   StackRoots _roots({&o, &_12, &_123, &s, &foxo, &expected});
 
-  o = CWrap("o");
-  _12 = CWrap("12");
-  _123 = CWrap("123");
+  o = CopyStr("o");
+  _12 = CopyStr("12");
+  _123 = CopyStr("123");
 
   s = kStrFood->replace(o, _12);
   ASSERT(str_equals0("f1212d", s));
@@ -169,7 +169,7 @@ TEST str_replace_test() {
   ASSERT(str_equals0("f123123", s));
   print(s);
 
-  foxo = CWrap("foxo");
+  foxo = CopyStr("foxo");
   s = foxo->replace(o, _123);
   ASSERT(str_equals0("f123x123", s));
   print(s);
@@ -202,20 +202,20 @@ TEST str_split_test() {
   List<Str*>* parts = nullptr;
 
   StackRoots _roots({&s, &sep, &parts});
-  sep = CWrap(":");
+  sep = CopyStr(":");
 
   parts = kEmptyString->split(sep);
   ASSERT_EQ(1, len(parts));
   Print(parts);
 
-  s = CWrap(":");
+  s = CopyStr(":");
   parts = s->split(sep);
   ASSERT_EQ_FMT(2, len(parts), "%d");
   ASSERT(str_equals(kEmptyString, parts->index_(0)));
   ASSERT(str_equals(kEmptyString, parts->index_(1)));
   Print(parts);
 
-  s = CWrap("::");
+  s = CopyStr("::");
   parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
   ASSERT(str_equals(kEmptyString, parts->index_(0)));
@@ -223,14 +223,14 @@ TEST str_split_test() {
   ASSERT(str_equals(kEmptyString, parts->index_(2)));
   Print(parts);
 
-  s = CWrap("a:b");
+  s = CopyStr("a:b");
   parts = s->split(sep);
   ASSERT_EQ(2, len(parts));
   Print(parts);
   ASSERT(str_equals0("a", parts->index_(0)));
   ASSERT(str_equals0("b", parts->index_(1)));
 
-  s = CWrap("abc:def:");
+  s = CopyStr("abc:def:");
   parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
   Print(parts);
@@ -238,12 +238,12 @@ TEST str_split_test() {
   ASSERT(str_equals0("def", parts->index_(1)));
   ASSERT(str_equals(kEmptyString, parts->index_(2)));
 
-  s = CWrap(":abc:def:");
+  s = CopyStr(":abc:def:");
   parts = s->split(sep);
   ASSERT_EQ(4, len(parts));
   Print(parts);
 
-  s = CWrap("abc:def:ghi");
+  s = CopyStr("abc:def:ghi");
   parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
   Print(parts);
@@ -253,14 +253,14 @@ TEST str_split_test() {
 
 TEST str_methods_test() {
   log("char funcs");
-  ASSERT(!(CWrap(""))->isupper());
-  ASSERT(!(CWrap("a"))->isupper());
-  ASSERT((CWrap("A"))->isupper());
-  ASSERT((CWrap("AB"))->isupper());
+  ASSERT(!(CopyStr(""))->isupper());
+  ASSERT(!(CopyStr("a"))->isupper());
+  ASSERT((CopyStr("A"))->isupper());
+  ASSERT((CopyStr("AB"))->isupper());
 
-  ASSERT((CWrap("abc"))->isalpha());
-  ASSERT((CWrap("3"))->isdigit());
-  ASSERT(!(CWrap(""))->isdigit());
+  ASSERT((CopyStr("abc"))->isalpha());
+  ASSERT((CopyStr("3"))->isdigit());
+  ASSERT(!(CopyStr(""))->isdigit());
 
   log("slice()");
   ASSERT(str_equals0("f", kStrFood->index_(0)));
@@ -274,15 +274,15 @@ TEST str_methods_test() {
   ASSERT(str_equals0("fo", kStrFood->slice(-4, -2)));
 
   log("strip()");
-  ASSERT(str_equals0(" abc", CWrap(" abc ")->rstrip()));
-  ASSERT(str_equals0(" def", CWrap(" def")->rstrip()));
+  ASSERT(str_equals0(" abc", CopyStr(" abc ")->rstrip()));
+  ASSERT(str_equals0(" def", CopyStr(" def")->rstrip()));
 
   ASSERT(str_equals0("", kEmptyString->rstrip()));
   ASSERT(str_equals0("", kEmptyString->strip()));
 
-  ASSERT(str_equals0("123", CWrap(" 123 ")->strip()));
-  ASSERT(str_equals0("123", CWrap(" 123")->strip()));
-  ASSERT(str_equals0("123", CWrap("123 ")->strip()));
+  ASSERT(str_equals0("123", CopyStr(" 123 ")->strip()));
+  ASSERT(str_equals0("123", CopyStr(" 123")->strip()));
+  ASSERT(str_equals0("123", CopyStr("123 ")->strip()));
 
   Str* input = nullptr;
   Str* arg = nullptr;
@@ -294,29 +294,29 @@ TEST str_methods_test() {
 
   // arg needs to be separate here because order of evaluation isn't defined!!!
   // CRASHES:
-  //   ASSERT(input->startswith(CWrap("ab")));
+  //   ASSERT(input->startswith(CopyStr("ab")));
   // Will this because a problem for mycpp?  I think you have to detect this
   // case:
   //   f(Alloc<Foo>(), new Alloc<Bar>())
   // Allocation can't happen INSIDE an arg list.
 
-  input = CWrap("abc");
+  input = CopyStr("abc");
   ASSERT(input->startswith(kEmptyString));
   ASSERT(input->endswith(kEmptyString));
 
   ASSERT(input->startswith(input));
   ASSERT(input->endswith(input));
 
-  arg = CWrap("ab");
+  arg = CopyStr("ab");
   ASSERT(input->startswith(arg));
   ASSERT(!input->endswith(arg));
 
-  arg = CWrap("bc");
+  arg = CopyStr("bc");
   ASSERT(!input->startswith(arg));
   ASSERT(input->endswith(arg));
 
   log("rjust() and ljust()");
-  input = CWrap("13");
+  input = CopyStr("13");
   ASSERT(str_equals0("  13", input->rjust(4, kSpace)));
   ASSERT(str_equals0(" 13", input->rjust(3, kSpace)));
   ASSERT(str_equals0("13", input->rjust(2, kSpace)));
@@ -375,7 +375,7 @@ TEST str_funcs_test() {
   StackRoots _roots({&s, &result});
 
   // -1 is allowed by Python and used by Oil!
-  s = CWrap("abc");
+  s = CopyStr("abc");
   ASSERT(str_equals(kEmptyString, str_repeat(s, -1)));
   ASSERT(str_equals(kEmptyString, str_repeat(s, 0)));
 
@@ -386,22 +386,22 @@ TEST str_funcs_test() {
   ASSERT(str_equals0("abcabcabc", result));
 
   ASSERT(str_equals0("''", repr(kEmptyString)));
-  ASSERT(str_equals0("\"'\"", repr(CWrap("'"))));
-  ASSERT(str_equals0("\"'single'\"", repr(CWrap("'single'"))));
-  ASSERT(str_equals0("'\"double\"'", repr(CWrap("\"double\""))));
+  ASSERT(str_equals0("\"'\"", repr(CopyStr("'"))));
+  ASSERT(str_equals0("\"'single'\"", repr(CopyStr("'single'"))));
+  ASSERT(str_equals0("'\"double\"'", repr(CopyStr("\"double\""))));
 
   // this one is truncated
   s = NewStr("NUL \x00 NUL", 9);
   ASSERT(str_equals0("'NUL \\x00 NUL'", repr(s)));
 
-  result = repr(CWrap("tab\tline\nline\r\n"));
+  result = repr(CopyStr("tab\tline\nline\r\n"));
   print(result);
   ASSERT(str_equals0("'tab\\tline\\nline\\r\\n'", result));
 
-  result = repr(CWrap("high \xFF \xFE high"));
+  result = repr(CopyStr("high \xFF \xFE high"));
   ASSERT(str_equals0("'high \\xff \\xfe high'", result));
 
-  s = CWrap("A");
+  s = CopyStr("A");
   ASSERT_EQ(65, ord(s));
 
   result = chr(65);
@@ -518,7 +518,7 @@ TEST list_iters_test() {
   }
 
   // hm std::initializer_list is "first class"
-  auto strs = {CWrap("foo"), CWrap("bar")};
+  auto strs = {CopyStr("foo"), CopyStr("bar")};
   ListFunc(strs);
 
   PASS();
@@ -532,9 +532,9 @@ TEST sort_test() {
   Str *a = nullptr, *aa = nullptr, *b = nullptr;
   StackRoots _roots({&a, &aa, &b});
 
-  a = CWrap("a");
-  aa = CWrap("aa");
-  b = CWrap("b");
+  a = CopyStr("a");
+  aa = CopyStr("aa");
+  b = CopyStr("b");
 
   ASSERT_EQ(0, str_cmp(kEmptyString, kEmptyString));
   ASSERT_EQ(-1, str_cmp(kEmptyString, a));
@@ -569,10 +569,10 @@ TEST contains_test() {
 
   // NOTE: 'substring' in mystr not allowed now, only 'c' in mystr
 #if 0
-  b = str_contains(CWrap("foo"), CWrap("oo"));
+  b = str_contains(CopyStr("foo"), CopyStr("oo"));
   ASSERT(b == true);
 
-  b = str_contains(CWrap("foo"), CWrap("ood"));
+  b = str_contains(CopyStr("foo"), CopyStr("ood"));
   ASSERT(b == false);
 #endif
 
@@ -598,7 +598,7 @@ TEST contains_test() {
   strs = Alloc<List<Str*>>();
 
   strs->append(kSpace);
-  s = CWrap(" ");  // LOCAL space
+  s = CopyStr(" ");  // LOCAL space
   ASSERT(list_contains(strs, s));
   ASSERT(!list_contains(strs, kStrFoo));
 
@@ -630,14 +630,14 @@ TEST dict_methods_test() {
   ASSERT(str_equals0("foo", d->index_(1)));
 
   d2 = Alloc<Dict<Str*, int>>();
-  key = CWrap("key");
+  key = CopyStr("key");
   d2->set(key, 42);
   ASSERT_EQ(42, d2->index_(key));
 
   PASS();
 
-  d2->set(CWrap("key2"), 2);
-  d2->set(CWrap("key3"), 3);
+  d2->set(CopyStr("key2"), 2);
+  d2->set(CopyStr("key3"), 3);
 
   ASSERT_EQ_FMT(3, len(d2), "%d");
 
@@ -649,7 +649,7 @@ TEST dict_methods_test() {
   ASSERT(str_equals0("key2", keys->index_(1)));
   ASSERT(str_equals0("key3", keys->index_(2)));
 
-  mylib::dict_remove(d2, CWrap("key"));
+  mylib::dict_remove(d2, CopyStr("key"));
   ASSERT_EQ_FMT(2, len(d2), "%d");
 
   auto keys2 = d2->keys();
@@ -692,14 +692,14 @@ TEST dict_methods_test() {
 
   // sorted()
   auto d3 = Alloc<Dict<Str*, int>>();
-  auto a = CWrap("a");
+  auto a = CopyStr("a");
 
-  d3->set(CWrap("b"), 11);
-  d3->set(CWrap("c"), 12);
-  d3->set(CWrap("a"), 10);
-  ASSERT_EQ(10, d3->index_(CWrap("a")));
-  ASSERT_EQ(11, d3->index_(CWrap("b")));
-  ASSERT_EQ(12, d3->index_(CWrap("c")));
+  d3->set(CopyStr("b"), 11);
+  d3->set(CopyStr("c"), 12);
+  d3->set(CopyStr("a"), 10);
+  ASSERT_EQ(10, d3->index_(CopyStr("a")));
+  ASSERT_EQ(11, d3->index_(CopyStr("b")));
+  ASSERT_EQ(12, d3->index_(CopyStr("c")));
   ASSERT_EQ(3, len(d3));
 
   auto keys3 = sorted(d3);
@@ -710,7 +710,7 @@ TEST dict_methods_test() {
 
   auto keys4 = d3->keys();
   ASSERT(list_contains(keys4, a));
-  ASSERT(!list_contains(keys4, CWrap("zzz")));
+  ASSERT(!list_contains(keys4, CopyStr("zzz")));
 
   ASSERT(dict_contains(d3, a));
   mylib::dict_remove(d3, a);

@@ -127,7 +127,7 @@ def _DefaultValue(typ):
     default = '0.0'  # or should it be NaN?
 
   elif type_name == 'string':
-    default = 'CWrap("")'
+    default = 'CopyStr("")'
 
   elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
     sum_type = typ.resolved
@@ -162,10 +162,10 @@ def _HNodeExpr(abbrev, typ, var_name):
     code_str = 'new hnode__External(%s)' % var_name
 
   elif type_name == 'id':  # was meta.UserType
-    code_str = 'new hnode__Leaf(CWrap(Id_str(%s)), color_e::UserType)' % var_name
+    code_str = 'new hnode__Leaf(CopyStr(Id_str(%s)), color_e::UserType)' % var_name
 
   elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
-    code_str = 'new hnode__Leaf(CWrap(%s_str(%s)), color_e::TypeName)' % (
+    code_str = 'new hnode__Leaf(CopyStr(%s_str(%s)), color_e::TypeName)' % (
         typ.name, var_name)
   else:
     code_str = '%s->%s()' % (var_name, abbrev)
@@ -424,7 +424,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
       self.Emit('      %s->children->append(%s);' % (out_val_name, child_code_str))
       self.Emit('    }')
-      self.Emit('    L->append(new field(CWrap("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('    L->append(new field(CopyStr("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }')
 
     elif field.IsMaybe():
@@ -433,7 +433,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('  if (this->%s) {  // MaybeType' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
       self.Emit('    hnode_t* %s = %s;' % (out_val_name, child_code_str))
-      self.Emit('    L->append(new field(CWrap("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('    L->append(new field(CopyStr("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }')
 
     elif field.IsMap():
@@ -451,7 +451,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
       self.Emit('  if (this->%s) {' % field.name)
       # TODO: m can be a global constant!
-      self.Emit('    auto m = new hnode__Leaf(CWrap("map"), color_e::OtherConst);')
+      self.Emit('    auto m = new hnode__Leaf(CopyStr("map"), color_e::OtherConst);')
       self.Emit('    hnode__Array* %s = new hnode__Array(NewList<hnode_t*>({m}));' % out_val_name)
       self.Emit('    for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' % (
                 k_c_type, v_c_type, field.name))
@@ -460,7 +460,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('      %s->children->append(%s);' % (out_val_name, k_code_str))
       self.Emit('      %s->children->append(%s);' % (out_val_name, v_code_str))
       self.Emit('    }')
-      self.Emit('    L->append(new field(CWrap ("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('    L->append(new field(CopyStr ("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }');
 
     else:
@@ -472,7 +472,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         pass
       self.Emit('  hnode_t* %s = %s;' % (out_val_name, code_str), depth)
 
-      self.Emit('  L->append(new field(CWrap("%s"), %s));' % (field.name, out_val_name), depth)
+      self.Emit('  L->append(new field(CopyStr("%s"), %s));' % (field.name, out_val_name), depth)
 
   def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node):
     if not self.pretty_print_methods:
@@ -489,7 +489,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     self.Emit('')
     self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
-    self.Emit('  hnode__Record* out_node = runtime::NewRecord(CWrap("%s"));' % pretty_cls_name)
+    self.Emit('  hnode__Record* out_node = runtime::NewRecord(CopyStr("%s"));' % pretty_cls_name)
     if all_fields:
       self.Emit('  List<field*>* L = out_node->fields;')
 
@@ -510,7 +510,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     self.Emit('')
     self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
-    self.Emit('  hnode__Record* out_node = runtime::NewRecord(CWrap("%s"));' % pretty_cls_name)
+    self.Emit('  hnode__Record* out_node = runtime::NewRecord(CopyStr("%s"));' % pretty_cls_name)
     if ast_node.fields:
       self.Emit('  List<field*>* L = out_node->fields;')
 

@@ -16,7 +16,7 @@ using gc_heap::Heap;
 using gc_heap::Obj;
 using gc_heap::Param;
 
-using gc_heap::CWrap;
+using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::GlobalStr;
 using gc_heap::List;
@@ -138,7 +138,7 @@ TEST str_test() {
   Str* str2 = nullptr;
   StackRoots _roots({&str1, &str2});
 
-  str1 = CWrap("");
+  str1 = CopyStr("");
   str2 = NewStr("one\0two", 7);
 
   ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag_, "%d");
@@ -243,10 +243,10 @@ TEST list_test() {
   log("list1_ = %p", list1);
   log("list1->slab_ = %p", list1->slab_);
 
-  auto str1 = CWrap("foo");
+  auto str1 = CopyStr("foo");
   StackRoots _roots5({&str1});
   log("str1 = %p", str1);
-  auto str2 = CWrap("bar");
+  auto str2 = CopyStr("bar");
   StackRoots _roots6({&str2});
   log("str2 = %p", str2);
 
@@ -358,8 +358,8 @@ TEST dict_test() {
   Str* foo = nullptr;
   Str* bar = nullptr;
   StackRoots _roots3({&foo, &bar});
-  foo = CWrap("foo");
-  bar = CWrap("bar");
+  foo = CopyStr("foo");
+  bar = CopyStr("bar");
 
   dict2->set(foo, bar);
 
@@ -390,7 +390,7 @@ TEST dict_test() {
   ASSERT_EQ_FMT(32, dict_is->keys_->obj_len_, "%d");
   ASSERT_EQ_FMT(64, dict_is->values_->obj_len_, "%d");
 
-  auto two = CWrap("two");
+  auto two = CopyStr("two");
   StackRoots _roots6({&two});
 
   auto dict3 =
@@ -485,11 +485,11 @@ TEST slab_trace_test() {
   ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
 
   // +2: slab and string
-  strings->append(CWrap("yo"));
+  strings->append(CopyStr("yo"));
   ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
   // +1 string
-  strings->append(CWrap("bar"));
+  strings->append(CopyStr("bar"));
   ASSERT_EQ_FMT(4, gHeap.num_live_objs_, "%d");
 
   // -1: remove reference to "bar"
@@ -559,9 +559,9 @@ void ShowRoots(const Heap& heap) {
 }
 
 Str* myfunc() {
-  Local<Str> str1(CWrap("foo"));
-  Local<Str> str2(CWrap("foo"));
-  Local<Str> str3(CWrap("foo"));
+  Local<Str> str1(CopyStr("foo"));
+  Local<Str> str2(CopyStr("foo"));
+  Local<Str> str3(CopyStr("foo"));
 
   log("myfunc roots_top = %d", gHeap.roots_top_);
   ShowRoots(gHeap);
@@ -596,7 +596,7 @@ TEST local_test() {
     // invokes operator*, but I don't think we need it!
     // log("point.y = %d", (*p).y_);
 
-    Local<Str> str2(CWrap("bar"));
+    Local<Str> str2(CopyStr("bar"));
     ASSERT_EQ(2, gHeap.roots_top_);
 
     myfunc();
@@ -686,7 +686,7 @@ TEST stack_roots_test() {
 
   gc_heap::StackRoots _roots({&s, &L});
 
-  s = CWrap("foo");
+  s = CopyStr("foo");
   // L = nullptr;
   L = NewList<int>();
 
@@ -722,13 +722,13 @@ TEST field_mask_test() {
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
 
-  auto key = CWrap("foo");
+  auto key = CopyStr("foo");
   StackRoots _roots9({&key});
   d->set(key, 3);
 
-  // oops this is bad?  Because CWrap() might move d in the middle of the
+  // oops this is bad?  Because CopyStr() might move d in the middle of the
   // expression!  Gah!
-  // d->set(CWrap("foo"), 3);
+  // d->set(CopyStr("foo"), 3);
 
   log("Dict mask = %d", d->field_mask_);
 
@@ -738,7 +738,7 @@ TEST field_mask_test() {
   auto L2 = NewList<Str*>();
   StackRoots _roots3({&L2});
 
-  auto s = CWrap("foo");
+  auto s = CopyStr("foo");
   StackRoots _roots4({&s});
 
   L2->append(s);
@@ -752,7 +752,7 @@ TEST repro2() {
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
 
-  auto key = CWrap("foo");
+  auto key = CopyStr("foo");
   StackRoots _roots9({&key});
   d->set(key, 3);
 

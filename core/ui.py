@@ -22,7 +22,7 @@ from asdl import format as fmt
 from core.pyutil import stderr_line
 from osh import word_
 from mycpp import mylib
-from mycpp.mylib import tagswitch, CWrap
+from mycpp.mylib import tagswitch, CopyStr
 from qsn_ import qsn
 
 from typing import List, Optional, cast, TYPE_CHECKING
@@ -39,7 +39,7 @@ def ValType(val):
   """For displaying type errors in the UI."""
 
   # Displays 'value.MaybeStrArray' for now, maybe change it.
-  return CWrap(value_str(val.tag_()))
+  return CopyStr(value_str(val.tag_()))
 
 
 def CommandType(cmd):
@@ -47,7 +47,7 @@ def CommandType(cmd):
   """For displaying commands in the UI."""
 
   # Displays 'value.MaybeStrArray' for now, maybe change it.
-  return CWrap(command_str(cmd.tag_()))
+  return CopyStr(command_str(cmd.tag_()))
 
 
 def PrettyId(id_):
@@ -55,7 +55,7 @@ def PrettyId(id_):
   """For displaying type errors in the UI."""
 
   # Displays 'Id.BoolUnary_v' for now
-  return CWrap(Id_str(id_))
+  return CopyStr(Id_str(id_))
 
 
 def PrettyToken(tok, arena):
