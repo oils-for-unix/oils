@@ -101,12 +101,6 @@ class RuntimeError {
 // Data Types
 //
 
-enum transform_op
-{
-  lower,
-  upper,
-};
-
 #ifdef LEAKY_MYLIB
 class Str : public gc_heap::Obj {
  public:
@@ -354,37 +348,8 @@ class Str : public gc_heap::Obj {
     return -1;
   }
 
-  Str* upper() {
-    return transform(transform_op::upper);
-  }
-
-  Str* lower() {
-    return transform(transform_op::lower);
-  }
-
-  Str* transform(transform_op op)
-  {
-    char* new_buf = static_cast<char*>(malloc(len_));
-    for (int char_index = 0; char_index <= len_; ++char_index)
-    {
-      switch (op)
-      {
-        case transform_op::upper:
-        {
-          new_buf[char_index] = toupper(data_[char_index]);
-        } break;
-
-        case transform_op::lower:
-        {
-          new_buf[char_index] = tolower(data_[char_index]);
-        } break;
-      }
-
-    }
-
-    return mylib::NewStr(new_buf, len_);
-  }
-
+  Str* upper();
+  Str* lower();
   Str* ljust(int width, Str* fillchar);
   Str* rjust(int width, Str* fillchar);
 

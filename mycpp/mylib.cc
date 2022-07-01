@@ -208,6 +208,45 @@ Str* Str::join(List<Str*>* items) {
   return new Str(result, len);
 }
 
+
+  Str* Str::upper() {
+    Str* self = this;
+    Str* result = 0;
+
+    /* StackRoots stroots = {&result, &self}; */
+
+    result = mylib::BlankStr(self->len_);
+
+    // TODO(Jesse): Have to cast off const-ness .. this is intolerable in the
+    // long-run.  How should we deal?
+    char *buffer = (char*)result->data_;
+
+    for (int char_index = 0; char_index <= self->len_; ++char_index)
+    {
+      buffer[char_index] = toupper(self->data_[char_index]);
+    }
+    return result;
+  }
+
+  Str* Str::lower() {
+    Str* self = this;
+    Str* result = 0;
+
+    /* StackRoots stroots = {&result, &self}; */
+
+    result = mylib::BlankStr(self->len_);
+
+    // TODO(Jesse): Have to cast off const-ness .. this is intolerable in the
+    // long-run.  How should we deal?
+    char *buffer = (char*)result->data_;
+
+    for (int char_index = 0; char_index <= self->len_; ++char_index)
+    {
+      buffer[char_index] = tolower(self->data_[char_index]);
+    }
+    return result;
+  }
+
 // Get a string with one character
 Str* StrIter::Value() {
   char* buf = static_cast<char*>(malloc(2));

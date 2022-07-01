@@ -20,8 +20,6 @@ allow_errors()
   true
 }
 
-test/spec-cpp.sh all
-
 for filename in _tmp/spec/cpp/*.tsv; do
 
   passes=$(find_passing_tests || allow_errors)
