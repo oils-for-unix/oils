@@ -4,6 +4,7 @@
 #define POSIX_H
 
 #include <unistd.h>
+#include <stdlib.h> // putenv
 
 #include "mycpp/mylib.h"
 
@@ -55,10 +56,6 @@ inline Str* strerror(int err_num) {
   return new Str(::strerror(err_num));
 }
 
-inline Str* uname() {
-  assert(0);
-}
-
 // TODO: write proper signatures
 // stat returns stat_result
 inline void stat() {
@@ -84,7 +81,10 @@ inline int close(int fd) {
 }
 
 inline int putenv(Str* name, Str* value) {
-  NotImplemented();
+  int env_string_size = name->len_ + value->len_ + 1; // NOTE(Jesse): +1 for the '=' between them
+  char* env_string = reinterpret_cast<char*>(malloc(env_string_size));
+  snprintf(env_string, env_string_size, "%s=%s", name->data_, value->data_);
+  return ::putenv(env_string);
 }
 
 inline int fork() {

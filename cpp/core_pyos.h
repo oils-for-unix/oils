@@ -4,9 +4,14 @@
 #define CORE_PYOS_H
 
 #include <termios.h>
+#include <pwd.h> // passwd
+#include <sys/utsname.h> // uname
+#include <sys/resource.h> // getrusage
+#include <sys/times.h> // tms / times()
 
 #include "_build/cpp/syntax_asdl.h"
 #include "mycpp/mylib.h"
+#include "time_.h"
 
 namespace pyos {
 
@@ -32,20 +37,61 @@ class ReadError {
 };
 
 inline Str* GetUserName(int uid) {
-  assert(0);
+  Str *result = kEmptyString;
+
+  if (passwd *pw = getpwuid(uid))
+  {
+    result = NewStr(pw->pw_name);
+  }
+
+  return result;
 }
 
 inline Str* OsType() {
-  // uname()[0].lower()
-  return new Str("TODO");
+  Str *result = kEmptyString; // TODO(Jesse): Should we set this to "unknown" or something?
+
+  utsname un = {};
+  if (::uname(&un) == 0)
+  {
+    result = mylib::NewStr(un.sysname);
+  }
+
+  return result;
 }
 
 inline Tuple3<double, double, double> Time() {
-  assert(0);
+  rusage ru; // NOTE(Jesse): Doesn't have to be cleared to 0.  The kernel clears unused fields.
+  ::getrusage(RUSAGE_SELF, &ru);
+
+  time_t t = time_::time();
+  auto result = Tuple3<double, double, double>((double)t, (double)ru.ru_utime.tv_sec, (double)ru.ru_stime.tv_sec);
+  return result;
 }
 
 inline void PrintTimes() {
-  assert(0);
+  tms t;
+  if (times(&t) == -1)
+  {
+    printf("Error during time()");
+  }
+  else
+  {
+    {
+      int user_minutes = t.tms_utime / 60;
+      float user_seconds = t.tms_utime % 60;
+      int system_minutes = t.tms_stime / 60;
+      float system_seconds = t.tms_stime % 60;
+      printf("%dm%1.3fs %dm%1.3fs", user_minutes, user_seconds, system_minutes, system_seconds);
+    }
+
+    {
+      int child_user_minutes = t.tms_cutime / 60;
+      float child_user_seconds = t.tms_cutime % 60;
+      int child_system_minutes = t.tms_cstime / 60;
+      float child_system_seconds = t.tms_cstime % 60;
+      printf("%dm%1.3fs %dm%1.3fs", child_user_minutes, child_user_seconds, child_system_minutes, child_system_seconds);
+    }
+  }
 }
 
 class TermState {

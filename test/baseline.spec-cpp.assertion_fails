@@ -1,23 +1,10 @@
-() Binary file _tmp/spec/cpp/builtin-printf.html matches
 (_build/cpp/osh_eval.cc:8798: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/command_.html
 (_build/cpp/osh_eval.cc:8798: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/command_.html
 (_build/cpp/osh_eval.cc:8798: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/toysh-posix.html
+(cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/arith-context.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/errexit-oil.html
-(/home/scallywag/work/oil/cpp/core_pyos.h:35: Str* pyos::GetUserName(int): Assertion `0' failed.) _tmp/spec/cpp/prompt.html
-(/home/scallywag/work/oil/cpp/core_pyos.h:35: Str* pyos::GetUserName(int): Assertion `0' failed.) _tmp/spec/cpp/prompt.html
-(/home/scallywag/work/oil/cpp/core_pyos.h:44: Tuple3&lt;double, double, double&gt; pyos::Time(): Assertion `0' failed.) _tmp/spec/cpp/builtins.html
-(/home/scallywag/work/oil/cpp/core_pyos.h:44: Tuple3&lt;double, double, double&gt; pyos::Time(): Assertion `0' failed.) _tmp/spec/cpp/errexit.html
-(/home/scallywag/work/oil/cpp/core_pyos.h:48: void pyos::PrintTimes(): Assertion `0' failed.) _tmp/spec/cpp/builtin-times.html
-(/home/scallywag/work/oil/cpp/libc.h:43: Str* libc::realpath(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtins.html
-(/home/scallywag/work/oil/cpp/libc.h:43: Str* libc::realpath(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtins.html
-(/home/scallywag/work/oil/cpp/libc.h:43: Str* libc::realpath(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtins.html
-(/home/scallywag/work/oil/cpp/time_.h:22: int time_::localtime(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/prompt.html
-(/home/scallywag/work/oil/cpp/time_.h:22: int time_::localtime(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/prompt.html
-(/home/scallywag/work/oil/cpp/time_.h:22: int time_::localtime(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/prompt.html
-(/home/scallywag/work/oil/cpp/time_.h:22: int time_::localtime(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/prompt.html
+(/home/scallywag/work/oil/cpp/core_pyos.h:118: bool pyos::InputAvailable(int): Assertion `0' failed.) _tmp/spec/cpp/builtin-io.html
+(/home/scallywag/work/oil/mycpp/gc_heap.h:267: void gc_heap::Heap::PushRoot(gc_heap::Obj**): Assertion `roots_top_ &lt; kMaxRoots' failed.) _tmp/spec/cpp/alias.html
 (/home/scallywag/work/oil/mycpp/gc_heap.h:267: void gc_heap::Heap::PushRoot(gc_heap::Obj**): Assertion `roots_top_ &lt; kMaxRoots' failed.) _tmp/spec/cpp/ble-idioms.html
-(/home/scallywag/work/oil/mycpp/mylib.h:1027: double to_float(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-io.html
-(/home/scallywag/work/oil/mycpp/mylib.h:1027: double to_float(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-io.html
-(/home/scallywag/work/oil/mycpp/mylib.h:1027: double to_float(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-io.html

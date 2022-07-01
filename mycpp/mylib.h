@@ -1024,7 +1024,9 @@ inline bool to_bool(Str* s) {
 }
 
 inline double to_float(Str* s) {
-  NotImplemented();
+  assert(s->IsNulTerminated());
+  double result = atof(s->data_);
+  return result;
 }
 
 // e.g. ('a' in 'abc')
