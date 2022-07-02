@@ -71,7 +71,14 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=address"
       ;;
 
-    # TODO: ubsan and gctest from mycpp/NINJA-steps.sh
+    (ubsan)
+      # faster build with -O0
+      flags+="$flags -O0 -g -fsanitize=undefined"
+      ;;
+    (testgc)
+      # TODO: GC_REPORT and GC_VERBOSE instead?
+      flags+="$flags -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC"
+      ;;
 
     (opt)
       # Hm why does _bin/cxx-opt/osh_eval not run without -D DUMB_ALLOC?  But

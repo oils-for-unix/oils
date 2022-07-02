@@ -116,11 +116,11 @@ compile() {
     ('asan')
       flags+=" $ASAN_FLAGS"
       ;;
-    ('ubsan')
-      flags+=' -fsanitize=undefined'
-      ;;
     ('opt')
       flags+=' -O2 -g'  # -g so you can debug crashes?
+      ;;
+    ('ubsan')
+      flags+=' -fsanitize=undefined'
       ;;
     ('testgc')
       # TODO: GC_REPORT and GC_VERBOSE instead?
