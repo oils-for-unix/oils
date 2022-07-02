@@ -213,7 +213,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
   more_cxx_flags = "''"
 
   if translator == 'mycpp':
-    variants = ['testgc', 'asan', 'opt']
+    variants = ['testgc', 'asan', 'ubsan', 'opt']
   else:
     variants = ['testgc']  # just do one for now
 
@@ -249,7 +249,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
 
   # minimal
   MATRIX = [
-      ('test', 'asan'),
+      ('test', 'asan'),  # TODO: testgc is better!
       ('benchmark', 'opt'),
   ]
 
@@ -375,6 +375,7 @@ def NinjaGraph(n, u):
       # variants
       'mycpp-testgc': [],
       'mycpp-asan': [],
+      'mycpp-ubsan': [],
       'mycpp-opt': [],
 
       'pea-translate': [],
@@ -392,14 +393,16 @@ def NinjaGraph(n, u):
     # assume names are unique
     test_name = os.path.basename(test_path)
 
-    # TODO: doesn't run under pure 'asan' because of -D GC_DEBUG, etc.
-    for variant in ['testgc']:  # , 'asan', 'opt']:
+    for variant in ['testgc', 'ubsan']:  # , 'asan', 'opt']:
       b = '_test/bin/unit/%s.%s' % (test_name, variant)
 
       main_cc = '%s.cc' % test_path
 
+      # for gHeap.Report() and Protect()
+      mycpp_unit_flags = "'-D GC_DEBUG -D GC_PROTECT'"
+
       n.build([b], 'compile', [main_cc] + cc_files,
-              variables=[('variant', variant), ('more_cxx_flags', "''")])
+              variables=[('variant', variant), ('more_cxx_flags', mycpp_unit_flags)])
       n.newline()
 
       prefix = '_test/tasks/unit/%s.%s' % (test_name, variant)

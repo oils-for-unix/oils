@@ -77,6 +77,16 @@ asan-bench() {
 }
 
 # PASS!
+ubsan() {
+  run-variant ubsan
+}
+
+# same as ASAN: 2 of 18
+ubsan-bench() {
+  run-variant ubsan 1
+}
+
+# PASS!
 opt() {
   run-variant opt
 }
@@ -84,6 +94,23 @@ opt() {
 # 2 of 18 tests failed
 opt-bench() {
   run-variant opt 1
+}
+
+# my_runtime_test has an error and an AssertionError under ubsan!
+
+unit() {
+  local variant=${1:-ubsan}
+
+  # TODO: This shouldn't run tests!
+  #ninja mycpp-unit
+
+  set +o errexit
+  for b in _test/bin/unit/*.$variant; do
+    echo $b
+    $b >/dev/null 2>&1
+    local status=$?
+    echo "status $status"
+  done
 }
 
 "$@"
