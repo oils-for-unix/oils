@@ -81,11 +81,15 @@ inline int close(int fd) {
 }
 
 inline int putenv(Str* name, Str* value) {
-  int env_string_size =
-      name->len_ + value->len_ + 1;  // NOTE(Jesse): +1 for the '=' between them
-  char* env_string = static_cast<char*>(malloc(env_string_size));
-  snprintf(env_string, env_string_size, "%s=%s", name->data_, value->data_);
-  return ::putenv(env_string);
+  // NOTE(Jesse): Technically this over-allocates by 1 byte, but by doing that
+  // we don't rely on the underlying Str* data_ buffer being defined as (Str::len_ + 1)
+  int env_string_size = name->len_ + value->len_ + 2;
+
+  Str* env_string = mylib::BlankStr(env_string_size);
+  char* env_string_buffer = env_string->data();
+
+  snprintf(env_string_buffer, env_string_size, "%s=%s", name->data_, value->data_);
+  return ::putenv(env_string->data());
 }
 
 inline int fork() {
