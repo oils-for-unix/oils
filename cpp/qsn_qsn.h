@@ -4,7 +4,7 @@
 #define QSN_QSN_H
 
 #ifdef LEAKY_BINDINGS
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 using mylib::BlankStr;
 using mylib::CopyStr;
 using mylib::OverAllocatedStr;

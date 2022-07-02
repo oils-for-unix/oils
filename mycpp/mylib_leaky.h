@@ -1,4 +1,4 @@
-// mylib.h
+// mylib_leaky.h
 
 #ifndef MYLIB_H
 #define MYLIB_H
@@ -19,7 +19,7 @@
 #include "common.h"
 
 // if this file is even included, we're using the old mylib
-#define LEAKY_MYLIB 1
+#define MYLIB_LEAKY 1
 #include "gc_heap.h"  // for Obj
 
 #ifdef DUMB_ALLOC
@@ -100,7 +100,7 @@ class RuntimeError {
 // Data Types
 //
 
-#ifdef LEAKY_MYLIB
+#ifdef MYLIB_LEAKY
 class Str : public gc_heap::Obj {
  public:
   Str(const char* data, int len)
@@ -798,7 +798,7 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
   assert(0);  // Uncalled
 }
 
-#endif  // LEAKY_MYLIB
+#endif  // MYLIB_LEAKY
 
 template <class A, class B>
 class Tuple2 {
@@ -867,7 +867,7 @@ class Tuple4 {
 // Overloaded free function len()
 //
 
-#ifdef LEAKY_MYLIB
+#ifdef MYLIB_LEAKY
 inline int len(const Str* s) {
   return s->len_;
 }
@@ -906,7 +906,7 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
-#if LEAKY_MYLIB
+#if MYLIB_LEAKY
 inline bool str_equals(Str* left, Str* right) {
   if (left->len_ == right->len_) {
     return memcmp(left->data_, right->data_, left->len_) == 0;

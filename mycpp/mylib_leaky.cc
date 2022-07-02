@@ -1,6 +1,6 @@
-// mylib.cc
+// mylib_leaky.cc
 
-#include "mylib.h"
+#include "mylib_leaky.h"
 
 #include <errno.h>
 #include <unistd.h>  // isatty

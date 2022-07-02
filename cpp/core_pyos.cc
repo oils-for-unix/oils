@@ -32,7 +32,7 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
     return Tuple2<int, int>(length, 0);
   }
   Str* s = new Str(buf, length);
-  // LEAKY_MYLIB: the buffer is now owned by the Str instance
+  // MYLIB_LEAKY: the buffer is now owned by the Str instance
   // free(buf);
   chunks->append(s);
   return Tuple2<int, int>(length, 0);

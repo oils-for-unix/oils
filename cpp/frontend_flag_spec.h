@@ -5,7 +5,7 @@
 
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/runtime_asdl.h"
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 // Forward declarations (can't include osh_eval.h)
 namespace args {

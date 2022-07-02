@@ -4,7 +4,7 @@
 #include "_build/asdl-test/typed_arith_asdl.h"
 #include "_build/asdl-test/typed_demo_asdl.h"  // has simple Sum, etc
 #include "asdl/runtime.h"
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 #include "vendor/greatest.h"
 
 using typed_arith_asdl::pipeline;

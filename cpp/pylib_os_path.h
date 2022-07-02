@@ -4,7 +4,7 @@
 #define PYLIB_OS_PATH_H
 
 #if 1  // TODO: switch this off
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 #else
 #include "mycpp/mylib2.h"
 #endif

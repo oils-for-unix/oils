@@ -4,7 +4,7 @@
 #define OSH_BOOL_STAT_H
 
 #include "_build/cpp/syntax_asdl.h"
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 namespace bool_stat {
 

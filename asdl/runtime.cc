@@ -2,7 +2,7 @@
 
 // BEGIN mycpp output
 
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;

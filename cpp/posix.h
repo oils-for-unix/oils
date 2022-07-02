@@ -6,7 +6,7 @@
 #include <stdlib.h>  // putenv
 #include <unistd.h>
 
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 namespace posix {
 

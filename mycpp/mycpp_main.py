@@ -233,7 +233,7 @@ def main(argv):
   f = sys.stdout
 
   gc = bool(os.getenv('GC'))
-  header_name = 'gc_heap' if gc else 'mylib'
+  header_name = 'gc_heap' if gc else 'mylib_leaky'
   #header_name = 'mylib'
 
   # TODO: Add --cc-out?  But there is a preamble and postamble.

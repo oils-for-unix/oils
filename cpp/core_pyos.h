@@ -16,7 +16,7 @@
 #include <cerrno>
 
 #include "_build/cpp/syntax_asdl.h"
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 #include "time_.h"
 // has a member named errno.  That member can't be changed
 // because it has to match the python error structure, which

@@ -26,7 +26,7 @@ compile-with-asdl() {
   # .. for asdl/runtime.h
   $CXX -o _bin/$name.$variant $flags \
     -I . -I .. -I ../_devbuild/gen -I ../_build/cpp -I _gen -I ../cpp \
-    mylib.cc gc_heap.cc $src "$@" -lstdc++
+    mylib_leaky.cc gc_heap.cc $src "$@" -lstdc++
 }
 
 asdl-gen() {
@@ -166,7 +166,7 @@ using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 //#include "match.h"
 
 // TODO: This is already added elsewhere
-#include "mylib.h"
+#include "mylib_leaky.h"
 
 // Stub
 void p_die(Str* s, syntax_asdl::Token* blame_token) {

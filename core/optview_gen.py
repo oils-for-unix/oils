@@ -24,7 +24,7 @@ def main(argv):
 #define OPTVIEW_H
 
 #include "_build/cpp/option_asdl.h"
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 namespace optview {
 

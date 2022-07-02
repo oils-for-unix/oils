@@ -87,7 +87,7 @@ def main(argv):
 """)
       else:
         f.write("""
-#include "mycpp/mylib.h"  // for old Str, List, etc.
+#include "mycpp/mylib_leaky.h"  // for old Str, List, etc.
 """)
 
       if pretty_print_methods:

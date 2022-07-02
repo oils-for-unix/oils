@@ -48,7 +48,7 @@ gen-cpp-test() {
     -o $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
-    mycpp/mylib.cc \
+    mycpp/mylib_leaky.cc \
     mycpp/gc_heap.cc \
     _build/cpp/hnode_asdl.cc \
     $dir/typed_arith_asdl.cc \

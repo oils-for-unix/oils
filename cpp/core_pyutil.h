@@ -4,7 +4,7 @@
 #define CORE_PYUTIL_H
 
 #include "mycpp/myerror.h"  // for _OSError; must come first
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 namespace pyutil {
 

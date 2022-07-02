@@ -2,7 +2,7 @@
 
 #include "_build/cpp/hnode_asdl.h"
 #include "cpp/qsn_qsn.h"
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 // For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
 inline Str* repr(void* obj) {
@@ -13,7 +13,7 @@ inline Str* repr(void* obj) {
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 namespace runtime {  // forward declare
 
 }  // forward declare namespace runtime

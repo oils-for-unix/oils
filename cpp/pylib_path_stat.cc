@@ -4,7 +4,7 @@
 
 #include <sys/stat.h>
 
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 namespace path_stat {
 

@@ -60,7 +60,7 @@ const-cpp-gen() {
   frontend/consts_gen.py cpp $out_dir/id_kind_asdl
   ls -l $out_dir/id_kind_asdl*
 
-  # TODO: Respect GC=1; Don't use mylib.h
+  # TODO: Respect GC=1; Don't use mylib_leaky.h
   frontend/consts_gen.py cpp-consts $out_dir/consts${gc}
   ls -l $out_dir/consts*
 }
@@ -78,7 +78,7 @@ option-cpp-gen() {
   local out_dir=_build/cpp
   frontend/option_gen.py cpp $out_dir/option_asdl${gc}
 
-  # TODO: Respect GC=1; Don't use mylib.h
+  # TODO: Respect GC=1; Don't use mylib_leaky.h
   core/optview_gen.py > $out_dir/core_optview${gc}.h
   log "  (core/optview_gen) -> $out_dir/core_optview${gc}.h"
 }

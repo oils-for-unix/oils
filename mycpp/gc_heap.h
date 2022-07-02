@@ -596,12 +596,12 @@ inline Slab<T>* NewSlab(int len) {
   return slab;
 }
 
-#ifdef LEAKY_MYLIB
+#ifdef MYLIB_LEAKY
 #define GLOBAL_STR(name, val) Str* name = new Str(val);
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 #endif
 
-#ifndef LEAKY_MYLIB
+#ifndef MYLIB_LEAKY
 
 //
 // Str
@@ -1396,7 +1396,7 @@ void Dict<K, V>::set(K key, V val) {
 void ShowFixedChildren(Obj* obj);
 #endif
 
-#endif  // LEAKY_MYLIB
+#endif  // MYLIB_LEAKY
 
 }  // namespace gc_heap
 
@@ -1404,7 +1404,7 @@ void ShowFixedChildren(Obj* obj);
 // Functions
 //
 
-#ifndef LEAKY_MYLIB
+#ifndef MYLIB_LEAKY
 
 // Do some extra calculation to avoid storing redundant lengths.
 inline int len(const gc_heap::Str* s) {
@@ -1421,6 +1421,6 @@ inline int len(const gc_heap::Dict<K, V>* d) {
   return d->len_;
 }
 
-#endif  // LEAKY_MYLIB
+#endif  // MYLIB_LEAKY
 
 #endif  // GC_HEAP_H

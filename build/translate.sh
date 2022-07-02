@@ -156,7 +156,7 @@ EOF
 
 #include "_build/cpp/hnode_asdl.h"
 #include "cpp/qsn_qsn.h"
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 EOF
     fi
 

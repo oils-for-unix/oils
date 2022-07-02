@@ -1,4 +1,4 @@
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.

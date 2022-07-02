@@ -25,7 +25,7 @@ readonly LEAKY_TEST_SRC=(
     cpp/osh_bool_stat.cc \
     cpp/posix.cc \
     cpp/pylib_os_path.cc \
-    mycpp/mylib.cc  # TODO: port to mylib2!
+    mycpp/mylib_leaky.cc  # TODO: port to mylib2!
 )
 
 # Note: It would be nice to fold these 2 variants into Ninja, but we don't have

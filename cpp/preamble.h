@@ -10,7 +10,7 @@
 #include "dumb_alloc.h"  // change the allocator
 // TODO: Need #if GC
 #include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
-#include "mycpp/mylib.h"  // runtime library e.g. with Python data structures
+#include "mycpp/mylib_leaky.h"  // runtime library e.g. with Python data structures
 
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this
 using id_kind_asdl::Kind_t;

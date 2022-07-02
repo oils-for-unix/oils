@@ -5,7 +5,7 @@
 
 #include <time.h>
 
-#include "mycpp/mylib.h"
+#include "mycpp/mylib_leaky.h"
 
 namespace time_ {
 
