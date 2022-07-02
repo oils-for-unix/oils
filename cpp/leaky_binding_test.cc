@@ -429,7 +429,7 @@ TEST pyos_read_test() {
 }
 
 TEST os_path_test() {
-  // TODO: use mylib2 here, with BlankStr(), StackRoots, etc.
+  // TODO: use mylib2 here, with AllocStr(), StackRoots, etc.
   Str* s = nullptr;
 
   s = os_path::rstrip_slashes(new Str(""));
