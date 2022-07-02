@@ -121,6 +121,15 @@ OLD_RUNTIME = [
 ]
 
 
+# -D DUMB_ALLOC: not sure why but only the _bin/cxx-opt/osh_eval binary needs it?
+# -D NO_GC_HACK: Avoid memset().  TODO: remove this hack!
+# -D OSH_EVAL: hack for osh_eval_stubs.h
+# -D LEAKY_BINDINGS: for QSN, which is used by the ASDL runtime
+
+# single quoted in Ninja/shell syntax
+OSH_EVAL_FLAGS_STR = "'-D DUMB_ALLOC -D NO_GC_HACK -D OSH_EVAL -D LEAKY_BINDINGS'"
+
+
 def NinjaGraph(n, u):
 
   n.comment('Build oil-native')
@@ -183,8 +192,7 @@ def NinjaGraph(n, u):
         # 'tcmalloc'
         ]:
 
-      # empty
-      ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")]
+      ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', OSH_EVAL_FLAGS_STR)]
 
       sources = DEPS_CC + OLD_RUNTIME
 
@@ -288,9 +296,8 @@ main() {
   local variant=${2:-opt}    # default is optimized build
   local skip_rebuild=${3:-}  # if the output exists, skip build'
 
-  # TODO: Generate this from Ninja vars
-  local more_cxx_flags=''
-''' % argv0, file=f)
+  local more_cxx_flags=%s
+''' % (argv0, OSH_EVAL_FLAGS_STR), file=f)
 
   out = '_bin/$compiler-$variant-sh/osh_eval'
   print('  local out=%s' % out, file=f)
@@ -318,11 +325,13 @@ main() {
     obj_quoted = '"_build/obj/$compiler-$variant-sh/%s.o"' % base_name
     objects.append(obj_quoted)
 
+    print("  echo 'CC %s'" % src, file=f)
     print('  compile_one "$compiler" "$variant" "$more_cxx_flags" \\', file=f)
     print('    %s %s' % (src, obj_quoted), file=f)
 
   print('', file=f)
 
+  print('  echo "LINK $out"', file=f)
   # note: can't have spaces in filenames
   print('  link "$compiler" "$variant" "$out" \\', file=f)
   # put each object on its own line, and indent by 4

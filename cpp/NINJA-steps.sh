@@ -70,10 +70,13 @@ setglobal_compile_flags() {
       # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
       flags="$flags -O0 -g -fsanitize=address"
       ;;
+
+    # TODO: ubsan and gctest from mycpp/NINJA-steps.sh
+
     (opt)
-      flags="$flags -O2 -g -D DUMB_ALLOC"
-      # To debug crash with 8 byte alignment
-      #flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
+      # Hm why does _bin/cxx-opt/osh_eval not run without -D DUMB_ALLOC?  But
+      # the dbg variant does?
+      flags="$flags -O2 -g"
       ;;
 
     (uftrace)
@@ -110,15 +113,6 @@ setglobal_compile_flags() {
   # Note: -ftlo doesn't do anything for size?
 
   flags="$flags -fdata-sections -ffunction-sections"
-
-  # Avoid memset().  TODO: remove this hack!
-  flags="$flags -D NO_GC_HACK"
-
-  # hack for osh_eval_stubs.h
-  flags="$flags -D OSH_EVAL"
-
-  # for QSN, which is used by the ASDL runtime
-  flags="$flags -D LEAKY_BINDINGS"
 
   # https://ninja-build.org/manual.html#ref_headers
   if test -n "$dotd"; then

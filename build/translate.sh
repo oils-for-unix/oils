@@ -84,7 +84,7 @@ osh-eval() {
 
   local name=${1:-osh_eval}
 
-  mkdir -p $TEMP_DIR
+  mkdir -p $TEMP_DIR _build/cpp
 
   local raw=$TEMP_DIR/${name}_raw.cc 
 
