@@ -187,7 +187,7 @@ EXAMPLES_PY = {
 }
 
 EXAMPLES_CC = {
-    'parse': ['_test/asdl/expr_asdl.gc.cc'],
+    'parse': ['_test/asdl/expr_asdl.cc'],
 }
 
 
@@ -418,7 +418,7 @@ def NinjaGraph(n, u):
   # ASDL schema that examples/parse.py depends on
   #
 
-  prefix = '_test/asdl/expr_asdl.gc'
+  prefix = '_test/asdl/expr_asdl'
   n.build([prefix + '.cc', prefix + '.h'], 'asdl-cpp', 'mycpp/examples/expr.asdl',
           variables=[('out_prefix', prefix)])
 

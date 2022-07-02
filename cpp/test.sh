@@ -38,7 +38,7 @@ leaky-binding-test-asan() {
 
   local bin=$dir/leaky_binding_test
 
-  compile_and_link cxx asan '-D CPP_UNIT_TEST' $bin \
+  compile_and_link cxx asan '-D LEAKY_BINDINGS -D CPP_UNIT_TEST' $bin \
     "${LEAKY_TEST_SRC[@]}"
 
   $bin "$@"
@@ -52,7 +52,7 @@ leaky-binding-test() {
 
   # dumb_alloc.cc exposes allocator alignment issues?
 
-  local more_cxx_flags='-D CPP_UNIT_TEST -D DUMB_ALLOC' 
+  local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
   compile_and_link cxx dbg "$more_cxx_flags" $bin \
     "${LEAKY_TEST_SRC[@]}" cpp/dumb_alloc.cc
 

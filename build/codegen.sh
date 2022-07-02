@@ -53,15 +53,12 @@ const-mypy-gen() {
 }
 
 const-cpp-gen() {
-  local gc=${1:-}
-
   local out_dir=_build/cpp
 
   frontend/consts_gen.py cpp $out_dir/id_kind_asdl
   ls -l $out_dir/id_kind_asdl*
 
-  # TODO: Respect GC=1; Don't use mylib_leaky.h
-  frontend/consts_gen.py cpp-consts $out_dir/consts${gc}
+  frontend/consts_gen.py cpp-consts $out_dir/consts
   ls -l $out_dir/consts*
 }
 
@@ -72,15 +69,11 @@ option-mypy-gen() {
 }
 
 option-cpp-gen() {
-  local gc=${1:-}
-
-  # TODO: respect GC=1
   local out_dir=_build/cpp
-  frontend/option_gen.py cpp $out_dir/option_asdl${gc}
+  frontend/option_gen.py cpp $out_dir/option_asdl
 
-  # TODO: Respect GC=1; Don't use mylib_leaky.h
-  core/optview_gen.py > $out_dir/core_optview${gc}.h
-  log "  (core/optview_gen) -> $out_dir/core_optview${gc}.h"
+  core/optview_gen.py > $out_dir/core_optview.h
+  log "  (core/optview_gen) -> $out_dir/core_optview.h"
 }
 
 flag-gen-mypy() {
