@@ -44,9 +44,7 @@ inline Str* strftime(Str* s, time_t ts) {
   {
     size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time);
 
-    int tries = 0;
-    int max_tries = 3;
-    while (tries++ < max_tries && size_of_result == 0)
+    while (temp_buf_size < Megabytes(10))
     {
       temp_buf_size = temp_buf_size * 2;
       temp_buf = static_cast<char*>(realloc(temp_buf, temp_buf_size));
@@ -59,7 +57,7 @@ inline Str* strftime(Str* s, time_t ts) {
 
   if (size_of_result)
   {
-    result = new Str(temp_buf, size_of_result + 1);
+    result = new Str(temp_buf, size_of_result);
   }
   else
   {
@@ -68,7 +66,8 @@ inline Str* strftime(Str* s, time_t ts) {
              "Call strftime failed.  The result from the format string specified was too long to be accomodated. The buffer we allocated was (%lu) bytes.",
              temp_buf_size);
 
-    e_die(new Str(temp_buf));
+    fprintf(stderr, "%s", temp_buf);
+    /* e_die(new Str(temp_buf)); */
   }
 
   free(temp_buf);

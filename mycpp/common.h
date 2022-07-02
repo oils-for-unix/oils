@@ -22,6 +22,16 @@
 #define NotImplemented() assert(!"Not Implemented")
 #define InvalidCodePath() assert(!"Invalid Code Path")
 
+#define Kilobytes(n) (n << 10)
+#define Megabytes(n) (n << 20)
+#define Gigabytes(n) (n << 30)
+#define Terabytes(n) ((uint64_t)((n##ul) << 40))
+
+static_assert(Kilobytes(1) == 1024, "");
+static_assert(Megabytes(1) == Kilobytes(1)*1024, "");
+static_assert(Gigabytes(1) == Megabytes(1)*1024, "");
+static_assert(Terabytes(1) == Gigabytes(1)*1024ul, "");
+
 // Prevent silent copies
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
