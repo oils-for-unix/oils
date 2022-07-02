@@ -12,6 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/common.sh  # BASE_CXXFLAGS, etc.
+source cpp/NINJA-steps.sh  # compile_and_link
 
 CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
 
@@ -24,37 +25,33 @@ readonly TMP_DIR='_build/asdl-test'
 gen-cpp-test() {
   export ASAN_OPTIONS='detect_leaks=0'
 
-  local dir=$TMP_DIR
-  mkdir -p $dir
+  local tmp_dir=$TMP_DIR
+  local out_dir=_bin/cxx-asan/asdl
 
-  local prefix=$dir/typed_arith_asdl
+  mkdir -p $tmp_dir $out_dir
+
+  local prefix=$tmp_dir/typed_arith_asdl
   asdl-tool cpp asdl/typed_arith.asdl $prefix
 
-  local prefix2=$dir/demo_lib_asdl
+  local prefix2=$tmp_dir/demo_lib_asdl
   asdl-tool cpp asdl/demo_lib.asdl $prefix2
 
-  local prefix3=$dir/typed_demo_asdl
+  local prefix3=$tmp_dir/typed_demo_asdl
   asdl-tool cpp asdl/typed_demo.asdl $prefix3
 
   wc -l $prefix* $prefix2*
 
-  local bin=_bin/gen_cpp_test
+  local bin=$out_dir/gen_cpp_test
 
-  # $CLANGXX -ferror-limit=10 \
-  $CXX \
-    $CPPFLAGS \
-    -D LEAKY_BINDINGS \
-    -I "$REPO_ROOT" \
-    -o $bin \
+  compile_and_link cxx asan '-D LEAKY_BINDINGS' $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
     mycpp/mylib_leaky.cc \
     mycpp/gc_heap.cc \
     _build/cpp/hnode_asdl.cc \
-    $dir/typed_arith_asdl.cc \
-    $dir/typed_demo_asdl.cc 
+    $tmp_dir/typed_arith_asdl.cc \
+    $tmp_dir/typed_demo_asdl.cc 
 
-  #gdb -batch -ex run -ex bt --args $bin "$@"
   $bin "$@"
 }
 
@@ -65,31 +62,28 @@ gc-test() {
   # for hnode_asdl.gc.cc
   build/dev.sh oil-asdl-to-cpp-gc
 
-  local dir=$TMP_DIR
-  mkdir -p $dir
+  local tmp_dir=$TMP_DIR
+  local out_dir=_bin/cxx-asan/asdl
+  mkdir -p $tmp_dir $out_dir
 
-  local prefix2=$dir/demo_lib_asdl.gc
+  local prefix2=$tmp_dir/demo_lib_asdl.gc
   GC=1 asdl-tool cpp asdl/demo_lib.asdl $prefix2
 
-  local prefix3=$dir/typed_demo_asdl.gc
+  local prefix3=$tmp_dir/typed_demo_asdl.gc
   GC=1 asdl-tool cpp asdl/typed_demo.asdl $prefix3
 
-  local bin=_bin/asdl_gc_test
+  local bin=$out_dir/asdl_gc_test
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
-  $CXX $CPPFLAGS \
-    -I "$REPO_ROOT" \
-    -o $bin \
+  compile_and_link cxx asan '' $bin \
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \
     mycpp/my_runtime.cc \
     mycpp/mylib2.cc \
     asdl/runtime.gc.cc \
     _build/cpp/hnode_asdl.gc.cc \
-    $dir/demo_lib_asdl.gc.cc \
-    $dir/typed_demo_asdl.gc.cc
-
-  #gdb -batch -ex run -ex bt --args $bin "$@"
+    $tmp_dir/demo_lib_asdl.gc.cc \
+    $tmp_dir/typed_demo_asdl.gc.cc
 
   $bin "$@"
 }
@@ -97,10 +91,11 @@ gc-test() {
 hnode-asdl-gc() {
   ### Test that hnode can compile by itself
 
-  local dir=$TMP_DIR
-  mkdir  -p $dir _bin
+  local tmp_dir=$TMP_DIR
+  local out_dir=_bin/cxx-asan/asdl
+  mkdir -p $tmp_dir $out_dir
 
-  cat >$dir/hnode_asdl_test.cc <<'EOF'
+  cat >$tmp_dir/hnode_asdl_test.cc <<'EOF'
 #include "_build/cpp/hnode_asdl.gc.h"
 
 int main() {
@@ -109,13 +104,11 @@ int main() {
 }
 EOF
 
-  local bin=_bin/hnode_asdl_test
-  $CXX \
-    $CPPFLAGS \
-    -I "$REPO_ROOT" \
-    -o $bin \
+  local bin=$out_dir/hnode_asdl_test
+
+  compile_and_link cxx asan '' $bin \
     _build/cpp/hnode_asdl.gc.cc \
-    $dir/hnode_asdl_test.cc
+    $tmp_dir/hnode_asdl_test.cc
 
   $bin
 }
@@ -132,10 +125,11 @@ one-asdl-gc() {
     echo ---
   fi
 
-  local dir=$TMP_DIR
-  mkdir  -p $dir _bin
+  local tmp_dir=$TMP_DIR
+  local out_dir=_bin/cxx-asan/asdl
+  mkdir -p $tmp_dir $out_dir
 
-  cat >$dir/${name}_asdl_test.cc <<EOF
+  cat >$tmp_dir/${name}_asdl_test.cc <<EOF
 #include "_build/cpp/${name}_asdl.gc.h"
 
 int main() {
@@ -144,19 +138,15 @@ int main() {
 }
 EOF
 
-  local bin=_bin/${name}_asdl_test
+  local bin=$out_dir/${name}_asdl_test
 
-  # $CLANGXX -ferror-limit=10 \
-  $CXX \
-    $CPPFLAGS \
-    -I "$REPO_ROOT" \
-    -o $bin \
+  compile_and_link cxx asan '' $bin \
     _build/cpp/${name}_asdl.gc.cc \
     asdl/runtime.gc.cc \
     mycpp/gc_heap.cc \
     mycpp/my_runtime.cc \
     mycpp/mylib2.cc \
-    $dir/${name}_asdl_test.cc \
+    $tmp_dir/${name}_asdl_test.cc \
     "$@"
 
   $bin
