@@ -157,6 +157,8 @@ class Str : public gc_heap::Obj {
   }
   // s[begin:end]
   Str* slice(int begin, int end) {
+    begin = std::min(begin, len_);
+    end = std::min(end, len_);
 
     assert(begin <= len_);
     assert(end <= len_);
@@ -169,6 +171,12 @@ class Str : public gc_heap::Obj {
       end = len_ + end;
     }
 
+    begin = std::min(begin, len_);
+    end = std::min(end, len_);
+
+    begin = std::max(begin, 0);
+    end = std::max(end, 0);
+
     assert(begin >= 0);
     assert(begin <= len_);
 
@@ -176,6 +184,8 @@ class Str : public gc_heap::Obj {
     assert(end <= len_);
 
     int new_len = end - begin;
+
+    /* printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len); */
 
     assert(new_len >= 0);
     assert(new_len <= len_);

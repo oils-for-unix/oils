@@ -484,6 +484,7 @@
 21 _tmp/spec/cpp/builtin-io.tsv
 22 _tmp/spec/cpp/builtin-io.tsv
 24 _tmp/spec/cpp/builtin-io.tsv
+25 _tmp/spec/cpp/builtin-io.tsv
 26 _tmp/spec/cpp/builtin-io.tsv
 27 _tmp/spec/cpp/builtin-io.tsv
 28 _tmp/spec/cpp/builtin-io.tsv
@@ -534,6 +535,7 @@
 14 _tmp/spec/cpp/builtin-printf.tsv
 15 _tmp/spec/cpp/builtin-printf.tsv
 16 _tmp/spec/cpp/builtin-printf.tsv
+17 _tmp/spec/cpp/builtin-printf.tsv
 18 _tmp/spec/cpp/builtin-printf.tsv
 19 _tmp/spec/cpp/builtin-printf.tsv
 20 _tmp/spec/cpp/builtin-printf.tsv
@@ -1403,7 +1405,6 @@
 9 _tmp/spec/cpp/var-ref.tsv
 10 _tmp/spec/cpp/var-ref.tsv
 11 _tmp/spec/cpp/var-ref.tsv
-12 _tmp/spec/cpp/var-ref.tsv
 13 _tmp/spec/cpp/var-ref.tsv
 14 _tmp/spec/cpp/var-ref.tsv
 15 _tmp/spec/cpp/var-ref.tsv
