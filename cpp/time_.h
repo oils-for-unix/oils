@@ -36,24 +36,35 @@ inline Str* strftime(Str* s, time_t ts) {
 
   tm* loc_time = ::localtime(&ts);
 
-  const int buf_size = 1024;
-  char buffer[buf_size] = {};
+  uint64_t temp_buf_size = (s->len_ + 1024) * 2; // NOTE(Jesse): Something completely arbitrary I came up with
+  char *temp_buf = static_cast<char*>(malloc(temp_buf_size)); // Doesn't have to be cleared; malloc is fine.
 
-  if (int size_of_result = strftime(buffer, buf_size, s->data_, loc_time)) {
+  if (int size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time)) {
     // Adding 1 to size_of_result is safe, as long as the strftime function
     // actually behaves as specified.
     //
     // https://cplusplus.com/reference/ctime/strftime/
     //
-    // The (buf_size) param describes how much space is in the buffer for the
+    // The (temp_buf_size) param describes how much space is in the temp_buf for the
     // result string, including a null.  The return value (size_of_result) is
-    // the number of bytes copied to (buffer), excluding the null.  This means
-    // that the max value of (size_of_result) will be (buf_size-1).  If the
-    // size of the string produced (including the null) exceeds (buf_size) the
+    // the number of bytes copied to (temp_buf), excluding the null.  This means
+    // that the max value of (size_of_result) will be (temp_buf_size-1).  If the
+    // size of the string produced (including the null) exceeds (temp_buf_size) the
     // function returns 0.
     //
-    result = new Str(buffer, size_of_result + 1);
+    result = new Str(temp_buf, size_of_result + 1);
   }
+  else
+  {
+    snprintf(temp_buf,
+             temp_buf_size,
+             "Call strftime failed.  The result from the format string specified was too long to be accomodated. The buffer we allocated was (%lu) bytes.",
+             temp_buf_size);
+
+    e_die(new Str(temp_buf));
+  }
+
+  free(temp_buf);
 
   return result;
 }
