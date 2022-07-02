@@ -6,6 +6,8 @@
 #include <time.h>
 
 #include "mycpp/mylib_leaky.h"
+#include "cpp/core_error.h"
+#include "cpp/core_pyerror.h"
 
 namespace time_ {
 
@@ -44,7 +46,7 @@ inline Str* strftime(Str* s, time_t ts) {
   {
     size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time);
 
-    while (temp_buf_size < Megabytes(10))
+    while (size_of_result == 0 && temp_buf_size < Megabytes(10))
     {
       temp_buf_size = temp_buf_size * 2;
       temp_buf = static_cast<char*>(realloc(temp_buf, temp_buf_size));
@@ -61,13 +63,7 @@ inline Str* strftime(Str* s, time_t ts) {
   }
   else
   {
-    snprintf(temp_buf,
-             temp_buf_size,
-             "Call strftime failed.  The result from the format string specified was too long to be accomodated. The buffer we allocated was (%lu) bytes.",
-             temp_buf_size);
-
-    fprintf(stderr, "%s", temp_buf);
-    /* e_die(new Str(temp_buf)); */
+    e_die(new Str("Call strftime failed.  The result from the format string specified was too long to be accomodated."));
   }
 
   free(temp_buf);
