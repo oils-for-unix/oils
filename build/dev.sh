@@ -252,11 +252,8 @@ oil-cpp() {
   build/translate.sh osh-eval  # translate with mycpp
 
   ./NINJA_config.py  # Create it for the first time
-  if test -f "$CLANGXX"; then
-    time build/native.sh compile-quickly  # Clang compiles more quickly
-  else
-    time ninja _bin/cxx-dbg/osh_eval
-  fi
+
+  time ninja _bin/cxx-dbg/osh_eval
 
   echo
   wc -l _build/cpp/*
