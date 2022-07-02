@@ -160,7 +160,7 @@ cpp-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/dev.sh minimal                  -
-cpp-unit-all     test/cpp-unit.sh all                  -
+cpp-unit         test/cpp-unit.sh soil-run             -
 mycpp-git        mycpp/deps.sh git-clone               -
 mycpp-pip        mycpp/deps.sh pip-install             -
 build-osh-eval   build/dev.sh oil-cpp                  -

@@ -94,7 +94,9 @@ config() {
 
 clean() {
   ### e.g. to time ninja build
-  rm -r -f -v _bin/* _build/obj/*
+  rm -r -f --verbose _bin _build _test build.ninja
+
+  # _release is for docs
 }
 
 gen-oil-native-sh() {

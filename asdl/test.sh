@@ -179,4 +179,12 @@ all-asdl-gc() {
   one-asdl-gc syntax _build/cpp/id_kind_asdl.cc
 }
 
+unit() {
+  asdl/test.sh gen-cpp-test
+  asdl/test.sh gc-test  # integration between ASDL and the GC heap
+
+  # test each ASDL file on its own, perhaps with the garbage-collected ASDL runtime
+  asdl/test.sh all-asdl-gc
+}
+
 "$@"

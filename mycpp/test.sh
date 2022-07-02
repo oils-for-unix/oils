@@ -107,13 +107,20 @@ unit() {
   mkdir -p $log_dir
 
   for b in _test/bin/unit/*.$variant; do
-    local log=$log_dir/$(basename $b) 
-    echo "log $log"
+    local log=$log_dir/$(basename $b).log
+    echo "RUN $b : $log"
 
+    set +o errexit
     $b >$log 2>&1
     local status=$?
+    set -o errexit
 
-    echo "status $status"
+    if test "$status" -eq 0; then
+      echo 'OK'
+    else
+      echo "FAIL with status $?"
+      return $status
+    fi
   done
 }
 

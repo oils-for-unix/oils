@@ -368,8 +368,8 @@ yajl() {
 }
 
 clean() {
-  rm -f --verbose libc.so fastlex.so line_input.so posix_.so
-  rm -r -f --verbose _devbuild/py-ext
+  rm -f --verbose *.so
+  rm -r -f --verbose _devbuild
 }
 
 py-source() {
