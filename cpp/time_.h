@@ -7,6 +7,9 @@
 
 #include "mycpp/mylib_leaky.h"
 
+#include "cpp/core_error.h"
+#include "cpp/core_pyerror.h"
+
 namespace time_ {
 
 inline void tzset() {
@@ -41,6 +44,8 @@ inline Str* strftime(Str* s, time_t ts) {
 
   if (int size_of_result = strftime(buffer, buf_size, s->data_, loc_time)) {
     result = new Str(buffer, size_of_result);
+  } else {
+   e_die(new Str("Call strftime failed. The result from the format string specified was too long to be accomodated."));
   }
 
   return result;
