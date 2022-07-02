@@ -405,13 +405,7 @@ def NinjaGraph(n, u):
               variables=[('variant', variant), ('more_cxx_flags', mycpp_unit_flags)])
       n.newline()
 
-      prefix = '_test/tasks/unit/%s.%s' % (test_name, variant)
-      task_out = '%s.task.txt' % prefix
-      log_out = '%s.log.txt' % prefix
-      n.build([task_out, log_out], 'task', b)
-      n.newline()
-
-      phony['mycpp-unit'].append(task_out)
+      phony['mycpp-unit'].append(b)
 
       u.unit_test('%s.%s' % (test_path.replace('/', '-'), variant), b)
       u.newline()

@@ -96,21 +96,30 @@ opt-bench() {
   run-variant opt 1
 }
 
-# my_runtime_test has an error and an AssertionError under ubsan!
-
 unit() {
   local variant=${1:-ubsan}
 
-  # TODO: This shouldn't run tests!
-  #ninja mycpp-unit
+  ninja mycpp-unit
 
-  set +o errexit
+  local log_dir=_test/unit
+  mkdir -p $log_dir
+
   for b in _test/bin/unit/*.$variant; do
-    echo $b
-    $b >/dev/null 2>&1
+    local log=$log_dir/$(basename $b) 
+    echo "log $log"
+
+    $b >$log 2>&1
     local status=$?
+
     echo "status $status"
   done
+}
+
+soil-run() {
+  unit testgc
+
+  # my_runtime_test has an error and an AssertionError under ubsan!
+  #unit ubsan
 }
 
 "$@"
