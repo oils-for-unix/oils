@@ -20,18 +20,22 @@ Code Layout:
 
 Output Layout:
 
-  _test/
-    bin/          # binaries
-      examples/   # many variants
-        cgi.asan  # for testing
-        cgi.opt   # for benchmarking
-        classes.asan
-        classes.opt
-      examples-stripped/  # not really used
-        cgi.opt
-      unit/       # unit tests
-        gc_heap_test.testgc
+  _bin/
 
+    cxx-dbg/
+      mycpp-examples/
+        cgi
+        classes
+
+    cxx-opt/
+      mycpp-examples/
+        cgi.stripped
+
+    cxx-testgc/
+      mycpp-unit/
+        gc_heap_test
+
+  _test/
     gen-mycpp/  # rewrite
       varargs_raw.cc
       varargs.cc
@@ -210,8 +214,6 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
   if translator == 'pea':
     phony['pea-translate'].append(cc_src)
 
-  more_cxx_flags = "''"
-
   if translator == 'mycpp':
     variants = ['testgc', 'asan', 'ubsan', 'opt']
   else:
@@ -219,13 +221,14 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
 
   # Compile C++.
   for variant in variants:
-    b = '_test/bin/examples-%s/%s.%s' % (translator, ex, variant)
-    n.build(
-        b, 'compile',
-        [cc_src] + RUNTIME + EXAMPLES_CC.get(ex, []),
-        variables=[
-            ('variant', variant), ('more_cxx_flags', more_cxx_flags)
-        ])
+    b = '_bin/cxx-%s/%s-examples/%s' % (variant, translator, ex)
+
+    example_vars = [
+        ('compiler', 'cxx'), ('variant', variant), ('more_cxx_flags', "''")
+    ]
+    n.build(b, 'compile_and_link',  # defined in cpp/NINJA-steps.sh
+            [cc_src] + RUNTIME + EXAMPLES_CC.get(ex, []),
+            variables=example_vars)
     n.newline()
 
     if translator == 'pea':
@@ -235,7 +238,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
       phony['mycpp-%s' % variant].append(b)
 
     if variant == 'opt':
-      stripped = '_test/bin/examples-%s/%s.%s.stripped' % (translator, ex, variant)
+      stripped = '_bin/cxx-%s/%s-examples/%s.stripped' % (variant, translator, ex)
       # no symbols
       n.build([stripped, ''], 'strip', [b],
               variables=[('variant', variant)])
@@ -274,10 +277,10 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
     to_compare.append(cc_log_out)
     to_compare.append(py_log_out)
 
-    n.build([task_out, cc_log_out], 'example-task',
-            '_test/bin/examples-%s/%s.%s' % (translator, ex, variant),
+    b_example = '_bin/cxx-%s/%s-examples/%s' % (variant, translator, ex)
+    n.build([task_out, cc_log_out], 'example-task', [b_example],
             variables=[
-              ('bin', '_test/bin/examples-%s/%s.%s' % (translator, ex, variant)),
+              ('bin', b_example),
               ('name', ex), ('impl', 'C++')])
     n.newline()
 
@@ -317,11 +320,6 @@ def NinjaGraph(n, u):
   n.rule('wrap-cc',
          command='mycpp/NINJA-steps.sh wrap-cc $name $in $preamble_path $out',
          description='wrap-cc $name $in $preamble_path $out')
-  n.newline()
-  n.rule('compile',
-         # note: $in can be MULTIPLE files, shell-quoted
-         command='mycpp/NINJA-steps.sh compile $variant $out $more_cxx_flags $in',
-         description='compile $variant $out $more_cxx_flags $in')
   n.newline()
   n.rule('task',
          # note: $out can be MULTIPLE FILES, shell-quoted
@@ -394,15 +392,21 @@ def NinjaGraph(n, u):
     test_name = os.path.basename(test_path)
 
     for variant in ['testgc', 'ubsan']:  # , 'asan', 'opt']:
-      b = '_test/bin/unit/%s.%s' % (test_name, variant)
+      b = '_bin/cxx-%s/mycpp-unit/%s' % (variant, test_name)
 
       main_cc = '%s.cc' % test_path
 
       # for gHeap.Report() and Protect()
       mycpp_unit_flags = "'-D GC_DEBUG -D GC_PROTECT'"
 
-      n.build([b], 'compile', [main_cc] + cc_files,
-              variables=[('variant', variant), ('more_cxx_flags', mycpp_unit_flags)])
+      unit_test_vars = [
+          ('compiler', 'cxx'),
+          ('variant', variant),
+          ('more_cxx_flags', mycpp_unit_flags)
+      ]
+
+      n.build([b], 'compile_and_link', [main_cc] + cc_files,
+              variables=unit_test_vars)
       n.newline()
 
       phony['mycpp-unit'].append(b)

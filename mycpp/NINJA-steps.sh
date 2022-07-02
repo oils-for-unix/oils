@@ -155,7 +155,7 @@ task() {
   # The rest of the args are passed as flags to time-tsv
 
   case $bin in
-    (_test/bin/*.asan)
+    (_bin/cxx-asan/*)
       # We could detect leaks when GC is turned on?
       export ASAN_OPTIONS='detect_leaks=0'
       ;;

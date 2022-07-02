@@ -243,6 +243,7 @@ oil-asdl-to-cpp-gc() {
 
 oil-cpp() {
   oil-asdl-to-cpp
+
   arith-parse-cpp-gen
   build/codegen.sh flag-gen-cpp
 

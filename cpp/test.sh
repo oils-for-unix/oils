@@ -67,8 +67,8 @@ readonly GC_TEST_SRC=(
 gc-binding-test() {
   local leaky_mode=${1:-}
 
-  local bin=_bin/gc_binding_test${leaky_mode}.dbg  # can't be ASAN; it has its own allocator
-  mkdir -p _bin
+  local out_dir=_bin/cxx-testgc/cpp
+  mkdir -p $out_dir
 
   local more_cxx_flags='-D DUMB_ALLOC'  # do we need this?
   if test -n "$leaky_mode"; then
@@ -76,6 +76,7 @@ gc-binding-test() {
     more_cxx_flags+=' -D LEAKY_BINDINGS -D LEAKY_TEST_MODE'
   fi
 
+  local bin=$out_dir/gc_binding_test${leaky_mode}
   compile_and_link cxx testgc "$more_cxx_flags" $bin \
     "${GC_TEST_SRC[@]}" cpp/dumb_alloc.cc
 
@@ -84,7 +85,7 @@ gc-binding-test() {
 
 all-gc-binding-test() {
   gc-binding-test        # normal GC mode
-  gc-binding-test '.leaky'  # test in leaky mode too
+  gc-binding-test '.LEAKY'  # test in leaky mode too
 }
 
 unit() {
