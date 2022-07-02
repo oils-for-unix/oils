@@ -30,6 +30,7 @@ inline time_t localtime(time_t ts) {
 }
 
 inline Str* strftime(Str* s, time_t ts) {
+  int size_of_result = 0;
   Str* result = kEmptyString;
 
   assert(s->IsNulTerminated());
@@ -39,19 +40,21 @@ inline Str* strftime(Str* s, time_t ts) {
   uint64_t temp_buf_size = (s->len_ + 1024) * 2; // NOTE(Jesse): Something completely arbitrary I came up with
   char *temp_buf = static_cast<char*>(malloc(temp_buf_size)); // Doesn't have to be cleared; malloc is fine.
 
-  int size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time);
-
-  int tries = 0;
-  int max_tries = 3; // Retry the allocation 3 times, then bail
-  while (tries < max_tries && size_of_result == 0)
+  if (temp_buf)
   {
-    temp_buf_size = temp_buf_size * 2;
-    temp_buf = realloc(temp_buf, temp_buf_size);
-    if (temp_buf)
+    size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time);
+
+    int tries = 0;
+    int max_tries = 3;
+    while (tries++ < max_tries && size_of_result == 0)
     {
-      size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time);
+      temp_buf_size = temp_buf_size * 2;
+      temp_buf = static_cast<char*>(realloc(temp_buf, temp_buf_size));
+      if (temp_buf)
+      {
+        size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time);
+      }
     }
-    ++tries;
   }
 
   if (size_of_result)
