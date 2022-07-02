@@ -40,19 +40,7 @@ inline Str* strftime(Str* s, time_t ts) {
   char buffer[buf_size] = {};
 
   if (int size_of_result = strftime(buffer, buf_size, s->data_, loc_time)) {
-    // Adding 1 to size_of_result is safe, as long as the strftime function
-    // actually behaves as specified.
-    //
-    // https://cplusplus.com/reference/ctime/strftime/
-    //
-    // The (buf_size) param describes how much space is in the buffer for the
-    // result string, including a null.  The return value (size_of_result) is
-    // the number of bytes copied to (buffer), excluding the null.  This means
-    // that the max value of (size_of_result) will be (buf_size-1).  If the
-    // size of the string produced (including the null) exceeds (buf_size) the
-    // function returns 0.
-    //
-    result = new Str(buffer, size_of_result + 1);
+    result = new Str(buffer, size_of_result);
   }
 
   return result;
