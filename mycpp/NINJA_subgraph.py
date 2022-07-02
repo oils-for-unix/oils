@@ -30,7 +30,7 @@ Output Layout:
       examples-stripped/  # not really used
         cgi.opt
       unit/       # unit tests
-        gc_heap_test.gc_debug
+        gc_heap_test.testgc
 
     gen-mycpp/  # rewrite
       varargs_raw.cc
@@ -41,7 +41,7 @@ Output Layout:
 
     tasks/        # *.txt and *.task.txt for .wwz
       typecheck/  # optionally run
-      test/       # py, gc_debug, asan, opt
+      test/       # py, testgc, asan, opt
       benchmark/
       unit/
 
@@ -131,20 +131,22 @@ def ShouldSkipBenchmark(name):
   if name.startswith('test_'):
     return True
 
-  # BUG: 8191 exceptions problem, I think caused by Alloc<ParseError>
-  if name == 'control_flow':
-    return True
+  # two crashes
 
   # BUG: Assertion failure here!
   if name == 'cartesian':
     return True
-
-  # BUG: Different number of iterations!
-  if name == 'files':
-    return True
-
   # This crashes with an assertion -- probably because ASDL has no GC header!
   if name == 'parse':
+    return True
+
+  # two differences
+
+  # BUG: 8191 exceptions problem, I think caused by Alloc<ParseError>
+  if name == 'control_flow':
+    return True
+  # BUG: Different number of iterations!
+  if name == 'files':
     return True
 
   return False
@@ -211,9 +213,9 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
   more_cxx_flags = "''"
 
   if translator == 'mycpp':
-    variants = ['gc_debug', 'asan', 'opt']
+    variants = ['testgc', 'asan', 'opt']
   else:
-    variants = ['gc_debug']  # just do one for now
+    variants = ['testgc']  # just do one for now
 
   # Compile C++.
   for variant in variants:
@@ -229,8 +231,8 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
     if translator == 'pea':
       phony['pea-compile'].append(b)
 
-    if translator == 'mycpp' and variant == 'gc_debug':
-      phony['gc_debug'].append(b)
+    if translator == 'mycpp':
+      phony['mycpp-%s' % variant].append(b)
 
     if variant == 'opt':
       stripped = '_test/bin/examples-%s/%s.%s.stripped' % (translator, ex, variant)
@@ -356,20 +358,24 @@ def NinjaGraph(n, u):
 
   # Groups of targets.  Not all of these are run by default.
   phony = {
+      # The 'mycpp-all' target is currently everything that starts with mycpp.
+      # Or should this be mycpp-default / mycpp-logs-equal?
+
       'mycpp-unit': [],
       'mycpp-typecheck': [],  # optional: for debugging only.  translation does it.
-
-      'benchmark-table': [],
+      'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
 
       # Compare logs for tests AND benchmarks.
       # It's a separate task because we have multiple variants to compare, and
       # the timing of test/benchmark tasks should NOT include comparison.
       'mycpp-logs-equal': [],
 
-      'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
+      # NOTE: _test/benchmark-table.tsv isn't included in any phony target
 
-      # examples
-      'gc_debug': [],
+      # variants
+      'mycpp-testgc': [],
+      'mycpp-asan': [],
+      'mycpp-opt': [],
 
       'pea-translate': [],
       'pea-compile': [],
@@ -387,7 +393,7 @@ def NinjaGraph(n, u):
     test_name = os.path.basename(test_path)
 
     # TODO: doesn't run under pure 'asan' because of -D GC_DEBUG, etc.
-    for variant in ['gc_debug']:  # , 'asan', 'opt']:
+    for variant in ['testgc']:  # , 'asan', 'opt']:
       b = '_test/bin/unit/%s.%s' % (test_name, variant)
 
       main_cc = '%s.cc' % test_path
@@ -483,8 +489,6 @@ def NinjaGraph(n, u):
   out = '_test/benchmark-table.tsv'
   n.build([out], 'benchmark-table', benchmark_tasks)
   n.newline()
-
-  phony['benchmark-table'].append(out)
 
   #
   # Write phony rules we accumulated

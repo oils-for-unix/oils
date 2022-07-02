@@ -43,7 +43,8 @@ int main(int argc, char **argv) {
   gc_heap::gHeap.Init(128 << 10);  // 128 KiB; doubling in size
   // gc_heap::gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
 
-  if (getenv("BENCHMARK")) {
+  char* b = getenv("BENCHMARK");
+  if (b && strlen(b)) {  // match Python's logic
     fprintf(stderr, "Benchmarking...\\n");
     $main_module::run_benchmarks();
   } else {
@@ -118,7 +119,7 @@ compile() {
     ('opt')
       flags+=' -O2 -g'  # -g so you can debug crashes?
       ;;
-    ('gc_debug')
+    ('testgc')
       # TODO: GC_REPORT and GC_VERBOSE instead?
       flags+=' -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC'
       ;;
