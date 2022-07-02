@@ -31,7 +31,7 @@ manifest() {
     build/native.sh \
     cpp/ \
     mycpp/common.sh \
-    mycpp/mylib.{cc,h} \
+    mycpp/mylib_leaky.{cc,h} \
     mycpp/gc_heap.{cc,h} \
     mycpp/my_runtime.{cc,h} \
     mycpp/myerror.h \
