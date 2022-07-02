@@ -2,7 +2,6 @@
 
 #include "core_pyos.h"  // undefined errno
 
-#include <errno.h>
 #include <pwd.h>
 #include <signal.h>
 #include <sys/wait.h>  // waitpid()

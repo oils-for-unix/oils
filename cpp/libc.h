@@ -5,10 +5,18 @@
 
 #include <fnmatch.h>
 #include <unistd.h>  // gethostname()
+#include <limits.h>
+#include <stdlib.h>
 
 #include "mycpp/mylib.h"
 
 namespace libc {
+
+inline Str* realpath(Str* path) {
+  assert(path->IsNulTerminated());
+  char *rp = ::realpath(path->data_, 0);
+  return new Str(rp);
+}
 
 inline Str* gethostname() {
   char* buf = static_cast<char*>(malloc(HOST_NAME_MAX + 1));
@@ -35,13 +43,11 @@ List<Str*>* regex_match(Str* pattern, Str* str);
 
 Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos);
 
-inline void print_time(double real, double user, double sys) {
-  NotImplemented();
+inline void print_time(double real_time, double user_time, double system_time) {
+  // TODO(Jesse): How to we report CPU load? .. Do we need to?
+  printf("%1.2fs user %1.2fs system BUG cpu %1.3f total", user_time, system_time, real_time); //0.05s user 0.03s system 2% cpu 3.186 total
 }
 
-inline Str* realpath(Str* path) {
-  NotImplemented();
-}
 
 }  // namespace libc
 
