@@ -38,7 +38,7 @@ leaky-binding-test-asan() {
   local bin=_bin/leaky_binding_test.asan
   mkdir -p _bin
 
-  compile_and_link cxx asan $bin -D CPP_UNIT_TEST \
+  compile_and_link cxx asan '' $bin -D CPP_UNIT_TEST \
     "${LEAKY_TEST_SRC[@]}"
 
   $bin "$@"
@@ -50,7 +50,7 @@ leaky-binding-test() {
 
   # dumb_alloc.cc exposes allocator alignment issues?
 
-  compile_and_link cxx dbg $bin -D CPP_UNIT_TEST -D DUMB_ALLOC \
+  compile_and_link cxx dbg '' $bin -D CPP_UNIT_TEST -D DUMB_ALLOC \
     "${LEAKY_TEST_SRC[@]}" \
     cpp/dumb_alloc.cc
 
@@ -83,7 +83,7 @@ gc-binding-test() {
   # TODO: move these flags out
 
     #// -D GC_DEBUG -D GC_VERBOSE \
-  compile_and_link cxx dbg $bin \
+  compile_and_link cxx dbg '' $bin \
     -U LEAKY_BINDINGS -U NO_GC_HACK \
     -D DUMB_ALLOC \
     -D GC_EVERY_ALLOC -D GC_PROTECT \

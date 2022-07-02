@@ -201,7 +201,7 @@ compile_and_link() {
   local variant=$2
   local more_cxx_flags=$3
   local out=$4
-  shift 3
+  shift 4
 
   setglobal_compile_flags "$variant" "$more_cxx_flags" ""  # no dotd
 
