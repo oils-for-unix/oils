@@ -97,7 +97,9 @@ opt-bench() {
 }
 
 unit() {
-  local variant=${1:-ubsan}
+  ### Run by test/cpp-unit.sh
+
+  local variant=${1:-testgc}
 
   ninja mycpp-unit
 
@@ -113,13 +115,6 @@ unit() {
 
     echo "status $status"
   done
-}
-
-soil-run() {
-  unit testgc
-
-  # my_runtime_test has an error and an AssertionError under ubsan!
-  #unit ubsan
 }
 
 "$@"

@@ -100,7 +100,11 @@ all-gc-binding-test() {
 }
 
 all() {
-  mycpp/test.sh soil-run
+  ./NINJA_config.py
+
+  mycpp/test.sh unit  # uses Ninja
+
+  # Note: could factor this into {mycpp,cpp,asdl}/test.sh unit
 
   build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h
   build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
