@@ -519,6 +519,73 @@ TEST test_sizeof() {
   PASS();
 }
 
+TEST test_str_slice() {
+  printf("\n");
+
+  Str* s0 = new Str("abcdef");
+
+  printf("------ Happy Path --------\n");
+
+  { // Happy path
+    Str* s1 = s0->slice(0, 5);
+    ASSERT(str_equals(s1, new Str("abcde")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Str* s1 = s0->slice(1, 5);
+    ASSERT(str_equals(s1, new Str("bcde")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Str* s1 = s0->slice(0, 0);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Str* s1 = s0->slice(0, 6);
+    ASSERT(str_equals(s1, new Str("abcdef")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Str* s1 = s0->slice(-6, 6);
+    ASSERT(str_equals(s1, new Str("abcdef")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Str* s1 = s0->slice(0, -6);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Str* s1 = s0->slice(-6, -6);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  printf("---- Infinite Sadness ----\n");
+
+  {
+    Str* s1 = s0->slice(0, -7);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(-7, -7);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(-7, 0);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -538,6 +605,8 @@ int main(int argc, char** argv) {
   RUN_TEST(test_sizeof);
 
   RUN_TEST(test_list_tuple);
+
+  RUN_TEST(test_str_slice);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
