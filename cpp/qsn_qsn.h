@@ -5,6 +5,7 @@
 
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_leaky.h"
+using gc_heap::StackRoots;  // no-op
 using mylib::BlankStr;
 using mylib::CopyStr;
 using mylib::OverAllocatedStr;
@@ -44,19 +45,10 @@ inline bool IsPlainChar(Str* ch) {
 
 inline Str* XEscape(Str* ch) {
   assert(len(ch) == 1);
-  // WHY DOES THIS SEGFAULT?
-#if 0
+  StackRoots _roots({&ch});
   Str* result = BlankStr(4);
-  // log("result = %p", result);
-  // log("result->data_ = %p", result->data_);
-  // log("result->data() = %p", result->data());
   sprintf(result->data(), "\\x%02x", ch->data_[0] & 0xff);
   return result;
-#else
-  char buf[5];  // 4 + 1 for NUL
-  sprintf(buf, "\\x%02x", ch->data_[0] & 0xff);
-  return CopyStr(buf, 4);
-#endif
 }
 
 inline Str* UEscape(int codepoint) {
