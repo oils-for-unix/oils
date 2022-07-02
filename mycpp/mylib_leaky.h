@@ -157,15 +157,32 @@ class Str : public gc_heap::Obj {
   }
   // s[begin:end]
   Str* slice(int begin, int end) {
+
+    assert(begin <= len_);
+    assert(end <= len_);
+
     if (begin < 0) {
       begin = len_ + begin;
     }
+
     if (end < 0) {
       end = len_ + end;
     }
+
+    assert(begin >= 0);
+    assert(begin <= len_);
+
+    assert(end >= 0);
+    assert(end <= len_);
+
     int new_len = end - begin;
+
+    assert(new_len >= 0);
+    assert(new_len <= len_);
+
     char* buf = static_cast<char*>(malloc(new_len + 1));
     memcpy(buf, data_ + begin, new_len);
+
     buf[new_len] = '\0';
     return new Str(buf, new_len);
   }

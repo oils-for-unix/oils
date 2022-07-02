@@ -8,5 +8,6 @@
 (/home/scallywag/work/oil/cpp/core_pyos.h:122: bool pyos::InputAvailable(int): Assertion `0' failed.) _tmp/spec/cpp/builtin-io.html
 (/home/scallywag/work/oil/mycpp/gc_heap.h:268: void gc_heap::Heap::PushRoot(gc_heap::Obj**): Assertion `roots_top_ &lt; kMaxRoots' failed.) _tmp/spec/cpp/alias.html
 (/home/scallywag/work/oil/mycpp/gc_heap.h:268: void gc_heap::Heap::PushRoot(gc_heap::Obj**): Assertion `roots_top_ &lt; kMaxRoots' failed.) _tmp/spec/cpp/ble-idioms.html
-IF YOU SEE THIS OSH IS CRASHING (_tmp/spec/cpp/builtin-io.html:<pre>OSH_CPP_SEGFAULT)
+(/home/scallywag/work/oil/mycpp/mylib_leaky.h:161: Str* Str::slice(int, int): Assertion `begin &lt;= len_' failed.) _tmp/spec/cpp/builtin-io.html
+(/home/scallywag/work/oil/mycpp/mylib_leaky.h:162: Str* Str::slice(int, int): Assertion `end &lt;= len_' failed.) _tmp/spec/cpp/builtin-printf.html
 IF YOU SEE THIS OSH IS CRASHING (_tmp/spec/cpp/for-expr.html:<pre>OSH_CPP_SEGFAULT)
