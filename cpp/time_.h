@@ -39,19 +39,23 @@ inline Str* strftime(Str* s, time_t ts) {
   uint64_t temp_buf_size = (s->len_ + 1024) * 2; // NOTE(Jesse): Something completely arbitrary I came up with
   char *temp_buf = static_cast<char*>(malloc(temp_buf_size)); // Doesn't have to be cleared; malloc is fine.
 
-  if (int size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time)) {
-    // Adding 1 to size_of_result is safe, as long as the strftime function
-    // actually behaves as specified.
-    //
-    // https://cplusplus.com/reference/ctime/strftime/
-    //
-    // The (temp_buf_size) param describes how much space is in the temp_buf for the
-    // result string, including a null.  The return value (size_of_result) is
-    // the number of bytes copied to (temp_buf), excluding the null.  This means
-    // that the max value of (size_of_result) will be (temp_buf_size-1).  If the
-    // size of the string produced (including the null) exceeds (temp_buf_size) the
-    // function returns 0.
-    //
+  int size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time);
+
+  int tries = 0;
+  int max_tries = 3; // Retry the allocation 3 times, then bail
+  while (tries < max_tries && size_of_result == 0)
+  {
+    temp_buf_size = temp_buf_size * 2;
+    temp_buf = realloc(temp_buf, temp_buf_size);
+    if (temp_buf)
+    {
+      size_of_result = strftime(temp_buf, temp_buf_size, s->data_, loc_time);
+    }
+    ++tries;
+  }
+
+  if (size_of_result)
+  {
     result = new Str(temp_buf, size_of_result + 1);
   }
   else
