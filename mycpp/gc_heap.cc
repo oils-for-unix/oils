@@ -173,7 +173,7 @@ void Heap::Collect() {
           case Tag::Scanned:
             break;
           default:
-            assert(0); // NOTE(Jesse): Pretty sure this is InvalidCodePath();
+            assert(0);  // NOTE(Jesse): Pretty sure this is InvalidCodePath();
           }
         }
       }

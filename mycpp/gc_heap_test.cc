@@ -76,7 +76,6 @@ class LayoutForwarded : public Obj {
 };
 
 TEST test_str_creation() {
-
   Str* s = CopyStr("foo");
   ASSERT_EQ(3, len(s));
   ASSERT_EQ(0, strcmp("foo", s->data_));
@@ -106,7 +105,6 @@ TEST test_str_creation() {
 
   PASS();
 }
-
 
 // Doesn't really test anything
 TEST sizeof_test() {

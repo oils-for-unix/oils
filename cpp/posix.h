@@ -3,8 +3,8 @@
 #ifndef POSIX_H
 #define POSIX_H
 
+#include <stdlib.h>  // putenv
 #include <unistd.h>
-#include <stdlib.h> // putenv
 
 #include "mycpp/mylib.h"
 
@@ -59,11 +59,11 @@ inline Str* strerror(int err_num) {
 // TODO: write proper signatures
 // stat returns stat_result
 inline void stat() {
-  NotImplemented(); // Uncalled
+  NotImplemented();  // Uncalled
 }
 
 inline void lstat() {
-  NotImplemented(); // Uncalled
+  NotImplemented();  // Uncalled
 }
 
 inline Tuple2<int, int> pipe() {
@@ -81,7 +81,8 @@ inline int close(int fd) {
 }
 
 inline int putenv(Str* name, Str* value) {
-  int env_string_size = name->len_ + value->len_ + 1; // NOTE(Jesse): +1 for the '=' between them
+  int env_string_size =
+      name->len_ + value->len_ + 1;  // NOTE(Jesse): +1 for the '=' between them
   char* env_string = static_cast<char*>(malloc(env_string_size));
   snprintf(env_string, env_string_size, "%s=%s", name->data_, value->data_);
   return ::putenv(env_string);

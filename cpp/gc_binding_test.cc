@@ -5,14 +5,14 @@
 // leaky mode!
 
 #ifdef LEAKY_TEST_MODE
-  #include "mycpp/mylib.h"
-  #include "mycpp/gc_heap.h"
-  using mylib::CopyStr;
-  using gc_heap::StackRoots;  // no-op
+#include "mycpp/gc_heap.h"
+#include "mycpp/mylib.h"
+using gc_heap::StackRoots;  // no-op
+using mylib::CopyStr;
 #else
-  #include "mycpp/gc_heap.h"
-  using gc_heap::CopyStr;
-  using gc_heap::StackRoots;
+#include "mycpp/gc_heap.h"
+using gc_heap::CopyStr;
+using gc_heap::StackRoots;
 #endif
 
 TEST qsn_test() {

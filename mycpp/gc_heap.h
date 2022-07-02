@@ -77,7 +77,8 @@
 // - gc_heap::Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
-// - BlankStr(length), CopyStr(), NewList, NewDict: gc_heap::Alloc() doesn't work
+// - BlankStr(length), CopyStr(), NewList, NewDict: gc_heap::Alloc() doesn't
+// work
 //   for these types for various reasons
 // - Heap::Allocate()
 //   The untyped internal API.  For BlankStr() and NewSlab().
@@ -643,11 +644,11 @@ class Str : public gc_heap::Obj {
   bool isupper();
 
   Str* upper() {
-    NotImplemented(); // Uncalled
+    NotImplemented();  // Uncalled
   }
 
   Str* lower() {
-    NotImplemented(); // Uncalled
+    NotImplemented();  // Uncalled
   }
 
   // Other options for fast comparison / hashing / string interning:
@@ -1196,7 +1197,8 @@ class Dict : public gc_heap::Obj {
   V index_(K key) {
     int pos = position_of_key(key);
     if (pos == -1) {
-      InvalidCodePath(); // NOTE(Jesse): Should we really crash if asking for a key not in a dict?
+      InvalidCodePath();  // NOTE(Jesse): Should we really crash if asking for a
+                          // key not in a dict?
     } else {
       return values_->items_[pos];
     }

@@ -59,7 +59,7 @@ void _CreateDefaults(DefaultPair_c* in,
       }
     } break;
     default:
-      assert(0); // NOTE(Jesse): Pretty sure this is InvalidCodePath()
+      assert(0);  // NOTE(Jesse): Pretty sure this is InvalidCodePath()
     }
     out->set(new Str(pair->name), val);
     ++i;

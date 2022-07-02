@@ -16,10 +16,10 @@
 #include "gc_heap.h"
 
 // TODO: Don't use 'using' in header
+using gc_heap::BlankStr;
 using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::List;
-using gc_heap::BlankStr;
 using gc_heap::StackRoots;
 using gc_heap::Str;
 
@@ -144,7 +144,7 @@ inline bool to_bool(Str* s) {
 }
 
 inline double to_float(Str* s) {
-  NotImplemented(); // Uncalled
+  NotImplemented();  // Uncalled
 }
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
@@ -163,7 +163,7 @@ inline Str* str(int i) {
 }
 
 inline Str* str(double f) {  // TODO: should be double
-  NotImplemented(); // Uncalled
+  NotImplemented();          // Uncalled
 }
 
 inline int ord(Str* s) {
@@ -249,7 +249,8 @@ inline bool str_contains(Str* haystack, Str* needle) {
     return memchr(haystack->data_, needle->data_[0], len(haystack));
   }
 
-  // NOTE(Jesse): Not sure what this TODO means.  Remove strstr and do it ourselves maybe?
+  // NOTE(Jesse): Not sure what this TODO means.  Remove strstr and do it
+  // ourselves maybe?
   // TODO: Implement substring
   assert(0);
 

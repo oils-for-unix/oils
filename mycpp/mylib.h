@@ -50,7 +50,6 @@ void dict_remove(Dict<int, V>* haystack, int needle);
 
 };  // namespace mylib
 
-
 extern Str* kEmptyString;
 
 void print(Str* s);
@@ -796,7 +795,7 @@ template <typename K, typename V>
 Dict<K, V>* NewDict(std::initializer_list<K> keys,
                     std::initializer_list<V> values) {
   // TODO(Jesse): Is this NotImplemented() or InvalidCodePath() ?
-  assert(0); // Uncalled
+  assert(0);  // Uncalled
 }
 
 #endif  // LEAKY_MYLIB
@@ -966,7 +965,7 @@ inline Str* str(int i) {
 }
 
 inline Str* str(double f) {  // TODO: should be double
-  NotImplemented(); // Uncalled
+  NotImplemented();          // Uncalled
 }
 
 // Display a quoted representation of a string.  word_.Pretty() uses it.

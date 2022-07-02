@@ -52,7 +52,7 @@ Tuple2<int, int> ReadByte(int fd) {
 
 // for read --line
 Str* ReadLine() {
-  assert(0); // Does this get called?
+  assert(0);  // Does this get called?
 }
 
 Dict<Str*, Str*>* Environ() {

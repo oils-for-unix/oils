@@ -232,7 +232,7 @@ Str* Str::strip() {
 
 // Used for CommandSub in osh/cmd_exec.py
 Str* Str::rstrip(Str* chars) {
-  NotImplemented(); // Uncalled
+  NotImplemented();  // Uncalled
 }
 
 Str* Str::rstrip() {
@@ -465,7 +465,7 @@ List<Str*>* Str::split(Str* sep) {
       // like BlankStr(), but IN PLACE
       int obj_len = kStrHeaderSize + part_len + 1;  // NUL terminator
       Str* part = new (place) Str();                // placement new
-      part->SetObjLen(obj_len);                 // So the GC can copy it
+      part->SetObjLen(obj_len);                     // So the GC can copy it
       memcpy(part->data_, self->data_ + prev_pos + 1, part_len);
       result->set(i - 1, part);
       place += aligned(obj_len);

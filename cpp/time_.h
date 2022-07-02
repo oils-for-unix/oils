@@ -39,8 +39,7 @@ inline Str* strftime(Str* s, time_t ts) {
   const int buf_size = 1024;
   char buffer[buf_size] = {};
 
-  if ( int size_of_result = strftime (buffer, buf_size, s->data_, loc_time ))
-  {
+  if (int size_of_result = strftime(buffer, buf_size, s->data_, loc_time)) {
     // Adding 1 to size_of_result is safe, as long as the strftime function
     // actually behaves as specified.
     //

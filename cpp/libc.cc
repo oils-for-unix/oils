@@ -147,5 +147,4 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   return new Tuple2<int, int>(pos + start, pos + end);
 }
 
-
 }  // namespace libc

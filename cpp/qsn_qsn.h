@@ -10,11 +10,11 @@ using mylib::CopyStr;
 using mylib::OverAllocatedStr;
 #else
 #include "mycpp/gc_heap.h"
-using gc_heap::CopyStr;
-using gc_heap::Str;
-using gc_heap::StackRoots;
 using gc_heap::BlankStr;
+using gc_heap::CopyStr;
 using gc_heap::OverAllocatedStr;
+using gc_heap::StackRoots;
+using gc_heap::Str;
 #endif
 
 namespace qsn {

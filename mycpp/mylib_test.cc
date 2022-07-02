@@ -8,7 +8,6 @@
 
 // Emulating the gc_heap API.  COPIED from gc_heap_test.cc
 TEST test_str_creation() {
-
   Str* s = mylib::CopyStr("foo");
   ASSERT_EQ(3, len(s));
   ASSERT_EQ(0, strcmp("foo", s->data_));
@@ -539,7 +538,6 @@ int main(int argc, char** argv) {
   RUN_TEST(test_sizeof);
 
   RUN_TEST(test_list_tuple);
-
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
