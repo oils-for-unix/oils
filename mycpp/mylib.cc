@@ -208,6 +208,27 @@ Str* Str::join(List<Str*>* items) {
   return new Str(result, len);
 }
 
+
+  Str* Str::upper() {
+    Str *result = mylib::BlankStr(len_);
+    char *buffer = result->data();
+    for (int char_index = 0; char_index < len_; ++char_index)
+    {
+      buffer[char_index] = toupper(data_[char_index]);
+    }
+    return result;
+  }
+
+  Str* Str::lower() {
+    Str *result = mylib::BlankStr(len_);
+    char *buffer = result->data();
+    for (int char_index = 0; char_index < len_; ++char_index)
+    {
+      buffer[char_index] = tolower(data_[char_index]);
+    }
+    return result;
+  }
+
 // Get a string with one character
 Str* StrIter::Value() {
   char* buf = static_cast<char*>(malloc(2));

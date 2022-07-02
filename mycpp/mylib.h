@@ -47,7 +47,9 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle);
 
 template <typename V>
 void dict_remove(Dict<int, V>* haystack, int needle);
+
 };  // namespace mylib
+
 
 extern Str* kEmptyString;
 
@@ -346,14 +348,8 @@ class Str : public gc_heap::Obj {
     return -1;
   }
 
-  Str* upper() {
-    NotImplemented();
-  }
-
-  Str* lower() {
-    NotImplemented();
-  }
-
+  Str* upper();
+  Str* lower();
   Str* ljust(int width, Str* fillchar);
   Str* rjust(int width, Str* fillchar);
 
