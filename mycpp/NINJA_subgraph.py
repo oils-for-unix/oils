@@ -417,6 +417,7 @@ def NinjaGraph(n):
               variables=unit_test_vars)
       n.newline()
 
+      # Should we delete this in favor of mycpp/test.sh?
       phony['mycpp-unit'].append(b)
 
 

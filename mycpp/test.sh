@@ -120,7 +120,7 @@ unit() {
   local compiler=${1:-cxx}
   local variant=${2:-testgc}
 
-  ninja mycpp-unit
+  ninja mycpp-$variant
 
   local log_dir=_test/$compiler-$variant/mycpp-unit
   mkdir -p $log_dir
