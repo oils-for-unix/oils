@@ -388,8 +388,19 @@ def NinjaGraph(n):
     # assume names are unique
     test_name = os.path.basename(test_path)
 
-    for variant in ['testgc', 'ubsan']:  # , 'asan', 'opt']:
-      b = '_bin/cxx-%s/mycpp-unit/%s' % (variant, test_name)
+    MATRIX = [
+        ('cxx', 'testgc'),
+        ('cxx', 'ubsan'),
+
+        # Is Clang's better?  Right now I see the same failure in
+        # my_runtime_test, so just use GCC.
+        #('clang', 'ubsan'),
+
+        ('clang', 'coverage'),
+    ]
+
+    for (compiler, variant) in MATRIX:
+      b = '_bin/%s-%s/mycpp-unit/%s' % (compiler, variant, test_name)
 
       main_cc = '%s.cc' % test_path
 
@@ -397,7 +408,7 @@ def NinjaGraph(n):
       mycpp_unit_flags = "'-D GC_DEBUG -D GC_PROTECT'"
 
       unit_test_vars = [
-          ('compiler', 'cxx'),
+          ('compiler', compiler),
           ('variant', variant),
           ('more_cxx_flags', mycpp_unit_flags)
       ]
@@ -407,6 +418,7 @@ def NinjaGraph(n):
       n.newline()
 
       phony['mycpp-unit'].append(b)
+
 
   #
   # ASDL schema that examples/parse.py depends on

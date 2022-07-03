@@ -48,9 +48,6 @@ CXX=${CXX:-'c++'}
 
 BASE_CXXFLAGS='-std=c++11 -Wall -Wno-invalid-offsetof -fno-omit-frame-pointer'
 
-readonly CLANG_COV_FLAGS='-fprofile-instr-generate -fcoverage-mapping'
-readonly CLANG_LINK_FLAGS=''
-
 readonly PY27=Python-2.7.13
 
 readonly PREPARE_DIR=$REPO_ROOT/../oil_DEPS/cpython-full

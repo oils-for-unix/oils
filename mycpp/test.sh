@@ -115,16 +115,27 @@ ex-opt-bench() {
 unit() {
   ### Run by test/cpp-unit.sh
 
-  local variant=${1:-testgc}
+  local compiler=${1:-cxx}
+  local variant=${2:-testgc}
 
   ninja mycpp-unit
 
-  local log_dir=_test/cxx-$variant/unit
+  local log_dir=_test/$compiler-$variant/mycpp-unit
   mkdir -p $log_dir
 
-  for b in _bin/cxx-$variant/mycpp-unit/*; do
-    local log=$log_dir/$(basename $b).log
+  for b in _bin/$compiler-$variant/mycpp-unit/*; do
+    local prefix=$log_dir/$(basename $b)
+    local log=$prefix.log
+
     echo "RUN $b > $log"
+
+    if test "$variant" = 'coverage'; then
+      export LLVM_PROFILE_FILE=$prefix.profraw
+      if test "$(basename $b)" = 'my_runtime_test'; then
+        echo "SKIPPING $b"
+        continue
+      fi
+    fi
 
     set +o errexit
     $b >$log 2>&1
@@ -138,6 +149,59 @@ unit() {
       return $status
     fi
   done
+}
+
+unit-test-coverage() {
+  # Hm same crash here
+  unit clang coverage
+  ls -l _test/clang-coverage/mycpp-unit/*.profraw
+}
+
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+source build/common.sh  # $CLANG_DIR
+
+coverage-report() {
+  local dir=_test/clang-coverage/mycpp-unit
+
+  $CLANG_DIR/bin/llvm-profdata merge -sparse $dir/*.profraw \
+    -o $dir/ALL.profdata \
+
+  ls -l $dir
+
+  # https://llvm.org/docs/CommandGuide/llvm-cov.html
+  # Weird syntax
+  local bin_dir=_bin/clang-coverage/mycpp-unit
+
+  local -a args=()
+  for b in $bin_dir/*; do
+    args+=(--object $b)
+  done
+
+  echo 'ALL'
+
+  $CLANG_DIR/bin/llvm-cov show --instr-profile $dir/ALL.profdata "${args[@]}"
+
+  local html=$dir/REPORT.html
+  local html_dir=$dir/html
+  mkdir -p $html_dir
+
+  $CLANG_DIR/bin/llvm-cov show \
+    --format html --output-dir $html_dir \
+    --instr-profile $dir/ALL.profdata \
+    "${args[@]}"
+
+  #echo "Wrote $html"
+  #ls -l --si -h $html  # 2.2 MB of HTML
+
+  # 2.4 MB of HTML
+  du --si -s $html_dir
+
+  echo
+  echo
+
+  $CLANG_DIR/bin/llvm-cov report --instr-profile=$dir/ALL.profdata "${args[@]}"
+
+  # Also TODO: leaky_bindings_test, etc.
 }
 
 "$@"

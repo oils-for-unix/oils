@@ -140,7 +140,7 @@ def NinjaGraph(n):
   n.rule('preprocess',
          # compile_one detects the _build/preprocessed path
          command='cpp/NINJA-steps.sh compile_one $compiler $variant $more_cxx_flags $in $out',
-         description='compile_one $compiler $variant $more_cxx_flags $in $out')
+         description='PP $compiler $variant $more_cxx_flags $in $out')
   n.newline()
 
   # Preprocess one translation unit
@@ -153,26 +153,27 @@ def NinjaGraph(n):
   n.rule('compile_and_link',
          # multiple outputs
          command='cpp/NINJA-steps.sh compile_and_link $compiler $variant $more_cxx_flags $out $in',
-         description='compile_and_link $compiler $variant $more_cxx_flags $out $in')
+         description='CXX,LINK $compiler $variant $more_cxx_flags $out $in')
   n.newline()
 
   # Compile one translation unit
   n.rule('compile_one',
          command='cpp/NINJA-steps.sh compile_one $compiler $variant $more_cxx_flags $in $out $out.d',
          depfile='$out.d',
-         description='compile_one $compiler $variant $more_cxx_flags $in $out')
+         # no prefix since the compiler is the first arg
+         description='$compiler $variant $more_cxx_flags $in $out')
   n.newline()
 
   # Link objects together
   n.rule('link',
          command='cpp/NINJA-steps.sh link $compiler $variant $out $in',
-         description='link $compiler $variant $out $in')
+         description='LINK $compiler $variant $out $in')
   n.newline()
 
   # 1 input and 2 outputs
   n.rule('strip',
          command='cpp/NINJA-steps.sh strip_ $in $out',
-         description='strip $in $out')
+         description='STRIP $in $out')
   n.newline()
 
   if 0:
@@ -326,7 +327,7 @@ main() {
     obj_quoted = '"_build/obj/$compiler-$variant-sh/%s.o"' % base_name
     objects.append(obj_quoted)
 
-    print("  echo 'CC %s'" % src, file=f)
+    print("  echo 'CXX %s'" % src, file=f)
     print('  compile_one "$compiler" "$variant" "$more_cxx_flags" \\', file=f)
     print('    %s %s' % (src, obj_quoted), file=f)
 
