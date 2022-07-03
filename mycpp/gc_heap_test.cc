@@ -16,7 +16,7 @@ using gc_heap::Heap;
 using gc_heap::Obj;
 using gc_heap::Param;
 
-using gc_heap::BlankStr;
+using gc_heap::AllocStr;
 using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::GlobalStr;
@@ -85,7 +85,7 @@ TEST test_str_creation() {
   ASSERT_EQ(7, len(s2));
   ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
 
-  Str* s3 = BlankStr(1);
+  Str* s3 = AllocStr(1);
   ASSERT_EQ(1, len(s3));
   ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
 

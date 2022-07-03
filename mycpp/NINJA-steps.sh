@@ -19,7 +19,7 @@ source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PAT
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
 
 asdl-tool() {
-  GC=1 PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
 }
 
 asdl-mypy() {
@@ -31,7 +31,7 @@ asdl-mypy() {
 asdl-cpp() {
   local in=$1
   local out_prefix=$2
-  GC=1 asdl-tool cpp $in $out_prefix
+  asdl-tool cpp $in $out_prefix
 }
 
 gen-main() {
@@ -82,7 +82,9 @@ translate-mycpp() {
   local out=$1
   shift  # rest of args are inputs
 
-  export GC=1  # mycpp_main.py reads this
+  # Controls NewList vs. Alloc<List>
+  # TODO: mylib_leaky.h should grow the GC API
+  export GC=1
 
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different
   # PYTHONPATH.
@@ -155,7 +157,7 @@ task() {
   # The rest of the args are passed as flags to time-tsv
 
   case $bin in
-    (_test/bin/*.asan)
+    (_bin/cxx-asan/*)
       # We could detect leaks when GC is turned on?
       export ASAN_OPTIONS='detect_leaks=0'
       ;;

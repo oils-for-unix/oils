@@ -60,17 +60,17 @@ gc-test() {
   export ASAN_OPTIONS='detect_leaks=0'
 
   # for hnode_asdl.gc.cc
-  build/dev.sh oil-asdl-to-cpp-gc
+  build/dev.sh oil-asdl-to-cpp
 
   local tmp_dir=$TMP_DIR
   local out_dir=_bin/cxx-asan/asdl
   mkdir -p $tmp_dir $out_dir
 
-  local prefix2=$tmp_dir/demo_lib_asdl.gc
-  GC=1 asdl-tool cpp asdl/demo_lib.asdl $prefix2
+  local prefix2=$tmp_dir/demo_lib_asdl
+  asdl-tool cpp asdl/demo_lib.asdl $prefix2
 
-  local prefix3=$tmp_dir/typed_demo_asdl.gc
-  GC=1 asdl-tool cpp asdl/typed_demo.asdl $prefix3
+  local prefix3=$tmp_dir/typed_demo_asdl
+  asdl-tool cpp asdl/typed_demo.asdl $prefix3
 
   local bin=$out_dir/asdl_gc_test
 
@@ -80,10 +80,10 @@ gc-test() {
     mycpp/gc_heap.cc \
     mycpp/my_runtime.cc \
     mycpp/mylib2.cc \
-    asdl/runtime.gc.cc \
-    _build/cpp/hnode_asdl.gc.cc \
-    $tmp_dir/demo_lib_asdl.gc.cc \
-    $tmp_dir/typed_demo_asdl.gc.cc
+    asdl/runtime.cc \
+    _build/cpp/hnode_asdl.cc \
+    $tmp_dir/demo_lib_asdl.cc \
+    $tmp_dir/typed_demo_asdl.cc
 
   $bin "$@"
 }
@@ -96,7 +96,7 @@ hnode-asdl-gc() {
   mkdir -p $tmp_dir $out_dir
 
   cat >$tmp_dir/hnode_asdl_test.cc <<'EOF'
-#include "_build/cpp/hnode_asdl.gc.h"
+#include "_build/cpp/hnode_asdl.h"
 
 int main() {
   printf("OK hnode_asdl_test\n");
@@ -107,7 +107,7 @@ EOF
   local bin=$out_dir/hnode_asdl_test
 
   compile_and_link cxx asan '' $bin \
-    _build/cpp/hnode_asdl.gc.cc \
+    _build/cpp/hnode_asdl.cc \
     $tmp_dir/hnode_asdl_test.cc
 
   $bin
@@ -130,7 +130,7 @@ one-asdl-gc() {
   mkdir -p $tmp_dir $out_dir
 
   cat >$tmp_dir/${name}_asdl_test.cc <<EOF
-#include "_build/cpp/${name}_asdl.gc.h"
+#include "_build/cpp/${name}_asdl.h"
 
 int main() {
   printf("OK ${name}_asdl_test\\n");
@@ -141,8 +141,8 @@ EOF
   local bin=$out_dir/${name}_asdl_test
 
   compile_and_link cxx asan '' $bin \
-    _build/cpp/${name}_asdl.gc.cc \
-    asdl/runtime.gc.cc \
+    _build/cpp/${name}_asdl.cc \
+    asdl/runtime.cc \
     mycpp/gc_heap.cc \
     mycpp/my_runtime.cc \
     mycpp/mylib2.cc \
@@ -156,7 +156,7 @@ all-asdl-gc() {
   ### All ASDL compilation tests
 
   # Invoke ASDL compiler on everything
-  build/dev.sh oil-asdl-to-cpp-gc
+  build/dev.sh oil-asdl-to-cpp
 
   # Now make sure they can compile
   hnode-asdl-gc
@@ -164,7 +164,7 @@ all-asdl-gc() {
 
   # syntax.asdl is a 'use' dependency; 'id' is implicit
   # there is no GC variant for id_kind_asdl
-  one-asdl-gc runtime _build/cpp/syntax_asdl.gc.cc _build/cpp/id_kind_asdl.cc
+  one-asdl-gc runtime _build/cpp/syntax_asdl.cc _build/cpp/id_kind_asdl.cc
 
   one-asdl-gc syntax _build/cpp/id_kind_asdl.cc
 }

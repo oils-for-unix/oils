@@ -1176,7 +1176,7 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 // Emulate GC API so we can reuse bindings
 
-inline Str* BlankStr(int len) {
+inline Str* AllocStr(int len) {
   char* buf = static_cast<char*>(malloc(len + 1));
   memset(buf, 0, len + 1);
   return new Str(buf, len);
@@ -1184,7 +1184,7 @@ inline Str* BlankStr(int len) {
 
 inline Str* OverAllocatedStr(int len) {
   // Here they are identical, but in gc_heap.cc they're different
-  return BlankStr(len);
+  return AllocStr(len);
 }
 
 inline Str* CopyStr(const char* s, int len) {

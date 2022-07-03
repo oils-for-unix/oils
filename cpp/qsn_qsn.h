@@ -6,12 +6,12 @@
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_leaky.h"
 using gc_heap::StackRoots;  // no-op
-using mylib::BlankStr;
+using mylib::AllocStr;
 using mylib::CopyStr;
 using mylib::OverAllocatedStr;
 #else
 #include "mycpp/gc_heap.h"
-using gc_heap::BlankStr;
+using gc_heap::AllocStr;
 using gc_heap::CopyStr;
 using gc_heap::OverAllocatedStr;
 using gc_heap::StackRoots;
@@ -46,7 +46,7 @@ inline bool IsPlainChar(Str* ch) {
 inline Str* XEscape(Str* ch) {
   assert(len(ch) == 1);
   StackRoots _roots({&ch});
-  Str* result = BlankStr(4);
+  Str* result = AllocStr(4);
   sprintf(result->data(), "\\x%02x", ch->data_[0] & 0xff);
   return result;
 }

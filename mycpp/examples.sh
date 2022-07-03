@@ -93,7 +93,6 @@ translate-parse() {
   # Need this otherwise we get type errors
   codegen-parse
 
-  # TODO: qsn_qsn.h is incompatible with GC=1
   local snippet='
 
 #include "expr_asdl.h"
