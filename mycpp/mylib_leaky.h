@@ -185,6 +185,10 @@ class Str : public gc_heap::Obj {
 
     int new_len = end - begin;
 
+    // Tried to use std::clamp() here but we're not compiling against cxx-17
+    new_len = std::max(new_len, 0);
+    new_len = std::min(new_len, len_);
+
     /* printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len); */
 
     assert(new_len >= 0);

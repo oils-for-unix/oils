@@ -168,12 +168,12 @@ TEST test_str_funcs() {
   Str* s1 = new Str("abc\0bcd", 7);
   ASSERT_EQ(7, len(s1));
 
-  Str* re1 = s1->replace(new Str("ab"), new Str("--"));
+  // Str* re1 = s1->replace(new Str("ab"), new Str("--"));
   // cstring-BUG!
   // ASSERT_EQ_FMT(7, len(re1), "%d");
   // ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
 
-  Str* re2 = s1->replace(new Str("bc"), new Str("--"));
+  // Str* re2 = s1->replace(new Str("bc"), new Str("--"));
   // ASSERT(str_equals(new Str("a--\0--d", 7), re1));
 
   log("split_once()");
@@ -524,7 +524,7 @@ TEST test_str_slice() {
 
   Str* s0 = new Str("abcdef");
 
-  printf("------ Happy Path --------\n");
+  printf("------- Happy Path -------\n");
 
   { // Happy path
     Str* s1 = s0->slice(0, 5);
@@ -562,6 +562,19 @@ TEST test_str_slice() {
     printf("%s\n", s1->data());
   }
 
+  {
+    Str* s1 = s0->slice(5, 6);
+    ASSERT(str_equals(s1, new Str("f")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(6, 6);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+
   printf("---- Infinite Sadness ----\n");
 
   {
@@ -580,6 +593,56 @@ TEST test_str_slice() {
     Str* s1 = s0->slice(-7, 0);
     ASSERT(str_equals(s1, new Str("")));
     printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(6, 6);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(7, 7);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(6, 5);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(7, 5);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(7, 6);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Str* s1 = s0->slice(7, 7);
+    ASSERT(str_equals(s1, new Str("")));
+    printf("%s\n", s1->data());
+  }
+
+  printf("---------- Done ----------\n");
+
+  //  NOTE(Jesse): testing all permutations of boundary conditions for assertions
+  int max_len = (s0->len_ +2);
+  int min_len = -max_len;
+
+  for (int outer = min_len; outer <= max_len; ++outer)
+  {
+    for (int inner = min_len; inner <= max_len; ++inner)
+    {
+      s0->slice(outer, inner);
+    }
   }
 
 
