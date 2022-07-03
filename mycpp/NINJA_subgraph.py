@@ -396,7 +396,11 @@ def NinjaGraph(n):
         # my_runtime_test, so just use GCC.
         #('clang', 'ubsan'),
 
-        ('clang', 'coverage'),
+        # TODO: re-enable coverage with Clang
+        # Or change cpp-unit task to only use mycpp-unit-$variant and
+        # mycpp-examples-$variant
+        #
+        #('clang', 'coverage'),
     ]
 
     for (compiler, variant) in MATRIX:
@@ -417,6 +421,7 @@ def NinjaGraph(n):
               variables=unit_test_vars)
       n.newline()
 
+      # Should we delete this in favor of mycpp/test.sh?
       phony['mycpp-unit'].append(b)
 
 

@@ -17,8 +17,7 @@ examples-variant() {
   local variant=$1
   local do_benchmark=${2:-}
 
-  # This also builds unit tests, which we don't want
-  # mycpp-ex-asan?
+  # TODO: Exclude unit tests here
   ninja mycpp-$variant
 
   set +o errexit
@@ -120,6 +119,8 @@ unit() {
   local compiler=${1:-cxx}
   local variant=${2:-testgc}
 
+  # TODO: Exclude examples here
+  # ninja mycpp-$variant
   ninja mycpp-unit
 
   local log_dir=_test/$compiler-$variant/mycpp-unit
