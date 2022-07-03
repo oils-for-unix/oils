@@ -56,6 +56,10 @@ Str* ReadLine() {
 }
 
 Dict<Str*, Str*>* Environ() {
+
+  setvbuf(stdout, 0, _IONBF, 0);
+  setvbuf(stderr, 0, _IONBF, 0);
+
   auto d = new Dict<Str*, Str*>();
 
   for (char** env = environ; *env; ++env) {
