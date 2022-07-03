@@ -1097,7 +1097,7 @@ class CommandParser(object):
     self._Eat(Id.Lit_RBrace)
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
-    node = BraceGroup(doc_token, c_list.children, None)  # no redirects yet
+    node = BraceGroup(doc_token, c_list.children, [])  # no redirects yet
     node.spids.append(left_spid)
     node.spids.append(right_spid)
     return node
