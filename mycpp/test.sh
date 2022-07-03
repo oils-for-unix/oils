@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 #
+# Run tests in this directory.
+#
 # Usage:
 #   mycpp/test.sh <function name>
 

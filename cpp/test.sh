@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
+# Run tests in this directory.
+#
 # Usage:
-#   ./test.sh <function name>
+#   cpp/test.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -14,23 +16,52 @@ export ASAN_OPTIONS='detect_leaks=0'
 
 readonly LEAKY_TEST_SRC=(
     cpp/leaky_binding_test.cc \
-    _build/cpp/arg_types.cc \
     cpp/core_pyos.cc \
     cpp/core_pyutil.cc \
-    cpp/frontend_flag_spec.cc \
     cpp/frontend_match.cc \
     cpp/libc.cc \
     cpp/osh_bool_stat.cc \
     cpp/posix.cc \
     cpp/pylib_os_path.cc \
-    mycpp/mylib_leaky.cc  # TODO: port to mylib2!
+    mycpp/mylib_leaky.cc
 )
 
-# Note: It would be nice to fold these 2 variants into Ninja, but we don't have
-# fine-grained dependencies for say _build/cpp/arg_types.cc and
-# cpp/frontend_flag_spec.cc.
+readonly LEAKY_FLAG_SPEC_SRC=(
+    cpp/leaky_flag_spec_test.cc \
+    _build/cpp/arg_types.cc \
+    cpp/frontend_flag_spec.cc \
+    mycpp/mylib_leaky.cc
+)
+
+leaky-flag-spec-test() {
+  ### Test generated code
+
+  local dir=_bin/cxx-dbg/cpp
+  mkdir -p $dir
+
+  local bin=$dir/leaky_flag_spec_test
+
+  local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
+  compile_and_link cxx dbg "$more_cxx_flags" $bin \
+    "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/dumb_alloc.cc
+
+  $bin "$@"
+}
+
+# TODO:
 #
-# Ditto with the tests in asdl/test.sh.
+# - Fold variants of leaky_binding_test and gc_binding_test into Ninja
+#   - And add cxx-ubsan and clang-coverage -- with HTML output
+# - Problem: We don't have fine-grained dependencies for ASDL
+#
+# Possible solution is to factor into:
+#
+# build/cpp.sh gen-cpp
+# build/cpp.sh all
+#
+# And then any time a Python source file changes (_build/app-deps), you do the
+# whole build/cpp.sh gen-cpp?
+
 
 leaky-binding-test-asan() {
   local dir=_bin/cxx-asan/cpp
@@ -45,6 +76,8 @@ leaky-binding-test-asan() {
 }
 
 leaky-binding-test() {
+  ### Test hand-written code
+
   local dir=_bin/cxx-dbg/cpp
   mkdir -p $dir
 
@@ -90,6 +123,9 @@ all-gc-binding-test() {
 
 unit() {
   ### Run by test/cpp-unit.sh
+
+  # Generated code
+  leaky-flag-spec-test
 
   leaky-binding-test
   leaky-binding-test-asan

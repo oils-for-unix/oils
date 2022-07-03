@@ -87,7 +87,6 @@ osh-eval() {
   mkdir -p $TEMP_DIR _build/cpp
 
   local raw=$TEMP_DIR/${name}_raw.cc 
-
   local cc=_build/cpp/$name.cc
   local h=_build/cpp/$name.h
 
@@ -106,8 +105,6 @@ osh-eval() {
   fi
 
   cpp-skeleton $name $raw > $cc
-
-  #compile-slice 'osh_eval' '.dbg'
 }
 
 #

@@ -96,6 +96,7 @@ DEPS_CC = [
     'cpp/libc.cc',
 
     # generated
+    # TODO: We're missing dependencies for these
     '_build/cpp/arg_types.cc',
     '_build/cpp/arith_parse.cc',
     '_build/cpp/consts.cc',
