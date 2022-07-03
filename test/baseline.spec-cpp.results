@@ -645,6 +645,7 @@
 16 _tmp/spec/cpp/command-sub.tsv
 17 _tmp/spec/cpp/command-sub.tsv
 18 _tmp/spec/cpp/command-sub.tsv
+19 _tmp/spec/cpp/command-sub.tsv
 20 _tmp/spec/cpp/command-sub.tsv
 21 _tmp/spec/cpp/command-sub.tsv
 22 _tmp/spec/cpp/command-sub.tsv
@@ -1047,6 +1048,7 @@
 4 _tmp/spec/cpp/process-sub.tsv
 1 _tmp/spec/cpp/prompt.tsv
 2 _tmp/spec/cpp/prompt.tsv
+3 _tmp/spec/cpp/prompt.tsv
 4 _tmp/spec/cpp/prompt.tsv
 5 _tmp/spec/cpp/prompt.tsv
 6 _tmp/spec/cpp/prompt.tsv
@@ -1076,6 +1078,7 @@
 8 _tmp/spec/cpp/quote.tsv
 9 _tmp/spec/cpp/quote.tsv
 10 _tmp/spec/cpp/quote.tsv
+11 _tmp/spec/cpp/quote.tsv
 12 _tmp/spec/cpp/quote.tsv
 13 _tmp/spec/cpp/quote.tsv
 14 _tmp/spec/cpp/quote.tsv
@@ -1519,6 +1522,7 @@
 31 _tmp/spec/cpp/word-split.tsv
 32 _tmp/spec/cpp/word-split.tsv
 34 _tmp/spec/cpp/word-split.tsv
+39 _tmp/spec/cpp/word-split.tsv
 0 _tmp/spec/cpp/xtrace.tsv
 2 _tmp/spec/cpp/xtrace.tsv
 4 _tmp/spec/cpp/xtrace.tsv

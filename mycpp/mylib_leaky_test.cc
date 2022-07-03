@@ -519,136 +519,6 @@ TEST test_sizeof() {
   PASS();
 }
 
-TEST test_str_slice() {
-  printf("\n");
-
-  Str* s0 = new Str("abcdef");
-
-  printf("------- Happy Path -------\n");
-
-  { // Happy path
-    Str* s1 = s0->slice(0, 5);
-    ASSERT(str_equals(s1, new Str("abcde")));
-    printf("%s\n", s1->data());
-  }
-  {
-    Str* s1 = s0->slice(1, 5);
-    ASSERT(str_equals(s1, new Str("bcde")));
-    printf("%s\n", s1->data());
-  }
-  {
-    Str* s1 = s0->slice(0, 0);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-  {
-    Str* s1 = s0->slice(0, 6);
-    ASSERT(str_equals(s1, new Str("abcdef")));
-    printf("%s\n", s1->data());
-  }
-  {
-    Str* s1 = s0->slice(-6, 6);
-    ASSERT(str_equals(s1, new Str("abcdef")));
-    printf("%s\n", s1->data());
-  }
-  {
-    Str* s1 = s0->slice(0, -6);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-  {
-    Str* s1 = s0->slice(-6, -6);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(5, 6);
-    ASSERT(str_equals(s1, new Str("f")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(6, 6);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-
-  printf("---- Infinite Sadness ----\n");
-
-  {
-    Str* s1 = s0->slice(0, -7);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(-7, -7);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(-7, 0);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(6, 6);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(7, 7);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(6, 5);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(7, 5);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(7, 6);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  {
-    Str* s1 = s0->slice(7, 7);
-    ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
-  }
-
-  printf("---------- Done ----------\n");
-
-  //  NOTE(Jesse): testing all permutations of boundary conditions for assertions
-  int max_len = (s0->len_ +2);
-  int min_len = -max_len;
-
-  for (int outer = min_len; outer <= max_len; ++outer)
-  {
-    for (int inner = min_len; inner <= max_len; ++inner)
-    {
-      s0->slice(outer, inner);
-    }
-  }
-
-
-  PASS();
-}
-
 TEST test_str_replace() {
   printf("\n");
 
@@ -669,17 +539,17 @@ TEST test_str_replace() {
     ASSERT(str_equals(s1, new Str("---- cd ---- ef")));
   }
 
-  /* { */
-  /*   Str* s1 = s0->replace(new Str("ab cd ab ef"), new Str("0")); */
-  /*   printf("%s\n", s1->data()); */
-  /*   ASSERT(str_equals(s1, new Str("0"))); */
-  /* } */
+  {
+    Str* s1 = s0->replace(new Str("ab cd ab ef"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("0")));
+  }
 
-  /* { */
-  /*   Str* s1 = s0->replace(s0, new Str("0")); */
-  /*   printf("%s\n", s1->data()); */
-  /*   ASSERT(str_equals(s1, new Str("0"))); */
-  /* } */
+  {
+    Str* s1 = s0->replace(s0, new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("0")));
+  }
 
   {
     Str* s1 = s0->replace(new Str("no-match"), new Str("0"));
@@ -706,19 +576,19 @@ TEST test_str_replace() {
     ASSERT(str_equals(s1, new Str("0 0 0")));
   }
 
-  /* { */
-  /*   s0 = new Str("ababab"); */
-  /*   Str* s1 = s0->replace(new Str("ab"), new Str("0")); */
-  /*   printf("%s\n", s1->data()); */
-  /*   ASSERT(str_equals(s1, new Str("000"))); */
-  /* } */
+  {
+    s0 = new Str("ababab");
+    Str* s1 = s0->replace(new Str("ab"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("000")));
+  }
 
-  /* { */
-  /*   s0 = new Str("abababab"); */
-  /*   Str* s1 = s0->replace(new Str("ab"), new Str("0")); */
-  /*   printf("%s\n", s1->data()); */
-  /*   ASSERT(str_equals(s1, new Str("0000"))); */
-  /* } */
+  {
+    s0 = new Str("abababab");
+    Str* s1 = s0->replace(new Str("ab"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("0000")));
+  }
 
   {
     s0 = new Str("abc 123");
@@ -739,6 +609,20 @@ TEST test_str_replace() {
     Str* s1 = s0->replace(new Str("abc"), new Str("abc"));
     printf("%s\n", s1->data());
     ASSERT(str_equals(s1, new Str("abc 123")));
+  }
+
+  {
+    s0 = new Str("aaaa");
+    Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("bbbb")));
+  }
+
+  {
+    s0 = new Str("aaaaaa");
+    Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("bbbbbb")));
   }
 
 
@@ -769,8 +653,6 @@ int main(int argc, char** argv) {
   RUN_TEST(test_sizeof);
 
   RUN_TEST(test_list_tuple);
-
-  RUN_TEST(test_str_slice);
 
   RUN_TEST(test_str_replace);
 

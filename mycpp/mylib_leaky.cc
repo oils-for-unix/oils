@@ -31,61 +31,118 @@ void println_stderr(Str* s) {
 //   - CPython has like 10 special cases for this!  It detects if len(old) ==
 //     len(new) as well.
 // - we're not handling internal NULs (because of strstr())
-Str* Str::replace(Str* old, Str* new_str) {
-  // log("replacing %s with %s", old_data, new_str->data_);
 
-  const char* old_data = old->data_;
-  const char* last_possible = data_ + len_ - old->len_;
+inline bool
+strings_match(Str *s1, Str *s2)
+{
+  bool result = true;
 
-  const char* p_this = data_;  // advances through 'this'
-
-  // First pass to calculate the new length
-  int replace_count = 0;
-  while (p_this < last_possible) {
-    // cstring-TODO: Don't use strstr()
-    const char* next = strstr(p_this, old_data);
-    if (next == nullptr) {
-      break;
+  if (s1 && s2 && s1->len_ == s2->len_)
+  {
+    for (int i = 0; i < s1->len_; ++i)
+    {
+      result = (result && (s1->data_[i] == s2->data_[i]));
     }
-    replace_count++;
-    p_this = next + old->len_;  // skip past
+  }
+  else
+  {
+    result = false;
   }
 
-  // log("done %d", replace_count);
+  return result;
+}
 
-  if (replace_count == 0) {
-    return this;  // Reuse the string if there were no replacements
+struct cursor
+{
+  char *start;
+  int at;
+  int end; // NOTE(Jesse): start[end] is undefined.  The cursor is empty when (at == end)
+};
+
+cursor make_cursor(Str *s)
+{
+  cursor result = {};
+  result.start = (char *)s->data_;
+  result.end = s->len_;
+  result.at = 0;
+  return result;
+};
+
+inline void
+copy_into_cursor(cursor &cur, char c)
+{
+  assert(cur.at < cur.end);
+  cur.start[cur.at++] = c;
+}
+
+bool
+copy_into_cursor(cursor &c, Str *s)
+{
+  bool result = (c.at + s->len_) <= c.end;
+
+  if (result)
+  {
+    for (int i = 0; i < s->len_; ++i)
+    {
+      copy_into_cursor(c, s->data_[i]);
+    }
+  }
+  return result;
+}
+
+// NOTE(Jesse): This function allocates about a billion times because
+// Str::slice allocates.  I would strongly prefer if Str::slice did not
+// allocate, but that's an issue for a different day.  Not sure if that'll be
+// possible because of the moving GC.
+Str* Str::replace(Str* needle_str, Str* replace_str)
+{
+  Str *result = this;
+
+  int matches = 0;
+  int i = 0;
+  while (i < len_)
+  {
+    Str *this_slice = this->slice(i, i+needle_str->len_);
+    if ( strings_match(this_slice, needle_str) )
+    {
+      matches = matches + 1;
+      i += needle_str->len_;
+    }
+    else
+    {
+      i = i + 1;
+    }
   }
 
-  int len = this->len_ - (replace_count * old->len_) +
-            (replace_count * new_str->len_);
+  if (matches)
+  {
+    int new_space_for_replace_pattern = matches * replace_str->len_;
+    int space_occupied_by_needle_matches = matches * needle_str->len_;
 
-  char* result = static_cast<char*>(malloc(len + 1));  // +1 for NUL
+    int result_length = (len_ - space_occupied_by_needle_matches) + new_space_for_replace_pattern;
+    result = mylib::AllocStr(result_length);
 
-  const char* new_data = new_str->data_;
-  const size_t new_len = new_str->len_;
+    cursor result_cursor = make_cursor(result);
 
-  // Second pass to copy into new 'result'
-  p_this = data_;
-  char* p_result = result;  // advances through 'result'
+    i = 0;
+    while (i < len_)
+    {
+      Str *this_slice = this->slice(i, i+needle_str->len_);
+      if ( strings_match(this_slice, needle_str) )
+      {
+        copy_into_cursor(result_cursor, replace_str);
+        i += needle_str->len_;
+      }
+      else
+      {
+        copy_into_cursor(result_cursor, data_[i]);
+        i = i + 1;
+      }
+    }
 
-  for (int i = 0; i < replace_count; ++i) {
-    const char* next = strstr(p_this, old_data);
-    assert(p_this != nullptr);
-    size_t n = next - p_this;
-
-    memcpy(p_result, p_this, n);  // Copy from 'this'
-    p_result += n;
-
-    memcpy(p_result, new_data, new_len);  // Copy from new_str
-    p_result += new_len;
-
-    p_this = next + old->len_;
   }
-  memcpy(p_result, p_this, data_ + len_ - p_this);  // Copy the rest of 'this'
-  result[len] = '\0';                               // NUL terminate
 
-  return new Str(result);
+  return result;
 }
 
 Str* Str::ljust(int width, Str* fillchar) {
