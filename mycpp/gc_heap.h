@@ -957,23 +957,21 @@ class List : public gc_heap::Obj {
     auto self = this;
     StackRoots _roots({&self});
 
-    if (self->capacity_ < n) {
-      // Example: The user asks for space for 7 integers.  Account for the
-      // header, and say we need 9 to determine the obj length.  9 is
-      // rounded up to 16, for a 64-byte obj.  Then we actually have space
-      // for 14 items.
-      self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
-      auto new_slab = NewSlab<T>(self->capacity_);
+    // Don't do anything if there's already enough space.
+    if (self->capacity_ >= n) return;
 
-      // slab_ may not be initialized constructor because many lists are
-      // empty.
-      if (self->capacity_ != 0) {
-        // log("Copying %d bytes", len_ * sizeof(T));
-        memcpy(new_slab->items_, self->slab_->items_, self->len_ * sizeof(T));
-      }
-      self->slab_ = new_slab;
+    // Example: The user asks for space for 7 integers.  Account for the
+    // header, and say we need 9 to determine the obj length.  9 is
+    // rounded up to 16, for a 64-byte obj.  Then we actually have space
+    // for 14 items.
+    self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+    auto new_slab = NewSlab<T>(self->capacity_);
+
+    if (self->len_ > 0) {
+      // log("Copying %d bytes", len_ * sizeof(T));
+      memcpy(new_slab->items_, self->slab_->items_, self->len_ * sizeof(T));
     }
-    // Otherwise, there's enough capacity
+    self->slab_ = new_slab;
   }
 
   // Append a single element to this list.  Must be specialized List<int> vs
