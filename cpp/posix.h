@@ -83,7 +83,10 @@ inline int close(int fd) {
 inline int putenv(Str* name, Str* value) {
   // NOTE(Jesse): Technically this over-allocates by 1 byte, but by doing that
   // we don't rely on the underlying Str* data_ buffer being defined as (Str::len_ + 1)
-  int env_string_size = name->len_ + value->len_ + 2;
+  //
+  // It must be over-allocated because snprintf expects to be able to write a
+  // null byte into the buffer.
+  int env_string_size = name->len_ + 1 + value->len_ + 1;
 
   Str* env_string = mylib::BlankStr(env_string_size);
   char* env_string_buffer = env_string->data();
