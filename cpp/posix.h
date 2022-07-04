@@ -80,19 +80,18 @@ inline int close(int fd) {
   return ::close(fd);
 }
 
-inline int putenv(Str* name, Str* value) {
-  // NOTE(Jesse): Technically this over-allocates by 1 byte, but by doing that
-  // we don't rely on the underlying Str* data_ buffer being defined as (Str::len_ + 1)
-  //
-  // It must be over-allocated because snprintf expects to be able to write a
-  // null byte into the buffer.
-  int env_string_size = name->len_ + 1 + value->len_ + 1;
+inline void putenv(Str* name, Str* value) {
+  int env_buffer_size = name->len_ + 1 + value->len_ + 1;
+  char *env_buffer = static_cast<char*>(malloc(env_buffer_size));
+  snprintf(env_buffer, env_buffer_size, "%s=%s", name->data_, value->data_);
 
-  Str* env_string = mylib::BlankStr(env_string_size);
-  char* env_string_buffer = env_string->data();
+  bool err = ::putenv(env_buffer) != 0;
+  int cached_errno = errno;
+  free(env_buffer);
 
-  snprintf(env_string_buffer, env_string_size, "%s=%s", name->data_, value->data_);
-  return ::putenv(env_string->data());
+  if (err) {
+    throw new IOError(cached_errno);
+  }
 }
 
 inline int fork() {
