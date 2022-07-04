@@ -1,6 +1,7 @@
 0 _tmp/spec/cpp/alias.tsv
 1 _tmp/spec/cpp/alias.tsv
 2 _tmp/spec/cpp/alias.tsv
+3 _tmp/spec/cpp/alias.tsv
 4 _tmp/spec/cpp/alias.tsv
 5 _tmp/spec/cpp/alias.tsv
 6 _tmp/spec/cpp/alias.tsv
@@ -197,11 +198,14 @@
 0 _tmp/spec/cpp/assign-dialects.tsv
 0 _tmp/spec/cpp/assign-extended.tsv
 1 _tmp/spec/cpp/assign-extended.tsv
+3 _tmp/spec/cpp/assign-extended.tsv
 4 _tmp/spec/cpp/assign-extended.tsv
+5 _tmp/spec/cpp/assign-extended.tsv
 6 _tmp/spec/cpp/assign-extended.tsv
 7 _tmp/spec/cpp/assign-extended.tsv
 8 _tmp/spec/cpp/assign-extended.tsv
 9 _tmp/spec/cpp/assign-extended.tsv
+10 _tmp/spec/cpp/assign-extended.tsv
 11 _tmp/spec/cpp/assign-extended.tsv
 12 _tmp/spec/cpp/assign-extended.tsv
 13 _tmp/spec/cpp/assign-extended.tsv
@@ -209,6 +213,8 @@
 15 _tmp/spec/cpp/assign-extended.tsv
 16 _tmp/spec/cpp/assign-extended.tsv
 17 _tmp/spec/cpp/assign-extended.tsv
+18 _tmp/spec/cpp/assign-extended.tsv
+19 _tmp/spec/cpp/assign-extended.tsv
 20 _tmp/spec/cpp/assign-extended.tsv
 21 _tmp/spec/cpp/assign-extended.tsv
 23 _tmp/spec/cpp/assign-extended.tsv
@@ -369,6 +375,7 @@
 6 _tmp/spec/cpp/bugs.tsv
 7 _tmp/spec/cpp/bugs.tsv
 11 _tmp/spec/cpp/bugs.tsv
+0 _tmp/spec/cpp/builtin-bash.tsv
 2 _tmp/spec/cpp/builtin-bash.tsv
 3 _tmp/spec/cpp/builtin-bash.tsv
 4 _tmp/spec/cpp/builtin-bash.tsv
@@ -386,6 +393,11 @@
 16 _tmp/spec/cpp/builtin-bash.tsv
 17 _tmp/spec/cpp/builtin-bash.tsv
 18 _tmp/spec/cpp/builtin-bash.tsv
+19 _tmp/spec/cpp/builtin-bash.tsv
+20 _tmp/spec/cpp/builtin-bash.tsv
+21 _tmp/spec/cpp/builtin-bash.tsv
+24 _tmp/spec/cpp/builtin-bash.tsv
+25 _tmp/spec/cpp/builtin-bash.tsv
 28 _tmp/spec/cpp/builtin-bash.tsv
 0 _tmp/spec/cpp/builtin-bracket.tsv
 1 _tmp/spec/cpp/builtin-bracket.tsv
@@ -431,10 +443,19 @@
 41 _tmp/spec/cpp/builtin-bracket.tsv
 43 _tmp/spec/cpp/builtin-bracket.tsv
 0 _tmp/spec/cpp/builtin-dirs.tsv
+1 _tmp/spec/cpp/builtin-dirs.tsv
+2 _tmp/spec/cpp/builtin-dirs.tsv
 3 _tmp/spec/cpp/builtin-dirs.tsv
 4 _tmp/spec/cpp/builtin-dirs.tsv
+5 _tmp/spec/cpp/builtin-dirs.tsv
+7 _tmp/spec/cpp/builtin-dirs.tsv
+8 _tmp/spec/cpp/builtin-dirs.tsv
+9 _tmp/spec/cpp/builtin-dirs.tsv
+10 _tmp/spec/cpp/builtin-dirs.tsv
 11 _tmp/spec/cpp/builtin-dirs.tsv
 12 _tmp/spec/cpp/builtin-dirs.tsv
+13 _tmp/spec/cpp/builtin-dirs.tsv
+14 _tmp/spec/cpp/builtin-dirs.tsv
 0 _tmp/spec/cpp/builtin-eval-source.tsv
 1 _tmp/spec/cpp/builtin-eval-source.tsv
 2 _tmp/spec/cpp/builtin-eval-source.tsv
@@ -792,6 +813,7 @@
 0 _tmp/spec/cpp/explore-parsing.tsv
 1 _tmp/spec/cpp/explore-parsing.tsv
 2 _tmp/spec/cpp/explore-parsing.tsv
+3 _tmp/spec/cpp/explore-parsing.tsv
 4 _tmp/spec/cpp/explore-parsing.tsv
 0 _tmp/spec/cpp/extglob-files.tsv
 1 _tmp/spec/cpp/extglob-files.tsv
@@ -840,6 +862,7 @@
 4 _tmp/spec/cpp/fatal-errors.tsv
 0 _tmp/spec/cpp/for-expr.tsv
 1 _tmp/spec/cpp/for-expr.tsv
+2 _tmp/spec/cpp/for-expr.tsv
 3 _tmp/spec/cpp/for-expr.tsv
 4 _tmp/spec/cpp/for-expr.tsv
 5 _tmp/spec/cpp/for-expr.tsv
@@ -1196,6 +1219,7 @@
 21 _tmp/spec/cpp/sh-options.tsv
 22 _tmp/spec/cpp/sh-options.tsv
 23 _tmp/spec/cpp/sh-options.tsv
+24 _tmp/spec/cpp/sh-options.tsv
 25 _tmp/spec/cpp/sh-options.tsv
 27 _tmp/spec/cpp/sh-options.tsv
 30 _tmp/spec/cpp/sh-options.tsv
