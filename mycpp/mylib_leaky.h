@@ -157,15 +157,46 @@ class Str : public gc_heap::Obj {
   }
   // s[begin:end]
   Str* slice(int begin, int end) {
+    begin = std::min(begin, len_);
+    end = std::min(end, len_);
+
+    assert(begin <= len_);
+    assert(end <= len_);
+
     if (begin < 0) {
       begin = len_ + begin;
     }
+
     if (end < 0) {
       end = len_ + end;
     }
+
+    begin = std::min(begin, len_);
+    end = std::min(end, len_);
+
+    begin = std::max(begin, 0);
+    end = std::max(end, 0);
+
+    assert(begin >= 0);
+    assert(begin <= len_);
+
+    assert(end >= 0);
+    assert(end <= len_);
+
     int new_len = end - begin;
+
+    // Tried to use std::clamp() here but we're not compiling against cxx-17
+    new_len = std::max(new_len, 0);
+    new_len = std::min(new_len, len_);
+
+    /* printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len); */
+
+    assert(new_len >= 0);
+    assert(new_len <= len_);
+
     char* buf = static_cast<char*>(malloc(new_len + 1));
     memcpy(buf, data_ + begin, new_len);
+
     buf[new_len] = '\0';
     return new Str(buf, new_len);
   }
@@ -1149,7 +1180,7 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 // Emulate GC API so we can reuse bindings
 
-inline Str* BlankStr(int len) {
+inline Str* AllocStr(int len) {
   char* buf = static_cast<char*>(malloc(len + 1));
   memset(buf, 0, len + 1);
   return new Str(buf, len);
@@ -1157,7 +1188,7 @@ inline Str* BlankStr(int len) {
 
 inline Str* OverAllocatedStr(int len) {
   // Here they are identical, but in gc_heap.cc they're different
-  return BlankStr(len);
+  return AllocStr(len);
 }
 
 inline Str* CopyStr(const char* s, int len) {

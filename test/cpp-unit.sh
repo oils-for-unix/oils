@@ -12,7 +12,8 @@ set -o errexit
 soil-run() {
   ./NINJA_config.py
 
-  mycpp/test.sh unit  # uses Ninja
+  # uses Ninja to run testgc.  Could also run ubsan
+  mycpp/test.sh unit
 
   # This is part of build/dev.sh oil-cpp
   build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h

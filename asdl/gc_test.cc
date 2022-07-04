@@ -1,8 +1,8 @@
 // asdl/gc_test.cc
 
-#include "_build/asdl-test/typed_demo_asdl.gc.h"
-#include "_build/cpp/hnode_asdl.gc.h"
-#include "asdl/runtime.gc.h"
+#include "_build/asdl-test/typed_demo_asdl.h"
+#include "_build/cpp/hnode_asdl.h"
+#include "asdl/runtime.h"
 #include "mycpp/gc_heap.h"
 #include "mycpp/mylib2.h"
 #include "vendor/greatest.h"

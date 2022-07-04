@@ -186,8 +186,6 @@ arith-parse-cpp-gen() {
   osh/arith_parse_gen.py > _build/cpp/arith_parse.cc
 }
 
-# TODO: Add GC=1 versions of everything here
-
 oil-asdl-to-cpp() {
   mkdir -p _build/cpp _devbuild/tmp
 
@@ -213,36 +211,9 @@ oil-asdl-to-cpp() {
   gen-asdl-cpp frontend/syntax.asdl
 }
 
-oil-asdl-to-cpp-gc() {
-  export GC=1
-
-  mkdir -p _build/cpp _devbuild/tmp
-
-  PRETTY_PRINT_METHODS='' gen-asdl-cpp 'asdl/hnode.asdl' _build/cpp/hnode_asdl.gc
-
-  # no dependency on Id
-  gen-asdl-cpp frontend/types.asdl _build/cpp/types_asdl.gc
-
-  # Problem:
-  # - we have both _devbuild/gen/id.h 
-  #           and _build/cpp/id_kind_asdl.h
-  # - do we want enum class?
-
-  # TODO: consts.h depends on mylib.  Should use mylib2.
-  build/codegen.sh const-cpp-gen '.gc' # dependency on bool_arg_type_e
-  build/codegen.sh option-cpp-gen '.gc'
-
-  # We also want to generate the lexer here.
-  # TranslateOshLexer can have a flag to use different Ids?
-  # Instead of id__Eol_Tok, use Id::Eol_Tok.
-  # case lex_mode_e::Expr
-
-  gen-asdl-cpp core/runtime.asdl _build/cpp/runtime_asdl.gc
-  gen-asdl-cpp frontend/syntax.asdl _build/cpp/syntax_asdl.gc
-}
-
 oil-cpp() {
   oil-asdl-to-cpp
+
   arith-parse-cpp-gen
   build/codegen.sh flag-gen-cpp
 
@@ -251,11 +222,8 @@ oil-cpp() {
   build/translate.sh osh-eval  # translate with mycpp
 
   ./NINJA_config.py  # Create it for the first time
-  if test -f "$CLANGXX"; then
-    time build/native.sh compile-quickly  # Clang compiles more quickly
-  else
-    time ninja _bin/cxx-dbg/osh_eval
-  fi
+
+  time ninja _bin/cxx-dbg/osh_eval
 
   echo
   wc -l _build/cpp/*

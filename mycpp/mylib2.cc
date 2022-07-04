@@ -34,8 +34,8 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
     Str* s2 = nullptr;
     StackRoots _roots({&s1, &s2});
     // Allocate together to avoid 's' moving in between
-    s1 = BlankStr(len1);
-    s2 = BlankStr(len2);
+    s1 = AllocStr(len1);
+    s2 = AllocStr(len2);
 
     memcpy(s1->data_, s->data_, len1);
     memcpy(s2->data_, s->data_ + len1 + 1, len2);
@@ -96,7 +96,7 @@ Str* BufLineReader::readline() {
     pos_ = buf_len;
   }
 
-  line = BlankStr(line_len);
+  line = AllocStr(line_len);
   memcpy(line->data_, self->s_->data_ + orig_pos, line_len);
   assert(line->data_[line_len] == '\0');
   return line;

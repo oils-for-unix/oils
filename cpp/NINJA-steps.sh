@@ -66,12 +66,26 @@ setglobal_compile_flags() {
     (dbg)
       flags="$flags -O0 -g"
       ;;
+
+    (coverage)
+      # source-based coverage is more precise than say sanitizer-based
+      # https://clang.llvm.org/docs/SourceBasedCodeCoverage.html
+      flags="$flags -O0 -g -fprofile-instr-generate -fcoverage-mapping"
+      ;;
+
     (asan)
       # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
       flags="$flags -O0 -g -fsanitize=address"
       ;;
 
-    # TODO: ubsan and gctest from mycpp/NINJA-steps.sh
+    (ubsan)
+      # faster build with -O0
+      flags+="$flags -O0 -g -fsanitize=undefined"
+      ;;
+    (testgc)
+      # TODO: GC_REPORT and GC_VERBOSE instead?
+      flags+="$flags -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC"
+      ;;
 
     (opt)
       # Hm why does _bin/cxx-opt/osh_eval not run without -D DUMB_ALLOC?  But
