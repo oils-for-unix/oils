@@ -51,6 +51,9 @@ EOF
 
   cat <<EOF
 int main(int argc, char **argv) {
+
+  complain_loudly_on_segfault();
+
   gc_heap::gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc.cc
 
   // NOTE(Jesse): Turn off buffered IO
