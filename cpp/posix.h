@@ -81,16 +81,12 @@ inline int close(int fd) {
 }
 
 inline void putenv(Str* name, Str* value) {
-  int env_buffer_size = name->len_ + 1 + value->len_ + 1;
-  char *env_buffer = static_cast<char*>(malloc(env_buffer_size));
-  snprintf(env_buffer, env_buffer_size, "%s=%s", name->data_, value->data_);
-
-  bool err = ::putenv(env_buffer) != 0;
-  int cached_errno = errno;
-  free(env_buffer);
-
+  assert(name->IsNulTerminated());
+  assert(value->IsNulTerminated());
+  int overwrite = 1;
+  bool err = ::setenv(name->data_, value->data_, overwrite) == -1;
   if (err) {
-    throw new IOError(cached_errno);
+    throw new IOError(errno);
   }
 }
 

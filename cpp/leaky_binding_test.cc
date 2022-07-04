@@ -455,13 +455,9 @@ TEST putenv_test() {
   Str* key = new Str("KEY");
   Str* value = new Str("value");
 
-  /* printf("setting (%s)=(%s)\n", key->data(), value->data()); */
   posix::putenv(key, value);
-
   char* got_value = ::getenv(key->data());
-  /* printf("got (%s)=(%s)\n", key->data(), got_value); */
-
-  ASSERT( str_equals(new Str(got_value), value) );
+  ASSERT( got_value && str_equals(new Str(got_value), value) );
 
   PASS();
 }
