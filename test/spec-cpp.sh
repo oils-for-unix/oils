@@ -61,6 +61,7 @@ run-with-osh-eval() {
   shift
 
   local base_dir=_tmp/spec/$SPEC_JOB
+  mkdir -p "$base_dir"
 
   # Run it with 3 versions of OSH.  And output TSV so we can compare the data.
   # 2022-01: Try 10 second timeout.
