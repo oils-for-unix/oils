@@ -1,5 +1,5 @@
 // clang-format off
-#include "core_pyutil.h"  // for BackslashEscape; must come first because of 'errno' issue
+#include "mycpp/myerror.h" // must come first because of 'errno' issue
 // clang-format on
 
 #include <errno.h>
@@ -9,6 +9,7 @@
 #include "_devbuild/gen/id.h"
 #include "core_error.h"
 #include "core_pyerror.h"
+#include "core_pyutil.h"
 #include "core_pyos.h"  // Chdir
 #include "frontend_match.h"
 #include "libc.h"

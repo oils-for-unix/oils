@@ -5,6 +5,8 @@
 
 #include "mycpp/mylib_leaky.h"
 
+class _OSError;  // declaration from mycpp/myerror.h
+
 namespace pyutil {
 
 bool IsValidCharEscape(int c);

@@ -10,6 +10,8 @@ import sys
 from osh import arith_parse
 from core.pyerror import log
 
+_ = log
+
 
 def main(argv):
   spec = arith_parse.Spec()
