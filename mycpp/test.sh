@@ -9,16 +9,19 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# in case binaries weren't built
+shopt -s failglob
+
 export ASAN_OPTIONS='detect_leaks=0'
 
 examples-variant() {
   ### Run all examples using a variant
 
-  local variant=$1
-  local do_benchmark=${2:-}
+  local compiler=${1:-cxx}
+  local variant=${2:-testgc}
+  local do_benchmark=${3:-}
 
-  # TODO: Exclude unit tests here
-  ninja mycpp-$variant
+  ninja mycpp-examples-$compiler-$variant
 
   set +o errexit
 
@@ -26,10 +29,10 @@ examples-variant() {
   local num_failed=0
   local status=0
 
-  local log_dir=_test/cxx-$variant/mycpp-examples
+  local log_dir=_test/$compiler-$variant/mycpp-examples
   mkdir -p $log_dir
 
-  for b in _bin/cxx-$variant/mycpp-examples/*; do
+  for b in _bin/$compiler-$variant/mycpp-examples/*; do
     case $b in
       (*.stripped)  # just run the unstripped binary
         continue
@@ -73,45 +76,57 @@ examples-variant() {
 
 # 10 segfaults
 ex-testgc() {
-  examples-variant testgc
+  local compiler=${1:-}
+  examples-variant "$compiler" testgc
 }
 
 # TOO SLOW to run.  It's garbage collecting all the time.
 ex-testgc-bench() {
-  examples-variant testgc '.BENCHMARK'
+  local compiler=${1:-}
+  examples-variant "$compiler" testgc '.BENCHMARK'
 }
 
 # PASS!
 ex-asan() {
-  examples-variant asan
+  local compiler=${1:-}
+  examples-variant "$compiler" asan
 }
 
 # 2 of 18 tests failed: cartesian, parse
 # So it does not catch the 10 segfaults that 'testgc' catches with a few
 # iterations!
 ex-asan-bench() {
-  examples-variant asan '.BENCHMARK'
+  local compiler=${1:-}
+  examples-variant "$compiler" asan '.BENCHMARK'
 }
 
-# PASS!
+# PASS!  Under both clang and GCC.
 ex-ubsan() {
-  examples-variant ubsan
+  local compiler=${1:-}
+  examples-variant "$compiler" ubsan
 }
 
 # same as ASAN: 2 of 18
 ex-ubsan-bench() {
-  examples-variant ubsan '.BENCHMARK'
+  local compiler=${1:-}
+  examples-variant "$compiler" ubsan '.BENCHMARK'
 }
 
 # PASS!
 ex-opt() {
-  examples-variant opt
+  local compiler=${1:-}
+  examples-variant "$compiler" opt
 }
 
 # 2 of 18 tests failed
 ex-opt-bench() {
-  examples-variant opt '.BENCHMARK'
+  local compiler=${1:-}
+  examples-variant "$compiler" opt '.BENCHMARK'
 }
+
+#
+# Unit Tests
+#
 
 unit() {
   ### Run by test/cpp-unit.sh
@@ -121,7 +136,7 @@ unit() {
 
   # TODO: Exclude examples here
   # ninja mycpp-$variant
-  ninja mycpp-unit
+  ninja mycpp-unit-$compiler-$variant
 
   local log_dir=_test/$compiler-$variant/mycpp-unit
   mkdir -p $log_dir

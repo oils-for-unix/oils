@@ -90,7 +90,8 @@ translate-mycpp() {
   # PYTHONPATH.
   ( source $MYCPP_VENV/bin/activate
     # flags may be empty
-    time MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" PYTHONPATH=$REPO_ROOT:$MYPY_REPO mycpp/mycpp_main.py "$@" > $out
+    time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" \
+      mycpp/mycpp_main.py "$@" > $out
   )
 }
 

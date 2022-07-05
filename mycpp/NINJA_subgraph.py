@@ -2,7 +2,7 @@
 """
 mycpp/NINJA_subgraph.py
 
-This is a library invoked by build/native_graph.py.
+This is a library invoked by ./NINJA_config.py
 
 Code Layout:
 
@@ -10,9 +10,9 @@ Code Layout:
     NINJA_subgraph.py  # This file describes dependencies programmatically
     NINJA-steps.sh     # Invoked by Ninja rules
 
-    build.sh        # wrappers invoked by the Toil and devtools/release.sh
+    build.sh           # wrappers invoked by the Toil and devtools/release.sh
+    test.sh            # test driver for unit tests and examples
 
-  mycpp/
     examples/
       cgi.py
       varargs.py
@@ -215,16 +215,26 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
     phony['pea-translate'].append(cc_src)
 
   if translator == 'mycpp':
-    variants = ['testgc', 'asan', 'ubsan', 'opt']
+    example_matrix = [
+        ('cxx', 'testgc'),
+        ('cxx', 'asan'),
+        ('cxx', 'ubsan'),
+        ('cxx', 'opt'),
+
+        # Finds more bugs!
+        ('clang', 'ubsan'),
+    ]
   else:
-    variants = ['testgc']  # just do one for now
+    example_matrix = [
+        ('cxx', 'testgc')
+    ]  # pea just has one variant for now
 
   # Compile C++.
-  for variant in variants:
-    b = '_bin/cxx-%s/%s-examples/%s' % (variant, translator, ex)
+  for compiler, variant in example_matrix:
+    b = '_bin/%s-%s/%s-examples/%s' % (compiler, variant, translator, ex)
 
     example_vars = [
-        ('compiler', 'cxx'), ('variant', variant), ('more_cxx_flags', "''")
+        ('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")
     ]
     n.build(b, 'compile_and_link',  # defined in cpp/NINJA-steps.sh
             [cc_src] + RUNTIME + EXAMPLES_CC.get(ex, []),
@@ -235,7 +245,10 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
       phony['pea-compile'].append(b)
 
     if translator == 'mycpp':
-      phony['mycpp-%s' % variant].append(b)
+      key = 'mycpp-examples-%s-%s' % (compiler, variant)
+      if key not in phony:
+        phony[key] = []
+      phony[key].append(b)
 
     if variant == 'opt':
       stripped = '_bin/cxx-%s/%s-examples/%s.stripped' % (variant, translator, ex)
@@ -356,7 +369,6 @@ def NinjaGraph(n):
       # The 'mycpp-all' target is currently everything that starts with mycpp.
       # Or should this be mycpp-default / mycpp-logs-equal?
 
-      'mycpp-unit': [],
       'mycpp-typecheck': [],  # optional: for debugging only.  translation does it.
       'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
 
@@ -367,11 +379,11 @@ def NinjaGraph(n):
 
       # NOTE: _test/benchmark-table.tsv isn't included in any phony target
 
-      # variants
-      'mycpp-testgc': [],
-      'mycpp-asan': [],
-      'mycpp-ubsan': [],
-      'mycpp-opt': [],
+      # Targets dynamically added:
+      #
+      # mycpp-unit-$compiler-$variant
+      # mycpp-examples-$compiler-$variant
+
 
       'pea-translate': [],
       'pea-compile': [],
@@ -388,13 +400,10 @@ def NinjaGraph(n):
     # assume names are unique
     test_name = os.path.basename(test_path)
 
-    MATRIX = [
+    UNIT_TEST_MATRIX = [
         ('cxx', 'testgc'),
         ('cxx', 'ubsan'),
-
-        # Is Clang's better?  Right now I see the same failure in
-        # my_runtime_test, so just use GCC.
-        #('clang', 'ubsan'),
+        ('clang', 'ubsan'),
 
         # TODO: re-enable coverage with Clang
         # Or change cpp-unit task to only use mycpp-unit-$variant and
@@ -403,7 +412,7 @@ def NinjaGraph(n):
         #('clang', 'coverage'),
     ]
 
-    for (compiler, variant) in MATRIX:
+    for (compiler, variant) in UNIT_TEST_MATRIX:
       b = '_bin/%s-%s/mycpp-unit/%s' % (compiler, variant, test_name)
 
       main_cc = '%s.cc' % test_path
@@ -421,8 +430,10 @@ def NinjaGraph(n):
               variables=unit_test_vars)
       n.newline()
 
-      # Should we delete this in favor of mycpp/test.sh?
-      phony['mycpp-unit'].append(b)
+      key = 'mycpp-unit-%s-%s' % (compiler, variant)
+      if key not in phony:
+        phony[key] = []
+      phony[key].append(b)
 
 
   #

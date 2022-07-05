@@ -12,7 +12,8 @@ set -o errexit
 soil-run() {
   ./NINJA_config.py
 
-  # uses Ninja to run testgc.  Could also run ubsan
+  # uses Ninja to run (cxx, testgc) variant.  Could also run (clang, ubsan),
+  # which finds more bugs.
   mycpp/test.sh unit
 
   # This is part of build/dev.sh oil-cpp
