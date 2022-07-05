@@ -1,5 +1,9 @@
 // core_pyutil.cc
 
+// clang-format off
+#include "mycpp/myerror.h"  // for _OSError; must come first
+// clang-format on
+
 #include "core_pyutil.h"
 
 namespace pyutil {
@@ -43,9 +47,6 @@ Str* GetVersion(_ResourceLoader* loader) {
 Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
   assert(0);
 }
-
-// Avoid conflict with field
-#undef errno
 
 Str* strerror(_OSError* e) {
   return new Str(::strerror(e->errno));
