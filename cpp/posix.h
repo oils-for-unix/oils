@@ -84,8 +84,8 @@ inline void putenv(Str* name, Str* value) {
   assert(name->IsNulTerminated());
   assert(value->IsNulTerminated());
   int overwrite = 1;
-  bool err = ::setenv(name->data_, value->data_, overwrite) == -1;
-  if (err) {
+  int ret = ::setenv(name->data_, value->data_, overwrite);
+  if (ret < 0) {
     throw new IOError(errno);
   }
 }
