@@ -11,6 +11,8 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
+source mycpp/common.sh  # $MYPY_REPO
+
 readonly PY_PATH='.:vendor/'
 
 # Temporary
@@ -22,17 +24,20 @@ readonly FILTER_DIR=build/app-deps
 write-filters() {
   ### Write files with the egrep -f format
 
-  # Remove files in the repo or stdlib
-
   # We could just manually edit these files in build/app-deps, but they are
   # easier to see here.
-  # Unfortunately there is no way to put a comment in these files?
 
-  # vendor/typing.py
+  # py-tool filter can be used for Ninja 'depfile' dependencies
+
+  # vendor/typing.py isn't imported normally
   cat >$FILTER_DIR/filter-py-tool.txt <<'EOF'
 __init__.py
 typing.py
 EOF
+
+
+  # typecheck and translate filters used for EXPLICIT Ninja dependencies --
+  # they are inputs to the tool
 
   # mylib.py causes a bunch of errors
   cat >$FILTER_DIR/filter-typecheck.txt <<'EOF'
@@ -42,7 +47,7 @@ mycpp/mylib.py
 pylib/collections_.py
 EOF
 
-  # On top of the filters above, exclude these from translation
+  # On top of the typecheck filter, exclude these from translation
 
   # Note: renaming files to pyoptview, pyconsts.py, pymatch.py, py_path_stat.py
   # etc. would make this filter cleaner.
@@ -73,7 +78,7 @@ repo-filter() {
 }
 
 exclude-filter() {
-  ### Select files based on exclusing relative paths
+  ### Exclude repo-relative paths
 
   local filter_name=$1
 
@@ -139,22 +144,73 @@ pea() {
   cat $dir/all.txt | grep -v 'oilshell/oil/_cache/Python' | repo-filter | mysort
 }
 
-source mycpp/common.sh  # $MYPY_REPO
-
 mycpp() {
-  local dir=$DIR/parse
+  local dir=mycpp/NINJA
   mkdir -p $dir
+
+  local module='mycpp.mycpp_main'
 
   # mycpp can't be imported with $PY_310 for some reason
   # typing_extensions?
 
   ( source $MYCPP_VENV/bin/activate
     PYTHONPATH=$REPO_ROOT:$REPO_ROOT/mycpp:$MYPY_REPO /usr/bin/env python3 \
-      build/app_deps.py py-manifest mycpp.mycpp_main > $dir/all.txt
+      build/app_deps.py py-manifest $module > $dir/$module.ALL.txt
   )
 
-  # TODO: mycpp imports should be 'from mycpp'
-  cat $dir/all.txt | grep -v oilshell/oil_DEPS | repo-filter | mysort
+  cat $dir/$module.ALL.txt \
+    | grep -v oilshell/oil_DEPS \
+    | repo-filter \
+    | exclude-filter py-tool \
+    | mysort \
+    | tee $dir/$module.FILTERED.txt
+}
+
+# 439 ms to compute all dependencies.
+# Should this be done in:
+#
+# build/dev.sh py-source -- but then you would have to remember
+# ./NINJA_config.py -- this makes sense because depfiles are part of the graph
+# When each tool is invoked, emulating gcc -M -- then you need a shell wrapper
+#   for each tool that calls build/app-deps.sh and has a flag
+# build/cpp.sh all?  -- no we want to be demand-driven?
+
+all-py-tool() {
+  # Union of all these is IMPLICIT input to build/cpp.sh codegen
+  # Plus lexer
+  asdl-tool
+
+  optview-gen
+  consts-gen
+  flag-gen
+  lexer-gen
+  option-gen
+  grammar-gen
+  arith-parse-gen
+}
+
+ninja-config() {
+  # TODO:
+  # _build/NINJA/  # Part of the Ninja graph
+  #   py-tool/
+  #     asdl.tool.ALL.txt
+  #     asdl.tool.FILTERED.txt
+  #     frontend.consts_gen.ALL.txt
+  #     frontend.consts_gen.FILTERED.txt
+  #   osh_eval/
+  #     typecheck.txt
+  #     translate.txt
+  #
+  # Then load *.FILTERED.txt into Ninja
+
+  # Implicit dependencies for tools
+  all-py-tool
+
+  # Explicit dependencies for translating and type checking
+  osh-eval
+
+  # NOTE: mycpp baked into mycpp/NINJA.
+
 }
 
 mycpp-example-parse() {

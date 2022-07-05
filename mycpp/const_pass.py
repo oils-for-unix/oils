@@ -16,11 +16,9 @@ from mypy.nodes import (
 
 from mypy.types import Type
 
-from crash import catch_errors
-from util import log
-
-import format_strings
-
+from mycpp.crash import catch_errors
+from mycpp import format_strings
+from mycpp.util import log
 
 T = None  # TODO: Make it type check?
 

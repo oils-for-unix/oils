@@ -28,9 +28,6 @@ using tdop::TdopParser;
     mod_name, func_name = row.ModuleAndFuncName()
     to_declare[mod_name].add(('N', func_name))
 
-  log('')
-  log('')
-
   # TODO: namespace are arith_parse or tdop
   for row in spec.led_lookup.itervalues():
     mod_name, func_name = row.ModuleAndFuncName()
@@ -61,7 +58,7 @@ tdop::LeftInfo kLeftLookup[] = {
   n = max(spec.led_lookup)
   m = max(spec.nud_lookup)
   assert n == m
-  log('arith_parse_gen.py: precedence table has %d entries', n)
+  #log('arith_parse_gen.py: precedence table has %d entries', n)
 
   for i in xrange(1, n):
     row = spec.led_lookup.get(i)

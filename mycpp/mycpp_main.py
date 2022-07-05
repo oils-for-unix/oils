@@ -16,12 +16,11 @@ from mypy.build import BuildSource
 from mypy.main import process_options
 from mypy.options import Options
 
-import const_pass
-import cppgen_pass
-import debug_pass
-import pass_state
-
-from util import log
+from mycpp import const_pass
+from mycpp import cppgen_pass
+from mycpp import debug_pass
+from mycpp import pass_state
+from mycpp.util import log
 
 
 def Options():

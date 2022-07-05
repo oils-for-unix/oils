@@ -152,7 +152,7 @@ gen-asdl-cpp() {
 
   # TODO: expand when .gc is the only thing generated
   #local -a out_files=( $out_prefix* )
-  echo "$asdl_path -> $out_prefix* and $debug_info"
+  echo "$asdl_path -> (asdl/tool) -> $out_prefix* and $debug_info"
 }
 
 # TODO: syntax.asdl and runtime.asdl are mutually recursive.
@@ -182,40 +182,38 @@ oil-asdl-to-py() {
   gen-asdl-py 'mycpp/examples/expr.asdl'
 }
 
-arith-parse-cpp-gen() {
-  osh/arith_parse_gen.py > _build/cpp/arith_parse.cc
-}
-
 oil-asdl-to-cpp() {
   mkdir -p _build/cpp _devbuild/tmp
 
   PRETTY_PRINT_METHODS='' gen-asdl-cpp 'asdl/hnode.asdl'
 
   gen-asdl-cpp frontend/types.asdl  # no dependency on Id
+  gen-asdl-cpp core/runtime.asdl
+  gen-asdl-cpp frontend/syntax.asdl
 
   # Problem:
   # - we have both _devbuild/gen/id.h 
   #           and _build/cpp/id_kind_asdl.h
   # - do we want enum class?
 
-  build/codegen.sh const-cpp-gen  # dependency on bool_arg_type_e
-  build/codegen.sh option-cpp-gen
-
   # We also want to generate the lexer here.
   # TranslateOshLexer can have a flag to use different Ids?
   # Instead of id__Eol_Tok, use Id::Eol_Tok.
   # case lex_mode_e::Expr
 
-  gen-asdl-cpp core/runtime.asdl
+}
 
-  gen-asdl-cpp frontend/syntax.asdl
+cpp-codegen() {
+  build/codegen.sh const-cpp-gen  # dependency on bool_arg_type_e
+  build/codegen.sh option-cpp-gen
+  build/codegen.sh arith-parse-cpp-gen
+  build/codegen.sh flag-gen-cpp
 }
 
 oil-cpp() {
   oil-asdl-to-cpp
 
-  arith-parse-cpp-gen
-  build/codegen.sh flag-gen-cpp
+  cpp-codegen
 
   build/native.sh gen-oil-native-sh  # script to build it
 

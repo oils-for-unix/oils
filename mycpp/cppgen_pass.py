@@ -18,9 +18,9 @@ from mypy.nodes import (
     UnaryExpr, ComparisonExpr, CallExpr, IntExpr, ListExpr, DictExpr,
     ListComprehension)
 
-import format_strings
-from crash import catch_errors
-from util import log
+from mycpp import format_strings
+from mycpp.crash import catch_errors
+from mycpp.util import log
 
 
 T = None
