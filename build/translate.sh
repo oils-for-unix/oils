@@ -29,7 +29,7 @@ mycpp() {
     set +o errexit
 
     source $MYCPP_VENV/bin/activate
-    time PYTHONPATH=$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
+    time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
       mycpp/mycpp_main.py "$@"
   )
 }
