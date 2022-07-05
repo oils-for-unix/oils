@@ -808,6 +808,7 @@
 1 _tmp/spec/cpp/exit-status.tsv
 2 _tmp/spec/cpp/exit-status.tsv
 3 _tmp/spec/cpp/exit-status.tsv
+4 _tmp/spec/cpp/exit-status.tsv
 5 _tmp/spec/cpp/exit-status.tsv
 6 _tmp/spec/cpp/exit-status.tsv
 7 _tmp/spec/cpp/exit-status.tsv
@@ -1266,6 +1267,7 @@
 5 _tmp/spec/cpp/strict-options.tsv
 6 _tmp/spec/cpp/strict-options.tsv
 7 _tmp/spec/cpp/strict-options.tsv
+8 _tmp/spec/cpp/strict-options.tsv
 9 _tmp/spec/cpp/strict-options.tsv
 10 _tmp/spec/cpp/strict-options.tsv
 11 _tmp/spec/cpp/strict-options.tsv

@@ -1,6 +1,3 @@
-(_build/cpp/osh_eval.cc:8810: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/command_.html
-(_build/cpp/osh_eval.cc:8810: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/command_.html
-(_build/cpp/osh_eval.cc:8810: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/toysh-posix.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/arith-context.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
