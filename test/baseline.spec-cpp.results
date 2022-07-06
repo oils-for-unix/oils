@@ -570,6 +570,7 @@
 35 _tmp/spec/cpp/builtin-printf.tsv
 38 _tmp/spec/cpp/builtin-printf.tsv
 39 _tmp/spec/cpp/builtin-printf.tsv
+44 _tmp/spec/cpp/builtin-printf.tsv
 45 _tmp/spec/cpp/builtin-printf.tsv
 46 _tmp/spec/cpp/builtin-printf.tsv
 47 _tmp/spec/cpp/builtin-printf.tsv
@@ -864,6 +865,7 @@
 4 _tmp/spec/cpp/fatal-errors.tsv
 0 _tmp/spec/cpp/for-expr.tsv
 1 _tmp/spec/cpp/for-expr.tsv
+2 _tmp/spec/cpp/for-expr.tsv
 3 _tmp/spec/cpp/for-expr.tsv
 4 _tmp/spec/cpp/for-expr.tsv
 5 _tmp/spec/cpp/for-expr.tsv
