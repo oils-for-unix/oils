@@ -27,6 +27,4 @@ class OSError : public _OSError {
   }
 };
 
-#include <errno.h>
-
 #endif  // MYERROR_H

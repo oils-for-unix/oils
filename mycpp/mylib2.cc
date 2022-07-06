@@ -4,7 +4,8 @@
 
 #include <unistd.h>  // isatty
 
-#include "myerror.h"
+#include <errno.h>
+
 #include "my_runtime.h"  // kIntBufSize
 
 using gc_heap::gHeap;

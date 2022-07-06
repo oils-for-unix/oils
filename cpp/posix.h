@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "mycpp/mylib_leaky.h"
+#include <errno.h>
 
 namespace posix {
 
