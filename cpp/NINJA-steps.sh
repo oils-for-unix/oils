@@ -66,6 +66,13 @@ setglobal_compile_flags() {
     (dbg)
       flags="$flags -O0 -g"
       ;;
+
+    (coverage)
+      # source-based coverage is more precise than say sanitizer-based
+      # https://clang.llvm.org/docs/SourceBasedCodeCoverage.html
+      flags="$flags -O0 -g -fprofile-instr-generate -fcoverage-mapping"
+      ;;
+
     (asan)
       # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
       flags="$flags -O0 -g -fsanitize=address"

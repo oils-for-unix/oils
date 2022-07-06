@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "mycpp/mylib_leaky.h"
+#include <errno.h>
 
 namespace posix {
 
@@ -80,12 +81,14 @@ inline int close(int fd) {
   return ::close(fd);
 }
 
-inline int putenv(Str* name, Str* value) {
-  int env_string_size =
-      name->len_ + value->len_ + 1;  // NOTE(Jesse): +1 for the '=' between them
-  char* env_string = static_cast<char*>(malloc(env_string_size));
-  snprintf(env_string, env_string_size, "%s=%s", name->data_, value->data_);
-  return ::putenv(env_string);
+inline void putenv(Str* name, Str* value) {
+  assert(name->IsNulTerminated());
+  assert(value->IsNulTerminated());
+  int overwrite = 1;
+  int ret = ::setenv(name->data_, value->data_, overwrite);
+  if (ret < 0) {
+    throw new IOError(errno);
+  }
 }
 
 inline int fork() {
@@ -115,6 +118,9 @@ inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
   return new mylib::CFileLineReader(f);
 }
 
+// Dummy exception posix::error
+class error {};
+
 inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   mylib::Str0 _argv0(argv0);
 
@@ -129,11 +135,18 @@ inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   }
   _argv[n] = nullptr;
 
-  ::execve(_argv0.Get(), _argv, nullptr);
+  int ret = ::execve(_argv0.Get(), _argv, nullptr);
+  if (ret == -1)
+  {
+    throw IOError(errno);
+  }
+
+  // NOTE(Jesse): ::execve() is specified to never return on success.  If we
+  // hit this assertion, it returned successfully (or at least something other
+  // than -1) but should have overwritten our address space with the invoked process'
+  InvalidCodePath();
 }
 
-// Dummy exception posix::error
-class error {};
 
 }  // namespace posix
 

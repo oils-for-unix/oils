@@ -209,7 +209,7 @@ Str* Str::join(List<Str*>* items) {
 }
 
 Str* Str::upper() {
-  Str* result = mylib::BlankStr(len_);
+  Str* result = mylib::AllocStr(len_);
   char* buffer = result->data();
   for (int char_index = 0; char_index < len_; ++char_index) {
     buffer[char_index] = toupper(data_[char_index]);
@@ -218,7 +218,7 @@ Str* Str::upper() {
 }
 
 Str* Str::lower() {
-  Str* result = mylib::BlankStr(len_);
+  Str* result = mylib::AllocStr(len_);
   char* buffer = result->data();
   for (int char_index = 0; char_index < len_; ++char_index) {
     buffer[char_index] = tolower(data_[char_index]);

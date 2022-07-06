@@ -2,7 +2,13 @@
 
 #include "_build/cpp/hnode_asdl.h"
 #include "cpp/qsn_qsn.h"
+
+#ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_leaky.h"
+#else
+#include "mycpp/gc_heap.h"
+#include "mycpp/mylib2.h"
+#endif
 
 // For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
 inline Str* repr(void* obj) {
@@ -13,7 +19,12 @@ inline Str* repr(void* obj) {
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
+#ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_leaky.h"
+#else
+#include "mycpp/gc_heap.h"
+#endif
+
 namespace runtime {  // forward declare
 
 }  // forward declare namespace runtime

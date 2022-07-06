@@ -45,6 +45,7 @@ using id_kind_asdl::Kind_t;
 #include "qsn_qsn.h"
 #include "signal_.h"
 #include "time_.h"
+#include "segfault_handler.h"
 
 #ifdef OSH_EVAL
 #include "osh_eval_stubs.h"

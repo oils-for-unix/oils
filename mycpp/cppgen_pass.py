@@ -18,9 +18,9 @@ from mypy.nodes import (
     UnaryExpr, ComparisonExpr, CallExpr, IntExpr, ListExpr, DictExpr,
     ListComprehension)
 
-import format_strings
-from crash import catch_errors
-from util import log
+from mycpp import format_strings
+from mycpp.crash import catch_errors
+from mycpp.util import log
 
 
 T = None
@@ -287,6 +287,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
       self.imported_names = set()  # For module::Foo() vs. self.foo
 
+      # TODO: mylib_leaky.h should emulate the GC API
       # for NewList vs. Alloc<List>, etc.
       self.gc = bool(os.getenv('GC'))
 

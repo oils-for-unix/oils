@@ -77,11 +77,11 @@
 // - gc_heap::Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
-// - BlankStr(length), CopyStr(), NewList, NewDict: gc_heap::Alloc() doesn't
+// - AllocStr(length), CopyStr(), NewList, NewDict: gc_heap::Alloc() doesn't
 // work
 //   for these types for various reasons
 // - Heap::Allocate()
-//   The untyped internal API.  For BlankStr() and NewSlab().
+//   The untyped internal API.  For AllocStr() and NewSlab().
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- shouldn't be in Oil?
 
@@ -130,7 +130,7 @@ inline size_t aligned(size_t n) {
 
 class Obj;
 
-const int kMaxRoots = 1024;  // related to C stack size
+const int kMaxRoots = 4*1024;  // related to C stack size
 
 // #define GC_DEBUG 1
 
@@ -609,7 +609,7 @@ inline Slab<T>* NewSlab(int len) {
 
 class Str : public gc_heap::Obj {
  public:
-  // Don't call this directly.  Call BlankStr() instead, which calls this.
+  // Don't call this directly.  Call AllocStr() instead, which calls this.
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
     // log("GC Str()");
   }
@@ -724,7 +724,7 @@ extern Str* kEmptyString;
 //
 
 // New string of a certain length, to be filled in
-inline Str* BlankStr(int len) {
+inline Str* AllocStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);
   auto s = new (place) Str();
@@ -732,7 +732,7 @@ inline Str* BlankStr(int len) {
   return s;
 }
 
-// Like BlankStr, but allocate more than you need, e.g. for snprintf() to write
+// Like AllocStr, but allocate more than you need, e.g. for snprintf() to write
 // into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
@@ -743,9 +743,9 @@ inline Str* OverAllocatedStr(int len) {
 
 inline Str* CopyStr(const char* data, int len) {
   // Problem: if data points inside a Str, it's often invalidated!
-  Str* s = BlankStr(len);
+  Str* s = AllocStr(len);
 
-  // log("BlankStr s->data_ %p len = %d", s->data_, len);
+  // log("AllocStr s->data_ %p len = %d", s->data_, len);
   // log("sizeof(Str) = %d", sizeof(Str));
   memcpy(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
@@ -957,23 +957,21 @@ class List : public gc_heap::Obj {
     auto self = this;
     StackRoots _roots({&self});
 
-    if (self->capacity_ < n) {
-      // Example: The user asks for space for 7 integers.  Account for the
-      // header, and say we need 9 to determine the obj length.  9 is
-      // rounded up to 16, for a 64-byte obj.  Then we actually have space
-      // for 14 items.
-      self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
-      auto new_slab = NewSlab<T>(self->capacity_);
+    // Don't do anything if there's already enough space.
+    if (self->capacity_ >= n) return;
 
-      // slab_ may not be initialized constructor because many lists are
-      // empty.
-      if (self->capacity_ != 0) {
-        // log("Copying %d bytes", len_ * sizeof(T));
-        memcpy(new_slab->items_, self->slab_->items_, self->len_ * sizeof(T));
-      }
-      self->slab_ = new_slab;
+    // Example: The user asks for space for 7 integers.  Account for the
+    // header, and say we need 9 to determine the obj length.  9 is
+    // rounded up to 16, for a 64-byte obj.  Then we actually have space
+    // for 14 items.
+    self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+    auto new_slab = NewSlab<T>(self->capacity_);
+
+    if (self->len_ > 0) {
+      // log("Copying %d bytes", len_ * sizeof(T));
+      memcpy(new_slab->items_, self->slab_->items_, self->len_ * sizeof(T));
     }
-    // Otherwise, there's enough capacity
+    self->slab_ = new_slab;
   }
 
   // Append a single element to this list.  Must be specialized List<int> vs

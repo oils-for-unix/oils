@@ -16,7 +16,7 @@
 #include "gc_heap.h"
 
 // TODO: Don't use 'using' in header
-using gc_heap::BlankStr;
+using gc_heap::AllocStr;
 using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::List;
@@ -174,7 +174,7 @@ inline int ord(Str* s) {
 }
 
 inline Str* chr(int i) {
-  auto result = BlankStr(1);
+  auto result = AllocStr(1);
   result->data_[0] = i;
   return result;
 }
@@ -317,7 +317,7 @@ class StrIter {
     return i_ >= len_;
   }
   Str* Value() {  // similar to index_()
-    Str* result = BlankStr(1);
+    Str* result = AllocStr(1);
     result->data_[0] = s_->data_[i_];
     // assert(result->data_[1] == '\0');
     return result;

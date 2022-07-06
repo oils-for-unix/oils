@@ -31,7 +31,7 @@ def ImportMain(main_module, old_modules):
   log('Importing %r', main_module)
   try:
     __import__(main_module)
-  except ImportError, e:
+  except ImportError as e:
     log('Error importing %r with sys.path %r', main_module, sys.path)
     # TODO: print better error.
     raise
@@ -79,7 +79,7 @@ def FilterModules(modules):
     if full_path.endswith('/__init__.pyc') or \
        full_path.endswith('__init__.py'):
       i = full_path.rfind('/', 0, i)
-    for _ in xrange(num_parts):
+    for _ in range(num_parts):  # range for Python 3
       i = full_path.rfind('/', 0, i)
     #print i, full_path[i+1:]
     rel_path = full_path[i + 1:]

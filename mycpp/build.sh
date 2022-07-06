@@ -19,8 +19,9 @@ soil-run() {
 
   set +o errexit
 
-  # includes non-essential stuff like type checking alone, stripping
-  ninja mycpp-all
+  # 'mycpp-all' has other stuff like type checking alone, stripping
+  ninja mycpp-logs-equal
+
   local status=$?
   set -o errexit
 

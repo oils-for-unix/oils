@@ -53,16 +53,13 @@ const-mypy-gen() {
 }
 
 const-cpp-gen() {
-  local gc=${1:-}
-
   local out_dir=_build/cpp
 
   frontend/consts_gen.py cpp $out_dir/id_kind_asdl
-  ls -l $out_dir/id_kind_asdl*
+  log "  (frontend/consts_gen) -> $out_dir/id_kind_asdl*"
 
-  # TODO: Respect GC=1; Don't use mylib_leaky.h
-  frontend/consts_gen.py cpp-consts $out_dir/consts${gc}
-  ls -l $out_dir/consts*
+  frontend/consts_gen.py cpp-consts $out_dir/consts
+  log "  (frontend/consts_gen) -> $out_dir/consts*"
 }
 
 option-mypy-gen() {
@@ -72,15 +69,11 @@ option-mypy-gen() {
 }
 
 option-cpp-gen() {
-  local gc=${1:-}
-
-  # TODO: respect GC=1
   local out_dir=_build/cpp
-  frontend/option_gen.py cpp $out_dir/option_asdl${gc}
+  frontend/option_gen.py cpp $out_dir/option_asdl
 
-  # TODO: Respect GC=1; Don't use mylib_leaky.h
-  core/optview_gen.py > $out_dir/core_optview${gc}.h
-  log "  (core/optview_gen) -> $out_dir/core_optview${gc}.h"
+  core/optview_gen.py > $out_dir/core_optview.h
+  log "  (core/optview_gen) -> $out_dir/core_optview.h"
 }
 
 flag-gen-mypy() {
@@ -96,7 +89,13 @@ flag-gen-cpp() {
   mkdir -p $(dirname $prefix)  # unit tests need this
 
   frontend/flag_gen.py cpp $prefix
-  ls -l $prefix*
+  log "  (frontend/flag_gen) -> $prefix*"
+}
+
+arith-parse-cpp-gen() {
+  local out=_build/cpp/arith_parse.cc
+  osh/arith_parse_gen.py > $out
+  log "  (osh/arith_parse_gen) -> $out"
 }
 
 lexer-gen() { frontend/lexer_gen.py "$@"; }

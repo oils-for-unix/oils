@@ -7,8 +7,8 @@ from mypy.types import Type
 
 from typing import overload, Union, Optional, Any, Dict
 
-from crash import catch_errors
-from util import log
+from mycpp.crash import catch_errors
+from mycpp.util import log
 
 
 T = None

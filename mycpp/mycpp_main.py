@@ -16,12 +16,11 @@ from mypy.build import BuildSource
 from mypy.main import process_options
 from mypy.options import Options
 
-import const_pass
-import cppgen_pass
-import debug_pass
-import pass_state
-
-from util import log
+from mycpp import const_pass
+from mycpp import cppgen_pass
+from mycpp import debug_pass
+from mycpp import pass_state
+from mycpp.util import log
 
 
 def Options():
@@ -232,29 +231,27 @@ def main(argv):
 
   f = sys.stdout
 
-  gc = bool(os.getenv('GC'))
-  header_name = 'gc_heap' if gc else 'mylib_leaky'
-  #header_name = 'mylib'
-
   # TODO: Add --cc-out?  But there is a preamble and postamble.
   f.write("""\
 // BEGIN mycpp output
 
-#include "mycpp/%s.h"
-
+#ifdef LEAKY_BINDINGS
+#include "mycpp/mylib_leaky.h"
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
-using gc_heap::StackRoots;
-""" % header_name)
-
-  if gc:
-    f.write("""\
+#else
+#include "mycpp/gc_heap.h"
 #include "mycpp/my_runtime.h"
 #include "mycpp/mylib2.h"
 
-using gc_heap::BlankStr;
+using gc_heap::Alloc;
+using gc_heap::AllocStr;
+using gc_heap::kZeroMask;
+using gc_heap::StackRoots;
 using gc_heap::NewList;
 using gc_heap::NewDict;
+#endif
+
 """)
 
   if to_header:
@@ -277,15 +274,20 @@ using gc_heap::NewDict;
 
   if opts.header_out:
     header_f = open(opts.header_out, 'w')  # Not closed
-    guard = 'RUNTIME_H'
+    guard = 'RUNTIME_H'  # hard-coded?
     header_f.write("""\
 // %s: translated from Python by mycpp
 
 #ifndef %s
 #define %s
 
-#include "mycpp/%s.h"
-""" % (os.path.basename(opts.header_out), guard, guard, header_name))
+#ifdef LEAKY_BINDINGS
+#include "mycpp/mylib_leaky.h"
+#else
+#include "mycpp/gc_heap.h"
+#endif
+
+""" % (os.path.basename(opts.header_out), guard, guard))
 
   log('\tmycpp pass: FORWARD DECL')
 

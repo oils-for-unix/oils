@@ -300,6 +300,7 @@
 2 _tmp/spec/cpp/ble-idioms.tsv
 3 _tmp/spec/cpp/ble-idioms.tsv
 4 _tmp/spec/cpp/ble-idioms.tsv
+5 _tmp/spec/cpp/ble-idioms.tsv
 6 _tmp/spec/cpp/ble-idioms.tsv
 7 _tmp/spec/cpp/ble-idioms.tsv
 8 _tmp/spec/cpp/ble-idioms.tsv
@@ -505,6 +506,7 @@
 21 _tmp/spec/cpp/builtin-io.tsv
 22 _tmp/spec/cpp/builtin-io.tsv
 24 _tmp/spec/cpp/builtin-io.tsv
+25 _tmp/spec/cpp/builtin-io.tsv
 26 _tmp/spec/cpp/builtin-io.tsv
 27 _tmp/spec/cpp/builtin-io.tsv
 28 _tmp/spec/cpp/builtin-io.tsv
@@ -555,6 +557,7 @@
 14 _tmp/spec/cpp/builtin-printf.tsv
 15 _tmp/spec/cpp/builtin-printf.tsv
 16 _tmp/spec/cpp/builtin-printf.tsv
+17 _tmp/spec/cpp/builtin-printf.tsv
 18 _tmp/spec/cpp/builtin-printf.tsv
 19 _tmp/spec/cpp/builtin-printf.tsv
 20 _tmp/spec/cpp/builtin-printf.tsv
@@ -569,6 +572,7 @@
 35 _tmp/spec/cpp/builtin-printf.tsv
 38 _tmp/spec/cpp/builtin-printf.tsv
 39 _tmp/spec/cpp/builtin-printf.tsv
+44 _tmp/spec/cpp/builtin-printf.tsv
 45 _tmp/spec/cpp/builtin-printf.tsv
 46 _tmp/spec/cpp/builtin-printf.tsv
 47 _tmp/spec/cpp/builtin-printf.tsv
@@ -807,6 +811,7 @@
 1 _tmp/spec/cpp/exit-status.tsv
 2 _tmp/spec/cpp/exit-status.tsv
 3 _tmp/spec/cpp/exit-status.tsv
+4 _tmp/spec/cpp/exit-status.tsv
 5 _tmp/spec/cpp/exit-status.tsv
 6 _tmp/spec/cpp/exit-status.tsv
 7 _tmp/spec/cpp/exit-status.tsv
@@ -1266,6 +1271,7 @@
 5 _tmp/spec/cpp/strict-options.tsv
 6 _tmp/spec/cpp/strict-options.tsv
 7 _tmp/spec/cpp/strict-options.tsv
+8 _tmp/spec/cpp/strict-options.tsv
 9 _tmp/spec/cpp/strict-options.tsv
 10 _tmp/spec/cpp/strict-options.tsv
 11 _tmp/spec/cpp/strict-options.tsv
@@ -1427,7 +1433,6 @@
 9 _tmp/spec/cpp/var-ref.tsv
 10 _tmp/spec/cpp/var-ref.tsv
 11 _tmp/spec/cpp/var-ref.tsv
-12 _tmp/spec/cpp/var-ref.tsv
 13 _tmp/spec/cpp/var-ref.tsv
 14 _tmp/spec/cpp/var-ref.tsv
 15 _tmp/spec/cpp/var-ref.tsv

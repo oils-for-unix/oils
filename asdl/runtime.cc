@@ -2,11 +2,23 @@
 
 // BEGIN mycpp output
 
+#ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_leaky.h"
-
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
+#else
+#include "mycpp/gc_heap.h"
+#include "mycpp/my_runtime.h"
+#include "mycpp/mylib2.h"
+
+using gc_heap::Alloc;
+using gc_heap::AllocStr;
+using gc_heap::kZeroMask;
 using gc_heap::StackRoots;
+using gc_heap::NewList;
+using gc_heap::NewDict;
+#endif
+
 #include "runtime.h"
 
 GLOBAL_STR(str0, "(");
