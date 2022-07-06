@@ -1,6 +1,3 @@
-(_build/cpp/osh_eval.cc:8810: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/command_.html
-(_build/cpp/osh_eval.cc:8810: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/command_.html
-(_build/cpp/osh_eval.cc:8810: virtual int executor::ShellExecutor::RunSimpleCommand(runtime_asdl::cmd_value__Argv*, runtime_asdl::CommandStatus*, bool, bool): Assertion `0' failed.) _tmp/spec/cpp/toysh-posix.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/arith-context.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
@@ -8,4 +5,3 @@
 (/home/scallywag/work/oil/cpp/core_pyos.h:122: bool pyos::InputAvailable(int): Assertion `0' failed.) _tmp/spec/cpp/builtin-io.html
 (/home/scallywag/work/oil/mycpp/gc_heap.h:268: void gc_heap::Heap::PushRoot(gc_heap::Obj**): Assertion `roots_top_ &lt; kMaxRoots' failed.) _tmp/spec/cpp/alias.html
 (/home/scallywag/work/oil/mycpp/gc_heap.h:268: void gc_heap::Heap::PushRoot(gc_heap::Obj**): Assertion `roots_top_ &lt; kMaxRoots' failed.) _tmp/spec/cpp/ble-idioms.html
-IF YOU SEE THIS OSH IS CRASHING (_tmp/spec/cpp/for-expr.html:<pre>OSH_CPP_SEGFAULT)
