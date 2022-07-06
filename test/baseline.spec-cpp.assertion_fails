@@ -3,3 +3,4 @@
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
 (cpp/pgen2_parse.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/errexit-oil.html
 (/home/scallywag/work/oil/cpp/core_pyos.h:122: bool pyos::InputAvailable(int): Assertion `0' failed.) _tmp/spec/cpp/builtin-io.html
+IF YOU SEE THIS OSH IS CRASHING (_tmp/spec/cpp/for-expr.html:<pre>OSH_CPP_SEGFAULT)
