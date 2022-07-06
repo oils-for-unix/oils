@@ -338,6 +338,17 @@ TEST os_path_test() {
   PASS();
 }
 
+TEST putenv_test() {
+  Str* key = new Str("KEY");
+  Str* value = new Str("value");
+
+  posix::putenv(key, value);
+  char* got_value = ::getenv(key->data());
+  ASSERT( got_value && str_equals(new Str(got_value), value) );
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -355,6 +366,7 @@ int main(int argc, char** argv) {
   RUN_TEST(pyos_readbyte_test);
   RUN_TEST(pyos_read_test);
   RUN_TEST(os_path_test);
+  RUN_TEST(putenv_test);
 
 
   // Must come last because it does chdir()
