@@ -18,8 +18,6 @@
 
 #include "common.h"
 
-#include "_build/cpp/id_kind_asdl.h"
-
 // if this file is even included, we're using the old mylib
 #define MYLIB_LEAKY 1
 #include "gc_heap.h"  // for Obj
@@ -951,10 +949,12 @@ inline bool str_equals(Str* left, Str* right) {
   }
 }
 
+namespace id_kind_asdl
+{
+  enum class Kind;
+};
 
-inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
-  return left == right;;
-}
+inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 
 inline bool are_equal(int left, int right) {
   return left == right;;
