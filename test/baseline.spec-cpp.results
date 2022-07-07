@@ -1,6 +1,7 @@
 0 _tmp/spec/cpp/alias.tsv
 1 _tmp/spec/cpp/alias.tsv
 2 _tmp/spec/cpp/alias.tsv
+3 _tmp/spec/cpp/alias.tsv
 4 _tmp/spec/cpp/alias.tsv
 5 _tmp/spec/cpp/alias.tsv
 6 _tmp/spec/cpp/alias.tsv
@@ -299,6 +300,7 @@
 2 _tmp/spec/cpp/ble-idioms.tsv
 3 _tmp/spec/cpp/ble-idioms.tsv
 4 _tmp/spec/cpp/ble-idioms.tsv
+5 _tmp/spec/cpp/ble-idioms.tsv
 6 _tmp/spec/cpp/ble-idioms.tsv
 7 _tmp/spec/cpp/ble-idioms.tsv
 8 _tmp/spec/cpp/ble-idioms.tsv
@@ -865,7 +867,6 @@
 4 _tmp/spec/cpp/fatal-errors.tsv
 0 _tmp/spec/cpp/for-expr.tsv
 1 _tmp/spec/cpp/for-expr.tsv
-2 _tmp/spec/cpp/for-expr.tsv
 3 _tmp/spec/cpp/for-expr.tsv
 4 _tmp/spec/cpp/for-expr.tsv
 5 _tmp/spec/cpp/for-expr.tsv

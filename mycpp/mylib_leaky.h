@@ -39,6 +39,7 @@ class Dict;
 template <class K, class V>
 class DictIter;
 
+bool are_equal(Str* left, Str* right);
 bool str_equals(Str* left, Str* right);
 
 namespace mylib {
@@ -945,6 +946,27 @@ inline bool str_equals(Str* left, Str* right) {
     return false;
   }
 }
+
+namespace id_kind_asdl {
+enum class Kind;
+};
+
+inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
+
+inline bool are_equal(int left, int right) {
+  return left == right;
+  ;
+}
+
+inline bool are_equal(Str* left, Str* right) {
+  return str_equals(left, right);
+}
+
+inline bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
+  bool result = are_equal(t1->at0(), t2->at0());
+  result = result && (t1->at1() == t2->at1());
+  return result;
+}
 #endif
 
 inline bool str_equals0(const char* c_string, Str* s) {
@@ -1039,17 +1061,6 @@ inline bool str_contains(Str* haystack, Str* needle) {
   return p != nullptr;
 }
 
-// e.g. 'a' in ['a', 'b', 'c']
-inline bool list_contains(List<Str*>* haystack, Str* needle) {
-  int n = haystack->v_.size();
-  for (int i = 0; i < n; ++i) {
-    if (str_equals(haystack->index_(i), needle)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // e.g. [None] * 3
 template <typename T>
 List<T>* list_repeat(T item, int times) {
@@ -1066,17 +1077,26 @@ List<T>* list(List<T>* other) {
   return result;
 }
 
-// ints, floats, enums like Kind
-// e.g. 1 in [1, 2, 3]
 template <typename T>
-inline bool list_contains(List<T>* haystack, T needle) {
+bool list_contains(List<T>* haystack, T needle) {
   int n = haystack->v_.size();
   for (int i = 0; i < n; ++i) {
-    if (haystack->index_(i) == needle) {
+    if (are_equal(haystack->index_(i), needle)) {
       return true;
     }
   }
   return false;
+}
+
+template <typename T>
+bool list_contains(List<T>* haystack, T* needle) {
+  bool result = false;
+
+  if (needle) {
+    result = list_contains(haystack, *needle);
+  }
+
+  return result;
 }
 
 template <typename K, typename V>

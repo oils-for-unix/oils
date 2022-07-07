@@ -51,6 +51,11 @@ using id_kind_asdl::Kind_t;
 #include "osh_eval_stubs.h"
 #endif
 
+inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
+  return left == right;
+  ;
+}
+
 // Stubs for Python exceptions.  TODO: Move more to mylib?
 
 // TODO: remove this.  cmd_eval.py RunOilProc uses it, which we probably
