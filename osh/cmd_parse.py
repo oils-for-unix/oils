@@ -1097,6 +1097,10 @@ class CommandParser(object):
     self._Eat(Id.Lit_RBrace)
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
+    # Note(andychu): Related ASDL bug #1216.  Choosing the Python [] behavior
+    # would allow us to revert this back to None, which was changed in
+    # https://github.com/oilshell/oil/pull/1211.  Choosing the C++ nullptr
+    # behavior saves allocations, but is less type safe.
     node = BraceGroup(doc_token, c_list.children, [])  # no redirects yet
     node.spids.append(left_spid)
     node.spids.append(right_spid)
