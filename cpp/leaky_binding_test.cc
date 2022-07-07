@@ -9,8 +9,8 @@
 #include "_devbuild/gen/id.h"
 #include "core_error.h"
 #include "core_pyerror.h"
-#include "core_pyutil.h"
 #include "core_pyos.h"  // Chdir
+#include "core_pyutil.h"
 #include "frontend_match.h"
 #include "libc.h"
 #include "osh_bool_stat.h"
@@ -344,7 +344,7 @@ TEST putenv_test() {
 
   posix::putenv(key, value);
   char* got_value = ::getenv(key->data());
-  ASSERT( got_value && str_equals(new Str(got_value), value) );
+  ASSERT(got_value && str_equals(new Str(got_value), value));
 
   PASS();
 }
@@ -367,7 +367,6 @@ int main(int argc, char** argv) {
   RUN_TEST(pyos_read_test);
   RUN_TEST(os_path_test);
   RUN_TEST(putenv_test);
-
 
   // Must come last because it does chdir()
   RUN_TEST(pyos_test);

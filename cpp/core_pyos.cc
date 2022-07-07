@@ -56,7 +56,6 @@ Str* ReadLine() {
 }
 
 Dict<Str*, Str*>* Environ() {
-
   auto d = new Dict<Str*, Str*>();
 
   for (char** env = environ; *env; ++env) {

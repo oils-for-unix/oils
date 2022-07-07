@@ -2,9 +2,8 @@
 
 #include "mylib2.h"
 
-#include <unistd.h>  // isatty
-
 #include <errno.h>
+#include <unistd.h>  // isatty
 
 #include "my_runtime.h"  // kIntBufSize
 

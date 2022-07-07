@@ -3,11 +3,11 @@
 #ifndef POSIX_H
 #define POSIX_H
 
+#include <errno.h>
 #include <stdlib.h>  // putenv
 #include <unistd.h>
 
 #include "mycpp/mylib_leaky.h"
-#include <errno.h>
 
 namespace posix {
 
@@ -133,17 +133,16 @@ inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   _argv[n] = nullptr;
 
   int ret = ::execve(_argv0.Get(), _argv, nullptr);
-  if (ret == -1)
-  {
+  if (ret == -1) {
     throw IOError(errno);
   }
 
   // NOTE(Jesse): ::execve() is specified to never return on success.  If we
   // hit this assertion, it returned successfully (or at least something other
-  // than -1) but should have overwritten our address space with the invoked process'
+  // than -1) but should have overwritten our address space with the invoked
+  // process'
   InvalidCodePath();
 }
-
 
 }  // namespace posix
 
