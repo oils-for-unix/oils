@@ -118,9 +118,6 @@ inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
   return new mylib::CFileLineReader(f);
 }
 
-// Dummy exception posix::error
-class error {};
-
 inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   mylib::Str0 _argv0(argv0);
 

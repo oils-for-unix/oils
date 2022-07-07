@@ -12,7 +12,6 @@ namespace flag_spec {
 
 using arg_types::kFlagSpecs;
 using arg_types::kFlagSpecsAndMore;
-using arg_types::kOilFlagSpecs;
 using runtime_asdl::flag_type_e;
 using runtime_asdl::value__Bool;
 using runtime_asdl::value__Undef;
@@ -194,22 +193,6 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   return out;
 }
 
-flag_spec::_OilFlagSpec* CreateSpecOil(OilFlagSpec_c* in) {
-  auto out = new flag_spec::_OilFlagSpec();
-  out->arity1 = new Dict<Str*, args::_Action*>();
-  out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
-
-#ifndef CPP_UNIT_TEST
-  if (in->arity1) {
-    _CreateActions(in->arity1, out->arity1);
-  }
-#endif
-  if (in->defaults) {
-    _CreateDefaults(in->defaults, out->defaults);
-  }
-  return out;
-}
-
 flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name) {
   int i = 0;
   while (true) {
@@ -238,24 +221,6 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
     if (str_equals0(name, spec_name)) {
       // log("%s found", spec_name->data_);
       return CreateSpec2(&kFlagSpecsAndMore[i]);
-    }
-
-    i++;
-  }
-  // log("%s not found", spec_name->data_);
-  return nullptr;
-}
-
-flag_spec::_OilFlagSpec* LookupFlagSpecOil(Str* spec_name) {
-  int i = 0;
-  while (true) {
-    const char* name = kOilFlagSpecs[i].name;
-    if (name == nullptr) {
-      break;
-    }
-    if (str_equals0(name, spec_name)) {
-      // log("%s found", spec_name->data_);
-      return CreateSpecOil(&kOilFlagSpecs[i]);
     }
 
     i++;

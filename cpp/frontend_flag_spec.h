@@ -80,13 +80,6 @@ struct FlagSpecAndMore_c {
   DefaultPair_c* defaults;
 };
 
-struct OilFlagSpec_c {
-  const char* name;  // e.g. 'osh'
-  // These are Dict[str, _Action]
-  Action_c* arity1;
-  DefaultPair_c* defaults;
-};
-
 namespace flag_spec {
 
 class _FlagSpec {
