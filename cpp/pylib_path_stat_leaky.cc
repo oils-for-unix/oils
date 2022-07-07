@@ -1,6 +1,6 @@
 // pylib_path_stat.cc
 
-#include "pylib_path_stat.h"
+#include "pylib_path_stat_leaky.h"
 
 #include <sys/stat.h>
 

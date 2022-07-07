@@ -1,4 +1,4 @@
-// osh_eval_stubs.h
+// osh_eval_stubs_leaky.h
 
 #ifndef OSH_EVAL_STUBS_H
 #define OSH_EVAL_STUBS_H

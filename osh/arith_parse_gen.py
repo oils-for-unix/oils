@@ -17,7 +17,7 @@ def main(argv):
   spec = arith_parse.Spec()
 
   print("""\
-#include "cpp/osh_arith_parse.h"
+#include "cpp/osh_arith_parse_leaky.h"
 
 using syntax_asdl::arith_expr_t;
 using syntax_asdl::word_t;

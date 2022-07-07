@@ -1,6 +1,6 @@
 // libc.cc: Replacement for native/libcmodule.c
 
-#include "libc.h"
+#include "libc_leaky.h"
 
 #include <glob.h>
 #include <locale.h>

@@ -1,4 +1,4 @@
-// core_pyos.h: Replacement for core/pyos.py
+// core_pyos_leaky.h: Replacement for core/pyos.py
 
 #ifndef CORE_PYOS_H
 #define CORE_PYOS_H
@@ -17,7 +17,7 @@
 
 #include "_build/cpp/syntax_asdl.h"
 #include "mycpp/mylib_leaky.h"
-#include "time_.h"
+#include "time__leaky.h"
 // has a member named errno.  That member can't be changed
 // because it has to match the python error structure, which
 // has an errno member.

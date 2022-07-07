@@ -7,16 +7,16 @@
 
 #include "_build/cpp/runtime_asdl.h"  // cell, etc
 #include "_devbuild/gen/id.h"
-#include "core_error.h"
-#include "core_pyerror.h"
-#include "core_pyos.h"  // Chdir
-#include "core_pyutil.h"
-#include "frontend_match.h"
-#include "libc.h"
-#include "osh_bool_stat.h"
-#include "posix.h"
-#include "pylib_os_path.h"
-#include "time_.h"
+#include "core_error_leaky.h"
+#include "core_pyerror_leaky.h"
+#include "core_pyos_leaky.h"  // Chdir
+#include "core_pyutil_leaky.h"
+#include "frontend_match_leaky.h"
+#include "libc_leaky.h"
+#include "osh_bool_stat_leaky.h"
+#include "posix_leaky.h"
+#include "pylib_os_path_leaky.h"
+#include "time__leaky.h"
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;
@@ -199,7 +199,7 @@ TEST posix_test() {
   PASS();
 }
 
-// HACK!  asdl/runtime.py isn't translated, but core_error.h uses it...
+// HACK!  asdl/runtime.py isn't translated, but core_error_leaky.h uses it...
 namespace runtime {
 int NO_SPID = -1;
 };

@@ -16,7 +16,7 @@ Code Layout:
     examples/
       cgi.py
       varargs.py
-      varargs_preamble.h
+      varargs_preamble_leaky.h
 
 Output Layout:
 
@@ -165,7 +165,7 @@ UNIT_TESTS = {
     'mycpp/my_runtime_test': RUNTIME,
     'mycpp/mylib2_test': RUNTIME,
 
-    'mycpp/demo/target_lang': ['cpp/dumb_alloc.cc', 'mycpp/gc_heap.cc'],
+    'mycpp/demo/target_lang': ['cpp/dumb_alloc_leaky.cc', 'mycpp/gc_heap.cc'],
 
     # there is also demo/{gc_heap,square_heap}.cc
 }

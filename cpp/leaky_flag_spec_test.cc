@@ -1,4 +1,4 @@
-#include "cpp/frontend_flag_spec.h"
+#include "cpp/frontend_flag_spec_leaky.h"
 #include "vendor/greatest.h"
 
 using runtime_asdl::flag_type_e;

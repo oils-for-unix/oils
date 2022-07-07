@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "cpp/dumb_alloc.h"
+#include "cpp/dumb_alloc_leaky.h"
 #define MYLIB_LEGACY 1
 #include "mycpp/gc_heap.h"
 #include "vendor/greatest.h"

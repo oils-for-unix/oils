@@ -176,7 +176,7 @@ def Cpp(specs, header_f, cc_f):
 #ifndef ARG_TYPES_H
 #define ARG_TYPES_H
 
-#include "cpp/frontend_flag_spec.h"  // for FlagSpec_c
+#include "cpp/frontend_flag_spec_leaky.h"  // for FlagSpec_c
 #include "mycpp/mylib_leaky.h"
 
 namespace value_e = runtime_asdl::value_e;

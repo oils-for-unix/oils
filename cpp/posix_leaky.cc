@@ -4,7 +4,7 @@
 #include "mycpp/myerror.h"  // for OSError; must come first
 // clang-format on
 
-#include "posix.h"
+#include "posix_leaky.h"
 
 #include <errno.h>
 #include <fcntl.h>     // open

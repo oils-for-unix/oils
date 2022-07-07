@@ -4,7 +4,7 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-// #include "dumb_alloc.h"
+// #include "dumb_alloc_leaky.h"
 // #include "mylib.h"
 
 void log(const char* fmt, ...) {

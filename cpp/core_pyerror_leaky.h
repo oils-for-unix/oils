@@ -1,4 +1,4 @@
-// core_pyerror.h
+// core_pyerror_leaky.h
 
 #ifndef CORE_PYERROR_H
 #define CORE_PYERROR_H

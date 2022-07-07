@@ -1,6 +1,6 @@
 // pylib_os_path.cc
 
-#include "pylib_os_path.h"
+#include "pylib_os_path_leaky.h"
 
 namespace os_path {
 

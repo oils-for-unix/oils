@@ -1,6 +1,6 @@
 // frontend_match.cc: manual port of frontend/match
 
-#include "frontend_match.h"
+#include "frontend_match_leaky.h"
 
 // This order is required to get it to compile, despite clang-format
 // clang-format off
@@ -10,7 +10,7 @@
 // clang-format on
 
 #ifdef DUMB_ALLOC
-#include "dumb_alloc.h"
+#include "dumb_alloc_leaky.h"
 #define malloc dumb_malloc
 #define free dumb_free
 #endif

@@ -37,7 +37,7 @@ _build/   # input source
 
   preprocessed/
     cxx-dbg/
-      posix.cc
+      posix_leaky.cc
     cxx-dbg.txt  # line counts
 
 
@@ -79,21 +79,21 @@ def log(msg, *args):
 
 
 DEPS_CC = [
-    'cpp/core_pyos.cc',
-    'cpp/core_pyutil.cc',
-    'cpp/frontend_flag_spec.cc',
-    'cpp/frontend_match.cc',
-    'cpp/frontend_tdop.cc',
-    'cpp/osh_arith_parse.cc',
-    'cpp/osh_bool_stat.cc',
-    'cpp/pgen2_parse.cc',
-    'cpp/pylib_path_stat.cc',
-    'cpp/pylib_os_path.cc',
-    'cpp/dumb_alloc.cc',
-    'cpp/fcntl_.cc',
-    'cpp/posix.cc',
-    'cpp/signal_.cc',
-    'cpp/libc.cc',
+    'cpp/core_pyos_leaky.cc',
+    'cpp/core_pyutil_leaky.cc',
+    'cpp/frontend_flag_spec_leaky.cc',
+    'cpp/frontend_match_leaky.cc',
+    'cpp/frontend_tdop_leaky.cc',
+    'cpp/osh_arith_parse_leaky.cc',
+    'cpp/osh_bool_stat_leaky.cc',
+    'cpp/pgen2_parse_leaky.cc',
+    'cpp/pylib_path_stat_leaky.cc',
+    'cpp/pylib_os_path_leaky.cc',
+    'cpp/dumb_alloc_leaky.cc',
+    'cpp/fcntl__leaky.cc',
+    'cpp/posix_leaky.cc',
+    'cpp/signal__leaky.cc',
+    'cpp/libc_leaky.cc',
 
     # generated
     # TODO: We're missing dependencies for these
@@ -124,7 +124,7 @@ OLD_RUNTIME = [
 
 # -D DUMB_ALLOC: not sure why but only the _bin/cxx-opt/osh_eval binary needs it?
 # -D NO_GC_HACK: Avoid memset().  TODO: remove this hack!
-# -D OSH_EVAL: hack for osh_eval_stubs.h
+# -D OSH_EVAL: hack for osh_eval_stubs_leaky.h
 # -D LEAKY_BINDINGS: for QSN, which is used by the ASDL runtime
 
 # single quoted in Ninja/shell syntax

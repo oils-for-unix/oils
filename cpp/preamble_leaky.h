@@ -1,4 +1,4 @@
-// preamble.h: declarations to run osh_eval.cc
+// preamble_leaky.h: declarations to run osh_eval.cc
 
 // clang-format off
 #include "mycpp/myerror.h"     // do this before 'errno' macro is defined
@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <sys/wait.h>  // WIFSIGNALED, etc. called DIRECTLY
 
-#include "dumb_alloc.h"  // change the allocator
+#include "dumb_alloc_leaky.h"  // change the allocator
 // TODO: Need #if GC
 #include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
 #include "mycpp/mylib_leaky.h"  // runtime library e.g. with Python data structures
@@ -25,30 +25,30 @@ using id_kind_asdl::Kind_t;
 #include "_devbuild/gen/grammar_nt.h"
 
 // oil/cpp
-#include "core_error.h"
+#include "core_error_leaky.h"
 //#include "core_process.h"
-#include "core_pyerror.h"
-#include "core_pyos.h"
-#include "core_pyutil.h"
-#include "fcntl_.h"
-#include "frontend_flag_spec.h"
-#include "frontend_match.h"
-#include "frontend_tdop.h"
-#include "libc.h"
-#include "osh_arith_parse.h"
-#include "osh_bool_stat.h"
-#include "osh_sh_expr_eval.h"
-#include "pgen2_parse.h"
-#include "posix.h"
-#include "pylib_os_path.h"
-#include "pylib_path_stat.h"
+#include "core_pyerror_leaky.h"
+#include "core_pyos_leaky.h"
+#include "core_pyutil_leaky.h"
+#include "fcntl__leaky.h"
+#include "frontend_flag_spec_leaky.h"
+#include "frontend_match_leaky.h"
+#include "frontend_tdop_leaky.h"
+#include "libc_leaky.h"
+#include "osh_arith_parse_leaky.h"
+#include "osh_bool_stat_leaky.h"
+#include "osh_sh_expr_eval_leaky.h"
+#include "pgen2_parse_leaky.h"
+#include "posix_leaky.h"
+#include "pylib_os_path_leaky.h"
+#include "pylib_path_stat_leaky.h"
 #include "qsn_qsn.h"
 #include "segfault_handler.h"
-#include "signal_.h"
-#include "time_.h"
+#include "signal__leaky.h"
+#include "time__leaky.h"
 
 #ifdef OSH_EVAL
-#include "osh_eval_stubs.h"
+#include "osh_eval_stubs_leaky.h"
 #endif
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {

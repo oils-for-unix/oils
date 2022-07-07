@@ -130,4 +130,33 @@ options() {
   sed -i 's/parse_dollar/parse_dollar/g' */*.{py,md,sh}
 }
 
+rename() {
+  cat cpp/h.txt | while read name; do
+    local new=$(basename $name .h)_leaky.h
+    echo $name $new
+
+    #git mv cpp/$new cpp/$name
+    #git mv cpp/$name cpp/$new
+
+    sed -i "s/$name/$new/g" */*/*.cc
+  done
+  return
+
+  cat cpp/h.txt | while read name; do
+    local new=$(basename $name .h)_leaky.h
+    echo $name $new
+
+    #sed -i "s/$name/$new/g" */*.{sh,py,cc,h}
+  done
+}
+
+revert() {
+  cat cpp/cc.txt | while read name; do
+    local new=$(basename $name .cc)_leaky.cc
+    echo $name $new
+
+    mv cpp/$new cpp/$name
+  done
+}
+
 "$@"

@@ -51,7 +51,7 @@ translate-varargs() {
   codegen-parse
 
   local snippet='
-#include "preamble.h"
+#include "preamble_leaky.h"
 #include "asdl_runtime.h"
 
 '
@@ -266,7 +266,7 @@ readonly PGEN2_DEMO_FILES=("${FILES[@]}")
 translate-pgen2_demo() {
   local name='pgen2_demo'
 
-  translate-ordered $name "$(cat ../cpp/preamble.h)" \
+  translate-ordered $name "$(cat ../cpp/preamble_leaky.h)" \
     "${PGEN2_DEMO_FILES[@]}" examples/$name.py
 
   compile-pgen2_demo
@@ -277,8 +277,8 @@ compile-pgen2_demo() {
   local name='pgen2_demo'
 
   compile-with-asdl $name $variant \
-    ../cpp/frontend_match.cc \
-    ../cpp/osh_arith_parse.cc \
+    ../cpp/frontend_match_leaky.cc \
+    ../cpp/osh_arith_parse_leaky.cc \
     ../_devbuild/gen-cpp/syntax_asdl.cc \
     ../_devbuild/gen-cpp/hnode_asdl.cc \
     ../_devbuild/gen-cpp/id_kind_asdl.cc \

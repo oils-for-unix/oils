@@ -1,6 +1,6 @@
 // pgen2_parse.cc
 
-#include "pgen2_parse.h"
+#include "pgen2_parse_leaky.h"
 
 namespace parse {
 
