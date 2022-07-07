@@ -847,7 +847,6 @@ class Tuple2 {
  private:
   A a_;
   B b_;
-
 };
 
 template <class A, class B, class C>
@@ -895,7 +894,6 @@ class Tuple4 {
   C c_;
   D d_;
 };
-
 
 //
 // Overloaded free function len()
@@ -949,24 +947,24 @@ inline bool str_equals(Str* left, Str* right) {
   }
 }
 
-namespace id_kind_asdl
-{
-  enum class Kind;
+namespace id_kind_asdl {
+enum class Kind;
 };
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 
 inline bool are_equal(int left, int right) {
-  return left == right;;
+  return left == right;
+  ;
 }
 
 inline bool are_equal(Str* left, Str* right) {
   return str_equals(left, right);
 }
 
-inline bool are_equal(Tuple2<Str*, int> *t1, Tuple2<Str*, int> *t2) {
+inline bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
   bool result = are_equal(t1->at0(), t2->at0());
-       result = result && (t1->at1() == t2->at1());
+  result = result && (t1->at1() == t2->at1());
   return result;
 }
 #endif
@@ -1080,10 +1078,10 @@ List<T>* list(List<T>* other) {
 }
 
 template <typename T>
-bool list_contains(List<T> *haystack, T needle) {
+bool list_contains(List<T>* haystack, T needle) {
   int n = haystack->v_.size();
   for (int i = 0; i < n; ++i) {
-    if ( are_equal(haystack->index_(i), needle) ) {
+    if (are_equal(haystack->index_(i), needle)) {
       return true;
     }
   }
@@ -1091,7 +1089,7 @@ bool list_contains(List<T> *haystack, T needle) {
 }
 
 template <typename T>
-bool list_contains(List<T> *haystack, T *needle) {
+bool list_contains(List<T>* haystack, T* needle) {
   bool result = false;
 
   if (needle) {

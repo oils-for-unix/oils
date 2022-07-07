@@ -526,7 +526,7 @@ TEST test_str_slice() {
 
   printf("------- Happy Path -------\n");
 
-  { // Happy path
+  {  // Happy path
     Str* s1 = s0->slice(0, 5);
     ASSERT(str_equals(s1, new Str("abcde")));
     printf("%s\n", s1->data());
@@ -573,7 +573,6 @@ TEST test_str_slice() {
     ASSERT(str_equals(s1, new Str("")));
     printf("%s\n", s1->data());
   }
-
 
   printf("---- Infinite Sadness ----\n");
 
@@ -633,18 +632,16 @@ TEST test_str_slice() {
 
   printf("---------- Done ----------\n");
 
-  //  NOTE(Jesse): testing all permutations of boundary conditions for assertions
-  int max_len = (s0->len_ +2);
+  //  NOTE(Jesse): testing all permutations of boundary conditions for
+  //  assertions
+  int max_len = (s0->len_ + 2);
   int min_len = -max_len;
 
-  for (int outer = min_len; outer <= max_len; ++outer)
-  {
-    for (int inner = min_len; inner <= max_len; ++inner)
-    {
+  for (int outer = min_len; outer <= max_len; ++outer) {
+    for (int inner = min_len; inner <= max_len; ++inner) {
       s0->slice(outer, inner);
     }
   }
-
 
   PASS();
 }

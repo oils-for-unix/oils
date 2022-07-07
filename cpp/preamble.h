@@ -43,16 +43,17 @@ using id_kind_asdl::Kind_t;
 #include "pylib_os_path.h"
 #include "pylib_path_stat.h"
 #include "qsn_qsn.h"
+#include "segfault_handler.h"
 #include "signal_.h"
 #include "time_.h"
-#include "segfault_handler.h"
 
 #ifdef OSH_EVAL
 #include "osh_eval_stubs.h"
 #endif
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
-  return left == right;;
+  return left == right;
+  ;
 }
 
 // Stubs for Python exceptions.  TODO: Move more to mylib?
