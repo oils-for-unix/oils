@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
+# Function to generate tags files, e.g. for Vim Ctrl-] lookup.
+#
 # Usage:
-#   ./ctags.sh <function name>
+#   devtools/ctags.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -19,11 +21,6 @@ index-python() {
   popd
 }
 
-# Copied from metrics/bytecode.sh, build/cpython-defs.sh, etc.
-py-files() {
-  awk ' $1 ~ /\.py$/ { print $1 }' _build/oil/opy-app-deps.txt
-}
-
 oil-ctags-out() {
 
   # Vim complains unless we have this
@@ -32,11 +29,12 @@ oil-ctags-out() {
   # We want an explicit manifest to avoid walking _chroot/ and so forth.  ctags
   # --exclude doesn't work well.
 
-  py-files | ctags --filter | sort 
+  test/lint.sh find-src-files | ctags --filter | sort 
 }
 
-index-oil-py() {
-  oil-ctags-out > tags
+index-oil() {
+  time oil-ctags-out > tags
+  ls -l tags
 }
 
 "$@"

@@ -64,8 +64,9 @@ format-oil() {
 
 # yapf: was useful, but might cause big diffs
 
-# Language independent
-find-src() {
+find-prune() {
+  ### find real source files
+
   # benchmarks/testdata should be excluded
   # excluding _build, _devbuild.  Although it might be OK to test generated
   # code for tabs.
@@ -73,38 +74,27 @@ find-src() {
           -o -name testdata \
           -o -name $PY27 \
          ')' -a -prune \
-         -o \
-         '(' -name '*.py' \
-          -o -name '*.sh' \
-          -o -name '*.asdl' \
-          -o -name '*.[ch]' \
-         ')' -a -print 
+         "$@"
+}
+
+find-src-files() {
+  find-prune \
+    -o -type f -a \
+   '(' -name '*.py' \
+    -o -name '*.sh' \
+    -o -name '*.asdl' \
+    -o -name '*.[ch]' \
+    -o -name '*.cc' \
+   ')' -a -print 
 }
 
 find-tabs() {
-  find-src | xargs grep -n $'\t'
+  find-src-files | xargs grep -n $'\t'
 }
 
 find-long-lines() {
   # Exclude URLs
-  find-src | xargs grep -n '^.\{81\}' | grep -v 'http'
-}
-
-_parse-one-oil() {
-  local path=$1
-  echo $path
-  if ! bin/osh -O all:oil -n $path >/dev/null; then
-    return 255  # stop xargs
-  fi
-}
-
-all-oil-parse() {
-  ### Make sure they parse with shopt -s all:oil
-  ### Will NOT Parse with all:nice.
-  find-src |
-    grep '.sh$' |
-    egrep -v 'spec/|/parse-errors/' |
-    xargs -n 1 -- $0 _parse-one-oil
+  find-src-files | xargs grep -n '^.\{81\}' | grep -v 'http'
 }
 
 bin-flake8() {
@@ -182,23 +172,25 @@ soil-run() {
 # Adjust and Check shebang lines.  It matters for developers on different distros.
 #
 
-find-src() {
+find-files-to-lint() {
+  ### Similar to find-prune / find-src-files, but used for Soil checks
+
   # don't touch mycpp yet because it's in Python 3
   # build has build/app_deps.py which needs the -S
-  find \
+  find . \
     -name '_*' -a -prune -o \
     -name 'Python-*' -a -prune -o \
     "$@"
 }
 
 find-py() {
-  find-src  \
+  find-files-to-lint \
     -name 'build' -a -prune -o \
     -name '*.py' -a -print "$@"
 }
 
 find-sh() {
-  find-src -name '*.sh' -a -print "$@"
+  find-files-to-lint -name '*.sh' -a -print "$@"
 }
 
 print-if-has-shebang() {
