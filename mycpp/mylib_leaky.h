@@ -28,6 +28,8 @@
 #define free dumb_free
 #endif
 
+typedef bool (*comparator)(char, char);
+
 class Str;
 
 template <class T>
@@ -202,106 +204,127 @@ class Str : public gc_heap::Obj {
     return new Str(buf, new_len);
   }
 
-  // Helper for lstrip() and strip()
-  int _strip_left_pos() {
-    assert(len_ > 0);
-
-    int i = 0;
-    bool done = false;
-    while (i < len_ && !done) {
-      switch (data_[i]) {
-      case ' ':
-      case '\t':
-      case '\r':
-      case '\n':
-        i++;
-      default:
-        done = true;
-        break;
-      }
-    }
-    return i;
-  }
-
-  // Helper for rstrip() and strip()
-  int _strip_right_pos() {
-    assert(len_ > 0);
-
-    int last = len_ - 1;
-    int i = last;
-    bool done = false;
-    while (i > 0 && !done) {
-      switch (data_[i]) {
-      case ' ':
-      case '\t':
-      case '\r':
-      case '\n':
-        i--;
-      default:
-        done = true;
-        break;
-      }
-    }
-    return i;
-  }
-
   Str* strip() {
-    if (len_ == 0) {
-      return this;
-    }
-    int left_pos = _strip_left_pos();
-    int right_pos = _strip_right_pos();
-
-    if (left_pos == 0 && right_pos == len_ - 1) {
-      return this;
-    }
-
-    // cstring-NOTE: This returns a SLICE, not a copy, unlike rstrip()
-    // TODO: make them consistent.
-    int len = right_pos - left_pos + 1;
-    return new Str(data_ + left_pos, len);
+    Str *s1 = rstrip();
+    Str *s2 = s1->lstrip();
+    return s2;
   }
 
-  // Used for CommandSub in osh/cmd_exec.py
-  Str* rstrip(Str* chars) {
-    assert(chars->len_ == 1);
-    char c = chars->data_[0];
+  static bool is_whitespace(char c, char ignored)
+  {
+    bool result = false;
+    switch (c)
+    {
+      case ' ':
+      case '\t':
+      case '\r':
+      case '\n':
+        result = true;
+    }
 
-    int last = len_ - 1;
-    int i = last;
-    bool done = false;
-    while (i > 0 && !done) {
-      if (data_[i] == c) {
-        i--;
-      } else {
-        done = true;
-        break;
-      }
-    }
-    if (i == last) {  // nothing stripped
-      return this;
-    }
-    int new_len = i + 1;
-    char* buf = static_cast<char*>(malloc(new_len + 1));
-    memcpy(buf, data_, new_len);
-    buf[new_len] = '\0';
-    return new Str(buf, new_len);
+    return result;
+  }
+
+  static bool chars_match(char c, char d) {
+    return c == d;
   }
 
   Str* rstrip() {
-    if (len_ == 0) {
-      return this;
-    }
-    int right_pos = _strip_right_pos();
-    if (right_pos == len_ - 1) {  // nothing stripped
-      return this;
-    }
-    int new_len = right_pos + 1;
-    char* buf = static_cast<char*>(malloc(new_len + 1));
-    memcpy(buf, data_, new_len);
-    buf[new_len] = '\0';
-    return new Str(buf, new_len);
+    Str *result = rstrip_internal(is_whitespace);
+    return result;
   }
+
+  Str* rstrip(Str* chars) {
+    assert(chars->len_ == 1);
+    char c = chars->data_[0];
+    Str *result = rstrip_internal(chars_match, c);
+    return result;
+  }
+
+  Str* lstrip() {
+    Str *result = lstrip_internal(is_whitespace);
+    return result;
+  }
+
+  Str* lstrip(Str* chars) {
+    assert(chars->len_ == 1);
+    char c = chars->data_[0];
+    Str *result = lstrip_internal(chars_match, c);
+    return result;
+  }
+
+  Str* lstrip_internal(comparator comp_func, char match_char = 0) {
+    Str* result = this;
+
+    int i = 0;
+    while (true)
+    {
+      if (i==len_) break;
+
+      if (comp_func(data_[i], match_char))
+      {
+        ++i;
+      }
+      else
+      {
+        break;
+      }
+    }
+
+    bool stripped_any_chars = (i > 0);
+    if (stripped_any_chars)
+    {
+      int new_len = len_ - i;
+      if (new_len > 0)
+      {
+        result = new Str(data_+i, new_len);
+      }
+      else
+      {
+        result = kEmptyString;
+      }
+    }
+
+    return result;
+  }
+
+  Str* rstrip_internal(comparator comp_func, char match_char = 0) {
+    Str* result = this;
+
+    int i = len_;
+    while (true)
+    {
+      int next = i-1;
+
+      if (next==-1) break;
+
+      if (comp_func(data_[next], match_char))
+      {
+        --i;
+      }
+      else
+      {
+        break;
+      }
+    }
+
+    bool stripped_any_chars = (i < len_);
+    if (stripped_any_chars)
+    {
+      int new_len = i;
+      if (new_len > 0)
+      {
+        result = new Str(data_, new_len);
+      }
+      else
+      {
+        result = kEmptyString;
+      }
+    }
+
+    return result;
+  }
+
 
   bool startswith(Str* s) {
     if (s->len_ > len_) {
