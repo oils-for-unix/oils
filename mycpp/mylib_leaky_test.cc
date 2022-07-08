@@ -534,9 +534,12 @@ TEST test_sizeof() {
 
 #define PRINT_STRING(str) printf("(%.*s)\n", (str)->len_, (str)->data_)
 
-#define PRINT_LIST(list) \
-  for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) \
-  { Str *piece = iter.Value(); printf("(%.*s) ", piece->len_, piece->data_); } printf("\n")
+#define PRINT_LIST(list)                                         \
+  for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) { \
+    Str* piece = iter.Value();                                   \
+    printf("(%.*s) ", piece->len_, piece->data_);                \
+  }                                                              \
+  printf("\n")
 
 TEST test_str_replace() {
   printf("\n");
@@ -671,7 +674,7 @@ TEST test_str_slice() {
 
   printf("------- Str::slice -------\n");
 
-  { // Happy path
+  {  // Happy path
     Str* s1 = s0->slice(0, 5);
     ASSERT(str_equals(s1, new Str("abcde")));
     PRINT_STRING(s1);
@@ -718,7 +721,6 @@ TEST test_str_slice() {
     ASSERT(str_equals(s1, new Str("")));
     PRINT_STRING(s1);
   }
-
 
   {
     Str* s1 = s0->slice(0, -7);
@@ -776,14 +778,13 @@ TEST test_str_slice() {
 
   printf("---------- Done ----------\n");
 
-  //  NOTE(Jesse): testing all permutations of boundary conditions for assertions
-  int max_len = (s0->len_ +2);
+  //  NOTE(Jesse): testing all permutations of boundary conditions for
+  //  assertions
+  int max_len = (s0->len_ + 2);
   int min_len = -max_len;
 
-  for (int outer = min_len; outer <= max_len; ++outer)
-  {
-    for (int inner = min_len; inner <= max_len; ++inner)
-    {
+  for (int outer = min_len; outer <= max_len; ++outer) {
+    for (int inner = min_len; inner <= max_len; ++inner) {
       s0->slice(outer, inner);
     }
   }
@@ -799,7 +800,7 @@ TEST test_str_split() {
   printf("------- Str::split -------\n");
 
   {
-    List<Str*> *split_result = s0->split(new Str(" "));
+    List<Str*>* split_result = s0->split(new Str(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 2);
     ASSERT(are_equal(split_result->index_(0), new Str("abc")));
@@ -807,7 +808,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*> *split_result = (new Str("###"))->split(new Str("#"));
+    List<Str*>* split_result = (new Str("###"))->split(new Str("#"));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 4);
     ASSERT(are_equal(split_result->index_(0), new Str("")));
@@ -817,7 +818,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*> *split_result = (new Str(" ### "))->split(new Str("#"));
+    List<Str*>* split_result = (new Str(" ### "))->split(new Str("#"));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 4);
     ASSERT(are_equal(split_result->index_(0), new Str(" ")));
@@ -827,7 +828,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*> *split_result = (new Str(" # "))->split(new Str(" "));
+    List<Str*>* split_result = (new Str(" # "))->split(new Str(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 3);
     ASSERT(are_equal(split_result->index_(0), new Str("")));
@@ -836,7 +837,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*> *split_result = (new Str("  #"))->split(new Str("#"));
+    List<Str*>* split_result = (new Str("  #"))->split(new Str("#"));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 2);
     ASSERT(are_equal(split_result->index_(0), new Str("  ")));
@@ -844,7 +845,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*> *split_result = (new Str("#  #"))->split(new Str("#"));
+    List<Str*>* split_result = (new Str("#  #"))->split(new Str("#"));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 3);
     ASSERT(are_equal(split_result->index_(0), new Str("")));
@@ -853,7 +854,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*> *split_result = (new Str(""))->split(new Str(" "));
+    List<Str*>* split_result = (new Str(""))->split(new Str(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 1);
     ASSERT(are_equal(split_result->index_(0), new Str("")));
@@ -871,7 +872,6 @@ TEST test_str_split() {
   /*   ASSERT(are_equal(split_result->index_(0), new Str(""))); */
   /* } */
 
-
   printf("---------- Done ----------\n");
 
   PASS();
@@ -883,16 +883,17 @@ TEST test_str_join() {
   printf("-------- Str::join -------\n");
 
   {
-    Str* result = (new Str(""))->join(
-      new List<Str*>( {new Str("abc"), new Str("def")} )
-    );
+    Str* result =
+        (new Str(""))->join(new List<Str*>({new Str("abc"), new Str("def")}));
     PRINT_STRING(result);
     ASSERT(are_equal(result, new Str("abcdef")));
   }
   {
-    Str* result = (new Str(" "))->join(
-      new List<Str*>( {new Str("abc"), new Str("def"), new Str("abc"), new Str("def"), new Str("abc"), new Str("def"), new Str("abc"), new Str("def")} )
-    );
+    Str* result = (new Str(" "))
+                      ->join(new List<Str*>({new Str("abc"), new Str("def"),
+                                             new Str("abc"), new Str("def"),
+                                             new Str("abc"), new Str("def"),
+                                             new Str("abc"), new Str("def")}));
     PRINT_STRING(result);
     ASSERT(are_equal(result, new Str("abc def abc def abc def abc def")));
   }
@@ -906,7 +907,6 @@ TEST test_str_strip() {
   printf("\n");
 
   printf("------- Str::lstrip -------\n");
-
 
   {
     Str* result = (new Str("\n "))->lstrip();
@@ -956,19 +956,7 @@ TEST test_str_strip() {
     ASSERT(are_equal(result, new Str(" # ")));
   }
 
-
-
-
-
-
-
   printf("------- Str::rstrip -------\n");
-
-
-
-
-
-
 
   {
     Str* result = (new Str(" \n"))->rstrip();
@@ -1018,29 +1006,7 @@ TEST test_str_strip() {
     ASSERT(are_equal(result, new Str(" # ")));
   }
 
-
-
-
-
-
-
-
-
-
-
-
   printf("------- Str::strip -------\n");
-
-
-
-
-
-
-
-
-
-
-
 
   {
     Str* result = (new Str(""))->strip();
@@ -1078,7 +1044,6 @@ TEST test_str_strip() {
 }
 
 TEST test_str_helpers() {
-
   printf("------ Str::helpers ------\n");
 
   ASSERT((new Str(""))->startswith(new Str("")) == true);
@@ -1121,7 +1086,6 @@ int main(int argc, char** argv) {
   RUN_TEST(test_str_strip);
 
   RUN_TEST(test_str_helpers);
-
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

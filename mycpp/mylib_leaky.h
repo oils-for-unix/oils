@@ -205,21 +205,19 @@ class Str : public gc_heap::Obj {
   }
 
   Str* strip() {
-    Str *s1 = rstrip();
-    Str *s2 = s1->lstrip();
+    Str* s1 = rstrip();
+    Str* s2 = s1->lstrip();
     return s2;
   }
 
-  static bool is_whitespace(char c, char ignored)
-  {
+  static bool is_whitespace(char c, char ignored) {
     bool result = false;
-    switch (c)
-    {
-      case ' ':
-      case '\t':
-      case '\r':
-      case '\n':
-        result = true;
+    switch (c) {
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\n':
+      result = true;
     }
 
     return result;
@@ -230,26 +228,26 @@ class Str : public gc_heap::Obj {
   }
 
   Str* rstrip() {
-    Str *result = rstrip_internal(is_whitespace);
+    Str* result = rstrip_internal(is_whitespace);
     return result;
   }
 
   Str* rstrip(Str* chars) {
     assert(chars->len_ == 1);
     char c = chars->data_[0];
-    Str *result = rstrip_internal(chars_match, c);
+    Str* result = rstrip_internal(chars_match, c);
     return result;
   }
 
   Str* lstrip() {
-    Str *result = lstrip_internal(is_whitespace);
+    Str* result = lstrip_internal(is_whitespace);
     return result;
   }
 
   Str* lstrip(Str* chars) {
     assert(chars->len_ == 1);
     char c = chars->data_[0];
-    Str *result = lstrip_internal(chars_match, c);
+    Str* result = lstrip_internal(chars_match, c);
     return result;
   }
 
@@ -257,30 +255,22 @@ class Str : public gc_heap::Obj {
     Str* result = this;
 
     int i = 0;
-    while (true)
-    {
-      if (i==len_) break;
+    while (true) {
+      if (i == len_) break;
 
-      if (comp_func(data_[i], match_char))
-      {
+      if (comp_func(data_[i], match_char)) {
         ++i;
-      }
-      else
-      {
+      } else {
         break;
       }
     }
 
     bool stripped_any_chars = (i > 0);
-    if (stripped_any_chars)
-    {
+    if (stripped_any_chars) {
       int new_len = len_ - i;
-      if (new_len > 0)
-      {
-        result = new Str(data_+i, new_len);
-      }
-      else
-      {
+      if (new_len > 0) {
+        result = new Str(data_ + i, new_len);
+      } else {
         result = kEmptyString;
       }
     }
@@ -292,39 +282,30 @@ class Str : public gc_heap::Obj {
     Str* result = this;
 
     int i = len_;
-    while (true)
-    {
-      int next = i-1;
+    while (true) {
+      int next = i - 1;
 
-      if (next==-1) break;
+      if (next == -1) break;
 
-      if (comp_func(data_[next], match_char))
-      {
+      if (comp_func(data_[next], match_char)) {
         --i;
-      }
-      else
-      {
+      } else {
         break;
       }
     }
 
     bool stripped_any_chars = (i < len_);
-    if (stripped_any_chars)
-    {
+    if (stripped_any_chars) {
       int new_len = i;
-      if (new_len > 0)
-      {
+      if (new_len > 0) {
         result = new Str(data_, new_len);
-      }
-      else
-      {
+      } else {
         result = kEmptyString;
       }
     }
 
     return result;
   }
-
 
   bool startswith(Str* s) {
     if (s->len_ > len_) {
