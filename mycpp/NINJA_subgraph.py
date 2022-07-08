@@ -402,14 +402,15 @@ def NinjaGraph(n):
 
     UNIT_TEST_MATRIX = [
         ('cxx', 'testgc'),
+
+        # Clang and GCC have different implementations of ASAN and UBSAN
+        ('cxx', 'asan'),
         ('cxx', 'ubsan'),
+
+        ('clang', 'asan'),
         ('clang', 'ubsan'),
 
-        # TODO: re-enable coverage with Clang
-        # Or change cpp-unit task to only use mycpp-unit-$variant and
-        # mycpp-examples-$variant
-        #
-        #('clang', 'coverage'),
+        ('clang', 'coverage'),
     ]
 
     for (compiler, variant) in UNIT_TEST_MATRIX:
