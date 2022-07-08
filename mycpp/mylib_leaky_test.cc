@@ -168,14 +168,6 @@ TEST test_str_funcs() {
   Str* s1 = new Str("abc\0bcd", 7);
   ASSERT_EQ(7, len(s1));
 
-  // Str* re1 = s1->replace(new Str("ab"), new Str("--"));
-  // cstring-BUG!
-  // ASSERT_EQ_FMT(7, len(re1), "%d");
-  // ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
-
-  // Str* re2 = s1->replace(new Str("bc"), new Str("--"));
-  // ASSERT(str_equals(new Str("a--\0--d", 7), re1));
-
   log("split_once()");
   Tuple2<Str*, Str*> t = mylib::split_once(new Str("foo=bar"), new Str("="));
   ASSERT(str_equals(t.at0(), new Str("foo")));
@@ -526,7 +518,6 @@ TEST test_str_replace() {
 
   printf("----- Str::replace -------\n");
 
-
   {
     Str* s1 = s0->replace(new Str("ab"), new Str("--"));
     printf("%s\n", s1->data());
@@ -623,6 +614,24 @@ TEST test_str_replace() {
     Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
     printf("%s\n", s1->data());
     ASSERT(str_equals(s1, new Str("bbbbbb")));
+  }
+
+  // Test NUL replacement
+  {
+    Str* s_null = new Str("abc\0bcd", 7);
+    ASSERT_EQ(7, len(s_null));
+
+    Str* re1 = s_null->replace(new Str("ab"), new Str("--"));
+    ASSERT_EQ_FMT(7, len(re1), "%d");
+    ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
+
+    Str* re2 = s_null->replace(new Str("bc"), new Str("--"));
+    ASSERT_EQ_FMT(7, len(re2), "%d");
+    ASSERT(str_equals(new Str("a--\0--d", 7), re2));
+
+    Str* re3 = s_null->replace(new Str("\0", 1), new Str("__"));
+    ASSERT_EQ_FMT(8, len(re3), "%d");
+    ASSERT(str_equals(new Str("abc__bcd", 8), re3));
   }
 
   PASS();

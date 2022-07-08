@@ -26,29 +26,29 @@ void println_stderr(Str* s) {
 }
 
 // NOTE:
-// - there's a third 'count' argument we're not using.
-// - len(old) == 1 is a very common case we could make more efficient
-//   - CPython has like 10 special cases for this!  It detects if len(old) ==
-//     len(new) as well.
-// - we're not handling internal NULs (because of strstr())
+// - Oil interpreter code only uses the very common case of len(old) == 1.
+//   - But we probably want to expose this more general function to OIL USERS.
+//   - We could have a special case for this like CPython.  It detects if
+//   len(old) == len(new) as well.
+// - Python replace() has a third 'count' argument we're not using.
 Str* Str::replace(Str* old, Str* new_str) {
   // log("replacing %s with %s", old_data, new_str->data_);
 
   const char* old_data = old->data_;
-  const char* last_possible = data_ + len_ - old->len_;
+  int old_len = old->len_;
+  const char* last_possible = data_ + len_ - old_len;
 
   const char* p_this = data_;  // advances through 'this'
 
-  // First pass to calculate number of replacements and hence new length
+  // First pass: Calculate number of replacements, and hence new length
   int replace_count = 0;
   while (p_this <= last_possible) {
-    // cstring-TODO: Don't use strstr()
-    const char* next = strstr(p_this, old_data);
-    if (next == nullptr) {
-      break;
+    if (memcmp(p_this, old_data, old_len) == 0) {  // equal
+      replace_count++;
+      p_this += old_len;
+    } else {
+      p_this++;
     }
-    replace_count++;
-    p_this = next + old->len_;  // skip past
   }
 
   // log("replacements %d", replace_count);
@@ -57,35 +57,34 @@ Str* Str::replace(Str* old, Str* new_str) {
     return this;  // Reuse the string if there were no replacements
   }
 
-  int len = this->len_ - (replace_count * old->len_) +
-            (replace_count * new_str->len_);
+  int result_len =
+      this->len_ - (replace_count * old_len) + (replace_count * new_str->len_);
 
-  char* result = static_cast<char*>(malloc(len + 1));  // +1 for NUL
+  char* result = static_cast<char*>(malloc(result_len + 1));  // +1 for NUL
 
   const char* new_data = new_str->data_;
   const size_t new_len = new_str->len_;
 
-  // Second pass to copy into new 'result'
-  p_this = data_;
+  // Second pass: Copy pieces into 'result'
+  p_this = data_;           // back to beginning
   char* p_result = result;  // advances through 'result'
 
-  for (int i = 0; i < replace_count; ++i) {
-    const char* next = strstr(p_this, old_data);
-    assert(p_this != nullptr);
-    size_t n = next - p_this;
-
-    memcpy(p_result, p_this, n);  // Copy from 'this'
-    p_result += n;
-
-    memcpy(p_result, new_data, new_len);  // Copy from new_str
-    p_result += new_len;
-
-    p_this = next + old->len_;
+  while (p_this <= last_possible) {
+    // Note: would be more efficient if we remembered the match positions
+    if (memcmp(p_this, old_data, old_len) == 0) {  // equal
+      memcpy(p_result, new_data, new_len);         // Copy from new_str
+      p_result += new_len;
+      p_this += old_len;
+    } else {  // copy 1 byte
+      *p_result = *p_this;
+      p_result++;
+      p_this++;
+    }
   }
-  memcpy(p_result, p_this, data_ + len_ - p_this);  // Copy the rest of 'this'
-  result[len] = '\0';                               // NUL terminate
+  memcpy(p_result, p_this, data_ + len_ - p_this);  // last part of string
+  result[result_len] = '\0';                        // NUL terminate
 
-  return new Str(result);
+  return new Str(result, result_len);
 }
 
 Str* Str::ljust(int width, Str* fillchar) {
