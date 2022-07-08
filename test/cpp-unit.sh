@@ -14,7 +14,7 @@ soil-run() {
 
   # uses Ninja to run (cxx, testgc) variant.  Could also run (clang, ubsan),
   # which finds more bugs.
-  mycpp/test.sh unit
+  mycpp/test.sh soil-run
 
   # This is part of build/dev.sh oil-cpp
   build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h

@@ -134,6 +134,11 @@ unit() {
   local compiler=${1:-cxx}
   local variant=${2:-testgc}
 
+  echo
+  echo "mycpp/test.sh unit $compiler $variant"
+  echo
+
+
   # TODO: Exclude examples here
   # ninja mycpp-$variant
   ninja mycpp-unit-$compiler-$variant
@@ -147,13 +152,22 @@ unit() {
 
     echo "RUN $b > $log"
 
-    if test "$variant" = 'coverage'; then
-      export LLVM_PROFILE_FILE=$prefix.profraw
-      if test "$(basename $b)" = 'my_runtime_test'; then
-        echo "SKIPPING $b"
-        continue
-      fi
-    fi
+    case $variant in
+      (coverage)
+        export LLVM_PROFILE_FILE=$prefix.profraw
+        ;;
+    esac
+
+    # I believe gc_heap::Str and its data[1] are incompatible with ASAN guards
+    # and the same happens with UBSAN and coverage somehow
+    case $variant in
+      (asan|ubsan|coverage)
+        if test "$(basename $b)" = 'my_runtime_test'; then
+          echo "SKIPPING $b because it's not compatible with $variant"
+          continue
+        fi
+        ;;
+   esac
 
     set +o errexit
     $b >$log 2>&1
@@ -167,6 +181,12 @@ unit() {
       return $status
     fi
   done
+}
+
+soil-run() {
+  unit '' testgc
+  unit '' asan
+  unit '' ubsan
 }
 
 unit-test-coverage() {
