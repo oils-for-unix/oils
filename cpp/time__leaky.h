@@ -5,7 +5,11 @@
 
 #include <time.h>
 
+#include "cpp/core_error_leaky.h"
+#include "cpp/core_pyerror_leaky.h"
 #include "mycpp/mylib_leaky.h"
+using mylib::CopyStr;
+using mylib::OverAllocatedStr;
 
 namespace time_ {
 
@@ -30,19 +34,23 @@ inline time_t localtime(time_t ts) {
 }
 
 inline Str* strftime(Str* s, time_t ts) {
-  Str* result = kEmptyString;
-
+  // TODO: may not work with mylib_leaky.h
+  // https://github.com/oilshell/oil/issues/1221
   assert(s->IsNulTerminated());
 
   tm* loc_time = ::localtime(&ts);
 
-  const int buf_size = 1024;
-  char buffer[buf_size] = {};
-
-  if (int size_of_result = strftime(buffer, buf_size, s->data_, loc_time)) {
-    result = new Str(buffer, size_of_result);
+  const int max_len = 1024;
+  Str* result = OverAllocatedStr(max_len);
+  int n = strftime(result->data(), max_len, s->data_, loc_time);
+  if (n == 0) {
+    // bash silently truncates on large format string like
+    //   printf '%(%Y)T'
+    // Oil doesn't mask errors
+    // No error location info, but leaving it out points reliably to 'printf'
+    e_die(CopyStr("strftime() result exceeds 1024 bytes"));
   }
-
+  result->SetObjLenFromStrLen(n);
   return result;
 }
 
