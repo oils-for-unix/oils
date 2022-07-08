@@ -153,19 +153,20 @@ proc p {
   set +x
 } 2>err.txt
 
-sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
+# Hack: sort for determinism
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt | LANG=C sort >&2
 
 ## stdout-json: ""
 ## STDERR:
-. builtin ':' begin
-| forkwait 12345
-  . 12345 builtin ':' 1
-  > 12345 proc p
     . 12345 builtin ':' p
-  < 12345 proc p
   + 12345 exit 3
-; process 12345: status 3
+  . 12345 builtin ':' 1
+  < 12345 proc p
+  > 12345 proc p
+. builtin ':' begin
 . builtin set '+x'
+; process 12345: status 3
+| forkwait 12345
 ## END
 
 #### command sub
