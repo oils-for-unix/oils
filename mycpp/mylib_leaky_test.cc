@@ -519,12 +519,121 @@ TEST test_sizeof() {
   PASS();
 }
 
+TEST test_str_replace() {
+  printf("\n");
+
+  Str* s0 = new Str("ab cd ab ef");
+
+  printf("----- Str::replace -------\n");
+
+
+  {
+    Str* s1 = s0->replace(new Str("ab"), new Str("--"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("-- cd -- ef")));
+  }
+
+  {
+    Str* s1 = s0->replace(new Str("ab"), new Str("----"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("---- cd ---- ef")));
+  }
+
+  {
+    Str* s1 = s0->replace(new Str("ab cd ab ef"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("0")));
+  }
+
+  {
+    Str* s1 = s0->replace(s0, new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("0")));
+  }
+
+  {
+    Str* s1 = s0->replace(new Str("no-match"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("ab cd ab ef")));
+  }
+
+  {
+    Str* s1 = s0->replace(new Str("ef"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("ab cd ab 0")));
+  }
+
+  {
+    Str* s1 = s0->replace(new Str("f"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("ab cd ab e0")));
+  }
+
+  {
+    s0 = new Str("ab ab ab");
+    Str* s1 = s0->replace(new Str("ab"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("0 0 0")));
+  }
+
+  {
+    s0 = new Str("ababab");
+    Str* s1 = s0->replace(new Str("ab"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("000")));
+  }
+
+  {
+    s0 = new Str("abababab");
+    Str* s1 = s0->replace(new Str("ab"), new Str("0"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("0000")));
+  }
+
+  {
+    s0 = new Str("abc 123");
+    Str* s1 = s0->replace(new Str("abc"), new Str(""));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str(" 123")));
+  }
+
+  {
+    s0 = new Str("abc 123");
+    Str* s1 = s0->replace(new Str("abc"), new Str(""));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str(" 123")));
+  }
+
+  {
+    s0 = new Str("abc 123");
+    Str* s1 = s0->replace(new Str("abc"), new Str("abc"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("abc 123")));
+  }
+
+  {
+    s0 = new Str("aaaa");
+    Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("bbbb")));
+  }
+
+  {
+    s0 = new Str("aaaaaa");
+    Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
+    printf("%s\n", s1->data());
+    ASSERT(str_equals(s1, new Str("bbbbbb")));
+  }
+
+  PASS();
+}
+
 TEST test_str_slice() {
   printf("\n");
 
   Str* s0 = new Str("abcdef");
 
-  printf("------- Happy Path -------\n");
+  printf("------- Str::slice -------\n");
 
   {  // Happy path
     Str* s1 = s0->slice(0, 5);
@@ -666,6 +775,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_list_tuple);
 
+  RUN_TEST(test_str_replace);
   RUN_TEST(test_str_slice);
 
   GREATEST_MAIN_END(); /* display results */

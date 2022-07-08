@@ -39,9 +39,9 @@ Str* Str::replace(Str* old, Str* new_str) {
 
   const char* p_this = data_;  // advances through 'this'
 
-  // First pass to calculate the new length
+  // First pass to calculate number of replacements and hence new length
   int replace_count = 0;
-  while (p_this < last_possible) {
+  while (p_this <= last_possible) {
     // cstring-TODO: Don't use strstr()
     const char* next = strstr(p_this, old_data);
     if (next == nullptr) {
@@ -51,7 +51,7 @@ Str* Str::replace(Str* old, Str* new_str) {
     p_this = next + old->len_;  // skip past
   }
 
-  // log("done %d", replace_count);
+  // log("replacements %d", replace_count);
 
   if (replace_count == 0) {
     return this;  // Reuse the string if there were no replacements
