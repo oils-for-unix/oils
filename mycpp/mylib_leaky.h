@@ -1056,9 +1056,27 @@ inline double to_float(Str* s) {
 
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {
-  // cstring-TODO: this not rely on NUL termination
-  const char* p = strstr(haystack->data_, needle->data_);
-  return p != nullptr;
+  // Common case
+  if (needle->len_ == 1) {
+    return memchr(haystack->data_, needle->data_[0], haystack->len_);
+  }
+
+  // General case. TODO: We could use a smarter substring algorithm.
+  if (needle->len_ > haystack->len_) {
+    return false;
+  }
+
+  const char* end = haystack->data_ + haystack->len_;
+  const char* last_possible = end - needle->len_;
+  const char* p = haystack->data_;
+
+  while (p <= last_possible) {
+    if (memcmp(p, needle->data_, needle->len_) == 0) {
+      return true;
+    }
+    p++;
+  }
+  return false;
 }
 
 // e.g. [None] * 3

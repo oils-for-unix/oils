@@ -310,15 +310,28 @@ TEST test_contains() {
   bool b;
 
   log("  Str");
+
+  // Degenerate cases
+  b = str_contains(new Str(""), new Str(""));
+  ASSERT(b == true);
+  b = str_contains(new Str("foo"), new Str(""));
+  ASSERT(b == true);
+
+  // Short circuit
+  b = str_contains(new Str("foo"), new Str("too long"));
+  ASSERT(b == false);
+
   b = str_contains(new Str("foo"), new Str("oo"));
   ASSERT(b == true);
 
   b = str_contains(new Str("foo"), new Str("ood"));
   ASSERT(b == false);
 
-  // cstring-BUG
   b = str_contains(new Str("foo\0a", 5), new Str("a"));
-  // ASSERT(b == true);
+  ASSERT(b == true);
+
+  b = str_contains(new Str("foo\0ab", 6), new Str("ab"));
+  ASSERT(b == true);
 
   // this ends with a NUL, but also has a NUL terinator.
   Str* s = new Str("foo\0", 4);
