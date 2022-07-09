@@ -153,33 +153,24 @@ EOF
 cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
-  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
-  # build-minimal
-
   # BUG: oil-cpp can't run with build/dev.sh minimal because 'fastlex' isn't built
-  # It requires build/dev.sh all
+  # can't run with build/dev.sh all because we don't have cmark
+
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
-dev-all          build/dev.sh all                       -
+build-minimal    build/dev.sh minimal                  -
+HACK-fastlex     build/dev.sh fastlex                  -
 build-osh-eval   build/dev.sh oil-cpp                  -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
-
-# mycpp-git        mycpp/deps.sh git-clone               -
-# mycpp-pip        mycpp/deps.sh pip-install             -
-
-# Notes on steps that depend on the binary:
-#   compile-osh-eval: compiles a few variant of osh_eval in parallel
-#   shell-benchmarks: uses _bin/cxx-opt/osh_eval.stripped
-#   parse-errors: uses _bin/cxx-asan/osh_eval
-#   spec-cpp: DUPLICATE work because we don't use Ninja.  Thre is a hack with CXX=gcc.
-
 }
 
 cpp-small-tasks() {
   # Planning this
 
+  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
+  # build-minimal
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/dev.sh minimal                  -
@@ -192,6 +183,12 @@ shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index
 mycpp-examples   mycpp/build.sh soil-run               _test/index.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 EOF
+
+# Notes on steps that depend on the binary:
+#   compile-osh-eval: compiles a few variant of osh_eval in parallel
+#   shell-benchmarks: uses _bin/cxx-opt/osh_eval.stripped
+#   parse-errors: uses _bin/cxx-asan/osh_eval
+#   spec-cpp: DUPLICATE work because we don't use Ninja.  Thre is a hack with CXX=gcc.
 }
 
 # TODO: Add more tests, like
