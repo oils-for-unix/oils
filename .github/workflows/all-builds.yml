@@ -250,7 +250,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'dev-minimal', 'cpp', 'ovm-tarball', 'pea', 'other-tests', 'app-tests']
+    needs: ['dummy', 'dev-minimal', 'cpp-small', 'cpp-spec', 'ovm-tarball', 'pea', 'other-tests', 'app-tests']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
