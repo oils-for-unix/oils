@@ -1,4 +1,4 @@
-// libc_leaky.h: Replacement for native/libc.c
+// leaky_libc.h: Replacement for native/libc.c
 
 #ifndef LIBC_H
 #define LIBC_H

@@ -1,4 +1,4 @@
-// pgen2_parse_leaky.h
+// leaky_pgen2_parse.h
 
 #ifndef PGEN2_PARSE_H
 #define PGEN2_PARSE_H

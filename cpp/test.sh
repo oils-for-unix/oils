@@ -16,20 +16,20 @@ export ASAN_OPTIONS='detect_leaks=0'
 
 readonly LEAKY_TEST_SRC=(
     cpp/leaky_binding_test.cc \
-    cpp/core_pyos_leaky.cc \
-    cpp/core_pyutil_leaky.cc \
-    cpp/frontend_match_leaky.cc \
-    cpp/libc_leaky.cc \
-    cpp/osh_bool_stat_leaky.cc \
-    cpp/posix_leaky.cc \
-    cpp/pylib_os_path_leaky.cc \
+    cpp/leaky_core_pyos.cc \
+    cpp/leaky_core_pyutil.cc \
+    cpp/leaky_frontend_match.cc \
+    cpp/leaky_libc.cc \
+    cpp/leaky_osh_bool_stat.cc \
+    cpp/leaky_posix.cc \
+    cpp/leaky_pylib_os_path.cc \
     mycpp/mylib_leaky.cc
 )
 
 readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_flag_spec_test.cc \
     _build/cpp/arg_types.cc \
-    cpp/frontend_flag_spec_leaky.cc \
+    cpp/leaky_frontend_flag_spec.cc \
     mycpp/mylib_leaky.cc
 )
 
@@ -43,7 +43,7 @@ leaky-flag-spec-test() {
 
   local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
   compile_and_link cxx dbg "$more_cxx_flags" $bin \
-    "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/dumb_alloc_leaky.cc
+    "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/leaky_dumb_alloc.cc
 
   $bin "$@"
 }
@@ -83,11 +83,11 @@ leaky-binding-test() {
 
   local bin=$dir/leaky_binding_test
 
-  # dumb_alloc_leaky.cc exposes allocator alignment issues?
+  # leaky_dumb_alloc.cc exposes allocator alignment issues?
 
   local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
   compile_and_link cxx dbg "$more_cxx_flags" $bin \
-    "${LEAKY_TEST_SRC[@]}" cpp/dumb_alloc_leaky.cc
+    "${LEAKY_TEST_SRC[@]}" cpp/leaky_dumb_alloc.cc
 
   $bin "$@"
 }
@@ -111,7 +111,7 @@ gc-binding-test() {
 
   local bin=$out_dir/gc_binding_test${leaky_mode}
   compile_and_link cxx testgc "$more_cxx_flags" $bin \
-    "${GC_TEST_SRC[@]}" cpp/dumb_alloc_leaky.cc
+    "${GC_TEST_SRC[@]}" cpp/leaky_dumb_alloc.cc
 
   $bin "$@"
 }

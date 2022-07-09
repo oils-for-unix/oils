@@ -5,8 +5,8 @@
 
 #include <time.h>
 
-#include "cpp/core_error_leaky.h"
-#include "cpp/core_pyerror_leaky.h"
+#include "cpp/leaky_core_error.h"
+#include "cpp/leaky_core_pyerror.h"
 #include "mycpp/mylib_leaky.h"
 using mylib::CopyStr;
 using mylib::OverAllocatedStr;

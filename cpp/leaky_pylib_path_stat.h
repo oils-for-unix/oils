@@ -1,4 +1,4 @@
-// pylib_path_stat_leaky.h
+// leaky_pylib_path_stat.h
 
 #ifndef PYLIB_PATH_STAT_H
 #define PYLIB_PATH_STAT_H

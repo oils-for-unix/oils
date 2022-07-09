@@ -1,6 +1,6 @@
 // dumb_alloc.cc: Test this C++ mechanism as a lower bound on performance.
 
-#include "dumb_alloc_leaky.h"
+#include "leaky_dumb_alloc.h"
 
 #include <stdio.h>
 

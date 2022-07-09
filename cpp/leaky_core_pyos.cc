@@ -1,6 +1,6 @@
 // core_pyos.cc
 
-#include "core_pyos_leaky.h"  // undefined errno
+#include "leaky_core_pyos.h"  // undefined errno
 
 #include <pwd.h>
 #include <signal.h>

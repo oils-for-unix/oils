@@ -1,4 +1,4 @@
-// posix_leaky.h: Replacement for native/posixmodule.c
+// leaky_posix.h: Replacement for native/posixmodule.c
 
 #ifndef POSIX_H
 #define POSIX_H

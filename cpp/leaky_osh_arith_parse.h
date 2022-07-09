@@ -3,7 +3,7 @@
 #ifndef OSH_ARITH_PARSE_H
 #define OSH_ARITH_PARSE_H
 
-#include "frontend_tdop_leaky.h"
+#include "leaky_frontend_tdop.h"
 
 namespace arith_parse {
 

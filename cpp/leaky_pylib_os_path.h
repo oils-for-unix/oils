@@ -1,4 +1,4 @@
-// pylib_os_path_leaky.h
+// leaky_pylib_os_path.h
 
 #ifndef PYLIB_OS_PATH_H
 #define PYLIB_OS_PATH_H

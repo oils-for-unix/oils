@@ -1,4 +1,4 @@
-// osh_bool_stat_leaky.h
+// leaky_osh_bool_stat.h
 
 #ifndef OSH_BOOL_STAT_H
 #define OSH_BOOL_STAT_H

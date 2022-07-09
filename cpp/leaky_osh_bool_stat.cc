@@ -1,13 +1,13 @@
 // osh_bool_stat.cc
 
-#include "osh_bool_stat_leaky.h"
+#include "leaky_osh_bool_stat.h"
 
 #include <fcntl.h>  // AT_* Constants
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "core_error_leaky.h"
-#include "core_pyerror_leaky.h"
+#include "leaky_core_error.h"
+#include "leaky_core_pyerror.h"
 
 namespace bool_stat {
 

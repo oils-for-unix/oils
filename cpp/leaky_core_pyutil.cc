@@ -4,7 +4,7 @@
 #include "mycpp/myerror.h"  // for _OSError; must come first
 // clang-format on
 
-#include "core_pyutil_leaky.h"
+#include "leaky_core_pyutil.h"
 
 namespace pyutil {
 

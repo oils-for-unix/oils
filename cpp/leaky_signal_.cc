@@ -1,6 +1,6 @@
 // signal.cc
 
-#include "signal__leaky.h"
+#include "leaky_signal_.h"
 
 #include <signal.h>
 

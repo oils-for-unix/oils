@@ -41,7 +41,7 @@ cpp-skeleton() {
   cat <<EOF
 // $name.cc: translated from Python by mycpp
 
-#include "cpp/preamble_leaky.h"  // hard-coded stuff
+#include "cpp/leaky_preamble.h"  // hard-coded stuff
 
 #undef errno  // for e->errno to work; see mycpp/myerror.h
 
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
   complain_loudly_on_segfault();
 
-  gc_heap::gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc_leaky.cc
+  gc_heap::gHeap.Init(400 << 20);  // 400 MiB matches leaky_dumb_alloc.cc
 
   // NOTE(Jesse): Turn off buffered IO
   setvbuf(stdout, 0, _IONBF, 0);

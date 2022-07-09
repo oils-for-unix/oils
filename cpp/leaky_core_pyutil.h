@@ -1,4 +1,4 @@
-// core_pyutil_leaky.h
+// leaky_core_pyutil.h
 
 #ifndef CORE_PYUTIL_H
 #define CORE_PYUTIL_H
