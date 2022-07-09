@@ -167,8 +167,6 @@ EOF
 }
 
 cpp-small-tasks() {
-  # Planning this
-
   # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
   # build-minimal
   cat <<EOF
@@ -183,12 +181,17 @@ shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index
 mycpp-examples   mycpp/build.sh soil-run               _test/index.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 EOF
+}
 
-# Notes on steps that depend on the binary:
-#   compile-osh-eval: compiles a few variant of osh_eval in parallel
-#   shell-benchmarks: uses _bin/cxx-opt/osh_eval.stripped
-#   parse-errors: uses _bin/cxx-asan/osh_eval
-#   spec-cpp: DUPLICATE work because we don't use Ninja.  Thre is a hack with CXX=gcc.
+cpp-coverage-tasks() {
+  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
+  # build-minimal
+  cat <<EOF
+build-minimal    build/dev.sh minimal                  -
+cpp-unit         test/cpp-unit.sh soil-run             -
+extract-clang    soil/deps-binary.sh extract-clang     -
+mycpp-coverage   mycpp/test.sh unit-test-coverage      -
+EOF
 }
 
 # TODO: Add more tests, like
@@ -436,9 +439,11 @@ JOB-pea() { job-main 'pea'; }
 
 JOB-app-tests() { job-main 'app-tests'; }
 
-JOB-cpp-spec() { job-main 'cpp-spec'; }
+JOB-cpp-coverage() { job-main 'cpp-coverage'; }
 
 JOB-cpp-small() { job-main 'cpp-small'; }
+
+JOB-cpp-spec() { job-main 'cpp-spec'; }
 
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 

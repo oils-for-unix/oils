@@ -190,7 +190,6 @@ soil-run() {
 }
 
 unit-test-coverage() {
-  # Hm same crash here
   unit clang coverage
   ls -l _test/clang-coverage/mycpp-unit/*.profraw
 }

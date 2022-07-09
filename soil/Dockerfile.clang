@@ -1,0 +1,33 @@
+FROM debian:buster-slim
+
+RUN apt-get update 
+
+WORKDIR /home/uke/tmp
+
+# Copy build scripts into the container and run them
+
+COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
+
+RUN soil/deps-apt.sh layer-for-soil
+RUN soil/deps-apt.sh clang
+
+# Build other dependencies as non-root uke
+RUN useradd --create-home uke && chown -R uke /home/uke
+USER uke
+
+# Used by soil/deps-binary.sh
+COPY build/common.sh /home/uke/tmp/build/common.sh
+
+# For Clang coverage
+# Requires soil/deps-binary.sh download-clang beforehand
+# Not sure why --chown=uke is necessary here and not elsewhere
+COPY --chown=uke _cache/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz \
+  /home/uke/tmp/_cache/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+
+# re2c
+COPY _cache/re2c-3.0.tar.xz \
+  /home/uke/tmp/_cache/re2c-3.0.tar.xz
+COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
+RUN soil/deps-tar.sh build-re2c
+
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-clang'"]

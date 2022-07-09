@@ -32,16 +32,4 @@ test-clang() {
   $CLANGXX --version
 }
 
-layer-clang() {
-  ### Make a layer for Dockerfile.cpp
-  download-clang
-
-  # Don't extract it because it's huge
-  # Uncompressed it's 4.7 GB; compressed it's 604 MB.  So just do this at
-  # runtime if we need it.
-  cp -v _cache/clang+llvm-14.0.0*.tar.xz $DEPS_DIR
-
-  #extract-clang
-}
-
 "$@"

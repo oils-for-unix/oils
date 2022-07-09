@@ -34,7 +34,7 @@ run-job-uke() {
 
   local image_id
   case $task in
-    ('app-tests')
+    (app-tests)
       # Hack to reuse this container for build/dev.sh all
       image_id='ovm-tarball'
       # allocate pseudo TTY, otherwise fails on opening /dev/tty 
@@ -42,6 +42,9 @@ run-job-uke() {
       ;;
     (cpp-small|cpp-spec)
       image_id='cpp'
+      ;;
+    (cpp-coverage)
+      image_id='clang'
       ;;
     (*)
       # docker.io is the namespace for hub.docker.com

@@ -67,10 +67,7 @@ other-tests() {
 }
 
 cpp() {
-  # For both cpp-small and cpp-large?
-  # - mycpp-examples is fast, but requires mycpp and its deps
-  #   - could also use Clang coverage?
-  # - mycpp unit tests require clang coverage
+  ### For both cpp-small and cpp-spec
 
   local -a packages=(
     # retrieving deps -- TODO: move to build time
@@ -92,6 +89,26 @@ cpp() {
     valgrind
     # the shell benchmarks compare shells
     busybox-static mksh zsh
+  )
+
+  apt-get install -y "${packages[@]}"
+}
+
+clang() {
+  ### For both cpp-small and cpp-spec
+
+  local -a packages=(
+    # retrieving deps -- TODO: move to build time
+    wget
+
+    build-essential
+    xz-utils  # to extract Clang
+
+    # build/dev.sh minimal is necessary to run tests?
+    libreadline-dev
+    python2-dev
+
+    ninja-build
   )
 
   apt-get install -y "${packages[@]}"

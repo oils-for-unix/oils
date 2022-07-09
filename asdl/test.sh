@@ -170,6 +170,8 @@ all-asdl-gc() {
 }
 
 unit() {
+  # TODO: Write logs to _test/cxx-dbg/asdl/ like mycpp/test.sh does
+
   asdl/test.sh gen-cpp-test
   asdl/test.sh gc-test  # integration between ASDL and the GC heap
 
