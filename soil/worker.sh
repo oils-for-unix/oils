@@ -150,7 +150,7 @@ interactive         test/interactive.sh soil      -
 EOF
 }
 
-cpp-tasks() {
+cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
   # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
@@ -160,15 +160,8 @@ cpp-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/dev.sh minimal                  -
-cpp-unit         test/cpp-unit.sh soil-run             -
 build-osh-eval   build/dev.sh oil-cpp                  -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
-compile-osh-eval build/native.sh soil-run              -
-line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
-preprocessed     metrics/source-code.sh oil-native-preprocessed -
-shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
-mycpp-examples   mycpp/build.sh soil-run               _test/index.html
-parse-errors     test/parse-errors.sh soil-run-cpp     -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 
@@ -445,7 +438,9 @@ JOB-pea() { job-main 'pea'; }
 
 JOB-app-tests() { job-main 'app-tests'; }
 
-JOB-cpp() { job-main 'cpp'; }
+JOB-cpp-spec() { job-main 'cpp-spec'; }
+
+JOB-cpp-small() { job-main 'cpp-small'; }
 
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 

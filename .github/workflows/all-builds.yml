@@ -191,7 +191,7 @@ jobs:
           cd $REPO_ROOT
           soil/github-actions.sh publish-html app-tests
 
-  cpp:
+  cpp-small:
     runs-on: ubuntu-18.04
     env:
       REPO_ROOT: ${{ github.workspace }}
@@ -205,10 +205,10 @@ jobs:
         run: |
           soil/host-shim.sh mount-perms $REPO_ROOT
 
-      - name: cpp
+      - name: cpp-small
         run: |
           cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT cpp
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT cpp-small
 
       - name: publish-html
         env:
@@ -216,7 +216,34 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           cd $REPO_ROOT
-          soil/github-actions.sh publish-html cpp
+          soil/github-actions.sh publish-html cpp-small
+
+  cpp-spec:
+    runs-on: ubuntu-18.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: mount-perms
+        run: |
+          soil/host-shim.sh mount-perms $REPO_ROOT
+
+      - name: cpp-spec
+        run: |
+          cd $REPO_ROOT
+          soil/host-shim.sh run-job-uke docker $REPO_ROOT cpp-spec
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          cd $REPO_ROOT
+          soil/github-actions.sh publish-html cpp-spec
 
   maybe-merge-to-master:
     runs-on: ubuntu-18.04

@@ -18,9 +18,9 @@ tasks:
       cd oil
       soil/host-shim.sh mount-perms $PWD
 
-  - cpp: |
+  - cpp-spec: |
       cd oil
-      soil/host-shim.sh run-job-uke podman $PWD cpp
+      soil/host-shim.sh run-job-uke podman $PWD cpp-spec
 
   # Relies on SSH key, so do it outside the container
   - publish-html: |

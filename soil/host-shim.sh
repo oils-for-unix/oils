@@ -32,15 +32,24 @@ run-job-uke() {
 
   local -a flags=()
 
-  if test "$task" = 'app-tests'; then
-    # Hack to reuse this container for build/dev.sh all
-    local image="docker.io/oilshell/soil-ovm-tarball"
-    # allocate pseudo TTY, otherwise fails on opening /dev/tty 
-    flags=( -t )
-  else
-    # docker.io is the namespace for hub.docker.com
-    local image="docker.io/oilshell/soil-$task"
-  fi
+  local image_id
+  case $task in
+    ('app-tests')
+      # Hack to reuse this container for build/dev.sh all
+      image_id='ovm-tarball'
+      # allocate pseudo TTY, otherwise fails on opening /dev/tty 
+      flags=( -t )
+      ;;
+    (cpp-small|cpp-spec)
+      image_id='cpp'
+      ;;
+    (*)
+      # docker.io is the namespace for hub.docker.com
+      image_id=$task
+      ;;
+  esac
+
+  local image="docker.io/oilshell/soil-$image_id"
 
   local metadata_dir=$repo_root/_tmp/soil
 
