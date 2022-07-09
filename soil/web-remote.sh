@@ -145,7 +145,11 @@ format-wwz-index() {
 EOF
   cat $tsv | while read status elapsed task script action result_html; do
     echo "<tr>"
-    echo "  <td><code><a href="_tmp/soil/logs/$task.txt">$script $action</a></code></td>"
+    echo "  <td>
+               <a href=\"_tmp/soil/logs/$task.txt\">$task</a> <br/>
+               <code>$script $action</code>
+            </td>
+         "
 
     printf -v elapsed_str '%.2f' $elapsed
     echo "  <td>$elapsed_str</td>"

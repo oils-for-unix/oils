@@ -156,10 +156,11 @@ cpp-spec-tasks() {
   # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
   # build-minimal
 
-  # consts_gen.py needs types_asdl.py
+  # BUG: oil-cpp can't run with build/dev.sh minimal because 'fastlex' isn't built
+  # It requires build/dev.sh all
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
-build-minimal    build/dev.sh minimal                  -
+dev-all          build/dev.sh all                       -
 build-osh-eval   build/dev.sh oil-cpp                  -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html

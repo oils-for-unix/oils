@@ -9,7 +9,11 @@ set -o errexit
 
 test-format-wwz-index() {
   soil/worker.sh JOB-dummy
-  format-wwz-index DUMMY_JOB_ID
+
+  local out=_tmp/format-wwz-index.html
+
+  format-wwz-index DUMMY_JOB_ID > $out
+  echo "Wrote $out"
 }
 
 all() {
