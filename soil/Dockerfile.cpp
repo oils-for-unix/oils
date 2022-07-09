@@ -16,13 +16,23 @@ RUN soil/deps-apt.sh cpp
 RUN useradd --create-home uke && chown -R uke /home/uke
 USER uke
 
-# We're in /home/uke/tmp, so this will create /home/uke/oil_DEPS, which will be 
+# We're in /home/uke/tmp, so these will create /home/uke/oil_DEPS, which will be 
 # a sibling of the runtime bind mount /home/uke/oil.
 
-# TODO: Figure out a better way to handle deps?
+# Used by soil/deps-{binary,tar}.sh
 COPY build/common.sh /home/uke/tmp/build/common.sh
-COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
 
+# For Clang coverage
+COPY soil/deps-binary.sh /home/uke/tmp/soil/deps-binary.sh
+#RUN soil/deps-binary.sh layer-clang
+
+# re2c
+COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
 RUN soil/deps-tar.sh layer-re2c
+
+# Installs from PyPI
+COPY mycpp/common.sh /home/uke/tmp/mycpp/common.sh
+COPY soil/deps-mycpp.sh /home/uke/tmp/soil/deps-mycpp.sh
+RUN soil/deps-mycpp.sh layer-mycpp
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-cpp'"]

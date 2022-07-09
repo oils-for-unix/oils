@@ -28,10 +28,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly THIS_DIR=$(dirname $(readlink -f $0))
-readonly REPO_ROOT=$THIS_DIR/..
-
-source $THIS_DIR/common.sh  # MYPY_REPO
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 
 git-clone() {
   ### Invoked by services/toil-worker
@@ -57,10 +55,6 @@ mypy-deps() {
 }
 
 pip-install() {
-  ### Invoked by services/toil-worker
-
-  pushd $THIS_DIR
-
   create-venv
 
   set +o nounset
@@ -69,8 +63,11 @@ pip-install() {
   source $MYCPP_VENV/bin/activate
 
   mypy-deps      # install deps in virtual env
+}
 
-  popd
+layer-mycpp() {
+  git-clone
+  pip-install
 }
 
 "$@"

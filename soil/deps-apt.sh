@@ -67,6 +67,11 @@ other-tests() {
 }
 
 cpp() {
+  # For both cpp-small and cpp-large?
+  # - mycpp-examples is fast, but requires mycpp and its deps
+  #   - could also use Clang coverage?
+  # - mycpp unit tests require clang coverage
+
   local -a packages=(
     # retrieving deps -- TODO: move to build time
     wget
@@ -80,7 +85,7 @@ cpp() {
     python3-venv
 
     ninja-build
-    # to create mycpp/_test/index.html
+    # to create _test/index.html
     gawk
 
     # for stable benchmarks
