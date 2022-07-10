@@ -205,7 +205,7 @@ jobs:
         run: |
           soil/host-shim.sh mount-perms $REPO_ROOT
 
-      - name: cpp-small
+      - name: cpp-coverage
         run: |
           cd $REPO_ROOT
           soil/host-shim.sh run-job-uke docker $REPO_ROOT cpp-coverage

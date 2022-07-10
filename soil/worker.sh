@@ -184,12 +184,15 @@ EOF
 }
 
 cpp-coverage-tasks() {
-  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
-  # build-minimal
+  # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
+
   cat <<EOF
-build-minimal    build/dev.sh minimal                            -
-extract-clang    soil/deps-binary.sh extract-clang-in-container  -
-mycpp-coverage   mycpp/test.sh soil-coverage                     _test/clang-coverage/mycpp-unit/html/index.html
+build-minimal           build/dev.sh minimal                            -
+ninja-config            ./NINJA-config.sh dummy                         -
+extract-clang           soil/deps-binary.sh extract-clang-in-container  -
+mycpp-unit-coverage     mycpp/test.sh unit-test-coverage                _test/clang-coverage/mycpp-unit/html/index.html
+HACK-asdl               build/dev.sh oil-asdl-to-cpp                    -
+mycpp-examples-coverage mycpp/test.sh examples-coverage                 _test/clang-coverage/mycpp-examples/html/index.html
 EOF
 }
 

@@ -77,9 +77,9 @@ cpp() {
     libreadline-dev
     python2-dev
 
+    python3
     python3-pip
-    # for MyPy virtualenv for requirements.txt -- TODO: move to build time.
-    python3-venv
+    python3-venv  # MyPy virtualenv requirements.txt
 
     ninja-build
     # to create _test/index.html
@@ -109,6 +109,11 @@ clang() {
     python2-dev
 
     ninja-build
+
+    # for translating mycpp/examples
+    python3
+    python3-pip
+    python3-venv  # MyPy virtualenv requirements.txt
   )
 
   apt-get install -y "${packages[@]}"

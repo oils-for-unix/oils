@@ -259,4 +259,8 @@ pea-hack() {
   cp -v $DIR/osh_eval/typecheck.txt pea/osh-eval-typecheck.txt
 }
 
-"$@"
+
+# Source by NINJA-config.sh
+if test $(basename $0) = 'app-deps.sh'; then
+  "$@"
+fi

@@ -9,6 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+source build/common.sh  # $CLANG_DIR
+
 # in case binaries weren't built
 shopt -s failglob
 
@@ -39,7 +42,16 @@ examples-variant() {
         ;;
     esac
 
-    local log=$log_dir/$(basename $b)${do_benchmark}.log
+    local prefix="$log_dir/$(basename $b)"
+
+    case $variant in
+      (coverage)
+        export LLVM_PROFILE_FILE=$prefix.profraw
+        ;;
+    esac
+
+    local log="${prefix}${do_benchmark}.log"
+
     echo "RUN $b > $log"
 
     local test_name=$(basename $b)
@@ -189,32 +201,21 @@ soil-run() {
   unit '' ubsan
 }
 
-soil-coverage() {
-  ./NINJA-config.sh
-
-  unit-test-coverage
-
-  coverage-report
-}
-
-unit-test-coverage() {
-  unit clang coverage
-  ls -l _test/clang-coverage/mycpp-unit/*.profraw
-}
-
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-source build/common.sh  # $CLANG_DIR
+#
+# Coverage
+#
 
 coverage-report() {
-  local dir=_test/clang-coverage/mycpp-unit
+  local suite=${1:-mycpp-unit}
 
-  local merged=$dir/ALL.profdata
-  $CLANG_DIR/bin/llvm-profdata merge -sparse $dir/*.profraw \
+  local prof_dir="_test/clang-coverage/$suite"
+  local bin_dir="_bin/clang-coverage/$suite"
+
+  local merged=$prof_dir/ALL.profdata
+  $CLANG_DIR/bin/llvm-profdata merge -sparse $prof_dir/*.profraw \
     -o $merged
 
   # https://llvm.org/docs/CommandGuide/llvm-cov.html
-  # Weird syntax
-  local bin_dir=_bin/clang-coverage/mycpp-unit
 
   local -a args=()
   for b in $bin_dir/*; do
@@ -224,7 +225,7 @@ coverage-report() {
   # Text report
   # $CLANG_DIR/bin/llvm-cov show --instr-profile $dir/ALL.profdata "${args[@]}"
 
-  local html_dir=$dir/html
+  local html_dir=$prof_dir/html
   mkdir -p $html_dir
 
   $CLANG_DIR/bin/llvm-cov show \
@@ -255,6 +256,22 @@ coverage-report() {
   $CLANG_DIR/bin/llvm-cov report --instr-profile $merged "${args[@]}"
 
   # Also TODO: leaky_bindings_test, etc.
+}
+
+unit-test-coverage() {
+  ### Invoked by Soil
+
+  unit clang coverage
+
+  coverage-report
+}
+
+examples-coverage() {
+  ### Invoked by Soil
+
+  examples-variant clang coverage
+
+  coverage-report mycpp-examples
 }
 
 "$@"

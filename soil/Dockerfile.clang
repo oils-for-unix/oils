@@ -37,4 +37,10 @@ COPY --chown=uke _cache/re2c-3.0.tar.xz \
 COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
 RUN soil/deps-tar.sh build-re2c
 
+# mypy deps: Installs from PyPI
+# needed to measure coverage of mycpp/examples
+COPY mycpp/common.sh /home/uke/tmp/mycpp/common.sh
+COPY soil/deps-mycpp.sh /home/uke/tmp/soil/deps-mycpp.sh
+RUN soil/deps-mycpp.sh layer-mycpp
+
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-clang'"]

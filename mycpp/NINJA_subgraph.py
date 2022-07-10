@@ -221,8 +221,8 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
         ('cxx', 'ubsan'),
         ('cxx', 'opt'),
 
-        # Finds more bugs!
-        ('clang', 'ubsan'),
+        ('clang', 'ubsan'),  # Finds more bugs!
+        ('clang', 'coverage'),
     ]
   else:
     example_matrix = [
