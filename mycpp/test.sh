@@ -189,6 +189,14 @@ soil-run() {
   unit '' ubsan
 }
 
+soil-coverage() {
+  ./NINJA-config.sh
+
+  unit-test-coverage
+
+  coverage-report
+}
+
 unit-test-coverage() {
   unit clang coverage
   ls -l _test/clang-coverage/mycpp-unit/*.profraw
@@ -203,8 +211,6 @@ coverage-report() {
   $CLANG_DIR/bin/llvm-profdata merge -sparse $dir/*.profraw \
     -o $dir/ALL.profdata \
 
-  ls -l $dir
-
   # https://llvm.org/docs/CommandGuide/llvm-cov.html
   # Weird syntax
   local bin_dir=_bin/clang-coverage/mycpp-unit
@@ -214,11 +220,9 @@ coverage-report() {
     args+=(--object $b)
   done
 
-  echo 'ALL'
+  # Text report
+  # $CLANG_DIR/bin/llvm-cov show --instr-profile $dir/ALL.profdata "${args[@]}"
 
-  $CLANG_DIR/bin/llvm-cov show --instr-profile $dir/ALL.profdata "${args[@]}"
-
-  local html=$dir/REPORT.html
   local html_dir=$dir/html
   mkdir -p $html_dir
 

@@ -189,7 +189,7 @@ cpp-coverage-tasks() {
   cat <<EOF
 build-minimal    build/dev.sh minimal                            -
 extract-clang    soil/deps-binary.sh extract-clang-in-container  -
-mycpp-coverage   mycpp/test.sh unit-test-coverage                -
+mycpp-coverage   mycpp/test.sh soil-coverage                     _test/clang-coverage/mycpp-unit/html/index.html
 EOF
 }
 

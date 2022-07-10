@@ -199,7 +199,7 @@ make-job-wwz() {
   zip -r $wwz \
     index.html _tmp/soil _tmp/spec _tmp/stateful \
     _tmp/syscall _tmp/benchmark-data _tmp/metrics \
-    _test/*.{html,txt,tsv} _test/{tasks,gen} \
+    _test/*.{html,txt,tsv} _test/{tasks,gen,clang-coverage} \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts}.css web/ajax.js \
     web/table/table-sort.{css,js} \
     _release/oil.tar _release/VERSION/doc
