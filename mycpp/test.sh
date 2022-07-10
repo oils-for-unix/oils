@@ -208,8 +208,9 @@ source build/common.sh  # $CLANG_DIR
 coverage-report() {
   local dir=_test/clang-coverage/mycpp-unit
 
+  local merged=$dir/ALL.profdata
   $CLANG_DIR/bin/llvm-profdata merge -sparse $dir/*.profraw \
-    -o $dir/ALL.profdata \
+    -o $merged
 
   # https://llvm.org/docs/CommandGuide/llvm-cov.html
   # Weird syntax
@@ -228,19 +229,30 @@ coverage-report() {
 
   $CLANG_DIR/bin/llvm-cov show \
     --format html --output-dir $html_dir \
-    --instr-profile $dir/ALL.profdata \
+    --instr-profile $merged \
     "${args[@]}"
 
   #echo "Wrote $html"
   #ls -l --si -h $html  # 2.2 MB of HTML
 
+  # Clang quirk: permissions of this tree aren't right.  Without this, the Soil
+  # host won't be able to zip and publish them.
+
+  # make sure files are readable
+  echo 'fix FILES'
+  chmod --changes -R o+r $html_dir
+  echo
+
+  # make sure dirs can be listed
+  echo 'fix DIRS'
+  find $html_dir -type d | xargs -- chmod --changes o+x
+  echo
+
   # 2.4 MB of HTML
   du --si -s $html_dir
-
-  echo
   echo
 
-  $CLANG_DIR/bin/llvm-cov report --instr-profile=$dir/ALL.profdata "${args[@]}"
+  $CLANG_DIR/bin/llvm-cov report --instr-profile $merged "${args[@]}"
 
   # Also TODO: leaky_bindings_test, etc.
 }
