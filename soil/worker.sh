@@ -193,6 +193,7 @@ extract-clang           soil/deps-binary.sh extract-clang-in-container  -
 mycpp-unit-coverage     mycpp/test.sh unit-test-coverage                _test/clang-coverage/mycpp-unit/html/index.html
 HACK-asdl               build/dev.sh oil-asdl-to-cpp                    -
 mycpp-examples-coverage mycpp/test.sh examples-coverage                 _test/clang-coverage/mycpp-examples/html/index.html
+cpp-coverage            cpp/test.sh coverage                            _test/clang-coverage/cpp/html/index.html
 EOF
 }
 

@@ -233,23 +233,6 @@ TEST bool_stat_test() {
   PASS();
 }
 
-TEST pyos_test() {
-  // This test isn't hermetic but it should work in most places, including in a
-  // container
-  int err_num = pyos::Chdir(new Str("/"));
-  ASSERT(err_num == 0);
-
-  err_num = pyos::Chdir(new Str("/nonexistent__"));
-  ASSERT(err_num != 0);
-
-  Dict<Str*, Str*>* env = pyos::Environ();
-  Str* p = env->get(new Str("PATH"));
-  ASSERT(p != nullptr);
-  log("PATH = %s", p->data_);
-
-  PASS();
-}
-
 TEST pyos_readbyte_test() {
   // Write 2 bytes to this file
   const char* tmp_name = "_tmp/pyos_ReadByte";
@@ -349,12 +332,30 @@ TEST putenv_test() {
   PASS();
 }
 
+TEST pyos_test() {
+  // This test isn't hermetic but it should work in most places, including in a
+  // container
+  int err_num = pyos::Chdir(new Str("/"));
+  ASSERT(err_num == 0);
+
+  err_num = pyos::Chdir(new Str("/nonexistent__"));
+  ASSERT(err_num != 0);
+
+  Dict<Str*, Str*>* env = pyos::Environ();
+  Str* p = env->get(new Str("PATH"));
+  ASSERT(p != nullptr);
+  log("PATH = %s", p->data_);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   // TODO: use garbage collection in this test?
 
   GREATEST_MAIN_BEGIN();
+
   RUN_TEST(show_sizeof);
   RUN_TEST(match_test);
   RUN_TEST(util_test);
@@ -368,8 +369,12 @@ int main(int argc, char** argv) {
   RUN_TEST(os_path_test);
   RUN_TEST(putenv_test);
 
+  // Disabled because changing the dir somehow prevents the
+  // leaky_binding_test.profraw file from being created
+  //
   // Must come last because it does chdir()
-  RUN_TEST(pyos_test);
+  //
+  // RUN_TEST(pyos_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

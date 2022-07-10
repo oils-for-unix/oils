@@ -14,6 +14,40 @@ source cpp/NINJA-steps.sh  # for compile_and_link function
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
 
+pre-build() {
+  # TODO: sort out these deps
+  # This is part of build/dev.sh oil-cpp
+
+  build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h
+  build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
+  build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
+  build/dev.sh cpp-codegen
+}
+
+readonly LEAKY_FLAG_SPEC_SRC=(
+    cpp/leaky_flag_spec_test.cc \
+    _build/cpp/arg_types.cc \
+    cpp/leaky_frontend_flag_spec.cc \
+    mycpp/mylib_leaky.cc
+)
+
+leaky-flag-spec-test() {
+  ### Test generated code
+
+  local compiler=${1:-cxx}
+  local variant=${2:-dbg}
+
+  local dir=_bin/$compiler-$variant/cpp
+  mkdir -p $dir
+  local bin=$dir/leaky_flag_spec_test
+
+  local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
+  compile_and_link $compiler $variant "$more_cxx_flags" $bin \
+    "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/leaky_dumb_alloc.cc
+
+  run-test $bin $compiler $variant
+}
+
 readonly LEAKY_TEST_SRC=(
     cpp/leaky_binding_test.cc \
     cpp/leaky_core_pyos.cc \
@@ -26,70 +60,23 @@ readonly LEAKY_TEST_SRC=(
     mycpp/mylib_leaky.cc
 )
 
-readonly LEAKY_FLAG_SPEC_SRC=(
-    cpp/leaky_flag_spec_test.cc \
-    _build/cpp/arg_types.cc \
-    cpp/leaky_frontend_flag_spec.cc \
-    mycpp/mylib_leaky.cc
-)
-
-leaky-flag-spec-test() {
-  ### Test generated code
-
-  local dir=_bin/cxx-dbg/cpp
-  mkdir -p $dir
-
-  local bin=$dir/leaky_flag_spec_test
-
-  local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
-  compile_and_link cxx dbg "$more_cxx_flags" $bin \
-    "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/leaky_dumb_alloc.cc
-
-  $bin "$@"
-}
-
-# TODO:
-#
-# - Fold variants of leaky_binding_test and gc_binding_test into Ninja
-#   - And add cxx-ubsan and clang-coverage -- with HTML output
-# - Problem: We don't have fine-grained dependencies for ASDL
-#
-# Possible solution is to factor into:
-#
-# build/cpp.sh gen-cpp
-# build/cpp.sh all
-#
-# And then any time a Python source file changes (_build/app-deps), you do the
-# whole build/cpp.sh gen-cpp?
-
-
-leaky-binding-test-asan() {
-  local dir=_bin/cxx-asan/cpp
-  mkdir -p $dir
-
-  local bin=$dir/leaky_binding_test
-
-  compile_and_link cxx asan '-D LEAKY_BINDINGS -D CPP_UNIT_TEST' $bin \
-    "${LEAKY_TEST_SRC[@]}"
-
-  $bin "$@"
-}
-
 leaky-binding-test() {
   ### Test hand-written code
 
-  local dir=_bin/cxx-dbg/cpp
-  mkdir -p $dir
+  local compiler=${1:-cxx}
+  local variant=${2:-dbg}
 
+  local dir=_bin/$compiler-$variant/cpp
+  mkdir -p $dir
   local bin=$dir/leaky_binding_test
 
   # leaky_dumb_alloc.cc exposes allocator alignment issues?
 
   local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
-  compile_and_link cxx dbg "$more_cxx_flags" $bin \
+  compile_and_link $compiler $variant "$more_cxx_flags" $bin \
     "${LEAKY_TEST_SRC[@]}" cpp/leaky_dumb_alloc.cc
 
-  $bin "$@"
+  run-test $bin $compiler $variant
 }
 
 readonly GC_TEST_SRC=(
@@ -100,37 +87,68 @@ readonly GC_TEST_SRC=(
 gc-binding-test() {
   local leaky_mode=${1:-}
 
-  local out_dir=_bin/cxx-testgc/cpp
+  local compiler=${1:-cxx}
+  local variant=${2:-dbg}
+
+  local out_dir=_bin/$compiler-$variant/cpp
   mkdir -p $out_dir
 
   local more_cxx_flags='-D DUMB_ALLOC'  # do we need this?
-  if test -n "$leaky_mode"; then
-    # LEAKY_BINDINGS is in the qsn_qsn.h header; LEAKY_TEST_MODE is gc_binding_test.cc
-    more_cxx_flags+=' -D LEAKY_BINDINGS -D LEAKY_TEST_MODE'
-  fi
+  local bin=$out_dir/gc_binding_test
 
-  local bin=$out_dir/gc_binding_test${leaky_mode}
-  compile_and_link cxx testgc "$more_cxx_flags" $bin \
+  compile_and_link $compiler $variant "$more_cxx_flags" $bin \
     "${GC_TEST_SRC[@]}" cpp/leaky_dumb_alloc.cc
 
-  $bin "$@"
+  run-test $bin $compiler $variant
 }
 
-all-gc-binding-test() {
-  gc-binding-test        # normal GC mode
-  gc-binding-test '.LEAKY'  # test in leaky mode too
+run-test() {
+  local bin=$1
+  local compiler=$2
+  local variant=$3
+
+  local dir=_test/$compiler-$variant/cpp
+
+  mkdir -p $dir
+
+  local name=$(basename $bin)
+  export LLVM_PROFILE_FILE=$dir/$name.profraw
+
+  local log=$dir/$name.log
+  echo "RUN $bin > $log"
+  $bin > $log
 }
+
+# TODO:
+#
+# - These tests can use Ninja dependencies with -M
+#   - separate all the files
+# - Put logs in _test/
+# - Make HTML links to all the logs
+# - Add coverage report
 
 unit() {
   ### Run by test/cpp-unit.sh
 
-  # Generated code
-  leaky-flag-spec-test
+  gc-binding-test '' testgc
+  gc-binding-test '' leaky
 
-  leaky-binding-test
-  leaky-binding-test-asan
+  # Has generated code
+  leaky-flag-spec-test '' ''
+  leaky-flag-spec-test '' asan
 
-  all-gc-binding-test
+  leaky-binding-test '' ''
+  leaky-binding-test '' asan
+}
+
+coverage() {
+  pre-build
+
+  gc-binding-test clang coverage
+  leaky-flag-spec-test clang coverage
+  leaky-binding-test clang coverage
+
+  test/coverage.sh html-report cpp
 }
 
 "$@"
