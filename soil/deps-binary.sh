@@ -32,7 +32,7 @@ extract-clang() {
   popd
 }
 
-extract-clang-inside-container() {
+extract-clang-in-container() {
   ### For Dockerfile.clang
 
   pushd $DEPS_DIR

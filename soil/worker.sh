@@ -187,10 +187,9 @@ cpp-coverage-tasks() {
   # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
   # build-minimal
   cat <<EOF
-build-minimal    build/dev.sh minimal                  -
-cpp-unit         test/cpp-unit.sh soil-run             -
-extract-clang    soil/deps-binary.sh extract-clang     -
-mycpp-coverage   mycpp/test.sh unit-test-coverage      -
+build-minimal    build/dev.sh minimal                            -
+extract-clang    soil/deps-binary.sh extract-clang-in-container  -
+mycpp-coverage   mycpp/test.sh unit-test-coverage                -
 EOF
 }
 
