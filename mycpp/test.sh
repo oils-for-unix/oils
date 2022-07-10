@@ -230,6 +230,13 @@ coverage-report() {
 
   $CLANG_DIR/bin/llvm-cov show \
     --format html --output-dir $html_dir \
+    --project-title "$suite" \
+    --ignore-filename-regex '_test.cc$' \
+    --ignore-filename-regex 'greatest.h$' \
+    --ignore-filename-regex 'mycpp/demo' \
+    --ignore-filename-regex '_test/' \
+    --ignore-filename-regex '_build/' \
+    --show-instantiation-summary \
     --instr-profile $merged \
     "${args[@]}"
 
@@ -256,6 +263,13 @@ coverage-report() {
   $CLANG_DIR/bin/llvm-cov report --instr-profile $merged "${args[@]}"
 
   # Also TODO: leaky_bindings_test, etc.
+}
+
+llvm-cov-help() {
+  # many options for filtering
+  # --name-allowlist
+
+  $CLANG_DIR/bin/llvm-cov show --help
 }
 
 unit-test-coverage() {
