@@ -96,7 +96,7 @@ cleanup-status-api() {
 
 sync-testdata() {
   rsync --archive --verbose \
-    $USER@$HOST:$HOST/jobs/ _tmp/jobs/
+    $SOIL_USER@$SOIL_HOST:$SOIL_HOST/jobs/ _tmp/jobs/
 }
 
 local-test() {

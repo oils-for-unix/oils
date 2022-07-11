@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source soil/common.sh  # for USER and HOST
+source soil/common.sh  # for SOIL_USER and SOIL_HOST
 
 # Notes on setting up travis-ci.oilshell.org
 #
@@ -113,8 +113,8 @@ EOF
 }
 
 deploy-data() {
-  local user=${1:-$USER}
-  local host=${2:-$HOST}
+  local user=${1:-$SOIL_USER}
+  local host=${2:-$SOIL_HOST}
 
   ssh $user@$host mkdir -v -p $host/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github}
 
@@ -141,7 +141,7 @@ multi() { ~/git/tree-tools/bin/multi "$@"; }
 deploy-code() {
   soil-web-manifest | multi cp _tmp/soil-web
   tree _tmp/soil-web
-  rsync --archive --verbose _tmp/soil-web/ $USER@$HOST:soil-web/
+  rsync --archive --verbose _tmp/soil-web/ $SOIL_USER_HOST:soil-web/
 }
 
 deploy() {
@@ -150,7 +150,7 @@ deploy() {
 }
 
 remote-test() {
-  ssh $USER@$HOST \
+  ssh $SOIL_USER_HOST \
     soil-web/soil/web.sh smoke-test '~/travis-ci.oilshell.org/jobs'
 }
 

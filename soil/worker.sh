@@ -422,7 +422,7 @@ job-main() {
 
   local out_dir=_tmp/soil
 
-  log "job-main: running as $(whoami) in directory $PWD"
+  log-context 'job-main'
   mkdir -v -p $out_dir
   ls -l -d $out_dir
 
@@ -432,19 +432,25 @@ job-main() {
 }
 
 job-reset() {
-  log "job-reset: running as $(whoami) in directory $PWD"
+  log-context 'job-reset'
 
-  # Show permissions
-  ls -l -d _tmp/soil _devbuild _devbuild/bin || true
+  # The VM runs as the 'build' user on sourcehut.  The podman container runs as
+  # 'uke' user, which apparently gets UID 100999.
+  #
+  # Running as 'build', we can't remove files created by the guest, so use
+  # 'sudo'.
+  #
+  # It's really these three dirs.
+  # ls -l -d _tmp/soil _tmp/soil/logs _devbuild/bin || true
 
-  soil/host-shim.sh mount-perms $PWD
+  sudo soil/host-shim.sh mount-perms $PWD
   echo
 
   git status .
   echo
 
-  # Similar to build/actions.sh clean, or build/native.sh clean, but also does
-  # _tmp and _devbuild
+  # Similar to 'build/actions.sh clean', or 'build/native.sh clean', but also
+  # does _tmp and _devbuild
   rm -r -f -v _tmp _bin _build _devbuild _test
 }
 

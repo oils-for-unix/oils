@@ -4,12 +4,21 @@ log() {
   echo "$@" 1>&2
 }
 
+log-context() {
+  local label=$1
+
+  log ''
+  log "$label: running as user '$(whoami)' on host '$(hostname)' in dir $PWD"
+  log ''
+}
+
 dump-env() {
   env | grep -v '^encrypted_' | sort
 }
 
-readonly USER='travis_admin'
-readonly HOST='travis-ci.oilshell.org'
+readonly SOIL_USER='travis_admin'
+readonly SOIL_HOST='travis-ci.oilshell.org'
+readonly SOIL_USER_HOST="$SOIL_USER@$SOIL_HOST"
 
 html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"

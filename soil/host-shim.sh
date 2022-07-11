@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source soil/common.sh
+
 mount-perms() {
   ### Ensure that the guest can write to bind mount
 
@@ -29,6 +31,8 @@ run-job-uke() {
   local repo_root=$2
   local task=$3  # e.g. dev-minimal
   local debug_shell=${4:-}
+
+  log-context 'run-job-uke'
 
   local -a flags=()
 
