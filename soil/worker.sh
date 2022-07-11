@@ -431,6 +431,23 @@ job-main() {
   ${job_name}-tasks | run-tasks $out_dir
 }
 
+job-reset() {
+  log "job-reset: running as $(whoami) in directory $PWD"
+
+  # Show permissions
+  ls -l -d _tmp/soil _devbuild _devbuild/bin || true
+
+  soil/host-shim.sh mount-perms $PWD
+  echo
+
+  git status .
+  echo
+
+  # Similar to build/actions.sh clean, or build/native.sh clean, but also does
+  # _tmp and _devbuild
+  rm -r -f -v _tmp _bin _build _devbuild _test
+}
+
 JOB-dummy() { job-main 'dummy'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }

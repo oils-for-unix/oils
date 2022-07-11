@@ -11,7 +11,6 @@ packages:
   - slirp4netns
 
 secrets:
-  # SSH key for publishing HTML
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
 tasks:
@@ -19,11 +18,24 @@ tasks:
       cd oil
       soil/host-shim.sh mount-perms $PWD
 
-  - pea: |
+  - ovm-tarball: |
       cd oil
-      soil/host-shim.sh run-job-uke podman $PWD pea
+      soil/host-shim.sh run-job-uke podman $PWD ovm-tarball
 
   # Relies on SSH key, so do it outside the container
-  - publish-html: |
+  - publish-ovm-tarball: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
+
+  # Outside container
+  - job-reset: |
+      cd oil
+      soil/worker.sh job-reset
+
+  - app-tests: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD app-tests
+
+  - publish-app-tests: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key

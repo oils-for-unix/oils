@@ -18,11 +18,25 @@ tasks:
       cd oil
       soil/host-shim.sh mount-perms $PWD
 
+  - pea: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD pea
+
+  # Relies on SSH key, so do it outside the container
+  - publish-pea: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
+
+  # Outside container
+  - job-reset: |
+      cd oil
+      soil/worker.sh job-reset
+
   - cpp-spec: |
       cd oil
       soil/host-shim.sh run-job-uke podman $PWD cpp-spec
 
   # Relies on SSH key, so do it outside the container
-  - publish-html: |
+  - publish-cpp-spec: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key

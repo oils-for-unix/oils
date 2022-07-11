@@ -23,6 +23,19 @@ tasks:
       soil/host-shim.sh run-job-uke podman $PWD dev-minimal
 
   # Relies on SSH key, so do it outside the container
-  - publish-html: |
+  - publish-dev-minimal: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
+
+  # Outside container
+  - job-reset: |
+      cd oil
+      soil/worker.sh job-reset
+
+  - other-tests: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD other-tests
+
+  - publish-other-tests: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key

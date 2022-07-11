@@ -21,7 +21,7 @@ mount-perms() {
   # submodules need it.
 
   time find "$repo_root" -type d -a -print \
-    | xargs -d $'\n' -- chmod --verbose 777
+    | xargs -d $'\n' -- chmod --changes 777
 }
 
 run-job-uke() {
