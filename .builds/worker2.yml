@@ -1,3 +1,5 @@
+# cpp-small, cpp-spec -- these SHARE the same container
+
 # Debian bullseye has podman
 image: debian/bullseye
 packages:
@@ -18,19 +20,17 @@ tasks:
       cd oil
       soil/host-shim.sh mount-perms $PWD
 
-  - pea: |
+  - cpp-small: |
       cd oil
-      soil/host-shim.sh run-job-uke podman $PWD pea
+      soil/host-shim.sh run-job-uke podman $PWD cpp-small
 
-  # Relies on SSH key, so do it outside the container
-  - publish-pea: |
+  - publish-cpp-small: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key
 
-  # Outside container
   - job-reset: |
       cd oil
-      soil/worker.sh job-reset
+      soil/host-shim.sh job-reset
 
   - cpp-spec: |
       cd oil

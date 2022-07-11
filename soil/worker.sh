@@ -50,7 +50,12 @@ dump-locale() {
 dump-hardware() {
   egrep '^(processor|model name)' /proc/cpuinfo
   echo
+
   egrep '^Mem' /proc/meminfo
+  echo
+
+  df -h
+  echo
 }
 
 dump-distro() {
@@ -187,6 +192,7 @@ cpp-coverage-tasks() {
   # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
 
   cat <<EOF
+dump-hardware           soil/worker.sh dump-hardware                    -
 build-minimal           build/dev.sh minimal                            -
 ninja-config            ./NINJA-config.sh dummy                         -
 extract-clang           soil/deps-binary.sh extract-clang-in-container  -
@@ -429,29 +435,6 @@ job-main() {
   save-metadata $job_name $out_dir
 
   ${job_name}-tasks | run-tasks $out_dir
-}
-
-job-reset() {
-  log-context 'job-reset'
-
-  # The VM runs as the 'build' user on sourcehut.  The podman container runs as
-  # 'uke' user, which apparently gets UID 100999.
-  #
-  # Running as 'build', we can't remove files created by the guest, so use
-  # 'sudo'.
-  #
-  # It's really these three dirs.
-  # ls -l -d _tmp/soil _tmp/soil/logs _devbuild/bin || true
-
-  sudo soil/host-shim.sh mount-perms $PWD
-  echo
-
-  git status .
-  echo
-
-  # Similar to 'build/actions.sh clean', or 'build/native.sh clean', but also
-  # does _tmp and _devbuild
-  rm -r -f -v _tmp _bin _build _devbuild _test
 }
 
 JOB-dummy() { job-main 'dummy'; }

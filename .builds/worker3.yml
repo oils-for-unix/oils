@@ -1,3 +1,5 @@
+# dev-minimal; other-tests
+
 # Debian bullseye has podman
 image: debian/bullseye
 packages:
@@ -30,7 +32,7 @@ tasks:
   # Outside container
   - job-reset: |
       cd oil
-      soil/worker.sh job-reset
+      soil/host-shim.sh job-reset
 
   - other-tests: |
       cd oil
