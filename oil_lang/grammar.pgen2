@@ -540,8 +540,9 @@ re_atom: (
     # %begin or %end
   | Expr_Symbol
   | class_literal
-    # !digit or ~ %boundary or ![a-f]
-  | '!' [Expr_Name | Expr_Symbol | class_literal]
+    # !digit or ![a-f].  Note ! %boundary could be \B in Python, but ERE
+    # doesn't have anything like that
+  | '!' (Expr_Name | class_literal)
     # Splice another expression
   | '@' Expr_Name
     # any %start %end are preferred

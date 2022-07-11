@@ -698,6 +698,12 @@ json write (x) {
 regex_literals() {
   set +o errexit
 
+  _oil-parse-error 'var x = / ! /'
+  _oil-should-parse 'var x = / ![a-z] /'
+  _oil-should-parse 'var x = / !d /'
+
+  _oil-parse-error 'var x = / !! /'
+
   # missing space between rangfes
   _oil-parse-error 'var x = /[a-zA-Z]/'
   _oil-parse-error 'var x = /[a-z0-9]/'
