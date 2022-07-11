@@ -162,7 +162,7 @@ run-job-uke() {
   command time -p -o $soil_dir/image-pull-time.txt \
     $docker pull $image
   pull_status=$?
-  set +O errexit
+  set +o errexit
 
   if test $pull_status -ne 0; then
     log "$docker pull failed with status $pull_status"
