@@ -11,26 +11,38 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh  # $CLANG_DIR
 
 html-report() {
-  local suite=${1:-mycpp-unit}
+  local out_dir=$1
+  shift  # other args are suites
 
-  local prof_dir="_test/clang-coverage/$suite"
-  local bin_dir="_bin/clang-coverage/$suite"
+  local -a args=()
+  local -a to_merge=()
 
-  local merged=$prof_dir/ALL.profdata
-  $CLANG_DIR/bin/llvm-profdata merge -sparse $prof_dir/*.profraw \
+  for suite in "$@"; do
+    local prof_dir="_test/clang-coverage/$suite"
+    local bin_dir="_bin/clang-coverage/$suite"
+
+    # args for merging
+    to_merge+=($prof_dir/*.profraw)
+
+    # args for reporting (weird syntax)
+    for b in $bin_dir/*; do
+      args+=(--object $b)
+    done
+
+  done
+
+  local merged=$out_dir/ALL.profdata
+
+  $CLANG_DIR/bin/llvm-profdata merge -sparse "${to_merge[@]}" \
     -o $merged
 
   # https://llvm.org/docs/CommandGuide/llvm-cov.html
 
-  local -a args=()
-  for b in $bin_dir/*; do
-    args+=(--object $b)
-  done
 
   # Text report
   # $CLANG_DIR/bin/llvm-cov show --instr-profile $dir/ALL.profdata "${args[@]}"
 
-  local html_dir=$prof_dir/html
+  local html_dir=$out_dir/html
   mkdir -p $html_dir
 
   $CLANG_DIR/bin/llvm-cov show \
@@ -51,14 +63,14 @@ html-report() {
   # Clang quirk: permissions of this tree aren't right.  Without this, the Soil
   # host won't be able to zip and publish them.
 
+  # make sure dirs can be listed
+  echo 'fix DIRS'
+  find $html_dir -type d | xargs -- chmod --changes o+rx
+  echo
+
   # make sure files are readable
   echo 'fix FILES'
   chmod --changes -R o+r $html_dir
-  echo
-
-  # make sure dirs can be listed
-  echo 'fix DIRS'
-  find $html_dir -type d | xargs -- chmod --changes o+x
   echo
 
   # 2.4 MB of HTML
@@ -75,6 +87,16 @@ llvm-cov-help() {
   # --name-allowlist
 
   $CLANG_DIR/bin/llvm-cov show --help
+}
+
+unified-report() {
+  # Merge 3 suites
+
+  local out_dir=_test/clang-coverage/unified
+  mkdir -p $out_dir
+
+  html-report $out_dir \
+    mycpp-unit mycpp-examples cpp
 }
 
 "$@"

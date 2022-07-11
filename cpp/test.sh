@@ -148,7 +148,8 @@ coverage() {
   leaky-flag-spec-test clang coverage
   leaky-binding-test clang coverage
 
-  test/coverage.sh html-report cpp
+  local out_dir=_test/clang-coverage/cpp
+  test/coverage.sh html-report $out_dir cpp
 }
 
 "$@"

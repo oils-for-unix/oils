@@ -203,7 +203,8 @@ unit-test-coverage() {
 
   unit clang coverage
 
-  test/coverage.sh html-report mycpp-unit
+  local out_dir=_test/clang-coverage/mycpp-unit 
+  test/coverage.sh html-report $out_dir mycpp-unit
 }
 
 examples-coverage() {
@@ -211,7 +212,8 @@ examples-coverage() {
 
   examples-variant clang coverage
 
-  test/coverage.sh html-report mycpp-examples
+  local out_dir=_test/clang-coverage/mycpp-examples
+  test/coverage.sh html-report $out_dir mycpp-examples
 }
 
 "$@"

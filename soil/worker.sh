@@ -194,6 +194,7 @@ mycpp-unit-coverage     mycpp/test.sh unit-test-coverage                _test/cl
 HACK-asdl               build/dev.sh oil-asdl-to-cpp                    -
 mycpp-examples-coverage mycpp/test.sh examples-coverage                 _test/clang-coverage/mycpp-examples/html/index.html
 cpp-coverage            cpp/test.sh coverage                            _test/clang-coverage/cpp/html/index.html
+unified-coverage        test/coverage.sh unified-report                 _test/clang-coverage/unified/html/index.html
 EOF
 }
 
