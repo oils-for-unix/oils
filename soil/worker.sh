@@ -62,7 +62,10 @@ dump-distro() {
   local path=/etc/lsb-release
   if test -f $path; then
     cat $path
+  else
+    echo "$path doesn't exist"
   fi
+  echo
 
   apt-cache policy r-base-core
 }

@@ -12,6 +12,9 @@ packages:
   - podman
   - uidmap
   - slirp4netns
+    # more space efficient than default storage driver
+    # TODO: replace with native-overlayfs when kernel is available
+  - fuse-overlayfs
 
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd

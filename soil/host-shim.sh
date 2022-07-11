@@ -28,9 +28,12 @@ show-disk-info() {
   df -h
   echo
 
-  echo 'SPACE FOR IMAGES?'
-  du --si -s ~/.local/share/ || true
-  echo
+  # Useful but many permissions errors
+  if false; then
+    echo 'SPACE FOR IMAGES?'
+    du --si -s ~/.local/share/ || true
+    echo
+  fi
 }
 
 podman-prune() {
@@ -42,8 +45,6 @@ podman-prune() {
   fi
 
   echo 'IMAGES'
-  podman images
-  echo
   podman images --all
   echo
 
