@@ -9,7 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-soil-run() {
+source soil/common.sh  # find-dir-html
+
+all-tests() {
   ./NINJA_config.py
 
   # uses Ninja to run (cxx, testgc) variant.  Could also run (clang, ubsan),
@@ -20,6 +22,18 @@ soil-run() {
   cpp/test.sh unit
 
   asdl/test.sh unit
+}
+
+soil-run() {
+  set +o errexit
+  $0 all-tests
+  local status=$?
+  set -o errexit
+
+  # Logs in _test/cxx-asan, etc.
+  find-dir-html _test
+
+  return $status
 }
 
 "$@"

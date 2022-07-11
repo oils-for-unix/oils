@@ -122,7 +122,7 @@ job-reset() {
 run-job-uke() {
   local docker=$1  # docker or podman
   local repo_root=$2
-  local task=$3  # e.g. dev-minimal
+  local job_name=$3  # e.g. dev-minimal
   local debug_shell=${4:-}
 
   log-context 'run-job-uke'
@@ -135,7 +135,7 @@ run-job-uke() {
   local -a flags=()
 
   local image_id
-  case $task in
+  case $job_name in
     (app-tests)
       # Hack to reuse this container for build/dev.sh all
       image_id='ovm-tarball'
@@ -150,15 +150,30 @@ run-job-uke() {
       ;;
     (*)
       # docker.io is the namespace for hub.docker.com
-      image_id=$task
+      image_id=$job_name
       ;;
   esac
 
   local image="docker.io/oilshell/soil-$image_id"
 
+  local pull_status
   # Use external time command in POSIX format, so it's consistent between hosts
+  set -o errexit
   command time -p -o $soil_dir/image-pull-time.txt \
     $docker pull $image
+  pull_status=$?
+  set +O errexit
+
+  if test $pull_status -ne 0; then
+    log "$docker pull failed with status $pull_status"
+
+    # Save status for a check later
+    mkdir -p $soil_dir/exit-status
+    echo "$pull_status" > $soil_dir/exit-status/$job_name.txt
+
+    # Return success
+    return
+  fi
 
   show-disk-info
 
@@ -179,7 +194,7 @@ run-job-uke() {
     
     args=(bash)
   else
-    args=(sh -c "cd /home/uke/oil; soil/worker.sh JOB-$task")
+    args=(sh -c "cd /home/uke/oil; soil/worker.sh JOB-$job_name")
   fi
 
   $docker run "${flags[@]}" \
@@ -188,16 +203,35 @@ run-job-uke() {
       "${args[@]}"
 }
 
+did-all-succeed() {
+  ### Check if the given jobs succeeded
+
+  local max_status=0
+  for job_name in "$@"; do
+    local status
+    status=$(cat "_tmp/soil/exit-status/$job_name.txt")
+
+    echo "$job_name status: $status"
+    if test $status -gt $max_status; then
+      max_status=$status
+    fi
+  done
+
+  log "Exiting with max status $max_status"
+
+  return "$max_status"
+}
+
 local-test-uke() {
   ### Something I can run locally.  This is fast.
 
   # Simulate sourcehut with 'local-test-uke dummy dummy'
-  local task=${1:-dummy}
-  local task2=${2:-}
+  local job_name=${1:-dummy}
+  local job2=${2:-}
 
   local branch=$(git rev-parse --abbrev-ref HEAD)
 
-  local fresh_clone=/tmp/soil-$task
+  local fresh_clone=/tmp/soil-$job_name
   rm -r -f -v $fresh_clone
 
   local this_repo=$PWD
@@ -207,23 +241,23 @@ local-test-uke() {
   git checkout $branch
 
   sudo $0 mount-perms $fresh_clone
-  sudo $0 run-job-uke docker $fresh_clone $task
+  sudo $0 run-job-uke docker $fresh_clone $job_name
 
-  if test -n "$task2"; then
+  if test -n "$job2"; then
     $0 job-reset
-    sudo $0 run-job-uke docker $fresh_clone $task2
+    sudo $0 run-job-uke docker $fresh_clone $job2
   fi
 }
 
 local-shell() {
-  local task=${1:-cpp}
+  local job_name=${1:-cpp}
 
   # Note: this currently requires local-test-uke first.  TODO: Remove that
   # restriction.
 
-  local repo_root=/tmp/soil-$task
+  local repo_root=/tmp/soil-$job_name
   # Run bash as debug shell
-  sudo $0 run-job-uke docker $repo_root $task bash
+  sudo $0 run-job-uke docker $repo_root $job_name bash
 }
 
 cleanup() {

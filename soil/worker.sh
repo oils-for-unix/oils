@@ -180,7 +180,7 @@ cpp-small-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/dev.sh minimal                  -
-cpp-unit         test/cpp-unit.sh soil-run             -
+cpp-unit         test/cpp-unit.sh soil-run             _test/index.html
 build-osh-eval   build/dev.sh oil-cpp                  -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
@@ -212,18 +212,6 @@ EOF
 tests-todo() {
   find . -name '_*' -a -prune -o -name '*-test.sh' -a -print
 }
-
-dev-all-nix-tasks() {
-  ### Print tasks for the 'dev-all' build
-
-  # (task_name, script, action, result_html)
-  cat <<EOF
-build-all       build/dev.sh all            -
-oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
-osh-spec        test/spec.sh soil-run-osh   _tmp/spec/survey/osh.html
-EOF
-}
-
 
 # https://github.com/oilshell/oil/wiki/Contributing
 
@@ -300,7 +288,8 @@ EOF
 
 run-tasks() {
   ### Run the tasks on stdin and write _tmp/soil/INDEX.tsv.
-  local out_dir=$1  # should already exist
+  local job_name=$1
+  local out_dir=$2  # should already exist
 
   mkdir -p $out_dir/logs
 
@@ -364,7 +353,11 @@ run-tasks() {
   fi
 
   # So the deploy step can fail later
-  echo $max_status > $out_dir/exit-status.txt
+  local status_dir=$out_dir/exit-status
+  mkdir -p $status_dir
+
+  # e.g. _tmp/soil/exit-status/dummy.txt
+  echo $max_status > $status_dir/$job_name.txt
 }
 
 allow-job-failure() {
@@ -374,31 +367,6 @@ allow-job-failure() {
   local out='_tmp/soil/exit-status.txt '
   log "*** ALLOWING JOB FAILURE by overwriting $out ***"
   echo 0 > $out
-}
-
-_run-dev-all-nix() {
-  dev-all-nix-tasks | run-tasks
-
-  allow-job-failure
-
-  return
-
-  # --- DEBUGGING THROUGH STDOUT ---
-
-  # makes _tmp
-  build/dev.sh all
-
-  # So we have something to deploy
-  dummy-tasks | run-tasks
-
-  if false; then
-    test/spec.sh check-shells-exist
-    # this hangs because nix bash doesn't have 'compgen' apparently
-    test/spec.sh builtin-completion -v -t
-  fi
-
-  test/spec.sh soil-run-osh
-
 }
 
 save-metadata() {
@@ -437,7 +405,7 @@ job-main() {
 
   save-metadata $job_name $out_dir
 
-  ${job_name}-tasks | run-tasks $out_dir
+  ${job_name}-tasks | run-tasks $job_name $out_dir
 }
 
 JOB-dummy() { job-main 'dummy'; }
@@ -460,24 +428,8 @@ JOB-cpp-spec() { job-main 'cpp-spec'; }
 
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 
-JOB-dev-all-nix() {
-  ### Travis job dev-all-nix
-
-  local job_name='dev-all-nix'
-  local out_dir=_tmp/soil
-  mkdir -p $out_dir/metadata
-  save-metadata $job_name $out_dir/metadata
-
-  # Run tasks the nix environment
-  nix-shell \
-    --argstr dev "none" \
-    --argstr test "none" \
-    --argstr cleanup "none" \
-    --run "$0 _run-dev-all-nix"
-}
-
 list-jobs() {
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'dev-all-nix|maybe-merge'
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge'
 }
 
 "$@"

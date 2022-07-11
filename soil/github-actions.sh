@@ -47,8 +47,9 @@ publish-html-assuming-ssh-key() {
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
+  local status_file="_tmp/soil/exit-status/$job_name.txt"
   if test -n "$job_name"; then
-    scp-status-api "$GITHUB_RUN_ID" "$job_name" _tmp/soil/exit-status.txt
+    scp-status-api "$GITHUB_RUN_ID" "$job_name" "$status_file"
   fi
 
   write-jobs-raw 'github-'
@@ -62,7 +63,7 @@ publish-html-assuming-ssh-key() {
 
   # soil/worker.sh recorded this for us
   local status
-  status=$(cat _tmp/soil/exit-status.txt)
+  status=$(cat "$status_file")
 
   log "Exiting with saved status $status"
 
