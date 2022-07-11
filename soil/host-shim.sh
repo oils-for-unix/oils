@@ -22,10 +22,53 @@ make-soil-dir() {
   ls -l -d . _tmp _tmp/soil
 }
 
+show-disk-info() {
+  # Debug 'no space left on device' issue
+  echo 'DISKS'
+  df -h
+  echo
+
+  echo 'SPACE FOR IMAGES?'
+  du --si -s ~/.local/share/ || true
+  echo
+}
+
+podman-prune() {
+  ### Should this work on Debian?
+
+  if ! command -v podman; then
+    echo 'no podman'
+    return
+  fi
+
+  echo 'IMAGES'
+  podman images
+  echo
+  podman images --all
+  echo
+
+  if false; then
+    # This causes an interactive prompt
+    echo 'PRUNE'
+    podman system prune || true
+    echo
+
+    show-disk-info
+
+    echo 'PRUNE AS ROOT'
+    sudo podman system prune || true
+    echo
+
+    show-disk-info
+  fi
+}
+
 mount-perms() {
   ### Ensure that the guest can write to bind mount
 
   local repo_root=$1
+
+  show-disk-info
 
   log-context 'mount-perms'
 
@@ -35,15 +78,12 @@ mount-perms() {
   time find "$repo_root" -type d -a -print \
     | xargs -d $'\n' -- chmod --changes 777
   echo
-
-  # Debug 'no space left on device' issue
-  echo 'DISKS'
-  df -h
-  echo
 }
 
 job-reset() {
   ### Called betweenjobs
+
+  show-disk-info
 
   log-context 'job-reset'
 
@@ -74,8 +114,9 @@ job-reset() {
   du --si -s "${dirs[@]}" || true
   rm -r -f "${dirs[@]}"
   echo
-}
 
+  show-disk-info
+}
 
 run-job-uke() {
   local docker=$1  # docker or podman
@@ -117,6 +158,10 @@ run-job-uke() {
   # Use external time command in POSIX format, so it's consistent between hosts
   command time -p -o $soil_dir/image-pull-time.txt \
     $docker pull $image
+
+  show-disk-info
+
+  podman-prune
 
   local -a args
   if test -n "$debug_shell"; then

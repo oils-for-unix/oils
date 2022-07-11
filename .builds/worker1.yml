@@ -20,19 +20,22 @@ tasks:
       cd oil
       soil/host-shim.sh mount-perms $PWD
 
-  - dummy: |
-      cd oil
-      soil/host-shim.sh run-job-uke podman $PWD dummy
-
-  # Relies on SSH key, so do it outside the container
-  - publish-dummy: |
-      cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key
-
-  # Outside container
-  - job-reset-1: |
-      cd oil
-      soil/host-shim.sh job-reset
+      #  Disabled because of weird podman bug
+      #  See soil/host-shim.sh podman-prune / show-disk-info
+      #
+      #  - dummy: |
+      #      cd oil
+      #      soil/host-shim.sh run-job-uke podman $PWD dummy
+      #
+      #  # Relies on SSH key, so do it outside the container
+      #  - publish-dummy: |
+      #      cd oil
+      #      soil/sourcehut.sh publish-html-assuming-ssh-key
+      #
+      #  # Outside container
+      #  - job-reset-1: |
+      #      cd oil
+      #      soil/host-shim.sh job-reset
 
   - cpp-coverage: |
       cd oil

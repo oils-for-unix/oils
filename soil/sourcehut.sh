@@ -41,6 +41,9 @@ publish-html-assuming-ssh-key() {
   # note: we could speed jobs up by doing this separately?
   remote-cleanup-jobs-index 'srht-'
 
+  # If we're running 2 jobs in a row, this prevents the second from running.
+  # TODO: Create a special 'soil-exit' task.
+
   # soil/worker.sh recorded this for us
   local status
   status=$(cat _tmp/soil/exit-status.txt)
