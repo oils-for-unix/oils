@@ -352,21 +352,12 @@ run-tasks() {
     ' $tsv
   fi
 
-  # So the deploy step can fail later
-  local status_dir=$out_dir/exit-status
-  mkdir -p $status_dir
+  # To fail later.  Important: this dir persists across jobs; it's NOT removed
+  # by 'host-shim.sh job-reset'.
+  mkdir -p _soil-jobs
 
-  # e.g. _tmp/soil/exit-status/dummy.txt
-  echo $max_status > $status_dir/$job_name.txt
-}
-
-allow-job-failure() {
-  # Note: soil-web will still count failures in INDEX.tsv.  This just
-  # prevents Travis from failing.
-
-  local out='_tmp/soil/exit-status.txt '
-  log "*** ALLOWING JOB FAILURE by overwriting $out ***"
-  echo 0 > $out
+  # e.g. _soil-jobs/dummy.status.txt
+  echo $max_status > _soil-jobs/$job_name.status.txt
 }
 
 save-metadata() {

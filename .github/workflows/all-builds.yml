@@ -9,7 +9,6 @@ on:
 jobs:
   dummy_orig:
     runs-on: ubuntu-latest
-    # container: oilshell/soil-dummy
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -18,7 +17,6 @@ jobs:
 
       - name: dummy
         run: |
-          cd $REPO_ROOT
           soil/worker.sh JOB-dummy
 
       - name: publish-html
@@ -26,8 +24,8 @@ jobs:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html
+          # NOTE: does not publish to status API
+          soil/github-actions.sh publish-and-exit dummy
 
   dummy:
     runs-on: ubuntu-20.04
@@ -38,22 +36,16 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: dummy
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT dummy
+          soil/github-actions.sh run-job dummy
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html dummy
+          soil/github-actions.sh publish-and-exit dummy T
 
   dev-minimal:
     # https://github.com/actions/virtual-environments
@@ -66,22 +58,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: dev-minimal
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT dev-minimal
+          soil/github-actions.sh run-job dev-minimal
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html dev-minimal
+          soil/github-actions.sh publish-and-exit dev-minimal T
 
   pea:
     runs-on: ubuntu-20.04
@@ -93,22 +79,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: pea
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT pea
+          soil/github-actions.sh run-job pea
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html pea
+          soil/github-actions.sh publish-and-exit pea T
 
   other-tests:
     runs-on: ubuntu-20.04
@@ -120,22 +100,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: other-tests
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT other-tests
+          soil/github-actions.sh run-job other-tests
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html other-tests
+          soil/github-actions.sh publish-and-exit other-tests T
 
   ovm-tarball:
     runs-on: ubuntu-20.04
@@ -147,22 +121,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: ovm-tarball
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT ovm-tarball
+          soil/github-actions.sh run-job ovm-tarball
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html ovm-tarball
+          soil/github-actions.sh publish-and-exit ovm-tarball T
 
   app-tests:
     runs-on: ubuntu-20.04
@@ -174,22 +142,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: app-tests
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT app-tests
+          soil/github-actions.sh run-job app-tests
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html app-tests
+          soil/github-actions.sh publish-and-exit app-tests T
 
   cpp-coverage:
     runs-on: ubuntu-18.04
@@ -201,22 +163,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: cpp-coverage
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT cpp-coverage
+          soil/github-actions.sh run-job cpp-coverage
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html cpp-coverage
+          soil/github-actions.sh publish-and-exit cpp-coverage T
 
   cpp-small:
     runs-on: ubuntu-18.04
@@ -228,22 +184,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: cpp-small
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT cpp-small
+          soil/github-actions.sh run-job cpp-small
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html cpp-small
+          soil/github-actions.sh publish-and-exit cpp-small T
 
   cpp-spec:
     runs-on: ubuntu-18.04
@@ -255,22 +205,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: mount-perms
-        run: |
-          soil/host-shim.sh mount-perms $REPO_ROOT
-
       - name: cpp-spec
         run: |
-          cd $REPO_ROOT
-          soil/host-shim.sh run-job-uke docker $REPO_ROOT cpp-spec
+          soil/github-actions.sh run-job cpp-spec
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html cpp-spec
+          soil/github-actions.sh publish-and-exit cpp-spec T
 
   maybe-merge-to-master:
     runs-on: ubuntu-18.04
@@ -287,7 +231,6 @@ jobs:
         env:
           SOIL_GITHUB_API_TOKEN: ${{ secrets.SOIL_GITHUB_API_TOKEN }}
         run: |
-          cd $REPO_ROOT
           soil/worker.sh JOB-maybe-merge
 
       - name: publish-html
@@ -296,5 +239,4 @@ jobs:
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           # NOTE: does not publish to status API
-          cd $REPO_ROOT
-          soil/github-actions.sh publish-html
+          soil/github-actions.sh publish-and-exit maybe-merge

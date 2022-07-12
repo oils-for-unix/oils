@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./other.sh <function name>
+#   test/other.sh <function name>
 
 set -o nounset
 set -o pipefail

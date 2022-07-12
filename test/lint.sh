@@ -3,7 +3,7 @@
 # Run tools to maintain the coding style.
 #
 # Usage:
-#   ./lint.sh <function name>
+#   test/lint.sh <function name>
 
 set -o nounset
 set -o pipefail

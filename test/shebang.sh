@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./shebang.sh is-shell PATH
+#   test/shebang.sh is-shell PATH
 
 # Test if the first line ends with 'sh'.
 is-shell() {

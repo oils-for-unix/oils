@@ -3,7 +3,7 @@
 # Test stdlib dependencies
 #
 # Usage:
-#   ./stdlib.sh <function name>
+#   test/stdlib.sh <function name>
 
 set -o nounset
 set -o pipefail

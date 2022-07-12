@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./arena.sh <function name>
+#   test/arena.sh <function name>
 
 set -o nounset
 set -o pipefail

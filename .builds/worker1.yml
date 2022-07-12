@@ -1,4 +1,4 @@
-# dummy, cpp-coverage
+# pea; cpp-coverage; dummy
 
 # Debian bullseye has podman
 image: debian/bullseye
@@ -23,16 +23,14 @@ tasks:
       cd oil
       soil/host-shim.sh mount-perms $PWD
 
-  - dummy: |
+  - pea: |
       cd oil
-      soil/host-shim.sh run-job-uke podman $PWD dummy
-  
-  # Relies on SSH key, so do it outside the container
-  - publish-dummy: |
+      soil/host-shim.sh run-job-uke podman $PWD pea
+
+  - publish-pea: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key
-  
-  # Outside container
+
   - job-reset-1: |
       cd oil
       soil/host-shim.sh job-reset
@@ -42,6 +40,19 @@ tasks:
       soil/host-shim.sh run-job-uke podman $PWD cpp-coverage
 
   - publish-cpp-coverage: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
+
+  - job-reset-2: |
+      cd oil
+      soil/host-shim.sh job-reset
+
+  - dummy: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD dummy
+  
+  # Relies on SSH key, so do it outside the container
+  - publish-dummy: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key
   

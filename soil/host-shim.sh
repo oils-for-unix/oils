@@ -77,7 +77,8 @@ mount-perms() {
   # build/temp.linux-*, for example.  Also can't exclude .git/ because
   # submodules need it.
   time find "$repo_root" -type d -a -print \
-    | xargs -d $'\n' -- chmod --changes 777
+    | xargs -d $'\n' -- chmod --changes 777 \
+    | wc -l
   echo
 }
 
@@ -168,8 +169,8 @@ run-job-uke() {
     log "$docker pull failed with status $pull_status"
 
     # Save status for a check later
-    mkdir -p $soil_dir/exit-status
-    echo "$pull_status" > $soil_dir/exit-status/$job_name.txt
+    mkdir -p _soil-jobs
+    echo "$pull_status" > _soil-jobs/$job_name.status.txt
 
     # Return success
     return
@@ -209,7 +210,7 @@ did-all-succeed() {
   local max_status=0
   for job_name in "$@"; do
     local status
-    status=$(cat "_tmp/soil/exit-status/$job_name.txt")
+    status=$(cat "_soil-jobs/$job_name.status.txt")
 
     echo "$job_name status: $status"
     if test $status -gt $max_status; then

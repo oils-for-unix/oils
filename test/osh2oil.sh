@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./osh-to-oil-test.sh <function name>
+#   test/osh-to-oil-test.sh <function name>
 
 set -o nounset
 set -o pipefail

@@ -3,7 +3,7 @@
 # Run ble.sh unit tests in Travis.
 #
 # Usage:
-#   ./ble.sh <function name>
+#   test/ble.sh <function name>
 
 set -o nounset
 set -o pipefail

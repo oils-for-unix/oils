@@ -3,7 +3,7 @@
 # Test opyc from the 'outside'.
 #
 # Usage:
-#   ./opyc.sh <function name>
+#   test/opyc.sh <function name>
 
 set -o nounset
 set -o pipefail

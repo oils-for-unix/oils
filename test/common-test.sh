@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./common-test.sh <function name>
+#   test/common-test.sh <function name>
 
 set -o nounset
 set -o pipefail

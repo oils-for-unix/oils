@@ -4,7 +4,7 @@
 # behavior in minor versions of each shell.
 #
 # Usage:
-#   ./spec-bin.sh <function name>
+#   test/spec-bin.sh <function name>
 #
 # Instructions:
 #   test/spec-bin.sh download     # Get the right version of every tarball

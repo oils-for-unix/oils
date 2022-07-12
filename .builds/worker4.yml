@@ -1,4 +1,4 @@
-# pea; ovm-tarball; app-tests 
+# ovm-tarball; app-tests 
 # The latter 2 use the same container
 
 # Debian bullseye has podman
@@ -23,20 +23,6 @@ tasks:
   - mount-perms: |
       cd oil
       soil/host-shim.sh mount-perms $PWD
-
-  - pea: |
-      cd oil
-      soil/host-shim.sh run-job-uke podman $PWD pea
-
-  # Relies on SSH key, so do it outside the container
-  - publish-pea: |
-      cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key
-
-  # Outside container
-  - job-reset-1: |
-      cd oil
-      soil/host-shim.sh job-reset
 
   - ovm-tarball: |
       cd oil

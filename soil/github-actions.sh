@@ -27,7 +27,8 @@ keygen() {
 #
 
 publish-html-assuming-ssh-key() {
-  local job_name=${1:-}  # to publish to status-api
+  local job_name=$1
+  local update_status_api=${2:-}
 
   if true; then
     # https://docs.github.com/en/actions/reference/environment-variables
@@ -47,8 +48,8 @@ publish-html-assuming-ssh-key() {
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
-  local status_file="_tmp/soil/exit-status/$job_name.txt"
-  if test -n "$job_name"; then
+  if test -n "$update_status_api"; then
+    local status_file="_soil-jobs/$job_name.status.txt"
     scp-status-api "$GITHUB_RUN_ID" "$job_name" "$status_file"
   fi
 
@@ -60,14 +61,6 @@ publish-html-assuming-ssh-key() {
   remote-cleanup-jobs-index 'github-'
 
   remote-cleanup-status-api
-
-  # soil/worker.sh recorded this for us
-  local status
-  status=$(cat "$status_file")
-
-  log "Exiting with saved status $status"
-
-  return $status
 }
 
 # Notes on Github secrets:
@@ -103,6 +96,37 @@ publish-html() {
 
   # $1 can be the job name
   publish-html-assuming-ssh-key "$@"
+}
+
+run-job() {
+  ### Called by YAML config
+
+  # Unlike sourcehut, Github Actions runs one job per machine.  So we fix the
+  # mount permissions and run the job in one step.
+
+  local job_name=$1
+
+  # I think it starts in the repo
+  # cd $REPO_ROOT
+
+  soil/host-shim.sh mount-perms $REPO_ROOT
+  echo
+  echo
+
+  soil/host-shim.sh run-job-uke docker $REPO_ROOT $job_name
+}
+
+publish-and-exit() {
+  ### Called by YAML config
+  local job_name=$1
+  # second param is passed to publish-html
+
+  # Unlike sourcehut, Github Actions runs one job per machine.  So we publish
+  # HTML and exit in one step.
+
+  publish-html "$@"
+
+  soil/host-shim.sh did-all-succeed $job_name
 }
 
 "$@"

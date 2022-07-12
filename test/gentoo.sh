@@ -5,7 +5,7 @@
 # https://wiki.gentoo.org/wiki/Chroot
 #
 # Usage:
-#   ./gentoo.sh <function name>
+#   test/gentoo.sh <function name>
 
 set -o nounset
 set -o pipefail

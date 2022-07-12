@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./parse-errors.sh <function name>
+#   test/parse-errors.sh <function name>
 
 set -o nounset
 set -o pipefail

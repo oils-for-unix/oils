@@ -3,7 +3,7 @@
 # Test osh usage "from the outside".
 #
 # Usage:
-#   ./osh-usage.sh <function name>
+#   test/osh-usage.sh <function name>
 
 set -o nounset
 set -o pipefail
