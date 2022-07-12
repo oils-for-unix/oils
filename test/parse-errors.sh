@@ -698,6 +698,10 @@ json write (x) {
 regex_literals() {
   set +o errexit
 
+  if is-oil-native; then
+    return
+  fi
+
   _oil-parse-error 'var x = / ! /'
   _oil-should-parse 'var x = / ![a-z] /'
   _oil-should-parse 'var x = / !d /'
