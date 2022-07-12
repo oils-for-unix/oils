@@ -1416,12 +1416,19 @@ class Transformer(object):
         return re.Splice(children[1].tok)
 
       if tok.id == Id.Expr_Bang:
-        # | '~' [Expr_Name | class_literal]
-        typ = children[1].typ
-        if ISNONTERMINAL(typ):
-          return re.ClassLiteral(True, self._ClassLiteral(children[1]))
+        # | '!' (Expr_Name | class_literal)
+        # | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
+        n = len(children)
+        if n == 2:
+          typ = children[1].typ
+          if ISNONTERMINAL(typ):
+            return re.ClassLiteral(True, self._ClassLiteral(children[1]))
+          else:
+            return self._NameInRegex(tok, children[1].tok)
         else:
-          return self._NameInRegex(tok, children[1].tok)
+          # Note: !! conflicts with shell history
+          p_die("Backtracking with !! isn't implemented (requires Python/PCRE)",
+                token=children[1].tok)
 
       if tok.id == Id.Op_LParen:
         # | '(' regex ')'
