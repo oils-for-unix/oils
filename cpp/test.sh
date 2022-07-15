@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+source build/common.sh
 source cpp/NINJA-steps.sh  # for compile_and_link function
 
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
@@ -115,7 +117,7 @@ run-test() {
   export LLVM_PROFILE_FILE=$dir/$name.profraw
 
   local log=$dir/$name.log
-  echo "RUN $bin > $log"
+  log "RUN $bin > $log"
   $bin > $log
 }
 

@@ -33,9 +33,10 @@ soil-html-head() {
 # Used by mycpp/build.sh and benchmarks/auto.sh
 find-dir-html() {
   local dir=$1
+  local out_name=${2:-index}
 
-  local txt=$dir/index.txt
-  local html=$dir/index.html
+  local txt=$dir/$out_name.txt
+  local html=$dir/$out_name.html
 
   find $dir -type f | sort > $txt
   echo "Wrote $txt"

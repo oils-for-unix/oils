@@ -31,7 +31,7 @@ soil-run() {
   set -o errexit
 
   # Logs in _test/cxx-asan, etc.
-  find-dir-html _test
+  find-dir-html _test cpp-unit
 
   return $status
 }
