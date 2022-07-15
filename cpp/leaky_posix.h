@@ -3,6 +3,10 @@
 #ifndef POSIX_H
 #define POSIX_H
 
+// clang-format off
+#include "mycpp/myerror.h"  // for OSError; must come first
+// clang-format on
+
 #include <errno.h>
 #include <stdlib.h>  // putenv
 #include <unistd.h>
@@ -151,7 +155,7 @@ inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
 
   int ret = ::execve(_argv0.Get(), _argv, envp);
   if (ret == -1) {
-    throw IOError(errno);
+    throw new OSError(errno);
   }
 
   // NOTE(Jesse): ::execve() is specified to never return on success.  If we
