@@ -121,18 +121,35 @@ inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
 inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   mylib::Str0 _argv0(argv0);
 
-  int n = len(argv);
+  int n_args = len(argv);
   // never deallocated
-  char** _argv = static_cast<char**>(malloc(n + 1));
+  char** _argv = static_cast<char**>(malloc((n_args + 1) * sizeof(char*)));
 
   // Annoying const_cast
   // https://stackoverflow.com/questions/190184/execv-and-const-ness
-  for (int i = 0; i < n; ++i) {
+  for (int i = 0; i < n_args; ++i) {
     _argv[i] = const_cast<char*>(argv->index_(i)->data_);
   }
-  _argv[n] = nullptr;
+  _argv[n_args] = nullptr;
 
-  int ret = ::execve(_argv0.Get(), _argv, nullptr);
+  // Convert environ into an array of pointers to strings of the form: "k=v".
+  int n_env = len(environ);
+  char** envp = static_cast<char**>(malloc((n_env + 1) * sizeof(char*)));
+  int i = 0;
+  for (const auto& kv : environ->items_) {
+    Str* k = kv.first;
+    Str* v = kv.second;
+    int joined_len = k->len_ + v->len_ + 1;
+    char* buf = static_cast<char*>(malloc(joined_len + 1));
+    memcpy(buf, k->data_, k->len_);
+    buf[k->len_] = '=';
+    memcpy(buf + k->len_ + 1, v->data_, v->len_);
+    buf[joined_len] = '\0';
+    envp[i++] = buf;
+  }
+  envp[n_env] = nullptr;
+
+  int ret = ::execve(_argv0.Get(), _argv, envp);
   if (ret == -1) {
     throw IOError(errno);
   }
