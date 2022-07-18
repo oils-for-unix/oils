@@ -17,6 +17,17 @@
 
 #include "common.h"
 
+#define VALIDATE_ALLOCATION(allocation, num_bytes, test_value)        \
+  for (int i = 0; i < (num_bytes); ++i) {                             \
+    if (((unsigned char*)(allocation))[i] != (test_value)) {          \
+      unsigned long offset = (unsigned long)(allocation) -            \
+                             (unsigned long)gHeap.from_space_.begin_; \
+      printf("failed at address 0x%lx, offset (%lu) index (%u)\n",    \
+             (unsigned long)(allocation), offset, i);                 \
+      assert(0);                                                      \
+    }                                                                 \
+  }
+
 // Design Notes:
 
 // It's a semi-space collector using the Cheney algorithm.  (Later we may add a
@@ -207,7 +218,19 @@ class Heap {
   }
 
   void* Allocate(int num_bytes) {
+    // NOTE(Jesse): I'm not sure what we should do if we ask for 0 bytes, but
+    // this is the second bug I'm fixing due to it, so I'm putting this check
+    // and some assertions in.  Practically, we should probably crash if we
+    // try to write to a buffer that's of 0 size anyways.
+    //
+    if (num_bytes <= 0) {
+      return 0;
+    }
+    assert(num_bytes > 0);
+
     int n = aligned(num_bytes);
+    assert(n > 0);
+
     // log("n = %d, p = %p", n, p);
 
 #if GC_EVERY_ALLOC
@@ -215,7 +238,8 @@ class Heap {
 #endif
 
     if (free_ + n <= limit_) {  // Common case: we have space for it.
-      return Bump(n);
+      void* Result = Bump(n);
+      return Result;
     }
 
 #if GC_DEBUG
@@ -229,7 +253,8 @@ class Heap {
     //    from_space_.begin_, free_, n, limit_);
 
     if (free_ + n <= limit_) {  // Now we have space for it.
-      return Bump(n);
+      void* Result = Bump(n);
+      return Result;
     }
 
     // It's STILL too small.  Resize to_space_ to ENSURE that allocation will
@@ -247,7 +272,8 @@ class Heap {
     num_forced_growths_++;
 #endif
 
-    return Bump(n);
+    void* Result = Bump(n);
+    return Result;
   }
 
   void Swap() {
@@ -262,10 +288,11 @@ class Heap {
   }
 
   void PushRoot(Obj** p) {
-    // log("PushRoot %d", roots_top_);
-    roots_[roots_top_++] = p;
     // TODO: This should be like a malloc() failure?
     assert(roots_top_ < kMaxRoots);
+
+    // log("PushRoot %d", roots_top_);
+    roots_[roots_top_++] = p;
   }
 
   void PopRoot() {
@@ -727,7 +754,9 @@ extern Str* kEmptyString;
 inline Str* AllocStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);
+  VALIDATE_ALLOCATION(place, obj_len, 0);
   auto s = new (place) Str();
+  VALIDATE_ALLOCATION(s->data_, len, 0);
   s->SetObjLen(obj_len);  // So the GC can copy it
   return s;
 }
@@ -741,13 +770,25 @@ inline Str* OverAllocatedStr(int len) {
   return s;
 }
 
+inline void CopyMemory(char* dest, const char* src, int len) {
+#if 0
+  for (int i = 0; i < len; ++i)
+  {
+    dest[i] = src[i];
+  }
+#else
+  memcpy(dest, src, len);
+#endif
+}
+
 inline Str* CopyStr(const char* data, int len) {
   // Problem: if data points inside a Str, it's often invalidated!
   Str* s = AllocStr(len);
 
   // log("AllocStr s->data_ %p len = %d", s->data_, len);
   // log("sizeof(Str) = %d", sizeof(Str));
-  memcpy(s->data_, data, len);
+
+  CopyMemory(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
 
   return s;

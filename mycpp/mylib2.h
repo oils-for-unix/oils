@@ -155,7 +155,13 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue() {
     if (data_) {
+      // NOTE(Jesse): @copy_str_possible_gc_crash_no_stack_root
+      //
+      // If data_ is a pointer into the managed heap and the allocation in
+      // CopyStr() collects this will result in an invalid read.
+      //
       Str* ret = gc_heap::CopyStr(data_, len_);
+
       reset();  // Invalidate this instance
       return ret;
     } else {

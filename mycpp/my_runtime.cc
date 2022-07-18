@@ -440,9 +440,10 @@ List<Str*>* Str::split(Str* sep) {
   // Find breaks first so we can allocate the right number of strings ALL AT
   // ONCE. We want to avoid invalidating self->data_.
   int num_bytes = 0;
-  int prev_pos = 0;
+  int prev_pos = -1;
   std::vector<int> breaks;
   breaks.push_back(-1);  // beginning of first part
+
   for (int i = 0; i < length; ++i) {
     if (data_[i] == sep_char) {
       breaks.push_back(i);
@@ -455,7 +456,15 @@ List<Str*>* Str::split(Str* sep) {
   }
   breaks.push_back(length);  // end of last part
 
+  if (length) {
+    int last_part_len = length - prev_pos - 1;
+    if (last_part_len > 0) {
+      num_bytes += aligned(kStrHeaderSize + last_part_len + 1);
+    }
+  }
+
   result = NewList<Str*>(nullptr, breaks.size() - 1);  // reserve enough space
+
   place = reinterpret_cast<char*>(gHeap.Allocate(num_bytes));
   int n = breaks.size();
   for (int i = 1; i < n; ++i) {

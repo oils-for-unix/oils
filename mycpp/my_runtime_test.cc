@@ -1,3 +1,4 @@
+
 #include "mycpp/my_runtime.h"
 
 #include <assert.h>
@@ -126,14 +127,13 @@ TEST str_to_int_test() {
 
 TEST int_to_str_test() {
   Str* int_str;
-  int_str = str((1 << 31) - 1);
+  int_str = str(INT_MAX);
   ASSERT(str_equals0("2147483647", int_str));
 
-  int_str = str(-(1 << 31) + 1);
+  int_str = str(-INT_MAX);
   ASSERT(str_equals0("-2147483647", int_str));
 
-  int int_min = -(1 << 31);
-  int_str = str(int_min);
+  int_str = str(INT_MIN);
   ASSERT(str_equals0("-2147483648", int_str));
 
   // Wraps with - sign.  Is this well-defined behavior?
@@ -565,10 +565,10 @@ TEST sort_test() {
 }
 
 TEST contains_test() {
-  bool b;
-
   // NOTE: 'substring' in mystr not allowed now, only 'c' in mystr
 #if 0
+  bool b;
+
   b = str_contains(CopyStr("foo"), CopyStr("oo"));
   ASSERT(b == true);
 
@@ -774,12 +774,107 @@ TEST dict_iters_test() {
   PASS();
 }
 
+void fill_buffer(void* buffer, int buffer_length, unsigned char fill_value) {
+  for (int i = 0; i < buffer_length; ++i) {
+    ((unsigned char*)buffer)[i] = fill_value;
+  }
+}
+
+inline void CopyMemory(char* dest, const char* src, int len) {
+  for (int i = 0; i < len; ++i) {
+    dest[i] = src[i];
+  }
+}
+
+// NOTE(Jesse): This is code I used to debug a segfault we were having due to
+// what I thought was an alignment issue with placement-new.  Turned out to be
+// unrelated, but I thought it might be useful testing to keep around.  If it's
+// breaking it could be a red-herring, but I think it should work pretty well
+// into the future.
+TEST allocation_tests() {
+#if 1
+  int outer_index = 1;
+#else
+  for (int outer_index = 1; outer_index < 256; ++outer_index)
+#endif
+
+  {
+    for (int test_index = 1; test_index < 256; ++test_index) {
+      int total_bytes = test_index * outer_index;
+
+      /* printf(" -- testing (%u)(%u)(%u) \n", outer_index, test_index,
+       * total_bytes ); */
+
+      Str* stronk = AllocStr(total_bytes);
+      StackRoots _roots({&stronk});
+      char* allocation = stronk->data();
+      VALIDATE_ALLOCATION((void*)allocation, total_bytes, 0);
+      fill_buffer((void*)allocation, total_bytes, test_index);
+      VALIDATE_ALLOCATION((void*)allocation, total_bytes, test_index);
+
+      Str* stronk_2 = AllocStr(total_bytes);
+      StackRoots _roots_2({&stronk_2});
+      char* allocation_2 = stronk_2->data();
+      VALIDATE_ALLOCATION((void*)allocation_2, total_bytes, 0);
+      fill_buffer((void*)allocation_2, total_bytes, test_index);
+      VALIDATE_ALLOCATION((void*)allocation_2, total_bytes, test_index);
+
+      CopyMemory(stronk->data_, stronk_2->data_, total_bytes);
+
+      char whatever[] = "whatever";
+      Str* stronk_3 = CopyStr(whatever, sizeof(whatever));
+      StackRoots _roots_3({&stronk_3});
+
+      CopyMemory(stronk->data_, stronk_3->data_, sizeof(whatever));
+      CopyMemory(stronk_2->data_, stronk_3->data_, sizeof(whatever));
+
+#if 0
+      int min_size =  16; // sizeof(LayoutForwarded); // LayoutForwarded isn't defined here and I didn't want to figure out how to get it.
+      int total_bytes = std::max(test_index*outer_index, min_size);
+
+      printf(" -- testing (%u)(%u)(%u) \n", outer_index, test_index, total_bytes );
+
+
+      // NOTE(Jesse): Interestingly, malloc is faster than the GC allocator.  I
+      // would think that (given everything gets leaked) ours would beat malloc
+      // handily.  My bump allocator puts malloc to shame at 13x faster.
+      //
+      // If we modify the loop to only allocate, malloc rips through the loop
+      // in 0.1s, while our allocator takes 4x as long.  This smells like a bug.
+      //
+      // Furthermore, when GC_EVERY_ALLOC is set, performance absolutely tanks
+      // and we get > 170x malloc (!!) for the gHeap allocator, even when there
+      // are zero stack roots.  I should think that GC_EVERY_ALLOC with 0 stack
+      // roots would have a minor impact on the allocator speed.  It's likely
+      // that the GC is taking forever because it's clearing the free'd zone to
+      // 0, or possibly waiting on the OS to allocate fresh pages.
+      //
+      // If either of the above are the problem they should be pretty easy to fix.
+      //
+      // Note I tested the above with inner and outer max values set to 256.  I
+      // changed to only run the inner loop after testing such that the test
+      // suite won't take forever.
+      //
+#if 0
+      void* allocation = malloc(total_bytes);
+#else
+      void* allocation = gHeap.Allocate(total_bytes);
+#endif
+#endif
+    }
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   gHeap.Init(1 << 20);
 
   GREATEST_MAIN_BEGIN();
+
+  RUN_TEST(allocation_tests);
 
   RUN_TEST(print_test);
   RUN_TEST(formatter_test);
@@ -788,6 +883,7 @@ int main(int argc, char** argv) {
   RUN_TEST(int_to_str_test);
 
   RUN_TEST(str_replace_test);
+
   RUN_TEST(str_split_test);
 
   RUN_TEST(str_methods_test);
