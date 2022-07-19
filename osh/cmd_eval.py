@@ -230,6 +230,23 @@ def PlusEquals(old_val, val):
   return val
 
 
+class ctx_LoopLevel(object):
+  """For checking for invalid control flow."""
+
+  def __init__(self, cmd_ev):
+    # type: (CommandEvaluator) -> None
+    cmd_ev.loop_level += 1
+    self.cmd_ev = cmd_ev
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.cmd_ev.loop_level -= 1
+
+
 class CommandEvaluator(object):
   """Executes the program by tree-walking.
 
@@ -1098,8 +1115,7 @@ class CommandEvaluator(object):
         node = cast(command__WhileUntil, UP_node)
         status = 0
 
-        self.loop_level += 1
-        try:
+        with ctx_LoopLevel(self):
           while True:
             try:
               # blame while/until spid
@@ -1120,8 +1136,6 @@ class CommandEvaluator(object):
                 continue
               else:  # return needs to pop up more
                 raise
-        finally:
-          self.loop_level -= 1
 
       elif case(command_e.ForEach):
         node = cast(command__ForEach, UP_node)
@@ -1159,8 +1173,7 @@ class CommandEvaluator(object):
 
             # TODO: Once expr_eval.py is statically typed, consolidate this
             # with the shell-style loop.
-            self.loop_level += 1
-            try:
+            with ctx_LoopLevel(self):
               if isinstance(obj, list):
 
                 n = len(node.iter_names)
@@ -1245,12 +1258,8 @@ class CommandEvaluator(object):
                 raise error.Expr("Expected list or dict, got %r" % type(obj),
                                  token=iter_expr_blame)
 
-            finally:
-              self.loop_level -= 1
         else:
-          self.loop_level += 1
-          try:
-
+          with ctx_LoopLevel(self):
             n = len(node.iter_names)
             assert n > 0
             if n == 1:
@@ -1287,8 +1296,6 @@ class CommandEvaluator(object):
                 else:  # return needs to pop up more
                   raise
               index += 1
-          finally:
-            self.loop_level -= 1
 
       elif case(command_e.ForExpr):
         node = cast(command__ForExpr, UP_node)
@@ -1302,8 +1309,7 @@ class CommandEvaluator(object):
         if init:
           self.arith_ev.Eval(init)
 
-        self.loop_level += 1
-        try:
+        with ctx_LoopLevel(self):
           while True:
             if for_cond:
               # We only accept integers as conditions
@@ -1324,9 +1330,6 @@ class CommandEvaluator(object):
 
             if update:
               self.arith_ev.Eval(update)
-
-        finally:
-          self.loop_level -= 1
 
       elif case(command_e.ShFunction):
         node = cast(command__ShFunction, UP_node)
