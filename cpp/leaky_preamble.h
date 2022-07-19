@@ -34,14 +34,13 @@ using id_kind_asdl::Kind_t;
 #include "leaky_frontend_match.h"
 #include "leaky_frontend_tdop.h"
 #include "leaky_libc.h"
-#include "leaky_osh_arith_parse.h"
-#include "leaky_osh_bool_stat.h"
+#include "leaky_osh.h"
 #include "leaky_pgen2_parse.h"
 #include "leaky_posix.h"
 #include "leaky_pylib.h"
 #include "leaky_signal_.h"
 #include "leaky_time_.h"
-#include "qsn_qsn.h"
+#include "qsn.h"
 #include "segfault_handler.h"
 
 #ifdef OSH_EVAL

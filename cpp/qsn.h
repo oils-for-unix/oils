@@ -1,7 +1,7 @@
-// qsn_qsn.h
+// cpp/qsn.h
 
-#ifndef QSN_QSN_H
-#define QSN_QSN_H
+#ifndef QSN_H
+#define QSN_H
 
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_leaky.h"
@@ -64,4 +64,4 @@ inline Str* UEscape(int codepoint) {
 
 }  // namespace qsn
 
-#endif  // QSN_QSN_H
+#endif  // QSN_H

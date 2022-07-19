@@ -1,10 +1,25 @@
-// leaky_osh_bool_stat.h
+// leaky_osh.h
 
-#ifndef OSH_BOOL_STAT_H
-#define OSH_BOOL_STAT_H
+#ifndef LEAKY_OSH_H
+#define LEAKY_OSH_H
 
 #include "_build/cpp/syntax_asdl.h"
+#include "cpp/leaky_frontend_tdop.h"
 #include "mycpp/mylib_leaky.h"
+
+namespace arith_parse {
+
+extern tdop::ParserSpec kArithSpec;
+
+inline tdop::ParserSpec* Spec() {
+  return &kArithSpec;
+}
+
+// Generated tables in _devbuild/gen-cpp/
+extern tdop::LeftInfo kLeftLookup[];
+extern tdop::NullInfo kNullLookup[];
+
+}  // namespace arith_parse
 
 namespace bool_stat {
 
@@ -17,8 +32,6 @@ bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2);
 }  // namespace bool_stat
 
 namespace sh_expr_eval {
-
-// TODO: Should refactor for int/char-based processing
 
 inline bool IsLower(Str* ch) {
   assert(ch->len_ == 1);
@@ -34,4 +47,4 @@ inline bool IsUpper(Str* ch) {
 
 }  // namespace sh_expr_eval
 
-#endif  // OSH_BOOL_STAT_H
+#endif  // LEAKY_OSH_H

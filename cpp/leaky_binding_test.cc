@@ -12,7 +12,7 @@
 #include "leaky_core_pyerror.h"
 #include "leaky_frontend_match.h"
 #include "leaky_libc.h"
-#include "leaky_osh_bool_stat.h"
+#include "leaky_osh.h"
 #include "leaky_posix.h"
 #include "leaky_pylib.h"
 #include "leaky_time_.h"

@@ -1,6 +1,6 @@
-// osh_bool_stat.cc
+// leaky_osh.cc
 
-#include "leaky_osh_bool_stat.h"
+#include "leaky_osh.h"
 
 #include <fcntl.h>  // AT_* Constants
 #include <sys/stat.h>
@@ -9,7 +9,13 @@
 #include "leaky_core_error.h"
 #include "leaky_core_pyerror.h"
 
-namespace Id = id_kind_asdl::Id;
+namespace arith_parse {
+
+tdop::ParserSpec kArithSpec;
+
+}  // namespace arith_parse
+
+namespace Id = id_kind_asdl::Id;  // used below
 
 namespace bool_stat {
 
