@@ -47,4 +47,4 @@ tasks:
 
   - did-all-succeed: |
       cd oil
-      soil/host-shim.sh did-all-succeed pea ovm-tarball app-tests
+      soil/host-shim.sh did-all-succeed ovm-tarball app-tests
