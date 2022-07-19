@@ -12,11 +12,13 @@
 namespace vm {
 class _Executor;
 }
+
 namespace word_eval {
 class AbstractWordEvaluator;
 }
 
 namespace expr_eval {
+
 class OilEvaluator {
  public:
   // TODO: Should return value_t
@@ -31,51 +33,17 @@ class OilEvaluator {
 };
 }  // namespace expr_eval
 
-namespace builtin_process {
-class _TrapHandler {
- public:
-  syntax_asdl::command_t* node;
-};
-}  // namespace builtin_process
+namespace signal_def {
 
-#if 0
-namespace executor {
+const int NO_SIGNAL = -1;
 
-// can't inherit from incomplete type
-// class ShellExecutor : public vm::_Executor {
-class ShellExecutor {
- public:
-  // overload
-  int RunSimpleCommand(runtime_asdl::cmd_value__Argv* cmd_val, bool do_fork) {
-    assert(0);
-  }
-  int RunSimpleCommand(runtime_asdl::cmd_value__Argv* cmd_val, bool do_fork,
-                       bool call_procs) {
-    assert(0);
-  }
-  int RunBackgroundJob(syntax_asdl::command_t* node) {
-    assert(0);
-  }
-  int RunPipeline(syntax_asdl::command__Pipeline* node) {
-    assert(0);
-  }
-  int RunSubshell(syntax_asdl::command__Subshell* node) {
-    assert(0);
-  }
-  bool PushRedirects(List<runtime_asdl::redirect*>* redirects) {
-    assert(0);
-  }
-  void PopRedirects() {
-    assert(0);
-  }
-  Str* RunCommandSub(syntax_asdl::command_t* node) {
-    assert(0);
-  }
-  Str* RunProcessSub(syntax_asdl::command_t* node, Id_t op_id) {
-    assert(0);
-  }
-};
-}  // namespace executor
-#endif
+inline List<Tuple2<Str*, int>*>* AllNames() {
+  NotImplemented();
+}
+
+inline int GetNumber(Str* sig_spec) {
+  NotImplemented();
+}
+}  // namespace signal_def
 
 #endif  // OSH_EVAL_STUBS_H

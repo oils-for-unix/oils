@@ -65,6 +65,7 @@ pgen2/parse.py
 pylib/path_stat.py
 oil_lang/objects.py
 osh/bool_stat.py
+osh/builtin_process.py
 EOF
 
   wc -l $FILTER_DIR/filter-*

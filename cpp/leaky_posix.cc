@@ -7,11 +7,18 @@
 #include "leaky_posix.h"
 
 #include <errno.h>
-#include <fcntl.h>     // open
-#include <sys/wait.h>  // WUNTRACED
+#include <fcntl.h>      // open
+#include <sys/stat.h>   // umask
+#include <sys/types.h>  // umask
+#include <sys/wait.h>   // WUNTRACED
 #include <unistd.h>
 
 namespace posix {
+
+int umask(int mask) {
+  // note: assuming mode_t fits in an int
+  return ::umask(mask);
+}
 
 int open(Str* path, int flags, int perms) {
   mylib::Str0 path0(path);

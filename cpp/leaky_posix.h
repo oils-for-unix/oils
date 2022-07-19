@@ -15,6 +15,8 @@
 
 namespace posix {
 
+int umask(int mask);
+
 inline int access(Str* pathname, int mode) {
   // Are there any errno I care about?
   mylib::Str0 pathname0(pathname);

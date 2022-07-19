@@ -167,9 +167,10 @@ HISTORY_SPEC.ShortFlag('-d', args.Int)
 # osh/builtin_process.py
 #
 
+EXEC_SPEC = FlagSpec('exec')
+
 WAIT_SPEC = FlagSpec('wait')
 WAIT_SPEC.ShortFlag('-n')
-
 
 TRAP_SPEC = FlagSpec('trap')
 TRAP_SPEC.ShortFlag('-p')

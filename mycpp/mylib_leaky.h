@@ -1359,6 +1359,7 @@ class BufWriter : public Writer {
 
   // strategy: snprintf() based on sizeof(int)
   void format_d(int i);
+  void format_o(int i);
   void format_s(Str* s);
   void format_r(Str* s);  // formats with quotes
 

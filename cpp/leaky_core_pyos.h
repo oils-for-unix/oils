@@ -18,9 +18,11 @@
 #include "_build/cpp/syntax_asdl.h"
 #include "leaky_time_.h"
 #include "mycpp/mylib_leaky.h"
-// has a member named errno.  That member can't be changed
-// because it has to match the python error structure, which
-// has an errno member.
+
+// Hacky forward declaration
+namespace builtin_trap {
+class _TrapHandler;
+};
 
 namespace pyos {
 
@@ -129,6 +131,12 @@ class SignalState {
   SignalState() {
   }
   void InitShell() {
+  }
+  void AddUserTrap(int sig_num, builtin_trap::_TrapHandler* handler) {
+    NotImplemented();
+  }
+  void RemoveUserTrap(int sig_num) {
+    NotImplemented();
   }
   int last_sig_num = 0;
 

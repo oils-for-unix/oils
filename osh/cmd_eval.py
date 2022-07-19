@@ -87,7 +87,7 @@ if TYPE_CHECKING:
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
-  from osh import builtin_process
+  from osh import builtin_trap
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -116,7 +116,7 @@ class Deps(object):
     self.debug_f = None       # type: util._DebugFile
 
     # signal/hook name -> handler
-    self.traps = None         # type: Dict[str, builtin_process._TrapHandler]
+    self.traps = None         # type: Dict[str, builtin_trap._TrapHandler]
     # appended to by signal handlers
     self.trap_nodes = None    # type: List[command_t]
 
@@ -1428,7 +1428,7 @@ class CommandEvaluator(object):
   def RunPendingTraps(self):
     # type: () -> None
 
-    # See osh/builtin_process.py _TrapHandler for the code that appends to this
+    # See osh/builtin_trap.py _TrapHandler for the code that appends to this
     # list.
     if len(self.trap_nodes):
       # Make a copy and clear it so we don't cause an infinite loop.

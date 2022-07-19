@@ -43,8 +43,10 @@ from osh import builtin_bracket
 from osh import builtin_meta
 from osh import builtin_misc
 from osh import builtin_printf
-#from osh import builtin_process
+from osh import builtin_process
+from osh import builtin_process2  # can be translated
 from osh import builtin_pure
+from osh import builtin_trap
 from osh import cmd_eval
 from osh import prompt
 from osh import sh_expr_eval
@@ -110,6 +112,36 @@ def AddIO(b, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt):
   b[builtin_i.pwd] = builtin_misc.Pwd(mem, errfmt)
 
   b[builtin_i.times] = builtin_misc.Times()
+
+
+def AddProcess(
+    b,  # type: Dict[int, vm._Builtin]
+    mem,  # type: state.Mem
+    shell_ex,  # type: vm._Executor
+    ext_prog,  # type: process.ExternalProgram
+    fd_state,  # type: process.FdState
+    job_state,  # type: process.JobState
+    waiter,  # type: process.Waiter
+    tracer,  # type: dev.Tracer
+    search_path,  # type: state.SearchPath
+    errfmt  # type: ui.ErrorFormatter
+    ):
+    # type: (...) -> None
+
+  # Process
+  b[builtin_i.exec_] = builtin_process2.Exec(mem, ext_prog, fd_state,
+                                            search_path, errfmt)
+  b[builtin_i.umask] = builtin_process2.Umask()
+
+  if mylib.PYTHON:
+    b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, tracer,
+                                             errfmt)
+    b[builtin_i.jobs] = builtin_process.Jobs(job_state)
+    b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
+    b[builtin_i.bg] = builtin_process.Bg(job_state)
+
+    b[builtin_i.fork] = builtin_process.Fork(shell_ex)
+    b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
 
 
 def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
@@ -367,8 +399,14 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins = {}  # type: Dict[int, vm._Builtin]
   modules = {}  # type: Dict[str, bool]
 
+  shell_ex = executor.ShellExecutor(
+      mem, exec_opts, mutable_opts, procs, hay_tree, builtins, search_path,
+      ext_prog, waiter, tracer, job_state, fd_state, errfmt)
+
   AddPure(builtins, mem, procs, modules, mutable_opts, aliases, search_path, errfmt)
   AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
+  AddProcess(builtins, mem, shell_ex, ext_prog, fd_state,
+             job_state, waiter, tracer, search_path, errfmt)
 
   builtins[builtin_i.help] = help_builtin
 
@@ -386,9 +424,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
 
-  shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, hay_tree, builtins, search_path,
-      ext_prog, waiter, tracer, job_state, fd_state, errfmt)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
@@ -417,18 +452,18 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.mapfile] = mapfile
   builtins[builtin_i.readarray] = mapfile
 
-  #source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
-                                       #fd_state, tracer, errfmt)
-  #builtins[builtin_i.source] = source_builtin
-  #builtins[builtin_i.dot] = source_builtin
+  source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
+                                       fd_state, tracer, errfmt)
+  builtins[builtin_i.source] = source_builtin
+  builtins[builtin_i.dot] = source_builtin
 
   AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
           errfmt)
   AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex, hay_tree, errfmt)
 
-  #builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
-  #                                                cmd_deps.trap_nodes,
-  #                                                parse_ctx, errfmt)
+  builtins[builtin_i.trap] = builtin_trap.Trap(
+      sig_state, cmd_deps.traps, cmd_deps.trap_nodes, parse_ctx, tracer,
+      errfmt)
 
   if flag.c is not None:
     arena.PushSource(source.CFlag())
