@@ -1824,8 +1824,8 @@ class CommandEvaluator(object):
         status = e.StatusCode()
       else:
         e_die('Unexpected control flow in block', token=e.token)
-    finally:
-      namespace_ = self.mem.TopNamespace()
+
+    namespace_ = self.mem.TopNamespace()
 
     # This is the thing on self.mem?
     # Filter out everything beginning with _ ?
