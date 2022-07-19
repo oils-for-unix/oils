@@ -36,7 +36,6 @@ using id_kind_asdl::Kind_t;
 #include "leaky_libc.h"
 #include "leaky_osh_arith_parse.h"
 #include "leaky_osh_bool_stat.h"
-#include "leaky_osh_sh_expr_eval.h"
 #include "leaky_pgen2_parse.h"
 #include "leaky_posix.h"
 #include "leaky_pylib.h"
