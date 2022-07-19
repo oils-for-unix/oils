@@ -7,10 +7,9 @@
 
 #include "_build/cpp/runtime_asdl.h"  // cell, etc
 #include "_devbuild/gen/id.h"
+#include "leaky_core.h"  // Chdir
 #include "leaky_core_error.h"
 #include "leaky_core_pyerror.h"
-#include "leaky_core_pyos.h"  // Chdir
-#include "leaky_core_pyutil.h"
 #include "leaky_frontend_match.h"
 #include "leaky_libc.h"
 #include "leaky_osh_bool_stat.h"

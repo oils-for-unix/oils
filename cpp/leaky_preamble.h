@@ -27,9 +27,8 @@ using id_kind_asdl::Kind_t;
 // oil/cpp
 #include "leaky_core_error.h"
 //#include "core_process.h"
+#include "leaky_core.h"
 #include "leaky_core_pyerror.h"
-#include "leaky_core_pyos.h"
-#include "leaky_core_pyutil.h"
 #include "leaky_fcntl_.h"
 #include "leaky_frontend_flag_spec.h"
 #include "leaky_frontend_match.h"

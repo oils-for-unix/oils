@@ -1,7 +1,7 @@
-// leaky_pylib_os_path.h
+// leaky_pylib.h: Replacement for pylib/*.py
 
-#ifndef PYLIB_OS_PATH_H
-#define PYLIB_OS_PATH_H
+#ifndef LEAKY_PYLIB_H
+#define LEAKY_PYLIB_H
 
 #if 1  // TODO: switch this off
 #include "mycpp/mylib_leaky.h"
@@ -21,4 +21,4 @@ bool exists(Str* path);
 
 }  // namespace path_stat
 
-#endif  // PYLIB_OS_PATH_H
+#endif  // LEAKY_PYLIB_H

@@ -52,8 +52,7 @@ leaky-flag-spec-test() {
 
 readonly LEAKY_TEST_SRC=(
     cpp/leaky_binding_test.cc \
-    cpp/leaky_core_pyos.cc \
-    cpp/leaky_core_pyutil.cc \
+    cpp/leaky_core.cc \
     cpp/leaky_frontend_match.cc \
     cpp/leaky_libc.cc \
     cpp/leaky_osh_bool_stat.cc \

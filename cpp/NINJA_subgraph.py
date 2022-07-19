@@ -79,8 +79,7 @@ def log(msg, *args):
 
 
 DEPS_CC = [
-    'cpp/leaky_core_pyos.cc',
-    'cpp/leaky_core_pyutil.cc',
+    'cpp/leaky_core.cc',
     'cpp/leaky_frontend_flag_spec.cc',
     'cpp/leaky_frontend_match.cc',
     'cpp/leaky_frontend_tdop.cc',
