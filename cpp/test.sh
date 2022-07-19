@@ -58,7 +58,7 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_libc.cc \
     cpp/leaky_osh_bool_stat.cc \
     cpp/leaky_posix.cc \
-    cpp/leaky_pylib_os_path.cc \
+    cpp/leaky_pylib.cc \
     mycpp/mylib_leaky.cc
 )
 

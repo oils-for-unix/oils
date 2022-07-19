@@ -15,7 +15,7 @@
 #include "leaky_libc.h"
 #include "leaky_osh_bool_stat.h"
 #include "leaky_posix.h"
-#include "leaky_pylib_os_path.h"
+#include "leaky_pylib.h"
 #include "leaky_time_.h"
 #include "vendor/greatest.h"
 

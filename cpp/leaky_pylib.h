@@ -15,4 +15,10 @@ Str* rstrip_slashes(Str* s);
 
 }  // namespace os_path
 
+namespace path_stat {
+
+bool exists(Str* path);
+
+}  // namespace path_stat
+
 #endif  // PYLIB_OS_PATH_H

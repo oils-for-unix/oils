@@ -1,6 +1,8 @@
 // pylib_os_path.cc
 
-#include "leaky_pylib_os_path.h"
+#include "leaky_pylib.h"
+
+#include <sys/stat.h>
 
 namespace os_path {
 
@@ -33,3 +35,17 @@ Str* rstrip_slashes(Str* s) {
 }
 
 }  // namespace os_path
+
+namespace path_stat {
+
+bool exists(Str* path) {
+  mylib::Str0 path0(path);
+  struct stat st;
+  if (::stat(path0.Get(), &st) < 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+}  // namespace path_stat
