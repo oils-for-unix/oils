@@ -48,7 +48,7 @@ from posix_ import (
     O_APPEND, O_CREAT, O_RDONLY, O_RDWR, O_WRONLY, O_TRUNC,
 )
 
-from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
+from typing import List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
@@ -956,6 +956,22 @@ class Process(Job):
     return self.Wait(waiter)
 
 
+class ctx_Pipe(object):
+
+  def __init__(self, fd_state, fd):
+    # type: (FdState, int) -> None
+    fd_state.PushStdinFromPipe(fd)
+    self.fd_state = fd_state
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.fd_state.Pop()
+
+
 class Pipeline(Job):
   """A pipeline of processes to run.
 
@@ -1120,11 +1136,9 @@ class Pipeline(Job):
       r, w = self.last_pipe  # set in AddLast()
       posix.close(w)  # we will not write here
 
-      fd_state.PushStdinFromPipe(r)
-      try:
+      with ctx_Pipe(fd_state, r):
         cmd_ev.ExecuteAndCatch(last_node)
-      finally:
-        fd_state.Pop()
+
       # We won't read anymore.  If we don't do this, then 'cat' in 'cat
       # /dev/urandom | sleep 1' will never get SIGPIPE.
       posix.close(r)
