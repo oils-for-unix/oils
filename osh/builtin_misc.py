@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import alloc
 from core import error
-from core.pyerror import e_usage, e_die, log
+from core.pyerror import e_usage, e_die, e_die_status, log
 from core import pyos
 from core import pyutil
 from core import state
@@ -860,7 +860,7 @@ class Cat(vm._Builtin):
           pass  # retry
         else:
           # Like the top level IOError handler
-          e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+          e_die_status(2, 'osh I/O error: %s' % posix.strerror(err_num))
           # TODO: Maybe just return 1?
 
       elif n == 0:  # EOF

@@ -42,10 +42,10 @@ using id_kind_asdl::Kind_t;
 #include "leaky_posix.h"
 #include "leaky_pylib_os_path.h"
 #include "leaky_pylib_path_stat.h"
-#include "qsn_qsn.h"
-#include "segfault_handler.h"
 #include "leaky_signal_.h"
 #include "leaky_time_.h"
+#include "qsn_qsn.h"
+#include "segfault_handler.h"
 
 #ifdef OSH_EVAL
 #include "leaky_osh_eval_stubs.h"

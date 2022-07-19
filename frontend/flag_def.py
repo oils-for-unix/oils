@@ -262,9 +262,6 @@ TRY_SPEC.LongFlag('--assign', args.String,
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
 
 # Future directions:
-# run --allow-status=0,1
-#   an arbitrary list of statuses.  Although --assign does this just
-#   fine.
 # run --builtin, run --command, run --proc:
 #   to "replace" 'builtin' and # 'command'
 

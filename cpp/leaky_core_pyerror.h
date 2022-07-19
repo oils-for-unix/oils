@@ -3,8 +3,9 @@
 #ifndef CORE_PYERROR_H
 #define CORE_PYERROR_H
 
-// STUBS for p_die()
+// STUBS for varargs functions like p_die()
 // [[noreturn]] avoids warnings
+
 [[noreturn]] inline void p_die(Str* s, int span_id) {
   throw new error::Parse(s, span_id);
 }
@@ -25,6 +26,8 @@
   throw new error::FatalRuntime(s);
 }
 
+// TODO: respect more arguments
+
 [[noreturn]] inline void e_die(Str* s, int span_id) {
   throw new error::FatalRuntime(s);
 }
@@ -39,6 +42,19 @@
 
 [[noreturn]] inline void e_die(Str* s, syntax_asdl::word_t* w) {
   throw new error::FatalRuntime(s);
+}
+
+[[noreturn]] inline void e_die_status(int status, Str* s) {
+  throw new error::FatalRuntime(status, s);
+}
+
+[[noreturn]] inline void e_die_status(int status, Str* s, int span_id) {
+  throw new error::FatalRuntime(status, s);
+}
+
+[[noreturn]] inline void e_die_status(int status, Str* s,
+                                      syntax_asdl::word_t* w) {
+  throw new error::FatalRuntime(status, s);
 }
 
 [[noreturn]] inline void e_strict(Str* s, int span_id) {

@@ -15,7 +15,7 @@ from _devbuild.gen.runtime_asdl import (
 from asdl import runtime
 from core import error
 from core import state
-from core.pyerror import e_die, log
+from core.pyerror import e_die, e_die_status, log
 from frontend import consts
 from oil_lang import objects
 from osh import braces
@@ -457,7 +457,7 @@ class OilEvaluator(object):
           except RuntimeError as e:
             # Status 2 indicates a regex parse error.  This is fatal in OSH but
             # not in bash, which treats [[ like a command with an exit code.
-            e_die("Invalid regex %r", right, span_id=op.span_id, status=2)
+            e_die_status(2, 'Invalid regex %r' % right, span_id=op.span_id)
 
         if not result:
           return result
@@ -496,7 +496,7 @@ class OilEvaluator(object):
       return d
 
     if node.tag == expr_e.ListComp:
-      e_die('List comprehension reserved but not implemented', status=2)
+      e_die_status(2, 'List comprehension reserved but not implemented')
 
       #
       # TODO: Move this code to the new for loop
@@ -538,12 +538,12 @@ class OilEvaluator(object):
       return result
 
     if node.tag == expr_e.GeneratorExp:
-      e_die('Generator expression reserved but not implemented', status=2)
+      e_die_status(2, 'Generator expression reserved but not implemented')
 
     if node.tag == expr_e.Lambda:  # |x| x+1 syntax is reserved
       # TODO: Location information for |, or func
       # Note: anonymous functions also evaluate to a Lambda, but they shouldn't
-      e_die('Lambda reserved but not implemented', status=2)
+      e_die_status(2, 'Lambda reserved but not implemented')
 
     if node.tag == expr_e.FuncCall:
       func = self._EvalExpr(node.func)

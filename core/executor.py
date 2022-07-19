@@ -18,7 +18,7 @@ from asdl import runtime
 from core import dev
 from core import error
 from core import process
-from core.pyerror import e_die, log
+from core.pyerror import e_die, e_die_status, log
 from core import pyos
 from core import ui
 from core import vm
@@ -191,7 +191,7 @@ class ShellExecutor(vm._Executor):
       # TODO: Enable this and fix spec test failures.
       # Also update _SPECIAL_BUILTINS in osh/builtin.py.
       #if status != 0:
-      #  e_die('special builtin failed', status=status)
+      #  e_die_status(status, 'special builtin failed')
       return status
 
     # Builtins like 'true' can be redefined as functions.
@@ -386,7 +386,7 @@ class ShellExecutor(vm._Executor):
           pass  # retry
         else:
           # Like the top level IOError handler
-          e_die('osh I/O error: %s', posix.strerror(err_num), status=2)
+          e_die_status(2, 'osh I/O error: %s' % posix.strerror(err_num))
 
       elif n == 0:  # EOF
         break

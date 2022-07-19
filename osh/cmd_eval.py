@@ -52,7 +52,7 @@ from asdl import runtime
 from core import dev
 from core import error
 from core.error import _ControlFlow
-from core.pyerror import log, e_die
+from core.pyerror import log, e_die, e_die_status
 from core import pyos  # Time().  TODO: rename
 from core import state
 from core import ui
@@ -1183,8 +1183,8 @@ class CommandEvaluator(object):
                   val_name = lvalue.Named(node.iter_names[1])
                 else:
                   # This is similar to a parse error
-                  e_die('List iteration expects at most 2 loop variables',
-                        span_id=node.spids[0], status=2)
+                  e_die_status(2, 'List iteration expects at most 2 loop variables',
+                               span_id=node.spids[0])
 
                 index =0
                 for item in obj:
@@ -1267,8 +1267,8 @@ class CommandEvaluator(object):
               val_name = lvalue.Named(node.iter_names[1])
             else:
               # This is similar to a parse error
-              e_die('List iteration expects at most 2 loop variables',
-                    span_id=node.spids[0], status=2)
+              e_die_status(2, 'List iteration expects at most 2 loop variables',
+                           span_id=node.spids[0])
 
             index = 0
             for x in iter_list:

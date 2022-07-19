@@ -29,41 +29,44 @@ class Usage : public std::exception {
 class _ErrorWithLocation : public std::exception {
  public:
   _ErrorWithLocation(Str* user_str, int span_id)
-      : user_str_(user_str),
+      : status(1),
+        user_str_(user_str),
         span_id(span_id),
         token(nullptr),
         part(nullptr),
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, Token* token)
-      : user_str_(user_str),
+      : status(1),
+        user_str_(user_str),
         span_id(runtime::NO_SPID),
         token(token),
         part(nullptr),
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, word_part_t* part)
-      : user_str_(user_str),
+      : status(1),
+        user_str_(user_str),
         span_id(runtime::NO_SPID),
         token(nullptr),
         part(part),
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, word_t* word)
-      : user_str_(user_str),
+      : status(1),
+        user_str_(user_str),
         span_id(runtime::NO_SPID),
         token(nullptr),
         part(nullptr),
         word(word) {
   }
-  _ErrorWithLocation(Str* user_str, int span_id, int exit_status,
-                     bool show_code)
-      : user_str_(user_str),
+  _ErrorWithLocation(int status, Str* user_str, int span_id, bool show_code)
+      : status(status),
+        user_str_(user_str),
         span_id(span_id),
         token(nullptr),
         part(nullptr),
         word(nullptr),
-        exit_status(exit_status),
         show_code(show_code) {
   }
 
@@ -77,9 +80,10 @@ class _ErrorWithLocation : public std::exception {
   }
 
   int ExitStatus() {
-    return 1;  // TODO: fix this
-    assert(0);
+    return status;
   }
+
+  int status;
 
   Str* user_str_;
   int span_id;
@@ -87,7 +91,6 @@ class _ErrorWithLocation : public std::exception {
   syntax_asdl::word_part_t* part;
   syntax_asdl::word_t* word;
 
-  int exit_status;
   bool show_code;
 };
 
@@ -122,8 +125,8 @@ class FatalRuntime : public _ErrorWithLocation {
  public:
   FatalRuntime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
   }
-  FatalRuntime(Str* user_str, int span_id, int status)
-      : _ErrorWithLocation(user_str, span_id, status, false) {
+  FatalRuntime(int status, Str* user_str)
+      : _ErrorWithLocation(status, user_str, -1, false) {
   }
 };
 
@@ -137,10 +140,10 @@ class Strict : public FatalRuntime {
 class ErrExit : public _ErrorWithLocation {
  public:
   ErrExit(Str* user_str, int span_id, int status)
-      : _ErrorWithLocation(user_str, span_id, status, false) {
+      : _ErrorWithLocation(status, user_str, span_id, false) {
   }
   ErrExit(Str* user_str, int span_id, int status, bool show_code)
-      : _ErrorWithLocation(user_str, span_id, status, show_code) {
+      : _ErrorWithLocation(status, user_str, span_id, show_code) {
   }
 };
 
