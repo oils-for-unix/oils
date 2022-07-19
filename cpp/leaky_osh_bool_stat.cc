@@ -9,6 +9,8 @@
 #include "leaky_core_error.h"
 #include "leaky_core_pyerror.h"
 
+namespace Id = id_kind_asdl::Id;
+
 namespace bool_stat {
 
 bool isatty(Str* fd_str, word_t* blame_word) {

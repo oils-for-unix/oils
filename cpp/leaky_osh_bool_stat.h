@@ -8,7 +8,6 @@
 
 namespace bool_stat {
 
-namespace Id = id_kind_asdl::Id;
 using syntax_asdl::word_t;
 
 bool isatty(Str* fd_str, word_t* blame_word);

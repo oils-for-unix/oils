@@ -5,8 +5,6 @@
 
 #include <termios.h>
 
-#include "_build/cpp/syntax_asdl.h"
-#include "leaky_time_.h"
 #include "mycpp/mylib_leaky.h"
 
 // Hacky forward declaration
