@@ -4,13 +4,12 @@
 #define FRONTEND_TDOP_H
 
 #include "_build/cpp/id_kind_asdl.h"
-using id_kind_asdl::Id_t;
 #include "_build/cpp/syntax_asdl.h"
 
+using id_kind_asdl::Id_t;
 using syntax_asdl::arith_expr_t;
 using syntax_asdl::word_t;
 
-// move to tdop.h?
 namespace tdop {
 
 class TdopParser;  // forward declaration
@@ -35,7 +34,6 @@ struct NullInfo {
 
 class ParserSpec {
  public:
-  // TODO: initialize from a table
   ParserSpec() {
   }
   LeftInfo* LookupLed(Id_t id);
