@@ -129,28 +129,26 @@ class ShellExecutor(vm._Executor):
     builtin_func = self.builtins[builtin_id]
 
     # note: could be second word, like 'builtin read'
-    self.errfmt.PushLocation(cmd_val.arg_spids[0])
-    try:
-      status = builtin_func.Run(cmd_val)
-      assert isinstance(status, int)
-    except error.Usage as e:
-      arg0 = cmd_val.argv[0]
-      # fill in default location.  e.g. osh/state.py raises UsageError without
-      # span_id.
-      if e.span_id == runtime.NO_SPID:
-        e.span_id = self.errfmt.CurrentLocation()
-      # e.g. 'type' doesn't accept flag '-x'
-      self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
-      status = 2  # consistent error code for usage error
-    finally:
-      # Flush stdout after running ANY builtin.  This is very important!
-      # Silence errors like we did from 'echo'.
+    with ui.ctx_Location(self.errfmt, cmd_val.arg_spids[0]):
       try:
-        sys.stdout.flush()
-      except IOError as e:
-        pass
-
-      self.errfmt.PopLocation()
+        status = builtin_func.Run(cmd_val)
+        assert isinstance(status, int)
+      except error.Usage as e:
+        arg0 = cmd_val.argv[0]
+        # fill in default location.  e.g. osh/state.py raises UsageError without
+        # span_id.
+        if e.span_id == runtime.NO_SPID:
+          e.span_id = self.errfmt.CurrentLocation()
+        # e.g. 'type' doesn't accept flag '-x'
+        self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
+        status = 2  # consistent error code for usage error
+      finally:
+        # Flush stdout after running ANY builtin.  This is very important!
+        # Silence errors like we did from 'echo'.
+        try:
+          sys.stdout.flush()
+        except IOError as e:
+          pass
 
     return status
 

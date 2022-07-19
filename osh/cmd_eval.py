@@ -307,29 +307,26 @@ class CommandEvaluator(object):
   def _RunAssignBuiltin(self, cmd_val):
     # type: (cmd_value__Assign) -> int
     """Run an assignment builtin.  Except blocks copied from RunBuiltin."""
-    self.errfmt.PushLocation(cmd_val.arg_spids[0])  # default
-
     builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
     if builtin_func is None:
       # This only happens with alternative Oil interpreters.
       e_die("Assignment builtin %r not configured",
             cmd_val.argv[0], span_id=cmd_val.arg_spids[0])
 
-    try:
-      status = builtin_func.Run(cmd_val)
-    except error.Usage as e:  # Copied from RunBuiltin
-      arg0 = cmd_val.argv[0]
-      if e.span_id == runtime.NO_SPID:  # fill in default location.
-        e.span_id = self.errfmt.CurrentLocation()
-      self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
-      status = 2  # consistent error code for usage error
-    finally:
+    with ui.ctx_Location(self.errfmt, cmd_val.arg_spids[0]):
       try:
-        sys.stdout.flush()
-      except IOError as e:
-        pass
-
-      self.errfmt.PopLocation()
+        status = builtin_func.Run(cmd_val)
+      except error.Usage as e:  # Copied from RunBuiltin
+        arg0 = cmd_val.argv[0]
+        if e.span_id == runtime.NO_SPID:  # fill in default location.
+          e.span_id = self.errfmt.CurrentLocation()
+        self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
+        status = 2  # consistent error code for usage error
+      finally:
+        try:
+          sys.stdout.flush()
+        except IOError as e:
+          pass
 
     return status
 

@@ -424,14 +424,12 @@ class FdState(object):
 
     for r in redirects:
       #log('apply %s', r)
-      self.errfmt.PushLocation(r.op_spid)
-      try:
-        self._ApplyRedirect(r)
-      except (IOError, OSError) as e:
-        self.Pop()
-        return False  # for bad descriptor, etc.
-      finally:
-        self.errfmt.PopLocation()
+      with ui.ctx_Location(self.errfmt, r.op_spid):
+        try:
+          self._ApplyRedirect(r)
+        except (IOError, OSError) as e:
+          self.Pop()
+          return False  # for bad descriptor, etc.
     #log('done applying %d redirects', len(redirects))
     return True
 
