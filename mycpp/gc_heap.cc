@@ -8,11 +8,15 @@ using gc_heap::Heap;
 using gc_heap::Local;
 using gc_heap::Obj;
 
+#include "types/string.h"
+
 namespace gc_heap {
+
+Heap gHeap;
 
 GLOBAL_STR(kEmptyString, "");
 
-Heap gHeap;
+
 
 // LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
 // objs to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
@@ -124,7 +128,7 @@ inline Obj* ObjHeader(Obj* obj) {
 
 void Heap::Collect() {
 #if GC_DEBUG
-  log("--> COLLECT with %d roots", roots_top_);
+  /* log("--> COLLECT with %d roots", roots_top_); */
   num_collections_++;
 #endif
 
@@ -146,8 +150,11 @@ void Heap::Collect() {
   num_live_objs_ = 0;
 #endif
 
-  for (int i = 0; i < roots_top_; ++i) {
+  for (int i = 0; i < kMaxRoots; ++i) {
     Obj** handle = roots_[i];
+
+    if (handle == 0) continue;
+
     auto root = *handle;
 #if GC_VERBOSE
     log("%d. handle %p", i, handle);

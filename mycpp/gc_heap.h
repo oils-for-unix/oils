@@ -198,7 +198,7 @@ class Heap {
     free_ = from_space_.begin_;  // where we allocate from
     limit_ = free_ + space_size;
 
-    roots_top_ = 0;
+    next_free_root = 0;
 
 #if GC_DEBUG
     num_collections_ = 0;
@@ -287,17 +287,55 @@ class Heap {
     to_space_.size_ = tmp2;
   }
 
-  void PushRoot(Obj** p) {
-    // TODO: This should be like a malloc() failure?
-    assert(roots_top_ < kMaxRoots);
-
-    // log("PushRoot %d", roots_top_);
-    roots_[roots_top_++] = p;
+  bool PushRoot(Obj** p) {
+    // log("PushRoot %d", last_free_root);
+    for(;;)
+    {
+      if (next_free_root < kMaxRoots)
+      {
+        if (roots_[next_free_root] == 0)
+        {
+          roots_[next_free_root] = p;
+          next_free_root++;
+          return true;
+        }
+        else
+        {
+          next_free_root++;
+        }
+      }
+      else
+      {
+        return false;
+      }
+    }
   }
 
-  void PopRoot() {
-    roots_top_--;
-    // log("PopRoot %d", roots_top_);
+  int FindRoot(void** root)
+  {
+    for(int root_index = 0; root_index < kMaxRoots; ++root_index)
+    {
+      if (roots_[root_index] == (Obj**)root)
+      {
+        return root_index;
+      }
+    }
+    return kMaxRoots;
+  }
+
+  bool PopRoot(void** root) {
+    int root_index = FindRoot(root);
+    if (root_index < kMaxRoots)
+    {
+      roots_[root_index] = 0;
+      if (next_free_root > root_index)
+      {
+        next_free_root = root_index;
+      }
+
+      return true;
+    }
+    return false;
   }
 
   Obj* Relocate(Obj* obj, Obj* header);
@@ -331,7 +369,7 @@ class Heap {
   // femtolisp uses a global pointer to dynamically-allocated growable array,
   // with initial N_STACK = 262144!  Kind of arbitrary.
 
-  int roots_top_;
+  int next_free_root;
   Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
 
 #if GC_DEBUG
@@ -342,11 +380,16 @@ class Heap {
 #endif
 };
 
+
 // The heap is a (compound) global variable.  Notes:
 // - The default constructor does nothing, to avoid initialization order
 //   problems.
 // - For some applications, this can be thread_local rather than global.
+#ifndef MYLIB_LEAKY
 extern Heap gHeap;
+#else
+static Heap gHeap;
+#endif
 
 class StackRoots {
  public:
@@ -360,7 +403,8 @@ class StackRoots {
   ~StackRoots() {
     // TODO: optimize this
     for (int i = 0; i < n_; ++i) {
-      gHeap.PopRoot();
+      NotImplemented();
+      gHeap.PopRoot(0);
     }
   }
 
@@ -375,23 +419,20 @@ class Local {
   // heap are updated by the Cheney GC algorithm.
 
  public:
-  Local() : raw_pointer_(nullptr) {
-  }
+   // NOTE(Jesse): Should probably not allow this.  Why would we ever want to
+   // construct one of these with a null pointer?
+  Local() = delete;
 
   // IMPLICIT conversion.  No 'explicit'.
   Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
-    // TODO(Jesse): Does this get called?
-    // Is this NotImplemented() or InvalidCodePath() ??
-    assert(0);
-    // gHeap.PushRoot(this);
+    log("impl root for (0x%lx) %s", &this->raw_pointer_, this->raw_pointer_->data());
+    gHeap.PushRoot((Obj**)&this->raw_pointer_);
   }
 
   // Copy constructor, e.g. f(mylocal) where f(Local<T> param);
   Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
-    // TODO(Jesse): Does this get called?
-    // Is this NotImplemented() or InvalidCodePath() ??
-    assert(0);
-    // gHeap.PushRoot(this);
+    log("copy root for (0x%lx) %s", &this->raw_pointer_, this->raw_pointer_->data());
+    gHeap.PushRoot((Obj**)&this->raw_pointer_);
   }
 
   void operator=(const Local& other) {  // Assignment operator
@@ -409,11 +450,19 @@ class Local {
 
     // However the problem is that then we'll have an unbalanced PopRoot().
     // So we keep it for now.
-    gHeap.PushRoot(this);
+
+    /* gHeap.PushRoot(this); */
+    int root_index = gHeap.FindRoot((void**)&raw_pointer_);
+    if (root_index < kMaxRoots) {
+      gHeap.roots_[root_index] = (Obj**)&raw_pointer_;
+    }
   }
 
   ~Local() {
-    gHeap.PopRoot();
+    log("pop  root for (0x%lx) %s", &this->raw_pointer_, this->raw_pointer_->data());
+
+    bool success = gHeap.PopRoot((void**)&raw_pointer_);
+    assert(success);
   }
 
   // This cast operator overload allows:
@@ -465,6 +514,8 @@ class Local {
   T* raw_pointer_;
 };
 
+// NOTE(Jesse): Not sure what the point of this is?
+//
 template <typename T>
 class Param : public Local<T> {
   // This could be an optimization like SpiderMonkey's Handle<T> vs Rooted<T>.
@@ -662,9 +713,9 @@ class Str : public gc_heap::Obj {
   bool startswith(Str* s);
   bool endswith(Str* s);
 
-  Str* replace(Str* old, Str* new_str);
+  Str* replace(Local<Str> old, Local<Str> new_str);
   Str* join(List<Str*>* items);
-  List<Str*>* split(Str* sep);
+  List<Str*>* split(Local<Str> sep);
 
   bool isdigit();
   bool isalpha();
@@ -781,20 +832,27 @@ inline void CopyMemory(char* dest, const char* src, int len) {
 #endif
 }
 
-inline Str* CopyStr(const char* data, int len) {
+inline Local<Str> AllocStr(const char* data, int len) {
   // Problem: if data points inside a Str, it's often invalidated!
   Str* s = AllocStr(len);
-
-  // log("AllocStr s->data_ %p len = %d", s->data_, len);
-  // log("sizeof(Str) = %d", sizeof(Str));
-
   CopyMemory(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
-
   return s;
 }
 
-// CHOPPED OFF at internal NUL.  Use explicit length if you have a NUL.
+inline Local<Str> AllocStr(const char* data) {
+  int len = strlen(data);
+  return AllocStr(data, len);
+}
+
+inline Str* CopyStr(const char* data, int len) {
+  // Problem: if data points inside a Str, it's often invalidated!
+  Str* s = AllocStr(len);
+  CopyMemory(s->data_, data, len);
+  assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
+  return s;
+}
+
 inline Str* CopyStr(const char* data) {
   return CopyStr(data, strlen(data));
 }
@@ -1450,6 +1508,8 @@ inline int len(const gc_heap::Str* s) {
   return s->obj_len_ - gc_heap::kStrHeaderSize - 1;
 }
 
+// NOTE(Jesse): This should really be the most generic template that len falls
+// back to.  Doesn't make sense to have specializations here.
 template <typename T>
 int len(const gc_heap::List<T>* L) {
   return L->len_;

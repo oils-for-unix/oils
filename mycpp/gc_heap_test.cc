@@ -62,6 +62,9 @@ static_assert(offsetof(List<int>, slab_) ==
                   offsetof(gc_heap::GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
+Str* replace(Local<Str> target, Local<Str> old, Local<Str> new_str);
+Str* slice(Local<Str> target, int, int);
+
 // 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
 const int kInitialSize = 1 << 20;
 
@@ -180,8 +183,8 @@ TEST str_test() {
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_.begin_;
   int diff2 = reinterpret_cast<char*>(str2) - gHeap.from_space_.begin_;
-  ASSERT(diff1 < 1024);
-  ASSERT(diff2 < 1024);
+  ASSERT(diff1 < kInitialSize);
+  ASSERT(diff2 < kInitialSize);
 
   ASSERT_EQ(0, len(str1));
   ASSERT_EQ(7, len(str2));
@@ -226,8 +229,8 @@ TEST list_test() {
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_.begin_;
   int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_.begin_;
-  ASSERT(diff1 < 1024);
-  ASSERT(diff2 < 1024);
+  ASSERT(diff1 < kInitialSize);
+  ASSERT(diff2 < kInitialSize);
 
   auto more = NewList<int>(std::initializer_list<int>{11, 22, 33});
   StackRoots _roots3({&more});
@@ -270,7 +273,7 @@ TEST list_test() {
   ASSERT_EQ_FMT(8, len(list1), "%d");
 
   int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_.begin_;
-  ASSERT(d_slab < 1024);
+  ASSERT(d_slab < kInitialSize);
 
   log("list1_ = %p", list1);
   log("list1->slab_ = %p", list1->slab_);
@@ -357,8 +360,8 @@ TEST dict_test() {
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_.begin_;
   int diff2 = reinterpret_cast<char*>(dict2) - gHeap.from_space_.begin_;
-  ASSERT(diff1 < 1024);
-  ASSERT(diff2 < 1024);
+  ASSERT(diff1 < kInitialSize);
+  ASSERT(diff2 < kInitialSize);
 
   dict1->set(42, 5);
   ASSERT_EQ(5, dict1->index_(42));
@@ -468,6 +471,7 @@ class Line : public Obj {
   Point* end_;
 };
 
+#if 0
 TEST fixed_trace_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
@@ -496,6 +500,7 @@ TEST fixed_trace_test() {
 
   PASS();
 }
+
 
 TEST slab_trace_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
@@ -568,6 +573,9 @@ TEST global_trace_test() {
   PASS();
 }
 
+#endif
+
+#if 0
 void ShowRoots(const Heap& heap) {
   log("--");
   for (int i = 0; i < heap.roots_top_; ++i) {
@@ -589,7 +597,9 @@ void ShowRoots(const Heap& heap) {
     // h->Update(nullptr);
   }
 }
+#endif
 
+#if 0
 Str* myfunc() {
   Local<Str> str1(CopyStr("foo"));
   Local<Str> str2(CopyStr("foo"));
@@ -610,6 +620,7 @@ void paramfunc(Param<Str> s) {
   log("paramfunc roots_top_ = %d", gHeap.roots_top_);
   log("len(s) = %d", len(s));
 }
+#endif
 
 #if 0
 TEST local_test() {
@@ -662,7 +673,6 @@ TEST local_test() {
 
   PASS();
 }
-#endif
 
 class Base {
  public:
@@ -685,6 +695,7 @@ int base_func(Base* base) {
 int base_func_local(Local<Base> base) {
   return base->a_;
 }
+
 
 TEST variance_test() {
   Base i1(5);
@@ -726,6 +737,7 @@ TEST stack_roots_test() {
 
   PASS();
 }
+#endif
 
 void ShowSlab(Obj* obj) {
   assert(obj->heap_tag_ == Tag::Scanned);
@@ -780,6 +792,7 @@ TEST field_mask_test() {
   PASS();
 }
 
+#if 0
 TEST repro2() {
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
@@ -790,6 +803,7 @@ TEST repro2() {
 
   PASS();
 }
+#endif
 
 TEST compile_time_masks_test() {
   // Note: These will be different for 32 bit
@@ -928,6 +942,262 @@ TEST protect_test() {
   PASS();
 }
 
+TEST test_str_slice() {
+  printf("\n");
+  Local<Str> s0 = AllocStr("abcdef");
+
+  printf("------- Str::slice -------\n");
+
+  {  // Happy path
+    Local<Str> s1 = s0->slice(0, 5);
+    Local<Str> expected = AllocStr("abcde");
+
+    ASSERT(str_equals(s1, expected));
+    printf("%s\n", s1->data());
+  }
+  {
+    Local<Str> s1 = s0->slice(1, 5);
+    ASSERT(str_equals(s1, AllocStr("bcde")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Local<Str> s1 = s0->slice(0, 0);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Local<Str> s1 = s0->slice(0, 6);
+    ASSERT(str_equals(s1, AllocStr("abcdef")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Local<Str> s1 = s0->slice(-6, 6);
+    ASSERT(str_equals(s1, AllocStr("abcdef")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Local<Str> s1 = s0->slice(0, -6);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+  {
+    Local<Str> s1 = s0->slice(-6, -6);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(5, 6);
+    ASSERT(str_equals(s1, AllocStr("f")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(6, 6);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  printf("---- Infinite Sadness ----\n");
+
+  {
+    Local<Str> s1 = s0->slice(0, -7);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(-7, -7);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(-7, 0);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(6, 6);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(7, 7);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(6, 5);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(7, 5);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(7, 6);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  {
+    Local<Str> s1 = s0->slice(7, 7);
+    ASSERT(str_equals(s1, AllocStr("")));
+    printf("%s\n", s1->data());
+  }
+
+  printf("---------- Done ----------\n");
+
+  //  NOTE(Jesse): testing all permutations of boundary conditions for
+  //  assertions
+  int max_len = (len(s0) + 2);
+  int min_len = -max_len;
+
+  for (int outer = min_len; outer <= max_len; ++outer) {
+    for (int inner = min_len; inner <= max_len; ++inner) {
+      s0->slice(outer, inner);
+    }
+  }
+
+  PASS();
+}
+
+TEST test_str_replace() {
+  printf("\n");
+  printf("----- Str::replace -------\n");
+
+  Local<Str> s0 = AllocStr("ab cd ab ef");
+
+  {
+    Local<Str> s2 = AllocStr("ab");
+    Local<Str> s3 = AllocStr("--");
+    Local<Str> s1 = s0->replace( s2, s3 );
+
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("-- cd -- ef")));
+  }
+
+  {
+    Local<Str> s1 = s0->replace(AllocStr("ab"), AllocStr("----"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("---- cd ---- ef")));
+  }
+
+  {
+    Local<Str> s1 = s0->replace(AllocStr("ab cd ab ef"), AllocStr("0"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("0")));
+  }
+
+  /* { */
+  /*   Local<Str> s1 = s0->replace(s0, AllocStr("0")); */
+  /*   printf("\n%s\n\n", s1->data()); */
+  /*   ASSERT(str_equals(s1, AllocStr("0"))); */
+  /* } */
+
+  {
+    Local<Str> s1 = s0->replace(AllocStr("no-match"), AllocStr("0"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("ab cd ab ef")));
+  }
+
+  {
+    Local<Str> s1 = s0->replace(AllocStr("ef"), AllocStr("0"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("ab cd ab 0")));
+  }
+
+  {
+    Local<Str> s1 = s0->replace(AllocStr("f"), AllocStr("0"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("ab cd ab e0")));
+  }
+
+  {
+    s0 = AllocStr("ab ab ab");
+    Local<Str> s1 = s0->replace(AllocStr("ab"), AllocStr("0"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("0 0 0")));
+  }
+
+  {
+    s0 = AllocStr("ababab");
+    Local<Str> s1 = s0->replace(AllocStr("ab"), AllocStr("0"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("000")));
+  }
+
+  {
+    s0 = AllocStr("abababab");
+    Local<Str> s1 = s0->replace(AllocStr("ab"), AllocStr("0"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("0000")));
+  }
+
+  {
+    s0 = AllocStr("abc 123");
+    Local<Str> s1 = s0->replace(AllocStr("abc"), AllocStr(""));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr(" 123")));
+  }
+
+  {
+    s0 = AllocStr("abc 123");
+    Local<Str> s1 = s0->replace(AllocStr("abc"), AllocStr(""));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr(" 123")));
+  }
+
+  {
+    s0 = AllocStr("abc 123");
+    Local<Str> s1 = s0->replace(AllocStr("abc"), AllocStr("abc"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("abc 123")));
+  }
+
+  {
+    s0 = AllocStr("aaaa");
+    Local<Str> s1 = s0->replace(AllocStr("aa"), AllocStr("bb"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("bbbb")));
+  }
+
+  {
+    s0 = AllocStr("aaaaaa");
+    Local<Str> s1 = s0->replace(AllocStr("aa"), AllocStr("bb"));
+    printf("\n%s\n\n", s1->data());
+    ASSERT(str_equals(s1, AllocStr("bbbbbb")));
+  }
+
+  // Test NUL replacement
+  {
+    Local<Str> s_null = AllocStr("abc\0bcd", 7);
+    ASSERT_EQ(7, len(s_null));
+
+    Local<Str> re1 = s_null->replace(AllocStr("ab"), AllocStr("--"));
+    ASSERT_EQ_FMT(7, len(re1), "%d");
+    ASSERT(str_equals(AllocStr("--c\0bcd", 7), re1));
+
+    Local<Str> re2 = s_null->replace(AllocStr("bc"), AllocStr("--"));
+    ASSERT_EQ_FMT(7, len(re2), "%d");
+    ASSERT(str_equals(AllocStr("a--\0--d", 7), re2));
+
+    Local<Str> re3 = s_null->replace(AllocStr("\0", 1), AllocStr("__"));
+    ASSERT_EQ_FMT(8, len(re3), "%d");
+    ASSERT(str_equals(AllocStr("abc__bcd", 8), re3));
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -936,6 +1206,9 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(test_str_creation);
+
+  RUN_TEST(test_str_slice);
+  RUN_TEST(test_str_replace);
 
   RUN_TEST(sizeof_test);
   RUN_TEST(roundup_test);
@@ -954,7 +1227,7 @@ int main(int argc, char** argv) {
   // RUN_TEST(variance_test);
 
   // RUN_TEST(local_test);
-  RUN_TEST(stack_roots_test);
+  /* RUN_TEST(stack_roots_test); */
   RUN_TEST(field_mask_test);
 
   RUN_TEST(compile_time_masks_test);

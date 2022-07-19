@@ -1,3 +1,4 @@
+
 #include "mycpp/mylib_leaky.h"
 
 #include <assert.h>
@@ -151,7 +152,7 @@ TEST test_str_to_int() {
 TEST test_str_funcs() {
   Str* int_str;
 
-  int int_min = -(1 << 31);
+  int int_min = INT_MIN;
 
   int_str = mylib::hex_lower(15);
   ASSERT(str_equals0("f", int_str));
@@ -551,6 +552,7 @@ TEST test_str_replace() {
 
   {
     Str* s1 = s0->replace(s0, new Str("0"));
+
     printf("%s\n", s1->data());
     ASSERT(str_equals(s1, new Str("0")));
   }
@@ -659,6 +661,7 @@ TEST test_str_slice() {
 
   {  // Happy path
     Str* s1 = s0->slice(0, 5);
+
     ASSERT(str_equals(s1, new Str("abcde")));
     printf("%s\n", s1->data());
   }
