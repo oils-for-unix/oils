@@ -89,7 +89,6 @@ DEPS_CC = [
     'cpp/leaky_dumb_alloc.cc',
     'cpp/leaky_fcntl_.cc',
     'cpp/leaky_posix.cc',
-    'cpp/leaky_signal_.cc',
     'cpp/leaky_libc.cc',
 
     # generated

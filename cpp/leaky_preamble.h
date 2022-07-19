@@ -38,7 +38,6 @@ using id_kind_asdl::Kind_t;
 #include "leaky_pgen2_parse.h"
 #include "leaky_posix.h"
 #include "leaky_pylib.h"
-#include "leaky_signal_.h"
 #include "leaky_time_.h"
 #include "qsn.h"
 #include "segfault_handler.h"

@@ -12,7 +12,7 @@ from __future__ import print_function
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
-import signal as signal_
+from signal import SIGINT
 from sys import exit  # mycpp translation directly calls exit(int status)!
 
 from _devbuild.gen.id_kind_asdl import Id
@@ -1480,7 +1480,7 @@ class Waiter(object):
       status = 128 + term_sig
 
       # Print newline after Ctrl-C.
-      if term_sig == signal_.SIGINT:
+      if term_sig == SIGINT:
         print('')
 
       self.job_state.WhenDone(pid)
