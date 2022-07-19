@@ -401,6 +401,7 @@ def NinjaGraph(n):
     test_name = os.path.basename(test_path)
 
     UNIT_TEST_MATRIX = [
+        ('cxx', 'dbg'),
         ('cxx', 'testgc'),
 
         # Clang and GCC have different implementations of ASAN and UBSAN
