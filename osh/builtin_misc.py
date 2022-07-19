@@ -36,7 +36,7 @@ from qsn_ import qsn_native
 import libc
 import posix_ as posix
 
-from typing import Tuple, List, Optional, TYPE_CHECKING
+from typing import Tuple, List, Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import span_t
   from core.pyutil import _ResourceLoader
@@ -528,6 +528,26 @@ class MapFile(vm._Builtin):
     return 0
 
 
+class ctx_CdBlock(object):
+
+  def __init__(self, dir_stack, dest_dir, mem, errfmt, err_nums):
+    # type: (DirStack, str, Mem, ErrorFormatter, List[int]) -> None
+    dir_stack.Push(dest_dir)
+
+    self.dir_stack = dir_stack
+    self.mem = mem
+    self.errfmt = errfmt
+    self.err_nums = err_nums
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    _PopDirStack('cd', self.mem, self.dir_stack, self.errfmt, self.err_nums)
+
+
 class Cd(vm._Builtin):
   def __init__(self, mem, dir_stack, cmd_ev, errfmt):
     # type: (Mem, DirStack, CommandEvaluator, ErrorFormatter) -> None
@@ -590,13 +610,11 @@ class Cd(vm._Builtin):
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block:
-      self.dir_stack.Push(real_dest_dir)
-      try:
+      err_nums = []  # type: List[int]
+      with ctx_CdBlock(self.dir_stack, real_dest_dir, self.mem, self.errfmt, err_nums):
         unused = self.cmd_ev.EvalBlock(block)
-      finally:  # TODO: Change this to a context manager.
-        # note: it might be more consistent to use an exception here.
-        if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):
-          return 1
+      if len(err_nums):
+        return 1
 
     else:  # No block
       state.ExportGlobalString(self.mem, 'OLDPWD', pwd)
@@ -665,18 +683,19 @@ class Pushd(vm._Builtin):
     return 0
 
 
-def _PopDirStack(mem, dir_stack, errfmt):
-  # type: (Mem, DirStack, ErrorFormatter) -> bool
+def _PopDirStack(label, mem, dir_stack, errfmt, err_nums):
+  # type: (str, Mem, DirStack, ErrorFormatter, List[int]) -> bool
   """Helper for popd and cd { ... }."""
   dest_dir = dir_stack.Pop()
   if dest_dir is None:
-    errfmt.Print_('popd: directory stack is empty')
+    errfmt.Print_('%s: directory stack is empty' % label)
     return False
 
   err_num = pyos.Chdir(dest_dir)
   if err_num != 0:
     # Happens if a directory is deleted in pushing and popping
-    errfmt.Print_("popd: %r: %s" % (dest_dir, posix.strerror(err_num)))
+    errfmt.Print_('%s: %r: %s' % (label, dest_dir, posix.strerror(err_num)))
+    err_nums.append(err_num)  # "return" to caller
     return False
 
   state.SetGlobalString(mem, 'PWD', dest_dir)
@@ -699,7 +718,9 @@ class Popd(vm._Builtin):
     if extra is not None:
       e_usage('got extra argument', span_id=extra_spid)
 
-    if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):
+    err_nums = []  # type: List[int]
+    _PopDirStack('popd', self.mem, self.dir_stack, self.errfmt, err_nums)
+    if len(err_nums):
       return 1  # error
 
     _PrintDirStack(self.dir_stack, SINGLE_LINE, state.MaybeString(self.mem, ('HOME')))
