@@ -226,6 +226,12 @@ class Str : public gc_heap::Obj {
       .len_ = right.len_ - start_offset,
     };
 
+    // NOTE(Jesse): This happens to always work with the current implementation
+    // because lstrip and rstrip return pointers to kEmptyString for cases that
+    // the subtract above would fail.  I'm putting this assertion here so that
+    // if anyone ever changes that we'll find out and put a clamp here instead.
+    assert(combined.len_ >= 0);
+
     return AllocStr(combined);
   }
 
