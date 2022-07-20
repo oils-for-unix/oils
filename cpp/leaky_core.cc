@@ -4,7 +4,7 @@
 #include "mycpp/myerror.h"
 // clang-format on
 
-#include "leaky_core.h"
+#include "cpp/leaky_core.h"
 
 #include <errno.h>
 #include <pwd.h>  // passwd
@@ -13,9 +13,12 @@
 #include <sys/times.h>     // tms / times()
 #include <sys/utsname.h>   // uname
 #include <sys/wait.h>      // waitpid()
+#include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
-#include "leaky_time_.h"
+#include "mycpp/mylib_leaky.h"
+
+using mylib::CopyStr;
 
 namespace pyos {
 
@@ -158,7 +161,7 @@ Tuple3<double, double, double> Time() {
     throw new IOError(errno);
   }
 
-  time_t t = time_::time();
+  time_t t = ::time(nullptr);
   auto result = Tuple3<double, double, double>(
       (double)t, (double)ru.ru_utime.tv_sec, (double)ru.ru_stime.tv_sec);
   return result;

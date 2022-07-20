@@ -5,6 +5,7 @@
 // clang-format on
 
 #include <errno.h>
+#include <fcntl.h>  // F_DUPFD used directly
 #include <sys/wait.h>  // WIFSIGNALED, etc. called DIRECTLY
 
 #include "leaky_dumb_alloc.h"  // change the allocator
@@ -29,16 +30,14 @@ using id_kind_asdl::Kind_t;
 //#include "core_process.h"
 #include "leaky_core.h"
 #include "leaky_core_pyerror.h"
-#include "leaky_fcntl_.h"
 #include "leaky_frontend_flag_spec.h"
 #include "leaky_frontend_match.h"
 #include "leaky_frontend_tdop.h"
 #include "leaky_libc.h"
 #include "leaky_osh.h"
-#include "leaky_pgen2_parse.h"
-#include "leaky_posix.h"
+#include "leaky_pgen2.h"
+#include "leaky_stdlib.h"
 #include "leaky_pylib.h"
-#include "leaky_time_.h"
 #include "qsn.h"
 #include "segfault_handler.h"
 

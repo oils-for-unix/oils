@@ -1,11 +1,19 @@
-// leaky_posix.h: Replacement for native/posixmodule.c
+// leaky_stdlib.h: Replacement for native/posixmodule.c
 
-#ifndef POSIX_H
-#define POSIX_H
+#ifndef LEAKY_STDLIB_H
+#define LEAKY_STDLIB_H
 
 #include <unistd.h>
 
 #include "mycpp/mylib_leaky.h"
+
+namespace fcntl_ {
+
+// for F_GETFD
+int fcntl(int fd, int cmd);
+int fcntl(int fd, int cmd, int arg);
+
+}  // namespace fcntl_
 
 namespace posix {
 
@@ -96,4 +104,13 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ);
 
 }  // namespace posix
 
-#endif  // POSIX_H
+namespace time_ {
+
+void tzset();
+time_t time();
+time_t localtime(time_t ts);
+Str* strftime(Str* s, time_t ts);
+
+}  // namespace time_
+
+#endif  // LEAKY_STDLIB_H

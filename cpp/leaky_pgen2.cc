@@ -1,6 +1,6 @@
-// pgen2_parse.cc
+// leaky_pgen2.cc
 
-#include "leaky_pgen2_parse.h"
+#include "leaky_pgen2.h"
 
 namespace parse {
 

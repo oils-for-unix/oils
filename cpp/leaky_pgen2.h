@@ -1,7 +1,7 @@
-// leaky_pgen2_parse.h
+// leaky_pgen2.h
 
-#ifndef PGEN2_PARSE_H
-#define PGEN2_PARSE_H
+#ifndef LEAKY_PGEN2_H
+#define LEAKY_PGEN2_H
 
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/syntax_asdl.h"
@@ -50,4 +50,4 @@ class Parser {
 
 }  // namespace parse
 
-#endif  // PGEN2_PARSE_H
+#endif  // LEAKY_PGEN2_H

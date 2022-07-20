@@ -1,17 +1,45 @@
-// posix.cc: Replacement for native/posixmodule.c
+// leaky_stdlib.cc: Replacement for standard library modules
+// and native/posixmodule.c
 
 // clang-format off
 #include "mycpp/myerror.h"  // for OSError; must come first
 // clang-format on
 
-#include "leaky_posix.h"
+#include "leaky_stdlib.h"
 
 #include <errno.h>
 #include <fcntl.h>      // open
 #include <sys/stat.h>   // umask
 #include <sys/types.h>  // umask
 #include <sys/wait.h>   // WUNTRACED
+#include <time.h>
 #include <unistd.h>
+
+#include "cpp/leaky_core_error.h"
+#include "cpp/leaky_core_pyerror.h"
+#include "mycpp/mylib_leaky.h"
+using mylib::CopyStr;
+using mylib::OverAllocatedStr;
+
+namespace fcntl_ {
+
+int fcntl(int fd, int cmd) {
+  int result = ::fcntl(fd, cmd);
+  if (result < 0) {
+    throw new IOError(errno);
+  }
+  return result;
+}
+
+int fcntl(int fd, int cmd, int arg) {
+  int result = ::fcntl(fd, cmd, arg);
+  if (result < 0) {
+    throw new IOError(errno);
+  }
+  return result;
+}
+
+}  // namespace fcntl_
 
 namespace posix {
 
@@ -94,3 +122,48 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
 }
 
 }  // namespace posix
+
+namespace time_ {
+
+void tzset() {
+  ::tzset();
+}
+
+time_t time() {
+  return ::time(nullptr);
+}
+
+// NOTE(Jesse): time_t is specified to be an arithmetic type by C++. On most
+// systems it's a 64-bit integer.  64 bits is used because 32 will overflow in
+// 2038.  Someone on a comittee somewhere thought of that when moving to 64-bit
+// architectures to prevent breaking ABI again; on 32-bit systems it's usually
+// 32 bits.  Point being, using anything but the time_t typedef here could
+// (unlikely, but possible) produce weird behavior.
+time_t localtime(time_t ts) {
+  tm* loc_time = ::localtime(&ts);
+  time_t result = mktime(loc_time);
+  return result;
+}
+
+Str* strftime(Str* s, time_t ts) {
+  // TODO: may not work with mylib_leaky.h
+  // https://github.com/oilshell/oil/issues/1221
+  assert(s->IsNulTerminated());
+
+  tm* loc_time = ::localtime(&ts);
+
+  const int max_len = 1024;
+  Str* result = OverAllocatedStr(max_len);
+  int n = strftime(result->data(), max_len, s->data_, loc_time);
+  if (n == 0) {
+    // bash silently truncates on large format string like
+    //   printf '%(%Y)T'
+    // Oil doesn't mask errors
+    // No error location info, but leaving it out points reliably to 'printf'
+    e_die(CopyStr("strftime() result exceeds 1024 bytes"));
+  }
+  result->SetObjLenFromStrLen(n);
+  return result;
+}
+
+}  // namespace time_

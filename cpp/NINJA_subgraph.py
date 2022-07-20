@@ -37,7 +37,7 @@ _build/   # input source
 
   preprocessed/
     cxx-dbg/
-      leaky_posix.cc
+      leaky_stdlib.cc
     cxx-dbg.txt  # line counts
 
 
@@ -84,11 +84,10 @@ DEPS_CC = [
     'cpp/leaky_frontend_match.cc',
     'cpp/leaky_frontend_tdop.cc',
     'cpp/leaky_osh.cc',
-    'cpp/leaky_pgen2_parse.cc',
+    'cpp/leaky_pgen2.cc',
     'cpp/leaky_pylib.cc',
     'cpp/leaky_dumb_alloc.cc',
-    'cpp/leaky_fcntl_.cc',
-    'cpp/leaky_posix.cc',
+    'cpp/leaky_stdlib.cc',
     'cpp/leaky_libc.cc',
 
     # generated
