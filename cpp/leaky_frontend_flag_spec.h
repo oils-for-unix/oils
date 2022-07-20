@@ -5,7 +5,15 @@
 
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/runtime_asdl.h"
-#include "mycpp/mylib_leaky.h"
+#ifdef LEAKY_BINDINGS
+  #include "mycpp/mylib_leaky.h"
+#else
+  #include "mycpp/gc_heap.h"
+  #include "mycpp/my_runtime.h"  // Tuple2, NOT gc_heap::Tuple2
+  using gc_heap::Str;
+  using gc_heap::List;
+  using gc_heap::Dict;
+#endif
 
 // Forward declarations (can't include osh_eval.h)
 namespace args {

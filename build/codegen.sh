@@ -118,6 +118,34 @@ flag-gen-cpp() {
   log "  (frontend/flag_gen) -> $prefix*"
 }
 
+test-flag-gen() {
+  mkdir -p _build/cpp
+  flag-gen-cpp
+
+  local tmp_dir=_test/gen-cpp/core
+  local bin_dir=_bin/cxx-asan/core
+  mkdir -p $tmp_dir $bin_dir
+
+  cat >$tmp_dir/arg_types_test.cc <<'EOF'
+#include "_build/cpp/arg_types.h"
+
+int main() {
+  printf("kFlagSpecs %p\n", arg_types::kFlagSpecs);
+  printf("OK arg_types_test\n");
+  return 0;
+}
+EOF
+
+  local bin=$bin_dir/arg_types_test
+
+  compile_and_link cxx asan '' $bin \
+    _build/cpp/arg_types.cc \
+    $tmp_dir/arg_types_test.cc
+
+  log "RUN $bin"
+  $bin
+}
+
 arith-parse-cpp-gen() {
   local out=_build/cpp/arith_parse.cc
   osh/arith_parse_gen.py > $out
@@ -153,6 +181,14 @@ ast-id-lex() {
   echo "  (lexer_gen) -> $tmp"
   osh-lex-gen-native $tmp $out
   echo "$tmp -> (re2c) -> $out"
+}
+
+test-generated-code() {
+  test-optview
+  echo
+
+  test-flag-gen
+  echo
 }
 
 "$@"
