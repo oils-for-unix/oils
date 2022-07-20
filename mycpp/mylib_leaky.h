@@ -103,7 +103,17 @@ class RuntimeError {
 // Data Types
 //
 
+struct strip_result
+{
+  const char* data_;
+  int len_;
+};
+
+Str* AllocStr(strip_result str);
+
 #ifdef MYLIB_LEAKY
+
+
 class Str : public gc_heap::Obj {
  public:
   Str(const char* data, int len)
@@ -205,9 +215,18 @@ class Str : public gc_heap::Obj {
   }
 
   Str* strip() {
-    Str* s1 = rstrip();
-    Str* s2 = s1->lstrip();
-    return s2;
+    strip_result right = rstrip_internal(is_whitespace);
+    strip_result left  = lstrip_internal(is_whitespace);
+
+    int start_offset = left.data_ - right.data_;
+    assert(start_offset >= 0);
+
+    strip_result combined = {
+      .data_ = left.data_,
+      .len_ = right.len_ - start_offset,
+    };
+
+    return AllocStr(combined);
   }
 
   static bool is_whitespace(char c, char ignored) {
@@ -228,31 +247,30 @@ class Str : public gc_heap::Obj {
   }
 
   Str* rstrip() {
-    Str* result = rstrip_internal(is_whitespace);
-    return result;
+    strip_result result = rstrip_internal(is_whitespace);
+    return AllocStr(result);
   }
 
   Str* rstrip(Str* chars) {
     assert(chars->len_ == 1);
     char c = chars->data_[0];
-    Str* result = rstrip_internal(chars_match, c);
-    return result;
+    strip_result result = rstrip_internal(chars_match, c);
+    return AllocStr(result);
   }
 
   Str* lstrip() {
-    Str* result = lstrip_internal(is_whitespace);
-    return result;
+    strip_result result = lstrip_internal(is_whitespace);
+    return AllocStr(result);
   }
 
   Str* lstrip(Str* chars) {
     assert(chars->len_ == 1);
     char c = chars->data_[0];
-    Str* result = lstrip_internal(chars_match, c);
-    return result;
+    strip_result result = lstrip_internal(chars_match, c);
+    return AllocStr(result);
   }
 
-  Str* lstrip_internal(comparator comp_func, char match_char = 0) {
-    Str* result = this;
+  strip_result lstrip_internal(comparator comp_func, char match_char = 0) {
 
     int i = 0;
     while (true) {
@@ -265,22 +283,28 @@ class Str : public gc_heap::Obj {
       }
     }
 
+    strip_result result = {
+      .data_ = this->data_,
+      .len_ = this->len_,
+    };
+
+
     bool stripped_any_chars = (i > 0);
     if (stripped_any_chars) {
       int new_len = len_ - i;
       if (new_len > 0) {
-        result = new Str(data_ + i, new_len);
+        result.data_ = data_ + i;
+        result.len_ = new_len;
       } else {
-        result = kEmptyString;
+        result.data_ = kEmptyString->data_;
+        result.len_ = kEmptyString->len_;
       }
     }
 
     return result;
   }
 
-  Str* rstrip_internal(comparator comp_func, char match_char = 0) {
-    Str* result = this;
-
+  strip_result rstrip_internal(comparator comp_func, char match_char = 0) {
     int i = len_;
     while (true) {
       int next = i - 1;
@@ -294,13 +318,20 @@ class Str : public gc_heap::Obj {
       }
     }
 
+    strip_result result = {
+      .data_ = this->data_,
+      .len_ = this->len_,
+    };
+
     bool stripped_any_chars = (i < len_);
     if (stripped_any_chars) {
       int new_len = i;
       if (new_len > 0) {
-        result = new Str(data_, new_len);
+        result.data_ = data_;
+        result.len_ = new_len;
       } else {
-        result = kEmptyString;
+        result.data_ = kEmptyString->data_;
+        result.len_ = kEmptyString->len_;
       }
     }
 
