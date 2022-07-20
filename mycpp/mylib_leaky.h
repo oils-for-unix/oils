@@ -1229,7 +1229,7 @@ inline Str* OverAllocatedStr(int len) {
   return AllocStr(len);
 }
 
-inline Str* CopyStr(const char* s, int len) {
+inline Str* StrFromC(const char* s, int len) {
   // take ownership (but still leaks)
   char* buf = static_cast<char*>(malloc(len + 1));
   memcpy(buf, s, len);
@@ -1237,8 +1237,8 @@ inline Str* CopyStr(const char* s, int len) {
   return new Str(buf, len);
 }
 
-inline Str* CopyStr(const char* s) {
-  return CopyStr(s, strlen(s));
+inline Str* StrFromC(const char* s) {
+  return StrFromC(s, strlen(s));
 }
 
 // emulate gc_heap API for ASDL

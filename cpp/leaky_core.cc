@@ -18,7 +18,7 @@
 
 #include "mycpp/mylib_leaky.h"
 
-using mylib::CopyStr;
+using mylib::StrFromC;
 
 namespace pyos {
 
@@ -82,7 +82,7 @@ Dict<Str*, Str*>* Environ() {
     memcpy(buf, pair, key_len);  // includes NUL terminator
     buf[key_len] = '\0';
 
-    Str* key = CopyStr(buf, key_len);
+    Str* key = StrFromC(buf, key_len);
 
     int len = strlen(pair);
     int val_len = len - key_len - 1;
@@ -90,7 +90,7 @@ Dict<Str*, Str*>* Environ() {
     memcpy(buf2, eq + 1, val_len);  // copy starting after =
     buf2[val_len] = '\0';
 
-    Str* val = CopyStr(buf2, val_len);
+    Str* val = StrFromC(buf2, val_len);
 
     d->set(key, val);
   }
@@ -115,7 +115,7 @@ Str* GetMyHomeDir() {
   if (entry == nullptr) {
     return nullptr;
   }
-  return CopyStr(entry->pw_dir);
+  return StrFromC(entry->pw_dir);
 }
 
 Str* GetHomeDir(Str* user_name) {
@@ -126,7 +126,7 @@ Str* GetHomeDir(Str* user_name) {
   if (entry == nullptr) {
     return nullptr;
   }
-  return CopyStr(entry->pw_dir);
+  return StrFromC(entry->pw_dir);
 }
 
 Str* GetUserName(int uid) {

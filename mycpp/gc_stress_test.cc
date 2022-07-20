@@ -8,7 +8,7 @@
 //#include "mylib2.h"  // gBuf
 
 using gc_heap::Alloc;
-using gc_heap::CopyStr;
+using gc_heap::StrFromC;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewList;
@@ -57,7 +57,7 @@ TEST str_growth_test() {
 
   gHeap.Report();
 
-  s = CopyStr("b");
+  s = StrFromC("b");
   int n = 300;
   int total = 0;
   for (int i = 0; i < n; ++i) {
@@ -136,7 +136,7 @@ TEST list_str_growth_test() {
   StackRoots _roots({&s, &L});
   // StackRoots _roots({&L});
 
-  s = CopyStr("b");
+  s = StrFromC("b");
   L = Alloc<List<Str*>>();
 
 #if 0
@@ -167,7 +167,7 @@ TEST dict_growth_test() {
   Dict<Str*, int>* D = nullptr;
   StackRoots _roots({&s, &D});
 
-  s = CopyStr("abcdefg");
+  s = StrFromC("abcdefg");
   D = Alloc<Dict<Str*, int>>();
 
   int total = 0;

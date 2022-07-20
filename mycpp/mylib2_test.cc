@@ -5,7 +5,7 @@
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;
-using gc_heap::CopyStr;
+using gc_heap::StrFromC;
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
 
@@ -16,8 +16,8 @@ TEST split_once_test() {
   Str* delim = nullptr;
   StackRoots _roots1({&s, &delim});
 
-  s = CopyStr("foo=bar");
-  delim = CopyStr("=");
+  s = StrFromC("foo=bar");
+  delim = StrFromC("=");
   Tuple2<Str*, Str*> t = mylib::split_once(s, delim);
 
   auto t0 = t.at0();
@@ -27,20 +27,20 @@ TEST split_once_test() {
 
   Str* foo = nullptr;
   StackRoots _roots2({&t0, &t1, &foo});
-  foo = CopyStr("foo");
+  foo = StrFromC("foo");
 
   PASS();
 
-  Tuple2<Str*, Str*> u = mylib::split_once(CopyStr("foo="), CopyStr("="));
-  ASSERT(str_equals(u.at0(), CopyStr("foo")));
-  ASSERT(str_equals(u.at1(), CopyStr("")));
+  Tuple2<Str*, Str*> u = mylib::split_once(StrFromC("foo="), StrFromC("="));
+  ASSERT(str_equals(u.at0(), StrFromC("foo")));
+  ASSERT(str_equals(u.at1(), StrFromC("")));
 
-  Tuple2<Str*, Str*> v = mylib::split_once(CopyStr("foo="), CopyStr("Z"));
-  ASSERT(str_equals(v.at0(), CopyStr("foo=")));
+  Tuple2<Str*, Str*> v = mylib::split_once(StrFromC("foo="), StrFromC("Z"));
+  ASSERT(str_equals(v.at0(), StrFromC("foo=")));
   ASSERT(v.at1() == nullptr);
 
-  Tuple2<Str*, Str*> w = mylib::split_once(CopyStr(""), CopyStr("Z"));
-  ASSERT(str_equals(w.at0(), CopyStr("")));
+  Tuple2<Str*, Str*> w = mylib::split_once(StrFromC(""), StrFromC("Z"));
+  ASSERT(str_equals(w.at0(), StrFromC("")));
   ASSERT(w.at1() == nullptr);
 
   PASS();
@@ -83,7 +83,7 @@ TEST buf_line_reader_test() {
 
   StackRoots _roots({&s, &reader, &line});
 
-  s = CopyStr("foo\nbar\nleftover");
+  s = StrFromC("foo\nbar\nleftover");
   reader = Alloc<BufLineReader>(s);
 
   log("BufLineReader");
@@ -124,8 +124,8 @@ TEST files_test() {
   StackRoots _roots({&r, &filename, &filename2});
 
   r = Alloc<mylib::CFileLineReader>(f);
-  filename = CopyStr("README.md");
-  filename2 = CopyStr("README.md ");
+  filename = StrFromC("README.md");
+  filename2 = StrFromC("README.md ");
   // auto r = mylib::Stdin();
 
   log("files_test");

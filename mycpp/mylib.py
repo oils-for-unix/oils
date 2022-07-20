@@ -15,7 +15,7 @@ CPP = False
 PYTHON = True
 
 
-def CopyStr(s):
+def StrFromC(s):
   """Hack to translate const char* s to Str * in C++."""
   return s
 

@@ -77,7 +77,7 @@
 // - gc_heap::Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
-// - AllocStr(length), CopyStr(), NewList, NewDict: gc_heap::Alloc() doesn't
+// - AllocStr(length), StrFromC(), NewList, NewDict: gc_heap::Alloc() doesn't
 // work
 //   for these types for various reasons
 // - Heap::Allocate()
@@ -372,7 +372,7 @@ class Local {
 
     // Note: we could try to avoid PushRoot() as an optimization.  Example:
     //
-    // Local<Str> a = CopyStr("foo");
+    // Local<Str> a = StrFromC("foo");
     // Local<Str> b;
     // b = a;  // invokes operator=, it's already a root
     //
@@ -391,13 +391,13 @@ class Local {
 
   // This cast operator overload allows:
   //
-  // Local<Str> s = CopyStr("foo");
+  // Local<Str> s = StrFromC("foo");
   // node->mystr = s;  // convert from Local to raw
   //
   // As well as:
   //
   // Local<List<Str*>> strings = Alloc<List<Str*>>();
-  // strings->append(CopyStr("foo"));  // convert from local to raw
+  // strings->append(StrFromC("foo"));  // convert from local to raw
   //
   // The heap should NOT have locals!  List<Str> and not List<Local<Str>>.
   //
@@ -741,7 +741,7 @@ inline Str* OverAllocatedStr(int len) {
   return s;
 }
 
-inline Str* CopyStr(const char* data, int len) {
+inline Str* StrFromC(const char* data, int len) {
   // Problem: if data points inside a Str, it's often invalidated!
   Str* s = AllocStr(len);
 
@@ -754,8 +754,8 @@ inline Str* CopyStr(const char* data, int len) {
 }
 
 // CHOPPED OFF at internal NUL.  Use explicit length if you have a NUL.
-inline Str* CopyStr(const char* data) {
-  return CopyStr(data, strlen(data));
+inline Str* StrFromC(const char* data) {
+  return StrFromC(data, strlen(data));
 }
 
 bool str_equals(Str* left, Str* right);

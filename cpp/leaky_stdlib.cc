@@ -18,7 +18,7 @@
 #include "cpp/leaky_core_error.h"
 #include "cpp/leaky_core_pyerror.h"
 #include "mycpp/mylib_leaky.h"
-using mylib::CopyStr;
+using mylib::StrFromC;
 using mylib::OverAllocatedStr;
 
 namespace fcntl_ {
@@ -160,7 +160,7 @@ Str* strftime(Str* s, time_t ts) {
     //   printf '%(%Y)T'
     // Oil doesn't mask errors
     // No error location info, but leaving it out points reliably to 'printf'
-    e_die(CopyStr("strftime() result exceeds 1024 bytes"));
+    e_die(StrFromC("strftime() result exceeds 1024 bytes"));
   }
   result->SetObjLenFromStrLen(n);
   return result;
