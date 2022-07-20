@@ -19,10 +19,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
-readonly REPO_ROOT
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/common.sh
+source cpp/NINJA-steps.sh  # compile_and_link
 
 export PYTHONPATH='.:vendor/'
 
@@ -74,6 +74,32 @@ option-cpp-gen() {
 
   core/optview_gen.py > $out_dir/core_optview.h
   log "  (core/optview_gen) -> $out_dir/core_optview.h"
+}
+
+test-optview() {
+  mkdir -p _build/cpp
+  option-cpp-gen
+
+  local tmp_dir=_test/gen-cpp/core
+  local bin_dir=_bin/cxx-asan/core
+  mkdir -p $tmp_dir $bin_dir
+
+  cat >$tmp_dir/optview_test.cc <<'EOF'
+#include "_build/cpp/core_optview.h"
+
+int main() {
+  printf("OK optview_test\n");
+  return 0;
+}
+EOF
+
+  local bin=$bin_dir/optview_test
+
+  compile_and_link cxx asan '' $bin \
+    $tmp_dir/optview_test.cc
+
+  log "RUN $bin"
+  $bin
 }
 
 flag-gen-mypy() {

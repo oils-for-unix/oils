@@ -18,8 +18,8 @@
 #include "cpp/leaky_core_error.h"
 #include "cpp/leaky_core_pyerror.h"
 #include "mycpp/mylib_leaky.h"
-using mylib::StrFromC;
 using mylib::OverAllocatedStr;
+using mylib::StrFromC;
 
 namespace fcntl_ {
 

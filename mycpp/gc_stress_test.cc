@@ -8,12 +8,12 @@
 //#include "mylib2.h"  // gBuf
 
 using gc_heap::Alloc;
-using gc_heap::StrFromC;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewList;
 using gc_heap::StackRoots;
 using gc_heap::Str;
+using gc_heap::StrFromC;
 // using gc_heap::kEmptyString;
 
 using gc_heap::gHeap;

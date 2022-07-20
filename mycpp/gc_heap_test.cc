@@ -17,7 +17,6 @@ using gc_heap::Obj;
 using gc_heap::Param;
 
 using gc_heap::AllocStr;
-using gc_heap::StrFromC;
 using gc_heap::Dict;
 using gc_heap::GlobalStr;
 using gc_heap::List;
@@ -28,6 +27,7 @@ using gc_heap::OverAllocatedStr;
 using gc_heap::Slab;
 using gc_heap::StackRoots;
 using gc_heap::Str;
+using gc_heap::StrFromC;
 
 // Constants
 using gc_heap::kEmptyString;

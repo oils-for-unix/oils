@@ -123,9 +123,6 @@ Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
 
 args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r);
 
-Tuple2<args::_Attributes*, args::Reader*> ParseOilCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val);
-
 }  // namespace flag_spec
 
 #endif  // FRONTEND_FLAG_SPEC_H

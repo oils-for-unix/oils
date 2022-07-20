@@ -5,9 +5,9 @@
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;
-using gc_heap::StrFromC;
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
+using gc_heap::StrFromC;
 
 TEST split_once_test() {
   log("split_once()");

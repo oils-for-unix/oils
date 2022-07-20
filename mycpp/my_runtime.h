@@ -17,11 +17,11 @@
 
 // TODO: Don't use 'using' in header
 using gc_heap::AllocStr;
-using gc_heap::StrFromC;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::StackRoots;
 using gc_heap::Str;
+using gc_heap::StrFromC;
 
 class IndexError {};
 class ValueError {};

@@ -13,8 +13,8 @@
 #include "leaky_frontend_match.h"
 #include "leaky_libc.h"
 #include "leaky_osh.h"
-#include "leaky_stdlib.h"
 #include "leaky_pylib.h"
+#include "leaky_stdlib.h"
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;

@@ -14,6 +14,8 @@ source soil/common.sh  # find-dir-html
 all-tests() {
   ./NINJA_config.py
 
+  build/codegen.sh test-optview
+
   # uses Ninja to run (cxx, testgc) variant.  Could also run (clang, ubsan),
   # which finds more bugs.
   mycpp/test.sh soil-run

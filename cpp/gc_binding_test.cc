@@ -11,8 +11,8 @@ using gc_heap::StackRoots;  // no-op
 using mylib::StrFromC;
 #else
 #include "mycpp/gc_heap.h"
-using gc_heap::StrFromC;
 using gc_heap::StackRoots;
+using gc_heap::StrFromC;
 #endif
 
 TEST qsn_test() {

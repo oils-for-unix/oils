@@ -7,15 +7,15 @@
 #include "mycpp/mylib_leaky.h"
 using gc_heap::StackRoots;  // no-op
 using mylib::AllocStr;
-using mylib::StrFromC;
 using mylib::OverAllocatedStr;
+using mylib::StrFromC;
 #else
 #include "mycpp/gc_heap.h"
 using gc_heap::AllocStr;
-using gc_heap::StrFromC;
 using gc_heap::OverAllocatedStr;
 using gc_heap::StackRoots;
 using gc_heap::Str;
+using gc_heap::StrFromC;
 #endif
 
 namespace qsn {

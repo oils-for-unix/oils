@@ -24,7 +24,12 @@ def main(argv):
 #define OPTVIEW_H
 
 #include "_build/cpp/option_asdl.h"
-#include "mycpp/mylib_leaky.h"
+#ifdef LEAKY_BINDINGS
+  #include "mycpp/mylib_leaky.h"
+#else
+  #include "mycpp/gc_heap.h"
+  using gc_heap::List;
+#endif
 
 namespace optview {
 
