@@ -11,12 +11,6 @@
 
 Str* kEmptyString = new Str("", 0);
 
-
-Str* AllocStr(strip_result str) {
-  return new Str(str.data_, str.len_);
-}
-
-
 // Translation of Python's print().
 void print(Str* s) {
   mylib::Str0 s0(s);
