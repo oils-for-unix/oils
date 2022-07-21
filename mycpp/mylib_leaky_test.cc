@@ -906,6 +906,7 @@ TEST test_str_join() {
 TEST test_str_strip() {
   printf("\n");
 
+#if 0
   printf("------- Str::lstrip -------\n");
 
   {
@@ -955,6 +956,7 @@ TEST test_str_strip() {
     PRINT_STRING(result);
     ASSERT(are_equal(result, new Str(" # ")));
   }
+#endif
 
   printf("------- Str::rstrip -------\n");
 
