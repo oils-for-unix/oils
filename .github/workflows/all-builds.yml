@@ -6,6 +6,8 @@ on:
   push:
     branches-ignore:
       - master
+  pull_request_target:
+    branches: [master, soil-staging]
 jobs:
   dummy_orig:
     runs-on: ubuntu-latest
