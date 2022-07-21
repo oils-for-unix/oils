@@ -979,6 +979,14 @@ TEST test_str_strip() {
   }
 
   {
+    Str* s1 = new Str(" \n#");
+    Str* result = s1->rstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, s1));
+    ASSERT_EQ(result, s1);  // objects are identical
+  }
+
+  {
     Str* result = (new Str("#  \n"))->rstrip();
     PRINT_STRING(result);
     ASSERT(are_equal(result, new Str("#")));

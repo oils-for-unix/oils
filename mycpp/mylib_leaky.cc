@@ -157,7 +157,7 @@ Str* Str::rstrip(Str* chars) {
 }
 
 Str* Str::rstrip() {
-  return StripAny(this, StripWhere::Both, kWhitespace);
+  return StripAny(this, StripWhere::Right, kWhitespace);
 }
 
 #if 0
