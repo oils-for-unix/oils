@@ -125,7 +125,7 @@ Str* StripAny(Str* s, StripWhere where, int what) {
     }
   }
 
-  int j = s->len_;
+  int j = length;
   if (where != StripWhere::Left) {
     do {
       j--;
