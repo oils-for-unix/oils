@@ -130,6 +130,50 @@ int Str::_strip_right_pos() {
   return i;
 }
 
+enum class StripWhere {
+  Left,
+  Right,
+  Both,
+};
+
+const int kWhitespace = -1;
+
+bool OmitChar(uint8_t ch, int what) {
+  if (what == kWhitespace) {
+    return isspace(ch);
+  } else {
+    return what == ch;
+  }
+}
+
+Str* _strip(Str* s, StripWhere where, int what) {
+  // what: kWhitespace or an ASCII code 0-255
+
+  int length = len(s);
+
+  int i = 0;
+  if (where != StripWhere::Right) {
+    while (i < length && OmitChar(s->data_[i], what)) {
+      i++;
+    }
+  }
+
+  int j = s->len_;
+  if (where != StripWhere::Left) {
+    do {
+      j--;
+    } while (j >= i && OmitChar(s->data_[j], what));
+    j++;
+  }
+
+  if (i == 0 && j == length) {  // nothing stripped
+    return s;
+  }
+
+  return new Str(s->data_ + i, j - i);
+}
+
+
 Str* Str::strip() {
   if (len_ == 0) {
     return this;
