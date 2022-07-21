@@ -170,17 +170,6 @@ unit() {
         ;;
     esac
 
-    # I believe gc_heap::Str and its data[1] are incompatible with ASAN guards
-    # and the same happens with UBSAN and coverage somehow
-    case $variant in
-      (asan|ubsan|coverage)
-        if test "$(basename $b)" = 'my_runtime_test'; then
-          log "SKIPPING $b because it's not compatible with $variant"
-          continue
-        fi
-        ;;
-   esac
-
     set +o errexit
     $b >$log 2>&1
     local status=$?
