@@ -103,8 +103,17 @@ bool OmitChar(uint8_t ch, int what) {
   }
 }
 
+// StripAny is modeled after CPython's do_strip() in stringobject.c, and can
+// implement 6 functions:
+//
+//   strip / lstrip / rstrip
+//   strip(char) / lstrip(char) / rstrip(char)
+//
+// Args:
+//   where: which ends to strip from
+//   what: kWhitespace, or an ASCII code 0-255
+
 Str* StripAny(Str* s, StripWhere where, int what) {
-  // what: kWhitespace or an ASCII code 0-255
 
   int length = len(s);
   const char* char_data = s->data_;
