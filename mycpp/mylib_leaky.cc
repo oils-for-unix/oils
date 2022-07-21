@@ -175,61 +175,18 @@ Str* _strip(Str* s, StripWhere where, int what) {
 
 
 Str* Str::strip() {
-  if (len_ == 0) {
-    return this;
-  }
-  int left_pos = _strip_left_pos();
-  int right_pos = _strip_right_pos();
-
-  if (left_pos == 0 && right_pos == len_ - 1) {
-    return this;
-  }
-
-  // cstring-NOTE: This returns a SLICE, not a copy, unlike rstrip()
-  // TODO: make them consistent.
-  int len = right_pos - left_pos + 1;
-  return new Str(data_ + left_pos, len);
+  return _strip(this, StripWhere::Both, kWhitespace);
 }
 
 // Used for CommandSub in osh/cmd_exec.py
 Str* Str::rstrip(Str* chars) {
   assert(chars->len_ == 1);
-  char c = chars->data_[0];
-
-  int last = len_ - 1;
-  int i = last;
-  bool done = false;
-  while (i > 0 && !done) {
-    if (data_[i] == c) {
-      i--;
-    } else {
-      done = true;
-      break;
-    }
-  }
-  if (i == last) {  // nothing stripped
-    return this;
-  }
-  int new_len = i + 1;
-  char* buf = static_cast<char*>(malloc(new_len + 1));
-  memcpy(buf, data_, new_len);
-  buf[new_len] = '\0';
-  return new Str(buf, new_len);
+  int c = chars->data_[0];
+  return _strip(this, StripWhere::Right, c);
 }
 
 Str* Str::rstrip() {
-  if (len_ == 0) {
-    return this;
-  }
-  int right_pos = _strip_right_pos();
-  if (right_pos == len_ - 1) {  // nothing stripped
-    return this;
-  }
-  int new_len = right_pos + 1;
-  char* buf = static_cast<char*>(malloc(new_len + 1));
-  memcpy(buf, data_, new_len);
-  buf[new_len] = '\0';
-  return new Str(buf, new_len);
+  return _strip(this, StripWhere::Both, kWhitespace);
 }
 
 Str* Str::ljust(int width, Str* fillchar) {
