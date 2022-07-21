@@ -86,7 +86,7 @@ inline int fork() {
 }
 
 inline void _exit(int status) {
-  exit(status);
+  ::_exit(status);
 }
 
 inline void write(int fd, Str* s) {
