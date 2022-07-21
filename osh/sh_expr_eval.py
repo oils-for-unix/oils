@@ -34,7 +34,7 @@ from core import alloc
 from core import error
 from core import state
 from core import ui
-from core.pyerror import e_die, e_strict, e_usage, log
+from core.pyerror import e_die, e_die_status, e_strict, e_usage, log
 from frontend import consts
 from frontend import location
 from frontend import match
@@ -849,7 +849,7 @@ class ArithEvaluator(object):
       return lval
 
     # e.g. unset 'x-y'.  status 2 for runtime parse error
-    e_die('Invalid place to modify', span_id=span_id, status=2)
+    e_die_status(2, 'Invalid place to modify', span_id=span_id)
 
 
 class BoolEvaluator(ArithEvaluator):
@@ -1029,8 +1029,7 @@ class BoolEvaluator(ArithEvaluator):
               # Status 2 indicates a regex parse error.  This is fatal in OSH but
               # not in bash, which treats [[ like a command with an exit code.
               msg = e.message  # type: str
-              e_die("Invalid regex %r: %s", s2, msg, word=node.right,
-                    status=2)
+              e_die_status(2, 'Invalid regex %r: %s' % (s2, msg), word=node.right)
 
             if matches is None:
               return False

@@ -10,82 +10,27 @@ import signal  # for calculating numbers
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
-    cmd_value, cmd_value__Argv,
+    cmd_value__Argv,
     wait_status_e, wait_status__Proc, wait_status__Pipeline,
     wait_status__Cancelled,
 )
-from _devbuild.gen.syntax_asdl import source
-from asdl import runtime
-from core import alloc
 from core import dev
 from core import error
 from core.pyerror import e_usage
-from core import main_loop
-from core.pyutil import stderr_line
 from core import process  # W1_OK, W1_ECHILD
-from core import pyos
 from core import vm
 from core.pyerror import log
-from frontend import args
 from frontend import flag_spec
-from frontend import reader
-from frontend import signal_def
 from frontend import typed_args
-from mycpp import mylib
-from mycpp.mylib import iteritems, tagswitch
+from mycpp.mylib import tagswitch
 
 import posix_ as posix
 
-from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import command_t
-  from core.process import ExternalProgram, FdState, JobState, Waiter
-  from core.state import Mem, SearchPath
+  from core.process import JobState, Waiter
+  from core.state import Mem
   from core.ui import ErrorFormatter
-  from frontend.parse_lib import ParseContext
-
-
-if mylib.PYTHON:
-  EXEC_SPEC = flag_spec.FlagSpec('exec')
-
-
-class Exec(vm._Builtin):
-
-  def __init__(self, mem, ext_prog, fd_state, search_path, errfmt):
-    # type: (Mem, ExternalProgram, FdState, SearchPath, ErrorFormatter) -> None
-    self.mem = mem
-    self.ext_prog = ext_prog
-    self.fd_state = fd_state
-    self.search_path = search_path
-    self.errfmt = errfmt
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip 'exec'
-    _ = args.Parse(EXEC_SPEC, arg_r)  # no flags now, but accepts --
-
-    # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
-    if arg_r.AtEnd():
-      self.fd_state.MakePermanent()
-      return 0
-
-    environ = self.mem.GetExported()
-    i = arg_r.i
-    cmd = cmd_val.argv[i]
-    argv0_path = self.search_path.CachedLookup(cmd)
-    if argv0_path is None:
-      self.errfmt.Print_('exec: %r not found' % cmd,
-                         span_id=cmd_val.arg_spids[1])
-      raise SystemExit(127)  # exec builtin never returns
-
-    # shift off 'exec'
-    c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_spids[i:],
-                        cmd_val.typed_args)
-
-    self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
-    assert False, "This line should never be reached" # makes mypy happy
 
 
 class Wait(vm._Builtin):
@@ -278,240 +223,6 @@ class Bg(vm._Builtin):
     # terminal?
 
     raise error.Usage("isn't implemented")
-
-
-class _TrapHandler(object):
-  """A function that is called by Python's signal module.
-
-  Similar to process.SubProgramThunk.
-
-  TODO: In C++ we can't use this type of handling.  We cannot append to a
-  garbage-colleted list inside a signal handler!
-
-  Instead I think we need to append to a global array of size 1024 for the last
-  signal number caught.
-
-  Then in the main loop we will have RunPendingTraps() that iterates over this
-  list, runs corresponding handlers, and then clears the list.
-  """
-
-  def __init__(self, node, nodes_to_run, sig_state, tracer):
-    # type: (command_t, List[command_t], pyos.SignalState, dev.Tracer) -> None
-    self.node = node
-    self.nodes_to_run = nodes_to_run
-    self.sig_state = sig_state
-    self.tracer = tracer
-
-  def __call__(self, sig_num, unused_frame):
-    # type: (int, Any) -> None
-    """For Python's signal module."""
-    self.tracer.PrintMessage(
-        'Received signal %d.  Will run handler in main loop' % sig_num)
-
-    self.sig_state.last_sig_num = sig_num  # for interrupted 'wait'
-    self.nodes_to_run.append(self.node)
-
-  def __str__(self):
-    # type: () -> str
-    # Used by trap -p
-    # TODO: Abbreviate with fmt.PrettyPrint?
-    return '<Trap %s>' % self.node
-
-
-def _GetSignalNumber(sig_spec):
-  # type: (str) -> int
-
-  # POSIX lists the numbers that are required.
-  # http://pubs.opengroup.org/onlinepubs/9699919799/
-  #
-  # Added 13 for SIGPIPE because autoconf's 'configure' uses it!
-  if sig_spec.strip() in ('1', '2', '3', '6', '9', '13', '14', '15'):
-    return int(sig_spec)
-
-  # INT is an alias for SIGINT
-  if sig_spec.startswith('SIG'):
-    sig_spec = sig_spec[3:]
-  return signal_def.GetNumber(sig_spec)
-
-
-_HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
-
-
-# TODO:
-#
-# bash's default -p looks like this:
-# trap -- '' SIGTSTP
-# trap -- '' SIGTTIN
-# trap -- '' SIGTTOU
-#
-# CPython registers different default handlers.  The C++ rewrite should make
-# OVM match sh/bash more closely.
-
-class Trap(vm._Builtin):
-  def __init__(self, sig_state, traps, nodes_to_run, parse_ctx, tracer, errfmt):
-    # type: (pyos.SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, dev.Tracer, ErrorFormatter) -> None
-    self.sig_state = sig_state
-    self.traps = traps
-    self.nodes_to_run = nodes_to_run
-    self.parse_ctx = parse_ctx
-    self.arena = parse_ctx.arena
-    self.tracer = tracer
-    self.errfmt = errfmt
-
-  def _ParseTrapCode(self, code_str):
-    # type: (str) -> command_t
-    """
-    Returns:
-      A node, or None if the code is invalid.
-    """
-    line_reader = reader.StringLineReader(code_str, self.arena)
-    c_parser = self.parse_ctx.MakeOshParser(line_reader)
-
-    # TODO: the SPID should be passed through argv.
-    src = source.ArgvWord('trap', runtime.NO_SPID)
-    with alloc.ctx_Location(self.arena, src):
-      try:
-        node = main_loop.ParseWholeFile(c_parser)
-      except error.Parse as e:
-        self.errfmt.PrettyPrintError(e)
-        return None
-
-    return node
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    attrs, arg_r = flag_spec.ParseCmdVal('trap', cmd_val)
-    arg = arg_types.trap(attrs.attrs)
-
-    if arg.p:  # Print registered handlers
-      for name, value in iteritems(self.traps):
-        # The unit tests rely on this being one line.
-        # bash prints a line that can be re-parsed.
-        print('%s %s' % (name, value.__class__.__name__))
-
-      return 0
-
-    if arg.l:  # List valid signals and hooks
-      for name in _HOOK_NAMES:
-        print('   %s' % name)
-      for name, int_val in signal_def.AllNames():
-        print('%2d %s' % (int_val, name))
-
-      return 0
-
-    code_str = arg_r.ReadRequired('requires a code string')
-    sig_spec, sig_spid = arg_r.ReadRequired2('requires a signal or hook name')
-
-    # sig_key is NORMALIZED sig_spec: a signal number string or string hook
-    # name.
-    sig_key = None  # type: Optional[str]
-    sig_num = None
-    if sig_spec in _HOOK_NAMES:
-      sig_key = sig_spec
-    elif sig_spec == '0':  # Special case
-      sig_key = 'EXIT'
-    else:
-      sig_num = _GetSignalNumber(sig_spec)
-      if sig_num is not None:
-        sig_key = str(sig_num)
-
-    if sig_key is None:
-      self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                         span_id=cmd_val.arg_spids[2])
-      return 1
-
-    # NOTE: sig_spec isn't validated when removing handlers.
-    if code_str == '-':
-      if sig_key in _HOOK_NAMES:
-        try:
-          del self.traps[sig_key]
-        except KeyError:
-          pass
-        return 0
-
-      if sig_num is not None:
-        try:
-          del self.traps[sig_key]
-        except KeyError:
-          pass
-
-        self.sig_state.RemoveUserTrap(sig_num)
-        return 0
-
-      raise AssertionError('Signal or trap')
-
-    # Try parsing the code first.
-
-    # TODO: If simple_trap is on (for oil:upgrade), then it must be a function
-    # name?  And then you wrap it in 'try'?
-
-    node = self._ParseTrapCode(code_str)
-    if node is None:
-      return 1  # ParseTrapCode() prints an error for us.
-
-    # Register a hook.
-    if sig_key in _HOOK_NAMES:
-      if sig_key in ('ERR', 'RETURN', 'DEBUG'):
-        stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run,
-                                         self.sig_state, self.tracer)
-      return 0
-
-    # Register a signal.
-    if sig_num is not None:
-      handler = _TrapHandler(node, self.nodes_to_run, self.sig_state,
-                             self.tracer)
-      # For signal handlers, the traps dictionary is used only for debugging.
-      self.traps[sig_key] = handler
-      if sig_num in (signal.SIGKILL, signal.SIGSTOP):
-        self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
-                           span_id=sig_spid)
-        # Other shells return 0, but this seems like an obvious error
-        return 1
-      self.sig_state.AddUserTrap(sig_num, handler)
-      return 0
-
-    raise AssertionError('Signal or trap')
-
-  # Example:
-  # trap -- 'echo "hi  there" | wc ' SIGINT
-  #
-  # Then hit Ctrl-C.
-
-
-class Umask(vm._Builtin):
-
-  def __init__(self):
-    # type: () -> None
-    """Dummy constructor for mycpp."""
-    pass
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-
-    argv = cmd_val.argv[1:]
-    if len(argv) == 0:
-      # umask() has a dumb API: you can't get it without modifying it first!
-      # NOTE: dash disables interrupts around the two umask() calls, but that
-      # shouldn't be a concern for us.  Signal handlers won't call umask().
-      mask = posix.umask(0)
-      posix.umask(mask)  #
-      print('0%03o' % mask)  # octal format
-      return 0
-
-    if len(argv) == 1:
-      a = argv[0]
-      try:
-        new_mask = int(a, 8)
-      except ValueError:
-        # NOTE: This happens if we have '8' or '9' in the input too.
-        stderr_line("osh warning: umask with symbolic input isn't implemented")
-        return 1
-      else:
-        posix.umask(new_mask)
-        return 0
-
-    e_usage('umask: unexpected arguments')
 
 
 class Fork(vm._Builtin):

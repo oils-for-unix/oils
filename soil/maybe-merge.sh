@@ -94,10 +94,6 @@ all-status-zero() {
   return 0
 }
 
-list-soil-jobs() {
-  cat soil/worker.sh
-}
-
 soil-run() {
   local github_token=${1:-}  # SOIL_GITHUB_API_TOKEN
   local run_id=${2:-}  # $GITHUB_RUN_ID

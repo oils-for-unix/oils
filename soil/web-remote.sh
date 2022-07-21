@@ -44,7 +44,7 @@ sshq() {
   #
   # This is Bernstein chaining through ssh.
 
-  ssh $USER@$HOST "$(printf '%q ' "$@")"
+  ssh $SOIL_USER@$SOIL_HOST "$(printf '%q ' "$@")"
 }
 
 remote-rewrite-jobs-index() {
@@ -62,17 +62,14 @@ remote-cleanup-status-api() {
   sshq soil-web/soil/web.sh cleanup-status-api false
 }
 
-readonly USER_HOST='travis_admin@travis-ci.oilshell.org'
-
 scp-results() {
   # could also use Travis known_hosts addon?
   local prefix=$1  # srht- or ''
   shift
 
   scp -o StrictHostKeyChecking=no "$@" \
-    "$USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
+    "$SOIL_USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
 }
-
 
 scp-status-api() {
   local run_id=${1:-TEST2-github-run-id}
@@ -82,18 +79,18 @@ scp-status-api() {
   local remote_path="travis-ci.oilshell.org/status-api/github/$run_id/$job_name"
 
   ssh -o StrictHostKeyChecking=no \
-    $USER_HOST "mkdir -p $(dirname $remote_path)"
+    $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
 
   # the consumer should check if these are all zero
   # note: the file gets RENAMED
   scp -o StrictHostKeyChecking=no $file \
-    "$USER_HOST:$remote_path"
+    "$SOIL_USER_HOST:$remote_path"
 }
 
 list-remote-results() {
   local prefix=$1
   ssh -o StrictHostKeyChecking=no \
-    $USER_HOST ls "travis-ci.oilshell.org/${prefix}jobs/"
+    $SOIL_USER_HOST ls "travis-ci.oilshell.org/${prefix}jobs/"
 }
 
 # Dummy that doesn't depend on results
@@ -145,7 +142,12 @@ format-wwz-index() {
 EOF
   cat $tsv | while read status elapsed task script action result_html; do
     echo "<tr>"
-    echo "  <td><code><a href="_tmp/soil/logs/$task.txt">$task</a></code></td>"
+    echo "  <td>
+               <a href=\"_tmp/soil/logs/$task.txt\">$task</a> <br/>
+               <code>$script $action</code>
+            </td>
+         "
+
     printf -v elapsed_str '%.2f' $elapsed
     echo "  <td>$elapsed_str</td>"
 
@@ -178,12 +180,6 @@ EOF
 EOF
 }
 
-# TODO: Extract this into a proper test
-test-format-wwz-index() {
-  soil/worker.sh run-dummy
-  format-wwz-index DUMMY_JOB_ID
-}
-
 make-job-wwz() {
   local job_id=${1:-test-job}
 
@@ -197,10 +193,11 @@ make-job-wwz() {
   # web/ : spec test HTML references this.
   #        Note that that index references /web/{base,soil}.css, outside the .wwz
   #        osh-summary.html uses table-sort.js and ajax.js
+  # TODO: Could move _tmp/{spec,stateful,syscall} etc. to _test
   zip -r $wwz \
     index.html _tmp/soil _tmp/spec _tmp/stateful \
     _tmp/syscall _tmp/benchmark-data _tmp/metrics \
-    _test/*.{html,txt,tsv} _test/{tasks,gen} \
+    _test \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts}.css web/ajax.js \
     web/table/table-sort.{css,js} \
     _release/oil.tar _release/VERSION/doc

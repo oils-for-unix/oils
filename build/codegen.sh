@@ -19,10 +19,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
-readonly REPO_ROOT
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/common.sh
+source cpp/NINJA-steps.sh  # compile_and_link
 
 export PYTHONPATH='.:vendor/'
 
@@ -76,6 +76,32 @@ option-cpp-gen() {
   log "  (core/optview_gen) -> $out_dir/core_optview.h"
 }
 
+test-optview() {
+  mkdir -p _build/cpp
+  option-cpp-gen
+
+  local tmp_dir=_test/gen-cpp/core
+  local bin_dir=_bin/cxx-asan/core
+  mkdir -p $tmp_dir $bin_dir
+
+  cat >$tmp_dir/optview_test.cc <<'EOF'
+#include "_build/cpp/core_optview.h"
+
+int main() {
+  printf("OK optview_test\n");
+  return 0;
+}
+EOF
+
+  local bin=$bin_dir/optview_test
+
+  compile_and_link cxx asan '' $bin \
+    $tmp_dir/optview_test.cc
+
+  log "RUN $bin"
+  $bin
+}
+
 flag-gen-mypy() {
   local out=_devbuild/gen/arg_types.py
   frontend/flag_gen.py mypy > $out
@@ -90,6 +116,34 @@ flag-gen-cpp() {
 
   frontend/flag_gen.py cpp $prefix
   log "  (frontend/flag_gen) -> $prefix*"
+}
+
+test-flag-gen() {
+  mkdir -p _build/cpp
+  flag-gen-cpp
+
+  local tmp_dir=_test/gen-cpp/core
+  local bin_dir=_bin/cxx-asan/core
+  mkdir -p $tmp_dir $bin_dir
+
+  cat >$tmp_dir/arg_types_test.cc <<'EOF'
+#include "_build/cpp/arg_types.h"
+
+int main() {
+  printf("kFlagSpecs %p\n", arg_types::kFlagSpecs);
+  printf("OK arg_types_test\n");
+  return 0;
+}
+EOF
+
+  local bin=$bin_dir/arg_types_test
+
+  compile_and_link cxx asan '' $bin \
+    _build/cpp/arg_types.cc \
+    $tmp_dir/arg_types_test.cc
+
+  log "RUN $bin"
+  $bin
 }
 
 arith-parse-cpp-gen() {
@@ -127,6 +181,14 @@ ast-id-lex() {
   echo "  (lexer_gen) -> $tmp"
   osh-lex-gen-native $tmp $out
   echo "$tmp -> (re2c) -> $out"
+}
+
+test-generated-code() {
+  test-optview
+  echo
+
+  test-flag-gen
+  echo
 }
 
 "$@"

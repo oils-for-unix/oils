@@ -16,7 +16,7 @@ Code Layout:
     examples/
       cgi.py
       varargs.py
-      varargs_preamble_leaky.h
+      varargs_leaky_preamble.h
 
 Output Layout:
 
@@ -165,7 +165,7 @@ UNIT_TESTS = {
     'mycpp/my_runtime_test': RUNTIME,
     'mycpp/mylib2_test': RUNTIME,
 
-    'mycpp/demo/target_lang': ['cpp/dumb_alloc_leaky.cc', 'mycpp/gc_heap.cc'],
+    'mycpp/demo/target_lang': ['cpp/leaky_dumb_alloc.cc', 'mycpp/gc_heap.cc'],
 
     # there is also demo/{gc_heap,square_heap}.cc
 }
@@ -221,8 +221,8 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
         ('cxx', 'ubsan'),
         ('cxx', 'opt'),
 
-        # Finds more bugs!
-        ('clang', 'ubsan'),
+        ('clang', 'ubsan'),  # Finds more bugs!
+        ('clang', 'coverage'),
     ]
   else:
     example_matrix = [
@@ -401,6 +401,7 @@ def NinjaGraph(n):
     test_name = os.path.basename(test_path)
 
     UNIT_TEST_MATRIX = [
+        ('cxx', 'dbg'),
         ('cxx', 'testgc'),
 
         # Clang and GCC have different implementations of ASAN and UBSAN

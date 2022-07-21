@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./oshc-deps.sh <function name>
+#   test/oshc-deps.sh <function name>
 
 set -o nounset
 set -o pipefail

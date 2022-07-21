@@ -8,7 +8,7 @@
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;
-using gc_heap::CopyStr;
+using gc_heap::StrFromC;
 
 using hnode_asdl::hnode_str;
 using hnode_asdl::hnode_t;
@@ -17,8 +17,8 @@ using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::word;
 
 TEST pretty_print_test() {
-  auto w1 = Alloc<word>(CopyStr("left"));
-  auto w2 = Alloc<word>(CopyStr("right"));
+  auto w1 = Alloc<word>(StrFromC("left"));
+  auto w2 = Alloc<word>(StrFromC("right"));
   auto b = Alloc<bool_expr__Binary>(w1, w2);
 
 #if 0

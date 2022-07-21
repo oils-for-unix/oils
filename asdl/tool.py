@@ -81,7 +81,7 @@ def main(argv):
       f.write("""
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_leaky.h"
-using mylib::CopyStr;
+using mylib::StrFromC;
 using mylib::NewList;
 #else
 #include "mycpp/gc_heap.h"
@@ -90,7 +90,7 @@ using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewList;
 using gc_heap::Str;
-using gc_heap::CopyStr;
+using gc_heap::StrFromC;
 #endif
 """)
       if pretty_print_methods:

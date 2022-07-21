@@ -9,6 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+source build/common.sh
+
 # in case binaries weren't built
 shopt -s failglob
 
@@ -39,12 +42,21 @@ examples-variant() {
         ;;
     esac
 
-    local log=$log_dir/$(basename $b)${do_benchmark}.log
-    echo "RUN $b > $log"
+    local prefix="$log_dir/$(basename $b)"
+
+    case $variant in
+      (coverage)
+        export LLVM_PROFILE_FILE=$prefix.profraw
+        ;;
+    esac
+
+    local log="${prefix}${do_benchmark}.log"
+
+    log "RUN $b > $log"
 
     local test_name=$(basename $b)
     if test -n "$do_benchmark" && [[ $test_name == test_* ]]; then
-      echo "Skipping $test_name in benchmark mode"
+      log "Skipping $test_name in benchmark mode"
       continue
     fi
 
@@ -53,9 +65,9 @@ examples-variant() {
     status=$?
 
     if test "$status" -eq 0; then
-      echo 'OK'
+      log 'OK'
     else
-      echo "FAIL with status $?"
+      log "FAIL with status $?"
       #return $status
     fi
 
@@ -65,9 +77,9 @@ examples-variant() {
     num_tests=$((num_tests + 1))
   done
 
-  echo
-  echo "$num_failed of $num_tests tests failed"
-  echo
+  log ''
+  log "$num_failed of $num_tests tests failed"
+  log ''
 }
 
 #
@@ -134,9 +146,9 @@ unit() {
   local compiler=${1:-cxx}
   local variant=${2:-testgc}
 
-  echo
-  echo "mycpp/test.sh unit $compiler $variant"
-  echo
+  log ''
+  log "mycpp/test.sh unit $compiler $variant"
+  log ''
 
 
   # TODO: Exclude examples here
@@ -150,7 +162,7 @@ unit() {
     local prefix=$log_dir/$(basename $b)
     local log=$prefix.log
 
-    echo "RUN $b > $log"
+    log "RUN $b > $log"
 
     case $variant in
       (coverage)
@@ -158,26 +170,15 @@ unit() {
         ;;
     esac
 
-    # I believe gc_heap::Str and its data[1] are incompatible with ASAN guards
-    # and the same happens with UBSAN and coverage somehow
-    case $variant in
-      (asan|ubsan|coverage)
-        if test "$(basename $b)" = 'my_runtime_test'; then
-          echo "SKIPPING $b because it's not compatible with $variant"
-          continue
-        fi
-        ;;
-   esac
-
     set +o errexit
     $b >$log 2>&1
     local status=$?
     set -o errexit
 
     if test "$status" -eq 0; then
-      echo 'OK'
+      log 'OK'
     else
-      echo "FAIL with status $?"
+      log "FAIL with status $?"
       return $status
     fi
   done
@@ -190,56 +191,21 @@ soil-run() {
 }
 
 unit-test-coverage() {
-  # Hm same crash here
+  ### Invoked by Soil
+
   unit clang coverage
-  ls -l _test/clang-coverage/mycpp-unit/*.profraw
+
+  local out_dir=_test/clang-coverage/mycpp-unit 
+  test/coverage.sh html-report $out_dir mycpp-unit
 }
 
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-source build/common.sh  # $CLANG_DIR
+examples-coverage() {
+  ### Invoked by Soil
 
-coverage-report() {
-  local dir=_test/clang-coverage/mycpp-unit
+  examples-variant clang coverage
 
-  $CLANG_DIR/bin/llvm-profdata merge -sparse $dir/*.profraw \
-    -o $dir/ALL.profdata \
-
-  ls -l $dir
-
-  # https://llvm.org/docs/CommandGuide/llvm-cov.html
-  # Weird syntax
-  local bin_dir=_bin/clang-coverage/mycpp-unit
-
-  local -a args=()
-  for b in $bin_dir/*; do
-    args+=(--object $b)
-  done
-
-  echo 'ALL'
-
-  $CLANG_DIR/bin/llvm-cov show --instr-profile $dir/ALL.profdata "${args[@]}"
-
-  local html=$dir/REPORT.html
-  local html_dir=$dir/html
-  mkdir -p $html_dir
-
-  $CLANG_DIR/bin/llvm-cov show \
-    --format html --output-dir $html_dir \
-    --instr-profile $dir/ALL.profdata \
-    "${args[@]}"
-
-  #echo "Wrote $html"
-  #ls -l --si -h $html  # 2.2 MB of HTML
-
-  # 2.4 MB of HTML
-  du --si -s $html_dir
-
-  echo
-  echo
-
-  $CLANG_DIR/bin/llvm-cov report --instr-profile=$dir/ALL.profdata "${args[@]}"
-
-  # Also TODO: leaky_bindings_test, etc.
+  local out_dir=_test/clang-coverage/mycpp-examples
+  test/coverage.sh html-report $out_dir mycpp-examples
 }
 
 "$@"

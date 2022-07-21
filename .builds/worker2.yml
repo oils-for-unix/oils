@@ -1,0 +1,49 @@
+# cpp-small, cpp-spec -- these SHARE the same container
+
+# Debian bullseye has podman
+image: debian/bullseye
+packages:
+  # for running soil on the host
+  - python2
+  - time
+  - zip
+  # podman and its missing dependencies
+  - podman
+  - uidmap
+  - slirp4netns
+    # more space efficient than default storage driver
+    # TODO: replace with native-overlayfs when kernel is available
+  - fuse-overlayfs
+
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+
+tasks:
+  - mount-perms: |
+      cd oil
+      soil/host-shim.sh mount-perms $PWD
+
+  - cpp-small: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD cpp-small
+
+  - publish-cpp-small: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
+
+  - job-reset: |
+      cd oil
+      soil/host-shim.sh job-reset
+
+  - cpp-spec: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD cpp-spec
+
+  # Relies on SSH key, so do it outside the container
+  - publish-cpp-spec: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
+  
+  - did-all-succeed: |
+      cd oil
+      soil/host-shim.sh did-all-succeed cpp-small cpp-spec

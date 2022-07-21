@@ -50,8 +50,8 @@ from osh import builtin_meta
 from osh import builtin_misc
 from osh import builtin_lib
 from osh import builtin_printf
-from osh import builtin_process
 from osh import builtin_pure
+from osh import builtin_trap
 from osh import cmd_eval
 from osh import glob_
 from osh import history
@@ -155,33 +155,6 @@ class ShellOptHook(state.OptHook):
         opt0_array[option_i.vi] = not b
 
     return True
-
-
-def AddProcess(
-    b,  # type: Dict[int, vm._Builtin]
-    mem,  # type: state.Mem
-    shell_ex,  # type: vm._Executor
-    ext_prog,  # type: process.ExternalProgram
-    fd_state,  # type: process.FdState
-    job_state,  # type: process.JobState
-    waiter,  # type: process.Waiter
-    tracer,  # type: dev.Tracer
-    search_path,  # type: state.SearchPath
-    errfmt  # type: ui.ErrorFormatter
-    ):
-    # type: (...) -> None
-
-  # Process
-  b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
-                                            search_path, errfmt)
-  b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, tracer,
-                                           errfmt)
-  b[builtin_i.jobs] = builtin_process.Jobs(job_state)
-  b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
-  b[builtin_i.bg] = builtin_process.Bg(job_state)
-  b[builtin_i.umask] = builtin_process.Umask()
-  b[builtin_i.fork] = builtin_process.Fork(shell_ex)
-  b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
 
 
 def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
@@ -435,8 +408,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                        search_path, errfmt)
   shell_native.AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx,
                      errfmt)
-  AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_state, waiter,
-             tracer, search_path, errfmt)
+  shell_native.AddProcess(builtins, mem, shell_ex, ext_prog, fd_state,
+                          job_state, waiter, tracer, search_path, errfmt)
 
   builtins[builtin_i.help] = help_builtin
 
@@ -513,9 +486,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
   builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
-  builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
-                                                  cmd_deps.trap_nodes,
-                                                  parse_ctx, tracer, errfmt)
+  builtins[builtin_i.trap] = builtin_trap.Trap(sig_state, cmd_deps.traps,
+                                               cmd_deps.trap_nodes,
+                                               parse_ctx, tracer, errfmt)
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)

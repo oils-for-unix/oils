@@ -19,13 +19,13 @@ soil-run() {
 
   set +o errexit
 
-  # 'mycpp-all' has other stuff like type checking alone, stripping
+  # 'mycpp-all' has other stuff like type checking alone, stripping, clang builds
   ninja mycpp-logs-equal
 
   local status=$?
   set -o errexit
 
-  find-dir-html _test
+  find-dir-html _test mycpp-examples
 
   # Now we want to zip up
   return $status

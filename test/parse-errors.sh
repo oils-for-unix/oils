@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./parse-errors.sh <function name>
+#   test/parse-errors.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -697,6 +697,16 @@ json write (x) {
 
 regex_literals() {
   set +o errexit
+
+  if is-oil-native; then
+    return
+  fi
+
+  _oil-parse-error 'var x = / ! /'
+  _oil-should-parse 'var x = / ![a-z] /'
+  _oil-should-parse 'var x = / !d /'
+
+  _oil-parse-error 'var x = / !! /'
 
   # missing space between rangfes
   _oil-parse-error 'var x = /[a-zA-Z]/'

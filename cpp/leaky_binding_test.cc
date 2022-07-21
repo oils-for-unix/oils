@@ -7,16 +7,14 @@
 
 #include "_build/cpp/runtime_asdl.h"  // cell, etc
 #include "_devbuild/gen/id.h"
-#include "core_error_leaky.h"
-#include "core_pyerror_leaky.h"
-#include "core_pyos_leaky.h"  // Chdir
-#include "core_pyutil_leaky.h"
-#include "frontend_match_leaky.h"
-#include "libc_leaky.h"
-#include "osh_bool_stat_leaky.h"
-#include "posix_leaky.h"
-#include "pylib_os_path_leaky.h"
-#include "time__leaky.h"
+#include "leaky_core.h"  // Chdir
+#include "leaky_core_error.h"
+#include "leaky_core_pyerror.h"
+#include "leaky_frontend_match.h"
+#include "leaky_libc.h"
+#include "leaky_osh.h"
+#include "leaky_pylib.h"
+#include "leaky_stdlib.h"
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;
@@ -199,7 +197,7 @@ TEST posix_test() {
   PASS();
 }
 
-// HACK!  asdl/runtime.py isn't translated, but core_error_leaky.h uses it...
+// HACK!  asdl/runtime.py isn't translated, but leaky_core_error.h uses it...
 namespace runtime {
 int NO_SPID = -1;
 };
@@ -229,23 +227,6 @@ TEST bool_stat_test() {
   bool b2 = bool_stat::isatty(new Str("0"), nullptr);
   // This will be true interactively
   log("stdin isatty = %d", b2);
-
-  PASS();
-}
-
-TEST pyos_test() {
-  // This test isn't hermetic but it should work in most places, including in a
-  // container
-  int err_num = pyos::Chdir(new Str("/"));
-  ASSERT(err_num == 0);
-
-  err_num = pyos::Chdir(new Str("/nonexistent__"));
-  ASSERT(err_num != 0);
-
-  Dict<Str*, Str*>* env = pyos::Environ();
-  Str* p = env->get(new Str("PATH"));
-  ASSERT(p != nullptr);
-  log("PATH = %s", p->data_);
 
   PASS();
 }
@@ -349,12 +330,30 @@ TEST putenv_test() {
   PASS();
 }
 
+TEST pyos_test() {
+  // This test isn't hermetic but it should work in most places, including in a
+  // container
+  int err_num = pyos::Chdir(new Str("/"));
+  ASSERT(err_num == 0);
+
+  err_num = pyos::Chdir(new Str("/nonexistent__"));
+  ASSERT(err_num != 0);
+
+  Dict<Str*, Str*>* env = pyos::Environ();
+  Str* p = env->get(new Str("PATH"));
+  ASSERT(p != nullptr);
+  log("PATH = %s", p->data_);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   // TODO: use garbage collection in this test?
 
   GREATEST_MAIN_BEGIN();
+
   RUN_TEST(show_sizeof);
   RUN_TEST(match_test);
   RUN_TEST(util_test);
@@ -368,8 +367,12 @@ int main(int argc, char** argv) {
   RUN_TEST(os_path_test);
   RUN_TEST(putenv_test);
 
+  // Disabled because changing the dir somehow prevents the
+  // leaky_binding_test.profraw file from being created
+  //
   // Must come last because it does chdir()
-  RUN_TEST(pyos_test);
+  //
+  // RUN_TEST(pyos_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

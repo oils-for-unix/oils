@@ -22,10 +22,10 @@ from asdl import format as fmt
 from core.pyutil import stderr_line
 from osh import word_
 from mycpp import mylib
-from mycpp.mylib import tagswitch, CopyStr
+from mycpp.mylib import tagswitch, StrFromC
 from qsn_ import qsn
 
-from typing import List, Optional, cast, TYPE_CHECKING
+from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen import arg_types
   from core.alloc import Arena
@@ -39,7 +39,7 @@ def ValType(val):
   """For displaying type errors in the UI."""
 
   # Displays 'value.MaybeStrArray' for now, maybe change it.
-  return CopyStr(value_str(val.tag_()))
+  return StrFromC(value_str(val.tag_()))
 
 
 def CommandType(cmd):
@@ -47,7 +47,7 @@ def CommandType(cmd):
   """For displaying commands in the UI."""
 
   # Displays 'value.MaybeStrArray' for now, maybe change it.
-  return CopyStr(command_str(cmd.tag_()))
+  return StrFromC(command_str(cmd.tag_()))
 
 
 def PrettyId(id_):
@@ -55,7 +55,7 @@ def PrettyId(id_):
   """For displaying type errors in the UI."""
 
   # Displays 'Id.BoolUnary_v' for now
-  return CopyStr(Id_str(id_))
+  return StrFromC(Id_str(id_))
 
 
 def PrettyToken(tok, arena):
@@ -239,6 +239,22 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
   f.write('%s:%d: %s%s\n' % (source_str, line_num, prefix, msg))
 
 
+class ctx_Location(object):
+
+  def __init__(self, errfmt, spid):
+    # type: (ErrorFormatter, int) -> None
+    errfmt.spid_stack.append(spid)
+    self.errfmt = errfmt
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.errfmt.spid_stack.pop()
+
+
 # TODO:
 # - ColorErrorFormatter
 # - BareErrorFormatter?  Could just display the foo.sh:37:8: and not quotation.
@@ -272,16 +288,6 @@ class ErrorFormatter(object):
   # A stack used for the current builtin.  A fallback for UsageError.
   # TODO: Should we have PushBuiltinName?  Then we can have a consistent style
   # like foo.sh:1: (compopt) Not currently executing.
-
-  def PushLocation(self, spid):
-    # type: (int) -> None
-    #log('%sPushLocation(%d)', '  ' * len(self.spid_stack), spid)
-    self.spid_stack.append(spid)
-
-  def PopLocation(self):
-    # type: () -> None
-    self.spid_stack.pop()
-    #log('%sPopLocation -> %d', '  ' * len(self.spid_stack), self.last_spid)
 
   def CurrentLocation(self):
     # type: () -> int

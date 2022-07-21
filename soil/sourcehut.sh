@@ -40,14 +40,6 @@ publish-html-assuming-ssh-key() {
 
   # note: we could speed jobs up by doing this separately?
   remote-cleanup-jobs-index 'srht-'
-
-  # soil/worker.sh recorded this for us
-  local status
-  status=$(cat _tmp/soil/exit-status.txt)
-
-  log "Exiting with saved status $status"
-
-  return $status
 }
 
 #

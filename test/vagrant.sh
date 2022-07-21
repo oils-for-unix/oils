@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./vagrant.sh <function name>
+#   test/vagrant.sh <function name>
 
 set -o nounset
 set -o pipefail

@@ -12,7 +12,7 @@ from __future__ import print_function
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
-import signal as signal_
+from signal import SIGINT
 from sys import exit  # mycpp translation directly calls exit(int status)!
 
 from _devbuild.gen.id_kind_asdl import Id
@@ -38,7 +38,7 @@ from frontend import match
 from osh import cmd_eval
 from qsn_ import qsn
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems, CopyStr
+from mycpp.mylib import tagswitch, iteritems, StrFromC
 
 import posix_ as posix
 from posix_ import (
@@ -48,7 +48,7 @@ from posix_ import (
     O_APPEND, O_CREAT, O_RDONLY, O_RDWR, O_WRONLY, O_TRUNC,
 )
 
-from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
+from typing import List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
@@ -424,14 +424,12 @@ class FdState(object):
 
     for r in redirects:
       #log('apply %s', r)
-      self.errfmt.PushLocation(r.op_spid)
-      try:
-        self._ApplyRedirect(r)
-      except (IOError, OSError) as e:
-        self.Pop()
-        return False  # for bad descriptor, etc.
-      finally:
-        self.errfmt.PopLocation()
+      with ui.ctx_Location(self.errfmt, r.op_spid):
+        try:
+          self._ApplyRedirect(r)
+        except (IOError, OSError) as e:
+          self.Pop()
+          return False  # for bad descriptor, etc.
     #log('done applying %d redirects', len(redirects))
     return True
 
@@ -956,6 +954,22 @@ class Process(Job):
     return self.Wait(waiter)
 
 
+class ctx_Pipe(object):
+
+  def __init__(self, fd_state, fd):
+    # type: (FdState, int) -> None
+    fd_state.PushStdinFromPipe(fd)
+    self.fd_state = fd_state
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.fd_state.Pop()
+
+
 class Pipeline(Job):
   """A pipeline of processes to run.
 
@@ -1120,11 +1134,9 @@ class Pipeline(Job):
       r, w = self.last_pipe  # set in AddLast()
       posix.close(w)  # we will not write here
 
-      fd_state.PushStdinFromPipe(r)
-      try:
+      with ctx_Pipe(fd_state, r):
         cmd_ev.ExecuteAndCatch(last_node)
-      finally:
-        fd_state.Pop()
+
       # We won't read anymore.  If we don't do this, then 'cat' in 'cat
       # /dev/urandom | sleep 1' will never get SIGPIPE.
       posix.close(r)
@@ -1174,7 +1186,7 @@ class Pipeline(Job):
 
 def _JobStateStr(i):
   # type: (job_state_t) -> str
-  return CopyStr(job_state_str(i))[10:]  # remove 'job_state.'
+  return StrFromC(job_state_str(i))[10:]  # remove 'job_state.'
 
 
 class JobState(object):
@@ -1468,7 +1480,7 @@ class Waiter(object):
       status = 128 + term_sig
 
       # Print newline after Ctrl-C.
-      if term_sig == signal_.SIGINT:
+      if term_sig == SIGINT:
         print('')
 
       self.job_state.WhenDone(pid)

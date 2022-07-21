@@ -12,7 +12,6 @@ set -o errexit
 #eval 'set -o pipefail'
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-readonly REPO_ROOT
 
 . build/common.sh  # for $BASE_CXXFLAGS
 
@@ -80,11 +79,17 @@ setglobal_compile_flags() {
 
     (ubsan)
       # faster build with -O0
-      flags+="$flags -O0 -g -fsanitize=undefined"
+      flags="$flags -O0 -g -fsanitize=undefined"
       ;;
     (testgc)
       # TODO: GC_REPORT and GC_VERBOSE instead?
-      flags+="$flags -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC"
+      flags="$flags -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC"
+      ;;
+
+    (leaky)
+      # Could this be ASAN?
+      # For cpp/gc_binding_test
+      flags="$flags -O0 -g -D LEAKY_BINDINGS -D LEAKY_TEST_MODE"
       ;;
 
     (opt)

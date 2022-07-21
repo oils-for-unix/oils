@@ -131,23 +131,25 @@ options() {
 }
 
 rename() {
-  cat cpp/h.txt | while read name; do
-    local new=$(basename $name .h)_leaky.h
+  cat cpp/cc.txt | while read name; do
+    local base=$(basename $name .cc)
+    local new=leaky_${base%_leaky}.cc
     echo $name $new
 
-    #git mv cpp/$new cpp/$name
-    #git mv cpp/$name cpp/$new
-
-    sed -i "s/$name/$new/g" */*/*.cc
+    #sed -i "s/$name/$new/g" */*.{py,sh} || true
+    git mv cpp/$name cpp/$new
   done
   return
 
   cat cpp/h.txt | while read name; do
-    local new=$(basename $name .h)_leaky.h
+    local base=$(basename $name .h)
+    local new=leaky_${base%_leaky}.h
     echo $name $new
 
     #sed -i "s/$name/$new/g" */*.{sh,py,cc,h}
+    git mv cpp/$name cpp/$new
   done
+  return
 }
 
 revert() {

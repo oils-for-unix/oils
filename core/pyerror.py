@@ -55,4 +55,17 @@ def e_die(msg, *args, **kwargs):
 
   Usually exits with status 1.  See osh/cmd_eval.py.
   """
+  assert 'status' not in kwargs, 'Use e_die_status'
   raise error.FatalRuntime(msg, *args, **kwargs)
+
+
+def e_die_status(status, msg, **kwargs):
+  # type: (int, str, **Any) -> NoReturn
+  """Wrapper for C++ semantics
+  
+  To avoid confusing e_die(int span_id) and e_die(int status)!
+
+  Note that it doesn't take positional args, so you should use % formatting.
+  """
+  kwargs['status'] = status
+  raise error.FatalRuntime(msg, **kwargs)

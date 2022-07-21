@@ -23,9 +23,9 @@ class UiTest(unittest.TestCase):
     # no location info
     errfmt.Print_('hello')
 
-    errfmt.PushLocation(span_id)
-    errfmt.Print_('zero')
-    errfmt.Print_('zero', span_id=spid1)
+    with ui.ctx_Location(errfmt, span_id):
+      errfmt.Print_('zero')
+      errfmt.Print_('zero', span_id=spid1)
 
 
 if __name__ == '__main__':

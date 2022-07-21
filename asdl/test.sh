@@ -16,6 +16,9 @@ source cpp/NINJA-steps.sh  # compile_and_link
 
 CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
 
+# Could we turn on the leak detector for the GC tests?
+export ASAN_OPTIONS='detect_leaks=0'
+
 asdl-tool() {
   PYTHONPATH='.:vendor/' asdl/tool.py "$@"
 }
@@ -23,12 +26,13 @@ asdl-tool() {
 readonly TMP_DIR='_build/asdl-test'
 
 gen-cpp-test() {
-  export ASAN_OPTIONS='detect_leaks=0'
+  local compiler=${1:-cxx}
+  local variant=${1:-asan}
 
   local tmp_dir=$TMP_DIR
-  local out_dir=_bin/cxx-asan/asdl
+  local bin_dir="_bin/$compiler-$variant/asdl"
 
-  mkdir -p $tmp_dir $out_dir
+  mkdir -p $tmp_dir $bin_dir
 
   local prefix=$tmp_dir/typed_arith_asdl
   asdl-tool cpp asdl/typed_arith.asdl $prefix
@@ -41,9 +45,9 @@ gen-cpp-test() {
 
   wc -l $prefix* $prefix2*
 
-  local bin=$out_dir/gen_cpp_test
+  local bin=$bin_dir/gen_cpp_test
 
-  compile_and_link cxx asan '-D LEAKY_BINDINGS' $bin \
+  compile_and_link $compiler $variant '-D LEAKY_BINDINGS' $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
     mycpp/mylib_leaky.cc \
@@ -52,10 +56,17 @@ gen-cpp-test() {
     $tmp_dir/typed_arith_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc 
 
-  $bin "$@"
+  local log_dir="test/$compiler-$variant/asdl"
+  mkdir -p $log_dir
+  local log="$log_dir/gen_cpp_test.log"
+  log "RUN $bin > $log"
+  $bin "$@" > "$log"
 }
 
 gc-test() {
+  local compiler=${1:-cxx}
+  local variant=${1:-asan}
+
   # TODO: remove this after it works with the garbage collector!
   export ASAN_OPTIONS='detect_leaks=0'
 
@@ -63,8 +74,8 @@ gc-test() {
   build/dev.sh oil-asdl-to-cpp
 
   local tmp_dir=$TMP_DIR
-  local out_dir=_bin/cxx-asan/asdl
-  mkdir -p $tmp_dir $out_dir
+  local bin_dir=_bin/$compiler-$variant/asdl
+  mkdir -p $tmp_dir $bin_dir
 
   local prefix2=$tmp_dir/demo_lib_asdl
   asdl-tool cpp asdl/demo_lib.asdl $prefix2
@@ -72,10 +83,10 @@ gc-test() {
   local prefix3=$tmp_dir/typed_demo_asdl
   asdl-tool cpp asdl/typed_demo.asdl $prefix3
 
-  local bin=$out_dir/asdl_gc_test
+  local bin=$bin_dir/gc_test
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
-  compile_and_link cxx asan '' $bin \
+  compile_and_link $compiler $variant '' $bin \
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \
     mycpp/my_runtime.cc \
@@ -85,15 +96,19 @@ gc-test() {
     $tmp_dir/demo_lib_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc
 
-  $bin "$@"
+  local log_dir="test/$compiler-$variant/asdl"
+  mkdir -p $log_dir
+  local log="$log_dir/gc_test.log"
+  log "RUN $bin > $log"
+  $bin "$@" > "$log"
 }
 
 hnode-asdl-gc() {
   ### Test that hnode can compile by itself
 
   local tmp_dir=$TMP_DIR
-  local out_dir=_bin/cxx-asan/asdl
-  mkdir -p $tmp_dir $out_dir
+  local bin_dir=_bin/cxx-asan/asdl
+  mkdir -p $tmp_dir $bin_dir
 
   cat >$tmp_dir/hnode_asdl_test.cc <<'EOF'
 #include "_build/cpp/hnode_asdl.h"
@@ -104,12 +119,13 @@ int main() {
 }
 EOF
 
-  local bin=$out_dir/hnode_asdl_test
+  local bin=$bin_dir/hnode_asdl_test
 
   compile_and_link cxx asan '' $bin \
     _build/cpp/hnode_asdl.cc \
     $tmp_dir/hnode_asdl_test.cc
 
+  log "RUN $bin"
   $bin
 }
 
@@ -126,8 +142,8 @@ one-asdl-gc() {
   fi
 
   local tmp_dir=$TMP_DIR
-  local out_dir=_bin/cxx-asan/asdl
-  mkdir -p $tmp_dir $out_dir
+  local bin_dir=_bin/cxx-asan/asdl
+  mkdir -p $tmp_dir $bin_dir
 
   cat >$tmp_dir/${name}_asdl_test.cc <<EOF
 #include "_build/cpp/${name}_asdl.h"
@@ -138,7 +154,7 @@ int main() {
 }
 EOF
 
-  local bin=$out_dir/${name}_asdl_test
+  local bin=$bin_dir/${name}_asdl_test
 
   compile_and_link cxx asan '' $bin \
     _build/cpp/${name}_asdl.cc \
@@ -149,6 +165,7 @@ EOF
     $tmp_dir/${name}_asdl_test.cc \
     "$@"
 
+  log "RUN $bin"
   $bin
 }
 
@@ -170,11 +187,16 @@ all-asdl-gc() {
 }
 
 unit() {
-  asdl/test.sh gen-cpp-test
-  asdl/test.sh gc-test  # integration between ASDL and the GC heap
+  ### Run unit tests
+
+  gen-cpp-test
+  echo
+
+  gc-test  # integration between ASDL and the GC heap
+  echo
 
   # test each ASDL file on its own, perhaps with the garbage-collected ASDL runtime
-  asdl/test.sh all-asdl-gc
+  all-asdl-gc
 }
 
 "$@"

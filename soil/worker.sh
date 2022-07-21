@@ -50,14 +50,22 @@ dump-locale() {
 dump-hardware() {
   egrep '^(processor|model name)' /proc/cpuinfo
   echo
+
   egrep '^Mem' /proc/meminfo
+  echo
+
+  df -h
+  echo
 }
 
 dump-distro() {
   local path=/etc/lsb-release
   if test -f $path; then
     cat $path
+  else
+    echo "$path doesn't exist"
   fi
+  echo
 
   apt-cache policy r-base-core
 }
@@ -150,56 +158,60 @@ interactive         test/interactive.sh soil      -
 EOF
 }
 
-cpp-tasks() {
+cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
-  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
-  # build-minimal
+  # BUG: oil-cpp can't run with build/dev.sh minimal because 'fastlex' isn't built
+  # can't run with build/dev.sh all because we don't have cmark
 
-  # consts_gen.py needs types_asdl.py
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/dev.sh minimal                  -
-cpp-unit         test/cpp-unit.sh soil-run             -
-mycpp-git        mycpp/deps.sh git-clone               -
-mycpp-pip        mycpp/deps.sh pip-install             -
+HACK-fastlex     build/dev.sh fastlex                  -
 build-osh-eval   build/dev.sh oil-cpp                  -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
-compile-osh-eval build/native.sh soil-run              -
+spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
+EOF
+}
+
+cpp-small-tasks() {
+  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
+  # build-minimal
+  cat <<EOF
+dump-versions    soil/worker.sh dump-versions          -
+build-minimal    build/dev.sh minimal                  -
+cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
+build-osh-eval   build/dev.sh oil-cpp                  -
+osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh oil-native-preprocessed -
 shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
-mycpp-examples   mycpp/build.sh soil-run               _test/index.html
+mycpp-examples   mycpp/build.sh soil-run               _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
-spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
-
-# Notes on steps that depend on the binary:
-#   compile-osh-eval: compiles a few variant of osh_eval in parallel
-#   shell-benchmarks: uses _bin/cxx-opt/osh_eval.stripped
-#   parse-errors: uses _bin/cxx-asan/osh_eval
-#   spec-cpp: DUPLICATE work because we don't use Ninja.  Thre is a hack with CXX=gcc.
-
 }
 
+cpp-coverage-tasks() {
+  # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
+
+  cat <<EOF
+dump-hardware           soil/worker.sh dump-hardware                    -
+build-minimal           build/dev.sh minimal                            -
+ninja-config            ./NINJA-config.sh dummy                         -
+extract-clang           soil/deps-binary.sh extract-clang-in-container  -
+mycpp-unit-coverage     mycpp/test.sh unit-test-coverage                _test/clang-coverage/mycpp-unit/html/index.html
+HACK-asdl               build/dev.sh oil-asdl-to-cpp                    -
+mycpp-examples-coverage mycpp/test.sh examples-coverage                 _test/clang-coverage/mycpp-examples/html/index.html
+cpp-coverage            cpp/test.sh coverage                            _test/clang-coverage/cpp/html/index.html
+unified-coverage        test/coverage.sh unified-report                 _test/clang-coverage/unified/html/index.html
+EOF
+}
 
 # TODO: Add more tests, like
 # - web/table/csv2html-test.sh (needs some assertions)
 tests-todo() {
   find . -name '_*' -a -prune -o -name '*-test.sh' -a -print
 }
-
-dev-all-nix-tasks() {
-  ### Print tasks for the 'dev-all' build
-
-  # (task_name, script, action, result_html)
-  cat <<EOF
-build-all       build/dev.sh all            -
-oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
-osh-spec        test/spec.sh soil-run-osh   _tmp/spec/survey/osh.html
-EOF
-}
-
 
 # https://github.com/oilshell/oil/wiki/Contributing
 
@@ -276,7 +288,8 @@ EOF
 
 run-tasks() {
   ### Run the tasks on stdin and write _tmp/soil/INDEX.tsv.
-  local out_dir=$1  # should already exist
+  local job_name=$1
+  local out_dir=$2  # should already exist
 
   mkdir -p $out_dir/logs
 
@@ -339,42 +352,12 @@ run-tasks() {
     ' $tsv
   fi
 
-  # So the deploy step can fail later
-  echo $max_status > $out_dir/exit-status.txt
-}
+  # To fail later.  Important: this dir persists across jobs; it's NOT removed
+  # by 'host-shim.sh job-reset'.
+  mkdir -p _soil-jobs
 
-allow-job-failure() {
-  # Note: soil-web will still count failures in INDEX.tsv.  This just
-  # prevents Travis from failing.
-
-  local out='_tmp/soil/exit-status.txt '
-  log "*** ALLOWING JOB FAILURE by overwriting $out ***"
-  echo 0 > $out
-}
-
-_run-dev-all-nix() {
-  dev-all-nix-tasks | run-tasks
-
-  allow-job-failure
-
-  return
-
-  # --- DEBUGGING THROUGH STDOUT ---
-
-  # makes _tmp
-  build/dev.sh all
-
-  # So we have something to deploy
-  dummy-tasks | run-tasks
-
-  if false; then
-    test/spec.sh check-shells-exist
-    # this hangs because nix bash doesn't have 'compgen' apparently
-    test/spec.sh builtin-completion -v -t
-  fi
-
-  test/spec.sh soil-run-osh
-
+  # e.g. _soil-jobs/dummy.status.txt
+  echo $max_status > _soil-jobs/$job_name.status.txt
 }
 
 save-metadata() {
@@ -407,13 +390,13 @@ job-main() {
 
   local out_dir=_tmp/soil
 
-  log "job-main: running as $(whoami) in directory $PWD"
+  log-context 'job-main'
   mkdir -v -p $out_dir
   ls -l -d $out_dir
 
   save-metadata $job_name $out_dir
 
-  ${job_name}-tasks | run-tasks $out_dir
+  ${job_name}-tasks | run-tasks $job_name $out_dir
 }
 
 JOB-dummy() { job-main 'dummy'; }
@@ -428,28 +411,16 @@ JOB-pea() { job-main 'pea'; }
 
 JOB-app-tests() { job-main 'app-tests'; }
 
-JOB-cpp() { job-main 'cpp'; }
+JOB-cpp-coverage() { job-main 'cpp-coverage'; }
+
+JOB-cpp-small() { job-main 'cpp-small'; }
+
+JOB-cpp-spec() { job-main 'cpp-spec'; }
 
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 
-JOB-dev-all-nix() {
-  ### Travis job dev-all-nix
-
-  local job_name='dev-all-nix'
-  local out_dir=_tmp/soil
-  mkdir -p $out_dir/metadata
-  save-metadata $job_name $out_dir/metadata
-
-  # Run tasks the nix environment
-  nix-shell \
-    --argstr dev "none" \
-    --argstr test "none" \
-    --argstr cleanup "none" \
-    --run "$0 _run-dev-all-nix"
-}
-
 list-jobs() {
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'dev-all-nix|maybe-merge'
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge'
 }
 
 "$@"

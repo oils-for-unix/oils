@@ -1,0 +1,50 @@
+# dev-minimal; other-tests
+
+# Debian bullseye has podman
+image: debian/bullseye
+packages:
+  # for running soil on the host
+  - python2
+  - time
+  - zip
+  # podman and its missing dependencies
+  - podman
+  - uidmap
+  - slirp4netns
+    # more space efficient than default storage driver
+    # TODO: replace with native-overlayfs when kernel is available
+  - fuse-overlayfs
+
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+
+tasks:
+  - mount-perms: |
+      cd oil
+      soil/host-shim.sh mount-perms $PWD
+
+  - dev-minimal: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD dev-minimal
+
+  # Relies on SSH key, so do it outside the container
+  - publish-dev-minimal: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
+
+  # Outside container
+  - job-reset: |
+      cd oil
+      soil/host-shim.sh job-reset
+
+  - other-tests: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD other-tests
+
+  - publish-other-tests: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
+
+  - did-all-succeed: |
+      cd oil
+      soil/host-shim.sh did-all-succeed dev-minimal other-tests

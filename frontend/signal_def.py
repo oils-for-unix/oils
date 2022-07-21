@@ -25,9 +25,11 @@ def _MakeSignals():
   return names
 
 
+NO_SIGNAL = -1
+
 def GetNumber(sig_spec):
   # type: (str) -> int
-  return _SIGNAL_NAMES.get(sig_spec)
+  return _SIGNAL_NAMES.get(sig_spec, NO_SIGNAL)
 
 
 _SIGNAL_NAMES = _MakeSignals()

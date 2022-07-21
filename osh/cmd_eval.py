@@ -52,7 +52,7 @@ from asdl import runtime
 from core import dev
 from core import error
 from core.error import _ControlFlow
-from core.pyerror import log, e_die
+from core.pyerror import log, e_die, e_die_status
 from core import pyos  # Time().  TODO: rename
 from core import state
 from core import ui
@@ -87,7 +87,7 @@ if TYPE_CHECKING:
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
-  from osh import builtin_process
+  from osh import builtin_trap
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -116,7 +116,7 @@ class Deps(object):
     self.debug_f = None       # type: util._DebugFile
 
     # signal/hook name -> handler
-    self.traps = None         # type: Dict[str, builtin_process._TrapHandler]
+    self.traps = None         # type: Dict[str, builtin_trap._TrapHandler]
     # appended to by signal handlers
     self.trap_nodes = None    # type: List[command_t]
 
@@ -230,6 +230,23 @@ def PlusEquals(old_val, val):
   return val
 
 
+class ctx_LoopLevel(object):
+  """For checking for invalid control flow."""
+
+  def __init__(self, cmd_ev):
+    # type: (CommandEvaluator) -> None
+    cmd_ev.loop_level += 1
+    self.cmd_ev = cmd_ev
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.cmd_ev.loop_level -= 1
+
+
 class CommandEvaluator(object):
   """Executes the program by tree-walking.
 
@@ -290,29 +307,26 @@ class CommandEvaluator(object):
   def _RunAssignBuiltin(self, cmd_val):
     # type: (cmd_value__Assign) -> int
     """Run an assignment builtin.  Except blocks copied from RunBuiltin."""
-    self.errfmt.PushLocation(cmd_val.arg_spids[0])  # default
-
     builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
     if builtin_func is None:
       # This only happens with alternative Oil interpreters.
       e_die("Assignment builtin %r not configured",
             cmd_val.argv[0], span_id=cmd_val.arg_spids[0])
 
-    try:
-      status = builtin_func.Run(cmd_val)
-    except error.Usage as e:  # Copied from RunBuiltin
-      arg0 = cmd_val.argv[0]
-      if e.span_id == runtime.NO_SPID:  # fill in default location.
-        e.span_id = self.errfmt.CurrentLocation()
-      self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
-      status = 2  # consistent error code for usage error
-    finally:
+    with ui.ctx_Location(self.errfmt, cmd_val.arg_spids[0]):
       try:
-        sys.stdout.flush()
-      except IOError as e:
-        pass
-
-      self.errfmt.PopLocation()
+        status = builtin_func.Run(cmd_val)
+      except error.Usage as e:  # Copied from RunBuiltin
+        arg0 = cmd_val.argv[0]
+        if e.span_id == runtime.NO_SPID:  # fill in default location.
+          e.span_id = self.errfmt.CurrentLocation()
+        self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
+        status = 2  # consistent error code for usage error
+      finally:
+        try:
+          sys.stdout.flush()
+        except IOError as e:
+          pass
 
     return status
 
@@ -1098,8 +1112,7 @@ class CommandEvaluator(object):
         node = cast(command__WhileUntil, UP_node)
         status = 0
 
-        self.loop_level += 1
-        try:
+        with ctx_LoopLevel(self):
           while True:
             try:
               # blame while/until spid
@@ -1120,8 +1133,6 @@ class CommandEvaluator(object):
                 continue
               else:  # return needs to pop up more
                 raise
-        finally:
-          self.loop_level -= 1
 
       elif case(command_e.ForEach):
         node = cast(command__ForEach, UP_node)
@@ -1159,8 +1170,7 @@ class CommandEvaluator(object):
 
             # TODO: Once expr_eval.py is statically typed, consolidate this
             # with the shell-style loop.
-            self.loop_level += 1
-            try:
+            with ctx_LoopLevel(self):
               if isinstance(obj, list):
 
                 n = len(node.iter_names)
@@ -1173,8 +1183,8 @@ class CommandEvaluator(object):
                   val_name = lvalue.Named(node.iter_names[1])
                 else:
                   # This is similar to a parse error
-                  e_die('List iteration expects at most 2 loop variables',
-                        span_id=node.spids[0], status=2)
+                  e_die_status(2, 'List iteration expects at most 2 loop variables',
+                               span_id=node.spids[0])
 
                 index =0
                 for item in obj:
@@ -1245,12 +1255,8 @@ class CommandEvaluator(object):
                 raise error.Expr("Expected list or dict, got %r" % type(obj),
                                  token=iter_expr_blame)
 
-            finally:
-              self.loop_level -= 1
         else:
-          self.loop_level += 1
-          try:
-
+          with ctx_LoopLevel(self):
             n = len(node.iter_names)
             assert n > 0
             if n == 1:
@@ -1261,8 +1267,8 @@ class CommandEvaluator(object):
               val_name = lvalue.Named(node.iter_names[1])
             else:
               # This is similar to a parse error
-              e_die('List iteration expects at most 2 loop variables',
-                    span_id=node.spids[0], status=2)
+              e_die_status(2, 'List iteration expects at most 2 loop variables',
+                           span_id=node.spids[0])
 
             index = 0
             for x in iter_list:
@@ -1287,8 +1293,6 @@ class CommandEvaluator(object):
                 else:  # return needs to pop up more
                   raise
               index += 1
-          finally:
-            self.loop_level -= 1
 
       elif case(command_e.ForExpr):
         node = cast(command__ForExpr, UP_node)
@@ -1302,8 +1306,7 @@ class CommandEvaluator(object):
         if init:
           self.arith_ev.Eval(init)
 
-        self.loop_level += 1
-        try:
+        with ctx_LoopLevel(self):
           while True:
             if for_cond:
               # We only accept integers as conditions
@@ -1324,9 +1327,6 @@ class CommandEvaluator(object):
 
             if update:
               self.arith_ev.Eval(update)
-
-        finally:
-          self.loop_level -= 1
 
       elif case(command_e.ShFunction):
         node = cast(command__ShFunction, UP_node)
@@ -1428,7 +1428,7 @@ class CommandEvaluator(object):
   def RunPendingTraps(self):
     # type: () -> None
 
-    # See osh/builtin_process.py _TrapHandler for the code that appends to this
+    # See osh/builtin_trap.py _TrapHandler for the code that appends to this
     # list.
     if len(self.trap_nodes):
       # Make a copy and clear it so we don't cause an infinite loop.
@@ -1824,8 +1824,8 @@ class CommandEvaluator(object):
         status = e.StatusCode()
       else:
         e_die('Unexpected control flow in block', token=e.token)
-    finally:
-      namespace_ = self.mem.TopNamespace()
+
+    namespace_ = self.mem.TopNamespace()
 
     # This is the thing on self.mem?
     # Filter out everything beginning with _ ?

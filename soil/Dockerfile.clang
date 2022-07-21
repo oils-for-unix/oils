@@ -1,0 +1,46 @@
+FROM debian:buster-slim
+
+RUN apt-get update 
+
+# repo is /home/uke/{oil,oil_DEPS}
+WORKDIR /home/uke/tmp
+
+# Copy build scripts into the container and run them
+
+COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
+
+RUN soil/deps-apt.sh layer-for-soil
+RUN soil/deps-apt.sh clang
+
+# Build other dependencies as non-root uke
+RUN useradd --create-home uke && chown -R uke /home/uke
+USER uke
+
+# Used by soil/deps-binary.sh
+COPY build/common.sh /home/uke/tmp/build/common.sh
+
+# Copy pre-built Clang to use Clang's coverage
+#
+# Requires soil/deps-binary.sh download-clang beforehand
+# Note that the path is changed from ~/oil/_cache to ~/oil_DEPS
+# - If both are ~/oil/_cache, ~/oil is mounted at runtime
+# - If both are ~/oil_DEPS, the Docker context is wrong
+# 
+# Not sure why --chown=uke is necessary here and not above
+
+COPY --chown=uke _cache/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz \
+  /home/uke/oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+
+# re2c
+COPY --chown=uke _cache/re2c-3.0.tar.xz \
+  /home/uke/tmp/_cache/re2c-3.0.tar.xz
+COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
+RUN soil/deps-tar.sh build-re2c
+
+# mypy deps: Installs from PyPI
+# needed to measure coverage of mycpp/examples
+COPY mycpp/common.sh /home/uke/tmp/mycpp/common.sh
+COPY soil/deps-mycpp.sh /home/uke/tmp/soil/deps-mycpp.sh
+RUN soil/deps-mycpp.sh layer-mycpp
+
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-clang'"]

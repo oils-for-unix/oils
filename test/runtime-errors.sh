@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   $SH ./runtime-errors.sh <function name>
+#   $SH test/runtime-errors.sh <function name>
 #
 # Run with bash/dash/mksh/zsh.
 

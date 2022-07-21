@@ -17,11 +17,11 @@
 
 // TODO: Don't use 'using' in header
 using gc_heap::AllocStr;
-using gc_heap::CopyStr;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::StackRoots;
 using gc_heap::Str;
+using gc_heap::StrFromC;
 
 class IndexError {};
 class ValueError {};
@@ -159,7 +159,7 @@ inline Str* str(int i) {
   // snprintf().
   char buf[kIntBufSize];
   int length = snprintf(buf, kIntBufSize, "%d", i);
-  return CopyStr(buf, length);
+  return StrFromC(buf, length);
 }
 
 inline Str* str(double f) {  // TODO: should be double

@@ -29,8 +29,8 @@ To run mycpp, you'll need the MyPy source repository, as well as a virtualenv
 containing MyPy's dependencies.  The instructions at the top of `deps.sh` give
 details:
 
-    oil$ mycpp/deps.sh git-clone
-    oil$ mycpp/deps.sh pip-install
+    oil$ soil/deps-mycpp.sh git-clone
+    oil$ soil/deps-mycpp.sh pip-install
 
 To build oil-native, use:
 

@@ -23,7 +23,7 @@
 #include "gc_heap.h"  // for Obj
 
 #ifdef DUMB_ALLOC
-#include "cpp/dumb_alloc_leaky.h"
+#include "cpp/leaky_dumb_alloc.h"
 #define malloc dumb_malloc
 #define free dumb_free
 #endif
@@ -1270,7 +1270,7 @@ inline Str* OverAllocatedStr(int len) {
   return AllocStr(len);
 }
 
-inline Str* CopyStr(const char* s, int len) {
+inline Str* StrFromC(const char* s, int len) {
   // take ownership (but still leaks)
   char* buf = static_cast<char*>(malloc(len + 1));
   memcpy(buf, s, len);
@@ -1278,8 +1278,8 @@ inline Str* CopyStr(const char* s, int len) {
   return new Str(buf, len);
 }
 
-inline Str* CopyStr(const char* s) {
-  return CopyStr(s, strlen(s));
+inline Str* StrFromC(const char* s) {
+  return StrFromC(s, strlen(s));
 }
 
 // emulate gc_heap API for ASDL
@@ -1400,6 +1400,7 @@ class BufWriter : public Writer {
 
   // strategy: snprintf() based on sizeof(int)
   void format_d(int i);
+  void format_o(int i);
   void format_s(Str* s);
   void format_r(Str* s);  // formats with quotes
 

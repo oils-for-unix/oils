@@ -3,7 +3,7 @@
 # Compare alternative shell designs!
 #
 # Usage:
-#   oil_lang/shell-vs-shell.sh <function name>
+#   test/shell-vs-shell.sh <function name>
 
 set -o nounset
 set -o pipefail

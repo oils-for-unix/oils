@@ -365,6 +365,10 @@ void BufWriter::format_d(int i) {
   len_ += len;
 }
 
+void BufWriter::format_o(int i) {
+  NotImplemented();
+}
+
 // repr() calls this too
 //
 // TODO: This could be replaced with QSN?  The upper bound is greater there

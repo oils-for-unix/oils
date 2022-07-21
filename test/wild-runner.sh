@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./wild-runner.sh <function name>
+#   test/wild-runner.sh <function name>
 
 set -o nounset
 set -o pipefail

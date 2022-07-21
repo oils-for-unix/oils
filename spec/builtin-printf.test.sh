@@ -853,6 +853,22 @@ printf $(strftime-format 30) | wc --bytes
 printf $(strftime-format 31) | wc --bytes
 printf $(strftime-format 32) | wc --bytes
 
+case $SH in
+  (*/_bin/cxx-dbg/*)    
+    # Ensure that oil-native detects the truncation of a fixed buffer.
+    # bash has a buffer of 128.
+
+    set +o errexit
+    (
+      printf $(strftime-format 1000)
+    )
+    status=$?
+    if test $status -ne 1; then
+      echo FAIL
+    fi
+    ;;
+esac
+
 ## STDOUT:
 4
 40

@@ -9,22 +9,34 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-soil-run() {
+source soil/common.sh  # find-dir-html
+
+all-tests() {
   ./NINJA_config.py
 
   # uses Ninja to run (cxx, testgc) variant.  Could also run (clang, ubsan),
   # which finds more bugs.
   mycpp/test.sh soil-run
 
-  # This is part of build/dev.sh oil-cpp
-  build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h
-  build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
-  build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
-  build/dev.sh cpp-codegen
-
+  cpp/test.sh pre-build
   cpp/test.sh unit
 
+  # Relies on same pre-build
+  build/codegen.sh test-generated-code
+
   asdl/test.sh unit
+}
+
+soil-run() {
+  set +o errexit
+  $0 all-tests
+  local status=$?
+  set -o errexit
+
+  # Logs in _test/cxx-asan, etc.
+  find-dir-html _test cpp-unit
+
+  return $status
 }
 
 "$@"

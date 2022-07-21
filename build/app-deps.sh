@@ -65,6 +65,7 @@ pgen2/parse.py
 pylib/path_stat.py
 oil_lang/objects.py
 osh/bool_stat.py
+osh/builtin_process.py
 EOF
 
   wc -l $FILTER_DIR/filter-*
@@ -259,4 +260,8 @@ pea-hack() {
   cp -v $DIR/osh_eval/typecheck.txt pea/osh-eval-typecheck.txt
 }
 
-"$@"
+
+# Source by NINJA-config.sh
+if test $(basename $0) = 'app-deps.sh'; then
+  "$@"
+fi

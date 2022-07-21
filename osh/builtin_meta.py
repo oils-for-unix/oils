@@ -12,7 +12,7 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
-from core.pyerror import e_usage, log
+from core.pyerror import e_die_status, e_usage, log
 from core import pyutil  # strerror
 from core import state
 from core import vm
@@ -341,10 +341,9 @@ class BoolStatus(vm._Builtin):
     status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
     if status not in (0, 1):
-      # for some reason this translates better than e_die()
-      raise error.FatalRuntime(
-          'boolstatus expected status 0 or 1, got %d' % status,
-          span_id=spids[0], status=status)
+      e_die_status(
+          status, 'boolstatus expected status 0 or 1, got %d' % status,
+          span_id=spids[0])
 
     return status
 

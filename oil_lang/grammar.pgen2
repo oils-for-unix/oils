@@ -540,8 +540,17 @@ re_atom: (
     # %begin or %end
   | Expr_Symbol
   | class_literal
-    # !digit or ~ %boundary or ![a-f]
-  | '!' [Expr_Name | Expr_Symbol | class_literal]
+    # !digit or ![a-f].  Note ! %boundary could be \B in Python, but ERE
+    # doesn't have anything like that
+  | '!' (Expr_Name | class_literal)
+
+    # syntactic space for Perl-style backtracking
+    # !!REF 1   !!REF name
+    # !!AHEAD(d+)   !!BEHIND(d+)  !!NOT_AHEAD(d+)  !!NOT_BEHIND(d+)
+    #
+    # Note: !! conflicts with history
+  | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
+
     # Splice another expression
   | '@' Expr_Name
     # any %start %end are preferred
@@ -556,11 +565,6 @@ re_atom: (
   | '(' regex ')'
     # capturing group, with optional name
   | '<' regex [':' name_type] '>'
-
-    # syntactic space for Perl-style backtracking
-    # !!REF 1   !!REF name
-    # !!AHEAD(d+)   !!BEHIND(d+)  !!NOT_AHEAD(d+)  !!NOT_BEHIND(d+)
-  | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.

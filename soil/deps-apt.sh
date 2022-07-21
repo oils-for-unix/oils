@@ -67,6 +67,8 @@ other-tests() {
 }
 
 cpp() {
+  ### For both cpp-small and cpp-spec
+
   local -a packages=(
     # retrieving deps -- TODO: move to build time
     wget
@@ -75,18 +77,43 @@ cpp() {
     libreadline-dev
     python2-dev
 
+    python3
     python3-pip
-    # for MyPy virtualenv for requirements.txt -- TODO: move to build time.
-    python3-venv
+    python3-venv  # MyPy virtualenv requirements.txt
 
     ninja-build
-    # to create mycpp/_test/index.html
+    # to create _test/index.html
     gawk
 
     # for stable benchmarks
     valgrind
     # the shell benchmarks compare shells
     busybox-static mksh zsh
+  )
+
+  apt-get install -y "${packages[@]}"
+}
+
+clang() {
+  ### For both cpp-small and cpp-spec
+
+  local -a packages=(
+    # retrieving deps -- TODO: move to build time
+    wget
+
+    build-essential
+    xz-utils  # to extract Clang
+
+    # build/dev.sh minimal is necessary to run tests?
+    libreadline-dev
+    python2-dev
+
+    ninja-build
+
+    # for translating mycpp/examples
+    python3
+    python3-pip
+    python3-venv  # MyPy virtualenv requirements.txt
   )
 
   apt-get install -y "${packages[@]}"

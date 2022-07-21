@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./nix.sh <function name>
+#   test/nix.sh <function name>
 
 set -o nounset
 set -o pipefail

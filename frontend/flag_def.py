@@ -167,9 +167,10 @@ HISTORY_SPEC.ShortFlag('-d', args.Int)
 # osh/builtin_process.py
 #
 
+EXEC_SPEC = FlagSpec('exec')
+
 WAIT_SPEC = FlagSpec('wait')
 WAIT_SPEC.ShortFlag('-n')
-
 
 TRAP_SPEC = FlagSpec('trap')
 TRAP_SPEC.ShortFlag('-p')
@@ -262,9 +263,6 @@ TRY_SPEC.LongFlag('--assign', args.String,
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
 
 # Future directions:
-# run --allow-status=0,1
-#   an arbitrary list of statuses.  Although --assign does this just
-#   fine.
 # run --builtin, run --command, run --proc:
 #   to "replace" 'builtin' and # 'command'
 
