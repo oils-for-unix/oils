@@ -202,12 +202,14 @@ class Str : public gc_heap::Obj {
     return new Str(buf, new_len);
   }
 
-  int _strip_left_pos();
-  int _strip_right_pos();
-
   Str* strip();
   Str* rstrip(Str* chars);
   Str* rstrip();
+
+#if 0
+  Str* lstrip(Str* chars);
+  Str* lstrip();
+#endif
 
   bool startswith(Str* s) {
     if (s->len_ > len_) {

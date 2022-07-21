@@ -87,49 +87,6 @@ Str* Str::replace(Str* old, Str* new_str) {
   return new Str(result, result_len);
 }
 
-// Helper for lstrip() and strip()
-int Str::_strip_left_pos() {
-  assert(len_ > 0);
-
-  int i = 0;
-  bool done = false;
-  while (i < len_ && !done) {
-    switch (data_[i]) {
-    case ' ':
-    case '\t':
-    case '\r':
-    case '\n':
-      i++;
-    default:
-      done = true;
-      break;
-    }
-  }
-  return i;
-}
-
-// Helper for rstrip() and strip()
-int Str::_strip_right_pos() {
-  assert(len_ > 0);
-
-  int last = len_ - 1;
-  int i = last;
-  bool done = false;
-  while (i > 0 && !done) {
-    switch (data_[i]) {
-    case ' ':
-    case '\t':
-    case '\r':
-    case '\n':
-      i--;
-    default:
-      done = true;
-      break;
-    }
-  }
-  return i;
-}
-
 enum class StripWhere {
   Left,
   Right,
@@ -146,7 +103,7 @@ bool OmitChar(uint8_t ch, int what) {
   }
 }
 
-Str* _strip(Str* s, StripWhere where, int what) {
+Str* StripAny(Str* s, StripWhere where, int what) {
   // what: kWhitespace or an ASCII code 0-255
 
   int length = len(s);
@@ -173,21 +130,32 @@ Str* _strip(Str* s, StripWhere where, int what) {
   return new Str(s->data_ + i, j - i);
 }
 
-
 Str* Str::strip() {
-  return _strip(this, StripWhere::Both, kWhitespace);
+  return StripAny(this, StripWhere::Both, kWhitespace);
 }
 
 // Used for CommandSub in osh/cmd_exec.py
 Str* Str::rstrip(Str* chars) {
   assert(chars->len_ == 1);
   int c = chars->data_[0];
-  return _strip(this, StripWhere::Right, c);
+  return StripAny(this, StripWhere::Right, c);
 }
 
 Str* Str::rstrip() {
-  return _strip(this, StripWhere::Both, kWhitespace);
+  return StripAny(this, StripWhere::Both, kWhitespace);
 }
+
+#if 0
+Str* Str::lstrip(Str* chars) {
+  assert(chars->len_ == 1);
+  int c = chars->data_[0];
+  return StripAny(this, StripWhere::Left, c);
+}
+
+Str* Str::lstrip() {
+  return StripAny(this, StripWhere::Left, kWhitespace);
+}
+#endif
 
 Str* Str::ljust(int width, Str* fillchar) {
   assert(len(fillchar) == 1);
