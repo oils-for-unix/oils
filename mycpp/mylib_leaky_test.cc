@@ -1014,18 +1014,24 @@ TEST test_str_strip() {
     Str* result = (new Str(""))->strip();
     PRINT_STRING(result);
     ASSERT(are_equal(result, new Str("")));
+
+    ASSERT_EQ(result, kEmptyString);  // identical objects
   }
 
   {
     Str* result = (new Str(" "))->strip();
     PRINT_STRING(result);
     ASSERT(are_equal(result, new Str("")));
+
+    ASSERT_EQ(result, kEmptyString);  // identical objects
   }
 
   {
     Str* result = (new Str("  \n"))->strip();
     PRINT_STRING(result);
     ASSERT(are_equal(result, new Str("")));
+
+    ASSERT_EQ(result, kEmptyString);  // identical objects
   }
 
   {

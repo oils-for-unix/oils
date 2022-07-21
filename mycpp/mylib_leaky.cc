@@ -107,10 +107,11 @@ Str* StripAny(Str* s, StripWhere where, int what) {
   // what: kWhitespace or an ASCII code 0-255
 
   int length = len(s);
+  const char* char_data = s->data_;
 
   int i = 0;
   if (where != StripWhere::Right) {
-    while (i < length && OmitChar(s->data_[i], what)) {
+    while (i < length && OmitChar(char_data[i], what)) {
       i++;
     }
   }
@@ -119,15 +120,20 @@ Str* StripAny(Str* s, StripWhere where, int what) {
   if (where != StripWhere::Left) {
     do {
       j--;
-    } while (j >= i && OmitChar(s->data_[j], what));
+    } while (j >= i && OmitChar(char_data[j], what));
     j++;
+  }
+
+  if (i == j) {  // Optimization to reuse existing object
+    return kEmptyString;
   }
 
   if (i == 0 && j == length) {  // nothing stripped
     return s;
   }
 
-  return new Str(s->data_ + i, j - i);
+  // Note: makes a copy in leaky version, and will in GC version too
+  return mylib::StrFromC(char_data + i, j - i);
 }
 
 Str* Str::strip() {
