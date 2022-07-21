@@ -31,6 +31,15 @@ from core.pyerror import log
 _ = log
 
 
+# Not supporting concise syntax tree like Python
+ABBREV = False
+
+if ABBREV:
+  PRETTY_METHODS = ['PrettyTree']
+else:
+  PRETTY_METHODS = ['PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree']
+
+
 # Used by core/asdl_gen.py to generate _devbuild/gen/osh-types.h, with
 # lex_mode__*
 class CEnumVisitor(visitor.AsdlVisitor):
@@ -293,7 +302,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit('  }')
 
     if self.pretty_print_methods:
-      for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
+      for abbrev in PRETTY_METHODS:
         self.Emit('  hnode_t* %s();' % abbrev)
 
     Emit('  DISALLOW_COPY_AND_ASSIGN(%(sum_name)s_t)')
@@ -366,7 +375,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
 
     if self.pretty_print_methods:
-      for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
+      for abbrev in PRETTY_METHODS:
         self.Emit('  hnode_t* %s();' % abbrev, depth)
 
     self.Emit('')
@@ -415,26 +424,26 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       iter_name = 'i%d' % counter
       typ = field.typ.children[0]
 
-      self.Emit('  if (this->%s && len(this->%s)) {  // ArrayType' % (field.name, field.name))
-      self.Emit('    hnode__Array* %s = new hnode__Array(NewList<hnode_t*>());' % out_val_name)
+      self.Emit('if (this->%s && len(this->%s)) {  // ArrayType' % (field.name, field.name))
+      self.Emit('  hnode__Array* %s = new hnode__Array(NewList<hnode_t*>());' % out_val_name)
       item_type = _GetCppType(typ)
-      self.Emit('    for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {'
+      self.Emit('  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {'
                 % (item_type, field.name))
-      self.Emit('      %s %s = it.Value();' % (item_type, iter_name))
+      self.Emit('    %s %s = it.Value();' % (item_type, iter_name))
       child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
-      self.Emit('      %s->children->append(%s);' % (out_val_name, child_code_str))
-      self.Emit('    }')
-      self.Emit('    L->append(new field(StrFromC("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('    %s->children->append(%s);' % (out_val_name, child_code_str))
       self.Emit('  }')
+      self.Emit('  L->append(new field(StrFromC("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('}')
 
     elif field.IsMaybe():
       typ = field.typ.children[0]
 
-      self.Emit('  if (this->%s) {  // MaybeType' % field.name)
+      self.Emit('if (this->%s) {  // MaybeType' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
-      self.Emit('    hnode_t* %s = %s;' % (out_val_name, child_code_str))
-      self.Emit('    L->append(new field(StrFromC("%s"), %s));' % (field.name, out_val_name))
-      self.Emit('  }')
+      self.Emit('  hnode_t* %s = %s;' % (out_val_name, child_code_str))
+      self.Emit('  L->append(new field(StrFromC("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('}')
 
     elif field.IsMap():
       k = 'k%d' % counter
@@ -449,19 +458,19 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
       v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
-      self.Emit('  if (this->%s) {' % field.name)
+      self.Emit('if (this->%s) {' % field.name)
       # TODO: m can be a global constant!
-      self.Emit('    auto m = new hnode__Leaf(StrFromC("map"), color_e::OtherConst);')
-      self.Emit('    hnode__Array* %s = new hnode__Array(NewList<hnode_t*>({m}));' % out_val_name)
-      self.Emit('    for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' % (
+      self.Emit('  auto m = new hnode__Leaf(StrFromC("map"), color_e::OtherConst);')
+      self.Emit('  hnode__Array* %s = new hnode__Array(NewList<hnode_t*>({m}));' % out_val_name)
+      self.Emit('  for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' % (
                 k_c_type, v_c_type, field.name))
-      self.Emit('      auto %s = it.Key();' % k)
-      self.Emit('      auto %s = it.Value();' % v)
-      self.Emit('      %s->children->append(%s);' % (out_val_name, k_code_str))
-      self.Emit('      %s->children->append(%s);' % (out_val_name, v_code_str))
-      self.Emit('    }')
-      self.Emit('    L->append(new field(StrFromC ("%s"), %s));' % (field.name, out_val_name))
-      self.Emit('  }');
+      self.Emit('    auto %s = it.Key();' % k)
+      self.Emit('    auto %s = it.Value();' % v)
+      self.Emit('    %s->children->append(%s);' % (out_val_name, k_code_str))
+      self.Emit('    %s->children->append(%s);' % (out_val_name, v_code_str))
+      self.Emit('  }')
+      self.Emit('  L->append(new field(StrFromC ("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('}');
 
     else:
       var_name = 'this->%s' % field.name
@@ -470,9 +479,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system
         pass
-      self.Emit('  hnode_t* %s = %s;' % (out_val_name, code_str), depth)
+      self.Emit('hnode_t* %s = %s;' % (out_val_name, code_str), depth)
 
-      self.Emit('  L->append(new field(StrFromC("%s"), %s));' % (field.name, out_val_name), depth)
+      self.Emit('L->append(new field(StrFromC("%s"), %s));' % (field.name, out_val_name), depth)
 
   def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node):
     if not self.pretty_print_methods:
@@ -492,6 +501,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' % pretty_cls_name)
     if all_fields:
       self.Emit('  List<field*>* L = out_node->fields;')
+      self.Emit('')
 
     # Use the runtime type to be more like asdl/format.py
     for local_id, field in enumerate(all_fields):
@@ -507,6 +517,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     #
     # _AbbreviatedTree
     #
+
+    if not ABBREV:
+      return
 
     self.Emit('')
     self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
@@ -589,9 +602,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self._EmitPrettyPrintMethods(class_name, all_fields, variant)
 
     # Emit dispatch WITHOUT using 'virtual'
-    for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
+    for func_name in PRETTY_METHODS:
       self.Emit('')
-      self.Emit('hnode_t* %s_t::%s() {' % (sum_name, abbrev))
+      self.Emit('hnode_t* %s_t::%s() {' % (sum_name, func_name))
       self.Emit('  switch (this->tag_()) {', depth)
 
       for variant in sum.types:
@@ -603,7 +616,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('  case %s_e::%s: {' % (sum_name, variant.name), depth)
         self.Emit('    %s* obj = static_cast<%s*>(this);' %
                   (subtype_name, subtype_name), depth)
-        self.Emit('    return obj->%s();' % abbrev, depth)
+        self.Emit('    return obj->%s();' % func_name, depth)
         self.Emit('  }', depth)
 
       self.Emit('  default:', depth)

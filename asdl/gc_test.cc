@@ -29,7 +29,7 @@ TEST pretty_print_test() {
   // Note: this segfaults with 1000 iterations, because it hit GC.
   // TODO: GC_EVERY_ALLOC and make it pass.
   for (int i = 0; i < 100; ++i) {
-    hnode_t* t1 = b->AbbreviatedTree();
+    hnode_t* t1 = b->PrettyTree();
     ASSERT(strcmp("hnode.Record", hnode_str(t1->tag_())) == 0);
 
     auto f = mylib::Stdout();

@@ -382,7 +382,11 @@ def PrintAst(node, flag):
       raise AssertionError()
 
     if 'abbrev-' in afmt:
-      tree = node.AbbreviatedTree()
+      # ASDL "abbreviations" are only supported by asdl/gen_python.py
+      if mylib.PYTHON:
+        tree = node.AbbreviatedTree()
+      else:
+        tree = node.PrettyTree()
     else:
       tree = node.PrettyTree()
 

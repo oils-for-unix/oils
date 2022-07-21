@@ -103,7 +103,7 @@ TEST pretty_print_test() {
   //
   log("sizeof b = %d", sizeof b);
   log("");
-  hnode_t* t1 = b->AbbreviatedTree();
+  hnode_t* t1 = b->PrettyTree();
   ASSERT(strcmp("hnode.Record", hnode_str(t1->tag_())) == 0);
 
   auto f = mylib::Stdout();
@@ -112,7 +112,7 @@ TEST pretty_print_test() {
 
   // typed_arith.asdl
   auto c = new arith_expr__Const(42);
-  hnode_t* t2 = c->AbbreviatedTree();
+  hnode_t* t2 = c->PrettyTree();
   ASSERT(strcmp("hnode.Record", hnode_str(t2->tag_())) == 0);
 
   PASS();
