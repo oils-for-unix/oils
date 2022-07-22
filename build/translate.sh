@@ -151,7 +151,7 @@ asdl-runtime() {
 #include "mycpp/mylib_leaky.h"
 #else
 #include "mycpp/gc_heap.h"
-#include "mycpp/mylib2.h"
+#include "mycpp/gc_mylib.h"
 #endif
 
 // For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.

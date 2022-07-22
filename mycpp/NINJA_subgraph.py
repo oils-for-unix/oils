@@ -156,14 +156,14 @@ def ShouldSkipBenchmark(name):
   return False
 
 
-RUNTIME = ['mycpp/gc_builtins.cc', 'mycpp/mylib2.cc', 'mycpp/gc_heap.cc']
+RUNTIME = ['mycpp/gc_builtins.cc', 'mycpp/gc_mylib.cc', 'mycpp/gc_heap.cc']
 
 UNIT_TESTS = {
     'mycpp/mylib_leaky_test': ['mycpp/mylib_leaky.cc'],
     'mycpp/gc_heap_test': ['mycpp/gc_heap.cc'],
     'mycpp/gc_stress_test': RUNTIME,
     'mycpp/gc_builtins_test': RUNTIME,
-    'mycpp/mylib2_test': RUNTIME,
+    'mycpp/gc_mylib_test': RUNTIME,
 
     'mycpp/demo/target_lang': ['cpp/leaky_dumb_alloc.cc', 'mycpp/gc_heap.cc'],
 

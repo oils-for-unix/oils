@@ -5,7 +5,7 @@
 #include "mycpp/gc_heap.h"
 #include "mycpp/gc_builtins.h"
 #include "vendor/greatest.h"
-//#include "mylib2.h"  // gBuf
+//#include "gc_mylib.h"  // gBuf
 
 using gc_heap::Alloc;
 using gc_heap::Dict;

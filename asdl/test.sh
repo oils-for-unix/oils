@@ -90,7 +90,7 @@ gc-test() {
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \
     mycpp/gc_builtins.cc \
-    mycpp/mylib2.cc \
+    mycpp/gc_mylib.cc \
     asdl/runtime.cc \
     _build/cpp/hnode_asdl.cc \
     $tmp_dir/demo_lib_asdl.cc \
@@ -161,7 +161,7 @@ EOF
     asdl/runtime.cc \
     mycpp/gc_heap.cc \
     mycpp/gc_builtins.cc \
-    mycpp/mylib2.cc \
+    mycpp/gc_mylib.cc \
     $tmp_dir/${name}_asdl_test.cc \
     "$@"
 

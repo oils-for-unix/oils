@@ -4,7 +4,7 @@
 #include "_build/cpp/hnode_asdl.h"
 #include "asdl/runtime.h"
 #include "mycpp/gc_heap.h"
-#include "mycpp/mylib2.h"
+#include "mycpp/gc_mylib.h"
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;

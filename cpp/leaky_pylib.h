@@ -6,7 +6,7 @@
 #if 1  // TODO: switch this off
 #include "mycpp/mylib_leaky.h"
 #else
-#include "mycpp/mylib2.h"
+#include "mycpp/gc_mylib.h"
 #endif
 
 namespace os_path {

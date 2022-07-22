@@ -1,6 +1,6 @@
-// mylib2.cc
+// gc_mylib.cc
 
-#include "mylib2.h"
+#include "gc_mylib.h"
 
 #include <errno.h>
 #include <unistd.h>  // isatty
@@ -118,7 +118,7 @@ void BufWriter::write(Str* s) {
   //   - only realloc by doublings?
   // - or change this to append to a list?  and then getvalue() does a join()
   // on it?
-  // - DEALLOCATE.  mylib2 doesn't leak!
+  // - DEALLOCATE.  gc_mylib doesn't leak!
 
   // data_ is nullptr at first
   data_ = static_cast<char*>(realloc(data_, len_ + 1));

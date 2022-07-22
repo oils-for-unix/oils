@@ -1,10 +1,10 @@
-// mylib2.h
+// gc_mylib.h
 //
 // Rewrites of mylib.py in C++.
 // TODO: Remove mylib.{h,cc}, and make this the main copy.
 
-#ifndef MYLIB2_H
-#define MYLIB2_H
+#ifndef GC_MYLIB_H
+#define GC_MYLIB_H
 
 #include "gc_heap.h"
 #include "gc_builtins.h"  // Tuple2
@@ -232,4 +232,4 @@ inline Writer* Stderr() {
 // Global formatter
 extern mylib::BufWriter gBuf;
 
-#endif  // MYLIB2_H
+#endif  // GC_MYLIB_H

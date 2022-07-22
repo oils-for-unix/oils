@@ -27,7 +27,7 @@ Str* rstrip_slashes(Str* s) {
     return s;
   }
 
-  // TODO: use mylib2.h API instead
+  // TODO: use gc_mylib.h API instead
   char* buf = static_cast<char*>(malloc(new_len + 1));
   memcpy(buf, s->data_, new_len);
   buf[new_len] = '\0';

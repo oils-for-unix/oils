@@ -5,7 +5,7 @@
 #include <stdio.h>   // vprintf
 
 #include "mycpp/gc_heap.h"
-#include "mycpp/mylib2.h"  // gBuf
+#include "mycpp/gc_mylib.h"  // gBuf
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;

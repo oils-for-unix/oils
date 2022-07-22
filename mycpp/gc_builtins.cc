@@ -7,7 +7,7 @@
 #include <cstdarg>  // va_list, etc.
 #include <vector>
 
-#include "mylib2.h"  // BufWriter
+#include "gc_mylib.h"  // BufWriter
 
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;

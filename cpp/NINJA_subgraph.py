@@ -107,7 +107,7 @@ DEPS_CC = [
 # Note: also appears in mycpp/build_graph.py
 GC_RUNTIME = [
     'mycpp/gc_heap.cc',
-    'mycpp/mylib2.cc',
+    'mycpp/gc_mylib.cc',
     'mycpp/gc_builtins.cc',
 ]
 

@@ -1,4 +1,4 @@
-#include "mylib2.h"
+#include "gc_mylib.h"
 
 #include "mycpp/gc_heap.h"
 #include "mycpp/gc_builtins.h"
