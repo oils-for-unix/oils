@@ -6,7 +6,7 @@
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/runtime_asdl.h"
 #ifdef LEAKY_BINDINGS
-  #include "mycpp/mylib_leaky.h"
+  #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_heap.h"
   #include "mycpp/gc_builtins.h"  // Tuple2, NOT gc_heap::Tuple2

@@ -50,7 +50,7 @@ gen-cpp-test() {
   compile_and_link $compiler $variant '-D LEAKY_BINDINGS' $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
-    mycpp/mylib_leaky.cc \
+    mycpp/mylib_old.cc \
     mycpp/gc_heap.cc \
     _build/cpp/hnode_asdl.cc \
     $tmp_dir/typed_arith_asdl.cc \

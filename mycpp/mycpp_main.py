@@ -236,7 +236,7 @@ def main(argv):
 // BEGIN mycpp output
 
 #ifdef LEAKY_BINDINGS
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
 #else
@@ -282,7 +282,7 @@ using gc_heap::NewDict;
 #define %s
 
 #ifdef LEAKY_BINDINGS
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 #else
 #include "mycpp/gc_heap.h"
 #endif

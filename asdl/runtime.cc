@@ -3,7 +3,7 @@
 // BEGIN mycpp output
 
 #ifdef LEAKY_BINDINGS
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
 #else

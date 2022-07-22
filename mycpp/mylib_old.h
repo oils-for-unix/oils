@@ -1,4 +1,4 @@
-// mylib_leaky.h
+// mylib_old.h
 
 #ifndef MYLIB_H
 #define MYLIB_H

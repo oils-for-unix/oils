@@ -6,7 +6,7 @@
 
 #ifdef LEAKY_TEST_MODE
 #include "mycpp/gc_heap.h"
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 using gc_heap::StackRoots;  // no-op
 using mylib::StrFromC;
 #else

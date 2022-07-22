@@ -25,7 +25,7 @@ def main(argv):
 
 #include "_build/cpp/option_asdl.h"
 #ifdef LEAKY_BINDINGS
-  #include "mycpp/mylib_leaky.h"
+  #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_heap.h"
   using gc_heap::List;

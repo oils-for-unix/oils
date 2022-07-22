@@ -83,7 +83,7 @@ translate-mycpp() {
   shift  # rest of args are inputs
 
   # Controls NewList vs. Alloc<List>
-  # TODO: mylib_leaky.h should grow the GC API
+  # TODO: mylib_old.h should grow the GC API
   export GC=1
 
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different

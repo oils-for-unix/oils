@@ -155,7 +155,7 @@ class TypeLookup(object):
       if target.name == 'gc_heap::Str':
           return GcStrPrinter(val)
 
-      # TODO: remove Str when we remove mylib_leaky.cc
+      # TODO: remove Str when we remove mylib_old.cc
       if target.name == 'Str':
           return StrPrinter(val)
 

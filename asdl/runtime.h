@@ -4,7 +4,7 @@
 #include "cpp/qsn.h"
 
 #ifdef LEAKY_BINDINGS
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 #else
 #include "mycpp/gc_heap.h"
 #include "mycpp/gc_mylib.h"
@@ -20,7 +20,7 @@ inline Str* repr(void* obj) {
 #define RUNTIME_H
 
 #ifdef LEAKY_BINDINGS
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 #else
 #include "mycpp/gc_heap.h"
 #endif

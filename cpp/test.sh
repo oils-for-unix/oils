@@ -30,7 +30,7 @@ readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_flag_spec_test.cc \
     _build/cpp/arg_types.cc \
     cpp/leaky_frontend_flag_spec.cc \
-    mycpp/mylib_leaky.cc
+    mycpp/mylib_old.cc
 )
 
 leaky-flag-spec-test() {
@@ -58,7 +58,7 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_osh.cc \
     cpp/leaky_stdlib.cc \
     cpp/leaky_pylib.cc \
-    mycpp/mylib_leaky.cc
+    mycpp/mylib_old.cc
 )
 
 leaky-binding-test() {

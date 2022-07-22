@@ -52,7 +52,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
 
 
 _PRIMITIVES = {
-    'string': 'Str*',  # declared in mylib_leaky.h
+    'string': 'Str*',  # declared in mylib_old.h
     'int': 'int',
     'float': 'double',
     'bool': 'bool',

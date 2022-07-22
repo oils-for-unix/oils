@@ -284,7 +284,7 @@ from asdl import pybase
 #ifndef CONSTS_H
 #define CONSTS_H
 
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/option_asdl.h"
 #include "_build/cpp/runtime_asdl.h"

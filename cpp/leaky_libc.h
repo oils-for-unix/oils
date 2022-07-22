@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>  // gethostname()
 
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 
 namespace libc {
 

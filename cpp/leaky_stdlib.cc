@@ -17,7 +17,7 @@
 
 #include "cpp/leaky_core_error.h"
 #include "cpp/leaky_core_pyerror.h"
-#include "mycpp/mylib_leaky.h"
+#include "mycpp/mylib_old.h"
 using mylib::OverAllocatedStr;
 using mylib::StrFromC;
 
@@ -146,7 +146,7 @@ time_t localtime(time_t ts) {
 }
 
 Str* strftime(Str* s, time_t ts) {
-  // TODO: may not work with mylib_leaky.h
+  // TODO: may not work with mylib_old.h
   // https://github.com/oilshell/oil/issues/1221
   assert(s->IsNulTerminated());
 

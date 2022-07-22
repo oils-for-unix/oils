@@ -113,7 +113,7 @@ GC_RUNTIME = [
 
 OLD_RUNTIME = [
     'mycpp/gc_heap.cc',  # We need this?
-    'mycpp/mylib_leaky.cc',
+    'mycpp/mylib_old.cc',
 ]
 
 

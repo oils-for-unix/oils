@@ -113,7 +113,7 @@ duplicate-symbols() {
   #include "mycpp/gc_heap.h"
   using gc_heap::Str;
 #else
-  #include "mycpp/mylib_leaky.h"
+  #include "mycpp/mylib_old.h"
 #endif
 
 GLOBAL_STR(str0, "hi");
@@ -131,7 +131,7 @@ int* g1 = new int[100];
   #include "mycpp/gc_heap.h"
   using gc_heap::Str;
 #else
-  #include "mycpp/mylib_leaky.h"
+  #include "mycpp/mylib_old.h"
 #endif
 
 GLOBAL_STR(str0, "hi");
