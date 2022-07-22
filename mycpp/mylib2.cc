@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <unistd.h>  // isatty
 
-#include "my_runtime.h"  // kIntBufSize
+#include "gc_lib.h"  // kIntBufSize
 
 using gc_heap::gHeap;
 using gc_heap::kStrHeaderSize;

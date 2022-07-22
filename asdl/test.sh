@@ -89,7 +89,7 @@ gc-test() {
   compile_and_link $compiler $variant '' $bin \
     asdl/gc_test.cc \
     mycpp/gc_heap.cc \
-    mycpp/my_runtime.cc \
+    mycpp/gc_lib.cc \
     mycpp/mylib2.cc \
     asdl/runtime.cc \
     _build/cpp/hnode_asdl.cc \
@@ -160,7 +160,7 @@ EOF
     _build/cpp/${name}_asdl.cc \
     asdl/runtime.cc \
     mycpp/gc_heap.cc \
-    mycpp/my_runtime.cc \
+    mycpp/gc_lib.cc \
     mycpp/mylib2.cc \
     $tmp_dir/${name}_asdl_test.cc \
     "$@"

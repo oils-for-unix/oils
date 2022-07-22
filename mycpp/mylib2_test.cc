@@ -1,7 +1,7 @@
 #include "mylib2.h"
 
 #include "mycpp/gc_heap.h"
-#include "mycpp/my_runtime.h"
+#include "mycpp/gc_lib.h"
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;

@@ -7,7 +7,7 @@
 #define MYLIB2_H
 
 #include "gc_heap.h"
-#include "my_runtime.h"  // Tuple2
+#include "gc_lib.h"  // Tuple2
 
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;

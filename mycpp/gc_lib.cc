@@ -1,6 +1,6 @@
-// my_runtime.cc
+// gc_lib.cc
 
-#include "my_runtime.h"
+#include "gc_lib.h"
 
 #include <ctype.h>  // isspace(), isdigit()
 

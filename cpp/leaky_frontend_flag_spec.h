@@ -9,7 +9,7 @@
   #include "mycpp/mylib_leaky.h"
 #else
   #include "mycpp/gc_heap.h"
-  #include "mycpp/my_runtime.h"  // Tuple2, NOT gc_heap::Tuple2
+  #include "mycpp/gc_lib.h"  // Tuple2, NOT gc_heap::Tuple2
   using gc_heap::Str;
   using gc_heap::List;
   using gc_heap::Dict;

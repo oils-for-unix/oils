@@ -1,4 +1,4 @@
-// my_runtime.h: Statically typed Python builtins.
+// gc_lib.h: Statically typed Python builtins.
 //
 // Builtin types: tuples, NotImplementedError, AssertionError
 // Builtin functions: print(), repr(), ord()
@@ -210,7 +210,7 @@ inline bool _cmp(gc_heap::Str* a, gc_heap::Str* b) {
   return str_cmp(a, b) < 0;
 }
 
-// This is a METHOD definition.  It's in my_runtime.h so that gc_heap.h doesn't
+// This is a METHOD definition.  It's in gc_lib.h so that gc_heap.h doesn't
 // need to #include <algorithm>.  I think that would bloat all the ASDL types.
 template <typename T>
 void gc_heap::List<T>::sort() {

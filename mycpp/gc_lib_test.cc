@@ -1,4 +1,4 @@
-#include "mycpp/my_runtime.h"
+#include "mycpp/gc_lib.h"
 
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.

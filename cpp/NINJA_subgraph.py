@@ -108,7 +108,7 @@ DEPS_CC = [
 GC_RUNTIME = [
     'mycpp/gc_heap.cc',
     'mycpp/mylib2.cc',
-    'mycpp/my_runtime.cc',
+    'mycpp/gc_lib.cc',
 ]
 
 OLD_RUNTIME = [
