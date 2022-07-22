@@ -5,7 +5,7 @@
 #include "_build/cpp/arg_types.h"
 
 #ifndef CPP_UNIT_TEST
-#include "_build/cpp/osh_eval.h"  // args::Reader, etc.
+  #include "_build/cpp/osh_eval.h"  // args::Reader, etc.
 #endif
 
 namespace flag_spec {

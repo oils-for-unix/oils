@@ -1,17 +1,17 @@
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
-  using mylib::StrFromC;
-  using gc_heap::StackRoots;  // no-op
+using gc_heap::StackRoots;  // no-op
+using mylib::StrFromC;
 #else
-  #include "mycpp/gc_heap.h"
   #include "mycpp/gc_builtins.h"
-  using gc_heap::StackRoots;
-  using gc_heap::Str;
-  using gc_heap::StrFromC;
-  using gc_heap::kEmptyString;
+  #include "mycpp/gc_heap.h"
+using gc_heap::kEmptyString;
+using gc_heap::StackRoots;
+using gc_heap::Str;
+using gc_heap::StrFromC;
 #endif
 
-#include <ctype.h>   // isalpha(), isdigit()
+#include <ctype.h>  // isalpha(), isdigit()
 
 #ifndef LEAKY_BINDINGS
 namespace gc_heap {

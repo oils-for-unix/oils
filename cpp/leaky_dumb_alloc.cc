@@ -32,9 +32,9 @@ inline size_t aligned(size_t n) {
 #ifdef DUMB_ALLOC
 void* operator new(size_t size) {
   char* p = &(kMem[gMemPos]);
-#ifdef ALLOC_LOG
+  #ifdef ALLOC_LOG
   printf("new %zu\n", size);
-#endif
+  #endif
   gMemPos += aligned(size);
   ++gNumNew;
   return p;

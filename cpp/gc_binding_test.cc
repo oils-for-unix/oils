@@ -5,12 +5,12 @@
 // leaky mode!
 
 #ifdef LEAKY_TEST_MODE
-#include "mycpp/gc_heap.h"
-#include "mycpp/mylib_old.h"
+  #include "mycpp/gc_heap.h"
+  #include "mycpp/mylib_old.h"
 using gc_heap::StackRoots;  // no-op
 using mylib::StrFromC;
 #else
-#include "mycpp/gc_heap.h"
+  #include "mycpp/gc_heap.h"
 using gc_heap::StackRoots;
 using gc_heap::StrFromC;
 #endif

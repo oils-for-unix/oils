@@ -4,13 +4,13 @@
 #define QSN_H
 
 #ifdef LEAKY_BINDINGS
-#include "mycpp/mylib_old.h"
+  #include "mycpp/mylib_old.h"
 using gc_heap::StackRoots;  // no-op
 using mylib::AllocStr;
 using mylib::OverAllocatedStr;
 using mylib::StrFromC;
 #else
-#include "mycpp/gc_heap.h"
+  #include "mycpp/gc_heap.h"
 using gc_heap::AllocStr;
 using gc_heap::OverAllocatedStr;
 using gc_heap::StackRoots;

@@ -1,13 +1,13 @@
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
-  using mylib::StrFromC;
+using mylib::StrFromC;
 #else
-  #include "mycpp/gc_heap.h"
   #include "mycpp/gc_builtins.h"
-  using gc_heap::Str;
-  using gc_heap::StrFromC;
-  using gc_heap::kEmptyString;
-  using gc_heap::gHeap;
+  #include "mycpp/gc_heap.h"
+using gc_heap::gHeap;
+using gc_heap::kEmptyString;
+using gc_heap::Str;
+using gc_heap::StrFromC;
 #endif
 
 #include "vendor/greatest.h"

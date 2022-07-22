@@ -219,8 +219,8 @@ class Heap {
     }
 
 #if GC_DEBUG
-    // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
-    //    space_size_);
+      // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+      //    space_size_);
 #endif
 
     Collect();  // Try to free some space.
@@ -603,8 +603,8 @@ inline Slab<T>* NewSlab(int len) {
 }
 
 #ifdef MYLIB_LEAKY
-#define GLOBAL_STR(name, val) Str* name = new Str(val);
-#define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
+  #define GLOBAL_STR(name, val) Str* name = new Str(val);
+  #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 #endif
 
 #ifndef MYLIB_LEAKY
@@ -700,23 +700,23 @@ class GlobalStr {
 
 extern Str* kEmptyString;
 
-// This macro is a workaround for the fact that it's impossible to have a
-// a constexpr initializer for char[N].  The "String Literals as Non-Type
-// Template Parameters" feature of C++ 20 would have done it, but it's not
-// there.
-//
-// https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
-// https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
+  // This macro is a workaround for the fact that it's impossible to have a
+  // a constexpr initializer for char[N].  The "String Literals as Non-Type
+  // Template Parameters" feature of C++ 20 would have done it, but it's not
+  // there.
+  //
+  // https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
+  // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
-#define GLOBAL_STR(name, val)                 \
-  gc_heap::GlobalStr<sizeof(val)> _##name = { \
-      Tag::Global,                            \
-      0,                                      \
-      gc_heap::kZeroMask,                     \
-      gc_heap::kStrHeaderSize + sizeof(val),  \
-      -1,                                     \
-      val};                                   \
-  Str* name = reinterpret_cast<Str*>(&_##name);
+  #define GLOBAL_STR(name, val)                 \
+    gc_heap::GlobalStr<sizeof(val)> _##name = { \
+        Tag::Global,                            \
+        0,                                      \
+        gc_heap::kZeroMask,                     \
+        gc_heap::kStrHeaderSize + sizeof(val),  \
+        -1,                                     \
+        val};                                   \
+    Str* name = reinterpret_cast<Str*>(&_##name);
 
 // Notes:
 // - sizeof("foo") == 4, for the NUL terminator.
@@ -811,13 +811,13 @@ class GlobalList {
   GlobalSlab<T, N>* slab_;
 };
 
-#define GLOBAL_LIST(T, N, name, array)                                \
-  gc_heap::GlobalSlab<T, N> _slab_##name = {                          \
-      Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen, array}; \
-  gc_heap::GlobalList<T, N> _list_##name = {                          \
-      Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen,         \
-      N,           N, &_slab_##name};                                 \
-  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
+  #define GLOBAL_LIST(T, N, name, array)                                \
+    gc_heap::GlobalSlab<T, N> _slab_##name = {                          \
+        Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen, array}; \
+    gc_heap::GlobalList<T, N> _list_##name = {                          \
+        Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen,         \
+        N,           N, &_slab_##name};                                 \
+    List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
 // A list has one Slab pointer which we need to follow.
 constexpr uint16_t maskof_List() {
@@ -1396,9 +1396,9 @@ void Dict<K, V>::set(K key, V val) {
   }
 }
 
-#if GC_DEBUG
+  #if GC_DEBUG
 void ShowFixedChildren(Obj* obj);
-#endif
+  #endif
 
 #endif  // MYLIB_LEAKY
 

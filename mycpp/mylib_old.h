@@ -23,9 +23,9 @@
 #include "gc_heap.h"  // for Obj
 
 #ifdef DUMB_ALLOC
-#include "cpp/leaky_dumb_alloc.h"
-#define malloc dumb_malloc
-#define free dumb_free
+  #include "cpp/leaky_dumb_alloc.h"
+  #define malloc dumb_malloc
+  #define free dumb_free
 #endif
 
 class Str;
@@ -206,10 +206,10 @@ class Str : public gc_heap::Obj {
   Str* rstrip(Str* chars);
   Str* rstrip();
 
-#if 0
+  #if 0
   Str* lstrip(Str* chars);
   Str* lstrip();
-#endif
+  #endif
 
   bool startswith(Str* s) {
     if (s->len_ > len_) {
@@ -409,11 +409,11 @@ class List : public gc_heap::Obj {
   }
 
   void append(T item) {
-#ifdef ALLOC_LOG
+  #ifdef ALLOC_LOG
     // we can post process this format to find large lists
     // except when they're constants, but that's OK?
     printf("%p %zu\n", this, v_.size());
-#endif
+  #endif
 
     v_.push_back(item);
   }
