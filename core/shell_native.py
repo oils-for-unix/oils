@@ -132,10 +132,10 @@ def AddProcess(
   b[builtin_i.exec_] = builtin_process2.Exec(mem, ext_prog, fd_state,
                                             search_path, errfmt)
   b[builtin_i.umask] = builtin_process2.Umask()
+  b[builtin_i.wait] = builtin_process2.Wait(waiter, job_state, mem, tracer,
+                                            errfmt)
 
   if mylib.PYTHON:
-    b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, tracer,
-                                             errfmt)
     b[builtin_i.jobs] = builtin_process.Jobs(job_state)
     b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
     b[builtin_i.bg] = builtin_process.Bg(job_state)
