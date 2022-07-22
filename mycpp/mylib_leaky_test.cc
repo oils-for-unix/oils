@@ -151,7 +151,7 @@ TEST test_str_to_int() {
 TEST test_str_funcs() {
   Str* int_str;
 
-  int int_min = -(1 << 31);
+  int int_min = INT_MIN;
 
   int_str = mylib::hex_lower(15);
   ASSERT(str_equals0("f", int_str));
@@ -167,6 +167,14 @@ TEST test_str_funcs() {
 
   Str* s1 = new Str("abc\0bcd", 7);
   ASSERT_EQ(7, len(s1));
+
+  // Str* re1 = s1->replace(new Str("ab"), new Str("--"));
+  // cstring-BUG!
+  // ASSERT_EQ_FMT(7, len(re1), "%d");
+  // ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
+
+  // Str* re2 = s1->replace(new Str("bc"), new Str("--"));
+  // ASSERT(str_equals(new Str("a--\0--d", 7), re1));
 
   log("split_once()");
   Tuple2<Str*, Str*> t = mylib::split_once(new Str("foo=bar"), new Str("="));
@@ -456,7 +464,7 @@ TEST test_dict() {
   // Test removed item
   for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
     auto key = it.Key();
-    log("ss key = ");
+    printf("ss key = ");
     print(key);
   }
 
@@ -524,6 +532,15 @@ TEST test_sizeof() {
   PASS();
 }
 
+#define PRINT_STRING(str) printf("(%.*s)\n", (str)->len_, (str)->data_)
+
+#define PRINT_LIST(list)                                         \
+  for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) { \
+    Str* piece = iter.Value();                                   \
+    printf("(%.*s) ", piece->len_, piece->data_);                \
+  }                                                              \
+  printf("\n")
+
 TEST test_str_replace() {
   printf("\n");
 
@@ -533,99 +550,99 @@ TEST test_str_replace() {
 
   {
     Str* s1 = s0->replace(new Str("ab"), new Str("--"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("-- cd -- ef")));
   }
 
   {
     Str* s1 = s0->replace(new Str("ab"), new Str("----"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("---- cd ---- ef")));
   }
 
   {
     Str* s1 = s0->replace(new Str("ab cd ab ef"), new Str("0"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("0")));
   }
 
   {
     Str* s1 = s0->replace(s0, new Str("0"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("0")));
   }
 
   {
     Str* s1 = s0->replace(new Str("no-match"), new Str("0"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("ab cd ab ef")));
   }
 
   {
     Str* s1 = s0->replace(new Str("ef"), new Str("0"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("ab cd ab 0")));
   }
 
   {
     Str* s1 = s0->replace(new Str("f"), new Str("0"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("ab cd ab e0")));
   }
 
   {
     s0 = new Str("ab ab ab");
     Str* s1 = s0->replace(new Str("ab"), new Str("0"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("0 0 0")));
   }
 
   {
     s0 = new Str("ababab");
     Str* s1 = s0->replace(new Str("ab"), new Str("0"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("000")));
   }
 
   {
     s0 = new Str("abababab");
     Str* s1 = s0->replace(new Str("ab"), new Str("0"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("0000")));
   }
 
   {
     s0 = new Str("abc 123");
     Str* s1 = s0->replace(new Str("abc"), new Str(""));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str(" 123")));
   }
 
   {
     s0 = new Str("abc 123");
     Str* s1 = s0->replace(new Str("abc"), new Str(""));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str(" 123")));
   }
 
   {
     s0 = new Str("abc 123");
     Str* s1 = s0->replace(new Str("abc"), new Str("abc"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("abc 123")));
   }
 
   {
     s0 = new Str("aaaa");
     Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("bbbb")));
   }
 
   {
     s0 = new Str("aaaaaa");
     Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
     ASSERT(str_equals(s1, new Str("bbbbbb")));
   }
 
@@ -660,105 +677,103 @@ TEST test_str_slice() {
   {  // Happy path
     Str* s1 = s0->slice(0, 5);
     ASSERT(str_equals(s1, new Str("abcde")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(1, 5);
     ASSERT(str_equals(s1, new Str("bcde")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(0, 0);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(0, 6);
     ASSERT(str_equals(s1, new Str("abcdef")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(-6, 6);
     ASSERT(str_equals(s1, new Str("abcdef")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(0, -6);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(-6, -6);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(5, 6);
     ASSERT(str_equals(s1, new Str("f")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(6, 6);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
-
-  printf("---- Infinite Sadness ----\n");
 
   {
     Str* s1 = s0->slice(0, -7);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(-7, -7);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(-7, 0);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(6, 6);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(7, 7);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(6, 5);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(7, 5);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(7, 6);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(7, 7);
     ASSERT(str_equals(s1, new Str("")));
-    printf("%s\n", s1->data());
+    PRINT_STRING(s1);
   }
 
   printf("---------- Done ----------\n");
@@ -777,6 +792,287 @@ TEST test_str_slice() {
   PASS();
 }
 
+TEST test_str_split() {
+  printf("\n");
+
+  Str* s0 = new Str("abc def");
+
+  printf("------- Str::split -------\n");
+
+  {
+    List<Str*>* split_result = s0->split(new Str(" "));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 2);
+    ASSERT(are_equal(split_result->index_(0), new Str("abc")));
+    ASSERT(are_equal(split_result->index_(1), new Str("def")));
+  }
+
+  {
+    List<Str*>* split_result = (new Str("###"))->split(new Str("#"));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 4);
+    ASSERT(are_equal(split_result->index_(0), new Str("")));
+    ASSERT(are_equal(split_result->index_(1), new Str("")));
+    ASSERT(are_equal(split_result->index_(2), new Str("")));
+    ASSERT(are_equal(split_result->index_(3), new Str("")));
+  }
+
+  {
+    List<Str*>* split_result = (new Str(" ### "))->split(new Str("#"));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 4);
+    ASSERT(are_equal(split_result->index_(0), new Str(" ")));
+    ASSERT(are_equal(split_result->index_(1), new Str("")));
+    ASSERT(are_equal(split_result->index_(2), new Str("")));
+    ASSERT(are_equal(split_result->index_(3), new Str(" ")));
+  }
+
+  {
+    List<Str*>* split_result = (new Str(" # "))->split(new Str(" "));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 3);
+    ASSERT(are_equal(split_result->index_(0), new Str("")));
+    ASSERT(are_equal(split_result->index_(1), new Str("#")));
+    ASSERT(are_equal(split_result->index_(2), new Str("")));
+  }
+
+  {
+    List<Str*>* split_result = (new Str("  #"))->split(new Str("#"));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 2);
+    ASSERT(are_equal(split_result->index_(0), new Str("  ")));
+    ASSERT(are_equal(split_result->index_(1), new Str("")));
+  }
+
+  {
+    List<Str*>* split_result = (new Str("#  #"))->split(new Str("#"));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 3);
+    ASSERT(are_equal(split_result->index_(0), new Str("")));
+    ASSERT(are_equal(split_result->index_(1), new Str("  ")));
+    ASSERT(are_equal(split_result->index_(2), new Str("")));
+  }
+
+  {
+    List<Str*>* split_result = (new Str(""))->split(new Str(" "));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 1);
+    ASSERT(are_equal(split_result->index_(0), new Str("")));
+  }
+
+  // NOTE(Jesse): Failure case.  Not sure if we care about supporting this.
+  // It might happen if we do something like : 'weahtevr'.split()
+  // Would need to check on what the Python interpreter does in that case to
+  // decipher what we'd expect to see.
+  //
+  /* { */
+  /*   List<Str*> *split_result = (new Str("weahtevr"))->split(0); */
+  /*   PRINT_LIST(split_result); */
+  /*   ASSERT(len(split_result) == 1); */
+  /*   ASSERT(are_equal(split_result->index_(0), new Str(""))); */
+  /* } */
+
+  printf("---------- Done ----------\n");
+
+  PASS();
+}
+
+TEST test_str_join() {
+  printf("\n");
+
+  printf("-------- Str::join -------\n");
+
+  {
+    Str* result =
+        (new Str(""))->join(new List<Str*>({new Str("abc"), new Str("def")}));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("abcdef")));
+  }
+  {
+    Str* result = (new Str(" "))
+                      ->join(new List<Str*>({new Str("abc"), new Str("def"),
+                                             new Str("abc"), new Str("def"),
+                                             new Str("abc"), new Str("def"),
+                                             new Str("abc"), new Str("def")}));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("abc def abc def abc def abc def")));
+  }
+
+  printf("---------- Done ----------\n");
+
+  PASS();
+}
+
+TEST test_str_strip() {
+  printf("\n");
+
+#if 0
+  printf("------- Str::lstrip -------\n");
+
+  {
+    Str* result = (new Str("\n "))->lstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("")));
+  }
+
+  {
+    Str* result = (new Str("\n #"))->lstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("#")));
+  }
+
+  {
+    Str* result = (new Str("\n  #"))->lstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("#")));
+  }
+
+  {
+    Str* result = (new Str("\n  #"))->lstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("#")));
+  }
+
+  {
+    Str* result = (new Str("#"))->lstrip(new Str("#"));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("")));
+  }
+
+  {
+    Str* result = (new Str("##### "))->lstrip(new Str("#"));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str(" ")));
+  }
+
+  {
+    Str* result = (new Str("#  "))->lstrip(new Str("#"));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("  ")));
+  }
+
+  {
+    Str* result = (new Str(" # "))->lstrip(new Str("#"));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str(" # ")));
+  }
+#endif
+
+  printf("------- Str::rstrip -------\n");
+
+  {
+    Str* result = (new Str(" \n"))->rstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("")));
+  }
+
+  {
+    Str* result = (new Str("# \n"))->rstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("#")));
+  }
+
+  {
+    Str* result = (new Str("#  \n"))->rstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("#")));
+  }
+
+  {
+    Str* s1 = new Str(" \n#");
+    Str* result = s1->rstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, s1));
+    ASSERT_EQ(result, s1);  // objects are identical
+  }
+
+  {
+    Str* result = (new Str("#  \n"))->rstrip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("#")));
+  }
+
+  {
+    Str* result = (new Str("#"))->rstrip(new Str("#"));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("")));
+  }
+
+  {
+    Str* result = (new Str(" #####"))->rstrip(new Str("#"));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str(" ")));
+  }
+
+  {
+    Str* result = (new Str("  #"))->rstrip(new Str("#"));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("  ")));
+  }
+
+  {
+    Str* result = (new Str(" # "))->rstrip(new Str("#"));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str(" # ")));
+  }
+
+  printf("------- Str::strip -------\n");
+
+  {
+    Str* result = (new Str(""))->strip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("")));
+
+    ASSERT_EQ(result, kEmptyString);  // identical objects
+  }
+
+  {
+    Str* result = (new Str(" "))->strip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("")));
+
+    ASSERT_EQ(result, kEmptyString);  // identical objects
+  }
+
+  {
+    Str* result = (new Str("  \n"))->strip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("")));
+
+    ASSERT_EQ(result, kEmptyString);  // identical objects
+  }
+
+  {
+    Str* result = (new Str(" ## "))->strip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("##")));
+  }
+
+  {
+    Str* result = (new Str("  hi  \n"))->strip();
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, new Str("hi")));
+  }
+
+  printf("---------- Done ----------\n");
+
+  PASS();
+}
+
+TEST test_str_helpers() {
+  printf("------ Str::helpers ------\n");
+
+  ASSERT((new Str(""))->startswith(new Str("")) == true);
+  ASSERT((new Str(" "))->startswith(new Str("")) == true);
+  ASSERT((new Str(" "))->startswith(new Str(" ")) == true);
+
+  ASSERT((new Str("  "))->startswith(new Str(" ")) == true);
+
+  printf("---------- Done ----------\n");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -790,15 +1086,22 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_list_funcs);
   RUN_TEST(test_list_iters);
+#if 1
   RUN_TEST(test_dict);
+#endif
 
   RUN_TEST(test_contains);
   RUN_TEST(test_sizeof);
 
   RUN_TEST(test_list_tuple);
 
-  RUN_TEST(test_str_replace);
   RUN_TEST(test_str_slice);
+  RUN_TEST(test_str_replace);
+  RUN_TEST(test_str_split);
+  RUN_TEST(test_str_join);
+  RUN_TEST(test_str_strip);
+
+  RUN_TEST(test_str_helpers);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
