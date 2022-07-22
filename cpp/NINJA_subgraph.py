@@ -71,6 +71,8 @@ from __future__ import print_function
 import os
 import sys
 
+# from mycpp.NINJA_subgraph import GC_RUNTIME
+
 
 def log(msg, *args):
   if args:
@@ -104,15 +106,11 @@ DEPS_CC = [
     '_build/cpp/id_kind_asdl.cc',
 ]
 
-# Note: also appears in mycpp/build_graph.py
-GC_RUNTIME = [
-    'mycpp/gc_heap.cc',
-    'mycpp/gc_mylib.cc',
-    'mycpp/gc_builtins.cc',
-]
-
 OLD_RUNTIME = [
     'mycpp/gc_heap.cc',  # We need this?
+
+    'mycpp/leaky_types.cc',  # runs with both old and new Str layout
+
     'mycpp/mylib_old.cc',
 ]
 

@@ -46,21 +46,12 @@ TEST test_str_creation() {
 TEST test_str0() {
   Str* s = new Str("foo");
   ASSERT_EQ(3, len(s));
-
-  // we can get the last one
-  ASSERT('\0' == s->data_[3]);
-
-  // ASAN ERROR!  Yes.
-  // ASSERT('\0' == s->data_[4]);
+  ASSERT('\0' == s->data_[3]);  // this is valid
 
   Str* space = new Str("foo ");
   ASSERT_EQ(4, len(space));
 
   ASSERT_EQ_FMT(3, len(space->strip()), "%d");
-
-  // WRONG WAY TO DO IT.  We get 4 instead of 3.
-  int bad_len = strlen(space->strip()->data_);
-  log("bad_len = %d", bad_len);
 
   mylib::Str0 space0(space->strip());
   int good_len = strlen(space0.Get());
@@ -164,17 +155,6 @@ TEST test_str_funcs() {
   int_str = mylib::octal(15);
   ASSERT(str_equals0("17", int_str));
   print(mylib::octal(int_min));  // ASAN
-
-  Str* s1 = new Str("abc\0bcd", 7);
-  ASSERT_EQ(7, len(s1));
-
-  // Str* re1 = s1->replace(new Str("ab"), new Str("--"));
-  // cstring-BUG!
-  // ASSERT_EQ_FMT(7, len(re1), "%d");
-  // ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
-
-  // Str* re2 = s1->replace(new Str("bc"), new Str("--"));
-  // ASSERT(str_equals(new Str("a--\0--d", 7), re1));
 
   log("split_once()");
   Tuple2<Str*, Str*> t = mylib::split_once(new Str("foo=bar"), new Str("="));
@@ -903,162 +883,6 @@ TEST test_str_join() {
   PASS();
 }
 
-TEST test_str_strip() {
-  printf("\n");
-
-#if 0
-  printf("------- Str::lstrip -------\n");
-
-  {
-    Str* result = (new Str("\n "))->lstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("")));
-  }
-
-  {
-    Str* result = (new Str("\n #"))->lstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("#")));
-  }
-
-  {
-    Str* result = (new Str("\n  #"))->lstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("#")));
-  }
-
-  {
-    Str* result = (new Str("\n  #"))->lstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("#")));
-  }
-
-  {
-    Str* result = (new Str("#"))->lstrip(new Str("#"));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("")));
-  }
-
-  {
-    Str* result = (new Str("##### "))->lstrip(new Str("#"));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str(" ")));
-  }
-
-  {
-    Str* result = (new Str("#  "))->lstrip(new Str("#"));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("  ")));
-  }
-
-  {
-    Str* result = (new Str(" # "))->lstrip(new Str("#"));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str(" # ")));
-  }
-#endif
-
-  printf("------- Str::rstrip -------\n");
-
-  {
-    Str* result = (new Str(" \n"))->rstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("")));
-  }
-
-  {
-    Str* result = (new Str("# \n"))->rstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("#")));
-  }
-
-  {
-    Str* result = (new Str("#  \n"))->rstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("#")));
-  }
-
-  {
-    Str* s1 = new Str(" \n#");
-    Str* result = s1->rstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, s1));
-    ASSERT_EQ(result, s1);  // objects are identical
-  }
-
-  {
-    Str* result = (new Str("#  \n"))->rstrip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("#")));
-  }
-
-  {
-    Str* result = (new Str("#"))->rstrip(new Str("#"));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("")));
-  }
-
-  {
-    Str* result = (new Str(" #####"))->rstrip(new Str("#"));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str(" ")));
-  }
-
-  {
-    Str* result = (new Str("  #"))->rstrip(new Str("#"));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("  ")));
-  }
-
-  {
-    Str* result = (new Str(" # "))->rstrip(new Str("#"));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str(" # ")));
-  }
-
-  printf("------- Str::strip -------\n");
-
-  {
-    Str* result = (new Str(""))->strip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("")));
-
-    ASSERT_EQ(result, kEmptyString);  // identical objects
-  }
-
-  {
-    Str* result = (new Str(" "))->strip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("")));
-
-    ASSERT_EQ(result, kEmptyString);  // identical objects
-  }
-
-  {
-    Str* result = (new Str("  \n"))->strip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("")));
-
-    ASSERT_EQ(result, kEmptyString);  // identical objects
-  }
-
-  {
-    Str* result = (new Str(" ## "))->strip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("##")));
-  }
-
-  {
-    Str* result = (new Str("  hi  \n"))->strip();
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("hi")));
-  }
-
-  printf("---------- Done ----------\n");
-
-  PASS();
-}
-
 TEST test_str_helpers() {
   printf("------ Str::helpers ------\n");
 
@@ -1086,9 +910,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_list_funcs);
   RUN_TEST(test_list_iters);
-#if 1
   RUN_TEST(test_dict);
-#endif
 
   RUN_TEST(test_contains);
   RUN_TEST(test_sizeof);
@@ -1099,10 +921,9 @@ int main(int argc, char** argv) {
   RUN_TEST(test_str_replace);
   RUN_TEST(test_str_split);
   RUN_TEST(test_str_join);
-  RUN_TEST(test_str_strip);
 
   RUN_TEST(test_str_helpers);
 
-  GREATEST_MAIN_END(); /* display results */
+  GREATEST_MAIN_END();
   return 0;
 }

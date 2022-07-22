@@ -324,21 +324,27 @@ extern Heap gHeap;
 class StackRoots {
  public:
   StackRoots(std::initializer_list<void*> roots) {
+#ifndef MYLIB_LEAKY
     n_ = roots.size();
     for (auto root : roots) {  // can't use roots[i]
       gHeap.PushRoot(reinterpret_cast<Obj**>(root));
     }
+#endif
   }
 
   ~StackRoots() {
+#ifndef MYLIB_LEAKY
     // TODO: optimize this
     for (int i = 0; i < n_; ++i) {
       gHeap.PopRoot();
     }
+#endif
   }
 
  private:
+#ifndef MYLIB_LEAKY
   int n_;
+#endif
 };
 
 template <typename T>

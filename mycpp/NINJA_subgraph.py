@@ -156,14 +156,21 @@ def ShouldSkipBenchmark(name):
   return False
 
 
-RUNTIME = ['mycpp/gc_builtins.cc', 'mycpp/gc_mylib.cc', 'mycpp/gc_heap.cc']
+GC_RUNTIME = [
+    'mycpp/gc_builtins.cc', 'mycpp/gc_mylib.cc', 'mycpp/gc_heap.cc',
+    # files we haven't added StackRoots to
+    'mycpp/leaky_types.cc',
+    ]
 
 UNIT_TESTS = {
-    'mycpp/mylib_old_test': ['mycpp/mylib_old.cc'],
+    'mycpp/mylib_old_test': ['mycpp/mylib_old.cc', 'mycpp/leaky_types.cc'],
     'mycpp/gc_heap_test': ['mycpp/gc_heap.cc'],
-    'mycpp/gc_stress_test': RUNTIME,
-    'mycpp/gc_builtins_test': RUNTIME,
-    'mycpp/gc_mylib_test': RUNTIME,
+    'mycpp/gc_stress_test': GC_RUNTIME,
+    'mycpp/gc_builtins_test': GC_RUNTIME,
+    'mycpp/gc_mylib_test': GC_RUNTIME,
+
+    # leaky bindings run against the GC runtime!
+    'mycpp/leaky_types_test': GC_RUNTIME,
 
     'mycpp/demo/target_lang': ['cpp/leaky_dumb_alloc.cc', 'mycpp/gc_heap.cc'],
 
@@ -237,7 +244,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
         ('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")
     ]
     n.build(b, 'compile_and_link',  # defined in cpp/NINJA-steps.sh
-            [cc_src] + RUNTIME + EXAMPLES_CC.get(ex, []),
+            [cc_src] + GC_RUNTIME + EXAMPLES_CC.get(ex, []),
             variables=example_vars)
     n.newline()
 
@@ -420,12 +427,19 @@ def NinjaGraph(n):
       main_cc = '%s.cc' % test_path
 
       # for gHeap.Report() and Protect()
-      mycpp_unit_flags = "'-D GC_DEBUG -D GC_PROTECT'"
+      mycpp_unit_flags = '-D GC_DEBUG -D GC_PROTECT'
+
+      if test_name == 'mylib_old_test':
+        mycpp_unit_flags += ' -D LEAKY_BINDINGS'
+
+      # Don't get collection here yet
+      if test_name == 'leaky_types_test' and variant == 'testgc':
+        continue
 
       unit_test_vars = [
           ('compiler', compiler),
           ('variant', variant),
-          ('more_cxx_flags', mycpp_unit_flags)
+          ('more_cxx_flags', "'%s'" % mycpp_unit_flags)
       ]
 
       n.build([b], 'compile_and_link', [main_cc] + cc_files,

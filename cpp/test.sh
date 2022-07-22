@@ -51,14 +51,15 @@ leaky-flag-spec-test() {
 }
 
 readonly LEAKY_TEST_SRC=(
-    cpp/leaky_binding_test.cc \
-    cpp/leaky_core.cc \
-    cpp/leaky_frontend_match.cc \
-    cpp/leaky_libc.cc \
-    cpp/leaky_osh.cc \
-    cpp/leaky_stdlib.cc \
-    cpp/leaky_pylib.cc \
+    cpp/leaky_binding_test.cc
+    cpp/leaky_core.cc
+    cpp/leaky_frontend_match.cc
+    cpp/leaky_libc.cc
+    cpp/leaky_osh.cc
+    cpp/leaky_stdlib.cc
+    cpp/leaky_pylib.cc
     mycpp/mylib_old.cc
+    mycpp/leaky_types.cc
 )
 
 leaky-binding-test() {
