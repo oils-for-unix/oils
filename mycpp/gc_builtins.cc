@@ -1,6 +1,6 @@
-// gc_lib.cc
+// gc_builtins.cc
 
-#include "gc_lib.h"
+#include "gc_builtins.h"
 
 #include <ctype.h>  // isspace(), isdigit()
 

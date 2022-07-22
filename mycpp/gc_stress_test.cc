@@ -3,7 +3,7 @@
 // And with GC_DEBUG defined.
 
 #include "mycpp/gc_heap.h"
-#include "mycpp/gc_lib.h"
+#include "mycpp/gc_builtins.h"
 #include "vendor/greatest.h"
 //#include "mylib2.h"  // gBuf
 

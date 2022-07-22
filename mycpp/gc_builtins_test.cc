@@ -1,4 +1,4 @@
-#include "mycpp/gc_lib.h"
+#include "mycpp/gc_builtins.h"
 
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.

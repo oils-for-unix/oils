@@ -33,7 +33,7 @@ manifest() {
     mycpp/common.sh \
     mycpp/mylib_leaky.{cc,h} \
     mycpp/gc_heap.{cc,h} \
-    mycpp/gc_lib.{cc,h} \
+    mycpp/gc_builtins.{cc,h} \
     mycpp/myerror.h \
     mycpp/common.h \
     _devbuild/gen/*.h \

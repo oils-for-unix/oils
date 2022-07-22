@@ -1,14 +1,11 @@
-// gc_lib.h: Statically typed Python builtins.
+// gc_builtins.h: Statically typed Python builtins.
 //
 // Builtin types: tuples, NotImplementedError, AssertionError
 // Builtin functions: print(), repr(), ord()
 // Builtin operators: str_concat(), str_repeat(), list_repeat()
-// Builtin methods: Str::join, etc.  Note that Str is declared in gc_heap.h.
-//
-// TODO: Rename this file to my_builtins.{h,cc}?
 
-#ifndef MY_RUNTIME_H
-#define MY_RUNTIME_H
+#ifndef GC_BUILTINS_H
+#define GC_BUILTINS_H
 
 #include <algorithm>  // min(), sort()
 #include <climits>    // CHAR_BIT
@@ -210,7 +207,7 @@ inline bool _cmp(gc_heap::Str* a, gc_heap::Str* b) {
   return str_cmp(a, b) < 0;
 }
 
-// This is a METHOD definition.  It's in gc_lib.h so that gc_heap.h doesn't
+// This is a METHOD definition.  It's in gc_builtins.h so that gc_heap.h doesn't
 // need to #include <algorithm>.  I think that would bloat all the ASDL types.
 template <typename T>
 void gc_heap::List<T>::sort() {
@@ -426,4 +423,4 @@ class DictIter {
   int pos_;
 };
 
-#endif  // MY_RUNTIME_H
+#endif  // GC_BUILTINS_H
