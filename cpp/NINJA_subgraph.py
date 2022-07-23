@@ -40,10 +40,8 @@ _build/   # input source
       leaky_stdlib.cc
     cxx-dbg.txt  # line counts
 
-
 _bin/   # output binaries
   # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh,together}
-    osh_eval
 
   cxx-opt/
     osh_eval

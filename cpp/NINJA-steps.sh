@@ -151,8 +151,16 @@ setglobal_link_flags() {
     (tcmalloc)
       link_flags='-ltcmalloc'
       ;;
+
+    # Must REPEAT these flags, otherwise we lose sanitizers / coverage
     (asan)
       link_flags='-fsanitize=address'
+      ;;
+    (ubsan)
+      link_flags='-fsanitize=undefined'
+      ;;
+    (coverage)
+      link_flags='-fprofile-instr-generate -fcoverage-mapping'
       ;;
   esac
 

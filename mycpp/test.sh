@@ -11,6 +11,8 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
+source cpp/NINJA-steps.sh
+source mycpp/common.sh  # run-test
 
 # in case binaries weren't built
 shopt -s failglob
@@ -184,7 +186,36 @@ unit() {
   done
 }
 
+readonly MYLIB_OLD_TEST_SRC=(
+    mycpp/mylib_old_test.cc \
+    mycpp/mylib_old.cc \
+    mycpp/leaky_types.cc \
+    #cpp/leaky_dumb_alloc.cc
+)
+
+mycpp-old-test() {
+  ### Test generated code
+
+  local compiler=${1:-cxx}
+  local variant=${2:-dbg}
+
+  local dir=_bin/$compiler-$variant/mycpp
+  mkdir -p $dir
+  local bin=$dir/mylib_old_test
+
+  local more_cxx_flags='-D LEAKY_BINDINGS'
+  compile_and_link $compiler $variant "$more_cxx_flags" $bin \
+    "${MYLIB_OLD_TEST_SRC[@]}"
+
+  run-test $bin $compiler $variant
+}
+
 soil-run() {
+  # Test with -D LEAKY_BINDINGS, which doesn't fit into variants well
+  mycpp-old-test '' asan
+  mycpp-old-test '' ubsan
+
+  # Ninja variants for GC
   unit '' gcstats
   unit '' gcevery
   unit '' asan
@@ -195,6 +226,9 @@ unit-test-coverage() {
   ### Invoked by Soil
 
   unit clang coverage
+
+  # Old test
+  mycpp-old-test clang coverage
 
   local out_dir=_test/clang-coverage/mycpp-unit 
   test/coverage.sh html-report $out_dir mycpp-unit

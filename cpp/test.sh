@@ -12,6 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source cpp/NINJA-steps.sh  # for compile_and_link function
+source mycpp/common.sh
 
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
@@ -43,7 +44,8 @@ leaky-flag-spec-test() {
   mkdir -p $dir
   local bin=$dir/leaky_flag_spec_test
 
-  local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
+  # -D CPP_UNIT_TEST is to disable #include _build/cpp/osh_eval.h
+  local more_cxx_flags='-D LEAKY_BINDINGS -D DUMB_ALLOC -D CPP_UNIT_TEST'
   compile_and_link $compiler $variant "$more_cxx_flags" $bin \
     "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/leaky_dumb_alloc.cc
 
@@ -74,7 +76,7 @@ leaky-binding-test() {
 
   # leaky_dumb_alloc.cc exposes allocator alignment issues?
 
-  local more_cxx_flags='-D LEAKY_BINDINGS -D CPP_UNIT_TEST -D DUMB_ALLOC' 
+  local more_cxx_flags='-D LEAKY_BINDINGS -D DUMB_ALLOC' 
   compile_and_link $compiler $variant "$more_cxx_flags" $bin \
     "${LEAKY_TEST_SRC[@]}" cpp/leaky_dumb_alloc.cc
 
@@ -87,8 +89,6 @@ readonly GC_TEST_SRC=(
 )
 
 gc-binding-test() {
-  local leaky_mode=${1:-}
-
   local compiler=${1:-cxx}
   local variant=${2:-dbg}
 
@@ -102,23 +102,6 @@ gc-binding-test() {
     "${GC_TEST_SRC[@]}" cpp/leaky_dumb_alloc.cc
 
   run-test $bin $compiler $variant
-}
-
-run-test() {
-  local bin=$1
-  local compiler=$2
-  local variant=$3
-
-  local dir=_test/$compiler-$variant/cpp
-
-  mkdir -p $dir
-
-  local name=$(basename $bin)
-  export LLVM_PROFILE_FILE=$dir/$name.profraw
-
-  local log=$dir/$name.log
-  log "RUN $bin > $log"
-  $bin > $log
 }
 
 # TODO:

@@ -25,6 +25,13 @@ Output Layout:
     # NO_GC_HACK, etc.
     obj-mycpp/
       cxx-dbg/
+        gc_heap_test.o  # not translated
+        gc_builtins.o   
+        gen-pea/        # per-translator, derived from _test/gen-pea
+          varargs.o
+        gen-mycpp/
+          varargs.o
+
       cxx-gcevery/
       cxx-opt/
       clang-coverage/
@@ -173,16 +180,15 @@ GC_RUNTIME = [
     ]
 
 UNIT_TESTS = {
-    'mycpp/mylib_old_test': ['mycpp/mylib_old.cc', 'mycpp/leaky_types.cc'],
-    'mycpp/gc_heap_test': ['mycpp/gc_heap.cc'],
-    'mycpp/gc_stress_test': GC_RUNTIME,
-    'mycpp/gc_builtins_test': GC_RUNTIME,
-    'mycpp/gc_mylib_test': GC_RUNTIME,
+    'mycpp/gc_heap_test.cc': ['mycpp/gc_heap.cc'],
+    'mycpp/gc_stress_test.cc': GC_RUNTIME,
+    'mycpp/gc_builtins_test.cc': GC_RUNTIME,
+    'mycpp/gc_mylib_test.cc': GC_RUNTIME,
 
     # leaky bindings run against the GC runtime!
-    'mycpp/leaky_types_test': GC_RUNTIME,
+    'mycpp/leaky_types_test.cc': GC_RUNTIME,
 
-    'mycpp/demo/target_lang': ['cpp/leaky_dumb_alloc.cc', 'mycpp/gc_heap.cc'],
+    'mycpp/demo/target_lang.cc': ['cpp/leaky_dumb_alloc.cc', 'mycpp/gc_heap.cc'],
 
     # there is also demo/{gc_heap,square_heap}.cc
 }
@@ -219,7 +225,8 @@ COMPILERS_VARIANTS = [
     ('cxx', 'ubsan'),
 
     #('clang', 'asan'),
-    ('clang', 'ubsan'),
+    ('clang', 'dbg'),  # compile-quickly
+    ('clang', 'ubsan'),  # finds different bugs
     ('clang', 'coverage'),
 ]
 
@@ -238,6 +245,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
   preamble_path = p if os.path.exists(p) else "''"
 
   cc_src = '_test/gen-%s/%s.cc' % (translator, ex)
+
   # Make a translation unit
   n.build(cc_src, 'wrap-cc', raw,
           variables=[('name', ex), ('preamble_path', preamble_path)])
@@ -255,14 +263,24 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
 
   # Compile C++.
   for compiler, variant in example_matrix:
-    b = '_bin/%s-%s/%s-examples/%s' % (compiler, variant, translator, ex)
-
-    example_vars = [
+    compile_vars = [
         ('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")
     ]
-    n.build(b, 'compile_and_link',  # defined in cpp/NINJA-steps.sh
-            [cc_src] + GC_RUNTIME + EXAMPLES_CC.get(ex, []),
-            variables=example_vars)
+    link_vars = [
+        ('compiler', compiler), ('variant', variant),
+    ]
+
+    main_obj = '_build/obj-mycpp/%s-%s/gen-%s/%s.o' % (compiler, variant, translator, ex)
+
+    n.build(main_obj, 'compile_one', [cc_src], variables=compile_vars)
+    n.newline()
+
+    b = '_bin/%s-%s/%s-examples/%s' % (compiler, variant, translator, ex)
+
+    src_deps = GC_RUNTIME + EXAMPLES_CC.get(ex, [])
+    obj_deps = [ObjPath(src, compiler, variant) for src in src_deps]
+
+    n.build(b, 'link', [main_obj] + obj_deps, variables=link_vars)
     n.newline()
 
     if translator == 'pea':
@@ -320,6 +338,12 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
               ('bin', b_example),
               ('name', ex), ('impl', 'C++')])
     n.newline()
+
+
+def ObjPath(src_path, compiler, variant):
+  base_name, _ = os.path.splitext(os.path.basename(src_path))
+  # Note: will be combined with _build/obj/ later
+  return '_build/obj-mycpp/%s-%s/%s.o' % (compiler, variant, base_name)
 
 
 def NinjaGraph(n):
@@ -414,37 +438,63 @@ def NinjaGraph(n):
       # TODO: eventually we will have pea-logs-equal, and pea-benchmark-table
   }
 
+
   #
-  # Build and run unit tests
+  # Individual object files
   #
 
-  for test_path in sorted(UNIT_TESTS):
-    cc_files = UNIT_TESTS[test_path]
+  cc_sources = []
+  cc_sources.extend(UNIT_TESTS.keys())  # the main programs
+  for srcs in UNIT_TESTS.values():  # the deps
+    cc_sources.extend(srcs)
+  for srcs in EXAMPLES_CC.values():  # generated code
+    cc_sources.extend(srcs)
+  cc_sources = sorted(set(cc_sources))  # make unique
 
-    # assume names are unique
-    test_name = os.path.basename(test_path)
+  for (compiler, variant) in COMPILERS_VARIANTS:
+    compile_vars = [
+        ('compiler', compiler),
+        ('variant', variant),
+        ('more_cxx_flags', "''"),
+    ]
+    link_vars = [
+        ('compiler', compiler),
+        ('variant', variant),
+    ]
 
-    for (compiler, variant) in COMPILERS_VARIANTS:
+    for src_path in cc_sources:
+      obj_path = ObjPath(src_path, compiler, variant)
+
+      n.build(obj_path, 'compile_one', [src_path], variables=compile_vars)
+      n.newline()
+
+    #
+    # Build and run unit tests
+    #
+
+    for main_cc in sorted(UNIT_TESTS):
+      cc_files = UNIT_TESTS[main_cc]
+
+      # assume names are unique
+      test_name, _ = os.path.splitext(os.path.basename(main_cc))
+
       b = '_bin/%s-%s/mycpp-unit/%s' % (compiler, variant, test_name)
-
-      main_cc = '%s.cc' % test_path
-
-      mycpp_unit_flags = ''
-      if test_name == 'mylib_old_test':
-        mycpp_unit_flags += ' -D LEAKY_BINDINGS'
 
       # Don't get collection here yet
       if test_name == 'leaky_types_test' and variant == 'gcevery':
         continue
 
-      unit_test_vars = [
+      compile_vars = [
           ('compiler', compiler),
           ('variant', variant),
-          ('more_cxx_flags', "'%s'" % mycpp_unit_flags)
+          ('more_cxx_flags', "''")
       ]
 
-      n.build([b], 'compile_and_link', [main_cc] + cc_files,
-              variables=unit_test_vars)
+      obj_paths = [ObjPath(main_cc, compiler, variant)]
+      obj_paths.extend(ObjPath(dep_cc, compiler, variant) for dep_cc in cc_files)
+
+      n.build([b], 'link', obj_paths,
+              variables=link_vars)
       n.newline()
 
       key = 'mycpp-unit-%s-%s' % (compiler, variant)
