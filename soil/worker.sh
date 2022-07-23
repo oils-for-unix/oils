@@ -184,7 +184,7 @@ cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 build-osh-eval   build/dev.sh oil-cpp                  -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
-preprocessed     metrics/source-code.sh oil-native-preprocessed -
+preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
 mycpp-examples   mycpp/build.sh soil-run               _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -

@@ -226,6 +226,7 @@ COMPILERS_VARIANTS = [
 
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
+    ('clang', 'opt'),  # for comparisons
     ('clang', 'ubsan'),  # finds different bugs
     ('clang', 'coverage'),
 ]
@@ -293,7 +294,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
       phony[key].append(b)
 
     if variant == 'opt':
-      stripped = '_bin/cxx-%s/%s-examples/%s.stripped' % (variant, translator, ex)
+      stripped = '_bin/%s-%s/%s-examples/%s.stripped' % (compiler, variant, translator, ex)
       # no symbols
       n.build([stripped, ''], 'strip', [b],
               variables=[('variant', variant)])
@@ -332,6 +333,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
     to_compare.append(cc_log_out)
     to_compare.append(py_log_out)
 
+    # Only test cxx- variant
     b_example = '_bin/cxx-%s/%s-examples/%s' % (variant, translator, ex)
     n.build([task_out, cc_log_out], 'example-task', [b_example],
             variables=[

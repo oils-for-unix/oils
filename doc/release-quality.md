@@ -93,6 +93,10 @@ This is a supplement to the [main release page](index.html).
     libraries, as measured by the [cloc][] tool.
   - [oil-cpp](pub/metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
     `oil-native` tarball.
+  - [preprocessed](pub/metrics.wwz/preprocessed/index.html).  How much code is
+    passed to the compiler?
+    - [cxx-dbg](pub/metrics.wwz/preprocessed/cxx-dbg.txt),
+      [cxx-opt](pub/metrics.wwz/preprocessed/cxx-opt.txt)
 - `oil-native`.
   - [overview](pub/metrics.wwz/oil-native/overview.txt) - Binary code size reported
     by [Bloaty][].

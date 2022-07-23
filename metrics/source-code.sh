@@ -72,7 +72,7 @@ osh-cloc() {
   asdl-cloc "${ASDL_FILES[@]}"
 }
 
-oil-native-preprocessed() {
+preprocessed() {
   ./NINJA_config.py
 
   # Clang has slightly fewer lines, but it's not on the CI machine
@@ -81,7 +81,19 @@ oil-native-preprocessed() {
   local -a files=(_build/preprocessed/cxx-{dbg,opt}.txt)
 
   ninja "${files[@]}"
-  head -n 100 "${files[@]}"
+
+  # Publish with release and show and CI
+
+  local dir=_tmp/metrics/preprocessed
+  mkdir -p $dir
+  cp -v "${files[@]}" $dir
+
+  cat >$dir/index.html <<EOF
+<a href="cxx-dbg.txt">cxx-dbg.txt</a> <br/>
+<a href="cxx-opt.txt">cxx-opt.txt</a> <br/>
+EOF
+
+  head -n 100 $dir/*.txt
 }
 
 #

@@ -208,21 +208,25 @@ def NinjaGraph(n):
     # See how much input we're feeding to the compiler.  Test C++ template
     # explosion, e.g. <unordered_map>
     #
+    # Limit to {dbg,opt} so we don't generate useless rules.  Invoked by
+    # metrics/source-code.sh
+    #
 
-    preprocessed = []
-    for src in sources:
-      # e.g. _build/obj/dbg/posix.o
-      base_name, _ = os.path.splitext(os.path.basename(src))
+    if variant in ('dbg', 'opt'):
+      preprocessed = []
+      for src in sources:
+        # e.g. _build/obj/dbg/posix.o
+        base_name, _ = os.path.splitext(os.path.basename(src))
 
-      pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, base_name)
-      preprocessed.append(pre)
+        pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, base_name)
+        preprocessed.append(pre)
 
-      n.build(pre, 'preprocess', [src], variables=ninja_vars)
+        n.build(pre, 'preprocess', [src], variables=ninja_vars)
+        n.newline()
+
+      n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
+              'line_count', preprocessed, variables=ninja_vars)
       n.newline()
-
-    n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
-            'line_count', preprocessed, variables=ninja_vars)
-    n.newline()
 
     #
     # TOGETHER

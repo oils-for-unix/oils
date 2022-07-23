@@ -476,6 +476,9 @@ line-counts() {
 
   metrics/source-code.sh write-reports  # for-translation and overview
   metrics/source-code.sh osh-cloc > $out/osh-cloc.txt
+
+  # goes to _tmp/metrics/preprocessed
+  metrics/source-code.sh preprocessed
 }
 
 metrics() {
