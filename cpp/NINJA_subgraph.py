@@ -71,7 +71,8 @@ from __future__ import print_function
 import os
 import sys
 
-# from mycpp.NINJA_subgraph import GC_RUNTIME
+# TODO: could use GC_RUNTIME
+from mycpp import NINJA_subgraph as mycpp_subgraph
 
 
 def log(msg, *args):
@@ -115,13 +116,21 @@ OLD_RUNTIME = [
 ]
 
 
-# -D DUMB_ALLOC: not sure why but only the _bin/cxx-opt/osh_eval binary needs it?
-# -D NO_GC_HACK: Avoid memset().  TODO: remove this hack!
-# -D OSH_EVAL: hack for leaky_osh_eval_stubs.h
+# -D NO_GC_HACK: Avoid memset().  -- rename GC_NO_MEMSET?
+#  - only applies to gc_heap.h in Space::Clear()
 # -D LEAKY_BINDINGS: for QSN, which is used by the ASDL runtime
+#  TODO: use .leaky variant
+#  - _bin/cxx-leaky/osh_eval -- this means it's optimized then?
+#  - we still want to be able to debug it
+#  - $compiler-$variant-$allocator triple?
+# -D DUMB_ALLOC: a speed optimization.  Should be obsolete with garbage
+#  collector.  Used for parser benchmarks.
+#  - can this also be controlled with the .leaky variant?
+
+# leakyopt, leakyasan -- I guess this is good for tests
 
 # single quoted in Ninja/shell syntax
-OSH_EVAL_FLAGS_STR = "'-D DUMB_ALLOC -D NO_GC_HACK -D OSH_EVAL -D LEAKY_BINDINGS'"
+OSH_EVAL_FLAGS_STR = "'-D DUMB_ALLOC -D NO_GC_HACK -D LEAKY_BINDINGS'"
 
 
 def NinjaGraph(n):
@@ -180,83 +189,89 @@ def NinjaGraph(n):
 
   n.newline()
 
-  for compiler in ['cxx', 'clang']:
-    for variant in [
-        'dbg', 'opt', 'asan', 'alloclog', 'malloc', 'uftrace',
-        # leave out tcmalloc since it requires system libs to be installed
-        # 'tcmalloc'
-        ]:
+  COMPILERS_VARIANTS = mycpp_subgraph.COMPILERS_VARIANTS + [
+      # note: these could be clang too
+      ('cxx', 'alloclog'),
+      ('cxx', 'malloc'),
+      ('cxx', 'uftrace'),
 
-      ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', OSH_EVAL_FLAGS_STR)]
+      # leave out tcmalloc since it requires system libs to be installed
+      # 'tcmalloc'
+      #('cxx', 'tcmalloc')
+  ]
 
-      sources = DEPS_CC + OLD_RUNTIME
+  for compiler, variant in COMPILERS_VARIANTS:
 
-      #
-      # See how much input we're feeding to the compiler.  Test C++ template
-      # explosion, e.g. <unordered_map>
-      #
+    ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', OSH_EVAL_FLAGS_STR)]
 
-      preprocessed = []
-      for src in sources:
-        # e.g. _build/obj/dbg/posix.o
-        base_name, _ = os.path.splitext(os.path.basename(src))
+    sources = DEPS_CC + OLD_RUNTIME
 
-        pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, base_name)
-        preprocessed.append(pre)
+    #
+    # See how much input we're feeding to the compiler.  Test C++ template
+    # explosion, e.g. <unordered_map>
+    #
 
-        n.build(pre, 'preprocess', [src], variables=ninja_vars)
+    preprocessed = []
+    for src in sources:
+      # e.g. _build/obj/dbg/posix.o
+      base_name, _ = os.path.splitext(os.path.basename(src))
+
+      pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, base_name)
+      preprocessed.append(pre)
+
+      n.build(pre, 'preprocess', [src], variables=ninja_vars)
+      n.newline()
+
+    n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
+            'line_count', preprocessed, variables=ninja_vars)
+    n.newline()
+
+    #
+    # TOGETHER
+    #
+
+    bin_together = '_bin/%s-%s-together/osh_eval' % (compiler, variant)
+    binaries.append(bin_together)
+
+    n.build(bin_together, 'compile_and_link',
+            sources, variables=ninja_vars)
+    n.newline()
+
+    #
+    # SEPARATE: Compile objects
+    #
+
+    objects = []
+    for src in sources:
+      # e.g. _build/obj/dbg/posix.o
+      base_name, _ = os.path.splitext(os.path.basename(src))
+
+      obj = '_build/obj/%s-%s/%s.o' % (compiler, variant, base_name)
+      objects.append(obj)
+
+      n.build(obj, 'compile_one', [src], variables=ninja_vars)
+      n.newline()
+
+    bin_separate = '_bin/%s-%s/osh_eval' % (compiler, variant)
+    binaries.append(bin_separate)
+
+    #
+    # SEPARATE: Link objects into binary
+    #
+
+    link_vars = [('compiler', compiler), ('variant', variant)]  # no CXX flags
+    n.build(bin_separate, 'link', objects, variables=link_vars)
+    n.newline()
+
+    # Strip the .opt binary
+    if variant == 'opt':
+      for b in [bin_together, bin_separate]:
+        stripped = b + '.stripped'
+        symbols = b + '.symbols'
+        n.build([stripped, symbols], 'strip', [b])
         n.newline()
 
-      n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
-              'line_count', preprocessed, variables=ninja_vars)
-      n.newline()
-
-      #
-      # TOGETHER
-      #
-
-      bin_together = '_bin/%s-%s-together/osh_eval' % (compiler, variant)
-      binaries.append(bin_together)
-
-      n.build(bin_together, 'compile_and_link',
-              sources, variables=ninja_vars)
-      n.newline()
-
-      #
-      # SEPARATE: Compile objects
-      #
-
-      objects = []
-      for src in sources:
-        # e.g. _build/obj/dbg/posix.o
-        base_name, _ = os.path.splitext(os.path.basename(src))
-
-        obj = '_build/obj/%s-%s/%s.o' % (compiler, variant, base_name)
-        objects.append(obj)
-
-        n.build(obj, 'compile_one', [src], variables=ninja_vars)
-        n.newline()
-
-      bin_separate = '_bin/%s-%s/osh_eval' % (compiler, variant)
-      binaries.append(bin_separate)
-
-      #
-      # SEPARATE: Link objects into binary
-      #
-
-      link_vars = [('compiler', compiler), ('variant', variant)]  # no CXX flags
-      n.build(bin_separate, 'link', objects, variables=link_vars)
-      n.newline()
-
-      # Strip the .opt binary
-      if variant == 'opt':
-        for b in [bin_together, bin_separate]:
-          stripped = b + '.stripped'
-          symbols = b + '.symbols'
-          n.build([stripped, symbols], 'strip', [b])
-          n.newline()
-
-          binaries.append(stripped)
+        binaries.append(stripped)
 
   n.default(['_bin/cxx-dbg/osh_eval'])
 

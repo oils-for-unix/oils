@@ -20,8 +20,16 @@ Code Layout:
 
 Output Layout:
 
-  _bin/
+  _build/
+    # TODO: combine with obj/ after we get rid of -D LEAKY_BINDINGS -D
+    # NO_GC_HACK, etc.
+    obj-mycpp/
+      cxx-dbg/
+      cxx-gcevery/
+      cxx-opt/
+      clang-coverage/
 
+  _bin/
     cxx-dbg/
       mycpp-examples/
         cgi
@@ -34,6 +42,8 @@ Output Layout:
     cxx-gcevery/
       mycpp-unit/
         gc_heap_test
+
+    clang-coverage/
 
   _test/
     gen-mycpp/  # rewrite
@@ -189,14 +199,29 @@ TRANSLATE_FILES = {
     'parse': [],  # added dynamically from mycpp/examples/parse.translate.txt
 }
 
+# Unused.  Could use mycpp/examples/parse.typecheck.txt
 EXAMPLES_PY = {
-    'parse': [],  # added dynamically
+    'parse': [],  
 }
 
 EXAMPLES_CC = {
     'parse': ['_test/asdl/expr_asdl.cc'],
 }
 
+COMPILERS_VARIANTS = [
+    # mainly for unit tests
+    ('cxx', 'gcstats'),
+    ('cxx', 'gcevery'),
+
+    ('cxx', 'dbg'),
+    ('cxx', 'opt'),
+    ('cxx', 'asan'),
+    ('cxx', 'ubsan'),
+
+    #('clang', 'asan'),
+    ('clang', 'ubsan'),
+    ('clang', 'coverage'),
+]
 
 def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
   raw = '_test/gen-%s/%s_raw.cc' % (translator, ex)
@@ -222,15 +247,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
     phony['pea-translate'].append(cc_src)
 
   if translator == 'mycpp':
-    example_matrix = [
-        ('cxx', 'gcevery'),
-        ('cxx', 'asan'),
-        ('cxx', 'ubsan'),
-        ('cxx', 'opt'),
-
-        ('clang', 'ubsan'),  # Finds more bugs!
-        ('clang', 'coverage'),
-    ]
+    example_matrix = COMPILERS_VARIANTS
   else:
     example_matrix = [
         ('cxx', 'gcevery')
@@ -407,21 +424,7 @@ def NinjaGraph(n):
     # assume names are unique
     test_name = os.path.basename(test_path)
 
-    UNIT_TEST_MATRIX = [
-        ('cxx', 'gcstats'),
-        ('cxx', 'gcevery'),
-
-        # Clang and GCC have different implementations of ASAN and UBSAN
-        ('cxx', 'asan'),
-        ('cxx', 'ubsan'),
-
-        ('clang', 'asan'),
-        ('clang', 'ubsan'),
-
-        ('clang', 'coverage'),
-    ]
-
-    for (compiler, variant) in UNIT_TEST_MATRIX:
+    for (compiler, variant) in COMPILERS_VARIANTS:
       b = '_bin/%s-%s/mycpp-unit/%s' % (compiler, variant, test_name)
 
       main_cc = '%s.cc' % test_path

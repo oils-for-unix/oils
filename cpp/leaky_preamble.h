@@ -35,15 +35,12 @@ using id_kind_asdl::Kind_t;
 #include "leaky_frontend_tdop.h"
 #include "leaky_libc.h"
 #include "leaky_osh.h"
+#include "leaky_osh_eval_stubs.h"
 #include "leaky_pgen2.h"
 #include "leaky_pylib.h"
 #include "leaky_stdlib.h"
 #include "qsn.h"
 #include "segfault_handler.h"
-
-#ifdef OSH_EVAL
-  #include "leaky_osh_eval_stubs.h"
-#endif
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
   return left == right;

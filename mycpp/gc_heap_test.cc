@@ -41,13 +41,11 @@ using gc_heap::RoundUp;
 // Variables
 using gc_heap::gHeap;
 
-
 #ifdef GC_STATS
   #define ASSERT_NUM_LIVE_OBJS(x) ASSERT_EQ_FMT((x), gHeap.num_live_objs_, "%d")
 #else
   #define ASSERT_NUM_LIVE_OBJS(x)
 #endif
-
 
 // Hm we're getting a warning because these aren't plain old data?
 // https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
@@ -537,7 +535,6 @@ TEST slab_trace_test() {
 
   gHeap.Collect();
   ASSERT_NUM_LIVE_OBJS(0);
-
 
   List<Str*>* strings = nullptr;
   Str* tmp = nullptr;

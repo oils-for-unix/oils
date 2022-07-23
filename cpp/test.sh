@@ -134,6 +134,7 @@ unit() {
 
   gc-binding-test '' gcevery
   gc-binding-test '' leaky
+  # leakyasan?
 
   # Has generated code
   leaky-flag-spec-test '' ''
