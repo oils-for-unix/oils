@@ -1,6 +1,6 @@
 // gc_stress_test.cc: Do many allocations and collections under ASAN
 //
-// And with GC_DEBUG defined.
+// And with GC_STATS defined.
 
 #include "mycpp/gc_builtins.h"
 #include "mycpp/gc_types.h"
@@ -41,7 +41,9 @@ TEST str_simple_test() {
     total += len(s);
   }
   log("total = %d", total);
+#ifdef GC_STATS
   gHeap.Report();
+#endif
 
   PASS();
 }
@@ -55,7 +57,9 @@ TEST str_growth_test() {
   Str* s = nullptr;
   StackRoots _roots({&s});
 
+#ifdef GC_STATS
   gHeap.Report();
+#endif
 
   s = StrFromC("b");
   int n = 300;
@@ -73,7 +77,9 @@ TEST str_growth_test() {
   int expected = (n * (n + 1)) / 2;
   ASSERT_EQ_FMT(expected, total, "%d");
 
+#ifdef GC_STATS
   gHeap.Report();
+#endif
 
   PASS();
 }

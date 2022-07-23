@@ -81,9 +81,14 @@ setglobal_compile_flags() {
       # faster build with -O0
       flags="$flags -O0 -g -fsanitize=undefined"
       ;;
-    (testgc)
-      # TODO: GC_REPORT and GC_VERBOSE instead?
-      flags="$flags -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC"
+
+    (gcstats)
+      # unit tests use for gHeap.Report()
+      flags="$flags -g -D GC_PROTECT -D GC_STATS"
+      ;;
+
+    (gcevery)
+      flags="$flags -g -D GC_PROTECT -D GC_STATS -D GC_EVERY_ALLOC"
       ;;
 
     (leaky)

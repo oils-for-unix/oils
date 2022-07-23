@@ -101,7 +101,7 @@ Obj* Heap::Relocate(Obj* obj, Obj* header) {
     // aligned() like Heap::Allocate()
     free_ += aligned(n);
 
-#if GC_DEBUG
+#if GC_STATS
     num_live_objs_++;
 #endif
 
@@ -123,7 +123,7 @@ inline Obj* ObjHeader(Obj* obj) {
 }
 
 void Heap::Collect() {
-#if GC_DEBUG
+#if GC_STATS
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
 #endif
@@ -142,7 +142,7 @@ void Heap::Collect() {
   free_ = scan;                   // where to copy new entries
   limit_ = scan + to_space_.size_;
 
-#if GC_DEBUG
+#if GC_STATS
   num_live_objs_ = 0;
 #endif
 
@@ -276,7 +276,7 @@ bool maybe_str_equals(Str* left, Str* right) {
   return false;  // one is None and one is a Str*
 }
 
-#if GC_DEBUG
+#if GC_STATS
 void ShowFixedChildren(Obj* obj) {
   assert(obj->heap_tag_ == Tag::FixedSize);
   auto fixed = reinterpret_cast<LayoutFixed*>(obj);

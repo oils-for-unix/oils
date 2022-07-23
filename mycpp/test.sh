@@ -21,7 +21,7 @@ examples-variant() {
   ### Run all examples using a variant
 
   local compiler=${1:-cxx}
-  local variant=${2:-testgc}
+  local variant=${2:-gcevery}
   local do_benchmark=${3:-}
 
   ninja mycpp-examples-$compiler-$variant
@@ -87,15 +87,15 @@ examples-variant() {
 #
 
 # 10 segfaults
-ex-testgc() {
+ex-gcevery() {
   local compiler=${1:-}
-  examples-variant "$compiler" testgc
+  examples-variant "$compiler" gcevery
 }
 
 # TOO SLOW to run.  It's garbage collecting all the time.
-ex-testgc-bench() {
+ex-gcevery-bench() {
   local compiler=${1:-}
-  examples-variant "$compiler" testgc '.BENCHMARK'
+  examples-variant "$compiler" gcevery '.BENCHMARK'
 }
 
 # PASS!
@@ -105,7 +105,7 @@ ex-asan() {
 }
 
 # 2 of 18 tests failed: cartesian, parse
-# So it does not catch the 10 segfaults that 'testgc' catches with a few
+# So it does not catch the 10 segfaults that 'gcevery' catches with a few
 # iterations!
 ex-asan-bench() {
   local compiler=${1:-}
@@ -144,7 +144,7 @@ unit() {
   ### Run by test/cpp-unit.sh
 
   local compiler=${1:-cxx}
-  local variant=${2:-testgc}
+  local variant=${2:-gcevery}
 
   log ''
   log "mycpp/test.sh unit $compiler $variant"
@@ -185,7 +185,8 @@ unit() {
 }
 
 soil-run() {
-  unit '' testgc
+  unit '' gcstats
+  unit '' gcevery
   unit '' asan
   unit '' ubsan
 }

@@ -31,7 +31,7 @@ Output Layout:
       mycpp-examples/
         cgi.stripped
 
-    cxx-testgc/
+    cxx-gcevery/
       mycpp-unit/
         gc_heap_test
 
@@ -45,7 +45,7 @@ Output Layout:
 
     tasks/        # *.txt and *.task.txt for .wwz
       typecheck/  # optionally run
-      test/       # py, testgc, asan, opt
+      test/       # py, gcevery, asan, opt
       benchmark/
       unit/
 
@@ -223,7 +223,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
 
   if translator == 'mycpp':
     example_matrix = [
-        ('cxx', 'testgc'),
+        ('cxx', 'gcevery'),
         ('cxx', 'asan'),
         ('cxx', 'ubsan'),
         ('cxx', 'opt'),
@@ -233,7 +233,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
     ]
   else:
     example_matrix = [
-        ('cxx', 'testgc')
+        ('cxx', 'gcevery')
     ]  # pea just has one variant for now
 
   # Compile C++.
@@ -272,7 +272,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
 
   # minimal
   MATRIX = [
-      ('test', 'asan'),  # TODO: testgc is better!
+      ('test', 'asan'),  # TODO: gcevery is better!
       ('benchmark', 'opt'),
   ]
 
@@ -408,8 +408,8 @@ def NinjaGraph(n):
     test_name = os.path.basename(test_path)
 
     UNIT_TEST_MATRIX = [
-        ('cxx', 'dbg'),
-        ('cxx', 'testgc'),
+        ('cxx', 'gcstats'),
+        ('cxx', 'gcevery'),
 
         # Clang and GCC have different implementations of ASAN and UBSAN
         ('cxx', 'asan'),
@@ -426,14 +426,12 @@ def NinjaGraph(n):
 
       main_cc = '%s.cc' % test_path
 
-      # for gHeap.Report() and Protect()
-      mycpp_unit_flags = '-D GC_DEBUG -D GC_PROTECT'
-
+      mycpp_unit_flags = ''
       if test_name == 'mylib_old_test':
         mycpp_unit_flags += ' -D LEAKY_BINDINGS'
 
       # Don't get collection here yet
-      if test_name == 'leaky_types_test' and variant == 'testgc':
+      if test_name == 'leaky_types_test' and variant == 'gcevery':
         continue
 
       unit_test_vars = [

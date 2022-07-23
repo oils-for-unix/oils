@@ -41,6 +41,14 @@ using gc_heap::RoundUp;
 // Variables
 using gc_heap::gHeap;
 
+
+#ifdef GC_STATS
+  #define ASSERT_NUM_LIVE_OBJS(x) ASSERT_EQ_FMT((x), gHeap.num_live_objs_, "%d")
+#else
+  #define ASSERT_NUM_LIVE_OBJS(x)
+#endif
+
+
 // Hm we're getting a warning because these aren't plain old data?
 // https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
 // https://stackoverflow.com/questions/53850100/warning-offset-of-on-non-standard-layout-type-derivedclass
@@ -470,28 +478,44 @@ class Line : public Obj {
 TEST fixed_trace_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
-  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(0);
 
-  Local<Point> p = Alloc<Point>(3, 4);
+  Point* p = nullptr;
+  Point* p2 = nullptr;
+  Line* line = nullptr;
+
+  StackRoots _roots({&p, &p2, &line});
+
+  p = Alloc<Point>(3, 4);
   log("point size = %d", p->size());
 
-  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(1);
 
-  auto line = Local<Line>(Alloc<Line>());
+  line = Alloc<Line>();
 
+  p2 = Alloc<Point>(5, 6);
   line->begin_ = p;
-  line->end_ = Alloc<Point>(5, 6);
 
-  ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
+  // ROOTING ISSUE: This isn't valid?  Uncomment and we'll see a crash in
+  // testgc mode.
+
+  // line->end_ = Alloc<Point>(5, 6);
+
+  // I think the problem is that the allocation causes the LHS to be invalid?
+
+  line->end_ = p2;
+
+  ASSERT_NUM_LIVE_OBJS(3);
 
   gHeap.Collect();
-  ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(3);
 
   // remove last reference
   line->end_ = nullptr;
+  p2 = nullptr;
 
   gHeap.Collect();
-  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(2);
 
   PASS();
 }
@@ -499,39 +523,50 @@ TEST fixed_trace_test() {
 TEST slab_trace_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
-  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(0);
 
   {
-    Local<List<int>> ints = Alloc<List<int>>();
-    ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+    List<int>* ints = nullptr;
+    StackRoots _roots({&ints});
+    ints = Alloc<List<int>>();
+    ASSERT_NUM_LIVE_OBJS(1);
 
     ints->append(3);
-    ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
-  }
+    ASSERT_NUM_LIVE_OBJS(2);
+  }  // ints goes out of scope
+
   gHeap.Collect();
-  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(0);
+
+
+  List<Str*>* strings = nullptr;
+  Str* tmp = nullptr;
+  StackRoots _roots({&strings, &tmp});
 
   // List of strings
-  Local<List<Str*>> strings = Alloc<List<Str*>>();
-  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+  strings = Alloc<List<Str*>>();
+  ASSERT_NUM_LIVE_OBJS(1);
 
   // +2: slab and string
-  strings->append(StrFromC("yo"));
-  ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
+  tmp = StrFromC("yo");
+  strings->append(tmp);
+  ASSERT_NUM_LIVE_OBJS(3);
 
   // +1 string
-  strings->append(StrFromC("bar"));
-  ASSERT_EQ_FMT(4, gHeap.num_live_objs_, "%d");
+  tmp = StrFromC("bar");
+  strings->append(tmp);
+  ASSERT_NUM_LIVE_OBJS(4);
 
   // -1: remove reference to "bar"
   strings->set(1, nullptr);
+  tmp = nullptr;
   gHeap.Collect();
-  ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(3);
 
   // -1: set to GLOBAL instance.  Remove reference to "yo".
   strings->set(0, str4);
   gHeap.Collect();
-  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(2);
 
   PASS();
 }
@@ -539,30 +574,33 @@ TEST slab_trace_test() {
 TEST global_trace_test() {
   gHeap.Init(kInitialSize);
 
-  // Local reference to global
+  Str* l4 = nullptr;
+  List<Str*>* strings = nullptr;
 
-  Local<Str> l4 = str4;
-  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  StackRoots _roots({&l4, &strings});
+
+  l4 = str4;
+  ASSERT_NUM_LIVE_OBJS(0);
 
   gHeap.Collect();
-  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(0);
 
   // Heap reference to global
 
-  Local<List<Str*>> strings = Alloc<List<Str*>>();
-  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+  strings = Alloc<List<Str*>>();
+  ASSERT_NUM_LIVE_OBJS(1);
 
   // We now have the Slab too
   strings->append(nullptr);
-  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(2);
 
   // Global pointer doesn't increase the count
   strings->set(1, str4);
-  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(2);
 
   // Not after GC either
   gHeap.Collect();
-  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(2);
 
   PASS();
 }
@@ -685,7 +723,7 @@ int base_func_local(Local<Base> base) {
   return base->a_;
 }
 
-TEST variance_test() {
+TEST local_variance_test() {
   Base i1(5);
   log("i1.a_ = %d", i1.a_);
 
@@ -763,8 +801,10 @@ TEST field_mask_test() {
 
   log("Dict mask = %d", d->field_mask_);
 
+#if GC_STATS
   gc_heap::ShowFixedChildren(L);
   gc_heap::ShowFixedChildren(d);
+#endif
 
   auto L2 = NewList<Str*>();
   StackRoots _roots3({&L2});
@@ -894,21 +934,21 @@ TEST vtable_test() {
 TEST inheritance_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
-  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(0);
 
   DerivedObj* obj = nullptr;
   StackRoots _roots({&obj});
 
-  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(0);
   gHeap.Collect();
-  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(0);
 
   obj = Alloc<DerivedObj>();
   ASSERT_EQ_FMT(253, obj->derived_member_, "%d");
-  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(1);
 
   gHeap.Collect();
-  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+  ASSERT_NUM_LIVE_OBJS(1);
   ASSERT_EQ_FMT(253, obj->derived_member_, "%d");
 
   PASS();
@@ -918,11 +958,13 @@ TEST protect_test() {
   gc_heap::Space from;
   from.Init(512);
 
+#ifdef GC_PROTECT
   from.Protect();
   // This crashes
   // log("begin = %x", *from.begin_);
   from.Unprotect();
   ASSERT_EQ_FMT(0, *from.begin_, "%d");
+#endif
 
   PASS();
 }
@@ -946,13 +988,15 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_test);
   RUN_TEST(dict_repro);
 
-  // TODO: Shouldn't use Local
-  // RUN_TEST(fixed_trace_test);
-  // RUN_TEST(slab_trace_test);
-  // RUN_TEST(global_trace_test);
-  // RUN_TEST(variance_test);
+  RUN_TEST(fixed_trace_test);
+  RUN_TEST(slab_trace_test);
+  RUN_TEST(global_trace_test);
 
-  // RUN_TEST(local_test);
+#if 0
+  RUN_TEST(local_variance_test);
+  RUN_TEST(local_test);
+#endif
+
   RUN_TEST(stack_roots_test);
   RUN_TEST(field_mask_test);
 

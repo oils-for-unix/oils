@@ -96,7 +96,7 @@
 // GC_EVERY_ALLOC: Collect() on every Allocate().  Exposes many bugs!
 // GC_PROTECT: Use mprotect()
 // GC_VERBOSE: Log when we collect
-// GC_DEBUG: Collect more stats.  TODO: Rename this?
+// GC_STATS: Collect more stats.  TODO: Rename this?
 
 // Obj::heap_tag_ values.  They're odd numbers to distinguish them from vtable
 // pointers.
@@ -156,7 +156,7 @@ class Space {
   void Protect();
   void Unprotect();
 #endif
-#if GC_DEBUG
+#if GC_STATS
   void AssertValid(void* p) {
     if (begin_ <= p && p < begin_ + size_) {
       return;
@@ -187,7 +187,7 @@ class Heap {
 
     roots_top_ = 0;
 
-#if GC_DEBUG
+#if GC_STATS
     num_collections_ = 0;
     num_heap_growths_ = 0;
     num_forced_growths_ = 0;
@@ -198,7 +198,7 @@ class Heap {
   void* Bump(int n) {
     char* p = free_;
     free_ += n;
-#if GC_DEBUG
+#if GC_STATS
     num_live_objs_++;
 #endif
     return p;
@@ -216,7 +216,7 @@ class Heap {
       return Bump(n);
     }
 
-#if GC_DEBUG
+#if GC_STATS
       // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
       //    space_size_);
 #endif
@@ -241,7 +241,7 @@ class Heap {
     to_space_.Init(to_space_.size_ * multiple);
 
     Collect();
-#if GC_DEBUG
+#if GC_STATS
     num_forced_growths_++;
 #endif
 
@@ -276,7 +276,7 @@ class Heap {
   // mutates free_ and other variables
   void Collect();
 
-#if GC_DEBUG
+#if GC_STATS
   void Report() {
     log("-----");
     log("num collections = %d", num_collections_);
@@ -305,7 +305,7 @@ class Heap {
   int roots_top_;
   Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
 
-#if GC_DEBUG
+#if GC_STATS
   int num_collections_;
   int num_heap_growths_;
   int num_forced_growths_;  // when a single allocation is too big
@@ -345,7 +345,7 @@ class StackRoots {
 #endif
 };
 
-#if GC_DEBUG
+#if GC_STATS
 void ShowFixedChildren(Obj* obj);
 #endif
 

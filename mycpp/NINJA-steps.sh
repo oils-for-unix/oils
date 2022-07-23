@@ -125,9 +125,9 @@ compile() {
     ('ubsan')
       flags+=' -fsanitize=undefined'
       ;;
-    ('testgc')
+    ('gcevery')
       # TODO: GC_REPORT and GC_VERBOSE instead?
-      flags+=' -g -D GC_PROTECT -D GC_DEBUG -D GC_EVERY_ALLOC'
+      flags+=' -g -D GC_PROTECT -D GC_STATS -D GC_EVERY_ALLOC'
       ;;
     (*)
       die "Invalid variant: $variant"

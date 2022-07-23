@@ -132,7 +132,7 @@ run-test() {
 unit() {
   ### Run by test/cpp-unit.sh
 
-  gc-binding-test '' testgc
+  gc-binding-test '' gcevery
   gc-binding-test '' leaky
 
   # Has generated code
