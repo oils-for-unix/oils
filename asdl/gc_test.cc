@@ -3,8 +3,8 @@
 #include "_build/asdl-test/typed_demo_asdl.h"
 #include "_build/cpp/hnode_asdl.h"
 #include "asdl/runtime.h"
-#include "mycpp/gc_heap.h"
 #include "mycpp/gc_mylib.h"
+#include "mycpp/gc_types.h"
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;

@@ -7,8 +7,7 @@
 // - Integrate with mycpp and run mycpp/examples/
 //   - Make sure the benchmarks show less heap usage.
 
-#include "mycpp/gc_heap.h"
-
+#include "mycpp/gc_types.h"
 #include "vendor/greatest.h"
 
 // Types

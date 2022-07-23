@@ -27,7 +27,7 @@ def main(argv):
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
 #else
-  #include "mycpp/gc_heap.h"
+  #include "mycpp/gc_types.h"
   using gc_heap::List;
 #endif
 

@@ -9,7 +9,7 @@
   #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_builtins.h"  // Tuple2, NOT gc_heap::Tuple2
-  #include "mycpp/gc_heap.h"
+  #include "mycpp/gc_types.h"
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::Str;

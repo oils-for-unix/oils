@@ -240,7 +240,7 @@ def main(argv):
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
 #else
-#include "mycpp/gc_heap.h"
+#include "mycpp/gc_types.h"
 #include "mycpp/gc_builtins.h"
 #include "mycpp/gc_mylib.h"
 
@@ -284,7 +284,7 @@ using gc_heap::NewDict;
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_old.h"
 #else
-#include "mycpp/gc_heap.h"
+#include "mycpp/gc_types.h"
 #endif
 
 """ % (os.path.basename(opts.header_out), guard, guard))

@@ -20,7 +20,7 @@
 
 // if this file is even included, we're using the old mylib
 #define MYLIB_LEAKY 1
-#include "gc_heap.h"  // for Obj
+#include "mycpp/gc_types.h"  // for Obj
 
 #ifdef DUMB_ALLOC
   #include "cpp/leaky_dumb_alloc.h"

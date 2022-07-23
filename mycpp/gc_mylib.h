@@ -6,8 +6,8 @@
 #ifndef GC_MYLIB_H
 #define GC_MYLIB_H
 
-#include "gc_builtins.h"  // Tuple2
-#include "gc_heap.h"
+#include "mycpp/gc_builtins.h"  // Tuple2
+#include "mycpp/gc_types.h"
 
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;

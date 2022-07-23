@@ -150,7 +150,7 @@ asdl-runtime() {
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_old.h"
 #else
-#include "mycpp/gc_heap.h"
+#include "mycpp/gc_types.h"
 #include "mycpp/gc_mylib.h"
 #endif
 

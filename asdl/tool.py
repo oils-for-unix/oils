@@ -84,7 +84,7 @@ def main(argv):
 using mylib::StrFromC;
 using mylib::NewList;
 #else
-#include "mycpp/gc_heap.h"
+#include "mycpp/gc_types.h"
 using gc_heap::Obj;
 using gc_heap::Dict;
 using gc_heap::List;

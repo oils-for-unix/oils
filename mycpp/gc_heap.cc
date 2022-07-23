@@ -1,8 +1,8 @@
 // gc_heap.cc
 
-#include "gc_heap.h"
-
 #include <sys/mman.h>  // mprotect()
+
+#include "mycpp/gc_types.h"
 
 using gc_heap::Heap;
 using gc_heap::Local;

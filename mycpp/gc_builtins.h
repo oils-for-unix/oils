@@ -10,7 +10,7 @@
 #include <algorithm>  // min(), sort()
 #include <climits>    // CHAR_BIT
 
-#include "gc_heap.h"
+#include "mycpp/gc_types.h"
 
 // TODO: Don't use 'using' in header
 using gc_heap::AllocStr;

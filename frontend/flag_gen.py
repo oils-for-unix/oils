@@ -181,7 +181,7 @@ def Cpp(specs, header_f, cc_f):
   #include "mycpp/mylib_old.h"
   using mylib::StrFromC;
 #else
-  #include "mycpp/gc_heap.h"
+  #include "mycpp/gc_types.h"
   using gc_heap::StrFromC;
 #endif
 

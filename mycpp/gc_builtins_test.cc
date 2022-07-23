@@ -4,8 +4,8 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "mycpp/gc_heap.h"
 #include "mycpp/gc_mylib.h"  // gBuf
+#include "mycpp/gc_types.h"
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;
