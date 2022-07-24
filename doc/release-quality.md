@@ -91,16 +91,16 @@ This is a supplement to the [main release page](index.html).
   - [overview](pub/metrics.wwz/line-counts/overview.html).  The whole Oil repo organized by
     type of source file.
   - [for-translation](pub/metrics.wwz/line-counts/for-translation.html).
-    An overview of the "compile engineer" project.
+    An overview of the "compiler engineer" project.
   - [osh-cloc](pub/metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
     libraries, as measured by the [cloc][] tool.
+- `oil-native`.
   - [oil-cpp](pub/metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
     `oil-native` tarball.
   - [preprocessed](pub/metrics.wwz/preprocessed/index.html).  How much code is
     passed to the compiler?
     - [cxx-dbg](pub/metrics.wwz/preprocessed/cxx-dbg.txt),
       [cxx-opt](pub/metrics.wwz/preprocessed/cxx-opt.txt)
-- `oil-native`.
   - [overview](pub/metrics.wwz/oil-native/overview.txt) - Binary code size reported
     by [Bloaty][].
 

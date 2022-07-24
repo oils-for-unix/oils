@@ -173,6 +173,9 @@ cpp-counts() {
     'Unit tests in C++' \
     'The goal is to make the spec tests pass, but unit tests are helpful too.' \
     "$@"
+
+  ls NINJA*.py */NINJA*.{py,sh} | $count \
+    'Incremental C++ Build' '' "$@"
 }
 
 gen-cpp-counts() {
@@ -252,9 +255,9 @@ _for-translation() {
 
   osh-counts $count "$@"
 
-  gen-cpp-counts $count "$@"
-
   spec-gold-counts $count "$@"
+
+  gen-cpp-counts $count "$@"
 }
 
 _overview() {
@@ -281,10 +284,9 @@ _overview() {
 
   code-generator-counts $count "$@"
 
-  # Leaving off cpp-counts since that requires a C++ build
+  cpp-counts $count "$@"
 
-  ls NINJA*.py */NINJA*.{py,sh} | $count \
-    'Incremental C++ Build' '' "$@"
+  # Leaving off gen-cpp-counts since that requires a C++ build
 
   ls build/*.{mk,sh,py} Makefile *.mk configure install | filter-py | $count \
     'Build Automation' '' "$@"
