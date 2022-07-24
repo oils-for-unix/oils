@@ -37,7 +37,10 @@ This is a supplement to the [main release page](index.html).
   implicit assertions, no golden output.)
 - [Wild Tests](test/wild.wwz/).  Parse and translate thousands of shell scripts
   with OSH.
-- [Unit Tests](test/unit.wwz/).  Python unit test results.
+- [Python Unit Tests](test/unit.wwz/).
+- [C++ Test Coverage](test/coverage.wwz/unified/html/index.html) measured by
+  Clang.
+  - [Log Files](test/coverage.wwz/log-files.html)
 
 ### More
 

@@ -145,9 +145,8 @@ auto-machine2() {
 #         number of functions, classes, etc.?
 #         bytecode/bundle size (binary size on x86_64 is in ovm-build.sh)
 #         tarball size?
-#       coverage/  # coverage of all spec tests?  And gold tests maybe?
-#         python/  # python stdlib coverage  with pycoverage
-#         c/       # c coverage with gcc/clang
+#       coverage.wwz/
+#         unified/   # clang-coverage
 #       benchmarks.wwz/
 #         compute
 #         osh-parser/
@@ -307,7 +306,9 @@ build-and-test() {
 
   _clean
   _dev-build
-  test/unit.sh run-for-release
+  test/unit.sh run-for-release  # Python unit tests
+
+  test/coverage.sh run-for-release  # C++ unit tests
 
   # oil-native
   devtools/release-native.sh make-tar
@@ -390,6 +391,16 @@ _link() {
 
 compress() {
   local root=$PWD/_release/VERSION/
+
+  # This has HTML reports, .profraw files, and logs of stdout, e.g.
+  # mycpp-unit/gc_heap_test.log
+  # About 1.5 MB
+  log "--- coverage"
+  local out="$root/test/coverage.wwz"
+  pushd _test/clang-coverage
+  # This also saves the logs
+  time zip -r -q $out .
+  popd
 
   log "--- test/other"
   local out="$root/test/other.wwz"

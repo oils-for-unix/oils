@@ -99,5 +99,27 @@ unified-report() {
     mycpp-unit mycpp-examples cpp
 }
 
+log-files-index() {
+  local dir=${1:-_test/clang-coverage}
+  pushd $dir
+  # Unit tests logs
+  find . -name '*.log' \
+    | gawk '{ printf("<a href=\"%s\">%s</a> <br/>\n", $0, $0); }' \
+    > log-files.html
+  popd
+}
+
+run-for-release() {
+  ### Similar to cpp-coverage in soil/worker.sh
+
+  mycpp/test.sh unit-test-coverage
+  mycpp/test.sh examples-coverage
+  cpp/test.sh coverage
+
+  log-files-index _test/clang-coverage
+
+  unified-report
+}
+
 "$@"
 
