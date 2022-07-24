@@ -188,7 +188,7 @@ preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed
 shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
 mycpp-examples   mycpp/build.sh soil-run               _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
-make-tar         devtools/release-native.sh make-tar   -
+make-tar         devtools/release-native.sh make-tar   _release/oil-native.tar
 test-tar         devtools/release-native.sh test-tar   -
 EOF
 }

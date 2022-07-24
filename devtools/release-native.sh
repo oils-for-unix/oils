@@ -41,16 +41,17 @@ make-tar() {
 
   local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
 
-  local out=_release/${app_name}-${OIL_VERSION}.tar
+  local tar=_release/${app_name}.tar
 
   # NOTE: Could move this to the Makefile, which will make it
   mkdir -p _release 
 
   build/dev.sh oil-cpp-codegen
 
-  manifest | xargs -- tar --create --transform "$sed_expr" --file $out
+  manifest | xargs -- tar --create --transform "$sed_expr" --file $tar
 
-  xz -c $out > $out.xz
+  local tar_xz=_release/${app_name}-${OIL_VERSION}.tar.xz
+  xz -c $tar > $tar_xz
 
   ls -l _release
 }
@@ -60,7 +61,7 @@ test-tar() {
   rm -r -f $tmp
   mkdir -p $tmp
   cd $tmp
-  tar -x < ../../_release/oil-native-$OIL_VERSION.tar
+  tar -x < ../../_release/oil-native.tar
 
   pushd oil-native-$OIL_VERSION
   build/native.sh tarball-demo
