@@ -210,7 +210,7 @@ cpp-codegen() {
   build/codegen.sh flag-gen-cpp
 }
 
-oil-cpp() {
+oil-cpp-codegen() {
   oil-asdl-to-cpp
 
   cpp-codegen
@@ -218,14 +218,19 @@ oil-cpp() {
   build/native.sh gen-oil-native-sh  # script to build it
 
   build/translate.sh osh-eval  # translate with mycpp
+}
+
+oil-cpp() {
+  oil-cpp-codegen
 
   ./NINJA_config.py  # Create it for the first time
 
   time ninja _bin/cxx-dbg/osh_eval
-
   echo
+
   wc -l _build/cpp/*
   echo
+
   ls -l _bin/*/osh_eval*
 }
 

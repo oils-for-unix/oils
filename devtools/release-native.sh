@@ -19,9 +19,7 @@ manifest() {
   # - Invoke the compiler to get all headers, like we do with CPython.
   # - Needs to be updated for the new GC runtime
   # - Provide a way to run C++ tests?  Unit tests and smoke tests alike.
-  # - MESSY: Are we using asdl/runtime?  It contains the SAME DEFINITIONS as
-  #   _build/cpp/osh_eval.h.  We use it to run ASDL unit tests without
-  #   depending on Oil.
+  # - MESSY: asdl/runtime.h is used by _build/cpp/*_asdl.cc
 
   find \
     LICENSE.txt \
@@ -29,13 +27,9 @@ manifest() {
     asdl/runtime.h \
     build/common.sh \
     build/native.sh \
-    cpp/ \
+    cpp/*.{cc,h,sh} \
     mycpp/common.sh \
-    mycpp/mylib_old.{cc,h} \
-    mycpp/gc_heap.{cc,h} \
-    mycpp/gc_builtins.{cc,h} \
-    mycpp/myerror.h \
-    mycpp/common.h \
+    mycpp/*.{cc,h} \
     _devbuild/gen/*.h \
     _build/cpp/ \
     _build/oil-native.sh \
@@ -52,8 +46,7 @@ make-tar() {
   # NOTE: Could move this to the Makefile, which will make it
   mkdir -p _release 
 
-  # TODO: This could skip compiling oil-native
-  build/dev.sh oil-cpp
+  build/dev.sh oil-cpp-codegen
 
   manifest | xargs -- tar --create --transform "$sed_expr" --file $out
 
