@@ -189,7 +189,6 @@ make-job-wwz() {
   format-wwz-index $job_id $index > index.html
 
   # _tmp/soil: Logs are in _tmp, see soil/worker.sh
-  # mycpp/ : leave out bin/ for now
   # web/ : spec test HTML references this.
   #        Note that that index references /web/{base,soil}.css, outside the .wwz
   #        osh-summary.html uses table-sort.js and ajax.js
@@ -200,7 +199,7 @@ make-job-wwz() {
     _test \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts}.css web/ajax.js \
     web/table/table-sort.{css,js} \
-    _release/oil.tar _release/VERSION/doc
+    _release/oil*.tar _release/VERSION/doc
 }
 
 deploy-job-results() {

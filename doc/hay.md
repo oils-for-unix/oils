@@ -590,6 +590,16 @@ In Python, you would:
 
 TODO: Show code example.
 
+### Locating Errors in the Original `.hay` File
+
+The Oil interpreter has 2 flags starting with `--location` that give you
+control over error messages.
+
+    oil --location-str 'foo.hay' --location-start-line 42 -- stage2.oil
+
+Set them to the values of fields `location_str` and `location_start_line` in
+the result of `SHELL` node evalution.
+
 ### Debian `.d` Dirs
 
 Debian has a pattern of splitting configuration into a **directory** of
