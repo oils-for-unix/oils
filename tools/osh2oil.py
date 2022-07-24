@@ -266,15 +266,14 @@ class OilPrinter(object):
     self.cursor.PrintUntil(self.arena.LastSpanId())
 
   def DoRedirect(self, node, local_symbols):
+    """Unused."""
+
+    # TODO: Here docs could change to <<< '''
+
     #print(node, file=sys.stderr)
     op_spid = node.op.span_id
     op_id = node.op.id
     self.cursor.PrintUntil(op_spid)
-
-    # TODO:
-    # - Do < and <& the same way.
-    # - How to handle here docs and here docs?
-    # - >> becomes >+ or >-, or maybe >>>
 
     #if node.tag == redir_e.Redir:
     if False:
@@ -630,9 +629,10 @@ class OilPrinter(object):
       for w in node.words:
         self.DoWordInCommand(w, local_symbols)
 
-      # NOTE: This will change to "phrase"?  Word or redirect.
-      for r in node.redirects:
-        self.DoRedirect(r, local_symbols)
+      # Leave redirects alone
+      if 0:
+        for r in node.redirects:
+          self.DoRedirect(r, local_symbols)
 
       # TODO: Print the terminator.  Could be \n or ;
       # Need to print env like PYTHONPATH = 'foo' && ls
