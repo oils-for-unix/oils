@@ -313,7 +313,6 @@ build-and-test() {
   # oil-native
   devtools/release-native.sh make-tar
   devtools/release-native.sh extract-for-benchmarks
-
   # This builds the tarball from _tmp/native-tar-test
   devtools/release-native.sh test-tar
 

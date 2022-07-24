@@ -69,7 +69,7 @@ test-tar() {
 }
 
 extract-for-benchmarks() {
-  local tar=$PWD/_release/oil-native-$OIL_VERSION.tar
+  local tar=$PWD/_release/oil-native.tar
   local dest='../benchmark-data/src'
   mkdir -p $dest
 
