@@ -28,9 +28,9 @@ pre-build() {
 }
 
 readonly LEAKY_FLAG_SPEC_SRC=(
-    cpp/leaky_flag_spec_test.cc \
-    _build/cpp/arg_types.cc \
-    cpp/leaky_frontend_flag_spec.cc \
+    cpp/leaky_flag_spec_test.cc
+    cpp/leaky_frontend_flag_spec.cc
+    _build/cpp/arg_types.cc
     mycpp/mylib_old.cc
 )
 
@@ -62,6 +62,7 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_pylib.cc
     mycpp/mylib_old.cc
     mycpp/leaky_types.cc
+    mycpp/gc_heap.cc
 )
 
 leaky-binding-test() {
