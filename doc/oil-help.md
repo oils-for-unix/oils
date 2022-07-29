@@ -421,7 +421,7 @@ Not implemented.
 Append a string to an array of strings:
 
     var mylist = %(one two)
-    push :mylist three
+    append :mylist three
 
 This is a command-mode synonym for the expression:
 
