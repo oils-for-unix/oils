@@ -17,6 +17,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly HOST='oilshell.org'
+
 log() {
   echo "$@" 1>&2
 }
@@ -57,9 +59,24 @@ spec() {
   echo "Visit http://$dest/"
 }
 
-# Publish unit tests
-unit() {
-  echo 'Hello from publish.sh'
+benchmark() {
+  ### Publish benchmarks to a versioned dir
+
+  local user=$1
+  local benchmark=${2:-osh-parser}
+
+  local dest
+  # Add hostname because spec tests aren't hermetic yet.
+  #dest="$(versioned-dest)/$(hostname)/spec"
+  dest="$(versioned-dest)/$benchmark"
+
+  echo $dest
+
+  ssh $user@$HOST mkdir -p $dest
+
+  scp _tmp/$benchmark/index.html $user@$HOST:$dest/
+
+  echo "Visit http://$dest/"
 }
 
 compress-wild() {
@@ -103,7 +120,11 @@ web-dir-versioned() {
   local host=oilshell.org
 
   local branch=$(current-branch-name)
-  local dest=$user@$host:oilshell.org/git-branch/$branch/web/
+  local dir=oilshell.org/git-branch/$branch/web/
+
+  local dest=$user@$host:$dir
+
+  ssh $user@$host mkdir --verbose -p $dir
   web-dir $user $dest
 }
 

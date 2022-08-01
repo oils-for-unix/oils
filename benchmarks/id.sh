@@ -198,6 +198,8 @@ dump-host-id() {
   grep -i -v 'cpu mhz' /proc/cpuinfo > $out_dir/cpuinfo.txt
   # mem info doesn't make a difference?  I guess it's just nice to check that
   # it's not swapping.  But shouldn't be part of the hash.
+
+  # TODO: MemTotal
   grep '^MemAvailable' /proc/meminfo > $out_dir/meminfo.txt
 
   #head $out_dir/* 1>&2  # don't write to stdout

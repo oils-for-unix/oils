@@ -9,8 +9,9 @@
 #
 #   devtools/release-native.sh make-tar
 #   devtools/release-native.sh extract-for-benchmarks
-#   devtools/release.sh benchmark-build
-#   make  # to build _bin/osh
+#   devtools/release.sh benchmark-build  # builds in _tmp/oil-tar-test
+#   make  
+#   devtools/bin.sh make-bin-links  # to build _bin/osh
 #   lenny:
 #     benchmark/auto.sh osh-parser-quick
 #   flanders:
