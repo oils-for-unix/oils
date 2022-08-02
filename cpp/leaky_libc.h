@@ -20,7 +20,7 @@ inline Str* realpath(Str* path) {
 
 inline Str* gethostname() {
   char* buf = static_cast<char*>(malloc(HOST_NAME_MAX + 1));
-  int result = ::gethostname(buf, PATH_MAX);
+  int result = ::gethostname(buf, HOST_NAME_MAX);
   if (result != 0) {
     // TODO: print errno, e.g. ENAMETOOLONG (glibc)
     throw new RuntimeError(new Str("Couldn't get working directory"));
