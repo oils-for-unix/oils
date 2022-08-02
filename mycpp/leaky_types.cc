@@ -1,14 +1,13 @@
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
 using gc_heap::StackRoots;  // no-op
-using mylib::StrFromC;
+using mylib::AllocStr;
 #else
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_types.h"
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
 using gc_heap::Str;
-using gc_heap::StrFromC;
 #endif
 
 #include <ctype.h>  // isalpha(), isdigit()
@@ -73,14 +72,10 @@ Str* StripAny(Str* s, StripWhere where, int what) {
   }
 
   // Note: makes a copy in leaky version, and will in GC version too
-#ifdef LEAKY_BINDINGS
-  return StrFromC(char_data + i, j - i);
-#else
   int new_len = j - i;
   Str* result = AllocStr(new_len);
   memcpy(result->data(), s->data() + i, new_len);
   return result;
-#endif
 }
 
 Str* Str::strip() {
