@@ -34,3 +34,15 @@ echo $len(e)
 foo
 6
 ## END
+
+#### Catch AttributeError
+
+var s = 'foo'
+echo s=$s
+var t = s.bad()
+echo 'should not get here'
+
+## status: 3
+## STDOUT:
+s=foo
+## END

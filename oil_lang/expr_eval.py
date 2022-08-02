@@ -200,6 +200,8 @@ class OilEvaluator(object):
       # TODO: Add location info.  Right now we blame the variable name for
       # 'var' and 'setvar', etc.
       raise error.Expr('Type error in expression: %s' % str(e))
+    except Exception as e:
+      raise error.Expr('Error evaluating expression: %s' % str(e))
 
   def _EvalExpr(self, node):
     # type: (expr_t) -> Any
