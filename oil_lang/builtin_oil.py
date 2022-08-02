@@ -24,6 +24,7 @@ from frontend import flag_spec
 from frontend import args
 from frontend import match
 from frontend import typed_args
+from mycpp.mylib import tagswitch
 from qsn_ import qsn
 
 import yajl
@@ -144,12 +145,21 @@ class Append(_Builtin):
                             span_id=var_spid)
 
     val = self.mem.GetValue(var_name)
-    # TODO: value.Obj too
-    if val.tag != value_e.MaybeStrArray:
+
+    # TODO: Get rid of the value.MaybeStrArray and value.Obj distinction!
+    ok = False
+    with tagswitch(val) as case:
+      if case(value_e.MaybeStrArray):
+        val.strs.extend(arg_r.Rest())
+        ok = True
+      if case(value_e.Obj):
+        if isinstance(val.obj, list):
+          val.obj.extend(arg_r.Rest())
+          ok = True
+    if not ok:
       self.errfmt.Print_("%r isn't an array" % var_name, span_id=var_spid)
       return 1
 
-    val.strs.extend(arg_r.Rest())
     return 0
 
 

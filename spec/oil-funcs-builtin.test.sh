@@ -15,6 +15,11 @@ true
 var a = Int("3")
 var b = Int("-35")
 write $a $b
+
+var c = Int("bad")
+echo 'should not get here'
+
+## status: 3
 ## STDOUT:
 3
 -35
