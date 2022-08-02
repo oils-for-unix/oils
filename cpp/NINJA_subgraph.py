@@ -121,14 +121,11 @@ OLD_RUNTIME = [
 #  - _bin/cxx-leaky/osh_eval -- this means it's optimized then?
 #  - we still want to be able to debug it
 #  - $compiler-$variant-$allocator triple?
-# -D DUMB_ALLOC: a speed optimization.  Should be obsolete with garbage
-#  collector.  Used for parser benchmarks.
-#  - can this also be controlled with the .leaky variant?
 
 # leakyopt, leakyasan -- I guess this is good for tests
 
 # single quoted in Ninja/shell syntax
-OSH_EVAL_FLAGS_STR = "'-D DUMB_ALLOC -D NO_GC_HACK -D LEAKY_BINDINGS'"
+OSH_EVAL_FLAGS_STR = "'-D NO_GC_HACK -D LEAKY_BINDINGS'"
 
 
 def NinjaGraph(n):
@@ -190,7 +187,7 @@ def NinjaGraph(n):
   COMPILERS_VARIANTS = mycpp_subgraph.COMPILERS_VARIANTS + [
       # note: these could be clang too
       ('cxx', 'alloclog'),
-      ('cxx', 'malloc'),
+      ('cxx', 'dumballoc'),
       ('cxx', 'uftrace'),
 
       # leave out tcmalloc since it requires system libs to be installed

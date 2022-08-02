@@ -102,6 +102,10 @@ setglobal_compile_flags() {
       # the dbg variant does?
       flags="$flags -O2 -g"
       ;;
+    (dumballoc)
+      # optimized build with bump allocator
+      flags="$flags -O2 -g -D DUMB_ALLOC"
+      ;;
 
     (uftrace)
       # -O0 creates a A LOT more data.  But sometimes we want to see the
@@ -115,9 +119,6 @@ setglobal_compile_flags() {
       flags="$flags $opt -g -pg"
       ;;
 
-    (malloc)
-      flags="$flags -O2 -g"
-      ;;
     (tcmalloc)
       flags="$flags -O2 -g -D TCMALLOC"
       ;;
