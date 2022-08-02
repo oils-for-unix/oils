@@ -8,14 +8,19 @@
 #include <stdlib.h>
 #include <unistd.h>  // gethostname()
 
+#ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_old.h"
+using mylib::StrFromC;
+#else
+using gc_heap::StrFromC;
+#endif
 
 namespace libc {
 
 inline Str* realpath(Str* path) {
   assert(path->IsNulTerminated());
   char* rp = ::realpath(path->data_, 0);
-  return new Str(rp);
+  return StrFromC(rp);
 }
 
 inline Str* gethostname() {
@@ -23,17 +28,14 @@ inline Str* gethostname() {
   int result = ::gethostname(buf, HOST_NAME_MAX);
   if (result != 0) {
     // TODO: print errno, e.g. ENAMETOOLONG (glibc)
-    throw new RuntimeError(new Str("Couldn't get working directory"));
+    throw new RuntimeError(StrFromC("Couldn't get working directory"));
   }
-  return new Str(buf);
+  return StrFromC(buf);
 }
 
 inline bool fnmatch(Str* pat, Str* str) {
-  // copy into NUL-terminated buffers
-  mylib::Str0 pat0(pat);
-  mylib::Str0 str0(str);
   int flags = FNM_EXTMATCH;
-  bool result = ::fnmatch(pat0.Get(), str0.Get(), flags) == 0;
+  bool result = ::fnmatch(pat->data(), str->data(), flags) == 0;
   return result;
 }
 
