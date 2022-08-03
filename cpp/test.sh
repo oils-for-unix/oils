@@ -47,7 +47,7 @@ leaky-flag-spec-test() {
   # -D CPP_UNIT_TEST is to disable #include _build/cpp/osh_eval.h
   local more_cxx_flags='-D LEAKY_BINDINGS -D DUMB_ALLOC -D CPP_UNIT_TEST'
   compile_and_link $compiler $variant "$more_cxx_flags" $bin \
-    "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/leaky_dumb_alloc.cc
+    "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/dumb_alloc.cc
 
   run-test $bin $compiler $variant
 }
@@ -75,11 +75,11 @@ leaky-binding-test() {
   mkdir -p $dir
   local bin=$dir/leaky_binding_test
 
-  # leaky_dumb_alloc.cc exposes allocator alignment issues?
+  # dumb_alloc.cc exposes allocator alignment issues?
 
   local more_cxx_flags='-D LEAKY_BINDINGS -D DUMB_ALLOC' 
   compile_and_link $compiler $variant "$more_cxx_flags" $bin \
-    "${LEAKY_TEST_SRC[@]}" cpp/leaky_dumb_alloc.cc
+    "${LEAKY_TEST_SRC[@]}" cpp/dumb_alloc.cc
 
   run-test $bin $compiler $variant
 }
@@ -100,7 +100,7 @@ gc-binding-test() {
   local bin=$out_dir/gc_binding_test
 
   compile_and_link $compiler $variant "$more_cxx_flags" $bin \
-    "${GC_TEST_SRC[@]}" cpp/leaky_dumb_alloc.cc
+    "${GC_TEST_SRC[@]}" cpp/dumb_alloc.cc
 
   run-test $bin $compiler $variant
 }

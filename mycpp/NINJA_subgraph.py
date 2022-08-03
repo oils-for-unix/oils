@@ -188,7 +188,7 @@ UNIT_TESTS = {
     # leaky bindings run against the GC runtime!
     'mycpp/leaky_types_test.cc': GC_RUNTIME,
 
-    'mycpp/demo/target_lang.cc': ['cpp/leaky_dumb_alloc.cc', 'mycpp/gc_heap.cc'],
+    'mycpp/demo/target_lang.cc': ['cpp/dumb_alloc.cc', 'mycpp/gc_heap.cc'],
 
     # there is also demo/{gc_heap,square_heap}.cc
 }

@@ -87,7 +87,7 @@ DEPS_CC = [
     'cpp/leaky_osh.cc',
     'cpp/leaky_pgen2.cc',
     'cpp/leaky_pylib.cc',
-    'cpp/leaky_dumb_alloc.cc',
+    'cpp/dumb_alloc.cc',
     'cpp/leaky_stdlib.cc',
     'cpp/leaky_libc.cc',
 

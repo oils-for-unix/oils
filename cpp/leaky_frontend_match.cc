@@ -10,7 +10,7 @@
 // clang-format on
 
 #ifdef DUMB_ALLOC
-  #include "leaky_dumb_alloc.h"
+  #include "dumb_alloc.h"
   #define malloc dumb_malloc
   #define free dumb_free
 #endif

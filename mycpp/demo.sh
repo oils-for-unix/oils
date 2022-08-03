@@ -74,7 +74,7 @@ overhead() {
 target-lang() {
   local bin=_bin/target_lang 
   # -m32 complains about "shadow memory"
-  cpp-compile demo/target_lang.cc $bin ../cpp/leaky_dumb_alloc.cc gc_heap.cc -I ../cpp
+  cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc gc_heap.cc -I ../cpp
   $bin "$@"
 }
 
@@ -84,7 +84,7 @@ target-lang-m32() {
 
   # constexpr restrictions lifted
   $CXX -o $bin $BASE_CXXFLAGS -m32 \
-    demo/target_lang.cc ../cpp/leaky_dumb_alloc.cc -I ../cpp
+    demo/target_lang.cc ../cpp/dumb_alloc.cc -I ../cpp
   $bin "$@"
 }
 
@@ -99,7 +99,7 @@ m32-demo() {
 open() {
   local bin=_bin/open
 
-  cpp-compile demo/open.cc $bin ../cpp/leaky_dumb_alloc.cc -I ../cpp
+  cpp-compile demo/open.cc $bin ../cpp/dumb_alloc.cc -I ../cpp
 
   ls -l $bin
   $bin util.py

@@ -23,7 +23,7 @@
 #include "mycpp/gc_types.h"  // for Obj
 
 #ifdef DUMB_ALLOC
-  #include "cpp/leaky_dumb_alloc.h"
+  #include "cpp/dumb_alloc.h"
   #define malloc dumb_malloc
   #define free dumb_free
 #endif
