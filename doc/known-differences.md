@@ -330,28 +330,35 @@ In OSH, omit the quotes if you want splitting:
 
 I think OSH is more consistent, but it disagrees with other shells.
 
-### Values Are Tagged with Types, Not Cells
+### Values Are Tagged with Types, Not Locations (`declare -i -a -A`)
 
-In bash, **cells** (locations for values) are tagged with types.  For example,
-these two statements are different:
+Even though there's a large common subset, OSH and bash have a different model
+for typed data.
+
+- In OSH, **values** are tagged with types, which is how Python and JavaScript
+  work.
+- In bash, **cells** (locations for values) are tagged with types.  Everything
+  is a string, but in certain contexts, strings are treated as integers or as
+  structured data.
+
+In particular,
+
+- The `-i` flag is a no-op in OSH.  See [Shell Idioms > Remove Dynamic
+  Parsing](shell-idioms.html#remove-dynamic-parsing) for alternatives to `-i`.
+- The `-a` and `-A` flags behave differently.  They pertain to the value, not
+  the location.
+
+For example, these two statements are different in bash, but the same in OSH:
 
     declare -A assoc     # unset cell that will LATER be an assoc array
     declare -A assoc=()  # empty associative array
-    set -u               # now we can tell the difference
 
-OSH behaves more like Python or JavaScript: **values** are tagged with types
-like `Str` and `AssocArray`.
-
-- The [pp]($help:pp) builtin is useful for gaining an understanding of the
-data model.
-- See the [Quirks](quirks.html) doc for details on how Oil uses this cleaner
-  model while staying compatible with bash.
+In bash, you can tell the difference with `set -u`, but there's no difference
+in OSH.
 
 ### Indexed and Associative Arrays are Distinct
 
-This is a consequence of the previous point.
-
-OSH has bash-compatible arrays, which are created like this:
+Here is how you can create arrays in OSH, in a bash-compatible way:
 
     local indexed=(foo bar)
     local -a indexed=(foo bar)            # -a is redundant
@@ -361,10 +368,19 @@ OSH has bash-compatible arrays, which are created like this:
     local -A assoc=(['one']=1 ['two']=2)  # -A is redundant
     echo ${assoc['one']}                  # 1
 
-In bash, the distinction between the two is blurry, e.g. in cases like this:
+In bash, the distinction between the two is blurry, with cases like this:
 
     local -A x=(foo bar)                  # -A disagrees with literal
     local -a y=(['one']=1 ['two']=2)      # -a disagrees with literal
+
+These are disallowed in OSH.
+
+Notes:
+
+- The [pp]($help:pp) builtin is useful for gaining an understanding of the
+data model.
+- See the [Quirks](quirks.html) doc for details on how Oil uses this cleaner
+  model while staying compatible with bash.
 
 ### Args to Assignment Builtins Aren't Split or Globbed
 

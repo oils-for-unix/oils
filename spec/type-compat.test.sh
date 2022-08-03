@@ -21,12 +21,17 @@ j=x  # treated like zero
 j+=' 2 '  # arith add
 
 echo "[$s]"
-echo $i
-echo $j
+echo [$i]
+echo [$j]
 ## STDOUT:
 [1  2 ]
-3
-2
+[3]
+[2]
+## END
+## N-I osh STDOUT:
+[1  2 ]
+[1 2 ]
+[x 2 ]
 ## END
 
 #### declare -i with arithmetic inside strings (Nix, issue 864)
@@ -47,6 +52,10 @@ echo item=$item
 s=3
 item=3
 ## END
+## N-I osh STDOUT:
+s=1 + 2
+item=array[1+1]
+## END
 
 #### append in arith context
 declare s
@@ -59,7 +68,12 @@ declare -i j
 (( j='x ' ))  # treated like zero
 (( j+=' 2 ' ))
 echo "$s|$i|$j"
-## stdout: 3|3|2
+## STDOUT:
+3|3|2
+## END
+## N-I osh status: 1
+## N-I osh STDOUT:
+## END
 
 #### declare array vs. string: mixing -a +a and () ''
 # dynamic parsing of first argument.
@@ -68,7 +82,13 @@ declare +a 'xyz2=(2 3)'
 declare -a 'xyz3=4'
 declare -a 'xyz4=(5 6)'
 argv.py "${xyz1}" "${xyz2}" "${xyz3[@]}" "${xyz4[@]}"
-## stdout: ['1', '(2 3)', '4', '5', '6']
+## STDOUT:
+['1', '(2 3)', '4', '5', '6']
+## END
+## N-I osh STDOUT:
+['', '']
+## END
+
 
 #### declare array vs. associative array
 # Hm I don't understand why the array only has one element.  I guess because
@@ -77,4 +97,11 @@ declare -a 'array=([a]=b [c]=d)'
 declare -A 'assoc=([a]=b [c]=d)'
 argv.py "${#array[@]}" "${!array[@]}" "${array[@]}"
 argv.py "${#assoc[@]}" "${!assoc[@]}" "${assoc[@]}"
-## stdout-json: "['1', '0', 'd']\n['2', 'a', 'c', 'b', 'd']\n"
+## STDOUT:
+['1', '0', 'd']
+['2', 'a', 'c', 'b', 'd']
+## END
+## N-I osh STDOUT:
+['0']
+['0']
+## END

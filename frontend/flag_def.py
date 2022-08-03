@@ -45,6 +45,7 @@ NEW_VAR_SPEC.PlusFlag('n')  # named ref
 # Common between readonly/declare
 NEW_VAR_SPEC.ShortFlag('-a')
 NEW_VAR_SPEC.ShortFlag('-A')
+NEW_VAR_SPEC.ShortFlag('-i')  # no-op for integers
 
 
 UNSET_SPEC = FlagSpec('unset')

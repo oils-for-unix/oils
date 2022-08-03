@@ -673,7 +673,7 @@ array-compat() {
 }
 
 type-compat() {
-  sh-spec spec/type-compat.test.sh $BASH "$@"
+  sh-spec spec/type-compat.test.sh $BASH $OSH_LIST "$@"
 }
 
 # += is not POSIX and not in dash.

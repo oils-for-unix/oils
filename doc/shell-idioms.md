@@ -149,7 +149,7 @@ No:
       echo 'Success'
     fi
 
-Shell workaround when the `"$@"` dispatch pattern is used:
+Shell workaround when the *$0 Dispatch Pattern* is used:
 
     myfunc() {
       echo hi
@@ -171,5 +171,47 @@ Better Oil Style:
       echo 'Success'
     }
 
-(TODO: Implement `try`.)
+
+## Remove Dynamic Parsing
+
+### Replacing `declare -i`, `local -i`, ...
+
+The `-i` flag on assignment builtins doesn't add any functionality to bash &mdash;
+it's merely a different and confusing style.
+
+OSH doesn't support it; instead it has *true integers*.
+
+For example, don't rely on "punning" of the `+=` operator; use `$(( ))`
+instead.
+
+No:
+
+    declare -i x=3
+    x+=1            # Now it's '4' because += will do integer arithmetic
+
+Yes (shell style):
+
+    x=3          
+    x=$(( x + 1 ))  # No -i flag needed
+
+Yes (Oil style):
+
+    var x = 3
+    setvar x += 1
+
+Likewise, don't rely on dynamic parsing of arithmetic.
+
+No:
+
+    declare -i x
+    x='1 + 2'     # Now it's the string '3'
+
+Yes (shell style):
+
+    x=$(( 1 + 2 ))
+
+Yes (Oil style):
+
+    var x = 1 + 2
+
 
