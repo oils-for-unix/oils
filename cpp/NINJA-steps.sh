@@ -73,7 +73,6 @@ setglobal_compile_flags() {
       ;;
 
     (asan)
-      # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
       flags="$flags -O0 -g -fsanitize=address"
       ;;
 
@@ -98,8 +97,6 @@ setglobal_compile_flags() {
       ;;
 
     (opt)
-      # Hm why does _bin/cxx-opt/osh_eval not run without -D DUMB_ALLOC?  But
-      # the dbg variant does?
       flags="$flags -O2 -g"
       ;;
     (dumballoc)
@@ -114,8 +111,6 @@ setglobal_compile_flags() {
       # Also List::List, Tuple2::at0, etc.
       #local opt='-O2'
       local opt='-O0'
-
-      # Do we want DUMB_ALLOC here?
       flags="$flags $opt -g -pg"
       ;;
 
