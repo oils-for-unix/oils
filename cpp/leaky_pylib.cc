@@ -39,9 +39,8 @@ Str* rstrip_slashes(Str* s) {
 namespace path_stat {
 
 bool exists(Str* path) {
-  mylib::Str0 path0(path);
   struct stat st;
-  if (::stat(path0.Get(), &st) < 0) {
+  if (::stat(path->data_, &st) < 0) {
     return false;
   } else {
     return true;

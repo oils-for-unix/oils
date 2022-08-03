@@ -1088,40 +1088,6 @@ inline void dict_remove(Dict<int, V>* haystack, int needle) {
   NotImplemented();
 }
 
-// A class for interfacing Str* slices with C functions that expect a NUL
-// terminated string.  It's meant to be used on the stack, like
-//
-// void f(Str* pat) {
-//   Str0 c_pattern(pat);
-//   int n = strlen(c_pattern.Get());
-//
-//   // copy of Str* is destroyed
-// }
-class Str0 {
- public:
-  Str0(Str* s) : s_(s), nul_str_(nullptr) {
-  }
-  ~Str0() {
-    if (nul_str_) {
-      free(nul_str_);
-    }
-  }
-
-  const char* Get() {  // caller should not modify this string!
-    if (s_->IsNulTerminated()) {
-      return s_->data_;
-    } else {
-      nul_str_ = static_cast<char*>(malloc(s_->len_ + 1));
-      memcpy(nul_str_, s_->data_, s_->len_);
-      nul_str_[s_->len_] = '\0';
-      return nul_str_;
-    }
-  }
-
-  Str* s_;
-  char* nul_str_;
-};
-
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 // Emulate GC API so we can reuse bindings
@@ -1212,8 +1178,7 @@ inline LineReader* Stdin() {
 }
 
 inline LineReader* open(Str* path) {
-  Str0 path0(path);
-  FILE* f = fopen(path0.Get(), "r");
+  FILE* f = fopen(path->data_, "r");
 
   // TODO: Better error checking.  IOError?
   if (!f) {

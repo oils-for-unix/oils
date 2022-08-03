@@ -9,15 +9,13 @@
 namespace libc {
 
 List<Str*>* glob(Str* pat) {
-  mylib::Str0 pat0(pat);
-
   glob_t results;
   // Hm, it's weird that the first one can't be called with GLOB_APPEND.  You
   // get a segfault.
   int flags = 0;
   // int flags = GLOB_APPEND;
   // flags |= GLOB_NOMAGIC;
-  int ret = glob(pat0.Get(), flags, NULL, &results);
+  int ret = glob(pat->data_, flags, NULL, &results);
 
   const char* err_str = NULL;
   switch (ret) {
@@ -69,18 +67,15 @@ List<Str*>* glob(Str* pat) {
 List<Str*>* regex_match(Str* pattern, Str* str) {
   List<Str*>* results = new List<Str*>();
 
-  mylib::Str0 pattern0(pattern);
-  mylib::Str0 str0(str);
-
   regex_t pat;
-  if (regcomp(&pat, pattern0.Get(), REG_EXTENDED) != 0) {
+  if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
     // TODO: check error code, as in func_regex_parse()
     throw new RuntimeError(new Str("Invalid regex syntax (regex_match)"));
   }
 
   int outlen = pat.re_nsub + 1;  // number of captures
 
-  const char* s0 = str0.Get();
+  const char* s0 = str->data_;
   regmatch_t* pmatch = (regmatch_t*)malloc(sizeof(regmatch_t) * outlen);
   int match = regexec(&pat, s0, outlen, pmatch, 0) == 0;
   if (match) {
@@ -111,9 +106,6 @@ const int NMATCH = 2;
 
 // Why is this a Tuple2* and not Tuple2?
 Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
-  mylib::Str0 pattern0(pattern);
-  mylib::Str0 str0(str);
-
   regex_t pat;
   regmatch_t m[NMATCH];
 
@@ -126,13 +118,13 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
   // patterns like ${foo/x*/y}.
 
-  if (regcomp(&pat, pattern0.Get(), REG_EXTENDED) != 0) {
+  if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
     throw new RuntimeError(
         new Str("Invalid regex syntax (func_regex_first_group_match)"));
   }
 
   // Match at offset 'pos'
-  int result = regexec(&pat, str0.Get() + pos, NMATCH, m, 0 /*flags*/);
+  int result = regexec(&pat, str->data() + pos, NMATCH, m, 0 /*flags*/);
   regfree(&pat);
 
   setlocale(LC_CTYPE, old_locale);

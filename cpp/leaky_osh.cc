@@ -33,9 +33,7 @@ bool isatty(Str* fd_str, word_t* blame_word) {
 }
 
 bool DoUnaryOp(Id_t op_id, Str* s) {
-  mylib::Str0 path(s);
-
-  const char* zPath = path.Get();
+  const char* zPath = s->data_;
 
   if (op_id == Id::BoolUnary_h || op_id == Id::BoolUnary_L) {
     struct stat st;
@@ -129,18 +127,15 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
 }
 
 bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
-  mylib::Str0 left0(s1);
-  mylib::Str0 right0(s2);
-
   int m1 = 0;
   struct stat st1;
-  if (stat(left0.Get(), &st1) == 0) {
+  if (stat(s1->data_, &st1) == 0) {
     m1 = st1.st_mtime;
   }
 
   int m2 = 0;
   struct stat st2;
-  if (stat(right0.Get(), &st2) == 0) {
+  if (stat(s2->data_, &st2) == 0) {
     m2 = st2.st_mtime;
   }
 

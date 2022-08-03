@@ -37,30 +37,6 @@ TEST test_str_creation() {
   PASS();
 }
 
-// TODO: Could use ASSERT_EQ_T to customize equality and print difference.
-//
-// Example:
-//
-// https://github.com/silentbicycle/greatest/blob/master/example.c#L71
-
-TEST test_str0() {
-  Str* s = new Str("foo");
-  ASSERT_EQ(3, len(s));
-  ASSERT('\0' == s->data_[3]);  // this is valid
-
-  Str* space = new Str("foo ");
-  ASSERT_EQ(4, len(space));
-
-  ASSERT_EQ_FMT(3, len(space->strip()), "%d");
-
-  mylib::Str0 space0(space->strip());
-  int good_len = strlen(space0.Get());
-
-  ASSERT_EQ_FMT(3, good_len, "%d");
-
-  PASS();
-}
-
 TEST test_str_to_int() {
   int i;
   bool ok;
@@ -68,11 +44,6 @@ TEST test_str_to_int() {
   ok = _str_to_int(new Str("345"), &i, 10);
   ASSERT(ok);
   ASSERT_EQ_FMT(345, i, "%d");
-
-  // Hack to test slicing.  Truncated "345" at "34".
-  ok = _str_to_int(new Str("345", 2), &i, 10);
-  ASSERT(ok);
-  ASSERT_EQ_FMT(34, i, "%d");
 
   ok = _str_to_int(new Str("1234567890"), &i, 10);
   ASSERT(ok);
@@ -180,10 +151,8 @@ void Print(List<Str*>* parts) {
   log("---");
   log("len = %d", len(parts));
   for (int i = 0; i < len(parts); ++i) {
-    mylib::Str0 s0(parts->index_(i));
-    printf("%d [", i);
-    fputs(s0.Get(), stdout);
-    fputs("]\n", stdout);
+    Str* s = parts->index_(i);
+    printf("%d [ %s ]\n", i, s->data_);
   }
 }
 
@@ -904,7 +873,6 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_str_creation);
 
-  RUN_TEST(test_str0);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_funcs);
 

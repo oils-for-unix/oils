@@ -13,15 +13,13 @@ Str* kEmptyString = new Str("", 0);
 
 // Translation of Python's print().
 void print(Str* s) {
-  mylib::Str0 s0(s);
-  fputs(s0.Get(), stdout);
+  fputs(s->data_, stdout);
   fputs("\n", stdout);
 }
 
 // Like print(..., file=sys.stderr), but Python code explicitly calls it.
 void println_stderr(Str* s) {
-  mylib::Str0 s0(s);
-  fputs(s0.Get(), stderr);
+  fputs(s->data_, stderr);
   fputs("\n", stderr);
 }
 
@@ -506,8 +504,7 @@ bool _str_to_int(Str* s, int* result, int base) {
 
   char* p;  // mutated by strtol
 
-  mylib::Str0 s0(s);
-  long v = strtol(s0.Get(), &p, base);  // base 10
+  long v = strtol(s->data_, &p, base);  // base 10
   switch (v) {
   case LONG_MIN:
     // log("underflow");

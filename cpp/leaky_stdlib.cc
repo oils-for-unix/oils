@@ -49,8 +49,7 @@ int umask(int mask) {
 }
 
 int open(Str* path, int flags, int perms) {
-  mylib::Str0 path0(path);
-  return ::open(path0.Get(), flags, perms);
+  return ::open(path->data_, flags, perms);
 }
 
 void dup2(int oldfd, int newfd) {
@@ -69,8 +68,7 @@ void putenv(Str* name, Str* value) {
 }
 
 mylib::LineReader* fdopen(int fd, Str* c_mode) {
-  mylib::Str0 c_mode0(c_mode);
-  FILE* f = ::fdopen(fd, c_mode0.Get());
+  FILE* f = ::fdopen(fd, c_mode->data_);
 
   // TODO: raise exception
   assert(f);
@@ -79,8 +77,6 @@ mylib::LineReader* fdopen(int fd, Str* c_mode) {
 }
 
 void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
-  mylib::Str0 _argv0(argv0);
-
   int n_args = len(argv);
   // never deallocated
   char** _argv = static_cast<char**>(malloc((n_args + 1) * sizeof(char*)));
@@ -109,7 +105,7 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   }
   envp[n_env] = nullptr;
 
-  int ret = ::execve(_argv0.Get(), _argv, envp);
+  int ret = ::execve(argv0->data_, _argv, envp);
   if (ret == -1) {
     throw new OSError(errno);
   }

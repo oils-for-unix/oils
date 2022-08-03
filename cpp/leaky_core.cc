@@ -99,8 +99,7 @@ Dict<Str*, Str*>* Environ() {
 }
 
 int Chdir(Str* dest_dir) {
-  mylib::Str0 d(dest_dir);
-  if (chdir(d.Get()) == 0) {
+  if (chdir(dest_dir->data_) == 0) {
     return 0;  // success
   } else {
     return errno;
@@ -119,10 +118,8 @@ Str* GetMyHomeDir() {
 }
 
 Str* GetHomeDir(Str* user_name) {
-  mylib::Str0 user_name0(user_name);
-
   // Don't free this.  (May return a pointer to a static area)
-  struct passwd* entry = getpwnam(user_name0.Get());
+  struct passwd* entry = getpwnam(user_name->data_);
   if (entry == nullptr) {
     return nullptr;
   }
