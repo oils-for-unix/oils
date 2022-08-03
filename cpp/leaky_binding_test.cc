@@ -73,20 +73,10 @@ TEST match_test() {
     log("val = %s", t.at1()->data_);
   }
 
-  // BUG: cstring-TODO: Truncated string causes read past len_
-  // Need a length check!
-#if 0
-  match::SimpleLexer* lex2 = match::BraceRangeLexer(new Str("1234", 2));
-  while (true) {
-    auto t = lex2->Next();
-    int id = t.at0();
-    if (id == id__Eol_Tok) {
-      break;
-    }
-    log("id = %d", id);
-    log("val = %s", t.at1()->data_);
-  }
-#endif
+  match::SimpleLexer* lex2 = match::BraceRangeLexer(kEmptyString);
+  auto t = lex2->Next();
+  int id = t.at0();
+  ASSERT_EQ(Id::Eol_Tok, id);
 
   ASSERT_EQ(Id::BoolUnary_G, match::BracketUnary(new Str("-G")));
   ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(new Str("-Gz")));

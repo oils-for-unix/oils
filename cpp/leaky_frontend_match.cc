@@ -20,7 +20,6 @@ namespace match {
 Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   int id;
   int end_pos;
-  // cstring-TODO: input isn't NUL-terminated
 
   // TODO: get rid of these casts
   MatchOshToken(static_cast<int>(lex_mode),
@@ -32,11 +31,8 @@ Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
 Tuple2<Id_t, Str*> SimpleLexer::Next() {
   int id;
   int end_pos;
-  // cstring-TODO: input isn't NUL-terminated
   match_func_(reinterpret_cast<const unsigned char*>(s_->data_), s_->len_, pos_,
               &id, &end_pos);
-  // cstring-TODO: Don't allocate?
-  // Str* val = new Str(s->data_ + pos_, end_pos - pos_);
 
   int len = end_pos - pos_;
   char* buf = static_cast<char*>(malloc(len + 1));
@@ -86,31 +82,24 @@ List<Tuple2<Id_t, Str*>*>* Ps1Tokens(Str* s) {
 }
 
 Id_t BracketUnary(Str* s) {
-  // cstring-TODO: input isn't NUL-terminated
   return ::BracketUnary(reinterpret_cast<const unsigned char*>(s->data_),
                         s->len_);
 }
 Id_t BracketBinary(Str* s) {
-  // cstring-TODO: input isn't NUL-terminated
   return ::BracketBinary(reinterpret_cast<const unsigned char*>(s->data_),
                          s->len_);
 }
 Id_t BracketOther(Str* s) {
-  // cstring-TODO: input isn't NUL-terminated
   return ::BracketOther(reinterpret_cast<const unsigned char*>(s->data_),
                         s->len_);
 }
 
 bool IsValidVarName(Str* s) {
-  // cstring-TODO: input isn't NUL-terminated
-
   return ::IsValidVarName(reinterpret_cast<const unsigned char*>(s->data_),
                           s->len_);
 }
 
 bool ShouldHijack(Str* s) {
-  // cstring-TODO: input isn't NUL-terminated
-
   return ::ShouldHijack(reinterpret_cast<const unsigned char*>(s->data_),
                         s->len_);
 }

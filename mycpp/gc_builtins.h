@@ -242,18 +242,8 @@ Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {
-  if (len(needle) == 1) {
-    return memchr(haystack->data_, needle->data_[0], len(haystack));
-  }
-
-  // NOTE(Jesse): Not sure what this TODO means.  Remove strstr and do it
-  // ourselves maybe?
-  // TODO: Implement substring
-  assert(0);
-
-  // cstring-TODO: this not rely on NUL termination
-  const char* p = strstr(haystack->data_, needle->data_);
-  return p != nullptr;
+  assert(len(needle) == 1);
+  return memchr(haystack->data_, needle->data_[0], len(haystack));
 }
 
 // ints, floats, enums like Kind
