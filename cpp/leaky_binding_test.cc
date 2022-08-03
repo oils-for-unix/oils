@@ -17,6 +17,8 @@
 #include "leaky_stdlib.h"
 #include "vendor/greatest.h"
 
+using mylib::StrFromC;
+
 namespace Id = id_kind_asdl::Id;
 
 TEST show_sizeof() {
@@ -61,7 +63,7 @@ TEST show_sizeof() {
 }
 
 TEST match_test() {
-  match::SimpleLexer* lex = match::BraceRangeLexer(new Str("{-1..22}"));
+  match::SimpleLexer* lex = match::BraceRangeLexer(StrFromC("{-1..22}"));
 
   while (true) {
     auto t = lex->Next();
@@ -78,15 +80,15 @@ TEST match_test() {
   int id = t.at0();
   ASSERT_EQ(Id::Eol_Tok, id);
 
-  ASSERT_EQ(Id::BoolUnary_G, match::BracketUnary(new Str("-G")));
-  ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(new Str("-Gz")));
-  ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(new Str("")));
+  ASSERT_EQ(Id::BoolUnary_G, match::BracketUnary(StrFromC("-G")));
+  ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(StrFromC("-Gz")));
+  ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(StrFromC("")));
 
-  ASSERT_EQ(Id::BoolBinary_NEqual, match::BracketBinary(new Str("!=")));
-  ASSERT_EQ(Id::Undefined_Tok, match::BracketBinary(new Str("")));
+  ASSERT_EQ(Id::BoolBinary_NEqual, match::BracketBinary(StrFromC("!=")));
+  ASSERT_EQ(Id::Undefined_Tok, match::BracketBinary(StrFromC("")));
 
   // This still works, but can't it overflow a buffer?
-  Str* s = new Str("!= ");
+  Str* s = StrFromC("!= ");
   Str* stripped = s->strip();
 
   ASSERT_EQ(3, len(s));
@@ -99,66 +101,66 @@ TEST match_test() {
 
 TEST util_test() {
   // OK this seems to work
-  Str* escaped = pyutil::BackslashEscape(new Str("'foo bar'"), new Str(" '"));
-  ASSERT(str_equals(escaped, new Str("\\'foo\\ bar\\'")));
+  Str* escaped = pyutil::BackslashEscape(StrFromC("'foo bar'"), StrFromC(" '"));
+  ASSERT(str_equals(escaped, StrFromC("\\'foo\\ bar\\'")));
 
-  Str* escaped2 = pyutil::BackslashEscape(new Str(""), new Str(" '"));
-  ASSERT(str_equals(escaped2, new Str("")));
+  Str* escaped2 = pyutil::BackslashEscape(StrFromC(""), StrFromC(" '"));
+  ASSERT(str_equals(escaped2, StrFromC("")));
 
   Str* s = pyutil::ChArrayToString(new List<int>({65}));
-  ASSERT(str_equals(s, new Str("A")));
+  ASSERT(str_equals(s, StrFromC("A")));
   ASSERT_EQ_FMT(1, len(s), "%d");
 
   Str* s2 = pyutil::ChArrayToString(new List<int>({102, 111, 111}));
-  ASSERT(str_equals(s2, new Str("foo")));
+  ASSERT(str_equals(s2, StrFromC("foo")));
   ASSERT_EQ_FMT(3, len(s2), "%d");
 
   Str* s3 = pyutil::ChArrayToString(new List<int>({45, 206, 188, 45}));
-  ASSERT(str_equals(s3, new Str("-\xce\xbc-")));  // mu char
+  ASSERT(str_equals(s3, StrFromC("-\xce\xbc-")));  // mu char
   ASSERT_EQ_FMT(4, len(s3), "%d");
 
   PASS();
 }
 
 TEST libc_test() {
-  Str* s1 = (new Str("foo.py "))->strip();
-  ASSERT(libc::fnmatch(new Str("*.py"), s1));
-  ASSERT(!libc::fnmatch(new Str("*.py"), new Str("foo.p")));
+  Str* s1 = (StrFromC("foo.py "))->strip();
+  ASSERT(libc::fnmatch(StrFromC("*.py"), s1));
+  ASSERT(!libc::fnmatch(StrFromC("*.py"), StrFromC("foo.p")));
 
   // extended glob
-  ASSERT(libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.py")));
-  ASSERT(!libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.p")));
+  ASSERT(libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.py")));
+  ASSERT(!libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.p")));
 
   List<Str*>* results =
-      libc::regex_match(new Str("(a+).(a+)"), new Str("-abaacaaa"));
+      libc::regex_match(StrFromC("(a+).(a+)"), StrFromC("-abaacaaa"));
   ASSERT_EQ_FMT(3, len(results), "%d");
-  ASSERT(str_equals(new Str("abaa"), results->index_(0)));  // whole match
-  ASSERT(str_equals(new Str("a"), results->index_(1)));
-  ASSERT(str_equals(new Str("aa"), results->index_(2)));
+  ASSERT(str_equals(StrFromC("abaa"), results->index_(0)));  // whole match
+  ASSERT(str_equals(StrFromC("a"), results->index_(1)));
+  ASSERT(str_equals(StrFromC("aa"), results->index_(2)));
 
-  results = libc::regex_match(new Str("z+"), new Str("abaacaaa"));
+  results = libc::regex_match(StrFromC("z+"), StrFromC("abaacaaa"));
   ASSERT_EQ(nullptr, results);
 
   Tuple2<int, int>* result;
-  Str* s = new Str("oXooXoooXoX");
-  result = libc::regex_first_group_match(new Str("(X.)"), s, 0);
+  Str* s = StrFromC("oXooXoooXoX");
+  result = libc::regex_first_group_match(StrFromC("(X.)"), s, 0);
   ASSERT_EQ_FMT(1, result->at0(), "%d");
   ASSERT_EQ_FMT(3, result->at1(), "%d");
 
-  result = libc::regex_first_group_match(new Str("(X.)"), s, 3);
+  result = libc::regex_first_group_match(StrFromC("(X.)"), s, 3);
   ASSERT_EQ_FMT(4, result->at0(), "%d");
   ASSERT_EQ_FMT(6, result->at1(), "%d");
 
-  result = libc::regex_first_group_match(new Str("(X.)"), s, 6);
+  result = libc::regex_first_group_match(StrFromC("(X.)"), s, 6);
   ASSERT_EQ_FMT(8, result->at0(), "%d");
   ASSERT_EQ_FMT(10, result->at1(), "%d");
 
   // This depends on the file system
-  auto files = libc::glob(new Str("*.md"));
+  auto files = libc::glob(StrFromC("*.md"));
   ASSERT_EQ_FMT(1, len(files), "%d");
   print(files->index_(0));  // should get README.md only
 
-  auto files2 = libc::glob(new Str("*.pyzzz"));
+  auto files2 = libc::glob(StrFromC("*.pyzzz"));
   ASSERT_EQ_FMT(0, len(files2), "%d");
 
   Str* h = libc::gethostname();
@@ -195,7 +197,7 @@ int NO_SPID = -1;
 TEST exceptions() {
   bool caught = false;
   try {
-    e_strict(new Str("foo"));
+    e_strict(StrFromC("foo"));
   } catch (error::Strict* e) {  // Catch by reference!
     // log("%p ", e);
     caught = true;
@@ -208,13 +210,13 @@ TEST exceptions() {
 TEST bool_stat_test() {
   int fail = 0;
   try {
-    bool_stat::isatty(new Str("invalid"), nullptr);
+    bool_stat::isatty(StrFromC("invalid"), nullptr);
   } catch (error::FatalRuntime* e) {
     fail++;
   }
   ASSERT_EQ(1, fail);
 
-  bool b2 = bool_stat::isatty(new Str("0"), nullptr);
+  bool b2 = bool_stat::isatty(StrFromC("0"), nullptr);
   // This will be true interactively
   log("stdin isatty = %d", b2);
 
@@ -290,32 +292,32 @@ TEST os_path_test() {
   // TODO: use gc_mylib here, with AllocStr(), StackRoots, etc.
   Str* s = nullptr;
 
-  s = os_path::rstrip_slashes(new Str(""));
-  ASSERT(str_equals(s, new Str("")));
+  s = os_path::rstrip_slashes(StrFromC(""));
+  ASSERT(str_equals(s, StrFromC("")));
 
-  s = os_path::rstrip_slashes(new Str("foo"));
-  ASSERT(str_equals(s, new Str("foo")));
+  s = os_path::rstrip_slashes(StrFromC("foo"));
+  ASSERT(str_equals(s, StrFromC("foo")));
 
-  s = os_path::rstrip_slashes(new Str("foo/"));
-  ASSERT(str_equals(s, new Str("foo")));
+  s = os_path::rstrip_slashes(StrFromC("foo/"));
+  ASSERT(str_equals(s, StrFromC("foo")));
 
-  s = os_path::rstrip_slashes(new Str("/foo/"));
-  ASSERT(str_equals(s, new Str("/foo")));
+  s = os_path::rstrip_slashes(StrFromC("/foo/"));
+  ASSERT(str_equals(s, StrFromC("/foo")));
 
   // special case of not stripping
-  s = os_path::rstrip_slashes(new Str("///"));
-  ASSERT(str_equals(s, new Str("///")));
+  s = os_path::rstrip_slashes(StrFromC("///"));
+  ASSERT(str_equals(s, StrFromC("///")));
 
   PASS();
 }
 
 TEST putenv_test() {
-  Str* key = new Str("KEY");
-  Str* value = new Str("value");
+  Str* key = StrFromC("KEY");
+  Str* value = StrFromC("value");
 
   posix::putenv(key, value);
   char* got_value = ::getenv(key->data());
-  ASSERT(got_value && str_equals(new Str(got_value), value));
+  ASSERT(got_value && str_equals(StrFromC(got_value), value));
 
   PASS();
 }
@@ -323,14 +325,14 @@ TEST putenv_test() {
 TEST pyos_test() {
   // This test isn't hermetic but it should work in most places, including in a
   // container
-  int err_num = pyos::Chdir(new Str("/"));
+  int err_num = pyos::Chdir(StrFromC("/"));
   ASSERT(err_num == 0);
 
-  err_num = pyos::Chdir(new Str("/nonexistent__"));
+  err_num = pyos::Chdir(StrFromC("/nonexistent__"));
   ASSERT(err_num != 0);
 
   Dict<Str*, Str*>* env = pyos::Environ();
-  Str* p = env->get(new Str("PATH"));
+  Str* p = env->get(StrFromC("PATH"));
   ASSERT(p != nullptr);
   log("PATH = %s", p->data_);
 

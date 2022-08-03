@@ -9,7 +9,7 @@
 #include <unistd.h>  // gethostname()
 
 #ifdef LEAKY_BINDINGS
-#include "mycpp/mylib_old.h"
+  #include "mycpp/mylib_old.h"
 using mylib::StrFromC;
 #else
 using gc_heap::StrFromC;
