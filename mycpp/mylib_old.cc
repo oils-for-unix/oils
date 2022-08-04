@@ -448,6 +448,7 @@ Str* repr(Str* s) {
   return f.getvalue();
 }
 
+#if 0
 Str* str_concat(Str* a, Str* b) {
   int new_len = a->len_ + b->len_;
   char* buf = static_cast<char*>(malloc(new_len + 1));
@@ -479,25 +480,6 @@ Str* str_concat3(Str* a, Str* b, Str* c) {
   return new Str(buf, new_len);
 }
 
-Str* str_repeat(Str* s, int times) {
-  // Python allows -1 too, and Oil used that
-  if (times <= 0) {
-    return kEmptyString;
-  }
-  int len = s->len_;
-  int new_len = len * times;
-  char* data = static_cast<char*>(malloc(new_len + 1));
-
-  char* dest = data;
-  for (int i = 0; i < times; i++) {
-    memcpy(dest, s->data_, len);
-    dest += len;
-  }
-  data[new_len] = '\0';
-  return new Str(data, new_len);
-}
-
-#if 0
 // Helper for str_to_int() that doesn't use exceptions.
 // Like atoi(), but with better error checking.
 bool _str_to_int(Str* s, int* result, int base) {
@@ -556,6 +538,24 @@ int to_int(Str* s, int base) {
   }
 }
 #endif
+
+Str* str_repeat(Str* s, int times) {
+  // Python allows -1 too, and Oil used that
+  if (times <= 0) {
+    return kEmptyString;
+  }
+  int len = s->len_;
+  int new_len = len * times;
+  char* data = static_cast<char*>(malloc(new_len + 1));
+
+  char* dest = data;
+  for (int i = 0; i < times; i++) {
+    memcpy(dest, s->data_, len);
+    dest += len;
+  }
+  data[new_len] = '\0';
+  return new Str(data, new_len);
+}
 
 //
 // Formatter

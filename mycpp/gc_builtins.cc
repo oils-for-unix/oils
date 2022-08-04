@@ -85,7 +85,6 @@ int to_int(Str* s, int base) {
   }
 }
 
-#endif
 
 Str* str_concat(Str* a, Str* b) {
   Str* result = nullptr;
@@ -103,6 +102,7 @@ Str* str_concat(Str* a, Str* b) {
   assert(buf[len_a + len_b] == '\0');
   return result;
 }
+#endif
 
 Str* str_repeat(Str* s, int times) {
   StackRoots _roots({&s});

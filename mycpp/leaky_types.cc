@@ -54,6 +54,45 @@ bool _str_to_int(Str* s, int* result, int base) {
   return true;
 }
 
+#if 1
+// for os_path.join()
+// NOTE(Jesse): Perfect candidate for bounded_buffer
+Str* str_concat3(Str* a, Str* b, Str* c) {
+  int a_len = len(a);
+  int b_len = len(b);
+  int c_len = len(c);
+
+  int new_len = a_len + b_len + c_len;
+  char* buf = static_cast<char*>(malloc(new_len));
+  char* pos = buf;
+
+  memcpy(pos, a->data_, a_len);
+  pos += a_len;
+
+  memcpy(pos, b->data_, b_len);
+  pos += b_len;
+
+  memcpy(pos, c->data_, c_len);
+
+  assert(pos + c_len == buf + new_len);
+
+  return CopyBufferIntoNewStr(buf, new_len);
+}
+
+Str* str_concat(Str* a, Str* b) {
+  int a_len = len(a);
+  int b_len = len(b);
+  int new_len = a_len + b_len;
+  char* buf = static_cast<char*>(malloc(new_len + 1));
+
+  memcpy(buf, a->data_, a_len);
+  memcpy(buf + a_len, b->data_, b_len);
+  buf[new_len] = '\0';
+
+  return CopyBufferIntoNewStr(buf, new_len);
+}
+#endif
+
 int to_int(Str* s, int base) {
   int i;
   if (_str_to_int(s, &i, base)) {
