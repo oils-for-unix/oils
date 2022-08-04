@@ -207,6 +207,7 @@ Str* Str::join(List<Str*>* items) {
   return new Str(result, len);
 }
 
+#if 0
 Str* Str::upper() {
   Str* result = mylib::AllocStr(len_);
   char* buffer = result->data();
@@ -224,6 +225,7 @@ Str* Str::lower() {
   }
   return result;
 }
+#endif
 
 // Get a string with one character
 Str* StrIter::Value() {

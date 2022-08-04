@@ -54,7 +54,6 @@ bool _str_to_int(Str* s, int* result, int base) {
   return true;
 }
 
-#if 1
 // for os_path.join()
 // NOTE(Jesse): Perfect candidate for bounded_buffer
 Str* str_concat3(Str* a, Str* b, Str* c) {
@@ -91,7 +90,6 @@ Str* str_concat(Str* a, Str* b) {
 
   return CopyBufferIntoNewStr(buf, new_len);
 }
-#endif
 
 int to_int(Str* s, int base) {
   int i;
@@ -137,6 +135,25 @@ bool OmitChar(uint8_t ch, int what) {
 // #######################################
 
 
+Str* Str::upper() {
+  int len_ = len(this);
+  Str* result = AllocStr(len_);
+  char* buffer = result->data();
+  for (int char_index = 0; char_index < len_; ++char_index) {
+    buffer[char_index] = toupper(data_[char_index]);
+  }
+  return result;
+}
+
+Str* Str::lower() {
+  int len_ = len(this);
+  Str* result = AllocStr(len_);
+  char* buffer = result->data();
+  for (int char_index = 0; char_index < len_; ++char_index) {
+    buffer[char_index] = tolower(data_[char_index]);
+  }
+  return result;
+}
 
 // #######################################
 

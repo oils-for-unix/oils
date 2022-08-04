@@ -102,13 +102,8 @@ class Str : public gc_heap::Obj {
   bool isalpha();
   bool isupper();
 
-  Str* upper() {
-    NotImplemented();  // Uncalled
-  }
-
-  Str* lower() {
-    NotImplemented();  // Uncalled
-  }
+  Str* upper();
+  Str* lower();
 
   // Other options for fast comparison / hashing / string interning:
   // - unique_id_: an index into intern table.  I don't think this works unless
