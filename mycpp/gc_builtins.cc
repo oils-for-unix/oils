@@ -164,6 +164,7 @@ bool Str::isupper() {
   return true;
 }
 
+#if 0
 Str* Str::ljust(int width, Str* fillchar) {
   auto self = this;
   StackRoots _roots({&self, &fillchar});
@@ -207,6 +208,7 @@ Str* Str::rjust(int width, Str* fillchar) {
     return result;
   }
 }
+#endif
 
 bool Str::startswith(Str* s) {
   int n = len(s);

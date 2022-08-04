@@ -85,7 +85,6 @@ Str* Str::replace(Str* old, Str* new_str) {
 
   return new Str(result, result_len);
 }
-#endif
 
 Str* Str::ljust(int width, Str* fillchar) {
   assert(len(fillchar) == 1);
@@ -122,6 +121,7 @@ Str* Str::rjust(int width, Str* fillchar) {
     return new Str(buf, width);
   }
 }
+#endif
 
 List<Str*>* Str::split(Str* sep) {
   assert(sep->len_ == 1);  // we can only split one char

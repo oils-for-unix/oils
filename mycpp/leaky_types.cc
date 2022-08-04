@@ -34,6 +34,42 @@ bool OmitChar(uint8_t ch, int what) {
   }
 }
 
+Str* Str::ljust(int width, Str* fillchar) {
+  assert(len(fillchar) == 1);
+
+  int len_ = len(this);
+  int num_fill = width - len_;
+  if (num_fill < 0) {
+    return this;
+  } else {
+    char* buf = static_cast<char*>(malloc(width));
+    char c = fillchar->data_[0];
+    memcpy(buf, data_, len_);
+    for (int i = len_; i < width; ++i) {
+      buf[i] = c;
+    }
+    return CopyBufferIntoNewStr(buf, width);
+  }
+}
+
+Str* Str::rjust(int width, Str* fillchar) {
+  assert(len(fillchar) == 1);
+
+  int len_ = len(this);
+  int num_fill = width - len_;
+  if (num_fill < 0) {
+    return this;
+  } else {
+    char* buf = static_cast<char*>(malloc(width));
+    char c = fillchar->data_[0];
+    for (int i = 0; i < num_fill; ++i) {
+      buf[i] = c;
+    }
+    memcpy(buf + num_fill, data_, len_);
+    return CopyBufferIntoNewStr(buf, width);
+  }
+}
+
 Str* Str::replace(Str* old, Str* new_str) {
   // log("replacing %s with %s", old_data, new_str->data_);
 
