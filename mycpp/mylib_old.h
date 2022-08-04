@@ -51,6 +51,7 @@ void dict_remove(Dict<int, V>* haystack, int needle);
 
 };  // namespace mylib
 
+
 extern Str* kEmptyString;
 
 void print(Str* s);
@@ -1113,6 +1114,15 @@ inline Str* StrFromC(const char* s, int len) {
 
 inline Str* StrFromC(const char* s) {
   return StrFromC(s, strlen(s));
+}
+
+inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
+  // NOTE(Jesse): This assertion is not valid because we have to handle strings
+  // with internal nulls.  We must blindly trust the caller passed us a valid length.
+  //
+  // assert(strlen(buf) == buf_len);
+  Str* s = StrFromC(buf, buf_len);
+  return s;
 }
 
 // emulate gc_heap API for ASDL

@@ -269,6 +269,7 @@ Str* Str::slice(int begin, int end) {
   return result;
 }
 
+#if 0
 Str* Str::replace(Str* old, Str* new_str) {
   assert(len(old) == 1);  // Restriction that Oil code is OK with
 
@@ -331,6 +332,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   assert(result->data_[result_len] == '\0');  // buffer should have been zero'd
   return result;
 }
+#endif
 
 List<Str*>* Str::split(Str* sep) {
   auto self = this;

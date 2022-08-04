@@ -2,12 +2,14 @@
   #include "mycpp/mylib_old.h"
 using gc_heap::StackRoots;  // no-op
 using mylib::AllocStr;
+using mylib::CopyBufferIntoNewStr;
 #else
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_types.h"
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
 using gc_heap::Str;
+using gc_heap::CopyBufferIntoNewStr;
 #endif
 
 #include <ctype.h>  // isalpha(), isdigit()
@@ -30,6 +32,64 @@ bool OmitChar(uint8_t ch, int what) {
   } else {
     return what == ch;
   }
+}
+
+Str* Str::replace(Str* old, Str* new_str) {
+  // log("replacing %s with %s", old_data, new_str->data_);
+
+  const char* old_data = old->data_;
+  int this_len = len(this);
+  int old_len = len(old);
+  const char* last_possible = data_ + this_len - old_len;
+
+  const char* p_this = data_;  // advances through 'this'
+
+  // First pass: Calculate number of replacements, and hence new length
+  int replace_count = 0;
+  while (p_this <= last_possible) {
+    if (memcmp(p_this, old_data, old_len) == 0) {  // equal
+      replace_count++;
+      p_this += old_len;
+    } else {
+      p_this++;
+    }
+  }
+
+  // log("replacements %d", replace_count);
+
+  if (replace_count == 0) {
+    return this;  // Reuse the string if there were no replacements
+  }
+
+  int new_str_len = len(new_str);
+  int result_len =
+      this_len - (replace_count * old_len) + (replace_count * new_str_len );
+
+  char* result = static_cast<char*>(malloc(result_len + 1));  // +1 for NUL
+
+  const char* new_data = new_str->data_;
+  const size_t new_len = new_str_len;
+
+  // Second pass: Copy pieces into 'result'
+  p_this = data_;           // back to beginning
+  char* p_result = result;  // advances through 'result'
+
+  while (p_this <= last_possible) {
+    // Note: would be more efficient if we remembered the match positions
+    if (memcmp(p_this, old_data, old_len) == 0) {  // equal
+      memcpy(p_result, new_data, new_len);         // Copy from new_str
+      p_result += new_len;
+      p_this += old_len;
+    } else {  // copy 1 byte
+      *p_result = *p_this;
+      p_result++;
+      p_this++;
+    }
+  }
+  memcpy(p_result, p_this, data_ + this_len - p_this);  // last part of string
+  result[result_len] = '\0';                        // NUL terminate
+
+  return CopyBufferIntoNewStr(result, result_len);
 }
 
 // StripAny is modeled after CPython's do_strip() in stringobject.c, and can

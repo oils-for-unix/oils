@@ -23,6 +23,7 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
+#if 0
 // NOTE:
 // - Oil interpreter code only uses the very common case of len(old) == 1.
 //   - But we probably want to expose this more general function to OIL USERS.
@@ -84,6 +85,7 @@ Str* Str::replace(Str* old, Str* new_str) {
 
   return new Str(result, result_len);
 }
+#endif
 
 Str* Str::ljust(int width, Str* fillchar) {
   assert(len(fillchar) == 1);
