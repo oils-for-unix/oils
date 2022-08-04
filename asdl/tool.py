@@ -81,7 +81,6 @@ def main(argv):
       f.write("""
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_old.h"
-using mylib::StrFromC;
 using mylib::NewList;
 #else
 #include "mycpp/gc_types.h"

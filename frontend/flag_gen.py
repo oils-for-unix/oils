@@ -179,7 +179,6 @@ def Cpp(specs, header_f, cc_f):
 #include "cpp/leaky_frontend_flag_spec.h"  // for FlagSpec_c
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
-  using mylib::StrFromC;
 #else
   #include "mycpp/gc_types.h"
   using gc_heap::StrFromC;

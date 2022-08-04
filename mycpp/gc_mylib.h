@@ -8,6 +8,7 @@
 
 #include "mycpp/gc_builtins.h"  // Tuple2
 #include "mycpp/gc_types.h"
+#include "mycpp/mylib_types.h"
 
 using gc_heap::Alloc;
 using gc_heap::kZeroMask;
@@ -34,24 +35,6 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
 
 // These 3 functions use a static buffer first because we don't know what n is
 // until we call snprintf().
-
-inline Str* hex_lower(int i) {
-  char buf[kIntBufSize];
-  int length = snprintf(buf, kIntBufSize, "%x", i);
-  return StrFromC(buf, length);
-}
-
-inline Str* hex_upper(int i) {
-  char buf[kIntBufSize];
-  int length = snprintf(buf, kIntBufSize, "%X", i);
-  return StrFromC(buf, length);
-}
-
-inline Str* octal(int i) {
-  char buf[kIntBufSize];
-  int length = snprintf(buf, kIntBufSize, "%o", i);
-  return StrFromC(buf, length);
-}
 
 class LineReader : gc_heap::Obj {
  public:

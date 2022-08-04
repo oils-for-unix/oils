@@ -351,3 +351,4 @@ Str* Str::lstrip() {
 #ifndef LEAKY_BINDINGS
 }  // namespace gc_heap
 #endif
+

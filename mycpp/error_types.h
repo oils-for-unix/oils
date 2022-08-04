@@ -1,5 +1,4 @@
-#ifndef ERROR_TYPES_H
-#define ERROR_TYPES_H
+#pragma once
 
 #ifdef LEAKY_BINDINGS
 class Str;
@@ -37,4 +36,11 @@ class AssertionError {
   }
 };
 
-#endif
+// Python's RuntimeError looks like this.  . libc::regex_match and other
+// bindings raise it.
+class RuntimeError {
+ public:
+  RuntimeError(Str* message) : message(message) {
+  }
+  Str* message;
+};

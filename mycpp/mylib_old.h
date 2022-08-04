@@ -23,6 +23,7 @@
 #include "mycpp/gc_types.h"  // for Obj
 #include "mycpp/tuple_types.h"
 #include "mycpp/error_types.h"
+#include "mycpp/mylib_types.h"
 
 #ifdef DUMB_ALLOC
   #include "cpp/dumb_alloc.h"
@@ -41,8 +42,6 @@ class Dict;
 template <class K, class V>
 class DictIter;
 
-bool str_equals(Str* left, Str* right);
-
 namespace mylib {
 template <typename V>
 void dict_remove(Dict<Str*, V>* haystack, Str* needle);
@@ -58,15 +57,6 @@ void print(Str* s);
 
 // log() generates code that writes this
 void println_stderr(Str* s);
-
-// Python's RuntimeError looks like this.  . libc::regex_match and other
-// bindings raise it.
-class RuntimeError {
- public:
-  RuntimeError(Str* message) : message(message) {
-  }
-  Str* message;
-};
 
 //
 // Data Types
@@ -561,6 +551,14 @@ class DictIter {
   int i_;
 };
 
+inline bool str_equals(Str* left, Str* right) {
+  if (left->len_ == right->len_) {
+    return memcmp(left->data_, right->data_, left->len_) == 0;
+  } else {
+    return false;
+  }
+}
+
 // Specialized functions
 template <class V>
 int find_by_key(const std::vector<std::pair<Str*, V>>& items, Str* key) {
@@ -747,14 +745,6 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
-inline bool str_equals(Str* left, Str* right) {
-  if (left->len_ == right->len_) {
-    return memcmp(left->data_, right->data_, left->len_) == 0;
-  } else {
-    return false;
-  }
-}
-
 namespace id_kind_asdl {
 enum class Kind;
 };
@@ -809,13 +799,6 @@ inline int ord(Str* s) {
   uint8_t c = static_cast<uint8_t>(s->data_[0]);
   return c;
 }
-
-// https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
-// Notes:
-// - Python 2.7's intobject.c has an erroneous +6
-// - This is 13, but len('-2147483648') is 11, which means we only need 12?
-// - This formula is valid for octal(), because 2^(3 bits) = 8
-const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 inline Str* str(int i) {
   char* buf = static_cast<char*>(malloc(kIntBufSize));
@@ -1187,23 +1170,6 @@ inline Writer* Stderr() {
   return gStderr;
 }
 
-inline Str* hex_lower(int i) {
-  char* buf = static_cast<char*>(malloc(kIntBufSize));
-  int len = snprintf(buf, kIntBufSize, "%x", i);
-  return new Str(buf, len);
-}
-
-inline Str* hex_upper(int i) {
-  char* buf = static_cast<char*>(malloc(kIntBufSize));
-  int len = snprintf(buf, kIntBufSize, "%X", i);
-  return new Str(buf, len);
-}
-
-inline Str* octal(int i) {
-  char* buf = static_cast<char*>(malloc(kIntBufSize));
-  int len = snprintf(buf, kIntBufSize, "%o", i);
-  return new Str(buf, len);
-}
 
 }  // namespace mylib
 

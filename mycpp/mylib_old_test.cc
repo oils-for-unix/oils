@@ -8,12 +8,12 @@
 
 // Emulating the gc_heap API.  COPIED from gc_heap_test.cc
 TEST test_str_creation() {
-  Str* s = mylib::StrFromC("foo");
+  Str* s = StrFromC("foo");
   ASSERT_EQ(3, len(s));
   ASSERT_EQ(0, strcmp("foo", s->data_));
 
   // String with internal NUL
-  Str* s2 = mylib::StrFromC("foo\0bar", 7);
+  Str* s2 = StrFromC("foo\0bar", 7);
   ASSERT_EQ(7, len(s2));
   ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
 

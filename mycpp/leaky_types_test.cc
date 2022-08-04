@@ -4,7 +4,6 @@
   #include "mycpp/mylib_old.h"
 
 using gc_heap::gHeap;
-using mylib::StrFromC;
 
 #else
 
