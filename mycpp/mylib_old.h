@@ -21,6 +21,7 @@
 // if this file is even included, we're using the old mylib
 #define MYLIB_LEAKY 1
 #include "mycpp/gc_types.h"  // for Obj
+#include "mycpp/tuple_types.h"
 #include "mycpp/error_types.h"
 
 #ifdef DUMB_ALLOC
@@ -40,7 +41,6 @@ class Dict;
 template <class K, class V>
 class DictIter;
 
-bool are_equal(Str* left, Str* right);
 bool str_equals(Str* left, Str* right);
 
 namespace mylib {
@@ -706,70 +706,6 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
   assert(0);  // Uncalled
 }
 
-
-template <class A, class B>
-class Tuple2 {
- public:
-  Tuple2(A a, B b) : a_(a), b_(b) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-
- private:
-  A a_;
-  B b_;
-};
-
-template <class A, class B, class C>
-class Tuple3 {
- public:
-  Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-  C at2() {
-    return c_;
-  }
-
- private:
-  A a_;
-  B b_;
-  C c_;
-};
-
-template <class A, class B, class C, class D>
-class Tuple4 {
- public:
-  Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-  C at2() {
-    return c_;
-  }
-  D at3() {
-    return d_;
-  }
-
- private:
-  A a_;
-  B b_;
-  C c_;
-  D d_;
-};
-
 //
 // Overloaded free function len()
 //
@@ -827,7 +763,6 @@ inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 
 inline bool are_equal(int left, int right) {
   return left == right;
-  ;
 }
 
 inline bool are_equal(Str* left, Str* right) {

@@ -1,7 +1,11 @@
 #ifndef ERROR_TYPES_H
 #define ERROR_TYPES_H
 
+#ifdef LEAKY_BINDINGS
 class Str;
+#else
+using gc_heap::Str;
+#endif
 
 class IndexError {};
 class ValueError {};
