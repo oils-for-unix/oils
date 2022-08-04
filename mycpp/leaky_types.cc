@@ -14,6 +14,19 @@ using gc_heap::CopyBufferIntoNewStr;
 
 #include <ctype.h>  // isalpha(), isdigit()
 
+// Translation of Python's print().
+void print(Str* s) {
+  fputs(s->data(), stdout);
+  fputs("\n", stdout);
+}
+
+// Like print(..., file=sys.stderr), but Python code explicitly calls it.
+void println_stderr(Str* s) {
+  fputs(s->data(), stderr);
+  fputs("\n", stderr);
+}
+
+
 // Helper for str_to_int() that doesn't use exceptions.
 // Like atoi(), but with better error checking.
 bool _str_to_int(Str* s, int* result, int base) {

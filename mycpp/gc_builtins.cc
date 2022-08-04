@@ -12,6 +12,7 @@
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
 
+#if 0
 // Translation of Python's print().
 void print(Str* s) {
   int n = len(s);
@@ -26,7 +27,6 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
-#if 0
 // Helper for str_to_int() that doesn't use exceptions.
 // Like atoi(), but with better error checking.
 bool _str_to_int(Str* s, int* result, int base) {

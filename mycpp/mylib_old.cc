@@ -11,6 +11,7 @@
 
 Str* kEmptyString = new Str("", 0);
 
+#if 0
 // Translation of Python's print().
 void print(Str* s) {
   fputs(s->data_, stdout);
@@ -23,7 +24,6 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
-#if 0
 // NOTE:
 // - Oil interpreter code only uses the very common case of len(old) == 1.
 //   - But we probably want to expose this more general function to OIL USERS.
