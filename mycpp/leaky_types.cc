@@ -14,6 +14,65 @@ using gc_heap::CopyBufferIntoNewStr;
 
 #include <ctype.h>  // isalpha(), isdigit()
 
+// Helper for str_to_int() that doesn't use exceptions.
+// Like atoi(), but with better error checking.
+bool _str_to_int(Str* s, int* result, int base) {
+  int s_len = len(s);
+  if (s_len == 0) {
+    return false;  // special case for empty string
+  }
+
+  char* p;  // mutated by strtol
+
+  long v = strtol(s->data(), &p, base);
+  switch (v) {
+  case LONG_MIN:
+    // log("underflow");
+    return false;
+  case LONG_MAX:
+    // log("overflow");
+    return false;
+  }
+
+  *result = v;
+
+  // Return true if it consumed ALL characters.
+  const char* end = s->data_ + s_len;
+
+  // log("start %p   p %p   end %p", s->data_, p, end);
+  if (p == end) {
+    return true;
+  }
+
+  // Trailing space is OK!
+  while (p < end) {
+    if (!isspace(*p)) {
+      return false;
+    }
+    p++;
+  }
+  return true;
+}
+
+int to_int(Str* s, int base) {
+  int i;
+  if (_str_to_int(s, &i, base)) {
+    return i;
+  } else {
+    throw new ValueError();
+  }
+}
+
+int to_int(Str* s) {
+  int i;
+  if (_str_to_int(s, &i, 10)) {
+    return i;
+  } else {
+    throw new ValueError();
+  }
+}
+
+
 #ifndef LEAKY_BINDINGS
 namespace gc_heap {
 #endif
@@ -33,6 +92,15 @@ bool OmitChar(uint8_t ch, int what) {
     return what == ch;
   }
 }
+
+
+
+// #######################################
+
+
+
+// #######################################
+
 
 Str* Str::ljust(int width, Str* fillchar) {
   assert(len(fillchar) == 1);

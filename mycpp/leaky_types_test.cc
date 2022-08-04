@@ -1,13 +1,24 @@
+/* #define LEAKY_BINDINGS 1 */
+
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
+
 using mylib::StrFromC;
+using gc_heap::gHeap;
+
 #else
+
+// NOTE(Jesse): This is the path that gets compiled.
+
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_types.h"
+
 using gc_heap::gHeap;
 using gc_heap::kEmptyString;
 using gc_heap::Str;
 using gc_heap::StrFromC;
+/* using gc_heap::StrFromC; */
+
 #endif
 
 #include "vendor/greatest.h"
@@ -250,6 +261,8 @@ TEST test_str_replace() {
   Str* s0 = StrFromC("ab cd ab ef");
 
   printf("----- Str::replace -------\n");
+
+
 
   {
     Str* s1 = s0->replace(StrFromC("ab"), StrFromC("--"));

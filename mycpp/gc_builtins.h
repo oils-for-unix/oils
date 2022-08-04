@@ -128,9 +128,9 @@ int to_int(Str* s);
 int to_int(Str* s, int base);
 
 // int(a == b) used in arithmetic evaluator
-inline int to_int(bool b) {
-  return b;
-}
+/* inline int to_int(bool b) { */
+/*   return b; */
+/* } */
 
 inline bool to_bool(int i) {
   return i != 0;

@@ -26,6 +26,7 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
+#if 0
 // Helper for str_to_int() that doesn't use exceptions.
 // Like atoi(), but with better error checking.
 bool _str_to_int(Str* s, int* result, int base) {
@@ -83,6 +84,8 @@ int to_int(Str* s, int base) {
     throw new ValueError();
   }
 }
+
+#endif
 
 Str* str_concat(Str* a, Str* b) {
   Str* result = nullptr;
