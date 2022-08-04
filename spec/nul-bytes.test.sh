@@ -91,16 +91,36 @@ status=0
 ## END
 
 
-#### NUL bytes with test -d
+#### NUL bytes with test -f
 
 case $SH in (dash) exit ;; esac
 
 
-test -d $'\0'
+test -f $'\0'
+echo status=$?
+
+touch foo
+test -f $'foo\0'
+echo status=$?
+
+test -f $'foo\0bar'
+echo status=$?
+
+test -f $'foobar'
 echo status=$?
 
 
 ## STDOUT:
+status=1
+status=0
+status=0
+status=1
+## END
+
+## OK ash STDOUT:
+status=1
+status=0
+status=1
 status=1
 ## END
 
