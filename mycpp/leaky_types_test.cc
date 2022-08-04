@@ -43,7 +43,6 @@ void debug_string(Str* s) {
 TEST test_str_strip() {
   printf("\n");
 
-#if 0
   printf("------- Str::lstrip -------\n");
 
   {
@@ -93,7 +92,6 @@ TEST test_str_strip() {
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC(" # ")));
   }
-#endif
 
 
 

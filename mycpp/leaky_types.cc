@@ -343,7 +343,6 @@ Str* Str::rstrip() {
   return StripAny(this, StripWhere::Right, kWhitespace);
 }
 
-#if 0
 Str* Str::lstrip(Str* chars) {
   assert(len(chars) == 1);
   int c = chars->data_[0];
@@ -353,7 +352,6 @@ Str* Str::lstrip(Str* chars) {
 Str* Str::lstrip() {
   return StripAny(this, StripWhere::Left, kWhitespace);
 }
-#endif
 
 #ifndef LEAKY_BINDINGS
 }  // namespace gc_heap

@@ -88,6 +88,9 @@ class Str : public gc_heap::Obj {
   Str* rstrip(Str* chars);
   Str* rstrip();
 
+  Str* lstrip(Str* chars);
+  Str* lstrip();
+
   Str* ljust(int width, Str* fillchar);
   Str* rjust(int width, Str* fillchar);
 

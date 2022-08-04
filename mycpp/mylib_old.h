@@ -207,10 +207,8 @@ class Str : public gc_heap::Obj {
   Str* rstrip(Str* chars);
   Str* rstrip();
 
-  #if 0
   Str* lstrip(Str* chars);
   Str* lstrip();
-  #endif
 
   bool startswith(Str* s) {
     if (s->len_ > len_) {
