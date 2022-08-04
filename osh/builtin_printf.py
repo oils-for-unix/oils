@@ -136,11 +136,12 @@ class _FormatStringParser(object):
       elif self.token_type == Id.Format_Percent:
         parts.append(self._ParseFormatStr())
 
-      elif self.token_type == Id.Eof_Real:
+      elif self.token_type in (Id.Eof_Real, Id.Eol_Tok):
+        # Id.Eol_Tok: special case for format string of '\x00'.
         break
 
       else:
-        raise AssertionError()
+        raise AssertionError(self.token_type)
 
       self._Next(lex_mode_e.PrintfOuter)
 

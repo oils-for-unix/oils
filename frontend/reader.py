@@ -93,6 +93,8 @@ class FileLineReader(_Reader):
     if not line.endswith('\n'):
       self.last_line_hint = True
 
+    #from core.pyerror import log
+    #log('LINE %r', line)
     return line
 
   def LastLineHint(self):
