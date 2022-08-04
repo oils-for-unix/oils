@@ -94,11 +94,11 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   for (const auto& kv : environ->items_) {
     Str* k = kv.first;
     Str* v = kv.second;
-    int joined_len = k->len_ + v->len_ + 1;
+    int joined_len = len(k) + len(v) + 1;
     char* buf = static_cast<char*>(malloc(joined_len + 1));
-    memcpy(buf, k->data_, k->len_);
-    buf[k->len_] = '=';
-    memcpy(buf + k->len_ + 1, v->data_, v->len_);
+    memcpy(buf, k->data_, len(k));
+    buf[len(k)] = '=';
+    memcpy(buf + len(k) + 1, v->data_, len(v));
     buf[joined_len] = '\0';
     envp[i++] = buf;
   }

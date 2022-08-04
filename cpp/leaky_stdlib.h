@@ -88,7 +88,7 @@ inline void _exit(int status) {
 }
 
 inline void write(int fd, Str* s) {
-  ::write(fd, s->data_, s->len_);
+  ::write(fd, s->data_, len(s));
 }
 
 // Can we use fcntl instead?

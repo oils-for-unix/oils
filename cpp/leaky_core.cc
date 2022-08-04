@@ -242,13 +242,13 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
 }
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {
-  int upper_bound = s->len_ * 2;
+  int upper_bound = len(s) * 2;
   char* buf = static_cast<char*>(malloc(upper_bound));
   char* p = buf;
 
-  for (int i = 0; i < s->len_; ++i) {
+  for (int i = 0; i < len(s); ++i) {
     char c = s->data_[i];
-    if (memchr(meta_chars->data_, c, meta_chars->len_)) {
+    if (memchr(meta_chars->data_, c, len(meta_chars))) {
       *p++ = '\\';
     }
     *p++ = c;

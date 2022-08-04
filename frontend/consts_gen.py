@@ -68,8 +68,8 @@ def GenStringLookup(type_name, func_name, pairs, f):
 
   f.write("""\
 %s %s(Str* s) {
-  int len = s->len_;
-  if (len == 0) return 0;  // consts.NO_INDEX
+  int length = len(s);
+  if (length == 0) return 0;  // consts.NO_INDEX
 
   const char* data = s->data_;
   switch (data[0]) {
@@ -81,7 +81,7 @@ def GenStringLookup(type_name, func_name, pairs, f):
     for name, index in pairs:
       # NOTE: we have to check the length because they're not NUL-terminated
       f.write('''\
-    if (len == %d && memcmp("%s", data, %d) == 0) return %d;
+    if (length == %d && memcmp("%s", data, %d) == 0) return %d;
 ''' % (len(name), name, len(name), index))
     f.write('    break;\n')
 
@@ -102,8 +102,8 @@ def GenStringMembership(func_name, strs, f):
 
   f.write("""\
 bool %s(Str* s) {
-  int len = s->len_;
-  if (len == 0) return false;
+  int length = len(s);
+  if (length == 0) return false;
 
   const char* data = s->data_;
   switch (data[0]) {
@@ -115,7 +115,7 @@ bool %s(Str* s) {
     for s in strs:
       # NOTE: we have to check the length because they're not NUL-terminated
       f.write('''\
-    if (len == %d && memcmp("%s", data, %d) == 0) return true;
+    if (length == %d && memcmp("%s", data, %d) == 0) return true;
 ''' % (len(s), s, len(s)))
     f.write('    break;\n')
 

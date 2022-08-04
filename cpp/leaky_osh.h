@@ -34,13 +34,13 @@ bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2);
 namespace sh_expr_eval {
 
 inline bool IsLower(Str* ch) {
-  assert(ch->len_ == 1);
+  assert(len(ch) == 1);
   uint8_t c = ch->data_[0];
   return ('a' <= c && c <= 'z');
 }
 
 inline bool IsUpper(Str* ch) {
-  assert(ch->len_ == 1);
+  assert(len(ch) == 1);
   uint8_t c = ch->data_[0];
   return ('A' <= c && c <= 'Z');
 }

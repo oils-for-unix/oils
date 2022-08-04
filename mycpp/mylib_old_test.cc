@@ -481,12 +481,12 @@ TEST test_sizeof() {
   PASS();
 }
 
-#define PRINT_STRING(str) printf("(%.*s)\n", (str)->len_, (str)->data_)
+#define PRINT_STRING(str) printf("(%.*s)\n", len(str), (str)->data_)
 
 #define PRINT_LIST(list)                                         \
   for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) { \
     Str* piece = iter.Value();                                   \
-    printf("(%.*s) ", piece->len_, piece->data_);                \
+    printf("(%.*s) ", len(piece), piece->data_);                \
   }                                                              \
   printf("\n")
 
@@ -729,7 +729,7 @@ TEST test_str_slice() {
 
   //  NOTE(Jesse): testing all permutations of boundary conditions for
   //  assertions
-  int max_len = (s0->len_ + 2);
+  int max_len = (len(s0) + 2);
   int min_len = -max_len;
 
   for (int outer = min_len; outer <= max_len; ++outer) {

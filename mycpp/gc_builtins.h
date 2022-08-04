@@ -13,6 +13,7 @@
 #include "mycpp/gc_types.h"
 #include "mycpp/error_types.h"
 #include "mycpp/tuple_types.h"
+#include "mycpp/mylib_types.h"
 
 // TODO: Don't use 'using' in header
 using gc_heap::AllocStr;
@@ -51,13 +52,6 @@ inline bool to_bool(Str* s) {
 inline double to_float(Str* s) {
   NotImplemented();  // Uncalled
 }
-
-// https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
-// Notes:
-// - Python 2.7's intobject.c has an erroneous +6
-// - This is 13, but len('-2147483648') is 11, which means we only need 12?
-// - This formula is valid for octal(), because 2^(3 bits) = 8
-const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 inline Str* str(int i) {
   // Use a static buffer first because we don't know what n is until we call
