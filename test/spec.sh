@@ -415,7 +415,7 @@ builtin-io() {
 }
 
 nul-bytes() {
-  sh-spec spec/nul-bytes.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/nul-bytes.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

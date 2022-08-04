@@ -61,3 +61,73 @@ argv.py "$(echo -e 'a\0b')"
 
 ## N-I dash STDOUT:
 ## END
+
+#### NUL bytes with test -n
+
+case $SH in (dash) exit ;; esac
+
+# zsh is buggy here, weird
+test -n $''
+echo status=$?
+
+test -n $'\0'
+echo status=$?
+
+
+## STDOUT:
+status=1
+status=1
+## END
+## OK osh STDOUT:
+status=1
+status=0
+## END
+## BUG zsh STDOUT:
+status=0
+status=0
+## END
+
+## N-I dash STDOUT:
+## END
+
+
+#### NUL bytes with test -d
+
+case $SH in (dash) exit ;; esac
+
+
+test -d $'\0'
+echo status=$?
+
+
+## STDOUT:
+status=1
+## END
+
+## N-I dash STDOUT:
+## END
+
+
+#### NUL bytes with ${#s} (OSH and zsh agree)
+
+case $SH in (dash) exit ;; esac
+
+empty=$''
+nul=$'\0'
+
+echo empty=${#empty}
+echo nul=${#nul}
+
+
+## STDOUT:
+empty=0
+nul=0
+## END
+
+## OK osh/zsh STDOUT:
+empty=0
+nul=1
+## END
+
+## N-I dash STDOUT:
+## END
