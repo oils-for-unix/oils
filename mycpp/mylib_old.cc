@@ -539,7 +539,6 @@ int to_int(Str* s, int base) {
     throw new ValueError();
   }
 }
-#endif
 
 Str* str_repeat(Str* s, int times) {
   // Python allows -1 too, and Oil used that
@@ -558,6 +557,7 @@ Str* str_repeat(Str* s, int times) {
   data[new_len] = '\0';
   return new Str(data, new_len);
 }
+#endif
 
 //
 // Formatter

@@ -26,6 +26,23 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
+Str* str_repeat(Str* s, int times) {
+  // Python allows -1 too, and Oil used that
+  if (times <= 0) {
+    return kEmptyString;
+  }
+  int len_ = len(s);
+  int new_len = len_ * times;
+  char* data = static_cast<char*>(malloc(new_len + 1));
+
+  char* dest = data;
+  for (int i = 0; i < times; i++) {
+    memcpy(dest, s->data_, len_);
+    dest += len_;
+  }
+  data[new_len] = '\0';
+  return CopyBufferIntoNewStr(data, new_len);
+}
 
 // Helper for str_to_int() that doesn't use exceptions.
 // Like atoi(), but with better error checking.

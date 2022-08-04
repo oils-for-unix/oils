@@ -102,7 +102,6 @@ Str* str_concat(Str* a, Str* b) {
   assert(buf[len_a + len_b] == '\0');
   return result;
 }
-#endif
 
 Str* str_repeat(Str* s, int times) {
   StackRoots _roots({&s});
@@ -123,6 +122,7 @@ Str* str_repeat(Str* s, int times) {
   assert(p_result[result_len] == '\0');
   return result;
 }
+#endif
 
 //
 // Str methods
