@@ -414,6 +414,11 @@ builtin-io() {
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
+nul-bytes() {
+  sh-spec spec/nul-bytes.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+}
+
 # Special bash printf things like -v and %q.  Portable stuff goes in builtin-io.
 builtin-printf() {
   sh-spec spec/builtin-printf.test.sh --osh-failures-allowed 1 \
