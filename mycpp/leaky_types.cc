@@ -6,10 +6,10 @@ using mylib::CopyBufferIntoNewStr;
 #else
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_types.h"
+using gc_heap::CopyBufferIntoNewStr;
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
 using gc_heap::Str;
-using gc_heap::CopyBufferIntoNewStr;
 #endif
 
 #include <ctype.h>  // isalpha(), isdigit()
@@ -139,7 +139,6 @@ int to_int(Str* s) {
   }
 }
 
-
 #ifndef LEAKY_BINDINGS
 namespace gc_heap {
 #endif
@@ -160,10 +159,7 @@ bool OmitChar(uint8_t ch, int what) {
   }
 }
 
-
-
 // #######################################
-
 
 Str* Str::upper() {
   int len_ = len(this);
@@ -186,7 +182,6 @@ Str* Str::lower() {
 }
 
 // #######################################
-
 
 Str* Str::ljust(int width, Str* fillchar) {
   assert(len(fillchar) == 1);
@@ -253,7 +248,7 @@ Str* Str::replace(Str* old, Str* new_str) {
 
   int new_str_len = len(new_str);
   int result_len =
-      this_len - (replace_count * old_len) + (replace_count * new_str_len );
+      this_len - (replace_count * old_len) + (replace_count * new_str_len);
 
   char* result = static_cast<char*>(malloc(result_len + 1));  // +1 for NUL
 
@@ -277,7 +272,7 @@ Str* Str::replace(Str* old, Str* new_str) {
     }
   }
   memcpy(p_result, p_this, data_ + this_len - p_this);  // last part of string
-  result[result_len] = '\0';                        // NUL terminate
+  result[result_len] = '\0';                            // NUL terminate
 
   return CopyBufferIntoNewStr(result, result_len);
 }

@@ -217,7 +217,8 @@ inline Str* StrFromC(const char* data) {
 
 inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
   // NOTE(Jesse): This assertion is not valid because we have to handle strings
-  // with internal nulls.  We must blindly trust the caller passed us a valid length.
+  // with internal nulls.  We must blindly trust the caller passed us a valid
+  // length.
   //
   // assert(strlen(buf) == buf_len);
   Str* s = StrFromC(buf, buf_len);
@@ -856,9 +857,6 @@ void Dict<K, V>::set(K key, V val) {
   }
 }
 
-
-
-
 #endif  // MYLIB_LEAKY
 
 }  // namespace gc_heap
@@ -879,7 +877,6 @@ template <typename K, typename V>
 inline int len(const gc_heap::Dict<K, V>* d) {
   return d->len_;
 }
-
 
 #endif  // MYLIB_LEAKY
 

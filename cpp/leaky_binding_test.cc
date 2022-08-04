@@ -322,8 +322,6 @@ TEST putenv_test() {
   PASS();
 }
 
-
-
 TEST pyos_test() {
   // This test isn't hermetic but it should work in most places, including in a
   // container

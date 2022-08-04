@@ -3,8 +3,8 @@
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
 
-using mylib::StrFromC;
 using gc_heap::gHeap;
+using mylib::StrFromC;
 
 #else
 
@@ -30,13 +30,15 @@ void debug_string(Str* s) {
   fputs(")\n", stdout);
 }
 
-#define PRINT_INT(i) printf("(%d)\n", (i) )
+#define PRINT_INT(i) printf("(%d)\n", (i))
 #define PRINT_STRING(str) debug_string(str)
 
 /* #define STRINGIFY_VALUE_INNER(a) #a */
 /* #define STRINGIFY_VALUE(a) STRINGIFY_VALUE_INNER(a) */
 
-#define PRINT_STR_INT(str, i) printf("(%s) -> ", str->data_); PRINT_INT(i)
+#define PRINT_STR_INT(str, i)     \
+  printf("(%s) -> ", str->data_); \
+  PRINT_INT(i)
 
 #define STRINGIFY(x) (#x)
 
@@ -92,10 +94,6 @@ TEST test_str_strip() {
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC(" # ")));
   }
-
-
-
-
 
   printf("------- Str::rstrip -------\n");
 
@@ -154,11 +152,6 @@ TEST test_str_strip() {
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC(" # ")));
   }
-
-
-
-
-
 
   printf("------- Str::strip -------\n");
 
@@ -257,8 +250,6 @@ TEST test_str_replace() {
   Str* s0 = StrFromC("ab cd ab ef");
 
   printf("----- Str::replace -------\n");
-
-
 
   {
     Str* s1 = s0->replace(StrFromC("ab"), StrFromC("--"));
@@ -385,119 +376,116 @@ TEST test_str_just() {
   printf("------- Str::ljust -------\n");
 
   {
-    Str* result = (StrFromC(""))->ljust( 0, StrFromC("_") );
+    Str* result = (StrFromC(""))->ljust(0, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
   {
-    Str* result = (StrFromC(""))->ljust( 1, StrFromC("_") );
+    Str* result = (StrFromC(""))->ljust(1, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("_")));
   }
   {
-    Str* result = (StrFromC(""))->ljust( 4, StrFromC("_") );
+    Str* result = (StrFromC(""))->ljust(4, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("____")));
   }
   {
-    Str* result = (StrFromC("x"))->ljust( 0, StrFromC("_") );
+    Str* result = (StrFromC("x"))->ljust(0, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("x")));
   }
   {
-    Str* result = (StrFromC("x"))->ljust( 1, StrFromC("_") );
+    Str* result = (StrFromC("x"))->ljust(1, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("x")));
   }
   {
-    Str* result = (StrFromC("x"))->ljust( 2, StrFromC("_") );
+    Str* result = (StrFromC("x"))->ljust(2, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("x_")));
   }
 
   {
-    Str* result = (StrFromC("xx"))->ljust( -1, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->ljust(-1, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->ljust( 0, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->ljust(0, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->ljust( 1, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->ljust(1, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->ljust( 2, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->ljust(2, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->ljust( 4, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->ljust(4, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx__")));
   }
 
-
-
-
   printf("------- Str::rjust -------\n");
   {
-    Str* result = (StrFromC(""))->rjust( 0, StrFromC("_") );
+    Str* result = (StrFromC(""))->rjust(0, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
   {
-    Str* result = (StrFromC(""))->rjust( 1, StrFromC("_") );
+    Str* result = (StrFromC(""))->rjust(1, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("_")));
   }
   {
-    Str* result = (StrFromC(""))->rjust( 4, StrFromC("_") );
+    Str* result = (StrFromC(""))->rjust(4, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("____")));
   }
   {
-    Str* result = (StrFromC("x"))->rjust( 0, StrFromC("_") );
+    Str* result = (StrFromC("x"))->rjust(0, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("x")));
   }
   {
-    Str* result = (StrFromC("x"))->rjust( 1, StrFromC("_") );
+    Str* result = (StrFromC("x"))->rjust(1, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("x")));
   }
   {
-    Str* result = (StrFromC("x"))->rjust( 2, StrFromC("_") );
+    Str* result = (StrFromC("x"))->rjust(2, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("_x")));
   }
 
   {
-    Str* result = (StrFromC("xx"))->rjust( -1, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->rjust(-1, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->rjust( 0, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->rjust(0, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->rjust( 1, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->rjust(1, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->rjust( 2, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->rjust(2, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->rjust( 4, StrFromC("_") );
+    Str* result = (StrFromC("xx"))->rjust(4, StrFromC("_"));
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("__xx")));
   }
@@ -556,7 +544,6 @@ TEST test_str_concat() {
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("aabb")));
   }
-
 
   printf("------- str_concat3 -------\n");
 
@@ -651,13 +638,13 @@ TEST test_str_to_int() {
     ASSERT(result == 100);
   }
   {
-    Str* input = StrFromC("2147483647"); // 0x7FFFFFFF
+    Str* input = StrFromC("2147483647");  // 0x7FFFFFFF
     int result = to_int(input);
     PRINT_STR_INT(input, result);
     ASSERT(result == INT_MAX);
   }
   {
-    Str* input = StrFromC("-2147483648"); // -0x7FFFFFFF - 1
+    Str* input = StrFromC("-2147483648");  // -0x7FFFFFFF - 1
     int result = to_int(input);
     PRINT_STR_INT(input, result);
     ASSERT(result == INT_MIN);
