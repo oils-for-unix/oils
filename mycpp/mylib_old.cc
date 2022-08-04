@@ -131,6 +131,7 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
 
 LineReader* gStdin;
 
+#if 1
 Str* CFileLineReader::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
@@ -152,6 +153,7 @@ Str* CFileLineReader::readline() {
   // Note: it's NUL terminated
   return new Str(line, len);
 }
+#endif
 
 // problem: most Str methods like index() and slice() COPY so they have a
 // NUL terminator.

@@ -11,6 +11,7 @@
 #include <climits>    // CHAR_BIT
 
 #include "mycpp/gc_types.h"
+#include "mycpp/error_types.h"
 
 // TODO: Don't use 'using' in header
 using gc_heap::AllocStr;
@@ -19,36 +20,6 @@ using gc_heap::List;
 using gc_heap::StackRoots;
 using gc_heap::Str;
 using gc_heap::StrFromC;
-
-class IndexError {};
-class ValueError {};
-class KeyError {};
-
-class EOFError {};
-
-class NotImplementedError {
- public:
-  NotImplementedError() {
-  }
-  explicit NotImplementedError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit NotImplementedError(const char* s) {
-  }
-  explicit NotImplementedError(Str* s) {
-  }
-};
-
-class AssertionError {
- public:
-  AssertionError() {
-  }
-  explicit AssertionError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit AssertionError(const char* s) {
-  }
-  explicit AssertionError(Str* s) {
-  }
-};
 
 template <class A, class B>
 class Tuple2 {

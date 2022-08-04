@@ -21,6 +21,7 @@
 // if this file is even included, we're using the old mylib
 #define MYLIB_LEAKY 1
 #include "mycpp/gc_types.h"  // for Obj
+#include "mycpp/error_types.h"
 
 #ifdef DUMB_ALLOC
   #include "cpp/dumb_alloc.h"
@@ -58,36 +59,6 @@ void print(Str* s);
 // log() generates code that writes this
 void println_stderr(Str* s);
 
-class IndexError {};
-class ValueError {};
-class KeyError {};
-
-class EOFError {};
-
-class NotImplementedError {
- public:
-  NotImplementedError() {
-  }
-  explicit NotImplementedError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit NotImplementedError(const char* s) {
-  }
-  explicit NotImplementedError(Str* s) {
-  }
-};
-
-class AssertionError {
- public:
-  AssertionError() {
-  }
-  explicit AssertionError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit AssertionError(const char* s) {
-  }
-  explicit AssertionError(Str* s) {
-  }
-};
-
 // Python's RuntimeError looks like this.  . libc::regex_match and other
 // bindings raise it.
 class RuntimeError {
@@ -101,7 +72,6 @@ class RuntimeError {
 // Data Types
 //
 
-#ifdef MYLIB_LEAKY
 class Str : public gc_heap::Obj {
  public:
   Str(const char* data, int len)
@@ -736,7 +706,6 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
   assert(0);  // Uncalled
 }
 
-#endif  // MYLIB_LEAKY
 
 template <class A, class B>
 class Tuple2 {
@@ -805,7 +774,6 @@ class Tuple4 {
 // Overloaded free function len()
 //
 
-#ifdef MYLIB_LEAKY
 inline int len(const Str* s) {
   return s->len_;
 }
@@ -833,7 +801,6 @@ inline int len(const Dict<Str*, V>* d) {
   }
   return len;
 }
-#endif
 
 //
 // Free functions
@@ -844,7 +811,6 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
-#if MYLIB_LEAKY
 inline bool str_equals(Str* left, Str* right) {
   if (left->len_ == right->len_) {
     return memcmp(left->data_, right->data_, left->len_) == 0;
@@ -873,7 +839,6 @@ inline bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
   result = result && (t1->at1() == t2->at1());
   return result;
 }
-#endif
 
 inline bool str_equals0(const char* c_string, Str* s) {
   int n = strlen(c_string);
