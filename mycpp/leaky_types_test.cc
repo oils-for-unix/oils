@@ -206,7 +206,6 @@ TEST test_str_strip() {
 TEST test_str_upper_lower() {
   printf("\n");
 
-#if 0
   printf("------- Str::upper -------\n");
 
   {
@@ -248,7 +247,6 @@ TEST test_str_upper_lower() {
   }
 
   printf("---------- Done ----------\n");
-#endif
 
   PASS();
 }
@@ -560,7 +558,6 @@ TEST test_str_concat() {
   }
 
 
-#if 0
   printf("------- str_concat3 -------\n");
 
   {
@@ -609,7 +606,6 @@ TEST test_str_concat() {
     PRINT_STRING(result);
     ASSERT(str_equals(result, StrFromC("aac")));
   }
-#endif
 
   printf("---------- Done ----------\n");
 
