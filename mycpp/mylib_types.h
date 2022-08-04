@@ -1,5 +1,12 @@
 #pragma once
 
+#if MYLIB_LEAKY
+using mylib::StrFromC;
+#else
+using gc_heap::StrFromC;
+#endif
+
+
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
 // Notes:
 // - Python 2.7's intobject.c has an erroneous +6
@@ -9,9 +16,6 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib
 {
-  inline Str* StrFromC(const char* s, int len);
-  inline Str* StrFromC(const char* s);
-
   inline Str* hex_lower(int i) {
     char* buf = static_cast<char*>(malloc(kIntBufSize));
     int len = snprintf(buf, kIntBufSize, "%x", i);

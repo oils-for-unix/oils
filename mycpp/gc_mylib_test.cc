@@ -47,7 +47,7 @@ TEST split_once_test() {
 }
 
 TEST int_to_str_test() {
-  int int_min = -(1 << 31);
+  int int_min = INT_MIN;
   Str* int_str;
 
   int_str = mylib::hex_lower(15);

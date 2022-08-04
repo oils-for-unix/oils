@@ -152,7 +152,7 @@ def CChar(c):
 def GenCharLookup(func_name, lookup, f, required=False):
   f.write("""\
 Str* %s(Str* c) {
-  assert(c->len_ == 1);
+  assert(len(c) == 1);
 
   char ch = c->data_[0];
 

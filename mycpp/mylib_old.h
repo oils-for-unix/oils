@@ -23,7 +23,6 @@
 #include "mycpp/gc_types.h"  // for Obj
 #include "mycpp/tuple_types.h"
 #include "mycpp/error_types.h"
-#include "mycpp/mylib_types.h"
 
 #ifdef DUMB_ALLOC
   #include "cpp/dumb_alloc.h"
@@ -43,6 +42,9 @@ template <class K, class V>
 class DictIter;
 
 namespace mylib {
+
+  inline Str* StrFromC(const char* s, int len);
+  inline Str* StrFromC(const char* s);
 
   template <typename V>
   void dict_remove(Dict<Str*, V>* haystack, Str* needle);
@@ -808,6 +810,8 @@ inline int ord(Str* s) {
   uint8_t c = static_cast<uint8_t>(s->data_[0]);
   return c;
 }
+
+#include "mycpp/mylib_types.h"
 
 inline Str* str(int i) {
   char* buf = static_cast<char*>(malloc(kIntBufSize));

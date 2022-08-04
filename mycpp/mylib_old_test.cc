@@ -6,6 +6,8 @@
 
 #include "vendor/greatest.h"
 
+using mylib::StrFromC;
+
 // Emulating the gc_heap API.  COPIED from gc_heap_test.cc
 TEST test_str_creation() {
   Str* s = StrFromC("foo");

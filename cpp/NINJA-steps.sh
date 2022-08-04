@@ -93,7 +93,7 @@ setglobal_compile_flags() {
     (leaky)
       # Could this be ASAN?
       # For cpp/gc_binding_test
-      flags="$flags -O0 -g -D LEAKY_BINDINGS -D LEAKY_TEST_MODE"
+      flags="$flags -O0 -g -D LEAKY_BINDINGS"
       ;;
 
     (opt)
