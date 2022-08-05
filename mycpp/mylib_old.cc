@@ -12,6 +12,20 @@ using mylib::CopyBufferIntoNewStr;
 
 Str* kEmptyString = StrFromC("", 0);
 
+// For cStringIO API
+Str* mylib::BufWriter::getvalue() {
+  if (data_) {
+    Str* ret = CopyBufferIntoNewStr(data_, len_);
+    reset();  // Invalidate this instance
+    return ret;
+  } else {
+    // log('') translates to this
+    // Strings are immutable so we can do this.
+    return kEmptyString;
+  }
+}
+
+
 List<Str*>* Str::split(Str* sep) {
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];

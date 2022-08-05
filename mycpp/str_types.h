@@ -80,4 +80,3 @@ inline void Str::SetObjLenFromStrLen(int str_len) {
 }
 
 #endif // STR_TYPES_H
-
