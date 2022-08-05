@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SEGFAULT_HANDLER_H
+#define SEGFAULT_HANDLER_H
 
 static int segfault_handler_initialized;
 
@@ -22,3 +23,5 @@ void complain_loudly_on_segfault() {
     segfault_handler_initialized = 1;
   }
 }
+
+#endif

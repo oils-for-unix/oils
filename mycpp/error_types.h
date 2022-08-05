@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ERROR_TYPES_H
+#define ERROR_TYPES_H
 
 #ifdef LEAKY_BINDINGS
 class Str;
@@ -44,3 +45,5 @@ class RuntimeError {
   }
   Str* message;
 };
+
+#endif // ERROR_TYPES_H

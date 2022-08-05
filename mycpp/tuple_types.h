@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TUPLE_TYPES_H
+#define TUPLE_TYPES_H
 
 template <class A, class B>
 class Tuple2 {
@@ -62,3 +63,5 @@ class Tuple4 {
   C c_;
   D d_;
 };
+
+#endif

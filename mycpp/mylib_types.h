@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MYLIB_TYPES_H
+#define MYLIB_TYPES_H
 
 #if MYLIB_LEAKY
 using mylib::StrFromC;
@@ -34,3 +35,5 @@ namespace mylib
     return StrFromC(buf, len);
   }
 } // namespace mylib
+
+#endif // MYLIB_TYPES_H
