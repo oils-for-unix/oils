@@ -14,6 +14,31 @@ using gc_heap::Str;
 
 #include <ctype.h>  // isalpha(), isdigit()
 
+int Str::find(Str* needle, int pos) {
+  int len_ = len(this);
+  assert(len(needle) == 1);  // Oil's usage
+  char c = needle->data_[0];
+  for (int i = pos; i < len_; ++i) {
+    if (data_[i] == c) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int Str::rfind(Str* needle) {
+  int len_ = len(this);
+  assert(len(needle) == 1);  // Oil's usage
+  char c = needle->data_[0];
+  for (int i = len_ - 1; i >= 0; --i) {
+    if (data_[i] == c) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+
 bool Str::isdigit() {
   int n = len(this);
   if (n == 0) {

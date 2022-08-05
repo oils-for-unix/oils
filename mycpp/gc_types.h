@@ -80,6 +80,10 @@ class Str : public gc_heap::Obj {
   void SetObjLenFromStrLen(int str_len);
 
   Str* index_(int i);
+
+  int find(Str* needle, int pos);
+  int rfind(Str* needle);
+
   Str* slice(int begin);
   Str* slice(int begin, int end);
 

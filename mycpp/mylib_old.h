@@ -78,14 +78,10 @@ class Str : public gc_heap::Obj {
   explicit Str(const char* data) : Str(data, strlen(data)) {
   }
 
-  // emulating gc_heap API
   void SetObjLenFromStrLen(int len) {
     len__ = len;
   }
 
-  // Usage:
-  // Str* s = OverAllocatedStr(10);
-  // strcpy(s->data(), "foo");
   char* data() {
     return const_cast<char*>(data_);
   }
@@ -114,29 +110,8 @@ class Str : public gc_heap::Obj {
 
   Str* replace(Str* old, Str* new_str);
 
-  int find(Str* needle, int pos = 0) {
-    int len_ = len(this);
-    assert(len(needle) == 1);  // Oil's usage
-    char c = needle->data_[0];
-    for (int i = pos; i < len_; ++i) {
-      if (data_[i] == c) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  int rfind(Str* needle) {
-    int len_ = len(this);
-    assert(len(needle) == 1);  // Oil's usage
-    char c = needle->data_[0];
-    for (int i = len_ - 1; i >= 0; --i) {
-      if (data_[i] == c) {
-        return i;
-      }
-    }
-    return -1;
-  }
+  int find(Str* needle, int pos = 0);
+  int rfind(Str* needle);
 
   Str* upper();
   Str* lower();
