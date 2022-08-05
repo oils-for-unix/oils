@@ -43,6 +43,8 @@ class DictIter;
 
 namespace mylib {
 
+  inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len);
+
   inline Str* StrFromC(const char* s, int len);
   inline Str* StrFromC(const char* s);
 
@@ -53,6 +55,7 @@ namespace mylib {
   void dict_remove(Dict<int, V>* haystack, int needle);
 
 };  // namespace mylib
+
 
 extern Str* kEmptyString;
 
@@ -65,217 +68,11 @@ void println_stderr(Str* s);
 // Data Types
 //
 
-int len(Str *s);
+#include "mycpp/str_types.h"
 
-class Str : public gc_heap::Obj {
- public:
-  Str(const char* data, int len)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0),
-        len__(len),
-        data_(data) {
-  }
-
-  explicit Str(const char* data) : Str(data, strlen(data)) {
-  }
-
-  // emulating gc_heap API
-  void SetObjLenFromStrLen(int len) {
-    len__ = len;
-  }
-
-  // Usage:
-  // Str* s = OverAllocatedStr(10);
-  // strcpy(s->data(), "foo");
-  char* data() {
-    return const_cast<char*>(data_);
-  }
-
-  // Important invariant: the buffer is of size len+1, so data[len] is OK to
-  // access!  Not just data[len-1].  We use that to test if it's a C string.
-  // note: "foo" and "foo\0" are both NUL-terminated.
-  bool IsNulTerminated() {
-    return data_[len(this)] == '\0';
-  }
-
-  // Get a string with one character
-  Str* index_(int i) {
-    int len_ = len(this);
-    if (i < 0) {
-      i = len_ + i;
-    }
-    assert(i >= 0);
-    assert(i < len_);  // had a problem here!
-
-    char* buf = static_cast<char*>(malloc(2));
-    buf[0] = data_[i];
-    buf[1] = '\0';
-    return new Str(buf, 1);
-  }
-
-  // s[begin:]
-  Str* slice(int begin) {
-    int len_ = len(this);
-    if (begin == 0) {
-      return this;  // s[i:] where i == 0 is common in here docs
-    }
-    if (begin < 0) {
-      begin = len_ + begin;
-    }
-    return slice(begin, len_);
-  }
-  // s[begin:end]
-  Str* slice(int begin, int end) {
-    int len_ = len(this);
-    begin = std::min(begin, len_);
-    end = std::min(end, len_);
-
-    assert(begin <= len_);
-    assert(end <= len_);
-
-    if (begin < 0) {
-      begin = len_ + begin;
-    }
-
-    if (end < 0) {
-      end = len_ + end;
-    }
-
-    begin = std::min(begin, len_);
-    end = std::min(end, len_);
-
-    begin = std::max(begin, 0);
-    end = std::max(end, 0);
-
-    assert(begin >= 0);
-    assert(begin <= len_);
-
-    assert(end >= 0);
-    assert(end <= len_);
-
-    int new_len = end - begin;
-
-    // Tried to use std::clamp() here but we're not compiling against cxx-17
-    new_len = std::max(new_len, 0);
-    new_len = std::min(new_len, len_);
-
-    /* printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len); */
-
-    assert(new_len >= 0);
-    assert(new_len <= len_);
-
-    char* buf = static_cast<char*>(malloc(new_len + 1));
-    memcpy(buf, data_ + begin, new_len);
-
-    buf[new_len] = '\0';
-    return new Str(buf, new_len);
-  }
-
-  Str* strip();
-  Str* rstrip(Str* chars);
-  Str* rstrip();
-
-  Str* lstrip(Str* chars);
-  Str* lstrip();
-
-  bool startswith(Str* s) {
-    int len_ = len(this);
-    if (len(s) > len_) {
-      return false;
-    }
-    return memcmp(data_, s->data_, len(s)) == 0;
-  }
-  bool endswith(Str* s) {
-    int len_ = len(this);
-    if (len(s) > len_) {
-      return false;
-    }
-    const char* start = data_ + len_ - len(s);
-    return memcmp(start, s->data_, len(s)) == 0;
-  }
-  bool isdigit() {
-    int len_ = len(this);
-    if (len_ == 0) {
-      return false;  // special case
-    }
-    for (int i = 0; i < len_; ++i) {
-      if (!::isdigit(data_[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-  bool isalpha() {
-    int len_ = len(this);
-    if (len_ == 0) {
-      return false;  // special case
-    }
-    for (int i = 0; i < len_; ++i) {
-      if (!::isalpha(data_[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-  // e.g. for osh/braces.py
-  bool isupper() {
-    int len_ = len(this);
-    if (len_ == 0) {
-      return false;  // special case
-    }
-    for (int i = 0; i < len_; ++i) {
-      if (!::isupper(data_[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  List<Str*>* split(Str* sep);
-  List<Str*>* splitlines(bool keep);
-  Str* join(List<Str*>* items);
-
-  Str* replace(Str* old, Str* new_str);
-
-  int find(Str* needle, int pos = 0) {
-    int len_ = len(this);
-    assert(len(needle) == 1);  // Oil's usage
-    char c = needle->data_[0];
-    for (int i = pos; i < len_; ++i) {
-      if (data_[i] == c) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  int rfind(Str* needle) {
-    int len_ = len(this);
-    assert(len(needle) == 1);  // Oil's usage
-    char c = needle->data_[0];
-    for (int i = len_ - 1; i >= 0; --i) {
-      if (data_[i] == c) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  Str* upper();
-  Str* lower();
-  Str* ljust(int width, Str* fillchar);
-  Str* rjust(int width, Str* fillchar);
-
-  int len__;  // reorder for alignment
-  const char* data_;
-
-  DISALLOW_COPY_AND_ASSIGN(Str)
-};
-
-inline int len(Str *s)
-{
-  return s->len__;
+inline int len(const Str* s) {
+  return s->obj_len_ - kStrHeaderSize - 1;
 }
-
 
 // NOTE: This iterates over bytes.
 class StrIter {
@@ -807,7 +604,7 @@ inline Str* chr(int i) {
   char* buf = static_cast<char*>(malloc(2));
   buf[0] = i;
   buf[1] = '\0';
-  return new Str(buf, 1);
+  return mylib::CopyBufferIntoNewStr(buf, 1);
 }
 
 inline int ord(Str* s) {
@@ -822,7 +619,7 @@ inline int ord(Str* s) {
 inline Str* str(int i) {
   char* buf = static_cast<char*>(malloc(kIntBufSize));
   int len = snprintf(buf, kIntBufSize, "%d", i);
-  return new Str(buf, len);
+  return mylib::CopyBufferIntoNewStr(buf, len);
 }
 
 inline Str* str(double f) {  // TODO: should be double
@@ -857,7 +654,6 @@ inline bool to_bool(Str* s) {
 }
 
 inline double to_float(Str* s) {
-  assert(s->IsNulTerminated());
   double result = atof(s->data_);
   return result;
 }
@@ -992,10 +788,16 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 // Emulate GC API so we can reuse bindings
 
+#if 0
 inline Str* AllocStr(int len) {
-  char* buf = static_cast<char*>(malloc(len + 1));
-  memset(buf, 0, len + 1);
-  return new Str(buf, len);
+  Str* result = static_cast<Str*>(calloc(sizeof(Str), 1));
+
+  // TODO(Jesse): This is heinous and needs to go.
+  char** data = (char**)&result->data_;
+  *data = static_cast<char*>(calloc(len+1, 1));
+  result->SetObjLenFromStrLen(len);
+
+  return result;
 }
 
 inline Str* OverAllocatedStr(int len) {
@@ -1004,26 +806,29 @@ inline Str* OverAllocatedStr(int len) {
 }
 
 inline Str* StrFromC(const char* s, int len) {
-  // take ownership (but still leaks)
-  char* buf = static_cast<char*>(malloc(len + 1));
-  memcpy(buf, s, len);
-  buf[len] = '\0';
-  return new Str(buf, len);
+  Str *result = AllocStr(len);
+  memcpy((void*)result->data_, s, len);
+  return result;
 }
 
 inline Str* StrFromC(const char* s) {
   return StrFromC(s, strlen(s));
 }
 
+inline Str* CopyBufferIntoNewStr(char* buf) {
+  Str* s = StrFromC(buf);
+  return s;
+}
+
 inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
-  // NOTE(Jesse): This assertion is not valid because we have to handle strings
-  // with internal nulls.  We must blindly trust the caller passed us a valid
-  // length.
-  //
-  // assert(strlen(buf) == buf_len);
   Str* s = StrFromC(buf, buf_len);
   return s;
 }
+#else
+
+#include "mycpp/str_allocators.h"
+
+#endif
 
 // emulate gc_heap API for ASDL
 
@@ -1117,7 +922,7 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue() {
     if (data_) {
-      Str* ret = new Str(data_, len_);
+      Str* ret = CopyBufferIntoNewStr(data_, len_);
       reset();  // Invalidate this instance
       return ret;
     } else {
@@ -1200,7 +1005,8 @@ extern mylib::BufWriter gBuf;
 
 // mycpp doesn't understand dynamic format strings yet
 inline Str* dynamic_fmt_dummy() {
-  return new Str("dynamic_fmt_dummy");
+  /* NotImplemented(); */
+  return StrFromC("dynamic_fmt_dummy");
 }
 
 #endif  // MYLIB_H

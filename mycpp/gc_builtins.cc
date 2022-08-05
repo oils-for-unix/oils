@@ -122,7 +122,6 @@ Str* str_repeat(Str* s, int times) {
   assert(p_result[result_len] == '\0');
   return result;
 }
-#endif
 
 //
 // Str methods
@@ -167,7 +166,6 @@ bool Str::isupper() {
   return true;
 }
 
-#if 0
 Str* Str::ljust(int width, Str* fillchar) {
   auto self = this;
   StackRoots _roots({&self, &fillchar});
@@ -211,7 +209,6 @@ Str* Str::rjust(int width, Str* fillchar) {
     return result;
   }
 }
-#endif
 
 bool Str::startswith(Str* s) {
   int n = len(s);
@@ -230,6 +227,7 @@ bool Str::endswith(Str* s) {
   const char* start = data_ + len_this - len_s;
   return memcmp(start, s->data_, len_s) == 0;
 }
+
 
 // Get a string with one character
 Str* Str::index_(int i) {
@@ -258,6 +256,7 @@ Str* Str::slice(int begin) {
   return slice(begin, length);
 }
 
+
 // s[begin:end]
 Str* Str::slice(int begin, int end) {
   if (begin < 0) {
@@ -274,7 +273,6 @@ Str* Str::slice(int begin, int end) {
   return result;
 }
 
-#if 0
 Str* Str::replace(Str* old, Str* new_str) {
   assert(len(old) == 1);  // Restriction that Oil code is OK with
 

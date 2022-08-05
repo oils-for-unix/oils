@@ -47,21 +47,21 @@ TEST misc_test() {
   log("c->tag = %d", c->tag_());
   PrintTag(c);
 
-  auto v = new arith_expr__Var(new Str("foo"));
+  auto v = new arith_expr__Var(StrFromC("foo"));
   log("sizeof *v = %d", sizeof *v);  // 24 bytes
 
-  ASSERT(str_equals(new Str("foo"), v->name));
+  ASSERT(str_equals(StrFromC("foo"), v->name));
   log("v->tag = %d", v->tag_());
   PrintTag(v);
 
-  auto u = new arith_expr__Unary(new Str("-"), v);
+  auto u = new arith_expr__Unary(StrFromC("-"), v);
   log("u->op = %s", u->op->data_);
 
-  auto v1 = new arith_expr__Var(new Str("v1"));
-  auto v2 = new arith_expr__Var(new Str("v2"));
+  auto v1 = new arith_expr__Var(StrFromC("v1"));
+  auto v2 = new arith_expr__Var(StrFromC("v2"));
   auto args = new List<arith_expr_t*>{v1, v2};
 
-  auto f = new arith_expr__FuncCall(new Str("f"), args);
+  auto f = new arith_expr__FuncCall(StrFromC("f"), args);
   log("f->name = %s", f->name->data_);
 
   auto p = new pipeline(true);
@@ -97,8 +97,8 @@ TEST pretty_print_test() {
   // left and right are not optional.
   // auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
 
-  auto w1 = new typed_demo_asdl::word(new Str("left"));
-  auto w2 = new typed_demo_asdl::word(new Str("right"));
+  auto w1 = new typed_demo_asdl::word(StrFromC("left"));
+  auto w2 = new typed_demo_asdl::word(StrFromC("right"));
   auto b = new bool_expr__Binary(w1, w2);
   //
   log("sizeof b = %d", sizeof b);
@@ -126,7 +126,7 @@ TEST maps_test() {
   m.ss = new Dict<Str*, Str*>();
   m.ib = new Dict<int, bool>();
 
-  m.ss->set(new Str("foo"), new Str("bar"));
+  m.ss->set(StrFromC("foo"), StrFromC("bar"));
 
   m.ib->set(42, true);
   // note: Dict<int, bool>::get() doesn't compile because nullptr isn't valid

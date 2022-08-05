@@ -19,6 +19,7 @@
 #include "mycpp/mylib_old.h"
 using mylib::StrFromC;
 using mylib::OverAllocatedStr;
+using mylib::CopyBufferIntoNewStr;
 
 namespace pyos {
 
@@ -128,7 +129,7 @@ Str* GetUserName(int uid) {
   Str* result = kEmptyString;
 
   if (passwd* pw = getpwuid(uid)) {
-    result = new Str(pw->pw_name);
+    result = CopyBufferIntoNewStr(pw->pw_name);
   } else {
     throw new IOError(errno);
   }
@@ -141,7 +142,7 @@ Str* OsType() {
 
   utsname un = {};
   if (::uname(&un) == 0) {
-    result = new Str(un.sysname);
+    result = CopyBufferIntoNewStr(un.sysname);
   } else {
     throw new IOError(errno);
   }
@@ -218,11 +219,12 @@ Str* ChArrayToString(List<int>* ch_array) {
     buf[i] = ch_array->index_(i);
   }
   buf[n] = '\0';
-  return new Str(reinterpret_cast<char*>(buf), n);
+  return CopyBufferIntoNewStr(reinterpret_cast<char*>(buf), n);
 }
 
 Str* _ResourceLoader::Get(Str* path) {
-  return new Str("TODO");
+  /* NotImplemented(); */
+  return StrFromC("TODO");
 }
 
 _ResourceLoader* GetResourceLoader() {
@@ -234,7 +236,8 @@ void CopyFile(Str* in_path, Str* out_path) {
 }
 
 Str* GetVersion(_ResourceLoader* loader) {
-  return new Str("TODO");
+  /* NotImplemented(); */
+  return StrFromC("TODO");
 }
 
 Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
@@ -254,14 +257,14 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
     *p++ = c;
   }
   int len = p - buf;
-  return new Str(buf, len);
+  return CopyBufferIntoNewStr(buf, len);
 }
 
 // Hack so e->errno will work below
 #undef errno
 
 Str* strerror(_OSError* e) {
-  return new Str(::strerror(e->errno));
+  return CopyBufferIntoNewStr(::strerror(e->errno));
 }
 
 }  // namespace pyutil

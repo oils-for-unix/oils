@@ -25,7 +25,7 @@ bool isatty(Str* fd_str, word_t* blame_word) {
     fd = to_int(fd_str);
   } catch (ValueError* e) {
     // Note we don't have printf formatting here
-    e_die(new Str("Invalid file descriptor TODO"), blame_word);
+    e_die(StrFromC("Invalid file descriptor TODO"), blame_word);
   }
   // note: we don't check errno
   int result = ::isatty(fd);

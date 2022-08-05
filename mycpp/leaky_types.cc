@@ -14,6 +14,163 @@ using gc_heap::Str;
 
 #include <ctype.h>  // isalpha(), isdigit()
 
+int Str::find(Str* needle, int pos) {
+  int len_ = len(this);
+  assert(len(needle) == 1);  // Oil's usage
+  char c = needle->data_[0];
+  for (int i = pos; i < len_; ++i) {
+    if (data_[i] == c) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int Str::rfind(Str* needle) {
+  int len_ = len(this);
+  assert(len(needle) == 1);  // Oil's usage
+  char c = needle->data_[0];
+  for (int i = len_ - 1; i >= 0; --i) {
+    if (data_[i] == c) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+
+bool Str::isdigit() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isdigit(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Str::isalpha() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isalpha(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// e.g. for osh/braces.py
+bool Str::isupper() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isupper(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Str::startswith(Str* s) {
+  int n = len(s);
+  if (n > len(this)) {
+    return false;
+  }
+  return memcmp(data_, s->data_, n) == 0;
+}
+
+bool Str::endswith(Str* s) {
+  int len_s = len(s);
+  int len_this = len(this);
+  if (len_s > len_this) {
+    return false;
+  }
+  const char* start = data_ + len_this - len_s;
+  return memcmp(start, s->data_, len_s) == 0;
+}
+
+// Get a string with one character
+Str* Str::index_(int i) {
+  int len_ = len(this);
+  if (i < 0) {
+    i = len_ + i;
+  }
+  assert(i >= 0);
+  assert(i < len_);  // had a problem here!
+
+  char* buf = static_cast<char*>(malloc(2));
+  buf[0] = data_[i];
+  buf[1] = '\0';
+  return CopyBufferIntoNewStr(buf, 1);
+}
+
+// s[begin:end]
+Str* Str::slice(int begin, int end) {
+  int len_ = len(this);
+  begin = std::min(begin, len_);
+  end = std::min(end, len_);
+
+  assert(begin <= len_);
+  assert(end <= len_);
+
+  if (begin < 0) {
+    begin = len_ + begin;
+  }
+
+  if (end < 0) {
+    end = len_ + end;
+  }
+
+  begin = std::min(begin, len_);
+  end = std::min(end, len_);
+
+  begin = std::max(begin, 0);
+  end = std::max(end, 0);
+
+  assert(begin >= 0);
+  assert(begin <= len_);
+
+  assert(end >= 0);
+  assert(end <= len_);
+
+  int new_len = end - begin;
+
+  // Tried to use std::clamp() here but we're not compiling against cxx-17
+  new_len = std::max(new_len, 0);
+  new_len = std::min(new_len, len_);
+
+  /* printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len); */
+
+  assert(new_len >= 0);
+  assert(new_len <= len_);
+
+  char* buf = static_cast<char*>(malloc(new_len + 1));
+  memcpy(buf, data_ + begin, new_len);
+
+  buf[new_len] = '\0';
+  return CopyBufferIntoNewStr(buf, new_len);
+}
+
+// s[begin:]
+Str* Str::slice(int begin) {
+  int len_ = len(this);
+  if (begin == 0) {
+    return this;  // s[i:] where i == 0 is common in here docs
+  }
+  if (begin < 0) {
+    begin = len_ + begin;
+  }
+  return slice(begin, len_);
+}
+
 // Translation of Python's print().
 void print(Str* s) {
   fputs(s->data(), stdout);
@@ -137,6 +294,11 @@ int to_int(Str* s) {
   } else {
     throw new ValueError();
   }
+}
+
+List<Str*>* Str::splitlines(bool keep) {
+  assert(keep == true);
+  return nullptr;
 }
 
 #ifndef LEAKY_BINDINGS

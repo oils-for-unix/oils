@@ -366,8 +366,8 @@ class Dict : public Managed {
 };
 
 void f() {
-  Str* s = new Str("foo");
-  Str* s2 = new Str("bar");
+  Str* s = StrFromC("foo");
+  Str* s2 = StrFromC("bar");
 
   log(s->data_);
   log(s2->data_);

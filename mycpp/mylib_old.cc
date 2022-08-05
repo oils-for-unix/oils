@@ -1,6 +1,7 @@
 // mylib_old.cc
 
 #include "mylib_old.h"
+using mylib::CopyBufferIntoNewStr;
 
 #include <errno.h>
 #include <unistd.h>  // isatty
@@ -9,7 +10,7 @@
 #include <cstdio>
 #include <exception>  // std::exception
 
-Str* kEmptyString = new Str("", 0);
+Str* kEmptyString = StrFromC("", 0);
 
 List<Str*>* Str::split(Str* sep) {
   assert(len(sep) == 1);  // we can only split one char
@@ -35,12 +36,12 @@ List<Str*>* Str::split(Str* sep) {
 
     const char* new_pos = static_cast<const char*>(memchr(pos, sep_char, n));
     if (new_pos == nullptr) {
-      result->append(new Str(pos, end - pos));  // rest of the string
+      result->append(StrFromC(pos, end - pos));  // rest of the string
       break;
     }
     int new_len = new_pos - pos;
 
-    result->append(new Str(pos, new_len));
+    result->append(StrFromC(pos, new_len));
     n -= new_len + 1;
     pos = new_pos + 1;
     if (pos >= end) {  // separator was at end of string
@@ -50,11 +51,6 @@ List<Str*>* Str::split(Str* sep) {
   }
 
   return result;
-}
-
-List<Str*>* Str::splitlines(bool keep) {
-  assert(keep == true);
-  return nullptr;
 }
 
 Str* Str::join(List<Str*>* items) {
@@ -93,7 +89,7 @@ Str* Str::join(List<Str*>* items) {
 
   result[length] = '\0';  // NUL terminator
 
-  return new Str(result, length);
+  return CopyBufferIntoNewStr(result, length);
 }
 
 // Get a string with one character
@@ -101,7 +97,7 @@ Str* StrIter::Value() {
   char* buf = static_cast<char*>(malloc(2));
   buf[0] = s_->data_[i_];
   buf[1] = '\0';
-  return new Str(buf, 1);
+  return CopyBufferIntoNewStr(buf, 1);
 }
 
 namespace mylib {
@@ -118,8 +114,8 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   if (p) {
     // NOTE: Using SHARED SLICES, not memcpy() like some other functions.
     int len1 = p - start;
-    Str* first = new Str(start, len1);
-    Str* second = new Str(p + 1, length - len1 - 1);
+    Str* first = StrFromC(start, len1);
+    Str* second = StrFromC(p + 1, length - len1 - 1);
     return Tuple2<Str*, Str*>(first, second);
   } else {
     return Tuple2<Str*, Str*>(s, nullptr);
@@ -152,7 +148,7 @@ Str* CFileLineReader::readline() {
   // log("len = %d", len);
 
   // Note: it's NUL terminated
-  return new Str(line, len);
+  return CopyBufferIntoNewStr(line, len);
 }
 #endif
 
@@ -181,10 +177,10 @@ Str* BufLineReader::readline() {
   char* result = static_cast<char*>(malloc(len + 1));
   memcpy(result, orig_pos, len);  // copy the list item
   result[len] = '\0';
-  Str* line = new Str(result, len);
+  Str* line = CopyBufferIntoNewStr(result, len);
 
   // Easier way:
-  // Str* line = new Str(pos_, new_pos - pos_);
+  // Str* line = CopyBufferIntoNewStr(pos_, new_pos - pos_);
   return line;
 }
 

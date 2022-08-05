@@ -18,7 +18,6 @@ using gc_heap::StrFromC;
 namespace libc {
 
 inline Str* realpath(Str* path) {
-  assert(path->IsNulTerminated());
   char* rp = ::realpath(path->data_, 0);
   return StrFromC(rp);
 }

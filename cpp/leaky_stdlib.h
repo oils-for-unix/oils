@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "mycpp/mylib_old.h"
+using mylib::CopyBufferIntoNewStr;
 
 namespace fcntl_ {
 
@@ -29,10 +30,10 @@ inline Str* getcwd() {
   char* result = ::getcwd(buf, PATH_MAX + 1);
   if (result == nullptr) {
     // TODO: print errno, e.g. ENAMETOOLONG
-    throw new RuntimeError(new Str("Couldn't get working directory"));
+    throw new RuntimeError(StrFromC("Couldn't get working directory"));
   }
 
-  return new Str(buf);
+  return CopyBufferIntoNewStr(buf);
 }
 
 inline int getegid() {
@@ -60,7 +61,7 @@ inline bool isatty(int fd) {
 }
 
 inline Str* strerror(int err_num) {
-  return new Str(::strerror(err_num));
+  return CopyBufferIntoNewStr(::strerror(err_num));
 }
 
 inline Tuple2<int, int> pipe() {

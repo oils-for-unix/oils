@@ -26,7 +26,9 @@ allow_errors()
   true
 }
 
+echo "Parsing Results"
 for filename in _tmp/spec/cpp/*.tsv; do
+
 
   passes=$(find_passing_tests || allow_errors)
   for test_number in $passes; do
@@ -39,6 +41,7 @@ done
 [ -f $tmp_file_1 ] && rm $tmp_file_1
 grep "Assertion.*failed\." _tmp/spec/cpp/* > $tmp_file_0
 
+echo "Recording Assertion Failuers"
 while read -r line; do
   assert_fail=$(echo -n "$line" | grep -o -P "osh_eval: \K.*") || allow_errors
   test_fail=$(echo "$line" | cut -d: -f1) || allow_errors
@@ -50,6 +53,7 @@ sort $tmp_file_1 > $assertion_fails_filename
 [ -f $tmp_file_0 ] && rm $tmp_file_0
 grep "OSH_CPP_SEGFAULT" _tmp/spec/cpp/* > $tmp_file_0
 
+echo "Recording Segfaults"
 while read -r line; do
   echo "IF YOU SEE THIS OSH IS CRASHING ($line)" >> $assertion_fails_filename
 done < $tmp_file_0
