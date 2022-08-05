@@ -57,8 +57,6 @@ void dup2(int oldfd, int newfd) {
   }
 }
 void putenv(Str* name, Str* value) {
-  assert(name->IsNulTerminated());
-  assert(value->IsNulTerminated());
   int overwrite = 1;
   int ret = ::setenv(name->data_, value->data_, overwrite);
   if (ret < 0) {
@@ -143,8 +141,6 @@ time_t localtime(time_t ts) {
 Str* strftime(Str* s, time_t ts) {
   // TODO: may not work with mylib_old.h
   // https://github.com/oilshell/oil/issues/1221
-  assert(s->IsNulTerminated());
-
   tm* loc_time = ::localtime(&ts);
 
   const int max_len = 1024;

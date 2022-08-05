@@ -90,13 +90,6 @@ class Str : public gc_heap::Obj {
     return const_cast<char*>(data_);
   }
 
-  // Important invariant: the buffer is of size len+1, so data[len] is OK to
-  // access!  Not just data[len-1].  We use that to test if it's a C string.
-  // note: "foo" and "foo\0" are both NUL-terminated.
-  bool IsNulTerminated() {
-    return data_[len(this)] == '\0';
-  }
-
   Str* index_(int i);
 
   Str* slice(int begin, int end);
@@ -742,7 +735,6 @@ inline bool to_bool(Str* s) {
 }
 
 inline double to_float(Str* s) {
-  assert(s->IsNulTerminated());
   double result = atof(s->data_);
   return result;
 }
