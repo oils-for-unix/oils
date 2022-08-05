@@ -14,6 +14,46 @@ using gc_heap::Str;
 
 #include <ctype.h>  // isalpha(), isdigit()
 
+bool Str::isdigit() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isdigit(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Str::isalpha() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isalpha(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// e.g. for osh/braces.py
+bool Str::isupper() {
+  int n = len(this);
+  if (n == 0) {
+    return false;  // special case
+  }
+  for (int i = 0; i < n; ++i) {
+    if (!::isupper(data_[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Str::startswith(Str* s) {
   int n = len(s);
   if (n > len(this)) {

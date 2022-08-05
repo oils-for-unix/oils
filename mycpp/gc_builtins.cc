@@ -122,7 +122,6 @@ Str* str_repeat(Str* s, int times) {
   assert(p_result[result_len] == '\0');
   return result;
 }
-#endif
 
 //
 // Str methods
@@ -167,7 +166,6 @@ bool Str::isupper() {
   return true;
 }
 
-#if 0
 Str* Str::ljust(int width, Str* fillchar) {
   auto self = this;
   StackRoots _roots({&self, &fillchar});

@@ -111,43 +111,9 @@ class Str : public gc_heap::Obj {
   bool startswith(Str* s);
   bool endswith(Str* s);
 
-  bool isdigit() {
-    int len_ = len(this);
-    if (len_ == 0) {
-      return false;  // special case
-    }
-    for (int i = 0; i < len_; ++i) {
-      if (!::isdigit(data_[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-  bool isalpha() {
-    int len_ = len(this);
-    if (len_ == 0) {
-      return false;  // special case
-    }
-    for (int i = 0; i < len_; ++i) {
-      if (!::isalpha(data_[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-  // e.g. for osh/braces.py
-  bool isupper() {
-    int len_ = len(this);
-    if (len_ == 0) {
-      return false;  // special case
-    }
-    for (int i = 0; i < len_; ++i) {
-      if (!::isupper(data_[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
+  bool isdigit();
+  bool isalpha();
+  bool isupper();
 
   List<Str*>* split(Str* sep);
   List<Str*>* splitlines(bool keep);
