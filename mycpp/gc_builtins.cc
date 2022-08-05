@@ -246,6 +246,8 @@ Str* Str::index_(int i) {
   return result;
 }
 
+#if 0
+
 // s[begin:]
 Str* Str::slice(int begin) {
   if (begin == 0) {
@@ -258,7 +260,6 @@ Str* Str::slice(int begin) {
   return slice(begin, length);
 }
 
-#if 0
 
 // s[begin:end]
 Str* Str::slice(int begin, int end) {

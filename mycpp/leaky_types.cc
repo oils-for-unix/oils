@@ -61,6 +61,18 @@ Str* Str::slice(int begin, int end) {
   return CopyBufferIntoNewStr(buf, new_len);
 }
 
+// s[begin:]
+Str* Str::slice(int begin) {
+  int len_ = len(this);
+  if (begin == 0) {
+    return this;  // s[i:] where i == 0 is common in here docs
+  }
+  if (begin < 0) {
+    begin = len_ + begin;
+  }
+  return slice(begin, len_);
+}
+
 // Translation of Python's print().
 void print(Str* s) {
   fputs(s->data(), stdout);

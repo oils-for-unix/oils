@@ -113,18 +113,7 @@ class Str : public gc_heap::Obj {
   }
 
   Str* slice(int begin, int end);
-
-  // s[begin:]
-  Str* slice(int begin) {
-    int len_ = len(this);
-    if (begin == 0) {
-      return this;  // s[i:] where i == 0 is common in here docs
-    }
-    if (begin < 0) {
-      begin = len_ + begin;
-    }
-    return slice(begin, len_);
-  }
+  Str* slice(int begin);
 
   Str* strip();
   Str* rstrip(Str* chars);
