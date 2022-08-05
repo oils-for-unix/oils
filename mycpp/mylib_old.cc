@@ -327,8 +327,3 @@ Str* repr(Str* s) {
 
 mylib::BufWriter gBuf;
 
-int len(Str *s)
-{
-  return s->len__;
-}
-

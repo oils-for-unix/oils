@@ -271,6 +271,12 @@ class Str : public gc_heap::Obj {
   DISALLOW_COPY_AND_ASSIGN(Str)
 };
 
+inline int len(Str *s)
+{
+  return s->len__;
+}
+
+
 // NOTE: This iterates over bytes.
 class StrIter {
  public:
