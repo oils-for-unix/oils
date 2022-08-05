@@ -99,7 +99,7 @@ gc-binding-test() {
   local bin=$out_dir/gc_binding_test
 
   compile_and_link $compiler $variant '' $bin \
-    "${GC_TEST_SRC[@]}" cpp/dumb_alloc.cc
+    "${GC_TEST_SRC[@]}" cpp/dumb_alloc.cc 
 
   run-test $bin $compiler $variant
 }

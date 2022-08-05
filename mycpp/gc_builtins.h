@@ -11,107 +11,16 @@
 #include <climits>    // CHAR_BIT
 
 #include "mycpp/gc_types.h"
+#include "mycpp/error_types.h"
+#include "mycpp/tuple_types.h"
+#include "mycpp/mylib_types.h"
 
 // TODO: Don't use 'using' in header
 using gc_heap::AllocStr;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::StackRoots;
-using gc_heap::Str;
 using gc_heap::StrFromC;
-
-class IndexError {};
-class ValueError {};
-class KeyError {};
-
-class EOFError {};
-
-class NotImplementedError {
- public:
-  NotImplementedError() {
-  }
-  explicit NotImplementedError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit NotImplementedError(const char* s) {
-  }
-  explicit NotImplementedError(Str* s) {
-  }
-};
-
-class AssertionError {
- public:
-  AssertionError() {
-  }
-  explicit AssertionError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit AssertionError(const char* s) {
-  }
-  explicit AssertionError(Str* s) {
-  }
-};
-
-template <class A, class B>
-class Tuple2 {
- public:
-  Tuple2(A a, B b) : a_(a), b_(b) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-
- private:
-  A a_;
-  B b_;
-};
-
-template <class A, class B, class C>
-class Tuple3 {
- public:
-  Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-  C at2() {
-    return c_;
-  }
-
- private:
-  A a_;
-  B b_;
-  C c_;
-};
-
-template <class A, class B, class C, class D>
-class Tuple4 {
- public:
-  Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-  C at2() {
-    return c_;
-  }
-  D at3() {
-    return d_;
-  }
-
- private:
-  A a_;
-  B b_;
-  C c_;
-  D d_;
-};
 
 void println_stderr(Str* s);
 
@@ -143,13 +52,6 @@ inline bool to_bool(Str* s) {
 inline double to_float(Str* s) {
   NotImplemented();  // Uncalled
 }
-
-// https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
-// Notes:
-// - Python 2.7's intobject.c has an erroneous +6
-// - This is 13, but len('-2147483648') is 11, which means we only need 12?
-// - This formula is valid for octal(), because 2^(3 bits) = 8
-const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 inline Str* str(int i) {
   // Use a static buffer first because we don't know what n is until we call

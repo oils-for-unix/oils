@@ -12,10 +12,10 @@
 Str* kEmptyString = new Str("", 0);
 
 List<Str*>* Str::split(Str* sep) {
-  assert(sep->len_ == 1);  // we can only split one char
+  assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
 
-  if (len_ == 0) {
+  if (len(this) == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
     return new List<Str*>({kEmptyString});
   }
@@ -25,9 +25,9 @@ List<Str*>* Str::split(Str* sep) {
 
   auto result = new List<Str*>({});
 
-  int n = len_;
+  int n = len(this);
   const char* pos = data_;
-  const char* end = data_ + len_;
+  const char* end = data_ + n;
 
   // log("pos %p", pos);
   while (true) {
@@ -58,22 +58,23 @@ List<Str*>* Str::splitlines(bool keep) {
 }
 
 Str* Str::join(List<Str*>* items) {
-  int len = 0;
+  int length = 0;
   const std::vector<Str*>& v = items->v_;
   int num_parts = v.size();
   if (num_parts == 0) {  // " ".join([]) == ""
     return kEmptyString;
   }
   for (int i = 0; i < num_parts; ++i) {
-    len += v[i]->len_;
+    length += len(v[i]);
   }
   // add length of all the separators
-  len += len_ * (num_parts - 1);
+  int len_ = len(this);
+  length += len_ * (num_parts - 1);
 
-  // log("len: %d", len);
+  // log("length: %d", length);
   // log("v.size(): %d", v.size());
 
-  char* result = static_cast<char*>(malloc(len + 1));
+  char* result = static_cast<char*>(malloc(length + 1));
   char* p_result = result;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
@@ -84,15 +85,15 @@ Str* Str::join(List<Str*>* items) {
       // log("len_ %d", len_);
     }
 
-    int n = v[i]->len_;
+    int n = len(v[i]);
     // log("n: %d", n);
     memcpy(p_result, v[i]->data_, n);  // copy the list item
     p_result += n;
   }
 
-  result[len] = '\0';  // NUL terminator
+  result[length] = '\0';  // NUL terminator
 
-  return new Str(result, len);
+  return new Str(result, length);
 }
 
 // Get a string with one character
@@ -106,19 +107,19 @@ Str* StrIter::Value() {
 namespace mylib {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
-  assert(delim->len_ == 1);
+  assert(len(delim) == 1);
 
   const char* start = s->data_;
   char c = delim->data_[0];
-  int len = s->len_;
+  int length = len(s);
 
-  const char* p = static_cast<const char*>(memchr(start, c, len));
+  const char* p = static_cast<const char*>(memchr(start, c, length));
 
   if (p) {
     // NOTE: Using SHARED SLICES, not memcpy() like some other functions.
     int len1 = p - start;
     Str* first = new Str(start, len1);
-    Str* second = new Str(p + 1, len - len1 - 1);
+    Str* second = new Str(p + 1, length - len1 - 1);
     return Tuple2<Str*, Str*>(first, second);
   } else {
     return Tuple2<Str*, Str*>(s, nullptr);
@@ -131,6 +132,7 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
 
 LineReader* gStdin;
 
+#if 1
 Str* CFileLineReader::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
@@ -152,13 +154,14 @@ Str* CFileLineReader::readline() {
   // Note: it's NUL terminated
   return new Str(line, len);
 }
+#endif
 
 // problem: most Str methods like index() and slice() COPY so they have a
 // NUL terminator.
 // log("%s") falls back on sprintf, so it expects a NUL terminator.
 // It would be easier for us to just share.
 Str* BufLineReader::readline() {
-  const char* end = s_->data_ + s_->len_;
+  const char* end = s_->data_ + len(s_);
   if (pos_ == end) {
     return kEmptyString;
   }
@@ -194,7 +197,7 @@ Writer* gStderr;
 
 void BufWriter::write(Str* s) {
   int orig_len = len_;
-  len_ += s->len_;
+  len_ += len(s);
 
   // BUG: This is quadratic!
 
@@ -202,7 +205,7 @@ void BufWriter::write(Str* s) {
   data_ = static_cast<char*>(realloc(data_, len_ + 1));
 
   // Append to the end
-  memcpy(data_ + orig_len, s->data_, s->len_);
+  memcpy(data_ + orig_len, s->data_, len(s));
   data_[len_] = '\0';
 }
 
@@ -239,20 +242,20 @@ void BufWriter::format_o(int i) {
 // because of \u{}.
 void BufWriter::format_r(Str* s) {
   // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
-  int upper_bound = s->len_ * 4 + 2;
+  int upper_bound = len(s) * 4 + 2;
 
   // Extend the buffer
   data_ = static_cast<char*>(realloc(data_, len_ + upper_bound + 1));
 
   char quote = '\'';
-  if (memchr(s->data_, '\'', s->len_) && !memchr(s->data_, '"', s->len_)) {
+  if (memchr(s->data_, '\'', len(s)) && !memchr(s->data_, '"', len(s))) {
     quote = '"';
   }
   char* p = data_ + len_;  // end of valid data
 
   // From PyString_Repr()
   *p++ = quote;
-  for (int i = 0; i < s->len_; ++i) {
+  for (int i = 0; i < len(s); ++i) {
     char c = s->data_[i];
     if (c == quote || c == '\\') {
       *p++ = '\\';
@@ -288,7 +291,7 @@ void BufWriter::format_r(Str* s) {
 
 void CFileWriter::write(Str* s) {
   // note: throwing away the return value
-  fwrite(s->data_, s->len_, 1, f_);
+  fwrite(s->data_, len(s), 1, f_);
 
   // Necessary for 'echo hi > x' to work.  Otherwise it gets buffered so the
   // write() happens AFTER ~ctx_Redirect().
@@ -323,3 +326,4 @@ Str* repr(Str* s) {
 //
 
 mylib::BufWriter gBuf;
+

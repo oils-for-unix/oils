@@ -6,14 +6,16 @@
 
 #include "vendor/greatest.h"
 
+using mylib::StrFromC;
+
 // Emulating the gc_heap API.  COPIED from gc_heap_test.cc
 TEST test_str_creation() {
-  Str* s = mylib::StrFromC("foo");
+  Str* s = StrFromC("foo");
   ASSERT_EQ(3, len(s));
   ASSERT_EQ(0, strcmp("foo", s->data_));
 
   // String with internal NUL
-  Str* s2 = mylib::StrFromC("foo\0bar", 7);
+  Str* s2 = StrFromC("foo\0bar", 7);
   ASSERT_EQ(7, len(s2));
   ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
 
@@ -481,12 +483,12 @@ TEST test_sizeof() {
   PASS();
 }
 
-#define PRINT_STRING(str) printf("(%.*s)\n", (str)->len_, (str)->data_)
+#define PRINT_STRING(str) printf("(%.*s)\n", len(str), (str)->data_)
 
 #define PRINT_LIST(list)                                         \
   for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) { \
     Str* piece = iter.Value();                                   \
-    printf("(%.*s) ", piece->len_, piece->data_);                \
+    printf("(%.*s) ", len(piece), piece->data_);                \
   }                                                              \
   printf("\n")
 
@@ -729,7 +731,7 @@ TEST test_str_slice() {
 
   //  NOTE(Jesse): testing all permutations of boundary conditions for
   //  assertions
-  int max_len = (s0->len_ + 2);
+  int max_len = (len(s0) + 2);
   int min_len = -max_len;
 
   for (int outer = min_len; outer <= max_len; ++outer) {

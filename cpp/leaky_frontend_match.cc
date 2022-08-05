@@ -23,7 +23,7 @@ Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
 
   // TODO: get rid of these casts
   MatchOshToken(static_cast<int>(lex_mode),
-                reinterpret_cast<const unsigned char*>(line->data_), line->len_,
+                reinterpret_cast<const unsigned char*>(line->data_), len(line),
                 start_pos, &id, &end_pos);
   return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
 }
@@ -31,7 +31,7 @@ Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
 Tuple2<Id_t, Str*> SimpleLexer::Next() {
   int id;
   int end_pos;
-  match_func_(reinterpret_cast<const unsigned char*>(s_->data_), s_->len_, pos_,
+  match_func_(reinterpret_cast<const unsigned char*>(s_->data_), len(s_), pos_,
               &id, &end_pos);
 
   int len = end_pos - pos_;
@@ -83,25 +83,25 @@ List<Tuple2<Id_t, Str*>*>* Ps1Tokens(Str* s) {
 
 Id_t BracketUnary(Str* s) {
   return ::BracketUnary(reinterpret_cast<const unsigned char*>(s->data_),
-                        s->len_);
+                        len(s));
 }
 Id_t BracketBinary(Str* s) {
   return ::BracketBinary(reinterpret_cast<const unsigned char*>(s->data_),
-                         s->len_);
+                         len(s));
 }
 Id_t BracketOther(Str* s) {
   return ::BracketOther(reinterpret_cast<const unsigned char*>(s->data_),
-                        s->len_);
+                        len(s));
 }
 
 bool IsValidVarName(Str* s) {
   return ::IsValidVarName(reinterpret_cast<const unsigned char*>(s->data_),
-                          s->len_);
+                          len(s));
 }
 
 bool ShouldHijack(Str* s) {
   return ::ShouldHijack(reinterpret_cast<const unsigned char*>(s->data_),
-                        s->len_);
+                        len(s));
 }
 
 }  // namespace match

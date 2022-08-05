@@ -4,7 +4,7 @@
 // This test runs primarily in the GC mode, but you can also run it in the
 // leaky mode!
 
-#ifdef LEAKY_TEST_MODE
+#ifdef LEAKY_BINDINGS
   #include "mycpp/gc_types.h"
   #include "mycpp/mylib_old.h"
 using gc_heap::StackRoots;  // no-op

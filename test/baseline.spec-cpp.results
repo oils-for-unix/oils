@@ -616,6 +616,7 @@
 46 _tmp/spec/cpp/builtin-printf.tsv
 47 _tmp/spec/cpp/builtin-printf.tsv
 48 _tmp/spec/cpp/builtin-printf.tsv
+50 _tmp/spec/cpp/builtin-printf.tsv
 0 _tmp/spec/cpp/builtins2.tsv
 1 _tmp/spec/cpp/builtins2.tsv
 2 _tmp/spec/cpp/builtins2.tsv
@@ -632,6 +633,7 @@
 6 _tmp/spec/cpp/builtin-special.tsv
 0 _tmp/spec/cpp/builtins.tsv
 1 _tmp/spec/cpp/builtins.tsv
+2 _tmp/spec/cpp/builtins.tsv
 3 _tmp/spec/cpp/builtins.tsv
 4 _tmp/spec/cpp/builtins.tsv
 5 _tmp/spec/cpp/builtins.tsv
@@ -1100,6 +1102,7 @@
 2 _tmp/spec/cpp/nocasematch-match.tsv
 4 _tmp/spec/cpp/nocasematch-match.tsv
 5 _tmp/spec/cpp/nocasematch-match.tsv
+4 _tmp/spec/cpp/nul-bytes.tsv
 0 _tmp/spec/cpp/osh-only.tsv
 2 _tmp/spec/cpp/osh-only.tsv
 0 _tmp/spec/cpp/parse-errors.tsv

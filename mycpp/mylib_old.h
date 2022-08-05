@@ -21,6 +21,8 @@
 // if this file is even included, we're using the old mylib
 #define MYLIB_LEAKY 1
 #include "mycpp/gc_types.h"  // for Obj
+#include "mycpp/tuple_types.h"
+#include "mycpp/error_types.h"
 
 #ifdef DUMB_ALLOC
   #include "cpp/dumb_alloc.h"
@@ -39,15 +41,16 @@ class Dict;
 template <class K, class V>
 class DictIter;
 
-bool are_equal(Str* left, Str* right);
-bool str_equals(Str* left, Str* right);
-
 namespace mylib {
-template <typename V>
-void dict_remove(Dict<Str*, V>* haystack, Str* needle);
 
-template <typename V>
-void dict_remove(Dict<int, V>* haystack, int needle);
+  inline Str* StrFromC(const char* s, int len);
+  inline Str* StrFromC(const char* s);
+
+  template <typename V>
+  void dict_remove(Dict<Str*, V>* haystack, Str* needle);
+
+  template <typename V>
+  void dict_remove(Dict<int, V>* haystack, int needle);
 
 };  // namespace mylib
 
@@ -58,55 +61,17 @@ void print(Str* s);
 // log() generates code that writes this
 void println_stderr(Str* s);
 
-class IndexError {};
-class ValueError {};
-class KeyError {};
-
-class EOFError {};
-
-class NotImplementedError {
- public:
-  NotImplementedError() {
-  }
-  explicit NotImplementedError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit NotImplementedError(const char* s) {
-  }
-  explicit NotImplementedError(Str* s) {
-  }
-};
-
-class AssertionError {
- public:
-  AssertionError() {
-  }
-  explicit AssertionError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit AssertionError(const char* s) {
-  }
-  explicit AssertionError(Str* s) {
-  }
-};
-
-// Python's RuntimeError looks like this.  . libc::regex_match and other
-// bindings raise it.
-class RuntimeError {
- public:
-  RuntimeError(Str* message) : message(message) {
-  }
-  Str* message;
-};
-
 //
 // Data Types
 //
 
-#ifdef MYLIB_LEAKY
+int len(Str *s);
+
 class Str : public gc_heap::Obj {
  public:
   Str(const char* data, int len)
       : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0),
-        len_(len),
+        len__(len),
         data_(data) {
   }
 
@@ -115,7 +80,7 @@ class Str : public gc_heap::Obj {
 
   // emulating gc_heap API
   void SetObjLenFromStrLen(int len) {
-    len_ = len;
+    len__ = len;
   }
 
   // Usage:
@@ -129,11 +94,12 @@ class Str : public gc_heap::Obj {
   // access!  Not just data[len-1].  We use that to test if it's a C string.
   // note: "foo" and "foo\0" are both NUL-terminated.
   bool IsNulTerminated() {
-    return data_[len_] == '\0';
+    return data_[len(this)] == '\0';
   }
 
   // Get a string with one character
   Str* index_(int i) {
+    int len_ = len(this);
     if (i < 0) {
       i = len_ + i;
     }
@@ -148,6 +114,7 @@ class Str : public gc_heap::Obj {
 
   // s[begin:]
   Str* slice(int begin) {
+    int len_ = len(this);
     if (begin == 0) {
       return this;  // s[i:] where i == 0 is common in here docs
     }
@@ -158,6 +125,7 @@ class Str : public gc_heap::Obj {
   }
   // s[begin:end]
   Str* slice(int begin, int end) {
+    int len_ = len(this);
     begin = std::min(begin, len_);
     end = std::min(end, len_);
 
@@ -210,19 +178,22 @@ class Str : public gc_heap::Obj {
   Str* lstrip();
 
   bool startswith(Str* s) {
-    if (s->len_ > len_) {
+    int len_ = len(this);
+    if (len(s) > len_) {
       return false;
     }
-    return memcmp(data_, s->data_, s->len_) == 0;
+    return memcmp(data_, s->data_, len(s)) == 0;
   }
   bool endswith(Str* s) {
-    if (s->len_ > len_) {
+    int len_ = len(this);
+    if (len(s) > len_) {
       return false;
     }
-    const char* start = data_ + len_ - s->len_;
-    return memcmp(start, s->data_, s->len_) == 0;
+    const char* start = data_ + len_ - len(s);
+    return memcmp(start, s->data_, len(s)) == 0;
   }
   bool isdigit() {
+    int len_ = len(this);
     if (len_ == 0) {
       return false;  // special case
     }
@@ -234,6 +205,7 @@ class Str : public gc_heap::Obj {
     return true;
   }
   bool isalpha() {
+    int len_ = len(this);
     if (len_ == 0) {
       return false;  // special case
     }
@@ -246,6 +218,7 @@ class Str : public gc_heap::Obj {
   }
   // e.g. for osh/braces.py
   bool isupper() {
+    int len_ = len(this);
     if (len_ == 0) {
       return false;  // special case
     }
@@ -264,7 +237,8 @@ class Str : public gc_heap::Obj {
   Str* replace(Str* old, Str* new_str);
 
   int find(Str* needle, int pos = 0) {
-    assert(needle->len_ == 1);  // Oil's usage
+    int len_ = len(this);
+    assert(len(needle) == 1);  // Oil's usage
     char c = needle->data_[0];
     for (int i = pos; i < len_; ++i) {
       if (data_[i] == c) {
@@ -275,7 +249,8 @@ class Str : public gc_heap::Obj {
   }
 
   int rfind(Str* needle) {
-    assert(needle->len_ == 1);  // Oil's usage
+    int len_ = len(this);
+    assert(len(needle) == 1);  // Oil's usage
     char c = needle->data_[0];
     for (int i = len_ - 1; i >= 0; --i) {
       if (data_[i] == c) {
@@ -290,11 +265,17 @@ class Str : public gc_heap::Obj {
   Str* ljust(int width, Str* fillchar);
   Str* rjust(int width, Str* fillchar);
 
-  int len_;  // reorder for alignment
+  int len__;  // reorder for alignment
   const char* data_;
 
   DISALLOW_COPY_AND_ASSIGN(Str)
 };
+
+inline int len(Str *s)
+{
+  return s->len__;
+}
+
 
 // NOTE: This iterates over bytes.
 class StrIter {
@@ -305,7 +286,7 @@ class StrIter {
     i_++;
   }
   bool Done() {
-    return i_ >= s_->len_;
+    return i_ >= len(s_);
   }
   Str* Value();
 
@@ -591,6 +572,14 @@ class DictIter {
   int i_;
 };
 
+inline bool str_equals(Str* left, Str* right) {
+  if (len(left) == len(right)) {
+    return memcmp(left->data_, right->data_, len(left)) == 0;
+  } else {
+    return false;
+  }
+}
+
 // Specialized functions
 template <class V>
 int find_by_key(const std::vector<std::pair<Str*, V>>& items, Str* key) {
@@ -736,79 +725,9 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
   assert(0);  // Uncalled
 }
 
-#endif  // MYLIB_LEAKY
-
-template <class A, class B>
-class Tuple2 {
- public:
-  Tuple2(A a, B b) : a_(a), b_(b) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-
- private:
-  A a_;
-  B b_;
-};
-
-template <class A, class B, class C>
-class Tuple3 {
- public:
-  Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-  C at2() {
-    return c_;
-  }
-
- private:
-  A a_;
-  B b_;
-  C c_;
-};
-
-template <class A, class B, class C, class D>
-class Tuple4 {
- public:
-  Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-  C at2() {
-    return c_;
-  }
-  D at3() {
-    return d_;
-  }
-
- private:
-  A a_;
-  B b_;
-  C c_;
-  D d_;
-};
-
 //
 // Overloaded free function len()
 //
-
-#ifdef MYLIB_LEAKY
-inline int len(const Str* s) {
-  return s->len_;
-}
 
 template <typename T>
 inline int len(const List<T>* L) {
@@ -833,7 +752,6 @@ inline int len(const Dict<Str*, V>* d) {
   }
   return len;
 }
-#endif
 
 //
 // Free functions
@@ -844,15 +762,6 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
-#if MYLIB_LEAKY
-inline bool str_equals(Str* left, Str* right) {
-  if (left->len_ == right->len_) {
-    return memcmp(left->data_, right->data_, left->len_) == 0;
-  } else {
-    return false;
-  }
-}
-
 namespace id_kind_asdl {
 enum class Kind;
 };
@@ -861,7 +770,6 @@ inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 
 inline bool are_equal(int left, int right) {
   return left == right;
-  ;
 }
 
 inline bool are_equal(Str* left, Str* right) {
@@ -873,11 +781,10 @@ inline bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
   result = result && (t1->at1() == t2->at1());
   return result;
 }
-#endif
 
 inline bool str_equals0(const char* c_string, Str* s) {
   int n = strlen(c_string);
-  if (s->len_ == n) {
+  if (len(s) == n) {
     return memcmp(s->data_, c_string, n) == 0;
   } else {
     return false;
@@ -904,18 +811,13 @@ inline Str* chr(int i) {
 }
 
 inline int ord(Str* s) {
-  assert(s->len_ == 1);
+  assert(len(s) == 1);
   // signed to unsigned conversion, so we don't get values like -127
   uint8_t c = static_cast<uint8_t>(s->data_[0]);
   return c;
 }
 
-// https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
-// Notes:
-// - Python 2.7's intobject.c has an erroneous +6
-// - This is 13, but len('-2147483648') is 11, which means we only need 12?
-// - This formula is valid for octal(), because 2^(3 bits) = 8
-const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
+#include "mycpp/mylib_types.h"
 
 inline Str* str(int i) {
   char* buf = static_cast<char*>(malloc(kIntBufSize));
@@ -951,7 +853,7 @@ inline bool to_bool(int i) {
 }
 
 inline bool to_bool(Str* s) {
-  return s->len_ != 0;
+  return len(s) != 0;
 }
 
 inline double to_float(Str* s) {
@@ -963,21 +865,21 @@ inline double to_float(Str* s) {
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {
   // Common case
-  if (needle->len_ == 1) {
-    return memchr(haystack->data_, needle->data_[0], haystack->len_);
+  if (len(needle) == 1) {
+    return memchr(haystack->data_, needle->data_[0], len(haystack));
   }
 
   // General case. TODO: We could use a smarter substring algorithm.
-  if (needle->len_ > haystack->len_) {
+  if (len(needle) > len(haystack)) {
     return false;
   }
 
-  const char* end = haystack->data_ + haystack->len_;
-  const char* last_possible = end - needle->len_;
+  const char* end = haystack->data_ + len(haystack);
+  const char* last_possible = end - len(needle);
   const char* p = haystack->data_;
 
   while (p <= last_possible) {
-    if (memcmp(p, needle->data_, needle->len_) == 0) {
+    if (memcmp(p, needle->data_, len(needle)) == 0) {
       return true;
     }
     p++;
@@ -1044,13 +946,13 @@ inline int int_cmp(int a, int b) {
 
 // Used by [[ a > b ]] and so forth
 inline int str_cmp(Str* a, Str* b) {
-  int min = std::min(a->len_, b->len_);
+  int min = std::min(len(a), len(b));
   if (min == 0) {
-    return int_cmp(a->len_, b->len_);
+    return int_cmp(len(a), len(b));
   }
   int comp = memcmp(a->data_, b->data_, min);
   if (comp == 0) {
-    return int_cmp(a->len_, b->len_);  // tiebreaker
+    return int_cmp(len(a), len(b));  // tiebreaker
   }
   return comp;
 }
@@ -1287,23 +1189,6 @@ inline Writer* Stderr() {
   return gStderr;
 }
 
-inline Str* hex_lower(int i) {
-  char* buf = static_cast<char*>(malloc(kIntBufSize));
-  int len = snprintf(buf, kIntBufSize, "%x", i);
-  return new Str(buf, len);
-}
-
-inline Str* hex_upper(int i) {
-  char* buf = static_cast<char*>(malloc(kIntBufSize));
-  int len = snprintf(buf, kIntBufSize, "%X", i);
-  return new Str(buf, len);
-}
-
-inline Str* octal(int i) {
-  char* buf = static_cast<char*>(malloc(kIntBufSize));
-  int len = snprintf(buf, kIntBufSize, "%o", i);
-  return new Str(buf, len);
-}
 
 }  // namespace mylib
 
