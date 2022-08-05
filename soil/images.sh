@@ -38,16 +38,46 @@ build() {
   # http://jpetazzo.github.io/2021/11/30/docker-build-container-images-antipatterns/
   #
   # It is more parallel and has colored output.
-  #
-  # TODO: add tag=2021-12-01__v1 ?  Later it can be more automated
 
   sudo DOCKER_BUILDKIT=1 \
     docker build "${flags[@]}" --tag oilshell/soil-$name --file soil/Dockerfile.$name .
 }
 
+tag() {
+  local name=${1:-dummy}
+
+  local tag=v-2022-08-04
+  sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
+}
+
+list-images() {
+  for name in soil/Dockerfile.*; do
+    #echo $name
+    local image=${name//'soil/Dockerfile.'/}
+    echo $image
+  done
+}
+
+tag-all() {
+  list-images | xargs --verbose -- $0 tag $image
+}
+
+list-tagged() {
+  sudo docker images 'oilshell/soil-*:v-*'
+}
+
 push() {
   local name=${1:-dummy}
-  sudo docker push oilshell/soil-$name
+  local tag=${2:-}
+
+  local image
+  if test -n "$tag"; then
+    image="oilshell/soil-$name:$tag"
+  else
+    image="oilshell/soil-$name:latest"
+  fi
+
+  sudo docker push $image
 }
 
 smoke() {

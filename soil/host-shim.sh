@@ -11,6 +11,14 @@ set -o errexit
 
 source soil/common.sh
 
+live-image-tag() {
+  ### image ID -> Docker tag name
+  local image_id=$1
+
+  # TODO: can use a case statement
+  echo 'v-2022-08-04'
+}
+
 make-soil-dir() {
   log-context 'make-soil-dir'
 
@@ -157,11 +165,13 @@ run-job-uke() {
 
   local image="docker.io/oilshell/soil-$image_id"
 
+  local tag=$(live-image-tag $image_id)
+
   local pull_status
   # Use external time command in POSIX format, so it's consistent between hosts
   set -o errexit
   command time -p -o $soil_dir/image-pull-time.txt \
-    $docker pull $image
+    $docker pull $image:$tag
   pull_status=$?
   set +o errexit
 
