@@ -68,15 +68,18 @@ class SystemExit {
 
 // Hack for now.  Every sum type should have repr()?
 inline Str* repr(syntax_asdl::source_t* obj) {
-  return new Str("TODO");
+  NotImplemented();
+  return StrFromC("TODO");
 }
 
 // STUB for osh/word_.py
 inline Str* str(syntax_asdl::word_t* w) {
-  return new Str("TODO");
+  NotImplemented();
+  return StrFromC("TODO");
 }
 
 // For hnode::External in asdl/format.py
 inline Str* repr(void* obj) {
-  return new Str("TODO: repr()");
+  NotImplemented();
+  return StrFromC("TODO: repr()");
 }

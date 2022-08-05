@@ -43,67 +43,67 @@ TEST test_str_to_int() {
   int i;
   bool ok;
 
-  ok = _str_to_int(new Str("345"), &i, 10);
+  ok = _str_to_int(StrFromC("345"), &i, 10);
   ASSERT(ok);
   ASSERT_EQ_FMT(345, i, "%d");
 
-  ok = _str_to_int(new Str("1234567890"), &i, 10);
+  ok = _str_to_int(StrFromC("1234567890"), &i, 10);
   ASSERT(ok);
   ASSERT(i == 1234567890);
 
   // overflow
-  ok = _str_to_int(new Str("12345678901234567890"), &i, 10);
+  ok = _str_to_int(StrFromC("12345678901234567890"), &i, 10);
   ASSERT(!ok);
 
   // underflow
-  ok = _str_to_int(new Str("-12345678901234567890"), &i, 10);
+  ok = _str_to_int(StrFromC("-12345678901234567890"), &i, 10);
   ASSERT(!ok);
 
   // negative
-  ok = _str_to_int(new Str("-123"), &i, 10);
+  ok = _str_to_int(StrFromC("-123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Leading space is OK!
-  ok = _str_to_int(new Str(" -123"), &i, 10);
+  ok = _str_to_int(StrFromC(" -123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Trailing space is OK!  NOTE: This fails!
-  ok = _str_to_int(new Str(" -123  "), &i, 10);
+  ok = _str_to_int(StrFromC(" -123  "), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Empty string isn't an integer
-  ok = _str_to_int(new Str(""), &i, 10);
+  ok = _str_to_int(StrFromC(""), &i, 10);
   ASSERT(!ok);
 
-  ok = _str_to_int(new Str("xx"), &i, 10);
+  ok = _str_to_int(StrFromC("xx"), &i, 10);
   ASSERT(!ok);
 
   // Trailing garbage
-  ok = _str_to_int(new Str("42a"), &i, 10);
+  ok = _str_to_int(StrFromC("42a"), &i, 10);
   ASSERT(!ok);
 
-  i = to_int(new Str("ff"), 16);
+  i = to_int(StrFromC("ff"), 16);
   ASSERT(i == 255);
 
   // strtol allows 0x prefix
-  i = to_int(new Str("0xff"), 16);
+  i = to_int(StrFromC("0xff"), 16);
   ASSERT(i == 255);
 
   // TODO: test ValueError here
-  // i = to_int(new Str("0xz"), 16);
+  // i = to_int(StrFromC("0xz"), 16);
 
-  i = to_int(new Str("0"), 16);
+  i = to_int(StrFromC("0"), 16);
   ASSERT(i == 0);
 
-  i = to_int(new Str("077"), 8);
+  i = to_int(StrFromC("077"), 8);
   ASSERT_EQ_FMT(63, i, "%d");
 
   bool caught = false;
   try {
-    i = to_int(new Str("zzz"));
+    i = to_int(StrFromC("zzz"));
   } catch (ValueError* e) {
     caught = true;
   }
@@ -130,20 +130,20 @@ TEST test_str_funcs() {
   print(mylib::octal(int_min));  // ASAN
 
   log("split_once()");
-  Tuple2<Str*, Str*> t = mylib::split_once(new Str("foo=bar"), new Str("="));
-  ASSERT(str_equals(t.at0(), new Str("foo")));
-  ASSERT(str_equals(t.at1(), new Str("bar")));
+  Tuple2<Str*, Str*> t = mylib::split_once(StrFromC("foo=bar"), StrFromC("="));
+  ASSERT(str_equals(t.at0(), StrFromC("foo")));
+  ASSERT(str_equals(t.at1(), StrFromC("bar")));
 
-  Tuple2<Str*, Str*> u = mylib::split_once(new Str("foo="), new Str("="));
-  ASSERT(str_equals(u.at0(), new Str("foo")));
-  ASSERT(str_equals(u.at1(), new Str("")));
+  Tuple2<Str*, Str*> u = mylib::split_once(StrFromC("foo="), StrFromC("="));
+  ASSERT(str_equals(u.at0(), StrFromC("foo")));
+  ASSERT(str_equals(u.at1(), StrFromC("")));
 
-  Tuple2<Str*, Str*> v = mylib::split_once(new Str("foo="), new Str("Z"));
-  ASSERT(str_equals(v.at0(), new Str("foo=")));
+  Tuple2<Str*, Str*> v = mylib::split_once(StrFromC("foo="), StrFromC("Z"));
+  ASSERT(str_equals(v.at0(), StrFromC("foo=")));
   ASSERT(v.at1() == nullptr);
 
-  Tuple2<Str*, Str*> w = mylib::split_once(new Str(""), new Str("Z"));
-  ASSERT(str_equals(w.at0(), new Str("")));
+  Tuple2<Str*, Str*> w = mylib::split_once(StrFromC(""), StrFromC("Z"));
+  ASSERT(str_equals(w.at0(), StrFromC("")));
   ASSERT(w.at1() == nullptr);
 
   PASS();
@@ -208,22 +208,22 @@ TEST test_list_funcs() {
   log("item 1 %d", L2->index_(1));
 
   auto strs = new List<Str*>();
-  strs->append(new Str("c"));
-  strs->append(new Str("a"));
-  strs->append(new Str("b"));
+  strs->append(StrFromC("c"));
+  strs->append(StrFromC("a"));
+  strs->append(StrFromC("b"));
   strs->append(kEmptyString);
   ASSERT_EQ(4, len(strs));  // ['c', 'a', 'b', '']
 
   strs->sort();
   ASSERT_EQ(4, len(strs));  // ['', 'a', 'b', 'c']
   ASSERT(str_equals(kEmptyString, strs->index_(0)));
-  ASSERT(str_equals(new Str("a"), strs->index_(1)));
-  ASSERT(str_equals(new Str("b"), strs->index_(2)));
-  ASSERT(str_equals(new Str("c"), strs->index_(3)));
+  ASSERT(str_equals(StrFromC("a"), strs->index_(1)));
+  ASSERT(str_equals(StrFromC("b"), strs->index_(2)));
+  ASSERT(str_equals(StrFromC("c"), strs->index_(3)));
 
-  auto a = new Str("a");
-  auto aa = new Str("aa");
-  auto b = new Str("b");
+  auto a = StrFromC("a");
+  auto aa = StrFromC("aa");
+  auto b = StrFromC("b");
 
   ASSERT_EQ(0, int_cmp(0, 0));
   ASSERT_EQ(-1, int_cmp(0, 5));
@@ -259,7 +259,7 @@ TEST test_list_iters() {
   }
 
   // hm std::initializer_list is "first class"
-  auto strs = {new Str("foo"), new Str("bar")};
+  auto strs = {StrFromC("foo"), StrFromC("bar")};
   ListFunc(strs);
 
   PASS();
@@ -271,41 +271,41 @@ TEST test_contains() {
   log("  Str");
 
   // Degenerate cases
-  b = str_contains(new Str(""), new Str(""));
+  b = str_contains(StrFromC(""), StrFromC(""));
   ASSERT(b == true);
-  b = str_contains(new Str("foo"), new Str(""));
+  b = str_contains(StrFromC("foo"), StrFromC(""));
   ASSERT(b == true);
 
   // Short circuit
-  b = str_contains(new Str("foo"), new Str("too long"));
+  b = str_contains(StrFromC("foo"), StrFromC("too long"));
   ASSERT(b == false);
 
-  b = str_contains(new Str("foo"), new Str("oo"));
+  b = str_contains(StrFromC("foo"), StrFromC("oo"));
   ASSERT(b == true);
 
-  b = str_contains(new Str("foo"), new Str("ood"));
+  b = str_contains(StrFromC("foo"), StrFromC("ood"));
   ASSERT(b == false);
 
-  b = str_contains(new Str("foo\0a", 5), new Str("a"));
+  b = str_contains(StrFromC("foo\0a", 5), StrFromC("a"));
   ASSERT(b == true);
 
-  b = str_contains(new Str("foo\0ab", 6), new Str("ab"));
+  b = str_contains(StrFromC("foo\0ab", 6), StrFromC("ab"));
   ASSERT(b == true);
 
   // this ends with a NUL, but also has a NUL terinator.
-  Str* s = new Str("foo\0", 4);
-  b = str_contains(s, new Str("\0", 1));
+  Str* s = StrFromC("foo\0", 4);
+  b = str_contains(s, StrFromC("\0", 1));
   ASSERT(b == true);
 
   log("  List<Str*>");
   auto strs = new List<Str*>();
-  strs->append(new Str("bar"));
+  strs->append(StrFromC("bar"));
 
-  b = list_contains(strs, new Str("foo"));
+  b = list_contains(strs, StrFromC("foo"));
   ASSERT(b == false);
 
-  strs->append(new Str("foo"));
-  b = list_contains(strs, new Str("foo"));
+  strs->append(StrFromC("foo"));
+  b = list_contains(strs, StrFromC("foo"));
   ASSERT(b == true);
 
   log("  ints");
@@ -331,16 +331,16 @@ TEST test_dict() {
 
   // Dict d {{"key", 1}, {"val", 2}};
   Dict<int, Str*>* d = new Dict<int, Str*>();
-  d->set(1, new Str("foo"));
+  d->set(1, StrFromC("foo"));
   log("d[1] = %s", d->index_(1)->data_);
 
   auto d2 = new Dict<Str*, int>();
-  Str* key = new Str("key");
+  Str* key = StrFromC("key");
   d2->set(key, 42);
 
   log("d2['key'] = %d", d2->index_(key));
-  d2->set(new Str("key2"), 2);
-  d2->set(new Str("key3"), 3);
+  d2->set(StrFromC("key2"), 2);
+  d2->set(StrFromC("key3"), 3);
 
   ASSERT_EQ_FMT(3, len(d2), "%d");
   ASSERT_EQ_FMT(3, len(d2->keys()), "%d");
@@ -363,14 +363,14 @@ TEST test_dict() {
   log("v2 = %p", v2);
 
   auto d3 = new Dict<Str*, int>();
-  auto a = new Str("a");
+  auto a = StrFromC("a");
 
-  d3->set(new Str("b"), 11);
-  d3->set(new Str("c"), 12);
-  d3->set(new Str("a"), 10);
-  ASSERT_EQ(10, d3->index_(new Str("a")));
-  ASSERT_EQ(11, d3->index_(new Str("b")));
-  ASSERT_EQ(12, d3->index_(new Str("c")));
+  d3->set(StrFromC("b"), 11);
+  d3->set(StrFromC("c"), 12);
+  d3->set(StrFromC("a"), 10);
+  ASSERT_EQ(10, d3->index_(StrFromC("a")));
+  ASSERT_EQ(11, d3->index_(StrFromC("b")));
+  ASSERT_EQ(12, d3->index_(StrFromC("c")));
   ASSERT_EQ(3, len(d3));
 
   auto keys = sorted(d3);
@@ -381,7 +381,7 @@ TEST test_dict() {
 
   auto keys3 = d3->keys();
   ASSERT(list_contains(keys3, a));
-  ASSERT(!list_contains(keys3, new Str("zzz")));
+  ASSERT(!list_contains(keys3, StrFromC("zzz")));
 
   ASSERT(dict_contains(d3, a));
   mylib::dict_remove(d3, a);
@@ -396,8 +396,8 @@ TEST test_dict() {
   }
 
   // Use the method version
-  d3->remove(new Str("b"));
-  ASSERT(!dict_contains(d3, new Str("b")));
+  d3->remove(StrFromC("b"));
+  ASSERT(!dict_contains(d3, StrFromC("b")));
   ASSERT_EQ(1, len(d3));
 
   // Test a different type of dict, to make sure partial template
@@ -437,13 +437,13 @@ TEST test_list_tuple() {
   log("t2[0] = %d", t2->at0());
   log("t2[1] = %d", t2->at1());
 
-  Tuple2<int, Str*>* u2 = new Tuple2<int, Str*>(42, new Str("hello"));
+  Tuple2<int, Str*>* u2 = new Tuple2<int, Str*>(42, StrFromC("hello"));
   log("u2[0] = %d", u2->at0());
   log("u2[1] = %s", u2->at1()->data_);
 
   log("");
 
-  auto t3 = new Tuple3<int, Str*, Str*>(42, new Str("hello"), new Str("bye"));
+  auto t3 = new Tuple3<int, Str*, Str*>(42, StrFromC("hello"), StrFromC("bye"));
   log("t3[0] = %d", t3->at0());
   log("t3[1] = %s", t3->at1()->data_);
   log("t3[2] = %s", t3->at2()->data_);
@@ -451,7 +451,7 @@ TEST test_list_tuple() {
   log("");
 
   auto t4 =
-      new Tuple4<int, Str*, Str*, int>(42, new Str("4"), new Str("four"), -42);
+      new Tuple4<int, Str*, Str*, int>(42, StrFromC("4"), StrFromC("four"), -42);
 
   log("t4[0] = %d", t4->at0());
   log("t4[1] = %s", t4->at1()->data_);
@@ -495,124 +495,124 @@ TEST test_sizeof() {
 TEST test_str_replace() {
   printf("\n");
 
-  Str* s0 = new Str("ab cd ab ef");
+  Str* s0 = StrFromC("ab cd ab ef");
 
   printf("----- Str::replace -------\n");
 
   {
-    Str* s1 = s0->replace(new Str("ab"), new Str("--"));
+    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("--"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("-- cd -- ef")));
+    ASSERT(str_equals(s1, StrFromC("-- cd -- ef")));
   }
 
   {
-    Str* s1 = s0->replace(new Str("ab"), new Str("----"));
+    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("----"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("---- cd ---- ef")));
+    ASSERT(str_equals(s1, StrFromC("---- cd ---- ef")));
   }
 
   {
-    Str* s1 = s0->replace(new Str("ab cd ab ef"), new Str("0"));
+    Str* s1 = s0->replace(StrFromC("ab cd ab ef"), StrFromC("0"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("0")));
+    ASSERT(str_equals(s1, StrFromC("0")));
   }
 
   {
-    Str* s1 = s0->replace(s0, new Str("0"));
+    Str* s1 = s0->replace(s0, StrFromC("0"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("0")));
+    ASSERT(str_equals(s1, StrFromC("0")));
   }
 
   {
-    Str* s1 = s0->replace(new Str("no-match"), new Str("0"));
+    Str* s1 = s0->replace(StrFromC("no-match"), StrFromC("0"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("ab cd ab ef")));
+    ASSERT(str_equals(s1, StrFromC("ab cd ab ef")));
   }
 
   {
-    Str* s1 = s0->replace(new Str("ef"), new Str("0"));
+    Str* s1 = s0->replace(StrFromC("ef"), StrFromC("0"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("ab cd ab 0")));
+    ASSERT(str_equals(s1, StrFromC("ab cd ab 0")));
   }
 
   {
-    Str* s1 = s0->replace(new Str("f"), new Str("0"));
+    Str* s1 = s0->replace(StrFromC("f"), StrFromC("0"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("ab cd ab e0")));
+    ASSERT(str_equals(s1, StrFromC("ab cd ab e0")));
   }
 
   {
-    s0 = new Str("ab ab ab");
-    Str* s1 = s0->replace(new Str("ab"), new Str("0"));
+    s0 = StrFromC("ab ab ab");
+    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("0 0 0")));
+    ASSERT(str_equals(s1, StrFromC("0 0 0")));
   }
 
   {
-    s0 = new Str("ababab");
-    Str* s1 = s0->replace(new Str("ab"), new Str("0"));
+    s0 = StrFromC("ababab");
+    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("000")));
+    ASSERT(str_equals(s1, StrFromC("000")));
   }
 
   {
-    s0 = new Str("abababab");
-    Str* s1 = s0->replace(new Str("ab"), new Str("0"));
+    s0 = StrFromC("abababab");
+    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("0000")));
+    ASSERT(str_equals(s1, StrFromC("0000")));
   }
 
   {
-    s0 = new Str("abc 123");
-    Str* s1 = s0->replace(new Str("abc"), new Str(""));
+    s0 = StrFromC("abc 123");
+    Str* s1 = s0->replace(StrFromC("abc"), StrFromC(""));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str(" 123")));
+    ASSERT(str_equals(s1, StrFromC(" 123")));
   }
 
   {
-    s0 = new Str("abc 123");
-    Str* s1 = s0->replace(new Str("abc"), new Str(""));
+    s0 = StrFromC("abc 123");
+    Str* s1 = s0->replace(StrFromC("abc"), StrFromC(""));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str(" 123")));
+    ASSERT(str_equals(s1, StrFromC(" 123")));
   }
 
   {
-    s0 = new Str("abc 123");
-    Str* s1 = s0->replace(new Str("abc"), new Str("abc"));
+    s0 = StrFromC("abc 123");
+    Str* s1 = s0->replace(StrFromC("abc"), StrFromC("abc"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("abc 123")));
+    ASSERT(str_equals(s1, StrFromC("abc 123")));
   }
 
   {
-    s0 = new Str("aaaa");
-    Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
+    s0 = StrFromC("aaaa");
+    Str* s1 = s0->replace(StrFromC("aa"), StrFromC("bb"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("bbbb")));
+    ASSERT(str_equals(s1, StrFromC("bbbb")));
   }
 
   {
-    s0 = new Str("aaaaaa");
-    Str* s1 = s0->replace(new Str("aa"), new Str("bb"));
+    s0 = StrFromC("aaaaaa");
+    Str* s1 = s0->replace(StrFromC("aa"), StrFromC("bb"));
     PRINT_STRING(s1);
-    ASSERT(str_equals(s1, new Str("bbbbbb")));
+    ASSERT(str_equals(s1, StrFromC("bbbbbb")));
   }
 
   // Test NUL replacement
   {
-    Str* s_null = new Str("abc\0bcd", 7);
+    Str* s_null = StrFromC("abc\0bcd", 7);
     ASSERT_EQ(7, len(s_null));
 
-    Str* re1 = s_null->replace(new Str("ab"), new Str("--"));
+    Str* re1 = s_null->replace(StrFromC("ab"), StrFromC("--"));
     ASSERT_EQ_FMT(7, len(re1), "%d");
-    ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
+    ASSERT(str_equals(StrFromC("--c\0bcd", 7), re1));
 
-    Str* re2 = s_null->replace(new Str("bc"), new Str("--"));
+    Str* re2 = s_null->replace(StrFromC("bc"), StrFromC("--"));
     ASSERT_EQ_FMT(7, len(re2), "%d");
-    ASSERT(str_equals(new Str("a--\0--d", 7), re2));
+    ASSERT(str_equals(StrFromC("a--\0--d", 7), re2));
 
-    Str* re3 = s_null->replace(new Str("\0", 1), new Str("__"));
+    Str* re3 = s_null->replace(StrFromC("\0", 1), StrFromC("__"));
     ASSERT_EQ_FMT(8, len(re3), "%d");
-    ASSERT(str_equals(new Str("abc__bcd", 8), re3));
+    ASSERT(str_equals(StrFromC("abc__bcd", 8), re3));
   }
 
   PASS();
@@ -621,109 +621,109 @@ TEST test_str_replace() {
 TEST test_str_slice() {
   printf("\n");
 
-  Str* s0 = new Str("abcdef");
+  Str* s0 = StrFromC("abcdef");
 
   printf("------- Str::slice -------\n");
 
   {  // Happy path
     Str* s1 = s0->slice(0, 5);
-    ASSERT(str_equals(s1, new Str("abcde")));
+    ASSERT(str_equals(s1, StrFromC("abcde")));
     PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(1, 5);
-    ASSERT(str_equals(s1, new Str("bcde")));
+    ASSERT(str_equals(s1, StrFromC("bcde")));
     PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(0, 0);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(0, 6);
-    ASSERT(str_equals(s1, new Str("abcdef")));
+    ASSERT(str_equals(s1, StrFromC("abcdef")));
     PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(-6, 6);
-    ASSERT(str_equals(s1, new Str("abcdef")));
+    ASSERT(str_equals(s1, StrFromC("abcdef")));
     PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(0, -6);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
   {
     Str* s1 = s0->slice(-6, -6);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(5, 6);
-    ASSERT(str_equals(s1, new Str("f")));
+    ASSERT(str_equals(s1, StrFromC("f")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(6, 6);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(0, -7);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(-7, -7);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(-7, 0);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(6, 6);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(7, 7);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(6, 5);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(7, 5);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(7, 6);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
   {
     Str* s1 = s0->slice(7, 7);
-    ASSERT(str_equals(s1, new Str("")));
+    ASSERT(str_equals(s1, StrFromC("")));
     PRINT_STRING(s1);
   }
 
@@ -746,69 +746,69 @@ TEST test_str_slice() {
 TEST test_str_split() {
   printf("\n");
 
-  Str* s0 = new Str("abc def");
+  Str* s0 = StrFromC("abc def");
 
   printf("------- Str::split -------\n");
 
   {
-    List<Str*>* split_result = s0->split(new Str(" "));
+    List<Str*>* split_result = s0->split(StrFromC(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 2);
-    ASSERT(are_equal(split_result->index_(0), new Str("abc")));
-    ASSERT(are_equal(split_result->index_(1), new Str("def")));
+    ASSERT(are_equal(split_result->index_(0), StrFromC("abc")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("def")));
   }
 
   {
-    List<Str*>* split_result = (new Str("###"))->split(new Str("#"));
+    List<Str*>* split_result = (StrFromC("###"))->split(StrFromC("#"));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 4);
-    ASSERT(are_equal(split_result->index_(0), new Str("")));
-    ASSERT(are_equal(split_result->index_(1), new Str("")));
-    ASSERT(are_equal(split_result->index_(2), new Str("")));
-    ASSERT(are_equal(split_result->index_(3), new Str("")));
+    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(3), StrFromC("")));
   }
 
   {
-    List<Str*>* split_result = (new Str(" ### "))->split(new Str("#"));
+    List<Str*>* split_result = (StrFromC(" ### "))->split(StrFromC("#"));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 4);
-    ASSERT(are_equal(split_result->index_(0), new Str(" ")));
-    ASSERT(are_equal(split_result->index_(1), new Str("")));
-    ASSERT(are_equal(split_result->index_(2), new Str("")));
-    ASSERT(are_equal(split_result->index_(3), new Str(" ")));
+    ASSERT(are_equal(split_result->index_(0), StrFromC(" ")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(3), StrFromC(" ")));
   }
 
   {
-    List<Str*>* split_result = (new Str(" # "))->split(new Str(" "));
+    List<Str*>* split_result = (StrFromC(" # "))->split(StrFromC(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 3);
-    ASSERT(are_equal(split_result->index_(0), new Str("")));
-    ASSERT(are_equal(split_result->index_(1), new Str("#")));
-    ASSERT(are_equal(split_result->index_(2), new Str("")));
+    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("#")));
+    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
   }
 
   {
-    List<Str*>* split_result = (new Str("  #"))->split(new Str("#"));
+    List<Str*>* split_result = (StrFromC("  #"))->split(StrFromC("#"));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 2);
-    ASSERT(are_equal(split_result->index_(0), new Str("  ")));
-    ASSERT(are_equal(split_result->index_(1), new Str("")));
+    ASSERT(are_equal(split_result->index_(0), StrFromC("  ")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
   }
 
   {
-    List<Str*>* split_result = (new Str("#  #"))->split(new Str("#"));
+    List<Str*>* split_result = (StrFromC("#  #"))->split(StrFromC("#"));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 3);
-    ASSERT(are_equal(split_result->index_(0), new Str("")));
-    ASSERT(are_equal(split_result->index_(1), new Str("  ")));
-    ASSERT(are_equal(split_result->index_(2), new Str("")));
+    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("  ")));
+    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
   }
 
   {
-    List<Str*>* split_result = (new Str(""))->split(new Str(" "));
+    List<Str*>* split_result = (StrFromC(""))->split(StrFromC(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 1);
-    ASSERT(are_equal(split_result->index_(0), new Str("")));
+    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
   }
 
   // NOTE(Jesse): Failure case.  Not sure if we care about supporting this.
@@ -817,10 +817,10 @@ TEST test_str_split() {
   // decipher what we'd expect to see.
   //
   /* { */
-  /*   List<Str*> *split_result = (new Str("weahtevr"))->split(0); */
+  /*   List<Str*> *split_result = (StrFromC("weahtevr"))->split(0); */
   /*   PRINT_LIST(split_result); */
   /*   ASSERT(len(split_result) == 1); */
-  /*   ASSERT(are_equal(split_result->index_(0), new Str(""))); */
+  /*   ASSERT(are_equal(split_result->index_(0), StrFromC(""))); */
   /* } */
 
   printf("---------- Done ----------\n");
@@ -835,18 +835,18 @@ TEST test_str_join() {
 
   {
     Str* result =
-        (new Str(""))->join(new List<Str*>({new Str("abc"), new Str("def")}));
+        (StrFromC(""))->join(new List<Str*>({StrFromC("abc"), StrFromC("def")}));
     PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("abcdef")));
+    ASSERT(are_equal(result, StrFromC("abcdef")));
   }
   {
-    Str* result = (new Str(" "))
-                      ->join(new List<Str*>({new Str("abc"), new Str("def"),
-                                             new Str("abc"), new Str("def"),
-                                             new Str("abc"), new Str("def"),
-                                             new Str("abc"), new Str("def")}));
+    Str* result = (StrFromC(" "))
+                      ->join(new List<Str*>({StrFromC("abc"), StrFromC("def"),
+                                             StrFromC("abc"), StrFromC("def"),
+                                             StrFromC("abc"), StrFromC("def"),
+                                             StrFromC("abc"), StrFromC("def")}));
     PRINT_STRING(result);
-    ASSERT(are_equal(result, new Str("abc def abc def abc def abc def")));
+    ASSERT(are_equal(result, StrFromC("abc def abc def abc def abc def")));
   }
 
   printf("---------- Done ----------\n");
@@ -857,11 +857,11 @@ TEST test_str_join() {
 TEST test_str_helpers() {
   printf("------ Str::helpers ------\n");
 
-  ASSERT((new Str(""))->startswith(new Str("")) == true);
-  ASSERT((new Str(" "))->startswith(new Str("")) == true);
-  ASSERT((new Str(" "))->startswith(new Str(" ")) == true);
+  ASSERT((StrFromC(""))->startswith(StrFromC("")) == true);
+  ASSERT((StrFromC(" "))->startswith(StrFromC("")) == true);
+  ASSERT((StrFromC(" "))->startswith(StrFromC(" ")) == true);
 
-  ASSERT((new Str("  "))->startswith(new Str(" ")) == true);
+  ASSERT((StrFromC("  "))->startswith(StrFromC(" ")) == true);
 
   printf("---------- Done ----------\n");
 

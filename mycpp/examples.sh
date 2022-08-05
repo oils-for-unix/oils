@@ -99,7 +99,7 @@ translate-parse() {
 #include "qsn_qsn.h"
 
 Str* repr(void* obj) {
-  return new Str("TODO: repr()");
+  return StrFromC("TODO: repr()");
 }
 
 '
@@ -174,7 +174,7 @@ void p_die(Str* s, syntax_asdl::Token* blame_token) {
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
-  return new Str("TODO");
+  return StrFromC("TODO");
 }
 '
   translate-ordered lexer_main "$snippet" \
@@ -213,7 +213,7 @@ using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
-  return new Str("TODO");
+  return StrFromC("TODO");
 }
 '
   translate-ordered alloc_main "$snippet" \

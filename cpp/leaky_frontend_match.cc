@@ -1,6 +1,7 @@
 // frontend_match.cc: manual port of frontend/match
 
 #include "leaky_frontend_match.h"
+using mylib::CopyBufferIntoNewStr;
 
 // This order is required to get it to compile, despite clang-format
 // clang-format off
@@ -38,7 +39,7 @@ Tuple2<Id_t, Str*> SimpleLexer::Next() {
   char* buf = static_cast<char*>(malloc(len + 1));
   memcpy(buf, s_->data_ + pos_, len);  // copy the list item
   buf[len] = '\0';
-  Str* val = new Str(buf, len);
+  Str* val = CopyBufferIntoNewStr(buf, len);
 
   pos_ = end_pos;
   return Tuple2<Id_t, Str*>(static_cast<Id_t>(id), val);

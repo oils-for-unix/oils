@@ -31,7 +31,7 @@ Str* rstrip_slashes(Str* s) {
   char* buf = static_cast<char*>(malloc(new_len + 1));
   memcpy(buf, s->data_, new_len);
   buf[new_len] = '\0';
-  return new Str(buf, new_len);
+  return mylib::CopyBufferIntoNewStr(buf, new_len);
 }
 
 }  // namespace os_path

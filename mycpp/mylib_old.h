@@ -43,6 +43,8 @@ class DictIter;
 
 namespace mylib {
 
+  inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len);
+
   inline Str* StrFromC(const char* s, int len);
   inline Str* StrFromC(const char* s);
 
@@ -53,6 +55,7 @@ namespace mylib {
   void dict_remove(Dict<int, V>* haystack, int needle);
 
 };  // namespace mylib
+
 
 extern Str* kEmptyString;
 
@@ -69,14 +72,15 @@ int len(Str *s);
 
 class Str : public gc_heap::Obj {
  public:
-  Str(const char* data, int len)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0),
-        len__(len),
-        data_(data) {
-  }
 
-  explicit Str(const char* data) : Str(data, strlen(data)) {
-  }
+  /* Str(const char* data, int len) */
+  /*     : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), */
+  /*       len__(len), */
+  /*       data_(data) { */
+  /* } */
+
+  /* explicit Str(const char* data) : Str(data, strlen(data)) { */
+  /* } */
 
   void SetObjLenFromStrLen(int len) {
     len__ = len;
@@ -660,7 +664,7 @@ inline Str* chr(int i) {
   char* buf = static_cast<char*>(malloc(2));
   buf[0] = i;
   buf[1] = '\0';
-  return new Str(buf, 1);
+  return mylib::CopyBufferIntoNewStr(buf, 1);
 }
 
 inline int ord(Str* s) {
@@ -675,7 +679,7 @@ inline int ord(Str* s) {
 inline Str* str(int i) {
   char* buf = static_cast<char*>(malloc(kIntBufSize));
   int len = snprintf(buf, kIntBufSize, "%d", i);
-  return new Str(buf, len);
+  return mylib::CopyBufferIntoNewStr(buf, len);
 }
 
 inline Str* str(double f) {  // TODO: should be double
@@ -845,9 +849,10 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 // Emulate GC API so we can reuse bindings
 
 inline Str* AllocStr(int len) {
-  char* buf = static_cast<char*>(malloc(len + 1));
-  memset(buf, 0, len + 1);
-  return new Str(buf, len);
+  Str* result = static_cast<Str*>(calloc(sizeof(Str), 1));
+  result->data_ = static_cast<char*>(calloc(len+1, 1));
+  result->len__ = len;
+  return result;
 }
 
 inline Str* OverAllocatedStr(int len) {
@@ -856,23 +861,21 @@ inline Str* OverAllocatedStr(int len) {
 }
 
 inline Str* StrFromC(const char* s, int len) {
-  // take ownership (but still leaks)
-  char* buf = static_cast<char*>(malloc(len + 1));
-  memcpy(buf, s, len);
-  buf[len] = '\0';
-  return new Str(buf, len);
+  Str *result = AllocStr(len);
+  memcpy((void*)result->data_, s, len);
+  return result;
 }
 
 inline Str* StrFromC(const char* s) {
   return StrFromC(s, strlen(s));
 }
 
+inline Str* CopyBufferIntoNewStr(char* buf) {
+  Str* s = StrFromC(buf);
+  return s;
+}
+
 inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
-  // NOTE(Jesse): This assertion is not valid because we have to handle strings
-  // with internal nulls.  We must blindly trust the caller passed us a valid
-  // length.
-  //
-  // assert(strlen(buf) == buf_len);
   Str* s = StrFromC(buf, buf_len);
   return s;
 }
@@ -969,7 +972,7 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue() {
     if (data_) {
-      Str* ret = new Str(data_, len_);
+      Str* ret = CopyBufferIntoNewStr(data_, len_);
       reset();  // Invalidate this instance
       return ret;
     } else {
@@ -1052,7 +1055,8 @@ extern mylib::BufWriter gBuf;
 
 // mycpp doesn't understand dynamic format strings yet
 inline Str* dynamic_fmt_dummy() {
-  return new Str("dynamic_fmt_dummy");
+  /* NotImplemented(); */
+  return StrFromC("dynamic_fmt_dummy");
 }
 
 #endif  // MYLIB_H

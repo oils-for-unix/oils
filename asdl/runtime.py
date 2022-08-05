@@ -36,6 +36,6 @@ def NewLeaf(s, e_color):
     return hnode__Leaf(s, e_color)
 
 
-# Constants to avoid 'new Str("T")' in ASDL-generated code
+# Constants to avoid 'StrFromC("T")' in ASDL-generated code
 TRUE_STR = 'T'
 FALSE_STR = 'F'

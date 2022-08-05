@@ -162,7 +162,7 @@ Str* %s(Str* c) {
 
   for char_code in sorted(lookup):
     f.write("  case '%s':\n" % CChar(char_code))
-    f.write('    return new Str("%s");\n' % CChar(lookup[char_code]))
+    f.write('    return StrFromC("%s");\n' % CChar(lookup[char_code]))
     f.write("    break;\n");
 
   f.write("  default:\n");
@@ -285,6 +285,8 @@ from asdl import pybase
 #define CONSTS_H
 
 #include "mycpp/mylib_old.h"
+using mylib::StrFromC;
+
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/option_asdl.h"
 #include "_build/cpp/runtime_asdl.h"
@@ -444,9 +446,9 @@ Str* OptionName(option_asdl::option_t opt_num) {
 
       out("""\
   default:
-    assert(0);
+    InvalidCodePath();
   }
-  return new Str(s);  // TODO-intern
+  return StrFromC(s);  // TODO-intern
 }
 """)
 

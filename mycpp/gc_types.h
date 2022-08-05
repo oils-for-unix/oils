@@ -56,7 +56,7 @@ inline Slab<T>* NewSlab(int len) {
 }
 
 #ifdef MYLIB_LEAKY
-  #define GLOBAL_STR(name, val) Str* name = new Str(val);
+  #define GLOBAL_STR(name, val) Str* name = StrFromC(val);
   #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 #endif
 

@@ -1,6 +1,7 @@
 // libc.cc: Replacement for native/libcmodule.c
 
 #include "leaky_libc.h"
+using mylib::CopyBufferIntoNewStr;
 
 #include <glob.h>
 #include <locale.h>
@@ -37,7 +38,7 @@ List<Str*>* glob(Str* pat) {
     break;
   }
   if (err_str) {
-    throw new RuntimeError(new Str(err_str));
+    throw new RuntimeError(StrFromC(err_str));
   }
 
   // http://stackoverflow.com/questions/3512414/does-this-pylist-appendlist-py-buildvalue-leak
@@ -55,7 +56,7 @@ List<Str*>* glob(Str* pat) {
     memcpy(buf, m, len);
     buf[len] = '\0';
 
-    matches->append(new Str(buf, len));
+    matches->append(CopyBufferIntoNewStr(buf, len));
   }
   globfree(&results);
 
@@ -70,7 +71,7 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
   regex_t pat;
   if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
     // TODO: check error code, as in func_regex_parse()
-    throw new RuntimeError(new Str("Invalid regex syntax (regex_match)"));
+    throw new RuntimeError(StrFromC("Invalid regex syntax (regex_match)"));
   }
 
   int outlen = pat.re_nsub + 1;  // number of captures
@@ -82,7 +83,7 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
     int i;
     for (i = 0; i < outlen; i++) {
       int len = pmatch[i].rm_eo - pmatch[i].rm_so;
-      Str* m = new Str(s0 + pmatch[i].rm_so, len);
+      Str* m = StrFromC(s0 + pmatch[i].rm_so, len);
       results->append(m);
     }
   }
@@ -112,7 +113,7 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   const char* old_locale = setlocale(LC_CTYPE, NULL);
 
   if (setlocale(LC_CTYPE, "") == NULL) {
-    throw new RuntimeError(new Str("Invalid locale for LC_CTYPE"));
+    throw new RuntimeError(StrFromC("Invalid locale for LC_CTYPE"));
   }
 
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
@@ -120,7 +121,7 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
 
   if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
     throw new RuntimeError(
-        new Str("Invalid regex syntax (func_regex_first_group_match)"));
+        StrFromC("Invalid regex syntax (func_regex_first_group_match)"));
   }
 
   // Match at offset 'pos'

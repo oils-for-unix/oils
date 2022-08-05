@@ -1,6 +1,8 @@
 // frontend_flag_spec.cc
 
 #include "leaky_frontend_flag_spec.h"
+using mylib::CopyBufferIntoNewStr;
+using mylib::StrFromC;
 
 #include "_build/cpp/arg_types.h"
 
@@ -25,7 +27,7 @@ void _CreateStrList(const char** in, List<Str*>* out) {
       break;
     }
     // log("a0 %s", s);
-    out->append(new Str(s));
+    out->append(StrFromC(s));
     ++i;
   }
 }
@@ -54,13 +56,13 @@ void _CreateDefaults(DefaultPair_c* in,
       if (s == nullptr) {
         val = new value__Undef();
       } else {
-        val = new value__Str(new Str(s));
+        val = new value__Str(StrFromC(s));
       }
     } break;
     default:
       assert(0);  // NOTE(Jesse): Pretty sure this is InvalidCodePath()
     }
-    out->set(new Str(pair->name), val);
+    out->set(StrFromC(pair->name), val);
     ++i;
   }
 }
@@ -82,26 +84,26 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
         valid = new List<Str*>();
         _CreateStrList(p->strs, valid);
       }
-      auto a = new args::SetToString(new Str(p->name), false, valid);
+      auto a = new args::SetToString(StrFromC(p->name), false, valid);
       action = a;
     } break;
     case ActionType_c::SetToString_q:
-      action = new args::SetToString(new Str(p->name), true, nullptr);
+      action = new args::SetToString(StrFromC(p->name), true, nullptr);
       break;
     case ActionType_c::SetToInt:
-      action = new args::SetToInt(new Str(p->name));
+      action = new args::SetToInt(StrFromC(p->name));
       break;
     case ActionType_c::SetToFloat:
-      action = new args::SetToFloat(new Str(p->name));
+      action = new args::SetToFloat(StrFromC(p->name));
       break;
     case ActionType_c::SetToTrue:
-      action = new args::SetToTrue(new Str(p->name));
+      action = new args::SetToTrue(StrFromC(p->name));
       break;
     case ActionType_c::SetAttachedBool:
-      action = new args::SetAttachedBool(new Str(p->name));
+      action = new args::SetAttachedBool(StrFromC(p->name));
       break;
     case ActionType_c::SetOption:
-      action = new args::SetOption(new Str(p->name));
+      action = new args::SetOption(StrFromC(p->name));
       break;
     case ActionType_c::SetNamedOption: {
       auto a = new args::SetNamedOption(false);
@@ -118,7 +120,7 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
       action = a;
     } break;
     case ActionType_c::SetAction:
-      action = new args::SetAction(new Str(p->name));
+      action = new args::SetAction(StrFromC(p->name));
       break;
     case ActionType_c::SetNamedAction: {
       auto a = new args::SetNamedAction();
@@ -130,7 +132,7 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
     }
 
     if (action) {
-      out->set(new Str(p->key), action);
+      out->set(StrFromC(p->key), action);
     }
     ++i;
   }

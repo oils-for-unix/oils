@@ -1,7 +1,7 @@
 """
 const_pass.py - AST pass that collects constants.
 
-Immutable string constants like 'new Str("foo")' are moved to the top level of
+Immutable string constants like 'StrFromC("foo")' are moved to the top level of
 the generated C++ program for efficiency.
 """
 import json

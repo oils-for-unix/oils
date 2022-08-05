@@ -62,14 +62,14 @@ int main(int argc, char **argv) {
 
   auto* args = Alloc<List<Str*>>();
   for (int i = 0; i < argc; ++i) {
-    args->append(Alloc<Str>(argv[i]));
+    args->append(StrFromC(argv[i]));
   }
   int status = 0;
 
   // For benchmarking
-  char* repeat = getenv("REPEAT");
+  const char* repeat = getenv("REPEAT");
   if (repeat) {
-    Str* r = Alloc<Str>(repeat);
+    Str* r = StrFromC(repeat);
     int n = to_int(r);
     log("Running %d times", n);
     for (int i = 0; i < n; ++i) { 
