@@ -296,6 +296,11 @@ int to_int(Str* s) {
   }
 }
 
+List<Str*>* Str::splitlines(bool keep) {
+  assert(keep == true);
+  return nullptr;
+}
+
 #ifndef LEAKY_BINDINGS
 namespace gc_heap {
 #endif

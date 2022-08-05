@@ -1,0 +1,22 @@
+sizeof *c = 24
+c->tag = 2
+Const
+
+sizeof *v = 24
+v->tag = 3
+Var
+
+u->op = -
+f->name = f
+p->negated = 1
+.sizeof b = 8
+
+(bool_expr.Binary left:(word value:left) right:(word value:right)).m.ss  = 0x603000001cf0
+m.ib = 0x603000001d20
+mm.ib[42] = 1
+(maps ss:[map foo bar] ib:[map 42 T] tokens:[map]).g_ft.tag_() = 1
+g_ret.tag_() = 3
+g_ret.status = 5
+.
+Total: 4 tests (597 ticks, 0.001 sec), 11 assertions
+Pass: 4, fail: 0, skip: 0.

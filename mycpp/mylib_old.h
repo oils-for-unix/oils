@@ -68,71 +68,11 @@ void println_stderr(Str* s);
 // Data Types
 //
 
-int len(Str *s);
+#include "mycpp/str_types.h"
 
-class Str : public gc_heap::Obj {
- public:
-
-  /* Str(const char* data, int len) */
-  /*     : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), */
-  /*       len__(len), */
-  /*       data_(data) { */
-  /* } */
-
-  /* explicit Str(const char* data) : Str(data, strlen(data)) { */
-  /* } */
-
-  void SetObjLenFromStrLen(int len) {
-    len__ = len;
-  }
-
-  char* data() {
-    return const_cast<char*>(data_);
-  }
-
-  Str* index_(int i);
-
-  Str* slice(int begin, int end);
-  Str* slice(int begin);
-
-  Str* strip();
-  Str* rstrip(Str* chars);
-  Str* rstrip();
-  Str* lstrip(Str* chars);
-  Str* lstrip();
-
-  bool startswith(Str* s);
-  bool endswith(Str* s);
-
-  bool isdigit();
-  bool isalpha();
-  bool isupper();
-
-  List<Str*>* split(Str* sep);
-  List<Str*>* splitlines(bool keep);
-  Str* join(List<Str*>* items);
-
-  Str* replace(Str* old, Str* new_str);
-
-  int find(Str* needle, int pos = 0);
-  int rfind(Str* needle);
-
-  Str* upper();
-  Str* lower();
-  Str* ljust(int width, Str* fillchar);
-  Str* rjust(int width, Str* fillchar);
-
-  int len__;  // reorder for alignment
-  const char* data_;
-
-  DISALLOW_COPY_AND_ASSIGN(Str)
-};
-
-inline int len(Str *s)
-{
-  return s->len__;
+inline int len(const Str* s) {
+  return s->obj_len_ - kStrHeaderSize - 1;
 }
-
 
 // NOTE: This iterates over bytes.
 class StrIter {
@@ -848,10 +788,15 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 // Emulate GC API so we can reuse bindings
 
+#if 0
 inline Str* AllocStr(int len) {
   Str* result = static_cast<Str*>(calloc(sizeof(Str), 1));
-  result->data_ = static_cast<char*>(calloc(len+1, 1));
-  result->len__ = len;
+
+  // TODO(Jesse): This is heinous and needs to go.
+  char** data = (char**)&result->data_;
+  *data = static_cast<char*>(calloc(len+1, 1));
+  result->SetObjLenFromStrLen(len);
+
   return result;
 }
 
@@ -879,6 +824,11 @@ inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
   Str* s = StrFromC(buf, buf_len);
   return s;
 }
+#else
+
+#include "mycpp/str_allocators.h"
+
+#endif
 
 // emulate gc_heap API for ASDL
 

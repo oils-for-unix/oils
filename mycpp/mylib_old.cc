@@ -53,11 +53,6 @@ List<Str*>* Str::split(Str* sep) {
   return result;
 }
 
-List<Str*>* Str::splitlines(bool keep) {
-  assert(keep == true);
-  return nullptr;
-}
-
 Str* Str::join(List<Str*>* items) {
   int length = 0;
   const std::vector<Str*>& v = items->v_;
