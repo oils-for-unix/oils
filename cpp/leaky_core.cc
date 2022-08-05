@@ -19,6 +19,7 @@
 #include "mycpp/mylib_old.h"
 
 using mylib::StrFromC;
+using mylib::OverAllocatedStr;
 
 namespace pyos {
 
@@ -32,22 +33,20 @@ Tuple2<int, int> WaitPid() {
 }
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
-  // TODO: Use garbage-collected APIs instead of malloc()
+  Str* s = OverAllocatedStr(n);  // Allocate enough for the result
 
-  char* buf = static_cast<char*>(malloc(n));
-  int length = ::read(fd, buf, n);
+  int length = ::read(fd, s->data(), n);
   if (length < 0) {
-    free(buf);
     return Tuple2<int, int>(-1, errno);
   }
   if (length == 0) {
-    free(buf);
     return Tuple2<int, int>(length, 0);
   }
-  Str* s = new Str(buf, length);
-  // MYLIB_LEAKY: the buffer is now owned by the Str instance
-  // free(buf);
+
+  // Now we know how much data we got back
+  s->SetObjLenFromStrLen(length);
   chunks->append(s);
+
   return Tuple2<int, int>(length, 0);
 }
 
