@@ -12,6 +12,7 @@
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
 
+#if 0
 // Translation of Python's print().
 void print(Str* s) {
   int n = len(s);
@@ -84,6 +85,7 @@ int to_int(Str* s, int base) {
   }
 }
 
+
 Str* str_concat(Str* a, Str* b) {
   Str* result = nullptr;
   StackRoots _roots({&a, &b, &result});
@@ -120,6 +122,7 @@ Str* str_repeat(Str* s, int times) {
   assert(p_result[result_len] == '\0');
   return result;
 }
+#endif
 
 //
 // Str methods
@@ -164,6 +167,7 @@ bool Str::isupper() {
   return true;
 }
 
+#if 0
 Str* Str::ljust(int width, Str* fillchar) {
   auto self = this;
   StackRoots _roots({&self, &fillchar});
@@ -207,6 +211,7 @@ Str* Str::rjust(int width, Str* fillchar) {
     return result;
   }
 }
+#endif
 
 bool Str::startswith(Str* s) {
   int n = len(s);
@@ -269,6 +274,7 @@ Str* Str::slice(int begin, int end) {
   return result;
 }
 
+#if 0
 Str* Str::replace(Str* old, Str* new_str) {
   assert(len(old) == 1);  // Restriction that Oil code is OK with
 
@@ -331,6 +337,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   assert(result->data_[result_len] == '\0');  // buffer should have been zero'd
   return result;
 }
+#endif
 
 List<Str*>* Str::split(Str* sep) {
   auto self = this;

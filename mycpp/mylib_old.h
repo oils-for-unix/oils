@@ -206,10 +206,8 @@ class Str : public gc_heap::Obj {
   Str* rstrip(Str* chars);
   Str* rstrip();
 
-  #if 0
   Str* lstrip(Str* chars);
   Str* lstrip();
-  #endif
 
   bool startswith(Str* s) {
     if (s->len_ > len_) {
@@ -1113,6 +1111,16 @@ inline Str* StrFromC(const char* s, int len) {
 
 inline Str* StrFromC(const char* s) {
   return StrFromC(s, strlen(s));
+}
+
+inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
+  // NOTE(Jesse): This assertion is not valid because we have to handle strings
+  // with internal nulls.  We must blindly trust the caller passed us a valid
+  // length.
+  //
+  // assert(strlen(buf) == buf_len);
+  Str* s = StrFromC(buf, buf_len);
+  return s;
 }
 
 // emulate gc_heap API for ASDL

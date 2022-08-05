@@ -88,6 +88,9 @@ class Str : public gc_heap::Obj {
   Str* rstrip(Str* chars);
   Str* rstrip();
 
+  Str* lstrip(Str* chars);
+  Str* lstrip();
+
   Str* ljust(int width, Str* fillchar);
   Str* rjust(int width, Str* fillchar);
 
@@ -102,13 +105,8 @@ class Str : public gc_heap::Obj {
   bool isalpha();
   bool isupper();
 
-  Str* upper() {
-    NotImplemented();  // Uncalled
-  }
-
-  Str* lower() {
-    NotImplemented();  // Uncalled
-  }
+  Str* upper();
+  Str* lower();
 
   // Other options for fast comparison / hashing / string interning:
   // - unique_id_: an index into intern table.  I don't think this works unless
@@ -215,6 +213,16 @@ inline Str* StrFromC(const char* data, int len) {
 // CHOPPED OFF at internal NUL.  Use explicit length if you have a NUL.
 inline Str* StrFromC(const char* data) {
   return StrFromC(data, strlen(data));
+}
+
+inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
+  // NOTE(Jesse): This assertion is not valid because we have to handle strings
+  // with internal nulls.  We must blindly trust the caller passed us a valid
+  // length.
+  //
+  // assert(strlen(buf) == buf_len);
+  Str* s = StrFromC(buf, buf_len);
+  return s;
 }
 
 bool str_equals(Str* left, Str* right);
