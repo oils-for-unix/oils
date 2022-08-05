@@ -112,6 +112,8 @@ class Str : public gc_heap::Obj {
     return new Str(buf, 1);
   }
 
+  Str* slice(int begin, int end);
+
   // s[begin:]
   Str* slice(int begin) {
     int len_ = len(this);
@@ -122,52 +124,6 @@ class Str : public gc_heap::Obj {
       begin = len_ + begin;
     }
     return slice(begin, len_);
-  }
-  // s[begin:end]
-  Str* slice(int begin, int end) {
-    int len_ = len(this);
-    begin = std::min(begin, len_);
-    end = std::min(end, len_);
-
-    assert(begin <= len_);
-    assert(end <= len_);
-
-    if (begin < 0) {
-      begin = len_ + begin;
-    }
-
-    if (end < 0) {
-      end = len_ + end;
-    }
-
-    begin = std::min(begin, len_);
-    end = std::min(end, len_);
-
-    begin = std::max(begin, 0);
-    end = std::max(end, 0);
-
-    assert(begin >= 0);
-    assert(begin <= len_);
-
-    assert(end >= 0);
-    assert(end <= len_);
-
-    int new_len = end - begin;
-
-    // Tried to use std::clamp() here but we're not compiling against cxx-17
-    new_len = std::max(new_len, 0);
-    new_len = std::min(new_len, len_);
-
-    /* printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len); */
-
-    assert(new_len >= 0);
-    assert(new_len <= len_);
-
-    char* buf = static_cast<char*>(malloc(new_len + 1));
-    memcpy(buf, data_ + begin, new_len);
-
-    buf[new_len] = '\0';
-    return new Str(buf, new_len);
   }
 
   Str* strip();

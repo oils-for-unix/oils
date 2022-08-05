@@ -258,6 +258,8 @@ Str* Str::slice(int begin) {
   return slice(begin, length);
 }
 
+#if 0
+
 // s[begin:end]
 Str* Str::slice(int begin, int end) {
   if (begin < 0) {
@@ -274,7 +276,6 @@ Str* Str::slice(int begin, int end) {
   return result;
 }
 
-#if 0
 Str* Str::replace(Str* old, Str* new_str) {
   assert(len(old) == 1);  // Restriction that Oil code is OK with
 
