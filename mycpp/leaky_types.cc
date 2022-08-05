@@ -14,6 +14,39 @@ using gc_heap::Str;
 
 #include <ctype.h>  // isalpha(), isdigit()
 
+bool Str::startswith(Str* s) {
+  int n = len(s);
+  if (n > len(this)) {
+    return false;
+  }
+  return memcmp(data_, s->data_, n) == 0;
+}
+
+bool Str::endswith(Str* s) {
+  int len_s = len(s);
+  int len_this = len(this);
+  if (len_s > len_this) {
+    return false;
+  }
+  const char* start = data_ + len_this - len_s;
+  return memcmp(start, s->data_, len_s) == 0;
+}
+
+// Get a string with one character
+Str* Str::index_(int i) {
+  int len_ = len(this);
+  if (i < 0) {
+    i = len_ + i;
+  }
+  assert(i >= 0);
+  assert(i < len_);  // had a problem here!
+
+  char* buf = static_cast<char*>(malloc(2));
+  buf[0] = data_[i];
+  buf[1] = '\0';
+  return CopyBufferIntoNewStr(buf, 1);
+}
+
 // s[begin:end]
 Str* Str::slice(int begin, int end) {
   int len_ = len(this);

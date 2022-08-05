@@ -211,7 +211,6 @@ Str* Str::rjust(int width, Str* fillchar) {
     return result;
   }
 }
-#endif
 
 bool Str::startswith(Str* s) {
   int n = len(s);
@@ -231,6 +230,7 @@ bool Str::endswith(Str* s) {
   return memcmp(start, s->data_, len_s) == 0;
 }
 
+
 // Get a string with one character
 Str* Str::index_(int i) {
   if (i < 0) {
@@ -245,8 +245,6 @@ Str* Str::index_(int i) {
   assert(buf[1] == '\0');
   return result;
 }
-
-#if 0
 
 // s[begin:]
 Str* Str::slice(int begin) {

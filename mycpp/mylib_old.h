@@ -97,20 +97,7 @@ class Str : public gc_heap::Obj {
     return data_[len(this)] == '\0';
   }
 
-  // Get a string with one character
-  Str* index_(int i) {
-    int len_ = len(this);
-    if (i < 0) {
-      i = len_ + i;
-    }
-    assert(i >= 0);
-    assert(i < len_);  // had a problem here!
-
-    char* buf = static_cast<char*>(malloc(2));
-    buf[0] = data_[i];
-    buf[1] = '\0';
-    return new Str(buf, 1);
-  }
+  Str* index_(int i);
 
   Str* slice(int begin, int end);
   Str* slice(int begin);
@@ -118,25 +105,12 @@ class Str : public gc_heap::Obj {
   Str* strip();
   Str* rstrip(Str* chars);
   Str* rstrip();
-
   Str* lstrip(Str* chars);
   Str* lstrip();
 
-  bool startswith(Str* s) {
-    int len_ = len(this);
-    if (len(s) > len_) {
-      return false;
-    }
-    return memcmp(data_, s->data_, len(s)) == 0;
-  }
-  bool endswith(Str* s) {
-    int len_ = len(this);
-    if (len(s) > len_) {
-      return false;
-    }
-    const char* start = data_ + len_ - len(s);
-    return memcmp(start, s->data_, len(s)) == 0;
-  }
+  bool startswith(Str* s);
+  bool endswith(Str* s);
+
   bool isdigit() {
     int len_ = len(this);
     if (len_ == 0) {
