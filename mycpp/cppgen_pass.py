@@ -11,7 +11,7 @@ from typing import overload, Union, Optional, Any, Dict
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.types import (
     Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType,
-    UnionType, UninhabitedType, PartialType)
+    UnionType, UninhabitedType, PartialType, TypeAliasType)
 from mypy.nodes import (
     Expression, Statement, Block, NameExpr, IndexExpr, MemberExpr, TupleExpr,
     ExpressionStmt, AssignmentStmt, IfStmt, StrExpr, SliceExpr, FuncDef,
@@ -71,7 +71,7 @@ def _GetContainsFunc(t):
   contains_func = None
 
   if isinstance(t, Instance):
-    type_name = t.type.fullname()
+    type_name = t.type.fullname
 
     if type_name == 'builtins.list':
       contains_func = 'list_contains'
@@ -97,7 +97,7 @@ def _GetContainsFunc(t):
 
 def IsStr(t):
   """Helper to check if a type is a string."""
-  return isinstance(t, Instance) and t.type.fullname() == 'builtins.str'
+  return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
 
 def _CheckConditionType(t):
@@ -106,7 +106,7 @@ def _CheckConditionType(t):
   doesn't translate to C++.
   """
   if isinstance(t, Instance):
-    type_name = t.type.fullname()
+    type_name = t.type.fullname
     if type_name == 'builtins.str':
       return False
 
@@ -154,7 +154,7 @@ def get_c_type(t, param=False, local=False):
   # mypyc/genops.py does?
 
   elif isinstance(t, Instance):
-    type_name = t.type.fullname()
+    type_name = t.type.fullname
 
     if type_name == 'builtins.int':
       c_type = 'int'
@@ -188,8 +188,8 @@ def get_c_type(t, param=False, local=False):
       is_pointer = True
 
     else:
-      # note: fullname() => 'parse.Lexer'; name() => 'Lexer'
-      base_class_names = [b.type.fullname() for b in t.type.bases]
+      # note: fullname => 'parse.Lexer'; name => 'Lexer'
+      base_class_names = [b.type.fullname for b in t.type.bases]
 
       #log('** base_class_names %s', base_class_names)
 
@@ -202,7 +202,7 @@ def get_c_type(t, param=False, local=False):
       if 'asdl.pybase.SimpleObj' not in base_class_names:
         is_pointer = True
 
-      parts = t.type.fullname().split('.')
+      parts = t.type.fullname.split('.')
       c_type = '%s::%s' % (parts[-2], parts[-1])
 
   elif isinstance(t, UninhabitedType):
@@ -235,6 +235,17 @@ def get_c_type(t, param=False, local=False):
     ret_type = get_c_type(t.ret_type)
     arg_types = [get_c_type(typ) for typ in t.arg_types]
     c_type = '%s (*f)(%s)' % (ret_type, ', '.join(arg_types))
+
+  elif isinstance(t, TypeAliasType):
+    if 0:
+      log('***')
+      log('%s', t)
+      log('%s', dir(t))
+      log('%s', t.alias)
+      log('%s', dir(t.alias))
+      log('%s', t.alias.target)
+      log('***')
+    return get_c_type(t.alias.target)
 
   else:
     raise NotImplementedError('MyPy type: %s %s' % (type(t), t))
@@ -364,7 +375,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
         # Skip some stdlib stuff.  A lot of it is brought in by 'import
         # typing'.
-        if o.fullname() in (
+        if o.fullname in (
             '__future__', 'sys', 'types', 'typing', 'abc', '_ast', 'ast',
             '_weakrefset', 'collections', 'cStringIO', 're', 'builtins'):
 
@@ -373,9 +384,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         #self.log('')
-        #self.log('mypyfile %s', o.fullname())
+        #self.log('mypyfile %s', o.fullname)
 
-        mod_parts = o.fullname().split('.')
+        mod_parts = o.fullname.split('.')
         if self.forward_decl:
           comment = 'forward declare' 
         elif self.decl:
@@ -516,7 +527,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if (callee_name not in ('str', 'bool', 'float') and
             isinstance(ret_type, Instance)):
 
-          ret_type_name = ret_type.type.name()
+          ret_type_name = ret_type.type.name
 
           # HACK: Const is the callee; expr__Const is the return type
           if (ret_type_name == callee_name or
@@ -743,8 +754,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.log('*** %r', c_op)
           self.log('%s', o.left)
           self.log('%s', o.right)
-          #self.log('t0 %r', t0.type.fullname())
-          #self.log('t1 %r', t1.type.fullname())
+          #self.log('t0 %r', t0.type.fullname)
+          #self.log('t1 %r', t1.type.fullname)
           self.log('left_ctype %r', left_ctype)
           self.log('right_ctype %r', right_ctype)
           self.log('')
@@ -1367,7 +1378,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             over_type = self.types[seq]
             #self.log('  iterating over type %s', over_type)
 
-            if over_type.type.fullname() == 'builtins.list':
+            if over_type.type.fullname == 'builtins.list':
               c_type = get_c_type(over_type)
               assert c_type.endswith('*'), c_type
               c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]  # remove *
@@ -1469,6 +1480,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Str* y = tup1->at1()
 
           rvalue_type = self.types[o.rvalue]
+
+          # type alias upgrade for MyPy 0.780
+          if isinstance(rvalue_type, TypeAliasType):
+            rvalue_type = rvalue_type.alias.target
+
           c_type = get_c_type(rvalue_type)
 
           is_return = isinstance(o.rvalue, CallExpr)
@@ -1599,12 +1615,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           iterated_over = o.expr
 
         over_type = self.types[iterated_over]
+        if isinstance(over_type, TypeAliasType):
+          over_type = over_type.alias.target
+
         #self.log('  iterating over type %s', over_type)
-        #self.log('  iterating over type %s', over_type.type.fullname())
+        #self.log('  iterating over type %s', over_type.type.fullname)
 
         over_dict = False
 
-        if over_type.type.fullname() == 'builtins.list':
+        if over_type.type.fullname == 'builtins.list':
           c_type = get_c_type(over_type)
           assert c_type.endswith('*'), c_type
           c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]  # remove *
@@ -1613,7 +1632,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if reverse:
             c_iter_type = 'Reverse' + c_iter_type
 
-        elif over_type.type.fullname() == 'builtins.dict':
+        elif over_type.type.fullname == 'builtins.dict':
           # Iterator
           c_type = get_c_type(over_type)
           assert c_type.endswith('*'), c_type
@@ -1623,7 +1642,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           assert not reverse
 
-        elif over_type.type.fullname() == 'builtins.str':
+        elif over_type.type.fullname == 'builtins.str':
           c_iter_type = 'StrIter'
           assert not reverse  # can't reverse iterate over string yet
 
@@ -1891,7 +1910,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           c_type = get_c_type(arg_type, param=False)
           #c_type = get_c_type(arg_type, param=True)
 
-          arg_name = arg.variable.name()
+          arg_name = arg.variable.name
 
           # C++ has implicit 'this'
           if arg_name == 'self':
@@ -1921,9 +1940,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       default_val = o.arguments[-1].initializer
       if default_val:  # e.g. osh/bool_parse.py has default val
         if self.decl or class_name is None:
-          func_name = o.name()
+          func_name = o.name
         else:
-          func_name = '%s::%s' % (self.current_class_name, o.name())
+          func_name = '%s::%s' % (self.current_class_name, o.name)
         self.write('\n')
 
         # Write _Next() with no args
@@ -1945,7 +1964,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(' {\n')
           # return MakeOshParser()
           kw = '' if isinstance(ret_type, NoneTyp) else 'return '
-          self.write('  %s%s(' % (kw, o.name()))
+          self.write('  %s%s(' % (kw, o.name))
 
           # Don't write self or last optional argument
           first_arg_index = 0 if class_name is None else 1
@@ -1955,7 +1974,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             for i, arg in enumerate(pass_through):
               if i != 0:
                 self.write(', ')
-              self.write(arg.variable.name())
+              self.write(arg.variable.name)
             self.write(', ')
 
           # Now write default value, e.g. lex_mode_e::DBracket
@@ -1964,12 +1983,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write('}\n')
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
-        if o.name() == '__repr__':  # Don't translate
+        if o.name == '__repr__':  # Don't translate
           return
 
         # No function prototypes when forward declaring.
         if self.forward_decl:
-          self.virtual.OnMethod(self.current_class_name, o.name())
+          self.virtual.OnMethod(self.current_class_name, o.name)
           return
 
         # Hacky MANUAL LIST of functions and methods with OPTIONAL ARGUMENTS.
@@ -1984,7 +2003,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # TODO: restrict this
         class_name = self.current_class_name
-        func_name = o.name()
+        func_name = o.name
         ret_type = o.type.ret_type
 
         if (class_name in ('BoolParser', 'CommandParser') and
@@ -2038,17 +2057,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.local_var_list = []  # Make a new instance to collect from
           self.local_vars[o] = self.local_var_list
 
-          #log('Is Virtual? %s %s', self.current_class_name, o.name())
-          if self.virtual.IsVirtual(self.current_class_name, o.name()):
+          #log('Is Virtual? %s %s', self.current_class_name, o.name)
+          if self.virtual.IsVirtual(self.current_class_name, o.name):
             virtual = 'virtual '
 
         if not self.decl and self.current_class_name:
           # definition looks like
           # void Type::foo(...);
-          func_name = '%s::%s' % (self.current_class_name, o.name())
+          func_name = '%s::%s' % (self.current_class_name, o.name)
         else:
           # declaration inside class { }
-          func_name = o.name()
+          func_name = o.name
 
         self.write('\n')
 
@@ -2071,7 +2090,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Write local vars we collected in the 'decl' phase
         if not self.forward_decl and not self.decl:
-          arg_names = [arg.variable.name() for arg in o.arguments]
+          arg_names = [arg.variable.name for arg in o.arguments]
           #log('arg_names %s', arg_names)
           #log('local_vars %s', self.local_vars[o])
           self.prepend_to_block = [
@@ -2137,7 +2156,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # Constructor is named after class
             if isinstance(stmt, FuncDef):
-              method_name = stmt.name()
+              method_name = stmt.name
               if method_name == '__init__':
                 self.decl_write_ind('%s(', o.name)
                 self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
@@ -2197,7 +2216,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if isinstance(stmt, FuncDef):
             # Collect __init__ calls within __init__, and turn them into
             # initializer lists.
-            if stmt.name() == '__init__':
+            if stmt.name == '__init__':
               self.write('\n')
               self.write_ind('%s::%s(', o.name, o.name)
               self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
@@ -2250,10 +2269,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.accept(stmt.body)
               continue
 
-            if stmt.name() == '__enter__':
+            if stmt.name == '__enter__':
               continue
 
-            if stmt.name() == '__exit__':
+            if stmt.name == '__exit__':
               self.decl_write('\n')
               self.decl_write_ind('%s::~%s()', o.name, o.name)
               self.accept(stmt.body)

@@ -87,7 +87,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
         # Skip some stdlib stuff.  A lot of it is brought in by 'import
         # typing'.
-        if o.fullname() in (
+        if o.fullname in (
             '__future__', 'sys', 'types', 'typing', 'abc', '_ast', 'ast',
             '_weakrefset', 'collections', 'cStringIO', 're', 'builtins'):
 
@@ -355,7 +355,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
         # got the type here, nice!
         typ = o.type
-        self.log('FuncDef %s :: %s', o.name(), typ)
+        self.log('FuncDef %s :: %s', o.name, typ)
         #self.log('%s', type(typ))
 
         for t, name in zip(typ.arg_types, typ.arg_names):

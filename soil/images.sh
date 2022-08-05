@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Manage container images for Toil
+# Manage container images for Soil
 #
 # Usage:
 #   soil/images.sh <function name>
@@ -46,15 +46,17 @@ build() {
 tag() {
   local name=${1:-dummy}
 
-  local tag=v-2022-08-04
+  local tag=v-2022-08-05
   sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
 }
 
 list-images() {
   for name in soil/Dockerfile.*; do
-    #echo $name
-    local image=${name//'soil/Dockerfile.'/}
-    echo $image
+    local image_id=${name//'soil/Dockerfile.'/}
+    if test "$image_id" = 'test-image'; then
+      continue
+    fi
+    echo $image_id
   done
 }
 

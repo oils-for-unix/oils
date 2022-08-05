@@ -12,7 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
-source $REPO_ROOT/mycpp/common.sh
+source $REPO_ROOT/mycpp/common.sh  # maybe-our-python3
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PATH
 
@@ -86,13 +86,18 @@ translate-mycpp() {
   # TODO: mylib_old.h should grow the GC API
   export GC=1
 
+  local tmp=$out.tmp
+
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different
   # PYTHONPATH.
   ( source $MYCPP_VENV/bin/activate
-    # flags may be empty
-    time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" \
-      mycpp/mycpp_main.py "$@" > $out
+    # MYPYPATH set to find mylib.pyi
+    time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH="$REPO_ROOT/mycpp" \
+      $0 maybe-our-python3 mycpp/mycpp_main.py "$@" > $tmp
   )
+
+  # Don't create output unless it succeeds!
+  mv $tmp $out
 }
 
 translate-pea() {

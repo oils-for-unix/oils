@@ -15,6 +15,8 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh  # for log, $CLANGXX
+source soil/deps-apt.sh   # PY3_DEPS
+# TODO: We could have the user run soil/deps-apt.sh directly
 
 export PYTHONPATH='.:vendor/'
 
@@ -28,7 +30,7 @@ ubuntu-deps() {
   set -x  # show what needs sudo
   sudo apt install \
     python-dev gawk libreadline-dev ninja-build cmake \
-    python-pip python3-pip
+    "${PY3_DEPS[@]}"
   set +x
 
   test/spec.sh install-shells

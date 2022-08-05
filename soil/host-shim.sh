@@ -15,8 +15,15 @@ live-image-tag() {
   ### image ID -> Docker tag name
   local image_id=$1
 
-  # TODO: can use a case statement
-  echo 'v-2022-08-04'
+  case $image_id in
+    (clang|cpp|pea)
+      # Updated with layer-py3
+      echo 'v-2022-08-05'
+      ;;
+    (*)
+      echo 'v-2022-08-04'
+      ;;
+  esac
 }
 
 make-soil-dir() {

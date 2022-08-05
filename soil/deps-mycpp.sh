@@ -32,29 +32,40 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 
 git-clone() {
-  ### Invoked by services/toil-worker
+  ### Clone mypy at a specific branch
+
   local out=$MYPY_REPO
   mkdir -p $out
-  git clone --recursive --depth=50 --branch=release-0.730 \
+  git clone --recursive --depth=50 --branch=release-0.780 \
     https://github.com/python/mypy $out
 }
 
 create-venv() {
   local dir=$MYCPP_VENV
-  python3 -m venv $dir
+
+  maybe-our-python3 -m venv $dir
 
   ls -l $dir
   
   echo "Now run . $dir/bin/activate"
 }
 
+ensure-pip() {
+  ### Special module to add pip to hermetic build
+
+  # Weird that it's a bunch of wheels
+
+  maybe-our-python3 -m ensurepip
+}
+
 # Do this inside the virtualenv
 # Re-run this when UPGRADING MyPy.  10/2019: Upgraded from 0.670 to 0.730.
 mypy-deps() {
-  python3 -m pip install -r $MYPY_REPO/test-requirements.txt
+  maybe-our-python3 -m pip install -r $MYPY_REPO/test-requirements.txt
 }
 
 pip-install() {
+  ensure-pip
   create-venv
 
   set +o nounset

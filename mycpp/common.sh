@@ -33,3 +33,19 @@ run-test() {
   $bin > $log
 }
 
+maybe-our-python3() {
+  ### Run a command line with Python 3
+
+  # Use Python 3.10 from soil/deps-tar if available.  Otherwise use the sytsem
+  # python3.
+
+  local py3_ours='../oil_DEPS/python3'
+  if test -f $py3_ours; then
+    echo "*** Running $py3_ours $@" >& 2
+    $py3_ours "$@"
+  else
+    # Use system copy
+    python3 "$@"
+  fi
+}
+

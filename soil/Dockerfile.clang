@@ -5,10 +5,7 @@ RUN apt-get update
 # repo is /home/uke/{oil,oil_DEPS}
 WORKDIR /home/uke/tmp
 
-# Copy build scripts into the container and run them
-
 COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
-
 RUN soil/deps-apt.sh layer-for-soil
 RUN soil/deps-apt.sh clang
 
@@ -39,6 +36,12 @@ RUN soil/deps-tar.sh build-re2c
 
 # mypy deps: Installs from PyPI
 # needed to measure coverage of mycpp/examples
+
+# Run MyPy under Python 3.10
+COPY --chown=uke _cache/Python-3.10.4.tar.xz \
+  /home/uke/tmp/_cache/Python-3.10.4.tar.xz
+RUN soil/deps-tar.sh layer-py3
+
 COPY mycpp/common.sh /home/uke/tmp/mycpp/common.sh
 COPY soil/deps-mycpp.sh /home/uke/tmp/soil/deps-mycpp.sh
 RUN soil/deps-mycpp.sh layer-mycpp

@@ -146,15 +146,10 @@ readonly JOBS=$(( NPROC == 1 ? NPROC : NPROC-1 ))
 
 build-python() {
   local dir=${1:-$PREPARE_DIR}
-  local extra_cflags=${2:-'-O0'}
 
   pushd $dir
   make clean
-  # Speed it up with -O0.
-  # NOTE: CFLAGS clobbers some Python flags, so use EXTRA_CFLAGS.
-
-  time make -j $JOBS EXTRA_CFLAGS="$extra_cflags"
-  #time make -j 7 CFLAGS='-O0'
+  time make -j $JOBS
   popd
 }
 

@@ -194,7 +194,7 @@ compile_one() {
 
   # this flag is only valid in Clang, doesn't work in continuous build
   if test "$compiler" = 'clang'; then
-    flags="$flags -ferror-limit=1000"
+    flags="$flags -ferror-limit=10"
   fi
 
   setglobal_cxx $compiler

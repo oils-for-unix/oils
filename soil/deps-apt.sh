@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./deps-apt.sh <function name>
+#   soil/deps-apt.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
+
+# These are needed for bootstrapping pip in Python 3.10
+# (Also used by build/dev.sh ubuntu-deps)
+#
+# For building Python 3.10 with working 'pip install'
+#   libssl-dev: to download packages
+#   libffi-dev: for working setuptools
+#   zlib1g-dev: needed for 'import zlib'
+declare -a PY3_DEPS=(libssl-dev libffi-dev zlib1g-dev)
 
 layer-python-symlink() {
   ### A special layer for building CPython; done as root
@@ -50,7 +59,14 @@ dev-minimal() {
 }
 
 pea() {
+  # For installing MyPy
   apt-get install -y python3-pip
+}
+
+test-image() {
+  ### Minimal build with custom Python 3
+
+  apt-get install -y build-essential "${PY3_DEPS[@]}"
 }
 
 other-tests() {
@@ -77,9 +93,13 @@ cpp() {
     libreadline-dev
     python2-dev
 
+    # for type checking with MyPy binary
     python3
-    python3-pip
-    python3-venv  # MyPy virtualenv requirements.txt
+    python3-pip  # TODO: remove
+    python3-venv  # TODO: remove
+
+    # for custom Python 3
+    "${PY3_DEPS[@]}"
 
     ninja-build
     # to create _test/index.html
@@ -110,10 +130,13 @@ clang() {
 
     ninja-build
 
-    # for translating mycpp/examples
+    # for type checking with MyPy binary
     python3
-    python3-pip
-    python3-venv  # MyPy virtualenv requirements.txt
+    python3-pip  # TODO: try removing
+    python3-venv  # TODO: try removing
+
+    # for custom Python 3
+    "${PY3_DEPS[@]}"
   )
 
   apt-get install -y "${packages[@]}"
@@ -147,4 +170,6 @@ ovm-tarball() {
   apt-get install -y "${packages[@]}"
 }
 
-"$@"
+if test $(basename $0) = 'deps-apt.sh'; then
+  "$@"
+fi
