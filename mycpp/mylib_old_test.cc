@@ -24,7 +24,12 @@ TEST test_str_creation() {
   ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
 
   // Test truncating a string
-  Str* s4 = mylib::OverAllocatedStr(7);
+  //
+  // NOTE(Jesse): It's undefined to call `len()` after allocating with this
+  // function because it explicitly doesn't set the length!!
+  /* Str* s4 = mylib::OverAllocatedStr(7); */
+
+  Str* s4 = mylib::AllocStr(7);
   ASSERT_EQ(7, len(s4));
   ASSERT_EQ(0, memcmp("\0\0\0\0\0\0\0\0", s4->data_, 8));
 

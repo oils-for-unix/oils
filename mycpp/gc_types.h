@@ -744,6 +744,8 @@ void Dict<K, V>::set(K key, V val) {
 
 // Do some extra calculation to avoid storing redundant lengths.
 inline int len(const gc_heap::Str* s) {
+  assert(s->obj_len_ > gc_heap::kStrHeaderSize - 1);
+
   return s->obj_len_ - gc_heap::kStrHeaderSize - 1;
 }
 
