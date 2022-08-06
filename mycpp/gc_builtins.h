@@ -90,7 +90,7 @@ inline int int_cmp(int a, int b) {
 }
 
 // Used by [[ a > b ]] and so forth
-inline int str_cmp(gc_heap::Str* a, gc_heap::Str* b) {
+inline int str_cmp(Str* a, Str* b) {
   int len_a = len(a);
   int len_b = len(b);
 
@@ -105,7 +105,7 @@ inline int str_cmp(gc_heap::Str* a, gc_heap::Str* b) {
   return comp;
 }
 
-inline bool _cmp(gc_heap::Str* a, gc_heap::Str* b) {
+inline bool _cmp(Str* a, Str* b) {
   return str_cmp(a, b) < 0;
 }
 

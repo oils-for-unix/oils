@@ -12,7 +12,6 @@
   #include "mycpp/gc_types.h"
 using gc_heap::Dict;
 using gc_heap::List;
-using gc_heap::Str;
 #endif
 
 // Forward declarations (can't include osh_eval.h)

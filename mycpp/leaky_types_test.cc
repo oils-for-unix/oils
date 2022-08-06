@@ -1,9 +1,10 @@
-/* #define LEAKY_BINDINGS 1 */
-
 #ifdef LEAKY_BINDINGS
-  #include "mycpp/mylib_old.h"
 
+// NOTE(Jesse): This path is currently never compiled.
+
+#include "mycpp/mylib_old.h"
 using gc_heap::gHeap;
+
 
 #else
 
@@ -14,9 +15,7 @@ using gc_heap::gHeap;
 
 using gc_heap::gHeap;
 using gc_heap::kEmptyString;
-using gc_heap::Str;
 using gc_heap::StrFromC;
-/* using gc_heap::StrFromC; */
 
 #endif
 
@@ -654,6 +653,25 @@ TEST test_str_to_int() {
   PASS();
 }
 
+TEST test_str_size() {
+  printf("---------- str_size ----------\n");
+
+  PRINT_INT(kStrHeaderSize);
+  PRINT_INT((int)sizeof(Str));
+
+#ifdef LEAKY_BINDINGS
+  PRINT_INT(1);
+#else
+  PRINT_INT(0);
+#endif
+
+  ASSERT(kStrHeaderSize == 12);
+  ASSERT(sizeof(Str) == 16);
+
+  printf("---------- Done ----------\n");
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -667,6 +685,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_str_just);
   RUN_TEST(test_str_concat);
   RUN_TEST(test_str_to_int);
+  RUN_TEST(test_str_size);
 
   GREATEST_MAIN_END();
   return 0;

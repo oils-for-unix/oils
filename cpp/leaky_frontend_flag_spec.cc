@@ -288,7 +288,6 @@ args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
   // TODO: Fill this in from constant data!
   flag_spec::_FlagSpecAndMore* spec = LookupFlagSpec2(spec_name);
   assert(spec);
-  // assert(spec);  // should always be found
   return args::ParseMore(spec, arg_r);
 #endif
 }

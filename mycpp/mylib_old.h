@@ -26,7 +26,45 @@
 
 // if this file is even included, we're using the old mylib
 #define MYLIB_LEAKY 1
-#include "mycpp/gc_types.h"  // for Obj
+/* #include "mycpp/gc_types.h"  // for Obj */
+
+#define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val)-1)
+#define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
+
+#include "mycpp/gc_tag.h"
+
+namespace gc_heap {
+  #include "mycpp/gc_obj.h"
+  #include "mycpp/gc_alloc.h"
+
+  struct Heap
+  {
+    void Init(int byte_count)
+    {
+    }
+
+    void Bump()
+    {
+    }
+
+    void Collect()
+    {
+    }
+
+    void* Allocate(int num_bytes)
+    {
+      return calloc(num_bytes, 1);
+    }
+  };
+
+  extern Heap gHeap;
+
+  struct StackRoots {
+    StackRoots(std::initializer_list<void*> roots) {}
+  };
+
+}
+
 #include "mycpp/tuple_types.h"
 #include "mycpp/error_types.h"
 
@@ -34,6 +72,11 @@ template <class T>
 class List;
 
 #include "mycpp/str_types.h"
+
+inline int len(const Str* s) {
+  return s->obj_len_ - kStrHeaderSize - 1;
+}
+
 
 template <class K, class V>
 class Dict;
@@ -64,10 +107,6 @@ void println_stderr(Str* s);
 //
 // Data Types
 //
-
-inline int len(const Str* s) {
-  return s->obj_len_ - kStrHeaderSize - 1;
-}
 
 // NOTE: This iterates over bytes.
 class StrIter {
@@ -523,7 +562,6 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
 
 template <typename T>
 inline int len(const List<T>* L) {
-  // inline int len(List<T>* L) {
   return L->v_.size();
 }
 

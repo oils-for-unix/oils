@@ -1,6 +1,11 @@
 #ifndef GC_OBJ_H
 #define GC_OBJ_H
 
+const int kZeroMask = 0;  // for types with no pointers
+// no obj_len_ computed for global List/Slab/Dict
+const int kNoObjLen = 0x0eadbeef;
+
+
 // Why do we need this macro instead of using inheritance?
 // - Because ASDL uses multiple inheritance for first class variants, but we
 //   don't want multiple IMPLEMENTATION inheritance.  Instead we just generate

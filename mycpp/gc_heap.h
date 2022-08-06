@@ -98,20 +98,10 @@
 // GC_VERBOSE: Log when we collect
 // GC_STATS: Collect more stats.  TODO: Rename this?
 
-// Obj::heap_tag_ values.  They're odd numbers to distinguish them from vtable
-// pointers.
-namespace Tag {
-const int Forwarded = 1;  // For the Cheney algorithm.
-const int Global = 3;     // Neither copy nor scan.
-const int Opaque = 5;     // Copy but don't scan.  List<int> and Str
-const int FixedSize = 7;  // Fixed size headers: consult field_mask_
-const int Scanned = 9;    // Copy AND scan for non-NULL pointers.
-}  // namespace Tag
-
 // Silly definition for passing types like GlobalList<T, N> and initializer
 // lists like {1, 2, 3} to macros
 
-#define COMMA ,
+#include "mycpp/gc_tag.h"
 
 namespace gc_heap {
 
@@ -460,15 +450,9 @@ class Param : public Local<T> {
   // operator= -- I don't think we need to PushRoot()
 };
 
-// Variadic templates:
-// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
-template <typename T, typename... Args>
-T* Alloc(Args&&... args) {
-  void* place = gHeap.Allocate(sizeof(T));
-  assert(place != nullptr);
-  // placement new
-  return new (place) T(std::forward<Args>(args)...);
-}
+
+#include "mycpp/gc_alloc.h"
+
 
 // Return the size of a resizeable allocation.  For now we just round up by
 // powers of 2. This could be optimized later.  CPython has an interesting
@@ -491,10 +475,6 @@ inline int RoundUp(int n) {
   n++;
   return n;
 }
-
-const int kZeroMask = 0;  // for types with no pointers
-// no obj_len_ computed for global List/Slab/Dict
-const int kNoObjLen = 0x0eadbeef;
 
 #include "mycpp/gc_obj.h"
 

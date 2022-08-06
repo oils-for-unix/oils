@@ -11,6 +11,18 @@
 
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
+/* using gc_heap::len; */
+
+
+constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
+// Align returned pointers to the worst case of 8 bytes (64-bit pointers)
+inline size_t aligned(size_t n) {
+  // https://stackoverflow.com/questions/2022179/c-quick-calculation-of-next-multiple-of-4
+  // return (n + 7) & ~7;
+
+  return (n + kMask) & ~kMask;
+}
+
 
 #if 0
 // Translation of Python's print().
@@ -349,7 +361,7 @@ List<Str*>* Str::split(Str* sep) {
   int length = len(this);
   if (length == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
-    return NewList<Str*>(std::initializer_list<Str*>{kEmptyString});
+    return gc_heap::NewList<Str*>(std::initializer_list<Str*>{kEmptyString});
   }
 
   // Find breaks first so we can allocate the right number of strings ALL AT
@@ -378,9 +390,9 @@ List<Str*>* Str::split(Str* sep) {
     }
   }
 
-  result = NewList<Str*>(nullptr, breaks.size() - 1);  // reserve enough space
+  result = gc_heap::NewList<Str*>(nullptr, breaks.size() - 1);  // reserve enough space
 
-  place = reinterpret_cast<char*>(gHeap.Allocate(num_bytes));
+  place = reinterpret_cast<char*>(gc_heap::gHeap.Allocate(num_bytes));
   int n = breaks.size();
   for (int i = 1; i < n; ++i) {
     int prev_pos = breaks[i - 1];

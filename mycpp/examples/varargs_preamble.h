@@ -4,8 +4,6 @@
 
 #include "mycpp/gc_types.h"
 
-using gc_heap::Str;
-
 //
 // Copied from cpp/core_error.h
 //

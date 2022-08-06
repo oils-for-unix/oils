@@ -13,7 +13,6 @@ using mylib::OverAllocatedStr;
 using gc_heap::AllocStr;
 using gc_heap::OverAllocatedStr;
 using gc_heap::StackRoots;
-using gc_heap::Str;
 #endif
 
 namespace qsn {
