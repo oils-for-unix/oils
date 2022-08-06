@@ -153,7 +153,7 @@ class TypeLookup(object):
       #print('target tag %r' % target.tag)
 
       if target.name == 'Str':
-          return StrPrinter(val)
+          return GcStrPrinter(val)
 
       if target.name in self.sum_type_lookup:
           return AsdlPrinter(val, self.sum_type_lookup[target.name])
