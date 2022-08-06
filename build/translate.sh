@@ -30,7 +30,7 @@ mycpp() {
 
     source $MYCPP_VENV/bin/activate
     time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
-      $0 maybe-our-python3 mycpp/mycpp_main.py "$@"
+      maybe-our-python3 mycpp/mycpp_main.py "$@"
   )
 }
 

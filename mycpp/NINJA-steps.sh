@@ -93,7 +93,7 @@ translate-mycpp() {
   ( source $MYCPP_VENV/bin/activate
     # MYPYPATH set to find mylib.pyi
     time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH="$REPO_ROOT/mycpp" \
-      $0 maybe-our-python3 mycpp/mycpp_main.py "$@" > $tmp
+      maybe-our-python3 mycpp/mycpp_main.py "$@" > $tmp
   )
 
   # Don't create output unless it succeeds!
@@ -215,7 +215,7 @@ benchmark-table() {
 # For consistency, use the copy of MyPy in our mycpp dependencies
 mypy() {
   ( source $MYCPP_VENV/bin/activate
-    PYTHONPATH=$MYPY_REPO $0 maybe-our-python3 -m mypy "$@";
+    PYTHONPATH=$MYPY_REPO maybe-our-python3 -m mypy "$@";
   )
 }
 

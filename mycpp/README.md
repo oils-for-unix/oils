@@ -47,7 +47,7 @@ To build oil-native, use:
 To run the tests and benchmarks:
 
     oil$ ./NINJA_config.py
-    oil$ ninja mycpp-all
+    oil$ ninja mycpp-logs-equal
     ... 200+ tasks run ...
 
 If you have problems, post a message on `#oil-dev` at
@@ -60,21 +60,6 @@ Related:
 Start](https://github.com/oilshell/oil/wiki/Oil-Native-Quick-Start) on the
 wiki.
 - [Oil Dev Cheat Sheet](https://github.com/oilshell/oil/wiki/Oil-Native-Quick-Start)
-
-
-### Run Tests and Benchmarks
-
-    $ ./NINJA_config.py
-    $ ninja mycpp-logs-equal       # test for correctness by comparing stdout
-    $ ninja benchmark-table  # make a table of time/memory usage
-
-To build and run one example, like `fib_iter`:
-
-    $ ninja _ninja/tasks/test/fib_iter.py.task.txt
-
-To list targets:
-
-    $ ninja -t targets all
 
 ### Clean
 
