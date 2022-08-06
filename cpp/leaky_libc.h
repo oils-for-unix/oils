@@ -12,7 +12,6 @@
   #include "mycpp/mylib_old.h"
 using mylib::StrFromC;
 #else
-using gc_heap::StrFromC;
 #endif
 
 namespace libc {

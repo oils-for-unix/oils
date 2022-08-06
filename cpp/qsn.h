@@ -10,8 +10,6 @@ using mylib::AllocStr;
 using mylib::OverAllocatedStr;
 #else
   #include "mycpp/gc_types.h"
-using gc_heap::AllocStr;
-using gc_heap::OverAllocatedStr;
 using gc_heap::StackRoots;
 #endif
 

@@ -4,7 +4,6 @@
 #if MYLIB_LEAKY
 using mylib::StrFromC;
 #else
-using gc_heap::StrFromC;
 #endif
 
 

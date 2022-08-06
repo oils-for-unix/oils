@@ -139,7 +139,7 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue() {
     if (data_) {
-      Str* ret = gc_heap::StrFromC(data_, len_);
+      Str* ret = StrFromC(data_, len_);
       reset();  // Invalidate this instance
       return ret;
     } else {

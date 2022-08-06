@@ -5,14 +5,12 @@
 #include "mycpp/gc_builtins.h"
 #include "mycpp/gc_types.h"
 #include "vendor/greatest.h"
-//#include "gc_mylib.h"  // gBuf
 
 using gc_heap::Alloc;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewList;
 using gc_heap::StackRoots;
-using gc_heap::StrFromC;
 
 using gc_heap::gHeap;
 

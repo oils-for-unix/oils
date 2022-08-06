@@ -10,6 +10,8 @@
 
 extern Str* kEmptyString;
 
+#include "mycpp/str_allocators.h"
+
 namespace gc_heap {
 
 #include "mycpp/gc_slab.h"
@@ -46,11 +48,6 @@ class GlobalStr {
         -1,                                     \
         val};                                   \
     Str* name = reinterpret_cast<Str*>(&_##name);
-
-#include "mycpp/str_allocators.h"
-
-bool str_equals(Str* left, Str* right);
-bool maybe_str_equals(Str* left, Str* right);
 
 //
 // Compile-time computation of GC field masks.
@@ -399,6 +396,9 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
 inline bool keys_equal(int left, int right) {
   return left == right;
 }
+
+bool str_equals(Str* left, Str* right);
+bool maybe_str_equals(Str* left, Str* right);
 
 inline bool keys_equal(Str* left, Str* right) {
   return str_equals(left, right);

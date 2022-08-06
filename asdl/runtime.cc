@@ -12,7 +12,6 @@ using gc_heap::kZeroMask;
 #include "mycpp/gc_mylib.h"
 
 using gc_heap::Alloc;
-using gc_heap::AllocStr;
 using gc_heap::kZeroMask;
 using gc_heap::StackRoots;
 using gc_heap::NewList;

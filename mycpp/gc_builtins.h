@@ -16,11 +16,9 @@
 #include "mycpp/mylib_types.h"
 
 // TODO: Don't use 'using' in header
-using gc_heap::AllocStr;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::StackRoots;
-using gc_heap::StrFromC;
 
 void println_stderr(Str* s);
 

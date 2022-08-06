@@ -15,17 +15,14 @@ using gc_heap::Heap;
 using gc_heap::Obj;
 using gc_heap::Param;
 
-using gc_heap::AllocStr;
 using gc_heap::Dict;
 using gc_heap::GlobalStr;
 using gc_heap::List;
 using gc_heap::Local;
 using gc_heap::NewDict;
 using gc_heap::NewList;
-using gc_heap::OverAllocatedStr;
 using gc_heap::Slab;
 using gc_heap::StackRoots;
-using gc_heap::StrFromC;
 
 // Constants
 using gc_heap::kSlabHeaderSize;

@@ -12,7 +12,6 @@ using mylib::StrFromC;
 #else
   #include "mycpp/gc_types.h"
 using gc_heap::StackRoots;
-using gc_heap::StrFromC;
 #endif
 
 TEST qsn_test() {

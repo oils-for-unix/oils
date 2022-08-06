@@ -8,7 +8,6 @@
 #include "vendor/greatest.h"
 
 using gc_heap::Alloc;
-using gc_heap::StrFromC;
 
 using hnode_asdl::hnode_str;
 using hnode_asdl::hnode_t;

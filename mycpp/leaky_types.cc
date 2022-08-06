@@ -6,7 +6,6 @@ using mylib::CopyBufferIntoNewStr;
 #else
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_types.h"
-using gc_heap::CopyBufferIntoNewStr;
 using gc_heap::StackRoots;
 #endif
 
