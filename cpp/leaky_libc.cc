@@ -1,8 +1,6 @@
 // libc.cc: Replacement for native/libcmodule.c
 
 #include "leaky_libc.h"
-using mylib::CopyBufferIntoNewStr;
-
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>

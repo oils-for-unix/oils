@@ -1,13 +1,11 @@
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
-using gc_heap::StackRoots;  // no-op
-using mylib::AllocStr;
-using mylib::CopyBufferIntoNewStr;
 #else
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_types.h"
-using gc_heap::StackRoots;
 #endif
+
+using gc_heap::StackRoots;
 
 #include <ctype.h>  // isalpha(), isdigit()
 

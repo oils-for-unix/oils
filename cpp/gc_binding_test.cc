@@ -5,14 +5,12 @@
 // leaky mode!
 
 #ifdef LEAKY_BINDINGS
-  /* #include "mycpp/gc_types.h" */
   #include "mycpp/mylib_old.h"
-using gc_heap::StackRoots;  // no-op
-using mylib::StrFromC;
 #else
   #include "mycpp/gc_types.h"
-using gc_heap::StackRoots;
 #endif
+
+using gc_heap::StackRoots;
 
 TEST qsn_test() {
   Str* s = nullptr;

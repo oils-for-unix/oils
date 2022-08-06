@@ -1,12 +1,6 @@
 #ifndef MYLIB_TYPES_H
 #define MYLIB_TYPES_H
 
-#if MYLIB_LEAKY
-using mylib::StrFromC;
-#else
-#endif
-
-
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
 // Notes:
 // - Python 2.7's intobject.c has an erroneous +6

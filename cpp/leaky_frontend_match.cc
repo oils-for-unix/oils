@@ -1,7 +1,6 @@
 // frontend_match.cc: manual port of frontend/match
 
 #include "leaky_frontend_match.h"
-using mylib::CopyBufferIntoNewStr;
 
 // This order is required to get it to compile, despite clang-format
 // clang-format off

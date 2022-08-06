@@ -10,8 +10,6 @@
 
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
-using mylib::StrFromC;
-#else
 #endif
 
 namespace libc {

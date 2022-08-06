@@ -1,9 +1,6 @@
 // frontend_flag_spec.cc
 
 #include "leaky_frontend_flag_spec.h"
-using mylib::CopyBufferIntoNewStr;
-using mylib::StrFromC;
-
 #include "_build/cpp/arg_types.h"
 
 #ifndef CPP_UNIT_TEST

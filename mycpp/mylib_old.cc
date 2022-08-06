@@ -1,7 +1,6 @@
 // mylib_old.cc
 
 #include "mylib_old.h"
-using mylib::CopyBufferIntoNewStr;
 
 #include <errno.h>
 #include <unistd.h>  // isatty

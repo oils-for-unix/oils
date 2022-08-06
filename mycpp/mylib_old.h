@@ -79,9 +79,17 @@ class Dict;
 template <class K, class V>
 class DictIter;
 
+#include "mycpp/str_allocators.h"
+
 namespace mylib {
 
-#include "mycpp/str_allocators.h"
+  inline Str* StrFromC(const char* s, int len) {
+    return ::StrFromC(s, len);
+  }
+
+  inline Str* StrFromC(const char* s) {
+    return ::StrFromC(s);
+  }
 
   template <typename V>
   void dict_remove(Dict<Str*, V>* haystack, Str* needle);
@@ -955,7 +963,7 @@ inline Str* chr(int i) {
   char* buf = static_cast<char*>(malloc(2));
   buf[0] = i;
   buf[1] = '\0';
-  return mylib::CopyBufferIntoNewStr(buf, 1);
+  return CopyBufferIntoNewStr(buf, 1);
 }
 
 inline int ord(Str* s) {
@@ -968,7 +976,7 @@ inline int ord(Str* s) {
 inline Str* str(int i) {
   char* buf = static_cast<char*>(malloc(kIntBufSize));
   int len = snprintf(buf, kIntBufSize, "%d", i);
-  return mylib::CopyBufferIntoNewStr(buf, len);
+  return CopyBufferIntoNewStr(buf, len);
 }
 
 inline Str* str(double f) {  // TODO: should be double

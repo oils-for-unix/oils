@@ -17,9 +17,6 @@
 #include <unistd.h>        // getuid(), environ
 
 #include "mycpp/mylib_old.h"
-using mylib::StrFromC;
-using mylib::OverAllocatedStr;
-using mylib::CopyBufferIntoNewStr;
 
 namespace pyos {
 
