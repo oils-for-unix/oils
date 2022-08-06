@@ -18,22 +18,22 @@
 
 #include "common.h"
 
-// if this file is even included, we're using the old mylib
-#define MYLIB_LEAKY 1
-#include "mycpp/gc_types.h"  // for Obj
-#include "mycpp/tuple_types.h"
-#include "mycpp/error_types.h"
-
 #ifdef DUMB_ALLOC
   #include "cpp/dumb_alloc.h"
   #define malloc dumb_malloc
   #define free dumb_free
 #endif
 
-class Str;
+// if this file is even included, we're using the old mylib
+#define MYLIB_LEAKY 1
+#include "mycpp/gc_types.h"  // for Obj
+#include "mycpp/tuple_types.h"
+#include "mycpp/error_types.h"
 
 template <class T>
 class List;
+
+#include "mycpp/str_types.h"
 
 template <class K, class V>
 class Dict;
@@ -43,9 +43,7 @@ class DictIter;
 
 namespace mylib {
 
-  inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len);
-  inline Str* StrFromC(const char* s, int len);
-  inline Str* StrFromC(const char* s);
+#include "mycpp/str_allocators.h"
 
   template <typename V>
   void dict_remove(Dict<Str*, V>* haystack, Str* needle);
@@ -66,8 +64,6 @@ void println_stderr(Str* s);
 //
 // Data Types
 //
-
-#include "mycpp/str_types.h"
 
 inline int len(const Str* s) {
   return s->obj_len_ - kStrHeaderSize - 1;
@@ -761,7 +757,6 @@ inline void dict_remove(Dict<int, V>* haystack, int needle) {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
-#include "mycpp/str_allocators.h"
 
 // emulate gc_heap API for ASDL
 
