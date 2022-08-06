@@ -13,7 +13,6 @@ using gc_heap::List;
 using gc_heap::NewList;
 using gc_heap::StackRoots;
 using gc_heap::StrFromC;
-// using gc_heap::kEmptyString;
 
 using gc_heap::gHeap;
 

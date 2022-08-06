@@ -10,7 +10,7 @@ using mylib::CopyBufferIntoNewStr;
 #include <cstdio>
 #include <exception>  // std::exception
 
-Str* kEmptyString = StrFromC("", 0);
+extern Str* kEmptyString; // = StrFromC("", 0);
 
 // For cStringIO API
 Str* mylib::BufWriter::getvalue() {

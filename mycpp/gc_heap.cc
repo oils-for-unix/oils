@@ -8,9 +8,9 @@ using gc_heap::Heap;
 using gc_heap::Local;
 using gc_heap::Obj;
 
-namespace gc_heap {
-
 GLOBAL_STR(kEmptyString, "");
+
+namespace gc_heap {
 
 Heap gHeap;
 

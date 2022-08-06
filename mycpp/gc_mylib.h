@@ -145,7 +145,7 @@ class BufWriter : public Writer {
     } else {
       // log('') translates to this
       // Strings are immutable so we can do this.
-      return gc_heap::kEmptyString;
+      return kEmptyString;
     }
   }
 

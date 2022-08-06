@@ -9,7 +9,6 @@
 #include "gc_mylib.h"  // BufWriter
 #include "cpp/aligned.h"
 
-using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
 using gc_heap::aligned;
 

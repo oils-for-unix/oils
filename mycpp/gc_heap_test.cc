@@ -28,7 +28,6 @@ using gc_heap::StackRoots;
 using gc_heap::StrFromC;
 
 // Constants
-using gc_heap::kEmptyString;
 using gc_heap::kSlabHeaderSize;
 using gc_heap::kZeroMask;
 

@@ -8,6 +8,7 @@
 #include "mycpp/gc_heap.h"
 #include "mycpp/str_types.h"
 
+extern Str* kEmptyString;
 
 namespace gc_heap {
 
@@ -27,8 +28,6 @@ class GlobalStr {
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
-
-extern Str* kEmptyString;
 
   // This macro is a workaround for the fact that it's impossible to have a
   // a constexpr initializer for char[N].  The "String Literals as Non-Type
