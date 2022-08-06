@@ -25,9 +25,14 @@ This will give you a working shell:
     oil$ bin/osh -c 'echo hi'  # running interpreted Python
     hi
 
-To run mycpp, you'll need the MyPy source repository, as well as a virtualenv
-containing MyPy's dependencies.  The instructions at the top of `deps.sh` give
-details:
+To run mycpp, you should first build Python 3.10 (which has the `match`
+statement and enhanced `ast` module).  This will take a few minutes:
+
+    oil$ soil/deps-tar.sh download-py3
+    oil$ soil/deps-tar.sh layer-py3
+
+Then you'll need the MyPy source repository, as well as a virtualenv containing
+MyPy's dependencies.
 
     oil$ soil/deps-mycpp.sh git-clone
     oil$ soil/deps-mycpp.sh pip-install
