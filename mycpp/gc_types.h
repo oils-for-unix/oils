@@ -688,10 +688,6 @@ void Dict<K, V>::set(K key, V val) {
 
 #ifndef MYLIB_LEAKY
 
-inline int len(const Str* s) {
-  return s->obj_len_ - kStrHeaderSize - 1;
-}
-
 template <typename T>
 int len(const gc_heap::List<T>* L) {
   return L->len_;

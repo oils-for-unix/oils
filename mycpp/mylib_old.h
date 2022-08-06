@@ -73,11 +73,6 @@ class List;
 
 #include "mycpp/str_types.h"
 
-inline int len(const Str* s) {
-  return s->obj_len_ - kStrHeaderSize - 1;
-}
-
-
 template <class K, class V>
 class Dict;
 

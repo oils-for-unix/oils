@@ -1,28 +1,17 @@
 // gc_builtins.cc
 
-#include "gc_builtins.h"
 
 #include <ctype.h>  // isspace(), isdigit()
-
 #include <cstdarg>  // va_list, etc.
 #include <vector>
 
+#include "gc_builtins.h"
 #include "gc_mylib.h"  // BufWriter
+#include "cpp/aligned.h"
 
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
-/* using gc_heap::len; */
-
-
-constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
-// Align returned pointers to the worst case of 8 bytes (64-bit pointers)
-inline size_t aligned(size_t n) {
-  // https://stackoverflow.com/questions/2022179/c-quick-calculation-of-next-multiple-of-4
-  // return (n + 7) & ~7;
-
-  return (n + kMask) & ~kMask;
-}
-
+using gc_heap::aligned;
 
 #if 0
 // Translation of Python's print().
