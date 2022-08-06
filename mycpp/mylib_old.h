@@ -1,4 +1,8 @@
-// mylib_old.h
+#define MYLIB_LEAKY 1
+
+#ifndef MYLIB_LEAKY
+#error "This file contains definitions for leaky containers.  If you wanted a gc'd container build, include gc_types.h"
+#endif
 
 #ifndef MYLIB_H
 #define MYLIB_H
@@ -23,10 +27,6 @@
   #define malloc dumb_malloc
   #define free dumb_free
 #endif
-
-// if this file is even included, we're using the old mylib
-#define MYLIB_LEAKY 1
-/* #include "mycpp/gc_types.h"  // for Obj */
 
 #define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val)-1)
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
