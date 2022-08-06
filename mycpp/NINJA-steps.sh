@@ -212,10 +212,10 @@ benchmark-table() {
 # This is the one installed from PIP
 #mypy() { ~/.local/bin/mypy "$@"; }
 
-# Use repo in the virtualenv
+# For consistency, use the copy of MyPy in our mycpp dependencies
 mypy() {
   ( source $MYCPP_VENV/bin/activate
-    PYTHONPATH=$MYPY_REPO python3 -m mypy "$@";
+    PYTHONPATH=$MYPY_REPO $0 maybe-our-python3 -m mypy "$@";
   )
 }
 
