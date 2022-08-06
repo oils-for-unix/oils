@@ -9,7 +9,6 @@ using mylib::CopyBufferIntoNewStr;
 using gc_heap::CopyBufferIntoNewStr;
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
-using gc_heap::Str;
 #endif
 
 #include <ctype.h>  // isalpha(), isdigit()
@@ -301,28 +300,6 @@ List<Str*>* Str::splitlines(bool keep) {
   return nullptr;
 }
 
-#ifndef LEAKY_BINDINGS
-namespace gc_heap {
-#endif
-
-enum class StripWhere {
-  Left,
-  Right,
-  Both,
-};
-
-const int kWhitespace = -1;
-
-bool OmitChar(uint8_t ch, int what) {
-  if (what == kWhitespace) {
-    return isspace(ch);
-  } else {
-    return what == ch;
-  }
-}
-
-// #######################################
-
 Str* Str::upper() {
   int len_ = len(this);
   Str* result = AllocStr(len_);
@@ -342,8 +319,6 @@ Str* Str::lower() {
   }
   return result;
 }
-
-// #######################################
 
 Str* Str::ljust(int width, Str* fillchar) {
   assert(len(fillchar) == 1);
@@ -439,6 +414,23 @@ Str* Str::replace(Str* old, Str* new_str) {
   return CopyBufferIntoNewStr(result, result_len);
 }
 
+
+enum class StripWhere {
+  Left,
+  Right,
+  Both,
+};
+
+const int kWhitespace = -1;
+
+bool OmitChar(uint8_t ch, int what) {
+  if (what == kWhitespace) {
+    return isspace(ch);
+  } else {
+    return what == ch;
+  }
+}
+
 // StripAny is modeled after CPython's do_strip() in stringobject.c, and can
 // implement 6 functions:
 //
@@ -509,8 +501,4 @@ Str* Str::lstrip(Str* chars) {
 Str* Str::lstrip() {
   return StripAny(this, StripWhere::Left, kWhitespace);
 }
-
-#ifndef LEAKY_BINDINGS
-}  // namespace gc_heap
-#endif
 

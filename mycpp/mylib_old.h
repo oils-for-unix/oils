@@ -18,22 +18,60 @@
 
 #include "common.h"
 
-// if this file is even included, we're using the old mylib
-#define MYLIB_LEAKY 1
-#include "mycpp/gc_types.h"  // for Obj
-#include "mycpp/tuple_types.h"
-#include "mycpp/error_types.h"
-
 #ifdef DUMB_ALLOC
   #include "cpp/dumb_alloc.h"
   #define malloc dumb_malloc
   #define free dumb_free
 #endif
 
-class Str;
+// if this file is even included, we're using the old mylib
+#define MYLIB_LEAKY 1
+/* #include "mycpp/gc_types.h"  // for Obj */
+
+#define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val)-1)
+#define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
+
+#include "mycpp/gc_tag.h"
+
+namespace gc_heap {
+  #include "mycpp/gc_obj.h"
+  #include "mycpp/gc_alloc.h"
+
+  struct Heap
+  {
+    void Init(int byte_count)
+    {
+    }
+
+    void Bump()
+    {
+    }
+
+    void Collect()
+    {
+    }
+
+    void* Allocate(int num_bytes)
+    {
+      return calloc(num_bytes, 1);
+    }
+  };
+
+  extern Heap gHeap;
+
+  struct StackRoots {
+    StackRoots(std::initializer_list<void*> roots) {}
+  };
+
+}
+
+#include "mycpp/tuple_types.h"
+#include "mycpp/error_types.h"
 
 template <class T>
 class List;
+
+#include "mycpp/str_types.h"
 
 template <class K, class V>
 class Dict;
@@ -43,10 +81,7 @@ class DictIter;
 
 namespace mylib {
 
-  inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len);
-
-  inline Str* StrFromC(const char* s, int len);
-  inline Str* StrFromC(const char* s);
+#include "mycpp/str_allocators.h"
 
   template <typename V>
   void dict_remove(Dict<Str*, V>* haystack, Str* needle);
@@ -67,12 +102,6 @@ void println_stderr(Str* s);
 //
 // Data Types
 //
-
-#include "mycpp/str_types.h"
-
-inline int len(const Str* s) {
-  return s->obj_len_ - kStrHeaderSize - 1;
-}
 
 // NOTE: This iterates over bytes.
 class StrIter {
@@ -528,7 +557,6 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
 
 template <typename T>
 inline int len(const List<T>* L) {
-  // inline int len(List<T>* L) {
   return L->v_.size();
 }
 
@@ -600,31 +628,7 @@ inline bool maybe_str_equals(Str* left, Str* right) {
   return false;  // one is None and one is a Str*
 }
 
-inline Str* chr(int i) {
-  char* buf = static_cast<char*>(malloc(2));
-  buf[0] = i;
-  buf[1] = '\0';
-  return mylib::CopyBufferIntoNewStr(buf, 1);
-}
-
-inline int ord(Str* s) {
-  assert(len(s) == 1);
-  // signed to unsigned conversion, so we don't get values like -127
-  uint8_t c = static_cast<uint8_t>(s->data_[0]);
-  return c;
-}
-
 #include "mycpp/mylib_types.h"
-
-inline Str* str(int i) {
-  char* buf = static_cast<char*>(malloc(kIntBufSize));
-  int len = snprintf(buf, kIntBufSize, "%d", i);
-  return mylib::CopyBufferIntoNewStr(buf, len);
-}
-
-inline Str* str(double f) {  // TODO: should be double
-  NotImplemented();          // Uncalled
-}
 
 // Display a quoted representation of a string.  word_.Pretty() uses it.
 Str* repr(Str* s);
@@ -786,49 +790,6 @@ inline void dict_remove(Dict<int, V>* haystack, int needle) {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
-// Emulate GC API so we can reuse bindings
-
-#if 0
-inline Str* AllocStr(int len) {
-  Str* result = static_cast<Str*>(calloc(sizeof(Str), 1));
-
-  // TODO(Jesse): This is heinous and needs to go.
-  char** data = (char**)&result->data_;
-  *data = static_cast<char*>(calloc(len+1, 1));
-  result->SetObjLenFromStrLen(len);
-
-  return result;
-}
-
-inline Str* OverAllocatedStr(int len) {
-  // Here they are identical, but in gc_heap.cc they're different
-  return AllocStr(len);
-}
-
-inline Str* StrFromC(const char* s, int len) {
-  Str *result = AllocStr(len);
-  memcpy((void*)result->data_, s, len);
-  return result;
-}
-
-inline Str* StrFromC(const char* s) {
-  return StrFromC(s, strlen(s));
-}
-
-inline Str* CopyBufferIntoNewStr(char* buf) {
-  Str* s = StrFromC(buf);
-  return s;
-}
-
-inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
-  Str* s = StrFromC(buf, buf_len);
-  return s;
-}
-#else
-
-#include "mycpp/str_allocators.h"
-
-#endif
 
 // emulate gc_heap API for ASDL
 
@@ -911,28 +872,20 @@ class Writer {
 
 class BufWriter : public Writer {
  public:
+
   BufWriter() : data_(nullptr), len_(0) {
   }
+
   virtual void write(Str* s) override;
   virtual void flush() override {
   }
   virtual bool isatty() override {
     return false;
   }
-  // For cStringIO API
-  Str* getvalue() {
-    if (data_) {
-      Str* ret = CopyBufferIntoNewStr(data_, len_);
-      reset();  // Invalidate this instance
-      return ret;
-    } else {
-      // log('') translates to this
-      // Strings are immutable so we can do this.
-      return kEmptyString;
-    }
-  }
+
 
   // Methods to compile printf format strings to
+  Str* getvalue();
 
   // To reuse the global gBuf instance
   // problem: '%r' % obj will recursively call asdl/format.py, which has its
@@ -996,6 +949,31 @@ inline Writer* Stderr() {
 
 
 }  // namespace mylib
+
+
+inline Str* chr(int i) {
+  char* buf = static_cast<char*>(malloc(2));
+  buf[0] = i;
+  buf[1] = '\0';
+  return mylib::CopyBufferIntoNewStr(buf, 1);
+}
+
+inline int ord(Str* s) {
+  assert(len(s) == 1);
+  // signed to unsigned conversion, so we don't get values like -127
+  uint8_t c = static_cast<uint8_t>(s->data_[0]);
+  return c;
+}
+
+inline Str* str(int i) {
+  char* buf = static_cast<char*>(malloc(kIntBufSize));
+  int len = snprintf(buf, kIntBufSize, "%d", i);
+  return mylib::CopyBufferIntoNewStr(buf, len);
+}
+
+inline Str* str(double f) {  // TODO: should be double
+  NotImplemented();          // Uncalled
+}
 
 //
 // Formatter for Python's %s

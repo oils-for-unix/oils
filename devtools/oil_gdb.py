@@ -152,12 +152,8 @@ class TypeLookup(object):
       #print('target name %r' % target.name)
       #print('target tag %r' % target.tag)
 
-      if target.name == 'gc_heap::Str':
-          return GcStrPrinter(val)
-
-      # TODO: remove Str when we remove mylib_old.cc
       if target.name == 'Str':
-          return StrPrinter(val)
+          return GcStrPrinter(val)
 
       if target.name in self.sum_type_lookup:
           return AsdlPrinter(val, self.sum_type_lookup[target.name])

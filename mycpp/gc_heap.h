@@ -98,35 +98,17 @@
 // GC_VERBOSE: Log when we collect
 // GC_STATS: Collect more stats.  TODO: Rename this?
 
-// Obj::heap_tag_ values.  They're odd numbers to distinguish them from vtable
-// pointers.
-namespace Tag {
-const int Forwarded = 1;  // For the Cheney algorithm.
-const int Global = 3;     // Neither copy nor scan.
-const int Opaque = 5;     // Copy but don't scan.  List<int> and Str
-const int FixedSize = 7;  // Fixed size headers: consult field_mask_
-const int Scanned = 9;    // Copy AND scan for non-NULL pointers.
-}  // namespace Tag
-
 // Silly definition for passing types like GlobalList<T, N> and initializer
 // lists like {1, 2, 3} to macros
 
-#define COMMA ,
+#include "mycpp/gc_tag.h"
 
 namespace gc_heap {
 
 template <class T>
 class List;
 
-constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
-
-// Align returned pointers to the worst case of 8 bytes (64-bit pointers)
-inline size_t aligned(size_t n) {
-  // https://stackoverflow.com/questions/2022179/c-quick-calculation-of-next-multiple-of-4
-  // return (n + 7) & ~7;
-
-  return (n + kMask) & ~kMask;
-}
+#include "cpp/aligned.h"
 
 class Obj;
 
@@ -460,15 +442,9 @@ class Param : public Local<T> {
   // operator= -- I don't think we need to PushRoot()
 };
 
-// Variadic templates:
-// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
-template <typename T, typename... Args>
-T* Alloc(Args&&... args) {
-  void* place = gHeap.Allocate(sizeof(T));
-  assert(place != nullptr);
-  // placement new
-  return new (place) T(std::forward<Args>(args)...);
-}
+
+#include "mycpp/gc_alloc.h"
+
 
 // Return the size of a resizeable allocation.  For now we just round up by
 // powers of 2. This could be optimized later.  CPython has an interesting
@@ -492,65 +468,7 @@ inline int RoundUp(int n) {
   return n;
 }
 
-const int kZeroMask = 0;  // for types with no pointers
-// no obj_len_ computed for global List/Slab/Dict
-const int kNoObjLen = 0x0eadbeef;
-
-// Why do we need this macro instead of using inheritance?
-// - Because ASDL uses multiple inheritance for first class variants, but we
-//   don't want multiple IMPLEMENTATION inheritance.  Instead we just generate
-//   compatible layouts.
-// - Similarly, GlobalStr is layout-compatible with Str.  It can't inherit from
-//   Obj like Str, because of the constexpr issue with char[N].
-
-// heap_tag_: one of Tag::
-// type_tag_: ASDL tag (variant)
-// field_mask_: for fixed length records, so max 16 fields
-// obj_len_: number of bytes to copy
-//   TODO: with a limitation of ~15 fields, we can encode obj_len_ in
-//   field_mask_, and save space on many ASDL types.
-//   And we can sort integers BEFORE pointers.
-
-// TODO: ./configure could detect big or little endian, and then flip the
-// fields in OBJ_HEADER?
-//
-// https://stackoverflow.com/questions/2100331/c-macro-definition-to-determine-big-endian-or-little-endian-machine
-//
-// Because we want to do (obj->heap_tag_ & 1 == 0) to distinguish it from
-// vtable pointer.  We assume low bits of a pointer are 0 but not high bits.
-
-#define OBJ_HEADER()    \
-  uint8_t heap_tag_;    \
-  uint8_t type_tag_;    \
-  uint16_t field_mask_; \
-  uint32_t obj_len_;
-
-class Obj {
-  // The unit of garbage collection.  It has a header describing how to find
-  // the pointers within it.
-  //
-  // Note: Sorting ASDL fields by (non-pointer, pointer) is a good idea, but it
-  // breaks down because mycpp has inheritance.  Could do this later.
-
- public:
-  // Note: ASDL types are layout-compatible with Obj, but don't actually
-  // inherit from it because of the 'multiple inheritance of implementation'
-  // issue.  So they don't call this constructor.
-  constexpr Obj(uint8_t heap_tag, uint16_t field_mask, int obj_len)
-      : heap_tag_(heap_tag),
-        type_tag_(0),
-        field_mask_(field_mask),
-        obj_len_(obj_len) {
-  }
-
-  void SetObjLen(int obj_len) {
-    this->obj_len_ = obj_len;
-  }
-
-  OBJ_HEADER()
-
-  DISALLOW_COPY_AND_ASSIGN(Obj)
-};
+#include "mycpp/gc_obj.h"
 
 }  // namespace gc_heap
 

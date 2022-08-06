@@ -1,16 +1,17 @@
 // gc_builtins.cc
 
-#include "gc_builtins.h"
 
 #include <ctype.h>  // isspace(), isdigit()
-
 #include <cstdarg>  // va_list, etc.
 #include <vector>
 
+#include "gc_builtins.h"
 #include "gc_mylib.h"  // BufWriter
+#include "cpp/aligned.h"
 
 using gc_heap::kEmptyString;
 using gc_heap::StackRoots;
+using gc_heap::aligned;
 
 #if 0
 // Translation of Python's print().
@@ -349,7 +350,7 @@ List<Str*>* Str::split(Str* sep) {
   int length = len(this);
   if (length == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
-    return NewList<Str*>(std::initializer_list<Str*>{kEmptyString});
+    return gc_heap::NewList<Str*>(std::initializer_list<Str*>{kEmptyString});
   }
 
   // Find breaks first so we can allocate the right number of strings ALL AT
@@ -378,9 +379,9 @@ List<Str*>* Str::split(Str* sep) {
     }
   }
 
-  result = NewList<Str*>(nullptr, breaks.size() - 1);  // reserve enough space
+  result = gc_heap::NewList<Str*>(nullptr, breaks.size() - 1);  // reserve enough space
 
-  place = reinterpret_cast<char*>(gHeap.Allocate(num_bytes));
+  place = reinterpret_cast<char*>(gc_heap::gHeap.Allocate(num_bytes));
   int n = breaks.size();
   for (int i = 1; i < n; ++i) {
     int prev_pos = breaks[i - 1];

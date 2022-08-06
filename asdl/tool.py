@@ -89,7 +89,6 @@ using gc_heap::Obj;
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewList;
-using gc_heap::Str;
 using gc_heap::StrFromC;
 #endif
 """)

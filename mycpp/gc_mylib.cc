@@ -8,7 +8,6 @@
 #include "gc_builtins.h"  // kIntBufSize
 
 using gc_heap::gHeap;
-using gc_heap::kStrHeaderSize;
 using gc_heap::StackRoots;
 
 mylib::BufWriter gBuf;

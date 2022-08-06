@@ -22,8 +22,9 @@
 #define NotImplemented() assert(!"Not Implemented")
 #define InvalidCodePath() assert(!"Invalid Code Path")
 
-// Prevent silent copies
+#define COMMA ,
 
+// Prevent silent copies
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(TypeName&) = delete;            \
   void operator=(TypeName) = delete;

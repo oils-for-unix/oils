@@ -139,12 +139,7 @@ int gNumDelete = 0;
 
 #ifdef DUMB_ALLOC
 
-constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
-
-// Align returned pointers to the worst case of 8 bytes (64-bit pointers)
-inline size_t aligned(size_t n) {
-  return (n + kMask) & ~kMask;
-}
+#include "cpp/aligned.h"
 
 void* operator new(size_t size) {
   char* p = &(kMem[gMemPos]);

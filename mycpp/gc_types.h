@@ -6,68 +6,14 @@
 #define GC_TYPES_H
 
 #include "mycpp/gc_heap.h"
+#include "mycpp/str_types.h"
+
 
 namespace gc_heap {
 
-template <typename T>
-inline void InitSlabCell(Obj* obj) {
-  // log("SCANNED");
-  obj->heap_tag_ = Tag::Scanned;
-}
-
-template <>
-inline void InitSlabCell<int>(Obj* obj) {
-  // log("OPAQUE");
-  obj->heap_tag_ = Tag::Opaque;
-}
-
-// don't include items_[1]
-const int kSlabHeaderSize = sizeof(Obj);
-
-// Opaque slab, e.g. for List<int>
-template <typename T>
-class Slab : public Obj {
- public:
-  Slab(int obj_len) : Obj(0, 0, obj_len) {
-    InitSlabCell<T>(this);
-  }
-  T items_[1];  // variable length
-};
-
-template <typename T, int N>
-class GlobalSlab {
-  // A template type with the same layout as Str with length N-1 (which needs a
-  // buffer of size N).  For initializing global constant instances.
- public:
-  OBJ_HEADER()
-
-  T items_[N];
-
-  DISALLOW_COPY_AND_ASSIGN(GlobalSlab)
-};
-
-// Note: entries will be zero'd because the Heap is zero'd.
-template <typename T>
-inline Slab<T>* NewSlab(int len) {
-  int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
-  void* place = gHeap.Allocate(obj_len);
-  auto slab = new (place) Slab<T>(obj_len);  // placement new
-  return slab;
-}
-
-#ifdef MYLIB_LEAKY
-  #define GLOBAL_STR(name, val) Str* name = StrFromC(val);
-  #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
-#endif
+#include "mycpp/gc_slab.h"
 
 #ifndef MYLIB_LEAKY
-
-//
-// Str
-//
-
-#include "mycpp/str_types.h"
-
 
 template <int N>
 class GlobalStr {
@@ -94,10 +40,10 @@ extern Str* kEmptyString;
 
   #define GLOBAL_STR(name, val)                 \
     gc_heap::GlobalStr<sizeof(val)> _##name = { \
-        Tag::Global,                            \
+        Tag::Global,                   \
         0,                                      \
         gc_heap::kZeroMask,                     \
-        gc_heap::kStrHeaderSize + sizeof(val),  \
+        kStrHeaderSize + sizeof(val),  \
         -1,                                     \
         val};                                   \
     Str* name = reinterpret_cast<Str*>(&_##name);
@@ -741,13 +687,6 @@ void Dict<K, V>::set(K key, V val) {
 }  // namespace gc_heap
 
 #ifndef MYLIB_LEAKY
-
-// Do some extra calculation to avoid storing redundant lengths.
-inline int len(const gc_heap::Str* s) {
-  assert(s->obj_len_ > gc_heap::kStrHeaderSize - 1);
-
-  return s->obj_len_ - gc_heap::kStrHeaderSize - 1;
-}
 
 template <typename T>
 int len(const gc_heap::List<T>* L) {
