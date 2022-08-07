@@ -225,12 +225,16 @@ compile_and_link() {
   local out=$4
   shift 4
 
+
   setglobal_compile_flags "$variant" "$more_cxx_flags" ""  # no dotd
 
   setglobal_link_flags $variant
 
   setglobal_cxx $compiler
 
+  echo ""
+  echo "Building: $cxx -o $out $flags $@ $link_flags"
+  echo ""
   "$cxx" -o "$out" $flags "$@" $link_flags
 }
 

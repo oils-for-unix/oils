@@ -106,11 +106,8 @@ DEPS_CC = [
 ]
 
 OLD_RUNTIME = [
-    'mycpp/gc_heap.cc',  # We need this?
-
+    'mycpp/switchy_containers.cc',
     'mycpp/leaky_types.cc',  # runs with both old and new Str layout
-
-    'mycpp/mylib_old.cc',
 ]
 
 

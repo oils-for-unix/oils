@@ -5,18 +5,23 @@
 #ifndef GC_TYPES_H
 #define GC_TYPES_H
 
+#ifdef MYLIB_LEAKY
+#error "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include mylib_old.h instead."
+#endif
+
+#ifdef LEAKY_BINDINGS
+#error "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include mylib_old.h instead."
+#endif
+
 #include "mycpp/gc_heap.h"
 #include "mycpp/str_types.h"
+#include "mycpp/str_allocators.h"
 
 extern Str* kEmptyString;
-
-#include "mycpp/str_allocators.h"
 
 namespace gc_heap {
 
 #include "mycpp/gc_slab.h"
-
-#ifndef MYLIB_LEAKY
 
 template <int N>
 class GlobalStr {
@@ -681,11 +686,8 @@ void Dict<K, V>::set(K key, V val) {
   }
 }
 
-#endif  // MYLIB_LEAKY
-
 }  // namespace gc_heap
 
-#ifndef MYLIB_LEAKY
 
 template <typename T>
 int len(const gc_heap::List<T>* L) {
@@ -696,7 +698,5 @@ template <typename K, typename V>
 inline int len(const gc_heap::Dict<K, V>* d) {
   return d->len_;
 }
-
-#endif  // MYLIB_LEAKY
 
 #endif  // GC_TYPES_H

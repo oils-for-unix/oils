@@ -1,6 +1,9 @@
-// mylib_old.cc
-
 #include "mylib_old.h"
+
+namespace gc_heap
+{
+  Heap gHeap;
+}
 
 #include <errno.h>
 #include <unistd.h>  // isatty
@@ -9,7 +12,8 @@
 #include <cstdio>
 #include <exception>  // std::exception
 
-extern Str* kEmptyString; // = StrFromC("", 0);
+Str* kEmptyString = StrFromC("", 0);
+/* extern Str* kEmptyString; // = StrFromC("", 0); */
 
 // For cStringIO API
 Str* mylib::BufWriter::getvalue() {

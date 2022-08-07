@@ -174,13 +174,13 @@ def ShouldSkipBenchmark(name):
 
 
 GC_RUNTIME = [
-    'mycpp/gc_builtins.cc', 'mycpp/gc_mylib.cc', 'mycpp/gc_heap.cc',
+    'mycpp/gc_builtins.cc', 'mycpp/gc_mylib.cc', 'mycpp/switchy_containers.cc',
     # files we haven't added StackRoots to
     'mycpp/leaky_types.cc',
     ]
 
 UNIT_TESTS = {
-    'mycpp/gc_heap_test.cc': ['mycpp/gc_heap.cc'],
+    'mycpp/gc_heap_test.cc': ['mycpp/switchy_containers.cc'],
     'mycpp/gc_stress_test.cc': GC_RUNTIME,
     'mycpp/gc_builtins_test.cc': GC_RUNTIME,
     'mycpp/gc_mylib_test.cc': GC_RUNTIME,
@@ -188,7 +188,7 @@ UNIT_TESTS = {
     # leaky bindings run against the GC runtime!
     'mycpp/leaky_types_test.cc': GC_RUNTIME,
 
-    'mycpp/demo/target_lang.cc': ['cpp/dumb_alloc.cc', 'mycpp/gc_heap.cc'],
+    'mycpp/demo/target_lang.cc': ['cpp/dumb_alloc.cc', 'mycpp/switchy_containers.cc'],
 
     # there is also demo/{gc_heap,square_heap}.cc
 }

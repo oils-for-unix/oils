@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <unistd.h>  // isatty
 
-#include "gc_builtins.h"  // kIntBufSize
+#include "gc_builtins.h"
 
 using gc_heap::gHeap;
 using gc_heap::StackRoots;

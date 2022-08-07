@@ -1,6 +1,18 @@
 #ifndef MYLIB_TYPES_H
 #define MYLIB_TYPES_H
 
+#ifdef MYLIB_LEAKY
+
+#else
+
+using gc_heap::Dict;
+
+#endif
+
+// NOTE(Jesse): The python that translates to osh_eval.cc relies on these
+// functions being inside this namespace, so we have to live with these.
+
+
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
 // Notes:
 // - Python 2.7's intobject.c has an erroneous +6
@@ -27,6 +39,36 @@ namespace mylib
     int len = snprintf(buf, kIntBufSize, "%o", i);
     return StrFromC(buf, len);
   }
+
+  inline Str* StrFromC(const char* s, int len) {
+    return ::StrFromC(s, len);
+  }
+
+  inline Str* StrFromC(const char* s) {
+    return ::StrFromC(s);
+  }
+
+  template <typename V>
+  void dict_remove(Dict<Str*, V>* haystack, Str* needle);
+
+  template <typename V>
+  void dict_remove(Dict<int, V>* haystack, int needle);
+
+
+  Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
+
+
+  template <typename T>
+  List<T>* NewList() {
+    return new List<T>();
+  }
+
+  template <typename T>
+  List<T>* NewList(std::initializer_list<T> init) {
+    return new List<T>(init);
+  }
+
+
 } // namespace mylib
 
 #endif // MYLIB_TYPES_H

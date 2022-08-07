@@ -32,11 +32,6 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
   haystack->len_--;
 }
 
-// These 3 functions use a static buffer first because we don't know what n is
-// until we call snprintf().
-
-#include "mycpp/mylib_types.h"
-
 class LineReader : gc_heap::Obj {
  public:
   // Abstract type with no fields: unknown size

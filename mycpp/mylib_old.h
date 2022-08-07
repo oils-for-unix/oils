@@ -1,5 +1,9 @@
 #define MYLIB_LEAKY 1
 
+#ifndef LEAKY_BINDINGS
+#error "This file contains definitions for leaky containers.  If you wanted a gc'd container build, include gc_types.h"
+#endif
+
 #ifndef MYLIB_LEAKY
 #error "This file contains definitions for leaky containers.  If you wanted a gc'd container build, include gc_types.h"
 #endif
@@ -65,13 +69,8 @@ namespace gc_heap {
 
 }
 
-#include "mycpp/tuple_types.h"
-#include "mycpp/error_types.h"
-
 template <class T>
 class List;
-
-#include "mycpp/str_types.h"
 
 template <class K, class V>
 class Dict;
@@ -79,26 +78,12 @@ class Dict;
 template <class K, class V>
 class DictIter;
 
+
+#include "mycpp/tuple_types.h"
+#include "mycpp/error_types.h"
+#include "mycpp/str_types.h"
 #include "mycpp/str_allocators.h"
-
-namespace mylib {
-
-  inline Str* StrFromC(const char* s, int len) {
-    return ::StrFromC(s, len);
-  }
-
-  inline Str* StrFromC(const char* s) {
-    return ::StrFromC(s);
-  }
-
-  template <typename V>
-  void dict_remove(Dict<Str*, V>* haystack, Str* needle);
-
-  template <typename V>
-  void dict_remove(Dict<int, V>* haystack, int needle);
-
-};  // namespace mylib
-
+#include "mycpp/mylib_types.h" // mylib namespace
 
 extern Str* kEmptyString;
 
@@ -132,9 +117,6 @@ class StrIter {
 };
 
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
-//
-// TODO(Jesse): I like the sound of getting rid of std:vector
-//
 template <class T>
 class List : public gc_heap::Obj {
  public:
@@ -636,8 +618,6 @@ inline bool maybe_str_equals(Str* left, Str* right) {
   return false;  // one is None and one is a Str*
 }
 
-#include "mycpp/mylib_types.h"
-
 // Display a quoted representation of a string.  word_.Pretty() uses it.
 Str* repr(Str* s);
 
@@ -779,10 +759,8 @@ inline void mysort(std::vector<Str*>* v) {
 // Buf is StringIO
 //
 
-namespace mylib {  // MyPy artifact
-
 template <typename V>
-inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
+inline void mylib::dict_remove(Dict<Str*, V>* haystack, Str* needle) {
   int pos = find_by_key(haystack->items_, needle);
   if (pos == -1) {
     return;
@@ -792,24 +770,11 @@ inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
 
 // TODO: how to do the int version of this?  Do you need an extra bit?
 template <typename V>
-inline void dict_remove(Dict<int, V>* haystack, int needle) {
+inline void mylib::dict_remove(Dict<int, V>* haystack, int needle) {
   NotImplemented();
 }
 
-Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
-
-
-// emulate gc_heap API for ASDL
-
-template <typename T>
-List<T>* NewList() {
-  return new List<T>();
-}
-
-template <typename T>
-List<T>* NewList(std::initializer_list<T> init) {
-  return new List<T>(init);
-}
+namespace mylib {
 
 class LineReader {
  public:

@@ -188,9 +188,8 @@ unit() {
 
 readonly MYLIB_OLD_TEST_SRC=(
     mycpp/mylib_old_test.cc
-    mycpp/mylib_old.cc
     mycpp/leaky_types.cc
-    mycpp/gc_heap.cc
+    mycpp/switchy_containers.cc
 )
 
 mycpp-old-test() {
