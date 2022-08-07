@@ -90,10 +90,10 @@ setglobal_compile_flags() {
       flags="$flags -g -D GC_PROTECT -D GC_STATS -D GC_EVERY_ALLOC"
       ;;
 
-    (leaky)
+    (oldstl)
       # Could this be ASAN?
       # For cpp/gc_binding_test
-      flags="$flags -O0 -g -D LEAKY_BINDINGS"
+      flags="$flags -O0 -g -D OLDSTL_BINDINGS"
       ;;
 
     (opt)

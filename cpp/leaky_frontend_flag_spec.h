@@ -5,7 +5,7 @@
 
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/runtime_asdl.h"
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
   #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_builtins.h"

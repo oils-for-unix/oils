@@ -1,4 +1,4 @@
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
 
 // NOTE(Jesse): This path is currently never compiled.
 
@@ -657,7 +657,7 @@ TEST test_str_size() {
   PRINT_INT(kStrHeaderSize);
   PRINT_INT((int)sizeof(Str));
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
   PRINT_INT(1);
 #else
   PRINT_INT(0);

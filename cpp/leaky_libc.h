@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>  // gethostname()
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
   #include "mycpp/mylib_old.h"
 #endif
 

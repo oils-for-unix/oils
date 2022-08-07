@@ -13,7 +13,7 @@
 //
 
 #ifndef ALLOCATE
-  #ifdef LEAKY_BINDINGS
+  #ifdef OLDSTL_BINDINGS
     #define ALLOCATE(byte_count) calloc(byte_count, 1)
   #else
     #define ALLOCATE(byte_count) gHeap.Allocate(byte_count);

@@ -4,7 +4,7 @@
 // This test runs primarily in the GC mode, but you can also run it in the
 // leaky mode!
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
   #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_types.h"

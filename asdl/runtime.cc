@@ -2,7 +2,7 @@
 
 // BEGIN mycpp output
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
 #include "mycpp/mylib_old.h"
 
 

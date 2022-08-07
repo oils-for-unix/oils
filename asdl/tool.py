@@ -79,7 +79,7 @@ def main(argv):
 #include <cstdint>
 """)
       f.write("""
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
 #include "mycpp/mylib_old.h"
 using mylib::NewList;
 #else

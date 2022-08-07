@@ -21,7 +21,7 @@ Code Layout:
 Output Layout:
 
   _build/
-    # TODO: combine with obj/ after we get rid of -D LEAKY_BINDINGS -D
+    # TODO: combine with obj/ after we get rid of -D OLDSTL_BINDINGS -D
     # NO_GC_HACK, etc.
     obj-mycpp/
       cxx-dbg/

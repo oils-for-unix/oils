@@ -177,7 +177,7 @@ def Cpp(specs, header_f, cc_f):
 #define ARG_TYPES_H
 
 #include "cpp/leaky_frontend_flag_spec.h"  // for FlagSpec_c
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
   #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_types.h"

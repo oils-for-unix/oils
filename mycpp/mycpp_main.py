@@ -235,7 +235,7 @@ def main(argv):
   f.write("""\
 // BEGIN mycpp output
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
 #include "mycpp/mylib_old.h"
 
 
@@ -280,7 +280,7 @@ def main(argv):
 #ifndef %s
 #define %s
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
 #include "mycpp/mylib_old.h"
 #else
 #include "mycpp/gc_types.h"

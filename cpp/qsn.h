@@ -3,7 +3,7 @@
 #ifndef QSN_H
 #define QSN_H
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
   #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_types.h"

@@ -3,7 +3,7 @@
 #include "_build/cpp/hnode_asdl.h"
 #include "cpp/qsn.h"
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
 #include "mycpp/mylib_old.h"
 #else
 #include "mycpp/gc_types.h"
@@ -19,7 +19,7 @@ inline Str* repr(void* obj) {
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
 #include "mycpp/mylib_old.h"
 #else
 #include "mycpp/gc_types.h"

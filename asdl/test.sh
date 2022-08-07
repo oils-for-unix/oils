@@ -47,7 +47,7 @@ gen-cpp-test() {
 
   local bin=$bin_dir/gen_cpp_test
 
-  compile_and_link $compiler $variant '-D LEAKY_BINDINGS' $bin \
+  compile_and_link $compiler $variant '-D OLDSTL_BINDINGS' $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
     mycpp/switchy_containers.cc \

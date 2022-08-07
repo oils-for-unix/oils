@@ -1,7 +1,7 @@
 #ifndef STR_TYPES_H
 #define STR_TYPES_H
 
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
 
 template <typename T>
 class List;

@@ -24,7 +24,7 @@ def main(argv):
 #define OPTVIEW_H
 
 #include "_build/cpp/option_asdl.h"
-#ifdef LEAKY_BINDINGS
+#ifdef OLDSTL_BINDINGS
   #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_types.h"

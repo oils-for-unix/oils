@@ -1,4 +1,4 @@
-#ifndef LEAKY_BINDINGS
+#ifndef OLDSTL_BINDINGS
 #error "This file contains definitions for leaky containers.  If you wanted a gc'd container build, include gc_types.h"
 #endif
 

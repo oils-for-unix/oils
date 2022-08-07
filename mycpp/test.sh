@@ -202,7 +202,7 @@ mycpp-old-test() {
   mkdir -p $dir
   local bin=$dir/mylib_old_test
 
-  local more_cxx_flags='-D LEAKY_BINDINGS'
+  local more_cxx_flags='-D OLDSTL_BINDINGS'
   compile_and_link $compiler $variant "$more_cxx_flags" $bin \
     "${MYLIB_OLD_TEST_SRC[@]}"
 
@@ -210,7 +210,7 @@ mycpp-old-test() {
 }
 
 soil-run() {
-  # Test with -D LEAKY_BINDINGS, which doesn't fit into variants well
+  # Test with -D OLDSTL_BINDINGS, which doesn't fit into variants well
   mycpp-old-test '' asan
   mycpp-old-test '' ubsan
 
