@@ -285,7 +285,6 @@ from asdl import pybase
 #define CONSTS_H
 
 #include "mycpp/mylib_old.h"
-using mylib::StrFromC;
 
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/option_asdl.h"

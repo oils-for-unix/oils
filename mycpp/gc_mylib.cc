@@ -5,10 +5,10 @@
 #include <errno.h>
 #include <unistd.h>  // isatty
 
-#include "gc_builtins.h"  // kIntBufSize
+#include "gc_builtins.h"
 
-using gc_heap::gHeap;
-using gc_heap::StackRoots;
+
+
 
 mylib::BufWriter gBuf;
 
@@ -60,7 +60,7 @@ Str* CFileLineReader::readline() {
       throw new AssertionError(errno);
     }
     // Expected EOF
-    return gc_heap::kEmptyString;
+    return kEmptyString;
   }
 
   // TODO: Fix the leak here.
@@ -79,7 +79,7 @@ Str* BufLineReader::readline() {
 
   int buf_len = len(s_);
   if (pos_ == buf_len) {
-    return gc_heap::kEmptyString;
+    return kEmptyString;
   }
 
   int orig_pos = pos_;

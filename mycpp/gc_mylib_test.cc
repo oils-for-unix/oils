@@ -4,10 +4,8 @@
 #include "mycpp/gc_types.h"
 #include "vendor/greatest.h"
 
-using gc_heap::Alloc;
-using gc_heap::kEmptyString;
-using gc_heap::StackRoots;
-using gc_heap::StrFromC;
+
+
 
 TEST split_once_test() {
   log("split_once()");
@@ -68,7 +66,7 @@ TEST int_to_str_test() {
 
 TEST writer_test() {
   // Demonstrate bug with inheritance
-  log("obj obj_len %d", offsetof(gc_heap::Obj, obj_len_));
+  log("obj obj_len %d", offsetof(Obj, obj_len_));
   log("buf obj_len %d", offsetof(mylib::BufWriter, obj_len_));
 
   PASS();
@@ -156,7 +154,7 @@ TEST files_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gc_heap::gHeap.Init(1 << 20);
+  gHeap.Init(1 << 20);
 
   GREATEST_MAIN_BEGIN();
 

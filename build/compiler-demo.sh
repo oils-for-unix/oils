@@ -111,7 +111,6 @@ duplicate-symbols() {
   echo '
 #ifdef GC
   #include "mycpp/gc_heap.h"
-  using gc_heap::Str;
 #else
   #include "mycpp/mylib_old.h"
 #endif
@@ -129,7 +128,6 @@ int* g1 = new int[100];
   echo '
 #ifdef GC
   #include "mycpp/gc_heap.h"
-  using gc_heap::Str;
 #else
   #include "mycpp/mylib_old.h"
 #endif

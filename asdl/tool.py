@@ -82,14 +82,12 @@ def main(argv):
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_old.h"
 using mylib::NewList;
-using mylib::StrFromC;
 #else
 #include "mycpp/gc_types.h"
-using gc_heap::Obj;
-using gc_heap::Dict;
-using gc_heap::List;
-using gc_heap::NewList;
-using gc_heap::StrFromC;
+
+
+
+
 #endif
 """)
       if pretty_print_methods:

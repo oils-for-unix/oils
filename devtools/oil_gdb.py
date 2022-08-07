@@ -46,7 +46,7 @@ class StrPrinter:
 
 
 class GcStrPrinter:
-    """Print gc_heap::Str type"""
+    """Print Str type"""
 
     def __init__(self, val):
         self.val = val

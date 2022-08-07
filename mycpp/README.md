@@ -124,7 +124,7 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 
 ### Major Features
 
-- Instantiating objects &rarr; `gc_heap::Alloc<T>(...)`
+- Instantiating objects &rarr; `Alloc<T>(...)`
 - Statically Typed Python Collections
   - `str` &rarr; `Str*`
   - `List[T]` &rarr; `List<T>*`

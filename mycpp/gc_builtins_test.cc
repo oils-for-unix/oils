@@ -8,13 +8,9 @@
 #include "mycpp/gc_types.h"
 #include "vendor/greatest.h"
 
-using gc_heap::Alloc;
-using gc_heap::Dict;
-using gc_heap::gHeap;
-using gc_heap::kEmptyString;
-using gc_heap::NewList;
-using gc_heap::StackRoots;
-using gc_heap::StrFromC;
+
+
+
 
 GLOBAL_STR(kStrFood, "food");
 GLOBAL_STR(kWithNull, "foo\0bar");

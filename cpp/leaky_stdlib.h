@@ -6,7 +6,6 @@
 #include <unistd.h>
 
 #include "mycpp/mylib_old.h"
-using mylib::CopyBufferIntoNewStr;
 
 namespace fcntl_ {
 

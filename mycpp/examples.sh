@@ -26,7 +26,7 @@ compile-with-asdl() {
   # .. for asdl/runtime.h
   $CXX -o _bin/$name.$variant $flags \
     -I . -I .. -I ../_devbuild/gen -I ../_build/cpp -I _gen -I ../cpp \
-    mylib_old.cc gc_heap.cc $src "$@" -lstdc++
+    switchy_containers.cc $src "$@" -lstdc++
 }
 
 asdl-gen() {

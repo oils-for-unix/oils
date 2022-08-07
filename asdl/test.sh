@@ -50,8 +50,7 @@ gen-cpp-test() {
   compile_and_link $compiler $variant '-D LEAKY_BINDINGS' $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
-    mycpp/mylib_old.cc \
-    mycpp/gc_heap.cc \
+    mycpp/switchy_containers.cc \
     mycpp/leaky_types.cc \
     _build/cpp/hnode_asdl.cc \
     $tmp_dir/typed_arith_asdl.cc \
@@ -89,7 +88,7 @@ gc-test() {
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
   compile_and_link $compiler $variant '' $bin \
     asdl/gc_test.cc \
-    mycpp/gc_heap.cc \
+    mycpp/switchy_containers.cc \
     mycpp/gc_builtins.cc \
     mycpp/gc_mylib.cc \
     mycpp/leaky_types.cc \
@@ -161,7 +160,7 @@ EOF
   compile_and_link cxx asan '' $bin \
     _build/cpp/${name}_asdl.cc \
     asdl/runtime.cc \
-    mycpp/gc_heap.cc \
+    mycpp/switchy_containers.cc \
     mycpp/gc_builtins.cc \
     mycpp/gc_mylib.cc \
     $tmp_dir/${name}_asdl_test.cc \

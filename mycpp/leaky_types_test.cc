@@ -3,7 +3,7 @@
 // NOTE(Jesse): This path is currently never compiled.
 
 #include "mycpp/mylib_old.h"
-using gc_heap::gHeap;
+
 
 
 #else
@@ -13,9 +13,7 @@ using gc_heap::gHeap;
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_types.h"
 
-using gc_heap::gHeap;
-using gc_heap::kEmptyString;
-using gc_heap::StrFromC;
+
 
 #endif
 

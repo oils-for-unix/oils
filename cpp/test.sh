@@ -31,7 +31,7 @@ readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_flag_spec_test.cc
     cpp/leaky_frontend_flag_spec.cc
     _build/cpp/arg_types.cc
-    mycpp/mylib_old.cc
+    mycpp/leaky_containers.cc
 )
 
 leaky-flag-spec-test() {
@@ -60,9 +60,8 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_osh.cc
     cpp/leaky_stdlib.cc
     cpp/leaky_pylib.cc
-    mycpp/mylib_old.cc
     mycpp/leaky_types.cc
-    mycpp/gc_heap.cc
+    mycpp/switchy_containers.cc
 )
 
 leaky-binding-test() {
@@ -86,7 +85,7 @@ leaky-binding-test() {
 
 readonly GC_TEST_SRC=(
     cpp/gc_binding_test.cc
-    mycpp/gc_heap.cc
+    mycpp/switchy_containers.cc
 )
 
 gc-binding-test() {

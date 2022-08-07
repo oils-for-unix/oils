@@ -1,7 +1,6 @@
-// mylib_old.cc
-
 #include "mylib_old.h"
-using mylib::CopyBufferIntoNewStr;
+
+Heap gHeap;
 
 #include <errno.h>
 #include <unistd.h>  // isatty
@@ -11,6 +10,7 @@ using mylib::CopyBufferIntoNewStr;
 #include <exception>  // std::exception
 
 Str* kEmptyString = StrFromC("", 0);
+/* extern Str* kEmptyString; // = StrFromC("", 0); */
 
 // For cStringIO API
 Str* mylib::BufWriter::getvalue() {

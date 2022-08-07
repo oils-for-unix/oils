@@ -7,8 +7,7 @@
 #include "mycpp/gc_types.h"
 #include "vendor/greatest.h"
 
-using gc_heap::Alloc;
-using gc_heap::StrFromC;
+
 
 using hnode_asdl::hnode_str;
 using hnode_asdl::hnode_t;
@@ -44,7 +43,7 @@ TEST pretty_print_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gc_heap::gHeap.Init(1 << 20);
+  gHeap.Init(1 << 20);
 
   GREATEST_MAIN_BEGIN();
 

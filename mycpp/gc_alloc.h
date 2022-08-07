@@ -4,13 +4,13 @@
 /* class Heap; */
 /* extern Heap gHeap; */
 
-#ifdef MYLIB_LEAKY
+#ifdef LEAKY_BINDINGS
 
 #define ALLOCATE(byte_count) calloc(byte_count, 1)
 
 #else
-  using gc_heap::Heap;
-  using gc_heap::gHeap;
+  
+  
 #define ALLOCATE(byte_count) gHeap.Allocate(byte_count)
 #endif
 

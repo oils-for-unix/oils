@@ -181,7 +181,6 @@ def Cpp(specs, header_f, cc_f):
   #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_types.h"
-  using gc_heap::StrFromC;
 #endif
 
 namespace value_e = runtime_asdl::value_e;

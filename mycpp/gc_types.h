@@ -5,15 +5,17 @@
 #ifndef GC_TYPES_H
 #define GC_TYPES_H
 
+#ifdef LEAKY_BINDINGS
+#error "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include mylib_old.h instead."
+#endif
+
 #include "mycpp/gc_heap.h"
 #include "mycpp/str_types.h"
+#include "mycpp/str_allocators.h"
 
-
-namespace gc_heap {
+extern Str* kEmptyString;
 
 #include "mycpp/gc_slab.h"
-
-#ifndef MYLIB_LEAKY
 
 template <int N>
 class GlobalStr {
@@ -28,8 +30,6 @@ class GlobalStr {
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
 
-extern Str* kEmptyString;
-
   // This macro is a workaround for the fact that it's impossible to have a
   // a constexpr initializer for char[N].  The "String Literals as Non-Type
   // Template Parameters" feature of C++ 20 would have done it, but it's not
@@ -39,19 +39,14 @@ extern Str* kEmptyString;
   // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
   #define GLOBAL_STR(name, val)                 \
-    gc_heap::GlobalStr<sizeof(val)> _##name = { \
+    GlobalStr<sizeof(val)> _##name = { \
         Tag::Global,                   \
         0,                                      \
-        gc_heap::kZeroMask,                     \
+        kZeroMask,                     \
         kStrHeaderSize + sizeof(val),  \
         -1,                                     \
         val};                                   \
     Str* name = reinterpret_cast<Str*>(&_##name);
-
-#include "mycpp/str_allocators.h"
-
-bool str_equals(Str* left, Str* right);
-bool maybe_str_equals(Str* left, Str* right);
 
 //
 // Compile-time computation of GC field masks.
@@ -98,10 +93,10 @@ class GlobalList {
 };
 
   #define GLOBAL_LIST(T, N, name, array)                                \
-    gc_heap::GlobalSlab<T, N> _slab_##name = {                          \
-        Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen, array}; \
-    gc_heap::GlobalList<T, N> _list_##name = {                          \
-        Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen,         \
+    GlobalSlab<T, N> _slab_##name = {                          \
+        Tag::Global, 0, kZeroMask, kNoObjLen, array}; \
+    GlobalList<T, N> _list_##name = {                          \
+        Tag::Global, 0, kZeroMask, kNoObjLen,         \
         N,           N, &_slab_##name};                                 \
     List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
@@ -111,7 +106,7 @@ constexpr uint16_t maskof_List() {
 }
 
 template <typename T>
-class List : public gc_heap::Obj {
+class List : public Obj {
   // TODO: Move methods that don't allocate or resize: out of gc_heap?
   // - allocate: append(), extend()
   // - resize: pop(), clear()
@@ -401,6 +396,9 @@ inline bool keys_equal(int left, int right) {
   return left == right;
 }
 
+bool str_equals(Str* left, Str* right);
+bool maybe_str_equals(Str* left, Str* right);
+
 inline bool keys_equal(Str* left, Str* right) {
   return str_equals(left, right);
 }
@@ -425,9 +423,9 @@ constexpr uint16_t maskof_Dict() {
 }
 
 template <class K, class V>
-class Dict : public gc_heap::Obj {
+class Dict : public Obj {
  public:
-  Dict() : gc_heap::Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
+  Dict() : Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
     assert(len_ == 0);
     assert(capacity_ == 0);
     assert(entry_ == nullptr);
@@ -682,22 +680,14 @@ void Dict<K, V>::set(K key, V val) {
   }
 }
 
-#endif  // MYLIB_LEAKY
-
-}  // namespace gc_heap
-
-#ifndef MYLIB_LEAKY
-
 template <typename T>
-int len(const gc_heap::List<T>* L) {
+int len(const List<T>* L) {
   return L->len_;
 }
 
 template <typename K, typename V>
-inline int len(const gc_heap::Dict<K, V>* d) {
+inline int len(const Dict<K, V>* d) {
   return d->len_;
 }
-
-#endif  // MYLIB_LEAKY
 
 #endif  // GC_TYPES_H

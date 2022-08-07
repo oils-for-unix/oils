@@ -1,14 +1,12 @@
-// gc_heap.cc
+// gc_containers.cc
 
 #include <sys/mman.h>  // mprotect()
 
 #include "mycpp/gc_types.h"
 
-using gc_heap::Heap;
-using gc_heap::Local;
-using gc_heap::Obj;
 
-namespace gc_heap {
+
+
 
 GLOBAL_STR(kEmptyString, "");
 
@@ -300,4 +298,3 @@ void ShowFixedChildren(Obj* obj) {
 }
 #endif
 
-}  // namespace gc_heap

@@ -695,7 +695,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       fmt_parts = format_strings.Parse(fmt)
       self.fmt_funcs.write('inline Str* %s(' % temp_name)
 
-      # NOTE: We're not calling gc_heap::Alloc<> inside these functions, so
+      # NOTE: We're not calling Alloc<> inside these functions, so
       # they don't need StackRoots?
       for i, typ in enumerate(fmt_types):
         if i != 0:
@@ -2136,7 +2136,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write_ind('class %s', o.name)  # block after this
 
           # e.g. class TextOutput : public ColorOutput
-          self.decl_write(' : public %s', base_class_name or 'gc_heap::Obj')
+          self.decl_write(' : public %s', base_class_name or 'Obj')
 
           self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')
@@ -2226,7 +2226,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               if not base_class_name:
                 # TODO: Generate the right mask!
                 self.write(
-                    ': gc_heap::Obj(Tag::FixedSize, kZeroMask, sizeof(%s)) ' % o.name)
+                    ': Obj(Tag::FixedSize, kZeroMask, sizeof(%s)) ' % o.name)
 
               # Taking into account the docstring, look at the first statement to
               # see if it's a superclass __init__ call.  Then move that to the

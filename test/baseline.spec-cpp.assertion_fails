@@ -1,4 +1,4 @@
-(cpp/leaky_core.cc:192: bool pyos::InputAvailable(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-io.html
+(cpp/leaky_core.cc:189: bool pyos::InputAvailable(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-io.html
 (cpp/leaky_pgen2.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/arith-context.html
 (cpp/leaky_pgen2.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
 (cpp/leaky_pgen2.cc:8: void parse::Parser::setup(int): Assertion `0' failed.) _tmp/spec/cpp/bugs.html
@@ -9,4 +9,4 @@
 (/home/scallywag/work/oil/cpp/leaky_osh_eval_stubs.h:45: int signal_def::GetNumber(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-trap.html
 (/home/scallywag/work/oil/cpp/leaky_osh_eval_stubs.h:45: int signal_def::GetNumber(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-trap.html
 (/home/scallywag/work/oil/cpp/leaky_osh_eval_stubs.h:45: int signal_def::GetNumber(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-trap.html
-(mycpp/mylib_old.cc:246: void mylib::BufWriter::format_o(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtins.html
+(mycpp/mylib_old.cc:245: void mylib::BufWriter::format_o(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtins.html

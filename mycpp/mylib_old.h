@@ -1,4 +1,6 @@
-// mylib_old.h
+#ifndef LEAKY_BINDINGS
+#error "This file contains definitions for leaky containers.  If you wanted a gc'd container build, include gc_types.h"
+#endif
 
 #ifndef MYLIB_H
 #define MYLIB_H
@@ -24,54 +26,41 @@
   #define free dumb_free
 #endif
 
-// if this file is even included, we're using the old mylib
-#define MYLIB_LEAKY 1
-/* #include "mycpp/gc_types.h"  // for Obj */
-
 #define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val)-1)
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 
 #include "mycpp/gc_tag.h"
+#include "mycpp/gc_obj.h"
+#include "mycpp/gc_alloc.h"
 
-namespace gc_heap {
-  #include "mycpp/gc_obj.h"
-  #include "mycpp/gc_alloc.h"
-
-  struct Heap
+struct Heap
+{
+  void Init(int byte_count)
   {
-    void Init(int byte_count)
-    {
-    }
+  }
 
-    void Bump()
-    {
-    }
+  void Bump()
+  {
+  }
 
-    void Collect()
-    {
-    }
+  void Collect()
+  {
+  }
 
-    void* Allocate(int num_bytes)
-    {
-      return calloc(num_bytes, 1);
-    }
-  };
+  void* Allocate(int num_bytes)
+  {
+    return calloc(num_bytes, 1);
+  }
+};
 
-  extern Heap gHeap;
+extern Heap gHeap;
 
-  struct StackRoots {
-    StackRoots(std::initializer_list<void*> roots) {}
-  };
-
-}
-
-#include "mycpp/tuple_types.h"
-#include "mycpp/error_types.h"
+struct StackRoots {
+  StackRoots(std::initializer_list<void*> roots) {}
+};
 
 template <class T>
 class List;
-
-#include "mycpp/str_types.h"
 
 template <class K, class V>
 class Dict;
@@ -79,18 +68,12 @@ class Dict;
 template <class K, class V>
 class DictIter;
 
-namespace mylib {
 
+#include "mycpp/tuple_types.h"
+#include "mycpp/error_types.h"
+#include "mycpp/str_types.h"
 #include "mycpp/str_allocators.h"
-
-  template <typename V>
-  void dict_remove(Dict<Str*, V>* haystack, Str* needle);
-
-  template <typename V>
-  void dict_remove(Dict<int, V>* haystack, int needle);
-
-};  // namespace mylib
-
+#include "mycpp/mylib_types.h" // mylib namespace
 
 extern Str* kEmptyString;
 
@@ -124,15 +107,12 @@ class StrIter {
 };
 
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
-//
-// TODO(Jesse): I like the sound of getting rid of std:vector
-//
 template <class T>
-class List : public gc_heap::Obj {
+class List : public Obj {
  public:
   // Note: constexpr doesn't work because the std::vector destructor is
   // nontrivial
-  List() : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), v_() {
+  List() : Obj(Tag::FixedSize, kZeroMask, 0), v_() {
     // Note: this seems to INCREASE the number of 'new' calls.  I guess because
     // many 'spids' lists aren't used?
     // v_.reserve(64);
@@ -140,11 +120,11 @@ class List : public gc_heap::Obj {
 
   // Used by list_repeat
   List(T item, int n)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), v_(n, item) {
+      : Obj(Tag::FixedSize, kZeroMask, 0), v_(n, item) {
   }
 
   List(std::initializer_list<T> init)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), v_() {
+      : Obj(Tag::FixedSize, kZeroMask, 0), v_() {
     for (T item : init) {
       v_.push_back(item);
     }
@@ -459,14 +439,14 @@ List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
 // Dict currently implemented by VECTOR OF PAIRS.  TODO: Use a real hash table,
 // and measure performance.  The hash table has to beat this for small cases!
 template <class K, class V>
-class Dict : public gc_heap::Obj {
+class Dict : public Obj {
  public:
-  Dict() : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), items_() {
+  Dict() : Obj(Tag::FixedSize, kZeroMask, 0), items_() {
   }
 
   // Dummy
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), items_() {
+      : Obj(Tag::FixedSize, kZeroMask, 0), items_() {
   }
 
   // d[key] in Python: raises KeyError if not found
@@ -540,7 +520,7 @@ class Dict : public gc_heap::Obj {
 
 template <typename K, typename V>
 Dict<K, V>* NewDict() {
-  auto self = gc_heap::Alloc<Dict<K, V>>();
+  auto self = Alloc<Dict<K, V>>();
   return self;
 }
 
@@ -627,8 +607,6 @@ inline bool maybe_str_equals(Str* left, Str* right) {
 
   return false;  // one is None and one is a Str*
 }
-
-#include "mycpp/mylib_types.h"
 
 // Display a quoted representation of a string.  word_.Pretty() uses it.
 Str* repr(Str* s);
@@ -771,10 +749,8 @@ inline void mysort(std::vector<Str*>* v) {
 // Buf is StringIO
 //
 
-namespace mylib {  // MyPy artifact
-
 template <typename V>
-inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
+inline void mylib::dict_remove(Dict<Str*, V>* haystack, Str* needle) {
   int pos = find_by_key(haystack->items_, needle);
   if (pos == -1) {
     return;
@@ -784,24 +760,11 @@ inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
 
 // TODO: how to do the int version of this?  Do you need an extra bit?
 template <typename V>
-inline void dict_remove(Dict<int, V>* haystack, int needle) {
+inline void mylib::dict_remove(Dict<int, V>* haystack, int needle) {
   NotImplemented();
 }
 
-Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
-
-
-// emulate gc_heap API for ASDL
-
-template <typename T>
-List<T>* NewList() {
-  return new List<T>();
-}
-
-template <typename T>
-List<T>* NewList(std::initializer_list<T> init) {
-  return new List<T>(init);
-}
+namespace mylib {
 
 class LineReader {
  public:
@@ -955,7 +918,7 @@ inline Str* chr(int i) {
   char* buf = static_cast<char*>(malloc(2));
   buf[0] = i;
   buf[1] = '\0';
-  return mylib::CopyBufferIntoNewStr(buf, 1);
+  return CopyBufferIntoNewStr(buf, 1);
 }
 
 inline int ord(Str* s) {
@@ -968,7 +931,7 @@ inline int ord(Str* s) {
 inline Str* str(int i) {
   char* buf = static_cast<char*>(malloc(kIntBufSize));
   int len = snprintf(buf, kIntBufSize, "%d", i);
-  return mylib::CopyBufferIntoNewStr(buf, len);
+  return CopyBufferIntoNewStr(buf, len);
 }
 
 inline Str* str(double f) {  // TODO: should be double

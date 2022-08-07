@@ -1,11 +1,16 @@
 #ifndef MYLIB_TYPES_H
 #define MYLIB_TYPES_H
 
-#if MYLIB_LEAKY
-using mylib::StrFromC;
+#ifdef LEAKY_BINDINGS
+
 #else
-using gc_heap::StrFromC;
+
+
+
 #endif
+
+// NOTE(Jesse): The python that translates to osh_eval.cc relies on these
+// functions being inside this namespace, so we have to live with these.
 
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
@@ -34,6 +39,38 @@ namespace mylib
     int len = snprintf(buf, kIntBufSize, "%o", i);
     return StrFromC(buf, len);
   }
+
+  inline Str* StrFromC(const char* s, int len) {
+    return ::StrFromC(s, len);
+  }
+
+  inline Str* StrFromC(const char* s) {
+    return ::StrFromC(s);
+  }
+
+  template <typename V>
+  void dict_remove(Dict<Str*, V>* haystack, Str* needle);
+
+  template <typename V>
+  void dict_remove(Dict<int, V>* haystack, int needle);
+
+
+  Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
+
+
+  // NOTE(Jesse): This should be able to be taken out of here ..?  I think.
+  template <typename T>
+  List<T>* NewList() {
+    return new List<T>();
+  }
+
+  // NOTE(Jesse): This should be able to be taken out of here ..?  I think.
+  template <typename T>
+  List<T>* NewList(std::initializer_list<T> init) {
+    return new List<T>(init);
+  }
+
+
 } // namespace mylib
 
 #endif // MYLIB_TYPES_H
