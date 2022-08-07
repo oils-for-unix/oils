@@ -247,7 +247,7 @@ unit-test-coverage() {
   unit clang coverage
 
   # Old test
-  mycpp-old-test clang coverage
+  mylib-old-test clang coverage
 
   local out_dir=_test/clang-coverage/mycpp-unit 
   test/coverage.sh html-report $out_dir mycpp-unit
