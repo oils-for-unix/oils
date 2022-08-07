@@ -8,13 +8,13 @@ class List;
 
 #else
 
-using gc_heap::List;
+
 
 #endif
 
-using gc_heap::kZeroMask;
 
-class Str : public gc_heap::Obj {
+
+class Str : public Obj {
  public:
   // Don't call this directly.  Call AllocStr() instead, which calls this.
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {

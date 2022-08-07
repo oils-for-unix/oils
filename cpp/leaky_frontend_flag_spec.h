@@ -8,10 +8,10 @@
 #ifdef LEAKY_BINDINGS
   #include "mycpp/mylib_old.h"
 #else
-  #include "mycpp/gc_builtins.h"  // Tuple2, NOT gc_heap::Tuple2
+  #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_types.h"
-using gc_heap::Dict;
-using gc_heap::List;
+
+
 #endif
 
 // Forward declarations (can't include osh_eval.h)

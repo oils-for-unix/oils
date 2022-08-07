@@ -9,9 +9,9 @@
 #define ALLOCATE(byte_count) calloc(byte_count, 1)
 
 #else
-  using gc_heap::Heap;
-  using gc_heap::gHeap;
-#define ALLOCATE(byte_count) gc_heap::gHeap.Allocate(byte_count)
+  
+  
+#define ALLOCATE(byte_count) gHeap.Allocate(byte_count)
 #endif
 
 // Variadic templates:

@@ -11,29 +11,29 @@
 #include "vendor/greatest.h"
 
 // Types
-using gc_heap::Heap;
-using gc_heap::Obj;
-using gc_heap::Param;
 
-using gc_heap::Dict;
-using gc_heap::GlobalStr;
-using gc_heap::List;
-using gc_heap::Local;
-using gc_heap::NewDict;
-using gc_heap::NewList;
-using gc_heap::Slab;
-using gc_heap::StackRoots;
+
+
+
+
+
+
+
+
+
+
+
 
 // Constants
-using gc_heap::kSlabHeaderSize;
-using gc_heap::kZeroMask;
+
+
 
 // Functions
-using gc_heap::Alloc;
-using gc_heap::RoundUp;
+
+
 
 // Variables
-using gc_heap::gHeap;
+
 
 #ifdef GC_STATS
   #define ASSERT_NUM_LIVE_OBJS(x) ASSERT_EQ_FMT((x), gHeap.num_live_objs_, "%d")
@@ -50,15 +50,15 @@ static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_),
               "Str and GlobalStr should be consistent");
 
 static_assert(offsetof(Slab<int>, items_) ==
-                  offsetof(gc_heap::GlobalSlab<int COMMA 1>, items_),
+                  offsetof(GlobalSlab<int COMMA 1>, items_),
               "Slab and GlobalSlab should be consistent");
 
 static_assert(kSlabHeaderSize ==
-                  offsetof(gc_heap::GlobalSlab<int COMMA 1>, items_),
+                  offsetof(GlobalSlab<int COMMA 1>, items_),
               "kSlabHeaderSize and GlobalSlab should be consistent");
 
 static_assert(offsetof(List<int>, slab_) ==
-                  offsetof(gc_heap::GlobalList<int COMMA 1>, slab_),
+                  offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
 // 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
@@ -127,7 +127,7 @@ TEST sizeof_test() {
   log("sizeof(Heap) = %d", sizeof(Heap));
 
   int min_obj_size = sizeof(LayoutForwarded);
-  int short_str_size = gc_heap::aligned(kStrHeaderSize + 1);
+  int short_str_size = aligned(kStrHeaderSize + 1);
 
   log("kStrHeaderSize = %d", kStrHeaderSize);
   log("aligned(kStrHeaderSize + 1) = %d", short_str_size);
@@ -299,10 +299,10 @@ TEST list_repro() {
 }
 
 // Manual initialization.  This helped me write the GLOBAL_LIST() macro.
-gc_heap::GlobalSlab<int, 3> _gSlab = {
-    Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen, {5, 6, 7}};
-gc_heap::GlobalList<int, 3> _gList = {
-    Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen,
+GlobalSlab<int, 3> _gSlab = {
+    Tag::Global, 0, kZeroMask, kNoObjLen, {5, 6, 7}};
+GlobalList<int, 3> _gList = {
+    Tag::Global, 0, kZeroMask, kNoObjLen,
     3,  // len
     3,  // capacity
     &_gSlab};
@@ -746,7 +746,7 @@ TEST stack_roots_test() {
 
   ASSERT_EQ(0, gHeap.roots_top_);
 
-  gc_heap::StackRoots _roots({&s, &L});
+  StackRoots _roots({&s, &L});
 
   s = StrFromC("foo");
   // L = nullptr;
@@ -795,8 +795,8 @@ TEST field_mask_test() {
   log("Dict mask = %d", d->field_mask_);
 
 #if GC_STATS
-  gc_heap::ShowFixedChildren(L);
-  gc_heap::ShowFixedChildren(d);
+  ShowFixedChildren(L);
+  ShowFixedChildren(d);
 #endif
 
   auto L2 = NewList<Str*>();
@@ -827,31 +827,31 @@ TEST compile_time_masks_test() {
   // Note: These will be different for 32 bit
 
   ASSERT_EQ(offsetof(List<int>, slab_),
-            offsetof(gc_heap::GlobalList<int COMMA 1>, slab_));
+            offsetof(GlobalList<int COMMA 1>, slab_));
   // 0b 0000 0010
-  ASSERT_EQ_FMT(0x0002, gc_heap::maskof_List(), "0x%x");
+  ASSERT_EQ_FMT(0x0002, maskof_List(), "0x%x");
 
   // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
   // There is a trick with __VA_ARGS__ I don't understand.
 
-  ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, entry_),
-            offsetof(gc_heap::_DummyDict, entry_));
-  ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, keys_),
-            offsetof(gc_heap::_DummyDict, keys_));
-  ASSERT_EQ(offsetof(gc_heap::Dict<int COMMA int>, values_),
-            offsetof(gc_heap::_DummyDict, values_));
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, entry_),
+            offsetof(_DummyDict, entry_));
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, keys_),
+            offsetof(_DummyDict, keys_));
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, values_),
+            offsetof(_DummyDict, values_));
 
   // in binary: 0b 0000 0000 0000 01110
-  ASSERT_EQ_FMT(0x000E, gc_heap::maskof_Dict(), "0x%x");
+  ASSERT_EQ_FMT(0x000E, maskof_Dict(), "0x%x");
 
   PASS();
 }
 
 // 8 byte vtable, 8 byte Obj header, then member_
-class BaseObj : public gc_heap::Obj {
+class BaseObj : public Obj {
  public:
   BaseObj(int obj_len)
-      : gc_heap::Obj(Tag::Opaque, gc_heap::kZeroMask, obj_len) {
+      : Obj(Tag::Opaque, kZeroMask, obj_len) {
   }
   BaseObj() : BaseObj(sizeof(BaseObj)) {
   }
@@ -875,7 +875,7 @@ class DerivedObj : public BaseObj {
   int derived_member2_ = 252;
 };
 
-void ShowObj(gc_heap::Obj* obj) {
+void ShowObj(Obj* obj) {
   log("obj->heap_tag_ %d", obj->heap_tag_);
   log("obj->obj_len_ %d", obj->obj_len_);
 }
@@ -904,11 +904,11 @@ TEST vtable_test() {
 
   // Note: if static casting, then it doesn't include the vtable pointer!  Must
   // reinterpret_cast!
-  gc_heap::Obj* obj = reinterpret_cast<gc_heap::Obj*>(b3);
+  Obj* obj = reinterpret_cast<Obj*>(b3);
 
   ShowObj(obj);
   if ((obj->heap_tag_ & 0x1) == 0) {  // vtable pointer, NOT A TAG!
-    gc_heap::Obj* header =
+    Obj* header =
         reinterpret_cast<Obj*>(reinterpret_cast<char*>(obj) + sizeof(void*));
     // Now we have the right GC info.
     ShowObj(header);
@@ -948,7 +948,7 @@ TEST inheritance_test() {
 }
 
 TEST protect_test() {
-  gc_heap::Space from;
+  Space from;
   from.Init(512);
 
 #ifdef GC_PROTECT

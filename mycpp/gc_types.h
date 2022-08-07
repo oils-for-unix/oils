@@ -15,8 +15,6 @@
 
 extern Str* kEmptyString;
 
-namespace gc_heap {
-
 #include "mycpp/gc_slab.h"
 
 template <int N>
@@ -41,10 +39,10 @@ class GlobalStr {
   // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
   #define GLOBAL_STR(name, val)                 \
-    gc_heap::GlobalStr<sizeof(val)> _##name = { \
+    GlobalStr<sizeof(val)> _##name = { \
         Tag::Global,                   \
         0,                                      \
-        gc_heap::kZeroMask,                     \
+        kZeroMask,                     \
         kStrHeaderSize + sizeof(val),  \
         -1,                                     \
         val};                                   \
@@ -95,10 +93,10 @@ class GlobalList {
 };
 
   #define GLOBAL_LIST(T, N, name, array)                                \
-    gc_heap::GlobalSlab<T, N> _slab_##name = {                          \
-        Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen, array}; \
-    gc_heap::GlobalList<T, N> _list_##name = {                          \
-        Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kNoObjLen,         \
+    GlobalSlab<T, N> _slab_##name = {                          \
+        Tag::Global, 0, kZeroMask, kNoObjLen, array}; \
+    GlobalList<T, N> _list_##name = {                          \
+        Tag::Global, 0, kZeroMask, kNoObjLen,         \
         N,           N, &_slab_##name};                                 \
     List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
@@ -108,7 +106,7 @@ constexpr uint16_t maskof_List() {
 }
 
 template <typename T>
-class List : public gc_heap::Obj {
+class List : public Obj {
   // TODO: Move methods that don't allocate or resize: out of gc_heap?
   // - allocate: append(), extend()
   // - resize: pop(), clear()
@@ -425,9 +423,9 @@ constexpr uint16_t maskof_Dict() {
 }
 
 template <class K, class V>
-class Dict : public gc_heap::Obj {
+class Dict : public Obj {
  public:
-  Dict() : gc_heap::Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
+  Dict() : Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
     assert(len_ == 0);
     assert(capacity_ == 0);
     assert(entry_ == nullptr);
@@ -682,16 +680,13 @@ void Dict<K, V>::set(K key, V val) {
   }
 }
 
-}  // namespace gc_heap
-
-
 template <typename T>
-int len(const gc_heap::List<T>* L) {
+int len(const List<T>* L) {
   return L->len_;
 }
 
 template <typename K, typename V>
-inline int len(const gc_heap::Dict<K, V>* d) {
+inline int len(const Dict<K, V>* d) {
   return d->len_;
 }
 

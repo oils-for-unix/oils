@@ -74,10 +74,10 @@
 
 // Memory allocation APIs:
 //
-// - gc_heap::Alloc<Foo>(x)
+// - Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
-// - AllocStr(length), StrFromC(), NewList, NewDict: gc_heap::Alloc() doesn't
+// - AllocStr(length), StrFromC(), NewList, NewDict: Alloc() doesn't
 // work
 //   for these types for various reasons
 // - Heap::Allocate()
@@ -102,8 +102,6 @@
 // lists like {1, 2, 3} to macros
 
 #include "mycpp/gc_tag.h"
-
-namespace gc_heap {
 
 template <class T>
 class List;
@@ -469,7 +467,5 @@ inline int RoundUp(int n) {
 }
 
 #include "mycpp/gc_obj.h"
-
-}  // namespace gc_heap
 
 #endif  // GC_HEAP_H

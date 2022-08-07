@@ -9,11 +9,11 @@
 #include "mycpp/gc_builtins.h"  // Tuple2
 #include "mycpp/gc_types.h"
 
-using gc_heap::Alloc;
-using gc_heap::kZeroMask;
-using gc_heap::maskbit;
-using gc_heap::maskbit_v;
-using gc_heap::StackRoots;
+
+
+
+
+
 
 namespace mylib {
 
@@ -25,18 +25,18 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
   if (pos == -1) {
     return;
   }
-  haystack->entry_->items_[pos] = gc_heap::kDeletedEntry;
+  haystack->entry_->items_[pos] = kDeletedEntry;
   // Zero out for GC.  These could be nullptr or 0
   haystack->keys_->items_[pos] = 0;
   haystack->values_->items_[pos] = 0;
   haystack->len_--;
 }
 
-class LineReader : gc_heap::Obj {
+class LineReader : Obj {
  public:
   // Abstract type with no fields: unknown size
   LineReader(uint16_t field_mask, int obj_len)
-      : gc_heap::Obj(Tag::FixedSize, field_mask, obj_len) {
+      : Obj(Tag::FixedSize, field_mask, obj_len) {
   }
   virtual Str* readline() = 0;
   virtual bool isatty() {
@@ -108,10 +108,10 @@ inline LineReader* open(Str* path) {
   return Alloc<CFileLineReader>(f);
 }
 
-class Writer : public gc_heap::Obj {
+class Writer : public Obj {
  public:
   Writer(uint8_t heap_tag, uint16_t field_mask, int obj_len)
-      : gc_heap::Obj(heap_tag, field_mask, obj_len) {
+      : Obj(heap_tag, field_mask, obj_len) {
   }
   virtual void write(Str* s) = 0;
   virtual void flush() = 0;
@@ -121,7 +121,7 @@ class Writer : public gc_heap::Obj {
 class BufWriter : public Writer {
  public:
   BufWriter()
-      : Writer(Tag::FixedSize, gc_heap::kZeroMask, sizeof(BufWriter)),
+      : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)),
         data_(nullptr),
         len_(0) {
   }
@@ -176,7 +176,7 @@ class BufWriter : public Writer {
 class CFileWriter : public Writer {
  public:
   explicit CFileWriter(FILE* f)
-      : Writer(Tag::FixedSize, gc_heap::kZeroMask, sizeof(BufWriter)), f_(f) {
+      : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), f_(f) {
   }
   virtual void write(Str* s) override;
   virtual void flush() override;

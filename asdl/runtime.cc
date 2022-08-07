@@ -4,18 +4,18 @@
 
 #ifdef LEAKY_BINDINGS
 #include "mycpp/mylib_old.h"
-using gc_heap::Alloc;
-using gc_heap::kZeroMask;
+
+
 #else
 #include "mycpp/gc_types.h"
 #include "mycpp/gc_builtins.h"
 #include "mycpp/gc_mylib.h"
 
-using gc_heap::Alloc;
-using gc_heap::kZeroMask;
-using gc_heap::StackRoots;
-using gc_heap::NewList;
-using gc_heap::NewDict;
+
+
+
+
+
 #endif
 
 #include "runtime.h"
@@ -222,7 +222,7 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
   }
 }
 
-ColorOutput::ColorOutput(mylib::Writer* f) : gc_heap::Obj(Tag::FixedSize, kZeroMask, sizeof(ColorOutput)) {
+ColorOutput::ColorOutput(mylib::Writer* f) : Obj(Tag::FixedSize, kZeroMask, sizeof(ColorOutput)) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -390,7 +390,7 @@ void AnsiOutput::PopColor() {
 }
 int INDENT = 2;
 
-_PrettyPrinter::_PrettyPrinter(int max_col) : gc_heap::Obj(Tag::FixedSize, kZeroMask, sizeof(_PrettyPrinter)) {
+_PrettyPrinter::_PrettyPrinter(int max_col) : Obj(Tag::FixedSize, kZeroMask, sizeof(_PrettyPrinter)) {
   this->max_col = max_col;
 }
 

@@ -6,13 +6,11 @@
 #include "mycpp/gc_types.h"
 #include "vendor/greatest.h"
 
-using gc_heap::Alloc;
-using gc_heap::Dict;
-using gc_heap::List;
-using gc_heap::NewList;
-using gc_heap::StackRoots;
 
-using gc_heap::gHeap;
+
+
+
+
 
 // TODO:
 // - Assert the number of collections

@@ -39,9 +39,9 @@ gen-main() {
   cat <<EOF
 
 int main(int argc, char **argv) {
-  // gc_heap::gHeap.Init(512);
-  gc_heap::gHeap.Init(128 << 10);  // 128 KiB; doubling in size
-  // gc_heap::gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
+  // gHeap.Init(512);
+  gHeap.Init(128 << 10);  // 128 KiB; doubling in size
+  // gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
 
   char* b = getenv("BENCHMARK");
   if (b && strlen(b)) {  // match Python's logic

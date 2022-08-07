@@ -1,9 +1,6 @@
 #include "mylib_old.h"
 
-namespace gc_heap
-{
-  Heap gHeap;
-}
+Heap gHeap;
 
 #include <errno.h>
 #include <unistd.h>  // isatty

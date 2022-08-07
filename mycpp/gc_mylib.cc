@@ -7,8 +7,8 @@
 
 #include "gc_builtins.h"
 
-using gc_heap::gHeap;
-using gc_heap::StackRoots;
+
+
 
 mylib::BufWriter gBuf;
 

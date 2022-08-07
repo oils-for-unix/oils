@@ -30,38 +30,34 @@
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 
 #include "mycpp/gc_tag.h"
+#include "mycpp/gc_obj.h"
+#include "mycpp/gc_alloc.h"
 
-namespace gc_heap {
-  #include "mycpp/gc_obj.h"
-  #include "mycpp/gc_alloc.h"
-
-  struct Heap
+struct Heap
+{
+  void Init(int byte_count)
   {
-    void Init(int byte_count)
-    {
-    }
+  }
 
-    void Bump()
-    {
-    }
+  void Bump()
+  {
+  }
 
-    void Collect()
-    {
-    }
+  void Collect()
+  {
+  }
 
-    void* Allocate(int num_bytes)
-    {
-      return calloc(num_bytes, 1);
-    }
-  };
+  void* Allocate(int num_bytes)
+  {
+    return calloc(num_bytes, 1);
+  }
+};
 
-  extern Heap gHeap;
+extern Heap gHeap;
 
-  struct StackRoots {
-    StackRoots(std::initializer_list<void*> roots) {}
-  };
-
-}
+struct StackRoots {
+  StackRoots(std::initializer_list<void*> roots) {}
+};
 
 template <class T>
 class List;
@@ -112,11 +108,11 @@ class StrIter {
 
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
-class List : public gc_heap::Obj {
+class List : public Obj {
  public:
   // Note: constexpr doesn't work because the std::vector destructor is
   // nontrivial
-  List() : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), v_() {
+  List() : Obj(Tag::FixedSize, kZeroMask, 0), v_() {
     // Note: this seems to INCREASE the number of 'new' calls.  I guess because
     // many 'spids' lists aren't used?
     // v_.reserve(64);
@@ -124,11 +120,11 @@ class List : public gc_heap::Obj {
 
   // Used by list_repeat
   List(T item, int n)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), v_(n, item) {
+      : Obj(Tag::FixedSize, kZeroMask, 0), v_(n, item) {
   }
 
   List(std::initializer_list<T> init)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), v_() {
+      : Obj(Tag::FixedSize, kZeroMask, 0), v_() {
     for (T item : init) {
       v_.push_back(item);
     }
@@ -443,14 +439,14 @@ List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
 // Dict currently implemented by VECTOR OF PAIRS.  TODO: Use a real hash table,
 // and measure performance.  The hash table has to beat this for small cases!
 template <class K, class V>
-class Dict : public gc_heap::Obj {
+class Dict : public Obj {
  public:
-  Dict() : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), items_() {
+  Dict() : Obj(Tag::FixedSize, kZeroMask, 0), items_() {
   }
 
   // Dummy
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), items_() {
+      : Obj(Tag::FixedSize, kZeroMask, 0), items_() {
   }
 
   // d[key] in Python: raises KeyError if not found
@@ -524,7 +520,7 @@ class Dict : public gc_heap::Obj {
 
 template <typename K, typename V>
 Dict<K, V>* NewDict() {
-  auto self = gc_heap::Alloc<Dict<K, V>>();
+  auto self = Alloc<Dict<K, V>>();
   return self;
 }
 

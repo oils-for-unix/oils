@@ -298,7 +298,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit(' public:')
     Emit('  int tag_() const {')
     # There's no inheritance relationship, so we have to reinterpret_cast.
-    Emit('    return reinterpret_cast<const gc_heap::Obj*>(this)->type_tag_;')
+    Emit('    return reinterpret_cast<const Obj*>(this)->type_tag_;')
     Emit('  }')
 
     if self.pretty_print_methods:

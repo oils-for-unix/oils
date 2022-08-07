@@ -71,22 +71,25 @@ overhead() {
   max-rss _bin/gc_heap 1000000
 }
 
-target-lang() {
-  local bin=_bin/target_lang 
-  # -m32 complains about "shadow memory"
-  cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc gc_containers.cc -I ../cpp
-  $bin "$@"
-}
+# See comment at : @removed_target_lang_test_cases
+#
+# target-lang() {
+#   local bin=_bin/target_lang 
+#   # -m32 complains about "shadow memory"
+#   cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc gc_containers.cc -I ../cpp
+#   $bin "$@"
+# }
 
+# See comment at : @removed_target_lang_test_cases
+#
 # Compile as 32-bit.  Not compatible with ASAN.
-target-lang-m32() {
-  local bin=_bin/target_lang_32
-
-  # constexpr restrictions lifted
-  $CXX -o $bin $BASE_CXXFLAGS -m32 \
-    demo/target_lang.cc ../cpp/dumb_alloc.cc -I ../cpp
-  $bin "$@"
-}
+# target-lang-m32() {
+#   local bin=_bin/target_lang_32
+#   # constexpr restrictions lifted
+#   $CXX -o $bin $BASE_CXXFLAGS -m32 \
+#     demo/target_lang.cc ../cpp/dumb_alloc.cc -I ../cpp
+#   $bin "$@"
+# }
 
 m32-demo() {
   # mask is 1010

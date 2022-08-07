@@ -5,7 +5,7 @@
   #include "mycpp/gc_types.h"
 #endif
 
-using gc_heap::StackRoots;
+
 
 #include <ctype.h>  // isalpha(), isdigit()
 

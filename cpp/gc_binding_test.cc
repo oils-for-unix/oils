@@ -10,7 +10,7 @@
   #include "mycpp/gc_types.h"
 #endif
 
-using gc_heap::StackRoots;
+
 
 TEST qsn_test() {
   Str* s = nullptr;
@@ -33,7 +33,7 @@ TEST qsn_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gc_heap::gHeap.Init(1 << 20);
+  gHeap.Init(1 << 20);
 
   GREATEST_MAIN_BEGIN();
 

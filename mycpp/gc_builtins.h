@@ -16,9 +16,9 @@
 #include "mycpp/mylib_types.h"
 
 // TODO: Don't use 'using' in header
-using gc_heap::Dict;
-using gc_heap::List;
-using gc_heap::StackRoots;
+
+
+
 
 void println_stderr(Str* s);
 
@@ -107,10 +107,16 @@ inline bool _cmp(Str* a, Str* b) {
   return str_cmp(a, b) < 0;
 }
 
+// TODO(Jesse): What does the following comment mean?  How does including
+// <algorithm> bloat types?  gc_heap.h already includes a ton of C++ headers so
+// I don't know how not including algorithm is a win.  Maybe this comment is
+// old..?
+//
 // This is a METHOD definition.  It's in gc_builtins.h so that gc_heap.h doesn't
 // need to #include <algorithm>.  I think that would bloat all the ASDL types.
+//
 template <typename T>
-void gc_heap::List<T>::sort() {
+void List<T>::sort() {
   std::sort(slab_->items_, slab_->items_ + len_, _cmp);
 }
 
@@ -178,7 +184,7 @@ inline bool list_contains(List<Str*>* haystack, Str* needle) {
 // e.g. [None] * 3
 template <typename T>
 List<T>* list_repeat(T item, int times) {
-  return gc_heap::NewList<T>(item, times);
+  return NewList<T>(item, times);
 }
 
 template <typename K, typename V>
@@ -192,10 +198,10 @@ class StrIter {
   explicit StrIter(Str* s) : s_(s), i_(0), len_(len(s)) {
     // We need this because StrIter is directly on the stack, and s_ could be
     // moved during iteration.
-    gc_heap::gHeap.PushRoot(reinterpret_cast<gc_heap::Obj**>(&s_));
+    gHeap.PushRoot(reinterpret_cast<Obj**>(&s_));
   }
   ~StrIter() {
-    gc_heap::gHeap.PopRoot();
+    gHeap.PopRoot();
   }
   void Next() {
     i_++;
@@ -224,10 +230,10 @@ class ListIter {
   explicit ListIter(List<T>* L) : L_(L), i_(0) {
     // We need this because ListIter is directly on the stack, and L_ could be
     // moved during iteration.
-    gc_heap::gHeap.PushRoot(reinterpret_cast<gc_heap::Obj**>(&L_));
+    gHeap.PushRoot(reinterpret_cast<Obj**>(&L_));
   }
   ~ListIter() {
-    gc_heap::gHeap.PopRoot();
+    gHeap.PopRoot();
   }
   void Next() {
     i_++;
@@ -297,11 +303,11 @@ class DictIter {
         return -1;
       }
       int index = D_->entry_->items_[pos];
-      if (index == gc_heap::kDeletedEntry) {
+      if (index == kDeletedEntry) {
         ++pos;
         continue;  // increment again
       }
-      if (index == gc_heap::kEmptyEntry) {
+      if (index == kEmptyEntry) {
         return -1;
       }
       break;

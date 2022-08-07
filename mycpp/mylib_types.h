@@ -5,7 +5,7 @@
 
 #else
 
-using gc_heap::Dict;
+
 
 #endif
 
@@ -58,11 +58,13 @@ namespace mylib
   Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 
+  // NOTE(Jesse): This should be able to be taken out of here ..?  I think.
   template <typename T>
   List<T>* NewList() {
     return new List<T>();
   }
 
+  // NOTE(Jesse): This should be able to be taken out of here ..?  I think.
   template <typename T>
   List<T>* NewList(std::initializer_list<T> init) {
     return new List<T>(init);

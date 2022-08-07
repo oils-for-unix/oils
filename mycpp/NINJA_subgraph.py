@@ -188,7 +188,16 @@ UNIT_TESTS = {
     # leaky bindings run against the GC runtime!
     'mycpp/leaky_types_test.cc': GC_RUNTIME,
 
-    'mycpp/demo/target_lang.cc': ['cpp/dumb_alloc.cc', 'mycpp/switchy_containers.cc'],
+    # NOTE(Jesse): I took this out because (as far as I can tell) it's ancient
+    # and doesn't actually serve any purpose for the more modern code.  ie. It
+    # doesn't test any _actual_ containers, it's effectively a dumping ground
+    # for random test code.  If that's untrue it's probably not much work to
+    # get it compiling again.
+    #
+    # @removed_target_lang_test_cases
+    #
+    # 'mycpp/demo/target_lang.cc': ['cpp/dumb_alloc.cc', 'mycpp/switchy_containers.cc'],
+    #
 
     # there is also demo/{gc_heap,square_heap}.cc
 }

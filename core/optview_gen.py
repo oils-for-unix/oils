@@ -28,7 +28,7 @@ def main(argv):
   #include "mycpp/mylib_old.h"
 #else
   #include "mycpp/gc_types.h"
-  using gc_heap::List;
+  
 #endif
 
 namespace optview {

@@ -50,7 +50,7 @@ extern Str* FALSE_STR;
 namespace format {  // declare
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f);
 
-class ColorOutput : public gc_heap::Obj {
+class ColorOutput : public Obj {
  public:
   ColorOutput(mylib::Writer* f);
   virtual format::ColorOutput* NewTempBuffer();
@@ -103,7 +103,7 @@ class AnsiOutput : public ColorOutput {
 };
 extern int INDENT;
 
-class _PrettyPrinter : public gc_heap::Obj {
+class _PrettyPrinter : public Obj {
  public:
   _PrettyPrinter(int max_col);
   bool _PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
