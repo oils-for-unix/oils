@@ -1,7 +1,7 @@
 #ifndef MYLIB_TYPES_H
 #define MYLIB_TYPES_H
 
-#ifdef MYLIB_LEAKY
+#ifdef LEAKY_BINDINGS
 
 #else
 

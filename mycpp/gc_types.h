@@ -5,10 +5,6 @@
 #ifndef GC_TYPES_H
 #define GC_TYPES_H
 
-#ifdef MYLIB_LEAKY
-#error "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include mylib_old.h instead."
-#endif
-
 #ifdef LEAKY_BINDINGS
 #error "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include mylib_old.h instead."
 #endif
