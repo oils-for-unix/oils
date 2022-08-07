@@ -192,7 +192,7 @@ readonly MYLIB_OLD_TEST_SRC=(
     mycpp/switchy_containers.cc
 )
 
-mycpp-old-test() {
+mylib-old-test() {
   ### Test generated code
 
   local compiler=${1:-cxx}
@@ -209,16 +209,36 @@ mycpp-old-test() {
   run-test $bin $compiler $variant
 }
 
+unit-tests-without-gc() {
+  local compiler=${1:-cxx}
+  local variant=${2:-dbg}
+
+  # Build the binary
+  ninja _bin/$compiler-$variant/mycpp-unit/leaky_types_test
+
+  # Run it and save logs to af ile
+  run-test \
+    _bin/$compiler-$variant/mycpp-unit/leaky_types_test \
+    $compiler $variant
+}
+
 soil-run() {
   # Test with -D OLDSTL_BINDINGS, which doesn't fit into variants well
-  mycpp-old-test '' asan
-  mycpp-old-test '' ubsan
+  mylib-old-test '' asan
+  mylib-old-test '' ubsan
+
+  # Tests using the GC layout, but no GC rooting yet
+  unit-tests-without-gc '' dbg
+
+  # TODO: Enable this
+  #unit-tests-without-gc '' oldstl
+
+  unit '' asan
+  unit '' ubsan
 
   # Ninja variants for GC
   unit '' gcstats
   unit '' gcevery
-  unit '' asan
-  unit '' ubsan
 }
 
 unit-test-coverage() {

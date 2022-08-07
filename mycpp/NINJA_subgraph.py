@@ -233,6 +233,10 @@ COMPILERS_VARIANTS = [
     ('cxx', 'asan'),
     ('cxx', 'ubsan'),
 
+    # FOR UNIT TESTS ONLY NOW!  This has -D OLDSTL_BINDINGS
+    # Note that _bin/cxx-dbg/osh_eval -D OLDSTL_BINDINGS on in OSH_EVAL_FLAGS_STR
+    ('cxx', 'oldstl'),
+
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
     ('clang', 'opt'),  # for comparisons
@@ -491,8 +495,8 @@ def NinjaGraph(n):
 
       b = '_bin/%s-%s/mycpp-unit/%s' % (compiler, variant, test_name)
 
-      # Don't get collection here yet
-      if test_name == 'leaky_types_test' and variant == 'gcevery':
+      # HACK: Only do GC_EVERY_ALLOC variants for tests that start with 'gc_'
+      if variant == 'gcevery' and not test_name.startswith('gc_'):
         continue
 
       compile_vars = [
