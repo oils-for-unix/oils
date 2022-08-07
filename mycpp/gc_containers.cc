@@ -1,4 +1,4 @@
-// gc_heap.cc
+// gc_containers.cc
 
 #include <sys/mman.h>  // mprotect()
 

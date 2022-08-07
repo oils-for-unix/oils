@@ -64,7 +64,9 @@ static_assert(offsetof(List<int>, slab_) ==
 // 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
 const int kInitialSize = 1 << 20;
 
-// COPY of what's in gc_heap.cc for testing.  This is 16 bytes.
+// TODO(Jesse): Gross.  Put this somewhere so we don't have to copy it here.
+//
+// COPY of what's in gc_containers.cc for testing.  This is 16 bytes.
 // The empty string is 12 + 1 = 13 bytes.  But we round up with aligned().
 // TODO: We could avoid the 3 aligned() calls by changing the definition of
 // obj_len_.  We could use the OCaml trick of numbers after the NUL byte.

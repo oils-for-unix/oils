@@ -47,12 +47,12 @@ square-heap() {
 }
 
 gc-heap() {
-  cpp-compile-run demo/gc_heap.cc "$@"
+  cpp-compile-run demo/gc_containers.cc "$@"
 }
 
 allocator() {
   local bin=_bin/gc_heap
-  cpp-compile demo/gc_heap.cc $bin
+  cpp-compile demo/gc_containers.cc $bin
   $bin allocator
 }
 
@@ -74,7 +74,7 @@ overhead() {
 target-lang() {
   local bin=_bin/target_lang 
   # -m32 complains about "shadow memory"
-  cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc gc_heap.cc -I ../cpp
+  cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc gc_containers.cc -I ../cpp
   $bin "$@"
 }
 

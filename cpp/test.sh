@@ -31,7 +31,7 @@ readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_flag_spec_test.cc
     cpp/leaky_frontend_flag_spec.cc
     _build/cpp/arg_types.cc
-    mycpp/mylib_old.cc
+    mycpp/leaky_containers.cc
 )
 
 leaky-flag-spec-test() {

@@ -1,7 +1,7 @@
 
 #if LEAKY_BINDINGS
-#include "mycpp/mylib_old.cc"
+#include "mycpp/leaky_containers.cc"
 #else
-#include "mycpp/gc_heap.cc"
+#include "mycpp/gc_containers.cc"
 #endif
 

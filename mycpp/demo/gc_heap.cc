@@ -400,7 +400,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  log("gc_heap.cc");
+  log("gc_containers.cc");
 
   // log("sizeof(Header) = %d", sizeof(Header));
   log("sizeof(Managed) = %d", sizeof(Managed));
