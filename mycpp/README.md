@@ -26,7 +26,12 @@ This will give you a working shell:
     hi
 
 To run mycpp, you should first build Python 3.10 (which has the `match`
-statement and enhanced `ast` module).  This will take a few minutes:
+statement and enhanced `ast` module).  First install dependencies of CPython:
+
+    # We need libssl-dev, libffi-dev, zlib1g-dev to bootstrap Python
+    oil$ build/dev.sh ubuntu-deps
+
+And then download and build it:
 
     oil$ soil/deps-tar.sh download-py3
     oil$ soil/deps-tar.sh layer-py3
