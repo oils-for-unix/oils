@@ -16,10 +16,13 @@ class List;
 
 class Str : public Obj {
  public:
+
+#if 0
   // Don't call this directly.  Call AllocStr() instead, which calls this.
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
     // log("GC Str()");
   }
+#endif
 
   char* data() {
     return data_;
@@ -118,20 +121,38 @@ inline void Str::SetObjLenFromStrLen(int str_len) {
   #endif
 #endif
 
-inline Str* AllocStr(int len) {
-  int obj_len = kStrHeaderSize + len + 1;
-  void* place = ALLOCATE(obj_len);
-  auto s = new (place) Str();
+inline void InitObj(void* buf, uint8_t heap_tag, uint8_t type_tag, uint16_t field_mask, uint32_t obj_len)
+{
+  ((Obj*)buf)->heap_tag_ = heap_tag;
+  ((Obj*)buf)->type_tag_ = type_tag;
+  ((Obj*)buf)->field_mask_ = field_mask;
+  ((Obj*)buf)->obj_len_ = obj_len;
+}
+
+inline int ObjLenFromStrLen(int len)
+{
+  return kStrHeaderSize + len + 1;
+}
+
+inline Str* InitStr(void* buf, int str_len, int obj_len) {
+  InitObj(buf, Tag::Opaque, 0, kZeroMask, obj_len);
+  Str* s = (Str*)buf;
   s->SetObjLen(obj_len);
   return s;
 }
 
-// Like AllocStr, but allocate more than you need, e.g. for snprintf() to write
-// into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
-inline Str* OverAllocatedStr(int len) {
-  int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
+inline Str* AllocStr(int str_len) {
+  int obj_len = ObjLenFromStrLen(str_len);
   void* place = ALLOCATE(obj_len);
-  auto s = new (place) Str();
+  Str* result = InitStr(place, str_len, obj_len);
+  return result;
+}
+
+// NOTE(Jesse): This API is safe, but instructive for the reader of the calling
+// code that the string is used as a buffer to incrementally copy into.  Could
+// be a good idea to audit call-sites of this and change to BoundedBuffer ..?
+inline Str* OverAllocatedStr(int len) {
+  Str* s = AllocStr(len);
   return s;
 }
 
