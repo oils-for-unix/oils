@@ -1,4 +1,4 @@
-// mycpp/gc_types.h
+// mycpp/gc_containers.h
 //
 // Definitions of Str, List<T>, Dict<K, V>, and related functions.
 

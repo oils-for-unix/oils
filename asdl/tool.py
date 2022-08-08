@@ -83,7 +83,7 @@ def main(argv):
 #include "mycpp/oldstl_containers.h"
 using mylib::NewList;
 #else
-#include "mycpp/gc_types.h"
+#include "mycpp/gc_containers.h"
 
 
 

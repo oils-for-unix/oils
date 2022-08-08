@@ -176,16 +176,16 @@ def ShouldSkipBenchmark(name):
 GC_RUNTIME = [
     'mycpp/gc_builtins.cc',
     'mycpp/gc_mylib.cc',
-    'mycpp/gc_containers.cc',
+    'mycpp/gc_heap.cc',
 
     # files we haven't added StackRoots to
-    'mycpp/leaky_types.cc',
+    'mycpp/leaky_containers.cc',
 ]
 
 # no CC files?
 OLDSTL_RUNTIME = [
     'mycpp/oldstl_containers.cc',
-    'mycpp/leaky_types.cc',
+    'mycpp/leaky_containers.cc',
     ]
 
 VARIANTS_GC = 1      # Run with garbage collector on, cxx-gcevery
@@ -198,7 +198,7 @@ UNIT_TESTS = {
     'mycpp/gc_builtins_test.cc': VARIANTS_GC,
     'mycpp/gc_mylib_test.cc': VARIANTS_GC,
 
-    'mycpp/leaky_types_test.cc': VARIANTS_OLDSTL,
+    'mycpp/leaky_containers_test.cc': VARIANTS_OLDSTL,
     'mycpp/oldstl_containers_test.cc': VARIANTS_OLDSTL,
 
     # there is also demo/{gc_heap,square_heap}.cc

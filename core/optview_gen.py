@@ -27,7 +27,7 @@ def main(argv):
 #ifdef OLDSTL_BINDINGS
   #include "mycpp/oldstl_containers.h"
 #else
-  #include "mycpp/gc_types.h"
+  #include "mycpp/gc_containers.h"
   
 #endif
 

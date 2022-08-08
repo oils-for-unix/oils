@@ -150,7 +150,7 @@ asdl-runtime() {
 #ifdef OLDSTL_BINDINGS
 #include "mycpp/oldstl_containers.h"
 #else
-#include "mycpp/gc_types.h"
+#include "mycpp/gc_containers.h"
 #include "mycpp/gc_mylib.h"
 #endif
 

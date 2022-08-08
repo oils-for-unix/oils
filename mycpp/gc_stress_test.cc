@@ -3,7 +3,7 @@
 // And with GC_STATS defined.
 
 #include "mycpp/gc_builtins.h"
-#include "mycpp/gc_types.h"
+#include "mycpp/gc_containers.h"
 #include "vendor/greatest.h"
 
 

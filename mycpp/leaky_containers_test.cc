@@ -11,7 +11,7 @@
 // NOTE(Jesse): This is the path that gets compiled.
 
   #include "mycpp/gc_builtins.h"
-  #include "mycpp/gc_types.h"
+  #include "mycpp/gc_containers.h"
 
 
 

@@ -1,5 +1,5 @@
 #ifndef OLDSTL_BINDINGS
-#error "This file contains definitions for OLDSTL containers.  If you wanted a gc'd container build, include gc_types.h"
+#error "This file contains definitions for OLDSTL containers.  If you wanted a gc'd container build, include gc_containers.h"
 #endif
 
 #ifndef MYLIB_H
@@ -73,7 +73,7 @@ class DictIter;
 #include "mycpp/error_types.h"
 #include "mycpp/str_types.h"
 #include "mycpp/str_allocators.h"
-#include "mycpp/mylib_types.h" // mylib namespace
+#include "mycpp/oldstl_mylib.h" // mylib namespace
 
 extern Str* kEmptyString;
 

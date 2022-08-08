@@ -62,7 +62,7 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_pylib.cc
 
     # TODO: OLDSTL_RUNTIME
-    mycpp/leaky_types.cc
+    mycpp/leaky_containers.cc
     mycpp/oldstl_containers.cc
 )
 
@@ -102,11 +102,11 @@ gc-binding-test() {
   case $variant in
     (oldstl)
       # OLDSTL_RUNTIME
-      runtime=(mycpp/oldstl_containers.cc mycpp/leaky_types.cc)
+      runtime=(mycpp/oldstl_containers.cc mycpp/leaky_containers.cc)
       ;;
     (*)
       # GC_RUNTIME
-      runtime=(mycpp/gc_builtins.cc mycpp/gc_containers.cc mycpp/gc_mylib.cc mycpp/leaky_types.cc)
+      runtime=(mycpp/gc_builtins.cc mycpp/gc_heap.cc mycpp/gc_mylib.cc mycpp/leaky_containers.cc)
       ;;
   esac
 

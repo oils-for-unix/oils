@@ -10,10 +10,10 @@
 #include <algorithm>  // min(), sort()
 #include <climits>    // CHAR_BIT
 
-#include "mycpp/gc_types.h"
+#include "mycpp/gc_containers.h"
 #include "mycpp/error_types.h"
 #include "mycpp/tuple_types.h"
-#include "mycpp/mylib_types.h"
+#include "mycpp/oldstl_mylib.h"
 
 // TODO: Don't use 'using' in header
 

@@ -1,8 +1,8 @@
-// gc_containers.cc
+// gc_heap.cc
 
 #include <sys/mman.h>  // mprotect()
 
-#include "mycpp/gc_types.h"
+#include "mycpp/gc_containers.h"
 
 
 

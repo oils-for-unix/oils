@@ -163,8 +163,8 @@ cpp-counts() {
     'This implementation has no garbage collection; it allocates memory forever.' \
     "$@"
 
-  ls mycpp/gc_heap.* mycpp/gc_mylib.* mycpp/gc_builtins.* mycpp/gc_types.* \
-     mycpp/leaky_types.cc mycpp/myerror.h | $count \
+  ls mycpp/gc_heap.* mycpp/gc_mylib.* mycpp/gc_builtins.* mycpp/gc_containers.* \
+     mycpp/leaky_containers.cc mycpp/myerror.h | $count \
     'New Garbage-Collected Runtime' \
     'Uses a simple Cheney / semi-space collector.' \
     "$@"
