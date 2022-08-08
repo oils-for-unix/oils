@@ -51,23 +51,7 @@ namespace mylib
   template <typename V>
   void dict_remove(Dict<int, V>* haystack, int needle);
 
-
   Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
-
-
-  // NOTE(Jesse): This should be able to be taken out of here ..?  I think.
-  template <typename T>
-  List<T>* NewList() {
-    return new List<T>();
-  }
-
-  // NOTE(Jesse): This should be able to be taken out of here ..?  I think.
-  template <typename T>
-  List<T>* NewList(std::initializer_list<T> init) {
-    return new List<T>(init);
-  }
-
-
 } // namespace mylib
 
 #endif // MYLIB_TYPES_H

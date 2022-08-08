@@ -270,6 +270,18 @@ class List : public Obj {
   std::vector<T> v_;  // ''.join accesses this directly
 };
 
+// Same as GC APIs
+
+template <typename T>
+List<T>* NewList() {
+  return new List<T>();
+}
+
+template <typename T>
+List<T>* NewList(std::initializer_list<T> init) {
+  return new List<T>(init);
+}
+
 template <class T>
 class ListIter {
  public:

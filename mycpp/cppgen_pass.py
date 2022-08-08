@@ -298,10 +298,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
       self.imported_names = set()  # For module::Foo() vs. self.foo
 
-      # TODO: oldstl_containers.h should emulate the GC API
-      # for NewList vs. Alloc<List>, etc.
-      self.gc = bool(os.getenv('GC'))
-
     def log(self, msg, *args):
       ind_str = self.indent * '  '
       log(ind_str + msg, *args)
@@ -1019,15 +1015,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if len(o.items) == 0:
             self.write('Alloc<%s>()' % c_type)
         else:
-            # Lists are MUTABLE so we can't pull them to the top level.
-            # C++ wart: Use initializer_list.  
-            if self.gc:
-              self.write('NewList<%s>(std::initializer_list<%s>' %
-                  (item_c_type, item_c_type))
-            else:
-              self.write('Alloc<%s>(std::initializer_list<%s>' %
-                  (c_type, item_c_type))
-
+            self.write('NewList<%s>(std::initializer_list<%s>' %
+                       (item_c_type, item_c_type))
             self._WriteListElements(o)
             self.write(')')
 

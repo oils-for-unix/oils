@@ -61,6 +61,7 @@ wrap-cc() {
   local out=$4
 
   {
+
      echo "// examples/$main_module"
      echo
 
@@ -81,10 +82,6 @@ translate-mycpp() {
 
   local out=$1
   shift  # rest of args are inputs
-
-  # Controls NewList vs. Alloc<List>
-  # TODO: oldstl_containers.h should grow the GC API
-  export GC=1
 
   local tmp=$out.tmp
 
