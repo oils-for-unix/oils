@@ -116,6 +116,9 @@ inline void Str::SetObjLenFromStrLen(int str_len) {
 
 inline void InitObj(void* buf, uint8_t heap_tag, uint8_t type_tag, uint16_t field_mask, uint32_t obj_len)
 {
+  assert(obj_len >= sizeof(Obj));
+  assert(heap_tag & 1); // By definition, heap tags are odd numbers
+
   Obj *obj = static_cast<Obj*>(buf);
   obj->heap_tag_ = heap_tag;
   obj->type_tag_ = type_tag;
@@ -128,7 +131,7 @@ inline int ObjLenFromStrLen(int len)
   return kStrHeaderSize + len + 1;
 }
 
-inline Str* InitStr(void* buf, int str_len, int obj_len) {
+inline Str* InitStr(void* buf, int obj_len) {
   InitObj(buf, Tag::Opaque, 0, kZeroMask, obj_len);
   return static_cast<Str*>(buf);
 }
@@ -136,7 +139,7 @@ inline Str* InitStr(void* buf, int str_len, int obj_len) {
 inline Str* AllocStr(int str_len) {
   int obj_len = ObjLenFromStrLen(str_len);
   void* place = ALLOCATE(obj_len);
-  Str* result = InitStr(place, str_len, obj_len);
+  Str* result = InitStr(place, obj_len);
   return result;
 }
 

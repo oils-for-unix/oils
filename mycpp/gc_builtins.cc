@@ -389,7 +389,7 @@ List<Str*>* Str::split(Str* sep) {
 
       // like AllocStr(), but IN PLACE
       int obj_len = ObjLenFromStrLen(part_len);
-      Str* part = InitStr(place, part_len, obj_len);
+      Str* part = InitStr(place, obj_len);
       memcpy(part->data_, self->data_ + prev_pos + 1, part_len);
       result->set(i - 1, part);
       place += aligned(obj_len);
