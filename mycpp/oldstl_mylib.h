@@ -25,25 +25,22 @@ namespace mylib
   inline Str* hex_lower(int i) {
     char* buf = static_cast<char*>(malloc(kIntBufSize));
     int len = snprintf(buf, kIntBufSize, "%x", i);
-    return StrFromC(buf, len);
+    return ::StrFromC(buf, len);
   }
 
   inline Str* hex_upper(int i) {
     char* buf = static_cast<char*>(malloc(kIntBufSize));
     int len = snprintf(buf, kIntBufSize, "%X", i);
-    return StrFromC(buf, len);
+    return ::StrFromC(buf, len);
   }
 
   inline Str* octal(int i) {
     char* buf = static_cast<char*>(malloc(kIntBufSize));
     int len = snprintf(buf, kIntBufSize, "%o", i);
-    return StrFromC(buf, len);
+    return ::StrFromC(buf, len);
   }
 
-  inline Str* StrFromC(const char* s, int len) {
-    return ::StrFromC(s, len);
-  }
-
+  // Used by generated _build/cpp/osh_eval.cc
   inline Str* StrFromC(const char* s) {
     return ::StrFromC(s);
   }

@@ -65,7 +65,7 @@ Str* CFileLineReader::readline() {
 
   // TODO: Fix the leak here.
   // Note: getline() NUL terminates the buffer
-  return StrFromC(line, len);
+  return ::StrFromC(line, len);
 }
 
 // Problem: most Str methods like index() and slice() COPY so they have a

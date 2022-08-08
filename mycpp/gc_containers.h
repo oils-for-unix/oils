@@ -10,8 +10,7 @@
 #endif
 
 #include "mycpp/gc_heap.h"
-#include "mycpp/str_types.h"
-#include "mycpp/str_allocators.h"
+#include "mycpp/gc_str.h"
 
 extern Str* kEmptyString;
 

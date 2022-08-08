@@ -71,8 +71,7 @@ class DictIter;
 
 #include "mycpp/tuple_types.h"
 #include "mycpp/error_types.h"
-#include "mycpp/str_types.h"
-#include "mycpp/str_allocators.h"
+#include "mycpp/gc_str.h"
 #include "mycpp/oldstl_mylib.h" // mylib namespace
 
 extern Str* kEmptyString;

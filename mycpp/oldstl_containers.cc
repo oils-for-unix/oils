@@ -128,8 +128,8 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   if (p) {
     // NOTE: Using SHARED SLICES, not memcpy() like some other functions.
     int len1 = p - start;
-    Str* first = StrFromC(start, len1);
-    Str* second = StrFromC(p + 1, length - len1 - 1);
+    Str* first = ::StrFromC(start, len1);
+    Str* second = ::StrFromC(p + 1, length - len1 - 1);
     return Tuple2<Str*, Str*>(first, second);
   } else {
     return Tuple2<Str*, Str*>(s, nullptr);
