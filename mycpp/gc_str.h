@@ -16,6 +16,7 @@ class List;
 
 class Str : public Obj {
  public:
+
   // Don't call this directly.  Call AllocStr() instead, which calls this.
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
     // log("GC Str()");
@@ -110,17 +111,9 @@ inline void Str::SetObjLenFromStrLen(int str_len) {
 // require mycpp to generate 2 statements everywhere.
 //
 
-#ifndef ALLOCATE
-  #ifdef OLDSTL_BINDINGS
-    #define ALLOCATE(byte_count) calloc(byte_count, 1)
-  #else
-    #define ALLOCATE(byte_count) gHeap.Allocate(byte_count);
-  #endif
-#endif
-
 inline Str* AllocStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;
-  void* place = ALLOCATE(obj_len);
+  void* place = gHeap.Allocate(obj_len);
   auto s = new (place) Str();
   s->SetObjLen(obj_len);
   return s;
@@ -130,7 +123,7 @@ inline Str* AllocStr(int len) {
 // into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = ALLOCATE(obj_len);
+  void* place = gHeap.Allocate(obj_len);
   auto s = new (place) Str();
   return s;
 }

@@ -218,7 +218,7 @@ TRANSLATE_FILES = {
 
 # Unused.  Could use mycpp/examples/parse.typecheck.txt
 EXAMPLES_PY = {
-    'parse': [],  
+    'parse': [],
 }
 
 EXAMPLES_CC = {

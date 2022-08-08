@@ -29,10 +29,6 @@
 #define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val)-1)
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 
-#include "mycpp/gc_tag.h"
-#include "mycpp/gc_obj.h"
-#include "mycpp/gc_alloc.h"
-
 struct Heap
 {
   void Init(int byte_count)
@@ -54,6 +50,10 @@ struct Heap
 };
 
 extern Heap gHeap;
+
+#include "mycpp/gc_tag.h"
+#include "mycpp/gc_obj.h"
+#include "mycpp/gc_alloc.h"
 
 struct StackRoots {
   StackRoots(std::initializer_list<void*> roots) {}
