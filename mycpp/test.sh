@@ -186,57 +186,13 @@ unit() {
   done
 }
 
-readonly MYLIB_OLD_TEST_SRC=(
-    mycpp/mylib_old_test.cc
-    mycpp/leaky_types.cc
-    mycpp/switchy_containers.cc
-)
-
-mylib-old-test() {
-  ### Test generated code
-
-  local compiler=${1:-cxx}
-  local variant=${2:-dbg}
-
-  local dir=_bin/$compiler-$variant/mycpp
-  mkdir -p $dir
-  local bin=$dir/mylib_old_test
-
-  local more_cxx_flags='-D OLDSTL_BINDINGS'
-  compile_and_link $compiler $variant "$more_cxx_flags" $bin \
-    "${MYLIB_OLD_TEST_SRC[@]}"
-
-  run-test $bin $compiler $variant
-}
-
-unit-tests-without-gc() {
-  local compiler=${1:-cxx}
-  local variant=${2:-dbg}
-
-  # Build the binary
-  ninja _bin/$compiler-$variant/mycpp-unit/leaky_types_test
-
-  # Run it and save logs to af ile
-  run-test \
-    _bin/$compiler-$variant/mycpp-unit/leaky_types_test \
-    $compiler $variant
-}
-
 soil-run() {
-  # Test with -D OLDSTL_BINDINGS, which doesn't fit into variants well
-  mylib-old-test '' asan
-  mylib-old-test '' ubsan
+  # Run two tests that respect this variant
+  unit '' oldstl
 
-  # Tests using the GC layout, but no GC rooting yet
-  unit-tests-without-gc '' dbg
-
-  # TODO: Enable this
-  #unit-tests-without-gc '' oldstl
-
+  # Run other unit tests, e.g. the GC tests
   unit '' asan
   unit '' ubsan
-
-  # Ninja variants for GC
   unit '' gcstats
   unit '' gcevery
 }

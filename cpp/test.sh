@@ -60,8 +60,10 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_osh.cc
     cpp/leaky_stdlib.cc
     cpp/leaky_pylib.cc
+
+    # TODO: OLDSTL_RUNTIME
     mycpp/leaky_types.cc
-    mycpp/switchy_containers.cc
+    mycpp/leaky_containers.cc
 )
 
 leaky-binding-test() {
@@ -85,7 +87,6 @@ leaky-binding-test() {
 
 readonly GC_TEST_SRC=(
     cpp/gc_binding_test.cc
-    mycpp/switchy_containers.cc
 )
 
 gc-binding-test() {
@@ -97,8 +98,20 @@ gc-binding-test() {
 
   local bin=$out_dir/gc_binding_test
 
+  local -a runtime
+  case $variant in
+    (oldstl)
+      # OLDSTL_RUNTIME
+      runtime=(mycpp/leaky_containers.cc mycpp/leaky_types.cc)
+      ;;
+    (*)
+      # GC_RUNTIME
+      runtime=(mycpp/gc_builtins.cc mycpp/gc_containers.cc mycpp/gc_mylib.cc mycpp/leaky_types.cc)
+      ;;
+  esac
+
   compile_and_link $compiler $variant '' $bin \
-    "${GC_TEST_SRC[@]}" cpp/dumb_alloc.cc 
+    "${GC_TEST_SRC[@]}" "${runtime[@]}"
 
   run-test $bin $compiler $variant
 }

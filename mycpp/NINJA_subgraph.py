@@ -174,30 +174,32 @@ def ShouldSkipBenchmark(name):
 
 
 GC_RUNTIME = [
-    'mycpp/gc_builtins.cc', 'mycpp/gc_mylib.cc', 'mycpp/switchy_containers.cc',
+    'mycpp/gc_builtins.cc',
+    'mycpp/gc_mylib.cc',
+    'mycpp/gc_containers.cc',
+
     # files we haven't added StackRoots to
+    'mycpp/leaky_types.cc',
+]
+
+# no CC files?
+OLDSTL_RUNTIME = [
+    'mycpp/leaky_containers.cc',
     'mycpp/leaky_types.cc',
     ]
 
+VARIANTS_GC = 1      # Run with garbage collector on, cxx-gcevery
+VARIANTS_OLDSTL = 2  # Run with old STL runtime, cxx-oldstl
+
+# Unit tests that run with garbage collector on.
 UNIT_TESTS = {
-    'mycpp/gc_heap_test.cc': ['mycpp/switchy_containers.cc'],
-    'mycpp/gc_stress_test.cc': GC_RUNTIME,
-    'mycpp/gc_builtins_test.cc': GC_RUNTIME,
-    'mycpp/gc_mylib_test.cc': GC_RUNTIME,
+    'mycpp/gc_heap_test.cc': VARIANTS_GC,
+    'mycpp/gc_stress_test.cc': VARIANTS_GC,
+    'mycpp/gc_builtins_test.cc': VARIANTS_GC,
+    'mycpp/gc_mylib_test.cc': VARIANTS_GC,
 
-    # leaky bindings run against the GC runtime!
-    'mycpp/leaky_types_test.cc': GC_RUNTIME,
-
-    # NOTE(Jesse): I took this out because (as far as I can tell) it's ancient
-    # and doesn't actually serve any purpose for the more modern code.  ie. It
-    # doesn't test any _actual_ containers, it's effectively a dumping ground
-    # for random test code.  If that's untrue it's probably not much work to
-    # get it compiling again.
-    #
-    # @removed_target_lang_test_cases
-    #
-    # 'mycpp/demo/target_lang.cc': ['cpp/dumb_alloc.cc', 'mycpp/switchy_containers.cc'],
-    #
+    'mycpp/leaky_types_test.cc': VARIANTS_OLDSTL,
+    'mycpp/mylib_old_test.cc': VARIANTS_OLDSTL,
 
     # there is also demo/{gc_heap,square_heap}.cc
 }
@@ -459,11 +461,15 @@ def NinjaGraph(n):
   #
 
   cc_sources = []
-  cc_sources.extend(UNIT_TESTS.keys())  # the main programs
-  for srcs in UNIT_TESTS.values():  # the deps
-    cc_sources.extend(srcs)
+
   for srcs in EXAMPLES_CC.values():  # generated code
     cc_sources.extend(srcs)
+
+  cc_sources.extend(UNIT_TESTS.keys())  # test main() with GC on
+
+  cc_sources.extend(GC_RUNTIME)
+  cc_sources.extend(OLDSTL_RUNTIME)
+
   cc_sources = sorted(set(cc_sources))  # make unique
 
   for (compiler, variant) in COMPILERS_VARIANTS:
@@ -477,6 +483,10 @@ def NinjaGraph(n):
         ('variant', variant),
     ]
 
+    #
+    # Build all objects
+    #
+
     for src_path in cc_sources:
       obj_path = ObjPath(src_path, compiler, variant)
 
@@ -488,15 +498,28 @@ def NinjaGraph(n):
     #
 
     for main_cc in sorted(UNIT_TESTS):
-      cc_files = UNIT_TESTS[main_cc]
+      which_variants = UNIT_TESTS[main_cc]
+
+      if which_variants == VARIANTS_GC:
+        cc_files = GC_RUNTIME
+      elif which_variants == VARIANTS_OLDSTL:
+        cc_files = OLDSTL_RUNTIME
+      else:
+        raise AssertionError(which_variants)
 
       # assume names are unique
       test_name, _ = os.path.splitext(os.path.basename(main_cc))
 
       b = '_bin/%s-%s/mycpp-unit/%s' % (compiler, variant, test_name)
 
-      # HACK: Only do GC_EVERY_ALLOC variants for tests that start with 'gc_'
-      if variant == 'gcevery' and not test_name.startswith('gc_'):
+      # Hack: avoid illegal combinations
+      test_runs_under_variant = False
+      if which_variants == VARIANTS_GC and variant in ('dbg', 'asan', 'ubsan', 'gcevery', 'gcstats'):
+        test_runs_under_variant = True
+      if which_variants == VARIANTS_OLDSTL and variant in ('oldstl',):
+        test_runs_under_variant = True
+
+      if not test_runs_under_variant:
         continue
 
       compile_vars = [

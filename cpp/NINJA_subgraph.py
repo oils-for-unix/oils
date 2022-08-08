@@ -69,8 +69,8 @@ from __future__ import print_function
 import os
 import sys
 
-# TODO: could use GC_RUNTIME
 from mycpp import NINJA_subgraph as mycpp_subgraph
+from mycpp.NINJA_subgraph import OLDSTL_RUNTIME
 
 
 def log(msg, *args):
@@ -104,12 +104,6 @@ DEPS_CC = [
     '_build/cpp/hnode_asdl.cc',
     '_build/cpp/id_kind_asdl.cc',
 ]
-
-OLD_RUNTIME = [
-    'mycpp/switchy_containers.cc',
-    'mycpp/leaky_types.cc',  # runs with both old and new Str layout
-]
-
 
 # -D NO_GC_HACK: Avoid memset().  -- rename GC_NO_MEMSET?
 #  - only applies to gc_heap.h in Space::Clear()
@@ -196,7 +190,7 @@ def NinjaGraph(n):
 
     ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', OSH_EVAL_FLAGS_STR)]
 
-    sources = DEPS_CC + OLD_RUNTIME
+    sources = DEPS_CC + OLDSTL_RUNTIME
 
     #
     # See how much input we're feeding to the compiler.  Test C++ template
@@ -325,7 +319,7 @@ main() {
 ''', file=f)
 
   objects = []
-  for src in DEPS_CC + OLD_RUNTIME:
+  for src in DEPS_CC + OLDSTL_RUNTIME:
     # e.g. _build/obj/dbg/posix.o
     base_name, _ = os.path.splitext(os.path.basename(src))
 
