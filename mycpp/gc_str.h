@@ -17,13 +17,6 @@ class List;
 class Str : public Obj {
  public:
 
-#if 0
-  // Don't call this directly.  Call AllocStr() instead, which calls this.
-  explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
-    // log("GC Str()");
-  }
-#endif
-
   char* data() {
     return data_;
   };
@@ -123,10 +116,11 @@ inline void Str::SetObjLenFromStrLen(int str_len) {
 
 inline void InitObj(void* buf, uint8_t heap_tag, uint8_t type_tag, uint16_t field_mask, uint32_t obj_len)
 {
-  ((Obj*)buf)->heap_tag_ = heap_tag;
-  ((Obj*)buf)->type_tag_ = type_tag;
-  ((Obj*)buf)->field_mask_ = field_mask;
-  ((Obj*)buf)->obj_len_ = obj_len;
+  Obj *obj = static_cast<Obj*>(buf);
+  obj->heap_tag_ = heap_tag;
+  obj->type_tag_ = type_tag;
+  obj->field_mask_ = field_mask;
+  obj->obj_len_ = obj_len;
 }
 
 inline int ObjLenFromStrLen(int len)
@@ -136,9 +130,7 @@ inline int ObjLenFromStrLen(int len)
 
 inline Str* InitStr(void* buf, int str_len, int obj_len) {
   InitObj(buf, Tag::Opaque, 0, kZeroMask, obj_len);
-  Str* s = (Str*)buf;
-  s->SetObjLen(obj_len);
-  return s;
+  return static_cast<Str*>(buf);
 }
 
 inline Str* AllocStr(int str_len) {
