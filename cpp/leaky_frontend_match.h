@@ -4,7 +4,7 @@
 #define MATCH_H
 
 #include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
-#include "mycpp/mylib_old.h"
+#include "mycpp/oldstl_containers.h"
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 
 #include "_build/cpp/syntax_asdl.h"

@@ -9,7 +9,7 @@
 #include <unistd.h>  // gethostname()
 
 #ifdef OLDSTL_BINDINGS
-  #include "mycpp/mylib_old.h"
+  #include "mycpp/oldstl_containers.h"
 #endif
 
 namespace libc {

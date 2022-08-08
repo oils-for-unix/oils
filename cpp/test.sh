@@ -31,7 +31,7 @@ readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_flag_spec_test.cc
     cpp/leaky_frontend_flag_spec.cc
     _build/cpp/arg_types.cc
-    mycpp/leaky_containers.cc
+    mycpp/oldstl_containers.cc
 )
 
 leaky-flag-spec-test() {
@@ -63,7 +63,7 @@ readonly LEAKY_TEST_SRC=(
 
     # TODO: OLDSTL_RUNTIME
     mycpp/leaky_types.cc
-    mycpp/leaky_containers.cc
+    mycpp/oldstl_containers.cc
 )
 
 leaky-binding-test() {
@@ -102,7 +102,7 @@ gc-binding-test() {
   case $variant in
     (oldstl)
       # OLDSTL_RUNTIME
-      runtime=(mycpp/leaky_containers.cc mycpp/leaky_types.cc)
+      runtime=(mycpp/oldstl_containers.cc mycpp/leaky_types.cc)
       ;;
     (*)
       # GC_RUNTIME

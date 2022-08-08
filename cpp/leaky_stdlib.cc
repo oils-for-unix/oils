@@ -17,7 +17,7 @@
 
 #include "cpp/leaky_core_error.h"
 #include "cpp/leaky_core_pyerror.h"
-#include "mycpp/mylib_old.h"
+#include "mycpp/oldstl_containers.h"
 
 namespace fcntl_ {
 
@@ -138,7 +138,7 @@ time_t localtime(time_t ts) {
 }
 
 Str* strftime(Str* s, time_t ts) {
-  // TODO: may not work with mylib_old.h
+  // TODO: may not work with oldstl_containers.h
   // https://github.com/oilshell/oil/issues/1221
   tm* loc_time = ::localtime(&ts);
 

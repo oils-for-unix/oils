@@ -6,7 +6,7 @@
 #define GC_TYPES_H
 
 #ifdef OLDSTL_BINDINGS
-#error "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include mylib_old.h instead."
+#error "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include oldstl_containers.h instead."
 #endif
 
 #include "mycpp/gc_heap.h"

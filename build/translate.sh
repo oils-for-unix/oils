@@ -148,7 +148,7 @@ asdl-runtime() {
 #include "cpp/qsn.h"
 
 #ifdef OLDSTL_BINDINGS
-#include "mycpp/mylib_old.h"
+#include "mycpp/oldstl_containers.h"
 #else
 #include "mycpp/gc_types.h"
 #include "mycpp/gc_mylib.h"

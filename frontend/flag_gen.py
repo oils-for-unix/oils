@@ -178,7 +178,7 @@ def Cpp(specs, header_f, cc_f):
 
 #include "cpp/leaky_frontend_flag_spec.h"  // for FlagSpec_c
 #ifdef OLDSTL_BINDINGS
-  #include "mycpp/mylib_old.h"
+  #include "mycpp/oldstl_containers.h"
 #else
   #include "mycpp/gc_types.h"
 #endif

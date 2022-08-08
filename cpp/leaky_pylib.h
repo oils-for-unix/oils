@@ -4,7 +4,7 @@
 #define LEAKY_PYLIB_H
 
 #if 1  // TODO: switch this off
-  #include "mycpp/mylib_old.h"
+  #include "mycpp/oldstl_containers.h"
 #else
   #include "mycpp/gc_mylib.h"
 #endif

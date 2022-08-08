@@ -80,7 +80,7 @@ def main(argv):
 """)
       f.write("""
 #ifdef OLDSTL_BINDINGS
-#include "mycpp/mylib_old.h"
+#include "mycpp/oldstl_containers.h"
 using mylib::NewList;
 #else
 #include "mycpp/gc_types.h"

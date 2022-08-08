@@ -158,7 +158,7 @@ cpp-counts() {
     'Includes OS bindings.  Small C++ files like cpp/osh_arith_parse.{cc,h} correspond to larger Python files like osh/arith_parse.py.' \
     "$@"
 
-  ls mycpp/leaky_containers.cc mycpp/mylib_old.h | $count \
+  ls mycpp/oldstl_containers.cc mycpp/oldstl_containers.h | $count \
     'Leaky mycpp Runtime' \
     'This implementation has no garbage collection; it allocates memory forever.' \
     "$@"

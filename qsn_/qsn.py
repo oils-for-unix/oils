@@ -41,7 +41,7 @@ TODO for other implementations:
 
   Related code:
 
-  repr() in stringobject.c in Python.  Copied to repr() in leaky_containers.cc.
+  repr() in stringobject.c in Python.  Copied to repr() in oldstl_containers.cc.
   You have to allocate 2 + 4*n bytes.  2 more bytes for the quotes.
 
 Where does Oil Use QSN?

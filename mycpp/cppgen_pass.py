@@ -298,7 +298,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
       self.imported_names = set()  # For module::Foo() vs. self.foo
 
-      # TODO: mylib_old.h should emulate the GC API
+      # TODO: oldstl_containers.h should emulate the GC API
       # for NewList vs. Alloc<List>, etc.
       self.gc = bool(os.getenv('GC'))
 

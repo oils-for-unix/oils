@@ -184,7 +184,7 @@ GC_RUNTIME = [
 
 # no CC files?
 OLDSTL_RUNTIME = [
-    'mycpp/leaky_containers.cc',
+    'mycpp/oldstl_containers.cc',
     'mycpp/leaky_types.cc',
     ]
 
@@ -199,7 +199,7 @@ UNIT_TESTS = {
     'mycpp/gc_mylib_test.cc': VARIANTS_GC,
 
     'mycpp/leaky_types_test.cc': VARIANTS_OLDSTL,
-    'mycpp/mylib_old_test.cc': VARIANTS_OLDSTL,
+    'mycpp/oldstl_containers_test.cc': VARIANTS_OLDSTL,
 
     # there is also demo/{gc_heap,square_heap}.cc
 }
@@ -514,8 +514,10 @@ def NinjaGraph(n):
 
       # Hack: avoid illegal combinations
       test_runs_under_variant = False
-      if which_variants == VARIANTS_GC and variant in ('dbg', 'asan', 'ubsan', 'gcevery', 'gcstats'):
+      if which_variants == VARIANTS_GC and variant in (
+          'dbg', 'asan', 'ubsan', 'gcevery', 'gcstats', 'coverage'):
         test_runs_under_variant = True
+      # TODO: How to add coverage back?
       if which_variants == VARIANTS_OLDSTL and variant in ('oldstl',):
         test_runs_under_variant = True
 
