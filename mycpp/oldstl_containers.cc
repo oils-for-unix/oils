@@ -106,14 +106,6 @@ Str* Str::join(List<Str*>* items) {
   return CopyBufferIntoNewStr(result, length);
 }
 
-// Get a string with one character
-Str* StrIter::Value() {
-  char* buf = static_cast<char*>(malloc(2));
-  buf[0] = s_->data_[i_];
-  buf[1] = '\0';
-  return CopyBufferIntoNewStr(buf, 1);
-}
-
 namespace mylib {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {

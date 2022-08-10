@@ -13,12 +13,7 @@
 #include "mycpp/gc_containers.h"
 #include "mycpp/error_types.h"
 #include "mycpp/tuple_types.h"
-#include "mycpp/oldstl_mylib.h"
-
-// TODO: Don't use 'using' in header
-
-
-
+#include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
 
 void println_stderr(Str* s);
 
@@ -191,38 +186,6 @@ template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return haystack->position_of_key(needle) != -1;
 }
-
-// NOTE: This iterates over bytes.
-class StrIter {
- public:
-  explicit StrIter(Str* s) : s_(s), i_(0), len_(len(s)) {
-    // We need this because StrIter is directly on the stack, and s_ could be
-    // moved during iteration.
-    gHeap.PushRoot(reinterpret_cast<Obj**>(&s_));
-  }
-  ~StrIter() {
-    gHeap.PopRoot();
-  }
-  void Next() {
-    i_++;
-  }
-  bool Done() {
-    return i_ >= len_;
-  }
-  Str* Value() {  // similar to index_()
-    Str* result = AllocStr(1);
-    result->data_[0] = s_->data_[i_];
-    // assert(result->data_[1] == '\0');
-    return result;
-  }
-
- private:
-  Str* s_;
-  int i_;
-  int len_;
-
-  DISALLOW_COPY_AND_ASSIGN(StrIter)
-};
 
 template <class T>
 class ListIter {

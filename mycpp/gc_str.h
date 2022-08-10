@@ -7,11 +7,7 @@ template <typename T>
 class List;
 
 #else
-
-
-
 #endif
-
 
 
 class Str : public Obj {
@@ -151,5 +147,39 @@ inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
   Str* s = StrFromC(buf, buf_len);
   return s;
 }
+
+// NOTE: This iterates over bytes.
+class StrIter {
+ public:
+  explicit StrIter(Str* s) : s_(s), i_(0), len_(len(s)) {
+    // We need this because StrIter is directly on the stack, and s_ could be
+    // moved during iteration.
+    gHeap.PushRoot(reinterpret_cast<Obj**>(&s_));
+  }
+  ~StrIter() {
+    gHeap.PopRoot();
+  }
+  void Next() {
+    i_++;
+  }
+  bool Done() {
+    return i_ >= len_;
+  }
+  Str* Value() {  // similar to index_()
+
+    // TODO: create 256 GLOBAL_STR() and return those instead!
+    Str* result = AllocStr(1);
+    result->data_[0] = s_->data_[i_];
+    // assert(result->data_[1] == '\0');
+    return result;
+  }
+
+ private:
+  Str* s_;
+  int i_;
+  int len_;
+
+  DISALLOW_COPY_AND_ASSIGN(StrIter)
+};
 
 #endif // STR_TYPES_H

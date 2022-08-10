@@ -29,23 +29,27 @@
 #define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val)-1)
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 
+class Obj;
+
 struct Heap
 {
-  void Init(int byte_count)
-  {
+  void Init(int byte_count) {
   }
 
-  void Bump()
-  {
+  void Bump() {
   }
 
-  void Collect()
-  {
+  void Collect() {
   }
 
-  void* Allocate(int num_bytes)
-  {
+  void* Allocate(int num_bytes) {
     return calloc(num_bytes, 1);
+  }
+
+  void PushRoot(Obj** p) {
+  }
+
+  void PopRoot() {
   }
 };
 
@@ -84,26 +88,6 @@ void println_stderr(Str* s);
 //
 // Data Types
 //
-
-// NOTE: This iterates over bytes.
-class StrIter {
- public:
-  explicit StrIter(Str* s) : s_(s), i_(0) {
-  }
-  void Next() {
-    i_++;
-  }
-  bool Done() {
-    return i_ >= len(s_);
-  }
-  Str* Value();
-
- private:
-  Str* s_;
-  int i_;
-
-  DISALLOW_COPY_AND_ASSIGN(StrIter)
-};
 
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
