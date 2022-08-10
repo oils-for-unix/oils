@@ -188,8 +188,9 @@ OLDSTL_RUNTIME = [
     'mycpp/leaky_containers.cc',
     ]
 
-VARIANTS_GC = 1      # Run with garbage collector on, cxx-gcevery
-VARIANTS_OLDSTL = 2  # Run with old STL runtime, cxx-oldstl
+VARIANTS_GC = 1            # Run with garbage collector on, cxx-gcevery
+VARIANTS_OLDSTL = 2        # Run with old STL runtime, cxx-oldstl
+VARIANTS_LEAKY_OLDSTL = 3  # Run both GC runtime and OLDSTL
 
 # Unit tests that run with garbage collector on.
 UNIT_TESTS = {
@@ -198,8 +199,9 @@ UNIT_TESTS = {
     'mycpp/gc_builtins_test.cc': VARIANTS_GC,
     'mycpp/gc_mylib_test.cc': VARIANTS_GC,
 
-    'mycpp/leaky_containers_test.cc': VARIANTS_OLDSTL,
     'mycpp/oldstl_containers_test.cc': VARIANTS_OLDSTL,
+
+    'mycpp/leaky_oldstl_containers_test.cc': VARIANTS_LEAKY_OLDSTL,
 
     # there is also demo/{gc_heap,square_heap}.cc
 }
@@ -502,8 +504,16 @@ def NinjaGraph(n):
 
       if which_variants == VARIANTS_GC:
         cc_files = GC_RUNTIME
+
       elif which_variants == VARIANTS_OLDSTL:
         cc_files = OLDSTL_RUNTIME
+
+      elif which_variants == VARIANTS_LEAKY_OLDSTL:
+        if variant == 'oldstl':
+          cc_files = OLDSTL_RUNTIME
+        else:
+          cc_files = GC_RUNTIME
+
       else:
         raise AssertionError(which_variants)
 
@@ -517,8 +527,13 @@ def NinjaGraph(n):
       if which_variants == VARIANTS_GC and variant in (
           'dbg', 'asan', 'ubsan', 'gcevery', 'gcstats', 'coverage'):
         test_runs_under_variant = True
+
       # TODO: How to add coverage back?
-      if which_variants == VARIANTS_OLDSTL and variant in ('oldstl',):
+      if which_variants == VARIANTS_OLDSTL and variant == 'oldstl':
+        test_runs_under_variant = True
+
+      if which_variants == VARIANTS_LEAKY_OLDSTL and variant in (
+          'oldstl', 'dbg', 'asan', 'ubsan', 'coverage'):
         test_runs_under_variant = True
 
       if not test_runs_under_variant:
