@@ -26,6 +26,43 @@ void debug_string(Str* s) {
 
 #define STRINGIFY(x) (#x)
 
+// Emulating the gc_heap API.  COPIED from gc_heap_test.cc
+TEST test_str_creation() {
+  Str* s = StrFromC("foo");
+  ASSERT_EQ(3, len(s));
+  ASSERT_EQ(0, strcmp("foo", s->data_));
+
+  // String with internal NUL
+  Str* s2 = StrFromC("foo\0bar", 7);
+  ASSERT_EQ(7, len(s2));
+  ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
+
+  Str* s3 = AllocStr(1);
+  ASSERT_EQ(1, len(s3));
+  ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
+
+  // Test truncating a string
+  //
+  // NOTE(Jesse): It's undefined to call `len()` after allocating with this
+  // function because it explicitly doesn't set the length!!
+  /* Str* s4 = mylib::OverAllocatedStr(7); */
+
+  Str* s4 = AllocStr(7);
+  ASSERT_EQ(7, len(s4));
+  ASSERT_EQ(0, memcmp("\0\0\0\0\0\0\0\0", s4->data_, 8));
+
+  // Hm annoying that we have to do a const_cast
+  memcpy(s4->data(), "foo", 3);
+  strcpy(s4->data(), "foo");
+  s4->SetObjLenFromStrLen(3);
+
+  ASSERT_EQ(3, len(s4));
+  ASSERT_EQ(0, strcmp("foo", s4->data_));
+
+  PASS();
+}
+
+
 TEST test_str_find() {
   Str* s = StrFromC("abc-abc");
   ASSERT_EQ(-1, s->find(StrFromC("x")));
@@ -492,6 +529,132 @@ TEST test_str_just() {
   PASS();
 }
 
+TEST test_str_slice() {
+  printf("\n");
+
+  Str* s0 = StrFromC("abcdef");
+
+  printf("------- Str::slice -------\n");
+
+  {  // Happy path
+    Str* s1 = s0->slice(0, 5);
+    ASSERT(str_equals(s1, StrFromC("abcde")));
+    PRINT_STRING(s1);
+  }
+  {
+    Str* s1 = s0->slice(1, 5);
+    ASSERT(str_equals(s1, StrFromC("bcde")));
+    PRINT_STRING(s1);
+  }
+  {
+    Str* s1 = s0->slice(0, 0);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+  {
+    Str* s1 = s0->slice(0, 6);
+    ASSERT(str_equals(s1, StrFromC("abcdef")));
+    PRINT_STRING(s1);
+  }
+  {
+    Str* s1 = s0->slice(-6, 6);
+    ASSERT(str_equals(s1, StrFromC("abcdef")));
+    PRINT_STRING(s1);
+  }
+  {
+    Str* s1 = s0->slice(0, -6);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+  {
+    Str* s1 = s0->slice(-6, -6);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(5, 6);
+    ASSERT(str_equals(s1, StrFromC("f")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(6, 6);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(0, -7);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(-7, -7);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(-7, 0);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(6, 6);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(7, 7);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(6, 5);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(7, 5);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(7, 6);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  {
+    Str* s1 = s0->slice(7, 7);
+    ASSERT(str_equals(s1, StrFromC("")));
+    PRINT_STRING(s1);
+  }
+
+  printf("---------- Done ----------\n");
+
+  //  NOTE(Jesse): testing all permutations of boundary conditions for
+  //  assertions
+  int max_len = (len(s0) + 2);
+  int min_len = -max_len;
+
+  for (int outer = min_len; outer <= max_len; ++outer) {
+    for (int inner = min_len; inner <= max_len; ++inner) {
+      s0->slice(outer, inner);
+    }
+  }
+
+  PASS();
+}
+
+
 TEST test_str_concat() {
   printf("\n");
 
@@ -672,6 +835,20 @@ TEST test_str_size() {
   PASS();
 }
 
+TEST test_str_helpers() {
+  printf("------ Str::helpers ------\n");
+
+  ASSERT((StrFromC(""))->startswith(StrFromC("")) == true);
+  ASSERT((StrFromC(" "))->startswith(StrFromC("")) == true);
+  ASSERT((StrFromC(" "))->startswith(StrFromC(" ")) == true);
+
+  ASSERT((StrFromC("  "))->startswith(StrFromC(" ")) == true);
+
+  printf("---------- Done ----------\n");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -679,14 +856,22 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(test_str_creation);
+
+  // Members
   RUN_TEST(test_str_find);
   RUN_TEST(test_str_strip);
   RUN_TEST(test_str_upper_lower);
   RUN_TEST(test_str_replace);
   RUN_TEST(test_str_just);
+  RUN_TEST(test_str_slice);
+
+  // Free functions
   RUN_TEST(test_str_concat);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_size);
+
+  RUN_TEST(test_str_helpers);
 
   GREATEST_MAIN_END();
   return 0;
