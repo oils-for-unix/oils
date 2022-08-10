@@ -291,9 +291,10 @@ int to_int(Str* s) {
   }
 }
 
+// Used by 'help' builtin and --help, neither of which translate yet.
 List<Str*>* Str::splitlines(bool keep) {
   assert(keep == true);
-  return nullptr;
+  NotImplemented();
 }
 
 Str* Str::upper() {

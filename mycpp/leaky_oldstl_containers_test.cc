@@ -1,20 +1,8 @@
 #ifdef OLDSTL_BINDINGS
-
-// NOTE(Jesse): This path is currently never compiled.
-
-#include "mycpp/oldstl_containers.h"
-
-
-
+  #include "mycpp/oldstl_containers.h"
 #else
-
-// NOTE(Jesse): This is the path that gets compiled.
-
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_containers.h"
-
-
-
 #endif
 
 #include "vendor/greatest.h"
@@ -37,6 +25,20 @@ void debug_string(Str* s) {
   PRINT_INT(i)
 
 #define STRINGIFY(x) (#x)
+
+TEST test_str_find() {
+  Str* s = StrFromC("abc-abc");
+  ASSERT_EQ(-1, s->find(StrFromC("x")));
+  ASSERT_EQ(-1, s->rfind(StrFromC("x")));
+
+  ASSERT_EQ(0, s->find(StrFromC("a")));
+  ASSERT_EQ(2, s->find(StrFromC("c")));
+
+  ASSERT_EQ(4, s->rfind(StrFromC("a")));
+  ASSERT_EQ(6, s->rfind(StrFromC("c")));
+
+  PASS();
+}
 
 TEST test_str_strip() {
   printf("\n");
@@ -677,6 +679,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(test_str_find);
   RUN_TEST(test_str_strip);
   RUN_TEST(test_str_upper_lower);
   RUN_TEST(test_str_replace);
