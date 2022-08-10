@@ -9,8 +9,6 @@
   #include "mycpp/gc_containers.h"
 #endif
 
-
-
 namespace qsn {
 
 inline bool IsUnprintableLow(Str* ch) {

@@ -3,11 +3,9 @@
 #include "_build/asdl-test/typed_demo_asdl.h"
 #include "_build/cpp/hnode_asdl.h"
 #include "asdl/runtime.h"
-#include "mycpp/gc_mylib.h"
 #include "mycpp/gc_containers.h"
+#include "mycpp/gc_mylib.h"
 #include "vendor/greatest.h"
-
-
 
 using hnode_asdl::hnode_str;
 using hnode_asdl::hnode_t;

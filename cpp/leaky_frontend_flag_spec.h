@@ -11,7 +11,6 @@
   #include "mycpp/gc_builtins.h"
   #include "mycpp/gc_containers.h"
 
-
 #endif
 
 // Forward declarations (can't include osh_eval.h)

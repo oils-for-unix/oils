@@ -202,6 +202,7 @@ UNIT_TESTS = {
     'mycpp/oldstl_containers_test.cc': VARIANTS_OLDSTL,
 
     'mycpp/leaky_oldstl_containers_test.cc': VARIANTS_LEAKY_OLDSTL,
+    'mycpp/leaky_oldstl_mylib_test.cc': VARIANTS_LEAKY_OLDSTL,
 
     # there is also demo/{gc_heap,square_heap}.cc
 }

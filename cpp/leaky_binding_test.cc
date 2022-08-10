@@ -17,7 +17,6 @@
 #include "leaky_stdlib.h"
 #include "vendor/greatest.h"
 
-
 namespace Id = id_kind_asdl::Id;
 
 TEST show_sizeof() {

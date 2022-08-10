@@ -10,8 +10,6 @@
   #include "mycpp/gc_containers.h"
 #endif
 
-
-
 TEST qsn_test() {
   Str* s = nullptr;
   Str* x = nullptr;
