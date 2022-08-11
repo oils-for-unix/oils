@@ -25,6 +25,21 @@ asdl-tool() {
 
 readonly TMP_DIR='_build/asdl-test'
 
+# TODO: Get these from Ninja
+readonly -a OLDSTL_RUNTIME=(
+  mycpp/oldstl_containers.cc
+  mycpp/leaky_builtins.cc
+  mycpp/leaky_containers.cc
+)
+
+readonly -a GC_RUNTIME=(
+    mycpp/gc_builtins.cc
+    mycpp/gc_heap.cc
+    mycpp/gc_mylib.cc
+    mycpp/leaky_builtins.cc
+    mycpp/leaky_containers.cc
+)
+
 gen-cpp-test() {
   local compiler=${1:-cxx}
   local variant=${1:-asan}
@@ -50,8 +65,7 @@ gen-cpp-test() {
   compile_and_link $compiler $variant '-D OLDSTL_BINDINGS' $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
-    mycpp/leaky_containers.cc \
-    mycpp/oldstl_containers.cc \
+    "${OLDSTL_RUNTIME[@]}" \
     _build/cpp/hnode_asdl.cc \
     $tmp_dir/typed_arith_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc 
@@ -88,10 +102,7 @@ gc-test() {
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
   compile_and_link $compiler $variant '' $bin \
     asdl/gc_test.cc \
-    mycpp/gc_builtins.cc \
-    mycpp/gc_heap.cc \
-    mycpp/gc_mylib.cc \
-    mycpp/leaky_containers.cc \
+    "${GC_RUNTIME[@]}" \
     asdl/runtime.cc \
     _build/cpp/hnode_asdl.cc \
     $tmp_dir/demo_lib_asdl.cc \

@@ -62,6 +62,7 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_pylib.cc
 
     # TODO: OLDSTL_RUNTIME
+    mycpp/leaky_builtins.cc
     mycpp/leaky_containers.cc
     mycpp/oldstl_containers.cc
 )

@@ -6,79 +6,6 @@
 
 #include "vendor/greatest.h"
 
-TEST test_str_to_int() {
-  int i;
-  bool ok;
-
-  ok = _str_to_int(StrFromC("345"), &i, 10);
-  ASSERT(ok);
-  ASSERT_EQ_FMT(345, i, "%d");
-
-  ok = _str_to_int(StrFromC("1234567890"), &i, 10);
-  ASSERT(ok);
-  ASSERT(i == 1234567890);
-
-  // overflow
-  ok = _str_to_int(StrFromC("12345678901234567890"), &i, 10);
-  ASSERT(!ok);
-
-  // underflow
-  ok = _str_to_int(StrFromC("-12345678901234567890"), &i, 10);
-  ASSERT(!ok);
-
-  // negative
-  ok = _str_to_int(StrFromC("-123"), &i, 10);
-  ASSERT(ok);
-  ASSERT(i == -123);
-
-  // Leading space is OK!
-  ok = _str_to_int(StrFromC(" -123"), &i, 10);
-  ASSERT(ok);
-  ASSERT(i == -123);
-
-  // Trailing space is OK!  NOTE: This fails!
-  ok = _str_to_int(StrFromC(" -123  "), &i, 10);
-  ASSERT(ok);
-  ASSERT(i == -123);
-
-  // Empty string isn't an integer
-  ok = _str_to_int(StrFromC(""), &i, 10);
-  ASSERT(!ok);
-
-  ok = _str_to_int(StrFromC("xx"), &i, 10);
-  ASSERT(!ok);
-
-  // Trailing garbage
-  ok = _str_to_int(StrFromC("42a"), &i, 10);
-  ASSERT(!ok);
-
-  i = to_int(StrFromC("ff"), 16);
-  ASSERT(i == 255);
-
-  // strtol allows 0x prefix
-  i = to_int(StrFromC("0xff"), 16);
-  ASSERT(i == 255);
-
-  // TODO: test ValueError here
-  // i = to_int(StrFromC("0xz"), 16);
-
-  i = to_int(StrFromC("0"), 16);
-  ASSERT(i == 0);
-
-  i = to_int(StrFromC("077"), 8);
-  ASSERT_EQ_FMT(63, i, "%d");
-
-  bool caught = false;
-  try {
-    i = to_int(StrFromC("zzz"));
-  } catch (ValueError* e) {
-    caught = true;
-  }
-  ASSERT(caught);
-
-  PASS();
-}
-
 void Print(List<Str*>* parts) {
   log("---");
   log("len = %d", len(parts));
@@ -195,7 +122,7 @@ TEST test_list_iters() {
   PASS();
 }
 
-TEST test_contains() {
+TEST test_str_contains() {
   bool b;
 
   log("  Str");
@@ -226,6 +153,13 @@ TEST test_contains() {
   Str* s = StrFromC("foo\0", 4);
   b = str_contains(s, StrFromC("\0", 1));
   ASSERT(b == true);
+
+  PASS();
+}
+
+
+TEST test_list_contains() {
+  bool b;
 
   log("  List<Str*>");
   auto strs = new List<Str*>();
@@ -664,13 +598,12 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(test_str_to_int);
-
   RUN_TEST(test_list_funcs);
   RUN_TEST(test_list_iters);
   RUN_TEST(test_dict);
 
-  RUN_TEST(test_contains);
+  RUN_TEST(test_str_contains);
+  RUN_TEST(test_list_contains);
   RUN_TEST(test_sizeof);
 
   RUN_TEST(test_list_tuple);
