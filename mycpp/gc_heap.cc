@@ -4,10 +4,6 @@
 
 #include "mycpp/gc_containers.h"
 
-
-
-
-
 GLOBAL_STR(kEmptyString, "");
 
 Heap gHeap;
@@ -297,4 +293,3 @@ void ShowFixedChildren(Obj* obj) {
   }
 }
 #endif
-

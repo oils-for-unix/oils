@@ -7,9 +7,6 @@
 
 #include "gc_builtins.h"
 
-
-
-
 mylib::BufWriter gBuf;
 
 namespace mylib {

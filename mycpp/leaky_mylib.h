@@ -8,21 +8,21 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib {
 
-  inline Str* hex_lower(int i) {
-    char buf[kIntBufSize];
-    int len = snprintf(buf, kIntBufSize, "%x", i);
-    return ::StrFromC(buf, len);
-  }
-
-  inline Str* hex_upper(int i) {
-    char buf[kIntBufSize];
-    int len = snprintf(buf, kIntBufSize, "%X", i);
-    return ::StrFromC(buf, len);
-  }
-
-  inline Str* octal(int i) {
-    char buf[kIntBufSize];
-    int len = snprintf(buf, kIntBufSize, "%o", i);
-    return ::StrFromC(buf, len);
-  }
+inline Str* hex_lower(int i) {
+  char buf[kIntBufSize];
+  int len = snprintf(buf, kIntBufSize, "%x", i);
+  return ::StrFromC(buf, len);
 }
+
+inline Str* hex_upper(int i) {
+  char buf[kIntBufSize];
+  int len = snprintf(buf, kIntBufSize, "%X", i);
+  return ::StrFromC(buf, len);
+}
+
+inline Str* octal(int i) {
+  char buf[kIntBufSize];
+  int len = snprintf(buf, kIntBufSize, "%o", i);
+  return ::StrFromC(buf, len);
+}
+}  // namespace mylib

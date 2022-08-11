@@ -30,4 +30,3 @@ inline Str* dynamic_fmt_dummy() {
   /* NotImplemented(); */
   return StrFromC("dynamic_fmt_dummy");
 }
-

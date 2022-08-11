@@ -1,16 +1,14 @@
 // gc_builtins.cc
 
+#include "gc_builtins.h"
 
 #include <ctype.h>  // isspace(), isdigit()
+
 #include <cstdarg>  // va_list, etc.
 #include <vector>
 
-#include "gc_builtins.h"
-#include "gc_mylib.h"  // BufWriter
 #include "cpp/aligned.h"
-
-
-
+#include "gc_mylib.h"  // BufWriter
 
 #if 0
 // Translation of Python's print().

@@ -31,7 +31,6 @@ int Str::rfind(Str* needle) {
   return -1;
 }
 
-
 bool Str::isdigit() {
   int n = len(this);
   if (n == 0) {
@@ -284,7 +283,6 @@ Str* Str::replace(Str* old, Str* new_str) {
   return CopyBufferIntoNewStr(result, result_len);
 }
 
-
 enum class StripWhere {
   Left,
   Right,
@@ -371,4 +369,3 @@ Str* Str::lstrip(Str* chars) {
 Str* Str::lstrip() {
   return StripAny(this, StripWhere::Left, kWhitespace);
 }
-

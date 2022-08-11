@@ -440,9 +440,7 @@ class Param : public Local<T> {
   // operator= -- I don't think we need to PushRoot()
 };
 
-
 #include "mycpp/gc_alloc.h"
-
 
 // Return the size of a resizeable allocation.  For now we just round up by
 // powers of 2. This could be optimized later.  CPython has an interesting

@@ -157,7 +157,6 @@ TEST test_str_contains() {
   PASS();
 }
 
-
 TEST test_list_contains() {
   bool b;
 
@@ -314,8 +313,8 @@ TEST test_list_tuple() {
 
   log("");
 
-  auto t4 =
-      new Tuple4<int, Str*, Str*, int>(42, StrFromC("4"), StrFromC("four"), -42);
+  auto t4 = new Tuple4<int, Str*, Str*, int>(42, StrFromC("4"),
+                                             StrFromC("four"), -42);
 
   log("t4[0] = %d", t4->at0());
   log("t4[1] = %s", t4->at1()->data_);
@@ -352,7 +351,7 @@ TEST test_sizeof() {
 #define PRINT_LIST(list)                                         \
   for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) { \
     Str* piece = iter.Value();                                   \
-    printf("(%.*s) ", len(piece), piece->data_);                \
+    printf("(%.*s) ", len(piece), piece->data_);                 \
   }                                                              \
   printf("\n")
 
@@ -574,16 +573,17 @@ TEST test_str_join() {
 
   {
     Str* result =
-        (StrFromC(""))->join(new List<Str*>({StrFromC("abc"), StrFromC("def")}));
+        (StrFromC(""))
+            ->join(new List<Str*>({StrFromC("abc"), StrFromC("def")}));
     PRINT_STRING(result);
     ASSERT(are_equal(result, StrFromC("abcdef")));
   }
   {
     Str* result = (StrFromC(" "))
-                      ->join(new List<Str*>({StrFromC("abc"), StrFromC("def"),
-                                             StrFromC("abc"), StrFromC("def"),
-                                             StrFromC("abc"), StrFromC("def"),
-                                             StrFromC("abc"), StrFromC("def")}));
+                      ->join(new List<Str*>(
+                          {StrFromC("abc"), StrFromC("def"), StrFromC("abc"),
+                           StrFromC("def"), StrFromC("abc"), StrFromC("def"),
+                           StrFromC("abc"), StrFromC("def")}));
     PRINT_STRING(result);
     ASSERT(are_equal(result, StrFromC("abc def abc def abc def abc def")));
   }

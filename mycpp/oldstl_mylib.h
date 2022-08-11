@@ -14,10 +14,19 @@ inline Str* StrFromC(const char* s) {
 }
 
 template <typename V>
-void dict_remove(Dict<Str*, V>* haystack, Str* needle);
+inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
+  int pos = find_by_key(haystack->items_, needle);
+  if (pos == -1) {
+    return;
+  }
+  haystack->items_[pos].first = nullptr;
+}
 
+// TODO: how to do the int version of this?  Do you need an extra bit?
 template <typename V>
-void dict_remove(Dict<int, V>* haystack, int needle);
+inline void dict_remove(Dict<int, V>* haystack, int needle) {
+  NotImplemented();
+}
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
@@ -90,7 +99,6 @@ class Writer {
 
 class BufWriter : public Writer {
  public:
-
   BufWriter() : data_(nullptr), len_(0) {
   }
 
@@ -100,7 +108,6 @@ class BufWriter : public Writer {
   virtual bool isatty() override {
     return false;
   }
-
 
   // Methods to compile printf format strings to
   Str* getvalue();
@@ -165,7 +172,7 @@ inline Writer* Stderr() {
   return gStderr;
 }
 
-} // namespace mylib
+}  // namespace mylib
 
 //
 // Formatter for Python's %s
@@ -173,4 +180,4 @@ inline Writer* Stderr() {
 
 extern mylib::BufWriter gBuf;
 
-#endif // MYLIB_TYPES_H
+#endif  // MYLIB_TYPES_H

@@ -139,7 +139,7 @@ int gNumDelete = 0;
 
 #ifdef DUMB_ALLOC
 
-#include "cpp/aligned.h"
+  #include "cpp/aligned.h"
 
 void* operator new(size_t size) {
   char* p = &(kMem[gMemPos]);

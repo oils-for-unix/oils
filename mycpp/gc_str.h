@@ -9,10 +9,8 @@ class List;
 #else
 #endif
 
-
 class Str : public Obj {
  public:
-
   // Don't call this directly.  Call AllocStr() instead, which calls this.
   explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
     // log("GC Str()");
@@ -182,4 +180,4 @@ class StrIter {
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
-#endif // STR_TYPES_H
+#endif  // STR_TYPES_H

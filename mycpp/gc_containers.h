@@ -6,7 +6,8 @@
 #define GC_TYPES_H
 
 #ifdef OLDSTL_BINDINGS
-#error "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include oldstl_containers.h instead."
+  #error \
+      "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include oldstl_containers.h instead."
 #endif
 
 #include "mycpp/gc_heap.h"
@@ -29,23 +30,18 @@ class GlobalStr {
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
 
-  // This macro is a workaround for the fact that it's impossible to have a
-  // a constexpr initializer for char[N].  The "String Literals as Non-Type
-  // Template Parameters" feature of C++ 20 would have done it, but it's not
-  // there.
-  //
-  // https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
-  // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
+// This macro is a workaround for the fact that it's impossible to have a
+// a constexpr initializer for char[N].  The "String Literals as Non-Type
+// Template Parameters" feature of C++ 20 would have done it, but it's not
+// there.
+//
+// https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
+// https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
-  #define GLOBAL_STR(name, val)                 \
-    GlobalStr<sizeof(val)> _##name = { \
-        Tag::Global,                   \
-        0,                                      \
-        kZeroMask,                     \
-        kStrHeaderSize + sizeof(val),  \
-        -1,                                     \
-        val};                                   \
-    Str* name = reinterpret_cast<Str*>(&_##name);
+#define GLOBAL_STR(name, val)                                            \
+  GlobalStr<sizeof(val)> _##name = {                                     \
+      Tag::Global, 0, kZeroMask, kStrHeaderSize + sizeof(val), -1, val}; \
+  Str* name = reinterpret_cast<Str*>(&_##name);
 
 //
 // Compile-time computation of GC field masks.
@@ -91,13 +87,12 @@ class GlobalList {
   GlobalSlab<T, N>* slab_;
 };
 
-  #define GLOBAL_LIST(T, N, name, array)                                \
-    GlobalSlab<T, N> _slab_##name = {                          \
-        Tag::Global, 0, kZeroMask, kNoObjLen, array}; \
-    GlobalList<T, N> _list_##name = {                          \
-        Tag::Global, 0, kZeroMask, kNoObjLen,         \
-        N,           N, &_slab_##name};                                 \
-    List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
+#define GLOBAL_LIST(T, N, name, array)                                      \
+  GlobalSlab<T, N> _slab_##name = {Tag::Global, 0, kZeroMask, kNoObjLen,    \
+                                   array};                                  \
+  GlobalList<T, N> _list_##name = {Tag::Global, 0, kZeroMask,    kNoObjLen, \
+                                   N,           N, &_slab_##name};          \
+  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
 // A list has one Slab pointer which we need to follow.
 constexpr uint16_t maskof_List() {

@@ -47,5 +47,4 @@ inline Slab<T>* NewSlab(int len) {
   return slab;
 }
 
-
 #endif  // GC_SLAB_H

@@ -42,4 +42,4 @@ class RuntimeError {
   Str* message;
 };
 
-#endif // ERROR_TYPES_H
+#endif  // ERROR_TYPES_H

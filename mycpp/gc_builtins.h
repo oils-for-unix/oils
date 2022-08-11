@@ -10,10 +10,10 @@
 #include <algorithm>  // min(), sort()
 #include <climits>    // CHAR_BIT
 
-#include "mycpp/gc_containers.h"
 #include "mycpp/error_types.h"
-#include "mycpp/tuple_types.h"
+#include "mycpp/gc_containers.h"
 #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
+#include "mycpp/tuple_types.h"
 
 void println_stderr(Str* s);
 

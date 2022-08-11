@@ -12,28 +12,11 @@
 
 // Types
 
-
-
-
-
-
-
-
-
-
-
-
-
 // Constants
-
-
 
 // Functions
 
-
-
 // Variables
-
 
 #ifdef GC_STATS
   #define ASSERT_NUM_LIVE_OBJS(x) ASSERT_EQ_FMT((x), gHeap.num_live_objs_, "%d")
@@ -53,8 +36,7 @@ static_assert(offsetof(Slab<int>, items_) ==
                   offsetof(GlobalSlab<int COMMA 1>, items_),
               "Slab and GlobalSlab should be consistent");
 
-static_assert(kSlabHeaderSize ==
-                  offsetof(GlobalSlab<int COMMA 1>, items_),
+static_assert(kSlabHeaderSize == offsetof(GlobalSlab<int COMMA 1>, items_),
               "kSlabHeaderSize and GlobalSlab should be consistent");
 
 static_assert(offsetof(List<int>, slab_) ==
@@ -299,13 +281,11 @@ TEST list_repro() {
 }
 
 // Manual initialization.  This helped me write the GLOBAL_LIST() macro.
-GlobalSlab<int, 3> _gSlab = {
-    Tag::Global, 0, kZeroMask, kNoObjLen, {5, 6, 7}};
-GlobalList<int, 3> _gList = {
-    Tag::Global, 0, kZeroMask, kNoObjLen,
-    3,  // len
-    3,  // capacity
-    &_gSlab};
+GlobalSlab<int, 3> _gSlab = {Tag::Global, 0, kZeroMask, kNoObjLen, {5, 6, 7}};
+GlobalList<int, 3> _gList = {Tag::Global, 0, kZeroMask, kNoObjLen,
+                             3,  // len
+                             3,  // capacity
+                             &_gSlab};
 List<int>* gList = reinterpret_cast<List<int>*>(&_gList);
 
 GLOBAL_LIST(int, 4, gList2, {5 COMMA 4 COMMA 3 COMMA 2});
@@ -836,8 +816,7 @@ TEST compile_time_masks_test() {
 
   ASSERT_EQ(offsetof(Dict<int COMMA int>, entry_),
             offsetof(_DummyDict, entry_));
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, keys_),
-            offsetof(_DummyDict, keys_));
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, keys_), offsetof(_DummyDict, keys_));
   ASSERT_EQ(offsetof(Dict<int COMMA int>, values_),
             offsetof(_DummyDict, values_));
 
@@ -850,8 +829,7 @@ TEST compile_time_masks_test() {
 // 8 byte vtable, 8 byte Obj header, then member_
 class BaseObj : public Obj {
  public:
-  BaseObj(int obj_len)
-      : Obj(Tag::Opaque, kZeroMask, obj_len) {
+  BaseObj(int obj_len) : Obj(Tag::Opaque, kZeroMask, obj_len) {
   }
   BaseObj() : BaseObj(sizeof(BaseObj)) {
   }

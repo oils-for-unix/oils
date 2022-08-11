@@ -13,6 +13,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/common.sh  # BASE_CXXFLAGS, etc.
 source cpp/NINJA-steps.sh  # compile_and_link
+source mycpp/ninja.sh  # OLDSTL_RUNTIME, etc.
 
 CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
 
@@ -24,21 +25,6 @@ asdl-tool() {
 }
 
 readonly TMP_DIR='_build/asdl-test'
-
-# TODO: Get these from Ninja
-readonly -a OLDSTL_RUNTIME=(
-  mycpp/oldstl_containers.cc
-  mycpp/leaky_builtins.cc
-  mycpp/leaky_containers.cc
-)
-
-readonly -a GC_RUNTIME=(
-    mycpp/gc_builtins.cc
-    mycpp/gc_heap.cc
-    mycpp/gc_mylib.cc
-    mycpp/leaky_builtins.cc
-    mycpp/leaky_containers.cc
-)
 
 gen-cpp-test() {
   local compiler=${1:-cxx}

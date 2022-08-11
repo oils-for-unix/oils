@@ -131,4 +131,3 @@ int to_int(Str* s) {
     throw new ValueError();
   }
 }
-

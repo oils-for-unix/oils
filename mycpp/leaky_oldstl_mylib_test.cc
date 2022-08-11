@@ -8,7 +8,6 @@
 #include "vendor/greatest.h"
 
 TEST test_mylib_funcs() {
-
   Str* int_str;
 
   int int_min = INT_MIN;
@@ -57,4 +56,3 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_END();
   return 0;
 }
-

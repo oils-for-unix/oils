@@ -62,7 +62,6 @@ TEST test_str_creation() {
   PASS();
 }
 
-
 TEST test_str_find() {
   Str* s = StrFromC("abc-abc");
   ASSERT_EQ(-1, s->find(StrFromC("x")));
@@ -653,7 +652,6 @@ TEST test_str_slice() {
 
   PASS();
 }
-
 
 TEST test_str_concat() {
   printf("\n");

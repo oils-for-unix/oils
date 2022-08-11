@@ -4,9 +4,6 @@
 #include "mycpp/gc_containers.h"
 #include "vendor/greatest.h"
 
-
-
-
 TEST split_once_test() {
   log("split_once()");
 

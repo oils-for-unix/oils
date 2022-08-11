@@ -9,12 +9,6 @@
 #include "mycpp/gc_builtins.h"  // Tuple2
 #include "mycpp/gc_containers.h"
 
-
-
-
-
-
-
 namespace mylib {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);

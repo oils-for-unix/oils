@@ -1,9 +1,10 @@
-#ifndef OLDSTL_BINDINGS
-#error "This file contains definitions for OLDSTL containers.  If you wanted a gc'd container build, include gc_containers.h"
-#endif
+#ifndef OLDSTL_CONTAINERS_H
+#define OLDSTL_CONTAINERS_H
 
-#ifndef MYLIB_H
-#define MYLIB_H
+#ifndef OLDSTL_BINDINGS
+  #error \
+      "This file contains definitions for OLDSTL containers.  If you wanted a gc'd container build, include gc_containers.h"
+#endif
 
 #include <assert.h>
 #include <ctype.h>   // isalpha(), isdigit()
@@ -26,13 +27,12 @@
   #define free dumb_free
 #endif
 
-#define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val)-1)
+#define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val) - 1)
 #define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
 
 class Obj;
 
-struct Heap
-{
+struct Heap {
   void Init(int byte_count) {
   }
 
@@ -55,12 +55,15 @@ struct Heap
 
 extern Heap gHeap;
 
+// clang-format off
 #include "mycpp/gc_tag.h"
 #include "mycpp/gc_obj.h"
 #include "mycpp/gc_alloc.h"
+// clang-format on
 
 struct StackRoots {
-  StackRoots(std::initializer_list<void*> roots) {}
+  StackRoots(std::initializer_list<void*> roots) {
+  }
 };
 
 template <class T>
@@ -72,11 +75,12 @@ class Dict;
 template <class K, class V>
 class DictIter;
 
-
+// clang-format off
 #include "mycpp/tuple_types.h"
 #include "mycpp/error_types.h"
 #include "mycpp/gc_str.h"
 #include "mycpp/oldstl_mylib.h" // mylib namespace
+// clang-format on
 
 extern Str* kEmptyString;
 
@@ -102,8 +106,7 @@ class List : public Obj {
   }
 
   // Used by list_repeat
-  List(T item, int n)
-      : Obj(Tag::FixedSize, kZeroMask, 0), v_(n, item) {
+  List(T item, int n) : Obj(Tag::FixedSize, kZeroMask, 0), v_(n, item) {
   }
 
   List(std::initializer_list<T> init)
@@ -177,11 +180,11 @@ class List : public Obj {
   }
 
   void append(T item) {
-  #ifdef ALLOC_LOG
+#ifdef ALLOC_LOG
     // we can post process this format to find large lists
     // except when they're constants, but that's OK?
     printf("%p %zu\n", this, v_.size());
-  #endif
+#endif
 
     v_.push_back(item);
   }
@@ -740,23 +743,4 @@ inline void mysort(std::vector<Str*>* v) {
   std::sort(v->begin(), v->end(), _cmp);
 }
 
-//
-// Buf is StringIO
-//
-
-template <typename V>
-inline void mylib::dict_remove(Dict<Str*, V>* haystack, Str* needle) {
-  int pos = find_by_key(haystack->items_, needle);
-  if (pos == -1) {
-    return;
-  }
-  haystack->items_[pos].first = nullptr;
-}
-
-// TODO: how to do the int version of this?  Do you need an extra bit?
-template <typename V>
-inline void mylib::dict_remove(Dict<int, V>* haystack, int needle) {
-  NotImplemented();
-}
-
-#endif  // MYLIB_H
+#endif  // OLDSTL_CONTAINERS_H

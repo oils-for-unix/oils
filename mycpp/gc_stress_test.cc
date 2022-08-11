@@ -6,12 +6,6 @@
 #include "mycpp/gc_containers.h"
 #include "vendor/greatest.h"
 
-
-
-
-
-
-
 // TODO:
 // - Assert the number of collections
 // - Assert the number of heap growths

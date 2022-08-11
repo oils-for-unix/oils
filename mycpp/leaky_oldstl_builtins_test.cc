@@ -92,4 +92,3 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_END();
   return 0;
 }
-

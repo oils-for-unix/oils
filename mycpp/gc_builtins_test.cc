@@ -4,13 +4,9 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "mycpp/gc_mylib.h"  // gBuf
 #include "mycpp/gc_containers.h"
+#include "mycpp/gc_mylib.h"  // gBuf
 #include "vendor/greatest.h"
-
-
-
-
 
 GLOBAL_STR(kStrFood, "food");
 GLOBAL_STR(kWithNull, "foo\0bar");

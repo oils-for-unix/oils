@@ -13,6 +13,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source cpp/NINJA-steps.sh  # for compile_and_link function
 source mycpp/common.sh
+source mycpp/ninja.sh
 
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
@@ -61,10 +62,7 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_stdlib.cc
     cpp/leaky_pylib.cc
 
-    # TODO: OLDSTL_RUNTIME
-    mycpp/leaky_builtins.cc
-    mycpp/leaky_containers.cc
-    mycpp/oldstl_containers.cc
+    "${OLDSTL_RUNTIME[@]}"
 )
 
 leaky-binding-test() {

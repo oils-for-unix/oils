@@ -25,7 +25,6 @@ Str* mylib::BufWriter::getvalue() {
   }
 }
 
-
 List<Str*>* Str::split(Str* sep) {
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
@@ -328,4 +327,3 @@ Str* repr(Str* s) {
 //
 
 mylib::BufWriter gBuf;
-
