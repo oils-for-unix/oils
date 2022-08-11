@@ -10,6 +10,8 @@
 
 #include "vendor/greatest.h"
 
+GLOBAL_STR(kSpace, " ");
+
 TEST test_str_to_int() {
   int i;
   bool ok;
@@ -83,6 +85,53 @@ TEST test_str_to_int() {
   PASS();
 }
 
+TEST test_str_contains() {
+  bool b;
+  Str* s;
+  Str* nul;
+
+  log("  str_contains");
+
+  s = StrFromC("foo\0 ", 5);
+  ASSERT(str_contains(s, kSpace));
+
+  // this ends with a NUL, but also has a NUL terinator.
+  nul = StrFromC("\0", 1);
+  ASSERT(str_contains(s, nul));
+  ASSERT(!str_contains(kSpace, nul));
+
+  b = str_contains(StrFromC("foo\0a", 5), StrFromC("a"));
+  ASSERT(b == true);
+
+  // this ends with a NUL, but also has a NUL terinator.
+  s = StrFromC("foo\0", 4);
+  b = str_contains(s, StrFromC("\0", 1));
+  ASSERT(b == true);
+
+  // Degenerate cases
+  b = str_contains(StrFromC(""), StrFromC(""));
+  ASSERT(b == true);
+  b = str_contains(StrFromC("foo"), StrFromC(""));
+  ASSERT(b == true);
+  b = str_contains(StrFromC(""), StrFromC("f"));
+  ASSERT(b == false);
+
+  // Short circuit
+  b = str_contains(StrFromC("foo"), StrFromC("too long"));
+  ASSERT(b == false);
+
+  b = str_contains(StrFromC("foo"), StrFromC("oo"));
+  ASSERT(b == true);
+
+  b = str_contains(StrFromC("foo"), StrFromC("ood"));
+  ASSERT(b == false);
+
+  b = str_contains(StrFromC("foo\0ab", 6), StrFromC("ab"));
+  ASSERT(b == true);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -91,6 +140,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(test_str_to_int);
+  RUN_TEST(test_str_contains);
 
   GREATEST_MAIN_END();
   return 0;

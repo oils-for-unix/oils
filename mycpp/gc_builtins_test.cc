@@ -572,14 +572,6 @@ TEST contains_test() {
   Str* nul = nullptr;
   StackRoots _roots({&s, &nul});
 
-  s = StrFromC("foo\0 ", 5);
-  ASSERT(str_contains(s, kSpace));
-
-  // this ends with a NUL, but also has a NUL terinator.
-  nul = StrFromC("\0", 1);
-  ASSERT(str_contains(s, nul));
-  ASSERT(!str_contains(kSpace, nul));
-
   log("  List<Str*>");
   List<Str*>* strs = nullptr;
   List<int>* ints = nullptr;

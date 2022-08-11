@@ -16,6 +16,28 @@ void Print(List<Str*>* parts) {
   }
 }
 
+TEST test_sizeof() {
+  // Str = 16 and List = 24.
+  // Rejected ideas about slicing:
+  //
+  // - Use data[len] == '\0' as OWNING and data[len] != '\0' as a slice?
+  //   It doesn't work because s[1:] would always have that problem
+  //
+  // - s->data == (void*)(s + 1)
+  //   Owning string has the data RIGHT AFTER?
+  //   Maybe works? but probably a bad idea because of GLOBAL Str instances.
+
+  log("");
+  log("sizeof(Str) = %zu", sizeof(Str));
+  log("sizeof(List<int>) = %zu", sizeof(List<int>));
+  log("sizeof(Dict<int, Str*>) = %zu", sizeof(Dict<int, Str*>));
+  log("sizeof(Tuple2<int, int>) = %zu", sizeof(Tuple2<int, int>));
+  log("sizeof(Tuple2<Str*, Str*>) = %zu", sizeof(Tuple2<Str*, Str*>));
+  log("sizeof(Tuple3<int, int, int>) = %zu", sizeof(Tuple3<int, int, int>));
+
+  PASS();
+}
+
 TEST test_list_funcs() {
   std::vector<int> v;
   v.push_back(0);
@@ -119,41 +141,6 @@ TEST test_list_iters() {
   // hm std::initializer_list is "first class"
   auto strs = {StrFromC("foo"), StrFromC("bar")};
   ListFunc(strs);
-
-  PASS();
-}
-
-TEST test_str_contains() {
-  bool b;
-
-  log("  Str");
-
-  // Degenerate cases
-  b = str_contains(StrFromC(""), StrFromC(""));
-  ASSERT(b == true);
-  b = str_contains(StrFromC("foo"), StrFromC(""));
-  ASSERT(b == true);
-
-  // Short circuit
-  b = str_contains(StrFromC("foo"), StrFromC("too long"));
-  ASSERT(b == false);
-
-  b = str_contains(StrFromC("foo"), StrFromC("oo"));
-  ASSERT(b == true);
-
-  b = str_contains(StrFromC("foo"), StrFromC("ood"));
-  ASSERT(b == false);
-
-  b = str_contains(StrFromC("foo\0a", 5), StrFromC("a"));
-  ASSERT(b == true);
-
-  b = str_contains(StrFromC("foo\0ab", 6), StrFromC("ab"));
-  ASSERT(b == true);
-
-  // this ends with a NUL, but also has a NUL terinator.
-  Str* s = StrFromC("foo\0", 4);
-  b = str_contains(s, StrFromC("\0", 1));
-  ASSERT(b == true);
 
   PASS();
 }
@@ -321,28 +308,6 @@ TEST test_list_tuple() {
   log("t4[1] = %s", t4->at1()->data_);
   log("t4[2] = %s", t4->at2()->data_);
   log("t4[3] = %d", t4->at3());
-
-  PASS();
-}
-
-TEST test_sizeof() {
-  // Str = 16 and List = 24.
-  // Rejected ideas about slicing:
-  //
-  // - Use data[len] == '\0' as OWNING and data[len] != '\0' as a slice?
-  //   It doesn't work because s[1:] would always have that problem
-  //
-  // - s->data == (void*)(s + 1)
-  //   Owning string has the data RIGHT AFTER?
-  //   Maybe works? but probably a bad idea because of GLOBAL Str instances.
-
-  log("");
-  log("sizeof(Str) = %zu", sizeof(Str));
-  log("sizeof(List<int>) = %zu", sizeof(List<int>));
-  log("sizeof(Dict<int, Str*>) = %zu", sizeof(Dict<int, Str*>));
-  log("sizeof(Tuple2<int, int>) = %zu", sizeof(Tuple2<int, int>));
-  log("sizeof(Tuple2<Str*, Str*>) = %zu", sizeof(Tuple2<Str*, Str*>));
-  log("sizeof(Tuple3<int, int, int>) = %zu", sizeof(Tuple3<int, int, int>));
 
   PASS();
 }
@@ -599,14 +564,13 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(test_sizeof);
+
   RUN_TEST(test_list_funcs);
   RUN_TEST(test_list_iters);
   RUN_TEST(test_dict);
 
-  RUN_TEST(test_str_contains);
   RUN_TEST(test_list_contains);
-  RUN_TEST(test_sizeof);
-
   RUN_TEST(test_list_tuple);
 
   RUN_TEST(test_str_replace);

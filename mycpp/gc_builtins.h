@@ -49,6 +49,8 @@ inline bool to_bool(int i) {
 bool to_bool(Str* s);
 double to_float(Str* s);
 
+bool str_contains(Str* haystack, Str* needle);
+
 //
 // NOT Shared with oldstl_builtins
 //
@@ -132,12 +134,6 @@ Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
 Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
-
-// e.g. ('a' in 'abc')
-inline bool str_contains(Str* haystack, Str* needle) {
-  assert(len(needle) == 1);
-  return memchr(haystack->data_, needle->data_[0], len(haystack));
-}
 
 // ints, floats, enums like Kind
 // e.g. 1 in [1, 2, 3]
