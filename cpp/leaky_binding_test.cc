@@ -15,6 +15,7 @@
 #include "leaky_osh.h"
 #include "leaky_pylib.h"
 #include "leaky_stdlib.h"
+#include "mycpp/oldstl_builtins.h"  // print()
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;
