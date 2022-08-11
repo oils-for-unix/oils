@@ -19,22 +19,11 @@ void println_stderr(Str* s) {
   fputs("\n", stderr);
 }
 
-Str* str_repeat(Str* s, int times) {
-  // Python allows -1 too, and Oil used that
-  if (times <= 0) {
-    return kEmptyString;
-  }
-  int len_ = len(s);
-  int new_len = len_ * times;
-  char* data = static_cast<char*>(malloc(new_len + 1));
-
-  char* dest = data;
-  for (int i = 0; i < times; i++) {
-    memcpy(dest, s->data_, len_);
-    dest += len_;
-  }
-  data[new_len] = '\0';
-  return CopyBufferIntoNewStr(data, new_len);
+Str* str(int i) {
+  Str* s = OverAllocatedStr(kIntBufSize);
+  int length = snprintf(s->data(), kIntBufSize, "%d", i);
+  s->SetObjLenFromStrLen(length);
+  return s;
 }
 
 // Helper for str_to_int() that doesn't use exceptions.
@@ -77,6 +66,66 @@ bool _str_to_int(Str* s, int* result, int base) {
   return true;
 }
 
+int to_int(Str* s, int base) {
+  int i;
+  if (_str_to_int(s, &i, base)) {
+    return i;
+  } else {
+    throw new ValueError();
+  }
+}
+
+int to_int(Str* s) {
+  int i;
+  if (_str_to_int(s, &i, 10)) {
+    return i;
+  } else {
+    throw new ValueError();
+  }
+}
+
+Str* chr(int i) {
+  // NOTE: i should be less than 256, in which we could return an object from
+  // GLOBAL_STR() pool, like StrIter
+  auto result = AllocStr(1);
+  result->data_[0] = i;
+  return result;
+}
+
+int ord(Str* s) {
+  assert(len(s) == 1);
+  // signed to unsigned conversion, so we don't get values like -127
+  uint8_t c = static_cast<uint8_t>(s->data_[0]);
+  return c;
+}
+
+bool to_bool(Str* s) {
+  return len(s) != 0;
+}
+
+double to_float(Str* s) {
+  double result = atof(s->data_);
+  return result;
+}
+
+Str* str_repeat(Str* s, int times) {
+  // Python allows -1 too, and Oil used that
+  if (times <= 0) {
+    return kEmptyString;
+  }
+  int len_ = len(s);
+  int new_len = len_ * times;
+  char* data = static_cast<char*>(malloc(new_len + 1));
+
+  char* dest = data;
+  for (int i = 0; i < times; i++) {
+    memcpy(dest, s->data_, len_);
+    dest += len_;
+  }
+  data[new_len] = '\0';
+  return CopyBufferIntoNewStr(data, new_len);
+}
+
 // for os_path.join()
 // NOTE(Jesse): Perfect candidate for bounded_buffer
 Str* str_concat3(Str* a, Str* b, Str* c) {
@@ -112,22 +161,4 @@ Str* str_concat(Str* a, Str* b) {
   buf[new_len] = '\0';
 
   return CopyBufferIntoNewStr(buf, new_len);
-}
-
-int to_int(Str* s, int base) {
-  int i;
-  if (_str_to_int(s, &i, base)) {
-    return i;
-  } else {
-    throw new ValueError();
-  }
-}
-
-int to_int(Str* s) {
-  int i;
-  if (_str_to_int(s, &i, 10)) {
-    return i;
-  } else {
-    throw new ValueError();
-  }
 }

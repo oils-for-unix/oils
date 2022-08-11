@@ -5,8 +5,9 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <cstdarg>  // va_list, etc.
-#include <cstdio>   // vprintf
+#include <assert.h>  // assert()
+#include <stdarg.h>  // va_list, etc.
+#include <stdio.h>   // vprintf
 
 // TODO(Jesse): Put NotImplemented on a compile-time switch such that we cannot
 // make a release build if we're not finished implementing the interpreter.

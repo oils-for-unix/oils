@@ -7,11 +7,15 @@
 #ifndef GC_BUILTINS_H
 #define GC_BUILTINS_H
 
+#include "mycpp/common.h"  // NotImplemented
+
+// from gc_str.h, should probably #include that
+class Str;
+Str* AllocStr(int len);
+
 //
 // Shared with oldstl_builtins
 //
-
-class Str;
 
 void print(Str* s);
 
@@ -19,9 +23,18 @@ void println_stderr(Str* s);
 
 Str* repr(Str* s);
 
+inline Str* str(double f) {  // TODO: should be double
+  NotImplemented();          // Uncalled
+}
+
+Str* str(int i);
+
 bool _str_to_int(Str* s, int* result, int base);  // for testing only
 int to_int(Str* s);
 int to_int(Str* s, int base);
+
+Str* chr(int i);
+int ord(Str* s);
 
 // int(a == b) used in arithmetic evaluator
 inline int to_int(bool b) {
@@ -31,6 +44,10 @@ inline int to_int(bool b) {
 inline bool to_bool(int i) {
   return i != 0;
 }
+
+// Used in boolean evaluator
+bool to_bool(Str* s);
+double to_float(Str* s);
 
 //
 // NOT Shared with oldstl_builtins
@@ -45,39 +62,6 @@ inline bool to_bool(int i) {
   #include "mycpp/gc_containers.h"
   #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
   #include "mycpp/tuple_types.h"
-
-inline bool to_bool(Str* s) {
-  return len(s) != 0;
-}
-
-inline double to_float(Str* s) {
-  NotImplemented();  // Uncalled
-}
-
-inline Str* str(int i) {
-  // Use a static buffer first because we don't know what n is until we call
-  // snprintf().
-  char buf[kIntBufSize];
-  int length = snprintf(buf, kIntBufSize, "%d", i);
-  return StrFromC(buf, length);
-}
-
-inline Str* str(double f) {  // TODO: should be double
-  NotImplemented();          // Uncalled
-}
-
-inline int ord(Str* s) {
-  assert(len(s) == 1);
-  // signed to unsigned conversion, so we don't get values like -127
-  uint8_t c = static_cast<uint8_t>(s->data_[0]);
-  return c;
-}
-
-inline Str* chr(int i) {
-  auto result = AllocStr(1);
-  result->data_[0] = i;
-  return result;
-}
 
 //
 // Comparison and Sorting

@@ -8,6 +8,8 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib {
 
+// NOTE: Can use OverAllocatedStr for all of these, rather than copying
+
 inline Str* hex_lower(int i) {
   char buf[kIntBufSize];
   int len = snprintf(buf, kIntBufSize, "%x", i);
