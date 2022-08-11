@@ -6,6 +6,7 @@
 
 class Str;
 
+#if 0
 void print(Str* s);
 
 // log() generates code that writes this
@@ -26,6 +27,7 @@ inline int to_int(bool b) {
 inline bool to_bool(int i) {
   return i != 0;
 }
+#endif
 
 inline bool to_bool(Str* s) {
   return len(s) != 0;

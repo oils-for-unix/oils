@@ -7,6 +7,35 @@
 #ifndef GC_BUILTINS_H
 #define GC_BUILTINS_H
 
+//
+// Shared with oldstl_builtins
+//
+
+class Str;
+
+void print(Str* s);
+
+void println_stderr(Str* s);
+
+Str* repr(Str* s);
+
+bool _str_to_int(Str* s, int* result, int base);  // for testing only
+int to_int(Str* s);
+int to_int(Str* s, int base);
+
+// int(a == b) used in arithmetic evaluator
+inline int to_int(bool b) {
+  return b;
+}
+
+inline bool to_bool(int i) {
+  return i != 0;
+}
+
+//
+// NOT Shared with oldstl_builtins
+//
+
 #ifndef OLDSTL_BINDINGS
 
   #include <algorithm>  // min(), sort()
@@ -16,29 +45,6 @@
   #include "mycpp/gc_containers.h"
   #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
   #include "mycpp/tuple_types.h"
-
-void println_stderr(Str* s);
-
-void print(Str* s);
-
-Str* repr(Str* s);
-
-//
-// Conversion Functions
-//
-
-bool _str_to_int(Str* s, int* result, int base);  // for testing only
-int to_int(Str* s);
-int to_int(Str* s, int base);
-
-// int(a == b) used in arithmetic evaluator
-/* inline int to_int(bool b) { */
-/*   return b; */
-/* } */
-
-inline bool to_bool(int i) {
-  return i != 0;
-}
 
 inline bool to_bool(Str* s) {
   return len(s) != 0;
