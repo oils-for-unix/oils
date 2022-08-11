@@ -580,15 +580,6 @@ inline bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
   return result;
 }
 
-inline bool str_equals0(const char* c_string, Str* s) {
-  int n = strlen(c_string);
-  if (len(s) == n) {
-    return memcmp(s->data_, c_string, n) == 0;
-  } else {
-    return false;
-  }
-}
-
 inline bool maybe_str_equals(Str* left, Str* right) {
   if (left && right) {
     return str_equals(left, right);

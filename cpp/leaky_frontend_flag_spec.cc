@@ -1,8 +1,9 @@
 // frontend_flag_spec.cc
 
-#include "leaky_frontend_flag_spec.h"
+#include "cpp/leaky_frontend_flag_spec.h"
 
 #include "_build/cpp/arg_types.h"
+#include "mycpp/oldstl_builtins.h"
 
 #ifndef CPP_UNIT_TEST
   #include "_build/cpp/osh_eval.h"  // args::Reader, etc.

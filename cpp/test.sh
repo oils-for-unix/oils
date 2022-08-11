@@ -32,7 +32,8 @@ readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_flag_spec_test.cc
     cpp/leaky_frontend_flag_spec.cc
     _build/cpp/arg_types.cc
-    mycpp/oldstl_containers.cc
+
+    "${OLDSTL_RUNTIME[@]}"
 )
 
 leaky-flag-spec-test() {
@@ -100,12 +101,10 @@ gc-binding-test() {
   local -a runtime
   case $variant in
     (oldstl)
-      # OLDSTL_RUNTIME
-      runtime=(mycpp/oldstl_containers.cc mycpp/leaky_containers.cc)
+      runtime=( "${OLDSTL_RUNTIME[@]}" )
       ;;
     (*)
-      # GC_RUNTIME
-      runtime=(mycpp/gc_builtins.cc mycpp/gc_heap.cc mycpp/gc_mylib.cc mycpp/leaky_containers.cc)
+      runtime=( "${GC_RUNTIME[@]}" )
       ;;
   esac
 

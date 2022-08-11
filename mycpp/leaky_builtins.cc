@@ -111,6 +111,15 @@ double to_float(Str* s) {
   return result;
 }
 
+bool str_equals0(const char* c_string, Str* s) {
+  int n = strlen(c_string);
+  if (len(s) == n) {
+    return memcmp(s->data_, c_string, n) == 0;
+  } else {
+    return false;
+  }
+}
+
 // e.g. ('a' in 'abc')
 bool str_contains(Str* haystack, Str* needle) {
   // Common case

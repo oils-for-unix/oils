@@ -51,6 +51,9 @@ double to_float(Str* s);
 
 bool str_contains(Str* haystack, Str* needle);
 
+// Only used by unit tests
+bool str_equals0(const char* c_string, Str* s);
+
 //
 // NOT Shared with oldstl_builtins
 //
@@ -114,16 +117,6 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
   auto keys = d->keys();
   keys->sort();
   return keys;
-}
-
-// Is this only used by unit tests?
-inline bool str_equals0(const char* c_string, Str* s) {
-  int n = strlen(c_string);
-  if (len(s) == n) {
-    return memcmp(s->data_, c_string, n) == 0;
-  } else {
-    return false;
-  }
 }
 
 //
