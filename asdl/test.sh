@@ -157,9 +157,7 @@ EOF
   compile_and_link cxx asan '' $bin \
     _build/cpp/${name}_asdl.cc \
     asdl/runtime.cc \
-    mycpp/gc_builtins.cc \
-    mycpp/gc_heap.cc \
-    mycpp/gc_mylib.cc \
+    "${GC_RUNTIME[@]}" \
     $tmp_dir/${name}_asdl_test.cc \
     "$@"
 

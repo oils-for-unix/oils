@@ -181,6 +181,7 @@ GC_RUNTIME = [
     # files we haven't added StackRoots to
     'mycpp/leaky_containers.cc',
     'mycpp/leaky_builtins.cc',
+    'mycpp/leaky_mylib.cc',
 ]
 
 # no CC files?
@@ -188,6 +189,7 @@ OLDSTL_RUNTIME = [
     'mycpp/oldstl_containers.cc',
     'mycpp/leaky_containers.cc',
     'mycpp/leaky_builtins.cc',
+    'mycpp/leaky_mylib.cc',
     ]
 
 VARIANTS_GC = 1            # Run with garbage collector on, cxx-gcevery

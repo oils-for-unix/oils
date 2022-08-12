@@ -4,8 +4,6 @@
 
 #include "mycpp/gc_containers.h"
 
-GLOBAL_STR(kEmptyString, "");
-
 Heap gHeap;
 
 // LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary

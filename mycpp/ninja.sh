@@ -7,6 +7,7 @@ readonly -a OLDSTL_RUNTIME=(
     mycpp/oldstl_containers.cc
     mycpp/leaky_builtins.cc
     mycpp/leaky_containers.cc
+    mycpp/leaky_mylib.cc
 )
 
 readonly -a GC_RUNTIME=(
@@ -15,5 +16,6 @@ readonly -a GC_RUNTIME=(
     mycpp/gc_mylib.cc
     mycpp/leaky_builtins.cc
     mycpp/leaky_containers.cc
+    mycpp/leaky_mylib.cc
 )
 

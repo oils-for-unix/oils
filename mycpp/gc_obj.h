@@ -61,4 +61,29 @@ class Obj {
   DISALLOW_COPY_AND_ASSIGN(Obj)
 };
 
+//
+// Compile-time computation of GC field masks.
+//
+
+class _DummyObj {  // For maskbit()
+ public:
+  OBJ_HEADER()
+  int first_field_;
+};
+
+constexpr int maskbit(int offset) {
+  return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
+}
+
+class _DummyObj_v {  // For maskbit_v()
+ public:
+  void* vtable;  // how the compiler does dynamic dispatch
+  OBJ_HEADER()
+  int first_field_;
+};
+
+constexpr int maskbit_v(int offset) {
+  return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
+}
+
 #endif  // GC_OBJ_H

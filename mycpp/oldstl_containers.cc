@@ -9,9 +9,7 @@ Heap gHeap;
 #include <cstdio>
 #include <exception>  // std::exception
 
-Str* kEmptyString = StrFromC("", 0);
-/* extern Str* kEmptyString; // = StrFromC("", 0); */
-
+#if 0
 // For cStringIO API
 Str* mylib::BufWriter::getvalue() {
   if (data_) {
@@ -24,6 +22,7 @@ Str* mylib::BufWriter::getvalue() {
     return kEmptyString;
   }
 }
+#endif
 
 List<Str*>* Str::split(Str* sep) {
   assert(len(sep) == 1);  // we can only split one char
@@ -131,9 +130,10 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
 // LineReader
 //
 
+#if 0
 LineReader* gStdin;
 
-#if 1
+  #if 1
 Str* CFileLineReader::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
@@ -155,7 +155,7 @@ Str* CFileLineReader::readline() {
   // Note: it's NUL terminated
   return CopyBufferIntoNewStr(line, len);
 }
-#endif
+  #endif
 
 // problem: most Str methods like index() and slice() COPY so they have a
 // NUL terminator.
@@ -233,10 +233,6 @@ void BufWriter::format_d(int i) {
   len_ += len;
 }
 
-void BufWriter::format_o(int i) {
-  NotImplemented();
-}
-
 // repr() calls this too
 //
 // TODO: This could be replaced with QSN?  The upper bound is greater there
@@ -309,6 +305,8 @@ void CFileWriter::flush() {
 bool CFileWriter::isatty() {
   return ::isatty(fileno(f_));
 }
+
+#endif
 
 }  // namespace mylib
 

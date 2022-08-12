@@ -7,6 +7,8 @@
 
 #include <ctype.h>  // isalpha(), isdigit()
 
+GLOBAL_STR(kEmptyString, "");
+
 int Str::find(Str* needle, int pos) {
   int len_ = len(this);
   assert(len(needle) == 1);  // Oil's usage

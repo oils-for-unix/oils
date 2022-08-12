@@ -44,31 +44,6 @@ class GlobalStr {
   Str* name = reinterpret_cast<Str*>(&_##name);
 
 //
-// Compile-time computation of GC field masks.
-//
-
-class _DummyObj {  // For maskbit()
- public:
-  OBJ_HEADER()
-  int first_field_;
-};
-
-constexpr int maskbit(int offset) {
-  return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
-}
-
-class _DummyObj_v {  // For maskbit_v()
- public:
-  void* vtable;  // how the compiler does dynamic dispatch
-  OBJ_HEADER()
-  int first_field_;
-};
-
-constexpr int maskbit_v(int offset) {
-  return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
-}
-
-//
 // List<T>
 //
 
