@@ -687,3 +687,23 @@ pat[invalid]+=1
 ## status: 1
 ## stdout-json: ""
 
+
+#### Regex in a loop (bug regression)
+
+shopt --set oil:all
+
+var content = [ 1, 2 ]
+var i = 0
+while (i < len(content)) {
+  var line = content[i]
+  write $[content[i]]
+  if (Str(line) ~ / s* 'imports' s* '=' s* .* /) {
+    exit
+  }
+  setvar i += 1
+}
+
+## STDOUT:
+1
+2
+## END

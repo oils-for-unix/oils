@@ -609,10 +609,7 @@ class OilEvaluator(object):
     # TODO: You can RESOLVE strings -> literal
     # Technically you can also @ if it contains exactly ONE CharClassLiteral?
     # But leave it out for now.
-
     return part
-
-    raise NotImplementedError(part.__class__.__name__)
 
   def _MaybeReplaceLeaf(self, node):
     # type: (re_t) -> Tuple[Optional[re_t], bool]
@@ -765,15 +762,9 @@ class OilEvaluator(object):
         self._MutateSubtree(node.child)
       return
 
-    elif node.tag == re_e.ClassLiteral:
+    if node.tag == re_e.ClassLiteral:
       self._MutateClassLiteral(node)
       return
-
-    elif node.tag == re_e.LiteralChars:
-      # No children
-      return
-
-    raise NotImplementedError(node.__class__.__name__)
 
   def EvalRegex(self, node):
     # type: (re_t) -> re_t
@@ -782,11 +773,16 @@ class OilEvaluator(object):
     
     / Hex '.' $const "--$const" /
     """
-    # Regex Evaluation Shares the Same Structure, but uses slightly different 
-    # nodes.
+    # An evaluated Regex shares the same structure as the AST, but uses
+    # slightly different nodes.
+    #
     # * Speck/Token (syntactic concepts) -> Primitive (logical)
     # * Splice -> Resolved
     # * All Strings -> Literal
+    #
+    # Note: there have been BUGS as a result of running this in a loop (see
+    # spec/oil-regex).  Should we have two different node types?  This is an
+    # "AST typing" problem.
 
     new_leaf, recurse = self._MaybeReplaceLeaf(node)
     if new_leaf:
