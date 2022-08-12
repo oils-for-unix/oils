@@ -707,3 +707,27 @@ while (i < len(content)) {
 1
 2
 ## END
+
+
+#### Regex in a loop depending on var
+
+shopt --set oil:all
+
+var lines = ['foo', 'bar']
+for line in (lines) {
+  write "line $line"
+
+  # = / $line /
+
+  if ("x$line" ~ / dot $line /) {
+  #if (line ~ / $line /) {
+    write "matched $line"
+  }
+}
+
+## STDOUT:
+line foo
+matched foo
+line bar
+matched bar
+## END

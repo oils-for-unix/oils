@@ -6,11 +6,24 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    expr_e, expr_t, re, re_e, re_t, class_literal_term, class_literal_term_e,
-    place_expr_e, place_expr_t,
+    place_expr_e, place_expr_t, place_expr__Var, attribute, subscript,
+
+    speck, Token, 
+    single_quoted, double_quoted, braced_var_sub, simple_var_sub,
+
+    expr_e, expr_t, expr__Var, expr__Spread,
+
+    re, re_e, re_t, re__Splice, re__Seq, re__Alt, re__Repeat, re__Group,
+    re__Capture, re__ClassLiteral,
+
+    class_literal_term, class_literal_term_e,
+    class_literal_term__CharLiteral,
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue, value, value_e, scope_e,
+    lvalue,
+    scope_e, scope_t,
+    value, value_e,
+    value__Str, value__MaybeStrArray, value__AssocArray, value__Obj
 )
 from asdl import runtime
 from core import error
@@ -20,27 +33,28 @@ from frontend import consts
 from oil_lang import objects
 from osh import braces
 from osh import word_compile
-from mycpp.mylib import NewDict
+from mycpp.mylib import NewDict, tagswitch
 
 import libc
 
-from typing import Any, Dict, Optional, List, Union, Tuple, TYPE_CHECKING
+from typing import cast, Any, Dict, Optional, List, Union, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
-      lvalue_t, lvalue__Named, lvalue__ObjIndex, lvalue__ObjAttr,
+      lvalue_t, lvalue__Named, # lvalue__ObjIndex, lvalue__ObjAttr,
   )
-  from _devbuild.gen.syntax_asdl import arg_list
+  from _devbuild.gen.syntax_asdl import ArgList
   from core.vm import _Executor
   from core.ui import ErrorFormatter
   from core.state import Mem
-  from osh.word_eval import StringWordEvaluator
+  from osh.word_eval import AbstractWordEvaluator
   from osh import split
 
 _ = log
 
 
 def LookupVar(mem, var_name, which_scopes, span_id=runtime.NO_SPID):
+  # type: (Mem, str, scope_t, int) -> Any
   """Convert to a Python object so we can calculate on it natively."""
 
   # Lookup WITHOUT dynamic scope.
@@ -49,13 +63,18 @@ def LookupVar(mem, var_name, which_scopes, span_id=runtime.NO_SPID):
     # TODO: Location info
     e_die('Undefined variable %r', var_name, span_id=span_id)
 
+  UP_val = val
   if val.tag == value_e.Str:
+    val = cast(value__Str, UP_val)
     return val.s
   if val.tag == value_e.MaybeStrArray:
+    val = cast(value__MaybeStrArray, UP_val)
     return val.strs  # node: has None
   if val.tag == value_e.AssocArray:
+    val = cast(value__AssocArray, UP_val)
     return val.d
   if val.tag == value_e.Obj:
+    val = cast(value__Obj, UP_val)
     return val.obj
 
 
@@ -71,13 +90,13 @@ class OilEvaluator(object):
   def __init__(self,
                mem,  # type: Mem
                mutable_opts,  # type: state.MutableOpts
-               funcs,  # type: Dict
+               funcs,  # type: Dict[str, Any]
                splitter,  # type: split.SplitContext
                errfmt,  # type: ErrorFormatter
                ):
     # type: (...) -> None
     self.shell_ex = None  # type: _Executor
-    self.word_ev = None  # type: StringWordEvaluator
+    self.word_ev = None  # type: AbstractWordEvaluator
 
     self.mem = mem
     self.mutable_opts = mutable_opts
@@ -95,8 +114,9 @@ class OilEvaluator(object):
     return LookupVar(self.mem, name, scope_e.LocalOrGlobal, span_id=span_id)
 
   def EvalPlusEquals(self, lval, rhs_py):
-    # type: (lvalue_t, Union[int, float]) -> Union[int, float]
+    # type: (lvalue__Named, Union[int, float]) -> Union[int, float]
     lhs_py = self.LookupVar(lval.name)
+
     if not isinstance(lhs_py, (int, float)):
       # TODO: Could point at the variable name
       e_die("Object of type %r doesn't support +=", lhs_py.__class__.__name__)
@@ -104,21 +124,25 @@ class OilEvaluator(object):
     return lhs_py + rhs_py
 
   def EvalLHS(self, node):
+    # type: (expr_t) -> lvalue_t
     if 0:
       print('EvalLHS()')
       node.PrettyPrint()
       print('')
 
-    if node.tag == expr_e.Var:
-      return lvalue.Named(node.name.val)
-    else:
-      # TODO:
-      # subscripts, tuple unpacking, starred expressions, etc.
-
-      raise NotImplementedError(node.__class__.__name__)
+    UP_node = node
+    with tagswitch(node) as case:
+      if case(expr_e.Var):
+        node = cast(expr__Var, UP_node)
+        return lvalue.Named(node.name.val)
+      else:
+        # TODO:
+        # subscripts, tuple unpacking, starred expressions, etc.
+        raise NotImplementedError(node.__class__.__name__)
 
   # Copied from BoolEvaluator
   def _EvalMatch(self, left, right, set_match_result):
+    # type: (str, Any, bool) -> bool
     """
     Args:
       set_match_result: Whether to assign
@@ -144,26 +168,30 @@ class OilEvaluator(object):
       return False
 
   def EvalArgList(self, args):
-    # type: (arg_list) -> Tuple[List[Any], Dict[str, Any]]
+    # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
     """ Used by do f(x) and echo $f(x). """
     pos_args = []
     for arg in args.positional:
-      if arg.tag == expr_e.Spread:
+      UP_arg = arg
+
+      if arg.tag_() == expr_e.Spread:
+        arg = cast(expr__Spread, UP_arg)
         # assume it returns a list
         pos_args.extend(self.EvalExpr(arg.child))
       else:
         pos_args.append(self.EvalExpr(arg))
 
     kwargs = {}
-    for arg in args.named:
-      if arg.name:
-        kwargs[arg.name.val] = self.EvalExpr(arg.value)
+    for named in args.named:
+      if named.name:
+        kwargs[named.name.val] = self.EvalExpr(named.value)
       else:
         # ...named
-        kwargs.update(self.EvalExpr(arg.value))
+        kwargs.update(self.EvalExpr(named.value))
     return pos_args, kwargs
 
   def _EvalIndices(self, indices):
+    # type: (List[expr_t]) -> Any
     if len(indices) == 1:
       return self.EvalExpr(indices[0])
     else:
@@ -171,24 +199,34 @@ class OilEvaluator(object):
       return tuple(self.EvalExpr(ind) for ind in indices)
 
   def EvalPlaceExpr(self, place):
-    # type: (place_expr_t) -> Union[lvalue__Named, lvalue__ObjIndex, lvalue__ObjAttr]
-    if place.tag == place_expr_e.Var:
-      return lvalue.Named(place.name.val)
+    # type: (place_expr_t) -> lvalue_t
 
-    if place.tag == place_expr_e.Subscript:
-      obj = self.EvalExpr(place.obj)
-      index = self._EvalIndices(place.indices)
-      return lvalue.ObjIndex(obj, index)
+    UP_place = place
+    with tagswitch(place) as case:
+      if case(place_expr_e.Var):
+        place = cast(place_expr__Var, UP_place)
 
-    if place.tag == place_expr_e.Attribute:
-      obj = self.EvalExpr(place.obj)
-      if place.op.id == Id.Expr_RArrow:
-        index = place.attr.val
+        return lvalue.Named(place.name.val)
+
+      elif case(place_expr_e.Subscript):
+        place = cast(subscript, UP_place)
+
+        obj = self.EvalExpr(place.obj)
+        index = self._EvalIndices(place.indices)
         return lvalue.ObjIndex(obj, index)
-      else:
-        return lvalue.ObjAttr(obj, place.attr.val)
 
-    raise NotImplementedError(place)
+      elif case(place_expr_e.Attribute):
+        place = cast(attribute, UP_place)
+
+        obj = self.EvalExpr(place.obj)
+        if place.op.id == Id.Expr_RArrow:
+          index = place.attr.val
+          return lvalue.ObjIndex(obj, index)
+        else:
+          return lvalue.ObjAttr(obj, place.attr.val)
+
+      else:
+        raise NotImplementedError(place)
 
   def EvalExpr(self, node):
     # type: (expr_t) -> Any
@@ -487,11 +525,11 @@ class OilEvaluator(object):
       keys = [self._EvalExpr(e) for e in node.keys]
 
       values = []
-      for i, e in enumerate(node.values):
-        if e.tag == expr_e.Implicit:
+      for i, value_expr in enumerate(node.values):
+        if value_expr.tag == expr_e.Implicit:
           v = self.LookupVar(keys[i])  # {name}
         else:
-          v = self._EvalExpr(e)
+          v = self._EvalExpr(value_expr)
         values.append(v)
 
       d = NewDict()
@@ -605,86 +643,97 @@ class OilEvaluator(object):
 
     raise NotImplementedError(node.__class__.__name__)
 
-  def _EvalClassLiteralPart(self, part):
-    # TODO: You can RESOLVE strings -> literal
-    # Technically you can also @ if it contains exactly ONE CharClassLiteral?
-    # But leave it out for now.
-    return part
-
   def _MaybeReplaceLeaf(self, node):
     # type: (re_t) -> Tuple[Optional[re_t], bool]
     """
     If a leaf node needs to be evaluated, do it and return the replacement.
     Otherwise return None.
     """
-    new_leaf = None
+    new_leaf = None  # type: re_t
     recurse = True
 
-    if node.tag == re_e.Speck:
-      id_ = node.id
-      if id_ == Id.Expr_Dot:
-        new_leaf = re.Primitive(Id.Re_Dot)
-      elif id_ == Id.Arith_Caret:  # ^
-        new_leaf = re.Primitive(Id.Re_Start)
-      elif id_ == Id.Expr_Dollar:  # $
-        new_leaf = re.Primitive(Id.Re_End)
-      else:
-        raise NotImplementedError(id_)
+    UP_node = node
+    with tagswitch(node) as case:
+      node = cast(speck, UP_node)
 
-    elif node.tag == re_e.Token:
-      id_ = node.id
-      val = node.val
-
-      if id_ == Id.Expr_Name:
-        if val == 'dot':
+      if case(re_e.Speck):
+        id_ = node.id
+        if id_ == Id.Expr_Dot:
           new_leaf = re.Primitive(Id.Re_Dot)
-        else:
-          raise NotImplementedError(val)
-
-      elif id_ == Id.Expr_Symbol:
-        if val == '%start':
+        elif id_ == Id.Arith_Caret:  # ^
           new_leaf = re.Primitive(Id.Re_Start)
-        elif val == '%end':
+        elif id_ == Id.Expr_Dollar:  # $
           new_leaf = re.Primitive(Id.Re_End)
         else:
-          raise NotImplementedError(val)
+          raise NotImplementedError(id_)
 
-      else:  # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
-        kind = consts.GetKind(id_)
-        assert kind == Kind.Char, id_
-        s = word_compile.EvalCStringToken(node)
-        new_leaf = re.LiteralChars(s, node.span_id)
+      elif case(re_e.Token):
+        node = cast(Token, UP_node)
 
-    elif node.tag == re_e.SingleQuoted:
-      s = word_compile.EvalSingleQuoted(node)
-      new_leaf = re.LiteralChars(s, node.left.span_id)
+        id_ = node.id
+        val = node.val
 
-    elif node.tag == re_e.DoubleQuoted:
-      s = self.word_ev.EvalDoubleQuotedToString(node)
-      new_leaf = re.LiteralChars(s, node.left.span_id)
+        if id_ == Id.Expr_Name:
+          if val == 'dot':
+            new_leaf = re.Primitive(Id.Re_Dot)
+          else:
+            raise NotImplementedError(val)
 
-    elif node.tag == re_e.BracedVarSub:
-      s = self.word_ev.EvalBracedVarSubToString(node)
-      new_leaf = re.LiteralChars(s, node.spids[0])
+        elif id_ == Id.Expr_Symbol:
+          if val == '%start':
+            new_leaf = re.Primitive(Id.Re_Start)
+          elif val == '%end':
+            new_leaf = re.Primitive(Id.Re_End)
+          else:
+            raise NotImplementedError(val)
 
-    elif node.tag == re_e.SimpleVarSub:
-      s = self.word_ev.EvalSimpleVarSubToString(node.token)
-      new_leaf = re.LiteralChars(s, node.token.span_id)
+        else:  # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
+          kind = consts.GetKind(id_)
+          assert kind == Kind.Char, id_
+          s = word_compile.EvalCStringToken(node)
+          new_leaf = re.LiteralChars(s, node.span_id)
 
-    elif node.tag == re_e.Splice:
-      obj = self.LookupVar(node.name.val, span_id=node.name.span_id)
-      if not isinstance(obj, objects.Regex):
-        e_die("Can't splice object of type %r into regex", obj.__class__,
-              token=node.name)
-      # Note: we only splice the regex, and ignore flags.
-      # Should we warn about this?
-      new_leaf = obj.regex
+      elif case(re_e.SingleQuoted):
+        node = cast(single_quoted, UP_node)
 
-    # These are leaves we don't need to do anything with.
-    elif node.tag == re_e.PosixClass:
-      recurse = False
-    elif node.tag == re_e.PerlClass:
-      recurse = False
+        s = word_compile.EvalSingleQuoted(node)
+        new_leaf = re.LiteralChars(s, node.left.span_id)
+
+      elif case(re_e.DoubleQuoted):
+        node = cast(double_quoted, UP_node)
+
+        s = self.word_ev.EvalDoubleQuotedToString(node)
+        new_leaf = re.LiteralChars(s, node.left.span_id)
+
+      elif case(re_e.BracedVarSub):
+        node = cast(braced_var_sub, UP_node)
+
+        s = self.word_ev.EvalBracedVarSubToString(node)
+        new_leaf = re.LiteralChars(s, node.spids[0])
+
+      elif case(re_e.SimpleVarSub):
+        node = cast(simple_var_sub, UP_node)
+
+        s = self.word_ev.EvalSimpleVarSubToString(node.token)
+        new_leaf = re.LiteralChars(s, node.token.span_id)
+
+      elif case(re_e.Splice):
+        node = cast(re__Splice, UP_node)
+
+        obj = self.LookupVar(node.name.val, span_id=node.name.span_id)
+        if not isinstance(obj, objects.Regex):
+          e_die("Can't splice object of type %r into regex", obj.__class__,
+                token=node.name)
+        # Note: we only splice the regex, and ignore flags.
+        # Should we warn about this?
+        new_leaf = obj.regex
+
+      # These are leaves we don't need to do anything with.
+      elif case(re_e.PosixClass):
+        recurse = False
+
+      elif case(re_e.PerlClass):
+        recurse = False
 
     return new_leaf, recurse
 
@@ -700,31 +749,45 @@ class OilEvaluator(object):
         self._MutateSubtree(c)
 
   def _MutateClassLiteral(self, node):
-    # type: (re_t) -> None
+    # type: (re__ClassLiteral) -> None
     for i, term in enumerate(node.terms):
       s = None
-      if term.tag == class_literal_term_e.SingleQuoted:
-        s = word_compile.EvalSingleQuoted(term)
-        spid = term.left.span_id
 
-      elif term.tag == class_literal_term_e.DoubleQuoted:
-        s = self.word_ev.EvalDoubleQuotedToString(term)
-        spid = term.left.span_id
+      UP_term = term
+      with tagswitch(term) as case:
 
-      elif term.tag == class_literal_term_e.BracedVarSub:
-        s = self.word_ev.EvalBracedVarSubToString(term)
-        spid = term.spids[0]
+        if case(class_literal_term_e.SingleQuoted):
+          term = cast(single_quoted, UP_term)
 
-      elif term.tag == class_literal_term_e.SimpleVarSub:
-        s = self.word_ev.EvalSimpleVarSubToString(term.token)
-        spid = term.token.span_id
+          s = word_compile.EvalSingleQuoted(term)
+          spid = term.left.span_id
 
-      elif term.tag == class_literal_term_e.CharLiteral:
-        # What about \0?
-        # At runtime, ERE should disallow it.  But we can also disallow it here.
-        new_leaf = word_compile.EvalCharLiteralForRegex(term.tok)
-        if new_leaf:
-          node.terms[i] = new_leaf
+        elif case(class_literal_term_e.DoubleQuoted):
+          term = cast(double_quoted, UP_term)
+
+          s = self.word_ev.EvalDoubleQuotedToString(term)
+          spid = term.left.span_id
+
+        elif case(class_literal_term_e.BracedVarSub):
+          term = cast(braced_var_sub, UP_term)
+
+          s = self.word_ev.EvalBracedVarSubToString(term)
+          spid = term.spids[0]
+
+        elif case(class_literal_term_e.SimpleVarSub):
+          term = cast(simple_var_sub, UP_term)
+
+          s = self.word_ev.EvalSimpleVarSubToString(term.token)
+          spid = term.token.span_id
+
+        elif case(class_literal_term_e.CharLiteral):
+          term = cast(class_literal_term__CharLiteral, UP_term)
+
+          # What about \0?
+          # At runtime, ERE should disallow it.  But we can also disallow it here.
+          new_leaf = word_compile.EvalCharLiteralForRegex(term.tok)
+          if new_leaf:
+            node.terms[i] = new_leaf
 
       if s is not None:
         # A string like '\x7f\xff' should be presented like
@@ -737,34 +800,51 @@ class OilEvaluator(object):
         node.terms[i] = class_literal_term.ByteSet(s, spid)
 
   def _MutateSubtree(self, node):
-    if node.tag == re_e.Seq:
-      self._MutateChildren(node.children)
-      return
+    # type: (re_t) -> None
+    UP_node = node
 
-    if node.tag == re_e.Alt:
-      self._MutateChildren(node.children)
-      return
+    with tagswitch(node) as case:
+      if case(re_e.Seq):
+        node = cast(re__Seq, UP_node)
 
-    if node.tag == re_e.Repeat:
-      new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
-      if new_leaf:
-        node.child = new_leaf
-      elif recurse:
-        self._MutateSubtree(node.child)
-      return
+        self._MutateChildren(node.children)
 
-    # TODO: How to consolidate this code with the above?
-    if node.tag in (re_e.Group, re_e.Capture):
-      new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
-      if new_leaf:
-        node.child = new_leaf
-      elif recurse:
-        self._MutateSubtree(node.child)
-      return
+      elif case(re_e.Alt):
+        node = cast(re__Alt, UP_node)
 
-    if node.tag == re_e.ClassLiteral:
-      self._MutateClassLiteral(node)
-      return
+        self._MutateChildren(node.children)
+
+      elif case(re_e.Repeat):
+        node = cast(re__Repeat, UP_node)
+
+        new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
+        if new_leaf:
+          node.child = new_leaf
+        elif recurse:
+          self._MutateSubtree(node.child)
+
+      elif case(re_e.Group):
+        node = cast(re__Group, UP_node)
+
+        new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
+        if new_leaf:
+          node.child = new_leaf
+        elif recurse:
+          self._MutateSubtree(node.child)
+      
+      elif case(re_e.Capture):  # Identical to Group
+        node = cast(re__Capture, UP_node)
+
+        new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
+        if new_leaf:
+          node.child = new_leaf
+        elif recurse:
+          self._MutateSubtree(node.child)
+
+      elif case(re_e.ClassLiteral):
+        node = cast(re__ClassLiteral, UP_node)
+
+        self._MutateClassLiteral(node)
 
   def EvalRegex(self, node):
     # type: (re_t) -> re_t
@@ -793,5 +873,6 @@ class OilEvaluator(object):
     # View it after evaluation
     if 0:
       log('After evaluation:')
-      node.PrettyPrint(); print()
+      node.PrettyPrint()
+      print()
     return node
