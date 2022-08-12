@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import (
     re, re_e, re_t, re__Splice, re__Seq, re__Alt, re__Repeat, re__Group,
     re__Capture, re__ClassLiteral,
 
-    class_literal_term, class_literal_term_e,
+    class_literal_term, class_literal_term_e, class_literal_term_t,
     class_literal_term__CharLiteral,
 )
 from _devbuild.gen.runtime_asdl import (
@@ -687,27 +687,111 @@ class OilEvaluator(object):
       else:
         raise NotImplementedError(node.__class__.__name__)
 
-  def _MaybeReplaceLeaf(self, node):
-    # type: (re_t) -> Tuple[Optional[re_t], bool]
-    """
-    If a leaf node needs to be evaluated, do it and return the replacement.
-    Otherwise return None.
-    """
-    new_leaf = None  # type: re_t
-    recurse = True
+  def _EvalClassLiteralTerm(self, term):
+    # type: (class_literal_term_t) -> class_literal_term_t
+    UP_term = term
 
+    s = None  # type: str
+    spid = runtime.NO_SPID
+
+    with tagswitch(term) as case:
+      if case(class_literal_term_e.SingleQuoted):
+        term = cast(single_quoted, UP_term)
+
+        s = word_compile.EvalSingleQuoted(term)
+        spid = term.left.span_id
+
+      elif case(class_literal_term_e.DoubleQuoted):
+        term = cast(double_quoted, UP_term)
+
+        s = self.word_ev.EvalDoubleQuotedToString(term)
+        spid = term.left.span_id
+
+      elif case(class_literal_term_e.BracedVarSub):
+        term = cast(braced_var_sub, UP_term)
+
+        s = self.word_ev.EvalBracedVarSubToString(term)
+        spid = term.spids[0]
+
+      elif case(class_literal_term_e.SimpleVarSub):
+        term = cast(simple_var_sub, UP_term)
+
+        s = self.word_ev.EvalSimpleVarSubToString(term.token)
+        spid = term.token.span_id
+
+      elif case(class_literal_term_e.CharLiteral):
+        term = cast(class_literal_term__CharLiteral, UP_term)
+
+        # What about \0?
+        # At runtime, ERE should disallow it.  But we can also disallow it here.
+        return word_compile.EvalCharLiteralForRegex(term.tok)
+
+    if s is not None:
+      # A string like '\x7f\xff' should be presented like
+      if len(s) > 1:
+        for c in s:
+          if ord(c) > 128:
+            e_die("Express these bytes as character literals to avoid "
+                  "confusing them with encoded characters", span_id=spid)
+
+      return class_literal_term.ByteSet(s, spid)
+    else:
+      return term
+
+  def _EvalRegex(self, node):
+    # type: (re_t) -> re_t
+    """
+    Resolve the references in an eggex, e.g. Hex and $const in
+    
+    / Hex '.' $const "--$const" /
+
+    Some rules:
+
+    * Speck/Token (syntactic concepts) -> Primitive (logical)
+    * Splice -> Resolved
+    * All Strings -> Literal
+    """
     UP_node = node
-    with tagswitch(node) as case:
-      node = cast(speck, UP_node)
 
-      if case(re_e.Speck):
+    with tagswitch(node) as case:
+      if case(re_e.Seq):
+        node = cast(re__Seq, UP_node)
+        new_children = [self._EvalRegex(child) for child in node.children]
+        return re.Seq(new_children)
+
+      elif case(re_e.Alt):
+        node = cast(re__Alt, UP_node)
+        new_children = [self._EvalRegex(child) for child in node.children]
+        return re.Alt(new_children)
+
+      elif case(re_e.Repeat):
+        node = cast(re__Repeat, UP_node)
+        return re.Repeat(self._EvalRegex(node.child), node.op)
+
+      elif case(re_e.Group):
+        node = cast(re__Group, UP_node)
+        return re.Group(self._EvalRegex(node.child))
+
+      elif case(re_e.Capture):  # Identical to Group
+        node = cast(re__Capture, UP_node)
+        return re.Capture(self._EvalRegex(node.child), node.var_name)
+
+      elif case(re_e.ClassLiteral):
+        node = cast(re__ClassLiteral, UP_node)
+
+        new_terms = [self._EvalClassLiteralTerm(t) for t in node.terms]
+        return re.ClassLiteral(node.negated, new_terms)
+
+      elif case(re_e.Speck):
+        node = cast(speck, UP_node)
+
         id_ = node.id
         if id_ == Id.Expr_Dot:
-          new_leaf = re.Primitive(Id.Re_Dot)
+          return re.Primitive(Id.Re_Dot)
         elif id_ == Id.Arith_Caret:  # ^
-          new_leaf = re.Primitive(Id.Re_Start)
+          return re.Primitive(Id.Re_Start)
         elif id_ == Id.Expr_Dollar:  # $
-          new_leaf = re.Primitive(Id.Re_End)
+          return re.Primitive(Id.Re_End)
         else:
           raise NotImplementedError(id_)
 
@@ -719,15 +803,15 @@ class OilEvaluator(object):
 
         if id_ == Id.Expr_Name:
           if val == 'dot':
-            new_leaf = re.Primitive(Id.Re_Dot)
+            return re.Primitive(Id.Re_Dot)
           else:
             raise NotImplementedError(val)
 
         elif id_ == Id.Expr_Symbol:
           if val == '%start':
-            new_leaf = re.Primitive(Id.Re_Start)
+            return re.Primitive(Id.Re_Start)
           elif val == '%end':
-            new_leaf = re.Primitive(Id.Re_End)
+            return re.Primitive(Id.Re_End)
           else:
             raise NotImplementedError(val)
 
@@ -735,31 +819,31 @@ class OilEvaluator(object):
           kind = consts.GetKind(id_)
           assert kind == Kind.Char, id_
           s = word_compile.EvalCStringToken(node)
-          new_leaf = re.LiteralChars(s, node.span_id)
+          return re.LiteralChars(s, node.span_id)
 
       elif case(re_e.SingleQuoted):
         node = cast(single_quoted, UP_node)
 
         s = word_compile.EvalSingleQuoted(node)
-        new_leaf = re.LiteralChars(s, node.left.span_id)
+        return re.LiteralChars(s, node.left.span_id)
 
       elif case(re_e.DoubleQuoted):
         node = cast(double_quoted, UP_node)
 
         s = self.word_ev.EvalDoubleQuotedToString(node)
-        new_leaf = re.LiteralChars(s, node.left.span_id)
+        return re.LiteralChars(s, node.left.span_id)
 
       elif case(re_e.BracedVarSub):
         node = cast(braced_var_sub, UP_node)
 
         s = self.word_ev.EvalBracedVarSubToString(node)
-        new_leaf = re.LiteralChars(s, node.spids[0])
+        return re.LiteralChars(s, node.spids[0])
 
       elif case(re_e.SimpleVarSub):
         node = cast(simple_var_sub, UP_node)
 
         s = self.word_ev.EvalSimpleVarSubToString(node.token)
-        new_leaf = re.LiteralChars(s, node.token.span_id)
+        return re.LiteralChars(s, node.token.span_id)
 
       elif case(re_e.Splice):
         node = cast(re__Splice, UP_node)
@@ -770,153 +854,23 @@ class OilEvaluator(object):
                 token=node.name)
         # Note: we only splice the regex, and ignore flags.
         # Should we warn about this?
-        new_leaf = obj.regex
+        return obj.regex
 
-      # These are leaves we don't need to do anything with.
-      elif case(re_e.PosixClass):
-        recurse = False
+      else:
+        # These are evaluated at translation time
 
-      elif case(re_e.PerlClass):
-        recurse = False
-
-    return new_leaf, recurse
-
-  def _MutateChildren(self, children):
-    # type: (List[re_t]) -> None
-    """
-    """
-    for i, c in enumerate(children):
-      new_leaf, recurse = self._MaybeReplaceLeaf(c)
-      if new_leaf:
-        children[i] = new_leaf
-      elif recurse:
-        self._MutateSubtree(c)
-
-  def _MutateClassLiteral(self, node):
-    # type: (re__ClassLiteral) -> None
-    for i, term in enumerate(node.terms):
-      s = None
-
-      UP_term = term
-      with tagswitch(term) as case:
-
-        if case(class_literal_term_e.SingleQuoted):
-          term = cast(single_quoted, UP_term)
-
-          s = word_compile.EvalSingleQuoted(term)
-          spid = term.left.span_id
-
-        elif case(class_literal_term_e.DoubleQuoted):
-          term = cast(double_quoted, UP_term)
-
-          s = self.word_ev.EvalDoubleQuotedToString(term)
-          spid = term.left.span_id
-
-        elif case(class_literal_term_e.BracedVarSub):
-          term = cast(braced_var_sub, UP_term)
-
-          s = self.word_ev.EvalBracedVarSubToString(term)
-          spid = term.spids[0]
-
-        elif case(class_literal_term_e.SimpleVarSub):
-          term = cast(simple_var_sub, UP_term)
-
-          s = self.word_ev.EvalSimpleVarSubToString(term.token)
-          spid = term.token.span_id
-
-        elif case(class_literal_term_e.CharLiteral):
-          term = cast(class_literal_term__CharLiteral, UP_term)
-
-          # What about \0?
-          # At runtime, ERE should disallow it.  But we can also disallow it here.
-          new_leaf = word_compile.EvalCharLiteralForRegex(term.tok)
-          if new_leaf:
-            node.terms[i] = new_leaf
-
-      if s is not None:
-        # A string like '\x7f\xff' should be presented like
-        if len(s) > 1:
-          for c in s:
-            if ord(c) > 128:
-              e_die("Express these bytes as character literals to avoid "
-                    "confusing them with encoded characters", span_id=spid)
-
-        node.terms[i] = class_literal_term.ByteSet(s, spid)
-
-  def _MutateSubtree(self, node):
-    # type: (re_t) -> None
-    UP_node = node
-
-    with tagswitch(node) as case:
-      if case(re_e.Seq):
-        node = cast(re__Seq, UP_node)
-
-        self._MutateChildren(node.children)
-
-      elif case(re_e.Alt):
-        node = cast(re__Alt, UP_node)
-
-        self._MutateChildren(node.children)
-
-      elif case(re_e.Repeat):
-        node = cast(re__Repeat, UP_node)
-
-        new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
-        if new_leaf:
-          node.child = new_leaf
-        elif recurse:
-          self._MutateSubtree(node.child)
-
-      elif case(re_e.Group):
-        node = cast(re__Group, UP_node)
-
-        new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
-        if new_leaf:
-          node.child = new_leaf
-        elif recurse:
-          self._MutateSubtree(node.child)
-      
-      elif case(re_e.Capture):  # Identical to Group
-        node = cast(re__Capture, UP_node)
-
-        new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
-        if new_leaf:
-          node.child = new_leaf
-        elif recurse:
-          self._MutateSubtree(node.child)
-
-      elif case(re_e.ClassLiteral):
-        node = cast(re__ClassLiteral, UP_node)
-
-        self._MutateClassLiteral(node)
+        # case(re_e.PosixClass)
+        # case(re_e.PerlClass)
+        return node
 
   def EvalRegex(self, node):
     # type: (re_t) -> re_t
-    """
-    Resolve the references in an eggex, e.g. Hex and $const in
-    
-    / Hex '.' $const "--$const" /
-    """
-    # An evaluated Regex shares the same structure as the AST, but uses
-    # slightly different nodes.
-    #
-    # * Speck/Token (syntactic concepts) -> Primitive (logical)
-    # * Splice -> Resolved
-    # * All Strings -> Literal
-    #
-    # Note: there have been BUGS as a result of running this in a loop (see
-    # spec/oil-regex).  Should we have two different node types?  This is an
-    # "AST typing" problem.
-
-    new_leaf, recurse = self._MaybeReplaceLeaf(node)
-    if new_leaf:
-      return new_leaf
-    elif recurse:
-      self._MutateSubtree(node)
+    """Trivial wrapper"""
+    new_node = self._EvalRegex(node)
 
     # View it after evaluation
     if 0:
       log('After evaluation:')
-      node.PrettyPrint()
+      new_node.PrettyPrint()
       print()
-    return node
+    return new_node

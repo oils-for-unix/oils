@@ -19,7 +19,7 @@ from typing import List, Optional, cast
 
 
 def EvalCharLiteralForRegex(tok):
-  # type: (Token) -> Optional[class_literal_term_t]
+  # type: (Token) -> class_literal_term_t
   """For regex char classes.
 
   Similar logic as below.
@@ -42,8 +42,10 @@ def EvalCharLiteralForRegex(tok):
     i = int(s, 16)
     return class_literal_term.CodePoint(i, tok.span_id)
 
-  elif id_ == Id.Expr_Name:  # [b B] is NOT mutated
-    return None
+  elif id_ == Id.Expr_Name:
+    # [b B] is the same as ['b' 'B']
+    assert len(tok.val) == 1, tok
+    return class_literal_term.ByteSet(tok.val[0], tok.span_id)
 
   else:
     raise AssertionError(Id_str(id_))
