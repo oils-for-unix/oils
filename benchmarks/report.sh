@@ -90,7 +90,7 @@ mycpp-examples() {
   # Force SERIAL reexecution
   rm -r -f --verbose _test/tasks/benchmark/
 
-  ninja mycpp-all -j 1 $in_tsv
+  ninja mycpp-logs-equal -j 1 $in_tsv
 
   mkdir -p $base_dir/raw
   cp -v $in_tsv $base_dir/raw

@@ -411,12 +411,11 @@ TEST str_iters_test() {
 }
 
 TEST list_methods_test() {
-  auto init = std::initializer_list<int>{5, 6, 7, 8};
 
   List<int>* ints = nullptr;
   StackRoots _roots({&ints});
 
-  ints = NewList<int>(init);
+  ints = NewList<int>(std::initializer_list<int>{5, 6, 7, 8});
 
   List<int>* slice1 = ints->slice(1);
   ASSERT_EQ(3, len(slice1));
@@ -495,8 +494,7 @@ TEST list_funcs_test() {
 
 TEST list_iters_test() {
   log("  forward iteration over list");
-  auto init = std::initializer_list<int>{1, 2, 3};
-  auto ints = NewList<int>(init);
+  auto ints = NewList<int>(std::initializer_list<int>{1, 2, 3});
 
   for (ListIter<int> it(ints); !it.Done(); it.Next()) {
     int x = it.Value();
@@ -557,17 +555,6 @@ TEST sort_test() {
 }
 
 TEST contains_test() {
-  bool b;
-
-  // NOTE: 'substring' in mystr not allowed now, only 'c' in mystr
-#if 0
-  b = str_contains(StrFromC("foo"), StrFromC("oo"));
-  ASSERT(b == true);
-
-  b = str_contains(StrFromC("foo"), StrFromC("ood"));
-  ASSERT(b == false);
-#endif
-
   Str* s = nullptr;
   Str* nul = nullptr;
   StackRoots _roots({&s, &nul});
