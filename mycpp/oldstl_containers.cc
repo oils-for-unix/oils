@@ -30,13 +30,13 @@ List<Str*>* Str::split(Str* sep) {
 
   if (len(this) == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
-    return new List<Str*>({kEmptyString});
+    return NewList<Str*>({kEmptyString});
   }
 
   // log("--- split()");
   // log("data [%s]", data_);
 
-  auto result = new List<Str*>({});
+  auto result = NewList<Str*>({});
 
   int n = len(this);
   const char* pos = data_;

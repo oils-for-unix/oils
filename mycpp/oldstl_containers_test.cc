@@ -46,7 +46,7 @@ TEST test_list_funcs() {
   log("v.size = %d", v.size());
 
   log("  ints");
-  auto ints = new List<int>({4, 5, 6});
+  auto ints = NewList<int>({4, 5, 6});
   log("-- before pop(0)");
   for (int i = 0; i < len(ints); ++i) {
     log("ints[%d] = %d", i, ints->index_(i));
@@ -87,7 +87,7 @@ TEST test_list_funcs() {
   log("item 0 %d", L2->index_(0));
   log("item 1 %d", L2->index_(1));
 
-  auto strs = new List<Str*>();
+  auto strs = NewList<Str*>();
   strs->append(StrFromC("c"));
   strs->append(StrFromC("a"));
   strs->append(StrFromC("b"));
@@ -126,7 +126,7 @@ void ListFunc(std::initializer_list<Str*> init) {
 
 TEST test_list_iters() {
   log("  forward iteration over list");
-  auto ints = new List<int>({1, 2, 3});
+  auto ints = NewList<int>({1, 2, 3});
   for (ListIter<int> it(ints); !it.Done(); it.Next()) {
     int x = it.Value();
     log("x = %d", x);
@@ -149,7 +149,7 @@ TEST test_list_contains() {
   bool b;
 
   log("  List<Str*>");
-  auto strs = new List<Str*>();
+  auto strs = NewList<Str*>();
   strs->append(StrFromC("bar"));
 
   b = list_contains(strs, StrFromC("foo"));
@@ -160,7 +160,7 @@ TEST test_list_contains() {
   ASSERT(b == true);
 
   log("  ints");
-  auto ints = new List<int>({1, 2, 3});
+  auto ints = NewList<int>({1, 2, 3});
   b = list_contains(ints, 1);
   ASSERT(b == true);
 
@@ -168,7 +168,7 @@ TEST test_list_contains() {
   ASSERT(b == false);
 
   log("  floats");
-  auto floats = new List<double>({0.5, 0.25, 0.0});
+  auto floats = NewList<double>({0.5, 0.25, 0.0});
   b = list_contains(floats, 0.0);
   log("b = %d", b);
   b = list_contains(floats, 42.0);
@@ -181,11 +181,11 @@ TEST test_dict() {
   // TODO: How to initialize constants?
 
   // Dict d {{"key", 1}, {"val", 2}};
-  Dict<int, Str*>* d = new Dict<int, Str*>();
+  Dict<int, Str*>* d = NewDict<int, Str*>();
   d->set(1, StrFromC("foo"));
   log("d[1] = %s", d->index_(1)->data_);
 
-  auto d2 = new Dict<Str*, int>();
+  auto d2 = NewDict<Str*, int>();
   Str* key = StrFromC("key");
   d2->set(key, 42);
 
@@ -213,7 +213,7 @@ TEST test_dict() {
   Str* v2 = d->get(423);  // nonexistent
   log("v2 = %p", v2);
 
-  auto d3 = new Dict<Str*, int>();
+  auto d3 = NewDict<Str*, int>();
   auto a = StrFromC("a");
 
   d3->set(StrFromC("b"), 11);
@@ -253,7 +253,7 @@ TEST test_dict() {
 
   // Test a different type of dict, to make sure partial template
   // specialization works
-  auto ss = new Dict<Str*, Str*>();
+  auto ss = NewDict<Str*, Str*>();
   ss->set(a, a);
   ASSERT_EQ(1, len(ss));
 
@@ -279,7 +279,7 @@ TEST test_dict() {
 }
 
 TEST test_list_tuple() {
-  List<int>* L = new List<int>{1, 2, 3};
+  List<int>* L = NewList<int>(std::initializer_list<int>{1, 2, 3});
 
   log("size: %d", len(L));
   log("");
@@ -539,17 +539,16 @@ TEST test_str_join() {
 
   {
     Str* result =
-        (StrFromC(""))
-            ->join(new List<Str*>({StrFromC("abc"), StrFromC("def")}));
+        (StrFromC(""))->join(NewList<Str*>({StrFromC("abc"), StrFromC("def")}));
     PRINT_STRING(result);
     ASSERT(are_equal(result, StrFromC("abcdef")));
   }
   {
     Str* result = (StrFromC(" "))
-                      ->join(new List<Str*>(
-                          {StrFromC("abc"), StrFromC("def"), StrFromC("abc"),
-                           StrFromC("def"), StrFromC("abc"), StrFromC("def"),
-                           StrFromC("abc"), StrFromC("def")}));
+                      ->join(NewList<Str*>({StrFromC("abc"), StrFromC("def"),
+                                            StrFromC("abc"), StrFromC("def"),
+                                            StrFromC("abc"), StrFromC("def"),
+                                            StrFromC("abc"), StrFromC("def")}));
     PRINT_STRING(result);
     ASSERT(are_equal(result, StrFromC("abc def abc def abc def abc def")));
   }

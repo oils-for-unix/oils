@@ -1,7 +1,4 @@
 // gc_mylib.h
-//
-// Rewrites of mylib.py in C++.
-// TODO: Remove mylib.{h,cc}, and make this the main copy.
 
 #ifndef GC_MYLIB_H
 #define GC_MYLIB_H
