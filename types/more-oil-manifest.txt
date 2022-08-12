@@ -4,7 +4,7 @@ frontend/py_reader.py
 oil_lang/objects.py
 
 # expr_t typing
-#oil_lang/expr_eval.py
+oil_lang/expr_eval.py
 
 core/process.py
 core/executor.py
