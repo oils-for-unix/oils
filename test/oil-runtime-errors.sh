@@ -203,6 +203,58 @@ test-user-reported() {
   '
 }
 
+test-ExprEval-calls() {
+  ### Test everywhere expr_ev.EvalExpr() is invoked
+
+  _expr-error-case 'json write (len(42))'
+
+  _expr-error-case '= len(42)'
+  _expr-error-case '_ len(42)'
+
+  _expr-error-case 'echo $[len(42)]'
+
+  # TODO: catch these errors
+
+  _expr-error-case 'echo $len(42)'
+  _expr-error-case 'echo $len(z = 42)'
+
+  _expr-error-case 'echo @len(42)'
+  _expr-error-case 'echo @len(z = 42)'
+
+  _expr-error-case 'const x = len(42)'
+  _expr-error-case 'setvar x += len(42)'
+
+  _expr-error-case '
+    var d = {}
+    = d[len("foo"), len(42)]
+  '
+
+  _expr-error-case '
+    var d = {}
+    setvar d[len(42)] = "foo"
+  '
+
+  _expr-error-case '
+    var d = {}
+    setvar len(42)->z = "foo"
+  '
+
+  _expr-error-case '
+  hay define Package
+  Package foo {
+    x = len(42)
+  }
+  '
+
+  _expr-error-case 'if (len(42)) { echo hi }'
+
+  _expr-error-case 'while (len(42)) { echo hi }'
+
+  _expr-error-case 'for x in (len(42)) { echo $x }'
+
+}
+
+
 test-hay() {
   _error-case-X 127 '
 hay define package user TASK

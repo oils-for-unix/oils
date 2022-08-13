@@ -42,12 +42,10 @@ from osh import glob_
 from osh import string_ops
 from osh import word_
 from osh import word_compile
-if mylib.PYTHON:
-  from oil_lang import objects
 
 import libc
 
-from typing import Optional, Tuple, List, Dict, Any, cast, TYPE_CHECKING
+from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import word_part_t
@@ -179,25 +177,6 @@ def _BackslashEscape(s):
   return s.replace('\\', '\\\\')
 
 
-if mylib.PYTHON:
-  def _Stringify(py_val):
-    # type: (Any) -> str
-    """ For predictably converting between Python objects and strings.
-
-    We don't want to tie our sematnics to the Python interpreter too much.
-    """
-    if isinstance(py_val, bool):
-      return 'true' if py_val else 'false'  # Use JSON spelling
-
-    if isinstance(py_val, objects.Regex):  # TODO: This should be a variant of value_t?
-      return py_val.AsPosixEre()
-
-    if not isinstance(py_val, (int, float, str)):
-      e_die("Expected function to return a bool, int, float, or string.  Got %s", type(py_val))
-
-    return str(py_val)
-
-
 def _ValueToPartValue(val, quoted):
   # type: (value_t, bool) -> part_value_t
   """Helper for VarSub evaluation.
@@ -228,7 +207,9 @@ def _ValueToPartValue(val, quoted):
     elif case(value_e.Obj):
       if mylib.PYTHON:
         val = cast(value__Obj, UP_val)
-        return part_value.String(_Stringify(val.obj), quoted, not quoted)
+        from oil_lang import expr_eval
+        s = expr_eval.Stringify(val.obj)
+        return part_value.String(s, quoted, not quoted)
       # Not in C++
       raise AssertionError()
 
@@ -1638,37 +1619,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case(word_part_e.FuncCall):
         part = cast(word_part__FuncCall, UP_part)
         if mylib.PYTHON:
-          func_name = part.name.val[1:]
-
-          fn_val = self.mem.GetValue(func_name)  # type: value_t
-          if fn_val.tag != value_e.Obj:
-            e_die("Expected function named %r, got %r ", func_name, fn_val)
-          assert isinstance(fn_val, value__Obj)
-
-          func = fn_val.obj
-          pos_args, named_args = self.expr_ev.EvalArgList(part.args)
-
-          id_ = part.name.id
-          if id_ == Id.VSub_DollarName:
-            s = _Stringify(func(*pos_args, **named_args))
-            part_val = part_value.String(s)  # type: part_value_t
-
-          elif id_ == Id.Lit_Splice:
-            # NOTE: Using iterable protocol as with @array.  TODO: Optimize
-            # this so it doesn't make a copy?
-            a = [_Stringify(item) for item in func(*pos_args, **named_args)]
-            part_val = part_value.Array(a)
-
-          else:
-            raise AssertionError(id_)
-
+          part_val = self.expr_ev.EvalInlineFunc(part)
           part_vals.append(part_val)
 
       elif case(word_part_e.ExprSub):
+        part = cast(word_part__ExprSub, UP_part)
         if mylib.PYTHON:
-          part = cast(word_part__ExprSub, UP_part)
-          py_val = self.expr_ev.EvalExpr(part.child)
-          part_val = part_value.String(_Stringify(py_val))
+          part_val = self.expr_ev.EvalExprSub(part)
           part_vals.append(part_val)
 
       else:

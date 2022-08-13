@@ -22,11 +22,14 @@ from _devbuild.gen.syntax_asdl import (
 
     class_literal_term, class_literal_term_e, class_literal_term_t,
     class_literal_term__CharLiteral,
+
+    word_part__ExprSub, word_part__FuncCall,
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue,
     scope_e, scope_t,
-    value, value_e,
+    part_value, part_value_t,
+    lvalue,
+    value, value_e, value_t,
     value__Str, value__MaybeStrArray, value__AssocArray, value__Obj
 )
 from asdl import runtime
@@ -80,6 +83,24 @@ def LookupVar(mem, var_name, which_scopes, span_id=runtime.NO_SPID):
   if val.tag == value_e.Obj:
     val = cast(value__Obj, UP_val)
     return val.obj
+
+
+def Stringify(py_val):
+  # type: (Any) -> str
+  """ For predictably converting between Python objects and strings.
+
+  We don't want to tie our sematnics to the Python interpreter too much.
+  """
+  if isinstance(py_val, bool):
+    return 'true' if py_val else 'false'  # Use JSON spelling
+
+  if isinstance(py_val, objects.Regex):  # TODO: This should be a variant of value_t?
+    return py_val.AsPosixEre()
+
+  if not isinstance(py_val, (int, float, str)):
+    e_die("Expected function to return a bool, int, float, or string.  Got %s", type(py_val))
+
+  return str(py_val)
 
 
 class OilEvaluator(object):
@@ -173,7 +194,7 @@ class OilEvaluator(object):
 
   def EvalArgList(self, args):
     # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
-    """ Used by do f(x) and echo $f(x). """
+    """ Used by f(x) and echo $f(x). """
     pos_args = []
     for arg in args.positional:
       UP_arg = arg
@@ -231,6 +252,53 @@ class OilEvaluator(object):
 
       else:
         raise NotImplementedError(place)
+
+  def EvalExprSub(self, part):
+    # type: (word_part__ExprSub) -> part_value_t
+    py_val = self.EvalExpr(part.child)
+    return part_value.String(Stringify(py_val))
+
+  def EvalInlineFunc(self, part):
+    # type: (word_part__FuncCall) -> part_value_t
+    func_name = part.name.val[1:]
+
+    fn_val = self.mem.GetValue(func_name)  # type: value_t
+    if fn_val.tag != value_e.Obj:
+      e_die("Expected function named %r, got %r ", func_name, fn_val)
+    assert isinstance(fn_val, value__Obj)
+
+    func = fn_val.obj
+    pos_args, named_args = self.EvalArgList(part.args)
+
+    id_ = part.name.id
+    if id_ == Id.VSub_DollarName:
+      s = Stringify(self._ApplyFunc(func, pos_args, named_args))
+      part_val = part_value.String(s)  # type: part_value_t
+
+    elif id_ == Id.Lit_Splice:
+      # NOTE: Using iterable protocol as with @array.  TODO: Optimize
+      # this so it doesn't make a copy?
+      a = [Stringify(item) for item in self._ApplyFunc(func, pos_args, named_args)]
+      part_val = part_value.Array(a)
+
+    else:
+      raise AssertionError(id_)
+
+    return part_val
+
+  def _ApplyFunc(self, func, pos_args, named_args):
+    # type: (Any, Any, Any) -> Any
+    """For inline function calls $strfunc(x) and @arrayfunc(x)"""
+    try:
+      return func(*pos_args, **named_args)
+
+    # Same error handling as EvalExpr below
+    except TypeError as e:
+      # TODO: Add location info.  Right now we blame the variable name for
+      # 'var' and 'setvar', etc.
+      raise error.Expr('Type error in expression: %s' % str(e))
+    except (AttributeError, ValueError) as e:
+      raise error.Expr('Expression eval error: %s' % str(e))
 
   def EvalExpr(self, node):
     # type: (expr_t) -> Any
@@ -874,3 +942,5 @@ class OilEvaluator(object):
       new_node.PrettyPrint()
       print()
     return new_node
+
+
