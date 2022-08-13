@@ -60,13 +60,20 @@ list-test-funcs() {
 }
 
 run-test-funcs() {
+  # for correct error handling, and to mtuate $i
+  shopt -s lastpipe
+
+  local i=0
+
   list-test-funcs | while read t; do
+    echo "*** Running $t"
     $t
     echo "OK  $t"
+    i=$((i + 1))
   done
 
   echo
-  echo "All $0 tests passed."
+  echo "$0: $i tests passed."
 }
 
 # A quick and dirty function to show logs

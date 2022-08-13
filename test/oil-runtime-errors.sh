@@ -107,7 +107,7 @@ test-undefined-vars() {
   _error-case 'if (${x}) { echo hi }'
 
   # BareDecl and regex
-  _error-case 'x = / @undef /; echo hi'
+  _error-case 'const x = / @undef /; echo hi'
 
   _error-case 'var x = undef; echo $x'  # VarDecl
   _error-case 'setvar a = undef'  # PlaceMutation
@@ -148,6 +148,61 @@ test-oil-expr-eval() {
   _expr-error-case 'var d = {}; for x in $[d->zzz] { echo hi }'
 }
 
+test-user-reported() {
+  set +o errexit
+
+  #_error-case 'echo'
+
+  # Issue #1118
+  # Originally pointed at 'for'
+  _error-case '
+  var snippets = [{status: 42}]
+  for snippet in (snippets) {
+    if (snippet["status"] === 0) {
+      echo hi
+    }
+
+    # The $ causes a wierd error
+    if ($snippet["status"] === 0) {
+      echo hi
+    }
+  }
+  '
+
+  # len(INTEGER) causes the same problem
+  _expr-error-case '
+  var snippets = [{status: 42}]
+  for snippet in (snippets) {
+    if (len(42)) {
+      echo hi
+    }
+  }
+  '
+
+  # Issue #1118
+  # pointed at 'var' in count
+  _error-case '
+  var content = [ 1, 2, 4 ]
+  var count = 0
+
+  # The $ causes a weird error
+  while (count < $len(content)) {
+    setvar count += 1
+  }
+  '
+
+
+  # len(INTEGER) causes the same problem
+  _expr-error-case '
+  var count = 0
+
+  # The $ causes a weird error
+  while (count < len(count)) {
+    setvar count += 1
+  }
+  '
+}
+
 test-hay() {
   _error-case-X 127 '
 hay define package user TASK
@@ -161,17 +216,6 @@ hay eval :result {
 }
 '
 
-  ### forgot parse_equals: tries to execute version as command
-  _error-case-X 127 '
-hay define package user TASK
-
-hay eval :result {
-  package foo {
-    version = 1
-  }
-}
-'
-
   ### shell assignment
   _error-case-X 2 '
 hay define package user TASK
@@ -180,18 +224,6 @@ hay eval :result {
   package foo {
     version=1
   }
-}
-'
-
-  # forgot hay eval -- error message is about 'unexpected typed args, which
-  # isn't great'
-  # TODO: add a hint about 'hay eval'
-
-  _error-case-X 1 '
-hay define package TASK
-
-package foo {
-  echo "forgot hay eval"
 }
 '
 }
@@ -223,6 +255,7 @@ hay eval :result {
 }
 
 soil-run() {
+  # This is like run-test-funcs, except errexit is off here
   run-test-funcs
 }
 
