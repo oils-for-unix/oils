@@ -98,7 +98,8 @@ def Stringify(py_val):
     return py_val.AsPosixEre()
 
   if not isinstance(py_val, (int, float, str)):
-    e_die("Expected function to return a bool, int, float, or string.  Got %s", type(py_val))
+    # or float?
+    e_die("Expected evaluation to Bool, Int, or Str.  Got %s", type(py_val))
 
   return str(py_val)
 
@@ -300,8 +301,8 @@ class OilEvaluator(object):
     except (AttributeError, ValueError) as e:
       raise error.Expr('Expression eval error: %s' % str(e))
 
-  def EvalExpr(self, node):
-    # type: (expr_t) -> Any
+  def EvalExpr(self, node, blame_spid=runtime.NO_SPID):
+    # type: (expr_t, int) -> Any
     """Public API for _EvalExpr that ensures that command_sub_errexit is on."""
     try:
       with state.ctx_OilExpr(self.mutable_opts):
@@ -309,9 +310,9 @@ class OilEvaluator(object):
     except TypeError as e:
       # TODO: Add location info.  Right now we blame the variable name for
       # 'var' and 'setvar', etc.
-      raise error.Expr('Type error in expression: %s' % str(e))
+      raise error.Expr('Type error in expression: %s' % str(e), span_id=blame_spid)
     except (AttributeError, ValueError) as e:
-      raise error.Expr('Expression eval error: %s' % str(e))
+      raise error.Expr('Expression eval error: %s' % str(e), span_id=blame_spid)
 
     # Note: IndexError and KeyError are handled in more specific places
 

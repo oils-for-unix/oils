@@ -9,7 +9,7 @@
 # This seems to work as expected?
 
 proc get_opt(arg, :out) {
-  setvar out = $arg
+  setvar out = arg
 }
 var a = ''
 get_opt a 'lol'
@@ -21,12 +21,16 @@ echo hi
 #### !== operator
 var a = 'bar'
 
-# NOTE: a != foo is idiomatic)
-if ($a !== 'foo') {
+if (a !== 'foo') {
   echo 'not equal'
 }
 
-if ($a !== 'bar') {
+if (a !== 'bar') {
+  echo 'should not get here'
+}
+
+# NOTE: a !== foo is idiomatic)
+if ("$a" !== 'bar') {
   echo 'should not get here'
 }
 
@@ -168,7 +172,7 @@ var e = []
 
 for i in @(seq 2) {
   var o = {}
-  setvar o[$i] = "Test $i"
+  setvar o[i] = "Test $i"
 
   # push builtin is only for strings
 

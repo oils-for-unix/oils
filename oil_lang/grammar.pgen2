@@ -103,7 +103,10 @@ atom: (
   | dq_string | sq_string
     # Expr_Symbol could be %mykey
     
-  | sh_command_sub | braced_var_sub | simple_var_sub
+  # $foo is disallowed, but $? is allowed.  Should be "$foo" to indicate a
+  # string, or ${foo:-}
+  | simple_var_sub
+  | sh_command_sub | braced_var_sub
   | sh_array_literal
     # Anonymous function.  Is this only in Tea mode?
   | 'func' tea_func

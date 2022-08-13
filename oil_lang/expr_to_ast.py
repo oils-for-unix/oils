@@ -600,7 +600,15 @@ class Transformer(object):
         return cast(single_quoted, children[1].tok)
 
       elif typ == grammar_nt.simple_var_sub:
-        return simple_var_sub(children[0].tok)
+        tok = children[0].tok
+
+        if tok.id == Id.VSub_DollarName:  # $foo is disallowed
+          bare = tok.val[1:]
+          p_die('In expressions, remove $ and use `%s`, or sometimes "$%s"',
+                bare, bare, token=tok)
+
+        # $? is allowed
+        return simple_var_sub(tok)
 
       else:
         nt_name = self.number2symbol[typ]

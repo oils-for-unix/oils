@@ -16,6 +16,35 @@ Old and new constructs exist side-by-side.  New constructs have fewer
 <div id="toc">
 </div>
 
+## What's the difference `myvar`, `$myvar`, and `"$myvar"` ?
+
+Oil is more like Python/JavaScript rather than PHP/Perl, so it doesn't use the
+`$` sigil as much.
+
+Never use `$` on the left-hand side:
+
+    var mystr = "foo"   # not var $mystr
+
+Use `$` to **substitute** vars into commands:
+
+    echo $mystr
+    echo $mystr/subdir  # no quotes in commands
+
+or quoted strings:
+
+    echo "$mystr/subdir"
+    var x = "$mystr/subdir"
+
+Rarely use `$` on the right-hand side:
+
+    var x = mystr       # preferred
+    var x = $mystr      # ILLEGAL -- use remove $
+    var x = ${mystr:-}  # occasionally useful
+
+    var x = $?          # allowed
+
+See [Command vs. Expression Mode](command-vs-expression-mode.html) for more
+details.
 
 ## What's the difference between `$(dirname $x)` and `$len(x)` ?
 

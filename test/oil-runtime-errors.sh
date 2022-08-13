@@ -103,7 +103,6 @@ test-undefined-vars() {
 
   _error-case 'echo hi; const y = 2 + x + 3'
   _error-case 'if (x) { echo hello }'
-  _error-case 'if ($x) { echo hi }'
   _error-case 'if (${x}) { echo hi }'
 
   # BareDecl and regex
@@ -154,20 +153,8 @@ test-user-reported() {
   #_error-case 'echo'
 
   # Issue #1118
-  # Originally pointed at 'for'
-  _error-case '
-  var snippets = [{status: 42}]
-  for snippet in (snippets) {
-    if (snippet["status"] === 0) {
-      echo hi
-    }
+  # Some tests became test/parse-errors.sh
 
-    # The $ causes a wierd error
-    if ($snippet["status"] === 0) {
-      echo hi
-    }
-  }
-  '
 
   # len(INTEGER) causes the same problem
   _expr-error-case '
@@ -178,19 +165,6 @@ test-user-reported() {
     }
   }
   '
-
-  # Issue #1118
-  # pointed at 'var' in count
-  _error-case '
-  var content = [ 1, 2, 4 ]
-  var count = 0
-
-  # The $ causes a weird error
-  while (count < $len(content)) {
-    setvar count += 1
-  }
-  '
-
 
   # len(INTEGER) causes the same problem
   _expr-error-case '
@@ -203,7 +177,7 @@ test-user-reported() {
   '
 }
 
-test-ExprEval-calls() {
+test-EvalExpr-calls() {
   ### Test everywhere expr_ev.EvalExpr() is invoked
 
   _expr-error-case 'json write (len(42))'
@@ -212,8 +186,6 @@ test-ExprEval-calls() {
   _expr-error-case '_ len(42)'
 
   _expr-error-case 'echo $[len(42)]'
-
-  # TODO: catch these errors
 
   _expr-error-case 'echo $len(42)'
   _expr-error-case 'echo $len(z = 42)'

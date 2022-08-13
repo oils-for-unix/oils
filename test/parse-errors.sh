@@ -1310,6 +1310,43 @@ oil_for_parse_bare_word() {
   '
 }
 
+oil_issue_1118() {
+  set +o errexit
+
+  if is-oil-native; then
+    echo 'skipping oil_issue_1118'
+    return
+  fi
+
+  # Originally pointed at 'for'
+  _oil-parse-error '
+  var snippets = [{status: 42}]
+  for snippet in (snippets) {
+    if (snippet["status"] === 0) {
+      echo hi
+    }
+
+    # The $ causes a wierd error
+    if ($snippet["status"] === 0) {
+      echo hi
+    }
+  }
+  '
+
+  # Issue #1118
+  # pointed at 'var' in count
+  _oil-parse-error '
+  var content = [ 1, 2, 4 ]
+  var count = 0
+
+  # The $ causes a weird error
+  while (count < $len(content)) {
+    setvar count += 1
+  }
+  '
+}
+
+
 #
 # Different source_t variants
 #
@@ -1392,6 +1429,8 @@ cases-in-strings() {
   oil_case
   oil_for
   oil_for_parse_bare_word
+  oil_issue_1118
+
   shell_for
   parse_at
   invalid_parens

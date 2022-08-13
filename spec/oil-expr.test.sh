@@ -228,7 +228,7 @@ var one = $1
 var two = $2
 echo $one $two
 
-var named = $one  # equivalent to 'one'
+var named = "$one"  # equivalent to 'one'
 echo named=$named
 
 ## STDOUT:

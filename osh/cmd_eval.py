@@ -616,6 +616,11 @@ class CommandEvaluator(object):
 
   def _EvalCondition(self, cond, spid):
     # type: (condition_t, int) -> bool
+    """
+    Args:
+      spid: for shell conditions, where errexit was disabled -- e.g. if
+            for Oil conditions, it would be nice to blame the ( instead
+    """
     b = False
     UP_cond = cond
     with tagswitch(cond) as case:
@@ -630,7 +635,7 @@ class CommandEvaluator(object):
       elif case(condition_e.Oil):
         if mylib.PYTHON:
           cond = cast(condition__Oil, UP_cond)
-          obj = self.expr_ev.EvalExpr(cond.e)
+          obj = self.expr_ev.EvalExpr(cond.e, spid)
           b = bool(obj)
 
     return b
