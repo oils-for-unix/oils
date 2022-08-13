@@ -41,7 +41,7 @@ from mycpp.mylib import NewDict, tagswitch
 
 import libc
 
-from typing import cast, Any, Dict, Optional, List, Union, Tuple, TYPE_CHECKING
+from typing import cast, Any, Dict, List, Union, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
