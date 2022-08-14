@@ -143,6 +143,8 @@ if fastlex:
   #QSN_MATCHER = _MatchQsnToken_Fast
   IsValidVarName = fastlex.IsValidVarName
   ShouldHijack = fastlex.ShouldHijack
+  LooksLikeInteger = fastlex.LooksLikeInteger
+  LooksLikeFloat = fastlex.LooksLikeFloat
 else:
   OneToken = _MatchOshToken_Slow(lexer_def.LEXER_DEF)
   ECHO_MATCHER = _MatchTokenSlow(lexer_def.ECHO_E_DEF)
@@ -161,10 +163,19 @@ else:
     return bool(_VAR_NAME_RE.match(s))
 
   _SHOULD_HIJACK_RE = re.compile(lexer_def.SHOULD_HIJACK_RE + '$')  # type: ignore
-
   def ShouldHijack(s):
     # type: (str) -> bool
     return bool(_SHOULD_HIJACK_RE.match(s))
+
+  _LOOKS_LIKE_INTEGER_RE = re.compile(lexer_def.LOOKS_LIKE_INTEGER + '$')
+  def LooksLikeInteger(s):
+    # type: (str) -> bool
+    return bool(_LOOKS_LIKE_INTEGER_RE.match(s))
+
+  _LOOKS_LIKE_FLOAT_RE = re.compile(lexer_def.LOOKS_LIKE_FLOAT + '$')
+  def LooksLikeFloat(s):
+    # type: (str) -> bool
+    return bool(_LOOKS_LIKE_FLOAT_RE.match(s))
 
 
 class SimpleLexer(object):

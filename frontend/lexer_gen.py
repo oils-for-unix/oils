@@ -171,6 +171,9 @@ def TranslateTree(re_tree, f, in_char_class=False):
       f.write(')')
 
     else:
+      if 0:
+        from core.pyerror import log
+        log('child %s', child)
       raise RuntimeError("I don't understand regex construct: %r" % name)
 
   # NOTE: negate and not_literal are sort of duplicated
@@ -437,6 +440,8 @@ def main(argv):
 
     TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
+    TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_INTEGER, 'LooksLikeInteger')
+    TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_FLOAT, 'LooksLikeFloat')
 
     TranslateBracket('BracketUnary', TEST_UNARY_LOOKUP)
     TranslateBracket('BracketBinary', TEST_BINARY_LOOKUP)

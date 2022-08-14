@@ -51,6 +51,37 @@ class MatchTest(unittest.TestCase):
       if id_ == Id.Eol_Tok:
         break
 
+  def testLooksLike(self):
+    INTS = [
+        (False, ''),
+        (False, 'foo'),
+        (True, '3'),
+        (True, '-3'),
+        (False, '-'),
+        (False, '.'),
+        (True, '\t12 '),
+        (True, '\t-12 '),
+        (False, ' - 12 '),
+    ]
+
+    MORE_INTS = [
+        (True, ' 3_000 '),
+    ]
+
+    for expected, s in INTS + MORE_INTS:
+      self.assertEqual(expected, match.LooksLikeInteger(s))
+
+    FLOATS = [
+        (True, '3.0'),
+        (True, '-3.0'),
+        (True, '\t3.0 '),
+        (True, '\t-3.0  '),
+        (False, ' - 3.0 '),
+    ]
+
+    for expected, s in INTS + FLOATS:  # Use BOTH test cases
+      self.assertEqual(expected, match.LooksLikeFloat(s), s)
+
 
 if __name__ == '__main__':
   unittest.main()

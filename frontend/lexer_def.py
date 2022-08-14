@@ -848,6 +848,23 @@ _EXPR_NEWLINE_COMMENT = [
 ]
 
 
+# TODO: unify this with LEXER_REFINEMENTS
+_SIMPLE_FLOAT_RE = r'[0-9]+(\.[0-9]*)?([eE][+\-]?[0-9]+)?'
+
+_WHITESPACE = r'[ \t\r\n]*'  # not including legacy \f \v
+
+# Used for Oil's comparison operators > >= < <=
+# Optional -?
+LOOKS_LIKE_FLOAT = _WHITESPACE + '-?' + _SIMPLE_FLOAT_RE + _WHITESPACE
+
+# Ditto, used for comparison operators
+
+# Python allows 0 to be written 00 or 0_0_0, which is weird.  But let's be
+# consistent, and avoid '00' turning into a float!
+_DECIMAL_INT_RE = r'[0-9](_?[0-9])*'
+
+LOOKS_LIKE_INTEGER = _WHITESPACE + '-?' + _DECIMAL_INT_RE + _WHITESPACE
+
 # Python 3 float literals:
 
 # digitpart     ::=  digit (["_"] digit)*
@@ -859,7 +876,7 @@ _EXPR_NEWLINE_COMMENT = [
 
 # This is the same as far as I can tell?
 
-# This is a hand-written re2c rule to "refine" the Id.Expr_Float token to
+# This is a hand-written re2c rule to "refine" the _SIMPLE_FLOAT_RE token to
 # include undescores: 1_000.234_567
 
 LEXER_REFINEMENTS = {
@@ -871,6 +888,7 @@ exponent = ("e" | "E") ("+" | "-")? digitpart
 float = digitpart fraction? exponent? | fraction exponent?
 """
 }
+
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = \
@@ -890,9 +908,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # octdigit     ::=  "0"..."7"
   # hexdigit     ::=  digit | "a"..."f" | "A"..."F"
 
-  # Python allows 0 to be written 00 or 0_0_0, which is weird.
-  C('0', Id.Expr_DecInt),
-  R(r'[1-9](_?[0-9])*', Id.Expr_DecInt),
+  R(_DECIMAL_INT_RE, Id.Expr_DecInt),
 
   R(r'0[bB](_?[01])+', Id.Expr_BinInt),
   R(r'0[oO](_?[0-7])+', Id.Expr_OctInt),
@@ -900,7 +916,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
 
   # !!! This is REFINED by a hand-written re2c rule !!!
   # The dev build is slightly different than the production build.
-  R(r'[0-9]+(\.[0-9]*)?([eE][+\-]?[0-9]+)?', Id.Expr_Float),
+  R(_SIMPLE_FLOAT_RE, Id.Expr_Float),
 
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?

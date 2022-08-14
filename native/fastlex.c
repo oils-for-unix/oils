@@ -194,6 +194,28 @@ fastlex_ShouldHijack(PyObject *self, PyObject *args) {
   return PyBool_FromLong(ShouldHijack(name, len));
 }
 
+static PyObject *
+fastlex_LooksLikeInteger(PyObject *self, PyObject *args) {
+  unsigned char *name;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
+    return NULL;
+  }
+  return PyBool_FromLong(LooksLikeInteger(name, len));
+}
+
+static PyObject *
+fastlex_LooksLikeFloat(PyObject *self, PyObject *args) {
+  unsigned char *name;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
+    return NULL;
+  }
+  return PyBool_FromLong(LooksLikeFloat(name, len));
+}
+
 #ifdef OVM_MAIN
 #include "native/fastlex.c/methods.def"
 #else
@@ -214,6 +236,8 @@ static PyMethodDef methods[] = {
    "Is it a valid var name?"},
   // Should we hijack this shebang line?
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS, ""},
+  {"LooksLikeInteger", fastlex_LooksLikeInteger, METH_VARARGS, ""},
+  {"LooksLikeFloat", fastlex_LooksLikeFloat, METH_VARARGS, ""},
   {NULL, NULL},
 };
 #endif

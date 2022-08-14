@@ -37,6 +37,7 @@ from core import error
 from core import state
 from core.pyerror import e_die, e_die_status, log
 from frontend import consts
+from frontend import match
 from oil_lang import objects
 from osh import braces
 from osh import word_compile
@@ -323,6 +324,34 @@ class OilEvaluator(object):
 
     # Note: IndexError and KeyError are handled in more specific places
 
+  def _ToNumber(self, val):
+    # type: (Any) -> int
+    """Convert to something that can be compared.
+
+    TODO: Add float support.
+    """
+    if isinstance(val, bool):
+      raise ValueError("Can't compare booleans")  # preserves location
+
+    if isinstance(val, int):
+      return val
+
+    if isinstance(val, float):
+      return val
+
+    if isinstance(val, str):
+      # NOTE: Can we avoid scanning the string twice?
+      if match.LooksLikeInteger(val):
+        return int(val)
+      elif match.LooksLikeFloat(val):
+        return float(val)
+      else:
+        raise ValueError("%r doesn't look like a number" % val)
+
+    raise ValueError("%r can't be compared" % (val,))
+    
+
+
   def _EvalExpr(self, node):
     # type: (expr_t) -> Any
     """
@@ -533,13 +562,13 @@ class OilEvaluator(object):
           right = self._EvalExpr(right_expr)
 
           if op.id == Id.Arith_Less:
-            result = left < right
+            result = self._ToNumber(left) < self._ToNumber(right)
           elif op.id == Id.Arith_Great:
-            result = left > right
-          elif op.id == Id.Arith_GreatEqual:
-            result = left >= right
+            result = self._ToNumber(left) > self._ToNumber(right)
           elif op.id == Id.Arith_LessEqual:
-            result = left <= right
+            result = self._ToNumber(left) <= self._ToNumber(right)
+          elif op.id == Id.Arith_GreatEqual:
+            result = self._ToNumber(left) >= self._ToNumber(right)
 
           elif op.id == Id.Expr_TEqual:
             result = left == right
