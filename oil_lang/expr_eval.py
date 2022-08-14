@@ -23,7 +23,7 @@ from _devbuild.gen.syntax_asdl import (
     class_literal_term, class_literal_term_e, class_literal_term_t,
     class_literal_term__CharLiteral,
 
-    word_part__ExprSub, word_part__FuncCall, word_part__Splice,
+    word_part_t, word_part__ExprSub, word_part__FuncCall, word_part__Splice,
 )
 from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
@@ -44,7 +44,7 @@ from mycpp.mylib import NewDict, tagswitch
 
 import libc
 
-from typing import cast, Any, Dict, List, Union, Tuple, TYPE_CHECKING
+from typing import cast, Any, Union, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
@@ -85,8 +85,8 @@ def LookupVar(mem, var_name, which_scopes, span_id=runtime.NO_SPID):
     return val.obj
 
 
-def Stringify(py_val):
-  # type: (Any) -> str
+def Stringify(py_val, word_part=None):
+  # type: (Any, Optional[word_part_t]) -> str
   """ For predictably converting between Python objects and strings.
 
   We don't want to tie our sematnics to the Python interpreter too much.
@@ -99,7 +99,8 @@ def Stringify(py_val):
 
   if not isinstance(py_val, (int, float, str)):
     raise error.Expr(
-        'Expected string-like value (Bool, Int, Str), but got %s' % type(py_val))
+        'Expected string-like value (Bool, Int, Str), but got %s' % type(py_val),
+        part=word_part)
 
   return str(py_val)
 
@@ -257,7 +258,7 @@ class OilEvaluator(object):
   def EvalExprSub(self, part):
     # type: (word_part__ExprSub) -> part_value_t
     py_val = self.EvalExpr(part.child)
-    return part_value.String(Stringify(py_val))
+    return part_value.String(Stringify(py_val, word_part=part))
 
   def EvalInlineFunc(self, part):
     # type: (word_part__FuncCall) -> part_value_t
@@ -275,13 +276,16 @@ class OilEvaluator(object):
       id_ = part.name.id
       if id_ == Id.VSub_DollarName:
         # func() can raise TypeError, ValueError, etc.
-        s = Stringify(func(*pos_args, **named_args))
+        s = Stringify(func(*pos_args, **named_args), word_part=part)
         part_val = part_value.String(s)  # type: part_value_t
 
       elif id_ == Id.Lit_Splice:
         # func() can raise TypeError, ValueError, etc.
         # 'for in' raises TypeError if it's not iterable
-        a = [Stringify(item) for item in func(*pos_args, **named_args)]
+        a = [
+            Stringify(item, word_part=part)
+            for item in func(*pos_args, **named_args)
+            ]
         part_val = part_value.Array(a)
 
       else:
@@ -300,7 +304,7 @@ class OilEvaluator(object):
   def SpliceValue(self, val, part):
     # type: (value__Obj, word_part__Splice) -> List[Any]
     try:
-      items = [Stringify(item) for item in val.obj]
+      items = [Stringify(item, word_part=part) for item in val.obj]
     except TypeError as e:  # TypeError if it isn't iterable
       raise error.Expr('Type error in expression: %s' % str(e), part=part)
 
