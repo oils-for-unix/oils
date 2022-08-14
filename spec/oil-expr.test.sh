@@ -126,30 +126,6 @@ echo $x $max(1+2, 3+4,)
 7 7
 ## END
 
-#### @range()
-shopt -s oil:all
-write @range(10, 15, 2)
-## STDOUT:
-10
-12
-14
-## END
-
-#### Wrong sigil $range() shows representation of iterator?
-shopt -s oil:upgrade
-echo $range(10, 15, 2)
-## STDOUT:
-TODO
-## END
-
-#### Wrong sigil @max(3, 4)
-shopt -s oil:upgrade
-write @max(3, 4)
-## STDOUT:
-TODO
-## END
-
-
 #### nested expr contexts
 var s = "123"
 

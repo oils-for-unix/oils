@@ -115,14 +115,14 @@ test-undefined-vars() {
 test-oil-word-eval() {
   set +o errexit
 
-  _error-case 'echo $maybe("foo")'
+  _expr-error-case 'echo $maybe("foo")'
 
-  _error-case 'echo $identity({key: "val"})'
+  _expr-error-case 'echo $identity({key: "val"})'
 
   # this should be consistent
-  _error-case 'write -- @identity([{key: "val"}])'
+  _expr-error-case 'write -- @identity([{key: "val"}])'
 
-  _error-case 'const x = [1, 2]; echo $x'
+  _expr-error-case 'const x = [1, 2]; echo $x'
 }
 
 test-oil-expr-eval() {

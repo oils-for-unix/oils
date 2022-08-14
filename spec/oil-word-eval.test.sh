@@ -54,14 +54,14 @@ bool splice true
 #### echo $f (x) with space is runtime error
 shopt -s oil:upgrade
 echo $identity (true)
-## status: 1
+## status: 3
 ## STDOUT:
 ## END
 
 #### echo @f (x) with space is runtime error
 shopt -s oil:upgrade
 echo @identity (['foo', 'bar'])
-## status: 1
+## status: 3
 ## STDOUT:
 ## END
 
@@ -79,3 +79,50 @@ true
 42
 3.14
 ## END
+
+#### @range()
+shopt -s oil:all
+write @range(10, 15, 2)
+## STDOUT:
+10
+12
+14
+## END
+
+#### Wrong sigil with $range() is runtime error
+shopt -s oil:upgrade
+echo $range(10, 15, 2)
+echo 'should not get here'
+## status: 3
+## STDOUT:
+## END
+
+#### Serializing type in a list
+shopt -s oil:upgrade
+
+# If you can serialize the above, then why this?
+var mylist = [3, true]
+
+write -- @mylist
+
+write -- ___
+
+var list2 = [range]
+write -- @list2
+
+## status: 3
+## STDOUT:
+3
+true
+___
+## END
+
+#### Wrong sigil @max(3, 4)
+shopt -s oil:upgrade
+write @max(3, 4)
+echo 'should not get here'
+## status: 3
+## STDOUT:
+## END
+
+

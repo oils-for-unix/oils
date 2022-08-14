@@ -1604,10 +1604,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           elif case2(value_e.Obj):
             if mylib.PYTHON:
               val = cast(value__Obj, UP_val)
-              try:
-                items = [str(item) for item in val.obj]
-              except TypeError:  # not iterable
-                e_die("Can't splice non-iterable object %r", var_name, part=part)
+              items = self.expr_ev.SpliceValue(val, part)
             else:
               raise AssertionError()
 

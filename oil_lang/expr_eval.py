@@ -98,8 +98,8 @@ def Stringify(py_val):
     return py_val.AsPosixEre()
 
   if not isinstance(py_val, (int, float, str)):
-    # or float?
-    e_die("Expected evaluation to Bool, Int, or Str.  Got %s", type(py_val))
+    raise error.Expr(
+        'Expected string-like value (Bool, Int, Str), but got %s' % type(py_val))
 
   return str(py_val)
 
@@ -271,27 +271,21 @@ class OilEvaluator(object):
     func = fn_val.obj
     pos_args, named_args = self.EvalArgList(part.args)
 
-    id_ = part.name.id
-    if id_ == Id.VSub_DollarName:
-      s = Stringify(self._ApplyFunc(func, pos_args, named_args))
-      part_val = part_value.String(s)  # type: part_value_t
-
-    elif id_ == Id.Lit_Splice:
-      # NOTE: Using iterable protocol as with @array.  TODO: Optimize
-      # this so it doesn't make a copy?
-      a = [Stringify(item) for item in self._ApplyFunc(func, pos_args, named_args)]
-      part_val = part_value.Array(a)
-
-    else:
-      raise AssertionError(id_)
-
-    return part_val
-
-  def _ApplyFunc(self, func, pos_args, named_args):
-    # type: (Any, Any, Any) -> Any
-    """For inline function calls $strfunc(x) and @arrayfunc(x)"""
     try:
-      return func(*pos_args, **named_args)
+      id_ = part.name.id
+      if id_ == Id.VSub_DollarName:
+        # func() can raise TypeError, ValueError, etc.
+        s = Stringify(func(*pos_args, **named_args))
+        part_val = part_value.String(s)  # type: part_value_t
+
+      elif id_ == Id.Lit_Splice:
+        # func() can raise TypeError, ValueError, etc.
+        # 'for in' raises TypeError if it's not iterable
+        a = [Stringify(item) for item in func(*pos_args, **named_args)]
+        part_val = part_value.Array(a)
+
+      else:
+        raise AssertionError(id_)
 
     # Same error handling as EvalExpr below
     except TypeError as e:
@@ -301,6 +295,17 @@ class OilEvaluator(object):
     except (AttributeError, ValueError) as e:
       raise error.Expr('Expression eval error: %s' % str(e))
 
+    return part_val
+
+  def SpliceValue(self, val, part):
+    # type: (value_t, part_value_t) -> List[Any]
+    try:
+      items = [Stringify(item) for item in val.obj]
+    except TypeError as e:  # TypeError if it isn't iterable
+      raise error.Expr('Type error in expression: %s' % str(e), part=part)
+
+    return items
+
   def EvalExpr(self, node, blame_spid=runtime.NO_SPID):
     # type: (expr_t, int) -> Any
     """Public API for _EvalExpr that ensures that command_sub_errexit is on."""
@@ -308,8 +313,6 @@ class OilEvaluator(object):
       with state.ctx_OilExpr(self.mutable_opts):
         return self._EvalExpr(node)
     except TypeError as e:
-      # TODO: Add location info.  Right now we blame the variable name for
-      # 'var' and 'setvar', etc.
       raise error.Expr('Type error in expression: %s' % str(e), span_id=blame_spid)
     except (AttributeError, ValueError) as e:
       raise error.Expr('Expression eval error: %s' % str(e), span_id=blame_spid)
