@@ -23,7 +23,7 @@ from _devbuild.gen.syntax_asdl import (
     class_literal_term, class_literal_term_e, class_literal_term_t,
     class_literal_term__CharLiteral,
 
-    word_part__ExprSub, word_part__FuncCall,
+    word_part__ExprSub, word_part__FuncCall, word_part__Splice,
 )
 from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
@@ -298,7 +298,7 @@ class OilEvaluator(object):
     return part_val
 
   def SpliceValue(self, val, part):
-    # type: (value_t, part_value_t) -> List[Any]
+    # type: (value__Obj, word_part__Splice) -> List[Any]
     try:
       items = [Stringify(item) for item in val.obj]
     except TypeError as e:  # TypeError if it isn't iterable
