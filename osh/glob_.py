@@ -101,7 +101,8 @@ def EreCharClassEscape(s):
   return pyutil.BackslashEscape(s, r'\^-')
 
 
-ERE_META_CHARS = r'\?*+{}^$.()|'
+# Bug fix: add [] so [[:space:]] is not special, etc.
+ERE_META_CHARS = r'\?*+{}^$.()|[]'
 
 def ExtendedRegexEscape(s):
   # type: (str) -> str

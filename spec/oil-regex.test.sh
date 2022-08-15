@@ -731,3 +731,30 @@ matched foo
 line bar
 matched bar
 ## END
+
+
+#### Regex with [ (bug regression)
+shopt --set oil:all
+
+if ('[' ~ / "[" /) {
+  echo 'dq'
+}
+
+if ('[' ~ / '[' /) {
+  echo 'sq'
+}
+
+if ('[' ~ / [ '[' ] /) {
+  echo 'char class'
+}
+
+# User-reported string
+if ("a" ~ / s* 'imports' s* '=' s* '[' /) {
+  echo "yes"
+}
+
+## STDOUT:
+dq
+sq
+char class
+## END
