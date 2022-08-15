@@ -541,7 +541,7 @@ class OilEvaluator(object):
           if not isinstance(right, (str, list)):
             raise ValueError('Use ++ on strings or lists, got %r' % type(right))
 
-          return left + right
+          return left + right  # type: ignore
 
         # Bitwise
         if node.op.id == Id.Arith_Amp:

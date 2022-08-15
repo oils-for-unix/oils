@@ -721,11 +721,18 @@ echo $_status
 ## END
 
 
-#### ++ on integers does concatenation
+#### can't use ++ on integers
 var x = 12 ++ 3
 echo $x
 ## status: 3
 ## STDOUT:
 ## END
+
+#### can't do mystr ++ mylist
+= ["s"] + "t"
+## status: 3
+## STDOUT:
+## END
+
 
 
