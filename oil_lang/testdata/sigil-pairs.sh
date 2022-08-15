@@ -39,6 +39,5 @@ var cmd_sub = $(
 
 show $cmd_sub
 
-# Do we want + as concatenation?  Or use ++ ?
-show $['quoted ' + 'words ' + "dq ${x:-default}"]
+show $['quoted ' ++ 'words ' ++ "dq ${x:-default}"]
 

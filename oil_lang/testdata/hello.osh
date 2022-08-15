@@ -17,7 +17,7 @@ var y = mylist[1] * 10
 
 echo "y: $y"
 
-var list2 = mylist + [4, 5]
+var list2 = mylist ++ [4, 5]
 
 # TODO: $json(list) should print [1,2,3,4,5]?
 #echo $list2
@@ -30,7 +30,7 @@ str1='shell string'  # traditinoal shell-style assignment
 # Oil assignment
 var str2 = "Oil string"
 
-var str3 = str1 + str2
+var str3 = str1 ++ str2
 
 echo "str3 = $str3"
 
