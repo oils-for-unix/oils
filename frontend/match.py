@@ -167,12 +167,12 @@ else:
     # type: (str) -> bool
     return bool(_SHOULD_HIJACK_RE.match(s))
 
-  _LOOKS_LIKE_INTEGER_RE = re.compile(lexer_def.LOOKS_LIKE_INTEGER + '$')
+  _LOOKS_LIKE_INTEGER_RE = re.compile(lexer_def.LOOKS_LIKE_INTEGER + '$')  # type: ignore
   def LooksLikeInteger(s):
     # type: (str) -> bool
     return bool(_LOOKS_LIKE_INTEGER_RE.match(s))
 
-  _LOOKS_LIKE_FLOAT_RE = re.compile(lexer_def.LOOKS_LIKE_FLOAT + '$')
+  _LOOKS_LIKE_FLOAT_RE = re.compile(lexer_def.LOOKS_LIKE_FLOAT + '$')  # type: ignore
   def LooksLikeFloat(s):
     # type: (str) -> bool
     return bool(_LOOKS_LIKE_FLOAT_RE.match(s))

@@ -325,7 +325,7 @@ class OilEvaluator(object):
     # Note: IndexError and KeyError are handled in more specific places
 
   def _ToNumber(self, val):
-    # type: (Any) -> int
+    # type: (Any) -> Union[int, float]
     """Convert to something that can be compared.
 
     TODO: Add float support.
