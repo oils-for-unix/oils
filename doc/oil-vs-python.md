@@ -72,13 +72,12 @@ Oil doesn't overload operators as much because it often does automatic string
 <-> int conversion (like Awk):
 
 - `a + b` is for addition, while `a ++ b` is for concatenation.
-- `a < b` does numeric comparison (with conversion).  `cmp()` could be for
-  strings.
+- `a < b` does numeric comparison, not lexicographical comparison of strings.
+  - (We should add `cmp()` for strings.)
 
 ### Same as Python
 
 - Arithmetic `+ - * / // %`, and `**` for exponentiation
-- Comparison `< > <= =>`
 - Bitwise `& | ~ ^ << >>`
 - Logical `and or not`
 - Ternary `0 if cond else 1`
@@ -91,6 +90,9 @@ Oil doesn't overload operators as much because it often does automatic string
 ### Changed
 
 - Equality `=== !==` because we also have `~==`
+- Comparison operators `< > <= =>` automatically convert strings to numbers.
+  - `'22' < '3'` is true because `22 < 3` is true.
+  - `'3.1' <= '3.14'` is true because `3.1 <= 3.14` is true.
 - String Concatenation: `++` (not `+`, which is always addition)
 
 ### New

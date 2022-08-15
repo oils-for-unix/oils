@@ -516,11 +516,13 @@ echo $b
 #### Exponentiation with **
 var x = 2**3
 echo $x
-var y = 2.0**3.0
-echo $y
+
+var y = 2.0 ** 3.0  # NOT SUPPORTED
+echo 'should not get here'
+
+## status: 3
 ## STDOUT:
 8
-8.0
 ## END
 
 #### Two Kinds of Division
@@ -717,4 +719,13 @@ echo $_status
 3
 3
 ## END
+
+
+#### ++ on integers does concatenation
+var x = 12 ++ 3
+echo $x
+## status: 3
+## STDOUT:
+## END
+
 

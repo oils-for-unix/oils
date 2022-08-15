@@ -991,6 +991,11 @@ oil-expr() {
     $OSH_LIST "$@"
 }
 
+oil-expr-arith() {
+  sh-spec spec/oil-expr-arith.test.sh --osh-failures-allowed 2 \
+    $OSH_LIST "$@"
+}
+
 oil-expr-compare() {
   sh-spec spec/oil-expr-compare.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"

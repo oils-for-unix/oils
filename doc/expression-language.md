@@ -29,24 +29,49 @@ For a short summary, see [Oil vs. Python](oil-vs-python.html).
 
 ### Constructs Shared Between Word and Expression Languages
 
-All Substitutions: `$myvar`, `$(hostname)`, etc.
-
-Variable subs:
-
-    echo $myvar
-    var x = $myvar
-
-Command subs:
-
-    echo $(hostname)
-    var x = $(hostname)  # no quotes necessary
-    var y = "name is $(hostname)"
-
-String Literals:
+String literals can be used in both words and expressions:
 
     echo 'foo'
     var x = 'foo'
+
     echo "hello $name"
+    var y = "hello $name"
+
+    echo $'\t TAB'
+    var z = $'\t TAB'
+
+This includes multi-line string literals:
+
+    echo '''
+    hello 
+    world
+    '''
+
+    var x = '''
+    hello
+    world
+    '''
+
+    # (and the 2 other kinds)
+
+Command substitution is shared:
+
+    echo $(hostname)
+    var a = $(hostname)  # no quotes necessary
+    var b = "name is $(hostname)"
+
+String subsitution is shared:
+
+    echo ${MYVAR:-}
+    var c = ${MYVAR:-}
+    var d = "var is ${MYVAR:-}"
+
+Not shared:
+
+- Unquoted substitution `$foo` isn't available in expression mode.  (It should
+  be or bare `foo`, or `"$foo"`)
+- Expression sub `$[1 + 2]` is usually not necessary in expression mode, so it
+  isn't available.  You can use a quoted string like `var x = "$[1 + 2]"`.
 
 ## Literals for Data Types
 
@@ -125,8 +150,6 @@ TODO:
 
     var myblock = ^(ls | wc -l)  
 
-
-
 ## Operators on Multiple Types
 
 Like JavaScript, Oil has two types of equality, but uses `===` and `~==` rather
@@ -194,9 +217,11 @@ TODO: All of these do string -> int conversion, like
     '0o010' => 8
     '0b0001_0000' => 32
 
+Right now comparison operators convert decimal strings.
+
 ### Arithmetic `+ - * / // %` and `**`
 
-Like Python.
+Like Python, with conversion.
 
 ### Bitwise `~ & | ^ << >>`
 
@@ -204,27 +229,19 @@ Like Python.
 
 ## Comparison on Integers and Floats `< <= > >=`
 
-- NOTE: 
-  - do we have `is` and `is not`?  Not sure I want identity in the language?
-  - is everything nullable too?
+Unlike Python, strings that look like numbers are **automatically converted**
+to numbers, and then compared.
 
-https://github.com/oilshell/oil/blob/master/spec/oil-expr.test.sh#L550
+That is `'22' < '3'` is equivalent to `22 < 3`, and is thus **false**.  (It
+would be true under lexicographical comparison.)
 
-```
-if (1 < 2 <= 2 <= 3 < 4) {
-  echo '123'
-}
-```
+Likewise, `'3.1' <= '3.14',` is true because it's equivalent to `3.1 <= 3.14`.
 
-This syntax is directly from Python.  That is,
+TODO:
 
-`x op y op  z`
-
-is a shortcut for
-
-`x op y and y op z`
-
-Comments welcome!
+- Do we have `is` and `is not`?  I think it's useful for lists and dicts
+- Remove chained comparison?  This syntax is directly from Python.
+  - That is, `x op y op  z` is a shortcut for `x op y and y op z`
 
 ## String Pattern Matching `~` and `~~`
 

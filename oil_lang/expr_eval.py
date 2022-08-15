@@ -327,11 +327,9 @@ class OilEvaluator(object):
   def _ToNumber(self, val):
     # type: (Any) -> Union[int, float]
     """Convert to something that can be compared.
-
-    TODO: Add float support.
     """
     if isinstance(val, bool):
-      raise ValueError("Can't compare booleans")  # preserves location
+      raise ValueError("A boolean isn't a number")  # preserves location
 
     if isinstance(val, int):
       return val
@@ -348,7 +346,26 @@ class OilEvaluator(object):
       else:
         raise ValueError("%r doesn't look like a number" % val)
 
-    raise ValueError("%r can't be compared" % (val,))
+    raise ValueError("%r isn't like a number" % (val,))
+
+  def _ToInteger(self, val):
+    # type: (Any) -> int
+    """Like the above, but no floats.
+    """
+    if isinstance(val, bool):
+      raise ValueError("A boolean isn't an integer")  # preserves location
+
+    if isinstance(val, int):
+      return val
+
+    if isinstance(val, str):
+      # NOTE: Can we avoid scanning the string twice?
+      if match.LooksLikeInteger(val):
+        return int(val)
+      else:
+        raise ValueError("%r doesn't look like an integer" % val)
+
+    raise ValueError("%r isn't like an integer" % (val,))
     
 
 
@@ -492,30 +509,38 @@ class OilEvaluator(object):
         right = self._EvalExpr(node.right)
 
         if node.op.id == Id.Arith_Plus:
-          return left + right
+          return self._ToNumber(left) + self._ToNumber(right)
         if node.op.id == Id.Arith_Minus:
-          return left - right
+          return self._ToNumber(left) - self._ToNumber(right)
         if node.op.id == Id.Arith_Star:
-          return left * right
+          return self._ToNumber(left) * self._ToNumber(right)
+
         if node.op.id == Id.Arith_Slash:
           # NOTE: does not depend on from __future__ import division
           try:
-            result = float(left) / right  # floating point division
+            result = float(self._ToNumber(left)) / self._ToNumber(right)  # floating point division
           except ZeroDivisionError:
             raise error.Expr('divide by zero', token=node.op)
 
           return result
 
         if node.op.id == Id.Expr_DSlash:
-          return left // right  # integer divison
+          return self._ToInteger(left) // self._ToInteger(right)  # integer divison
         if node.op.id == Id.Arith_Percent:
-          return left % right
+          return self._ToInteger(left) % self._ToInteger(right)
 
         if node.op.id == Id.Arith_DStar:  # Exponentiation
-          return left ** right
+          return self._ToInteger(left) ** self._ToInteger(right)
 
         if node.op.id == Id.Arith_DPlus:
           # list or string concatenation
+          # dicts can have duplicates, so don't mess with that
+
+          if not isinstance(left, (str, list)):
+            raise ValueError('Use ++ on strings or lists, got %r' % type(left))
+          if not isinstance(right, (str, list)):
+            raise ValueError('Use ++ on strings or lists, got %r' % type(right))
+
           return left + right
 
         # Bitwise
