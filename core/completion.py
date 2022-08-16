@@ -1248,7 +1248,9 @@ class ReadlineCallback(object):
       stderr_line('osh: Unhandled exception while completing: %s', e)
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:
-      # Because readline ignores SystemExit!
+      # I think this should no longer be called, because we don't use
+      # sys.exit()?
+      # But put it here in case Because readline ignores SystemExit!
       posix._exit(e.code)
 
 
