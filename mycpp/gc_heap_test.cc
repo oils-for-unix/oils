@@ -696,6 +696,7 @@ int base_func_local(Local<Base> base) {
   return base->a_;
 }
 
+#if 0
 TEST local_variance_test() {
   Base i1(5);
   log("i1.a_ = %d", i1.a_);
@@ -717,6 +718,7 @@ TEST local_variance_test() {
 
   PASS();
 }
+#endif
 
 TEST stack_roots_test() {
   Str* s = nullptr;
@@ -792,6 +794,7 @@ TEST field_mask_test() {
   PASS();
 }
 
+#if 0
 TEST repro2() {
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
@@ -802,6 +805,7 @@ TEST repro2() {
 
   PASS();
 }
+#endif
 
 TEST compile_time_masks_test() {
   // Note: These will be different for 32 bit
