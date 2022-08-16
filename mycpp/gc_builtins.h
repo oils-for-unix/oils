@@ -99,19 +99,6 @@ inline bool _cmp(Str* a, Str* b) {
   return str_cmp(a, b) < 0;
 }
 
-// TODO(Jesse): What does the following comment mean?  How does including
-// <algorithm> bloat types?  gc_heap.h already includes a ton of C++ headers so
-// I don't know how not including algorithm is a win.  Maybe this comment is
-// old..?
-//
-// This is a METHOD definition.  It's in gc_builtins.h so that gc_heap.h doesn't
-// need to #include <algorithm>.  I think that would bloat all the ASDL types.
-//
-template <typename T>
-void List<T>::sort() {
-  std::sort(slab_->items_, slab_->items_ + len_, _cmp);
-}
-
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d) {
   auto keys = d->keys();
@@ -128,6 +115,7 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
+#if 0
 // ints, floats, enums like Kind
 // e.g. 1 in [1, 2, 3]
 template <typename T>
@@ -143,7 +131,6 @@ inline bool list_contains(List<T>* haystack, T needle) {
   return false;
 }
 
-#if 0
 // e.g. 'a' in ['a', 'b', 'c']
 inline bool list_contains(List<Str*>* haystack, Str* needle) {
   // StackRoots _roots({&haystack, &needle});  // doesn't allocate

@@ -118,13 +118,13 @@ TEST str_to_int_test() {
 
 TEST int_to_str_test() {
   Str* int_str;
-  int_str = str((1 << 31) - 1);
+  int_str = str(INT_MAX);
   ASSERT(str_equals0("2147483647", int_str));
 
-  int_str = str(-(1 << 31) + 1);
+  int_str = str(-INT_MAX);
   ASSERT(str_equals0("-2147483647", int_str));
 
-  int int_min = -(1 << 31);
+  int int_min = INT_MIN;
   int_str = str(int_min);
   ASSERT(str_equals0("-2147483648", int_str));
 

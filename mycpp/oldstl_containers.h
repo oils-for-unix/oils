@@ -53,9 +53,9 @@ struct Heap {
   }
 };
 
-inline bool are_equal(int left, int right) {
-  return left == right;
-}
+/* inline bool are_equal(int left, int right) { */
+/*   return left == right; */
+/* } */
 
 extern Heap gHeap;
 
@@ -538,10 +538,13 @@ enum class Kind;
 };
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
+inline bool are_equal(Str* left, Str* right);
 
+#if 0
 inline bool are_equal(Str* left, Str* right) {
   return str_equals(left, right);
 }
+#endif
 
 inline bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
   bool result = are_equal(t1->at0(), t2->at0());
@@ -609,12 +612,14 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return find_by_key(haystack->items_, needle) != -1;
 }
 
+#if 0
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d) {
   auto keys = d->keys();
   keys->sort();
   return keys;
 }
+#endif
 
 inline int int_cmp(int a, int b) {
   if (a == b) {

@@ -227,11 +227,13 @@ void List<T>::append(T item) {
 
 #endif // 0
 
-template<typename T>
+
+#include <algorithm>
+template <typename T>
 void List<T>::sort() {
   NotImplemented();
+  /* std::sort(slab_->items_, slab_->items_ + len_, are_equal); */
 }
-
 
 template <typename T>
 int len(const List<T>* L) {

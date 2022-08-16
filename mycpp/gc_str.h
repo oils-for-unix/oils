@@ -181,6 +181,15 @@ class StrIter {
 };
 
 bool str_equals(Str* left, Str* right);
+
 bool maybe_str_equals(Str* left, Str* right);
+
+inline bool are_equal(int left, int right) {
+  return left == right;
+}
+
+inline bool are_equal(Str* left, Str* right) {
+  return str_equals(left, right);
+}
 
 #endif  // STR_TYPES_H
