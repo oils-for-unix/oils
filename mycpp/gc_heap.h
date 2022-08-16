@@ -441,29 +441,6 @@ class Param : public Local<T> {
 };
 
 #include "mycpp/gc_alloc.h"
-
-// Return the size of a resizeable allocation.  For now we just round up by
-// powers of 2. This could be optimized later.  CPython has an interesting
-// policy in listobject.c.
-//
-// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
-inline int RoundUp(int n) {
-  // minimum size
-  if (n < 8) {
-    return 8;
-  }
-
-  // TODO: what if int isn't 32 bits?
-  n--;
-  n |= n >> 1;
-  n |= n >> 2;
-  n |= n >> 4;
-  n |= n >> 8;
-  n |= n >> 16;
-  n++;
-  return n;
-}
-
 #include "mycpp/gc_obj.h"
 
 #endif  // GC_HEAP_H

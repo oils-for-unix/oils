@@ -180,4 +180,7 @@ class StrIter {
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
+bool str_equals(Str* left, Str* right);
+bool maybe_str_equals(Str* left, Str* right);
+
 #endif  // STR_TYPES_H

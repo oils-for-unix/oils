@@ -47,32 +47,12 @@ class GlobalStr {
 // List<T>
 //
 
-// Type that is layout-compatible with List (unit tests assert this).  Two
-// purposes:
-// - To make globals of "plain old data" at compile-time, not at startup time.
-//   This can't be done with subclasses of Obj.
-// - To avoid invalid-offsetof warnings when computing GC masks.
-
-template <typename T, int N>
-class GlobalList {
- public:
-  OBJ_HEADER()
-  int len_;
-  int capacity_;
-  GlobalSlab<T, N>* slab_;
-};
-
 #define GLOBAL_LIST(T, N, name, array)                                      \
   GlobalSlab<T, N> _slab_##name = {Tag::Global, 0, kZeroMask, kNoObjLen,    \
                                    array};                                  \
   GlobalList<T, N> _list_##name = {Tag::Global, 0, kZeroMask,    kNoObjLen, \
                                    N,           N, &_slab_##name};          \
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
-
-// A list has one Slab pointer which we need to follow.
-constexpr uint16_t maskof_List() {
-  return maskbit(offsetof(GlobalList<int COMMA 1>, slab_));
-}
 
 #include "mycpp/gc_list.h"
 #include "mycpp/gc_list_impl.h"
@@ -402,10 +382,12 @@ void Dict<K, V>::set(K key, V val) {
   }
 }
 
+#if 0
 template <typename T>
 int len(const List<T>* L) {
   return L->len_;
 }
+#endif
 
 template <typename K, typename V>
 inline int len(const Dict<K, V>* d) {

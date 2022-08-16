@@ -242,6 +242,7 @@ void Heap::Collect() {
 #endif
 }
 
+// @duplicated_to_oldstl_str_equals
 bool str_equals(Str* left, Str* right) {
   // Fast path for identical strings.  String deduplication during GC could
   // make this more likely.  String interning could guarantee it, allowing us

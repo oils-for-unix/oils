@@ -1,6 +1,27 @@
 #ifndef LIST_TYPES_H
 #define LIST_TYPES_H
 
+
+// Type that is layout-compatible with List (unit tests assert this).  Two
+// purposes:
+// - To make globals of "plain old data" at compile-time, not at startup time.
+//   This can't be done with subclasses of Obj.
+// - To avoid invalid-offsetof warnings when computing GC masks.
+
+template <typename T, int N>
+class GlobalList {
+ public:
+  OBJ_HEADER()
+  int len_;
+  int capacity_;
+  GlobalSlab<T, N>* slab_;
+};
+
+// A list has one Slab pointer which we need to follow.
+constexpr uint16_t maskof_List() {
+  return maskbit(offsetof(GlobalList<int COMMA 1>, slab_));
+}
+
 template <typename T>
 class List : public Obj {
   // TODO: Move methods that don't allocate or resize: out of gc_heap?

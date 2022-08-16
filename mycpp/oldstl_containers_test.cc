@@ -94,12 +94,15 @@ TEST test_list_funcs() {
   strs->append(kEmptyString);
   ASSERT_EQ(4, len(strs));  // ['c', 'a', 'b', '']
 
+#define SORT_IS_IMPLEMENTED 0
+#if SORT_IS_IMPLEMENTED
   strs->sort();
   ASSERT_EQ(4, len(strs));  // ['', 'a', 'b', 'c']
   ASSERT(str_equals(kEmptyString, strs->index_(0)));
   ASSERT(str_equals(StrFromC("a"), strs->index_(1)));
   ASSERT(str_equals(StrFromC("b"), strs->index_(2)));
   ASSERT(str_equals(StrFromC("c"), strs->index_(3)));
+#endif
 
   auto a = StrFromC("a");
   auto aa = StrFromC("aa");
@@ -224,11 +227,13 @@ TEST test_dict() {
   ASSERT_EQ(12, d3->index_(StrFromC("c")));
   ASSERT_EQ(3, len(d3));
 
+#if SORT_IS_IMPLEMENTED
   auto keys = sorted(d3);
   ASSERT(str_equals0("a", keys->index_(0)));
   ASSERT(str_equals0("b", keys->index_(1)));
   ASSERT(str_equals0("c", keys->index_(2)));
   ASSERT_EQ(3, len(keys));
+#endif
 
   auto keys3 = d3->keys();
   ASSERT(list_contains(keys3, a));
@@ -532,6 +537,8 @@ TEST test_str_split() {
   PASS();
 }
 
+#define STR_JOIN_IS_IMPLEMENTED 0
+#if STR_JOIN_IS_IMPLEMENTED
 TEST test_str_join() {
   printf("\n");
 
@@ -557,6 +564,7 @@ TEST test_str_join() {
 
   PASS();
 }
+#endif
 
 GREATEST_MAIN_DEFS();
 
@@ -574,7 +582,10 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_str_replace);
   RUN_TEST(test_str_split);
+
+#if STR_JOIN_IS_IMPLEMENTED
   RUN_TEST(test_str_join);
+#endif
 
   GREATEST_MAIN_END();
   return 0;

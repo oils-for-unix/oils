@@ -53,6 +53,10 @@ struct Heap {
   }
 };
 
+inline bool are_equal(int left, int right) {
+  return left == right;
+}
+
 extern Heap gHeap;
 
 // clang-format off
@@ -65,9 +69,6 @@ struct StackRoots {
   StackRoots(std::initializer_list<void*> roots) {
   }
 };
-
-template <class T>
-class List;
 
 template <class K, class V>
 class Dict;
@@ -88,6 +89,12 @@ extern Str* kEmptyString;
 // Data Types
 //
 
+#include "mycpp/gc_slab.h"
+#include "mycpp/gc_list.h"
+#include "mycpp/gc_list_impl.h"
+#include "mycpp/gc_list_iter.h"
+
+#if 0
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
 class List : public Obj {
@@ -263,48 +270,7 @@ template <typename T>
 List<T>* NewList(std::initializer_list<T> init) {
   return new List<T>(init);
 }
-
-template <class T>
-class ListIter {
- public:
-  explicit ListIter(List<T>* L) : L_(L), i_(0) {
-  }
-  void Next() {
-    i_++;
-  }
-  bool Done() {
-    // "unsigned size_t was a mistake"
-    return i_ >= static_cast<int>(L_->v_.size());
-  }
-  T Value() {
-    return L_->v_[i_];
-  }
-
- private:
-  List<T>* L_;
-  int i_;
-};
-
-// TODO: Does using pointers rather than indices make this more efficient?
-template <class T>
-class ReverseListIter {
- public:
-  explicit ReverseListIter(List<T>* L) : L_(L), i_(L_->v_.size() - 1) {
-  }
-  void Next() {
-    i_--;
-  }
-  bool Done() {
-    return i_ < 0;
-  }
-  T Value() {
-    return L_->v_[i_];
-  }
-
- private:
-  List<T>* L_;
-  int i_;
-};
+#endif
 
 // TODO: A proper dict index should get rid of this unusual sentinel scheme.
 // The index can be -1 on deletion, regardless of the type of the key.
@@ -371,6 +337,10 @@ class DictIter {
   int i_;
 };
 
+#if 1
+// NOTE(Jesse): This version (the oldstl one) is slightly different than the gc'd
+// one.  The other one seems better ..?
+// @duplicated_to_oldstl_str_equals
 inline bool str_equals(Str* left, Str* right) {
   if (len(left) == len(right)) {
     return memcmp(left->data_, right->data_, len(left)) == 0;
@@ -378,6 +348,7 @@ inline bool str_equals(Str* left, Str* right) {
     return false;
   }
 }
+#endif
 
 // Specialized functions
 template <class V>
@@ -528,10 +499,12 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
 // Overloaded free function len()
 //
 
+#if 0
 template <typename T>
 inline int len(const List<T>* L) {
   return L->v_.size();
 }
+#endif
 
 template <typename K, typename V>
 inline int len(const Dict<K, V>* d) {
@@ -566,10 +539,6 @@ enum class Kind;
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 
-inline bool are_equal(int left, int right) {
-  return left == right;
-}
-
 inline bool are_equal(Str* left, Str* right) {
   return str_equals(left, right);
 }
@@ -580,6 +549,7 @@ inline bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
   return result;
 }
 
+#if 0
 inline bool maybe_str_equals(Str* left, Str* right) {
   if (left && right) {
     return str_equals(left, right);
@@ -591,6 +561,7 @@ inline bool maybe_str_equals(Str* left, Str* right) {
 
   return false;  // one is None and one is a Str*
 }
+#endif
 
 // TODO: There should be one str() and one repr() for every sum type, that
 // dispatches on tag?  Or just repr()?
@@ -598,12 +569,6 @@ inline bool maybe_str_equals(Str* left, Str* right) {
 // Will need it for dict, but not tuple.
 // inline int len(Dict* D) {
 // }
-
-// e.g. [None] * 3
-template <typename T>
-List<T>* list_repeat(T item, int times) {
-  return new List<T>(item, times);
-}
 
 // list(L) copies the list
 template <typename T>
@@ -615,6 +580,7 @@ List<T>* list(List<T>* other) {
   return result;
 }
 
+#if 0
 template <typename T>
 bool list_contains(List<T>* haystack, T needle) {
   int n = haystack->v_.size();
@@ -636,6 +602,7 @@ bool list_contains(List<T>* haystack, T* needle) {
 
   return result;
 }
+#endif
 
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {

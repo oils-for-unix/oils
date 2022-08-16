@@ -50,7 +50,7 @@ List<Str*>* Str::split(Str* sep) {
   return result;
 }
 
-#if 1
+#if 0
 Str* Str::join(List<Str*>* items) {
   int length = 0;
   const std::vector<Str*>& v = items->v_;

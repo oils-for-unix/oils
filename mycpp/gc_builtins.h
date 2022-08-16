@@ -143,6 +143,7 @@ inline bool list_contains(List<T>* haystack, T needle) {
   return false;
 }
 
+#if 0
 // e.g. 'a' in ['a', 'b', 'c']
 inline bool list_contains(List<Str*>* haystack, Str* needle) {
   // StackRoots _roots({&haystack, &needle});  // doesn't allocate
@@ -162,59 +163,14 @@ template <typename T>
 List<T>* list_repeat(T item, int times) {
   return NewList<T>(item, times);
 }
+#endif
 
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return haystack->position_of_key(needle) != -1;
 }
 
-template <class T>
-class ListIter {
- public:
-  explicit ListIter(List<T>* L) : L_(L), i_(0) {
-    // We need this because ListIter is directly on the stack, and L_ could be
-    // moved during iteration.
-    gHeap.PushRoot(reinterpret_cast<Obj**>(&L_));
-  }
-  ~ListIter() {
-    gHeap.PopRoot();
-  }
-  void Next() {
-    i_++;
-  }
-  bool Done() {
-    // "unsigned size_t was a mistake"
-    return i_ >= static_cast<int>(L_->len_);
-  }
-  T Value() {
-    return L_->slab_->items_[i_];
-  }
-
- private:
-  List<T>* L_;
-  int i_;
-};
-
-// TODO: Does using pointers rather than indices make this more efficient?
-template <class T>
-class ReverseListIter {
- public:
-  explicit ReverseListIter(List<T>* L) : L_(L), i_(L_->len_ - 1) {
-  }
-  void Next() {
-    i_--;
-  }
-  bool Done() {
-    return i_ < 0;
-  }
-  T Value() {
-    return L_->slab_->items_[i_];
-  }
-
- private:
-  List<T>* L_;
-  int i_;
-};
+#include "gc_list_iter.h"
 
 // TODO:
 // - Look at entry_ to see if an item is deleted (or is a tombstone once we
