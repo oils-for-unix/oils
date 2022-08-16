@@ -1,4 +1,5 @@
 make.sh
+.gdbinit
 *.swp
 *.pyc
 tags
