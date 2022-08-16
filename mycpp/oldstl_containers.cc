@@ -50,6 +50,7 @@ List<Str*>* Str::split(Str* sep) {
   return result;
 }
 
+#if 1
 Str* Str::join(List<Str*>* items) {
   int length = 0;
   const std::vector<Str*>& v = items->v_;
@@ -88,6 +89,7 @@ Str* Str::join(List<Str*>* items) {
 
   return CopyBufferIntoNewStr(result, length);
 }
+#endif
 
 namespace mylib {
 
