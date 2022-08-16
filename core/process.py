@@ -13,7 +13,6 @@ from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
 from signal import SIGINT
-from sys import exit  # mycpp translation directly calls exit(int status)!
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
@@ -622,7 +621,7 @@ class ExternalProgram(object):
         # consistent with mksh and zsh.
         status = 127
 
-      exit(status)  # raises SystemExit
+      posix._exit(status)
     # NO RETURN
 
 
@@ -757,7 +756,7 @@ class _HereDocWriterThunk(Thunk):
     posix.close(self.w)
     #log('Closed %d', self.w)
 
-    exit(0)  # Could this fail?
+    posix._exit(0)
 
 
 class Job(object):

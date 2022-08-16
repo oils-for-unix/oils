@@ -526,7 +526,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     status = box[0]
 
   # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
-  # don't because they call sys.exit().
+  # don't because they call _exit().
   if flag.runtime_mem_dump is not None:
     input_path = '/proc/%d/status' % posix.getpid()
     pyutil.CopyFile(input_path, flag.runtime_mem_dump)
