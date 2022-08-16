@@ -10,6 +10,11 @@ class List : public Obj {
   //   sort() is a templated method that depends on type param T.
   // - neither: index(), slice()
 
+  // 8 / 4 = 2 items, or 8 / 8 = 1 item
+  static const int kCapacityAdjust = kSlabHeaderSize / sizeof(T);
+  static_assert(kSlabHeaderSize % sizeof(T) == 0,
+                "Slab header size should be multiple of item size");
+
  public:
   List() : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)) {
     // Ensured by heap zeroing.  It's never directly on the stack.
@@ -19,163 +24,45 @@ class List : public Obj {
   }
 
   // Implements L[i]
-  T index_(int i) {
-    if (i < 0) {
-      i += len_;
-    }
-
-    if (i < len_) {
-      return slab_->items_[i];
-    }
-
-    log("i = %d, len_ = %d", i, len_);
-    InvalidCodePath();  // Out of bounds
-  }
+  T index_(int i);
 
   // Implements L[i] = item
   // Note: Unlike Dict::set(), we don't need to specialize List::set() on T for
   // StackRoots because it doesn't allocate.
-  void set(int i, T item) {
-    slab_->items_[i] = item;
-  }
+  void set(int i, T item);
 
   // L[begin:]
-  List* slice(int begin) {
-    auto self = this;
-    List<T>* result = nullptr;
-    StackRoots _roots({&self, &result});
-
-    if (begin == 0) {
-      return self;
-    }
-    if (begin < 0) {
-      begin = self->len_ + begin;
-    }
-
-    result = Alloc<List<T>>();  // TODO: initialize with size
-    for (int i = begin; i < self->len_; i++) {
-      result->append(self->slab_->items_[i]);
-    }
-    return result;
-  }
+  List* slice(int begin);
 
   // L[begin:end]
   // TODO: Can this be optimized?
-  List* slice(int begin, int end) {
-    auto self = this;
-    List<T>* result = nullptr;
-    StackRoots _roots({&self, &result});
-
-    if (begin < 0) {
-      begin = self->len_ + begin;
-    }
-    if (end < 0) {
-      end = self->len_ + end;
-    }
-
-    result = Alloc<List<T>>();  // TODO: initialize with size
-    for (int i = begin; i < end; i++) {
-      result->append(self->slab_->items_[i]);
-    }
-    return result;
-  }
+  List* slice(int begin, int end);
 
   // Should we have a separate API that doesn't return it?
   // https://stackoverflow.com/questions/12600330/pop-back-return-value
-  T pop() {
-    assert(len_ > 0);
-    len_--;
-    T result = slab_->items_[len_];
-    slab_->items_[len_] = 0;  // zero for GC scan
-    return result;
-  }
+  T pop();
 
   // Used in osh/word_parse.py to remove from front
   // TODO: Don't accept an arbitrary index?
-  T pop(int i) {
-    assert(len_ > 0);
-    assert(i == 0);  // only support popping the first item
+  T pop(int i);
 
-    len_--;
-    T result = index_(0);
-
-    // Shift everything by one
-    memmove(slab_->items_, slab_->items_ + 1, len_ * sizeof(T));
-    /*
-    for (int j = 0; j < len_; j++) {
-      slab_->items_[j] = slab_->items_[j+1];
-    }
-    */
-
-    slab_->items_[len_] = 0;  // zero for GC scan
-    return result;
-  }
-
-  void clear() {
-    memset(slab_->items_, 0, len_ * sizeof(T));  // zero for GC scan
-    len_ = 0;
-  }
+  void clear();
 
   // Used in osh/string_ops.py
-  void reverse() {
-    for (int i = 0; i < len_ / 2; ++i) {
-      // log("swapping %d and %d", i, n-i);
-      T tmp = slab_->items_[i];
-      int j = len_ - 1 - i;
-      slab_->items_[i] = slab_->items_[j];
-      slab_->items_[j] = tmp;
-    }
-  }
+  void reverse();
 
   // Templated function
   void sort();
 
-  // 8 / 4 = 2 items, or 8 / 8 = 1 item
-  static const int kCapacityAdjust = kSlabHeaderSize / sizeof(T);
-  static_assert(kSlabHeaderSize % sizeof(T) == 0,
-                "Slab header size should be multiple of item size");
-
   // Ensure that there's space for a number of items
-  void reserve(int n) {
-    // log("reserve capacity = %d, n = %d", capacity_, n);
-    auto self = this;
-    StackRoots _roots({&self});
-
-    // Don't do anything if there's already enough space.
-    if (self->capacity_ >= n) return;
-
-    // Example: The user asks for space for 7 integers.  Account for the
-    // header, and say we need 9 to determine the obj length.  9 is
-    // rounded up to 16, for a 64-byte obj.  Then we actually have space
-    // for 14 items.
-    self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
-    auto new_slab = NewSlab<T>(self->capacity_);
-
-    if (self->len_ > 0) {
-      // log("Copying %d bytes", len_ * sizeof(T));
-      memcpy(new_slab->items_, self->slab_->items_, self->len_ * sizeof(T));
-    }
-    self->slab_ = new_slab;
-  }
+  void reserve(int n);
 
   // Append a single element to this list.  Must be specialized List<int> vs
   // List<Str*>.
   void append(T item);
 
   // Extend this list with multiple elements.
-  void extend(List<T>* other) {
-    auto self = this;
-    StackRoots _roots({&self, &other});
-
-    int n = other->len_;
-    int new_len = self->len_ + n;
-    self->reserve(new_len);
-
-    for (int i = 0; i < n; ++i) {
-      self->set(self->len_ + i, other->slab_->items_[i]);
-    }
-    self->len_ = new_len;
-  }
+  void extend(List<T>* other);
 
   int len_;       // number of entries
   int capacity_;  // max entries before resizing

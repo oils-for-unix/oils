@@ -75,6 +75,7 @@ constexpr uint16_t maskof_List() {
 }
 
 #include "mycpp/gc_list.h"
+#include "mycpp/gc_list_impl.h"
 
 //
 // Dict<K, V>
