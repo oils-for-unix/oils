@@ -242,7 +242,10 @@ void Heap::Collect() {
 #endif
 }
 
+// NOTE(Jesse): There's different string compare logic in _multiple!_ places.
 // @duplicated_to_oldstl_str_equals
+// @duplicate_string_compare_code
+//
 bool str_equals(Str* left, Str* right) {
   // Fast path for identical strings.  String deduplication during GC could
   // make this more likely.  String interning could guarantee it, allowing us

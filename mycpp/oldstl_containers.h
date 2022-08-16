@@ -53,10 +53,6 @@ struct Heap {
   }
 };
 
-/* inline bool are_equal(int left, int right) { */
-/*   return left == right; */
-/* } */
-
 extern Heap gHeap;
 
 // clang-format off
@@ -620,31 +616,6 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
   return keys;
 }
 #endif
-
-inline int int_cmp(int a, int b) {
-  if (a == b) {
-    return 0;
-  }
-  return a < b ? -1 : 1;
-}
-
-// Used by [[ a > b ]] and so forth
-inline int str_cmp(Str* a, Str* b) {
-  int min = std::min(len(a), len(b));
-  if (min == 0) {
-    return int_cmp(len(a), len(b));
-  }
-  int comp = memcmp(a->data_, b->data_, min);
-  if (comp == 0) {
-    return int_cmp(len(a), len(b));  // tiebreaker
-  }
-  return comp;
-}
-
-// Hm std::sort() just needs true/false, not 0, 1, 1.
-inline bool _cmp(Str* a, Str* b) {
-  return str_cmp(a, b) < 0;
-}
 
 // specialization for Str only
 inline void mysort(std::vector<Str*>* v) {

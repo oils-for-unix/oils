@@ -229,10 +229,42 @@ void List<T>::append(T item) {
 
 
 #include <algorithm>
+
+inline int int_cmp(int a, int b) {
+  if (a == b) {
+    return 0;
+  }
+  return a < b ? -1 : 1;
+}
+
+// NOTE(Jesse): It's highly sus that we have str_equals and str_cmp..
+// shouldn't we write one in terms of the other?
+//
+// @duplicate_string_compare_code
+//
+// Used by [[ a > b ]] and so forth
+inline int str_cmp(Str* a, Str* b) {
+  int len_a = len(a);
+  int len_b = len(b);
+
+  int min = std::min(len_a, len_b);
+  if (min == 0) {
+    return int_cmp(len_a, len_b);
+  }
+  int comp = memcmp(a->data_, b->data_, min);
+  if (comp == 0) {
+    return int_cmp(len_a, len_b);  // tiebreaker
+  }
+  return comp;
+}
+
+inline bool _cmp(Str* a, Str* b) {
+  return str_cmp(a, b) < 0;
+}
+
 template <typename T>
 void List<T>::sort() {
-  NotImplemented();
-  /* std::sort(slab_->items_, slab_->items_ + len_, are_equal); */
+  std::sort( (Str**)slab_->items_, slab_->items_ + len_, _cmp);
 }
 
 template <typename T>
