@@ -10,21 +10,21 @@ started with Python's `Grammar/Grammar` file.
 
 This doc describes some differences, which may help Python users learn Oil.
 
-If you don't know Python, see [A Tour of the Oil
-Language](oil-language-tour.html).
+If you don't know Python, see [Expression Language](expression-language.html)
+and [A Tour of the Oil Language](oil-language-tour.html).
 
 <div id="toc">
 </div>
 
 ## Literals for Data Types
 
-### Same as Python
+### Literals Like Python
 
 - Integers: `123`, `1_000_000`, `0b1100_0010`, `0o755`, `0xff`
 - Floats: `1.023e6` (not in the first cut of Oil)
 - Lists: `['pea', 'nut']`
 
-### Changed
+### Literals Changed
 
 - `true`, `false`, and `null` (like JavaScript) rather than `True`, `False`,
   and `None` (like Python).  In Oil, types are spelled with capital letters.
@@ -38,7 +38,7 @@ Language](oil-language-tour.html).
   - Bracketed keys: `{[myvar + 1]: 'value'}`
   - "Punning": `{age}`
 
-### New
+### Literals Added
 
 - Character literals are **integers**
   - Unicode `\u{03bc}`
@@ -53,16 +53,16 @@ Language](oil-language-tour.html).
 `%symbol` (used in eggex now, but could also be used as interned strings)
 -->
 
-### Omitted
+### Literals Omitted
 
+- TODO: Remove tuple type.  We might want Go-like multiple return values.
+- List comprehensions and generator expressions.  QTT over pipes should address
+  these use cases.
+- Lambdas.  Functions are often external and don't have lexical scope.
 - Iterators.
   - Instead we have for loop that works on lists and dicts.
   - It flexibly accepts up to 3 loop variables, taking the place of Python's
     `enumerate()`, `keys()`, `values()`, and `items()`.
-- List comprehensions and generator expressions.  QTT over pipes should address
-  these use cases.
-- Lambdas.  Functions are often external and don't have lexical scope.
-- TODO: No tuple type for now.  We might want Go-like multiple return values.
 
 ## Operators
 
@@ -75,27 +75,29 @@ Oil doesn't overload operators as much because it often does automatic string
 - `a < b` does numeric comparison, not lexicographical comparison of strings.
   - (We should add `cmp()` for strings.)
 
-### Same as Python
+### Operators Like Python
 
-- Arithmetic `+ - * / // %`, and `**` for exponentiation
+- Arithmetic `+ - * /` (except they convert strings to numbers)
+- `//` integer division, `%` modulus, `**` (except they convert strings to
+  integers)
 - Bitwise `& | ~ ^ << >>`
 - Logical `and or not`
 - Ternary `0 if cond else 1`
-- Indexing: `s[i]` evaluates to an integer?
 - Slicing: `s[i:j]` evaluates to a string
 - Membership `in  not in`
 - Function Call: `f(x, y)`
   - What about splat `*` and `**`?
 
-### Changed
+### Operators Changed
 
 - Equality `=== !==` because we also have `~==`
 - Comparison operators `< > <= =>` automatically convert strings to numbers.
   - `'22' < '3'` is true because `22 < 3` is true.
   - `'3.1' <= '3.14'` is true because `3.1 <= 3.14` is true.
 - String Concatenation: `++` (not `+`, which is always addition)
+- TODO: indexing: `s[i]` evaluates to an integer?
 
-### New
+### Operators Added
 
 - Eggex match `s ~ /d+/`
 - Glob match `s ~~ '*.py'`
@@ -103,7 +105,7 @@ Oil doesn't overload operators as much because it often does automatic string
 - Oil sigils: `$` and `@`
 - `mydict->key` as an alias for `mydict['key']`
 
-### Removed
+### Operators Removed
 
 - No string formatting with `%`.  Use `${x %.3f}` instead.
 - No `@` for matrix multiply.

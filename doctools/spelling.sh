@@ -85,6 +85,12 @@ check-tree() {
     $SPELLING_PY check --known-words /usr/share/dict/words
 }
 
+check-one() {
+  local words=${1:-_tmp/spelling/_release/VERSION/doc/eggex.words}
+
+  $SPELLING_PY check --known-words /usr/share/dict/words $words
+}
+
 check-oil-docs() {
   check-tree _release/VERSION/doc/*.html
 }

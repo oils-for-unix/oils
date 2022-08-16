@@ -60,7 +60,7 @@ Command substitution is shared:
     var a = $(hostname)  # no quotes necessary
     var b = "name is $(hostname)"
 
-String subsitution is shared:
+String substitution is shared:
 
     echo ${MYVAR:-}
     var c = ${MYVAR:-}
@@ -144,11 +144,12 @@ This is what ES2015 calls "shorthand object properties":
 
 - <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer>
 
-### Block, Expr, ArgList
+### Block, Expr
 
 TODO:
 
     var myblock = ^(ls | wc -l)  
+    var myexpr = ^[1 + 2]
 
 ## Operators on Multiple Types
 
@@ -208,9 +209,10 @@ Like Python.
     var cond = true
     var x = 'yes' if cond else 'no'
 
-## Integer Operators
+## Arithmetic
 
-TODO: All of these do string -> int conversion, like
+<!--
+TODO: Should the string to number/integer conversions also handle these cases?
 
     '1_000' => 1000   
     '0xff' => 255
@@ -218,24 +220,35 @@ TODO: All of these do string -> int conversion, like
     '0b0001_0000' => 32
 
 Right now comparison operators convert decimal strings.
+-->
 
-### Arithmetic `+ - * / // %` and `**`
+### Arithmetic `+ - * /`
 
-Like Python, with conversion.
+These are like Python, but they do string to number conversion (but not unary
+`-`.) A number is an integer or float.
+
+That is:
+
+- `'1' + '2'` evaluates to `3` because `1 + 2` evaluates to `3`.
+- `'1' + '2.5'` evaluates to `3.5` because `1 + 2.5` evaluates to `3.5`.
+
+### Arithmetic `// %` and `**`
+
+Also like Python, but they do string to **integer** conversion.
+
+- `'9' // '4'` evaluates to `2` because `9 / 4` evaluates to `2`.
 
 ### Bitwise `~ & | ^ << >>`
 
 Like Python.
 
-## Comparison on Integers and Floats `< <= > >=`
+## Comparison of Integers and Floats `< <= > >=`
 
-Unlike Python, strings that look like numbers are **automatically converted**
-to numbers, and then compared.
+These operators also do string to number conversion.  That is:
 
-That is `'22' < '3'` is equivalent to `22 < 3`, and is thus **false**.  (It
-would be true under lexicographical comparison.)
-
-Likewise, `'3.1' <= '3.14',` is true because it's equivalent to `3.1 <= 3.14`.
+- `'22' < '3'` false because `22 < 3` is false.  (It would be true under
+  lexicographical comparison.)
+- `'3.1' <= '3.14'` is true because `3.1 <= 3.14` is true.
 
 TODO:
 
@@ -379,7 +392,7 @@ Notes:
   - though I think strings should be non-nullable value types?  They are
     slices.
   - they start off as the empty slice
-- Coercions of strings to numbers
+- Automatic conversions of strings to numbers
   - `42` and `3.14` and `1e100`
 
 ### Implementation Notes
