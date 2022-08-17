@@ -2360,7 +2360,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'Id', 'hnode_e', 'source_e', 'place_e',
 
                 # syntax_asdl
-                're', 're_repeat', 'class_literal_term', 'proc_sig',
                 'bracket_op', 'bracket_op_e',
                 'source', 'source_e',
                 'suffix_op', 'suffix_op_e',
@@ -2385,6 +2384,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 're_e', 're',
                 're_repeat_e', 're_repeat',
                 'class_literal_term_e', 'class_literal_term',
+                'char_class_term_e', 'char_class_term',
+
                 'sh_lhs_expr_e', 'sh_lhs_expr',
                 'variant_type',
 
