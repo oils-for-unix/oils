@@ -1,5 +1,8 @@
 
 Str* Str::join(List<Str*>* items) {
+  auto self = this;
+  StackRoots _roots({&self, &items});
+
   int length = 0;
 
   int num_parts = len(items);
@@ -10,7 +13,7 @@ Str* Str::join(List<Str*>* items) {
     length += len(items->index_(i));
   }
   // add length of all the separators
-  int len_ = len(this);
+  int len_ = len(self);
   length += len_ * (num_parts - 1);
 
   char* result = static_cast<char*>(malloc(length + 1));
@@ -35,49 +38,6 @@ Str* Str::join(List<Str*>* items) {
   return CopyBufferIntoNewStr(result, length);
 }
 
-List<Str*>* Str::split(Str* sep) {
-  assert(len(sep) == 1);  // we can only split one char
-  char sep_char = sep->data_[0];
-
-  if (len(this) == 0) {
-    // weird case consistent with Python: ''.split(':') == ['']
-    return NewList<Str*>({kEmptyString});
-  }
-
-  // log("--- split()");
-  // log("data [%s]", data_);
-
-  // NOTE(Jesse): I think we know how much space we're going to use
-  auto result = NewList<Str*>();
-
-  int n = len(this);
-  const char* pos = data_;
-  const char* end = data_ + n;
-
-  // log("pos %p", pos);
-  while (true) {
-    // log("n %d, pos %p", n, pos);
-
-    const char* new_pos = static_cast<const char*>(memchr(pos, sep_char, n));
-    if (new_pos == nullptr) {
-      result->append(StrFromC(pos, end - pos));  // rest of the string
-      break;
-    }
-    int new_len = new_pos - pos;
-
-    result->append(StrFromC(pos, new_len));
-    n -= new_len + 1;
-    pos = new_pos + 1;
-    if (pos >= end) {  // separator was at end of string
-      result->append(kEmptyString);
-      break;
-    }
-  }
-
-  return result;
-}
-// NOTE(Jesse): This function is buggy.
-#if 0
 List<Str*>* Str::split(Str* sep) {
   auto self = this;
   List<Str*>* result = nullptr;
@@ -141,50 +101,3 @@ List<Str*>* Str::split(Str* sep) {
 
   return result;
 }
-
-Str* Str::join(List<Str*>* items) {
-  auto self = this;       // must be a root!
-  Str* result = nullptr;  // may not need to be a root, but make it robust
-
-  StackRoots _roots({&self, &result, &items});
-
-  int result_len = 0;
-  int num_parts = len(items);
-  if (num_parts == 0) {  // " ".join([]) == ""
-    return kEmptyString;
-  }
-  for (int i = 0; i < num_parts; ++i) {
-    result_len += len(items->index_(i));
-  }
-  int sep_len = len(self);
-  // add length of all the separators
-  result_len += sep_len * (num_parts - 1);
-
-  // log("len: %d", len);
-  // log("v.size(): %d", v.size());
-
-  result = AllocStr(result_len);
-  char* p_result = result->data_;  // advances through
-
-  for (int i = 0; i < num_parts; ++i) {
-    // log("i %d", i);
-    if (i != 0 && sep_len) {  // optimize common case of ''.join()
-      memcpy(p_result, self->data_, sep_len);  // copy the separator
-      p_result += sep_len;
-      // log("len_ %d", len_);
-    }
-
-    int n = len(items->index_(i));
-    if (n < 0) {
-      log("n: %d", n);
-      InvalidCodePath();
-    }
-    memcpy(p_result, items->index_(i)->data_, n);  // copy the list item
-    p_result += n;
-  }
-
-  assert(p_result[result_len] == '\0');  // GC should zero it
-  return result;
-}
-#endif
-

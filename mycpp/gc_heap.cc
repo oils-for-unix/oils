@@ -118,8 +118,6 @@ inline Obj* ObjHeader(Obj* obj) {
 
 void Heap::Collect() {
 
-  NotImplemented();
-
 #if GC_STATS
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
@@ -245,6 +243,7 @@ void Heap::Collect() {
 #if GC_VERBOSE
   Report();
 #endif
+
 }
 
 

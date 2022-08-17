@@ -1,6 +1,8 @@
 #ifndef LIST_IMPL_H
 #define LIST_IMPL_H
 
+#include "mycpp/error_types.h"
+
 #if 0
 
  public:
@@ -258,13 +260,14 @@ List<T>* List<T>::slice(int begin) {// @todo_old_impl
   /* assert(begin > -1); */
   /* assert(end > -1); */
 
-  auto old_this = this;
+  auto self = this;
+  List<T> *result = nullptr;
+  StackRoots _roots({&self, &result});
 
-  List<T> *result = NewList<T>();
-  assert(old_this == this);
+  result = NewList<T>();
 
-  for (int i = begin; i < len_; i++) {
-    result->append(this->slab_->items_[i]);
+  for (int i = begin; i < self->len_; i++) {
+    result->append(self->slab_->items_[i]);
   }
 
   return result;
@@ -306,10 +309,13 @@ List<T>* List<T>::slice(int begin, int end) {
   /* assert(begin > -1); */
   /* assert(end > -1); */
 
+  auto self = this;
+  List<T> *result = nullptr;
+  StackRoots _roots({&self, &result});
 
-  List<T> *result = NewList<T>();
+  result = NewList<T>();
   for (int i = begin; i < end; i++) {
-    result->append(slab_->items_[i]);
+    result->append(self->slab_->items_[i]);
   }
 
   return result;

@@ -185,11 +185,24 @@ class Heap {
   }
 
   void* Allocate(int num_bytes) {
-    /* assert(num_bytes >= sizeof()); */
     int n = aligned(num_bytes);
     // log("n = %d, p = %p", n, p);
 
-    assert(n >= 16); // TODO(Jesse): Change to `sizeof(LayoutForwarded)`
+    // TODO(Jesse): Change to `assert(n >= sizeof(LayoutForwarded))`.
+    //
+    // If you change this to an assertion there's a bunch of buggy code that
+    // asks us for 0-length allocations, and then tries to write to it.  I
+    // didn't want to fix that code (again!!!) so I'm putting this here for now
+    // so the invalid writes to the pointer this returns don't ruin our day.
+    //
+    // !!!!!!! THIS SHOULD BE FIXED ASAP !!!!!!!
+    // !!!!!!! THIS SHOULD BE FIXED ASAP !!!!!!!
+    //
+    if (n < 16)
+    {
+      log("invalid size passed to Allocate");
+      n = 16;
+    }
 
 #if GC_EVERY_ALLOC
     Collect();  // force collection to find problems early
