@@ -876,12 +876,16 @@ class OilEvaluator(object):
         spid = term.token.span_id
 
     assert s is not None, term
-    # A string like '\x7f\xff' should be presented like
+    # / [ '\x7f\xff' ] / is better written as / [ \x7f \xff ] /
     if len(s) > 1:
       for c in s:
-        if ord(c) > 128:
-          e_die("Express these bytes as character literals to avoid "
-                "confusing them with encoded characters", span_id=spid)
+        if ord(c) >= 128:
+          e_die("Use char literals for bytes >= 128"
+                " (it's a set of bytes, not multibyte chars)", span_id=spid)
+
+    # TODO: get rid of ByteSet
+    # Use a list of CharCode, which can then be operated on uniformly To test
+    # for ^ - ] \
 
     return char_class_term.ByteSet(s, spid)
 
