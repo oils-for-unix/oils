@@ -842,3 +842,54 @@ c-d
 ab
 ## END
 
+#### Char class special: ^ - ] \
+
+# See demo/ere-char-class-literals.sh
+#
+# \ is special because of gawk
+
+
+# Note: single caret disalowed
+var caret = / ['^' 'x'] /
+echo caret=$caret
+
+var caret2 = / [ \x5e 'x'] /
+echo caret2=$caret2
+
+var caret3 = / [ \u{5e} 'x'] /
+echo caret3=$caret3
+
+var hyphen = / ['a' '-' 'b'] /
+echo hyphen=$hyphen
+
+var hyphen2 = / ['a' \x2d 'b' ] /
+echo hyphen2=$hyphen2
+
+var rbracket = / [ '[' ']' ] /
+echo rbracket=$rbracket
+
+var rbracket2 = / [ \x5b \x5d ] /
+echo rbracket2=$rbracket2
+
+var backslash = / [ 'x' \\ 'n' ] /
+echo backslash=$backslash
+
+var backslash2 = / [ 'x' \x5c 'n' ] /
+echo backslash2=$backslash2
+
+var backslash3 = / [ 'x' $'\\' 'n' ] /
+echo backslash3=$backslash3
+
+
+## STDOUT:
+caret=[x^]
+caret2=[x^]
+caret3=[x^]
+hyphen=[ab-]
+hyphen2=[ab-]
+rbracket=[][]
+rbracket2=[][]
+backslash=[\\xn]
+backslash2=[\\xn]
+backslash3=[\\xn]
+## END

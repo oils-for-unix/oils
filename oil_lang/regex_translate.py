@@ -5,25 +5,12 @@ regex_translate.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    char_class_term_e,
-    char_class_term_t,
-    char_class_term__ByteSet,
-    char_class_term__Range,
-    code_point,
-    posix_class,
-    perl_class,
+    char_class_term_e, char_class_term_t,
+    char_class_term__ByteSet, char_class_term__Range,
+    posix_class, perl_class, code_point,
 
-    re_e,
-    re__CharClass,
-    re__Primitive,
-    re__LiteralChars,
-    re__Seq,
-    re__Alt,
-    re__Repeat,
-    re__Group,
-    re_repeat_e,
-    re_repeat__Op,
-    re_repeat__Num,
+    re_e, re__CharClass, re__Primitive, re__LiteralChars, re__Seq, re__Alt,
+    re__Repeat, re__Group, re_repeat_e, re_repeat__Op, re_repeat__Num,
     re_repeat__Range,
 )
 from _devbuild.gen.id_kind_asdl import Id
@@ -93,14 +80,26 @@ def _CharClassTermToPosixEre(term, parts):
       ere_start = _CodePointToEre(term.start)
       ere_end = _CodePointToEre(term.end)
 
+      # TODO: Detect ^ - ] ?  I think we should disallow them
       parts.append('%s-%s' % (ere_start, ere_end))
 
     elif case(char_class_term_e.ByteSet):
       term = cast(char_class_term__ByteSet, UP_term)
+
+      # "abc" and $'\xff' evaluate to this
+      #
+      # \xff should evaluate to this too?
+
+      # TODO: Detect ^ - ]
       parts.append(term.bytes)
 
     elif case(char_class_term_e.CodePoint):
       term = cast(code_point, UP_term)
+      # \u{123} evaluates to this
+      # Also 'a' 'z' a z '0' '9' 0 9 !
+      # But those could be byte sets too?
+
+      # TODO: Detect ^ - ]
       parts.append(_CodePointToEre(term))
 
     elif case(char_class_term_e.PerlClass):
