@@ -1,11 +1,11 @@
 #!/usr/bin/env python2
 """
-word_compile.py
+osh/word_compile.py
 
-This is called the "compile" stage because it happens after parsing, but it
-doesn't depend on any values at runtime.
+This functions in this file happens after parsing, but don't depend on any
+values at runtime.
 """
-from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     Token, single_quoted, code_point, 
     word_part_e, word_part_t,
