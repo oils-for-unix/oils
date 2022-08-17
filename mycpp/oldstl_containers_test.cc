@@ -329,7 +329,7 @@ TEST test_str_split() {
   printf("------- Str::split -------\n");
 
   {
-    List<Str*>* split_result = s0->split(StrFromC(" "));
+    List<Str*> *split_result = s0->split(StrFromC(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 2);
     ASSERT(are_equal(split_result->index_(0), StrFromC("abc")));

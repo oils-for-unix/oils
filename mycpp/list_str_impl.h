@@ -120,6 +120,17 @@ int find_next_occurance_of(const char *haystack, int starting_index, int end_ind
   return result;
 }
 
+Str *NewStrFromHeapStr(Str *src, int new_len, int start_index = 0)
+{
+  StackRoots _roots({&src});
+
+  Str *result = AllocStr(new_len);
+  assert( (start_index+new_len) <= len(src));
+  memcpy(result->data_, src->data_+start_index, new_len);
+
+  return result;
+}
+
 List<Str*>* Str::split(Str* sep) {
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
@@ -147,12 +158,15 @@ List<Str*>* Str::split(Str* sep) {
     assert(new_pos <= end);
 
     if (new_pos == end) {
-      result->append(StrFromC(self->data_+pos, end - pos));  // rest of the string
+      Str *to_push = NewStrFromHeapStr(self, end-pos, pos);
+      result->append(to_push); //StrFromC(self->data_+pos, end - pos));  // rest of the string
       break;
     }
 
     int new_len = new_pos - pos;
-    result->append(StrFromC(self->data_+pos, new_len));
+    Str *to_push = NewStrFromHeapStr(self, new_len, pos);
+    result->append(to_push);
+
     pos = new_pos + 1;
     if (pos >= end) {  // separator was at end of string
       result->append(kEmptyString);
