@@ -440,18 +440,26 @@ var pat2 = /[ \u{7f} ]/;
 var pat3 = /[ \u{0007f} ]/;
 test "$pat2" = "$pat3" && echo 'equal'
 
+var range = / [ \u{70} - \u{7f} ] /
+if ($'\x70' ~ range) { echo yes } else { echo no }
+if ($'\x69' ~ range) { echo yes } else { echo no }
+
 ## STDOUT:
  5b 7f 5d 0a
 yes
 no
 equal
+yes
+no
 ## END
 
 #### ERE can't express higher Unicode escapes
 shopt -s oil:all
-var pat = /[ \u{ff} ]/;
+var pat2 = /[ \u{00} - \u{ff} ]/;
+= pat2
+var pat1 = /[ \u{ff} ]/;
 
-echo $pat | od -A n -t x1
+echo $pat1 | od -A n -t x1
 if ($'\x7f' ~ pat) { echo yes } else { echo no }
 if ($'\x7e' ~ pat) { echo yes } else { echo no }
 
@@ -476,46 +484,6 @@ write pat=$pat
 write @lines | egrep $pat 
 
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
-
-#### Matching ] and \ and ' and " in character classes
-shopt -s oil:all
-
-# BUG: need C strings in array literal
-var lines=%(
-  'backslash \'
-  'rbracket ]'
-  'lbracket ['
-  "sq '"
-  'dq "'
-)
-
-# Weird GNU quirk: ] has to come first!
-# []abc] works.  But [abc\]] does NOT work.  Stupid rule!
-
-var pat = / [ ']' \\ \' \" ] /
-write pat=$pat
-write @lines | egrep $pat 
-
-## STDOUT:
-pat=[]\\'"]
-backslash \
-rbracket ]
-sq '
-dq "
-## END
-
-#### Matching literal hyphen in character classes
-shopt -s oil:all
-
-var literal = '-'
-var pat = / [ 'a' $literal 'b' ${literal} "-" ] /
-write pat=$pat
-write 'c-d' 'ab' 'cd' | grep $pat
-## STDOUT:
-pat=[a\-b\-\-]
-c-d
-ab
-## END
 
 #### Repeated String Literal With Single Char
 shopt -s oil:all
@@ -758,3 +726,119 @@ dq
 sq
 char class
 ## END
+
+#### Operator chars in char classes (bash-like)
+
+pat='[-]'
+[[ '-' =~ $pat ]] && echo hyphen
+[[ '\' =~ $pat ]] && echo FAIL
+
+pat='[\]'
+[[ '\' =~ $pat ]] && echo backslash
+[[ '-' =~ $pat ]] && echo FAIL
+
+pat='[]]'
+[[ ']' =~ $pat ]] && echo 'right bracket'
+[[ '[' =~ $pat ]] && echo FAIL
+
+pat='[[]'
+[[ '[' =~ $pat ]] && echo 'left bracket'
+[[ ']' =~ $pat ]] && echo FAIL
+
+pat='[.]'
+[[ '.' =~ $pat ]] && echo period
+[[ '\' =~ $pat ]] && echo FAIL
+
+pat='[\^]'
+[[ '^' =~ $pat ]] && echo caret
+[[ '\' =~ $pat ]] && echo 'no way to have [^]'
+
+## STDOUT:
+hyphen
+backslash
+right bracket
+left bracket
+period
+caret
+no way to have [^]
+## END
+
+#### Operator chars in char classes (eggex)
+shopt --set oil:upgrade
+
+var pat = / ['-'] /
+#echo PAT=$pat
+if ('-' ~ pat) { echo hyphen }
+if ($'\\' ~ pat) { echo FAIL }
+
+var pat = / [ \\ ] /
+[[ '\' =~ $pat ]] && echo backslash
+[[ '-' =~ $pat ]] && echo FAIL
+
+var pat = / [ ']' ] /
+[[ ']' =~ $pat ]] && echo 'right bracket'
+[[ '[' =~ $pat ]] && echo FAIL
+
+var pat = / [ '[' ] /
+[[ '[' =~ $pat ]] && echo 'left bracket'
+[[ ']' =~ $pat ]] && echo FAIL
+
+var pat = / [ '.' ] /
+[[ '.' =~ $pat ]] && echo period
+[[ '\' =~ $pat ]] && echo FAIL
+
+var pat = / [ \\ '^' ] /
+[[ '^' =~ $pat ]] && echo caret
+[[ '\' =~ $pat ]] && echo 'no way to have [^]'
+
+
+## STDOUT:
+hyphen
+backslash
+right bracket
+left bracket
+period
+caret
+no way to have [^]
+## END
+
+#### Matching ] and \ and ' and " in character classes
+shopt -s oil:all
+
+# BUG: need C strings in array literal
+var lines=%(
+  'backslash \'
+  'rbracket ]'
+  'lbracket ['
+  "sq '"
+  'dq "'
+)
+
+# Weird GNU quirk: ] has to come first!
+# []abc] works.  But [abc\]] does NOT work.  Stupid rule!
+
+var pat = / [ ']' \\ \' \" ] /
+write pat=$pat
+write @lines | egrep $pat 
+
+## STDOUT:
+pat=[]\'"]
+backslash \
+rbracket ]
+sq '
+dq "
+## END
+
+#### Matching literal hyphen in character classes
+shopt -s oil:all
+
+var literal = '-'
+var pat = / [ 'a' 'b' $literal ] /
+write pat=$pat
+write 'c-d' 'ab' 'cd' | grep $pat
+## STDOUT:
+pat=[ab-]
+c-d
+ab
+## END
+

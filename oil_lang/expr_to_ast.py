@@ -1175,13 +1175,12 @@ class Transformer(object):
   #
 
   def _RangeChar(self, p_node):
-    # type: (PNode) -> str
-    """Evaluate a range endpoints.
-    - the 'a' in 'a'-'z'
-    - the \x00 in \x00-\x01
-    etc.
+    # type: (PNode) -> Token
+    """
+    An endpoint of a range (single char)
 
-    TODO: This function doesn't respect the LST invariant.
+    range_char: Expr_Name | Expr_DecInt | sq_string | char_literal
+                a-z         0-9           'a'-'z'     \x00-\xff
     """
     assert p_node.typ == grammar_nt.range_char, p_node
     children = p_node.children
@@ -1195,18 +1194,11 @@ class Transformer(object):
           p_die(RANGE_POINT_TOO_LONG, part=sq_part)
         if len(tokens[0].val) > 1:
           p_die(RANGE_POINT_TOO_LONG, part=sq_part)
-        s = tokens[0].val[0]
-        return s
+        return tokens[0]
 
       if typ == grammar_nt.char_literal:
-        raise AssertionError('TODO')
-        # TODO: This brings in a lot of dependencies, and this type checking
-        # errors.  We want to respect the LST invariant anyway.
-
-        #from osh import word_compile
-        #tok = children[0].children[0].tok
-        #s = word_compile.EvalCStringToken(tok.id, tok.val)
-        #return s
+        tok = children[0].children[0].tok
+        return tok
 
       raise NotImplementedError()
     else:
@@ -1216,7 +1208,7 @@ class Transformer(object):
         # For the a in a-z, 0 in 0-9
         if len(tok.val) != 1:
           p_die(RANGE_POINT_TOO_LONG, token=tok)
-        return tok.val[0]
+        return tok
 
       raise NotImplementedError()
 
@@ -1382,7 +1374,7 @@ class Transformer(object):
     if ISNONTERMINAL(typ):
       p_child = p_atom.children[0]
       if typ == grammar_nt.class_literal:
-        return re.ClassLiteral(False, self._ClassLiteral(p_child))
+        return re.CharClassLiteral(False, self._ClassLiteral(p_child))
 
       if typ == grammar_nt.braced_var_sub:
         return cast(braced_var_sub, p_child.children[1].tok)
@@ -1430,7 +1422,7 @@ class Transformer(object):
         if n == 2:
           typ = children[1].typ
           if ISNONTERMINAL(typ):
-            return re.ClassLiteral(True, self._ClassLiteral(children[1]))
+            return re.CharClassLiteral(True, self._ClassLiteral(children[1]))
           else:
             return self._NameInRegex(tok, children[1].tok)
         else:

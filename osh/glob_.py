@@ -89,18 +89,6 @@ def GlobEscape(s):
   return pyutil.BackslashEscape(s, GLOB_META_CHARS)
 
 
-def EreCharClassEscape(s):
-  # type: (str) -> str
-
-  # \ is escaping
-  # ^ would invert it at the front,
-  # - is range
-  #
-  # ] would close it -- but there is a weird posix rule where it has to be put
-  # FIRST.  Like []abc].
-  return pyutil.BackslashEscape(s, r'\^-')
-
-
 # Bug fix: add [] so [[:space:]] is not special, etc.
 ERE_META_CHARS = r'\?*+{}^$.()|[]'
 

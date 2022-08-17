@@ -18,10 +18,13 @@ from _devbuild.gen.syntax_asdl import (
     expr__Spread,
 
     re, re_e, re_t, re__Splice, re__Seq, re__Alt, re__Repeat, re__Group,
-    re__Capture, re__ClassLiteral,
+    re__Capture, re__CharClassLiteral,
 
-    class_literal_term, class_literal_term_e, class_literal_term_t,
+    class_literal_term_e, class_literal_term_t,
+    class_literal_term__Range,
     class_literal_term__CharLiteral,
+    char_class_term, char_class_term_t,
+    posix_class, perl_class,
 
     word_part_t, word_part__ExprSub, word_part__FuncCall, word_part__Splice,
 )
@@ -818,14 +821,37 @@ class OilEvaluator(object):
         raise NotImplementedError(node.__class__.__name__)
 
   def _EvalClassLiteralTerm(self, term):
-    # type: (class_literal_term_t) -> class_literal_term_t
+    # type: (class_literal_term_t) -> char_class_term_t
     UP_term = term
 
     s = None  # type: str
     spid = runtime.NO_SPID
 
     with tagswitch(term) as case:
-      if case(class_literal_term_e.SingleQuoted):
+
+      if case(class_literal_term_e.CharLiteral):
+        term = cast(class_literal_term__CharLiteral, UP_term)
+
+        # What about \0?
+        # At runtime, ERE should disallow it.  But we can also disallow it here.
+        return word_compile.EvalCharLiteralForRegex(term.tok)
+
+      elif case(class_literal_term_e.Range):
+        term = cast(class_literal_term__Range, UP_term)
+
+        cp_start = word_compile.EvalCharLiteralForRegex(term.start)
+        cp_end = word_compile.EvalCharLiteralForRegex(term.end)
+        return char_class_term.Range(cp_start, cp_end)
+
+      elif case(class_literal_term_e.PosixClass):
+        term = cast(posix_class, UP_term)
+        return term
+
+      elif case(class_literal_term_e.PerlClass):
+        term = cast(perl_class, UP_term)
+        return term
+
+      elif case(class_literal_term_e.SingleQuoted):
         term = cast(single_quoted, UP_term)
 
         s = word_compile.EvalSingleQuoted(term)
@@ -849,24 +875,15 @@ class OilEvaluator(object):
         s = self.word_ev.EvalSimpleVarSubToString(term.token)
         spid = term.token.span_id
 
-      elif case(class_literal_term_e.CharLiteral):
-        term = cast(class_literal_term__CharLiteral, UP_term)
+    assert s is not None, term
+    # A string like '\x7f\xff' should be presented like
+    if len(s) > 1:
+      for c in s:
+        if ord(c) > 128:
+          e_die("Express these bytes as character literals to avoid "
+                "confusing them with encoded characters", span_id=spid)
 
-        # What about \0?
-        # At runtime, ERE should disallow it.  But we can also disallow it here.
-        return word_compile.EvalCharLiteralForRegex(term.tok)
-
-    if s is not None:
-      # A string like '\x7f\xff' should be presented like
-      if len(s) > 1:
-        for c in s:
-          if ord(c) > 128:
-            e_die("Express these bytes as character literals to avoid "
-                  "confusing them with encoded characters", span_id=spid)
-
-      return class_literal_term.ByteSet(s, spid)
-    else:
-      return term
+    return char_class_term.ByteSet(s, spid)
 
   def _EvalRegex(self, node):
     # type: (re_t) -> re_t
@@ -906,11 +923,11 @@ class OilEvaluator(object):
         node = cast(re__Capture, UP_node)
         return re.Capture(self._EvalRegex(node.child), node.var_name)
 
-      elif case(re_e.ClassLiteral):
-        node = cast(re__ClassLiteral, UP_node)
+      elif case(re_e.CharClassLiteral):
+        node = cast(re__CharClassLiteral, UP_node)
 
         new_terms = [self._EvalClassLiteralTerm(t) for t in node.terms]
-        return re.ClassLiteral(node.negated, new_terms)
+        return re.CharClass(node.negated, new_terms)
 
       elif case(re_e.Speck):
         node = cast(speck, UP_node)

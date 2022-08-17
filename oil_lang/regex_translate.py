@@ -5,15 +5,16 @@ regex_translate.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    class_literal_term_e,
-    class_literal_term__Range,
-    class_literal_term__ByteSet,
-    class_literal_term__CodePoint,
-    class_literal_term__CharLiteral,
+    char_class_term_e,
+    char_class_term_t,
+    char_class_term__ByteSet,
+    char_class_term__Range,
+    code_point,
     posix_class,
     perl_class,
+
     re_e,
-    re__ClassLiteral,
+    re__CharClass,
     re__Primitive,
     re__LiteralChars,
     re__Seq,
@@ -28,12 +29,13 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.id_kind_asdl import Id
 
 from core.pyerror import log, e_die
+from mycpp.mylib import tagswitch
 from osh import glob_  # for ExtendedRegexEscape
 
 from typing import List, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from _devbuild.gen.syntax_asdl import class_literal_term_t, re_t
+    from _devbuild.gen.syntax_asdl import re_t
 
 _ = log
 
@@ -69,64 +71,61 @@ PERL_CLASS = {
 # problematic within character sets.  There's no way to disallow those in
 # general though.
 
-def _ClassLiteralToPosixEre(term, parts):
-  # type: (class_literal_term_t, List[str]) -> None
+def _CodePointToEre(term):
+  # type: (code_point) -> str
+  cp = term.i
+  if cp < 128:
+    return chr(cp)
+  else:
+    e_die("ERE can't express code point %d", cp, span_id=term.spid)
+
+
+def _CharClassTermToPosixEre(term, parts):
+  # type: (char_class_term_t, List[str]) -> None
 
   UP_term = term
   tag = term.tag_()
 
-  if tag == class_literal_term_e.Range:
-    term = cast(class_literal_term__Range, UP_term)
-    # \\ \^ \- can be used in ranges?
-    start = glob_.EreCharClassEscape(term.start)
-    end = glob_.EreCharClassEscape(term.end)
-    parts.append('%s-%s' % (start, end))
-    return
+  with tagswitch(term) as case:
+    if case(char_class_term_e.Range):
+      term = cast(char_class_term__Range, UP_term)
 
-  if tag == class_literal_term_e.ByteSet:
-    term = cast(class_literal_term__ByteSet, UP_term)
-    # This escaping is different than ExtendedRegexEscape.
-    parts.append(glob_.EreCharClassEscape(term.bytes))
-    return
+      ere_start = _CodePointToEre(term.start)
+      ere_end = _CodePointToEre(term.end)
 
-  if tag == class_literal_term_e.CodePoint:
-    term = cast(class_literal_term__CodePoint, UP_term)
-    code_point = term.i
-    if code_point < 128:
-      parts.append(chr(code_point))
+      parts.append('%s-%s' % (ere_start, ere_end))
+
+    elif case(char_class_term_e.ByteSet):
+      term = cast(char_class_term__ByteSet, UP_term)
+      parts.append(term.bytes)
+
+    elif case(char_class_term_e.CodePoint):
+      term = cast(code_point, UP_term)
+      parts.append(_CodePointToEre(term))
+
+    elif case(char_class_term_e.PerlClass):
+      term = cast(perl_class, UP_term)
+      n = term.name
+      chars = PERL_CLASS[term.name]  # looks like '[:digit:]'
+      if term.negated:
+        e_die("Perl classes can't be negated in ERE",
+              span_id=term.negated.span_id)
+      else:
+        pat = '%s' % chars
+      parts.append(pat)
+
+    elif case(char_class_term_e.PosixClass):
+      term = cast(posix_class, UP_term)
+      n = term.name  # looks like 'digit'
+      if term.negated:
+        e_die("POSIX classes can't be negated in ERE",
+              span_id=term.negated.span_id)
+      else:
+        pat = '[:%s:]' % n
+      parts.append(pat)
+
     else:
-      e_die("ERE can't express code point %d", code_point, span_id=term.spid)
-    return
-
-  if tag == class_literal_term_e.PerlClass:
-    term = cast(perl_class, UP_term)
-    n = term.name
-    chars = PERL_CLASS[term.name]  # looks like '[:digit:]'
-    if term.negated:
-      e_die("Perl classes can't be negated in ERE",
-            span_id=term.negated.span_id)
-    else:
-      pat = '%s' % chars
-    parts.append(pat)
-    return
-
-  if tag == class_literal_term_e.PosixClass:
-    term = cast(posix_class, UP_term)
-    n = term.name  # looks like 'digit'
-    if term.negated:
-      e_die("POSIX classes can't be negated in ERE",
-            span_id=term.negated.span_id)
-    else:
-      pat = '[:%s:]' % n
-    parts.append(pat)
-    return
-
-  if tag == class_literal_term_e.CharLiteral:
-    term = cast(class_literal_term__CharLiteral, UP_term)
-    parts.append(term.tok.val)
-    return
-
-  raise NotImplementedError(tag)
+      raise AssertionError(term)
 
 
 def AsPosixEre(node, parts):
@@ -249,13 +248,27 @@ def AsPosixEre(node, parts):
     parts.append(pat)
     return
 
-  if tag == re_e.ClassLiteral:
-    node = cast(re__ClassLiteral, UP_node)
+  if tag == re_e.CharClass:
+    node = cast(re__CharClass, UP_node)
     parts.append('[')
     if node.negated:
       parts.append('^')
+
+    # TODO: Help the user with some of these terrible corner cases
+
+    # [^]     is not valid -- no way to write this!
+    # / [ '^' '_' ] / shouldn't be translated with ^ first
+    # [ab-]   is different than [a-b]
+    # []] and [[] are problematic -- compare with [a]] and [a[]
+
+    # Possible rules:
+    # - Put literal caret at end, and assert that it isn't the only one
+    #   - or hyphen turns into \x45
+    # - ^ turns into \x94
+
     for term in node.terms:
-      _ClassLiteralToPosixEre(term, parts)
+      _CharClassTermToPosixEre(term, parts)
+
     parts.append(']')
     return
 

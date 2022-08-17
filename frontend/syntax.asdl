@@ -504,8 +504,8 @@ module syntax
     PosixClass %posix_class
   | PerlClass %perl_class
     -- [a-z]   ~[a-z]   TODO: Doesn't respect LST invariant
-  | Range(string start, string end)
 
+  | Range(Token start, Token end)
   | CharLiteral(Token tok)
 
   | SimpleVarSub %simple_var_sub
@@ -513,19 +513,29 @@ module syntax
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
+  code_point = (int i, int spid)  -- location where it's specified
+
+  -- evaluated version of class_literal_term (could be in runtime.asdl)
+  char_class_term =
+    PosixClass %posix_class
+  | PerlClass %perl_class
+
+  | Range(code_point start, code_point end)
+
     -- Each of ['abc' \\ \" \xff ] is evaluated to this
     -- If there is more than one byte and any of them is > 128, there is
     -- ambiguity about whether it's a single encoded character or multiple
     -- bytes.
   | ByteSet(string bytes, int spid)
     -- [ \u0100 \u00ff ] is evaluated to this
-  | CodePoint(int i, int spid)
+  | CodePoint %code_point
 
   -- NOTE: modifier is unused now, can represent L or P
   re_repeat =
     -- TODO: could use speck.  And add back Op(Token op, id modifier)
     Op(Token op)
   | Num(Token times)
+    -- dot{1,2}
   | Range(Token? lower, Token? upper)
   -- Haven't implemented the modifier, e.g. x{+ P}
   -- | Num(Token times, id modifier)
@@ -538,7 +548,10 @@ module syntax
   | Token %Token
   | PosixClass %posix_class
   | PerlClass %perl_class
-  | ClassLiteral(bool negated, class_literal_term* terms)
+    -- syntax [ $x \n ]
+  | CharClassLiteral(bool negated, class_literal_term* terms)
+    -- evaluated [ 'abc' \n ]
+  | CharClass(bool negated, char_class_term* terms)
 
     -- @D
   | Splice(Token name)

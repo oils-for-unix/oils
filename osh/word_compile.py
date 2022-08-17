@@ -7,7 +7,7 @@ doesn't depend on any values at runtime.
 """
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, class_literal_term, class_literal_term_t, single_quoted,
+    Token, single_quoted, code_point, 
     word_part_e, word_part_t,
 )
 from core.pyerror import log
@@ -19,7 +19,7 @@ from typing import List, Optional, cast
 
 
 def EvalCharLiteralForRegex(tok):
-  # type: (Token) -> class_literal_term_t
+  # type: (Token) -> code_point
   """For regex char classes.
 
   Similar logic as below.
@@ -27,28 +27,37 @@ def EvalCharLiteralForRegex(tok):
   id_ = tok.id
   value = tok.val
 
-  if id_ == Id.Char_OneChar:
-    c = value[1]
-    s = consts.LookupCharC(c)
-    return class_literal_term.ByteSet(s, tok.span_id)
+  if id_ == Id.Char_OneChar:  # \'
+    one_char_str = consts.LookupCharC(value[1])
+    return code_point(ord(one_char_str), tok.span_id)
 
   elif id_ == Id.Char_Hex:
     s = value[2:]
     i = int(s, 16)
-    return class_literal_term.ByteSet(chr(i), tok.span_id)
+    return code_point(i, tok.span_id)
 
   elif id_ == Id.Char_UBraced:
     s = value[3:-1]  # \u{123}
     i = int(s, 16)
-    return class_literal_term.CodePoint(i, tok.span_id)
+    return code_point(i, tok.span_id)
+
+  elif id_ == Id.Lit_Chars:
+    # token in single quoted string ['a'] is Id.Lit_Chars
+    assert len(tok.val) == 1, tok
+    return code_point(ord(tok.val[0]), tok.span_id)
 
   elif id_ == Id.Expr_Name:
-    # [b B] is the same as ['b' 'B']
+    # [a-z] is ['a'-'Z'], and [a z] is ['a' 'Z']
     assert len(tok.val) == 1, tok
-    return class_literal_term.ByteSet(tok.val[0], tok.span_id)
+    return code_point(ord(tok.val[0]), tok.span_id)
+
+  elif id_ == Id.Expr_DecInt:
+    # [0-9] is ['0'-'9'], and [0 9] is ['0' '9']
+    assert len(tok.val) == 1, tok
+    return code_point(ord(tok.val[0]), tok.span_id)
 
   else:
-    raise AssertionError(Id_str(id_))
+    raise AssertionError(tok)
 
 
 def EvalCStringToken(tok):

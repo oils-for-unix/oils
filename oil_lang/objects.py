@@ -7,6 +7,7 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 from __future__ import print_function
 
 from core.pyerror import log
+from mycpp import mylib
 from oil_lang import regex_translate
 
 from typing import TYPE_CHECKING, List, Optional
@@ -117,13 +118,14 @@ class Regex(object):
 
   def __repr__(self):
     # type: () -> str
-    # The default because x ~ obj accepts an ERE string?
-    # And because grep $/d+/ does.
-    #
-    # $ var x = /d+/
-    # $ echo $x
-    # [0-9]+
-    return self.AsPosixEre()
+
+    # for the = operator
+    # = / d+ /
+    f = mylib.BufWriter()
+    f.write(repr(self.AsPosixEre()))
+    f.write('\n')
+    self.regex.PrettyPrint(f=f)
+    return f.getvalue()
 
   def AsPosixEre(self):
     # type: () -> str
