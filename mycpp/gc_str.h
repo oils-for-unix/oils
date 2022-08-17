@@ -122,8 +122,6 @@ inline Str* OverAllocatedStr(int len) {
   return s;
 }
 
-#undef ALLOCATE
-
 inline Str* StrFromC(const char* data, int len) {
   Str* s = AllocStr(len);
   memcpy(s->data_, data, len);

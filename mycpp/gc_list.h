@@ -160,7 +160,24 @@ void list_append(List<T*>* self, T* item) {
 
 template <typename T>
 void List<T>::append(T item) {
-  list_append(this, item);
+  auto self = this;
+  StackRoots _roots({&self});
+
+  if (std::is_pointer<T>::value)
+  {
+    assert(!"invalid instantiation of template with pointer type.");
+  }
+
+  list_append(self, item);
 }
+
+/* template <typename T> */
+/* void List<T>::append(T *item) { */
+/*   auto self = this; */
+/*   StackRoots _roots({&self, &item}); */
+
+/*   list_append(self, item); */
+/* } */
+
 
 #endif // LIST_TYPES_H

@@ -168,6 +168,7 @@ Str* Str::slice(int begin) {
 }
 
 // Used by 'help' builtin and --help, neither of which translate yet.
+
 List<Str*>* Str::splitlines(bool keep) {
   assert(keep == true);
   NotImplemented();

@@ -187,12 +187,12 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  /* RUN_TEST(str_simple_test); */
-  /* RUN_TEST(str_growth_test); */
-  /* RUN_TEST(list_append_test); */
+  RUN_TEST(str_simple_test);
+  RUN_TEST(str_growth_test);
+  RUN_TEST(list_append_test);
   RUN_TEST(list_slice_append_test);
-  /* RUN_TEST(list_str_growth_test); */
-  /* RUN_TEST(dict_growth_test); */
+  RUN_TEST(list_str_growth_test);
+  RUN_TEST(dict_growth_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

@@ -1,4 +1,6 @@
 
+
+
 Str* Str::join(List<Str*>* items) {
   auto self = this;
   StackRoots _roots({&self, &items});
@@ -38,6 +40,7 @@ Str* Str::join(List<Str*>* items) {
   return CopyBufferIntoNewStr(result, length);
 }
 
+#if 0
 List<Str*>* Str::split(Str* sep) {
   auto self = this;
   List<Str*>* result = nullptr;
@@ -101,3 +104,62 @@ List<Str*>* Str::split(Str* sep) {
 
   return result;
 }
+#else
+
+int find_next_occurance_of(const char *haystack, int starting_index, int end_index, const char needle)
+{
+  int result = end_index;
+  for (int i = starting_index; i < end_index; ++i)
+  {
+    if (haystack[i] == needle)
+    {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
+List<Str*>* Str::split(Str* sep) {
+  assert(len(sep) == 1);  // we can only split one char
+  char sep_char = sep->data_[0];
+
+  auto self = this;
+  List<Str*> *result = nullptr;
+
+  StackRoots _roots({&self, &result});
+
+  if (len(self) == 0) {
+    // weird case consistent with Python: ''.split(':') == ['']
+    return NewList<Str*>({kEmptyString});
+  }
+
+  result = NewList<Str*>({});
+
+  int n = len(self);
+  int pos = 0;
+  int end = n;
+
+  while (true) {
+    // NOTE(Jesse): Perfect use case for cursor
+    int new_pos = find_next_occurance_of(self->data_, pos, end, sep_char);
+    assert(new_pos >= pos);
+    assert(new_pos <= end);
+
+    if (new_pos == end) {
+      result->append(StrFromC(self->data_+pos, end - pos));  // rest of the string
+      break;
+    }
+
+    int new_len = new_pos - pos;
+    result->append(StrFromC(self->data_+pos, new_len));
+    pos = new_pos + 1;
+    if (pos >= end) {  // separator was at end of string
+      result->append(kEmptyString);
+      break;
+    }
+  }
+
+  return result;
+}
+#endif

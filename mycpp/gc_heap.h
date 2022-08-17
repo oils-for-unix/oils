@@ -198,6 +198,8 @@ class Heap {
     // !!!!!!! THIS SHOULD BE FIXED ASAP !!!!!!!
     // !!!!!!! THIS SHOULD BE FIXED ASAP !!!!!!!
     //
+    assert(n >= 16);
+
     if (n < 16)
     {
       log("invalid size passed to Allocate");

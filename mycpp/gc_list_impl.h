@@ -3,170 +3,6 @@
 
 #include "mycpp/error_types.h"
 
-#if 0
-
- public:
-  // Note: constexpr doesn't work because the std::vector destructor is
-  // nontrivial
-  List() : Obj(Tag::FixedSize, kZeroMask, 0), v_() {
-    // Note: this seems to INCREASE the number of 'new' calls.  I guess because
-    // many 'spids' lists aren't used?
-    // v_.reserve(64);
-  }
-
-  // Used by list_repeat
-  List(T item, int n) : Obj(Tag::FixedSize, kZeroMask, 0), v_(n, item) {
-  }
-
-  List(std::initializer_list<T> init)
-      : Obj(Tag::FixedSize, kZeroMask, 0), v_() {
-    for (T item : init) {
-      v_.push_back(item);
-    }
-  }
-
-  // a[-1] = 42 becomes a->set(-1, 42);
-  void set(int index, T value) {
-    if (index < 0) {
-      index = v_.size() + index;
-    }
-    v_[index] = value;
-  }
-
-  // L[i]
-  T index_(int i) const {
-    if (i < 0) {
-      // User code doesn't result in mylist[-1], but Oil's own code does
-      int j = v_.size() + i;
-      return v_.at(j);
-    }
-    return v_.at(i);  // checked version
-  }
-
-  // L.index(i) -- Python method
-  int index(T value) const {
-    int len = v_.size();
-    for (int i = 0; i < len; i++) {
-      // TODO: this doesn't work for strings!
-      if (v_[i] == value) {
-        return i;
-      }
-    }
-    throw new ValueError();
-  }
-
-  // L[begin:]
-  List* slice(int begin) {
-    if (begin == 0) {
-      return this;
-    }
-    if (begin < 0) {
-      begin = v_.size() + begin;
-    }
-
-    List* result = new List();
-    int len = v_.size();
-    for (int i = begin; i < len; i++) {
-      result->v_.push_back(v_[i]);
-    }
-    return result;
-  }
-  // L[begin:end]
-  // TODO: Can this be optimized?
-  List* slice(int begin, int end) {
-    if (begin < 0) {
-      begin = v_.size() + begin;
-    }
-    if (end < 0) {
-      end = v_.size() + end;
-    }
-
-    List* result = new List();
-    for (int i = begin; i < end; i++) {
-      result->v_.push_back(v_[i]);
-    }
-    return result;
-  }
-
-  void append(T item) {
-#ifdef ALLOC_LOG
-    // we can post process this format to find large lists
-    // except when they're constants, but that's OK?
-    printf("%p %zu\n", this, v_.size());
-#endif
-
-    v_.push_back(item);
-  }
-
-  void extend(List<T>* items) {
-    // Note: C++ idioms would be v_.insert() or std::copy, but we're keeping it
-    // simple.
-    //
-    // We could optimize this for the small cases Oil has?  I doubt it's a
-    // bottleneck anywhere.
-    int len = items->v_.size();
-    for (int i = 0; i < len; ++i) {
-      v_.push_back(items->v_[i]);
-    }
-  }
-
-  // Reconsider?
-  // https://stackoverflow.com/questions/12600330/pop-back-return-value
-  T pop() {
-    assert(!v_.empty());
-    T result = v_.back();
-    v_.pop_back();
-    return result;
-  }
-
-  // Used in osh/word_parse.py to remove from front
-  // TODO: Don't accept arbitrary index?
-  T pop(int index) {
-    if (v_.size() == 0) {
-      // TODO(Jesse): Probably shouldn't crash if we try to pop a List with
-      // nothing on it
-      InvalidCodePath();
-    }
-
-    T result = v_.at(index);
-    v_.erase(v_.begin() + index);
-    return result;
-
-    /*
-    Implementation without std::vector
-    assert(index == 0);
-    for (int i = 1; i < v_.size(); ++i) {
-      v_[i-1] = v_[i];
-    }
-    v_.pop_back();
-    */
-  }
-
-  void clear() {
-    v_.clear();
-  }
-
-  void sort() {
-    mysort(&v_);
-  }
-
-  // in osh/string_ops.py
-  void reverse() {
-    int n = v_.size();
-    for (int i = 0; i < n / 2; ++i) {
-      // log("swapping %d and %d", i, n-i);
-      T tmp = v_[i];
-      int j = n - 1 - i;
-      v_[i] = v_[j];
-      v_[j] = tmp;
-    }
-  }
-
-  // private:
-  std::vector<T> v_;  // ''.join accesses this directly
-#endif
-
-
 bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2);
 bool are_equal(int, int);
 
@@ -174,29 +10,16 @@ bool are_equal(int, int);
 template <typename T>
 T List<T>::index_(int i) {
 
-#if 0
-  if (i < 0) {
-    i += len_; // NOTE(Jesse): the fuck?
-  }
-
-  if (i < len_) {
-    return slab_->items_[i];
-  }
-
-  log("i = %d, len_ = %d", i, len_);
-  InvalidCodePath();  // Out of bounds
-#else
-
-  // NOTE(Jesse): This is fucked, but less fucked than the 'gc' version
   if (i < 0) {
     int j = len_ + i;
     assert(j < len_);
+    assert(j >= 0);
     return slab_->items_[j];
   }
 
   assert(i < len_);
+  assert(i >= 0);
   return slab_->items_[i];
-#endif
 }
 
 
@@ -219,9 +42,6 @@ int List<T>::index(T value) {
 // StackRoots because it doesn't allocate.
 template <typename T>
 void List<T>::set(int i, T item) {
-#if 0
-  slab_->items_[i] = item;
-#endif
   if (i < 0) {
     i = len_ + i;
   }
@@ -230,35 +50,13 @@ void List<T>::set(int i, T item) {
 
 // L[begin:]
 template <typename T>
-List<T>* List<T>::slice(int begin) {// @todo_old_impl
-#if 0
-  auto self = this;
-  List<T>* result = nullptr;
-  StackRoots _roots({&self, &result});
-
-  if (begin == 0) {
-    return self;
-  }
-  if (begin < 0) {
-    begin = self->len_ + begin;
-  }
-
-  result = Alloc<List<T>>();  // TODO: initialize with size
-  for (int i = begin; i < self->len_; i++) {
-    result->append(self->slab_->items_[i]);
-  }
-#endif
+List<T>* List<T>::slice(int begin) {
 
   if (begin < 0) {
     begin = len_ + begin;
   }
 
-  // TODO(Jesse): Pretty much guaranteed these will fire
-  /* assert(begin < len_); */
-  /* assert(end < len_); */
-
-  /* assert(begin > -1); */
-  /* assert(end > -1); */
+  assert(begin >= 0);
 
   auto self = this;
   List<T> *result = nullptr;
@@ -273,27 +71,10 @@ List<T>* List<T>::slice(int begin) {// @todo_old_impl
   return result;
 }
 
-  // L[begin:end]
-  // TODO: Can this be optimized?
+// L[begin:end]
+// TODO: Can this be optimized?
 template <typename T>
 List<T>* List<T>::slice(int begin, int end) {
-#if 0
-  auto self = this;
-  List<T>* result = nullptr;
-  StackRoots _roots({&self, &result});
-
-  if (begin < 0) {
-    begin = self->len_ + begin;
-  }
-  if (end < 0) {
-    end = self->len_ + end;
-  }
-
-  result = Alloc<List<T>>();  // TODO: initialize with size
-  for (int i = begin; i < end; i++) {
-    result->append(self->slab_->items_[i]);
-  }
-#endif
 
   if (begin < 0) {
     begin = len_ + begin;
@@ -301,13 +82,10 @@ List<T>* List<T>::slice(int begin, int end) {
   if (end < 0) {
     end = len_ + end;
   }
-  //
-  // TODO(Jesse): Pretty much guaranteed these will fire
-  /* assert(begin < len_); */
-  /* assert(end < len_); */
 
-  /* assert(begin > -1); */
-  /* assert(end > -1); */
+  assert(end <= len_);
+  assert(begin >= 0);
+  assert(end >= 0);
 
   auto self = this;
   List<T> *result = nullptr;
@@ -346,6 +124,7 @@ T List<T>::pop(int i) {
 
   // Shift everything by one
   memmove(slab_->items_, slab_->items_ + 1, len_ * sizeof(T));
+
   /*
   for (int j = 0; j < len_; j++) {
     slab_->items_[j] = slab_->items_[j+1];
@@ -364,7 +143,7 @@ void List<T>::clear() {
 
   // Used in osh/string_ops.py
 template <typename T>
-void List<T>::reverse() {// @todo_old_impl
+void List<T>::reverse() {
   for (int i = 0; i < len_ / 2; ++i) {
     // log("swapping %d and %d", i, n-i);
     T tmp = slab_->items_[i];
@@ -376,7 +155,7 @@ void List<T>::reverse() {// @todo_old_impl
 
   // Ensure that there's space for a number of items
 template <typename T>
-void List<T>::reserve(int n) {// @todo_old_impl
+void List<T>::reserve(int n) {
   // log("reserve capacity = %d, n = %d", capacity_, n);
   auto self = this;
   StackRoots _roots({&self});
@@ -400,7 +179,7 @@ void List<T>::reserve(int n) {// @todo_old_impl
 
   // Extend this list with multiple elements.
 template <typename T>
-void List<T>::extend(List<T>* other) {// @todo_old_impl
+void List<T>::extend(List<T>* other) {
   auto self = this;
   StackRoots _roots({&self, &other});
 
@@ -413,76 +192,6 @@ void List<T>::extend(List<T>* other) {// @todo_old_impl
   }
   self->len_ = new_len;
 }
-
-#if 0
-// "Constructors" as free functions since we can't allocate within a
-// constructor.  Allocation may cause garbage collection, which interferes with
-// placement new.
-
-template <typename T>
-List<T>* NewList() {
-  return Alloc<List<T>>();
-}
-
-// Literal ['foo', 'bar']
-template <typename T>
-List<T>* NewList(std::initializer_list<T> init) {
-  auto self = Alloc<List<T>>();
-  StackRoots _roots({&self});
-
-  int n = init.size();
-  self->reserve(n);
-
-  int i = 0;
-  for (auto item : init) {
-    self->set(i, item);
-    ++i;
-  }
-  self->len_ = n;
-  return self;
-}
-
-// ['foo'] * 3
-template <typename T>
-List<T>* NewList(T item, int times) {
-  auto self = Alloc<List<T>>();
-  StackRoots _roots({&self});
-
-  self->reserve(times);
-  self->len_ = times;
-  for (int i = 0; i < times; ++i) {
-    self->set(i, item);
-  }
-  return self;
-}
-
-// e.g. List<int>
-template <typename T>
-void list_append(List<T>* self, T item) {
-  StackRoots _roots({&self});
-
-  self->reserve(self->len_ + 1);
-  self->set(self->len_, item);
-  ++self->len_;
-}
-
-// e.g. List<Str*>
-template <typename T>
-void list_append(List<T*>* self, T* item) {
-  StackRoots _roots({&self, &item});
-
-  self->reserve(self->len_ + 1);
-  self->set(self->len_, item);
-  ++self->len_;
-}
-
-template <typename T>
-void List<T>::append(T item) {
-  list_append(this, item);
-}
-
-#endif // 0
-
 
 #include <algorithm>
 
@@ -562,7 +271,7 @@ template <typename K, typename V>
 class Dict;
 
 template <typename V>
-List<Str*>* sorted(Dict<Str*, V>* d) {// @todo_old_impl
+List<Str*>* sorted(Dict<Str*, V>* d) {
   auto keys = d->keys();
   keys->sort();
   return keys;
