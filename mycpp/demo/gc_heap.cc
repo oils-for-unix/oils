@@ -368,14 +368,14 @@ void f() {
   log(s2->data_);
 
   // How do we make these roots?
-  auto mylist = new List<Str*>({s, s2});
+  auto mylist = NewList<Str*>({s, s2});
 }
 
 int main(int argc, char** argv) {
   if (argc == 2) {
     // how many allocations are there?  which allocators are used
     if (strcmp(argv[1], "allocator") == 0) {
-      auto mylist = new List<int>();  //{1, 2, 3});
+      auto mylist = NewList<int>();  //{1, 2, 3});
 
       // BAD: this causes another allocation via new().  Because we're using
       // std::vector.

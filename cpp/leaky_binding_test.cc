@@ -106,15 +106,15 @@ TEST util_test() {
   Str* escaped2 = pyutil::BackslashEscape(StrFromC(""), StrFromC(" '"));
   ASSERT(str_equals(escaped2, StrFromC("")));
 
-  Str* s = pyutil::ChArrayToString(new List<int>({65}));
+  Str* s = pyutil::ChArrayToString(NewList<int>({65}));
   ASSERT(str_equals(s, StrFromC("A")));
   ASSERT_EQ_FMT(1, len(s), "%d");
 
-  Str* s2 = pyutil::ChArrayToString(new List<int>({102, 111, 111}));
+  Str* s2 = pyutil::ChArrayToString(NewList<int>({102, 111, 111}));
   ASSERT(str_equals(s2, StrFromC("foo")));
   ASSERT_EQ_FMT(3, len(s2), "%d");
 
-  Str* s3 = pyutil::ChArrayToString(new List<int>({45, 206, 188, 45}));
+  Str* s3 = pyutil::ChArrayToString(NewList<int>({45, 206, 188, 45}));
   ASSERT(str_equals(s3, StrFromC("-\xce\xbc-")));  // mu char
   ASSERT_EQ_FMT(4, len(s3), "%d");
 
@@ -271,7 +271,7 @@ TEST pyos_read_test() {
     printf("2. ERROR %s", strerror(errno));
   }
 
-  List<Str*>* chunks = new List<Str*>();
+  List<Str*>* chunks = NewList<Str*>();
   Tuple2<int, int> tup = pyos::Read(fd, 4096, chunks);
   ASSERT_EQ_FMT(2, tup.at0(), "%d");  // error code
   ASSERT_EQ_FMT(0, tup.at1(), "%d");

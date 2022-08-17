@@ -5,6 +5,8 @@
   #include "mycpp/gc_containers.h"
 #endif
 
+#include "mycpp/comparator_impls.h"
+
 #include <ctype.h>  // isalpha(), isdigit()
 
 GLOBAL_STR(kEmptyString, "");
@@ -371,3 +373,4 @@ Str* Str::lstrip(Str* chars) {
 Str* Str::lstrip() {
   return StripAny(this, StripWhere::Left, kWhitespace);
 }
+

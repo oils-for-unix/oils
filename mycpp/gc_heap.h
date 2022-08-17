@@ -185,8 +185,11 @@ class Heap {
   }
 
   void* Allocate(int num_bytes) {
+    /* assert(num_bytes >= sizeof()); */
     int n = aligned(num_bytes);
     // log("n = %d, p = %p", n, p);
+
+    assert(n >= 16); // TODO(Jesse): Change to `sizeof(LayoutForwarded)`
 
 #if GC_EVERY_ALLOC
     Collect();  // force collection to find problems early

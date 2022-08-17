@@ -42,7 +42,7 @@ List<Str*>* glob(Str* pat) {
 
   // http://stackoverflow.com/questions/3512414/does-this-pylist-appendlist-py-buildvalue-leak
   size_t n = results.gl_pathc;
-  auto matches = new List<Str*>();
+  auto matches = NewList<Str*>();
 
   // Print array of results
   size_t i;
@@ -65,7 +65,7 @@ List<Str*>* glob(Str* pat) {
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
 List<Str*>* regex_match(Str* pattern, Str* str) {
-  List<Str*>* results = new List<Str*>();
+  List<Str*>* results = NewList<Str*>();
 
   regex_t pat;
   if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {

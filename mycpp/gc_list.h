@@ -47,6 +47,9 @@ class List : public Obj {
   // Implements L[i]
   T index_(int i);
 
+  // returns index of the element
+  int index(T element);
+
   // Implements L[i] = item
   // Note: Unlike Dict::set(), we don't need to specialize List::set() on T for
   // StackRoots because it doesn't allocate.

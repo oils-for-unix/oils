@@ -633,6 +633,7 @@
 6 _tmp/spec/cpp/builtin-special.tsv
 0 _tmp/spec/cpp/builtins.tsv
 1 _tmp/spec/cpp/builtins.tsv
+2 _tmp/spec/cpp/builtins.tsv
 3 _tmp/spec/cpp/builtins.tsv
 4 _tmp/spec/cpp/builtins.tsv
 5 _tmp/spec/cpp/builtins.tsv
@@ -1157,6 +1158,7 @@
 12 _tmp/spec/cpp/posix.tsv
 13 _tmp/spec/cpp/posix.tsv
 14 _tmp/spec/cpp/posix.tsv
+0 _tmp/spec/cpp/process-sub.tsv
 1 _tmp/spec/cpp/process-sub.tsv
 2 _tmp/spec/cpp/process-sub.tsv
 3 _tmp/spec/cpp/process-sub.tsv

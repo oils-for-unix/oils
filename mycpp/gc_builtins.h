@@ -69,17 +69,6 @@ bool str_equals0(const char* c_string, Str* s);
   #include "mycpp/tuple_types.h"
 
 //
-// Comparison and Sorting
-//
-
-template <typename V>
-List<Str*>* sorted(Dict<Str*, V>* d) {
-  auto keys = d->keys();
-  keys->sort();
-  return keys;
-}
-
-//
 // Free Standing Str, List, and Dict Functions
 //
 

@@ -9,6 +9,11 @@ Heap gHeap;
 #include <cstdio>
 #include <exception>  // std::exception
 
+#include "cpp/aligned.h"
+#include "mycpp/comparators.h"
+#include "mycpp/list_str_impl.h"
+
+#if 0
 List<Str*>* Str::split(Str* sep) {
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
@@ -50,7 +55,6 @@ List<Str*>* Str::split(Str* sep) {
   return result;
 }
 
-#if 0
 Str* Str::join(List<Str*>* items) {
   int length = 0;
   const std::vector<Str*>& v = items->v_;

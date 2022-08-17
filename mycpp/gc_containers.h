@@ -12,6 +12,7 @@
 
 #include "mycpp/gc_heap.h"
 #include "mycpp/gc_str.h"
+#include "mycpp/comparators.h"
 
 extern Str* kEmptyString;
 
@@ -94,16 +95,6 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
   return result;
 }
 
-inline bool keys_equal(int left, int right) {
-  return left == right;
-}
-
-bool str_equals(Str* left, Str* right);
-bool maybe_str_equals(Str* left, Str* right);
-
-inline bool keys_equal(Str* left, Str* right) {
-  return str_equals(left, right);
-}
 
 // Type that is layout-compatible with List to avoid invalid-offsetof warnings.
 // Unit tests assert that they have the same layout.

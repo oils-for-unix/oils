@@ -3,7 +3,6 @@
 // And with GC_STATS defined.
 
 #include "mycpp/gc_builtins.h"
-#include "mycpp/gc_containers.h"
 #include "vendor/greatest.h"
 
 // TODO:
@@ -97,7 +96,7 @@ TEST list_append_test() {
 }
 
 TEST list_slice_append_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
+  gHeap.Init(1 << 20);  // 1 KiB
 
   List<int>* L = nullptr;
   StackRoots _roots({&L});
@@ -108,11 +107,15 @@ TEST list_slice_append_test() {
   int n = 300;
   int total = 0;
   for (int i = 0; i < n; ++i) {
-    log("i = %d", i);
+    /* log("i = %d", i); */
     total += len(L);  // count it first
 
     L = L->slice(1);
+    assert(len(L) == 4);
+
     L->append(43);  // append to end
+    assert(len(L) == 5);
+
   }
   log("total = %d", total);
 
@@ -155,7 +158,7 @@ TEST list_str_growth_test() {
 }
 
 TEST dict_growth_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
+  gHeap.Init(1 << 20);  // 1 KiB
 
   Str* s = nullptr;
   Dict<Str*, int>* D = nullptr;
@@ -184,12 +187,12 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(str_simple_test);
-  RUN_TEST(str_growth_test);
-  RUN_TEST(list_append_test);
+  /* RUN_TEST(str_simple_test); */
+  /* RUN_TEST(str_growth_test); */
+  /* RUN_TEST(list_append_test); */
   RUN_TEST(list_slice_append_test);
-  RUN_TEST(list_str_growth_test);
-  RUN_TEST(dict_growth_test);
+  /* RUN_TEST(list_str_growth_test); */
+  /* RUN_TEST(dict_growth_test); */
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

@@ -80,7 +80,7 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
     case ActionType_c::SetToString: {
       List<Str*>* valid = nullptr;
       if (p->strs) {
-        valid = new List<Str*>();
+        valid = NewList<Str*>();
         _CreateStrList(p->strs, valid);
       }
       auto a = new args::SetToString(StrFromC(p->name), false, valid);
@@ -143,10 +143,10 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
 // TODO: Make a GLOBAL CACHE?  It could be shared between subinterpreters even?
 flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   auto out = new flag_spec::_FlagSpec();
-  out->arity0 = new List<Str*>();
+  out->arity0 = NewList<Str*>();
   out->arity1 = new Dict<Str*, args::_Action*>();
   out->actions_long = new Dict<Str*, args::_Action*>();
-  out->plus_flags = new List<Str*>();
+  out->plus_flags = NewList<Str*>();
   out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
   if (in->arity0) {
@@ -173,7 +173,7 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   auto out = new flag_spec::_FlagSpecAndMore();
   out->actions_short = new Dict<Str*, args::_Action*>();
   out->actions_long = new Dict<Str*, args::_Action*>();
-  out->plus_flags = new List<Str*>();
+  out->plus_flags = NewList<Str*>();
   out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
 #ifndef CPP_UNIT_TEST

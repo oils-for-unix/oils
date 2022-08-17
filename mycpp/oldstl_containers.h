@@ -28,7 +28,7 @@
 #endif
 
 #define GLOBAL_STR(name, val) Str* name = StrFromC(val, sizeof(val) - 1)
-#define GLOBAL_LIST(T, N, name, array) List<T>* name = new List<T>(array);
+#define GLOBAL_LIST(T, N, name, array) List<T>* name = NewList<T>(array);
 
 class Obj;
 
@@ -333,7 +333,7 @@ class DictIter {
   int i_;
 };
 
-#if 1
+#if 0
 // NOTE(Jesse): This version (the oldstl one) is slightly different than the gc'd
 // one.  The other one seems better ..?
 // @duplicated_to_oldstl_str_equals
@@ -345,6 +345,7 @@ inline bool str_equals(Str* left, Str* right) {
   }
 }
 #endif
+bool str_equals(Str* left, Str* right);
 
 // Specialized functions
 template <class V>
@@ -372,7 +373,7 @@ int find_by_key(const std::vector<std::pair<int, V>>& items, int key) {
 
 template <class V>
 List<Str*>* dict_keys(const std::vector<std::pair<Str*, V>>& items) {
-  auto result = new List<Str*>();
+  auto result = NewList<Str*>();
   int n = items.size();
   for (int i = 0; i < n; ++i) {
     Str* s = items[i].first;  // nullptr for deleted entries
@@ -385,7 +386,7 @@ List<Str*>* dict_keys(const std::vector<std::pair<Str*, V>>& items) {
 
 template <class V>
 List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
-  auto result = new List<V>();
+  auto result = NewList<V>();
   int n = items.size();
   for (int i = 0; i < n; ++i) {
     auto& pair = items[i];
@@ -534,21 +535,13 @@ enum class Kind;
 };
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
-inline bool are_equal(Str* left, Str* right);
+bool are_equal(Str* left, Str* right);
 
 #if 0
 inline bool are_equal(Str* left, Str* right) {
   return str_equals(left, right);
 }
-#endif
 
-inline bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
-  bool result = are_equal(t1->at0(), t2->at0());
-  result = result && (t1->at1() == t2->at1());
-  return result;
-}
-
-#if 0
 inline bool maybe_str_equals(Str* left, Str* right) {
   if (left && right) {
     return str_equals(left, right);
@@ -572,7 +565,7 @@ inline bool maybe_str_equals(Str* left, Str* right) {
 // list(L) copies the list
 template <typename T>
 List<T>* list(List<T>* other) {
-  auto result = new List<T>();
+  auto result = NewList<T>();
   for (int i = 0; i < len(other); ++i) {
     result->set(i, other->index_(i));
   }

@@ -154,8 +154,8 @@ TEST template_demo() {
   log("a.size() = %d", a.size());
 
   Array<List*> a2;
-  a2.append(new List{1, 2, 3});
-  a2.append(new List{4, 5, 6});
+  a2.append(NewList{1, 2, 3});
+  a2.append(NewList{4, 5, 6});
   log("a2.size() = %d", a2.size());
 
   PASS();
