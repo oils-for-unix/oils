@@ -7,7 +7,7 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import (
     char_class_term_e, char_class_term_t,
     char_class_term__ByteSet, char_class_term__Range,
-    posix_class, perl_class, code_point,
+    posix_class, perl_class, CharCode,
 
     re_e, re__CharClass, re__Primitive, re__LiteralChars, re__Seq, re__Alt,
     re__Repeat, re__Group, re_repeat_e, re_repeat__Op, re_repeat__Num,
@@ -58,8 +58,8 @@ PERL_CLASS = {
 # problematic within character sets.  There's no way to disallow those in
 # general though.
 
-def _CodePointToEre(term):
-  # type: (code_point) -> str
+def _CharCodeToEre(term):
+  # type: (CharCode) -> str
   cp = term.i
   if cp < 128:
     return chr(cp)
@@ -77,8 +77,8 @@ def _CharClassTermToPosixEre(term, parts):
     if case(char_class_term_e.Range):
       term = cast(char_class_term__Range, UP_term)
 
-      ere_start = _CodePointToEre(term.start)
-      ere_end = _CodePointToEre(term.end)
+      ere_start = _CharCodeToEre(term.start)
+      ere_end = _CharCodeToEre(term.end)
 
       # TODO: Detect ^ - ] ?  I think we should disallow them
       parts.append('%s-%s' % (ere_start, ere_end))
@@ -93,14 +93,14 @@ def _CharClassTermToPosixEre(term, parts):
       # TODO: Detect ^ - ]
       parts.append(term.bytes)
 
-    elif case(char_class_term_e.CodePoint):
-      term = cast(code_point, UP_term)
+    elif case(char_class_term_e.CharCode):
+      term = cast(CharCode, UP_term)
       # \u{123} evaluates to this
       # Also 'a' 'z' a z '0' '9' 0 9 !
       # But those could be byte sets too?
 
       # TODO: Detect ^ - ]
-      parts.append(_CodePointToEre(term))
+      parts.append(_CharCodeToEre(term))
 
     elif case(char_class_term_e.PerlClass):
       term = cast(perl_class, UP_term)

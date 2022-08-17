@@ -513,22 +513,25 @@ module syntax
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
-  code_point = (int i, int spid)  -- location where it's specified
+  -- Char Sets and Ranges both use Char Codes
+  -- with u_braced == true : \u{ff}
+  -- with u_braced == false: \xff \\ 'a' a '0' 0
+  -- ERE doesn't make a distinction, but compiling to Python/PCRE can use it
+  CharCode = (int i, bool u_braced, int spid)
 
   -- evaluated version of class_literal_term (could be in runtime.asdl)
   char_class_term =
     PosixClass %posix_class
   | PerlClass %perl_class
 
-  | Range(code_point start, code_point end)
+  | Range(CharCode start, CharCode end)
 
-    -- Each of ['abc' \\ \" \xff ] is evaluated to this
-    -- If there is more than one byte and any of them is > 128, there is
-    -- ambiguity about whether it's a single encoded character or multiple
-    -- bytes.
+    -- Byteset is for ['abc']
+    -- Can use [ \u{3bc} ] rather the encoded [ $'\xce\xbc' ]
   | ByteSet(string bytes, int spid)
-    -- [ \u0100 \u00ff ] is evaluated to this
-  | CodePoint %code_point
+
+    -- For [ \x00 \\ ]
+  | CharCode %CharCode
 
   -- NOTE: modifier is unused now, can represent L or P
   re_repeat =

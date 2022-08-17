@@ -7,19 +7,20 @@ values at runtime.
 """
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    Token, single_quoted, code_point, 
+    Token, single_quoted, CharCode, 
     word_part_e, word_part_t,
 )
 from core.pyerror import log
 from frontend import consts
 from osh import string_ops
+from mycpp.mylib import switch
 from qsn_ import qsn_native  # IsWhitespace
 
 from typing import List, Optional, cast
 
 
 def EvalCharLiteralForRegex(tok):
-  # type: (Token) -> code_point
+  # type: (Token) -> CharCode
   """For regex char classes.
 
   Similar logic as below.
@@ -27,37 +28,31 @@ def EvalCharLiteralForRegex(tok):
   id_ = tok.id
   value = tok.val
 
-  if id_ == Id.Char_OneChar:  # \'
-    one_char_str = consts.LookupCharC(value[1])
-    return code_point(ord(one_char_str), tok.span_id)
+  with switch(id_) as case:
+    if case(Id.Char_UBraced):
+      s = value[3:-1]  # \u{123}
+      i = int(s, 16)
+      return CharCode(i, True, tok.span_id)  # u_braced
 
-  elif id_ == Id.Char_Hex:
-    s = value[2:]
-    i = int(s, 16)
-    return code_point(i, tok.span_id)
+    elif case(Id.Char_OneChar):  # \'
+      one_char_str = consts.LookupCharC(value[1])
+      return CharCode(ord(one_char_str), False, tok.span_id)
 
-  elif id_ == Id.Char_UBraced:
-    s = value[3:-1]  # \u{123}
-    i = int(s, 16)
-    return code_point(i, tok.span_id)
+    elif case(Id.Char_Hex):
+      s = value[2:]
+      i = int(s, 16)
+      return CharCode(i, False, tok.span_id)
 
-  elif id_ == Id.Lit_Chars:
-    # token in single quoted string ['a'] is Id.Lit_Chars
-    assert len(tok.val) == 1, tok
-    return code_point(ord(tok.val[0]), tok.span_id)
+    elif case(Id.Lit_Chars, Id.Expr_Name, Id.Expr_DecInt):
+      # Id.Lit_Chars: Token in single quoted string ['a'] is Id.Lit_Chars
+      # Id.Expr_Name: [a-z] is ['a'-'Z'], and [a z] is ['a' 'Z']
+      # Id.Expr_DecInt: [0-9] is ['0'-'9'], and [0 9] is ['0' '9']
 
-  elif id_ == Id.Expr_Name:
-    # [a-z] is ['a'-'Z'], and [a z] is ['a' 'Z']
-    assert len(tok.val) == 1, tok
-    return code_point(ord(tok.val[0]), tok.span_id)
+      assert len(tok.val) == 1, tok
+      return CharCode(ord(tok.val[0]), False, tok.span_id)
 
-  elif id_ == Id.Expr_DecInt:
-    # [0-9] is ['0'-'9'], and [0 9] is ['0' '9']
-    assert len(tok.val) == 1, tok
-    return code_point(ord(tok.val[0]), tok.span_id)
-
-  else:
-    raise AssertionError(tok)
+    else:
+      raise AssertionError(tok)
 
 
 def EvalCStringToken(tok):
