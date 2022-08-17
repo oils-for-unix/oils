@@ -414,18 +414,19 @@ yes
 no
 ## END
 
-#### Match non-ASCII byte denoted using \xff (TODO: LANG=C)
+#### Match non-ASCII byte denoted using \xff
 shopt -s oil:all
 var pat = /[ \xff ]/;
 
+# Show what it translates to
 echo $pat | od -A n -t x1
-if ($'\xff' ~ pat) { echo yes } else { echo no }
-if ($'\xfe' ~ pat) { echo yes } else { echo no }
+
+# TODO: This might require LANG=C to work
+#if ($'\xff' ~ pat) { echo yes } else { echo no }
+#if ($'\xfe' ~ pat) { echo yes } else { echo no }
 
 ## STDOUT:
  5b ff 5d 0a
-yes
-no
 ## END
 
 #### ERE can express Unicode escapes that are in the ASCII range
@@ -822,7 +823,7 @@ write pat=$pat
 write @lines | egrep $pat 
 
 ## STDOUT:
-pat=[]\'"]
+pat=[]'"\\]
 backslash \
 rbracket ]
 sq '
@@ -848,6 +849,8 @@ ab
 #
 # \ is special because of gawk
 
+shopt -s oil:upgrade
+
 
 # Note: single caret disalowed
 var caret = / ['^' 'x'] /
@@ -859,17 +862,50 @@ echo caret2=$caret2
 var caret3 = / [ \u{5e} 'x'] /
 echo caret3=$caret3
 
+if ('x' ~ caret3) {
+  echo 'match x'
+}
+if ('^' ~ caret3) {
+  echo 'match ^'
+}
+
+echo ---
+
 var hyphen = / ['a' '-' 'b'] /
 echo hyphen=$hyphen
 
 var hyphen2 = / ['a' \x2d 'b' ] /
 echo hyphen2=$hyphen2
 
+if ('-' ~ hyphen2) {
+  echo 'match -'
+}
+
+if ('a' ~ hyphen2) {
+  echo 'match a'
+}
+
+if ('c' ~ hyphen2) {
+  echo 'match c'
+}
+
+echo ---
+
 var rbracket = / [ '[' ']' ] /
 echo rbracket=$rbracket
 
 var rbracket2 = / [ \x5b \x5d ] /
 echo rbracket2=$rbracket2
+
+if ('[' ~ rbracket2) {
+  echo 'match ['
+}
+
+if (']' ~ rbracket2) {
+  echo 'match ]'
+}
+
+echo ---
 
 var backslash = / [ 'x' \\ 'n' ] /
 echo backslash=$backslash
@@ -880,16 +916,45 @@ echo backslash2=$backslash2
 var backslash3 = / [ 'x' $'\\' 'n' ] /
 echo backslash3=$backslash3
 
+if ('x' ~ backslash3) {
+  echo 'match x'
+}
+
+if ('n' ~ backslash3) {
+  echo 'match n'
+}
+
+if ($'\\' ~ backslash3) {
+  echo 'match backslash'
+}
+
+if ($'\n' ~ backslash3) {
+  echo 'match nnewline'
+}
+
 
 ## STDOUT:
 caret=[x^]
 caret2=[x^]
 caret3=[x^]
+match x
+match ^
+---
 hyphen=[ab-]
 hyphen2=[ab-]
+match -
+match a
+---
 rbracket=[][]
 rbracket2=[][]
-backslash=[\\xn]
-backslash2=[\\xn]
-backslash3=[\\xn]
+match [
+match ]
+---
+backslash=[xn\\]
+backslash2=[xn\\]
+backslash3=[xn\\]
+match x
+match n
+match backslash
 ## END
+

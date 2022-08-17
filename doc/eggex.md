@@ -392,44 +392,53 @@ insert constructs that change the meaning of the pattern.
 group when translating to ERE.  This is for convenience / familiarity.  Prefer
 `<'foo'>+`.)
 
-### Unicode Char Literals Can't Be Used In Char Class Literals
+### Unicode Char Literals Limited in Range
 
-No:
+ERE can't represent this set of 1 character reliably:
 
-    # ERE can't represent this, and 2 byte utf-8 encoding could be confused
-    with 2 bytes.
-    / [ \u0100 ] /
+    / [ \u{0100} ] /      # This char is 2 bytes encoded in UTF-8
 
-Yes:
+These sets are accepted:
 
-    # This is accepted -- it's clear it matches one of two bytes.
-    / [ \x61 \xFF ] /
+    / [ \u{1} \u{2} ] /   # set of 2 chars
+    / [ \x01 \x02 ] ] /   # set of 2 bytes
 
-### ] is Confusing in Char Class Literals
+They happen to be identical when translated to ERE, but may not be when
+translated to PCRE.
 
-ERE wants it like this:
+### Don't Put non-ASCII in String Sets
 
-    []abc]
+This is a sequence of characters:
 
-These don't work:
+    / $'\xfe\xff' /
 
-    [abc\]]
-    [abc]]
+This is a set of characters that is **disallowed**:
 
-So in Oil you have to write it like this:
+    / [ $'\xfe\xff' ] /  # set or sequence?  It's confusing
 
-Yes:
+Better to write it this way:
 
-    / [ ']' 'abc'] /
+    / [ \xfe \xff ] /  # set of 2 chars
 
-No:
+### Char Class Literals: `^ - ] \`
 
-    / [ 'abc' ']' ] /
-    / [ 'abc]' ] /
+The literal characters `^ - ] \` are problematic because they can be confused
+with operators.
 
-Since we do a dumb syntactic translation, we can't detect whether it's on the
-front or back.  You have to put it in the right place.
+- `^` means negation
+- `-` means range
+- `]` closes the character class
+- `\` is usually literal, but GNU gawk has an extension to make it an escaping
+  operator
 
+The Eggex-to-ERE translator is smart enough to handle cases like:
+
+    var pat = / ['^' 'x'] / 
+    # translated to [x^], not [^x] for correctness
+
+However, cases like this are a fatal error at runtime:
+
+    var pat = / ['a'-'^'] / 
 
 ## Critiques
 

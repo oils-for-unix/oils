@@ -25,6 +25,7 @@ from _devbuild.gen.syntax_asdl import (
     class_literal_term__CharLiteral,
     char_class_term, char_class_term_t,
     posix_class, perl_class,
+    CharCode,
 
     word_part_t, word_part__ExprSub, word_part__FuncCall, word_part__Splice,
 )
@@ -820,8 +821,8 @@ class OilEvaluator(object):
       else:
         raise NotImplementedError(node.__class__.__name__)
 
-  def _EvalClassLiteralTerm(self, term):
-    # type: (class_literal_term_t) -> char_class_term_t
+  def _EvalClassLiteralTerm(self, term, out):
+    # type: (class_literal_term_t, List[char_class_term_t]) -> None
     UP_term = term
 
     s = None  # type: str
@@ -834,22 +835,26 @@ class OilEvaluator(object):
 
         # What about \0?
         # At runtime, ERE should disallow it.  But we can also disallow it here.
-        return word_compile.EvalCharLiteralForRegex(term.tok)
+        out.append(word_compile.EvalCharLiteralForRegex(term.tok))
+        return
 
       elif case(class_literal_term_e.Range):
         term = cast(class_literal_term__Range, UP_term)
 
         cp_start = word_compile.EvalCharLiteralForRegex(term.start)
         cp_end = word_compile.EvalCharLiteralForRegex(term.end)
-        return char_class_term.Range(cp_start, cp_end)
+        out.append(char_class_term.Range(cp_start, cp_end))
+        return
 
       elif case(class_literal_term_e.PosixClass):
         term = cast(posix_class, UP_term)
-        return term
+        out.append(term)
+        return
 
       elif case(class_literal_term_e.PerlClass):
         term = cast(perl_class, UP_term)
-        return term
+        out.append(term)
+        return
 
       elif case(class_literal_term_e.SingleQuoted):
         term = cast(single_quoted, UP_term)
@@ -876,18 +881,14 @@ class OilEvaluator(object):
         spid = term.token.span_id
 
     assert s is not None, term
-    # / [ '\x7f\xff' ] / is better written as / [ \x7f \xff ] /
-    if len(s) > 1:
-      for c in s:
-        if ord(c) >= 128:
-          e_die("Use char literals for bytes >= 128"
-                " (it's a set of bytes, not multibyte chars)", span_id=spid)
-
-    # TODO: get rid of ByteSet
-    # Use a list of CharCode, which can then be operated on uniformly To test
-    # for ^ - ] \
-
-    return char_class_term.ByteSet(s, spid)
+    for ch in s:
+      char_int = ord(ch)
+      if char_int >= 128:
+        # / [ '\x7f\xff' ] / is better written as / [ \x7f \xff ] /
+        e_die("Use unquoted char literal for byte %d, which is >= 128"
+              " (avoid confusing a set of bytes with a sequence)", char_int,
+              span_id=spid)
+      out.append(CharCode(char_int, False, spid))
 
   def _EvalRegex(self, node):
     # type: (re_t) -> re_t
@@ -930,7 +931,11 @@ class OilEvaluator(object):
       elif case(re_e.CharClassLiteral):
         node = cast(re__CharClassLiteral, UP_node)
 
-        new_terms = [self._EvalClassLiteralTerm(t) for t in node.terms]
+        new_terms = []  # type: List[char_class_term_t]
+        for t in node.terms:
+          # can get multiple char_class_term.CharCode for a
+          # class_literal_term_t
+          self._EvalClassLiteralTerm(t, new_terms)
         return re.CharClass(node.negated, new_terms)
 
       elif case(re_e.Speck):

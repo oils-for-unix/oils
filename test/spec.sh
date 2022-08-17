@@ -1017,7 +1017,7 @@ oil-slice-range() {
 }
 
 oil-regex() {
-  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
     char_class_term_e, char_class_term_t,
-    char_class_term__ByteSet, char_class_term__Range,
+    char_class_term__Range,
     posix_class, perl_class, CharCode,
 
     re_e, re__CharClass, re__Primitive, re__LiteralChars, re__Seq, re__Alt,
@@ -58,17 +58,51 @@ PERL_CLASS = {
 # problematic within character sets.  There's no way to disallow those in
 # general though.
 
-def _CharCodeToEre(term):
-  # type: (CharCode) -> str
-  cp = term.i
-  if cp < 128:
-    return chr(cp)
+CH_RBRACKET = 0x5d
+CH_BACKSLASH = 0x5c
+CH_CARET = 0x5e
+CH_HYPHEN = 0x2d
+
+FLAG_RBRACKET  = 0b0001
+FLAG_BACKSLASH = 0b0010
+FLAG_CARET     = 0b0100
+FLAG_HYPHEN    = 0b1000
+
+def _CharCodeToEre(term, parts, special_char_flags):
+  # type: (CharCode, List[str], List[int]) -> None
+  """
+  special_char_flags: list of single int that is mutated
+  """
+
+  char_int = term.i
+  if char_int >= 128 and term.u_braced:
+    # \u{ff} can't be represented in ERE because we don't know the encoding
+    # \xff can be represented
+    e_die("ERE can't express char code %d", char_int, span_id=term.spid)
+
+  # note: mycpp doesn't handle
+  # special_char_flags[0] |= FLAG_HYPHEN
+  mask = special_char_flags[0]
+
+  if char_int == CH_HYPHEN:
+    mask |= FLAG_HYPHEN
+  elif char_int == CH_CARET:
+    mask |= FLAG_CARET
+  elif char_int == CH_RBRACKET:
+    mask |= FLAG_RBRACKET
+  elif char_int == CH_BACKSLASH:
+    mask |= FLAG_BACKSLASH
   else:
-    e_die("ERE can't express code point %d", cp, span_id=term.spid)
+    parts.append(chr(char_int))
+
+  special_char_flags[0] = mask
 
 
-def _CharClassTermToPosixEre(term, parts):
-  # type: (char_class_term_t, List[str]) -> None
+def _CharClassTermToEre(term, parts, special_char_flags):
+  # type: (char_class_term_t, List[str], List[int]) -> None
+  """
+  special_char_flags: list of single int that is mutated
+  """
 
   UP_term = term
   tag = term.tag_()
@@ -77,30 +111,25 @@ def _CharClassTermToPosixEre(term, parts):
     if case(char_class_term_e.Range):
       term = cast(char_class_term__Range, UP_term)
 
-      ere_start = _CharCodeToEre(term.start)
-      ere_end = _CharCodeToEre(term.end)
+      # Create our own flags
+      range_no_special = [0]
 
-      # TODO: Detect ^ - ] ?  I think we should disallow them
-      parts.append('%s-%s' % (ere_start, ere_end))
+      _CharCodeToEre(term.start, parts, range_no_special)
+      if range_no_special[0] !=0:
+        e_die("Can't use char %d as start of range in ERE syntax", term.start.i,
+              span_id=term.start.spid)
 
-    elif case(char_class_term_e.ByteSet):
-      term = cast(char_class_term__ByteSet, UP_term)
+      parts.append('-')  # a-b
 
-      # "abc" and $'\xff' evaluate to this
-      #
-      # \xff should evaluate to this too?
-
-      # TODO: Detect ^ - ]
-      parts.append(term.bytes)
+      _CharCodeToEre(term.end, parts, range_no_special)
+      if range_no_special[0] != 0:
+        e_die("Can't use char %d as end of range in ERE syntax", term.end.i,
+              span_id=term.end.spid)
 
     elif case(char_class_term_e.CharCode):
       term = cast(CharCode, UP_term)
-      # \u{123} evaluates to this
-      # Also 'a' 'z' a z '0' '9' 0 9 !
-      # But those could be byte sets too?
 
-      # TODO: Detect ^ - ]
-      parts.append(_CharCodeToEre(term))
+      _CharCodeToEre(term, parts, special_char_flags)
 
     elif case(char_class_term_e.PerlClass):
       term = cast(perl_class, UP_term)
@@ -249,26 +278,41 @@ def AsPosixEre(node, parts):
 
   if tag == re_e.CharClass:
     node = cast(re__CharClass, UP_node)
+
+    # HYPHEN CARET RBRACKET BACKSLASH
+    special_char_flags = [0]
+    non_special_parts = []  # type: List[str]
+
+    for term in node.terms:
+      _CharClassTermToEre(term, non_special_parts, special_char_flags)
+
     parts.append('[')
     if node.negated:
       parts.append('^')
 
-    # TODO: Help the user with some of these terrible corner cases
+    # Help the user with some of terrible corner cases
 
-    # [^]     is not valid -- no way to write this!
-    # / [ '^' '_' ] / shouldn't be translated with ^ first
-    # [ab-]   is different than [a-b]
-    # []] and [[] are problematic -- compare with [a]] and [a[]
+    # - move literal - to end        [ab-] not [a-b]
+    # - move literal ^ to end        [x^-] not [^x-]
+    # - move literal ] to beginning: []x] not [x]]
+    # - double up \\ because of Gawk extension [\\]
 
-    # Possible rules:
-    # - Put literal caret at end, and assert that it isn't the only one
-    #   - or hyphen turns into \x45
-    # - ^ turns into \x94
+    if special_char_flags[0] & FLAG_RBRACKET:
+      parts.append(']')
 
-    for term in node.terms:
-      _CharClassTermToPosixEre(term, parts)
+    parts.extend(non_special_parts)
+
+    if special_char_flags[0] & FLAG_BACKSLASH:
+      parts.append('\\\\')  # TWO backslashes
+
+    if special_char_flags[0] & FLAG_CARET:
+      parts.append('^')
+
+    if special_char_flags[0] & FLAG_HYPHEN:
+      parts.append('-')
 
     parts.append(']')
     return
 
   raise NotImplementedError(tag)
+

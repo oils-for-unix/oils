@@ -526,10 +526,6 @@ module syntax
 
   | Range(CharCode start, CharCode end)
 
-    -- Byteset is for ['abc']
-    -- Can use [ \u{3bc} ] rather the encoded [ $'\xce\xbc' ]
-  | ByteSet(string bytes, int spid)
-
     -- For [ \x00 \\ ]
   | CharCode %CharCode
 
