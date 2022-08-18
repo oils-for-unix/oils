@@ -2,6 +2,8 @@
 
 #include <sys/mman.h>  // mprotect()
 
+#include "mycpp/error_types.h"
+#include "mycpp/comparators.h"
 #include "mycpp/gc_containers.h"
 
 Heap gHeap;
@@ -115,6 +117,7 @@ inline Obj* ObjHeader(Obj* obj) {
 }
 
 void Heap::Collect() {
+
 #if GC_STATS
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
@@ -240,33 +243,9 @@ void Heap::Collect() {
 #if GC_VERBOSE
   Report();
 #endif
+
 }
 
-bool str_equals(Str* left, Str* right) {
-  // Fast path for identical strings.  String deduplication during GC could
-  // make this more likely.  String interning could guarantee it, allowing us
-  // to remove memcmp().
-  if (left == right) {
-    return true;
-  }
-  // obj_len_ equal implies string lengths are equal
-  if (left->obj_len_ == right->obj_len_) {
-    return memcmp(left->data_, right->data_, len(left)) == 0;
-  }
-  return false;
-}
-
-bool maybe_str_equals(Str* left, Str* right) {
-  if (left && right) {
-    return str_equals(left, right);
-  }
-
-  if (!left && !right) {
-    return true;  // None == None
-  }
-
-  return false;  // one is None and one is a Str*
-}
 
 #if GC_STATS
 void ShowFixedChildren(Obj* obj) {

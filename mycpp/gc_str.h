@@ -122,8 +122,6 @@ inline Str* OverAllocatedStr(int len) {
   return s;
 }
 
-#undef ALLOCATE
-
 inline Str* StrFromC(const char* data, int len) {
   Str* s = AllocStr(len);
   memcpy(s->data_, data, len);
@@ -179,5 +177,7 @@ class StrIter {
 
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
+
+bool maybe_str_equals(Str* left, Str* right);
 
 #endif  // STR_TYPES_H

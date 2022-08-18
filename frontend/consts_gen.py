@@ -347,7 +347,7 @@ int NO_INDEX = 0;  // duplicated from frontend/consts.py
       for name in LIST_INT:
         val = getattr(consts, name)
         val_str = ', '.join(str(i) for i in val)
-        out('List<int>* %s = new List<int>({%s});', name, val_str)
+        out('List<int>* %s = NewList<int>({%s});', name, val_str)
 
       out("""\
 

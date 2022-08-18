@@ -329,7 +329,7 @@ TEST test_str_split() {
   printf("------- Str::split -------\n");
 
   {
-    List<Str*>* split_result = s0->split(StrFromC(" "));
+    List<Str*> *split_result = s0->split(StrFromC(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 2);
     ASSERT(are_equal(split_result->index_(0), StrFromC("abc")));
@@ -432,11 +432,11 @@ TEST test_str_join() {
   PASS();
 }
 
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
-
   RUN_TEST(test_sizeof);
 
   RUN_TEST(test_list_funcs);
@@ -447,6 +447,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_tuple);
 
   RUN_TEST(test_str_split);
+
   RUN_TEST(test_str_join);
 
   GREATEST_MAIN_END();

@@ -67,57 +67,7 @@ bool str_equals0(const char* c_string, Str* s);
   #include "mycpp/gc_containers.h"
   #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
   #include "mycpp/tuple_types.h"
-
-//
-// Comparison and Sorting
-//
-
-inline int int_cmp(int a, int b) {
-  if (a == b) {
-    return 0;
-  }
-  return a < b ? -1 : 1;
-}
-
-// Used by [[ a > b ]] and so forth
-inline int str_cmp(Str* a, Str* b) {
-  int len_a = len(a);
-  int len_b = len(b);
-
-  int min = std::min(len_a, len_b);
-  if (min == 0) {
-    return int_cmp(len_a, len_b);
-  }
-  int comp = memcmp(a->data_, b->data_, min);
-  if (comp == 0) {
-    return int_cmp(len_a, len_b);  // tiebreaker
-  }
-  return comp;
-}
-
-inline bool _cmp(Str* a, Str* b) {
-  return str_cmp(a, b) < 0;
-}
-
-// TODO(Jesse): What does the following comment mean?  How does including
-// <algorithm> bloat types?  gc_heap.h already includes a ton of C++ headers so
-// I don't know how not including algorithm is a win.  Maybe this comment is
-// old..?
-//
-// This is a METHOD definition.  It's in gc_builtins.h so that gc_heap.h doesn't
-// need to #include <algorithm>.  I think that would bloat all the ASDL types.
-//
-template <typename T>
-void List<T>::sort() {
-  std::sort(slab_->items_, slab_->items_ + len_, _cmp);
-}
-
-template <typename V>
-List<Str*>* sorted(Dict<Str*, V>* d) {
-  auto keys = d->keys();
-  keys->sort();
-  return keys;
-}
+  #include "mycpp/gc_list_iter.h"
 
 //
 // Free Standing Str, List, and Dict Functions
@@ -128,93 +78,10 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
-// ints, floats, enums like Kind
-// e.g. 1 in [1, 2, 3]
-template <typename T>
-inline bool list_contains(List<T>* haystack, T needle) {
-  // StackRoots _roots({&haystack});  // doesn't allocate
-
-  int n = len(haystack);
-  for (int i = 0; i < n; ++i) {
-    if (haystack->index_(i) == needle) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// e.g. 'a' in ['a', 'b', 'c']
-inline bool list_contains(List<Str*>* haystack, Str* needle) {
-  // StackRoots _roots({&haystack, &needle});  // doesn't allocate
-
-  int n = len(haystack);
-  for (int i = 0; i < n; ++i) {
-    if (str_equals(haystack->index_(i), needle)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// TODO: mycpp can just generate the constructor instead?
-// e.g. [None] * 3
-template <typename T>
-List<T>* list_repeat(T item, int times) {
-  return NewList<T>(item, times);
-}
-
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return haystack->position_of_key(needle) != -1;
 }
-
-template <class T>
-class ListIter {
- public:
-  explicit ListIter(List<T>* L) : L_(L), i_(0) {
-    // We need this because ListIter is directly on the stack, and L_ could be
-    // moved during iteration.
-    gHeap.PushRoot(reinterpret_cast<Obj**>(&L_));
-  }
-  ~ListIter() {
-    gHeap.PopRoot();
-  }
-  void Next() {
-    i_++;
-  }
-  bool Done() {
-    // "unsigned size_t was a mistake"
-    return i_ >= static_cast<int>(L_->len_);
-  }
-  T Value() {
-    return L_->slab_->items_[i_];
-  }
-
- private:
-  List<T>* L_;
-  int i_;
-};
-
-// TODO: Does using pointers rather than indices make this more efficient?
-template <class T>
-class ReverseListIter {
- public:
-  explicit ReverseListIter(List<T>* L) : L_(L), i_(L_->len_ - 1) {
-  }
-  void Next() {
-    i_--;
-  }
-  bool Done() {
-    return i_ < 0;
-  }
-  T Value() {
-    return L_->slab_->items_[i_];
-  }
-
- private:
-  List<T>* L_;
-  int i_;
-};
 
 // TODO:
 // - Look at entry_ to see if an item is deleted (or is a tombstone once we

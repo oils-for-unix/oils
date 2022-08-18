@@ -4,7 +4,6 @@
 #define GC_MYLIB_H
 
 #include "mycpp/gc_builtins.h"  // Tuple2
-#include "mycpp/gc_containers.h"
 
 namespace mylib {
 

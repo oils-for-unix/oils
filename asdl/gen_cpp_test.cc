@@ -39,6 +39,7 @@ void PrintTag(arith_expr_t* a) {
   log("");
 }
 
+#if 1
 TEST misc_test() {
   auto c = new arith_expr__Const(42);
   log("sizeof *c = %d", sizeof *c);  // 16 bytes
@@ -59,7 +60,7 @@ TEST misc_test() {
 
   auto v1 = new arith_expr__Var(StrFromC("v1"));
   auto v2 = new arith_expr__Var(StrFromC("v2"));
-  auto args = new List<arith_expr_t*>{v1, v2};
+  auto args = NewList<arith_expr_t*>({v1, v2});
 
   auto f = new arith_expr__FuncCall(StrFromC("f"), args);
   log("f->name = %s", f->name->data_);
@@ -88,6 +89,7 @@ TEST misc_test() {
 
   PASS();
 }
+#endif
 
 TEST pretty_print_test() {
   // typed_demo.asdl
@@ -154,7 +156,7 @@ using typed_demo_asdl::cflow__Return;
 cflow__Return g_ret = {5};
 
 int i0 = 7;  // This runs before main()?  How to tell?
-List<int> g_list = {i0, 8, 9};
+List<int> *g_list = NewList<int>({i0, 8, 9});
 
 // Dict<Str*, int> g_dict = {4, 5, 6};
 
@@ -173,10 +175,10 @@ TEST literal_test() {
 
   // Wow this works too?  Is it the the constexpr interpreter, or is this code
   // inserted before main()?
-  ASSERT_EQ(3, len(&g_list));
-  ASSERT_EQ_FMT(7, g_list.index_(0), "%d");
-  ASSERT_EQ_FMT(8, g_list.index_(1), "%d");
-  ASSERT_EQ_FMT(9, g_list.index_(2), "%d");
+  ASSERT_EQ(3, len(g_list));
+  ASSERT_EQ_FMT(7, g_list->index_(0), "%d");
+  ASSERT_EQ_FMT(8, g_list->index_(1), "%d");
+  ASSERT_EQ_FMT(9, g_list->index_(2), "%d");
 
   PASS();
 }

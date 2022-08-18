@@ -47,7 +47,7 @@ Tuple2<Id_t, Str*> SimpleLexer::Next() {
 namespace Id = id_kind_asdl::Id;
 
 List<Tuple2<Id_t, Str*>*>* SimpleLexer::Tokens() {
-  auto tokens = new List<Tuple2<Id_t, Str*>*>();
+  auto tokens = NewList<Tuple2<Id_t, Str*>*>();
   while (true) {
     auto tup2 = Next();
     if (tup2.at0() == Id::Eol_Tok) {

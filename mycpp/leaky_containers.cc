@@ -5,6 +5,9 @@
   #include "mycpp/gc_containers.h"
 #endif
 
+#include "mycpp/list_str_impl.h"
+#include "mycpp/comparator_impls.h"
+
 #include <ctype.h>  // isalpha(), isdigit()
 
 GLOBAL_STR(kEmptyString, "");
@@ -166,6 +169,7 @@ Str* Str::slice(int begin) {
 }
 
 // Used by 'help' builtin and --help, neither of which translate yet.
+
 List<Str*>* Str::splitlines(bool keep) {
   assert(keep == true);
   NotImplemented();
@@ -371,3 +375,4 @@ Str* Str::lstrip(Str* chars) {
 Str* Str::lstrip() {
   return StripAny(this, StripWhere::Left, kWhitespace);
 }
+

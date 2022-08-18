@@ -188,6 +188,14 @@ class Heap {
     int n = aligned(num_bytes);
     // log("n = %d, p = %p", n, p);
 
+    // TODO(Jesse): Change to `assert(n >= sizeof(LayoutForwarded))`
+    //
+    // This must be at least sizeof(LayoutForwarded), which happens to be 16
+    // bytes, because the GC pointer forwarding requires 16 bytes.  If we
+    // allocated less than 16 the GC would overwrite the adjacent object when
+    // it went to forward the pointer.
+    assert(n >= 16);
+
 #if GC_EVERY_ALLOC
     Collect();  // force collection to find problems early
 #endif
@@ -441,29 +449,6 @@ class Param : public Local<T> {
 };
 
 #include "mycpp/gc_alloc.h"
-
-// Return the size of a resizeable allocation.  For now we just round up by
-// powers of 2. This could be optimized later.  CPython has an interesting
-// policy in listobject.c.
-//
-// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
-inline int RoundUp(int n) {
-  // minimum size
-  if (n < 8) {
-    return 8;
-  }
-
-  // TODO: what if int isn't 32 bits?
-  n--;
-  n |= n >> 1;
-  n |= n >> 2;
-  n |= n >> 4;
-  n |= n >> 8;
-  n |= n >> 16;
-  n++;
-  return n;
-}
-
 #include "mycpp/gc_obj.h"
 
 #endif  // GC_HEAP_H

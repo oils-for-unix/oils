@@ -1,7 +1,5 @@
 #include "gc_mylib.h"
 
-#include "mycpp/gc_builtins.h"
-#include "mycpp/gc_containers.h"
 #include "vendor/greatest.h"
 
 TEST split_once_test() {
