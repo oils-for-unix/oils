@@ -79,8 +79,6 @@ run-file() {
 
   log "__ $spec_name"
 
-  # could be 'test/spec-alpine.sh run-test', which WILL BE SPLIT!
-  local spec_runner=${SPEC_RUNNER:-test/spec.sh}
   local base_dir=$BASE_DIR
 
   local log_filename=$spec_name.log.txt

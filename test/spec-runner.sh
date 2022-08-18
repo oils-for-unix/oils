@@ -96,18 +96,27 @@ manifest() {
 }
 
 run-file() {
-  local spec_name=$1
+  # Determines what binaries to compare against: compare-py | compare-cpp | release-alpine 
+  local compare_mode=${1:-compare-py}
+  local spec_name=$2
 
   log "__ $spec_name"
 
-  # could be 'test/spec-alpine.sh run-test', which WILL BE SPLIT!
-  local spec_runner=${SPEC_RUNNER:-test/spec.sh}
+  local -a prefix
+  case $compare_mode in
+    # note: could make these names more consistent
+    (compare-py)     prefix=(test/spec.sh) ;;
+    (compare-cpp)    prefix=(test/spec-cpp.sh run-with-osh-eval) ;;
+    (release-alpine) prefix=(test/spec-alpine.sh run-test) ;;
+    (*) die "Invalid compare mode $compare_mode" ;;
+  esac
+
   local base_dir=_tmp/spec/$SPEC_JOB
 
   # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
   run-task-with-status \
     $base_dir/${spec_name}.task.txt \
-    $spec_runner $spec_name \
+    "${prefix[@]}" $spec_name \
       --format html \
       --stats-file $base_dir/${spec_name}.stats.txt \
       --stats-template \
@@ -312,15 +321,17 @@ html-summary() {
 
 _all-parallel() {
   local suite=${1:-osh-oil}
+  local compare_mode=${2:-py}
   local manifest="_tmp/spec/SUITE-$suite.txt"
 
+  # TODO: $SPEC_JOB could be a param too
   mkdir -p _tmp/spec/$SPEC_JOB
 
   manifest
 
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
-  head -n $NUM_SPEC_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-file
+  head -n $NUM_SPEC_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-file $compare_mode
   set -o errexit
 
   #ls -l _tmp/spec

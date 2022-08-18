@@ -102,7 +102,7 @@ check-shells-exist() {
 
 maybe-show() {
   local path=$1
-  if test -e $path; then
+  if test -f $path; then
     echo "--- $path ---"
     cat $path
     echo
@@ -138,12 +138,6 @@ osh-version-text() {
     $bin --version
     echo
   done
-
-  # e.g. when running test/spec-alpine.sh
-  if test -n "${SPEC_RUNNER:-}"; then
-    maybe-show /etc/alpine-release
-    return
-  fi
 
   # $BASH and $ZSH should exist
 
@@ -192,6 +186,7 @@ osh-version-text() {
 
   maybe-show /etc/debian_version
   maybe-show /etc/lsb-release
+  maybe-show /etc/alpine-release
 }
 
 osh-minimal-version-text() {
@@ -224,15 +219,15 @@ trace-var-sub() {
 #
 
 osh-all() {
-  test/spec-runner.sh all-parallel osh "$@"
+  test/spec-runner.sh all-parallel osh compare-py
 }
 
 oil-all() {
-  SPEC_JOB='oil-language' test/spec-runner.sh all-parallel oil "$@"
+  SPEC_JOB='oil-language' test/spec-runner.sh all-parallel oil compare-py "$@"
 }
 
 tea-all() {
-  SPEC_JOB='tea-language' test/spec-runner.sh all-parallel tea "$@"
+  SPEC_JOB='tea-language' test/spec-runner.sh all-parallel tea compare-py "$@"
 }
 
 osh-minimal() {

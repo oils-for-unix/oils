@@ -74,18 +74,20 @@ run-with-osh-eval() {
     "$@"
 }
 
-all() {
-  ### Run all tests with osh_eval and its translatino
-  export SPEC_RUNNER='test/spec-cpp.sh run-with-osh-eval'
+osh-all() {
+  # Like test/spec.sh {oil,osh}-all, but it compares against different binaries
 
   # For debugging hangs
   #export MAX_PROCS=1
 
-  # this is like test/spec.sh {oil,osh}-all
-
-  test/spec-runner.sh all-parallel osh "$@" || true  # OK if it fails
+  test/spec-runner.sh all-parallel osh compare-cpp || true  # OK if it fails
 
   html-summary
+}
+
+all() {
+  # TODO: add oil-all eventually
+  osh-all
 }
 
 soil-run() {

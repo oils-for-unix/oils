@@ -94,11 +94,13 @@ run-test() {
 }
 
 all() {
-  export OSH_LIST=osh OIL_LIST=oil SPEC_RUNNER='test/spec-alpine.sh run-test'
+  # TODO: Test this function and run in CI
+
+  export OSH_LIST=osh OIL_LIST=oil
 
   # this is like test/spec.sh {oil,osh}-all
-  test/spec-runner.sh all-parallel oil "$@"
-  test/spec-runner.sh all-parallel osh "$@"
+  test/spec-runner.sh all-parallel oil release-alpine
+  test/spec-runner.sh all-parallel osh release-alpine
 }
 
 home-page() {
