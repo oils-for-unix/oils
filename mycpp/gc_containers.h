@@ -56,7 +56,6 @@ class GlobalStr {
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
 #include "mycpp/gc_list.h"
-#include "mycpp/gc_list_impl.h"
 
 //
 // Dict<K, V>

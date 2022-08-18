@@ -38,7 +38,7 @@ Str* Str::join(List<Str*>* items) {
   return CopyBufferIntoNewStr(result, length);
 }
 
-int find_next_occurance_of(const char *haystack, int starting_index, int end_index, const char needle)
+int find_next(const char *haystack, int starting_index, int end_index, const char needle)
 {
   int result = end_index;
   for (int i = starting_index; i < end_index; ++i)
@@ -85,7 +85,7 @@ List<Str*>* Str::split(Str* sep) {
 
   while (true) {
     // NOTE(Jesse): Perfect use case for cursor
-    int new_pos = find_next_occurance_of(self->data_, pos, end, sep_char);
+    int new_pos = find_next(self->data_, pos, end, sep_char);
     assert(new_pos >= pos);
     assert(new_pos <= end);
 

@@ -11,7 +11,6 @@ Heap gHeap;
 
 #include "cpp/aligned.h"
 #include "mycpp/comparators.h"
-#include "mycpp/list_str_impl.h"
 
 namespace mylib {
 

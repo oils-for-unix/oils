@@ -189,6 +189,11 @@ class Heap {
     // log("n = %d, p = %p", n, p);
 
     // TODO(Jesse): Change to `assert(n >= sizeof(LayoutForwarded))`
+    //
+    // This must be at least sizeof(LayoutForwarded), which happens to be 16
+    // bytes, because the GC pointer forwarding requires 16 bytes.  If we
+    // allocated less than 16 the GC would overwrite the adjacent object when
+    // it went to forward the pointer.
     assert(n >= 16);
 
 #if GC_EVERY_ALLOC

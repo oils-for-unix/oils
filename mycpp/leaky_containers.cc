@@ -5,6 +5,7 @@
   #include "mycpp/gc_containers.h"
 #endif
 
+#include "mycpp/list_str_impl.h"
 #include "mycpp/comparator_impls.h"
 
 #include <ctype.h>  // isalpha(), isdigit()

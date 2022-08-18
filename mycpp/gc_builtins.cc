@@ -335,8 +335,6 @@ Str* Str::replace(Str* old, Str* new_str) {
 }
 #endif
 
-#include "mycpp/list_str_impl.h"
-
 Str* repr(Str* s) {
   mylib::BufWriter f;
   f.format_r(s);

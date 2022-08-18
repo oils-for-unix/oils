@@ -67,6 +67,7 @@ bool str_equals0(const char* c_string, Str* s);
   #include "mycpp/gc_containers.h"
   #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
   #include "mycpp/tuple_types.h"
+  #include "mycpp/gc_list_iter.h"
 
 //
 // Free Standing Str, List, and Dict Functions
@@ -81,8 +82,6 @@ template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return haystack->position_of_key(needle) != -1;
 }
-
-#include "gc_list_iter.h"
 
 // TODO:
 // - Look at entry_ to see if an item is deleted (or is a tombstone once we

@@ -87,7 +87,6 @@ extern Str* kEmptyString;
 
 #include "mycpp/gc_slab.h"
 #include "mycpp/gc_list.h"
-#include "mycpp/gc_list_impl.h"
 #include "mycpp/gc_list_iter.h"
 
 
