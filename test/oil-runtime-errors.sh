@@ -275,7 +275,38 @@ hay eval :result {
   }
 }
 '
+}
 
+test-eggex() {
+   # forgot parse_brace
+  _should-run ' = / [ \x00 \xff ] /'
+  _should-run ' = / [ \x00-\xff ] /'
+
+  # Shouldn't be in strings
+
+  cat >_tmp/test-eggex.txt <<'EOF'
+= / [ $'\x00 \xff' ] /
+EOF
+
+  _error-case "$(cat _tmp/test-eggex.txt)"
+
+  _should-run ' = / [ \u{0} ] /'
+  _should-run ' = / [ \u{0}-\u{1} ] /'
+
+  # Too high
+  _error-case ' = / [ \u{80} ] /'
+  _error-case ' = / [ \u{7f}-\u{80} ] /'
+
+  # Now test special characters
+  _should-run ' = / [ \\ "^-]" "abc" ] /'
+
+  # Special chars in ranges are disallowed for simplicity
+  _error-case " = / [ a-'^' ] /"
+  _error-case " = / [ '-'-z ] /"
+  _error-case " = / [ ']'-z ] /"
+
+  # Hm this runs but will cause a syntax error.  Could disallow it.
+  # _should-run ' = / ["^"] /'
 }
 
 soil-run() {

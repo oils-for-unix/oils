@@ -356,7 +356,7 @@ Splitting:
 
 ## Usage Notes
 
-### Use Character Literals Rather than C-Escaped Strings
+### Use character literals rather than C-Escaped strings
 
 No:
 
@@ -372,7 +372,7 @@ Yes:
 
 ## POSIX ERE Limitations
 
-### Surround Repeated Strings with a Capturing Group <>
+### Surround repeated strings with a capturing group `<>`
 
 No:
 
@@ -392,7 +392,7 @@ insert constructs that change the meaning of the pattern.
 group when translating to ERE.  This is for convenience / familiarity.  Prefer
 `<'foo'>+`.)
 
-### Unicode Char Literals Limited in Range
+### Unicode char literals are limited in range
 
 ERE can't represent this set of 1 character reliably:
 
@@ -406,21 +406,21 @@ These sets are accepted:
 They happen to be identical when translated to ERE, but may not be when
 translated to PCRE.
 
-### Don't Put non-ASCII in String Sets
+### Don't put non-ASCII bytes in string sets in char classes
 
 This is a sequence of characters:
 
     / $'\xfe\xff' /
 
-This is a set of characters that is **disallowed**:
+This is a **set** of characters that is illegal:
 
     / [ $'\xfe\xff' ] /  # set or sequence?  It's confusing
 
-Better to write it this way:
+This is a better way to write it:
 
     / [ \xfe \xff ] /  # set of 2 chars
 
-### Char Class Literals: `^ - ] \`
+### Char class literals: `^ - ] \`
 
 The literal characters `^ - ] \` are problematic because they can be confused
 with operators.
@@ -431,14 +431,15 @@ with operators.
 - `\` is usually literal, but GNU gawk has an extension to make it an escaping
   operator
 
-The Eggex-to-ERE translator is smart enough to handle cases like:
+The Eggex-to-ERE translator is smart enough to handle cases like this:
 
     var pat = / ['^' 'x'] / 
     # translated to [x^], not [^x] for correctness
 
-However, cases like this are a fatal error at runtime:
+However, cases like this are a fatal runtime error:
 
-    var pat = / ['a'-'^'] / 
+    var pat1 = / ['a'-'^'] /
+    var pat2 = / ['a'-'-'] /
 
 ## Critiques
 
