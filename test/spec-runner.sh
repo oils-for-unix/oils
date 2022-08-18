@@ -130,7 +130,7 @@ _html-summary() {
 
   local sh_label=$1  # osh or oil
   local totals=$2  # path to print HTML to
-  local manifest=${3:-_tmp/spec/$SPEC_JOB/MANIFEST.txt}
+  local manifest=$3
 
   html-head --title "Spec Test Summary" \
     ../../../web/base.css ../../../web/spec-tests.css
@@ -321,7 +321,7 @@ html-summary() {
 
 _all-parallel() {
   local suite=${1:-osh-oil}
-  local compare_mode=${2:-py}
+  local compare_mode=${2:-compare-py}
   local manifest="_tmp/spec/SUITE-$suite.txt"
 
   # TODO: $SPEC_JOB could be a param too
