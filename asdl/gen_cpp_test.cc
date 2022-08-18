@@ -39,7 +39,7 @@ void PrintTag(arith_expr_t* a) {
   log("");
 }
 
-#if 0
+#if 1
 TEST misc_test() {
   auto c = new arith_expr__Const(42);
   log("sizeof *c = %d", sizeof *c);  // 16 bytes
@@ -60,7 +60,7 @@ TEST misc_test() {
 
   auto v1 = new arith_expr__Var(StrFromC("v1"));
   auto v2 = new arith_expr__Var(StrFromC("v2"));
-  auto args = new List<arith_expr_t*>{v1, v2};
+  auto args = NewList<arith_expr_t*>({v1, v2});
 
   auto f = new arith_expr__FuncCall(StrFromC("f"), args);
   log("f->name = %s", f->name->data_);
@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  /* RUN_TEST(misc_test); */
+  RUN_TEST(misc_test);
   RUN_TEST(pretty_print_test);
   RUN_TEST(maps_test);
   RUN_TEST(literal_test);

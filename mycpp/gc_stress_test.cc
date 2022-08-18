@@ -96,7 +96,7 @@ TEST list_append_test() {
 }
 
 TEST list_slice_append_test() {
-  gHeap.Init(1 << 20);  // 1 KiB
+  gHeap.Init(1 << 8);  // 1 KiB
 
   List<int>* L = nullptr;
   StackRoots _roots({&L});

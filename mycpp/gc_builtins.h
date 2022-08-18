@@ -77,43 +77,6 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
-#if 0
-// ints, floats, enums like Kind
-// e.g. 1 in [1, 2, 3]
-template <typename T>
-inline bool list_contains(List<T>* haystack, T needle) {
-  // StackRoots _roots({&haystack});  // doesn't allocate
-
-  int n = len(haystack);
-  for (int i = 0; i < n; ++i) {
-    if (haystack->index_(i) == needle) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// e.g. 'a' in ['a', 'b', 'c']
-inline bool list_contains(List<Str*>* haystack, Str* needle) {
-  // StackRoots _roots({&haystack, &needle});  // doesn't allocate
-
-  int n = len(haystack);
-  for (int i = 0; i < n; ++i) {
-    if (str_equals(haystack->index_(i), needle)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// TODO: mycpp can just generate the constructor instead?
-// e.g. [None] * 3
-template <typename T>
-List<T>* list_repeat(T item, int times) {
-  return NewList<T>(item, times);
-}
-#endif
-
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return haystack->position_of_key(needle) != -1;

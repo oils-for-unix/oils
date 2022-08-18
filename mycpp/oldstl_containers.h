@@ -90,183 +90,6 @@ extern Str* kEmptyString;
 #include "mycpp/gc_list_impl.h"
 #include "mycpp/gc_list_iter.h"
 
-#if 0
-// TODO: Rewrite without vector<>, so we don't depend on libstdc++.
-template <class T>
-class List : public Obj {
- public:
-  // Note: constexpr doesn't work because the std::vector destructor is
-  // nontrivial
-  List() : Obj(Tag::FixedSize, kZeroMask, 0), v_() {
-    // Note: this seems to INCREASE the number of 'new' calls.  I guess because
-    // many 'spids' lists aren't used?
-    // v_.reserve(64);
-  }
-
-  // Used by list_repeat
-  List(T item, int n) : Obj(Tag::FixedSize, kZeroMask, 0), v_(n, item) {
-  }
-
-  List(std::initializer_list<T> init)
-      : Obj(Tag::FixedSize, kZeroMask, 0), v_() {
-    for (T item : init) {
-      v_.push_back(item);
-    }
-  }
-
-  // a[-1] = 42 becomes a->set(-1, 42);
-  void set(int index, T value) {
-    if (index < 0) {
-      index = v_.size() + index;
-    }
-    v_[index] = value;
-  }
-
-  // L[i]
-  T index_(int i) const {
-    if (i < 0) {
-      // User code doesn't result in mylist[-1], but Oil's own code does
-      int j = v_.size() + i;
-      return v_.at(j);
-    }
-    return v_.at(i);  // checked version
-  }
-
-  // L.index(i) -- Python method
-  int index(T value) const {
-    int len = v_.size();
-    for (int i = 0; i < len; i++) {
-      // TODO: this doesn't work for strings!
-      if (v_[i] == value) {
-        return i;
-      }
-    }
-    throw new ValueError();
-  }
-
-  // L[begin:]
-  List* slice(int begin) {
-    if (begin == 0) {
-      return this;
-    }
-    if (begin < 0) {
-      begin = v_.size() + begin;
-    }
-
-    List* result = new List();
-    int len = v_.size();
-    for (int i = begin; i < len; i++) {
-      result->v_.push_back(v_[i]);
-    }
-    return result;
-  }
-  // L[begin:end]
-  // TODO: Can this be optimized?
-  List* slice(int begin, int end) {
-    if (begin < 0) {
-      begin = v_.size() + begin;
-    }
-    if (end < 0) {
-      end = v_.size() + end;
-    }
-
-    List* result = new List();
-    for (int i = begin; i < end; i++) {
-      result->v_.push_back(v_[i]);
-    }
-    return result;
-  }
-
-  void append(T item) {
-#ifdef ALLOC_LOG
-    // we can post process this format to find large lists
-    // except when they're constants, but that's OK?
-    printf("%p %zu\n", this, v_.size());
-#endif
-
-    v_.push_back(item);
-  }
-
-  void extend(List<T>* items) {
-    // Note: C++ idioms would be v_.insert() or std::copy, but we're keeping it
-    // simple.
-    //
-    // We could optimize this for the small cases Oil has?  I doubt it's a
-    // bottleneck anywhere.
-    int len = items->v_.size();
-    for (int i = 0; i < len; ++i) {
-      v_.push_back(items->v_[i]);
-    }
-  }
-
-  // Reconsider?
-  // https://stackoverflow.com/questions/12600330/pop-back-return-value
-  T pop() {
-    assert(!v_.empty());
-    T result = v_.back();
-    v_.pop_back();
-    return result;
-  }
-
-  // Used in osh/word_parse.py to remove from front
-  // TODO: Don't accept arbitrary index?
-  T pop(int index) {
-    if (v_.size() == 0) {
-      // TODO(Jesse): Probably shouldn't crash if we try to pop a List with
-      // nothing on it
-      InvalidCodePath();
-    }
-
-    T result = v_.at(index);
-    v_.erase(v_.begin() + index);
-    return result;
-
-    /*
-    Implementation without std::vector
-    assert(index == 0);
-    for (int i = 1; i < v_.size(); ++i) {
-      v_[i-1] = v_[i];
-    }
-    v_.pop_back();
-    */
-  }
-
-  void clear() {
-    v_.clear();
-  }
-
-  void sort() {
-    mysort(&v_);
-  }
-
-  // in osh/string_ops.py
-  void reverse() {
-    int n = v_.size();
-    for (int i = 0; i < n / 2; ++i) {
-      // log("swapping %d and %d", i, n-i);
-      T tmp = v_[i];
-      int j = n - 1 - i;
-      v_[i] = v_[j];
-      v_[j] = tmp;
-    }
-  }
-
-  // private:
-  std::vector<T> v_;  // ''.join accesses this directly
-};
-
-// Same as GC APIs
-
-template <typename T>
-List<T>* NewList() {
-  return new List<T>();
-}
-
-template <typename T>
-List<T>* NewList(std::initializer_list<T> init) {
-  return new List<T>(init);
-}
-#endif
 
 // TODO: A proper dict index should get rid of this unusual sentinel scheme.
 // The index can be -1 on deletion, regardless of the type of the key.
@@ -333,18 +156,6 @@ class DictIter {
   int i_;
 };
 
-#if 0
-// NOTE(Jesse): This version (the oldstl one) is slightly different than the gc'd
-// one.  The other one seems better ..?
-// @duplicated_to_oldstl_str_equals
-inline bool str_equals(Str* left, Str* right) {
-  if (len(left) == len(right)) {
-    return memcmp(left->data_, right->data_, len(left)) == 0;
-  } else {
-    return false;
-  }
-}
-#endif
 bool str_equals(Str* left, Str* right);
 
 // Specialized functions
@@ -496,13 +307,6 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
 // Overloaded free function len()
 //
 
-#if 0
-template <typename T>
-inline int len(const List<T>* L) {
-  return L->v_.size();
-}
-#endif
-
 template <typename K, typename V>
 inline int len(const Dict<K, V>* d) {
   assert(0);
@@ -537,24 +341,6 @@ enum class Kind;
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 bool are_equal(Str* left, Str* right);
 
-#if 0
-inline bool are_equal(Str* left, Str* right) {
-  return str_equals(left, right);
-}
-
-inline bool maybe_str_equals(Str* left, Str* right) {
-  if (left && right) {
-    return str_equals(left, right);
-  }
-
-  if (!left && !right) {
-    return true;  // None == None
-  }
-
-  return false;  // one is None and one is a Str*
-}
-#endif
-
 // TODO: There should be one str() and one repr() for every sum type, that
 // dispatches on tag?  Or just repr()?
 
@@ -572,43 +358,10 @@ List<T>* list(List<T>* other) {
   return result;
 }
 
-#if 0
-template <typename T>
-bool list_contains(List<T>* haystack, T needle) {
-  int n = haystack->v_.size();
-  for (int i = 0; i < n; ++i) {
-    if (are_equal(haystack->index_(i), needle)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-template <typename T>
-bool list_contains(List<T>* haystack, T* needle) {
-  bool result = false;
-
-  if (needle) {
-    result = list_contains(haystack, *needle);
-  }
-
-  return result;
-}
-#endif
-
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return find_by_key(haystack->items_, needle) != -1;
 }
-
-#if 0
-template <typename V>
-List<Str*>* sorted(Dict<Str*, V>* d) {
-  auto keys = d->keys();
-  keys->sort();
-  return keys;
-}
-#endif
 
 // specialization for Str only
 inline void mysort(std::vector<Str*>* v) {
