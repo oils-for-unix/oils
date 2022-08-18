@@ -373,13 +373,6 @@ void Dict<K, V>::set(K key, V val) {
   }
 }
 
-#if 0
-template <typename T>
-int len(const List<T>* L) {
-  return L->len_;
-}
-#endif
-
 template <typename K, typename V>
 inline int len(const Dict<K, V>* d) {
   return d->len_;

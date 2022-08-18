@@ -45,6 +45,10 @@ void List<T>::set(int i, T item) {
   if (i < 0) {
     i = len_ + i;
   }
+
+  assert(i >= 0);
+  assert(i < capacity_);
+
   slab_->items_[i] = item;
 }
 
