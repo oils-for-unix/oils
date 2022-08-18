@@ -2,13 +2,10 @@
 #
 # Library shared between test/{spec,spec-alpine,spec-bin}.sh.
 
-SPEC_JOB=${SPEC_JOB:-survey}
-
 readonly BASH_NAME='bash-4.4'  # TODO: 5.1 upgrade
 readonly BUSYBOX_NAME='busybox-1.35.0'
 readonly DASH_NAME='dash-0.5.10.2'
 readonly YASH_NAME='yash-2.49'
-
 
 sh-spec() {
   local test_file=$1

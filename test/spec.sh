@@ -219,15 +219,18 @@ trace-var-sub() {
 #
 
 osh-all() {
-  test/spec-runner.sh all-parallel osh compare-py
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel osh compare-py survey
 }
 
 oil-all() {
-  SPEC_JOB='oil-language' test/spec-runner.sh all-parallel oil compare-py "$@"
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel oil compare-py oil-language
 }
 
 tea-all() {
-  SPEC_JOB='tea-language' test/spec-runner.sh all-parallel tea compare-py "$@"
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel tea compare-py tea-language
 }
 
 osh-minimal() {
@@ -246,7 +249,8 @@ EOF
 # this fails because the 'help' builtin doesn't have its data
 # builtin-bash
 
-  MAX_PROCS=1 test/spec-runner.sh all-parallel osh-minimal "$@"
+  # suite compare_mode spec_subdir
+  MAX_PROCS=1 test/spec-runner.sh all-parallel osh-minimal compare-py survey
 }
 
 osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
@@ -829,7 +833,12 @@ _one-html() {
   local spec_name=$1
   shift
 
-  local base_dir=_tmp/spec/$SPEC_JOB
+  # TODO:
+  # - Smooth tests be in _tmp/spec/smoosh ?
+  # - They could go in the CI
+
+  local spec_subdir='survey'
+  local base_dir=_tmp/spec/$spec_subdir
 
   test/spec-runner.sh _test-to-html _tmp/${spec_name}.test.sh \
     > $base_dir/${spec_name}.test.html

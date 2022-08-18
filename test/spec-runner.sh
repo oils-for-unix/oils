@@ -47,7 +47,7 @@ _spec-names() {
   # }
 }
 
-manifest() {
+write-suite-manifests() {
   { _spec-names | while read t; do
       # First filter.
       case $t in
@@ -98,20 +98,22 @@ manifest() {
 run-file() {
   # Determines what binaries to compare against: compare-py | compare-cpp | release-alpine 
   local compare_mode=${1:-compare-py}
-  local spec_name=$2
+  # Which subdir of _tmp/spec: survey | cpp | oil-language | tea-language
+  local spec_subdir=${2:-survey}
+  local spec_name=$3
 
   log "__ $spec_name"
 
   local -a prefix
   case $compare_mode in
-    # note: could make these names more consistent
+    # Note: could make these names more consistent
     (compare-py)     prefix=(test/spec.sh) ;;
     (compare-cpp)    prefix=(test/spec-cpp.sh run-with-osh-eval) ;;
     (release-alpine) prefix=(test/spec-alpine.sh run-test) ;;
     (*) die "Invalid compare mode $compare_mode" ;;
   esac
 
-  local base_dir=_tmp/spec/$SPEC_JOB
+  local base_dir=_tmp/spec/$spec_subdir
 
   # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
   run-task-with-status \
@@ -129,8 +131,9 @@ _html-summary() {
   ### Print an HTML summary to stdout and return whether all tests succeeded
 
   local sh_label=$1  # osh or oil
-  local totals=$2  # path to print HTML to
-  local manifest=$3
+  local base_dir=$2  # e.g. _tmp/spec/oil-language
+  local totals=$3  # path to print HTML to
+  local manifest=$4
 
   html-head --title "Spec Test Summary" \
     ../../../web/base.css ../../../web/spec-tests.css
@@ -163,8 +166,6 @@ EOF
   # - "getline" is kind of like bash "read", but it doesn't allow you do
   # specify variable names.  You have to destructure it yourself.
   # - Lack of string interpolation is very annoying
-
-  local base_dir=_tmp/spec/$SPEC_JOB
 
   head -n $NUM_SPEC_TASKS $manifest | awk -v totals=$totals -v base_dir=$base_dir '
   # Awk problem: getline errors are ignored by default!
@@ -280,9 +281,9 @@ EOF
 
 html-summary() {
   local suite=$1
-  local manifest="_tmp/spec/SUITE-$suite.txt"
+  local base_dir=$2
 
-  local base_dir=_tmp/spec/$SPEC_JOB
+  local manifest="_tmp/spec/SUITE-$suite.txt"
 
   local totals=$base_dir/totals-$suite.html
   local tmp=$base_dir/tmp-$suite.html
@@ -300,7 +301,7 @@ html-summary() {
   # }
 
   set +o errexit
-  _html-summary $suite $totals $manifest > $tmp
+  _html-summary $suite $base_dir $totals $manifest > $tmp
   all_passed=$?
   set -o errexit
 
@@ -322,25 +323,24 @@ html-summary() {
 _all-parallel() {
   local suite=${1:-osh-oil}
   local compare_mode=${2:-compare-py}
+  local spec_subdir=${3:-survey}
+
   local manifest="_tmp/spec/SUITE-$suite.txt"
+  local output_base_dir="_tmp/spec/$spec_subdir"
+  mkdir -p $output_base_dir
 
-  # TODO: $SPEC_JOB could be a param too
-  mkdir -p _tmp/spec/$SPEC_JOB
-
-  manifest
+  write-suite-manifests
 
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
-  head -n $NUM_SPEC_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-file $compare_mode
+  head -n $NUM_SPEC_TASKS $manifest \
+    | xargs -n 1 -P $MAX_PROCS -- $0 run-file $compare_mode $spec_subdir
   set -o errexit
 
-  #ls -l _tmp/spec
-
-  all-tests-to-html $manifest
+  all-tests-to-html $manifest $output_base_dir
 
   # note: the HTML links to ../../web/, which is in the repo.
-
-  html-summary $suite  # returns whether all passed
+  html-summary $suite $output_base_dir  # returns whether all passed
 }
 
 all-parallel() {
@@ -405,14 +405,16 @@ EOF
 }
 
 test-to-html() {
-  local spec_name=$1
-  _test-to-html spec/${spec_name}.test.sh > _tmp/spec/$SPEC_JOB/${spec_name}.test.html
+  local output_base_dir=$1
+  local spec_name=$2
+  _test-to-html spec/${spec_name}.test.sh > $output_base_dir/${spec_name}.test.html
 }
 
 all-tests-to-html() {
   local manifest=$1
+  local output_base_dir=$2
   head -n $NUM_SPEC_TASKS $manifest \
-    | xargs -n 1 -P $MAX_PROCS -- $0 test-to-html
+    | xargs -n 1 -P $MAX_PROCS -- $0 test-to-html $output_base_dir
   log "done: all-tests-to-html"
 }
 

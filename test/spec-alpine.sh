@@ -99,8 +99,9 @@ all() {
   export OSH_LIST=osh OIL_LIST=oil
 
   # this is like test/spec.sh {oil,osh}-all
-  test/spec-runner.sh all-parallel oil release-alpine
-  test/spec-runner.sh all-parallel osh release-alpine
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel oil release-alpine oil-language
+  test/spec-runner.sh all-parallel osh release-alpine survey
 }
 
 home-page() {

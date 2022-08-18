@@ -22,7 +22,6 @@ readonly REPO_ROOT
 OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-dbg/osh_eval}
 
 # Applies everywhere
-export SPEC_JOB='cpp'
 export ASAN_OPTIONS=detect_leaks=0
 
 #
@@ -60,7 +59,8 @@ run-with-osh-eval() {
   local test_name=$1
   shift
 
-  local base_dir=_tmp/spec/$SPEC_JOB
+  local spec_subdir='cpp'  # matches $spec_subdir in all-parallel
+  local base_dir=_tmp/spec/$spec_subdir
   mkdir -p "$base_dir"
 
   # Run it with 3 versions of OSH.  And output TSV so we can compare the data.
@@ -80,7 +80,8 @@ osh-all() {
   # For debugging hangs
   #export MAX_PROCS=1
 
-  test/spec-runner.sh all-parallel osh compare-cpp || true  # OK if it fails
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel osh compare-cpp cpp || true  # OK if it fails
 
   html-summary
 }
