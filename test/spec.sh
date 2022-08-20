@@ -81,25 +81,6 @@ install-shells() {
   link-busybox-ash
 }
 
-check-shells-exist() {
-  # We need these shells to run OSH spec tests.
-
-  echo "PWD = $PWD"
-  echo "PATH = $PATH"
-
-  #ls -l _tmp/shells || true
-  #/bin/busybox ash -c 'echo "hello from /bin/busybox"'
-
-  for sh in "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST; do
-
-    # note: shells are in $PATH, but not $OSH_LIST
-    if ! $sh -c 'echo -n "hello from $0: "; command -v $0 || true'; then 
-      echo "ERROR: $sh does not exist"
-      return 1
-    fi
-  done
-}
-
 maybe-show() {
   local path=$1
   if test -f $path; then
@@ -219,6 +200,8 @@ trace-var-sub() {
 #
 
 osh-all() {
+  check-survey-shells
+
   # $suite $compare_mode $spec_subdir
   test/spec-runner.sh all-parallel osh compare-py survey
 }
@@ -233,12 +216,20 @@ tea-all() {
   test/spec-runner.sh all-parallel tea compare-py tea-language
 }
 
+check-survey-shells() {
+  ### Make sure bash, zsh, OSH, etc. exist
+
+  # Note: yash isn't here, but it is used in a couple tests
+
+  test/spec-runner.sh shell-sanity-check "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST
+}
+
 osh-minimal() {
   ### Some tests that work on the minimal build.  Run by Soil.
 
   # depends on link-busybox-ash, then source dev-shell.sh at the top of this
   # file
-  check-shells-exist
+  check-survey-shells
 
   # oil-json: for testing yajl
   cat >_tmp/spec/SUITE-osh-minimal.txt <<EOF
@@ -258,7 +249,6 @@ oil-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
 tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 
 soil-run-osh() {
-  check-shells-exist  # e.g. depends on link-busybox-ash
   osh-all-serial
 }
 

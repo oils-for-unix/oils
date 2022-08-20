@@ -1262,6 +1262,9 @@ def main(argv):
 if __name__ == '__main__':
   try:
     sys.exit(main(sys.argv))
+  except KeyboardInterrupt as e:
+    print('%s: interrupted with Ctrl-C' % sys.argv[0], file=sys.stderr)
+    sys.exit(1)
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

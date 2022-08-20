@@ -187,6 +187,9 @@ def main(argv):
 if __name__ == '__main__':
   try:
     status = main(sys.argv)
+  except KeyboardInterrupt as e:
+    print('%s: interrupted with Ctrl-C' % sys.argv[0], file=sys.stderr)
+    sys.exit(1)
   except RuntimeError as e:
     log('time_.py: %s', e)
     status = 2

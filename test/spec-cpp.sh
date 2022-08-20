@@ -21,6 +21,12 @@ readonly REPO_ROOT
 # Run with debug binary by default
 OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-dbg/osh_eval}
 
+readonly -a COMPARE_CPP_SHELLS=(
+    $REPO_ROOT/bin/osh 
+    $REPO_ROOT/bin/osh_eval 
+    $OSH_CC 
+)
+
 # Applies everywhere
 export ASAN_OPTIONS=detect_leaks=0
 
@@ -68,9 +74,7 @@ run-with-osh-eval() {
   sh-spec spec/$test_name.test.sh \
     --timeout 10 \
     --tsv-output $base_dir/${test_name}.tsv \
-    $REPO_ROOT/bin/osh \
-    $REPO_ROOT/bin/osh_eval \
-    $OSH_CC \
+    "${COMPARE_CPP_SHELLS[@]}" \
     "$@"
 }
 
@@ -79,6 +83,8 @@ osh-all() {
 
   # For debugging hangs
   #export MAX_PROCS=1
+
+  test/spec-runner.sh shell-sanity-check "${COMPARE_CPP_SHELLS[@]}"
 
   # $suite $compare_mode $spec_subdir
   test/spec-runner.sh all-parallel osh compare-cpp cpp || true  # OK if it fails
