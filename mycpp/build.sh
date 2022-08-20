@@ -35,7 +35,7 @@ run-for-release() {
   # invoked by devtools/release.sh
 
   ./NINJA_config.py
-  ninja mycpp-all
+  ninja mycpp-logs-equal
 }
 
 #
