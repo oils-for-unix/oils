@@ -24,6 +24,8 @@ EOF
   # OSH Python bindings don't like this!  gah!
   #echo -e 'NUL \x00 NUL'
 
+  echo -e '\xff 0xff'
+
   } > $FILE
 
   od -c $FILE
@@ -87,6 +89,45 @@ test-ere() {
   #survey '[\]'
 
   survey '[\\]'
+
+  # single byte matching doesn't work with en_US.UTF-8 !
+  echo LANG=$LANG
+  survey "[$(echo -e '\xff')]"
+
+  # it DOES work with LANG=C
+  LANG=C
+  echo LANG=$LANG
+  declare -p LANG  # it's exported!
+  survey "[$(echo -e '\xff')]"
+
+  #survey "$(echo -e '\xff')"
+}
+
+
+argv() {
+  spec/bin/argv.py "$@"
+}
+
+ere-capture-order() {
+  # It feels like it's a depth first walk
+  # It basically goes in order of the (
+
+  pat='([a-z]+)([0-9]+)'
+  [[ abc123 =~ $pat ]]; argv "${BASH_REMATCH[@]}"
+
+  pat='(([a-z])([a-z])[a-z])([0-9]+)'
+  [[ abc123 =~ $pat ]]; argv "${BASH_REMATCH[@]}"
+
+  # Extra parens DOES create a new capture
+  pat='((([a-z]))([a-z])[a-z])([0-9]+)'
+  [[ abc123 =~ $pat ]]; argv "${BASH_REMATCH[@]}"
+
+  pat='(([a-z][a-z])[a-z])([0-9]+)'
+  [[ abc123 =~ $pat ]]; argv "${BASH_REMATCH[@]}"
+
+  pat='(([a-z]([a-z]))[a-z])(([0-9]+))'
+  [[ abc123 =~ $pat ]]; argv "${BASH_REMATCH[@]}"
 }
 
 "$@"
+

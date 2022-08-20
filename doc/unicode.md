@@ -58,10 +58,12 @@ Where bash respects it:
 - ${foo,} and ${foo^} for lowercase / uppercase
 - Any operation that uses glob, because it has `?` for a single character,
   character classes like `[[:alpha:]]`, etc.
+  - `echo my?glob`
   - `case $x in ?) echo 'one char' ;; esac`
   - `[[ $x == ? ]]`
   - `${s#?}` (remove one character)
   - `${s/?/x}` (note: this uses our glob to ERE translator for position)
+- Regular expressions `[[ $x =~ $pat ]]`, which also have character classes
 - `printf '%d' \'c` where `c` is an arbitrary character.  This is an obscure
   syntax for `ord()`, i.e. getting an integer from an encoded character.
 
@@ -75,6 +77,10 @@ Other:
 - The prompt width is calculated with `wcswidth()`, which doesn't just count
   code points.  It calculates the **display width** of characters, which is
   different in general.
+
+## Oil-Specific
+
+- Eggex matching like `mystr ~ / [ \xff ] /` depends on ERE semantics.
 
 ## Tips
 

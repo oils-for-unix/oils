@@ -179,7 +179,6 @@ class OilEvaluator(object):
     Args:
       set_match_result: Whether to assign
     """
-    # TODO: Rename EggEx?
     if isinstance(right, str):
       pass
     elif isinstance(right, objects.Regex):
@@ -188,7 +187,10 @@ class OilEvaluator(object):
       raise RuntimeError(
           "RHS of ~ should be string or Regex (got %s)" % right.__class__.__name__)
     
-    # TODO: We need an API that can populate _start() and _end() too
+    # TODO:
+    # - libc_regex_match should populate _start() and _end() too (out params?)
+    # - What is the ordering for named captures?  See demo/ere*.sh
+
     matches = libc.regex_match(right, left)
     if matches:
       if set_match_result:

@@ -1451,6 +1451,10 @@ class Transformer(object):
           # INVALID
           #   < d+ : month List[int] >
           name_tok = children[3].children[0].tok
+
+          # TODO: is it possible to output the capture name <-> index mapping
+          # here for POSIX ERE?
+
         else:
           name_tok = None
 
