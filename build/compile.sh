@@ -174,7 +174,8 @@ readonly CC=${CC:-cc}  # cc should be on POSIX systems
 # isn't necessary.  Python's configure.ac sometimes does it by compiling a test
 # file; at other times it does it by grepping $CC --help.
 
-BASE_CFLAGS='-fno-strict-aliasing -fwrapv -Wall -Wstrict-prototypes'
+# native/fanos.c needs -std=c99
+BASE_CFLAGS='-fno-strict-aliasing -fwrapv -Wall -Wstrict-prototypes -std=c99'
 
 # These flags are disabled for OS X.  I would have thought it would work in
 # Clang?  It works with both GCC and Clang on Linux.
