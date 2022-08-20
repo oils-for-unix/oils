@@ -60,14 +60,29 @@ list-test-funcs() {
 }
 
 run-test-funcs() {
-  # for correct error handling, and to mtuate $i
+  # for correct error handling, and to mutate $i
+  #
+  # Note: when I ran $t rather than $0 t, I seemed to tickle a bash lastpipe bug like this:
+  # https://www.spinics.net/lists/dash/msg01918.html
+  # I got a 127 exit code with no explanation.
   shopt -s lastpipe
 
   local i=0
+  local status=0
 
   list-test-funcs | while read t; do
     echo "*** Running $t"
-    $t
+
+    set +o errexit
+    $0 $t
+    status=$?
+    set -o errexit
+
+    if test $status -ne 0; then
+      echo "FAIL  $t"
+      break
+    fi
+
     echo "OK  $t"
     i=$((i + 1))
   done
