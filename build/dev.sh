@@ -418,13 +418,13 @@ time-helper() {
   ls -l $out
 }
 
-# Prerequisites: build/codegen.sh {download,install}-re2c
 all() {
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
   py-source
-  py-extensions
+  py-extensions  # no re2c
 
+  # requires re2c: soil/deps-tar.sh layer-re2c
   fastlex
   time-helper
   build/doc.sh all-help

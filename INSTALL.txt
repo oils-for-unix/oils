@@ -95,10 +95,3 @@ Notes
 - The oil.ovm executable behaves like busybox, and osh is a symlink to it.
 - Oil contains a fork of the Python 2.7 runtime, so it should compile with most
   popular compiler/OS combinations.
-
-TODO
-----
-
-- Add back build support for PGO and LTO and document them.  (CPython has
-  this.)
-
