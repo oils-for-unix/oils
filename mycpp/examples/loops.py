@@ -6,8 +6,8 @@ from __future__ import print_function
 
 import os
 
-import mylib
-from mylib import log, iteritems
+from mycpp import mylib
+from mycpp.mylib import log, iteritems
 
 from typing import Dict
 

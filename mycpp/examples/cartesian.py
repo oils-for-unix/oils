@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 
 from typing import List
-from mylib import log
+from mycpp.mylib import log
 
 # Operations:
 # - list literals

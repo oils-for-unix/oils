@@ -7,8 +7,8 @@ from __future__ import print_function
 import os
 from typing import Tuple, cast
 
-import mylib
-from mylib import log
+from mycpp import mylib
+from mycpp.mylib import log
 
 
 class ColorOutput(object):

@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 """
 modules.py
+
+PYTHONPATH=.:mycpp is required to run this one
 """
 from __future__ import print_function
 

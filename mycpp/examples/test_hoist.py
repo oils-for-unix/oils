@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
-from mylib import log
+from mycpp.mylib import log
 
 # Note: To fix this,
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python2
 """
-container_types.py
+mycpp/examples/container.py
 """
 from __future__ import print_function
 
 import os
-from mylib import log, NewDict, iteritems
+from mycpp.mylib import log, NewDict, iteritems
 
 from typing import List, Tuple, Dict, Optional
 

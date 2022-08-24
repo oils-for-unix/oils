@@ -5,7 +5,7 @@ escape.py: Test string and list operations.
 from __future__ import print_function
 
 import os
-from mylib import log
+from mycpp.mylib import log
 
 from typing import List
 

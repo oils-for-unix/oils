@@ -367,6 +367,7 @@ py-source() {
   # Needed on Travis.
   oil-grammar
   find-grammar
+  demo-grammar  # mycpp/examples
 }
 
 # No fastlex, because we don't want to require re2c installation.

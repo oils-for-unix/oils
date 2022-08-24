@@ -9,8 +9,8 @@ import sys
 
 from typing import List
 
-import mylib
-from mylib import log
+from mycpp import mylib
+from mycpp.mylib import log
 
 
 def run_tests():

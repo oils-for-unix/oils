@@ -8,8 +8,8 @@ import cStringIO
 import os
 import sys
 
-import mylib
-from mylib import log
+from mycpp import mylib
+from mycpp.mylib import log
 
 from typing import IO
 

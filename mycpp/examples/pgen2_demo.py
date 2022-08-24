@@ -33,7 +33,7 @@ def ParseDemo(oil_grammar):
   arena.PushSource(source__Stdin(''))
 
   parse_ctx = None  # type: ParseContext
-  e_parser = expr_parse.ExprParser(parse_ctx, oil_grammar)
+  e_parser = expr_parse.ExprParser(parse_ctx, oil_grammar, False)
 
   line_lexer = lexer.LineLexer('', arena)
   line_reader = reader.StringLineReader('1 + 2*3', arena)

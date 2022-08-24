@@ -9,7 +9,7 @@ from __future__ import print_function
 
 import os
 
-from mylib import log
+from mycpp.mylib import log
 
 
 # For testing what the code generator does

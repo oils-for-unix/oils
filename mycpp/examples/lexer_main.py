@@ -10,10 +10,9 @@ import sys
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import alloc
+from core.pyerror import log
 from frontend import lexer
 from frontend import match
-
-from core.pyerror import log
 
 from typing import cast
 

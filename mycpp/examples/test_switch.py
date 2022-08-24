@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import os
 
-from mylib import switch, log
+from mycpp.mylib import switch, log
 
 
 def run_tests():
