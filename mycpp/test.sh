@@ -34,10 +34,10 @@ examples-variant() {
   local num_failed=0
   local status=0
 
-  local log_dir=_test/$compiler-$variant/mycpp-examples
+  local log_dir=_test/$compiler-$variant/mycpp/examples
   mkdir -p $log_dir
 
-  for b in _bin/$compiler-$variant/mycpp-examples/*; do
+  for b in _bin/$compiler-$variant/mycpp/examples/*; do
     case $b in
       (*.stripped)  # just run the unstripped binary
         continue
@@ -211,8 +211,8 @@ examples-coverage() {
 
   examples-variant clang coverage
 
-  local out_dir=_test/clang-coverage/mycpp-examples
-  test/coverage.sh html-report $out_dir mycpp-examples
+  local out_dir=_test/clang-coverage/mycpp/examples
+  test/coverage.sh html-report $out_dir mycpp/examples
 }
 
 "$@"
