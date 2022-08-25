@@ -2,8 +2,6 @@
 """
 mycpp/NINJA_subgraph.py
 
-This is a library invoked by ./NINJA_config.py
-
 Code Layout:
 
   mycpp/

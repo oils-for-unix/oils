@@ -51,7 +51,7 @@ To build oil-native, use:
 
 To run the tests and benchmarks:
 
-    oil$ ./NINJA_config.py
+    oil$ ./NINJA-config.sh
     oil$ ninja mycpp-logs-equal
     ... 200+ tasks run ...
 

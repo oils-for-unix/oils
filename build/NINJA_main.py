@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-NINJA_config.py
+build/NINJA_main.py - invoked by ./NINJA-config.sh
 """
 from __future__ import print_function
 
