@@ -73,7 +73,7 @@ osh-cloc() {
 }
 
 preprocessed() {
-  ./NINJA_config.py
+  ./NINJA-config.sh
 
   # Clang has slightly fewer lines, but it's not on the CI machine
   #local -a files=(_build/preprocessed/{cxx,clang}-{dbg,opt}.txt)

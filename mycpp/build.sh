@@ -15,7 +15,7 @@ source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 source $REPO_ROOT/soil/common.sh  # find-dir-html
 
 soil-run() {
-  ./NINJA_config.py
+  ./NINJA-config.sh
 
   set +o errexit
 
@@ -34,7 +34,7 @@ soil-run() {
 run-for-release() {
   # invoked by devtools/release.sh
 
-  ./NINJA_config.py
+  ./NINJA-config.sh
   ninja mycpp-logs-equal
 }
 

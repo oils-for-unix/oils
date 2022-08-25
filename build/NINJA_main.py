@@ -11,7 +11,6 @@ from build import NINJA_subgraph as build_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
 from mycpp import NINJA_subgraph as mycpp_subgraph
 
-sys.path.append('.')
 from vendor import ninja_syntax
 
 

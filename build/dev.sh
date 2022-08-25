@@ -231,9 +231,9 @@ oil-cpp-codegen() {
 }
 
 oil-cpp() {
-  oil-cpp-codegen
+  ./NINJA-config.sh  # Create it for the first time
 
-  ./NINJA_config.py  # Create it for the first time
+  oil-cpp-codegen
 
   time ninja _bin/cxx-dbg/osh_eval
   echo

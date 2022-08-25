@@ -72,16 +72,7 @@ typecheck-all() {
 }
 
 soil-run() {
-  if test -n "${TRAVIS_SKIP:-}"; then
-    echo "TRAVIS_SKIP: Skipping $0"
-    return
-  fi
-
-  # Figure out what to type check
-  build/app-deps.sh osh-eval
-  echo
-
-  typecheck-all _build/app-deps/osh_eval/typecheck.txt
+  typecheck-all _build/NINJA/osh_eval/typecheck.txt
 }
 
 "$@"

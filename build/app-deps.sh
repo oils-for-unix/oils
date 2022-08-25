@@ -16,7 +16,7 @@ source mycpp/common.sh  # $MYPY_REPO
 readonly PY_PATH='.:vendor/'
 
 # Temporary
-readonly DIR=_build/app-deps
+readonly DIR=_build/NINJA
 
 # In git
 readonly FILTER_DIR=build/app-deps
@@ -103,10 +103,12 @@ py-tool() {
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
     build/app_deps.py py-manifest $py_module \
-  > $dir/all.txt
+    > $dir/all-pairs.txt
 
-  cat $dir/all.txt | repo-filter | exclude-filter py-tool | mysort \
-    | tee $dir/repo.txt
+  cat $dir/all-pairs.txt | repo-filter | exclude-filter py-tool | mysort \
+    > $dir/deps.txt
+
+  echo "DEPS $dir/deps.txt"
 }
 
 # Code generators
@@ -114,104 +116,45 @@ list-gen() {
   ls */*_gen.py
 }
 
-# TODO: precise dependencies for code generation
-#
-# _bin/py/frontend/consts_gen    # This is a #!/bin/sh stub with a TIMESTAMP
-# _bin/py/frontend/consts_gen.d  # dependency file -- when it should be updated
-# And then _build/cpp/consts.{cc,h} should have an IMPLICIT dependency on the
-# code generator.
-
-asdl-main() { py-tool asdl.asdl_main; }
-
-optview-gen() { py-tool core.optview_gen; }
-consts-gen() { py-tool frontend.consts_gen; }
-flag-gen() { py-tool frontend.flag_gen; }
-lexer-gen() { py-tool frontend.lexer_gen; }
-option-gen() { py-tool frontend.option_gen; }
-grammar-gen() { py-tool oil_lang.grammar_gen; }
-arith-parse-gen() { py-tool osh.arith_parse_gen; }
+# mycpp and pea deps are committed to git instead of in _build/NINJA/ because
+# users might not have Python 3.10
 
 readonly PY_310=../oil_DEPS/python3
 
-pea() {
+write-pea() {
   # PYTHONPATH=$PY_PATH 
-  local dir=$DIR/pea
+  local module='pea.pea_main'
+  local dir=pea/NINJA/$module
   mkdir -p $dir
 
   # Can't use vendor/typing.py
   PYTHONPATH=. $PY_310 \
-    build/app_deps.py py-manifest 'pea.pea_main' \
-  > $dir/all.txt
+    build/app_deps.py py-manifest $module \
+  > $dir/all-pairs.txt
 
-  cat $dir/all.txt | grep -v 'oilshell/oil/_cache/Python' | repo-filter | mysort
+  cat $dir/all-pairs.txt | repo-filter | mysort | tee $dir/deps.txt
+
+  ls -l $dir
 }
 
-mycpp() {
-  # This is committed to git instead of in _build/app-deps/ because users might
-  # not have Python 3.10
-  local dir=mycpp/NINJA
-  mkdir -p $dir
-
+write-mycpp() {
   local module='mycpp.mycpp_main'
+  local dir=mycpp/NINJA/$module
+  mkdir -p $dir
 
   ( source $MYCPP_VENV/bin/activate
     PYTHONPATH=$REPO_ROOT:$REPO_ROOT/mycpp:$MYPY_REPO maybe-our-python3 \
-      build/app_deps.py py-manifest $module > $dir/$module.ALL.txt
+      build/app_deps.py py-manifest $module > $dir/all-pairs.txt
   )
 
-  cat $dir/$module.ALL.txt \
+  cat $dir/all-pairs.txt \
     | grep -v oilshell/oil_DEPS \
     | repo-filter \
     | exclude-filter py-tool \
     | mysort \
-    | tee $dir/$module.FILTERED.txt
-}
+    | tee $dir/deps.txt
 
-# 439 ms to compute all dependencies.
-# Should this be done in:
-#
-# build/dev.sh py-source -- but then you would have to remember
-# ./NINJA_config.py -- this makes sense because depfiles are part of the graph
-# When each tool is invoked, emulating gcc -M -- then you need a shell wrapper
-#   for each tool that calls build/app-deps.sh and has a flag
-# build/cpp.sh all?  -- no we want to be demand-driven?
-
-all-py-tool() {
-  # Union of all these is IMPLICIT input to build/cpp.sh codegen
-  # Plus lexer
-  asdl-main
-
-  optview-gen
-  consts-gen
-  flag-gen
-  lexer-gen
-  option-gen
-  grammar-gen
-  arith-parse-gen
-}
-
-ninja-config() {
-  # TODO:
-  # _build/NINJA/  # Part of the Ninja graph
-  #   py-tool/
-  #     asdl.tool.ALL.txt
-  #     asdl.tool.FILTERED.txt
-  #     frontend.consts_gen.ALL.txt
-  #     frontend.consts_gen.FILTERED.txt
-  #   osh_eval/
-  #     typecheck.txt
-  #     translate.txt
-  #
-  # Then load *.FILTERED.txt into Ninja
-
-  # Implicit dependencies for tools
-  all-py-tool
-
-  # Explicit dependencies for translating and type checking
-  osh-eval
-
-  # NOTE: mycpp baked into mycpp/NINJA.
-
+  ls -l $dir
 }
 
 mycpp-example-parse() {
@@ -222,12 +165,12 @@ mycpp-example-parse() {
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
     build/app_deps.py py-manifest mycpp.examples.parse \
-  > $dir/all.txt
+  > $dir/all-pairs.txt
 
   local ty=mycpp/examples/parse.typecheck.txt
   local tr=mycpp/examples/parse.translate.txt
 
-  cat $dir/all.txt | repo-filter | exclude-filter typecheck | mysort > $ty
+  cat $dir/all-pairs.txt | repo-filter | exclude-filter typecheck | mysort > $ty
 
   cat $ty | exclude-filter translate > $tr
 
@@ -236,30 +179,9 @@ mycpp-example-parse() {
   #head $ty $tr
 }
 
-osh-eval() {
-  ### bin/osh_eval is oil-native
-
-  local dir=$DIR/osh_eval
-  mkdir -p $dir
-
-  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/app_deps.py py-manifest bin.osh_eval \
-  > $dir/all.txt
-
-  set +o errexit
-  cat $dir/all.txt | repo-filter | exclude-filter typecheck | mysort \
-    > $dir/typecheck.txt
-
-  cat $dir/typecheck.txt | exclude-filter translate | mysort \
-    > $dir/translate.txt
-
-  wc -l $dir/*
-}
-
 pea-hack() {
   cp -v $DIR/osh_eval/typecheck.txt pea/osh-eval-typecheck.txt
 }
-
 
 # Source by NINJA-config.sh
 if test $(basename $0) = 'app-deps.sh'; then

@@ -12,7 +12,7 @@ set -o errexit
 source soil/common.sh  # find-dir-html
 
 all-tests() {
-  ./NINJA_config.py
+  ./NINJA-config.sh
 
   # uses Ninja to run (cxx, gcevery) variant.  Could also run (clang, ubsan),
   # which finds more bugs.

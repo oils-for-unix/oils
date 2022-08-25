@@ -86,7 +86,7 @@ translate-mycpp() {
   local tmp=$out.tmp
 
   local mypypath="$REPO_ROOT/mycpp"
-  _bin/pystubs/mycpp_main $MYCPP_VENV $MYPY_REPO $mypypath "$@" > $tmp
+  _bin/shwrap/mycpp_main $MYCPP_VENV $MYPY_REPO $mypypath "$@" > $tmp
 
   # Don't create output unless it succeeds!
   mv $tmp $out

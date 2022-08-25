@@ -18,8 +18,11 @@ OLD_MODULES = dict(sys.modules)  # Make a copy
 
 import posix  # Do it afterward so we don't mess up analysis.
 
+VERBOSE = False
 
 def log(msg, *args):
+  if not VERBOSE:
+    return
   if args:
     msg = msg % args
   print('\t', msg, file=sys.stderr)

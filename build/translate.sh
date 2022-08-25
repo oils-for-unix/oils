@@ -98,12 +98,10 @@ osh-eval() {
   local cc=_build/cpp/$name.cc
   local h=_build/cpp/$name.h
 
-  build/app-deps.sh osh-eval
-
   #if false; then
   if true; then
     # relies on splitting
-    cat _build/app-deps/osh_eval/translate.txt | xargs -- \
+    cat _build/NINJA/osh_eval/translate.txt | xargs -- \
       $0 mycpp \
         --header-out $h \
         --to-header frontend.args \

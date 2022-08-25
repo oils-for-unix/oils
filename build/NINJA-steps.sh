@@ -7,14 +7,14 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-sh-stub-prefix() {
+shwrap-prefix() {
   cat << 'EOF'
 #!/bin/sh
 REPO_ROOT=$(cd "$(dirname $0)/../.."; pwd)
 EOF
 }
 
-sh-deps-comment() {
+shwrap-deps-comment() {
   echo
   echo '# DEPENDS ON:'
   for dep in "$@"; do
@@ -22,18 +22,18 @@ sh-deps-comment() {
   done
 }
 
-sh-py-stub() {
+shwrap-py() {
   local main=$1
-  sh-stub-prefix
+  shwrap-prefix
   echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/'$main' "$@"'
 
   # Now write outputs
   shift
-  sh-deps-comment "$@"
+  shwrap-deps-comment "$@"
 }
 
-sh-mycpp-stub() {
-  sh-stub-prefix
+shwrap-mycpp() {
+  shwrap-prefix
 
   #source mycpp/common.sh  # MYCPP_VENV
 
@@ -49,11 +49,11 @@ PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
 EOF
 
   shift
-  sh-deps-comment "$@"
+  shwrap-deps-comment "$@"
 }
 
-write-stub() {
-  ### Create a stub for a Python tool
+write-shwrap() {
+  ### Create a shell wrapper for a Python tool
 
   # Key point: if the Python code changes, then the C++ code should be
   # regenerated and re-compiled
@@ -64,10 +64,10 @@ write-stub() {
 
   case $kind in
     (py)
-      sh-py-stub "$@" > $stub_out
+      shwrap-py "$@" > $stub_out
       ;;
     (mycpp)
-      sh-mycpp-stub "$@" > $stub_out
+      shwrap-mycpp "$@" > $stub_out
       ;;
     (*)
       die "Invalid kind '$kind'"
