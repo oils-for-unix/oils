@@ -26,6 +26,9 @@ html-report() {
 
     # args for reporting (weird syntax)
     for b in $bin_dir/*; do
+      if ! test -f $b; then  # skip mycpp/examples, which is a dir
+        continue
+      fi
       args+=(--object $b)
     done
 

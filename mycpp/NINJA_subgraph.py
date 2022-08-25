@@ -233,14 +233,14 @@ EXAMPLES_PY = {
 
 # Linking _bin/cxx-dbg/mycpp-examples/parse depends on expr_asdl.o
 EXAMPLES_CC = {
-    'parse': ['_test/asdl/expr_asdl.cc'],
+    'parse': ['_build/gen/mycpp/examples/expr_asdl.cc'],
 }
 
 # We need IMPLICIT header dependencies too.
 # Compiling _build/obj-mycpp/cxx-asan/parse.o depends brings parse_preamble.h,
 # which brings in expr_asdl.h
 EXAMPLES_H = {
-    'parse': ['_test/asdl/expr_asdl.h'],
+    'parse': ['_build/gen/mycpp/examples/expr_asdl.h'],
 }
 
 COMPILERS_VARIANTS = [
@@ -592,7 +592,7 @@ def NinjaGraph(n):
   # ASDL schema that examples/parse.py depends on
   #
 
-  prefix = '_test/asdl/expr_asdl'
+  prefix = '_build/gen/mycpp/examples/expr_asdl'
   n.build([prefix + '.cc', prefix + '.h'], 'asdl-cpp', 'mycpp/examples/expr.asdl',
           variables=[('out_prefix', prefix)])
 
