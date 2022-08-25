@@ -32,8 +32,8 @@ fi
 
 types-gen() {
   local out=_devbuild/gen/osh-types.h
-  asdl/tool.py c frontend/types.asdl "$@" > $out
-  echo "  (asdl/tool) -> $out"
+  asdl/asdl_main.py c frontend/types.asdl "$@" > $out
+  echo "  (asdl_main) -> $out"
 }
 
 id-c-gen() {

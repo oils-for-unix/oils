@@ -44,7 +44,7 @@ def NinjaGraph(n):
   #
   # But how do we put asdl/tool.py at the front?  Do it manually?
 
-  p = subprocess.Popen(['build/app-deps.sh', 'py-tool', 'asdl.tool'], stdout=subprocess.PIPE)
+  p = subprocess.Popen(['build/app-deps.sh', 'py-tool', 'asdl.asdl_main'], stdout=subprocess.PIPE)
   for line in p.stdout:
     dep = line.strip()
     print('# %s' % dep)

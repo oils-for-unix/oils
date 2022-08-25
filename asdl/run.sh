@@ -16,27 +16,6 @@ source build/common.sh
 
 export PYTHONPATH='.:vendor/'
 
-gen-mypy-asdl() {
-  local name=$1
-  shift
-  local in=asdl/${name}.asdl 
-  local out=_devbuild/gen/${name}_asdl.py
-
-  asdl/tool.py mypy $in "$@" > $out
-
-  log "$in -> (asdl/tool) -> $out"
-  #wc -l $out
-}
-
-gen-typed-demo-asdl() {
-  gen-mypy-asdl demo_lib  # dependency
-  gen-mypy-asdl typed_demo
-}
-gen-shared-variant-asdl() { gen-mypy-asdl shared_variant; }
-gen-typed-arith-asdl() {
-  gen-mypy-asdl typed_arith 'asdl.typed_arith_abbrev'
-}
-
 #
 # Native Code
 #
@@ -129,7 +108,7 @@ module bad {
 }
 EOF
 
-  asdl/tool.py cpp _tmp/bad.asdl _tmp/asdl_bad
+  asdl/asdl_main.py cpp _tmp/bad.asdl _tmp/asdl_bad
 
   ls -l _tmp/asdl_bad*
 }

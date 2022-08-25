@@ -131,13 +131,13 @@ gen-asdl-py() {
   local out=_devbuild/gen/${name}_asdl.py
 
   # abbrev module is optional
-  asdl/tool.py mypy "$@" > $tmp
+  asdl/asdl_main.py mypy "$@" > $tmp
 
   # BUG: MUST BE DONE ATOMICALLY; otherwise the Python interpreter can
   # import an empty file!
   mv $tmp $out
 
-  echo "$asdl_path -> (asdl/tool) -> $out"
+  echo "$asdl_path -> (asdl_main) -> $out"
 }
 
 gen-asdl-cpp() {
@@ -150,22 +150,22 @@ gen-asdl-cpp() {
   local debug_info=_devbuild/gen/${name}_asdl_debug.py
 
   # abbrev module is optional
-  asdl/tool.py cpp $asdl_path $out_prefix $debug_info
+  asdl/asdl_main.py cpp $asdl_path $out_prefix $debug_info
 
   # TODO: expand when .gc is the only thing generated
   #local -a out_files=( $out_prefix* )
-  echo "$asdl_path -> (asdl/tool) -> $out_prefix* and $debug_info"
+  echo "$asdl_path -> (asdl_main) -> $out_prefix* and $debug_info"
 }
 
 # TODO: syntax.asdl and runtime.asdl are mutually recursive.
 # Do it in one invocation, and use an output dir:
 #
-# ASDL_PATH=frontend:runtime asdl/tool.py mypy $out_dir ...
+# ASDL_PATH=frontend:runtime asdl/asdl_main.py mypy $out_dir ...
 #
 # It looks like there needs to be a global cache like sys.modules in the ASDL
 # compiler.
 
-oil-asdl-to-py() {
+py-codegen() {
   OPTIONAL_FIELDS='' PRETTY_PRINT_METHODS='' gen-asdl-py 'asdl/hnode.asdl'
 
   gen-asdl-py frontend/types.asdl
@@ -182,6 +182,14 @@ oil-asdl-to-py() {
 
   # For tests
   gen-asdl-py 'mycpp/examples/expr.asdl'
+}
+
+py-asdl-testdata() {
+  gen-asdl-py 'asdl/demo_lib.asdl'  # dependency of typed_demo
+  gen-asdl-py 'asdl/typed_demo.asdl'
+
+  gen-asdl-py 'asdl/shared_variant.asdl'
+  gen-asdl-py 'asdl/typed_arith.asdl' 'asdl.typed_arith_abbrev'
 }
 
 oil-asdl-to-cpp() {
@@ -343,6 +351,9 @@ yajl() {
 clean() {
   rm -f --verbose *.so
   rm -r -f --verbose _devbuild
+
+  # These can be stale after renaming things
+  build/actions.sh clean-pyc
 }
 
 py-source() {
@@ -357,17 +368,15 @@ py-source() {
   # So modules are importable.
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py
 
-  oil-asdl-to-py  # depends on Id
+  py-codegen  # depends on Id
 
   # Only for testing.
-  asdl/run.sh gen-typed-demo-asdl
-  asdl/run.sh gen-typed-arith-asdl
-  asdl/run.sh gen-shared-variant-asdl
+  py-asdl-testdata
 
   # Needed on Travis.
   oil-grammar
   find-grammar
-  demo-grammar  # mycpp/examples
+  demo-grammar  # for mycpp/examples/pgen2_demo
 }
 
 # No fastlex, because we don't want to require re2c installation.

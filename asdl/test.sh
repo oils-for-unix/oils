@@ -20,8 +20,8 @@ CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
 # Could we turn on the leak detector for the GC tests?
 export ASAN_OPTIONS='detect_leaks=0'
 
-asdl-tool() {
-  PYTHONPATH='.:vendor/' asdl/tool.py "$@"
+asdl-main() {
+  PYTHONPATH='.:vendor/' asdl/asdl_main.py "$@"
 }
 
 readonly TMP_DIR='_build/asdl-test'
@@ -36,13 +36,13 @@ gen-cpp-test() {
   mkdir -p $tmp_dir $bin_dir
 
   local prefix=$tmp_dir/typed_arith_asdl
-  asdl-tool cpp asdl/typed_arith.asdl $prefix
+  asdl-main cpp asdl/typed_arith.asdl $prefix
 
   local prefix2=$tmp_dir/demo_lib_asdl
-  asdl-tool cpp asdl/demo_lib.asdl $prefix2
+  asdl-main cpp asdl/demo_lib.asdl $prefix2
 
   local prefix3=$tmp_dir/typed_demo_asdl
-  asdl-tool cpp asdl/typed_demo.asdl $prefix3
+  asdl-main cpp asdl/typed_demo.asdl $prefix3
 
   wc -l $prefix* $prefix2*
 
@@ -78,10 +78,10 @@ gc-test() {
   mkdir -p $tmp_dir $bin_dir
 
   local prefix2=$tmp_dir/demo_lib_asdl
-  asdl-tool cpp asdl/demo_lib.asdl $prefix2
+  asdl-main cpp asdl/demo_lib.asdl $prefix2
 
   local prefix3=$tmp_dir/typed_demo_asdl
-  asdl-tool cpp asdl/typed_demo.asdl $prefix3
+  asdl-main cpp asdl/typed_demo.asdl $prefix3
 
   local bin=$bin_dir/gc_test
 

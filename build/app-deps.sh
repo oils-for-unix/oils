@@ -120,7 +120,7 @@ list-gen() {
 # And then _build/cpp/consts.{cc,h} should have an IMPLICIT dependency on the
 # code generator.
 
-asdl-tool() { py-tool asdl.tool; }
+asdl-main() { py-tool asdl.asdl_main; }
 
 optview-gen() { py-tool core.optview_gen; }
 consts-gen() { py-tool frontend.consts_gen; }
@@ -179,7 +179,7 @@ mycpp() {
 all-py-tool() {
   # Union of all these is IMPLICIT input to build/cpp.sh codegen
   # Plus lexer
-  asdl-tool
+  asdl-main
 
   optview-gen
   consts-gen

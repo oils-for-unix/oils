@@ -30,7 +30,7 @@ compile-with-asdl() {
 }
 
 asdl-gen() {
-  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/asdl_main.py "$@"
 }
 
 # Type check, with some relaxations for Oil

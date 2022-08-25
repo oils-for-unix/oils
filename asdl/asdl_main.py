@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-asdl_gen.py - Generate Python and C from OSH ASDL schemas.
+asdl_main.py - Generate Python and C from ASDL schemas.
 """
 from __future__ import print_function
 
