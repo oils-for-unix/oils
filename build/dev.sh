@@ -166,7 +166,7 @@ gen-asdl-cpp() {
 # compiler.
 
 py-codegen() {
-  OPTIONAL_FIELDS='' gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods
+  gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-required
 
   gen-asdl-py frontend/types.asdl
   gen-asdl-py core/runtime.asdl  # depends on syntax.asdl

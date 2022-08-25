@@ -146,14 +146,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
   def __init__(self, f, abbrev_mod_entries=None, e_suffix=True,
-               pretty_print_methods=True, optional_fields=True,
+               pretty_print_methods=True, py_init_required=False,
                simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
-    self.optional_fields = optional_fields
+    self.py_init_required = py_init_required
     # For Id to use different code gen.  It's used like an integer, not just
     # like an enum.
     self.simple_int_sums = simple_int_sums or []
@@ -291,10 +291,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # __init__
     #
 
-    if self.optional_fields:
-      args = ['%s=None' % f.name for f in all_fields]
-    else:
+    if self.py_init_required:
       args = [f.name for f in all_fields]
+    else:
+      args = ['%s=None' % f.name for f in all_fields]
 
     self.Emit('  def __init__(self, %s):' % ', '.join(args))
 
@@ -302,7 +302,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       t = _MyPyType(f.typ)
 
-      if self.optional_fields and f.typ.name != 'maybe':  # already Optional
+      if not self.py_init_required and f.typ.name != 'maybe':  # already Optional
         t = 'Optional[%s]' % t
       arg_types.append(t)
 

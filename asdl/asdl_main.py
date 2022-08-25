@@ -28,6 +28,10 @@ def Options():
       '--no-pretty-print-methods', dest='pretty_print_methods',
       action='store_false', default=True,
       help='Whether to generate pretty printing methods')
+  p.add_option(
+      '--py-init-required', dest='py_init_required',
+      action='store_true', default=False,
+      help='Whether Python codegen should require every field')
 
   return p
 
@@ -246,8 +250,6 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
         f.write('from _devbuild.gen.%s import Id_str\n' % typ.mod_name)
         f.write('\n')
 
-    optional_fields = bool(os.getenv('OPTIONAL_FIELDS', 'yes'))
-
     if opts.pretty_print_methods:
       f.write("""
 from asdl import runtime  # For runtime.NO_SPID
@@ -259,7 +261,7 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
     v = gen_python.GenMyPyVisitor(f, abbrev_mod_entries,
                                   pretty_print_methods=opts.pretty_print_methods,
-                                  optional_fields=optional_fields,
+                                  py_init_required=opts.py_init_required,
                                   simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)
 
