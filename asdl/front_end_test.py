@@ -8,7 +8,7 @@ import cStringIO
 import unittest
 
 from asdl import front_end  # module under test
-from asdl import asdl_
+from asdl import ast
 
 
 class FrontEndTest(unittest.TestCase):
@@ -53,7 +53,7 @@ class FrontEndTest(unittest.TestCase):
     schema_ast = p.parse(f)
     print(schema_ast)
     # For now just test its type
-    self.assert_(isinstance(schema_ast, asdl_.Module))
+    self.assert_(isinstance(schema_ast, ast.Module))
 
   def testParse(self):
     self._assertParse("""
@@ -126,13 +126,13 @@ module foo {
 
   def testAstNodes(self):
     # maybe[string]
-    n1 = asdl_.TypeExpr('string')
+    n1 = ast.TypeExpr('string')
     print(n1)
 
-    n2 = asdl_.TypeExpr('maybe', [n1])
+    n2 = ast.TypeExpr('maybe', [n1])
     print(n2)
 
-    n3 = asdl_.TypeExpr('map', [n1, asdl_.TypeExpr('int')])
+    n3 = ast.TypeExpr('map', [n1, ast.TypeExpr('int')])
     print(n3)
 
 

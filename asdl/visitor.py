@@ -4,7 +4,7 @@ visitor.py
 from __future__ import print_function
 
 import sys
-from asdl import asdl_ as asdl
+from asdl import ast
 
 
 class AsdlVisitor:
@@ -38,15 +38,15 @@ class AsdlVisitor:
     self.EmitFooter()
 
   def VisitType(self, typ, depth=0):
-    if isinstance(typ.value, asdl.Sum):
+    if isinstance(typ.value, ast.Sum):
       self.VisitSum(typ.value, typ.name, depth)
-    elif isinstance(typ.value, asdl.Product):
+    elif isinstance(typ.value, ast.Product):
       self.VisitProduct(typ.value, typ.name, depth)
     else:
       raise AssertionError(typ)
 
   def VisitSum(self, sum, name, depth):
-    if asdl.is_simple(sum):
+    if ast.is_simple(sum):
       self.VisitSimpleSum(sum, name, depth)
     else:
       self.VisitCompoundSum(sum, name, depth)

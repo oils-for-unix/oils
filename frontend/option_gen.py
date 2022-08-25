@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import sys
 
-from asdl import asdl_
+from asdl import ast
 from asdl.visitor import FormatLines
 from frontend import builtin_def
 from frontend import option_def
@@ -30,8 +30,8 @@ def _CreateSum(sum_name, variant_names):
   from _devbuild.gen.option_asdl import opt_num
   opt_num.nounset
   """
-  sum_ = asdl_.Sum([asdl_.Constructor(name) for name in variant_names])
-  typ = asdl_.TypeDecl(sum_name, sum_)
+  sum_ = ast.Sum([ast.Constructor(name) for name in variant_names])
+  typ = ast.TypeDecl(sum_name, sum_)
   return typ
 
 
@@ -50,7 +50,7 @@ def main(argv):
   # TODO: could shrink array later.
   # [opt.name for opt in option_def.All() if opt.implemented])
 
-  schema_ast = asdl_.Module('option', [], [option, builtin])
+  schema_ast = ast.Module('option', [], [option, builtin])
 
   if action == 'cpp':
     from asdl import gen_cpp

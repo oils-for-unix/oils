@@ -44,8 +44,6 @@ pyann-patched() {
 # NOTE: We're testing ASDL code generation with --strict because we might want
 # Oil to pass under --strict someday.
 typed-demo-asdl() {
-  asdl/run.sh gen-typed-demo-asdl
-
   # We want to exclude ONLY pylib.collections_, but somehow --exclude
   # '.*collections_\.py' does not do it.  So --follow-imports=silent.  Tried
   # --verbose too
@@ -64,7 +62,6 @@ check-arith() {
 }
 
 typed-arith-asdl() {
-  asdl/run.sh gen-typed-arith-asdl
   check-arith
 
   export PYTHONPATH=$PY_PATH
@@ -156,14 +153,11 @@ typecheck-more-oil() {
 }
 
 soil-run() {
-  if test -n "${TRAVIS_SKIP:-}"; then
-    echo "TRAVIS_SKIP: Skipping $0"
-    return
-  fi
-
   set -x
   mypy_ --version
   set +x
+
+  build/dev.sh py-asdl-testdata
 
   banner 'typed-arith-asdl'
   typed-arith-asdl

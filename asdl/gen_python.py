@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from collections import defaultdict
 
-from asdl import asdl_
+from asdl import ast
 from asdl import visitor
 from core.pyerror import log
 
@@ -41,12 +41,12 @@ def _MyPyType(typ):
     return 'Optional[%s]' % _MyPyType(typ.children[0])
 
   if typ.resolved:
-    if isinstance(typ.resolved, asdl_.Sum):  # includes SimpleSum
+    if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
       return '%s_t' % typ.name
-    if isinstance(typ.resolved, asdl_.Product):
+    if isinstance(typ.resolved, ast.Product):
       return typ.name
-    if isinstance(typ.resolved, asdl_.Use):
-      return asdl_.TypeNameHeuristic(type_name)
+    if isinstance(typ.resolved, ast.Use):
+      return ast.TypeNameHeuristic(type_name)
 
   # 'id' falls through here
   return _PRIMITIVES[type_name]
@@ -97,7 +97,7 @@ def _DefaultValue(typ):
     #default = "''"
     pass
 
-  elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
+  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
     sum_type = typ.resolved
     # Just make it the first variant.  We could define "Undef" for
     # each enum, but it doesn't seem worth it.
@@ -107,7 +107,7 @@ def _DefaultValue(typ):
 
 
 def _HNodeExpr(abbrev, typ, var_name):
-  # type: (str, asdl_.TypeExpr, str) -> str
+  # type: (str, ast.TypeExpr, str) -> str
   none_guard = False
   type_name = typ.name
 
@@ -130,7 +130,7 @@ def _HNodeExpr(abbrev, typ, var_name):
     # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
     code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
 
-  elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
+  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
     code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
         typ.name, var_name)
 

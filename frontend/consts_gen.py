@@ -23,17 +23,17 @@ def _CreateModule(id_spec, ids):
   """ 
   Create a SYNTHETIC ASDL module to generate code from.
   """
-  from asdl import asdl_
+  from asdl import ast
 
-  id_sum = asdl_.Sum([asdl_.Constructor(name) for name, _ in ids])
+  id_sum = ast.Sum([ast.Constructor(name) for name, _ in ids])
 
-  variants2 = [asdl_.Constructor(name) for name in id_spec.kind_name_list]
-  kind_sum = asdl_.Sum(variants2)
+  variants2 = [ast.Constructor(name) for name in id_spec.kind_name_list]
+  kind_sum = ast.Sum(variants2)
 
-  id_ = asdl_.TypeDecl('Id', id_sum)
-  kind_ = asdl_.TypeDecl('Kind', kind_sum)
+  id_ = ast.TypeDecl('Id', id_sum)
+  kind_ = ast.TypeDecl('Kind', kind_sum)
 
-  schema_ast = asdl_.Module('id_kind', [], [id_, kind_])
+  schema_ast = ast.Module('id_kind', [], [id_, kind_])
   return schema_ast
 
 

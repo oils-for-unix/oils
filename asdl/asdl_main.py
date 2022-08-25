@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
-from asdl import asdl_
+from asdl import ast
 from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
@@ -106,7 +106,7 @@ using id_kind_asdl::Id_t;
 
         # assume sum type for now!
         cpp_names = [
-            'class %s;' % asdl_.TypeNameHeuristic(n) for n in use.type_names]
+            'class %s;' % ast.TypeNameHeuristic(n) for n in use.type_names]
         f.write('namespace %s_asdl { %s }\n' % (
             use.mod_name, ' '.join(cpp_names)))
         f.write('\n')
@@ -217,7 +217,7 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
       f.write('\n')
       f.write('if TYPE_CHECKING:\n')
     for use in schema_ast.uses:
-      py_names = [asdl_.TypeNameHeuristic(n) for n in use.type_names]
+      py_names = [ast.TypeNameHeuristic(n) for n in use.type_names]
       # indented
       f.write('  from _devbuild.gen.%s_asdl import %s\n' % (
         use.mod_name, ', '.join(py_names)))

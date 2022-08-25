@@ -24,7 +24,7 @@ import sys
 
 from collections import defaultdict
 
-from asdl import asdl_
+from asdl import ast
 from asdl import visitor
 from core.pyerror import log
 
@@ -96,15 +96,15 @@ def _GetCppType(typ):
     return c_type
 
   elif typ.resolved:
-    if isinstance(typ.resolved, asdl_.SimpleSum):
+    if isinstance(typ.resolved, ast.SimpleSum):
       return '%s_t' % typ.name
-    if isinstance(typ.resolved, asdl_.Sum):
+    if isinstance(typ.resolved, ast.Sum):
       return '%s_t*' % typ.name
-    if isinstance(typ.resolved, asdl_.Product):
+    if isinstance(typ.resolved, ast.Product):
       return '%s*' % typ.name
-    if isinstance(typ.resolved, asdl_.Use):
+    if isinstance(typ.resolved, ast.Use):
       return '%s_asdl::%s*' % (
-          typ.resolved.mod_name, asdl_.TypeNameHeuristic(type_name))
+          typ.resolved.mod_name, ast.TypeNameHeuristic(type_name))
 
   # 'id' falls through here
   return _PRIMITIVES[typ.name]
@@ -138,7 +138,7 @@ def _DefaultValue(typ):
   elif type_name == 'string':
     default = 'StrFromC("")'
 
-  elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
+  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
     sum_type = typ.resolved
     # Just make it the first variant.  We could define "Undef" for
     # each enum, but it doesn't seem worth it.
@@ -151,7 +151,7 @@ def _DefaultValue(typ):
 
 
 def _HNodeExpr(abbrev, typ, var_name):
-  # type: (str, asdl_.TypeExpr, str) -> str
+  # type: (str, ast.TypeExpr, str) -> str
   none_guard = False
   type_name = typ.name
 
@@ -173,7 +173,7 @@ def _HNodeExpr(abbrev, typ, var_name):
   elif type_name == 'id':  # was meta.UserType
     code_str = 'new hnode__Leaf(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
 
-  elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
+  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
     code_str = 'new hnode__Leaf(StrFromC(%s_str(%s)), color_e::TypeName)' % (
         typ.name, var_name)
   else:

@@ -5,8 +5,8 @@ from __future__ import print_function
 
 import re
 
-from asdl import asdl_ as asdl
-from asdl.asdl_ import (
+from asdl import ast
+from asdl.ast import (
     Use, Module, TypeDecl, Constructor, Field, Sum, SimpleSum, Product, TypeExpr
 )
 
@@ -436,7 +436,7 @@ def _ResolveModule(module, app_types):
 
   for u in module.uses:
     for type_name in u.type_names:
-      type_lookup[type_name] = u  # type: asdl.Use()
+      type_lookup[type_name] = u  # type: ast.Use()
 
   # NOTE: We need two passes because types can be mutually recursive, e.g.
   # asdl/arith.asdl.
@@ -457,11 +457,11 @@ def _ResolveModule(module, app_types):
 
   for d in module.dfns:
     ast_node = d.value
-    if isinstance(ast_node, asdl.Product):
+    if isinstance(ast_node, ast.Product):
       #log('fields %s', ast_node.fields)
       _ResolveFields(ast_node.fields, type_lookup)
 
-    elif isinstance(ast_node, asdl.Sum):
+    elif isinstance(ast_node, ast.Sum):
       for cons in ast_node.types:
         _ResolveFields(cons.fields, type_lookup)
 
