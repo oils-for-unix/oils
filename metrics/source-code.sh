@@ -175,7 +175,7 @@ cpp-counts() {
     'The goal is to make the spec tests pass, but unit tests are helpful too.' \
     "$@"
 
-  ls NINJA*.py */NINJA*.{py,sh} | $count \
+  ls NINJA*.sh */NINJA*.{py,sh} | $count \
     'Incremental C++ Build' '' "$@"
 }
 

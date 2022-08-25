@@ -86,12 +86,12 @@ need-typechecking() {
   # typechecked by typecheck-more-oil here or
   # `types/oil-slice.sh soil-run`.
 
-  build/app-deps.sh osh-eval
+  build/dynamic-deps.sh osh-eval
   echo
 
   comm -2 -3 \
     <(checkable-files | sort | grep '.py$') \
-    <({ more-oil-manifest; cat _build/app-deps/osh_eval/typecheck.txt; } | sort) \
+    <({ more-oil-manifest; cat _build/NINJA/osh_eval/typecheck.txt; } | sort) \
     | xargs wc -l | sort -n
 }
 

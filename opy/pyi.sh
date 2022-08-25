@@ -32,10 +32,10 @@ demo() {
 multi() { ~/hg/tree-tools/bin/multi "$@"; }
 
 manifest() {
-  # TODO: Should change build/app_deps.py
+  # TODO: Should change build/dynamic_deps.py
   local out=_tmp/mypy
   mkdir -p $out
-  PYTHONPATH=. build/app_deps.py py-manifest bin.oil | multi cp $out
+  PYTHONPATH=. build/dynamic_deps.py py-manifest bin.oil | multi cp $out
 }
 
 stubgen-path() {

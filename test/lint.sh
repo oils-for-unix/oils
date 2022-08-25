@@ -178,7 +178,7 @@ find-files-to-lint() {
   ### Similar to find-prune / find-src-files, but used for Soil checks
 
   # don't touch mycpp yet because it's in Python 3
-  # build has build/app_deps.py which needs the -S
+  # build has build/dynamic_deps.py which needs the -S
   find . \
     -name '_*' -a -prune -o \
     -name 'Python-*' -a -prune -o \

@@ -1,13 +1,13 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 """
-app_deps_test.py: Tests for app_deps.py
+dynamic_deps_test.py: Tests for dynamic_deps.py
 """
 
 import sys
 import unittest
 
-import app_deps  # module under test
+import dynamic_deps  # module under test
 
 
 class AppDepsTest(unittest.TestCase):
@@ -19,7 +19,7 @@ class AppDepsTest(unittest.TestCase):
         ('simplejson',
          '/home/andy/dev/simplejson-2.1.5/simplejson/__init__.py')
     ]
-    for mod_type, x, y in app_deps.FilterModules(pairs):
+    for mod_type, x, y in dynamic_deps.FilterModules(pairs):
       print(mod_type, x, y)
 
 

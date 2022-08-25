@@ -376,7 +376,7 @@ make-tar() {
   #   The Makefile can and should operate without it.
   #
   # - We include intermediate files like c-module-srcs.txt, so we don't have to
-  #   ship tools app_deps.py.  The end-user build shouldn't depend on Python.
+  #   ship tools dynamic_deps.py.  The end-user build shouldn't depend on Python.
 
   tar --create --transform "$sed_expr" --file $out \
     LICENSE.txt \

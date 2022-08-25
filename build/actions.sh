@@ -70,7 +70,7 @@ app-deps() {
   local prefix=_build/$app_name/app-deps
 
   PYTHONPATH=$pythonpath \
-    $PREPARE_DIR/python -S build/app_deps.py both $main_module $prefix
+    $PREPARE_DIR/python -S build/dynamic_deps.py both $main_module $prefix
 }
 
 # .py files to compile
@@ -79,7 +79,7 @@ py-to-compile() {
   local main_module=${2:-hello}
 
   PYTHONPATH=$pythonpath \
-    $PREPARE_DIR/python -S build/app_deps.py py $main_module
+    $PREPARE_DIR/python -S build/dynamic_deps.py py $main_module
 }
 
 # For embedding in oil/bytecode.zip.

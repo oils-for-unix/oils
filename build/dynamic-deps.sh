@@ -3,7 +3,7 @@
 # Calculate and filter deps of Python apps.
 #
 # Usage:
-#   build/app-deps.sh <function name>
+#   build/dynamic-deps.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -19,7 +19,7 @@ readonly PY_PATH='.:vendor/'
 readonly DIR=_build/NINJA
 
 # In git
-readonly FILTER_DIR=build/app-deps
+readonly FILTER_DIR='build/dynamic-deps'
 
 write-filters() {
   ### Write files with the egrep -f format
@@ -72,7 +72,7 @@ EOF
 }
 
 repo-filter() {
-  ### Select files from the app_deps.py output
+  ### Select files from the dynamic_deps.py output
 
   # select what's in the repo; eliminating stdlib stuff
   # eliminate _cache for mycpp running under Python-3.10
@@ -102,7 +102,7 @@ py-tool() {
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/app_deps.py py-manifest $py_module \
+    build/dynamic_deps.py py-manifest $py_module \
     > $dir/all-pairs.txt
 
   cat $dir/all-pairs.txt | repo-filter | exclude-filter py-tool | mysort \
@@ -129,7 +129,7 @@ write-pea() {
 
   # Can't use vendor/typing.py
   PYTHONPATH=. $PY_310 \
-    build/app_deps.py py-manifest $module \
+    build/dynamic_deps.py py-manifest $module \
   > $dir/all-pairs.txt
 
   cat $dir/all-pairs.txt | repo-filter | mysort | tee $dir/deps.txt
@@ -144,7 +144,7 @@ write-mycpp() {
 
   ( source $MYCPP_VENV/bin/activate
     PYTHONPATH=$REPO_ROOT:$REPO_ROOT/mycpp:$MYPY_REPO maybe-our-python3 \
-      build/app_deps.py py-manifest $module > $dir/all-pairs.txt
+      build/dynamic_deps.py py-manifest $module > $dir/all-pairs.txt
   )
 
   cat $dir/all-pairs.txt \
@@ -164,7 +164,7 @@ mycpp-example-parse() {
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/app_deps.py py-manifest mycpp.examples.parse \
+    build/dynamic_deps.py py-manifest mycpp.examples.parse \
   > $dir/all-pairs.txt
 
   local ty=mycpp/examples/parse.typecheck.txt
@@ -184,6 +184,6 @@ pea-hack() {
 }
 
 # Source by NINJA-config.sh
-if test $(basename $0) = 'app-deps.sh'; then
+if test $(basename $0) = 'dynamic-deps.sh'; then
   "$@"
 fi

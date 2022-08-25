@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/app-deps.sh
+source build/dynamic-deps.sh
 
 asdl-main() { py-tool asdl.asdl_main; }
 
@@ -26,7 +26,7 @@ osh-eval() {
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/app_deps.py py-manifest bin.osh_eval \
+    build/dynamic_deps.py py-manifest bin.osh_eval \
   > $dir/all.txt
 
   set +o errexit

@@ -72,6 +72,8 @@ typecheck-all() {
 }
 
 soil-run() {
+  # Generate osh_eval dependencies.  Though this is overly aggressive
+  ./NINJA-config.sh
   typecheck-all _build/NINJA/osh_eval/typecheck.txt
 }
 
