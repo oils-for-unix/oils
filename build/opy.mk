@@ -18,11 +18,11 @@ _build/opy/py27.grammar.marshal:
 _build/opy/main_name.c:
 	$(ACTIONS_SH) main-name bin.opy_ opy.ovm > $@
 
-_build/opy/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
+_build/opy/app-deps-%.txt: _build/detected-config.sh build/dynamic_deps.py
 	test -d _build/opy && \
 	  $(ACTIONS_SH) app-deps opy $(OPY_PYPATH) bin.opy_
 
-_build/opy/py-to-compile.txt: _build/detected-config.sh build/app_deps.py
+_build/opy/py-to-compile.txt: _build/detected-config.sh build/dynamic_deps.py
 	test -d _build/opy && \
 	  $(ACTIONS_SH) py-to-compile $(OPY_PYPATH) bin.opy_ > $@
 

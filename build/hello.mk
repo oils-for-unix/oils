@@ -13,12 +13,12 @@ HELLO_PYPATH := $(REPO_ROOT)/build/testdata:$(REPO_ROOT)/vendor
 # Dependencies calculated by importing main.  The guard is because ovm.d
 # depends on it.  Is that correct?  We'll skip it before 'make dirs'.
 _build/hello/app-deps-%.txt: $(HELLO_SRCS) \
-	_build/detected-config.sh build/app_deps.py
+	_build/detected-config.sh build/dynamic_deps.py
 	test -d _build/hello && \
 	  $(ACTIONS_SH) app-deps hello $(HELLO_PYPATH) hello
 
 _build/hello/py-to-compile.txt: \
-	_build/detected-config.sh build/app_deps.py
+	_build/detected-config.sh build/dynamic_deps.py
 	test -d _build/hello && \
 	  $(ACTIONS_SH) py-to-compile $(HELLO_PYPATH) hello > $@
 

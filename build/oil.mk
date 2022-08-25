@@ -15,11 +15,11 @@ OIL_PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
 #
 # BUG: Running 'make' the first time files because it can't find the '_build'
 # package.  build/doc.sh currently makes _build/__init__.py.
-_build/oil/app-deps-%.txt: _build/detected-config.sh build/app_deps.py
+_build/oil/app-deps-%.txt: _build/detected-config.sh build/dynamic_deps.py
 	test -d _build/oil && \
 	  $(ACTIONS_SH) app-deps oil $(OIL_PYPATH) bin.oil
 
-_build/oil/py-to-compile.txt: _build/detected-config.sh build/app_deps.py
+_build/oil/py-to-compile.txt: _build/detected-config.sh build/dynamic_deps.py
 	test -d _build/oil && \
 		$(ACTIONS_SH) py-to-compile $(OIL_PYPATH) bin.oil > $@
 
