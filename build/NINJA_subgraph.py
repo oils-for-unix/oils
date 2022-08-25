@@ -6,7 +6,7 @@ Directory structure:
 
 # These are the code generators.  Could nested like asdl/asdl_main too
 _bin/
-  pystub/
+  shwrap/
     asdl_main
     mycpp_main
     lexer_gen
@@ -74,6 +74,8 @@ def NinjaGraph(n):
          # $in must start with main program
          command='build/NINJA-steps.sh write-shwrap py $out $in',
          description='make-pystub $out $in')
+  n.newline()
+
   n.rule('write-shwrap-mycpp',
          # $in must start with main program
          command='build/NINJA-steps.sh write-shwrap mycpp $out $in',
@@ -91,6 +93,7 @@ def NinjaGraph(n):
   deps.remove(main_py)  # raises ValueError
 
   n.build('_bin/shwrap/asdl_main', 'write-shwrap-py', [main_py] + deps)
+  n.newline()
 
   # This committed file is genereated by build/app-deps.sh
   with open('mycpp/NINJA/mycpp.mycpp_main/deps.txt') as f:
@@ -100,4 +103,5 @@ def NinjaGraph(n):
   deps.remove(main_py)  # raises ValueError
 
   n.build('_bin/shwrap/mycpp_main', 'write-shwrap-mycpp', [main_py] + deps)
+  n.newline()
 

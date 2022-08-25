@@ -38,14 +38,20 @@ shwrap-mycpp() {
   #source mycpp/common.sh  # MYCPP_VENV
 
   cat <<'EOF'
-MYCPP_VENV=$1  # usually ../oil_DEPS/mycpp-venv
-MYPY_REPO=$2   # usually ../oil_DEPS/mypy
-MYPYPATH=$3    # e.g. $REPO_ROOT/mycpp
-shift 3
+MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
+out=$2
+shift 2
 
-. $MYCPP_VENV/bin/activate
+. $REPO_ROOT/mycpp/common-vars.sh  # for $MYCPP_VENV $MYPY_REPO
+
+. $MYCPP_VENV/bin/activate  # so MyPy can import
+
+tmp=$out.tmp  # avoid creating partial files
+
 PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
-  exec ../oil_DEPS/python3 mycpp/mycpp_main.py "$@"
+  ../oil_DEPS/python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+
+mv $tmp $out
 EOF
 
   shift

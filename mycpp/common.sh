@@ -11,8 +11,7 @@ if test -z "${REPO_ROOT:-}"; then
   exit 1
 fi
 
-readonly MYPY_REPO=$REPO_ROOT/../oil_DEPS/mypy
-readonly MYCPP_VENV=$REPO_ROOT/../oil_DEPS/mycpp-venv
+source mycpp/common-vars.sh
 
 # Used by cpp/test.sh and mycpp/test.sh
 

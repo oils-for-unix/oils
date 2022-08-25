@@ -32,6 +32,10 @@ def Options():
       help='Show details about translation')
 
   p.add_option(
+      '--cc-out', dest='cc_out', default=None,
+      help='.cc file to write to')
+
+  p.add_option(
       '--to-header', dest='to_header', action='append', default=[],
       help='Export this module to a header, e.g. frontend.args')
 
@@ -229,7 +233,10 @@ def main(argv):
       builder.visit_mypy_file(module)
     return
 
-  f = sys.stdout
+  if opts.cc_out:
+    f = open(opts.cc_out, 'w')
+  else:
+    f = sys.stdout
 
   # TODO: Add --cc-out?  But there is a preamble and postamble.
   f.write("""\

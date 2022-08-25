@@ -77,24 +77,13 @@ wrap-cc() {
   } > $out
 }
 
-translate-mycpp() {
-  ### Translate Python/MyPy to C++.
-
-  local out=$1
-  shift  # rest of args are inputs
-
-  local tmp=$out.tmp
-
-  local mypypath="$REPO_ROOT/mycpp"
-  _bin/shwrap/mycpp_main $MYCPP_VENV $MYPY_REPO $mypypath "$@" > $tmp
-
-  # Don't create output unless it succeeds!
-  mv $tmp $out
-}
-
 translate-pea() {
-  local out=$1
-  shift  # rest of args are inputs
+
+  # TODO: Remove this in favor of _bin/shwrap/pea_main
+
+  local mypypath=$1  # interface compatibility
+  local out=$2
+  shift 2  # rest of args are inputs
 
   pea/test.sh translate-cpp "$@" > $out
 }
