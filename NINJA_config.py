@@ -7,6 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
+from build import NINJA_subgraph as build_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
 from mycpp import NINJA_subgraph as mycpp_subgraph
 
@@ -35,6 +36,11 @@ def main(argv):
 
   if action == 'ninja':
     n = ninja_syntax.Writer(open(BUILD_NINJA, 'w'))
+
+    build_subgraph.NinjaGraph(n)
+
+    n.newline()
+    n.newline()
 
     cpp_subgraph.NinjaGraph(n)
 

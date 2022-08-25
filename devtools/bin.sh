@@ -9,10 +9,13 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# Used by devtools/bin.sh and opy/build.sh
-readonly OIL_SYMLINKS=(oil oilc osh oshc tea sh true false readlink)
-readonly OPY_SYMLINKS=(opy opyc)
+source build/NINJA-steps.sh
 
+# Used by devtools/bin.sh and opy/build.sh
+readonly OIL_OVM_NAMES=(oil oilc osh oshc tea sh true false readlink)
+readonly OPY_NAMES=(opyc)
+
+# TODO: probably delete this
 # For osh-dbg.
 ovm-snippet() {
   local name=$1
@@ -36,12 +39,9 @@ make-osh-eval() {
   echo "Wrote $out"
 }
 
-sh-prefix() {
-  cat << 'EOF'
-#!/bin/sh
-REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)
-EOF
-}
+#
+# Shell Stubs
+#
 
 sh-snippet() {
   local wrapped=$1  # e.g. oil.py
@@ -67,14 +67,14 @@ make-bin-stubs() {
   ### bin/ is for running with the Python interpreter.
   mkdir -p bin
 
-  for link in "${OIL_SYMLINKS[@]}"; do
+  for link in "${OIL_OVM_NAMES[@]}"; do
     # bin/ shell wrapper
     oil-dev-snippet $link > bin/$link
     chmod +x bin/$link
     echo "Wrote bin/$link"
   done
 
-  for link in "${OPY_SYMLINKS[@]}"; do
+  for link in "${OPY_NAMES[@]}"; do
     opy-dev-snippet $link > bin/$link
     chmod +x bin/$link
     echo "Wrote bin/$link"
@@ -90,12 +90,12 @@ make-bin-links() {
 
   mkdir -p _bin
 
-  for link in "${OIL_SYMLINKS[@]}"; do
+  for link in "${OIL_OVM_NAMES[@]}"; do
     # _bin/ symlink
     ln -s -f --verbose oil.ovm _bin/$link
   done
 
-  for link in "${OPY_SYMLINKS[@]}"; do
+  for link in "${OPY_NAMES[@]}"; do
     # _bin/ symlink
     ln -s -f --verbose opy.ovm _bin/$link
   done
