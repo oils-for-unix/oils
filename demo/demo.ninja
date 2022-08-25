@@ -1,0 +1,17 @@
+empty =
+sq = ''
+spaces = foo bar
+
+rule argv
+  command = spec/bin/argv.py $out $empty $in $sq $spaces
+
+# The whole thing is a big shell string
+# So this uses shell quoting rules
+#
+# It's a bit like
+# mystr="spec/bin/argv.py $out $in $sq $spaces"
+# $mystr
+
+# we get ['_tmp/out1', '_tmp/out2', '_tmp/in1', _tmp/in2, '', 'foo', 'bar']
+
+build _tmp/out1 _tmp/out2: argv _tmp/in1 _tmp/in2

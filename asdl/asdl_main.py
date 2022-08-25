@@ -4,6 +4,7 @@ asdl_main.py - Generate Python and C from ASDL schemas.
 """
 from __future__ import print_function
 
+import optparse
 import os
 import sys
 
@@ -19,6 +20,18 @@ from asdl import gen_python
 _SIMPLE = ['state', 'emit', 'char_kind', 'opt_group']
 
 
+def Options():
+  """Returns an option parser instance."""
+
+  p = optparse.OptionParser()
+  p.add_option(
+      '--no-pretty-print-methods', dest='pretty_print_methods',
+      action='store_false', default=True,
+      help='Whether to generate pretty printing methods')
+
+  return p
+
+
 class UserType(object):
   """
   TODO: Delete this class after we have modules with 'use'?
@@ -32,6 +45,9 @@ class UserType(object):
 
 
 def main(argv):
+  o = Options()
+  opts, argv = o.parse_args(argv)
+
   try:
     action = argv[1]
   except IndexError:
@@ -57,7 +73,6 @@ def main(argv):
 
   elif action == 'cpp':  # Generate C++ code for ASDL schemas
     out_prefix = argv[3]
-    pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
 
     with open(schema_path) as f:
       schema_ast = front_end.LoadSchema(f, app_types)
@@ -85,7 +100,7 @@ def main(argv):
 #include "mycpp/gc_containers.h"
 #endif
 """)
-      if pretty_print_methods:
+      if opts.pretty_print_methods:
         f.write("""\
 #include "_build/cpp/hnode_asdl.h"
 using hnode_asdl::hnode_t;
@@ -120,7 +135,7 @@ namespace %s {
       v.VisitModule(schema_ast)
 
       debug_info = {}
-      v2 = gen_cpp.ClassDefVisitor(f, pretty_print_methods=pretty_print_methods,
+      v2 = gen_cpp.ClassDefVisitor(f, pretty_print_methods=opts.pretty_print_methods,
                                    simple_int_sums=_SIMPLE,
                                    debug_info=debug_info)
       v2.VisitModule(schema_ast)
@@ -152,7 +167,7 @@ tags_to_types = \\
 #include <assert.h>
 """ % (out_prefix, ns))
 
-        if pretty_print_methods:
+        if opts.pretty_print_methods:
           f.write("""\
 #include "asdl/runtime.h"  // generated code uses wrappers here
 """)
@@ -161,7 +176,7 @@ tags_to_types = \\
         for use in schema_ast.uses:
           f.write('#include "%s_asdl.h"  // "use" in ASDL \n' % use.mod_name)
 
-        if pretty_print_methods:
+        if opts.pretty_print_methods:
           f.write("""\
 
 // Generated code uses these types
@@ -184,7 +199,7 @@ namespace %s {
 """ % ns)
 
         v3 = gen_cpp.MethodDefVisitor(f,
-                                      pretty_print_methods=pretty_print_methods,
+                                      pretty_print_methods=opts.pretty_print_methods,
                                       simple_int_sums=_SIMPLE)
         v3.VisitModule(schema_ast)
 
@@ -231,10 +246,9 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
         f.write('from _devbuild.gen.%s import Id_str\n' % typ.mod_name)
         f.write('\n')
 
-    pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
     optional_fields = bool(os.getenv('OPTIONAL_FIELDS', 'yes'))
 
-    if pretty_print_methods:
+    if opts.pretty_print_methods:
       f.write("""
 from asdl import runtime  # For runtime.NO_SPID
 from asdl.runtime import NewRecord, NewLeaf
@@ -244,7 +258,7 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
 
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
     v = gen_python.GenMyPyVisitor(f, abbrev_mod_entries,
-                                  pretty_print_methods=pretty_print_methods,
+                                  pretty_print_methods=opts.pretty_print_methods,
                                   optional_fields=optional_fields,
                                   simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)

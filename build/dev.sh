@@ -166,7 +166,7 @@ gen-asdl-cpp() {
 # compiler.
 
 py-codegen() {
-  OPTIONAL_FIELDS='' PRETTY_PRINT_METHODS='' gen-asdl-py 'asdl/hnode.asdl'
+  OPTIONAL_FIELDS='' gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods
 
   gen-asdl-py frontend/types.asdl
   gen-asdl-py core/runtime.asdl  # depends on syntax.asdl
@@ -195,7 +195,7 @@ py-asdl-testdata() {
 oil-asdl-to-cpp() {
   mkdir -p _build/cpp _devbuild/tmp
 
-  PRETTY_PRINT_METHODS='' gen-asdl-cpp 'asdl/hnode.asdl'
+  gen-asdl-cpp 'asdl/hnode.asdl' --no-pretty-print-methods
 
   gen-asdl-cpp frontend/types.asdl  # no dependency on Id
   gen-asdl-cpp core/runtime.asdl
