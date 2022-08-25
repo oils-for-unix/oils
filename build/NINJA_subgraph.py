@@ -32,26 +32,37 @@ def NinjaGraph(n):
   n.newline()
 
   # Preprocess one translation unit
-  n.rule('make-pystub',
-         # $in starts with main program?
-         command='build/NINJA-steps.sh make-pystub $out $in',
+  n.rule('write-py-stub',
+         # $in must start with main program
+         command='build/NINJA-steps.sh write-stub py $out $in',
+         description='make-pystub $out $in')
+  n.rule('write-mycpp-stub',
+         # $in must start with main program
+         command='build/NINJA-steps.sh write-stub mycpp $out $in',
          description='make-pystub $out $in')
   n.newline()
 
   # build/app-deps.sh asdl-tool gives us the dependencies
-  #
-  # This filters with build/app-deps/filter-py-tool.txt
-  #
-  # But how do we put asdl/tool.py at the front?  Do it manually?
+  # It filters with build/app-deps/filter-py-tool.txt
 
   p = subprocess.Popen(['build/app-deps.sh', 'py-tool', 'asdl.asdl_main'], stdout=subprocess.PIPE)
-  for line in p.stdout:
-    dep = line.strip()
-    print('# %s' % dep)
+  deps = [line.strip() for line in p.stdout]
   status = p.wait()
-  log('status %d', status)
+  if status != 0:
+    raise AssertionError(status)
 
-  deps = []
-  n.build('_bin/pystubs/asdl_tool', 'make-pystub', deps)
+  # Put it at the front manually
+  main_py = 'asdl/asdl_main.py'
+  deps.remove(main_py)  # raises ValueError
 
-  n.build('_bin/pystubs/optview_gen', 'make-pystub', deps)
+  n.build('_bin/pystubs/asdl_main', 'write-py-stub', [main_py] + deps)
+
+  # This committed file is genereated by build/app-deps.sh
+  with open('mycpp/NINJA/mycpp.mycpp_main.FILTERED.txt') as f:
+    deps = [line.strip() for line in f]
+
+  main_py = 'mycpp/mycpp_main.py'
+  deps.remove(main_py)  # raises ValueError
+
+  n.build('_bin/pystubs/mycpp_main', 'write-mycpp-stub', [main_py] + deps)
+

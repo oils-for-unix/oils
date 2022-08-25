@@ -7,38 +7,73 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-sh-prefix() {
+sh-stub-prefix() {
   cat << 'EOF'
 #!/bin/sh
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+REPO_ROOT=$(cd "$(dirname $0)/../.."; pwd)
 EOF
 }
 
-sh-pystub() {
+sh-deps-comment() {
+  echo
+  echo '# DEPENDS ON:'
+  for dep in "$@"; do
+    echo "#   $dep"
+  done
+}
+
+sh-py-stub() {
   local main=$1
-  sh-prefix
+  sh-stub-prefix
   echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/'$main' "$@"'
 
   # Now write outputs
   shift
-  echo
-  echo '# depends on:'
-  for dep in "$@"; do
-    echo "# $dep"
-  done
+  sh-deps-comment "$@"
 }
 
-make-pystub() {
+sh-mycpp-stub() {
+  sh-stub-prefix
+
+  #source mycpp/common.sh  # MYCPP_VENV
+
+  cat <<'EOF'
+MYCPP_VENV=$1  # usually ../oil_DEPS/mycpp-venv
+MYPY_REPO=$2   # usually ../oil_DEPS/mypy
+MYPYPATH=$3    # e.g. $REPO_ROOT/mycpp
+shift 3
+
+. $MYCPP_VENV/bin/activate
+PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
+  exec ../oil_DEPS/python3 mycpp/mycpp_main.py "$@"
+EOF
+
+  shift
+  sh-deps-comment "$@"
+}
+
+write-stub() {
   ### Create a stub for a Python tool
 
   # Key point: if the Python code changes, then the C++ code should be
   # regenerated and re-compiled
 
-  # e.g. for _bin/pytools/asdl_tool ?
-  local stub_out=$1
-  shift
+  local kind=$1
+  local stub_out=$2
+  shift 2
 
-  sh-pystub "$@" > $stub_out
+  case $kind in
+    (py)
+      sh-py-stub "$@" > $stub_out
+      ;;
+    (mycpp)
+      sh-mycpp-stub "$@" > $stub_out
+      ;;
+    (*)
+      die "Invalid kind '$kind'"
+      ;;
+  esac
+
   chmod +x $stub_out
 }
 

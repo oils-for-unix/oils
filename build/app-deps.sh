@@ -75,7 +75,8 @@ repo-filter() {
   ### Select files from the app_deps.py output
 
   # select what's in the repo; eliminating stdlib stuff
-  fgrep "$REPO_ROOT" | awk '{ print $2 }' 
+  # eliminate _cache for mycpp running under Python-3.10
+  fgrep -v "$REPO_ROOT/_cache" | fgrep "$REPO_ROOT" | awk '{ print $2 }' 
 }
 
 exclude-filter() {
@@ -146,16 +147,15 @@ pea() {
 }
 
 mycpp() {
+  # This is committed to git instead of in _build/app-deps/ because users might
+  # not have Python 3.10
   local dir=mycpp/NINJA
   mkdir -p $dir
 
   local module='mycpp.mycpp_main'
 
-  # mycpp can't be imported with $PY_310 for some reason
-  # typing_extensions?
-
   ( source $MYCPP_VENV/bin/activate
-    PYTHONPATH=$REPO_ROOT:$REPO_ROOT/mycpp:$MYPY_REPO /usr/bin/env python3 \
+    PYTHONPATH=$REPO_ROOT:$REPO_ROOT/mycpp:$MYPY_REPO maybe-our-python3 \
       build/app_deps.py py-manifest $module > $dir/$module.ALL.txt
   )
 

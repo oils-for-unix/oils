@@ -262,7 +262,12 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
     to_translate = TRANSLATE_FILES[ex]
   else:
     to_translate = ['mycpp/examples/%s.py' % ex]
-  n.build(raw, 'translate-%s' % translator, to_translate)
+
+  # Implicit dependency: if the translator changes, regenerate source code.
+  # But don't pass it on the command line.
+  translator_path = '_bin/pystubs/%s_main' % translator
+  n.build(raw, 'translate-%s' % translator, to_translate,
+         implicit=[translator_path])
 
   p = 'mycpp/examples/%s_preamble.h' % ex
   # Ninja empty string!

@@ -30,6 +30,13 @@ make-osh-dbg() {
   chmod +x $out
 }
 
+sh-prefix() {
+  cat << 'EOF'
+#!/bin/sh
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+EOF
+}
+
 make-osh-eval() {
   local out=bin/osh_eval
   { sh-prefix

@@ -29,18 +29,6 @@ deps() {
   pip3 install --user --upgrade 'mypy'
 }
 
-# This has a bug
-#pyannotate() { ~/.local/bin/pyannotate "$@"; }
-
-readonly PYANN_REPO=~/git/oilshell/pyannotate/
-
-pyann-patched() {
-  local tool=$PYANN_REPO/pyannotate_tools/annotations
-  export PYTHONPATH=$PYANN_REPO
-  # --dump can help
-  python $tool "$@"
-}
-
 # NOTE: We're testing ASDL code generation with --strict because we might want
 # Oil to pass under --strict someday.
 typed-demo-asdl() {
@@ -173,6 +161,18 @@ soil-run() {
 #
 # PyAnnotate
 #
+
+# This has a bug
+#pyannotate() { ~/.local/bin/pyannotate "$@"; }
+
+readonly PYANN_REPO=~/git/oilshell/pyannotate/
+
+pyann-patched() {
+  local tool=$PYANN_REPO/pyannotate_tools/annotations
+  export PYTHONPATH=$PYANN_REPO
+  # --dump can help
+  python $tool "$@"
+}
 
 collect-types() {
   export PYTHONPATH=".:$PYANN_REPO"

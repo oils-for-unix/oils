@@ -85,13 +85,8 @@ translate-mycpp() {
 
   local tmp=$out.tmp
 
-  # NOTE: mycpp has to be run in the virtualenv, as well as with a different
-  # PYTHONPATH.
-  ( source $MYCPP_VENV/bin/activate
-    # MYPYPATH set to find mylib.pyi
-    time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH="$REPO_ROOT/mycpp" \
-      maybe-our-python3 mycpp/mycpp_main.py "$@" > $tmp
-  )
+  local mypypath="$REPO_ROOT/mycpp"
+  _bin/pystubs/mycpp_main $MYCPP_VENV $MYPY_REPO $mypypath "$@" > $tmp
 
   # Don't create output unless it succeeds!
   mv $tmp $out
@@ -304,4 +299,6 @@ logs-equal() {
   } | tee $out
 }
 
-"$@"
+if test $(basename $0) = 'NINJA-steps.sh'; then
+  "$@"
+fi

@@ -269,5 +269,6 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
+    arg0 = os.path.basename(sys.argv[0])
+    print('%s: FATAL: %s' % (arg0, e) , file=sys.stderr)
     
