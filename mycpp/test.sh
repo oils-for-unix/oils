@@ -157,10 +157,14 @@ unit() {
   # ninja mycpp-$variant
   ninja mycpp-unit-$compiler-$variant
 
-  local log_dir=_test/$compiler-$variant/mycpp-unit
+  local log_dir=_test/$compiler-$variant/mycpp
   mkdir -p $log_dir
 
-  for b in _bin/$compiler-$variant/mycpp-unit/*; do
+  for b in _bin/$compiler-$variant/mycpp/*; do
+    if ! test -f $b; then
+      continue
+    fi
+
     local prefix=$log_dir/$(basename $b)
     local log=$prefix.log
 
@@ -202,8 +206,8 @@ unit-test-coverage() {
 
   unit clang coverage
 
-  local out_dir=_test/clang-coverage/mycpp-unit 
-  test/coverage.sh html-report $out_dir mycpp-unit
+  local out_dir=_test/clang-coverage/mycpp
+  test/coverage.sh html-report $out_dir mycpp
 }
 
 examples-coverage() {

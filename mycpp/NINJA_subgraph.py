@@ -36,16 +36,20 @@ Output Layout:
 
   _bin/
     cxx-dbg/
-      mycpp-examples/
-        cgi
-        classes
+      mycpp/
+        examples/
+          cgi.mycpp
+          classes.mycpp
+          cgi.pea
+          classes.pea
 
     cxx-opt/
-      mycpp-examples/
-        cgi.stripped
+      mycpp/
+        examples/
+          cgi.mycpp.stripped
 
     cxx-gcevery/
-      mycpp-unit/
+      mycpp/
         gc_heap_test
 
     clang-coverage/
@@ -546,7 +550,7 @@ def NinjaGraph(n):
       # assume names are unique
       test_name, _ = os.path.splitext(os.path.basename(main_cc))
 
-      b = '_bin/%s-%s/mycpp-unit/%s' % (compiler, variant, test_name)
+      b = '_bin/%s-%s/mycpp/%s' % (compiler, variant, test_name)
 
       # Hack: avoid illegal combinations
       test_runs_under_variant = False

@@ -96,7 +96,7 @@ unified-report() {
   mkdir -p $out_dir
 
   html-report $out_dir \
-    mycpp-unit mycpp/examples cpp
+    mycpp mycpp/examples cpp
 }
 
 log-files-index() {
