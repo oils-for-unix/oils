@@ -105,6 +105,11 @@ DEPS_CC = [
     '_build/cpp/id_kind_asdl.cc',
 ]
 
+HEADER_DEPS = {
+    # Weird implicit dependency
+    'cpp/leaky_frontend_flag_spec.cc': ['_build/cpp/osh_eval.h'],
+}
+
 # -D NO_GC_HACK: Avoid memset().  -- rename GC_NO_MEMSET?
 #  - only applies to gc_heap.h in Space::Clear()
 # -D OLDSTL_BINDINGS: for QSN, which is used by the ASDL runtime
@@ -238,7 +243,8 @@ def NinjaGraph(n):
       obj = '_build/obj/%s-%s/%s.o' % (compiler, variant, base_name)
       objects.append(obj)
 
-      n.build(obj, 'compile_one', [src], variables=ninja_vars)
+      n.build(obj, 'compile_one', [src], variables=ninja_vars,
+              implicit=HEADER_DEPS.get(src, []))
       n.newline()
 
     bin_separate = '_bin/%s-%s/osh_eval' % (compiler, variant)

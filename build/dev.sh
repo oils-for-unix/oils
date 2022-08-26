@@ -219,8 +219,6 @@ oil-cpp-codegen() {
   cpp-codegen
 
   build/native.sh gen-oil-native-sh  # script to build it
-
-  build/translate.sh osh-eval  # translate with mycpp
 }
 
 oil-cpp() {

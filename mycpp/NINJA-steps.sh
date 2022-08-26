@@ -15,22 +15,6 @@ source $REPO_ROOT/mycpp/common.sh  # maybe-our-python3
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PATH
 
-mycpp() {
-  ### Run mycpp (in a virtualenv because it depends on Python 3 / MyPy)
-
-  # created by mycpp/run.sh
-  ( 
-    # for _OLD_VIRTUAL_PATH error on Travis?
-    set +o nounset
-    set +o pipefail
-    set +o errexit
-
-    source $MYCPP_VENV/bin/activate
-    time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
-      maybe-our-python3 mycpp/mycpp_main.py "$@"
-  )
-}
-
 example-main() {
   local main_module=${1:-fib_iter}
 
@@ -52,6 +36,8 @@ EOF
 }
 
 osh-eval-main() {
+  local name=$1
+
   cat <<EOF
 int main(int argc, char **argv) {
 
@@ -89,45 +75,36 @@ int main(int argc, char **argv) {
 EOF
 }
 
-cpp-skeleton() {
-  local name=$1
-  shift
+gen-osh-eval() {
+  local out_prefix=$1
+  shift  # rest are inputs
 
-  cat <<EOF
+  local raw=${out_prefix}_raw.cc
+  local cc_out=${out_prefix}.cc
+  local header_out=${out_prefix}.h
+
+  local mypypath="$REPO_ROOT:$REPO_ROOT/native"
+
+  _bin/shwrap/mycpp_main \
+    $mypypath $raw \
+    --header-out $header_out \
+    --to-header frontend.args \
+    --to-header asdl.runtime \
+    --to-header asdl.format \
+    "$@"
+
+  { 
+    local name='osh_eval'
+    cat <<EOF
 // $name.cc: translated from Python by mycpp
 
 #include "cpp/leaky_preamble.h"  // hard-coded stuff
 EOF
 
-  cat "$@"
+    cat $raw
 
-  osh-eval-main
-}
-
-osh-eval() {
-  ### Translate bin/osh_eval.py -> _build/cpp/osh_eval.{cc,h}
-
-  local name=${1:-osh_eval}
-
-  mkdir -p $TEMP_DIR _build/cpp
-
-  local raw=$TEMP_DIR/${name}_raw.cc 
-  local cc=_build/cpp/$name.cc
-  local h=_build/cpp/$name.h
-
-  #if false; then
-  if true; then
-    # relies on splitting
-    cat _build/NINJA/osh_eval/translate.txt | xargs -- \
-      $0 mycpp \
-        --header-out $h \
-        --to-header frontend.args \
-        --to-header asdl.runtime \
-        --to-header asdl.format \
-    > $raw 
-  fi
-
-  cpp-skeleton $name $raw > $cc
+    osh-eval-main $name
+  } > $cc_out
 }
 
 wrap-cc() {
@@ -154,7 +131,6 @@ wrap-cc() {
 }
 
 translate-pea() {
-
   # TODO: Remove this in favor of _bin/shwrap/pea_main
 
   local mypypath=$1  # interface compatibility

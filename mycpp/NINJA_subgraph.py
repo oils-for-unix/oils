@@ -401,13 +401,18 @@ def NinjaGraph(n):
   n.variable('NINJA_REPO_ROOT', os.path.dirname(this_dir))
   n.newline()
 
-  # Use stub directly
+  # TODO: could go in bin/NINJA_subgraph
+  n.rule('gen-osh-eval',
+         command='mycpp/NINJA-steps.sh gen-osh-eval $out_prefix $in',
+         description='gen-osh-eval $out_prefix $in')
+  n.newline()
+
   n.rule('asdl-cpp',
          command='_bin/shwrap/asdl_main cpp $asdl_flags $in $out_prefix',
          description='asdl $asdl_flags $in $out_prefix')
   n.newline()
 
-  # Two translators
+  # mycpp and pea have the same interface
   n.rule('translate-mycpp',
          command='_bin/shwrap/mycpp_main $mypypath $out $in',
          description='mycpp $mypypath $out $in')
@@ -481,6 +486,17 @@ def NinjaGraph(n):
       # TODO: eventually we will have pea-logs-equal, and pea-benchmark-table
   }
 
+  #
+  # osh_eval.  Could go in bin/NINJA_subgraph.py
+  #
+
+  with open('_build/NINJA/osh_eval/translate.txt') as f:
+    deps = [line.strip() for line in f]
+
+  prefix = '_build/cpp/osh_eval'
+  n.build([prefix + '.h', prefix + '.cc'], 'gen-osh-eval', deps,
+          implicit=['_bin/shwrap/mycpp_main'],
+          variables=[('out_prefix', prefix)])
 
   #
   # Individual object files
