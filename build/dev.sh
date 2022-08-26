@@ -150,7 +150,7 @@ gen-asdl-cpp() {
   local debug_info=_devbuild/gen/${name}_asdl_debug.py
 
   # abbrev module is optional
-  asdl/asdl_main.py cpp $asdl_path $out_prefix $debug_info
+  asdl/asdl_main.py cpp $asdl_path $out_prefix $debug_info "$@"
 
   # TODO: expand when .gc is the only thing generated
   #local -a out_files=( $out_prefix* )
@@ -166,7 +166,8 @@ gen-asdl-cpp() {
 # compiler.
 
 py-codegen() {
-  gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-required
+  # note: filename must come first
+  gen-asdl-py asdl/hnode.asdl --no-pretty-print-methods --py-init-required
 
   gen-asdl-py frontend/types.asdl
   gen-asdl-py core/runtime.asdl  # depends on syntax.asdl
@@ -195,7 +196,8 @@ py-asdl-testdata() {
 oil-asdl-to-cpp() {
   mkdir -p _build/cpp _devbuild/tmp
 
-  gen-asdl-cpp 'asdl/hnode.asdl' --no-pretty-print-methods
+  # note: filename must come first
+  gen-asdl-cpp asdl/hnode.asdl '' --no-pretty-print-methods
 
   gen-asdl-cpp frontend/types.asdl  # no dependency on Id
   gen-asdl-cpp core/runtime.asdl
