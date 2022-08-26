@@ -2,8 +2,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.typed_arith_asdl import arith_expr_t
-from asdl import tdop
-from asdl import typed_arith_parse  # module under test
+from asdl.examples import tdop
+from asdl.examples import typed_arith_parse  # module under test
 
 from typing import Callable, Optional, TYPE_CHECKING
 

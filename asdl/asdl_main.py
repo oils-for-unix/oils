@@ -272,8 +272,9 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
 #
 
 """)
-      package, module = abbrev_module_name.split('.')
-      path = os.path.join(package, module + '.py')
+      first, module = abbrev_module_name.rsplit('.', 1)
+      dir_name = first.replace('.', '/')
+      path = os.path.join(dir_name, module + '.py')
       with open(path) as in_f:
         f.write(in_f.read())
 

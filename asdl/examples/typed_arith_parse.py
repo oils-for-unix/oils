@@ -15,8 +15,8 @@ from _devbuild.gen.typed_arith_asdl import (
 from typing import Dict, List, Optional
 #from typing import cast
 
-from asdl import tdop
-from asdl import tdop_lexer
+from asdl.examples import tdop
+from asdl.examples import tdop_lexer
 
 
 #

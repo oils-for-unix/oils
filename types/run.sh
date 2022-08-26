@@ -36,9 +36,9 @@ typed-demo-asdl() {
   # '.*collections_\.py' does not do it.  So --follow-imports=silent.  Tried
   # --verbose too
   typecheck --strict --follow-imports=silent \
-    _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
+    _devbuild/gen/typed_demo_asdl.py asdl/examples/typed_demo.py
 
-  PYTHONPATH=$PY_PATH asdl/typed_demo.py "$@"
+  PYTHONPATH=$PY_PATH asdl/examples/typed_demo.py "$@"
 }
 
 check-arith() {
@@ -46,21 +46,23 @@ check-arith() {
   # translation.
 
   MYPYPATH=. PYTHONPATH=$PY_PATH typecheck --strict --follow-imports=silent \
-    asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
+    asdl/examples/typed_arith_parse.py \
+    asdl/examples/typed_arith_parse_test.py \
+    asdl/examples/tdop.py
 }
 
 typed-arith-asdl() {
   check-arith
 
   export PYTHONPATH=$PY_PATH
-  asdl/typed_arith_parse_test.py
+  asdl/examples/typed_arith_parse_test.py
 
   banner 'parse'
-  asdl/typed_arith_parse.py parse '40+2'
+  asdl/examples/typed_arith_parse.py parse '40+2'
   echo
 
   banner 'eval'
-  asdl/typed_arith_parse.py eval '40+2+5'
+  asdl/examples/typed_arith_parse.py eval '40+2+5'
   echo
 }
 
@@ -145,7 +147,7 @@ soil-run() {
   mypy_ --version
   set +x
 
-  build/dev.sh py-asdl-testdata
+  build/dev.sh py-asdl-examples
 
   banner 'typed-arith-asdl'
   typed-arith-asdl

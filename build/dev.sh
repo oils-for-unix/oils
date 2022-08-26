@@ -157,20 +157,12 @@ gen-asdl-cpp() {
   echo "$asdl_path -> (asdl_main) -> $out_prefix* and $debug_info"
 }
 
-# TODO: syntax.asdl and runtime.asdl are mutually recursive.
-# Do it in one invocation, and use an output dir:
-#
-# ASDL_PATH=frontend:runtime asdl/asdl_main.py mypy $out_dir ...
-#
-# It looks like there needs to be a global cache like sys.modules in the ASDL
-# compiler.
-
 py-codegen() {
   # note: filename must come first
-  gen-asdl-py asdl/hnode.asdl --no-pretty-print-methods --py-init-required
+  gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-required
 
-  gen-asdl-py frontend/types.asdl
-  gen-asdl-py core/runtime.asdl  # depends on syntax.asdl
+  gen-asdl-py 'frontend/types.asdl'
+  gen-asdl-py 'core/runtime.asdl'  # depends on syntax.asdl
   gen-asdl-py 'tools/find/find.asdl'
 
   build/codegen.sh const-mypy-gen  # dependency on bool_arg_type_e
@@ -179,29 +171,29 @@ py-codegen() {
 
   # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
   # AST module later?
-  gen-asdl-py frontend/syntax.asdl 'frontend.syntax_abbrev'
+  gen-asdl-py 'frontend/syntax.asdl' 'frontend.syntax_abbrev'
 
   # For tests
   gen-asdl-py 'mycpp/examples/expr.asdl'
 }
 
-py-asdl-testdata() {
-  gen-asdl-py 'asdl/demo_lib.asdl'  # dependency of typed_demo
-  gen-asdl-py 'asdl/typed_demo.asdl'
+py-asdl-examples() {
+  gen-asdl-py 'asdl/examples/demo_lib.asdl'  # dependency of typed_demo
+  gen-asdl-py 'asdl/examples/typed_demo.asdl'
 
-  gen-asdl-py 'asdl/shared_variant.asdl'
-  gen-asdl-py 'asdl/typed_arith.asdl' 'asdl.typed_arith_abbrev'
+  gen-asdl-py 'asdl/examples/shared_variant.asdl'
+  gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'
 }
 
 oil-asdl-to-cpp() {
   mkdir -p _build/cpp _devbuild/tmp
 
   # note: filename must come first
-  gen-asdl-cpp asdl/hnode.asdl '' --no-pretty-print-methods
+  gen-asdl-cpp 'asdl/hnode.asdl' '' --no-pretty-print-methods
 
-  gen-asdl-cpp frontend/types.asdl  # no dependency on Id
-  gen-asdl-cpp core/runtime.asdl
-  gen-asdl-cpp frontend/syntax.asdl
+  gen-asdl-cpp 'frontend/types.asdl'  # no dependency on Id
+  gen-asdl-cpp 'core/runtime.asdl'
+  gen-asdl-cpp 'frontend/syntax.asdl'
 
   # Problem:
   # - we have both _devbuild/gen/id.h 
@@ -212,7 +204,6 @@ oil-asdl-to-cpp() {
   # TranslateOshLexer can have a flag to use different Ids?
   # Instead of id__Eol_Tok, use Id::Eol_Tok.
   # case lex_mode_e::Expr
-
 }
 
 cpp-codegen() {
@@ -373,7 +364,7 @@ py-source() {
   py-codegen  # depends on Id
 
   # Only for testing.
-  py-asdl-testdata
+  py-asdl-examples
 
   # Needed on Travis.
   oil-grammar

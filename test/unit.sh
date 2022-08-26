@@ -48,7 +48,7 @@ banner() {
   echo -----
 }
 
-readonly -a PY2_UNIT_TESTS=( {asdl,build,core,doctools,frontend,lazylex,native,oil_lang,osh,pylib,qsn_,test,tools}/*_test.py )
+readonly -a PY2_UNIT_TESTS=( {asdl,asdl/examples,build,core,doctools,frontend,lazylex,native,oil_lang,osh,pylib,qsn_,test,tools}/*_test.py )
 
 readonly -a PY3_UNIT_TESTS=( mycpp/*_test.py spec/stateful/*_test.py )
 

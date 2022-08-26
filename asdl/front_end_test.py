@@ -14,12 +14,12 @@ from asdl import ast
 class FrontEndTest(unittest.TestCase):
 
   def testLoadSchema(self):
-    with open('asdl/typed_demo.asdl') as f:
+    with open('asdl/examples/typed_demo.asdl') as f:
       schema_ast = front_end.LoadSchema(f, {}, verbose=True)
     print(schema_ast)
 
   def testSharedVariant(self):
-    with open('asdl/shared_variant.asdl') as f:
+    with open('asdl/examples/shared_variant.asdl') as f:
       schema_ast = front_end.LoadSchema(f, {}, verbose=False)
     print(schema_ast)
 

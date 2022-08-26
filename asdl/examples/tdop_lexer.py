@@ -6,7 +6,7 @@ from __future__ import print_function
 import re
 from typing import Iterator, Tuple, cast, TYPE_CHECKING
 
-from asdl.tdop import Token
+from asdl.examples.tdop import Token
 
 if TYPE_CHECKING:
   TupleStr4 = Tuple[str, str, str, str]
