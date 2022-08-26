@@ -401,17 +401,10 @@ def NinjaGraph(n):
   n.variable('NINJA_REPO_ROOT', os.path.dirname(this_dir))
   n.newline()
 
-  n.rule('touch',
-         command='touch $out',
-         description='touch $out')
-  n.newline()
-  n.rule('asdl-mypy',
-         command='mycpp/NINJA-steps.sh asdl-mypy $in $out',
-         description='asdl-mypy $in $out')
-  n.newline()
+  # Use stub directly
   n.rule('asdl-cpp',
-         command='mycpp/NINJA-steps.sh asdl-cpp $in $out_prefix',
-         description='asdl-cpp $in $out_prefix')
+         command='_bin/shwrap/asdl_main cpp $asdl_flags $in $out_prefix',
+         description='asdl $asdl_flags $in $out_prefix')
   n.newline()
 
   # Two translators
@@ -419,6 +412,7 @@ def NinjaGraph(n):
          command='_bin/shwrap/mycpp_main $mypypath $out $in',
          description='mycpp $mypypath $out $in')
   n.newline()
+
   n.rule('translate-pea',
          command='mycpp/NINJA-steps.sh translate-pea $mypypath $out $in',
          description='pea $mypypath $out $in')
@@ -594,7 +588,11 @@ def NinjaGraph(n):
 
   prefix = '_build/gen/mycpp/examples/expr_asdl'
   n.build([prefix + '.cc', prefix + '.h'], 'asdl-cpp', 'mycpp/examples/expr.asdl',
-          variables=[('out_prefix', prefix)])
+          implicit=['_bin/shwrap/asdl_main'],
+          variables=[
+            ('out_prefix', prefix),
+            ('asdl_flags', ''),
+          ])
 
   #
   # Build and run examples/

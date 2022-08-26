@@ -18,22 +18,6 @@ source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PAT
 
 readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
 
-asdl-main() {
-  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/asdl_main.py "$@"
-}
-
-asdl-mypy() {
-  local in=$1
-  local out=$2
-  asdl-main mypy $in > $out
-}
-
-asdl-cpp() {
-  local in=$1
-  local out_prefix=$2
-  asdl-main cpp $in $out_prefix
-}
-
 gen-main() {
   local main_module=${1:-fib_iter}
   cat <<EOF
