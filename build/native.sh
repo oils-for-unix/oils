@@ -97,7 +97,6 @@ clean() {
 gen-oil-native-sh() {
   build/NINJA_main.py shell
   chmod +x _build/oil-native.sh
-  ls -l _build/oil-native.sh
 }
 
 "$@"

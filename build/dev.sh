@@ -185,6 +185,7 @@ py-asdl-examples() {
   gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'
 }
 
+# TODO: These have mutual dependencies.  Move to NINJA-steps.sh
 oil-asdl-to-cpp() {
   mkdir -p _build/cpp _devbuild/tmp
 
@@ -207,8 +208,13 @@ oil-asdl-to-cpp() {
 }
 
 cpp-codegen() {
-  build/codegen.sh const-cpp-gen  # dependency on bool_arg_type_e
+  # dependency on bool_arg_type_e
+  # generates id_kind_asdl
+  build/codegen.sh const-cpp-gen
+
+  # generates option_asdl
   build/codegen.sh option-cpp-gen
+
   build/codegen.sh arith-parse-cpp-gen
   build/codegen.sh flag-gen-cpp
 }
@@ -218,19 +224,20 @@ oil-cpp-codegen() {
 
   cpp-codegen
 
-  build/native.sh gen-oil-native-sh  # script to build it
 }
 
 oil-cpp() {
   ./NINJA-config.sh  # Create it for the first time
 
   oil-cpp-codegen
+  build/native.sh gen-oil-native-sh  # script to build it
 
+  #time ninja -j 1 _bin/cxx-dbg/osh_eval
   time ninja _bin/cxx-dbg/osh_eval
   echo
 
-  wc -l _build/cpp/*
-  echo
+  #wc -l _build/cpp/*
+  #echo
 
   ls -l _bin/*/osh_eval*
 }

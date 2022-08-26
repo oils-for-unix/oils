@@ -33,6 +33,12 @@ Output Layout:
       cxx-gcevery/
       cxx-opt/
       clang-coverage/
+    gen/
+      mycpp/
+        examples/
+          parse.mycpp.cc
+          parse_raw.mycpp.cc
+          expr_asdl.{h,cc}
 
   _bin/
     cxx-dbg/
@@ -55,13 +61,6 @@ Output Layout:
     clang-coverage/
 
   _test/
-    gen-mycpp/  # rewrite
-      varargs_raw.cc
-      varargs.cc
-    gen-pea/
-      varargs_raw.cc
-      varargs.cc
-
     tasks/        # *.txt and *.task.txt for .wwz
       typecheck/  # optionally run
       test/       # py, gcevery, asan, opt
@@ -186,7 +185,6 @@ GC_RUNTIME = [
     'mycpp/leaky_mylib.cc',
 ]
 
-# no CC files?
 OLDSTL_RUNTIME = [
     'mycpp/oldstl_containers.cc',
     'mycpp/leaky_containers.cc',
@@ -405,11 +403,6 @@ def NinjaGraph(n):
   n.rule('gen-osh-eval',
          command='mycpp/NINJA-steps.sh gen-osh-eval $out_prefix $in',
          description='gen-osh-eval $out_prefix $in')
-  n.newline()
-
-  n.rule('asdl-cpp',
-         command='_bin/shwrap/asdl_main cpp $asdl_flags $in $out_prefix',
-         description='asdl $asdl_flags $in $out_prefix')
   n.newline()
 
   # mycpp and pea have the same interface

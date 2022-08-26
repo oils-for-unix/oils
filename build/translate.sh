@@ -35,13 +35,17 @@ asdl-runtime() {
   mkdir -p $TEMP_DIR
 
   local header=$TEMP_DIR/runtime.h
+  local mypypath=$REPO_ROOT
 
-  mycpp \
+  local mycpp=_bin/shwrap/mycpp_main
+
+  ninja $mycpp
+  $mycpp \
+    $mypypath $raw \
     --header-out $header \
     --to-header asdl.runtime \
     --to-header asdl.format \
     $REPO_ROOT/{asdl/runtime,asdl/format,core/ansi,pylib/cgi,qsn_/qsn}.py \
-    > $raw 
 
   { 
     cat <<EOF

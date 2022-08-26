@@ -71,6 +71,7 @@ option-mypy-gen() {
 option-cpp-gen() {
   local out_dir=_build/cpp
   frontend/option_gen.py cpp $out_dir/option_asdl
+  log "  (core/option_gen) -> $out_dir/option_asdl*"
 
   core/optview_gen.py > $out_dir/core_optview.h
   log "  (core/optview_gen) -> $out_dir/core_optview.h"

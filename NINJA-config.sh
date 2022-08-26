@@ -36,7 +36,7 @@ osh-eval() {
   cat $dir/typecheck.txt | exclude-filter translate | mysort \
     > $dir/translate.txt
 
-  wc -l $dir/*
+  echo DEPS $dir/*
 }
 
 main() {
@@ -66,7 +66,7 @@ main() {
   osh-eval
 
   # Pre-baked
-  ls -l -d mycpp/NINJA/* pea/NINJA/*
+  echo "    " {mycpp,pea}/NINJA/*/deps.txt
 
   # Reads the deps.txt files above
   PYTHONPATH=. build/NINJA_main.py

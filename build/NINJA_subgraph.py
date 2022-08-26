@@ -82,9 +82,14 @@ def NinjaGraph(n):
          description='make-pystub $out $in')
   n.newline()
 
-  # build/app-deps.sh asdl-tool gives us the dependencies
-  # It filters with build/app-deps/filter-py-tool.txt
+  n.rule('asdl-cpp',
+         command='_bin/shwrap/asdl_main cpp $asdl_flags $in $out_prefix',
+         description='asdl $asdl_flags $in $out_prefix')
+  n.newline()
 
+  #
+  # shwrap
+  #
   with open('_build/NINJA/asdl.asdl_main/deps.txt') as f:
     deps = [line.strip() for line in f]
 
@@ -105,3 +110,16 @@ def NinjaGraph(n):
   n.build('_bin/shwrap/mycpp_main', 'write-shwrap-mycpp', [main_py] + deps)
   n.newline()
 
+  #
+  # ASDL (TODO: move next to)
+  #
+
+  if 0:
+    prefix = '_build/cpp/syntax_asdl'
+    n.build([prefix + '.cc', prefix + '.h'], 'asdl-cpp', 'frontend/syntax.asdl',
+            implicit=['_bin/shwrap/asdl_main'],
+            variables=[
+              ('out_prefix', prefix),
+              ('asdl_flags', ''),
+            ])
+    n.newline()

@@ -79,7 +79,28 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-DEPS_CC = [
+# CPP bindings and some generated code have implicit dependencies on these headers
+ASDL_H = [
+    '_build/cpp/runtime_asdl.h',
+    '_build/cpp/syntax_asdl.h',
+    '_build/cpp/types_asdl.h',
+    '_build/cpp/hnode_asdl.h',
+
+    # synthetic
+    '_build/cpp/id_kind_asdl.h',
+    '_build/cpp/option_asdl.h',
+]
+
+ASDL_CC = [
+    '_build/cpp/runtime_asdl.cc',
+    '_build/cpp/syntax_asdl.cc',
+    # NOTE: left out types_asdl.cc?  Because we never use it
+
+    '_build/cpp/hnode_asdl.cc',
+    '_build/cpp/id_kind_asdl.cc',
+]
+
+CPP_BINDINGS = [
     'cpp/leaky_core.cc',
     'cpp/leaky_frontend_flag_spec.cc',
     'cpp/leaky_frontend_match.cc',
@@ -90,25 +111,28 @@ DEPS_CC = [
     'cpp/dumb_alloc.cc',
     'cpp/leaky_stdlib.cc',
     'cpp/leaky_libc.cc',
+]
 
-    # generated
-    # TODO: We're missing dependencies for these
+GENERATED_CC = [
     '_build/cpp/arg_types.cc',
     '_build/cpp/arith_parse.cc',
     '_build/cpp/consts.cc',
     '_build/cpp/osh_eval.cc',
-
-    # ASDL generated
-    '_build/cpp/runtime_asdl.cc',
-    '_build/cpp/syntax_asdl.cc',
-    '_build/cpp/hnode_asdl.cc',
-    '_build/cpp/id_kind_asdl.cc',
 ]
+
+# TODO: Change to GC_RUNTIME
+OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC + OLDSTL_RUNTIME
 
 HEADER_DEPS = {
     # Weird implicit dependency
     'cpp/leaky_frontend_flag_spec.cc': ['_build/cpp/osh_eval.h'],
 }
+
+# Add implicit deps
+for cc in CPP_BINDINGS + GENERATED_CC:
+  if cc not in HEADER_DEPS:
+    HEADER_DEPS[cc] = []
+  HEADER_DEPS[cc].extend(ASDL_H)
 
 # -D NO_GC_HACK: Avoid memset().  -- rename GC_NO_MEMSET?
 #  - only applies to gc_heap.h in Space::Clear()
@@ -194,8 +218,6 @@ def NinjaGraph(n):
 
     ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', OSH_EVAL_FLAGS_STR)]
 
-    sources = DEPS_CC + OLDSTL_RUNTIME
-
     #
     # See how much input we're feeding to the compiler.  Test C++ template
     # explosion, e.g. <unordered_map>
@@ -206,7 +228,7 @@ def NinjaGraph(n):
 
     if variant in ('dbg', 'opt'):
       preprocessed = []
-      for src in sources:
+      for src in OSH_EVAL_UNITS:
         # e.g. _build/obj/dbg/posix.o
         base_name, _ = os.path.splitext(os.path.basename(src))
 
@@ -228,7 +250,7 @@ def NinjaGraph(n):
     binaries.append(bin_together)
 
     n.build(bin_together, 'compile_and_link',
-            sources, variables=ninja_vars)
+            OSH_EVAL_UNITS, variables=ninja_vars)
     n.newline()
 
     #
@@ -236,7 +258,7 @@ def NinjaGraph(n):
     #
 
     objects = []
-    for src in sources:
+    for src in OSH_EVAL_UNITS:
       # e.g. _build/obj/dbg/posix.o
       base_name, _ = os.path.splitext(os.path.basename(src))
 
@@ -244,6 +266,9 @@ def NinjaGraph(n):
       objects.append(obj)
 
       n.build(obj, 'compile_one', [src], variables=ninja_vars,
+              # even though compile_one has .d, I guess we still need this
+              # implicit dep because _build/cpp/osh_eval.h doesn't exist the
+              # first time
               implicit=HEADER_DEPS.get(src, []))
       n.newline()
 
@@ -324,7 +349,7 @@ main() {
 ''', file=f)
 
   objects = []
-  for src in DEPS_CC + OLDSTL_RUNTIME:
+  for src in OSH_EVAL_UNITS:
     # e.g. _build/obj/dbg/posix.o
     base_name, _ = os.path.splitext(os.path.basename(src))
 
