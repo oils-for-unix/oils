@@ -10,18 +10,31 @@ set -o pipefail
 set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-readonly REPO_ROOT
 
 source $REPO_ROOT/mycpp/common.sh  # maybe-our-python3
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PATH
 
-readonly ASAN_FLAGS='-O0 -g -fsanitize=address'
+mycpp() {
+  ### Run mycpp (in a virtualenv because it depends on Python 3 / MyPy)
 
-gen-main() {
+  # created by mycpp/run.sh
+  ( 
+    # for _OLD_VIRTUAL_PATH error on Travis?
+    set +o nounset
+    set +o pipefail
+    set +o errexit
+
+    source $MYCPP_VENV/bin/activate
+    time PYTHONPATH=$REPO_ROOT:$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
+      maybe-our-python3 mycpp/mycpp_main.py "$@"
+  )
+}
+
+example-main() {
   local main_module=${1:-fib_iter}
-  cat <<EOF
 
+  cat <<EOF
 int main(int argc, char **argv) {
   // gHeap.Init(512);
   gHeap.Init(128 << 10);  // 128 KiB; doubling in size
@@ -36,6 +49,85 @@ int main(int argc, char **argv) {
   }
 }
 EOF
+}
+
+osh-eval-main() {
+  cat <<EOF
+int main(int argc, char **argv) {
+
+  complain_loudly_on_segfault();
+
+  gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc.cc
+
+  // NOTE(Jesse): Turn off buffered IO
+  setvbuf(stdout, 0, _IONBF, 0);
+  setvbuf(stderr, 0, _IONBF, 0);
+
+  auto* args = Alloc<List<Str*>>();
+  for (int i = 0; i < argc; ++i) {
+    args->append(StrFromC(argv[i]));
+  }
+  int status = 0;
+
+  // For benchmarking
+  const char* repeat = getenv("REPEAT");
+  if (repeat) {
+    Str* r = StrFromC(repeat);
+    int n = to_int(r);
+    log("Running %d times", n);
+    for (int i = 0; i < n; ++i) { 
+      status = $name::main(args);
+    }
+    // TODO: clear memory?
+  } else {
+    status = $name::main(args);
+  }
+
+  dumb_alloc::Summarize();
+  return status;
+}
+EOF
+}
+
+cpp-skeleton() {
+  local name=$1
+  shift
+
+  cat <<EOF
+// $name.cc: translated from Python by mycpp
+
+#include "cpp/leaky_preamble.h"  // hard-coded stuff
+EOF
+
+  cat "$@"
+
+  osh-eval-main
+}
+
+osh-eval() {
+  ### Translate bin/osh_eval.py -> _build/cpp/osh_eval.{cc,h}
+
+  local name=${1:-osh_eval}
+
+  mkdir -p $TEMP_DIR _build/cpp
+
+  local raw=$TEMP_DIR/${name}_raw.cc 
+  local cc=_build/cpp/$name.cc
+  local h=_build/cpp/$name.h
+
+  #if false; then
+  if true; then
+    # relies on splitting
+    cat _build/NINJA/osh_eval/translate.txt | xargs -- \
+      $0 mycpp \
+        --header-out $h \
+        --to-header frontend.args \
+        --to-header asdl.runtime \
+        --to-header asdl.format \
+    > $raw 
+  fi
+
+  cpp-skeleton $name $raw > $cc
 }
 
 wrap-cc() {
@@ -56,7 +148,7 @@ wrap-cc() {
      cat $in
 
      # main() function
-     gen-main $main_module
+     example-main $main_module
 
   } > $out
 }
@@ -70,53 +162,6 @@ translate-pea() {
   shift 2  # rest of args are inputs
 
   pea/test.sh translate-cpp "$@" > $out
-}
-
-compile() {
-  ### Compile C++ with various flags
-
-  local variant=$1
-  local out=$2
-  local more_cxx_flags=$3
-  shift 3
-  # Now "$@" are the inputs
-
-  #argv COMPILE "$variant" "$out" "$more_cxx_flags"
-
-  local flags="$BASE_CXXFLAGS $more_cxx_flags"
-
-  case $variant in
-    ('asan')
-      flags+=" $ASAN_FLAGS"
-      ;;
-    ('opt')
-      flags+=' -O2 -g'  # -g so you can debug crashes?
-      ;;
-    ('ubsan')
-      flags+=' -fsanitize=undefined'
-      ;;
-    ('gcevery')
-      # TODO: GC_REPORT and GC_VERBOSE instead?
-      flags+=' -g -D GC_PROTECT -D GC_STATS -D GC_EVERY_ALLOC'
-      ;;
-    (*)
-      die "Invalid variant: $variant"
-      ;;
-  esac
-
-  # Note: needed -lstdc++ for 'operator new', which we're no longer using.  But
-  # probably exceptions too.
-
-  #set -x
-  $CXX -o $out $flags -I $REPO_ROOT "$@" -lstdc++
-}
-
-strip_() {
-  local in=$1
-  local out=$2
-
-  # TODO: there could be 2 outputs: symbols + binary
-  strip -o $out $in
 }
 
 task() {

@@ -46,6 +46,8 @@ using id_kind_asdl::Kind_t;
 #include "qsn.h"
 #include "segfault_handler.h"
 
+#undef errno  // for e->errno to work; see mycpp/myerror.h
+
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
   return left == right;
 }
