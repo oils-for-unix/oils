@@ -90,6 +90,35 @@ def NinjaGraph(n):
   #
   # shwrap
   #
+
+  def shwrap_py(main_py, deps_base_dir='_build/NINJA', rule='write-shwrap-py'):
+    rel_path, _ = os.path.splitext(main_py)
+    py_module = rel_path.replace('/', '.')  # asdl/asdl_main.py -> asdl.asdl_main
+
+    deps_path = os.path.join(deps_base_dir, py_module, 'deps.txt')
+    with open(deps_path) as f:
+      deps = [line.strip() for line in f]
+
+    deps.remove(main_py)  # raises ValueError if it's not there
+
+    basename = os.path.basename(rel_path)
+    n.build('_bin/shwrap/%s' % basename, rule, [main_py] + deps)
+    n.newline()
+
+  # All the code generators from NINJA-config.sh
+  shwrap_py('asdl/asdl_main.py')
+  shwrap_py('core/optview_gen.py')
+  shwrap_py('frontend/consts_gen.py')
+  shwrap_py('frontend/lexer_gen.py')
+  shwrap_py('frontend/option_gen.py')
+  shwrap_py('oil_lang/grammar_gen.py')
+  shwrap_py('osh/arith_parse_gen.py')
+
+  shwrap_py('mycpp/mycpp_main.py',
+            deps_base_dir='mycpp/NINJA',
+            rule='write-shwrap-mycpp')
+
+  """
   with open('_build/NINJA/asdl.asdl_main/deps.txt') as f:
     deps = [line.strip() for line in f]
 
@@ -109,9 +138,10 @@ def NinjaGraph(n):
 
   n.build('_bin/shwrap/mycpp_main', 'write-shwrap-mycpp', [main_py] + deps)
   n.newline()
+  """
 
   #
-  # ASDL (TODO: move next to)
+  # ASDL (TODO: use parallel structure)
   #
 
   if 0:

@@ -209,7 +209,7 @@ oil-asdl-to-cpp() {
 
 cpp-codegen() {
   # dependency on bool_arg_type_e
-  # generates id_kind_asdl
+  # generates id_kind_asdl, but also DEPENDS on it
   build/codegen.sh const-cpp-gen
 
   # generates option_asdl
@@ -265,15 +265,15 @@ py-ext-test() {
   # TODO: Fold this into some kind of Ninja test runner?
   # Or just rely on test/unit.sh all?
 
-  local test_path=$1
+  local test_path=$1  # Or a function
   shift
 
-  local log_path=_test/py-unit/$test_path.log
+  local log_path=_test/unit/$test_path.log
   mkdir -p $(dirname $log_path)
 
   set +o errexit
   $test_path "$@" >$log_path 2>&1
-  status=$?
+  local status=$?
   set -o errexit
 
   if test $status -eq 0; then
@@ -337,9 +337,15 @@ yajl-release() {
   popd >/dev/null
 }
 
-yajl-unit() {
+py-yajl-unit() {
   pushd py-yajl >/dev/null
   python2 tests/unit.py
+
+  echo
+  echo 'tests/issue11.py'
+  echo
+
+  zcat test_data/issue_11.gz | python2 tests/issue_11.py >/dev/null
   popd >/dev/null
 }
 
@@ -352,12 +358,7 @@ yajl() {
   python2 setup.py --quiet build_ext --inplace
   popd >/dev/null
 
-  yajl-unit >/dev/null 2>&1
-
-  # Hm this test doesn't make any assertions.
-  pushd py-yajl >/dev/null
-  zcat test_data/issue_11.gz | python2 tests/issue_11.py >/dev/null
-  popd >/dev/null
+  py-ext-test py-yajl-unit
 
   # Link it in the repo root
   ln -s -f py-yajl/yajl.so .
