@@ -242,19 +242,13 @@ oil-cpp() {
   ls -l _bin/*/osh_eval*
 }
 
-# TODO: should fastlex.c be part of the dev build?  It means you need re2c
-# installed?  I don't think it makes sense to have 3 builds, so yes I think we
-# can put it here for simplicity.
-# However one problem is that if the Python lexer definition is changed, then
-# you need to run re2c again!  I guess you should just provide a script to
-# download it.
-
 py-ext() {
+  ### Build a Python extension
+
   local name=$1
   local setup_script=$2
 
-  log ''
-  log "$setup_script -> $name.so"
+  log "  ($setup_script) -> $name.so"
 
   local arch
   arch=$(uname -m)
@@ -265,18 +259,42 @@ py-ext() {
   #file $name.so
 }
 
+py-ext-test() {
+  ### Run a test and log it
+
+  # TODO: Fold this into some kind of Ninja test runner?
+  # Or just rely on test/unit.sh all?
+
+  local test_path=$1
+  shift
+
+  local log_path=_test/py-unit/$test_path.log
+  mkdir -p $(dirname $log_path)
+
+  set +o errexit
+  $test_path "$@" >$log_path 2>&1
+  status=$?
+  set -o errexit
+
+  if test $status -eq 0; then
+    echo "OK $log_path"
+  else
+    die "FAIL $log_path"
+  fi
+}
+
 pylibc() {
   rm -f libc.so
 
   py-ext libc build/setup.py
-  native/libc_test.py "$@" > /dev/null
+  py-ext-test native/libc_test.py "$@"
 }
 
 fanos() {
   rm -f fanos.so
 
   py-ext fanos build/setup_fanos.py
-  native/fanos_test.py "$@" #> /dev/null
+  py-ext-test native/fanos_test.py "$@"
 }
 
 fastlex() {
@@ -286,7 +304,7 @@ fastlex() {
   rm -f fastlex.so
 
   py-ext fastlex build/setup_fastlex.py
-  native/fastlex_test.py "$@" > /dev/null
+  py-ext-test native/fastlex_test.py
 }
 
 line-input() {
@@ -294,20 +312,14 @@ line-input() {
   rm -f line_input.so
 
   py-ext line_input build/setup_line_input.py
-  native/line_input_test.py "$@" > /dev/null
+  py-ext-test native/line_input_test.py
 }
 
 posix_() {
   rm -f posix_.so
 
   py-ext posix_ build/setup_posix.py
-  native/posix_test.py "$@" > /dev/null
-}
-
-yajl-unit() {
-  pushd py-yajl >/dev/null
-  python2 tests/unit.py "$@" > /dev/null
-  popd >/dev/null
+  py-ext-test native/posix_test.py
 }
 
 yajl-release() {
@@ -325,20 +337,25 @@ yajl-release() {
   popd >/dev/null
 }
 
+yajl-unit() {
+  pushd py-yajl >/dev/null
+  python2 tests/unit.py
+  popd >/dev/null
+}
+
 yajl() {
   ### Build and test yajl binding (depends on submodule)
 
-  log ''
-  log "py-yajl/setup.py -> yajl.so"
+  log "  (py-yajl/setup.py) -> yajl.so"
 
   pushd py-yajl >/dev/null
   python2 setup.py --quiet build_ext --inplace
+  popd >/dev/null
 
-  # This causes a lot of spew
-  echo 'Running py-yajl unit tests'
-  python2 tests/unit.py >/dev/null 2>&1
+  yajl-unit >/dev/null 2>&1
 
   # Hm this test doesn't make any assertions.
+  pushd py-yajl >/dev/null
   zcat test_data/issue_11.gz | python2 tests/issue_11.py >/dev/null
   popd >/dev/null
 
@@ -420,10 +437,11 @@ demo-grammar() {
 }
 
 time-helper() {
+  local in=benchmarks/time-helper.c
   local out=_devbuild/bin/time-helper
   mkdir -p $(dirname $out)
-  cc -std=c99 -o $out benchmarks/time-helper.c
-  ls -l $out
+  cc -std=c99 -o $out $in
+  echo "  CC $in"
 }
 
 all() {
