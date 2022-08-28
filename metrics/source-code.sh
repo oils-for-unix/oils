@@ -183,6 +183,7 @@ gen-cpp-counts() {
   local count=$1
   shift
 
+  # TODO: should be find _gen/ -name '*.cc' -o -name '*.h'
   # NOTE: this excludes .re2c.h file
   ls _build/cpp/*.{cc,h} _devbuild/gen/*.h | $count \
     'Generated C+ Code' \

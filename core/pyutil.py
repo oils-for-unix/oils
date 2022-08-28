@@ -90,7 +90,7 @@ def strerror(e):
 def LoadOilGrammar(loader):
   # type: (_ResourceLoader) -> grammar.Grammar
   oil_grammar = grammar.Grammar()
-  contents = loader.Get('_devbuild/gen/grammar.marshal')
+  contents = loader.Get('_gen/oil_lang/grammar.marshal')
   oil_grammar.loads(contents)
   return oil_grammar
 

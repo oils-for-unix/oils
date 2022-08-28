@@ -114,12 +114,13 @@ This is a supplement to the [main release page](index.html).
 These files may help you understand how Oil is implemented, i.e. with
 domain-specific languages and code generation.
 
-- [_devbuild/gen/id.h](source-code.wwz/_devbuild/gen/id.h). A list of language
-  elements, used in the lexer and in multiple parsers and evaluators.
+- [_gen/frontend/id_kind.asdl_c.h](source-code.wwz/_gen/frontend/id_kind.asdl_c.h).
+  A list of language elements, used in the lexer and in multiple parsers and
+  evaluators.
 - The regex-based lexer uses two stages of code generation:
   - [frontend/lexer_def.py](source-code.wwz/frontend/lexer_def.py)
-    | [_devbuild/tmp/osh-lex.re2c.h](source-code.wwz/_devbuild/tmp/osh-lex.re2c.h)
-    | [_devbuild/gen/osh-lex.h](source-code.wwz/_devbuild/gen/osh-lex.h)
+    | [_build/tmp/frontend/match.re2c.txt](source-code.wwz/_build/tmp/frontend/match.re2c.txt)
+    | [_gen/frontend/match.re2c.h](source-code.wwz/_gen/frontend/match.re2c.h)
 - [frontend/syntax.asdl](source-code.wwz/frontend/syntax.asdl). The syntax tree
   for OSH and Oil.
 - [oil_lang/grammar.pgen2](source-code.wwz/oil_lang/grammar.pgen2). The

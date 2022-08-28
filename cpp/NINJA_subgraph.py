@@ -247,9 +247,8 @@ def NinjaGraph(n):
       objects.append(obj)
 
       n.build(obj, 'compile_one', [src], variables=ninja_vars,
-              # even though compile_one has .d, I guess we still need this
-              # implicit dep because _build/cpp/osh_eval.h doesn't exist the
-              # first time
+              # even though compile_one has .d, we still need these implicit deps
+              # for generated headers
               implicit=HEADER_DEPS.get(src, []))
       n.newline()
 
@@ -298,8 +297,9 @@ def TarballManifest():
   # TODO: crawl headers
   names.extend(glob('cpp/*.h'))
 
-  # TODO: Put these in Ninja.  It includes the grammar.
-  names.extend(glob('_devbuild/gen/*.h'))
+  # TODO: Put these in Ninja.
+  names.extend(glob('_gen/frontend/*.h'))
+  names.extend(glob('_gen/oil_lang/*.h'))
 
   # ONLY the headers
   names.extend(glob('prebuilt/*/*.h'))

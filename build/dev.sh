@@ -202,8 +202,6 @@ oil-asdl-to-cpp() {
 oil-cpp() {
   ./NINJA-config.sh  # Create it for the first time
 
-  # NOTE: 'build/dev.sh all' is required for _devbuild/gen/osh-lex.h (via re2c)
-
   build/native.sh gen-oil-native-sh  # script to build it
 
   #time ninja -j 1 _bin/cxx-dbg/osh_eval
@@ -400,7 +398,9 @@ EOF
 
 
 oil-grammar() {
-  oil_lang/grammar_gen.py marshal oil_lang/grammar.pgen2 _devbuild/gen
+  mkdir -p _gen/oil_lang
+  touch _gen/__init__.py _gen/oil_lang/__init__.py
+  oil_lang/grammar_gen.py marshal oil_lang/grammar.pgen2 _gen/oil_lang
 }
 
 find-grammar() {

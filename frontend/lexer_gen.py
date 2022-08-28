@@ -422,9 +422,6 @@ static inline int %s(const unsigned char* s, int len) {
   # limit should be the end of string
   # line + line_len
 def main(argv):
-  # This becomes osh-lexer_def.re2c.c.  It is compiled to osh-lexer_def.c and then
-  # included.
-
   action = argv[1]
   if action == 'c':
     # Code is printed to stdout

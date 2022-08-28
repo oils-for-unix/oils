@@ -2331,8 +2331,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             dotted_parts = o.id.split('.')
             last_dotted = dotted_parts[-1]
 
-            # Omit this:
-            #   from _devbuild.gen import grammar_nt
+            # Omit these:
+            #   from _gen.oil_lang import grammar_nt
+            if last_dotted == 'oil_lang':
+              return
+            #   from _devbuild.gen import syntax_asdl
             if last_dotted == 'gen':
               return
 

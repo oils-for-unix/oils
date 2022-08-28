@@ -282,9 +282,9 @@ important-source-code() {
 
   for rel_path in \
     frontend/lexer_def.py \
-    _devbuild/tmp/osh-lex.re2c.h \
-    _devbuild/gen/osh-lex.h \
-    _devbuild/gen/id.h \
+    _build/tmp/frontend/match.re2c.txt \
+    _gen/frontend/match.re2c.h \
+    _gen/frontend/id_kind.asdl_c.h \
     frontend/syntax.asdl \
     oil_lang/grammar.pgen2; do
   mkdir -p $dest/$(dirname $rel_path)

@@ -489,7 +489,7 @@ def NinjaGraph(n):
     deps = [line.strip() for line in f]
 
   prefix = '_build/cpp/osh_eval'
-  n.build([prefix + '.h', prefix + '.cc'], 'gen-osh-eval', deps,
+  n.build([prefix + '.cc'], 'gen-osh-eval', deps,
           implicit=['_bin/shwrap/mycpp_main'],
           variables=[('out_prefix', prefix)])
 

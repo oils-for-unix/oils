@@ -54,6 +54,7 @@ EOF
 
   cat >$FILTER_DIR/filter-translate.txt <<'EOF'
 _devbuild/
+_gen/
 .*_def\.py
 .*_spec\.py
 asdl/py.*

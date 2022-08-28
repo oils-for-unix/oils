@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 def _LongestMatch(re_list, line, start_pos):
   # type: (LexerPairs, str, int) -> Tuple[Id_t, int]
 
-  # Simulate the rule for \x00, which we generate in osh-lex.re2c.h
+  # Simulate the rule for \x00, which we generate in frontend/match.re2c.h
   if start_pos >= len(line):
     return Id.Eol_Tok, start_pos
   # Simulate C-style string handling: \x00 is empty string.

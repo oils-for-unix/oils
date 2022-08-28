@@ -14,5 +14,5 @@ module = Extension('fastlex',
 setup(name = 'fastlex',
       version = '1.0',
       description = 'Module to speed up lexers',
-      include_dirs = ['_devbuild/gen'],
+      include_dirs = ['.'],
       ext_modules = [module])

@@ -67,7 +67,7 @@ main() {
   # Baked into mycpp/NINJA.
   osh-eval
 
-  echo DEPS prebuilt/NINJA/*/deps.txt
+  echo DEPS prebuilt/ninja/*/deps.txt
 
   # Reads the deps.txt files above
   PYTHONPATH=. build/NINJA_main.py

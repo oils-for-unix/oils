@@ -1,4 +1,5 @@
 _devbuild/
+_gen/
 .*_def\.py
 .*_spec\.py
 asdl/py.*

@@ -27,7 +27,7 @@ using id_kind_asdl::Kind_t;
 #include "_build/cpp/runtime_asdl.h"
 #include "_build/cpp/syntax_asdl.h"
 #include "_build/cpp/types_asdl.h"
-#include "_devbuild/gen/grammar_nt.h"
+#include "_gen/oil_lang/grammar_nt.h"
 
 // oil/cpp
 #include "leaky_core_error.h"

@@ -47,7 +47,7 @@ lex_mode_e.VSub_ArgDQ
   e.g. "${x:-a  "b"}".
 """
 
-from _devbuild.gen import grammar_nt
+from _gen.oil_lang import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (

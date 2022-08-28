@@ -82,6 +82,18 @@ EOF
   $bin
 }
 
+test-generated-code() {
+  test-optview
+  echo
+
+  test-flag-gen
+  echo
+}
+
+#
+# For frontend/match.py
+#
+
 lexer-gen() { frontend/lexer_gen.py "$@"; }
 
 print-regex() { lexer-gen print-regex; }
@@ -100,18 +112,6 @@ print-all() { lexer-gen print-all; }
 #     bin/
 #       osh_eval_raw.mycpp.cc
 
-types-gen() {
-  local out=_devbuild/gen/osh-types.h
-  asdl/asdl_main.py c frontend/types.asdl "$@" > $out
-  log "  (asdl_main c) -> $out"
-}
-
-id-c-gen() {
-  local out=_devbuild/gen/id.h
-  frontend/consts_gen.py c > $out
-  log "  (frontend/consts_gen c) -> $out"
-}
-
 # re2c native.
 osh-lex-gen-native() {
   local in=$1
@@ -124,26 +124,23 @@ osh-lex-gen-native() {
 
 # Called by build/dev.sh for fastlex.so.
 ast-id-lex() {
-  mkdir -p _devbuild/{gen,tmp}
+  local gen_dir=_gen/frontend
+  mkdir -p _build/tmp/frontend $gen_dir
 
-  #log "-- Generating AST, IDs, and lexer in _devbuild/gen"
-  types-gen
-  id-c-gen
+  local out=$gen_dir/types.asdl_c.h
+  asdl/asdl_main.py c frontend/types.asdl "$@" > $out
+  log "  (asdl_main c) -> $out"
 
-  local tmp=_devbuild/tmp/osh-lex.re2c.h
-  local out=_devbuild/gen/osh-lex.h
+  local out=$gen_dir/id_kind.asdl_c.h
+  frontend/consts_gen.py c > $out
+  log "  (frontend/consts_gen c) -> $out"
+
+  local tmp=_build/tmp/frontend/match.re2c.txt
+  local out=_gen/frontend/match.re2c.h
   lexer-gen c > $tmp
   log "  (lexer_gen) -> $tmp"
   osh-lex-gen-native $tmp $out
   log "$tmp -> (re2c) -> $out"
-}
-
-test-generated-code() {
-  test-optview
-  echo
-
-  test-flag-gen
-  echo
 }
 
 "$@"

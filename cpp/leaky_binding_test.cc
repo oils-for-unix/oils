@@ -6,7 +6,7 @@
 #include <fcntl.h>  // O_RDWR
 
 #include "_build/cpp/runtime_asdl.h"  // cell, etc
-#include "_devbuild/gen/id.h"
+#include "_gen/frontend/id_kind.asdl_c.h"
 #include "leaky_core.h"  // Chdir
 #include "leaky_core_error.h"
 #include "leaky_core_pyerror.h"

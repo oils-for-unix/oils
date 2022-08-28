@@ -7,10 +7,9 @@
 
 #include <Python.h>
 
-#include "id.h"
-#include "osh-types.h"  // for lex_mode_e
-// this is generated C code, but we want a single translation unit
-#include "osh-lex.h"
+#include "_gen/frontend/id_kind.asdl_c.h"
+#include "_gen/frontend/types.asdl_c.h"  // for lex_mode_e
+#include "_gen/frontend/match.re2c.h"
 
 // TODO: Should this be shared among all extensions?
 // Log messages to stderr.
