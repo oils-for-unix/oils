@@ -1,11 +1,11 @@
 _devbuild/gen/arg_types.py
-_devbuild/gen/grammar_nt.py
 _devbuild/gen/hnode_asdl.py
 _devbuild/gen/id_kind_asdl.py
 _devbuild/gen/option_asdl.py
 _devbuild/gen/runtime_asdl.py
 _devbuild/gen/syntax_asdl.py
 _devbuild/gen/types_asdl.py
+_gen/oil_lang/grammar_nt.py
 asdl/format.py
 asdl/pybase.py
 asdl/runtime.py
@@ -39,6 +39,7 @@ frontend/match.py
 frontend/option_def.py
 frontend/parse_lib.py
 frontend/reader.py
+frontend/signal_def.py
 frontend/typed_args.py
 oil_lang/expr_parse.py
 oil_lang/expr_to_ast.py
@@ -54,7 +55,10 @@ osh/builtin_bracket.py
 osh/builtin_meta.py
 osh/builtin_misc.py
 osh/builtin_printf.py
+osh/builtin_process.py
+osh/builtin_process2.py
 osh/builtin_pure.py
+osh/builtin_trap.py
 osh/cmd_eval.py
 osh/cmd_parse.py
 osh/glob_.py

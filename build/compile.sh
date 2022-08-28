@@ -150,9 +150,9 @@ readonly PREPROC_FLAGS=(
 # hello.ovm and opy.ovm for now, but those can easily be added later.  We
 # haven't mangled the CPython source!
 readonly INCLUDE_PATHS=(
-  -I .
+  -I .   # for pyconfig.h
+  -I ..  # for _gen/frontend/id_kind_asdl_c.h etc.
   -I Include
-  -I ../_devbuild/gen
   -I ../build/oil-defs
   -I ../py-yajl
    # Note: This depends on build/dev.sh yajl-release
