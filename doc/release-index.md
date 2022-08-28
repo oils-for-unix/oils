@@ -21,7 +21,8 @@ This is the home page for version 0.12.4 of Oil, a Unix shell.  To use it,
 These steps take 30 to 60 seconds on most machines.  After installation, see
 [Getting Started](doc/getting-started.html).
 
-Test results, metrics, and benchmarks are shown below.
+The associated [quality page](quality.html) shows test results, metrics, and
+benchmarks.
 
 [INSTALL]: doc/INSTALL.html
 
@@ -77,7 +78,4 @@ More docs:
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oil.  These versions may not be up-to-date.
 
-## Tests, Benchmarks, and Metrics
-
-The associated [quality page](quality.html) has many measurements.
 

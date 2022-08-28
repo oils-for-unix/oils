@@ -51,10 +51,4 @@ EOF
 
 }
 
-# Copied greatest.h into cpp/ afterward
-download() {
-  wget --directory _deps \
-    https://github.com/silentbicycle/greatest/archive/v1.4.2.tar.gz
-}
-
 "$@"

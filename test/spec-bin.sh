@@ -10,7 +10,7 @@
 #   test/spec-bin.sh download     # Get the right version of every tarball
 #   test/spec-bin.sh extract-all  # Extract source
 #   test/spec-bin.sh build-all    # Compile
-#   test/spec-bin.sh copy-all     # Put them in _deps/spec-bin
+#   test/spec-bin.sh copy-all     # Put them in ../oil_DEPS/spec-bin
 #   test/spec-bin.sh test-all     # Run a small smoke test
 #
 # Once you've run all steps manually and understand how they work, run them
@@ -24,7 +24,7 @@ set -o errexit
 
 source test/spec-common.sh
 
-REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 # This dir is a sibling to the repo to make it easier to use containers
@@ -49,7 +49,7 @@ download() {
 extract-all() {
   pushd $TAR_DIR
 
-  # Remove name collision: _deps/spec-bin/mksh could be a FILE and a DIRECTORY.
+  # Remove name collision: spec-bin/mksh could be a FILE and a DIRECTORY.
   # This is unfortunately how their tarball is laid out.
   rm --verbose -r -f mksh mksh-R52c
 
@@ -230,15 +230,13 @@ publish-mirror() {
 }
 
 all-steps() {
-  # Uncomment to rebuild the Travis cache in _deps/
-  #if false; then
   if test -d $DEPS_DIR; then
     echo "$DEPS_DIR exists: skipping build of shells"
   else
     download     # Get the right version of every tarball
     extract-all  # Extract source
     build-all    # Compile
-    copy-all     # Put them in _deps/spec-bin
+    copy-all     # Put them in ../oil_DEPS/spec-bin
     test-all     # Run a small smoke test
   fi
 }

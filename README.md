@@ -153,6 +153,8 @@ the oil-native build (pure C++):
       NINJA-steps.sh
       NINJA_subgraph.py
 
+    prebuilt/         # Prebuilt files committed to git, instead of in _gen/
+
     Python-2.7.13/    # For the slow Python build
     native/           # Python extension modules, e.g. libc.c
 
@@ -198,7 +200,6 @@ shell, of course!
       old/            # A junk drawer.
     web/              # HTML/JS/CSS for tests and tools
     soil/             # Multi-cloud continuous build (e.g. sourcehut, Github)
-    services/         # Other cloud services
 
 ### Temp Dirs
 
@@ -209,9 +210,9 @@ above create and use these dirs.
       cxx-dbg/
     _build/           # Temporary build files
     _cache/           # Dev dependency tarballs
-    _devbuild/        # Developer build files not deleted upon 'make clean'
-      gen/            # Generated Python and C code
-    _deps/            # build dependencies like re2c
+    _devbuild/        # Generated Python code, etc.
+    _gen/             # Generated C++ code that mirrors the repo
+      frontend/
     _release/         # Source release tarballs are put here
       VERSION/        # Published at oilshell.org/release/$VERSION/
         benchmarks/
@@ -237,13 +238,35 @@ above create and use these dirs.
       startup/
       ...
 
-### Build System for End Users
+### Build Dependencies in `../oil_DEPS`
 
-This is very different than the **developer build** of Oil.
+These tools are built from shell scripts in `soil/`.  The `oil_DEPS` dir is
+"parallel" to Oil because it works better with container bind mounds.
+
+    ../oil_DEPS/
+      re2c/           # to build the lexer
+      cmark/          # for building docs
+      spec-bin/       # shells to run spec tests against
+      mypy/           # MyPy repo
+      mycpp-venv/     # MyPy binaries deps in a VirtualEnv
+
+      py3/            # for mycpp and pea/
+      cpython-full/   # for boostrapping Oil-CPython
+
+
+### Build System for End Users version.
+
+These files make the slow "Oil Python" build, which is very different than the
+**developer build** of Oil.
 
     Makefile
     configure
     install
+
+These files are for `oil-native` (in progress):
+
+    _build/
+      oil-native.sh
 
 ### Doc Sources
 

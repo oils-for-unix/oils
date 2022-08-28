@@ -60,11 +60,11 @@ py2-tests() {
     # then skip a unit test that will fail.
 
     if test -n "$minimal"; then
-      if test $t = 'native/fastlex_test.py' && ! test -e 'fastlex.so'; then
+      if test $t = 'native/fastlex_test.py'; then
         continue
       fi
       # doctools/cmark.sh makes that shared library
-      if test $t = 'doctools/cmark_test.py' && ! test -e '_deps/libcmark.so'; then
+      if test $t = 'doctools/cmark_test.py'; then
         continue
       fi
     fi

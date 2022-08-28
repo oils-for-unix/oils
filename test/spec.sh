@@ -155,7 +155,8 @@ osh-version-text() {
   echo
 
   echo ---
-  local my_busybox=_deps/spec-bin/$BUSYBOX_NAME/busybox
+  local my_busybox
+  my_busybox=$(type -p busybox)
   if test -f $my_busybox; then
     { $my_busybox || true; } | head -n 1
     ls -l $my_busybox
