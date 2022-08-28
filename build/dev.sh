@@ -140,23 +140,6 @@ gen-asdl-py() {
   log "$asdl_path -> (asdl_main) -> $out"
 }
 
-gen-asdl-cpp() {
-  local asdl_path=$1  # e.g. osh/osh.asdl
-
-  local name
-  name=$(basename $asdl_path .asdl)
-
-  local out_prefix=${2:-_build/cpp/${name}_asdl}
-  local debug_info=_devbuild/gen/${name}_asdl_debug.py
-
-  # abbrev module is optional
-  asdl/asdl_main.py cpp $asdl_path $out_prefix $debug_info "$@"
-
-  # TODO: expand when .gc is the only thing generated
-  #local -a out_files=( $out_prefix* )
-  log "$asdl_path -> (asdl_main) -> $out_prefix* and $debug_info"
-}
-
 py-codegen() {
   # note: filename must come first
   gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-required

@@ -110,6 +110,19 @@ lexer-gen() { frontend/lexer_gen.py "$@"; }
 print-regex() { lexer-gen print-regex; }
 print-all() { lexer-gen print-all; }
 
+# TODO:
+# _build/
+#   gen/
+#     frontend/
+#       id.asdl_c.h
+#       types.asdl_c.h
+#       match.re2c.h
+#   tmp/
+#     frontend/
+#       match.re2c.in
+#     bin/
+#       osh_eval_raw.mycpp.cc
+
 types-gen() {
   local out=_devbuild/gen/osh-types.h
   asdl/asdl_main.py c frontend/types.asdl "$@" > $out

@@ -97,6 +97,9 @@ def asdl_cpp(n, asdl_path, pretty_print_methods=True, gen_dir=False):
     outputs = [prefix + '.h']
     asdl_flags = '--no-pretty-print-methods'
 
+  debug_mod = '%s_debug.py' % prefix 
+  outputs.append(debug_mod)
+
   # NOTE: Generating syntax_asdl.h does NOT depend on hnode_asdl.h, but
   # COMPILING anything that #includes it does.  That is handled elsewhere.
 
@@ -106,6 +109,7 @@ def asdl_cpp(n, asdl_path, pretty_print_methods=True, gen_dir=False):
             ('action', 'cpp'),
             ('out_prefix', prefix),
             ('asdl_flags', asdl_flags),
+            ('debug_mod', debug_mod),
           ])
   n.newline()
 
@@ -129,8 +133,8 @@ def NinjaGraph(n):
   n.newline()
 
   n.rule('asdl-cpp',
-         command='_bin/shwrap/asdl_main $action $asdl_flags $in $out_prefix',
-         description='asdl_main $action $asdl_flags $in $out_prefix')
+         command='_bin/shwrap/asdl_main $action $asdl_flags $in $out_prefix $debug_mod',
+         description='asdl_main $action $asdl_flags $in $out_prefix $debug_mod')
   n.newline()
 
   #

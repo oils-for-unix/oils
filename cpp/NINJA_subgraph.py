@@ -41,7 +41,7 @@ _build/   # input source
     cxx-dbg.txt  # line counts
 
 _bin/   # output binaries
-  # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh,together}
+  # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
 
   cxx-opt/
     osh_eval
@@ -49,10 +49,6 @@ _bin/   # output binaries
     osh_eval.symbols
 
   cxx-opt-sh/                      # with shell script
-
-  cxx-opt-together/                # one compiler invocation, could delete
-    osh_eval
-    osh_eval.{stripped,symbols}
 
 TODO
 
@@ -197,13 +193,6 @@ def NinjaGraph(n):
          description='line_count $out $in')
   n.newline()
 
-  # 'together' build
-  n.rule('compile_and_link',
-         # multiple outputs
-         command='cpp/NINJA-steps.sh compile_and_link $compiler $variant $more_cxx_flags $out $in',
-         description='CXX,LINK $compiler $variant $more_cxx_flags $out $in')
-  n.newline()
-
   # Compile one translation unit
   n.rule('compile_one',
          command='cpp/NINJA-steps.sh compile_one $compiler $variant $more_cxx_flags $in $out $out.d',
@@ -274,17 +263,6 @@ def NinjaGraph(n):
       n.newline()
 
     #
-    # TOGETHER
-    #
-
-    bin_together = '_bin/%s-%s-together/osh_eval' % (compiler, variant)
-    binaries.append(bin_together)
-
-    n.build(bin_together, 'compile_and_link',
-            OSH_EVAL_UNITS, variables=ninja_vars)
-    n.newline()
-
-    #
     # SEPARATE: Compile objects
     #
 
@@ -316,13 +294,13 @@ def NinjaGraph(n):
 
     # Strip the .opt binary
     if variant == 'opt':
-      for b in [bin_together, bin_separate]:
-        stripped = b + '.stripped'
-        symbols = b + '.symbols'
-        n.build([stripped, symbols], 'strip', [b])
-        n.newline()
+      b = bin_separate
+      stripped = b + '.stripped'
+      symbols = b + '.symbols'
+      n.build([stripped, symbols], 'strip', [b])
+      n.newline()
 
-        binaries.append(stripped)
+      binaries.append(stripped)
 
   n.default(['_bin/cxx-dbg/osh_eval'])
 
