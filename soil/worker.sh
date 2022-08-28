@@ -201,9 +201,9 @@ dump-hardware           soil/worker.sh dump-hardware                    -
 build-minimal           build/dev.sh minimal                            -
 ninja-config            ./NINJA-config.sh dummy                         -
 extract-clang           soil/deps-binary.sh extract-clang-in-container  -
-mycpp-unit-coverage     mycpp/test.sh unit-test-coverage                _test/clang-coverage/mycpp-unit/html/index.html
+mycpp-unit-coverage     mycpp/test.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
 HACK-asdl               build/dev.sh oil-asdl-to-cpp                    -
-mycpp-examples-coverage mycpp/test.sh examples-coverage                 _test/clang-coverage/mycpp-examples/html/index.html
+mycpp-examples-coverage mycpp/test.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html
 cpp-coverage            cpp/test.sh coverage                            _test/clang-coverage/cpp/html/index.html
 unified-coverage        test/coverage.sh unified-report                 _test/clang-coverage/unified/html/index.html
 EOF

@@ -52,7 +52,6 @@ gen-cpp-test() {
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \
     "${OLDSTL_RUNTIME[@]}" \
-    _build/cpp/hnode_asdl.cc \
     $tmp_dir/typed_arith_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc 
 
@@ -70,7 +69,8 @@ gc-test() {
   # TODO: remove this after it works with the garbage collector!
   export ASAN_OPTIONS='detect_leaks=0'
 
-  # for hnode_asdl.gc.cc
+  # for hnode_asdl.h
+  # TODO: move this into Ninja.  Redundant with cpp/test.sh pre-build
   build/dev.sh oil-asdl-to-cpp
 
   local tmp_dir=$TMP_DIR
@@ -90,7 +90,6 @@ gc-test() {
     asdl/gc_test.cc \
     "${GC_RUNTIME[@]}" \
     asdl/runtime.cc \
-    _build/cpp/hnode_asdl.cc \
     $tmp_dir/demo_lib_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc
 
@@ -99,32 +98,6 @@ gc-test() {
   local log="$log_dir/gc_test.log"
   log "RUN $bin > $log"
   $bin "$@" > "$log"
-}
-
-hnode-asdl-gc() {
-  ### Test that hnode can compile by itself
-
-  local tmp_dir=$TMP_DIR
-  local bin_dir=_bin/cxx-asan/asdl
-  mkdir -p $tmp_dir $bin_dir
-
-  cat >$tmp_dir/hnode_asdl_test.cc <<'EOF'
-#include "_build/cpp/hnode_asdl.h"
-
-int main() {
-  printf("OK hnode_asdl_test\n");
-  return 0;
-}
-EOF
-
-  local bin=$bin_dir/hnode_asdl_test
-
-  compile_and_link cxx asan '' $bin \
-    _build/cpp/hnode_asdl.cc \
-    $tmp_dir/hnode_asdl_test.cc
-
-  log "RUN $bin"
-  $bin
 }
 
 one-asdl-gc() {
@@ -172,11 +145,9 @@ all-asdl-gc() {
   build/dev.sh oil-asdl-to-cpp
 
   # Now make sure they can compile
-  hnode-asdl-gc
-  one-asdl-gc types
 
-  # syntax.asdl is a 'use' dependency; 'id' is implicit
-  # there is no GC variant for id_kind_asdl
+  # syntax.asdl is a 'use' dependency; 'id' is implicit there is no GC variant
+  # for id_kind_asdl
   one-asdl-gc runtime _build/cpp/syntax_asdl.cc _build/cpp/id_kind_asdl.cc
 
   one-asdl-gc syntax _build/cpp/id_kind_asdl.cc

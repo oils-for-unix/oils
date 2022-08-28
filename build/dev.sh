@@ -137,7 +137,7 @@ gen-asdl-py() {
   # import an empty file!
   mv $tmp $out
 
-  echo "$asdl_path -> (asdl_main) -> $out"
+  log "$asdl_path -> (asdl_main) -> $out"
 }
 
 gen-asdl-cpp() {
@@ -154,7 +154,7 @@ gen-asdl-cpp() {
 
   # TODO: expand when .gc is the only thing generated
   #local -a out_files=( $out_prefix* )
-  echo "$asdl_path -> (asdl_main) -> $out_prefix* and $debug_info"
+  log "$asdl_path -> (asdl_main) -> $out_prefix* and $debug_info"
 }
 
 py-codegen() {
@@ -278,7 +278,7 @@ py-ext-test() {
   set -o errexit
 
   if test $status -eq 0; then
-    echo "OK $log_path"
+    log "OK $log_path"
   else
     die "FAIL $log_path"
   fi
@@ -443,7 +443,7 @@ time-helper() {
   local out=_devbuild/bin/time-helper
   mkdir -p $(dirname $out)
   cc -std=c99 -o $out $in
-  echo "  CC $in"
+  log "  CC $in"
 }
 
 all() {

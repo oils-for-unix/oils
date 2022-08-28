@@ -48,14 +48,14 @@ def main(argv):
 
     mycpp_subgraph.NinjaGraph(n)
 
-    log('%s: Wrote %s', argv[0], BUILD_NINJA)
+    log('  (%s) -> %s', argv[0], BUILD_NINJA)
 
 
   elif action == 'shell':
     out = '_build/oil-native.sh'
     with open(out, 'w') as f:
       cpp_subgraph.ShellFunctions(f, argv[0])
-    log('%s: Wrote %s', argv[0], out)
+    log('  (%s) -> %s', argv[0], out)
 
   else:
     raise RuntimeError('Invalid action %r' % action)

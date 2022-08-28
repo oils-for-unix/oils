@@ -33,13 +33,13 @@ fi
 types-gen() {
   local out=_devbuild/gen/osh-types.h
   asdl/asdl_main.py c frontend/types.asdl "$@" > $out
-  echo "  (asdl_main) -> $out"
+  log "  (asdl_main) -> $out"
 }
 
 id-c-gen() {
   local out=_devbuild/gen/id.h
   frontend/consts_gen.py c > $out
-  echo "  (frontend/consts_gen) -> $out"
+  log "  (frontend/consts_gen) -> $out"
 }
 
 const-mypy-gen() {
@@ -179,9 +179,9 @@ ast-id-lex() {
   local tmp=_devbuild/tmp/osh-lex.re2c.h
   local out=_devbuild/gen/osh-lex.h
   lexer-gen c > $tmp
-  echo "  (lexer_gen) -> $tmp"
+  log "  (lexer_gen) -> $tmp"
   osh-lex-gen-native $tmp $out
-  echo "$tmp -> (re2c) -> $out"
+  log "$tmp -> (re2c) -> $out"
 }
 
 test-generated-code() {
