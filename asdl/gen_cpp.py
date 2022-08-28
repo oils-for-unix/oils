@@ -243,8 +243,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit('typedef %s %s_t;' % (enum_name, sum_name), depth)
       self.Emit('', depth)
 
-      self.Emit('const char* %s_str(%s tag);' % (sum_name, enum_name), depth)
-      self.Emit('', depth)
+      if self.pretty_print_methods:
+        self.Emit('const char* %s_str(%s tag);' % (sum_name, enum_name), depth)
+        self.Emit('', depth)
 
     else:
       if is_simple:
@@ -264,8 +265,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
       self.Emit('', depth)
 
-      self.Emit('const char* %s_str(int tag);' % sum_name, depth)
-      self.Emit('', depth)
+      if self.pretty_print_methods:
+        self.Emit('const char* %s_str(int tag);' % sum_name, depth)
+        self.Emit('', depth)
 
     return int_to_type
 
@@ -580,16 +582,19 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('}', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
+    if not self.pretty_print_methods:
+      return
+
     if name in self.simple_int_sums:
       self._EmitStrFunction(sum, name, depth, strong=False, simple=True)
     else:
       self._EmitStrFunction(sum, name, depth, strong=True)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
-    self._EmitStrFunction(sum, sum_name, depth)
-
     if not self.pretty_print_methods:
       return
+
+    self._EmitStrFunction(sum, sum_name, depth)
 
     for variant in sum.types:
       if variant.shared_type:

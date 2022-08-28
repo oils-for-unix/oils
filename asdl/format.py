@@ -18,7 +18,7 @@ from typing import Tuple, List
 
 from _devbuild.gen.hnode_asdl import (
     hnode_e, hnode_t, hnode__Record, hnode__Array, hnode__Leaf,
-    hnode__External, color_e, color_t, color_str, hnode_str,
+    hnode__External, color_e, color_t
 )
 from core import ansi
 from qsn_ import qsn
@@ -171,7 +171,7 @@ class HtmlOutput(ColorOutput):
     elif e_color == color_e.UserType:
       css_class = 'o'
     else:
-      raise AssertionError(color_str(e_color))
+      raise AssertionError(e_color)
     self.f.write('<span class="%s">' % css_class)
 
   def PopColor(self):
@@ -210,7 +210,7 @@ class AnsiOutput(ColorOutput):
     elif e_color == color_e.UserType:
       self.f.write(ansi.GREEN)  # Same color as other literals for now
     else:
-      raise AssertionError(color_str(e_color))
+      raise AssertionError(e_color)
 
   def PopColor(self):
     # type: () -> None
@@ -396,7 +396,7 @@ class _PrettyPrinter(object):
       self._PrintRecord(node, f, indent)
 
     else:
-      raise AssertionError(hnode_str(tag))
+      raise AssertionError(node)
 
 
 def _TrySingleLineObj(node, f, max_chars):
@@ -476,7 +476,7 @@ def _TrySingleLine(node, f, max_chars):
     return _TrySingleLineObj(node, f, max_chars)
 
   else:
-    raise AssertionError(hnode_str(tag))
+    raise AssertionError(node)
 
   # Take into account the last char.
   num_chars_so_far = f.NumChars()

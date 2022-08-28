@@ -7,8 +7,8 @@
 #include "mycpp/gc_mylib.h"
 #include "vendor/greatest.h"
 
-using hnode_asdl::hnode_str;
 using hnode_asdl::hnode_t;
+namespace hnode_e = hnode_asdl::hnode_e;
 
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::word;
@@ -27,7 +27,7 @@ TEST pretty_print_test() {
   // TODO: GC_EVERY_ALLOC and make it pass.
   for (int i = 0; i < 100; ++i) {
     hnode_t* t1 = b->PrettyTree();
-    ASSERT(strcmp("hnode.Record", hnode_str(t1->tag_())) == 0);
+    ASSERT_EQ(hnode_e::Record, t1->tag_());
 
     auto f = mylib::Stdout();
     auto ast_f = new format::TextOutput(f);

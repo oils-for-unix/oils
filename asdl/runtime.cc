@@ -208,8 +208,6 @@ using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode__External;
 using hnode_asdl::color_e;
 using hnode_asdl::color_t;
-using hnode_asdl::color_str;
-using hnode_asdl::hnode_str;
 
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
   StackRoots _roots({&f});

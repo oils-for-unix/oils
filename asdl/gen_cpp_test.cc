@@ -22,7 +22,6 @@ using typed_demo_asdl::bool_expr__LogicalBinary;
 using typed_demo_asdl::op_id_e;
 
 using hnode_asdl::hnode__Leaf;
-using hnode_asdl::hnode_str;
 namespace hnode_e = hnode_asdl::hnode_e;
 
 void PrintTag(arith_expr_t* a) {
@@ -106,7 +105,7 @@ TEST pretty_print_test() {
   log("sizeof b = %d", sizeof b);
   log("");
   hnode_t* t1 = b->PrettyTree();
-  ASSERT(strcmp("hnode.Record", hnode_str(t1->tag_())) == 0);
+  ASSERT_EQ(hnode_e::Record, t1->tag_());
 
   auto f = mylib::Stdout();
   auto ast_f = new format::TextOutput(f);
@@ -115,7 +114,7 @@ TEST pretty_print_test() {
   // typed_arith.asdl
   auto c = new arith_expr__Const(42);
   hnode_t* t2 = c->PrettyTree();
-  ASSERT(strcmp("hnode.Record", hnode_str(t2->tag_())) == 0);
+  ASSERT_EQ(hnode_e::Record, t2->tag_());
 
   PASS();
 }
