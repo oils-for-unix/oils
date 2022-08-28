@@ -23,7 +23,7 @@ compile-with-asdl() {
       ;;
   esac
 
-  # .. for asdl/runtime.h
+  # TODO: Use $REPO_ROOT, etc.
   $CXX -o _bin/$name.$variant $flags \
     -I . -I .. -I ../_devbuild/gen -I ../_build/cpp -I _gen -I ../cpp \
     switchy_containers.cc $src "$@" -lstdc++

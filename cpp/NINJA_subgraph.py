@@ -99,16 +99,6 @@ GENERATED_H = [
 
     # header only
     '_build/cpp/core_optview.h',
-
-    # TODO: Generate something smaller for ARGS.reader?
-    #
-    # Does it make sense to generate asdl/runtime.h on the fly?
-    #
-    # And maybe args.Reader?
-    #
-    # I think it should be called pre-baked?
-
-    #'_build/cpp/osh_eval.h',
 ]
 
 GENERATED_CC = [
@@ -135,19 +125,8 @@ CPP_BINDINGS = [
 # TODO: Change to GC_RUNTIME
 OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC + OLDSTL_RUNTIME
 
-HEADER_DEPS = {
-    # Weird implicit dependency: this file needs to use mycpp-generated code
-    # args::Reader.
-
-    # It's the same problem as asdl/runtime.h being #included by syntax_asdl.h,
-    # but then the actual code is in _build/cpp/osh_eval.cc.
-    #
-    # TODO: How to clean this up?
-
-    'cpp/leaky_frontend_flag_spec.cc': ['_build/cpp/osh_eval.h'],
-}
-
 # Add implicit deps
+HEADER_DEPS = {}
 for cc in CPP_BINDINGS + GENERATED_CC:
   if cc not in HEADER_DEPS:
     HEADER_DEPS[cc] = []
@@ -322,11 +301,8 @@ def TarballManifest():
   # TODO: Put these in Ninja.  It includes the grammar.
   names.extend(glob('_devbuild/gen/*.h'))
 
-  # Extra code to get rid of
-  names.append('_build/cpp/osh_eval.h')
-
-  # PREBUILT code
-  names.append('asdl/runtime.h')
+  # ONLY the headers
+  names.extend(glob('prebuilt/*/*.h'))
 
   # Build scripts
   names.extend([

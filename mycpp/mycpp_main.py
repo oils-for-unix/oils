@@ -238,31 +238,18 @@ def main(argv):
   else:
     f = sys.stdout
 
-  # TODO: Add --cc-out?  But there is a preamble and postamble.
   f.write("""\
 // BEGIN mycpp output
 
 #ifdef OLDSTL_BINDINGS
 #include "mycpp/oldstl_containers.h"
-
-
 #else
 #include "mycpp/gc_containers.h"
 #include "mycpp/gc_builtins.h"
 #include "mycpp/gc_mylib.h"
-
-
-
-
-
-
 #endif
 
 """)
-
-  if to_header:
-    f.write('#include "%s"\n' % os.path.basename(opts.header_out))
-    f.write('\n')
 
   # Collect constants and then emit code.
   log('\tmycpp pass: CONST')

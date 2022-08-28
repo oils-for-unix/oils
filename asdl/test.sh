@@ -50,7 +50,7 @@ gen-cpp-test() {
 
   compile_and_link $compiler $variant '-D OLDSTL_BINDINGS' $bin \
     asdl/gen_cpp_test.cc \
-    asdl/runtime.cc \
+    prebuilt/asdl/runtime.mycpp.cc \
     "${OLDSTL_RUNTIME[@]}" \
     $tmp_dir/typed_arith_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc 
@@ -89,7 +89,7 @@ gc-test() {
   compile_and_link $compiler $variant '' $bin \
     asdl/gc_test.cc \
     "${GC_RUNTIME[@]}" \
-    asdl/runtime.cc \
+    prebuilt/asdl/runtime.mycpp.cc \
     $tmp_dir/demo_lib_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc
 
@@ -129,7 +129,7 @@ EOF
 
   compile_and_link cxx asan '' $bin \
     _build/cpp/${name}_asdl.cc \
-    asdl/runtime.cc \
+    prebuilt/asdl/runtime.mycpp.cc \
     "${GC_RUNTIME[@]}" \
     $tmp_dir/${name}_asdl_test.cc \
     "$@"

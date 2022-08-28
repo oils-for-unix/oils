@@ -288,9 +288,8 @@ def Options() -> optparse.OptionParser:
       '-v', '--verbose', dest='verbose', action='store_true', default=False,
       help='Show details about translation')
 
-  # Control which modules are exported to the header.
-  # - It's used for asdl/runtime.h, which is useful for tests ONLY
-  # - TODO: Should we get rid of _build/cpp/osh_eval.h?  Not sure it's used
+  # Control which modules are exported to the header.  Used by
+  # build/translate.sh.
   p.add_option(
       '--to-header', dest='to_header', action='append', default=[],
       help='Export this module to a header, e.g. frontend.args')

@@ -177,7 +177,7 @@ tags_to_types = \\
 """ % (out_prefix, ARG_0, out_prefix))
 
         f.write("""\
-#include "asdl/runtime.h"  // generated code uses wrappers here
+#include "prebuilt/asdl/runtime.mycpp.h"  // generated code uses wrappers here
 """)
 
         # To call pretty-printing methods
