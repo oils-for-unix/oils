@@ -108,6 +108,9 @@ GENERATED_H = [
 
     '_build/cpp/consts.h',
 
+    # header only
+    '_build/cpp/core_optview.h',
+
     # TODO: Generate something smaller for ARGS.reader?
     #
     # Does it make sense to generate asdl/runtime.h on the fly?

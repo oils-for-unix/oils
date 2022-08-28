@@ -194,31 +194,11 @@ oil-asdl-to-cpp() {
     _build/cpp/syntax_asdl.h
 }
 
-cpp-codegen() {
-  mkdir -p _build/cpp _devbuild/tmp
-
-  local out_dir=_build/cpp
-
-  frontend/option_gen.py cpp $out_dir/option_asdl
-  log "  (core/option_gen) -> $out_dir/option_asdl*"
-
-  core/optview_gen.py > $out_dir/core_optview.h
-  log "  (core/optview_gen) -> $out_dir/core_optview.h"
-
-  local out="$out_dir/arith_parse.cc"
-  osh/arith_parse_gen.py > $out
-  log "  (osh/arith_parse_gen) -> $out"
-
-  local prefix="$out_dir/arg_types"
-  frontend/flag_gen.py cpp $prefix
-  log "  (frontend/flag_gen) -> $prefix*"
-}
-
 oil-cpp() {
   ./NINJA-config.sh  # Create it for the first time
 
   # NOTE: 'build/dev.sh all' is required for _devbuild/gen/osh-lex.h (via re2c)
-  cpp-codegen
+
   build/native.sh gen-oil-native-sh  # script to build it
 
   #time ninja -j 1 _bin/cxx-dbg/osh_eval

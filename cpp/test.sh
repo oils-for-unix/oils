@@ -23,9 +23,11 @@ pre-build() {
   # This is part of build/dev.sh oil-cpp
 
   build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h
-  build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
   build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
-  build/dev.sh cpp-codegen
+
+  # TODO: Make a target for this
+  ninja _build/cpp/arg_types.{h,cc}
+  ninja _build/cpp/id_kind_asdl.{h,cc}
 }
 
 readonly LEAKY_FLAG_SPEC_SRC=(

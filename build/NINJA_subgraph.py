@@ -137,6 +137,7 @@ def NinjaGraph(n):
   shwrap_py(n, 'asdl/asdl_main.py')
   shwrap_py(n, 'core/optview_gen.py')
   shwrap_py(n, 'frontend/consts_gen.py')
+  shwrap_py(n, 'frontend/flag_gen.py')
   shwrap_py(n, 'frontend/lexer_gen.py')
   shwrap_py(n, 'frontend/option_gen.py')
   shwrap_py(n, 'oil_lang/grammar_gen.py')
@@ -163,6 +164,24 @@ def NinjaGraph(n):
          command='_bin/shwrap/consts_gen $action $out_prefix',
          description='consts_gen $action $out_prefix')
 
+  n.rule('flag-gen',
+         command='_bin/shwrap/flag_gen $action $out_prefix',
+         description='flag_gen $action $out_prefix')
+
+  n.rule('option-gen',
+         command='_bin/shwrap/option_gen $action $out_prefix',
+         description='consts_gen $action $out_prefix')
+
+  n.rule('optview-gen',
+         # uses shell style
+         command='_bin/shwrap/optview_gen > $out',
+         description='optview_gen > $out')
+
+  n.rule('arith-parse-gen',
+         # uses shell style
+         command='_bin/shwrap/arith_parse_gen > $out',
+         description='arith-parse-gen > $out')
+
   prefix = '_build/cpp/id_kind_asdl'
   n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
           implicit=['_bin/shwrap/consts_gen'],
@@ -182,5 +201,29 @@ def NinjaGraph(n):
           ])
   n.newline()
 
+  prefix = '_build/cpp/arg_types'
+  n.build([prefix + '.h', prefix + '.cc'], 'flag-gen', [],
+          implicit=['_bin/shwrap/flag_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp'),
+          ])
+  n.newline()
 
+  prefix = '_build/cpp/option_asdl'
+  # no .cc file
+  n.build([prefix + '.h'], 'option-gen', [],
+          implicit=['_bin/shwrap/option_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp'),
+          ])
+  n.newline()
 
+  n.build(['_build/cpp/core_optview.h'], 'optview-gen', [],
+          implicit=['_bin/shwrap/optview_gen'])
+  n.newline()
+
+  n.build(['_build/cpp/arith_parse.cc'], 'arith-parse-gen', [],
+          implicit=['_bin/shwrap/arith_parse_gen'])
+  n.newline()

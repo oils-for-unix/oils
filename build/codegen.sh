@@ -54,8 +54,7 @@ flag-gen-mypy() {
 }
 
 test-optview() {
-  mkdir -p _build/cpp
-  ninja _build/cpp/core_optview.h
+  ninja _build/cpp/core_optview.h _build/cpp/option_asdl.h
 
   local tmp_dir=_test/gen-cpp/core
   local bin_dir=_bin/cxx-asan/core
@@ -80,8 +79,7 @@ EOF
 }
 
 test-flag-gen() {
-  mkdir -p _build/cpp
-  ninja _build/cpp/arg_types.h
+  ninja _build/cpp/arg_types.{h,cc}
 
   local tmp_dir=_test/gen-cpp/core
   local bin_dir=_bin/cxx-asan/core
