@@ -82,22 +82,12 @@ gen-osh-eval() {
   # Put it in _build/tmp so it's not in the tarball
   local tmp=_build/tmp
   mkdir -p $tmp
-  local raw=$tmp/osh_eval_raw.cc
 
+  local raw=$tmp/osh_eval_raw.cc
   local cc_out=${out_prefix}.cc
-  local header_out=${out_prefix}.h
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/native"
-
-  # Note: header output is for leaky_frontend_flag_spec.cc to use args::Reader
-
-  _bin/shwrap/mycpp_main \
-    $mypypath $raw \
-    --header-out $header_out \
-    --to-header frontend.args \
-    --to-header asdl.runtime \
-    --to-header asdl.format \
-    "$@"
+  _bin/shwrap/mycpp_main $mypypath $raw "$@"
 
   { 
     local name='osh_eval'

@@ -4,10 +4,8 @@
 
 #include "_build/cpp/arg_types.h"
 #include "mycpp/oldstl_builtins.h"
-
-#ifndef CPP_UNIT_TEST
-  #include "_build/cpp/osh_eval.h"  // args::Reader, etc.
-#endif
+// for definition of args::Reader, etc.
+#include "prebuilt/frontend/args.mycpp.h"
 
 namespace flag_spec {
 
