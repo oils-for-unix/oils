@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/dynamic-deps.sh
+source build/dynamic-deps.sh  # py-tool, etc
 
 asdl-main() { py-tool asdl.asdl_main; }
 
@@ -67,8 +67,7 @@ main() {
   # Baked into mycpp/NINJA.
   osh-eval
 
-  # Pre-baked
-  echo "    " {mycpp,pea}/NINJA/*/deps.txt
+  echo DEPS prebuilt/NINJA/*/deps.txt
 
   # Reads the deps.txt files above
   PYTHONPATH=. build/NINJA_main.py

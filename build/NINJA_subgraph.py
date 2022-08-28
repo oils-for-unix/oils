@@ -154,7 +154,7 @@ def NinjaGraph(n):
   shwrap_py(n, 'osh/arith_parse_gen.py')
 
   shwrap_py(n, 'mycpp/mycpp_main.py',
-            deps_base_dir='mycpp/NINJA',
+            deps_base_dir='prebuilt/ninja',
             rule='write-shwrap-mycpp')
 
   #

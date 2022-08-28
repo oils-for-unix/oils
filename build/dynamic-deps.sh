@@ -19,7 +19,7 @@ readonly PY_PATH='.:vendor/'
 readonly DIR=_build/NINJA
 
 # In git
-readonly FILTER_DIR='build/dynamic-deps'
+readonly FILTER_DIR='prebuilt/dynamic-deps'
 
 write-filters() {
   ### Write files with the egrep -f format
@@ -124,7 +124,7 @@ readonly PY_310=../oil_DEPS/python3
 write-pea() {
   # PYTHONPATH=$PY_PATH 
   local module='pea.pea_main'
-  local dir=pea/NINJA/$module
+  local dir=prebuilt/ninja/$module
   mkdir -p $dir
 
   # Can't use vendor/typing.py
@@ -134,12 +134,13 @@ write-pea() {
 
   cat $dir/all-pairs.txt | repo-filter | mysort | tee $dir/deps.txt
 
-  ls -l $dir
+  echo
+  echo $dir/*
 }
 
 write-mycpp() {
   local module='mycpp.mycpp_main'
-  local dir=mycpp/NINJA/$module
+  local dir=prebuilt/ninja/$module
   mkdir -p $dir
 
   ( source $MYCPP_VENV/bin/activate
@@ -154,7 +155,8 @@ write-mycpp() {
     | mysort \
     | tee $dir/deps.txt
 
-  ls -l $dir
+  echo
+  echo $dir/*
 }
 
 mycpp-example-parse() {
@@ -183,7 +185,7 @@ pea-hack() {
   cp -v $DIR/osh_eval/typecheck.txt pea/osh-eval-typecheck.txt
 }
 
-# Source by NINJA-config.sh
+# Sourced by NINJA-config.sh
 if test $(basename $0) = 'dynamic-deps.sh'; then
   "$@"
 fi
