@@ -102,6 +102,32 @@ ASDL_CC = [
     # '_build/cpp/option_asdl.cc',
 ]
 
+GENERATED_H = [
+    '_build/cpp/arg_types.h',
+    # NOTE: there is no cpp/arith_parse.h
+
+    '_build/cpp/consts.h',
+
+    # TODO: Generate something smaller for ARGS.reader?
+    #
+    # Does it make sense to generate asdl/runtime.h on the fly?
+    #
+    # And maybe args.Reader?
+    #
+    # I think it should be called pre-baked?
+
+
+    #'_build/cpp/osh_eval.h',
+]
+
+GENERATED_CC = [
+    '_build/cpp/arg_types.cc',
+    '_build/cpp/arith_parse.cc',
+    '_build/cpp/consts.cc',
+    '_build/cpp/osh_eval.cc',
+]
+
+
 CPP_BINDINGS = [
     'cpp/leaky_core.cc',
     'cpp/leaky_frontend_flag_spec.cc',
@@ -115,18 +141,18 @@ CPP_BINDINGS = [
     'cpp/leaky_libc.cc',
 ]
 
-GENERATED_CC = [
-    '_build/cpp/arg_types.cc',
-    '_build/cpp/arith_parse.cc',
-    '_build/cpp/consts.cc',
-    '_build/cpp/osh_eval.cc',
-]
-
 # TODO: Change to GC_RUNTIME
 OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC + OLDSTL_RUNTIME
 
 HEADER_DEPS = {
-    # Weird implicit dependency
+    # Weird implicit dependency: this file needs to use mycpp-generated code
+    # args::Reader.
+
+    # It's the same problem as asdl/runtime.h being #included by syntax_asdl.h,
+    # but then the actual code is in _build/cpp/osh_eval.cc.
+    #
+    # TODO: How to clean this up?
+
     'cpp/leaky_frontend_flag_spec.cc': ['_build/cpp/osh_eval.h'],
 }
 
@@ -135,6 +161,7 @@ for cc in CPP_BINDINGS + GENERATED_CC:
   if cc not in HEADER_DEPS:
     HEADER_DEPS[cc] = []
   HEADER_DEPS[cc].extend(ASDL_H)
+  HEADER_DEPS[cc].extend(GENERATED_H)
 
 # -D NO_GC_HACK: Avoid memset().  -- rename GC_NO_MEMSET?
 #  - only applies to gc_heap.h in Space::Clear()

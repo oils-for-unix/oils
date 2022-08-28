@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
+# Creates build.ninja.  Crawls dynamic dependencies.
+#
 # Usage:
-#   ./NINJA-config.sh <function name>
+#   ./NINJA-config.sh
 
 set -o nounset
 set -o pipefail

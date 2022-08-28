@@ -150,10 +150,37 @@ def NinjaGraph(n):
   # ASDL
   #
 
-  if 1:
-    asdl_cpp(n, 'asdl/hnode.asdl', pretty_print_methods=False)
-    asdl_cpp(n, 'frontend/syntax.asdl')
-    asdl_cpp(n, 'frontend/types.asdl', pretty_print_methods=False)
-    asdl_cpp(n, 'core/runtime.asdl')
+  asdl_cpp(n, 'asdl/hnode.asdl', pretty_print_methods=False)
+  asdl_cpp(n, 'frontend/syntax.asdl')
+  asdl_cpp(n, 'frontend/types.asdl', pretty_print_methods=False)
+  asdl_cpp(n, 'core/runtime.asdl')
 
-    # TODO: Also generate synthetic option_asdl id_kind_asdl
+  #
+  # Other code generators
+  #
+
+  n.rule('consts-gen',
+         command='_bin/shwrap/consts_gen $action $out_prefix',
+         description='consts_gen $action $out_prefix')
+
+  prefix = '_build/cpp/id_kind_asdl'
+  n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
+          implicit=['_bin/shwrap/consts_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp'),
+          ])
+  n.newline()
+
+  # Similar to above
+  prefix = '_build/cpp/consts'
+  n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
+          implicit=['_bin/shwrap/consts_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp-consts'),
+          ])
+  n.newline()
+
+
+

@@ -39,15 +39,22 @@ manifest() {
 make-tar() {
   local app_name='oil-native'
 
-  local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
-
   local tar=_release/${app_name}.tar
 
   # NOTE: Could move this to the Makefile, which will make it
   mkdir -p _release 
 
-  build/dev.sh oil-cpp-codegen
+  # TODO: Use Ninja here?
+  #
+  # ninja _release/oil-native.tar
+  #
+  # The ./NINJA-config.sh step could even read oil-native.sh
+  #
+  # Then you wouldn't need a duplicate manifest
 
+  build/dev.sh cpp-codegen
+
+  local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
   manifest | xargs -- tar --create --transform "$sed_expr" --file $tar
 
   local tar_xz=_release/${app_name}-${OIL_VERSION}.tar.xz

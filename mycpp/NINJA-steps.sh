@@ -89,6 +89,8 @@ gen-osh-eval() {
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/native"
 
+  # Note: header output is for leaky_frontend_flag_spec.cc to use args::Reader
+
   _bin/shwrap/mycpp_main \
     $mypypath $raw \
     --header-out $header_out \
