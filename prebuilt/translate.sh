@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Build parts of Oil with mycpp, to work around circular deps issue.
+# Translate parts of Oil with mycpp, to work around circular deps issue.
 #
 # Usage:
-#   prebuilt/build.sh <function name>
+#   prebuilt/translate.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -14,15 +14,13 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source mycpp/common.sh  # MYPY_REPO
 source mycpp/NINJA-steps.sh
 
-# _build/tmp/osh_eval_raw.cc won't be included in the tarball
-# _build/cpp/osh_eval.cc is in the tarball
 readonly TEMP_DIR=_build/tmp
 
 oil-part() {
   ### Translate ASDL deps for unit tests
 
-  local out_prefix=${1:-asdl/runtime}
-  local raw_header=${2:-$TEMP_DIR/runtime.h}
+  local out_prefix=$1
+  local raw_header=$2
   shift 2
 
   local name=asdl_runtime

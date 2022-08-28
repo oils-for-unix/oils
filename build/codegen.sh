@@ -30,29 +30,6 @@ if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 're2c'
 fi
 
-const-mypy-gen() {
-  local out=_devbuild/gen/id_kind_asdl.py
-  frontend/consts_gen.py mypy > $out
-  log "  (frontend/consts_gen) -> $out"
-
-  out=_devbuild/gen/id_kind.py
-  frontend/consts_gen.py py-consts > $out
-  log "  (frontend/consts_gen) -> $out"
-}
-
-option-mypy-gen() {
-  local out=_devbuild/gen/option_asdl.py
-  frontend/option_gen.py mypy > $out
-  log "  (frontend/option_gen) -> $out"
-}
-
-flag-gen-mypy() {
-  local out=_devbuild/gen/arg_types.py
-  frontend/flag_gen.py mypy > $out
-  #cat $out
-  log "  (frontend/flag_gen) -> $out"
-}
-
 test-optview() {
   ninja _build/cpp/core_optview.h _build/cpp/option_asdl.h
 

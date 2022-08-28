@@ -230,15 +230,15 @@ EXAMPLES_PY = {
 
 # Linking _bin/cxx-dbg/mycpp-examples/parse depends on expr.asdl.o
 EXAMPLES_CC = {
-    'parse': ['_build/gen/mycpp/examples/expr.asdl.cc'],
+    'parse': ['_gen/mycpp/examples/expr.asdl.cc'],
 }
 
 # We need IMPLICIT header dependencies too.
 # Compiling _build/obj-mycpp/cxx-asan/parse.o depends brings parse_preamble.h,
 # which brings in expr.asdl.h
 EXAMPLES_H = {
-    'parse': [ '_build/gen/mycpp/examples/expr.asdl.h',
-               # TODO: move to _build/gen
+    'parse': [ '_gen/mycpp/examples/expr.asdl.h',
+               # TODO: move to _gen
                '_build/cpp/hnode_asdl.h',
              ],
 }
@@ -265,7 +265,7 @@ COMPILERS_VARIANTS = [
 ]
 
 def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
-  raw = '_build/gen/mycpp/examples/%s_raw.%s.cc' % (ex, translator)
+  raw = '_gen/mycpp/examples/%s_raw.%s.cc' % (ex, translator)
 
   # Translate to C++
   if ex in TRANSLATE_FILES:
@@ -285,7 +285,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
   # Ninja empty string!
   preamble_path = p if os.path.exists(p) else "''"
 
-  cc_src = '_build/gen/mycpp/examples/%s.%s.cc' % (ex, translator)
+  cc_src = '_gen/mycpp/examples/%s.%s.cc' % (ex, translator)
 
   # Make a translation unit
   n.build(cc_src, 'wrap-cc', raw,

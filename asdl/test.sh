@@ -55,7 +55,7 @@ gen-cpp-test() {
     $tmp_dir/typed_arith_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc 
 
-  local log_dir="test/$compiler-$variant/asdl"
+  local log_dir="_test/$compiler-$variant/asdl"
   mkdir -p $log_dir
   local log="$log_dir/gen_cpp_test.log"
   log "RUN $bin > $log"
@@ -93,7 +93,7 @@ gc-test() {
     $tmp_dir/demo_lib_asdl.cc \
     $tmp_dir/typed_demo_asdl.cc
 
-  local log_dir="test/$compiler-$variant/asdl"
+  local log_dir="_test/$compiler-$variant/asdl"
   mkdir -p $log_dir
   local log="$log_dir/gc_test.log"
   log "RUN $bin > $log"

@@ -120,6 +120,28 @@ install-new-r() {
   sudo $0 _install-new-r "$@"
 }
 
+const-mypy-gen() {
+  local out=_devbuild/gen/id_kind_asdl.py
+  frontend/consts_gen.py mypy > $out
+  log "  (frontend/consts_gen) -> $out"
+
+  out=_devbuild/gen/id_kind.py
+  frontend/consts_gen.py py-consts > $out
+  log "  (frontend/consts_gen) -> $out"
+}
+
+option-mypy-gen() {
+  local out=_devbuild/gen/option_asdl.py
+  frontend/option_gen.py mypy > $out
+  log "  (frontend/option_gen) -> $out"
+}
+
+flag-gen-mypy() {
+  local out=_devbuild/gen/arg_types.py
+  frontend/flag_gen.py mypy > $out
+  log "  (frontend/flag_gen) -> $out"
+}
+
 # Helper
 gen-asdl-py() {
   local asdl_path=$1  # e.g. osh/osh.asdl
@@ -148,9 +170,9 @@ py-codegen() {
   gen-asdl-py 'core/runtime.asdl'  # depends on syntax.asdl
   gen-asdl-py 'tools/find/find.asdl'
 
-  build/codegen.sh const-mypy-gen  # dependency on bool_arg_type_e
-  build/codegen.sh option-mypy-gen
-  build/codegen.sh flag-gen-mypy
+  const-mypy-gen  # dependency on bool_arg_type_e
+  option-mypy-gen
+  flag-gen-mypy
 
   # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
   # AST module later?

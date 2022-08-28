@@ -83,8 +83,8 @@ def shwrap_py(n, main_py, deps_base_dir='_build/NINJA', rule='write-shwrap-py'):
 def asdl_cpp(n, asdl_path, pretty_print_methods=True, gen_dir=False):
 
   if gen_dir:
-    # to create _build/gen/mycpp/examples/expr.asdl.h
-    prefix = '_build/gen/%s' % asdl_path
+    # to create _gen/mycpp/examples/expr.asdl.h
+    prefix = '_gen/%s' % asdl_path
   else:
     # TODO: remove this
     name = os.path.basename(asdl_path).replace('.', '_')

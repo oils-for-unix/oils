@@ -1,4 +1,4 @@
-#include "_build/gen/mycpp/examples/expr.asdl.h"
+#include "_gen/mycpp/examples/expr.asdl.h"
 #include "cpp/qsn.h"
 
 // For hnode::External in asdl/format.py
