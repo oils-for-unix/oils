@@ -185,30 +185,18 @@ py-asdl-examples() {
   gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'
 }
 
-# TODO: These have mutual dependencies.  Move to NINJA-steps.sh
+# Hack for unit tests.  TODO: express proper dependencies.
 oil-asdl-to-cpp() {
-  mkdir -p _build/cpp _devbuild/tmp
-
-  # note: filename must come first
-  gen-asdl-cpp 'asdl/hnode.asdl' '' --no-pretty-print-methods
-
-  # Unlike the Python version, we don't need to pretty print any of this
-  gen-asdl-cpp 'frontend/types.asdl' '' --no-pretty-print-methods
-  gen-asdl-cpp 'core/runtime.asdl'
-  gen-asdl-cpp 'frontend/syntax.asdl'
-
-  # Problem:
-  # - we have both _devbuild/gen/id.h 
-  #           and _build/cpp/id_kind_asdl.h
-  # - do we want enum class?
-
-  # We also want to generate the lexer here.
-  # TranslateOshLexer can have a flag to use different Ids?
-  # Instead of id__Eol_Tok, use Id::Eol_Tok.
-  # case lex_mode_e::Expr
+  ninja \
+    _build/cpp/hnode_asdl.h \
+    _build/cpp/types_asdl.h \
+    _build/cpp/runtime_asdl.h \
+    _build/cpp/syntax_asdl.h
 }
 
 cpp-codegen() {
+  mkdir -p _build/cpp _devbuild/tmp
+
   # dependency on bool_arg_type_e
   # generates id_kind_asdl, but also DEPENDS on it
   build/codegen.sh const-cpp-gen
@@ -220,17 +208,10 @@ cpp-codegen() {
   build/codegen.sh flag-gen-cpp
 }
 
-oil-cpp-codegen() {
-  oil-asdl-to-cpp
-
-  cpp-codegen
-
-}
-
 oil-cpp() {
   ./NINJA-config.sh  # Create it for the first time
 
-  oil-cpp-codegen
+  cpp-codegen
   build/native.sh gen-oil-native-sh  # script to build it
 
   #time ninja -j 1 _bin/cxx-dbg/osh_eval
