@@ -94,10 +94,12 @@ ASDL_H = [
 ASDL_CC = [
     '_build/cpp/runtime_asdl.cc',
     '_build/cpp/syntax_asdl.cc',
-    # NOTE: left out types_asdl.cc?  Because we never use it
-
-    '_build/cpp/hnode_asdl.cc',
     '_build/cpp/id_kind_asdl.cc',
+
+    # NOT generated due to --no-pretty-print-methods
+    # '_build/cpp/types_asdl.cc',
+    # '_build/cpp/hnode_asdl.cc',
+    # '_build/cpp/option_asdl.cc',
 ]
 
 CPP_BINDINGS = [

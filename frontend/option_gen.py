@@ -65,8 +65,9 @@ def main(argv):
 namespace option_asdl {
 """)
 
-      # TODO: Could suppress option_str
-      v = gen_cpp.ClassDefVisitor(f, simple_int_sums=_SIMPLE)
+      # Don't need option_str()
+      v = gen_cpp.ClassDefVisitor(f, pretty_print_methods=False,
+                                  simple_int_sums=_SIMPLE)
       v.VisitModule(schema_ast)
 
       f.write("""
@@ -74,21 +75,6 @@ namespace option_asdl {
 
 #endif  // OPTION_ASDL_H
 """)
-
-    with open(out_prefix + '.cc', 'w') as f:
-      f.write("""\
-#include <assert.h>
-#include "_build/cpp/option_asdl.h"
-
-namespace option_asdl {
-
-""")
-
-      v = gen_cpp.MethodDefVisitor(f, {}, simple_int_sums=_SIMPLE)
-
-      v.VisitModule(schema_ast)
-
-      f.write('}  // namespace option_asdl\n')
 
   elif action == 'mypy':
     from asdl import gen_python

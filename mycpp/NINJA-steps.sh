@@ -79,7 +79,11 @@ gen-osh-eval() {
   local out_prefix=$1
   shift  # rest are inputs
 
-  local raw=${out_prefix}_raw.cc
+  # Put it in _build/tmp so it's not in the tarball
+  local tmp=_build/tmp
+  mkdir -p $tmp
+  local raw=$tmp/osh_eval_raw.cc
+
   local cc_out=${out_prefix}.cc
   local header_out=${out_prefix}.h
 

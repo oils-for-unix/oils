@@ -415,7 +415,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                simple_int_sums=None):
     visitor.AsdlVisitor.__init__(self, f)
     self.e_suffix = e_suffix
-    self.pretty_print_methods = pretty_print_methods
     self.simple_int_sums = simple_int_sums or []
 
   def _EmitCodeForField(self, abbrev, field, counter):
@@ -486,9 +485,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('L->append(new field(StrFromC("%s"), %s));' % (field.name, out_val_name), depth)
 
   def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node):
-    if not self.pretty_print_methods:
-      return
-
     pretty_cls_name = class_name.replace('__', '.')  # used below
 
     #
@@ -582,18 +578,12 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('}', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    if not self.pretty_print_methods:
-      return
-
     if name in self.simple_int_sums:
       self._EmitStrFunction(sum, name, depth, strong=False, simple=True)
     else:
       self._EmitStrFunction(sum, name, depth, strong=True)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
-    if not self.pretty_print_methods:
-      return
-
     self._EmitStrFunction(sum, sum_name, depth)
 
     for variant in sum.types:

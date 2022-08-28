@@ -192,7 +192,8 @@ oil-asdl-to-cpp() {
   # note: filename must come first
   gen-asdl-cpp 'asdl/hnode.asdl' '' --no-pretty-print-methods
 
-  gen-asdl-cpp 'frontend/types.asdl'  # no dependency on Id
+  # Unlike the Python version, we don't need to pretty print any of this
+  gen-asdl-cpp 'frontend/types.asdl' '' --no-pretty-print-methods
   gen-asdl-cpp 'core/runtime.asdl'
   gen-asdl-cpp 'frontend/syntax.asdl'
 
