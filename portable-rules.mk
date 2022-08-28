@@ -56,6 +56,9 @@ _build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
 _build/%/all-deps-py.txt: _build/%/py-to-compile.txt 
 	sort $^ | uniq > $@
 
+_build/opy/py27.grammar.marshal: opy/py27.grammar
+	bin/opyc pgen2 $^ $@
+
 # NOTE: This should really depend on all the .py files.
 # I should make a _build/oil/py.d file and include it?
 # This depends on the grammar pickle because it's the first one that calls opy

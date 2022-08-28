@@ -110,10 +110,8 @@ run-for-release() {
 }
 
 soil-run() {
-  # flag_spec.py defines types in runtime.asdl
   build/dev.sh minimal
 
-  # Has to come after the previous step
   make _build/opy/py27.grammar.marshal
 
   run-test-funcs
