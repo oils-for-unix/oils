@@ -240,7 +240,7 @@ gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 oshc-deps         test/oshc-deps.sh soil-run             -
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
-test-tarball      build/test.sh oil-tar                  -
+test-tarball      devtools/release.sh test-oil-tar       -
 EOF
 }
 

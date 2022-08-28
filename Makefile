@@ -72,7 +72,7 @@
 # handling directories but I don't know it.
 # NOTE: _devbuild is made by build/dev.sh.  That directory is NOT cleaned with
 # 'make clean'.
-$(shell mkdir -p _bin _release _tmp _build/hello _build/oil _build/opy)
+$(shell mkdir -p _bin _release _tmp _build/hello _build/oil)
 
 ACTIONS_SH := build/actions.sh
 COMPILE_SH := build/compile.sh
@@ -129,7 +129,6 @@ print-%:
 -include portable-rules.mk  # Must come first
 -include build/hello.mk
 -include build/oil.mk
--include build/opy.mk
 
 #
 # Native Builds

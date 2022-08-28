@@ -19,10 +19,9 @@ source mycpp/ninja.sh
 export ASAN_OPTIONS='detect_leaks=0'
 
 pre-build() {
-  # TODO: sort out these deps
-  # This is part of build/dev.sh oil-cpp
+  # TODO: Folding tests into Ninja would get rid of ad hoc deps
 
-  build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h
+  build/dev.sh fastmatch
   build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
 
   # TODO: Make a target for this

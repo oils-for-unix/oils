@@ -22,7 +22,7 @@ all-tests() {
   cpp/test.sh unit
 
   # Relies on same pre-build
-  build/codegen.sh test-generated-code
+  build/TEST.sh all
 
   asdl/test.sh unit
 }

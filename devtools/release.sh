@@ -176,14 +176,43 @@ _dev-build() {
   build/dev.sh all  # for {libc,fastlex}.so, needed to crawl deps
 }
 
+_test-tarball() {
+  local name=${1:-hello}
+  local version=${2:-0.0.0}
+  local install=${3:-}
+
+  local tmp=_tmp/${name}-tar-test
+  rm -r -f $tmp
+  mkdir -p $tmp
+  cd $tmp
+  tar --extract -z < ../../_release/$name-$version.tar.gz
+
+  cd $name-$version
+  ./configure
+
+  # Build the fast one for a test.
+  # TODO: Maybe edit the Makefile to change the top target.
+  local bin=_bin/${name}.ovm  # not dbg
+  time make $bin
+  $bin --version
+
+  if test -n "$install"; then
+    sudo ./install
+  fi
+}
+
+test-oil-tar() {
+  local install=${1:-}  # non-empty to install
+  _test-tarball oil $(head -n 1 oil-version.txt) "$install"
+}
+
 _release-build() {
   # NOTE: soil/deps-tar.sh {configre,build}-python is assumed
 
   # Build the oil tar
   $0 oil
 
-  # Build the binary out of the tar.
-  build/test.sh oil-tar
+  test-oil-tar
 
   ln -s -f --no-target-directory -v oil.ovm $OSH_RELEASE_BINARY
   ln -s -f --no-target-directory -v oil.ovm $OIL_RELEASE_BINARY
@@ -832,7 +861,7 @@ tarball-size() {
   make clean-repo
   make _bin/oil.ovm-dbg  # faster way to build bytecode
   oil  # make tarball
-  build/test.sh oil-tar  # Ctrl-C this, then run metrics/tarball.sh
+  test-oil-tar  # Ctrl-C this, then run metrics/tarball.sh
 }
 
 # TODO: move to ../oil_DEPS
