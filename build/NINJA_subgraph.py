@@ -21,15 +21,15 @@ _build/
 
   gen/
     asdl/
-      hnode_asdl.{cc,h}
+      hnode.asdl.{cc,h}
     bin/
       osh_eval.mycpp.cc  -- suffix is the generator
     core/
-      runtime_asdl.{cc,h}
-      optview.h
+      runtime.asdl.{cc,h}
+      optview.gen.h
     frontend/
-      syntax_asdl.{cc,h}
-      types_asdl.{cc,h}
+      syntax.asdl.{cc,h}
+      types.asdl.h  # no .cc file
     mycpp/
       examples/
         expr_asdl.{cc,h}

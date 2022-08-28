@@ -14,9 +14,27 @@ Code Layout:
     examples/
       cgi.py
       varargs.py
-      varargs_leaky_preamble.h
+      varargs_preamble.h
 
 Output Layout:
+
+  _bin/
+    cxx-dbg/
+      mycpp/
+        gc_heap_test
+        examples/
+          cgi.mycpp
+          classes.mycpp
+          cgi.pea
+          classes.pea
+    cxx-opt/
+      mycpp/
+        examples/
+          cgi.mycpp.stripped
+    cxx-gcevery/
+      mycpp/
+        gc_heap_test
+    clang-coverage/
 
   _build/
     # TODO: combine with obj/ after we get rid of -D OLDSTL_BINDINGS -D
@@ -40,32 +58,11 @@ Output Layout:
           parse_raw.mycpp.cc
           expr.asdl.{h,cc}
 
-  _bin/
-    cxx-dbg/
-      mycpp/
-        examples/
-          cgi.mycpp
-          classes.mycpp
-          cgi.pea
-          classes.pea
-
-    cxx-opt/
-      mycpp/
-        examples/
-          cgi.mycpp.stripped
-
-    cxx-gcevery/
-      mycpp/
-        gc_heap_test
-
-    clang-coverage/
-
   _test/
     tasks/        # *.txt and *.task.txt for .wwz
       typecheck/  # optionally run
       test/       # py, gcevery, asan, opt
       benchmark/
-      unit/
 
       # optionally logged?
       translate/

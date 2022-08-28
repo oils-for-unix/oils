@@ -140,8 +140,12 @@ Here are the tools that transform that high-level code to efficient code:
 We have native code to support both the dev build (running under CPython) and
 the oil-native build (pure C++):
 
-    NINJA_config.py   # Generates build.ninja and TASK.sh
+    NINJA-config.sh   # Generates build.ninja
 
+    build/            # High level build
+      NINJA-steps.sh
+      NINJA_main.py   # invoked by NINJA-config.sh
+      NINJA_subgraph.py
     cpp/              # C++ code which complements the mycpp translation
       NINJA-steps.sh
       NINJA_subgraph.py
@@ -151,6 +155,12 @@ the oil-native build (pure C++):
 
     Python-2.7.13/    # For the slow Python build
     native/           # Python extension modules, e.g. libc.c
+
+    # Temp dirs (see below)
+    _bin/
+    _build/
+    _gen/
+    _test/
 
 ### Several Kinds of Tests
 
@@ -196,6 +206,7 @@ Directories that begin with `_` are **not** stored in `git`.  The dev tools
 above create and use these dirs.
 
     _bin/             # Native executables are put here
+      cxx-dbg/
     _build/           # Temporary build files
     _cache/           # Dev dependency tarballs
     _devbuild/        # Developer build files not deleted upon 'make clean'
@@ -213,8 +224,7 @@ above create and use these dirs.
         web/          # Static files, copy of $REPO_ROOT/web
           table/
     _test/            # Unit tests, mycpp examples
-      bin/
-        unit/
+      tasks/
     _tmp/             # Output of other test suites; temp files
       spec/
       wild/

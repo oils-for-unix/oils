@@ -36,7 +36,6 @@ from frontend import id_kind_def
 from typing import Tuple
 
 # Initialize spec that the lexer depends on.
-# NOTE: This is duplicated in frontend/id_kind_gen.py.
 ID_SPEC = id_kind_def.IdSpec({}, {})
 
 id_kind_def.AddKinds(ID_SPEC)
@@ -149,8 +148,7 @@ LEXER_DEF[lex_mode_e.Comment] = [
 # A whitelist for efficiency.  The shell language says that "anything else" is
 # a literal character.  In other words, a single $ \ or ! is a literal, not a
 # syntax error.  It's defined negatively, but let's define positive runs here.
-# TODO: Add + and @ here they are never special?  It's different for Oil
-# though.
+# TODO: Add + here because it's never special?  It's different for Oil though.
 
 # The range \x80-\xff makes sure that UTF-8 sequences are a single token.
 _LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_/.\-]+'

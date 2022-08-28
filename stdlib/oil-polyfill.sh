@@ -31,7 +31,7 @@ die() {
   exit 1
 }
 
-# Idea: from services/travis.sh, to fix Bernstein chaining.
+# Idea: from Soil, to fix Bernstein chaining.
 #
 # ssh $USER@$HOST "$(printf '%q ' "$@")"
 #

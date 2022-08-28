@@ -148,15 +148,12 @@ false___
 ## END
 
 #### compgen -A directory
-# omit portable-files.mk
 cd $REPO_ROOT
-compgen -A directory p | sort
+compgen -A directory c | sort
 ## STDOUT:
-pea
-pgen-native
-pgen2
-py-yajl
-pylib
+client
+core
+cpp
 ## END
 
 #### compgen -A file

@@ -16,18 +16,21 @@ Phony targets
 
 Directory structure:
 
-_test/ 
-  bin/
-    unit/
+_bin/   # output binaries
+  # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
+  cxx-opt/
+    osh_eval
+    osh_eval.stripped              # The end user binary
+    osh_eval.symbols
 
-_build/   # input source
+  cxx-opt-sh/                      # with shell script
 
+_build/
   cpp/    # _build/gen is more consistent, but it would take a lot of renaming
     osh_eval.{h,cc}
 
   obj/
     # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
-
     cxx-asan/
       osh_eval.o
       osh_eval.d     # dependency file
@@ -39,16 +42,6 @@ _build/   # input source
     cxx-dbg/
       leaky_stdlib.cc
     cxx-dbg.txt  # line counts
-
-_bin/   # output binaries
-  # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
-
-  cxx-opt/
-    osh_eval
-    osh_eval.stripped              # The end user binary
-    osh_eval.symbols
-
-  cxx-opt-sh/                      # with shell script
 
 TODO
 

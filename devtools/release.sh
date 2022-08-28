@@ -885,7 +885,7 @@ dep-benchmarks() {
 }
 
 more-release-deps() {
-  # List here of deps that are NOT in services/toil-worker.sh here
+  # List of deps that are NOT in soil/worker.sh here
   # https://github.com/oilshell/oil/issues/926
 
   # TODO: Make a container image for these.
