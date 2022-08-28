@@ -57,6 +57,9 @@ def main(argv):
       cpp_subgraph.ShellFunctions(f, argv[0])
     log('  (%s) -> %s', argv[0], out)
 
+  elif action == 'tarball-manifest':
+    cpp_subgraph.TarballManifest()
+
   else:
     raise RuntimeError('Invalid action %r' % action)
 

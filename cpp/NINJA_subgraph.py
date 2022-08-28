@@ -119,7 +119,6 @@ GENERATED_H = [
     #
     # I think it should be called pre-baked?
 
-
     #'_build/cpp/osh_eval.h',
 ]
 
@@ -331,6 +330,48 @@ def NinjaGraph(n):
   n.build(['osh-eval-all'], 'phony', binaries)
 
 
+def TarballManifest():
+  names = []
+
+  # Text
+  names.extend([
+    'LICENSE.txt',
+    'README-native.txt',
+    ])
+
+  # Code we know about
+  names.extend(OSH_EVAL_UNITS + GENERATED_H + ASDL_H)
+
+  from glob import glob
+  names.extend(glob('mycpp/*.h'))
+
+  # TODO: crawl headers
+  names.extend(glob('cpp/*.h'))
+
+  # TODO: Put these in Ninja.  It includes the grammar.
+  names.extend(glob('_devbuild/gen/*.h'))
+
+  # Extra code to get rid of
+  names.append('_build/cpp/osh_eval.h')
+
+  # PREBUILT code
+  names.append('asdl/runtime.h')
+
+  # Build scripts
+  names.extend([
+    'build/common.sh',
+    'build/native.sh',
+    'cpp/NINJA-steps.sh',
+    'mycpp/common.sh',
+
+    # Generated
+    '_build/oil-native.sh',
+    ])
+
+  for name in names:
+    print(name)
+
+
 def ShellFunctions(f, argv0):
   """
   Generate a shell script that invokes the same function that build.ninja does
@@ -411,4 +452,4 @@ main() {
 }
 
 main "$@"
-''', file =f)
+''', file=f)

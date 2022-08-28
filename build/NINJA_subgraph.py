@@ -10,6 +10,7 @@ _bin/
     asdl_main
     mycpp_main
     lexer_gen
+    ...
 
 # These
 _build/
@@ -79,11 +80,15 @@ def shwrap_py(n, main_py, deps_base_dir='_build/NINJA', rule='write-shwrap-py'):
   n.newline()
 
 
-def asdl_cpp(n, asdl_path, pretty_print_methods=True):
+def asdl_cpp(n, asdl_path, pretty_print_methods=True, gen_dir=False):
 
-  # TODO: use parallel path structure
-  name = os.path.basename(asdl_path).replace('.', '_')
-  prefix = '_build/cpp/%s' % name
+  if gen_dir:
+    # to create _build/gen/mycpp/examples/expr.asdl.h
+    prefix = '_build/gen/%s' % asdl_path
+  else:
+    # TODO: remove this
+    name = os.path.basename(asdl_path).replace('.', '_')
+    prefix = '_build/cpp/%s' % name
 
   if pretty_print_methods:
     outputs = [prefix + '.cc', prefix + '.h']
@@ -98,6 +103,7 @@ def asdl_cpp(n, asdl_path, pretty_print_methods=True):
   n.build(outputs, 'asdl-cpp', asdl_path,
           implicit=['_bin/shwrap/asdl_main'],
           variables=[
+            ('action', 'cpp'),
             ('out_prefix', prefix),
             ('asdl_flags', asdl_flags),
           ])
@@ -123,8 +129,8 @@ def NinjaGraph(n):
   n.newline()
 
   n.rule('asdl-cpp',
-         command='_bin/shwrap/asdl_main cpp $asdl_flags $in $out_prefix',
-         description='asdl $asdl_flags $in $out_prefix')
+         command='_bin/shwrap/asdl_main $action $asdl_flags $in $out_prefix',
+         description='asdl_main $action $asdl_flags $in $out_prefix')
   n.newline()
 
   #

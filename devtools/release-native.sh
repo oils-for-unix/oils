@@ -14,28 +14,6 @@ set -o errexit
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
-manifest() {
-  # TODO:
-  # - Invoke the compiler to get all headers, like we do with CPython.
-  # - Needs to be updated for the new GC runtime
-  # - Provide a way to run C++ tests?  Unit tests and smoke tests alike.
-  # - MESSY: asdl/runtime.h is used by _build/cpp/*_asdl.cc
-
-  find \
-    LICENSE.txt \
-    README-native.txt \
-    asdl/runtime.h \
-    build/common.sh \
-    build/native.sh \
-    cpp/*.{cc,h,sh} \
-    mycpp/common.sh \
-    mycpp/*.{cc,h} \
-    _devbuild/gen/*.h \
-    _build/cpp/ \
-    _build/oil-native.sh \
-    -name _bin -a -prune -o -type f -a -print
-}
-
 make-tar() {
   local app_name='oil-native'
 
@@ -44,18 +22,9 @@ make-tar() {
   # NOTE: Could move this to the Makefile, which will make it
   mkdir -p _release 
 
-  # TODO: Use Ninja here?
-  #
-  # ninja _release/oil-native.tar
-  #
-  # The ./NINJA-config.sh step could even read oil-native.sh
-  #
-  # Then you wouldn't need a duplicate manifest
-
-  build/dev.sh cpp-codegen
-
   local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
-  manifest | xargs -- tar --create --transform "$sed_expr" --file $tar
+  PYTHONPATH=. build/NINJA_main.py tarball-manifest \
+    | xargs -- tar --create --transform "$sed_expr" --file $tar
 
   local tar_xz=_release/${app_name}-${OIL_VERSION}.tar.xz
   xz -c $tar > $tar_xz
