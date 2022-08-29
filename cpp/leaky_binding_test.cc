@@ -321,7 +321,6 @@ TEST putenv_test() {
   PASS();
 }
 
-
 // NOTE(Jesse): `if 0`-ed this out to silence an annoying warning.  Should be
 // put back in, though that's on Andy.
 #if 0

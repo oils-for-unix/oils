@@ -537,7 +537,6 @@ class ShellExecutor(vm._Executor):
       st = p.Wait(self.waiter)
       compound_st.codes.append(st)
       compound_st.spids.append(frame.span_ids[i])
-      i += 1
 
   def Time(self):
     # type: () -> None
