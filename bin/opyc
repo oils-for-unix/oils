@@ -1,3 +1,6 @@
 #!/bin/sh
+
+# This file MANUALLY written, not generated.
+
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/opy_.py opyc "$@"
+PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/opy/opy_main.py "$@"

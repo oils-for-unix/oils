@@ -575,8 +575,6 @@ args-parse-main() {
   bin/osh --ast-format x
 
   bin/osh -o errexit +o oops
-
-  # TODO: opy/opy_main.py uses OilFlags, which has Go-like boolean syntax
 }
 
 invalid-brace-ranges() {

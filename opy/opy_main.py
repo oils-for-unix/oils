@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 """
 opy_main.py
 """
@@ -11,17 +12,17 @@ import sys
 import marshal
 import types
 
-from . import pytree
-from . import skeleton
+from opy import pytree
+from opy import skeleton
 
-from .compiler2 import consts
-from .compiler2 import dis_tool
-from .compiler2 import misc
-from .compiler2 import transformer
+from opy.compiler2 import consts
+from opy.compiler2 import dis_tool
+from opy.compiler2 import misc
+from opy.compiler2 import transformer
 
 # Disabled for now because byterun imports 'six', and that breaks the build.
-from .byterun import execfile
-from .byterun import ovm
+from opy.byterun import execfile
+from opy.byterun import ovm
 
 from pgen2 import driver, parse, pgen, grammar
 from pgen2 import token
@@ -591,3 +592,20 @@ def OpyCommandMain(argv):
 
   else:
     raise error.Usage('Invalid action %r' % action)
+
+
+def main(argv):
+  try:
+    sys.exit(OpyCommandMain(argv[1:]))
+  except error.Usage as e:
+    #print(_OPY_USAGE, file=sys.stderr)
+    log('opy: %s', e.msg)
+    return 2
+  except RuntimeError as e:
+    log('FATAL: %s', e)
+    return 1
+ 
+
+if __name__ == '__main__':
+  sys.exit(main(sys.argv))
+

@@ -11,9 +11,7 @@ set -o errexit
 
 source build/NINJA-steps.sh
 
-# Used by devtools/bin.sh and opy/build.sh
-readonly OIL_OVM_NAMES=(oil oilc osh oshc tea sh true false readlink)
-readonly OPY_NAMES=(opyc)
+readonly OIL_OVM_NAMES=(oil osh oshc tea sh true false readlink)
 
 # TODO: probably delete this
 # For osh-dbg.
@@ -81,12 +79,6 @@ make-bin-stubs() {
     echo "Wrote bin/$link"
   done
 
-  for link in "${OPY_NAMES[@]}"; do
-    opy-dev-snippet $link > bin/$link
-    chmod +x bin/$link
-    echo "Wrote bin/$link"
-  done
-
   make-osh-dbg
 
   make-osh-eval
@@ -100,11 +92,6 @@ make-bin-links() {
   for link in "${OIL_OVM_NAMES[@]}"; do
     # _bin/ symlink
     ln -s -f --verbose oil.ovm _bin/$link
-  done
-
-  for link in "${OPY_NAMES[@]}"; do
-    # _bin/ symlink
-    ln -s -f --verbose opy.ovm _bin/$link
   done
 }
 

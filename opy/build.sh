@@ -6,17 +6,16 @@
 # there.
 #
 # Usage:
-#   ./build.sh <function name>
+#   opy/build.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source $REPO_ROOT/opy/common.sh  # oil-python-sources
-source $REPO_ROOT/build/common.sh  # for OIL_SYMLINKS
 
 md5-manifest() {
   local tree=$1

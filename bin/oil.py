@@ -78,6 +78,17 @@ def OshCommandMain(argv):
     NOTE: we're leaving out su -c, find, xargs, etc.?  Those should generally
     run functions using the $0 pattern.
     --chained-command sudo
+
+  TODO: Get rid of oshc, and change this to
+
+  osh/oil --tool translate foo.py
+  osh/oil --tool translate -c 'echo hi'
+  osh/oil --tool parse-glob 'my-glob'
+
+  Although it does ParseWholeFile, like -n.
+
+  And then you can use the same -o options and so forth.  Also push this into
+  core/shell_native.py.
   """
   try:
     action = argv[0]
