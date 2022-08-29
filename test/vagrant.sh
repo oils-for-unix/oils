@@ -42,7 +42,7 @@ archlinux() {
 
 
 # $ make
-# build/compile.sh build-opt _build/oil/ovm _build/oil/module_init.c _build/oil/main_name.c _build/oil/c-module-srcs.txt
+# build/ovm-compile.sh build-opt _build/oil/ovm _build/oil/module_init.c _build/oil/main_name.c _build/oil/c-module-srcs.txt
 # ~/src/oil-0.1.alpha1/Python-2.7.13 ~/src/oil-0.1.alpha1
 # Modules/posixmodule.c:3914:21: fatal error: stropts.h: No such file or directory
 # #include <stropts.h>

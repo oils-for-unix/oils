@@ -1,4 +1,3 @@
-make.sh
 .gdbinit
 *.swp
 *.pyc
@@ -20,7 +19,6 @@ _tmp/
 
 build.ninja
 .ninja_*
-TASK.sh
 
 fanos.so
 fastlex.so
@@ -35,12 +33,9 @@ build/temp.*
 local.sh  
 
 NOTES*.txt
-*/NOTES*.txt
 TODO*.txt
 # uftrace creates this
 uftrace.data
-release-*.txt
-asdl.txt
 
 # pgen-specific stuff, this is probably temporary
 pgen-native/*.o
@@ -48,3 +43,4 @@ pgen-native/parser
 
 # emacs temp files
 *~
+make.sh

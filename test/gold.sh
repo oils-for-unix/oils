@@ -67,7 +67,7 @@ test-html-summary() {
 
 test-gen-module-init() {
   local modules='time datetime'
-  _compare build/actions.sh gen-module-init $modules
+  _compare build/ovm-actions.sh gen-module-init $modules
 }
 
 # NOTE: zsh behaves differently under sh and bin/osh!  Looks like it is an

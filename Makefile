@@ -71,9 +71,9 @@
 # Make all directories before every build.
 $(shell mkdir -p _bin _release _tmp _build/hello _build/oil _build/opy)
 
-ACTIONS_SH := build/actions.sh
+ACTIONS_SH := build/ovm-actions.sh
+COMPILE_SH := build/ovm-compile.sh
 CLEAN_SH := build/clean.sh
-COMPILE_SH := build/compile.sh
 
 # Change the bytecode compiler here.
 #BYTECODE_ZIP := bytecode-cpython.zip

@@ -337,7 +337,7 @@ posix_() {
 }
 
 yajl-release() {
-  ### Creates a py-yajl/yajl/yajl-2.1.1/ dir, used by build/compile.sh
+  ### Creates a py-yajl/yajl/yajl-2.1.1/ dir, used by build/ovm-compile.sh
 
   pushd py-yajl/yajl >/dev/null
   ./configure

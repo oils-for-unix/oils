@@ -3,7 +3,7 @@
 # Demonstrate compiler features
 #
 # Usage:
-#   build/compiler-demo.sh <function name>
+#   demo/c-compiler.sh <function name>
 
 set -o nounset
 set -o pipefail

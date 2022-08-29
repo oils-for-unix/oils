@@ -3,7 +3,7 @@
 # Compile OVM tarball.
 #
 # Usage:
-#   build/compile.sh <function name>
+#   build/ovm-compile.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -386,8 +386,8 @@ make-tar() {
     uninstall \
     Makefile \
     doc/osh.1 \
-    build/compile.sh \
-    build/actions.sh \
+    build/ovm-compile.sh \
+    build/ovm-actions.sh \
     build/common.sh \
     build/detect-*.c \
     _build/$app_name/$bytecode_zip \
@@ -432,6 +432,4 @@ count-c-lines() {
   popd
 }
 
-if test $(basename $0) = 'compile.sh'; then
-  "$@"
-fi
+"$@"

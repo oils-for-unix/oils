@@ -119,7 +119,7 @@ job-reset() {
   git status .
   echo
 
-  # Similar to 'build/actions.sh clean', or 'build/native.sh clean', but also
+  # Similar to 'build/ovm-actions.sh clean', or 'build/native.sh clean', but also
   # does _tmp and _devbuild
 
   local -a dirs=(_tmp _bin _build _devbuild _test)

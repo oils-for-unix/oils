@@ -12,7 +12,7 @@
 #   build/cpython-defs.sh oil-py-names  # extract names
 #   build/cpython-defs.sh filter-methods
 #
-# NOTE: 'build/compile.sh make-tar' is complex, so it's easier to just extract
+# NOTE: 'build/ovm-compile.sh make-tar' is complex, so it's easier to just extract
 # the tarball, even though it leads to a weird dependency.
 
 set -o nounset
@@ -129,7 +129,7 @@ extract-methods() {
 }
 
 preprocess() {
-  # TODO: Use PREPROC_FLAGS from build/compile.sh.
+  # TODO: Use PREPROC_FLAGS from build/ovm-compile.sh.
   # - What about stuff in pyconfig.h?
   # - Hack to define WTERMSIG!  We really need to include <sys/wait.h>, but
   # that causes parse errors in cpython_defs.py.  Really we should get rid of

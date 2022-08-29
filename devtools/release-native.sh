@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# adapted from build/compile.sh
+# adapted from build/ovm-compile.sh
 # and devtools/release.sh
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)

@@ -2,7 +2,7 @@
 #
 # Compile Python code with OPy.
 #
-# NOTE: this is roughly analogous to build/actions.sh and may be moved
+# NOTE: this is roughly analogous to build/ovm-actions.sh and may be moved
 # there.
 #
 # Usage:
@@ -146,8 +146,8 @@ _oil-bin-manifest() {
   # alias doesn't.
   # For some reason sys.modules has different modules with the same __file__.
 
-  { build/actions.sh runpy-py-to-compile
-    build/actions.sh py-to-compile '.' 'bin.oil'
+  { build/ovm-actions.sh runpy-py-to-compile
+    build/ovm-actions.sh py-to-compile '.' 'bin.oil'
   } | sort | uniq
 }
 
@@ -158,7 +158,7 @@ oil-bin() {
 }
 
 _opy-bin-manifest() {
-  build/actions.sh py-to-compile '.' 'bin.opy_'
+  build/ovm-actions.sh py-to-compile '.' 'bin.opy_'
 }
 
 opy-bin() {
