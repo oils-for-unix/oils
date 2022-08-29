@@ -155,7 +155,7 @@ readonly INCLUDE_PATHS=(
   -I Include
   -I ../build/oil-defs
   -I ../py-yajl
-   # Note: This depends on build/dev.sh yajl-release
+   # Note: This depends on build/py.sh yajl-release
   -I ../py-yajl/yajl/yajl-2.1.1/include
 )
 readonly CC=${CC:-cc}  # cc should be on POSIX systems

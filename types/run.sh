@@ -147,7 +147,7 @@ soil-run() {
   mypy_ --version
   set +x
 
-  build/dev.sh py-asdl-examples
+  build/py.sh py-asdl-examples
 
   banner 'typed-arith-asdl'
   typed-arith-asdl

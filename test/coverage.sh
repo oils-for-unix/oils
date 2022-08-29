@@ -116,7 +116,7 @@ run-for-release() {
   ### Similar to cpp-coverage in soil/worker.sh
 
   # Hack until we have proper dependencies
-  build/dev.sh oil-asdl-to-cpp
+  build/cpp.sh gen-asdl
 
   mycpp/test.sh unit-test-coverage
   mycpp/test.sh examples-coverage

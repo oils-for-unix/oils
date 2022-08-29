@@ -27,7 +27,7 @@ translate-cpp() {
 }
 
 all-files() {
-  # Can't run this on Soil because we only have build/dev.sh py-source, not
+  # Can't run this on Soil because we only have build/py.sh py-source, not
   # 'minimal'
   # build/app-deps.sh osh-eval
 

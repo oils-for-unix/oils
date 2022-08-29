@@ -9,37 +9,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
-readonly REPO_ROOT
-
-source build/common.sh  # CLANGXX
-
-compile-quickly() {
-  ### For the fast possible development experience
-
-  if test -f "$CLANGXX"; then
-    ninja _bin/clang-dbg/osh_eval
-  else
-    echo ""
-    echo " Error: Unable to locate clang at ($CLANGXX)"
-    echo ""
-    echo "        To install clang at the specified path, run the following commands:"
-    echo ""
-    echo "        soil/deps-binary.sh download-clang"
-    echo "        soil/deps-binary.sh extract-clang"
-    echo ""
-  fi
-}
-
-compiler-trace-build() {
-  ### Output _build/obj/clang-dbg/*.json files
-
-  local variant=${1:-dbg}
-
-  # Only clang supports -ftime-trace
-  CXXFLAGS='-ftime-trace' ninja _bin/clang-$variant/osh_eval
-}
-
 # Demo for the oil-native tarball.
 # Notes:
 # - Does not rely on Ninja, which is for the dev build
@@ -81,22 +50,6 @@ osh-eval-smoke() {
   local bin=_bin/cxx-dbg/osh_eval
   ninja $bin
   types/oil-slice.sh demo $bin
-}
-
-#
-# Utilities
-#
-
-clean() {
-  ### e.g. to time ninja build
-  rm -r -f --verbose _bin _build _test build.ninja
-
-  # _release is for docs
-}
-
-gen-oil-native-sh() {
-  build/NINJA_main.py shell
-  chmod +x _build/oil-native.sh
 }
 
 "$@"

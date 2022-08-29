@@ -115,7 +115,7 @@ pea-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host     -
-py-source           build/dev.sh py-source            -
+py-source           build/py.sh py-source             -
 check-types         pea/test.sh check-types           -
 run-tests           pea/test.sh run-tests             -
 parse-all           pea/test.sh parse-all             -
@@ -130,7 +130,7 @@ dev-minimal-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host                -
-build-minimal       build/dev.sh minimal                         -
+build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
 typecheck-slice     types/oil-slice.sh soil-run                  -
@@ -153,7 +153,7 @@ EOF
 # Redefinition for quicker cloud debugging
 DISABLED_dev-minimal-tasks() {
   cat <<EOF
-build-minimal       build/dev.sh minimal          -
+build-minimal       build/py.sh minimal           -
 interactive         test/interactive.sh soil      -
 EOF
 }
@@ -161,14 +161,14 @@ EOF
 cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
-  # BUG: oil-cpp can't run with build/dev.sh minimal because 'fastlex' isn't built
-  # can't run with build/dev.sh all because we don't have cmark
+  # BUG: oil-cpp can't run with 'build/py.sh minimal' because 'fastlex' isn't built
+  # can't run with 'build/py.sh all' because we don't have cmark
 
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
-build-minimal    build/dev.sh minimal                  -
-HACK-fastlex     build/dev.sh fastlex                  -
-build-osh-eval   build/dev.sh oil-cpp                  -
+build-minimal    build/py.sh minimal                   -
+HACK-fastlex     build/py.sh fastlex                   -
+build-osh-eval   build/cpp.sh all                      -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
@@ -179,9 +179,9 @@ cpp-small-tasks() {
   # build-minimal
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
-build-minimal    build/dev.sh minimal                  -
+build-minimal    build/py.sh minimal                   -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
-build-osh-eval   build/dev.sh oil-cpp                  -
+build-osh-eval   build/cpp.sh all                      -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
@@ -198,12 +198,12 @@ cpp-coverage-tasks() {
 
   cat <<EOF
 dump-hardware           soil/worker.sh dump-hardware                    -
-build-minimal           build/dev.sh minimal                            -
+build-minimal           build/py.sh minimal                             -
 ninja-config            ./NINJA-config.sh dummy                         -
 extract-clang           soil/deps-binary.sh extract-clang-in-container  -
 mycpp-unit-coverage     mycpp/test.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
 mycpp-examples-coverage mycpp/test.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html
-HACK-asdl               build/dev.sh oil-asdl-to-cpp                    -
+HACK-asdl               build/cpp.sh gen-asdl                           -
 cpp-coverage            cpp/test.sh coverage                            _test/clang-coverage/cpp/html/index.html
 unified-coverage        test/coverage.sh unified-report                 _test/clang-coverage/unified/html/index.html
 EOF
@@ -224,13 +224,13 @@ ovm-tarball-tasks() {
   # - dev-all needed to crawl dependencies to make tarball.
   # - The 'tour' also depends on buildings docs.
   # - 'all-markdown' could be published.
-  # - build/dev.sh all does 'all-help', so we don't need it explicitly
+  # - build/py.sh all does 'all-help', so we don't need it explicitly
 
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-locale       soil/worker.sh dump-locale             -
-dev-all           build/dev.sh all                       -
-yajl              build/dev.sh yajl-release              -
+py-all            build/py.sh all                        -
+yajl              build/py.sh yajl-release               -
 tour              build/doc.sh tour                      _release/VERSION/doc/oil-language-tour.html
 all-markdown      build/doc.sh all-markdown              -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
@@ -247,8 +247,8 @@ EOF
 # Reuse ovm-tarball container
 app-tests-tasks() {
   cat <<EOF
-dev-all           build/dev.sh all                        -
-yajl              build/dev.sh yajl-release               -
+py-all            build/py.sh all                         -
+yajl              build/py.sh yajl-release                -
 ble-clone         test/ble.sh clone                       -
 ble-build         test/ble.sh build                       -
 ble-test          test/ble.sh run-tests                   -
@@ -296,7 +296,7 @@ run-tasks() {
   mkdir -p $out_dir/logs
 
   # So we can always run benchmarks/time_.py.  TODO: Use Ninja for deps.
-  build/dev.sh time-helper
+  build/py.sh time-helper
 
   # For the later deploy step to pick up
   date +%s > $out_dir/task-run-start-time.txt

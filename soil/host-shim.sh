@@ -88,7 +88,7 @@ mount-perms() {
 
   log-context 'mount-perms'
 
-  # We have to chmod all dirs because build/dev.sh all creates
+  # We have to chmod all dirs because 'build/py.sh all' creates
   # build/temp.linux-*, for example.  Also can't exclude .git/ because
   # submodules need it.
   time find "$repo_root" -type d -a -print \
@@ -153,7 +153,7 @@ run-job-uke() {
   local image_id
   case $job_name in
     (app-tests)
-      # Hack to reuse this container for build/dev.sh all
+      # Hack to reuse this container, e.g. for 'build/py.sh all'
       image_id='ovm-tarball'
       # allocate pseudo TTY, otherwise fails on opening /dev/tty 
       flags=( -t )

@@ -238,7 +238,7 @@ Str* repr(syntax_asdl::source_t* obj) {
 pyrun-pgen2_demo() {
   #codegen-pgen2_demo
   pushd ..
-  build/dev.sh demo-grammar
+  build/py.sh demo-grammar
   popd
 
   PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT" examples/pgen2_demo.py

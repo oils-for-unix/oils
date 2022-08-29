@@ -8,7 +8,7 @@
 # Steps:
 #   edit oil-version.txt and build/doc.sh update-src-versions
 #   $0 make-release-branch
-#   build/dev.sh yajl-release
+#   build/py.sh yajl-release
 #   $0 quick-oil-tarball     # build FIRST tarball
 #   build/test.sh oil-tar T  # extract, build, install
 #                            # for cpython-defs source scanning and dogfood
@@ -173,7 +173,7 @@ _clean() {
 }
 
 _dev-build() {
-  build/dev.sh all  # for {libc,fastlex}.so, needed to crawl deps
+  build/py.sh all  # for {libc,fastlex}.so, needed to crawl deps
 }
 
 _test-tarball() {
@@ -353,7 +353,7 @@ build-and-test() {
 _install() {
   test/spec.sh install-shells
 
-  # A subset of build/dev.sh ubuntu-deps.  (Do we need build-essential?)
+  # A subset of build/py.sh ubuntu-deps.  (Do we need build-essential?)
   sudo apt install python-dev
 }
 
@@ -525,7 +525,7 @@ metrics() {
   mkdir -p $out
 
   # Generate C++ code that will be conuted later
-  build/dev.sh oil-asdl-to-cpp
+  build/cpp.sh gen-asdl
 
   line-counts $PWD/$out/line-counts
 

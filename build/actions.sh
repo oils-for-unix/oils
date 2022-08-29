@@ -188,36 +188,4 @@ join-modules() {
     | sort | uniq
 }
 
-#
-# Misc
-#
-
-# To test building stdlib.
-clean-pyc() {
-  # skip _chroot, _tmp, etc.  But delete __init__.pyc
-  find . \( -type d -a -name '_*' -a -prune \) -o -name '*.pyc' -a -print |
-    xargs --no-run-if-empty -- rm --verbose
-}
-
-# NOTE: Not deleting _devbuild, including cpython-full.  Maybe we should, or
-# we should put it in a different directory?
-clean-repo() {
-  clean-source-tarball-build
-  rm -r -f -v _build _release
-  rm -f -v _bin/hello.* _bin/opy.*
-  clean-pyc
-}
-
-# 'make clean'.
-# NOTE:
-# - There are no object files written now.
-# - We're not cleaning _build/detect-config.* ?
-clean-source-tarball-build() {
-  rm -f -v _bin/oil.{ovm,ovm-dbg}
-  # NOTE: delete ovm-opt, ovm-opt.{stripped,symbols}
-  rm -f -v \
-      _build/oil/{ovm-opt,ovm-dbg} \
-      _build/oil/ovm-opt.{stripped,symbols}
-}
-
 "$@"

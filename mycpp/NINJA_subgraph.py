@@ -457,9 +457,6 @@ def NinjaGraph(n):
 
   # Groups of targets.  Not all of these are run by default.
   phony = {
-      # The 'mycpp-all' target is currently everything that starts with mycpp.
-      # Or should this be mycpp-default / mycpp-logs-equal?
-
       'mycpp-typecheck': [],  # optional: for debugging only.  translation does it.
       'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
 
@@ -474,7 +471,6 @@ def NinjaGraph(n):
       #
       # mycpp-unit-$compiler-$variant
       # mycpp-examples-$compiler-$variant
-
 
       'pea-translate': [],
       'pea-compile': [],
@@ -672,7 +668,6 @@ def NinjaGraph(n):
   # Write phony rules we accumulated
   #
 
-  mycpp_all = []
   pea_all = []
   for name in sorted(phony):
     deps = phony[name]
@@ -680,12 +675,9 @@ def NinjaGraph(n):
       n.build([name], 'phony', deps)
       n.newline()
 
-      if name.startswith('mycpp-'):
-        mycpp_all.append(name)
       if name.startswith('pea-'):
         pea_all.append(name)
 
   # All groups
-  n.build(['mycpp-all'], 'phony', mycpp_all)
   n.build(['pea-all'], 'phony', pea_all)
 

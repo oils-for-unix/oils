@@ -56,7 +56,7 @@ py2-tests() {
   local minimal=${1:-}
 
   for t in "${PY2_UNIT_TESTS[@]}"; do
-    # For Travis after build/dev.sh minimal: if we didn't build fastlex.so,
+    # For Travis after build/py.sh minimal: if we didn't build fastlex.so,
     # then skip a unit test that will fail.
 
     if test -n "$minimal"; then
@@ -102,7 +102,7 @@ run-test-and-maybe-abort() {
 }
 
 all() {
-  ### Run unit tests after build/dev.sh all
+  ### Run unit tests after build/py.sh all
 
   time all-tests "$@" | xargs -n 1 -- $0 run-test-and-maybe-abort
   echo
@@ -110,7 +110,7 @@ all() {
 }
 
 minimal() {
-  ### Run unit tests after build/dev.sh minimal
+  ### Run unit tests after build/py.sh minimal
 
   time py2-tests T | xargs -n 1 -- $0 run-test-and-maybe-abort
   echo

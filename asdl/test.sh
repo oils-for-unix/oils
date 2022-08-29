@@ -71,7 +71,7 @@ gc-test() {
 
   # for hnode_asdl.h
   # TODO: move this into Ninja.  Redundant with cpp/test.sh pre-build
-  build/dev.sh oil-asdl-to-cpp
+  build/cpp.sh gen-asdl
 
   local tmp_dir=$TMP_DIR
   local bin_dir=_bin/$compiler-$variant/asdl
@@ -142,7 +142,7 @@ all-asdl-gc() {
   ### All ASDL compilation tests
 
   # Invoke ASDL compiler on everything
-  build/dev.sh oil-asdl-to-cpp
+  build/cpp.sh gen-asdl
 
   # Now make sure they can compile
 

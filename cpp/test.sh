@@ -21,8 +21,8 @@ export ASAN_OPTIONS='detect_leaks=0'
 pre-build() {
   # TODO: Folding tests into Ninja would get rid of ad hoc deps
 
-  build/dev.sh fastmatch
-  build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
+  build/py.sh fastmatch
+  build/cpp.sh gen-asdl  # unit tests depend on id_kind_asdl.h, etc.
 
   # TODO: Make a target for this
   ninja _build/cpp/arg_types.{h,cc}

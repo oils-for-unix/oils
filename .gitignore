@@ -12,6 +12,7 @@ _chroot/
 _clone/
 _deps/
 _devbuild/
+_gen
 _release/
 _test/
 _tmp/

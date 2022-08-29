@@ -1363,7 +1363,7 @@ run-for-release() {
 
 soil-run() {
   # We need posix_.so.  Though we could probably factor this out.
-  build/dev.sh minimal
+  build/py.sh minimal
   all-passing
 }
 

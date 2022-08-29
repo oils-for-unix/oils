@@ -72,6 +72,7 @@
 $(shell mkdir -p _bin _release _tmp _build/hello _build/oil _build/opy)
 
 ACTIONS_SH := build/actions.sh
+CLEAN_SH := build/clean.sh
 COMPILE_SH := build/compile.sh
 
 # Change the bytecode compiler here.
@@ -97,13 +98,12 @@ all: \
 	_bin/hello.ovm-dbg _bin/oil.ovm-dbg \
 	_release/hello.tar _release/oil.tar
 
-# For the release tarball.
+# Take care not to remove _build/oil/bytecode-opy.zip, etc.
 clean:
-	$(ACTIONS_SH) clean-source-tarball-build
+	$(CLEAN_SH) source-tarball-build
 
-# For developers in a repo.
 clean-repo:
-	$(ACTIONS_SH) clean-repo
+	$(CLEAN_SH) cpp
 
 # .PHONY alias for compatibility
 install:

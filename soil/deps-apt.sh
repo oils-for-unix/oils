@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 # These are needed for bootstrapping pip in Python 3.10
-# (Also used by build/dev.sh ubuntu-deps)
+# (Also used by build/py.sh ubuntu-deps)
 #
 # For building Python 3.10 with working 'pip install'
 #   libssl-dev: to download packages
@@ -72,7 +72,7 @@ test-image() {
 other-tests() {
   local -a packages=(
     libreadline-dev
-    python2-dev  # osh2oil needs build/dev.sh minimal
+    python2-dev  # osh2oil needs build/py.sh minimal
 
     python3  # for py3-parse
 
@@ -124,7 +124,7 @@ clang() {
     build-essential
     xz-utils  # to extract Clang
 
-    # build/dev.sh minimal is necessary to run tests?
+    # build/py.sh minimal is necessary to run tests?
     libreadline-dev
     python2-dev
 
