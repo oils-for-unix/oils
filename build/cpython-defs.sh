@@ -7,7 +7,7 @@
 #
 #   # make clean tree of .c files
 #   devtools/release.sh quick-oil-tarball
-#   build/test.sh oil-tar  # can Ctrl-C this
+#   devtools/release.sh test-oil-tar  # can Ctrl-C this
 #
 #   build/cpython-defs.sh oil-py-names  # extract names
 #   build/cpython-defs.sh filter-methods

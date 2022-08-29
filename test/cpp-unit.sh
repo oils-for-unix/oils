@@ -16,15 +16,15 @@ all-tests() {
 
   # uses Ninja to run (cxx, gcevery) variant.  Could also run (clang, ubsan),
   # which finds more bugs.
-  mycpp/test.sh soil-run
+  mycpp/TEST.sh soil-run
 
-  cpp/test.sh pre-build
-  cpp/test.sh unit
+  cpp/TEST.sh pre-build
+  cpp/TEST.sh unit
 
   # Relies on same pre-build
   build/TEST.sh all
 
-  asdl/test.sh unit
+  asdl/TEST.sh unit
 }
 
 soil-run() {

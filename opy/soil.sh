@@ -13,7 +13,7 @@ REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
 
 test-gold() {
   pushd opy
-  ./test.sh gold
+  ./TEST.sh gold
   popd
 }
 

@@ -159,7 +159,7 @@
  10948 859d0aaaf3ea343428b59bc6182fcff2 _tmp/regtest/_weakrefset.pyc
  11107 47a73e693f77f9522c6d657b57623ed8 _tmp/regtest/core/id_kind.pyc
  11541 172ebbd7999dc3b51177097dc4363b4f _tmp/regtest/osh/lex.pyc
- 11716 e1f7485739cea836089fd859250436a6 _tmp/regtest/opy/callgraph.pyc
+ 11712 77ca7afdcc16b3eeb48fc7137ff2c278 _tmp/regtest/opy/callgraph.pyc
  12124 c88fba0e6eb1ffff5c62fab2451cab0f _tmp/regtest/web/table/csv2html.pyc
  12428 de20f2bb77b4186a501f409421713554 _tmp/regtest/opy/tools/astgen.pyc
  12527 fb8a0f24e8c23472e90293730f4d5d4c _tmp/regtest/opy/byterun/test_with.pyc

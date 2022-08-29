@@ -3,7 +3,7 @@
 # Run tests in this directory.
 #
 # Usage:
-#   cpp/test.sh <function name>
+#   cpp/TEST.sh <function name>
 
 set -o nounset
 set -o pipefail

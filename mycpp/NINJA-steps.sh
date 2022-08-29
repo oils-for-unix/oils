@@ -133,7 +133,7 @@ translate-pea() {
   local out=$2
   shift 2  # rest of args are inputs
 
-  pea/test.sh translate-cpp "$@" > $out
+  pea/TEST.sh translate-cpp "$@" > $out
 }
 
 task() {

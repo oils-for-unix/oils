@@ -118,9 +118,9 @@ run-for-release() {
   # Hack until we have proper dependencies
   build/cpp.sh gen-asdl
 
-  mycpp/test.sh unit-test-coverage
-  mycpp/test.sh examples-coverage
-  cpp/test.sh coverage
+  mycpp/TEST.sh unit-test-coverage
+  mycpp/TEST.sh examples-coverage
+  cpp/TEST.sh coverage
 
   log-files-index _test/clang-coverage
 

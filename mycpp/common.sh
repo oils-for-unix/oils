@@ -13,7 +13,7 @@ fi
 
 source mycpp/common-vars.sh
 
-# Used by cpp/test.sh and mycpp/test.sh
+# Used by cpp/TEST.sh and mycpp/TEST.sh
 
 run-test() {
   local bin=$1

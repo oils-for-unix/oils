@@ -30,7 +30,7 @@ test-cfg() {
   bin/opyc cfg $FILE
 }
 
-# This should be tested by opy/test.sh gold
+# This should be tested by opy/TEST.sh gold
 test-run() {
   bin/opyc run opy/gold/fib_recursive.py
 } 

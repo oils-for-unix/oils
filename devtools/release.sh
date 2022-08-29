@@ -10,7 +10,7 @@
 #   $0 make-release-branch
 #   build/py.sh yajl-release
 #   $0 quick-oil-tarball     # build FIRST tarball
-#   build/test.sh oil-tar T  # extract, build, install
+#   $0 test-oil-tar T        # extract, build, install
 #                            # for cpython-defs source scanning and dogfood
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
 #   build/cpython-defs.sh {oil-py-names,filter-methods}
@@ -58,7 +58,6 @@ source devtools/common.sh  # banner
 source benchmarks/common.sh  # BENCHMARK_DATA_OIL_NATIVE, OSH_EVAL_BENCHMARK_DATA
                              # redefines OIL_VERSION as readonly
 
-# Dir is defined in build/test.sh.
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
 readonly OIL_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/oil
 

@@ -3,7 +3,7 @@
 # Run tests in this directory.
 #
 # Usage:
-#   mycpp/test.sh <function name>
+#   mycpp/TEST.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -149,7 +149,7 @@ unit() {
   local variant=${2:-gcevery}
 
   log ''
-  log "mycpp/test.sh unit $compiler $variant"
+  log "$0 unit $compiler $variant"
   log ''
 
 

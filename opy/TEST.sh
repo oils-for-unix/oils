@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./test.sh <function name>
+#   ./TEST.sh <function name>
+#
+# These are mostly run from this dir.
 
 set -o nounset
 set -o pipefail
@@ -263,6 +265,6 @@ print ")" * n
   python _tmp/deep.py
 }
 
-if test $(basename $0) = 'test.sh'; then
+if test $(basename $0) = 'TEST.sh'; then
   "$@"
 fi

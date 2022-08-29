@@ -476,11 +476,6 @@ oil-python-symbols() {
   _python-symbols bin/oil.py oil $out_dir
 }
 
-opy-python-symbols() {
-  local out_dir=${1:-_tmp/opy-test}
-  _python-symbols bin/opy_.py opy $out_dir
-}
-
 old-style-classes() {
   oil-python-symbols | grep -v '<'
 }

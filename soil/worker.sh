@@ -116,9 +116,9 @@ pea-tasks() {
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host     -
 py-source           build/py.sh py-source             -
-check-types         pea/test.sh check-types           -
-run-tests           pea/test.sh run-tests             -
-parse-all           pea/test.sh parse-all             -
+check-types         pea/TEST.sh check-types           -
+run-tests           pea/TEST.sh run-tests             -
+parse-all           pea/TEST.sh parse-all             -
 EOF
 }
 
@@ -133,7 +133,7 @@ dump-user-host      soil/worker.sh dump-user-host                -
 build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
-asdl-types          asdl/test.sh check-types                     -
+asdl-types          asdl/TEST.sh check-types                     -
 oil-types           devtools/types.sh soil-run                   -
 unit                test/unit.sh soil-run                        -
 stateful            test/stateful.sh soil-run                    _tmp/spec/stateful/index.html
@@ -201,21 +201,13 @@ dump-hardware           soil/worker.sh dump-hardware                    -
 build-minimal           build/py.sh minimal                             -
 ninja-config            ./NINJA-config.sh dummy                         -
 extract-clang           soil/deps-binary.sh extract-clang-in-container  -
-mycpp-unit-coverage     mycpp/test.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
-mycpp-examples-coverage mycpp/test.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html
+mycpp-unit-coverage     mycpp/TEST.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
+mycpp-examples-coverage mycpp/TEST.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html
 HACK-asdl               build/cpp.sh gen-asdl                           -
-cpp-coverage            cpp/test.sh coverage                            _test/clang-coverage/cpp/html/index.html
+cpp-coverage            cpp/TEST.sh coverage                            _test/clang-coverage/cpp/html/index.html
 unified-coverage        test/coverage.sh unified-report                 _test/clang-coverage/unified/html/index.html
 EOF
 }
-
-# TODO: Add more tests, like
-# - web/table/csv2html-test.sh (needs some assertions)
-tests-todo() {
-  find . -name '_*' -a -prune -o -name '*-test.sh' -a -print
-}
-
-# https://github.com/oilshell/oil/wiki/Contributing
 
 ovm-tarball-tasks() {
   ### Print tasks for the 'ovm-tarball' build
@@ -269,7 +261,6 @@ R-test                 devtools/R-test.sh soil-run                -
 xargs-test             test/other.sh xargs-test                   -
 csv2html-test          test/other.sh csv2html-test                -
 oil-python-symbols     metrics/source-code.sh oil-python-symbols  -
-opy-python-symbols     metrics/source-code.sh opy-python-symbols  -
 opyc                   test/opyc.sh soil-run                      -
 opy-count-lines        opy/soil.sh count-lines                    -
 test-gold              opy/soil.sh test-gold                      -
@@ -277,6 +268,13 @@ build-oil-repo         opy/soil.sh build-oil-repo                 -
 regtest-compile        opy/soil.sh regtest-compile                -
 regtest-verify-golden  opy/soil.sh regtest-verify-golden          -
 EOF
+}
+
+tests-todo() {
+  ### More tests to add
+  find . -name '_*' -a -prune -o -name '*-test.sh' -a -print
+
+  # pgen2/pgen2-test.sh seems mostly broken
 }
 
 # Redefinition for quicker cloud debugging

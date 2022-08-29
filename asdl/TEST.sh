@@ -3,7 +3,7 @@
 # Tests for ASDL.
 #
 # Usage:
-#   asdl/test.sh <function name>
+#   asdl/TEST.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -71,7 +71,7 @@ gc-test() {
   export ASAN_OPTIONS='detect_leaks=0'
 
   # for hnode_asdl.h
-  # TODO: move this into Ninja.  Redundant with cpp/test.sh pre-build
+  # TODO: move this into Ninja.  Redundant with cpp/TEST.sh pre-build
   build/cpp.sh gen-asdl
 
   local tmp_dir=$TMP_DIR
