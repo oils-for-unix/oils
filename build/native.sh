@@ -46,10 +46,36 @@ soil-run() {
         _bin/cxx-opt/osh_eval.stripped
 }
 
+oil-slice-demo() {
+  export PYTHONPATH='.:vendor/'
+
+  echo 'echo hi' | bin/osh_parse.py
+  bin/osh_parse.py -c 'ls -l'
+
+  local osh_eval=${1:-bin/osh_eval.py}
+
+  # Same functionality in bin/osh_eval
+  echo 'echo hi' | $osh_eval
+  $osh_eval -n -c 'ls -l'
+  echo ---
+  # ast format is none
+  $osh_eval --ast-format none -n -c 'ls -l'
+
+  echo '-----'
+
+  # Now test some more exotic stuff
+  $osh_eval -c '(( a = 1 + 2 * 3 ))'
+
+  $osh_eval -c \
+    'echo "hello"x $$ ${$} $((1 + 2 * 3)) {foo,bar}@example.com'
+
+  $osh_eval -c 'for x in 1 2 3; do echo $x; done'
+}
+
 osh-eval-smoke() {
   local bin=_bin/cxx-dbg/osh_eval
   ninja $bin
-  types/oil-slice.sh demo $bin
+  oil-slice-demo $bin
 }
 
 "$@"

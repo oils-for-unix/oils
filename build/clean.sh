@@ -7,6 +7,16 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+tmp-dirs() {
+  ### Used by devtools/release.sh
+
+  rm -r -f \
+    _tmp/{spec,unit,gold,parse-errors,osh2oil,wild/www} \
+    _tmp/{metrics,important-source-code} \
+    _tmp/{compute,osh-parser,osh-runtime,vm-baseline,ovm-build,oheap,syscall} \
+    _tmp/oil-tar-test
+}
+
 # To test building stdlib.
 clean-pyc() {
   # skip _chroot, _tmp, etc.  But delete __init__.pyc
@@ -31,6 +41,11 @@ cpp() {
   # _release is for docs
 }
 
+all() {
+  py
+  cpp
+}
+
 # This is 'make clean' for the oil.ovm build.
 #
 # - Take care not to remove _build/oil/bytecode-opy.zip, etc.
@@ -46,4 +61,9 @@ source-tarball-build() {
 }
 
 
-"$@"
+if test $# -eq 0; then
+  # clean all if no args
+  all
+else
+  "$@"
+fi

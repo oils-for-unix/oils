@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh  # run-test-funcs
-source types/common.sh
+source devtools/common.sh
 
 # not using build/dev-shell.sh for now
 readonly PY3=../oil_DEPS/python3

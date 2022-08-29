@@ -158,18 +158,10 @@ auto-machine2() {
 #     0.0.0/  
 #       oil-0.0.0.tar.xz 
 
-_clean-tmp-dirs() {
-  rm -r -f \
-    _tmp/{spec,unit,gold,parse-errors,osh2oil,wild/www} \
-    _tmp/{metrics,important-source-code} \
-    _tmp/{compute,osh-parser,osh-runtime,vm-baseline,ovm-build,oheap,syscall} \
-    _tmp/oil-tar-test
-}
-
 _clean() {
-  _clean-tmp-dirs   # Remove benchmark stuff
+  build/clean.sh tmp-dirs
   rm -r -f _devbuild  # We're redoing the dev build
-  build/actions.sh clean-repo
+  build/clean.sh cpp
 }
 
 _dev-build() {
@@ -939,7 +931,9 @@ more-release-deps() {
 
 # This is a hack because the Makefile dependencies aren't correct.
 quick-oil-tarball() {
-  make clean-repo
+  # Can't delete _gen/_devbuild because there are source files there we want
+  rm -r -f --verbose _bin _build _release
+
   make _bin/oil.ovm-dbg
 
   local in=_release/oil.tar

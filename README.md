@@ -180,7 +180,6 @@ Unit tests are named `foo_test.py` and live next to `foo.py`.
       bin/            # tools used in many spec tests
       testdata/       # scripts for specific test cases
       stateful/       # Tests that use pexpect
-    types/            # Scripts for running MyPy and PyAnnotate, etc.
 
 ### Dev Tools and Scripts
 
@@ -195,6 +194,7 @@ shell, of course!
       dev.sh          # For development builds, running CPython
     devtools/         # For Oil developers (not end users)
       release.sh      # The (large) release process.
+      services/       # talk to cloud services
     demo/             # Demonstrations of bash/shell features.  Could be
                       # moved to tests/ if automated.
       old/            # A junk drawer.

@@ -133,8 +133,8 @@ dump-user-host      soil/worker.sh dump-user-host                -
 build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
-typecheck-slice     types/oil-slice.sh soil-run                  -
-typecheck-other     types/run.sh soil-run                        -
+asdl-types          asdl/test.sh check-types                     -
+oil-types           devtools/types.sh soil-run                   -
 unit                test/unit.sh soil-run                        -
 stateful            test/stateful.sh soil-run                    _tmp/spec/stateful/index.html
 arena               test/arena.sh soil-run                       -

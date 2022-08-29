@@ -7,15 +7,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source types/common.sh
+source devtools/common.sh
 
 readonly PY_PATH='.:vendor/'  # note: could consolidate with other scripts
-
-banner() {
-  echo "  -----"
-  echo "  $@"
-  echo "  -----"
-}
 
 deps() {
   set -x
@@ -27,51 +21,6 @@ deps() {
   # Without --upgrade, it won't install the latest version.
   # In .travis.yaml we apparently install the latest version too (?)
   pip3 install --user --upgrade 'mypy'
-}
-
-# NOTE: We're testing ASDL code generation with --strict because we might want
-# Oil to pass under --strict someday.
-typed-demo-asdl() {
-  # We want to exclude ONLY pylib.collections_, but somehow --exclude
-  # '.*collections_\.py' does not do it.  So --follow-imports=silent.  Tried
-  # --verbose too
-  typecheck --strict --follow-imports=silent \
-    _devbuild/gen/typed_demo_asdl.py asdl/examples/typed_demo.py
-
-  PYTHONPATH=$PY_PATH asdl/examples/typed_demo.py "$@"
-}
-
-check-arith() {
-  # NOTE: There are still some Any types here!  We don't want them for
-  # translation.
-
-  MYPYPATH=. PYTHONPATH=$PY_PATH typecheck --strict --follow-imports=silent \
-    asdl/examples/typed_arith_parse.py \
-    asdl/examples/typed_arith_parse_test.py \
-    asdl/examples/tdop.py
-}
-
-typed-arith-asdl() {
-  check-arith
-
-  export PYTHONPATH=$PY_PATH
-  asdl/examples/typed_arith_parse_test.py
-
-  banner 'parse'
-  asdl/examples/typed_arith_parse.py parse '40+2'
-  echo
-
-  banner 'eval'
-  asdl/examples/typed_arith_parse.py eval '40+2+5'
-  echo
-}
-
-
-readonly MORE_OIL_MANIFEST=types/more-oil-manifest.txt
-
-more-oil-manifest() {
-  # allow comments
-  egrep -v "$COMMENT_RE" $MORE_OIL_MANIFEST
 }
 
 checkable-files() {
@@ -95,10 +44,6 @@ need-typechecking() {
     <(checkable-files | sort | grep '.py$') \
     <({ more-oil-manifest; cat _build/NINJA/osh_eval/typecheck.txt; } | sort) \
     | xargs wc -l | sort -n
-}
-
-typecheck-files() {
-  $0 typecheck --follow-imports=silent $MYPY_FLAGS "$@"
 }
 
 readonly -a COMMON_TYPE_MODULES=(_devbuild/gen/runtime_asdl.py _devbuild/gen/syntax_asdl.py)
@@ -131,33 +76,6 @@ add-imports() {
     mv "$module_tmp" "$module"
 	echo "Updated $module"
   fi
-}
-
-typecheck-more-oil() {
-  # The --follow-imports=silent option allows adding type annotations
-  # in smaller steps without worrying about triggering a bunch of
-  # errors from imports.  In the end, we may want to remove it, since
-  # everything will be annotated anyway.  (that would require
-  # re-adding assert-one-error and its associated cruft, though).
-  more-oil-manifest | xargs -- $0 typecheck-files
-}
-
-soil-run() {
-  set -x
-  mypy_ --version
-  set +x
-
-  build/py.sh py-asdl-examples
-
-  banner 'typed-arith-asdl'
-  typed-arith-asdl
-
-  banner 'typed-demo-asdl'
-  typed-demo-asdl
-
-  # Ad hoc list of additional files
-  banner 'typecheck-more-oil'
-  typecheck-more-oil
 }
 
 #
@@ -250,15 +168,6 @@ audit-hacks() {
   echo ---
 
   egrep --color -w 'type: ignore' {osh,core,frontend}/*.py
-}
-
-#
-# expr_parse demo.  Typecheck it?
-#
-
-expr-parse() {
-  export PYTHONPATH=$PY_PATH
-  echo '1 + 2*3' | bin/expr_parse.py "$@"
 }
 
 "$@"
