@@ -2,7 +2,7 @@
   // clang-format off
   #include "mycpp/oldstl_containers.h"
   #include "mycpp/builtins.h"
-  #include "mycpp/oldstl_mylib.h"
+  #include "mycpp/leaky_mylib.h"
 // clang-format on
 #else
   #include "mycpp/gc_mylib.h"

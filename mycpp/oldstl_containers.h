@@ -69,7 +69,7 @@ struct StackRoots {
 #include "mycpp/tuple_types.h"
 #include "mycpp/error_types.h"
 
-#include "mycpp/oldstl_mylib.h" // mylib namespace
+#include "mycpp/leaky_mylib.h"
 
 #include "mycpp/gc_slab.h"
 
