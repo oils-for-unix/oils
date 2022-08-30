@@ -58,6 +58,10 @@ bool str_equals0(const char* c_string, Str* s);
 // NOT Shared with oldstl_builtins
 //
 
+Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
+Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
+Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
+
 #ifndef OLDSTL_BINDINGS
 
   #include <algorithm>  // min(), sort()
@@ -72,11 +76,6 @@ bool str_equals0(const char* c_string, Str* s);
 //
 // Free Standing Str, List, and Dict Functions
 //
-
-Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
-Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
-
-Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {

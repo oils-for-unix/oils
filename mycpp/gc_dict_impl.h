@@ -129,6 +129,7 @@ int Dict<K,V>::position_of_key(K key) {
       return -1;  // not found
     }
     if (keys_equal(self->keys_->items_[i], key)) {
+
       return i;
     }
   }

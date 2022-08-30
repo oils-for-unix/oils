@@ -293,34 +293,12 @@ inline int len(const Dict<Str*, V>* d) {
 // Free functions
 //
 
-Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
-Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
-
-Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
-
 namespace id_kind_asdl {
 enum class Kind;
 };
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 bool are_equal(Str* left, Str* right);
-
-// TODO: There should be one str() and one repr() for every sum type, that
-// dispatches on tag?  Or just repr()?
-
-// Will need it for dict, but not tuple.
-// inline int len(Dict* D) {
-// }
-
-// list(L) copies the list
-template <typename T>
-List<T>* list(List<T>* other) {
-  auto result = NewList<T>();
-  for (int i = 0; i < len(other); ++i) {
-    result->set(i, other->index_(i));
-  }
-  return result;
-}
 
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
