@@ -11,7 +11,7 @@ set -o errexit
 
 posix-test() {
   PYTHONPATH=.:vendor EINTR_TEST=1 \
-    native/posix_test.py "$@"
+    pyext/posix_test.py "$@"
 }
 
 test-read() { posix-test PosixTest.testRead; }

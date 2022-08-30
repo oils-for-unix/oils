@@ -2,7 +2,7 @@
 from distutils.core import setup, Extension
 
 module = Extension('line_input',
-                    sources = ['native/line_input.c'],
+                    sources = ['pyext/line_input.c'],
                     undef_macros = ['NDEBUG'],
                     libraries = ['readline']
                     )

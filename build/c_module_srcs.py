@@ -30,10 +30,10 @@ def main(argv):
 
       if mod_name in ('libc', 'fanos', 'fastlex', 'line_input'):  # Our own modules
         # Relative to Python-2.7.13 dir
-        print('../native/%s.c' % mod_name)
+        print('../pyext/%s.c' % mod_name)
 
       elif mod_name == 'posix_':
-        print('../native/posixmodule.c')
+        print('../pyext/posixmodule.c')
 
       elif mod_name == 'math':
         print('Modules/mathmodule.c')

@@ -1,4 +1,4 @@
-// native/line_input.c
+// pyext/line_input.c
 
 static PyMethodDef readline_methods[] = {
   {"parse_and_bind", parse_and_bind, METH_VARARGS},

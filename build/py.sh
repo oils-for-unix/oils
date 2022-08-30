@@ -243,15 +243,15 @@ py-ext-test() {
 pylibc() {
   rm -f libc.so
 
-  py-ext libc build/setup.py
-  py-ext-test native/libc_test.py "$@"
+  py-ext libc pyext/setup_libc.py
+  py-ext-test pyext/libc_test.py "$@"
 }
 
 fanos() {
   rm -f fanos.so
 
-  py-ext fanos build/setup_fanos.py
-  py-ext-test native/fanos_test.py "$@"
+  py-ext fanos pyext/setup_fanos.py
+  py-ext-test pyext/fanos_test.py "$@"
 }
 
 #
@@ -317,23 +317,23 @@ fastlex() {
   # Why do we need this?  It gets stale otherwise.
   rm -f fastlex.so
 
-  py-ext fastlex build/setup_fastlex.py
-  py-ext-test native/fastlex_test.py
+  py-ext fastlex pyext/setup_fastlex.py
+  py-ext-test pyext/fastlex_test.py
 }
 
 line-input() {
   # Why do we need this?  It gets stale otherwise.
   rm -f line_input.so
 
-  py-ext line_input build/setup_line_input.py
-  py-ext-test native/line_input_test.py
+  py-ext line_input pyext/setup_line_input.py
+  py-ext-test pyext/line_input_test.py
 }
 
 posix_() {
   rm -f posix_.so
 
-  py-ext posix_ build/setup_posix.py
-  py-ext-test native/posix_test.py
+  py-ext posix_ pyext/setup_posix.py
+  py-ext-test pyext/posix_test.py
 }
 
 yajl-release() {

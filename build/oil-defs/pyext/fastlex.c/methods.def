@@ -1,4 +1,4 @@
-// native/fastlex.c
+// pyext/fastlex.c
 
 static PyMethodDef methods[] = {
   {"MatchOshToken", fastlex_MatchOshToken, METH_VARARGS},

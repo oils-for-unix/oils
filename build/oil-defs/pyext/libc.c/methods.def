@@ -1,4 +1,4 @@
-// native/libc.c
+// pyext/libc.c
 
 static PyMethodDef methods[] = {
   {"realpath", func_realpath, METH_VARARGS},

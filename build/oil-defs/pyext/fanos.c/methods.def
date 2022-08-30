@@ -1,4 +1,4 @@
-// native/fanos.c
+// pyext/fanos.c
 
 static PyMethodDef methods[] = {
   {"recv", func_recv, METH_VARARGS},

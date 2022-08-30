@@ -27,9 +27,9 @@ mypy_() {
 }
 
 typecheck() {
-  # we 'import libc' but the source is native/libc.{c,pyi}
+  # we 'import libc' but the source is pyext/libc.{c,pyi}
 
-  MYPYPATH=.:native PYTHONPATH=. mypy_ --py2 "$@"
+  MYPYPATH='.:pyext' PYTHONPATH='.' mypy_ --py2 "$@"
 }
 
 readonly MYPY_FLAGS='--strict --no-implicit-optional --no-strict-optional'

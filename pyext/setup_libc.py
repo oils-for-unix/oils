@@ -2,7 +2,7 @@
 from distutils.core import setup, Extension
 
 module = Extension('libc',
-                    sources = ['native/libc.c'],
+                    sources = ['pyext/libc.c'],
                     undef_macros = ['NDEBUG'])
 
 setup(name = 'libc',

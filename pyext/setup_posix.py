@@ -5,7 +5,7 @@ from distutils.core import setup, Extension
 # module it's based on.
 
 module = Extension('posix_',
-                    sources = ['native/posixmodule.c'],
+                    sources = ['pyext/posixmodule.c'],
                     # we deleted some entries from the method table; I don't
                     # want to see warnings about it
                     extra_compile_args = ['-Wno-unused-function'],

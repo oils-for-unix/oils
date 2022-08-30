@@ -216,7 +216,7 @@ fastlex_LooksLikeFloat(PyObject *self, PyObject *args) {
 }
 
 #ifdef OVM_MAIN
-#include "native/fastlex.c/methods.def"
+#include "pyext/fastlex.c/methods.def"
 #else
 static PyMethodDef methods[] = {
   {"MatchOshToken", fastlex_MatchOshToken, METH_VARARGS,
