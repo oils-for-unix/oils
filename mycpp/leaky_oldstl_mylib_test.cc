@@ -1,9 +1,10 @@
-
 #ifdef OLDSTL_BINDINGS
   #include "mycpp/leaky_containers.h"
 #else
+  #include "mycpp/gc_containers.h"
   #include "mycpp/gc_mylib.h"
 #endif
+
 #include "mycpp/builtins.h"
 
 #include "vendor/greatest.h"

@@ -1,16 +1,16 @@
-#include "mycpp/builtins.h"
-
 #ifdef OLDSTL_BINDINGS
   #include "mycpp/leaky_containers.h"
 #else
   #include "mycpp/gc_containers.h"
 #endif
 
+#include "mycpp/leaky_mylib.h"
+#include "mycpp/builtins.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
-#include "mycpp/leaky_mylib.h"
 
 namespace mylib {
 

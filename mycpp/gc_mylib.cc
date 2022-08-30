@@ -1,5 +1,6 @@
 // gc_mylib.cc
 
+#include "gc_containers.h"
 #include "gc_mylib.h"
 
 #include <errno.h>

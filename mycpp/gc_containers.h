@@ -14,6 +14,7 @@
 #include "mycpp/comparators.h"
 #include "mycpp/gc_slab.h"
 #include "mycpp/gc_list.h"
+#include "mycpp/tuple_types.h"
 
 #include <mycpp/gc_dict.h>
 #include <mycpp/gc_dict_impl.h>

@@ -1,4 +1,3 @@
-#include "mycpp/builtins.h"
 
 #ifdef OLDSTL_BINDINGS
   #include "mycpp/leaky_containers.h"
@@ -6,6 +5,7 @@
   #include "mycpp/gc_containers.h"
 #endif
 
+#include "mycpp/builtins.h"
 #include "vendor/greatest.h"
 
 void debug_string(Str* s) {

@@ -1,11 +1,10 @@
-#include "mycpp/builtins.h"
-
 #ifdef OLDSTL_BINDINGS
   #include "mycpp/leaky_containers.h"
 #else
   #include "mycpp/gc_containers.h"
 #endif
 
+#include "mycpp/builtins.h"
 #include "vendor/greatest.h"
 
 GLOBAL_STR(kSpace, " ");
