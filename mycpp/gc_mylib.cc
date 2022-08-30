@@ -22,11 +22,11 @@ Str* repr(Str* s) {
 
 namespace mylib {
 
-template <typename K, typename V>
-void dict_remove(Dict<K, V>* haystack, K needle)
-{
-  ::dict_remove(haystack, needle);
-}
+/* template <typename K, typename V> */
+/* void dict_remove(Dict<K, V>* haystack, K needle) */
+/* { */
+/*   ::dict_remove(haystack, needle); */
+/* } */
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   StackRoots _roots({&s, &delim});

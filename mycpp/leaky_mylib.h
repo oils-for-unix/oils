@@ -1,6 +1,9 @@
 #ifndef LEAKY_MYLIB_H
 #define LEAKY_MYLIB_H
 
+template <class K, class V>
+class Dict;
+
 #include <limits.h>  // CHAR_BIT
 #include <stdint.h>  // uint8_t
 
@@ -12,10 +15,24 @@
 
 const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
-namespace mylib {
-
 template <typename K, typename V>
 void dict_remove(Dict<K, V>* haystack, K needle);
+
+namespace mylib {
+
+Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
+
+// Used by generated _build/cpp/osh_eval.cc
+inline Str* StrFromC(const char* s) {
+  return ::StrFromC(s);
+}
+
+template <typename K, typename V>
+void dict_remove(Dict<K, V>* haystack, K needle)
+{
+  ::dict_remove(haystack, needle);
+}
+
 
 // NOTE: Can use OverAllocatedStr for all of these, rather than copying
 
@@ -203,5 +220,8 @@ inline Writer* Stderr() {
 }
 
 }  // namespace mylib
+
+
+extern mylib::BufWriter gBuf;
 
 #endif  // LEAKY_MYLIB_H
