@@ -22,7 +22,7 @@ source build/common.sh
 source cpp/NINJA-steps.sh  # compile_and_link
 
 test-optview() {
-  ninja _gen/core/optview.h _build/cpp/option_asdl.h
+  ninja _gen/core/optview.h _gen/frontend/option.asdl.h
 
   local tmp_dir=_test/gen-cpp/core
   local bin_dir=_bin/cxx-asan/core

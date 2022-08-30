@@ -233,7 +233,7 @@ namespace id_kind_asdl {
     with open(out_prefix + '.cc', 'w') as f:
       f.write("""\
 #include <assert.h>
-#include "_build/cpp/id_kind_asdl.h"
+#include "_gen/frontend/id_kind.asdl.h"
 
 namespace id_kind_asdl {
 
@@ -286,10 +286,10 @@ from asdl import pybase
 
 #include "mycpp/oldstl_containers.h"
 
-#include "_build/cpp/id_kind_asdl.h"
-#include "_build/cpp/option_asdl.h"
-#include "_build/cpp/runtime_asdl.h"
-#include "_build/cpp/types_asdl.h"
+#include "_gen/frontend/id_kind.asdl.h"
+#include "_gen/frontend/option.asdl.h"
+#include "_gen/core/runtime.asdl.h"
+#include "_gen/frontend/types.asdl.h"
 
 namespace consts {
 """)

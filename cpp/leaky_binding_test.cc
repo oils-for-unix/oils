@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <fcntl.h>  // O_RDWR
 
-#include "_build/cpp/runtime_asdl.h"  // cell, etc
+#include "_gen/core/runtime.asdl.h"  // cell, etc
 #include "_gen/frontend/id_kind.asdl_c.h"
 #include "leaky_core.h"  // Chdir
 #include "leaky_core_error.h"

@@ -3,8 +3,8 @@
 #ifndef FRONTEND_TDOP_H
 #define FRONTEND_TDOP_H
 
-#include "_build/cpp/id_kind_asdl.h"
-#include "_build/cpp/syntax_asdl.h"
+#include "_gen/frontend/id_kind.asdl.h"
+#include "_gen/frontend/syntax.asdl.h"
 
 using id_kind_asdl::Id_t;
 using syntax_asdl::arith_expr_t;

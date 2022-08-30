@@ -1,8 +1,8 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
-#include "_gen/asdl/typed_arith_asdl.h"
-#include "_gen/asdl/typed_demo_asdl.h"  // has simple Sum, etc
+#include "_gen/asdl/examples/typed_arith.asdl.h"
+#include "_gen/asdl/examples/typed_demo.asdl.h"  // has simple Sum, etc
 #include "mycpp/oldstl_containers.h"
 #include "prebuilt/asdl/runtime.mycpp.h"
 #include "vendor/greatest.h"

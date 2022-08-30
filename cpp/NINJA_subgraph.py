@@ -70,25 +70,25 @@ def log(msg, *args):
 
 # CPP bindings and some generated code have implicit dependencies on these headers
 ASDL_H = [
-    '_build/cpp/runtime_asdl.h',
-    '_build/cpp/syntax_asdl.h',
-    '_build/cpp/types_asdl.h',
-    '_build/cpp/hnode_asdl.h',
+    '_gen/asdl/hnode.asdl.h',
+    '_gen/core/runtime.asdl.h',
+    '_gen/frontend/syntax.asdl.h',
+    '_gen/frontend/types.asdl.h',
 
     # synthetic
-    '_build/cpp/id_kind_asdl.h',
-    '_build/cpp/option_asdl.h',
+    '_gen/frontend/id_kind.asdl.h',
+    '_gen/frontend/option.asdl.h',
 ]
 
 ASDL_CC = [
-    '_build/cpp/runtime_asdl.cc',
-    '_build/cpp/syntax_asdl.cc',
-    '_build/cpp/id_kind_asdl.cc',
+    '_gen/core/runtime.asdl.cc',
+    '_gen/frontend/syntax.asdl.cc',
+    '_gen/frontend/id_kind.asdl.cc',
 
     # NOT generated due to --no-pretty-print-methods
-    # '_build/cpp/types_asdl.cc',
-    # '_build/cpp/hnode_asdl.cc',
-    # '_build/cpp/option_asdl.cc',
+    # '_gen/frontend/types.asdl.cc',
+    # '_gen/asdl/hnode.asdl.cc',
+    # '_gen/frontend/option.asdl.cc',
 ]
 
 GENERATED_H = [
@@ -96,16 +96,14 @@ GENERATED_H = [
     # NOTE: there is no cpp/arith_parse.h
 
     '_gen/frontend/consts.h',
-
-    # header only
-    '_gen/core/optview.h',
+    '_gen/core/optview.h',  # header only
 ]
 
 GENERATED_CC = [
-    '_gen/frontend/arg_types.cc',
-    '_gen/osh/arith_parse.cc',
-    '_gen/frontend/consts.cc',
     '_gen/bin/osh_eval.mycpp.cc',
+    '_gen/frontend/arg_types.cc',
+    '_gen/frontend/consts.cc',
+    '_gen/osh/arith_parse.cc',
 ]
 
 
