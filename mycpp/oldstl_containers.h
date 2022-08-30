@@ -76,9 +76,17 @@ struct StackRoots {
 #include "mycpp/gc_list.h"
 #include "mycpp/gc_list_iter.h"
 
+#if 0
 #include <mycpp/oldstl_dict.h>
 #include <mycpp/oldstl_dict_impl.h>
+#else
+
+#include <mycpp/gc_dict.h>
+#include <mycpp/gc_dict_impl.h>
+#include "mycpp/dict_iter.h"
+
+#endif
 
 // clang-format on
-//
+
 #endif  // OLDSTL_CONTAINERS_H

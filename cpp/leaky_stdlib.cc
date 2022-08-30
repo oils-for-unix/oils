@@ -87,6 +87,7 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   // Convert environ into an array of pointers to strings of the form: "k=v".
   int n_env = len(environ);
   char** envp = static_cast<char**>(malloc((n_env + 1) * sizeof(char*)));
+#if 0
   int i = 0;
   for (const auto& kv : environ->items_) {
     Str* k = kv.first;
@@ -100,6 +101,9 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
     envp[i++] = buf;
   }
   envp[n_env] = nullptr;
+#else
+  NotImplemented();
+#endif
 
   int ret = ::execve(argv0->data_, _argv, envp);
   if (ret == -1) {

@@ -136,4 +136,116 @@ int Dict<K,V>::position_of_key(K key) {
   return -1;  // table is completely full?  Does this happen?
 }
 
+// Four overloads for dict_set()!  TODO: Is there a nicer way to do this?
+// e.g. Dict<int, int>
+template <typename K, typename V>
+void dict_set(Dict<K, V>* self, K key, V val) {
+  StackRoots _roots({&self});
+
+  self->reserve(self->len_ + 1);
+  self->keys_->items_[self->len_] = key;
+  self->values_->items_[self->len_] = val;
+
+  self->entry_->items_[self->len_] = 0;  // new special value
+
+  ++self->len_;
+}
+
+// e.g. Dict<Str*, int>
+template <typename K, typename V>
+void dict_set(Dict<K*, V>* self, K* key, V val) {
+  StackRoots _roots({&self, &key});
+
+  self->reserve(self->len_ + 1);
+  self->keys_->items_[self->len_] = key;
+  self->values_->items_[self->len_] = val;
+
+  self->entry_->items_[self->len_] = 0;  // new special value
+
+  ++self->len_;
+}
+
+// e.g. Dict<int, Str*>
+template <typename K, typename V>
+void dict_set(Dict<K, V*>* self, K key, V* val) {
+  StackRoots _roots({&self, &val});
+
+  self->reserve(self->len_ + 1);
+  self->keys_->items_[self->len_] = key;
+  self->values_->items_[self->len_] = val;
+
+  self->entry_->items_[self->len_] = 0;  // new special value
+
+  ++self->len_;
+}
+
+// e.g. Dict<Str*, Str*>
+template <typename K, typename V>
+void dict_set(Dict<K*, V*>* self, K* key, V* val) {
+  StackRoots _roots({&self, &key, &val});
+
+  self->reserve(self->len_ + 1);
+  self->keys_->items_[self->len_] = key;
+  self->values_->items_[self->len_] = val;
+
+  self->entry_->items_[self->len_] = 0;  // new special value
+
+  ++self->len_;
+}
+
+template <typename K, typename V>
+void Dict<K, V>::set(K key, V val) {
+  auto self = this;
+  StackRoots _roots({&self});  // May not need this here?
+
+  int pos = self->position_of_key(key);
+  if (pos == -1) {             // new pair
+    dict_set(self, key, val);  // ALLOCATES
+  } else {
+    self->values_->items_[pos] = val;
+  }
+}
+
+template <typename K, typename V>
+inline int len(const Dict<K, V>* d) {
+  return d->len_;
+}
+
+// Specialized functions
+template <class V>
+int find_by_key(const std::vector<std::pair<Str*, V>>& items, Str* key) {
+#if 0
+  int n = items.size();
+  for (int i = 0; i < n; ++i) {
+    Str* s = items[i].first;  // nullptr for deleted entries
+    if (s && str_equals(s, key)) {
+      return i;
+    }
+  }
+#else
+  NotImplemented();
+#endif
+  return -1;
+}
+
+template <class V>
+int find_by_key(const std::vector<std::pair<int, V>>& items, int key) {
+#if 0
+  int n = items.size();
+  for (int i = 0; i < n; ++i) {
+    if (items[i].first == key) {
+      return i;
+    }
+  }
+#else
+  NotImplemented();
+#endif
+  return -1;
+}
+
+template <typename K, typename V>
+void Dict<K, V>::remove(K key) {
+  mylib::dict_remove(this, key);
+}
+
 #endif

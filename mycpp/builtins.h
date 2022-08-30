@@ -59,7 +59,7 @@ inline Str* dynamic_fmt_dummy() {
 
   #include "mycpp/error_types.h"
   #include "mycpp/gc_containers.h"
-  #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
+  #include "mycpp/leaky_mylib.h"
   #include "mycpp/tuple_types.h"
   #include "mycpp/gc_list_iter.h"
 

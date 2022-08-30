@@ -19,11 +19,15 @@ inline Str* StrFromC(const char* s) {
 
 template <typename V>
 inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
+#if 0
   int pos = find_by_key(haystack->items_, needle);
   if (pos == -1) {
     return;
   }
   haystack->items_[pos].first = nullptr;
+#else
+  NotImplemented();
+#endif
 }
 
 // TODO: how to do the int version of this?  Do you need an extra bit?
