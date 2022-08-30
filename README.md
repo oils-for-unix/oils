@@ -189,9 +189,10 @@ shell, of course!
     benchmarks/       # Benchmarks should be run on multiple machines.
     metrics/          # Metrics don't change between machines (e.g. code size)
     client/           # Demonstration of OSH as a headless server.
+    deps/             # Dev dependencies and Docker images
     build/            # Build automation
       oil-defs/       # Files that define our slice of CPython.
-      dev.sh          # For development builds, running CPython
+      py.sh           # For development builds, running CPython
     devtools/         # For Oil developers (not end users)
       release.sh      # The (large) release process.
       services/       # talk to cloud services

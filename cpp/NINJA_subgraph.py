@@ -105,7 +105,7 @@ GENERATED_CC = [
     '_build/cpp/arg_types.cc',
     '_build/cpp/arith_parse.cc',
     '_build/cpp/consts.cc',
-    '_build/cpp/osh_eval.cc',
+    '_gen/bin/osh_eval.mycpp.cc',
 ]
 
 

@@ -33,14 +33,14 @@ statement and enhanced `ast` module).  First install dependencies of CPython:
 
 And then download and build it:
 
-    oil$ soil/deps-tar.sh download-py3
-    oil$ soil/deps-tar.sh layer-py3
+    oil$ deps/from-tar.sh download-py3
+    oil$ deps/from-tar.sh layer-py3
 
 Then you'll need the MyPy source repository, as well as a virtualenv containing
 MyPy's dependencies.
 
-    oil$ soil/deps-mycpp.sh git-clone
-    oil$ soil/deps-mycpp.sh pip-install
+    oil$ deps/from-git.sh mypy-git-clone
+    oil$ deps/from-git.sh mypy-pip-install
 
 To build oil-native, use:
 

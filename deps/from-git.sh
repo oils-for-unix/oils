@@ -1,28 +1,18 @@
 #!/usr/bin/env bash
 #
-# Dependencies for mycpp.  Invoked by services/worker.sh, and can also be
-# invoked manually.
+# Dependencies for mycpp.  Invoked by soil/worker.sh, and can also be invoked
+# manually.
 #
 # Usage:
 #   deps/from-git.sh <function name>
 #
-# Setup:
+# Prerequisites:
 #
-#   ./deps.sh git-clone
+#   Run deps/from-tar.sh layer-py3 first.
 #
-#   This clones the MyPy repo and switches to the release-0.730 branch.  As of
-#   May 2022, that's the latest release I've tested against. It also installs
-#   typeshed.
+# Example:
 #
-#   ./deps.sh pip-install
-#
-#   Installs Python packages that MyPy depends on.
-#
-# Troubleshooting:
-#
-#   If you don't have Python 3.6, then build one from a source tarball and then
-#   install it.  (NOTE: mypyc tests require the libsqlite3-dev dependency.
-#   It's probably not necessary for running mycpp.)
+#   deps/from-git.sh layer-mycpp
 
 set -o nounset
 set -o pipefail
@@ -31,7 +21,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
 
-git-clone() {
+mypy-git-clone() {
   ### Clone mypy at a specific branch
 
   local out=$MYPY_REPO
@@ -64,7 +54,7 @@ mypy-deps() {
   maybe-our-python3 -m pip install -r $MYPY_REPO/test-requirements.txt
 }
 
-pip-install() {
+mypy-pip-install() {
   ensure-pip
   create-venv
 
@@ -77,8 +67,8 @@ pip-install() {
 }
 
 layer-mycpp() {
-  git-clone
-  pip-install
+  mypy-git-clone
+  mypy-pip-install
 }
 
 "$@"

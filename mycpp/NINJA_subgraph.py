@@ -484,7 +484,7 @@ def NinjaGraph(n):
   with open('_build/NINJA/osh_eval/translate.txt') as f:
     deps = [line.strip() for line in f]
 
-  prefix = '_build/cpp/osh_eval'
+  prefix = '_gen/bin/osh_eval.mycpp'
   n.build([prefix + '.cc'], 'gen-osh-eval', deps,
           implicit=['_bin/shwrap/mycpp_main'],
           variables=[('out_prefix', prefix)])
