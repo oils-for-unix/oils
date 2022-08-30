@@ -20,9 +20,9 @@
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this
 using id_kind_asdl::Kind_t;
 
-#include "_build/cpp/arg_types.h"
-#include "_build/cpp/consts.h"
-#include "_build/cpp/core_optview.h"
+#include "_gen/frontend/arg_types.h"
+#include "_gen/frontend/consts.h"
+#include "_gen/core/optview.h"
 #include "_build/cpp/option_asdl.h"
 #include "_build/cpp/runtime_asdl.h"
 #include "_build/cpp/syntax_asdl.h"

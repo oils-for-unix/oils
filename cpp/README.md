@@ -1,5 +1,5 @@
-cpp/ - Hand-written C++ Code
-============================
+`cpp/` - Hand-written C++ Code
+==============================
 
 Structure of this directory:
 

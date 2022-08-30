@@ -1,6 +1,6 @@
 // asdl/gc_test.cc
 
-#include "_build/asdl-test/typed_demo_asdl.h"
+#include "_gen/asdl/typed_demo_asdl.h"
 #include "_build/cpp/hnode_asdl.h"
 #include "mycpp/gc_containers.h"
 #include "mycpp/gc_mylib.h"

@@ -330,7 +330,7 @@ Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_
         print(fmt % args, file=f)
 
       out("""\
-#include "_build/cpp/consts.h"
+#include "_gen/frontend/consts.h"
 
 namespace Id = id_kind_asdl::Id;
 using id_kind_asdl::Kind;

@@ -92,19 +92,19 @@ ASDL_CC = [
 ]
 
 GENERATED_H = [
-    '_build/cpp/arg_types.h',
+    '_gen/frontend/arg_types.h',
     # NOTE: there is no cpp/arith_parse.h
 
-    '_build/cpp/consts.h',
+    '_gen/frontend/consts.h',
 
     # header only
-    '_build/cpp/core_optview.h',
+    '_gen/core/optview.h',
 ]
 
 GENERATED_CC = [
-    '_build/cpp/arg_types.cc',
-    '_build/cpp/arith_parse.cc',
-    '_build/cpp/consts.cc',
+    '_gen/frontend/arg_types.cc',
+    '_gen/osh/arith_parse.cc',
+    '_gen/frontend/consts.cc',
     '_gen/bin/osh_eval.mycpp.cc',
 ]
 

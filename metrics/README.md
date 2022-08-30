@@ -1,5 +1,5 @@
-metrics
--------
+`metrics/`
+=========
 
 This directory is for measurements of the code (source or binary) that can be
 done on a single machine.

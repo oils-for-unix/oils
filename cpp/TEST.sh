@@ -25,14 +25,14 @@ pre-build() {
   build/cpp.sh gen-asdl  # unit tests depend on id_kind_asdl.h, etc.
 
   # TODO: Make a target for this
-  ninja _build/cpp/arg_types.{h,cc}
+  ninja _gen/frontend/arg_types.{h,cc}
   ninja _build/cpp/id_kind_asdl.{h,cc}
 }
 
 readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_flag_spec_test.cc
     cpp/leaky_frontend_flag_spec.cc
-    _build/cpp/arg_types.cc
+    _gen/frontend/arg_types.cc
 
     "${OLDSTL_RUNTIME[@]}"
 )

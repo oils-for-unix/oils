@@ -44,6 +44,6 @@ Oil, which I think will be useful for metaprogramming.
 This is currently run in the continuous build
 (<http://travis-ci.oilshell.org/jobs/>).
 
-    tea/run.sh travis
+    tea/run.sh soil-run
 
 

@@ -25,24 +25,23 @@ asdl-main() {
   PYTHONPATH='.:vendor/' asdl/asdl_main.py "$@"
 }
 
-readonly TMP_DIR='_build/asdl-test'
+readonly GEN_DIR='_gen/asdl'
 
 gen-cpp-test() {
   local compiler=${1:-cxx}
   local variant=${1:-asan}
 
-  local tmp_dir=$TMP_DIR
   local bin_dir="_bin/$compiler-$variant/asdl"
 
-  mkdir -p $tmp_dir $bin_dir
+  mkdir -p $GEN_DIR $bin_dir
 
-  local prefix=$tmp_dir/typed_arith_asdl
+  local prefix=$GEN_DIR/typed_arith_asdl
   asdl-main cpp asdl/examples/typed_arith.asdl $prefix
 
-  local prefix2=$tmp_dir/demo_lib_asdl
+  local prefix2=$GEN_DIR/demo_lib_asdl
   asdl-main cpp asdl/examples/demo_lib.asdl $prefix2
 
-  local prefix3=$tmp_dir/typed_demo_asdl
+  local prefix3=$GEN_DIR/typed_demo_asdl
   asdl-main cpp asdl/examples/typed_demo.asdl $prefix3
 
   wc -l $prefix* $prefix2*
@@ -53,8 +52,8 @@ gen-cpp-test() {
     asdl/gen_cpp_test.cc \
     prebuilt/asdl/runtime.mycpp.cc \
     "${OLDSTL_RUNTIME[@]}" \
-    $tmp_dir/typed_arith_asdl.cc \
-    $tmp_dir/typed_demo_asdl.cc 
+    $GEN_DIR/typed_arith_asdl.cc \
+    $GEN_DIR/typed_demo_asdl.cc 
 
   local log_dir="_test/$compiler-$variant/asdl"
   mkdir -p $log_dir
@@ -74,14 +73,13 @@ gc-test() {
   # TODO: move this into Ninja.  Redundant with cpp/TEST.sh pre-build
   build/cpp.sh gen-asdl
 
-  local tmp_dir=$TMP_DIR
   local bin_dir=_bin/$compiler-$variant/asdl
-  mkdir -p $tmp_dir $bin_dir
+  mkdir -p $GEN_DIR $bin_dir
 
-  local prefix2=$tmp_dir/demo_lib_asdl
+  local prefix2=$GEN_DIR/demo_lib_asdl
   asdl-main cpp asdl/examples/demo_lib.asdl $prefix2
 
-  local prefix3=$tmp_dir/typed_demo_asdl
+  local prefix3=$GEN_DIR/typed_demo_asdl
   asdl-main cpp asdl/examples/typed_demo.asdl $prefix3
 
   local bin=$bin_dir/gc_test
@@ -91,8 +89,8 @@ gc-test() {
     asdl/gc_test.cc \
     "${GC_RUNTIME[@]}" \
     prebuilt/asdl/runtime.mycpp.cc \
-    $tmp_dir/demo_lib_asdl.cc \
-    $tmp_dir/typed_demo_asdl.cc
+    $GEN_DIR/demo_lib_asdl.cc \
+    $GEN_DIR/typed_demo_asdl.cc
 
   local log_dir="_test/$compiler-$variant/asdl"
   mkdir -p $log_dir
@@ -113,11 +111,10 @@ one-asdl-gc() {
     echo ---
   fi
 
-  local tmp_dir=$TMP_DIR
   local bin_dir=_bin/cxx-asan/asdl
-  mkdir -p $tmp_dir $bin_dir
+  mkdir -p $GEN_DIR $bin_dir
 
-  cat >$tmp_dir/${name}_asdl_test.cc <<EOF
+  cat >$GEN_DIR/${name}_asdl_test.cc <<EOF
 #include "_build/cpp/${name}_asdl.h"
 
 int main() {
@@ -132,7 +129,7 @@ EOF
     _build/cpp/${name}_asdl.cc \
     prebuilt/asdl/runtime.mycpp.cc \
     "${GC_RUNTIME[@]}" \
-    $tmp_dir/${name}_asdl_test.cc \
+    $GEN_DIR/${name}_asdl_test.cc \
     "$@"
 
   log "RUN $bin"

@@ -7,21 +7,6 @@ Continuous testing on many platforms.
 
     soil/web-init.sh deploy  # deploy static assets and tools
 
-## Directory structure
-
-    soil/
-      dummy.Dockerfile
-      dev-minimal.Dockerfile
-
-      # Shell functions to install dependencies
-      # like ubuntu-deps, py2, etc.
-      # Invoked by the Docker build.
-      images.sh
-
-      # stuff that happens outside the container, in the VM.
-      # Invocation of images; docker permissions hack
-      host-setup.sh
-
 ## Code
 
 - `soil/worker.sh` runs on each build service node.  For each job, it

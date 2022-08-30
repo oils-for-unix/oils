@@ -202,7 +202,7 @@ def NinjaGraph(n):
   n.newline()
 
   # Similar to above
-  prefix = '_build/cpp/consts'
+  prefix = '_gen/frontend/consts'
   n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
           implicit=['_bin/shwrap/consts_gen'],
           variables=[
@@ -211,7 +211,7 @@ def NinjaGraph(n):
           ])
   n.newline()
 
-  prefix = '_build/cpp/arg_types'
+  prefix = '_gen/frontend/arg_types'
   n.build([prefix + '.h', prefix + '.cc'], 'flag-gen', [],
           implicit=['_bin/shwrap/flag_gen'],
           variables=[
@@ -230,10 +230,10 @@ def NinjaGraph(n):
           ])
   n.newline()
 
-  n.build(['_build/cpp/core_optview.h'], 'optview-gen', [],
+  n.build(['_gen/core/optview.h'], 'optview-gen', [],
           implicit=['_bin/shwrap/optview_gen'])
   n.newline()
 
-  n.build(['_build/cpp/arith_parse.cc'], 'arith-parse-gen', [],
+  n.build(['_gen/osh/arith_parse.cc'], 'arith-parse-gen', [],
           implicit=['_bin/shwrap/arith_parse_gen'])
   n.newline()

@@ -1,12 +1,11 @@
-# Documentation
+Documentation
+=============
 
 ## HTML Docs
 
 I build these with a wrapper around CommonMark.  Try:
 
-    devtools/cmark.sh download
-    devtools/cmark.sh build
-    devtools/cmark.sh run-tests
+    deps/from-tar.sh layer-cmark
 
 And then:
 
