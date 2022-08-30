@@ -293,13 +293,6 @@ inline int len(const Dict<Str*, V>* d) {
 // Free functions
 //
 
-namespace id_kind_asdl {
-enum class Kind;
-};
-
-inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
-bool are_equal(Str* left, Str* right);
-
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return find_by_key(haystack->items_, needle) != -1;

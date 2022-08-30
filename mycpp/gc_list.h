@@ -2,7 +2,7 @@
 #define LIST_TYPES_H
 
 #include "mycpp/error_types.h"
-
+#include "mycpp/comparators.h"
 
 // Type that is layout-compatible with List (unit tests assert this).  Two
 // purposes:
@@ -295,10 +295,6 @@ void List<T>::set(int i, T item) {
   slab_->items_[i] = item;
 }
 
-
-bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2);
-bool are_equal(int, int);
-
   // Implements L[i]
 template <typename T>
 T List<T>::index_(int i) {
@@ -482,14 +478,6 @@ List<T>* NewList(T item, int times) {
   return self;
 }
 #endif
-
-namespace id_kind_asdl {
-enum class Kind;
-};
-
-// NOTE(Jesse): Where should this _actually_ go?  Definitely not here.
-inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
-bool are_equal(int left, int right);
 
 // e.g. 'a' in ['a', 'b', 'c']
 template <typename T>
