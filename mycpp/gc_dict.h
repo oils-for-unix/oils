@@ -72,4 +72,10 @@ class Dict : public Obj {
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 };
+
+template <typename K, typename V>
+inline bool dict_contains(Dict<K, V>* haystack, K needle) {
+  return haystack->position_of_key(needle) != -1;
+}
+
 #endif

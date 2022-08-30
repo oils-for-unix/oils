@@ -505,5 +505,16 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
 }
 
 
+// list(L) copies the list
+template <typename T>
+List<T>* list(List<T>* other) {
+  auto result = NewList<T>();
+  for (int i = 0; i < len(other); ++i) {
+    result->set(i, other->index_(i));
+  }
+  return result;
+}
+
+
 
 #endif // LIST_TYPES_H

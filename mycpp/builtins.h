@@ -60,30 +60,11 @@ inline Str* dynamic_fmt_dummy() {
 
   #include "mycpp/error_types.h"
   #include "mycpp/gc_containers.h"
+  #include "mycpp/dict_iter.h"
   #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
   #include "mycpp/tuple_types.h"
   #include "mycpp/gc_list_iter.h"
-  #include "mycpp/dict_iter.h"
-
-template <typename K, typename V>
-inline bool dict_contains(Dict<K, V>* haystack, K needle) {
-  return haystack->position_of_key(needle) != -1;
-}
-
-// TODO:
-// - Look at entry_ to see if an item is deleted (or is a tombstone once we
-// have hash chaining)
 
 #endif  // OLDSTL_BINDINGS
-
-// list(L) copies the list
-template <typename T>
-List<T>* list(List<T>* other) {
-  auto result = NewList<T>();
-  for (int i = 0; i < len(other); ++i) {
-    result->set(i, other->index_(i));
-  }
-  return result;
-}
 
 #endif  // GC_BUILTINS_H
