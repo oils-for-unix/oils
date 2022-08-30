@@ -26,7 +26,7 @@ pre-build() {
 
   # TODO: Make a target for this
   ninja _gen/frontend/arg_types.{h,cc}
-  ninja _build/cpp/id_kind_asdl.{h,cc}
+  ninja _gen/frontend/id_kind.asdl.{h,cc}
 }
 
 readonly LEAKY_FLAG_SPEC_SRC=(

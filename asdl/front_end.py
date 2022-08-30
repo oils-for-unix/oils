@@ -140,10 +140,18 @@ class ASDLParser(object):
 
     def _parse_use(self):
         """
-        use = 'use' NAME '{' NAME+ '}'
+        use = 'use' NAME+ '{' NAME+ '}'
+
+        example: use frontend syntax { Token }
+
+        This means frontend/syntax.asdl.h :: Token
         """
-        self._advance()
-        mod_name = self._match(TokenKind.Name)
+        self._advance()  # past 'use'
+        module_parts = []
+        while self.cur_token.kind == TokenKind.Name:
+          part = self._advance()
+          module_parts.append(part)
+
         self._match(TokenKind.LBrace)
 
         type_names = []
@@ -156,7 +164,8 @@ class ASDLParser(object):
                 self._advance()
 
         self._match(TokenKind.RBrace)
-        return Use(mod_name, type_names)
+        #print('MOD %s' % module_parts)
+        return Use(module_parts, type_names)
 
     def _parse_type_decl(self):
         """

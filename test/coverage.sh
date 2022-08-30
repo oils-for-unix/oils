@@ -54,8 +54,7 @@ html-report() {
     --ignore-filename-regex '_test.cc$' \
     --ignore-filename-regex 'greatest.h$' \
     --ignore-filename-regex 'mycpp/demo' \
-    --ignore-filename-regex '_test/' \
-    --ignore-filename-regex '_build/' \
+    --ignore-filename-regex '_gen/' \
     --show-instantiation-summary \
     --instr-profile $merged \
     "${args[@]}"

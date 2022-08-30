@@ -58,13 +58,13 @@ class AST(object):
 
 
 class Use(AST):
-    def __init__(self, mod_name, type_names):
-        self.mod_name = mod_name
+    def __init__(self, module_parts, type_names):
+        self.module_parts = module_parts
         self.type_names = type_names
 
     def Print(self, f, indent):
         ind = indent * '  '
-        f.write('%sUse %s {\n' % (ind, self.mod_name))
+        f.write('%sUse %s {\n' % (ind, ' '.join(self.module_parts)))
         f.write('  %s%s\n' % (ind, ', '.join(t for t in self.type_names)))
         f.write('%s}\n' % ind)
 

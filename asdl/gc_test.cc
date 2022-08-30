@@ -1,7 +1,7 @@
 // asdl/gc_test.cc
 
-#include "_gen/asdl/typed_demo_asdl.h"
-#include "_build/cpp/hnode_asdl.h"
+#include "_gen/asdl/examples/typed_demo.asdl.h"
+#include "_gen/asdl/hnode.asdl.h"
 #include "mycpp/runtime.h"
 #include "prebuilt/asdl/runtime.mycpp.h"
 #include "vendor/greatest.h"

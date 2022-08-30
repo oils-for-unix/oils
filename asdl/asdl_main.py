@@ -104,14 +104,14 @@ def main(argv):
 """)
       if opts.pretty_print_methods:
         f.write("""\
-#include "_build/cpp/hnode_asdl.h"
+#include "_gen/asdl/hnode.asdl.h"
 using hnode_asdl::hnode_t;
 
 """)
 
       if app_types:
         f.write("""\
-#include "_build/cpp/id_kind_asdl.h"
+#include "_gen/frontend/id_kind.asdl.h"
 using id_kind_asdl::Id_t;
 
 """)
@@ -125,7 +125,7 @@ using id_kind_asdl::Id_t;
         cpp_names = [
             'class %s;' % ast.TypeNameHeuristic(n) for n in use.type_names]
         f.write('namespace %s_asdl { %s }\n' % (
-            use.mod_name, ' '.join(cpp_names)))
+            use.module_parts[-1], ' '.join(cpp_names)))
         f.write('\n')
 
       f.write("""\
@@ -178,7 +178,7 @@ tags_to_types = \\
 
         # To call pretty-printing methods
         for use in schema_ast.uses:
-          f.write('#include "%s_asdl.h"  // "use" in ASDL \n' % use.mod_name)
+          f.write('#include "_gen/%s.asdl.h"  // "use" in ASDL \n' % '/'.join(use.module_parts))
 
         f.write("""\
 
@@ -236,7 +236,7 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
       py_names = [ast.TypeNameHeuristic(n) for n in use.type_names]
       # indented
       f.write('  from _devbuild.gen.%s_asdl import %s\n' % (
-        use.mod_name, ', '.join(py_names)))
+        use.module_parts[-1], ', '.join(py_names)))
     f.write('\n')
 
     for typ in app_types.itervalues():

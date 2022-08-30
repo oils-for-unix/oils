@@ -3,7 +3,7 @@
 #ifndef CORE_ERROR_H
 #define CORE_ERROR_H
 
-#include "_build/cpp/syntax_asdl.h"
+#include "_gen/frontend/syntax.asdl.h"
 #include "mycpp/runtime.h"
 
 namespace runtime {

@@ -238,7 +238,7 @@ EXAMPLES_CC = {
 EXAMPLES_H = {
     'parse': [ '_gen/mycpp/examples/expr.asdl.h',
                # TODO: move to _gen
-               '_build/cpp/hnode_asdl.h',
+               '_gen/asdl/hnode.asdl.h',
              ],
 }
 
@@ -592,7 +592,7 @@ def NinjaGraph(n):
   # ASDL schema that examples/parse.py depends on
   #
 
-  asdl_cpp(n, 'mycpp/examples/expr.asdl', gen_dir=True)
+  asdl_cpp(n, 'mycpp/examples/expr.asdl')
 
   #
   # Build and run examples/

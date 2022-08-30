@@ -3,8 +3,8 @@
 #ifndef LEAKY_PGEN2_H
 #define LEAKY_PGEN2_H
 
-#include "_build/cpp/id_kind_asdl.h"
-#include "_build/cpp/syntax_asdl.h"
+#include "_gen/frontend/id_kind.asdl.h"
+#include "_gen/frontend/syntax.asdl.h"
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration for translated pgen2/pnode.py

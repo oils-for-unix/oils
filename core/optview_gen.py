@@ -23,7 +23,7 @@ def main(argv):
 #ifndef OPTVIEW_H
 #define OPTVIEW_H
 
-#include "_build/cpp/option_asdl.h"
+#include "_gen/frontend/option.asdl.h"
 #include "mycpp/runtime.h"
 
 namespace optview {

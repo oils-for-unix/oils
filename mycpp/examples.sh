@@ -120,7 +120,7 @@ compile-parse() {
 
   compile-with-asdl parse $variant \
     _gen/expr_asdl.cc \
-    ../_build/cpp/hnode_asdl.cc
+    ../_gen/asdl/hnode.asdl.cc
 }
 
 ### parse
@@ -225,8 +225,8 @@ Str* repr(syntax_asdl::source_t* obj) {
 
   compile-with-asdl alloc_main $variant \
     _gen/syntax_asdl.cc \
-    ../_build/cpp/hnode_asdl.cc \
-    ../_build/cpp/id_kind_asdl.cc
+    ../_gen/asdl/hnode.asdl.cc \
+    ../_gen/frontend/id_kind.asdl.cc
 } 
 
 #

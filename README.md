@@ -120,6 +120,7 @@ languages, Zephyr ASDL, and a statically-typed subset of Python.
     osh/              # OSH parsers and evaluators (cmd, word, sh_expr)
     oil_lang/         # Oil parser and evaluator
     core/             # Other code shared between Oil and OSH
+    pyext/            # Python extension modules, e.g. libc.c
     pylib/            # Borrowed from the Python standard library.
     qsn_/             # QSN serialization format
     tools/            # User-facing tools, e.g. the osh2oil translator
@@ -146,6 +147,8 @@ the oil-native build (pure C++):
       NINJA-steps.sh
       NINJA_main.py   # invoked by NINJA-config.sh
       NINJA_subgraph.py
+      oil-defs/       # Files that define our slice of CPython.
+      py.sh           # For development builds, running CPython
     cpp/              # C++ code which complements the mycpp translation
       NINJA-steps.sh
       NINJA_subgraph.py
@@ -156,7 +159,6 @@ the oil-native build (pure C++):
     prebuilt/         # Prebuilt files committed to git, instead of in _gen/
 
     Python-2.7.13/    # For the slow Python build
-    native/           # Python extension modules, e.g. libc.c
 
     # Temp dirs (see below)
     _bin/
@@ -190,9 +192,6 @@ shell, of course!
     metrics/          # Metrics don't change between machines (e.g. code size)
     client/           # Demonstration of OSH as a headless server.
     deps/             # Dev dependencies and Docker images
-    build/            # Build automation
-      oil-defs/       # Files that define our slice of CPython.
-      py.sh           # For development builds, running CPython
     devtools/         # For Oil developers (not end users)
       release.sh      # The (large) release process.
       services/       # talk to cloud services

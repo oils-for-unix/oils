@@ -183,11 +183,10 @@ gen-cpp-counts() {
   local count=$1
   shift
 
-  # TODO: should be find _gen/ -name '*.cc' -o -name '*.h'
   # NOTE: this excludes .re2c.h file
-  ls _build/cpp/*.{cc,h} _devbuild/gen/*.h | $count \
+  ls _gen/*/*.{cc,h} | $count \
     'Generated C+ Code' \
-    'mycpp generates the big file _build/cpp/osh_eval.cc.  Other programs like Zephyr ASDL and re2c generate other files.' \
+    'mycpp generates the big file _gen/bin/osh_eval.mycpp.cc.  Other programs like Zephyr ASDL and re2c generate other files.' \
     "$@"
 }
 

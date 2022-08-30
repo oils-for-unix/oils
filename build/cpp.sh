@@ -14,10 +14,10 @@ source build/common.sh  # CLANGXX
 # Some tests don't express proper dependencies, and need this.
 gen-asdl() {
   ninja \
-    _build/cpp/hnode_asdl.h \
-    _build/cpp/types_asdl.h \
-    _build/cpp/runtime_asdl.h \
-    _build/cpp/syntax_asdl.h
+    _gen/asdl/hnode.asdl.h \
+    _gen/frontend/types.asdl.h \
+    _gen/core/runtime.asdl.h \
+    _gen/frontend/syntax.asdl.h
 }
 
 gen-oil-native-sh() {

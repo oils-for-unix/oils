@@ -9,7 +9,7 @@
 #include <sys/wait.h>  // WIFSIGNALED, etc. called DIRECTLY
 
 #include "dumb_alloc.h"  // change the allocator
-#include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
+#include "_gen/frontend/id_kind.asdl.h"  // syntax.asdl depends on this
 
 // clang-format off
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
@@ -21,10 +21,10 @@ using id_kind_asdl::Kind_t;
 #include "_gen/frontend/arg_types.h"
 #include "_gen/frontend/consts.h"
 #include "_gen/core/optview.h"
-#include "_build/cpp/option_asdl.h"
-#include "_build/cpp/runtime_asdl.h"
-#include "_build/cpp/syntax_asdl.h"
-#include "_build/cpp/types_asdl.h"
+#include "_gen/frontend/option.asdl.h"
+#include "_gen/core/runtime.asdl.h"
+#include "_gen/frontend/syntax.asdl.h"
+#include "_gen/frontend/types.asdl.h"
 #include "_gen/oil_lang/grammar_nt.h"
 
 // oil/cpp

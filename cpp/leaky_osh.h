@@ -3,7 +3,7 @@
 #ifndef LEAKY_OSH_H
 #define LEAKY_OSH_H
 
-#include "_build/cpp/syntax_asdl.h"
+#include "_gen/frontend/syntax.asdl.h"
 #include "cpp/leaky_frontend_tdop.h"
 #include "mycpp/runtime.h"
 

@@ -80,15 +80,9 @@ def shwrap_py(n, main_py, deps_base_dir='_build/NINJA', rule='write-shwrap-py'):
   n.newline()
 
 
-def asdl_cpp(n, asdl_path, pretty_print_methods=True, gen_dir=False):
-
-  if gen_dir:
-    # to create _gen/mycpp/examples/expr.asdl.h
-    prefix = '_gen/%s' % asdl_path
-  else:
-    # TODO: remove this
-    name = os.path.basename(asdl_path).replace('.', '_')
-    prefix = '_build/cpp/%s' % name
+def asdl_cpp(n, asdl_path, pretty_print_methods=True):
+  # to create _gen/mycpp/examples/expr.asdl.h
+  prefix = '_gen/%s' % asdl_path
 
   if pretty_print_methods:
     outputs = [prefix + '.cc', prefix + '.h']
@@ -192,7 +186,7 @@ def NinjaGraph(n):
          command='_bin/shwrap/arith_parse_gen > $out',
          description='arith-parse-gen > $out')
 
-  prefix = '_build/cpp/id_kind_asdl'
+  prefix = '_gen/frontend/id_kind.asdl'
   n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
           implicit=['_bin/shwrap/consts_gen'],
           variables=[
@@ -220,7 +214,7 @@ def NinjaGraph(n):
           ])
   n.newline()
 
-  prefix = '_build/cpp/option_asdl'
+  prefix = '_gen/frontend/option.asdl'
   # no .cc file
   n.build([prefix + '.h'], 'option-gen', [],
           implicit=['_bin/shwrap/option_gen'],
