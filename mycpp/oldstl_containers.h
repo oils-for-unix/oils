@@ -221,64 +221,27 @@ class Dict : public Obj {
   }
 
   // d[key] in Python: raises KeyError if not found
-  V index_(K key) {
-    int pos = find(key);
-    if (pos == -1) {
-      throw new KeyError();
-    } else {
-      return items_[pos].second;
-    }
-  }
+  V index_(K key);
 
   // Get a key.
   // Returns nullptr if not found (Can't use this for non-pointer types?)
-  V get(K key) {
-    int pos = find(key);
-    if (pos == -1) {
-      return nullptr;
-    } else {
-      return items_[pos].second;
-    }
-  }
+  V get(K key);
 
   // Get a key, but return a default if not found.
   // expr_parse.py uses this with OTHER_BALANCE
-  V get(K key, V default_val) {
-    int pos = find(key);
-    if (pos == -1) {
-      return default_val;
-    } else {
-      return items_[pos].second;
-    }
-  }
+  V get(K key, V default_val);
 
   // d->set(key, val) is like (*d)[key] = val;
-  void set(K key, V val) {
-    int pos = find(key);
-    if (pos == -1) {
-      items_.push_back(std::make_pair(key, val));
-    } else {
-      items_[pos].second = val;
-    }
-  }
+  void set(K key, V val);
 
-  void remove(K key) {
-    mylib::dict_remove(this, key);
-  }
+  void remove(K key);
 
-  List<K>* keys() {
-    return dict_keys(items_);
-  }
+  List<K>* keys();
 
   // For AssocArray transformations
-  List<V>* values() {
-    return dict_values(items_);
-  }
+  List<V>* values();
 
-  void clear() {
-    items_.clear();
-  }
-
+  void clear();
 
   // std::unordered_map<K, V> m_;
   std::vector<std::pair<K, V>> items_;
@@ -286,10 +249,10 @@ class Dict : public Obj {
  private:
 
   // returns the position in the array
-  int find(K key) {
-    return find_by_key(items_, key);
-  }
+  int find(K key);
 };
+
+#include <mycpp/list_dict_impl.h>
 
 template <typename K, typename V>
 Dict<K, V>* NewDict() {
