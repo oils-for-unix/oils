@@ -6,15 +6,15 @@ WORKDIR /home/uke/tmp
 
 # Copy build scripts into the container and run them
 
-COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 
-RUN soil/deps-apt.sh layer-for-soil
+RUN deps/from-apt.sh layer-for-soil
 
-RUN soil/deps-apt.sh ovm-tarball
+RUN deps/from-apt.sh ovm-tarball
 
-RUN soil/deps-apt.sh layer-python-symlink
+RUN deps/from-apt.sh layer-python-symlink
 
-RUN soil/deps-apt.sh layer-locales
+RUN deps/from-apt.sh layer-locales
 
 RUN useradd --create-home uke && chown -R uke /home/uke
 USER uke
@@ -23,11 +23,11 @@ USER uke
 COPY Python-2.7.13/ /home/uke/tmp/Python-2.7.13/
 
 COPY build/common.sh /home/uke/tmp/build/common.sh
-COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
+COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
-RUN soil/deps-tar.sh layer-cmark
-RUN soil/deps-tar.sh layer-re2c
-RUN soil/deps-tar.sh layer-cpython
+RUN deps/from-tar.sh layer-cmark
+RUN deps/from-tar.sh layer-re2c
+RUN deps/from-tar.sh layer-cpython
 
 COPY test/spec-common.sh /home/uke/tmp/test/spec-common.sh
 COPY test/spec-bin.sh /home/uke/tmp/test/spec-bin.sh

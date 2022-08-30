@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   soil/deps-apt.sh <function name>
+#   deps/from-apt.sh <function name>
 
 set -o nounset
 set -o pipefail

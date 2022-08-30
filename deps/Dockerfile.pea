@@ -6,9 +6,9 @@ WORKDIR /home/uke/tmp
 
 # Copy build scripts into the container and run them
 
-COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
-RUN soil/deps-apt.sh layer-for-soil
-RUN soil/deps-apt.sh pea
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+RUN deps/from-apt.sh layer-for-soil
+RUN deps/from-apt.sh pea
 
 RUN useradd --create-home uke && chown -R uke /home/uke
 USER uke
@@ -18,10 +18,10 @@ COPY --chown=uke _cache/Python-3.10.4.tar.xz \
   /home/uke/tmp/_cache/Python-3.10.4.tar.xz
 
 COPY build/common.sh /home/uke/tmp/build/common.sh
-COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
-RUN soil/deps-tar.sh layer-py3
+COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
+RUN deps/from-tar.sh layer-py3
 
-COPY soil/deps-py.sh /home/uke/tmp/soil/deps-py.sh
-RUN soil/deps-py.sh pea
+COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
+RUN deps/from-py.sh pea
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-pea'"]

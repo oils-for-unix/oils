@@ -4,7 +4,7 @@
 # invoked manually.
 #
 # Usage:
-#   ./deps.sh <function name>
+#   deps/from-git.sh <function name>
 #
 # Setup:
 #

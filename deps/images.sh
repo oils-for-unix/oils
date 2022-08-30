@@ -3,13 +3,23 @@
 # Manage container images for Soil
 #
 # Usage:
-#   soil/images.sh <function name>
+#   deps/images.sh <function name>
 #
 # Example: Rebuild an image:
 #
-#   soil/images.sh build cpp
-#   soil/images.sh smoke cpp
-#   soil/images.sh push cpp
+#   deps/images.sh build cpp
+#   deps/images.sh smoke cpp
+#   deps/images.sh push cpp
+#
+# Update tag, and then
+#   deps/images.sh tag cpp
+#   deps/images.sh push cpp  # push again
+#
+#   Update live version in 'soil/host-shim.sh live-image-tag'
+#
+# Also useful:
+#
+#   deps/images.sh list-tagged
 
 set -o nounset
 set -o pipefail
@@ -40,19 +50,19 @@ build() {
   # It is more parallel and has colored output.
 
   sudo DOCKER_BUILDKIT=1 \
-    docker build "${flags[@]}" --tag oilshell/soil-$name --file soil/Dockerfile.$name .
+    docker build "${flags[@]}" --tag oilshell/soil-$name --file deps/Dockerfile.$name .
 }
 
 tag() {
   local name=${1:-dummy}
 
-  local tag=v-2022-08-05
+  local tag='v-2022-08-29'
   sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
 }
 
 list-images() {
-  for name in soil/Dockerfile.*; do
-    local image_id=${name//'soil/Dockerfile.'/}
+  for name in deps/Dockerfile.*; do
+    local image_id=${name//'deps/Dockerfile.'/}
     if test "$image_id" = 'test-image'; then
       continue
     fi
@@ -87,7 +97,18 @@ smoke() {
   local name=${1:-dummy}
 
   #sudo docker run oilshell/soil-$name
-  sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
+  #sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
+
+  sudo docker run oilshell/soil-$name bash -c '
+echo "bash $BASH_VERSION"
+for name in python python2 python3; do
+  if which $name; then
+    $name -V
+  else
+    echo "$name not found"
+  fi
+done
+'
 
   # Python 2.7 build/prepare.sh requires this
   #sudo docker run oilshell/soil-$name python -V

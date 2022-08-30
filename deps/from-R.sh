@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./deps-R.sh <function name>
+#   deps/from-R.sh <function name>
 
 set -o nounset
 set -o pipefail

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./deps-py.sh <function name>
+#   deps/from-py.sh <function name>
 
 set -o nounset
 set -o pipefail

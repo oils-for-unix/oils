@@ -6,11 +6,11 @@ WORKDIR /home/uke/tmp
 
 # Copy build scripts into the container and run them
 
-COPY soil/deps-apt.sh /home/uke/tmp/soil/deps-apt.sh
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 
-RUN soil/deps-apt.sh layer-for-soil
+RUN deps/from-apt.sh layer-for-soil
 
-RUN soil/deps-apt.sh cpp
+RUN deps/from-apt.sh cpp
 
 # Build other dependencies as non-root uke
 RUN useradd --create-home uke && chown -R uke /home/uke
@@ -19,21 +19,21 @@ USER uke
 # We're in /home/uke/tmp, so these will create /home/uke/oil_DEPS, which will be 
 # a sibling of the runtime bind mount /home/uke/oil.
 
-# Used by soil/deps-tar.sh
+# Used by deps/from-tar.sh
 COPY build/common.sh /home/uke/tmp/build/common.sh
 
 # re2c
-COPY soil/deps-tar.sh /home/uke/tmp/soil/deps-tar.sh
-RUN soil/deps-tar.sh layer-re2c
+COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
+RUN deps/from-tar.sh layer-re2c
 
 # Run MyPy under Python 3.10
 COPY --chown=uke _cache/Python-3.10.4.tar.xz \
   /home/uke/tmp/_cache/Python-3.10.4.tar.xz
-RUN soil/deps-tar.sh layer-py3
+RUN deps/from-tar.sh layer-py3
 
 # Installs from PyPI
 COPY mycpp/common.sh /home/uke/tmp/mycpp/common.sh
-COPY soil/deps-mycpp.sh /home/uke/tmp/soil/deps-mycpp.sh
-RUN soil/deps-mycpp.sh layer-mycpp
+COPY deps/from-git.sh /home/uke/tmp/deps/from-git.sh
+RUN deps/from-git.sh layer-mycpp
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-cpp'"]

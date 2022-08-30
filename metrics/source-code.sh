@@ -276,7 +276,7 @@ _overview() {
 
   spec-gold-counts $count "$@"
 
-  ls {osh,oil_lang,frontend,core,native}/*_test.py | $count \
+  ls {osh,oil_lang,frontend,core,pyext}/*_test.py | $count \
     'Language Unit Tests' '' "$@"
 
   ls {build,test,asdl,pylib,tools}/*_test.py | $count \

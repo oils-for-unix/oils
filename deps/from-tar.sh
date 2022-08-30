@@ -3,11 +3,11 @@
 # Handle build dependencies that are in tarballs.
 #
 # Usage:
-#   soil/deps-tar.sh <function name>
+#   deps/from-tar.sh <function name>
 #
 # Examples:
-#   soil/deps-tar.sh download-re2c
-#   soil/deps-tar.sh install-re2c
+#   deps/from-tar.sh download-re2c
+#   deps/from-tar.sh install-re2c
 #
 # The executable will be in ../oil_DEPS/re2c/re2c.
 

@@ -3,7 +3,7 @@
 # For things we don't want to compile.
 #
 # Usage:
-#   soil/deps-binary.sh <function name>
+#   deps/from-binary.sh <function name>
 
 set -o nounset
 set -o pipefail

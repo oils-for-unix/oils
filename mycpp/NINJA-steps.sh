@@ -86,7 +86,7 @@ gen-osh-eval() {
   local raw=$tmp/osh_eval_raw.cc
   local cc_out=${out_prefix}.cc
 
-  local mypypath="$REPO_ROOT:$REPO_ROOT/native"
+  local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
   _bin/shwrap/mycpp_main $mypypath $raw "$@"
 
   { 
