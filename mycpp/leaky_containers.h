@@ -1,10 +1,9 @@
-#ifndef OLDSTL_CONTAINERS_H
-#define OLDSTL_CONTAINERS_H
+#ifndef LEAKY_CONTAINERS_H
+#define LEAKY_CONTAINERS_H
 
-#ifndef OLDSTL_BINDINGS
-  #error \
-      "This file contains definitions for OLDSTL containers.  If you wanted a gc'd container build, include gc_containers.h"
-#endif
+/* #ifdef OLDSTL_BINDINGS */
+/*   #error "WHATCHOO ON ABOUT FOO!  THERE ISNT ANY OLDSTL CODE LEFT!" */
+/* #endif */
 
 #include <assert.h>
 #include <ctype.h>   // isalpha(), isdigit()
@@ -27,36 +26,7 @@
   #define free dumb_free
 #endif
 
-
-class Obj;
-
-struct Heap {
-  void Init(int byte_count) {
-  }
-
-  void Bump() {
-  }
-
-  void Collect() {
-  }
-
-  void* Allocate(int num_bytes) {
-    return calloc(num_bytes, 1);
-  }
-
-  void PushRoot(Obj** p) {
-  }
-
-  void PopRoot() {
-  }
-};
-
-extern Heap gHeap;
-
-struct StackRoots {
-  StackRoots(std::initializer_list<void*> roots) {
-  }
-};
+#include "mycpp/leaky_heap.h"
 
 // clang-format off
 
@@ -76,17 +46,10 @@ struct StackRoots {
 #include "mycpp/gc_list.h"
 #include "mycpp/gc_list_iter.h"
 
-#if 0
-#include <mycpp/oldstl_dict.h>
-#include <mycpp/oldstl_dict_impl.h>
-#else
-
 #include <mycpp/gc_dict.h>
 #include <mycpp/gc_dict_impl.h>
 #include "mycpp/dict_iter.h"
 
-#endif
-
 // clang-format on
 
-#endif  // OLDSTL_CONTAINERS_H
+#endif  // LEAKY_CONTAINERS_H

@@ -16,7 +16,7 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/leaky_containers.h"
 
 namespace pyos {
 

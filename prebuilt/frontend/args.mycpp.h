@@ -4,7 +4,7 @@
 #include "cpp/qsn.h"
 
 #ifdef OLDSTL_BINDINGS
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/leaky_containers.h"
 #include "mycpp/builtins.h"
 #else
 #include "mycpp/gc_containers.h"
@@ -21,7 +21,7 @@ inline Str* repr(void* obj) {
 #define RUNTIME_H
 
 #ifdef OLDSTL_BINDINGS
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/leaky_containers.h"
 #else
 #include "mycpp/gc_containers.h"
 #endif

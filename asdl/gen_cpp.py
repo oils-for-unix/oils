@@ -52,7 +52,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
 
 
 _PRIMITIVES = {
-    'string': 'Str*',  # declared in oldstl_containers.h
+    'string': 'Str*',  # declared in leaky_containers.h
     'int': 'int',
     'float': 'double',
     'bool': 'bool',

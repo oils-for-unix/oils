@@ -3,7 +3,7 @@
 
 #include "_gen/asdl/typed_arith_asdl.h"
 #include "_gen/asdl/typed_demo_asdl.h"  // has simple Sum, etc
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/leaky_containers.h"
 #include "prebuilt/asdl/runtime.mycpp.h"
 #include "vendor/greatest.h"
 

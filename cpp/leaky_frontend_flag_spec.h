@@ -6,7 +6,7 @@
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/runtime_asdl.h"
 #ifdef OLDSTL_BINDINGS
-  #include "mycpp/oldstl_containers.h"
+  #include "mycpp/leaky_containers.h"
 #else
   #include "mycpp/builtins.h"
   #include "mycpp/gc_containers.h"

@@ -13,7 +13,7 @@
 #include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
 
 // clang-format off
-#include "mycpp/oldstl_containers.h"  // runtime library e.g. with Python data structures
+#include "mycpp/leaky_containers.h"  // runtime library e.g. with Python data structures
 #include "mycpp/builtins.h"   // runtime library e.g. with Python data structures
 // clang-format on
 

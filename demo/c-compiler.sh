@@ -112,7 +112,7 @@ duplicate-symbols() {
 #ifdef GC
   #include "mycpp/gc_heap.h"
 #else
-  #include "mycpp/oldstl_containers.h"
+  #include "mycpp/leaky_containers.h"
 #endif
 
 GLOBAL_STR(str0, "hi");
@@ -129,7 +129,7 @@ int* g1 = new int[100];
 #ifdef GC
   #include "mycpp/gc_heap.h"
 #else
-  #include "mycpp/oldstl_containers.h"
+  #include "mycpp/leaky_containers.h"
 #endif
 
 GLOBAL_STR(str0, "hi");

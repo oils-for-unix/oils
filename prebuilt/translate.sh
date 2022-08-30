@@ -49,7 +49,7 @@ oil-part() {
 #include "cpp/qsn.h"
 
 #ifdef OLDSTL_BINDINGS
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/leaky_containers.h"
 #include "mycpp/builtins.h"
 #else
 #include "mycpp/gc_containers.h"
