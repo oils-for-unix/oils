@@ -55,16 +55,17 @@ struct Heap {
 
 extern Heap gHeap;
 
+struct StackRoots {
+  StackRoots(std::initializer_list<void*> roots) {
+  }
+};
+
+
 // clang-format off
 #include "mycpp/gc_tag.h"
 #include "mycpp/gc_obj.h"
 #include "mycpp/gc_alloc.h"
 // clang-format on
-
-struct StackRoots {
-  StackRoots(std::initializer_list<void*> roots) {
-  }
-};
 
 template <class K, class V>
 class Dict;

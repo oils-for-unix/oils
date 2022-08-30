@@ -35,14 +35,23 @@ inline int to_int(bool b) {
   return b;
 }
 
+bool to_bool(Str* s);
+double to_float(Str* s);
+
 inline bool to_bool(int i) {
   return i != 0;
 }
 
 bool str_contains(Str* haystack, Str* needle);
 
+
+
 // mycpp doesn't understand dynamic format strings yet
-inline Str* dynamic_fmt_dummy();
+inline Str* dynamic_fmt_dummy() {
+  Str *Result = AllocStr(1);
+  return Result;
+}
+
 
 #ifndef OLDSTL_BINDINGS
 
@@ -108,5 +117,15 @@ class DictIter {
 };
 
 #endif  // OLDSTL_BINDINGS
+
+// list(L) copies the list
+template <typename T>
+List<T>* list(List<T>* other) {
+  auto result = NewList<T>();
+  for (int i = 0; i < len(other); ++i) {
+    result->set(i, other->index_(i));
+  }
+  return result;
+}
 
 #endif  // GC_BUILTINS_H
