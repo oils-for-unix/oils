@@ -1,12 +1,10 @@
+
 #ifdef OLDSTL_BINDINGS
-  // clang-format off
   #include "mycpp/leaky_containers.h"
-  #include "mycpp/builtins.h"
-  #include "mycpp/leaky_mylib.h"
-// clang-format on
 #else
   #include "mycpp/gc_mylib.h"
 #endif
+#include "mycpp/builtins.h"
 
 #include "vendor/greatest.h"
 

@@ -1,9 +1,10 @@
 #ifndef LEAKY_CONTAINERS_H
 #define LEAKY_CONTAINERS_H
 
-/* #ifdef OLDSTL_BINDINGS */
-/*   #error "WHATCHOO ON ABOUT FOO!  THERE ISNT ANY OLDSTL CODE LEFT!" */
-/* #endif */
+#ifndef OLDSTL_BINDINGS
+  #error \
+      "This file contains definitions for OLDSTL containers.  If you wanted a gc'd container build, include gc_containers.h"
+#endif
 
 #include <assert.h>
 #include <ctype.h>   // isalpha(), isdigit()

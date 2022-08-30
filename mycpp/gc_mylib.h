@@ -1,9 +1,7 @@
-// gc_mylib.h
-
 #ifndef GC_MYLIB_H
 #define GC_MYLIB_H
 
-#include "mycpp/builtins.h"  // Tuple2
+#include "mycpp/builtins.h"
 
 namespace mylib {
 

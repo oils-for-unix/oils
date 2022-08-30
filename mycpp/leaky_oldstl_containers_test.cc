@@ -1,10 +1,8 @@
+#include "mycpp/builtins.h"
+
 #ifdef OLDSTL_BINDINGS
-  // clang-format off
   #include "mycpp/leaky_containers.h"
-  #include "mycpp/builtins.h"
-// clang-format on
 #else
-  #include "mycpp/builtins.h"
   #include "mycpp/gc_containers.h"
 #endif
 
@@ -822,12 +820,6 @@ TEST test_str_size() {
 
   PRINT_INT(kStrHeaderSize);
   PRINT_INT((int)sizeof(Str));
-
-#ifdef OLDSTL_BINDINGS
-  PRINT_INT(1);
-#else
-  PRINT_INT(0);
-#endif
 
   ASSERT(kStrHeaderSize == 12);
   ASSERT(sizeof(Str) == 16);

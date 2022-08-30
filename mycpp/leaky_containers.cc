@@ -1,10 +1,10 @@
 #ifdef OLDSTL_BINDINGS
   #include "mycpp/leaky_containers.h"
 #else
-  #include "mycpp/builtins.h"
   #include "mycpp/gc_containers.h"
 #endif
 
+#include "mycpp/builtins.h"
 #include "mycpp/list_str_impl.h"
 #include "mycpp/comparator_impls.h"
 

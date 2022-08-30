@@ -1,13 +1,8 @@
 #ifndef STR_TYPES_H
 #define STR_TYPES_H
 
-#ifdef OLDSTL_BINDINGS
-
 template <typename T>
 class List;
-
-#else
-#endif
 
 class Str : public Obj {
  public:

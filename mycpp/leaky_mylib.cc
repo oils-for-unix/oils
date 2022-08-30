@@ -1,7 +1,8 @@
+#include "mycpp/builtins.h"
+
 #ifdef OLDSTL_BINDINGS
   #include "mycpp/leaky_containers.h"
 #else
-  #include "mycpp/builtins.h"
   #include "mycpp/gc_containers.h"
 #endif
 

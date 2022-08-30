@@ -1,10 +1,8 @@
+#include "mycpp/builtins.h"
+
 #ifdef OLDSTL_BINDINGS
-  // clang-format off
   #include "mycpp/leaky_containers.h"
-  #include "mycpp/builtins.h"
-// clang-format on
 #else
-  #include "mycpp/builtins.h"
   #include "mycpp/gc_containers.h"
 #endif
 
