@@ -9,11 +9,10 @@
 #
 #   deps/images.sh build cpp
 #   deps/images.sh smoke cpp
-#   deps/images.sh push cpp
 #
-# Update tag, and then
+# Update tag, then
 #   deps/images.sh tag cpp
-#   deps/images.sh push cpp  # push again
+#   deps/images.sh push cpp v-2022-08-29
 #
 #   Update live version in 'soil/host-shim.sh live-image-tag'
 #
