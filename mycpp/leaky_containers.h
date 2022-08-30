@@ -5,15 +5,8 @@
 
 #ifndef OLDSTL_BINDINGS
   #error \
-      "This file contains definitions for OLDSTL containers.  If you wanted a gc'd container build, include gc_containers.h"
+      "This file contains definitions for leaky containers.  If you wanted a gc'd container build, include gc_containers.h"
 #endif
-
-#include <ctype.h>   // isalpha(), isdigit()
-#include <string.h>  // strlen
-#include <algorithm>  // sort() is templated
-#include <initializer_list>
-#include <vector>
-
 #include "common.h"
 
 #ifdef DUMB_ALLOC

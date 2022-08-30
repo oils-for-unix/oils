@@ -1,11 +1,4 @@
-#ifdef OLDSTL_BINDINGS
-  #include "mycpp/leaky_containers.h"
-#else
-  #include "mycpp/gc_containers.h"
-#endif
-
-#include "mycpp/builtins.h"
-#include "mycpp/leaky_mylib.h"
+#include "mycpp/runtime.h"
 
 #include <ctype.h>  // isspace()
 

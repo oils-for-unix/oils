@@ -241,13 +241,7 @@ def main(argv):
   f.write("""\
 // BEGIN mycpp output
 
-#ifdef OLDSTL_BINDINGS
-#include "mycpp/leaky_containers.h"
-#else
-#include "mycpp/gc_containers.h"
-#include "mycpp/builtins.h"
-#include "mycpp/gc_mylib.h"
-#endif
+#include "mycpp/runtime.h"
 
 """)
 
@@ -274,11 +268,7 @@ def main(argv):
 #ifndef %s
 #define %s
 
-#ifdef OLDSTL_BINDINGS
-#include "mycpp/leaky_containers.h"
-#else
-#include "mycpp/gc_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 """ % (os.path.basename(opts.header_out), guard, guard))
 

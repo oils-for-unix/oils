@@ -16,8 +16,6 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
-#include "mycpp/leaky_containers.h"
-
 namespace pyos {
 
 Tuple2<int, int> WaitPid() {
