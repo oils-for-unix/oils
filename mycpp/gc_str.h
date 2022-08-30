@@ -180,4 +180,7 @@ class StrIter {
 
 bool maybe_str_equals(Str* left, Str* right);
 
+// TODO(Jesse): Where should this go?  Certainly not here..
+extern Str* kEmptyString;
+
 #endif  // STR_TYPES_H
