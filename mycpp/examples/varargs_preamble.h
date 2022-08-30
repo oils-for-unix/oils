@@ -2,7 +2,7 @@
 
 #include <exception>
 
-#include "mycpp/gc_containers.h"
+#include "mycpp/runtime.h"
 
 //
 // Copied from cpp/core_error.h

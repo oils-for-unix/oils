@@ -2,9 +2,7 @@
 
 #include <sys/mman.h>  // mprotect()
 
-#include "mycpp/error_types.h"
-#include "mycpp/comparators.h"
-#include "mycpp/gc_containers.h"
+#include "mycpp/runtime.h"
 
 Heap gHeap;
 

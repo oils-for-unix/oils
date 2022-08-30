@@ -48,13 +48,7 @@ oil-part() {
 #include "_build/cpp/hnode_asdl.h"
 #include "cpp/qsn.h"
 
-#ifdef OLDSTL_BINDINGS
-#include "mycpp/leaky_containers.h"
-#include "mycpp/builtins.h"
-#else
-#include "mycpp/gc_containers.h"
-#include "mycpp/gc_mylib.h"
-#endif
+#include "mycpp/runtime.h"
 
 // For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
 inline Str* repr(void* obj) {

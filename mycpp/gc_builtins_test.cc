@@ -3,9 +3,7 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "mycpp/gc_containers.h"
-#include "mycpp/builtins.h"
-#include "mycpp/gc_mylib.h"  // gBuf
+#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
 GLOBAL_STR(kStrFood, "food");

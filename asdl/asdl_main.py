@@ -100,11 +100,7 @@ def main(argv):
 #include <cstdint>
 """)
       f.write("""
-#ifdef OLDSTL_BINDINGS
-#include "mycpp/leaky_containers.h"
-#else
-#include "mycpp/gc_containers.h"
-#endif
+#include "mycpp/runtime.h"
 """)
       if opts.pretty_print_methods:
         f.write("""\

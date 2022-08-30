@@ -2,8 +2,7 @@
 
 #include "_gen/asdl/typed_demo_asdl.h"
 #include "_build/cpp/hnode_asdl.h"
-#include "mycpp/gc_containers.h"
-#include "mycpp/gc_mylib.h"
+#include "mycpp/runtime.h"
 #include "prebuilt/asdl/runtime.mycpp.h"
 #include "vendor/greatest.h"
 

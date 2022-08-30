@@ -3,13 +3,7 @@
 #include "prebuilt/frontend/args.mycpp.h"
 // BEGIN mycpp output
 
-#ifdef OLDSTL_BINDINGS
-#include "mycpp/leaky_containers.h"
-#else
-#include "mycpp/gc_containers.h"
-#include "mycpp/builtins.h"
-#include "mycpp/gc_mylib.h"
-#endif
+#include "mycpp/runtime.h"
 
 GLOBAL_STR(str0, "(");
 GLOBAL_STR(str1, ")");

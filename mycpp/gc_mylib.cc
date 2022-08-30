@@ -1,13 +1,9 @@
 // gc_mylib.cc
 
-#include "gc_containers.h"
-#include "gc_mylib.h"
+#include "mycpp/runtime.h"
 
 #include <errno.h>
 #include <unistd.h>  // isatty
-
-/* #include "mycpp/leaky_mylib.h" */
-#include "builtins.h"
 
 mylib::BufWriter gBuf;
 

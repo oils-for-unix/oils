@@ -3,13 +3,7 @@
 #include "_build/cpp/hnode_asdl.h"
 #include "cpp/qsn.h"
 
-#ifdef OLDSTL_BINDINGS
-#include "mycpp/leaky_containers.h"
-#include "mycpp/builtins.h"
-#else
-#include "mycpp/gc_containers.h"
-#include "mycpp/gc_mylib.h"
-#endif
+#include "mycpp/runtime.h"
 
 // For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
 inline Str* repr(void* obj) {
@@ -20,11 +14,7 @@ inline Str* repr(void* obj) {
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
-#ifdef OLDSTL_BINDINGS
-#include "mycpp/leaky_containers.h"
-#else
-#include "mycpp/gc_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 namespace runtime {  // forward declare
 

@@ -1,7 +1,4 @@
-#include "gc_containers.h"
-/* #include "mycpp/builtins.h" */
-#include "gc_mylib.h"
-
+#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
 TEST split_once_test() {
