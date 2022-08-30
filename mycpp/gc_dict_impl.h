@@ -48,8 +48,7 @@ template <typename K, typename V>
 V Dict<K, V>::index_(K key) {
   int pos = position_of_key(key);
   if (pos == -1) {
-    InvalidCodePath();  // NOTE(Jesse): Should we really crash if asking for a
-                        // key not in a dict?
+    throw new KeyError();
   } else {
     return values_->items_[pos];
   }

@@ -87,23 +87,22 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   // Convert environ into an array of pointers to strings of the form: "k=v".
   int n_env = len(environ);
   char** envp = static_cast<char**>(malloc((n_env + 1) * sizeof(char*)));
-#if 0
-  int i = 0;
-  for (const auto& kv : environ->items_) {
-    Str* k = kv.first;
-    Str* v = kv.second;
+
+  int EnvIndex = 0;
+  for (DictIter<Str*, Str*> it(environ); !it.Done(); it.Next()) {
+    Str *k = it.Key();
+    Str *v = it.Value();
+
     int joined_len = len(k) + len(v) + 1;
     char* buf = static_cast<char*>(malloc(joined_len + 1));
     memcpy(buf, k->data_, len(k));
     buf[len(k)] = '=';
     memcpy(buf + len(k) + 1, v->data_, len(v));
     buf[joined_len] = '\0';
-    envp[i++] = buf;
+
+    envp[EnvIndex++] = buf;
   }
   envp[n_env] = nullptr;
-#else
-  NotImplemented();
-#endif
 
   int ret = ::execve(argv0->data_, _argv, envp);
   if (ret == -1) {
