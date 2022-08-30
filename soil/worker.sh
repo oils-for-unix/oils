@@ -200,7 +200,7 @@ cpp-coverage-tasks() {
 dump-hardware           soil/worker.sh dump-hardware                    -
 build-minimal           build/py.sh minimal                             -
 ninja-config            ./NINJA-config.sh dummy                         -
-extract-clang           soil/deps-binary.sh extract-clang-in-container  -
+extract-clang           deps/from-binary.sh extract-clang-in-container  -
 mycpp-unit-coverage     mycpp/TEST.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
 mycpp-examples-coverage mycpp/TEST.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html
 HACK-asdl               build/cpp.sh gen-asdl                           -

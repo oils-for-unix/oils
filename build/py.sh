@@ -14,8 +14,8 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh  # for log, $CLANGXX
-source soil/deps-apt.sh   # PY3_DEPS
-# TODO: We could have the user run soil/deps-apt.sh directly
+source deps/from-apt.sh   # PY3_DEPS
+# TODO: We could have the user run deps/from-apt.sh directly
 
 if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 're2c'
@@ -459,7 +459,7 @@ all() {
   py-source
   py-extensions  # no re2c
 
-  # requires re2c: soil/deps-tar.sh layer-re2c
+  # requires re2c: deps/from-tar.sh layer-re2c
   fastlex
   time-helper
   build/doc.sh all-help

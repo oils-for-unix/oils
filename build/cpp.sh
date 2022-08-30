@@ -48,8 +48,8 @@ compile-quickly() {
     echo ""
     echo "        To install clang at the specified path, run the following commands:"
     echo ""
-    echo "        soil/deps-binary.sh download-clang"
-    echo "        soil/deps-binary.sh extract-clang"
+    echo "        deps/from-binary.sh download-clang"
+    echo "        deps/from-binary.sh extract-clang"
     echo ""
   fi
 }

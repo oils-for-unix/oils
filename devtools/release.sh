@@ -198,7 +198,7 @@ test-oil-tar() {
 }
 
 _release-build() {
-  # NOTE: soil/deps-tar.sh {configre,build}-python is assumed
+  # NOTE: deps/from-tar.sh {configre,build}-python is assumed
 
   # Build the oil tar
   $0 oil
