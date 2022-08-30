@@ -5,12 +5,10 @@
   #include "mycpp/gc_containers.h"
 #endif
 
-#include <ctype.h>  // isalpha(), isdigit()
-
-// clang-format off
 #include "mycpp/list_str_impl.h"
 #include "mycpp/comparator_impls.h"
-// clang-format on
+
+#include <ctype.h>  // isalpha(), isdigit()
 
 GLOBAL_STR(kEmptyString, "");
 
@@ -377,3 +375,4 @@ Str* Str::lstrip(Str* chars) {
 Str* Str::lstrip() {
   return StripAny(this, StripWhere::Left, kWhitespace);
 }
+

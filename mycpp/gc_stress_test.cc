@@ -115,6 +115,7 @@ TEST list_slice_append_test() {
 
     L->append(43);  // append to end
     assert(len(L) == 5);
+
   }
   log("total = %d", total);
 

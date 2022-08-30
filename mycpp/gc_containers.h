@@ -10,11 +10,9 @@
       "This file contains definitions for gc'd containers and should not be included in leaky builds!  Include oldstl_containers.h instead."
 #endif
 
-// clang-format off
 #include "mycpp/gc_heap.h"
 #include "mycpp/gc_str.h"
 #include "mycpp/comparators.h"
-// clang-format on
 
 extern Str* kEmptyString;
 
@@ -95,6 +93,7 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
   }
   return result;
 }
+
 
 // Type that is layout-compatible with List to avoid invalid-offsetof warnings.
 // Unit tests assert that they have the same layout.

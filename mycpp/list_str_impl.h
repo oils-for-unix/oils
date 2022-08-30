@@ -1,5 +1,5 @@
 
-Str *Str::join(List<Str *> *items) {
+Str* Str::join(List<Str*>* items) {
   auto self = this;
   StackRoots _roots({&self, &items});
 
@@ -16,8 +16,8 @@ Str *Str::join(List<Str *> *items) {
   int len_ = len(self);
   length += len_ * (num_parts - 1);
 
-  char *result = static_cast<char *>(malloc(length + 1));
-  char *p_result = result;  // advances through
+  char* result = static_cast<char*>(malloc(length + 1));
+  char* p_result = result;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
     // log("i %d", i);
@@ -38,11 +38,13 @@ Str *Str::join(List<Str *> *items) {
   return CopyBufferIntoNewStr(result, length);
 }
 
-int find_next(const char *haystack, int starting_index, int end_index,
-              const char needle) {
+int find_next(const char *haystack, int starting_index, int end_index, const char needle)
+{
   int result = end_index;
-  for (int i = starting_index; i < end_index; ++i) {
-    if (haystack[i] == needle) {
+  for (int i = starting_index; i < end_index; ++i)
+  {
+    if (haystack[i] == needle)
+    {
       result = i;
       break;
     }
@@ -50,31 +52,32 @@ int find_next(const char *haystack, int starting_index, int end_index,
   return result;
 }
 
-Str *NewStrFromHeapStr(Str *src, int new_len, int start_index = 0) {
+Str *NewStrFromHeapStr(Str *src, int new_len, int start_index = 0)
+{
   StackRoots _roots({&src});
 
   Str *result = AllocStr(new_len);
-  assert((start_index + new_len) <= len(src));
-  memcpy(result->data_, src->data_ + start_index, new_len);
+  assert( (start_index+new_len) <= len(src));
+  memcpy(result->data_, src->data_+start_index, new_len);
 
   return result;
 }
 
-List<Str *> *Str::split(Str *sep) {
+List<Str*>* Str::split(Str* sep) {
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
 
   auto self = this;
-  List<Str *> *result = nullptr;
+  List<Str*> *result = nullptr;
 
   StackRoots _roots({&self, &result});
 
   if (len(self) == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
-    return NewList<Str *>({kEmptyString});
+    return NewList<Str*>({kEmptyString});
   }
 
-  result = NewList<Str *>({});
+  result = NewList<Str*>({});
 
   int n = len(self);
   int pos = 0;
@@ -87,9 +90,8 @@ List<Str *> *Str::split(Str *sep) {
     assert(new_pos <= end);
 
     if (new_pos == end) {
-      Str *to_push = NewStrFromHeapStr(self, end - pos, pos);
-      result->append(to_push);  // StrFromC(self->data_+pos, end - pos));  //
-                                // rest of the string
+      Str *to_push = NewStrFromHeapStr(self, end-pos, pos);
+      result->append(to_push); //StrFromC(self->data_+pos, end - pos));  // rest of the string
       break;
     }
 
