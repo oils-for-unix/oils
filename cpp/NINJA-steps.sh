@@ -100,7 +100,7 @@ setglobal_compile_flags() {
     (oldstl)
       # Could this be ASAN?
       # For cpp/gc_binding_test
-      flags="$flags -O0 -g -D OLDSTL_BINDINGS"
+      flags="$flags -O0 -g -D LEAKY_ALLOCATOR"
       ;;
 
     (opt)
