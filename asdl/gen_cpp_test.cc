@@ -67,14 +67,14 @@ TEST misc_test() {
   auto p = new pipeline(true);
   log("p->negated = %d", p->negated);
 
-#if 0
+  #if 0
   if (t->tag_() == hnode_e::Leaf) {
     hnode__Leaf* t2 = static_cast<hnode__Leaf*>(t);
     log("%s", hnode_str(t2->tag_()));
     log("%s", color_str(t2->color));
     log("%s", t2->s->data_);
   }
-#endif
+  #endif
 
   // NOTE: This is self-initialization!!!
   /*
@@ -155,7 +155,7 @@ using typed_demo_asdl::cflow__Return;
 cflow__Return g_ret = {5};
 
 int i0 = 7;  // This runs before main()?  How to tell?
-List<int> *g_list = NewList<int>({i0, 8, 9});
+List<int>* g_list = NewList<int>({i0, 8, 9});
 
 // Dict<Str*, int> g_dict = {4, 5, 6};
 

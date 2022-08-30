@@ -10,7 +10,6 @@
 #include "mycpp/error_types.h"
 #include "mycpp/gc_builtins.h"
 #include "mycpp/gc_containers.h"
-
 #include "vendor/greatest.h"
 
 // Types

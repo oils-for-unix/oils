@@ -3,8 +3,8 @@
 #ifndef FRONTEND_FLAG_SPEC_H
 #define FRONTEND_FLAG_SPEC_H
 
-#include "_gen/frontend/id_kind.asdl.h"
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/frontend/id_kind.asdl.h"
 #ifdef OLDSTL_BINDINGS
   #include "mycpp/oldstl_containers.h"
 #else

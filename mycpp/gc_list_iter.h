@@ -45,4 +45,3 @@ class ReverseListIter {
   List<T>* L_;
   int i_;
 };
-

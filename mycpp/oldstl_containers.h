@@ -85,10 +85,11 @@ extern Str* kEmptyString;
 // Data Types
 //
 
+// clang-format off
 #include "mycpp/gc_slab.h"
 #include "mycpp/gc_list.h"
 #include "mycpp/gc_list_iter.h"
-
+// clang-format on
 
 // TODO: A proper dict index should get rid of this unusual sentinel scheme.
 // The index can be -1 on deletion, regardless of the type of the key.

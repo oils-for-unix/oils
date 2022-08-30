@@ -23,7 +23,7 @@ bool str_equals(Str *left, Str *right) {
   return false;
 }
 
-bool maybe_str_equals(Str* left, Str* right) {
+bool maybe_str_equals(Str *left, Str *right) {
   if (left && right) {
     return str_equals(left, right);
   }
@@ -35,33 +35,29 @@ bool maybe_str_equals(Str* left, Str* right) {
   return false;  // one is None and one is a Str*
 }
 
-bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
+bool are_equal(Tuple2<Str *, int> *t1, Tuple2<Str *, int> *t2) {
   bool result = are_equal(t1->at0(), t2->at0());
   result = result && (t1->at1() == t2->at1());
   return result;
 }
 
 // TODO(Jesse): Make an inline version of this
-bool are_equal(Str *left, Str *right)
-{
+bool are_equal(Str *left, Str *right) {
   return str_equals(left, right);
 }
 
 // TODO(Jesse): Make an inline version of this
-bool are_equal(int left, int right)
-{
+bool are_equal(int left, int right) {
   return left == right;
 }
 
 // TODO(Jesse): Make an inline version of this
-bool keys_equal(int left, int right)
-{
+bool keys_equal(int left, int right) {
   return left == right;
 }
 
 // TODO(Jesse): Make an inline version of this
-bool keys_equal(Str *left, Str *right)
-{
+bool keys_equal(Str *left, Str *right) {
   return are_equal(left, right);
 }
 
