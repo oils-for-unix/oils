@@ -4,7 +4,7 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "mycpp/gc_builtins.h"
+#include "mycpp/builtins.h"
 #include "vendor/greatest.h"
 
 void Print(List<Str*>* parts) {

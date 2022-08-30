@@ -2,7 +2,7 @@
 //
 // And with GC_STATS defined.
 
-#include "mycpp/gc_builtins.h"
+#include "mycpp/builtins.h"
 #include "vendor/greatest.h"
 
 // TODO:

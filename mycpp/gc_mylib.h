@@ -3,7 +3,7 @@
 #ifndef GC_MYLIB_H
 #define GC_MYLIB_H
 
-#include "mycpp/gc_builtins.h"  // Tuple2
+#include "mycpp/builtins.h"  // Tuple2
 
 namespace mylib {
 

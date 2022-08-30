@@ -15,7 +15,7 @@
 #include "leaky_osh.h"
 #include "leaky_pylib.h"
 #include "leaky_stdlib.h"
-#include "mycpp/gc_builtins.h" 
+#include "mycpp/builtins.h" 
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;

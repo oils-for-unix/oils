@@ -1,10 +1,9 @@
-#include "mycpp/gc_builtins.h"
+#include "mycpp/builtins.h"
 
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "mycpp/gc_builtins.h"
 #include "mycpp/gc_containers.h"
 #include "mycpp/gc_mylib.h"  // gBuf
 #include "vendor/greatest.h"

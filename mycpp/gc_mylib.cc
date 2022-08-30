@@ -5,12 +5,14 @@
 #include <errno.h>
 #include <unistd.h>  // isatty
 
-#include "gc_builtins.h"
+#include "builtins.h"
 
 mylib::BufWriter gBuf;
 
-// NOTE(Jesse): Was literally the only thing left in gc_builtins.cc so I moved
-// it here.  Not sure where it belongs, but it's only called from a single test.
+
+// NOTE(Jesse): This was literally the only thing left in gc_builtins.cc so I
+// moved it here.  Not sure where it belongs, but it's only called from a
+// single test.
 Str* repr(Str* s) {
   mylib::BufWriter f;
   f.format_r(s);

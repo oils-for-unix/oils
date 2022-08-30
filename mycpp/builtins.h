@@ -1,4 +1,4 @@
-// gc_builtins.h: Statically typed Python builtins.
+// builtins.h: Statically typed Python builtins.
 //
 // Builtin types: tuples, NotImplementedError, AssertionError
 // Builtin functions: print(), repr(), ord()
@@ -63,6 +63,7 @@ inline Str* dynamic_fmt_dummy() {
   #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
   #include "mycpp/tuple_types.h"
   #include "mycpp/gc_list_iter.h"
+  #include "mycpp/dict_iter.h"
 
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
@@ -72,49 +73,6 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
 // TODO:
 // - Look at entry_ to see if an item is deleted (or is a tombstone once we
 // have hash chaining)
-
-template <class K, class V>
-class DictIter {
- public:
-  explicit DictIter(Dict<K, V>* D) : D_(D), pos_(ValidPosAfter(0)) {
-  }
-  void Next() {
-    pos_ = ValidPosAfter(pos_ + 1);
-  }
-  bool Done() {
-    return pos_ == -1;
-  }
-  K Key() {
-    return D_->keys_->items_[pos_];
-  }
-  V Value() {
-    return D_->values_->items_[pos_];
-  }
-
- private:
-  int ValidPosAfter(int pos) {
-    // Returns the position of a valid entry at or after index i_.  Or -1 if
-    // there isn't one.  Advances i_ too.
-    while (true) {
-      if (pos >= D_->capacity_) {
-        return -1;
-      }
-      int index = D_->entry_->items_[pos];
-      if (index == kDeletedEntry) {
-        ++pos;
-        continue;  // increment again
-      }
-      if (index == kEmptyEntry) {
-        return -1;
-      }
-      break;
-    }
-    return pos;
-  }
-
-  Dict<K, V>* D_;
-  int pos_;
-};
 
 #endif  // OLDSTL_BINDINGS
 

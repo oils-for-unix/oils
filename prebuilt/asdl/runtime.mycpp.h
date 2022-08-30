@@ -5,7 +5,7 @@
 
 #ifdef OLDSTL_BINDINGS
 #include "mycpp/oldstl_containers.h"
-#include "mycpp/gc_builtins.h"
+#include "mycpp/builtins.h"
 #else
 #include "mycpp/gc_containers.h"
 #include "mycpp/gc_mylib.h"
