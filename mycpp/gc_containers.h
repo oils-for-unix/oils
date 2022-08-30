@@ -132,104 +132,30 @@ class Dict : public Obj {
   static_assert(kSlabHeaderSize % sizeof(int) == 0,
                 "Slab header size should be multiple of key size");
 
-  void reserve(int n) {
-    auto self = this;
-    Slab<int>* new_i = nullptr;
-    Slab<K>* new_k = nullptr;
-    Slab<V>* new_v = nullptr;
-    StackRoots _roots({&self, &new_i, &new_k, &new_v});
-
-    // log("--- reserve %d", capacity_);
-    //
-    if (self->capacity_ < n) {  // TODO: use load factor, not exact fit
-      // calculate the number of keys and values we should have
-      self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
-
-      // TODO: This is SPARSE.  How to compute a size that ensures a decent
-      // load factor?
-      int index_len = self->capacity_;
-      new_i = NewSlab<int>(index_len);
-
-      // For the linear search to work
-      for (int i = 0; i < index_len; ++i) {
-        new_i->items_[i] = kEmptyEntry;
-      }
-
-      // These are DENSE.
-      new_k = NewSlab<K>(self->capacity_);
-      new_v = NewSlab<V>(self->capacity_);
-
-      if (self->keys_ != nullptr) {
-        // Right now the index is the same size as keys and values.
-        memcpy(new_i->items_, self->entry_->items_, self->len_ * sizeof(int));
-
-        memcpy(new_k->items_, self->keys_->items_, self->len_ * sizeof(K));
-        memcpy(new_v->items_, self->values_->items_, self->len_ * sizeof(V));
-      }
-
-      self->entry_ = new_i;
-      self->keys_ = new_k;
-      self->values_ = new_v;
-    }
-  }
+  void reserve(int n);
 
   // d[key] in Python: raises KeyError if not found
-  V index_(K key) {
-    int pos = position_of_key(key);
-    if (pos == -1) {
-      InvalidCodePath();  // NOTE(Jesse): Should we really crash if asking for a
-                          // key not in a dict?
-    } else {
-      return values_->items_[pos];
-    }
-  }
+  V index_(K key);
 
   // Get a key.
   // Returns nullptr if not found (Can't use this for non-pointer types?)
-  V get(K key) {
-    int pos = position_of_key(key);
-    if (pos == -1) {
-      return nullptr;
-    } else {
-      return values_->items_[pos];
-    }
-  }
+  V get(K key);
 
   // Get a key, but return a default if not found.
   // expr_parse.py uses this with OTHER_BALANCE
-  V get(K key, V default_val) {
-    int pos = position_of_key(key);
-    if (pos == -1) {
-      return default_val;
-    } else {
-      return values_->items_[pos];
-    }
-  }
+  V get(K key, V default_val);
 
   // Implements d[k] = v.  May resize the dictionary.
   //
   // TODO: Need to specialize this for StackRoots!  Gah!
   void set(K key, V val);
 
-  List<K>* keys() {
-    return ListFromDictSlab<K>(entry_, keys_, capacity_);
-  }
+  List<K>* keys();
 
   // For AssocArray transformations
-  List<V>* values() {
-    return ListFromDictSlab<V>(entry_, values_, capacity_);
-  }
+  List<V>* values();
 
-  void clear() {
-    // Maintain invariant
-    for (int i = 0; i < capacity_; ++i) {
-      entry_->items_[i] = kEmptyEntry;
-    }
-
-    memset(keys_->items_, 0, len_ * sizeof(K));    // zero for GC scan
-    memset(values_->items_, 0, len_ * sizeof(V));  // zero for GC scan
-    len_ = 0;
-  }
+  void clear();
 
   // Returns the position in the array.  Used by dict_contains(), index(),
   // get(), and set().
@@ -244,24 +170,7 @@ class Dict : public Obj {
   //   - V GetAndIntern<V>(D, &string_key)
   //   - SetAndIntern<V>(D, &string_key, value)
   //   This will enable duplicate copies of the string to be garbage collected
-  int position_of_key(K key) {
-    auto self = this;
-    StackRoots _roots({&self});
-
-    for (int i = 0; i < self->capacity_; ++i) {
-      int special = self->entry_->items_[i];  // NOT an index now
-      if (special == kDeletedEntry) {
-        continue;  // keep searching
-      }
-      if (special == kEmptyEntry) {
-        return -1;  // not found
-      }
-      if (keys_equal(self->keys_->items_[i], key)) {
-        return i;
-      }
-    }
-    return -1;  // table is completely full?  Does this happen?
-  }
+  int position_of_key(K key);
 
   // int index_size_;  // size of index (sparse)
   int len_;       // number of entries (keys and values, almost dense)
@@ -276,6 +185,8 @@ class Dict : public Obj {
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 };
+
+#include <mycpp/gc_dict_impl.h>
 
 // "Constructors" that allocate
 

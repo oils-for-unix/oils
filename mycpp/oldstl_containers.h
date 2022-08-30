@@ -252,7 +252,7 @@ class Dict : public Obj {
   int find(K key);
 };
 
-#include <mycpp/list_dict_impl.h>
+#include <mycpp/oldstl_dict_impl.h>
 
 template <typename K, typename V>
 Dict<K, V>* NewDict() {
