@@ -5,7 +5,7 @@
 
 #include "_build/cpp/id_kind_asdl.h"
 #include "_build/cpp/syntax_asdl.h"
-#include "mycpp/leaky_containers.h"
+#include "mycpp/runtime.h"
 
 // Hacky forward declaration for translated pgen2/pnode.py
 // Note: it's probably better to express PNode in ASDL, like Token.

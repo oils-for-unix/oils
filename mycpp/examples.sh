@@ -164,8 +164,7 @@ using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 
 //#include "match.h"
 
-// TODO: This is already added elsewhere
-#include "leaky_containers.h"
+#include "mycpp/runtime.h"
 
 // Stub
 void p_die(Str* s, syntax_asdl::Token* blame_token) {

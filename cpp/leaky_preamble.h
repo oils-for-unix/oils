@@ -9,12 +9,10 @@
 #include <sys/wait.h>  // WIFSIGNALED, etc. called DIRECTLY
 
 #include "dumb_alloc.h"  // change the allocator
-// TODO: Need #if GC
 #include "_build/cpp/id_kind_asdl.h"  // syntax.asdl depends on this
 
 // clang-format off
-#include "mycpp/leaky_containers.h"  // runtime library e.g. with Python data structures
-#include "mycpp/builtins.h"   // runtime library e.g. with Python data structures
+#include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
 // clang-format on
 
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this

@@ -109,11 +109,7 @@ duplicate-symbols() {
   mkdir -p $dir
 
   echo '
-#ifdef GC
-  #include "mycpp/gc_heap.h"
-#else
-  #include "mycpp/leaky_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 GLOBAL_STR(str0, "hi");
 
@@ -126,11 +122,7 @@ int* g1 = new int[100];
   # Oh they are NOT linked together.  asdl/runtime.cc is only for tests!
 
   echo '
-#ifdef GC
-  #include "mycpp/gc_heap.h"
-#else
-  #include "mycpp/leaky_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 GLOBAL_STR(str0, "hi");
 

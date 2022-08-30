@@ -3,11 +3,7 @@
 #ifndef LEAKY_PYLIB_H
 #define LEAKY_PYLIB_H
 
-#if 1  // TODO: switch this off
-  #include "mycpp/leaky_containers.h"
-#else
-  #include "mycpp/gc_mylib.h"
-#endif
+#include "mycpp/runtime.h"
 
 namespace os_path {
 
