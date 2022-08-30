@@ -211,41 +211,22 @@ inline int len(const Dict<K, V>* d) {
   return d->len_;
 }
 
-// Specialized functions
-template <class V>
-int find_by_key(const std::vector<std::pair<Str*, V>>& items, Str* key) {
-#if 0
-  int n = items.size();
-  for (int i = 0; i < n; ++i) {
-    Str* s = items[i].first;  // nullptr for deleted entries
-    if (s && str_equals(s, key)) {
-      return i;
-    }
+template <typename K, typename V>
+void dict_remove(Dict<K, V>* haystack, K needle) {
+  int pos = haystack->position_of_key(needle);
+  if (pos == -1) {
+    return;
   }
-#else
-  NotImplemented();
-#endif
-  return -1;
-}
-
-template <class V>
-int find_by_key(const std::vector<std::pair<int, V>>& items, int key) {
-#if 0
-  int n = items.size();
-  for (int i = 0; i < n; ++i) {
-    if (items[i].first == key) {
-      return i;
-    }
-  }
-#else
-  NotImplemented();
-#endif
-  return -1;
+  haystack->entry_->items_[pos] = kDeletedEntry;
+  // Zero out for GC.  These could be nullptr or 0
+  haystack->keys_->items_[pos] = 0;
+  haystack->values_->items_[pos] = 0;
+  haystack->len_--;
 }
 
 template <typename K, typename V>
 void Dict<K, V>::remove(K key) {
-  mylib::dict_remove(this, key);
+  dict_remove(this, key);
 }
 
 #endif

@@ -14,6 +14,9 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib {
 
+template <typename K, typename V>
+void dict_remove(Dict<K, V>* haystack, K needle);
+
 // NOTE: Can use OverAllocatedStr for all of these, rather than copying
 
 inline Str* hex_lower(int i) {

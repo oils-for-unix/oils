@@ -10,48 +10,22 @@ class Dict;
 
 #include "mycpp/leaky_mylib.h"
 
+template <typename K, typename V>
+void dict_remove(Dict<K, V>* haystack, K needle);
+
 namespace mylib {
+
+template <typename K, typename V>
+void dict_remove(Dict<K, V>* haystack, K needle)
+{
+  ::dict_remove(haystack, needle);
+}
+
 
 // Used by generated _build/cpp/osh_eval.cc
 inline Str* StrFromC(const char* s) {
   return ::StrFromC(s);
 }
-
-#if 1
-/* template <typename V> */
-/* inline void dict_remove(Dict<int, V>* haystack, int needle); */
-
-/* template <typename V> */
-/* inline void dict_remove(Dict<Str*, V>* haystack, Str* needle); */
-
-template <typename K, typename V>
-inline void dict_remove(Dict<K, V>* haystack, K needle) {
-  int pos = haystack->position_of_key(needle);
-  if (pos != -1)
-  {
-    haystack->entry_->items_[pos] = -1;
-  }
-}
-
-#else
-template <typename V>
-inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
-  int pos = find_by_key(haystack->items_, needle);
-  if (pos == -1) {
-    return;
-  }
-  haystack->items_[pos].first = nullptr;
-}
-
-// TODO: how to do the int version of this?  Do you need an extra bit?
-//
-// TODO(Jesse): why do these go in this namespace pray-tell?
-//
-template <typename V>
-inline void dict_remove(Dict<int, V>* haystack, int needle) {
-  NotImplemented();
-}
-#endif
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
