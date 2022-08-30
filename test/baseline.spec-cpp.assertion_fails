@@ -9,4 +9,4 @@
 (/home/scallywag/work/oil/cpp/leaky_osh_eval_stubs.h:45: int signal_def::GetNumber(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-trap.html
 (/home/scallywag/work/oil/cpp/leaky_osh_eval_stubs.h:45: int signal_def::GetNumber(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-trap.html
 (/home/scallywag/work/oil/cpp/leaky_osh_eval_stubs.h:45: int signal_def::GetNumber(Str*): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtin-trap.html
-(mycpp/leaky_mylib.cc:126: void mylib::BufWriter::format_o(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtins.html
+(mycpp/leaky_mylib.cc:127: void mylib::BufWriter::format_o(int): Assertion `!"Not Implemented"' failed.) _tmp/spec/cpp/builtins.html

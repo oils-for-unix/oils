@@ -522,5 +522,6 @@ List<T>* list(List<T>* other) {
                                    N,           N, &_slab_##name};          \
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
+#include "mycpp/gc_list_iter.h"
 
 #endif // LIST_TYPES_H

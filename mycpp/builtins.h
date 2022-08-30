@@ -7,8 +7,6 @@
 #ifndef GC_BUILTINS_H
 #define GC_BUILTINS_H
 
-#include "mycpp/common.h"
-
 class Str;
 Str* AllocStr(int len);
 
@@ -50,17 +48,5 @@ inline Str* dynamic_fmt_dummy() {
   Str *Result = AllocStr(1);
   return Result;
 }
-
-
-#ifndef OLDSTL_BINDINGS
-
-
-  /* #include "mycpp/error_types.h" */
-  /* #include "mycpp/gc_containers.h" */
-  /* #include "mycpp/leaky_mylib.h" */
-  #include "mycpp/tuple_types.h"
-  #include "mycpp/gc_list_iter.h"
-
-#endif  // OLDSTL_BINDINGS
 
 #endif  // GC_BUILTINS_H

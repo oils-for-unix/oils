@@ -45,7 +45,6 @@
 #include "mycpp/gc_slab.h"
 
 #include "mycpp/gc_list.h"
-#include "mycpp/gc_list_iter.h"
 
 #include <mycpp/gc_dict.h>
 #include <mycpp/gc_dict_impl.h>
