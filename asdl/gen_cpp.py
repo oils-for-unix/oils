@@ -116,7 +116,7 @@ def _DefaultValue(typ):
   if type_name == 'map':
     k_type = _GetCppType(typ.children[0])
     v_type = _GetCppType(typ.children[1])
-    return 'new Dict<%s, %s>()' % (k_type, v_type)
+    return 'NewDict<%s, %s>()' % (k_type, v_type)
 
   elif type_name == 'array':
     c_type = _GetCppType(typ.children[0])

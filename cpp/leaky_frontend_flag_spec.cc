@@ -142,10 +142,10 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
 flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   auto out = new flag_spec::_FlagSpec();
   out->arity0 = NewList<Str*>();
-  out->arity1 = new Dict<Str*, args::_Action*>();
-  out->actions_long = new Dict<Str*, args::_Action*>();
+  out->arity1 = NewDict<Str*, args::_Action*>();
+  out->actions_long = NewDict<Str*, args::_Action*>();
   out->plus_flags = NewList<Str*>();
-  out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
+  out->defaults = NewDict<Str*, runtime_asdl::value_t*>();
 
   if (in->arity0) {
     _CreateStrList(in->arity0, out->arity0);
@@ -169,10 +169,10 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
 
 flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   auto out = new flag_spec::_FlagSpecAndMore();
-  out->actions_short = new Dict<Str*, args::_Action*>();
-  out->actions_long = new Dict<Str*, args::_Action*>();
+  out->actions_short = NewDict<Str*, args::_Action*>();
+  out->actions_long = NewDict<Str*, args::_Action*>();
   out->plus_flags = NewList<Str*>();
-  out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
+  out->defaults = NewDict<Str*, runtime_asdl::value_t*>();
 
 #ifndef CPP_UNIT_TEST
   if (in->actions_short) {

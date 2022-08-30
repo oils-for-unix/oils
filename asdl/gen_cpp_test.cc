@@ -124,8 +124,8 @@ TEST maps_test() {
   log("m.ss  = %p", m.ss);
   log("m.ib = %p", m.ib);
 
-  m.ss = new Dict<Str*, Str*>();
-  m.ib = new Dict<int, bool>();
+  m.ss = NewDict<Str*, Str*>();
+  m.ib = NewDict<int, bool>();
 
   m.ss->set(StrFromC("foo"), StrFromC("bar"));
 
