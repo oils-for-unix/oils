@@ -7,15 +7,10 @@
 #ifndef GC_BUILTINS_H
 #define GC_BUILTINS_H
 
-#include "mycpp/common.h"  // NotImplemented
+#include "mycpp/common.h"
 
-// from gc_str.h, should probably #include that
 class Str;
 Str* AllocStr(int len);
-
-//
-// Shared with oldstl_builtins
-//
 
 void print(Str* s);
 
@@ -23,8 +18,8 @@ void println_stderr(Str* s);
 
 Str* repr(Str* s);
 
-inline Str* str(double f) {  // TODO: should be double
-  NotImplemented();          // Uncalled
+inline Str* str(double f) {
+  NotImplemented();
 }
 
 Str* str(int i);
@@ -36,7 +31,6 @@ int to_int(Str* s, int base);
 Str* chr(int i);
 int ord(Str* s);
 
-// int(a == b) used in arithmetic evaluator
 inline int to_int(bool b) {
   return b;
 }
@@ -45,22 +39,10 @@ inline bool to_bool(int i) {
   return i != 0;
 }
 
-// Used in boolean evaluator
-bool to_bool(Str* s);
-double to_float(Str* s);
-
 bool str_contains(Str* haystack, Str* needle);
 
-// Only used by unit tests
-bool str_equals0(const char* c_string, Str* s);
-
-//
-// NOT Shared with oldstl_builtins
-//
-
-Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
-Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
-Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
+// mycpp doesn't understand dynamic format strings yet
+inline Str* dynamic_fmt_dummy();
 
 #ifndef OLDSTL_BINDINGS
 
@@ -72,10 +54,6 @@ Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
   #include "mycpp/leaky_mylib.h"  // TODO: remove inverted dependency
   #include "mycpp/tuple_types.h"
   #include "mycpp/gc_list_iter.h"
-
-//
-// Free Standing Str, List, and Dict Functions
-//
 
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {

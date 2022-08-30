@@ -1,7 +1,7 @@
 #ifdef OLDSTL_BINDINGS
   // clang-format off
   #include "mycpp/oldstl_containers.h"
-  #include "mycpp/oldstl_builtins.h"
+  #include "mycpp/gc_builtins.h"
   #include "mycpp/oldstl_mylib.h"
 // clang-format on
 #else

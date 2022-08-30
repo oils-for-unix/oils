@@ -14,7 +14,7 @@
 
 // clang-format off
 #include "mycpp/oldstl_containers.h"  // runtime library e.g. with Python data structures
-#include "mycpp/oldstl_builtins.h"  // runtime library e.g. with Python data structures
+#include "mycpp/gc_builtins.h"   // runtime library e.g. with Python data structures
 // clang-format on
 
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this

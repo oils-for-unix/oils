@@ -65,4 +65,13 @@ bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
   return result;
 }
 
+bool str_equals0(const char* c_string, Str* s) {
+  int n = strlen(c_string);
+  if (len(s) == n) {
+    return memcmp(s->data_, c_string, n) == 0;
+  } else {
+    return false;
+  }
+}
+
 #endif

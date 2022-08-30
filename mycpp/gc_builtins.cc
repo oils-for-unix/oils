@@ -10,6 +10,11 @@
 #include "cpp/aligned.h"
 #include "gc_mylib.h"  // BufWriter
 
+inline Str* dynamic_fmt_dummy() {
+  /* NotImplemented(); */
+  return StrFromC("dynamic_fmt_dummy");
+}
+
 #if 0
 // Translation of Python's print().
 void print(Str* s) {
