@@ -8,6 +8,8 @@
 #include <assert.h>  // assert()
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
+#include <limits.h>  // CHAR_BIT
+#include <stdint.h>  // uint8_t
 
 // TODO(Jesse): Put NotImplemented on a compile-time switch such that we cannot
 // make a release build if we're not finished implementing the interpreter.

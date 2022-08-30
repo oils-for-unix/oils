@@ -2,6 +2,7 @@
 #define GC_MYLIB_H
 
 #include "mycpp/builtins.h"
+#include "mycpp/leaky_mylib.h"
 
 namespace mylib {
 

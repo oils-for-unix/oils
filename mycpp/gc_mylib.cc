@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <unistd.h>  // isatty
 
+/* #include "mycpp/leaky_mylib.h" */
 #include "builtins.h"
 
 mylib::BufWriter gBuf;

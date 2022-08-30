@@ -4,8 +4,6 @@
 template <class K, class V>
 class Dict;
 
-#include <limits.h>  // CHAR_BIT
-#include <stdint.h>  // uint8_t
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
 // Notes:

@@ -5,6 +5,7 @@
 #endif
 
 #include "mycpp/builtins.h"
+#include "mycpp/leaky_mylib.h"
 
 #include <ctype.h>  // isspace()
 
