@@ -174,7 +174,6 @@ def ShouldSkipBenchmark(name):
 
 
 GC_RUNTIME = [
-    'mycpp/gc_builtins.cc',
     'mycpp/gc_mylib.cc',
     'mycpp/gc_heap.cc',
 
