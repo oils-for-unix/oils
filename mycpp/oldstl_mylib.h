@@ -1,6 +1,10 @@
 #ifndef MYLIB_TYPES_H
 #define MYLIB_TYPES_H
 
+template <class K, class V>
+class Dict;
+
+
 // NOTE(Jesse): The python that translates to osh_eval.cc relies on these
 // functions being inside this namespace, so we have to live with these.
 
@@ -23,6 +27,9 @@ inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
 }
 
 // TODO: how to do the int version of this?  Do you need an extra bit?
+//
+// TODO(Jesse): why do these go in this namespace pray-tell?
+//
 template <typename V>
 inline void dict_remove(Dict<int, V>* haystack, int needle) {
   NotImplemented();

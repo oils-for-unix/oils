@@ -14,44 +14,6 @@
 #include "mycpp/gc_str.h"
 #include "mycpp/comparators.h"
 #include "mycpp/gc_slab.h"
-
-template <int N>
-class GlobalStr {
-  // A template type with the same layout as Str with length N-1 (which needs a
-  // buffer of size N).  For initializing global constant instances.
- public:
-  OBJ_HEADER()
-
-  int hash_value_;
-  const char data_[N];
-
-  DISALLOW_COPY_AND_ASSIGN(GlobalStr)
-};
-
-// This macro is a workaround for the fact that it's impossible to have a
-// a constexpr initializer for char[N].  The "String Literals as Non-Type
-// Template Parameters" feature of C++ 20 would have done it, but it's not
-// there.
-//
-// https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
-// https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
-
-#define GLOBAL_STR(name, val)                                            \
-  GlobalStr<sizeof(val)> _##name = {                                     \
-      Tag::Global, 0, kZeroMask, kStrHeaderSize + sizeof(val), -1, val}; \
-  Str* name = reinterpret_cast<Str*>(&_##name);
-
-//
-// List<T>
-//
-
-#define GLOBAL_LIST(T, N, name, array)                                      \
-  GlobalSlab<T, N> _slab_##name = {Tag::Global, 0, kZeroMask, kNoObjLen,    \
-                                   array};                                  \
-  GlobalList<T, N> _list_##name = {Tag::Global, 0, kZeroMask,    kNoObjLen, \
-                                   N,           N, &_slab_##name};          \
-  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
-
 #include "mycpp/gc_list.h"
 
 //
@@ -112,6 +74,7 @@ constexpr uint16_t maskof_Dict() {
 
 #include <mycpp/gc_dict.h>
 #include <mycpp/gc_dict_impl.h>
+#include "mycpp/dict_iter.h"
 
 // "Constructors" that allocate
 
