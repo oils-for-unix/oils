@@ -8,7 +8,6 @@ WORKDIR /home/uke/tmp
 
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 RUN deps/from-apt.sh layer-for-soil
-
 RUN deps/from-apt.sh layer-locales
 
 RUN useradd --create-home uke && chown -R uke /home/uke

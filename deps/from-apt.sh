@@ -22,7 +22,7 @@ layer-python-symlink() {
 }
 
 layer-for-soil() {
-  # gcc: time-helper is needed
+  # gcc: time-helper is needed.  TODO: remove this dependency
   # git: for checking out code
   # python2: for various tools
   apt-get install -y gcc git python2
@@ -170,6 +170,6 @@ ovm-tarball() {
   apt-get install -y "${packages[@]}"
 }
 
-if test $(basename $0) = 'deps-apt.sh'; then
+if test $(basename $0) = 'from-apt.sh'; then
   "$@"
 fi

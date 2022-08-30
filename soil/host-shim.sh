@@ -220,7 +220,7 @@ run-job-uke() {
 
   $docker run "${flags[@]}" \
       --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
-      $image \
+      $image:$tag \
       "${args[@]}"
 }
 

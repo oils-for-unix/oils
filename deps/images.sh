@@ -100,6 +100,9 @@ smoke() {
 
   sudo docker run oilshell/soil-$name bash -c '
 echo "bash $BASH_VERSION"
+
+git --version
+
 for name in python python2 python3; do
   if which $name; then
     $name -V

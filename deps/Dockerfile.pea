@@ -13,7 +13,7 @@ RUN deps/from-apt.sh pea
 RUN useradd --create-home uke && chown -R uke /home/uke
 USER uke
 
-# deps-tar.sh has a 'wget' step which we're skipping
+# from-tar.sh has a 'wget' step which we're skipping
 COPY --chown=uke _cache/Python-3.10.4.tar.xz \
   /home/uke/tmp/_cache/Python-3.10.4.tar.xz
 
