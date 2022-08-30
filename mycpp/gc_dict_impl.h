@@ -116,7 +116,7 @@ void Dict<K,V>::clear() {
 //   - SetAndIntern<V>(D, &string_key, value)
 //   This will enable duplicate copies of the string to be garbage collected
 template <typename K, typename V>
-int Dict<K,V>::position_of_key(K key) {
+int Dict<K, V>::position_of_key(K key) {
   auto self = this;
   StackRoots _roots({&self});
 

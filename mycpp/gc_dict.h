@@ -143,6 +143,15 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
 }
 
 template <typename K, typename V>
+inline void dict_remove(Dict<K, V>* haystack, K needle) {
+  int pos = haystack->position_of_key(haystack, needle);
+  if (pos != kDeletedEntry)
+  {
+    haystack.entry_[pos] = kDeletedEntry;
+  }
+}
+
+template <typename K, typename V>
 Dict<K, V>* NewDict() {
   auto self = Alloc<Dict<K, V>>();
   return self;

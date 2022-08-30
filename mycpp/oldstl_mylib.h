@@ -17,17 +17,30 @@ inline Str* StrFromC(const char* s) {
   return ::StrFromC(s);
 }
 
+#if 1
+/* template <typename V> */
+/* inline void dict_remove(Dict<int, V>* haystack, int needle); */
+
+/* template <typename V> */
+/* inline void dict_remove(Dict<Str*, V>* haystack, Str* needle); */
+
+template <typename K, typename V>
+inline void dict_remove(Dict<K, V>* haystack, K needle) {
+  int pos = haystack->position_of_key(needle);
+  if (pos != -1)
+  {
+    haystack->entry_->items_[pos] = -1;
+  }
+}
+
+#else
 template <typename V>
 inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
-#if 0
   int pos = find_by_key(haystack->items_, needle);
   if (pos == -1) {
     return;
   }
   haystack->items_[pos].first = nullptr;
-#else
-  NotImplemented();
-#endif
 }
 
 // TODO: how to do the int version of this?  Do you need an extra bit?
@@ -38,6 +51,7 @@ template <typename V>
 inline void dict_remove(Dict<int, V>* haystack, int needle) {
   NotImplemented();
 }
+#endif
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
