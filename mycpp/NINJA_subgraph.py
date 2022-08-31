@@ -114,6 +114,9 @@ def log(msg, *args):
 # - pgen2_demo -- uses pgen2
 
 def ShouldSkipBuild(name):
+  if name.startswith('invalid_'):
+    return True
+
   if name in [
       # these 3 use Oil code, and don't type check or compile
       # Maybe give up on these?  pgen2_demo might be useful later.

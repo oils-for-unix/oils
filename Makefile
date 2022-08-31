@@ -123,7 +123,7 @@ print-%:
 # included in the release tarball.  Portable rules can be run on the developer
 # machine rather than on the end-user machine.
 
--include portable-rules.mk  # Must come first
+-include build/portable-rules.mk  # Must come first
 -include build/hello.mk
 -include build/oil.mk
 

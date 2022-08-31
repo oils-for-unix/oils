@@ -289,7 +289,7 @@ _overview() {
 
   # Leaving off gen-cpp-counts since that requires a C++ build
 
-  ls build/*.{mk,sh,py} Makefile *.mk configure install | filter-py | $count \
+  ls build/*.{mk,sh,py,c} Makefile configure install | filter-py | $count \
     'Build Automation' '' "$@"
 
   ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py | $count \

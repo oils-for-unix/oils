@@ -372,7 +372,7 @@ make-tar() {
 
   # Differences between tarball and repo:
   #
-  # - portable-rules.mk is intentionally not included in the release tarball.
+  # - build/portable-rules.mk is intentionally not included in the release tarball.
   #   The Makefile can and should operate without it.
   #
   # - We include intermediate files like c-module-srcs.txt, so we don't have to

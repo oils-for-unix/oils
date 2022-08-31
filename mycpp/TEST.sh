@@ -190,7 +190,31 @@ unit() {
   done
 }
 
+#
+# Test failures
+#
+
+test-invalid-examples() {
+  local mycpp=_bin/shwrap/mycpp_main
+  ninja $mycpp
+  for ex in mycpp/examples/invalid_*; do
+    set +o errexit
+    $mycpp '.:pyext' _tmp/mycpp-invalid $ex
+    local status=$?
+    set -o errexit
+
+    if test $status -ne 1; then
+      die "mycpp $ex: expected status 1, got $status"
+    fi
+
+  done
+
+  echo "OK $0 mycpp test-invalid-examples"
+}
+
 soil-run() {
+  test-invalid-examples
+
   # Run two tests that respect this variant
   unit '' oldstl
 

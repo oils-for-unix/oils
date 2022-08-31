@@ -50,8 +50,10 @@ tmp=$out.tmp  # avoid creating partial files
 
 PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
   ../oil_DEPS/python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+status=$?
 
 mv $tmp $out
+exit $status
 EOF
 
   shift
