@@ -1,8 +1,8 @@
 #ifndef LIST_TYPES_H
 #define LIST_TYPES_H
 
-#include "mycpp/error_types.h"
 #include "mycpp/comparators.h"
+#include "mycpp/error_types.h"
 
 // Type that is layout-compatible with List (unit tests assert this).  Two
 // purposes:
@@ -146,7 +146,6 @@ List<T>* NewList(T item, int times) {
   return self;
 }
 
-
 // e.g. List<int>
 template <typename T>
 void list_append(List<T>* self, T item) {
@@ -181,7 +180,7 @@ template <typename T>
 List<T>* list_repeat(T item, int times);
 
 template <typename T>
-inline bool list_contains(List<T> *haystack, T needle);
+inline bool list_contains(List<T>* haystack, T needle);
 
 inline int int_cmp(int a, int b) {
   if (a == b) {
@@ -190,10 +189,8 @@ inline int int_cmp(int a, int b) {
   return a < b ? -1 : 1;
 }
 
-
 inline int str_cmp(Str* a, Str* b);
 inline bool _cmp(Str* a, Str* b);
-
 
 // NOTE(Jesse): Move to gc_dict_impl once I get there
 template <typename K, typename V>
@@ -208,7 +205,6 @@ List<Str*>* sorted(Dict<Str*, V>* d);
 // L[begin:]
 template <typename T>
 List<T>* List<T>::slice(int begin) {
-
   if (begin < 0) {
     begin = len_ + begin;
   }
@@ -216,7 +212,7 @@ List<T>* List<T>::slice(int begin) {
   assert(begin >= 0);
 
   auto self = this;
-  List<T> *result = nullptr;
+  List<T>* result = nullptr;
   StackRoots _roots({&self, &result});
 
   result = NewList<T>();
@@ -232,7 +228,6 @@ List<T>* List<T>::slice(int begin) {
 // TODO: Can this be optimized?
 template <typename T>
 List<T>* List<T>::slice(int begin, int end) {
-
   if (begin < 0) {
     begin = len_ + begin;
   }
@@ -245,7 +240,7 @@ List<T>* List<T>::slice(int begin, int end) {
   assert(end >= 0);
 
   auto self = this;
-  List<T> *result = nullptr;
+  List<T>* result = nullptr;
   StackRoots _roots({&self, &result});
 
   result = NewList<T>();
@@ -256,7 +251,7 @@ List<T>* List<T>::slice(int begin, int end) {
   return result;
 }
 
-  // Ensure that there's space for a number of items
+// Ensure that there's space for a number of items
 template <typename T>
 void List<T>::reserve(int n) {
   // log("reserve capacity = %d, n = %d", capacity_, n);
@@ -295,10 +290,9 @@ void List<T>::set(int i, T item) {
   slab_->items_[i] = item;
 }
 
-  // Implements L[i]
+// Implements L[i]
 template <typename T>
 T List<T>::index_(int i) {
-
   if (i < 0) {
     int j = len_ + i;
     assert(j < len_);
@@ -311,12 +305,11 @@ T List<T>::index_(int i) {
   return slab_->items_[i];
 }
 
-
 // L.index(i) -- Python method
-template<typename T>
+template <typename T>
 int List<T>::index(T value) {
   int element_count = len(this);
-  for (int i = 0; i < element_count ; i++) {
+  for (int i = 0; i < element_count; i++) {
     if (are_equal(slab_->items_[i], value)) {
       return i;
     }
@@ -324,10 +317,8 @@ int List<T>::index(T value) {
   throw new ValueError();
 }
 
-
-
-  // Should we have a separate API that doesn't return it?
-  // https://stackoverflow.com/questions/12600330/pop-back-return-value
+// Should we have a separate API that doesn't return it?
+// https://stackoverflow.com/questions/12600330/pop-back-return-value
 template <typename T>
 T List<T>::pop() {
   assert(len_ > 0);
@@ -368,7 +359,7 @@ void List<T>::clear() {
   len_ = 0;
 }
 
-  // Used in osh/string_ops.py
+// Used in osh/string_ops.py
 template <typename T>
 void List<T>::reverse() {
   for (int i = 0; i < len_ / 2; ++i) {
@@ -380,7 +371,7 @@ void List<T>::reverse() {
   }
 }
 
-  // Extend this list with multiple elements.
+// Extend this list with multiple elements.
 template <typename T>
 void List<T>::extend(List<T>* other) {
   auto self = this;
@@ -425,7 +416,7 @@ inline bool _cmp(Str* a, Str* b) {
 
 template <typename T>
 void List<T>::sort() {
-  std::sort( (Str**)slab_->items_, slab_->items_ + len_, _cmp);
+  std::sort((Str**)slab_->items_, slab_->items_ + len_, _cmp);
 }
 
 /* template <typename T> */
@@ -481,7 +472,7 @@ List<T>* NewList(T item, int times) {
 
 // e.g. 'a' in ['a', 'b', 'c']
 template <typename T>
-inline bool list_contains(List<T> *haystack, T needle) {
+inline bool list_contains(List<T>* haystack, T needle) {
   // StackRoots _roots({&haystack, &needle});  // doesn't allocate
 
   int n = len(haystack);
@@ -504,7 +495,6 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
   return keys;
 }
 
-
 // list(L) copies the list
 template <typename T>
 List<T>* list(List<T>* other) {
@@ -524,4 +514,4 @@ List<T>* list(List<T>* other) {
 
 #include "mycpp/gc_list_iter.h"
 
-#endif // LIST_TYPES_H
+#endif  // LIST_TYPES_H

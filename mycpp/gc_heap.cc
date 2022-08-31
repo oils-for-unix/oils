@@ -115,7 +115,6 @@ inline Obj* ObjHeader(Obj* obj) {
 }
 
 void Heap::Collect() {
-
 #if GC_STATS
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
@@ -241,9 +240,7 @@ void Heap::Collect() {
 #if GC_VERBOSE
   Report();
 #endif
-
 }
-
 
 #if GC_STATS
 void ShowFixedChildren(Obj* obj) {

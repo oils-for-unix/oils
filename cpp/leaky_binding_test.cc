@@ -15,7 +15,7 @@
 #include "leaky_osh.h"
 #include "leaky_pylib.h"
 #include "leaky_stdlib.h"
-#include "mycpp/builtins.h" 
+#include "mycpp/builtins.h"
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;
@@ -320,7 +320,6 @@ TEST putenv_test() {
 
   PASS();
 }
-
 
 // NOTE(Jesse): `if 0`-ed this out to silence an annoying warning.  Should be
 // put back in, though that's on Andy.

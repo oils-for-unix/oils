@@ -11,7 +11,7 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 template <typename K, typename V>
 void dict_remove(Dict<K, V>* haystack, K needle);
 
-}
+}  // namespace mylib
 
 // Global formatter
 extern mylib::BufWriter gBuf;

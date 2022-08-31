@@ -42,10 +42,9 @@ inline bool to_bool(int i) {
 
 bool str_contains(Str* haystack, Str* needle);
 
-
 // mycpp doesn't understand dynamic format strings yet
 inline Str* dynamic_fmt_dummy() {
-  Str *Result = AllocStr(1);
+  Str* Result = AllocStr(1);
   return Result;
 }
 

@@ -8,8 +8,8 @@
 #include <fcntl.h>     // F_DUPFD used directly
 #include <sys/wait.h>  // WIFSIGNALED, etc. called DIRECTLY
 
-#include "dumb_alloc.h"  // change the allocator
 #include "_gen/frontend/id_kind.asdl.h"  // syntax.asdl depends on this
+#include "dumb_alloc.h"                  // change the allocator
 
 // clang-format off
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
@@ -18,11 +18,11 @@
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this
 using id_kind_asdl::Kind_t;
 
+#include "_gen/core/optview.h"
+#include "_gen/core/runtime.asdl.h"
 #include "_gen/frontend/arg_types.h"
 #include "_gen/frontend/consts.h"
-#include "_gen/core/optview.h"
 #include "_gen/frontend/option.asdl.h"
-#include "_gen/core/runtime.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "_gen/frontend/types.asdl.h"
 #include "_gen/oil_lang/grammar_nt.h"

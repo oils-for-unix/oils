@@ -4,7 +4,6 @@
 template <class K, class V>
 class Dict;
 
-
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
 // Notes:
 // - Python 2.7's intobject.c has an erroneous +6
@@ -26,11 +25,9 @@ inline Str* StrFromC(const char* s) {
 }
 
 template <typename K, typename V>
-void dict_remove(Dict<K, V>* haystack, K needle)
-{
+void dict_remove(Dict<K, V>* haystack, K needle) {
   ::dict_remove(haystack, needle);
 }
-
 
 // NOTE: Can use OverAllocatedStr for all of these, rather than copying
 
@@ -218,7 +215,6 @@ inline Writer* Stderr() {
 }
 
 }  // namespace mylib
-
 
 extern mylib::BufWriter gBuf;
 

@@ -5,7 +5,7 @@
 // @duplicated_to_oldstl_str_equals
 // @duplicate_string_compare_code
 //
-bool str_equals(Str *left, Str *right) {
+bool str_equals(Str* left, Str* right) {
   // Fast path for identical strings.  String deduplication during GC could
   // make this more likely.  String interning could guarantee it, allowing us
   // to remove memcmp().
@@ -36,26 +36,22 @@ bool maybe_str_equals(Str* left, Str* right) {
 }
 
 // TODO(Jesse): Make an inline version of this
-bool are_equal(Str *left, Str *right)
-{
+bool are_equal(Str* left, Str* right) {
   return str_equals(left, right);
 }
 
 // TODO(Jesse): Make an inline version of this
-bool are_equal(int left, int right)
-{
+bool are_equal(int left, int right) {
   return left == right;
 }
 
 // TODO(Jesse): Make an inline version of this
-bool keys_equal(int left, int right)
-{
+bool keys_equal(int left, int right) {
   return left == right;
 }
 
 // TODO(Jesse): Make an inline version of this
-bool keys_equal(Str *left, Str *right)
-{
+bool keys_equal(Str* left, Str* right) {
   return are_equal(left, right);
 }
 

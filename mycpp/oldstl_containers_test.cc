@@ -1,10 +1,9 @@
-#include "mycpp/runtime.h"
-
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
 #include "mycpp/builtins.h"
+#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
 void Print(List<Str*>* parts) {
@@ -337,7 +336,7 @@ TEST test_str_split() {
   printf("------- Str::split -------\n");
 
   {
-    List<Str*> *split_result = s0->split(StrFromC(" "));
+    List<Str*>* split_result = s0->split(StrFromC(" "));
     PRINT_LIST(split_result);
     ASSERT(len(split_result) == 2);
     ASSERT(are_equal(split_result->index_(0), StrFromC("abc")));
@@ -439,7 +438,6 @@ TEST test_str_join() {
 
   PASS();
 }
-
 
 GREATEST_MAIN_DEFS();
 

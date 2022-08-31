@@ -6,22 +6,18 @@
 #define COMMON_H
 
 #include <assert.h>  // assert()
-#include <stdarg.h>  // va_list, etc.
-#include <stdio.h>   // vprintf
+#include <ctype.h>   // isalpha(), isdigit()
 #include <limits.h>  // CHAR_BIT
+#include <stdarg.h>  // va_list, etc.
 #include <stdint.h>  // uint8_t
-
+#include <stdio.h>   // vprintf
 #include <stdlib.h>
 #include <string.h>
-#include <initializer_list>
-
-#include <ctype.h>   // isalpha(), isdigit()
 #include <string.h>  // strlen
+
 #include <algorithm>  // sort() is templated
 #include <initializer_list>
 #include <vector>
-
-
 
 // TODO(Jesse): Put NotImplemented on a compile-time switch such that we cannot
 // make a release build if we're not finished implementing the interpreter.

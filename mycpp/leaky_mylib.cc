@@ -1,9 +1,8 @@
-#include "mycpp/runtime.h"
-
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
+#include "mycpp/runtime.h"
 
 namespace mylib {
 

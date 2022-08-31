@@ -3,7 +3,7 @@
 #include "cpp/leaky_frontend_flag_spec.h"
 
 #include "_gen/frontend/arg_types.h"
-#include "mycpp/builtins.h" 
+#include "mycpp/builtins.h"
 // for definition of args::Reader, etc.
 #include "prebuilt/frontend/args.mycpp.h"
 

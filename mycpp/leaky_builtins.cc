@@ -1,6 +1,6 @@
-#include "mycpp/runtime.h"
-
 #include <ctype.h>  // isspace()
+
+#include "mycpp/runtime.h"
 
 // Translation of Python's print().
 void print(Str* s) {

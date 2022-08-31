@@ -1,7 +1,9 @@
 #include "mycpp/runtime.h"
 
+// clang-format off
 #include "mycpp/list_str_impl.h"
 #include "mycpp/comparator_impls.h"
+// clang-format on
 
 #include <ctype.h>  // isalpha(), isdigit()
 
@@ -370,4 +372,3 @@ Str* Str::lstrip(Str* chars) {
 Str* Str::lstrip() {
   return StripAny(this, StripWhere::Left, kWhitespace);
 }
-

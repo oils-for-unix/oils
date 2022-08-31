@@ -1,12 +1,11 @@
 // gc_mylib.cc
 
-#include "mycpp/runtime.h"
-
 #include <errno.h>
 #include <unistd.h>  // isatty
 
-mylib::BufWriter gBuf;
+#include "mycpp/runtime.h"
 
+mylib::BufWriter gBuf;
 
 // NOTE(Jesse): This was literally the only thing left in gc_builtins.cc so I
 // moved it here.  Not sure where it belongs, but it's only called from a
@@ -16,7 +15,6 @@ Str* repr(Str* s) {
   f.format_r(s);
   return f.getvalue();
 }
-
 
 namespace mylib {
 

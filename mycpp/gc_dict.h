@@ -65,8 +65,7 @@ class Dict : public Obj {
   }
 
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-    : Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict))
-  {
+      : Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
     assert(len_ == 0);
     assert(capacity_ == 0);
     assert(entry_ == nullptr);
@@ -163,6 +162,5 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
 
   return self;
 }
-
 
 #endif

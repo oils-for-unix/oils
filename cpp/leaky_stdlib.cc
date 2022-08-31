@@ -90,8 +90,8 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
 
   int EnvIndex = 0;
   for (DictIter<Str*, Str*> it(environ); !it.Done(); it.Next()) {
-    Str *k = it.Key();
-    Str *v = it.Value();
+    Str* k = it.Key();
+    Str* v = it.Value();
 
     int joined_len = len(k) + len(v) + 1;
     char* buf = static_cast<char*>(malloc(joined_len + 1));

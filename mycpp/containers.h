@@ -1,6 +1,7 @@
 #ifndef CONTAINERS_H
 #define CONTAINERS_H
 
+// clang-format off
 #include "mycpp/gc_tag.h"
 #include "mycpp/gc_obj.h"
 #include "mycpp/gc_alloc.h"
@@ -15,8 +16,9 @@
 
 #include "mycpp/gc_list.h"
 
-#include <mycpp/gc_dict.h>
-#include <mycpp/gc_dict_impl.h>
+#include "mycpp/gc_dict.h"
+#include "mycpp/gc_dict_impl.h"
 #include "mycpp/dict_iter.h"
+// clang-format on
 
 #endif

@@ -3,8 +3,8 @@
 #ifndef FRONTEND_FLAG_SPEC_H
 #define FRONTEND_FLAG_SPEC_H
 
-#include "_gen/frontend/id_kind.asdl.h"
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/frontend/id_kind.asdl.h"
 #include "mycpp/runtime.h"
 
 // Forward declarations (can't include osh_eval.h)

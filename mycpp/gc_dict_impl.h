@@ -79,18 +79,18 @@ V Dict<K, V>::get(K key, V default_val) {
 }
 
 template <typename K, typename V>
-List<K>* Dict<K,V>::keys() {
+List<K>* Dict<K, V>::keys() {
   return ListFromDictSlab<K>(entry_, keys_, capacity_);
 }
 
 // For AssocArray transformations
 template <typename K, typename V>
-List<V>* Dict<K,V>::values() {
+List<V>* Dict<K, V>::values() {
   return ListFromDictSlab<V>(entry_, values_, capacity_);
 }
 
 template <typename K, typename V>
-void Dict<K,V>::clear() {
+void Dict<K, V>::clear() {
   // Maintain invariant
   for (int i = 0; i < capacity_; ++i) {
     entry_->items_[i] = kEmptyEntry;
@@ -128,7 +128,6 @@ int Dict<K, V>::position_of_key(K key) {
       return -1;  // not found
     }
     if (keys_equal(self->keys_->items_[i], key)) {
-
       return i;
     }
   }
