@@ -16,8 +16,6 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
-#include "mycpp/oldstl_containers.h"
-
 namespace pyos {
 
 Tuple2<int, int> WaitPid() {
@@ -65,7 +63,7 @@ Str* ReadLine() {
 }
 
 Dict<Str*, Str*>* Environ() {
-  auto d = new Dict<Str*, Str*>();
+  auto d = NewDict<Str*, Str*>();
 
   for (char** env = environ; *env; ++env) {
     char* pair = *env;

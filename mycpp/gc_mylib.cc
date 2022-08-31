@@ -1,15 +1,30 @@
 // gc_mylib.cc
 
-#include "gc_mylib.h"
+#include "mycpp/runtime.h"
 
 #include <errno.h>
 #include <unistd.h>  // isatty
 
-#include "gc_builtins.h"
-
 mylib::BufWriter gBuf;
 
+
+// NOTE(Jesse): This was literally the only thing left in gc_builtins.cc so I
+// moved it here.  Not sure where it belongs, but it's only called from a
+// single test.
+Str* repr(Str* s) {
+  mylib::BufWriter f;
+  f.format_r(s);
+  return f.getvalue();
+}
+
+
 namespace mylib {
+
+/* template <typename K, typename V> */
+/* void dict_remove(Dict<K, V>* haystack, K needle) */
+/* { */
+/*   ::dict_remove(haystack, needle); */
+/* } */
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   StackRoots _roots({&s, &delim});

@@ -1,13 +1,4 @@
-#ifdef OLDSTL_BINDINGS
-  // clang-format off
-  #include "mycpp/oldstl_containers.h"
-  #include "mycpp/oldstl_builtins.h"
-  #include "mycpp/oldstl_mylib.h"
-// clang-format on
-#else
-  #include "mycpp/gc_mylib.h"
-#endif
-
+#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
 TEST test_mylib_funcs() {

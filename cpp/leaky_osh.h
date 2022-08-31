@@ -5,7 +5,7 @@
 
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/leaky_frontend_tdop.h"
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/runtime.h"
 
 namespace arith_parse {
 

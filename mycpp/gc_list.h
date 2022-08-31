@@ -2,7 +2,7 @@
 #define LIST_TYPES_H
 
 #include "mycpp/error_types.h"
-
+#include "mycpp/comparators.h"
 
 // Type that is layout-compatible with List (unit tests assert this).  Two
 // purposes:
@@ -295,10 +295,6 @@ void List<T>::set(int i, T item) {
   slab_->items_[i] = item;
 }
 
-
-bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2);
-bool are_equal(int, int);
-
   // Implements L[i]
 template <typename T>
 T List<T>::index_(int i) {
@@ -483,14 +479,6 @@ List<T>* NewList(T item, int times) {
 }
 #endif
 
-namespace id_kind_asdl {
-enum class Kind;
-};
-
-// NOTE(Jesse): Where should this _actually_ go?  Definitely not here.
-inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
-bool are_equal(int left, int right);
-
 // e.g. 'a' in ['a', 'b', 'c']
 template <typename T>
 inline bool list_contains(List<T> *haystack, T needle) {
@@ -517,5 +505,23 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
 }
 
 
+// list(L) copies the list
+template <typename T>
+List<T>* list(List<T>* other) {
+  auto result = NewList<T>();
+  for (int i = 0; i < len(other); ++i) {
+    result->set(i, other->index_(i));
+  }
+  return result;
+}
+
+#define GLOBAL_LIST(T, N, name, array)                                      \
+  GlobalSlab<T, N> _slab_##name = {Tag::Global, 0, kZeroMask, kNoObjLen,    \
+                                   array};                                  \
+  GlobalList<T, N> _list_##name = {Tag::Global, 0, kZeroMask,    kNoObjLen, \
+                                   N,           N, &_slab_##name};          \
+  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
+
+#include "mycpp/gc_list_iter.h"
 
 #endif // LIST_TYPES_H

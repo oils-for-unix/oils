@@ -284,7 +284,7 @@ from asdl import pybase
 #ifndef CONSTS_H
 #define CONSTS_H
 
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/runtime.h"
 
 #include "_gen/frontend/id_kind.asdl.h"
 #include "_gen/frontend/option.asdl.h"

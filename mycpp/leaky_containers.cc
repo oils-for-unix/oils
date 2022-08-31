@@ -1,9 +1,4 @@
-#ifdef OLDSTL_BINDINGS
-  #include "mycpp/oldstl_containers.h"
-#else
-  #include "mycpp/gc_builtins.h"
-  #include "mycpp/gc_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 #include "mycpp/list_str_impl.h"
 #include "mycpp/comparator_impls.h"

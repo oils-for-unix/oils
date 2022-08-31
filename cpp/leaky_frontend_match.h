@@ -4,7 +4,7 @@
 #define MATCH_H
 
 #include "_gen/frontend/id_kind.asdl.h"  // syntax.asdl depends on this
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/runtime.h"
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 
 #include "_gen/frontend/syntax.asdl.h"

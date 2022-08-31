@@ -1,10 +1,10 @@
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/runtime.h"
 
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "mycpp/oldstl_builtins.h"
+#include "mycpp/builtins.h"
 #include "vendor/greatest.h"
 
 void Print(List<Str*>* parts) {
@@ -214,11 +214,19 @@ TEST test_dict() {
   log("v2 = %p", v2);
 
   auto d3 = NewDict<Str*, int>();
+  ASSERT_EQ(0, len(d3));
+
   auto a = StrFromC("a");
 
   d3->set(StrFromC("b"), 11);
+  ASSERT_EQ(1, len(d3));
+
   d3->set(StrFromC("c"), 12);
+  ASSERT_EQ(2, len(d3));
+
   d3->set(StrFromC("a"), 10);
+  ASSERT_EQ(3, len(d3));
+
   ASSERT_EQ(10, d3->index_(StrFromC("a")));
   ASSERT_EQ(11, d3->index_(StrFromC("b")));
   ASSERT_EQ(12, d3->index_(StrFromC("c")));

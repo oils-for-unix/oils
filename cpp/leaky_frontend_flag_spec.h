@@ -5,13 +5,7 @@
 
 #include "_gen/frontend/id_kind.asdl.h"
 #include "_gen/core/runtime.asdl.h"
-#ifdef OLDSTL_BINDINGS
-  #include "mycpp/oldstl_containers.h"
-#else
-  #include "mycpp/gc_builtins.h"
-  #include "mycpp/gc_containers.h"
-
-#endif
+#include "mycpp/runtime.h"
 
 // Forward declarations (can't include osh_eval.h)
 namespace args {

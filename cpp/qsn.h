@@ -3,11 +3,7 @@
 #ifndef QSN_H
 #define QSN_H
 
-#ifdef OLDSTL_BINDINGS
-  #include "mycpp/oldstl_containers.h"
-#else
-  #include "mycpp/gc_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 namespace qsn {
 

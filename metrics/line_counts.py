@@ -23,7 +23,7 @@ def main(argv):
   comment = argv[3]
   tmp_dir = argv[4]
 
-  total_lines = None
+  total_lines = 0
   rows = []
 
   # Parse

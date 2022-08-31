@@ -4,7 +4,7 @@
 #define CORE_ERROR_H
 
 #include "_gen/frontend/syntax.asdl.h"
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/runtime.h"
 
 namespace runtime {
 extern int NO_SPID;

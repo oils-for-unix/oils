@@ -17,7 +17,7 @@
 
 #include "cpp/leaky_core_error.h"
 #include "cpp/leaky_core_pyerror.h"
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/runtime.h"
 
 namespace fcntl_ {
 
@@ -87,17 +87,20 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   // Convert environ into an array of pointers to strings of the form: "k=v".
   int n_env = len(environ);
   char** envp = static_cast<char**>(malloc((n_env + 1) * sizeof(char*)));
-  int i = 0;
-  for (const auto& kv : environ->items_) {
-    Str* k = kv.first;
-    Str* v = kv.second;
+
+  int EnvIndex = 0;
+  for (DictIter<Str*, Str*> it(environ); !it.Done(); it.Next()) {
+    Str *k = it.Key();
+    Str *v = it.Value();
+
     int joined_len = len(k) + len(v) + 1;
     char* buf = static_cast<char*>(malloc(joined_len + 1));
     memcpy(buf, k->data_, len(k));
     buf[len(k)] = '=';
     memcpy(buf + len(k) + 1, v->data_, len(v));
     buf[joined_len] = '\0';
-    envp[i++] = buf;
+
+    envp[EnvIndex++] = buf;
   }
   envp[n_env] = nullptr;
 
@@ -138,7 +141,7 @@ time_t localtime(time_t ts) {
 }
 
 Str* strftime(Str* s, time_t ts) {
-  // TODO: may not work with oldstl_containers.h
+  // TODO: may not work with leaky_containers.h
   // https://github.com/oilshell/oil/issues/1221
   tm* loc_time = ::localtime(&ts);
 

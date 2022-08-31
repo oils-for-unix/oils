@@ -3,13 +3,7 @@
 #include "prebuilt/asdl/runtime.mycpp.h"
 // BEGIN mycpp output
 
-#ifdef OLDSTL_BINDINGS
-#include "mycpp/oldstl_containers.h"
-#else
-#include "mycpp/gc_containers.h"
-#include "mycpp/gc_builtins.h"
-#include "mycpp/gc_mylib.h"
-#endif
+#include "mycpp/runtime.h"
 
 GLOBAL_STR(str0, "(");
 GLOBAL_STR(str1, ")");

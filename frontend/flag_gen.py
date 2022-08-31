@@ -177,11 +177,7 @@ def Cpp(specs, header_f, cc_f):
 #define ARG_TYPES_H
 
 #include "cpp/leaky_frontend_flag_spec.h"  // for FlagSpec_c
-#ifdef OLDSTL_BINDINGS
-  #include "mycpp/oldstl_containers.h"
-#else
-  #include "mycpp/gc_containers.h"
-#endif
+#include "mycpp/gc_mylib.h"
 
 namespace value_e = runtime_asdl::value_e;
 using runtime_asdl::value__Bool;

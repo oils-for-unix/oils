@@ -1,13 +1,4 @@
-#ifdef OLDSTL_BINDINGS
-  // clang-format off
-  #include "mycpp/oldstl_containers.h"
-  #include "mycpp/oldstl_builtins.h"
-// clang-format on
-#else
-  #include "mycpp/gc_builtins.h"
-  #include "mycpp/gc_containers.h"
-#endif
-
+#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
 void debug_string(Str* s) {
@@ -822,12 +813,6 @@ TEST test_str_size() {
 
   PRINT_INT(kStrHeaderSize);
   PRINT_INT((int)sizeof(Str));
-
-#ifdef OLDSTL_BINDINGS
-  PRINT_INT(1);
-#else
-  PRINT_INT(0);
-#endif
 
   ASSERT(kStrHeaderSize == 12);
   ASSERT(sizeof(Str) == 16);

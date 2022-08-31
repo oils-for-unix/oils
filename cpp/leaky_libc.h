@@ -8,9 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>  // gethostname()
 
-#ifdef OLDSTL_BINDINGS
-  #include "mycpp/oldstl_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 namespace libc {
 

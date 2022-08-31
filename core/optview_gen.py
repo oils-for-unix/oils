@@ -24,12 +24,7 @@ def main(argv):
 #define OPTVIEW_H
 
 #include "_gen/frontend/option.asdl.h"
-#ifdef OLDSTL_BINDINGS
-  #include "mycpp/oldstl_containers.h"
-#else
-  #include "mycpp/gc_containers.h"
-  
-#endif
+#include "mycpp/runtime.h"
 
 namespace optview {
 

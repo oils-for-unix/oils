@@ -11,7 +11,6 @@ readonly -a OLDSTL_RUNTIME=(
 )
 
 readonly -a GC_RUNTIME=(
-    mycpp/gc_builtins.cc
     mycpp/gc_heap.cc
     mycpp/gc_mylib.cc
     mycpp/leaky_builtins.cc

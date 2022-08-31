@@ -4,12 +4,7 @@
 // This test runs primarily in the GC mode, but you can also run it in the
 // leaky mode!
 
-
-#ifdef OLDSTL_BINDINGS
-  #include "mycpp/oldstl_containers.h"
-#else
-  #include "mycpp/gc_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 TEST qsn_test() {
   Str* s = nullptr;

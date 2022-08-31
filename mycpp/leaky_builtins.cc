@@ -1,12 +1,4 @@
-#ifdef OLDSTL_BINDINGS
-  // clang-format off
-  #include "mycpp/oldstl_containers.h"
-  #include "mycpp/oldstl_builtins.h"
-// clang-format on
-#else
-  #include "mycpp/gc_builtins.h"
-  #include "mycpp/gc_containers.h"
-#endif
+#include "mycpp/runtime.h"
 
 #include <ctype.h>  // isspace()
 
@@ -109,15 +101,6 @@ bool to_bool(Str* s) {
 double to_float(Str* s) {
   double result = atof(s->data_);
   return result;
-}
-
-bool str_equals0(const char* c_string, Str* s) {
-  int n = strlen(c_string);
-  if (len(s) == n) {
-    return memcmp(s->data_, c_string, n) == 0;
-  } else {
-    return false;
-  }
 }
 
 // e.g. ('a' in 'abc')

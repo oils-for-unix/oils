@@ -35,12 +35,6 @@ bool maybe_str_equals(Str* left, Str* right) {
   return false;  // one is None and one is a Str*
 }
 
-bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
-  bool result = are_equal(t1->at0(), t2->at0());
-  result = result && (t1->at1() == t2->at1());
-  return result;
-}
-
 // TODO(Jesse): Make an inline version of this
 bool are_equal(Str *left, Str *right)
 {
@@ -63,6 +57,21 @@ bool keys_equal(int left, int right)
 bool keys_equal(Str *left, Str *right)
 {
   return are_equal(left, right);
+}
+
+bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
+  bool result = are_equal(t1->at0(), t2->at0());
+  result = result && (t1->at1() == t2->at1());
+  return result;
+}
+
+bool str_equals0(const char* c_string, Str* s) {
+  int n = strlen(c_string);
+  if (len(s) == n) {
+    return memcmp(s->data_, c_string, n) == 0;
+  } else {
+    return false;
+  }
 }
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "_gen/asdl/examples/typed_arith.asdl.h"
 #include "_gen/asdl/examples/typed_demo.asdl.h"  // has simple Sum, etc
-#include "mycpp/oldstl_containers.h"
+#include "mycpp/runtime.h"
 #include "prebuilt/asdl/runtime.mycpp.h"
 #include "vendor/greatest.h"
 
@@ -124,8 +124,8 @@ TEST maps_test() {
   log("m.ss  = %p", m.ss);
   log("m.ib = %p", m.ib);
 
-  m.ss = new Dict<Str*, Str*>();
-  m.ib = new Dict<int, bool>();
+  m.ss = NewDict<Str*, Str*>();
+  m.ib = NewDict<int, bool>();
 
   m.ss->set(StrFromC("foo"), StrFromC("bar"));
 

@@ -133,7 +133,7 @@ for cc in CPP_BINDINGS + GENERATED_CC:
 
 # -D NO_GC_HACK: Avoid memset().  -- rename GC_NO_MEMSET?
 #  - only applies to gc_heap.h in Space::Clear()
-# -D OLDSTL_BINDINGS: for QSN, which is used by the ASDL runtime
+# -D LEAKY_ALLOCATOR: for QSN, which is used by the ASDL runtime
 #  TODO: use .leaky variant
 #  - _bin/cxx-leaky/osh_eval -- this means it's optimized then?
 #  - we still want to be able to debug it
@@ -142,7 +142,7 @@ for cc in CPP_BINDINGS + GENERATED_CC:
 # leakyopt, leakyasan -- I guess this is good for tests
 
 # single quoted in Ninja/shell syntax
-OSH_EVAL_FLAGS_STR = "'-D NO_GC_HACK -D OLDSTL_BINDINGS'"
+OSH_EVAL_FLAGS_STR = "'-D NO_GC_HACK -D LEAKY_ALLOCATOR'"
 
 
 def NinjaGraph(n):
