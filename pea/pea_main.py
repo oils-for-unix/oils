@@ -168,7 +168,8 @@ def _ParseFuncType(st: stmt) -> AST:
 class PrototypesPass:
   """Parse signatures and Emit function prototypes."""
 
-  def __init__(self, prog: Program, f: typing.IO[str]) -> None:
+  def __init__(self, opts: Any, prog: Program, f: typing.IO[str]) -> None:
+    self.opts = opts
     self.prog = prog
     self.f = f
 
@@ -179,9 +180,10 @@ class PrototypesPass:
           if stmt.type_comment:
             sig = _ParseFuncType(stmt)  # may raise
 
-            print('METHOD')
-            print(ast.dump(sig, indent='  '))
-            # TODO: We need to print virtual here
+            if self.opts.verbose:
+              print('METHOD')
+              print(ast.dump(sig, indent='  '))
+              # TODO: We need to print virtual here
 
             self.prog.method_types[stmt] = sig  # save for ImplPass
           self.prog.stats['num_methods'] += 1
@@ -197,8 +199,9 @@ class PrototypesPass:
           if stmt.type_comment:
             sig = _ParseFuncType(stmt)  # may raise
 
-            print('FUNC')
-            print(ast.dump(sig, indent='  '))
+            if self.opts.verbose:
+              print('FUNC')
+              print(ast.dump(sig, indent='  '))
 
             self.prog.func_types[stmt] = sig  # save for ImplPass
 
@@ -303,6 +306,9 @@ def Options() -> optparse.OptionParser:
 
 def main(argv: list[str]) -> int:
 
+  o = Options()
+  opts, argv = o.parse_args(argv)
+
   action = argv[1]
 
   if action == 'parse':
@@ -353,7 +359,7 @@ def main(argv: list[str]) -> int:
     try:
       # PrototypesPass: module -> class/method, func
 
-      pass3 = PrototypesPass(prog, out_f)
+      pass3 = PrototypesPass(opts, prog, out_f)
       for py_file in prog.py_files:
         pass3.DoPyFile(py_file)  # parses type comments in signatures
 
@@ -372,8 +378,8 @@ def main(argv: list[str]) -> int:
       print()
 
     except TypeSyntaxError as e:
-      print('Type comment syntax error on line %d of %s: %r' %
-            (e.lineno, py_file.filename, e.code_str))
+      log('Type comment syntax error on line %d of %s: %r',
+          e.lineno, py_file.filename, e.code_str)
       return 1
 
     log('Done')

@@ -217,41 +217,43 @@ var x = len(ARGV) + 1
 
 For now, we only have a few builtin functions like `len()`.
 
-### Two Kinds of Composition
+
+### Two Worlds: Syntax, Semantics, Composition
 
 There are two kinds of composition / code units in Oil:
 
-- funcs are like Python or JavaScript functions. They accept and return typed
-  data.
 - procs are like shell "functions".  They look like an external process, accepting an
   `argv` array and returning exit code.  I think of `proc` as *procedure* or
   *process*.
+  - TODO: add notes below
+- funcs are like Python or JavaScript functions. They accept and return typed
+  data.
 
 procs are called with a "command line":
 
-    myproc arg1 arg2 arg3
+    my-proc arg1 arg2 arg3
 
 funcs are called with Python/JS-like Oil expressions:
 
-    var x = myfunc(42, 'foo')
-    do myfunc(42, 'foo')   # throw away the return value.
+    var x = my_func(42, 'foo')
+    _ my_func(42, 'foo')   # throw away the return value.
+
+This may be legal:
+
+    my-proc (42, 'foo')  # note space
 
 This is NOT legal:
 
-    myfunc(42, 'foo')
-
-TODO: 
-
-Shell is really the "main", if that makes sense. procs can call funcs, but
-funcs won't be able to call procs (except for some limited cases like `log` and
-`die`).
+    my_func(42, 'foo')  # it's illegal whether there's a space or not
 
 
-<!--
+### Procs / Shell is the "main"
 
-Deferred Functions Look Like Julia, JavaScript, and Go
+That is, procs can call funcs, but funcs won't be able to call procs (except
+for some limited cases like `log` and `die`).
 
--->
+
+### Proc Compose
 
 People may tend to prefer funcs because they're more familiar. But shell
 composition with proc is very powerful!
@@ -278,7 +280,8 @@ of a syntactic issue.  But I don't think it's that high priority.
 
 -->
 
-Here are some complicated examples from the tests.  It's not representative of what real code looks like, but it shows all the features.
+Here are some complicated examples from the tests.  It's not representative of
+what real code looks like, but it shows all the features.
 
 proc:
 
@@ -289,6 +292,10 @@ proc name-with-hyphen (x, y, @names) {
 }
 name-with-hyphen a b c
 ```
+
+<!--
+
+OBSOLETE
 
 func:
 
@@ -316,3 +323,53 @@ echo ____
 echo array @f(5, 6, ...a, c=7, d=8; ...n)
 ```
 
+-->
+
+### More Notes on Procs. vs Funcs
+
+
+procs:
+
+- shell-like / process-like
+  - have string args, stdin/stdout/stderr, and return exit code
+- BUT they also have **typed args** in Oil, including BLocks
+  - args are lazily evaluated?
+- return status is for ERRORS
+- To "return" a list of strings, you should print lines of QSN to stdout!
+- they can have side effects (I/O)
+- they can be run on remote machines
+- they're generally for code that takes more than 10ms?
+
+Examples:
+
+    kebab-case (1, 2, 3)
+    kebab-case {
+      const block = 'literal'
+    }
+    HayBlock {
+      const block = 'literal'
+    }
+
+funcs: Python- and JavaScript, like
+
+- often do pure computation
+- eagerly evaluated args?  not sure
+- no recoverable errors?
+  - well you can use 'try' around the whole thing
+  - glob() can fail
+- run locally?
+- should be fast: should take under 10ms -- which is a typical process start time
+- which means funcs should:
+  - be vectorized in a row
+
+Examples:
+
+    var x = strip(y)
+    = strip(y)  # pretty print
+    _ strip(y)  # not useful
+    echo $[strip(y)]
+    write -- @[split(x)]
+    write -- @[glob(x)]  # it's possible for this to fail
+
+    # arguments to procs are expressions!
+    append (x, strip(y))

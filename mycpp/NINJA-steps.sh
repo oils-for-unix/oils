@@ -109,6 +109,19 @@ wrap-cc() {
   local preamble_path=$3
   local out=$4
 
+  # Suppress wrapper for Pea for now!
+  case $out in
+    (*.pea.cc)
+      {  
+        cat $in
+        echo '#include <stdio.h>'
+        echo 'int main() { printf("stub\n"); return 1; }'
+      } > $out
+
+      return
+      ;;
+  esac    
+
   {
 
      echo "// examples/$main_module"
@@ -133,7 +146,8 @@ translate-pea() {
   local out=$2
   shift 2  # rest of args are inputs
 
-  pea/TEST.sh translate-cpp "$@" > $out
+  # the parse actino outputs C++
+  PYTHONPATH=. ../oil_DEPS/python3 pea/pea_main.py parse "$@" > $out
 }
 
 task() {

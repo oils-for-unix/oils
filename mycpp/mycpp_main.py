@@ -167,6 +167,7 @@ def main(argv):
       log(e)
     log('-'* 80)
     log('')
+    return 1
 
   # Important functions in mypyc/build.py:
   #
@@ -329,10 +330,12 @@ def main(argv):
                               local_vars=local_vars, fmt_ids=fmt_ids)
     p4.visit_mypy_file(module)
 
+  return 0  # success
+
 
 if __name__ == '__main__':
   try:
-    main(sys.argv)
+    sys.exit(main(sys.argv))
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

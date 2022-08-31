@@ -151,9 +151,10 @@ def NinjaGraph(n):
             deps_base_dir='prebuilt/ninja',
             rule='write-shwrap-mycpp')
 
-  # This is Python 3, but the wrapper still works
-  shwrap_py(n, 'pea/pea_main.py',
-            deps_base_dir='prebuilt/ninja')
+  # This needs a wrapper for Python 3.10
+  if 0:
+    shwrap_py(n, 'pea/pea_main.py',
+              deps_base_dir='prebuilt/ninja')
 
   #
   # ASDL

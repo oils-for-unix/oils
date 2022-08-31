@@ -300,9 +300,10 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
   if translator == 'mycpp':
     example_matrix = COMPILERS_VARIANTS
   else:
+    # pea just has one variant for now
     example_matrix = [
         ('cxx', 'gcevery')
-    ]  # pea just has one variant for now
+    ]
 
   # Compile C++.
   for compiler, variant in example_matrix:
@@ -415,6 +416,7 @@ def NinjaGraph(n):
          description='mycpp $mypypath $out $in')
   n.newline()
 
+  # NOTE: Doesn't use _bin/shwrap/pea_main
   n.rule('translate-pea',
          command='mycpp/NINJA-steps.sh translate-pea $mypypath $out $in',
          description='pea $mypypath $out $in')

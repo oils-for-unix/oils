@@ -209,7 +209,8 @@ test-invalid-examples() {
 
   done
 
-  echo "OK $0 mycpp test-invalid-examples"
+  log ''
+  log "OK $0 mycpp test-invalid-examples"
 }
 
 soil-run() {
