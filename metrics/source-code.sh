@@ -277,11 +277,14 @@ _overview() {
 
   spec-gold-counts $count "$@"
 
-  ls {osh,oil_lang,frontend,core,pyext}/*_test.py | $count \
-    'Language Unit Tests' '' "$@"
+  test/unit.sh py2-tests | $count \
+    'Python Unit Tests' '' "$@"
 
-  ls {build,test,asdl,pylib,tools}/*_test.py | $count \
-    'Other Unit Tests' '' "$@"
+  ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py | $count \
+    'Other Shell Tests' '' "$@"
+
+  ls */TEST.sh | $count \
+    'Test Automation' '' "$@"
 
   mycpp-counts $count "$@"
 
@@ -291,11 +294,9 @@ _overview() {
 
   # Leaving off gen-cpp-counts since that requires a C++ build
 
-  ls build/*.{mk,sh,py,c} Makefile configure install | filter-py | $count \
+  ls build/*.{mk,sh,py,c} Makefile configure install \
+    | filter-py | egrep -v 'NINJA|TEST' | $count \
     'Build Automation' '' "$@"
-
-  ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py | $count \
-    'Test Automation' '' "$@"
 
   ls devtools/release*.sh | $count \
     'Release Automation' '' "$@"
