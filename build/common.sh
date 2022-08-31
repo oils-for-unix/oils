@@ -17,12 +17,17 @@ set -o errexit
 # New version is slightly slower -- 13 seconds vs. 11.6 seconds on oil-native
 readonly CLANG_DIR_RELATIVE='../oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04'
 
-CLANG_DIR=$REPO_ROOT/$CLANG_DIR_RELATIVE
-if ! test -d "$CLANG_DIR"; then
+CLANG_DIR_1=$REPO_ROOT/$CLANG_DIR_RELATIVE
+CLANG_DIR_FALLBACK=~/git/oilshell/oil/$CLANG_DIR_RELATIVE
+if test -d $CLANG_DIR_1; then
+  CLANG_DIR=$CLANG_DIR_1
+  CLANG_IS_MISSING=''
+else
   # BUG FIX: What if we're building _deps/ovm-build or ../benchmark-data/src?
   # Just hard-code an absolute path.  (We used to use $PWD, but I think that
   # was too fragile.)
-  CLANG_DIR=~/git/oilshell/oil/$CLANG_DIR_RELATIVE
+  CLANG_DIR=$CLANG_DIR_FALLBACK
+  CLANG_IS_MISSING='T'
 fi
 readonly CLANG_DIR
 

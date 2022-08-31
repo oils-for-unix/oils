@@ -29,8 +29,6 @@ cpplint() {
 }
 
 clang-format() {
-  #$CLANG_DIR/bin/clang-format -style=Google "$@"
-
   # I like consistent Python-style functions and blocks, e.g. not if (x) return
   local style='{
       BasedOnStyle: Google,
@@ -53,12 +51,27 @@ cpp-files() {
   done
 }
 
-# Not ready to do this yet?
-# I don't like one liners like Constructor : v_() {}
-format-oil() {
-  cpp-files | egrep -v 'asdl/runtime(.gc)?.cc|greatest.h' | xargs -- $0 clang-format -i 
+format-cpp() {
+  # see build/common.sh
+  if test -n "$CLANG_IS_MISSING"; then
+    log ''
+    log "  *** $0: Did not find $CLANG_DIR_1"
+    log "  *** Run deps/from-binary.sh to get it"
+    log ''
+    return 1
+  fi
+
+  cpp-files | egrep -v 'greatest.h' | xargs -- $0 clang-format -i 
   git diff
 }
+
+format-oil() {
+  ### BACKWARD COMPAT stub
+
+  format-cpp "$@"
+}
+
+
 
 #
 # Python

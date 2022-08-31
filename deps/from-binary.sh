@@ -4,6 +4,10 @@
 #
 # Usage:
 #   deps/from-binary.sh <function name>
+#
+# Example:
+#   deps/from-binary.sh download-clang
+#   deps/from-binary.sh extract-clang
 
 set -o nounset
 set -o pipefail
