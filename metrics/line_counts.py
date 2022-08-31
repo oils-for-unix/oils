@@ -23,7 +23,7 @@ def main(argv):
   comment = argv[3]
   tmp_dir = argv[4]
 
-  total_lines = 0
+  total_lines = None
   rows = []
 
   # Parse
@@ -43,6 +43,13 @@ def main(argv):
   index_tsv = os.path.join(tmp_dir, 'INDEX.tsv')
 
   anchor = 'i%s' % id_
+
+  # Quirk: 'wc' doesn't print total line when there's one file.
+  # TODO: Should we get rid of the terminal/text version of this report, and
+  # not use 'wc'?
+
+  if total_lines is None:
+    total_lines = rows[-1][0]
 
   record = {
       'id': id_,
@@ -86,10 +93,12 @@ def main(argv):
   </pre>
 </div>''' % record, file=f)
 
+  return 0
+
 
 if __name__ == '__main__':
   try:
-    main(sys.argv)
+    sys.exit(main(sys.argv))
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

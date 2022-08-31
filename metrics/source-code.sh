@@ -97,7 +97,7 @@ EOF
 }
 
 #
-# Two variants: text and html
+# Two variants of the $count function: text and html
 #
 
 category-text() {
@@ -117,6 +117,8 @@ shopt -s lastpipe
 SECTION_ID=0  # mutable global
 
 category-html() {
+  # TODO: Don't use wc -l, and just count and sum the lines yourself
+
   xargs wc -l | metrics/line_counts.py $((++SECTION_ID)) "$@"
 }
 
@@ -299,8 +301,7 @@ _overview() {
     'Release Automation' '' "$@"
 
   ls soil/*.{sh,py} | $count \
-    'Soil' \
-    'Multi-cloud continuous build with containers.' '' "$@"
+    'Soil: Multi-cloud CI with containers' '' "$@"
 
   ls benchmarks/*.{sh,py,R} | $count \
     'Benchmarks' '' "$@"
