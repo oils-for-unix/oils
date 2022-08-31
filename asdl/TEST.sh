@@ -48,7 +48,7 @@ gen-cpp-test() {
 
   local bin=$bin_dir/gen_cpp_test
 
-  compile_and_link $compiler $variant '-D OLDSTL_BINDINGS' $bin \
+  compile_and_link $compiler $variant '-D LEAKY_ALLOCATOR' $bin \
     asdl/gen_cpp_test.cc \
     prebuilt/asdl/runtime.mycpp.cc \
     "${OLDSTL_RUNTIME[@]}" \
