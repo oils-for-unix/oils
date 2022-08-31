@@ -13,6 +13,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source cpp/NINJA-steps.sh
 source mycpp/common.sh  # run-test
+source soil/common.sh  # find-dir-html
 
 # in case binaries weren't built
 shopt -s failglob
@@ -213,8 +214,7 @@ test-invalid-examples() {
   log "OK $0 mycpp test-invalid-examples"
 }
 
-soil-run() {
-  test-invalid-examples
+test-runtime() {
 
   # Run two tests that respect this variant
   unit '' oldstl
@@ -225,6 +225,37 @@ soil-run() {
   unit '' gcstats
   unit '' gcevery
 }
+
+#
+# Translator
+#
+
+test-valid-examples() {
+  ./NINJA-config.sh
+
+  # 'mycpp-all' has other stuff like type checking alone, stripping, clang builds
+  set +o errexit
+  ninja mycpp-logs-equal
+  local status=$?
+  set -o errexit
+
+  find-dir-html _test mycpp-examples
+
+  # Now we want to zip up
+  return $status
+}
+
+
+test-translator() {
+  ### Invoked by soil/worker.sh
+
+  test-invalid-examples
+  test-valid-examples
+}
+
+#
+#
+#
 
 unit-test-coverage() {
   ### Invoked by Soil
