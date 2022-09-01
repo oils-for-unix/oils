@@ -143,8 +143,6 @@ class Heap {
   void Init(int space_size) {
     // malloc() and memset()
     from_space_.Init(space_size);
-    to_space_.Init(space_size);
-
     free_ = from_space_.begin_;  // where we allocate from
     limit_ = free_ + space_size;
 

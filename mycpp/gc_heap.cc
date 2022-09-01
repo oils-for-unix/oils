@@ -124,10 +124,12 @@ void Heap::Collect() {
   num_collections_++;
 #endif
 
-  // If we grew one space, the other one has to catch up.
   if (to_space_.size_ < from_space_.size_) {
-    to_space_.Free();
-    to_space_.Init(from_space_.size_);
+    // We just initialized the to_space to the size of the from space.  If it's
+    // smaller here, thats now a bug.
+    InvalidCodePath(); 
+    /* to_space_.Free(); */
+    /* to_space_.Init(from_space_.size_); */
   }
 
   char* scan = to_space_.begin_;  // boundary between black and gray
