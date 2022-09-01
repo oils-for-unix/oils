@@ -934,7 +934,8 @@ TEST protect_test() {
   Space from;
   from.Init(512);
 
-#ifdef GC_PROTECT
+  // TODO(Jesse): What does this test do?
+#if 0
   from.Protect();
   // This crashes
   // log("begin = %x", *from.begin_);

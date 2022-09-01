@@ -1,6 +1,6 @@
 // gc_heap.cc
 
-#include <sys/mman.h>  // mprotect()
+#include <sys/mman.h> // mmap
 
 #include "mycpp/runtime.h"
 
@@ -21,38 +21,39 @@ class LayoutFixed : public Obj {
   Obj* children_[16];  // only the entries denoted in field_mask will be valid
 };
 
-void Space::Init(int space_size) {
-#if GC_PROTECT
-  void* p = mmap(nullptr, space_size, PROT_READ | PROT_WRITE,
-                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  begin_ = static_cast<char*>(p);
-#else
-  begin_ = static_cast<char*>(malloc(space_size));
-#endif
-  size_ = space_size;
+void Space::Init(int num_bytes) {
+  void *requested_addr = nullptr;
 
-  Clear();
+  int fd = -1;  // `man 2 mmap` notes that a portable application should set
+                // the fd argument to -1 with MAP_ANONYMOUS because some impls
+                // require it.
+
+  int offset = 0; // `man 2 mmap` specifies this must be 0 with MAP_ANONYMOUS
+
+
+  void *p = mmap( requested_addr,
+                  num_bytes,
+                  PROT_READ | PROT_WRITE,
+                  MAP_PRIVATE | MAP_ANONYMOUS,
+                  fd, offset);
+
+  if (p == MAP_FAILED)
+  {
+    assert(!"mmap() failed, infinite sadness.");
+  }
+  else
+  {
+    begin_ = static_cast<char*>(p);
+    size_ = num_bytes;
+  }
 }
 
 void Space::Free() {
-#if GC_PROTECT
-  Protect();  // There is no way of deallocating I guess
-#else
-  free(begin_);
-#endif
+  if (munmap(begin_, size_) == -1)
+  {
+    assert(!"munmap() failed, infinite sadness.");
+  }
 }
-
-#if GC_PROTECT
-void Space::Protect() {
-  int m = mprotect(begin_, size_, PROT_NONE);
-  assert(m == 0);
-}
-
-void Space::Unprotect() {
-  int m = mprotect(begin_, size_, PROT_READ | PROT_WRITE);
-  assert(m == 0);
-}
-#endif
 
 Obj* Heap::Relocate(Obj* obj, Obj* header) {
   // Move an object from one space to another.
@@ -115,13 +116,12 @@ inline Obj* ObjHeader(Obj* obj) {
 }
 
 void Heap::Collect() {
+
+  to_space_.Init(from_space_.size_);
+
 #if GC_STATS
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
-#endif
-
-#if GC_PROTECT
-  to_space_.Unprotect();
 #endif
 
   // If we grew one space, the other one has to catch up.
@@ -227,15 +227,9 @@ void Heap::Collect() {
     scan += aligned(header->obj_len_);
   }
 
-  // We just copied everything from_space_ -> to_space_.  Maintain
-  // invariant of the space we will allocate from next time.
-  from_space_.Clear();
-#if GC_PROTECT
-  from_space_.Protect();
-  // log("begin = %x", *from_space_.begin_);
-#endif
-
   Swap();
+
+  to_space_.Free();
 
 #if GC_VERBOSE
   Report();

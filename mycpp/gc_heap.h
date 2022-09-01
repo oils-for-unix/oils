@@ -114,28 +114,12 @@ const int kMaxRoots = 4 * 1024;  // related to C stack size
 
 class Space {
  public:
-  Space() {
-  }
+  Space() {}
+
   void Init(int space_size);
 
   void Free();
 
-  void Clear() {
-    // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
-    // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
-    // it makes sense to zero the slabs instead?
-#ifndef NO_GC_HACK
-    // When not collecting, we need a huge 400 MiB heap.  Try to save startup
-    // time by not doing this.
-    memset(begin_, 0, size_);
-#endif
-  }
-
-#if GC_PROTECT
-  // To maintain invariants
-  void Protect();
-  void Unprotect();
-#endif
 #if GC_STATS
   void AssertValid(void* p) {
     if (begin_ <= p && p < begin_ + size_) {
@@ -152,8 +136,7 @@ class Space {
 
 class Heap {
  public:
-  Heap() {  // default constructor does nothing -- relies on zero initialization
-  }
+  Heap() {}  // default constructor does nothing -- relies on zero initialization
 
   // Real initialization with the initial heap size.  The heap grows with
   // allocations.
