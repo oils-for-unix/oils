@@ -73,7 +73,7 @@ leaky-binding-test() {
   local compiler=${1:-cxx}
   local variant=${2:-dbg}
 
-  local dir=_bin/$compiler-$variant/cpp
+  local dir=$REPO_ROOT/_bin/$compiler-$variant/cpp
   mkdir -p $dir
   local bin=$dir/leaky_binding_test
 
@@ -83,7 +83,17 @@ leaky-binding-test() {
   compile_and_link $compiler $variant "$more_cxx_flags" $bin \
     "${LEAKY_TEST_SRC[@]}" cpp/dumb_alloc.cc
 
+  local tmp_dir=_tmp/leaky-binding-test
+  rm -r -f -v $tmp_dir
+  mkdir -p $tmp_dir
+  pushd $tmp_dir >/dev/null
+
+  # to test glob()
+  touch {foo,bar,baz}.testdata
+
+  # TODO: we need a way to pass -t here
   run-test $bin $compiler $variant
+  popd >/dev/null
 }
 
 readonly GC_TEST_SRC=(

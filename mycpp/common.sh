@@ -20,7 +20,7 @@ run-test() {
   local compiler=$2
   local variant=$3
 
-  local dir=_test/$compiler-$variant/cpp
+  local dir=$REPO_ROOT/_test/$compiler-$variant/cpp
 
   mkdir -p $dir
 
@@ -29,7 +29,20 @@ run-test() {
 
   local log=$dir/$name.log
   log "RUN $bin > $log"
+
+  set +o errexit
   $bin > $log
+  local status=$?
+  set -o errexit
+
+  if test $status -eq 0; then
+    echo 'OK'
+  else
+    echo
+    cat $log
+    echo
+    die "FAIL: $bin failed with code $status"
+  fi
 }
 
 maybe-our-python3() {
