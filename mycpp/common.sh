@@ -29,7 +29,20 @@ run-test() {
 
   local log=$dir/$name.log
   log "RUN $bin > $log"
+
+  set +o errexit
   $bin > $log
+  local status=$?
+  set -o errexit
+
+  if test $status -eq 0; then
+    echo 'OK'
+  else
+    echo
+    cat $log
+    echo
+    die "FAIL: $bin failed with code $status"
+  fi
 }
 
 maybe-our-python3() {
