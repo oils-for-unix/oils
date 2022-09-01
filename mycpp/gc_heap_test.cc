@@ -934,7 +934,11 @@ TEST protect_test() {
   Space from;
   from.Init(512);
 
-  // TODO(Jesse): What does this test do?
+  // TODO(Jesse): This test is no longer necessary .. whatever it was doing.
+  //
+  // Seems to me like it was manually toggled on at one point to verify that
+  // the 'Protect()' call indeed produced a crash as intended ..?
+  //
 #if 0
   from.Protect();
   // This crashes
