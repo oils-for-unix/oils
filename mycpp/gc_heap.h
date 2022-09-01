@@ -94,7 +94,6 @@
 // #defines for degbugging:
 //
 // GC_EVERY_ALLOC: Collect() on every Allocate().  Exposes many bugs!
-// GC_PROTECT: Use mprotect()
 // GC_VERBOSE: Log when we collect
 // GC_STATS: Collect more stats.  TODO: Rename this?
 
