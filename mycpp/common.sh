@@ -20,7 +20,7 @@ run-test() {
   local compiler=$2
   local variant=$3
 
-  local dir=_test/$compiler-$variant/cpp
+  local dir=$REPO_ROOT/_test/$compiler-$variant/cpp
 
   mkdir -p $dir
 

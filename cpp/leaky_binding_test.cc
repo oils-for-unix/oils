@@ -154,14 +154,6 @@ TEST libc_test() {
   ASSERT_EQ_FMT(8, result->at0(), "%d");
   ASSERT_EQ_FMT(10, result->at1(), "%d");
 
-  // This depends on the file system
-  auto files = libc::glob(StrFromC("*.md"));
-  ASSERT_EQ_FMT(1, len(files), "%d");
-  print(files->index_(0));  // should get README.md only
-
-  auto files2 = libc::glob(StrFromC("*.pyzzz"));
-  ASSERT_EQ_FMT(0, len(files2), "%d");
-
   Str* h = libc::gethostname();
   log("gethostname() =");
   print(h);
@@ -224,10 +216,10 @@ TEST bool_stat_test() {
 
 TEST pyos_readbyte_test() {
   // Write 2 bytes to this file
-  const char* tmp_name = "_tmp/pyos_ReadByte";
+  const char* tmp_name = "pyos_ReadByte";
   int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
-    printf("1. ERROR %s", strerror(errno));
+    printf("1. ERROR %s\n", strerror(errno));
   }
   ASSERT(fd > 0);
   write(fd, "SH", 2);
@@ -235,7 +227,7 @@ TEST pyos_readbyte_test() {
 
   fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
-    printf("2. ERROR %s", strerror(errno));
+    printf("2. ERROR %s\n", strerror(errno));
   }
 
   Tuple2<int, int> tup = pyos::ReadByte(fd);
@@ -256,10 +248,10 @@ TEST pyos_readbyte_test() {
 }
 
 TEST pyos_read_test() {
-  const char* tmp_name = "_tmp/pyos_Read";
+  const char* tmp_name = "pyos_Read";
   int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
-    printf("1. ERROR %s", strerror(errno));
+    printf("3. ERROR %s\n", strerror(errno));
   }
   ASSERT(fd > 0);
   write(fd, "SH", 2);
@@ -268,7 +260,7 @@ TEST pyos_read_test() {
   // open needs an absolute path for some reason?  _tmp/pyos doesn't work
   fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
   if (fd < 0) {
-    printf("2. ERROR %s", strerror(errno));
+    printf("4. ERROR %s\n", strerror(errno));
   }
 
   List<Str*>* chunks = NewList<Str*>();
@@ -321,6 +313,20 @@ TEST putenv_test() {
   PASS();
 }
 
+TEST libc_glob_test() {
+  // This depends on the file system
+  auto files = libc::glob(StrFromC("*.testdata"));
+  // 3 files are made by the shell wrapper
+  ASSERT_EQ_FMT(3, len(files), "%d");
+
+  print(files->index_(0));
+
+  auto files2 = libc::glob(StrFromC("*.pyzzz"));
+  ASSERT_EQ_FMT(0, len(files2), "%d");
+
+  PASS();
+}
+
 // NOTE(Jesse): `if 0`-ed this out to silence an annoying warning.  Should be
 // put back in, though that's on Andy.
 #if 0
@@ -353,6 +359,7 @@ int main(int argc, char** argv) {
   RUN_TEST(match_test);
   RUN_TEST(util_test);
   RUN_TEST(libc_test);
+  RUN_TEST(libc_glob_test);
   RUN_TEST(time_test);
   RUN_TEST(posix_test);
   RUN_TEST(exceptions);
