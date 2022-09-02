@@ -94,7 +94,6 @@
 // #defines for degbugging:
 //
 // GC_EVERY_ALLOC: Collect() on every Allocate().  Exposes many bugs!
-// GC_PROTECT: Use mprotect()
 // GC_VERBOSE: Log when we collect
 // GC_STATS: Collect more stats.  TODO: Rename this?
 
@@ -120,22 +119,6 @@ class Space {
 
   void Free();
 
-  void Clear() {
-    // Slab scanning relies on 0 bytes (nullptr).  e.g. for a List<Token*>*.
-    // Note: I noticed that memset() of say 400 MiB is pretty expensive.  Does
-    // it makes sense to zero the slabs instead?
-#ifndef NO_GC_HACK
-    // When not collecting, we need a huge 400 MiB heap.  Try to save startup
-    // time by not doing this.
-    memset(begin_, 0, size_);
-#endif
-  }
-
-#if GC_PROTECT
-  // To maintain invariants
-  void Protect();
-  void Unprotect();
-#endif
 #if GC_STATS
   void AssertValid(void* p) {
     if (begin_ <= p && p < begin_ + size_) {
@@ -160,7 +143,7 @@ class Heap {
   void Init(int space_size) {
     // malloc() and memset()
     from_space_.Init(space_size);
-    to_space_.Init(space_size);
+    /* to_space_.Init(space_size); */
 
     free_ = from_space_.begin_;  // where we allocate from
     limit_ = free_ + space_size;
@@ -220,17 +203,10 @@ class Heap {
       return Bump(n);
     }
 
-    // It's STILL too small.  Resize to_space_ to ENSURE that allocation will
-    // succeed, copy the heap to it, then allocate the object.
+    // It's still too small.  Grow the heap.
     int multiple = 2;
-    while (from_space_.size_ + n > to_space_.size_ * multiple) {
-      multiple *= 2;
-    }
-    // log("=== FORCED by multiple of %d", multiple);
-    to_space_.Free();
-    to_space_.Init(to_space_.size_ * multiple);
+    Collect( (from_space_.size_+n) * multiple );
 
-    Collect();
 #if GC_STATS
     num_forced_growths_++;
 #endif
@@ -264,7 +240,7 @@ class Heap {
   Obj* Relocate(Obj* obj, Obj* header);
 
   // mutates free_ and other variables
-  void Collect();
+  void Collect(int to_space_size = 0);
 
 #if GC_STATS
   void Report() {
