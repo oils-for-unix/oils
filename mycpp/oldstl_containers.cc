@@ -12,6 +12,7 @@ Heap gHeap;
 #include "cpp/aligned.h"
 #include "mycpp/comparators.h"
 
+#if 0
 namespace mylib {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
@@ -35,19 +36,10 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
 }
 
 }  // namespace mylib
-
-//
-// Free functions
-//
-
-Str* repr(Str* s) {
-  mylib::BufWriter f;
-  f.format_r(s);
-  return f.getvalue();
-}
+#endif
 
 //
 // Formatter
 //
 
-mylib::BufWriter gBuf;
+// mylib::BufWriter gBuf;

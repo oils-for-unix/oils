@@ -2,6 +2,8 @@
 
 #include "mycpp/runtime.h"
 
+mylib::BufWriter gBuf;
+
 // Translation of Python's print().
 void print(Str* s) {
   fputs(s->data(), stdout);
@@ -19,6 +21,12 @@ Str* str(int i) {
   int length = snprintf(s->data(), kIntBufSize, "%d", i);
   s->SetObjLenFromStrLen(length);
   return s;
+}
+
+Str* repr(Str* s) {
+  mylib::BufWriter f;
+  f.format_r(s);
+  return f.getvalue();
 }
 
 // Helper for str_to_int() that doesn't use exceptions.
