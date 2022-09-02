@@ -212,10 +212,6 @@ test-invalid-examples() {
 }
 
 test-runtime() {
-
-  # Run two tests that respect this variant
-  unit '' oldstl
-
   # Run other unit tests, e.g. the GC tests
   unit '' asan
   unit '' ubsan

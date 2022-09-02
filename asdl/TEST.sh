@@ -13,7 +13,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/common.sh  # BASE_CXXFLAGS, etc.
 source cpp/NINJA-steps.sh  # compile_and_link
-source mycpp/ninja.sh  # OLDSTL_RUNTIME, etc.
+source mycpp/ninja.sh  # GC_RUNTIME
 source devtools/common.sh  # mypy_, etc.
 
 CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
@@ -48,10 +48,10 @@ gen-cpp-test() {
 
   local bin=$bin_dir/gen_cpp_test
 
-  compile_and_link $compiler $variant '-D LEAKY_ALLOCATOR' $bin \
+  compile_and_link $compiler $variant '' $bin \
     asdl/gen_cpp_test.cc \
     prebuilt/asdl/runtime.mycpp.cc \
-    "${OLDSTL_RUNTIME[@]}" \
+    "${GC_RUNTIME[@]}" \
     $GEN_DIR/typed_arith.asdl.cc \
     $GEN_DIR/typed_demo.asdl.cc 
 

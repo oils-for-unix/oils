@@ -59,7 +59,7 @@ import os
 import sys
 
 from mycpp import NINJA_subgraph as mycpp_subgraph
-from mycpp.NINJA_subgraph import OLDSTL_RUNTIME
+from mycpp.NINJA_subgraph import GC_RUNTIME
 
 
 def log(msg, *args):
@@ -120,8 +120,7 @@ CPP_BINDINGS = [
     'cpp/leaky_libc.cc',
 ]
 
-# TODO: Change to GC_RUNTIME
-OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC + OLDSTL_RUNTIME
+OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC + GC_RUNTIME
 
 # Add implicit deps
 HEADER_DEPS = {}

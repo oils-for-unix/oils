@@ -97,12 +97,6 @@ setglobal_compile_flags() {
       flags="$flags -g -D GC_STATS -D GC_EVERY_ALLOC"
       ;;
 
-    (oldstl)
-      # Could this be ASAN?
-      # For cpp/gc_binding_test
-      flags="$flags -O0 -g -D LEAKY_ALLOCATOR"
-      ;;
-
     (opt)
       flags="$flags -O2 -g"
       ;;

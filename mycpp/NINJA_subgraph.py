@@ -186,18 +186,8 @@ GC_RUNTIME = [
     'mycpp/leaky_mylib.cc',
 ]
 
-OLDSTL_RUNTIME = [
-    'mycpp/gc_mylib.cc',
-    'mycpp/gc_heap.cc',
-
-    'mycpp/leaky_containers.cc',
-    'mycpp/leaky_builtins.cc',
-    'mycpp/leaky_mylib.cc',
-    ]
-
 VARIANTS_GC = 1            # Run with garbage collector on, cxx-gcevery
-VARIANTS_OLDSTL = 2        # Run with old STL runtime, cxx-oldstl
-VARIANTS_LEAKY_OLDSTL = 3  # Run both GC runtime and OLDSTL
+VARIANTS_LEAKY = 2
 
 # Unit tests that run with garbage collector on.
 UNIT_TESTS = {
@@ -206,11 +196,11 @@ UNIT_TESTS = {
     'mycpp/gc_builtins_test.cc': VARIANTS_GC,
     'mycpp/gc_mylib_test.cc': VARIANTS_GC,
 
-    'mycpp/oldstl_containers_test.cc': VARIANTS_OLDSTL,
+    'mycpp/oldstl_containers_test.cc': VARIANTS_LEAKY,
 
-    'mycpp/leaky_oldstl_builtins_test.cc': VARIANTS_LEAKY_OLDSTL,
-    'mycpp/leaky_oldstl_containers_test.cc': VARIANTS_LEAKY_OLDSTL,
-    'mycpp/leaky_oldstl_mylib_test.cc': VARIANTS_LEAKY_OLDSTL,
+    'mycpp/leaky_oldstl_builtins_test.cc': VARIANTS_LEAKY,
+    'mycpp/leaky_oldstl_containers_test.cc': VARIANTS_LEAKY,
+    'mycpp/leaky_oldstl_mylib_test.cc': VARIANTS_LEAKY,
 
     # there is also demo/{gc_heap,square_heap}.cc
 }
@@ -256,10 +246,6 @@ COMPILERS_VARIANTS = [
     ('cxx', 'opt'),
     ('cxx', 'asan'),
     ('cxx', 'ubsan'),
-
-    # FOR UNIT TESTS ONLY NOW!  This has -D OLDSTL_BINDINGS
-    # Note that _bin/cxx-dbg/osh_eval -D OLDSTL_BINDINGS on in OSH_EVAL_FLAGS_STR
-    ('cxx', 'oldstl'),
 
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
@@ -507,7 +493,6 @@ def NinjaGraph(n):
   cc_sources.extend(UNIT_TESTS.keys())  # test main() with GC on
 
   cc_sources.extend(GC_RUNTIME)
-  cc_sources.extend(OLDSTL_RUNTIME)
 
   cc_sources = sorted(set(cc_sources))  # make unique
 
@@ -539,20 +524,7 @@ def NinjaGraph(n):
     for main_cc in sorted(UNIT_TESTS):
       which_variants = UNIT_TESTS[main_cc]
 
-      if which_variants == VARIANTS_GC:
-        cc_files = GC_RUNTIME
-
-      elif which_variants == VARIANTS_OLDSTL:
-        cc_files = OLDSTL_RUNTIME
-
-      elif which_variants == VARIANTS_LEAKY_OLDSTL:
-        if variant == 'oldstl':
-          cc_files = OLDSTL_RUNTIME
-        else:
-          cc_files = GC_RUNTIME
-
-      else:
-        raise AssertionError(which_variants)
+      cc_files = GC_RUNTIME
 
       # assume names are unique
       test_name, _ = os.path.splitext(os.path.basename(main_cc))
@@ -565,12 +537,8 @@ def NinjaGraph(n):
           'dbg', 'asan', 'ubsan', 'gcevery', 'gcstats', 'coverage'):
         test_runs_under_variant = True
 
-      # TODO: How to add coverage back?
-      if which_variants == VARIANTS_OLDSTL and variant == 'oldstl':
-        test_runs_under_variant = True
-
-      if which_variants == VARIANTS_LEAKY_OLDSTL and variant in (
-          'oldstl', 'dbg', 'asan', 'ubsan', 'coverage'):
+      if which_variants == VARIANTS_LEAKY and variant in (
+          'dbg', 'asan', 'ubsan', 'coverage'):
         test_runs_under_variant = True
 
       if not test_runs_under_variant:

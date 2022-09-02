@@ -34,7 +34,10 @@ readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_frontend_flag_spec.cc
     _gen/frontend/arg_types.cc
 
-    "${OLDSTL_RUNTIME[@]}"
+    # TODO: Remove CPP_UNIT_TEST and fix this
+    # prebuilt/frontend/args.mycpp.cc
+
+    "${GC_RUNTIME[@]}"
 )
 
 leaky-flag-spec-test() {
@@ -48,8 +51,7 @@ leaky-flag-spec-test() {
   local bin=$dir/leaky_flag_spec_test
 
   # -D CPP_UNIT_TEST is to disable #include _build/cpp/osh_eval.h
-  local more_cxx_flags='-D LEAKY_ALLOCATOR -D CPP_UNIT_TEST'
-  compile_and_link $compiler $variant "$more_cxx_flags" $bin \
+  compile_and_link $compiler $variant '-D CPP_UNIT_TEST' $bin \
     "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/dumb_alloc.cc
 
   run-test $bin $compiler $variant
@@ -63,8 +65,7 @@ readonly LEAKY_TEST_SRC=(
     cpp/leaky_osh.cc
     cpp/leaky_stdlib.cc
     cpp/leaky_pylib.cc
-
-    "${OLDSTL_RUNTIME[@]}"
+    "${GC_RUNTIME[@]}"
 )
 
 leaky-binding-test() {
@@ -79,8 +80,7 @@ leaky-binding-test() {
 
   # dumb_alloc.cc exposes allocator alignment issues?
 
-  local more_cxx_flags='-D LEAKY_ALLOCATOR' 
-  compile_and_link $compiler $variant "$more_cxx_flags" $bin \
+  compile_and_link $compiler $variant '' $bin \
     "${LEAKY_TEST_SRC[@]}" cpp/dumb_alloc.cc
 
   local tmp_dir=_tmp/leaky-binding-test
@@ -98,6 +98,7 @@ leaky-binding-test() {
 
 readonly GC_TEST_SRC=(
     cpp/gc_binding_test.cc
+    "${GC_RUNTIME[@]}"
 )
 
 gc-binding-test() {
@@ -109,18 +110,8 @@ gc-binding-test() {
 
   local bin=$out_dir/gc_binding_test
 
-  local -a runtime
-  case $variant in
-    (oldstl)
-      runtime=( "${OLDSTL_RUNTIME[@]}" )
-      ;;
-    (*)
-      runtime=( "${GC_RUNTIME[@]}" )
-      ;;
-  esac
-
   compile_and_link $compiler $variant '' $bin \
-    "${GC_TEST_SRC[@]}" "${runtime[@]}"
+    "${GC_TEST_SRC[@]}"
 
   run-test $bin $compiler $variant
 }
@@ -137,8 +128,6 @@ unit() {
   ### Run by test/cpp-unit.sh
 
   gc-binding-test '' gcevery
-  gc-binding-test '' oldstl
-  # leakyasan?
 
   # Has generated code
   leaky-flag-spec-test '' ''

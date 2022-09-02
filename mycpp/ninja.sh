@@ -1,16 +1,7 @@
 # Usage:
-#   source mycpp/ninja.sh <function name>
+#   source mycpp/ninja.sh
 
-# TODO: Get these from Ninja
-
-readonly -a OLDSTL_RUNTIME=(
-    mycpp/gc_heap.cc
-    mycpp/gc_mylib.cc
-
-    mycpp/leaky_builtins.cc
-    mycpp/leaky_containers.cc
-    mycpp/leaky_mylib.cc
-)
+# TODO: Get from Ninja
 
 readonly -a GC_RUNTIME=(
     mycpp/gc_heap.cc
