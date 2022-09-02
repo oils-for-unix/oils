@@ -930,21 +930,6 @@ TEST inheritance_test() {
   PASS();
 }
 
-TEST protect_test() {
-  Space from;
-  from.Init(512);
-
-#ifdef GC_PROTECT
-  from.Protect();
-  // This crashes
-  // log("begin = %x", *from.begin_);
-  from.Unprotect();
-  ASSERT_EQ_FMT(0, *from.begin_, "%d");
-#endif
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -979,7 +964,6 @@ int main(int argc, char** argv) {
   RUN_TEST(compile_time_masks_test);
   RUN_TEST(vtable_test);
   RUN_TEST(inheritance_test);
-  RUN_TEST(protect_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

@@ -90,11 +90,11 @@ setglobal_compile_flags() {
 
     (gcstats)
       # unit tests use for gHeap.Report()
-      flags="$flags -g -D GC_PROTECT -D GC_STATS"
+      flags="$flags -g -D GC_STATS"
       ;;
 
     (gcevery)
-      flags="$flags -g -D GC_PROTECT -D GC_STATS -D GC_EVERY_ALLOC"
+      flags="$flags -g -D GC_STATS -D GC_EVERY_ALLOC"
       ;;
 
     (oldstl)
