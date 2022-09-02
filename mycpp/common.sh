@@ -31,12 +31,34 @@ run-test() {
   log "RUN $bin > $log"
 
   set +o errexit
-  $bin > $log
+  $bin > $log 2>&1
   local status=$?
   set -o errexit
 
   if test $status -eq 0; then
-    echo 'OK'
+    log "OK $bin"
+  else
+    echo
+    cat $log
+    echo
+    die "FAIL: $bin failed with code $status"
+  fi
+}
+
+run-with-log-wrapper() {
+  local bin=$1
+  local log=$2
+
+  mkdir -p $(dirname $log)
+  log "RUN $bin > $log"
+
+  set +o errexit
+  $bin > $log 2>&1
+  local status=$?
+  set -o errexit
+
+  if test $status -eq 0; then
+    log "OK $bin"
   else
     echo
     cat $log

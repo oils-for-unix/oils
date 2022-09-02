@@ -209,9 +209,6 @@ test-invalid-examples() {
     fi
 
   done
-
-  log ''
-  log "OK $0 mycpp test-invalid-examples"
 }
 
 test-runtime() {
@@ -249,7 +246,7 @@ test-valid-examples() {
 test-translator() {
   ### Invoked by soil/worker.sh
 
-  test-invalid-examples
+  run-with-log-wrapper test-invalid-examples _test/mycpp/test-invalid-examples.log
   test-valid-examples
 }
 
