@@ -160,11 +160,6 @@ cpp-counts() {
     'Includes OS bindings.  Small C++ files like cpp/osh_arith_parse.{cc,h} correspond to larger Python files like osh/arith_parse.py.' \
     "$@"
 
-  ls mycpp/oldstl* | grep -v '_test.cc' | $count \
-    'OLDSTL mycpp Runtime' \
-    'This implementation has no garbage collection; it allocates memory forever.' \
-    "$@"
-
   # TODO: Consolidate these 3 small headers
   ls mycpp/gc_* mycpp/leaky_* mycpp/{myerror,error_types,tuple_types}.h | egrep -v '_test.cc' \
     | $count \

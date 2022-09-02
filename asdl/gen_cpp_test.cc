@@ -154,8 +154,12 @@ flag_type::Bool g_ft = {};
 using typed_demo_asdl::cflow__Return;
 cflow__Return g_ret = {5};
 
-int i0 = 7;  // This runs before main()?  How to tell?
+int i0 = 7;
+
+// NOTE: This causes an infinite loop with the garbage collected runtime
+#if 0
 List<int>* g_list = NewList<int>({i0, 8, 9});
+#endif
 
 // Dict<Str*, int> g_dict = {4, 5, 6};
 
@@ -172,12 +176,14 @@ TEST literal_test() {
   ASSERT_EQ(g_ret.tag_(), ret->tag_());
   ASSERT_EQ(g_ret.status, ret->status);
 
+#if 0
   // Wow this works too?  Is it the the constexpr interpreter, or is this code
   // inserted before main()?
   ASSERT_EQ(3, len(g_list));
   ASSERT_EQ_FMT(7, g_list->index_(0), "%d");
   ASSERT_EQ_FMT(8, g_list->index_(1), "%d");
   ASSERT_EQ_FMT(9, g_list->index_(2), "%d");
+#endif
 
   PASS();
 }

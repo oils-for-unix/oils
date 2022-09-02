@@ -351,7 +351,7 @@ TEST pyos_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  // TODO: use garbage collection in this test?
+  gHeap.Init(1 << 20);
 
   GREATEST_MAIN_BEGIN();
 

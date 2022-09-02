@@ -131,19 +131,6 @@ for cc in CPP_BINDINGS + GENERATED_CC:
   HEADER_DEPS[cc].extend(ASDL_H)
   HEADER_DEPS[cc].extend(GENERATED_H)
 
-# -D NO_GC_HACK: Avoid memset().  -- rename GC_NO_MEMSET?
-#  - only applies to gc_heap.h in Space::Clear()
-# -D LEAKY_ALLOCATOR: for QSN, which is used by the ASDL runtime
-#  TODO: use .leaky variant
-#  - _bin/cxx-leaky/osh_eval -- this means it's optimized then?
-#  - we still want to be able to debug it
-#  - $compiler-$variant-$allocator triple?
-
-# leakyopt, leakyasan -- I guess this is good for tests
-
-# single quoted in Ninja/shell syntax
-OSH_EVAL_FLAGS_STR = "'-D NO_GC_HACK -D LEAKY_ALLOCATOR'"
-
 
 def NinjaGraph(n):
 
@@ -206,7 +193,7 @@ def NinjaGraph(n):
 
   for compiler, variant in COMPILERS_VARIANTS:
 
-    ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', OSH_EVAL_FLAGS_STR)]
+    ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")]
 
     #
     # See how much input we're feeding to the compiler.  Test C++ template
@@ -345,8 +332,7 @@ main() {
   local variant=${2:-opt}    # default is optimized build
   local skip_rebuild=${3:-}  # if the output exists, skip build'
 
-  local more_cxx_flags=%s
-''' % (argv0, OSH_EVAL_FLAGS_STR), file=f)
+''' % (argv0), file=f)
 
   out = '_bin/$compiler-$variant-sh/osh_eval'
   print('  local out=%s' % out, file=f)
@@ -375,7 +361,7 @@ main() {
     objects.append(obj_quoted)
 
     print("  echo 'CXX %s'" % src, file=f)
-    print('  compile_one "$compiler" "$variant" "$more_cxx_flags" \\', file=f)
+    print('  compile_one "$compiler" "$variant" "" \\', file=f)
     print('    %s %s' % (src, obj_quoted), file=f)
 
   print('', file=f)
