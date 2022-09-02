@@ -156,7 +156,7 @@ cflow__Return g_ret = {5};
 
 int i0 = 7;
 
-// NOTE: This causes an infinite loop with the garbage collected runtime
+// NOTE: This causes an failed assert() in the GC runtime
 #if 0
 List<int>* g_list = NewList<int>({i0, 8, 9});
 #endif
