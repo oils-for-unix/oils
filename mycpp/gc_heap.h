@@ -167,6 +167,8 @@ class Heap {
 
     roots_top_ = 0;
 
+    is_initialized_ = true;
+
 #if GC_STATS
     num_collections_ = 0;
     num_heap_growths_ = 0;
@@ -292,6 +294,8 @@ class Heap {
 
   int roots_top_;
   Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
+
+  bool is_initialized_ = false;
 
 #if GC_STATS
   int num_collections_;

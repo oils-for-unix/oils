@@ -187,7 +187,9 @@ GC_RUNTIME = [
 ]
 
 OLDSTL_RUNTIME = [
-    'mycpp/oldstl_containers.cc',
+    'mycpp/gc_mylib.cc',
+    'mycpp/gc_heap.cc',
+
     'mycpp/leaky_containers.cc',
     'mycpp/leaky_builtins.cc',
     'mycpp/leaky_mylib.cc',

@@ -5,6 +5,4 @@
 
 #include "mycpp/runtime.h"
 
-namespace mylib {
-
-}  // namespace mylib
+namespace mylib {}  // namespace mylib

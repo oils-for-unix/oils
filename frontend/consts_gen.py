@@ -346,8 +346,8 @@ int NO_INDEX = 0;  // duplicated from frontend/consts.py
       # Note: could use opt_num:: instead of raw ints
       for name in LIST_INT:
         val = getattr(consts, name)
-        val_str = ', '.join(str(i) for i in val)
-        out('List<int>* %s = NewList<int>({%s});', name, val_str)
+        val_str = ' COMMA '.join(str(i) for i in val)
+        out('GLOBAL_LIST(int, %d, %s, {%s});', len(val), name, val_str)
 
       out("""\
 
