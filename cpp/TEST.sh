@@ -46,15 +46,14 @@ leaky-flag-spec-test() {
   local compiler=${1:-cxx}
   local variant=${2:-dbg}
 
-  local dir=_bin/$compiler-$variant/cpp
-  mkdir -p $dir
-  local bin=$dir/leaky_flag_spec_test
+  local bin=_bin/$compiler-$variant/cpp/leaky_flag_spec_test
+  mkdir -p $(dirname $bin)
 
-  # -D CPP_UNIT_TEST is to disable #include _build/cpp/osh_eval.h
+  # -D CPP_UNIT_TEST is to disable #include prebuilt/...
   compile_and_link $compiler $variant '-D CPP_UNIT_TEST' $bin \
     "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/dumb_alloc.cc
 
-  run-test $bin $compiler $variant
+  run-test-bin $bin
 }
 
 readonly LEAKY_TEST_SRC=(
@@ -74,26 +73,24 @@ leaky-binding-test() {
   local compiler=${1:-cxx}
   local variant=${2:-dbg}
 
-  local dir=$REPO_ROOT/_bin/$compiler-$variant/cpp
-  mkdir -p $dir
-  local bin=$dir/leaky_binding_test
+  local bin=_bin/$compiler-$variant/cpp/leaky_binding_test
+  mkdir -p $(dirname $bin)
 
   # dumb_alloc.cc exposes allocator alignment issues?
 
   compile_and_link $compiler $variant '' $bin \
     "${LEAKY_TEST_SRC[@]}" cpp/dumb_alloc.cc
 
-  local tmp_dir=_tmp/leaky-binding-test
-  rm -r -f -v $tmp_dir
-  mkdir -p $tmp_dir
-  pushd $tmp_dir >/dev/null
+  local working_dir=_tmp/leaky-binding-test
+  rm -r -f -v $working_dir
+  mkdir -p $working_dir
 
   # to test glob()
-  touch {foo,bar,baz}.testdata
+  touch $working_dir/{foo,bar,baz}.testdata
 
   # TODO: we need a way to pass -t here
-  run-test $bin $compiler $variant
-  popd >/dev/null
+
+  run-test-bin $bin $working_dir
 }
 
 readonly GC_TEST_SRC=(
@@ -113,7 +110,7 @@ gc-binding-test() {
   compile_and_link $compiler $variant '' $bin \
     "${GC_TEST_SRC[@]}"
 
-  run-test $bin $compiler $variant
+  run-test-bin $bin
 }
 
 # TODO:

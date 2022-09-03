@@ -91,14 +91,13 @@ run-test-funcs() {
   echo "$0: $i tests passed."
 }
 
-# Used by cpp/TEST.sh and mycpp/TEST.sh
-# Compare with run-test-funcs in test/common.sh
 
-run-test() {
+run-test-bin() {
+  ### Run a binary in _bin/ and log output to a file in _test/
+
+  # Compare with run-test-funcs
   local bin=$1
-  local compiler=$2
-  local variant=$3
-  shift 3
+  local working_dir=${2:-}
 
   local rel_path=${bin#'_bin/'}
   local log_dir="_test/$(dirname $rel_path)"
@@ -110,25 +109,34 @@ run-test() {
   local log=$log_dir/$name.log
   log "RUN $bin > $log"
 
+  if test -n "$working_dir"; then
+    pushd $working_dir
+  fi
+
   set +o errexit
-  $bin "$@" > $REPO_ROOT/$log 2>&1
+  $REPO_ROOT/$bin > $REPO_ROOT/$log 2>&1
   local status=$?
   set -o errexit
 
+  if test -n "$working_dir"; then
+    popd
+  fi
+
   if test $status -eq 0; then
-    log "OK $bin"
+    log 'OK'
   else
     echo
     echo "=== $REPO_ROOT/$log ==="
     echo
     cat $REPO_ROOT/$log
     echo
-    die "$bin failed with code $status"
+    log "FAIL: $bin with code $status"
+    return 1
   fi
 }
 
 run-with-log-wrapper() {
-  ### Same as above, except you specify the log file
+  ### Similar to above
   local bin=$1
   local log=$2
   shift 2
@@ -147,7 +155,8 @@ run-with-log-wrapper() {
     echo
     cat $log
     echo
-    die "FAIL: $bin failed with code $status"
+    log "FAIL: $bin with code $status"
+    return 1
   fi
 }
 

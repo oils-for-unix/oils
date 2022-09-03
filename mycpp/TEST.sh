@@ -166,7 +166,7 @@ unit() {
     local prefix=$log_dir/$(basename $b)
     local log=$prefix.log
 
-    run-test $b $compiler $variant
+    run-test-bin $b
   done
 }
 

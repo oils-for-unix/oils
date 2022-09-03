@@ -39,7 +39,7 @@ EOF
   compile_and_link $compiler $variant '' $bin \
     $gen_dir/optview_test.cc
 
-  run-test $bin $compiler $variant
+  run-test-bin $bin
 }
 
 test-flag-gen() {
@@ -68,7 +68,7 @@ EOF
     _gen/frontend/arg_types.cc \
     $gen_dir/arg_types_test.cc
 
-  run-test $bin $compiler $variant
+  run-test-bin $bin
 }
 
 all() {

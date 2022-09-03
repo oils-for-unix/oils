@@ -56,7 +56,7 @@ gen-cpp-test() {
     $GEN_DIR/typed_arith.asdl.cc \
     $GEN_DIR/typed_demo.asdl.cc 
 
-  run-test $bin $compiler $variant
+  run-test-bin $bin
 }
 
 gc-test() {
@@ -89,7 +89,7 @@ gc-test() {
     $GEN_DIR/demo_lib.asdl.cc \
     $GEN_DIR/typed_demo.asdl.cc
 
-  run-test $bin $compiler $variant
+  run-test-bin $bin
 }
 
 one-asdl-gc() {
@@ -129,7 +129,7 @@ EOF
     $test_src \
     "$@"
 
-  run-test $bin $compiler $variant
+  run-test-bin $bin
 }
 
 all-asdl-gc() {
