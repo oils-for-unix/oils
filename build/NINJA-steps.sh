@@ -60,6 +60,28 @@ EOF
   shwrap-deps-comment "$@"
 }
 
+shwrap-pea() {
+  shwrap-prefix
+
+  cat <<'EOF'
+MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
+out=$2
+shift 2
+
+tmp=$out.tmp  # avoid creating partial files
+
+PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
+  ../oil_DEPS/python3 pea/pea_main.py cpp "$@" > $tmp
+status=$?
+
+mv $tmp $out
+exit $status
+EOF
+
+  shift
+  shwrap-deps-comment "$@"
+}
+
 write-shwrap() {
   ### Create a shell wrapper for a Python tool
 
@@ -77,8 +99,11 @@ write-shwrap() {
     (mycpp)
       shwrap-mycpp "$@" > $stub_out
       ;;
+    (pea)
+      shwrap-pea "$@" > $stub_out
+      ;;
     (*)
-      die "Invalid kind '$kind'"
+      die "Invalid template '$template'"
       ;;
   esac
 

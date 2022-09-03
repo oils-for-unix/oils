@@ -103,51 +103,42 @@ EOF
   } > $cc_out
 }
 
-wrap-cc() {
-  local main_module=$1
-  local in=$2
-  local preamble_path=$3
-  local out=$4
+print-wrap-cc() {
+  local translator=$1
+  local main_module=$2
+  local in=$3
+  local preamble_path=$4
 
-  # Suppress wrapper for Pea for now!
-  case $out in
-    (*.pea.cc)
-      {  
-        cat $in
+   echo "// examples/$main_module translated by $translator"
+   echo
+
+   if test -f "$preamble_path"; then
+     echo "#include \"$preamble_path\""
+   fi
+
+   cat $in
+
+   # main() function
+   case $translator in
+     (mycpp)
+       example-main $main_module
+       ;;
+     (pea)
         echo '#include <stdio.h>'
         echo 'int main() { printf("stub\n"); return 1; }'
-      } > $out
-
-      return
-      ;;
-  esac    
-
-  {
-
-     echo "// examples/$main_module"
-     echo
-
-     if test -f "$preamble_path"; then
-       echo "#include \"$preamble_path\""
-     fi
-
-     cat $in
-
-     # main() function
-     example-main $main_module
-
-  } > $out
+       ;;
+     (*)
+       die "Invalid translator $translator"
+       ;;
+   esac
 }
 
-translate-pea() {
-  # TODO: Remove this in favor of _bin/shwrap/pea_main
+wrap-cc() {
+  local out=$1
+  shift
 
-  local mypypath=$1  # interface compatibility
-  local out=$2
-  shift 2  # rest of args are inputs
-
-  # the parse actino outputs C++
-  PYTHONPATH=. ../oil_DEPS/python3 pea/pea_main.py parse "$@" > $out
+  # $translator $main_module $in $preamble_path
+  print-wrap-cc "$@" > $out
 }
 
 task() {

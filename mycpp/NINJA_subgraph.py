@@ -21,8 +21,10 @@ Output Layout:
   _gen/
     mycpp/
       examples/
-        parse.mycpp.cc
-        parse_raw.mycpp.cc
+        cgi.mycpp.cc
+        cgi_raw.mycpp.cc
+        cgi.pea.cc
+        cgi_raw.pea.cc
         expr.asdl.{h,cc}
 
   _build/
@@ -33,10 +35,10 @@ Output Layout:
         _gen/
           mycpp/
             examples/
-              parse.mycpp.o
-              parse.mycpp.o.d
-              parse.pea.o
-              parse.pea.o.d
+              cgi.mycpp.o
+              cgi.mycpp.o.d
+              cgi.pea.o
+              cgi.pea.o.d
               expr.asdl.o
               expr.asdl.o.d
       cxx-gcevery/
@@ -231,7 +233,6 @@ EXAMPLES_CC = {
 # which brings in expr.asdl.h
 EXAMPLES_H = {
     'parse': [ '_gen/mycpp/examples/expr.asdl.h',
-               # TODO: move to _gen
                '_gen/asdl/hnode.asdl.h',
              ],
 }
@@ -253,7 +254,7 @@ COMPILERS_VARIANTS = [
     ('clang', 'coverage'),
 ]
 
-def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
+def TranslatorSubgraph(n, translator, ex, phony):
   raw = '_gen/mycpp/examples/%s_raw.%s.cc' % (ex, translator)
 
   # Translate to C++
@@ -278,7 +279,11 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
 
   # Make a translation unit
   n.build(main_cc_src, 'wrap-cc', raw,
-          variables=[('name', ex), ('preamble_path', preamble_path)])
+          variables=[
+            ('name', ex),
+            ('preamble_path', preamble_path),
+            ('translator', translator)])
+
   n.newline()
 
   if translator == 'pea':
@@ -334,44 +339,6 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
       phony['mycpp-strip'].append(stripped)
 
 
-  # Don't run it for now; just compile
-  if translator == 'pea':
-    return
-
-  # minimal
-  MATRIX = [
-      ('test', 'asan'),  # TODO: gcevery is better!
-      ('benchmark', 'opt'),
-  ]
-
-  # Run the binary in two ways
-  for mode, variant in MATRIX:
-    task_out = '_test/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
-
-    if mode == 'benchmark':
-      if ShouldSkipBenchmark(ex):
-        #log('Skipping benchmark of %s', ex)
-        continue
-      benchmark_tasks.append(task_out)
-
-    elif mode == 'test':
-      if ShouldSkipTest(ex):
-        #log('Skipping test of %s', ex)
-        continue
-
-    cc_log_out = '_test/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
-    py_log_out = '_test/tasks/%s/%s.py.log.txt' % (mode, ex)
-
-    to_compare.append(cc_log_out)
-    to_compare.append(py_log_out)
-
-    # Only test cxx- variant
-    b_example = '_bin/cxx-%s/mycpp/examples/%s.%s' % (variant, ex, translator)
-    n.build([task_out, cc_log_out], 'example-task', [b_example],
-            variables=[
-              ('bin', b_example),
-              ('name', ex), ('impl', 'C++')])
-    n.newline()
 
 
 def NinjaGraph(n):
@@ -397,15 +364,14 @@ def NinjaGraph(n):
          description='mycpp $mypypath $out $in')
   n.newline()
 
-  # NOTE: Doesn't use _bin/shwrap/pea_main
   n.rule('translate-pea',
-         command='mycpp/NINJA-steps.sh translate-pea $mypypath $out $in',
+         command='_bin/shwrap/pea_main $mypypath $out $in',
          description='pea $mypypath $out $in')
   n.newline()
 
   n.rule('wrap-cc',
-         command='mycpp/NINJA-steps.sh wrap-cc $name $in $preamble_path $out',
-         description='wrap-cc $name $in $preamble_path $out')
+         command='mycpp/NINJA-steps.sh wrap-cc $out $translator $name $in $preamble_path',
+         description='wrap-cc $out $translator $name $in $preamble_path $out')
   n.newline()
   n.rule('task',
          # note: $out can be MULTIPLE FILES, shell-quoted
@@ -617,10 +583,49 @@ def NinjaGraph(n):
       n.newline()
 
     for translator in ['mycpp', 'pea']:
-      TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony)
+      TranslatorSubgraph(n, translator, ex, phony)
+
+      # Don't run it for now; just compile
+      if translator == 'pea':
+            continue
+
+      # minimal
+      MATRIX = [
+          ('test', 'asan'),  # TODO: gcevery is better!
+          ('benchmark', 'opt'),
+      ]
+
+      # Run the binary in two ways
+      for mode, variant in MATRIX:
+        task_out = '_test/tasks/%s/%s.%s.%s.task.txt' % (mode, ex, translator, variant)
+
+        if mode == 'benchmark':
+          if ShouldSkipBenchmark(ex):
+            #log('Skipping benchmark of %s', ex)
+            continue
+          benchmark_tasks.append(task_out)
+
+        elif mode == 'test':
+          if ShouldSkipTest(ex):
+            #log('Skipping test of %s', ex)
+            continue
+
+        cc_log_out = '_test/tasks/%s/%s.%s.%s.log.txt' % (mode, ex, translator, variant)
+        py_log_out = '_test/tasks/%s/%s.py.log.txt' % (mode, ex)
+
+        to_compare.append(cc_log_out)
+        to_compare.append(py_log_out)
+
+        # Only test cxx- variant
+        b_example = '_bin/cxx-%s/mycpp/examples/%s.%s' % (variant, ex, translator)
+        n.build([task_out, cc_log_out], 'example-task', [b_example],
+                variables=[
+                  ('bin', b_example),
+                  ('name', ex), ('impl', 'C++')])
+        n.newline()
 
   # Compare the log of all examples
-  out = '_test/logs-equal.txt'
+  out = '_test/mycpp-logs-equal.txt'
   n.build([out], 'logs-equal', to_compare)
   n.newline()
 

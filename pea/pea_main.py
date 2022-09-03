@@ -311,7 +311,8 @@ def main(argv: list[str]) -> int:
 
   action = argv[1]
 
-  if action == 'parse':
+  # TODO: get rid of 'parse'
+  if action in ('parse', 'cpp'):
     files = argv[2:]
 
     # TODO:
@@ -383,10 +384,6 @@ def main(argv: list[str]) -> int:
       return 1
 
     log('Done')
-
-  elif action == 'cpp':
-    files = argv[2:]
-    print('// PEA C++')
 
   else:
     raise RuntimeError('Invalid action %r' % action)
