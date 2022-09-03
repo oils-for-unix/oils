@@ -12,8 +12,8 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source cpp/NINJA-steps.sh
-source mycpp/common.sh  # run-test
 source soil/common.sh  # find-dir-html
+source test/common.sh  # run-test
 
 # in case binaries weren't built
 shopt -s failglob
@@ -28,8 +28,6 @@ examples-variant() {
   local do_benchmark=${3:-}
 
   ninja mycpp-examples-$compiler-$variant
-
-  set +o errexit
 
   local num_tests=0
   local num_failed=0
@@ -63,20 +61,19 @@ examples-variant() {
       continue
     fi
 
+    set +o errexit
     BENCHMARK="$do_benchmark" $b >$log 2>&1
-
     status=$?
+    set -o errexit
 
     if test "$status" -eq 0; then
       log 'OK'
     else
       log "FAIL with status $?"
       #return $status
-    fi
-
-    if test "$status" != 0; then
       num_failed=$((num_failed + 1))
     fi
+
     num_tests=$((num_tests + 1))
   done
 
@@ -169,25 +166,7 @@ unit() {
     local prefix=$log_dir/$(basename $b)
     local log=$prefix.log
 
-    log "RUN $b > $log"
-
-    case $variant in
-      (coverage)
-        export LLVM_PROFILE_FILE=$prefix.profraw
-        ;;
-    esac
-
-    set +o errexit
-    $b >$log 2>&1
-    local status=$?
-    set -o errexit
-
-    if test "$status" -eq 0; then
-      log 'OK'
-    else
-      log "FAIL with status $?"
-      return $status
-    fi
+    run-test $b $compiler $variant
   done
 }
 

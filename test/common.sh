@@ -91,6 +91,66 @@ run-test-funcs() {
   echo "$0: $i tests passed."
 }
 
+# Used by cpp/TEST.sh and mycpp/TEST.sh
+# Compare with run-test-funcs in test/common.sh
+
+run-test() {
+  local bin=$1
+  local compiler=$2
+  local variant=$3
+  shift 3
+
+  local rel_path=${bin#'_bin/'}
+  local log_dir="_test/$(dirname $rel_path)"
+  mkdir -p $REPO_ROOT/$log_dir  # abs path
+
+  local name=$(basename $bin)
+  export LLVM_PROFILE_FILE="$REPO_ROOT/$log_dir/$name.profraw"
+
+  local log=$log_dir/$name.log
+  log "RUN $bin > $log"
+
+  set +o errexit
+  $bin "$@" > $REPO_ROOT/$log 2>&1
+  local status=$?
+  set -o errexit
+
+  if test $status -eq 0; then
+    log "OK $bin"
+  else
+    echo
+    echo "=== $REPO_ROOT/$log ==="
+    echo
+    cat $REPO_ROOT/$log
+    echo
+    die "$bin failed with code $status"
+  fi
+}
+
+run-with-log-wrapper() {
+  ### Same as above, except you specify the log file
+  local bin=$1
+  local log=$2
+  shift 2
+
+  mkdir -p $(dirname $log)
+  log "RUN $bin > $log"
+
+  set +o errexit
+  $bin "$@" > $log 2>&1
+  local status=$?
+  set -o errexit
+
+  if test $status -eq 0; then
+    log "OK $bin"
+  else
+    echo
+    cat $log
+    echo
+    die "FAIL: $bin failed with code $status"
+  fi
+}
+
 # A quick and dirty function to show logs
 run-other-suite-for-release() {
   local suite_name=$1

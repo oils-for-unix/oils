@@ -12,8 +12,8 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source cpp/NINJA-steps.sh  # for compile_and_link function
-source mycpp/common.sh
 source mycpp/ninja.sh
+source test/common.sh  # run-test
 
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'

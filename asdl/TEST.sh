@@ -11,10 +11,11 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source build/common.sh  # BASE_CXXFLAGS, etc.
+source build/common.sh     # BASE_CXXFLAGS, etc.
 source cpp/NINJA-steps.sh  # compile_and_link
-source mycpp/ninja.sh  # GC_RUNTIME
-source devtools/common.sh  # mypy_, etc.
+source devtools/common.sh  # banner
+source mycpp/ninja.sh      # GC_RUNTIME
+source test/common.sh      # run-test
 
 CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
 
@@ -29,7 +30,7 @@ readonly GEN_DIR='_gen/asdl/examples'
 
 gen-cpp-test() {
   local compiler=${1:-cxx}
-  local variant=${1:-asan}
+  local variant=${2:-asan}
 
   local bin_dir="_bin/$compiler-$variant/asdl"
 
@@ -55,16 +56,12 @@ gen-cpp-test() {
     $GEN_DIR/typed_arith.asdl.cc \
     $GEN_DIR/typed_demo.asdl.cc 
 
-  local log_dir="_test/$compiler-$variant/asdl"
-  mkdir -p $log_dir
-  local log="$log_dir/gen_cpp_test.log"
-  log "RUN $bin > $log"
-  $bin "$@" > "$log"
+  run-test $bin $compiler $variant
 }
 
 gc-test() {
   local compiler=${1:-cxx}
-  local variant=${1:-asan}
+  local variant=${2:-asan}
 
   # TODO: remove this after it works with the garbage collector!
   export ASAN_OPTIONS='detect_leaks=0'
@@ -92,18 +89,16 @@ gc-test() {
     $GEN_DIR/demo_lib.asdl.cc \
     $GEN_DIR/typed_demo.asdl.cc
 
-  local log_dir="_test/$compiler-$variant/asdl"
-  mkdir -p $log_dir
-  local log="$log_dir/gc_test.log"
-  log "RUN $bin > $log"
-  $bin "$@" > "$log"
+  run-test $bin $compiler $variant
 }
 
 one-asdl-gc() {
   ### Test that an Oil ASDL file can compile by itself
 
-  local rel_path=$1
-  shift
+  local compiler=$1
+  local variant=$2
+  local rel_path=$3
+  shift 3
 
   local name
   name=$(basename $rel_path)
@@ -134,36 +129,45 @@ EOF
     $test_src \
     "$@"
 
-  log "RUN $bin"
-  $bin
+  run-test $bin $compiler $variant
 }
 
 all-asdl-gc() {
   ### All ASDL compilation tests
 
+  local compiler=${1:-cxx}
+  local variant=${2:-asan}
+
   # Invoke ASDL compiler on everything
   build/cpp.sh gen-asdl
+  ninja _gen/frontend/id_kind.asdl.cc
 
   # Now make sure they can compile
 
   # syntax.asdl is a 'use' dependency; 'id' is implicit there is no GC variant
   # for id_kind_asdl
-  one-asdl-gc core/runtime _gen/frontend/syntax.asdl.cc _gen/frontend/id_kind.asdl.cc
+  one-asdl-gc $compiler $variant \
+    core/runtime _gen/frontend/syntax.asdl.cc _gen/frontend/id_kind.asdl.cc
 
-  one-asdl-gc frontend/syntax _gen/frontend/id_kind.asdl.cc
+  one-asdl-gc $compiler $variant \
+    frontend/syntax _gen/frontend/id_kind.asdl.cc
 }
 
 unit() {
   ### Run unit tests
 
-  gen-cpp-test
+  local compiler=${1:-cxx}
+  local variant=${2:-asan}
+
+  gen-cpp-test $compiler $variant
   echo
 
-  gc-test  # integration between ASDL and the GC heap
+  # integration between ASDL and the GC heap
+  gc-test $compiler $variant
   echo
 
   # test each ASDL file on its own, perhaps with the garbage-collected ASDL runtime
-  all-asdl-gc
+  all-asdl-gc $compiler $variant
 }
 
 #
