@@ -91,7 +91,6 @@ run-test-funcs() {
   echo "$0: $i tests passed."
 }
 
-
 run-test-bin() {
   ### Run a binary in _bin/ and log output to a file in _test/
 
@@ -135,27 +134,30 @@ run-test-bin() {
   fi
 }
 
-run-with-log-wrapper() {
+run-test-func() {
   ### Similar to above
-  local bin=$1
+  local func_name=$1
   local log=$2
   shift 2
 
   mkdir -p $(dirname $log)
-  log "RUN $bin > $log"
+  log "RUN $0 $func_name > $log"
 
   set +o errexit
-  $bin "$@" > $log 2>&1
+
+  # Reinvoke $0 so errexit is on in the function
+  $0 $func_name "$@" > $log 2>&1
   local status=$?
+
   set -o errexit
 
   if test $status -eq 0; then
-    log "OK $bin"
+    log 'OK'
   else
     echo
     cat $log
     echo
-    log "FAIL: $bin with code $status"
+    log "FAIL: $func_name with code $status"
     return 1
   fi
 }

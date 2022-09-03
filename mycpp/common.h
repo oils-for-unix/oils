@@ -12,12 +12,9 @@
 #include <stdint.h>  // uint8_t
 #include <stdio.h>   // vprintf
 #include <stdlib.h>
-#include <string.h>
 #include <string.h>  // strlen
 
-#include <algorithm>  // sort() is templated
 #include <initializer_list>
-#include <vector>
 
 // TODO(Jesse): Put NotImplemented on a compile-time switch such that we cannot
 // make a release build if we're not finished implementing the interpreter.
@@ -49,7 +46,5 @@ inline void log(const char* fmt, ...) {
   va_end(args);
   puts("");
 }
-
-namespace common {}  // namespace common
 
 #endif  // COMMON_H

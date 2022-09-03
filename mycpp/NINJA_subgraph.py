@@ -197,10 +197,9 @@ UNIT_TESTS = {
     'mycpp/gc_builtins_test.cc': VARIANTS_GC,
     'mycpp/gc_mylib_test.cc': VARIANTS_GC,
 
-    'mycpp/oldstl_containers_test.cc': VARIANTS_LEAKY,
-
     'mycpp/leaky_builtins_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_containers_test.cc': VARIANTS_LEAKY,
+    'mycpp/leaky_str_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_mylib_test.cc': VARIANTS_LEAKY,
 
     # there is also demo/{gc_heap,square_heap}.cc

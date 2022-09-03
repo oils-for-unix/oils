@@ -12,6 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source cpp/NINJA-steps.sh
+source devtools/common.sh
 source soil/common.sh  # find-dir-html
 source test/common.sh  # run-test
 
@@ -178,6 +179,9 @@ test-invalid-examples() {
   local mycpp=_bin/shwrap/mycpp_main
   ninja $mycpp
   for ex in mycpp/examples/invalid_*; do
+
+    banner "$ex"
+
     set +o errexit
     $mycpp '.:pyext' _tmp/mycpp-invalid $ex
     local status=$?
@@ -221,7 +225,7 @@ test-valid-examples() {
 test-translator() {
   ### Invoked by soil/worker.sh
 
-  run-with-log-wrapper test-invalid-examples _test/mycpp/test-invalid-examples.log
+  run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
   test-valid-examples
 }
 

@@ -1,4 +1,5 @@
-
+#ifndef MYCPP_COMPARATORS_H
+#define MYCPP_COMPARATORS_H
 
 class Str;
 
@@ -29,3 +30,5 @@ bool str_equals0(const char* c_string, Str* s);
 Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
 Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 Str* str_repeat(Str* s, int times);        // e.g. ' ' * 3
+
+#endif  // MYCPP_COMPARATORS_H
