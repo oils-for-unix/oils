@@ -87,7 +87,7 @@ mount-perms() {
 
   local repo_root=$1
 
-  show-disk-info
+  #show-disk-info
 
   log-context 'mount-perms'
 
@@ -101,9 +101,9 @@ mount-perms() {
 }
 
 job-reset() {
-  ### Called betweenjobs
+  ### Called between jobs
 
-  show-disk-info
+  #show-disk-info
 
   log-context 'job-reset'
 
@@ -238,7 +238,8 @@ did-all-succeed() {
     fi
   done
 
-  log "Exiting with max status $max_status"
+  log ''
+  log "Exiting with max job status $max_status"
 
   return "$max_status"
 }

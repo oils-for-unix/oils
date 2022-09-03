@@ -108,10 +108,11 @@ def _ParsePullTime(time_p_str):
 
 
 def ParseJobs(stdin):
-  for line in stdin:
+  for i, line in enumerate(stdin):
     json_path = line.strip()
 
-    log('%s', json_path)
+    if i % 20 == 0:
+      log('job %d = %s', i, json_path)
 
     with open(json_path) as f:
       meta = json.load(f)
@@ -378,18 +379,25 @@ def main(argv):
     print(INDEX_BOTTOM)
 
   elif action == 'cleanup':
+    try:
+      num_to_keep = int(argv[2])
+    except IndexError:
+      num_to_keep = 200
+
     prefixes = []
     for line in sys.stdin:
       json_path = line.strip()
 
-      log('%s', json_path)
+      #log('%s', json_path)
       prefixes.append(json_path[:-5])
+
+    log('%s cleanup: keep %d', sys.argv[0], num_to_keep)
+    log('%s cleanup: got %d JSON paths', sys.argv[0], len(prefixes))
 
     # looks like 2020-03-20, so sort ascending means the oldest are first
     prefixes.sort()
 
-    # Keep 200 jobs.  We only display the last 100.
-    prefixes = prefixes[:-200]
+    prefixes = prefixes[:-num_to_keep]
 
     # Show what to delete.  Then the user can pipe to xargs rm to remove it.
     for prefix in prefixes:

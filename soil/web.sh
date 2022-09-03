@@ -9,13 +9,27 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+shopt -s nullglob  # for list-json
+
 REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 source $REPO_ROOT/soil/common.sh
 
+readonly NUM_JOBS=1000  # jobs to show and keep
+
 soil-web() {
   PYTHONPATH=$REPO_ROOT $REPO_ROOT/soil/web.py "$@"
+}
+
+# Bug fix for another race:
+# ls *.json has a race: the shell expands files that may no longer exist, and
+# then 'ls' fails!
+list-json() {
+  local dir=$1
+  for name in $dir/*.json; do
+    echo $name
+  done
 }
 
 rewrite-jobs-index() {
@@ -39,8 +53,7 @@ rewrite-jobs-index() {
   # Limit to last 100 jobs.  Glob is in alphabetical order and jobs look like
   # 2020-03-20__...
 
-  # suppress SIGPIPE failure
-  { ls $dir/*.json || true; } | tail -n -100 | soil-web ${prefix}index > $tmp
+  list-json $dir | tail -n -$NUM_JOBS | soil-web ${prefix}index > $tmp
   echo status=${PIPESTATUS[@]}
 
   mv -v $tmp $dir/index.html
@@ -55,12 +68,13 @@ cleanup-jobs-index() {
   # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
   case $dry_run in
     false)
-      # Bug fix: there is a race here when 2 jobs complete at the same time.
-      # So use rm -f to ignore failure if the file was already deleted.
-      ls $dir/*.json | soil-web cleanup | xargs --no-run-if-empty -- rm -f -v
+      # Bug fix: There's a race here when 2 jobs complete at the same time.
+      # Use rm -f to ignore failure if the file was already deleted.
+
+      list-json $dir | soil-web cleanup $NUM_JOBS | xargs --no-run-if-empty -- rm -f -v
       ;;
     true)
-      ls $dir/*.json | soil-web cleanup
+      list-json $dir | soil-web cleanup $NUM_JOBS
       ;;
     *)
       log 'Expected true or false for dry_run'
@@ -104,14 +118,14 @@ local-test() {
   local dir=${1:-_tmp/jobs}
   local out='_tmp/jobs.html'
 
-  ls $dir/*.json | index > $out
+  list-json $dir | index > $out
   echo "Wrote $out"
 }
 
 smoke-test() {
   ### Run on remote machine
   local dir=${1:-_tmp/jobs}
-  ls $dir/*.json | soil-web srht-index 
+  list-json $dir | soil-web srht-index 
 }
 
 "$@"

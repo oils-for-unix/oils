@@ -108,7 +108,7 @@ EOF
 
   dump-env > env.txt
 
-  zip $wwz env.txt index.html build/*.txt
+  zip -q $wwz env.txt index.html build/*.txt
 
   scp-results '' $wwz
 }
@@ -193,7 +193,7 @@ make-job-wwz() {
   #        Note that that index references /web/{base,soil}.css, outside the .wwz
   #        osh-summary.html uses table-sort.js and ajax.js
   # TODO: Could move _tmp/{spec,stateful,syscall} etc. to _test
-  zip -r $wwz \
+  zip -q -r $wwz \
     index.html _tmp/soil _tmp/spec _tmp/stateful \
     _tmp/syscall _tmp/benchmark-data _tmp/metrics \
     _test \
@@ -226,6 +226,8 @@ deploy-job-results() {
   # Copy wwz, tsv, json
   scp-results "$prefix" $job_id.*
 
+  log ''
+  log 'View CI results here:'
   log ''
   log "http://travis-ci.oilshell.org/${prefix}jobs/"
   log "http://travis-ci.oilshell.org/${prefix}jobs/$job_id.wwz/"
