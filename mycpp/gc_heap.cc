@@ -21,28 +21,21 @@ class LayoutFixed : public Obj {
   Obj* children_[16];  // only the entries denoted in field_mask will be valid
 };
 
-void Space::Init(int num_bytes)
-{
-  void *requested_addr = nullptr;
+void Space::Init(int num_bytes) {
+  void* requested_addr = nullptr;
 
   int fd = -1;  // `man 2 mmap` notes that a portable application should set
                 // the fd argument to -1 with MAP_ANONYMOUS because some impls
                 // require it.
 
-  int offset = 0; // `man 2 mmap` specifies this must be 0 with MAP_ANONYMOUS
+  int offset = 0;  // `man 2 mmap` specifies this must be 0 with MAP_ANONYMOUS
 
-  void *p = mmap( requested_addr,
-                  num_bytes,
-                  PROT_READ | PROT_WRITE,
-                  MAP_PRIVATE | MAP_ANONYMOUS,
-                  fd, offset);
+  void* p = mmap(requested_addr, num_bytes, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS, fd, offset);
 
-  if (p == MAP_FAILED)
-  {
+  if (p == MAP_FAILED) {
     assert(!"mmap() failed, infinite sadness.");
-  }
-  else
-  {
+  } else {
     begin_ = static_cast<char*>(p);
     size_ = num_bytes;
   }
@@ -118,8 +111,7 @@ void Heap::Collect(int to_space_size) {
   num_collections_++;
 #endif
 
-  if (to_space_size == 0)
-  {
+  if (to_space_size == 0) {
     to_space_size = from_space_.size_;
   }
 
@@ -127,8 +119,7 @@ void Heap::Collect(int to_space_size) {
 
   to_space_.Init(to_space_size);
 
-  if (to_space_.size_ < from_space_.size_)
-  {
+  if (to_space_.size_ < from_space_.size_) {
     InvalidCodePath();
   }
 

@@ -205,7 +205,7 @@ class Heap {
 
     // It's still too small.  Grow the heap.
     int multiple = 2;
-    Collect( (from_space_.size_+n) * multiple );
+    Collect((from_space_.size_ + n) * multiple);
 
 #if GC_STATS
     num_forced_growths_++;

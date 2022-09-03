@@ -18,6 +18,31 @@ Code Layout:
 
 Output Layout:
 
+  _gen/
+    mycpp/
+      examples/
+        parse.mycpp.cc
+        parse_raw.mycpp.cc
+        expr.asdl.{h,cc}
+
+  _build/
+    obj/
+      cxx-dbg/
+        gc_heap_test.o  # not translated
+        gc_builtins.o   
+        _gen/
+          mycpp/
+            examples/
+              parse.mycpp.o
+              parse.mycpp.o.d
+              parse.pea.o
+              parse.pea.o.d
+              expr.asdl.o
+              expr.asdl.o.d
+      cxx-gcevery/
+      cxx-opt/
+      clang-coverage/
+
   _bin/
     cxx-dbg/
       mycpp/
@@ -36,27 +61,6 @@ Output Layout:
         gc_heap_test
     clang-coverage/
 
-  _build/
-    # TODO: combine with obj/ after we get rid of -D OLDSTL_BINDINGS -D
-    # NO_GC_HACK, etc.
-    obj-mycpp/
-      cxx-dbg/
-        gc_heap_test.o  # not translated
-        gc_builtins.o   
-        gen-pea/        # per-translator, derived from _test/gen-pea
-          varargs.o
-        gen-mycpp/
-          varargs.o
-
-      cxx-gcevery/
-      cxx-opt/
-      clang-coverage/
-    gen/
-      mycpp/
-        examples/
-          parse.mycpp.cc
-          parse_raw.mycpp.cc
-          expr.asdl.{h,cc}
 
   _test/
     tasks/        # *.txt and *.task.txt for .wwz
@@ -193,9 +197,9 @@ UNIT_TESTS = {
 
     'mycpp/oldstl_containers_test.cc': VARIANTS_LEAKY,
 
-    'mycpp/leaky_oldstl_builtins_test.cc': VARIANTS_LEAKY,
-    'mycpp/leaky_oldstl_containers_test.cc': VARIANTS_LEAKY,
-    'mycpp/leaky_oldstl_mylib_test.cc': VARIANTS_LEAKY,
+    'mycpp/leaky_builtins_test.cc': VARIANTS_LEAKY,
+    'mycpp/leaky_containers_test.cc': VARIANTS_LEAKY,
+    'mycpp/leaky_mylib_test.cc': VARIANTS_LEAKY,
 
     # there is also demo/{gc_heap,square_heap}.cc
 }
@@ -270,15 +274,15 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
   # Ninja empty string!
   preamble_path = p if os.path.exists(p) else "''"
 
-  cc_src = '_gen/mycpp/examples/%s.%s.cc' % (ex, translator)
+  main_cc_src = '_gen/mycpp/examples/%s.%s.cc' % (ex, translator)
 
   # Make a translation unit
-  n.build(cc_src, 'wrap-cc', raw,
+  n.build(main_cc_src, 'wrap-cc', raw,
           variables=[('name', ex), ('preamble_path', preamble_path)])
   n.newline()
 
   if translator == 'pea':
-    phony['pea-translate'].append(cc_src)
+    phony['pea-translate'].append(main_cc_src)
 
   if translator == 'mycpp':
     example_matrix = COMPILERS_VARIANTS
@@ -297,9 +301,9 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
         ('compiler', compiler), ('variant', variant),
     ]
 
-    main_obj = '_build/obj/%s-%s/mycpp/examples/%s.%s.o' % (compiler, variant, ex, translator)
+    main_obj = ObjPath(main_cc_src, compiler, variant)
 
-    n.build(main_obj, 'compile_one', [cc_src],
+    n.build(main_obj, 'compile_one', [main_cc_src],
             implicit=EXAMPLES_H.get(ex, []),
             variables=compile_vars)
     n.newline()
