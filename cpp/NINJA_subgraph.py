@@ -58,14 +58,9 @@ from __future__ import print_function
 import os
 import sys
 
+from build.NINJA_lib import log, ObjPath
 from mycpp import NINJA_subgraph as mycpp_subgraph
 from mycpp.NINJA_subgraph import GC_RUNTIME
-
-
-def log(msg, *args):
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
 
 
 # CPP bindings and some generated code have implicit dependencies on these headers
@@ -120,7 +115,8 @@ CPP_BINDINGS = [
     'cpp/leaky_libc.cc',
 ]
 
-OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC + GC_RUNTIME
+OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC
+OSH_EVAL_UNITS_ALL = OSH_EVAL_UNITS + GC_RUNTIME
 
 # Add implicit deps
 HEADER_DEPS = {}
@@ -204,11 +200,11 @@ def NinjaGraph(n):
 
     if variant in ('dbg', 'opt'):
       preprocessed = []
-      for src in OSH_EVAL_UNITS:
+      for src in OSH_EVAL_UNITS_ALL:
         # e.g. _build/obj/dbg/posix.o
-        base_name, _ = os.path.splitext(os.path.basename(src))
+        rel_path, _ = os.path.splitext(src)
 
-        pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, base_name)
+        pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, rel_path)
         preprocessed.append(pre)
 
         n.build(pre, 'preprocess', [src], variables=ninja_vars)
@@ -222,13 +218,11 @@ def NinjaGraph(n):
     # SEPARATE: Compile objects
     #
 
-    objects = []
     for src in OSH_EVAL_UNITS:
       # e.g. _build/obj/dbg/posix.o
-      base_name, _ = os.path.splitext(os.path.basename(src))
+      rel_path, _ = os.path.splitext(src)
 
-      obj = '_build/obj/%s-%s/%s.o' % (compiler, variant, base_name)
-      objects.append(obj)
+      obj = '_build/obj/%s-%s/%s.o' % (compiler, variant, rel_path)
 
       n.build(obj, 'compile_one', [src], variables=ninja_vars,
               # even though compile_one has .d, we still need these implicit deps
@@ -243,6 +237,7 @@ def NinjaGraph(n):
     # SEPARATE: Link objects into binary
     #
 
+    objects = [ObjPath(src, compiler, variant) for src in OSH_EVAL_UNITS_ALL]
     link_vars = [('compiler', compiler), ('variant', variant)]  # no CXX flags
     n.build(bin_separate, 'link', objects, variables=link_vars)
     n.newline()
@@ -273,7 +268,7 @@ def TarballManifest():
     ])
 
   # Code we know about
-  names.extend(OSH_EVAL_UNITS + GENERATED_H + ASDL_H)
+  names.extend(OSH_EVAL_UNITS_ALL + GENERATED_H + ASDL_H)
 
   from glob import glob
   names.extend(glob('mycpp/*.h'))
@@ -352,7 +347,7 @@ main() {
 ''', file=f)
 
   objects = []
-  for src in OSH_EVAL_UNITS:
+  for src in OSH_EVAL_UNITS_ALL:
     # e.g. _build/obj/dbg/posix.o
     base_name, _ = os.path.splitext(os.path.basename(src))
 

@@ -100,12 +100,7 @@ import os
 import sys
 
 from build.NINJA_subgraph import asdl_cpp  # could be NINJA_lib?
-
-
-def log(msg, *args):
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
+from build.NINJA_lib import log, ObjPath
 
 
 # special ones in examples.sh:
@@ -302,7 +297,7 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
         ('compiler', compiler), ('variant', variant),
     ]
 
-    main_obj = '_build/obj-mycpp/%s-%s/gen-%s/%s.o' % (compiler, variant, translator, ex)
+    main_obj = '_build/obj/%s-%s/mycpp/examples/%s.%s.o' % (compiler, variant, ex, translator)
 
     n.build(main_obj, 'compile_one', [cc_src],
             implicit=EXAMPLES_H.get(ex, []),
@@ -373,12 +368,6 @@ def TranslatorSubgraph(n, translator, ex, to_compare, benchmark_tasks, phony):
               ('bin', b_example),
               ('name', ex), ('impl', 'C++')])
     n.newline()
-
-
-def ObjPath(src_path, compiler, variant):
-  base_name, _ = os.path.splitext(os.path.basename(src_path))
-  # Note: will be combined with _build/obj/ later
-  return '_build/obj-mycpp/%s-%s/%s.o' % (compiler, variant, base_name)
 
 
 def NinjaGraph(n):
