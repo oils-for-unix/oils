@@ -66,11 +66,11 @@ write-shwrap() {
   # Key point: if the Python code changes, then the C++ code should be
   # regenerated and re-compiled
 
-  local kind=$1
+  local template=$1
   local stub_out=$2
   shift 2
 
-  case $kind in
+  case $template in
     (py)
       shwrap-py "$@" > $stub_out
       ;;

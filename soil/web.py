@@ -111,8 +111,8 @@ def ParseJobs(stdin):
   for i, line in enumerate(stdin):
     json_path = line.strip()
 
-    if i % 20 == 0:
-      log('job %d = %s', i, json_path)
+    #if i % 20 == 0:
+    #  log('job %d = %s', i, json_path)
 
     with open(json_path) as f:
       meta = json.load(f)

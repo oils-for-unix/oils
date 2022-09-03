@@ -62,7 +62,7 @@ test-spec-file() {
 test-html-summary() {
   # BUG: in the devtools/release.sh process, there's nothing to summarize here
   # because _tmp/spec is deleted.
-  _compare test/spec-runner.sh html-summary osh
+  _compare test/spec-runner.sh html-summary osh _tmp/spec/cpp
 }
 
 test-gen-module-init() {

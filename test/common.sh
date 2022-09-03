@@ -79,11 +79,11 @@ run-test-funcs() {
     set -o errexit
 
     if test $status -ne 0; then
-      echo "FAIL  $t"
-      break
+      log "FAIL  $t"
+      exit 1
     fi
 
-    echo "OK  $t"
+    log "OK  $t"
     i=$((i + 1))
   done
 

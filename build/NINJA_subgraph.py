@@ -65,7 +65,7 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-def shwrap_py(n, main_py, deps_base_dir='_build/NINJA', rule='write-shwrap-py'):
+def shwrap_py(n, main_py, deps_base_dir='_build/NINJA', template='py'):
   rel_path, _ = os.path.splitext(main_py)
   py_module = rel_path.replace('/', '.')  # asdl/asdl_main.py -> asdl.asdl_main
 
@@ -76,7 +76,8 @@ def shwrap_py(n, main_py, deps_base_dir='_build/NINJA', rule='write-shwrap-py'):
   deps.remove(main_py)  # raises ValueError if it's not there
 
   basename = os.path.basename(rel_path)
-  n.build('_bin/shwrap/%s' % basename, rule, [main_py] + deps)
+  n.build('_bin/shwrap/%s' % basename, 'write-shwrap', [main_py] + deps,
+          variables=[('template', template)])
   n.newline()
 
 
@@ -114,15 +115,9 @@ def NinjaGraph(n):
   n.newline()
 
   # Preprocess one translation unit
-  n.rule('write-shwrap-py',
+  n.rule('write-shwrap',
          # $in must start with main program
-         command='build/NINJA-steps.sh write-shwrap py $out $in',
-         description='make-pystub $out $in')
-  n.newline()
-
-  n.rule('write-shwrap-mycpp',
-         # $in must start with main program
-         command='build/NINJA-steps.sh write-shwrap mycpp $out $in',
+         command='build/NINJA-steps.sh write-shwrap $template $out $in',
          description='make-pystub $out $in')
   n.newline()
 
@@ -149,12 +144,13 @@ def NinjaGraph(n):
 
   shwrap_py(n, 'mycpp/mycpp_main.py',
             deps_base_dir='prebuilt/ninja',
-            rule='write-shwrap-mycpp')
+            template='mycpp')
 
   # This needs a wrapper for Python 3.10
   if 0:
     shwrap_py(n, 'pea/pea_main.py',
-              deps_base_dir='prebuilt/ninja')
+              deps_base_dir='prebuilt/ninja',
+              template='py3')
 
   #
   # ASDL
