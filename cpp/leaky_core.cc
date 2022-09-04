@@ -126,7 +126,7 @@ Str* GetUserName(int uid) {
   if (passwd* pw = getpwuid(uid)) {
     result = CopyBufferIntoNewStr(pw->pw_name);
   } else {
-    throw new IOError(errno);
+    throw Alloc<IOError>(errno);
   }
 
   return result;
@@ -139,7 +139,7 @@ Str* OsType() {
   if (::uname(&un) == 0) {
     result = CopyBufferIntoNewStr(un.sysname);
   } else {
-    throw new IOError(errno);
+    throw Alloc<IOError>(errno);
   }
 
   return result;
@@ -149,7 +149,7 @@ Tuple3<double, double, double> Time() {
   rusage ru;  // NOTE(Jesse): Doesn't have to be cleared to 0.  The kernel
               // clears unused fields.
   if (::getrusage(RUSAGE_SELF, &ru) == -1) {
-    throw new IOError(errno);
+    throw Alloc<IOError>(errno);
   }
 
   time_t t = ::time(nullptr);
@@ -161,7 +161,7 @@ Tuple3<double, double, double> Time() {
 void PrintTimes() {
   tms t;
   if (times(&t) == -1) {
-    throw new IOError(errno);
+    throw Alloc<IOError>(errno);
   } else {
     {
       int user_minutes = t.tms_utime / 60;
@@ -223,7 +223,7 @@ Str* _ResourceLoader::Get(Str* path) {
 }
 
 _ResourceLoader* GetResourceLoader() {
-  return new _ResourceLoader();
+  return Alloc<_ResourceLoader>();
 }
 
 void CopyFile(Str* in_path, Str* out_path) {

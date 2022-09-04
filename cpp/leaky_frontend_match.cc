@@ -54,21 +54,21 @@ List<Tuple2<Id_t, Str*>*>* SimpleLexer::Tokens() {
       break;
     }
     // it's annoying that we have to put it on the heap
-    tokens->append(new Tuple2<Id_t, Str*>(tup2.at0(), tup2.at1()));
+    tokens->append(Alloc<Tuple2<Id_t, Str*>>(tup2.at0(), tup2.at1()));
   }
   return tokens;
 }
 
 SimpleLexer* BraceRangeLexer(Str* s) {
-  return new SimpleLexer(&MatchBraceRangeToken, s);
+  return Alloc<SimpleLexer>(&MatchBraceRangeToken, s);
 }
 
 SimpleLexer* GlobLexer(Str* s) {
-  return new SimpleLexer(&MatchGlobToken, s);
+  return Alloc<SimpleLexer>(&MatchGlobToken, s);
 }
 
 SimpleLexer* EchoLexer(Str* s) {
-  return new SimpleLexer(&MatchEchoToken, s);
+  return Alloc<SimpleLexer>(&MatchEchoToken, s);
 }
 
 List<Tuple2<Id_t, Str*>*>* HistoryTokens(Str* s) {

@@ -24,7 +24,7 @@ namespace fcntl_ {
 int fcntl(int fd, int cmd) {
   int result = ::fcntl(fd, cmd);
   if (result < 0) {
-    throw new IOError(errno);
+    throw Alloc<IOError>(errno);
   }
   return result;
 }
@@ -32,7 +32,7 @@ int fcntl(int fd, int cmd) {
 int fcntl(int fd, int cmd, int arg) {
   int result = ::fcntl(fd, cmd, arg);
   if (result < 0) {
-    throw new IOError(errno);
+    throw Alloc<IOError>(errno);
   }
   return result;
 }
@@ -52,14 +52,14 @@ int open(Str* path, int flags, int perms) {
 
 void dup2(int oldfd, int newfd) {
   if (::dup2(oldfd, newfd) < 0) {
-    throw new OSError(errno);
+    throw Alloc<OSError>(errno);
   }
 }
 void putenv(Str* name, Str* value) {
   int overwrite = 1;
   int ret = ::setenv(name->data_, value->data_, overwrite);
   if (ret < 0) {
-    throw new IOError(errno);
+    throw Alloc<IOError>(errno);
   }
 }
 
@@ -69,7 +69,7 @@ mylib::LineReader* fdopen(int fd, Str* c_mode) {
   // TODO: raise exception
   assert(f);
 
-  return new mylib::CFileLineReader(f);
+  return Alloc<mylib::CFileLineReader>(f);
 }
 
 void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
@@ -106,7 +106,7 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
 
   int ret = ::execve(argv0->data_, _argv, envp);
   if (ret == -1) {
-    throw new OSError(errno);
+    throw Alloc<OSError>(errno);
   }
 
   // NOTE(Jesse): ::execve() is specified to never return on success.  If we

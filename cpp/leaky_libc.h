@@ -22,7 +22,7 @@ inline Str* gethostname() {
   int result = ::gethostname(buf, HOST_NAME_MAX);
   if (result != 0) {
     // TODO: print errno, e.g. ENAMETOOLONG (glibc)
-    throw new RuntimeError(StrFromC("Couldn't get working directory"));
+    throw Alloc<RuntimeError>(StrFromC("Couldn't get working directory"));
   }
   return StrFromC(buf);
 }

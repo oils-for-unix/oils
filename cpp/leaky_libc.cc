@@ -37,7 +37,7 @@ List<Str*>* glob(Str* pat) {
     break;
   }
   if (err_str) {
-    throw new RuntimeError(StrFromC(err_str));
+    throw Alloc<RuntimeError>(StrFromC(err_str));
   }
 
   // http://stackoverflow.com/questions/3512414/does-this-pylist-appendlist-py-buildvalue-leak
@@ -70,7 +70,7 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
   regex_t pat;
   if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
     // TODO: check error code, as in func_regex_parse()
-    throw new RuntimeError(StrFromC("Invalid regex syntax (regex_match)"));
+    throw Alloc<RuntimeError>(StrFromC("Invalid regex syntax (regex_match)"));
   }
 
   int outlen = pat.re_nsub + 1;  // number of captures
@@ -112,14 +112,14 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   const char* old_locale = setlocale(LC_CTYPE, NULL);
 
   if (setlocale(LC_CTYPE, "") == NULL) {
-    throw new RuntimeError(StrFromC("Invalid locale for LC_CTYPE"));
+    throw Alloc<RuntimeError>(StrFromC("Invalid locale for LC_CTYPE"));
   }
 
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
   // patterns like ${foo/x*/y}.
 
   if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
-    throw new RuntimeError(
+    throw Alloc<RuntimeError>(
         StrFromC("Invalid regex syntax (func_regex_first_group_match)"));
   }
 
@@ -136,7 +136,7 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   // Assume there is a match
   regoff_t start = m[1].rm_so;
   regoff_t end = m[1].rm_eo;
-  return new Tuple2<int, int>(pos + start, pos + end);
+  return Alloc<Tuple2<int, int>>(pos + start, pos + end);
 }
 
 }  // namespace libc

@@ -1,3 +1,7 @@
+// clang-format off
+#include "mycpp/myerror.h"
+// clang-format on
+
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>  // isatty
@@ -62,7 +66,7 @@ Str* CFileLineReader::readline() {
   if (len < 0) {
     if (errno != 0) {  // Unexpected error
       log("getline() error: %s", strerror(errno));
-      throw new AssertionError(errno);
+      throw Alloc<IOError>(errno);
     }
     // Expected EOF
     return kEmptyString;

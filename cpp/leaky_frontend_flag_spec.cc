@@ -40,20 +40,20 @@ void _CreateDefaults(DefaultPair_c* in,
     value_t* val;
     switch (pair->typ) {
     case flag_type_e::Bool:
-      val = new value__Bool(pair->val.b);
+      val = Alloc<value__Bool>(pair->val.b);
       break;
     case flag_type_e::Int:
-      val = new value__Int(pair->val.i);
+      val = Alloc<value__Int>(pair->val.i);
       break;
     case flag_type_e::Float:
-      val = new value__Float(pair->val.f);
+      val = Alloc<value__Float>(pair->val.f);
       break;
     case flag_type_e::Str: {
       const char* s = pair->val.s;
       if (s == nullptr) {
-        val = new value__Undef();
+        val = Alloc<value__Undef>();
       } else {
-        val = new value__Str(StrFromC(s));
+        val = Alloc<value__Str>(StrFromC(s));
       }
     } break;
     default:
@@ -81,46 +81,46 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
         valid = NewList<Str*>();
         _CreateStrList(p->strs, valid);
       }
-      auto a = new args::SetToString(StrFromC(p->name), false, valid);
+      auto a = Alloc<args::SetToString>(StrFromC(p->name), false, valid);
       action = a;
     } break;
     case ActionType_c::SetToString_q:
-      action = new args::SetToString(StrFromC(p->name), true, nullptr);
+      action = Alloc<args::SetToString>(StrFromC(p->name), true, nullptr);
       break;
     case ActionType_c::SetToInt:
-      action = new args::SetToInt(StrFromC(p->name));
+      action = Alloc<args::SetToInt>(StrFromC(p->name));
       break;
     case ActionType_c::SetToFloat:
-      action = new args::SetToFloat(StrFromC(p->name));
+      action = Alloc<args::SetToFloat>(StrFromC(p->name));
       break;
     case ActionType_c::SetToTrue:
-      action = new args::SetToTrue(StrFromC(p->name));
+      action = Alloc<args::SetToTrue>(StrFromC(p->name));
       break;
     case ActionType_c::SetAttachedBool:
-      action = new args::SetAttachedBool(StrFromC(p->name));
+      action = Alloc<args::SetAttachedBool>(StrFromC(p->name));
       break;
     case ActionType_c::SetOption:
-      action = new args::SetOption(StrFromC(p->name));
+      action = Alloc<args::SetOption>(StrFromC(p->name));
       break;
     case ActionType_c::SetNamedOption: {
-      auto a = new args::SetNamedOption(false);
+      auto a = Alloc<args::SetNamedOption>(false);
       if (p->strs) {
         _CreateStrList(p->strs, a->names);
       }
       action = a;
     } break;
     case ActionType_c::SetNamedOption_shopt: {
-      auto a = new args::SetNamedOption(true);
+      auto a = Alloc<args::SetNamedOption>(true);
       if (p->strs) {
         _CreateStrList(p->strs, a->names);
       }
       action = a;
     } break;
     case ActionType_c::SetAction:
-      action = new args::SetAction(StrFromC(p->name));
+      action = Alloc<args::SetAction>(StrFromC(p->name));
       break;
     case ActionType_c::SetNamedAction: {
-      auto a = new args::SetNamedAction();
+      auto a = Alloc<args::SetNamedAction>();
       if (p->strs) {
         _CreateStrList(p->strs, a->names);
       }
@@ -140,7 +140,7 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
 //
 // TODO: Make a GLOBAL CACHE?  It could be shared between subinterpreters even?
 flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
-  auto out = new flag_spec::_FlagSpec();
+  auto out = Alloc<flag_spec::_FlagSpec>();
   out->arity0 = NewList<Str*>();
   out->arity1 = NewDict<Str*, args::_Action*>();
   out->actions_long = NewDict<Str*, args::_Action*>();
@@ -168,7 +168,7 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
 }
 
 flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
-  auto out = new flag_spec::_FlagSpecAndMore();
+  auto out = Alloc<flag_spec::_FlagSpecAndMore>();
   out->actions_short = NewDict<Str*, args::_Action*>();
   out->actions_long = NewDict<Str*, args::_Action*>();
   out->plus_flags = NewList<Str*>();
@@ -245,7 +245,7 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 #ifdef CPP_UNIT_TEST
   return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
 #else
-  auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
+  auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
   flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
@@ -268,7 +268,7 @@ Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
 #ifdef CPP_UNIT_TEST
   return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
 #else
-  auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
+  auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
   flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);

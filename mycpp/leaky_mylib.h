@@ -116,6 +116,7 @@ inline LineReader* Stdin() {
 inline LineReader* open(Str* path) {
   StackRoots _roots({&path});
 
+  // TODO: Don't use C I/O; use POSIX I/O!
   FILE* f = fopen(path->data_, "r");
 
   // TODO: Better error checking.  IOError?

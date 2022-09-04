@@ -161,7 +161,7 @@ cpp-counts() {
     "$@"
 
   # TODO: Consolidate these 3 small headers
-  ls mycpp/gc_* mycpp/leaky_* mycpp/{myerror,error_types,tuple_types}.h | egrep -v '_test.cc' \
+  ls mycpp/*.{cc,h} | egrep -v '_test.cc' \
     | $count \
     'New Garbage-Collected Runtime' \
     'Uses a simple Cheney / semi-space collector.' \

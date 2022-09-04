@@ -74,7 +74,7 @@ int to_int(Str* s, int base) {
   if (_str_to_int(s, &i, base)) {
     return i;
   } else {
-    throw new ValueError();
+    throw Alloc<ValueError>();
   }
 }
 
@@ -83,7 +83,7 @@ int to_int(Str* s) {
   if (_str_to_int(s, &i, 10)) {
     return i;
   } else {
-    throw new ValueError();
+    throw Alloc<ValueError>();
   }
 }
 

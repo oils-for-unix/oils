@@ -317,7 +317,7 @@ int List<T>::index(T value) {
       return i;
     }
   }
-  throw new ValueError();
+  throw Alloc<ValueError>();
 }
 
 // Should we have a separate API that doesn't return it?

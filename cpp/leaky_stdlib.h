@@ -29,7 +29,7 @@ inline Str* getcwd() {
   char* result = ::getcwd(buf, PATH_MAX + 1);
   if (result == nullptr) {
     // TODO: print errno, e.g. ENAMETOOLONG
-    throw new RuntimeError(StrFromC("Couldn't get working directory"));
+    throw Alloc<RuntimeError>(StrFromC("Couldn't get working directory"));
   }
 
   return CopyBufferIntoNewStr(buf);
