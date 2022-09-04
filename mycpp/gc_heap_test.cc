@@ -7,17 +7,8 @@
 // - Integrate with mycpp and run mycpp/examples/
 //   - Make sure the benchmarks show less heap usage.
 
-#include "mycpp/error_types.h"
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
-
-// Types
-
-// Constants
-
-// Functions
-
-// Variables
 
 #ifdef GC_STATS
   #define ASSERT_NUM_LIVE_OBJS(x) ASSERT_EQ_FMT((x), gHeap.num_live_objs_, "%d")

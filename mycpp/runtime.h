@@ -4,7 +4,6 @@
 // clang-format off
 #include "mycpp/common.h"
 #include "mycpp/gc_heap.h"
-#include "mycpp/error_types.h"
 #include "mycpp/builtins.h"
 
 #include "mycpp/tuple_types.h"

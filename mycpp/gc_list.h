@@ -4,7 +4,8 @@
 #include <algorithm>  // sort() is templated
 
 #include "mycpp/comparators.h"
-#include "mycpp/error_types.h"
+
+class ValueError;
 
 // Type that is layout-compatible with List (unit tests assert this).  Two
 // purposes:
