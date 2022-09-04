@@ -160,10 +160,9 @@ cpp-counts() {
     'Includes OS bindings.  Small C++ files like cpp/osh_arith_parse.{cc,h} correspond to larger Python files like osh/arith_parse.py.' \
     "$@"
 
-  # TODO: Consolidate these 3 small headers
   ls mycpp/*.{cc,h} | egrep -v '_test.cc' \
     | $count \
-    'New Garbage-Collected Runtime' \
+    'Garbage-Collected Runtime' \
     'Uses a simple Cheney / semi-space collector.' \
     "$@"
 

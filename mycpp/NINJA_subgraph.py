@@ -196,6 +196,7 @@ UNIT_TESTS = {
     'mycpp/gc_stress_test.cc': VARIANTS_GC,
     'mycpp/gc_builtins_test.cc': VARIANTS_GC,
     'mycpp/gc_mylib_test.cc': VARIANTS_GC,
+    'mycpp/smartptr_test.cc': VARIANTS_GC,
 
     'mycpp/leaky_builtins_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_containers_test.cc': VARIANTS_LEAKY,
