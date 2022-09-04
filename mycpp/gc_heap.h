@@ -7,8 +7,6 @@
 #define GC_HEAP_H
 
 #include <cassert>  // assert()
-#include <cstddef>  // max_align_t
-#include <cstdint>  // max_align_t
 #include <cstdlib>  // malloc
 #include <cstring>  // memcpy
 #include <initializer_list>
@@ -102,8 +100,6 @@
 
 template <class T>
 class List;
-
-#include "cpp/aligned.h"
 
 class Obj;
 

@@ -297,7 +297,8 @@ TEST test_list_tuple() {
 
   log("");
 
-  auto t3 = Alloc<Tuple3<int, Str*, Str*>>(42, StrFromC("hello"), StrFromC("bye"));
+  auto t3 =
+      Alloc<Tuple3<int, Str*, Str*>>(42, StrFromC("hello"), StrFromC("bye"));
   log("t3[0] = %d", t3->at0());
   log("t3[1] = %s", t3->at1()->data_);
   log("t3[2] = %s", t3->at2()->data_);
@@ -305,7 +306,7 @@ TEST test_list_tuple() {
   log("");
 
   auto t4 = Alloc<Tuple4<int, Str*, Str*, int>>(42, StrFromC("4"),
-                                             StrFromC("four"), -42);
+                                                StrFromC("four"), -42);
 
   log("t4[0] = %d", t4->at0());
   log("t4[1] = %s", t4->at1()->data_);

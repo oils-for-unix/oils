@@ -1,8 +1,10 @@
 // dumb_alloc.cc: Test this C++ mechanism as a lower bound on performance.
 
-#include "dumb_alloc.h"
+#include "mycpp/dumb_alloc.h"
 
 #include <stdio.h>
+
+#include "mycpp/common.h"  // aligned
 
 // 400 MiB of memory
 char kMem[400 << 20];
@@ -10,8 +12,6 @@ char kMem[400 << 20];
 int gMemPos = 0;
 int gNumNew = 0;
 int gNumDelete = 0;
-
-#include "cpp/aligned.h"
 
 // This global interface is silly ...
 
