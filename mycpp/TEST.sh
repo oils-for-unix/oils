@@ -28,6 +28,8 @@ examples-variant() {
   local variant=${2:-gcevery}
   local do_benchmark=${3:-}
 
+  banner "$0 examples-variant $compiler $variant"
+
   ninja mycpp-examples-$compiler-$variant
 
   local num_tests=0
@@ -206,7 +208,9 @@ test-runtime() {
 # Translator
 #
 
-test-valid-examples() {
+compare-examples() {
+  banner 'compare-examples'
+
   ./NINJA-config.sh
 
   # 'mycpp-all' has other stuff like type checking alone, stripping, clang builds
@@ -226,12 +230,20 @@ test-translator() {
   ### Invoked by soil/worker.sh
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
-  test-valid-examples
-}
 
-#
-#
-#
+  # Runs test in cxx-asan variant, and benchmarks in cxx-opt variant
+  compare-examples
+
+  #
+  # Now test under more variants
+  #
+  examples-variant '' sweepasan
+
+  # NOTE: This has 10 crashes!  Because of the Cheney collector.
+  # Heap-allocated tuple, etc.
+
+  #examples-variant '' gcevery
+}
 
 unit-test-coverage() {
   ### Invoked by Soil

@@ -305,18 +305,6 @@ class StackRoots {
 void ShowFixedChildren(Obj* obj);
 #endif
 
-// Variadic templates:
-// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
-template <typename T, typename... Args>
-T* Alloc(Args&&... args) {
-  assert(gHeap.is_initialized_);
-
-  void* place = gHeap.Allocate(sizeof(T));
-  assert(place != nullptr);
-  // placement new
-  return new (place) T(std::forward<Args>(args)...);
-}
-
 // Obj::heap_tag_ values.  They're odd numbers to distinguish them from vtable
 // pointers.
 //
@@ -414,6 +402,27 @@ class _DummyObj_v {  // For maskbit_v()
 
 constexpr int maskbit_v(int offset) {
   return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
+}
+
+// Variadic templates:
+// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
+template <typename T, typename... Args>
+T* Alloc(Args&&... args) {
+  assert(gHeap.is_initialized_);
+
+#ifdef MARK_SWEEP
+  void* place = calloc(sizeof(T), 1);  // make sure it's set to zero
+
+  // TODO:
+  // - trace, sweep, and free()
+  // - collection policy: every N allocations?
+
+#else
+  void* place = gHeap.Allocate(sizeof(T));
+#endif
+  assert(place != nullptr);
+  // placement new
+  return new (place) T(std::forward<Args>(args)...);
 }
 
 #endif  // GC_HEAP_H
