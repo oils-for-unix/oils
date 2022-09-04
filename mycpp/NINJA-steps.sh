@@ -69,7 +69,9 @@ int main(int argc, char **argv) {
     status = $name::main(args);
   }
 
+#ifdef DUMB_ALLOC
   dumb_alloc::Summarize();
+#endif
   return status;
 }
 EOF

@@ -6,6 +6,14 @@
 
 Heap gHeap;
 
+// Disable 'new X' globally!
+void* operator new(size_t size) {
+  InvalidCodePath();
+}
+
+// This would fail due to the above!
+// List<Str*>* zz = new List<Str*>();
+
 // LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
 // objs to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
 // collection.

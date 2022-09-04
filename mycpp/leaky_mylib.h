@@ -108,23 +108,12 @@ extern LineReader* gStdin;
 
 inline LineReader* Stdin() {
   if (gStdin == nullptr) {
-    gStdin = new CFileLineReader(stdin);
+    gStdin = Alloc<CFileLineReader>(stdin);
   }
   return gStdin;
 }
 
-inline LineReader* open(Str* path) {
-  StackRoots _roots({&path});
-
-  // TODO: Don't use C I/O; use POSIX I/O!
-  FILE* f = fopen(path->data_, "r");
-
-  // TODO: Better error checking.  IOError?
-  if (!f) {
-    throw new AssertionError("file not found");
-  }
-  return Alloc<CFileLineReader>(f);
-}
+LineReader* open(Str* path);
 
 class Writer : public Obj {
  public:
@@ -201,7 +190,7 @@ extern Writer* gStdout;
 
 inline Writer* Stdout() {
   if (gStdout == nullptr) {
-    gStdout = new CFileWriter(stdout);
+    gStdout = Alloc<CFileWriter>(stdout);
   }
   return gStdout;
 }
@@ -210,7 +199,7 @@ extern Writer* gStderr;
 
 inline Writer* Stderr() {
   if (gStderr == nullptr) {
-    gStderr = new CFileWriter(stderr);
+    gStderr = Alloc<CFileWriter>(stderr);
   }
   return gStderr;
 }

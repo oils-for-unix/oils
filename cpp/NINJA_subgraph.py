@@ -110,9 +110,11 @@ CPP_BINDINGS = [
     'cpp/leaky_osh.cc',
     'cpp/leaky_pgen2.cc',
     'cpp/leaky_pylib.cc',
-    'cpp/dumb_alloc.cc',
     'cpp/leaky_stdlib.cc',
     'cpp/leaky_libc.cc',
+
+    # Unused now, but could be brought back to test GC overhead
+    #'cpp/dumb_alloc.cc',
 ]
 
 OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC

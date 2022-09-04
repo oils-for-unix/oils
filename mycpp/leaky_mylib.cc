@@ -56,6 +56,18 @@ Str* BufWriter::getvalue() {
 
 LineReader* gStdin;
 
+LineReader* open(Str* path) {
+  StackRoots _roots({&path});
+
+  // TODO: Don't use C I/O; use POSIX I/O!
+  FILE* f = fopen(path->data_, "r");
+
+  if (f == nullptr) {
+    throw Alloc<IOError>(errno);
+  }
+  return Alloc<CFileLineReader>(f);
+}
+
 Str* CFileLineReader::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
