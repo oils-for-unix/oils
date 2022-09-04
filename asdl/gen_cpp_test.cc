@@ -40,31 +40,31 @@ void PrintTag(arith_expr_t* a) {
 
 #if 1
 TEST misc_test() {
-  auto c = new arith_expr__Const(42);
+  auto c = Alloc<arith_expr__Const>(42);
   log("sizeof *c = %d", sizeof *c);  // 16 bytes
 
   ASSERT_EQ_FMT(42, c->i, "%d");
   log("c->tag = %d", c->tag_());
   PrintTag(c);
 
-  auto v = new arith_expr__Var(StrFromC("foo"));
+  auto v = Alloc<arith_expr__Var>(StrFromC("foo"));
   log("sizeof *v = %d", sizeof *v);  // 24 bytes
 
   ASSERT(str_equals(StrFromC("foo"), v->name));
   log("v->tag = %d", v->tag_());
   PrintTag(v);
 
-  auto u = new arith_expr__Unary(StrFromC("-"), v);
+  auto u = Alloc<arith_expr__Unary>(StrFromC("-"), v);
   log("u->op = %s", u->op->data_);
 
-  auto v1 = new arith_expr__Var(StrFromC("v1"));
-  auto v2 = new arith_expr__Var(StrFromC("v2"));
+  auto v1 = Alloc<arith_expr__Var>(StrFromC("v1"));
+  auto v2 = Alloc<arith_expr__Var>(StrFromC("v2"));
   auto args = NewList<arith_expr_t*>({v1, v2});
 
-  auto f = new arith_expr__FuncCall(StrFromC("f"), args);
+  auto f = Alloc<arith_expr__FuncCall>(StrFromC("f"), args);
   log("f->name = %s", f->name->data_);
 
-  auto p = new pipeline(true);
+  auto p = Alloc<pipeline>(true);
   log("p->negated = %d", p->negated);
 
   #if 0
@@ -98,9 +98,9 @@ TEST pretty_print_test() {
   // left and right are not optional.
   // auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
 
-  auto w1 = new typed_demo_asdl::word(StrFromC("left"));
-  auto w2 = new typed_demo_asdl::word(StrFromC("right"));
-  auto b = new bool_expr__Binary(w1, w2);
+  auto w1 = Alloc<typed_demo_asdl::word>(StrFromC("left"));
+  auto w2 = Alloc<typed_demo_asdl::word>(StrFromC("right"));
+  auto b = Alloc<bool_expr__Binary>(w1, w2);
   //
   log("sizeof b = %d", sizeof b);
   log("");
@@ -108,11 +108,11 @@ TEST pretty_print_test() {
   ASSERT_EQ(hnode_e::Record, t1->tag_());
 
   auto f = mylib::Stdout();
-  auto ast_f = new format::TextOutput(f);
+  auto ast_f = Alloc<format::TextOutput>(f);
   format::PrintTree(t1, ast_f);
 
   // typed_arith.asdl
-  auto c = new arith_expr__Const(42);
+  auto c = Alloc<arith_expr__Const>(42);
   hnode_t* t2 = c->PrettyTree();
   ASSERT_EQ(hnode_e::Record, t2->tag_());
 
@@ -136,7 +136,7 @@ TEST maps_test() {
 
   hnode_t* t = m.PrettyTree();
   auto f = mylib::Stdout();
-  auto ast_f = new format::TextOutput(f);
+  auto ast_f = Alloc<format::TextOutput>(f);
   // fails with repr(void *)
   // OK change the pretty printer!
   format::PrintTree(t, ast_f);
@@ -167,12 +167,12 @@ TEST literal_test() {
   // Interesting, initializer list part of the constructor "runs".  Otherwise
   // this doesn't work.
   log("g_ft.tag_() = %d", g_ft.tag_());
-  auto ft = new flag_type::Bool();
+  auto ft = Alloc<flag_type::Bool>();
   ASSERT_EQ(g_ft.tag_(), ft->tag_());
 
   log("g_ret.tag_() = %d", g_ret.tag_());
   log("g_ret.status = %d", g_ret.status);
-  auto ret = new cflow__Return(5);
+  auto ret = Alloc<cflow__Return>(5);
   ASSERT_EQ(g_ret.tag_(), ret->tag_());
   ASSERT_EQ(g_ret.status, ret->status);
 

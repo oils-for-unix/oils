@@ -104,16 +104,18 @@ TEST show_sizeof() {
   log("alignof(flag_spec::_FlagSpecAndMore) = %d",
       alignof(flag_spec::_FlagSpecAndMore));
 
+#if 0
   // throw off the alignment
   __attribute__((unused)) auto i = new bool[1];
+#endif
 
-  auto out = new flag_spec::_FlagSpecAndMore();
+  auto out = Alloc<flag_spec::_FlagSpecAndMore>();
   log("sizeof(out) = %d", sizeof(out));
 
   log("sizeof(flag_spec::_FlagSpec) = %d", sizeof(flag_spec::_FlagSpec));
   // alignment is 8, so why doesn't it work?
   log("alignof(flag_spec::_FlagSpec) = %d", alignof(flag_spec::_FlagSpec));
-  auto out2 = new flag_spec::_FlagSpec();
+  auto out2 = Alloc<flag_spec::_FlagSpec>();
   log("sizeof(out2) = %d", sizeof(out2));
 
   PASS();

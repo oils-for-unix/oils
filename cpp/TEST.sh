@@ -51,7 +51,7 @@ leaky-flag-spec-test() {
 
   # -D CPP_UNIT_TEST is to disable #include prebuilt/...
   compile_and_link $compiler $variant '-D CPP_UNIT_TEST' $bin \
-    "${LEAKY_FLAG_SPEC_SRC[@]}" cpp/dumb_alloc.cc
+    "${LEAKY_FLAG_SPEC_SRC[@]}"
 
   run-test-bin $bin
 }
@@ -76,10 +76,8 @@ leaky-binding-test() {
   local bin=_bin/$compiler-$variant/cpp/leaky_binding_test
   mkdir -p $(dirname $bin)
 
-  # dumb_alloc.cc exposes allocator alignment issues?
-
   compile_and_link $compiler $variant '' $bin \
-    "${LEAKY_TEST_SRC[@]}" cpp/dumb_alloc.cc
+    "${LEAKY_TEST_SRC[@]}"
 
   local working_dir=_tmp/leaky-binding-test
   rm -r -f -v $working_dir

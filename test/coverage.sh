@@ -53,8 +53,9 @@ html-report() {
     --project-title "$suite" \
     --ignore-filename-regex '_test.cc$' \
     --ignore-filename-regex 'greatest.h$' \
-    --ignore-filename-regex 'mycpp/demo' \
     --ignore-filename-regex '_gen/' \
+    --ignore-filename-regex 'mycpp/demo' \
+    --ignore-filename-regex 'prebuilt/' \
     --show-instantiation-summary \
     --instr-profile $merged \
     "${args[@]}"

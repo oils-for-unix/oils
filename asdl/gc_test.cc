@@ -29,7 +29,7 @@ TEST pretty_print_test() {
     ASSERT_EQ(hnode_e::Record, t1->tag_());
 
     auto f = mylib::Stdout();
-    auto ast_f = new format::TextOutput(f);
+    auto ast_f = Alloc<format::TextOutput>(f);
     format::PrintTree(t1, ast_f);
     log("");
   }
