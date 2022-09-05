@@ -3,6 +3,7 @@
 
 // clang-format off
 #include "mycpp/common.h"
+#include "mycpp/gc_obj.h"
 #include "mycpp/gc_heap.h"
 #include "mycpp/builtins.h"
 
