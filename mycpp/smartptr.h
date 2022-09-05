@@ -2,8 +2,6 @@
 
 #include <assert.h>
 
-#include "mycpp/gc_heap.h"
-
 template <typename T>
 class Local {
   // We can garbage collect at any Alloc() invocation, so we need a level of
