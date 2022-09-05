@@ -103,6 +103,7 @@ class List;
 
 class Obj;
 
+
 const int kMaxRoots = 4 * 1024;  // related to C stack size
 
 class Space {
@@ -135,9 +136,7 @@ class Heap {
   // Real initialization with the initial heap size.  The heap grows with
   // allocations.
   void Init(int space_size) {
-    // malloc() and memset()
     from_space_.Init(space_size);
-    /* to_space_.Init(space_size); */
 
     free_ = from_space_.begin_;  // where we allocate from
     limit_ = free_ + space_size;
@@ -163,50 +162,7 @@ class Heap {
     return p;
   }
 
-  void* Allocate(int num_bytes) {
-    int n = aligned(num_bytes);
-    // log("n = %d, p = %p", n, p);
-
-    // TODO(Jesse): Change to `assert(n >= sizeof(LayoutForwarded))`
-    //
-    // This must be at least sizeof(LayoutForwarded), which happens to be 16
-    // bytes, because the GC pointer forwarding requires 16 bytes.  If we
-    // allocated less than 16 the GC would overwrite the adjacent object when
-    // it went to forward the pointer.
-    assert(n >= 16);
-
-#if GC_EVERY_ALLOC
-    Collect();  // force collection to find problems early
-#endif
-
-    if (free_ + n <= limit_) {  // Common case: we have space for it.
-      return Bump(n);
-    }
-
-#if GC_STATS
-      // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
-      //    space_size_);
-#endif
-
-    Collect();  // Try to free some space.
-
-    // log("after GC: from begin %p, free_ %p,  n %d, limit_ %p",
-    //    from_space_.begin_, free_, n, limit_);
-
-    if (free_ + n <= limit_) {  // Now we have space for it.
-      return Bump(n);
-    }
-
-    // It's still too small.  Grow the heap.
-    int multiple = 2;
-    Collect((from_space_.size_ + n) * multiple);
-
-#if GC_STATS
-    num_forced_growths_++;
-#endif
-
-    return Bump(n);
-  }
+  void *Allocate(int);
 
   void Swap() {
     // Swap spaces for next collection.
@@ -378,6 +334,24 @@ class Obj {
 
   DISALLOW_COPY_AND_ASSIGN(Obj)
 };
+
+// LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
+// objs to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
+// collection.
+
+class LayoutForwarded : public Obj {
+ public:
+  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
+};
+
+// for Tag::FixedSize
+class LayoutFixed : public Obj {
+ public:
+  Obj* children_[16];  // only the entries denoted in field_mask will be valid
+};
+
+
+
 
 //
 // Compile-time computation of GC field masks.
