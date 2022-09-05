@@ -26,9 +26,10 @@ gen-oil-native-sh() {
 }
 
 all() {
-  ./NINJA-config.sh  # Create it for the first time
+  ./NINJA-config.sh
 
-  gen-oil-native-sh  # script to build it
+  # Needed for release tarball
+  gen-oil-native-sh
 
   #time ninja -j 1 _bin/cxx-dbg/osh_eval
   time ninja _bin/cxx-dbg/osh_eval

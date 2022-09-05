@@ -388,6 +388,7 @@ make-tar() {
     doc/osh.1 \
     build/ovm-compile.sh \
     build/ovm-actions.sh \
+    build/clean.sh \
     build/common.sh \
     build/detect-*.c \
     _build/$app_name/$bytecode_zip \

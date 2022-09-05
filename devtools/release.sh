@@ -175,7 +175,8 @@ _test-tarball() {
   local tmp=_tmp/${name}-tar-test
   rm -r -f $tmp
   mkdir -p $tmp
-  cd $tmp
+
+  pushd $tmp
   tar --extract -z < ../../_release/$name-$version.tar.gz
 
   cd $name-$version
@@ -190,6 +191,7 @@ _test-tarball() {
   if test -n "$install"; then
     sudo ./install
   fi
+  popd
 }
 
 test-oil-tar() {
@@ -327,6 +329,9 @@ build-and-test() {
   _clean
   _dev-build
   test/unit.sh run-for-release  # Python unit tests
+
+  # coverage and tarball depend on this
+  build/cpp.sh all
 
   test/coverage.sh run-for-release  # C++ unit tests
 
