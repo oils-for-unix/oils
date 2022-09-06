@@ -37,4 +37,3 @@ class StackRoots {
  private:
   int n_;
 };
-

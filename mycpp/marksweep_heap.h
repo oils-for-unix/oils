@@ -3,21 +3,22 @@
 
 #include <new>
 
-#define Terabytes(bytes) (Gigabytes(bytes)*1024)
-#define Gigabytes(bytes) (Megabytes(bytes)*1024)
-#define Megabytes(bytes) (Kilobytes(bytes)*1024)
+#define Terabytes(bytes) (Gigabytes(bytes) * 1024)
+#define Gigabytes(bytes) (Megabytes(bytes) * 1024)
+#define Megabytes(bytes) (Kilobytes(bytes) * 1024)
 #define Kilobytes(bytes) ((bytes)*1024)
-
 
 const int kMaxRoots = Kilobytes(4);
 
 class Heap {
  public:
-  Heap() {}
+  Heap() {
+  }
 
-  void Init(int space_size) {}
+  void Init(int space_size) {
+  }
 
-  void *Allocate(int);
+  void* Allocate(int);
 
   void PushRoot(Obj** p) {
     assert(roots_top_ < kMaxRoots);
@@ -34,8 +35,6 @@ class Heap {
   Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
 
   bool is_initialized_ = false;
-
 };
 
 #endif
-

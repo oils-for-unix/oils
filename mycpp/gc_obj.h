@@ -69,7 +69,6 @@ class Obj {
   DISALLOW_COPY_AND_ASSIGN(Obj)
 };
 
-
 //
 // Compile-time computation of GC field masks.
 //
@@ -94,4 +93,3 @@ class _DummyObj_v {  // For maskbit_v()
 constexpr int maskbit_v(int offset) {
   return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
 }
-

@@ -252,8 +252,8 @@ void* Heap::Allocate(int num_bytes) {
   }
 
 #if GC_STATS
-    // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
-    //    space_size_);
+  // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+  //    space_size_);
 #endif
 
   Collect();  // Try to free some space.

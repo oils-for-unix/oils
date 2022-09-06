@@ -103,7 +103,6 @@ class List;
 
 class Obj;
 
-
 const int kMaxRoots = 4 * 1024;  // related to C stack size
 
 class Space {
@@ -162,7 +161,7 @@ class Heap {
     return p;
   }
 
-  void *Allocate(int);
+  void* Allocate(int);
 
   void Swap() {
     // Swap spaces for next collection.
@@ -235,7 +234,6 @@ class Heap {
 void ShowFixedChildren(Obj* obj);
 #endif
 
-
 // LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
 // objs to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
 // collection.
@@ -250,7 +248,5 @@ class LayoutFixed : public Obj {
  public:
   Obj* children_[16];  // only the entries denoted in field_mask will be valid
 };
-
-
 
 #endif  // GC_HEAP_H
