@@ -5,6 +5,12 @@ class LayoutFixed : public Obj {
 };
 
 
+#define Terabytes(bytes) (Gigabytes(bytes) * 1024)
+#define Gigabytes(bytes) (Megabytes(bytes) * 1024)
+#define Megabytes(bytes) (Kilobytes(bytes) * 1024)
+#define Kilobytes(bytes) ((bytes)*1024)
+
+
 #ifdef MARK_SWEEP
   #define PRINT_GC_MODE_STRING() printf("  GC_MODE :: marksweep\n")
   #include "marksweep_heap.h"

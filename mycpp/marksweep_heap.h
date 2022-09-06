@@ -4,11 +4,6 @@
 #include <new>
 #include <unordered_set>
 
-#define Terabytes(bytes) (Gigabytes(bytes) * 1024)
-#define Gigabytes(bytes) (Megabytes(bytes) * 1024)
-#define Megabytes(bytes) (Kilobytes(bytes) * 1024)
-#define Kilobytes(bytes) ((bytes)*1024)
-
 const int kMaxRoots = Kilobytes(4);
 
 typedef uint64_t u64;
