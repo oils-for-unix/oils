@@ -181,7 +181,7 @@ gen-cpp-counts() {
 
   # NOTE: this excludes .re2c.h file
   ls _gen/*/*.{cc,h} | $count \
-    'Generated C+ Code' \
+    'Generated C++ Code' \
     'mycpp generates the big file _gen/bin/osh_eval.mycpp.cc.  Other programs like Zephyr ASDL and re2c generate other files.' \
     "$@"
 }
