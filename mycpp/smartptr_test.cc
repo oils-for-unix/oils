@@ -1,7 +1,8 @@
 // smartptr_test.cc -- OLD UNUSED CODE
 
-#include "mycpp/runtime.h"
 #include "mycpp/smartptr.h"
+
+#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
 Str* myfunc() {
