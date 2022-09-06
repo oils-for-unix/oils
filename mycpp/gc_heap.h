@@ -10,16 +10,16 @@ class LayoutFixed : public Obj {
 #define Megabytes(bytes) (Kilobytes(bytes) * 1024)
 #define Kilobytes(bytes) ((bytes)*1024)
 
+#include "marksweep_heap.h"
+#include "cheney_heap.h"
 
-#ifdef MARK_SWEEP
-  #define PRINT_GC_MODE_STRING() printf("  GC_MODE :: marksweep\n")
-  #include "marksweep_heap.h"
+#if MARK_SWEEP
+  #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: marksweep\n")
+  extern MarkSweepHeap gHeap;
 #else
-  #define PRINT_GC_MODE_STRING() printf("  GC_MODE :: cheney\n")
-  #include "cheney_heap.h"
+  #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: cheney\n")
+  extern CheneyHeap gHeap;
 #endif
-
-extern Heap gHeap;
 
 // Variadic templates:
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/

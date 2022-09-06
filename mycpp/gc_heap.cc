@@ -1,3 +1,6 @@
+#error "This file should never be compiled .. and yet .."
+
+#if 0
 #include "mycpp/runtime.h"
 
 Heap gHeap;
@@ -24,4 +27,5 @@ void* operator new(size_t size) {
   #include "mycpp/marksweep_heap_impl.h"
 #else
   #include "mycpp/cheney_heap_impl.h"
+#endif
 #endif

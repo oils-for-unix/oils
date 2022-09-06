@@ -103,7 +103,7 @@ class List;
 
 class Obj;
 
-const int kMaxRoots = 4 * 1024;  // related to C stack size
+/* const int kMaxRoots = 4 * 1024;  // related to C stack size */
 
 class Space {
  public:
@@ -127,9 +127,9 @@ class Space {
   int size_;  // number of bytes
 };
 
-class Heap {
+class CheneyHeap {
  public:
-  Heap() {  // default constructor does nothing -- relies on zero initialization
+  CheneyHeap() {  // default constructor does nothing -- relies on zero initialization
   }
 
   // Real initialization with the initial heap size.  The heap grows with

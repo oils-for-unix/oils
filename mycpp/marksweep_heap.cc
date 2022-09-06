@@ -1,8 +1,10 @@
-void Heap::Init(int max_heap_bytes) {
+#include "mycpp/runtime.h"
+
+void MarkSweepHeap::Init(int max_heap_bytes) {
   this->max_heap_bytes = max_heap_bytes;
 }
 
-void* Heap::Allocate(int byte_count) {
+void* MarkSweepHeap::Allocate(int byte_count) {
   void* Result = calloc(byte_count, 1);
   assert(Result);
 
@@ -21,14 +23,13 @@ void* Heap::Allocate(int byte_count) {
     // 1.5x = (3/2)
     // 1.3x = (13/10)
     //
-    int growth_factor = (3 / 2);
-    this->max_heap_bytes = this->current_heap_bytes * growth_factor;
+    this->max_heap_bytes = this->current_heap_bytes * 3 / 2;
   }
 
   return Result;
 }
 
-void Heap::MarkAllReferences(Obj* obj) {
+void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 
   auto header = ObjHeader(obj);
 
@@ -80,7 +81,7 @@ void Heap::MarkAllReferences(Obj* obj) {
 
 }
 
-void Heap::Collect(int byte_count) {
+void MarkSweepHeap::Collect(int byte_count) {
   for (int root_index = 0; root_index < this->roots_top_; ++root_index) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
@@ -113,3 +114,7 @@ void Heap::Collect(int byte_count) {
   MarkedAllocations.clear();
 
 }
+
+#if MARK_SWEEP
+MarkSweepHeap gHeap;
+#endif

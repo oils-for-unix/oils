@@ -8,9 +8,9 @@ const int kMaxRoots = Kilobytes(4);
 
 typedef uint64_t u64;
 
-class Heap {
+class MarkSweepHeap {
  public:
-  Heap() {
+  MarkSweepHeap() {
   }
   void Init(int space_size);
 
@@ -42,5 +42,6 @@ class Heap {
   std::unordered_set<void*> AllAllocations;
   std::unordered_set<void*> MarkedAllocations;
 };
+
 
 #endif

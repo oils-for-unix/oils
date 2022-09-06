@@ -179,7 +179,8 @@ def ShouldSkipBenchmark(name):
 
 GC_RUNTIME = [
     'mycpp/gc_mylib.cc',
-    'mycpp/gc_heap.cc',
+    'mycpp/cheney_heap.cc',
+    'mycpp/marksweep_heap.cc',
 
     # files we haven't added StackRoots to
     'mycpp/leaky_containers.cc',
