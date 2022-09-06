@@ -76,15 +76,6 @@ Obj* Heap::Relocate(Obj* obj, Obj* header) {
   }  // switch
 }
 
-inline Obj* ObjHeader(Obj* obj) {
-  // If we see a vtable pointer, return the Obj* header immediately following.
-  // Otherwise just return Obj itself.
-  return (obj->heap_tag_ & 0x1) == 0
-             ? reinterpret_cast<Obj*>(reinterpret_cast<char*>(obj) +
-                                      sizeof(void*))
-             : obj;
-}
-
 void Heap::Collect(int to_space_size) {
 #if GC_STATS
   log("--> COLLECT with %d roots", roots_top_);

@@ -2,6 +2,7 @@
 #define MARKSWEEP_H
 
 #include <new>
+#include <unordered_set>
 
 #define Terabytes(bytes) (Gigabytes(bytes) * 1024)
 #define Gigabytes(bytes) (Megabytes(bytes) * 1024)
@@ -10,15 +11,17 @@
 
 const int kMaxRoots = Kilobytes(4);
 
+typedef uint64_t u64;
+
 class Heap {
  public:
   Heap() {
   }
-
-  void Init(int space_size) {
-  }
+  void Init(int space_size);
 
   void* Allocate(int);
+
+  void MarkAllReferences(Obj* obj);
 
   void PushRoot(Obj** p) {
     assert(roots_top_ < kMaxRoots);
@@ -34,7 +37,15 @@ class Heap {
   int roots_top_;
   Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
 
-  bool is_initialized_ = false;
+  u64 current_heap_bytes;
+  u64 max_heap_bytes;
+
+  // TODO(Jesse): This should really be in an 'internal' build
+  bool is_initialized_ =
+      true;  // mark/sweep heap doesn't need to be initialized
+
+  std::unordered_set<void*> AllAllocations;
+  std::unordered_set<void*> MarkedAllocations;
 };
 
 #endif

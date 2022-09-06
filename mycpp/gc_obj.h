@@ -93,3 +93,12 @@ class _DummyObj_v {  // For maskbit_v()
 constexpr int maskbit_v(int offset) {
   return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
 }
+
+inline Obj* ObjHeader(Obj* obj) {
+  // If we see a vtable pointer, return the Obj* header immediately following.
+  // Otherwise just return Obj itself.
+  return (obj->heap_tag_ & 0x1) == 0
+             ? reinterpret_cast<Obj*>(reinterpret_cast<char*>(obj) +
+                                      sizeof(void*))
+             : obj;
+}

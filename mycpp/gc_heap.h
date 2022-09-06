@@ -11,7 +11,7 @@ extern Heap gHeap;
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
-  assert(gHeap.is_initialized_);
+  /* assert(gHeap.is_initialized_); */
   void* place = gHeap.Allocate(sizeof(T));
   assert(place != nullptr);
   // placement new
