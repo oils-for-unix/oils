@@ -192,6 +192,7 @@ VARIANTS_LEAKY = 2
 
 # Unit tests that run with garbage collector on.
 UNIT_TESTS = {
+    'mycpp/marksweep_gc_test.cc': VARIANTS_GC,
     'mycpp/gc_heap_test.cc': VARIANTS_GC,
     'mycpp/gc_stress_test.cc': VARIANTS_GC,
     'mycpp/gc_builtins_test.cc': VARIANTS_GC,

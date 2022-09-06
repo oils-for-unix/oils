@@ -1,7 +1,15 @@
+// for Tag::FixedSize
+class LayoutFixed : public Obj {
+ public:
+  Obj* children_[16];  // only the entries denoted in field_mask will be valid
+};
+
 
 #ifdef MARK_SWEEP
+  #define PRINT_GC_MODE_STRING() printf("  GC_MODE :: marksweep\n")
   #include "marksweep_heap.h"
 #else
+  #define PRINT_GC_MODE_STRING() printf("  GC_MODE :: cheney\n")
   #include "cheney_heap.h"
 #endif
 
@@ -11,7 +19,7 @@ extern Heap gHeap;
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
-  /* assert(gHeap.is_initialized_); */
+  assert(gHeap.is_initialized_);
   void* place = gHeap.Allocate(sizeof(T));
   assert(place != nullptr);
   // placement new

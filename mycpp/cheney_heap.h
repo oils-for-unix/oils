@@ -243,10 +243,4 @@ class LayoutForwarded : public Obj {
   Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
 };
 
-// for Tag::FixedSize
-class LayoutFixed : public Obj {
- public:
-  Obj* children_[16];  // only the entries denoted in field_mask will be valid
-};
-
 #endif  // GC_HEAP_H

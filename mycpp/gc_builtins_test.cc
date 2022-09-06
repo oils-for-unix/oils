@@ -1,5 +1,6 @@
 
 #include <assert.h>
+
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
@@ -749,6 +750,8 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  PRINT_GC_MODE_STRING();
+
   RUN_TEST(print_test);
   RUN_TEST(formatter_test);
 
@@ -772,6 +775,9 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_funcs_test);
   RUN_TEST(dict_iters_test);
 
+  gHeap.Collect();
+
   GREATEST_MAIN_END(); /* display results */
+
   return 0;
 }

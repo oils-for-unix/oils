@@ -3,9 +3,18 @@
 Heap gHeap;
 
 // Disable 'new X' globally!
+//
+// NOTE(Jesse): Inserting elements into unordered_set calls `new` internally so
+// we have to either figure out how to coerce it into either accepting the gc'd
+// allocator (if that's even a plausible path) or disallowing new is not possible.
+//
+// Alternatively, we could write our own hashtable, which is pretty easy.
+//
+#if 0
 void* operator new(size_t size) {
   InvalidCodePath();
 }
+#endif
 
 // NOTE(Jesse): Put the implementations in header files because there's a
 // special case script that copies all the _header_ files in mycpp to another

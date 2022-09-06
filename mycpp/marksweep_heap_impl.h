@@ -6,7 +6,7 @@ void* Heap::Allocate(int byte_count) {
   void* Result = calloc(byte_count, 1);
   assert(Result);
 
-  /* this->AllAllocations.insert(Result); */
+  this->AllAllocations.insert(Result);
 
   this->current_heap_bytes += byte_count;
   if (this->current_heap_bytes > this->max_heap_bytes) {
@@ -29,38 +29,42 @@ void* Heap::Allocate(int byte_count) {
 }
 
 void Heap::MarkAllReferences(Obj* obj) {
-#if 0
+
   auto header = ObjHeader(obj);
 
-  this->MarkedAllocations.insert(Obj);
+  this->MarkedAllocations.insert((void*)obj);
 
   switch (header->heap_tag_) {
+
   case Tag::FixedSize: {
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
     int mask = fixed->field_mask_;
+
+    // TODO(Jesse): Put the 16 in a #define
     for (int i = 0; i < 16; ++i) {
       if (mask & (1 << i)) {
         Obj* child = fixed->children_[i];
-        // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
         if (child) {
-          auto child_header = ObjHeader(child);
-          // log("  fixed: child %d from %p", i, child);
-          fixed->children_[i] = MarkAllReferences(child, child_header);
-          // log("  to %p", fixed->children_[i]);
+          MarkAllReferences(child);
         }
       }
     }
+
     break;
   }
+
   case Tag::Scanned: {
-    assert(header == obj);  // no inheritance
+    assert(header == obj);
+
     auto slab = reinterpret_cast<Slab<void*>*>(header);
+
+    // TODO(Jesse): Give this a name
     int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
+
     for (int i = 0; i < n; ++i) {
       Obj* child = reinterpret_cast<Obj*>(slab->items_[i]);
-      if (child) {  // note: List<> may have nullptr; Dict is sparse
-        auto child_header = ObjHeader(child);
-        slab->items_[i] = MarkAllReferences(child, child_header);
+      if (child) {
+        MarkAllReferences(child);
       }
     }
     break;
@@ -73,9 +77,7 @@ void Heap::MarkAllReferences(Obj* obj) {
 
     // other tags like Tag::Opaque have no children
   }
-  // aligned() like Heap::Allocate()
-  scan += aligned(header->obj_len_);
-#endif
+
 }
 
 void Heap::Collect(int byte_count) {
@@ -86,8 +88,28 @@ void Heap::Collect(int byte_count) {
     Obj* Root = this->roots_[root_index][0];
 
     MarkAllReferences(Root);
+  }
 
-    for (auto it = AllAllocations.begin(); it != AllAllocations.end(); ++it) {
+
+  for (auto it = AllAllocations.begin(); it != AllAllocations.end(); ++it) {
+    void* alloc = *it;
+
+    auto marked_alloc = MarkedAllocations.find(alloc);
+    bool alloc_is_dead = marked_alloc == MarkedAllocations.end();
+
+    if (alloc_is_dead)
+    {
+      free(alloc);
     }
   }
+
+  AllAllocations.clear();
+
+  for (auto it = MarkedAllocations.begin(); it != MarkedAllocations.end(); ++it)
+  {
+    AllAllocations.insert(*it);
+  }
+
+  MarkedAllocations.clear();
+
 }
