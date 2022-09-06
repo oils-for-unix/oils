@@ -86,7 +86,7 @@ TEST sizeof_test() {
   // 8 + 128 possible entries
   // log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
 
-  log("sizeof(Heap) = %d", sizeof(Heap));
+  /* log("sizeof(Heap) = %d", sizeof(Heap)); */
 
   int min_obj_size = sizeof(LayoutForwarded);
   int short_str_size = aligned(kStrHeaderSize + 1);
@@ -558,6 +558,7 @@ TEST global_trace_test() {
   PASS();
 }
 
+#if 0
 void ShowRoots(const Heap& heap) {
   log("--");
   for (int i = 0; i < heap.roots_top_; ++i) {
@@ -579,6 +580,7 @@ void ShowRoots(const Heap& heap) {
     // h->Update(nullptr);
   }
 }
+#endif
 
 TEST stack_roots_test() {
   Str* s = nullptr;
