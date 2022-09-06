@@ -8,7 +8,7 @@ void* operator new(size_t size) {
 }
 
 #ifdef MARK_SWEEP
-  #include "marksweep_heap.cc"
+  #include "mycpp/marksweep_heap.cc"
 #else
-  #include "cheney_heap.cc"
+  #include "mycpp/cheney_heap.cc"
 #endif
