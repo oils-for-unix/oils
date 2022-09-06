@@ -4,21 +4,22 @@ class LayoutFixed : public Obj {
   Obj* children_[16];  // only the entries denoted in field_mask will be valid
 };
 
-
 #define Terabytes(bytes) (Gigabytes(bytes) * 1024)
 #define Gigabytes(bytes) (Megabytes(bytes) * 1024)
 #define Megabytes(bytes) (Kilobytes(bytes) * 1024)
 #define Kilobytes(bytes) ((bytes)*1024)
 
-#include "marksweep_heap.h"
+const int kMaxRoots = Kilobytes(4);
+
 #include "cheney_heap.h"
+#include "marksweep_heap.h"
 
 #if MARK_SWEEP
   #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: marksweep\n")
-  extern MarkSweepHeap gHeap;
+extern MarkSweepHeap gHeap;
 #else
   #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: cheney\n")
-  extern CheneyHeap gHeap;
+extern CheneyHeap gHeap;
 #endif
 
 // Variadic templates:

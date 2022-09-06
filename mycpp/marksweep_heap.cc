@@ -30,13 +30,11 @@ void* MarkSweepHeap::Allocate(int byte_count) {
 }
 
 void MarkSweepHeap::MarkAllReferences(Obj* obj) {
-
   auto header = ObjHeader(obj);
 
   this->MarkedAllocations.insert((void*)obj);
 
   switch (header->heap_tag_) {
-
   case Tag::FixedSize: {
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
     int mask = fixed->field_mask_;
@@ -78,7 +76,6 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 
     // other tags like Tag::Opaque have no children
   }
-
 }
 
 void MarkSweepHeap::Collect(int byte_count) {
@@ -91,28 +88,25 @@ void MarkSweepHeap::Collect(int byte_count) {
     MarkAllReferences(Root);
   }
 
-
   for (auto it = AllAllocations.begin(); it != AllAllocations.end(); ++it) {
     void* alloc = *it;
 
     auto marked_alloc = MarkedAllocations.find(alloc);
     bool alloc_is_dead = marked_alloc == MarkedAllocations.end();
 
-    if (alloc_is_dead)
-    {
+    if (alloc_is_dead) {
       free(alloc);
     }
   }
 
   AllAllocations.clear();
 
-  for (auto it = MarkedAllocations.begin(); it != MarkedAllocations.end(); ++it)
-  {
+  for (auto it = MarkedAllocations.begin(); it != MarkedAllocations.end();
+       ++it) {
     AllAllocations.insert(*it);
   }
 
   MarkedAllocations.clear();
-
 }
 
 #if MARK_SWEEP

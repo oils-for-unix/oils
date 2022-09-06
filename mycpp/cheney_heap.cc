@@ -1,6 +1,6 @@
-#include "mycpp/runtime.h"
-
 #include <sys/mman.h>  // mmap
+
+#include "mycpp/runtime.h"
 
 void Space::Init(int num_bytes) {
   void* requested_addr = nullptr;

@@ -4,8 +4,6 @@
 #include <new>
 #include <unordered_set>
 
-const int kMaxRoots = Kilobytes(4);
-
 typedef uint64_t u64;
 
 class MarkSweepHeap {
@@ -42,6 +40,5 @@ class MarkSweepHeap {
   std::unordered_set<void*> AllAllocations;
   std::unordered_set<void*> MarkedAllocations;
 };
-
 
 #endif

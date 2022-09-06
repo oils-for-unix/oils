@@ -1,6 +1,5 @@
 
 #include <assert.h>
-
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 

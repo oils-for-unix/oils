@@ -3,7 +3,6 @@
 #include "vendor/greatest.h"
 
 TEST string_collection_test() {
-
   Str *test_str = StrFromC("foo");
   {
     // NOTE(Jesse): This causes a crash when this gets compiled against the
@@ -39,20 +38,17 @@ TEST string_collection_test() {
   PASS();
 }
 
-
 TEST list_collection_test() {
-
   {
     Str *test_str0 = 0;
     Str *test_str1 = 0;
-    List<Str*> *test_list = 0;
+    List<Str *> *test_list = 0;
 
     StackRoots _roots({&test_str0, &test_str1, &test_list});
 
     test_str0 = StrFromC("foo_0");
     test_str1 = StrFromC("foo_1");
-    test_list = NewList<Str*>();
-
+    test_list = NewList<Str *>();
 
     test_list->append(test_str0);
     test_list->append(test_str1);
@@ -81,7 +77,7 @@ TEST list_collection_test() {
 
 GREATEST_MAIN_DEFS();
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   gHeap.Init(Megabytes(64));
 
   PRINT_GC_MODE_STRING();

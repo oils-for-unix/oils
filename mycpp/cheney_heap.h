@@ -129,7 +129,8 @@ class Space {
 
 class CheneyHeap {
  public:
-  CheneyHeap() {  // default constructor does nothing -- relies on zero initialization
+  CheneyHeap() {  // default constructor does nothing -- relies on zero
+                  // initialization
   }
 
   // Real initialization with the initial heap size.  The heap grows with
