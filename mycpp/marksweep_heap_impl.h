@@ -6,7 +6,7 @@ void* Heap::Allocate(int byte_count) {
   void* Result = calloc(byte_count, 1);
   assert(Result);
 
-  this->AllAllocations.insert(Result);
+  /* this->AllAllocations.insert(Result); */
 
   this->current_heap_bytes += byte_count;
   if (this->current_heap_bytes > this->max_heap_bytes) {
@@ -29,6 +29,7 @@ void* Heap::Allocate(int byte_count) {
 }
 
 void Heap::MarkAllReferences(Obj* obj) {
+#if 0
   auto header = ObjHeader(obj);
 
   this->MarkedAllocations.insert(Obj);
@@ -74,6 +75,7 @@ void Heap::MarkAllReferences(Obj* obj) {
   }
   // aligned() like Heap::Allocate()
   scan += aligned(header->obj_len_);
+#endif
 }
 
 void Heap::Collect(int byte_count) {
