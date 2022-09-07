@@ -1,3 +1,6 @@
+#ifndef GC_OBJ_H
+#define GC_OBJ_H
+
 // Obj::heap_tag_ values.  They're odd numbers to distinguish them from vtable
 // pointers.
 //
@@ -102,3 +105,5 @@ inline Obj* ObjHeader(Obj* obj) {
                                       sizeof(void*))
              : obj;
 }
+
+#endif

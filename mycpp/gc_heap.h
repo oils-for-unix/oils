@@ -1,18 +1,16 @@
+#ifndef GC_HEAP_H
+#define GC_HEAP_H
+
+const int kMaxRoots = KiB(4);
+
+#include "marksweep_heap.h"
+#include "cheney_heap.h"
+
 // for Tag::FixedSize
 class LayoutFixed : public Obj {
  public:
   Obj* children_[16];  // only the entries denoted in field_mask will be valid
 };
-
-#define Terabytes(bytes) (Gigabytes(bytes) * 1024)
-#define Gigabytes(bytes) (Megabytes(bytes) * 1024)
-#define Megabytes(bytes) (Kilobytes(bytes) * 1024)
-#define Kilobytes(bytes) ((bytes)*1024)
-
-const int kMaxRoots = Kilobytes(4);
-
-#include "cheney_heap.h"
-#include "marksweep_heap.h"
 
 #if MARK_SWEEP
   #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: marksweep\n")
@@ -52,3 +50,5 @@ class StackRoots {
  private:
   int n_;
 };
+
+#endif

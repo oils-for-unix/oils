@@ -1,29 +1,31 @@
 #include "mycpp/runtime.h"
 
-void MarkSweepHeap::Init(int max_heap_bytes) {
-  this->max_heap_bytes = max_heap_bytes;
+void MarkSweepHeap::Init(int collection_thresh) {
+  this->collection_thresh_ = collection_thresh;
 }
 
 void* MarkSweepHeap::Allocate(int byte_count) {
   void* Result = calloc(byte_count, 1);
   assert(Result);
 
-  this->AllAllocations.insert(Result);
+  this->all_allocations_.insert(Result);
 
-  this->current_heap_bytes += byte_count;
-  if (this->current_heap_bytes > this->max_heap_bytes) {
+  this->current_heap_bytes_ += byte_count;
+  if (this->current_heap_bytes_ > this->collection_thresh_) {
     Collect();
   }
 
-  if (this->current_heap_bytes > this->max_heap_bytes) {
+  if (this->current_heap_bytes_ > this->collection_thresh_) {
+    //
     // NOTE(Jesse): Generally, doubling results in a lot of wasted space.  I've
     // observed growing by a factor of 1.5x, or even 1.3x, to be a good
-    // time-space tradeoff.
+    // time/space tradeoff in the past.  Unclear if that's good for a typical
+    // Oil workload, but we've got to start somewhere.
     //
     // 1.5x = (3/2)
     // 1.3x = (13/10)
     //
-    this->max_heap_bytes = this->current_heap_bytes * 3 / 2;
+    this->collection_thresh_ = this->current_heap_bytes_ * 3 / 2;
   }
 
   return Result;
@@ -32,7 +34,7 @@ void* MarkSweepHeap::Allocate(int byte_count) {
 void MarkSweepHeap::MarkAllReferences(Obj* obj) {
   auto header = ObjHeader(obj);
 
-  this->MarkedAllocations.insert((void*)obj);
+  this->marked_allocations_.insert(static_cast<void*>(obj));
 
   switch (header->heap_tag_) {
   case Tag::FixedSize: {
@@ -88,25 +90,25 @@ void MarkSweepHeap::Collect(int byte_count) {
     MarkAllReferences(Root);
   }
 
-  for (auto it = AllAllocations.begin(); it != AllAllocations.end(); ++it) {
+  for (auto it = all_allocations_.begin(); it != all_allocations_.end(); ++it) {
     void* alloc = *it;
 
-    auto marked_alloc = MarkedAllocations.find(alloc);
-    bool alloc_is_dead = marked_alloc == MarkedAllocations.end();
+    auto marked_alloc = marked_allocations_.find(alloc);
+    bool alloc_is_dead = marked_alloc == marked_allocations_.end();
 
     if (alloc_is_dead) {
       free(alloc);
     }
   }
 
-  AllAllocations.clear();
+  all_allocations_.clear();
 
-  for (auto it = MarkedAllocations.begin(); it != MarkedAllocations.end();
+  for (auto it = marked_allocations_.begin(); it != marked_allocations_.end();
        ++it) {
-    AllAllocations.insert(*it);
+    all_allocations_.insert(*it);
   }
 
-  MarkedAllocations.clear();
+  marked_allocations_.clear();
 }
 
 #if MARK_SWEEP

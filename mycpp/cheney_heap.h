@@ -3,8 +3,8 @@
 // A garbage collected heap that looks like statically typed Python: Str,
 // List<T>, Dict<K, V>.
 
-#ifndef GC_HEAP_H
-#define GC_HEAP_H
+#ifndef CHENEY_HEAP_H
+#define CHENEY_HEAP_H
 
 #include <cassert>  // assert()
 #include <cstdlib>  // malloc

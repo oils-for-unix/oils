@@ -78,7 +78,7 @@ TEST list_collection_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
-  gHeap.Init(Megabytes(64));
+  gHeap.Init(MiB(64));
 
   PRINT_GC_MODE_STRING();
 
