@@ -119,16 +119,17 @@ format-wwz-index() {
   local job_id=$1
   local tsv=${2:-_tmp/soil/INDEX.tsv}
 
-  soil-html-head "$job_id results"
+  soil-html-head "CI job $job_id"
 
   cat <<EOF
   <body class="width40">
     <p id="home-link">
-      <a href="/">travis-ci.oilshell.org</a>
+        <a href="..">Up</a>
+      | <a href="/">travis-ci.oilshell.org</a>
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
-    <h1>Job <code>$job_id</code></h1>
+    <h1>CI job <code>$job_id</code></h1>
 
     <table>
       <thead>
