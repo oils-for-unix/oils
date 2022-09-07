@@ -109,7 +109,7 @@ class Space {
  public:
   Space() {
   }
-  void Init(int space_size);
+  void Init(int);
 
   void Free();
 
