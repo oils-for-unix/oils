@@ -417,7 +417,7 @@ inline bool _cmp(Str* a, Str* b) {
 
 template <typename T>
 void List<T>::sort() {
-  std::sort((Str**)slab_->items_, slab_->items_ + len_, _cmp);
+  std::sort(slab_->items_, slab_->items_ + len_, _cmp);
 }
 
 /* template <typename T> */

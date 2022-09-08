@@ -103,8 +103,6 @@ class List;
 
 class Obj;
 
-/* const int kMaxRoots = 4 * 1024;  // related to C stack size */
-
 class Space {
  public:
   Space() {

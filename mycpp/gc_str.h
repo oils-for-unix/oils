@@ -7,13 +7,13 @@ class List;
 class Str : public Obj {
  public:
   // Don't call this directly.  Call AllocStr() instead, which calls this.
-  explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
+  Str() : Obj(Tag::Opaque, kZeroMask, 0) {
     // log("GC Str()");
   }
 
   char* data() {
     return data_;
-  };
+  }
 
   void SetObjLenFromStrLen(int str_len);
 
@@ -157,7 +157,6 @@ class StrIter {
     return i_ >= len_;
   }
   Str* Value() {  // similar to index_()
-
     // TODO: create 256 GLOBAL_STR() and return those instead!
     Str* result = AllocStr(1);
     result->data_[0] = s_->data_[i_];

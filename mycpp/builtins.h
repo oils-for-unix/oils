@@ -43,7 +43,7 @@ class AssertionError {
 // bindings raise it.
 class RuntimeError {
  public:
-  RuntimeError(Str* message) : message(message) {
+  explicit RuntimeError(Str* message) : message(message) {
   }
   Str* message;
 };
@@ -52,7 +52,7 @@ class RuntimeError {
 // don't need
 class TypeError {
  public:
-  TypeError(Str* arg) {
+  explicit TypeError(Str* arg) {
     assert(0);
   }
 };

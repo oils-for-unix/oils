@@ -5,19 +5,22 @@ void MarkSweepHeap::Init(int collection_thresh) {
 }
 
 void* MarkSweepHeap::Allocate(int byte_count) {
-  void* Result = calloc(byte_count, 1);
-  assert(Result);
+  void* result = calloc(byte_count, 1);
+  assert(result);
 
 #if GC_STATS
   this->num_live_objs_++;
 #endif
 
-  this->all_allocations_.insert(Result);
+  this->all_allocations_.insert(result);
 
   this->current_heap_bytes_ += byte_count;
   if (this->current_heap_bytes_ > this->collection_thresh_) {
     Collect();
   }
+
+  // TODO: collection policy isn't correct, as this->current_heap_bytes_ isn't
+  // updated on collection.
 
   if (this->current_heap_bytes_ > this->collection_thresh_) {
     //
@@ -32,7 +35,7 @@ void* MarkSweepHeap::Allocate(int byte_count) {
     this->collection_thresh_ = this->current_heap_bytes_ * 3 / 2;
   }
 
-  return Result;
+  return result;
 }
 
 void MarkSweepHeap::MarkAllReferences(Obj* obj) {
@@ -91,10 +94,10 @@ void MarkSweepHeap::Collect() {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
     // should do that such that we don't store indirected pointers here.
-    Obj* Root = *(this->roots_[root_index]);
+    Obj* root = *(this->roots_[root_index]);
 
-    if (Root) {
-      MarkAllReferences(Root);
+    if (root) {
+      MarkAllReferences(root);
     }
   }
 

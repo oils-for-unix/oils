@@ -1,8 +1,6 @@
 #ifndef GC_HEAP_H
 #define GC_HEAP_H
 
-const int kMaxRoots = KiB(4);
-
 #include "cheney_heap.h"
 #include "marksweep_heap.h"
 
@@ -51,4 +49,4 @@ class StackRoots {
   int n_;
 };
 
-#endif
+#endif  // GC_HEAP_H

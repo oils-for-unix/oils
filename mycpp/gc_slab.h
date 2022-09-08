@@ -42,7 +42,7 @@ const int kSlabHeaderSize = sizeof(Obj);
 template <typename T>
 class Slab : public Obj {
  public:
-  Slab(int obj_len) : Obj(0, 0, obj_len) {
+  explicit Slab(int obj_len) : Obj(0, 0, obj_len) {
     InitSlabCell<T>(this);
   }
   T items_[1];  // variable length

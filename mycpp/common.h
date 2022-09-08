@@ -63,4 +63,6 @@ inline size_t aligned(size_t n) {
   return (n + kMask) & ~kMask;
 }
 
+const int kMaxRoots = KiB(4);
+
 #endif  // COMMON_H

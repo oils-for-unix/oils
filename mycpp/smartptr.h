@@ -15,7 +15,7 @@ class Local {
   }
 
   // IMPLICIT conversion.  No 'explicit'.
-  Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
+  explicit Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
     // TODO(Jesse): Does this get called?
     // Is this NotImplemented() or InvalidCodePath() ??
     assert(0);
@@ -23,7 +23,7 @@ class Local {
   }
 
   // Copy constructor, e.g. f(mylocal) where f(Local<T> param);
-  Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
+  explicit Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
     // TODO(Jesse): Does this get called?
     // Is this NotImplemented() or InvalidCodePath() ??
     assert(0);
@@ -109,7 +109,7 @@ class Param : public Local<T> {
  public:
   // hm this is awkward, I think we should NOT inherit!  We should only
   // convert.
-  Param(const Local<T>& other) : Local<T>(nullptr) {
+  explicit Param(const Local<T>& other) : Local<T>(nullptr) {
     this->raw_pointer_ = other.raw_pointer_;
   }
 

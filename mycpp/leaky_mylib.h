@@ -132,10 +132,10 @@ class BufWriter : public Writer {
         data_(nullptr),
         len_(0) {
   }
-  virtual void write(Str* s) override;
-  virtual void flush() override {
+  void write(Str* s) override;
+  void flush() override {
   }
-  virtual bool isatty() override {
+  bool isatty() override {
     return false;
   }
   // For cStringIO API
@@ -176,9 +176,9 @@ class CFileWriter : public Writer {
   explicit CFileWriter(FILE* f)
       : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), f_(f) {
   }
-  virtual void write(Str* s) override;
-  virtual void flush() override;
-  virtual bool isatty() override;
+  void write(Str* s) override;
+  void flush() override;
+  bool isatty() override;
 
  private:
   FILE* f_;

@@ -82,7 +82,7 @@ TEST local_test() {
 
 class Base {
  public:
-  Base(int a) : a_(a) {
+  explicit Base(int a) : a_(a) {
   }
   int a_;
 };

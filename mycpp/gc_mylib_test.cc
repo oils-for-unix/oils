@@ -131,7 +131,7 @@ TEST files_test() {
       println_stderr(s);
     }
     ++i;
-  };
+  }
   log("files_test DONE");
 
   auto f2 = mylib::open(filename);

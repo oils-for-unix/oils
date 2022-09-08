@@ -703,7 +703,7 @@ TEST compile_time_masks_test() {
 // 8 byte vtable, 8 byte Obj header, then member_
 class BaseObj : public Obj {
  public:
-  BaseObj(int obj_len) : Obj(Tag::Opaque, kZeroMask, obj_len) {
+  explicit BaseObj(int obj_len) : Obj(Tag::Opaque, kZeroMask, obj_len) {
   }
   BaseObj() : BaseObj(sizeof(BaseObj)) {
   }

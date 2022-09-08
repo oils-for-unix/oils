@@ -233,7 +233,7 @@ void* CheneyHeap::Allocate(int num_bytes) {
   // bytes, because the GC pointer forwarding requires 16 bytes.  If we
   // allocated less than 16 the GC would overwrite the adjacent object when
   // it went to forward the pointer.
-  assert(n >= (int)sizeof(LayoutForwarded));
+  assert(n >= static_cast<int>(sizeof(LayoutForwarded)));
 
 #if GC_EVERY_ALLOC
   Collect();  // force collection to find problems early
