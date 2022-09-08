@@ -33,16 +33,16 @@ TEST string_collection_test() {
 
   // NOTE(Jesse): ASAN detects UAF here when I tested by toggling this on
   //
-  /* ASSERT(are_equal(test_str, StrFromC("foo"))); */
+  // ASSERT(are_equal(test_str, StrFromC("foo")));
 
   PASS();
 }
 
 TEST list_collection_test() {
   {
-    Str *test_str0 = 0;
-    Str *test_str1 = 0;
-    List<Str *> *test_list = 0;
+    Str *test_str0 = nullptr;
+    Str *test_str1 = nullptr;
+    List<Str *> *test_list = nullptr;
 
     StackRoots _roots({&test_str0, &test_str1, &test_list});
 
@@ -53,21 +53,29 @@ TEST list_collection_test() {
     test_list->append(test_str0);
     test_list->append(test_str1);
 
+    // Verify the list looks as we expected
     {
-      auto str0 = test_list->index_(0);
-      ASSERT(are_equal(str0, test_str0));
-      auto str1 = test_list->index_(1);
-      ASSERT(are_equal(str1, test_str1));
+      ASSERT(are_equal(test_list->index_(0), test_str0));
+      ASSERT(are_equal(test_list->index_(1), test_str1));
+
+      ASSERT_EQ(test_list->index_(0), test_str0);
+      ASSERT_EQ(test_list->index_(1), test_str1);
+
+      ASSERT_EQ(2, len(test_list));
     }
 
     gHeap.Collect();
 
     {
-      auto str0 = test_list->index_(0);
-      ASSERT(are_equal(str0, test_str0));
-      auto str1 = test_list->index_(1);
-      ASSERT(are_equal(str1, test_str1));
+      ASSERT(are_equal(test_list->index_(0), test_str0));
+      ASSERT(are_equal(test_list->index_(1), test_str1));
+
+      ASSERT_EQ(test_list->index_(0), test_str0);
+      ASSERT_EQ(test_list->index_(1), test_str1);
     }
+
+    test_list->pop();
+    ASSERT_EQ(1, len(test_list));
   }
 
   gHeap.Collect();

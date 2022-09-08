@@ -202,6 +202,16 @@ test-runtime() {
   unit '' ubsan
   unit '' gcstats
   unit '' gcevery
+
+  # Doesn't work yet because of GC_STATS num_live_objs_
+  # unit '' sweepasan
+
+  # Two tests that do pass
+  ninja _bin/cxx-sweepasan/mycpp/marksweep_gc_test
+  run-test-bin _bin/cxx-sweepasan/mycpp/marksweep_gc_test
+
+  ninja _bin/cxx-sweepasan/mycpp/gc_builtins_test
+  run-test-bin _bin/cxx-sweepasan/mycpp/gc_builtins_test
 }
 
 #
