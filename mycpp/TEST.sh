@@ -14,7 +14,7 @@ source build/common.sh
 source cpp/NINJA-steps.sh
 source devtools/common.sh
 source soil/common.sh  # find-dir-html
-source test/common.sh  # run-test
+source test/common.sh  # run-test-bin
 
 # in case binaries weren't built
 shopt -s failglob
@@ -210,6 +210,7 @@ test-runtime() {
   ninja _bin/cxx-sweepasan/mycpp/marksweep_gc_test
   run-test-bin _bin/cxx-sweepasan/mycpp/marksweep_gc_test
 
+  # Fails under ASAN; we should re-enable ASAN_OPTIONS=detect_leaks
   ninja _bin/cxx-sweepasan/mycpp/gc_builtins_test
   run-test-bin _bin/cxx-sweepasan/mycpp/gc_builtins_test
 }
