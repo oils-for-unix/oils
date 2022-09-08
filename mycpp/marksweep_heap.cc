@@ -1,12 +1,17 @@
 #include "mycpp/runtime.h"
 
 void MarkSweepHeap::Init(int collection_thresh) {
+
   this->collection_thresh_ = collection_thresh;
 }
 
 void* MarkSweepHeap::Allocate(int byte_count) {
   void* Result = calloc(byte_count, 1);
   assert(Result);
+
+#if GC_STATS
+  this->num_live_objs_ ++;
+#endif
 
   this->all_allocations_.insert(Result);
 
@@ -37,6 +42,7 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
   this->marked_allocations_.insert(static_cast<void*>(obj));
 
   switch (header->heap_tag_) {
+
   case Tag::FixedSize: {
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
     int mask = fixed->field_mask_;
@@ -68,12 +74,14 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
         MarkAllReferences(child);
       }
     }
+
     break;
   }
+
   default: {
     assert(header->heap_tag_ == Tag::Forwarded ||
-           header->heap_tag_ == Tag::Global ||
-           header->heap_tag_ == Tag::Opaque);
+           header->heap_tag_ == Tag::Global    ||
+           header->heap_tag_ == Tag::Opaque    );
   }
 
     // other tags like Tag::Opaque have no children
@@ -88,7 +96,10 @@ void MarkSweepHeap::Collect() {
     // should do that such that we don't store indirected pointers here.
     Obj* Root = *(this->roots_[root_index]);
 
-    MarkAllReferences(Root);
+    if (Root)
+    {
+      MarkAllReferences(Root);
+    }
   }
 
   for (auto it = all_allocations_.begin(); it != all_allocations_.end(); ++it) {
@@ -98,15 +109,26 @@ void MarkSweepHeap::Collect() {
     bool alloc_is_dead = marked_alloc == marked_allocations_.end();
 
     if (alloc_is_dead) {
+
       free(alloc);
+
+#if GC_STATS
+      this->num_live_objs_ --;
+#endif
     }
+
   }
 
   all_allocations_.clear();
 
   for (auto it = marked_allocations_.begin(); it != marked_allocations_.end();
        ++it) {
-    all_allocations_.insert(*it);
+
+    Obj *obj = reinterpret_cast<Obj*>(*it);
+    if (obj->heap_tag_ != Tag::Global)
+    {
+      all_allocations_.insert(*it);
+    }
   }
 
   marked_allocations_.clear();

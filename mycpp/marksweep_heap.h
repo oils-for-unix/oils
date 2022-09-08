@@ -37,6 +37,10 @@ class MarkSweepHeap {
   //
   bool is_initialized_ = true; // mark/sweep doesn't need to be initialized
 
+#if GC_STATS
+  int num_live_objs_;
+#endif
+
   std::unordered_set<void*> all_allocations_;
   std::unordered_set<void*> marked_allocations_;
 };

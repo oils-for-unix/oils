@@ -141,10 +141,12 @@ TEST str_test() {
   ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->obj_len_, "%d");
 
   // Make sure they're on the heap
+#ifndef MARK_SWEEP
   int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_.begin_;
   int diff2 = reinterpret_cast<char*>(str2) - gHeap.from_space_.begin_;
   ASSERT(diff1 < 1024);
   ASSERT(diff2 < 1024);
+#endif
 
   ASSERT_EQ(0, len(str1));
   ASSERT_EQ(7, len(str2));
@@ -187,10 +189,12 @@ TEST list_test() {
   ASSERT_EQ_FMT(24, list2->obj_len_, "%d");
 
   // Make sure they're on the heap
+#ifndef MARK_SWEEP
   int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_.begin_;
   int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_.begin_;
   ASSERT(diff1 < 1024);
   ASSERT(diff2 < 1024);
+#endif
 
   auto more = NewList<int>(std::initializer_list<int>{11, 22, 33});
   StackRoots _roots3({&more});
@@ -232,8 +236,10 @@ TEST list_test() {
   ASSERT_EQ_FMT(88, list1->index_(7), "%d");
   ASSERT_EQ_FMT(8, len(list1), "%d");
 
+#ifndef MARK_SWEEP
   int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_.begin_;
   ASSERT(d_slab < 1024);
+#endif
 
   log("list1_ = %p", list1);
   log("list1->slab_ = %p", list1->slab_);
@@ -316,10 +322,12 @@ TEST dict_test() {
   ASSERT_EQ(nullptr, dict1->values_);
 
   // Make sure they're on the heap
+#ifndef MARK_SWEEP
   int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_.begin_;
   int diff2 = reinterpret_cast<char*>(dict2) - gHeap.from_space_.begin_;
   ASSERT(diff1 < 1024);
   ASSERT(diff2 < 1024);
+#endif
 
   dict1->set(42, 5);
   ASSERT_EQ(5, dict1->index_(42));
@@ -430,7 +438,7 @@ class Line : public Obj {
 };
 
 TEST fixed_trace_test() {
-  gHeap.Init(kInitialSize);  // reset the whole thing
+  gHeap.Collect();
 
   ASSERT_NUM_LIVE_OBJS(0);
 
@@ -475,7 +483,7 @@ TEST fixed_trace_test() {
 }
 
 TEST slab_trace_test() {
-  gHeap.Init(kInitialSize);  // reset the whole thing
+  gHeap.Collect();
 
   ASSERT_NUM_LIVE_OBJS(0);
 
@@ -525,7 +533,7 @@ TEST slab_trace_test() {
 }
 
 TEST global_trace_test() {
-  gHeap.Init(kInitialSize);
+  gHeap.Collect();
 
   Str* l4 = nullptr;
   List<Str*>* strings = nullptr;
@@ -586,7 +594,7 @@ TEST stack_roots_test() {
   Str* s = nullptr;
   List<int>* L = nullptr;
 
-  gHeap.Init(kInitialSize);  // reset the whole thing
+  gHeap.Collect();
 
   ASSERT_EQ(0, gHeap.roots_top_);
 
@@ -769,7 +777,7 @@ TEST vtable_test() {
 }
 
 TEST inheritance_test() {
-  gHeap.Init(kInitialSize);  // reset the whole thing
+  gHeap.Collect();
 
   ASSERT_NUM_LIVE_OBJS(0);
 
@@ -820,6 +828,8 @@ int main(int argc, char** argv) {
   RUN_TEST(compile_time_masks_test);
   RUN_TEST(vtable_test);
   RUN_TEST(inheritance_test);
+
+  gHeap.Collect();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
