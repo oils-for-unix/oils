@@ -98,7 +98,7 @@ void MarkSweepHeap::Collect() {
     }
   }
 
-  for (auto it = all_allocations_.begin(); it != all_allocations_.end(); ++it) {
+  for (auto it = all_allocations_.begin(); it != all_allocations_.end();) {
     void* alloc = *it;
 
     auto marked_alloc = marked_allocations_.find(alloc);
@@ -106,20 +106,14 @@ void MarkSweepHeap::Collect() {
 
     if (alloc_is_dead) {
       free(alloc);
-
+      auto at =
+          it++;  // Have to increment the iterator before we remove its element
+      all_allocations_.erase(at);
 #if GC_STATS
       this->num_live_objs_--;
 #endif
-    }
-  }
-
-  all_allocations_.clear();
-
-  for (auto it = marked_allocations_.begin(); it != marked_allocations_.end();
-       ++it) {
-    Obj* obj = reinterpret_cast<Obj*>(*it);
-    if (obj->heap_tag_ != Tag::Global) {
-      all_allocations_.insert(*it);
+    } else {
+      it++;
     }
   }
 
