@@ -1,7 +1,6 @@
 #include "mycpp/runtime.h"
 
 void MarkSweepHeap::Init(int collection_thresh) {
-
   this->collection_thresh_ = collection_thresh;
 }
 
@@ -10,7 +9,7 @@ void* MarkSweepHeap::Allocate(int byte_count) {
   assert(Result);
 
 #if GC_STATS
-  this->num_live_objs_ ++;
+  this->num_live_objs_++;
 #endif
 
   this->all_allocations_.insert(Result);
@@ -42,7 +41,6 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
   this->marked_allocations_.insert(static_cast<void*>(obj));
 
   switch (header->heap_tag_) {
-
   case Tag::FixedSize: {
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
     int mask = fixed->field_mask_;
@@ -80,8 +78,8 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 
   default: {
     assert(header->heap_tag_ == Tag::Forwarded ||
-           header->heap_tag_ == Tag::Global    ||
-           header->heap_tag_ == Tag::Opaque    );
+           header->heap_tag_ == Tag::Global ||
+           header->heap_tag_ == Tag::Opaque);
   }
 
     // other tags like Tag::Opaque have no children
@@ -89,15 +87,13 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 }
 
 void MarkSweepHeap::Collect() {
-
   for (int root_index = 0; root_index < this->roots_top_; ++root_index) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
     // should do that such that we don't store indirected pointers here.
     Obj* Root = *(this->roots_[root_index]);
 
-    if (Root)
-    {
+    if (Root) {
       MarkAllReferences(Root);
     }
   }
@@ -109,24 +105,20 @@ void MarkSweepHeap::Collect() {
     bool alloc_is_dead = marked_alloc == marked_allocations_.end();
 
     if (alloc_is_dead) {
-
       free(alloc);
 
 #if GC_STATS
-      this->num_live_objs_ --;
+      this->num_live_objs_--;
 #endif
     }
-
   }
 
   all_allocations_.clear();
 
   for (auto it = marked_allocations_.begin(); it != marked_allocations_.end();
        ++it) {
-
-    Obj *obj = reinterpret_cast<Obj*>(*it);
-    if (obj->heap_tag_ != Tag::Global)
-    {
+    Obj* obj = reinterpret_cast<Obj*>(*it);
+    if (obj->heap_tag_ != Tag::Global) {
       all_allocations_.insert(*it);
     }
   }

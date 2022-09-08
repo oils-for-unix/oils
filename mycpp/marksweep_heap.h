@@ -5,11 +5,9 @@
 #include <unordered_set>
 
 class MarkSweepHeap {
-
   void MarkAllReferences(Obj* obj);
 
-  public:
-
+ public:
   MarkSweepHeap() {
   }
   void Init(int);
@@ -35,7 +33,7 @@ class MarkSweepHeap {
 
   // TODO(Jesse): This should really be in an 'internal' build
   //
-  bool is_initialized_ = true; // mark/sweep doesn't need to be initialized
+  bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
 #if GC_STATS
   int num_live_objs_;

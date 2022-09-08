@@ -3,8 +3,8 @@
 
 const int kMaxRoots = KiB(4);
 
-#include "marksweep_heap.h"
 #include "cheney_heap.h"
+#include "marksweep_heap.h"
 
 // for Tag::FixedSize
 class LayoutFixed : public Obj {
