@@ -119,8 +119,8 @@ def ShouldSkipBuild(name):
     return True
 
   if name in [
-      # these 3 use Oil code, and don't type check or compile
-      # Maybe give up on these?  pgen2_demo might be useful later.
+      # these use Oil code, and don't type check or compile.  Maybe give up on
+      # them?  pgen2_demo might be useful later.
       'lexer_main', 
       'pgen2_demo',
       ]:
@@ -143,6 +143,8 @@ def ExamplesToBuild():
 
 
 def ShouldSkipTest(name):
+  #return False
+
   # '%5d' doesn't work yet.  TODO: fix this.
   if name in (
       'strings',
@@ -575,7 +577,7 @@ def NinjaGraph(n):
           #log('Skipping test of %s', ex)
           continue
 
-      log_out = '%s.log.txt' % prefix
+      log_out = '%s.log' % prefix
       n.build([task_out, log_out], 'example-task',
               EXAMPLES_PY.get(ex, []) + ['mycpp/examples/%s.py' % ex],
               variables=[
@@ -589,7 +591,7 @@ def NinjaGraph(n):
 
       # Don't run it for now; just compile
       if translator == 'pea':
-            continue
+        continue
 
       # minimal
       MATRIX = [
@@ -612,8 +614,8 @@ def NinjaGraph(n):
             #log('Skipping test of %s', ex)
             continue
 
-        cc_log_out = '_test/tasks/%s/%s.%s.%s.log.txt' % (mode, ex, translator, variant)
-        py_log_out = '_test/tasks/%s/%s.py.log.txt' % (mode, ex)
+        cc_log_out = '_test/tasks/%s/%s.%s.%s.log' % (mode, ex, translator, variant)
+        py_log_out = '_test/tasks/%s/%s.py.log' % (mode, ex)
 
         to_compare.append(cc_log_out)
         to_compare.append(py_log_out)
@@ -627,10 +629,11 @@ def NinjaGraph(n):
         n.newline()
 
   # Compare the log of all examples
-  out = '_test/mycpp-logs-equal.txt'
+  out = '_test/mycpp-compare-passing.txt'
   n.build([out], 'logs-equal', to_compare)
   n.newline()
 
+  # NOTE: Don't really need this
   phony['mycpp-logs-equal'].append(out)
 
   # Timing of benchmarks
