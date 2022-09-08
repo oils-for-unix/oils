@@ -5,12 +5,6 @@
 
 #include "mycpp/runtime.h"
 
-// For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
-inline Str* repr(void* obj) {
-  assert(0);
-}
-// runtime_raw.mycpp.h: translated from Python by mycpp
-
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
