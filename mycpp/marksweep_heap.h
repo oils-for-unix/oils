@@ -5,14 +5,16 @@
 #include <unordered_set>
 
 class MarkSweepHeap {
- public:
+
+  void MarkAllReferences(Obj* obj);
+
+  public:
+
   MarkSweepHeap() {
   }
   void Init(int);
 
   void* Allocate(int);
-
-  void MarkAllReferences(Obj* obj);
 
   void PushRoot(Obj** p) {
     assert(roots_top_ < kMaxRoots);
@@ -23,7 +25,7 @@ class MarkSweepHeap {
     roots_top_--;
   }
 
-  void Collect(int to_space_size = 0);
+  void Collect();
 
   int roots_top_;
   Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers

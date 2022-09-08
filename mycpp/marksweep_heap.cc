@@ -80,23 +80,13 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
   }
 }
 
-void MarkSweepHeap::Collect(int byte_count) {
-
-  // NOTE(Jesse): The cheney collector takes an argument here that specifies
-  // how large the to_space allocation should be.  For this mark/sweep
-  // collector this argument is nonsensicle and should always be zero. ie. code
-  // calling this function outside of the collection routines should never set
-  // this to anything.  Test code that sets it (atm there isn't any) should
-  // only be compiled against the Cheney collector because it would be testing
-  // internal implementation details of that collector.
-  //
-  assert(byte_count == 0);
+void MarkSweepHeap::Collect() {
 
   for (int root_index = 0; root_index < this->roots_top_; ++root_index) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
     // should do that such that we don't store indirected pointers here.
-    Obj* Root = this->roots_[root_index][0];
+    Obj* Root = *(this->roots_[root_index]);
 
     MarkAllReferences(Root);
   }
