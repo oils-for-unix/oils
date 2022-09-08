@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-#include "mycpp/gc_heap.h"
+#include "mycpp/runtime.h"
 
 template <typename T>
 class Local {

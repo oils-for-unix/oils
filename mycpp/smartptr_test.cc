@@ -2,7 +2,6 @@
 
 #include "mycpp/smartptr.h"
 
-#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
 Str* myfunc() {

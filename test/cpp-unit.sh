@@ -28,6 +28,8 @@ all-tests() {
 }
 
 soil-run() {
+  ### Hook for soil/worker.sh
+
   set +o errexit
   $0 all-tests
   local status=$?

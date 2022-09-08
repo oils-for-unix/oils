@@ -1,33 +1,6 @@
-// gc_heap.cc
-
-#include <sys/mman.h>  // mprotect()
+#include <sys/mman.h>  // mmap
 
 #include "mycpp/runtime.h"
-
-Heap gHeap;
-
-// Disable 'new X' globally!
-void* operator new(size_t size) {
-  InvalidCodePath();
-}
-
-// This would fail due to the above!
-// List<Str*>* zz = new List<Str*>();
-
-// LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
-// objs to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
-// collection.
-
-class LayoutForwarded : public Obj {
- public:
-  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
-};
-
-// for Tag::FixedSize
-class LayoutFixed : public Obj {
- public:
-  Obj* children_[16];  // only the entries denoted in field_mask will be valid
-};
 
 void Space::Init(int num_bytes) {
   void* requested_addr = nullptr;
@@ -53,7 +26,7 @@ void Space::Free() {
   munmap(begin_, size_);
 }
 
-Obj* Heap::Relocate(Obj* obj, Obj* header) {
+Obj* CheneyHeap::Relocate(Obj* obj, Obj* header) {
   // Move an object from one space to another.
   // If there's no vtable, then obj == header.  Otherwise header points to the
   // Obj header, which is right after the vtable.
@@ -104,16 +77,7 @@ Obj* Heap::Relocate(Obj* obj, Obj* header) {
   }  // switch
 }
 
-inline Obj* ObjHeader(Obj* obj) {
-  // If we see a vtable pointer, return the Obj* header immediately following.
-  // Otherwise just return Obj itself.
-  return (obj->heap_tag_ & 0x1) == 0
-             ? reinterpret_cast<Obj*>(reinterpret_cast<char*>(obj) +
-                                      sizeof(void*))
-             : obj;
-}
-
-void Heap::Collect(int to_space_size) {
+void CheneyHeap::Collect(int to_space_size) {
 #if GC_STATS
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
@@ -259,4 +223,52 @@ void ShowFixedChildren(Obj* obj) {
     }
   }
 }
+#endif
+
+void* CheneyHeap::Allocate(int num_bytes) {
+  int n = aligned(num_bytes);
+  // log("n = %d, p = %p", n, p);
+
+  // This must be at least sizeof(LayoutForwarded), which happens to be 16
+  // bytes, because the GC pointer forwarding requires 16 bytes.  If we
+  // allocated less than 16 the GC would overwrite the adjacent object when
+  // it went to forward the pointer.
+  assert(n >= (int)sizeof(LayoutForwarded));
+
+#if GC_EVERY_ALLOC
+  Collect();  // force collection to find problems early
+#endif
+
+  if (free_ + n <= limit_) {  // Common case: we have space for it.
+    return Bump(n);
+  }
+
+#if GC_STATS
+  // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+  //    space_size_);
+#endif
+
+  Collect();  // Try to free some space.
+
+  // log("after GC: from begin %p, free_ %p,  n %d, limit_ %p",
+  //    from_space_.begin_, free_, n, limit_);
+
+  if (free_ + n <= limit_) {  // Now we have space for it.
+    return Bump(n);
+  }
+
+  // It's still too small.  Grow the heap.
+  int multiple = 2;
+  Collect((from_space_.size_ + n) * multiple);
+
+#if GC_STATS
+  num_forced_growths_++;
+#endif
+
+  return Bump(n);
+}
+
+#if MARK_SWEEP
+#else
+CheneyHeap gHeap;
 #endif

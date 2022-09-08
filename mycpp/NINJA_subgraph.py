@@ -181,7 +181,8 @@ def ShouldSkipBenchmark(name):
 
 GC_RUNTIME = [
     'mycpp/gc_mylib.cc',
-    'mycpp/gc_heap.cc',
+    'mycpp/cheney_heap.cc',
+    'mycpp/marksweep_heap.cc',
 
     # files we haven't added StackRoots to
     'mycpp/leaky_containers.cc',
@@ -194,6 +195,7 @@ VARIANTS_LEAKY = 2
 
 # Unit tests that run with garbage collector on.
 UNIT_TESTS = {
+    'mycpp/marksweep_gc_test.cc': VARIANTS_GC,
     'mycpp/gc_heap_test.cc': VARIANTS_GC,
     'mycpp/gc_stress_test.cc': VARIANTS_GC,
     'mycpp/gc_builtins_test.cc': VARIANTS_GC,
