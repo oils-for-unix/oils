@@ -213,6 +213,9 @@ test-runtime() {
   # Fails under ASAN; we should re-enable ASAN_OPTIONS=detect_leaks
   ninja _bin/cxx-sweepasan/mycpp/gc_builtins_test
   run-test-bin _bin/cxx-sweepasan/mycpp/gc_builtins_test
+
+  ninja _bin/cxx-sweepasan/mycpp/gc_heap_test
+  run-test-bin _bin/cxx-sweepasan/mycpp/gc_heap_test
 }
 
 #
