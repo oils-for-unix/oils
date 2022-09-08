@@ -33,7 +33,7 @@ class Parser {
   // In C, the grammar is a constant, so the grammar arg is ignored.  (We can't
   // get easily rid of it because the call site has to type check and run in
   // Python.)
-  Parser(grammar::Grammar* grammar) {
+  explicit Parser(grammar::Grammar* grammar) {
   }
   void setup(int start);
   bool addtoken(int typ, syntax_asdl::Token* opaque, int ilabel);

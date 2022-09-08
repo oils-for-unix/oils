@@ -76,7 +76,8 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
   int outlen = pat.re_nsub + 1;  // number of captures
 
   const char* s0 = str->data_;
-  regmatch_t* pmatch = (regmatch_t*)malloc(sizeof(regmatch_t) * outlen);
+  regmatch_t* pmatch =
+      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
   int match = regexec(&pat, s0, outlen, pmatch, 0) == 0;
   if (match) {
     int i;

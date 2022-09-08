@@ -30,7 +30,7 @@ Str* GetHomeDir(Str* user_name);
 
 class ReadError {
  public:
-  ReadError(int err_num_) : err_num(err_num_) {
+  explicit ReadError(int err_num_) : err_num(err_num_) {
   }
   int err_num;
 };

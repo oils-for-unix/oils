@@ -154,7 +154,8 @@ Tuple3<double, double, double> Time() {
 
   time_t t = ::time(nullptr);
   auto result = Tuple3<double, double, double>(
-      (double)t, (double)ru.ru_utime.tv_sec, (double)ru.ru_stime.tv_sec);
+      static_cast<double>(t), static_cast<double>(ru.ru_utime.tv_sec),
+      static_cast<double>(ru.ru_stime.tv_sec));
   return result;
 }
 

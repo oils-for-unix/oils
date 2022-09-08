@@ -123,7 +123,7 @@ class FailGlob : public _ErrorWithLocation {
 
 class FatalRuntime : public _ErrorWithLocation {
  public:
-  FatalRuntime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
+  explicit FatalRuntime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
   }
   FatalRuntime(int status, Str* user_str)
       : _ErrorWithLocation(status, user_str, -1, false) {
@@ -132,7 +132,7 @@ class FatalRuntime : public _ErrorWithLocation {
 
 class Strict : public FatalRuntime {
  public:
-  Strict(Str* user_str) : FatalRuntime(user_str) {
+  explicit Strict(Str* user_str) : FatalRuntime(user_str) {
   }
 };
 
@@ -162,7 +162,7 @@ class Expr : public _ErrorWithLocation {
 // Stub
 class Runtime : public _ErrorWithLocation {
  public:
-  Runtime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
+  explicit Runtime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
   }
 };
 
