@@ -95,10 +95,9 @@ Str* Str::index_(int i) {
   assert(i >= 0);
   assert(i < len_);  // had a problem here!
 
-  char* buf = static_cast<char*>(malloc(2));
-  buf[0] = data_[i];
-  buf[1] = '\0';
-  return CopyBufferIntoNewStr(buf, 1);
+  Str* result = AllocStr(1);
+  result->data_[0] = data_[i];
+  return result;
 }
 
 // s[begin:end]
@@ -141,11 +140,10 @@ Str* Str::slice(int begin, int end) {
   assert(new_len >= 0);
   assert(new_len <= len_);
 
-  char* buf = static_cast<char*>(malloc(new_len + 1));
-  memcpy(buf, data_ + begin, new_len);
+  Str* result = AllocStr(new_len);
+  memcpy(result->data_, data_+begin, new_len);
 
-  buf[new_len] = '\0';
-  return CopyBufferIntoNewStr(buf, new_len);
+  return result;
 }
 
 // s[begin:]
@@ -195,13 +193,13 @@ Str* Str::ljust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    char* buf = static_cast<char*>(malloc(width));
+    Str *result = AllocStr(width);
     char c = fillchar->data_[0];
-    memcpy(buf, data_, len_);
+    memcpy(result->data_, data_, len_);
     for (int i = len_; i < width; ++i) {
-      buf[i] = c;
+      result->data_[i] = c;
     }
-    return CopyBufferIntoNewStr(buf, width);
+    return result;
   }
 }
 
@@ -213,13 +211,13 @@ Str* Str::rjust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    char* buf = static_cast<char*>(malloc(width));
+    Str *result = AllocStr(width);
     char c = fillchar->data_[0];
     for (int i = 0; i < num_fill; ++i) {
-      buf[i] = c;
+      result->data_[i] = c;
     }
-    memcpy(buf + num_fill, data_, len_);
-    return CopyBufferIntoNewStr(buf, width);
+    memcpy(result->data_ + num_fill, data_, len_);
+    return result;
   }
 }
 
@@ -254,14 +252,15 @@ Str* Str::replace(Str* old, Str* new_str) {
   int result_len =
       this_len - (replace_count * old_len) + (replace_count * new_str_len);
 
-  char* result = static_cast<char*>(malloc(result_len + 1));  // +1 for NUL
+  Str* result = AllocStr(result_len);
+  StackRoots _roots({&result});
 
   const char* new_data = new_str->data_;
   const size_t new_len = new_str_len;
 
   // Second pass: Copy pieces into 'result'
   p_this = data_;           // back to beginning
-  char* p_result = result;  // advances through 'result'
+  char* p_result = result->data_;  // advances through 'result'
 
   while (p_this <= last_possible) {
     // Note: would be more efficient if we remembered the match positions
@@ -276,9 +275,7 @@ Str* Str::replace(Str* old, Str* new_str) {
     }
   }
   memcpy(p_result, p_this, data_ + this_len - p_this);  // last part of string
-  result[result_len] = '\0';                            // NUL terminate
-
-  return CopyBufferIntoNewStr(result, result_len);
+  return result;
 }
 
 enum class StripWhere {
@@ -385,8 +382,8 @@ Str* Str::join(List<Str*>* items) {
   int len_ = len(self);
   length += len_ * (num_parts - 1);
 
-  char* result = static_cast<char*>(malloc(length + 1));
-  char* p_result = result;  // advances through
+  Str* result = AllocStr(length);
+  char* p_result = result->data_;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
     // log("i %d", i);
@@ -402,9 +399,7 @@ Str* Str::join(List<Str*>* items) {
     p_result += n;
   }
 
-  result[length] = '\0';  // NUL terminator
-
-  return CopyBufferIntoNewStr(result, length);
+  return result;
 }
 
 int find_next(const char* haystack, int starting_index, int end_index,
