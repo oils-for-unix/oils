@@ -16,7 +16,7 @@ all-tests() {
 
   # uses Ninja to run (cxx, gcevery) variant.  Could also run (clang, ubsan),
   # which finds more bugs.
-  mycpp/TEST.sh test-runtime 
+  mycpp/TEST.sh test-runtime
 
   cpp/TEST.sh pre-build
   cpp/TEST.sh unit

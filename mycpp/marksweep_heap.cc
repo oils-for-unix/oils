@@ -6,7 +6,9 @@ void MarkSweepHeap::Init(int collection_thresh) {
 
 void* MarkSweepHeap::Allocate(int byte_count) {
 
+#if GC_EVERY_ALLOC
   Collect();
+#endif
 
 #if GC_STATS
   this->num_live_objs_++;
