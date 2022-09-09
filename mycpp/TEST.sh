@@ -22,7 +22,7 @@ shopt -s failglob
 export ASAN_OPTIONS='detect_leaks=0'
 
 examples-variant() {
-  ### Run all examples using a variant
+  ### Run all examples using a variant -- STATS only
 
   local compiler=${1:-cxx}
   local variant=${2:-gcevery}
@@ -242,6 +242,10 @@ compare-examples() {
 test-sweep-asan-leaks() {
   ninja _bin/cxx-sweepasan/mycpp/examples/fib_iter.mycpp
   ASAN_OPTIONS='' _bin/cxx-sweepasan/mycpp/examples/fib_iter.mycpp
+
+  # CURRENTLY 9 of 22 fail
+  # This does NOT check if all pass
+  ASAN_OPTIONS='' examples-variant '' sweepasan
 }
 
 test-translator() {
@@ -253,17 +257,6 @@ test-translator() {
 
   # Runs test in cxx-asan variant, and benchmarks in cxx-opt variant
   compare-examples
-
-  #
-  # Now test under more variants
-  #
-  examples-variant '' sweepasan
-
-  # NOTE: This has 10 crashes!  Because of the Cheney collector.
-  # Heap-allocated tuple, etc.
-
-  #examples-variant '' gcevery
-
 }
 
 unit-test-coverage() {
@@ -283,5 +276,9 @@ examples-coverage() {
   local out_dir=_test/clang-coverage/mycpp/examples
   test/coverage.sh html-report $out_dir mycpp/examples
 }
+
+# Call function $1 with arguments $2 $3 $4
+#
+# mycpp/TEST.sh examples-variant '' sweepasan
 
 "$@"
