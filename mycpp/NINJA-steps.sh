@@ -31,6 +31,9 @@ int main(int argc, char **argv) {
   } else {
     $main_module::run_tests();
   }
+
+  gBuf.reset();  // free internal buffer for fmtX()
+  gHeap.Collect();
 }
 EOF
 }
@@ -68,6 +71,8 @@ int main(int argc, char **argv) {
   } else {
     status = $name::main(args);
   }
+
+  gHeap.Collect();
 
 #ifdef DUMB_ALLOC
   dumb_alloc::Summarize();

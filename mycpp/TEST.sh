@@ -239,9 +239,15 @@ compare-examples() {
   return $status
 }
 
+test-sweep-asan-leaks() {
+  ninja _bin/cxx-sweepasan/mycpp/examples/fib_iter.mycpp
+  ASAN_OPTIONS='' _bin/cxx-sweepasan/mycpp/examples/fib_iter.mycpp
+}
 
 test-translator() {
   ### Invoked by soil/worker.sh
+
+  test-sweep-asan-leaks
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
@@ -257,6 +263,7 @@ test-translator() {
   # Heap-allocated tuple, etc.
 
   #examples-variant '' gcevery
+
 }
 
 unit-test-coverage() {

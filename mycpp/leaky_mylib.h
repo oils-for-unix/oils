@@ -143,11 +143,15 @@ class BufWriter : public Writer {
 
   // Methods to compile printf format strings to
 
-  // To reuse the global gBuf instance
-  // problem: '%r' % obj will recursively call asdl/format.py, which has its
-  // own % operations
+  // Called before reusing the global gBuf instance for fmtX() functions
+  //
+  // Problem with globals: '%r' % obj will recursively call asdl/format.py,
+  // which has its own % operations
   void reset() {
-    data_ = nullptr;  // make sure we get a new buffer next time
+    if (data_) {
+      free(data_);
+    }
+    data_ = nullptr;  // arg to next realloc()
     len_ = 0;
   }
 
