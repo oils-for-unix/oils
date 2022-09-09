@@ -222,11 +222,14 @@ Str* Str::rjust(int width, Str* fillchar) {
 }
 
 Str* Str::replace(Str* old, Str* new_str) {
-  // log("replacing %s with %s", old_data, new_str->data_);
+  StackRoots _roots0({&old, &new_str});
 
+  // log("replacing %s with %s", old_data, new_str->data_);
   const char* old_data = old->data_;
+
   int this_len = len(this);
   int old_len = len(old);
+
   const char* last_possible = data_ + this_len - old_len;
 
   const char* p_this = data_;  // advances through 'this'
@@ -253,7 +256,7 @@ Str* Str::replace(Str* old, Str* new_str) {
       this_len - (replace_count * old_len) + (replace_count * new_str_len);
 
   Str* result = AllocStr(result_len);
-  StackRoots _roots({&result});
+  StackRoots _roots1({&result});
 
   const char* new_data = new_str->data_;
   const size_t new_len = new_str_len;
