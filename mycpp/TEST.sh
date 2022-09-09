@@ -240,11 +240,6 @@ compare-examples() {
 }
 
 test-sweep-asan-leaks() {
-  ninja _bin/cxx-sweepasan/mycpp/examples/fib_iter.mycpp
-  ASAN_OPTIONS='' _bin/cxx-sweepasan/mycpp/examples/fib_iter.mycpp
-
-  # CURRENTLY 9 of 22 fail
-  # This does NOT check if all pass
   ASAN_OPTIONS='' examples-variant '' sweepasan
 }
 
