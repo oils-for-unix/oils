@@ -148,6 +148,9 @@ wrap-cc() {
   print-wrap-cc "$@" > $out
 }
 
+# TODO: Move mycpp/example tasks out of Ninja since timing is not a VALUE.  It
+# depends on the machine, can be done more than once, etc.
+
 task() {
   local bin=$1  # Run this
   local task_out=$2
@@ -199,6 +202,8 @@ benchmark-table() {
   { time-tsv --print-header --rusage \
       --field example_name --field impl \
       --field bin --field task_out 
+
+    # Concatenate task files
     cat "$@" 
   } > $out
 }

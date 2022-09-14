@@ -209,7 +209,8 @@ def NinjaGraph(n):
         pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, rel_path)
         preprocessed.append(pre)
 
-        n.build(pre, 'preprocess', [src], variables=ninja_vars)
+        n.build(pre, 'preprocess', [src], variables=ninja_vars,
+                implicit=HEADER_DEPS.get(src, []))
         n.newline()
 
       n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),

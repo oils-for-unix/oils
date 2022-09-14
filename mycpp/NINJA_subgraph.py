@@ -379,11 +379,6 @@ def NinjaGraph(n):
          command='mycpp/NINJA-steps.sh wrap-cc $out $translator $name $in $preamble_path',
          description='wrap-cc $out $translator $name $in $preamble_path $out')
   n.newline()
-  n.rule('task',
-         # note: $out can be MULTIPLE FILES, shell-quoted
-         command='mycpp/NINJA-steps.sh task $in $out',
-         description='task $in $out')
-  n.newline()
   n.rule('example-task',
          # note: $out can be MULTIPLE FILES, shell-quoted
          command='mycpp/NINJA-steps.sh example-task $name $impl $bin $out',
