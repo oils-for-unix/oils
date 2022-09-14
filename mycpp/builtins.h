@@ -67,6 +67,11 @@ void println_stderr(Str* s);
 
 Str* repr(Str* s);
 
+// For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
+inline Str* repr(void* obj) {
+  InvalidCodePath();
+}
+
 inline Str* str(double f) {
   NotImplemented();
 }
