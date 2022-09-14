@@ -203,9 +203,6 @@ benchmark-table() {
   } > $out
 }
 
-# This is the one installed from PIP
-#mypy() { ~/.local/bin/mypy "$@"; }
-
 # For consistency, use the copy of MyPy in our mycpp dependencies
 mypy() {
   ( source $MYCPP_VENV/bin/activate
@@ -230,6 +227,17 @@ typecheck() {
     mypy --py2 --strict $more_flags $main_py > $out
 }
 
+logs-equal() {
+  local out=$1
+  shift
+
+  mycpp/compare_pairs.py "$@" | tee $out
+}
+
+#
+# Unused
+#
+
 lines() {
   for line in "$@"; do
     echo $line
@@ -238,13 +246,6 @@ lines() {
 
 checksum() {
   lines "$@" | sort | xargs md5sum
-}
-
-logs-equal() {
-  local out=$1
-  shift
-
-  mycpp/compare_pairs.py "$@" | tee $out
 }
 
 if test $(basename $0) = 'NINJA-steps.sh'; then

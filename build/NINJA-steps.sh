@@ -7,36 +7,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-shwrap-prefix() {
-  cat << 'EOF'
-#!/bin/sh
-REPO_ROOT=$(cd "$(dirname $0)/../.."; pwd)
-EOF
-}
-
-shwrap-deps-comment() {
-  echo
-  echo '# DEPENDS ON:'
-  for dep in "$@"; do
-    echo "#   $dep"
-  done
-}
-
 shwrap-py() {
   local main=$1
-  shwrap-prefix
   echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/'$main' "$@"'
-
-  # Now write outputs
-  shift
-  shwrap-deps-comment "$@"
 }
 
 shwrap-mycpp() {
-  shwrap-prefix
-
-  #source mycpp/common.sh  # MYCPP_VENV
-
   cat <<'EOF'
 MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
 out=$2
@@ -55,13 +31,9 @@ status=$?
 mv $tmp $out
 exit $status
 EOF
-
-  shift
-  shwrap-deps-comment "$@"
 }
 
 shwrap-pea() {
-  shwrap-prefix
 
   cat <<'EOF'
 MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
@@ -77,9 +49,40 @@ status=$?
 mv $tmp $out
 exit $status
 EOF
+}
 
-  shift
-  shwrap-deps-comment "$@"
+print-shwrap() {
+  local template=$1
+  local unused=$2
+  shift 2
+
+  cat << 'EOF'
+#!/bin/sh
+REPO_ROOT=$(cd "$(dirname $0)/../.."; pwd)
+EOF
+
+  case $template in
+    (py)
+      local main=$1  # additional arg
+      shift
+      shwrap-py $main
+      ;;
+    (mycpp)
+      shwrap-mycpp
+      ;;
+    (pea)
+      shwrap-pea
+      ;;
+    (*)
+      die "Invalid template '$template'"
+      ;;
+  esac
+
+  echo
+  echo '# DEPENDS ON:'
+  for dep in "$@"; do
+    echo "#   $dep"
+  done
 }
 
 write-shwrap() {
@@ -88,25 +91,10 @@ write-shwrap() {
   # Key point: if the Python code changes, then the C++ code should be
   # regenerated and re-compiled
 
-  local template=$1
+  local unused=$1
   local stub_out=$2
-  shift 2
 
-  case $template in
-    (py)
-      shwrap-py "$@" > $stub_out
-      ;;
-    (mycpp)
-      shwrap-mycpp "$@" > $stub_out
-      ;;
-    (pea)
-      shwrap-pea "$@" > $stub_out
-      ;;
-    (*)
-      die "Invalid template '$template'"
-      ;;
-  esac
-
+  print-shwrap "$@" > $stub_out
   chmod +x $stub_out
 }
 
