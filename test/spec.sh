@@ -69,12 +69,17 @@ readonly REF_SHELLS=($DASH $BASH $MKSH)
 #
 
 link-busybox-ash() {
+  ### Non-hermetic ash only used for benchmarks / Soil dev-minimal
+
+  # Could delete this at some point
   mkdir -p _tmp/shells
   ln -s -f --verbose "$(which busybox)" _tmp/shells/ash
 }
 
 # dash and bash should be there by default on Ubuntu.
-install-shells() {
+install-shells-with-apt() {
+  ### Non-hermetic shells; test/spec-bin.sh replaces this for most purposes
+
   set -x  # show what needs sudo
   sudo apt install busybox-static mksh zsh
   set +x

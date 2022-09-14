@@ -36,7 +36,7 @@ ubuntu-deps() {
     "${PY3_DEPS[@]}"
   set +x
 
-  test/spec.sh install-shells
+  test/spec.sh install-shells-with-apt
 }
 
 # This is what Python uses on OS X.

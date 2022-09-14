@@ -93,6 +93,15 @@ parse-in-parallel() {
   tree -L 3 _tmp/wild
 }
 
+filter-manifest() {
+  local manifest_regex=${1:-}  # egrep regex for manifest line
+  if test -n "$manifest_regex"; then
+    egrep -- "$manifest_regex" $MANIFEST
+  else
+    cat $MANIFEST
+  fi
+}
+
 # Takes 3m 47s on 7 cores for 513K lines.
 # So that's like 230 seconds or so.  It should really take 1 second!
 
@@ -104,13 +113,8 @@ parse-and-report() {
     #test/wild.sh write-manifest
     test/wild.sh manifest-from-archive
 
-    if test -n "$manifest_regex"; then
-      egrep -- "$manifest_regex" $MANIFEST | parse-in-parallel $func
-    else
-      cat $MANIFEST | parse-in-parallel $func
-    fi
-
-    make-report
+    filter-manifest "$manifest_regex" | parse-in-parallel $func
+    make-report "$manifest_regex"
   }
 }
 
@@ -166,13 +170,14 @@ version-text() {
 }
 
 make-report() {
+  local manifest_regex=${1:-}
   local in_dir=_tmp/wild/raw
   local out_dir=_tmp/wild/www
 
   # TODO: This could also go in 'raw', and then be processed by Python?
   version-text > $out_dir/version-info.txt
 
-  cat $MANIFEST | wild-report summarize-dirs \
+  filter-manifest "$manifest_regex" | wild-report summarize-dirs \
     --not-shell test/wild-not-shell.txt \
     --not-osh test/wild-not-osh.txt \
     $in_dir $out_dir

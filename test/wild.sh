@@ -9,6 +9,8 @@
 #   test/wild.sh fetch-archive
 #   test/wild.sh extract-archive
 #   test/wild.sh manifest-from-archive
+#
+#   test/wild.sh all
 
 # TODO:
 # - There are a lot of hard-coded source paths here.  These files could
@@ -22,7 +24,9 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-readonly RESULT_DIR=_tmp/wild
+# This persists across build/clean.sh
+readonly DEPS_WILD_DIR=../oil_DEPS/wild
+
 
 #
 # Helpers
@@ -424,7 +428,7 @@ all-manifests() {
   }
 }
 
-# TODO: Parameterize this; it's duplicated in wild-runner.txt.
+# TODO: Note: duplicated in wild-runner.sh
 readonly MANIFEST=_tmp/wild/MANIFEST.txt
 
 write-manifest() {
@@ -452,21 +456,22 @@ make-archive() {
 # Fetch the archive we published.
 fetch-archive() {
   local dir=_tmp/wild
-  mkdir -p $dir
-  wget --directory $dir --no-clobber \
+  mkdir -p $DEPS_WILD_DIR
+  wget --directory $DEPS_WILD_DIR --no-clobber \
     https://www.oilshell.org/blob/wild/wild-source.tar.gz
 }
 
 extract-archive() {
-  local out=_tmp/wild/src 
+  local out=$DEPS_WILD_DIR/src
   mkdir -p $out
-  tar --extract -z --directory $out < _tmp/wild/wild-source.tar.gz
+  tar --extract -z --directory $out < $DEPS_WILD_DIR/wild-source.tar.gz
 }
 
 # This is opposed to crawling the file system with 'find'.
 manifest-from-archive() {
+  mkdir -p $(dirname $MANIFEST)
   # relative path then absolute path
-  find _tmp/wild/src -type f -a -printf '%P %p\n' > $MANIFEST
+  find $DEPS_WILD_DIR/src -type f -a -printf '%P %p\n' > $MANIFEST
 }
 
 # 442K lines without "big" and without ltmain.sh
@@ -549,7 +554,7 @@ all() {
 
 smoke-test() {
   ### Smoke test on Oil's own source; takes a few seconds
-  all oil
+  all 'oil/'
 }
 
 find-tracebacks() {

@@ -7,16 +7,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-tmp-dirs() {
-  ### Used by devtools/release.sh
-
-  rm -r -f \
-    _tmp/{spec,unit,gold,parse-errors,osh2oil,wild/www} \
-    _tmp/{metrics,important-source-code} \
-    _tmp/{compute,osh-parser,osh-runtime,vm-baseline,ovm-build,oheap,syscall} \
-    _tmp/oil-tar-test
-}
-
 # To test building stdlib.
 clean-pyc() {
   # skip _chroot, _tmp, etc.  But delete __init__.pyc
@@ -42,6 +32,7 @@ cpp() {
 }
 
 all() {
+  rm -r -f --verbose _tmp
   py
   cpp
 }
