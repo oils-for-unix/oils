@@ -137,19 +137,19 @@ def NinjaGraph(n):
   # Preprocess one translation unit
   n.rule('preprocess',
          # compile_one detects the _build/preprocessed path
-         command='cpp/NINJA-steps.sh compile_one $compiler $variant $more_cxx_flags $in $out',
+         command='build/ninja-rules-cpp.sh compile_one $compiler $variant $more_cxx_flags $in $out',
          description='PP $compiler $variant $more_cxx_flags $in $out')
   n.newline()
 
   # Preprocess one translation unit
   n.rule('line_count',
-         command='cpp/NINJA-steps.sh line_count $out $in',
+         command='build/ninja-rules-cpp.sh line_count $out $in',
          description='line_count $out $in')
   n.newline()
 
   # Compile one translation unit
   n.rule('compile_one',
-         command='cpp/NINJA-steps.sh compile_one $compiler $variant $more_cxx_flags $in $out $out.d',
+         command='build/ninja-rules-cpp.sh compile_one $compiler $variant $more_cxx_flags $in $out $out.d',
          depfile='$out.d',
          # no prefix since the compiler is the first arg
          description='$compiler $variant $more_cxx_flags $in $out')
@@ -157,21 +157,15 @@ def NinjaGraph(n):
 
   # Link objects together
   n.rule('link',
-         command='cpp/NINJA-steps.sh link $compiler $variant $out $in',
+         command='build/ninja-rules-cpp.sh link $compiler $variant $out $in',
          description='LINK $compiler $variant $out $in')
   n.newline()
 
   # 1 input and 2 outputs
   n.rule('strip',
-         command='cpp/NINJA-steps.sh strip_ $in $out',
+         command='build/ninja-rules-cpp.sh strip_ $in $out',
          description='STRIP $in $out')
   n.newline()
-
-  if 0:
-    phony = {
-        'osh-eval': [],  # build all osh-eval
-        'strip': [],
-    }
 
   binaries = []
 
@@ -290,7 +284,7 @@ def TarballManifest():
   names.extend([
     'build/common.sh',
     'build/native.sh',
-    'cpp/NINJA-steps.sh',
+    'build/ninja-rules-cpp.sh',
     'mycpp/common.sh',
 
     # Generated

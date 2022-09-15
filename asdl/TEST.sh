@@ -11,10 +11,10 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source build/common.sh     # BASE_CXXFLAGS, etc.
-source cpp/NINJA-steps.sh  # compile_and_link
-source devtools/common.sh  # banner
-source mycpp/ninja.sh      # GC_RUNTIME
+source build/common.sh           # BASE_CXXFLAGS, etc.
+source build/ninja-rules-cpp.sh  # compile_and_link
+source devtools/common.sh        # banner
+source mycpp/ninja.sh            # GC_RUNTIME
 source test/common.sh      # run-test
 
 CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests

@@ -12,7 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/common.sh
-source cpp/NINJA-steps.sh  # compile_and_link
+source build/ninja-rules-cpp.sh  # compile_and_link
 source test/common.sh
 
 test-optview() {

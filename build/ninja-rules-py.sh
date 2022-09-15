@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Build steps invoked by Ninja.
+# Ninja rules for translating Python to C++.
 #
 # Usage:
-#   mycpp/NINJA-steps.sh <function name>
+#   build/ninja-rules-py.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -13,7 +13,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source $REPO_ROOT/mycpp/common.sh  # maybe-our-python3
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
-source $REPO_ROOT/build/common.sh  # for CXX, BASE_CXXFLAGS, ASAN_SYMBOLIZER_PATH
 
 example-main() {
   local main_module=${1:-fib_iter}
@@ -240,19 +239,106 @@ logs-equal() {
 }
 
 #
-# Unused
+# shwrap rules
 #
 
-lines() {
-  for line in "$@"; do
-    echo $line
+shwrap-py() {
+  ### Part of shell template for Python executables
+
+  local main=$1
+  echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/'$main' "$@"'
+}
+
+shwrap-mycpp() {
+  ### Part of shell template for mycpp executable
+
+  cat <<'EOF'
+MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
+out=$2
+shift 2
+
+. $REPO_ROOT/mycpp/common-vars.sh  # for $MYCPP_VENV $MYPY_REPO
+
+. $MYCPP_VENV/bin/activate  # so MyPy can import
+
+tmp=$out.tmp  # avoid creating partial files
+
+PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
+  ../oil_DEPS/python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+status=$?
+
+mv $tmp $out
+exit $status
+EOF
+}
+
+shwrap-pea() {
+  ### Part of shell template for pea executable
+
+  cat <<'EOF'
+MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
+out=$2
+shift 2
+
+tmp=$out.tmp  # avoid creating partial files
+
+PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
+  ../oil_DEPS/python3 pea/pea_main.py cpp "$@" > $tmp
+status=$?
+
+mv $tmp $out
+exit $status
+EOF
+}
+
+print-shwrap() {
+  local template=$1
+  local unused=$2
+  shift 2
+
+  cat << 'EOF'
+#!/bin/sh
+REPO_ROOT=$(cd "$(dirname $0)/../.."; pwd)
+EOF
+
+  case $template in
+    (py)
+      local main=$1  # additional arg
+      shift
+      shwrap-py $main
+      ;;
+    (mycpp)
+      shwrap-mycpp
+      ;;
+    (pea)
+      shwrap-pea
+      ;;
+    (*)
+      die "Invalid template '$template'"
+      ;;
+  esac
+
+  echo
+  echo '# DEPENDS ON:'
+  for dep in "$@"; do
+    echo "#   $dep"
   done
 }
 
-checksum() {
-  lines "$@" | sort | xargs md5sum
+write-shwrap() {
+  ### Create a shell wrapper for a Python tool
+
+  # Key point: if the Python code changes, then the C++ code should be
+  # regenerated and re-compiled
+
+  local unused=$1
+  local stub_out=$2
+
+  print-shwrap "$@" > $stub_out
+  chmod +x $stub_out
 }
 
-if test $(basename $0) = 'NINJA-steps.sh'; then
+# sourced by devtools/bin.sh
+if test $(basename $0) = 'ninja-rules-py.sh'; then
   "$@"
 fi

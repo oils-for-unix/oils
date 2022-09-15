@@ -11,7 +11,7 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
-source cpp/NINJA-steps.sh
+source build/ninja-rules-cpp.sh
 source devtools/common.sh
 source soil/common.sh  # find-dir-html
 source test/common.sh  # run-test-bin

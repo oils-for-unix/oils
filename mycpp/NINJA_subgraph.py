@@ -6,7 +6,6 @@ Code Layout:
 
   mycpp/
     NINJA_subgraph.py  # This file describes dependencies programmatically
-    NINJA-steps.sh     # Invoked by Ninja rules
 
     build.sh           # wrappers invoked by the Toil and devtools/release.sh
     test.sh            # test driver for unit tests and examples
@@ -105,8 +104,7 @@ from __future__ import print_function
 import os
 import sys
 
-from build.NINJA_subgraph import asdl_cpp  # could be NINJA_lib?
-from build.NINJA_lib import log, ObjPath
+from build.NINJA_lib import asdl_cpp, log, ObjPath
 
 
 # special ones in examples.sh:
@@ -358,9 +356,8 @@ def NinjaGraph(n):
   n.variable('NINJA_REPO_ROOT', os.path.dirname(this_dir))
   n.newline()
 
-  # TODO: could go in bin/NINJA_subgraph
   n.rule('gen-osh-eval',
-         command='mycpp/NINJA-steps.sh gen-osh-eval $out_prefix $in',
+         command='build/ninja-rules-py.sh gen-osh-eval $out_prefix $in',
          description='gen-osh-eval $out_prefix $in')
   n.newline()
 
@@ -376,24 +373,24 @@ def NinjaGraph(n):
   n.newline()
 
   n.rule('wrap-cc',
-         command='mycpp/NINJA-steps.sh wrap-cc $out $translator $name $in $preamble_path',
+         command='build/ninja-rules-py.sh wrap-cc $out $translator $name $in $preamble_path',
          description='wrap-cc $out $translator $name $in $preamble_path $out')
   n.newline()
   n.rule('example-task',
          # note: $out can be MULTIPLE FILES, shell-quoted
-         command='mycpp/NINJA-steps.sh example-task $name $impl $bin $out',
+         command='build/ninja-rules-py.sh example-task $name $impl $bin $out',
          description='example-task $name $impl $bin $out')
   n.newline()
   n.rule('typecheck',
-         command='mycpp/NINJA-steps.sh typecheck $main_py $out $skip_imports',
+         command='build/ninja-rules-py.sh typecheck $main_py $out $skip_imports',
          description='typecheck $main_py $out $skip_imports')
   n.newline()
   n.rule('logs-equal',
-         command='mycpp/NINJA-steps.sh logs-equal $out $in',
+         command='build/ninja-rules-py.sh logs-equal $out $in',
          description='logs-equal $out $in')
   n.newline()
   n.rule('benchmark-table',
-         command='mycpp/NINJA-steps.sh benchmark-table $out $in',
+         command='build/ninja-rules-py.sh benchmark-table $out $in',
          description='benchmark-table $out $in')
   n.newline()
 
