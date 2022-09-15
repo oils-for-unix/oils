@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-NINJA_lib.py
+ninja_lib.py
 """
 from __future__ import print_function
 

@@ -9,8 +9,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/NINJA-steps.sh
-
 readonly OIL_OVM_NAMES=(oil osh oshc tea sh true false readlink)
 
 # TODO: probably delete this

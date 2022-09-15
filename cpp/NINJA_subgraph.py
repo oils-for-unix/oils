@@ -58,7 +58,7 @@ from __future__ import print_function
 import os
 import sys
 
-from build.NINJA_lib import log, ObjPath
+from build.ninja_lib import log, ObjPath
 from mycpp import NINJA_subgraph as mycpp_subgraph
 from mycpp.NINJA_subgraph import GC_RUNTIME
 
@@ -314,7 +314,7 @@ def ShellFunctions(f, argv0):
 # Could run with /bin/sh, but use bash for now, bceause dash has bad errors messages!
 #!/bin/sh
 
-. cpp/NINJA-steps.sh
+. build/ninja-rules-cpp.sh
 
 main() {
   ### Compile oil-native into _bin/$compiler-$variant-sh/ (not with ninja)

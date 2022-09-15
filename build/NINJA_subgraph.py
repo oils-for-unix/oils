@@ -59,7 +59,7 @@ import os
 import subprocess
 import sys
 
-from build.NINJA_lib import asdl_cpp
+from build.ninja_lib import asdl_cpp
 
 def log(msg, *args):
   if args:
