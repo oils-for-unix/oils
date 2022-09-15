@@ -70,7 +70,7 @@ main() {
   echo DEPS prebuilt/ninja/*/deps.txt
 
   # Reads the deps.txt files above
-  PYTHONPATH=. build/NINJA_main.py
+  PYTHONPATH=. build/ninja_main.py
 }
 
 main "$@"
