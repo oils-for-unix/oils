@@ -23,7 +23,7 @@ make-tar() {
   mkdir -p _release 
 
   local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
-  PYTHONPATH=. build/NINJA_main.py tarball-manifest \
+  PYTHONPATH=. build/ninja_main.py tarball-manifest \
     | xargs -- tar --create --transform "$sed_expr" --file $tar
 
   local tar_xz=_release/${app_name}-${OIL_VERSION}.tar.xz

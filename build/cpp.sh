@@ -21,7 +21,7 @@ gen-asdl() {
 }
 
 gen-oil-native-sh() {
-  PYTHONPATH=. build/NINJA_main.py shell
+  PYTHONPATH=. build/ninja_main.py shell
   chmod +x _build/oil-native.sh
 }
 

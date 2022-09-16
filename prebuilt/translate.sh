@@ -50,10 +50,6 @@ oil-part() {
 
 #include "mycpp/runtime.h"
 
-// For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
-inline Str* repr(void* obj) {
-  assert(0);
-}
 EOF
     cat $raw_header
 

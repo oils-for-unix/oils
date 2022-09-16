@@ -53,9 +53,3 @@ inline Str* str(syntax_asdl::word_t* w) {
   /* NotImplemented(); */
   return StrFromC("TODO");
 }
-
-// For hnode::External in asdl/format.py
-inline Str* repr(void* obj) {
-  /* NotImplemented(); */
-  return StrFromC("TODO: repr()");
-}

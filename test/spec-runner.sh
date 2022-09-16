@@ -422,11 +422,7 @@ shell-sanity-check() {
   echo "PWD = $PWD"
   echo "PATH = $PATH"
 
-  #ls -l _tmp/shells || true
-  #/bin/busybox ash -c 'echo "hello from /bin/busybox"'
-
   for sh in "$@"; do
-
     # note: shells are in $PATH, but not $OSH_LIST
     if ! $sh -c 'echo -n "hello from $0: "; command -v $0 || true'; then 
       echo "ERROR: $sh failed sanity check"

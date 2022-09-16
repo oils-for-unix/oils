@@ -158,9 +158,7 @@ auto-machine2() {
 #       oil-0.0.0.tar.xz 
 
 _clean() {
-  build/clean.sh tmp-dirs
-  rm -r -f _devbuild  # We're redoing the dev build
-  build/clean.sh cpp
+  build/clean.sh all
 }
 
 _dev-build() {
@@ -347,7 +345,7 @@ build-and-test() {
 }
 
 _install() {
-  test/spec.sh install-shells
+  test/spec.sh install-shells-with-apt
 
   # A subset of build/py.sh ubuntu-deps.  (Do we need build-essential?)
   sudo apt install python-dev
