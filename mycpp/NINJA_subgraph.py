@@ -6,9 +6,7 @@ Code Layout:
 
   mycpp/
     NINJA_subgraph.py  # This file describes dependencies programmatically
-
-    build.sh           # wrappers invoked by the Toil and devtools/release.sh
-    test.sh            # test driver for unit tests and examples
+    TEST.sh            # test driver for unit tests and examples
 
     examples/
       cgi.py
@@ -79,7 +77,7 @@ Output Layout:
 Also:
 
 - .wwz archive of all the logs.
-- Turn it into HTML and link to logs.  Basically just like Toil does.
+- Turn it into HTML and link to logs.  Basically just like Soil does.
 
 Notes for Oil: 
 
@@ -106,6 +104,10 @@ import sys
 
 from build.ninja_lib import asdl_cpp, log, ObjPath
 
+# TODO:
+# - Fold this dependency into a proper shwrap wrapper
+# - Make a n.build() wrapper that takes it into account automatically
+RULES_PY = 'build/ninja-rules-py.sh'
 
 # special ones in examples.sh:
 # - parse
@@ -283,6 +285,7 @@ def TranslatorSubgraph(n, translator, ex, phony):
 
   # Make a translation unit
   n.build(main_cc_src, 'wrap-cc', raw,
+          implicit=[RULES_PY],
           variables=[
             ('name', ex),
             ('preamble_path', preamble_path),
@@ -433,7 +436,7 @@ def NinjaGraph(n):
 
   prefix = '_gen/bin/osh_eval.mycpp'
   n.build([prefix + '.cc'], 'gen-osh-eval', deps,
-          implicit=['_bin/shwrap/mycpp_main'],
+          implicit=['_bin/shwrap/mycpp_main', RULES_PY],
           variables=[('out_prefix', prefix)])
 
   #

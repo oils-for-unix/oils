@@ -19,7 +19,6 @@ example-main() {
 
   cat <<EOF
 int main(int argc, char **argv) {
-  // gHeap.Init(512);
   gHeap.Init(128 << 10);  // 128 KiB; doubling in size
   // gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
 
