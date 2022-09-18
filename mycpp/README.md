@@ -18,7 +18,7 @@ instructions at <https://github.com/oilshell/oil/wiki/Contributing> to create
 the "dev build" first, which is DISTINCT from `oil-native`.  Make sure you can
 run:
 
-    oil$ build/dev.sh all
+    oil$ build/py.sh all
 
 This will give you a working shell:
 
@@ -44,14 +44,14 @@ MyPy's dependencies.
 
 To build oil-native, use:
 
-    oil$ build/dev.sh oil-cpp  # translate and compile, may take 30 seconds
+    oil$ ./NINJA-config.sh
+    oil$ ninja              # translate and compile, may take 30 seconds
 
     oil$ _bin/cxx-dbg/osh_eval -c 'echo hi'  # running compiled C++ !
     hi
 
 To run the tests and benchmarks:
 
-    oil$ ./NINJA-config.sh
     oil$ ninja mycpp-logs-equal
     ... 200+ tasks run ...
 
@@ -65,13 +65,6 @@ Related:
 Start](https://github.com/oilshell/oil/wiki/Oil-Native-Quick-Start) on the
 wiki.
 - [Oil Dev Cheat Sheet](https://github.com/oilshell/oil/wiki/Oil-Native-Quick-Start)
-
-### Clean
-
-Unfortunately, you may need to clean the build, since some dependencies
-aren't accounted for:
-
-    $ mycpp/build.sh clean
 
 ## Notes on the Algorithm / Architecture
 
@@ -130,6 +123,8 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 ### Major Features
 
 - Instantiating objects &rarr; `Alloc<T>(...)`
+- Python `int` and `bool` &rarr; C++ `int` and `bool`
+  - `None` &rarr; `nullptr`
 - Statically Typed Python Collections
   - `str` &rarr; `Str*`
   - `List[T]` &rarr; `List<T>*`
@@ -159,6 +154,7 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 ### Minor Translations
 
 - `s1 == s2` &rarr; `str_equals(s1, s2)`
+- `'x' * 3` &rarr; `str_repeat(globalStr, 3)`
 - `[None] * 3` &rarr; `list_repeat(nullptr, 3)`
 - Omitted:
   - If the LHS of an assignment is `_`, then the statement is omitted
@@ -225,13 +221,14 @@ Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
 - Failing to declare methods `virtual` can involve the wrong one being called
   at runtime
 
-### Features Used
+### Minor Features Used
 
-- For ASDL: type-safe enums, i.e. `enum class`
-- `nullptr`
+In addition to classes, templates, exceptions, etc. mentioned above, we use:
+
 - `static_cast` and `reinterpret_cast`
-- Some Function Overloading for `format_r`?
-  - Do we need this for equality and hashing?
+- `enum class` for ASDL
+- Function overloading
+  - For equality and hashing?
 - `offsetof` for introspection of field positions for garbage collection
 - `std::initializer_list` for `StackRoots()`
   - Should we get rid of this?
@@ -249,4 +246,3 @@ Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
 - A `BufWriter` is mutable.  It's an alias for `cStringIO.StringIO()`.  You
   build it with repeated calls to`write()`, and then call `getvalue()` at the
   end.
-
