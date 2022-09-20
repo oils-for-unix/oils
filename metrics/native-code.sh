@@ -21,20 +21,22 @@ fastlex-symbols() {
   symbols _devbuild/py-ext/x86_64/fastlex.so
 }
 
-symbols() {
+print-symbols() {
   local obj=$1
-  nm $obj
+  ls -l $obj
   echo
 
+  # Summary
   bloaty $obj
   echo
 
+  # Top symbols
   # fastlex_MatchToken is 21.2 KiB.  That doesn't seem to large compared ot
   # the 14K line output?
   bloaty -d symbols $obj
   echo
 
-  ls -l $obj
+  nm $obj
   echo
 }
 
@@ -63,11 +65,6 @@ symbols() {
   # ovm-opt.stripped doesn't show a report.
   local file=${1:-_build/oil/ovm-opt}
 
-  # Slightly different.
-  #local file=_build/oil/ovm-dbg
-
-  #bloaty -n 30 -d symbols $file
-
   # Full output
   # 3,588 lines!
   bloaty --tsv -n 0 -d symbols $file 
@@ -87,6 +84,9 @@ collect-and-report() {
   local opt=$3
 
   mkdir -p $base_dir
+
+  print-symbols $opt > $base_dir/symbols.txt
+
   symbols $opt > $base_dir/symbols.tsv
 
   # Really 'transation units', but bloaty gives it that name.
@@ -102,10 +102,11 @@ collect-and-report() {
   fi
 
   # For CI
-  cat >>$base_dir/index.html <<'EOF'
+  cat >$base_dir/index.html <<'EOF'
 <a href="overview.txt">overview.txt</a> <br/>
 <a href="compileunits.tsv">compileunits.tsv</a> <br/>
-<a href="symbols.tsv">symbols.tsv</a <br/>
+<a href="symbols.tsv">symbols.tsv</a> <br/>
+<a href="symbols.txt">symbols.txt</a> <br/>
 EOF
 }
 

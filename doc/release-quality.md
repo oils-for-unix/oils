@@ -101,8 +101,10 @@ This is a supplement to the [main release page](index.html).
     passed to the compiler?
     - [cxx-dbg](pub/metrics.wwz/preprocessed/cxx-dbg.txt),
       [cxx-opt](pub/metrics.wwz/preprocessed/cxx-opt.txt)
-  - [overview](pub/metrics.wwz/oil-native/overview.txt) - Binary code size reported
-    by [Bloaty][].
+  - [Binary code size](pub/metrics.wwz/oil-native/index.html) reported by
+    [Bloaty][].  How much code is output by the compiler?
+    - [overview](pub/metrics.wwz/oil-native/overview.txt),
+      [symbols](pub/metrics.wwz/oil-native/symbols.txt)
 
 
 [cloc]: https://github.com/AlDanial/cloc
