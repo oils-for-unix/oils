@@ -19,7 +19,7 @@ set -o pipefail
 set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO
+source $REPO_ROOT/mycpp/common.sh  # MYPY_REPO, maybe-our-python3
 
 mypy-git-clone() {
   ### Clone mypy at a specific branch

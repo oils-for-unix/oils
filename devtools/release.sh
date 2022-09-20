@@ -858,26 +858,6 @@ tarball-size() {
   test-oil-tar  # Ctrl-C this, then run metrics/tarball.sh
 }
 
-# TODO: move to ../oil_DEPS
-dep-bloaty() {
-  wget --no-clobber --directory _deps/ \
-    https://github.com/google/bloaty/releases/download/v1.1/bloaty-1.1.tar.bz2
-
-  pushd _deps
-  if ! test -d bloaty-1.1; then
-    tar -x -j < bloaty-1.1.tar.bz2
-  fi
-
-  pushd bloaty-1.1
-  # It's much slower without -G Ninja!
-  cmake -G Ninja .
-  cmake --build .
-  ./bloaty --help
-  popd
-
-  popd
-}
-
 dep-smoosh() {
   local repo=~/git/languages/smoosh
   if ! test -d $repo; then
@@ -915,11 +895,7 @@ more-release-deps() {
   if false; then
     # TODO: Did this manually
     # test/alpine.sh
-
-    dep-alpine
-
-    # metrics/native-code.sh
-    dep-bloaty
+    # dep-alpine
 
     # test/smoosh.sh
     dep-smoosh

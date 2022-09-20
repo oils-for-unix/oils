@@ -117,11 +117,9 @@ test-py3() {
   $DEPS_DIR/python3 -c 'import sys; print(sys.version)'
 }
 
-#
-# OVM slice -- CPython dependency for 'make'
-#
-
 configure-python() {
+  ### for both 2.7 OVM slice and 3.10 mycpp
+
   local dir=${1:-$PREPARE_DIR}
   local conf=${2:-$PWD/$PY27/configure}
 
@@ -174,7 +172,7 @@ layer-cpython() {
   build-python
 }
 
-# For pea and type checking
+# For Pea and type checking
 layer-py3() {
   # Dockerfile.pea copies it
   # download-py3
@@ -186,6 +184,43 @@ layer-py3() {
   build-python $dir
 
   symlink-py3
+}
+
+download-bloaty() {
+  wget --no-clobber --directory $REPO_ROOT/_cache \
+    https://github.com/google/bloaty/releases/download/v1.1/bloaty-1.1.tar.bz2
+}
+
+extract-bloaty() {
+  pushd $REPO_ROOT/_cache
+  tar -x -j < bloaty-1.1.tar.bz2
+  popd
+}
+
+build-bloaty() {
+  mkdir -p $DEPS_DIR/bloaty
+  pushd $DEPS_DIR/bloaty
+
+  local tar_dir=$REPO_ROOT/_cache/bloaty-1.1
+  # It's much slower without -G Ninja!
+  cmake -G Ninja $tar_dir
+  cmake --build .
+
+  popd
+}
+
+link-bloaty() {
+  mkdir -p ../oil_DEPS/bin
+  ln -s -f -v $DEPS_DIR/bloaty/bloaty ../oil_DEPS/bin
+  ../oil_DEPS/bin/bloaty --help
+}
+
+layer-bloaty() {
+  # tarball should be copied into Docker
+
+  extract-bloaty
+  build-bloaty
+  link-bloaty
 }
 
 "$@"

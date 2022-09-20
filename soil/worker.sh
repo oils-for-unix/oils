@@ -185,6 +185,7 @@ build-osh-eval   build/cpp.sh all                      -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
+native-code      metrics/native-code.sh oil-native     _tmp/metrics/oil-native/index.html
 shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
 mycpp-translator mycpp/TEST.sh test-translator         _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -

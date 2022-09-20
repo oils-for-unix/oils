@@ -8,15 +8,10 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh  # for $R_PATH
+source build/dev-shell.sh  # put bloaty in $PATH
 
 readonly OVM_BASE_DIR=_tmp/metrics/ovm
 readonly OIL_BASE_DIR=_tmp/metrics/oil-native
-
-# Size profiler for binaries.
-bloaty() {
-  # See devtools/release.sh dep-bloaty
-  _deps/bloaty-1.1/bloaty "$@"
-}
 
 pylibc-symbols() {
   symbols _devbuild/py-ext/x86_64/libc.so
@@ -78,7 +73,7 @@ symbols() {
   bloaty --tsv -n 0 -d symbols $file 
 }
 
-report() {
+R-report() {
   R_LIBS_USER=$R_PATH metrics/native-code.R "$@"
 }
 
@@ -99,7 +94,19 @@ collect-and-report() {
 
   head $base_dir/symbols.tsv $base_dir/compileunits.tsv
 
-  report metrics $base_dir $dbg $opt | tee $base_dir/overview.txt
+  # Hack for now
+  if Rscript -e 'print("hi from R")'; then
+    R-report metrics $base_dir $dbg $opt | tee $base_dir/overview.txt
+  else
+    echo 'R not detected' | tee $base_dir/overview.txt
+  fi
+
+  # For CI
+  cat >>$base_dir/index.html <<'EOF'
+<a href="overview.txt">overview.txt</a> <br/>
+<a href="compileunits.tsv">compileunits.tsv</a> <br/>
+<a href="symbols.tsv">symbols.tsv</a <br/>
+EOF
 }
 
 oil-native() {

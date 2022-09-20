@@ -101,6 +101,10 @@ cpp() {
     # for custom Python 3
     "${PY3_DEPS[@]}"
 
+    # To build bloaty
+    # TODO: should we use multi-stage builds?
+    cmake
+
     ninja-build
     # to create _test/index.html
     gawk

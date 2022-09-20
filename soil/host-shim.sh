@@ -16,10 +16,14 @@ live-image-tag() {
   local image_id=$1
 
   case $image_id in
+    (cpp)
+      # Updated with bloaty
+      echo 'v-2022-09-20'
+      ;;
     (dummy)
       echo 'v-2022-08-29'
       ;;
-    (clang|cpp|pea)
+    (clang|pea)
       # Updated with layer-py3
       echo 'v-2022-08-05'
       ;;

@@ -6,6 +6,9 @@
 #
 # Note: assumes that $REPO_ROOT is $PWD.
 
+# TODO: Move everything into 'bin'
+readonly DEPS_BIN_DIR="$PWD/../oil_DEPS/bin"
+
 # build/codegen.sh builds binaries
 readonly RE2C_DIR="$PWD/../oil_DEPS/re2c"
 
@@ -14,6 +17,10 @@ readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"
 
 # test/spec-bin.sh builds binaries
 readonly SPEC_DIR="$PWD/../oil_DEPS/spec-bin"
+
+if test -d $DEPS_BIN_DIR; then
+  export PATH="$DEPS_BIN_DIR:$PATH"
+fi
 
 if test -d $RE2C_DIR; then
   export PATH="$RE2C_DIR:$PATH"
