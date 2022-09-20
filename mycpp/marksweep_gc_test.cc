@@ -35,34 +35,6 @@ TEST string_collection_test() {
   //
   // ASSERT(are_equal(test_str, StrFromC("foo")));
 
-  {
-    Str *test_str0 = nullptr;
-    Str *test_str1 = nullptr;
-    StackRoots _roots({&test_str0, &test_str1});
-
-    test_str0 = StrFromC("foo");
-    test_str1 = StrFromC("foo");
-
-    for (int i = 0; i < KiB(32); ++i)
-    {
-      if (i % 2)
-      {
-        test_str0 = StrFromC("foo");
-        ASSERT(are_equal(test_str0, test_str1));
-
-        test_str1 = 0;
-        gHeap.Collect();
-      }
-      else
-      {
-        test_str1 = StrFromC("foo");
-        ASSERT(are_equal(test_str0, test_str1));
-
-        test_str0 = 0;
-        gHeap.Collect();
-      }
-    }
-  }
 
   PASS();
 }

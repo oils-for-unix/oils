@@ -240,6 +240,9 @@ compare-examples() {
 }
 
 test-sweep-asan-leaks() {
+  # One of these tests fails currently, but it's unrelated to the GC
+  # There's some pretty questionable pretty-printing code that leaks and is a
+  # kinda tricky to fix
   ASAN_OPTIONS='' examples-variant '' sweepasan
 }
 
