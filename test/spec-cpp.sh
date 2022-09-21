@@ -282,6 +282,7 @@ EOF
 
 readonly BASE_DIR=_tmp/spec/cpp
 
+# TODO: Use here-schema-tsv in test/tsv-lib.sh
 here-schema() {
   ### Read a legible text format on stdin, and write CSV on stdout
 

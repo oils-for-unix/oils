@@ -189,10 +189,12 @@ EOF
 
 format-image-stats() {
   local soil_dir=${1:-_tmp/soil}
+  local web_base_url=${2:-'/web'}  # for production
 
-  soil-html-head "Image Stats"
+  table-sort-html-head "Image Stats" $web_base_url
 
-  table-sort-begin "width50"  # prints <body>
+  # prints <body>; make it wide for the shell commands
+  table-sort-begin "width60"
 
   # TODO:
   # - Format the TSV as an HTML table

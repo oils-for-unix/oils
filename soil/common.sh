@@ -24,12 +24,25 @@ html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"
 }
 
+# NOTE: soil-html-head and table-sort-html-head are distinct, because they
+# collide with <td> styling and so forth
+
 soil-html-head() {
   local title="$1"
-  # These files live at the root.  Bust cache.
+  local web_base_url=${2:-'/web'}
+
   html-head --title "$title" \
-    "/web/base.css?cache=0" "/web/soil.css?cache=0" \
-    "/web/table/table-sort.css?cache=0" "/web/table/table-sort.js?cache=0" 
+    "$web_base_url/base.css?cache=0" "$web_base_url/soil.css?cache=0"
+}
+
+table-sort-html-head() {
+  local title="$1"
+  local web_base_url=${2:-'/web'}
+
+  html-head --title "$title" \
+    "$web_base_url/base.css?cache=0" \
+    "$web_base_url/ajax.js?cache=0" \
+    "$web_base_url/table/table-sort.css?cache=0" "$web_base_url/table/table-sort.js?cache=0" 
 }
 
 # Used by mycpp/build.sh and benchmarks/auto.sh

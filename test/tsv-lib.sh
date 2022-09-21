@@ -35,3 +35,11 @@ tsv-row() {
   echo  # newline
 }
 
+here-schema-tsv() {
+  ### Read a legible text format on stdin, and write TSV on stdout
+
+  local tab=$'\t'
+  while read one two; do
+    echo "${one}${tab}${two}"
+  done
+}

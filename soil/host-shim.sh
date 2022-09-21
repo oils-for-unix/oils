@@ -9,7 +9,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source soil/common.sh
+source test/tsv-lib.sh
 
 live-image-tag() {
   ### image ID -> Docker tag name
@@ -165,6 +168,17 @@ save-image-stats() {
     $docker history --no-trunc --human=0 --format '{{.Size}}\t{{.CreatedAt}}\t{{.CreatedBy}}' $image:$tag
   } > $soil_dir/image-layers.tsv
   log "Wrote $soil_dir/image-layers.tsv"
+
+  here-schema-tsv >$soil_dir/image-layers.schema.tsv <<EOF
+column_name   type
+ROW_CSS_CLASS string
+num_bytes     integer
+created_at    string
+created_by    string
+EOF
+
+  log "Wrote $soil_dir/image-layers.schema.tsv"
+
 }
 
 run-job-uke() {

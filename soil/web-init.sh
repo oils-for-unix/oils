@@ -124,7 +124,7 @@ deploy-data() {
 
   # note: duplicating CSS
   scp _tmp/index.html $user@$host:$host/
-  scp web/{base,soil}.css $user@$host:$host/web
+  scp web/{base.css,soil.css,ajax.js} $user@$host:$host/web
   scp web/table/*.{js,css} $user@$host:$host/web/table
 }
 
