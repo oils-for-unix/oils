@@ -73,6 +73,7 @@ examples-variant() {
       log 'OK'
     else
       log "FAIL with status $?"
+      log ''
       #return $status
       num_failed=$((num_failed + 1))
     fi
@@ -83,6 +84,31 @@ examples-variant() {
   log ''
   log "$num_failed of $num_tests tests failed"
   log ''
+
+  case $variant in
+    (asan)
+      # TODO: make examples/parse pass!
+      # https://github.com/oilshell/oil/issues/1317
+      if test $num_failed -ne 1; then
+        echo "FAIL: Expected 1 failure in ASAN"
+        return 1
+      fi
+      ;;
+    (gcevery)
+      if test $num_failed -ne 5; then
+        echo "FAIL: Expected 5 failure with GC_EVERY_ALLOC"
+        return 1
+      fi
+      ;;
+    (*)
+      if test $num_failed -ne 0; then
+        echo "FAIL: Expected no failures, got $num_failed"
+        return 1
+      fi
+      ;;
+  esac
+
+  return 0
 }
 
 #
@@ -198,24 +224,14 @@ test-invalid-examples() {
 
 test-runtime() {
   # Run other unit tests, e.g. the GC tests
+
+  # Doesn't pass yet because of rooting i
+  # ASAN_OPTIONS='' unit '' asan
+
   unit '' asan
   unit '' ubsan
   unit '' gcstats
   unit '' gcevery
-
-  # Doesn't work yet because of GC_STATS num_live_objs_
-  # unit '' sweepasan
-
-  # Two tests that do pass
-  ninja _bin/cxx-sweepasan/mycpp/marksweep_gc_test
-  run-test-bin _bin/cxx-sweepasan/mycpp/marksweep_gc_test
-
-  # Fails under ASAN; we should re-enable ASAN_OPTIONS=detect_leaks
-  ninja _bin/cxx-sweepasan/mycpp/gc_builtins_test
-  run-test-bin _bin/cxx-sweepasan/mycpp/gc_builtins_test
-
-  ninja _bin/cxx-sweepasan/mycpp/gc_heap_test
-  run-test-bin _bin/cxx-sweepasan/mycpp/gc_heap_test
 }
 
 #
@@ -239,19 +255,14 @@ compare-examples() {
   return $status
 }
 
-test-sweep-asan-leaks() {
-  ninja _bin/cxx-sweepasan/mycpp/examples/fib_iter.mycpp
-  ASAN_OPTIONS='' _bin/cxx-sweepasan/mycpp/examples/fib_iter.mycpp
-
-  # CURRENTLY 9 of 22 fail
-  # This does NOT check if all pass
-  ASAN_OPTIONS='' examples-variant '' sweepasan
-}
-
 test-translator() {
   ### Invoked by soil/worker.sh
 
-  test-sweep-asan-leaks
+  # Test that examples don't leak
+  ASAN_OPTIONS='' examples-variant '' asan
+
+  # Test with more collections
+  ASAN_OPTIONS='' examples-variant '' gcevery
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
@@ -279,6 +290,6 @@ examples-coverage() {
 
 # Call function $1 with arguments $2 $3 $4
 #
-# mycpp/TEST.sh examples-variant '' sweepasan
+# mycpp/TEST.sh examples-variant '' asan
 
 "$@"

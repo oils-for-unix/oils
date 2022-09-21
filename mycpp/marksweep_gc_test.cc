@@ -35,6 +35,7 @@ TEST string_collection_test() {
   //
   // ASSERT(are_equal(test_str, StrFromC("foo")));
 
+
   PASS();
 }
 

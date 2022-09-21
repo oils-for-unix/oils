@@ -11,22 +11,20 @@
 // - maybe number of allocations?
 
 TEST str_simple_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
+  gHeap.Init(KiB(1));
 
   Str* s = nullptr;
-  // Note: This test case doesn't strictly require this.  I guess because
-  // it doesn't use the strings long after they've been allocated and/or moved.
   StackRoots _roots({&s});
 
   int total = 0;
   for (int i = 0; i < 400; ++i) {
     unsigned char c = i % 256;
     s = chr(c);
-    // print(s);
-    log("i = %d", i);
+    /* log("i = %d", i); */
     ASSERT_EQ_FMT(c, ord(s), "%d");  // Check for memory corruption
     total += len(s);
   }
+
   log("total = %d", total);
 #ifdef GC_STATS
   gHeap.Report();
@@ -192,6 +190,8 @@ int main(int argc, char** argv) {
   RUN_TEST(list_slice_append_test);
   RUN_TEST(list_str_growth_test);
   RUN_TEST(dict_growth_test);
+
+  gHeap.Collect();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

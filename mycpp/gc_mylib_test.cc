@@ -159,6 +159,9 @@ int main(int argc, char** argv) {
   RUN_TEST(buf_line_reader_test);
   RUN_TEST(files_test);
 
+  gHeap.Collect();
+
   GREATEST_MAIN_END(); /* display results */
+
   return 0;
 }

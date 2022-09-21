@@ -5,14 +5,15 @@ void MarkSweepHeap::Init(int collection_thresh) {
 }
 
 void* MarkSweepHeap::Allocate(int byte_count) {
-  void* result = calloc(byte_count, 1);
-  assert(result);
+
+#if GC_EVERY_ALLOC
+  Collect();
+#endif
 
 #if GC_STATS
   this->num_live_objs_++;
 #endif
 
-  this->all_allocations_.insert(result);
 
   this->current_heap_bytes_ += byte_count;
   if (this->current_heap_bytes_ > this->collection_thresh_) {
@@ -34,6 +35,11 @@ void* MarkSweepHeap::Allocate(int byte_count) {
     //
     this->collection_thresh_ = this->current_heap_bytes_ * 3 / 2;
   }
+
+  void* result = calloc(byte_count, 1);
+  assert(result);
+
+  this->all_allocations_.insert(result);
 
   return result;
 }

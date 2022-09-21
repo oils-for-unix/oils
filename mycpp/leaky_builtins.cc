@@ -144,15 +144,14 @@ Str* str_repeat(Str* s, int times) {
   }
   int len_ = len(s);
   int new_len = len_ * times;
-  char* data = static_cast<char*>(malloc(new_len + 1));
+  Str* result = AllocStr(new_len);
 
-  char* dest = data;
+  char* dest = result->data_;
   for (int i = 0; i < times; i++) {
     memcpy(dest, s->data_, len_);
     dest += len_;
   }
-  data[new_len] = '\0';
-  return CopyBufferIntoNewStr(data, new_len);
+  return result;
 }
 
 // for os_path.join()
@@ -163,8 +162,8 @@ Str* str_concat3(Str* a, Str* b, Str* c) {
   int c_len = len(c);
 
   int new_len = a_len + b_len + c_len;
-  char* buf = static_cast<char*>(malloc(new_len));
-  char* pos = buf;
+  Str* result = AllocStr(new_len);
+  char* pos = result->data_;
 
   memcpy(pos, a->data_, a_len);
   pos += a_len;
@@ -174,22 +173,22 @@ Str* str_concat3(Str* a, Str* b, Str* c) {
 
   memcpy(pos, c->data_, c_len);
 
-  assert(pos + c_len == buf + new_len);
+  assert(pos + c_len == result->data_ + new_len);
 
-  return CopyBufferIntoNewStr(buf, new_len);
+  return result;
 }
 
 Str* str_concat(Str* a, Str* b) {
   int a_len = len(a);
   int b_len = len(b);
   int new_len = a_len + b_len;
-  char* buf = static_cast<char*>(malloc(new_len + 1));
+  Str* result = AllocStr(new_len);
+  char* buf = result->data_;
 
   memcpy(buf, a->data_, a_len);
   memcpy(buf + a_len, b->data_, b_len);
-  buf[new_len] = '\0';
 
-  return CopyBufferIntoNewStr(buf, new_len);
+  return result;
 }
 
 //

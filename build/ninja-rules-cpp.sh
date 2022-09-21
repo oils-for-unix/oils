@@ -67,7 +67,7 @@ setglobal_compile_flags() {
     flags="$flags $env_flags"
   fi
 
-  flags="$flags -I $REPO_ROOT"
+  flags="$flags -D MARK_SWEEP -I $REPO_ROOT"
 
   case $variant in
     (dbg)
@@ -87,11 +87,6 @@ setglobal_compile_flags() {
     (ubsan)
       # faster build with -O0
       flags="$flags -O0 -g -fsanitize=undefined"
-      ;;
-
-    (sweepasan)
-      # Mark and Sweep with ASAN
-      flags="$flags -O0 -g -fsanitize=address -D MARK_SWEEP -D GC_STATS"
       ;;
 
     (gcstats)
@@ -156,7 +151,7 @@ setglobal_link_flags() {
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    (asan|sweepasan)
+    (asan)
       link_flags='-fsanitize=address'
       ;;
     (ubsan)

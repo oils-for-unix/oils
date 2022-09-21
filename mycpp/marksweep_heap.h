@@ -25,6 +25,8 @@ class MarkSweepHeap {
 
   void Collect();
 
+  void Report() {};
+
   int roots_top_;
   Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
 

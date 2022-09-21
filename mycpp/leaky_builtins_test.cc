@@ -79,8 +79,9 @@ TEST test_str_to_int() {
 
 TEST test_str_contains() {
   bool b;
-  Str* s;
-  Str* nul;
+  Str* s = nullptr;
+  Str* nul = nullptr;
+  StackRoots _roots({&s, &nul});
 
   log("  str_contains");
 
@@ -133,6 +134,8 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_contains);
+
+  gHeap.Collect();
 
   GREATEST_MAIN_END();
   return 0;

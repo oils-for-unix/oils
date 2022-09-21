@@ -202,6 +202,8 @@ UNIT_TESTS = {
     'mycpp/gc_mylib_test.cc': VARIANTS_GC,
     'mycpp/smartptr_test.cc': VARIANTS_GC,
 
+    # TODO: Make these VARIANTS_GC?
+    # Is it painful to add rooting?
     'mycpp/leaky_builtins_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_containers_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_str_test.cc': VARIANTS_LEAKY,
@@ -245,8 +247,6 @@ COMPILERS_VARIANTS = [
     # mainly for unit tests
     ('cxx', 'gcstats'),
     ('cxx', 'gcevery'),
-
-    ('cxx', 'sweepasan'),
 
     ('cxx', 'dbg'),
     ('cxx', 'opt'),
@@ -492,11 +492,11 @@ def NinjaGraph(n):
       # Hack: avoid illegal combinations
       test_runs_under_variant = False
       if which_variants == VARIANTS_GC and variant in (
-          'dbg', 'asan', 'ubsan', 'coverage', 'sweepasan', 'gcevery', 'gcstats'):
+          'dbg', 'asan', 'ubsan', 'coverage', 'gcevery', 'gcstats'):
         test_runs_under_variant = True
 
       if which_variants == VARIANTS_LEAKY and variant in (
-          'dbg', 'asan', 'ubsan', 'coverage', 'sweepasan'):
+          'dbg', 'asan', 'ubsan', 'coverage'):
         test_runs_under_variant = True
 
       if not test_runs_under_variant:
