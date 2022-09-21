@@ -89,13 +89,19 @@ examples-variant() {
       # TODO: make examples/parse pass!
       # https://github.com/oilshell/oil/issues/1317
       if test $num_failed -ne 1; then
-        echo "Expected 1 failure in ASAN"
+        echo "FAIL: Expected 1 failure in ASAN"
+        return 1
+      fi
+      ;;
+    (gcevery)
+      if test $num_failed -ne 5; then
+        echo "FAIL: Expected 5 failure with GC_EVERY_ALLOC"
         return 1
       fi
       ;;
     (*)
       if test $num_failed -ne 0; then
-        echo "Expected no failures, got $num_failed"
+        echo "FAIL: Expected no failures, got $num_failed"
         return 1
       fi
       ;;
@@ -253,6 +259,9 @@ test-translator() {
 
   # Test that examples don't leak
   ASAN_OPTIONS='' examples-variant '' asan
+
+  # Test with more collections
+  ASAN_OPTIONS='' examples-variant '' gcevery
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
