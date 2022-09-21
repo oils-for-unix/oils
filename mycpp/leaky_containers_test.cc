@@ -7,8 +7,6 @@
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
-GLOBAL_STR(kSpace, " ");
-
 void Print(List<Str*>* parts) {
   log("---");
   log("len = %d", len(parts));
@@ -438,55 +436,6 @@ TEST test_str_join() {
   PASS();
 }
 
-TEST test_str_contains() {
-  bool b;
-  Str* s = nullptr;
-  Str* nul = nullptr;
-  StackRoots _roots({&s, &nul});
-
-  log("  str_contains");
-
-  s = StrFromC("foo\0 ", 5);
-  ASSERT(str_contains(s, kSpace));
-
-  // this ends with a NUL, but also has a NUL terinator.
-  nul = StrFromC("\0", 1);
-  ASSERT(str_contains(s, nul));
-  ASSERT(!str_contains(kSpace, nul));
-
-  b = str_contains(StrFromC("foo\0a", 5), StrFromC("a"));
-  ASSERT(b == true);
-
-  // this ends with a NUL, but also has a NUL terinator.
-  s = StrFromC("foo\0", 4);
-  b = str_contains(s, StrFromC("\0", 1));
-  ASSERT(b == true);
-
-  // Degenerate cases
-  b = str_contains(StrFromC(""), StrFromC(""));
-  ASSERT(b == true);
-  b = str_contains(StrFromC("foo"), StrFromC(""));
-  ASSERT(b == true);
-  b = str_contains(StrFromC(""), StrFromC("f"));
-  ASSERT(b == false);
-
-  // Short circuit
-  b = str_contains(StrFromC("foo"), StrFromC("too long"));
-  ASSERT(b == false);
-
-  b = str_contains(StrFromC("foo"), StrFromC("oo"));
-  ASSERT(b == true);
-
-  b = str_contains(StrFromC("foo"), StrFromC("ood"));
-  ASSERT(b == false);
-
-  b = str_contains(StrFromC("foo\0ab", 6), StrFromC("ab"));
-  ASSERT(b == true);
-
-  PASS();
-}
-
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -500,7 +449,6 @@ int main(int argc, char** argv) {
   RUN_TEST(test_dict);
 
   RUN_TEST(test_list_contains);
-  RUN_TEST(test_str_contains);
   RUN_TEST(test_list_tuple);
 
   RUN_TEST(test_str_split);
