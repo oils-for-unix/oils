@@ -73,6 +73,7 @@ examples-variant() {
       log 'OK'
     else
       log "FAIL with status $?"
+      log ''
       #return $status
       num_failed=$((num_failed + 1))
     fi
