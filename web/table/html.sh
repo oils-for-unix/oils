@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./html.sh <function name>
+#   source web/table/html.sh
 
 set -o nounset
 set -o pipefail

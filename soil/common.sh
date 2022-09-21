@@ -27,7 +27,9 @@ html-head() {
 soil-html-head() {
   local title="$1"
   # These files live at the root.  Bust cache.
-  html-head --title "$title" "/web/base.css?cache=0" "/web/soil.css?cache=0" 
+  html-head --title "$title" \
+    "/web/base.css?cache=0" "/web/soil.css?cache=0" \
+    "/web/table/table-sort.css?cache=0" "/web/table/table-sort.js?cache=0" 
 }
 
 # Used by mycpp/build.sh and benchmarks/auto.sh

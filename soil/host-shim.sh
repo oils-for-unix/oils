@@ -140,6 +140,29 @@ job-reset() {
   show-disk-info
 }
 
+save-image-stats() {
+  local soil_dir=${1:-_tmp/soil}
+  local docker=${2:-docker}
+  local image=${3:-oilshell/soil-dummy}
+  local tag=${4:-latest}
+
+  # TODO: write image.json with the name and tag?
+
+  mkdir -p $soil_dir
+
+  $docker history $image:$tag | tee $soil_dir/image-layers.txt > $soil_dir/image-layers.txt
+  log "Wrote $soil_dir/image-layers.txt"
+
+  # NOTE: Only works with docker!  podman doesn't support --format ?
+  {
+    # --human=0 gives us raw bytes and ISO timestamps
+    # --no-trunc shows the full command line
+    echo $'num_bytes\tcreated_at\tcreated_by'
+    $docker history --no-trunc --human=0 --format '{{.Size}}\t{{.CreatedAt}}\t{{.CreatedBy}}' $image:$tag
+  } > $soil_dir/image-layers.tsv
+  log "Wrote $soil_dir/image-layers.tsv"
+}
+
 run-job-uke() {
   local docker=$1  # docker or podman
   local repo_root=$2
@@ -197,6 +220,8 @@ run-job-uke() {
     # Return success
     return
   fi
+
+  save-image-stats $soil_dir $docker $image $tag
 
   show-disk-info
 

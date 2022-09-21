@@ -116,13 +116,16 @@ deploy-data() {
   local user=${1:-$SOIL_USER}
   local host=${2:-$SOIL_HOST}
 
-  ssh $user@$host mkdir -v -p $host/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github}
+  ssh $user@$host mkdir -v -p \
+    $host/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github} \
+    $host/web/table
 
   home-page "$host" > _tmp/index.html
 
   # note: duplicating CSS
   scp _tmp/index.html $user@$host:$host/
   scp web/{base,soil}.css $user@$host:$host/web
+  scp web/table/*.{js,css} $user@$host:$host/web/table
 }
 
 soil-web-manifest() {

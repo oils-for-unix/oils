@@ -13,6 +13,8 @@ set -o pipefail
 set -o errexit
 
 source soil/common.sh
+source test/tsv-lib.sh  # tsv2html
+source web/table/html.sh  # table-sort-{begin,end}
 
 # ~/
 #   soil-web/
@@ -131,6 +133,10 @@ format-wwz-index() {
 
     <h1>CI job <code>$job_id</code></h1>
 
+    <p>
+      <a href="_tmp/soil/image.html">Container Image Stats</a>
+    </p>
+
     <table>
       <thead>
         <tr>
@@ -181,10 +187,47 @@ EOF
 EOF
 }
 
+format-image-stats() {
+  local soil_dir=${1:-_tmp/soil}
+
+  soil-html-head "Image Stats"
+
+  table-sort-begin "width50"  # prints <body>
+
+  # TODO:
+  # - Format the TSV as an HTML table
+  # - Save the name and tag and show it
+
+  cat <<EOF
+    <p id="home-link">
+        <a href="..">Up</a>
+      | <a href="/">travis-ci.oilshell.org</a>
+      | <a href="//oilshell.org/">oilshell.org</a>
+    </p>
+
+    <h1>Image Layers</h1>
+EOF
+
+  tsv2html $soil_dir/image-layers.tsv
+
+  cat <<EOF
+    <h2>Raw Data</h2>
+
+    <a href="image-layers.txt">image-layers.txt</a> <br/>
+    <a href="image-layers.tsv">image-layers.tsv</a> <br/>
+  </body>
+</html>
+EOF
+
+  table-sort-end image-layers
+}
+
 make-job-wwz() {
   local job_id=${1:-test-job}
 
   local wwz=$job_id.wwz
+
+  format-image-stats _tmp/soil > _tmp/soil/image.html
 
   local index=_tmp/soil/INDEX.tsv 
   format-wwz-index $job_id $index > index.html
@@ -195,7 +238,8 @@ make-job-wwz() {
   #        osh-summary.html uses table-sort.js and ajax.js
   # TODO: Could move _tmp/{spec,stateful,syscall} etc. to _test
   zip -q -r $wwz \
-    index.html _tmp/soil _tmp/spec _tmp/stateful \
+    index.html \
+    _tmp/soil _tmp/spec _tmp/stateful \
     _tmp/syscall _tmp/benchmark-data _tmp/metrics \
     _test \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts}.css web/ajax.js \
@@ -210,6 +254,7 @@ deploy-job-results() {
 
   local job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
+  # writes $job_id.wwz
   make-job-wwz $job_id
 
   # Debug permissions.  When using docker rather than podman, these dirs can be
