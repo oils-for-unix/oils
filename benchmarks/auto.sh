@@ -158,13 +158,17 @@ demo-tasks() {
   done
 }
 
-readonly OSH_EVAL_IN_TREE=_bin/cxx-opt/osh_eval.stripped
-
 soil-run() {
   local base_dir=_tmp/benchmark-data
   mkdir -p $base_dir
 
-  OIL_NATIVE=$OSH_EVAL_IN_TREE cachegrind-shells $base_dir
+  # Test the one that's IN TREE, NOT in ../benchmark-data
+  local osh_eval=_bin/cxx-opt/osh_eval.stripped
+
+  # Assume ./NINJA-config.sh was already run
+  ninja $osh_eval
+
+  OIL_NATIVE=$osh_eval cachegrind-shells $base_dir
 
   find-dir-html $base_dir
 }

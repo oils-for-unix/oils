@@ -186,6 +186,8 @@ layer-py3() {
   symlink-py3
 }
 
+# Bloaty doesn't seem to be available in Debian/Ubuntu repos
+
 download-bloaty() {
   wget --no-clobber --directory $REPO_ROOT/_cache \
     https://github.com/google/bloaty/releases/download/v1.1/bloaty-1.1.tar.bz2
@@ -198,6 +200,11 @@ extract-bloaty() {
 }
 
 build-bloaty() {
+
+  # TODO:
+  # - Don't build bloaty in this dir; it bloats the Docker image
+  # - strip the binary: it goes from 36 MB -> 6.1 MB
+
   mkdir -p $DEPS_DIR/bloaty
   pushd $DEPS_DIR/bloaty
 
