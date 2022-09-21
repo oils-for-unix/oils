@@ -146,7 +146,7 @@ TEST files_test() {
 }
 
 TEST test_mylib_funcs() {
-  Str* int_str = 0;
+  Str* int_str = nullptr;
 
   StackRoots _roots({&int_str});
 
@@ -164,14 +164,14 @@ TEST test_mylib_funcs() {
   ASSERT(str_equals0("17", int_str));
   print(mylib::octal(int_min));  // ASAN
 
-  Str* fooEqualsBar = 0;
-  Str* foo = 0;
-  Str* bar = 0;
-  Str* fooEquals = 0;
+  Str* fooEqualsBar = nullptr;
+  Str* foo = nullptr;
+  Str* bar = nullptr;
+  Str* fooEquals = nullptr;
 
-  Str* equals = 0;
-  Str* Z = 0;
-  Str* emptyStr = 0;
+  Str* equals = nullptr;
+  Str* Z = nullptr;
+  Str* emptyStr = nullptr;
 
   StackRoots _roots2({&fooEqualsBar, &foo, &bar, &fooEquals, &equals, &Z, &emptyStr});
 
