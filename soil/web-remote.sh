@@ -205,6 +205,10 @@ format-image-stats() {
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
+    <h1>Images Tagged</h1>
+
+    <a href="images-tagged.txt">images-tagged.txt</a> <br/>
+
     <h1>Image Layers</h1>
 EOF
 
@@ -227,7 +231,10 @@ make-job-wwz() {
 
   local wwz=$job_id.wwz
 
-  format-image-stats _tmp/soil > _tmp/soil/image.html
+  # Doesn't exist when we're not using a container
+  if test -f _tmp/soil/image-layers.tsv; then
+    format-image-stats _tmp/soil > _tmp/soil/image.html
+  fi
 
   local index=_tmp/soil/INDEX.tsv 
   format-wwz-index $job_id $index > index.html

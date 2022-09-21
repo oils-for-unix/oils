@@ -150,7 +150,11 @@ save-image-stats() {
 
   mkdir -p $soil_dir
 
-  $docker history $image:$tag | tee $soil_dir/image-layers.txt > $soil_dir/image-layers.txt
+  # NOTE: Works on my dev machine, but produces an empty table on CI?
+  $docker images "$image:v-*" > $soil_dir/images-tagged.txt
+  log "Wrote $soil_dir/images-tagged.txt"
+
+  $docker history $image:$tag > $soil_dir/image-layers.txt
   log "Wrote $soil_dir/image-layers.txt"
 
   # NOTE: Only works with docker!  podman doesn't support --format ?
