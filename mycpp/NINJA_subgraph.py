@@ -204,7 +204,6 @@ UNIT_TESTS = {
 
     # TODO: Make these VARIANTS_GC?
     # Is it painful to add rooting?
-    'mycpp/leaky_builtins_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_containers_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_str_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_mylib_test.cc': VARIANTS_LEAKY,
