@@ -145,6 +145,65 @@ TEST files_test() {
   PASS();
 }
 
+TEST test_mylib_funcs() {
+  Str* int_str = 0;
+
+  StackRoots _roots({&int_str});
+
+  int int_min = INT_MIN;
+
+  int_str = mylib::hex_lower(15);
+  ASSERT(str_equals0("f", int_str));
+  print(mylib::hex_lower(int_min));  // ASAN implicitly checks this
+
+  int_str = mylib::hex_upper(15);
+  ASSERT(str_equals0("F", int_str));
+  print(mylib::hex_upper(int_min));  // ASAN
+
+  int_str = mylib::octal(15);
+  ASSERT(str_equals0("17", int_str));
+  print(mylib::octal(int_min));  // ASAN
+
+  Str* fooEqualsBar = 0;
+  Str* foo = 0;
+  Str* bar = 0;
+  Str* fooEquals = 0;
+
+  Str* equals = 0;
+  Str* Z = 0;
+  Str* emptyStr = 0;
+
+  StackRoots _roots2({&fooEqualsBar, &foo, &bar, &fooEquals, &equals, &Z, &emptyStr});
+
+  fooEqualsBar = StrFromC("foo=bar");
+  foo = StrFromC("foo");
+  bar = StrFromC("bar");
+  fooEquals = StrFromC("foo=");
+
+  equals = StrFromC("=");
+  Z = StrFromC("Z");
+  emptyStr = StrFromC("");
+
+  log("split_once()");
+  Tuple2<Str*, Str*> t = mylib::split_once(fooEqualsBar, equals);
+  ASSERT(str_equals(t.at0(), foo));
+  ASSERT(str_equals(t.at1(), bar));
+
+  Tuple2<Str*, Str*> u = mylib::split_once(fooEquals, equals);
+  ASSERT(str_equals(u.at0(), foo));
+  ASSERT(str_equals(u.at1(), emptyStr));
+
+  Tuple2<Str*, Str*> v = mylib::split_once(fooEquals, Z);
+  ASSERT(str_equals(v.at0(), fooEquals));
+  ASSERT(v.at1() == nullptr);
+
+  Tuple2<Str*, Str*> w = mylib::split_once(emptyStr, Z);
+  ASSERT(str_equals(w.at0(), emptyStr));
+  ASSERT(w.at1() == nullptr);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -155,6 +214,8 @@ int main(int argc, char** argv) {
   RUN_TEST(split_once_test);
   RUN_TEST(int_to_str_test);
   RUN_TEST(writer_test);
+
+  RUN_TEST(test_mylib_funcs);
 
   RUN_TEST(buf_line_reader_test);
   RUN_TEST(files_test);
