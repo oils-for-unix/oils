@@ -228,7 +228,7 @@ test-runtime() {
   # Doesn't pass yet because of rooting i
   # ASAN_OPTIONS='' unit '' asan
 
-  unit '' asan  # equivalent to sweepasan
+  unit '' asan
   unit '' ubsan
   unit '' gcstats
   unit '' gcevery
@@ -290,6 +290,6 @@ examples-coverage() {
 
 # Call function $1 with arguments $2 $3 $4
 #
-# mycpp/TEST.sh examples-variant '' sweepasan
+# mycpp/TEST.sh examples-variant '' asan
 
 "$@"

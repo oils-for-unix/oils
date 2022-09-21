@@ -248,8 +248,6 @@ COMPILERS_VARIANTS = [
     ('cxx', 'gcstats'),
     ('cxx', 'gcevery'),
 
-    ('cxx', 'sweepasan'),
-
     ('cxx', 'dbg'),
     ('cxx', 'opt'),
     ('cxx', 'asan'),
@@ -494,11 +492,11 @@ def NinjaGraph(n):
       # Hack: avoid illegal combinations
       test_runs_under_variant = False
       if which_variants == VARIANTS_GC and variant in (
-          'dbg', 'asan', 'ubsan', 'coverage', 'sweepasan', 'gcevery', 'gcstats'):
+          'dbg', 'asan', 'ubsan', 'coverage', 'gcevery', 'gcstats'):
         test_runs_under_variant = True
 
       if which_variants == VARIANTS_LEAKY and variant in (
-          'dbg', 'asan', 'ubsan', 'coverage', 'sweepasan'):
+          'dbg', 'asan', 'ubsan', 'coverage'):
         test_runs_under_variant = True
 
       if not test_runs_under_variant:

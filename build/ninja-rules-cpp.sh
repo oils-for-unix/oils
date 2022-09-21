@@ -89,11 +89,6 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=undefined"
       ;;
 
-    (sweepasan)
-      # Mark and Sweep with ASAN
-      flags="$flags -O0 -g -fsanitize=address -D MARK_SWEEP -D GC_STATS"
-      ;;
-
     (gcstats)
       # unit tests use for gHeap.Report()
       flags="$flags -g -D GC_STATS"
@@ -156,7 +151,7 @@ setglobal_link_flags() {
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    (asan|sweepasan)
+    (asan)
       link_flags='-fsanitize=address'
       ;;
     (ubsan)
