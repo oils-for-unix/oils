@@ -7,6 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 # Reuse some stuff
 source soil/web-remote.sh
 
