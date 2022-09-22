@@ -20,7 +20,16 @@ def run_tests():
 
   contents = f.getvalue()
   log('Wrote %d bytes to StringIO', len(contents))
-  log('contents = %s ... %s', contents[:10], contents[-10:])
+
+  # the f(g(), h()) problem with mark and sweep!!!
+  if 1:
+    log('contents = %s ... %s', contents[:10], contents[-10:])
+
+  # Does not have the problem
+  if 0:
+    a = contents[:10]
+    b = contents[-10:]
+    log('contents = %s ... %s', a, b)
 
   f2 = mylib.Stdout()
   f2.write('stdout\n')
