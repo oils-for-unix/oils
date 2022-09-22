@@ -95,7 +95,7 @@ setglobal_compile_flags() {
       ;;
 
     (gcevery)
-      flags="$flags -g -D GC_STATS -D GC_EVERY_ALLOC"
+      flags="$flags -g -D GC_STATS -D GC_EVERY_ALLOC -fsanitize=address"
       ;;
 
     (opt)
@@ -151,7 +151,7 @@ setglobal_link_flags() {
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    (asan)
+    (asan|gcevery)
       link_flags='-fsanitize=address'
       ;;
     (ubsan)
