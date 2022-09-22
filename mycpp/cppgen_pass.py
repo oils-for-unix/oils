@@ -1664,9 +1664,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(' = it.Value();\n')
 
           # Register loop variable as a stack root.
-          self.write_ind('  StackRoots _for({&');
-          self.accept(index_expr)
-          self.write_ind('});\n')
+          if CTypeIsManaged(c_item_type):
+            self.write_ind('  StackRoots _for({&');
+            self.accept(index_expr)
+            self.write_ind('});\n')
 
         elif isinstance(item_type, TupleType):  # for x, y in pairs
           if over_dict:
