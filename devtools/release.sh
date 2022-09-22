@@ -38,12 +38,14 @@
 #
 #   demo/osh-debug.sh analyze  # see what you ran
 # 
-# - Go to oilshell.org__deploy and "git add release/$VERSION".
 # - Go to oilshell.org repo and do:
+#   ./deploy.sh site                  # copy release
 #   ./deploy.sh bump-index-version
 #   make
-#   ./deploy.sh site
+#   ./deploy.sh site                  # copy new index
 #   ./deploy.sh bump-release-version
+# - Go to oilshell.org__deploy and "git add release/$VERSION".
+#   - git commit -a
 
 set -o nounset
 set -o pipefail

@@ -333,6 +333,11 @@ report() {
 }
 
 run-for-release() {
+  # Repeats what we did at the beginning of the release process, because _tmp/
+  # was deleted
+  oil-py-names
+  filter-methods
+
   methods-tsv
   report | tee $METRICS_DIR/overview.txt
 }
