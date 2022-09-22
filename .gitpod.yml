@@ -83,10 +83,7 @@
 tasks:
   - name: OSH
     command: |
-      sudo apt -y install python-dev gawk libreadline-dev ninja-build cmake python3-pip
-      test/spec.sh install-shells
-      build/dev.sh minimal 
-      test/spec.sh smoke
+      build/py.sh gitpod-minimal
 
 ## The 'ports' section defines various ports your may listen on are 
 ## configured in Gitpod on an authenticated URL. By default, all ports

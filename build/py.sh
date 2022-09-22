@@ -464,6 +464,15 @@ all() {
   build/doc.sh all-help
 }
 
+gitpod-minimal() {
+  ubuntu-deps
+  minimal 
+  test/spec.sh smoke
+
+  set -x
+  bin/osh -c 'echo hi'
+}
+
 if [ $# -eq 0 ]; then
   echo "usage: $0 <function name>"
   exit 1
