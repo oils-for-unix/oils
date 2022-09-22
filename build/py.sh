@@ -31,7 +31,9 @@ ubuntu-deps() {
   # libreadline-dev: needed for the build/prepare.sh Python build.
   # cmake: for build/py.sh yajl-release
   set -x  # show what needs sudo
-  sudo apt install \
+
+  # pass -y for say gitpod
+  sudo apt "$@" install \
     python-dev gawk libreadline-dev ninja-build cmake \
     "${PY3_DEPS[@]}"
   set +x
@@ -465,7 +467,7 @@ all() {
 }
 
 gitpod-minimal() {
-  ubuntu-deps
+  ubuntu-deps '-y'  # skip prompt
   minimal 
   test/spec.sh smoke
 
