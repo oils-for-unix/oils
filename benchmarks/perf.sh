@@ -14,19 +14,20 @@
 #
 #   $0 install  # install perf, including matching kernel symbols
 #
-#   $0 record-osh-parse (requires root)
+#   $0 profile-osh-parse       # make flame graph
 #
 #   Then look at _tmp/perf/osh-parse.svg in the browser
-#
-#   $0 text-report osh-parse
 
+#   $0 profile-osh-parse flat  # make flat text report
+#
 #   perf report -i _tmp/perf/osh-parse.perf  #  interactive
 #
 # Likewise for
 #
-#   $0 record-example-escape
-#   $0 text-report example-escape
-#   with output _tmp/perf/example-escape.svg
+#   $0 profile-example escape
+#     => _tmp/perf/example-escape.svg
+#   $0 profile-example escape flat
+#     => _tmp/perf/example-escape.report.txt
 
 set -o nounset
 set -o pipefail
@@ -129,7 +130,8 @@ make-readable() {
 
 _record-cpp() {
   local name=$1  # e.g. osh_eval, escape
-  shift
+  local mode=$2
+  shift 2
 
   # Can repeat 13 times without blowing heap
   local freq=10000
@@ -137,15 +139,24 @@ _record-cpp() {
 
   # call graph mode: needed to make flame graph
   local flag='-g'  
+
   #local flag='' # flat mode?
 
-  time perf record $flag -F $freq -o $BASE_DIR/$name.perf -- "$@"
+  local extra_flags=''
+  case $mode in 
+    (graph) extra_flags='-g' ;;
+    (flat)  extra_flags='' ;;
+    (*)     die "Mode should be graph or flat, got $mode" ;;
+  esac
+
+  time perf record $extra_flags -F $freq -o $BASE_DIR/$name.perf -- "$@"
 
   make-readable $name
 }
 
-record-cpp() { 
+profile-cpp() { 
   local name=$1
+  local mode=$2
   shift
 
   mkdir -p $BASE_DIR
@@ -153,25 +164,42 @@ record-cpp() {
   # -E preserve environment like BENCHMARK=1
   sudo -E $0 _record-cpp $name "$@";
 
-  make-graph $name
+  case $mode in 
+    (graph)
+      make-graph $name
+      ;;
+    (flat)
+      local out=$BASE_DIR/$name.report.txt
+      text-report $name | tee $out
+      echo "Wrote $out"
+      ;;
+    (*)
+      die "Mode should be graph or flat, got $mode"
+      ;;
+  esac
 }
 
-record-osh-parse() {
+profile-osh-parse() {
   # Profile parsing a big file.  More than half the time is in malloc
   # (_int_malloc in GCC), which is not surprising!
 
+  local mode=${1:-graph}
+
   local bin='_bin/cxx-opt/osh_eval'
   ninja $bin
-  record-cpp 'osh-parse' $bin --ast-format none -n benchmarks/testdata/configure
+  profile-cpp 'osh-parse' $mode $bin --ast-format none -n benchmarks/testdata/configure
 }
 
-record-example-escape() {
-  local bin='_bin/cxx-opt/mycpp/examples/escape.mycpp'
+profile-example() {
+  local example=${1:-escape}
+  local mode=${2:-graph}
+
+  local bin="_bin/cxx-opt/mycpp/examples/$example.mycpp"
 
   ninja $bin
   echo
 
-  BENCHMARK=1 record-cpp 'example-escape' $bin
+  BENCHMARK=1 profile-cpp "example-$example" $mode $bin
 }
 
 # Perf note: Without -o, for some reason osh output is shown on the console.
@@ -186,7 +214,8 @@ text-report() {
 
   local perf_raw=$BASE_DIR/$name.perf
 
-  perf report -g flat -i $perf_raw -n --stdio "$@"
+  # Flat report
+  perf report -i $perf_raw -n --stdio "$@"
 }
 
 # Shows instruction counts, branch misses, and so forth
