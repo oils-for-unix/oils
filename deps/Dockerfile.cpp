@@ -1,11 +1,8 @@
 FROM oilshell/soil-common
 
-WORKDIR /home/uke/tmp
-
 RUN deps/from-apt.sh cpp
 
 # Build other dependencies as non-root uke
-RUN useradd --create-home uke && chown -R uke /home/uke
 USER uke
 
 # We're in /home/uke/tmp, so these will create /home/uke/oil_DEPS, which will be 
@@ -16,6 +13,8 @@ COPY build/common.sh /home/uke/tmp/build/common.sh
 
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
+# TODO: slim down re2c, bloaty, and Python 3
+
 # re2c
 RUN deps/from-tar.sh layer-re2c
 
@@ -24,6 +23,7 @@ COPY --chown=uke _cache/bloaty-1.1.tar.bz2 \
 RUN deps/from-tar.sh layer-bloaty
 
 # Run MyPy under Python 3.10
+# Problem: .py files in _cache are used?
 COPY --chown=uke _cache/Python-3.10.4.tar.xz \
   /home/uke/tmp/_cache/Python-3.10.4.tar.xz
 RUN deps/from-tar.sh layer-py3

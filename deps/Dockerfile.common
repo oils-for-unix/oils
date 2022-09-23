@@ -16,3 +16,5 @@ RUN deps/from-apt.sh layer-for-soil
 
 # Note: can't remove apt lists yet, because other images will install more
 # packages.
+
+RUN useradd --create-home uke && chown -R uke /home/uke

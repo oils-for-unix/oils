@@ -19,6 +19,10 @@ live-image-tag() {
   local image_id=$1
 
   case $image_id in
+    (pea)
+      # based off Dockerfile.common
+      echo 'v-2022-09-23'
+      ;;
     (cpp)
       # Updated with bloaty, and slimmed down
       echo 'v-2022-09-23'
@@ -26,7 +30,7 @@ live-image-tag() {
     (dummy)
       echo 'v-2022-08-29'
       ;;
-    (clang|pea)
+    (clang)
       # Updated with layer-py3
       echo 'v-2022-08-05'
       ;;
