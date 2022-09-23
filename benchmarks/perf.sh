@@ -146,7 +146,8 @@ record-cpp() {
   local name=$1
   shift
 
-  sudo $0 _record-cpp $name "$@";
+  # -E preserve environment like BENCHMARK=1
+  sudo -E $0 _record-cpp $name "$@";
 
   make-graph $name
 }
@@ -162,7 +163,10 @@ record-osh-parse() {
 
 record-example-escape() {
   local bin='_bin/cxx-opt/mycpp/examples/escape.mycpp'
+
   ninja $bin
+  echo
+
   BENCHMARK=1 record-cpp 'example-escape' $bin
 }
 
