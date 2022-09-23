@@ -1,11 +1,33 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./perf.sh <function name>
+#   benchmarks/perf.sh <function name>
+#
+# Deps:
+#
+#   Clone https://github.com/brendangregg/FlameGraph
+#   Put it in ~/git/other/FlameGraph, or edit the paths below
+#
+# Examples:
+#
+#   $0 install  # install perf, including matching kernel symbols
+#
+#   $0 record-osh-parse (requires root)
+#
+#   Then look at _tmp/perf/osh-parse.svg in the browser
+#
+#   perf report -i _tmp/perf/osh-parse.perf  #  interactive
+#
+# Likewise for
+#
+#   $0 record-example-escape
+#   with output _tmp/perf/example-escape.svg
 
 set -o nounset
 set -o pipefail
 set -o errexit
+
+readonly BASE_DIR=_tmp/perf
 
 # TODO:
 # - kernel symbols.  Is that why there are a lot of [unknown] in opt mode?
@@ -25,7 +47,7 @@ set -o errexit
 install() {
   # linux-tools-generic is the kernel module
   # Apparently you need a package specific to the kernel, not sure why.
-  sudo apt install linux-tools-common linux-tools-4.13.0-41-generic linux-tools-generic
+  sudo apt install linux-tools-common linux-tools-$(uname -r) linux-tools-generic
 }
 
 debug-symbols() {
@@ -104,22 +126,45 @@ _record() {
 record() { sudo $0 _record; }
 
 _record-cpp() {
-  local flag=${1:-'-g'}  # pass '' for flat
-
-  # Profile parsing a big file.  More than half the time is in malloc
-  # (_int_malloc in GCC), which is not surprising!
-  local cmd=(
-   _bin/osh_parse.opt -n 
-   #benchmarks/testdata/configure-coreutils
-   benchmarks/testdata/configure
-  )
+  local name=$1  # e.g. osh_eval, escape
+  shift
 
   # Can repeat 13 times without blowing heap
   local freq=10000
   #export REPEAT=13 
-  time perf record $flag -F $freq -o perf.data -- "${cmd[@]}"
+
+  # call graph mode: needed to make flame graph
+  local flag='-g'  
+  #local flag='' # flat mode?
+
+  time perf record $flag -F $freq -o $BASE_DIR/$name.perf -- "$@"
+
+  make-readable $name
 }
-record-cpp() { sudo $0 _record-cpp "$@"; }
+
+record-cpp() { 
+  local name=$1
+  shift
+
+  sudo $0 _record-cpp $name "$@";
+
+  make-graph $name
+}
+
+record-osh-parse() {
+  # Profile parsing a big file.  More than half the time is in malloc
+  # (_int_malloc in GCC), which is not surprising!
+
+  local bin='_bin/cxx-opt/osh_eval'
+  ninja $bin
+  record-cpp 'osh-parse' $bin --ast-format none -n benchmarks/testdata/configure
+}
+
+record-example-escape() {
+  local bin='_bin/cxx-opt/mycpp/examples/escape.mycpp'
+  ninja $bin
+  BENCHMARK=1 record-cpp 'example-escape' $bin
+}
 
 # Perf note: Without -o, for some reason osh output is shown on the console.
 # It doesn't go to wc?
@@ -127,15 +172,18 @@ record-cpp() { sudo $0 _record-cpp "$@"; }
 
 _make-readable() {
   # This gets run as root
-  chmod 644 perf.data
-  chown andy perf.data
-  file perf.data
-  ls -l perf.data
-}
-make-readable() { sudo $0 _make-readable; }
+  local name=$1
 
-# 'perf report' is interactive
+  local perf_raw=$BASE_DIR/$name.perf
+  chmod 644 $perf_raw
+  chown andy $perf_raw
+  file $perf_raw
+  ls -l $perf_raw
+}
+make-readable() { sudo $0 _make-readable "$@"; }
+
 report() {
+  #### Show a batch report; 'perf report' is interactive
   perf report -g flat -n --stdio "$@"
 }
 
@@ -146,6 +194,9 @@ _stat() {
   # -e cache-misses only shows that stat
 }
 stat() { sudo $0 _stat; }
+
+# TODO: Link these two tools in ../oil_DEPS/bin or something
+# Make them work on CI
 
 # NOTE: I used this before with python-flamegraph too.
 flamegraph() {
@@ -158,8 +209,14 @@ stackcollapse-perf() {
 
 # http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html
 make-graph() {
-  perf script | stackcollapse-perf > out.perf-folded
-  flamegraph out.perf-folded > perf-kernel.svg
+  local name=${1:-osh-parse}
+
+  local dir=$BASE_DIR
+  perf script -i $dir/$name.perf | stackcollapse-perf > $dir/$name.perf-folded
+
+  flamegraph $dir/$name.perf-folded > $dir/$name.svg
+
+  echo "Wrote $dir/$name.svg"
 }
 
 "$@"
