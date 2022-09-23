@@ -1,36 +1,5 @@
 # This image is only for TESTING
 
-FROM debian:buster-slim
-
-RUN apt-get update
-
-WORKDIR /home/uke/tmp
-
-# Copy build scripts into the container and run them
-
-COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
-RUN deps/from-apt.sh layer-for-soil
-
-# Has build-essential and Python build deps, no system Python 3
-RUN deps/from-apt.sh test-image
-
-RUN useradd --create-home uke && chown -R uke /home/uke
-USER uke
-
-COPY --chown=uke _cache/Python-3.10.4.tar.xz \
-  /home/uke/tmp/_cache/Python-3.10.4.tar.xz
-
-COPY build/common.sh /home/uke/tmp/build/common.sh
-COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
-RUN deps/from-tar.sh layer-py3
-
-# Note: reproducing ensurepip failure here?
-COPY mycpp/common.sh /home/uke/tmp/mycpp/common.sh
-COPY deps/from-git.sh /home/uke/tmp/deps/from-git.sh
-RUN deps/from-git.sh layer-mycpp
-
-#RUN deps/from-git.sh git-clone
-
-#RUN deps/from-git.sh pip-install
+FROM oilshell/soil-common
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-test-image'"]

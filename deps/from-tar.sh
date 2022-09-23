@@ -199,26 +199,24 @@ extract-bloaty() {
   popd
 }
 
+readonly BLOATY_DIR="$REPO_ROOT/_cache/bloaty-1.1"
+
 build-bloaty() {
+  mkdir -p $BLOATY_DIR/build
+  pushd $BLOATY_DIR/build
 
-  # TODO:
-  # - Don't build bloaty in this dir; it bloats the Docker image
-  # - strip the binary: it goes from 36 MB -> 6.1 MB
-
-  mkdir -p $DEPS_DIR/bloaty
-  pushd $DEPS_DIR/bloaty
-
-  local tar_dir=$REPO_ROOT/_cache/bloaty-1.1
   # It's much slower without -G Ninja!
-  cmake -G Ninja $tar_dir
-  cmake --build .
+  cmake -G Ninja $BLOATY_DIR
+
+  # Limit parallelism.  This build is ridiculously expensive?
+  ninja -j 4
 
   popd
 }
 
-link-bloaty() {
+install-bloaty() {
   mkdir -p ../oil_DEPS/bin
-  ln -s -f -v $DEPS_DIR/bloaty/bloaty ../oil_DEPS/bin
+  strip -o ../oil_DEPS/bin/bloaty $BLOATY_DIR/build/bloaty
   ../oil_DEPS/bin/bloaty --help
 }
 
@@ -227,7 +225,15 @@ layer-bloaty() {
 
   extract-bloaty
   build-bloaty
-  link-bloaty
+  install-bloaty
+}
+
+bloaty-sizes() {
+  # 52 M
+  du --si -s _cache/bloaty*
+
+  # 694 MB, OK we have to fix this
+  du --si -s $DEPS_DIR/bin/bloaty
 }
 
 "$@"

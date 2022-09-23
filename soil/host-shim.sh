@@ -20,8 +20,8 @@ live-image-tag() {
 
   case $image_id in
     (cpp)
-      # Updated with bloaty
-      echo 'v-2022-09-20'
+      # Updated with bloaty, and slimmed down
+      echo 'v-2022-09-23'
       ;;
     (dummy)
       echo 'v-2022-08-29'

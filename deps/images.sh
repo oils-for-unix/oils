@@ -55,7 +55,7 @@ build() {
 tag() {
   local name=${1:-dummy}
 
-  local tag='v-2022-09-20'
+  local tag='v-2022-09-23'
   sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
 }
 
@@ -146,6 +146,29 @@ mount-test() {
     oilshell/soil-$name "${argv[@]}"
 }
 
+image-history() {
+  local image_id=${1:-dummy}
+  local tag=${2:-latest}
+
+  local image="oilshell/soil-$image_id"
+
+  sudo docker history $image:$tag
+}
+
+save() {
+  local image_id=${1:-dummy}
+  local tag=${2:-latest}
+
+  local image="oilshell/soil-$image_id"
+
+  mkdir -p _tmp/images
+  local out=_tmp/images/$image_id.tar 
+
+  # Use > instead of -o so it doesn'th have root permissions
+  time sudo docker save $image:$tag > $out
+  ls -l -h $out
+}
+
 # This shows CREATED, command CREATED BY, size
 # It's a human readable size though
 #
@@ -166,5 +189,6 @@ layers() {
     | jq --raw-output '.[0] | [.Size, .VirtualSize] | @tsv' \
     | commas
 }
+
 
 "$@"

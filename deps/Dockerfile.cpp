@@ -1,14 +1,6 @@
-FROM debian:buster-slim
-
-RUN apt-get update 
+FROM oilshell/soil-common
 
 WORKDIR /home/uke/tmp
-
-# Copy build scripts into the container and run them
-
-COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
-
-RUN deps/from-apt.sh layer-for-soil
 
 RUN deps/from-apt.sh cpp
 
