@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 #
+# Run the 'perf' tool and associated reports on OSH.
+#
 # Usage:
 #   benchmarks/perf.sh <function name>
 #
@@ -16,11 +18,14 @@
 #
 #   Then look at _tmp/perf/osh-parse.svg in the browser
 #
+#   $0 text-report osh-parse
+
 #   perf report -i _tmp/perf/osh-parse.perf  #  interactive
 #
 # Likewise for
 #
 #   $0 record-example-escape
+#   $0 text-report example-escape
 #   with output _tmp/perf/example-escape.svg
 
 set -o nounset
@@ -77,6 +82,131 @@ debug-symbols() {
   #libpython2.7-dbg 
 }
 
+# TODO: Link these two tools in ../oil_DEPS/bin or something
+# Make them work on CI
+
+# NOTE: I used this before with python-flamegraph too.
+flamegraph() {
+  ~/git/other/FlameGraph/flamegraph.pl "$@"
+}
+
+stackcollapse-perf() {
+  ~/git/other/FlameGraph/stackcollapse-perf.pl "$@"
+}
+
+# http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html
+make-graph() {
+  local name=${1:-osh-parse}
+
+  local dir=$BASE_DIR
+  perf script -i $dir/$name.perf | stackcollapse-perf > $dir/$name.perf-folded
+
+  flamegraph $dir/$name.perf-folded > $dir/$name.svg
+
+  echo "Wrote $dir/$name.svg"
+}
+
+_make-readable() {
+  local perf_raw=$1
+
+  chmod 644 $perf_raw
+
+  # original user
+  chown $USER $perf_raw
+}
+
+make-readable() {
+  # This gets run as root
+  local name=$1
+
+  local perf_raw=$BASE_DIR/$name.perf
+
+  sudo $0 _make-readable $perf_raw
+
+  file $perf_raw
+  ls -l $perf_raw
+}
+
+_record-cpp() {
+  local name=$1  # e.g. osh_eval, escape
+  shift
+
+  # Can repeat 13 times without blowing heap
+  local freq=10000
+  #export REPEAT=13 
+
+  # call graph mode: needed to make flame graph
+  local flag='-g'  
+  #local flag='' # flat mode?
+
+  time perf record $flag -F $freq -o $BASE_DIR/$name.perf -- "$@"
+
+  make-readable $name
+}
+
+record-cpp() { 
+  local name=$1
+  shift
+
+  mkdir -p $BASE_DIR
+
+  # -E preserve environment like BENCHMARK=1
+  sudo -E $0 _record-cpp $name "$@";
+
+  make-graph $name
+}
+
+record-osh-parse() {
+  # Profile parsing a big file.  More than half the time is in malloc
+  # (_int_malloc in GCC), which is not surprising!
+
+  local bin='_bin/cxx-opt/osh_eval'
+  ninja $bin
+  record-cpp 'osh-parse' $bin --ast-format none -n benchmarks/testdata/configure
+}
+
+record-example-escape() {
+  local bin='_bin/cxx-opt/mycpp/examples/escape.mycpp'
+
+  ninja $bin
+  echo
+
+  BENCHMARK=1 record-cpp 'example-escape' $bin
+}
+
+# Perf note: Without -o, for some reason osh output is shown on the console.
+# It doesn't go to wc?
+#perf record -o perf.data -- _bin/osh -n benchmarks/testdata/abuild | wc -l
+
+text-report() {
+  ### Show a batch report; 'perf report' is interactive
+
+  local name=$1
+  shift
+
+  local perf_raw=$BASE_DIR/$name.perf
+
+  perf report -g flat -i $perf_raw -n --stdio "$@"
+}
+
+# Shows instruction counts, branch misses, and so forth
+#
+# Wow 11 billion instructions!  9 billion cycles.  2.3 billion branches.  Crazy.
+# Only 21M branch misses, or 0.9%.  Interesting.
+_stat() {
+  perf stat -- "$@" | wc -l
+  # -e cache-misses only shows that stat
+}
+stat() { sudo $0 _stat "$@"; }
+
+stat-osh-parse() {
+  stat _bin/cxx-opt/osh_eval --ast-format none -n benchmarks/testdata/configure
+}
+
+
+#
+# OLD OVM stuff
+#
 
 # Parsing abuild in Debug mode:
 # 14%  PyEval_EvalFrameEx  -- hm.  Interpreter dispatch is a lot?  More than I
@@ -125,102 +255,5 @@ _record() {
 }
 record() { sudo $0 _record; }
 
-_record-cpp() {
-  local name=$1  # e.g. osh_eval, escape
-  shift
-
-  # Can repeat 13 times without blowing heap
-  local freq=10000
-  #export REPEAT=13 
-
-  # call graph mode: needed to make flame graph
-  local flag='-g'  
-  #local flag='' # flat mode?
-
-  time perf record $flag -F $freq -o $BASE_DIR/$name.perf -- "$@"
-
-  make-readable $name
-}
-
-record-cpp() { 
-  local name=$1
-  shift
-
-  # -E preserve environment like BENCHMARK=1
-  sudo -E $0 _record-cpp $name "$@";
-
-  make-graph $name
-}
-
-record-osh-parse() {
-  # Profile parsing a big file.  More than half the time is in malloc
-  # (_int_malloc in GCC), which is not surprising!
-
-  local bin='_bin/cxx-opt/osh_eval'
-  ninja $bin
-  record-cpp 'osh-parse' $bin --ast-format none -n benchmarks/testdata/configure
-}
-
-record-example-escape() {
-  local bin='_bin/cxx-opt/mycpp/examples/escape.mycpp'
-
-  ninja $bin
-  echo
-
-  BENCHMARK=1 record-cpp 'example-escape' $bin
-}
-
-# Perf note: Without -o, for some reason osh output is shown on the console.
-# It doesn't go to wc?
-#perf record -o perf.data -- _bin/osh -n benchmarks/testdata/abuild | wc -l
-
-_make-readable() {
-  # This gets run as root
-  local name=$1
-
-  local perf_raw=$BASE_DIR/$name.perf
-  chmod 644 $perf_raw
-  chown andy $perf_raw
-  file $perf_raw
-  ls -l $perf_raw
-}
-make-readable() { sudo $0 _make-readable "$@"; }
-
-report() {
-  #### Show a batch report; 'perf report' is interactive
-  perf report -g flat -n --stdio "$@"
-}
-
-# Wow 11 billion instructions!  9 billion cycles.  2.3 billion branches.  Crazy.
-# Only 21M branch misses, or 0.9%.  Interesting.
-_stat() {
-  perf stat -- _bin/osh -n benchmarks/testdata/abuild | wc -l
-  # -e cache-misses only shows that stat
-}
-stat() { sudo $0 _stat; }
-
-# TODO: Link these two tools in ../oil_DEPS/bin or something
-# Make them work on CI
-
-# NOTE: I used this before with python-flamegraph too.
-flamegraph() {
-  ~/git/other/FlameGraph/flamegraph.pl "$@"
-}
-
-stackcollapse-perf() {
-  ~/git/other/FlameGraph/stackcollapse-perf.pl "$@"
-}
-
-# http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html
-make-graph() {
-  local name=${1:-osh-parse}
-
-  local dir=$BASE_DIR
-  perf script -i $dir/$name.perf | stackcollapse-perf > $dir/$name.perf-folded
-
-  flamegraph $dir/$name.perf-folded > $dir/$name.svg
-
-  echo "Wrote $dir/$name.svg"
-}
 
 "$@"
