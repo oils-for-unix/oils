@@ -38,25 +38,37 @@ versioned-dest() {
   echo $dest
 }
 
-spec() {
-  ### Publish spec tests to a versioned directory on a web server
-
-  local user=$1
-  local host=$2
+share-dir-versioned() {
+  local dir=$1
+  local user=$2
+  local host=oilshell.org
 
   local dest
-  # Add hostname because spec tests aren't hermetic yet.
-  #dest="$(versioned-dest)/$(hostname)/spec"
-  dest="$(versioned-dest)/spec"
+  dest="$(versioned-dest)/$(basename $dir)"
 
   ssh $user@$host mkdir -p $dest
 
   # rsync is faster than scp and has the --no-target-directory behavior.
   # We need --copy-links because the CSS files are symlinks.
   rsync --archive --verbose --copy-links \
-    _tmp/spec/ $user@$host:$dest/
+    "$dir/" "$user@$host:$dest/"
 
   echo "Visit http://$dest/"
+
+}
+
+spec() {
+  ### Publish spec tests to a versioned directory on a web server
+
+  local user=$1
+  share-dir-versioned _tmp/spec $user
+}
+
+benchmarks-perf() {
+  ### Identical to above, except for the directory
+
+  local user=$1
+  share-dir-versioned _tmp/perf $user
 }
 
 benchmark() {
