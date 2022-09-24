@@ -60,6 +60,8 @@ layer-locales() {
 
 dev-minimal() {
   local -a packages=(
+    # Shouldn't require a C++ compiler in build-essential?  Only gcc?
+
     libreadline-dev
     procps  # pgrep used by test/interactive
     gawk
@@ -119,6 +121,8 @@ cpp() {
   ### For both cpp-small and cpp-spec
 
   local -a packages=(
+    build-essential
+
     # retrieving deps -- TODO: move to build time
     wget
 
@@ -137,6 +141,7 @@ cpp() {
     # To build bloaty
     # TODO: should we use multi-stage builds?
     cmake
+    bzip2  # to extract bloaty
 
     ninja-build
     # to create _test/index.html
@@ -152,7 +157,7 @@ cpp() {
 }
 
 clang() {
-  ### For both cpp-small and cpp-spec
+  ### For cpp-coverage
 
   local -a packages=(
     # retrieving deps -- TODO: move to build time

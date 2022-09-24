@@ -113,13 +113,22 @@ EOF
 oil-native() {
   ### Report on the ones we just built
 
-  # TODO: could compare GCC and Clang
+  # TODO: could compare GCC and Clang once we have R on the CI images
   local -a targets=(_bin/cxx-{dbg,opt}/osh_eval)
   ninja "${targets[@]}"
 
   collect-and-report $OIL_BASE_DIR "${targets[@]}"
 
   ls -l $OIL_BASE_DIR
+}
+
+compare-gcc-clang() {
+  ### Run by Soil 'cpp-coverage' task, because it has clang
+
+  local -a targets=(_bin/{clang,cxx}-dbg/osh_eval _bin/{clang,cxx}-opt/osh_eval.stripped)
+  ninja "${targets[@]}"
+
+  ls -l "${targets[@]}" | tee _tmp/metrics/compare-gcc-clang.txt
 }
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)

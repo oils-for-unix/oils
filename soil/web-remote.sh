@@ -132,11 +132,17 @@ format-wwz-index() {
     </p>
 
     <h1>CI job <code>$job_id</code></h1>
+EOF
 
+  if test -f _tmp/soil/image.html; then
+    cat <<EOF
     <p>
       <a href="_tmp/soil/image.html">Container Image Stats</a>
     </p>
+EOF
+  fi
 
+  cat <<EOF
     <table>
       <thead>
         <tr>
@@ -202,8 +208,7 @@ format-image-stats() {
 
   cat <<EOF
     <p id="home-link">
-        <a href="..">Up</a>
-      | <a href="/">travis-ci.oilshell.org</a>
+        <a href="/">travis-ci.oilshell.org</a>
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 

@@ -208,6 +208,7 @@ mycpp-examples-coverage mycpp/TEST.sh examples-coverage                 _test/cl
 HACK-asdl               build/cpp.sh gen-asdl                           -
 cpp-coverage            cpp/TEST.sh coverage                            _test/clang-coverage/cpp/html/index.html
 unified-coverage        test/coverage.sh unified-report                 _test/clang-coverage/unified/html/index.html
+compare-gcc-clang       metrics/native-code.sh compare-gcc-clang        _tmp/metrics/compare-gcc-clang.txt
 EOF
 }
 

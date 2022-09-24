@@ -1,9 +1,9 @@
 #!/usr/bin/Rscript
 #
-# bytecode.R -- Analyze output of opyc dis-tables.
+# metrics/native-code.R -- Analyze output of bloaty
 #
 # Usage:
-#   bytecode.R ACTION IN_DIR OUT_DIR
+#   metrics/native-code.R ACTION IN_DIR OUT_DIR
 
 library(dplyr)
 library(tidyr)  # spread()
