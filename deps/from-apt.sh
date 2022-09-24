@@ -16,6 +16,13 @@ set -o errexit
 #   zlib1g-dev: needed for 'import zlib'
 declare -a PY3_DEPS=(libssl-dev libffi-dev zlib1g-dev)
 
+# https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/reference.md#run---mounttypecache
+
+init-deb-cache() {
+  rm -f /etc/apt/apt.conf.d/docker-clean
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+}
+
 layer-python-symlink() {
   ### A special layer for building CPython; done as root
   ln -s -f -v /usr/bin/python2 /usr/bin/python
@@ -26,6 +33,15 @@ layer-for-soil() {
   # git: for checking out code
   # python2: for various tools
   apt-get install -y gcc git python2
+}
+
+layer-common() {
+  # with RUN --mount=type=cache
+
+  # Can't install packages in Debian without this
+  apt-get update  # uses /var/lib/apt
+
+  layer-for-soil  # uses /var/cache/apt
 }
 
 layer-locales() {

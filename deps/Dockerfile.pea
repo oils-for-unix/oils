@@ -1,6 +1,9 @@
 FROM oilshell/soil-common
 
-RUN deps/from-apt.sh pea
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh pea
 
 USER uke
 

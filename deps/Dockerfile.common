@@ -2,17 +2,20 @@
 
 FROM debian:buster-slim
 
-# Can't install packages without this
-# ~13 seconds
-RUN apt-get update 
-
 WORKDIR /home/uke/tmp
 
 # Copy build scripts into the container and run them
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 
-# ~184 seconds!  too long
-RUN deps/from-apt.sh layer-for-soil
+RUN deps/from-apt.sh init-deb-cache
+
+# --no-cache will make these invisible
+# And it appears that id= makes them stable across Dockerfile.{common,pea} ?
+# So we have a single shared cache.
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh layer-common
 
 # Note: can't remove apt lists yet, because other images will install more
 # packages.

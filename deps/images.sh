@@ -28,8 +28,24 @@ set -o errexit
 #
 # https://stackoverflow.com/questions/69173822/docker-build-uses-wrong-dockerfile-content-bug
 
+# NOTE: This also clears the exec.cachemount
 prune() {
   sudo docker builder prune -f
+}
+
+# https://stackoverflow.com/questions/62834806/docker-buildkit-cache-location-size-and-id
+#
+# It lives somewhere in /var/lib/docker/overlay2
+
+show-cachemount() {
+  sudo docker system df -v --format '{{ .BuildCache | json }}' \
+    | jq '.[] | select(.CacheType == "exec.cachemount")' | tee _tmp/cachemount.txt
+
+  cat _tmp/cachemount.txt | jq -r '.ID' | while read id; do
+    sudo tree /var/lib/docker/overlay2/$id
+    sudo du --si -s /var/lib/docker/overlay2/$id
+    echo
+  done
 }
 
 build() {
@@ -42,6 +58,7 @@ build() {
   else
     flags=('--no-cache=true')
   fi
+  #flags+=('--progress=plain')
 
   # Uh BuildKit is not the default on Linux!
   # http://jpetazzo.github.io/2021/11/30/docker-build-container-images-antipatterns/
@@ -55,7 +72,7 @@ build() {
 tag() {
   local name=${1:-dummy}
 
-  local tag='v-2022-09-23'
+  local tag='v-2022-09-24'
   sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
 }
 
@@ -189,6 +206,5 @@ layers() {
     | jq --raw-output '.[0] | [.Size, .VirtualSize] | @tsv' \
     | commas
 }
-
 
 "$@"

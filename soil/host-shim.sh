@@ -20,8 +20,8 @@ live-image-tag() {
 
   case $image_id in
     (pea)
-      # based off Dockerfile.common
-      echo 'v-2022-09-23'
+      # based off Dockerfile.common, with cache mount
+      echo 'v-2022-09-24'
       ;;
     (cpp)
       # Updated with bloaty, and slimmed down

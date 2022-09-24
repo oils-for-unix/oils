@@ -54,7 +54,6 @@ share-dir-versioned() {
     "$dir/" "$user@$host:$dest/"
 
   echo "Visit http://$dest/"
-
 }
 
 spec() {
