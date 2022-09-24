@@ -94,12 +94,22 @@ test-image() {
 
 other-tests() {
   local -a packages=(
+    # Includes C++ compiler.  This popped up with --no-install-recommends
+    build-essential
+
     libreadline-dev
     python2-dev  # osh2oil needs build/py.sh minimal
+
+    make  # to build py27.grammar.marshal, ugh
 
     python3  # for py3-parse
 
     r-base-core  # for r-libs
+
+    # ICU for R stringi package.  This makes compilation faster; otherwise it
+    # tries to compile it from source.
+    # https://stringi.gagolewski.com/install.html
+    libicu-dev
   )
 
   apt-install "${packages[@]}"
