@@ -22,6 +22,11 @@ readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS
 
 source build/common.sh  # $PREPARE_DIR, $PY27
 
+clean-temp() {
+  ### Works for layer-bloaty now.  TODO: re2c, cmark, Python 3, spec-bin
+  rm -r -f -v _cache/
+}
+
 #
 # re2c dependency
 #

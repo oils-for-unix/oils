@@ -24,11 +24,12 @@ live-image-tag() {
       echo 'v-2022-09-24'
       ;;
     (cpp)
-      # Updated with bloaty, and slimmed down
-      echo 'v-2022-09-23'
+      # Slimmed down bloaty, with cache mount
+      echo 'v-2022-09-24'
       ;;
     (dummy)
-      echo 'v-2022-08-29'
+      # cache mount
+      echo 'v-2022-09-24'
       ;;
     (clang)
       # Updated with layer-py3

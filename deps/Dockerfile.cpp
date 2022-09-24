@@ -1,6 +1,9 @@
 FROM oilshell/soil-common
 
-RUN deps/from-apt.sh cpp
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh cpp
 
 # Build other dependencies as non-root uke
 USER uke
@@ -13,14 +16,15 @@ COPY build/common.sh /home/uke/tmp/build/common.sh
 
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
-# TODO: slim down re2c, bloaty, and Python 3
+COPY --chown=uke _cache/bloaty-1.1.tar.bz2 \
+  /home/uke/tmp/_cache/bloaty-1.1.tar.bz2
+RUN deps/from-tar.sh layer-bloaty && \
+    deps/from-tar.sh clean-temp
+
+# TODO: slim down re2c, Python 3, like clean-temp
 
 # re2c
 RUN deps/from-tar.sh layer-re2c
-
-COPY --chown=uke _cache/bloaty-1.1.tar.bz2 \
-  /home/uke/tmp/_cache/bloaty-1.1.tar.bz2
-RUN deps/from-tar.sh layer-bloaty
 
 # Run MyPy under Python 3.10
 # Problem: .py files in _cache are used?

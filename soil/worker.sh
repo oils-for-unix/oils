@@ -115,6 +115,7 @@ pea-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host     -
+dump-locale         soil/worker.sh dump-locale        -
 py-source           build/py.sh py-source             -
 check-types         pea/TEST.sh check-types           -
 run-tests           pea/TEST.sh run-tests             -
@@ -255,6 +256,7 @@ EOF
 other-tests-tasks() {
   cat <<EOF
 dump-distro            soil/worker.sh dump-distro                 -
+dump-locale            soil/worker.sh dump-locale                 -
 time-test              benchmarks/time-test.sh soil-run           -
 csv-concat-test        devtools/csv-concat-test.sh soil-run       -
 osh2oil                test/osh2oil.sh soil-run                   -
