@@ -2,4 +2,11 @@
 
 FROM oilshell/soil-common
 
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh test-image
+
+USER uke
+
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-test-image'"]

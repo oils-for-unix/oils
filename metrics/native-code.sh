@@ -128,6 +128,7 @@ compare-gcc-clang() {
   local -a targets=(_bin/{clang,cxx}-dbg/osh_eval _bin/{clang,cxx}-opt/osh_eval.stripped)
   ninja "${targets[@]}"
 
+  mkdir -p _tmp/metrics
   ls -l "${targets[@]}" | tee _tmp/metrics/compare-gcc-clang.txt
 }
 

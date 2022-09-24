@@ -20,11 +20,15 @@ live-image-tag() {
 
   case $image_id in
     (pea)
-      # based off Dockerfile.common, with cache mount
+      # soil-common and cache mount
       echo 'v-2022-09-24'
       ;;
     (cpp)
       # Slimmed down bloaty, with cache mount
+      echo 'v-2022-09-24'
+      ;;
+    (dev-minimal)
+      # soil-common and cache mount
       echo 'v-2022-09-24'
       ;;
     (dummy)
@@ -169,7 +173,7 @@ save-image-stats() {
   $docker history $image:$tag > $soil_dir/image-layers.txt
   log "Wrote $soil_dir/image-layers.txt"
 
-  # NOTE: Only works with docker!  podman doesn't support --format ?
+  # NOTE: Works with docker but not podman!  podman doesn't support --format ?
   {
     # --human=0 gives us raw bytes and ISO timestamps
     # --no-trunc shows the full command line
@@ -177,6 +181,10 @@ save-image-stats() {
     $docker history --no-trunc --human=0 --format '{{.Size}}\t{{.CreatedAt}}\t{{.CreatedBy}}' $image:$tag
   } > $soil_dir/image-layers.tsv
   log "Wrote $soil_dir/image-layers.tsv"
+
+  # TODO: sum into image-layers.json
+  # - total size
+  # - earliest and layer date?
 
   here-schema-tsv >$soil_dir/image-layers.schema.tsv <<EOF
 column_name   type

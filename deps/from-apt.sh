@@ -58,6 +58,12 @@ layer-locales() {
   locale-gen --purge en_US.UTF-8
 }
 
+test-image() {
+  ### For testing builds, not run on CI
+
+  apt-install build-essential "${PY3_DEPS[@]}"
+}
+
 dev-minimal() {
   local -a packages=(
     # Shouldn't require a C++ compiler in build-essential?  Only gcc?
@@ -67,6 +73,7 @@ dev-minimal() {
     gawk
 
     python2-dev  # for building Python extensions
+    python-setuptools  # Python 2, for flake8
 
     python-pip  # flake8 typing
     python3-setuptools  # mypy
@@ -79,19 +86,13 @@ dev-minimal() {
     jq
   )
 
-  apt-get install -y "${packages[@]}"
+  apt-install "${packages[@]}"
 
 }
 
 pea() {
   # For installing MyPy
   apt-install python3-pip
-}
-
-test-image() {
-  ### Minimal build with custom Python 3
-
-  apt-get install -y build-essential "${PY3_DEPS[@]}"
 }
 
 other-tests() {

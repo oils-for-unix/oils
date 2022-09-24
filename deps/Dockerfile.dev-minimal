@@ -1,18 +1,13 @@
-FROM debian:buster-slim
+FROM oilshell/soil-common
 
-RUN apt-get update
-
-WORKDIR /home/uke/tmp
-
-# Copy build scripts into the container and run them
-
+# Copy again to prevent unsound caching
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 
-RUN deps/from-apt.sh layer-for-soil
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh dev-minimal
 
-RUN deps/from-apt.sh dev-minimal
-
-RUN useradd --create-home uke && chown -R uke /home/uke
 USER uke
 
 COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
