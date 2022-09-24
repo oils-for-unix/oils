@@ -1,22 +1,14 @@
-FROM debian:buster-slim
+FROM oilshell/soil-common
 
-RUN apt-get update 
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    echo 'unsound caching workaround' && \
+    deps/from-apt.sh other-tests
 
-WORKDIR /home/uke/tmp
-
-# Copy build scripts into the container and run them
-
-COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
-
-RUN deps/from-apt.sh layer-for-soil
-
-RUN deps/from-apt.sh other-tests
-
-# Build other dependencies as non-root uke
-RUN useradd --create-home uke && chown -R uke /home/uke
 USER uke
 
 COPY deps/from-R.sh /home/uke/tmp/deps/from-R.sh
 RUN deps/from-R.sh other-tests
 
-CMD ["sh", "-c", "echo 'hello from oilshell/soil-other-tests buildkit'"]
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-other-tests'"]

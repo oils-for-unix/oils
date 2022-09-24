@@ -31,6 +31,10 @@ live-image-tag() {
       # cache mount
       echo 'v-2022-09-24'
       ;;
+    (other-tests)
+      # soil-common and cache mount
+      echo 'v-2022-09-24'
+      ;;
     (clang)
       # Updated with layer-py3
       echo 'v-2022-08-05'

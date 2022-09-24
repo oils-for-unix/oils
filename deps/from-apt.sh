@@ -18,6 +18,13 @@ declare -a PY3_DEPS=(libssl-dev libffi-dev zlib1g-dev)
 
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/reference.md#run---mounttypecache
 
+# TODO: Use this for ALL images
+apt-install() {
+  ### Helper to slim down images
+
+  apt-get install -y --no-install-recommends "$@"
+}
+
 init-deb-cache() {
   rm -f /etc/apt/apt.conf.d/docker-clean
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
@@ -32,7 +39,7 @@ layer-for-soil() {
   # gcc: time-helper is needed.  TODO: remove this dependency
   # git: for checking out code
   # python2: for various tools
-  apt-get install -y gcc git python2
+  apt-install gcc git python2
 }
 
 layer-common() {
@@ -76,7 +83,7 @@ dev-minimal() {
 
 pea() {
   # For installing MyPy
-  apt-get install -y python3-pip
+  apt-install python3-pip
 }
 
 test-image() {
@@ -95,7 +102,7 @@ other-tests() {
     r-base-core  # for r-libs
   )
 
-  apt-get install -y "${packages[@]}"
+  apt-install "${packages[@]}"
 }
 
 cpp() {
@@ -131,7 +138,7 @@ cpp() {
     busybox-static mksh zsh
   )
 
-  apt-get install -y "${packages[@]}"
+  apt-install "${packages[@]}"
 }
 
 clang() {

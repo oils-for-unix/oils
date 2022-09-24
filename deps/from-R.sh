@@ -7,6 +7,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# TODO: cache the package downloads with Docker, since it takes about 20
+# seconds to retrieve.
+
 other-tests() {
   readonly R_PATH=~/R  # duplicates what's in test/common.sh
 
