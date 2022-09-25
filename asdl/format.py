@@ -348,6 +348,7 @@ class _PrettyPrinter(object):
             s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
             f.WriteRaw((s, num_chars))
           else:
+            cast(mylib.BufWriter, single_f.f).reset()
             f.write('\n')
             self.PrintNode(val, f, indent+INDENT+INDENT)
 
@@ -376,6 +377,8 @@ class _PrettyPrinter(object):
       s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
       f.WriteRaw((s, num_chars))
       return
+    else:
+      cast(mylib.BufWriter, single_f.f).reset()
 
     UP_node = node  # for mycpp
     tag = node.tag_()
