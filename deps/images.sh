@@ -72,7 +72,7 @@ build() {
 tag() {
   local name=${1:-dummy}
 
-  local tag='v-2022-09-25'
+  local tag='v-2022-09-26'
   sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
 }
 
