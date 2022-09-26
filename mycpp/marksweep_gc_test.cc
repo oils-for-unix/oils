@@ -5,19 +5,20 @@
 #include "vendor/greatest.h"
 
 TEST hash_value_test() {
-  int dummy1 = 41;
-  int dummy2 = 42;
-  void *p1 = static_cast<void *>(&dummy1);
-  void *p2 = static_cast<void *>(&dummy2);
+  void *p1 = malloc(1);
+  void *p2 = malloc(1);
+  void *p3 = malloc(1);
 
   std::unordered_set<void *> set;
   set.insert(p1);
 
   log("&dummy1 = %p", p1);
   log("&dummy2 = %p", p2);
+  log("&dummy2 = %p", p3);
   std::hash<void *> hasher;
-  log("std::hash<void*>(&dummy1) = %x", hasher(p1));
-  log("std::hash<void*>(&dummy2) = %x", hasher(p2));
+  log("std::hash<void*>(p1) = %x", hasher(p1));
+  log("std::hash<void*>(p2) = %x", hasher(p2));
+  log("std::hash<void*>(p3) = %x", hasher(p3));
 
   PASS();
 }
