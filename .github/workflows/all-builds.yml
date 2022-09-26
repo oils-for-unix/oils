@@ -9,8 +9,8 @@ on:
   # us from testing dev / feature branches.  We would have to create a PR
   # first?
   pull_request:
-  push:
-    branches: ['soil-staging', 'dev*', 'jesse*']
+  #push:
+  #  branches: ['soil-staging', 'dev*', 'jesse*']
   #
   # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
   # I think that is sufficient for dev branches.
