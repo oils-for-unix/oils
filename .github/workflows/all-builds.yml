@@ -9,6 +9,9 @@ on:
   # us from testing dev / feature branches.  We would have to create a PR
   # first?
   pull_request:
+  # Run on PR merge to soil-staging, so that it will get auto-merged to master
+  push:
+    branches: ['soil-staging']
   #push:
   #  branches: ['soil-staging', 'dev*', 'jesse*']
   #
