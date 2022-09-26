@@ -249,6 +249,12 @@ compare-examples() {
   local status=$?
   set -o errexit
 
+  if Rscript -e 'print("hi from R")'; then
+    # TODO: make report with R
+    echo 'hi'
+  fi
+
+  # Only for CI
   find-dir-html _test mycpp-examples
 
   # Now we want to zip up

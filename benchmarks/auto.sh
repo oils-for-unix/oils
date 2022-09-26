@@ -158,6 +158,11 @@ demo-tasks() {
   done
 }
 
+# Measure the parser with cachegrind in CI.
+#
+# TODO: Also want benchmarks/compute.sh in CI.  And enhance it to use
+# cachegrind, not wall time.
+
 soil-run() {
   local base_dir=_tmp/benchmark-data
   mkdir -p $base_dir
