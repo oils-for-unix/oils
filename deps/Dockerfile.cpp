@@ -14,9 +14,11 @@ USER uke
 # We're in /home/uke/tmp, so these will create /home/uke/oil_DEPS, which will be 
 # a sibling of the runtime bind mount /home/uke/oil.
 
+COPY deps/from-R.sh /home/uke/tmp/deps/from-R.sh
+RUN deps/from-R.sh other-tests
+
 # Used by deps/from-tar.sh
 COPY build/common.sh /home/uke/tmp/build/common.sh
-
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
 COPY --chown=uke _cache/bloaty-1.1.tar.bz2 \

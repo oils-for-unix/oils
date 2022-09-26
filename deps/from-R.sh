@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# TODO: cache the package downloads with Docker, since it takes about 20
+# TODO: cache the package downloads with Docker, since they takes about 20
 # seconds to retrieve.
 
 other-tests() {
@@ -23,7 +23,11 @@ other-tests() {
   # installation below.
   INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
 
-  # TODO: This does not return non-zero status if there are installation errors!
+  # Note: The above doesn't seem to return non-zero status if there are
+  # installation errors!
+
+  # Explicit test copied from devtools/R-test.sh
+  R_LIBS_USER=$R_PATH Rscript -e 'library(dplyr); library(tidyr); library(stringr); print("OK")'
 }
 
 "$@"

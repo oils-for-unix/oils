@@ -16,6 +16,16 @@ set -o errexit
 #   zlib1g-dev: needed for 'import zlib'
 declare -a PY3_DEPS=(libssl-dev libffi-dev zlib1g-dev)
 
+# for deps/from-R.sh
+declare -a R_DEPS=(
+    r-base-core  # R interpreter
+
+    # ICU for the R stringi package.  This makes compilation faster; otherwise
+    # it tries to compile it from source.
+    # https://stringi.gagolewski.com/install.html
+    libicu-dev
+)
+
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/reference.md#run---mounttypecache
 
 # TODO: Use this for ALL images
@@ -105,14 +115,10 @@ other-tests() {
 
     make  # to build py27.grammar.marshal, ugh
 
-    python3  # for py3-parse
+    # for py3-parse -- is this obsolete?
+    python3
 
-    r-base-core  # for r-libs
-
-    # ICU for R stringi package.  This makes compilation faster; otherwise it
-    # tries to compile it from source.
-    # https://stringi.gagolewski.com/install.html
-    libicu-dev
+    "${R_DEPS[@]}"
   )
 
   apt-install "${packages[@]}"
@@ -138,6 +144,8 @@ cpp() {
 
     # for custom Python 3
     "${PY3_DEPS[@]}"
+
+    "${R_DEPS[@]}"
 
     # To build bloaty
     # TODO: should we use multi-stage builds?
