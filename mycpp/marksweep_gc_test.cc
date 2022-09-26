@@ -1,6 +1,26 @@
 
+#include <unordered_set>
+
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
+
+TEST hash_value_test() {
+  int dummy1 = 41;
+  int dummy2 = 42;
+  void *p1 = static_cast<void *>(&dummy1);
+  void *p2 = static_cast<void *>(&dummy2);
+
+  std::unordered_set<void *> set;
+  set.insert(p1);
+
+  log("&dummy1 = %p", p1);
+  log("&dummy2 = %p", p2);
+  std::hash<void *> hasher;
+  log("std::hash<void*>(&dummy1) = %x", hasher(p1));
+  log("std::hash<void*>(&dummy2) = %x", hasher(p2));
+
+  PASS();
+}
 
 TEST string_collection_test() {
   Str *test_str = StrFromC("foo");
@@ -34,7 +54,6 @@ TEST string_collection_test() {
   // NOTE(Jesse): ASAN detects UAF here when I tested by toggling this on
   //
   // ASSERT(are_equal(test_str, StrFromC("foo")));
-
 
   PASS();
 }
@@ -93,6 +112,7 @@ int main(int argc, char **argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(hash_value_test);
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);
 

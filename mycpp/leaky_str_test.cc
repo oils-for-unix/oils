@@ -885,8 +885,6 @@ TEST test_str_contains() {
   PASS();
 }
 
-
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
