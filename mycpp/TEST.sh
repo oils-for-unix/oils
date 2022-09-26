@@ -244,11 +244,15 @@ compare-examples() {
   ./NINJA-config.sh
 
   # 'mycpp-all' has other stuff like type checking alone, stripping, clang builds
+  # Note: only tests CORRECTNESS of benchmarks.  To test speed, we run them
+  # SERIALLY with benchmarks/report.sh.  TODO: could move that here.
+
   set +o errexit
   ninja mycpp-logs-equal
   local status=$?
   set -o errexit
 
+  # Only for CI
   find-dir-html _test mycpp-examples
 
   # Now we want to zip up
@@ -258,10 +262,10 @@ compare-examples() {
 test-translator() {
   ### Invoked by soil/worker.sh
 
-  # Test that examples don't leak
+  # Test that examples don't leak (note known failures above)
   ASAN_OPTIONS='' examples-variant '' asan
 
-  # Test with more collections
+  # Test with more collections (note known failures above)
   ASAN_OPTIONS='' examples-variant '' gcevery
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log

@@ -24,8 +24,8 @@ live-image-tag() {
       echo 'v-2022-09-24'
       ;;
     (cpp)
-      # Added R packages
-      echo 'v-2022-09-25'
+      # Added cmark for benchmark HTML
+      echo 'v-2022-09-26'
       ;;
     (dev-minimal)
       # soil-common and cache mount

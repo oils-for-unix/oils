@@ -178,6 +178,11 @@ EOF
 cpp-small-tasks() {
   # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
   # build-minimal
+
+  # Note: mycpp-benchmarks runs benchmarks SERIALLY with ninja -j 1, and makes HTML
+  # And then we have correctness for mycpp-translator.  Somewhat redundant but
+  # it's OK for now.
+
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
@@ -188,6 +193,7 @@ line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 native-code      metrics/native-code.sh oil-native     _tmp/metrics/oil-native/index.html
 shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
+mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
 mycpp-translator mycpp/TEST.sh test-translator         _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 make-tar         devtools/release-native.sh make-tar   _release/oil-native.tar

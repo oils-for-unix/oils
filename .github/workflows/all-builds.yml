@@ -2,10 +2,23 @@
 
 name: oil
 on:
+  # We are running into the pitfall here
+  # https://fusectore.dev/2022/09/25/github-actions-pitfalls.html
+  # We only run for members now, not external contributors
+  # But I think their solution of push: branches: [soil-staging] would prevent
+  # us from testing dev / feature branches.  We would have to create a PR
+  # first?
+  pull_request:
+  #push:
+  #  branches: ['soil-staging', 'dev*', 'jesse*']
+  #
+  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+  # I think that is sufficient for dev branches.
+
   # don't run CI on master because we test soil-staging and auto-merge.
-  push:
-    branches-ignore:
-      - master
+  #push:
+  #  branches-ignore:
+  #    - master
 jobs:
   dummy_orig:
     runs-on: ubuntu-latest

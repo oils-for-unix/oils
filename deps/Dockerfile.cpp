@@ -21,6 +21,9 @@ RUN deps/from-R.sh other-tests
 COPY build/common.sh /home/uke/tmp/build/common.sh
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
+# For making benchmark HTML
+RUN deps/from-tar.sh layer-cmark
+
 COPY --chown=uke _cache/bloaty-1.1.tar.bz2 \
   /home/uke/tmp/_cache/bloaty-1.1.tar.bz2
 RUN deps/from-tar.sh layer-bloaty && \
