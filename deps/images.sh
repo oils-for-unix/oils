@@ -86,6 +86,17 @@ list-images() {
   done
 }
 
+push-all-latest() {
+  ### 'latest' can lag behind the tagged version, so push to catch up
+
+  # because our 'my-sizes' script fetches the latest manifest
+
+  list-images | while read image_id; do
+    echo "___ $image_id"
+    push $image_id
+  done
+}
+
 tag-all() {
   list-images | xargs --verbose -- $0 tag $image
 }

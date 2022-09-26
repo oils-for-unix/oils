@@ -45,7 +45,7 @@ live-image-tag() {
       ;;
     (clang)
       # Updated with layer-py3
-      echo 'v-2022-08-05'
+      echo 'v-2022-09-25'
       ;;
     (*)
       echo 'v-2022-08-04'

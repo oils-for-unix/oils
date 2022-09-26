@@ -182,7 +182,7 @@ clang() {
     "${PY3_DEPS[@]}"
   )
 
-  apt-get install -y "${packages[@]}"
+  apt-install "${packages[@]}"
 }
 
 ovm-tarball() {
