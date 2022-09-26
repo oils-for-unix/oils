@@ -52,7 +52,7 @@ layer-common() {
 }
 
 layer-locales() {
-  apt-get install -y locales
+  apt-install locales
   # uncomment in a file
   sed -i 's/# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
   locale-gen --purge en_US.UTF-8
@@ -187,30 +187,37 @@ clang() {
 
 ovm-tarball() {
   local -a packages=(
+    # retrieving deps -- TODO: move to build time
+    wget
+    # for wget https://.  TODO: remove when the build is hermetic
+    ca-certificates
+
     # spec tests need the 'time' command, not the shell builtin
-    time
+    'time'
 
     # This is a separate package needed for re2c.  TODO: remove when we've
     # built it into the image.
     g++
+    # for cmark and yajl
+    cmake
+    # needed to build cmark (although we could use Ninja)
+    make
+
+    xz-utils  # extract e.g. re2c tarball
+    bzip2  # extract e.g. busybox tarball
 
     # line_input.so needs this
     libreadline-dev
     python2-dev
 
-    # retrieving deps -- TODO: move to build time
-    wget
     # for syscall measurements
     strace
-
-    # for cmark and yajl
-    cmake
 
     # test/spec-runner.sh needs this
     gawk
   )
 
-  apt-get install -y "${packages[@]}"
+  apt-install "${packages[@]}"
 }
 
 if test $(basename $0) = 'from-apt.sh'; then
