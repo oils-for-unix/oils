@@ -10,7 +10,7 @@ on:
   # first?
   # pull_request:
   # push:
-  #   branches: ['dev*', 'jesse*']
+  #   branches: ['soil-staging', 'dev*', 'jesse*']
   #
   # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
   # I think that is sufficient for dev branches.
