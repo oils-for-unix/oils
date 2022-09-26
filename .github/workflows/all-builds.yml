@@ -8,6 +8,12 @@ on:
   # But I think their solution of push: branches: [soil-staging] would prevent
   # us from testing dev / feature branches.  We would have to create a PR
   # first?
+  # pull_request:
+  # push:
+  #   branches: ['dev*', 'jesse*']
+  #
+  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+  # I think that is sufficient for dev branches.
 
   # don't run CI on master because we test soil-staging and auto-merge.
   push:
