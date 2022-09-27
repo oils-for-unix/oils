@@ -615,8 +615,16 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                                       debug_f, line_input)  # type: comp_ui._IDisplay
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
+      if 'HISTFILE_%s' % lang.upper() in environ:
+        history_filename = environ.get('HISTFILE_%s' % lang.upper())
+        print(repr(history_filename))
+      elif 'XDG_DATA_HOME' in environ:
+        history_filename = os_path.join(
+          environ.get('XDG_DATA_HOME'), 'oil/history_%s' % lang)
+      else:
+        history_filename = os_path.join(
+          home_dir, '.local/share/oil/history_%s' % lang)
 
-      history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
       comp_ui.InitReadline(line_input, history_filename, root_comp, display,
                            debug_f)
       _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
