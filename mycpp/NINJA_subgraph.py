@@ -305,7 +305,7 @@ def TranslatorSubgraph(n, translator, ex, phony):
   # Compile C++.
   for compiler, variant in example_matrix:
     compile_vars = [
-        ('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")
+        ('compiler', compiler), ('variant', variant), ('more_cxx_flags', "'-lpthread -lX11 -ldl -lGL'")
     ]
     link_vars = [
         ('compiler', compiler), ('variant', variant),

@@ -40,9 +40,44 @@ osh-eval-main() {
   local name=$1
 
   cat <<EOF
+
+#include <dlfcn.h>
+#include <x86intrin.h>
+#include "bonsai_debug.h"
+
+bool
+InitializeBonsaiDebug(const char* DebugLibName)
+{
+  bool Result = false;
+  void* DebugLib = dlopen(DebugLibName, RTLD_NOW);
+
+  if (!DebugLib) { char *error = dlerror(); printf("OpenLibrary Failed (%s)\n", error); }
+  else
+  {
+    printf("Library (%s) loaded!\n", DebugLibName); 
+
+    init_debug_system_proc OpenAndInitializeDebugWindow = (init_debug_system_proc)dlsym(DebugLib, "OpenAndInitializeDebugWindow");
+    if (!OpenAndInitializeDebugWindow) { printf("Retreiving OpenAndInitializeDebugWindow from Debug Lib :( \n"); }
+    else
+    {
+      Result = true;
+      /* GetDebugState = OpenAndInitializeDebugWindow(&Os, &Plat); */
+      /* debug_state* DebugState = GetDebugState(); */
+      /* DebugState->DebugDoScopeProfiling = True; */
+    }
+  }
+
+  return Result;
+}
+
 int main(int argc, char **argv) {
 
   complain_loudly_on_segfault();
+
+  if (!InitializeBonsaiDebug("lib_debug_system.so"))
+  {
+    return 1;
+  }
 
   gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc.cc
 

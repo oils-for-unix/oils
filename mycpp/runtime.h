@@ -5,6 +5,10 @@
 #define MiB(bytes) (KiB(bytes) * 1024)
 #define KiB(bytes) ((bytes)*1024)
 
+#include "bonsai/releases/bonsai_debug/public.h"
+#undef NotImplemented
+#undef InvalidCodePath
+
 // clang-format off
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
@@ -20,4 +24,6 @@
 #include "mycpp/leaky_mylib.h"
 // clang-format on
 
+
 #endif  // MYCPP_RUNTIME_H
+

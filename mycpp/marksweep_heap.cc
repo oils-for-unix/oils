@@ -96,6 +96,8 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 }
 
 void MarkSweepHeap::Collect() {
+  TIMED_FUNCTION();
+
   for (int root_index = 0; root_index < this->roots_top_; ++root_index) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
