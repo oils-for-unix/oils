@@ -5,18 +5,44 @@
 #include <unordered_set>
 #include <cstdint>
 
+#define GC_STATS 1
+
 // Implement hash and equality functors for unordered_set.
 struct PointerHash {
   int operator() (const void* p) const {
-    intptr_t result = reinterpret_cast<intptr_t>(p);
-    return result;
-/*
-    // DJB hash
+    intptr_t i = reinterpret_cast<intptr_t>(p);
+#if 1
+    return i;
+    //return i * 2654435761;
+#else
+    uint8_t* bytes = reinterpret_cast<uint8_t*>(&i);
+#if 0
+    log("%d", bytes[0]);
+    log("%d", bytes[1]);
+    log("%d", bytes[2]);
+    log("%d", bytes[3]);
+#endif
+
+    int h = 0;
+    h ^= bytes[0];
+    h ^= bytes[1];
+    h ^= bytes[2];
+    h ^= bytes[3];
+
+#if 1
+    // DJB2 hash: http://www.cse.yorku.ca/~oz/hash.html
     int h = 5381;
-    h = (h << 5) + h + NodeHash()(edge.left);
-    h = (h << 5) + h + NodeHash()(edge.right);
+    h = (h << 5) + h + bytes[0];
+    h = (h << 5) + h + bytes[1];
+    h = (h << 5) + h + bytes[2];
+    h = (h << 5) + h + bytes[3];
+#endif
+
+    // log("h = %d bucket = %d", h, h % 128);
+    //return i;
     return h;
-*/
+    // return 0;
+#endif
   }
 };
 
@@ -63,8 +89,7 @@ class MarkSweepHeap {
   int num_live_objs_;
 #endif
 
-  std::unordered_set<void*> all_allocations_;
-
+  std::unordered_set<void*, PointerHash, PointerEquals> all_allocations_;
   std::unordered_set<void*, PointerHash, PointerEquals> marked_allocations_;
 };
 

@@ -2,6 +2,15 @@
 
 void MarkSweepHeap::Init(int collection_thresh) {
   this->collection_thresh_ = collection_thresh;
+
+  this->all_allocations_.reserve(10 * MiB(1));
+
+
+  auto all = this->all_allocations_;
+  log("bucket_count %d", all.bucket_count());
+  log("max_bucket_count %u", all.max_bucket_count());
+
+  this->marked_allocations_.reserve(MiB(1));
 }
 
 void* MarkSweepHeap::Allocate(int byte_count) {
@@ -38,6 +47,14 @@ void* MarkSweepHeap::Allocate(int byte_count) {
   assert(result);
 
   this->all_allocations_.insert(result);
+
+  if (this->num_live_objs_ % 100000 == 0) {
+    auto all = this->all_allocations_;
+    log("live %d", this->num_live_objs_);
+    log("bucket_count %d", all.bucket_count());
+    log("load_factor %f", all.load_factor());
+    log("max_load_factor %f", all.max_load_factor());
+  }
 
   return result;
 }
