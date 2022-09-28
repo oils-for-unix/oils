@@ -18,12 +18,12 @@ Str* myfunc() {
 }
 
 void otherfunc(Local<Str> s) {
-  log("otherfunc roots_top_ = %d", gHeap.roots_top_);
+  log("otherfunc roots_top_ = %d", gHeap.roots_.size());
   log("len(s) = %d", len(s));
 }
 
 void paramfunc(Param<Str> s) {
-  log("paramfunc roots_top_ = %d", gHeap.roots_top_);
+  log("paramfunc roots_top_ = %d", gHeap.roots_.size());
   log("len(s) = %d", len(s));
 }
 

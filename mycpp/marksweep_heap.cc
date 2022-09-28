@@ -2,6 +2,7 @@
 
 void MarkSweepHeap::Init(int collection_thresh) {
   this->collection_thresh_ = collection_thresh;
+  roots_.reserve(1024);  // prevent resizing in common case
 }
 
 void* MarkSweepHeap::Allocate(int byte_count) {
@@ -94,11 +95,12 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 }
 
 void MarkSweepHeap::Collect() {
-  for (int root_index = 0; root_index < this->roots_top_; ++root_index) {
+  int n = this->roots_.size();
+  for (int i = 0; i < n; ++i) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
     // should do that such that we don't store indirected pointers here.
-    Obj* root = *(this->roots_[root_index]);
+    Obj* root = *(this->roots_[i]);
 
     if (root) {
       MarkAllReferences(root);
