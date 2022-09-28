@@ -3,6 +3,28 @@
 
 #include <new>
 #include <unordered_set>
+#include <cstdint>
+
+// Implement hash and equality functors for unordered_set.
+struct PointerHash {
+  int operator() (const void* p) const {
+    intptr_t result = reinterpret_cast<intptr_t>(p);
+    return result;
+/*
+    // DJB hash
+    int h = 5381;
+    h = (h << 5) + h + NodeHash()(edge.left);
+    h = (h << 5) + h + NodeHash()(edge.right);
+    return h;
+*/
+  }
+};
+
+struct PointerEquals {
+  bool operator() (const void* x, const void* y) const {
+    return x == y;
+  }
+};
 
 class MarkSweepHeap {
   void MarkAllReferences(Obj* obj);
@@ -42,7 +64,8 @@ class MarkSweepHeap {
 #endif
 
   std::unordered_set<void*> all_allocations_;
-  std::unordered_set<void*> marked_allocations_;
+
+  std::unordered_set<void*, PointerHash, PointerEquals> marked_allocations_;
 };
 
 #endif
