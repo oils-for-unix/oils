@@ -2,6 +2,7 @@
 
 void MarkSweepHeap::Init(int collection_thresh) {
   this->collection_thresh_ = collection_thresh;
+  roots_.reserve(1024);  // prevent resizing in common case
 }
 
 void* MarkSweepHeap::Allocate(int byte_count) {
