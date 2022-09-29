@@ -253,6 +253,8 @@ COMPILERS_VARIANTS = [
     ('cxx', 'asan'),
     ('cxx', 'ubsan'),
 
+    ('cxx', 'mallocleak'),
+
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
     ('clang', 'opt'),  # for comparisons

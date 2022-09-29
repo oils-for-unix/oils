@@ -101,6 +101,10 @@ setglobal_compile_flags() {
     (opt)
       flags="$flags -O2 -g"
       ;;
+    (mallocleak)
+      # optimized build with malloc only
+      flags="$flags -O2 -g -D MALLOC_LEAK"
+      ;;
     (dumballoc)
       # optimized build with bump allocator
       flags="$flags -O2 -g -D DUMB_ALLOC"

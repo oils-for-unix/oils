@@ -5,14 +5,20 @@ void MarkSweepHeap::Init(int collection_thresh) {
   roots_.reserve(1024);  // prevent resizing in common case
 }
 
+#ifdef MALLOC_LEAK
+// for testing performance
 void* MarkSweepHeap::Allocate(int byte_count) {
-#if GC_EVERY_ALLOC
+  return calloc(byte_count, 1);
+}
+#else
+void* MarkSweepHeap::Allocate(int byte_count) {
+  #if GC_EVERY_ALLOC
   Collect();
-#endif
+  #endif
 
-#if GC_STATS
+  #if GC_STATS
   this->num_live_objs_++;
-#endif
+  #endif
 
   this->current_heap_bytes_ += byte_count;
   if (this->current_heap_bytes_ > this->collection_thresh_) {
@@ -42,6 +48,7 @@ void* MarkSweepHeap::Allocate(int byte_count) {
 
   return result;
 }
+#endif  // MALLOC_LEAK
 
 void MarkSweepHeap::MarkAllReferences(Obj* obj) {
   auto header = ObjHeader(obj);
