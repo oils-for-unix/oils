@@ -125,12 +125,60 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
+class Buf {
+ public:
+  Buf(char* data, int len) : data_(data), len_(len) {}
+  void reset() {
+      free(data_);
+      data_ = nullptr;
+      len_ = 0;
+  }
+  operator bool() const {
+    return data_ != nullptr;
+  }
+  void expand(Str* s) {
+    return expand(s->data_, ::len(s));
+  }
+  void expand(const char* s, int n) {
+    int orig_len = len_;
+    len_ += n;
+
+    data_ = static_cast<char*>(realloc(data_, len_ + 1));
+    memcpy(data_ + orig_len, s, n);
+    data_[len_] = '\0';
+  }
+  void format_d(int i) {
+    // extend to the maximum size
+    data_ = static_cast<char*>(realloc(data_, len_ + kIntBufSize));
+    int len = snprintf(data_ + len_, kIntBufSize, "%d", i);
+    // but record only the number of bytes written
+    len_ += len;
+  }
+  void resize_up(int n) {
+    assert(n >= len_);
+    data_ = static_cast<char*>(realloc(data_, n));
+  }
+  void resize_down(int n) {
+    assert(n <= len_);
+    data_ = static_cast<char*>(realloc(data_, n + 1));
+    len_ = n;
+  }
+  char* data() {
+    return data_;
+  }
+  int len() {
+    return len_;
+  }
+ private:
+  char* data_;
+  int len_;
+};
+
 class BufWriter : public Writer {
  public:
   BufWriter()
       : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)),
-        data_(nullptr),
-        len_(0) {
+        buf_(nullptr, 0) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -148,11 +196,7 @@ class BufWriter : public Writer {
   // Problem with globals: '%r' % obj will recursively call asdl/format.py,
   // which has its own % operations
   void reset() {
-    if (data_) {
-      free(data_);
-    }
-    data_ = nullptr;  // arg to next realloc()
-    len_ = 0;
+    buf_.reset();
   }
 
   // Note: we do NOT need to instantiate a Str() to append
@@ -170,8 +214,7 @@ class BufWriter : public Writer {
 
  private:
   // Just like a string, except it's mutable
-  char* data_;
-  int len_;
+  Buf buf_;
 };
 
 // Wrap a FILE*
