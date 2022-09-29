@@ -6,7 +6,7 @@
 #ifndef CHENEY_HEAP_H
 #define CHENEY_HEAP_H
 
-#define GC_STATS 1
+/* #define GC_STATS 1 */
 
 #include <cassert>  // assert()
 #include <cstdlib>  // malloc

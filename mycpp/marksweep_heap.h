@@ -5,7 +5,17 @@
 #include <unordered_set>
 #include <cstdint>
 
-#define GC_STATS 1
+typedef uint64_t umm;
+
+struct hashtable
+{
+  void **Elements;
+  umm Count;
+};
+
+
+
+/* #define GC_STATS 1 */
 
 // Implement hash and equality functors for unordered_set.
 struct PointerHash {
@@ -89,8 +99,11 @@ class MarkSweepHeap {
   int num_live_objs_;
 #endif
 
-  std::unordered_set<void*, PointerHash, PointerEquals> all_allocations_;
-  std::unordered_set<void*, PointerHash, PointerEquals> marked_allocations_;
+  /* std::unordered_set<void*, PointerHash, PointerEquals> all_allocations_; */
+  /* std::unordered_set<void*, PointerHash, PointerEquals> marked_allocations_; */
+
+  hashtable all_allocations_;
+  hashtable marked_allocations_;
 };
 
 #endif

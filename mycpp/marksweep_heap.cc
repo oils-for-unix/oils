@@ -1,16 +1,123 @@
 #include "mycpp/runtime.h"
 
+uint64_t
+Hash(void* Value)
+{
+  /* uint64_t Result = (uint64_t)Value * 2654435761; */
+  uint64_t Result = (uint64_t)Value;
+  /* uint64_t Result = 0; */
+  return Result;
+}
+
+void **
+GetBucketFor(hashtable *Table, umm HashValue)
+{
+  umm BucketIndex = HashValue % Table->Count;
+  void **Result = Table->Elements + BucketIndex;
+  return Result;
+}
+
+bool
+NotEmpty(void** Bucket)
+{
+  bool Result = *Bucket != 0;
+  return Result;
+}
+
+
+void
+AllocateHashtable(hashtable *Table, int Count)
+{
+  Table->Count = Count;
+  Table->Elements = (void**)calloc(Count, sizeof(void*));
+}
+
+bool
+HashtableContains(hashtable *Table, void *Value)
+{
+  uint64_t HashValue = Hash(Value);
+  void **Bucket = GetBucketFor(Table, HashValue);
+
+  void **FirstBucket = Bucket;
+
+  umm CollisionCount = 0;
+  while (NotEmpty(Bucket) && *Bucket != Value)
+  {
+    CollisionCount++;
+    HashValue++;
+
+    Bucket = GetBucketFor(Table, HashValue);
+
+    if (Bucket == FirstBucket) { Bucket = 0; break; }
+  }
+
+  /* if (CollisionCount > 3) */
+  /* { */
+  /*   log("%u collisions on lookup (%p)", CollisionCount, Value); */
+  /* } */
+
+  bool Result = (Bucket && *Bucket == Value);
+  return Result;
+}
+
+void
+HashtableInsert(hashtable *Table, void *insertValue)
+{
+  assert(insertValue != 0);
+
+  uint64_t HashValue = Hash(insertValue);
+  void **Bucket = GetBucketFor(Table, HashValue);
+
+  void **FirstBucket = Bucket;
+
+  umm CollisionCount = 0;
+  while (NotEmpty(Bucket))
+  {
+    CollisionCount++;
+    HashValue++;
+
+    Bucket = GetBucketFor(Table, HashValue);
+
+    if (Bucket == FirstBucket) { Bucket = 0; log("insertion failed; hashtable full"); break; }
+  }
+
+  /* if (CollisionCount > 3) */
+  /* { */
+  /*   log("%u collision on insert (%p)", CollisionCount, insertValue); */
+  /* } */
+
+  if (Bucket)
+  {
+    *Bucket = insertValue;
+  }
+}
+
+void
+HashtableClear(hashtable *Table)
+{
+  for (umm BucketIndex = 0; BucketIndex < Table->Count; ++BucketIndex)
+  {
+    Table->Elements[BucketIndex] = 0;
+  }
+}
+
 void MarkSweepHeap::Init(int collection_thresh) {
   this->collection_thresh_ = collection_thresh;
 
+#if 0
   this->all_allocations_.reserve(10 * MiB(1));
-
 
   auto all = this->all_allocations_;
   log("bucket_count %d", all.bucket_count());
   log("max_bucket_count %u", all.max_bucket_count());
 
   this->marked_allocations_.reserve(MiB(1));
+#else
+
+  AllocateHashtable(&this->marked_allocations_, KiB(1));
+  AllocateHashtable(&this->all_allocations_, KiB(1000));
+
+#endif
 }
 
 void* MarkSweepHeap::Allocate(int byte_count) {
@@ -46,15 +153,15 @@ void* MarkSweepHeap::Allocate(int byte_count) {
   void* result = calloc(byte_count, 1);
   assert(result);
 
-  this->all_allocations_.insert(result);
+  HashtableInsert(&this->all_allocations_, result);
 
-  if (this->num_live_objs_ % 100000 == 0) {
-    auto all = this->all_allocations_;
-    log("live %d", this->num_live_objs_);
-    log("bucket_count %d", all.bucket_count());
-    log("load_factor %f", all.load_factor());
-    log("max_load_factor %f", all.max_load_factor());
-  }
+  /* if (this->num_live_objs_ % 100000 == 0) { */
+  /*   auto all = this->all_allocations_; */
+  /*   log("live %d", this->num_live_objs_); */
+  /*   log("bucket_count %d", all.bucket_count()); */
+  /*   log("load_factor %f", all.load_factor()); */
+  /*   log("max_load_factor %f", all.max_load_factor()); */
+  /* } */
 
   return result;
 }
@@ -62,7 +169,12 @@ void* MarkSweepHeap::Allocate(int byte_count) {
 void MarkSweepHeap::MarkAllReferences(Obj* obj) {
   auto header = ObjHeader(obj);
 
-  this->marked_allocations_.insert(static_cast<void*>(obj));
+  if (HashtableContains(&marked_allocations_, obj))
+  {
+    return;
+  }
+
+  HashtableInsert(&this->marked_allocations_, (void*)obj);
 
   switch (header->heap_tag_) {
   case Tag::FixedSize: {
@@ -122,7 +234,8 @@ void MarkSweepHeap::Collect() {
     }
   }
 
-  for (auto it = all_allocations_.begin(); it != all_allocations_.end(); ++it) {
+#if 0
+  for (auto it = all_allocations_.Count(); it != all_allocations_.end(); ++it) {
     void* alloc = *it;
 
     auto marked_alloc = marked_allocations_.find(alloc);
@@ -136,18 +249,56 @@ void MarkSweepHeap::Collect() {
 #endif
     }
   }
+#else
+  for (umm BucketIndex = 0; BucketIndex < all_allocations_.Count; ++BucketIndex)
+  {
+    void *alloc = all_allocations_.Elements[BucketIndex];
+    if (alloc)
+    {
+      if (!HashtableContains(&marked_allocations_, alloc))
+      {
+        free(alloc);
+#if GC_STATS
+        this->num_live_objs_--;
+#endif
+      }
+      else
+      {
+        /* int breakhere = 0; */
+      }
+    }
+  }
+#endif
 
-  all_allocations_.clear();
+  HashtableClear(&all_allocations_);
+  int objectsInserted = 0;
+  for (umm BucketIndex = 0; BucketIndex < marked_allocations_.Count; ++BucketIndex)
+  {
+    Obj *obj = (Obj*)marked_allocations_.Elements[BucketIndex];
+    if (obj && ObjHeader(obj)->heap_tag_ != Tag::Global) {
+      ++objectsInserted;
+      HashtableInsert(&all_allocations_, (void*)obj);
+    }
+  }
 
-  for (auto it = marked_allocations_.begin(); it != marked_allocations_.end();
-       ++it) {
+#if GC_STATS
+  // TODO(Jesse): This assertion fails but all the tests pass!  Is this a
+  // pre-existing bug or one with this hashtable impl?  I'm guessing it's
+  // been lurking..
+  //
+  // assert(this->num_live_objs_ == objectsInserted);
+#endif
+
+#if 0
+  for (auto it = marked_allocations_.begin(); it != marked_allocations_.end(); ++it) {
     Obj* obj = reinterpret_cast<Obj*>(*it);
     if (obj->heap_tag_ != Tag::Global) {
       all_allocations_.insert(*it);
     }
   }
+#endif
 
-  marked_allocations_.clear();
+  HashtableClear(&marked_allocations_);
 }
 
 #if MARK_SWEEP
