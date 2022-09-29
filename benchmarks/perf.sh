@@ -273,7 +273,7 @@ _record() {
   local bin=_bin/oil.ovm-opt 
   #local bin=_bin/oil.ovm-dbg  # This shows more details
 
-  local freq=100000  # 1000 Hz
+  local freq=1000  # 1000 Hz
 
   #local file=benchmarks/testdata/abuild  # small file
 
