@@ -43,8 +43,8 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
 }
 
 Str* BufWriter::getvalue() {
-  if (data_) {
-    Str* ret = ::StrFromC(data_, len_);
+  if (buf_) {
+    Str* ret = ::StrFromC(buf_.data(), buf_.len());
     reset();  // Invalidate this instance
     return ret;
   } else {
@@ -126,37 +126,11 @@ Writer* gStdout;
 Writer* gStderr;
 
 void BufWriter::write(Str* s) {
-  int orig_len = len_;
-  int n = len(s);
-  len_ += n;
-
-  // BUG: This is quadratic!
-
-  // TODO:
-  //
-  // - add capacity_, and double it?  start at 32 bytes -> 64 -> 128
-  //   - only realloc by doublings?
-  // - or change this to append to a list?  and then getvalue() does a join()
-  // on it?
-  // - DEALLOCATE.  gc_mylib doesn't leak!
-
-  // data_ is nullptr at first
-  data_ = static_cast<char*>(realloc(data_, len_ + 1));
-
-  // Append to the end
-  memcpy(data_ + orig_len, s->data_, n);
-  data_[len_] = '\0';
+  buf_.expand(s);
 }
 
 void BufWriter::write_const(const char* s, int len) {
-  int orig_len = len_;
-  len_ += len;
-  // data_ is nullptr at first
-  data_ = static_cast<char*>(realloc(data_, len_ + 1));
-
-  // Append to the end
-  memcpy(data_ + orig_len, s, len);
-  data_[len_] = '\0';
+  buf_.expand(s, len);
 }
 
 void BufWriter::format_s(Str* s) {
@@ -168,11 +142,7 @@ void BufWriter::format_o(int i) {
 }
 
 void BufWriter::format_d(int i) {
-  // extend to the maximum size
-  data_ = static_cast<char*>(realloc(data_, len_ + kIntBufSize));
-  int len = snprintf(data_ + len_, kIntBufSize, "%d", i);
-  // but record only the number of bytes written
-  len_ += len;
+  buf_.format_d(i);
 }
 
 // repr() calls this too
@@ -184,14 +154,13 @@ void BufWriter::format_r(Str* s) {
   int n = len(s);
   int upper_bound = n * 4 + 2;
 
-  // Extend the buffer
-  data_ = static_cast<char*>(realloc(data_, len_ + upper_bound + 1));
+  buf_.resize_up(buf_.len() + upper_bound + 1);
 
   char quote = '\'';
   if (memchr(s->data_, '\'', n) && !memchr(s->data_, '"', n)) {
     quote = '"';
   }
-  char* p = data_ + len_;  // end of valid data
+  char* p = buf_.data() + buf_.len();  // end of valid data
 
   // From PyString_Repr()
   *p++ = quote;
@@ -219,10 +188,7 @@ void BufWriter::format_r(Str* s) {
   *p++ = quote;
   *p = '\0';
 
-  len_ = p - data_;
-  // Shrink the buffer.  This is valid usage and GNU libc says it can actually
-  // release.
-  data_ = static_cast<char*>(realloc(data_, len_ + 1));
+  buf_.resize_down(p - buf_.data());
 }
 
 void CFileWriter::write(Str* s) {
