@@ -155,11 +155,11 @@ class Buf {
     len_ += len;
   }
   void resize_up(int n) {
-    assert(n >= len_);
+    // assert(n >= len_);
     data_ = static_cast<char*>(realloc(data_, n));
   }
   void resize_down(int n) {
-    assert(n <= len_);
+    // assert(n <= len_);
     data_ = static_cast<char*>(realloc(data_, n + 1));
     len_ = n;
   }
