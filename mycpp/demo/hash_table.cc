@@ -1,3 +1,4 @@
+#include <set>
 #include <unordered_set>
 
 #include "mycpp/common.h"
@@ -29,15 +30,18 @@ TEST unordered_set_bucket_test() {
 
 // Benchmark to test hashing against malloc()
 TEST hash_speed_test() {
-  std::unordered_set<void *> set;
+  std::unordered_set<void *> hash_set;
+  std::set<void *> tree_set;
   int n = 10e6;
   for (int i = 0; i < n; ++i) {
     // TODO: use random size workload too
     void *p = malloc(1);
-    set.insert(p);
+    hash_set.insert(p);
+    tree_set.insert(p);
   }
-  log("size = %d", set.size());
-  log("bucket_count = %d", set.bucket_count());
+  log("hash_set size = %d", hash_set.size());
+  log("bucket_count = %d", hash_set.bucket_count());
+  log("tree_set size = %d", tree_set.size());
 
   PASS();
 }
