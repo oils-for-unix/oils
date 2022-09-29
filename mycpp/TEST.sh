@@ -89,8 +89,8 @@ examples-variant() {
     (asan)
       # TODO: make examples/parse pass!
       # https://github.com/oilshell/oil/issues/1317
-      if test $num_failed -ne 0; then
-        echo "FAIL: Expected 0 failure in ASAN"
+      if test $num_failed -ne 1; then
+        echo "FAIL: Expected 1 failure in ASAN"
         return 1
       fi
       ;;
