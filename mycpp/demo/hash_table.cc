@@ -32,7 +32,8 @@ TEST unordered_set_bucket_test() {
 TEST hash_speed_test() {
   std::unordered_set<void *> hash_set;
   std::set<void *> tree_set;
-  int n = 10e6;
+  int n = 10e3;  // change to 10e6 for significant benchmark
+  // int n = 10e6;
   for (int i = 0; i < n; ++i) {
     // TODO: use random size workload too
     void *p = malloc(1);
