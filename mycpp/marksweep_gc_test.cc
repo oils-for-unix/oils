@@ -1,27 +1,5 @@
-
-#include <unordered_set>
-
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
-
-TEST hash_value_test() {
-  void *p1 = malloc(1);
-  void *p2 = malloc(1);
-  void *p3 = malloc(1);
-
-  std::unordered_set<void *> set;
-  set.insert(p1);
-
-  log("&dummy1 = %p", p1);
-  log("&dummy2 = %p", p2);
-  log("&dummy2 = %p", p3);
-  std::hash<void *> hasher;
-  log("std::hash<void*>(p1) = %x", hasher(p1));
-  log("std::hash<void*>(p2) = %x", hasher(p2));
-  log("std::hash<void*>(p3) = %x", hasher(p3));
-
-  PASS();
-}
 
 TEST string_collection_test() {
   Str *test_str = StrFromC("foo");
@@ -113,7 +91,6 @@ int main(int argc, char **argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(hash_value_test);
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);
 

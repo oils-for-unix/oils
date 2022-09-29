@@ -207,6 +207,8 @@ UNIT_TESTS = {
     'mycpp/leaky_containers_test.cc': VARIANTS_LEAKY,
     'mycpp/leaky_str_test.cc': VARIANTS_LEAKY,
 
+    'mycpp/demo/target_lang.cc': VARIANTS_LEAKY,
+    'mycpp/demo/hash_table.cc': VARIANTS_LEAKY,
     # there is also demo/{gc_heap,square_heap}.cc
 }
 
@@ -490,11 +492,11 @@ def NinjaGraph(n):
       # Hack: avoid illegal combinations
       test_runs_under_variant = False
       if which_variants == VARIANTS_GC and variant in (
-          'dbg', 'asan', 'ubsan', 'coverage', 'gcevery', 'gcstats'):
+          'dbg', 'opt', 'asan', 'ubsan', 'coverage', 'gcevery', 'gcstats'):
         test_runs_under_variant = True
 
       if which_variants == VARIANTS_LEAKY and variant in (
-          'dbg', 'asan', 'ubsan', 'coverage'):
+          'dbg', 'opt', 'asan', 'ubsan', 'coverage'):
         test_runs_under_variant = True
 
       if not test_runs_under_variant:

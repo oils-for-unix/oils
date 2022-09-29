@@ -1,10 +1,6 @@
 #ifndef MYCPP_RUNTIME_H
 #define MYCPP_RUNTIME_H
 
-#define GiB(bytes) (MiB(bytes) * 1024)
-#define MiB(bytes) (KiB(bytes) * 1024)
-#define KiB(bytes) ((bytes)*1024)
-
 // clang-format off
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
