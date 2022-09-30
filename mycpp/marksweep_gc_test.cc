@@ -129,6 +129,8 @@ int main(int argc, char **argv) {
   RUN_TEST(list_collection_test);
   RUN_TEST(cycle_collection_test);
 
+  gHeap.Collect();
+
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }
