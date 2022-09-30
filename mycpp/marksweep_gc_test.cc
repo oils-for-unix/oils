@@ -85,23 +85,22 @@ TEST list_collection_test() {
 class Node : Obj {
  public:
   Node();
-  Node* next_;
+  Node *next_;
 };
 
 constexpr uint16_t maskof_Node() {
   return maskbit(offsetof(Node, next_));
 }
 
-Node::Node() :
-  Obj(Tag::FixedSize, maskof_Node(), sizeof(Node)),
-  next_(nullptr) {
+Node::Node()
+    : Obj(Tag::FixedSize, maskof_Node(), sizeof(Node)), next_(nullptr) {
 }
 
 TEST cycle_collection_test() {
   // Dict<Str*, int>* d = NewDict<Str*, int>();
 
-  Node* n1 = nullptr;
-  Node* n2 = nullptr;
+  Node *n1 = nullptr;
+  Node *n2 = nullptr;
   StackRoots _roots({&n1, &n2});
   n1 = Alloc<Node>();
   n2 = Alloc<Node>();

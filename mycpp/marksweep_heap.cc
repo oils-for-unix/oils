@@ -56,8 +56,7 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 
   auto marked_alloc = marked_allocations_.find((Obj*)obj);
   bool alloc_is_marked = marked_alloc != marked_allocations_.end();
-  if (alloc_is_marked)
-  {
+  if (alloc_is_marked) {
     return;
   }
 
@@ -123,30 +122,24 @@ void MarkSweepHeap::Collect() {
   }
 
   int last_live_index = 0;
-  for (unsigned int alloc_index = 0; alloc_index < all_allocations_.size(); ++alloc_index)
-  {
-    void *alloc = all_allocations_[alloc_index];
+  for (unsigned int alloc_index = 0; alloc_index < all_allocations_.size();
+       ++alloc_index) {
+    void* alloc = all_allocations_[alloc_index];
 
-    if (alloc)
-    {
+    if (alloc) {
       auto marked_alloc = marked_allocations_.find(alloc);
       bool alloc_is_live = marked_alloc != marked_allocations_.end();
 
-      if (alloc_is_live)
-      {
+      if (alloc_is_live) {
         all_allocations_[last_live_index++] = alloc;
-      }
-      else
-      {
+      } else {
         free(alloc);
 
 #if GC_STATS
         this->num_live_objs_--;
 #endif
       }
-    }
-    else
-    {
+    } else {
       break;
     }
   }
