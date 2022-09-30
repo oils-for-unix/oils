@@ -125,7 +125,7 @@ void MarkSweepHeap::Collect() {
   int num_objs = all_allocations_.size();
   for (int alloc_index = 0; alloc_index < num_objs; ++alloc_index) {
     void* alloc = all_allocations_[alloc_index];
-    assert(alloc);
+    assert(alloc);  // malloc() shouldn't have returned nullptr
 
     auto marked_alloc = marked_allocations_.find(alloc);
     bool alloc_is_live = marked_alloc != marked_allocations_.end();
