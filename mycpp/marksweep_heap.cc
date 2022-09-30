@@ -54,6 +54,13 @@ void* MarkSweepHeap::Allocate(int byte_count) {
 void MarkSweepHeap::MarkAllReferences(Obj* obj) {
   auto header = ObjHeader(obj);
 
+  auto marked_alloc = marked_allocations_.find((Obj*)obj);
+  bool alloc_is_marked = marked_alloc != marked_allocations_.end();
+  if (alloc_is_marked)
+  {
+    return;
+  }
+
   this->marked_allocations_.insert(static_cast<void*>(obj));
 
   switch (header->heap_tag_) {

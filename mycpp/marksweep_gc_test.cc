@@ -82,6 +82,40 @@ TEST list_collection_test() {
   PASS();
 }
 
+class Node : Obj {
+ public:
+  Node();
+  Node* next_;
+};
+
+constexpr uint16_t maskof_Node() {
+  return maskbit(offsetof(Node, next_));
+}
+
+Node::Node() :
+  Obj(Tag::FixedSize, maskof_Node(), sizeof(Node)),
+  next_(nullptr) {
+}
+
+TEST cycle_collection_test() {
+  // Dict<Str*, int>* d = NewDict<Str*, int>();
+
+  Node* n1 = nullptr;
+  Node* n2 = nullptr;
+  StackRoots _roots({&n1, &n2});
+  n1 = Alloc<Node>();
+  n2 = Alloc<Node>();
+
+  gHeap.Collect();
+
+  n1->next_ = n2;
+  n2->next_ = n1;
+
+  gHeap.Collect();
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
@@ -93,6 +127,9 @@ int main(int argc, char **argv) {
 
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);
+  RUN_TEST(cycle_collection_test);
+
+  gHeap.Collect();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
