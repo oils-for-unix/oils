@@ -109,8 +109,8 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 }
 
 void MarkSweepHeap::Collect() {
-  int n = this->roots_.size();
-  for (int i = 0; i < n; ++i) {
+  int num_roots = this->roots_.size();
+  for (int i = 0; i < num_roots; ++i) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
     // should do that such that we don't store indirected pointers here.
@@ -122,25 +122,22 @@ void MarkSweepHeap::Collect() {
   }
 
   int last_live_index = 0;
-  for (unsigned int alloc_index = 0; alloc_index < all_allocations_.size();
-       ++alloc_index) {
+  int num_objs = all_allocations_.size();
+  for (int alloc_index = 0; alloc_index < num_objs; ++alloc_index) {
     void* alloc = all_allocations_[alloc_index];
+    assert(alloc);
 
-    if (alloc) {
-      auto marked_alloc = marked_allocations_.find(alloc);
-      bool alloc_is_live = marked_alloc != marked_allocations_.end();
+    auto marked_alloc = marked_allocations_.find(alloc);
+    bool alloc_is_live = marked_alloc != marked_allocations_.end();
 
-      if (alloc_is_live) {
-        all_allocations_[last_live_index++] = alloc;
-      } else {
-        free(alloc);
+    if (alloc_is_live) {
+      all_allocations_[last_live_index++] = alloc;
+    } else {
+      free(alloc);
 
 #if GC_STATS
-        this->num_live_objs_--;
+      this->num_live_objs_--;
 #endif
-      }
-    } else {
-      break;
     }
   }
 
