@@ -2,7 +2,8 @@
 
 void MarkSweepHeap::Init(int collection_thresh) {
   this->collection_thresh_ = collection_thresh;
-  roots_.reserve(1024);  // prevent resizing in common case
+  this->all_allocations_.reserve(KiB(10));
+  roots_.reserve(KiB(1));  // prevent resizing in common case
 }
 
 #ifdef MALLOC_LEAK
@@ -44,7 +45,7 @@ void* MarkSweepHeap::Allocate(int byte_count) {
   void* result = calloc(byte_count, 1);
   assert(result);
 
-  this->all_allocations_.insert(result);
+  this->all_allocations_.push_back(result);
 
   return result;
 }
@@ -55,8 +56,7 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 
   auto marked_alloc = marked_allocations_.find((Obj*)obj);
   bool alloc_is_marked = marked_alloc != marked_allocations_.end();
-  if (alloc_is_marked)
-  {
+  if (alloc_is_marked) {
     return;
   }
 
@@ -109,8 +109,8 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 }
 
 void MarkSweepHeap::Collect() {
-  int n = this->roots_.size();
-  for (int i = 0; i < n; ++i) {
+  int num_roots = this->roots_.size();
+  for (int i = 0; i < num_roots; ++i) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
     // should do that such that we don't store indirected pointers here.
@@ -121,13 +121,18 @@ void MarkSweepHeap::Collect() {
     }
   }
 
-  for (auto it = all_allocations_.begin(); it != all_allocations_.end(); ++it) {
-    void* alloc = *it;
+  int last_live_index = 0;
+  int num_objs = all_allocations_.size();
+  for (int alloc_index = 0; alloc_index < num_objs; ++alloc_index) {
+    void* alloc = all_allocations_[alloc_index];
+    assert(alloc);  // malloc() shouldn't have returned nullptr
 
     auto marked_alloc = marked_allocations_.find(alloc);
-    bool alloc_is_dead = marked_alloc == marked_allocations_.end();
+    bool alloc_is_live = marked_alloc != marked_allocations_.end();
 
-    if (alloc_is_dead) {
+    if (alloc_is_live) {
+      all_allocations_[last_live_index++] = alloc;
+    } else {
       free(alloc);
 
 #if GC_STATS
@@ -136,16 +141,7 @@ void MarkSweepHeap::Collect() {
     }
   }
 
-  all_allocations_.clear();
-
-  for (auto it = marked_allocations_.begin(); it != marked_allocations_.end();
-       ++it) {
-    Obj* obj = reinterpret_cast<Obj*>(*it);
-    if (obj->heap_tag_ != Tag::Global) {
-      all_allocations_.insert(*it);
-    }
-  }
-
+  all_allocations_.resize(last_live_index);
   marked_allocations_.clear();
 }
 

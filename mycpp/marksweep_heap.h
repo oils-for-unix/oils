@@ -40,7 +40,7 @@ class MarkSweepHeap {
   int num_live_objs_;
 #endif
 
-  std::unordered_set<void*> all_allocations_;
+  std::vector<void*> all_allocations_;
   std::unordered_set<void*> marked_allocations_;
 };
 
