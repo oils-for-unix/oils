@@ -3,6 +3,7 @@
 
 TEST string_collection_test() {
   Str *test_str = StrFromC("foo");
+
   {
     // NOTE(Jesse): This causes a crash when this gets compiled against the
     // cheney collector w/ GC_EVERY_ALLOC.  I did verify it doesn't crash with
@@ -117,6 +118,65 @@ TEST cycle_collection_test() {
 
 GREATEST_MAIN_DEFS();
 
+TEST tuple_test() {
+  gHeap.Collect();
+  printf("\n");
+
+  Tuple2<int, Tuple2<int, Str*>*> *t3 = nullptr;
+  StackRoots _roots2({&t3});
+
+  {
+    Tuple2<int, int> *t0 = nullptr;
+    Tuple2<int, Str*> *t1 = nullptr;
+    Tuple2<int, Str*> *t2 = nullptr;
+
+    Str *str0 = nullptr;
+    Str *str1 = nullptr;
+
+    StackRoots _roots({&str0, &str1, &t0, &t1, &t2});
+
+    gHeap.Collect();
+
+    str0 = StrFromC("foo_0");
+    gHeap.Collect();
+
+    str1 = StrFromC("foo_1");
+
+    gHeap.Collect();
+
+    t0 = Alloc<Tuple2<int, int>>(2, 3);
+
+    gHeap.Collect();
+
+    printf("%s\n", str0->data_);
+    printf("%s\n", str1->data_);
+
+    t1 = Alloc<Tuple2<int, Str*>>(4, str0);
+    t2 = Alloc<Tuple2<int, Str*>>(5, str1);
+
+    gHeap.Collect();
+
+    printf("%s\n", str0->data_);
+    printf("%s\n", str1->data_);
+
+    printf("%d = %d\n", t0->at0(), t0->at1());
+    printf("%d = %s\n", t1->at0(), t1->at1()->data_);
+    printf("%d = %s\n", t2->at0(), t2->at1()->data_);
+
+    gHeap.Collect();
+
+    t3 = Alloc< Tuple2<int, Tuple2<int, Str*>*> >(6, t2);
+
+    gHeap.Collect();
+  }
+
+  printf("%d = { %d = %s }\n", t3->at0(), t3->at1()->at0(), t3->at1()->at1()->data_);
+
+  gHeap.Collect();
+
+  PASS();
+}
+
 int main(int argc, char **argv) {
   gHeap.Init(MiB(64));
 
@@ -127,6 +187,8 @@ int main(int argc, char **argv) {
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);
   RUN_TEST(cycle_collection_test);
+
+  RUN_TEST(tuple_test);
 
   gHeap.Collect();
 

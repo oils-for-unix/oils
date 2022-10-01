@@ -3,7 +3,7 @@
 
 static int segfault_handler_initialized;
 
-#define WRITE_STRING_TO_STDERR(s) (write(2, (s), sizeof(s) - 1))
+#define WRITE_STRING_TO_STDERR(s) do {size_t ignored = write(2, (s), sizeof(s) - 1);} while (false)
 
 void complain_loudly_on_segfault_handler(int sig, siginfo_t *si, void *data) {
   WRITE_STRING_TO_STDERR("OSH_CPP_SEGFAULT\n");
