@@ -289,8 +289,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Only add debug info for compound sums.
     self.debug_info['%s_t' % sum_name] = int_to_type
 
-    # TODO: DISALLOW_COPY_AND_ASSIGN on this class and others?
-
     # This is the base class.
     Emit('class %(sum_name)s_t {')
     # Can't be constructed directly.  Note: this shows up in uftrace in debug
@@ -343,16 +341,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     tag_init = 'type_tag_(%s)' % tag
     all_fields = ast_node.fields + attributes
 
-    if ast_node.fields:  # Don't emit for constructors with no fields
-      default_inits = [tag_init]
-      for field in all_fields:
-        default = _DefaultValue(field.typ)
-        default_inits.append('%s(%s)' % (field.name, default))
-
-      # Constructor with ZERO args
-      self.Emit("  %s() : %s {" %
-          (class_name, ', '.join(default_inits)), depth)
-      self.Emit("  }")
+    # Declare constructor with ZERO args.  Don't emit two constructors for
+    # types with no fields.
+    if ast_node.fields:
+      self.Emit("  %s();" % class_name)
 
     params = []
     # All product types and variants have a tag
@@ -364,10 +356,14 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for f in attributes:  # spids are initialized separately
       inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ)))
 
-    # Constructor with N args
-    self.Emit("  %s(%s) : %s {" %
-        (class_name, ', '.join(params), ', '.join(inits)), depth)
-    self.Emit("  }")
+    # Declare constructor with N args
+    self.Emit("  %s(%s);" % (class_name, ', '.join(params)))
+
+    if self.pretty_print_methods:
+      for abbrev in PRETTY_METHODS:
+        self.Emit('  hnode_t* %s();' % abbrev, depth)
+
+    self.Emit('')
 
     #
     # Members
@@ -376,14 +372,28 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for field in all_fields:
       self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
 
-    if self.pretty_print_methods:
-      for abbrev in PRETTY_METHODS:
-        self.Emit('  hnode_t* %s();' % abbrev, depth)
-
     self.Emit('')
     self.Emit('  DISALLOW_COPY_AND_ASSIGN(%s)' % class_name)
     self.Emit('};', depth)
     self.Emit('', depth)
+
+    # Define constructor with ZERO args
+    if ast_node.fields:
+      default_inits = [tag_init]
+      for field in all_fields:
+        default = _DefaultValue(field.typ)
+        default_inits.append('%s(%s)' % (field.name, default))
+
+      self.Emit('inline %s::%s() : %s {' %
+          (class_name, class_name, ', '.join(default_inits)), depth)
+      self.Emit('}')
+      self.Emit('')
+
+    # Define constructor with N args
+    self.Emit('inline %s::%s(%s) : %s {' %
+        (class_name, class_name, ', '.join(params), ', '.join(inits)), depth)
+    self.Emit('}')
+    self.Emit('')
 
   def VisitProduct(self, product, name, depth):
     self._shared_type_tags[name] = self._product_counter
