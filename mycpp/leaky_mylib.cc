@@ -160,16 +160,18 @@ void BufWriter::write(Str* s) {
 }
 
 Str* BufWriter::getvalue() {
-  if (len_ == 0) {  // result is "" if no methods are called
+  if (len_ == 0) {  // if no write() methods are called, the result is ""
     assert(data_ == nullptr);
     return kEmptyString;
   } else {
-    assert(len_ != -1);
+    assert(len_ != -1);  // Check for two INVALID getvalue() in a row
+
     Str* ret = ::StrFromC(data_, len_);
 
-    // Put this instance in an INVALID STATE so you can't call getvalue() twice
-    // in a row.
+    // Put this instance in an INVALID state
     len_ = -1;
+    free(data_);
+    data_ = nullptr;
 
     return ret;
   }
