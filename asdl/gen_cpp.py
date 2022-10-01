@@ -34,6 +34,7 @@ _ = log
 # Not supporting concise syntax tree like Python
 ABBREV = False
 
+# TODO: Fix bug!  This condition is reversed!
 if ABBREV:
   PRETTY_METHODS = ['PrettyTree']
 else:
@@ -108,6 +109,11 @@ def _GetCppType(typ):
 
   # 'id' falls through here
   return _PRIMITIVES[typ.name]
+
+
+def _IsManagedType(typ):
+  # This is a little cheesy, but works
+  return _GetCppType(typ).endswith('*')
 
 
 def _DefaultValue(typ):
@@ -338,8 +344,21 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit("class %s {" % class_name, depth)
     self.Emit(" public:", depth)
 
-    tag_init = 'type_tag_(%s)' % tag
+    heap_init = 'heap_tag_(Tag::FixedSize)'
+    type_init = 'type_tag_(%s)' % tag
     all_fields = ast_node.fields + attributes
+
+    bits = []
+    if all_fields:
+      for field in all_fields:
+        if _IsManagedType(field.typ):
+          bits.append('maskbit(offsetof(%s, %s))' % (class_name, field.name))
+
+    if bits:
+      mask_init = 'field_mask_(maskof_%s())' % class_name
+      #mask_init = 'field_mask_(kZeroMask)'
+    else:
+      mask_init = 'field_mask_(kZeroMask)'
 
     # Declare constructor with ZERO args.  Don't emit two constructors for
     # types with no fields.
@@ -348,7 +367,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     params = []
     # All product types and variants have a tag
-    inits = [tag_init]
+    inits = [heap_init, type_init, mask_init]
 
     for f in ast_node.fields:
       params.append('%s %s' % (_GetCppType(f.typ), f.name))
@@ -377,21 +396,32 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.Emit('};', depth)
     self.Emit('', depth)
 
+    if bits:
+      self.Emit('constexpr uint16_t maskof_%s() {' % class_name, depth)
+      self.Emit('  return', depth)
+      self.Emit('    ' + '\n  | '.join(bits) + ';', depth, reflow=False)
+      self.Emit('}', depth)
+      self.Emit('', depth)
+
+    def FieldInitJoin(strs):
+      # reflow doesn't work well here, so do it manually
+      return ',\n      '.join(strs)
+
     # Define constructor with ZERO args
     if ast_node.fields:
-      default_inits = [tag_init]
+      default_inits = [heap_init, type_init, mask_init]
       for field in all_fields:
         default = _DefaultValue(field.typ)
         default_inits.append('%s(%s)' % (field.name, default))
 
-      self.Emit('inline %s::%s() : %s {' %
-          (class_name, class_name, ', '.join(default_inits)), depth)
+      self.Emit('inline %s::%s()' % (class_name, class_name), depth)
+      self.Emit('    : %s {' % FieldInitJoin(default_inits), depth, reflow=False)
       self.Emit('}')
       self.Emit('')
 
     # Define constructor with N args
-    self.Emit('inline %s::%s(%s) : %s {' %
-        (class_name, class_name, ', '.join(params), ', '.join(inits)), depth)
+    self.Emit('inline %s::%s(%s)' % (class_name, class_name, ', '.join(params)), depth)
+    self.Emit('    : %s {' % FieldInitJoin(inits), depth, reflow=False)
     self.Emit('}')
     self.Emit('')
 
