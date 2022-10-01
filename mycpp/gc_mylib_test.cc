@@ -59,13 +59,12 @@ TEST int_to_str_test() {
 }
 
 TEST writer_test() {
-  // Demonstrate vtable offset bug
+  // Demonstrate vtable offset issue
   //
-  // TODO: Garbage collector needs a fix for this!
-  // https://github.com/oilshell/oil/issues/1345
-
-  log("obj obj_len %d", offsetof(Obj, obj_len_));
-  log("buf obj_len %d", offsetof(mylib::BufWriter, obj_len_));
+  // The ObjHeader() function in the garbage collector accounts for this
+  log("offset of obj_len in Obj = %d", offsetof(Obj, obj_len_));
+  log("offset of obj_len in mylib::BufWriter = %d",
+      offsetof(mylib::BufWriter, obj_len_));
 
   mylib::BufWriter* writer = nullptr;
   Str* s = nullptr;
