@@ -13,7 +13,4 @@ void dict_remove(Dict<K, V>* haystack, K needle);
 
 }  // namespace mylib
 
-// Global formatter
-extern mylib::BufWriter gBuf;
-
 #endif  // GC_MYLIB_H

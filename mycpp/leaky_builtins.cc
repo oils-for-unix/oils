@@ -2,8 +2,6 @@
 
 #include "mycpp/runtime.h"
 
-mylib::BufWriter gBuf;
-
 // Translation of Python's print().
 void print(Str* s) {
   fputs(s->data(), stdout);
@@ -24,7 +22,7 @@ Str* str(int i) {
 }
 
 Str* repr(Str* s) {
-  mylib::BufWriter f;
+  mylib::FormatStringer f;
   f.format_r(s);
   return f.getvalue();
 }

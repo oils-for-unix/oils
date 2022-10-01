@@ -141,7 +141,17 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue();
 
-  // Methods to compile printf format strings to
+ private:
+  // Just like a string, except it's mutable
+  char* data_;
+  int len_;
+};
+
+class FormatStringer {
+ public:
+  FormatStringer() : data_(nullptr), len_(0) {
+  }
+  Str* getvalue();
 
   // Called before reusing the global gBuf instance for fmtX() functions
   //
@@ -210,6 +220,6 @@ inline Writer* Stderr() {
 
 }  // namespace mylib
 
-extern mylib::BufWriter gBuf;
+extern mylib::FormatStringer gBuf;
 
 #endif  // LEAKY_MYLIB_H
