@@ -596,7 +596,7 @@ TEST stack_roots_test() {
 
   gHeap.Collect();
 
-  ASSERT_EQ(0, gHeap.roots_top_);
+  ASSERT_EQ(0, gHeap.roots_.size());
 
   StackRoots _roots({&s, &L});
 
@@ -604,7 +604,7 @@ TEST stack_roots_test() {
   // L = nullptr;
   L = NewList<int>();
 
-  ASSERT_EQ_FMT(2, gHeap.roots_top_, "%d");
+  ASSERT_EQ_FMT(2, gHeap.roots_.size(), "%d");
 
   PASS();
 }

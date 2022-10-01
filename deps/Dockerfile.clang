@@ -1,16 +1,13 @@
-FROM debian:buster-slim
+FROM oilshell/soil-common
 
-RUN apt-get update 
-
-# repo is /home/uke/{oil,oil_DEPS}
-WORKDIR /home/uke/tmp
-
+# Copy again to prevent unsound caching
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
-RUN deps/from-apt.sh layer-for-soil
-RUN deps/from-apt.sh clang
 
-# Build other dependencies as non-root uke
-RUN useradd --create-home uke && chown -R uke /home/uke
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh clang
+
 USER uke
 
 # Used by deps/from-binary.sh
@@ -43,6 +40,7 @@ COPY --chown=uke _cache/Python-3.10.4.tar.xz \
 RUN deps/from-tar.sh layer-py3
 
 COPY mycpp/common.sh /home/uke/tmp/mycpp/common.sh
+COPY mycpp/common-vars.sh /home/uke/tmp/mycpp/common-vars.sh
 COPY deps/from-git.sh /home/uke/tmp/deps/from-git.sh
 RUN deps/from-git.sh layer-mycpp
 

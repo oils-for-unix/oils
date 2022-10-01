@@ -141,7 +141,7 @@ Str* Str::slice(int begin, int end) {
   assert(new_len <= len_);
 
   Str* result = AllocStr(new_len);
-  memcpy(result->data_, data_+begin, new_len);
+  memcpy(result->data_, data_ + begin, new_len);
 
   return result;
 }
@@ -193,7 +193,7 @@ Str* Str::ljust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    Str *result = AllocStr(width);
+    Str* result = AllocStr(width);
     char c = fillchar->data_[0];
     memcpy(result->data_, data_, len_);
     for (int i = len_; i < width; ++i) {
@@ -211,7 +211,7 @@ Str* Str::rjust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    Str *result = AllocStr(width);
+    Str* result = AllocStr(width);
     char c = fillchar->data_[0];
     for (int i = 0; i < num_fill; ++i) {
       result->data_[i] = c;
@@ -262,7 +262,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   const size_t new_len = new_str_len;
 
   // Second pass: Copy pieces into 'result'
-  p_this = data_;           // back to beginning
+  p_this = data_;                  // back to beginning
   char* p_result = result->data_;  // advances through 'result'
 
   while (p_this <= last_possible) {

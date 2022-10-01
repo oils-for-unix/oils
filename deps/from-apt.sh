@@ -16,6 +16,16 @@ set -o errexit
 #   zlib1g-dev: needed for 'import zlib'
 declare -a PY3_DEPS=(libssl-dev libffi-dev zlib1g-dev)
 
+# for deps/from-R.sh
+declare -a R_DEPS=(
+    r-base-core  # R interpreter
+
+    # ICU for the R stringi package.  This makes compilation faster; otherwise
+    # it tries to compile it from source.
+    # https://stringi.gagolewski.com/install.html
+    libicu-dev
+)
+
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/reference.md#run---mounttypecache
 
 # TODO: Use this for ALL images
@@ -52,7 +62,7 @@ layer-common() {
 }
 
 layer-locales() {
-  apt-get install -y locales
+  apt-install locales
   # uncomment in a file
   sed -i 's/# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
   locale-gen --purge en_US.UTF-8
@@ -105,14 +115,10 @@ other-tests() {
 
     make  # to build py27.grammar.marshal, ugh
 
-    python3  # for py3-parse
+    # for py3-parse -- is this obsolete?
+    python3
 
-    r-base-core  # for r-libs
-
-    # ICU for R stringi package.  This makes compilation faster; otherwise it
-    # tries to compile it from source.
-    # https://stringi.gagolewski.com/install.html
-    libicu-dev
+    "${R_DEPS[@]}"
   )
 
   apt-install "${packages[@]}"
@@ -138,6 +144,8 @@ cpp() {
 
     # for custom Python 3
     "${PY3_DEPS[@]}"
+
+    "${R_DEPS[@]}"
 
     # To build bloaty
     # TODO: should we use multi-stage builds?
@@ -182,35 +190,42 @@ clang() {
     "${PY3_DEPS[@]}"
   )
 
-  apt-get install -y "${packages[@]}"
+  apt-install "${packages[@]}"
 }
 
 ovm-tarball() {
   local -a packages=(
+    # retrieving deps -- TODO: move to build time
+    wget
+    # for wget https://.  TODO: remove when the build is hermetic
+    ca-certificates
+
     # spec tests need the 'time' command, not the shell builtin
-    time
+    'time'
 
     # This is a separate package needed for re2c.  TODO: remove when we've
     # built it into the image.
     g++
+    # for cmark and yajl
+    cmake
+    # needed to build cmark (although we could use Ninja)
+    make
+
+    xz-utils  # extract e.g. re2c tarball
+    bzip2  # extract e.g. busybox tarball
 
     # line_input.so needs this
     libreadline-dev
     python2-dev
 
-    # retrieving deps -- TODO: move to build time
-    wget
     # for syscall measurements
     strace
-
-    # for cmark and yajl
-    cmake
 
     # test/spec-runner.sh needs this
     gawk
   )
 
-  apt-get install -y "${packages[@]}"
+  apt-install "${packages[@]}"
 }
 
 if test $(basename $0) = 'from-apt.sh'; then

@@ -88,17 +88,12 @@ cachegrind-builds() {
   echo TODO
 }
 
-benchmark-shell-provenance() {
-  # empty label
-  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OIL_NATIVE python2
-}
-
 measure-shells() {
   local base_dir=../benchmark-data
 
   # capture the filename
   local provenance
-  provenance=$(benchmark-shell-provenance)
+  provenance=$(our-shell-provenance)
 
   benchmarks/vm-baseline.sh measure \
     $provenance $base_dir/vm-baseline
@@ -157,6 +152,11 @@ demo-tasks() {
     done
   done
 }
+
+# Measure the parser with cachegrind in CI.
+#
+# TODO: Also want benchmarks/compute.sh in CI.  And enhance it to use
+# cachegrind, not wall time.
 
 soil-run() {
   local base_dir=_tmp/benchmark-data

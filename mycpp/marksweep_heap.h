@@ -3,6 +3,7 @@
 
 #include <new>
 #include <unordered_set>
+#include <vector>
 
 class MarkSweepHeap {
   void MarkAllReferences(Obj* obj);
@@ -15,20 +16,18 @@ class MarkSweepHeap {
   void* Allocate(int);
 
   void PushRoot(Obj** p) {
-    assert(roots_top_ < kMaxRoots);
-    roots_[roots_top_++] = p;
+    roots_.push_back(p);
   }
 
   void PopRoot() {
-    roots_top_--;
+    roots_.pop_back();
   }
 
   void Collect();
 
-  void Report() {};
+  void Report(){};
 
-  int roots_top_;
-  Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
+  std::vector<Obj**> roots_;
 
   uint64_t current_heap_bytes_;
   uint64_t collection_thresh_;
@@ -41,7 +40,7 @@ class MarkSweepHeap {
   int num_live_objs_;
 #endif
 
-  std::unordered_set<void*> all_allocations_;
+  std::vector<void*> all_allocations_;
   std::unordered_set<void*> marked_allocations_;
 };
 

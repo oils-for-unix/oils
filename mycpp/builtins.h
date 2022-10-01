@@ -67,7 +67,8 @@ void println_stderr(Str* s);
 
 Str* repr(Str* s);
 
-// For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
+// For hnode::External in asdl/format.py.  TODO: Remove this when that is
+// removed.
 inline Str* repr(void* obj) {
   InvalidCodePath();
 }

@@ -78,3 +78,10 @@ filter-provenance() {
   # 4th column is the shell
   awk -v pat="$pat" '$4 ~ pat { print }'
 }
+
+our-shell-provenance() {
+  ### The list of programs we compare
+
+  # empty label
+  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OIL_NATIVE python2
+}

@@ -173,7 +173,8 @@ TEST test_mylib_funcs() {
   Str* Z = nullptr;
   Str* emptyStr = nullptr;
 
-  StackRoots _roots2({&fooEqualsBar, &foo, &bar, &fooEquals, &equals, &Z, &emptyStr});
+  StackRoots _roots2(
+      {&fooEqualsBar, &foo, &bar, &fooEquals, &equals, &Z, &emptyStr});
 
   fooEqualsBar = StrFromC("foo=bar");
   foo = StrFromC("foo");

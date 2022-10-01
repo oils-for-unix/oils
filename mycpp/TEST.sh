@@ -244,11 +244,15 @@ compare-examples() {
   ./NINJA-config.sh
 
   # 'mycpp-all' has other stuff like type checking alone, stripping, clang builds
+  # Note: only tests CORRECTNESS of benchmarks.  To test speed, we run them
+  # SERIALLY with benchmarks/report.sh.  TODO: could move that here.
+
   set +o errexit
   ninja mycpp-logs-equal
   local status=$?
   set -o errexit
 
+  # Only for CI
   find-dir-html _test mycpp-examples
 
   # Now we want to zip up
@@ -258,11 +262,14 @@ compare-examples() {
 test-translator() {
   ### Invoked by soil/worker.sh
 
-  # Test that examples don't leak
+  # Test that examples don't leak (note known failures above)
   ASAN_OPTIONS='' examples-variant '' asan
 
-  # Test with more collections
+  # Test with more collections (note known failures above)
   ASAN_OPTIONS='' examples-variant '' gcevery
+
+  # Sanity check that doesn't collect garbage
+  examples-variant '' mallocleak
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
@@ -286,6 +293,28 @@ examples-coverage() {
 
   local out_dir=_test/clang-coverage/mycpp/examples
   test/coverage.sh html-report $out_dir mycpp/examples
+}
+
+compare-malloc-leak-parse() {
+  ninja _bin/cxx-{opt,mallocleak}/osh_eval
+
+  for bin in _bin/cxx-{opt,mallocleak}/osh_eval; do
+    echo $bin
+    time $bin --ast-format none -n benchmarks/testdata/configure-coreutils
+  done
+}
+
+compare-malloc-leak-example() {
+  local example=${1:-escape}
+  ninja _bin/cxx-{opt,mallocleak}/mycpp/examples/$example.mycpp
+  for bin in _bin/cxx-{opt,mallocleak}/mycpp/examples/$example.mycpp; do
+    echo $bin
+    time BENCHMARK=1 $bin
+    # time BENCHMARK=1 gdb --args $bin
+  done
+
+  echo PYTHON
+  time PYTHONPATH=.:vendor BENCHMARK=1 mycpp/examples/$example.py
 }
 
 # Call function $1 with arguments $2 $3 $4

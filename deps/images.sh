@@ -72,7 +72,7 @@ build() {
 tag() {
   local name=${1:-dummy}
 
-  local tag='v-2022-09-24'
+  local tag='v-2022-09-26'
   sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
 }
 
@@ -83,6 +83,17 @@ list-images() {
       continue
     fi
     echo $image_id
+  done
+}
+
+push-all-latest() {
+  ### 'latest' can lag behind the tagged version, so push to catch up
+
+  # because our 'my-sizes' script fetches the latest manifest
+
+  list-images | while read image_id; do
+    echo "___ $image_id"
+    push $image_id
   done
 }
 
