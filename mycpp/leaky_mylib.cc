@@ -139,6 +139,10 @@ bool CFileWriter::isatty() {
 void BufWriter::write(Str* s) {
   int orig_len = len_;
   int n = len(s);
+  if (n == 0) {
+    // preserve invariant that data_ == nullptr when len_ == 0
+    return; 
+  }
   len_ += n;
 
   // BUG: This is quadratic!
