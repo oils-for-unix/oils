@@ -64,7 +64,7 @@ class Obj {
   }
 
   void SetObjLen(int obj_len) {
-    this->obj_len_ = obj_len;
+    obj_len_ = obj_len;
   }
 
   OBJ_HEADER()

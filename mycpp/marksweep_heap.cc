@@ -1,8 +1,8 @@
 #include "mycpp/runtime.h"
 
 void MarkSweepHeap::Init(int collection_thresh) {
-  this->collection_thresh_ = collection_thresh;
-  this->all_allocations_.reserve(KiB(10));
+  collection_thresh_ = collection_thresh;
+  all_allocations_.reserve(KiB(10));
   roots_.reserve(KiB(1));  // prevent resizing in common case
 }
 
@@ -18,18 +18,18 @@ void* MarkSweepHeap::Allocate(int byte_count) {
   #endif
 
   #if GC_STATS
-  this->num_live_objs_++;
+  num_live_objs_++;
   #endif
 
-  this->current_heap_bytes_ += byte_count;
-  if (this->current_heap_bytes_ > this->collection_thresh_) {
+  current_heap_bytes_ += byte_count;
+  if (current_heap_bytes_ > collection_thresh_) {
     Collect();
   }
 
-  // TODO: collection policy isn't correct, as this->current_heap_bytes_ isn't
+  // TODO: collection policy isn't correct, as current_heap_bytes_ isn't
   // updated on collection.
 
-  if (this->current_heap_bytes_ > this->collection_thresh_) {
+  if (current_heap_bytes_ > collection_thresh_) {
     //
     // NOTE(Jesse): Generally, doubling results in a lot of wasted space.  I've
     // observed growing by a factor of 1.5x, or even 1.3x, to be a good
@@ -39,13 +39,13 @@ void* MarkSweepHeap::Allocate(int byte_count) {
     // 1.5x = (3/2)
     // 1.3x = (13/10)
     //
-    this->collection_thresh_ = this->current_heap_bytes_ * 3 / 2;
+    collection_thresh_ = current_heap_bytes_ * 3 / 2;
   }
 
   void* result = calloc(byte_count, 1);
   assert(result);
 
-  this->all_allocations_.push_back(result);
+  all_allocations_.push_back(result);
 
   return result;
 }
@@ -60,7 +60,7 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
     return;
   }
 
-  this->marked_allocations_.insert(static_cast<void*>(obj));
+  marked_allocations_.insert(static_cast<void*>(obj));
 
   switch (header->heap_tag_) {
   case Tag::FixedSize: {
@@ -109,12 +109,12 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
 }
 
 void MarkSweepHeap::Collect() {
-  int num_roots = this->roots_.size();
+  int num_roots = roots_.size();
   for (int i = 0; i < num_roots; ++i) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
     // should do that such that we don't store indirected pointers here.
-    Obj* root = *(this->roots_[i]);
+    Obj* root = *(roots_[i]);
 
     if (root) {
       MarkAllReferences(root);
@@ -136,7 +136,7 @@ void MarkSweepHeap::Collect() {
       free(alloc);
 
 #if GC_STATS
-      this->num_live_objs_--;
+      num_live_objs_--;
 #endif
     }
   }

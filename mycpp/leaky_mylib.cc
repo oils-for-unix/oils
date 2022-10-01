@@ -160,7 +160,7 @@ void BufWriter::write_const(const char* s, int len) {
 }
 
 void BufWriter::format_s(Str* s) {
-  this->write(s);
+  write(s);
 }
 
 void BufWriter::format_o(int i) {
