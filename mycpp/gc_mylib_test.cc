@@ -59,9 +59,25 @@ TEST int_to_str_test() {
 }
 
 TEST writer_test() {
-  // Demonstrate bug with inheritance
+  // Demonstrate vtable offset bug
+  //
+  // TODO: Garbage collector needs a fix for this!
+  // https://github.com/oilshell/oil/issues/1345
+
   log("obj obj_len %d", offsetof(Obj, obj_len_));
   log("buf obj_len %d", offsetof(mylib::BufWriter, obj_len_));
+
+  mylib::BufWriter* writer = nullptr;
+  Str* s = nullptr;
+  StackRoots _roots({&writer, &s});
+
+  writer = Alloc<mylib::BufWriter>();
+  writer->write(StrFromC("foo"));
+  writer->write(StrFromC("bar"));
+
+  s = writer->getvalue();
+  ASSERT(str_equals0("foobar", s));
+  log("result = %s", s->data());
 
   PASS();
 }
