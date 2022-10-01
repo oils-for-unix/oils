@@ -6,7 +6,11 @@
 #include "prebuilt/asdl/runtime.mycpp.h"
 #include "vendor/greatest.h"
 
+using hnode_asdl::color_e;
 using hnode_asdl::hnode_t;
+using hnode_asdl::hnode__Array;
+using hnode_asdl::hnode__Record;
+using hnode_asdl::hnode__Leaf;
 namespace hnode_e = hnode_asdl::hnode_e;
 
 using typed_demo_asdl::bool_expr__Binary;
@@ -24,7 +28,7 @@ TEST pretty_print_test() {
 
   // Note: this segfaults with 1000 iterations, because it hit GC.
   // TODO: GC_EVERY_ALLOC and make it pass.
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     hnode_t* t1 = b->PrettyTree();
     ASSERT_EQ(hnode_e::Record, t1->tag_());
 
@@ -37,14 +41,53 @@ TEST pretty_print_test() {
   PASS();
 }
 
+TEST hnode_test() {
+  mylib::Writer* f = nullptr;
+  format::TextOutput* ast_f = nullptr;
+  hnode__Array* array = nullptr;  // base type
+  hnode_t* h = nullptr;  // base type
+  StackRoots _roots({&f, &ast_f, &h, &array});
+
+  f = mylib::Stdout();
+  ast_f = Alloc<format::TextOutput>(f);
+  array = Alloc<hnode__Array>();
+
+  hnode__Record* rec = Alloc<hnode__Record>();
+  rec->node_type = StrFromC("dummy_node");
+
+  h = rec;  // base type
+  array->children->append(h);
+
+  format::PrintTree(h, ast_f);
+  printf("\n");
+  gHeap.Collect();
+
+  h = Alloc<hnode__Leaf>(StrFromC("zz"), color_e::TypeName);
+  array->children->append(h);
+
+  format::PrintTree(h, ast_f);
+  printf("\n");
+  gHeap.Collect();
+
+  h = array;
+  format::PrintTree(h, ast_f);
+  printf("\n");
+  gHeap.Collect();
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init(KiB(1));
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(hnode_test);
   RUN_TEST(pretty_print_test);
+
+  gHeap.Collect();
 
   GREATEST_MAIN_END();
   return 0;
