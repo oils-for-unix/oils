@@ -7,11 +7,14 @@ void MarkSweepHeap::Init(int collection_thresh) {
 }
 
 #ifdef MALLOC_LEAK
+
 // for testing performance
 void* MarkSweepHeap::Allocate(int byte_count) {
   return calloc(byte_count, 1);
 }
+
 #else
+
 void* MarkSweepHeap::Allocate(int byte_count) {
   #if GC_EVERY_ALLOC
   Collect();
@@ -49,6 +52,7 @@ void* MarkSweepHeap::Allocate(int byte_count) {
 
   return result;
 }
+
 #endif  // MALLOC_LEAK
 
 void MarkSweepHeap::MarkAllReferences(Obj* obj) {
