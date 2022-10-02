@@ -27,8 +27,9 @@ Output Layout:
   _build/
     obj/
       cxx-dbg/
-        gc_heap_test.o  # not translated
-        gc_builtins.o   
+        mycpp/
+          gc_heap_test.o  # not translated
+          gc_builtins.o   
         _gen/
           mycpp/
             examples/
@@ -102,7 +103,9 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import asdl_cpp, log, ObjPath
+from build.ninja_lib import (
+    asdl_cpp, log, NinjaVars, ObjPath, COMPILERS_VARIANTS 
+    )
 
 # TODO:
 # - Fold this dependency into a proper shwrap wrapper
@@ -243,25 +246,6 @@ EXAMPLES_H = {
              ],
 }
 
-COMPILERS_VARIANTS = [
-    # mainly for unit tests
-    ('cxx', 'gcstats'),
-    ('cxx', 'gcevery'),
-
-    ('cxx', 'dbg'),
-    ('cxx', 'opt'),
-    ('cxx', 'asan'),
-    ('cxx', 'ubsan'),
-
-    ('cxx', 'mallocleak'),
-
-    #('clang', 'asan'),
-    ('clang', 'dbg'),  # compile-quickly
-    ('clang', 'opt'),  # for comparisons
-    ('clang', 'ubsan'),  # finds different bugs
-    ('clang', 'coverage'),
-]
-
 def TranslatorSubgraph(n, translator, ex, phony):
   raw = '_gen/mycpp/examples/%s_raw.%s.cc' % (ex, translator)
 
@@ -308,12 +292,7 @@ def TranslatorSubgraph(n, translator, ex, phony):
 
   # Compile C++.
   for compiler, variant in example_matrix:
-    compile_vars = [
-        ('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")
-    ]
-    link_vars = [
-        ('compiler', compiler), ('variant', variant),
-    ]
+    compile_vars, link_vars = NinjaVars(compiler, variant)
 
     main_obj = ObjPath(main_cc_src, compiler, variant)
 
@@ -442,6 +421,12 @@ def NinjaGraph(n):
           variables=[('out_prefix', prefix)])
 
   #
+  # ASDL schema that examples/parse.py depends on
+  #
+
+  asdl_cpp(n, 'mycpp/examples/expr.asdl')
+
+  #
   # Individual object files
   #
 
@@ -457,15 +442,7 @@ def NinjaGraph(n):
   cc_sources = sorted(set(cc_sources))  # make unique
 
   for (compiler, variant) in COMPILERS_VARIANTS:
-    compile_vars = [
-        ('compiler', compiler),
-        ('variant', variant),
-        ('more_cxx_flags', "''"),
-    ]
-    link_vars = [
-        ('compiler', compiler),
-        ('variant', variant),
-    ]
+    compile_vars, link_vars = NinjaVars(compiler, variant)
 
     #
     # Build all objects
@@ -521,12 +498,6 @@ def NinjaGraph(n):
         phony[key] = []
       phony[key].append(b)
 
-
-  #
-  # ASDL schema that examples/parse.py depends on
-  #
-
-  asdl_cpp(n, 'mycpp/examples/expr.asdl')
 
   #
   # Build and run examples/

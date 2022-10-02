@@ -6,6 +6,29 @@ from __future__ import print_function
 
 import os
 
+# - Used as-is by mycpp/examples
+# - mycpp unit tests can be restricted by 'test_runs_under_variant'.
+# - cpp/ adds a few 
+
+COMPILERS_VARIANTS = [
+    # mainly for unit tests
+    ('cxx', 'gcstats'),
+    ('cxx', 'gcevery'),
+
+    ('cxx', 'dbg'),
+    ('cxx', 'opt'),
+    ('cxx', 'asan'),
+    ('cxx', 'ubsan'),
+
+    ('cxx', 'mallocleak'),
+
+    #('clang', 'asan'),
+    ('clang', 'dbg'),  # compile-quickly
+    ('clang', 'opt'),  # for comparisons
+    ('clang', 'ubsan'),  # finds different bugs
+    ('clang', 'coverage'),
+]
+
 
 def log(msg, *args):
   if args:
@@ -16,6 +39,19 @@ def log(msg, *args):
 def ObjPath(src_path, compiler, variant):
   rel_path, _ = os.path.splitext(src_path)
   return '_build/obj/%s-%s/%s.o' % (compiler, variant, rel_path)
+
+
+def NinjaVars(compiler, variant):
+  compile_vars = [
+      ('compiler', compiler),
+      ('variant', variant),
+      ('more_cxx_flags', "''")
+  ]
+  link_vars = [
+      ('compiler', compiler),
+      ('variant', variant),
+  ]
+  return compile_vars, link_vars
 
 
 def asdl_cpp(n, asdl_path, pretty_print_methods=True):
