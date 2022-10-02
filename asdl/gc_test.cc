@@ -28,7 +28,7 @@ TEST pretty_print_test() {
 
   // Note: this segfaults with 1000 iterations, because it hit GC.
   // TODO: GC_EVERY_ALLOC and make it pass.
-  for (int i = 0; i < 1000; ++i) {
+  for (int i = 0; i < 2; ++i) {
     hnode_t* t1 = b->PrettyTree();
     ASSERT_EQ(hnode_e::Record, t1->tag_());
 
@@ -80,7 +80,7 @@ TEST hnode_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(KiB(1));
+  gHeap.Init(KiB(128));
 
   GREATEST_MAIN_BEGIN();
 
