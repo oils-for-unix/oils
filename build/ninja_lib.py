@@ -56,81 +56,100 @@ def NinjaVars(compiler, variant):
   return compile_vars, link_vars
 
 
-def asdl_cpp(n, asdl_path, pretty_print_methods=True):
-  # to create _gen/mycpp/examples/expr.asdl.h
-  prefix = '_gen/%s' % asdl_path
+class Rules(object):
+  """High-level wrapper for NinjaWriter
 
-  if pretty_print_methods:
-    outputs = [prefix + '.cc', prefix + '.h']
-    asdl_flags = '' 
-  else:
-    outputs = [prefix + '.h']
-    asdl_flags = '--no-pretty-print-methods'
+  What should it handle?
 
-  debug_mod = '%s_debug.py' % prefix 
-  outputs.append(debug_mod)
+  - The (compiler, variant) matrix loop
+  - Implicit deps for generated code
+  - Phony convenience targets
 
-  # NOTE: Generating syntax_asdl.h does NOT depend on hnode_asdl.h, but
-  # COMPILING anything that #includes it does.  That is handled elsewhere.
+  Maybe: exporting data to test runner
+  """
 
-  n.build(outputs, 'asdl-cpp', asdl_path,
-          implicit=['_bin/shwrap/asdl_main'],
-          variables=[
-            ('action', 'cpp'),
-            ('out_prefix', prefix),
-            ('asdl_flags', asdl_flags),
-            ('debug_mod', debug_mod),
-          ])
-  n.newline()
+  def __init__(self, n):
+    self.n = n  # direct ninja writer
+    self.cc_libs = {}
+    self.phony = {}  # list of phony targets
 
+  def cc_library(self, name, srcs, matrix=[]):
+    for compiler, variant in matrix:
+      compile_vars, _ = NinjaVars(compiler, variant)
 
-# TODO: Move into cc_library()
-GC_RUNTIME = [
-    'mycpp/gc_mylib.cc',
-    'mycpp/cheney_heap.cc',
-    'mycpp/marksweep_heap.cc',
+      objects = []
+      for src in srcs:
+        obj = ObjPath(src, compiler, variant)
+        objects.append(obj)
 
-    # files we haven't added StackRoots to
-    'mycpp/leaky_containers.cc',
-    'mycpp/leaky_builtins.cc',
-    'mycpp/leaky_mylib.cc',
-]
+        self.n.build(obj, 'compile_one', [src], variables=compile_vars)
+        self.n.newline()
+      self.cc_libs[(name, compiler, variant)] = objects
 
+  def cc_binary(
+      self,
+      main_cc,
+      deps=[],
+      # TODO: Put :mycpp/runtime label here
+      # Also could put :asdl/examples/typed_arith, etc.
+      asdl_deps=[],  # causes implicit header dep for compile action, and .o for link action
 
-def cc_binary(
-    n,
-    main_cc,
-    asdl_deps=[],  # causes implicit header dep for compile action, and .o for link action
-    matrix=[],  # $compiler $variant
-    phony={},
-    ):
+      matrix=[],  # $compiler $variant
 
-  # Actions:
-  #   compile_one main_cc
-  #   link with objects, including GC runtime
+      # TODO: tags?
+      # if tags = 'mycpp-unit' then add to phony?
+      phony={},
+      ):
 
-  # So then asdl_cpp() also has to generated
-  #
-  #   compile_one of the .cc file, respecting matrix
+    for compiler, variant in matrix:
+      compile_vars, link_vars = NinjaVars(compiler, variant)
 
-  for compiler, variant in matrix:
-    compile_vars, link_vars = NinjaVars(compiler, variant)
+      main_obj = ObjPath(main_cc, compiler, variant)
+      self.n.build(main_obj, 'compile_one', [main_cc], variables=compile_vars)
+      self.n.newline()
 
-    main_obj = ObjPath(main_cc, compiler, variant)
-    n.build(main_obj, 'compile_one', [main_cc], variables=compile_vars)
-    n.newline()
+      rel_path, _ = os.path.splitext(main_cc)
 
-    rel_path, _ = os.path.splitext(main_cc)
+      b = '_bin/%s-%s/%s' % (compiler, variant, rel_path)
 
-    b = '_bin/%s-%s/%s' % (compiler, variant, rel_path)
+      obj_paths = [main_obj]
+      for dep in deps:
+        o = self.cc_libs.get((dep, compiler, variant))
+        if o is None:
+          raise RuntimeError('Invalid cc_library %r' % dep)
+        obj_paths.extend(o)
 
-    cc_files = [main_cc] + GC_RUNTIME
-    obj_paths = [ObjPath(dep_cc, compiler, variant) for dep_cc in cc_files]
+      self.n.build([b], 'link', obj_paths, variables=link_vars)
+      self.n.newline()
 
-    n.build([b], 'link', obj_paths, variables=link_vars)
-    n.newline()
+      key = 'mycpp-unit-%s-%s' % (compiler, variant)
+      if key not in phony:
+        phony[key] = []
+      phony[key].append(b)
 
-    key = 'mycpp-unit-%s-%s' % (compiler, variant)
-    if key not in phony:
-      phony[key] = []
-    phony[key].append(b)
+  def asdl_cc(self, asdl_path, pretty_print_methods=True):
+    # to create _gen/mycpp/examples/expr.asdl.h
+    prefix = '_gen/%s' % asdl_path
+
+    if pretty_print_methods:
+      outputs = [prefix + '.cc', prefix + '.h']
+      asdl_flags = '' 
+    else:
+      outputs = [prefix + '.h']
+      asdl_flags = '--no-pretty-print-methods'
+
+    debug_mod = '%s_debug.py' % prefix 
+    outputs.append(debug_mod)
+
+    # NOTE: Generating syntax_asdl.h does NOT depend on hnode_asdl.h, but
+    # COMPILING anything that #includes it does.  That is handled elsewhere.
+
+    self.n.build(outputs, 'asdl-cpp', [asdl_path],
+            implicit=['_bin/shwrap/asdl_main'],
+            variables=[
+              ('action', 'cpp'),
+              ('out_prefix', prefix),
+              ('asdl_flags', asdl_flags),
+              ('debug_mod', debug_mod),
+            ])
+    self.n.newline()

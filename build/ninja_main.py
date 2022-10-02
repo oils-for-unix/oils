@@ -7,6 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
+from build import ninja_lib
 from asdl import NINJA_subgraph as asdl_subgraph
 from build import NINJA_subgraph as build_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
@@ -37,22 +38,25 @@ def main(argv):
   if action == 'ninja':
     n = ninja_syntax.Writer(open(BUILD_NINJA, 'w'))
 
-    asdl_subgraph.NinjaGraph(n)
+    # High level rules
+    ru = ninja_lib.Rules(n)
+
+    asdl_subgraph.NinjaGraph(ru)
 
     n.newline()
     n.newline()
 
-    build_subgraph.NinjaGraph(n)
+    build_subgraph.NinjaGraph(ru)
 
     n.newline()
     n.newline()
 
-    cpp_subgraph.NinjaGraph(n)
+    cpp_subgraph.NinjaGraph(ru)
 
     n.newline()
     n.newline()
 
-    mycpp_subgraph.NinjaGraph(n)
+    mycpp_subgraph.NinjaGraph(ru)
 
     log('  (%s) -> %s', argv[0], BUILD_NINJA)
 
