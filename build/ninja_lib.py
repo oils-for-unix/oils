@@ -6,15 +6,17 @@ from __future__ import print_function
 
 import os
 
+
+def log(msg, *args):
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
 # - Used as-is by mycpp/examples
 # - mycpp unit tests can be restricted by 'test_runs_under_variant'.
 # - cpp/ adds a few 
 
-COMPILERS_VARIANTS = [
-    # mainly for unit tests
-    ('cxx', 'gcstats'),
-    ('cxx', 'gcevery'),
-
+COMPILERS_VARIANTS_LEAKY = [
     ('cxx', 'dbg'),
     ('cxx', 'opt'),
     ('cxx', 'asan'),
@@ -29,11 +31,11 @@ COMPILERS_VARIANTS = [
     ('clang', 'coverage'),
 ]
 
-
-def log(msg, *args):
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
+COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
+    # mainly for unit tests
+    ('cxx', 'gcstats'),
+    ('cxx', 'gcevery'),
+]
 
 
 def ObjPath(src_path, compiler, variant):
@@ -80,3 +82,55 @@ def asdl_cpp(n, asdl_path, pretty_print_methods=True):
             ('debug_mod', debug_mod),
           ])
   n.newline()
+
+
+# TODO: Move into cc_library()
+GC_RUNTIME = [
+    'mycpp/gc_mylib.cc',
+    'mycpp/cheney_heap.cc',
+    'mycpp/marksweep_heap.cc',
+
+    # files we haven't added StackRoots to
+    'mycpp/leaky_containers.cc',
+    'mycpp/leaky_builtins.cc',
+    'mycpp/leaky_mylib.cc',
+]
+
+
+def cc_binary(
+    n,
+    main_cc,
+    asdl_deps=[],  # causes implicit header dep for compile action, and .o for link action
+    matrix=[],  # $compiler $variant
+    phony={},
+    ):
+
+  # Actions:
+  #   compile_one main_cc
+  #   link with objects, including GC runtime
+
+  # So then asdl_cpp() also has to generated
+  #
+  #   compile_one of the .cc file, respecting matrix
+
+  for compiler, variant in matrix:
+    compile_vars, link_vars = NinjaVars(compiler, variant)
+
+    main_obj = ObjPath(main_cc, compiler, variant)
+    n.build(main_obj, 'compile_one', [main_cc], variables=compile_vars)
+    n.newline()
+
+    rel_path, _ = os.path.splitext(main_cc)
+
+    b = '_bin/%s-%s/%s' % (compiler, variant, rel_path)
+
+    cc_files = [main_cc] + GC_RUNTIME
+    obj_paths = [ObjPath(dep_cc, compiler, variant) for dep_cc in cc_files]
+
+    n.build([b], 'link', obj_paths, variables=link_vars)
+    n.newline()
+
+    key = 'mycpp-unit-%s-%s' % (compiler, variant)
+    if key not in phony:
+      phony[key] = []
+    phony[key].append(b)

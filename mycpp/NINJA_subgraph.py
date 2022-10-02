@@ -104,8 +104,10 @@ import os
 import sys
 
 from build.ninja_lib import (
-    asdl_cpp, log, NinjaVars, ObjPath, COMPILERS_VARIANTS 
-    )
+    asdl_cpp, cc_binary, log, NinjaVars, ObjPath, COMPILERS_VARIANTS,
+    COMPILERS_VARIANTS_LEAKY,
+    GC_RUNTIME,
+)
 
 # TODO:
 # - Fold this dependency into a proper shwrap wrapper
@@ -181,17 +183,6 @@ def ShouldSkipBenchmark(name):
 
   return False
 
-
-GC_RUNTIME = [
-    'mycpp/gc_mylib.cc',
-    'mycpp/cheney_heap.cc',
-    'mycpp/marksweep_heap.cc',
-
-    # files we haven't added StackRoots to
-    'mycpp/leaky_containers.cc',
-    'mycpp/leaky_builtins.cc',
-    'mycpp/leaky_mylib.cc',
-]
 
 VARIANTS_GC = 1            # Run with garbage collector on, cxx-gcevery
 VARIANTS_LEAKY = 2
@@ -427,6 +418,22 @@ def NinjaGraph(n):
   asdl_cpp(n, 'mycpp/examples/expr.asdl')
 
   #
+  # Build and run unit tests
+  #
+
+  for main_cc in sorted(UNIT_TESTS):
+    which_variants = UNIT_TESTS[main_cc]
+
+    if which_variants == VARIANTS_GC:
+      matrix = COMPILERS_VARIANTS
+    elif which_variants == VARIANTS_LEAKY:
+      matrix = COMPILERS_VARIANTS_LEAKY
+    else:
+      raise AssertionError()
+
+    cc_binary(n, main_cc, matrix=matrix, phony=phony)
+
+  #
   # Individual object files
   #
 
@@ -434,8 +441,6 @@ def NinjaGraph(n):
 
   for srcs in EXAMPLES_CC.values():  # generated code
     cc_sources.extend(srcs)
-
-  cc_sources.extend(UNIT_TESTS.keys())  # test main() with GC on
 
   cc_sources.extend(GC_RUNTIME)
 
@@ -450,54 +455,8 @@ def NinjaGraph(n):
 
     for src_path in cc_sources:
       obj_path = ObjPath(src_path, compiler, variant)
-
       n.build(obj_path, 'compile_one', [src_path], variables=compile_vars)
       n.newline()
-
-    #
-    # Build and run unit tests
-    #
-
-    for main_cc in sorted(UNIT_TESTS):
-      which_variants = UNIT_TESTS[main_cc]
-
-      cc_files = GC_RUNTIME
-
-      test_rel_path, _ = os.path.splitext(main_cc)
-
-      b = '_bin/%s-%s/%s' % (compiler, variant, test_rel_path)
-
-      # Hack: avoid illegal combinations
-      test_runs_under_variant = False
-      if which_variants == VARIANTS_GC and variant in (
-          'dbg', 'opt', 'asan', 'ubsan', 'coverage', 'gcevery', 'gcstats'):
-        test_runs_under_variant = True
-
-      if which_variants == VARIANTS_LEAKY and variant in (
-          'dbg', 'opt', 'asan', 'ubsan', 'coverage'):
-        test_runs_under_variant = True
-
-      if not test_runs_under_variant:
-        continue
-
-      compile_vars = [
-          ('compiler', compiler),
-          ('variant', variant),
-          ('more_cxx_flags', "''")
-      ]
-
-      obj_paths = [ObjPath(main_cc, compiler, variant)]
-      obj_paths.extend(ObjPath(dep_cc, compiler, variant) for dep_cc in cc_files)
-
-      n.build([b], 'link', obj_paths,
-              variables=link_vars)
-      n.newline()
-
-      key = 'mycpp-unit-%s-%s' % (compiler, variant)
-      if key not in phony:
-        phony[key] = []
-      phony[key].append(b)
-
 
   #
   # Build and run examples/
