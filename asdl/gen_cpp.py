@@ -34,11 +34,10 @@ _ = log
 # Not supporting concise syntax tree like Python
 ABBREV = False
 
-# TODO: Fix bug!  This condition is reversed!
 if ABBREV:
-  PRETTY_METHODS = ['PrettyTree']
-else:
   PRETTY_METHODS = ['PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree']
+else:
+  PRETTY_METHODS = ['PrettyTree']
 
 
 # Used by core/asdl_gen.py to generate _devbuild/gen/osh-types.h, with
