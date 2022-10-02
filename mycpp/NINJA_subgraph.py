@@ -486,10 +486,9 @@ def NinjaGraph(n):
 
       cc_files = GC_RUNTIME
 
-      # assume names are unique
-      test_name, _ = os.path.splitext(os.path.basename(main_cc))
+      test_rel_path, _ = os.path.splitext(main_cc)
 
-      b = '_bin/%s-%s/mycpp/%s' % (compiler, variant, test_name)
+      b = '_bin/%s-%s/%s' % (compiler, variant, test_rel_path)
 
       # Hack: avoid illegal combinations
       test_runs_under_variant = False

@@ -179,21 +179,23 @@ unit() {
   log "$0 unit $compiler $variant"
   log ''
 
-
-  # TODO: Exclude examples here
-  # ninja mycpp-$variant
   ninja mycpp-unit-$compiler-$variant
 
-  local log_dir=_test/$compiler-$variant/mycpp
-  mkdir -p $log_dir
+  local -a binaries=(_bin/$compiler-$variant/mycpp/*)
 
-  for b in _bin/$compiler-$variant/mycpp/*; do
+  # Add these files if they exist in the variant
+  if test -d _bin/$compiler-$variant/mycpp/demo; then
+    binaries+=(_bin/$compiler-$variant/mycpp/demo/*)
+  fi
+
+  for b in "${binaries[@]}"; do
     if ! test -f $b; then
       continue
     fi
 
-    local prefix=$log_dir/$(basename $b)
+    local prefix=${b//_bin/_test/}
     local log=$prefix.log
+    mkdir -p $(dirname $log)
 
     run-test-bin $b
   done

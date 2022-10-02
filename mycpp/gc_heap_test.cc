@@ -604,7 +604,8 @@ TEST stack_roots_test() {
   // L = nullptr;
   L = NewList<int>();
 
-  ASSERT_EQ_FMT(2, gHeap.roots_.size(), "%d");
+  int num_roots = gHeap.roots_.size();
+  ASSERT_EQ_FMT(2, num_roots, "%u");
 
   PASS();
 }
