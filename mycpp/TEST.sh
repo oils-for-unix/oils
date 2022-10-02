@@ -95,8 +95,8 @@ examples-variant() {
       fi
       ;;
     (gcevery)
-      if test $num_failed -ne 6; then
-        echo "FAIL: Expected 6 failures with GC_EVERY_ALLOC"
+      if test $num_failed -ne 5; then
+        echo "FAIL: Expected 5 failures with GC_EVERY_ALLOC"
         return 1
       fi
       ;;
