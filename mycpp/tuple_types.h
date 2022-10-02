@@ -28,6 +28,7 @@ class Tuple2 {
   }
 
   OBJ_HEADER();
+
  private:
   A a_;
   B b_;
@@ -57,6 +58,7 @@ class Tuple3 {
   }
 
   OBJ_HEADER();
+
  private:
   A a_;
   B b_;
@@ -92,6 +94,7 @@ class Tuple4 {
   }
 
   OBJ_HEADER();
+
  private:
   A a_;
   B b_;
