@@ -141,7 +141,7 @@ void BufWriter::write(Str* s) {
   int n = len(s);
   if (n == 0) {
     // preserve invariant that data_ == nullptr when len_ == 0
-    return; 
+    return;
   }
   len_ += n;
 

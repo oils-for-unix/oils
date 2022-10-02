@@ -7,10 +7,10 @@
 #include "vendor/greatest.h"
 
 using hnode_asdl::color_e;
-using hnode_asdl::hnode_t;
 using hnode_asdl::hnode__Array;
-using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Leaf;
+using hnode_asdl::hnode__Record;
+using hnode_asdl::hnode_t;
 namespace hnode_e = hnode_asdl::hnode_e;
 
 using typed_demo_asdl::bool_expr__Binary;
@@ -51,7 +51,7 @@ TEST hnode_test() {
   mylib::Writer* f = nullptr;
   format::TextOutput* ast_f = nullptr;
   hnode__Array* array = nullptr;  // base type
-  hnode_t* h = nullptr;  // base type
+  hnode_t* h = nullptr;           // base type
   StackRoots _roots({&f, &ast_f, &h, &array});
 
   f = mylib::Stdout();
