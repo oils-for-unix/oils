@@ -1,7 +1,11 @@
 #ifndef TUPLE_TYPES_H
 #define TUPLE_TYPES_H
 
-
+// Note:
+//
+// - These use OBJ_HEADER() instead of inheriting from Obj, because Obj can't
+//   be returned by value.  mycpp generates code that returns TupleN<> VALUES,
+//   not references (to reduce GC pressure).
 
 template <class A, class B>
 class Tuple2 {
