@@ -118,6 +118,31 @@ TEST cycle_collection_test() {
 
 GREATEST_MAIN_DEFS();
 
+TEST tuple_field_masks_test() {
+  Tuple2<Str*, Str*> ss(nullptr, nullptr);
+  ASSERT_EQ_FMT(0b11, ss.field_mask_, "%d");
+
+  // 8 + 4 on 64 bit
+  Tuple2<Str*, int> si(nullptr, 42);
+  ASSERT_EQ_FMT(0b01, si.field_mask_, "%d");
+
+  // 4 + 8 on 64 bit
+  Tuple2<int, Str*> is(42, nullptr);
+  ASSERT_EQ_FMT(0b10, is.field_mask_, "%d");
+
+  Tuple3<Str*, Str*, Str*> sss(nullptr, nullptr, nullptr);
+  ASSERT_EQ_FMT(0b111, sss.field_mask_, "%d");
+
+  Tuple3<int, Str*, Str*> iss(42, nullptr, nullptr);
+  ASSERT_EQ_FMT(0b110, iss.field_mask_, "%d");
+
+  // 4 + 4 + 8 + 8, so it's 0b110 not 0b1100
+  Tuple4<int, int, Str*, Str*> iiss(42, 42, nullptr, nullptr);
+  ASSERT_EQ_FMT(0b110, iiss.field_mask_, "%d");
+
+  PASS();
+}
+
 TEST tuple_test() {
   gHeap.Collect();
   printf("\n");
@@ -189,6 +214,7 @@ int main(int argc, char **argv) {
   RUN_TEST(cycle_collection_test);
 
   RUN_TEST(tuple_test);
+  RUN_TEST(tuple_field_masks_test);
 
   gHeap.Collect();
 

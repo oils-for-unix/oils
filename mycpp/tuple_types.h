@@ -10,12 +10,12 @@
 template <class A, class B>
 class Tuple2 {
  public:
-  Tuple2(A a, B b) : a_(a), b_(b)
-  {
+  Tuple2(A a, B b) : a_(a), b_(b) {
     heap_tag_ = Tag::FixedSize;
-    field_mask_ = 0;
-    field_mask_ |= std::is_pointer<A>() ? maskbit(offsetof( Tuple2<A COMMA B> , a_)) : 0;
-    field_mask_ |= std::is_pointer<B>() ? maskbit(offsetof( Tuple2<A COMMA B> , b_)) : 0;
+    constexpr int m = 
+      (std::is_pointer<A>() ? maskbit(offsetof( Tuple2<A COMMA B> , a_)) : 0)
+    | (std::is_pointer<B>() ? maskbit(offsetof( Tuple2<A COMMA B> , b_)) : 0);
+    field_mask_ = m;
   }
 
   A at0() {
@@ -25,8 +25,8 @@ class Tuple2 {
     return b_;
   }
 
- private:
   OBJ_HEADER();
+ private:
   A a_;
   B b_;
 };
@@ -36,10 +36,11 @@ class Tuple3 {
  public:
   Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
     heap_tag_ = Tag::FixedSize;
-    field_mask_ = 0;
-    field_mask_ |= std::is_pointer<A>() ? maskbit(offsetof( Tuple3<A COMMA B COMMA C> , a_)) : 0;
-    field_mask_ |= std::is_pointer<B>() ? maskbit(offsetof( Tuple3<A COMMA B COMMA C> , b_)) : 0;
-    field_mask_ |= std::is_pointer<C>() ? maskbit(offsetof( Tuple3<A COMMA B COMMA C> , c_)) : 0;
+    constexpr int m = 
+      (std::is_pointer<A>() ? maskbit(offsetof( Tuple3<A COMMA B COMMA C> , a_)) : 0)
+    | (std::is_pointer<B>() ? maskbit(offsetof( Tuple3<A COMMA B COMMA C> , b_)) : 0)
+    | (std::is_pointer<C>() ? maskbit(offsetof( Tuple3<A COMMA B COMMA C> , c_)) : 0);
+    field_mask_ = m;
   }
   A at0() {
     return a_;
@@ -51,8 +52,8 @@ class Tuple3 {
     return c_;
   }
 
- private:
   OBJ_HEADER();
+ private:
   A a_;
   B b_;
   C c_;
@@ -63,11 +64,12 @@ class Tuple4 {
  public:
   Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
     heap_tag_ = Tag::FixedSize;
-    field_mask_ = 0;
-    field_mask_ |= std::is_pointer<A>() ? maskbit(offsetof( Tuple4<A COMMA B COMMA C COMMA D> , a_)) : 0;
-    field_mask_ |= std::is_pointer<B>() ? maskbit(offsetof( Tuple4<A COMMA B COMMA C COMMA D> , b_)) : 0;
-    field_mask_ |= std::is_pointer<C>() ? maskbit(offsetof( Tuple4<A COMMA B COMMA C COMMA D> , c_)) : 0;
-    field_mask_ |= std::is_pointer<D>() ? maskbit(offsetof( Tuple4<A COMMA B COMMA C COMMA D> , d_)) : 0;
+    constexpr int m = 
+      (std::is_pointer<A>() ? maskbit(offsetof( Tuple4<A COMMA B COMMA C COMMA D> , a_)) : 0)
+    | (std::is_pointer<B>() ? maskbit(offsetof( Tuple4<A COMMA B COMMA C COMMA D> , b_)) : 0)
+    | (std::is_pointer<C>() ? maskbit(offsetof( Tuple4<A COMMA B COMMA C COMMA D> , c_)) : 0)
+    | (std::is_pointer<D>() ? maskbit(offsetof( Tuple4<A COMMA B COMMA C COMMA D> , d_)) : 0);
+    field_mask_ = m;
   }
 
   A at0() {
@@ -83,8 +85,8 @@ class Tuple4 {
     return d_;
   }
 
- private:
   OBJ_HEADER();
+ private:
   A a_;
   B b_;
   C c_;
