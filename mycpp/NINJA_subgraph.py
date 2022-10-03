@@ -417,8 +417,15 @@ def NinjaGraph(ru):
 
   ru.cc_library('//mycpp/runtime', GC_RUNTIME, matrix=COMPILERS_VARIANTS)
 
+  # TODO: This rule should be dynamically created
+
   # ASDL schema that examples/parse.py depends on
   ru.asdl_cc('mycpp/examples/expr.asdl')
+
+  ru.cc_library(
+      '//mycpp/examples/expr.asdl.o',
+      ['_gen/mycpp/examples/expr.asdl.cc'],
+      matrix=COMPILERS_VARIANTS)
 
   # Build and run unit tests
   for main_cc in sorted(UNIT_TESTS):
@@ -444,27 +451,6 @@ def NinjaGraph(ru):
   n.build([prefix + '.cc'], 'gen-osh-eval', deps,
           implicit=['_bin/shwrap/mycpp_main', RULES_PY],
           variables=[('out_prefix', prefix)])
-
-  #
-  # Individual object files
-  #
-
-  cc_sources = []
-  for srcs in EXAMPLES_CC.values():  # generated code
-    cc_sources.extend(srcs)
-  cc_sources = sorted(set(cc_sources))  # make unique
-
-  for (compiler, variant) in COMPILERS_VARIANTS:
-    compile_vars, link_vars = NinjaVars(compiler, variant)
-
-    #
-    # Build all objects
-    #
-
-    for src_path in cc_sources:
-      obj_path = ObjPath(src_path, compiler, variant)
-      n.build(obj_path, 'compile_one', [src_path], variables=compile_vars)
-      n.newline()
 
   #
   # Build and run examples/

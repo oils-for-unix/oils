@@ -5,6 +5,7 @@ ninja_lib.py
 from __future__ import print_function
 
 import os
+import sys
 
 
 def log(msg, *args):
@@ -66,77 +67,127 @@ class Rules(object):
   - Phony convenience targets
 
   Maybe: exporting data to test runner
-  """
 
+  Terminology:
+
+  Ninja has
+  - rules, which are like Bazel "actions"
+  - build targets
+
+  Our library has:
+  - Build config: (compiler, variant), and more later
+
+  - Labels: identifiers starting with //, which are higher level than Ninja
+    "targets"
+    cc_library:
+      //mycpp/runtime
+
+      //mycpp/examples/expr.asdl
+      //frontend/syntax.asdl
+
+  - Deps are lists of labels, and have a transitive closure
+
+  - H Rules / High level rules?  B rules / Boil?
+    cc_binary, cc_library, asdl, etc.
+  """
   def __init__(self, n):
     self.n = n  # direct ninja writer
-    self.cc_libs = {}
+
+    #self.generated_headers = {}  # ASDL filename -> header name
+    #self.asdl = {}  # label -> True if ru.compile(config) has been called?
+
+    self.cc_libs = {}  # (target, compiler, variant) -> list of objects
+
     self.phony = {}  # list of phony targets
 
-  def cc_library(self, name, srcs, matrix=[]):
-    for compiler, variant in matrix:
-      compile_vars, _ = NinjaVars(compiler, variant)
+  def compile(self, out_obj, in_cc, deps, config):
+    # deps: //mycpp/examples/expr.asdl -> then look up the headers it exports?
+
+    compiler, variant = config
+
+    # TODO: implicit deps for ASDL
+    # EXAMPLES_H.get(ex, []),
+    implicit = []
+    for label in deps:
+      pass
+
+    v = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")]
+    self.n.build([out_obj], 'compile_one', [in_cc], implicit=implicit, variables=v)
+    self.n.newline()
+
+  def link(self, out_bin, main_obj, deps, config):
+    compiler, variant = config
+
+    assert isinstance(out_bin, str), out_bin
+    assert isinstance(main_obj, str), main_obj
+    objects = [main_obj]
+    for label in deps:
+
+      # TODO: for ASDL label, call n.compile() on demand?  
+      # So you can just have an asdl() rule, and no binary ever depends on it,
+      # then you don't get those rules.
+
+      o = self.cc_libs[(label, compiler, variant)]
+      objects.extend(o)
+
+    v = [('compiler', compiler), ('variant', variant)]
+    self.n.build([out_bin], 'link', objects, variables=v)
+    self.n.newline()
+
+  def cc_library(self, label, srcs, deps=[], matrix=[]):
+    for config in matrix:
+      compiler, variant = config
 
       objects = []
       for src in srcs:
         obj = ObjPath(src, compiler, variant)
         objects.append(obj)
 
-        self.n.build(obj, 'compile_one', [src], variables=compile_vars)
-        self.n.newline()
-      self.cc_libs[(name, compiler, variant)] = objects
+        self.compile(obj, src, deps, config)
+
+      self.cc_libs[(label, compiler, variant)] = objects
+    if 0:
+      from pprint import pprint
+      pprint(self.cc_libs)
 
   def cc_binary(
       self,
       main_cc,
       deps=[],
-      # TODO: Put :mycpp/runtime label here
-      # Also could put :asdl/examples/typed_arith, etc.
-      asdl_deps=[],  # causes implicit header dep for compile action, and .o for link action
-
       matrix=[],  # $compiler $variant
-
       # TODO: tags?
       # if tags = 'mycpp-unit' then add to phony?
       phony={},
       ):
 
-    for compiler, variant in matrix:
-      compile_vars, link_vars = NinjaVars(compiler, variant)
+    for config in matrix:
+      compiler, variant = config
 
       main_obj = ObjPath(main_cc, compiler, variant)
-      self.n.build(main_obj, 'compile_one', [main_cc], variables=compile_vars)
-      self.n.newline()
+      self.compile(main_obj, main_cc, deps, config)
 
       rel_path, _ = os.path.splitext(main_cc)
+      bin_= '_bin/%s-%s/%s' % (compiler, variant, rel_path)
 
-      b = '_bin/%s-%s/%s' % (compiler, variant, rel_path)
-
-      obj_paths = [main_obj]
-      for dep in deps:
-        o = self.cc_libs.get((dep, compiler, variant))
-        if o is None:
-          raise RuntimeError('Invalid cc_library %r' % dep)
-        obj_paths.extend(o)
-
-      self.n.build([b], 'link', obj_paths, variables=link_vars)
-      self.n.newline()
+      self.link(bin_, main_obj, deps, config)
 
       key = 'mycpp-unit-%s-%s' % (compiler, variant)
       if key not in phony:
         phony[key] = []
-      phony[key].append(b)
+      phony[key].append(bin_)
 
   def asdl_cc(self, asdl_path, pretty_print_methods=True):
     # to create _gen/mycpp/examples/expr.asdl.h
     prefix = '_gen/%s' % asdl_path
-
+    out_header = prefix + '.h'
     if pretty_print_methods:
-      outputs = [prefix + '.cc', prefix + '.h']
+      outputs = [prefix + '.cc', out_header]
       asdl_flags = '' 
     else:
-      outputs = [prefix + '.h']
+      outputs = [out_header]
       asdl_flags = '--no-pretty-print-methods'
+
+    #self.generated_headers[asdl_path] = out_header
 
     debug_mod = '%s_debug.py' % prefix 
     outputs.append(debug_mod)
