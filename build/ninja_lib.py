@@ -13,9 +13,11 @@ def log(msg, *args):
     msg = msg % args
   print(msg, file=sys.stderr)
 
+
+# Matrix of configurations
 # - Used as-is by mycpp/examples
 # - mycpp unit tests can be restricted by 'test_runs_under_variant'.
-# - cpp/ adds a few 
+# - cpp/ adds uftrace, etc.
 
 COMPILERS_VARIANTS_LEAKY = [
     ('cxx', 'dbg'),
@@ -133,6 +135,30 @@ class Rules(object):
     v = [('compiler', compiler), ('variant', variant)]
     self.n.build([out_bin], 'link', objects, variables=v)
     self.n.newline()
+
+  def _GeneratedHeader(self, label):
+    # for implicit deps of 'compile'
+    #
+    # //mycpp/examples/expr.asdl -> _gen/mycpp/examples/expr.asdl.h
+    # And then parse.mycpp.cc needs this implicit dep
+    pass
+
+  def _TranslationUnit(self, label, path, implicit=[]):
+    # TODO:
+    # - cc_library() and asdl() should call this
+    # - append to a data structure
+    # - and then when cc_binary() is called, it goes through its transitive
+    #   closure of labels, and gets translation units
+    # - and then for each config (compiler, variant), it calls n.compile() on the translation unit
+    #   - n.compile() can have implicit deps due to ASDL headers
+    #   - TODO: this part probably needs unit tests
+    pass
+
+  # LAZY and does not take MATRIX?
+  # only cc_binary takes a matrix!
+  #  and then it "pulls" all Ninja rules forward
+  # 
+  # It should just create self.cc_libs[label] = SomeObject
 
   def cc_library(self, label, srcs, deps=[], matrix=[]):
     for config in matrix:
