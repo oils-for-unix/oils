@@ -125,12 +125,32 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
+class Buf {
+ public:
+  Buf(char* data, int len) : data_(data), len_(len) {}
+  explicit operator bool() { return len_ == 0; }
+  char* data() { return data_; }
+  bool IsValid() { return len_ != -1; }
+  void Extend(Str* s);
+  void Invalidate();
+ private:
+  friend Str* StrFromBuf(const Buf*);
+  char* data_;
+  int len_;
+};
+
+Str* StrFromBuf(const Buf*);
+Buf* AllocBuf(char*, int);
+void FreeBuf(Buf*);
+
 class BufWriter : public Writer {
  public:
   BufWriter()
       : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)),
-        data_(nullptr),
-        len_(0) {
+        buf_(AllocBuf(nullptr, 0)) {
+  }
+  ~BufWriter() {
+      FreeBuf(buf_);
   }
   void write(Str* s) override;
   void flush() override {
@@ -143,8 +163,7 @@ class BufWriter : public Writer {
 
  private:
   // Just like a string, except it's mutable
-  char* data_;
-  int len_;
+  Buf* buf_;
 };
 
 class FormatStringer {
