@@ -294,6 +294,7 @@ def main(argv):
   #log('V %s', virtual.virtuals)
 
   local_vars = {}  # FuncDef node -> (name, c_type) list
+  mask_funcs = {}  # ClassDef node -> maskof_Foo() string, if it's required
 
   # Node -> fmt_name, plus a hack for the counter
   # TODO: This could be a class with 2 members
@@ -311,6 +312,7 @@ def main(argv):
       out_f = f
     p3 = cppgen_pass.Generate(result.types, const_lookup, out_f,
                               local_vars=local_vars, fmt_ids=fmt_ids,
+                              mask_funcs=mask_funcs,
                               virtual=virtual, decl=True)
 
     p3.visit_mypy_file(module)
@@ -327,7 +329,8 @@ def main(argv):
   # void Bar:method() { ... }
   for name, module in to_compile:
     p4 = cppgen_pass.Generate(result.types, const_lookup, f,
-                              local_vars=local_vars, fmt_ids=fmt_ids)
+                              local_vars=local_vars, fmt_ids=fmt_ids,
+                              mask_funcs=mask_funcs)
     p4.visit_mypy_file(module)
 
   return 0  # success

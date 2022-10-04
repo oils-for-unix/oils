@@ -126,7 +126,7 @@ def _CheckConditionType(t):
 
 def CTypeIsManaged(c_type):
   # type: (str) -> bool
-  """Do we need to add it to StackRoots?"""
+  """For rooting and field masks."""
   assert c_type != 'void'
 
   # int, double, bool, scope_t enums, etc. are not managed
@@ -263,6 +263,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
                  virtual=None, local_vars=None, fmt_ids=None,
+                 mask_funcs=None,
                  decl=False, forward_decl=False):
       self.types = types
       self.const_lookup = const_lookup
@@ -274,6 +275,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # phase.  But then write it in the definition phase.
       self.local_vars = local_vars
       self.fmt_ids = fmt_ids
+      self.mask_funcs = mask_funcs
       self.fmt_funcs = io.StringIO()
 
       self.decl = decl
@@ -293,6 +295,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # of the class.
       # This is all in the 'decl' phase.
       self.member_vars = {}  # type: Dict[str, Type]
+
       self.current_class_name = None  # for prototypes
       self.current_method_name = None
 
@@ -2182,15 +2185,28 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Do we need this?  I think everything under a class is a method?
             self.accept(stmt)
 
-          self.current_class_name = None
+          # List of field mask expressions
+          # TODO: This is needed in both decl mode and definition mode.
+          bits = []
+          for name in sorted(self.member_vars):
+            c_type = get_c_type(self.member_vars[name])
+            if CTypeIsManaged(c_type):
+              bits.append('maskbit(offsetof(%s, %s))' % (o.name, name))
+          if bits:
+            #self.mask_funcs[o] = 'maskof_%s()' % o.name
+
+            # TODO: enable maskof().  Getting 7 failures instead of 5 in gcevery mode!
+            self.mask_funcs[o] = 'kZeroMask'
 
           # Now write member defs
           #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
           if self.member_vars:
             self.decl_write('\n')  # separate from functions
-          for name in sorted(self.member_vars):
-            c_type = get_c_type(self.member_vars[name])
-            self.decl_write_ind('%s %s;\n', c_type, name)
+            for name in sorted(self.member_vars):
+              c_type = get_c_type(self.member_vars[name])
+              self.decl_write_ind('%s %s;\n', c_type, name)
+
+          self.current_class_name = None
 
           self.decl_write('\n')
           self.decl_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
@@ -2198,10 +2214,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write_ind('};\n')
           self.decl_write('\n')
 
-          self.decl_write('inline constexpr int maskof_%s() {\n', o.name)
-          self.decl_write('  return kZeroMask;\n')
-          self.decl_write('}\n')
-          self.decl_write('\n')
+          if bits:
+            self.decl_write('constexpr uint16_t maskof_%s() {\n', o.name)
+
+            self.decl_write('  return\n')
+            self.decl_write('    ')
+            self.decl_write('\n  | '.join(bits))
+            self.decl_write(';\n')
+
+            self.decl_write('}\n')
+            self.decl_write('\n')
 
           return
 
@@ -2217,19 +2239,23 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # initializer lists.
             if stmt.name == '__init__':
               self.write('\n')
-              self.write_ind('%s::%s(', o.name, o.name)
+              self.write('%s::%s(', o.name, o.name)
               self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
               self.write(') ')
 
-              # Everything descents from Obj
+              # Base class can use Obj() constructor directly, but Derived class can't
               if not base_class_name:
+                if o in self.mask_funcs:
+                  mask_str = 'maskof_%s()' % o.name
+                else: 
+                  mask_str = 'kZeroMask'
+
                 self.write('\n')
                 self.write(
-                    '    : Obj(Tag::FixedSize, maskof_%s(), sizeof(%s)) ' % (o.name, o.name))
+                    '    : Obj(Tag::FixedSize, %s, sizeof(%s)) ' % (mask_str, o.name))
 
-              # Taking into account the docstring, look at the first statement to
-              # see if it's a superclass __init__ call.  Then move that to the
-              # initializer list.
+              # Taking into account the docstring, check for Base.__init__(self, ...)
+              # and move that to the initializer list.
 
               first_index = 0
               maybe_skip_stmt = stmt.body.body[0]
@@ -2257,12 +2283,31 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     self.accept(arg)
                   self.write(') {\n')
 
+                  # Derived classes MUTATE the mask
+                  if base_class_name:
+                    mask_str = self.mask_funcs.get(o)
+                    if mask_str is None:
+                      #self.log('*** No mask for %s', o.name)
+                      pass
+                    else:
+                      self.write('  field_mask_ |= %s;\n' % mask_str)
+
                   self.indent += 1
                   for node in stmt.body.body[first_index+1:]:
                     self.accept(node)
                   self.indent -= 1
                   self.write('}\n')
                   continue
+
+              # Derived classes MUTATE the mask.  DUPLICATE of above check, for
+              # when there's no Base.__init__(self).
+              if base_class_name:
+                mask_str = self.mask_funcs.get(o)
+                if mask_str is None:
+                  #self.log('*** No mask for %s', o.name)
+                  pass
+                else:
+                  self.write('  field_mask_ |= %s;\n' % mask_str)
 
               # Normal function body
               self.accept(stmt.body)

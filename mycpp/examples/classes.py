@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-classes.py - Test out inheritance.  Based on asdl/format.py.
+classes.py - Test out inheritance.
 """
 from __future__ import print_function
 
@@ -13,6 +13,8 @@ from mycpp.mylib import log
 
 from typing import IO, cast
 
+
+# Based on asdl/format.py
 
 class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
@@ -52,7 +54,15 @@ class TextOutput(ColorOutput):
     print("i = %d" % self.i)  # field from derived
 
 
+#
+# Heterogeneous linked list to test field masks, inheritance, virtual dispatch,
+# constructors, etc.
+#
+
+
 class Abstract(object):
+
+  # empty constructor required by mycpp
   def __init__(self):
     # type: () -> None
     pass
@@ -66,7 +76,6 @@ class Abstract(object):
 
 class Base(Abstract):
 
-  # empty constructor required by mycpp
   def __init__(self, n):
     # type: (Base) -> None
     Abstract.__init__(self)
@@ -213,9 +222,12 @@ def run_benchmarks():
   # type: () -> None
 
   # NOTE: Raising this exposes quadratic behavior
-  BenchmarkWriter(5000)
+  if 1:
+    BenchmarkWriter(5000)
 
-  BenchmarkNodes(500)
+  # Hits Collect() and ASAN finds bugs above 500 and before 1000
+  BenchmarkNodes(750)
+  #BenchmarkNodes(1000)
 
 
 if __name__ == '__main__':
