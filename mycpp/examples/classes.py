@@ -69,6 +69,7 @@ class Base(Abstract):
   # empty constructor required by mycpp
   def __init__(self, s):
     # type: (str) -> None
+    Abstract.__init__(self)
     self.s = s
 
   def TypeString(self):
@@ -76,15 +77,34 @@ class Base(Abstract):
     return "Base with %s" % self.s
 
 
-class Derived(Base):
+class DerivedI(Base):
 
-  def __init__(self, s):
-    # type: (str) -> None
+  def __init__(self, s, i):
+    # type: (str, int) -> None
     Base.__init__(self, s)
+    self.i = i
+
+  def Integer(self):
+    # type: () -> int
+    return self.i
 
   def TypeString(self):
     # type: () -> str
-    return "Derived with %s" % self.s
+    return "DerivedI(%s, %d)" % (self.s, self.i)
+
+
+class DerivedSS(Base):
+
+  def __init__(self, s, t, u):
+    # type: (str, str, str) -> None
+    Base.__init__(self, s)
+    self.s = s
+    self.t = t
+    self.u = u
+
+  def TypeString(self):
+    # type: () -> str
+    return "DerivedSS(%s, %s, %s)" % (self.s, self.t, self.u)
 
 
 def TestMethods():
@@ -106,13 +126,15 @@ def f(obj):
 
 
 # Note: this happsns to work, but globals should probably be disallowed
-GLOBAL = Derived('goo')
+GLOBAL = DerivedI('goo', 37)
 
 def TestInheritance():
   # type: () -> None
 
   b = Base('bee')
-  d = Derived('dog')
+  d = DerivedI('dog', 1)
+  log('Integer() = %d', d.Integer())
+
   log("b.TypeString() %s", b.TypeString())
   log("d.TypeString() %s", d.TypeString())
   log("f(b)           %s", f(b))

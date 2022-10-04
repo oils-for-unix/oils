@@ -391,6 +391,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           comment = 'define'
 
         self.decl_write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
+        self.decl_write('\n')
 
         self.module_path = o.path
 
@@ -407,6 +408,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Write fmtX() functions inside the namespace.
         if self.decl:
+          self.decl_write('\n')
           self.decl_write(self.fmt_funcs.getvalue())
           self.fmt_funcs = io.StringIO()  # clear it for the next file
 
@@ -1266,6 +1268,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               #self.log('INSTANCE lval %s rval %s', lval, call_expr)
 
+              self.write('\n')
               self.write('%s %s', call_expr.callee.name, temp_name)
               # C c;, not C c(); which is most vexing parse
               if call_expr.args:
@@ -1273,6 +1276,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.write(';\n')
               self.write('%s %s = &%s;', get_c_type(lval_type), lval.name,
                   temp_name)
+              self.write('\n')
               return
 
         #
@@ -2122,7 +2126,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.decl:
           self.member_vars.clear()  # make a new list
 
-          self.decl_write('\n')
           self.decl_write_ind('class %s', o.name)  # block after this
 
           # e.g. class TextOutput : public ColorOutput
@@ -2193,6 +2196,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
           self.indent -= 1
           self.decl_write_ind('};\n')
+          self.decl_write('\n')
+
+          self.decl_write('inline constexpr int maskof_%s() {\n', o.name)
+          self.decl_write('  return kZeroMask;\n')
+          self.decl_write('}\n')
+          self.decl_write('\n')
 
           return
 
@@ -2214,9 +2223,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               # Everything descents from Obj
               if not base_class_name:
-                # TODO: Generate the right mask!
+                self.write('\n')
                 self.write(
-                    ': Obj(Tag::FixedSize, kZeroMask, sizeof(%s)) ' % o.name)
+                    '    : Obj(Tag::FixedSize, maskof_%s(), sizeof(%s)) ' % (o.name, o.name))
 
               # Taking into account the docstring, look at the first statement to
               # see if it's a superclass __init__ call.  Then move that to the
