@@ -11,7 +11,7 @@ import sys
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import IO
+from typing import IO, cast
 
 
 class ColorOutput(object):
@@ -67,21 +67,21 @@ class Abstract(object):
 class Base(Abstract):
 
   # empty constructor required by mycpp
-  def __init__(self, s):
-    # type: (str) -> None
+  def __init__(self, n):
+    # type: (Base) -> None
     Abstract.__init__(self)
-    self.s = s
+    self.next = n
 
   def TypeString(self):
     # type: () -> str
-    return "Base with %s" % self.s
+    return "Base(%s)" % ('next' if self.next else 'null')
 
 
 class DerivedI(Base):
 
-  def __init__(self, s, i):
-    # type: (str, int) -> None
-    Base.__init__(self, s)
+  def __init__(self, n, i):
+    # type: (Base, int) -> None
+    Base.__init__(self, n)
     self.i = i
 
   def Integer(self):
@@ -90,21 +90,21 @@ class DerivedI(Base):
 
   def TypeString(self):
     # type: () -> str
-    return "DerivedI(%s, %d)" % (self.s, self.i)
+    return "DerivedI(%s, %d)" % ('next' if self.next else 'null', self.i)
 
 
 class DerivedSS(Base):
 
-  def __init__(self, s, t, u):
-    # type: (str, str, str) -> None
-    Base.__init__(self, s)
-    self.s = s
+  def __init__(self, n, t, u):
+    # type: (Base, str, str) -> None
+    Base.__init__(self, n)
     self.t = t
     self.u = u
 
   def TypeString(self):
     # type: () -> str
-    return "DerivedSS(%s, %s, %s)" % (self.s, self.t, self.u)
+    return "DerivedSS(%s, %s, %s)" % (
+        'next' if self.next else 'null', self.t, self.u)
 
 
 def TestMethods():
@@ -126,19 +126,24 @@ def f(obj):
 
 
 # Note: this happsns to work, but globals should probably be disallowed
-GLOBAL = DerivedI('goo', 37)
+GLOBAL = DerivedI(None, 37)
 
 def TestInheritance():
   # type: () -> None
 
-  b = Base('bee')
-  d = DerivedI('dog', 1)
-  log('Integer() = %d', d.Integer())
+  b = Base(None)
+  di = DerivedI(None, 1)
+  dss = DerivedSS(None, 'left', 'right')
 
-  log("b.TypeString() %s", b.TypeString())
-  log("d.TypeString() %s", d.TypeString())
+  log('Integer() = %d', di.Integer())
+
+  log("b.TypeString()   %s", b.TypeString())
+  log("di.TypeString()  %s", di.TypeString())
+  log("dss.TypeString() %s", dss.TypeString())
+
   log("f(b)           %s", f(b))
-  log("f(d)           %s", f(d))
+  log("f(di)          %s", f(di))
+  log("f(dss)         %s", f(dss))
   log("f(GLOBAL)      %s", f(GLOBAL))
 
 
@@ -148,14 +153,11 @@ def run_tests():
   TestInheritance()
 
 
-def run_benchmarks():
-  # type: () -> None
+def BenchmarkWriter(n):
+  # type: (int) -> None
 
-  # NOTE: Raising this exposes quadratic behavior
-  n = 50000
-
-  x = 33
-  result = -1
+  log('BenchmarkWriter')
+  log('')
 
   f = mylib.BufWriter()
   out = TextOutput(f)
@@ -164,8 +166,56 @@ def run_benchmarks():
   while i < n:
     out.write('foo\n')
     i += 1
-  log('Ran %d iterations', n)
-  log('Wrote %d bytes', out.num_chars)
+  log('  Ran %d iterations', n)
+  log('  Wrote %d bytes', out.num_chars)
+  log('')
+
+
+def BenchmarkNodes(n):
+  # type: (int) -> None
+
+  log('BenchmarkNodes')
+  log('')
+
+  next_ = Base(None)
+  for i in xrange(n):
+    node1 = DerivedI(next_, i)
+
+    # Allocate some children
+    s1 = str(i)
+    s2 = '+%d' % i
+    node2 = DerivedSS(node1, s1, s2)
+
+    node3 = Base(node2)
+    next_ = node3
+
+  # do this separately because of type
+  current = None  # type: Base
+  current = node3
+
+  linked_list_len = 0
+  while True:
+    if linked_list_len < 10:
+      log('  -> %s', current.TypeString())
+
+    current = current.next
+
+    if current is None:
+      break
+    linked_list_len += 1
+
+  log('')
+  log("  linked list len = %d", linked_list_len)
+  log('')
+
+
+def run_benchmarks():
+  # type: () -> None
+
+  # NOTE: Raising this exposes quadratic behavior
+  BenchmarkWriter(5000)
+
+  BenchmarkNodes(500)
 
 
 if __name__ == '__main__':
