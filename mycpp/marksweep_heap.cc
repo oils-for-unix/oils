@@ -1,54 +1,63 @@
 #include "mycpp/runtime.h"
 
-void MarkSweepHeap::Init(int collection_thresh) {
-  collection_thresh_ = collection_thresh;
+void MarkSweepHeap::Init() {
+  Init(1000);  // collect at 1000 objects in tests
+}
+
+void MarkSweepHeap::Init(int collect_threshold) {
+  collect_threshold_ = collect_threshold;
   all_allocations_.reserve(KiB(10));
   roots_.reserve(KiB(1));  // prevent resizing in common case
+}
+
+void MarkSweepHeap::Report() {
+  log("  num allocated   = %d", num_allocated_);
+  log("bytes allocated   = %d", bytes_allocated_);
+  log("  num live        = %d", num_live_);
+  log("  num collections = %d", num_collections_);
+  log("");
+  log("roots capacity    = %d", roots_.capacity());
+  log(" objs capacity    = %d", all_allocations_.capacity());
+}
+
+void MarkSweepHeap::MaybePrintReport() {
+  char* p = getenv("OIL_GC_STATS");
+  if (p && strlen(p)) {
+    Report();
+  }
 }
 
 #ifdef MALLOC_LEAK
 
 // for testing performance
-void* MarkSweepHeap::Allocate(int byte_count) {
-  return calloc(byte_count, 1);
+void* MarkSweepHeap::Allocate(int num_bytes) {
+  return calloc(num_bytes, 1);
 }
 
 #else
 
-void* MarkSweepHeap::Allocate(int byte_count) {
+void* MarkSweepHeap::Allocate(int num_bytes) {
   #if GC_EVERY_ALLOC
   Collect();
-  #endif
-
-  #if GC_STATS
-  num_live_objs_++;
-  #endif
-
-  current_heap_bytes_ += byte_count;
-  if (current_heap_bytes_ > collection_thresh_) {
+  #else
+  if (num_live_ > collect_threshold_) {
     Collect();
   }
+  #endif
 
-  // TODO: collection policy isn't correct, as current_heap_bytes_ isn't
-  // updated on collection.
-
-  if (current_heap_bytes_ > collection_thresh_) {
-    //
-    // NOTE(Jesse): Generally, doubling results in a lot of wasted space.  I've
-    // observed growing by a factor of 1.5x, or even 1.3x, to be a good
-    // time/space tradeoff in the past.  Unclear if that's good for a typical
-    // Oil workload, but we've got to start somewhere.
-    //
-    // 1.5x = (3/2)
-    // 1.3x = (13/10)
-    //
-    collection_thresh_ = current_heap_bytes_ * 3 / 2;
+  // num_live_ updated after collection
+  if (num_live_ > collect_threshold_) {
+    collect_threshold_ = num_live_ * 2;
   }
 
-  void* result = calloc(byte_count, 1);
+  void* result = calloc(num_bytes, 1);
   assert(result);
 
   all_allocations_.push_back(result);
+
+  num_live_++;
+  num_allocated_++;
+  bytes_allocated_ += num_bytes;
 
   return result;
 }
@@ -138,15 +147,14 @@ void MarkSweepHeap::Collect() {
       all_allocations_[last_live_index++] = alloc;
     } else {
       free(alloc);
-
-#if GC_STATS
-      num_live_objs_--;
-#endif
+      num_live_--;
     }
   }
 
   all_allocations_.resize(last_live_index);
   marked_allocations_.clear();
+
+  num_collections_++;
 }
 
 #if MARK_SWEEP

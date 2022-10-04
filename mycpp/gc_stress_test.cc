@@ -23,7 +23,7 @@ int count(int n) {
 }
 
 TEST overflowing_roots_test() {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   log("count 4000 = %d", count(4000));
 
@@ -40,7 +40,7 @@ TEST overflowing_roots_test() {
 }
 
 TEST str_simple_test() {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   Str* s = nullptr;
   StackRoots _roots({&s});
@@ -66,7 +66,7 @@ GLOBAL_STR(b, "b");
 GLOBAL_STR(bx, "bx");
 
 TEST str_growth_test() {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   Str* s = nullptr;
   StackRoots _roots({&s});
@@ -100,7 +100,7 @@ TEST str_growth_test() {
 
 // Simple test with just List on the heap.
 TEST list_append_test() {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   List<int>* L = nullptr;
   StackRoots _roots({&L});
@@ -123,7 +123,7 @@ TEST list_append_test() {
 }
 
 TEST list_slice_append_test() {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   List<int>* L = nullptr;
   StackRoots _roots({&L});
@@ -152,7 +152,7 @@ TEST list_slice_append_test() {
 }
 
 TEST list_str_growth_test() {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   Str* s = nullptr;
   List<Str*>* L = nullptr;
@@ -184,7 +184,7 @@ TEST list_str_growth_test() {
 }
 
 TEST dict_growth_test() {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   Str* s = nullptr;
   Dict<Str*, int>* D = nullptr;
@@ -209,7 +209,7 @@ TEST dict_growth_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 

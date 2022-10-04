@@ -86,7 +86,7 @@ TEST hnode_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(KiB(128));
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 

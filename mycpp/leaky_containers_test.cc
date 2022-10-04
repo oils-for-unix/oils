@@ -439,7 +439,7 @@ TEST test_str_join() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
   RUN_TEST(test_sizeof);

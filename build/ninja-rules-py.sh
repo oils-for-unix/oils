@@ -19,8 +19,7 @@ example-main() {
 
   cat <<EOF
 int main(int argc, char **argv) {
-  gHeap.Init(128 << 10);  // 128 KiB; doubling in size
-  // gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
+  gHeap.Init();
 
   char* b = getenv("BENCHMARK");
   if (b && strlen(b)) {  // match Python's logic
@@ -32,6 +31,7 @@ int main(int argc, char **argv) {
 
   gBuf.reset();  // free internal buffer for fmtX()
   gHeap.Collect();
+  gHeap.MaybePrintReport();
 }
 EOF
 }
@@ -44,7 +44,8 @@ int main(int argc, char **argv) {
 
   complain_loudly_on_segfault();
 
-  gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc.cc
+  // So big that we don't trigger collection
+  gHeap.Init(400 << 20);
 
   // NOTE(Jesse): Turn off buffered IO
   setvbuf(stdout, 0, _IONBF, 0);
@@ -71,10 +72,8 @@ int main(int argc, char **argv) {
   }
 
   gHeap.Collect();
+  gHeap.MaybePrintReport();
 
-#ifdef DUMB_ALLOC
-  dumb_alloc::Summarize();
-#endif
   return status;
 }
 EOF

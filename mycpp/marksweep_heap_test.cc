@@ -204,7 +204,7 @@ TEST tuple_test() {
 }
 
 int main(int argc, char **argv) {
-  gHeap.Init(MiB(64));
+  gHeap.Init();
 
   PRINT_GC_MODE_STRING();
 

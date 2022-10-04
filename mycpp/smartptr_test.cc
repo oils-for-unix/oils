@@ -29,7 +29,7 @@ void paramfunc(Param<Str> s) {
 
 #if 0
 TEST local_test() {
-  gHeap.Init(kInitialSize);  // reset the whole thing
+  gHeap.Init();  // reset the whole thing
 
   {
     log("top = %d", gHeap.roots_top_);
@@ -129,7 +129,7 @@ TEST local_variance_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 

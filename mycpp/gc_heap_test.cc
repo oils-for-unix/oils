@@ -10,11 +10,8 @@
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
-#ifdef GC_STATS
-  #define ASSERT_NUM_LIVE_OBJS(x) ASSERT_EQ_FMT((x), gHeap.num_live_objs_, "%d")
-#else
-  #define ASSERT_NUM_LIVE_OBJS(x)
-#endif
+#define ASSERT_NUM_LIVE_OBJS(x) \
+  ASSERT_EQ_FMT((x), static_cast<int>(gHeap.num_live_), "%d");
 
 // Hm we're getting a warning because these aren't plain old data?
 // https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
@@ -34,9 +31,6 @@ static_assert(kSlabHeaderSize == offsetof(GlobalSlab<int COMMA 1>, items_),
 static_assert(offsetof(List<int>, slab_) ==
                   offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
-
-// 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
-const int kInitialSize = 1 << 20;
 
 TEST test_str_creation() {
   Str* s = StrFromC("foo");
@@ -803,7 +797,7 @@ TEST inheritance_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(kInitialSize);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
