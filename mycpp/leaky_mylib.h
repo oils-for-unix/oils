@@ -128,6 +128,7 @@ class Writer : public Obj {
 class Buf {
  public:
   Buf(char* data, int len) : data_(data), len_(len) {}
+  ~Buf() { free(data_); }
   explicit operator bool() { return len_ == 0; }
   char* data() { return data_; }
   bool IsValid() { return len_ != -1; }
