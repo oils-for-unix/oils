@@ -59,7 +59,6 @@ class TextOutput(ColorOutput):
 # constructors, etc.
 #
 
-
 class Abstract(object):
 
   # empty constructor required by mycpp
@@ -114,6 +113,17 @@ class DerivedSS(Base):
     # type: () -> str
     return "DerivedSS(%s, %s, %s)" % (
         'next' if self.next else 'null', self.t, self.u)
+
+#
+# Homogeneous Node
+#
+
+class Node(object):
+  """No vtable pointer."""
+  def __init__(self, n, i):
+    # type: (Node, int) -> None
+    self.next = n
+    self.i = i
 
 
 def TestMethods():
@@ -180,7 +190,36 @@ def BenchmarkWriter(n):
   log('')
 
 
-def BenchmarkNodes(n):
+def BenchmarkSimpleNode(n):
+  # type: (int) -> None
+
+  log('BenchmarkSimpleNode')
+  log('')
+
+  next_ = Node(None, -1)
+  for i in xrange(n):
+    node = Node(next_, i)
+    next_ = node
+
+  current = node
+  linked_list_len = 0
+  while True:
+    if linked_list_len < 10:
+      log('  -> %d', current.i)
+
+    current = current.next
+
+    if current is None:
+      break
+
+    linked_list_len += 1
+
+  log('')
+  log("  linked list len = %d", linked_list_len)
+  log('')
+
+
+def BenchmarkVirtualNodes(n):
   # type: (int) -> None
 
   log('BenchmarkNodes')
@@ -225,9 +264,11 @@ def run_benchmarks():
   if 1:
     BenchmarkWriter(5000)
 
+  BenchmarkSimpleNode(10000)
+
   # Hits Collect() and ASAN finds bugs above 500 and before 1000
-  BenchmarkNodes(750)
-  #BenchmarkNodes(1000)
+  #BenchmarkNodes(750)
+  BenchmarkVirtualNodes(1000)
 
 
 if __name__ == '__main__':

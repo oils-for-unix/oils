@@ -2186,17 +2186,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(stmt)
 
           # List of field mask expressions
-          # TODO: This is needed in both decl mode and definition mode.
+
+          if self.virtual.HasVTable(o.name):  # Account for vtable pointer offset
+            mask_func_name = 'maskbit_v'
+          else:
+            mask_func_name = 'maskbit'
+
           bits = []
           for name in sorted(self.member_vars):
             c_type = get_c_type(self.member_vars[name])
             if CTypeIsManaged(c_type):
-              bits.append('maskbit(offsetof(%s, %s))' % (o.name, name))
+              bits.append('%s(offsetof(%s, %s))' % (mask_func_name, o.name, name))
           if bits:
-            #self.mask_funcs[o] = 'maskof_%s()' % o.name
-
-            # TODO: enable maskof().  Getting 7 failures instead of 5 in gcevery mode!
-            self.mask_funcs[o] = 'kZeroMask'
+            self.mask_funcs[o] = 'maskof_%s()' % o.name
 
           # Now write member defs
           #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
