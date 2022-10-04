@@ -261,14 +261,18 @@ def run_benchmarks():
   # type: () -> None
 
   # NOTE: Raising this exposes quadratic behavior
+  #  30,000 iterations:  1.4 seconds in cxx-opt mode
+  #  60,000 iterations:  5.0 seconds in cxx-opt mode
   if 1:
-    BenchmarkWriter(5000)
+    BenchmarkWriter(30000)
 
-  BenchmarkSimpleNode(10000)
+  if 1:
+    BenchmarkSimpleNode(10000)
 
   # Hits Collect() and ASAN finds bugs above 500 and before 1000
   #BenchmarkNodes(750)
-  BenchmarkVirtualNodes(1000)
+  if 1:
+    BenchmarkVirtualNodes(1000)
 
 
 if __name__ == '__main__':
