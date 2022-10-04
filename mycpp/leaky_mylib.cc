@@ -143,15 +143,18 @@ bool CFileWriter::isatty() {
 void Buf::Extend(Str* s) {
   int n = len(s);
 
-  data_ = static_cast<char*>(realloc(data_, len_ + n + 1));
+  cap_ = len_ + 1 + std::max(len_, n);
+  data_ = static_cast<char*>(realloc(data_, cap_));
   memcpy(data_ + len_, s->data_, n);
   len_ += n;
   data_[len_] = '\0';
+  assert(len_ <= cap_);
 }
 
 void Buf::Invalidate() {
     free(data_);
     len_ = -1;
+    cap_ = -1;
     data_ = nullptr;
 }
 

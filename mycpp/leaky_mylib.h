@@ -127,7 +127,7 @@ class Writer : public Obj {
 
 class Buf {
  public:
-  Buf() : data_(nullptr), len_(0) {}
+  Buf() : data_(nullptr), len_(0), cap_(0) {}
   bool IsEmpty() { return len_ == 0; }
   char* data() { return data_; }
   bool IsValid() { return len_ != -1; }
@@ -137,6 +137,7 @@ class Buf {
   friend Str* StrFromBuf(const Buf&);
   char* data_;
   int len_;
+  int cap_;
 };
 
 Str* StrFromBuf(const Buf&);
