@@ -41,7 +41,7 @@ class TextOutput(ColorOutput):
     print('TextOutput constructor')
     self.i = 0  # field only in derived class
 
-  def MutateField(self):
+  def MutateFields(self):
     # type: () -> None
     self.num_chars = 42
     self.i = 43
@@ -52,65 +52,78 @@ class TextOutput(ColorOutput):
     print("i = %d" % self.i)  # field from derived
 
 
-class Base(object):
-
-  # empty constructor required by mycpp
+class Abstract(object):
   def __init__(self):
     # type: () -> None
     pass
 
-  def method(self):
+  def TypeString(self):
     # type: () -> str
-    return "Base"
 
-  def x(self):
-    # type: () -> int
-    return 42
+    # TODO: could be translated to TypeString() = 0; in C++
+    raise NotImplementedError()
+
+
+class Base(Abstract):
+
+  # empty constructor required by mycpp
+  def __init__(self, s):
+    # type: (str) -> None
+    self.s = s
+
+  def TypeString(self):
+    # type: () -> str
+    return "Base with %s" % self.s
 
 
 class Derived(Base):
 
-  def __init__(self):
-    # type: () -> None
-    Base.__init__(self)
+  def __init__(self, s):
+    # type: (str) -> None
+    Base.__init__(self, s)
 
-  def method(self):
+  def TypeString(self):
     # type: () -> str
-    return "Derived"
-
-  def y(self):
-    # type: () -> int
-    return 43
+    return "Derived with %s" % self.s
 
 
-GLOBAL = Derived()
-
-# TODO: Test GC masks for fields.  Do subtypes re-initialize it?
-
-
-def f(obj):
-  # type: (Base) -> str
-  return obj.method()
-
-
-def run_tests():
+def TestMethods():
   # type: () -> None
+
   stdout = mylib.Stdout()
   out = TextOutput(stdout)
   out.write('foo\n')
   out.write('bar\n')
   log('Wrote %d bytes', out.num_chars)
 
-  out.MutateField()
+  out.MutateFields()
   out.PrintFields()
 
-  #b = Base()
-  d = Derived()
-  #log(b.method())
-  print(d.method())
-  print(f(d))
 
-  print(GLOBAL.method())
+def f(obj):
+  # type: (Base) -> str
+  return obj.TypeString()
+
+
+# Note: this happsns to work, but globals should probably be disallowed
+GLOBAL = Derived('goo')
+
+def TestInheritance():
+  # type: () -> None
+
+  b = Base('bee')
+  d = Derived('dog')
+  log("b.TypeString() %s", b.TypeString())
+  log("d.TypeString() %s", d.TypeString())
+  log("f(b)           %s", f(b))
+  log("f(d)           %s", f(d))
+  log("f(GLOBAL)      %s", f(GLOBAL))
+
+
+def run_tests():
+  # type: () -> None
+  TestMethods()
+  TestInheritance()
 
 
 def run_benchmarks():
