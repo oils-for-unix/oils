@@ -2254,10 +2254,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.write(
                     '    : Obj(Tag::FixedSize, %s, sizeof(%s)) ' % (mask_str, o.name))
 
-              # Taking into account the docstring, check for Base.__init__(self, ...)
-              # and move that to the initializer list.
+              # Check for Base.__init__(self, ...) and move that to the initializer list.
 
               first_index = 0
+
+              # Skip docstring
               maybe_skip_stmt = stmt.body.body[0]
               if (isinstance(maybe_skip_stmt, ExpressionStmt) and
                   isinstance(maybe_skip_stmt.expr, StrExpr)):
@@ -2281,26 +2282,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     if i != 1:
                       self.write(', ')
                     self.accept(arg)
-                  self.write(') {\n')
+                  self.write(')')
 
-                  # Derived classes MUTATE the mask
-                  if base_class_name:
-                    mask_str = self.mask_funcs.get(o)
-                    if mask_str is None:
-                      #self.log('*** No mask for %s', o.name)
-                      pass
-                    else:
-                      self.write('  field_mask_ |= %s;\n' % mask_str)
+                  first_index += 1
 
-                  self.indent += 1
-                  for node in stmt.body.body[first_index+1:]:
-                    self.accept(node)
-                  self.indent -= 1
-                  self.write('}\n')
-                  continue
+              self.write(' {\n')
 
-              # Derived classes MUTATE the mask.  DUPLICATE of above check, for
-              # when there's no Base.__init__(self).
+              # Derived classes MUTATE the mask
               if base_class_name:
                 mask_str = self.mask_funcs.get(o)
                 if mask_str is None:
@@ -2309,9 +2297,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 else:
                   self.write('  field_mask_ |= %s;\n' % mask_str)
 
-              # Normal function body
-              self.accept(stmt.body)
-              continue
+              # Now visit the rest of the statements
+              self.indent += 1
+              for node in stmt.body.body[first_index: ]:
+                self.accept(node)
+              self.indent -= 1
+              self.write('}\n')
+
+              continue  # wrote FuncDef for constructor
+
 
             if stmt.name == '__enter__':
               continue
