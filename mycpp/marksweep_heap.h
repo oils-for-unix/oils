@@ -9,12 +9,10 @@ class MarkSweepHeap;  // forward decl for circular dep
 class RootSet {
  public:
   explicit RootSet(int num_reserved) {
-    roots_.reserve(num_reserved);  // 32 stack frames to start
+    roots_.reserve(num_reserved);  // e.g. 32 stack frames to start
     for (int i = 0; i < num_reserved; ++i) {
-      // construct std::vector for the frame IN PLACE
-      roots_.emplace_back();
-      // reserving 16 rooted variables per frame.
-      roots_.back().reserve(16);
+      roots_.emplace_back();  // Construct std::vector frame IN PLACE.
+      roots_.back().reserve(16);  // Reserve 16 rooted variables per frame.
     }
   }
 
@@ -23,7 +21,6 @@ class RootSet {
 
     // Construct more std::vector frames if necessary.  We reuse vectors to
     // avoid constructing one on every function call.
-
     int num_constructed = roots_.size();
     // equivalent to NumFrames() >= num_constructed
     if (frame_top_ >= num_constructed) {
@@ -43,8 +40,8 @@ class RootSet {
   void PopScope() {
     // Called on function exit
 
-    // Remove all roots owned by the top frame
-    // NOT using vector<>::pop() because we are REUSING objects.
+    // Remove all roots owned by the top frame.  We're REUSING frames, so not
+    // calling vector<>::pop().
     roots_[frame_top_ - 1].clear();
     frame_top_--;
   }
@@ -52,9 +49,12 @@ class RootSet {
   void AddRoot(Obj* root) {
     // Called when returning a value
 
-    // true because main() has RootsScope(), and doesn't return objects
+    // This is true because main() has RootsScope(), and doesn't return objects
     assert(frame_top_ > 1);
 
+    if (root == nullptr) {  // No reason to add it
+      return;
+    }
     // Owned by the frame BELOW
     roots_[frame_top_ - 2].push_back(root);
   }

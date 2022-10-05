@@ -216,32 +216,94 @@ TEST root_set_test() {
     ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[i].size()), "%d");
   }
 
+  /*
+  Str* g() {
+    Str* ret = StrFromC("X");
+    gHeap.AddRoot(ret);
+    return ret;
+  }
+  
+  Str* f(Str* s, Str* t) {
+    Str* ret = str_concat(s, t);
+    gHeap.AddRoot(ret);
+    return ret;
+  }
+  
+  int main() {
+    Str* dummy = f(g(), g());
+  
+    // both the temporary args and concatenated values are roots until the end of main()
+  }
+  */
+
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(0, r.NumFrames(), "%d");
 
   r.PushScope();  // main() call
+  ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
 
-  r.PushScope();  // foo() call
+  r.PushScope();  // g() call
+  ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
 
-  // foo() returns "X"
+  // g() returns "X"
   r.AddRoot(StrFromC("X"));
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
+  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
   ASSERT_EQ_FMT(1, static_cast<int>(r.roots_[0].size()), "%d");
   ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[1].size()), "%d");
 
-  r.PopScope();  // foo() return
-  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
+  r.PopScope();  // g() return
   // "X" is still live after foo() returns!
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
+  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
   ASSERT_EQ_FMT(1, static_cast<int>(r.roots_[0].size()), "%d");
+
+  r.PushScope();  // another g() call
+  ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
+  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
+
+  // g() returns "X" again
+  r.AddRoot(StrFromC("X"));
+  ASSERT_EQ_FMT(2, r.NumRoots(), "%d");
+  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(2, static_cast<int>(r.roots_[0].size()), "%d");
+  ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[1].size()), "%d");
+
+  r.PopScope();  // another g() return
+  ASSERT_EQ_FMT(2, r.NumRoots(), "%d");
+  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(2, static_cast<int>(r.roots_[0].size()), "%d");
 
   r.PopScope();  // main() return
   ASSERT_EQ_FMT(0, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
 
-  // TODO: nullptr is never added
+  PASS();
+}
 
+TEST root_set_null_test() {
+  RootSet r(32);
+
+  r.PushScope();
+  r.PushScope();
+
+  r.AddRoot(StrFromC("X"));
+  ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
+
+  // Does NOT get added
+  r.AddRoot(nullptr);
+  ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
+
+  r.PopScope();
+  r.PopScope();
+
+  PASS();
+}
+
+TEST root_set_big_test() {
+  RootSet r(32);
   // Test many frames
   r.PushScope();
   for (int i = 0; i < 100; ++i) {
@@ -250,6 +312,8 @@ TEST root_set_test() {
       r.AddRoot(StrFromC("Y"));
     }
   }
+
+  // TODO: nullptr is never added
 
   PASS();
 }
@@ -292,6 +356,8 @@ int main(int argc, char **argv) {
   RUN_TEST(tuple_field_masks_test);
 
   RUN_TEST(root_set_test);
+  RUN_TEST(root_set_null_test);
+  RUN_TEST(root_set_big_test);
   RUN_TEST(roots_scope_test);
 
   gHeap.Collect();
