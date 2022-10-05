@@ -127,7 +127,8 @@ class Writer : public Obj {
 
 class Buf {
  public:
-  Buf() : data_(nullptr), len_(0), cap_(0) {
+  // The initial capacity is big enough for a line
+  Buf() : data_(nullptr), len_(0), cap_(128) {
   }
   bool IsEmpty() {
     return len_ == 0;
@@ -144,8 +145,8 @@ class Buf {
  private:
   friend Str* StrFromBuf(const Buf&);
   char* data_;
-  int len_;
-  int cap_;
+  int len_;  // data length, not including NUL
+  int cap_;  // capacity, not including NUL
 };
 
 Str* StrFromBuf(const Buf&);
