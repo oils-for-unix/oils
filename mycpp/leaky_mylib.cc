@@ -170,16 +170,6 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  // BUG: This is quadratic!
-
-  // TODO:
-  //
-  // - add capacity_, and double it?  start at 32 bytes -> 64 -> 128
-  //   - only realloc by doublings?
-  // - or change this to append to a list?  and then getvalue() does a join()
-  // on it?
-  // - DEALLOCATE.  gc_mylib doesn't leak!
-
   buf_.Extend(s);
 }
 

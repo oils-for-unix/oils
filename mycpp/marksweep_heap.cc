@@ -13,6 +13,7 @@ void MarkSweepHeap::Init(int collect_threshold) {
 void MarkSweepHeap::Report() {
   log("  num allocated   = %d", num_allocated_);
   log("bytes allocated   = %d", bytes_allocated_);
+  log("  max live        = %d", max_live_);
   log("  num live        = %d", num_live_);
   log("  num collections = %d", num_collections_);
   log("");
@@ -146,6 +147,7 @@ void MarkSweepHeap::Collect() {
       num_live_--;
     }
   }
+  max_live_ = std::max(max_live_, num_live_);
 
   live_objs_.resize(last_live_index);  // remove dangling objects
   marked_.clear();

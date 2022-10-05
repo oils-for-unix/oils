@@ -37,6 +37,7 @@ class MarkSweepHeap {
   int64_t num_allocated_ = 0;
   int64_t bytes_allocated_ = 0;
   int64_t num_collections_ = 0;
+  int64_t max_live_ = 0;  // max # live after a collection
 
   // current stats
   int64_t num_live_ = 0;
