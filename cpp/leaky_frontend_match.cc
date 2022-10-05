@@ -35,10 +35,9 @@ Tuple2<Id_t, Str*> SimpleLexer::Next() {
               &id, &end_pos);
 
   int len = end_pos - pos_;
-  char* buf = static_cast<char*>(malloc(len + 1));
-  memcpy(buf, s_->data_ + pos_, len);  // copy the list item
-  buf[len] = '\0';
-  Str* val = CopyBufferIntoNewStr(buf, len);
+  Str* val = AllocStr(len);                   // TODO: return value rooting
+  memcpy(val->data_, s_->data_ + pos_, len);  // copy the list item
+  val->data_[len] = '\0';
 
   pos_ = end_pos;
   return Tuple2<Id_t, Str*>(static_cast<Id_t>(id), val);

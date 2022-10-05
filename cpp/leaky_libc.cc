@@ -48,14 +48,7 @@ List<Str*>* glob(Str* pat) {
   size_t i;
   for (i = 0; i < n; i++) {
     const char* m = results.gl_pathv[i];
-
-    // Make a copy so we own it.
-    size_t len = strlen(m);
-    char* buf = static_cast<char*>(malloc(len + 1));
-    memcpy(buf, m, len);
-    buf[len] = '\0';
-
-    matches->append(CopyBufferIntoNewStr(buf, len));
+    matches->append(StrFromC(m));
   }
   globfree(&results);
 

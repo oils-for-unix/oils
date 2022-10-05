@@ -129,16 +129,6 @@ inline Str* StrFromC(const char* data) {
   return StrFromC(data, strlen(data));
 }
 
-inline Str* CopyBufferIntoNewStr(char* buf) {
-  Str* s = StrFromC(buf);
-  return s;
-}
-
-inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
-  Str* s = StrFromC(buf, buf_len);
-  return s;
-}
-
 // NOTE: This iterates over bytes.
 class StrIter {
  public:

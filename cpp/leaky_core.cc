@@ -124,7 +124,7 @@ Str* GetUserName(int uid) {
   Str* result = kEmptyString;
 
   if (passwd* pw = getpwuid(uid)) {
-    result = CopyBufferIntoNewStr(pw->pw_name);
+    result = StrFromC(pw->pw_name);
   } else {
     throw Alloc<IOError>(errno);
   }
@@ -137,7 +137,7 @@ Str* OsType() {
 
   utsname un = {};
   if (::uname(&un) == 0) {
-    result = CopyBufferIntoNewStr(un.sysname);
+    result = StrFromC(un.sysname);
   } else {
     throw Alloc<IOError>(errno);
   }
@@ -210,12 +210,12 @@ bool IsValidCharEscape(int c) {
 
 Str* ChArrayToString(List<int>* ch_array) {
   int n = len(ch_array);
-  unsigned char* buf = static_cast<unsigned char*>(malloc(n + 1));
+  Str* result = AllocStr(n);
   for (int i = 0; i < n; ++i) {
-    buf[i] = ch_array->index_(i);
+    result->data_[i] = ch_array->index_(i);
   }
-  buf[n] = '\0';
-  return CopyBufferIntoNewStr(reinterpret_cast<char*>(buf), n);
+  result->data_[n] = '\0';
+  return result;
 }
 
 Str* _ResourceLoader::Get(Str* path) {
@@ -253,14 +253,14 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
     *p++ = c;
   }
   int len = p - buf;
-  return CopyBufferIntoNewStr(buf, len);
+  return StrFromC(buf, len);
 }
 
 // Hack so e->errno will work below
 #undef errno
 
 Str* strerror(_OSError* e) {
-  return CopyBufferIntoNewStr(::strerror(e->errno));
+  return StrFromC(::strerror(e->errno));
 }
 
 }  // namespace pyutil
