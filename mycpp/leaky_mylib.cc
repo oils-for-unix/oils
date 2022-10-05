@@ -144,8 +144,11 @@ void Buf::Extend(Str* s) {
   int n = len(s);
 
   assert(cap_ >= len_);
-  cap_ = cap_ + 1 + std::max(cap_, n);
-  data_ = static_cast<char*>(realloc(data_, cap_));
+  if (cap_ - len_ < n + 1) {
+    cap_ += n + 1;
+    cap_ *= 2;
+    data_ = static_cast<char*>(realloc(data_, cap_));
+  }
   memcpy(data_ + len_, s->data_, n);
   len_ += n;
   data_[len_] = '\0';
