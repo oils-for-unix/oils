@@ -127,12 +127,20 @@ class Writer : public Obj {
 
 class Buf {
  public:
-  Buf() : data_(nullptr), len_(0), cap_(0) {}
-  bool IsEmpty() { return len_ == 0; }
-  char* data() { return data_; }
-  bool IsValid() { return len_ != -1; }
+  Buf() : data_(nullptr), len_(0), cap_(0) {
+  }
+  bool IsEmpty() {
+    return len_ == 0;
+  }
+  char* data() {
+    return data_;
+  }
+  bool IsValid() {
+    return len_ != -1;
+  }
   void Extend(Str* s);
   void Invalidate();
+
  private:
   friend Str* StrFromBuf(const Buf&);
   char* data_;
@@ -145,9 +153,7 @@ Buf AllocBuf(char*, int);
 
 class BufWriter : public Writer {
  public:
-  BufWriter()
-      : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)),
-        buf_() {
+  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_() {
   }
   void write(Str* s) override;
   void flush() override {

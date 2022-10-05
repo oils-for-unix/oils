@@ -13,7 +13,7 @@ mylib::FormatStringer gBuf;
 namespace mylib {
 
 Str* StrFromBuf(const Buf& buf) {
-    return ::StrFromC(buf.data_, buf.len_);
+  return ::StrFromC(buf.data_, buf.len_);
 }
 
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
@@ -144,20 +144,19 @@ void Buf::Extend(Str* s) {
   int n = len(s);
 
   assert(cap_ >= len_);
-  if (cap_ - len_ < n + 1) {
-    cap_ = std::max(cap_ * 2, len_ + n + 1);
-    data_ = static_cast<char*>(realloc(data_, cap_));
-  }
+  cap_ = std::max(cap_ * 2, len_ + n);
+  data_ = static_cast<char*>(realloc(data_, cap_ + 1));
+
   memcpy(data_ + len_, s->data_, n);
   len_ += n;
   data_[len_] = '\0';
 }
 
 void Buf::Invalidate() {
-    free(data_);
-    len_ = -1;
-    cap_ = -1;
-    data_ = nullptr;
+  free(data_);
+  len_ = -1;
+  cap_ = -1;
+  data_ = nullptr;
 }
 
 //
