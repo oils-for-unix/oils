@@ -102,6 +102,8 @@ Str* Str::index_(int i) {
 
 // s[begin:end]
 Str* Str::slice(int begin, int end) {
+  RootsScope _r();
+
   int len_ = len(this);
   begin = std::min(begin, len_);
   end = std::min(end, len_);
@@ -143,6 +145,7 @@ Str* Str::slice(int begin, int end) {
   Str* result = AllocStr(new_len);
   memcpy(result->data_, data_ + begin, new_len);
 
+  gHeap.AddRoot(result);  // return value rooting
   return result;
 }
 

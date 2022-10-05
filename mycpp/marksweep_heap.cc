@@ -1,5 +1,18 @@
 #include "mycpp/runtime.h"
 
+// Start of garbage collection.  We have a circular dependency here because I
+// don't want some kind of STL iterator.
+void RootSet::MarkRoots(MarkSweepHeap* heap) {
+  for (int i = 0; i < num_frames_; ++i) {
+    const std::vector<Obj*>& frame = roots_[i];
+    int n = frame.size();
+    for (int j = 0; j < n; ++j) {
+      // TODO: would be nice to do non-recursive marking
+      heap->MarkObjects(frame[j]);
+    }
+  }
+}
+
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
 }
@@ -120,19 +133,7 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
   }
 }
 
-int MarkSweepHeap::Collect() {
-  int num_roots = roots_.size();
-  for (int i = 0; i < num_roots; ++i) {
-    // NOTE(Jesse): This is dereferencing again because I didn't want to
-    // rewrite the stackroots class for this implementation.  Realistically we
-    // should do that such that we don't store indirected pointers here.
-    Obj* root = *(roots_[i]);
-
-    if (root) {
-      MarkObjects(root);
-    }
-  }
-
+void MarkSweepHeap::Sweep() {
   int last_live_index = 0;
   int num_objs = live_objs_.size();
   for (int i = 0; i < num_objs; ++i) {
@@ -152,8 +153,38 @@ int MarkSweepHeap::Collect() {
 
   num_collections_++;
   max_live_ = std::max(max_live_, num_live_);
+}
+
+#define RETURN_ROOTING 0
+
+int MarkSweepHeap::Collect() {
+#if RETURN_ROOTING
+  root_set_.MarkRoots(this);
+#else
+  int num_roots = roots_.size();
+  for (int i = 0; i < num_roots; ++i) {
+    // NOTE(Jesse): This is dereferencing again because I didn't want to
+    // rewrite the stackroots class for this implementation.  Realistically we
+    // should do that such that we don't store indirected pointers here.
+    Obj* root = *(roots_[i]);
+
+    if (root) {
+      MarkObjects(root);
+    }
+  }
+#endif
+
+  Sweep();
 
   return num_live_;  // for unit tests only
+}
+
+// Cleanup at the end of main() to remain ASAN-safe
+void MarkSweepHeap::OnProcessExit() {
+  // Don't MarkObjects() because locals to main() are still live!  This must be
+  // called right before main exits.
+  root_set_.Clear();
+  Sweep();
 }
 
 #if MARK_SWEEP

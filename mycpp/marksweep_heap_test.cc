@@ -335,6 +335,84 @@ Str *g(Str *left, Str *right) {
   return ret;
 }
 
+int count_old(Str* a, Str* b) {
+  StackRoots _roots({&a, &b});
+
+  int result = 0;
+  if (a) {
+    result += len(a);
+  }
+  if (b) {
+    result += len(b);
+  }
+  return result;
+}
+
+// Just like above, but instead of rooting variables, we create a RootsScope instance.
+// It doesn't return a heap-allocated object, so we don't need gHeap.AddRoot().
+// Functions that allocate like Alloc<T> are responsible for that.
+
+int count_new(Str* a, Str* b) {
+  RootsScope _r();
+
+  int result = 0;
+  if (a) {
+    result += len(a);
+  }
+  if (b) {
+    result += len(b);
+  }
+  return result;
+}
+
+TEST old_slice_demo() {
+  Str* s = nullptr;
+  Str* t = nullptr;
+  StackRoots _roots({&s, &t});
+  s = StrFromC("spam");
+  t = StrFromC("eggs");
+
+  log("old_slice_demo");
+
+  // OK
+  int i = count_old(s->slice(1), nullptr);
+  log("s[1:] %d", i);
+
+  // OK
+  int j = count_old(t->slice(2), nullptr);
+  log("t[2:] %d", j);
+
+  // f(g(), h()) problem -- ASAN in gcevery mode finds this!
+  int k = count_old(s->slice(1), t->slice(2));
+  log("s[1:] t[2:] %d", k);
+
+  PASS();
+}
+
+TEST new_slice_demo() {
+  RootsScope _r();
+
+  // TODO: This function needs rooting
+  Str* s = StrFromC("spam");
+  Str* t = StrFromC("eggs");
+
+  log("new_slice_demo");
+
+  // OK
+  int i = count_new(s->slice(1), nullptr);
+  log("s[1:] %d", i);
+
+  // OK
+  int j = count_new(t->slice(2), nullptr);
+  log("t[2:] %d", j);
+
+  // Does NOT have the f(g(), h()) problem
+  int k = count_old(s->slice(1), t->slice(2));
+  log("s[1:] t[2:] %d", k);
+
+  PASS();
+}
+
 TEST root_set_stress_test() {
   RootsScope _r();
 
@@ -388,8 +466,13 @@ int main(int argc, char **argv) {
   // RUN_TEST(root_set_stress_test);
 
   RUN_TEST(roots_scope_test);
+#if 0
+  RUN_TEST(old_slice_demo);
+  RUN_TEST(new_slice_demo);
+#endif
 
   gHeap.Collect();
+  gHeap.OnProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

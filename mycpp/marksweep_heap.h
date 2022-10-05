@@ -43,14 +43,27 @@ class RootSet {
     num_frames_--;
   }
 
-  // Called when returning a value
-  void AddRoot(Obj* root) {
-    // This is true because main() has RootsScope(), and doesn't return objects
-    assert(num_frames_ > 1);
+  void Clear() {
+    while (num_frames_ > 0) {
+      PopScope();
+    }
+  }
 
+  // Called when returning a value
+  //
+  // TODO: might want RootOnReturn() vs. RootOnThrow()
+  void AddRoot(Obj* root) {
     if (root == nullptr) {  // No reason to add it
       return;
     }
+
+    // If we create temporaries in main(), then there's no "higher" stack frame
+    // to free them.  To exit without leaks for ASAN, call
+    // gHeap.OnProcessExit().
+    if (num_frames_ <= 1) {
+      return;
+    }
+
     // Owned by the frame BELOW
     roots_[num_frames_ - 2].push_back(root);
   }
@@ -69,18 +82,7 @@ class RootSet {
     return result;
   }
 
-  // Start of garbage collection.  We have a circular dependency here because I
-  // don't want some kind of STL iterator.
-  void MarkRoots(MarkSweepHeap* heap) {
-    for (int i = 0; i < num_frames_; ++i) {
-      const std::vector<Obj*>& frame = roots_[i];
-      int n = frame.size();
-      for (int j = 0; j < n; ++j) {
-        // TODO: add to gray stack
-        ;
-      }
-    }
-  }
+  void MarkRoots(MarkSweepHeap* heap);
 
   // This representation seems weird, but is appropriate since multiple stack
   // frames are "in play" at once.  That is, AddRoot() may mutate root_set_[1]
@@ -122,6 +124,10 @@ class MarkSweepHeap {
 
   void* Allocate(int num_bytes);
   int Collect();
+  void MarkObjects(Obj* obj);
+  void Sweep();
+  // Cleanup at the end of main() to remain ASAN-safe
+  void OnProcessExit();
 
   void MaybePrintReport();
   void Report();
@@ -153,8 +159,6 @@ class MarkSweepHeap {
   std::unordered_set<void*> marked_;
 
  private:
-  void MarkObjects(Obj* obj);
-
   DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);
 };
 
