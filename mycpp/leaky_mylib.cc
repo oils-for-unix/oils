@@ -12,6 +12,10 @@ mylib::FormatStringer gBuf;
 
 namespace mylib {
 
+Str* StrFromBuf(const Buf& buf) {
+  return ::StrFromC(buf.data_, buf.len_);
+}
+
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   StackRoots _roots({&s, &delim});
@@ -132,18 +136,39 @@ bool CFileWriter::isatty() {
   return ::isatty(fileno(f_));
 }
 
+// Buf
+//
+//
+
+void Buf::Extend(Str* s) {
+  int n = len(s);
+
+  assert(cap_ >= len_);
+  cap_ = std::max(cap_ * 2, len_ + n);
+  data_ = static_cast<char*>(realloc(data_, cap_ + 1));
+
+  memcpy(data_ + len_, s->data_, n);
+  len_ += n;
+  data_[len_] = '\0';
+}
+
+void Buf::Invalidate() {
+  free(data_);
+  len_ = -1;
+  cap_ = -1;
+  data_ = nullptr;
+}
+
 //
 // BufWriter
 //
 
 void BufWriter::write(Str* s) {
-  int orig_len = len_;
   int n = len(s);
   if (n == 0) {
     // preserve invariant that data_ == nullptr when len_ == 0
     return;
   }
-  len_ += n;
 
   // BUG: This is quadratic!
 
@@ -155,27 +180,19 @@ void BufWriter::write(Str* s) {
   // on it?
   // - DEALLOCATE.  gc_mylib doesn't leak!
 
-  // data_ is nullptr at first
-  data_ = static_cast<char*>(realloc(data_, len_ + 1));
-
-  // Append to the end
-  memcpy(data_ + orig_len, s->data_, n);
-  data_[len_] = '\0';
+  buf_.Extend(s);
 }
 
 Str* BufWriter::getvalue() {
-  if (len_ == 0) {  // if no write() methods are called, the result is ""
-    assert(data_ == nullptr);
+  if (buf_.IsEmpty()) {  // if no write() methods are called, the result is ""
+    assert(buf_.data() == nullptr);
     return kEmptyString;
   } else {
-    assert(len_ != -1);  // Check for two INVALID getvalue() in a row
+    assert(buf_.IsValid());  // Check for two INVALID getvalue() in a row
 
-    Str* ret = ::StrFromC(data_, len_);
+    Str* ret = StrFromBuf(buf_);
 
-    // Put this instance in an INVALID state
-    len_ = -1;
-    free(data_);
-    data_ = nullptr;
+    buf_.Invalidate();
 
     return ret;
   }
