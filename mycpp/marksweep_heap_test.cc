@@ -116,8 +116,6 @@ TEST cycle_collection_test() {
   PASS();
 }
 
-GREATEST_MAIN_DEFS();
-
 TEST tuple_field_masks_test() {
   Tuple2<Str *, Str *> ss(nullptr, nullptr);
   ASSERT_EQ_FMT(0b11, ss.field_mask_, "%d");
@@ -203,6 +201,82 @@ TEST tuple_test() {
   PASS();
 }
 
+TEST root_set_test() {
+  RootSet r(32);
+
+  // Make sure it was initialized correctly
+
+  // 32 frames
+  ASSERT_EQ_FMT(32, static_cast<int>(r.roots_.capacity()), "%d");
+  ASSERT_EQ_FMT(32, static_cast<int>(r.roots_.size()), "%d");
+
+  // 16 rooted objects per frame
+  for (int i = 0; i < 32; ++i) {
+    ASSERT_EQ_FMT(16, static_cast<int>(r.roots_[i].capacity()), "%d");
+    ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[i].size()), "%d");
+  }
+
+  ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
+  ASSERT_EQ_FMT(0, r.NumFrames(), "%d");
+
+  r.PushScope();  // main() call
+  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
+
+  r.PushScope();  // foo() call
+  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
+
+  // foo() returns "X"
+  r.AddRoot(StrFromC("X"));
+  ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
+  ASSERT_EQ_FMT(1, static_cast<int>(r.roots_[0].size()), "%d");
+  ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[1].size()), "%d");
+
+  r.PopScope();  // foo() return
+  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
+  // "X" is still live after foo() returns!
+  ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
+  ASSERT_EQ_FMT(1, static_cast<int>(r.roots_[0].size()), "%d");
+
+  r.PopScope();  // main() return
+  ASSERT_EQ_FMT(0, r.NumFrames(), "%d");
+
+  // TODO: nullptr is never added
+
+  // Test many frames
+  r.PushScope();
+  for (int i = 0; i < 100; ++i) {
+    r.PushScope();
+    for (int j = 0; j < 100; ++j) {
+      r.AddRoot(StrFromC("Y"));
+    }
+  }
+
+  PASS();
+}
+
+int f() {
+  RootsScope r2;
+
+  // Can't assert in this non-test function
+  return gHeap.root_set_.frame_top_;
+}
+
+TEST roots_scope_test() {
+  ASSERT_EQ_FMT(0, gHeap.root_set_.frame_top_, "%d");
+
+  RootsScope r1;
+  ASSERT_EQ_FMT(1, gHeap.root_set_.frame_top_, "%d");
+
+  int f_top = f();
+  ASSERT_EQ_FMT(2, f_top, "%d");
+
+  ASSERT_EQ_FMT(1, gHeap.root_set_.frame_top_, "%d");
+
+  PASS();
+}
+
+GREATEST_MAIN_DEFS();
+
 int main(int argc, char **argv) {
   gHeap.Init();
 
@@ -216,6 +290,9 @@ int main(int argc, char **argv) {
 
   RUN_TEST(tuple_test);
   RUN_TEST(tuple_field_masks_test);
+
+  RUN_TEST(root_set_test);
+  RUN_TEST(roots_scope_test);
 
   gHeap.Collect();
 

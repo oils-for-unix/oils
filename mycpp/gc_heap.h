@@ -49,4 +49,17 @@ class StackRoots {
   int n_;
 };
 
+class RootsScope {
+  // Create an instance of this in every function.  This lets the GC now when
+  // functions return, so it can remove values from the root set.
+
+ public:
+  RootsScope() {
+    gHeap.root_set_.PushScope();
+  }
+  ~RootsScope() {
+    gHeap.root_set_.PopScope();
+  }
+};
+
 #endif  // GC_HEAP_H
