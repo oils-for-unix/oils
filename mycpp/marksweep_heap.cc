@@ -6,7 +6,7 @@ void MarkSweepHeap::Init() {
 
 void MarkSweepHeap::Init(int collect_threshold) {
   collect_threshold_ = collect_threshold;
-  all_allocations_.reserve(KiB(10));
+  live_objs_.reserve(KiB(10));
   roots_.reserve(KiB(1));  // prevent resizing in common case
 }
 
@@ -17,7 +17,7 @@ void MarkSweepHeap::Report() {
   log("  num collections = %d", num_collections_);
   log("");
   log("roots capacity    = %d", roots_.capacity());
-  log(" objs capacity    = %d", all_allocations_.capacity());
+  log(" objs capacity    = %d", live_objs_.capacity());
 }
 
 void MarkSweepHeap::MaybePrintReport() {
@@ -53,7 +53,7 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   void* result = calloc(num_bytes, 1);
   assert(result);
 
-  all_allocations_.push_back(result);
+  live_objs_.push_back(result);
 
   num_live_++;
   num_allocated_++;
@@ -64,17 +64,15 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
 
 #endif  // MALLOC_LEAK
 
-void MarkSweepHeap::MarkAllReferences(Obj* obj) {
-  auto header = ObjHeader(obj);
-
-  auto marked_alloc = marked_allocations_.find((Obj*)obj);
-  bool alloc_is_marked = marked_alloc != marked_allocations_.end();
-  if (alloc_is_marked) {
+void MarkSweepHeap::MarkObjects(Obj* obj) {
+  bool is_marked = marked_.find(obj) != marked_.end();
+  if (is_marked) {
     return;
   }
 
-  marked_allocations_.insert(static_cast<void*>(obj));
+  marked_.insert(static_cast<void*>(obj));
 
+  auto header = ObjHeader(obj);
   switch (header->heap_tag_) {
   case Tag::FixedSize: {
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
@@ -85,7 +83,7 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
       if (mask & (1 << i)) {
         Obj* child = fixed->children_[i];
         if (child) {
-          MarkAllReferences(child);
+          MarkObjects(child);
         }
       }
     }
@@ -104,7 +102,7 @@ void MarkSweepHeap::MarkAllReferences(Obj* obj) {
     for (int i = 0; i < n; ++i) {
       Obj* child = reinterpret_cast<Obj*>(slab->items_[i]);
       if (child) {
-        MarkAllReferences(child);
+        MarkObjects(child);
       }
     }
 
@@ -130,29 +128,27 @@ void MarkSweepHeap::Collect() {
     Obj* root = *(roots_[i]);
 
     if (root) {
-      MarkAllReferences(root);
+      MarkObjects(root);
     }
   }
 
   int last_live_index = 0;
-  int num_objs = all_allocations_.size();
-  for (int alloc_index = 0; alloc_index < num_objs; ++alloc_index) {
-    void* alloc = all_allocations_[alloc_index];
-    assert(alloc);  // malloc() shouldn't have returned nullptr
+  int num_objs = live_objs_.size();
+  for (int i = 0; i < num_objs; ++i) {
+    void* obj = live_objs_[i];
+    assert(obj);  // malloc() shouldn't have returned nullptr
 
-    auto marked_alloc = marked_allocations_.find(alloc);
-    bool alloc_is_live = marked_alloc != marked_allocations_.end();
-
-    if (alloc_is_live) {
-      all_allocations_[last_live_index++] = alloc;
+    bool is_live = marked_.find(obj) != marked_.end();
+    if (is_live) {
+      live_objs_[last_live_index++] = obj;
     } else {
-      free(alloc);
+      free(obj);
       num_live_--;
     }
   }
 
-  all_allocations_.resize(last_live_index);
-  marked_allocations_.clear();
+  live_objs_.resize(last_live_index);  // remove dangling objects
+  marked_.clear();
 
   num_collections_++;
 }

@@ -5,8 +5,6 @@
 #include <vector>
 
 class MarkSweepHeap {
-  void MarkAllReferences(Obj* obj);
-
  public:
   MarkSweepHeap() {
   }
@@ -46,8 +44,13 @@ class MarkSweepHeap {
   // int64_t bytes_live_ = 0;
 
   std::vector<Obj**> roots_;
-  std::vector<void*> all_allocations_;
-  std::unordered_set<void*> marked_allocations_;
+  std::vector<void*> live_objs_;
+  std::unordered_set<void*> marked_;
+
+ private:
+  void MarkObjects(Obj* obj);
+
+  DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);
 };
 
 #endif
