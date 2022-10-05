@@ -4,7 +4,7 @@
 // don't want some kind of STL iterator.
 void RootSet::MarkRoots(MarkSweepHeap* heap) {
   for (int i = 0; i < num_frames_; ++i) {
-    const std::vector<Obj*>& frame = roots_[i];
+    const std::vector<Obj*>& frame = stack_[i];
     int n = frame.size();
     for (int j = 0; j < n; ++j) {
       // TODO: would be nice to do non-recursive marking

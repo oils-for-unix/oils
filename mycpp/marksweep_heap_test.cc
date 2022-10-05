@@ -207,25 +207,25 @@ TEST root_set_test() {
   // Make sure it was initialized correctly
 
   // 32 pre-allocated frames
-  ASSERT_EQ_FMT(32, static_cast<int>(r.roots_.capacity()), "%d");
-  ASSERT_EQ_FMT(32, static_cast<int>(r.roots_.size()), "%d");
+  ASSERT_EQ_FMT(32, static_cast<int>(r.stack_.capacity()), "%d");
+  ASSERT_EQ_FMT(32, static_cast<int>(r.stack_.size()), "%d");
 
   // reserved 16 rooted objects per frame
   for (int i = 0; i < 32; ++i) {
-    ASSERT_EQ_FMT(16, static_cast<int>(r.roots_[i].capacity()), "%d");
-    ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[i].size()), "%d");
+    ASSERT_EQ_FMT(16, static_cast<int>(r.stack_[i].capacity()), "%d");
+    ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[i].size()), "%d");
   }
 
   /*
   Str* g() {
     Str* ret = StrFromC("X");
-    gHeap.AddRoot(ret);
+    gHeap.RootOnReturn(ret);
     return ret;
   }
 
   Str* f(Str* s, Str* t) {
     Str* ret = str_concat(s, t);
-    gHeap.AddRoot(ret);
+    gHeap.RootOnReturn(ret);
     return ret;
   }
 
@@ -249,33 +249,33 @@ TEST root_set_test() {
   ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
 
   // g() returns "X"
-  r.AddRoot(StrFromC("X"));
+  r.RootOnReturn(StrFromC("X"));
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
-  ASSERT_EQ_FMT(1, static_cast<int>(r.roots_[0].size()), "%d");
-  ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[1].size()), "%d");
+  ASSERT_EQ_FMT(1, static_cast<int>(r.stack_[0].size()), "%d");
+  ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[1].size()), "%d");
 
   r.PopScope();  // g() return
   // "X" is still live after foo() returns!
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
-  ASSERT_EQ_FMT(1, static_cast<int>(r.roots_[0].size()), "%d");
+  ASSERT_EQ_FMT(1, static_cast<int>(r.stack_[0].size()), "%d");
 
   r.PushScope();  // another g() call
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
 
   // g() returns "X" again
-  r.AddRoot(StrFromC("X"));
+  r.RootOnReturn(StrFromC("X"));
   ASSERT_EQ_FMT(2, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
-  ASSERT_EQ_FMT(2, static_cast<int>(r.roots_[0].size()), "%d");
-  ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[1].size()), "%d");
+  ASSERT_EQ_FMT(2, static_cast<int>(r.stack_[0].size()), "%d");
+  ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[1].size()), "%d");
 
   r.PopScope();  // another g() return
   ASSERT_EQ_FMT(2, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
-  ASSERT_EQ_FMT(2, static_cast<int>(r.roots_[0].size()), "%d");
+  ASSERT_EQ_FMT(2, static_cast<int>(r.stack_[0].size()), "%d");
 
   r.PopScope();  // main() return
   ASSERT_EQ_FMT(0, r.NumFrames(), "%d");
@@ -290,11 +290,11 @@ TEST root_set_null_test() {
   r.PushScope();
   r.PushScope();
 
-  r.AddRoot(StrFromC("X"));
+  r.RootOnReturn(StrFromC("X"));
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
 
   // Does NOT get added
-  r.AddRoot(nullptr);
+  r.RootOnReturn(nullptr);
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
 
   r.PopScope();
@@ -310,7 +310,7 @@ TEST root_set_big_test() {
   for (int i = 0; i < 100; ++i) {
     r.PushScope();
     for (int j = 0; j < 100; ++j) {
-      r.AddRoot(StrFromC("Y"));
+      r.RootOnReturn(StrFromC("Y"));
     }
   }
 
@@ -331,7 +331,7 @@ Str *g(Str *left, Str *right) {
 
   // TODO: call str_concat, NewList, etc.
   Str *ret = left;
-  gHeap.AddRoot(ret);
+  gHeap.RootOnReturn(ret);
   return ret;
 }
 
@@ -349,7 +349,7 @@ int count_old(Str* a, Str* b) {
 }
 
 // Just like above, but instead of rooting variables, we create a RootsScope instance.
-// It doesn't return a heap-allocated object, so we don't need gHeap.AddRoot().
+// It doesn't return a heap-allocated object, so we don't need gHeap.RootOnReturn().
 // Functions that allocate like Alloc<T> are responsible for that.
 
 int count_new(Str* a, Str* b) {

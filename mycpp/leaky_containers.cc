@@ -145,7 +145,7 @@ Str* Str::slice(int begin, int end) {
   Str* result = AllocStr(new_len);
   memcpy(result->data_, data_ + begin, new_len);
 
-  gHeap.AddRoot(result);  // return value rooting
+  gHeap.RootOnReturn(result);  // return value rooting
   return result;
 }
 
