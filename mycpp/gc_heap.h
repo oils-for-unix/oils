@@ -4,12 +4,6 @@
 #include "cheney_heap.h"
 #include "marksweep_heap.h"
 
-// for Tag::FixedSize
-class LayoutFixed : public Obj {
- public:
-  Obj* children_[16];  // only the entries denoted in field_mask will be valid
-};
-
 #if MARK_SWEEP
   #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: marksweep\n")
 extern MarkSweepHeap gHeap;
@@ -18,13 +12,29 @@ extern MarkSweepHeap gHeap;
 extern CheneyHeap gHeap;
 #endif
 
+class RootsScope {
+  // Create an instance of this in every function.  This lets the GC now when
+  // functions return, so it can remove values from the root set.
+
+ public:
+  RootsScope() {
+    gHeap.root_set_.PushScope();
+  }
+  ~RootsScope() {
+    gHeap.root_set_.PopScope();
+  }
+};
+
 // Variadic templates:
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
+  RootsScope _r;
+
   assert(gHeap.is_initialized_);
   void* place = gHeap.Allocate(sizeof(T));
   assert(place != nullptr);
+  gHeap.RootOnReturn(static_cast<Obj*>(place));
   // placement new
   return new (place) T(std::forward<Args>(args)...);
 }
@@ -49,17 +59,10 @@ class StackRoots {
   int n_;
 };
 
-class RootsScope {
-  // Create an instance of this in every function.  This lets the GC now when
-  // functions return, so it can remove values from the root set.
-
+// for Tag::FixedSize
+class LayoutFixed : public Obj {
  public:
-  RootsScope() {
-    gHeap.root_set_.PushScope();
-  }
-  ~RootsScope() {
-    gHeap.root_set_.PopScope();
-  }
+  Obj* children_[16];  // only the entries denoted in field_mask will be valid
 };
 
 #endif  // GC_HEAP_H

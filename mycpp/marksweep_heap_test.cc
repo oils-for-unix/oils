@@ -335,7 +335,7 @@ Str *g(Str *left, Str *right) {
   return ret;
 }
 
-int count_old(Str* a, Str* b) {
+int count_old(Str *a, Str *b) {
   StackRoots _roots({&a, &b});
 
   int result = 0;
@@ -348,11 +348,12 @@ int count_old(Str* a, Str* b) {
   return result;
 }
 
-// Just like above, but instead of rooting variables, we create a RootsScope instance.
-// It doesn't return a heap-allocated object, so we don't need gHeap.RootOnReturn().
-// Functions that allocate like Alloc<T> are responsible for that.
+// Like the above, but instead of rooting variables, we create a RootsScope
+// instance.  It doesn't return a heap-allocated object, so we don't need
+// gHeap.RootOnReturn(). Functions that allocate like Alloc<T> are responsible
+// for that.
 
-int count_new(Str* a, Str* b) {
+int count_new(Str *a, Str *b) {
   RootsScope _r();
 
   int result = 0;
@@ -366,8 +367,8 @@ int count_new(Str* a, Str* b) {
 }
 
 TEST old_slice_demo() {
-  Str* s = nullptr;
-  Str* t = nullptr;
+  Str *s = nullptr;
+  Str *t = nullptr;
   StackRoots _roots({&s, &t});
   s = StrFromC("spam");
   t = StrFromC("eggs");
@@ -393,8 +394,8 @@ TEST new_slice_demo() {
   RootsScope _r();
 
   // TODO: This function needs rooting
-  Str* s = StrFromC("spam");
-  Str* t = StrFromC("eggs");
+  Str *s = StrFromC("spam");
+  Str *t = StrFromC("eggs");
 
   log("new_slice_demo");
 
@@ -466,10 +467,10 @@ int main(int argc, char **argv) {
   // RUN_TEST(root_set_stress_test);
 
   RUN_TEST(roots_scope_test);
-#if 0
-  RUN_TEST(old_slice_demo);
-  RUN_TEST(new_slice_demo);
-#endif
+
+  // f(g(), h()) problem
+  // RUN_TEST(old_slice_demo);
+  // RUN_TEST(new_slice_demo);
 
   gHeap.Collect();
   gHeap.OnProcessExit();
