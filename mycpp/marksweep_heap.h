@@ -11,73 +11,68 @@ class RootSet {
   explicit RootSet(int num_reserved) {
     roots_.reserve(num_reserved);  // e.g. 32 stack frames to start
     for (int i = 0; i < num_reserved; ++i) {
-      roots_.emplace_back();  // Construct std::vector frame IN PLACE.
+      roots_.emplace_back();      // Construct std::vector frame IN PLACE.
       roots_.back().reserve(16);  // Reserve 16 rooted variables per frame.
     }
   }
 
+  // Called on function entry
   void PushScope() {
-    // Called on function entry
-
     // Construct more std::vector frames if necessary.  We reuse vectors to
     // avoid constructing one on every function call.
     int num_constructed = roots_.size();
-    // equivalent to NumFrames() >= num_constructed
-    if (frame_top_ >= num_constructed) {
+    if (num_frames_ >= num_constructed) {
       roots_.emplace_back();
       roots_.back().reserve(16);
 
 #if 0
       num_constructed = roots_.size();
-      log("frame_top_ %d, num_constructed %d", frame_top_, num_constructed);
-      assert(frame_top_ + 1 == num_constructed);
+      log("num_frames_ %d, num_constructed %d", num_frames_, num_constructed);
+      assert(num_frames_ + 1 == num_constructed);
 #endif
     }
 
-    frame_top_++;
+    num_frames_++;
   }
 
+  // Called on function exit
   void PopScope() {
-    // Called on function exit
-
     // Remove all roots owned by the top frame.  We're REUSING frames, so not
     // calling vector<>::pop().
-    roots_[frame_top_ - 1].clear();
-    frame_top_--;
+    roots_[num_frames_ - 1].clear();
+    num_frames_--;
   }
 
+  // Called when returning a value
   void AddRoot(Obj* root) {
-    // Called when returning a value
-
     // This is true because main() has RootsScope(), and doesn't return objects
-    assert(frame_top_ > 1);
+    assert(num_frames_ > 1);
 
     if (root == nullptr) {  // No reason to add it
       return;
     }
     // Owned by the frame BELOW
-    roots_[frame_top_ - 2].push_back(root);
+    roots_[num_frames_ - 2].push_back(root);
   }
 
+  // For testing
   int NumFrames() {
-    return frame_top_;
+    return num_frames_;
   }
 
+  // Calculate size of root set, for unit tests only.
   int NumRoots() {
-    // Calculate size of root set, for unit tests only.
-
     int result = 0;
-    for (int i = 0; i < frame_top_; ++i) {
+    for (int i = 0; i < num_frames_; ++i) {
       result += roots_[i].size();
     }
     return result;
   }
 
+  // Start of garbage collection.  We have a circular dependency here because I
+  // don't want some kind of STL iterator.
   void MarkRoots(MarkSweepHeap* heap) {
-    // Start of garbage collection.  We have a circular dependency here because
-    // I don't want some kind of STL iterator.
-
-    for (int i = 0; i < frame_top_; ++i) {
+    for (int i = 0; i < num_frames_; ++i) {
       const std::vector<Obj*>& frame = roots_[i];
       int n = frame.size();
       for (int j = 0; j < n; ++j) {
@@ -91,7 +86,7 @@ class RootSet {
   // frames are "in play" at once.  That is, AddRoot() may mutate root_set_[1]
   // while root_set_[2] is being pushed/popped/modified.
   std::vector<std::vector<Obj*>> roots_;
-  int frame_top_ = 0;  // frames 0 to N-1 are valid
+  int num_frames_ = 0;  // frames 0 to N-1 are valid
 };
 
 class MarkSweepHeap {

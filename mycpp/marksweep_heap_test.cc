@@ -206,11 +206,11 @@ TEST root_set_test() {
 
   // Make sure it was initialized correctly
 
-  // 32 frames
+  // 32 pre-allocated frames
   ASSERT_EQ_FMT(32, static_cast<int>(r.roots_.capacity()), "%d");
   ASSERT_EQ_FMT(32, static_cast<int>(r.roots_.size()), "%d");
 
-  // 16 rooted objects per frame
+  // reserved 16 rooted objects per frame
   for (int i = 0; i < 32; ++i) {
     ASSERT_EQ_FMT(16, static_cast<int>(r.roots_[i].capacity()), "%d");
     ASSERT_EQ_FMT(0, static_cast<int>(r.roots_[i].size()), "%d");
@@ -222,17 +222,18 @@ TEST root_set_test() {
     gHeap.AddRoot(ret);
     return ret;
   }
-  
+
   Str* f(Str* s, Str* t) {
     Str* ret = str_concat(s, t);
     gHeap.AddRoot(ret);
     return ret;
   }
-  
+
   int main() {
     Str* dummy = f(g(), g());
-  
-    // both the temporary args and concatenated values are roots until the end of main()
+
+    // both the temporary args and concatenated values are roots until the end
+  of main()
   }
   */
 
@@ -322,19 +323,44 @@ int f() {
   RootsScope r2;
 
   // Can't assert in this non-test function
-  return gHeap.root_set_.frame_top_;
+  return gHeap.root_set_.NumFrames();
+}
+
+Str *g(Str *left, Str *right) {
+  RootsScope _r();
+
+  // TODO: call str_concat, NewList, etc.
+  Str *ret = left;
+  gHeap.AddRoot(ret);
+  return ret;
+}
+
+TEST root_set_stress_test() {
+  RootsScope _r();
+
+  for (int i = 0; i < 10; ++i) {
+    // AllocStr needs to root; also needs RootsScope
+    Str *s = StrFromC("abcdef");
+
+    // slice() needs to root; also eneds RootsScope
+    Str *t = g(s->slice(1), s->slice(2));
+
+    log("t = %s", t->data());
+  }
+
+  PASS();
 }
 
 TEST roots_scope_test() {
-  ASSERT_EQ_FMT(0, gHeap.root_set_.frame_top_, "%d");
+  ASSERT_EQ_FMT(0, gHeap.root_set_.NumFrames(), "%d");
 
   RootsScope r1;
-  ASSERT_EQ_FMT(1, gHeap.root_set_.frame_top_, "%d");
+  ASSERT_EQ_FMT(1, gHeap.root_set_.NumFrames(), "%d");
 
-  int f_top = f();
-  ASSERT_EQ_FMT(2, f_top, "%d");
+  int f_num_frames = f();
+  ASSERT_EQ_FMT(2, f_num_frames, "%d");
 
-  ASSERT_EQ_FMT(1, gHeap.root_set_.frame_top_, "%d");
+  ASSERT_EQ_FMT(1, gHeap.root_set_.NumFrames(), "%d");
 
   PASS();
 }
@@ -358,6 +384,9 @@ int main(int argc, char **argv) {
   RUN_TEST(root_set_test);
   RUN_TEST(root_set_null_test);
   RUN_TEST(root_set_big_test);
+
+  // RUN_TEST(root_set_stress_test);
+
   RUN_TEST(roots_scope_test);
 
   gHeap.Collect();
