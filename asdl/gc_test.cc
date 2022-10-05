@@ -50,35 +50,38 @@ TEST pretty_print_test() {
 TEST hnode_test() {
   mylib::Writer* f = nullptr;
   format::TextOutput* ast_f = nullptr;
-  hnode__Array* array = nullptr;  // base type
   hnode_t* h = nullptr;           // base type
-  StackRoots _roots({&f, &ast_f, &h, &array});
+  hnode__Array* array = nullptr;  // base type
+  hnode__Record* rec = nullptr;
+  StackRoots _roots({&f, &ast_f, &h, &array, &rec});
 
   f = mylib::Stdout();
   ast_f = Alloc<format::TextOutput>(f);
   array = Alloc<hnode__Array>();
+  ASSERT_EQ_FMT(4, gHeap.Collect(), "%d");
 
-  hnode__Record* rec = Alloc<hnode__Record>();
+  rec = Alloc<hnode__Record>();
   rec->node_type = StrFromC("dummy_node");
+  ASSERT_EQ_FMT(10, gHeap.Collect(), "%d");
 
   h = rec;  // base type
   array->children->append(h);
 
   format::PrintTree(h, ast_f);
   printf("\n");
-  gHeap.Collect();
+  ASSERT_EQ_FMT(11, gHeap.Collect(), "%d");
 
   h = Alloc<hnode__Leaf>(StrFromC("zz"), color_e::TypeName);
   array->children->append(h);
 
   format::PrintTree(h, ast_f);
   printf("\n");
-  gHeap.Collect();
+  ASSERT_EQ_FMT(13, gHeap.Collect(), "%d");
 
   h = array;
   format::PrintTree(h, ast_f);
   printf("\n");
-  gHeap.Collect();
+  ASSERT_EQ_FMT(13, gHeap.Collect(), "%d");
 
   PASS();
 }
@@ -91,9 +94,11 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(hnode_test);
-  RUN_TEST(pretty_print_test);
+  // TODO: fix rooting of mylib.Stdout().  Then collect after every test, so
+  // that the number of live objects is accurate.
+  // gHeap.Collect();
 
-  gHeap.Collect();
+  RUN_TEST(pretty_print_test);
 
   GREATEST_MAIN_END();
   return 0;

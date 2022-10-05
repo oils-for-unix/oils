@@ -227,6 +227,7 @@ extern Writer* gStdout;
 
 inline Writer* Stdout() {
   if (gStdout == nullptr) {
+    // TODO: global instance needs rooting
     gStdout = Alloc<CFileWriter>(stdout);
   }
   return gStdout;
@@ -236,6 +237,7 @@ extern Writer* gStderr;
 
 inline Writer* Stderr() {
   if (gStderr == nullptr) {
+    // TODO: global instance needs rooting
     gStderr = Alloc<CFileWriter>(stderr);
   }
   return gStderr;

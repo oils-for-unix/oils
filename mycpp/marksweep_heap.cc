@@ -11,14 +11,14 @@ void MarkSweepHeap::Init(int collect_threshold) {
 }
 
 void MarkSweepHeap::Report() {
-  log("  num allocated   = %d", num_allocated_);
-  log("bytes allocated   = %d", bytes_allocated_);
-  log("  max live        = %d", max_live_);
-  log("  num live        = %d", num_live_);
-  log("  num collections = %d", num_collections_);
+  log("  num allocated   = %10d", num_allocated_);
+  log("bytes allocated   = %10d", bytes_allocated_);
+  log("  max live        = %10d", max_live_);
+  log("  num live        = %10d", num_live_);
+  log("  num collections = %10d", num_collections_);
   log("");
-  log("roots capacity    = %d", roots_.capacity());
-  log(" objs capacity    = %d", live_objs_.capacity());
+  log("roots capacity    = %10d", roots_.capacity());
+  log(" objs capacity    = %10d", live_objs_.capacity());
 }
 
 void MarkSweepHeap::MaybePrintReport() {
@@ -120,7 +120,7 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
   }
 }
 
-void MarkSweepHeap::Collect() {
+int MarkSweepHeap::Collect() {
   int num_roots = roots_.size();
   for (int i = 0; i < num_roots; ++i) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
@@ -147,12 +147,13 @@ void MarkSweepHeap::Collect() {
       num_live_--;
     }
   }
-  max_live_ = std::max(max_live_, num_live_);
-
   live_objs_.resize(last_live_index);  // remove dangling objects
   marked_.clear();
 
   num_collections_++;
+  max_live_ = std::max(max_live_, num_live_);
+
+  return num_live_;  // for unit tests only
 }
 
 #if MARK_SWEEP
