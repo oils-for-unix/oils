@@ -102,7 +102,7 @@ Str* Str::index_(int i) {
 
 // s[begin:end]
 Str* Str::slice(int begin, int end) {
-  RootsScope _r;
+  RootingScope _r;
 
   int len_ = len(this);
   begin = std::min(begin, len_);
@@ -151,7 +151,7 @@ Str* Str::slice(int begin, int end) {
 
 // s[begin:]
 Str* Str::slice(int begin) {
-  // RootsScope omitted because PASS THROUGH
+  // RootingScope omitted because PASS THROUGH
   // log("slice(begin) -> %d frames", gHeap.root_set_.NumFrames());
 
   int len_ = len(this);

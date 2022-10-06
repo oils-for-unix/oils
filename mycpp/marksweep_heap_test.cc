@@ -320,14 +320,14 @@ TEST root_set_big_test() {
 }
 
 int f() {
-  RootsScope r2;
+  RootingScope r2;
 
   // Can't assert in this non-test function
   return gHeap.root_set_.NumFrames();
 }
 
 Str *g(Str *left, Str *right) {
-  RootsScope _r;
+  RootingScope _r;
 
   // TODO: call str_concat, NewList, etc.
   Str *ret = left;
@@ -348,13 +348,13 @@ int count_old(Str *a, Str *b) {
   return result;
 }
 
-// Like the above, but instead of rooting variables, we create a RootsScope
+// Like the above, but instead of rooting variables, we create a RootingScope
 // instance.  It doesn't return a heap-allocated object, so we don't need
 // gHeap.RootOnReturn(). Functions that allocate like Alloc<T> are responsible
 // for that.
 
 int count_new(Str *a, Str *b) {
-  RootsScope _r;
+  RootingScope _r;
 
   int result = 0;
   if (a) {
@@ -391,7 +391,7 @@ TEST old_slice_demo() {
 }
 
 TEST new_slice_demo() {
-  RootsScope _r;
+  RootingScope _r;
 
   Str *s = StrFromC("spam");
   log("s %p heap_tag_ %d", s, s->heap_tag_);
@@ -418,13 +418,13 @@ TEST new_slice_demo() {
 }
 
 TEST root_set_stress_test() {
-  RootsScope _r;
+  RootingScope _r;
 
   for (int i = 0; i < 10; ++i) {
-    // AllocStr needs to root; also needs RootsScope
+    // AllocStr needs to root; also needs RootingScope
     Str *s = StrFromC("abcdef");
 
-    // slice() needs to root; also eneds RootsScope
+    // slice() needs to root; also eneds RootingScope
     Str *t = g(s->slice(1), s->slice(2));
 
     log("t = %s", t->data());
@@ -436,7 +436,7 @@ TEST root_set_stress_test() {
 TEST roots_scope_test() {
   ASSERT_EQ_FMT(1, gHeap.root_set_.NumFrames(), "%d");
 
-  RootsScope r1;
+  RootingScope r1;
   ASSERT_EQ_FMT(2, gHeap.root_set_.NumFrames(), "%d");
 
   int f_num_frames = f();

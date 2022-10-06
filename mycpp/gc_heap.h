@@ -12,15 +12,15 @@ extern MarkSweepHeap gHeap;
 extern CheneyHeap gHeap;
 #endif
 
-class RootsScope {
+class RootingScope {
   // Create an instance of this in every function.  This lets the GC now when
   // functions return, so it can remove values from the root set.
 
  public:
-  RootsScope() {
+  RootingScope() {
     gHeap.root_set_.PushScope();
   }
-  ~RootsScope() {
+  ~RootingScope() {
     gHeap.root_set_.PopScope();
   }
 };
@@ -29,7 +29,7 @@ class RootsScope {
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
-  // RootsScope omitted for PASS THROUGH
+  // RootingScope omitted for PASS THROUGH
 
   assert(gHeap.is_initialized_);
   void* place = gHeap.Allocate(sizeof(T));

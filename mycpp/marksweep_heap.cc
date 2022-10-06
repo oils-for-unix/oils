@@ -74,7 +74,7 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
 #else
 
 void* MarkSweepHeap::Allocate(int num_bytes) {
-  RootsScope _r;  // TODO: could optimize this away with another method
+  RootingScope _r;  // TODO: could optimize this away with another method
   // log("Allocate %d", num_bytes);
 
   // Maybe collect BEFORE allocation, because the new object won't be rooted
