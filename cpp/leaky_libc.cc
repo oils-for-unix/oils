@@ -1,4 +1,4 @@
-// libc.cc: Replacement for native/libcmodule.c
+// libc.cc: Replacement for pyext/libc.c
 
 // clang-format off
 #include "mycpp/myerror.h"
@@ -9,6 +9,7 @@
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
+#include <unistd.h>  // gethostname()
 
 namespace libc {
 
@@ -113,7 +114,7 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
 
 const int NMATCH = 2;
 
-// Why is this a Tuple2* and not Tuple2?
+// Odd: This a Tuple2* not Tuple2 because it's Optional[Tuple2]!
 Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   regex_t pat;
   regmatch_t m[NMATCH];
