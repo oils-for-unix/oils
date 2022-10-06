@@ -238,47 +238,47 @@ TEST root_set_test() {
   */
 
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
-  ASSERT_EQ_FMT(0, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
 
   r.PushScope();  // main() call
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
-  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
 
   r.PushScope();  // g() call
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
-  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(3, r.NumFrames(), "%d");
 
   // g() returns "X"
   r.RootOnReturn(StrFromC("X"));
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
-  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
-  ASSERT_EQ_FMT(1, static_cast<int>(r.stack_[0].size()), "%d");
-  ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[1].size()), "%d");
+  ASSERT_EQ_FMT(3, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(1, static_cast<int>(r.stack_[1].size()), "%d");
+  ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[2].size()), "%d");
 
   r.PopScope();  // g() return
   // "X" is still live after foo() returns!
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
-  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
-  ASSERT_EQ_FMT(1, static_cast<int>(r.stack_[0].size()), "%d");
+  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(1, static_cast<int>(r.stack_[1].size()), "%d");
 
   r.PushScope();  // another g() call
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
-  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(3, r.NumFrames(), "%d");
 
   // g() returns "X" again
   r.RootOnReturn(StrFromC("X"));
   ASSERT_EQ_FMT(2, r.NumRoots(), "%d");
-  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
-  ASSERT_EQ_FMT(2, static_cast<int>(r.stack_[0].size()), "%d");
-  ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[1].size()), "%d");
+  ASSERT_EQ_FMT(3, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(2, static_cast<int>(r.stack_[1].size()), "%d");
+  ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[2].size()), "%d");
 
   r.PopScope();  // another g() return
   ASSERT_EQ_FMT(2, r.NumRoots(), "%d");
-  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
-  ASSERT_EQ_FMT(2, static_cast<int>(r.stack_[0].size()), "%d");
+  ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(2, static_cast<int>(r.stack_[1].size()), "%d");
 
   r.PopScope();  // main() return
-  ASSERT_EQ_FMT(0, r.NumFrames(), "%d");
+  ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
 
   PASS();
@@ -327,7 +327,7 @@ int f() {
 }
 
 Str *g(Str *left, Str *right) {
-  RootsScope _r();
+  RootsScope _r;
 
   // TODO: call str_concat, NewList, etc.
   Str *ret = left;
@@ -354,7 +354,7 @@ int count_old(Str *a, Str *b) {
 // for that.
 
 int count_new(Str *a, Str *b) {
-  RootsScope _r();
+  RootsScope _r;
 
   int result = 0;
   if (a) {
@@ -391,11 +391,14 @@ TEST old_slice_demo() {
 }
 
 TEST new_slice_demo() {
-  RootsScope _r();
+  RootsScope _r;
 
-  // TODO: This function needs rooting
   Str *s = StrFromC("spam");
+  log("s %p heap_tag_ %d", s, s->heap_tag_);
+  log("");
   Str *t = StrFromC("eggs");
+  log("t %p heap_tag_ %d", t, t->heap_tag_);
+  log("");
 
   log("new_slice_demo");
 
@@ -408,14 +411,14 @@ TEST new_slice_demo() {
   log("t[2:] %d", j);
 
   // Does NOT have the f(g(), h()) problem
-  int k = count_old(s->slice(1), t->slice(2));
+  int k = count_new(s->slice(1), t->slice(2));
   log("s[1:] t[2:] %d", k);
 
   PASS();
 }
 
 TEST root_set_stress_test() {
-  RootsScope _r();
+  RootsScope _r;
 
   for (int i = 0; i < 10; ++i) {
     // AllocStr needs to root; also needs RootsScope
@@ -431,15 +434,15 @@ TEST root_set_stress_test() {
 }
 
 TEST roots_scope_test() {
-  ASSERT_EQ_FMT(0, gHeap.root_set_.NumFrames(), "%d");
+  ASSERT_EQ_FMT(1, gHeap.root_set_.NumFrames(), "%d");
 
   RootsScope r1;
-  ASSERT_EQ_FMT(1, gHeap.root_set_.NumFrames(), "%d");
+  ASSERT_EQ_FMT(2, gHeap.root_set_.NumFrames(), "%d");
 
   int f_num_frames = f();
-  ASSERT_EQ_FMT(2, f_num_frames, "%d");
+  ASSERT_EQ_FMT(3, f_num_frames, "%d");
 
-  ASSERT_EQ_FMT(1, gHeap.root_set_.NumFrames(), "%d");
+  ASSERT_EQ_FMT(2, gHeap.root_set_.NumFrames(), "%d");
 
   PASS();
 }
@@ -472,8 +475,8 @@ int main(int argc, char **argv) {
   // RUN_TEST(old_slice_demo);
   // RUN_TEST(new_slice_demo);
 
-  gHeap.Collect();
-  gHeap.OnProcessExit();
+  gHeap.Collect();        // Remove after we do return value rooting
+  gHeap.OnProcessExit();  // For return value rooting
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

@@ -1,8 +1,16 @@
 #include "mycpp/runtime.h"
 
+// TODO: a gclog variant should replace gcstats
+#define GC_VERBOSE 0
+#define RETURN_ROOTING 0
+
 // Start of garbage collection.  We have a circular dependency here because I
 // don't want some kind of STL iterator.
 void RootSet::MarkRoots(MarkSweepHeap* heap) {
+#if GC_VERBOSE
+  log("Collect with %d roots and %d frames", NumRoots(), NumFrames());
+#endif
+
   for (int i = 0; i < num_frames_; ++i) {
     const std::vector<Obj*>& frame = stack_[i];
     int n = frame.size();
@@ -41,6 +49,21 @@ void MarkSweepHeap::MaybePrintReport() {
   }
 }
 
+void MarkSweepHeap::MaybeCollect() {
+#if GC_EVERY_ALLOC
+  Collect();
+#else
+  if (num_live_ > collect_threshold_) {
+    Collect();
+  }
+#endif
+
+  // num_live_ updated after collection
+  if (num_live_ > collect_threshold_) {
+    collect_threshold_ = num_live_ * 2;
+  }
+}
+
 #ifdef MALLOC_LEAK
 
 // for testing performance
@@ -51,18 +74,11 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
 #else
 
 void* MarkSweepHeap::Allocate(int num_bytes) {
-  #if GC_EVERY_ALLOC
-  Collect();
-  #else
-  if (num_live_ > collect_threshold_) {
-    Collect();
-  }
-  #endif
+  RootsScope _r;  // TODO: could optimize this away with another method
+  // log("Allocate %d", num_bytes);
 
-  // num_live_ updated after collection
-  if (num_live_ > collect_threshold_) {
-    collect_threshold_ = num_live_ * 2;
-  }
+  // Maybe collect BEFORE allocation, because the new object won't be rooted
+  MaybeCollect();
 
   void* result = calloc(num_bytes, 1);
   assert(result);
@@ -72,6 +88,14 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   num_live_++;
   num_allocated_++;
   bytes_allocated_ += num_bytes;
+
+  #if RETURN_ROOTING
+  gHeap.RootOnReturn(static_cast<Obj*>(result));
+  static_cast<Obj*>(result)->heap_tag_ = Tag::Opaque;  // it is opaque to start!
+
+    // I don't think we need this difference
+    // MaybeCollect();
+  #endif
 
   return result;
 }
@@ -155,8 +179,6 @@ void MarkSweepHeap::Sweep() {
   max_live_ = std::max(max_live_, num_live_);
 }
 
-#define RETURN_ROOTING 0
-
 int MarkSweepHeap::Collect() {
 #if RETURN_ROOTING
   root_set_.MarkRoots(this);
@@ -181,10 +203,9 @@ int MarkSweepHeap::Collect() {
 
 // Cleanup at the end of main() to remain ASAN-safe
 void MarkSweepHeap::OnProcessExit() {
-  // Don't MarkObjects() because locals to main() are still live!  This must be
-  // called right before main exits.
-  root_set_.Clear();
-  Sweep();
+  // Remove objects rooted in main(), i.e. the first frame
+  root_set_.PopScope();
+  Collect();
 }
 
 #if MARK_SWEEP

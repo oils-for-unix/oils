@@ -10,8 +10,10 @@ class MarkSweepHeap;  // forward decl for circular dep
 // to "root" an object means "add it to the root set".
 class RootSet {
  public:
-  explicit RootSet(int num_reserved) {
-    stack_.reserve(num_reserved);  // e.g. 32 stack frames to start
+  // start with 1 live frame and e.g. 32 reserved ones
+  explicit RootSet(int num_reserved) : num_frames_(1) {
+    assert(num_reserved > 1);
+    stack_.reserve(num_reserved);
     for (int i = 0; i < num_reserved; ++i) {
       stack_.emplace_back();      // Construct std::vector frame IN PLACE.
       stack_.back().reserve(16);  // Reserve 16 rooted variables per frame.
@@ -34,6 +36,7 @@ class RootSet {
     }
 
     num_frames_++;
+    // log("PushScope -> %d", num_frames_);
   }
 
   // Called on function exit
@@ -42,29 +45,31 @@ class RootSet {
     // calling vector<>::pop().
     stack_[num_frames_ - 1].clear();
     num_frames_--;
+    // log("PopScope -> %d", num_frames_);
   }
 
-  // Called by MarkSweepHeap::OnProcessExit
-  void Clear() {
-    while (num_frames_ > 0) {
-      PopScope();
-    }
-  }
-
-  // Called when returning a value
+  // Called when returning a value (except in trivial passthrough case)
   //
   // TODO: need RootOnThrow() too
   void RootOnReturn(Obj* root) {
+    // log("RootOnReturn %p %d", root, num_frames_);
+
     if (root == nullptr) {  // No reason to add it
       return;
     }
 
+    // We should have 2 frames because we start with 1 for main(), and main()
+    // itself can't return GC objects.
+    assert(num_frames_ > 1);
+
+#if 0
     // If we create temporaries in main(), then there's no "higher" stack frame
     // to free them.  To exit without leaks for ASAN, call
     // gHeap.OnProcessExit().
     if (num_frames_ <= 1) {
       return;
     }
+#endif
 
     // Owned by the frame BELOW
     stack_[num_frames_ - 2].push_back(root);
@@ -127,6 +132,7 @@ class MarkSweepHeap {
 
   void* Allocate(int num_bytes);
   int Collect();
+  void MaybeCollect();
   void MarkObjects(Obj* obj);
   void Sweep();
   // Cleanup at the end of main() to remain ASAN-safe

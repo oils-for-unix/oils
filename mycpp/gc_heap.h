@@ -29,12 +29,11 @@ class RootsScope {
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
-  RootsScope _r;
+  // RootsScope omitted for PASS THROUGH
 
   assert(gHeap.is_initialized_);
   void* place = gHeap.Allocate(sizeof(T));
   assert(place != nullptr);
-  gHeap.RootOnReturn(static_cast<Obj*>(place));
   // placement new
   return new (place) T(std::forward<Args>(args)...);
 }
