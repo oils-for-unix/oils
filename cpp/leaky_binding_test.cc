@@ -155,8 +155,7 @@ TEST libc_test() {
   ASSERT_EQ_FMT(10, result->at1(), "%d");
 
   Str* h = libc::gethostname();
-  log("gethostname() =");
-  print(h);
+  log("gethostname() = %s %d", h->data_, len(h));
 
   PASS();
 }
@@ -170,8 +169,7 @@ TEST time_test() {
 
 TEST posix_test() {
   Str* cwd = posix::getcwd();
-  log("getcwd() =");
-  print(cwd);
+  log("getcwd() = %s %d", cwd->data_, len(cwd));
 
   Str* message = posix::strerror(EBADF);
   log("strerror");

@@ -1,12 +1,27 @@
 // libc.cc: Replacement for native/libcmodule.c
 
-#include "leaky_libc.h"
+// clang-format off
+#include "mycpp/myerror.h"
+// clang-format on
+
+#include "cpp/leaky_libc.h"
 
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
 
 namespace libc {
+
+Str* gethostname() {
+  Str* result = OverAllocatedStr(HOST_NAME_MAX);
+  int status = ::gethostname(result->data_, HOST_NAME_MAX);
+  if (status != 0) {
+    throw Alloc<OSError>(errno);
+  }
+  // Important: set the length of the string!
+  result->SetObjLenFromC();
+  return result;
+}
 
 List<Str*>* glob(Str* pat) {
   glob_t results;

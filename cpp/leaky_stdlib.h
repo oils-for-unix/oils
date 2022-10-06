@@ -30,7 +30,7 @@ inline Str* getcwd() {
     throw Alloc<OSError>(errno);
   }
   // Important: set the length of the string!
-  result->SetObjLenFromStrLen(strlen(result->data_));
+  result->SetObjLenFromC();
   return result;
 }
 

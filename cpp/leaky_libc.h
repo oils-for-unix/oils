@@ -17,15 +17,7 @@ inline Str* realpath(Str* path) {
   return StrFromC(rp);
 }
 
-inline Str* gethostname() {
-  char* buf = static_cast<char*>(malloc(HOST_NAME_MAX + 1));
-  int result = ::gethostname(buf, HOST_NAME_MAX);
-  if (result != 0) {
-    // TODO: print errno, e.g. ENAMETOOLONG (glibc)
-    throw Alloc<RuntimeError>(StrFromC("Couldn't get working directory"));
-  }
-  return StrFromC(buf);
-}
+Str* gethostname();
 
 inline bool fnmatch(Str* pat, Str* str) {
   int flags = FNM_EXTMATCH;

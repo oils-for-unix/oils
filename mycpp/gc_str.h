@@ -8,7 +8,6 @@ class Str : public Obj {
  public:
   // Don't call this directly.  Call AllocStr() instead, which calls this.
   Str() : Obj(Tag::Opaque, kZeroMask, 0) {
-    // log("GC Str()");
   }
 
   char* data() {
@@ -16,6 +15,11 @@ class Str : public Obj {
   }
 
   void SetObjLenFromStrLen(int str_len);
+
+  // Useful for getcwd() + PATH_MAX, gethostname() + HOSTNAME_MAX, etc.
+  void SetObjLenFromC() {
+    SetObjLenFromStrLen(strlen(data_));
+  }
 
   Str* index_(int i);
 
@@ -76,17 +80,16 @@ class Str : public Obj {
 
 constexpr int kStrHeaderSize = offsetof(Str, data_);
 
+inline void Str::SetObjLenFromStrLen(int str_len) {
+  obj_len_ = kStrHeaderSize + str_len + 1;
+}
+
 inline int len(const Str* s) {
   // NOTE(Jesse): Not sure if 0-length strings should be allowed, but we
   // currently don't hit this assertion, so I would think not?
   assert(s->obj_len_ >= kStrHeaderSize - 1);
 
   return s->obj_len_ - kStrHeaderSize - 1;
-}
-
-inline void Str::SetObjLenFromStrLen(int str_len) {
-  obj_len_ = kStrHeaderSize + str_len + 1;
-  /* assert(len(this) == str_len); */
 }
 
 // Notes:
