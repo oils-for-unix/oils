@@ -1,8 +1,14 @@
 #include "mycpp/runtime.h"
 
+#define GC_VERBOSE 0
+
 // Start of garbage collection.  We have a circular dependency here because I
 // don't want some kind of STL iterator.
 void RootSet::MarkRoots(MarkSweepHeap* heap) {
+#if GC_VERBOSE
+  log("Collect with %d roots and %d frames", NumRoots(), NumFrames());
+#endif
+
   for (int i = 0; i < num_frames_; ++i) {
     const std::vector<Obj*>& frame = stack_[i];
     int n = frame.size();
@@ -51,6 +57,23 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
 #else
 
 void* MarkSweepHeap::Allocate(int num_bytes) {
+  RootsScope _r;  // TODO: could optimize this away with another method
+
+  // log("Allocate %d", num_bytes);
+
+  void* result = calloc(num_bytes, 1);
+  assert(result);
+
+  live_objs_.push_back(result);
+
+  num_live_++;
+  num_allocated_++;
+  bytes_allocated_ += num_bytes;
+
+  // Root BEFORE collection
+  gHeap.RootOnReturn(static_cast<Obj*>(result));
+  static_cast<Obj*>(result)->heap_tag_ = Tag::Opaque;  // it is opaque to start!
+
   #if GC_EVERY_ALLOC
   Collect();
   #else
@@ -63,15 +86,6 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   if (num_live_ > collect_threshold_) {
     collect_threshold_ = num_live_ * 2;
   }
-
-  void* result = calloc(num_bytes, 1);
-  assert(result);
-
-  live_objs_.push_back(result);
-
-  num_live_++;
-  num_allocated_++;
-  bytes_allocated_ += num_bytes;
 
   return result;
 }
@@ -155,7 +169,7 @@ void MarkSweepHeap::Sweep() {
   max_live_ = std::max(max_live_, num_live_);
 }
 
-#define RETURN_ROOTING 0
+#define RETURN_ROOTING 1
 
 int MarkSweepHeap::Collect() {
 #if RETURN_ROOTING

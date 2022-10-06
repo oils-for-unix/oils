@@ -104,7 +104,12 @@ inline int len(const Str* s) {
 //
 
 inline Str* AllocStr(int len) {
+  // RootsScope omitted for PASS THROUGH
   int obj_len = kStrHeaderSize + len + 1;
+
+  // BUG: THIS MAY COLLECT
+  // BUT you have a partially rooted object
+
   void* place = gHeap.Allocate(obj_len);
   auto s = new (place) Str();
   s->SetObjLen(obj_len);
@@ -121,6 +126,7 @@ inline Str* OverAllocatedStr(int len) {
 }
 
 inline Str* StrFromC(const char* data, int len) {
+  // RootsScope omitted for PASS THROUGH
   Str* s = AllocStr(len);
   memcpy(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
@@ -129,6 +135,7 @@ inline Str* StrFromC(const char* data, int len) {
 }
 
 inline Str* StrFromC(const char* data) {
+  // RootsScope omitted for PASS THROUGH
   return StrFromC(data, strlen(data));
 }
 

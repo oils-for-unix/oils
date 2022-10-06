@@ -327,7 +327,7 @@ int f() {
 }
 
 Str *g(Str *left, Str *right) {
-  RootsScope _r();
+  RootsScope _r;
 
   // TODO: call str_concat, NewList, etc.
   Str *ret = left;
@@ -354,7 +354,7 @@ int count_old(Str *a, Str *b) {
 // for that.
 
 int count_new(Str *a, Str *b) {
-  RootsScope _r();
+  RootsScope _r;
 
   int result = 0;
   if (a) {
@@ -391,11 +391,14 @@ TEST old_slice_demo() {
 }
 
 TEST new_slice_demo() {
-  RootsScope _r();
+  RootsScope _r;
 
-  // TODO: This function needs rooting
   Str *s = StrFromC("spam");
+  log("s %p heap_tag_ %d", s, s->heap_tag_);
+  log("");
   Str *t = StrFromC("eggs");
+  log("t %p heap_tag_ %d", t, t->heap_tag_);
+  log("");
 
   log("new_slice_demo");
 
@@ -408,14 +411,14 @@ TEST new_slice_demo() {
   log("t[2:] %d", j);
 
   // Does NOT have the f(g(), h()) problem
-  int k = count_old(s->slice(1), t->slice(2));
+  int k = count_new(s->slice(1), t->slice(2));
   log("s[1:] t[2:] %d", k);
 
   PASS();
 }
 
 TEST root_set_stress_test() {
-  RootsScope _r();
+  RootsScope _r;
 
   for (int i = 0; i < 10; ++i) {
     // AllocStr needs to root; also needs RootsScope
@@ -470,7 +473,7 @@ int main(int argc, char **argv) {
 
   // f(g(), h()) problem
   // RUN_TEST(old_slice_demo);
-  // RUN_TEST(new_slice_demo);
+  RUN_TEST(new_slice_demo);
 
   gHeap.Collect();
   gHeap.OnProcessExit();
