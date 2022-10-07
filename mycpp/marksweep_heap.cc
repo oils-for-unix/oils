@@ -1,9 +1,5 @@
 #include "mycpp/runtime.h"
 
-// TODO: a gclog variant should replace gcstats
-#define GC_VERBOSE 0
-#define RETURN_ROOTING 0
-
 // Start of garbage collection.  We have a circular dependency here because I
 // don't want some kind of STL iterator.
 void RootSet::MarkRoots(MarkSweepHeap* heap) {
@@ -74,7 +70,6 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
 #else
 
 void* MarkSweepHeap::Allocate(int num_bytes) {
-  RootingScope _r;  // TODO: could optimize this away with another method
   // log("Allocate %d", num_bytes);
 
   // Maybe collect BEFORE allocation, because the new object won't be rooted
@@ -89,12 +84,11 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   num_allocated_++;
   bytes_allocated_ += num_bytes;
 
+  // Allocate() is special: we use RootInCurrentFrame because it's a LEAF, and
+  // this function doesn't have RootingScope to do PushScope/PopScope
   #if RETURN_ROOTING
-  gHeap.RootOnReturn(static_cast<Obj*>(result));
+  gHeap.RootInCurrentFrame(static_cast<Obj*>(result));
   static_cast<Obj*>(result)->heap_tag_ = Tag::Opaque;  // it is opaque to start!
-
-    // I don't think we need this difference
-    // MaybeCollect();
   #endif
 
   return result;

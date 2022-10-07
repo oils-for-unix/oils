@@ -4,6 +4,10 @@
 #include <unordered_set>
 #include <vector>
 
+// TODO: a gclog variant should replace gcstats
+#define GC_VERBOSE 0
+#define RETURN_ROOTING 0
+
 class MarkSweepHeap;  // forward decl for circular dep
 
 // The set of objects where the mark and sweep algorithm starts.  Terminology:
@@ -49,30 +53,30 @@ class RootSet {
   }
 
   // Called when returning a value (except in trivial passthrough case)
-  //
-  // TODO: need RootOnThrow() too
   void RootOnReturn(Obj* root) {
     // log("RootOnReturn %p %d", root, num_frames_);
 
     if (root == nullptr) {  // No reason to add it
       return;
     }
-
     // We should have 2 frames because we start with 1 for main(), and main()
     // itself can't return GC objects.
     assert(num_frames_ > 1);
 
-#if 0
-    // If we create temporaries in main(), then there's no "higher" stack frame
-    // to free them.  To exit without leaks for ASAN, call
-    // gHeap.OnProcessExit().
-    if (num_frames_ <= 1) {
-      return;
-    }
-#endif
-
     // Owned by the frame BELOW
     stack_[num_frames_ - 2].push_back(root);
+  }
+
+  // Called in 2 situations:
+  // - the "leaf" Allocate(), which does not have a RootingScope
+  // - when catching exceptions:
+  //   catch (IOError e) { gHeap.RootInCurrentFrame(e); }
+  void RootInCurrentFrame(Obj* root) {
+    if (root == nullptr) {  // No reason to add it
+      return;
+    }
+    assert(num_frames_ > 0);
+    stack_[num_frames_ - 1].push_back(root);
   }
 
   // For testing
@@ -124,10 +128,12 @@ class MarkSweepHeap {
   // NEW Return Value Rooting
   //
 
-  // Hopefully this will get inlined away
   void RootOnReturn(Obj* root) {
     root_set_.RootOnReturn(root);
-    // Make the object a root until the CALLER returns
+  }
+
+  void RootInCurrentFrame(Obj* root) {
+    root_set_.RootInCurrentFrame(root);
   }
 
   void* Allocate(int num_bytes);

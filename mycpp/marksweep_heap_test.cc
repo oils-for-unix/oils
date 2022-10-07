@@ -473,7 +473,10 @@ int main(int argc, char **argv) {
 
   // f(g(), h()) problem
   // RUN_TEST(old_slice_demo);
-  // RUN_TEST(new_slice_demo);
+
+#if RETURN_ROOTING
+  RUN_TEST(new_slice_demo);
+#endif
 
   gHeap.Collect();        // Remove after we do return value rooting
   gHeap.OnProcessExit();  // For return value rooting
