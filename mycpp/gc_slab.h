@@ -31,8 +31,9 @@ template <typename T>
 class Slab : public Obj {
  public:
   // slabs of pointers are scanned; slabs of ints/bools are opaque.
-  explicit Slab(int obj_len) : Obj(
-      std::is_pointer<T>() ? Tag::Scanned : Tag::Opaque, kZeroMask, obj_len) {
+  explicit Slab(int obj_len)
+      : Obj(std::is_pointer<T>() ? Tag::Scanned : Tag::Opaque, kZeroMask,
+            obj_len) {
   }
   T items_[1];  // variable length
 };

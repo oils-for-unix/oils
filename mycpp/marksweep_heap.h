@@ -136,7 +136,6 @@ class MarkSweepHeap {
 
   void* Allocate(int num_bytes);
   int Collect();
-  void MaybeCollect();
   void MarkObjects(Obj* obj);
   void Sweep();
   // Cleanup at the end of main() to remain ASAN-safe

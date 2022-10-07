@@ -41,21 +41,6 @@ void MarkSweepHeap::MaybePrintReport() {
   }
 }
 
-void MarkSweepHeap::MaybeCollect() {
-#if GC_EVERY_ALLOC
-  Collect();
-#else
-  if (num_live_ > collect_threshold_) {
-    Collect();
-  }
-#endif
-
-  // num_live_ updated after collection
-  if (num_live_ > collect_threshold_) {
-    collect_threshold_ = num_live_ * 2;
-  }
-}
-
 #ifdef MALLOC_LEAK
 
 // for testing performance
@@ -69,7 +54,22 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   // log("Allocate %d", num_bytes);
 
   // Maybe collect BEFORE allocation, because the new object won't be rooted
-  MaybeCollect();
+  #if GC_EVERY_ALLOC
+  Collect();
+  #else
+  if (num_live_ > collect_threshold_) {
+    Collect();
+  }
+  #endif
+
+  // num_live_ UPDATED after possible collection
+  if (num_live_ > collect_threshold_) {
+    collect_threshold_ = num_live_ * 2;
+  }
+
+  //
+  // Allocate and update stats
+  //
 
   void* result = calloc(num_bytes, 1);
   assert(result);
