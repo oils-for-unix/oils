@@ -232,7 +232,7 @@ test-runtime() {
 
   unit '' asan
   unit '' ubsan
-  unit '' gcstats
+  unit '' gcverbose
   unit '' gcevery
 }
 

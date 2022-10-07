@@ -36,7 +36,7 @@ COMPILERS_VARIANTS_LEAKY = [
 
 COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
     # mainly for unit tests
-    ('cxx', 'gcstats'),
+    ('cxx', 'gcverbose'),
     ('cxx', 'gcevery'),
 ]
 

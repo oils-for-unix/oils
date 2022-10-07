@@ -3,10 +3,6 @@
 // Start of garbage collection.  We have a circular dependency here because I
 // don't want some kind of STL iterator.
 void RootSet::MarkRoots(MarkSweepHeap* heap) {
-#if GC_VERBOSE
-  log("Collect with %d roots and %d frames", NumRoots(), NumFrames());
-#endif
-
   for (int i = 0; i < num_frames_; ++i) {
     const std::vector<Obj*>& frame = stack_[i];
     int n = frame.size();
@@ -175,9 +171,19 @@ void MarkSweepHeap::Sweep() {
 
 int MarkSweepHeap::Collect() {
 #if RETURN_ROOTING
+
+  #ifdef GC_VERBOSE
+  log("  Collect with %d roots and %d frames", NumRoots(), NumFrames());
+  #endif
+
   root_set_.MarkRoots(this);
 #else
   int num_roots = roots_.size();
+
+  #ifdef GC_VERBOSE
+  log("  Collect with %d roots, %d live", num_roots, num_live_);
+  #endif
+
   for (int i = 0; i < num_roots; ++i) {
     // NOTE(Jesse): This is dereferencing again because I didn't want to
     // rewrite the stackroots class for this implementation.  Realistically we
@@ -191,6 +197,9 @@ int MarkSweepHeap::Collect() {
 #endif
 
   Sweep();
+#ifdef GC_VERBOSE
+  log("  %d live after sweep", num_live_);
+#endif
 
   return num_live_;  // for unit tests only
 }

@@ -641,7 +641,7 @@ TEST field_mask_test() {
 
   log("Dict mask = %d", d->field_mask_);
 
-#if GC_STATS
+#if 0
   ShowFixedChildren(L);
   ShowFixedChildren(d);
 #endif

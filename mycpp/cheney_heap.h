@@ -93,7 +93,6 @@
 //
 // GC_EVERY_ALLOC: Collect() on every Allocate().  Exposes many bugs!
 // GC_VERBOSE: Log when we collect
-// GC_STATS: Collect more stats.  TODO: Rename this?
 
 // Silly definition for passing types like GlobalList<T, N> and initializer
 // lists like {1, 2, 3} to macros

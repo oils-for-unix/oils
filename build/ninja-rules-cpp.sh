@@ -89,9 +89,9 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=undefined"
       ;;
 
-    (gcstats)
-      # unit tests use for gHeap.Report()
-      flags="$flags -g -D GC_STATS"
+    (gcverbose)
+      # show log statements
+      flags="$flags -O0 -g -fsanitize=address -D GC_VERBOSE"
       ;;
 
     (gcevery)
@@ -155,7 +155,7 @@ setglobal_link_flags() {
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    (asan|gcevery)
+    (asan|gcevery|gcverbose)
       link_flags='-fsanitize=address'
       ;;
     (ubsan)

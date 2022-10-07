@@ -4,8 +4,6 @@
 #include <unordered_set>
 #include <vector>
 
-// TODO: a gclog variant should replace gcstats
-#define GC_VERBOSE 0
 #define RETURN_ROOTING 0
 
 class MarkSweepHeap;  // forward decl for circular dep
