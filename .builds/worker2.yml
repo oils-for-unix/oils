@@ -31,7 +31,7 @@ tasks:
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key
 
-  - job-reset: |
+  - job-reset-1: |
       cd oil
       soil/host-shim.sh job-reset
 
@@ -43,7 +43,19 @@ tasks:
   - publish-cpp-spec: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key
+
+  - job-reset-2: |
+      cd oil
+      soil/host-shim.sh job-reset
+
+  - benchmarks: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD benchmarks
+
+  - publish-benchmarks: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key
   
   - did-all-succeed: |
       cd oil
-      soil/host-shim.sh did-all-succeed cpp-small cpp-spec
+      soil/host-shim.sh did-all-succeed cpp-small cpp-spec benchmarks

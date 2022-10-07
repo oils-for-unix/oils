@@ -225,7 +225,7 @@ run-job-uke() {
       # allocate pseudo TTY, otherwise fails on opening /dev/tty 
       flags=( -t )
       ;;
-    (cpp-small|cpp-spec)
+    (cpp-small|cpp-spec|benchmarks)
       image_id='cpp'
       ;;
     (cpp-coverage)

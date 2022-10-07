@@ -190,6 +190,27 @@ jobs:
         run: |
           soil/github-actions.sh publish-and-exit cpp-coverage T
 
+  benchmarks:
+    runs-on: ubuntu-18.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: cpp-small
+        run: |
+          soil/github-actions.sh run-job benchmarks
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit benchmarks T
+
   cpp-small:
     runs-on: ubuntu-18.04
     env:
@@ -237,7 +258,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'ovm-tarball', 'pea', 'other-tests', 'app-tests']
+    needs: ['dummy', 'benchmarks', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'ovm-tarball', 'pea', 'other-tests', 'app-tests']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code

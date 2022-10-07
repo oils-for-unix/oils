@@ -89,6 +89,13 @@ dump-user-host() {
   echo
 }
 
+py-all-and-ninja() {
+  ### baseline for most tasks
+
+  build/py.sh all
+  ./NINJA-config.sh
+}
+
 dummy-tasks() {
   ### Print tasks that execute quickly
 
@@ -159,6 +166,17 @@ interactive         test/interactive.sh soil      -
 EOF
 }
 
+benchmarks-tasks() {
+  # (task_name, script, action, result_html)
+
+  cat <<EOF
+dump-versions    soil/worker.sh dump-versions          -
+py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
+mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
+EOF
+}
+
 cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
@@ -192,8 +210,6 @@ osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 native-code      metrics/native-code.sh oil-native     _tmp/metrics/oil-native/index.html
-shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
-mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
 mycpp-translator mycpp/TEST.sh test-translator         _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 make-tar         devtools/release-native.sh make-tar   _release/oil-native.tar
@@ -415,17 +431,18 @@ JOB-dev-minimal() { job-main 'dev-minimal'; }
 
 JOB-other-tests() { job-main 'other-tests'; }
 
-JOB-ovm-tarball() { job-main 'ovm-tarball'; }
-
 JOB-pea() { job-main 'pea'; }
-
-JOB-app-tests() { job-main 'app-tests'; }
 
 JOB-cpp-coverage() { job-main 'cpp-coverage'; }
 
-JOB-cpp-small() { job-main 'cpp-small'; }
+# For now, these share a container image
+JOB-ovm-tarball() { job-main 'ovm-tarball'; }
+JOB-app-tests() { job-main 'app-tests'; }
 
+# For now, these share a container image
+JOB-cpp-small() { job-main 'cpp-small'; }
 JOB-cpp-spec() { job-main 'cpp-spec'; }
+JOB-benchmarks() { job-main 'benchmarks'; }
 
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 
