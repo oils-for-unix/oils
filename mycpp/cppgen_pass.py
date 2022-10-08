@@ -264,7 +264,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
                  virtual=None, local_vars=None, fmt_ids=None,
                  mask_funcs=None,
-                 decl=False, forward_decl=False):
+                 decl=False, forward_decl=False, ret_val_rooting=False):
       self.types = types
       self.const_lookup = const_lookup
       self.f = f 
@@ -280,6 +280,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
       self.decl = decl
       self.forward_decl = forward_decl
+      self.ret_val_rooting = ret_val_rooting
 
       self.unique_id = 0
 
@@ -2516,7 +2517,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               roots.append(lval_name)
           #self.log('roots %s', roots)
 
-          if len(roots):
+          if not self.ret_val_rooting and len(roots):
             self.write_ind('StackRoots _roots({');
             for i, r in enumerate(roots):
               if i != 0:

@@ -32,6 +32,10 @@ def Options():
       help='Show details about translation')
 
   p.add_option(
+      '--ret-val-rooting', dest='ret_val_rooting', action='store_true', default=False,
+      help='Use Return Value Rooting policy')
+
+  p.add_option(
       '--cc-out', dest='cc_out', default=None,
       help='.cc file to write to')
 
@@ -330,7 +334,8 @@ def main(argv):
   for name, module in to_compile:
     p4 = cppgen_pass.Generate(result.types, const_lookup, f,
                               local_vars=local_vars, fmt_ids=fmt_ids,
-                              mask_funcs=mask_funcs)
+                              mask_funcs=mask_funcs,
+                              ret_val_rooting=opts.ret_val_rooting)
     p4.visit_mypy_file(module)
 
   return 0  # success

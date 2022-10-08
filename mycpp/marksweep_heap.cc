@@ -82,7 +82,7 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
 
   // Allocate() is special: we use RootInCurrentFrame because it's a LEAF, and
   // this function doesn't have RootingScope to do PushScope/PopScope
-  #if RETURN_ROOTING
+  #if RET_VAL_ROOTING
   gHeap.RootInCurrentFrame(static_cast<Obj*>(result));
   static_cast<Obj*>(result)->heap_tag_ = Tag::Opaque;  // it is opaque to start!
   #endif
@@ -170,7 +170,7 @@ void MarkSweepHeap::Sweep() {
 }
 
 int MarkSweepHeap::Collect() {
-#if RETURN_ROOTING
+#if RET_VAL_ROOTING
 
   #ifdef GC_VERBOSE
   log("  Collect with %d roots and %d frames", NumRoots(), NumFrames());

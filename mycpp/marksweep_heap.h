@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include <vector>
 
-#define RETURN_ROOTING 0
+#define RET_VAL_ROOTING 0
 
 class MarkSweepHeap;  // forward decl for circular dep
 

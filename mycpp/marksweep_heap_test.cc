@@ -474,7 +474,7 @@ int main(int argc, char **argv) {
   // f(g(), h()) problem
   // RUN_TEST(old_slice_demo);
 
-#if RETURN_ROOTING
+#if RET_VAL_ROOTING
   RUN_TEST(new_slice_demo);
 #endif
 
