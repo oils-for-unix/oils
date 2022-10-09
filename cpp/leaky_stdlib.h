@@ -3,6 +3,7 @@
 #ifndef LEAKY_STDLIB_H
 #define LEAKY_STDLIB_H
 
+#include <errno.h>
 #include <unistd.h>
 
 #include "mycpp/runtime.h"
