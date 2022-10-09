@@ -6,6 +6,7 @@
 
 #include "cpp/leaky_libc.h"
 
+#include <errno.h>
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
