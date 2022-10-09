@@ -21,6 +21,9 @@ shopt -s failglob
 
 export ASAN_OPTIONS='detect_leaks=0'
 
+# To pass ASAN leak detector
+export OIL_GC_ON_EXIT=1
+
 examples-variant() {
   ### Run all examples using a variant -- STATS only
 

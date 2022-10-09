@@ -34,13 +34,6 @@ void MarkSweepHeap::Report() {
   log(" objs capacity    = %10d", live_objs_.capacity());
 }
 
-void MarkSweepHeap::MaybePrintReport() {
-  char* p = getenv("OIL_GC_STATS");
-  if (p && strlen(p)) {
-    Report();
-  }
-}
-
 #ifdef MALLOC_LEAK
 
 // for testing performance
@@ -206,9 +199,25 @@ int MarkSweepHeap::Collect() {
 
 // Cleanup at the end of main() to remain ASAN-safe
 void MarkSweepHeap::OnProcessExit() {
-  // Remove objects rooted in main(), i.e. the first frame
-  root_set_.PopScope();
+  char* e;
+
+#ifdef RET_VAL_ROOTING
+  // Let the OS clean up by default
+  // To pass the ASAN leak detector, set OIL_GC_ON_EXIT=1
+  e = getenv("OIL_GC_ON_EXIT");
+  if (e && strlen(e)) {  // env var set and non-empty
+    // Remove objects rooted in main(), i.e. the first frame
+    root_set_.PopScope();
+    Collect();
+  }
+#else
   Collect();
+#endif
+
+  e = getenv("OIL_GC_STATS");
+  if (e && strlen(e)) {  // env var set and non-empty
+    Report();
+  }
 }
 
 #if MARK_SWEEP

@@ -478,8 +478,7 @@ int main(int argc, char **argv) {
   RUN_TEST(new_slice_demo);
 #endif
 
-  gHeap.Collect();        // Remove after we do return value rooting
-  gHeap.OnProcessExit();  // For return value rooting
+  gHeap.OnProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

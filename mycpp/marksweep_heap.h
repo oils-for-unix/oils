@@ -141,7 +141,6 @@ class MarkSweepHeap {
   // Cleanup at the end of main() to remain ASAN-safe
   void OnProcessExit();
 
-  void MaybePrintReport();
   void Report();
 
   // TODO(Jesse): This should really be in an 'internal' build
