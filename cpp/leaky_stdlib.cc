@@ -41,8 +41,7 @@ int fcntl(int fd, int cmd, int arg) {
 
 namespace posix {
 
-int umask(int mask) {
-  // note: assuming mode_t fits in an int
+mode_t umask(mode_t mask) {
   return ::umask(mask);
 }
 
