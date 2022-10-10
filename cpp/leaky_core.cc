@@ -71,20 +71,13 @@ Dict<Str*, Str*>* Environ() {
     char* eq = strchr(pair, '=');
     assert(eq != nullptr);  // must look like KEY=value
 
-    int key_len = eq - pair;
-    char* buf = static_cast<char*>(malloc(key_len + 1));
-    memcpy(buf, pair, key_len);  // includes NUL terminator
-    buf[key_len] = '\0';
-
-    Str* key = StrFromC(buf, key_len);
-
     int len = strlen(pair);
-    int val_len = len - key_len - 1;
-    char* buf2 = static_cast<char*>(malloc(val_len + 1));
-    memcpy(buf2, eq + 1, val_len);  // copy starting after =
-    buf2[val_len] = '\0';
 
-    Str* val = StrFromC(buf2, val_len);
+    int key_len = eq - pair;
+    Str* key = StrFromC(pair, key_len);
+
+    int val_len = len - key_len - 1;
+    Str* val = StrFromC(eq + 1, val_len);
 
     d->set(key, val);
   }
@@ -242,8 +235,8 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {
   int upper_bound = len(s) * 2;
-  char* buf = static_cast<char*>(malloc(upper_bound));
-  char* p = buf;
+  Str* buf = OverAllocatedStr(upper_bound);
+  char* p = buf->data_;
 
   for (int i = 0; i < len(s); ++i) {
     char c = s->data_[i];
@@ -252,8 +245,8 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
     }
     *p++ = c;
   }
-  int len = p - buf;
-  return StrFromC(buf, len);
+  buf->SetObjLenFromStrLen(p - buf->data_);
+  return buf;
 }
 
 // Hack so e->errno will work below
