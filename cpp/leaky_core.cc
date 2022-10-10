@@ -235,8 +235,8 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {
   int upper_bound = len(s) * 2;
-  char* buf = static_cast<char*>(malloc(upper_bound));
-  char* p = buf;
+  Str* buf = OverAllocatedStr(upper_bound);
+  char* p = buf->data_;
 
   for (int i = 0; i < len(s); ++i) {
     char c = s->data_[i];
@@ -245,8 +245,8 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
     }
     *p++ = c;
   }
-  int len = p - buf;
-  return StrFromC(buf, len);
+  buf->SetObjLenFromStrLen(p - buf->data_);
+  return buf;
 }
 
 // Hack so e->errno will work below
