@@ -242,7 +242,9 @@ void FormatStringer::format_s(Str* s) {
 }
 
 void FormatStringer::format_o(int i) {
-  NotImplemented();
+  data_ = static_cast<char*>(realloc(data_, len_ + kIntBufSize));
+  int len = snprintf(data_ + len_, kIntBufSize, "%o", i);
+  len_ += len;
 }
 
 void FormatStringer::format_d(int i) {

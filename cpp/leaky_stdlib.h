@@ -4,6 +4,7 @@
 #define LEAKY_STDLIB_H
 
 #include <errno.h>
+#include <sys/types.h>  // mode_t
 #include <unistd.h>
 
 #include "mycpp/runtime.h"
@@ -18,7 +19,7 @@ int fcntl(int fd, int cmd, int arg);
 
 namespace posix {
 
-int umask(int mask);
+mode_t umask(mode_t mask);
 
 inline int access(Str* pathname, int mode) {
   return ::access(pathname->data_, mode) == 0;
