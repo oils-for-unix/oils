@@ -1926,11 +1926,13 @@ class Mem(object):
         return value.Str(self.this_dir[-1])  # top of stack
 
     if name in ('PIPESTATUS', '_pipeline_status'):
-      return value.MaybeStrArray([str(i) for i in self.pipe_status[-1]])
+      pipe_strs = [str(i) for i in self.pipe_status[-1]] # type: List[str]
+      return value.MaybeStrArray(pipe_strs)
 
     if name == '_process_sub_status':  # Oil naming convention
       # TODO: Shouldn't these be real integers?
-      return value.MaybeStrArray([str(i) for i in self.process_sub_status[-1]])
+      sub_strs = [str(i) for i in self.process_sub_status[-1]] # type: List[str]
+      return value.MaybeStrArray(sub_strs)
 
     if name == 'BASH_REMATCH':
       return value.MaybeStrArray(self.regex_matches[-1])  # top of stack
