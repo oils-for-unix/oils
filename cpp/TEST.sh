@@ -117,6 +117,8 @@ leaky-core-test() {
 
   local bin=_bin/$compiler-$variant/cpp/leaky_core_test
 
+  ninja $bin
+
   run-test-bin $bin
 }
 
