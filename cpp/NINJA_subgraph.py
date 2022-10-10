@@ -103,13 +103,8 @@ GENERATED_CC = [
 ]
 
 # TODO: Clean up this weirdness.
-# Some C++ bindings are in mycpp/NINJA_subgraph, and some are here.
-
-from mycpp.NINJA_subgraph import UNIT_TEST_DEPS
-
-NINJA_CPP_BINDINGS = []
-for cc_list in UNIT_TEST_DEPS.values():
-  NINJA_CPP_BINDINGS.extend(cc_list)
+# Duplicates info in mycpp.NINJA_subgraph -> UNIT_TEST_DEPS
+NINJA_CPP_BINDINGS = ['cpp/leaky_core.cc']
 
 # stuff not in Ninja
 MORE_CPP_BINDINGS = [
@@ -121,9 +116,6 @@ MORE_CPP_BINDINGS = [
     'cpp/leaky_pylib.cc',
     'cpp/leaky_stdlib.cc',
     'cpp/leaky_libc.cc',
-
-    # Unused now, but could be brought back to test GC overhead
-    #'cpp/dumb_alloc.cc',
 ]
 
 OSH_EVAL_UNITS = MORE_CPP_BINDINGS + ASDL_CC + GENERATED_CC
