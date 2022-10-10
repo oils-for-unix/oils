@@ -102,9 +102,17 @@ GENERATED_CC = [
     '_gen/osh/arith_parse.cc',
 ]
 
+# TODO: Clean up this weirdness.
+# Some C++ bindings are in mycpp/NINJA_subgraph, and some are here.
 
-CPP_BINDINGS = [
-    'cpp/leaky_core.cc',
+from mycpp.NINJA_subgraph import UNIT_TEST_DEPS
+
+NINJA_CPP_BINDINGS = []
+for cc_list in UNIT_TEST_DEPS.values():
+  NINJA_CPP_BINDINGS.extend(cc_list)
+
+# stuff not in Ninja
+MORE_CPP_BINDINGS = [
     'cpp/leaky_frontend_flag_spec.cc',
     'cpp/leaky_frontend_match.cc',
     'cpp/leaky_frontend_tdop.cc',
@@ -118,12 +126,12 @@ CPP_BINDINGS = [
     #'cpp/dumb_alloc.cc',
 ]
 
-OSH_EVAL_UNITS = CPP_BINDINGS + ASDL_CC + GENERATED_CC
-OSH_EVAL_UNITS_ALL = OSH_EVAL_UNITS + GC_RUNTIME
+OSH_EVAL_UNITS = MORE_CPP_BINDINGS + ASDL_CC + GENERATED_CC
+OSH_EVAL_UNITS_ALL = OSH_EVAL_UNITS + NINJA_CPP_BINDINGS + GC_RUNTIME
 
 # Add implicit deps
 HEADER_DEPS = {}
-for cc in CPP_BINDINGS + GENERATED_CC:
+for cc in NINJA_CPP_BINDINGS + MORE_CPP_BINDINGS + GENERATED_CC:
   if cc not in HEADER_DEPS:
     HEADER_DEPS[cc] = []
   HEADER_DEPS[cc].extend(ASDL_H)
