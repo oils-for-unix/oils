@@ -200,6 +200,8 @@ VARIANTS_LEAKY = 2
 
 # Unit tests that run with garbage collector on.
 UNIT_TESTS = {
+    'cpp/leaky_core_test.cc': VARIANTS_GC,
+
     'mycpp/marksweep_heap_test.cc': VARIANTS_GC,
     'mycpp/gc_heap_test.cc': VARIANTS_GC,
     'mycpp/gc_stress_test.cc': VARIANTS_GC,
@@ -215,6 +217,11 @@ UNIT_TESTS = {
     'mycpp/demo/target_lang.cc': VARIANTS_LEAKY,
     'mycpp/demo/hash_table.cc': VARIANTS_LEAKY,
     # there is also demo/{gc_heap,square_heap}.cc
+}
+
+# More dependencies
+UNIT_TEST_DEPS = {
+    'cpp/leaky_core_test.cc': ['//cpp/leaky_core'],
 }
 
 TRANSLATE_FILES = {
@@ -415,7 +422,11 @@ def NinjaGraph(ru):
   # Rules
   #
 
-  ru.cc_library('//mycpp/runtime', GC_RUNTIME, matrix=COMPILERS_VARIANTS)
+  ru.cc_library('//mycpp/runtime', GC_RUNTIME,
+                matrix=COMPILERS_VARIANTS)
+
+  ru.cc_library('//cpp/leaky_core', ['cpp/leaky_core.cc'],
+                matrix=COMPILERS_VARIANTS)
 
   # TODO: This rule should be dynamically created
 
@@ -438,7 +449,8 @@ def NinjaGraph(ru):
     else:
       raise AssertionError()
 
-    ru.cc_binary(main_cc, deps=['//mycpp/runtime'], matrix=matrix, phony=phony)
+    deps = ['//mycpp/runtime'] + UNIT_TEST_DEPS.get(main_cc, [])
+    ru.cc_binary(main_cc, deps=deps, matrix=matrix, phony=phony)
 
   #
   # osh_eval.  Could go in bin/NINJA_subgraph.py

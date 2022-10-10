@@ -337,11 +337,6 @@ TEST pyos_test() {
   err_num = pyos::Chdir(StrFromC("/nonexistent__"));
   ASSERT(err_num != 0);
 
-  Dict<Str*, Str*>* env = pyos::Environ();
-  Str* p = env->get(StrFromC("PATH"));
-  ASSERT(p != nullptr);
-  log("PATH = %s", p->data_);
-
   PASS();
 }
 #endif

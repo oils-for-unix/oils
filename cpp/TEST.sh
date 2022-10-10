@@ -111,6 +111,17 @@ gc-binding-test() {
   run-test-bin $bin
 }
 
+leaky-core-test() {
+  local compiler=${1:-cxx}
+  local variant=${2:-dbg}
+
+  local bin=_bin/$compiler-$variant/cpp/leaky_core_test
+
+  ninja $bin
+
+  run-test-bin $bin
+}
+
 # TODO:
 #
 # - These tests can use Ninja dependencies with -M
@@ -121,6 +132,10 @@ gc-binding-test() {
 
 unit() {
   ### Run by test/cpp-unit.sh
+
+  # Run Ninja-based tests
+  leaky-core-test '' ''
+  leaky-core-test '' asan
 
   gc-binding-test '' gcevery
 
