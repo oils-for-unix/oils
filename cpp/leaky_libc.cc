@@ -86,19 +86,17 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
   int outlen = pat.re_nsub + 1;  // number of captures
 
   const char* s0 = str->data_;
-  regmatch_t* pmatch =
-      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
-  int match = regexec(&pat, s0, outlen, pmatch, 0) == 0;
+  Slab<regmatch_t>* pmatch = NewSlab<regmatch_t>(outlen);
+  int match = regexec(&pat, s0, outlen, pmatch->items_, 0) == 0;
   if (match) {
     int i;
     for (i = 0; i < outlen; i++) {
-      int len = pmatch[i].rm_eo - pmatch[i].rm_so;
-      Str* m = StrFromC(s0 + pmatch[i].rm_so, len);
+      int len = pmatch->items_[i].rm_eo - pmatch->items_[i].rm_so;
+      Str* m = StrFromC(s0 + pmatch->items_[i].rm_so, len);
       results->append(m);
     }
   }
 
-  free(pmatch);
   regfree(&pat);
 
   if (!match) {
