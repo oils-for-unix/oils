@@ -29,6 +29,8 @@ class Writer(object):
     def __init__(self, output, width=78):
         self.output = output
         self.width = width
+ 
+        self._num_build_targets = 0  # number of times we call n.build()
 
     def newline(self):
         self.output.write('\n')
@@ -107,7 +109,12 @@ class Writer(object):
             for key, val in iterator:
                 self.variable(key, val, indent=1)
 
+        self._num_build_targets += 1
+
         return outputs
+
+    def num_build_targets(self):
+      return self._num_build_targets
 
     def include(self, path):
         self._line('include %s' % path)

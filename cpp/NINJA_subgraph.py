@@ -101,11 +101,6 @@ GENERATED_CC = [
     '_gen/osh/arith_parse.cc',
 ]
 
-# TODO: Clean up this weirdness.
-# Duplicates info in mycpp.NINJA_subgraph -> UNIT_TEST_DEPS
-NINJA_CPP_BINDINGS = ['cpp/leaky_core.cc']
-
-# stuff not in Ninja
 MORE_CPP_BINDINGS = [
     'cpp/leaky_frontend_flag_spec.cc',
     'cpp/leaky_frontend_match.cc',
@@ -116,22 +111,6 @@ MORE_CPP_BINDINGS = [
     'cpp/leaky_stdlib.cc',
     'cpp/leaky_libc.cc',
 ]
-
-OSH_EVAL_UNITS = MORE_CPP_BINDINGS + ASDL_CC + GENERATED_CC
-
-# Note: this is
-# //cpp/leaky_bindings
-# //cpp/leaky_core
-# //mycpp/runtime 
-OSH_EVAL_UNITS_ALL = OSH_EVAL_UNITS + NINJA_CPP_BINDINGS + GC_RUNTIME
-
-# Add implicit deps
-HEADER_DEPS = {}
-for cc in NINJA_CPP_BINDINGS + MORE_CPP_BINDINGS + GENERATED_CC:
-  if cc not in HEADER_DEPS:
-    HEADER_DEPS[cc] = []
-  HEADER_DEPS[cc].extend(ASDL_H)
-  HEADER_DEPS[cc].extend(GENERATED_H)
 
 
 def NinjaGraph(ru):
@@ -192,6 +171,7 @@ def NinjaGraph(ru):
 
   n.newline()
 
+  # TODO: use these variants?
   COMPILERS_VARIANTS = ninja_lib.COMPILERS_VARIANTS + [
       # note: these could be clang too
       ('cxx', 'alloclog'),
@@ -203,34 +183,29 @@ def NinjaGraph(ru):
       #('cxx', 'tcmalloc')
   ]
 
+  # See how much input we're feeding to the compiler.  Test C++ template
+  # explosion, e.g. <unordered_map>
+  #
+  # Limit to {dbg,opt} so we don't generate useless rules.  Invoked by
+  # metrics/source-code.sh
+  cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
+
+  if 0:
+    from pprint import pprint
+    pprint(cc_sources)
+
   for compiler, variant in COMPILERS_VARIANTS:
-
-    # TODO: make consistent with compile_vars, link_vars
-    ninja_vars = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")]
-
-    #
-    # See how much input we're feeding to the compiler.  Test C++ template
-    # explosion, e.g. <unordered_map>
-    #
-    # Limit to {dbg,opt} so we don't generate useless rules.  Invoked by
-    # metrics/source-code.sh
-    #
-
     if variant in ('dbg', 'opt'):
       preprocessed = []
-      for src in OSH_EVAL_UNITS_ALL:
+      for src in cc_sources:
         # e.g. _build/obj/dbg/posix.o
         rel_path, _ = os.path.splitext(src)
-
         pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, rel_path)
         preprocessed.append(pre)
 
-        n.build(pre, 'preprocess', [src], variables=ninja_vars,
-                implicit=HEADER_DEPS.get(src, []))
-        n.newline()
-
       n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
-              'line_count', preprocessed, variables=ninja_vars)
+              'line_count',
+              preprocessed)
       n.newline()
 
   n.default(['_bin/cxx-dbg/osh_eval'])

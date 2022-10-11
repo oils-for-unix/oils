@@ -121,6 +121,11 @@ class Rules(object):
     self.n.build([out_obj], 'compile_one', [in_cc], implicit=implicit, variables=v)
     self.n.newline()
 
+    if variant in ('dbg', 'opt'):
+      pre = '_build/preprocessed/%s-%s/%s' % (compiler, variant, in_cc)
+      self.n.build(pre, 'preprocess', [in_cc], implicit=implicit, variables=v)
+      self.n.newline()
+
   def link(self, out_bin, main_obj, deps, config):
     compiler, variant = config
 

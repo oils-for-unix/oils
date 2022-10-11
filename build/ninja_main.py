@@ -67,22 +67,21 @@ def main(argv):
   n.newline()
   n.newline()
 
+
+  # Now collect sources for tarball and shell script
+  cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
+
   if action == 'ninja':
-    log('  (%s) -> %s', argv[0], BUILD_NINJA)
+    log('  (%s) -> %s (%d build targets)', argv[0], BUILD_NINJA,
+        n.num_build_targets())
 
   elif action == 'shell':
-    from cpp.NINJA_subgraph import OSH_EVAL_UNITS_ALL
-    cc_sources = OSH_EVAL_UNITS_ALL
-
     out = '_build/oil-native.sh'
     with open(out, 'w') as f:
       cpp_subgraph.ShellFunctions(cc_sources, f, argv[0])
     log('  (%s) -> %s', argv[0], out)
 
   elif action == 'tarball-manifest':
-    from cpp.NINJA_subgraph import OSH_EVAL_UNITS_ALL
-
-    cc_sources = OSH_EVAL_UNITS_ALL
     cpp_subgraph.TarballManifest(cc_sources)
 
   else:
