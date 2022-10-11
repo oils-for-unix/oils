@@ -96,7 +96,6 @@ GENERATED_H = [
 ]
 
 GENERATED_CC = [
-    '_gen/bin/osh_eval.mycpp.cc',
     '_gen/frontend/arg_types.cc',
     '_gen/frontend/consts.cc',
     '_gen/osh/arith_parse.cc',
@@ -144,6 +143,7 @@ def NinjaGraph(ru):
   ru.cc_library(
       '//cpp/leaky_core', 
       srcs = ['cpp/leaky_core.cc'],
+      # No implicit deps on ASDL, but some files do
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_binary(
@@ -153,6 +153,42 @@ def NinjaGraph(ru):
         '//mycpp/runtime',
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
+
+  # TODO: could split these up more, with fine-grained ASDL deps?
+  ru.cc_library(
+      '//cpp/leaky_bindings', 
+      srcs = MORE_CPP_BINDINGS,
+      implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
+  ru.cc_library(
+      # TODO: split these up?
+      '//ASDL_CC',   
+      srcs = ASDL_CC,
+      implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
+  ru.cc_library(
+      # TODO: split these up?
+      '//GENERATED_CC',
+      srcs = GENERATED_CC,
+      implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
+  # Main program!
+  ru.cc_binary(
+      '_gen/bin/osh_eval.mycpp.cc',
+      implicit = ASDL_H + GENERATED_H,  # TODO: express
+      matrix = ninja_lib.COMPILERS_VARIANTS,
+      top_level = True,  # _bin/cxx-dbg/osh_eval
+      deps = [
+        '//cpp/leaky_core',
+        '//cpp/leaky_bindings',
+        '//ASDL_CC',
+        '//GENERATED_CC',
+        '//mycpp/runtime',
+        ]
+      )
 
   n.newline()
 
@@ -166,8 +202,6 @@ def NinjaGraph(ru):
       # 'tcmalloc'
       #('cxx', 'tcmalloc')
   ]
-
-  binaries = []
 
   for compiler, variant in COMPILERS_VARIANTS:
 
@@ -199,48 +233,7 @@ def NinjaGraph(ru):
               'line_count', preprocessed, variables=ninja_vars)
       n.newline()
 
-    #
-    # SEPARATE: Compile objects
-    #
-
-    for src in OSH_EVAL_UNITS:
-      # e.g. _build/obj/dbg/posix.o
-      rel_path, _ = os.path.splitext(src)
-
-      obj = '_build/obj/%s-%s/%s.o' % (compiler, variant, rel_path)
-
-      n.build(obj, 'compile_one', [src], variables=ninja_vars,
-              # even though compile_one has .d, we still need these implicit deps
-              # for generated headers
-              implicit=HEADER_DEPS.get(src, []))
-      n.newline()
-
-    bin_separate = '_bin/%s-%s/osh_eval' % (compiler, variant)
-    binaries.append(bin_separate)
-
-    #
-    # SEPARATE: Link objects into binary
-    #
-
-    objects = [ObjPath(src, compiler, variant) for src in OSH_EVAL_UNITS_ALL]
-    link_vars = [('compiler', compiler), ('variant', variant)]  # no CXX flags
-    n.build(bin_separate, 'link', objects, variables=link_vars)
-    n.newline()
-
-    # Strip the .opt binary
-    if variant == 'opt':
-      b = bin_separate
-      stripped = b + '.stripped'
-      symbols = b + '.symbols'
-      n.build([stripped, symbols], 'strip', [b])
-      n.newline()
-
-      binaries.append(stripped)
-
   n.default(['_bin/cxx-dbg/osh_eval'])
-
-  # All groups
-  n.build(['osh-eval-all'], 'phony', binaries)
 
 
 def TarballManifest(cc_sources):

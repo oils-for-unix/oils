@@ -104,8 +104,10 @@ class Rules(object):
 
     self.phony = {}  # list of phony targets
 
-  def compile(self, out_obj, in_cc, deps, config):
+  def compile(self, out_obj, in_cc, deps, config, implicit=None):
     # deps: //mycpp/examples/expr.asdl -> then look up the headers it exports?
+
+    implicit = implicit or []
 
     compiler, variant = config
 
@@ -143,6 +145,13 @@ class Rules(object):
     self.n.build([out_bin], 'link', objects, variables=v)
     self.n.newline()
 
+    # Strip any .opt binariies
+    if variant == 'opt':
+      stripped = out_bin + '.stripped'
+      symbols = out_bin + '.symbols'
+      self.n.build([stripped, symbols], 'strip', [out_bin])
+      self.n.newline()
+
   def _GeneratedHeader(self, label):
     # for implicit deps of 'compile'
     #
@@ -150,7 +159,9 @@ class Rules(object):
     # And then parse.mycpp.cc needs this implicit dep
     pass
 
-  def _TranslationUnit(self, label, path, implicit=[]):
+  def _TranslationUnit(self, label, path, implicit=None):
+    implicit = implicit or []
+
     # TODO:
     # - cc_library() and asdl() should call this
     # - append to a data structure
@@ -167,7 +178,9 @@ class Rules(object):
   # 
   # It should just create self.cc_lib_objects[label] = SomeObject
 
-  def cc_library(self, label, srcs, deps=[], matrix=[]):
+  def cc_library(self, label, srcs, implicit=None, deps=None, matrix=[]):
+    implicit = implicit or []
+    deps = deps or []
 
     self.cc_lib_srcs[label] = srcs
 
@@ -179,17 +192,24 @@ class Rules(object):
         obj = ObjPath(src, compiler, variant)
         objects.append(obj)
 
-        self.compile(obj, src, deps, config)
+        self.compile(obj, src, deps, config, implicit=implicit)
 
       self.cc_lib_objects[(label, compiler, variant)] = objects
     if 0:
       from pprint import pprint
       pprint(self.cc_lib_objects)
 
-  def cc_binary(self, main_cc, deps=[], matrix=[],  # $compiler $variant
+  def cc_binary(self, main_cc,
+      top_level=False,
+      implicit=None,  # for COMPILE action, not link action
+      deps=None, matrix=None,  # $compiler $variant
       # TODO: add tags?  if tags = 'mycpp-unit' then add to phony?
       phony={},
       ):
+    implicit = implicit or []
+    deps = deps or []
+    if not matrix:
+      raise RuntimeError("Config matrix required")
 
     self.cc_binary_deps[main_cc] = deps
     for config in matrix:
@@ -197,10 +217,17 @@ class Rules(object):
 
       # Compile main object, maybe with IMPLICIT headers deps
       main_obj = ObjPath(main_cc, compiler, variant)
-      self.compile(main_obj, main_cc, deps, config)
+      self.compile(main_obj, main_cc, deps, config, implicit=implicit)
 
-      rel_path, _ = os.path.splitext(main_cc)
-      bin_= '_bin/%s-%s/%s' % (compiler, variant, rel_path)
+      if top_level:
+        # e.g. _bin/cxx-dbg/osh_eval
+        basename = os.path.basename(main_cc)
+        first_name = basename.split('.')[0]
+        bin_= '_bin/%s-%s/%s' % (compiler, variant, first_name)
+      else:
+        # e.g. _gen/mycpp/examples/classes.mycpp
+        rel_path, _ = os.path.splitext(main_cc)
+        bin_= '_bin/%s-%s/%s' % (compiler, variant, rel_path)
 
       # Link with OBJECT deps
       self.link(bin_, main_obj, deps, config)
