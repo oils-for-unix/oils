@@ -98,7 +98,9 @@ class Rules(object):
     #self.generated_headers = {}  # ASDL filename -> header name
     #self.asdl = {}  # label -> True if ru.compile(config) has been called?
 
-    self.cc_libs = {}  # (target, compiler, variant) -> list of objects
+    self.cc_binary_deps = {}  # main_cc -> list of sources
+    self.cc_lib_srcs = {}  # target -> list of sources
+    self.cc_lib_objects = {}  # (target, compiler, variant) -> list of objects
 
     self.phony = {}  # list of phony targets
 
@@ -129,7 +131,12 @@ class Rules(object):
       # So you can just have an asdl() rule, and no binary ever depends on it,
       # then you don't get those rules.
 
-      o = self.cc_libs[(label, compiler, variant)]
+      key = (label, compiler, variant)
+      try:
+        o = self.cc_lib_objects[key]
+      except KeyError:
+        raise RuntimeError("Couldn't resolve label %r (dict key is %r)" % (label, key))
+
       objects.extend(o)
 
     v = [('compiler', compiler), ('variant', variant)]
@@ -158,9 +165,12 @@ class Rules(object):
   # only cc_binary takes a matrix!
   #  and then it "pulls" all Ninja rules forward
   # 
-  # It should just create self.cc_libs[label] = SomeObject
+  # It should just create self.cc_lib_objects[label] = SomeObject
 
   def cc_library(self, label, srcs, deps=[], matrix=[]):
+
+    self.cc_lib_srcs[label] = srcs
+
     for config in matrix:
       compiler, variant = config
 
@@ -171,36 +181,44 @@ class Rules(object):
 
         self.compile(obj, src, deps, config)
 
-      self.cc_libs[(label, compiler, variant)] = objects
+      self.cc_lib_objects[(label, compiler, variant)] = objects
     if 0:
       from pprint import pprint
-      pprint(self.cc_libs)
+      pprint(self.cc_lib_objects)
 
-  def cc_binary(
-      self,
-      main_cc,
-      deps=[],
-      matrix=[],  # $compiler $variant
-      # TODO: tags?
-      # if tags = 'mycpp-unit' then add to phony?
+  def cc_binary(self, main_cc, deps=[], matrix=[],  # $compiler $variant
+      # TODO: add tags?  if tags = 'mycpp-unit' then add to phony?
       phony={},
       ):
 
+    self.cc_binary_deps[main_cc] = deps
     for config in matrix:
       compiler, variant = config
 
+      # Compile main object, maybe with IMPLICIT headers deps
       main_obj = ObjPath(main_cc, compiler, variant)
       self.compile(main_obj, main_cc, deps, config)
 
       rel_path, _ = os.path.splitext(main_cc)
       bin_= '_bin/%s-%s/%s' % (compiler, variant, rel_path)
 
+      # Link with OBJECT deps
       self.link(bin_, main_obj, deps, config)
 
       key = 'mycpp-unit-%s-%s' % (compiler, variant)
       if key not in phony:
         phony[key] = []
       phony[key].append(bin_)
+
+  def SourcesForBinary(self, main_cc):
+    """
+    Used for getting sources of _gen/bin/osh_eval.mycpp.cc, etc.
+    """
+    deps = self.cc_binary_deps[main_cc]
+    sources = [main_cc]
+    for dep in deps:
+      sources.extend(self.cc_lib_srcs[dep])
+    return sources
 
   def asdl_cc(self, asdl_path, pretty_print_methods=True):
     # to create _gen/mycpp/examples/expr.asdl.h

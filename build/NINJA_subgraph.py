@@ -84,6 +84,40 @@ def NinjaGraph(ru):
   n.newline()
 
   # Preprocess one translation unit
+  n.rule('preprocess',
+         # compile_one detects the _build/preprocessed path
+         command='build/ninja-rules-cpp.sh compile_one $compiler $variant $more_cxx_flags $in $out',
+         description='PP $compiler $variant $more_cxx_flags $in $out')
+  n.newline()
+
+  # Preprocess one translation unit
+  n.rule('line_count',
+         command='build/ninja-rules-cpp.sh line_count $out $in',
+         description='line_count $out $in')
+  n.newline()
+
+  # Compile one translation unit
+  n.rule('compile_one',
+         command='build/ninja-rules-cpp.sh compile_one $compiler $variant $more_cxx_flags $in $out $out.d',
+         depfile='$out.d',
+         # no prefix since the compiler is the first arg
+         description='$compiler $variant $more_cxx_flags $in $out')
+  n.newline()
+
+  # Link objects together
+  n.rule('link',
+         command='build/ninja-rules-cpp.sh link $compiler $variant $out $in',
+         description='LINK $compiler $variant $out $in')
+  n.newline()
+
+  # 1 input and 2 outputs
+  n.rule('strip',
+         command='build/ninja-rules-cpp.sh strip_ $in $out',
+         description='STRIP $in $out')
+  n.newline()
+
+
+  # Preprocess one translation unit
   n.rule('write-shwrap',
          # $in must start with main program
          command='build/ninja-rules-py.sh write-shwrap $template $out $in',

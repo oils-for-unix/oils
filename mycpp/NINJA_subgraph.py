@@ -200,8 +200,6 @@ VARIANTS_LEAKY = 2
 
 # Unit tests that run with garbage collector on.
 UNIT_TESTS = {
-    'cpp/leaky_core_test.cc': VARIANTS_GC,
-
     'mycpp/marksweep_heap_test.cc': VARIANTS_GC,
     'mycpp/gc_heap_test.cc': VARIANTS_GC,
     'mycpp/gc_stress_test.cc': VARIANTS_GC,
@@ -423,9 +421,6 @@ def NinjaGraph(ru):
   #
 
   ru.cc_library('//mycpp/runtime', GC_RUNTIME,
-                matrix=COMPILERS_VARIANTS)
-
-  ru.cc_library('//cpp/leaky_core', ['cpp/leaky_core.cc'],
                 matrix=COMPILERS_VARIANTS)
 
   # TODO: This rule should be dynamically created

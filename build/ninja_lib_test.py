@@ -11,12 +11,27 @@ from build import ninja_lib  # module under test
 from vendor import ninja_syntax
 
 
-class NinjaTest(unittest.TestCase):
-  def setUp(self):
-    pass
+MATRIX = [
+    ('cxx', 'dbg'),
+    ('cxx', 'opt'),
+]
 
-  def tearDown(self):
-    pass
+class NinjaTest(unittest.TestCase):
+
+  def testSourcesForBinary(self):
+    n = ninja_syntax.Writer(sys.stdout)
+    ru = ninja_lib.Rules(n)
+
+    ru.cc_library('//mycpp/y', ['mycpp/y.cc', 'mycpp/y2.cc'], matrix=MATRIX)
+    ru.cc_library('//mycpp/z', ['mycpp/z.cc'], matrix=MATRIX)
+
+    ru.cc_binary(
+        'mycpp/a_test.cc', deps=['//mycpp/y', '//mycpp/z'], matrix=MATRIX)
+
+    srcs = ru.SourcesForBinary('mycpp/a_test.cc')
+    self.assertEqual(
+        ['mycpp/a_test.cc', 'mycpp/y.cc', 'mycpp/y2.cc', 'mycpp/z.cc'],
+        srcs)
 
   def testBuild(self):
     n = ninja_syntax.Writer(sys.stdout)
@@ -25,10 +40,7 @@ class NinjaTest(unittest.TestCase):
     config = ('cxx', 'dbg')
     ru.compile('foo.o', 'foo.cc', [], config)
 
-    matrix = [
-        ('cxx', 'dbg'),
-        ('cxx', 'opt'),
-        ]
+    matrix = MATRIX
     # TODO: eliminate matrix arg
     ru.cc_library('//mycpp/ab', ['mycpp/a.cc', 'mycpp/b.cc'], matrix=matrix)
     ru.cc_library('//mycpp/z', ['mycpp/z.cc'], matrix=matrix)

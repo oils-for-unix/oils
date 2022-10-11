@@ -4,6 +4,7 @@ build/NINJA_main.py - invoked by ./NINJA-config.sh
 """
 from __future__ import print_function
 
+import cStringIO
 import os
 import sys
 
@@ -36,39 +37,53 @@ def main(argv):
     action = 'ninja'
 
   if action == 'ninja':
-    n = ninja_syntax.Writer(open(BUILD_NINJA, 'w'))
+    f = open(BUILD_NINJA, 'w')
+  else:
+    f = cStringIO.StringIO()  # thrown away
 
-    # High level rules
-    ru = ninja_lib.Rules(n)
+  n = ninja_syntax.Writer(f)
+  ru = ninja_lib.Rules(n)
 
-    asdl_subgraph.NinjaGraph(ru)
+  ### Create the graph.  TODO: Add other dirs.
 
-    n.newline()
-    n.newline()
+  asdl_subgraph.NinjaGraph(ru)
 
-    build_subgraph.NinjaGraph(ru)
+  n.newline()
+  n.newline()
 
-    n.newline()
-    n.newline()
+  build_subgraph.NinjaGraph(ru)
 
-    cpp_subgraph.NinjaGraph(ru)
+  n.newline()
+  n.newline()
 
-    n.newline()
-    n.newline()
+  # //mycpp/runtime defined first
+  mycpp_subgraph.NinjaGraph(ru)
 
-    mycpp_subgraph.NinjaGraph(ru)
+  n.newline()
+  n.newline()
 
+  cpp_subgraph.NinjaGraph(ru)
+
+  n.newline()
+  n.newline()
+
+  if action == 'ninja':
     log('  (%s) -> %s', argv[0], BUILD_NINJA)
 
-
   elif action == 'shell':
+    from cpp.NINJA_subgraph import OSH_EVAL_UNITS_ALL
+    cc_sources = OSH_EVAL_UNITS_ALL
+
     out = '_build/oil-native.sh'
     with open(out, 'w') as f:
-      cpp_subgraph.ShellFunctions(f, argv[0])
+      cpp_subgraph.ShellFunctions(cc_sources, f, argv[0])
     log('  (%s) -> %s', argv[0], out)
 
   elif action == 'tarball-manifest':
-    cpp_subgraph.TarballManifest()
+    from cpp.NINJA_subgraph import OSH_EVAL_UNITS_ALL
+
+    cc_sources = OSH_EVAL_UNITS_ALL
+    cpp_subgraph.TarballManifest(cc_sources)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
