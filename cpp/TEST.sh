@@ -91,31 +91,12 @@ leaky-binding-test() {
   run-test-bin $bin $working_dir
 }
 
-readonly GC_TEST_SRC=(
-    cpp/gc_binding_test.cc
-    "${GC_RUNTIME[@]}"
-)
+run-one-test() {
+  local name=$1
+  local compiler=${2:-cxx}
+  local variant=${3:-dbg}
 
-gc-binding-test() {
-  local compiler=${1:-cxx}
-  local variant=${2:-dbg}
-
-  local out_dir=_bin/$compiler-$variant/cpp
-  mkdir -p $out_dir
-
-  local bin=$out_dir/gc_binding_test
-
-  compile_and_link $compiler $variant '' $bin \
-    "${GC_TEST_SRC[@]}"
-
-  run-test-bin $bin
-}
-
-leaky-core-test() {
-  local compiler=${1:-cxx}
-  local variant=${2:-dbg}
-
-  local bin=_bin/$compiler-$variant/cpp/leaky_core_test
+  local bin=_bin/$compiler-$variant/cpp/$name
 
   ninja $bin
 
@@ -134,10 +115,11 @@ unit() {
   ### Run by test/cpp-unit.sh
 
   # Run Ninja-based tests
-  leaky-core-test '' ''
-  leaky-core-test '' asan
+  run-one-test leaky_core_test '' ''
+  run-one-test leaky_core_test '' asan
 
-  gc-binding-test '' gcevery
+  #gc-binding-test '' gcevery
+  run-one-test gc_binding_test '' gcevery
 
   # Has generated code
   leaky-flag-spec-test '' ''

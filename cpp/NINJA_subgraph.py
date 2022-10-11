@@ -140,6 +140,14 @@ def NinjaGraph(ru):
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
+  ru.cc_binary(
+      'cpp/gc_binding_test.cc',
+      deps = [
+        '//cpp/leaky_bindings',
+        '//mycpp/runtime',
+        ],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
   ru.cc_library(
       # TODO: split these up?
       '//ASDL_CC',   
