@@ -148,6 +148,15 @@ def NinjaGraph(ru):
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
+  ru.cc_binary(
+      'cpp/leaky_binding_test.cc',
+      deps = [
+        '//cpp/leaky_bindings',
+        '//cpp/leaky_core',  # could move this
+        '//mycpp/runtime',
+        ],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
   ru.cc_library(
       # TODO: split these up?
       '//ASDL_CC',   

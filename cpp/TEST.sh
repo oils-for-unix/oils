@@ -73,11 +73,9 @@ leaky-binding-test() {
   local compiler=${1:-cxx}
   local variant=${2:-dbg}
 
-  local bin=_bin/$compiler-$variant/cpp/leaky_binding_test
-  mkdir -p $(dirname $bin)
-
-  compile_and_link $compiler $variant '' $bin \
-    "${LEAKY_TEST_SRC[@]}"
+  local name=leaky_binding_test
+  local bin=_bin/$compiler-$variant/cpp/$name
+  ninja $bin
 
   local working_dir=_tmp/leaky-binding-test
   rm -r -f -v $working_dir
@@ -87,7 +85,6 @@ leaky-binding-test() {
   touch $working_dir/{foo,bar,baz}.testdata
 
   # TODO: we need a way to pass -t here
-
   run-test-bin $bin $working_dir
 }
 
@@ -121,20 +118,22 @@ unit() {
   #gc-binding-test '' gcevery
   run-one-test gc_binding_test '' gcevery
 
+  leaky-binding-test '' ''
+  leaky-binding-test '' asan
+
   # Has generated code
   leaky-flag-spec-test '' ''
   leaky-flag-spec-test '' asan
-
-  leaky-binding-test '' ''
-  leaky-binding-test '' asan
 }
 
 coverage() {
   pre-build
 
-  gc-binding-test clang coverage
-  leaky-flag-spec-test clang coverage
+  run-one-test leaky_core_test clang coverage
+  run-one-test gc_binding_test clang coverage
+
   leaky-binding-test clang coverage
+  leaky-flag-spec-test clang coverage
 
   local out_dir=_test/clang-coverage/cpp
   test/coverage.sh html-report $out_dir cpp
