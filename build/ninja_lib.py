@@ -107,15 +107,10 @@ class Rules(object):
   def compile(self, out_obj, in_cc, deps, config, implicit=None):
     # deps: //mycpp/examples/expr.asdl -> then look up the headers it exports?
 
+    # TODO: implicit deps for ASDL
     implicit = implicit or []
 
     compiler, variant = config
-
-    # TODO: implicit deps for ASDL
-    # EXAMPLES_H.get(ex, []),
-    implicit = []
-    for label in deps:
-      pass
 
     v = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")]
     self.n.build([out_obj], 'compile_one', [in_cc], implicit=implicit, variables=v)
