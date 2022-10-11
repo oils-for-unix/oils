@@ -9,10 +9,12 @@ import os
 import sys
 
 from build import ninja_lib
+
 from asdl import NINJA_subgraph as asdl_subgraph
 from build import NINJA_subgraph as build_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
 from mycpp import NINJA_subgraph as mycpp_subgraph
+from prebuilt import NINJA_subgraph as prebuilt_subgraph
 
 from vendor import ninja_syntax
 
@@ -67,6 +69,10 @@ def main(argv):
   n.newline()
   n.newline()
 
+  prebuilt_subgraph.NinjaGraph(ru)
+
+  n.newline()
+  n.newline()
 
   # Now collect sources for tarball and shell script
   cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')

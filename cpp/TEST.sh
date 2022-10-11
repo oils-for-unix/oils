@@ -18,24 +18,16 @@ source test/common.sh  # run-test
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
 
-pre-build() {
-  # TODO: Folding tests into Ninja would get rid of ad hoc deps
-
-  build/py.sh fastmatch
-  build/cpp.sh gen-asdl  # unit tests depend on id_kind_asdl.h, etc.
-
-  # TODO: Make a target for this
-  ninja _gen/frontend/arg_types.{h,cc}
-  ninja _gen/frontend/id_kind.asdl.{h,cc}
-}
-
 readonly LEAKY_FLAG_SPEC_SRC=(
     cpp/leaky_flag_spec_test.cc
     cpp/leaky_frontend_flag_spec.cc
     _gen/frontend/arg_types.cc
 
-    # TODO: Remove CPP_UNIT_TEST and fix this
+    # Would be needed for CPP_UNIT_TEST, but it doesn't compile!
     # prebuilt/frontend/args.mycpp.cc
+
+    # Also seems necessary
+    # _gen/core/runtime.asdl.cc
 
     "${GC_RUNTIME[@]}"
 )
@@ -55,17 +47,6 @@ leaky-flag-spec-test() {
 
   run-test-bin $bin
 }
-
-readonly LEAKY_TEST_SRC=(
-    cpp/leaky_binding_test.cc
-    cpp/leaky_core.cc
-    cpp/leaky_frontend_match.cc
-    cpp/leaky_libc.cc
-    cpp/leaky_osh.cc
-    cpp/leaky_stdlib.cc
-    cpp/leaky_pylib.cc
-    "${GC_RUNTIME[@]}"
-)
 
 leaky-binding-test() {
   ### Test hand-written code
@@ -100,16 +81,8 @@ run-one-test() {
   run-test-bin $bin
 }
 
-# TODO:
-#
-# - These tests can use Ninja dependencies with -M
-#   - separate all the files
-# - Put logs in _test/
-# - Make HTML links to all the logs
-# - Add coverage report
-
 unit() {
-  ### Run by test/cpp-unit.sh
+  ### Run unit tests in this dir; used by test/cpp-unit.sh
 
   # Run Ninja-based tests
   run-one-test leaky_core_test '' ''
@@ -121,12 +94,27 @@ unit() {
   leaky-binding-test '' ''
   leaky-binding-test '' asan
 
-  # Has generated code
+  # Has generated code, needs -D CPP_UNIT_TEST
   leaky-flag-spec-test '' ''
   leaky-flag-spec-test '' asan
 }
 
+pre-build() {
+  ### Before running coverage
+
+  # TODO: Folding tests into Ninja would get rid of ad hoc deps
+
+  build/py.sh fastmatch
+  build/cpp.sh gen-asdl  # unit tests depend on id_kind_asdl.h, etc.
+
+  # TODO: Make a target for this
+  ninja _gen/frontend/arg_types.{h,cc}
+  ninja _gen/frontend/id_kind.asdl.{h,cc}
+}
+
 coverage() {
+  ### Run coverage for this dir
+
   pre-build
 
   run-one-test leaky_core_test clang coverage
