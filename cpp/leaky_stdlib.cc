@@ -87,7 +87,7 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   int n_env = len(environ);
   char** envp = static_cast<char**>(malloc((n_env + 1) * sizeof(char*)));
 
-  int EnvIndex = 0;
+  int env_index = 0;
   for (DictIter<Str*, Str*> it(environ); !it.Done(); it.Next()) {
     Str* k = it.Key();
     Str* v = it.Value();
@@ -99,7 +99,7 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
     memcpy(buf + len(k) + 1, v->data_, len(v));
     buf[joined_len] = '\0';
 
-    envp[EnvIndex++] = buf;
+    envp[env_index++] = buf;
   }
   envp[n_env] = nullptr;
 

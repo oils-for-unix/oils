@@ -325,21 +325,23 @@ TEST libc_glob_test() {
   PASS();
 }
 
-// NOTE(Jesse): `if 0`-ed this out to silence an annoying warning.  Should be
-// put back in, though that's on Andy.
-#if 0
 TEST pyos_test() {
   // This test isn't hermetic but it should work in most places, including in a
   // container
+
+  Str* current = posix::getcwd();
+
   int err_num = pyos::Chdir(StrFromC("/"));
   ASSERT(err_num == 0);
 
   err_num = pyos::Chdir(StrFromC("/nonexistent__"));
   ASSERT(err_num != 0);
 
+  err_num = pyos::Chdir(current);
+  ASSERT(err_num == 0);
+
   PASS();
 }
-#endif
 
 GREATEST_MAIN_DEFS();
 
@@ -362,12 +364,8 @@ int main(int argc, char** argv) {
   RUN_TEST(os_path_test);
   RUN_TEST(putenv_test);
 
-  // Disabled because changing the dir somehow prevents the
-  // leaky_binding_test.profraw file from being created
-  //
-  // Must come last because it does chdir()
-  //
-  // RUN_TEST(pyos_test);
+  // non-hermetic
+  RUN_TEST(pyos_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
