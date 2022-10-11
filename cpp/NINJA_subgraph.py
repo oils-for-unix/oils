@@ -1,56 +1,6 @@
 #!/usr/bin/env python2
 """
 cpp/NINJA_subgraph.py
-
-Runtime options:
-
-  CXXFLAGS     Additional flags to pass to the C++ compiler
-
-Phony targets
-
-  osh-eval-all   # all variants of the binary
-  mycpp-all      # all mycpp/examples
-  mycpp-typecheck, etc.
-
-  TODO: unit tests
-
-Directory structure:
-
-_bin/   # output binaries
-  # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
-  cxx-opt/
-    osh_eval
-    osh_eval.stripped              # The end user binary
-    osh_eval.symbols
-
-  cxx-opt-sh/                      # with shell script
-
-_build/
-  cpp/    # _build/gen is more consistent, but it would take a lot of renaming
-    osh_eval.{h,cc}
-
-  obj/
-    # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
-    cxx-asan/
-      osh_eval.o
-      osh_eval.d     # dependency file
-      osh_eval.json  # when -ftime-trace is passed
-    cxx-dbg/
-    cxx-opt/
-
-  preprocessed/
-    cxx-dbg/
-      leaky_stdlib.cc
-    cxx-dbg.txt  # line counts
-
-TODO
-
-- Could fold bloaty reports in here?  See metrics/native-code.sh
-  - Takes both dbg and opt.  Depends on the symbolized, optimized file.
-  - make bloaty report along with total size in the continuous build?
-    - although it depends on R, and we don't have Clang
-- Port test/cpp-unit.sh logic here
-  - declare dependencies, could use same pattern as mycpp/build_graph.py
 """
 
 from __future__ import print_function
@@ -76,17 +26,6 @@ ASDL_H = [
     '_gen/frontend/option.asdl.h',
 ]
 
-ASDL_CC = [
-    '_gen/core/runtime.asdl.cc',
-    '_gen/frontend/syntax.asdl.cc',
-    '_gen/frontend/id_kind.asdl.cc',
-
-    # NOT generated due to --no-pretty-print-methods
-    # '_gen/frontend/types.asdl.cc',
-    # '_gen/asdl/hnode.asdl.cc',
-    # '_gen/frontend/option.asdl.cc',
-]
-
 GENERATED_H = [
     '_gen/frontend/arg_types.h',
     # NOTE: there is no cpp/arith_parse.h
@@ -94,24 +33,6 @@ GENERATED_H = [
     '_gen/frontend/consts.h',
     '_gen/core/optview.h',  # header only
 ]
-
-GENERATED_CC = [
-    '_gen/frontend/arg_types.cc',
-    '_gen/frontend/consts.cc',
-    '_gen/osh/arith_parse.cc',
-]
-
-MORE_CPP_BINDINGS = [
-    'cpp/leaky_frontend_flag_spec.cc',
-    'cpp/leaky_frontend_match.cc',
-    'cpp/leaky_frontend_tdop.cc',
-    'cpp/leaky_osh.cc',
-    'cpp/leaky_pgen2.cc',
-    'cpp/leaky_pylib.cc',
-    'cpp/leaky_stdlib.cc',
-    'cpp/leaky_libc.cc',
-]
-
 
 def NinjaGraph(ru):
   n = ru.n
@@ -136,7 +57,16 @@ def NinjaGraph(ru):
   # TODO: could split these up more, with fine-grained ASDL deps?
   ru.cc_library(
       '//cpp/leaky_bindings', 
-      srcs = MORE_CPP_BINDINGS,
+      srcs = [
+        'cpp/leaky_frontend_flag_spec.cc',
+        'cpp/leaky_frontend_match.cc',
+        'cpp/leaky_frontend_tdop.cc',
+        'cpp/leaky_osh.cc',
+        'cpp/leaky_pgen2.cc',
+        'cpp/leaky_pylib.cc',
+        'cpp/leaky_stdlib.cc',
+        'cpp/leaky_libc.cc',
+      ],
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
@@ -158,16 +88,28 @@ def NinjaGraph(ru):
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
-      # TODO: split these up?
-      '//ASDL_CC',   
-      srcs = ASDL_CC,
+      '//ASDL_CC',  # TODO: split these up?
+      srcs = [
+        '_gen/core/runtime.asdl.cc',
+        '_gen/frontend/syntax.asdl.cc',
+        '_gen/frontend/id_kind.asdl.cc',
+
+        # NOT generated due to --no-pretty-print-methods
+        # '_gen/frontend/types.asdl.cc',
+        # '_gen/asdl/hnode.asdl.cc',
+        # '_gen/frontend/option.asdl.cc',
+      ],
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
       # TODO: split these up?
       '//GENERATED_CC',
-      srcs = GENERATED_CC,
+      srcs = [
+        '_gen/frontend/arg_types.cc',
+        '_gen/frontend/consts.cc',
+        '_gen/osh/arith_parse.cc',
+      ],
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
@@ -188,16 +130,14 @@ def NinjaGraph(ru):
 
   n.newline()
 
-  # TODO: use these variants?
+  # TODO: add more variants?
   COMPILERS_VARIANTS = ninja_lib.COMPILERS_VARIANTS + [
       # note: these could be clang too
-      ('cxx', 'alloclog'),
-      ('cxx', 'dumballoc'),
       ('cxx', 'uftrace'),
+      ('cxx', 'tcmalloc'),
 
-      # leave out tcmalloc since it requires system libs to be installed
-      # 'tcmalloc'
-      #('cxx', 'tcmalloc')
+      ('cxx', 'dumballoc'),
+      ('cxx', 'alloclog'),
   ]
 
   # See how much input we're feeding to the compiler.  Test C++ template
@@ -211,141 +151,24 @@ def NinjaGraph(ru):
     from pprint import pprint
     pprint(cc_sources)
 
-  for compiler, variant in COMPILERS_VARIANTS:
-    if variant in ('dbg', 'opt'):
-      preprocessed = []
-      for src in cc_sources:
-        # e.g. _build/obj/dbg/posix.o
-        rel_path, _ = os.path.splitext(src)
-        pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, rel_path)
-        preprocessed.append(pre)
+  pre_matrix = [
+      ('cxx', 'dbg'),
+      ('cxx', 'opt'),
+      ('clang', 'dbg'),
+      ('clang', 'opt'),
+  ]
+  for compiler, variant in pre_matrix:
+    preprocessed = []
+    for src in cc_sources:
+      # e.g. _build/preprocessed/cxx-dbg/mycpp/gc_heap.cc
+      rel_path, _ = os.path.splitext(src)
+      pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, rel_path)
+      preprocessed.append(pre)
 
-      n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
-              'line_count',
-              preprocessed)
-      n.newline()
+    # Summary file
+    n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
+            'line_count',
+            preprocessed)
+    n.newline()
 
   n.default(['_bin/cxx-dbg/osh_eval'])
-
-
-def TarballManifest(cc_sources):
-  names = []
-
-  # Text
-  names.extend([
-    'LICENSE.txt',
-    'README-native.txt',
-    ])
-
-  # Code we know about
-  names.extend(cc_sources)
-  names.extend(GENERATED_H + ASDL_H)
-
-  from glob import glob
-  names.extend(glob('mycpp/*.h'))
-
-  # TODO: crawl headers
-  names.extend(glob('cpp/*.h'))
-
-  # TODO: Put these in Ninja.
-  names.extend(glob('_gen/frontend/*.h'))
-  names.extend(glob('_gen/oil_lang/*.h'))
-
-  # ONLY the headers
-  names.extend(glob('prebuilt/*/*.h'))
-
-  # Build scripts
-  names.extend([
-    'build/common.sh',
-    'build/native.sh',
-    'build/ninja-rules-cpp.sh',
-    'mycpp/common.sh',
-
-    # Generated
-    '_build/oil-native.sh',
-    ])
-
-  for name in names:
-    print(name)
-
-
-def ShellFunctions(cc_sources, f, argv0):
-  """
-  Generate a shell script that invokes the same function that build.ninja does
-  """
-  print('''\
-#!/usr/bin/env bash
-#
-# _build/oil-native.sh - generated by %s
-#
-# Usage
-#   _build/oil-native COMPILER? VARIANT? SKIP_REBUILD?
-#
-#   COMPILER: 'cxx' for system compiler, or 'clang' [default cxx]
-#   VARIANT: 'dbg' or 'opt' [default dbg]
-#   SKIP_REBUILD: if non-empty, checks if the output exists before building
-#
-# Could run with /bin/sh, but use bash for now, bceause dash has bad errors messages!
-#!/bin/sh
-
-. build/ninja-rules-cpp.sh
-
-main() {
-  ### Compile oil-native into _bin/$compiler-$variant-sh/ (not with ninja)
-
-  local compiler=${1:-cxx}   # default is system compiler
-  local variant=${2:-opt}    # default is optimized build
-  local skip_rebuild=${3:-}  # if the output exists, skip build'
-
-''' % (argv0), file=f)
-
-  out = '_bin/$compiler-$variant-sh/osh_eval'
-  print('  local out=%s' % out, file=f)
-
-  print('''\
-  if test -n "$skip_rebuild" && test -f "$out"; then
-    echo
-    echo "$0: SKIPPING build because $out exists"
-    echo
-    return
-  fi
-
-  echo
-  echo "$0: Building oil-native: $out"
-  echo
-
-  mkdir -p "_build/obj/$compiler-$variant-sh" "_bin/$compiler-$variant-sh"
-''', file=f)
-
-  objects = []
-  for src in cc_sources:
-    # e.g. _build/obj/dbg/posix.o
-    base_name, _ = os.path.splitext(os.path.basename(src))
-
-    obj_quoted = '"_build/obj/$compiler-$variant-sh/%s.o"' % base_name
-    objects.append(obj_quoted)
-
-    print("  echo 'CXX %s'" % src, file=f)
-    print('  compile_one "$compiler" "$variant" "" \\', file=f)
-    print('    %s %s' % (src, obj_quoted), file=f)
-
-  print('', file=f)
-
-  print('  echo "LINK $out"', file=f)
-  # note: can't have spaces in filenames
-  print('  link "$compiler" "$variant" "$out" \\', file=f)
-  # put each object on its own line, and indent by 4
-  print('    %s' % (' \\\n    '.join(objects)), file=f)
-  print('', file=f)
-
-  # Strip opt binary
-  # TODO: provide a way for the user to get symbols?
-
-  print('''\
-  if test "$variant" = opt; then
-    strip -o "$out.stripped" "$out"
-  fi
-}
-
-main "$@"
-''', file=f)

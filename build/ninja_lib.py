@@ -1,6 +1,41 @@
 #!/usr/bin/env python2
 """
 ninja_lib.py
+
+Runtime options:
+
+  CXXFLAGS     Additional flags to pass to the C++ compiler
+
+Directory structure:
+
+_bin/   # output binaries
+  # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
+  cxx-opt/
+    osh_eval
+    osh_eval.stripped              # The end user binary
+    osh_eval.symbols
+
+  cxx-opt-sh/                      # with shell script
+
+_gen/
+  bin/ 
+    osh_eval.mycpp.{h,cc}
+
+_build/
+  obj/
+    # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
+    cxx-asan/
+      osh_eval.mycpp.o
+      osh_eval.mycpp.d     # dependency file
+      osh_eval.mycpp.json  # when -ftime-trace is passed
+    cxx-dbg/
+    cxx-opt/
+
+  preprocessed/
+    cxx-dbg/
+      cpp/
+        leaky_stdlib.cc
+    cxx-dbg.txt  # line counts
 """
 from __future__ import print_function
 
