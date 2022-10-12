@@ -67,6 +67,8 @@ run-one-test() {
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
+  build/py.sh fastmatch  # Could fold this into Ninja
+
   # Run Ninja-based tests
   run-one-test leaky_core_test '' ''
   run-one-test leaky_core_test '' asan
@@ -85,8 +87,7 @@ unit() {
 coverage() {
   ### Run coverage for this dir
 
-  # Could fold this into Ninja
-  build/py.sh fastmatch
+  build/py.sh fastmatch  # Could fold this into Ninja
 
   run-one-test leaky_core_test clang coverage
   run-one-test gc_binding_test clang coverage
