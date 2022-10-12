@@ -11,6 +11,7 @@ import sys
 from build.ninja_lib import log, COMPILERS_VARIANTS, COMPILERS_VARIANTS_LEAKY
 
 def DefineTargets(ru):
+
   ru.cc_library(
       '//mycpp/runtime', 
       srcs = [
@@ -27,67 +28,35 @@ def DefineTargets(ru):
 
   # Unit tests
 
-  ru.cc_binary(
+  for test_main in [
       'mycpp/marksweep_heap_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS)
-
-  ru.cc_binary(
       'mycpp/gc_heap_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS)
-
-  ru.cc_binary(
       'mycpp/gc_stress_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS)
-
-  ru.cc_binary(
       'mycpp/gc_builtins_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS)
-
-  ru.cc_binary(
-      'mycpp/gc_builtins_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS)
-
-  ru.cc_binary(
       'mycpp/gc_mylib_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS)
-
-  ru.cc_binary(
       'mycpp/smartptr_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS)
+  ]:
+    ru.cc_binary(
+        test_main,
+        deps = ['//mycpp/runtime'],
+        matrix = COMPILERS_VARIANTS,
+        phony_prefix = 'mycpp-unit')
 
-  # Leaky only.
-
-  ru.cc_binary(
-      # TODO: make it run under GC
+  for test_main in [
+      # TODO: make these 2 run under GC
       'mycpp/leaky_containers_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS_LEAKY)
-
-  ru.cc_binary(
-      # TODO: make it run under GC
       'mycpp/leaky_str_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS_LEAKY)
 
-  ru.cc_binary(
       'mycpp/demo/target_lang.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS_LEAKY)
-
-  ru.cc_binary(
       'mycpp/demo/hash_table.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = COMPILERS_VARIANTS_LEAKY)
 
-  # there is also demo/{gc_heap,square_heap}.cc
-
+      # there is also demo/{gc_heap,square_heap}.cc
+  ]:
+    ru.cc_binary(
+        test_main,
+        deps = ['//mycpp/runtime'],
+        matrix = COMPILERS_VARIANTS_LEAKY,
+        phony_prefix = 'mycpp-unit')
 
   # ASDL schema that examples/parse.py depends on
   ru.asdl_cc('mycpp/examples/expr.asdl')
@@ -99,7 +68,7 @@ def DefineTargets(ru):
 
 
 #
-# mycpp/examples
+# mycpp/examples build config
 #
 
 
@@ -129,7 +98,6 @@ def ShouldSkipBuild(name):
 
 
 def ExamplesToBuild():
-
   filenames = os.listdir('mycpp/examples') 
   py = [
       name[:-3] for name in filenames

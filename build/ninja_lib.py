@@ -67,19 +67,6 @@ def ObjPath(src_path, compiler, variant):
   return '_build/obj/%s-%s/%s.o' % (compiler, variant, rel_path)
 
 
-def NinjaVars(compiler, variant):
-  compile_vars = [
-      ('compiler', compiler),
-      ('variant', variant),
-      ('more_cxx_flags', "''")
-  ]
-  link_vars = [
-      ('compiler', compiler),
-      ('variant', variant),
-  ]
-  return compile_vars, link_vars
-
-
 class CcLibrary(object):
   """
   Life cycle:
@@ -180,6 +167,7 @@ class Rules(object):
     self.n.build([out_obj], 'compile_one', [in_cc], implicit=implicit, variables=v)
     self.n.newline()
 
+    # TODO: don't need to write all of these
     if variant in ('dbg', 'opt'):
       pre = '_build/preprocessed/%s-%s/%s' % (compiler, variant, in_cc)
       self.n.build(pre, 'preprocess', [in_cc], implicit=implicit, variables=v)
@@ -295,7 +283,7 @@ class Rules(object):
 
   def SourcesForBinary(self, main_cc):
     """
-    Used for getting sources of _gen/bin/osh_eval.mycpp.cc, etc.
+    Used for preprocessed metrics, release tarball, _build/oil-native.sh, etc.
     """
     deps = self.cc_binary_deps[main_cc]
     sources = [main_cc]
