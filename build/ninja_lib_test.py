@@ -40,7 +40,7 @@ class NinjaTest(unittest.TestCase):
     n = ninja_syntax.Writer(sys.stdout)
     ru = ninja_lib.Rules(n)
 
-    config = ('cxx', 'dbg')
+    config = ('cxx', 'dbg', None)
     ru.compile('foo.o', 'foo.cc', [], config)
 
     matrix = MATRIX
