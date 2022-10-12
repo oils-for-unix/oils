@@ -148,6 +148,35 @@ main "$@"
 ''', file=f)
 
 
+def Preprocessed(ru):
+  # See how much input we're feeding to the compiler.  Test C++ template
+  # explosion, e.g. <unordered_map>
+  #
+  # Limit to {dbg,opt} so we don't generate useless rules.  Invoked by
+  # metrics/source-code.sh
+  cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
+
+  pre_matrix = [
+      ('cxx', 'dbg'),
+      ('cxx', 'opt'),
+      ('clang', 'dbg'),
+      ('clang', 'opt'),
+  ]
+  for compiler, variant in pre_matrix:
+    preprocessed = []
+    for src in cc_sources:
+      # e.g. _build/preprocessed/cxx-dbg/mycpp/gc_heap.cc
+      rel_path, _ = os.path.splitext(src)
+      pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, rel_path)
+      preprocessed.append(pre)
+
+    # Summary file
+    ru.n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
+            'line_count',
+            preprocessed)
+    ru.n.newline()
+
+
 def main(argv):
   try:
     action = argv[1]
@@ -189,6 +218,8 @@ def main(argv):
 
   n.newline()
   n.newline()
+
+  Preprocessed(ru)
 
   ru.WritePhony()
 

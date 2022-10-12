@@ -11,7 +11,6 @@ import sys
 from build import ninja_lib
 from build.ninja_lib import log, ObjPath
 from mycpp import NINJA_subgraph as mycpp_subgraph
-from mycpp.NINJA_subgraph import GC_RUNTIME
 
 
 # CPP bindings and some generated code have implicit dependencies on these headers
@@ -44,7 +43,7 @@ def NinjaGraph(ru):
       '//cpp/leaky_core', 
       srcs = ['cpp/leaky_core.cc'],
       # No implicit deps on ASDL, but some files do
-      matrix = ninja_lib.COMPILERS_VARIANTS)
+  )
 
   ru.cc_binary(
       'cpp/leaky_core_test.cc',
@@ -68,7 +67,7 @@ def NinjaGraph(ru):
         'cpp/leaky_libc.cc',
       ],
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
-      matrix = ninja_lib.COMPILERS_VARIANTS)
+  )
 
   ru.cc_binary(
       'cpp/gc_binding_test.cc',
@@ -100,7 +99,7 @@ def NinjaGraph(ru):
         # '_gen/frontend/option.asdl.cc',
       ],
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
-      matrix = ninja_lib.COMPILERS_VARIANTS)
+  )
 
   ru.cc_library(
       # TODO: split these up?
@@ -111,7 +110,7 @@ def NinjaGraph(ru):
         '_gen/osh/arith_parse.cc',
       ],
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
-      matrix = ninja_lib.COMPILERS_VARIANTS)
+  )
 
   # Main program!
   ru.cc_binary(
@@ -139,36 +138,5 @@ def NinjaGraph(ru):
       ('cxx', 'dumballoc'),
       ('cxx', 'alloclog'),
   ]
-
-  # See how much input we're feeding to the compiler.  Test C++ template
-  # explosion, e.g. <unordered_map>
-  #
-  # Limit to {dbg,opt} so we don't generate useless rules.  Invoked by
-  # metrics/source-code.sh
-  cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
-
-  if 0:
-    from pprint import pprint
-    pprint(cc_sources)
-
-  pre_matrix = [
-      ('cxx', 'dbg'),
-      ('cxx', 'opt'),
-      ('clang', 'dbg'),
-      ('clang', 'opt'),
-  ]
-  for compiler, variant in pre_matrix:
-    preprocessed = []
-    for src in cc_sources:
-      # e.g. _build/preprocessed/cxx-dbg/mycpp/gc_heap.cc
-      rel_path, _ = os.path.splitext(src)
-      pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, rel_path)
-      preprocessed.append(pre)
-
-    # Summary file
-    n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
-            'line_count',
-            preprocessed)
-    n.newline()
 
   n.default(['_bin/cxx-dbg/osh_eval'])

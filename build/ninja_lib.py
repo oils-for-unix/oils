@@ -168,11 +168,8 @@ class Rules(object):
     #self.generated_headers = {}  # ASDL filename -> header name
     #self.asdl = {}  # label -> True if ru.compile(config) has been called?
 
-    self.cc_binary_deps = {}  # main_cc -> list of LABELS
     self.cc_libs = {}  # label -> CcLibrary object
-
-    self.cc_lib_objects = {}  # (target, compiler, variant) -> list of objects
-
+    self.cc_binary_deps = {}  # main_cc -> list of LABELS
     self.phony = {}  # list of phony targets
 
   def AddPhony(self, phony_to_add):
@@ -254,15 +251,12 @@ class Rules(object):
     #   - TODO: this part probably needs unit tests
     pass
 
-  # LAZY and does not take MATRIX?
-  # only cc_binary takes a matrix!
-  #  and then it "pulls" all Ninja rules forward
-  # 
-  # It should just create self.cc_lib_objects[label] = SomeObject
-
-  def cc_library(self, label, srcs, implicit=None, deps=None, matrix=[]):
+  def cc_library(self, label, srcs, implicit=None, deps=None):
     implicit = implicit or []
     deps = deps or []
+
+    if label in self.cc_libs:
+      raise RuntimeError('%s was already defined' % label)
 
     self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps)
 

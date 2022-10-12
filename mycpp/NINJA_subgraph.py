@@ -109,17 +109,6 @@ from build.ninja_lib import (
 )
 
 
-GC_RUNTIME = [
-    'mycpp/gc_mylib.cc',
-    'mycpp/cheney_heap.cc',
-    'mycpp/marksweep_heap.cc',
-
-    # files we haven't added StackRoots to
-    'mycpp/leaky_containers.cc',
-    'mycpp/leaky_builtins.cc',
-    'mycpp/leaky_mylib.cc',
-]
-
 # TODO:
 # - Fold this dependency into a proper shwrap wrapper
 # - Make a n.build() wrapper that takes it into account automatically
@@ -398,8 +387,18 @@ def NinjaGraph(ru):
   # Rules
   #
 
-  ru.cc_library('//mycpp/runtime', GC_RUNTIME,
-                matrix=COMPILERS_VARIANTS)
+  ru.cc_library(
+      '//mycpp/runtime', 
+      [ 'mycpp/gc_mylib.cc',
+        'mycpp/cheney_heap.cc',
+        'mycpp/marksweep_heap.cc',
+
+        # files we haven't added StackRoots to
+        'mycpp/leaky_containers.cc',
+        'mycpp/leaky_builtins.cc',
+        'mycpp/leaky_mylib.cc',
+      ]
+  )
 
   # ASDL schema that examples/parse.py depends on
   ru.asdl_cc('mycpp/examples/expr.asdl')
@@ -407,8 +406,7 @@ def NinjaGraph(ru):
   # TODO: This rule should be dynamically created
   ru.cc_library(
       '//mycpp/examples/expr.asdl.o',
-      ['_gen/mycpp/examples/expr.asdl.cc'],
-      matrix=COMPILERS_VARIANTS)
+      ['_gen/mycpp/examples/expr.asdl.cc'])
 
   # Build and run unit tests
   for main_cc in sorted(UNIT_TESTS):

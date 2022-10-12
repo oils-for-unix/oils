@@ -18,9 +18,7 @@ def NinjaGraph(ru):
 
   # These files are checked in
   ru.cc_library(
-      '//prebuilt/asdl/runtime', ['prebuilt/asdl/runtime.mycpp.cc'],
-      matrix=ninja_lib.COMPILERS_VARIANTS)
+      '//prebuilt/asdl/runtime', ['prebuilt/asdl/runtime.mycpp.cc'])
 
   ru.cc_library(
-      '//prebuilt/frontend/args', ['prebuilt/frontend/args.mycpp.cc'],
-      matrix=ninja_lib.COMPILERS_VARIANTS)
+      '//prebuilt/frontend/args', ['prebuilt/frontend/args.mycpp.cc'])
