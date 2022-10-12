@@ -21,13 +21,24 @@ class NinjaTest(unittest.TestCase):
 
   def testSourcesForBinary(self):
     n = ninja_syntax.Writer(sys.stdout)
+    n = ninja_syntax.FakeWriter(n)
+
     ru = ninja_lib.Rules(n)
 
     ru.cc_library('//mycpp/y', ['mycpp/y.cc', 'mycpp/y2.cc'])
     ru.cc_library('//mycpp/z', ['mycpp/z.cc'])
 
+    # cc_library() is lazy
+    self.assertEqual(0, len(n.build_calls))
+
     ru.cc_binary(
         'mycpp/a_test.cc', deps=['//mycpp/y', '//mycpp/z'], matrix=MATRIX)
+    self.assertEqual(19, len(n.build_calls))
+
+    first = n.build_calls[0]
+    self.assertEqual(['_build/obj/cxx-dbg/mycpp/a_test.o'], first.outputs)
+    self.assertEqual('compile_one', first.rule)
+    self.assertEqual(['mycpp/a_test.cc'], first.inputs)
 
     srcs = ru.SourcesForBinary('mycpp/a_test.cc')
     self.assertEqual(
