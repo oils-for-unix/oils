@@ -42,9 +42,9 @@ int GetNumber(Str* sig_spec) {
     f.write("""\
   if ((length == %d && memcmp("%s", data, %d) == 0) ||
       (length == %d && memcmp("%s", data, %d) == 0)) {
-    return true;
+    return %s;
   }
-""" % (len(name), name, len(name), len(abbrev), abbrev, len(abbrev)))
+""" % (len(name), name, len(name), len(abbrev), abbrev, len(abbrev), name))
   f.write("""\
   return NO_SIGNAL;
 }
