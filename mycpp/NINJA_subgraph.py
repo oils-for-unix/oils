@@ -217,11 +217,6 @@ UNIT_TESTS = {
     # there is also demo/{gc_heap,square_heap}.cc
 }
 
-# More dependencies
-UNIT_TEST_DEPS = {
-    'cpp/leaky_core_test.cc': ['//cpp/leaky_core'],
-}
-
 TRANSLATE_FILES = {
     # TODO: We could also use app_deps.py here
     # BUG: modules.py must be listed last.  Order matters with inheritance
@@ -240,8 +235,8 @@ EXAMPLES_PY = {
 }
 
 # Linking _bin/cxx-dbg/mycpp-examples/parse depends on expr.asdl.o
-EXAMPLES_CC = {
-    'parse': ['_gen/mycpp/examples/expr.asdl.cc'],
+EXAMPLES_DEPS = {
+    'parse': ['//mycpp/examples/expr.asdl.o'],
 }
 
 # We need IMPLICIT header dependencies too.
@@ -253,7 +248,9 @@ EXAMPLES_H = {
              ],
 }
 
-def TranslatorSubgraph(n, translator, ex, phony):
+def TranslatorSubgraph(ru, translator, ex):
+  n = ru.n
+
   raw = '_gen/mycpp/examples/%s_raw.%s.cc' % (ex, translator)
 
   # Translate to C++
@@ -287,7 +284,7 @@ def TranslatorSubgraph(n, translator, ex, phony):
   n.newline()
 
   if translator == 'pea':
-    phony['pea-translate'].append(main_cc_src)
+    ru.phony['pea-translate'].append(main_cc_src)
 
   if translator == 'mycpp':
     example_matrix = COMPILERS_VARIANTS
@@ -297,41 +294,21 @@ def TranslatorSubgraph(n, translator, ex, phony):
         ('cxx', 'gcevery')
     ]
 
-  # Compile C++.
-  for compiler, variant in example_matrix:
-    compile_vars, link_vars = NinjaVars(compiler, variant)
+  if translator == 'mycpp':
+    phony_prefix = 'mycpp-examples'
+  else:
+    phony_prefix = ''
 
-    main_obj = ObjPath(main_cc_src, compiler, variant)
+  ru.cc_binary(
+      main_cc_src,
+      implicit = EXAMPLES_H.get(ex, []),
+      deps = ['//mycpp/runtime'] + EXAMPLES_DEPS.get(ex, []),
+      matrix = example_matrix,
+      phony_prefix = phony_prefix,
+  )
 
-    n.build(main_obj, 'compile_one', [main_cc_src],
-            implicit=EXAMPLES_H.get(ex, []),
-            variables=compile_vars)
-    n.newline()
-
-    b = '_bin/%s-%s/mycpp/examples/%s.%s' % (compiler, variant, ex, translator)
-
-    src_deps = GC_RUNTIME + EXAMPLES_CC.get(ex, [])
-    obj_deps = [ObjPath(src, compiler, variant) for src in src_deps]
-
-    n.build(b, 'link', [main_obj] + obj_deps, variables=link_vars)
-    n.newline()
-
-    if translator == 'pea':
-      phony['pea-compile'].append(b)
-
-    if translator == 'mycpp':
-      key = 'mycpp-examples-%s-%s' % (compiler, variant)
-      if key not in phony:
-        phony[key] = []
-      phony[key].append(b)
-
-    if variant == 'opt':
-      stripped = '_bin/%s-%s/mycpp/examples/%s.%s.stripped' % (compiler, variant, ex, translator)
-      # no symbols
-      n.build([stripped, ''], 'strip', [b],
-              variables=[('variant', variant)])
-      n.newline()
-      phony['mycpp-strip'].append(stripped)
+  # TODO:
+  # - restore lost 'pea-compile' tag?
 
 
 def NinjaGraph(ru):
@@ -415,6 +392,7 @@ def NinjaGraph(ru):
       'pea-compile': [],
       # TODO: eventually we will have pea-logs-equal, and pea-benchmark-table
   }
+  ru.AddPhony(phony)
 
   #
   # Rules
@@ -423,11 +401,10 @@ def NinjaGraph(ru):
   ru.cc_library('//mycpp/runtime', GC_RUNTIME,
                 matrix=COMPILERS_VARIANTS)
 
-  # TODO: This rule should be dynamically created
-
   # ASDL schema that examples/parse.py depends on
   ru.asdl_cc('mycpp/examples/expr.asdl')
 
+  # TODO: This rule should be dynamically created
   ru.cc_library(
       '//mycpp/examples/expr.asdl.o',
       ['_gen/mycpp/examples/expr.asdl.cc'],
@@ -444,8 +421,12 @@ def NinjaGraph(ru):
     else:
       raise AssertionError()
 
-    deps = ['//mycpp/runtime'] + UNIT_TEST_DEPS.get(main_cc, [])
-    ru.cc_binary(main_cc, deps=deps, matrix=matrix, phony=phony)
+    ru.cc_binary(
+        main_cc,
+        deps = ['//mycpp/runtime'],
+        matrix = matrix,
+        phony_prefix = 'mycpp-unit',
+    )
 
   #
   # osh_eval.  Could go in bin/NINJA_subgraph.py
@@ -486,7 +467,7 @@ def NinjaGraph(ru):
             EXAMPLES_PY.get(ex, []) + [main_py],
             variables=[('main_py', main_py), ('skip_imports', skip_imports)])
     n.newline()
-    phony['mycpp-typecheck'].append(t)
+    ru.phony['mycpp-typecheck'].append(t)
 
     # Run Python.
     for mode in ['test', 'benchmark']:
@@ -514,7 +495,7 @@ def NinjaGraph(ru):
       n.newline()
 
     for translator in ['mycpp', 'pea']:
-      TranslatorSubgraph(n, translator, ex, phony)
+      TranslatorSubgraph(ru, translator, ex)
 
       # Don't run it for now; just compile
       if translator == 'pea':
@@ -561,27 +542,10 @@ def NinjaGraph(ru):
   n.newline()
 
   # NOTE: Don't really need this
-  phony['mycpp-logs-equal'].append(out)
+  ru.phony['mycpp-logs-equal'].append(out)
 
   # Timing of benchmarks
   out = '_test/benchmark-table.tsv'
   n.build([out], 'benchmark-table', benchmark_tasks)
   n.newline()
-
-  #
-  # Write phony rules we accumulated
-  #
-
-  pea_all = []
-  for name in sorted(phony):
-    deps = phony[name]
-    if deps:
-      n.build([name], 'phony', deps)
-      n.newline()
-
-      if name.startswith('pea-'):
-        pea_all.append(name)
-
-  # All groups
-  n.build(['pea-all'], 'phony', pea_all)
 

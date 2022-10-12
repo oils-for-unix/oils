@@ -190,6 +190,8 @@ def main(argv):
   n.newline()
   n.newline()
 
+  ru.WritePhony()
+
   # Now collect sources for tarball and shell script
   cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
 

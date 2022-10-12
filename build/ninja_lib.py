@@ -94,6 +94,41 @@ def NinjaVars(compiler, variant):
   return compile_vars, link_vars
 
 
+class CcLibrary(object):
+  """
+  Life cycle:
+  
+  1. A cc_library is first created
+  2. A cc_binary can depend on it
+     - maybe writing rules, and ensuring uniques per configuration
+  3. The link step needs the list of objects
+  4. The tarball needs the list of sources for binary
+  """
+
+  def __init__(self, label, srcs, implicit, deps):
+    self.label = label
+    self.srcs = srcs  # queried by SourcesForBinary
+    self.implicit = implicit
+    self.deps = deps
+
+    self.obj_lookup = {}  # config -> list of objects
+
+  def MaybeWrite(self, ru, config):
+    if config in self.obj_lookup:  # already written by some other cc_binary()
+      return
+
+    compiler, variant = config
+
+    objects = []
+    for src in self.srcs:
+      obj = ObjPath(src, compiler, variant)
+      objects.append(obj)
+
+      ru.compile(obj, src, self.deps, config, implicit=self.implicit)
+
+    self.obj_lookup[config] = objects
+
+
 class Rules(object):
   """High-level wrapper for NinjaWriter
 
@@ -133,11 +168,22 @@ class Rules(object):
     #self.generated_headers = {}  # ASDL filename -> header name
     #self.asdl = {}  # label -> True if ru.compile(config) has been called?
 
-    self.cc_binary_deps = {}  # main_cc -> list of sources
-    self.cc_lib_srcs = {}  # target -> list of sources
+    self.cc_binary_deps = {}  # main_cc -> list of LABELS
+    self.cc_libs = {}  # label -> CcLibrary object
+
     self.cc_lib_objects = {}  # (target, compiler, variant) -> list of objects
 
     self.phony = {}  # list of phony targets
+
+  def AddPhony(self, phony_to_add):
+    self.phony.update(phony_to_add)
+
+  def WritePhony(self):
+    for name in sorted(self.phony):
+      targets = self.phony[name]
+      if targets:
+        self.n.build([name], 'phony', targets)
+        self.n.newline()
 
   def compile(self, out_obj, in_cc, deps, config, implicit=None):
     # deps: //mycpp/examples/expr.asdl -> then look up the headers it exports?
@@ -170,10 +216,11 @@ class Rules(object):
 
       key = (label, compiler, variant)
       try:
-        o = self.cc_lib_objects[key]
+        cc_lib = self.cc_libs[label]
       except KeyError:
-        raise RuntimeError("Couldn't resolve label %r (dict key is %r)" % (label, key))
+        raise RuntimeError("Couldn't resolve label %r" % label)
 
+      o = cc_lib.obj_lookup[config]
       objects.extend(o)
 
     v = [('compiler', compiler), ('variant', variant)]
@@ -217,29 +264,13 @@ class Rules(object):
     implicit = implicit or []
     deps = deps or []
 
-    self.cc_lib_srcs[label] = srcs
-
-    for config in matrix:
-      compiler, variant = config
-
-      objects = []
-      for src in srcs:
-        obj = ObjPath(src, compiler, variant)
-        objects.append(obj)
-
-        self.compile(obj, src, deps, config, implicit=implicit)
-
-      self.cc_lib_objects[(label, compiler, variant)] = objects
-    if 0:
-      from pprint import pprint
-      pprint(self.cc_lib_objects)
+    self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps)
 
   def cc_binary(self, main_cc,
       top_level=False,
       implicit=None,  # for COMPILE action, not link action
       deps=None, matrix=None,  # $compiler $variant
-      # TODO: add tags?  if tags = 'mycpp-unit' then add to phony?
-      phony={},
+      phony_prefix=None,
       ):
     implicit = implicit or []
     deps = deps or []
@@ -254,6 +285,10 @@ class Rules(object):
       main_obj = ObjPath(main_cc, compiler, variant)
       self.compile(main_obj, main_cc, deps, config, implicit=implicit)
 
+      for label in deps:
+        cc_lib = self.cc_libs[label]
+        cc_lib.MaybeWrite(self, config)
+
       if top_level:
         # e.g. _bin/cxx-dbg/osh_eval
         basename = os.path.basename(main_cc)
@@ -262,15 +297,21 @@ class Rules(object):
       else:
         # e.g. _gen/mycpp/examples/classes.mycpp
         rel_path, _ = os.path.splitext(main_cc)
+
+        # Put binary in _bin/cxx-dbg/mycpp/examples, not _bin/cxx-dbg/_gen/mycpp/examples
+        if rel_path.startswith('_gen/'):
+          rel_path = rel_path[len('_gen/'):]
+
         bin_= '_bin/%s-%s/%s' % (compiler, variant, rel_path)
 
       # Link with OBJECT deps
       self.link(bin_, main_obj, deps, config)
 
-      key = 'mycpp-unit-%s-%s' % (compiler, variant)
-      if key not in phony:
-        phony[key] = []
-      phony[key].append(bin_)
+      if phony_prefix:
+        key = '%s-%s-%s' % (phony_prefix, compiler, variant)
+        if key not in self.phony:
+          self.phony[key] = []
+        self.phony[key].append(bin_)
 
   def SourcesForBinary(self, main_cc):
     """
@@ -278,8 +319,8 @@ class Rules(object):
     """
     deps = self.cc_binary_deps[main_cc]
     sources = [main_cc]
-    for dep in deps:
-      sources.extend(self.cc_lib_srcs[dep])
+    for label in deps:
+      sources.extend(self.cc_libs[label].srcs)
     return sources
 
   def asdl_cc(self, asdl_path, pretty_print_methods=True):

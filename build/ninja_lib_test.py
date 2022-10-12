@@ -7,6 +7,7 @@ from __future__ import print_function
 import sys
 import unittest
 
+from build.ninja_lib import log
 from build import ninja_lib  # module under test
 from vendor import ninja_syntax
 
@@ -32,6 +33,8 @@ class NinjaTest(unittest.TestCase):
     self.assertEqual(
         ['mycpp/a_test.cc', 'mycpp/y.cc', 'mycpp/y2.cc', 'mycpp/z.cc'],
         srcs)
+
+    log('generated %d targets', n.num_build_targets())
 
   def testBuild(self):
     n = ninja_syntax.Writer(sys.stdout)
