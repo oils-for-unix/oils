@@ -20,6 +20,7 @@ lexer-gen() { py-tool frontend.lexer_gen; }
 option-gen() { py-tool frontend.option_gen; }
 grammar-gen() { py-tool oil_lang.grammar_gen; }
 arith-parse-gen() { py-tool osh.arith_parse_gen; }
+signal-gen() { py-tool frontend.signal_gen; }
 
 osh-eval() {
   ### bin/osh_eval is oil-native
@@ -62,6 +63,7 @@ main() {
   option-gen
   grammar-gen
   arith-parse-gen
+  signal-gen
 
   # Explicit dependencies for translating and type checking
   # Baked into mycpp/NINJA.

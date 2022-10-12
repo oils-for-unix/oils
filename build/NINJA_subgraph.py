@@ -137,6 +137,7 @@ def NinjaGraph(ru):
   shwrap_py(n, 'frontend/flag_gen.py')
   shwrap_py(n, 'frontend/lexer_gen.py')
   shwrap_py(n, 'frontend/option_gen.py')
+  shwrap_py(n, 'frontend/signal_gen.py')
   shwrap_py(n, 'oil_lang/grammar_gen.py')
   shwrap_py(n, 'osh/arith_parse_gen.py')
 
@@ -192,6 +193,10 @@ def NinjaGraph(ru):
           ])
   n.newline()
 
+  n.rule('signal-gen',
+         command='_bin/shwrap/signal_gen $action $out_prefix',
+         description='signal_gen $action $out_prefix')
+
   # Similar to above
   prefix = '_gen/frontend/consts'
   n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
@@ -228,3 +233,13 @@ def NinjaGraph(ru):
   n.build(['_gen/osh/arith_parse.cc'], 'arith-parse-gen', [],
           implicit=['_bin/shwrap/arith_parse_gen'])
   n.newline()
+
+  prefix = '_gen/frontend/signal'
+  n.build([prefix + '.h', prefix + '.cc'], 'signal-gen', [],
+          implicit=['_bin/shwrap/signal_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp'),
+          ])
+  n.newline()
+

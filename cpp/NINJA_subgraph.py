@@ -30,6 +30,7 @@ GENERATED_H = [
 
     '_gen/frontend/consts.h',
     '_gen/core/optview.h',  # header only
+    '_gen/frontend/signal.h',
 ]
 
 def NinjaGraph(ru):
@@ -106,6 +107,7 @@ def NinjaGraph(ru):
       srcs = [
         '_gen/frontend/arg_types.cc',
         '_gen/frontend/consts.cc',
+        '_gen/frontend/signal.cc',
         '_gen/osh/arith_parse.cc',
       ],
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?

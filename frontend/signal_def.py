@@ -39,7 +39,8 @@ _BY_NUMBER = _SIGNAL_NAMES.items()
 _BY_NUMBER.sort(key=lambda x: x[1])
 
 
-def AllNames():
-  # type: () -> List[Tuple[str, int]]
-  return _BY_NUMBER
+def PrintSignals():
+  # type: () -> None
+  for name, int_val in _BY_NUMBER:
+    print('%2d SIG%s' % (int_val, name))
 
