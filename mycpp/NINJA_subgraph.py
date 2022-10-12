@@ -1,101 +1,6 @@
 #!/usr/bin/env python2
 """
 mycpp/NINJA_subgraph.py
-
-Code Layout:
-
-  mycpp/
-    NINJA_subgraph.py  # This file describes dependencies programmatically
-    TEST.sh            # test driver for unit tests and examples
-
-    examples/
-      cgi.py
-      varargs.py
-      varargs_preamble.h
-
-Output Layout:
-
-  _gen/
-    mycpp/
-      examples/
-        cgi.mycpp.cc
-        cgi_raw.mycpp.cc
-        cgi.pea.cc
-        cgi_raw.pea.cc
-        expr.asdl.{h,cc}
-
-  _build/
-    obj/
-      cxx-dbg/
-        mycpp/
-          gc_heap_test.o  # not translated
-          gc_builtins.o   
-        _gen/
-          mycpp/
-            examples/
-              cgi.mycpp.o
-              cgi.mycpp.o.d
-              cgi.pea.o
-              cgi.pea.o.d
-              expr.asdl.o
-              expr.asdl.o.d
-      cxx-gcevery/
-      cxx-opt/
-      clang-coverage/
-
-  _bin/
-    cxx-dbg/
-      mycpp/
-        gc_heap_test
-        examples/
-          cgi.mycpp
-          classes.mycpp
-          cgi.pea
-          classes.pea
-    cxx-opt/
-      mycpp/
-        examples/
-          cgi.mycpp.stripped
-    cxx-gcevery/
-      mycpp/
-        gc_heap_test
-    clang-coverage/
-
-
-  _test/
-    tasks/        # *.txt and *.task.txt for .wwz
-      typecheck/  # optionally run
-      test/       # py, gcevery, asan, opt
-      benchmark/
-
-      # optionally logged?
-      translate/
-      compile/
-
-  Phony Targets
-    typecheck, strip, benchmark-table, etc. (See phony dict below)
-
-Also:
-
-- .wwz archive of all the logs.
-- Turn it into HTML and link to logs.  Basically just like Soil does.
-
-Notes for Oil: 
-
-- escape_path() in ninja_syntax seems wrong?
-  - It should really take $ to $$.
-  - It doesn't escape newlines
-
-    return word.replace('$ ', '$$ ').replace(' ', '$ ').replace(':', '$:')
-
-  Ninja shouldn't have used $ and ALSO used shell commands (sh -c)!  Better
-  solutions:
-
-  - Spawn a process with environment variables.
-  - use % for substitution instead
-
-- Another problem: Ninja doesn't escape the # comment character like $#, so
-  how can you write a string with a # as the first char on a line?
 """
 
 from __future__ import print_function
@@ -103,10 +8,99 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import (
-    log, NinjaVars, ObjPath, COMPILERS_VARIANTS,
-    COMPILERS_VARIANTS_LEAKY,
-)
+from build.ninja_lib import log, COMPILERS_VARIANTS, COMPILERS_VARIANTS_LEAKY
+
+def DefineTargets(ru):
+  ru.cc_library(
+      '//mycpp/runtime', 
+      srcs = [
+        'mycpp/gc_mylib.cc',
+        'mycpp/cheney_heap.cc',
+        'mycpp/marksweep_heap.cc',
+
+        # files we haven't added StackRoots to
+        'mycpp/leaky_containers.cc',
+        'mycpp/leaky_builtins.cc',
+        'mycpp/leaky_mylib.cc',
+      ]
+  )
+
+  # Unit tests
+
+  ru.cc_binary(
+      'mycpp/marksweep_heap_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS)
+
+  ru.cc_binary(
+      'mycpp/gc_heap_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS)
+
+  ru.cc_binary(
+      'mycpp/gc_stress_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS)
+
+  ru.cc_binary(
+      'mycpp/gc_builtins_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS)
+
+  ru.cc_binary(
+      'mycpp/gc_builtins_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS)
+
+  ru.cc_binary(
+      'mycpp/gc_mylib_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS)
+
+  ru.cc_binary(
+      'mycpp/smartptr_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS)
+
+  # Leaky only.
+
+  ru.cc_binary(
+      # TODO: make it run under GC
+      'mycpp/leaky_containers_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS_LEAKY)
+
+  ru.cc_binary(
+      # TODO: make it run under GC
+      'mycpp/leaky_str_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS_LEAKY)
+
+  ru.cc_binary(
+      'mycpp/demo/target_lang.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS_LEAKY)
+
+  ru.cc_binary(
+      'mycpp/demo/hash_table.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = COMPILERS_VARIANTS_LEAKY)
+
+  # there is also demo/{gc_heap,square_heap}.cc
+
+
+  # ASDL schema that examples/parse.py depends on
+  ru.asdl_cc('mycpp/examples/expr.asdl')
+
+  # TODO: This rule should be dynamically created
+  ru.cc_library(
+      '//mycpp/examples/expr.asdl.o',
+      ['_gen/mycpp/examples/expr.asdl.cc'])
+
+
+#
+# mycpp/examples
+#
 
 
 # TODO:
@@ -183,28 +177,6 @@ def ShouldSkipBenchmark(name):
 
   return False
 
-
-VARIANTS_GC = 1            # Run with garbage collector on, cxx-gcevery
-VARIANTS_LEAKY = 2
-
-# Unit tests that run with garbage collector on.
-UNIT_TESTS = {
-    'mycpp/marksweep_heap_test.cc': VARIANTS_GC,
-    'mycpp/gc_heap_test.cc': VARIANTS_GC,
-    'mycpp/gc_stress_test.cc': VARIANTS_GC,
-    'mycpp/gc_builtins_test.cc': VARIANTS_GC,
-    'mycpp/gc_mylib_test.cc': VARIANTS_GC,
-    'mycpp/smartptr_test.cc': VARIANTS_GC,
-
-    # TODO: Make these VARIANTS_GC?
-    # Is it painful to add rooting?
-    'mycpp/leaky_containers_test.cc': VARIANTS_LEAKY,
-    'mycpp/leaky_str_test.cc': VARIANTS_LEAKY,
-
-    'mycpp/demo/target_lang.cc': VARIANTS_LEAKY,
-    'mycpp/demo/hash_table.cc': VARIANTS_LEAKY,
-    # there is also demo/{gc_heap,square_heap}.cc
-}
 
 TRANSLATE_FILES = {
     # TODO: We could also use app_deps.py here
@@ -361,7 +333,7 @@ def NinjaGraph(ru):
   #examples = ['cgi', 'containers', 'fib_iter']
 
   # Groups of targets.  Not all of these are run by default.
-  phony = {
+  ph = {
       'mycpp-typecheck': [],  # optional: for debugging only.  translation does it.
       'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
 
@@ -381,50 +353,9 @@ def NinjaGraph(ru):
       'pea-compile': [],
       # TODO: eventually we will have pea-logs-equal, and pea-benchmark-table
   }
-  ru.AddPhony(phony)
+  ru.AddPhony(ph)
 
-  #
-  # Rules
-  #
-
-  ru.cc_library(
-      '//mycpp/runtime', 
-      [ 'mycpp/gc_mylib.cc',
-        'mycpp/cheney_heap.cc',
-        'mycpp/marksweep_heap.cc',
-
-        # files we haven't added StackRoots to
-        'mycpp/leaky_containers.cc',
-        'mycpp/leaky_builtins.cc',
-        'mycpp/leaky_mylib.cc',
-      ]
-  )
-
-  # ASDL schema that examples/parse.py depends on
-  ru.asdl_cc('mycpp/examples/expr.asdl')
-
-  # TODO: This rule should be dynamically created
-  ru.cc_library(
-      '//mycpp/examples/expr.asdl.o',
-      ['_gen/mycpp/examples/expr.asdl.cc'])
-
-  # Build and run unit tests
-  for main_cc in sorted(UNIT_TESTS):
-    which_variants = UNIT_TESTS[main_cc]
-
-    if which_variants == VARIANTS_GC:
-      matrix = COMPILERS_VARIANTS
-    elif which_variants == VARIANTS_LEAKY:
-      matrix = COMPILERS_VARIANTS_LEAKY
-    else:
-      raise AssertionError()
-
-    ru.cc_binary(
-        main_cc,
-        deps = ['//mycpp/runtime'],
-        matrix = matrix,
-        phony_prefix = 'mycpp-unit',
-    )
+  DefineTargets(ru)
 
   #
   # osh_eval.  Could go in bin/NINJA_subgraph.py

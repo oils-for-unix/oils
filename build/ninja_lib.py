@@ -6,36 +6,22 @@ Runtime options:
 
   CXXFLAGS     Additional flags to pass to the C++ compiler
 
-Directory structure:
+Notes on ninja_syntax.py:
 
-_bin/   # output binaries
-  # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
-  cxx-opt/
-    osh_eval
-    osh_eval.stripped              # The end user binary
-    osh_eval.symbols
+- escape_path() seems wrong?
+  - It should really take $ to $$.
+  - It doesn't escape newlines
 
-  cxx-opt-sh/                      # with shell script
+    return word.replace('$ ', '$$ ').replace(' ', '$ ').replace(':', '$:')
 
-_gen/
-  bin/ 
-    osh_eval.mycpp.{h,cc}
+  Ninja shouldn't have used $ and ALSO used shell commands (sh -c)!  Better
+  solutions:
 
-_build/
-  obj/
-    # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
-    cxx-asan/
-      osh_eval.mycpp.o
-      osh_eval.mycpp.d     # dependency file
-      osh_eval.mycpp.json  # when -ftime-trace is passed
-    cxx-dbg/
-    cxx-opt/
+  - Spawn a process with environment variables.
+  - use % for substitution instead
 
-  preprocessed/
-    cxx-dbg/
-      cpp/
-        leaky_stdlib.cc
-    cxx-dbg.txt  # line counts
+- Another problem: Ninja doesn't escape the # comment character like $#, so
+  how can you write a string with a # as the first char on a line?
 """
 from __future__ import print_function
 

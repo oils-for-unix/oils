@@ -23,8 +23,8 @@ class NinjaTest(unittest.TestCase):
     n = ninja_syntax.Writer(sys.stdout)
     ru = ninja_lib.Rules(n)
 
-    ru.cc_library('//mycpp/y', ['mycpp/y.cc', 'mycpp/y2.cc'], matrix=MATRIX)
-    ru.cc_library('//mycpp/z', ['mycpp/z.cc'], matrix=MATRIX)
+    ru.cc_library('//mycpp/y', ['mycpp/y.cc', 'mycpp/y2.cc'])
+    ru.cc_library('//mycpp/z', ['mycpp/z.cc'])
 
     ru.cc_binary(
         'mycpp/a_test.cc', deps=['//mycpp/y', '//mycpp/z'], matrix=MATRIX)
@@ -44,9 +44,8 @@ class NinjaTest(unittest.TestCase):
     ru.compile('foo.o', 'foo.cc', [], config)
 
     matrix = MATRIX
-    # TODO: eliminate matrix arg
-    ru.cc_library('//mycpp/ab', ['mycpp/a.cc', 'mycpp/b.cc'], matrix=matrix)
-    ru.cc_library('//mycpp/z', ['mycpp/z.cc'], matrix=matrix)
+    ru.cc_library('//mycpp/ab', ['mycpp/a.cc', 'mycpp/b.cc'])
+    ru.cc_library('//mycpp/z', ['mycpp/z.cc'])
 
     ru.cc_binary('mycpp/a_test.cc', matrix=matrix)
 

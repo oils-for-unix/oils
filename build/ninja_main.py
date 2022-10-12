@@ -1,6 +1,95 @@
 #!/usr/bin/env python2
 """
-build/NINJA_main.py - invoked by ./NINJA-config.sh
+build/ninja_main.py - invoked by ./NINJA-config.sh
+
+Code Layout:
+
+  cpp/
+    NINJA_subgraph.py
+  mycpp/
+    NINJA_subgraph.py  # This file describes dependencies programmatically
+    TEST.sh            # test driver for unit tests and examples
+
+    examples/
+      cgi.py
+      varargs.py
+      varargs_preamble.h
+
+Output Layout:
+
+  _gen/
+    bin/ 
+      osh_eval.mycpp.{h,cc}
+    mycpp/
+      examples/
+        cgi.mycpp.cc
+        cgi_raw.mycpp.cc
+        cgi.pea.cc
+        cgi_raw.pea.cc
+        expr.asdl.{h,cc}
+
+  _build/
+    obj/
+      # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
+      cxx-dbg/
+        bin/
+          osh_eval.mycpp.o
+          osh_eval.mycpp.d     # dependency file
+          osh_eval.mycpp.json  # when -ftime-trace is passed
+        mycpp/
+          gc_heap_test.o  # not translated
+          gc_builtins.o   
+        _gen/
+          mycpp/
+            examples/
+              cgi.mycpp.o
+              cgi.mycpp.o.d
+              cgi.pea.o
+              cgi.pea.o.d
+              expr.asdl.o
+              expr.asdl.o.d
+      cxx-gcevery/
+      cxx-opt/
+      clang-coverage/
+
+    preprocessed/
+      cxx-dbg/
+        cpp/
+          leaky_stdlib.cc
+      cxx-dbg.txt  # line counts
+
+
+  _bin/
+    # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
+    cxx-opt/
+      osh_eval
+      osh_eval.stripped              # The end user binary, with top_level = True
+      osh_eval.symbols
+
+      mycpp/
+        examples/
+          cgi.mycpp
+          cgi.mycpp.stripped
+          cgi.pea
+          cgi.pea.stripped
+        gc_heap_test
+
+    cxx-opt-sh/                      # with shell script
+      cxx-gcevery/
+        mycpp/
+          gc_heap_test
+
+    clang-coverage/
+
+  _test/
+    tasks/        # *.txt and *.task.txt for .wwz
+      typecheck/  # optionally run
+      test/       # py, gcevery, asan, opt
+      benchmark/
+
+      # optionally logged?
+      translate/
+      compile/
 """
 from __future__ import print_function
 
@@ -148,13 +237,12 @@ main "$@"
 ''', file=f)
 
 
-def Preprocessed(ru):
+def Preprocessed(n, cc_sources):
   # See how much input we're feeding to the compiler.  Test C++ template
   # explosion, e.g. <unordered_map>
   #
   # Limit to {dbg,opt} so we don't generate useless rules.  Invoked by
   # metrics/source-code.sh
-  cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
 
   pre_matrix = [
       ('cxx', 'dbg'),
@@ -171,10 +259,10 @@ def Preprocessed(ru):
       preprocessed.append(pre)
 
     # Summary file
-    ru.n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
+    n.build('_build/preprocessed/%s-%s.txt' % (compiler, variant),
             'line_count',
             preprocessed)
-    ru.n.newline()
+    n.newline()
 
 
 def main(argv):
@@ -219,12 +307,16 @@ def main(argv):
   n.newline()
   n.newline()
 
-  Preprocessed(ru)
+  # Collect sources for metrics, tarball, shell script
+  cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
+
+  # TODO: could thin these out, not generate for unit tests, etc.
+  Preprocessed(n, cc_sources)
 
   ru.WritePhony()
 
-  # Now collect sources for tarball and shell script
-  cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
+  n.default(['_bin/cxx-dbg/osh_eval'])
+
 
   if action == 'ninja':
     log('  (%s) -> %s (%d build targets)', argv[0], BUILD_NINJA,

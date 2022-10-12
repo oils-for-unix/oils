@@ -9,8 +9,7 @@ import os
 import sys
 
 from build import ninja_lib
-from build.ninja_lib import log, ObjPath
-from mycpp import NINJA_subgraph as mycpp_subgraph
+from build.ninja_lib import log
 
 
 # CPP bindings and some generated code have implicit dependencies on these headers
@@ -127,8 +126,6 @@ def NinjaGraph(ru):
         ]
       )
 
-  n.newline()
-
   # TODO: add more variants?
   COMPILERS_VARIANTS = ninja_lib.COMPILERS_VARIANTS + [
       # note: these could be clang too
@@ -138,5 +135,3 @@ def NinjaGraph(ru):
       ('cxx', 'dumballoc'),
       ('cxx', 'alloclog'),
   ]
-
-  n.default(['_bin/cxx-dbg/osh_eval'])
