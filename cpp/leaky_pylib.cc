@@ -28,7 +28,7 @@ Str* rstrip_slashes(Str* s) {
   }
 
   // Truncate to new_len
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
   memcpy(result->data_, s->data_, new_len);
   result->data_[new_len] = '\0';
   return result;

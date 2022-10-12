@@ -6,7 +6,7 @@ class List;
 
 class Str : public Obj {
  public:
-  // Don't call this directly.  Call AllocStr() instead, which calls this.
+  // Don't call this directly.  Call NewStr() instead, which calls this.
   Str() : Obj(Tag::Opaque, kZeroMask, 0) {
   }
 
@@ -103,7 +103,7 @@ inline int len(const Str* s) {
 // require mycpp to generate 2 statements everywhere.
 //
 
-inline Str* AllocStr(int len) {
+inline Str* NewStr(int len) {
   // RootingScope omitted for PASS THROUGH
   int obj_len = kStrHeaderSize + len + 1;
 
@@ -115,7 +115,7 @@ inline Str* AllocStr(int len) {
   return s;
 }
 
-// Like AllocStr, but allocate more than you need, e.g. for snprintf() to write
+// Like NewStr, but allocate more than you need, e.g. for snprintf() to write
 // into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
@@ -126,7 +126,7 @@ inline Str* OverAllocatedStr(int len) {
 
 inline Str* StrFromC(const char* data, int len) {
   // RootingScope omitted for PASS THROUGH
-  Str* s = AllocStr(len);
+  Str* s = NewStr(len);
   memcpy(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
 
@@ -157,7 +157,7 @@ class StrIter {
   }
   Str* Value() {  // similar to index_()
     // TODO: create 256 GLOBAL_STR() and return those instead!
-    Str* result = AllocStr(1);
+    Str* result = NewStr(1);
     result->data_[0] = s_->data_[i_];
     // assert(result->data_[1] == '\0');
     return result;

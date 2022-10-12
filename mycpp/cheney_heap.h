@@ -75,11 +75,11 @@
 // - Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
-// - AllocStr(length), StrFromC(), NewList, NewDict: Alloc() doesn't
+// - NewStr(length), StrFromC(), NewList, NewDict: Alloc() doesn't
 // work
 //   for these types for various reasons
 // - Heap::Allocate()
-//   The untyped internal API.  For AllocStr() and NewSlab().
+//   The untyped internal API.  For NewStr() and NewSlab().
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- shouldn't be in Oil?
 

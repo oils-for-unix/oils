@@ -59,7 +59,7 @@ class TypeError {
 
 class KeyboardInterrupt {};
 
-Str* AllocStr(int len);
+Str* NewStr(int len);
 
 void print(Str* s);
 
@@ -101,7 +101,7 @@ bool str_contains(Str* haystack, Str* needle);
 
 // mycpp doesn't understand dynamic format strings yet
 inline Str* dynamic_fmt_dummy() {
-  Str* Result = AllocStr(1);
+  Str* Result = NewStr(1);
   return Result;
 }
 

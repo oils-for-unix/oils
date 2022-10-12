@@ -96,6 +96,11 @@ class CcLibrary(object):
 
     self.obj_lookup = {}  # config -> list of objects
 
+    # TODO: asdl() rule should add to this.
+    # Generated headers are different than regular headers.  The former need an
+    # implicit dep in Ninja, while the latter can rely on the .d mechanism.
+    self.generated_headers = []
+
   def MaybeWrite(self, ru, config):
     if config in self.obj_lookup:  # already written by some other cc_binary()
       return
@@ -108,6 +113,24 @@ class CcLibrary(object):
       ru.compile(obj, src, self.deps, config, implicit=self.implicit)
 
     self.obj_lookup[config] = objects
+
+
+# Kinds of deps:
+#   ASDL -> ASDL:        core/runtime -> frontend/syntax 
+#   cc_library -> ASDL
+#   cc_binary -> ASDL
+#
+# TODO: Make a FakeNinjaWriter to test this, n.build, n.rule()
+# - Add assertions for other rules
+
+# asdl('frontend/syntax.asdl')
+# asdl(
+#   'core/runtime.asdl',
+#   deps = ['//frontend/syntax.asdl'])
+#
+# This dependency moves over to C++?  It means that runtime.asdl.cc has
+# implicit dep on _gen/frontend/syntax.asdl.h
+
 
 
 class Rules(object):
@@ -218,26 +241,6 @@ class Rules(object):
       self.n.build([stripped, symbols], 'strip', [out_bin])
       self.n.newline()
 
-  def _GeneratedHeader(self, label):
-    # for implicit deps of 'compile'
-    #
-    # //mycpp/examples/expr.asdl -> _gen/mycpp/examples/expr.asdl.h
-    # And then parse.mycpp.cc needs this implicit dep
-    pass
-
-  def _TranslationUnit(self, label, path, implicit=None):
-    implicit = implicit or []
-
-    # TODO:
-    # - cc_library() and asdl() should call this
-    # - append to a data structure
-    # - and then when cc_binary() is called, it goes through its transitive
-    #   closure of labels, and gets translation units
-    # - and then for each config (compiler, variant), it calls n.compile() on the translation unit
-    #   - n.compile() can have implicit deps due to ASDL headers
-    #   - TODO: this part probably needs unit tests
-    pass
-
   def cc_library(self, label, srcs, implicit=None, deps=None):
     implicit = implicit or []
     deps = deps or []
@@ -334,14 +337,3 @@ class Rules(object):
               ('debug_mod', debug_mod),
             ])
     self.n.newline()
-
-    # TODO: self.cc_library() is lazy here
-    # Might as well do it
-    # implicit=hnode.asdl
-    #   what about ASDL 'use' deps?
-    # typed_demo and demo_lib
-
-
-
-
-

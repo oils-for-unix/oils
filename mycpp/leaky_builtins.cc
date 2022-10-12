@@ -88,7 +88,7 @@ int to_int(Str* s) {
 Str* chr(int i) {
   // NOTE: i should be less than 256, in which we could return an object from
   // GLOBAL_STR() pool, like StrIter
-  auto result = AllocStr(1);
+  auto result = NewStr(1);
   result->data_[0] = i;
   return result;
 }
@@ -142,7 +142,7 @@ Str* str_repeat(Str* s, int times) {
   }
   int len_ = len(s);
   int new_len = len_ * times;
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
 
   char* dest = result->data_;
   for (int i = 0; i < times; i++) {
@@ -160,7 +160,7 @@ Str* str_concat3(Str* a, Str* b, Str* c) {
   int c_len = len(c);
 
   int new_len = a_len + b_len + c_len;
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
   char* pos = result->data_;
 
   memcpy(pos, a->data_, a_len);
@@ -180,7 +180,7 @@ Str* str_concat(Str* a, Str* b) {
   int a_len = len(a);
   int b_len = len(b);
   int new_len = a_len + b_len;
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
   char* buf = result->data_;
 
   memcpy(buf, a->data_, a_len);

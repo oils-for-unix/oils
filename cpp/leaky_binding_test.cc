@@ -278,7 +278,7 @@ TEST pyos_read_test() {
 }
 
 TEST os_path_test() {
-  // TODO: use gc_mylib here, with AllocStr(), StackRoots, etc.
+  // TODO: use gc_mylib here, with NewStr(), StackRoots, etc.
   Str* s = nullptr;
 
   s = os_path::rstrip_slashes(StrFromC(""));

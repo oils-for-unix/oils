@@ -421,7 +421,7 @@ TEST root_set_stress_test() {
   RootingScope _r;
 
   for (int i = 0; i < 10; ++i) {
-    // AllocStr needs to root; also needs RootingScope
+    // NewStr needs to root; also needs RootingScope
     Str *s = StrFromC("abcdef");
 
     // slice() needs to root; also eneds RootingScope

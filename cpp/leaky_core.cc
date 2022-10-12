@@ -203,7 +203,7 @@ bool IsValidCharEscape(int c) {
 
 Str* ChArrayToString(List<int>* ch_array) {
   int n = len(ch_array);
-  Str* result = AllocStr(n);
+  Str* result = NewStr(n);
   for (int i = 0; i < n; ++i) {
     result->data_[i] = ch_array->index_(i);
   }

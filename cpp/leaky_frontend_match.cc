@@ -35,7 +35,7 @@ Tuple2<Id_t, Str*> SimpleLexer::Next() {
               &id, &end_pos);
 
   int len = end_pos - pos_;
-  Str* val = AllocStr(len);                   // TODO: return value rooting
+  Str* val = NewStr(len);                   // TODO: return value rooting
   memcpy(val->data_, s_->data_ + pos_, len);  // copy the list item
   val->data_[len] = '\0';
 

@@ -42,7 +42,7 @@ TEST test_str_creation() {
   ASSERT_EQ(7, len(s2));
   ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
 
-  Str* s3 = AllocStr(1);
+  Str* s3 = NewStr(1);
   ASSERT_EQ(1, len(s3));
   ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
 

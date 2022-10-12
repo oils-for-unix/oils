@@ -5,9 +5,6 @@ cpp/NINJA_subgraph.py
 
 from __future__ import print_function
 
-import os
-import sys
-
 from build import ninja_lib
 from build.ninja_lib import log
 

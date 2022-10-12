@@ -95,7 +95,7 @@ Str* Str::index_(int i) {
   assert(i >= 0);
   assert(i < len_);  // had a problem here!
 
-  Str* result = AllocStr(1);
+  Str* result = NewStr(1);
   result->data_[0] = data_[i];
   return result;
 }
@@ -142,7 +142,7 @@ Str* Str::slice(int begin, int end) {
   assert(new_len >= 0);
   assert(new_len <= len_);
 
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
   memcpy(result->data_, data_ + begin, new_len);
 
   gHeap.RootOnReturn(result);  // return value rooting
@@ -173,7 +173,7 @@ List<Str*>* Str::splitlines(bool keep) {
 
 Str* Str::upper() {
   int len_ = len(this);
-  Str* result = AllocStr(len_);
+  Str* result = NewStr(len_);
   char* buffer = result->data();
   for (int char_index = 0; char_index < len_; ++char_index) {
     buffer[char_index] = toupper(data_[char_index]);
@@ -183,7 +183,7 @@ Str* Str::upper() {
 
 Str* Str::lower() {
   int len_ = len(this);
-  Str* result = AllocStr(len_);
+  Str* result = NewStr(len_);
   char* buffer = result->data();
   for (int char_index = 0; char_index < len_; ++char_index) {
     buffer[char_index] = tolower(data_[char_index]);
@@ -199,7 +199,7 @@ Str* Str::ljust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    Str* result = AllocStr(width);
+    Str* result = NewStr(width);
     char c = fillchar->data_[0];
     memcpy(result->data_, data_, len_);
     for (int i = len_; i < width; ++i) {
@@ -217,7 +217,7 @@ Str* Str::rjust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    Str* result = AllocStr(width);
+    Str* result = NewStr(width);
     char c = fillchar->data_[0];
     for (int i = 0; i < num_fill; ++i) {
       result->data_[i] = c;
@@ -261,7 +261,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   int result_len =
       this_len - (replace_count * old_len) + (replace_count * new_str_len);
 
-  Str* result = AllocStr(result_len);
+  Str* result = NewStr(result_len);
   StackRoots _roots1({&result});
 
   const char* new_data = new_str->data_;
@@ -344,7 +344,7 @@ Str* StripAny(Str* s, StripWhere where, int what) {
 
   // Note: makes a copy in leaky version, and will in GC version too
   int new_len = j - i;
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
   memcpy(result->data(), s->data() + i, new_len);
   return result;
 }
@@ -391,7 +391,7 @@ Str* Str::join(List<Str*>* items) {
   int len_ = len(self);
   length += len_ * (num_parts - 1);
 
-  Str* result = AllocStr(length);
+  Str* result = NewStr(length);
   char* p_result = result->data_;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
@@ -426,7 +426,7 @@ int find_next(const char* haystack, int starting_index, int end_index,
 Str* NewStrFromHeapStr(Str* src, int new_len, int start_index = 0) {
   StackRoots _roots({&src});
 
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
   assert((start_index + new_len) <= len(src));
   memcpy(result->data_, src->data_ + start_index, new_len);
 
