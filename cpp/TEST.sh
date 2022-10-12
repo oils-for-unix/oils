@@ -18,32 +18,15 @@ source test/common.sh  # run-test
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
 
-readonly LEAKY_FLAG_SPEC_SRC=(
-    cpp/leaky_flag_spec_test.cc
-    cpp/leaky_frontend_flag_spec.cc
-    _gen/frontend/arg_types.cc
-
-    # Would be needed for CPP_UNIT_TEST, but it doesn't compile!
-    # prebuilt/frontend/args.mycpp.cc
-
-    # Also seems necessary
-    # _gen/core/runtime.asdl.cc
-
-    "${GC_RUNTIME[@]}"
-)
-
 leaky-flag-spec-test() {
   ### Test generated code
 
   local compiler=${1:-cxx}
   local variant=${2:-dbg}
 
-  local bin=_bin/$compiler-$variant/cpp/leaky_flag_spec_test
-  mkdir -p $(dirname $bin)
-
-  # -D CPP_UNIT_TEST is to disable #include prebuilt/...
-  compile_and_link $compiler $variant '-D CPP_UNIT_TEST' $bin \
-    "${LEAKY_FLAG_SPEC_SRC[@]}"
+  # -D CPP_UNIT_TEST
+  local bin=_bin/$compiler-$variant-D_CPP_UNIT_TEST/cpp/leaky_flag_spec_test
+  ninja $bin
 
   run-test-bin $bin
 }
@@ -88,34 +71,22 @@ unit() {
   run-one-test leaky_core_test '' ''
   run-one-test leaky_core_test '' asan
 
-  #gc-binding-test '' gcevery
   run-one-test gc_binding_test '' gcevery
 
+  # Runs in different dir
   leaky-binding-test '' ''
   leaky-binding-test '' asan
 
-  # Has generated code, needs -D CPP_UNIT_TEST
+  # Needs -D CPP_UNIT_TEST
   leaky-flag-spec-test '' ''
   leaky-flag-spec-test '' asan
-}
-
-pre-build() {
-  ### Before running coverage
-
-  # TODO: Folding tests into Ninja would get rid of ad hoc deps
-
-  build/py.sh fastmatch
-  build/cpp.sh gen-asdl  # unit tests depend on id_kind_asdl.h, etc.
-
-  # TODO: Make a target for this
-  ninja _gen/frontend/arg_types.{h,cc}
-  ninja _gen/frontend/id_kind.asdl.{h,cc}
 }
 
 coverage() {
   ### Run coverage for this dir
 
-  pre-build
+  # Could fold this into Ninja
+  build/py.sh fastmatch
 
   run-one-test leaky_core_test clang coverage
   run-one-test gc_binding_test clang coverage

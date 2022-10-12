@@ -310,6 +310,10 @@ def main(argv):
   # Collect sources for metrics, tarball, shell script
   cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
 
+  if 0:
+    from pprint import pprint
+    pprint(cc_sources)
+
   # TODO: could thin these out, not generate for unit tests, etc.
   Preprocessed(n, cc_sources)
 

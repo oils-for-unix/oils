@@ -104,11 +104,31 @@ def NinjaGraph(ru):
       # TODO: split these up?
       '//GENERATED_CC',
       srcs = [
-        '_gen/frontend/arg_types.cc',
         '_gen/frontend/consts.cc',
         '_gen/osh/arith_parse.cc',
       ],
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
+  )
+
+  ru.cc_library(
+      '//frontend/arg_types',
+      srcs = [ '_gen/frontend/arg_types.cc' ],
+      implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
+  )
+
+  ru.cc_binary(
+      'cpp/leaky_flag_spec_test.cc',
+
+      deps = [
+        '//cpp/leaky_bindings',  # TODO: It only needs cpp/leaky_frontend_flag_spec.cc
+        '//frontend/arg_types',
+        '//mycpp/runtime',
+        ],
+      matrix = [
+        ('cxx', 'dbg', '-D CPP_UNIT_TEST'),
+        ('cxx', 'asan', '-D CPP_UNIT_TEST'),
+        ('clang', 'coverage', '-D CPP_UNIT_TEST'),
+      ]
   )
 
   # Main program!
@@ -120,6 +140,7 @@ def NinjaGraph(ru):
       deps = [
         '//cpp/leaky_core',
         '//cpp/leaky_bindings',
+        '//frontend/arg_types',
         '//ASDL_CC',
         '//GENERATED_CC',
         '//mycpp/runtime',

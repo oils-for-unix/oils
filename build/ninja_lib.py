@@ -62,9 +62,19 @@ COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
 ]
 
 
-def ObjPath(src_path, compiler, variant):
+def ConfigDir(config):
+  compiler, variant, more_cxx_flags = config
+  if more_cxx_flags is None:
+    return '%s-%s' % (compiler, variant)
+  else:
+    # -D CPP_UNIT_TEST -> D_CPP_UNIT_TEST
+    flags_str = more_cxx_flags.replace('-', '').replace(' ', '_')
+    return '%s-%s-%s' % (compiler, variant, flags_str)
+
+
+def ObjPath(src_path, config):
   rel_path, _ = os.path.splitext(src_path)
-  return '_build/obj/%s-%s/%s.o' % (compiler, variant, rel_path)
+  return '_build/obj/%s/%s.o' % (ConfigDir(config), rel_path)
 
 
 class CcLibrary(object):
@@ -90,11 +100,9 @@ class CcLibrary(object):
     if config in self.obj_lookup:  # already written by some other cc_binary()
       return
 
-    compiler, variant = config
-
     objects = []
     for src in self.srcs:
-      obj = ObjPath(src, compiler, variant)
+      obj = ObjPath(src, config)
       objects.append(obj)
 
       ru.compile(obj, src, self.deps, config, implicit=self.implicit)
@@ -161,20 +169,25 @@ class Rules(object):
     # TODO: implicit deps for ASDL
     implicit = implicit or []
 
-    compiler, variant = config
+    compiler, variant, more_cxx_flags = config
+    if more_cxx_flags is None:
+      flags_str = "''"
+    else:
+      assert "'" not in more_cxx_flags, more_cxx_flags  # can't handle single quotes
+      flags_str = "'%s'" % more_cxx_flags
 
-    v = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")]
+    v = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', flags_str)]
     self.n.build([out_obj], 'compile_one', [in_cc], implicit=implicit, variables=v)
     self.n.newline()
 
-    # TODO: don't need to write all of these
-    if variant in ('dbg', 'opt'):
+    # TODO: restrict to some binaries?
+    if more_cxx_flags is None and variant in ('dbg', 'opt'):
       pre = '_build/preprocessed/%s-%s/%s' % (compiler, variant, in_cc)
       self.n.build(pre, 'preprocess', [in_cc], implicit=implicit, variables=v)
       self.n.newline()
 
   def link(self, out_bin, main_obj, deps, config):
-    compiler, variant = config
+    compiler, variant, _ = config
 
     assert isinstance(out_bin, str), out_bin
     assert isinstance(main_obj, str), main_obj
@@ -247,21 +260,23 @@ class Rules(object):
 
     self.cc_binary_deps[main_cc] = deps
     for config in matrix:
-      compiler, variant = config
+      if len(config) == 2:
+        config = (config[0], config[1], None)
 
       # Compile main object, maybe with IMPLICIT headers deps
-      main_obj = ObjPath(main_cc, compiler, variant)
+      main_obj = ObjPath(main_cc, config)
       self.compile(main_obj, main_cc, deps, config, implicit=implicit)
 
       for label in deps:
         cc_lib = self.cc_libs[label]
         cc_lib.MaybeWrite(self, config)
 
+      config_dir = ConfigDir(config)
       if top_level:
         # e.g. _bin/cxx-dbg/osh_eval
         basename = os.path.basename(main_cc)
         first_name = basename.split('.')[0]
-        bin_= '_bin/%s-%s/%s' % (compiler, variant, first_name)
+        bin_= '_bin/%s/%s' % (config_dir, first_name)
       else:
         # e.g. _gen/mycpp/examples/classes.mycpp
         rel_path, _ = os.path.splitext(main_cc)
@@ -270,13 +285,13 @@ class Rules(object):
         if rel_path.startswith('_gen/'):
           rel_path = rel_path[len('_gen/'):]
 
-        bin_= '_bin/%s-%s/%s' % (compiler, variant, rel_path)
+        bin_= '_bin/%s/%s' % (config_dir, rel_path)
 
       # Link with OBJECT deps
       self.link(bin_, main_obj, deps, config)
 
       if phony_prefix:
-        key = '%s-%s-%s' % (phony_prefix, compiler, variant)
+        key = '%s-%s' % (phony_prefix, config_dir)
         if key not in self.phony:
           self.phony[key] = []
         self.phony[key].append(bin_)
@@ -319,3 +334,14 @@ class Rules(object):
               ('debug_mod', debug_mod),
             ])
     self.n.newline()
+
+    # TODO: self.cc_library() is lazy here
+    # Might as well do it
+    # implicit=hnode.asdl
+    #   what about ASDL 'use' deps?
+    # typed_demo and demo_lib
+
+
+
+
+
