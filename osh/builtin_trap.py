@@ -143,9 +143,8 @@ class Trap(vm._Builtin):
     if arg.l:  # List valid signals and hooks
       for name in _HOOK_NAMES:
         print('   %s' % name)
-      if mylib.PYTHON:
-        for name, int_val in signal_def.AllNames():
-          print('%2d %s' % (int_val, name))
+
+      signal_def.PrintSignals()
 
       return 0
 

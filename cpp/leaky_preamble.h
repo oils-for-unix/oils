@@ -16,6 +16,7 @@ using id_kind_asdl::Kind_t;
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/frontend/arg_types.h"
 #include "_gen/frontend/consts.h"
+#include "_gen/frontend/signal.h"
 #include "_gen/frontend/option.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "_gen/frontend/types.asdl.h"
