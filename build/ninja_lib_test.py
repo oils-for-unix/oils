@@ -87,11 +87,6 @@ class NinjaTest(unittest.TestCase):
         'mycpp/a_test.cc', deps=['//mycpp/y', '//mycpp/z'], matrix=MATRIX)
     self.assertEqual(19, len(n.build_calls))
 
-    first = n.build_calls[0]
-    self.assertEqual(['_build/obj/cxx-dbg/mycpp/a_test.o'], first.outputs)
-    self.assertEqual('compile_one', first.rule)
-    self.assertEqual(['mycpp/a_test.cc'], first.inputs)
-
     srcs = ru.SourcesForBinary('mycpp/a_test.cc')
     self.assertEqual(
         ['mycpp/a_test.cc', 'mycpp/y.cc', 'mycpp/y2.cc', 'mycpp/z.cc'],
@@ -108,11 +103,46 @@ class NinjaTest(unittest.TestCase):
     first = n.build_calls[0]
     self.assertEqual('asdl-cpp', first.rule)
 
-    ru.asdl_cc('mycpp/examples/foo.asdl', pretty_print_methods=False)
+    # ru.asdl_cc('mycpp/examples/foo.asdl', pretty_print_methods=False)
 
   def test_cc_binary_to_asdl(self):
     n, ru = self._Rules()
-    pass
+
+    ru.asdl_cc('mycpp/examples/expr.asdl')
+
+    ru.cc_binary(
+        '_gen/mycpp/examples/parse.mycpp.cc',
+        deps = ['//mycpp/examples/expr.asdl'],
+        matrix = MATRIX1)
+
+    actions = [b.rule for b in n.build_calls]
+    print(actions)
+    self.assertEqual([
+        'asdl-cpp',
+        'compile_one', 'preprocess',
+        'compile_one', 'preprocess',
+        'link'],
+        actions)
+
+    compile_parse = n.build_calls[3]
+    self.assertEqual(
+        ['_build/obj/cxx-dbg/_gen/mycpp/examples/parse.mycpp.o'],
+        compile_parse.outputs)
+
+    # Important implicit dependencies on generated headers!
+    self.assertEqual([
+        '_gen/asdl/hnode.asdl.h',
+        '_gen/mycpp/examples/expr.asdl.h',
+        ],
+        compile_parse.implicit)
+
+    last = n.build_calls[-1]
+
+    self.assertEqual([
+        '_build/obj/cxx-dbg/_gen/mycpp/examples/parse.mycpp.o',
+        '_build/obj/cxx-dbg/_gen/mycpp/examples/expr.asdl.o',
+        ],
+        last.inputs)
 
   def test_cc_library_to_asdl(self):
     n, ru = self._Rules()

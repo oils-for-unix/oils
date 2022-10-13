@@ -88,18 +88,18 @@ class CcLibrary(object):
   4. The tarball needs the list of sources for binary
   """
 
-  def __init__(self, label, srcs, implicit, deps):
+  def __init__(self, label, srcs, implicit, deps, generated_headers):
     self.label = label
     self.srcs = srcs  # queried by SourcesForBinary
     self.implicit = implicit
     self.deps = deps
-
-    self.obj_lookup = {}  # config -> list of objects
-
     # TODO: asdl() rule should add to this.
     # Generated headers are different than regular headers.  The former need an
     # implicit dep in Ninja, while the latter can rely on the .d mechanism.
-    self.generated_headers = []
+    self.generated_headers = generated_headers
+
+    self.obj_lookup = {}  # config -> list of objects
+
 
   def MaybeWrite(self, ru, config):
     if config in self.obj_lookup:  # already written by some other cc_binary()
@@ -241,14 +241,15 @@ class Rules(object):
       self.n.build([stripped, symbols], 'strip', [out_bin])
       self.n.newline()
 
-  def cc_library(self, label, srcs, implicit=None, deps=None):
+  def cc_library(self, label, srcs, implicit=None, deps=None, generated_headers=None):
     implicit = implicit or []
     deps = deps or []
+    generated_headers = generated_headers or []
 
     if label in self.cc_libs:
       raise RuntimeError('%s was already defined' % label)
 
-    self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps)
+    self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps, generated_headers)
 
   def cc_binary(self, main_cc,
       top_level=False,
@@ -266,16 +267,20 @@ class Rules(object):
       if len(config) == 2:
         config = (config[0], config[1], None)
 
-      # Compile main object, maybe with IMPLICIT headers deps
-      main_obj = ObjPath(main_cc, config)
-      self.compile(main_obj, main_cc, deps, config, implicit=implicit)
-
       for label in deps:
         try:
           cc_lib = self.cc_libs[label]
         except KeyError:
           raise RuntimeError('Undefined label %s in cc_binary %s' % (label, main_cc))
         cc_lib.MaybeWrite(self, config)
+
+        # compile actions of binaries that have ASDL label deps need the
+        # generated header as implicit dep
+        implicit.extend(cc_lib.generated_headers)
+
+      # Compile main object, maybe with IMPLICIT headers deps
+      main_obj = ObjPath(main_cc, config)
+      self.compile(main_obj, main_cc, deps, config, implicit=implicit)
 
       config_dir = ConfigDir(config)
       if top_level:
@@ -315,15 +320,16 @@ class Rules(object):
   def asdl_cc(self, asdl_path, pretty_print_methods=True):
     # to create _gen/mycpp/examples/expr.asdl.h
     prefix = '_gen/%s' % asdl_path
+
+    out_cc = prefix + '.cc'
     out_header = prefix + '.h'
+
     if pretty_print_methods:
-      outputs = [prefix + '.cc', out_header]
+      outputs = [out_cc, out_header]
       asdl_flags = '' 
     else:
       outputs = [out_header]
       asdl_flags = '--no-pretty-print-methods'
-
-    #self.generated_headers[asdl_path] = out_header
 
     debug_mod = '%s_debug.py' % prefix 
     outputs.append(debug_mod)
@@ -332,11 +338,22 @@ class Rules(object):
     # COMPILING anything that #includes it does.  That is handled elsewhere.
 
     self.n.build(outputs, 'asdl-cpp', [asdl_path],
-            implicit=['_bin/shwrap/asdl_main'],
-            variables=[
-              ('action', 'cpp'),
-              ('out_prefix', prefix),
-              ('asdl_flags', asdl_flags),
-              ('debug_mod', debug_mod),
-            ])
+        implicit = ['_bin/shwrap/asdl_main'],
+        variables = [
+          ('action', 'cpp'),
+          ('out_prefix', prefix),
+          ('asdl_flags', asdl_flags),
+          ('debug_mod', debug_mod),
+        ])
     self.n.newline()
+
+    # Note: assumes there's a build rule for this "system" ASDL schema
+    headers = ['_gen/asdl/hnode.asdl.h', out_header]
+
+    # Define lazy CC library too
+    self.cc_library(
+        '//' + asdl_path,
+        srcs = [out_cc],
+        # For compile_one steps of files that #include this ASDL file
+        generated_headers = headers,
+    )

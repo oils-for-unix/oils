@@ -163,20 +163,6 @@ EXAMPLES_PY = {
     'parse': [],
 }
 
-# Linking _bin/cxx-dbg/mycpp-examples/parse depends on expr.asdl.o
-EXAMPLES_DEPS = {
-    'parse': ['//mycpp/examples/expr.asdl.o'],
-}
-
-# We need IMPLICIT header dependencies too.
-# Compiling _build/obj-mycpp/cxx-asan/parse.o depends brings parse_preamble.h,
-# which brings in expr.asdl.h
-EXAMPLES_H = {
-    'parse': [ '_gen/mycpp/examples/expr.asdl.h',
-               '_gen/asdl/hnode.asdl.h',
-             ],
-}
-
 def TranslatorSubgraph(ru, translator, ex):
   n = ru.n
 
@@ -228,10 +214,13 @@ def TranslatorSubgraph(ru, translator, ex):
   else:
     phony_prefix = ''
 
+  deps = ['//mycpp/runtime'] 
+  if ex == 'parse':
+    deps = deps + ['//mycpp/examples/expr.asdl']
+
   ru.cc_binary(
       main_cc_src,
-      implicit = EXAMPLES_H.get(ex, []),
-      deps = ['//mycpp/runtime'] + EXAMPLES_DEPS.get(ex, []),
+      deps = deps,
       matrix = example_matrix,
       phony_prefix = phony_prefix,
   )
@@ -382,6 +371,7 @@ def NinjaGraph(ru):
           #log('Skipping test of %s', ex)
           continue
 
+      # TODO: This should be a Python stub!
       log_out = '%s.log' % prefix
       n.build([task_out, log_out], 'example-task',
               EXAMPLES_PY.get(ex, []) + ['mycpp/examples/%s.py' % ex],
