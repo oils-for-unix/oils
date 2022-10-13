@@ -162,7 +162,7 @@ void PrintTimes() {
       float user_seconds = t.tms_utime % 60;
       int system_minutes = t.tms_stime / 60;
       float system_seconds = t.tms_stime % 60;
-      printf("%dm%1.3fs %dm%1.3fs", user_minutes, user_seconds, system_minutes,
+      printf("%dm%1.3fs %dm%1.3fs\n", user_minutes, user_seconds, system_minutes,
              system_seconds);
     }
 
