@@ -62,6 +62,18 @@ COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
     ('cxx', 'gcevery'),
 ]
 
+# TODO: add more variants?
+[
+  # note: these could be clang too
+  ('cxx', 'uftrace'),
+  ('cxx', 'tcmalloc'),
+
+  ('cxx', 'dumballoc'),
+  ('cxx', 'alloclog'),
+]
+
+
+
 
 def ConfigDir(config):
   compiler, variant, more_cxx_flags = config
@@ -250,6 +262,10 @@ class Rules(object):
       self.n.build([stripped, symbols], 'strip', [out_bin])
       self.n.newline()
 
+  def comment(self, s):
+    self.n.comment(s)
+    self.n.newline()
+
   def cc_library(self, label,
       srcs = None,
       implicit = None,
@@ -415,3 +431,23 @@ class Rules(object):
         # For compile_one steps of files that #include this ASDL file
         generated_headers = [out_header],
     )
+
+  def shwrap_py(self, main_py, deps_base_dir='_build/NINJA', template='py'):
+    """
+    Wrapper for Python script with dynamically discovered deps
+    """
+    rel_path, _ = os.path.splitext(main_py)
+    py_module = rel_path.replace('/', '.')  # asdl/asdl_main.py -> asdl.asdl_main
+
+    deps_path = os.path.join(deps_base_dir, py_module, 'deps.txt')
+    with open(deps_path) as f:
+      deps = [line.strip() for line in f]
+
+    deps.remove(main_py)  # raises ValueError if it's not there
+
+    basename = os.path.basename(rel_path)
+    self.n.build('_bin/shwrap/%s' % basename, 'write-shwrap', [main_py] + deps,
+            variables=[('template', template)])
+    self.n.newline()
+
+

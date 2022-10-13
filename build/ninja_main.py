@@ -4,6 +4,10 @@ build/ninja_main.py - invoked by ./NINJA-config.sh
 
 Code Layout:
 
+  build/
+    # TODO: rename to "steps"
+    ninja-rules-py.sh
+    ninja-rules-cpp.sh
   cpp/
     NINJA_subgraph.py
   mycpp/
@@ -29,6 +33,11 @@ Output Layout:
         expr.asdl.{h,cc}
 
   _build/
+    NINJA/  # part of the Ninja graph
+      asdl.asdl_main/
+        all-pairs.txt
+        deps.txt
+
     obj/
       # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
       cxx-dbg/
@@ -60,6 +69,14 @@ Output Layout:
 
 
   _bin/
+
+    # These are the code generators.  TODO: move to _bin/PORT/asdl/asdl_main
+    shwrap/
+      asdl_main
+      mycpp_main
+      lexer_gen
+      ...
+
     # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
     cxx-opt/
       osh_eval
@@ -90,6 +107,19 @@ Output Layout:
       # optionally logged?
       translate/
       compile/
+
+# More
+
+  # C code shared with the Python build
+  # eventually this can be moved into Ninja
+  _devbuild/
+    gen/
+      osh-lex.h
+      osh-types.h
+      id.h
+      grammar_nt.h
+
+      runtime_asdl.py
 """
 from __future__ import print_function
 
@@ -100,12 +130,6 @@ import sys
 
 from build import ninja_lib
 from build.ninja_lib import log
-
-from asdl import NINJA_subgraph as asdl_subgraph
-from build import NINJA_subgraph as build_subgraph
-from cpp import NINJA_subgraph as cpp_subgraph
-from mycpp import NINJA_subgraph as mycpp_subgraph
-from prebuilt import NINJA_subgraph as prebuilt_subgraph
 
 from vendor import ninja_syntax
 
@@ -265,6 +289,166 @@ def Preprocessed(n, cc_sources):
     n.newline()
 
 
+def InitSteps(n):
+  """Wrappers for build/ninja-rules-*.sh
+
+  Some of these are defined in mycpp/NINJA_subgraph.py.  Could move them here.
+  """
+
+  # Preprocess one translation unit
+  n.rule('preprocess',
+         # compile_one detects the _build/preprocessed path
+         command='build/ninja-rules-cpp.sh compile_one $compiler $variant $more_cxx_flags $in $out',
+         description='PP $compiler $variant $more_cxx_flags $in $out')
+  n.newline()
+
+  n.rule('line_count',
+         command='build/ninja-rules-cpp.sh line_count $out $in',
+         description='line_count $out $in')
+  n.newline()
+
+  # Compile one translation unit
+  n.rule('compile_one',
+         command='build/ninja-rules-cpp.sh compile_one $compiler $variant $more_cxx_flags $in $out $out.d',
+         depfile='$out.d',
+         # no prefix since the compiler is the first arg
+         description='$compiler $variant $more_cxx_flags $in $out')
+  n.newline()
+
+  # Link objects together
+  n.rule('link',
+         command='build/ninja-rules-cpp.sh link $compiler $variant $out $in',
+         description='LINK $compiler $variant $out $in')
+  n.newline()
+
+  # 1 input and 2 outputs
+  n.rule('strip',
+         command='build/ninja-rules-cpp.sh strip_ $in $out',
+         description='STRIP $in $out')
+  n.newline()
+
+  n.rule('write-shwrap',
+         # $in must start with main program
+         command='build/ninja-rules-py.sh write-shwrap $template $out $in',
+         description='make-pystub $out $in')
+  n.newline()
+
+
+  #
+  # Code generators
+  #
+
+  n.rule('asdl-cpp',
+         command='_bin/shwrap/asdl_main $action $asdl_flags $in $out_prefix $debug_mod',
+         description='asdl_main $action $asdl_flags $in $out_prefix $debug_mod')
+  n.newline()
+
+  n.rule('consts-gen',
+         command='_bin/shwrap/consts_gen $action $out_prefix',
+         description='consts_gen $action $out_prefix')
+
+  n.rule('flag-gen',
+         command='_bin/shwrap/flag_gen $action $out_prefix',
+         description='flag_gen $action $out_prefix')
+
+  n.rule('option-gen',
+         command='_bin/shwrap/option_gen $action $out_prefix',
+         description='consts_gen $action $out_prefix')
+
+  n.rule('optview-gen',
+         # uses shell style
+         command='_bin/shwrap/optview_gen > $out',
+         description='optview_gen > $out')
+
+  n.rule('arith-parse-gen',
+         # uses shell style
+         command='_bin/shwrap/arith_parse_gen > $out',
+         description='arith-parse-gen > $out')
+
+  prefix = '_gen/frontend/id_kind.asdl'
+  n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
+          implicit=['_bin/shwrap/consts_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp'),
+          ])
+  n.newline()
+
+  n.rule('signal-gen',
+         command='_bin/shwrap/signal_gen $action $out_prefix',
+         description='signal_gen $action $out_prefix')
+
+  # Similar to above
+  prefix = '_gen/frontend/consts'
+  n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
+          implicit=['_bin/shwrap/consts_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp-consts'),
+          ])
+  n.newline()
+
+  prefix = '_gen/frontend/arg_types'
+  n.build([prefix + '.h', prefix + '.cc'], 'flag-gen', [],
+          implicit=['_bin/shwrap/flag_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp'),
+          ])
+  n.newline()
+
+  prefix = '_gen/frontend/option.asdl'
+  # no .cc file
+  n.build([prefix + '.h'], 'option-gen', [],
+          implicit=['_bin/shwrap/option_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp'),
+          ])
+  n.newline()
+
+  n.build(['_gen/core/optview.h'], 'optview-gen', [],
+          implicit=['_bin/shwrap/optview_gen'])
+  n.newline()
+
+  n.build(['_gen/osh/arith_parse.cc'], 'arith-parse-gen', [],
+          implicit=['_bin/shwrap/arith_parse_gen'])
+  n.newline()
+
+  prefix = '_gen/frontend/signal'
+  n.build([prefix + '.h', prefix + '.cc'], 'signal-gen', [],
+          implicit=['_bin/shwrap/signal_gen'],
+          variables=[
+            ('out_prefix', prefix),
+            ('action', 'cpp'),
+          ])
+  n.newline()
+
+
+def InitCodeGen(ru):
+  # All the code generators from NINJA-config.sh
+  #
+  # TODO: could be moved into frontend, core/, etc.
+  ru.shwrap_py('core/optview_gen.py')
+  ru.shwrap_py('frontend/consts_gen.py')
+  ru.shwrap_py('frontend/flag_gen.py')
+  ru.shwrap_py('frontend/lexer_gen.py')
+  ru.shwrap_py('frontend/option_gen.py')
+  ru.shwrap_py('frontend/signal_gen.py')
+  ru.shwrap_py('oil_lang/grammar_gen.py')
+  ru.shwrap_py('osh/arith_parse_gen.py')
+
+  ru.shwrap_py(
+      'mycpp/mycpp_main.py',
+      deps_base_dir = 'prebuilt/ninja',
+      template = 'mycpp')
+
+  ru.shwrap_py(
+      'pea/pea_main.py',
+      deps_base_dir = 'prebuilt/ninja',
+      template = 'pea')
+
+
 def main(argv):
   try:
     action = argv[1]
@@ -279,32 +463,40 @@ def main(argv):
   n = ninja_syntax.Writer(f)
   ru = ninja_lib.Rules(n)
 
-  ### Create the graph.  TODO: Add other dirs.
+  ru.comment('InitSteps()')
+  InitSteps(n)
+
+  ru.comment('InitCodeGen()')
+  InitCodeGen(ru)
+
+  #
+  # Create the graph.
+  #
+
+  from asdl import NINJA_subgraph as asdl_subgraph
+  from core import NINJA_subgraph as core_subgraph
+  from cpp import NINJA_subgraph as cpp_subgraph
+  from frontend import NINJA_subgraph as frontend_subgraph
+  from mycpp import NINJA_subgraph as mycpp_subgraph
+  from prebuilt import NINJA_subgraph as prebuilt_subgraph
 
   asdl_subgraph.NinjaGraph(ru)
+  ru.comment('')
 
-  n.newline()
-  n.newline()
-
-  build_subgraph.NinjaGraph(ru)
-
-  n.newline()
-  n.newline()
+  core_subgraph.NinjaGraph(ru)
+  ru.comment('')
 
   cpp_subgraph.NinjaGraph(ru)
+  ru.comment('')
 
-  n.newline()
-  n.newline()
+  frontend_subgraph.NinjaGraph(ru)
+  ru.comment('')
 
   mycpp_subgraph.NinjaGraph(ru)
-
-  n.newline()
-  n.newline()
+  ru.comment('')
 
   prebuilt_subgraph.NinjaGraph(ru)
-
-  n.newline()
-  n.newline()
+  ru.comment('')
 
 
   # Materialize all the cc_binary() rules
