@@ -522,7 +522,7 @@ def main(argv):
 
 
   if action == 'ninja':
-    log('  (%s) -> %s (%d build targets)', argv[0], BUILD_NINJA,
+    log('  (%s) -> %s (%d targets)', argv[0], BUILD_NINJA,
         n.num_build_targets())
 
   elif action == 'shell':

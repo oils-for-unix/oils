@@ -18,7 +18,6 @@ all-tests() {
   # which finds more bugs.
   mycpp/TEST.sh test-runtime
 
-  cpp/TEST.sh pre-build
   cpp/TEST.sh unit
 
   # Relies on same pre-build
@@ -29,6 +28,10 @@ all-tests() {
 
 soil-run() {
   ### Hook for soil/worker.sh
+
+  # Soil only does build/dev.sh minimal, while most devs should do build/dev.sh
+  # all, and can run all-tests by itself
+  cpp/TEST.sh pre-build
 
   set +o errexit
   $0 all-tests

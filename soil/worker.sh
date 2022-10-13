@@ -194,9 +194,6 @@ EOF
 }
 
 cpp-small-tasks() {
-  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
-  # build-minimal
-
   # Note: mycpp-benchmarks runs benchmarks SERIALLY with ninja -j 1, and makes HTML
   # And then we have correctness for mycpp-translator.  Somewhat redundant but
   # it's OK for now.

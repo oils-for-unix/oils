@@ -55,6 +55,8 @@ html-report() {
     --ignore-filename-regex 'greatest.h$' \
     --ignore-filename-regex '_gen/' \
     --ignore-filename-regex 'mycpp/demo' \
+    --ignore-filename-regex 'mycpp/smartptr' \
+    --ignore-filename-regex 'mycpp/cheney' \
     --ignore-filename-regex 'prebuilt/' \
     --show-instantiation-summary \
     --instr-profile $merged \
