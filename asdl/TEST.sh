@@ -22,76 +22,6 @@ CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
 # Could we turn on the leak detector for the GC tests?
 export ASAN_OPTIONS='detect_leaks=0'
 
-asdl-main() {
-  PYTHONPATH='.:vendor/' asdl/asdl_main.py "$@"
-}
-
-readonly GEN_DIR='_gen/asdl/examples'
-
-gen-cpp-test() {
-  local compiler=${1:-cxx}
-  local variant=${2:-asan}
-
-  local bin_dir="_bin/$compiler-$variant/asdl"
-
-  mkdir -p $GEN_DIR $bin_dir
-
-  local prefix=$GEN_DIR/typed_arith.asdl
-  asdl-main cpp asdl/examples/typed_arith.asdl $prefix
-
-  local prefix2=$GEN_DIR/demo_lib.asdl
-  asdl-main cpp asdl/examples/demo_lib.asdl $prefix2
-
-  local prefix3=$GEN_DIR/typed_demo.asdl
-  asdl-main cpp asdl/examples/typed_demo.asdl $prefix3
-
-  wc -l $prefix* $prefix2*
-
-  local bin=$bin_dir/gen_cpp_test
-
-  compile_and_link $compiler $variant '' $bin \
-    asdl/gen_cpp_test.cc \
-    prebuilt/asdl/runtime.mycpp.cc \
-    "${GC_RUNTIME[@]}" \
-    $GEN_DIR/typed_arith.asdl.cc \
-    $GEN_DIR/typed_demo.asdl.cc 
-
-  run-test-bin $bin
-}
-
-gc-test() {
-  local compiler=${1:-cxx}
-  local variant=${2:-asan}
-
-  # TODO: remove this after it works with the garbage collector!
-  export ASAN_OPTIONS='detect_leaks=0'
-
-  # for hnode_asdl.h
-  # TODO: move this into Ninja.  Redundant with cpp/TEST.sh pre-build
-  build/cpp.sh gen-asdl
-
-  local bin_dir=_bin/$compiler-$variant/asdl
-  mkdir -p $GEN_DIR $bin_dir
-
-  local prefix2=$GEN_DIR/demo_lib.asdl
-  asdl-main cpp asdl/examples/demo_lib.asdl $prefix2
-
-  local prefix3=$GEN_DIR/typed_demo.asdl
-  asdl-main cpp asdl/examples/typed_demo.asdl $prefix3
-
-  local bin=$bin_dir/gc_test
-
-  # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
-  compile_and_link $compiler $variant '' $bin \
-    asdl/gc_test.cc \
-    "${GC_RUNTIME[@]}" \
-    prebuilt/asdl/runtime.mycpp.cc \
-    $GEN_DIR/demo_lib.asdl.cc \
-    $GEN_DIR/typed_demo.asdl.cc
-
-  run-test-bin $bin
-}
-
 one-asdl-gc() {
   ### Test that an Oil ASDL file can compile by itself
 
@@ -159,11 +89,12 @@ unit() {
   local compiler=${1:-cxx}
   local variant=${2:-asan}
 
-  gen-cpp-test $compiler $variant
+  # TODO: gcevery
+
+  run-one-test 'asdl/gen_cpp_test' $compiler $variant
   echo
 
-  # integration between ASDL and the GC heap
-  gc-test $compiler $variant
+  run-one-test 'asdl/gc_test' $compiler $variant
   echo
 
   # test each ASDL file on its own, perhaps with the garbage-collected ASDL runtime

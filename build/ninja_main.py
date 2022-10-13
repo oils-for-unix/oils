@@ -291,13 +291,12 @@ def main(argv):
   n.newline()
   n.newline()
 
-  # //mycpp/runtime defined first
-  mycpp_subgraph.NinjaGraph(ru)
-
-  n.newline()
-  n.newline()
-
   cpp_subgraph.NinjaGraph(ru)
+
+  n.newline()
+  n.newline()
+
+  mycpp_subgraph.NinjaGraph(ru)
 
   n.newline()
   n.newline()
@@ -306,6 +305,10 @@ def main(argv):
 
   n.newline()
   n.newline()
+
+
+  # Materialize all the cc_binary() rules
+  ru.WriteRules()
 
   # Collect sources for metrics, tarball, shell script
   cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')

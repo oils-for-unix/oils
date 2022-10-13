@@ -25,6 +25,7 @@ Notes on ninja_syntax.py:
 """
 from __future__ import print_function
 
+import collections
 import os
 import sys
 
@@ -75,6 +76,12 @@ def ConfigDir(config):
 def ObjPath(src_path, config):
   rel_path, _ = os.path.splitext(src_path)
   return '_build/obj/%s/%s.o' % (ConfigDir(config), rel_path)
+
+
+# Used namedtuple since it doesn't have any state
+CcBinary = collections.namedtuple(
+    'CcBinary',
+    'main_cc implicit deps matrix phony_prefix preprocessed top_level')
 
 
 class CcLibrary(object):
@@ -172,6 +179,7 @@ class Rules(object):
   def __init__(self, n):
     self.n = n  # direct ninja writer
 
+    self.cc_bins = []  # list of CcBinary() objects to write
     self.cc_libs = {}  # label -> CcLibrary object
     self.cc_binary_deps = {}  # main_cc -> list of LABELS
     self.phony = {}  # list of phony targets
@@ -185,6 +193,10 @@ class Rules(object):
       if targets:
         self.n.build([name], 'phony', targets)
         self.n.newline()
+
+  def WriteRules(self):
+    for cc_bin in self.cc_bins:
+      self.WriteCcBinary(cc_bin)
 
   def compile(self, out_obj, in_cc, deps, config, implicit=None, maybe_preprocess=False):
     """ .cc -> compiler -> .o """
@@ -275,57 +287,63 @@ class Rules(object):
       self._TransitiveClosure(cc_lib.label, cc_lib.deps, unique_out)
 
   def cc_binary(self, main_cc,
-      top_level = False,
-      preprocessed = False,
       implicit = None,  # for COMPILE action, not link action
       deps = None,
       matrix = None,  # $compiler $variant
       phony_prefix = None,
+      preprocessed = False,
+      top_level = False,
       ):
     implicit = implicit or []
     deps = deps or []
     if not matrix:
       raise RuntimeError("Config matrix required")
 
+    cc_bin = CcBinary(main_cc, implicit, deps, matrix, phony_prefix, preprocessed, top_level)
+    self.cc_bins.append(cc_bin)
+
+  def WriteCcBinary(self, cc_bin):
+    c = cc_bin
+
     out_deps = set()
-    self._TransitiveClosure(main_cc, deps, out_deps)
+    self._TransitiveClosure(c.main_cc, c.deps, out_deps)
     unique_deps = sorted(out_deps)
 
     # save for SourcesForBinary()
-    self.cc_binary_deps[main_cc] = unique_deps
+    self.cc_binary_deps[c.main_cc] = unique_deps
 
-    compile_imp = list(implicit)
+    compile_imp = list(c.implicit)
     for label in unique_deps:
       cc_lib = self.cc_libs[label]  # should exit
       # compile actions of binaries that have ASDL label deps need the
       # generated header as implicit dep
       compile_imp.extend(cc_lib.generated_headers)
 
-    for config in matrix:
+    for config in c.matrix:
       if len(config) == 2:
         config = (config[0], config[1], None)
 
       for label in unique_deps:
         cc_lib = self.cc_libs[label]  # should exit
 
-        cc_lib.MaybeWrite(self, config, preprocessed)
+        cc_lib.MaybeWrite(self, config, c.preprocessed)
 
       # Compile main object, maybe with IMPLICIT headers deps
-      main_obj = ObjPath(main_cc, config)
-      self.compile(main_obj, main_cc, deps, config, implicit=compile_imp)
-      if preprocessed:
-        self.compile('', main_cc, deps, config, implicit=compile_imp,
+      main_obj = ObjPath(c.main_cc, config)
+      self.compile(main_obj, c.main_cc, c.deps, config, implicit=compile_imp)
+      if c.preprocessed:
+        self.compile('', c.main_cc, c.deps, config, implicit=compile_imp,
                      maybe_preprocess=True)
 
       config_dir = ConfigDir(config)
-      if top_level:
+      if c.top_level:
         # e.g. _bin/cxx-dbg/osh_eval
-        basename = os.path.basename(main_cc)
+        basename = os.path.basename(c.main_cc)
         first_name = basename.split('.')[0]
         bin_= '_bin/%s/%s' % (config_dir, first_name)
       else:
         # e.g. _gen/mycpp/examples/classes.mycpp
-        rel_path, _ = os.path.splitext(main_cc)
+        rel_path, _ = os.path.splitext(c.main_cc)
 
         # Put binary in _bin/cxx-dbg/mycpp/examples, not _bin/cxx-dbg/_gen/mycpp/examples
         if rel_path.startswith('_gen/'):
@@ -336,8 +354,8 @@ class Rules(object):
       # Link with OBJECT deps
       self.link(bin_, main_obj, unique_deps, config)
 
-      if phony_prefix:
-        key = '%s-%s' % (phony_prefix, config_dir)
+      if c.phony_prefix:
+        key = '%s-%s' % (c.phony_prefix, config_dir)
         if key not in self.phony:
           self.phony[key] = []
         self.phony[key].append(bin_)

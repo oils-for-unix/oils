@@ -18,6 +18,7 @@ all-tests() {
   # which finds more bugs.
   mycpp/TEST.sh test-runtime
 
+  cpp/TEST.sh pre-build
   cpp/TEST.sh unit
 
   # Relies on same pre-build

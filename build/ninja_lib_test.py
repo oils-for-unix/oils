@@ -50,6 +50,8 @@ class NinjaTest(unittest.TestCase):
         deps = ['//mycpp/ab'],
         matrix = MATRIX1)
 
+    ru.WriteRules()
+
     actions = [b.rule for b in n.build_calls]
     self.assertEqual([
         'compile_one',
@@ -88,6 +90,8 @@ class NinjaTest(unittest.TestCase):
     ru.cc_library('//mycpp/c', srcs = ['mycpp/c.cc'], deps = ['//mycpp/d'])
     ru.cc_binary('mycpp/a.cc', deps = ['//mycpp/b', '//mycpp/c'], matrix = MATRIX1)
 
+    ru.WriteRules()
+
     actions = [b.rule for b in n.build_calls]
     self.assertEqual([
         'compile_one',  # e
@@ -124,6 +128,9 @@ class NinjaTest(unittest.TestCase):
 
     ru.cc_binary(
         'mycpp/a_test.cc', deps = ['//mycpp/z'], matrix = MATRIX)
+
+    ru.WriteRules()
+
     self.assertEqual(11, len(n.build_calls))
 
     srcs = ru.SourcesForBinary('mycpp/a_test.cc')
@@ -155,6 +162,8 @@ class NinjaTest(unittest.TestCase):
         '_gen/mycpp/examples/parse.mycpp.cc',
         deps = ['//mycpp/examples/expr.asdl'],
         matrix = MATRIX1)
+
+    ru.WriteRules()
 
     actions = [b.rule for b in n.build_calls]
     print(actions)
@@ -202,6 +211,8 @@ class NinjaTest(unittest.TestCase):
         'asdl/gen_cpp_test.cc',
         deps = ['//asdl/examples/typed_demo.asdl'],
         matrix = MATRIX1)
+
+    ru.WriteRules()
 
     actions = [call.rule for call in n.build_calls]
     self.assertEqual([

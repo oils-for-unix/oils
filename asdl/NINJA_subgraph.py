@@ -5,6 +5,7 @@ asdl/NINJA_subgraph.py
 from __future__ import print_function
 
 from build.ninja_lib import log
+from build import ninja_lib
 
 _ = log
 
@@ -24,22 +25,28 @@ def NinjaGraph(ru):
   ru.asdl_library('asdl/hnode.asdl', pretty_print_methods=False)
 
   # For unit tests
-  ru.asdl_library('asdl/examples/demo_lib.asdl')
   ru.asdl_library('asdl/examples/typed_arith.asdl')
-  ru.asdl_library('asdl/examples/typed_demo.asdl')
 
-  if 0:
-    ru.cc_binary('asdl/gen_cpp_test.cc')
-    ru.cc_binary('asdl/gc_test.cc')
-    # Dependencies
-    #
-    # //mycpp/runtime
-    #
-    # The issue here is that the main
-    # asdl_deps = ['asdl/examples/typed_demo.asdl']
+  ru.asdl_library('asdl/examples/demo_lib.asdl')
+  ru.asdl_library(
+      'asdl/examples/typed_demo.asdl',
+      deps = ['//asdl/examples/demo_lib.asdl'])
 
-    # cc_library can mean compile_one, while cc_binary means link
-    #
-    # The problem is that the object file can have an implicit dependency on ASDL
-    # i.e. compile_one actions in both cc_binary and cc_library can depend on
-    # ASDL-generated headers.
+  ru.cc_binary(
+      'asdl/gen_cpp_test.cc',
+      deps = [
+        '//asdl/examples/typed_arith.asdl',
+        '//asdl/examples/typed_demo.asdl',
+        '//mycpp/runtime',
+        '//prebuilt/asdl/runtime.mycpp',
+      ],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
+  ru.cc_binary(
+      'asdl/gc_test.cc',
+      deps = [
+        '//asdl/examples/typed_demo.asdl',
+        '//mycpp/runtime',
+        '//prebuilt/asdl/runtime.mycpp',
+      ],
+      matrix = ninja_lib.COMPILERS_VARIANTS)

@@ -52,28 +52,19 @@ leaky-binding-test() {
   run-test-bin $bin $working_dir
 }
 
-run-one-test() {
-  local name=$1
-  local compiler=${2:-cxx}
-  local variant=${3:-dbg}
-
-  local bin=_bin/$compiler-$variant/cpp/$name
-
-  ninja $bin
-
-  run-test-bin $bin
+pre-build() {
+  # TODO: fold this into Ninja so it doesn't invalidate build
+  build/py.sh fastmatch
 }
 
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
-  build/py.sh fastmatch  # Could fold this into Ninja
-
   # Run Ninja-based tests
-  run-one-test leaky_core_test '' ''
-  run-one-test leaky_core_test '' asan
+  run-one-test cpp/leaky_core_test '' ''
+  run-one-test cpp/leaky_core_test '' asan
 
-  run-one-test gc_binding_test '' gcevery
+  run-one-test cpp/gc_binding_test '' gcevery
 
   # Runs in different dir
   leaky-binding-test '' ''
@@ -87,10 +78,10 @@ unit() {
 coverage() {
   ### Run coverage for this dir
 
-  build/py.sh fastmatch  # Could fold this into Ninja
+  pre-build
 
-  run-one-test leaky_core_test clang coverage
-  run-one-test gc_binding_test clang coverage
+  run-one-test cpp/leaky_core_test clang coverage
+  run-one-test cpp/gc_binding_test clang coverage
 
   leaky-binding-test clang coverage
   leaky-flag-spec-test clang coverage
