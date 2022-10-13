@@ -14,9 +14,11 @@
 
 namespace runtime {  // forward declare
 
+
 }  // forward declare namespace runtime
 
 namespace format {  // forward declare
+
   class ColorOutput;
   class TextOutput;
   class HtmlOutput;
@@ -26,17 +28,19 @@ namespace format {  // forward declare
 }  // forward declare namespace format
 
 namespace runtime {  // declare
+
 extern int NO_SPID;
 hnode_asdl::hnode__Record* NewRecord(Str* node_type);
 hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
 extern Str* TRUE_STR;
 extern Str* FALSE_STR;
 
+
 }  // declare namespace runtime
 
 namespace format {  // declare
-format::ColorOutput* DetectConsoleOutput(mylib::Writer* f);
 
+format::ColorOutput* DetectConsoleOutput(mylib::Writer* f);
 class ColorOutput : public Obj {
  public:
   ColorOutput(mylib::Writer* f);
@@ -55,6 +59,11 @@ class ColorOutput : public Obj {
 
   DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
+
+constexpr uint16_t maskof_ColorOutput() {
+  return
+    maskbit_v(offsetof(ColorOutput, f));
+}
 
 class TextOutput : public ColorOutput {
  public:
@@ -88,8 +97,8 @@ class AnsiOutput : public ColorOutput {
 
   DISALLOW_COPY_AND_ASSIGN(AnsiOutput)
 };
-extern int INDENT;
 
+extern int INDENT;
 class _PrettyPrinter : public Obj {
  public:
   _PrettyPrinter(int max_col);
@@ -102,9 +111,11 @@ class _PrettyPrinter : public Obj {
 
   DISALLOW_COPY_AND_ASSIGN(_PrettyPrinter)
 };
+
 bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
+
 inline Str* fmt0(Str* a0) {
   gBuf.reset();
   gBuf.write_const("<span class=\"", 13);

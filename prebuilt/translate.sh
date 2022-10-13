@@ -36,8 +36,6 @@ oil-part() {
   $mycpp \
     $mypypath $raw \
     --header-out $raw_header \
-    --to-header asdl.runtime \
-    --to-header asdl.format \
     $REPO_ROOT/{asdl/runtime,asdl/format,core/ansi,pylib/cgi,qsn_/qsn}.py \
     "$@"
 
@@ -67,12 +65,16 @@ EOF
 
 asdl-runtime() {
   mkdir -p prebuilt/asdl $TEMP_DIR/asdl
-  oil-part prebuilt/asdl/runtime.mycpp $TEMP_DIR/asdl/runtime_raw.mycpp.h
+  oil-part prebuilt/asdl/runtime.mycpp $TEMP_DIR/asdl/runtime_raw.mycpp.h \
+    --to-header asdl.runtime \
+    --to-header asdl.format
 }
 
 frontend-args() {
   mkdir -p prebuilt/frontend $TEMP_DIR/frontend
   oil-part prebuilt/frontend/args.mycpp $TEMP_DIR/frontend/args_raw.mycpp.h \
+    --to-header asdl.runtime \
+    --to-header asdl.format \
     --to-header frontend.args \
     frontend/args.py 
 }
