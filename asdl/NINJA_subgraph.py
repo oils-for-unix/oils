@@ -21,12 +21,12 @@ def NinjaGraph(ru):
   n.newline()
 
   # For pretty printing
-  ru.asdl_cc('asdl/hnode.asdl', pretty_print_methods=False)
+  ru.asdl_library('asdl/hnode.asdl', pretty_print_methods=False)
 
   # For unit tests
-  ru.asdl_cc('asdl/examples/demo_lib.asdl')
-  ru.asdl_cc('asdl/examples/typed_arith.asdl')
-  ru.asdl_cc('asdl/examples/typed_demo.asdl')
+  ru.asdl_library('asdl/examples/demo_lib.asdl')
+  ru.asdl_library('asdl/examples/typed_arith.asdl')
+  ru.asdl_library('asdl/examples/typed_demo.asdl')
 
   if 0:
     ru.cc_binary('asdl/gen_cpp_test.cc')

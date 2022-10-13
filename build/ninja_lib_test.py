@@ -71,10 +71,6 @@ class NinjaTest(unittest.TestCase):
 
     self.assertEqual(4, n.num_build_targets())
 
-  def testTransitiveDeps(self):
-    # TODO: cc_library() with deps
-    pass
-
   def testDiamondDeps(self):
     n, ru = self._Rules()
 
@@ -120,14 +116,14 @@ class NinjaTest(unittest.TestCase):
   def testSourcesForBinary(self):
     n, ru = self._Rules()
 
-    ru.cc_library('//mycpp/y', ['mycpp/y.cc', 'mycpp/y2.cc'])
-    ru.cc_library('//mycpp/z', ['mycpp/z.cc'])
+    ru.cc_library('//mycpp/y', srcs = ['mycpp/y.cc', 'mycpp/y2.cc'])
+    ru.cc_library('//mycpp/z', srcs = ['mycpp/z.cc'], deps = ['//mycpp/y'])
 
     # cc_library() is lazy
     self.assertEqual(0, len(n.build_calls))
 
     ru.cc_binary(
-        'mycpp/a_test.cc', deps=['//mycpp/y', '//mycpp/z'], matrix=MATRIX)
+        'mycpp/a_test.cc', deps = ['//mycpp/z'], matrix = MATRIX)
     self.assertEqual(11, len(n.build_calls))
 
     srcs = ru.SourcesForBinary('mycpp/a_test.cc')
@@ -139,19 +135,21 @@ class NinjaTest(unittest.TestCase):
 
   def test_asdl(self):
     n, ru = self._Rules()
-    ru.asdl_cc('mycpp/examples/foo.asdl')
+    ru.asdl_library('mycpp/examples/foo.asdl')
 
     self.assertEqual(1, len(n.build_calls))
 
     first = n.build_calls[0]
     self.assertEqual('asdl-cpp', first.rule)
 
-    # ru.asdl_cc('mycpp/examples/foo.asdl', pretty_print_methods=False)
+    # ru.asdl_library('mycpp/examples/foo.asdl', pretty_print_methods=False)
 
   def test_cc_binary_to_asdl(self):
     n, ru = self._Rules()
 
-    ru.asdl_cc('mycpp/examples/expr.asdl')
+    ru.asdl_library('asdl/hnode.asdl', pretty_print_methods = False)  # REQUIRED
+
+    ru.asdl_library('mycpp/examples/expr.asdl')
 
     ru.cc_binary(
         '_gen/mycpp/examples/parse.mycpp.cc',
@@ -161,6 +159,7 @@ class NinjaTest(unittest.TestCase):
     actions = [b.rule for b in n.build_calls]
     print(actions)
     self.assertEqual([
+        'asdl-cpp',
         'asdl-cpp',
         'compile_one',
         'compile_one',
@@ -184,27 +183,20 @@ class NinjaTest(unittest.TestCase):
         ],
         last.inputs)
 
-  def test_cc_library_to_asdl(self):
-    n, ru = self._Rules()
-
-    ru.asdl_cc('asdl/hnode.asdl', pretty_print_methods=False)
-    # There's no cc_library() in this case
-
-    pass
-
   def test_asdl_to_asdl(self):
     n, ru = self._Rules()
 
-    ru.asdl_cc(
-        'asdl/examples/demo_lib.asdl')
+    ru.asdl_library('asdl/hnode.asdl', pretty_print_methods = False)  # REQUIRED
+
+    ru.asdl_library('asdl/examples/demo_lib.asdl')
 
     # 'use' in ASDL creates this dependency
-    ru.asdl_cc(
+    ru.asdl_library(
         'asdl/examples/typed_demo.asdl',
         deps = ['//asdl/examples/demo_lib.asdl'])
     
     actions = [call.rule for call in n.build_calls]
-    self.assertEqual(['asdl-cpp', 'asdl-cpp'], actions)
+    self.assertEqual(['asdl-cpp', 'asdl-cpp', 'asdl-cpp'], actions)
 
     ru.cc_binary(
         'asdl/gen_cpp_test.cc',
@@ -213,7 +205,7 @@ class NinjaTest(unittest.TestCase):
 
     actions = [call.rule for call in n.build_calls]
     self.assertEqual([
-        'asdl-cpp', 'asdl-cpp',
+        'asdl-cpp', 'asdl-cpp', 'asdl-cpp',
         'compile_one',  # compile demo_lib
         'compile_one',  # compile typed_demo
         'compile_one',  # compile gen_cpp_test
@@ -224,7 +216,22 @@ class NinjaTest(unittest.TestCase):
     c = CallFor(n, '_build/obj/cxx-dbg/_gen/asdl/examples/typed_demo.asdl.o')
     print(c)
 
-    #self.assertEqual(['TODO'], c.implicit)
+    # typed_demo depends on demo_lib, so compiling typed_demo.asdl.c depends on
+    # the header demo_lib.asdl.h
+    self.assertEqual(
+        [ '_gen/asdl/examples/demo_lib.asdl.h',
+          '_gen/asdl/hnode.asdl.h' ],
+        sorted(c.implicit))
+
+    c = CallFor(n, '_build/obj/cxx-dbg/asdl/gen_cpp_test.o')
+    print(c)
+    print(c.implicit)
+    self.assertEqual(
+        [ '_gen/asdl/examples/demo_lib.asdl.h',
+          '_gen/asdl/examples/typed_demo.asdl.h',
+          '_gen/asdl/hnode.asdl.h',
+        ],
+        sorted(c.implicit))
 
   def testShWrap(self):
     # TODO: Rename to py_binary or py_tool

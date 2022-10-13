@@ -101,20 +101,37 @@ class CcLibrary(object):
     self.obj_lookup = {}  # config -> list of objects
     self.preprocessed_lookup = {}  # config -> boolean
 
+  def _CalculateImplicit(self, ru):
+    """ Compile actions for cc_library() also need implicit deps on generated headers"""
+
+    out_deps = set()
+    ru._TransitiveClosure(self.label, self.deps, out_deps)
+    unique_deps = sorted(out_deps)
+
+    implicit = list(self.implicit)  # copy
+    for label in unique_deps:
+      cc_lib = ru.cc_libs[label]
+      implicit.extend(cc_lib.generated_headers)
+    return implicit
+
   def MaybeWrite(self, ru, config, preprocessed):
     if config not in self.obj_lookup:  # already written by some other cc_binary()
+      implicit = self._CalculateImplicit(ru)
+
       objects = []
       for src in self.srcs:
         obj = ObjPath(src, config)
-        ru.compile(obj, src, self.deps, config, implicit=self.implicit)
+        ru.compile(obj, src, self.deps, config, implicit=implicit)
         objects.append(obj)
 
       self.obj_lookup[config] = objects
 
     if preprocessed and config not in self.preprocessed_lookup:
+      implicit = self._CalculateImplicit(ru)
+
       for src in self.srcs:
         # no output needed
-        ru.compile('', src, self.deps, config, implicit=self.implicit,
+        ru.compile('', src, self.deps, config, implicit=implicit,
                    maybe_preprocess=True)
       self.preprocessed_lookup[config] = True
 
@@ -199,7 +216,6 @@ class Rules(object):
     assert isinstance(out_bin, str), out_bin
     assert isinstance(main_obj, str), main_obj
 
-    # TODO: replace with _TransitiveClosure
     objects = [main_obj]
     for label in deps:
       key = (label, compiler, variant)
@@ -222,7 +238,16 @@ class Rules(object):
       self.n.build([stripped, symbols], 'strip', [out_bin])
       self.n.newline()
 
-  def cc_library(self, label, srcs, implicit=None, deps=None, generated_headers=None):
+  def cc_library(self, label,
+      srcs = None,
+      implicit = None,
+      deps = None,
+      generated_headers = None):
+
+    # srcs = [] is allowed for _gen/asdl/hnode.asdl.h
+    if srcs is None:
+      raise RuntimeError('cc_library %r requires srcs' % label)
+
     implicit = implicit or []
     deps = deps or []
     generated_headers = generated_headers or []
@@ -262,18 +287,19 @@ class Rules(object):
     if not matrix:
       raise RuntimeError("Config matrix required")
 
-    # TODO: Use transitive closure here too
-    self.cc_binary_deps[main_cc] = deps
-
     out_deps = set()
     self._TransitiveClosure(main_cc, deps, out_deps)
     unique_deps = sorted(out_deps)
 
+    # save for SourcesForBinary()
+    self.cc_binary_deps[main_cc] = unique_deps
+
+    compile_imp = list(implicit)
     for label in unique_deps:
       cc_lib = self.cc_libs[label]  # should exit
       # compile actions of binaries that have ASDL label deps need the
       # generated header as implicit dep
-      implicit.extend(cc_lib.generated_headers)
+      compile_imp.extend(cc_lib.generated_headers)
 
     for config in matrix:
       if len(config) == 2:
@@ -286,9 +312,9 @@ class Rules(object):
 
       # Compile main object, maybe with IMPLICIT headers deps
       main_obj = ObjPath(main_cc, config)
-      self.compile(main_obj, main_cc, deps, config, implicit=implicit)
+      self.compile(main_obj, main_cc, deps, config, implicit=compile_imp)
       if preprocessed:
-        self.compile('', main_cc, deps, config, implicit=implicit,
+        self.compile('', main_cc, deps, config, implicit=compile_imp,
                      maybe_preprocess=True)
 
       config_dir = ConfigDir(config)
@@ -326,8 +352,11 @@ class Rules(object):
       sources.extend(self.cc_libs[label].srcs)
     return sources
 
-  def asdl_cc(self, asdl_path, deps = None, pretty_print_methods=True):
+  def asdl_library(self, asdl_path, deps = None, pretty_print_methods=True):
     deps = deps or []
+
+    # SYSTEM header, _gen/asdl/hnode.asdl.h
+    deps.append('//asdl/hnode.asdl')
 
     # to create _gen/mycpp/examples/expr.asdl.h
     prefix = '_gen/%s' % asdl_path
@@ -358,13 +387,13 @@ class Rules(object):
 
     # ... But COMPILING anything that #includes it does.
     # Note: assumes there's a build rule for this "system" ASDL schema
-    headers = ['_gen/asdl/hnode.asdl.h', out_header]
 
+    srcs = [out_cc] if pretty_print_methods else []
     # Define lazy CC library
     self.cc_library(
         '//' + asdl_path,
-        srcs = [out_cc],
+        srcs = srcs,
         deps = deps,
         # For compile_one steps of files that #include this ASDL file
-        generated_headers = headers,
+        generated_headers = [out_header],
     )

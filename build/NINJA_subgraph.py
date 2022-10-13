@@ -154,9 +154,9 @@ def NinjaGraph(ru):
   #
 
   # TODO: can move these to frontend/ etc.
-  ru.asdl_cc('frontend/syntax.asdl')
-  ru.asdl_cc('frontend/types.asdl', pretty_print_methods=False)
-  ru.asdl_cc('core/runtime.asdl')
+  ru.asdl_library('frontend/syntax.asdl')
+  ru.asdl_library('frontend/types.asdl', pretty_print_methods=False)
+  ru.asdl_library('core/runtime.asdl')
 
   #
   # Other code generators
