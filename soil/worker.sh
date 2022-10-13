@@ -187,7 +187,7 @@ cpp-spec-tasks() {
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
 HACK-fastlex     build/py.sh fastlex                   -
-build-osh-eval   build/cpp.sh all                      -
+ninja-config     ./NINJA-config.sh dummy               -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
@@ -205,7 +205,7 @@ cpp-small-tasks() {
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
-build-osh-eval   build/cpp.sh all                      -
+ninja-config     ./NINJA-config.sh dummy               -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
