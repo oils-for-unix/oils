@@ -131,6 +131,13 @@ import sys
 from build import ninja_lib
 from build.ninja_lib import log
 
+from asdl import NINJA_subgraph as asdl_subgraph
+from core import NINJA_subgraph as core_subgraph
+from cpp import NINJA_subgraph as cpp_subgraph
+from frontend import NINJA_subgraph as frontend_subgraph
+from mycpp import NINJA_subgraph as mycpp_subgraph
+from prebuilt import NINJA_subgraph as prebuilt_subgraph
+
 from vendor import ninja_syntax
 
 
@@ -378,6 +385,9 @@ def InitSteps(n):
          command='_bin/shwrap/signal_gen $action $out_prefix',
          description='signal_gen $action $out_prefix')
 
+  # TODO: these should be ru.genrule() and moved into frontend/, core/, etc.
+  # They have an implicit dependency on the code generator.
+
   # Similar to above
   prefix = '_gen/frontend/consts'
   n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
@@ -427,8 +437,9 @@ def InitSteps(n):
 
 def InitCodeGen(ru):
   # All the code generators from NINJA-config.sh
-  #
-  # TODO: could be moved into frontend, core/, etc.
+
+  # TODO: these should be ru.py_binary() and moved into frontend/, core/, etc.
+
   ru.shwrap_py('core/optview_gen.py')
   ru.shwrap_py('frontend/consts_gen.py')
   ru.shwrap_py('frontend/flag_gen.py')
@@ -472,13 +483,6 @@ def main(argv):
   #
   # Create the graph.
   #
-
-  from asdl import NINJA_subgraph as asdl_subgraph
-  from core import NINJA_subgraph as core_subgraph
-  from cpp import NINJA_subgraph as cpp_subgraph
-  from frontend import NINJA_subgraph as frontend_subgraph
-  from mycpp import NINJA_subgraph as mycpp_subgraph
-  from prebuilt import NINJA_subgraph as prebuilt_subgraph
 
   asdl_subgraph.NinjaGraph(ru)
   ru.comment('')

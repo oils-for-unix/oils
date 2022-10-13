@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """
 mycpp/NINJA_subgraph.py
 """
@@ -60,11 +59,6 @@ def DefineTargets(ru):
 
   # ASDL schema that examples/parse.py depends on
   ru.asdl_library('mycpp/examples/expr.asdl')
-
-  # TODO: This rule should be dynamically created
-  ru.cc_library(
-      '//mycpp/examples/expr.asdl.o',
-      ['_gen/mycpp/examples/expr.asdl.cc'])
 
 
 #

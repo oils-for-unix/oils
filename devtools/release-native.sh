@@ -14,6 +14,11 @@ set -o errexit
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
+gen-oil-native-sh() {
+  PYTHONPATH=. build/ninja_main.py shell
+  chmod +x _build/oil-native.sh
+}
+
 make-tar() {
   local app_name='oil-native'
 
@@ -21,6 +26,8 @@ make-tar() {
 
   # NOTE: Could move this to the Makefile, which will make it
   mkdir -p _release 
+
+  gen-oil-native-sh
 
   local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
   PYTHONPATH=. build/ninja_main.py tarball-manifest \

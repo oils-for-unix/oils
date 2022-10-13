@@ -20,24 +20,6 @@ gen-asdl() {
     _gen/frontend/syntax.asdl.h
 }
 
-gen-oil-native-sh() {
-  PYTHONPATH=. build/ninja_main.py shell
-  chmod +x _build/oil-native.sh
-}
-
-all() {
-  ./NINJA-config.sh
-
-  # Needed for release tarball
-  gen-oil-native-sh
-
-  #time ninja -j 1 _bin/cxx-dbg/osh_eval
-  time ninja _bin/cxx-dbg/osh_eval
-  echo
-
-  ls -l _bin/*/osh_eval*
-}
-
 compile-quickly() {
   ### For the fast possible development experience
 
