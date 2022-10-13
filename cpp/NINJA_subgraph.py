@@ -133,7 +133,8 @@ def NinjaGraph(ru):
   # Main program!
   ru.cc_binary(
       '_gen/bin/osh_eval.mycpp.cc',
-      implicit = ASDL_H + GENERATED_H,  # TODO: express
+      preprocessed = True,
+      implicit = ASDL_H + GENERATED_H,
       matrix = ninja_lib.COMPILERS_VARIANTS,
       top_level = True,  # _bin/cxx-dbg/osh_eval
       deps = [

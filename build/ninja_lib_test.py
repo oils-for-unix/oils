@@ -21,6 +21,15 @@ MATRIX = [
     ('cxx', 'opt'),
 ]
 
+
+def CallFor(n, output_name):
+  for b in n.build_calls:
+    if b.outputs[0] == output_name:
+      return b
+  else:
+    raise RuntimeError('%s not found' % output_name)
+
+
 class NinjaTest(unittest.TestCase):
 
   def _Rules(self):
@@ -42,11 +51,11 @@ class NinjaTest(unittest.TestCase):
         matrix = MATRIX1)
 
     actions = [b.rule for b in n.build_calls]
-    # preprocess could be optional?
     self.assertEqual([
-        'compile_one', 'preprocess',
-        'compile_one', 'preprocess',
-        'compile_one', 'preprocess', 'link'],
+        'compile_one',
+        'compile_one',
+        'compile_one',
+        'link'],
         actions)
 
     last = n.build_calls[-1]
@@ -58,17 +67,51 @@ class NinjaTest(unittest.TestCase):
 
     # It's NOT used in a binary, so not instantiated
     ru.cc_library('//mycpp/z', ['mycpp/z.cc'])
-    self.assertEqual(7, len(n.build_calls))
+    self.assertEqual(4, len(n.build_calls))
 
-    self.assertEqual(7, n.num_build_targets())
+    self.assertEqual(4, n.num_build_targets())
 
   def testTransitiveDeps(self):
     # TODO: cc_library() with deps
     pass
 
   def testDiamondDeps(self):
-    # TODO: make sure there aren't duplicates
-    pass
+    n, ru = self._Rules()
+
+    # e
+    # |
+    # d 
+    # | \
+    # b  c
+    # | /
+    # a 
+
+    ru.cc_library('//mycpp/e', srcs = ['mycpp/e.cc'])  # leaf
+    ru.cc_library('//mycpp/d', srcs = ['mycpp/d.cc'], deps = ['//mycpp/e'])  # diamond
+    ru.cc_library('//mycpp/b', srcs = ['mycpp/b.cc'], deps = ['//mycpp/d'])
+    ru.cc_library('//mycpp/c', srcs = ['mycpp/c.cc'], deps = ['//mycpp/d'])
+    ru.cc_binary('mycpp/a.cc', deps = ['//mycpp/b', '//mycpp/c'], matrix = MATRIX1)
+
+    actions = [b.rule for b in n.build_calls]
+    self.assertEqual([
+        'compile_one',  # e
+        'compile_one',  # d
+        'compile_one',  # c
+        'compile_one',  # b
+        'compile_one',  # a
+        'link'],
+        actions)
+
+    b = CallFor(n, '_bin/cxx-dbg/mycpp/a')
+    print(b)
+    self.assertEqual([
+        '_build/obj/cxx-dbg/mycpp/a.o',
+        '_build/obj/cxx-dbg/mycpp/b.o',
+        '_build/obj/cxx-dbg/mycpp/c.o',
+        '_build/obj/cxx-dbg/mycpp/d.o',
+        '_build/obj/cxx-dbg/mycpp/e.o',
+        ],
+        sorted(b.inputs))
 
   def testCircularDeps(self):
     # Should be disallowed I think
@@ -85,7 +128,7 @@ class NinjaTest(unittest.TestCase):
 
     ru.cc_binary(
         'mycpp/a_test.cc', deps=['//mycpp/y', '//mycpp/z'], matrix=MATRIX)
-    self.assertEqual(19, len(n.build_calls))
+    self.assertEqual(11, len(n.build_calls))
 
     srcs = ru.SourcesForBinary('mycpp/a_test.cc')
     self.assertEqual(
@@ -119,15 +162,12 @@ class NinjaTest(unittest.TestCase):
     print(actions)
     self.assertEqual([
         'asdl-cpp',
-        'compile_one', 'preprocess',
-        'compile_one', 'preprocess',
+        'compile_one',
+        'compile_one',
         'link'],
         actions)
 
-    compile_parse = n.build_calls[3]
-    self.assertEqual(
-        ['_build/obj/cxx-dbg/_gen/mycpp/examples/parse.mycpp.o'],
-        compile_parse.outputs)
+    compile_parse = CallFor(n, '_build/obj/cxx-dbg/_gen/mycpp/examples/parse.mycpp.o')
 
     # Important implicit dependencies on generated headers!
     self.assertEqual([
@@ -146,24 +186,45 @@ class NinjaTest(unittest.TestCase):
 
   def test_cc_library_to_asdl(self):
     n, ru = self._Rules()
+
+    ru.asdl_cc('asdl/hnode.asdl', pretty_print_methods=False)
+    # There's no cc_library() in this case
+
     pass
 
   def test_asdl_to_asdl(self):
     n, ru = self._Rules()
 
-    ru.asdl_cc('asdl/hnode.asdl', pretty_print_methods=False)
-    # There's no cc_library() in this case
+    ru.asdl_cc(
+        'asdl/examples/demo_lib.asdl')
 
-    ru.asdl_cc('frontend/syntax.asdl')
+    # 'use' in ASDL creates this dependency
+    ru.asdl_cc(
+        'asdl/examples/typed_demo.asdl',
+        deps = ['//asdl/examples/demo_lib.asdl'])
+    
+    actions = [call.rule for call in n.build_calls]
+    self.assertEqual(['asdl-cpp', 'asdl-cpp'], actions)
 
-    return
-
-    # TODO: It should automatically look it up, generate a cc_binary, etc.
-    # Then uses it on examples/parse -> expr.asdl
     ru.cc_binary(
-        'foo.cc',
-        deps = ['//frontend/syntax.asdl'],
+        'asdl/gen_cpp_test.cc',
+        deps = ['//asdl/examples/typed_demo.asdl'],
         matrix = MATRIX1)
+
+    actions = [call.rule for call in n.build_calls]
+    self.assertEqual([
+        'asdl-cpp', 'asdl-cpp',
+        'compile_one',  # compile demo_lib
+        'compile_one',  # compile typed_demo
+        'compile_one',  # compile gen_cpp_test
+        'link',
+        ],
+        actions)
+
+    c = CallFor(n, '_build/obj/cxx-dbg/_gen/asdl/examples/typed_demo.asdl.o')
+    print(c)
+
+    #self.assertEqual(['TODO'], c.implicit)
 
   def testShWrap(self):
     # TODO: Rename to py_binary or py_tool

@@ -99,38 +99,24 @@ class CcLibrary(object):
     self.generated_headers = generated_headers
 
     self.obj_lookup = {}  # config -> list of objects
+    self.preprocessed_lookup = {}  # config -> boolean
 
+  def MaybeWrite(self, ru, config, preprocessed):
+    if config not in self.obj_lookup:  # already written by some other cc_binary()
+      objects = []
+      for src in self.srcs:
+        obj = ObjPath(src, config)
+        ru.compile(obj, src, self.deps, config, implicit=self.implicit)
+        objects.append(obj)
 
-  def MaybeWrite(self, ru, config):
-    if config in self.obj_lookup:  # already written by some other cc_binary()
-      return
+      self.obj_lookup[config] = objects
 
-    objects = []
-    for src in self.srcs:
-      obj = ObjPath(src, config)
-      objects.append(obj)
-
-      ru.compile(obj, src, self.deps, config, implicit=self.implicit)
-
-    self.obj_lookup[config] = objects
-
-
-# Kinds of deps:
-#   ASDL -> ASDL:        core/runtime -> frontend/syntax 
-#   cc_library -> ASDL
-#   cc_binary -> ASDL
-#
-# TODO: Make a FakeNinjaWriter to test this, n.build, n.rule()
-# - Add assertions for other rules
-
-# asdl('frontend/syntax.asdl')
-# asdl(
-#   'core/runtime.asdl',
-#   deps = ['//frontend/syntax.asdl'])
-#
-# This dependency moves over to C++?  It means that runtime.asdl.cc has
-# implicit dep on _gen/frontend/syntax.asdl.h
-
+    if preprocessed and config not in self.preprocessed_lookup:
+      for src in self.srcs:
+        # no output needed
+        ru.compile('', src, self.deps, config, implicit=self.implicit,
+                   maybe_preprocess=True)
+      self.preprocessed_lookup[config] = True
 
 
 class Rules(object):
@@ -169,9 +155,6 @@ class Rules(object):
   def __init__(self, n):
     self.n = n  # direct ninja writer
 
-    #self.generated_headers = {}  # ASDL filename -> header name
-    #self.asdl = {}  # label -> True if ru.compile(config) has been called?
-
     self.cc_libs = {}  # label -> CcLibrary object
     self.cc_binary_deps = {}  # main_cc -> list of LABELS
     self.phony = {}  # list of phony targets
@@ -186,10 +169,9 @@ class Rules(object):
         self.n.build([name], 'phony', targets)
         self.n.newline()
 
-  def compile(self, out_obj, in_cc, deps, config, implicit=None):
-    # deps: //mycpp/examples/expr.asdl -> then look up the headers it exports?
+  def compile(self, out_obj, in_cc, deps, config, implicit=None, maybe_preprocess=False):
+    """ .cc -> compiler -> .o """
 
-    # TODO: implicit deps for ASDL
     implicit = implicit or []
 
     compiler, variant, more_cxx_flags = config
@@ -200,27 +182,26 @@ class Rules(object):
       flags_str = "'%s'" % more_cxx_flags
 
     v = [('compiler', compiler), ('variant', variant), ('more_cxx_flags', flags_str)]
-    self.n.build([out_obj], 'compile_one', [in_cc], implicit=implicit, variables=v)
+    if maybe_preprocess:
+      # Limit it to certain configs
+      if more_cxx_flags is None and variant in ('dbg', 'opt'):
+        pre = '_build/preprocessed/%s-%s/%s' % (compiler, variant, in_cc)
+        self.n.build(pre, 'preprocess', [in_cc], implicit=implicit, variables=v)
+    else:
+      self.n.build([out_obj], 'compile_one', [in_cc], implicit=implicit, variables=v)
+
     self.n.newline()
 
-    # TODO: restrict to some binaries?
-    if more_cxx_flags is None and variant in ('dbg', 'opt'):
-      pre = '_build/preprocessed/%s-%s/%s' % (compiler, variant, in_cc)
-      self.n.build(pre, 'preprocess', [in_cc], implicit=implicit, variables=v)
-      self.n.newline()
-
   def link(self, out_bin, main_obj, deps, config):
+    """ list of .o -> linker -> executable, along with stripped version """
     compiler, variant, _ = config
 
     assert isinstance(out_bin, str), out_bin
     assert isinstance(main_obj, str), main_obj
+
+    # TODO: replace with _TransitiveClosure
     objects = [main_obj]
     for label in deps:
-
-      # TODO: for ASDL label, call n.compile() on demand?  
-      # So you can just have an asdl() rule, and no binary ever depends on it,
-      # then you don't get those rules.
-
       key = (label, compiler, variant)
       try:
         cc_lib = self.cc_libs[label]
@@ -251,36 +232,64 @@ class Rules(object):
 
     self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps, generated_headers)
 
+  def _TransitiveClosure(self, name, deps, unique_out):
+    """
+    Args:
+      name: for error messages
+    """
+    for label in deps:
+      if label in unique_out:
+        continue
+      unique_out.add(label)
+
+      try:
+        cc_lib = self.cc_libs[label]
+      except KeyError:
+        raise RuntimeError('Undefined label %s in %s' % (label, name))
+
+      self._TransitiveClosure(cc_lib.label, cc_lib.deps, unique_out)
+
   def cc_binary(self, main_cc,
-      top_level=False,
-      implicit=None,  # for COMPILE action, not link action
-      deps=None, matrix=None,  # $compiler $variant
-      phony_prefix=None,
+      top_level = False,
+      preprocessed = False,
+      implicit = None,  # for COMPILE action, not link action
+      deps = None,
+      matrix = None,  # $compiler $variant
+      phony_prefix = None,
       ):
     implicit = implicit or []
     deps = deps or []
     if not matrix:
       raise RuntimeError("Config matrix required")
 
+    # TODO: Use transitive closure here too
     self.cc_binary_deps[main_cc] = deps
+
+    out_deps = set()
+    self._TransitiveClosure(main_cc, deps, out_deps)
+    unique_deps = sorted(out_deps)
+
+    for label in unique_deps:
+      cc_lib = self.cc_libs[label]  # should exit
+      # compile actions of binaries that have ASDL label deps need the
+      # generated header as implicit dep
+      implicit.extend(cc_lib.generated_headers)
+
     for config in matrix:
       if len(config) == 2:
         config = (config[0], config[1], None)
 
-      for label in deps:
-        try:
-          cc_lib = self.cc_libs[label]
-        except KeyError:
-          raise RuntimeError('Undefined label %s in cc_binary %s' % (label, main_cc))
-        cc_lib.MaybeWrite(self, config)
+      for label in unique_deps:
+        cc_lib = self.cc_libs[label]  # should exit
 
-        # compile actions of binaries that have ASDL label deps need the
-        # generated header as implicit dep
-        implicit.extend(cc_lib.generated_headers)
+        cc_lib.MaybeWrite(self, config, preprocessed)
 
       # Compile main object, maybe with IMPLICIT headers deps
       main_obj = ObjPath(main_cc, config)
       self.compile(main_obj, main_cc, deps, config, implicit=implicit)
+      if preprocessed:
+        self.compile('', main_cc, deps, config, implicit=implicit,
+                     maybe_preprocess=True)
 
       config_dir = ConfigDir(config)
       if top_level:
@@ -299,7 +308,7 @@ class Rules(object):
         bin_= '_bin/%s/%s' % (config_dir, rel_path)
 
       # Link with OBJECT deps
-      self.link(bin_, main_obj, deps, config)
+      self.link(bin_, main_obj, unique_deps, config)
 
       if phony_prefix:
         key = '%s-%s' % (phony_prefix, config_dir)
@@ -317,7 +326,9 @@ class Rules(object):
       sources.extend(self.cc_libs[label].srcs)
     return sources
 
-  def asdl_cc(self, asdl_path, pretty_print_methods=True):
+  def asdl_cc(self, asdl_path, deps = None, pretty_print_methods=True):
+    deps = deps or []
+
     # to create _gen/mycpp/examples/expr.asdl.h
     prefix = '_gen/%s' % asdl_path
 
@@ -331,12 +342,10 @@ class Rules(object):
       outputs = [out_header]
       asdl_flags = '--no-pretty-print-methods'
 
-    debug_mod = '%s_debug.py' % prefix 
+    debug_mod = prefix + '_debug.py'
     outputs.append(debug_mod)
 
-    # NOTE: Generating syntax_asdl.h does NOT depend on hnode_asdl.h, but
-    # COMPILING anything that #includes it does.  That is handled elsewhere.
-
+    # Generating syntax_asdl.h does NOT depend on hnode_asdl.h existing ...
     self.n.build(outputs, 'asdl-cpp', [asdl_path],
         implicit = ['_bin/shwrap/asdl_main'],
         variables = [
@@ -347,13 +356,15 @@ class Rules(object):
         ])
     self.n.newline()
 
+    # ... But COMPILING anything that #includes it does.
     # Note: assumes there's a build rule for this "system" ASDL schema
     headers = ['_gen/asdl/hnode.asdl.h', out_header]
 
-    # Define lazy CC library too
+    # Define lazy CC library
     self.cc_library(
         '//' + asdl_path,
         srcs = [out_cc],
+        deps = deps,
         # For compile_one steps of files that #include this ASDL file
         generated_headers = headers,
     )
