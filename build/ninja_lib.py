@@ -271,7 +271,10 @@ class Rules(object):
       self.compile(main_obj, main_cc, deps, config, implicit=implicit)
 
       for label in deps:
-        cc_lib = self.cc_libs[label]
+        try:
+          cc_lib = self.cc_libs[label]
+        except KeyError:
+          raise RuntimeError('Undefined label %s in cc_binary %s' % (label, main_cc))
         cc_lib.MaybeWrite(self, config)
 
       config_dir = ConfigDir(config)
