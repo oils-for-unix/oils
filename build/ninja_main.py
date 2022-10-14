@@ -2,124 +2,8 @@
 """
 build/ninja_main.py - invoked by ./NINJA-config.sh
 
-Code Layout:
+See build/README.md for the code and data layout.
 
-  build/
-    # TODO: rename to "steps"
-    ninja-rules-py.sh
-    ninja-rules-cpp.sh
-  cpp/
-    NINJA_subgraph.py
-  mycpp/
-    NINJA_subgraph.py  # This file describes dependencies programmatically
-    TEST.sh            # test driver for unit tests and examples
-
-    examples/
-      cgi.py
-      varargs.py
-      varargs_preamble.h
-
-Output Layout:
-
-  _gen/
-    bin/ 
-      osh_eval.mycpp.{h,cc}
-    mycpp/
-      examples/
-        cgi.mycpp.cc
-        cgi_raw.mycpp.cc
-        cgi.pea.cc
-        cgi_raw.pea.cc
-        expr.asdl.{h,cc}
-
-  _build/
-    NINJA/  # part of the Ninja graph
-      asdl.asdl_main/
-        all-pairs.txt
-        deps.txt
-
-    obj/
-      # The obj folder is a 2-tuple {cxx,clang}-{dbg,opt,asan ...}
-      cxx-dbg/
-        bin/
-          osh_eval.mycpp.o
-          osh_eval.mycpp.d     # dependency file
-          osh_eval.mycpp.json  # when -ftime-trace is passed
-        mycpp/
-          gc_heap_test.o  # not translated
-          gc_builtins.o   
-        _gen/
-          mycpp/
-            examples/
-              cgi.mycpp.o
-              cgi.mycpp.o.d
-              cgi.pea.o
-              cgi.pea.o.d
-              expr.asdl.o
-              expr.asdl.o.d
-      cxx-gcevery/
-      cxx-opt/
-      clang-coverage/
-
-    preprocessed/
-      cxx-dbg/
-        cpp/
-          leaky_stdlib.cc
-      cxx-dbg.txt  # line counts
-
-
-  _bin/
-
-    # These are the code generators.  TODO: move to _bin/PORT/asdl/asdl_main
-    shwrap/
-      asdl_main
-      mycpp_main
-      lexer_gen
-      ...
-
-    # The _bin folder is a 3-tuple {cxx,clang}-{dbg,opt,asan ...}-{,sh}
-    cxx-opt/
-      osh_eval
-      osh_eval.stripped              # The end user binary, with top_level = True
-      osh_eval.symbols
-
-      mycpp/
-        examples/
-          cgi.mycpp
-          cgi.mycpp.stripped
-          cgi.pea
-          cgi.pea.stripped
-        gc_heap_test
-
-    cxx-opt-sh/                      # with shell script
-      cxx-gcevery/
-        mycpp/
-          gc_heap_test
-
-    clang-coverage/
-
-  _test/
-    tasks/        # *.txt and *.task.txt for .wwz
-      typecheck/  # optionally run
-      test/       # py, gcevery, asan, opt
-      benchmark/
-
-      # optionally logged?
-      translate/
-      compile/
-
-# More
-
-  # C code shared with the Python build
-  # eventually this can be moved into Ninja
-  _devbuild/
-    gen/
-      osh-lex.h
-      osh-types.h
-      id.h
-      grammar_nt.h
-
-      runtime_asdl.py
 """
 from __future__ import print_function
 
@@ -132,6 +16,7 @@ from build import ninja_lib
 from build.ninja_lib import log
 
 from asdl import NINJA_subgraph as asdl_subgraph
+from bin import NINJA_subgraph as bin_subgraph
 from core import NINJA_subgraph as core_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
 from frontend import NINJA_subgraph as frontend_subgraph
@@ -302,6 +187,10 @@ def InitSteps(n):
   Some of these are defined in mycpp/NINJA_subgraph.py.  Could move them here.
   """
 
+  #
+  # Compiling and linking
+  #
+
   # Preprocess one translation unit
   n.rule('preprocess',
          # compile_one detects the _build/preprocessed path
@@ -334,16 +223,15 @@ def InitSteps(n):
          description='STRIP $in $out')
   n.newline()
 
+  #
+  # Code generators
+  #
+
   n.rule('write-shwrap',
          # $in must start with main program
          command='build/ninja-rules-py.sh write-shwrap $template $out $in',
          description='make-pystub $out $in')
   n.newline()
-
-
-  #
-  # Code generators
-  #
 
   n.rule('asdl-cpp',
          command='_bin/shwrap/asdl_main $action $asdl_flags $in $out_prefix $debug_mod',
@@ -372,6 +260,16 @@ def InitSteps(n):
          command='_bin/shwrap/arith_parse_gen > $out',
          description='arith-parse-gen > $out')
 
+  n.rule('signal-gen',
+         command='_bin/shwrap/signal_gen $action $out_prefix',
+         description='signal_gen $action $out_prefix')
+
+  n.rule('gen-osh-eval',
+         command='build/ninja-rules-py.sh gen-osh-eval $out_prefix $in',
+         description='gen-osh-eval $out_prefix $in')
+
+  n.newline()
+
   prefix = '_gen/frontend/id_kind.asdl'
   n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
           implicit=['_bin/shwrap/consts_gen'],
@@ -380,10 +278,6 @@ def InitSteps(n):
             ('action', 'cpp'),
           ])
   n.newline()
-
-  n.rule('signal-gen',
-         command='_bin/shwrap/signal_gen $action $out_prefix',
-         description='signal_gen $action $out_prefix')
 
   # TODO: these should be ru.genrule() and moved into frontend/, core/, etc.
   # They have an implicit dependency on the code generator.
@@ -485,6 +379,9 @@ def main(argv):
   #
 
   asdl_subgraph.NinjaGraph(ru)
+  ru.comment('')
+
+  bin_subgraph.NinjaGraph(ru)
   ru.comment('')
 
   core_subgraph.NinjaGraph(ru)

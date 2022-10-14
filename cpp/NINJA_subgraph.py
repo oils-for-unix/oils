@@ -124,20 +124,3 @@ def NinjaGraph(ru):
         ('clang', 'coverage', '-D CPP_UNIT_TEST'),
       ]
   )
-
-  # Main program!
-  ru.cc_binary(
-      '_gen/bin/osh_eval.mycpp.cc',
-      preprocessed = True,
-      implicit = ASDL_H + GENERATED_H,
-      matrix = ninja_lib.COMPILERS_VARIANTS,
-      top_level = True,  # _bin/cxx-dbg/osh_eval
-      deps = [
-        '//cpp/leaky_core',
-        '//cpp/leaky_bindings',
-        '//frontend/arg_types',
-        '//ASDL_CC',
-        '//GENERATED_CC',
-        '//mycpp/runtime',
-        ]
-      )

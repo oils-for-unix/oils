@@ -234,11 +234,6 @@ def NinjaGraph(ru):
   n.variable('NINJA_REPO_ROOT', os.path.dirname(this_dir))
   n.newline()
 
-  n.rule('gen-osh-eval',
-         command='build/ninja-rules-py.sh gen-osh-eval $out_prefix $in',
-         description='gen-osh-eval $out_prefix $in')
-  n.newline()
-
   # mycpp and pea have the same interface
   n.rule('translate-mycpp',
          command='_bin/shwrap/mycpp_main $mypypath $out $in',
@@ -306,18 +301,6 @@ def NinjaGraph(ru):
   ru.AddPhony(ph)
 
   DefineTargets(ru)
-
-  #
-  # osh_eval.  Could go in bin/NINJA_subgraph.py
-  #
-
-  with open('_build/NINJA/osh_eval/translate.txt') as f:
-    deps = [line.strip() for line in f]
-
-  prefix = '_gen/bin/osh_eval.mycpp'
-  n.build([prefix + '.cc'], 'gen-osh-eval', deps,
-          implicit=['_bin/shwrap/mycpp_main', RULES_PY],
-          variables=[('out_prefix', prefix)])
 
   #
   # Build and run examples/
