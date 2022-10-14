@@ -18,14 +18,15 @@ source test/common.sh  # run-test
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
 export ASAN_OPTIONS='detect_leaks=0'
 
-leaky-flag-spec-test() {
-  ### Test generated code
+run-special-test() {
+  ### For tests with -D CPP_UNIT_TEST
 
-  local compiler=${1:-cxx}
-  local variant=${2:-dbg}
+  local rel_path=$1
+  local compiler=${2:-cxx}
+  local variant=${3:-dbg}
 
   # -D CPP_UNIT_TEST
-  local bin=_bin/$compiler-$variant-D_CPP_UNIT_TEST/cpp/leaky_flag_spec_test
+  local bin=_bin/$compiler-$variant-D_CPP_UNIT_TEST/$rel_path
   ninja $bin
 
   run-test-bin $bin
@@ -60,19 +61,19 @@ pre-build() {
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
-  # Run Ninja-based tests
-  run-one-test cpp/leaky_core_test '' ''
-  run-one-test cpp/leaky_core_test '' asan
-
   run-one-test cpp/gc_binding_test '' gcevery
+
+  # Need -D CPP_UNIT_TEST
+
+  run-special-test cpp/leaky_core_test '' ''
+  run-special-test cpp/leaky_core_test '' asan
+
+  run-special-test cpp/leaky_flag_spec_test '' ''
+  run-special-test cpp/leaky_flag_spec_test '' asan
 
   # Runs in different dir
   leaky-binding-test '' ''
   leaky-binding-test '' asan
-
-  # Needs -D CPP_UNIT_TEST
-  leaky-flag-spec-test '' ''
-  leaky-flag-spec-test '' asan
 }
 
 coverage() {
@@ -80,11 +81,12 @@ coverage() {
 
   pre-build
 
-  run-one-test cpp/leaky_core_test clang coverage
   run-one-test cpp/gc_binding_test clang coverage
 
+  run-special-test cpp/leaky_core_test clang coverage
+  run-special-test cpp/leaky_flag_spec_test clang coverage
+
   leaky-binding-test clang coverage
-  leaky-flag-spec-test clang coverage
 
   local out_dir=_test/clang-coverage/cpp
   test/coverage.sh html-report $out_dir cpp
