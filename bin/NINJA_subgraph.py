@@ -27,7 +27,9 @@ def NinjaGraph(ru):
     deps = [line.strip() for line in f]
 
   prefix = '_gen/bin/osh_eval.mycpp'
-  n.build([prefix + '.cc'], 'gen-osh-eval', deps,
+  # header exports osh.cmd_eval
+  outputs = [prefix + '.cc', prefix + '.h']
+  n.build(outputs, 'gen-osh-eval', deps,
           implicit=['_bin/shwrap/mycpp_main', RULES_PY],
           variables=[('out_prefix', prefix)])
 

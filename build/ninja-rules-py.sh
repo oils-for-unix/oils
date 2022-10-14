@@ -85,21 +85,40 @@ gen-osh-eval() {
   local tmp=_build/tmp
   mkdir -p $tmp
 
-  local raw=$tmp/osh_eval_raw.cc
+  local raw_cc=$tmp/osh_eval_raw.cc
   local cc_out=${out_prefix}.cc
 
-  local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
-  _bin/shwrap/mycpp_main $mypypath $raw "$@"
+  local raw_header=$tmp/osh_eval_raw.h
+  local header_out=${out_prefix}.h
 
-  { 
-    local name='osh_eval'
-    cat <<EOF
+  local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
+  _bin/shwrap/mycpp_main $mypypath $raw_cc \
+    --header-out $raw_header \
+    "$@"
+    #--to-header osh.cmd_eval \
+
+  local name='osh_eval'
+
+  { echo "// $name.h: translated from Python by mycpp"
+    echo
+    echo '#ifndef OSH_EVAL_MYCPP_H'
+    echo '#define OSH_EVAL_MYCPP_H'
+
+    cat $raw_header
+
+    echo '#endif  // OSH_EVAL_MYCPP_H'
+
+  } > $header_out
+
+  { cat <<EOF
 // $name.cc: translated from Python by mycpp
+
+// #include "$header_out"
 
 #include "cpp/leaky_preamble.h"  // hard-coded stuff
 EOF
 
-    cat $raw
+    cat $raw_cc
 
     osh-eval-main $name
   } > $cc_out

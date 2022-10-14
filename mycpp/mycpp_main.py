@@ -266,16 +266,6 @@ def main(argv):
 
   if opts.header_out:
     header_f = open(opts.header_out, 'w')  # Not closed
-    guard = 'RUNTIME_H'  # hard-coded?
-    header_f.write("""\
-// %s: translated from Python by mycpp
-
-#ifndef %s
-#define %s
-
-#include "mycpp/runtime.h"
-
-""" % (os.path.basename(opts.header_out), guard, guard))
 
   log('\tmycpp pass: FORWARD DECL')
 
@@ -320,11 +310,6 @@ def main(argv):
                               virtual=virtual, decl=True)
 
     p3.visit_mypy_file(module)
-
-  if opts.header_out:
-    header_f.write("""\
-#endif  // %s
-""" % guard)
 
   log('\tmycpp pass: IMPL')
 
