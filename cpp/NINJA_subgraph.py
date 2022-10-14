@@ -20,7 +20,7 @@ ASDL_H = [
 ]
 
 GENERATED_H = [
-    '_gen/frontend/arg_types.h',
+    #'_gen/frontend/arg_types.h',
     # NOTE: there is no cpp/arith_parse.h
 
     '_gen/frontend/consts.h',
@@ -75,6 +75,7 @@ def NinjaGraph(ru):
       'cpp/gc_binding_test.cc',
       deps = [
         '//cpp/leaky_bindings',
+        '//frontend/arg_types',  # is it necessary?
         '//mycpp/runtime',
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
@@ -114,11 +115,12 @@ def NinjaGraph(ru):
       implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
   )
 
-  ru.cc_library(
-      '//frontend/arg_types',
-      srcs = [ '_gen/frontend/arg_types.cc' ],
-      implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
-  )
+  if 0:
+    ru.cc_library(
+        '//frontend/arg_types',
+        srcs = [ '_gen/frontend/arg_types.cc' ],
+        implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
+    )
 
   ru.cc_binary(
       'cpp/leaky_flag_spec_test.cc',

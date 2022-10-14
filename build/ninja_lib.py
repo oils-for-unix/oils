@@ -62,6 +62,11 @@ COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
     ('cxx', 'gcevery'),
 ]
 
+SMALL_TEST_MATRIX = [
+  ('cxx', 'asan'),
+  ('clang', 'coverage', '-D CPP_UNIT_TEST'),
+]
+
 # TODO: add more variants?
 [
   # note: these could be clang too

@@ -236,40 +236,10 @@ def InitSteps(n):
          description='make-pystub $out $in')
   n.newline()
 
-  n.rule('asdl-cpp',
-         command='_bin/shwrap/asdl_main $action $asdl_flags $in $out_prefix $debug_mod',
-         description='asdl_main $action $asdl_flags $in $out_prefix $debug_mod')
-  n.newline()
-
-  n.rule('consts-gen',
-         command='_bin/shwrap/consts_gen $action $out_prefix',
-         description='consts_gen $action $out_prefix')
-
-  n.rule('flag-gen',
-         command='_bin/shwrap/flag_gen $action $out_prefix',
-         description='flag_gen $action $out_prefix')
-
-  n.rule('option-gen',
-         command='_bin/shwrap/option_gen $action $out_prefix',
-         description='consts_gen $action $out_prefix')
-
-  n.rule('optview-gen',
-         # uses shell style
-         command='_bin/shwrap/optview_gen > $out',
-         description='optview_gen > $out')
-
-  n.rule('arith-parse-gen',
-         # uses shell style
-         command='_bin/shwrap/arith_parse_gen > $out',
-         description='arith-parse-gen > $out')
-
-  n.rule('signal-gen',
-         command='_bin/shwrap/signal_gen $action $out_prefix',
-         description='signal_gen $action $out_prefix')
-
   n.rule('gen-osh-eval',
          command='build/ninja-rules-py.sh gen-osh-eval $out_prefix $in',
          description='gen-osh-eval $out_prefix $in')
+  n.newline()
 
 
 def main(argv):

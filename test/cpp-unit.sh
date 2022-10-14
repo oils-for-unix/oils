@@ -18,10 +18,11 @@ all-tests() {
   # which finds more bugs.
   mycpp/TEST.sh test-runtime
 
+  core/TEST.sh unit
+
   cpp/TEST.sh unit
 
-  # Relies on same pre-build
-  build/TEST.sh all
+  frontend/TEST.sh unit
 
   asdl/TEST.sh unit
 }

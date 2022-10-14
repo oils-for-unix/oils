@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   frontend/TEST.sh <function name>
+#   core/TEST.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -12,9 +12,11 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/common.sh
 
 unit() {
-  #run-one-test 'frontend/syntax_asdl_test' '' asan
+  # TODO: express proper dependency
+  ninja _gen/frontend/option.asdl.h
 
-  run-one-test 'frontend/arg_types_test' '' asan
+  run-one-test 'core/optview_test' '' asan
+  echo
 }
 
 "$@"
