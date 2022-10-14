@@ -20,6 +20,7 @@ from bin import NINJA_subgraph as bin_subgraph
 from core import NINJA_subgraph as core_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
 from frontend import NINJA_subgraph as frontend_subgraph
+from osh import NINJA_subgraph as osh_subgraph
 from mycpp import NINJA_subgraph as mycpp_subgraph
 from prebuilt import NINJA_subgraph as prebuilt_subgraph
 
@@ -268,66 +269,6 @@ def InitSteps(n):
          command='build/ninja-rules-py.sh gen-osh-eval $out_prefix $in',
          description='gen-osh-eval $out_prefix $in')
 
-  n.newline()
-
-  prefix = '_gen/frontend/id_kind.asdl'
-  n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
-          implicit=['_bin/shwrap/consts_gen'],
-          variables=[
-            ('out_prefix', prefix),
-            ('action', 'cpp'),
-          ])
-  n.newline()
-
-  # TODO: these should be ru.genrule() and moved into frontend/, core/, etc.
-  # They have an implicit dependency on the code generator.
-
-  # Similar to above
-  prefix = '_gen/frontend/consts'
-  n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
-          implicit=['_bin/shwrap/consts_gen'],
-          variables=[
-            ('out_prefix', prefix),
-            ('action', 'cpp-consts'),
-          ])
-  n.newline()
-
-  prefix = '_gen/frontend/arg_types'
-  n.build([prefix + '.h', prefix + '.cc'], 'flag-gen', [],
-          implicit=['_bin/shwrap/flag_gen'],
-          variables=[
-            ('out_prefix', prefix),
-            ('action', 'cpp'),
-          ])
-  n.newline()
-
-  prefix = '_gen/frontend/option.asdl'
-  # no .cc file
-  n.build([prefix + '.h'], 'option-gen', [],
-          implicit=['_bin/shwrap/option_gen'],
-          variables=[
-            ('out_prefix', prefix),
-            ('action', 'cpp'),
-          ])
-  n.newline()
-
-  n.build(['_gen/core/optview.h'], 'optview-gen', [],
-          implicit=['_bin/shwrap/optview_gen'])
-  n.newline()
-
-  n.build(['_gen/osh/arith_parse.cc'], 'arith-parse-gen', [],
-          implicit=['_bin/shwrap/arith_parse_gen'])
-  n.newline()
-
-  prefix = '_gen/frontend/signal'
-  n.build([prefix + '.h', prefix + '.cc'], 'signal-gen', [],
-          implicit=['_bin/shwrap/signal_gen'],
-          variables=[
-            ('out_prefix', prefix),
-            ('action', 'cpp'),
-          ])
-  n.newline()
-
 
 def InitCodeGen(ru):
   # All the code generators from NINJA-config.sh
@@ -394,6 +335,9 @@ def main(argv):
   ru.comment('')
 
   mycpp_subgraph.NinjaGraph(ru)
+  ru.comment('')
+
+  osh_subgraph.NinjaGraph(ru)
   ru.comment('')
 
   prebuilt_subgraph.NinjaGraph(ru)
