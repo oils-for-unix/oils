@@ -11,6 +11,11 @@ from build.ninja_lib import log, COMPILERS_VARIANTS, COMPILERS_VARIANTS_LEAKY
 
 def DefineTargets(ru):
 
+  ru.py_binary(
+      'mycpp/mycpp_main.py',
+      deps_base_dir = 'prebuilt/ninja',
+      template = 'mycpp')
+
   ru.cc_library(
       '//mycpp/runtime', 
       srcs = [

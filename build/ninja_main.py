@@ -20,8 +20,10 @@ from bin import NINJA_subgraph as bin_subgraph
 from core import NINJA_subgraph as core_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
 from frontend import NINJA_subgraph as frontend_subgraph
+from oil_lang import NINJA_subgraph as oil_lang_subgraph
 from osh import NINJA_subgraph as osh_subgraph
 from mycpp import NINJA_subgraph as mycpp_subgraph
+from pea import NINJA_subgraph as pea_subgraph
 from prebuilt import NINJA_subgraph as prebuilt_subgraph
 
 from vendor import ninja_syntax
@@ -270,31 +272,6 @@ def InitSteps(n):
          description='gen-osh-eval $out_prefix $in')
 
 
-def InitCodeGen(ru):
-  # All the code generators from NINJA-config.sh
-
-  # TODO: these should be ru.py_binary() and moved into frontend/, core/, etc.
-
-  ru.shwrap_py('core/optview_gen.py')
-  ru.shwrap_py('frontend/consts_gen.py')
-  ru.shwrap_py('frontend/flag_gen.py')
-  ru.shwrap_py('frontend/lexer_gen.py')
-  ru.shwrap_py('frontend/option_gen.py')
-  ru.shwrap_py('frontend/signal_gen.py')
-  ru.shwrap_py('oil_lang/grammar_gen.py')
-  ru.shwrap_py('osh/arith_parse_gen.py')
-
-  ru.shwrap_py(
-      'mycpp/mycpp_main.py',
-      deps_base_dir = 'prebuilt/ninja',
-      template = 'mycpp')
-
-  ru.shwrap_py(
-      'pea/pea_main.py',
-      deps_base_dir = 'prebuilt/ninja',
-      template = 'pea')
-
-
 def main(argv):
   try:
     action = argv[1]
@@ -311,9 +288,6 @@ def main(argv):
 
   ru.comment('InitSteps()')
   InitSteps(n)
-
-  ru.comment('InitCodeGen()')
-  InitCodeGen(ru)
 
   #
   # Create the graph.
@@ -337,7 +311,13 @@ def main(argv):
   mycpp_subgraph.NinjaGraph(ru)
   ru.comment('')
 
+  oil_lang_subgraph.NinjaGraph(ru)
+  ru.comment('')
+
   osh_subgraph.NinjaGraph(ru)
+  ru.comment('')
+
+  pea_subgraph.NinjaGraph(ru)
   ru.comment('')
 
   prebuilt_subgraph.NinjaGraph(ru)

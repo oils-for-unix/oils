@@ -432,7 +432,7 @@ class Rules(object):
         generated_headers = [out_header],
     )
 
-  def shwrap_py(self, main_py, deps_base_dir='_build/NINJA', template='py'):
+  def py_binary(self, main_py, deps_base_dir='_build/NINJA', template='py'):
     """
     Wrapper for Python script with dynamically discovered deps
     """
