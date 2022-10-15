@@ -54,6 +54,7 @@ def NinjaGraph(ru):
         '//core/runtime.asdl',
 
         '//osh/arith_parse',
+        '//oil_lang/grammar',
 
         '//mycpp/runtime',
         ]

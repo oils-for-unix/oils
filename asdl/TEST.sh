@@ -11,8 +11,8 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source devtools/common.sh        # banner
-source test/common.sh      # run-test
+source devtools/common.sh  # banner
+source test/common.sh      # run-one-test
 
 # Could we turn on the leak detector for the GC tests?
 export ASAN_OPTIONS='detect_leaks=0'
@@ -20,16 +20,15 @@ export ASAN_OPTIONS='detect_leaks=0'
 unit() {
   ### Run unit tests
 
-  local compiler=${1:-cxx}
-  local variant=${2:-asan}
-
-  # TODO: gcevery
-
-  run-one-test 'asdl/gen_cpp_test' $compiler $variant
+  run-one-test 'asdl/gen_cpp_test' '' asan
   echo
 
-  run-one-test 'asdl/gc_test' $compiler $variant
+  run-one-test 'asdl/gc_test' '' asan
   echo
+
+  # use-after-free detected
+  # run-one-test 'asdl/gc_test' '' gcevery
+  # echo
 }
 
 #

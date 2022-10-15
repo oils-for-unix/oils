@@ -130,7 +130,7 @@ def main(argv):
 
   tok_def = OilTokenDef(OPS, more_ops, keyword_ops)
 
-  if action == 'marshal':  # generate the grammar and parse it
+  if action == 'py':  # generate the grammar and parse it
     grammar_path = argv[0]
     out_dir = argv[1]
 
@@ -152,14 +152,26 @@ def main(argv):
     with open(nonterm_py, 'w') as out_f:
       gr.dump_nonterminals_py(out_f)
 
+    log('%s -> (oil_lang/grammar_gen) -> %s/%s{.marshal,_nt.py}',
+        grammar_path, out_dir, basename)
+
+    #gr.report()
+
+  elif action == 'cpp':  # generate the grammar and parse it
+    grammar_path = argv[0]
+    out_dir = argv[1]
+
+    basename, _ = os.path.splitext(os.path.basename(grammar_path))
+
+    with open(grammar_path) as f:
+      gr = pgen.MakeGrammar(f, tok_def=tok_def)
+
     nonterm_h = os.path.join(out_dir, basename + '_nt.h')
     with open(nonterm_h, 'w') as out_f:
       gr.dump_nonterminals_cpp(out_f)
 
-    log('%s -> (oil_lang/grammar_gen) -> %s/%s{.marshal,_nt.py,_nt.h}',
+    log('%s -> (oil_lang/grammar_gen) -> %s/%s{._nt.h}',
         grammar_path, out_dir, basename)
-
-    #gr.report()
 
   elif action == 'parse':  # generate the grammar and parse it
     # Remove build dependency

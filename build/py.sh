@@ -435,15 +435,17 @@ EOF
 oil-grammar() {
   mkdir -p _gen/oil_lang
   touch _gen/__init__.py _gen/oil_lang/__init__.py
-  oil_lang/grammar_gen.py marshal oil_lang/grammar.pgen2 _gen/oil_lang
+
+  # TODO: Put Python grammar stuff in _devbuild/gen
+  oil_lang/grammar_gen.py py oil_lang/grammar.pgen2 _gen/oil_lang
 }
 
 find-grammar() {
-  oil_lang/grammar_gen.py marshal tools/find/find.pgen2 _devbuild/gen
+  oil_lang/grammar_gen.py py tools/find/find.pgen2 _devbuild/gen
 }
 
 demo-grammar() {
-  oil_lang/grammar_gen.py marshal mycpp/examples/arith.pgen2 _devbuild/gen
+  oil_lang/grammar_gen.py py mycpp/examples/arith.pgen2 _devbuild/gen
 }
 
 time-helper() {
