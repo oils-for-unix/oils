@@ -7,7 +7,7 @@ A mix of old "OVM" scripts and new `oil-native` Ninja scripts.
 
 Quick smoke test:
 
-   build/old-ovm-test.sh test-oild-bundle
+   build/old-ovm-test.sh test-oil-bundle
 
 ### Python Behavior Changes
 
@@ -19,9 +19,12 @@ Almost all changes remove unused code, but here is a list of behavior changes:
   - TODO: Perhaps find the corresponding compile-time time check in
     `compiler2`?
 
-## Directory Structure
+## Directory Structure for C++ Build
 
 ### Code
+
+    ./NINJA-config.sh    # Run this to generate build.ninja
+    build.ninja          # What's executed by the ninja tool
 
     build/
       ninja_main.py      # Invoked by ./NINJA-config.sh
@@ -31,8 +34,13 @@ Almost all changes remove unused code, but here is a list of behavior changes:
       ninja-rules-py.sh
       ninja-rules-cpp.sh
 
+    core/
+      NINJA_subgraph.py
+      TEST.sh
+
     cpp/
       NINJA_subgraph.py
+      TEST.sh
 
     mycpp/
       NINJA_subgraph.py  # This file describes dependencies programmatically
@@ -93,7 +101,7 @@ Almost all changes remove unused code, but here is a list of behavior changes:
 
     _bin/
 
-      # These are the code generators.  TODO: move to _bin/PORT/asdl/asdl_main
+      # These are the code generators.  TODO: move to _bin/SCRIPT/asdl/asdl_main
       shwrap/
         asdl_main
         mycpp_main

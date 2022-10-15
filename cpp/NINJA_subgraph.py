@@ -31,6 +31,17 @@ def NinjaGraph(ru):
         ],
       matrix = CPP_UNIT)
 
+  ru.cc_binary(
+      'cpp/data_race_test.cc',
+      deps = [
+        '//cpp/leaky_core',
+        '//mycpp/runtime',
+        ],
+      matrix = ninja_lib.SMALL_TEST_MATRIX + [
+        ('cxx', 'tsan'),
+        ('clang', 'tsan'),
+      ])
+
   ru.cc_library(
       '//cpp/leaky_bindings', 
       # TODO: could split these up more

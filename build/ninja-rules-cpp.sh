@@ -84,6 +84,10 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=address"
       ;;
 
+    (tsan)
+      flags="$flags -O0 -g -fsanitize=thread"
+      ;;
+
     (ubsan)
       # faster build with -O0
       flags="$flags -O0 -g -fsanitize=undefined"
@@ -157,6 +161,9 @@ setglobal_link_flags() {
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
     (asan|gcevery|gcverbose)
       link_flags='-fsanitize=address'
+      ;;
+    (tsan)
+      link_flags='-fsanitize=thread'
       ;;
     (ubsan)
       link_flags='-fsanitize=undefined'
