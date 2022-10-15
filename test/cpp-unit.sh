@@ -12,11 +12,7 @@ set -o errexit
 source soil/common.sh  # find-dir-html
 
 all-tests() {
-  ./NINJA-config.sh
-
-  # uses Ninja to run (cxx, gcevery) variant.  Could also run (clang, ubsan),
-  # which finds more bugs.
-  mycpp/TEST.sh test-runtime
+  asdl/TEST.sh unit
 
   core/TEST.sh unit
 
@@ -24,7 +20,9 @@ all-tests() {
 
   frontend/TEST.sh unit
 
-  asdl/TEST.sh unit
+  # uses Ninja to run (cxx, gcevery) variant.  Could also run (clang, ubsan),
+  # which finds more bugs.
+  mycpp/TEST.sh test-runtime
 }
 
 soil-run() {

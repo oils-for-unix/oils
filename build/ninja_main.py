@@ -44,8 +44,6 @@ def TarballManifest(cc_sources):
 
   # Code we know about
   names.extend(cc_sources)
-  names.extend(cpp_subgraph.GENERATED_H)
-  names.extend(cpp_subgraph.ASDL_H)
 
   names.extend(glob('mycpp/*.h'))
 
@@ -53,7 +51,9 @@ def TarballManifest(cc_sources):
   names.extend(glob('cpp/*.h'))
 
   # TODO: Put these in Ninja.
+  names.extend(glob('_gen/asdl/*.h'))
   names.extend(glob('_gen/frontend/*.h'))
+  names.extend(glob('_gen/core/*.h'))
   names.extend(glob('_gen/oil_lang/*.h'))
 
   # ONLY the headers

@@ -96,6 +96,10 @@ py-all-and-ninja() {
   ./NINJA-config.sh
 }
 
+ninja-config() {
+  ./NINJA-config.sh
+}
+
 dummy-tasks() {
   ### Print tasks that execute quickly
 
@@ -187,7 +191,7 @@ cpp-spec-tasks() {
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
 HACK-fastlex     build/py.sh fastlex                   -
-ninja-config     ./NINJA-config.sh dummy               -
+ninja-config     soil/worker.sh ninja-config           -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
@@ -201,8 +205,8 @@ cpp-small-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
+ninja-config     soil/worker.sh ninja-config           -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
-ninja-config     ./NINJA-config.sh dummy               -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
@@ -220,7 +224,7 @@ cpp-coverage-tasks() {
   cat <<EOF
 dump-hardware           soil/worker.sh dump-hardware                    -
 build-minimal           build/py.sh minimal                             -
-ninja-config            ./NINJA-config.sh dummy                         -
+ninja-config            soil/worker.sh ninja-config                     -
 extract-clang           deps/from-binary.sh extract-clang-in-container  -
 mycpp-unit-coverage     mycpp/TEST.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
 mycpp-examples-coverage mycpp/TEST.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html

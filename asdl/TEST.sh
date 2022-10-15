@@ -11,56 +11,11 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source build/common.sh           # BASE_CXXFLAGS, etc.
-source build/ninja-rules-cpp.sh  # compile_and_link
 source devtools/common.sh        # banner
-source mycpp/ninja.sh            # GC_RUNTIME
 source test/common.sh      # run-test
-
-CPPFLAGS="$BASE_CXXFLAGS -g -fsanitize=address"  # for debugging tests
 
 # Could we turn on the leak detector for the GC tests?
 export ASAN_OPTIONS='detect_leaks=0'
-
-one-asdl-gc() {
-  ### Test that an Oil ASDL file can compile by itself
-
-  local compiler=$1
-  local variant=$2
-  local rel_path=$3
-  shift 3
-
-  local name
-  name=$(basename $rel_path)
-
-  if false; then
-    echo ---
-    echo "test-one-asdl-gc $rel_path"
-    echo ---
-  fi
-
-  local test_src=_gen/${rel_path}_asdl_test.cc
-  local bin=_bin/cxx-asan/${rel_path}_asdl_test
-  mkdir -p $(dirname $test_src) $(dirname $bin)
-
-  cat >$test_src <<EOF
-#include "_gen/${rel_path}.asdl.h"
-
-int main() {
-  printf("OK ${test_src}\\n");
-  return 0;
-}
-EOF
-
-  compile_and_link cxx asan '' $bin \
-    _gen/${rel_path}.asdl.cc \
-    prebuilt/asdl/runtime.mycpp.cc \
-    "${GC_RUNTIME[@]}" \
-    $test_src \
-    "$@"
-
-  run-test-bin $bin
-}
 
 unit() {
   ### Run unit tests
