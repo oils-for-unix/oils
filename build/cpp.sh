@@ -11,15 +11,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/common.sh  # CLANGXX
 
-# Some tests don't express proper dependencies, and need this.
-gen-asdl() {
-  ninja \
-    _gen/asdl/hnode.asdl.h \
-    _gen/frontend/types.asdl.h \
-    _gen/core/runtime.asdl.h \
-    _gen/frontend/syntax.asdl.h
-}
-
 compile-quickly() {
   ### For the fast possible development experience
 

@@ -118,9 +118,6 @@ log-files-index() {
 run-for-release() {
   ### Similar to cpp-coverage in soil/worker.sh
 
-  # Hack until we have proper dependencies
-  build/cpp.sh gen-asdl
-
   mycpp/TEST.sh unit-test-coverage
   mycpp/TEST.sh examples-coverage
   cpp/TEST.sh coverage
