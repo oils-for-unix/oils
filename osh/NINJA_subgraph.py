@@ -25,3 +25,6 @@ def NinjaGraph(ru):
           implicit=['_bin/shwrap/arith_parse_gen'])
   n.newline()
 
+  ru.cc_library(
+      '//osh/arith_parse',
+      srcs = ['_gen/osh/arith_parse.cc'])

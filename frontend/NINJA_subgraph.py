@@ -51,6 +51,11 @@ def NinjaGraph(ru):
           ])
   n.newline()
 
+  ru.cc_library(
+      '//frontend/id_kind.asdl',
+      srcs = [],
+      generated_headers = ['_gen/frontend/id_kind.asdl.h'])
+
   # Similar to above
   prefix = '_gen/frontend/consts'
   n.build([prefix + '.h', prefix + '.cc'], 'consts-gen', [],
@@ -60,6 +65,11 @@ def NinjaGraph(ru):
             ('action', 'cpp-consts'),
           ])
   n.newline()
+
+  ru.cc_library(
+      '//frontend/consts',
+      srcs = ['_gen/frontend/consts.cc'],
+      generated_headers = ['_gen/frontend/consts.h'])
 
   prefix = '_gen/frontend/arg_types'
   n.build([prefix + '.h', prefix + '.cc'], 'flag-gen', [],
@@ -91,6 +101,11 @@ def NinjaGraph(ru):
             ('action', 'cpp'),
           ])
   n.newline()
+
+  ru.cc_library(
+      '//frontend/option.asdl',
+      srcs = [],
+      generated_headers = ['_gen/frontend/option.asdl.h'])
 
   prefix = '_gen/frontend/signal'
   n.build([prefix + '.h', prefix + '.cc'], 'signal-gen', [],

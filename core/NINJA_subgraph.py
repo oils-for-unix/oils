@@ -26,11 +26,11 @@ def NinjaGraph(ru):
           implicit=['_bin/shwrap/optview_gen'])
   n.newline()
 
-  # TODO: dependency for #include options.asdl.h
   ru.cc_library(
       '//core/optview',
       srcs = [],
-      generated_headers = ['_gen/core/optview.h'])
+      generated_headers = ['_gen/core/optview.h'],
+      deps = ['//frontend/option.asdl'])
 
   ru.cc_binary(
       'core/optview_test.cc',
@@ -39,4 +39,5 @@ def NinjaGraph(ru):
 
   ru.asdl_library(
       'core/runtime.asdl',
+      # 'use' dependency
       deps = ['//frontend/syntax.asdl'])
