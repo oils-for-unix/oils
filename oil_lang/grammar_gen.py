@@ -170,8 +170,9 @@ def main(argv):
     with open(nonterm_h, 'w') as out_f:
       gr.dump_nonterminals_cpp(out_f)
 
-    log('%s -> (oil_lang/grammar_gen) -> %s/%s{._nt.h}',
-        grammar_path, out_dir, basename)
+    if 0:
+      log('%s -> (oil_lang/grammar_gen) -> %s/%s._nt.h',
+          grammar_path, out_dir, basename)
 
   elif action == 'parse':  # generate the grammar and parse it
     # Remove build dependency

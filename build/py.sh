@@ -436,8 +436,7 @@ oil-grammar() {
   mkdir -p _gen/oil_lang
   touch _gen/__init__.py _gen/oil_lang/__init__.py
 
-  # TODO: Put Python grammar stuff in _devbuild/gen
-  oil_lang/grammar_gen.py py oil_lang/grammar.pgen2 _gen/oil_lang
+  oil_lang/grammar_gen.py py oil_lang/grammar.pgen2 _devbuild/gen
 }
 
 find-grammar() {
