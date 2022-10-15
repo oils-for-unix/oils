@@ -9,12 +9,6 @@
 #include "_gen/frontend/match.re2c.h"
 // clang-format on
 
-#ifdef DUMB_ALLOC
-  #include "dumb_alloc.h"
-  #define malloc dumb_malloc
-  #define free dumb_free
-#endif
-
 namespace match {
 
 Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
