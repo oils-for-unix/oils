@@ -41,3 +41,8 @@ def NinjaGraph(ru):
       'core/runtime.asdl',
       # 'use' dependency
       deps = ['//frontend/syntax.asdl'])
+
+  ru.cc_binary(
+      'core/runtime_asdl_test.cc',
+      deps = ['//core/runtime.asdl'],
+      matrix = ninja_lib.SMALL_TEST_MATRIX)

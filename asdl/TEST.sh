@@ -62,27 +62,6 @@ EOF
   run-test-bin $bin
 }
 
-all-asdl-gc() {
-  ### All ASDL compilation tests
-
-  local compiler=${1:-cxx}
-  local variant=${2:-asan}
-
-  # Invoke ASDL compiler on everything
-  build/cpp.sh gen-asdl
-  ninja _gen/frontend/id_kind.asdl.cc
-
-  # Now make sure they can compile
-
-  # syntax.asdl is a 'use' dependency; 'id' is implicit there is no GC variant
-  # for id_kind_asdl
-  one-asdl-gc $compiler $variant \
-    core/runtime _gen/frontend/syntax.asdl.cc _gen/frontend/id_kind.asdl.cc
-
-  one-asdl-gc $compiler $variant \
-    frontend/syntax _gen/frontend/id_kind.asdl.cc
-}
-
 unit() {
   ### Run unit tests
 
@@ -96,9 +75,6 @@ unit() {
 
   run-one-test 'asdl/gc_test' $compiler $variant
   echo
-
-  # test each ASDL file on its own, perhaps with the garbage-collected ASDL runtime
-  all-asdl-gc $compiler $variant
 }
 
 #

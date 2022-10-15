@@ -53,7 +53,7 @@ def NinjaGraph(ru):
 
   ru.cc_library(
       '//frontend/id_kind.asdl',
-      srcs = [],
+      srcs = ['_gen/frontend/id_kind.asdl.cc'],
       generated_headers = ['_gen/frontend/id_kind.asdl.h'])
 
   # Similar to above
@@ -116,15 +116,20 @@ def NinjaGraph(ru):
           ])
   n.newline()
 
+  ru.cc_library(
+      '//frontend/signal',
+      srcs = ['_gen/frontend/signal.cc'],
+      generated_headers = ['_gen/frontend/signal.h'])
+
   ru.asdl_library(
       'frontend/types.asdl',
       pretty_print_methods = False)
 
   ru.asdl_library(
-      'frontend/syntax.asdl')
+      'frontend/syntax.asdl',
+      deps = ['//frontend/id_kind.asdl'])
 
-  if 0:
-    ru.cc_binary(
-        'frontend/syntax_asdl_test.cc',
-        deps = ['//frontend/syntax.asdl'],
-        matrix = ninja_lib.COMPILERS_VARIANTS)
+  ru.cc_binary(
+      'frontend/syntax_asdl_test.cc',
+      deps = ['//frontend/syntax.asdl'],
+      matrix = ninja_lib.COMPILERS_VARIANTS)

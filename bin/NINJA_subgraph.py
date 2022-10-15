@@ -1,12 +1,11 @@
 """
-prebuilt/NINJA_subgraph.py
+bin/NINJA_subgraph.py
 """
 
 from __future__ import print_function
 
 from build import ninja_lib
 from build.ninja_lib import log
-from cpp.NINJA_subgraph import ASDL_H, GENERATED_H
 
 _ = log
 
@@ -37,15 +36,25 @@ def NinjaGraph(ru):
   ru.cc_binary(
       '_gen/bin/osh_eval.mycpp.cc',
       preprocessed = True,
-      implicit = ASDL_H + GENERATED_H,
       matrix = ninja_lib.COMPILERS_VARIANTS,
       top_level = True,  # _bin/cxx-dbg/osh_eval
       deps = [
         '//cpp/leaky_core',
         '//cpp/leaky_bindings',
+
         '//frontend/arg_types',
-        '//ASDL_CC',
-        '//GENERATED_CC',
+        '//frontend/consts',
+        '//frontend/id_kind.asdl',
+        '//frontend/option.asdl',
+        '//frontend/signal',
+        '//frontend/syntax.asdl',
+        '//frontend/types.asdl',
+
+        '//core/optview',
+        '//core/runtime.asdl',
+
+        '//osh/arith_parse',
+
         '//mycpp/runtime',
         ]
       )

@@ -7,31 +7,9 @@ from __future__ import print_function
 from build import ninja_lib
 from build.ninja_lib import log
 
-# CPP bindings and some generated code have implicit dependencies on these headers
-ASDL_H = [
-    '_gen/asdl/hnode.asdl.h',
-    '_gen/core/runtime.asdl.h',
-    '_gen/frontend/syntax.asdl.h',
-    '_gen/frontend/types.asdl.h',
-
-    # synthetic
-    '_gen/frontend/id_kind.asdl.h',
-    '_gen/frontend/option.asdl.h',
-]
-
-GENERATED_H = [
-    #'_gen/frontend/arg_types.h',
-    # NOTE: there is no cpp/arith_parse.h
-
-    '_gen/frontend/consts.h',
-    '_gen/core/optview.h',  # header only
-    '_gen/frontend/signal.h',
-]
-
-
 # Some tests use #ifndef CPP_UNIT_TEST to disable circular dependencies on
 # generated code
-SMALL_MATRIX = [
+CPP_UNIT = [
   ('cxx', 'dbg', '-D CPP_UNIT_TEST'),
   ('cxx', 'asan', '-D CPP_UNIT_TEST'),
   ('clang', 'coverage', '-D CPP_UNIT_TEST'),
@@ -44,7 +22,6 @@ def NinjaGraph(ru):
   ru.cc_library(
       '//cpp/leaky_core', 
       srcs = ['cpp/leaky_core.cc'],
-      # No implicit deps on ASDL, but some files do
   )
 
   ru.cc_binary(
@@ -53,11 +30,11 @@ def NinjaGraph(ru):
         '//cpp/leaky_core',
         '//mycpp/runtime',
         ],
-      matrix = SMALL_MATRIX)
+      matrix = CPP_UNIT)
 
-  # TODO: could split these up more, with fine-grained ASDL deps?
   ru.cc_library(
       '//cpp/leaky_bindings', 
+      # TODO: could split these up more
       srcs = [
         'cpp/leaky_frontend_flag_spec.cc',
         'cpp/leaky_frontend_match.cc',
@@ -68,8 +45,22 @@ def NinjaGraph(ru):
         'cpp/leaky_stdlib.cc',
         'cpp/leaky_libc.cc',
       ],
-      implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
+      deps = [
+        '//core/runtime.asdl',
+        '//frontend/arg_types',
+        '//frontend/syntax.asdl',
+        '//frontend/types.asdl',  # leaky_frontend_match.cc uses it
+      ],
   )
+
+  ru.cc_binary(
+      'cpp/leaky_binding_test.cc',
+      deps = [
+        '//cpp/leaky_bindings',
+        '//cpp/leaky_core',  # could move this
+        '//mycpp/runtime',
+        ],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_binary(
       'cpp/gc_binding_test.cc',
@@ -81,48 +72,6 @@ def NinjaGraph(ru):
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_binary(
-      'cpp/leaky_binding_test.cc',
-      deps = [
-        '//cpp/leaky_bindings',
-        '//cpp/leaky_core',  # could move this
-        '//mycpp/runtime',
-        ],
-      matrix = ninja_lib.COMPILERS_VARIANTS)
-
-  ru.cc_library(
-      '//ASDL_CC',  # TODO: split these up?
-      srcs = [
-        '_gen/core/runtime.asdl.cc',
-        '_gen/frontend/syntax.asdl.cc',
-        '_gen/frontend/id_kind.asdl.cc',
-
-        # NOT generated due to --no-pretty-print-methods
-        # '_gen/frontend/types.asdl.cc',
-        # '_gen/asdl/hnode.asdl.cc',
-        # '_gen/frontend/option.asdl.cc',
-      ],
-      implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
-  )
-
-  ru.cc_library(
-      # TODO: split these up?
-      '//GENERATED_CC',
-      srcs = [
-        '_gen/frontend/consts.cc',
-        '_gen/frontend/signal.cc',
-        '_gen/osh/arith_parse.cc',
-      ],
-      implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
-  )
-
-  if 0:
-    ru.cc_library(
-        '//frontend/arg_types',
-        srcs = [ '_gen/frontend/arg_types.cc' ],
-        implicit = ASDL_H + GENERATED_H,  # TODO: express as proper deps?
-    )
-
-  ru.cc_binary(
       'cpp/leaky_flag_spec_test.cc',
 
       deps = [
@@ -130,5 +79,4 @@ def NinjaGraph(ru):
         '//frontend/arg_types',
         '//mycpp/runtime',
         ],
-      matrix = SMALL_MATRIX,
-  )
+      matrix = CPP_UNIT)
