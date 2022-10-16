@@ -196,7 +196,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # - no expression evaluator
   # - no interactive shell, or line_input
   # - no process.*
-  #   process.{ExternalProgram,Waiter,FdState,JobState,SignalState} -- we want
+  #   process.{ExternalProgram,Waiter,FdState,JobState,TrapState} -- we want
   #   to evaluate config files without any of these
   # Modules not translated yet: completion, comp_ui, builtin_comp, process
   # - word evaluator
@@ -317,8 +317,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # TODO: In general, cmd_deps are shared between the mutually recursive
   # evaluators.  Some of the four below are only shared between a builtin and
   # the CommandEvaluator, so we could put them somewhere else.
-  cmd_deps.traps = {}
-  cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
+  cmd_deps.trap_state = builtin_trap.TrapState()
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem, None, None)
@@ -352,9 +351,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
   fd_state.tracer = tracer  # circular dep
 
-  sig_state = pyos.SignalState()
-  sig_state.InitShell()
-  waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
+  waiter = process.Waiter(job_state, exec_opts, cmd_deps.trap_state, tracer)
   fd_state.waiter = waiter
 
   cmd_deps.debug_f = debug_f
@@ -486,9 +483,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
   builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
-  builtins[builtin_i.trap] = builtin_trap.Trap(sig_state, cmd_deps.traps,
-                                               cmd_deps.trap_nodes,
-                                               parse_ctx, tracer, errfmt)
+  builtins[builtin_i.trap] = builtin_trap.Trap(cmd_deps.trap_state, parse_ctx, tracer, errfmt)
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
@@ -624,7 +619,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-    sig_state.InitInteractiveShell(display, my_pid)
+    cmd_deps.trap_state.InitInteractiveShell(display, my_pid)
 
     # NOTE: called AFTER _InitDefaultCompletions.
     with state.ctx_ThisDir(mem, rc_path):
