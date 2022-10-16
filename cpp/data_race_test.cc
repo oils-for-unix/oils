@@ -20,17 +20,17 @@
 
 typedef std::map<std::string, std::string> map_t;
 
-void* threadfunc(void* p) {
-  map_t& m = *(map_t*)p;
+void* MapThread(void* p) {
+  map_t& m = *(static_cast<map_t*>(p));
   m["foo"] = "bar";
-  return 0;
+  return nullptr;
 }
 
 TEST tsan_demo() {
   map_t m;
   pthread_t t;
 #if 1
-  pthread_create(&t, 0, threadfunc, &m);
+  pthread_create(&t, 0, MapThread, &m);
   printf("foo=%s\n", m["foo"].c_str());
   pthread_join(t, 0);
 #endif
@@ -38,8 +38,25 @@ TEST tsan_demo() {
   PASS();
 }
 
+void* ListThread(void* p) {
+  List<Str*>* mylist = static_cast<List<Str*>*>(p);
+  mylist->append(StrFromC("thread"));
+  return nullptr;
+}
+
 TEST list_test() {
-  log("list_test");
+  List<Str*>* mylist = nullptr;
+  StackRoots _roots({&mylist});
+
+  mylist = NewList<Str*>({});
+  mylist->append(StrFromC("main"));
+
+  pthread_t t;
+  pthread_create(&t, 0, ListThread, mylist);
+  // DATA RACE DETECTED by ThreadSanitizer!  Remove this line, and it goes
+  // away.
+  mylist->append(StrFromC("concurrent"));
+  pthread_join(t, 0);
 
   PASS();
 }
