@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <pwd.h>  // passwd
 #include <signal.h>
+#include <string.h>        // memset()
 #include <sys/resource.h>  // getrusage
 #include <sys/times.h>     // tms / times()
 #include <sys/utsname.h>   // uname
@@ -17,6 +18,8 @@
 #include <unistd.h>        // getuid(), environ
 
 namespace pyos {
+
+static Dict<int, SignalHandler*>* gSignalHandlers = nullptr;
 
 Tuple2<int, int> WaitPid() {
   int status;
@@ -181,10 +184,31 @@ bool InputAvailable(int fd) {
   NotImplemented();
 }
 
-void SignalState_AfterForkingChild() {
-  signal(SIGQUIT, SIG_DFL);
-  signal(SIGPIPE, SIG_DFL);
-  signal(SIGTSTP, SIG_DFL);
+static void signal_handler(int sig_num) {
+  assert(gSignalHandlers != nullptr);
+  SignalHandler* handler = gSignalHandlers->get(sig_num);
+  assert(handler != nullptr);
+  handler->Run(sig_num);
+}
+
+void Sigaction(int sig_num, SignalHandler* handler) {
+  if (gSignalHandlers == nullptr) {
+    gSignalHandlers = Alloc<Dict<int, SignalHandler*>>();
+  }
+  gSignalHandlers->set(sig_num, handler);
+  struct sigaction act = {};
+  act.sa_handler = signal_handler;
+  assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+void Sigaction(int sig_num, sighandler_t handler) {
+  struct sigaction act = {};
+  act.sa_handler = handler;
+  assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+void ReserveHandlerCapacity(List<syntax_asdl::command_t*>* list) {
+  list->reserve(1024);
 }
 
 }  // namespace pyos

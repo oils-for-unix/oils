@@ -3,14 +3,15 @@
 #ifndef LEAKY_CORE_H
 #define LEAKY_CORE_H
 
+#include <signal.h>
 #include <termios.h>
 
+#include "_gen/frontend/syntax.asdl.h"
 #include "mycpp/runtime.h"
 
-// Hacky forward declaration
-namespace builtin_trap {
-class _TrapHandler;
-};
+namespace comp_ui {
+class _IDisplay;
+}  // namespace comp_ui
 
 namespace pyos {
 
@@ -51,24 +52,20 @@ class TermState {
   }
 };
 
-void SignalState_AfterForkingChild();
-
-class SignalState {
+// An abstract type that approximates python's Callable-based signal().
+class SignalHandler : public Obj {
  public:
-  SignalState() {
+  // XXX: This will probably break the garbage collector. We may need to rework
+  // this when it gets enabled.
+  SignalHandler() : Obj(Tag::FixedSize, kZeroMask, 0) {
   }
-  void InitShell() {
-  }
-  void AddUserTrap(int sig_num, builtin_trap::_TrapHandler* handler) {
-    NotImplemented();
-  }
-  void RemoveUserTrap(int sig_num) {
-    NotImplemented();
-  }
-  int last_sig_num = 0;
-
-  DISALLOW_COPY_AND_ASSIGN(SignalState)
+  virtual void Run(int) = 0;
 };
+
+void Sigaction(int sig_num, SignalHandler* handler);
+void Sigaction(int sig_num, sighandler_t handler);
+
+void ReserveHandlerCapacity(List<syntax_asdl::command_t*>* list);
 
 }  // namespace pyos
 
