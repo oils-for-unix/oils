@@ -2,10 +2,10 @@
 //
 // The idea behind this test is that these two questions have the SAME answer:
 //
-// 1. It it safe to perform operations X and Y on 2 different threads without
-//    synchronization?  (If they share nontrivial state, then no.)
-// 2. It it safe to perform operations X in a signal handler and operation Y in
-//    the main thread without synchronization
+// 1. Is it safe to perform ops X and Y in 2 different threads, without
+//    synchronization?  (If they share nontrivial state, then NO.)
+// 2. Is it safe to perform op X in a signal handler, and op Y in the main
+//    thread, without synchronization?
 
 #include <pthread.h>
 
