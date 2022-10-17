@@ -19,7 +19,7 @@
 
 namespace pyos {
 
-static Dict<int, SignalHandler*>* gSignalHandlers = nullptr;
+static SignalHandler* gSignalHandler = nullptr;
 
 Tuple2<int, int> WaitPid() {
   int status;
@@ -185,17 +185,16 @@ bool InputAvailable(int fd) {
 }
 
 static void signal_handler(int sig_num) {
-  assert(gSignalHandlers != nullptr);
-  SignalHandler* handler = gSignalHandlers->get(sig_num);
+  SignalHandler* handler = gSignalHandler;
   assert(handler != nullptr);
   handler->Run(sig_num);
 }
 
 void Sigaction(int sig_num, SignalHandler* handler) {
-  if (gSignalHandlers == nullptr) {
-    gSignalHandlers = Alloc<Dict<int, SignalHandler*>>();
+  if (gSignalHandler == nullptr) {
+    // NOTE: `handler` will always be the same thing.
+    gSignalHandler = handler;
   }
-  gSignalHandlers->set(sig_num, handler);
   struct sigaction act = {};
   act.sa_handler = signal_handler;
   assert(sigaction(sig_num, &act, nullptr) == 0);
