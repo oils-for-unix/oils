@@ -314,12 +314,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
 
-  # TODO: In general, cmd_deps are shared between the mutually recursive
-  # evaluators.  Some of the four below are only shared between a builtin and
-  # the CommandEvaluator, so we could put them somewhere else.
-  cmd_deps.traps = {}
-  cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
-
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem, None, None)
 
@@ -429,7 +423,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   assign_b = shell_native.InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_b, arena, cmd_deps)
+                                     assign_b, arena, cmd_deps, sig_state)
 
   AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 
@@ -486,9 +480,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
   builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
-  builtins[builtin_i.trap] = builtin_trap.Trap(sig_state, cmd_deps.traps,
-                                               cmd_deps.trap_nodes,
-                                               parse_ctx, tracer, errfmt)
+  builtins[builtin_i.trap] = builtin_trap.Trap(sig_state, parse_ctx, tracer, errfmt)
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)

@@ -23,7 +23,7 @@ from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import iteritems
 
-from typing import List, Dict, Optional, Any, TYPE_CHECKING
+from typing import Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core.ui import ErrorFormatter
@@ -45,10 +45,9 @@ class _TrapHandler(object):
   list, runs corresponding handlers, and then clears the list.
   """
 
-  def __init__(self, node, nodes_to_run, sig_state, tracer):
-    # type: (command_t, List[command_t], pyos.SignalState, dev.Tracer) -> None
+  def __init__(self, node, sig_state, tracer):
+    # type: (command_t, pyos.SignalState, dev.Tracer) -> None
     self.node = node
-    self.nodes_to_run = nodes_to_run
     self.sig_state = sig_state
     self.tracer = tracer
 
@@ -59,7 +58,7 @@ class _TrapHandler(object):
         'Received signal %d.  Will run handler in main loop' % sig_num)
 
     self.sig_state.last_sig_num = sig_num  # for interrupted 'wait'
-    self.nodes_to_run.append(self.node)
+    self.sig_state.nodes_to_run.append(self.node)
 
 
 def _GetSignalNumber(sig_spec):
@@ -96,11 +95,9 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 
 class Trap(vm._Builtin):
-  def __init__(self, sig_state, traps, nodes_to_run, parse_ctx, tracer, errfmt):
-    # type: (pyos.SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, dev.Tracer, ErrorFormatter) -> None
+  def __init__(self, sig_state, parse_ctx, tracer, errfmt):
+    # type: (pyos.SignalState, ParseContext, dev.Tracer, ErrorFormatter) -> None
     self.sig_state = sig_state
-    self.traps = traps
-    self.nodes_to_run = nodes_to_run
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.tracer = tracer
@@ -133,7 +130,7 @@ class Trap(vm._Builtin):
 
     if arg.p:  # Print registered handlers
       if mylib.PYTHON:
-        for name, value in iteritems(self.traps):
+        for name, value in iteritems(self.sig_state.traps):
           # The unit tests rely on this being one line.
           # bash prints a line that can be re-parsed.
           print('%s %s' % (name, value.__class__.__name__))
@@ -174,14 +171,14 @@ class Trap(vm._Builtin):
     if code_str == '-':
       if sig_key in _HOOK_NAMES:
         try:
-          del self.traps[sig_key]
+          del self.sig_state.traps[sig_key]
         except KeyError:
           pass
         return 0
 
       if sig_num != signal_def.NO_SIGNAL:
         try:
-          del self.traps[sig_key]
+          del self.sig_state.traps[sig_key]
         except KeyError:
           pass
 
@@ -203,16 +200,14 @@ class Trap(vm._Builtin):
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run,
-                                         self.sig_state, self.tracer)
+      self.sig_state.traps[sig_key] = _TrapHandler(node, self.sig_state, self.tracer)
       return 0
 
     # Register a signal.
     if sig_num != signal_def.NO_SIGNAL:
-      handler = _TrapHandler(node, self.nodes_to_run, self.sig_state,
-                             self.tracer)
+      handler = _TrapHandler(node, self.sig_state, self.tracer)
       # For signal handlers, the traps dictionary is used only for debugging.
-      self.traps[sig_key] = handler
+      self.sig_state.traps[sig_key] = handler
       if sig_num in (SIGKILL, SIGSTOP):
         self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
                            span_id=sig_spid)

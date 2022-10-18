@@ -322,12 +322,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
 
-  # TODO: In general, cmd_deps are shared between the mutually recursive
-  # evaluators.  Some of the four below are only shared between a builtin and
-  # the CommandEvaluator, so we could put them somewhere else.
-  cmd_deps.traps = {}
-  cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
-
   my_pid = posix.getpid()
 
   debug_path = ''
@@ -422,7 +416,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_b, arena, cmd_deps)
+                                     assign_b, arena, cmd_deps, sig_state)
 
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
@@ -461,9 +455,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
           errfmt)
   AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex, hay_tree, errfmt)
 
-  builtins[builtin_i.trap] = builtin_trap.Trap(
-      sig_state, cmd_deps.traps, cmd_deps.trap_nodes, parse_ctx, tracer,
-      errfmt)
+  builtins[builtin_i.trap] = builtin_trap.Trap(sig_state, parse_ctx, tracer, errfmt)
 
   if flag.c is not None:
     arena.PushSource(source.CFlag())
