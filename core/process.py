@@ -12,7 +12,7 @@ from __future__ import print_function
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
-from signal import SIGINT
+from signal import SIG_DFL, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP, SIGTTOU, SIGTTIN
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
@@ -888,7 +888,27 @@ class Process(Job):
       raise RuntimeError('Fatal error in posix.fork()')
 
     elif pid == 0:  # child
-      pyos.SignalState_AfterForkingChild()
+      # Note: this happens in BOTH interactive and non-interactive shells.
+      # We technically don't need to do most of it in non-interactive, since we
+      # did not change state in InitInteractiveShell().
+
+      # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
+      # shouldn't have this.
+      # https://docs.python.org/2/library/signal.html
+      # See Python/pythonrun.c.
+      pyos.Sigaction(SIGPIPE, SIG_DFL)
+
+      # Respond to Ctrl-\ (core dump)
+      pyos.Sigaction(SIGQUIT, SIG_DFL)
+
+      # Child processes should get Ctrl-Z.
+      pyos.Sigaction(SIGTSTP, SIG_DFL)
+
+      # More signals from
+      # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
+      # (but not SIGCHLD)
+      pyos.Sigaction(SIGTTOU, SIG_DFL)
+      pyos.Sigaction(SIGTTIN, SIG_DFL)
 
       for st in self.state_changes:
         st.Apply()

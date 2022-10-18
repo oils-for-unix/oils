@@ -3,6 +3,7 @@
 #ifndef LEAKY_CORE_H
 #define LEAKY_CORE_H
 
+#include <signal.h>  // sighandler_t
 #include <termios.h>
 
 #include "mycpp/runtime.h"
@@ -51,8 +52,6 @@ class TermState {
   }
 };
 
-void SignalState_AfterForkingChild();
-
 class SignalState {
  public:
   SignalState() {
@@ -69,6 +68,8 @@ class SignalState {
 
   DISALLOW_COPY_AND_ASSIGN(SignalState)
 };
+
+void Sigaction(int sig_num, sighandler_t handler);
 
 }  // namespace pyos
 

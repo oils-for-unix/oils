@@ -286,31 +286,10 @@ class SigwinchHandler(object):
       self.user_handler(sig_num, unused_frame)
 
 
-def SignalState_AfterForkingChild():
-  # type: () -> None
-  """Not a member of SignalState since we didn't do dependency injection."""
-
-  # Note: this happens in BOTH interactive and non-interactive shells.
-  # We technically don't need to do most of it in non-interactive, since we
-  # did not change state in InitInteractiveShell().
-
-  # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
-  # shouldn't have this.
-  # https://docs.python.org/2/library/signal.html
-  # See Python/pythonrun.c.
-  signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-  # Respond to Ctrl-\ (core dump)
-  signal.signal(signal.SIGQUIT, signal.SIG_DFL)
-
-  # Child processes should get Ctrl-Z.
-  signal.signal(signal.SIGTSTP, signal.SIG_DFL)
-
-  # More signals from
-  # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
-  # (but not SIGCHLD)
-  signal.signal(signal.SIGTTOU, signal.SIG_DFL)
-  signal.signal(signal.SIGTTIN, signal.SIG_DFL)
+def Sigaction(sig_num, handler):
+  # type: (int, Any) -> None
+  """Register a signal handler"""
+  signal.signal(sig_num, handler)
 
 
 class SignalState(object):

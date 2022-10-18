@@ -181,10 +181,10 @@ bool InputAvailable(int fd) {
   NotImplemented();
 }
 
-void SignalState_AfterForkingChild() {
-  signal(SIGQUIT, SIG_DFL);
-  signal(SIGPIPE, SIG_DFL);
-  signal(SIGTSTP, SIG_DFL);
+void Sigaction(int sig_num, sighandler_t handler) {
+  struct sigaction act = {};
+  act.sa_handler = handler;
+  assert(sigaction(sig_num, &act, nullptr) == 0);
 }
 
 }  // namespace pyos
