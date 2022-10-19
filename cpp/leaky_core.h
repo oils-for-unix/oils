@@ -7,6 +7,7 @@
 #include <termios.h>
 
 #include "mycpp/myerror.h"
+#include "_gen/frontend/syntax.asdl.h"
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration
@@ -55,7 +56,9 @@ class TermState {
 
 class SignalState {
  public:
-  SignalState() {
+  SignalState()
+      : traps(NewDict<Str*, builtin_trap::_TrapHandler*>()),
+        nodes_to_run(NewList<syntax_asdl::command_t*>()) {
   }
   void InitShell() {
   }
@@ -65,7 +68,12 @@ class SignalState {
   void RemoveUserTrap(int sig_num) {
     NotImplemented();
   }
+  List<syntax_asdl::command_t*>* TakeRunList() {
+    return NewList<syntax_asdl::command_t*>();
+  }
   int last_sig_num = 0;
+  Dict<Str*, builtin_trap::_TrapHandler*>* traps;
+  List<syntax_asdl::command_t*>* nodes_to_run;
 
   DISALLOW_COPY_AND_ASSIGN(SignalState)
 };

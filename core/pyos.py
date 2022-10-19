@@ -22,6 +22,7 @@ from posix_ import WUNTRACED
 from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import command_t
   from core.comp_ui import _IDisplay
   from osh.builtin_trap import _TrapHandler
 
@@ -299,6 +300,10 @@ class SignalState(object):
     # type: () -> None
     self.sigwinch_handler = None  # type: SigwinchHandler
     self.last_sig_num = 0  # MUTABLE GLOBAL, for interrupted 'wait'
+    # signal/hook name -> handler
+    self.traps = {}  # type: Dict[str, _TrapHandler]
+    # appended to by signal handlers
+    self.nodes_to_run = []  # type: List[command_t]
 
   def InitShell(self):
     # type: () -> None
@@ -361,3 +366,27 @@ class SignalState(object):
     else:
       signal.signal(sig_num, signal.SIG_DFL)
     # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
+
+  def TakeRunList(self):
+      # type: () -> List[command_t]
+      """Transfer ownership of the current queue of pending trap handlers to the caller."""
+      # A note on signal-safety here. The main loop might be calling this function
+      # at the same time a signal is firing and appending to
+      # `self.nodes_to_run`. We can forgoe using a lock here
+      # (which would be problematic for the signal handler) because mutual
+      # exclusivity should be maintained by the atomic nature of pointer
+      # assignment (i.e. word-sized writes) on most modern platforms.
+      # The replacement run list is allocated before the swap, so it can be
+      # interuppted at any point without consequence.
+      # This means the signal handler always has exclusive access to
+      # `self.nodes_to_run`. In the worst case the signal handler might write to
+      # `new_run_list` and the corresponding trap handler won't get executed
+      # until the main loop calls this function again.
+      # NOTE: It's important to distinguish between signal-saftey an
+      # thread-saftey here. Signals run in the same process context as the main
+      # loop, while concurrent threads do not and would have to worry about
+      # cache-coherence and instruction reordering.
+      new_run_list = []  # type: List[command_t]
+      ret = self.nodes_to_run
+      self.nodes_to_run = new_run_list
+      return ret

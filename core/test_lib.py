@@ -207,7 +207,6 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   debug_f = util.DebugFile(sys.stderr)
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
-  cmd_deps.trap_nodes = []
 
   search_path = state.SearchPath(mem)
 
@@ -224,10 +223,10 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
-  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_builtins, arena, cmd_deps)
-
   sig_state = pyos.SignalState()
+  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
+                                     assign_builtins, arena, cmd_deps, sig_state)
+
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
   waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
 
