@@ -7,6 +7,7 @@
 #include <sys/types.h>  // mode_t
 #include <unistd.h>
 
+#include "mycpp/myerror.h"
 #include "mycpp/runtime.h"
 
 namespace fcntl_ {

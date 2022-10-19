@@ -1,6 +1,3 @@
-// clang-format off
-#include "mycpp/myerror.h" // must come first because of 'errno' issue
-// clang-format on
 
 #include <errno.h>
 #include <fcntl.h>  // O_RDWR
@@ -16,6 +13,7 @@
 #include "leaky_pylib.h"
 #include "leaky_stdlib.h"
 #include "mycpp/builtins.h"
+#include "mycpp/myerror.h"  // must come first because of 'errno' issue
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;

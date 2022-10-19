@@ -1,9 +1,5 @@
 // leaky_core.cc
 
-// clang-format off
-#include "mycpp/myerror.h"
-// clang-format on
-
 #include "cpp/leaky_core.h"
 
 #include <errno.h>
@@ -15,6 +11,8 @@
 #include <sys/wait.h>      // waitpid()
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
+
+#include "mycpp/myerror.h"
 
 namespace pyos {
 
@@ -249,11 +247,8 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
   return buf;
 }
 
-// Hack so e->errno will work below
-#undef errno
-
 Str* strerror(_OSError* e) {
-  return StrFromC(::strerror(e->errno));
+  return StrFromC(::strerror(e->errno_));
 }
 
 }  // namespace pyutil

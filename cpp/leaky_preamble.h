@@ -1,9 +1,5 @@
 // leaky_preamble.h: declarations to run osh_eval.cc
 
-// clang-format off
-#include "mycpp/myerror.h"     // do this before 'errno' macro is defined
-// clang-format on
-
 #include <errno.h>
 #include <fcntl.h>     // F_DUPFD used directly
 #include <sys/wait.h>  // WIFSIGNALED, etc. called DIRECTLY
@@ -35,9 +31,8 @@ using id_kind_asdl::Kind_t;
 #include "cpp/leaky_stdlib.h"
 #include "cpp/qsn.h"
 #include "cpp/segfault_handler.h"
+#include "mycpp/myerror.h"  // do this before 'errno' macro is defined
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
-
-#undef errno  // for e->errno to work; see mycpp/myerror.h
 
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
   return left == right;

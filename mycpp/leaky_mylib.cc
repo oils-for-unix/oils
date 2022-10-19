@@ -1,11 +1,8 @@
-// clang-format off
-#include "mycpp/myerror.h"
-// clang-format on
-
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
+#include "mycpp/myerror.h"
 #include "mycpp/runtime.h"
 
 mylib::FormatStringer gBuf;

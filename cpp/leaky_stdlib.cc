@@ -1,10 +1,6 @@
 // leaky_stdlib.cc: Replacement for standard library modules
 // and native/posixmodule.c
 
-// clang-format off
-#include "mycpp/myerror.h"  // for OSError; must come first
-// clang-format on
-
 #include "leaky_stdlib.h"
 
 #include <errno.h>

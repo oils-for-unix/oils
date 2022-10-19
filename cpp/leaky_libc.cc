@@ -1,9 +1,5 @@
 // libc.cc: Replacement for pyext/libc.c
 
-// clang-format off
-#include "mycpp/myerror.h"
-// clang-format on
-
 #include "cpp/leaky_libc.h"
 
 #include <errno.h>
@@ -11,6 +7,8 @@
 #include <locale.h>
 #include <regex.h>
 #include <unistd.h>  // gethostname()
+
+#include "mycpp/myerror.h"
 
 namespace libc {
 

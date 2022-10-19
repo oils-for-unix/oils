@@ -6,6 +6,7 @@
 #include <signal.h>  // sighandler_t
 #include <termios.h>
 
+#include "mycpp/myerror.h"
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration
@@ -72,8 +73,6 @@ class SignalState {
 void Sigaction(int sig_num, sighandler_t handler);
 
 }  // namespace pyos
-
-class _OSError;  // declaration from mycpp/myerror.h
 
 namespace pyutil {
 

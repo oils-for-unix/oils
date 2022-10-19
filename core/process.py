@@ -1470,11 +1470,11 @@ class Waiter(object):
     """
     pid, status = pyos.WaitPid()
     if pid < 0:  # error case
-      errno = status
+      err_num = status
       #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
-      if errno == ECHILD:
+      if err_num == ECHILD:
         return W1_ECHILD  # nothing to wait for caller should stop
-      elif errno == EINTR:  # Bug #858 fix
+      elif err_num == EINTR:  # Bug #858 fix
         #log('WaitForOne() => %d', self.sig_state.last_sig_num)
         return self.sig_state.last_sig_num  # e.g. 1 for SIGHUP
       else:

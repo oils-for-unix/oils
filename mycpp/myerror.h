@@ -10,9 +10,9 @@
 // Base class that mycpp generates.
 class _OSError {
  public:
-  explicit _OSError(int err_num) : errno(err_num) {
+  explicit _OSError(int err_num) : errno_(err_num) {
   }
-  int errno;
+  int errno_;
 };
 
 class IOError : public _OSError {

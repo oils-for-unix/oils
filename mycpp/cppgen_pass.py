@@ -491,7 +491,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.accept(o.expr)
           self.write(op)
-        self.write('%s', o.name)
+
+        if o.name == 'errno':
+          # Avoid conflict with errno macro
+          # e->errno turns into e->errno_
+          self.write('errno_')
+        else:
+          self.write('%s', o.name)
 
     def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
         pass
