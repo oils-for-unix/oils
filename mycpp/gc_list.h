@@ -500,9 +500,7 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
 template <typename T>
 List<T>* list(List<T>* other) {
   auto result = NewList<T>();
-  for (int i = 0; i < len(other); ++i) {
-    result->set(i, other->index_(i));
-  }
+  result->extend(other);
   return result;
 }
 
