@@ -301,7 +301,8 @@ class SignalState(object):
     self.sigwinch_handler = None  # type: SigwinchHandler
     self.last_sig_num = 0  # MUTABLE GLOBAL, for interrupted 'wait'
     # signal/hook name -> handler
-    self.traps = {}  # type: Dict[str, _TrapHandler]
+    self.hooks = {}  # type: Dict[str, _TrapHandler]
+    self.traps = {}  # type: Dict[int, _TrapHandler]
     # appended to by signal handlers
     self.nodes_to_run = []  # type: List[command_t]
 
@@ -345,6 +346,27 @@ class SignalState(object):
         # For some reason setpgid() fails with Operation Not Permitted (EPERM) under pexpect?
         pass
 
+  def GetLastSignal(self):
+    # type: () -> int
+    """Return the last signal that fired"""
+    return self.last_sig_num
+
+  def GetHook(self, hook_name):
+    # type: (str) -> Optional[Any]
+    """Return the handler associated with hook_name"""
+    return self.hooks.get(hook_name, None)
+
+  def AddUserHook(self, hook_name, handler):
+    # type: (int, Any) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    self.hooks[hook_name] = handler
+
+  def RemoveUserHook(self, hook_name):
+    # type: (str) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    if hook_name in self.hooks:
+      del self.hooks[hook_name]
+
   def AddUserTrap(self, sig_num, handler):
     # type: (int, Any) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
@@ -360,6 +382,9 @@ class SignalState(object):
     # type: (int) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     # Restore default
+    if sig_num in self.traps:
+      del self.traps[sig_num]
+
     if sig_num == signal.SIGWINCH:
       assert self.sigwinch_handler is not None
       self.sigwinch_handler.user_handler = None

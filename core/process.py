@@ -1475,8 +1475,8 @@ class Waiter(object):
       if err_num == ECHILD:
         return W1_ECHILD  # nothing to wait for caller should stop
       elif err_num == EINTR:  # Bug #858 fix
-        #log('WaitForOne() => %d', self.sig_state.last_sig_num)
-        return self.sig_state.last_sig_num  # e.g. 1 for SIGHUP
+        #log('WaitForOne() => %d', self.sig_state.GetLastSignal())
+        return self.sig_state.GetLastSignal()  # e.g. 1 for SIGHUP
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()
