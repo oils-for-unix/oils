@@ -1705,11 +1705,11 @@ class CommandEvaluator(object):
     Could use i & (n-1) == i & 255  because we have a power of 2.
     https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
     """
-    handler = self.sig_state.GetHook('EXIT')
-    if handler:
+    node = self.sig_state.GetHook('EXIT')
+    if node:
       with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
         try:
-          is_return, is_fatal = self.ExecuteAndCatch(handler.node)
+          is_return, is_fatal = self.ExecuteAndCatch(node)
         except util.UserExit as e:  # explicit exit
           mut_status[0] = e.status
           return

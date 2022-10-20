@@ -30,37 +30,6 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
 
 
-class _TrapHandler(object):
-  """A function that is called by Python's signal module.
-
-  Similar to process.SubProgramThunk.
-
-  TODO: In C++ we can't use this type of handling.  We cannot append to a
-  garbage-colleted list inside a signal handler!
-
-  Instead I think we need to append to a global array of size 1024 for the last
-  signal number caught.
-
-  Then in the main loop we will have RunPendingTraps() that iterates over this
-  list, runs corresponding handlers, and then clears the list.
-  """
-
-  def __init__(self, node, sig_state, tracer):
-    # type: (command_t, pyos.SignalState, dev.Tracer) -> None
-    self.node = node
-    self.sig_state = sig_state
-    self.tracer = tracer
-
-  def __call__(self, sig_num, unused_frame):
-    # type: (int, Any) -> None
-    """For Python's signal module."""
-    self.tracer.PrintMessage(
-        'Received signal %d.  Will run handler in main loop' % sig_num)
-
-    self.sig_state.last_sig_num = sig_num  # for interrupted 'wait'
-    self.sig_state.nodes_to_run.append(self.node)
-
-
 def _GetSignalNumber(sig_spec):
   # type: (str) -> int
 
@@ -191,12 +160,11 @@ class Trap(vm._Builtin):
     if node is None:
       return 1  # ParseTrapCode() prints an error for us.
 
-    handler = _TrapHandler(node, self.sig_state, self.tracer)
     # Register a hook.
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      self.sig_state.AddUserHook(sig_key, handler)
+      self.sig_state.AddUserHook(sig_key, node)
       return 0
 
     # Register a signal.
@@ -207,7 +175,7 @@ class Trap(vm._Builtin):
                            span_id=sig_spid)
         # Other shells return 0, but this seems like an obvious error
         return 1
-      self.sig_state.AddUserTrap(sig_num, handler)
+      self.sig_state.AddUserTrap(sig_num, node)
       return 0
 
     raise AssertionError('Signal or trap')
