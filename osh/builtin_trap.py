@@ -130,10 +130,13 @@ class Trap(vm._Builtin):
 
     if arg.p:  # Print registered handlers
       if mylib.PYTHON:
-        for name, value in iteritems(self.sig_state.traps):
-          # The unit tests rely on this being one line.
-          # bash prints a line that can be re-parsed.
+        # The unit tests rely on this being one line.
+        # bash prints a line that can be re-parsed.
+        for name, value in iteritems(self.sig_state.hooks):
           print('%s %s' % (name, value.__class__.__name__))
+
+        for sig_num, value in iteritems(self.sig_state.traps):
+          print('%d %s' % (sig_num, value.__class__.__name__))
 
       return 0
 
@@ -170,18 +173,10 @@ class Trap(vm._Builtin):
     # NOTE: sig_spec isn't validated when removing handlers.
     if code_str == '-':
       if sig_key in _HOOK_NAMES:
-        try:
-          del self.sig_state.traps[sig_key]
-        except KeyError:
-          pass
+        self.sig_state.RemoveUserHook(sig_key)
         return 0
 
       if sig_num != signal_def.NO_SIGNAL:
-        try:
-          del self.sig_state.traps[sig_key]
-        except KeyError:
-          pass
-
         self.sig_state.RemoveUserTrap(sig_num)
         return 0
 
@@ -196,18 +191,17 @@ class Trap(vm._Builtin):
     if node is None:
       return 1  # ParseTrapCode() prints an error for us.
 
+    handler = _TrapHandler(node, self.sig_state, self.tracer)
     # Register a hook.
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      self.sig_state.traps[sig_key] = _TrapHandler(node, self.sig_state, self.tracer)
+      self.sig_state.AddUserHook(sig_key, handler)
       return 0
 
     # Register a signal.
     if sig_num != signal_def.NO_SIGNAL:
-      handler = _TrapHandler(node, self.sig_state, self.tracer)
       # For signal handlers, the traps dictionary is used only for debugging.
-      self.sig_state.traps[sig_key] = handler
       if sig_num in (SIGKILL, SIGSTOP):
         self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
                            span_id=sig_spid)

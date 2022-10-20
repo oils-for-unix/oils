@@ -87,6 +87,7 @@ if TYPE_CHECKING:
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
+  from osh.builtin_trap import _TrapHandler
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -1705,7 +1706,7 @@ class CommandEvaluator(object):
     Could use i & (n-1) == i & 255  because we have a power of 2.
     https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
     """
-    handler = self.sig_state.traps.get('EXIT')
+    handler = self.sig_state.GetHook('EXIT')  # type: _TrapHandler
     if handler:
       with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
         try:
