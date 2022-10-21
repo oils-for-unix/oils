@@ -57,15 +57,15 @@ class TermState {
 class SignalState {
  public:
   SignalState()
-      : traps(NewDict<int, builtin_trap::_TrapHandler*>()),
+      : traps(NewDict<int, syntax_asdl::command_t*>()),
         nodes_to_run(NewList<syntax_asdl::command_t*>()) {
   }
   void InitShell() {
   }
   int GetLastSignal() {
-    return last_sig_num;
+    return -1;
   }
-  void AddUserTrap(int sig_num, builtin_trap::_TrapHandler* handler) {
+  void AddUserTrap(int sig_num, syntax_asdl::command_t* handler) {
     NotImplemented();
   }
   void RemoveUserTrap(int sig_num) {
@@ -74,8 +74,7 @@ class SignalState {
   List<syntax_asdl::command_t*>* TakeRunList() {
     return NewList<syntax_asdl::command_t*>();
   }
-  int last_sig_num = 0;
-  Dict<int, builtin_trap::_TrapHandler*>* traps;
+  Dict<int, syntax_asdl::command_t*>* traps;
   List<syntax_asdl::command_t*>* nodes_to_run;
 
   DISALLOW_COPY_AND_ASSIGN(SignalState)

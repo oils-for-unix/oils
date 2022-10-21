@@ -266,26 +266,56 @@ def InputAvailable(fd):
 
 UNTRAPPED_SIGWINCH = -1
 
-class SigwinchHandler(object):
-  """Wrapper to call user handler."""
 
-  def __init__(self, display, sig_state):
-    # type: (_IDisplay, SignalState) -> None
-    self.display = display
-    self.sig_state = sig_state
-    self.user_handler = None  # type: _TrapHandler
+class _SignalHandler(object):
+  """
+  A singleton that implements a basic generic signal handler that enqueues
+  signals for asynchrnous processing as they are fired.
+  """
+  _instance = None
+
+  signal_queue = []  # type: List[int]
+  last_sig_num = 0  # type: int
+  sigwinch_num = UNTRAPPED_SIGWINCH
+
+  def __new__(cls):
+    # type: () -> None
+    if cls._instance is None:
+        cls._instance = super(_SignalHandler, cls).__new__(cls)
+
+    return cls._instance
 
   def __call__(self, sig_num, unused_frame):
     # type: (int, Any) -> None
-    """For Python's signal module."""
+    if sig_num == signal.SIGWINCH:
+      self.last_sig_num = self.sigwinch_num
+    else:
+      self.last_sig_num = sig_num
 
-    # SENTINEL for UNTRAPPED SIGWINCH.  If it's trapped, self.user_handler
-    # will overwrite it with signal.SIGWINCH.
-    self.sig_state.last_sig_num = UNTRAPPED_SIGWINCH
+    self.signal_queue.append(sig_num)
 
-    self.display.OnWindowChange()
-    if self.user_handler:
-      self.user_handler(sig_num, unused_frame)
+  def TakeSignalQueue(self):
+    # type: () -> List[int]
+    # A note on signal-safety here. The main loop might be calling this function
+    # at the same time a signal is firing and appending to
+    # `self.signal_queue`. We can forgoe using a lock here
+    # (which would be problematic for the signal handler) because mutual
+    # exclusivity should be maintained by the atomic nature of pointer
+    # assignment (i.e. word-sized writes) on most modern platforms.
+    # The replacement run list is allocated before the swap, so it can be
+    # interuppted at any point without consequence.
+    # This means the signal handler always has exclusive access to
+    # `self.signal_queue`. In the worst case the signal handler might write to
+    # `new_queue` and the corresponding trap handler won't get executed
+    # until the main loop calls this function again.
+    # NOTE: It's important to distinguish between signal-saftey an
+    # thread-saftey here. Signals run in the same process context as the main
+    # loop, while concurrent threads do not and would have to worry about
+    # cache-coherence and instruction reordering.
+    new_queue = []  #  type: List[int]
+    ret = self.signal_queue
+    self.signal_queue = new_queue
+    return ret
 
 
 def Sigaction(sig_num, handler):
@@ -299,10 +329,9 @@ class SignalState(object):
 
   def __init__(self):
     # type: () -> None
-    self.sigwinch_handler = None  # type: SigwinchHandler
-    self.last_sig_num = 0  # MUTABLE GLOBAL, for interrupted 'wait'
+    self.display = None  # type: _IDisplay
     # signal/hook name -> handler
-    self.traps = {}  # type: Dict[int, _TrapHandler]
+    self.traps = {}  # type: Dict[int, command_t]
     # appended to by signal handlers
     self.nodes_to_run = []  # type: List[command_t]
 
@@ -331,8 +360,9 @@ class SignalState(object):
 
     # This is ALWAYS on, which means that it can cause EINTR, and wait() and
     # read() have to handle it
-    self.sigwinch_handler = SigwinchHandler(display, self)
-    signal.signal(signal.SIGWINCH, self.sigwinch_handler)
+    self.display = display
+    signal.signal(signal.SIGWINCH, _SignalHandler())
+    _SignalHandler().sigwinch_num = UNTRAPPED_SIGWINCH
 
     # This doesn't make any tests pass, and we might punt on job control
     if 0:
@@ -349,17 +379,17 @@ class SignalState(object):
   def GetLastSignal(self):
     # type: () -> int
     """Return the last signal that fired"""
-    return self.last_sig_num
+    return _SignalHandler().last_sig_num
 
   def AddUserTrap(self, sig_num, handler):
-    # type: (int, Any) -> None
+    # type: (int, command_t) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
 
     if sig_num == signal.SIGWINCH:
-      assert self.sigwinch_handler is not None
-      self.sigwinch_handler.user_handler = handler
+      assert self.display is not None
+      _SignalHandler().sigwinch_num = signal.SIGWINCH
     else:
-      signal.signal(sig_num, handler)
+      signal.signal(sig_num, _SignalHandler())
     self.traps[sig_num] = handler
     # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
 
@@ -370,8 +400,7 @@ class SignalState(object):
     mylib.dict_remove(self.traps, sig_num)
 
     if sig_num == signal.SIGWINCH:
-      assert self.sigwinch_handler is not None
-      self.sigwinch_handler.user_handler = None
+      _SignalHandler().sigwinch_num = UNTRAPPED_SIGWINCH
     else:
       signal.signal(sig_num, signal.SIG_DFL)
     # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
@@ -379,23 +408,18 @@ class SignalState(object):
   def TakeRunList(self):
       # type: () -> List[command_t]
       """Transfer ownership of the current queue of pending trap handlers to the caller."""
-      # A note on signal-safety here. The main loop might be calling this function
-      # at the same time a signal is firing and appending to
-      # `self.nodes_to_run`. We can forgoe using a lock here
-      # (which would be problematic for the signal handler) because mutual
-      # exclusivity should be maintained by the atomic nature of pointer
-      # assignment (i.e. word-sized writes) on most modern platforms.
-      # The replacement run list is allocated before the swap, so it can be
-      # interuppted at any point without consequence.
-      # This means the signal handler always has exclusive access to
-      # `self.nodes_to_run`. In the worst case the signal handler might write to
-      # `new_run_list` and the corresponding trap handler won't get executed
-      # until the main loop calls this function again.
-      # NOTE: It's important to distinguish between signal-saftey an
-      # thread-saftey here. Signals run in the same process context as the main
-      # loop, while concurrent threads do not and would have to worry about
-      # cache-coherence and instruction reordering.
-      new_run_list = []  # type: List[command_t]
-      ret = self.nodes_to_run
-      self.nodes_to_run = new_run_list
-      return ret
+      sig_queue = _SignalHandler().TakeSignalQueue()
+
+      run_list = []  # type: List[command_t]
+      for sig_num in sig_queue:
+        node = self.traps.get(sig_num, None)
+
+        if sig_num == signal.SIGWINCH:
+          self.display.OnWindowChange()
+          if node is None:
+            continue
+
+        assert node is not None
+        run_list.append(node)
+
+      return run_list

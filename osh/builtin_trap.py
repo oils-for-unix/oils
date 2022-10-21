@@ -58,7 +58,6 @@ class _TrapHandler(object):
     self.tracer.PrintMessage(
         'Received signal %d.  Will run handler in main loop' % sig_num)
 
-    self.sig_state.last_sig_num = sig_num  # for interrupted 'wait'
     self.sig_state.nodes_to_run.append(self.node)
 
 
@@ -158,8 +157,8 @@ class Trap(vm._Builtin):
         for name, value in iteritems(self.hook_state.hooks):
           print('%s %s' % (name, value.__class__.__name__))
 
-        for sig_num, value in iteritems(self.sig_state.traps):
-          print('%d %s' % (sig_num, value.__class__.__name__))
+        for sig_num, thandler in iteritems(self.sig_state.traps):
+          print('%d %s' % (sig_num, thandler.__class__.__name__))
 
       return 0
 
@@ -214,11 +213,11 @@ class Trap(vm._Builtin):
     if node is None:
       return 1  # ParseTrapCode() prints an error for us.
 
-    handler = _TrapHandler(node, self.sig_state, self.tracer)
     # Register a hook.
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
+      handler = _TrapHandler(node, self.sig_state, self.tracer)
       self.hook_state.AddUserHook(sig_key, handler)
       return 0
 
@@ -230,7 +229,7 @@ class Trap(vm._Builtin):
                            span_id=sig_spid)
         # Other shells return 0, but this seems like an obvious error
         return 1
-      self.sig_state.AddUserTrap(sig_num, handler)
+      self.sig_state.AddUserTrap(sig_num, node)
       return 0
 
     raise AssertionError('Signal or trap')
