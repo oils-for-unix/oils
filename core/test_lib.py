@@ -224,6 +224,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
   sig_state = builtin_trap.SignalState()
+  sig_state.InitShell()
   hook_state = builtin_trap.HookState()
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_builtins, arena, cmd_deps, sig_state, hook_state)

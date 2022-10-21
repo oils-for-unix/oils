@@ -262,23 +262,16 @@ def InputAvailable(fd):
 UNTRAPPED_SIGWINCH = -1
 
 
-class _SignalHandler(object):
+class SignalHandler(object):
   """
-  A singleton that implements a basic generic signal handler that enqueues
-  signals for asynchrnous processing as they are fired.
+  A basic signal handler that enqueues signals for asynchrnous processing as
+  they are fired.
   """
-  _instance = None  # type: _SignalHandler
-
-  signal_queue = []  # type: List[int]
-  last_sig_num = 0  # type: int
-  sigwinch_num = UNTRAPPED_SIGWINCH
-
-  def __new__(cls):
-    # type: () -> _SignalHandler
-    if cls._instance is None:
-        cls._instance = super(_SignalHandler, cls).__new__(cls)
-
-    return cls._instance
+  def __init__(self):
+    # type: () -> None
+    self.signal_queue = []  # type: List[int]
+    self.last_sig_num = 0  # type: int
+    self.sigwinch_num = UNTRAPPED_SIGWINCH
 
   def __call__(self, sig_num, unused_frame):
     # type: (int, Any) -> None
@@ -313,6 +306,9 @@ class _SignalHandler(object):
     return ret
 
 
+gSignalHandler = None  #  type: SignalHandler
+
+
 def Sigaction(sig_num, handler):
   # type: (int, Any) -> None
   """Register a signal handler"""
@@ -322,19 +318,25 @@ def Sigaction(sig_num, handler):
 def RegisterSignalInterest(sig_num):
   # type: (int) -> None
   """Have the kernel notify the main loop about the given signal"""
-  signal.signal(sig_num, _SignalHandler())
+  global gSignalHandler
+  assert gSignalHandler is not None
+  signal.signal(sig_num, gSignalHandler)
 
 
 def GetPendingSignals():
   # type: () -> List[int]
   """Transfer ownership of the current queue of pending signals to the caller."""
-  return _SignalHandler().TakeSignalQueue()
+  global gSignalHandler
+  assert gSignalHandler is not None
+  return gSignalHandler.TakeSignalQueue()
 
 
 def LastSignal():
   # type: () -> int
   """Returns the number of the last signal that fired"""
-  return _SignalHandler().last_sig_num
+  global gSignalHandler
+  assert gSignalHandler is not None
+  return gSignalHandler.last_sig_num
 
 
 def SetSigwinchCode(code):
@@ -344,8 +346,12 @@ def SetSigwinchCode(code):
   report a different code to `wait`. SetSigwinchCode() lets us set which code is
   reported.
   """
-  _SignalHandler().sigwinch_num = code
+  global gSignalHandler
+  assert gSignalHandler is not None
+  gSignalHandler.sigwinch_num = code
+
 
 def InitShell():
   # type: () -> None
-  pass
+  global gSignalHandler
+  gSignalHandler = SignalHandler()
