@@ -23,11 +23,12 @@ from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import iteritems
 
-from typing import Optional, Any, TYPE_CHECKING
+from typing import Dict, Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
+
 
 
 class _TrapHandler(object):
@@ -59,6 +60,27 @@ class _TrapHandler(object):
 
     self.sig_state.last_sig_num = sig_num  # for interrupted 'wait'
     self.sig_state.nodes_to_run.append(self.node)
+
+
+class HookState(object):
+  def __init__(self):
+    # type: () -> None
+    self.hooks = {}  # type: Dict[str, _TrapHandler]
+
+  def GetHook(self, hook_name):
+    # type: (str) -> _TrapHandler
+    """Return the handler associated with hook_name"""
+    return self.hooks.get(hook_name, None)
+
+  def AddUserHook(self, hook_name, handler):
+    # type: (str, _TrapHandler) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    self.hooks[hook_name] = handler
+
+  def RemoveUserHook(self, hook_name):
+    # type: (str) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    mylib.dict_remove(self.hooks, hook_name)
 
 
 def _GetSignalNumber(sig_spec):
@@ -95,9 +117,10 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 
 class Trap(vm._Builtin):
-  def __init__(self, sig_state, parse_ctx, tracer, errfmt):
-    # type: (pyos.SignalState, ParseContext, dev.Tracer, ErrorFormatter) -> None
+  def __init__(self, sig_state, hook_state, parse_ctx, tracer, errfmt):
+    # type: (pyos.SignalState, HookState, ParseContext, dev.Tracer, ErrorFormatter) -> None
     self.sig_state = sig_state
+    self.hook_state = hook_state
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.tracer = tracer
@@ -132,7 +155,7 @@ class Trap(vm._Builtin):
       if mylib.PYTHON:
         # The unit tests rely on this being one line.
         # bash prints a line that can be re-parsed.
-        for name, value in iteritems(self.sig_state.hooks):
+        for name, value in iteritems(self.hook_state.hooks):
           print('%s %s' % (name, value.__class__.__name__))
 
         for sig_num, value in iteritems(self.sig_state.traps):
@@ -173,7 +196,7 @@ class Trap(vm._Builtin):
     # NOTE: sig_spec isn't validated when removing handlers.
     if code_str == '-':
       if sig_key in _HOOK_NAMES:
-        self.sig_state.RemoveUserHook(sig_key)
+        self.hook_state.RemoveUserHook(sig_key)
         return 0
 
       if sig_num != signal_def.NO_SIGNAL:
@@ -196,7 +219,7 @@ class Trap(vm._Builtin):
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      self.sig_state.AddUserHook(sig_key, handler)
+      self.hook_state.AddUserHook(sig_key, handler)
       return 0
 
     # Register a signal.
