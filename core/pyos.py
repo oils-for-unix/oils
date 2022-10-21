@@ -15,6 +15,7 @@ import time
 
 from core import pyutil
 from core.pyerror import log
+from mycpp import mylib
 
 import posix_ as posix
 from posix_ import WUNTRACED
@@ -301,7 +302,8 @@ class SignalState(object):
     self.sigwinch_handler = None  # type: SigwinchHandler
     self.last_sig_num = 0  # MUTABLE GLOBAL, for interrupted 'wait'
     # signal/hook name -> handler
-    self.traps = {}  # type: Dict[str, _TrapHandler]
+    self.hooks = {}  # type: Dict[str, _TrapHandler]
+    self.traps = {}  # type: Dict[int, _TrapHandler]
     # appended to by signal handlers
     self.nodes_to_run = []  # type: List[command_t]
 
@@ -345,6 +347,11 @@ class SignalState(object):
         # For some reason setpgid() fails with Operation Not Permitted (EPERM) under pexpect?
         pass
 
+  def GetLastSignal(self):
+    # type: () -> int
+    """Return the last signal that fired"""
+    return self.last_sig_num
+
   def AddUserTrap(self, sig_num, handler):
     # type: (int, Any) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
@@ -354,12 +361,15 @@ class SignalState(object):
       self.sigwinch_handler.user_handler = handler
     else:
       signal.signal(sig_num, handler)
+    self.traps[sig_num] = handler
     # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
 
   def RemoveUserTrap(self, sig_num):
     # type: (int) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     # Restore default
+    mylib.dict_remove(self.traps, sig_num)
+
     if sig_num == signal.SIGWINCH:
       assert self.sigwinch_handler is not None
       self.sigwinch_handler.user_handler = None

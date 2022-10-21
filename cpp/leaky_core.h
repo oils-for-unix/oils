@@ -6,8 +6,8 @@
 #include <signal.h>  // sighandler_t
 #include <termios.h>
 
-#include "mycpp/myerror.h"
 #include "_gen/frontend/syntax.asdl.h"
+#include "mycpp/myerror.h"
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration
@@ -57,10 +57,13 @@ class TermState {
 class SignalState {
  public:
   SignalState()
-      : traps(NewDict<Str*, builtin_trap::_TrapHandler*>()),
+      : traps(NewDict<int, builtin_trap::_TrapHandler*>()),
         nodes_to_run(NewList<syntax_asdl::command_t*>()) {
   }
   void InitShell() {
+  }
+  int GetLastSignal() {
+    return last_sig_num;
   }
   void AddUserTrap(int sig_num, builtin_trap::_TrapHandler* handler) {
     NotImplemented();
@@ -72,7 +75,7 @@ class SignalState {
     return NewList<syntax_asdl::command_t*>();
   }
   int last_sig_num = 0;
-  Dict<Str*, builtin_trap::_TrapHandler*>* traps;
+  Dict<int, builtin_trap::_TrapHandler*>* traps;
   List<syntax_asdl::command_t*>* nodes_to_run;
 
   DISALLOW_COPY_AND_ASSIGN(SignalState)
