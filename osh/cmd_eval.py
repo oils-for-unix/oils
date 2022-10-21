@@ -87,7 +87,7 @@ if TYPE_CHECKING:
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
-  from osh.builtin_trap import _TrapHandler, HookState
+  from osh.builtin_trap import HookState
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -1430,7 +1430,7 @@ class CommandEvaluator(object):
   def RunPendingTraps(self):
     # type: () -> None
 
-    # See osh/builtin_trap.py _TrapHandler for the code that populates this
+    # See osh/builtin_trap.py SignalState for the code that populates this
     # list.
     trap_nodes = self.sig_state.TakeRunList()
 
@@ -1708,11 +1708,11 @@ class CommandEvaluator(object):
     Could use i & (n-1) == i & 255  because we have a power of 2.
     https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
     """
-    handler = self.hook_state.GetHook('EXIT')  # type: _TrapHandler
-    if handler:
+    node = self.hook_state.GetHook('EXIT')  # type: command_t
+    if node:
       with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
         try:
-          is_return, is_fatal = self.ExecuteAndCatch(handler.node)
+          is_return, is_fatal = self.ExecuteAndCatch(node)
         except util.UserExit as e:  # explicit exit
           mut_status[0] = e.status
           return

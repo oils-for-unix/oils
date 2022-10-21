@@ -10,11 +10,6 @@
 #include "mycpp/myerror.h"
 #include "mycpp/runtime.h"
 
-// Hacky forward declaration
-namespace builtin_trap {
-class _TrapHandler;
-};
-
 namespace pyos {
 
 const int TERM_ICANON = ICANON;

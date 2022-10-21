@@ -25,7 +25,6 @@ from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core.comp_ui import _IDisplay
-  from osh.builtin_trap import _TrapHandler
 
 _ = log
 

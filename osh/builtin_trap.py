@@ -30,49 +30,18 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
 
 
-
-class _TrapHandler(object):
-  """A function that is called by Python's signal module.
-
-  Similar to process.SubProgramThunk.
-
-  TODO: In C++ we can't use this type of handling.  We cannot append to a
-  garbage-colleted list inside a signal handler!
-
-  Instead I think we need to append to a global array of size 1024 for the last
-  signal number caught.
-
-  Then in the main loop we will have RunPendingTraps() that iterates over this
-  list, runs corresponding handlers, and then clears the list.
-  """
-
-  def __init__(self, node, sig_state, tracer):
-    # type: (command_t, pyos.SignalState, dev.Tracer) -> None
-    self.node = node
-    self.sig_state = sig_state
-    self.tracer = tracer
-
-  def __call__(self, sig_num, unused_frame):
-    # type: (int, Any) -> None
-    """For Python's signal module."""
-    self.tracer.PrintMessage(
-        'Received signal %d.  Will run handler in main loop' % sig_num)
-
-    self.sig_state.nodes_to_run.append(self.node)
-
-
 class HookState(object):
   def __init__(self):
     # type: () -> None
-    self.hooks = {}  # type: Dict[str, _TrapHandler]
+    self.hooks = {}  # type: Dict[str, command_t]
 
   def GetHook(self, hook_name):
-    # type: (str) -> _TrapHandler
+    # type: (str) -> command_t
     """Return the handler associated with hook_name"""
     return self.hooks.get(hook_name, None)
 
   def AddUserHook(self, hook_name, handler):
-    # type: (str, _TrapHandler) -> None
+    # type: (str, command_t) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     self.hooks[hook_name] = handler
 
@@ -217,8 +186,7 @@ class Trap(vm._Builtin):
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      handler = _TrapHandler(node, self.sig_state, self.tracer)
-      self.hook_state.AddUserHook(sig_key, handler)
+      self.hook_state.AddUserHook(sig_key, node)
       return 0
 
     # Register a signal.
