@@ -22,7 +22,6 @@ from core import main_loop
 from core import process
 from core.pyerror import e_usage, log
 unused1 = log
-from core import pyos
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
@@ -357,7 +356,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   hook_state = builtin_trap.HookState()
   # TODO: We shouldn't have SignalState?
-  sig_state = pyos.SignalState()
+  sig_state = builtin_trap.SignalState()
   sig_state.InitShell()
 
   job_state = process.JobState()

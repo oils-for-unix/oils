@@ -24,7 +24,6 @@ from core import executor
 from core import main_loop
 from core import optview
 from core import process
-from core import pyos
 from core import pyutil
 from core import ui
 from core import util
@@ -224,7 +223,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
-  sig_state = pyos.SignalState()
+  sig_state = builtin_trap.SignalState()
   hook_state = builtin_trap.HookState()
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_builtins, arena, cmd_deps, sig_state, hook_state)

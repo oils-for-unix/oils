@@ -20,7 +20,7 @@ from core import ui
 from core import util
 from core.pyerror import log
 from core import state
-from osh import builtin_misc
+from osh import builtin_misc, builtin_trap
 from mycpp import mylib
 
 Process = process.Process
@@ -49,7 +49,7 @@ class ProcessTest(unittest.TestCase):
     state.InitMem(mem, {}, '0.1')
 
     self.job_state = process.JobState()
-    sig_state = pyos.SignalState()
+    sig_state = builtin_trap.SignalState()
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
     self.waiter = process.Waiter(self.job_state, exec_opts, sig_state, self.tracer)
     errfmt = ui.ErrorFormatter(self.arena)

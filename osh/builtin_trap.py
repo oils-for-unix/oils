@@ -4,7 +4,10 @@ builtin_trap.py
 """
 from __future__ import print_function
 
-from signal import SIGKILL, SIGSTOP
+from signal import (
+    SIG_DFL, SIG_IGN, SIGKILL, SIGSTOP, SIGQUIT, SIGTSTP, SIGTTOU, SIGTTIN,
+    SIGWINCH
+)
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value__Argv
@@ -23,9 +26,10 @@ from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import iteritems
 
-from typing import Dict, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
+  from core.comp_ui import _IDisplay
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
 
@@ -49,6 +53,96 @@ class HookState(object):
     # type: (str) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     mylib.dict_remove(self.hooks, hook_name)
+
+
+class SignalState(object):
+  """All changes to global signal state go through this object."""
+
+  def __init__(self):
+    # type: () -> None
+    self.display = None  # type: _IDisplay
+    # signal/hook name -> handler
+    self.traps = {}  # type: Dict[int, command_t]
+    # appended to by signal handlers
+    self.nodes_to_run = []  # type: List[command_t]
+
+  def InitShell(self):
+    # type: () -> None
+    """Always called when initializing the shell process."""
+    pyos.InitShell()
+
+  def InitInteractiveShell(self, display, my_pid):
+    # type: (_IDisplay, int) -> None
+    """Called when initializing an interactive shell."""
+    # The shell itself should ignore Ctrl-\.
+    pyos.Sigaction(SIGQUIT, SIG_IGN)
+
+    # This prevents Ctrl-Z from suspending OSH in interactive mode.
+    pyos.Sigaction(SIGTSTP, SIG_IGN)
+
+    # More signals from
+    # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
+    # (but not SIGCHLD)
+    pyos.Sigaction(SIGTTOU, SIG_IGN)
+    pyos.Sigaction(SIGTTIN, SIG_IGN)
+
+    # Register a callback to receive terminal width changes.
+    # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
+
+    # This is ALWAYS on, which means that it can cause EINTR, and wait() and
+    # read() have to handle it
+    self.display = display
+    pyos.RegisterSignalInterest(SIGWINCH)
+    pyos.SetSigwinchCode(pyos.UNTRAPPED_SIGWINCH)
+
+  def GetLastSignal(self):
+    # type: () -> int
+    """Return the last signal that fired"""
+    return pyos.LastSignal()
+
+  def AddUserTrap(self, sig_num, handler):
+    # type: (int, command_t) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+
+    if sig_num == SIGWINCH:
+      assert self.display is not None
+      pyos.SetSigwinchCode(SIGWINCH)
+    else:
+      pyos.RegisterSignalInterest(sig_num)
+    self.traps[sig_num] = handler
+    # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
+
+  def RemoveUserTrap(self, sig_num):
+    # type: (int) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    # Restore default
+    mylib.dict_remove(self.traps, sig_num)
+
+    if sig_num == SIGWINCH:
+      pyos.SetSigwinchCode(pyos.UNTRAPPED_SIGWINCH)
+    else:
+      pyos.Sigaction(sig_num, SIG_DFL)
+    # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
+
+  def TakeRunList(self):
+      # type: () -> List[command_t]
+      """Transfer ownership of the current queue of pending trap handlers to the caller."""
+      sig_queue = pyos.GetPendingSignals()
+
+      run_list = []  # type: List[command_t]
+      for sig_num in sig_queue:
+        node = self.traps.get(sig_num, None)
+
+        if sig_num == SIGWINCH:
+          if mylib.PYTHON:
+            self.display.OnWindowChange()
+          if node is None:
+            continue
+
+        assert node is not None
+        run_list.append(node)
+
+      return run_list
 
 
 def _GetSignalNumber(sig_spec):
@@ -86,7 +180,7 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 class Trap(vm._Builtin):
   def __init__(self, sig_state, hook_state, parse_ctx, tracer, errfmt):
-    # type: (pyos.SignalState, HookState, ParseContext, dev.Tracer, ErrorFormatter) -> None
+    # type: (SignalState, HookState, ParseContext, dev.Tracer, ErrorFormatter) -> None
     self.sig_state = sig_state
     self.hook_state = hook_state
     self.parse_ctx = parse_ctx
@@ -120,14 +214,13 @@ class Trap(vm._Builtin):
     arg = arg_types.trap(attrs.attrs)
 
     if arg.p:  # Print registered handlers
-      if mylib.PYTHON:
-        # The unit tests rely on this being one line.
-        # bash prints a line that can be re-parsed.
-        for name, value in iteritems(self.hook_state.hooks):
-          print('%s %s' % (name, value.__class__.__name__))
+      # The unit tests rely on this being one line.
+      # bash prints a line that can be re-parsed.
+      for name, _ in iteritems(self.hook_state.hooks):
+        print('%s HookState' % (name,))
 
-        for sig_num, thandler in iteritems(self.sig_state.traps):
-          print('%d %s' % (sig_num, thandler.__class__.__name__))
+      for sig_num, _ in iteritems(self.sig_state.traps):
+        print('%d SignalState' % (sig_num,))
 
       return 0
 

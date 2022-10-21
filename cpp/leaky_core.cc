@@ -16,6 +16,25 @@
 
 namespace pyos {
 
+static List<int>* AllocSignalQueue() {
+  List<int>* ret = NewList<int>();
+  ret->reserve(kMaxSignalsInFlight);
+  return ret;
+}
+
+static List<int>* signal_queue = nullptr;
+static int last_sig_num = 0;
+static int sigwinch_num = UNTRAPPED_SIGWINCH;
+
+static void signal_handler(int sig_num) {
+  assert(signal_queue != nullptr);
+  signal_queue->append(sig_num);
+  if (sig_num == SIGWINCH) {
+    sig_num = sigwinch_num;
+  }
+  last_sig_num = sig_num;
+}
+
 Tuple2<int, int> WaitPid() {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED);
@@ -183,6 +202,31 @@ void Sigaction(int sig_num, sighandler_t handler) {
   struct sigaction act = {};
   act.sa_handler = handler;
   assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+void RegisterSignalInterest(int sig_num) {
+  struct sigaction act = {};
+  act.sa_handler = signal_handler;
+  assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+List<int>* GetPendingSignals() {
+  List<int>* new_queue = AllocSignalQueue();
+  List<int>* ret = signal_queue;
+  signal_queue = new_queue;
+  return ret;
+}
+
+int LastSignal() {
+  return last_sig_num;
+}
+
+void SetSigwinchCode(int code) {
+  sigwinch_num = code;
+}
+
+void InitShell() {
+  signal_queue = AllocSignalQueue();
 }
 
 }  // namespace pyos

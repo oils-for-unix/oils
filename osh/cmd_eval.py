@@ -87,7 +87,7 @@ if TYPE_CHECKING:
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
-  from osh.builtin_trap import HookState
+  from osh.builtin_trap import HookState, SignalState
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -256,7 +256,7 @@ class CommandEvaluator(object):
                assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
                arena,            # type: Arena
                cmd_deps,         # type: Deps
-               sig_state,        # type: pyos.SignalState
+               sig_state,        # type: SignalState
                hook_state,       # type: HookState
   ):
     # type: (...) -> None

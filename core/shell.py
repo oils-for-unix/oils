@@ -347,7 +347,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   fd_state.tracer = tracer  # circular dep
 
   hook_state = builtin_trap.HookState()
-  sig_state = pyos.SignalState()
+  sig_state = builtin_trap.SignalState()
   sig_state.InitShell()
   waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
   fd_state.waiter = waiter

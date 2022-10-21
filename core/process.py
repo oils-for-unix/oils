@@ -57,6 +57,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.util import _DebugFile
   from osh.cmd_eval import CommandEvaluator
+  from osh import builtin_trap
 
 
 NO_FD = -1
@@ -1428,7 +1429,7 @@ class Waiter(object):
   process OR a background process!  So you have to distinguish between them.
   """
   def __init__(self, job_state, exec_opts, sig_state, tracer):
-    # type: (JobState, optview.Exec, pyos.SignalState, dev.Tracer) -> None
+    # type: (JobState, optview.Exec, builtin_trap.SignalState, dev.Tracer) -> None
     self.job_state = job_state
     self.exec_opts = exec_opts
     self.sig_state = sig_state
