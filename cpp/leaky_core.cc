@@ -16,24 +16,7 @@
 
 namespace pyos {
 
-static List<int>* AllocSignalQueue() {
-  List<int>* ret = NewList<int>();
-  ret->reserve(kMaxSignalsInFlight);
-  return ret;
-}
-
-static List<int>* signal_queue = nullptr;
-static int last_sig_num = 0;
-static int sigwinch_num = UNTRAPPED_SIGWINCH;
-
-static void signal_handler(int sig_num) {
-  assert(signal_queue != nullptr);
-  signal_queue->append(sig_num);
-  if (sig_num == SIGWINCH) {
-    sig_num = sigwinch_num;
-  }
-  last_sig_num = sig_num;
-}
+static SignalHandler gSignalHandler;
 
 Tuple2<int, int> WaitPid() {
   int status;
@@ -198,10 +181,40 @@ bool InputAvailable(int fd) {
   NotImplemented();
 }
 
+SignalHandler::SignalHandler()
+    : signal_queue(), last_sig_num(0), sigwinch_num(UNTRAPPED_SIGWINCH) {
+}
+
+void SignalHandler::EnqueueSignal(int sig_num) {
+  assert(signal_queue != nullptr);
+  signal_queue->append(sig_num);
+  if (sig_num == SIGWINCH) {
+    sig_num = sigwinch_num;
+  }
+  last_sig_num = sig_num;
+}
+
+static List<int>* AllocSignalQueue() {
+  List<int>* ret = NewList<int>();
+  ret->reserve(kMaxSignalsInFlight);
+  return ret;
+}
+
+List<int>* SignalHandler::TakeSignalQueue() {
+  List<int>* new_queue = AllocSignalQueue();
+  List<int>* ret = signal_queue;
+  signal_queue = new_queue;
+  return ret;
+}
+
 void Sigaction(int sig_num, sighandler_t handler) {
   struct sigaction act = {};
   act.sa_handler = handler;
   assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+static void signal_handler(int sig_num) {
+  gSignalHandler.EnqueueSignal(sig_num);
 }
 
 void RegisterSignalInterest(int sig_num) {
@@ -211,22 +224,19 @@ void RegisterSignalInterest(int sig_num) {
 }
 
 List<int>* GetPendingSignals() {
-  List<int>* new_queue = AllocSignalQueue();
-  List<int>* ret = signal_queue;
-  signal_queue = new_queue;
-  return ret;
+  return gSignalHandler.TakeSignalQueue();
 }
 
 int LastSignal() {
-  return last_sig_num;
+  return gSignalHandler.last_sig_num;
 }
 
 void SetSigwinchCode(int code) {
-  sigwinch_num = code;
+  gSignalHandler.sigwinch_num = code;
 }
 
 void InitShell() {
-  signal_queue = AllocSignalQueue();
+  gSignalHandler.signal_queue = AllocSignalQueue();
 }
 
 }  // namespace pyos
