@@ -15,6 +15,7 @@ import time
 
 from core import pyutil
 from core.pyerror import log
+from mycpp import mylib
 
 import posix_ as posix
 from posix_ import WUNTRACED
@@ -351,22 +352,6 @@ class SignalState(object):
     """Return the last signal that fired"""
     return self.last_sig_num
 
-  def GetHook(self, hook_name):
-    # type: (str) -> _TrapHandler
-    """Return the handler associated with hook_name"""
-    return self.hooks.get(hook_name, None)
-
-  def AddUserHook(self, hook_name, handler):
-    # type: (str, _TrapHandler) -> None
-    """For user-defined handlers registered with the 'trap' builtin."""
-    self.hooks[hook_name] = handler
-
-  def RemoveUserHook(self, hook_name):
-    # type: (str) -> None
-    """For user-defined handlers registered with the 'trap' builtin."""
-    if hook_name in self.hooks:
-      del self.hooks[hook_name]
-
   def AddUserTrap(self, sig_num, handler):
     # type: (int, Any) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
@@ -383,8 +368,7 @@ class SignalState(object):
     # type: (int) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     # Restore default
-    if sig_num in self.traps:
-      del self.traps[sig_num]
+    mylib.dict_remove(self.traps, sig_num)
 
     if sig_num == signal.SIGWINCH:
       assert self.sigwinch_handler is not None

@@ -36,6 +36,7 @@ from osh import builtin_assign
 from osh import builtin_comp
 from osh import builtin_lib
 from osh import builtin_pure
+from osh import builtin_trap
 from osh import cmd_eval
 from osh import prompt
 from osh import sh_expr_eval
@@ -224,8 +225,9 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
   sig_state = pyos.SignalState()
+  hook_state = builtin_trap.HookState()
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_builtins, arena, cmd_deps, sig_state)
+                                     assign_builtins, arena, cmd_deps, sig_state, hook_state)
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
   waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
