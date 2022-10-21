@@ -302,7 +302,6 @@ class SignalState(object):
     self.sigwinch_handler = None  # type: SigwinchHandler
     self.last_sig_num = 0  # MUTABLE GLOBAL, for interrupted 'wait'
     # signal/hook name -> handler
-    self.hooks = {}  # type: Dict[str, _TrapHandler]
     self.traps = {}  # type: Dict[int, _TrapHandler]
     # appended to by signal handlers
     self.nodes_to_run = []  # type: List[command_t]
