@@ -223,14 +223,14 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
-  sig_state = builtin_trap.SignalState()
-  sig_state.InitShell()
-  hook_state = builtin_trap.HookState()
+  trap_state = builtin_trap.TrapState()
+  trap_state.InitShell()
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_builtins, arena, cmd_deps, sig_state, hook_state)
+                                     assign_builtins, arena, cmd_deps,
+                                     trap_state)
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
-  waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
+  waiter = process.Waiter(job_state, exec_opts, trap_state, tracer)
 
   hay_state = state.Hay()
   shell_ex = executor.ShellExecutor(

@@ -49,9 +49,9 @@ class ProcessTest(unittest.TestCase):
     state.InitMem(mem, {}, '0.1')
 
     self.job_state = process.JobState()
-    sig_state = builtin_trap.SignalState()
+    trap_state = builtin_trap.TrapState()
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
-    self.waiter = process.Waiter(self.job_state, exec_opts, sig_state, self.tracer)
+    self.waiter = process.Waiter(self.job_state, exec_opts, trap_state, self.tracer)
     errfmt = ui.ErrorFormatter(self.arena)
     self.fd_state = process.FdState(errfmt, self.job_state, None, self.tracer, None)
     self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,

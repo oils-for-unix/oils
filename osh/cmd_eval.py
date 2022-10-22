@@ -87,7 +87,7 @@ if TYPE_CHECKING:
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
-  from osh.builtin_trap import HookState, SignalState
+  from osh.builtin_trap import TrapState
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -256,8 +256,7 @@ class CommandEvaluator(object):
                assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
                arena,            # type: Arena
                cmd_deps,         # type: Deps
-               sig_state,        # type: SignalState
-               hook_state,       # type: HookState
+               trap_state,       # type: TrapState
   ):
     # type: (...) -> None
     """
@@ -287,8 +286,7 @@ class CommandEvaluator(object):
     self.dumper = cmd_deps.dumper
     self.debug_f = cmd_deps.debug_f  # Used by ShellFuncAction too
 
-    self.sig_state = sig_state
-    self.hook_state = hook_state
+    self.trap_state = trap_state
 
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
@@ -1432,7 +1430,7 @@ class CommandEvaluator(object):
 
     # See osh/builtin_trap.py SignalState for the code that populates this
     # list.
-    trap_nodes = self.sig_state.TakeRunList()
+    trap_nodes = self.trap_state.TakeRunList()
 
     if len(trap_nodes):
       with state.ctx_Option(self.mutable_opts, [option_i._running_trap], True):
@@ -1708,7 +1706,7 @@ class CommandEvaluator(object):
     Could use i & (n-1) == i & 255  because we have a power of 2.
     https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
     """
-    node = self.hook_state.GetHook('EXIT')  # type: command_t
+    node = self.trap_state.GetHook('EXIT')  # type: command_t
     if node:
       with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
         try:

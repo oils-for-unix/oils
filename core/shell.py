@@ -346,10 +346,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
   fd_state.tracer = tracer  # circular dep
 
-  hook_state = builtin_trap.HookState()
-  sig_state = builtin_trap.SignalState()
-  sig_state.InitShell()
-  waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
+  trap_state = builtin_trap.TrapState()
+  trap_state.InitShell()
+  waiter = process.Waiter(job_state, exec_opts, trap_state, tracer)
   fd_state.waiter = waiter
 
   cmd_deps.debug_f = debug_f
@@ -424,7 +423,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   assign_b = shell_native.InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_b, arena, cmd_deps, sig_state, hook_state)
+                                     assign_b, arena, cmd_deps, trap_state)
 
   AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 
@@ -481,7 +480,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
   builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
-  builtins[builtin_i.trap] = builtin_trap.Trap(sig_state, hook_state, parse_ctx, tracer, errfmt)
+  builtins[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer, errfmt)
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
@@ -617,7 +616,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-    sig_state.InitInteractiveShell(display, my_pid)
+    trap_state.InitInteractiveShell(display, my_pid)
 
     # NOTE: called AFTER _InitDefaultCompletions.
     with state.ctx_ThisDir(mem, rc_path):
