@@ -11,8 +11,8 @@
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration
-namespace builtin_trap {
-class _TrapHandler;
+namespace comp_ui {
+class _IDisplay;
 };
 
 namespace pyos {
@@ -21,6 +21,8 @@ const int TERM_ICANON = ICANON;
 const int TERM_ECHO = ECHO;
 const int EOF_SENTINEL = 256;
 const int NEWLINE_CH = 10;
+const int UNTRAPPED_SIGWINCH = -1;
+const int kMaxSignalsInFlight = 1024;
 
 Tuple2<int, int> WaitPid();
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks);
@@ -54,34 +56,28 @@ class TermState {
   }
 };
 
-class SignalState {
+class SignalHandler {
  public:
-  SignalState()
-      : traps(NewDict<int, builtin_trap::_TrapHandler*>()),
-        nodes_to_run(NewList<syntax_asdl::command_t*>()) {
-  }
-  void InitShell() {
-  }
-  int GetLastSignal() {
-    return last_sig_num;
-  }
-  void AddUserTrap(int sig_num, builtin_trap::_TrapHandler* handler) {
-    NotImplemented();
-  }
-  void RemoveUserTrap(int sig_num) {
-    NotImplemented();
-  }
-  List<syntax_asdl::command_t*>* TakeRunList() {
-    return NewList<syntax_asdl::command_t*>();
-  }
-  int last_sig_num = 0;
-  Dict<int, builtin_trap::_TrapHandler*>* traps;
-  List<syntax_asdl::command_t*>* nodes_to_run;
+  SignalHandler();
+  void Update(int sig_num);
+  List<int>* TakeSignalQueue();
 
-  DISALLOW_COPY_AND_ASSIGN(SignalState)
+  List<int>* signal_queue_;
+  int last_sig_num_;
+  int sigwinch_num_;
 };
 
 void Sigaction(int sig_num, sighandler_t handler);
+
+void RegisterSignalInterest(int sig_num);
+
+List<int>* TakeSignalQueue();
+
+int LastSignal();
+
+void SetSigwinchCode(int code);
+
+void InitShell();
 
 }  // namespace pyos
 

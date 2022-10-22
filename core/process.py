@@ -57,6 +57,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.util import _DebugFile
   from osh.cmd_eval import CommandEvaluator
+  from osh import builtin_trap
 
 
 NO_FD = -1
@@ -1427,11 +1428,11 @@ class Waiter(object):
   Now when you do wait() after starting the pipeline, you might get a pipeline
   process OR a background process!  So you have to distinguish between them.
   """
-  def __init__(self, job_state, exec_opts, sig_state, tracer):
-    # type: (JobState, optview.Exec, pyos.SignalState, dev.Tracer) -> None
+  def __init__(self, job_state, exec_opts, trap_state, tracer):
+    # type: (JobState, optview.Exec, builtin_trap.TrapState, dev.Tracer) -> None
     self.job_state = job_state
     self.exec_opts = exec_opts
-    self.sig_state = sig_state
+    self.trap_state = trap_state
     self.tracer = tracer
     self.last_status = 127  # wait -n error code
 
@@ -1475,8 +1476,8 @@ class Waiter(object):
       if err_num == ECHILD:
         return W1_ECHILD  # nothing to wait for caller should stop
       elif err_num == EINTR:  # Bug #858 fix
-        #log('WaitForOne() => %d', self.sig_state.GetLastSignal())
-        return self.sig_state.GetLastSignal()  # e.g. 1 for SIGHUP
+        #log('WaitForOne() => %d', self.trap_state.GetLastSignal())
+        return self.trap_state.GetLastSignal()  # e.g. 1 for SIGHUP
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()

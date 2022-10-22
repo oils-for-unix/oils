@@ -16,6 +16,8 @@
 
 namespace pyos {
 
+static SignalHandler gSignalHandler;
+
 Tuple2<int, int> WaitPid() {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED);
@@ -179,10 +181,63 @@ bool InputAvailable(int fd) {
   NotImplemented();
 }
 
+SignalHandler::SignalHandler()
+    : signal_queue_(), last_sig_num_(0), sigwinch_num_(UNTRAPPED_SIGWINCH) {
+}
+
+void SignalHandler::Update(int sig_num) {
+  assert(signal_queue_ != nullptr);
+  assert(signal_queue_->len_ < signal_queue_->capacity_);
+  signal_queue_->append(sig_num);
+  if (sig_num == SIGWINCH) {
+    sig_num = sigwinch_num_;
+  }
+  last_sig_num_ = sig_num;
+}
+
+static List<int>* AllocSignalQueue() {
+  List<int>* ret = NewList<int>();
+  ret->reserve(kMaxSignalsInFlight);
+  return ret;
+}
+
+List<int>* SignalHandler::TakeSignalQueue() {
+  List<int>* new_queue = AllocSignalQueue();
+  List<int>* ret = signal_queue_;
+  signal_queue_ = new_queue;
+  return ret;
+}
+
 void Sigaction(int sig_num, sighandler_t handler) {
   struct sigaction act = {};
   act.sa_handler = handler;
   assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+static void signal_handler(int sig_num) {
+  gSignalHandler.Update(sig_num);
+}
+
+void RegisterSignalInterest(int sig_num) {
+  struct sigaction act = {};
+  act.sa_handler = signal_handler;
+  assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+List<int>* TakeSignalQueue() {
+  return gSignalHandler.TakeSignalQueue();
+}
+
+int LastSignal() {
+  return gSignalHandler.last_sig_num_;
+}
+
+void SetSigwinchCode(int code) {
+  gSignalHandler.sigwinch_num_ = code;
+}
+
+void InitShell() {
+  gSignalHandler.signal_queue_ = AllocSignalQueue();
 }
 
 }  // namespace pyos
