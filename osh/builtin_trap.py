@@ -127,7 +127,7 @@ class SignalState(object):
   def TakeRunList(self):
       # type: () -> List[command_t]
       """Transfer ownership of the current queue of pending trap handlers to the caller."""
-      sig_queue = pyos.GetPendingSignals()
+      sig_queue = pyos.TakeSignalQueue()
 
       run_list = []  # type: List[command_t]
       for sig_num in sig_queue:

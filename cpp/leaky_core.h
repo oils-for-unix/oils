@@ -59,19 +59,19 @@ class TermState {
 class SignalHandler {
  public:
   SignalHandler();
-  void EnqueueSignal(int sig_num);
+  void Update(int sig_num);
   List<int>* TakeSignalQueue();
 
-  List<int>* signal_queue;
-  int last_sig_num;
-  int sigwinch_num;
+  List<int>* signal_queue_;
+  int last_sig_num_;
+  int sigwinch_num_;
 };
 
 void Sigaction(int sig_num, sighandler_t handler);
 
 void RegisterSignalInterest(int sig_num);
 
-List<int>* GetPendingSignals();
+List<int>* TakeSignalQueue();
 
 int LastSignal();
 

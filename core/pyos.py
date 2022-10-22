@@ -318,12 +318,11 @@ def Sigaction(sig_num, handler):
 def RegisterSignalInterest(sig_num):
   # type: (int) -> None
   """Have the kernel notify the main loop about the given signal"""
-  global gSignalHandler
   assert gSignalHandler is not None
   signal.signal(sig_num, gSignalHandler)
 
 
-def GetPendingSignals():
+def TakeSignalQueue():
   # type: () -> List[int]
   """Transfer ownership of the current queue of pending signals to the caller."""
   global gSignalHandler
@@ -334,7 +333,6 @@ def GetPendingSignals():
 def LastSignal():
   # type: () -> int
   """Returns the number of the last signal that fired"""
-  global gSignalHandler
   assert gSignalHandler is not None
   return gSignalHandler.last_sig_num
 
