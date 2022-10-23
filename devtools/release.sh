@@ -159,14 +159,6 @@ auto-machine2() {
 #     0.0.0/  
 #       oil-0.0.0.tar.xz 
 
-_clean() {
-  build/clean.sh all
-}
-
-_dev-build() {
-  build/py.sh all  # for {libc,fastlex}.so, needed to crawl deps
-}
-
 _test-tarball() {
   local name=${1:-hello}
   local version=${2:-0.0.0}
@@ -209,19 +201,6 @@ _release-build() {
 
   ln -s -f --no-target-directory -v oil.ovm $OSH_RELEASE_BINARY
   ln -s -f --no-target-directory -v oil.ovm $OIL_RELEASE_BINARY
-}
-
-# Run this after manually removing symbols from CPython.
-release-build-and-spec() {
-  # We need _clean to prevent stale files, and _dev-build too.  Dependencies
-  # are all messed up.
-
-  _clean
-  _dev-build
-  _release-build
-  export OSH_LIST="$OSH_RELEASE_BINARY" OIL_LIST="$OIL_RELEASE_BINARY"
-  #test/spec.sh osh-all
-  test/spec.sh oil-all
 }
 
 readonly HAVE_ROOT=1
@@ -326,12 +305,12 @@ build-and-test() {
   # Before doing anything
   test/lint.sh soil-run
 
-  _clean
-  _dev-build
+  build/clean.sh
+  build/py.sh all
   test/unit.sh run-for-release  # Python unit tests
 
-  # coverage and tarball depend on this
-  build/cpp.sh all
+  # "Base state" for repo scripts
+  ./NINJA-config.sh
 
   test/coverage.sh run-for-release  # C++ unit tests
 
@@ -366,8 +345,8 @@ benchmark-build() {
   if test -n "$HAVE_ROOT"; then
     _install
   fi
-  _clean
-  _dev-build
+  build/clean.sh
+  build/py.sh all
   _release-build
 }
 

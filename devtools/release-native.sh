@@ -3,7 +3,7 @@
 # Make a tarball containing native (C++) code.
 #
 # Usage:
-#   ./release-native.sh <function name>
+#   devtools/release-native.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -28,6 +28,8 @@ make-tar() {
   mkdir -p _release 
 
   gen-oil-native-sh
+  # Build default target to generate code
+  ninja
 
   local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
   PYTHONPATH=. build/ninja_main.py tarball-manifest \

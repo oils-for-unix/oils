@@ -21,8 +21,8 @@ This is the home page for version 0.12.8 of Oil, a Unix shell.  To use it,
 These steps take 30 to 60 seconds on most machines.  After installation, see
 [Getting Started](doc/getting-started.html).
 
-The associated [quality page](quality.html) shows test results, metrics, and
-benchmarks.
+The associated **[quality page](quality.html)** shows test results, metrics,
+and benchmarks.
 
 [INSTALL]: doc/INSTALL.html
 

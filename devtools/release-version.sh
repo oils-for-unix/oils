@@ -541,6 +541,11 @@ git-changelog-0.12.7() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.12.8() {
+  _git-changelog origin/release/0.12.7 release/0.12.8 \
+    > _release/VERSION/changelog.html
+}
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -894,6 +899,10 @@ announcement-0.12.6() {
 }
 
 announcement-0.12.7() {
+  write-no-announcement
+}
+
+announcement-0.12.8() {
   write-no-announcement
 }
 
