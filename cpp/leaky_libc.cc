@@ -8,8 +8,6 @@
 #include <regex.h>
 #include <unistd.h>  // gethostname()
 
-#include "mycpp/myerror.h"
-
 namespace libc {
 
 Str* gethostname() {

@@ -12,8 +12,6 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
-#include "mycpp/myerror.h"
-
 namespace pyos {
 
 static SignalHandler gSignalHandler;
@@ -302,7 +300,7 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
   return buf;
 }
 
-Str* strerror(_OSError* e) {
+Str* strerror(IOError_OSError* e) {
   return StrFromC(::strerror(e->errno_));
 }
 

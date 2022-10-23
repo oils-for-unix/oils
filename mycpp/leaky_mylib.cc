@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
-#include "mycpp/myerror.h"
 #include "mycpp/runtime.h"
 
 mylib::FormatStringer gBuf;

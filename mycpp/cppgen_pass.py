@@ -2677,7 +2677,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 names = [e1.name, e2.name]
                 names.sort()
                 if names == ['IOError', 'OSError']:
-                  c_type = '_OSError*'  # Base class in mylib
+                  c_type = 'IOError_OSError*'  # Base class in mylib
 
             if c_type is None:
               c_type = 'MultipleExceptions'  # Causes compile error

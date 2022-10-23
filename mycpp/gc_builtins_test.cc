@@ -757,6 +757,15 @@ TEST exceptions_test() {
   log("other %p", other);
   ASSERT(caught);
 
+  caught = false;
+  try {
+    throw Alloc<OSError>(99);
+  } catch (IOError_OSError* e) {
+    gHeap.RootInCurrentFrame(e);
+    caught = true;
+  }
+  ASSERT(caught);
+
   PASS();
 }
 

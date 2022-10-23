@@ -9,21 +9,42 @@
 
 class Str;
 
-class _ExceptionWithoutFields : public Obj {
+class _ExceptionOpaque : public Obj {
  public:
-  _ExceptionWithoutFields() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+  _ExceptionOpaque() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
   }
 };
 
-class IndexError : public _ExceptionWithoutFields {};
+class IndexError : public _ExceptionOpaque {};
 
-class ValueError : public _ExceptionWithoutFields {};
+class ValueError : public _ExceptionOpaque {};
 
-class KeyError : public _ExceptionWithoutFields {};
+class KeyError : public _ExceptionOpaque {};
 
-class EOFError : public _ExceptionWithoutFields {};
+class EOFError : public _ExceptionOpaque {};
 
-class KeyboardInterrupt : public _ExceptionWithoutFields {};
+class KeyboardInterrupt : public _ExceptionOpaque {};
+
+// Python 2 has a dubious distinction between IOError and OSError, so mycpp
+// generates this base class to catch both.
+class IOError_OSError : public _ExceptionOpaque {
+ public:
+  explicit IOError_OSError(int err_num) : _ExceptionOpaque(), errno_(err_num) {
+  }
+  int errno_;
+};
+
+class IOError : public IOError_OSError {
+ public:
+  explicit IOError(int err_num) : IOError_OSError(err_num) {
+  }
+};
+
+class OSError : public IOError_OSError {
+ public:
+  explicit OSError(int err_num) : IOError_OSError(err_num) {
+  }
+};
 
 // TODO: should we eliminate args to NotImplementedError and AssertionError?
 

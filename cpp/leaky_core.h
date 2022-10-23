@@ -7,7 +7,6 @@
 #include <termios.h>
 
 #include "_gen/frontend/syntax.asdl.h"
-#include "mycpp/myerror.h"
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration
@@ -99,7 +98,7 @@ Str* GetVersion(_ResourceLoader* loader);
 
 Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader);
 
-Str* strerror(_OSError* e);
+Str* strerror(IOError_OSError* e);
 
 Str* BackslashEscape(Str* s, Str* meta_chars);
 

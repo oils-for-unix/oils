@@ -13,7 +13,6 @@
 #include "leaky_pylib.h"
 #include "leaky_stdlib.h"
 #include "mycpp/builtins.h"
-#include "mycpp/myerror.h"  // must come first because of 'errno' issue
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;
