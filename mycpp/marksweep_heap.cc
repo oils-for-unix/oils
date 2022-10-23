@@ -200,7 +200,8 @@ int MarkSweepHeap::Collect() {
 void MarkSweepHeap::OnProcessExit() {
   char* e;
 
-#ifdef RET_VAL_ROOTING
+#ifdef FAST_EXIT
+  // TODO: enable this when RET_VAL_ROOTING is the default
   // Let the OS clean up by default
   // To pass the ASAN leak detector, set OIL_GC_ON_EXIT=1
   e = getenv("OIL_GC_ON_EXIT");
@@ -209,6 +210,9 @@ void MarkSweepHeap::OnProcessExit() {
     root_set_.PopScope();
     Collect();
   }
+#elif RET_VAL_ROOTING
+  root_set_.PopScope();
+  Collect();
 #else
   Collect();
 #endif

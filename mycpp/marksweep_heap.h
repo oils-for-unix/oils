@@ -4,8 +4,6 @@
 #include <unordered_set>
 #include <vector>
 
-#define RET_VAL_ROOTING 0
-
 class MarkSweepHeap;  // forward decl for circular dep
 
 // The set of objects where the mark and sweep algorithm starts.  Terminology:

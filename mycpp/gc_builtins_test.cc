@@ -822,7 +822,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(exceptions_test);
 
-  gHeap.Collect();
+  gHeap.OnProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
 

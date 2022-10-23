@@ -465,8 +465,9 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_copy);
 
   RUN_TEST(test_str_split);
-
   RUN_TEST(test_str_join);
+
+  gHeap.OnProcessExit();
 
   GREATEST_MAIN_END();
   return 0;

@@ -49,6 +49,9 @@ COMPILERS_VARIANTS_LEAKY = [
 
     ('cxx', 'mallocleak'),
 
+    # -D RET_VAL_ROOTING
+    ('cxx', 'rvroot'),
+
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
     ('clang', 'opt'),  # for comparisons

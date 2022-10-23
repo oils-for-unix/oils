@@ -304,17 +304,18 @@ TEST root_set_null_test() {
 }
 
 TEST root_set_big_test() {
+  Str *s = StrFromC("Y");
+
   RootSet r(32);
   // Test many frames
   r.PushScope();
   for (int i = 0; i < 100; ++i) {
+    // log("i %d", i);
     r.PushScope();
     for (int j = 0; j < 100; ++j) {
-      r.RootOnReturn(StrFromC("Y"));
+      r.RootOnReturn(s);
     }
   }
-
-  // TODO: nullptr is never added
 
   PASS();
 }
@@ -433,7 +434,7 @@ TEST root_set_stress_test() {
   PASS();
 }
 
-TEST roots_scope_test() {
+TEST rooting_scope_test() {
   ASSERT_EQ_FMT(1, gHeap.root_set_.NumFrames(), "%d");
 
   RootingScope r1;
@@ -469,7 +470,7 @@ int main(int argc, char **argv) {
 
   // RUN_TEST(root_set_stress_test);
 
-  RUN_TEST(roots_scope_test);
+  RUN_TEST(rooting_scope_test);
 
   // f(g(), h()) problem
   // RUN_TEST(old_slice_demo);

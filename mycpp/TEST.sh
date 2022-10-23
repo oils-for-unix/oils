@@ -237,6 +237,7 @@ test-runtime() {
   unit '' ubsan
   unit '' gcverbose
   unit '' gcevery
+  unit '' rvroot
 }
 
 #
