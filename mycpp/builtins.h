@@ -15,6 +15,9 @@ class _ExceptionOpaque : public Obj {
   }
 };
 
+// mycpp removes constructor arguments
+class AssertionError : public _ExceptionOpaque {};
+
 class IndexError : public _ExceptionOpaque {};
 
 class ValueError : public _ExceptionOpaque {};
@@ -24,6 +27,37 @@ class KeyError : public _ExceptionOpaque {};
 class EOFError : public _ExceptionOpaque {};
 
 class KeyboardInterrupt : public _ExceptionOpaque {};
+
+// TODO: we could eliminate args to NotImplementedError, like we do for
+// AssertionError
+class NotImplementedError : public _ExceptionOpaque {
+ public:
+  NotImplementedError() : _ExceptionOpaque() {
+  }
+  // used in expr_to_ast
+  explicit NotImplementedError(int i) : _ExceptionOpaque() {
+  }
+  // called with Id_str()
+  explicit NotImplementedError(const char* s) : _ExceptionOpaque() {
+  }
+  explicit NotImplementedError(Str* s) : _ExceptionOpaque() {
+  }
+};
+
+// libc::regex_match and other bindings raise RuntimeError
+class RuntimeError : public Obj {
+ public:
+  explicit RuntimeError(Str* message);
+  Str* message;
+};
+
+constexpr uint16_t maskof_RuntimeError() {
+  return maskbit(offsetof(RuntimeError, message));
+}
+
+inline RuntimeError::RuntimeError(Str* message)
+    : Obj(Tag::FixedSize, maskof_RuntimeError(), kNoObjLen), message(message) {
+}
 
 // Python 2 has a dubious distinction between IOError and OSError, so mycpp
 // generates this base class to catch both.
@@ -43,50 +77,6 @@ class IOError : public IOError_OSError {
 class OSError : public IOError_OSError {
  public:
   explicit OSError(int err_num) : IOError_OSError(err_num) {
-  }
-};
-
-// TODO: should we eliminate args to NotImplementedError and AssertionError?
-
-class NotImplementedError {
- public:
-  NotImplementedError() {
-  }
-  explicit NotImplementedError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit NotImplementedError(const char* s) {
-  }
-  explicit NotImplementedError(Str* s) {
-  }
-};
-
-class AssertionError {
- public:
-  AssertionError() {
-  }
-  explicit AssertionError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit AssertionError(const char* s) {
-  }
-  explicit AssertionError(Str* s) {
-  }
-};
-
-// Python's RuntimeError looks like this.  . libc::regex_match and other
-// bindings raise it.
-class RuntimeError {
- public:
-  explicit RuntimeError(Str* message) : message(message) {
-  }
-  Str* message;
-};
-
-// TODO: remove this.  cmd_eval.py RunOilProc uses it, which we probably
-// don't need
-class TypeError {
- public:
-  explicit TypeError(Str* arg) {
-    assert(0);
   }
 };
 

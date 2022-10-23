@@ -766,6 +766,25 @@ TEST exceptions_test() {
   }
   ASSERT(caught);
 
+  // TODO: Make this work with return value rooting
+  RuntimeError* r = nullptr;
+  Str* message = nullptr;
+  StackRoots _roots2({&r, &message});
+  message = StrFromC("libc::regex_match");
+
+  caught = false;
+  try {
+    r = Alloc<RuntimeError>(message);
+    throw r;
+
+  } catch (RuntimeError* e) {
+    gHeap.RootInCurrentFrame(e);
+    caught = true;
+
+    log("RuntimeError %s", e->message->data());
+  }
+  ASSERT(caught);
+
   PASS();
 }
 
