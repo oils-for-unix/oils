@@ -153,7 +153,7 @@ Str* str_repeat(Str* s, int times) {
 }
 
 // for os_path.join()
-// NOTE(Jesse): Perfect candidate for bounded_buffer
+// NOTE(Jesse): Perfect candidate for BoundedBuffer
 Str* str_concat3(Str* a, Str* b, Str* c) {
   int a_len = len(a);
   int b_len = len(b);

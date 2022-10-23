@@ -1,5 +1,5 @@
-#ifndef TUPLE_TYPES_H
-#define TUPLE_TYPES_H
+#ifndef MYCPP_GC_TUPLE_H
+#define MYCPP_GC_TUPLE_H
 
 // Note:
 //
@@ -99,4 +99,4 @@ class Tuple4 {
   D d_;
 };
 
-#endif
+#endif  // MYCPP_GC_TUPLE_H

@@ -1,5 +1,5 @@
-#ifndef GC_DICT_H
-#define GC_DICT_H
+#ifndef MYCPP_GC_DICT_H
+#define MYCPP_GC_DICT_H
 
 #include "mycpp/comparators.h"
 
@@ -434,4 +434,4 @@ class DictIter {
   int pos_;
 };
 
-#endif
+#endif  // MYCPP_GC_DICT_H

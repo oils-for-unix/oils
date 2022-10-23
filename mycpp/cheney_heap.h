@@ -1,4 +1,4 @@
-// mycpp/gc_heap.h
+// mycpp/cheney_heap.h
 //
 // A garbage collected heap that looks like statically typed Python: Str,
 // List<T>, Dict<K, V>.

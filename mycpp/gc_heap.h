@@ -48,7 +48,6 @@ class StackRoots {
   }
 
   ~StackRoots() {
-    // TODO: optimize this
     for (int i = 0; i < n_; ++i) {
       gHeap.PopRoot();
     }

@@ -178,9 +178,8 @@ int MarkSweepHeap::Collect() {
   #endif
 
   for (int i = 0; i < num_roots; ++i) {
-    // NOTE(Jesse): This is dereferencing again because I didn't want to
-    // rewrite the stackroots class for this implementation.  Realistically we
-    // should do that such that we don't store indirected pointers here.
+    // Note: When we abandon the Cheney collector, we no longer need double
+    // pointers
     Obj* root = *(roots_[i]);
 
     if (root) {

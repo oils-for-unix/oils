@@ -1,5 +1,5 @@
-#ifndef MARKSWEEP_H
-#define MARKSWEEP_H
+#ifndef MARKSWEEP_HEAP_H
+#define MARKSWEEP_HEAP_H
 
 #include <unordered_set>
 #include <vector>
@@ -143,7 +143,6 @@ class MarkSweepHeap {
 
   void Report();
 
-  // TODO(Jesse): This should really be in an 'internal' build
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
   // In number of live objects, since we aren't keeping track of total bytes
@@ -173,4 +172,4 @@ class MarkSweepHeap {
   DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);
 };
 
-#endif
+#endif  // MARKSWEEP_HEAP_H

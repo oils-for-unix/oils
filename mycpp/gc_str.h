@@ -1,5 +1,5 @@
-#ifndef STR_TYPES_H
-#define STR_TYPES_H
+#ifndef MYCPP_GC_STR_H
+#define MYCPP_GC_STR_H
 
 template <typename T>
 class List;
@@ -85,10 +85,7 @@ inline void Str::SetObjLenFromStrLen(int str_len) {
 }
 
 inline int len(const Str* s) {
-  // NOTE(Jesse): Not sure if 0-length strings should be allowed, but we
-  // currently don't hit this assertion, so I would think not?
   assert(s->obj_len_ >= kStrHeaderSize - 1);
-
   return s->obj_len_ - kStrHeaderSize - 1;
 }
 
@@ -173,7 +170,6 @@ class StrIter {
 
 bool maybe_str_equals(Str* left, Str* right);
 
-// TODO(Jesse): Where should this go?  Certainly not here..
 extern Str* kEmptyString;
 
 template <int N>
@@ -202,4 +198,4 @@ class GlobalStr {
       Tag::Global, 0, kZeroMask, kStrHeaderSize + sizeof(val), -1, val}; \
   Str* name = reinterpret_cast<Str*>(&_##name);
 
-#endif  // STR_TYPES_H
+#endif  // MYCPP_GC_STR_H

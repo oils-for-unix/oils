@@ -1,4 +1,4 @@
-// Dumb Allocator
+// Leaky Bump Allocator
 
 #ifndef DUMB_ALLOC_H
 #define DUMB_ALLOC_H

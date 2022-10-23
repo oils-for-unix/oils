@@ -454,7 +454,7 @@ List<Str*>* Str::split(Str* sep) {
   int end = n;
 
   while (true) {
-    // NOTE(Jesse): Perfect use case for cursor
+    // NOTE(Jesse): Perfect use case for BoundedBuffer
     int new_pos = find_next(self->data_, pos, end, sep_char);
     assert(new_pos >= pos);
     assert(new_pos <= end);

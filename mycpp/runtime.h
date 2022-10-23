@@ -7,7 +7,7 @@
 #include "mycpp/gc_heap.h"
 #include "mycpp/builtins.h"
 
-#include "mycpp/tuple_types.h"
+#include "mycpp/gc_tuple.h"
 #include "mycpp/gc_str.h"
 #include "mycpp/gc_slab.h"
 #include "mycpp/gc_list.h"
