@@ -9,11 +9,23 @@
 
 class Str;
 
-class IndexError {};
-class ValueError {};
-class KeyError {};
+class _ExceptionWithoutFields : public Obj {
+ public:
+  _ExceptionWithoutFields() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+  }
+};
 
-class EOFError {};
+class IndexError : public _ExceptionWithoutFields {};
+
+class ValueError : public _ExceptionWithoutFields {};
+
+class KeyError : public _ExceptionWithoutFields {};
+
+class EOFError : public _ExceptionWithoutFields {};
+
+class KeyboardInterrupt : public _ExceptionWithoutFields {};
+
+// TODO: should we eliminate args to NotImplementedError and AssertionError?
 
 class NotImplementedError {
  public:
@@ -57,10 +69,6 @@ class TypeError {
   }
 };
 
-class KeyboardInterrupt {};
-
-Str* NewStr(int len);
-
 void print(Str* s);
 
 void println_stderr(Str* s);
@@ -99,10 +107,12 @@ inline bool to_bool(int i) {
 
 bool str_contains(Str* haystack, Str* needle);
 
-// mycpp doesn't understand dynamic format strings yet
+extern Str* kEmptyString;
+
+// Function that mycpp generates for non-constant format strings
+// TODO: switch back to a printf interpreter
 inline Str* dynamic_fmt_dummy() {
-  Str* Result = NewStr(1);
-  return Result;
+  return kEmptyString;
 }
 
 #endif  // GC_BUILTINS_H

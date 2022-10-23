@@ -742,6 +742,24 @@ TEST dict_iters_test() {
   PASS();
 }
 
+TEST exceptions_test() {
+  IndexError* other;
+  bool caught = false;
+  try {
+    throw Alloc<IndexError>();
+  } catch (IndexError* e) {
+    log("e %p", e);
+    gHeap.RootInCurrentFrame(e);
+    other = e;
+    caught = true;
+  }
+
+  log("other %p", other);
+  ASSERT(caught);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -773,6 +791,8 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_funcs_test);
   RUN_TEST(dict_iters_test);
+
+  RUN_TEST(exceptions_test);
 
   gHeap.Collect();
 
