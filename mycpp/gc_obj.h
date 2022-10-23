@@ -14,7 +14,7 @@ enum Tag {
 
 const int kZeroMask = 0;  // for types with no pointers
 // no obj_len_ computed for global List/Slab/Dict
-const int kNoObjLen = 0xdeadbeef;
+const int kNoObjLen = 0x0badbeef;
 
 // Why do we need this macro instead of using inheritance?
 // - Because ASDL uses multiple inheritance for first class variants, but we
