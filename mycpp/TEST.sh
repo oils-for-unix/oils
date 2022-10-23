@@ -19,10 +19,8 @@ source test/common.sh  # run-test-bin
 # in case binaries weren't built
 shopt -s failglob
 
-export ASAN_OPTIONS='detect_leaks=0'
-
-# To pass ASAN leak detector
-export OIL_GC_ON_EXIT=1
+# Will be needed to pass ASAN leak detector?  Or only do this for the main binary?
+# export OIL_GC_ON_EXIT=1
 
 examples-variant() {
   ### Run all examples using a variant -- STATS only
@@ -89,7 +87,7 @@ examples-variant() {
   log ''
 
   case $variant in
-    (asan)
+    (asan|rvroot)
       # TODO: make examples/parse pass!
       # https://github.com/oilshell/oil/issues/1317
       if test $num_failed -ne 1; then
@@ -191,6 +189,8 @@ unit() {
     binaries+=(_bin/$compiler-$variant/mycpp/demo/*)
   fi
 
+  local asan_options=''
+
   for b in "${binaries[@]}"; do
     if ! test -f $b; then
       continue
@@ -200,7 +200,19 @@ unit() {
     local log=$prefix.log
     mkdir -p $(dirname $log)
 
-    run-test-bin $b
+    case $b in
+      # leaks with malloc
+      (*/demo/hash_table|*/demo/target_lang)
+        asan_options='detect_leaks=0'
+        ;;
+
+      # What is the problem here?  300 allocations leaked.
+      (*/gc_mylib_test)
+        asan_options='detect_leaks=0'
+        ;;
+    esac
+
+    ASAN_OPTIONS=$asan_options run-test-bin $b
   done
 }
 
@@ -230,11 +242,11 @@ test-invalid-examples() {
 test-runtime() {
   # Run other unit tests, e.g. the GC tests
 
-  # Doesn't pass yet because of rooting i
-  # ASAN_OPTIONS='' unit '' asan
+  local leak_ok='detect_leaks=0'
+
+  unit '' ubsan
 
   unit '' asan
-  unit '' ubsan
   unit '' gcverbose
   unit '' gcevery
   unit '' rvroot
@@ -268,11 +280,14 @@ compare-examples() {
 test-translator() {
   ### Invoked by soil/worker.sh
 
-  # Test that examples don't leak (note known failures above)
-  ASAN_OPTIONS='' examples-variant '' asan
+  # examples/parse fails with Buf leak
+  examples-variant '' rvroot
 
-  # Test with more collections (note known failures above)
-  ASAN_OPTIONS='' examples-variant '' gcevery
+  # examples/parse fails with Buf leak
+  examples-variant '' asan
+
+  # Test with more collections -- 5 failures above
+  examples-variant '' gcevery
 
   # Sanity check that doesn't collect garbage
   examples-variant '' mallocleak

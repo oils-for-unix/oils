@@ -13,9 +13,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source test/common.sh  # run-test
 
-# https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
-export ASAN_OPTIONS='detect_leaks=0'
-
 run-special-test() {
   ### For tests with -D CPP_UNIT_TEST
 

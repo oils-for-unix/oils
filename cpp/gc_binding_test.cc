@@ -36,6 +36,8 @@ int main(int argc, char** argv) {
     RUN_TEST(qsn_test);
   }
 
+  gHeap.OnProcessExit();
+
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }

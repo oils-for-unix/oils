@@ -131,6 +131,8 @@ int main(int argc, char** argv) {
   RUN_TEST(flag_spec_test);
   RUN_TEST(show_sizeof);
 
+  gHeap.OnProcessExit();
+
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }
