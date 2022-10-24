@@ -20,6 +20,7 @@ def DefineTargets(ru):
       '//mycpp/runtime', 
       srcs = [
         'mycpp/gc_mylib.cc',
+        'mycpp/bump_alloc.cc',
         'mycpp/cheney_heap.cc',
         'mycpp/marksweep_heap.cc',
 

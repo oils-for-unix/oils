@@ -28,10 +28,9 @@ Str* repr(Str* s) {
 }
 
 // Helper for str_to_int() that doesn't use exceptions.
-// Like atoi(), but with better error checking.
 bool StringToInteger(char* s, int length, int base, int* result) {
   if (length == 0) {
-    return false;  // special case for empty string
+    return false;  // empty string isn't a valid integer
   }
 
   char* pos;  // mutated by strtol
@@ -42,17 +41,14 @@ bool StringToInteger(char* s, int length, int base, int* result) {
 
   switch (v) {
   case LONG_MIN:
-    // log("underflow");
-    return false;
+    return false;  // underflow
   case LONG_MAX:
-    // log("overflow");
-    return false;
+    return false;  // overflow
   }
 
-  // Return true if it consumed ALL characters.
   const char* end = s + length;
   if (pos == end) {
-    return true;
+    return true;  // strtol() consumed ALL characters.
   }
 
   while (pos < end) {
@@ -62,8 +58,7 @@ bool StringToInteger(char* s, int length, int base, int* result) {
     pos++;
   }
 
-  // Trailing space is OK!
-  return true;
+  return true;  // Trailing space is OK
 }
 
 int to_int(Str* s, int base) {

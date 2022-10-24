@@ -1,15 +1,16 @@
 #ifndef GC_HEAP_H
 #define GC_HEAP_H
 
-#include "cheney_heap.h"
-#include "marksweep_heap.h"
+#include "mycpp/bump_alloc.h"
+#include "mycpp/cheney_heap.h"
+#include "mycpp/marksweep_heap.h"
 
-#if MARK_SWEEP
+#if defined(MARK_SWEEP)
   #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: marksweep\n")
-extern MarkSweepHeap gHeap;
+#elif defined(BUMP_LEAK)
+  #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: bumpleak\n")
 #else
   #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: cheney\n")
-extern CheneyHeap gHeap;
 #endif
 
 class RootingScope {
@@ -18,10 +19,14 @@ class RootingScope {
 
  public:
   RootingScope() {
+#if !defined(BUMP_LEAK)
     gHeap.root_set_.PushScope();
+#endif
   }
   ~RootingScope() {
+#if !defined(BUMP_LEAK)
     gHeap.root_set_.PopScope();
+#endif
   }
 };
 

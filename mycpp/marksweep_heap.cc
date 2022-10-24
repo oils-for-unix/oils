@@ -44,12 +44,14 @@ void MarkSweepHeap::Report() {
   log(" objs capacity    = %10d", live_objs_.capacity());
 }
 
-#ifdef MALLOC_LEAK
+#if defined(MALLOC_LEAK)
 
 // for testing performance
 void* MarkSweepHeap::Allocate(int num_bytes) {
   return calloc(num_bytes, 1);
 }
+
+#elif defined(BUMP_LEAK)
 
 #else
 
@@ -241,6 +243,6 @@ void MarkSweepHeap::FastProcessExit() {
   DoProcessExit(true);
 }
 
-#if MARK_SWEEP
+#if defined(MARK_SWEEP) && !defined(BUMP_LEAK)
 MarkSweepHeap gHeap;
 #endif

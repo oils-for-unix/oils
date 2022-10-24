@@ -241,4 +241,8 @@ class LayoutForwarded : public Obj {
   Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
 };
 
+#if !defined(MARK_SWEEP) && !defined(BUMP_LEAK)
+extern CheneyHeap gHeap;
+#endif
+
 #endif  // GC_HEAP_H

@@ -9,9 +9,12 @@ set -o errexit
 
 source devtools/common.sh  # banner
 
+# TODO:
+# - -m32 speed comparison would be interesting, see mycpp/demo.sh
+# - also it's generally good for testing
+
 compare() {
   local file=${1:-benchmarks/testdata/configure-coreutils}
-
 
   # ~50ms
   banner dash
@@ -23,8 +26,12 @@ compare() {
   time bash -n $file
   echo
 
-  # TODO:
-  # - mutator only: bumpleak
+  # ~174 ms
+  banner 'bumpleak'
+  local bin=_bin/cxx-bumpleak/osh_eval
+  ninja $bin
+  time $bin --ast-format none -n $file
+  echo
 
   # ~174 ms
   banner 'mallocleak'

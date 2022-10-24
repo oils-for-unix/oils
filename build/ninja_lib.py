@@ -48,6 +48,7 @@ COMPILERS_VARIANTS_LEAKY = [
     ('cxx', 'ubsan'),
 
     ('cxx', 'mallocleak'),
+    ('cxx', 'bumpleak'),
 
     # -D RET_VAL_ROOTING
     ('cxx', 'rvroot'),
