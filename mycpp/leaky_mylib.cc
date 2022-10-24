@@ -157,6 +157,10 @@ Buf* ExtendBuf(Buf* buf, Str* s) {
     return b;
 }
 
+Buf* NewBuf(int size) {
+    return nullptr;
+}
+
 void Buf::Invalidate() {
   len_ = -1;
   cap_ = -1;
