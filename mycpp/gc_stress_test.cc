@@ -213,7 +213,7 @@ int main(int argc, char** argv) {
   RUN_TEST(list_str_growth_test);
   RUN_TEST(dict_growth_test);
 
-  gHeap.OnProcessExit();
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END();
   return 0;

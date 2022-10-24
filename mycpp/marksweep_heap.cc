@@ -197,30 +197,38 @@ int MarkSweepHeap::Collect() {
 }
 
 // Cleanup at the end of main() to remain ASAN-safe
-void MarkSweepHeap::OnProcessExit() {
-  char* e;
+void MarkSweepHeap::DoProcessExit(bool fast_exit) {
+  char* e = getenv("OIL_GC_ON_EXIT");
 
-#ifdef FAST_EXIT
-  // TODO: enable this when RET_VAL_ROOTING is the default
-  // Let the OS clean up by default
-  // To pass the ASAN leak detector, set OIL_GC_ON_EXIT=1
-  e = getenv("OIL_GC_ON_EXIT");
-  if (e && strlen(e)) {  // env var set and non-empty
-    // Remove objects rooted in main(), i.e. the first frame
-    root_set_.PopScope();
-    Collect();
+  if (fast_exit) {
+    // don't collect by default; OIL_GC_ON_EXIT=1 overrides
+    if (e && strcmp(e, "1") == 0) {
+      root_set_.PopScope();
+      Collect();
+    }
+  } else {
+    // collect by default; OIL_GC_ON_EXIT=0 overrides
+    if (e && strcmp(e, "0") == 0) {
+      ;
+    } else {
+      root_set_.PopScope();
+      Collect();
+    }
   }
-#elif RET_VAL_ROOTING
-  root_set_.PopScope();
-  Collect();
-#else
-  Collect();
-#endif
 
   e = getenv("OIL_GC_STATS");
   if (e && strlen(e)) {  // env var set and non-empty
     Report();
   }
+}
+
+void MarkSweepHeap::CleanProcessExit() {
+  DoProcessExit(false);  // not fast_exit
+}
+
+// for the main binary
+void MarkSweepHeap::FastProcessExit() {
+  DoProcessExit(true);
 }
 
 #if MARK_SWEEP

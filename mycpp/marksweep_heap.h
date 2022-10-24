@@ -136,8 +136,12 @@ class MarkSweepHeap {
   int Collect();
   void MarkObjects(Obj* obj);
   void Sweep();
+
   // Cleanup at the end of main() to remain ASAN-safe
-  void OnProcessExit();
+  void CleanProcessExit();
+
+  // Faster exit
+  void FastProcessExit();
 
   void Report();
 
@@ -167,6 +171,8 @@ class MarkSweepHeap {
   std::unordered_set<void*> marked_;
 
  private:
+  void DoProcessExit(bool fast_exit);
+
   DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);
 };
 

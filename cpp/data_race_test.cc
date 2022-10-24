@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
   RUN_TEST(list_test);
   RUN_TEST(global_trap_state_test);
 
-  gHeap.OnProcessExit();
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

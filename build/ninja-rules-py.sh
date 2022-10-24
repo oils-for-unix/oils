@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   }
 
   gBuf.reset();  // free internal buffer for fmtX()
-  gHeap.OnProcessExit();  // for return value rooting
+  gHeap.CleanProcessExit();  // for return value rooting
 }
 EOF
 }
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     status = $name::main(args);
   }
 
-  gHeap.OnProcessExit();
+  gHeap.FastProcessExit();
 
   return status;
 }

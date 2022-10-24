@@ -910,7 +910,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_str_helpers);
 
-  gHeap.OnProcessExit();
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END();
   return 0;

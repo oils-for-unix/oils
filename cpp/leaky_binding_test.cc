@@ -364,7 +364,7 @@ int main(int argc, char** argv) {
   // non-hermetic
   RUN_TEST(pyos_test);
 
-  gHeap.OnProcessExit();
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
