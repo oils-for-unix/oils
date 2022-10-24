@@ -36,7 +36,7 @@ def NinjaGraph(ru):
   ru.cc_binary(
       '_gen/bin/osh_eval.mycpp.cc',
       preprocessed = True,
-      matrix = ninja_lib.COMPILERS_VARIANTS,
+      matrix = ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
       top_level = True,  # _bin/cxx-dbg/osh_eval
       deps = [
         '//cpp/leaky_core',

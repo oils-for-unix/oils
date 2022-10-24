@@ -47,9 +47,6 @@ COMPILERS_VARIANTS_LEAKY = [
     ('cxx', 'asan'),
     ('cxx', 'ubsan'),
 
-    ('cxx', 'mallocleak'),
-    ('cxx', 'bumpleak'),
-
     # -D RET_VAL_ROOTING
     ('cxx', 'rvroot'),
 
@@ -59,6 +56,13 @@ COMPILERS_VARIANTS_LEAKY = [
     ('clang', 'ubsan'),  # finds different bugs
     ('clang', 'coverage'),
 ]
+
+GC_PERF_VARIANTS = [
+    ('cxx', 'mallocleak'),
+    ('cxx', 'tcmallocleak'),
+    ('cxx', 'bumpleak'),
+]
+
 
 COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
     # mainly for unit tests

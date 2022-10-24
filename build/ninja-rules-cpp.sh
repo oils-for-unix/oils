@@ -114,6 +114,9 @@ setglobal_compile_flags() {
       # optimized build with malloc only
       flags="$flags -O2 -g -D MALLOC_LEAK"
       ;;
+    (tcmallocleak)
+      flags="$flags -O2 -g -D TCMALLOC"
+      ;;
     (bumpleak)
       # optimized build with bump allocator
       flags="$flags -O2 -g -D BUMP_LEAK"
@@ -129,9 +132,6 @@ setglobal_compile_flags() {
       flags="$flags $opt -g -pg"
       ;;
 
-    (tcmalloc)
-      flags="$flags -O2 -g -D TCMALLOC"
-      ;;
     (alloclog)
       # debug flags
       flags="$flags -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
@@ -159,8 +159,9 @@ setglobal_link_flags() {
   local variant=$1
 
   case $variant in
-    (tcmalloc)
-      link_flags='-ltcmalloc'
+    (tcmallocleak)
+      # Need to tell the dynamic loader where to find tcmalloc
+      link_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
@@ -233,7 +234,9 @@ link() {
 
   setglobal_cxx $compiler
 
-  "$cxx" -o "$out" $link_flags "$@"
+  # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
+  # true.
+  "$cxx" -o "$out" "$@" $link_flags
 }
 
 compile_and_link() {

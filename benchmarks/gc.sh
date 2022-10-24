@@ -7,7 +7,51 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/common.sh  # banner
+# See benchmarks/gperftools.sh.  I think the Ubuntu package is very old
+
+download-tcmalloc() {
+  # TODO: move this to ../oil_DEPS ?
+  wget --directory _deps \
+    https://github.com/gperftools/gperftools/releases/download/gperftools-2.10/gperftools-2.10.tar.gz
+
+  # Then ./configure; make; sudo make install
+  # installs in /usr/local/lib
+
+  # Note: there's a warning about libunwind -- maybe install that first.  Does
+  # it only apply to CPU profiles?
+}
+
+debug-tcmalloc() {
+  touch mycpp/marksweep_heap.cc
+
+  # No evidence of difference
+  for bin in _bin/cxx-{mallocleak,tcmallocleak}/osh_eval; do
+    echo $bin
+    ninja $bin
+
+    ldd $bin
+    echo
+
+    ls -l $bin
+    echo
+
+    # Still linking against glibc
+    nm $bin | egrep -i 'malloc|calloc'
+    #wc -l
+    echo
+  done
+}
+
+banner() {
+  echo -----
+  echo "$@"
+}
+
+run-osh() {
+  local bin=$1
+  ninja $bin
+  time $bin --ast-format none -n $file
+}
 
 # TODO:
 # - -m32 speed comparison would be interesting, see mycpp/demo.sh
@@ -17,28 +61,29 @@ compare() {
   local file=${1:-benchmarks/testdata/configure-coreutils}
 
   # ~50ms
-  banner dash
+  banner 'dash'
   time dash -n $file
   echo
 
   # 91 ms
-  echo bash
+  banner 'bash'
   time bash -n $file
   echo
 
-  # ~174 ms
+  # ~88 ms!  But we are using more system time than bash/dash -- is it
+  # line-based I/O?
   banner 'bumpleak'
   local bin=_bin/cxx-bumpleak/osh_eval
-  ninja $bin
-  time $bin --ast-format none -n $file
-  echo
+  run-osh $bin
+
+  banner 'tcmallocleak'
+  local bin=_bin/cxx-tcmallocleak/osh_eval
+  run-osh $bin
 
   # ~174 ms
   banner 'mallocleak'
   local bin=_bin/cxx-mallocleak/osh_eval
-  ninja $bin
-  time $bin --ast-format none -n $file
-  echo
+  run-osh $bin
 
   # ~204 ms -- this is slower than mallocleak!  But all we're doing is checking
   # collection policy, and updating GC stats.  Hm.
@@ -46,23 +91,21 @@ compare() {
 
   # ~308 ms
   # Garbage-collected Oil binary
-  # TODO: OIL_GC_ON_EXIT is disabled
   local bin=_bin/cxx-opt/osh_eval
-  ninja $bin
-  time $bin --ast-format none -n $file
+  run-osh $bin
 
   # tcmalloc?
 
   # ~330 ms -- free() is slow
   banner 'OPT with high threshold - malloc + free'
-  time OIL_GC_ON_EXIT=1 $bin --ast-format none -n $file
+  OIL_GC_ON_EXIT=1 run-osh $bin
 
   echo 'TODO'
   if false; then
     banner 'OPT with low threshold - malloc + free + mark/sweep'
 
     # TODO: crashes!
-    time OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin --ast-format none -n $file
+    OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 run-osh $bin
   fi
 }
 
