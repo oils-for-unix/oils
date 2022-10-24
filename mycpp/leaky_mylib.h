@@ -156,11 +156,11 @@ class Buf : public Obj {
 };
 
 Str* StrFromBuf(const Buf*);
-Buf AllocBuf(char*, int);
+Buf* NewBuf(int);
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_() {
+  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_(NewBuf(128)) {
   }
   void write(Str* s) override;
   void flush() override {
