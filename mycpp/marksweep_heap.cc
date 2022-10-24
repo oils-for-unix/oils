@@ -19,6 +19,16 @@ void MarkSweepHeap::Init() {
 
 void MarkSweepHeap::Init(int collect_threshold) {
   collect_threshold_ = collect_threshold;
+
+  char* e = getenv("OIL_GC_THRESHOLD");
+  if (e) {
+    int result;
+    if (StringToInteger(e, strlen(e), 10, &result)) {
+      // Override collection threshold
+      collect_threshold_ = result;
+    }
+  }
+
   live_objs_.reserve(KiB(10));
   roots_.reserve(KiB(1));  // prevent resizing in common case
 }

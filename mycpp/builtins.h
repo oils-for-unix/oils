@@ -98,7 +98,9 @@ inline Str* str(double f) {
 
 Str* str(int i);
 
-bool _str_to_int(Str* s, int* result, int base);  // for testing only
+// Helper function
+bool StringToInteger(char* s, int len, int base, int* result);
+
 int to_int(Str* s);
 int to_int(Str* s, int base);
 

@@ -29,15 +29,17 @@ Str* repr(Str* s) {
 
 // Helper for str_to_int() that doesn't use exceptions.
 // Like atoi(), but with better error checking.
-bool _str_to_int(Str* s, int* result, int base) {
-  int s_len = len(s);
-  if (s_len == 0) {
+bool StringToInteger(char* s, int length, int base, int* result) {
+  if (length == 0) {
     return false;  // special case for empty string
   }
 
-  char* p;  // mutated by strtol
+  char* pos;  // mutated by strtol
+  long v = strtol(s, &pos, base);
 
-  long v = strtol(s->data(), &p, base);
+  // Unconditionally set out param.  Caller should use the return value!
+  *result = v;
+
   switch (v) {
   case LONG_MIN:
     // log("underflow");
@@ -47,29 +49,26 @@ bool _str_to_int(Str* s, int* result, int base) {
     return false;
   }
 
-  *result = v;
-
   // Return true if it consumed ALL characters.
-  const char* end = s->data_ + s_len;
-
-  // log("start %p   p %p   end %p", s->data_, p, end);
-  if (p == end) {
+  const char* end = s + length;
+  if (pos == end) {
     return true;
   }
 
-  // Trailing space is OK!
-  while (p < end) {
-    if (!isspace(*p)) {
-      return false;
+  while (pos < end) {
+    if (!isspace(*pos)) {
+      return false;  // Trailing non-space
     }
-    p++;
+    pos++;
   }
+
+  // Trailing space is OK!
   return true;
 }
 
 int to_int(Str* s, int base) {
   int i;
-  if (_str_to_int(s, &i, base)) {
+  if (StringToInteger(s->data_, len(s), base, &i)) {
     return i;
   } else {
     throw Alloc<ValueError>();
@@ -78,7 +77,7 @@ int to_int(Str* s, int base) {
 
 int to_int(Str* s) {
   int i;
-  if (_str_to_int(s, &i, 10)) {
+  if (StringToInteger(s->data_, len(s), 10, &i)) {
     return i;
   } else {
     throw Alloc<ValueError>();

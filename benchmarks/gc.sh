@@ -35,7 +35,7 @@ compare() {
 
   # ~204 ms -- this is slower than mallocleak!  But all we're doing is checking
   # collection policy, and updating GC stats.  Hm.
-  banner 'opt'
+  banner 'OPT with high threshold - malloc only'
 
   # ~308 ms
   # Garbage-collected Oil binary
@@ -44,18 +44,19 @@ compare() {
   ninja $bin
   time $bin --ast-format none -n $file
 
-  # TODO: OIL_GC_ON_EXIT=1
-  # I think you want 
-  # - gHeap.LazyProcessExit("OIL_GC_ON_EXIT")  -- for Oil
-  # - gHeap.CleanProcessExit("OIL_GC_ON_EXIT")  -- for benchmarks
-
-  # TODO: OIL_GC_THRESHOLD=low -- measure traceing and collection
-
   # tcmalloc?
 
   # ~330 ms -- free() is slow
-  banner 'opt with free'
+  banner 'OPT with high threshold - malloc + free'
   time OIL_GC_ON_EXIT=1 $bin --ast-format none -n $file
+
+  echo 'TODO'
+  if false; then
+    banner 'OPT with low threshold - malloc + free + mark/sweep'
+
+    # TODO: crashes!
+    time OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin --ast-format none -n $file
+  fi
 }
 
 "$@"
