@@ -2695,7 +2695,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # DUMMY to prevent compile errors
         # TODO: Remove this
         if not caught:
-          self.write_ind('catch (std::exception) { }\n')
+          self.write_ind('catch (std::exception const&) { }\n')
 
         #if o.else_body:
         #  raise AssertionError('try/else not supported')
