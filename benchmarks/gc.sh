@@ -76,9 +76,10 @@ compare() {
   local bin=_bin/cxx-bumpleak/osh_eval
   run-osh $bin
 
+  # Not much faster
   banner 'tcmallocleak'
-  local bin=_bin/cxx-tcmallocleak/osh_eval
-  run-osh $bin
+  local tcmalloc_bin=_bin/cxx-tcmallocleak/osh_eval
+  run-osh $tcmalloc_bin
 
   # ~174 ms
   banner 'mallocleak'
@@ -94,11 +95,14 @@ compare() {
   local bin=_bin/cxx-opt/osh_eval
   run-osh $bin
 
-  # tcmalloc?
-
   # ~330 ms -- free() is slow
   banner 'OPT with high threshold - malloc + free'
   OIL_GC_ON_EXIT=1 run-osh $bin
+
+  # WOW: 192 ms!  It doesn't have the huge free() penalty that glibc does.
+  # Maybe it doesn't do all the malloc_consolidate() stuff.
+  banner 'OPT with high threshold - tcmalloc + free'
+  OIL_GC_ON_EXIT=1 run-osh $tcmalloc_bin
 
   echo 'TODO'
   if false; then
