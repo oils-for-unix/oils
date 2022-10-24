@@ -180,9 +180,10 @@ ParserReport = function(in_dir, out_dir) {
   print(times_summary)
 
   # Summarize cachegrind by platform/shell
+  # Bug fix: as.numeric(irefs) avoids 32-bit integer overflow!
   joined_cachegrind %>%
     group_by(shell_label) %>%
-    summarize(total_lines = sum(num_lines), total_irefs = sum(irefs)) %>%
+    summarize(total_lines = sum(num_lines), total_irefs = sum(as.numeric(irefs))) %>%
     mutate(thousand_irefs_per_line = total_irefs / total_lines / 1000) %>%
     select(-c(total_irefs)) ->
     cachegrind_summary
