@@ -187,7 +187,6 @@ void BufWriter::write(Str* s) {
 
 Str* BufWriter::getvalue() {
   if (buf_->IsEmpty()) {  // if no write() methods are called, the result is ""
-    assert(buf_->data() == nullptr);
     return kEmptyString;
   } else {
     assert(buf_->IsValid());  // Check for two INVALID getvalue() in a row
