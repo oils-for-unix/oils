@@ -157,8 +157,13 @@ Buf* ExtendBuf(Buf* buf, Str* s) {
     return b;
 }
 
-Buf* NewBuf(int size) {
-    return nullptr;
+Buf* NewBuf(int cap) {
+    void* place = gHeap.Allocate(cap + 1);
+
+    auto b = new (place) Buf();
+    b->len_ = 0;
+    b->cap_ = cap;
+    return b;
 }
 
 void Buf::Invalidate() {
