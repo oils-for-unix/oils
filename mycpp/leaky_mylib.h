@@ -125,31 +125,37 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
-class Buf {
+class Buf : public Obj {
  public:
   // The initial capacity is big enough for a line
-  Buf() : data_(nullptr), len_(0), cap_(128) {
+  Buf() : Obj(Tag::Opaque, kZeroMask, 0) {
   }
+
   bool IsEmpty() {
     return len_ == 0;
   }
+
   char* data() {
     return data_;
   }
+
   bool IsValid() {
     return len_ != -1;
   }
+
   void Extend(Str* s);
   void Invalidate();
 
- private:
-  friend Str* StrFromBuf(const Buf&);
-  char* data_;
+ public:
+  friend Str* StrFromBuf(const Buf*);
   int len_;  // data length, not including NUL
   int cap_;  // capacity, not including NUL
+  char data_[1];
+
+  DISALLOW_COPY_AND_ASSIGN(Buf)
 };
 
-Str* StrFromBuf(const Buf&);
+Str* StrFromBuf(const Buf*);
 Buf AllocBuf(char*, int);
 
 class BufWriter : public Writer {
@@ -167,7 +173,7 @@ class BufWriter : public Writer {
 
  private:
   // Just like a string, except it's mutable
-  Buf buf_;
+  Buf* buf_;
 };
 
 class FormatStringer {

@@ -8,8 +8,8 @@ mylib::FormatStringer gBuf;
 
 namespace mylib {
 
-Str* StrFromBuf(const Buf& buf) {
-  return ::StrFromC(buf.data_, buf.len_);
+Str* StrFromBuf(const Buf* buf) {
+  return ::StrFromC(buf->data_, buf->len_);
 }
 
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
@@ -136,26 +136,30 @@ bool CFileWriter::isatty() {
 //
 //
 
-void Buf::Extend(Str* s) {
-  int n = len(s);
+Buf* ExtendBuf(Buf* buf, Str* s) {
+    int n = len(s);
+    int cap = buf->cap_;
+    int len = buf->len_;
 
-  assert(cap_ >= len_);
-  if (cap_ < len_ + n) {
-    cap_ = std::max(cap_ * 2, len_ + n);
-  }
-  // +1 for NUL.  TODO: consider making it a power of 2
-  data_ = static_cast<char*>(realloc(data_, cap_ + 1));
+    assert(cap >= len);
+    if (cap < len + n) {
+        cap = std::max(cap * 2, len + n);
+    }
 
-  memcpy(data_ + len_, s->data_, n);
-  len_ += n;
-  data_[len_] = '\0';
+    void* place = gHeap.Allocate(cap + 1);
+    auto b = new (place) Buf();
+    b->len_ = len + n;
+    b->cap_ = cap;
+    memcpy(b->data_, buf->data_, buf->len_);
+    memcpy(b->data_ + len, s->data_, n);
+    b->data_[len] = '\0';
+
+    return b;
 }
 
 void Buf::Invalidate() {
-  free(data_);
   len_ = -1;
   cap_ = -1;
-  data_ = nullptr;
 }
 
 //
@@ -169,19 +173,19 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  buf_.Extend(s);
+  buf_ = ExtendBuf(buf_, s);
 }
 
 Str* BufWriter::getvalue() {
-  if (buf_.IsEmpty()) {  // if no write() methods are called, the result is ""
-    assert(buf_.data() == nullptr);
+  if (buf_->IsEmpty()) {  // if no write() methods are called, the result is ""
+    assert(buf_->data() == nullptr);
     return kEmptyString;
   } else {
-    assert(buf_.IsValid());  // Check for two INVALID getvalue() in a row
+    assert(buf_->IsValid());  // Check for two INVALID getvalue() in a row
 
     Str* ret = StrFromBuf(buf_);
 
-    buf_.Invalidate();
+    buf_->Invalidate();
 
     return ret;
   }
