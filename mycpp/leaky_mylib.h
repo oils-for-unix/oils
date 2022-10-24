@@ -160,8 +160,7 @@ Buf* NewBuf(int);
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_(NewBuf(128)) {
-  }
+  BufWriter();
   void write(Str* s) override;
   void flush() override {
   }
@@ -171,10 +170,18 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue();
 
- private:
   // Just like a string, except it's mutable
   Buf* buf_;
 };
+
+constexpr uint16_t maskof_BufWriter() {
+  return maskbit(offsetof(BufWriter, buf_));
+}
+
+inline BufWriter::BufWriter()
+    : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)),
+      buf_(NewBuf(128)) {
+}
 
 class FormatStringer {
  public:

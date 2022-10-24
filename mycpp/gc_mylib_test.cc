@@ -75,9 +75,19 @@ TEST writer_test() {
   writer->write(StrFromC("bar"));
 
   s = writer->getvalue();
+  log("result = %s len = %d", s->data(), len(s));
   ASSERT(str_equals0("foobar", s));
-  log("result = %s", s->data());
 
+  PASS();
+}
+
+TEST writer_mask_test() {
+  mylib::BufWriter* writer = nullptr;
+  StackRoots _roots({&writer});
+  writer = Alloc<mylib::BufWriter>();
+
+  log("mask %d", writer->field_mask_);
+  ASSERT(writer->field_mask_ != 0);
   PASS();
 }
 
@@ -230,6 +240,7 @@ int main(int argc, char** argv) {
   RUN_TEST(split_once_test);
   RUN_TEST(int_to_str_test);
   RUN_TEST(writer_test);
+  RUN_TEST(writer_mask_test);
 
   RUN_TEST(test_mylib_funcs);
 
