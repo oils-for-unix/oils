@@ -7,6 +7,8 @@ from __future__ import print_function
 import collections
 
 stack = []
+
+# call stack (list) -> count
 list_callers = collections.Counter()
 str_callers = collections.Counter()
 slice_callers = collections.Counter()

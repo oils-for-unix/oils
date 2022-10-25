@@ -1,6 +1,12 @@
 #!/usr/bin/env python2
 """
 uftrace_allocs.py
+
+Count allocations and show sizes.
+
+TODO:
+  Attribute allocations and sizes to Str, List, Dict, Token, etc.
+  How do we do that?  We need the call graph relationship
 """
 from __future__ import print_function
 

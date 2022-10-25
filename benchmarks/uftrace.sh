@@ -8,8 +8,8 @@
 #   benchmarks/uftrace.sh replay-alloc
 #
 # TODO:
-#  uftrace dump --chrome       # time-based trace
-#  uftrace dump --flame-graph
+# - uftrace dump --chrome       # time-based trace
+# - uftrace dump --flame-graph  # common stack traces, e.g. for allocation
 
 set -o nounset
 set -o pipefail
@@ -158,6 +158,7 @@ replay-alloc() {
   uftrace replay -D 1 -F 'MarkSweepHeap::Allocate'
 }
 
+# TODO: the 'record' command has to line up with this
 plugin() {
   # These manual filters speed it up
   uftrace script \

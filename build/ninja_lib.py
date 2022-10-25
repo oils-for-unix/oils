@@ -37,9 +37,6 @@ def log(msg, *args):
 
 
 # Matrix of configurations
-# - Used as-is by mycpp/examples
-# - mycpp unit tests can be restricted by 'test_runs_under_variant'.
-# - cpp/ adds uftrace, etc.
 
 COMPILERS_VARIANTS_LEAKY = [
     ('cxx', 'dbg'),

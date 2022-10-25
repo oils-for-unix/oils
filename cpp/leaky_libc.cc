@@ -3,6 +3,7 @@
 #include "cpp/leaky_libc.h"
 
 #include <errno.h>
+#include <fnmatch.h>
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
@@ -19,6 +20,20 @@ Str* gethostname() {
   // Important: set the length of the string!
   result->SetObjLenFromC();
   return result;
+}
+
+int fnmatch(Str* pat, Str* str) {
+  int flags = FNM_EXTMATCH;
+  int result = ::fnmatch(pat->data_, str->data_, flags);
+  switch (result) {
+  case 0:
+    return 1;
+  case FNM_NOMATCH:
+    return 0;
+  default:
+    // Other error
+    return -1;
+  }
 }
 
 List<Str*>* glob(Str* pat) {
@@ -131,7 +146,7 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   }
 
   // Match at offset 'pos'
-  int result = regexec(&pat, str->data() + pos, NMATCH, m, 0 /*flags*/);
+  int result = regexec(&pat, str->data_ + pos, NMATCH, m, 0 /*flags*/);
   regfree(&pat);
 
   setlocale(LC_CTYPE, old_locale);

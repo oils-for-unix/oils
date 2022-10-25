@@ -3,22 +3,15 @@
 #ifndef LIBC_H
 #define LIBC_H
 
-#include <fnmatch.h>
 #include <stdlib.h>
 
 #include "mycpp/runtime.h"
 
 namespace libc {
 
-inline bool fnmatch(Str* pat, Str* str) {
-  int flags = FNM_EXTMATCH;
-  bool result = ::fnmatch(pat->data(), str->data(), flags) == 0;
-  return result;
-}
-
 inline void print_time(double real_time, double user_time, double system_time) {
   fprintf(stderr, "%1.2fs user\n%1.2fs system\n%1.3fs total\n", user_time,
-         system_time, real_time);  // 0.05s user 0.03s system 3.186s total
+          system_time, real_time);  // 0.05s user 0.03s system 3.186s total
 }
 
 inline Str* realpath(Str* path) {
@@ -27,6 +20,8 @@ inline Str* realpath(Str* path) {
 }
 
 Str* gethostname();
+
+int fnmatch(Str* pat, Str* str);
 
 List<Str*>* glob(Str* pat);
 
