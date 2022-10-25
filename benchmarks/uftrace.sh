@@ -2,13 +2,21 @@
 #
 # Usage:
 #   benchmarks/uftrace.sh <function name>
+#
+# Examples:
+#   benchmarks/uftrace.sh record-osh-eval
+#   benchmarks/uftrace.sh replay-alloc
+#
+# TODO:
+#  uftrace dump --chrome       # time-based trace
+#  uftrace dump --flame-graph
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
 download() {
-  wget --directory _deps \
+  wget --no-clobber --directory _deps \
     https://github.com/namhyung/uftrace/archive/v0.9.3.tar.gz
 }
 
@@ -21,10 +29,6 @@ build() {
   echo 'Run sudo make install'
 }
 
-python-demo() {
-  uftrace _devbuild/cpython-instrumented/python -h
-}
-
 # https://github.com/namhyung/uftrace/wiki/Tutorial
 hello-demo() {
   cat >_tmp/hello.c <<EOF
@@ -32,20 +36,13 @@ hello-demo() {
 
 int main(void) {
   printf("Hello world\n");
-    return 0;
-  }
+  return 0;
+}
 EOF
 
   gcc -o _tmp/hello -pg _tmp/hello.c
 
   uftrace _tmp/hello
-}
-
-# Creates uftrace.data
-ovm-dbg() {
-  make clean 
-  make CFLAGS='-O0 -pg' _bin/oil.ovm-dbg
-  OVM_VERBOSE=1 uftrace record _bin/oil.ovm-dbg osh "$@"
 }
 
 # Now we can analyze uftrace.data.
@@ -57,22 +54,35 @@ replay() {
   uftrace replay -F cmd_eval::CommandEvaluator::_Execute
 }
 
-# creates uftrace.data dir
-osh-eval() {
-  local path=${1:-benchmarks/testdata/configure-coreutils}
-  #local cmd=(_bin/osh_eval.uftrace -n $path)
-  #local cmd=(_bin/osh_eval.uftrace -c 'echo hi')
-
-  #local cmd=(_bin/osh_eval.uftrace _tmp/a)
-  local cmd=(_bin/osh_eval.uftrace -c 'echo hi > _tmp/redir')
-
+# creates uftrace.data/ dir
+record-osh-eval() {
   #local flags=(-F process::Process::RunWait -F process::Process::Process)
-  local flags=()
 
-  uftrace record "${flags[@]}" "${cmd[@]}" || true
+  # It's faster to filter just those functino calls
+  # record allocation sizes
+  # first arg is 'this'
+  local flags=( -F MarkSweepHeap::Allocate -A MarkSweepHeap::Allocate@arg2 )
+
+  # Why isn't this showing up?  Is it because of placement new or something?
+  #local flags=( -F 'syntax_asdl::Token' )
+
+  uftrace record "${flags[@]}" _bin/cxx-uftrace/osh_eval "$@"
 
   # Hint: ls -l uftrace.data to make sure this filtering worked!
-  ls -l uftrace.data
+  ls -l --si uftrace.data/
+}
+
+record-execute() {
+  record-osh-eval -c 'echo hi > _tmp/redir'
+}
+
+record-parse() {
+  local path=${1:-benchmarks/testdata/abuild}
+
+  # 635 MB of trace data for this file, Allocate() calls only
+  #local path=${1:-benchmarks/testdata/configure-coreutils}
+
+  record-osh-eval --ast-format none -n $path
 }
 
 by-call() {
@@ -121,15 +131,37 @@ list-creation() {
   uftrace graph -C 'List::List'
 }
 
+# Not many dicts!
+dict-creation() {
+  uftrace graph -C 'Dict::Dict'
+}
+
 str-creation() {
-  #uftrace graph -f total,self,call 'List::List'
-  # This shows how often List::List is called from each site
   uftrace graph -C 'Str::Str'
+}
+
+replay-alloc() {
+  # call graph
+  #uftrace graph -C 'MarkSweepHeap::Allocate'
+
+  # shows what calls this function
+  #uftrace replay -C 'MarkSweepHeap::Allocate'
+
+  # shows what this function calls
+  #uftrace replay -F 'MarkSweepHeap::Allocate'
+
+  # filters may happen at record or replay time
+
+  # depth of 1
+  #uftrace replay -D 1 -F 'MarkSweepHeap::Allocate'
+
+  uftrace replay -D 1 -F 'MarkSweepHeap::Allocate'
 }
 
 plugin() {
   # These manual filters speed it up
   uftrace script \
+    -C 'Dict::Dict' \
     -C 'List::List' \
     -C 'Str::Str' \
     -C 'Tuple2::Tuple2' \
@@ -138,6 +170,19 @@ plugin() {
     -C 'operator new' \
     -C 'malloc' \
     -S benchmarks/uftrace_plugin.py
+}
+
+plugin-allocs() {
+  # On the big configure-coreutils script, this takes 10 seconds.  That's
+  # acceptable.  Gives 2,402,003 allocations.
+
+  time uftrace script \
+    -D 1 \
+    -F 'MarkSweepHeap::Allocate' \
+    -S benchmarks/uftrace_allocs.py > _tmp/allocs.txt
+
+  # Make allocation size histogram
+  sort -n _tmp/allocs.txt | uniq -c | sort -n -r | head -n 20
 }
 
 "$@"

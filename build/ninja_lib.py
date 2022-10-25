@@ -63,7 +63,10 @@ GC_PERF_VARIANTS = [
     ('cxx', 'mallocleak'),
     ('cxx', 'tcmalloc'),
 
-    # Less memory usage
+    # For tracing allocations, or debugging
+    ('cxx', 'uftrace'),
+
+    # Less memory usage (but slower)
     ('cxx', 'opt32')
 ]
 
@@ -78,18 +81,6 @@ SMALL_TEST_MATRIX = [
   ('cxx', 'asan'),
   ('clang', 'coverage', '-D CPP_UNIT_TEST'),
 ]
-
-# TODO: add more variants?
-[
-  # note: these could be clang too
-  ('cxx', 'uftrace'),
-  ('cxx', 'tcmalloc'),
-
-  ('cxx', 'dumballoc'),
-  ('cxx', 'alloclog'),
-]
-
-
 
 
 def ConfigDir(config):
