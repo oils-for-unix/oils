@@ -17,9 +17,8 @@ inline bool fnmatch(Str* pat, Str* str) {
 }
 
 inline void print_time(double real_time, double user_time, double system_time) {
-  // TODO(Jesse): How to we report CPU load? .. Do we need to?
-  printf("%1.2fs user %1.2fs system BUG cpu %1.3f total", user_time,
-         system_time, real_time);  // 0.05s user 0.03s system 2% cpu 3.186 total
+  fprintf(stderr, "%1.2fs user\n%1.2fs system\n%1.3fs total\n", user_time,
+         system_time, real_time);  // 0.05s user 0.03s system 3.186s total
 }
 
 inline Str* realpath(Str* path) {
