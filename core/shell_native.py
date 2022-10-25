@@ -22,7 +22,6 @@ from core import main_loop
 from core import process
 from core.pyerror import e_usage, log
 unused1 = log
-from core import pyos
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
@@ -322,12 +321,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
 
-  # TODO: In general, cmd_deps are shared between the mutually recursive
-  # evaluators.  Some of the four below are only shared between a builtin and
-  # the CommandEvaluator, so we could put them somewhere else.
-  cmd_deps.traps = {}
-  cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
-
   my_pid = posix.getpid()
 
   debug_path = ''
@@ -361,13 +354,12 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     trace_f = util.DebugFile(mylib.Stderr())
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
 
-  # TODO: We shouldn't have SignalState?
-  sig_state = pyos.SignalState()
-  sig_state.InitShell()
+  trap_state = builtin_trap.TrapState()
+  trap_state.InitShell()
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem, tracer, None)
-  waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
+  waiter = process.Waiter(job_state, exec_opts, trap_state, tracer)
   fd_state.waiter = waiter  # circular dep
 
   interp = environ.get('OSH_HIJACK_SHEBANG', '')
@@ -422,7 +414,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_b, arena, cmd_deps)
+                                     assign_b, arena, cmd_deps, trap_state)
 
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
@@ -461,9 +453,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
           errfmt)
   AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex, hay_tree, errfmt)
 
-  builtins[builtin_i.trap] = builtin_trap.Trap(
-      sig_state, cmd_deps.traps, cmd_deps.trap_nodes, parse_ctx, tracer,
-      errfmt)
+  builtins[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer, errfmt)
 
   if flag.c is not None:
     arena.PushSource(source.CFlag())

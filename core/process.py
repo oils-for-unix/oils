@@ -12,7 +12,7 @@ from __future__ import print_function
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
-from signal import SIGINT
+from signal import SIG_DFL, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP, SIGTTOU, SIGTTIN
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
@@ -57,6 +57,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.util import _DebugFile
   from osh.cmd_eval import CommandEvaluator
+  from osh import builtin_trap
 
 
 NO_FD = -1
@@ -888,7 +889,27 @@ class Process(Job):
       raise RuntimeError('Fatal error in posix.fork()')
 
     elif pid == 0:  # child
-      pyos.SignalState_AfterForkingChild()
+      # Note: this happens in BOTH interactive and non-interactive shells.
+      # We technically don't need to do most of it in non-interactive, since we
+      # did not change state in InitInteractiveShell().
+
+      # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
+      # shouldn't have this.
+      # https://docs.python.org/2/library/signal.html
+      # See Python/pythonrun.c.
+      pyos.Sigaction(SIGPIPE, SIG_DFL)
+
+      # Respond to Ctrl-\ (core dump)
+      pyos.Sigaction(SIGQUIT, SIG_DFL)
+
+      # Child processes should get Ctrl-Z.
+      pyos.Sigaction(SIGTSTP, SIG_DFL)
+
+      # More signals from
+      # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
+      # (but not SIGCHLD)
+      pyos.Sigaction(SIGTTOU, SIG_DFL)
+      pyos.Sigaction(SIGTTIN, SIG_DFL)
 
       for st in self.state_changes:
         st.Apply()
@@ -1407,11 +1428,11 @@ class Waiter(object):
   Now when you do wait() after starting the pipeline, you might get a pipeline
   process OR a background process!  So you have to distinguish between them.
   """
-  def __init__(self, job_state, exec_opts, sig_state, tracer):
-    # type: (JobState, optview.Exec, pyos.SignalState, dev.Tracer) -> None
+  def __init__(self, job_state, exec_opts, trap_state, tracer):
+    # type: (JobState, optview.Exec, builtin_trap.TrapState, dev.Tracer) -> None
     self.job_state = job_state
     self.exec_opts = exec_opts
-    self.sig_state = sig_state
+    self.trap_state = trap_state
     self.tracer = tracer
     self.last_status = 127  # wait -n error code
 
@@ -1450,13 +1471,13 @@ class Waiter(object):
     """
     pid, status = pyos.WaitPid()
     if pid < 0:  # error case
-      errno = status
+      err_num = status
       #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
-      if errno == ECHILD:
+      if err_num == ECHILD:
         return W1_ECHILD  # nothing to wait for caller should stop
-      elif errno == EINTR:  # Bug #858 fix
-        #log('WaitForOne() => %d', self.sig_state.last_sig_num)
-        return self.sig_state.last_sig_num  # e.g. 1 for SIGHUP
+      elif err_num == EINTR:  # Bug #858 fix
+        #log('WaitForOne() => %d', self.trap_state.GetLastSignal())
+        return self.trap_state.GetLastSignal()  # e.g. 1 for SIGHUP
       else:
         # The signature of waitpid() means this shouldn't happen
         raise AssertionError()

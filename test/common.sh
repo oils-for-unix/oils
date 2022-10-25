@@ -134,6 +134,18 @@ run-test-bin() {
   fi
 }
 
+run-one-test() {
+  local rel_path=$1
+  local compiler=${2:-cxx}
+  local variant=${3:-dbg}
+
+  local bin=_bin/$compiler-$variant/$rel_path
+
+  ninja $bin
+
+  run-test-bin $bin
+}
+
 run-test-func() {
   ### Similar to above
   local func_name=$1

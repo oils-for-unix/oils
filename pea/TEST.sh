@@ -29,7 +29,9 @@ translate-cpp() {
 all-files() {
   # Can't run this on Soil because we only have build/py.sh py-source, not
   # 'minimal'
-  # build/app-deps.sh osh-eval
+  # build/dynamic-deps.sh osh-eval
+
+  # Update this file with build/dynamic-deps.sh pea-hack
 
   cat pea/osh-eval-typecheck.txt
 

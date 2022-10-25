@@ -126,7 +126,7 @@ def _CheckConditionType(t):
 
 def CTypeIsManaged(c_type):
   # type: (str) -> bool
-  """Do we need to add it to StackRoots?"""
+  """For rooting and field masks."""
   assert c_type != 'void'
 
   # int, double, bool, scope_t enums, etc. are not managed
@@ -263,7 +263,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
                  virtual=None, local_vars=None, fmt_ids=None,
-                 decl=False, forward_decl=False):
+                 mask_funcs=None,
+                 decl=False, forward_decl=False, ret_val_rooting=False):
       self.types = types
       self.const_lookup = const_lookup
       self.f = f 
@@ -274,10 +275,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # phase.  But then write it in the definition phase.
       self.local_vars = local_vars
       self.fmt_ids = fmt_ids
+      self.mask_funcs = mask_funcs
       self.fmt_funcs = io.StringIO()
 
       self.decl = decl
       self.forward_decl = forward_decl
+      self.ret_val_rooting = ret_val_rooting
 
       self.unique_id = 0
 
@@ -293,6 +296,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # of the class.
       # This is all in the 'decl' phase.
       self.member_vars = {}  # type: Dict[str, Type]
+
       self.current_class_name = None  # for prototypes
       self.current_method_name = None
 
@@ -391,6 +395,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           comment = 'define'
 
         self.decl_write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
+        self.decl_write('\n')
 
         self.module_path = o.path
 
@@ -407,6 +412,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Write fmtX() functions inside the namespace.
         if self.decl:
+          self.decl_write('\n')
           self.decl_write(self.fmt_funcs.getvalue())
           self.fmt_funcs = io.StringIO()  # clear it for the next file
 
@@ -485,7 +491,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.accept(o.expr)
           self.write(op)
-        self.write('%s', o.name)
+
+        if o.name == 'errno':
+          # Avoid conflict with errno macro
+          # e->errno turns into e->errno_
+          self.write('errno_')
+        else:
+          self.write('%s', o.name)
 
     def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
         pass
@@ -1266,6 +1278,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               #self.log('INSTANCE lval %s rval %s', lval, call_expr)
 
+              self.write('\n')
               self.write('%s %s', call_expr.callee.name, temp_name)
               # C c;, not C c(); which is most vexing parse
               if call_expr.args:
@@ -1273,6 +1286,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.write(';\n')
               self.write('%s %s = &%s;', get_c_type(lval_type), lval.name,
                   temp_name)
+              self.write('\n')
               return
 
         #
@@ -2122,7 +2136,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.decl:
           self.member_vars.clear()  # make a new list
 
-          self.decl_write('\n')
           self.decl_write_ind('class %s', o.name)  # block after this
 
           # e.g. class TextOutput : public ColorOutput
@@ -2179,20 +2192,47 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Do we need this?  I think everything under a class is a method?
             self.accept(stmt)
 
-          self.current_class_name = None
+          # List of field mask expressions
+
+          if self.virtual.HasVTable(o.name):  # Account for vtable pointer offset
+            mask_func_name = 'maskbit_v'
+          else:
+            mask_func_name = 'maskbit'
+
+          bits = []
+          for name in sorted(self.member_vars):
+            c_type = get_c_type(self.member_vars[name])
+            if CTypeIsManaged(c_type):
+              bits.append('%s(offsetof(%s, %s))' % (mask_func_name, o.name, name))
+          if bits:
+            self.mask_funcs[o] = 'maskof_%s()' % o.name
 
           # Now write member defs
           #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
           if self.member_vars:
             self.decl_write('\n')  # separate from functions
-          for name in sorted(self.member_vars):
-            c_type = get_c_type(self.member_vars[name])
-            self.decl_write_ind('%s %s;\n', c_type, name)
+            for name in sorted(self.member_vars):
+              c_type = get_c_type(self.member_vars[name])
+              self.decl_write_ind('%s %s;\n', c_type, name)
+
+          self.current_class_name = None
 
           self.decl_write('\n')
           self.decl_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
           self.indent -= 1
           self.decl_write_ind('};\n')
+          self.decl_write('\n')
+
+          if bits:
+            self.decl_write('constexpr uint16_t maskof_%s() {\n', o.name)
+
+            self.decl_write('  return\n')
+            self.decl_write('    ')
+            self.decl_write('\n  | '.join(bits))
+            self.decl_write(';\n')
+
+            self.decl_write('}\n')
+            self.decl_write('\n')
 
           return
 
@@ -2208,21 +2248,26 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # initializer lists.
             if stmt.name == '__init__':
               self.write('\n')
-              self.write_ind('%s::%s(', o.name, o.name)
+              self.write('%s::%s(', o.name, o.name)
               self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
               self.write(') ')
 
-              # Everything descents from Obj
+              # Base class can use Obj() constructor directly, but Derived class can't
               if not base_class_name:
-                # TODO: Generate the right mask!
-                self.write(
-                    ': Obj(Tag::FixedSize, kZeroMask, sizeof(%s)) ' % o.name)
+                if o in self.mask_funcs:
+                  mask_str = 'maskof_%s()' % o.name
+                else: 
+                  mask_str = 'kZeroMask'
 
-              # Taking into account the docstring, look at the first statement to
-              # see if it's a superclass __init__ call.  Then move that to the
-              # initializer list.
+                self.write('\n')
+                self.write(
+                    '    : Obj(Tag::FixedSize, %s, sizeof(%s)) ' % (mask_str, o.name))
+
+              # Check for Base.__init__(self, ...) and move that to the initializer list.
 
               first_index = 0
+
+              # Skip docstring
               maybe_skip_stmt = stmt.body.body[0]
               if (isinstance(maybe_skip_stmt, ExpressionStmt) and
                   isinstance(maybe_skip_stmt.expr, StrExpr)):
@@ -2246,18 +2291,30 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     if i != 1:
                       self.write(', ')
                     self.accept(arg)
-                  self.write(') {\n')
+                  self.write(')')
 
-                  self.indent += 1
-                  for node in stmt.body.body[first_index+1:]:
-                    self.accept(node)
-                  self.indent -= 1
-                  self.write('}\n')
-                  continue
+                  first_index += 1
 
-              # Normal function body
-              self.accept(stmt.body)
-              continue
+              self.write(' {\n')
+
+              # Derived classes MUTATE the mask
+              if base_class_name:
+                mask_str = self.mask_funcs.get(o)
+                if mask_str is None:
+                  #self.log('*** No mask for %s', o.name)
+                  pass
+                else:
+                  self.write('  field_mask_ |= %s;\n' % mask_str)
+
+              # Now visit the rest of the statements
+              self.indent += 1
+              for node in stmt.body.body[first_index: ]:
+                self.accept(node)
+              self.indent -= 1
+              self.write('}\n')
+
+              continue  # wrote FuncDef for constructor
+
 
             if stmt.name == '__enter__':
               continue
@@ -2466,7 +2523,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               roots.append(lval_name)
           #self.log('roots %s', roots)
 
-          if len(roots):
+          if not self.ret_val_rooting and len(roots):
             self.write_ind('StackRoots _roots({');
             for i, r in enumerate(roots):
               if i != 0:
@@ -2620,7 +2677,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 names = [e1.name, e2.name]
                 names.sort()
                 if names == ['IOError', 'OSError']:
-                  c_type = '_OSError*'  # Base class in mylib
+                  c_type = 'IOError_OSError*'  # Base class in mylib
 
             if c_type is None:
               c_type = 'MultipleExceptions'  # Causes compile error
@@ -2638,7 +2695,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # DUMMY to prevent compile errors
         # TODO: Remove this
         if not caught:
-          self.write_ind('catch (std::exception) { }\n')
+          self.write_ind('catch (std::exception const&) { }\n')
 
         #if o.else_body:
         #  raise AssertionError('try/else not supported')

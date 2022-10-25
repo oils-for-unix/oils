@@ -33,17 +33,4 @@ class OilEvaluator {
 };
 }  // namespace expr_eval
 
-namespace signal_def {
-
-const int NO_SIGNAL = -1;
-
-inline List<Tuple2<Str*, int>*>* AllNames() {
-  NotImplemented();
-}
-
-inline int GetNumber(Str* sig_spec) {
-  NotImplemented();
-}
-}  // namespace signal_def
-
 #endif  // OSH_EVAL_STUBS_H

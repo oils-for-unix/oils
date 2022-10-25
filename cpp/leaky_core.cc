@@ -1,9 +1,5 @@
 // leaky_core.cc
 
-// clang-format off
-#include "mycpp/myerror.h"
-// clang-format on
-
 #include "cpp/leaky_core.h"
 
 #include <errno.h>
@@ -17,6 +13,8 @@
 #include <unistd.h>        // getuid(), environ
 
 namespace pyos {
+
+static SignalHandler gSignalHandler;
 
 Tuple2<int, int> WaitPid() {
   int status;
@@ -71,20 +69,13 @@ Dict<Str*, Str*>* Environ() {
     char* eq = strchr(pair, '=');
     assert(eq != nullptr);  // must look like KEY=value
 
-    int key_len = eq - pair;
-    char* buf = static_cast<char*>(malloc(key_len + 1));
-    memcpy(buf, pair, key_len);  // includes NUL terminator
-    buf[key_len] = '\0';
-
-    Str* key = StrFromC(buf, key_len);
-
     int len = strlen(pair);
-    int val_len = len - key_len - 1;
-    char* buf2 = static_cast<char*>(malloc(val_len + 1));
-    memcpy(buf2, eq + 1, val_len);  // copy starting after =
-    buf2[val_len] = '\0';
 
-    Str* val = StrFromC(buf2, val_len);
+    int key_len = eq - pair;
+    Str* key = StrFromC(pair, key_len);
+
+    int val_len = len - key_len - 1;
+    Str* val = StrFromC(eq + 1, val_len);
 
     d->set(key, val);
   }
@@ -124,7 +115,7 @@ Str* GetUserName(int uid) {
   Str* result = kEmptyString;
 
   if (passwd* pw = getpwuid(uid)) {
-    result = CopyBufferIntoNewStr(pw->pw_name);
+    result = StrFromC(pw->pw_name);
   } else {
     throw Alloc<IOError>(errno);
   }
@@ -137,7 +128,7 @@ Str* OsType() {
 
   utsname un = {};
   if (::uname(&un) == 0) {
-    result = CopyBufferIntoNewStr(un.sysname);
+    result = StrFromC(un.sysname);
   } else {
     throw Alloc<IOError>(errno);
   }
@@ -169,8 +160,8 @@ void PrintTimes() {
       float user_seconds = t.tms_utime % 60;
       int system_minutes = t.tms_stime / 60;
       float system_seconds = t.tms_stime % 60;
-      printf("%dm%1.3fs %dm%1.3fs", user_minutes, user_seconds, system_minutes,
-             system_seconds);
+      printf("%dm%1.3fs %dm%1.3fs\n", user_minutes, user_seconds,
+             system_minutes, system_seconds);
     }
 
     {
@@ -188,10 +179,63 @@ bool InputAvailable(int fd) {
   NotImplemented();
 }
 
-void SignalState_AfterForkingChild() {
-  signal(SIGQUIT, SIG_DFL);
-  signal(SIGPIPE, SIG_DFL);
-  signal(SIGTSTP, SIG_DFL);
+SignalHandler::SignalHandler()
+    : signal_queue_(), last_sig_num_(0), sigwinch_num_(UNTRAPPED_SIGWINCH) {
+}
+
+void SignalHandler::Update(int sig_num) {
+  assert(signal_queue_ != nullptr);
+  assert(signal_queue_->len_ < signal_queue_->capacity_);
+  signal_queue_->append(sig_num);
+  if (sig_num == SIGWINCH) {
+    sig_num = sigwinch_num_;
+  }
+  last_sig_num_ = sig_num;
+}
+
+static List<int>* AllocSignalQueue() {
+  List<int>* ret = NewList<int>();
+  ret->reserve(kMaxSignalsInFlight);
+  return ret;
+}
+
+List<int>* SignalHandler::TakeSignalQueue() {
+  List<int>* new_queue = AllocSignalQueue();
+  List<int>* ret = signal_queue_;
+  signal_queue_ = new_queue;
+  return ret;
+}
+
+void Sigaction(int sig_num, sighandler_t handler) {
+  struct sigaction act = {};
+  act.sa_handler = handler;
+  assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+static void signal_handler(int sig_num) {
+  gSignalHandler.Update(sig_num);
+}
+
+void RegisterSignalInterest(int sig_num) {
+  struct sigaction act = {};
+  act.sa_handler = signal_handler;
+  assert(sigaction(sig_num, &act, nullptr) == 0);
+}
+
+List<int>* TakeSignalQueue() {
+  return gSignalHandler.TakeSignalQueue();
+}
+
+int LastSignal() {
+  return gSignalHandler.last_sig_num_;
+}
+
+void SetSigwinchCode(int code) {
+  gSignalHandler.sigwinch_num_ = code;
+}
+
+void InitShell() {
+  gSignalHandler.signal_queue_ = AllocSignalQueue();
 }
 
 }  // namespace pyos
@@ -210,12 +254,12 @@ bool IsValidCharEscape(int c) {
 
 Str* ChArrayToString(List<int>* ch_array) {
   int n = len(ch_array);
-  unsigned char* buf = static_cast<unsigned char*>(malloc(n + 1));
+  Str* result = NewStr(n);
   for (int i = 0; i < n; ++i) {
-    buf[i] = ch_array->index_(i);
+    result->data_[i] = ch_array->index_(i);
   }
-  buf[n] = '\0';
-  return CopyBufferIntoNewStr(reinterpret_cast<char*>(buf), n);
+  result->data_[n] = '\0';
+  return result;
 }
 
 Str* _ResourceLoader::Get(Str* path) {
@@ -242,8 +286,8 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {
   int upper_bound = len(s) * 2;
-  char* buf = static_cast<char*>(malloc(upper_bound));
-  char* p = buf;
+  Str* buf = OverAllocatedStr(upper_bound);
+  char* p = buf->data_;
 
   for (int i = 0; i < len(s); ++i) {
     char c = s->data_[i];
@@ -252,15 +296,12 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
     }
     *p++ = c;
   }
-  int len = p - buf;
-  return CopyBufferIntoNewStr(buf, len);
+  buf->SetObjLenFromStrLen(p - buf->data_);
+  return buf;
 }
 
-// Hack so e->errno will work below
-#undef errno
-
-Str* strerror(_OSError* e) {
-  return CopyBufferIntoNewStr(::strerror(e->errno));
+Str* strerror(IOError_OSError* e) {
+  return StrFromC(::strerror(e->errno_));
 }
 
 }  // namespace pyutil

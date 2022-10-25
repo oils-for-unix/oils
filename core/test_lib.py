@@ -24,7 +24,6 @@ from core import executor
 from core import main_loop
 from core import optview
 from core import process
-from core import pyos
 from core import pyutil
 from core import ui
 from core import util
@@ -36,6 +35,7 @@ from osh import builtin_assign
 from osh import builtin_comp
 from osh import builtin_lib
 from osh import builtin_pure
+from osh import builtin_trap
 from osh import cmd_eval
 from osh import prompt
 from osh import sh_expr_eval
@@ -207,7 +207,6 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   debug_f = util.DebugFile(sys.stderr)
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
-  cmd_deps.trap_nodes = []
 
   search_path = state.SearchPath(mem)
 
@@ -224,12 +223,14 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
+  trap_state = builtin_trap.TrapState()
+  trap_state.InitShell()
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_builtins, arena, cmd_deps)
+                                     assign_builtins, arena, cmd_deps,
+                                     trap_state)
 
-  sig_state = pyos.SignalState()
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
-  waiter = process.Waiter(job_state, exec_opts, sig_state, tracer)
+  waiter = process.Waiter(job_state, exec_opts, trap_state, tracer)
 
   hay_state = state.Hay()
   shell_ex = executor.ShellExecutor(

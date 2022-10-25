@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oil 0.12.6
+Oil 0.12.8
 ============
 
 <!-- NOTE: This file is published to /release/$VERSION/index.html -->
@@ -13,7 +13,7 @@ Oil 0.12.6
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.12.6 of Oil, a Unix shell.  To use it,
+This is the home page for version 0.12.8 of Oil, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build it and do a "smoke test", as described in [INSTALL][].
@@ -21,8 +21,8 @@ This is the home page for version 0.12.6 of Oil, a Unix shell.  To use it,
 These steps take 30 to 60 seconds on most machines.  After installation, see
 [Getting Started](doc/getting-started.html).
 
-The associated [quality page](quality.html) shows test results, metrics, and
-benchmarks.
+The associated **[quality page](quality.html)** shows test results, metrics,
+and benchmarks.
 
 [INSTALL]: doc/INSTALL.html
 

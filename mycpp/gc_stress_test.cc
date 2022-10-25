@@ -1,6 +1,4 @@
 // gc_stress_test.cc: Do many allocations and collections under ASAN
-//
-// And with GC_STATS defined.
 
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
@@ -10,8 +8,37 @@
 // - Assert the number of heap growths
 // - maybe number of allocations?
 
+int count(int n) {
+  int dummy = 42;
+  StackRoots _roots({&dummy});
+  // log("d %p", &dummy);
+
+  if (n == 0) {
+    return 0;
+  } else {
+    return 1 + count(n - 1);
+  }
+}
+
+TEST overflowing_roots_test() {
+  gHeap.Init();
+
+  log("count 4000 = %d", count(4000));
+
+  // When our stack roots were limited, this would crash
+  log("count 5000 = %d", count(5000));
+  log("count 20000 = %d", count(20000));
+  log("count 25000 = %d", count(25000));
+  // Stack overflow in ASAN
+  // log("count 29000 = %d", count(29000));
+  // Stack overflow in dbg
+  // log("count 200000 = %d", count(200000));
+
+  PASS();
+}
+
 TEST str_simple_test() {
-  gHeap.Init(KiB(1));
+  gHeap.Init();
 
   Str* s = nullptr;
   StackRoots _roots({&s});
@@ -26,9 +53,7 @@ TEST str_simple_test() {
   }
 
   log("total = %d", total);
-#ifdef GC_STATS
   gHeap.Report();
-#endif
 
   PASS();
 }
@@ -37,14 +62,12 @@ GLOBAL_STR(b, "b");
 GLOBAL_STR(bx, "bx");
 
 TEST str_growth_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
+  gHeap.Init();
 
   Str* s = nullptr;
   StackRoots _roots({&s});
 
-#ifdef GC_STATS
   gHeap.Report();
-#endif
 
   s = StrFromC("b");
   int n = 300;
@@ -62,16 +85,14 @@ TEST str_growth_test() {
   int expected = (n * (n + 1)) / 2;
   ASSERT_EQ_FMT(expected, total, "%d");
 
-#ifdef GC_STATS
   gHeap.Report();
-#endif
 
   PASS();
 }
 
 // Simple test with just List on the heap.
 TEST list_append_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
+  gHeap.Init();
 
   List<int>* L = nullptr;
   StackRoots _roots({&L});
@@ -94,7 +115,7 @@ TEST list_append_test() {
 }
 
 TEST list_slice_append_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
+  gHeap.Init();
 
   List<int>* L = nullptr;
   StackRoots _roots({&L});
@@ -123,7 +144,7 @@ TEST list_slice_append_test() {
 }
 
 TEST list_str_growth_test() {
-  gHeap.Init(1 << 8);  // 1 KiB
+  gHeap.Init();
 
   Str* s = nullptr;
   List<Str*>* L = nullptr;
@@ -155,7 +176,7 @@ TEST list_str_growth_test() {
 }
 
 TEST dict_growth_test() {
-  gHeap.Init(1 << 20);  // 1 KiB
+  gHeap.Init();
 
   Str* s = nullptr;
   Dict<Str*, int>* D = nullptr;
@@ -180,10 +201,11 @@ TEST dict_growth_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(overflowing_roots_test);
   RUN_TEST(str_simple_test);
   RUN_TEST(str_growth_test);
   RUN_TEST(list_append_test);
@@ -191,8 +213,8 @@ int main(int argc, char** argv) {
   RUN_TEST(list_str_growth_test);
   RUN_TEST(dict_growth_test);
 
-  gHeap.Collect();
+  gHeap.CleanProcessExit();
 
-  GREATEST_MAIN_END(); /* display results */
+  GREATEST_MAIN_END();
   return 0;
 }

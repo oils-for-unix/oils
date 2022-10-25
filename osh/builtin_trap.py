@@ -4,7 +4,10 @@ builtin_trap.py
 """
 from __future__ import print_function
 
-from signal import SIGKILL, SIGSTOP
+from signal import (
+    SIG_DFL, SIG_IGN, SIGKILL, SIGSTOP, SIGQUIT, SIGTSTP, SIGTTOU, SIGTTIN,
+    SIGWINCH
+)
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value__Argv
@@ -23,43 +26,114 @@ from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import iteritems
 
-from typing import List, Dict, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
+  from core.comp_ui import _IDisplay
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
 
 
-class _TrapHandler(object):
-  """A function that is called by Python's signal module.
+class TrapState(object):
+  """All changes to global signal and hook state go through this object."""
+  def __init__(self):
+    # type: () -> None
+    self.hooks = {}  # type: Dict[str, command_t]
+    self.traps = {}  # type: Dict[int, command_t]
+    self.display = None  # type: _IDisplay
 
-  Similar to process.SubProgramThunk.
+  def GetHook(self, hook_name):
+    # type: (str) -> command_t
+    """Return the handler associated with hook_name"""
+    return self.hooks.get(hook_name, None)
 
-  TODO: In C++ we can't use this type of handling.  We cannot append to a
-  garbage-colleted list inside a signal handler!
+  def AddUserHook(self, hook_name, handler):
+    # type: (str, command_t) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    self.hooks[hook_name] = handler
 
-  Instead I think we need to append to a global array of size 1024 for the last
-  signal number caught.
+  def RemoveUserHook(self, hook_name):
+    # type: (str) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    mylib.dict_remove(self.hooks, hook_name)
 
-  Then in the main loop we will have RunPendingTraps() that iterates over this
-  list, runs corresponding handlers, and then clears the list.
-  """
+  def AddUserTrap(self, sig_num, handler):
+    # type: (int, command_t) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    self.traps[sig_num] = handler
 
-  def __init__(self, node, nodes_to_run, sig_state, tracer):
-    # type: (command_t, List[command_t], pyos.SignalState, dev.Tracer) -> None
-    self.node = node
-    self.nodes_to_run = nodes_to_run
-    self.sig_state = sig_state
-    self.tracer = tracer
+    if sig_num == SIGWINCH:
+      assert self.display is not None
+      pyos.SetSigwinchCode(SIGWINCH)
+    else:
+      pyos.RegisterSignalInterest(sig_num)
+    # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
 
-  def __call__(self, sig_num, unused_frame):
-    # type: (int, Any) -> None
-    """For Python's signal module."""
-    self.tracer.PrintMessage(
-        'Received signal %d.  Will run handler in main loop' % sig_num)
+  def RemoveUserTrap(self, sig_num):
+    # type: (int) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    # Restore default
+    mylib.dict_remove(self.traps, sig_num)
 
-    self.sig_state.last_sig_num = sig_num  # for interrupted 'wait'
-    self.nodes_to_run.append(self.node)
+    if sig_num == SIGWINCH:
+      pyos.SetSigwinchCode(pyos.UNTRAPPED_SIGWINCH)
+    else:
+      pyos.Sigaction(sig_num, SIG_DFL)
+    # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
+
+  def InitShell(self):
+    # type: () -> None
+    """Always called when initializing the shell process."""
+    pyos.InitShell()
+
+  def InitInteractiveShell(self, display, my_pid):
+    # type: (_IDisplay, int) -> None
+    """Called when initializing an interactive shell."""
+    # The shell itself should ignore Ctrl-\.
+    pyos.Sigaction(SIGQUIT, SIG_IGN)
+
+    # This prevents Ctrl-Z from suspending OSH in interactive mode.
+    pyos.Sigaction(SIGTSTP, SIG_IGN)
+
+    # More signals from
+    # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
+    # (but not SIGCHLD)
+    pyos.Sigaction(SIGTTOU, SIG_IGN)
+    pyos.Sigaction(SIGTTIN, SIG_IGN)
+
+    # Register a callback to receive terminal width changes.
+    # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
+
+    # This is ALWAYS on, which means that it can cause EINTR, and wait() and
+    # read() have to handle it
+    self.display = display
+    pyos.RegisterSignalInterest(SIGWINCH)
+    pyos.SetSigwinchCode(pyos.UNTRAPPED_SIGWINCH)
+
+  def GetLastSignal(self):
+    # type: () -> int
+    """Return the last signal that fired"""
+    return pyos.LastSignal()
+
+  def TakeRunList(self):
+      # type: () -> List[command_t]
+      """Transfer ownership of the current queue of pending trap handlers to the caller."""
+      sig_queue = pyos.TakeSignalQueue()
+
+      run_list = []  # type: List[command_t]
+      for sig_num in sig_queue:
+        node = self.traps.get(sig_num, None)
+
+        if sig_num == SIGWINCH:
+          if mylib.PYTHON:
+            self.display.OnWindowChange()
+          if node is None:
+            continue
+
+        assert node is not None
+        run_list.append(node)
+
+      return run_list
 
 
 def _GetSignalNumber(sig_spec):
@@ -96,11 +170,9 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 
 class Trap(vm._Builtin):
-  def __init__(self, sig_state, traps, nodes_to_run, parse_ctx, tracer, errfmt):
-    # type: (pyos.SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, dev.Tracer, ErrorFormatter) -> None
-    self.sig_state = sig_state
-    self.traps = traps
-    self.nodes_to_run = nodes_to_run
+  def __init__(self, trap_state, parse_ctx, tracer, errfmt):
+    # type: (TrapState, ParseContext, dev.Tracer, ErrorFormatter) -> None
+    self.trap_state = trap_state
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.tracer = tracer
@@ -132,20 +204,21 @@ class Trap(vm._Builtin):
     arg = arg_types.trap(attrs.attrs)
 
     if arg.p:  # Print registered handlers
-      if mylib.PYTHON:
-        for name, value in iteritems(self.traps):
-          # The unit tests rely on this being one line.
-          # bash prints a line that can be re-parsed.
-          print('%s %s' % (name, value.__class__.__name__))
+      # The unit tests rely on this being one line.
+      # bash prints a line that can be re-parsed.
+      for name, _ in iteritems(self.trap_state.hooks):
+        print('%s TrapState' % (name,))
+
+      for sig_num, _ in iteritems(self.trap_state.traps):
+        print('%d TrapState' % (sig_num,))
 
       return 0
 
     if arg.l:  # List valid signals and hooks
       for name in _HOOK_NAMES:
         print('   %s' % name)
-      if mylib.PYTHON:
-        for name, int_val in signal_def.AllNames():
-          print('%2d %s' % (int_val, name))
+
+      signal_def.PrintSignals()
 
       return 0
 
@@ -174,19 +247,11 @@ class Trap(vm._Builtin):
     # NOTE: sig_spec isn't validated when removing handlers.
     if code_str == '-':
       if sig_key in _HOOK_NAMES:
-        try:
-          del self.traps[sig_key]
-        except KeyError:
-          pass
+        self.trap_state.RemoveUserHook(sig_key)
         return 0
 
       if sig_num != signal_def.NO_SIGNAL:
-        try:
-          del self.traps[sig_key]
-        except KeyError:
-          pass
-
-        self.sig_state.RemoveUserTrap(sig_num)
+        self.trap_state.RemoveUserTrap(sig_num)
         return 0
 
       raise AssertionError('Signal or trap')
@@ -204,22 +269,18 @@ class Trap(vm._Builtin):
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
         stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
-      self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run,
-                                         self.sig_state, self.tracer)
+      self.trap_state.AddUserHook(sig_key, node)
       return 0
 
     # Register a signal.
     if sig_num != signal_def.NO_SIGNAL:
-      handler = _TrapHandler(node, self.nodes_to_run, self.sig_state,
-                             self.tracer)
       # For signal handlers, the traps dictionary is used only for debugging.
-      self.traps[sig_key] = handler
       if sig_num in (SIGKILL, SIGSTOP):
         self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
                            span_id=sig_spid)
         # Other shells return 0, but this seems like an obvious error
         return 1
-      self.sig_state.AddUserTrap(sig_num, handler)
+      self.trap_state.AddUserTrap(sig_num, node)
       return 0
 
     raise AssertionError('Signal or trap')

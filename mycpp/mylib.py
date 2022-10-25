@@ -138,7 +138,7 @@ def octal(i):
 
 
 def dict_remove(d, key):
-  # type: (Dict[str, Any], str) -> None
+  # type: (Dict[Any, Any], Any) -> None
   """
   Ensure that a key isn't in the dict.
   """

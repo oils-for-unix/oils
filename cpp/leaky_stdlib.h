@@ -3,6 +3,8 @@
 #ifndef LEAKY_STDLIB_H
 #define LEAKY_STDLIB_H
 
+#include <errno.h>
+#include <sys/types.h>  // mode_t
 #include <unistd.h>
 
 #include "mycpp/runtime.h"
@@ -17,22 +19,21 @@ int fcntl(int fd, int cmd, int arg);
 
 namespace posix {
 
-int umask(int mask);
+mode_t umask(mode_t mask);
 
 inline int access(Str* pathname, int mode) {
   return ::access(pathname->data_, mode) == 0;
 }
 
 inline Str* getcwd() {
-  char* buf = static_cast<char*>(malloc(PATH_MAX + 1));
-
-  char* result = ::getcwd(buf, PATH_MAX + 1);
-  if (result == nullptr) {
-    // TODO: print errno, e.g. ENAMETOOLONG
-    throw Alloc<RuntimeError>(StrFromC("Couldn't get working directory"));
+  Str* result = OverAllocatedStr(PATH_MAX);
+  char* p = ::getcwd(result->data_, PATH_MAX);
+  if (p == nullptr) {
+    throw Alloc<OSError>(errno);
   }
-
-  return CopyBufferIntoNewStr(buf);
+  // Important: set the length of the string!
+  result->SetObjLenFromC();
+  return result;
 }
 
 inline int getegid() {
@@ -60,7 +61,7 @@ inline bool isatty(int fd) {
 }
 
 inline Str* strerror(int err_num) {
-  return CopyBufferIntoNewStr(::strerror(err_num));
+  return StrFromC(::strerror(err_num));
 }
 
 inline Tuple2<int, int> pipe() {

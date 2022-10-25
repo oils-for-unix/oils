@@ -10,10 +10,12 @@
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
-#ifdef GC_STATS
-  #define ASSERT_NUM_LIVE_OBJS(x) ASSERT_EQ_FMT((x), gHeap.num_live_objs_, "%d")
+// disable for now
+#ifdef RET_VAL_ROOTING
+  #define ASSERT_NUM_LIVE_OBJS(x) ;
 #else
-  #define ASSERT_NUM_LIVE_OBJS(x)
+  #define ASSERT_NUM_LIVE_OBJS(x) \
+    ASSERT_EQ_FMT((x), static_cast<int>(gHeap.num_live_), "%d");
 #endif
 
 // Hm we're getting a warning because these aren't plain old data?
@@ -35,9 +37,6 @@ static_assert(offsetof(List<int>, slab_) ==
                   offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
-// 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
-const int kInitialSize = 1 << 20;
-
 TEST test_str_creation() {
   Str* s = StrFromC("foo");
   ASSERT_EQ(3, len(s));
@@ -48,7 +47,7 @@ TEST test_str_creation() {
   ASSERT_EQ(7, len(s2));
   ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
 
-  Str* s3 = AllocStr(1);
+  Str* s3 = NewStr(1);
   ASSERT_EQ(1, len(s3));
   ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
 
@@ -596,7 +595,7 @@ TEST stack_roots_test() {
 
   gHeap.Collect();
 
-  ASSERT_EQ(0, gHeap.roots_top_);
+  ASSERT_EQ(0, gHeap.roots_.size());
 
   StackRoots _roots({&s, &L});
 
@@ -604,7 +603,8 @@ TEST stack_roots_test() {
   // L = nullptr;
   L = NewList<int>();
 
-  ASSERT_EQ_FMT(2, gHeap.roots_top_, "%d");
+  int num_roots = gHeap.roots_.size();
+  ASSERT_EQ_FMT(2, num_roots, "%u");
 
   PASS();
 }
@@ -646,7 +646,7 @@ TEST field_mask_test() {
 
   log("Dict mask = %d", d->field_mask_);
 
-#if GC_STATS
+#if 0
   ShowFixedChildren(L);
   ShowFixedChildren(d);
 #endif
@@ -802,7 +802,7 @@ TEST inheritance_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(kInitialSize);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
@@ -829,7 +829,7 @@ int main(int argc, char** argv) {
   RUN_TEST(vtable_test);
   RUN_TEST(inheritance_test);
 
-  gHeap.Collect();
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

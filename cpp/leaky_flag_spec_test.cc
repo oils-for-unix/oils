@@ -124,12 +124,14 @@ TEST show_sizeof() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(flag_spec_test);
   RUN_TEST(show_sizeof);
+
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

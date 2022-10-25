@@ -1,100 +1,5 @@
-#!/usr/bin/env python2
 """
 mycpp/NINJA_subgraph.py
-
-Code Layout:
-
-  mycpp/
-    NINJA_subgraph.py  # This file describes dependencies programmatically
-    TEST.sh            # test driver for unit tests and examples
-
-    examples/
-      cgi.py
-      varargs.py
-      varargs_preamble.h
-
-Output Layout:
-
-  _gen/
-    mycpp/
-      examples/
-        cgi.mycpp.cc
-        cgi_raw.mycpp.cc
-        cgi.pea.cc
-        cgi_raw.pea.cc
-        expr.asdl.{h,cc}
-
-  _build/
-    obj/
-      cxx-dbg/
-        gc_heap_test.o  # not translated
-        gc_builtins.o   
-        _gen/
-          mycpp/
-            examples/
-              cgi.mycpp.o
-              cgi.mycpp.o.d
-              cgi.pea.o
-              cgi.pea.o.d
-              expr.asdl.o
-              expr.asdl.o.d
-      cxx-gcevery/
-      cxx-opt/
-      clang-coverage/
-
-  _bin/
-    cxx-dbg/
-      mycpp/
-        gc_heap_test
-        examples/
-          cgi.mycpp
-          classes.mycpp
-          cgi.pea
-          classes.pea
-    cxx-opt/
-      mycpp/
-        examples/
-          cgi.mycpp.stripped
-    cxx-gcevery/
-      mycpp/
-        gc_heap_test
-    clang-coverage/
-
-
-  _test/
-    tasks/        # *.txt and *.task.txt for .wwz
-      typecheck/  # optionally run
-      test/       # py, gcevery, asan, opt
-      benchmark/
-
-      # optionally logged?
-      translate/
-      compile/
-
-  Phony Targets
-    typecheck, strip, benchmark-table, etc. (See phony dict below)
-
-Also:
-
-- .wwz archive of all the logs.
-- Turn it into HTML and link to logs.  Basically just like Soil does.
-
-Notes for Oil: 
-
-- escape_path() in ninja_syntax seems wrong?
-  - It should really take $ to $$.
-  - It doesn't escape newlines
-
-    return word.replace('$ ', '$$ ').replace(' ', '$ ').replace(':', '$:')
-
-  Ninja shouldn't have used $ and ALSO used shell commands (sh -c)!  Better
-  solutions:
-
-  - Spawn a process with environment variables.
-  - use % for substitution instead
-
-- Another problem: Ninja doesn't escape the # comment character like $#, so
-  how can you write a string with a # as the first char on a line?
 """
 
 from __future__ import print_function
@@ -102,7 +7,73 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import asdl_cpp, log, ObjPath
+from build.ninja_lib import log, COMPILERS_VARIANTS, COMPILERS_VARIANTS_LEAKY
+
+def DefineTargets(ru):
+
+  ru.py_binary(
+      'mycpp/mycpp_main.py',
+      deps_base_dir = 'prebuilt/ninja',
+      template = 'mycpp')
+
+  ru.cc_library(
+      '//mycpp/cheney_heap', 
+      srcs = ['mycpp/cheney_heap.cc'])
+
+  ru.cc_library(
+      '//mycpp/runtime', 
+      srcs = [
+        'mycpp/gc_mylib.cc',
+        'mycpp/bump_leak_heap.cc',
+        'mycpp/marksweep_heap.cc',
+
+        # files we haven't added StackRoots to
+        'mycpp/leaky_containers.cc',
+        'mycpp/leaky_builtins.cc',
+        'mycpp/leaky_mylib.cc',
+      ]
+  )
+
+  # Unit tests
+
+  for test_main in [
+      'mycpp/marksweep_heap_test.cc',
+      'mycpp/gc_heap_test.cc',
+      'mycpp/gc_stress_test.cc',
+      'mycpp/gc_builtins_test.cc',
+      'mycpp/gc_mylib_test.cc',
+      'mycpp/smartptr_test.cc',
+  ]:
+    ru.cc_binary(
+        test_main,
+        deps = ['//mycpp/runtime'],
+        matrix = COMPILERS_VARIANTS,
+        phony_prefix = 'mycpp-unit')
+
+  for test_main in [
+      # TODO: make these 2 run under GC
+      'mycpp/leaky_containers_test.cc',
+      'mycpp/leaky_str_test.cc',
+
+      'mycpp/demo/target_lang.cc',
+      'mycpp/demo/hash_table.cc',
+
+      # there is also demo/{gc_heap,square_heap}.cc
+  ]:
+    ru.cc_binary(
+        test_main,
+        deps = ['//mycpp/runtime'],
+        matrix = COMPILERS_VARIANTS_LEAKY,
+        phony_prefix = 'mycpp-unit')
+
+  # ASDL schema that examples/parse.py depends on
+  ru.asdl_library('mycpp/examples/expr.asdl')
+
+
+#
+# mycpp/examples build config
+#
+
 
 # TODO:
 # - Fold this dependency into a proper shwrap wrapper
@@ -130,7 +101,6 @@ def ShouldSkipBuild(name):
 
 
 def ExamplesToBuild():
-
   filenames = os.listdir('mycpp/examples') 
   py = [
       name[:-3] for name in filenames
@@ -179,37 +149,6 @@ def ShouldSkipBenchmark(name):
   return False
 
 
-GC_RUNTIME = [
-    'mycpp/gc_mylib.cc',
-    'mycpp/cheney_heap.cc',
-    'mycpp/marksweep_heap.cc',
-
-    # files we haven't added StackRoots to
-    'mycpp/leaky_containers.cc',
-    'mycpp/leaky_builtins.cc',
-    'mycpp/leaky_mylib.cc',
-]
-
-VARIANTS_GC = 1            # Run with garbage collector on, cxx-gcevery
-VARIANTS_LEAKY = 2
-
-# Unit tests that run with garbage collector on.
-UNIT_TESTS = {
-    'mycpp/marksweep_gc_test.cc': VARIANTS_GC,
-    'mycpp/gc_heap_test.cc': VARIANTS_GC,
-    'mycpp/gc_stress_test.cc': VARIANTS_GC,
-    'mycpp/gc_builtins_test.cc': VARIANTS_GC,
-    'mycpp/gc_mylib_test.cc': VARIANTS_GC,
-    'mycpp/smartptr_test.cc': VARIANTS_GC,
-
-    # TODO: Make these VARIANTS_GC?
-    # Is it painful to add rooting?
-    'mycpp/leaky_containers_test.cc': VARIANTS_LEAKY,
-    'mycpp/leaky_str_test.cc': VARIANTS_LEAKY,
-
-    # there is also demo/{gc_heap,square_heap}.cc
-}
-
 TRANSLATE_FILES = {
     # TODO: We could also use app_deps.py here
     # BUG: modules.py must be listed last.  Order matters with inheritance
@@ -227,38 +166,9 @@ EXAMPLES_PY = {
     'parse': [],
 }
 
-# Linking _bin/cxx-dbg/mycpp-examples/parse depends on expr.asdl.o
-EXAMPLES_CC = {
-    'parse': ['_gen/mycpp/examples/expr.asdl.cc'],
-}
+def TranslatorSubgraph(ru, translator, ex):
+  n = ru.n
 
-# We need IMPLICIT header dependencies too.
-# Compiling _build/obj-mycpp/cxx-asan/parse.o depends brings parse_preamble.h,
-# which brings in expr.asdl.h
-EXAMPLES_H = {
-    'parse': [ '_gen/mycpp/examples/expr.asdl.h',
-               '_gen/asdl/hnode.asdl.h',
-             ],
-}
-
-COMPILERS_VARIANTS = [
-    # mainly for unit tests
-    ('cxx', 'gcstats'),
-    ('cxx', 'gcevery'),
-
-    ('cxx', 'dbg'),
-    ('cxx', 'opt'),
-    ('cxx', 'asan'),
-    ('cxx', 'ubsan'),
-
-    #('clang', 'asan'),
-    ('clang', 'dbg'),  # compile-quickly
-    ('clang', 'opt'),  # for comparisons
-    ('clang', 'ubsan'),  # finds different bugs
-    ('clang', 'coverage'),
-]
-
-def TranslatorSubgraph(n, translator, ex, phony):
   raw = '_gen/mycpp/examples/%s_raw.%s.cc' % (ex, translator)
 
   # Translate to C++
@@ -292,7 +202,7 @@ def TranslatorSubgraph(n, translator, ex, phony):
   n.newline()
 
   if translator == 'pea':
-    phony['pea-translate'].append(main_cc_src)
+    ru.phony['pea-translate'].append(main_cc_src)
 
   if translator == 'mycpp':
     example_matrix = COMPILERS_VARIANTS
@@ -302,62 +212,35 @@ def TranslatorSubgraph(n, translator, ex, phony):
         ('cxx', 'gcevery')
     ]
 
-  # Compile C++.
-  for compiler, variant in example_matrix:
-    compile_vars = [
-        ('compiler', compiler), ('variant', variant), ('more_cxx_flags', "''")
-    ]
-    link_vars = [
-        ('compiler', compiler), ('variant', variant),
-    ]
+  if translator == 'mycpp':
+    phony_prefix = 'mycpp-examples'
+  else:
+    phony_prefix = ''
 
-    main_obj = ObjPath(main_cc_src, compiler, variant)
+  deps = ['//mycpp/runtime'] 
+  if ex == 'parse':
+    deps = deps + ['//mycpp/examples/expr.asdl']
 
-    n.build(main_obj, 'compile_one', [main_cc_src],
-            implicit=EXAMPLES_H.get(ex, []),
-            variables=compile_vars)
-    n.newline()
+  ru.cc_binary(
+      main_cc_src,
+      deps = deps,
+      matrix = example_matrix,
+      phony_prefix = phony_prefix,
+  )
 
-    b = '_bin/%s-%s/mycpp/examples/%s.%s' % (compiler, variant, ex, translator)
-
-    src_deps = GC_RUNTIME + EXAMPLES_CC.get(ex, [])
-    obj_deps = [ObjPath(src, compiler, variant) for src in src_deps]
-
-    n.build(b, 'link', [main_obj] + obj_deps, variables=link_vars)
-    n.newline()
-
-    if translator == 'pea':
-      phony['pea-compile'].append(b)
-
-    if translator == 'mycpp':
-      key = 'mycpp-examples-%s-%s' % (compiler, variant)
-      if key not in phony:
-        phony[key] = []
-      phony[key].append(b)
-
-    if variant == 'opt':
-      stripped = '_bin/%s-%s/mycpp/examples/%s.%s.stripped' % (compiler, variant, ex, translator)
-      # no symbols
-      n.build([stripped, ''], 'strip', [b],
-              variables=[('variant', variant)])
-      n.newline()
-      phony['mycpp-strip'].append(stripped)
+  # TODO:
+  # - restore lost 'pea-compile' tag?
 
 
-def NinjaGraph(n):
+def NinjaGraph(ru):
+  n = ru.n
 
-  n.comment('Generated by %s' % __name__)
-  n.newline()
+  ru.comment('Generated by %s' % __name__)
 
   # Running build/ninja_main.py
   this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
   n.variable('NINJA_REPO_ROOT', os.path.dirname(this_dir))
-  n.newline()
-
-  n.rule('gen-osh-eval',
-         command='build/ninja-rules-py.sh gen-osh-eval $out_prefix $in',
-         description='gen-osh-eval $out_prefix $in')
   n.newline()
 
   # mycpp and pea have the same interface
@@ -404,7 +287,7 @@ def NinjaGraph(n):
   #examples = ['cgi', 'containers', 'fib_iter']
 
   # Groups of targets.  Not all of these are run by default.
-  phony = {
+  ph = {
       'mycpp-typecheck': [],  # optional: for debugging only.  translation does it.
       'mycpp-strip': [],  # optional: strip binaries.  To see how big they are.
 
@@ -424,106 +307,9 @@ def NinjaGraph(n):
       'pea-compile': [],
       # TODO: eventually we will have pea-logs-equal, and pea-benchmark-table
   }
+  ru.AddPhony(ph)
 
-  #
-  # osh_eval.  Could go in bin/NINJA_subgraph.py
-  #
-
-  with open('_build/NINJA/osh_eval/translate.txt') as f:
-    deps = [line.strip() for line in f]
-
-  prefix = '_gen/bin/osh_eval.mycpp'
-  n.build([prefix + '.cc'], 'gen-osh-eval', deps,
-          implicit=['_bin/shwrap/mycpp_main', RULES_PY],
-          variables=[('out_prefix', prefix)])
-
-  #
-  # Individual object files
-  #
-
-  cc_sources = []
-
-  for srcs in EXAMPLES_CC.values():  # generated code
-    cc_sources.extend(srcs)
-
-  cc_sources.extend(UNIT_TESTS.keys())  # test main() with GC on
-
-  cc_sources.extend(GC_RUNTIME)
-
-  cc_sources = sorted(set(cc_sources))  # make unique
-
-  for (compiler, variant) in COMPILERS_VARIANTS:
-    compile_vars = [
-        ('compiler', compiler),
-        ('variant', variant),
-        ('more_cxx_flags', "''"),
-    ]
-    link_vars = [
-        ('compiler', compiler),
-        ('variant', variant),
-    ]
-
-    #
-    # Build all objects
-    #
-
-    for src_path in cc_sources:
-      obj_path = ObjPath(src_path, compiler, variant)
-
-      n.build(obj_path, 'compile_one', [src_path], variables=compile_vars)
-      n.newline()
-
-    #
-    # Build and run unit tests
-    #
-
-    for main_cc in sorted(UNIT_TESTS):
-      which_variants = UNIT_TESTS[main_cc]
-
-      cc_files = GC_RUNTIME
-
-      # assume names are unique
-      test_name, _ = os.path.splitext(os.path.basename(main_cc))
-
-      b = '_bin/%s-%s/mycpp/%s' % (compiler, variant, test_name)
-
-      # Hack: avoid illegal combinations
-      test_runs_under_variant = False
-      if which_variants == VARIANTS_GC and variant in (
-          'dbg', 'asan', 'ubsan', 'coverage', 'gcevery', 'gcstats'):
-        test_runs_under_variant = True
-
-      if which_variants == VARIANTS_LEAKY and variant in (
-          'dbg', 'asan', 'ubsan', 'coverage'):
-        test_runs_under_variant = True
-
-      if not test_runs_under_variant:
-        continue
-
-      compile_vars = [
-          ('compiler', compiler),
-          ('variant', variant),
-          ('more_cxx_flags', "''")
-      ]
-
-      obj_paths = [ObjPath(main_cc, compiler, variant)]
-      obj_paths.extend(ObjPath(dep_cc, compiler, variant) for dep_cc in cc_files)
-
-      n.build([b], 'link', obj_paths,
-              variables=link_vars)
-      n.newline()
-
-      key = 'mycpp-unit-%s-%s' % (compiler, variant)
-      if key not in phony:
-        phony[key] = []
-      phony[key].append(b)
-
-
-  #
-  # ASDL schema that examples/parse.py depends on
-  #
-
-  asdl_cpp(n, 'mycpp/examples/expr.asdl')
+  DefineTargets(ru)
 
   #
   # Build and run examples/
@@ -533,10 +319,7 @@ def NinjaGraph(n):
   benchmark_tasks = []
 
   for ex in examples:
-    n.comment('---')
-    n.comment(ex)
-    n.comment('---')
-    n.newline()
+    ru.comment('- mycpp/examples/%s' % ex)
 
     # TODO: make a phony target for these, since they're not strictly necessary.
     # Translation does everything that type checking does.  Type checking only
@@ -552,7 +335,7 @@ def NinjaGraph(n):
             EXAMPLES_PY.get(ex, []) + [main_py],
             variables=[('main_py', main_py), ('skip_imports', skip_imports)])
     n.newline()
-    phony['mycpp-typecheck'].append(t)
+    ru.phony['mycpp-typecheck'].append(t)
 
     # Run Python.
     for mode in ['test', 'benchmark']:
@@ -570,6 +353,7 @@ def NinjaGraph(n):
           #log('Skipping test of %s', ex)
           continue
 
+      # TODO: This should be a Python stub!
       log_out = '%s.log' % prefix
       n.build([task_out, log_out], 'example-task',
               EXAMPLES_PY.get(ex, []) + ['mycpp/examples/%s.py' % ex],
@@ -580,7 +364,7 @@ def NinjaGraph(n):
       n.newline()
 
     for translator in ['mycpp', 'pea']:
-      TranslatorSubgraph(n, translator, ex, phony)
+      TranslatorSubgraph(ru, translator, ex)
 
       # Don't run it for now; just compile
       if translator == 'pea':
@@ -627,27 +411,10 @@ def NinjaGraph(n):
   n.newline()
 
   # NOTE: Don't really need this
-  phony['mycpp-logs-equal'].append(out)
+  ru.phony['mycpp-logs-equal'].append(out)
 
   # Timing of benchmarks
   out = '_test/benchmark-table.tsv'
   n.build([out], 'benchmark-table', benchmark_tasks)
   n.newline()
-
-  #
-  # Write phony rules we accumulated
-  #
-
-  pea_all = []
-  for name in sorted(phony):
-    deps = phony[name]
-    if deps:
-      n.build([name], 'phony', deps)
-      n.newline()
-
-      if name.startswith('pea-'):
-        pea_all.append(name)
-
-  # All groups
-  n.build(['pea-all'], 'phony', pea_all)
 

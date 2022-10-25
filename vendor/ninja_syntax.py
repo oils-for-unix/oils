@@ -19,16 +19,47 @@ just a helpful utility for build-file-generation systems that already
 use Python.
 """
 
+import collections
 import re
 import textwrap
 
 def escape_path(word):
     return word.replace('$ ', '$$ ').replace(' ', '$ ').replace(':', '$:')
 
+
+BuildCall = collections.namedtuple(
+    'BuildCall', 'outputs rule inputs implicit variables')
+
+
+class FakeWriter(object):
+
+    def __init__(self, writer):
+        """
+        Args:
+          n: Writer to delegate to
+        """
+        self.writer = writer
+        self.build_calls = []  # recorded
+
+    def build(self, outputs, rule, inputs=None, implicit=None, order_only=None,
+              variables=None, implicit_outputs=None, pool=None, dyndep=None):
+        b = BuildCall(outputs, rule, inputs=inputs, implicit=implicit, variables=variables)
+        self.build_calls.append(b)
+        self.writer.build(outputs, rule, inputs=inputs, implicit=implicit, variables=variables)
+
+    def newline(self):
+      self.writer.newline()
+
+    def num_build_targets(self):
+      return self.writer.num_build_targets()
+
+
 class Writer(object):
     def __init__(self, output, width=78):
         self.output = output
         self.width = width
+ 
+        self._num_build_targets = 0  # number of times we call n.build()
 
     def newline(self):
         self.output.write('\n')
@@ -107,7 +138,12 @@ class Writer(object):
             for key, val in iterator:
                 self.variable(key, val, indent=1)
 
+        self._num_build_targets += 1
+
         return outputs
+
+    def num_build_targets(self):
+      return self._num_build_targets
 
     def include(self, path):
         self._line('include %s' % path)

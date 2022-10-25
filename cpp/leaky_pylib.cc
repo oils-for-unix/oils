@@ -27,11 +27,11 @@ Str* rstrip_slashes(Str* s) {
     return s;
   }
 
-  // TODO: use gc_mylib.h API instead
-  char* buf = static_cast<char*>(malloc(new_len + 1));
-  memcpy(buf, s->data_, new_len);
-  buf[new_len] = '\0';
-  return CopyBufferIntoNewStr(buf, new_len);
+  // Truncate to new_len
+  Str* result = NewStr(new_len);
+  memcpy(result->data_, s->data_, new_len);
+  result->data_[new_len] = '\0';
+  return result;
 }
 
 }  // namespace os_path

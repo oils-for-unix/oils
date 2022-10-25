@@ -23,18 +23,6 @@ inline int RoundUp(int n) {
   return n;
 }
 
-template <typename T>
-inline void InitSlabCell(Obj* obj) {
-  // log("SCANNED");
-  obj->heap_tag_ = Tag::Scanned;
-}
-
-template <>
-inline void InitSlabCell<int>(Obj* obj) {
-  // log("OPAQUE");
-  obj->heap_tag_ = Tag::Opaque;
-}
-
 // don't include items_[1]
 const int kSlabHeaderSize = sizeof(Obj);
 
@@ -42,8 +30,10 @@ const int kSlabHeaderSize = sizeof(Obj);
 template <typename T>
 class Slab : public Obj {
  public:
-  explicit Slab(int obj_len) : Obj(0, 0, obj_len) {
-    InitSlabCell<T>(this);
+  // slabs of pointers are scanned; slabs of ints/bools are opaque.
+  explicit Slab(int obj_len)
+      : Obj(std::is_pointer<T>() ? Tag::Scanned : Tag::Opaque, kZeroMask,
+            obj_len) {
   }
   T items_[1];  // variable length
 };

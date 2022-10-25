@@ -11,33 +11,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/common.sh  # CLANGXX
 
-# Some tests don't express proper dependencies, and need this.
-gen-asdl() {
-  ninja \
-    _gen/asdl/hnode.asdl.h \
-    _gen/frontend/types.asdl.h \
-    _gen/core/runtime.asdl.h \
-    _gen/frontend/syntax.asdl.h
-}
-
-gen-oil-native-sh() {
-  PYTHONPATH=. build/ninja_main.py shell
-  chmod +x _build/oil-native.sh
-}
-
-all() {
-  ./NINJA-config.sh
-
-  # Needed for release tarball
-  gen-oil-native-sh
-
-  #time ninja -j 1 _bin/cxx-dbg/osh_eval
-  time ninja _bin/cxx-dbg/osh_eval
-  echo
-
-  ls -l _bin/*/osh_eval*
-}
-
 compile-quickly() {
   ### For the fast possible development experience
 

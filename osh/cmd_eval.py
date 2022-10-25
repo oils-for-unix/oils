@@ -87,7 +87,7 @@ if TYPE_CHECKING:
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
-  from osh import builtin_trap
+  from osh.builtin_trap import TrapState
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -114,11 +114,6 @@ class Deps(object):
     self.mutable_opts = None  # type: state.MutableOpts
     self.dumper = None        # type: dev.CrashDumper
     self.debug_f = None       # type: util._DebugFile
-
-    # signal/hook name -> handler
-    self.traps = None         # type: Dict[str, builtin_trap._TrapHandler]
-    # appended to by signal handlers
-    self.trap_nodes = None    # type: List[command_t]
 
 
 if mylib.PYTHON:
@@ -261,6 +256,7 @@ class CommandEvaluator(object):
                assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
                arena,            # type: Arena
                cmd_deps,         # type: Deps
+               trap_state,       # type: TrapState
   ):
     # type: (...) -> None
     """
@@ -290,8 +286,7 @@ class CommandEvaluator(object):
     self.dumper = cmd_deps.dumper
     self.debug_f = cmd_deps.debug_f  # Used by ShellFuncAction too
 
-    self.traps = cmd_deps.traps
-    self.trap_nodes = cmd_deps.trap_nodes
+    self.trap_state = trap_state
 
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
@@ -1433,14 +1428,13 @@ class CommandEvaluator(object):
   def RunPendingTraps(self):
     # type: () -> None
 
-    # See osh/builtin_trap.py _TrapHandler for the code that appends to this
+    # See osh/builtin_trap.py SignalState for the code that populates this
     # list.
-    if len(self.trap_nodes):
-      # Make a copy and clear it so we don't cause an infinite loop.
-      to_run = list(self.trap_nodes)
-      del self.trap_nodes[:]
+    trap_nodes = self.trap_state.TakeRunList()
+
+    if len(trap_nodes):
       with state.ctx_Option(self.mutable_opts, [option_i._running_trap], True):
-        for trap_node in to_run:
+        for trap_node in trap_nodes:
           # Isolate the exit status.
           with state.ctx_Registers(self.mem): 
             # Trace it.  TODO: Show the trap kind too
@@ -1712,11 +1706,11 @@ class CommandEvaluator(object):
     Could use i & (n-1) == i & 255  because we have a power of 2.
     https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
     """
-    handler = self.traps.get('EXIT')
-    if handler:
+    node = self.trap_state.GetHook('EXIT')  # type: command_t
+    if node:
       with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
         try:
-          is_return, is_fatal = self.ExecuteAndCatch(handler.node)
+          is_return, is_fatal = self.ExecuteAndCatch(node)
         except util.UserExit as e:  # explicit exit
           mut_status[0] = e.status
           return

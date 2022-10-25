@@ -55,6 +55,10 @@ html-report() {
     --ignore-filename-regex 'greatest.h$' \
     --ignore-filename-regex '_gen/' \
     --ignore-filename-regex 'mycpp/demo' \
+    --ignore-filename-regex 'mycpp/examples' \
+    --ignore-filename-regex 'mycpp/smartptr' \
+    --ignore-filename-regex 'mycpp/cheney' \
+    --ignore-filename-regex 'mycpp/bump_leak' \
     --ignore-filename-regex 'prebuilt/' \
     --show-instantiation-summary \
     --instr-profile $merged \
@@ -114,9 +118,6 @@ log-files-index() {
 
 run-for-release() {
   ### Similar to cpp-coverage in soil/worker.sh
-
-  # Hack until we have proper dependencies
-  build/cpp.sh gen-asdl
 
   mycpp/TEST.sh unit-test-coverage
   mycpp/TEST.sh examples-coverage

@@ -215,8 +215,8 @@ class Umask(vm._Builtin):
         # NOTE: This happens if we have '8' or '9' in the input too.
         stderr_line("osh warning: umask with symbolic input isn't implemented")
         return 1
-      else:
-        posix.umask(new_mask)
-        return 0
+
+      posix.umask(new_mask)
+      return 0
 
     e_usage('umask: unexpected arguments')

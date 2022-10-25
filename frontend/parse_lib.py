@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (
     Token, compound_word, expr_t, word_t, redir, ArgList, name_type,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
-from _gen.oil_lang import grammar_nt
+from _devbuild.gen import grammar_nt
 
 from core.pyerror import p_die
 from core import state

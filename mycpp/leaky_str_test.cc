@@ -33,7 +33,7 @@ TEST test_str_creation() {
   ASSERT_EQ(7, len(s2));
   ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
 
-  Str* s3 = AllocStr(1);
+  Str* s3 = NewStr(1);
   ASSERT_EQ(1, len(s3));
   ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
 
@@ -43,7 +43,7 @@ TEST test_str_creation() {
   // function because it explicitly doesn't set the length!!
   /* Str* s4 = mylib::OverAllocatedStr(7); */
 
-  Str* s4 = AllocStr(7);
+  Str* s4 = NewStr(7);
   ASSERT_EQ(7, len(s4));
   ASSERT_EQ(0, memcmp("\0\0\0\0\0\0\0\0", s4->data_, 8));
 
@@ -888,7 +888,7 @@ TEST test_str_contains() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
@@ -909,6 +909,8 @@ int main(int argc, char** argv) {
   RUN_TEST(test_str_contains);
 
   RUN_TEST(test_str_helpers);
+
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END();
   return 0;

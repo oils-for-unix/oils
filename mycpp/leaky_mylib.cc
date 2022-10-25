@@ -1,14 +1,16 @@
-// clang-format off
-#include "mycpp/myerror.h"
-// clang-format on
-
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
 #include "mycpp/runtime.h"
 
+mylib::FormatStringer gBuf;
+
 namespace mylib {
+
+Str* StrFromBuf(const Buf& buf) {
+  return ::StrFromC(buf.data_, buf.len_);
+}
 
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
@@ -30,8 +32,8 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
     Str* s2 = nullptr;
     StackRoots _roots({&s1, &s2});
     // Allocate together to avoid 's' moving in between
-    s1 = AllocStr(len1);
-    s2 = AllocStr(len2);
+    s1 = NewStr(len1);
+    s2 = NewStr(len2);
 
     memcpy(s1->data_, s->data_, len1);
     memcpy(s2->data_, s->data_ + len1 + 1, len2);
@@ -39,18 +41,6 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
     return Tuple2<Str*, Str*>(s1, s2);
   } else {
     return Tuple2<Str*, Str*>(s, nullptr);
-  }
-}
-
-Str* BufWriter::getvalue() {
-  if (data_) {
-    Str* ret = ::StrFromC(data_, len_);
-    reset();  // Invalidate this instance
-    return ret;
-  } else {
-    // log('') translates to this
-    // Strings are immutable so we can do this.
-    return kEmptyString;
   }
 }
 
@@ -116,7 +106,7 @@ Str* BufLineReader::readline() {
     pos_ = buf_len;
   }
 
-  line = AllocStr(line_len);
+  line = NewStr(line_len);
   memcpy(line->data_, self->s_->data_ + orig_pos, line_len);
   assert(line->data_[line_len] == '\0');
   return line;
@@ -125,7 +115,106 @@ Str* BufLineReader::readline() {
 Writer* gStdout;
 Writer* gStderr;
 
+//
+// CFileWriter
+//
+
+void CFileWriter::write(Str* s) {
+  // note: throwing away the return value
+  fwrite(s->data_, sizeof(char), len(s), f_);
+}
+
+void CFileWriter::flush() {
+  ::fflush(f_);
+}
+
+bool CFileWriter::isatty() {
+  return ::isatty(fileno(f_));
+}
+
+// Buf
+//
+//
+
+void Buf::Extend(Str* s) {
+  int n = len(s);
+
+  assert(cap_ >= len_);
+  if (cap_ < len_ + n) {
+    cap_ = std::max(cap_ * 2, len_ + n);
+  }
+  // +1 for NUL.  TODO: consider making it a power of 2
+  data_ = static_cast<char*>(realloc(data_, cap_ + 1));
+
+  memcpy(data_ + len_, s->data_, n);
+  len_ += n;
+  data_[len_] = '\0';
+}
+
+void Buf::Invalidate() {
+  free(data_);
+  len_ = -1;
+  cap_ = -1;
+  data_ = nullptr;
+}
+
+//
+// BufWriter
+//
+
 void BufWriter::write(Str* s) {
+  int n = len(s);
+  if (n == 0) {
+    // preserve invariant that data_ == nullptr when len_ == 0
+    return;
+  }
+
+  buf_.Extend(s);
+}
+
+Str* BufWriter::getvalue() {
+  if (buf_.IsEmpty()) {  // if no write() methods are called, the result is ""
+    assert(buf_.data() == nullptr);
+    return kEmptyString;
+  } else {
+    assert(buf_.IsValid());  // Check for two INVALID getvalue() in a row
+
+    Str* ret = StrFromBuf(buf_);
+
+    buf_.Invalidate();
+
+    return ret;
+  }
+}
+
+//
+// FormatStringer
+//
+
+Str* FormatStringer::getvalue() {
+  if (data_) {
+    Str* ret = ::StrFromC(data_, len_);
+    reset();  // Invalidate this instance
+    return ret;
+  } else {
+    // log('') translates to this
+    // Strings are immutable so we can do this.
+    return kEmptyString;
+  }
+}
+
+void FormatStringer::write_const(const char* s, int len) {
+  int orig_len = len_;
+  len_ += len;
+  // data_ is nullptr at first
+  data_ = static_cast<char*>(realloc(data_, len_ + 1));
+
+  // Append to the end
+  memcpy(data_ + orig_len, s, len);
+  data_[len_] = '\0';
+}
+
+void FormatStringer::format_s(Str* s) {
   int orig_len = len_;
   int n = len(s);
   len_ += n;
@@ -148,26 +237,13 @@ void BufWriter::write(Str* s) {
   data_[len_] = '\0';
 }
 
-void BufWriter::write_const(const char* s, int len) {
-  int orig_len = len_;
+void FormatStringer::format_o(int i) {
+  data_ = static_cast<char*>(realloc(data_, len_ + kIntBufSize));
+  int len = snprintf(data_ + len_, kIntBufSize, "%o", i);
   len_ += len;
-  // data_ is nullptr at first
-  data_ = static_cast<char*>(realloc(data_, len_ + 1));
-
-  // Append to the end
-  memcpy(data_ + orig_len, s, len);
-  data_[len_] = '\0';
 }
 
-void BufWriter::format_s(Str* s) {
-  this->write(s);
-}
-
-void BufWriter::format_o(int i) {
-  NotImplemented();
-}
-
-void BufWriter::format_d(int i) {
+void FormatStringer::format_d(int i) {
   // extend to the maximum size
   data_ = static_cast<char*>(realloc(data_, len_ + kIntBufSize));
   int len = snprintf(data_ + len_, kIntBufSize, "%d", i);
@@ -179,7 +255,7 @@ void BufWriter::format_d(int i) {
 //
 // TODO: This could be replaced with QSN?  The upper bound is greater there
 // because of \u{}.
-void BufWriter::format_r(Str* s) {
+void FormatStringer::format_r(Str* s) {
   // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
   int n = len(s);
   int upper_bound = n * 4 + 2;
@@ -223,19 +299,6 @@ void BufWriter::format_r(Str* s) {
   // Shrink the buffer.  This is valid usage and GNU libc says it can actually
   // release.
   data_ = static_cast<char*>(realloc(data_, len_ + 1));
-}
-
-void CFileWriter::write(Str* s) {
-  // note: throwing away the return value
-  fwrite(s->data_, sizeof(char), len(s), f_);
-}
-
-void CFileWriter::flush() {
-  ::fflush(f_);
-}
-
-bool CFileWriter::isatty() {
-  return ::isatty(fileno(f_));
 }
 
 }  // namespace mylib

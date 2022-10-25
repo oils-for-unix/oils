@@ -1,12 +1,25 @@
-// libc.cc: Replacement for native/libcmodule.c
+// libc.cc: Replacement for pyext/libc.c
 
-#include "leaky_libc.h"
+#include "cpp/leaky_libc.h"
 
+#include <errno.h>
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
+#include <unistd.h>  // gethostname()
 
 namespace libc {
+
+Str* gethostname() {
+  Str* result = OverAllocatedStr(HOST_NAME_MAX);
+  int status = ::gethostname(result->data_, HOST_NAME_MAX);
+  if (status != 0) {
+    throw Alloc<OSError>(errno);
+  }
+  // Important: set the length of the string!
+  result->SetObjLenFromC();
+  return result;
+}
 
 List<Str*>* glob(Str* pat) {
   glob_t results;
@@ -48,14 +61,7 @@ List<Str*>* glob(Str* pat) {
   size_t i;
   for (i = 0; i < n; i++) {
     const char* m = results.gl_pathv[i];
-
-    // Make a copy so we own it.
-    size_t len = strlen(m);
-    char* buf = static_cast<char*>(malloc(len + 1));
-    memcpy(buf, m, len);
-    buf[len] = '\0';
-
-    matches->append(CopyBufferIntoNewStr(buf, len));
+    matches->append(StrFromC(m));
   }
   globfree(&results);
 
@@ -105,7 +111,7 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
 
 const int NMATCH = 2;
 
-// Why is this a Tuple2* and not Tuple2?
+// Odd: This a Tuple2* not Tuple2 because it's Optional[Tuple2]!
 Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   regex_t pat;
   regmatch_t m[NMATCH];

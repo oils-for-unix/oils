@@ -152,17 +152,21 @@ GLOBAL_STR(str143, "-");
 
 namespace ansi {  // forward declare
 
+
 }  // forward declare namespace ansi
 
 namespace cgi {  // forward declare
+
 
 }  // forward declare namespace cgi
 
 namespace qsn {  // forward declare
 
+
 }  // forward declare namespace qsn
 
 namespace ansi {  // declare
+
 extern Str* RESET;
 extern Str* BOLD;
 extern Str* UNDERLINE;
@@ -172,14 +176,18 @@ extern Str* GREEN;
 extern Str* YELLOW;
 extern Str* BLUE;
 
+
 }  // declare namespace ansi
 
 namespace cgi {  // declare
+
 Str* escape(Str* s);
+
 
 }  // declare namespace cgi
 
 namespace qsn {  // declare
+
 extern int BIT8_UTF8;
 extern int BIT8_U_ESCAPE;
 extern int BIT8_X_ESCAPE;
@@ -207,9 +215,11 @@ extern int B4_3;
 bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts);
 Str* maybe_qtt_encode(Str* s, int bit8_display);
 
+
 }  // declare namespace qsn
 
 namespace runtime {  // define
+
 using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::color_t;
@@ -238,6 +248,7 @@ Str* FALSE_STR = str4;
 }  // define namespace runtime
 
 namespace format {  // define
+
 namespace hnode_e = hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
 using hnode_asdl::hnode__Record;
@@ -258,7 +269,8 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
   }
 }
 
-ColorOutput::ColorOutput(mylib::Writer* f) : Obj(Tag::FixedSize, kZeroMask, sizeof(ColorOutput)) {
+ColorOutput::ColorOutput(mylib::Writer* f) 
+    : Obj(Tag::FixedSize, maskof_ColorOutput(), sizeof(ColorOutput))  {
   this->f = f;
   this->num_chars = 0;
 }
@@ -426,7 +438,8 @@ void AnsiOutput::PopColor() {
 }
 int INDENT = 2;
 
-_PrettyPrinter::_PrettyPrinter(int max_col) : Obj(Tag::FixedSize, kZeroMask, sizeof(_PrettyPrinter)) {
+_PrettyPrinter::_PrettyPrinter(int max_col) 
+    : Obj(Tag::FixedSize, kZeroMask, sizeof(_PrettyPrinter))  {
   this->max_col = max_col;
 }
 
@@ -751,6 +764,7 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 }  // define namespace format
 
 namespace ansi {  // define
+
 Str* RESET = str37;
 Str* BOLD = str38;
 Str* UNDERLINE = str39;
@@ -764,6 +778,7 @@ Str* BLUE = str44;
 
 namespace cgi {  // define
 
+
 Str* escape(Str* s) {
   StackRoots _roots({&s});
 
@@ -776,6 +791,7 @@ Str* escape(Str* s) {
 }  // define namespace cgi
 
 namespace qsn {  // define
+
 int BIT8_UTF8 = 0;
 int BIT8_U_ESCAPE = 1;
 int BIT8_X_ESCAPE = 2;
@@ -1179,6 +1195,7 @@ Str* maybe_qtt_encode(Str* s, int bit8_display) {
 }  // define namespace qsn
 
 namespace args {  // define
+
 namespace value = runtime_asdl::value;
 namespace value_e = runtime_asdl::value_e;
 using runtime_asdl::value_t;
@@ -1191,7 +1208,8 @@ int Int = 2;
 int Float = 3;
 int Bool = 4;
 
-_Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) : Obj(Tag::FixedSize, kZeroMask, sizeof(_Attributes)) {
+_Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) 
+    : Obj(Tag::FixedSize, maskof__Attributes(), sizeof(_Attributes))  {
   this->attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
@@ -1218,7 +1236,8 @@ void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
   this->attrs->set(name, val);
 }
 
-Reader::Reader(List<Str*>* argv, List<int>* spids) : Obj(Tag::FixedSize, kZeroMask, sizeof(Reader)) {
+Reader::Reader(List<Str*>* argv, List<int>* spids) 
+    : Obj(Tag::FixedSize, maskof_Reader(), sizeof(Reader))  {
   this->argv = argv;
   this->spids = spids;
   this->n = len(argv);
@@ -1314,7 +1333,8 @@ int Reader::SpanId() {
   }
 }
 
-_Action::_Action() : Obj(Tag::FixedSize, kZeroMask, sizeof(_Action)) {
+_Action::_Action() 
+    : Obj(Tag::FixedSize, kZeroMask, sizeof(_Action))  {
   ;  // pass
 }
 
@@ -1324,7 +1344,8 @@ bool _Action::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes*
   throw Alloc<NotImplementedError>();
 }
 
-_ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid) {
+_ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid)  {
+  field_mask_ |= maskof__ArgAction();
   this->name = name;
   this->quit_parsing_flags = quit_parsing_flags;
   this->valid = valid;
@@ -1406,7 +1427,8 @@ runtime_asdl::value_t* SetToString::_Value(Str* arg, int span_id) {
   return Alloc<value::Str>(arg);
 }
 
-SetAttachedBool::SetAttachedBool(Str* name) {
+SetAttachedBool::SetAttachedBool(Str* name)  {
+  field_mask_ |= maskof_SetAttachedBool();
   this->name = name;
 }
 
@@ -1434,7 +1456,8 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
   return false;
 }
 
-SetToTrue::SetToTrue(Str* name) {
+SetToTrue::SetToTrue(Str* name)  {
+  field_mask_ |= maskof_SetToTrue();
   this->name = name;
 }
 
@@ -1445,7 +1468,8 @@ bool SetToTrue::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
   return false;
 }
 
-SetOption::SetOption(Str* name) {
+SetOption::SetOption(Str* name)  {
+  field_mask_ |= maskof_SetOption();
   this->name = name;
 }
 
@@ -1458,7 +1482,8 @@ bool SetOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
   return false;
 }
 
-SetNamedOption::SetNamedOption(bool shopt) {
+SetNamedOption::SetNamedOption(bool shopt)  {
+  field_mask_ |= maskof_SetNamedOption();
   this->names = Alloc<List<Str*>>();
   this->shopt = shopt;
 }
@@ -1492,7 +1517,8 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   return false;
 }
 
-SetAction::SetAction(Str* name) {
+SetAction::SetAction(Str* name)  {
+  field_mask_ |= maskof_SetAction();
   this->name = name;
 }
 
@@ -1503,7 +1529,8 @@ bool SetAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
   return false;
 }
 
-SetNamedAction::SetNamedAction() {
+SetNamedAction::SetNamedAction()  {
+  field_mask_ |= maskof_SetNamedAction();
   this->names = Alloc<List<Str*>>();
 }
 

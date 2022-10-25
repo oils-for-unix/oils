@@ -19,8 +19,7 @@ example-main() {
 
   cat <<EOF
 int main(int argc, char **argv) {
-  gHeap.Init(128 << 10);  // 128 KiB; doubling in size
-  // gHeap.Init(400 << 20);  // 400 MiB to avoid garbage collection
+  gHeap.Init();
 
   char* b = getenv("BENCHMARK");
   if (b && strlen(b)) {  // match Python's logic
@@ -31,7 +30,7 @@ int main(int argc, char **argv) {
   }
 
   gBuf.reset();  // free internal buffer for fmtX()
-  gHeap.Collect();
+  gHeap.CleanProcessExit();  // for return value rooting
 }
 EOF
 }
@@ -44,7 +43,8 @@ int main(int argc, char **argv) {
 
   complain_loudly_on_segfault();
 
-  gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc.cc
+  // So big that we don't trigger collection
+  gHeap.Init(400 << 20);
 
   // NOTE(Jesse): Turn off buffered IO
   setvbuf(stdout, 0, _IONBF, 0);
@@ -70,11 +70,8 @@ int main(int argc, char **argv) {
     status = $name::main(args);
   }
 
-  gHeap.Collect();
+  gHeap.FastProcessExit();
 
-#ifdef DUMB_ALLOC
-  dumb_alloc::Summarize();
-#endif
   return status;
 }
 EOF
@@ -88,21 +85,40 @@ gen-osh-eval() {
   local tmp=_build/tmp
   mkdir -p $tmp
 
-  local raw=$tmp/osh_eval_raw.cc
+  local raw_cc=$tmp/osh_eval_raw.cc
   local cc_out=${out_prefix}.cc
 
-  local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
-  _bin/shwrap/mycpp_main $mypypath $raw "$@"
+  local raw_header=$tmp/osh_eval_raw.h
+  local header_out=${out_prefix}.h
 
-  { 
-    local name='osh_eval'
-    cat <<EOF
+  local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
+  _bin/shwrap/mycpp_main $mypypath $raw_cc \
+    --header-out $raw_header \
+    "$@"
+    #--to-header osh.cmd_eval \
+
+  local name='osh_eval'
+
+  { echo "// $name.h: translated from Python by mycpp"
+    echo
+    echo '#ifndef OSH_EVAL_MYCPP_H'
+    echo '#define OSH_EVAL_MYCPP_H'
+
+    cat $raw_header
+
+    echo '#endif  // OSH_EVAL_MYCPP_H'
+
+  } > $header_out
+
+  { cat <<EOF
 // $name.cc: translated from Python by mycpp
+
+// #include "$header_out"
 
 #include "cpp/leaky_preamble.h"  // hard-coded stuff
 EOF
 
-    cat $raw
+    cat $raw_cc
 
     osh-eval-main $name
   } > $cc_out

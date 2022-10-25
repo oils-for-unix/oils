@@ -59,9 +59,24 @@ TEST int_to_str_test() {
 }
 
 TEST writer_test() {
-  // Demonstrate bug with inheritance
-  log("obj obj_len %d", offsetof(Obj, obj_len_));
-  log("buf obj_len %d", offsetof(mylib::BufWriter, obj_len_));
+  // Demonstrate vtable offset issue
+  //
+  // The ObjHeader() function in the garbage collector accounts for this
+  log("offset of obj_len in Obj = %d", offsetof(Obj, obj_len_));
+  log("offset of obj_len in mylib::BufWriter = %d",
+      offsetof(mylib::BufWriter, obj_len_));
+
+  mylib::BufWriter* writer = nullptr;
+  Str* s = nullptr;
+  StackRoots _roots({&writer, &s});
+
+  writer = Alloc<mylib::BufWriter>();
+  writer->write(StrFromC("foo"));
+  writer->write(StrFromC("bar"));
+
+  s = writer->getvalue();
+  ASSERT(str_equals0("foobar", s));
+  log("result = %s", s->data());
 
   PASS();
 }
@@ -208,7 +223,7 @@ TEST test_mylib_funcs() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
@@ -221,7 +236,7 @@ int main(int argc, char** argv) {
   RUN_TEST(buf_line_reader_test);
   RUN_TEST(files_test);
 
-  gHeap.Collect();
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
 

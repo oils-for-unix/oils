@@ -316,6 +316,18 @@ TEST test_list_tuple() {
   PASS();
 }
 
+TEST test_list_copy() {
+  List<int>* a = NewList<int>(std::initializer_list<int>{1, 2, 3});
+  List<int>* b = list(a);
+
+  ASSERT_EQ(b->len_, a->len_);
+  ASSERT_EQ(b->index_(0), a->index_(0));
+  ASSERT_EQ(b->index_(1), a->index_(1));
+  ASSERT_EQ(b->index_(2), a->index_(2));
+
+  PASS();
+}
+
 #define PRINT_STRING(str) printf("(%.*s)\n", len(str), (str)->data_)
 
 #define PRINT_LIST(list)                                         \
@@ -439,7 +451,7 @@ TEST test_str_join() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
   RUN_TEST(test_sizeof);
@@ -450,10 +462,12 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_list_contains);
   RUN_TEST(test_list_tuple);
+  RUN_TEST(test_list_copy);
 
   RUN_TEST(test_str_split);
-
   RUN_TEST(test_str_join);
+
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END();
   return 0;

@@ -1,3 +1,3 @@
 oil-version.txt oil-version.txt 
-_gen/oil_lang/grammar.marshal _gen/oil_lang/grammar.marshal
+_devbuild/gen/grammar.marshal _devbuild/gen/grammar.marshal
 

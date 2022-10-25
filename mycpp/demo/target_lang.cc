@@ -21,16 +21,16 @@
 #include <unordered_map>
 #include <vector>
 
-#include "cpp/dumb_alloc.h"
-#define MYLIB_LEGACY 1
-#include "mycpp/gc_heap.h"
+//#include "cpp/dumb_alloc.h"
+#include "mycpp/runtime.h"
+#include "mycpp/smartptr.h"
 #include "vendor/greatest.h"
 
 using std::unordered_map;
 
-class List {
+class MyList {
  public:
-  List(std::initializer_list<int> init) : v_() {
+  MyList(std::initializer_list<int> init) : v_() {
     for (int i : init) {
       v_.push_back(i);
     }
@@ -153,9 +153,9 @@ TEST template_demo() {
   a.append(3);
   log("a.size() = %d", a.size());
 
-  Array<List*> a2;
-  a2.append(NewList{1, 2, 3});
-  a2.append(NewList{4, 5, 6});
+  Array<MyList*> a2;
+  a2.append(new MyList{1, 2, 3});
+  a2.append(new MyList{4, 5, 6});
   log("a2.size() = %d", a2.size());
 
   PASS();
@@ -321,7 +321,7 @@ TEST sizeof_demo() {
 }
 
 TEST test_misc() {
-  List l{1, 2, 3};
+  MyList l{1, 2, 3};
   log("size: %d", l.v_.size());
   log("");
 
@@ -332,7 +332,7 @@ TEST test_misc() {
   expr::Const c(42);
   log("expr::Const = %d", c.i_);
 
-  dumb_alloc::Summarize();
+  // dumb_alloc::Summarize();
 
   PASS();
 }
@@ -491,9 +491,9 @@ TEST field_mask_demo() {
 }
 
 // https://stackoverflow.com/questions/7405740/how-can-i-initialize-base-class-member-variables-in-derived-class-constructor
-class Base : public gc_heap::Obj {
+class Base : public Obj {
  public:
-  Base(int i) : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), i(i) {
+  Base(int i) : Obj(Tag::FixedSize, kZeroMask, 0), i(i) {
     // annoying: should be in initializer list
     // maybe only do this if there's inheritance!
     field_mask_ = 0x9;
@@ -513,9 +513,7 @@ class Derived : public Base {
   Node* three;
 };
 
-using gc_heap::Alloc;
-using gc_heap::Local;
-
+#if 0
 TEST inheritance_demo() {
   Local<Base> b = Alloc<Base>(2);
   Local<Derived> d = Alloc<Derived>(4, 5);
@@ -530,6 +528,7 @@ TEST inheritance_demo() {
 
   PASS();
 }
+#endif
 
 char* realloc(char* buf, size_t num_bytes) {
   void* result = mmap(nullptr, num_bytes, PROT_READ | PROT_WRITE,
@@ -584,7 +583,7 @@ TEST comma_demo() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gc_heap::gHeap.Init(1 << 20);
+  gHeap.Init(1 << 20);
 
   GREATEST_MAIN_BEGIN();
 
@@ -601,7 +600,7 @@ int main(int argc, char** argv) {
   RUN_TEST(enum_demo);
   RUN_TEST(field_mask_demo);
   // RUN_TEST(inheritance_demo);
-  //
+
   RUN_TEST(mmap_demo);
   RUN_TEST(comma_demo);
 

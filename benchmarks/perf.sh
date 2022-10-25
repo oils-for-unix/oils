@@ -202,6 +202,14 @@ profile-example() {
   BENCHMARK=1 profile-cpp "example-$example" $mode $bin
 }
 
+profile-hash-table() {
+  local mode=${1:-graph}
+
+  local bin='_bin/cxx-opt/mycpp/hash_table'
+  ninja $bin
+  profile-cpp 'hash_table' $mode $bin -t hash_speed_test
+}
+
 # Perf note: Without -o, for some reason osh output is shown on the console.
 # It doesn't go to wc?
 #perf record -o perf.data -- _bin/osh -n benchmarks/testdata/abuild | wc -l

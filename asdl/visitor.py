@@ -85,9 +85,6 @@ def _ReflowLines(s, depth):
   padding = ""
   while len(cur) > size:
     i = cur.rfind(' ', 0, size)
-    # XXX this should be fixed for real
-    if i == -1 and 'GeneratorExp' in cur:
-      i = size + 3
     if i == -1:
       if 0:
         print("Warning: No space to reflow line (size=%d, depth=%d, cur=%r): %r"

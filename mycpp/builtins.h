@@ -9,57 +9,76 @@
 
 class Str;
 
-class IndexError {};
-class ValueError {};
-class KeyError {};
-
-class EOFError {};
-
-class NotImplementedError {
+class _ExceptionOpaque : public Obj {
  public:
-  NotImplementedError() {
-  }
-  explicit NotImplementedError(int i) {  // e.g. in expr_to_ast
-  }
-  explicit NotImplementedError(const char* s) {
-  }
-  explicit NotImplementedError(Str* s) {
+  _ExceptionOpaque() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
   }
 };
 
-class AssertionError {
+// mycpp removes constructor arguments
+class AssertionError : public _ExceptionOpaque {};
+
+class IndexError : public _ExceptionOpaque {};
+
+class ValueError : public _ExceptionOpaque {};
+
+class KeyError : public _ExceptionOpaque {};
+
+class EOFError : public _ExceptionOpaque {};
+
+class KeyboardInterrupt : public _ExceptionOpaque {};
+
+// TODO: we could eliminate args to NotImplementedError, like we do for
+// AssertionError
+class NotImplementedError : public _ExceptionOpaque {
  public:
-  AssertionError() {
+  NotImplementedError() : _ExceptionOpaque() {
   }
-  explicit AssertionError(int i) {  // e.g. in expr_to_ast
+  // used in expr_to_ast
+  explicit NotImplementedError(int i) : _ExceptionOpaque() {
   }
-  explicit AssertionError(const char* s) {
+  // called with Id_str()
+  explicit NotImplementedError(const char* s) : _ExceptionOpaque() {
   }
-  explicit AssertionError(Str* s) {
+  explicit NotImplementedError(Str* s) : _ExceptionOpaque() {
   }
 };
 
-// Python's RuntimeError looks like this.  . libc::regex_match and other
-// bindings raise it.
-class RuntimeError {
+// libc::regex_match and other bindings raise RuntimeError
+class RuntimeError : public Obj {
  public:
-  explicit RuntimeError(Str* message) : message(message) {
-  }
+  explicit RuntimeError(Str* message);
   Str* message;
 };
 
-// TODO: remove this.  cmd_eval.py RunOilProc uses it, which we probably
-// don't need
-class TypeError {
+constexpr uint16_t maskof_RuntimeError() {
+  return maskbit(offsetof(RuntimeError, message));
+}
+
+inline RuntimeError::RuntimeError(Str* message)
+    : Obj(Tag::FixedSize, maskof_RuntimeError(), kNoObjLen), message(message) {
+}
+
+// Python 2 has a dubious distinction between IOError and OSError, so mycpp
+// generates this base class to catch both.
+class IOError_OSError : public _ExceptionOpaque {
  public:
-  explicit TypeError(Str* arg) {
-    assert(0);
+  explicit IOError_OSError(int err_num) : _ExceptionOpaque(), errno_(err_num) {
+  }
+  int errno_;
+};
+
+class IOError : public IOError_OSError {
+ public:
+  explicit IOError(int err_num) : IOError_OSError(err_num) {
   }
 };
 
-class KeyboardInterrupt {};
-
-Str* AllocStr(int len);
+class OSError : public IOError_OSError {
+ public:
+  explicit OSError(int err_num) : IOError_OSError(err_num) {
+  }
+};
 
 void print(Str* s);
 
@@ -79,7 +98,12 @@ inline Str* str(double f) {
 
 Str* str(int i);
 
-bool _str_to_int(Str* s, int* result, int base);  // for testing only
+// Helper function: returns whether the string is a valid integer, and
+// populates the result.  (Also used by marksweep_heap.cc; could be moved
+// there)
+bool StringToInteger(char* s, int len, int base, int* result);
+
+// String to integer, raising ValueError if invalid
 int to_int(Str* s);
 int to_int(Str* s, int base);
 
@@ -99,10 +123,12 @@ inline bool to_bool(int i) {
 
 bool str_contains(Str* haystack, Str* needle);
 
-// mycpp doesn't understand dynamic format strings yet
+extern Str* kEmptyString;
+
+// Function that mycpp generates for non-constant format strings
+// TODO: switch back to a printf interpreter
 inline Str* dynamic_fmt_dummy() {
-  Str* Result = AllocStr(1);
-  return Result;
+  return kEmptyString;
 }
 
 #endif  // GC_BUILTINS_H

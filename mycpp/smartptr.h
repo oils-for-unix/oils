@@ -1,4 +1,4 @@
-// OLD UNUSED CODE
+// mycpp/smartptr.h: OLD UNUSED CODE
 
 #include <assert.h>
 
@@ -16,16 +16,12 @@ class Local {
 
   // IMPLICIT conversion.  No 'explicit'.
   explicit Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
-    // TODO(Jesse): Does this get called?
-    // Is this NotImplemented() or InvalidCodePath() ??
     assert(0);
     // gHeap.PushRoot(this);
   }
 
   // Copy constructor, e.g. f(mylocal) where f(Local<T> param);
   explicit Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
-    // TODO(Jesse): Does this get called?
-    // Is this NotImplemented() or InvalidCodePath() ??
     assert(0);
     // gHeap.PushRoot(this);
   }

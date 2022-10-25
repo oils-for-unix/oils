@@ -27,7 +27,7 @@ TEST qsn_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
@@ -35,6 +35,8 @@ int main(int argc, char** argv) {
   for (int i = 0; i < 10; ++i) {
     RUN_TEST(qsn_test);
   }
+
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

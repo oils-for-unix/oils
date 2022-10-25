@@ -1,5 +1,5 @@
-#ifndef GC_DICT_H
-#define GC_DICT_H
+#ifndef MYCPP_GC_DICT_H
+#define MYCPP_GC_DICT_H
 
 #include "mycpp/comparators.h"
 
@@ -48,7 +48,7 @@ class _DummyDict {
   void* values_;
 };
 
-// A list has one Slab pointer which we need to follow.
+// A dict has 3 pointers the GC needs to follow.
 constexpr uint16_t maskof_Dict() {
   return maskbit(offsetof(_DummyDict, entry_)) |
          maskbit(offsetof(_DummyDict, keys_)) |
@@ -434,4 +434,4 @@ class DictIter {
   int pos_;
 };
 
-#endif
+#endif  // MYCPP_GC_DICT_H

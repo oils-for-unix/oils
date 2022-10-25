@@ -1,14 +1,13 @@
-#ifndef STR_TYPES_H
-#define STR_TYPES_H
+#ifndef MYCPP_GC_STR_H
+#define MYCPP_GC_STR_H
 
 template <typename T>
 class List;
 
 class Str : public Obj {
  public:
-  // Don't call this directly.  Call AllocStr() instead, which calls this.
+  // Don't call this directly.  Call NewStr() instead, which calls this.
   Str() : Obj(Tag::Opaque, kZeroMask, 0) {
-    // log("GC Str()");
   }
 
   char* data() {
@@ -16,6 +15,11 @@ class Str : public Obj {
   }
 
   void SetObjLenFromStrLen(int str_len);
+
+  // Useful for getcwd() + PATH_MAX, gethostname() + HOSTNAME_MAX, etc.
+  void SetObjLenFromC() {
+    SetObjLenFromStrLen(strlen(data_));
+  }
 
   Str* index_(int i);
 
@@ -76,17 +80,13 @@ class Str : public Obj {
 
 constexpr int kStrHeaderSize = offsetof(Str, data_);
 
-inline int len(const Str* s) {
-  // NOTE(Jesse): Not sure if 0-length strings should be allowed, but we
-  // currently don't hit this assertion, so I would think not?
-  assert(s->obj_len_ >= kStrHeaderSize - 1);
-
-  return s->obj_len_ - kStrHeaderSize - 1;
-}
-
 inline void Str::SetObjLenFromStrLen(int str_len) {
   obj_len_ = kStrHeaderSize + str_len + 1;
-  /* assert(len(this) == str_len); */
+}
+
+inline int len(const Str* s) {
+  assert(s->obj_len_ >= kStrHeaderSize - 1);
+  return s->obj_len_ - kStrHeaderSize - 1;
 }
 
 // Notes:
@@ -100,15 +100,19 @@ inline void Str::SetObjLenFromStrLen(int str_len) {
 // require mycpp to generate 2 statements everywhere.
 //
 
-inline Str* AllocStr(int len) {
+inline Str* NewStr(int len) {
+  // RootingScope omitted for PASS THROUGH
   int obj_len = kStrHeaderSize + len + 1;
+
+  // only allocation is unconditionally returned
   void* place = gHeap.Allocate(obj_len);
+
   auto s = new (place) Str();
   s->SetObjLen(obj_len);
   return s;
 }
 
-// Like AllocStr, but allocate more than you need, e.g. for snprintf() to write
+// Like NewStr, but allocate more than you need, e.g. for snprintf() to write
 // into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
@@ -118,7 +122,8 @@ inline Str* OverAllocatedStr(int len) {
 }
 
 inline Str* StrFromC(const char* data, int len) {
-  Str* s = AllocStr(len);
+  // RootingScope omitted for PASS THROUGH
+  Str* s = NewStr(len);
   memcpy(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
 
@@ -126,17 +131,8 @@ inline Str* StrFromC(const char* data, int len) {
 }
 
 inline Str* StrFromC(const char* data) {
+  // RootingScope omitted for PASS THROUGH
   return StrFromC(data, strlen(data));
-}
-
-inline Str* CopyBufferIntoNewStr(char* buf) {
-  Str* s = StrFromC(buf);
-  return s;
-}
-
-inline Str* CopyBufferIntoNewStr(char* buf, unsigned int buf_len) {
-  Str* s = StrFromC(buf, buf_len);
-  return s;
 }
 
 // NOTE: This iterates over bytes.
@@ -158,7 +154,7 @@ class StrIter {
   }
   Str* Value() {  // similar to index_()
     // TODO: create 256 GLOBAL_STR() and return those instead!
-    Str* result = AllocStr(1);
+    Str* result = NewStr(1);
     result->data_[0] = s_->data_[i_];
     // assert(result->data_[1] == '\0');
     return result;
@@ -174,7 +170,6 @@ class StrIter {
 
 bool maybe_str_equals(Str* left, Str* right);
 
-// TODO(Jesse): Where should this go?  Certainly not here..
 extern Str* kEmptyString;
 
 template <int N>
@@ -203,4 +198,4 @@ class GlobalStr {
       Tag::Global, 0, kZeroMask, kStrHeaderSize + sizeof(val), -1, val}; \
   Str* name = reinterpret_cast<Str*>(&_##name);
 
-#endif  // STR_TYPES_H
+#endif  // MYCPP_GC_STR_H

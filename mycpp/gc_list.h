@@ -1,5 +1,5 @@
-#ifndef LIST_TYPES_H
-#define LIST_TYPES_H
+#ifndef MYCPP_GC_LIST_H
+#define MYCPP_GC_LIST_H
 
 #include <algorithm>  // sort() is templated
 
@@ -86,14 +86,8 @@ class List : public Obj {
   // Ensure that there's space for a number of items
   void reserve(int n);
 
-  // Append a single element to this list.  Must be specialized List<int> vs
-  // List<Str*>.
-  //
-  // NOTE(Jesse): The 'must be a specialized List<int> vs List<Str*>' part of
-  // the comment above is correct, however the entirety of the codebase
-  // completely ignores it.  See @template_specialization_append_pointer for
-  // more details and the solution.
-  //
+  // Append a single element to this list.  Calls free function list_append(),
+  // which has pointer and non-pointer specializations.
   void append(T item);
 
   // Extend this list with multiple elements.
@@ -195,9 +189,8 @@ inline int int_cmp(int a, int b) {
 inline int str_cmp(Str* a, Str* b);
 inline bool _cmp(Str* a, Str* b);
 
-// NOTE(Jesse): Move to gc_dict_impl once I get there
 template <typename K, typename V>
-class Dict;
+class Dict;  // forward decl
 
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d);
@@ -333,8 +326,6 @@ T List<T>::pop() {
 
 // Used in osh/word_parse.py to remove from front
 // TODO: Don't accept an arbitrary index?
-//
-// NOTE(Jesse): This operation is typically called 'shift' I think
 template <typename T>
 T List<T>::pop(int i) {
   assert(len_ > 0);
@@ -390,11 +381,6 @@ void List<T>::extend(List<T>* other) {
   self->len_ = new_len;
 }
 
-// NOTE(Jesse): It's highly sus that we have str_equals and str_cmp..
-// shouldn't we write one in terms of the other?
-//
-// @duplicate_string_compare_code
-//
 // Used by [[ a > b ]] and so forth
 inline int str_cmp(Str* a, Str* b) {
   int len_a = len(a);
@@ -485,10 +471,6 @@ inline bool list_contains(List<T>* haystack, T needle) {
   return false;
 }
 
-// NOTE(Jesse): Move to gc_dict_impl once I get there
-template <typename K, typename V>
-class Dict;
-
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d) {
   auto keys = d->keys();
@@ -500,9 +482,7 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
 template <typename T>
 List<T>* list(List<T>* other) {
   auto result = NewList<T>();
-  for (int i = 0; i < len(other); ++i) {
-    result->set(i, other->index_(i));
-  }
+  result->extend(other);
   return result;
 }
 
@@ -561,4 +541,4 @@ class ReverseListIter {
   int i_;
 };
 
-#endif  // LIST_TYPES_H
+#endif  // MYCPP_GC_LIST_H

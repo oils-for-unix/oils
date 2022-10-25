@@ -99,17 +99,21 @@ GLOBAL_STR(str90, "\\0");
 
 namespace ansi {  // forward declare
 
+
 }  // forward declare namespace ansi
 
 namespace cgi {  // forward declare
+
 
 }  // forward declare namespace cgi
 
 namespace qsn {  // forward declare
 
+
 }  // forward declare namespace qsn
 
 namespace ansi {  // declare
+
 extern Str* RESET;
 extern Str* BOLD;
 extern Str* UNDERLINE;
@@ -119,14 +123,18 @@ extern Str* GREEN;
 extern Str* YELLOW;
 extern Str* BLUE;
 
+
 }  // declare namespace ansi
 
 namespace cgi {  // declare
+
 Str* escape(Str* s);
+
 
 }  // declare namespace cgi
 
 namespace qsn {  // declare
+
 extern int BIT8_UTF8;
 extern int BIT8_U_ESCAPE;
 extern int BIT8_X_ESCAPE;
@@ -154,9 +162,11 @@ extern int B4_3;
 bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts);
 Str* maybe_qtt_encode(Str* s, int bit8_display);
 
+
 }  // declare namespace qsn
 
 namespace runtime {  // define
+
 using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::color_t;
@@ -185,6 +195,7 @@ Str* FALSE_STR = str4;
 }  // define namespace runtime
 
 namespace format {  // define
+
 namespace hnode_e = hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
 using hnode_asdl::hnode__Record;
@@ -205,7 +216,8 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
   }
 }
 
-ColorOutput::ColorOutput(mylib::Writer* f) : Obj(Tag::FixedSize, kZeroMask, sizeof(ColorOutput)) {
+ColorOutput::ColorOutput(mylib::Writer* f) 
+    : Obj(Tag::FixedSize, maskof_ColorOutput(), sizeof(ColorOutput))  {
   this->f = f;
   this->num_chars = 0;
 }
@@ -373,7 +385,8 @@ void AnsiOutput::PopColor() {
 }
 int INDENT = 2;
 
-_PrettyPrinter::_PrettyPrinter(int max_col) : Obj(Tag::FixedSize, kZeroMask, sizeof(_PrettyPrinter)) {
+_PrettyPrinter::_PrettyPrinter(int max_col) 
+    : Obj(Tag::FixedSize, kZeroMask, sizeof(_PrettyPrinter))  {
   this->max_col = max_col;
 }
 
@@ -698,6 +711,7 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 }  // define namespace format
 
 namespace ansi {  // define
+
 Str* RESET = str37;
 Str* BOLD = str38;
 Str* UNDERLINE = str39;
@@ -711,6 +725,7 @@ Str* BLUE = str44;
 
 namespace cgi {  // define
 
+
 Str* escape(Str* s) {
   StackRoots _roots({&s});
 
@@ -723,6 +738,7 @@ Str* escape(Str* s) {
 }  // define namespace cgi
 
 namespace qsn {  // define
+
 int BIT8_UTF8 = 0;
 int BIT8_U_ESCAPE = 1;
 int BIT8_X_ESCAPE = 2;

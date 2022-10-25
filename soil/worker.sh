@@ -89,6 +89,17 @@ dump-user-host() {
   echo
 }
 
+py-all-and-ninja() {
+  ### baseline for most tasks
+
+  build/py.sh all
+  ./NINJA-config.sh
+}
+
+ninja-config() {
+  ./NINJA-config.sh
+}
+
 dummy-tasks() {
   ### Print tasks that execute quickly
 
@@ -159,6 +170,17 @@ interactive         test/interactive.sh soil      -
 EOF
 }
 
+benchmarks-tasks() {
+  # (task_name, script, action, result_html)
+
+  cat <<EOF
+dump-versions    soil/worker.sh dump-versions          -
+py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
+mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
+EOF
+}
+
 cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
@@ -169,16 +191,13 @@ cpp-spec-tasks() {
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
 HACK-fastlex     build/py.sh fastlex                   -
-build-osh-eval   build/cpp.sh all                      -
+ninja-config     soil/worker.sh ninja-config           -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 }
 
 cpp-small-tasks() {
-  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
-  # build-minimal
-
   # Note: mycpp-benchmarks runs benchmarks SERIALLY with ninja -j 1, and makes HTML
   # And then we have correctness for mycpp-translator.  Somewhat redundant but
   # it's OK for now.
@@ -186,14 +205,12 @@ cpp-small-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
+ninja-config     soil/worker.sh ninja-config           -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
-build-osh-eval   build/cpp.sh all                      -
 osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 native-code      metrics/native-code.sh oil-native     _tmp/metrics/oil-native/index.html
-shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
-mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
 mycpp-translator mycpp/TEST.sh test-translator         _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 make-tar         devtools/release-native.sh make-tar   _release/oil-native.tar
@@ -207,11 +224,10 @@ cpp-coverage-tasks() {
   cat <<EOF
 dump-hardware           soil/worker.sh dump-hardware                    -
 build-minimal           build/py.sh minimal                             -
-ninja-config            ./NINJA-config.sh dummy                         -
+ninja-config            soil/worker.sh ninja-config                     -
 extract-clang           deps/from-binary.sh extract-clang-in-container  -
 mycpp-unit-coverage     mycpp/TEST.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
 mycpp-examples-coverage mycpp/TEST.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html
-HACK-asdl               build/cpp.sh gen-asdl                           -
 cpp-coverage            cpp/TEST.sh coverage                            _test/clang-coverage/cpp/html/index.html
 unified-coverage        test/coverage.sh unified-report                 _test/clang-coverage/unified/html/index.html
 compare-gcc-clang       metrics/native-code.sh compare-gcc-clang        _tmp/metrics/compare-gcc-clang.txt
@@ -415,17 +431,18 @@ JOB-dev-minimal() { job-main 'dev-minimal'; }
 
 JOB-other-tests() { job-main 'other-tests'; }
 
-JOB-ovm-tarball() { job-main 'ovm-tarball'; }
-
 JOB-pea() { job-main 'pea'; }
-
-JOB-app-tests() { job-main 'app-tests'; }
 
 JOB-cpp-coverage() { job-main 'cpp-coverage'; }
 
-JOB-cpp-small() { job-main 'cpp-small'; }
+# For now, these share a container image
+JOB-ovm-tarball() { job-main 'ovm-tarball'; }
+JOB-app-tests() { job-main 'app-tests'; }
 
+# For now, these share a container image
+JOB-cpp-small() { job-main 'cpp-small'; }
 JOB-cpp-spec() { job-main 'cpp-spec'; }
+JOB-benchmarks() { job-main 'benchmarks'; }
 
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 

@@ -33,7 +33,7 @@ inline bool IsPlainChar(Str* ch) {
 inline Str* XEscape(Str* ch) {
   assert(len(ch) == 1);
   StackRoots _roots({&ch});
-  Str* result = AllocStr(4);
+  Str* result = NewStr(4);
   sprintf(result->data(), "\\x%02x", ch->data_[0] & 0xff);
   return result;
 }

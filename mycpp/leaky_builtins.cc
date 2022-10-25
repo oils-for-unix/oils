@@ -2,8 +2,6 @@
 
 #include "mycpp/runtime.h"
 
-mylib::BufWriter gBuf;
-
 // Translation of Python's print().
 void print(Str* s) {
   fputs(s->data(), stdout);
@@ -24,54 +22,48 @@ Str* str(int i) {
 }
 
 Str* repr(Str* s) {
-  mylib::BufWriter f;
+  mylib::FormatStringer f;
   f.format_r(s);
   return f.getvalue();
 }
 
 // Helper for str_to_int() that doesn't use exceptions.
-// Like atoi(), but with better error checking.
-bool _str_to_int(Str* s, int* result, int base) {
-  int s_len = len(s);
-  if (s_len == 0) {
-    return false;  // special case for empty string
+bool StringToInteger(char* s, int length, int base, int* result) {
+  if (length == 0) {
+    return false;  // empty string isn't a valid integer
   }
 
-  char* p;  // mutated by strtol
+  char* pos;  // mutated by strtol
+  long v = strtol(s, &pos, base);
 
-  long v = strtol(s->data(), &p, base);
-  switch (v) {
-  case LONG_MIN:
-    // log("underflow");
-    return false;
-  case LONG_MAX:
-    // log("overflow");
-    return false;
-  }
-
+  // Unconditionally set out param.  Caller should use the return value!
   *result = v;
 
-  // Return true if it consumed ALL characters.
-  const char* end = s->data_ + s_len;
-
-  // log("start %p   p %p   end %p", s->data_, p, end);
-  if (p == end) {
-    return true;
+  switch (v) {
+  case LONG_MIN:
+    return false;  // underflow
+  case LONG_MAX:
+    return false;  // overflow
   }
 
-  // Trailing space is OK!
-  while (p < end) {
-    if (!isspace(*p)) {
-      return false;
+  const char* end = s + length;
+  if (pos == end) {
+    return true;  // strtol() consumed ALL characters.
+  }
+
+  while (pos < end) {
+    if (!isspace(*pos)) {
+      return false;  // Trailing non-space
     }
-    p++;
+    pos++;
   }
-  return true;
+
+  return true;  // Trailing space is OK
 }
 
 int to_int(Str* s, int base) {
   int i;
-  if (_str_to_int(s, &i, base)) {
+  if (StringToInteger(s->data_, len(s), base, &i)) {
     return i;
   } else {
     throw Alloc<ValueError>();
@@ -80,7 +72,7 @@ int to_int(Str* s, int base) {
 
 int to_int(Str* s) {
   int i;
-  if (_str_to_int(s, &i, 10)) {
+  if (StringToInteger(s->data_, len(s), 10, &i)) {
     return i;
   } else {
     throw Alloc<ValueError>();
@@ -90,7 +82,7 @@ int to_int(Str* s) {
 Str* chr(int i) {
   // NOTE: i should be less than 256, in which we could return an object from
   // GLOBAL_STR() pool, like StrIter
-  auto result = AllocStr(1);
+  auto result = NewStr(1);
   result->data_[0] = i;
   return result;
 }
@@ -144,7 +136,7 @@ Str* str_repeat(Str* s, int times) {
   }
   int len_ = len(s);
   int new_len = len_ * times;
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
 
   char* dest = result->data_;
   for (int i = 0; i < times; i++) {
@@ -155,14 +147,14 @@ Str* str_repeat(Str* s, int times) {
 }
 
 // for os_path.join()
-// NOTE(Jesse): Perfect candidate for bounded_buffer
+// NOTE(Jesse): Perfect candidate for BoundedBuffer
 Str* str_concat3(Str* a, Str* b, Str* c) {
   int a_len = len(a);
   int b_len = len(b);
   int c_len = len(c);
 
   int new_len = a_len + b_len + c_len;
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
   char* pos = result->data_;
 
   memcpy(pos, a->data_, a_len);
@@ -182,7 +174,7 @@ Str* str_concat(Str* a, Str* b) {
   int a_len = len(a);
   int b_len = len(b);
   int new_len = a_len + b_len;
-  Str* result = AllocStr(new_len);
+  Str* result = NewStr(new_len);
   char* buf = result->data_;
 
   memcpy(buf, a->data_, a_len);

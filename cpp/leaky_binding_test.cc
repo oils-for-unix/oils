@@ -1,6 +1,3 @@
-// clang-format off
-#include "mycpp/myerror.h" // must come first because of 'errno' issue
-// clang-format on
 
 #include <errno.h>
 #include <fcntl.h>  // O_RDWR
@@ -155,8 +152,7 @@ TEST libc_test() {
   ASSERT_EQ_FMT(10, result->at1(), "%d");
 
   Str* h = libc::gethostname();
-  log("gethostname() =");
-  print(h);
+  log("gethostname() = %s %d", h->data_, len(h));
 
   PASS();
 }
@@ -170,8 +166,7 @@ TEST time_test() {
 
 TEST posix_test() {
   Str* cwd = posix::getcwd();
-  log("getcwd() =");
-  print(cwd);
+  log("getcwd() = %s %d", cwd->data_, len(cwd));
 
   Str* message = posix::strerror(EBADF);
   log("strerror");
@@ -280,7 +275,7 @@ TEST pyos_read_test() {
 }
 
 TEST os_path_test() {
-  // TODO: use gc_mylib here, with AllocStr(), StackRoots, etc.
+  // TODO: use gc_mylib here, with NewStr(), StackRoots, etc.
   Str* s = nullptr;
 
   s = os_path::rstrip_slashes(StrFromC(""));
@@ -327,31 +322,28 @@ TEST libc_glob_test() {
   PASS();
 }
 
-// NOTE(Jesse): `if 0`-ed this out to silence an annoying warning.  Should be
-// put back in, though that's on Andy.
-#if 0
 TEST pyos_test() {
   // This test isn't hermetic but it should work in most places, including in a
   // container
+
+  Str* current = posix::getcwd();
+
   int err_num = pyos::Chdir(StrFromC("/"));
   ASSERT(err_num == 0);
 
   err_num = pyos::Chdir(StrFromC("/nonexistent__"));
   ASSERT(err_num != 0);
 
-  Dict<Str*, Str*>* env = pyos::Environ();
-  Str* p = env->get(StrFromC("PATH"));
-  ASSERT(p != nullptr);
-  log("PATH = %s", p->data_);
+  err_num = pyos::Chdir(current);
+  ASSERT(err_num == 0);
 
   PASS();
 }
-#endif
 
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
@@ -369,12 +361,10 @@ int main(int argc, char** argv) {
   RUN_TEST(os_path_test);
   RUN_TEST(putenv_test);
 
-  // Disabled because changing the dir somehow prevents the
-  // leaky_binding_test.profraw file from being created
-  //
-  // Must come last because it does chdir()
-  //
-  // RUN_TEST(pyos_test);
+  // non-hermetic
+  RUN_TEST(pyos_test);
+
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

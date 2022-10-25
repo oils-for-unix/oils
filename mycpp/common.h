@@ -1,4 +1,4 @@
-// common.h
+// mycpp/common.h
 //
 // A grab bag of definitions needed in multiple places.
 
@@ -17,20 +17,10 @@
 
 #include <initializer_list>
 
-// TODO(Jesse): Put NotImplemented on a compile-time switch such that we cannot
-// make a release build if we're not finished implementing the interpreter.
-// ie.
-//
-// #if OIL_INTERNAL
-//   #define NotImplemented() assert(!"Not Implemented")
-// #else
-//   #define NotImplemented() NOT IMPLENTED !!! // Intentionally a compile error
-// #endif
-//
-//
 #define NotImplemented() assert(!"Not Implemented")
 #define InvalidCodePath() assert(!"Invalid Code Path")
 
+// Workaround for macros that take templates
 #define COMMA ,
 
 // Prevent silent copies
@@ -62,6 +52,10 @@ inline size_t aligned(size_t n) {
   // return (n + 7) & ~7;
   return (n + kMask) & ~kMask;
 }
+
+#define GiB(bytes) (MiB(bytes) * 1024)
+#define MiB(bytes) (KiB(bytes) * 1024)
+#define KiB(bytes) ((bytes)*1024)
 
 const int kMaxRoots = KiB(4);
 

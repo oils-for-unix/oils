@@ -12,23 +12,25 @@ set -o errexit
 source soil/common.sh  # find-dir-html
 
 all-tests() {
-  ./NINJA-config.sh
+  asdl/TEST.sh unit
+
+  core/TEST.sh unit
+
+  cpp/TEST.sh unit
+
+  frontend/TEST.sh unit
 
   # uses Ninja to run (cxx, gcevery) variant.  Could also run (clang, ubsan),
   # which finds more bugs.
   mycpp/TEST.sh test-runtime
-
-  cpp/TEST.sh pre-build
-  cpp/TEST.sh unit
-
-  # Relies on same pre-build
-  build/TEST.sh all
-
-  asdl/TEST.sh unit
 }
 
 soil-run() {
   ### Hook for soil/worker.sh
+
+  # Soil only does build/dev.sh minimal, while most devs should do build/dev.sh
+  # all, and can run all-tests by itself
+  cpp/TEST.sh pre-build
 
   set +o errexit
   $0 all-tests

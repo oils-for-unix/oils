@@ -125,12 +125,36 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
+class Buf {
+ public:
+  // The initial capacity is big enough for a line
+  Buf() : data_(nullptr), len_(0), cap_(128) {
+  }
+  bool IsEmpty() {
+    return len_ == 0;
+  }
+  char* data() {
+    return data_;
+  }
+  bool IsValid() {
+    return len_ != -1;
+  }
+  void Extend(Str* s);
+  void Invalidate();
+
+ private:
+  friend Str* StrFromBuf(const Buf&);
+  char* data_;
+  int len_;  // data length, not including NUL
+  int cap_;  // capacity, not including NUL
+};
+
+Str* StrFromBuf(const Buf&);
+Buf AllocBuf(char*, int);
+
 class BufWriter : public Writer {
  public:
-  BufWriter()
-      : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)),
-        data_(nullptr),
-        len_(0) {
+  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_() {
   }
   void write(Str* s) override;
   void flush() override {
@@ -141,7 +165,16 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue();
 
-  // Methods to compile printf format strings to
+ private:
+  // Just like a string, except it's mutable
+  Buf buf_;
+};
+
+class FormatStringer {
+ public:
+  FormatStringer() : data_(nullptr), len_(0) {
+  }
+  Str* getvalue();
 
   // Called before reusing the global gBuf instance for fmtX() functions
   //
@@ -194,6 +227,7 @@ extern Writer* gStdout;
 
 inline Writer* Stdout() {
   if (gStdout == nullptr) {
+    // TODO: global instance needs rooting
     gStdout = Alloc<CFileWriter>(stdout);
   }
   return gStdout;
@@ -203,6 +237,7 @@ extern Writer* gStderr;
 
 inline Writer* Stderr() {
   if (gStderr == nullptr) {
+    // TODO: global instance needs rooting
     gStderr = Alloc<CFileWriter>(stderr);
   }
   return gStderr;
@@ -210,6 +245,6 @@ inline Writer* Stderr() {
 
 }  // namespace mylib
 
-extern mylib::BufWriter gBuf;
+extern mylib::FormatStringer gBuf;
 
 #endif  // LEAKY_MYLIB_H

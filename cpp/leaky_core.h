@@ -3,13 +3,15 @@
 #ifndef LEAKY_CORE_H
 #define LEAKY_CORE_H
 
+#include <signal.h>  // sighandler_t
 #include <termios.h>
 
+#include "_gen/frontend/syntax.asdl.h"
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration
-namespace builtin_trap {
-class _TrapHandler;
+namespace comp_ui {
+class _IDisplay;
 };
 
 namespace pyos {
@@ -18,6 +20,8 @@ const int TERM_ICANON = ICANON;
 const int TERM_ECHO = ECHO;
 const int EOF_SENTINEL = 256;
 const int NEWLINE_CH = 10;
+const int UNTRAPPED_SIGWINCH = -1;
+const int kMaxSignalsInFlight = 1024;
 
 Tuple2<int, int> WaitPid();
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks);
@@ -51,28 +55,30 @@ class TermState {
   }
 };
 
-void SignalState_AfterForkingChild();
-
-class SignalState {
+class SignalHandler {
  public:
-  SignalState() {
-  }
-  void InitShell() {
-  }
-  void AddUserTrap(int sig_num, builtin_trap::_TrapHandler* handler) {
-    NotImplemented();
-  }
-  void RemoveUserTrap(int sig_num) {
-    NotImplemented();
-  }
-  int last_sig_num = 0;
+  SignalHandler();
+  void Update(int sig_num);
+  List<int>* TakeSignalQueue();
 
-  DISALLOW_COPY_AND_ASSIGN(SignalState)
+  List<int>* signal_queue_;
+  int last_sig_num_;
+  int sigwinch_num_;
 };
 
-}  // namespace pyos
+void Sigaction(int sig_num, sighandler_t handler);
 
-class _OSError;  // declaration from mycpp/myerror.h
+void RegisterSignalInterest(int sig_num);
+
+List<int>* TakeSignalQueue();
+
+int LastSignal();
+
+void SetSigwinchCode(int code);
+
+void InitShell();
+
+}  // namespace pyos
 
 namespace pyutil {
 
@@ -92,7 +98,7 @@ Str* GetVersion(_ResourceLoader* loader);
 
 Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader);
 
-Str* strerror(_OSError* e);
+Str* strerror(IOError_OSError* e);
 
 Str* BackslashEscape(Str* s, Str* meta_chars);
 

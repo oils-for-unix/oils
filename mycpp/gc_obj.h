@@ -14,7 +14,7 @@ enum Tag {
 
 const int kZeroMask = 0;  // for types with no pointers
 // no obj_len_ computed for global List/Slab/Dict
-const int kNoObjLen = 0x0eadbeef;
+const int kNoObjLen = 0x0badbeef;
 
 // Why do we need this macro instead of using inheritance?
 // - Because ASDL uses multiple inheritance for first class variants, but we
@@ -64,7 +64,7 @@ class Obj {
   }
 
   void SetObjLen(int obj_len) {
-    this->obj_len_ = obj_len;
+    obj_len_ = obj_len;
   }
 
   OBJ_HEADER()
@@ -82,6 +82,14 @@ class _DummyObj {  // For maskbit()
   int first_field_;
 };
 
+// maskbit(field_offset) returns a bit in mask that you can bitwise-or (|) with
+// other bits.
+//
+// - Note that we only call maskbit() on offsets of pointer fields, which must
+//   be POINTER-ALIGNED.
+// - _DummyObj is used in case OBJ_HEADER() requires padding, then
+//   sizeof(Obj) != offsetof(_DummyObj, first_field_)
+
 constexpr int maskbit(int offset) {
   return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
 }
@@ -92,6 +100,9 @@ class _DummyObj_v {  // For maskbit_v()
   OBJ_HEADER()
   int first_field_;
 };
+
+// maskbit_v(field_offset) is like maskbit(), but accounts for the vtable
+// pointer.
 
 constexpr int maskbit_v(int offset) {
   return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));

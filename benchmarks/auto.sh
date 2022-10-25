@@ -88,17 +88,12 @@ cachegrind-builds() {
   echo TODO
 }
 
-benchmark-shell-provenance() {
-  # empty label
-  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OIL_NATIVE python2
-}
-
 measure-shells() {
   local base_dir=../benchmark-data
 
   # capture the filename
   local provenance
-  provenance=$(benchmark-shell-provenance)
+  provenance=$(our-shell-provenance)
 
   benchmarks/vm-baseline.sh measure \
     $provenance $base_dir/vm-baseline

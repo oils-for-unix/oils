@@ -84,26 +84,45 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=address"
       ;;
 
+    (tsan)
+      flags="$flags -O0 -g -fsanitize=thread"
+      ;;
+
     (ubsan)
       # faster build with -O0
       flags="$flags -O0 -g -fsanitize=undefined"
       ;;
 
-    (gcstats)
-      # unit tests use for gHeap.Report()
-      flags="$flags -g -D GC_STATS"
+    (gcverbose)
+      # show log statements
+      flags="$flags -O0 -g -fsanitize=address -D GC_VERBOSE"
       ;;
 
     (gcevery)
-      flags="$flags -g -D GC_STATS -D GC_EVERY_ALLOC -fsanitize=address"
+      flags="$flags -g -D GC_EVERY_ALLOC -fsanitize=address"
+      ;;
+
+    # Just like GCEVERY
+    (rvroot)
+      flags="$flags -g -D RET_VAL_ROOTING -D GC_EVERY_ALLOC -fsanitize=address"
       ;;
 
     (opt)
       flags="$flags -O2 -g"
       ;;
-    (dumballoc)
+    (opt32)
+      flags="$flags -O2 -g -m32"
+      ;;
+    (mallocleak)
+      # optimized build with malloc only
+      flags="$flags -O2 -g -D MALLOC_LEAK"
+      ;;
+    (bumpleak)
       # optimized build with bump allocator
-      flags="$flags -O2 -g -D DUMB_ALLOC"
+      flags="$flags -O2 -g -D BUMP_LEAK"
+      ;;
+    (tcmalloc)
+      flags="$flags -O2 -g -D TCMALLOC"
       ;;
 
     (uftrace)
@@ -116,9 +135,6 @@ setglobal_compile_flags() {
       flags="$flags $opt -g -pg"
       ;;
 
-    (tcmalloc)
-      flags="$flags -O2 -g -D TCMALLOC"
-      ;;
     (alloclog)
       # debug flags
       flags="$flags -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
@@ -146,13 +162,21 @@ setglobal_link_flags() {
   local variant=$1
 
   case $variant in
+    (opt32)
+      link_flags='-m32'
+      ;;
+
     (tcmalloc)
-      link_flags='-ltcmalloc'
+      # Need to tell the dynamic loader where to find tcmalloc
+      link_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    (asan|gcevery)
+    (asan|gcevery|gcverbose|rvroot)
       link_flags='-fsanitize=address'
+      ;;
+    (tsan)
+      link_flags='-fsanitize=thread'
       ;;
     (ubsan)
       link_flags='-fsanitize=undefined'
@@ -217,7 +241,9 @@ link() {
 
   setglobal_cxx $compiler
 
-  "$cxx" -o "$out" $link_flags "$@"
+  # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
+  # true.
+  "$cxx" -o "$out" "$@" $link_flags
 }
 
 compile_and_link() {

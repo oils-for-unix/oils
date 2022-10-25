@@ -32,6 +32,10 @@ def Options():
       help='Show details about translation')
 
   p.add_option(
+      '--ret-val-rooting', dest='ret_val_rooting', action='store_true', default=False,
+      help='Use Return Value Rooting policy')
+
+  p.add_option(
       '--cc-out', dest='cc_out', default=None,
       help='.cc file to write to')
 
@@ -262,16 +266,6 @@ def main(argv):
 
   if opts.header_out:
     header_f = open(opts.header_out, 'w')  # Not closed
-    guard = 'RUNTIME_H'  # hard-coded?
-    header_f.write("""\
-// %s: translated from Python by mycpp
-
-#ifndef %s
-#define %s
-
-#include "mycpp/runtime.h"
-
-""" % (os.path.basename(opts.header_out), guard, guard))
 
   log('\tmycpp pass: FORWARD DECL')
 
@@ -294,6 +288,7 @@ def main(argv):
   #log('V %s', virtual.virtuals)
 
   local_vars = {}  # FuncDef node -> (name, c_type) list
+  mask_funcs = {}  # ClassDef node -> maskof_Foo() string, if it's required
 
   # Node -> fmt_name, plus a hack for the counter
   # TODO: This could be a class with 2 members
@@ -311,14 +306,10 @@ def main(argv):
       out_f = f
     p3 = cppgen_pass.Generate(result.types, const_lookup, out_f,
                               local_vars=local_vars, fmt_ids=fmt_ids,
+                              mask_funcs=mask_funcs,
                               virtual=virtual, decl=True)
 
     p3.visit_mypy_file(module)
-
-  if opts.header_out:
-    header_f.write("""\
-#endif  // %s
-""" % guard)
 
   log('\tmycpp pass: IMPL')
 
@@ -327,7 +318,9 @@ def main(argv):
   # void Bar:method() { ... }
   for name, module in to_compile:
     p4 = cppgen_pass.Generate(result.types, const_lookup, f,
-                              local_vars=local_vars, fmt_ids=fmt_ids)
+                              local_vars=local_vars, fmt_ids=fmt_ids,
+                              mask_funcs=mask_funcs,
+                              ret_val_rooting=opts.ret_val_rooting)
     p4.visit_mypy_file(module)
 
   return 0  # success

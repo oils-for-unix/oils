@@ -19,7 +19,8 @@ source test/common.sh  # run-test-bin
 # in case binaries weren't built
 shopt -s failglob
 
-export ASAN_OPTIONS='detect_leaks=0'
+# Will be needed to pass ASAN leak detector?  Or only do this for the main binary?
+# export OIL_GC_ON_EXIT=1
 
 examples-variant() {
   ### Run all examples using a variant -- STATS only
@@ -86,7 +87,7 @@ examples-variant() {
   log ''
 
   case $variant in
-    (asan)
+    (asan|rvroot)
       # TODO: make examples/parse pass!
       # https://github.com/oilshell/oil/issues/1317
       if test $num_failed -ne 1; then
@@ -95,8 +96,8 @@ examples-variant() {
       fi
       ;;
     (gcevery)
-      if test $num_failed -ne 6; then
-        echo "FAIL: Expected 6 failures with GC_EVERY_ALLOC"
+      if test $num_failed -ne 5; then
+        echo "FAIL: Expected 5 failures with GC_EVERY_ALLOC"
         return 1
       fi
       ;;
@@ -179,23 +180,39 @@ unit() {
   log "$0 unit $compiler $variant"
   log ''
 
-
-  # TODO: Exclude examples here
-  # ninja mycpp-$variant
   ninja mycpp-unit-$compiler-$variant
 
-  local log_dir=_test/$compiler-$variant/mycpp
-  mkdir -p $log_dir
+  local -a binaries=(_bin/$compiler-$variant/mycpp/*)
 
-  for b in _bin/$compiler-$variant/mycpp/*; do
+  # Add these files if they exist in the variant
+  if test -d _bin/$compiler-$variant/mycpp/demo; then
+    binaries+=(_bin/$compiler-$variant/mycpp/demo/*)
+  fi
+
+  local asan_options=''
+
+  for b in "${binaries[@]}"; do
     if ! test -f $b; then
       continue
     fi
 
-    local prefix=$log_dir/$(basename $b)
+    local prefix=${b//_bin/_test/}
     local log=$prefix.log
+    mkdir -p $(dirname $log)
 
-    run-test-bin $b
+    case $b in
+      # leaks with malloc
+      (*/demo/hash_table|*/demo/target_lang)
+        asan_options='detect_leaks=0'
+        ;;
+
+      # What is the problem here?  300 allocations leaked.
+      (*/gc_mylib_test)
+        asan_options='detect_leaks=0'
+        ;;
+    esac
+
+    ASAN_OPTIONS=$asan_options run-test-bin $b
   done
 }
 
@@ -225,13 +242,14 @@ test-invalid-examples() {
 test-runtime() {
   # Run other unit tests, e.g. the GC tests
 
-  # Doesn't pass yet because of rooting i
-  # ASAN_OPTIONS='' unit '' asan
+  local leak_ok='detect_leaks=0'
+
+  unit '' ubsan
 
   unit '' asan
-  unit '' ubsan
-  unit '' gcstats
+  unit '' gcverbose
   unit '' gcevery
+  unit '' rvroot
 }
 
 #
@@ -262,11 +280,14 @@ compare-examples() {
 test-translator() {
   ### Invoked by soil/worker.sh
 
-  # Test that examples don't leak (note known failures above)
-  ASAN_OPTIONS='' examples-variant '' asan
+  # examples/parse fails with Buf leak
+  examples-variant '' rvroot
 
-  # Test with more collections (note known failures above)
-  ASAN_OPTIONS='' examples-variant '' gcevery
+  # examples/parse fails with Buf leak
+  examples-variant '' asan
+
+  # Test with more collections -- 5 failures above
+  examples-variant '' gcevery
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
@@ -290,6 +311,28 @@ examples-coverage() {
 
   local out_dir=_test/clang-coverage/mycpp/examples
   test/coverage.sh html-report $out_dir mycpp/examples
+}
+
+compare-malloc-leak-parse() {
+  ninja _bin/cxx-{opt,mallocleak}/osh_eval
+
+  for bin in _bin/cxx-{opt,mallocleak}/osh_eval; do
+    echo $bin
+    time $bin --ast-format none -n benchmarks/testdata/configure-coreutils
+  done
+}
+
+compare-malloc-leak-example() {
+  local example=${1:-escape}
+  ninja _bin/cxx-{opt,mallocleak}/mycpp/examples/$example.mycpp
+  for bin in _bin/cxx-{opt,mallocleak}/mycpp/examples/$example.mycpp; do
+    echo $bin
+    time BENCHMARK=1 $bin
+    # time BENCHMARK=1 gdb --args $bin
+  done
+
+  echo PYTHON
+  time PYTHONPATH=.:vendor BENCHMARK=1 mycpp/examples/$example.py
 }
 
 # Call function $1 with arguments $2 $3 $4

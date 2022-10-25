@@ -1,4 +1,4 @@
-// mycpp/gc_heap.h
+// mycpp/cheney_heap.h
 //
 // A garbage collected heap that looks like statically typed Python: Str,
 // List<T>, Dict<K, V>.
@@ -75,11 +75,11 @@
 // - Alloc<Foo>(x)
 //   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
 //   generate these calls.
-// - AllocStr(length), StrFromC(), NewList, NewDict: Alloc() doesn't
+// - NewStr(length), StrFromC(), NewList, NewDict: Alloc() doesn't
 // work
 //   for these types for various reasons
 // - Heap::Allocate()
-//   The untyped internal API.  For AllocStr() and NewSlab().
+//   The untyped internal API.  For NewStr() and NewSlab().
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- shouldn't be in Oil?
 
@@ -93,7 +93,6 @@
 //
 // GC_EVERY_ALLOC: Collect() on every Allocate().  Exposes many bugs!
 // GC_VERBOSE: Log when we collect
-// GC_STATS: Collect more stats.  TODO: Rename this?
 
 // Silly definition for passing types like GlobalList<T, N> and initializer
 // lists like {1, 2, 3} to macros
@@ -233,13 +232,8 @@ class CheneyHeap {
 void ShowFixedChildren(Obj* obj);
 #endif
 
-// LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
-// objs to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
-// collection.
-
-class LayoutForwarded : public Obj {
- public:
-  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
-};
+#if !defined(MARK_SWEEP) && !defined(BUMP_LEAK)
+extern CheneyHeap gHeap;
+#endif
 
 #endif  // GC_HEAP_H

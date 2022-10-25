@@ -304,7 +304,7 @@ _overview() {
   ls metrics/*.{sh,R} | $count \
     'Metrics' '' "$@"
 
-  ls _devbuild/gen/*.{py,h} | $count \
+  ls _devbuild/gen/*.py | $count \
     'Generated Python Code' \
     'For the Python App Bundle.' \
     "$@"

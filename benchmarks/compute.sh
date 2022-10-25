@@ -38,6 +38,7 @@ source test/tsv-lib.sh  # tsv2html
 readonly BASE_DIR=_tmp/compute
 
 # Passed to awk in filter-provenance.  TODO: This could be a parameter
+# Awk wants this to be \\. ?  Probably should stop using Awk.
 readonly OIL_NATIVE_REGEX='osh_eval(\.stripped)?'
 
 TIMEFORMAT='%U'
@@ -406,8 +407,35 @@ measure() {
   tree $raw_dir
 }
 
+soil-run() {
+  ### Run it on just this machine, and make a report
+
+  rm -r -f $BASE_DIR
+  mkdir -p $BASE_DIR
+
+  make _bin/oil.ovm
+  devtools/bin.sh make-bin-links
+
+  local provenance
+  provenance=$(our-shell-provenance)
+
+  measure $provenance
+
+  set -x
+
+  # Problem: doesn't work on one machine
+  stage1 '' no
+
+  benchmarks/report.sh stage2 $BASE_DIR
+  benchmarks/report.sh stage3 $BASE_DIR
+}
+
 stage1() {
   local raw_dir=${1:-$BASE_DIR/raw}
+
+  # This report works even if we only have one machine
+  local both_machines=${2:-yes}
+
   local out_dir=$BASE_DIR/stage1
   mkdir -p $out_dir
 
@@ -418,12 +446,18 @@ stage1() {
   for metric in hello fib word_freq parse_help bubble_sort palindrome; do
     local dir=$raw_dir/$metric
 
-    # Globs are in lexicographical order, which works for our dates.
-    local -a a=($dir/$MACHINE1.*.times.tsv)
-    local -a b=($dir/$MACHINE2.*.times.tsv)  # HACK for now
+    if test "$both_machines" = 'yes'; then
+      # Globs are in lexicographical order, which works for our dates.
+      local -a a=($dir/$MACHINE1.*.times.tsv)
+      local -a b=($dir/$MACHINE2.*.times.tsv)  # HACK for now
 
-    # take the latest file
-    raw+=(${a[-1]} ${b[-1]})
+      # take the latest file
+      raw+=(${a[-1]} ${b[-1]})
+    else
+      local -a b=($dir/$MACHINE2.*.times.tsv)  # HACK for now
+      raw+=(${b[-1]})
+    fi
+
   done
   csv-concat ${raw[@]} > $times_tsv
   wc -l $times_tsv

@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-classes.py - Test out inheritance.  Based on asdl/format.py.
+classes.py - Test out inheritance.
 """
 from __future__ import print_function
 
@@ -11,8 +11,10 @@ import sys
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import IO
+from typing import IO, cast
 
+
+# Based on asdl/format.py
 
 class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
@@ -41,7 +43,7 @@ class TextOutput(ColorOutput):
     print('TextOutput constructor')
     self.i = 0  # field only in derived class
 
-  def MutateField(self):
+  def MutateFields(self):
     # type: () -> None
     self.num_chars = 42
     self.i = 43
@@ -52,75 +54,129 @@ class TextOutput(ColorOutput):
     print("i = %d" % self.i)  # field from derived
 
 
-class Base(object):
+#
+# Heterogeneous linked list to test field masks, inheritance, virtual dispatch,
+# constructors, etc.
+#
+
+class Abstract(object):
 
   # empty constructor required by mycpp
   def __init__(self):
     # type: () -> None
     pass
 
-  def method(self):
+  def TypeString(self):
     # type: () -> str
-    return "Base"
 
-  def x(self):
-    # type: () -> int
-    return 42
+    # TODO: could be translated to TypeString() = 0; in C++
+    raise NotImplementedError()
 
 
-class Derived(Base):
+class Base(Abstract):
 
-  def __init__(self):
-    # type: () -> None
-    Base.__init__(self)
+  def __init__(self, n):
+    # type: (Base) -> None
+    Abstract.__init__(self)
+    self.next = n
 
-  def method(self):
+  def TypeString(self):
     # type: () -> str
-    return "Derived"
+    return "Base(%s)" % ('next' if self.next else 'null')
 
-  def y(self):
+
+class DerivedI(Base):
+
+  def __init__(self, n, i):
+    # type: (Base, int) -> None
+    Base.__init__(self, n)
+    self.i = i
+
+  def Integer(self):
     # type: () -> int
-    return 43
+    return self.i
+
+  def TypeString(self):
+    # type: () -> str
+    return "DerivedI(%s, %d)" % ('next' if self.next else 'null', self.i)
 
 
-GLOBAL = Derived()
+class DerivedSS(Base):
 
-# TODO: Test GC masks for fields.  Do subtypes re-initialize it?
+  def __init__(self, n, t, u):
+    # type: (Base, str, str) -> None
+    Base.__init__(self, n)
+    self.t = t
+    self.u = u
+
+  def TypeString(self):
+    # type: () -> str
+    return "DerivedSS(%s, %s, %s)" % (
+        'next' if self.next else 'null', self.t, self.u)
+
+#
+# Homogeneous Node
+#
+
+class Node(object):
+  """No vtable pointer."""
+  def __init__(self, n, i):
+    # type: (Node, int) -> None
+    self.next = n
+    self.i = i
 
 
-def f(obj):
-  # type: (Base) -> str
-  return obj.method()
-
-
-def run_tests():
+def TestMethods():
   # type: () -> None
+
   stdout = mylib.Stdout()
   out = TextOutput(stdout)
   out.write('foo\n')
   out.write('bar\n')
   log('Wrote %d bytes', out.num_chars)
 
-  out.MutateField()
+  out.MutateFields()
   out.PrintFields()
 
-  #b = Base()
-  d = Derived()
-  #log(b.method())
-  print(d.method())
-  print(f(d))
 
-  print(GLOBAL.method())
+def f(obj):
+  # type: (Base) -> str
+  return obj.TypeString()
 
 
-def run_benchmarks():
+# Note: this happsns to work, but globals should probably be disallowed
+GLOBAL = DerivedI(None, 37)
+
+def TestInheritance():
   # type: () -> None
 
-  # NOTE: Raising this exposes quadratic behavior
-  n = 50000
+  b = Base(None)
+  di = DerivedI(None, 1)
+  dss = DerivedSS(None, 'left', 'right')
 
-  x = 33
-  result = -1
+  log('Integer() = %d', di.Integer())
+
+  log("b.TypeString()   %s", b.TypeString())
+  log("di.TypeString()  %s", di.TypeString())
+  log("dss.TypeString() %s", dss.TypeString())
+
+  log("f(b)           %s", f(b))
+  log("f(di)          %s", f(di))
+  log("f(dss)         %s", f(dss))
+  log("f(GLOBAL)      %s", f(GLOBAL))
+
+
+def run_tests():
+  # type: () -> None
+  TestMethods()
+  TestInheritance()
+
+
+def BenchmarkWriter(n):
+  # type: (int) -> None
+
+  log('BenchmarkWriter')
+  log('')
 
   f = mylib.BufWriter()
   out = TextOutput(f)
@@ -129,8 +185,94 @@ def run_benchmarks():
   while i < n:
     out.write('foo\n')
     i += 1
-  log('Ran %d iterations', n)
-  log('Wrote %d bytes', out.num_chars)
+  log('  Ran %d iterations', n)
+  log('  Wrote %d bytes', out.num_chars)
+  log('')
+
+
+def BenchmarkSimpleNode(n):
+  # type: (int) -> None
+
+  log('BenchmarkSimpleNode')
+  log('')
+
+  next_ = Node(None, -1)
+  for i in xrange(n):
+    node = Node(next_, i)
+    next_ = node
+
+  current = node
+  linked_list_len = 0
+  while True:
+    if linked_list_len < 10:
+      log('  -> %d', current.i)
+
+    current = current.next
+
+    if current is None:
+      break
+
+    linked_list_len += 1
+
+  log('')
+  log("  linked list len = %d", linked_list_len)
+  log('')
+
+
+def BenchmarkVirtualNodes(n):
+  # type: (int) -> None
+
+  log('BenchmarkNodes')
+  log('')
+
+  next_ = Base(None)
+  for i in xrange(n):
+    node1 = DerivedI(next_, i)
+
+    # Allocate some children
+    s1 = str(i)
+    s2 = '+%d' % i
+    node2 = DerivedSS(node1, s1, s2)
+
+    node3 = Base(node2)
+    next_ = node3
+
+  # do this separately because of type
+  current = None  # type: Base
+  current = node3
+
+  linked_list_len = 0
+  while True:
+    if linked_list_len < 10:
+      log('  -> %s', current.TypeString())
+
+    current = current.next
+
+    if current is None:
+      break
+    linked_list_len += 1
+
+  log('')
+  log("  linked list len = %d", linked_list_len)
+  log('')
+
+
+def run_benchmarks():
+  # type: () -> None
+
+  # NOTE: Raising this exposes quadratic behavior
+  #  30,000 iterations:  1.4 seconds in cxx-opt mode
+  #  60,000 iterations:  5.0 seconds in cxx-opt mode
+  if 1:
+    BenchmarkWriter(30000)
+
+  if 1:
+    BenchmarkSimpleNode(10000)
+
+  # Hits Collect() and ASAN finds bugs above 500 and before 1000
+  #BenchmarkNodes(750)
+  if 1:
+    BenchmarkVirtualNodes(1000)
 
 
 if __name__ == '__main__':

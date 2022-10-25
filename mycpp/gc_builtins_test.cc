@@ -36,56 +36,67 @@ TEST formatter_test() {
   PASS();
 }
 
-TEST str_to_int_test() {
+// Wrapper for testing
+bool _StrToInteger(Str* s, int* result, int base) {
+  return StringToInteger(s->data_, len(s), base, result);
+}
+
+TEST StringToInteger_test() {
   int i;
   bool ok;
 
-  ok = _str_to_int(StrFromC("345"), &i, 10);
+  ok = _StrToInteger(StrFromC("345"), &i, 10);
   ASSERT(ok);
   ASSERT_EQ_FMT(345, i, "%d");
 
   // Hack to test slicing.  Truncated "345" at "34".
-  ok = _str_to_int(StrFromC("345", 2), &i, 10);
+  ok = _StrToInteger(StrFromC("345", 2), &i, 10);
   ASSERT(ok);
   ASSERT_EQ_FMT(34, i, "%d");
 
-  ok = _str_to_int(StrFromC("1234567890"), &i, 10);
+  ok = _StrToInteger(StrFromC("1234567890"), &i, 10);
   ASSERT(ok);
   ASSERT(i == 1234567890);
 
   // overflow
-  ok = _str_to_int(StrFromC("12345678901234567890"), &i, 10);
+  ok = _StrToInteger(StrFromC("12345678901234567890"), &i, 10);
   ASSERT(!ok);
 
   // underflow
-  ok = _str_to_int(StrFromC("-12345678901234567890"), &i, 10);
+  ok = _StrToInteger(StrFromC("-12345678901234567890"), &i, 10);
   ASSERT(!ok);
 
   // negative
-  ok = _str_to_int(StrFromC("-123"), &i, 10);
+  ok = _StrToInteger(StrFromC("-123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Leading space is OK!
-  ok = _str_to_int(StrFromC(" -123"), &i, 10);
+  ok = _StrToInteger(StrFromC(" -123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
-  // Trailing space is OK!  NOTE: This fails!
-  ok = _str_to_int(StrFromC(" -123  "), &i, 10);
+  // Trailing space is OK!
+  ok = _StrToInteger(StrFromC(" -123  "), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Empty string isn't an integer
-  ok = _str_to_int(StrFromC(""), &i, 10);
+  ok = _StrToInteger(StrFromC(""), &i, 10);
   ASSERT(!ok);
 
-  ok = _str_to_int(StrFromC("xx"), &i, 10);
+  ok = _StrToInteger(StrFromC("xx"), &i, 10);
   ASSERT(!ok);
 
   // Trailing garbage
-  ok = _str_to_int(StrFromC("42a"), &i, 10);
+  ok = _StrToInteger(StrFromC("42a"), &i, 10);
   ASSERT(!ok);
+
+  PASS();
+}
+
+TEST str_to_int_test() {
+  int i;
 
   i = to_int(StrFromC("ff"), 16);
   ASSERT(i == 255);
@@ -742,10 +753,56 @@ TEST dict_iters_test() {
   PASS();
 }
 
+TEST exceptions_test() {
+  IndexError* other;
+  bool caught = false;
+  try {
+    throw Alloc<IndexError>();
+  } catch (IndexError* e) {
+    log("e %p", e);
+    gHeap.RootInCurrentFrame(e);
+    other = e;
+    caught = true;
+  }
+
+  log("other %p", other);
+  ASSERT(caught);
+
+  caught = false;
+  try {
+    throw Alloc<OSError>(99);
+  } catch (IOError_OSError* e) {
+    gHeap.RootInCurrentFrame(e);
+    caught = true;
+  }
+  ASSERT(caught);
+
+  // TODO: Make this work with return value rooting
+  RuntimeError* r = nullptr;
+  Str* message = nullptr;
+  StackRoots _roots2({&r, &message});
+  message = StrFromC("libc::regex_match");
+
+  caught = false;
+  try {
+    r = Alloc<RuntimeError>(message);
+    throw r;
+
+  } catch (RuntimeError* e) {
+    gHeap.RootInCurrentFrame(e);
+    caught = true;
+
+    log("RuntimeError %s", e->message->data());
+  }
+  ASSERT(caught);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  gHeap.Init(1 << 20);
+  gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
@@ -754,6 +811,7 @@ int main(int argc, char** argv) {
   RUN_TEST(print_test);
   RUN_TEST(formatter_test);
 
+  RUN_TEST(StringToInteger_test);
   RUN_TEST(str_to_int_test);
   RUN_TEST(int_to_str_test);
 
@@ -774,7 +832,9 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_funcs_test);
   RUN_TEST(dict_iters_test);
 
-  gHeap.Collect();
+  RUN_TEST(exceptions_test);
+
+  gHeap.CleanProcessExit();
 
   GREATEST_MAIN_END(); /* display results */
 
