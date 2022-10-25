@@ -1,8 +1,7 @@
 #ifndef GC_HEAP_H
 #define GC_HEAP_H
 
-#include "mycpp/bump_alloc.h"
-#include "mycpp/cheney_heap.h"
+#include "mycpp/bump_leak_heap.h"
 #include "mycpp/marksweep_heap.h"
 
 #if defined(MARK_SWEEP)
@@ -60,6 +59,15 @@ class StackRoots {
 
  private:
   int n_;
+};
+
+// LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
+// objs to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
+// collection.
+
+class LayoutForwarded : public Obj {
+ public:
+  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
 };
 
 // for Tag::FixedSize

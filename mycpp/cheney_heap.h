@@ -232,15 +232,6 @@ class CheneyHeap {
 void ShowFixedChildren(Obj* obj);
 #endif
 
-// LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
-// objs to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
-// collection.
-
-class LayoutForwarded : public Obj {
- public:
-  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
-};
-
 #if !defined(MARK_SWEEP) && !defined(BUMP_LEAK)
 extern CheneyHeap gHeap;
 #endif

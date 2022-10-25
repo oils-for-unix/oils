@@ -17,11 +17,14 @@ def DefineTargets(ru):
       template = 'mycpp')
 
   ru.cc_library(
+      '//mycpp/cheney_heap', 
+      srcs = ['mycpp/cheney_heap.cc'])
+
+  ru.cc_library(
       '//mycpp/runtime', 
       srcs = [
         'mycpp/gc_mylib.cc',
-        'mycpp/bump_alloc.cc',
-        'mycpp/cheney_heap.cc',
+        'mycpp/bump_leak_heap.cc',
         'mycpp/marksweep_heap.cc',
 
         # files we haven't added StackRoots to

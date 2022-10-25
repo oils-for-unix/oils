@@ -1,6 +1,6 @@
-// mycpp/bump_alloc.cc: Leaky Bump Allocator
+// mycpp/bump_leak_heap.cc: Leaky Bump Allocator
 
-#include "mycpp/bump_alloc.h"
+#include "mycpp/bump_leak_heap.h"
 
 #include <stddef.h>
 #include <stdio.h>

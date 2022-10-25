@@ -289,9 +289,6 @@ test-translator() {
   # Test with more collections -- 5 failures above
   examples-variant '' gcevery
 
-  # Sanity check that doesn't collect garbage
-  examples-variant '' mallocleak
-
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
   # Runs test in cxx-asan variant, and benchmarks in cxx-opt variant

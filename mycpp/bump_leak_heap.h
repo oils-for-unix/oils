@@ -1,7 +1,7 @@
-// mycpp/bump_alloc.h: Leaky Bump Allocator
+// mycpp/bump_leak_heap.h: Leaky Bump Allocator
 
-#ifndef BUMP_ALLOC_H
-#define BUMP_ALLOC_H
+#ifndef MYCPP_BUMP_LEAK_HEAP_H
+#define MYCPP_BUMP_LEAK_HEAP_H
 
 #include <stdint.h>  // int64_t
 
@@ -67,4 +67,4 @@ class BumpLeakHeap {
 extern BumpLeakHeap gHeap;
 #endif
 
-#endif  // BUMP_ALLOC_H
+#endif  // MYCPP_BUMP_LEAK_HEAP_H
