@@ -106,7 +106,7 @@ class MarkSweepHeap {
   }
 
   void Init();  // use default threshold
-  void Init(int collect_threshold);
+  void Init(int gc_threshold);
 
   //
   // OLD Local Var Rooting
@@ -148,7 +148,7 @@ class MarkSweepHeap {
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
   // In number of live objects, since we aren't keeping track of total bytes
-  int collect_threshold_;
+  int gc_threshold_;
 
   // Cumulative stats
   int64_t num_allocated_ = 0;

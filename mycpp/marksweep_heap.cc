@@ -17,15 +17,15 @@ void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
 }
 
-void MarkSweepHeap::Init(int collect_threshold) {
-  collect_threshold_ = collect_threshold;
+void MarkSweepHeap::Init(int gc_threshold) {
+  gc_threshold_ = gc_threshold;
 
   char* e = getenv("OIL_GC_THRESHOLD");
   if (e) {
     int result;
     if (StringToInteger(e, strlen(e), 10, &result)) {
       // Override collection threshold
-      collect_threshold_ = result;
+      gc_threshold_ = result;
     }
   }
 
@@ -62,14 +62,14 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   #if GC_EVERY_ALLOC
   Collect();
   #else
-  if (num_live_ > collect_threshold_) {
+  if (num_live_ > gc_threshold_) {
     Collect();
   }
   #endif
 
   // num_live_ UPDATED after possible collection
-  if (num_live_ > collect_threshold_) {
-    collect_threshold_ = num_live_ * 2;
+  if (num_live_ > gc_threshold_) {
+    gc_threshold_ = num_live_ * 2;
   }
 
   //

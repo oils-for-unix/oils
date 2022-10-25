@@ -7,6 +7,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
+source test/tsv-lib.sh
+
 # See benchmarks/gperftools.sh.  I think the Ubuntu package is very old
 
 download-tcmalloc() {
@@ -25,7 +29,7 @@ debug-tcmalloc() {
   touch mycpp/marksweep_heap.cc
 
   # No evidence of difference
-  for bin in _bin/cxx-{mallocleak,tcmallocleak}/osh_eval; do
+  for bin in _bin/cxx-{opt,tcmalloc}/osh_eval; do
     echo $bin
     ninja $bin
 
@@ -35,7 +39,7 @@ debug-tcmalloc() {
     ls -l $bin
     echo
 
-    # Still linking against glibc
+    # Check what we're linking against
     nm $bin | egrep -i 'malloc|calloc'
     #wc -l
     echo
@@ -56,6 +60,8 @@ run-osh() {
 # TODO:
 # - -m32 speed comparison would be interesting, see mycpp/demo.sh
 # - also it's generally good for testing
+# - integrate with benchmarks/gperftools.sh, and measure memory usage
+# - Use time-tsv, and max_rss stat, like %M
 
 compare() {
   local file=${1:-benchmarks/testdata/configure-coreutils}
@@ -68,6 +74,11 @@ compare() {
   # 91 ms
   banner 'bash'
   time bash -n $file
+  echo
+
+  # 274 ms
+  banner 'zsh'
+  time zsh -n $file
   echo
 
   # ~88 ms!  But we are using more system time than bash/dash -- is it
@@ -110,6 +121,16 @@ compare() {
     # TODO: crashes!
     OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 run-osh $bin
   fi
+}
+
+compare-two-files() {
+  compare
+
+  # Similar, smaller file.  zsh is faster
+  compare benchmarks/testdata/configure
+
+  #compare testdata/completion/git-completion.bash
+  #compare testdata/osh-runtime/abuild
 }
 
 "$@"

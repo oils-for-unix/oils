@@ -58,6 +58,7 @@ html-report() {
     --ignore-filename-regex 'mycpp/examples' \
     --ignore-filename-regex 'mycpp/smartptr' \
     --ignore-filename-regex 'mycpp/cheney' \
+    --ignore-filename-regex 'mycpp/bump_leak' \
     --ignore-filename-regex 'prebuilt/' \
     --show-instantiation-summary \
     --instr-profile $merged \

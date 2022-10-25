@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./gperftools.sh <function name>
+#   benchmarks/gperftools.sh <function name>
 
 set -o nounset
 set -o pipefail

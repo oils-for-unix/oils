@@ -16,7 +16,7 @@ class BumpLeakHeap {
 
   void Init() {
   }
-  void Init(int collect_threshold) {
+  void Init(int gc_threshold) {
   }
 
   //
@@ -55,7 +55,7 @@ class BumpLeakHeap {
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
   // In number of live objects, since we aren't keeping track of total bytes
-  int collect_threshold_;
+  int gc_threshold_;
   int mem_pos_ = 0;
 
   // Cumulative stats
