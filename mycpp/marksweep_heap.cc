@@ -44,7 +44,7 @@ void MarkSweepHeap::Report() {
   log(" objs capacity    = %10d", live_objs_.capacity());
 }
 
-#if defined(MALLOC_LEAK) || defined(TCMALLOC)
+#if defined(MALLOC_LEAK)
 
 // for testing performance
 void* MarkSweepHeap::Allocate(int num_bytes) {

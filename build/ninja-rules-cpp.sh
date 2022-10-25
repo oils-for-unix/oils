@@ -114,12 +114,12 @@ setglobal_compile_flags() {
       # optimized build with malloc only
       flags="$flags -O2 -g -D MALLOC_LEAK"
       ;;
-    (tcmallocleak)
-      flags="$flags -O2 -g -D TCMALLOC"
-      ;;
     (bumpleak)
       # optimized build with bump allocator
       flags="$flags -O2 -g -D BUMP_LEAK"
+      ;;
+    (tcmalloc)
+      flags="$flags -O2 -g -D TCMALLOC"
       ;;
 
     (uftrace)
@@ -159,7 +159,7 @@ setglobal_link_flags() {
   local variant=$1
 
   case $variant in
-    (tcmallocleak)
+    (tcmalloc)
       # Need to tell the dynamic loader where to find tcmalloc
       link_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
       ;;
