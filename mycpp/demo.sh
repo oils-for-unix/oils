@@ -16,11 +16,6 @@ source $REPO_ROOT/build/common.sh  # $BASE_CXXFLAGS, $CLANG_DIR_RELATIVE, $PREPA
 CPPFLAGS="$BASE_CXXFLAGS -O0 -g -fsanitize=address -Wpedantic"
 # export ASAN_OPTIONS='detect_leaks=0'
 
-deps() {
-  # needed to compile with -m32
-  sudo apt install gcc-multilib g++-multilib
-}
-
 # Copied from mycpp/run.sh
 cpp-compile() {
   local main_cc=$1

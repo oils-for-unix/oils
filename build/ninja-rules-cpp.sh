@@ -110,6 +110,9 @@ setglobal_compile_flags() {
     (opt)
       flags="$flags -O2 -g"
       ;;
+    (opt32)
+      flags="$flags -O2 -g -m32"
+      ;;
     (mallocleak)
       # optimized build with malloc only
       flags="$flags -O2 -g -D MALLOC_LEAK"
@@ -159,6 +162,10 @@ setglobal_link_flags() {
   local variant=$1
 
   case $variant in
+    (opt32)
+      link_flags='-m32'
+      ;;
+
     (tcmalloc)
       # Need to tell the dynamic loader where to find tcmalloc
       link_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'

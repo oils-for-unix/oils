@@ -46,6 +46,36 @@ debug-tcmalloc() {
   done
 }
 
+install-m32() {
+  # needed to compile with -m32
+  sudo apt install gcc-multilib g++-multilib
+}
+
+max-rss() {
+  # %e is real time
+  /usr/bin/time --format '%e %M' -- "$@"
+}
+
+compare-m32() {
+  for bin in _bin/cxx-opt{,32}/osh_eval.stripped; do
+    echo $bin
+    ninja $bin
+
+    ldd $bin
+    echo
+
+    file $bin
+    echo
+
+    ls -l $bin
+    echo
+
+    # 141136 KiB vs. 110924 KiB.  Significant savings, but it's slower.
+    max-rss $bin --ast-format none -n benchmarks/testdata/configure-coreutils
+
+  done
+}
+
 banner() {
   echo -----
   echo "$@"
@@ -81,37 +111,49 @@ compare() {
   time zsh -n $file
   echo
 
-  # ~88 ms!  But we are using more system time than bash/dash -- is it
-  # line-based I/O?
+  # ~88 ms!  But we are using more system time than bash/dash -- it's almost
+  # certainly UNBUFFERED line-based I/O!
   banner 'bumpleak'
   local bin=_bin/cxx-bumpleak/osh_eval
   OIL_GC_STATS=1 run-osh $bin
 
-  # ~174 ms
+  # 165 ms
   banner 'mallocleak'
   local bin=_bin/cxx-mallocleak/osh_eval
   run-osh $bin
 
-  # ~204 ms -- this is slower than mallocleak!  But all we're doing is checking
-  # collection policy, and updating GC stats.  Hm.
-  banner 'OPT with high threshold - malloc only'
-
-  # ~308 ms
+  # 184 ms
   # Garbage-collected Oil binary
+  banner 'OPT - malloc only'
   local bin=_bin/cxx-opt/osh_eval
   run-osh $bin
 
-  # ~330 ms -- free() is slow
-  banner 'OPT with high threshold - malloc + free'
+  # 277 ms -- free() is slow
+  banner 'OPT GC on exit - malloc + free'
   OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $bin
 
-  banner 'tcmalloc with high threshold - malloc only'
+  # Surprisingly, -m32 is SLOWER, even though it allocates less.
+  # My guess is because less work is going into maintaining this code path in
+  # GCC.
+
+  # 223 ms
+  # 61.9 MB bytes allocated
+  banner 'OPT32 - malloc only'
+  local bin=_bin/cxx-opt32/osh_eval
+  run-osh $bin
+
+  # 280 ms
+  banner 'OPT32 GC on exit - malloc + free'
+  OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $bin
+
+  # 184 ms
+  banner 'tcmalloc - malloc only'
   local tcmalloc_bin=_bin/cxx-tcmalloc/osh_eval
   run-osh $tcmalloc_bin
 
-  # WOW: 192 ms!  It doesn't have the huge free() penalty that glibc does.
+  # Faster: 218 ms!  It doesn't have the huge free() penalty that glibc does.
   # Maybe it doesn't do all the malloc_consolidate() stuff.
-  banner 'OPT with high threshold - tcmalloc + free'
+  banner 'tcmalloc GC on exit - malloc + free'
   OIL_GC_ON_EXIT=1 run-osh $tcmalloc_bin
 
   echo 'TODO'
