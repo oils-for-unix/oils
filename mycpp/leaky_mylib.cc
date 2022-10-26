@@ -185,11 +185,11 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  Extend(s);
+  buf_->Extend(s);
 }
 
 Str* BufWriter::getvalue() {
-  if (BufIsEmpty()) {  // if no write() methods are called, the result is ""
+  if (buf_->IsEmpty()) {  // if no write() methods are called, the result is ""
     assert(buf_->data() == nullptr);
     return kEmptyString;
   } else {
