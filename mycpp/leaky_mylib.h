@@ -150,9 +150,11 @@ class Buf : Obj {
 Str* StrFromBuf(const Buf&);
 Buf* NewBuf(int);
 
+constexpr uint16_t maskof_BufWriter();
+
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_(NewBuf(128)) {
+  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)), buf_(NewBuf(128)) {
   }
   void write(Str* s) override;
   void flush() override {
