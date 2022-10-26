@@ -130,9 +130,6 @@ class Buf : Obj {
   // The initial capacity is big enough for a line
   Buf() : Obj(Tag::Opaque, kZeroMask, 0), data_(nullptr), len_(0), cap_(128) {
   }
-  bool IsEmpty() {
-    return len_ == 0;
-  }
   char* data() {
     return data_;
   }
@@ -170,8 +167,13 @@ class BufWriter : public Writer {
 
  private:
   friend constexpr uint16_t maskof_BufWriter();
-  // Just like a string, except it's mutable
+
+  bool BufIsEmpty() {
+      return buf_ == nullptr;
+  }
+
   Buf* buf_;
+  bool buf_is_valid_ = true;
 };
 
 constexpr uint16_t maskof_BufWriter() {
