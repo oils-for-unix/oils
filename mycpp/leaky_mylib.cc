@@ -8,8 +8,8 @@ mylib::FormatStringer gBuf;
 
 namespace mylib {
 
-Str* StrFromBuf(const Buf& buf) {
-  return ::StrFromC(buf.data_, buf.len_);
+Str* StrFromBuf(const Buf* buf) {
+  return ::StrFromC(buf->data_, buf->len_);
 }
 
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
@@ -169,19 +169,19 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  buf_.Extend(s);
+  buf_->Extend(s);
 }
 
 Str* BufWriter::getvalue() {
-  if (buf_.IsEmpty()) {  // if no write() methods are called, the result is ""
-    assert(buf_.data() == nullptr);
+  if (buf_->IsEmpty()) {  // if no write() methods are called, the result is ""
+    assert(buf_->data() == nullptr);
     return kEmptyString;
   } else {
-    assert(buf_.IsValid());  // Check for two INVALID getvalue() in a row
+    assert(buf_->IsValid());  // Check for two INVALID getvalue() in a row
 
     Str* ret = StrFromBuf(buf_);
 
-    buf_.Invalidate();
+    buf_->Invalidate();
 
     return ret;
   }
