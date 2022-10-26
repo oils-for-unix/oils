@@ -142,16 +142,21 @@ Buf* ExtendBuf(Buf* buf, Str* s) {
     int len = buf->len_;
 
     assert(cap >= len);
+
+    auto* b = buf;
     if (cap < len + n) {
         cap = std::max(cap * 2, len + n);
+
+        void* place = gHeap.Allocate(cap + 1);
+        b = new (place) Buf();
+
+        memcpy(b->data_, buf->data_, buf->len_);
     }
 
-    void* place = gHeap.Allocate(cap + 1);
-    auto b = new (place) Buf();
+    memcpy(b->data_ + len, s->data_, n);
+
     b->len_ = len + n;
     b->cap_ = cap;
-    memcpy(b->data_, buf->data_, buf->len_);
-    memcpy(b->data_ + len, s->data_, n);
     b->data_[len] = '\0';
 
     return b;
