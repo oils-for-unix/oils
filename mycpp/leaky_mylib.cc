@@ -183,7 +183,7 @@ void BufWriter::write(Str* s) {
 }
 
 Str* BufWriter::getvalue() {
-  if (buf_->IsEmpty()) {  // if no write() methods are called, the result is ""
+  if (BufIsEmpty()) {  // if no write() methods are called, the result is ""
     assert(buf_->data() == nullptr);
     return kEmptyString;
   } else {
