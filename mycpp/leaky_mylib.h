@@ -144,17 +144,18 @@ class Buf {
 
  private:
   friend Str* StrFromBuf(const Buf*);
+  friend Buf* NewBuf(int);
   char* data_;
   int len_;  // data length, not including NUL
   int cap_;  // capacity, not including NUL
 };
 
 Str* StrFromBuf(const Buf&);
-Buf NewBuf(int);
+Buf* NewBuf(int);
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_() {
+  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_(NewBuf(128)) {
   }
   void write(Str* s) override;
   void flush() override {

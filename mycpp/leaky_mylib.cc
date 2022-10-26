@@ -12,6 +12,14 @@ Str* StrFromBuf(const Buf* buf) {
   return ::StrFromC(buf->data_, buf->len_);
 }
 
+Buf* NewBuf(int cap) {
+    auto* b = new Buf();
+    b->cap_ = cap;
+    b->len_ = 0;
+    b->data_ = nullptr;
+    return b;
+}
+
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   StackRoots _roots({&s, &delim});
