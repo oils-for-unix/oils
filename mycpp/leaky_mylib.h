@@ -175,7 +175,8 @@ class BufWriter : public Writer {
 };
 
 constexpr uint16_t maskof_BufWriter() {
-    return maskbit(offsetof(BufWriter, buf_));
+  // maskvit_v() because BufWriter has virtual methods
+  return maskbit_v(offsetof(BufWriter, buf_));
 }
 
 class FormatStringer {
