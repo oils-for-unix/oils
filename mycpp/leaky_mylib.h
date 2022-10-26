@@ -125,10 +125,10 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
-class Buf {
+class Buf : Obj {
  public:
   // The initial capacity is big enough for a line
-  Buf() : data_(nullptr), len_(0), cap_(128) {
+  Buf() : Obj(Tag::Opaque, kZeroMask, 0), data_(nullptr), len_(0), cap_(128) {
   }
   bool IsEmpty() {
     return len_ == 0;
@@ -153,9 +153,11 @@ class Buf {
 Str* StrFromBuf(const Buf&);
 Buf* NewBuf(int);
 
+constexpr uint16_t maskof_BufWriter();
+
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_(NewBuf(128)) {
+  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)), buf_(NewBuf(128)) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -167,9 +169,14 @@ class BufWriter : public Writer {
   Str* getvalue();
 
  private:
+  friend constexpr uint16_t maskof_BufWriter();
   // Just like a string, except it's mutable
   Buf* buf_;
 };
+
+constexpr uint16_t maskof_BufWriter() {
+    return maskbit(offsetof(BufWriter, buf_));
+}
 
 class FormatStringer {
  public:
