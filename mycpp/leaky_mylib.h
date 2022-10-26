@@ -143,14 +143,14 @@ class Buf {
   void Invalidate();
 
  private:
-  friend Str* StrFromBuf(const Buf&);
+  friend Str* StrFromBuf(const Buf*);
   char* data_;
   int len_;  // data length, not including NUL
   int cap_;  // capacity, not including NUL
 };
 
 Str* StrFromBuf(const Buf&);
-Buf AllocBuf(char*, int);
+Buf NewBuf(int);
 
 class BufWriter : public Writer {
  public:
@@ -167,7 +167,7 @@ class BufWriter : public Writer {
 
  private:
   // Just like a string, except it's mutable
-  Buf buf_;
+  Buf* buf_;
 };
 
 class FormatStringer {
