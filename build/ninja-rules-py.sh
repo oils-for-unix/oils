@@ -41,7 +41,7 @@ osh-eval-main() {
   cat <<EOF
 int main(int argc, char **argv) {
 
-  complain_loudly_on_segfault();
+  // complain_loudly_on_segfault();
 
   // So big that we don't trigger collection
   gHeap.Init(400 << 20);
