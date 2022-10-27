@@ -172,6 +172,10 @@ void Buf::Invalidate() {
 // BufWriter
 //
 
+void BufWriter::Extend(Str* s) {
+    buf_->Extend(s);
+}
+
 void BufWriter::write(Str* s) {
   int n = len(s);
   if (n == 0) {
@@ -179,7 +183,7 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  buf_->Extend(s);
+  Extend(s);
 }
 
 Str* BufWriter::getvalue() {
