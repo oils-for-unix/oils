@@ -162,7 +162,7 @@ Str* %s(Str* c) {
 
   for char_code in sorted(lookup):
     f.write("  case '%s':\n" % CChar(char_code))
-    f.write('    return StrFromC("%s");\n' % CChar(lookup[char_code]))
+    f.write('    return StrFromC("%s", 1);\n' % CChar(lookup[char_code]))
     f.write("    break;\n");
 
   f.write("  default:\n");
