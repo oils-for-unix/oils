@@ -185,7 +185,7 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  buf_->Extend(s);
+  Extend(s);
 }
 
 Str* BufWriter::getvalue() {
