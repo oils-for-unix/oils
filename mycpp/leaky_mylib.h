@@ -168,6 +168,8 @@ class BufWriter : public Writer {
  private:
   friend constexpr uint16_t maskof_BufWriter();
 
+  void Extend(Str* s);
+
   bool BufIsEmpty() {
       return buf_ == nullptr;
   }
