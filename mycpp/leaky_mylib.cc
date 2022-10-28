@@ -173,7 +173,6 @@ void Buf::Invalidate() {
 //
 
 void BufWriter::Extend(Str* s) {
-    auto* str = s;
     if (!buf_)
         buf_ = NewBuf(128);
     buf_->Extend(s);
