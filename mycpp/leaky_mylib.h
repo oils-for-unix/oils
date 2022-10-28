@@ -128,7 +128,7 @@ class Writer : public Obj {
 class Buf : Obj {
  public:
   // The initial capacity is big enough for a line
-  Buf() : Obj(Tag::Opaque, kZeroMask, 0), data_(nullptr), len_(0), cap_(128) {
+  Buf() : Obj(Tag::Opaque, kZeroMask, 0), len_(0), cap_(0), data_(nullptr) {
   }
   char* data() {
     return data_;
@@ -142,9 +142,9 @@ class Buf : Obj {
  private:
   friend Str* StrFromBuf(const Buf*);
   friend Buf* NewBuf(int);
-  char* data_;
   int len_;  // data length, not including NUL
   int cap_;  // capacity, not including NUL
+  char* data_;
 };
 
 Str* StrFromBuf(const Buf&);
