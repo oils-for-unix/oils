@@ -4,14 +4,11 @@
 #
 # The following is as close as possible to the python argparse which seems to work well
 
-#### Argparse basic statement
+#### Argparse boolsche option and positional
 
 #I assume the hay definitions are given.
 ArgSpec myspec {
-  description = '''
-     Reference Implementation
-  '''
-  arg -v --verbose { type = Bool, help = "Verbose" }
+  arg -v --verbose { type = Bool }
   # TODO: can position be implicit (in given order?) or is the order not maintained in hay?
   arg firstPositional
 }
@@ -26,7 +23,7 @@ argparse (myspec, args, :opts)
 (List)   []
 ## END
 
-#### Argparse print automatic option "help"
+#### Argparse basic help message
 ArgSpec myspec {
   description = '''
      Reference Implementation
