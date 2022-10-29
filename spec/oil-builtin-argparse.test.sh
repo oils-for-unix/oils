@@ -2,34 +2,51 @@
 #
 # Some thoughts before writing code.  Hm can we do this entirely in user code, not as a builtin?
 #
-# I think it modifies OPT
+# The following is as close as possible to the python argparse which seems to work well
 
+#### Argparse basic statement
 
-#### Argparse Prototype
-
-hay define argparse
-
-# Oops, we're running into this problem ...
-
-hay define argparse/flag
-
-# This means we need expr.Type objects?  
-
-argparse foo {
-  flag -v --verbose (Bool) {
-    help = 'fo'
-    default = true
-  }
-
-  flag -h --help (Bool) {
-    help = 'fo'
-  }
-
-  arg name (pos = 1) {
-    foo
-  }
+#I assume the hay definitions are given.
+ArgSpec myspec {
+  description = '''
+     Reference Implementation
+  '''
+  arg -v --verbose { type = Bool, help = "Verbose" }
+  # TODO: can position be implicit (in given order?) or is the order not maintained in hay?
+  arg firstPositional
 }
+var args = ['-v' 'argument']
+argparse (myspec, args, :opts)
 
+= opts
+= args
 ## STDOUT:
-TODO
+(OrderedDict)   <'verbose': True, 'firstPositional': 'argument'> 
+# TODO: Should this be empty afterwards? Is it even possible with above call?
+(List)   []
+## END
+
+#### Argparse print automatic option "help"
+ArgSpec myspec {
+  description = '''
+     Reference Implementation
+  '''
+  prog = "program-name"
+  arg -v --verbose { type = Bool, help = "Verbose" }
+  arg firstPositional
+}
+var args = ['-h' 'posone']
+
+argparse (myspec, args, :opts)
+## STDOUT:
+usage: program-name [-h] [-v] firstPositional
+
+Reference Implementation
+
+positional arguments:
+ firstPositional
+
+options:
+ -h, --help           show this help message and exit
+ -v, --verbose        Verbose
 ## END
