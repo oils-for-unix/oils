@@ -180,7 +180,7 @@ void Buf::Invalidate() {
 
 void BufWriter::Extend(Str* s) {
     if (!buf_)
-        buf_ = NewBuf(128);
+        buf_ = NewBuf(len(s));
     buf_->Extend(s);
 }
 
