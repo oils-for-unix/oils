@@ -137,7 +137,6 @@ class Buf : Obj {
     return len_ != -1;
   }
 
-  void ExpandCapacity(int n);
   void Extend(Str* s);
   void Invalidate();
 

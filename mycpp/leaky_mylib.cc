@@ -146,9 +146,6 @@ bool CFileWriter::isatty() {
 //
 //
 
-void Buf::ExpandCapacity(int extra_size_needed) {
-}
-
 void Buf::Extend(Str* s) {
   const int n = len(s);
 
