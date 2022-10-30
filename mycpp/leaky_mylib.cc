@@ -18,7 +18,7 @@ Buf* NewBuf(int cap) {
     auto* b = new (place) Buf();
     b->cap_ = cap;
     b->len_ = 0;
-    b->data_ = nullptr;
+    b->data_ = (char*)malloc(cap + 1);
     return b;
 }
 
@@ -160,7 +160,7 @@ void Buf::Invalidate() {
   free(data_);
   len_ = -1;
   cap_ = -1;
-  data_ = nullptr;
+  // data_ = nullptr;
 }
 
 //
@@ -168,8 +168,11 @@ void Buf::Invalidate() {
 //
 
 void BufWriter::ExpandBufCapacity(int n) {
-    if (!buf_)
+    if (!buf_) {
         buf_ = NewBuf(n);
+        return;
+    }
+
     assert(buf_->cap_ >= buf_->len_);
 
     if (buf_->cap_ < buf_->len_ + n) {
