@@ -137,7 +137,7 @@ class Buf : Obj {
     return len_ != -1;
   }
 
-  void ExpandCapacity(int cap);
+  void ExpandCapacity(int n);
   void Extend(Str* s);
   void Invalidate();
 
@@ -170,6 +170,7 @@ class BufWriter : public Writer {
  private:
   friend constexpr uint16_t maskof_BufWriter();
 
+  void ExpandBufCapacity(int n);
   void Extend(Str* s);
 
   bool BufIsEmpty() {
