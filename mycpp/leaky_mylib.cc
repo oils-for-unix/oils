@@ -147,14 +147,6 @@ bool CFileWriter::isatty() {
 //
 
 void Buf::ExpandCapacity(int extra_size_needed) {
-  assert(cap_ >= len_);
-
-  if (cap_ < len_ + extra_size_needed) {
-    cap_ = std::max(cap_ * 2, len_ + extra_size_needed);
-  }
-
-  // +1 for NUL.  TODO: consider making it a power of 2
-  data_ = static_cast<char*>(realloc(data_, cap_ + 1));
 }
 
 void Buf::Extend(Str* s) {
@@ -181,7 +173,14 @@ void Buf::Invalidate() {
 void BufWriter::ExpandBufCapacity(int n) {
     if (!buf_)
         buf_ = NewBuf(n);
-    buf_->ExpandCapacity(n);
+    assert(buf_->cap_ >= buf_->len_);
+
+    if (buf_->cap_ < buf_->len_ + n) {
+      buf_->cap_ = std::max(buf_->cap_ * 2, buf_->len_ + n);
+    }
+
+    // +1 for NUL.  TODO: consider making it a power of 2
+    buf_->data_ = static_cast<char*>(realloc(buf_->data_, buf_->cap_ + 1));
 }
 
 void BufWriter::Extend(Str* s) {
