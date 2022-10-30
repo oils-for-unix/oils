@@ -146,8 +146,11 @@ bool CFileWriter::isatty() {
 //
 //
 
-void Buf::ExpandCapacity(int cap) {
-  cap_ = cap;
+void Buf::ExpandCapacity(int extra_size_needed) {
+  if (cap_ < len_ + extra_size_needed) {
+    cap_ = std::max(cap_ * 2, len_ + extra_size_needed);
+  }
+
   // +1 for NUL.  TODO: consider making it a power of 2
   data_ = static_cast<char*>(realloc(data_, cap_ + 1));
 }
@@ -156,12 +159,8 @@ void Buf::Extend(Str* s) {
   int n = len(s);
 
   assert(cap_ >= len_);
-  int cap = cap_;
-  if (cap_ < len_ + n) {
-    cap = std::max(cap_ * 2, len_ + n);
-  }
 
-  ExpandCapacity(cap);
+  ExpandCapacity(n);
 
   memcpy(data_ + len_, s->data_, n);
   len_ += n;
