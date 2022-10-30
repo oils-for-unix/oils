@@ -158,10 +158,9 @@ void Buf::ExpandCapacity(int extra_size_needed) {
 }
 
 void Buf::Extend(Str* s) {
-  int n = len(s);
+  const int n = len(s);
 
   assert(cap_ >= len_ + n);
-  // ExpandCapacity(n);
 
   memcpy(data_ + len_, s->data_, n);
   len_ += n;
@@ -179,10 +178,14 @@ void Buf::Invalidate() {
 // BufWriter
 //
 
-void BufWriter::Extend(Str* s) {
+void BufWriter::ExpandBufCapacity(int n) {
     if (!buf_)
-        buf_ = NewBuf(len(s));
-    buf_->ExpandCapacity(len(s));
+        buf_ = NewBuf(n);
+    buf_->ExpandCapacity(n);
+}
+
+void BufWriter::Extend(Str* s) {
+    ExpandBufCapacity(len(s));
     buf_->Extend(s);
 }
 
