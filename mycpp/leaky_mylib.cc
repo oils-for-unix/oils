@@ -147,6 +147,8 @@ bool CFileWriter::isatty() {
 //
 
 void Buf::ExpandCapacity(int extra_size_needed) {
+  assert(cap_ >= len_);
+
   if (cap_ < len_ + extra_size_needed) {
     cap_ = std::max(cap_ * 2, len_ + extra_size_needed);
   }
@@ -158,9 +160,8 @@ void Buf::ExpandCapacity(int extra_size_needed) {
 void Buf::Extend(Str* s) {
   int n = len(s);
 
-  assert(cap_ >= len_);
-
-  ExpandCapacity(n);
+  assert(cap_ >= len_ + n);
+  // ExpandCapacity(n);
 
   memcpy(data_ + len_, s->data_, n);
   len_ += n;
@@ -181,6 +182,7 @@ void Buf::Invalidate() {
 void BufWriter::Extend(Str* s) {
     if (!buf_)
         buf_ = NewBuf(len(s));
+    buf_->ExpandCapacity(len(s));
     buf_->Extend(s);
 }
 
