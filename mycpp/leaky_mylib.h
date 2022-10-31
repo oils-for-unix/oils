@@ -140,7 +140,7 @@ class Buf : Obj {
   void Extend(Str* s);
   void Invalidate();
 
- // private:
+  // private:
   friend Str* StrFromBuf(const Buf*);
   friend Buf* NewBuf(int);
   int len_;  // data length, not including NUL
@@ -155,7 +155,9 @@ constexpr uint16_t maskof_BufWriter();
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)), buf_(nullptr) {
+  BufWriter()
+      : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)),
+        buf_(nullptr) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -173,7 +175,7 @@ class BufWriter : public Writer {
   void Extend(Str* s);
 
   bool BufIsEmpty() {
-      return buf_ == nullptr;
+    return buf_ == nullptr;
   }
 
   Buf* buf_;

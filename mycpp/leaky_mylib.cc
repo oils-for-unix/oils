@@ -13,13 +13,13 @@ Str* StrFromBuf(const Buf* buf) {
 }
 
 Buf* NewBuf(int cap) {
-    void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
+  void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
 
-    auto* b = new (place) Buf();
-    b->cap_ = cap;
-    b->len_ = 0;
-    // b->data_ = (char*)malloc(cap + 1);
-    return b;
+  auto* b = new (place) Buf();
+  b->cap_ = cap;
+  b->len_ = 0;
+  // b->data_ = (char*)malloc(cap + 1);
+  return b;
 }
 
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
@@ -168,32 +168,31 @@ void Buf::Invalidate() {
 //
 
 void BufWriter::ExpandBufCapacity(int n) {
-    if (!buf_) {
-        buf_ = NewBuf(n);
-        return;
-    }
+  if (!buf_) {
+    buf_ = NewBuf(n);
+    return;
+  }
 
-    assert(buf_->cap_ >= buf_->len_);
+  assert(buf_->cap_ >= buf_->len_);
 
-    if (buf_->cap_ < buf_->len_ + n) {
-      // buf_->cap_ = std::max(buf_->cap_ * 2, buf_->len_ + n);
+  if (buf_->cap_ < buf_->len_ + n) {
+    // buf_->cap_ = std::max(buf_->cap_ * 2, buf_->len_ + n);
 
-      // +1 for NUL.  TODO: consider making it a power of 2
-      // buf_->data_ = static_cast<char*>(realloc(buf_->data_, buf_->cap_ + 1));
+    // +1 for NUL.  TODO: consider making it a power of 2
+    // buf_->data_ = static_cast<char*>(realloc(buf_->data_, buf_->cap_ + 1));
 
-      auto* b = NewBuf(std::max(buf_->cap_ * 2, buf_->len_ + n));
-      memcpy(b->data_, buf_->data_, buf_->len_);
-      b->len_ = buf_->len_;
-      b->data_[b->len_] = '\0';
-      // free(buf_->data_);
-      buf_ = b;
-    }
-
+    auto* b = NewBuf(std::max(buf_->cap_ * 2, buf_->len_ + n));
+    memcpy(b->data_, buf_->data_, buf_->len_);
+    b->len_ = buf_->len_;
+    b->data_[b->len_] = '\0';
+    // free(buf_->data_);
+    buf_ = b;
+  }
 }
 
 void BufWriter::Extend(Str* s) {
-    ExpandBufCapacity(len(s));
-    buf_->Extend(s);
+  ExpandBufCapacity(len(s));
+  buf_->Extend(s);
 }
 
 void BufWriter::write(Str* s) {
