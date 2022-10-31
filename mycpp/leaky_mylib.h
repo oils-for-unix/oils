@@ -140,7 +140,8 @@ class Buf : Obj {
   void Extend(Str* s);
   void Invalidate();
 
-  // private:
+ private:
+  friend class BufWriter;
   friend Str* StrFromBuf(const Buf*);
   friend Buf* NewBuf(int);
   int len_;  // data length, not including NUL
