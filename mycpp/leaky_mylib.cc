@@ -13,12 +13,12 @@ Str* StrFromBuf(const Buf* buf) {
 }
 
 Buf* NewBuf(int cap) {
-    void* place = gHeap.Allocate(sizeof(Buf));
+    void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
 
     auto* b = new (place) Buf();
     b->cap_ = cap;
     b->len_ = 0;
-    b->data_ = (char*)malloc(cap + 1);
+    // b->data_ = (char*)malloc(cap + 1);
     return b;
 }
 
@@ -157,7 +157,7 @@ void Buf::Extend(Str* s) {
 }
 
 void Buf::Invalidate() {
-  free(data_);
+  // free(data_);
   len_ = -1;
   cap_ = -1;
   // data_ = nullptr;
@@ -185,7 +185,7 @@ void BufWriter::ExpandBufCapacity(int n) {
       memcpy(b->data_, buf_->data_, buf_->len_);
       b->len_ = buf_->len_;
       b->data_[b->len_] = '\0';
-      free(buf_->data_);
+      // free(buf_->data_);
       buf_ = b;
     }
 
