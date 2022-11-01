@@ -5,43 +5,55 @@
 # The following is as close as possible to the python argparse which seems to work well
 
 #### Argparse boolsche option and positional
+hay define ArgSpec
+hay define ArgSpec/Arg
 
-#I assume the hay definitions are given.
 ArgSpec myspec {
-  arg -v --verbose { type = Bool }
-  # TODO: can position be implicit (in given order?) or is the order not maintained in hay?
-  arg firstPositional
+  Arg -v --verbose { type = Bool }
+  Arg src
+  Arg dst
 }
-var args = ['-v' 'argument']
+var args = ['-v', 'src/path', 'dst/path']
 argparse (myspec, args, :opts)
 
-= opts
-= args
+json write (opts)
+json write (args)
 ## STDOUT:
-(OrderedDict)   <'verbose': True, 'firstPositional': 'argument'> 
+{
+  "verbose": true,
+  "src": "src/path",
+  "dst": "dst/path"
+}
 # TODO: Should this be empty afterwards? Is it even possible with above call?
-(List)   []
+[
+
+]
 ## END
 
 #### Argparse basic help message
+hay define ArgSpec
+hay define ArgSpec/Arg
+
 ArgSpec myspec {
   description = '''
      Reference Implementation
   '''
   prog = "program-name"
-  arg -v --verbose { type = Bool, help = "Verbose" }
-  arg firstPositional
+  Arg -v --verbose { type = Bool; help = "Verbose" }
+  Arg src
+  Arg dst
 }
-var args = ['-h' 'posone']
+var args = ['-h', 'src', 'dst']
 
 argparse (myspec, args, :opts)
 ## STDOUT:
-usage: program-name [-h] [-v] firstPositional
+usage: program-name [-h] [-v] src dst
 
 Reference Implementation
 
 positional arguments:
- firstPositional
+ src
+ dst
 
 options:
  -h, --help           show this help message and exit
