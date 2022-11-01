@@ -15,10 +15,7 @@ Str* StrFromBuf(const Buf* buf) {
 Buf* NewBuf(int cap) {
   void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
 
-  auto* b = new (place) Buf();
-  b->cap_ = cap;
-  b->len_ = 0;
-  // b->data_ = (char*)malloc(cap + 1);
+  auto* b = new (place) Buf(cap);
   return b;
 }
 

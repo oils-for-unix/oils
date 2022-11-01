@@ -128,7 +128,7 @@ class Writer : public Obj {
 class Buf : Obj {
  public:
   // The initial capacity is big enough for a line
-  Buf() : Obj(Tag::Opaque, kZeroMask, 0), len_(0), cap_(0) {
+  Buf(int cap) : Obj(Tag::Opaque, kZeroMask, 0), len_(0), cap_(cap) {
   }
   char* data() {
     return data_;
