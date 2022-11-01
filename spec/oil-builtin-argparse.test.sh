@@ -2,34 +2,60 @@
 #
 # Some thoughts before writing code.  Hm can we do this entirely in user code, not as a builtin?
 #
-# I think it modifies OPT
+# The following is as close as possible to the python argparse which seems to work well
 
+#### Argparse boolsche option and positional
+hay define ArgSpec
+hay define ArgSpec/Arg
 
-#### Argparse Prototype
-
-hay define argparse
-
-# Oops, we're running into this problem ...
-
-hay define argparse/flag
-
-# This means we need expr.Type objects?  
-
-argparse foo {
-  flag -v --verbose (Bool) {
-    help = 'fo'
-    default = true
-  }
-
-  flag -h --help (Bool) {
-    help = 'fo'
-  }
-
-  arg name (pos = 1) {
-    foo
-  }
+ArgSpec myspec {
+  Arg -v --verbose { type = Bool }
+  Arg src
+  Arg dst
 }
+var args = ['-v', 'src/path', 'dst/path']
+argparse (myspec, args, :opts)
 
+json write (opts)
+json write (args)
 ## STDOUT:
-TODO
+{
+  "verbose": true,
+  "src": "src/path",
+  "dst": "dst/path"
+}
+# TODO: Should this be empty afterwards? Is it even possible with above call?
+[
+
+]
+## END
+
+#### Argparse basic help message
+hay define ArgSpec
+hay define ArgSpec/Arg
+
+ArgSpec myspec {
+  description = '''
+     Reference Implementation
+  '''
+  prog = "program-name"
+  Arg -v --verbose { type = Bool; help = "Verbose" }
+  Arg src
+  Arg dst
+}
+var args = ['-h', 'src', 'dst']
+
+argparse (myspec, args, :opts)
+## STDOUT:
+usage: program-name [-h] [-v] src dst
+
+Reference Implementation
+
+positional arguments:
+ src
+ dst
+
+options:
+ -h, --help           show this help message and exit
+ -v, --verbose        Verbose
 ## END
