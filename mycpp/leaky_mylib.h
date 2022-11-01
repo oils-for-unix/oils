@@ -180,7 +180,6 @@ class BufWriter : public Writer {
   }
 
   Buf* buf_;
-  bool buf_is_valid_ = true;
 };
 
 constexpr uint16_t maskof_BufWriter() {
