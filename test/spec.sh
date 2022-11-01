@@ -927,7 +927,7 @@ oil-builtins() {
 }
 
 oil-builtin-argparse() {
-  sh-spec spec/oil-builtin-argparse.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/oil-builtin-argparse.test.sh --osh-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 
