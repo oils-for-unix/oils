@@ -8,8 +8,15 @@ mylib::FormatStringer gBuf;
 
 namespace mylib {
 
-Str* StrFromBuf(const Buf& buf) {
-  return ::StrFromC(buf.data_, buf.len_);
+Str* StrFromBuf(const Buf* buf) {
+  return ::StrFromC(buf->data_, buf->len_);
+}
+
+Buf* NewBuf(int cap) {
+  void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
+
+  auto* b = new (place) Buf(cap);
+  return b;
 }
 
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
@@ -137,14 +144,9 @@ bool CFileWriter::isatty() {
 //
 
 void Buf::Extend(Str* s) {
-  int n = len(s);
+  const int n = len(s);
 
-  assert(cap_ >= len_);
-  if (cap_ < len_ + n) {
-    cap_ = std::max(cap_ * 2, len_ + n);
-  }
-  // +1 for NUL.  TODO: consider making it a power of 2
-  data_ = static_cast<char*>(realloc(data_, cap_ + 1));
+  assert(cap_ >= len_ + n);
 
   memcpy(data_ + len_, s->data_, n);
   len_ += n;
@@ -152,15 +154,43 @@ void Buf::Extend(Str* s) {
 }
 
 void Buf::Invalidate() {
-  free(data_);
+  // free(data_);
   len_ = -1;
   cap_ = -1;
-  data_ = nullptr;
+  // data_ = nullptr;
 }
 
 //
 // BufWriter
 //
+
+void BufWriter::ExpandBufCapacity(int n) {
+  if (!buf_) {
+    buf_ = NewBuf(n);
+    return;
+  }
+
+  assert(buf_->cap_ >= buf_->len_);
+
+  if (buf_->cap_ < buf_->len_ + n) {
+    // buf_->cap_ = std::max(buf_->cap_ * 2, buf_->len_ + n);
+
+    // +1 for NUL.  TODO: consider making it a power of 2
+    // buf_->data_ = static_cast<char*>(realloc(buf_->data_, buf_->cap_ + 1));
+
+    auto* b = NewBuf(std::max(buf_->cap_ * 2, buf_->len_ + n));
+    memcpy(b->data_, buf_->data_, buf_->len_);
+    b->len_ = buf_->len_;
+    b->data_[b->len_] = '\0';
+    // free(buf_->data_);
+    buf_ = b;
+  }
+}
+
+void BufWriter::Extend(Str* s) {
+  ExpandBufCapacity(len(s));
+  buf_->Extend(s);
+}
 
 void BufWriter::write(Str* s) {
   int n = len(s);
@@ -169,19 +199,18 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  buf_.Extend(s);
+  Extend(s);
 }
 
 Str* BufWriter::getvalue() {
-  if (buf_.IsEmpty()) {  // if no write() methods are called, the result is ""
-    assert(buf_.data() == nullptr);
+  if (BufIsEmpty()) {  // if no write() methods are called, the result is ""
     return kEmptyString;
   } else {
-    assert(buf_.IsValid());  // Check for two INVALID getvalue() in a row
+    assert(buf_->IsValid());  // Check for two INVALID getvalue() in a row
 
     Str* ret = StrFromBuf(buf_);
 
-    buf_.Invalidate();
+    buf_->Invalidate();
 
     return ret;
   }

@@ -68,11 +68,15 @@ TEST writer_test() {
 
   mylib::BufWriter* writer = nullptr;
   Str* s = nullptr;
-  StackRoots _roots({&writer, &s});
+  Str* foo = nullptr;
+  Str* bar = nullptr;
+  StackRoots _roots({&writer, &s, &foo, &bar});
 
+  foo = StrFromC("foo");
+  bar = StrFromC("bar");
   writer = Alloc<mylib::BufWriter>();
-  writer->write(StrFromC("foo"));
-  writer->write(StrFromC("bar"));
+  writer->write(foo);
+  writer->write(bar);
 
   s = writer->getvalue();
   ASSERT(str_equals0("foobar", s));

@@ -125,13 +125,10 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
-class Buf {
+class Buf : Obj {
  public:
   // The initial capacity is big enough for a line
-  Buf() : data_(nullptr), len_(0), cap_(128) {
-  }
-  bool IsEmpty() {
-    return len_ == 0;
+  Buf(int cap) : Obj(Tag::Opaque, kZeroMask, 0), len_(0), cap_(cap) {
   }
   char* data() {
     return data_;
@@ -139,22 +136,29 @@ class Buf {
   bool IsValid() {
     return len_ != -1;
   }
+
   void Extend(Str* s);
   void Invalidate();
 
  private:
-  friend Str* StrFromBuf(const Buf&);
-  char* data_;
+  friend class BufWriter;
+  friend Str* StrFromBuf(const Buf*);
+  friend Buf* NewBuf(int);
   int len_;  // data length, not including NUL
   int cap_;  // capacity, not including NUL
+  char data_[1];
 };
 
 Str* StrFromBuf(const Buf&);
-Buf AllocBuf(char*, int);
+Buf* NewBuf(int);
+
+constexpr uint16_t maskof_BufWriter();
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), buf_() {
+  BufWriter()
+      : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)),
+        buf_(nullptr) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -166,9 +170,22 @@ class BufWriter : public Writer {
   Str* getvalue();
 
  private:
-  // Just like a string, except it's mutable
-  Buf buf_;
+  friend constexpr uint16_t maskof_BufWriter();
+
+  void ExpandBufCapacity(int n);
+  void Extend(Str* s);
+
+  bool BufIsEmpty() {
+    return buf_ == nullptr;
+  }
+
+  Buf* buf_;
 };
+
+constexpr uint16_t maskof_BufWriter() {
+  // maskvit_v() because BufWriter has virtual methods
+  return maskbit_v(offsetof(BufWriter, buf_));
+}
 
 class FormatStringer {
  public:
