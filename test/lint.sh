@@ -65,14 +65,6 @@ format-cpp() {
   git diff
 }
 
-format-oil() {
-  ### BACKWARD COMPAT stub
-
-  format-cpp "$@"
-}
-
-
-
 #
 # Python
 #
