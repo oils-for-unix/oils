@@ -133,12 +133,7 @@ class Buf : Obj {
   char* data() {
     return data_;
   }
-  bool IsValid() {
-    return len_ != -1;
-  }
-
   void Extend(Str* s);
-  void Invalidate();
 
  private:
   friend class BufWriter;
@@ -156,9 +151,7 @@ constexpr uint16_t maskof_BufWriter();
 
 class BufWriter : public Writer {
  public:
-  BufWriter()
-      : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)),
-        buf_(nullptr) {
+  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -171,15 +164,10 @@ class BufWriter : public Writer {
 
  private:
   friend constexpr uint16_t maskof_BufWriter();
+  Buf* EnsureCapacity(int n);
 
-  void ExpandBufCapacity(int n);
-  void Extend(Str* s);
-
-  bool BufIsEmpty() {
-    return buf_ == nullptr;
-  }
-
-  Buf* buf_;
+  Buf* buf_ = nullptr;
+  bool is_valid_ = true;  // It becomes invalid after getvalue() is called
 };
 
 constexpr uint16_t maskof_BufWriter() {
