@@ -37,6 +37,11 @@ static_assert(offsetof(List<int>, slab_) ==
                   offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
+#if 0
+static_assert(offsetof(Str, data_) == offsetof(mylib::Buf, data_),
+              "Str and Buf should have same data layout");
+#endif
+
 TEST test_str_creation() {
   Str* s = StrFromC("foo");
   ASSERT_EQ(3, len(s));

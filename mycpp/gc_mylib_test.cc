@@ -121,16 +121,20 @@ TEST BufWriter_test() {
 
   foo = StrFromC("foo");
   bar = StrFromC("bar");
-  writer = Alloc<mylib::BufWriter>();
 
+  writer = Alloc<mylib::BufWriter>();
   s = writer->getvalue();
   ASSERT_EQ(kEmptyString, s);
 
+  // Create a new BufWriter to call getvalue() again
+  writer = Alloc<mylib::BufWriter>();
   writer->write(foo);
-  // TODO: fix ASAN negative-size-param error here
-  // s = writer->getvalue();
-  // ASSERT(str_equals0("foo", s));
+  s = writer->getvalue();
+  ASSERT(str_equals0("foo", s));
 
+  // Create a new BufWriter to call getvalue() again
+  writer = Alloc<mylib::BufWriter>();
+  writer->write(foo);
   writer->write(bar);
 
   s = writer->getvalue();

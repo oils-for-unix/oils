@@ -8,17 +8,6 @@ mylib::FormatStringer gBuf;
 
 namespace mylib {
 
-Str* StrFromBuf(const Buf* buf) {
-  return ::StrFromC(buf->data_, buf->len_);
-}
-
-Buf* NewBuf(int cap) {
-  void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
-
-  auto* b = new (place) Buf(cap);
-  return b;
-}
-
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   StackRoots _roots({&s, &delim});
@@ -139,9 +128,40 @@ bool CFileWriter::isatty() {
   return ::isatty(fileno(f_));
 }
 
+//
 // Buf
 //
-//
+
+// TODO: Consider renaming MutableStr, or make this a subclass of Str
+class Buf : Obj {
+ public:
+  // The initial capacity is big enough for a line
+  Buf(int cap) : Obj(Tag::Opaque, kZeroMask, 0), len_(0), cap_(cap) {
+  }
+  void Extend(Str* s);
+
+ private:
+  friend class BufWriter;
+  friend Str* StrFromBuf(const Buf*);
+  friend Buf* NewBuf(int);
+
+  // TODO: move this state into BufWriter
+  int len_;  // data length, not including NUL
+  int cap_;  // capacity, not including NUL
+  char data_[1];
+};
+
+Str* StrFromBuf(const Buf* buf) {
+  return ::StrFromC(buf->data_, buf->len_);
+}
+
+Buf* NewBuf(int cap) {
+  // TODO: sizeof(Buf) is an overestimate because of flexible array member
+  void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
+
+  auto* b = new (place) Buf(cap);
+  return b;
+}
 
 void Buf::Extend(Str* s) {
   const int n = len(s);
@@ -153,66 +173,56 @@ void Buf::Extend(Str* s) {
   data_[len_] = '\0';
 }
 
-void Buf::Invalidate() {
-  // free(data_);
-  len_ = -1;
-  cap_ = -1;
-  // data_ = nullptr;
-}
-
 //
 // BufWriter
 //
 
-void BufWriter::ExpandBufCapacity(int n) {
-  if (!buf_) {
-    buf_ = NewBuf(n);
-    return;
-  }
-
+// TODO: realloc() to new capacity instead of creating NewBuf()
+Buf* BufWriter::EnsureCapacity(int capacity) {
   assert(buf_->cap_ >= buf_->len_);
 
-  if (buf_->cap_ < buf_->len_ + n) {
-    // buf_->cap_ = std::max(buf_->cap_ * 2, buf_->len_ + n);
-
-    // +1 for NUL.  TODO: consider making it a power of 2
-    // buf_->data_ = static_cast<char*>(realloc(buf_->data_, buf_->cap_ + 1));
-
-    auto* b = NewBuf(std::max(buf_->cap_ * 2, buf_->len_ + n));
+  if (buf_->cap_ < capacity) {
+    auto* b = NewBuf(std::max(buf_->cap_ * 2, capacity));
     memcpy(b->data_, buf_->data_, buf_->len_);
     b->len_ = buf_->len_;
     b->data_[b->len_] = '\0';
-    // free(buf_->data_);
-    buf_ = b;
+    return b;
+  } else {
+    return buf_;  // no-op
   }
-}
-
-void BufWriter::Extend(Str* s) {
-  ExpandBufCapacity(len(s));
-  buf_->Extend(s);
 }
 
 void BufWriter::write(Str* s) {
+  assert(is_valid_);  // Can't write() after getvalue()
+
   int n = len(s);
+
+  // write('') is a no-op, so don't create Buf if we don't need to
   if (n == 0) {
-    // preserve invariant that data_ == nullptr when len_ == 0
     return;
   }
 
-  Extend(s);
+  if (buf_ == nullptr) {
+    // TODO: we could make the default capacity big enough for a line, e.g. 128
+    // capacity: 128 -> 256 -> 512
+    int capacity = n;
+    buf_ = NewBuf(capacity);
+  } else {
+    buf_ = EnsureCapacity(buf_->len_ + n);
+  }
+
+  // Append the contents to the buffer
+  buf_->Extend(s);
 }
 
 Str* BufWriter::getvalue() {
-  if (BufIsEmpty()) {  // if no write() methods are called, the result is ""
+  assert(is_valid_);  // Check for two INVALID getvalue() in a row
+  is_valid_ = false;
+
+  if (buf_ == nullptr) {  // if no write() methods are called, the result is ""
     return kEmptyString;
   } else {
-    assert(buf_->IsValid());  // Check for two INVALID getvalue() in a row
-
-    Str* ret = StrFromBuf(buf_);
-
-    buf_->Invalidate();
-
-    return ret;
+    return StrFromBuf(buf_);
   }
 }
 

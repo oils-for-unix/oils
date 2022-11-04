@@ -125,29 +125,7 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
-class Buf : Obj {
- public:
-  // The initial capacity is big enough for a line
-  Buf(int cap) : Obj(Tag::Opaque, kZeroMask, 0), len_(0), cap_(cap) {
-  }
-  char* data() {
-    return data_;
-  }
-  bool IsValid() {
-    return len_ != -1;
-  }
-
-  void Extend(Str* s);
-  void Invalidate();
-
- private:
-  friend class BufWriter;
-  friend Str* StrFromBuf(const Buf*);
-  friend Buf* NewBuf(int);
-  int len_;  // data length, not including NUL
-  int cap_;  // capacity, not including NUL
-  char data_[1];
-};
+class Buf;  // forward declaration
 
 Str* StrFromBuf(const Buf&);
 Buf* NewBuf(int);
@@ -156,9 +134,7 @@ constexpr uint16_t maskof_BufWriter();
 
 class BufWriter : public Writer {
  public:
-  BufWriter()
-      : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)),
-        buf_(nullptr) {
+  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -171,15 +147,10 @@ class BufWriter : public Writer {
 
  private:
   friend constexpr uint16_t maskof_BufWriter();
+  Buf* EnsureCapacity(int n);
 
-  void ExpandBufCapacity(int n);
-  void Extend(Str* s);
-
-  bool BufIsEmpty() {
-    return buf_ == nullptr;
-  }
-
-  Buf* buf_;
+  Buf* buf_ = nullptr;
+  bool is_valid_ = true;  // It becomes invalid after getvalue() is called
 };
 
 constexpr uint16_t maskof_BufWriter() {
