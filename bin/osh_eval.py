@@ -9,6 +9,8 @@ import sys
 from asdl import runtime
 from core import error
 from core import shell_native
+# TODO: turn this on
+#from core import shell
 from core.pyerror import log
 from core import pyos
 from core import pyutil

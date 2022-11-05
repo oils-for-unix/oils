@@ -524,7 +524,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       line_reader = reader.FileLineReader(f, arena)
 
   # Pretend it came from somewhere else
-  if flag.location_str:
+  if flag.location_str is not None:
     src = source.Synthetic(flag.location_str)
     if flag.location_start_line != -1:
       line_reader.SetLineOffset(flag.location_start_line)
@@ -640,7 +640,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
     return status
 
-  if flag.rcfile:  # bash doesn't have this warning, but it's useful
+  if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
     stderr_line('osh warning: --rcfile ignored in non-interactive shell')
 
   if exec_opts.noexec():
