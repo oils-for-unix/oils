@@ -133,6 +133,7 @@ class MarkSweepHeap {
   }
 
   void* Allocate(int num_bytes);
+  void* Reallocate(void *p, int num_bytes);
   int Collect();
   void MarkObjects(Obj* obj);
   void Sweep();

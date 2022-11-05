@@ -132,29 +132,33 @@ compare() {
   banner 'OPT GC on exit - malloc + free'
   OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $bin
 
-  # Surprisingly, -m32 is SLOWER, even though it allocates less.
-  # My guess is because less work is going into maintaining this code path in
-  # GCC.
+  if false; then
+    # Surprisingly, -m32 is SLOWER, even though it allocates less.
+    # My guess is because less work is going into maintaining this code path in
+    # GCC.
 
-  # 223 ms
-  # 61.9 MB bytes allocated
-  banner 'OPT32 - malloc only'
-  local bin=_bin/cxx-opt32/osh_eval
-  run-osh $bin
+    # 223 ms
+    # 61.9 MB bytes allocated
+    banner 'OPT32 - malloc only'
+    local bin=_bin/cxx-opt32/osh_eval
+    run-osh $bin
 
-  # 280 ms
-  banner 'OPT32 GC on exit - malloc + free'
-  OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $bin
+    # 280 ms
+    banner 'OPT32 GC on exit - malloc + free'
+    OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $bin
+  fi
 
-  # 184 ms
-  banner 'tcmalloc - malloc only'
-  local tcmalloc_bin=_bin/cxx-tcmalloc/osh_eval
-  run-osh $tcmalloc_bin
+  if false; then
+    # 184 ms
+    banner 'tcmalloc - malloc only'
+    local tcmalloc_bin=_bin/cxx-tcmalloc/osh_eval
+    run-osh $tcmalloc_bin
 
-  # Faster: 218 ms!  It doesn't have the huge free() penalty that glibc does.
-  # Maybe it doesn't do all the malloc_consolidate() stuff.
-  banner 'tcmalloc GC on exit - malloc + free'
-  OIL_GC_ON_EXIT=1 run-osh $tcmalloc_bin
+    # Faster: 218 ms!  It doesn't have the huge free() penalty that glibc does.
+    # Maybe it doesn't do all the malloc_consolidate() stuff.
+    banner 'tcmalloc GC on exit - malloc + free'
+    OIL_GC_ON_EXIT=1 run-osh $tcmalloc_bin
+  fi
 
   echo 'TODO'
   if false; then

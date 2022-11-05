@@ -51,6 +51,10 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   return calloc(num_bytes, 1);
 }
 
+void* MarkSweepHeap::Reallocate(void *p, int num_bytes) {
+  return realloc(p, num_bytes);
+}
+
 #elif defined(BUMP_LEAK)
 
 #else
@@ -93,6 +97,11 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   #endif
 
   return result;
+}
+
+// Right now, this doesn't affect the GC policy
+void* MarkSweepHeap::Reallocate(void *p, int num_bytes) {
+  return realloc(p, num_bytes);
 }
 
 #endif  // MALLOC_LEAK

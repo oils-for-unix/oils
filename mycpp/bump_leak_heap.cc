@@ -23,6 +23,10 @@ void* BumpLeakHeap::Allocate(int num_bytes) {
   return p;
 }
 
+void* BumpLeakHeap::Reallocate(void *p, int num_bytes) {
+  return Allocate(num_bytes);
+}
+
 void BumpLeakHeap::Report() {
   log("[BumpLeakHeap]");
   log("  num allocated = %10d", num_allocated_);
