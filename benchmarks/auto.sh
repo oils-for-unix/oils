@@ -155,8 +155,17 @@ demo-tasks() {
 
 # Measure the parser with cachegrind in CI.
 #
-# TODO: Also want benchmarks/compute.sh in CI.  And enhance it to use
-# cachegrind, not wall time.
+# TODO: 
+# - benchmarks/osh-parser can also measure
+#   - wall time
+#   - number of allocations with uftrace
+#   - the HTML report should accept one machine
+# - benchmarks/gc.sh is also a parser benchmark
+# - benchmarks/compute
+#   - Enhance it to use cachegrind, not wall time.
+# - benchmarks/osh-runtime
+#   - add oil-native to it
+#   - the HTML report should accept one machine
 
 soil-run() {
   local base_dir=_tmp/benchmark-data

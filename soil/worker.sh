@@ -176,9 +176,10 @@ benchmarks-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
-shell-benchmarks benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
+osh-parser       benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
 mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
 EOF
+#compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 }
 
 cpp-spec-tasks() {

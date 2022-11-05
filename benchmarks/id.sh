@@ -69,6 +69,10 @@ _dump-if-exists() {
 dump-shell-id() {
   local sh=$1  # path to the shell
 
+  if ! command -v $sh; then
+    die "dump-shell-id: Couldn't find $sh"
+  fi
+
   local name
   name=$(basename $sh)
 
@@ -322,6 +326,8 @@ shell-provenance() {
   local label=$1  # if it exists, it overrides the host
   shift
 
+  # log "*** shell-provenance"
+
   local job_id
   job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
@@ -333,7 +339,11 @@ shell-provenance() {
     local tmp_dir=_tmp/host-id/$host
     dump-host-id $tmp_dir
 
+    # TODO: This requires ../benchmark-data
+
     host_hash=$(publish-host-id $tmp_dir)
+
+    # log "*** host_hash $host_hash"
 
     label=$host
   else
@@ -348,6 +358,8 @@ shell-provenance() {
   local shell_hash
 
   for sh_path in "$@"; do
+    # log "*** sh_path $sh_path"
+
     # There will be two different OSH
     local name=$(basename $sh_path)
 

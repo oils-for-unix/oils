@@ -407,24 +407,42 @@ measure() {
   tree $raw_dir
 }
 
+compute-shell-provenance() {
+  ### Like 'our-shell-provenance', but for benchmarks/compute.sh soil-run
+
+  # - The Soil 'benchmarks' job uses the 'cpp' Docker image, which doesn't have
+  #   layer-cpython, ../oil_DEPS/cpython-full
+  # - It also doesn't have mksh or zsh
+
+  # empty label
+  benchmarks/id.sh shell-provenance '' bash dash $OIL_NATIVE python2
+}
+
 soil-run() {
   ### Run it on just this machine, and make a report
 
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  make _bin/oil.ovm
-  devtools/bin.sh make-bin-links
+  #make _bin/oil.ovm
+  #devtools/bin.sh make-bin-links
 
-  local provenance
-  provenance=$(our-shell-provenance)
-
-  measure $provenance
+  # Test the one that's IN TREE, NOT in ../benchmark-data
+  local osh_eval=_bin/cxx-opt/osh_eval.stripped
+  ninja $osh_eval
 
   set -x
 
-  # Problem: doesn't work on one machine
-  stage1 '' no
+  # Used by benchmarks/common.sh
+  export OIL_NATIVE=$osh_eval
+
+  local provenance
+  provenance=$(compute-shell-provenance)
+
+  measure $provenance
+
+  # Make it run on one machine
+  stage1 '' $(hostname)
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR
@@ -434,7 +452,7 @@ stage1() {
   local raw_dir=${1:-$BASE_DIR/raw}
 
   # This report works even if we only have one machine
-  local both_machines=${2:-yes}
+  local single_machine=${2:-}
 
   local out_dir=$BASE_DIR/stage1
   mkdir -p $out_dir
@@ -446,16 +464,16 @@ stage1() {
   for metric in hello fib word_freq parse_help bubble_sort palindrome; do
     local dir=$raw_dir/$metric
 
-    if test "$both_machines" = 'yes'; then
+    if test -n "$single_machine"; then
+      local -a a=($dir/$single_machine.*.times.tsv)
+      raw+=(${a[-1]})
+    else
       # Globs are in lexicographical order, which works for our dates.
       local -a a=($dir/$MACHINE1.*.times.tsv)
       local -a b=($dir/$MACHINE2.*.times.tsv)  # HACK for now
 
       # take the latest file
       raw+=(${a[-1]} ${b[-1]})
-    else
-      local -a b=($dir/$MACHINE2.*.times.tsv)  # HACK for now
-      raw+=(${b[-1]})
     fi
 
   done

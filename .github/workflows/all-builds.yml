@@ -200,7 +200,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: cpp-small
+      - name: benchmarks
         run: |
           soil/github-actions.sh run-job benchmarks
 
