@@ -1,8 +1,8 @@
 // preamble.h: declarations to run osh_eval.cc
 
 #include <errno.h>
-#include <fcntl.h>     // F_DUPFD used directly
-#include <sys/wait.h>  // WIFSIGNALED, etc. called DIRECTLY
+#include <fcntl.h>     // e.g. F_DUPFD used directly
+#include <sys/wait.h>  // e.g. WIFSIGNALED() called directly
 
 #include "_gen/core/optview.h"
 #include "_gen/core/runtime.asdl.h"

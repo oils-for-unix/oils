@@ -1372,7 +1372,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             left_expr = gen.left_expr
             index_expr = gen.indices[0]
             seq = gen.sequences[0]
-            cond = gen.condlists[0]  # TODO: not used!
+            cond = gen.condlists[0]
+
+            # BUG: can't use this to filter
+            # results = [x for x in results]
+            if isinstance(seq, NameExpr) and seq.name == lval.name:
+              raise AssertionError(
+                  "Can't use var %r in list comprehension because it would "
+                  "be overwritten" % lval.name)
 
             # Write empty container as initialization.
             assert c_type.endswith('*'), c_type  # Hack
