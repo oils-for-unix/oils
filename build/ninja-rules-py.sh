@@ -115,7 +115,7 @@ gen-osh-eval() {
 
 // #include "$header_out"
 
-#include "cpp/leaky_preamble.h"  // hard-coded stuff
+#include "cpp/preamble.h"
 EOF
 
     cat $raw_cc

@@ -3,11 +3,22 @@
 #ifndef OSH_EVAL_STUBS_H
 #define OSH_EVAL_STUBS_H
 
-// Hacky stubs
+// Hm is this overload really necessary?
+inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
+  return left == right;
+}
 
-#include "_gen/core/runtime.asdl.h"
-#include "_gen/frontend/id_kind.asdl.h"
-#include "_gen/frontend/syntax.asdl.h"
+// Hack for now.  Every sum type should have repr()?
+inline Str* repr(syntax_asdl::source_t* obj) {
+  /* NotImplemented(); */
+  return StrFromC("TODO");
+}
+
+// STUB for osh/word_.py
+inline Str* str(syntax_asdl::word_t* w) {
+  /* NotImplemented(); */
+  return StrFromC("TODO");
+}
 
 namespace vm {
 class _Executor;
