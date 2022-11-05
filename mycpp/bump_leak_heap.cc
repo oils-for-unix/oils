@@ -23,7 +23,7 @@ void* BumpLeakHeap::Allocate(int num_bytes) {
   return p;
 }
 
-void* BumpLeakHeap::Reallocate(void *p, int num_bytes) {
+void* BumpLeakHeap::Reallocate(void* p, int num_bytes) {
   return Allocate(num_bytes);
 }
 

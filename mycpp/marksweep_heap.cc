@@ -51,7 +51,7 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
   return calloc(num_bytes, 1);
 }
 
-void* MarkSweepHeap::Reallocate(void *p, int num_bytes) {
+void* MarkSweepHeap::Reallocate(void* p, int num_bytes) {
   return realloc(p, num_bytes);
 }
 
@@ -100,7 +100,7 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
 }
 
 // Right now, this doesn't affect the GC policy
-void* MarkSweepHeap::Reallocate(void *p, int num_bytes) {
+void* MarkSweepHeap::Reallocate(void* p, int num_bytes) {
   return realloc(p, num_bytes);
 }
 
