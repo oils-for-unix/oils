@@ -106,15 +106,15 @@ def ModulesToCompile(result, mod_names):
     if name in ('asdl.runtime', 'core.vm'):
       continue
 
-    # should be LAST because it uses 2 base classes
-    if name in ('osh.builtin_bracket',):
+    # should be LAST they use base classes
+    if name in ('osh.builtin_bracket', 'core.shell'):
       continue
 
     yield name, module
 
   # LAST files
   for name, module in result.files.items():
-    if name in ('osh.builtin_bracket',):
+    if name in ('osh.builtin_bracket', 'core.shell'):
       yield name, module
 
 

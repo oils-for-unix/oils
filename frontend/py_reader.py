@@ -4,7 +4,7 @@ py_reader.py - Code that won't be translated to C++.
 """
 from __future__ import print_function
 
-from frontend.reader import _Reader
+from frontend import reader
 
 from typing import Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 _PS2 = '> '
 
-class InteractiveLineReader(_Reader):
+class InteractiveLineReader(reader._Reader):
   def __init__(self, arena, prompt_ev, hist_ev, line_input, prompt_state):
     # type: (Arena, Any, Any, Any, Any) -> None
     # TODO: Hook up PromptEvaluator and history.Evaluator when they have types.
@@ -25,7 +25,7 @@ class InteractiveLineReader(_Reader):
     Args:
       prompt_state: Current prompt is PUBLISHED here.
     """
-    _Reader.__init__(self, arena)
+    reader._Reader.__init__(self, arena)
     self.prompt_ev = prompt_ev
     self.hist_ev = hist_ev
     self.line_input = line_input  # may be None!

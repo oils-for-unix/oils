@@ -3,7 +3,7 @@ core/shell.py -- Entry point for the shell interpreter.
 """
 from __future__ import print_function
 
-import errno
+from errno import ENOENT
 import time
 
 from _devbuild.gen import arg_types
@@ -73,23 +73,24 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import Proc
 
 
-def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
-  # type: (cmd_eval.CommandEvaluator, builtin_comp.Complete, completion.Lookup) -> None
+if mylib.PYTHON:
+  def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
+    # type: (cmd_eval.CommandEvaluator, builtin_comp.Complete, completion.Lookup) -> None
 
-  # register builtins and words
-  complete_builtin.Run(shell_native.MakeBuiltinArgv(['-E', '-A', 'command']))
-  # register path completion
-  # Add -o filenames?  Or should that be automatic?
-  complete_builtin.Run(shell_native.MakeBuiltinArgv(['-D', '-A', 'file']))
+    # register builtins and words
+    complete_builtin.Run(shell_native.MakeBuiltinArgv(['-E', '-A', 'command']))
+    # register path completion
+    # Add -o filenames?  Or should that be automatic?
+    complete_builtin.Run(shell_native.MakeBuiltinArgv(['-D', '-A', 'file']))
 
-  # TODO: Move this into demo/slow-completion.sh
-  if 1:
-    # Something for fun, to show off.  Also: test that you don't repeatedly hit
-    # the file system / network / coprocess.
-    A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
-    A2 = completion.TestAction(['m%d' % i for i in xrange(5)], delay=0.1)
-    C1 = completion.UserSpec([A1, A2], [], [], lambda candidate: True)
-    comp_lookup.RegisterName('slowc', {}, C1)
+    # TODO: Move this into demo/slow-completion.sh
+    if 1:
+      # Something for fun, to show off.  Also: test that you don't repeatedly hit
+      # the file system / network / coprocess.
+      A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
+      A2 = completion.TestAction(['m%d' % i for i in xrange(5)], delay=0.1)
+      C1 = completion.UserSpec([A1, A2], [], [], lambda candidate: True)
+      comp_lookup.RegisterName('slowc', {}, C1)
 
 
 def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
@@ -112,7 +113,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
     f = fd_state.Open(rc_path)
   except (IOError, OSError) as e:
     # TODO: Could warn about nonexistent explicit --rcfile?
-    if e.errno != errno.ENOENT:
+    if e.errno != ENOENT:
       raise  # Goes to top level.  Handle this better?
     return
 
@@ -552,7 +553,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
     # This is like an interactive shell, so we copy some initialization from
     # below.  Note: this may need to be tweaked.
-    _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
+    if mylib.PYTHON:
+      _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     # NOTE: called AFTER _InitDefaultCompletions.
     with state.ctx_ThisDir(mem, rc_path):
@@ -611,7 +613,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
       comp_ui.InitReadline(line_input, history_filename, root_comp, display,
                            debug_f)
-      _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
+      if mylib.PYTHON:
+        _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
