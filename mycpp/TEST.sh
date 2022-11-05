@@ -87,14 +87,6 @@ examples-variant() {
   log ''
 
   case $variant in
-    (asan|rvroot)
-      # TODO: make examples/parse pass!
-      # https://github.com/oilshell/oil/issues/1317
-      if test $num_failed -ne 0; then
-        echo "FAIL: Expected 0 failure in ASAN"
-        return 1
-      fi
-      ;;
     (gcevery)
       if test $num_failed -ne 5; then
         echo "FAIL: Expected 5 failures with GC_EVERY_ALLOC"
