@@ -137,6 +137,7 @@ Str* StrFromBuf(const Buf* buf) {
 }
 
 Buf* NewBuf(int cap) {
+  // TODO: sizeof(Buf) is an overestimate because of flexible array member
   void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
 
   auto* b = new (place) Buf(cap);
@@ -162,11 +163,6 @@ Buf* BufWriter::EnsureCapacity(int capacity) {
   assert(buf_->cap_ >= buf_->len_);
 
   if (buf_->cap_ < capacity) {
-    // buf_->cap_ = std::max(buf_->cap_ * 2, buf_->len_ + n);
-
-    // +1 for NUL.  TODO: consider making it a power of 2
-    // buf_->data_ = static_cast<char*>(realloc(buf_->data_, buf_->cap_ + 1));
-
     auto* b = NewBuf(std::max(buf_->cap_ * 2, capacity));
     memcpy(b->data_, buf_->data_, buf_->len_);
     b->len_ = buf_->len_;
