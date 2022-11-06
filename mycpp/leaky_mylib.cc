@@ -132,6 +132,25 @@ bool CFileWriter::isatty() {
 // Buf
 //
 
+// TODO: Consider renaming MutableStr, or make this a subclass of Str
+class Buf : Obj {
+ public:
+  // The initial capacity is big enough for a line
+  Buf(int cap) : Obj(Tag::Opaque, kZeroMask, 0), len_(0), cap_(cap) {
+  }
+  void Extend(Str* s);
+
+ private:
+  friend class BufWriter;
+  friend Str* StrFromBuf(const Buf*);
+  friend Buf* NewBuf(int);
+
+  // TODO: move this state into BufWriter
+  int len_;  // data length, not including NUL
+  int cap_;  // capacity, not including NUL
+  char data_[1];
+};
+
 Str* StrFromBuf(const Buf* buf) {
   return ::StrFromC(buf->data_, buf->len_);
 }
