@@ -185,6 +185,7 @@ void BufWriter::write(Str* s) {
 
   if (buf_ == nullptr) {
     // TODO: we could make the default capacity big enough for a line, e.g. 128
+    // capacity: 128 -> 256 -> 512
     int capacity = n;
     buf_ = NewBuf(capacity);
   } else {
