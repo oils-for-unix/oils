@@ -6,7 +6,7 @@ This is sort of the opposite of builtin_pure.py.
 """
 from __future__ import print_function
 
-import signal  # for calculating numbers
+from signal import SIGCONT
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value__Argv
@@ -71,7 +71,7 @@ class Fg(vm._Builtin):
 
     # TODO: Print job ID rather than the PID
     log('Continue PID %d', pid)
-    posix.kill(pid, signal.SIGCONT)
+    posix.kill(pid, SIGCONT)
     return self.job_state.WhenContinued(pid, self.waiter)
 
 
