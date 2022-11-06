@@ -569,8 +569,12 @@ ComputeReport = function(in_dir, out_dir) {
 
   times %>% filter(task_name == 'bubble_sort') %>% unique_stdout_md5sum(2)
 
-  # TODO: Why does osh_eval differ?
-  times %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% unique_stdout_md5sum(1)
+  # TODO: 
+  # - osh_eval doesn't implement unicode LANG=C
+  # - bash behaves differently on your desktop vs. in the container
+  #   - might need layer-locales in the image?
+
+  #times %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% unique_stdout_md5sum(1)
   # Ditto here
   #times %>% filter(task_name == 'palindrome' & arg1 == 'bytes') %>% unique_stdout_md5sum(1)
 

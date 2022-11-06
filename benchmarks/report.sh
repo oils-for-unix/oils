@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./report.sh <function name>
+#   benchmarks/report.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
+source benchmarks/common.sh  # maybe-tree
 source test/common.sh  # log
 
 # TODO: Move stuff from osh-parser.sh, osh-runtime.sh, etc.
@@ -25,7 +26,7 @@ stage2() {
 
   R_LIBS_USER=$R_PATH benchmarks/report.R $action $base_dir/stage1 $out
 
-  tree $out
+  maybe-tree $out
 }
 
 stage3() {

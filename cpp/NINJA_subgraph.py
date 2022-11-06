@@ -21,6 +21,7 @@ def NinjaGraph(ru):
   ru.cc_library(
       '//cpp/leaky_core', 
       srcs = ['cpp/leaky_core.cc'],
+      deps = ['//frontend/syntax.asdl'],
   )
 
   ru.cc_binary(

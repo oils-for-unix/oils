@@ -85,3 +85,10 @@ our-shell-provenance() {
   # empty label
   benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OIL_NATIVE python2
 }
+
+maybe-tree() {
+  ### Run tree command if it's installed
+  if command -v tree; then
+    tree "$@"
+  fi
+}
