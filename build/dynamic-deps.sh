@@ -73,7 +73,6 @@ pylib/path_stat.py
 oil_lang/expr_eval.py
 oil_lang/objects.py
 osh/bool_stat.py
-osh/builtin_process.py
 osh/history.py
 EOF
 

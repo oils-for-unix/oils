@@ -101,6 +101,8 @@ mylib::LineReader* fdopen(int fd, Str* c_mode);
 
 void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ);
 
+void kill(int pid, int sig);
+
 }  // namespace posix
 
 namespace time_ {

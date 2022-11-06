@@ -134,13 +134,12 @@ def AddProcess(
   b[builtin_i.wait] = builtin_process2.Wait(waiter, job_state, mem, tracer,
                                             errfmt)
 
-  if mylib.PYTHON:
-    b[builtin_i.jobs] = builtin_process.Jobs(job_state)
-    b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
-    b[builtin_i.bg] = builtin_process.Bg(job_state)
+  b[builtin_i.jobs] = builtin_process.Jobs(job_state)
+  b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
+  b[builtin_i.bg] = builtin_process.Bg(job_state)
 
-    b[builtin_i.fork] = builtin_process.Fork(shell_ex)
-    b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
+  b[builtin_i.fork] = builtin_process.Fork(shell_ex)
+  b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
 
 
 def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,

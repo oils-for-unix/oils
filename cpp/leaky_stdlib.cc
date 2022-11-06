@@ -5,6 +5,7 @@
 
 #include <errno.h>
 #include <fcntl.h>      // open
+#include <signal.h>     // kill
 #include <sys/stat.h>   // umask
 #include <sys/types.h>  // umask
 #include <sys/wait.h>   // WUNTRACED
@@ -109,6 +110,12 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   // than -1) but should have overwritten our address space with the invoked
   // process'
   InvalidCodePath();
+}
+
+void kill(int pid, int sig) {
+  if (::kill(pid, sig) != 0) {
+    throw Alloc<OSError>(errno);
+  }
 }
 
 }  // namespace posix

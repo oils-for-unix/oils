@@ -20,6 +20,8 @@ class Usage : public std::exception {
  public:
   Usage(Str* msg, int span_id) : msg(msg), span_id(span_id) {
   }
+  Usage(Str* msg) : msg(msg), span_id(runtime::NO_SPID) {
+  }
 
   Str* msg;
   int span_id;
