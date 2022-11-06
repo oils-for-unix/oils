@@ -3,12 +3,13 @@
 
 BumpLeakHeap gBumpLeakHeap;
 
-TEST bump_leak_heap_test() {
+TEST Reallocate_test() {
+  log("sizeof(size_t) = %zu", sizeof(size_t));
+
   char* p1 = static_cast<char*>(gBumpLeakHeap.Allocate(10));
   strcpy(p1, "abcdef");
 
   char* p2 = static_cast<char*>(gBumpLeakHeap.Reallocate(p2, 20));
-  // TODO: Make this pass
   // ASSERT_EQ(0, strcmp(p1, p2));
 
   PASS();
@@ -21,7 +22,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(bump_leak_heap_test);
+  RUN_TEST(Reallocate_test);
 
   gHeap.CleanProcessExit();
 

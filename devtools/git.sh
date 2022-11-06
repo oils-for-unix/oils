@@ -48,4 +48,8 @@ merge-to-staging() {
   fi
 }
 
+fetch-staging-and-master() {
+  git fetch origin soil-staging:soil-staging master:master
+}
+
 "$@"

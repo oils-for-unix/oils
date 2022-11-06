@@ -12,18 +12,20 @@
 #ifdef BUMP_LEAK
 char gMemory[MiB(400)];  // 400 MiB of memory, zero'd
 
-void* BumpLeakHeap::Allocate(int num_bytes) {
+struct LayoutBlock {  // this type for "layout"; it's not instantiated
+  size_t num_bytes;
+  char data[1];  // flexible array
+};
+
+void* BumpLeakHeap::Allocate(size_t num_bytes) {
   char* p = &(gMemory[mem_pos_]);
-  #ifdef ALLOC_LOG
-  printf("alloc %zu\n", num_bytes);
-  #endif
   mem_pos_ += aligned(num_bytes);
   num_allocated_++;
   bytes_allocated_ += num_bytes;
   return p;
 }
 
-void* BumpLeakHeap::Reallocate(void* p, int num_bytes) {
+void* BumpLeakHeap::Reallocate(void* p, size_t num_bytes) {
   // TODO:
   // 1. Reserve 4 bytes for the size,
   // 2. Actually copy the data over to the new buffer!

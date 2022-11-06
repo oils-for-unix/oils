@@ -36,6 +36,13 @@ def DefineTargets(ru):
 
   # Unit tests
 
+  # Special test with -D
+  ru.cc_binary(
+      'mycpp/bump_leak_heap_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = [('cxx', 'ubsan', '-D BUMP_LEAK')],
+      phony_prefix = 'mycpp-unit')
+
   for test_main in [
       'mycpp/marksweep_heap_test.cc',
       'mycpp/gc_heap_test.cc',
@@ -49,12 +56,6 @@ def DefineTargets(ru):
         deps = ['//mycpp/runtime'],
         matrix = COMPILERS_VARIANTS,
         phony_prefix = 'mycpp-unit')
-
-  ru.cc_binary(
-      'mycpp/bump_leak_heap_test.cc',
-      deps = ['//mycpp/runtime'],
-      matrix = [('cxx', 'gcevery', '-D BUMP_LEAK')],
-      phony_prefix = 'mycpp-unit')
 
   for test_main in [
       # TODO: make these 2 run under GC

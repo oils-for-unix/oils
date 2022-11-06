@@ -47,11 +47,11 @@ void MarkSweepHeap::Report() {
 #if defined(MALLOC_LEAK)
 
 // for testing performance
-void* MarkSweepHeap::Allocate(int num_bytes) {
+void* MarkSweepHeap::Allocate(size_t num_bytes) {
   return calloc(num_bytes, 1);
 }
 
-void* MarkSweepHeap::Reallocate(void* p, int num_bytes) {
+void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
   return realloc(p, num_bytes);
 }
 
@@ -59,7 +59,7 @@ void* MarkSweepHeap::Reallocate(void* p, int num_bytes) {
 
 #else
 
-void* MarkSweepHeap::Allocate(int num_bytes) {
+void* MarkSweepHeap::Allocate(size_t num_bytes) {
   // log("Allocate %d", num_bytes);
 
   // Maybe collect BEFORE allocation, because the new object won't be rooted
@@ -100,7 +100,7 @@ void* MarkSweepHeap::Allocate(int num_bytes) {
 }
 
 // Right now, this doesn't affect the GC policy
-void* MarkSweepHeap::Reallocate(void* p, int num_bytes) {
+void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
   return realloc(p, num_bytes);
 }
 

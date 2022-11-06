@@ -234,7 +234,12 @@ test-invalid-examples() {
 test-runtime() {
   # Run other unit tests, e.g. the GC tests
 
-  local leak_ok='detect_leaks=0'
+  # Special test
+  local bin=_bin/cxx-ubsan-D_BUMP_LEAK/mycpp/bump_leak_heap_test
+  ninja $bin
+  run-test-bin $bin
+
+  # Run other tests with all variants
 
   unit '' ubsan
 
