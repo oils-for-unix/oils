@@ -24,7 +24,11 @@ void* BumpLeakHeap::Allocate(int num_bytes) {
 }
 
 void* BumpLeakHeap::Reallocate(void* p, int num_bytes) {
-  return Allocate(num_bytes);
+  // TODO:
+  // 1. Reserve 4 bytes for the size, 
+  // 2. Actually copy the data over to the new buffer!
+  void* new_buffer = Allocate(num_bytes);
+  return new_buffer;
 }
 
 void BumpLeakHeap::Report() {

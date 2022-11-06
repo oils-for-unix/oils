@@ -50,6 +50,12 @@ def DefineTargets(ru):
         matrix = COMPILERS_VARIANTS,
         phony_prefix = 'mycpp-unit')
 
+  ru.cc_binary(
+      'mycpp/bump_leak_heap_test.cc',
+      deps = ['//mycpp/runtime'],
+      matrix = [('cxx', 'gcevery', '-D BUMP_LEAK')],
+      phony_prefix = 'mycpp-unit')
+
   for test_main in [
       # TODO: make these 2 run under GC
       'mycpp/leaky_containers_test.cc',
