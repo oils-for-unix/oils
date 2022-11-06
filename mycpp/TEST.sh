@@ -235,6 +235,11 @@ test-runtime() {
   # Run other unit tests, e.g. the GC tests
 
   # Special test
+
+  local bin=_bin/cxx-asan-D_BUMP_LEAK/mycpp/bump_leak_heap_test
+  ninja $bin
+  run-test-bin $bin
+
   local bin=_bin/cxx-ubsan-D_BUMP_LEAK/mycpp/bump_leak_heap_test
   ninja $bin
   run-test-bin $bin

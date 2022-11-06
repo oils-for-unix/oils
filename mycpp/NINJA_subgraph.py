@@ -40,7 +40,10 @@ def DefineTargets(ru):
   ru.cc_binary(
       'mycpp/bump_leak_heap_test.cc',
       deps = ['//mycpp/runtime'],
-      matrix = [('cxx', 'ubsan', '-D BUMP_LEAK')],
+      matrix = [
+        ('cxx', 'asan', '-D BUMP_LEAK'),
+        ('cxx', 'ubsan', '-D BUMP_LEAK'),
+      ],
       phony_prefix = 'mycpp-unit')
 
   for test_main in [

@@ -8,9 +8,15 @@ TEST Reallocate_test() {
 
   char* p1 = static_cast<char*>(gBumpLeakHeap.Allocate(10));
   strcpy(p1, "abcdef");
+  log("p1 = %p %s", p1, p1);
 
-  char* p2 = static_cast<char*>(gBumpLeakHeap.Reallocate(p2, 20));
-  // ASSERT_EQ(0, strcmp(p1, p2));
+  char* p2 = static_cast<char*>(gBumpLeakHeap.Reallocate(p1, 20));
+  log("p2 = %p %s", p2, p2);
+  ASSERT_EQ_FMT(0, strcmp(p1, p2), "%d");
+
+  char* p3 = static_cast<char*>(gBumpLeakHeap.Reallocate(p2, 30));
+  log("p3 = %p %s", p3, p3);
+  ASSERT_EQ_FMT(0, strcmp(p1, p3), "%d");
 
   PASS();
 }
