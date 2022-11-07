@@ -250,11 +250,17 @@ make-job-wwz() {
   # web/ : spec test HTML references this.
   #        Note that that index references /web/{base,soil}.css, outside the .wwz
   #        osh-summary.html uses table-sort.js and ajax.js
-  # TODO: Could move _tmp/{spec,stateful,syscall} etc. to _test
+  #
+  # TODO:
+  # - Could move _tmp/{spec,stateful,syscall} etc. to _test
+  # - Create _tmp/benchmarks/{compute,gc,osh-parser,mycpp-examples,...}
+  #   - would require release/$VERSION/pub/benchmarks.wwz, like we have
+  #     pub/metrics.wwz, for consistent links
+
   zip -q -r $wwz \
     index.html \
     _test \
-    _tmp/{soil,spec,stateful,syscall,benchmark-data,metrics,mycpp-examples,compute} \
+    _tmp/{soil,spec,stateful,syscall,benchmark-data,metrics,mycpp-examples,compute,gc} \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts,benchmarks}.css web/ajax.js \
     web/table/table-sort.{css,js} \
     _release/oil*.tar _release/VERSION/doc

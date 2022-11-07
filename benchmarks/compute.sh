@@ -415,7 +415,8 @@ soil-shell-provenance() {
   # - It also doesn't have mksh or zsh
 
   local label=$1
-  benchmarks/id.sh shell-provenance "$label" bash dash $OIL_NATIVE python2
+  shift
+  benchmarks/id.sh shell-provenance "$label" bash dash python2 "$@"
 }
 
 soil-run() {
@@ -431,13 +432,10 @@ soil-run() {
   local osh_eval=_bin/cxx-opt/osh_eval.stripped
   ninja $osh_eval
 
-  # Used by benchmarks/common.sh
-  export OIL_NATIVE=$osh_eval
-
   local label='no-host'
 
   local provenance
-  provenance=$(soil-shell-provenance $label)
+  provenance=$(soil-shell-provenance $label $osh_eval)
 
   measure $provenance
 

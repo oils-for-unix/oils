@@ -81,56 +81,89 @@ banner() {
   echo "$@"
 }
 
+# Table column:
+#
+# - status elapsed user sys max_rss_KiB
+# - shell (with variant) 
+# - comment (OIL_GC_ON_EXIT, OIL_GC_THRESHOLD)
+# - TODO: can also add the file parsed
+
+table-row() {
+  local out=$1
+  local shell=$2
+  local comment=$3
+  shift 3
+
+  banner "  time-tsv $shell / $comment"
+
+  # TODO: add --verbose to show a message on stderr?
+  time-tsv -o $out --append \
+    --rusage --field "$shell" --field "$comment" -- "$@"
+}
+
+table-header() {
+  local out=$1
+  time-tsv -o $out --print-header \
+    --rusage --field shell --field comment
+}
+
 run-osh() {
-  local bin=$1
+  local tsv_out=$1
+  local bin=$2
+  local comment=$3
+  local file=$4
+
   ninja $bin
-  time $bin --ast-format none -n $file
+
+  table-row $tsv_out $bin $comment \
+    $bin --ast-format none -n $file
 }
 
 # TODO:
-# - -m32 speed comparison would be interesting, see mycpp/demo.sh
-# - also it's generally good for testing
 # - integrate with benchmarks/gperftools.sh, and measure memory usage
-# - Use time-tsv, and max_rss stat, like %M
 
-compare() {
-  local file=${1:-benchmarks/testdata/configure-coreutils}
+parser-compare() {
+  local tsv_out=${1:-_tmp/gc/parser-compare.tsv}
+  local file=${2:-benchmarks/testdata/configure-coreutils}
+
+  mkdir -p $(dirname $tsv_out)
+
+  table-header $tsv_out
+
+  local no_comment='-'
 
   # ~50ms
-  banner 'dash'
-  time dash -n $file
+  table-row $tsv_out dash $no_comment \
+    dash -n $file
   echo
 
   # 91 ms
-  banner 'bash'
-  time bash -n $file
+  table-row $tsv_out bash $no_comment \
+    bash -n $file
   echo
 
   # 274 ms
-  banner 'zsh'
-  time zsh -n $file
+  table-row $tsv_out zsh $no_comment \
+    zsh -n $file
   echo
 
   # ~88 ms!  But we are using more system time than bash/dash -- it's almost
   # certainly UNBUFFERED line-based I/O!
-  banner 'bumpleak'
   local bin=_bin/cxx-bumpleak/osh_eval
-  OIL_GC_STATS=1 run-osh $bin
+  OIL_GC_STATS=1 run-osh $tsv_out $bin 'mutator' $file
+  echo
 
   # 165 ms
-  banner 'mallocleak'
   local bin=_bin/cxx-mallocleak/osh_eval
-  run-osh $bin
+  run-osh $tsv_out $bin 'mutator+mallocleak' $file
 
   # 184 ms
   # Garbage-collected Oil binary
-  banner 'OPT - malloc only'
   local bin=_bin/cxx-opt/osh_eval
-  run-osh $bin
+  OIL_GC_STATS=1 run-osh $tsv_out $bin 'mutator+malloc' $file
 
   # 277 ms -- free() is slow
-  banner 'OPT GC on exit - malloc + free'
-  OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $bin
+  OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $tsv_out $bin 'mutator+malloc+free' $file
 
   if false; then
     # Surprisingly, -m32 is SLOWER, even though it allocates less.
@@ -167,16 +200,24 @@ compare() {
     # TODO: crashes!
     OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 run-osh $bin
   fi
+
+  if command -v pretty-tsv; then
+    pretty-tsv $tsv_out
+  fi
 }
 
-compare-two-files() {
-  compare
+parse-compare-two() {
+  parser-compare ''
 
   # Similar, smaller file.  zsh is faster
-  compare benchmarks/testdata/configure
+  parser-compare '' benchmarks/testdata/configure
 
   #compare testdata/completion/git-completion.bash
   #compare testdata/osh-runtime/abuild
+}
+
+soil-run() {
+  parser-compare
 }
 
 "$@"
