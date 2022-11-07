@@ -407,15 +407,15 @@ measure() {
   tree $raw_dir
 }
 
-compute-shell-provenance() {
+soil-shell-provenance() {
   ### Like 'our-shell-provenance', but for benchmarks/compute.sh soil-run
 
   # - The Soil 'benchmarks' job uses the 'cpp' Docker image, which doesn't have
   #   layer-cpython, ../oil_DEPS/cpython-full
   # - It also doesn't have mksh or zsh
 
-  # empty label
-  benchmarks/id.sh shell-provenance '' bash dash $OIL_NATIVE python2
+  local label=$1
+  benchmarks/id.sh shell-provenance "$label" bash dash $OIL_NATIVE python2
 }
 
 soil-run() {
@@ -431,18 +431,18 @@ soil-run() {
   local osh_eval=_bin/cxx-opt/osh_eval.stripped
   ninja $osh_eval
 
-  set -x
-
   # Used by benchmarks/common.sh
   export OIL_NATIVE=$osh_eval
 
+  local label='no-host'
+
   local provenance
-  provenance=$(compute-shell-provenance)
+  provenance=$(soil-shell-provenance $label)
 
   measure $provenance
 
   # Make it run on one machine
-  stage1 '' $(hostname)
+  stage1 '' $label
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR

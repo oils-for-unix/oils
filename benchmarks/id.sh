@@ -333,7 +333,17 @@ shell-provenance() {
 
   local host
   local host_hash
-  if test -z "$label"; then
+
+  local dest_base=''
+
+  if test -n "$label"; then
+    # e.g. label could be 'no-host'
+    host='-'
+    host_hash='-'
+
+    # Don't write to ../benchmark-data
+    dest_base=_tmp/provenance
+  else
     host=$(hostname)
 
     local tmp_dir=_tmp/host-id/$host
@@ -346,10 +356,6 @@ shell-provenance() {
     # log "*** host_hash $host_hash"
 
     label=$host
-  else
-    # Not recorded.
-    host='-'
-    host_hash='-'
   fi
 
   # Filename
@@ -358,15 +364,14 @@ shell-provenance() {
   local shell_hash
 
   for sh_path in "$@"; do
-    # log "*** sh_path $sh_path"
-
     # There will be two different OSH
     local name=$(basename $sh_path)
 
     tmp_dir=_tmp/shell-id/$name
     dump-shell-id $sh_path $tmp_dir
 
-    shell_hash=$(publish-shell-id $tmp_dir)
+    # writes to ../benchmark-data
+    shell_hash=$(publish-shell-id $tmp_dir "$dest_base")
 
     # note: filter-provenance depends on $4 being $sh_path
     echo "$job_id $host $host_hash $sh_path $shell_hash"
