@@ -336,7 +336,7 @@ task-all() {
   done
 
   #wc -l _tmp/compute/word_freq/*
-  tree $tmp_dir
+  #tree $tmp_dir
   cat $times_tsv
 }
 
