@@ -336,7 +336,7 @@ task-all() {
   done
 
   #wc -l _tmp/compute/word_freq/*
-  #tree $tmp_dir
+  maybe-tree $tmp_dir
   cat $times_tsv
 }
 
@@ -404,7 +404,7 @@ measure() {
   # necessary on 1 machine.  I think I will make a separate blog post,
   # if anything.
 
-  tree $raw_dir
+  maybe-tree $raw_dir
 }
 
 soil-shell-provenance() {
