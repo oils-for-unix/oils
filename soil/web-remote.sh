@@ -254,7 +254,7 @@ make-job-wwz() {
   zip -q -r $wwz \
     index.html \
     _test \
-    _tmp/{soil,spec,stateful,syscall,benchmark-data,metrics,mycpp-examples} \
+    _tmp/{soil,spec,stateful,syscall,benchmark-data,metrics,mycpp-examples,compute} \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts}.css web/ajax.js \
     web/table/table-sort.{css,js} \
     _release/oil*.tar _release/VERSION/doc
