@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./unicode.sh <function name>
+#   benchmarks/compute/palindrome.sh unicode
+#   benchmarks/compute/palindrome.sh bytes
 
 #shopt -s globasciiranges
 
