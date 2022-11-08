@@ -8,12 +8,13 @@
 # List of benchmarks:
 #
 # - osh-parser
-# - virtual-memory.sh -- vm-baseline, or mem-baseline
 # - osh-runtime (now called runtime.sh, or wild-run)
-# - oheap.sh?  For size, it doesn't need to be run on every machine.
-# - startup.sh -- needs CSV
-#   - this has many different snippets
-#   - and it has strace
+# - vm-baseline
+# - compute
+#   - awk-python could be moved here
+#   - startup.sh could be moved here, it also has strace counts
+# - ovm-build
+# - gc
 
 set -o nounset
 set -o pipefail
