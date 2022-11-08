@@ -33,9 +33,9 @@
 inline void log(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  vprintf(fmt, args);
+  vfprintf(stderr, fmt, args);
   va_end(args);
-  puts("");
+  fputs("\n", stderr);
 }
 
 // I'm not sure why this matters but we get crashes when aligning to 8 bytes.
@@ -53,9 +53,9 @@ inline size_t aligned(size_t n) {
   return (n + kMask) & ~kMask;
 }
 
-#define GiB(bytes) (MiB(bytes) * 1024)
+#define KiB(bytes) ((bytes) * 1024)
 #define MiB(bytes) (KiB(bytes) * 1024)
-#define KiB(bytes) ((bytes)*1024)
+#define GiB(bytes) (MiB(bytes) * 1024)
 
 const int kMaxRoots = KiB(4);
 

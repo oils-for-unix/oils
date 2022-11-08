@@ -96,7 +96,7 @@ dump-shell-id() {
     osh)
       $sh --version > $out_dir/osh-version.txt
       ;;
-    osh_eval.stripped)
+    osh_eval|osh_eval.stripped)
       # just rely on the stuff above
       ;;
     dash|mksh)

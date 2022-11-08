@@ -429,13 +429,13 @@ soil-run() {
   #devtools/bin.sh make-bin-links
 
   # Test the one that's IN TREE, NOT in ../benchmark-data
-  local osh_eval=_bin/cxx-opt/osh_eval.stripped
-  ninja $osh_eval
+  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped _bin/cxx-bumpleak/osh_eval)
+  ninja "${oil_bin[@]}"
 
   local label='no-host'
 
   local provenance
-  provenance=$(soil-shell-provenance $label $osh_eval)
+  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
 
   measure $provenance
 

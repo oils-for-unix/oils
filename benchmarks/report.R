@@ -65,6 +65,10 @@ ShellLabels = function(shell_name, shell_hash) {
       label = GetOshLabel(shell_hash[i])
     } else if (shell_name[i] == 'osh_eval.stripped') {
       label = 'oil-native'
+    } else if (shell_name[i] == '_bin/cxx-opt/osh_eval.stripped') {
+      label = 'opt/osh_eval'
+    } else if (shell_name[i] == '_bin/cxx-bumpleak/osh_eval') {
+      label = 'bumpleak/osh_eval'
     } else {
       label = shell_name[i]
     }
@@ -584,7 +588,7 @@ ComputeReport = function(in_dir, out_dir) {
 
   # Runtimes are called shells, as a hack for code reuse
   times %>%
-    mutate(shell_name = basename(runtime_name), shell_hash = runtime_hash) %>%
+    mutate(shell_name = runtime_name, shell_hash = runtime_hash) %>%
     select(c(host_name, host_hash, shell_name, shell_hash)) ->
     tmp
 
@@ -600,7 +604,7 @@ ComputeReport = function(in_dir, out_dir) {
 
   times %>%
     select(-c(status, stdout_md5sum, host_hash, runtime_hash)) %>%
-    mutate(runtime = basename(runtime_name),
+    mutate(runtime_label = ShellLabels(runtime_name, runtime_hash),
            elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,

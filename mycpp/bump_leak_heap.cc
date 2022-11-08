@@ -10,7 +10,7 @@
 // We need this #ifdef because we don't want the global var in other binaries
 
 #ifdef BUMP_LEAK
-char gMemory[MiB(400)];  // 400 MiB of memory, zero'd
+char gMemory[MiB(2000)];  // some benchmarks take more than 1 GiB
 
 // This type is for "layout"; it's not instantiated
 struct LayoutBlock {
