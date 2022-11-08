@@ -3,7 +3,7 @@
 # benchmarks/report.R -- Analyze data collected by shell scripts.
 #
 # Usage:
-#   osh-parser.R OUT_DIR [TIMES_CSV...]
+#   benchmarks/report.R OUT_DIR [TIMES_CSV...]
 
 library(dplyr)
 library(tidyr)  # spread()
@@ -327,7 +327,11 @@ RuntimeReport = function(in_dir, out_dir) {
   distinct_hosts$host_label = distinct_hosts$host_name
   print(distinct_hosts)
 
-  # Shell label is the same as name.  We only have one OSH build.
+  # Problems:
+  # - DistinctShells() wants to look osh-cpython vs. osh-ovm
+  # - Without it, then we don't have oil-native
+  #distinct_shells = DistinctShells(times)
+
   times %>% distinct(shell_name, shell_hash) -> distinct_shells
   distinct_shells$shell_label = distinct_shells$shell_name
   print(distinct_shells)
@@ -339,7 +343,11 @@ RuntimeReport = function(in_dir, out_dir) {
     select(-c(host_name, host_hash, shell_name, shell_hash)) ->
     details
 
-  print(times)
+  #Log('times')
+  #print(times)
+
+  Log('details')
+  print(details)
 
   # Sort by osh elapsed ms.
   details %>%
@@ -347,22 +355,29 @@ RuntimeReport = function(in_dir, out_dir) {
            task_arg = basename(task_arg)) %>%
     select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
-    mutate(osh_to_bash_ratio = osh / bash) %>%
+    rename(`oil-native` = `osh_eval.stripped`) %>%
+    mutate(py_bash_ratio = osh / bash) %>%
+    mutate(native_bash_ratio = `oil-native` / bash) %>%
     arrange(task_arg, host_label) %>%
-    select(c(task_arg, host_label, bash, dash, osh, osh_to_bash_ratio)) ->
+    select(c(task_arg, host_label, bash, dash, osh, `oil-native`, py_bash_ratio, native_bash_ratio)) ->
     elapsed
 
-  print(summary(elapsed))
-  print(head(elapsed))
+  Log('elapsed')
+  print(elapsed)
+
+  #print(summary(elapsed))
+  #print(head(elapsed))
 
   details %>%
     mutate(max_rss_MB = max_rss_KiB * 1024 / 1e6,
            task_arg = basename(task_arg)) %>%
     select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     spread(key = shell_label, value = max_rss_MB) %>%
-    mutate(osh_to_bash_ratio = osh / bash) %>%
+    rename(`oil-native` = `osh_eval.stripped`) %>%
+    mutate(py_bash_ratio = osh / bash) %>%
+    mutate(native_bash_ratio = `oil-native` / bash) %>%
     arrange(task_arg, host_label) %>%
-    select(c(task_arg, host_label, bash, dash, osh, osh_to_bash_ratio)) ->
+    select(c(task_arg, host_label, bash, dash, osh, `oil-native`, py_bash_ratio, native_bash_ratio)) ->
     max_rss
 
   print(summary(elapsed))

@@ -336,9 +336,8 @@ shell-provenance() {
 
   local dest_base=''
 
-  if test -n "$label"; then
-    # e.g. label could be 'no-host'
-    host='-'
+  if test -n "$label"; then  # label is often 'no-host'
+    host='no-host'
     host_hash='-'
 
     # Don't write to ../benchmark-data

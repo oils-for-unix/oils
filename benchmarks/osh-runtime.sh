@@ -3,7 +3,7 @@
 # Test scripts found in the wild for both correctness and performance.
 #
 # Usage:
-#   ./runtime.sh <function name>
+#   benchmarks/osh-runtime.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -35,7 +35,7 @@ EOF
 download() {
   mkdir -p $TAR_DIR
   tarballs | xargs -n 1 -I {} --verbose -- \
-    wget --directory $TAR_DIR 'https://www.oilshell.org/blob/testdata/{}'
+    wget --no-clobber --directory $TAR_DIR 'https://www.oilshell.org/blob/testdata/{}'
 }
 
 extract() {
@@ -85,9 +85,8 @@ runtime-task() {
   local task_label="${shell_name}-${shell_hash}__${x}"
 
   local times_out="$PWD/$raw_dir/$host.$job_id.times.csv"
-  local vm_out_dir="$PWD/$raw_dir/$host.$job_id.virtual-memory"
   local files_out_dir="$PWD/$raw_dir/$host.$job_id.files/$task_label"
-  mkdir -p $vm_out_dir $files_out_dir
+  mkdir -p $files_out_dir
 
   local -a TIME_PREFIX=(
     $PWD/benchmarks/time_.py \
@@ -99,15 +98,6 @@ runtime-task() {
     --field "$task_type" --field "$task_arg"
   )
 
-  # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
-  extra_args=''
-  if test "$shell_name" = 'osh'; then
-    local rdump="${vm_out_dir}/${task_label}__runtime.txt"
-    extra_args="--runtime-mem-dump $rdump"
-
-    # Should we add a field here to say it has VM stats?
-  fi
-
   echo
   echo "--- $sh_path $task_type $task_arg ---"
   echo
@@ -116,14 +106,14 @@ runtime-task() {
     hello-world)  # NOTE: $task_arg unused.
 
       "${TIME_PREFIX[@]}" -- \
-        "$sh_path" $extra_args testdata/osh-runtime/hello_world.sh
+        "$sh_path" testdata/osh-runtime/hello_world.sh
         > $files_out_dir/STDOUT.txt
       ;;
 
     abuild)  # NOTE: $task_arg unused.
 
       "${TIME_PREFIX[@]}" -- \
-        "$sh_path" $extra_args testdata/osh-runtime/abuild -h \
+        "$sh_path" testdata/osh-runtime/abuild -h \
         > $files_out_dir/STDOUT.txt
       ;;
 
@@ -136,7 +126,7 @@ runtime-task() {
       pushd $files_out_dir >/dev/null
 
       "${TIME_PREFIX[@]}" -- \
-        "$sh_path" $extra_args $PY27_DIR/configure \
+        "$sh_path" $PY27_DIR/configure \
         > $files_out_dir/STDOUT.txt
 
       popd >/dev/null
@@ -148,7 +138,7 @@ runtime-task() {
       pushd $conf_dir >/dev/null
       touch __TIMESTAMP
 
-      "${TIME_PREFIX[@]}" -- "$sh_path" $extra_args ./configure \
+      "${TIME_PREFIX[@]}" -- "$sh_path" ./configure \
         > $files_out_dir/STDOUT.txt
 
       find . -type f -newer __TIMESTAMP \
@@ -192,11 +182,12 @@ print-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance "${SHELLS[@]}" |
+  cat $provenance | filter-provenance "${SHELLS[@]}" $OIL_NATIVE_REGEX |
   while read job_id host_name host_hash sh_path shell_hash; do
 
+    # Skip shells for speed
     case $sh_path in
-      mksh|zsh|bin/osh)
+      mksh|zsh|_bin/osh)
         log "--- osh-runtime.sh: Skipping $sh_path"
         continue
         ;;
@@ -207,7 +198,7 @@ print-tasks() {
       /*)
         # It's already absolute -- do nothing.
         ;;
-      */osh)
+      */osh*)  # matches _bin/osh and _bin/cxx-opt/osh_eval.stripped
         sh_path=$PWD/$sh_path
         ;;
     esac
@@ -260,18 +251,25 @@ measure() {
 
 stage1() {
   local raw_dir=${1:-$BASE_DIR/raw}
+  local single_machine=${2:-}
+
   local out_dir=$BASE_DIR/stage1
 
   mkdir -p $out_dir
 
-  local times_csv=$out_dir/times.csv
-  # Globs are in lexicographical order, which works for our dates.
-  local -a a=($raw_dir/$MACHINE1.*.times.csv)
-  local -a b=($raw_dir/$MACHINE2.*.times.csv)
-  csv-concat ${a[-1]} ${b[-1]} > $times_csv
+  local -a raw=()
+  if test -n "$single_machine"; then
+    local -a a=($raw_dir/$single_machine.*.times.csv)
+    raw+=( ${a[-1]} )
+  else
+    # Globs are in lexicographical order, which works for our dates.
+    local -a a=($raw_dir/$MACHINE1.*.times.csv)
+    local -a b=($raw_dir/$MACHINE2.*.times.csv)
+    raw+=( ${a[-1]} ${b[-1]} )
+  fi
 
-  local -a c=($raw_dir/$MACHINE1.*.virtual-memory)
-  local -a d=($raw_dir/$MACHINE2.*.virtual-memory)
+  local times_csv=$out_dir/times.csv
+  csv-concat "${raw[@]}" > $times_csv
 }
 
 print-report() {
@@ -286,8 +284,10 @@ print-report() {
     </p>
 EOF
 
-  cmark <<EOF
+  cmark <<'EOF'
 ## OSH Runtime Performance
+
+Running with `bin/osh`, not `_bin/osh` (CPython, not OVM.)
 
 ### Elapsed Time by Shell (milliseconds)
 
@@ -314,6 +314,47 @@ EOF
   </body>
 </html>
 EOF
+}
+
+soil-shell-provenance() {
+  ### Only measure shells in the Docker image
+
+  local label=$1
+  shift
+
+  # This is a superset; see filter-provenance
+  # - _bin/osh isn't available in the Docker image, so use bin/osh instead
+
+  benchmarks/id.sh shell-provenance "$label" bash dash bin/osh "$@"
+}
+
+soil-run() {
+  ### Run it on just this machine, and make a report
+
+  rm -r -f $BASE_DIR
+  mkdir -p $BASE_DIR
+
+  # Testdata
+  download
+  extract
+
+  # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
+  # $shell_name 
+  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped)
+  ninja "${oil_bin[@]}"
+
+  local label='no-host'
+
+  local provenance
+  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
+
+  measure $provenance
+
+  # Make it run on one machine
+  stage1 '' $label
+
+  benchmarks/report.sh stage2 $BASE_DIR
+  benchmarks/report.sh stage3 $BASE_DIR
 }
 
 #

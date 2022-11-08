@@ -176,6 +176,7 @@ benchmarks-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/parser-compare.tsv
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
