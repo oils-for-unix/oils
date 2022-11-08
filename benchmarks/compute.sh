@@ -408,7 +408,7 @@ measure() {
 }
 
 soil-shell-provenance() {
-  ### Like 'our-shell-provenance', but for benchmarks/compute.sh soil-run
+  ### Only measure shells in the Docker image
 
   # - The Soil 'benchmarks' job uses the 'cpp' Docker image, which doesn't have
   #   layer-cpython, ../oil_DEPS/cpython-full

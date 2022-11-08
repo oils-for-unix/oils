@@ -62,17 +62,29 @@ demo() {
 # Combine CSV files.
 stage1() {
   local raw_dir=${1:-$BASE_DIR/raw}
+  local single_machine=${2:-}
+
   local out=$BASE_DIR/stage1
   mkdir -p $out
 
-  # Globs are in lexicographical order, which works for our dates.
-  local -a m1=(../benchmark-data/vm-baseline/$MACHINE1.*)
-  local -a m2=(../benchmark-data/vm-baseline/$MACHINE2.*)
+  # TODO: change this to _tmp/vm-baseline?
+  local base_dir=../benchmark-data/vm-baseline
 
-  # The last one
-  local -a latest=(${m1[-1]} ${m2[-1]})
+  local -a raw=()
 
-  benchmarks/virtual_memory.py baseline "${latest[@]}" \
+  if test -n "$single_machine"; then
+    local -a m1=(../benchmark-data/vm-baseline/$single_machine.*)
+    raw+=(${m1[-1]})
+  else
+    # Globs are in lexicographical order, which works for our dates.
+    local -a m1=(../benchmark-data/vm-baseline/$MACHINE1.*)
+    local -a m2=(../benchmark-data/vm-baseline/$MACHINE2.*)
+
+    # The last one
+    raw+=(${m1[-1]} ${m2[-1]})
+  fi
+
+  benchmarks/virtual_memory.py baseline "${raw[@]}" \
     | tee $out/vm-baseline.csv
 }
 
@@ -144,6 +156,41 @@ runtime-dump-demo() {
     -c 'echo $(echo hi)'
 
   grep '^Vm' $out_dir/parser.txt $out_dir/runtime.txt
+}
+
+soil-shell-provenance() {
+  ### Only measure shells in the Docker image
+
+  local label=$1
+  shift
+  benchmarks/id.sh shell-provenance "$label" bash dash "$@"
+}
+
+soil-run() {
+  ### Run it on just this machine, and make a report
+
+  rm -r -f $BASE_DIR
+  mkdir -p $BASE_DIR
+
+  #make _bin/oil.ovm
+  #devtools/bin.sh make-bin-links
+
+  # Test the one that's IN TREE, NOT in ../benchmark-data
+  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped _bin/cxx-bumpleak/osh_eval)
+  ninja "${oil_bin[@]}"
+
+  local label='no-host'
+
+  local provenance
+  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
+
+  measure $provenance
+
+  # Make it run on one machine
+  stage1 '' $label
+
+  benchmarks/report.sh stage2 $BASE_DIR
+  benchmarks/report.sh stage3 $BASE_DIR
 }
 
 "$@"
