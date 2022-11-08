@@ -23,6 +23,10 @@ OIL_NATIVE=${OIL_NATIVE:-$OSH_EVAL_BENCHMARK_DATA}
 readonly OTHER_SHELLS=( bash dash mksh zsh )
 readonly SHELLS=( ${OTHER_SHELLS[@]} bin/osh $OSH_OVM )
 
+# Passed to awk in filter-provenance.  TODO: This could be a parameter
+# Awk wants this to be \\. ?  Probably should stop using Awk.
+readonly OIL_NATIVE_REGEX='osh_eval(\.stripped)?'
+
 # NOTE: This is in {build,test}/common.sh too.
 die() {
   echo "FATAL: $@" 1>&2

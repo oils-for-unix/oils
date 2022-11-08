@@ -30,8 +30,10 @@ measure() {
 
   # Fourth column is the shell.
   # TODO: when oil-native can start processes, hook it up!
-  cat $provenance | filter-provenance "${SHELLS[@]}" |
+  cat $provenance | filter-provenance "${SHELLS[@]}" $OIL_NATIVE_REGEX |
   while read _ _ _ sh_path shell_hash; do
+    # _bin/cxx-opt/osh_eval.stripped -> osh_eval.stripped
+    # TODO: bumpleak
     local sh_name=$(basename $sh_path)
 
     # There is a race condition on the status but sleep helps.
@@ -62,17 +64,30 @@ demo() {
 # Combine CSV files.
 stage1() {
   local raw_dir=${1:-$BASE_DIR/raw}
+  local single_machine=${2:-}
+
   local out=$BASE_DIR/stage1
   mkdir -p $out
 
-  # Globs are in lexicographical order, which works for our dates.
-  local -a m1=(../benchmark-data/vm-baseline/$MACHINE1.*)
-  local -a m2=(../benchmark-data/vm-baseline/$MACHINE2.*)
+  # TODO: change this to _tmp/vm-baseline?
+  local base_dir=../benchmark-data/vm-baseline
 
-  # The last one
-  local -a latest=(${m1[-1]} ${m2[-1]})
+  local -a raw=()
 
-  benchmarks/virtual_memory.py baseline "${latest[@]}" \
+  if test -n "$single_machine"; then
+    local base_dir=_tmp/vm-baseline
+    local -a m1=( $base_dir/$single_machine.* )
+    raw+=( ${m1[-1]} )
+  else
+    local base_dir=../benchmark-data/vm-baseline
+    # Globs are in lexicographical order, which works for our dates.
+    local -a m1=( $base_dir/$MACHINE1.* )
+    local -a m2=( $base_dir/$MACHINE2.* )
+
+    raw+=( ${m1[-1]} ${m2[-1]} )
+  fi
+
+  benchmarks/virtual_memory.py baseline "${raw[@]}" \
     | tee $out/vm-baseline.csv
 }
 
@@ -115,7 +130,6 @@ EOF
 # Other
 #
 
-# Demo of the --dump-proc-status-to flag.
 # NOTE: Could also add Python introspection.
 parser-dump-demo() {
   local out_dir=_tmp/virtual-memory
@@ -144,6 +158,41 @@ runtime-dump-demo() {
     -c 'echo $(echo hi)'
 
   grep '^Vm' $out_dir/parser.txt $out_dir/runtime.txt
+}
+
+soil-shell-provenance() {
+  ### Only measure shells in the Docker image
+
+  local label=$1
+  shift
+
+  # TODO: mksh, zsh
+  benchmarks/id.sh shell-provenance "$label" bash dash "$@"
+}
+
+soil-run() {
+  ### Run it on just this machine, and make a report
+
+  rm -r -f $BASE_DIR
+  mkdir -p $BASE_DIR
+
+  # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
+  # $shell_name 
+  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped)
+  ninja "${oil_bin[@]}"
+
+  local label='no-host'
+
+  local provenance
+  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
+
+  measure $provenance
+
+  # Make it run on one machine
+  stage1 '' $label
+
+  benchmarks/report.sh stage2 $BASE_DIR
+  benchmarks/report.sh stage3 $BASE_DIR
 }
 
 "$@"

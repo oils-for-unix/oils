@@ -69,7 +69,7 @@ _dump-if-exists() {
 dump-shell-id() {
   local sh=$1  # path to the shell
 
-  if ! command -v $sh; then
+  if ! command -v $sh >/dev/null; then
     die "dump-shell-id: Couldn't find $sh"
   fi
 
