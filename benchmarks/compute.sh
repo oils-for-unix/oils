@@ -37,10 +37,6 @@ source test/tsv-lib.sh  # tsv2html
 
 readonly BASE_DIR=_tmp/compute
 
-# Passed to awk in filter-provenance.  TODO: This could be a parameter
-# Awk wants this to be \\. ?  Probably should stop using Awk.
-readonly OIL_NATIVE_REGEX='osh_eval(\.stripped)?'
-
 TIMEFORMAT='%U'
 
 # task_name,iter,args

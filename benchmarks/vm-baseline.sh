@@ -30,8 +30,10 @@ measure() {
 
   # Fourth column is the shell.
   # TODO: when oil-native can start processes, hook it up!
-  cat $provenance | filter-provenance "${SHELLS[@]}" |
+  cat $provenance | filter-provenance "${SHELLS[@]}" $OIL_NATIVE_REGEX |
   while read _ _ _ sh_path shell_hash; do
+    # _bin/cxx-opt/osh_eval.stripped -> osh_eval.stripped
+    # TODO: bumpleak
     local sh_name=$(basename $sh_path)
 
     # There is a race condition on the status but sleep helps.
@@ -73,15 +75,16 @@ stage1() {
   local -a raw=()
 
   if test -n "$single_machine"; then
-    local -a m1=(../benchmark-data/vm-baseline/$single_machine.*)
-    raw+=(${m1[-1]})
+    local base_dir=_tmp/vm-baseline
+    local -a m1=( $base_dir/$single_machine.* )
+    raw+=( ${m1[-1]} )
   else
+    local base_dir=../benchmark-data/vm-baseline
     # Globs are in lexicographical order, which works for our dates.
-    local -a m1=(../benchmark-data/vm-baseline/$MACHINE1.*)
-    local -a m2=(../benchmark-data/vm-baseline/$MACHINE2.*)
+    local -a m1=( $base_dir/$MACHINE1.* )
+    local -a m2=( $base_dir/$MACHINE2.* )
 
-    # The last one
-    raw+=(${m1[-1]} ${m2[-1]})
+    raw+=( ${m1[-1]} ${m2[-1]} )
   fi
 
   benchmarks/virtual_memory.py baseline "${raw[@]}" \
@@ -163,6 +166,8 @@ soil-shell-provenance() {
 
   local label=$1
   shift
+
+  # TODO: mksh, zsh
   benchmarks/id.sh shell-provenance "$label" bash dash "$@"
 }
 
@@ -172,11 +177,9 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  #make _bin/oil.ovm
-  #devtools/bin.sh make-bin-links
-
-  # Test the one that's IN TREE, NOT in ../benchmark-data
-  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped _bin/cxx-bumpleak/osh_eval)
+  # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
+  # $shell_name 
+  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped)
   ninja "${oil_bin[@]}"
 
   local label='no-host'
