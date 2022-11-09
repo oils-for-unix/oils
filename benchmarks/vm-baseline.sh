@@ -93,7 +93,6 @@ stage1() {
 
 print-report() {
   local in_dir=$1
-  local base_url='../../web'
 
   benchmark-html-head 'Virtual Memory Baseline'
 

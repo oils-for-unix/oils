@@ -9,7 +9,11 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
+source benchmarks/common.sh  # benchmark-html-head
+source test/common.sh  # R_PATH
 source test/tsv-lib.sh
+
+readonly BASE_DIR=_tmp/gc
 
 # See benchmarks/gperftools.sh.  I think the Ubuntu package is very old
 
@@ -123,7 +127,7 @@ run-osh() {
 # - integrate with benchmarks/gperftools.sh, and measure memory usage
 
 parser-compare() {
-  local tsv_out=${1:-_tmp/gc/parser-compare.tsv}
+  local tsv_out=${1:-$BASE_DIR/raw/parser.tsv}
   local file=${2:-benchmarks/testdata/configure-coreutils}
 
   mkdir -p $(dirname $tsv_out)
@@ -216,8 +220,42 @@ parse-compare-two() {
   #compare testdata/osh-runtime/abuild
 }
 
+print-report() {
+  local in_dir=$1
+
+  benchmark-html-head 'Allocation and GC Overhead'
+
+  cat <<EOF
+  <body class="width60">
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+EOF
+
+  cmark << 'EOF'
+## Allocation and GC Overhead
+
+### Parser Comparison
+
+Parsing a big file, like in the [parser benchmark](../osh-parser/index.html).
+
+EOF
+
+  tsv2html $in_dir/parser.tsv
+
+  cat <<EOF
+  </body>
+</html>
+EOF
+}
+
 soil-run() {
   parser-compare
+
+  mkdir -p $BASE_DIR/stage2
+  R_LIBS_USER=$R_PATH benchmarks/report.R gc $BASE_DIR/raw $BASE_DIR/stage2
+
+  benchmarks/report.sh stage3 $BASE_DIR
 }
 
 "$@"

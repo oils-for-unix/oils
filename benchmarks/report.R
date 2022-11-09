@@ -683,6 +683,27 @@ ComputeReport = function(in_dir, out_dir) {
   WriteDetails(distinct_hosts, distinct_shells, out_dir, tsv = T)
 }
 
+GcReport = function(in_dir, out_dir) {
+  parser_times = read.table(file.path(in_dir, 'parser.tsv'), header=T)
+
+  parser_times %>% filter(status != 0) -> failed
+  if (nrow(failed) != 0) {
+    print(failed)
+    stop('Some gc tasks failed')
+  }
+
+  parser_times %>%
+    mutate(elapsed_ms = elapsed_secs * 1000,
+           user_ms = user_secs * 1000,
+           sys_ms = sys_secs * 1000,
+           max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
+    select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
+    select(c(elapsed_ms, user_ms, sys_ms, max_rss_MB, shell, comment)) ->
+    parser_out
+
+  writeTsv(parser_out, file.path(out_dir, 'parser'))
+}
+
 MyCppReport = function(in_dir, out_dir) {
   # TSV file, not CSV
   times = read.table(file.path(in_dir, 'benchmark-table.tsv'), header=T)
@@ -742,6 +763,9 @@ main = function(argv) {
 
   } else if (action == 'compute') {
     ComputeReport(in_dir, out_dir)
+
+  } else if (action == 'gc') {
+    GcReport(in_dir, out_dir)
 
   } else if (action == 'mycpp') {
     MyCppReport(in_dir, out_dir)
