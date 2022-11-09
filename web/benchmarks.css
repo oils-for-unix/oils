@@ -26,3 +26,11 @@ h3, h4 {
 .special {
   background-color: oldlace;
 }
+
+/* Make it lighter */
+hr {
+  border: none;
+  height: 1px;
+  background-color: #BBB;
+}
+

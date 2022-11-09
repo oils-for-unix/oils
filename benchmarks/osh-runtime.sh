@@ -9,8 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh
 source benchmarks/common.sh  # csv-concat
+source soil/common.sh  # find-dir-html
+source test/common.sh
 
 readonly BASE_DIR=_tmp/osh-runtime
 
@@ -149,31 +150,6 @@ runtime-task() {
   esac
 }
 
-# TODO:
-# - Add Python's configure -- same or different?
-# - Unify abuild -h -- time it
-# - --runtime-dump-mem and rename to --parser-dump-mem
-#
-# benchmark_name,shell,out_dir
-# abuild-h
-# X-configure
-# config.status?
-#
-# Yeah need to come up with a name.  Not just conf-dirs.
-# $dir-configure
-
-# Do I add host/host_id?  Or just host_label and rely on provenance?
-
-# Turn this into write-tasks?
-# And then run-tasks?  run-all?
-
-# Yeah it should be 
-# osh-parser.sh write-tasks
-# osh-runtime.sh write-tasks
-# virtual-memory.sh write-tasks
-#
-# And then auto.sh run-tasks?  Then you can have consistent logging?
-
 # For each configure file.
 print-tasks() {
   local provenance=$1
@@ -307,6 +283,12 @@ EOF
   csv2html $in_dir/shells.csv
   csv2html $in_dir/hosts.csv
 
+  cmark <<'EOF'
+---
+
+[raw files](files.html)
+EOF
+
   cat <<EOF
   </body>
 </html>
@@ -319,7 +301,7 @@ soil-shell-provenance() {
   local label=$1
   shift
 
-  # This is a superset; see filter-provenance
+  # This is a superset of shells; see filter-provenance
   # - _bin/osh isn't available in the Docker image, so use bin/osh instead
 
   benchmarks/id.sh shell-provenance "$label" bash dash bin/osh "$@"
@@ -331,7 +313,7 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  # Testdata
+  # TODO: This testdata should be baked into Docker image, or mounted
   download
   extract
 
@@ -352,6 +334,9 @@ soil-run() {
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR
+
+  # Index of raw files
+  find-dir-html _tmp/osh-runtime files
 }
 
 #

@@ -157,19 +157,17 @@ demo-tasks() {
 # Measure the parser with cachegrind in CI.
 #
 # TODO: 
-# - benchmarks/gc.sh is also a parser benchmark
-# - benchmarks/osh-runtime
-#   - add oil-native to it
-#   - the HTML report should accept one machine
+# - benchmarks/gc.sh
+#   - add HTML for this
 # - benchmarks/vm-baseline
-#   - add oil-native
-
-# - benchmarks/osh-parser can also measure
-#   - wall time
-#   - number of allocations with uftrace
-#   - the HTML report should accept one machine
+#   - add bin/osh too?  We have oil-native
 # - benchmarks/compute
 #   - Enhance it to use cachegrind, not wall time.
+#   - number of allocations with uftrace
+
+# - benchmarks/osh-parser can also measure
+#   - the HTML report should accept one machine
+#   - number of allocations with uftrace
 #
 # Later:
 # - benchmarks/ovm-build.sh -- binary size and timing
