@@ -180,7 +180,7 @@ osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.ht
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/parser-compare.tsv
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
-osh-parser       benchmarks/auto.sh soil-run           _tmp/benchmark-data/index.html
+osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/benchmark-data/index.html
 mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
 EOF
 }

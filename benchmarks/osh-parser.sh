@@ -24,12 +24,13 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/.. && pwd)  # tsv-lib.sh uses this
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
+source benchmarks/common.sh  # die
+source soil/common.sh  # find-dir-html
 source test/tsv-lib.sh  # tsv2html
 source test/common.sh  # die
-source benchmarks/common.sh  # die
 
 # TODO: The raw files should be published.  In both
 # ~/git/oilshell/benchmarks-data and also in the /release/ hierarchy?
@@ -445,12 +446,53 @@ EOF
 EOF
 }
 
-time-test() {
-  benchmarks/time_.py \
-    --field bash --field foo.txt \
-    --append --output _tmp/bench.csv \
-    sleep 0.123
-  cat _tmp/bench.csv
+cachegrind-main() {
+  ### Invoked by benchmarks/auto.sh and 'soil-run' function
+
+  local base_dir=${1:-../benchmark-data}
+
+  local provenance
+  provenance=$(benchmarks/id.sh shell-provenance no-host \
+    "${OTHER_SHELLS[@]}" $OIL_NATIVE)
+
+  measure-cachegrind \
+    $provenance $base_dir/osh-parser $OIL_NATIVE
+
+}
+
+# Measure the parser with cachegrind in CI.
+#
+# TODO: 
+# - benchmarks/gc.sh
+#   - add HTML for this
+# - benchmarks/vm-baseline
+#   - add bin/osh too?  We have oil-native
+# - benchmarks/compute
+#   - Enhance it to use cachegrind, not wall time.
+#   - number of allocations with uftrace
+
+# - benchmarks/osh-parser can also measure
+#   - the HTML report should accept one machine
+#   - number of allocations with uftrace
+#
+# Later:
+# - benchmarks/ovm-build.sh -- binary size and timing
+#   - maybe just do it for oil-native
+
+
+soil-run() {
+  local base_dir=_tmp/benchmark-data
+  mkdir -p $base_dir
+
+  # Test the one that's IN TREE, NOT in ../benchmark-data
+  local osh_eval=_bin/cxx-opt/osh_eval.stripped
+
+  # Assume ./NINJA-config.sh was already run
+  ninja $osh_eval
+
+  OIL_NATIVE=$osh_eval cachegrind-main $base_dir
+
+  find-dir-html $base_dir
 }
 
 "$@"

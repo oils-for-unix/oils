@@ -22,7 +22,6 @@ set -o errexit
 
 source test/common.sh  # die
 source benchmarks/common.sh  # default value of OSH_OVM
-source soil/common.sh  # find-dir-html
 
 _banner() {
   echo -----
@@ -72,23 +71,6 @@ osh-parser-dup-testdata() {
   done
 }
 
-cachegrind-shells() {
-  local base_dir=${1:-../benchmark-data}
-
-  # Python is considered a shell for benchmarks/compute
-  local provenance
-  provenance=$(benchmarks/id.sh shell-provenance no-host \
-    "${OTHER_SHELLS[@]}" $OIL_NATIVE python2)
-
-  benchmarks/osh-parser.sh measure-cachegrind \
-    $provenance $base_dir/osh-parser $OIL_NATIVE
-
-}
-
-cachegrind-builds() {
-  echo TODO
-}
-
 measure-shells() {
   local base_dir=../benchmark-data
 
@@ -125,8 +107,7 @@ all() {
   # - During release, this happens on machine1, but not machine2
   # - Depends on oil-native being built
   if test -n "$do_cachegrind"; then
-    cachegrind-shells '' $OIL_NATIVE
-    cachegrind-builds '' $OIL_NATIVE
+    benchmarks/osh-parser.sh cachegrind-main '' $OIL_NATIVE
   fi
 
   measure-shells
@@ -152,41 +133,6 @@ demo-tasks() {
       echo $i $sh_path
     done
   done
-}
-
-# Measure the parser with cachegrind in CI.
-#
-# TODO: 
-# - benchmarks/gc.sh
-#   - add HTML for this
-# - benchmarks/vm-baseline
-#   - add bin/osh too?  We have oil-native
-# - benchmarks/compute
-#   - Enhance it to use cachegrind, not wall time.
-#   - number of allocations with uftrace
-
-# - benchmarks/osh-parser can also measure
-#   - the HTML report should accept one machine
-#   - number of allocations with uftrace
-#
-# Later:
-# - benchmarks/ovm-build.sh -- binary size and timing
-#   - maybe just do it for oil-native
-
-
-soil-run() {
-  local base_dir=_tmp/benchmark-data
-  mkdir -p $base_dir
-
-  # Test the one that's IN TREE, NOT in ../benchmark-data
-  local osh_eval=_bin/cxx-opt/osh_eval.stripped
-
-  # Assume ./NINJA-config.sh was already run
-  ninja $osh_eval
-
-  OIL_NATIVE=$osh_eval cachegrind-shells $base_dir
-
-  find-dir-html $base_dir
 }
 
 "$@"
