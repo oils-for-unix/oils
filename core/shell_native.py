@@ -495,15 +495,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       status = 2
 
     if status == 0 :
-      if flag.parser_mem_dump is not None:  # only valid in -n mode
-        input_path = '/proc/%d/status' % posix.getpid()
-        pyutil.CopyFile(input_path, flag.parser_mem_dump)
-
       ui.PrintAst(node, flag)
   else:
-    if flag.parser_mem_dump is not None:
-      e_usage('--parser-mem-dump can only be used with -n')
-
     with state.ctx_ThisDir(mem, script_name):
       try:
         status = main_loop.Batch(cmd_ev, c_parser, errfmt,
@@ -513,12 +506,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     box = [status]
     cmd_ev.MaybeRunExitTrap(box)
     status = box[0]
-
-  # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
-  # don't because they call _exit().
-  if flag.runtime_mem_dump is not None:
-    input_path = '/proc/%d/status' % posix.getpid()
-    pyutil.CopyFile(input_path, flag.runtime_mem_dump)
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status

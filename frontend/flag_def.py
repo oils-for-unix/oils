@@ -233,10 +233,6 @@ OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
 OSH_SPEC.LongFlag('--debug-file', args.String)
 OSH_SPEC.LongFlag('--xtrace-to-debug-file')
 
-# For benchmarks/*.sh
-OSH_SPEC.LongFlag('--parser-mem-dump', args.String)
-OSH_SPEC.LongFlag('--runtime-mem-dump', args.String)
-
 # This flag has is named like bash's equivalent.  We got rid of --norc because
 # it can simply by --rcfile /dev/null.
 OSH_SPEC.LongFlag('--rcfile', args.String)

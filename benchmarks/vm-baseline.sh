@@ -130,36 +130,6 @@ EOF
 # Other
 #
 
-# NOTE: Could also add Python introspection.
-parser-dump-demo() {
-  local out_dir=_tmp/virtual-memory
-  mkdir -p $out_dir
-
-  # VmRSS: 46 MB for abuild, 200 MB for configure!  That is bad.  This
-  # benchmark really is necessary.
-  local input=benchmarks/testdata/abuild
-
-  bin/osh \
-    --parser-mem-dump $out_dir/parser.txt -n --ast-format none \
-    $input
-
-  grep '^Vm' $out_dir/parser.txt
-}
-
-runtime-dump-demo() {
-  # Multiple processes
-  #OIL_TIMING=1 bin/osh -c 'echo $(echo hi)'
-
-  local out_dir=_tmp/virtual-memory
-  mkdir -p $out_dir
-  bin/osh \
-    --parser-mem-dump $out_dir/parser.txt \
-    --runtime-mem-dump $out_dir/runtime.txt \
-    -c 'echo $(echo hi)'
-
-  grep '^Vm' $out_dir/parser.txt $out_dir/runtime.txt
-}
-
 soil-shell-provenance() {
   ### Only measure shells in the Docker image
 
