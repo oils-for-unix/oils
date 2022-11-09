@@ -3,7 +3,7 @@
 # Measure how fast the OSH parser is.
 #
 # Usage:
-#   ./osh-parser.sh <function name>
+#   benchmarks/osh-parser.sh <function name>
 #
 # Hacky way to run it by itself:
 #
@@ -152,10 +152,12 @@ print-tasks() {
   # Add 1 field for each of 5 fields.
   cat $provenance | filter-provenance "$@" |
   while read fields; do
-    cat $SORTED | xargs -n 1 -- echo "$fields"
-
-    # Quick test
-    #head -n 2 $SORTED | xargs -n 1 -- echo "$fields"
+    if test -n "${QUICKLY:-}"; then
+      # Quick test
+      head -n 2 $SORTED | xargs -n 1 -- echo "$fields"
+    else
+      cat $SORTED | xargs -n 1 -- echo "$fields"
+    fi
   done
 }
 
@@ -199,6 +201,7 @@ readonly NUM_TASK_COLS=6  # input columns: 5 from provenance, 1 for file
 measure() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
+  local oil_native=${3:-$OIL_NATIVE}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -221,7 +224,7 @@ measure() {
     > $times_out
 
   local tasks=$BASE_DIR/tasks.txt
-  print-tasks $provenance "${SHELLS[@]}" $OIL_NATIVE > $tasks
+  print-tasks $provenance "${SHELLS[@]}" $oil_native > $tasks
 
   # Run them all
   cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $raw_dir
@@ -232,6 +235,7 @@ measure() {
 measure-cachegrind() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
+  local oil_native=${3:-$OIL_NATIVE}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -260,7 +264,7 @@ measure-cachegrind() {
   # zsh weirdly forks during zsh -n, which complicates our cachegrind
   # measurement.  So just ignore it.  (This can be seen with
   # strace -e fork -f -- zsh -n $file)
-  print-tasks $provenance bash dash mksh $OIL_NATIVE > $ctasks
+  print-tasks $provenance bash dash mksh $oil_native > $ctasks
 
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $raw_dir
 
@@ -312,6 +316,7 @@ stage1-cachegrind() {
 
 stage1() {
   local raw_dir=${1:-$BASE_DIR/raw}
+  local single_machine=${2:-}
 
   local out=$BASE_DIR/stage1
   mkdir -p $out
@@ -322,35 +327,45 @@ stage1() {
 
   stage1-cachegrind $raw_dir $out $raw_data_csv
 
-  local -a x=($raw_dir/$MACHINE1.*.virtual-memory)
-  local -a y=($raw_dir/$MACHINE2.*.virtual-memory)
-
-  local times_csv=$out/times.csv
-  # Globs are in lexicographical order, which works for our dates.
-  local -a a=($raw_dir/$MACHINE1.*.times.csv)
-  local -a b=($raw_dir/$MACHINE2.*.times.csv)
-
-  csv-concat ${a[-1]} ${b[-1]} > $times_csv
-
-  {
-    echo ${a[-1]}
-    echo ${b[-1]}
-  } >> $raw_data_csv
-
-  # Verify that the files are equal, and pass one of them.
   local lines_csv=$out/lines.csv
-  local -a c=($raw_dir/$MACHINE1.*.lines.csv)
-  local -a d=($raw_dir/$MACHINE2.*.lines.csv)
 
-  local left=${c[-1]}
-  local right=${d[-1]}
+  local -a raw=()
+  if test -n "$single_machine"; then
+    local -a a=($raw_dir/$single_machine.*.times.csv)
+    raw+=( ${a[-1]} )
+    echo ${a[-1]} >> $raw_data_csv
 
-  if ! diff $left $right; then
-    die "Benchmarks were run on different files ($left != $right)"
+    # They are the same, output one of them.
+    cat $raw_dir/$single_machine.*.lines.csv > $lines_csv 
+  else
+    # Globs are in lexicographical order, which works for our dates.
+    local -a a=($raw_dir/$MACHINE1.*.times.csv)
+    local -a b=($raw_dir/$MACHINE2.*.times.csv)
+
+    raw+=( ${a[-1]} ${b[-1]} )
+    {
+      echo ${a[-1]}
+      echo ${b[-1]}
+    } >> $raw_data_csv
+
+
+    # Verify that the files are equal, and pass one of them.
+    local -a c=($raw_dir/$MACHINE1.*.lines.csv)
+    local -a d=($raw_dir/$MACHINE2.*.lines.csv)
+
+    local left=${c[-1]}
+    local right=${d[-1]}
+
+    if ! diff $left $right; then
+      die "Benchmarks were run on different files ($left != $right)"
+    fi
+
+    # They are the same, output one of them.
+    cat $left > $lines_csv 
   fi
 
-  # They are the same, output one of them.
-  cat $left > $lines_csv 
+  local times_csv=$out/times.csv
+  csv-concat "${raw[@]}" > $times_csv
 
   head $out/*
   wc -l $out/*
@@ -402,32 +417,43 @@ are chosen to minimize its effect.
 EOF
   csv2html $in_dir/summary.csv
 
-  cmark <<EOF
-### Breakdown By File
+  cmark <<< '### Breakdown By File'
+  echo
 
-### Instructions Per Line (in thousands)
+  # Flat list for CI
+  if test -f $in_dir/times_flat.tsv; then
+    tsv2html $in_dir/times_flat.tsv
+  fi
 
-EOF
-  tsv2html $in_dir/instructions.tsv
+  # Breakdowns for release
+  if test -f $in_dir/instructions.tsv; then
+    cmark <<< '#### Instructions Per Line (in thousands)'
+    echo
+    tsv2html $in_dir/instructions.tsv
+  fi
 
-  cmark<<EOF
+  if test -f $in_dir/elapsed.csv; then
+    cmark <<< '#### Elasped Time (milliseconds)'
+    echo
+    csv2html $in_dir/elapsed.csv
+  fi
 
-#### Elasped Time (milliseconds)
-EOF
-  csv2html $in_dir/elapsed.csv
+  if test -f $in_dir/rate.csv; then
+    cmark <<< '#### Parsing Rate (lines/ms)'
+    echo
+    csv2html $in_dir/rate.csv
+  fi
 
-  cmark <<EOF
-  #### Parsing Rate (lines/ms)
-EOF
-  csv2html $in_dir/rate.csv
-
-  cmark <<EOF
+  if test -f $in_dir/max_rss.csv; then
+    cmark <<'EOF'
 ### Memory Usage (Max Resident Set Size in MB)
 
 Again, Oil uses a **different algorithm** (and language) than POSIX shells.  It
 builds an AST in memory rather than just validating the code line-by-line.
+
 EOF
-  csv2html $in_dir/max_rss.csv
+    csv2html $in_dir/max_rss.csv
+  fi
 
   cmark <<EOF
 ### Shell and Host Details
@@ -439,6 +465,12 @@ EOF
 ### Raw Data
 EOF
   csv2html $in_dir/raw-data.csv
+
+  cmark << 'EOF'
+---
+[raw files](files.html)
+
+EOF
 
   cat <<EOF
   </body>
@@ -460,39 +492,48 @@ cachegrind-main() {
 
 }
 
-# Measure the parser with cachegrind in CI.
-#
-# TODO: 
-# - benchmarks/gc.sh
-#   - add HTML for this
-# - benchmarks/vm-baseline
-#   - add bin/osh too?  We have oil-native
-# - benchmarks/compute
-#   - Enhance it to use cachegrind, not wall time.
-#   - number of allocations with uftrace
+soil-shell-provenance() {
+  ### Only measure shells in the Docker image
 
-# - benchmarks/osh-parser can also measure
-#   - the HTML report should accept one machine
-#   - number of allocations with uftrace
-#
-# Later:
-# - benchmarks/ovm-build.sh -- binary size and timing
-#   - maybe just do it for oil-native
+  local label=$1
+  shift
 
+  # This is a superset of shells; see filter-provenance
+  # - _bin/osh isn't available in the Docker image, so use bin/osh instead
+
+  benchmarks/id.sh shell-provenance "$label" bash dash bin/osh "$@"
+}
 
 soil-run() {
-  local base_dir=_tmp/benchmark-data
-  mkdir -p $base_dir
+  ### Run it on just this machine, and make a report
 
-  # Test the one that's IN TREE, NOT in ../benchmark-data
+  rm -r -f $BASE_DIR
+  mkdir -p $BASE_DIR
+
+  # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
+  # $shell_name 
+
   local osh_eval=_bin/cxx-opt/osh_eval.stripped
+  local -a oil_bin=( $osh_eval )
+  ninja "${oil_bin[@]}"
 
-  # Assume ./NINJA-config.sh was already run
-  ninja $osh_eval
+  local label='no-host'
 
-  OIL_NATIVE=$osh_eval cachegrind-main $base_dir
+  local provenance
+  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
 
-  find-dir-html $base_dir
+  measure $provenance '' $osh_eval
+
+  measure-cachegrind $provenance '' $osh_eval
+
+  # Make it run on one machine
+  stage1 '' $label
+
+  benchmarks/report.sh stage2 $BASE_DIR
+  benchmarks/report.sh stage3 $BASE_DIR
+
+  # Index of raw files
+  find-dir-html _tmp/osh-parser files
 }
 
 "$@"

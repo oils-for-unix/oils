@@ -180,6 +180,11 @@ print-tasks() {
     # NOTE: 'abuild-help' is a dummy label.
     echo "$prefix" hello-world hello-world
     echo "$prefix" abuild abuild-help
+
+    if test -n "${QUICKLY:-}"; then
+      continue
+    fi
+
     echo "$prefix" cpython cpython-configure
 
     for dir in "${TAR_SUBDIRS[@]}"; do

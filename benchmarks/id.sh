@@ -338,7 +338,7 @@ shell-provenance() {
 
   if test -n "$label"; then  # label is often 'no-host'
     host='no-host'
-    host_hash='-'
+    host_hash='no-hash'
 
     # Don't write to ../benchmark-data
     dest_base=_tmp/provenance

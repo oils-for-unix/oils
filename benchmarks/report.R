@@ -41,14 +41,18 @@ GetOshLabel = function(shell_hash) {
 
   path = sprintf('../benchmark-data/shell-id/osh-%s/osh-version.txt',
                  shell_hash)
-  Log('Reading %s', path)
-  lines = readLines(path)
-  if (length(grep('OVM', lines)) > 0) {
-    label = 'osh-ovm'
-  } else if (length(grep('CPython', lines)) > 0) {
-    label = 'osh-cpython'
+  if (file.exists(path)) {
+    Log('Reading %s', path)
+    lines = readLines(path)
+    if (length(grep('OVM', lines)) > 0) {
+      label = 'osh-ovm'
+    } else if (length(grep('CPython', lines)) > 0) {
+      label = 'osh-cpython'
+    } else {
+      stop("Couldn't find OVM or CPython in the version string")
+    }
   } else {
-    stop("Couldn't find OVM or CPython in the version string")
+    label = sprintf('osh-%s', shell_hash)
   }
   return(label)
 }
@@ -121,9 +125,13 @@ ParserReport = function(in_dir, out_dir) {
   # lines_per_sec?
   times %>%
     left_join(lines, by = c('path')) %>%
-    mutate(elapsed_ms = elapsed_secs * 1000,
+    mutate(filename = basename(path), filename_HREF = sourceUrl(path),
+           max_rss_MB = max_rss_KiB * 1024 / 1e6,
+           elapsed_ms = elapsed_secs * 1000,
+           user_ms = user_secs * 1000,
+           sys_ms = sys_secs * 1000,
            lines_per_ms = num_lines / elapsed_ms) %>%
-    select(-c(elapsed_secs)) ->
+    select(-c(path, max_rss_KiB, elapsed_secs, user_secs, sys_secs)) ->
     joined_times
 
   #print(head(times))
@@ -175,10 +183,15 @@ ParserReport = function(in_dir, out_dir) {
     summarize(total_lines = sum(num_lines), total_ms = sum(elapsed_ms)) %>%
     mutate(lines_per_ms = total_lines / total_ms) %>%
     select(-c(total_ms)) %>%
-    spread(key = host_label, value = lines_per_ms) %>%
-    # sort by parsing rate on the fast machine
-    arrange(desc(`host lenny`)) ->
+    spread(key = host_label, value = lines_per_ms) ->
     times_summary
+
+  # Sort by parsing rate on the fast machine
+  if ("host lenny" %in% colnames(times_summary)) {
+    times_summary %>% arrange(desc(`host lenny`)) -> times_summary
+  } else {
+    times_summary %>% arrange(desc(`host no-host`)) -> times_summary
+  }
 
   Log('times_summary:')
   print(times_summary)
@@ -192,69 +205,82 @@ ParserReport = function(in_dir, out_dir) {
     select(-c(total_irefs)) ->
     cachegrind_summary
 
-  # Elapsed seconds for each shell by platform and file
-  joined_times %>%
-    select(-c(lines_per_ms, user_secs, sys_secs, max_rss_KiB)) %>% 
-    spread(key = shell_label, value = elapsed_ms) %>%
-    arrange(host_label, num_lines) %>%
-    mutate(filename = basename(path), filename_HREF = sourceUrl(path),
-           osh_to_bash_ratio = `oil-native` / bash) %>% 
-    select(c(host_label, bash, dash, mksh, zsh,
-             `osh-ovm`, `osh-cpython`, `oil-native`,
-             osh_to_bash_ratio, num_lines, filename, filename_HREF)) ->
-    elapsed
+  if ("no-host" %in% distinct_hosts$host_label) {
 
-  Log('\n')
-  Log('ELAPSED')
-  print(elapsed)
+    # We don't have all the shells
+    elapsed = NA
+    rate = NA
+    max_rss = NA
+    instructions = NA
 
-  # Rates by file and shell
-  joined_times  %>%
-    select(-c(elapsed_ms, user_secs, sys_secs, max_rss_KiB)) %>% 
-    spread(key = shell_label, value = lines_per_ms) %>%
-    arrange(host_label, num_lines) %>%
-    mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
-    select(c(host_label, bash, dash, mksh, zsh,
-             `osh-ovm`, `osh-cpython`, `oil-native`,
-             num_lines, filename, filename_HREF)) ->
-    rate
+    joined_times %>%
+      select(c(shell_label, elapsed_ms, user_ms, sys_ms, max_rss_MB,
+               num_lines, filename, filename_HREF)) %>%
+      arrange(filename, elapsed_ms) -> times_flat
 
-  Log('\n')
-  Log('RATE')
-  print(rate)
+  } else {
 
-  # Memory usage by file
-  joined_times %>%
-    select(-c(elapsed_ms, lines_per_ms, user_secs, sys_secs)) %>% 
-    mutate(max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
-    select(-c(max_rss_KiB)) %>%
-    spread(key = shell_label, value = max_rss_MB) %>%
-    arrange(host_label, num_lines) %>%
-    mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
-    select(c(host_label, bash, dash, mksh, zsh,
-             `osh-ovm`, `osh-cpython`, `oil-native`,
-             num_lines, filename, filename_HREF)) ->
-    max_rss
+    times_flat = NA
 
-  Log('\n')
-  Log('joined_cachegrind has %d rows', nrow(joined_cachegrind))
-  #print(joined_cachegrind)
-  print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
+    # Elapsed seconds for each shell by platform and file
+    joined_times %>%
+      select(-c(lines_per_ms, user_ms, sys_ms, max_rss_MB)) %>% 
+      spread(key = shell_label, value = elapsed_ms) %>%
+      arrange(host_label, num_lines) %>%
+      mutate(osh_to_bash_ratio = `oil-native` / bash) %>% 
+      select(c(host_label, bash, dash, mksh, zsh,
+               `osh-ovm`, `osh-cpython`, `oil-native`,
+               osh_to_bash_ratio, num_lines, filename, filename_HREF)) ->
+      elapsed
 
-  # Cachegrind instructions by file
-  joined_cachegrind %>%
-    mutate(thousand_irefs_per_line = irefs / num_lines / 1000) %>%
-    select(-c(irefs)) %>%
-    spread(key = shell_label, value = thousand_irefs_per_line) %>%
-    arrange(num_lines) %>%
-    mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
-    select(c(bash, dash, mksh, `oil-native`,
-             num_lines, filename, filename_HREF)) ->
-    instructions
+    Log('\n')
+    Log('ELAPSED')
+    print(elapsed)
 
-  Log('\n')
-  Log('instructions has %d rows', nrow(instructions))
-  print(instructions)
+    # Rates by file and shell
+    joined_times  %>%
+      select(-c(elapsed_ms, user_ms, sys_ms, max_rss_MB)) %>% 
+      spread(key = shell_label, value = lines_per_ms) %>%
+      arrange(host_label, num_lines) %>%
+      select(c(host_label, bash, dash, mksh, zsh,
+               `osh-ovm`, `osh-cpython`, `oil-native`,
+               num_lines, filename, filename_HREF)) ->
+      rate
+
+    Log('\n')
+    Log('RATE')
+    print(rate)
+
+    # Memory usage by file
+    joined_times %>%
+      select(-c(elapsed_ms, lines_per_ms, user_ms, sys_ms)) %>% 
+      spread(key = shell_label, value = max_rss_MB) %>%
+      arrange(host_label, num_lines) %>%
+      select(c(host_label, bash, dash, mksh, zsh,
+               `osh-ovm`, `osh-cpython`, `oil-native`,
+               num_lines, filename, filename_HREF)) ->
+      max_rss
+
+    Log('\n')
+    Log('joined_cachegrind has %d rows', nrow(joined_cachegrind))
+    #print(joined_cachegrind)
+    print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
+
+    # Cachegrind instructions by file
+    joined_cachegrind %>%
+      mutate(thousand_irefs_per_line = irefs / num_lines / 1000) %>%
+      select(-c(irefs)) %>%
+      spread(key = shell_label, value = thousand_irefs_per_line) %>%
+      arrange(num_lines) %>%
+      mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
+      select(c(bash, dash, mksh, `oil-native`,
+               num_lines, filename, filename_HREF)) ->
+      instructions
+
+    Log('\n')
+    Log('instructions has %d rows', nrow(instructions))
+    print(instructions)
+  }
 
   WriteDetails(distinct_hosts, distinct_shells, out_dir)
 
@@ -272,14 +298,21 @@ ParserReport = function(in_dir, out_dir) {
   precision = ColumnPrecision(list(), default = 1)
   writeTsv(cachegrind_summary, file.path(out_dir, 'cachegrind_summary'), precision)
 
-  # Round to nearest millisecond, but the ratio has a decimal point.
-  precision = ColumnPrecision(list(osh_to_bash_ratio = 1), default = 0)
-  writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
-  writeCsv(rate, file.path(out_dir, 'rate'))
-  writeCsv(max_rss, file.path(out_dir, 'max_rss'))
+  if (!is.na(times_flat)) {
+    writeTsv(times_flat, file.path(out_dir, 'times_flat'), precision)
+  }
 
-  precision = ColumnPrecision(list(), default = 1)
-  writeTsv(instructions, file.path(out_dir, 'instructions'), precision)
+  if (!is.na(elapsed)) {  # equivalent to no-host
+    # Round to nearest millisecond, but the ratio has a decimal point.
+    precision = ColumnPrecision(list(osh_to_bash_ratio = 1), default = 0)
+
+    writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
+    writeCsv(rate, file.path(out_dir, 'rate'))
+    writeCsv(max_rss, file.path(out_dir, 'max_rss'))
+
+    precision = ColumnPrecision(list(), default = 1)
+    writeTsv(instructions, file.path(out_dir, 'instructions'), precision)
+  }
 
   Log('Wrote %s', out_dir)
 }

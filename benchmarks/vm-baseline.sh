@@ -102,22 +102,26 @@ print-report() {
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
-    <h2>Virtual Memory Baseline</h2>
+EOF
 
-    <h3>Memory Used at Startup (MB)</h3>
+  cmark << 'EOF'
+## Virtual Memory Baseline
 
-    <p>Running under <code>osh-ovm</code>.  Memory usage is measured in MB
-    (powers of 10), not MiB (powers of 2).</p>
+### Memory Used at Startup (MB)
+
+Running under `osh-ovm`.  Memory usage is measured in MB (powers of 10), not
+MiB (powers of 2).
 
 EOF
   csv2html $in_dir/vm-baseline.csv
 
-  # TODO: This could be shared with osh-parser and osh-runtime?
-  cat <<EOF
-    <!-- <h3>Shell and Host Details</h3> -->
-EOF
-  #csv2html $in_dir/shells.csv
-  #csv2html $in_dir/hosts.csv
+  # R code doesn't generate this
+  if false; then
+    cmark <<< '### Shell and Host Details'
+
+    csv2html $in_dir/shells.csv
+    csv2html $in_dir/hosts.csv
+  fi
 
   cat <<EOF
   </body>
@@ -137,7 +141,7 @@ soil-shell-provenance() {
   shift
 
   # TODO: mksh, zsh
-  benchmarks/id.sh shell-provenance "$label" bash dash "$@"
+  benchmarks/id.sh shell-provenance "$label" bash dash bin/osh "$@"
 }
 
 soil-run() {
