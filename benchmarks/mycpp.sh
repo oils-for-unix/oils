@@ -13,6 +13,7 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 source benchmarks/common.sh
+source soil/common.sh  # find-dir-html
 source test/common.sh  # R_PATH
 source test/tsv-lib.sh  # tsv2html
 
@@ -55,12 +56,11 @@ EOF
 
   tsv2html $in_dir/max_rss.tsv
 
+  # This file is benchmarks.wwz/mycpp-examples/ or _tmp/mycpp-examples/
+  # The link only exists in the latter case
   cmark << 'EOF'
 ---
-
-<!-- this file is benchmarks.wwz/mycpp-examples/ or _tmp/mycpp-examples/
-
-[task files](../_test/mycpp-examples.html)
+[task files](../../_test/mycpp-examples.html)
 
 EOF
 
