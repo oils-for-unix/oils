@@ -60,7 +60,7 @@ EOF
   # The link only exists in the latter case
   cmark << 'EOF'
 ---
-[task files](../../_test/mycpp-examples.html)
+[files](raw/benchmark/index.html)
 
 EOF
 
@@ -92,11 +92,13 @@ soil-run() {
   # - mycpp/TEST.sh test-translator does 'mycpp-logs-equal', which also runs
   #   tests
 
-  rm -r -f --verbose _test/tasks/benchmark/
+  local task_dir=_test/tasks/benchmark
+  rm -r -f --verbose $task_dir
   ninja -j 1 $in_tsv
 
   mkdir -p $base_dir/raw
   cp -v $in_tsv $base_dir/raw
+  cp -R $task_dir/ $base_dir/raw/benchmark/
 
   local dir2=$base_dir/stage2
   mkdir -p $dir2
@@ -107,7 +109,7 @@ soil-run() {
 
   # The data is in _test/tasks; we could move it to _test/benchmarks/mycpp/ or
   # something
-  find-dir-html _test mycpp-examples
+  find-dir-html $base_dir/raw/benchmark
 }
 
 "$@"
