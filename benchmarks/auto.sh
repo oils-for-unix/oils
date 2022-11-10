@@ -7,14 +7,17 @@
 #
 # List of benchmarks:
 #
-# - osh-parser
-# - osh-runtime (now called runtime.sh, or wild-run)
-# - vm-baseline
-# - compute
-#   - awk-python could be moved here
-#   - startup.sh could be moved here, it also has strace counts
-# - ovm-build
-# - gc
+# - Single Machine (for now):
+#   - mycpp-examples
+#   - gc
+# - Multiple machines
+#   - osh-parser
+#   - osh-runtime
+#   - vm-baseline
+#   - compute
+#     - awk-python could be moved here
+#     - startup.sh could be moved here, it also has strace counts
+#   - ovm-build
 
 set -o nounset
 set -o pipefail
@@ -27,12 +30,6 @@ _banner() {
   echo -----
   echo "$@"
   echo -----
-}
-
-# Check that the code is correct before measuring performance!
-prereq() {
-  test/unit.sh all
-  test/spec.sh all
 }
 
 osh-parser-quick() {
@@ -101,12 +98,16 @@ measure-builds() {
 # Before this, run devtools/release.sh benchmark-build.
 
 all() {
-  local do_cachegrind=${1:-}
+  local do_machine1=${1:-}
 
   # Notes:
   # - During release, this happens on machine1, but not machine2
   # - Depends on oil-native being built
-  if test -n "$do_cachegrind"; then
+  if test -n "$do_machine1"; then
+    # Only run on one machine
+    benchmarks/mycpp.sh soil-run
+    benchmarks/gc.sh soil-run
+
     benchmarks/osh-parser.sh cachegrind-main '' $OIL_NATIVE
   fi
 

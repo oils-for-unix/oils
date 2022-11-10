@@ -258,27 +258,6 @@ test-runtime() {
 # Translator
 #
 
-compare-examples() {
-  banner 'compare-examples'
-
-  ./NINJA-config.sh
-
-  # 'mycpp-all' has other stuff like type checking alone, stripping, clang builds
-  # Note: only tests CORRECTNESS of benchmarks.  To test speed, we run them
-  # SERIALLY with benchmarks/report.sh.  TODO: could move that here.
-
-  set +o errexit
-  ninja mycpp-logs-equal
-  local status=$?
-  set -o errexit
-
-  # Only for CI
-  find-dir-html _test mycpp-examples
-
-  # Now we want to zip up
-  return $status
-}
-
 test-translator() {
   ### Invoked by soil/worker.sh
 
@@ -294,7 +273,10 @@ test-translator() {
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
   # Runs test in cxx-asan variant, and benchmarks in cxx-opt variant
-  compare-examples
+  if ! ninja mycpp-logs-equal; then
+    log 'FAIL mycpp-logs-equal'
+    return 1
+  fi
 }
 
 unit-test-coverage() {

@@ -223,7 +223,7 @@ parse-compare-two() {
 print-report() {
   local in_dir=$1
 
-  benchmark-html-head 'Allocation and GC Overhead'
+  benchmark-html-head 'Memory Management Overhead'
 
   cat <<EOF
   <body class="width60">

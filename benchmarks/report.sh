@@ -83,29 +83,6 @@ compute() {
   stage3 $base_dir
 }
 
-mycpp-examples() {
-  # Run AND report benchmarks.
-
-  local base_dir=${1:-_tmp/mycpp-examples}
-  local in_tsv=_test/benchmark-table.tsv
-
-  # Force SERIAL reexecution
-  # TODO: This is why benchmarks don't really belong in Ninja?
-  rm -r -f --verbose _test/tasks/benchmark/
-
-  ninja -j 1 $in_tsv
-
-  mkdir -p $base_dir/raw
-  cp -v $in_tsv $base_dir/raw
-
-  local dir2=$base_dir/stage2
-  mkdir -p $dir2
-
-  R_LIBS_USER=$R_PATH benchmarks/report.R mycpp $base_dir/raw $dir2
-
-  stage3 $base_dir mycpp
-}
-
 all() {
   osh-parser
   osh-runtime
@@ -113,8 +90,9 @@ all() {
   ovm-build
   compute
 
-  # Only run on one machine
-  mycpp-examples
+  # Note:
+  # benchmarks/mycpp and benchmarks/gc run on one machine, and are done in
+  # benchmarks/auto.sh
 }
 
 # For view
