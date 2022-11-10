@@ -315,10 +315,12 @@ ParserReport = function(in_dir, out_dir) {
     precision = ColumnPrecision(list(osh_to_bash_ratio = 1), default = 0)
     writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
 
-    writeCsv(rate, file.path(out_dir, 'rate') )
+    precision = SamePrecision(0)
+    writeCsv(rate, file.path(out_dir, 'rate'), precision)
+
     writeCsv(max_rss, file.path(out_dir, 'max_rss'))
 
-    precision = ColumnPrecision(list(), default = 1)
+    precision = SamePrecision(1)
     writeTsv(instructions, file.path(out_dir, 'instructions'), precision)
   }
 
@@ -761,11 +763,12 @@ MyCppReport = function(in_dir, out_dir) {
     max_rss
 
   # Sometimes it speeds up by more than 10x
-  precision3 = ColumnPrecision(list(`C++ : Python` = 3))
-  precision2 = ColumnPrecision(list(`C++ : Python` = 2))
+  precision1 = ColumnPrecision(list(`C++ : Python` = 3), default = 0)
+  writeTsv(user_time, file.path(out_dir, 'user_time'), precision1)
 
-  writeTsv(user_time, file.path(out_dir, 'user_time'), precision3)
+  precision2 = ColumnPrecision(list(`C++ : Python` = 2), default = 1)
   writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision2)
+
   writeTsv(details, file.path(out_dir, 'details'))
 }
 
