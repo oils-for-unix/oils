@@ -23,13 +23,18 @@ typedef void (*MatchFunc)(const unsigned char* line, int line_len,
 
 class SimpleLexer : Obj {
  public:
-  SimpleLexer(MatchFunc match_func, Str* s);
+  SimpleLexer(MatchFunc match_func, Str* s)
+      : Obj(Tag::FixedSize, SimpleLexer::field_mask(), sizeof(SimpleLexer)),
+        match_func_(match_func),
+        s_(s),
+        pos_(0) {
+  }
+
   Tuple2<Id_t, Str*> Next();
   List<Tuple2<Id_t, Str*>*>* Tokens();
 
   static constexpr uint16_t field_mask() {
-    return maskbit(offsetof(SimpleLexer, match_func_)) |
-           maskbit(offsetof(SimpleLexer, s_));
+    return maskbit(offsetof(SimpleLexer, s_));
   }
 
  private:

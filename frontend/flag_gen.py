@@ -194,10 +194,11 @@ namespace arg_types {
       continue  # skip empty 'eval' spec
 
     header_f.write("""
-class %s {
+class %s : Obj {
  public:
-  %s(Dict<Str*, runtime_asdl::value_t*>* attrs) :
-""" % (spec_name, spec_name))
+  %s(Dict<Str*, runtime_asdl::value_t*>* attrs)
+    : Obj(Tag::FixedSize, %s::field_mask(), sizeof(%s)),
+""" % (spec_name, spec_name, spec_name, spec_name))
 
     init_vals = []
     field_decls = []
@@ -238,8 +239,10 @@ attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
         else:
           raise AssertionError(typ)
 
+    bits = []
     for i, field_name in enumerate(sorted(spec.fields)):
       field_name = field_name.replace('-', '_')
+      bits.append('maskbit(offsetof(%s, %s))' % (spec_name, field_name))
       if i != 0:
         header_f.write(',\n')
       header_f.write('    %s(%s)' % (field_name, init_vals[i]))
@@ -248,6 +251,15 @@ attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
 
     for decl in field_decls:
       header_f.write('  %s\n' % decl)
+
+    if bits:
+      header_f.write('  static constexpr uint16_t field_mask() {\n')
+      header_f.write('    return\n')
+      header_f.write('      ')
+      header_f.write('\n      | '.join(bits))
+      header_f.write(';\n')
+      header_f.write('  }\n')
+      header_f.write('\n')
 
     header_f.write("""\
 };

@@ -22,13 +22,6 @@ Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
 }
 
-SimpleLexer::SimpleLexer(MatchFunc match_func, Str* s)
-    : Obj(Tag::FixedSize, SimpleLexer::field_mask(), sizeof(SimpleLexer)),
-      match_func_(match_func),
-      s_(s),
-      pos_(0) {
-}
-
 Tuple2<Id_t, Str*> SimpleLexer::Next() {
   int id;
   int end_pos;
