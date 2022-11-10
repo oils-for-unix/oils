@@ -95,7 +95,6 @@ auto-machine1() {
 
   $0 spec-all  # spec tests run here again
   $0 benchmark-run do_cachegrind
-  $0 mycpp-examples
 }
 
 # Note: needs dep-benchmarks to run
@@ -457,26 +456,23 @@ compress-benchmarks() {
 
   local out="$root/benchmarks.wwz"
 
-  # Technically we only need index.html.  But it's nice to have stage1 and
-  # stage2 in case we need backup.
+  # - For benchmarks that run on multiple machines, technically we only need
+  #   index.html, but include stage1 and stage2.
+  # - For those that run on single machines, we also archive the raw/ dir.
+  #   - Although benchmarks/compute is saved in oilshell/benchmark-data
 
-  # note: mycpp-benchmarks only run on one machine
   pushd _tmp
   find \
-    compute/{stage1,stage2,index.html} \
     osh-parser/{stage1,stage2,index.html} \
     osh-runtime/{stage1,stage2,index.html} \
     vm-baseline/{stage1,stage2,index.html} \
     ovm-build/{stage1,stage2,index.html} \
-    mycpp-examples/{stage2,index.html} \
+    compute/{raw,stage1,stage2,index.html} \
+    gc/{raw,stage2,index.html} \
+    mycpp-examples/{raw,stage2,index.html} \
     -type f \
     | xargs --verbose -- zip -q $out 
   popd
-}
-
-mycpp-examples() {
-  ### Single machine benchmarks that show our GC progress
-  mycpp/TEST.sh test-translator
 }
 
 line-counts() {

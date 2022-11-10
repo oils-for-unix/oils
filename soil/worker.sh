@@ -181,7 +181,7 @@ osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.ht
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/index.html
-mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
+mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/index.html
 EOF
 }
 
