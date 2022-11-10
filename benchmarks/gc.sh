@@ -235,6 +235,8 @@ EOF
   cmark << 'EOF'
 ## Allocation and GC Overhead
 
+Source code: [oil/benchmarks/gc.sh](https://github.com/oilshell/oil/tree/master/benchmarks/gc.sh)
+
 ### Parser Comparison
 
 Parsing a big file, like in the [parser benchmark](../osh-parser/index.html).

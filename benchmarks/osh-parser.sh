@@ -395,6 +395,8 @@ EOF
 We time `$sh -n $file` for various files under various shells, and repeat then
 run under cachegrind for stable metrics.
 
+Source code: [oil/benchmarks/osh-parser.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-parser.sh)
+
 ### Summary
 
 #### Instructions Per Line (via cachegrind)
@@ -417,7 +419,7 @@ are chosen to minimize its effect.
 EOF
   csv2html $in_dir/summary.csv
 
-  cmark <<< '### Breakdown By File'
+  cmark <<< '### Per-File Measurements'
   echo
 
   # Flat list for CI

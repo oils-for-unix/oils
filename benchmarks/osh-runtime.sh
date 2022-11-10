@@ -265,7 +265,7 @@ EOF
   cmark <<'EOF'
 ## OSH Runtime Performance
 
-Running with `bin/osh`, not `_bin/osh` (CPython, not OVM.)
+Source code: [oil/benchmarks/osh-runtime.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-runtime.sh)
 
 ### Elapsed Time by Shell (milliseconds)
 

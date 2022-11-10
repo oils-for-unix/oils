@@ -129,9 +129,7 @@ ParserReport = function(in_dir, out_dir) {
   times %>% filter(status == 0) %>% select(-c(status)) -> times
   cachegrind %>% filter(status == 0) %>% select(-c(status)) -> cachegrind
 
-  # Add the number of lines, joining on path, and compute lines/sec
-  # TODO: Is there a better way compute lines_per_ms and then drop
-  # lines_per_sec?
+  # Add the number of lines, joining on path, and compute lines/ms
   times %>%
     left_join(lines, by = c('path')) %>%
     mutate(filename = basename(path), filename_HREF = sourceUrl(path),
@@ -301,22 +299,23 @@ ParserReport = function(in_dir, out_dir) {
 
   writeCsv(raw_data_table, file.path(out_dir, 'raw-data'))
 
-  precision = ColumnPrecision(list(total_ms = 0))  # round to nearest millisecond
+  precision = SamePrecision(0)  # lines per ms
   writeCsv(times_summary, file.path(out_dir, 'summary'), precision)
 
   precision = ColumnPrecision(list(), default = 1)
   writeTsv(cachegrind_summary, file.path(out_dir, 'cachegrind_summary'), precision)
 
   if (!is.na(times_flat)) {
+    precision = SamePrecision(0)
     writeTsv(times_flat, file.path(out_dir, 'times_flat'), precision)
   }
 
   if (!is.na(elapsed)) {  # equivalent to no-host
     # Round to nearest millisecond, but the ratio has a decimal point.
     precision = ColumnPrecision(list(osh_to_bash_ratio = 1), default = 0)
-
     writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
-    writeCsv(rate, file.path(out_dir, 'rate'))
+
+    writeCsv(rate, file.path(out_dir, 'rate') )
     writeCsv(max_rss, file.path(out_dir, 'max_rss'))
 
     precision = ColumnPrecision(list(), default = 1)
@@ -696,13 +695,14 @@ ComputeReport = function(in_dir, out_dir) {
 
   writeTsv(details, file.path(out_dir, 'details'))
 
-  writeTsv(hello, file.path(out_dir, 'hello'))
-  writeTsv(fib, file.path(out_dir, 'fib'))
-  writeTsv(word_freq, file.path(out_dir, 'word_freq'))
-  writeTsv(parse_help, file.path(out_dir, 'parse_help'))
+  precision = ColumnPrecision(list(max_rss_MB = 1), default = 0)
+  writeTsv(hello, file.path(out_dir, 'hello'), precision)
+  writeTsv(fib, file.path(out_dir, 'fib'), precision)
+  writeTsv(word_freq, file.path(out_dir, 'word_freq'), precision)
+  writeTsv(parse_help, file.path(out_dir, 'parse_help'), precision)
 
-  writeTsv(bubble_sort, file.path(out_dir, 'bubble_sort'))
-  writeTsv(palindrome, file.path(out_dir, 'palindrome'))
+  writeTsv(bubble_sort, file.path(out_dir, 'bubble_sort'), precision)
+  writeTsv(palindrome, file.path(out_dir, 'palindrome'), precision)
 
   WriteProvenance(distinct_hosts, distinct_shells, out_dir, tsv = T)
 }
@@ -725,7 +725,8 @@ GcReport = function(in_dir, out_dir) {
     select(c(elapsed_ms, user_ms, sys_ms, max_rss_MB, shell, comment)) ->
     parser_out
 
-  writeTsv(parser_out, file.path(out_dir, 'parser'))
+  precision = ColumnPrecision(list(max_rss_MB = 1), default = 0)
+  writeTsv(parser_out, file.path(out_dir, 'parser'), precision)
 }
 
 MyCppReport = function(in_dir, out_dir) {

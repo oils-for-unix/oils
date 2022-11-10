@@ -428,13 +428,16 @@ print-report() {
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
-    <h2>OVM Build Performance</h2>
+EOF
 
-    <h3>Time in Seconds by Host and Compiler</h3>
+  cmark << 'EOF'
+## OVM Build Performance
 
-    <p>We measure the build speed of <code>bash</code> and <code>dash</code>
-    for comparison.
-    </p>
+Source code: [oil/benchmarks/osh-parser.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-parser.sh)
+
+### Time in Seconds by Host and Compiler
+
+We measure the build speed of `bash` and `dash` for comparison.
 EOF
 
   # Highlighting clang makes this table easier to read.
@@ -442,31 +445,27 @@ EOF
     --css-class-pattern 'special ^gcc' \
     $in_dir/times.tsv
 
-  cat <<EOF
-    <h3>Native Binary Size</h3>
+  cmark << 'EOF'
+### Native Binary Size
 
 EOF
   tsv2html --css-class-pattern 'special ^gcc' $in_dir/native-sizes.tsv
 
-  cat <<EOF
-    <h3>OVM Binary Size</h3>
+  cmark << 'EOF'
+### OVM Binary Size
 
-    <p>The oil binary has two portions:
-      <ol>
-        <li>Architecture-independent <code>bytecode.zip</code></li>
-        <li>Architecture- and compiler- dependent native code
-            (<code>_build/oil/ovm*</code>)
-        </li>
-      </ol>
-    </p>
+The oil binary has two portions:
+
+- Architecture-independent `bytecode.zip`
+- Architecture- and compiler- dependent native code (`_build/oil/ovm*`)
 
 EOF
   # Highlight the "default" production build
   tsv2html --css-class-pattern 'special /gcc/oil.ovm$' $in_dir/sizes.tsv
 
-  cat <<EOF
+  cmark << 'EOF'
 
-    <h3>Host and Compiler Details</h3>
+### Host and Compiler Details
 EOF
   tsv2html $in_dir/hosts.tsv
   tsv2html $in_dir/compilers.tsv
