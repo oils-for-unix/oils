@@ -23,7 +23,13 @@ test-r-packages() {
 
 soil-run() {
   show-r
+  echo
+
   test-r-packages
+  echo
+
+  benchmarks/report.sh report-test
+  echo
 }
 
 "$@"

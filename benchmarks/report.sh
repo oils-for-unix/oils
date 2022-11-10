@@ -104,4 +104,8 @@ dev-index() {
   log "Wrote $out"
 }
 
+report-test() {
+  R_LIBS_USER=$R_PATH benchmarks/report_test.R
+}
+
 "$@"

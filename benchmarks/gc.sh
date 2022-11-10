@@ -233,7 +233,7 @@ print-report() {
 EOF
 
   cmark << 'EOF'
-## Allocation and GC Overhead
+## Memory Management Overhead
 
 Source code: [oil/benchmarks/gc.sh](https://github.com/oilshell/oil/tree/master/benchmarks/gc.sh)
 

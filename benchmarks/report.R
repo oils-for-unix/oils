@@ -79,9 +79,9 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
       label = GetOshLabel(shell_hash[i], num_hosts)
     } else if (shell_name[i] == 'osh_eval.stripped') {
       label = 'oil-native'
-    } else if (shell_name[i] == '_bin/cxx-opt/osh_eval.stripped') {
+    } else if (endsWith(shell_name[i], '_bin/cxx-opt/osh_eval.stripped')) {
       label = 'opt/osh_eval'
-    } else if (shell_name[i] == '_bin/cxx-bumpleak/osh_eval') {
+    } else if (endsWith(shell_name[i], '_bin/cxx-bumpleak/osh_eval')) {
       label = 'bumpleak/osh_eval'
     } else {
       label = shell_name[i]
