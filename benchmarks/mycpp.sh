@@ -55,6 +55,15 @@ EOF
 
   tsv2html $in_dir/max_rss.tsv
 
+  cmark << 'EOF'
+---
+
+<!-- this file is benchmarks.wwz/mycpp-examples/ or _tmp/mycpp-examples/
+
+[task files](../_test/mycpp-examples.html)
+
+EOF
+
 
 if false; then
   cmark <<EOF
@@ -65,15 +74,6 @@ EOF
   tsv2html $in_dir/details.tsv
 fi
 
-  cmark <<'EOF'
-### TODO
-
-- Benchmark with both GCC and Clang, and show compiler provenance.  Right now
-  the compiler is forced to be the system `c++`.
-- Run this benchmark on multiple machines.
-
-EOF
-
   cat <<EOF
   </body>
 </html>
@@ -81,15 +81,18 @@ EOF
 }
 
 soil-run() {
-  # Run AND report benchmarks.
+  # Run and report mycpp/examples BENCHMARKS only.
 
   local base_dir=${1:-_tmp/mycpp-examples}
   local in_tsv=_test/benchmark-table.tsv
 
-  # Force SERIAL reexecution
-  # TODO: This is why benchmarks don't really belong in Ninja?
-  rm -r -f --verbose _test/tasks/benchmark/
+  # Force SERIAL reexecution of benchmarks
+  # Notes:
+  # - This is why benchmarks don't really belong in Ninja?
+  # - mycpp/TEST.sh test-translator does 'mycpp-logs-equal', which also runs
+  #   tests
 
+  rm -r -f --verbose _test/tasks/benchmark/
   ninja -j 1 $in_tsv
 
   mkdir -p $base_dir/raw
@@ -101,6 +104,10 @@ soil-run() {
   R_LIBS_USER=$R_PATH benchmarks/report.R mycpp $base_dir/raw $dir2
 
   benchmarks/report.sh stage3 $base_dir mycpp
+
+  # The data is in _test/tasks; we could move it to _test/benchmarks/mycpp/ or
+  # something
+  find-dir-html _test mycpp-examples
 }
 
 "$@"
