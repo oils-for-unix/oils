@@ -36,11 +36,21 @@ benchmarkDataLink = function(subdir, name, suffix) {
           subdir, name, suffix)
 }
 
-GetOshLabel = function(shell_hash) {
+provenanceLink = function(subdir, name, suffix) {
+  sprintf('../provenance/%s/%s%s', subdir, name, suffix)
+}
+
+
+GetOshLabel = function(shell_hash, num_hosts) {
   ### Given a string, return another string.
 
-  path = sprintf('../benchmark-data/shell-id/osh-%s/osh-version.txt',
-                 shell_hash)
+  if (num_hosts == 1) {
+    prov_dir = '_tmp/provenance'
+  } else {
+    prov_dir = '../benchmark-data/'
+  }
+  path = sprintf('%s/shell-id/osh-%s/osh-version.txt', prov_dir, shell_hash)
+
   if (file.exists(path)) {
     Log('Reading %s', path)
     lines = readLines(path)
@@ -52,12 +62,12 @@ GetOshLabel = function(shell_hash) {
       stop("Couldn't find OVM or CPython in the version string")
     }
   } else {
-    label = sprintf('osh-%s', shell_hash)
+    stop(sprintf("%s doesn't exist", path))
   }
   return(label)
 }
 
-ShellLabels = function(shell_name, shell_hash) {
+ShellLabels = function(shell_name, shell_hash, num_hosts) {
   ### Given 2 vectors, return a vector of readable labels.
 
   #Log('name %s', shell_name)
@@ -66,7 +76,7 @@ ShellLabels = function(shell_name, shell_hash) {
   labels = c()
   for (i in 1:length(shell_name)) {
     if (shell_name[i] == 'osh') {
-      label = GetOshLabel(shell_hash[i])
+      label = GetOshLabel(shell_hash[i], num_hosts)
     } else if (shell_name[i] == 'osh_eval.stripped') {
       label = 'oil-native'
     } else if (shell_name[i] == '_bin/cxx-opt/osh_eval.stripped') {
@@ -85,7 +95,7 @@ ShellLabels = function(shell_name, shell_hash) {
 
 DistinctHosts = function(t) {
   t %>% distinct(host_name, host_hash) -> distinct_hosts
-  # Just use the name
+  # The label is just the name
   distinct_hosts$host_label = distinct_hosts$host_name
   return(distinct_hosts)
 }
@@ -97,9 +107,8 @@ DistinctShells = function(t) {
   Log('Labeling shells')
 
   distinct_shells$shell_label = ShellLabels(distinct_shells$shell_name,
-                                            distinct_shells$shell_hash)
-  print(distinct_shells)
-
+                                            distinct_shells$shell_hash,
+                                            nrow(DistinctHosts(t)))
   return(distinct_shells)
 }
 
@@ -163,11 +172,11 @@ ParserReport = function(in_dir, out_dir) {
     joined_times
 
   # Like 'times', but do shell_label as one step
-  distinct_shells = DistinctShells(cachegrind)
+  distinct_shells_2 = DistinctShells(cachegrind)
   cachegrind %>%
     left_join(lines, by = c('path')) %>%
     select(-c(elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>% 
-    left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
+    left_join(distinct_shells_2, by = c('shell_name', 'shell_hash')) %>%
     select(-c(shell_name, shell_hash)) ->
     joined_cachegrind
 
@@ -282,7 +291,7 @@ ParserReport = function(in_dir, out_dir) {
     print(instructions)
   }
 
-  WriteDetails(distinct_hosts, distinct_shells, out_dir)
+  WriteProvenance(distinct_hosts, distinct_shells, out_dir)
 
   raw_data_table = tibble(
     filename = basename(as.character(raw_data$path)),
@@ -317,7 +326,15 @@ ParserReport = function(in_dir, out_dir) {
   Log('Wrote %s', out_dir)
 }
 
-WriteDetails = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
+WriteProvenance = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
+
+  num_hosts = nrow(distinct_hosts)
+  if (num_hosts == 1) {
+    linkify = provenanceLink
+  } else {
+    linkify = benchmarkDataLink
+  }
+
   # Should be:
   # host_id_url
   # And then csv_to_html will be smart enough?  It should take --url flag?
@@ -325,17 +342,25 @@ WriteDetails = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
     host_label = distinct_hosts$host_label,
     host_id = paste(distinct_hosts$host_name,
                     distinct_hosts$host_hash, sep='-'),
-    host_id_HREF = benchmarkDataLink('host-id', host_id, '/')
+    host_id_HREF = linkify('host-id', host_id, '/')
   )
+  Log('host_table')
   print(host_table)
+  Log('')
 
   shell_table = tibble(
     shell_label = distinct_shells$shell_label,
     shell_id = paste(distinct_shells$shell_name,
                      distinct_shells$shell_hash, sep='-'),
-    shell_id_HREF = benchmarkDataLink('shell-id', shell_id, '/')
+    shell_id_HREF = linkify('shell-id', shell_id, '/')
   )
+  Log('distinct_shells')
+  print(distinct_shells)
+  Log('')
+
+  Log('shell_table')
   print(shell_table)
+  Log('')
 
   if (tsv) {
     writeTsv(host_table, file.path(out_dir, 'hosts'))
@@ -355,19 +380,15 @@ RuntimeReport = function(in_dir, out_dir) {
     stop('Some osh-runtime tasks failed')
   }
 
-  # Host label is the same as name
-  times %>% distinct(host_name, host_hash) -> distinct_hosts
-  distinct_hosts$host_label = distinct_hosts$host_name
+  distinct_hosts = DistinctHosts(times)
+  distinct_shells = DistinctShells(times)
+
   print(distinct_hosts)
-
-  # Problems:
-  # - DistinctShells() wants to look osh-cpython vs. osh-ovm
-  # - Without it, then we don't have oil-native
-  #distinct_shells = DistinctShells(times)
-
-  times %>% distinct(shell_name, shell_hash) -> distinct_shells
-  distinct_shells$shell_label = distinct_shells$shell_name
+  Log('')
   print(distinct_shells)
+  Log('')
+
+  #return()
 
   # Replace name/hash combinations with labels.
   times %>%
@@ -388,11 +409,10 @@ RuntimeReport = function(in_dir, out_dir) {
            task_arg = basename(task_arg)) %>%
     select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
-    rename(`oil-native` = `osh_eval.stripped`) %>%
-    mutate(py_bash_ratio = osh / bash) %>%
+    mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `oil-native` / bash) %>%
     arrange(task_arg, host_label) %>%
-    select(c(task_arg, host_label, bash, dash, osh, `oil-native`, py_bash_ratio, native_bash_ratio)) ->
+    select(c(task_arg, host_label, bash, dash, `osh-cpython`, `oil-native`, py_bash_ratio, native_bash_ratio)) ->
     elapsed
 
   Log('elapsed')
@@ -406,19 +426,18 @@ RuntimeReport = function(in_dir, out_dir) {
            task_arg = basename(task_arg)) %>%
     select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     spread(key = shell_label, value = max_rss_MB) %>%
-    rename(`oil-native` = `osh_eval.stripped`) %>%
-    mutate(py_bash_ratio = osh / bash) %>%
+    mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `oil-native` / bash) %>%
     arrange(task_arg, host_label) %>%
-    select(c(task_arg, host_label, bash, dash, osh, `oil-native`, py_bash_ratio, native_bash_ratio)) ->
+    select(c(task_arg, host_label, bash, dash, `osh-cpython`, `oil-native`, py_bash_ratio, native_bash_ratio)) ->
     max_rss
 
   print(summary(elapsed))
   print(head(elapsed))
 
-  WriteDetails(distinct_hosts, distinct_shells, out_dir)
+  WriteProvenance(distinct_hosts, distinct_shells, out_dir)
 
-  precision = ColumnPrecision(list(bash = 0, dash = 0, osh = 0))
+  precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0, `oil-native` = 0))
   writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeCsv(max_rss, file.path(out_dir, 'max_rss'))
 
@@ -475,9 +494,12 @@ VmBaselineReport = function(in_dir, out_dir) {
   vm = read.csv(file.path(in_dir, 'vm-baseline.csv'))
   #print(vm)
 
+  # Not using DistinctHosts() because field host_hash isn't collected
+  num_hosts = nrow(vm %>% distinct(host))
+
   vm %>%
     rename(kib = metric_value) %>%
-    mutate(shell_label = ShellLabels(shell_name, shell_hash),
+    mutate(shell_label = ShellLabels(shell_name, shell_hash, num_hosts),
            megabytes = kib * 1024 / 1e6) %>%
     select(-c(shell_name, kib)) %>%
     spread(key = c(metric_name), value = megabytes) %>%
@@ -650,9 +672,11 @@ ComputeReport = function(in_dir, out_dir) {
   Log('Distinct runtimes')
   print(distinct_shells)
 
+  num_hosts = nrow(distinct_hosts)
+
   times %>%
     select(-c(status, stdout_md5sum, host_hash, runtime_hash)) %>%
-    mutate(runtime_label = ShellLabels(runtime_name, runtime_hash),
+    mutate(runtime_label = ShellLabels(runtime_name, runtime_hash, num_hosts),
            elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
@@ -680,7 +704,7 @@ ComputeReport = function(in_dir, out_dir) {
   writeTsv(bubble_sort, file.path(out_dir, 'bubble_sort'))
   writeTsv(palindrome, file.path(out_dir, 'palindrome'))
 
-  WriteDetails(distinct_hosts, distinct_shells, out_dir, tsv = T)
+  WriteProvenance(distinct_hosts, distinct_shells, out_dir, tsv = T)
 }
 
 GcReport = function(in_dir, out_dir) {

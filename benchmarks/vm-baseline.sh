@@ -19,12 +19,10 @@ readonly BASE_DIR=_tmp/vm-baseline
 measure() {
   local provenance=$1
   local base_dir=${2:-_tmp/vm-baseline}
-  #local base_dir=${2:-../benchmark-data/vm-baseline}
 
   local name=$(basename $provenance)
   local prefix=${name%.provenance.txt}  # strip suffix
 
-  local host=$(hostname)
   local out_dir="$base_dir/$prefix"
   mkdir -p $out_dir
 
@@ -35,10 +33,10 @@ measure() {
     # _bin/cxx-opt/osh_eval.stripped -> osh_eval.stripped
     # TODO: bumpleak
     local sh_name=$(basename $sh_path)
+    local out="$out_dir/${sh_name}-${shell_hash}.txt"
 
     # There is a race condition on the status but sleep helps.
     # Bug fix: ALIVE to prevent exec optimization in OSH and zsh.
-    local out="$out_dir/${sh_name}-${shell_hash}.txt"
     $sh_path -c 'sleep 0.001; cat /proc/$$/status; echo ALIVE' > $out
   done
 
@@ -69,17 +67,16 @@ stage1() {
   local out=$BASE_DIR/stage1
   mkdir -p $out
 
-  # TODO: change this to _tmp/vm-baseline?
-  local base_dir=../benchmark-data/vm-baseline
+  local base_dir=
 
   local -a raw=()
 
   if test -n "$single_machine"; then
-    local base_dir=_tmp/vm-baseline
+    base_dir=_tmp/vm-baseline
     local -a m1=( $base_dir/$single_machine.* )
     raw+=( ${m1[-1]} )
   else
-    local base_dir=../benchmark-data/vm-baseline
+    base_dir=../benchmark-data/vm-baseline
     # Globs are in lexicographical order, which works for our dates.
     local -a m1=( $base_dir/$MACHINE1.* )
     local -a m2=( $base_dir/$MACHINE2.* )
@@ -108,8 +105,7 @@ EOF
 
 ### Memory Used at Startup (MB)
 
-Running under `osh-ovm`.  Memory usage is measured in MB (powers of 10), not
-MiB (powers of 2).
+Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
 
 EOF
   csv2html $in_dir/vm-baseline.csv

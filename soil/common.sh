@@ -50,11 +50,11 @@ find-dir-html() {
   local dir=$1
   local out_name=${2:-index}
 
-  local txt=$dir/$out_name.txt
-  local html=$dir/$out_name.html
+  #local txt=$dir/$out_name.txt
+  #find $dir -type f | sort > $txt
+  #echo "Wrote $txt"
 
-  find $dir -type f | sort > $txt
-  echo "Wrote $txt"
+  local html=$dir/$out_name.html
 
   # Note: no HTML escaping.  Would be nice for Oil.
   find $dir -type f | sort | gawk -v dir="$dir" '
@@ -64,5 +64,5 @@ find-dir-html() {
   }
   ' > $html
 
-  echo "Wrote $html"
+  log "Wrote $html"
 }

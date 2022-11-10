@@ -183,8 +183,6 @@ compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/index.html
 mycpp-benchmarks benchmarks/report.sh mycpp-examples   _tmp/mycpp-examples/index.html
 EOF
-
-#osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/benchmark-data/index.html
 }
 
 cpp-spec-tasks() {

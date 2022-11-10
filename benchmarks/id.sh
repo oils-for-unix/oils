@@ -14,6 +14,7 @@ readonly REPO_ROOT
 
 source build/common.sh  # for $CLANG
 source benchmarks/common.sh
+source soil/common.sh  # find-dir-html
 
 # TODO: add benchmark labels/hashes for osh and all other shells
 #
@@ -58,8 +59,10 @@ source benchmarks/common.sh
 _dump-if-exists() {
   local path=$1
   local out=$2
-  test -f $path || return
-  cat $path > $out
+  if ! test -f "$path"; then
+    return
+  fi
+  cat "$path" > $out
 }
 
 #
@@ -162,7 +165,9 @@ publish-shell-id() {
 
   echo $hash > $dest/HASH.txt
 
-  #ls -l $dest 1>&2  # don't write to stdout
+  # for .wwz file
+  find-dir-html "$dest"
+
   log "Published shell ID to $dest"
 
   echo $id
@@ -224,7 +229,9 @@ _host-id-hash() {
 
   # OS
   local file=$src/lsb-release.txt
-  test -f $file && cat $file
+  if test -f $file; then
+    cat $file
+  fi
 
   return 0
 }
@@ -248,7 +255,9 @@ publish-host-id() {
 
   echo $hash > $dest/HASH.txt
 
-  #ls -l $dest 1>&2
+  # for .wwz file
+  find-dir-html "$dest"
+
   log "Published host ID to $dest"
 
   echo $id
@@ -332,35 +341,29 @@ shell-provenance() {
   job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
   local host
-  local host_hash
-
-  local dest_base=''
+  local prov_dir
 
   if test -n "$label"; then  # label is often 'no-host'
-    host='no-host'
-    host_hash='no-hash'
-
-    # Don't write to ../benchmark-data
-    dest_base=_tmp/provenance
+    host=$label
+    prov_dir=_tmp/provenance  # local links
   else
     host=$(hostname)
-
-    local tmp_dir=_tmp/host-id/$host
-    dump-host-id $tmp_dir
-
-    # TODO: This requires ../benchmark-data
-
-    host_hash=$(publish-host-id $tmp_dir)
-
-    # log "*** host_hash $host_hash"
-
-    label=$host
+    prov_dir=../benchmark-data  # shared links
   fi
 
-  # Filename
-  local out=_tmp/${label}.${job_id}.provenance.txt
+  log "*** $label $host $prov_dir"
 
+  #set -x
+
+  local tmp_dir=_tmp/host-id/$host
+  dump-host-id $tmp_dir
+
+  local host_hash
+  host_hash=$(publish-host-id $tmp_dir "$prov_dir/host-id")
   local shell_hash
+
+  # Filename
+  local out=_tmp/${host}.${job_id}.provenance.txt
 
   for sh_path in "$@"; do
     # There will be two different OSH
@@ -369,8 +372,8 @@ shell-provenance() {
     tmp_dir=_tmp/shell-id/$name
     dump-shell-id $sh_path $tmp_dir
 
-    # writes to ../benchmark-data
-    shell_hash=$(publish-shell-id $tmp_dir "$dest_base")
+    # writes to ../benchmark-data or _tmp/provenance
+    shell_hash=$(publish-shell-id $tmp_dir "$prov_dir/shell-id")
 
     # note: filter-provenance depends on $4 being $sh_path
     echo "$job_id $host $host_hash $sh_path $shell_hash"
