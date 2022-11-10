@@ -16,61 +16,27 @@ using syntax_asdl::Token;
 using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
 
-class Usage : public std::exception {
+class Usage : public std::exception, Obj {
  public:
-  Usage(Str* msg, int span_id) : msg(msg), span_id(span_id) {
-  }
-  Usage(Str* msg) : msg(msg), span_id(runtime::NO_SPID) {
-  }
+  Usage(Str* msg, int span_id);
+  Usage(Str* msg);
 
   Str* msg;
   int span_id;
 };
 
+constexpr uint16_t maskof_Usage() {
+  return maskbit(offsetof(Usage, msg));
+}
+
 // This definition is different in Python than C++.  Not worth auto-translating.
-class _ErrorWithLocation : public std::exception {
+class _ErrorWithLocation : public std::exception, Obj {
  public:
-  _ErrorWithLocation(Str* user_str, int span_id)
-      : status(1),
-        user_str_(user_str),
-        span_id(span_id),
-        token(nullptr),
-        part(nullptr),
-        word(nullptr) {
-  }
-  _ErrorWithLocation(Str* user_str, Token* token)
-      : status(1),
-        user_str_(user_str),
-        span_id(runtime::NO_SPID),
-        token(token),
-        part(nullptr),
-        word(nullptr) {
-  }
-  _ErrorWithLocation(Str* user_str, word_part_t* part)
-      : status(1),
-        user_str_(user_str),
-        span_id(runtime::NO_SPID),
-        token(nullptr),
-        part(part),
-        word(nullptr) {
-  }
-  _ErrorWithLocation(Str* user_str, word_t* word)
-      : status(1),
-        user_str_(user_str),
-        span_id(runtime::NO_SPID),
-        token(nullptr),
-        part(nullptr),
-        word(word) {
-  }
-  _ErrorWithLocation(int status, Str* user_str, int span_id, bool show_code)
-      : status(status),
-        user_str_(user_str),
-        span_id(span_id),
-        token(nullptr),
-        part(nullptr),
-        word(nullptr),
-        show_code(show_code) {
-  }
+  _ErrorWithLocation(Str* user_str, int span_id);
+  _ErrorWithLocation(Str* user_str, Token* token);
+  _ErrorWithLocation(Str* user_str, word_part_t* part);
+  _ErrorWithLocation(Str* user_str, word_t* word);
+  _ErrorWithLocation(int status, Str* user_str, int span_id, bool show_code);
 
   Str* UserErrorString() {
     return user_str_;
@@ -95,6 +61,10 @@ class _ErrorWithLocation : public std::exception {
 
   bool show_code;
 };
+
+constexpr uint16_t maskof__ErrorWithLocation() {
+  return maskbit(offsetof(_ErrorWithLocation, user_str_));
+}
 
 class Parse : public _ErrorWithLocation {
  public:

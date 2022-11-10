@@ -55,6 +55,7 @@ def NinjaGraph(ru):
         'cpp/leaky_pylib.cc',
         'cpp/leaky_stdlib.cc',
         'cpp/leaky_libc.cc',
+        'cpp/leaky_core_error.cc',
       ],
       deps = [
         '//core/runtime.asdl',

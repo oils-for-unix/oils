@@ -82,8 +82,9 @@ struct FlagSpecAndMore_c {
 
 namespace flag_spec {
 
-class _FlagSpec {
+class _FlagSpec : Obj {
  public:
+  _FlagSpec();
   List<Str*>* arity0;
   Dict<Str*, args::_Action*>* arity1;
   List<Str*>* plus_flags;
@@ -91,13 +92,29 @@ class _FlagSpec {
   Dict<Str*, runtime_asdl::value_t*>* defaults;
 };
 
-class _FlagSpecAndMore {
+constexpr uint16_t maskof__FlagSpec() {
+  return maskbit(offsetof(_FlagSpec, arity0)) |
+         maskbit(offsetof(_FlagSpec, arity1)) |
+         maskbit(offsetof(_FlagSpec, plus_flags)) |
+         maskbit(offsetof(_FlagSpec, actions_long)) |
+         maskbit(offsetof(_FlagSpec, defaults));
+}
+
+class _FlagSpecAndMore : Obj {
  public:
+  _FlagSpecAndMore();
   Dict<Str*, args::_Action*>* actions_long;
   Dict<Str*, args::_Action*>* actions_short;
   List<Str*>* plus_flags;
   Dict<Str*, runtime_asdl::value_t*>* defaults;
 };
+
+constexpr uint16_t maskof__FlagSpecAndMore() {
+  return maskbit(offsetof(_FlagSpecAndMore, actions_long)) |
+         maskbit(offsetof(_FlagSpecAndMore, actions_short)) |
+         maskbit(offsetof(_FlagSpecAndMore, plus_flags)) |
+         maskbit(offsetof(_FlagSpecAndMore, defaults));
+}
 
 class _OilFlagSpec {
  public:

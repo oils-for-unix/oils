@@ -16,6 +16,23 @@ using runtime_asdl::value__Bool;
 using runtime_asdl::value__Undef;
 using runtime_asdl::value_t;
 
+_FlagSpec::_FlagSpec()
+    : Obj(Tag::FixedSize, maskof__FlagSpec(), sizeof(_FlagSpec)),
+      arity0(nullptr),
+      arity1(nullptr),
+      plus_flags(nullptr),
+      actions_long(nullptr),
+      defaults(nullptr) {
+}
+
+_FlagSpecAndMore::_FlagSpecAndMore()
+    : Obj(Tag::FixedSize, maskof__FlagSpecAndMore(), sizeof(_FlagSpecAndMore)),
+      actions_long(),
+      actions_short(),
+      plus_flags(),
+      defaults() {
+}
+
 void _CreateStrList(const char** in, List<Str*>* out) {
   int i = 0;
   while (true) {

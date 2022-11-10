@@ -21,13 +21,16 @@ Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
 typedef void (*MatchFunc)(const unsigned char* line, int line_len,
                           int start_pos, int* id, int* end_pos);
 
-class SimpleLexer {
+class SimpleLexer : Obj {
  public:
-  SimpleLexer(MatchFunc match_func, Str* s)
-      : match_func_(match_func), s_(s), pos_(0) {
-  }
+  SimpleLexer(MatchFunc match_func, Str* s);
   Tuple2<Id_t, Str*> Next();
   List<Tuple2<Id_t, Str*>*>* Tokens();
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(SimpleLexer, match_func_)) |
+           maskbit(offsetof(SimpleLexer, s_));
+  }
 
  private:
   MatchFunc match_func_;
