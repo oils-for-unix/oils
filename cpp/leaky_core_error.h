@@ -18,14 +18,16 @@ using syntax_asdl::word_t;
 
 class Usage : public Obj {
  public:
-  Usage(Str* msg, int span_id) : 
-    Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
-    msg(msg), span_id(span_id) {
+  Usage(Str* msg, int span_id)
+      : Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
+        msg(msg),
+        span_id(span_id) {
   }
 
-  Usage(Str* msg) : 
-    Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
-    msg(msg), span_id(runtime::NO_SPID) {
+  Usage(Str* msg)
+      : Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
+        msg(msg),
+        span_id(runtime::NO_SPID) {
   }
 
   Str* msg;

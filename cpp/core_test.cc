@@ -1,10 +1,11 @@
 #include "cpp/leaky_core.h"
 #include "cpp/leaky_core_error.h"
-
 #include "vendor/greatest.h"
 
-static_assert(offsetof(Obj, field_mask_) == offsetof(error::Usage, field_mask_));
-static_assert(offsetof(Obj, field_mask_) == offsetof(error::_ErrorWithLocation, field_mask_));
+static_assert(offsetof(Obj, field_mask_) ==
+              offsetof(error::Usage, field_mask_));
+static_assert(offsetof(Obj, field_mask_) ==
+              offsetof(error::_ErrorWithLocation, field_mask_));
 
 TEST exceptions_test() {
   bool caught = false;

@@ -53,7 +53,7 @@ inline size_t aligned(size_t n) {
   return (n + kMask) & ~kMask;
 }
 
-#define KiB(bytes) ((bytes) * 1024)
+#define KiB(bytes) ((bytes)*1024)
 #define MiB(bytes) (KiB(bytes) * 1024)
 #define GiB(bytes) (MiB(bytes) * 1024)
 
