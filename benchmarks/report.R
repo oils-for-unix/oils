@@ -708,9 +708,9 @@ ComputeReport = function(in_dir, out_dir) {
   details %>% filter(task_name == 'bubble_sort') %>% select(-c(task_name)) -> bubble_sort
   details %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% select(-c(task_name)) -> palindrome
 
-  writeTsv(details, file.path(out_dir, 'details'))
-
   precision = ColumnPrecision(list(max_rss_MB = 1), default = 0)
+  writeTsv(details, file.path(out_dir, 'details'), precision)
+
   writeTsv(hello, file.path(out_dir, 'hello'), precision)
   writeTsv(fib, file.path(out_dir, 'fib'), precision)
   writeTsv(word_freq, file.path(out_dir, 'word_freq'), precision)

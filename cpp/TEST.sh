@@ -53,14 +53,22 @@ pre-build() {
   build/py.sh fastmatch
 }
 
+# Tests that pass with the garbage collector on.
+# TODO: Move all tests here
+
+readonly -a GOOD_TESTS=(
+  cpp/qsn_test
+  cpp/core_test
+)
+
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
-  run-one-test cpp/qsn_test '' ubsan
-  run-one-test cpp/qsn_test '' gcevery
-
-  run-one-test cpp/core_test '' ubsan
-  run-one-test cpp/core_test '' gcevery
+  for t in "${GOOD_TESTS[@]}"; do
+    run-one-test $t '' ubsan
+    run-one-test $t '' gcevery
+    run-one-test $t '' rvroot
+  done
 
   # Doesn't run with GC_EVERY_ALLOC
   run-one-test cpp/leaky_core_test '' ubsan
@@ -69,6 +77,8 @@ unit() {
   # Need -D CPP_UNIT_TEST
   run-special-test cpp/leaky_frontend_flag_spec_test '' ubsan
   run-special-test cpp/leaky_frontend_flag_spec_test '' asan
+  # Doesn't work
+  # run-special-test cpp/leaky_frontend_flag_spec_test '' gcevery
 
   # Runs in different dir
   leaky-binding-test '' ubsan
@@ -86,9 +96,9 @@ coverage() {
 
   pre-build
 
-  run-one-test cpp/qsn_test clang coverage
-  run-one-test cpp/core_test clang coverage
-  run-one-test cpp/leaky_core_test clang coverage
+  for t in "${GOOD_TESTS[@]}"; do
+    run-one-test $t clang coverage
+  done
 
   # Need -D CPP_UNIT_TEST
   run-special-test cpp/leaky_frontend_flag_spec_test clang coverage
