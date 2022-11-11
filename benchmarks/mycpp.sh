@@ -56,6 +56,16 @@ EOF
 
   tsv2html $in_dir/max_rss.tsv
 
+  cmark <<EOF
+### System Time (milliseconds)
+
+Lower ratios are better.
+
+EOF
+
+  tsv2html $in_dir/sys_time.tsv
+
+
   # This file is benchmarks.wwz/mycpp-examples/ or _tmp/mycpp-examples/
   # The link only exists in the latter case
   cmark << 'EOF'

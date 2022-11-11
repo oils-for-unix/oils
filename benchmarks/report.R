@@ -756,20 +756,27 @@ MyCppReport = function(in_dir, out_dir) {
   }
 
   # Don't care about elapsed and system
-  times %>% select(-c(status, elapsed_secs, sys_secs, bin, task_out)) %>%
+  times %>% select(-c(status, elapsed_secs, bin, task_out)) %>%
     mutate(example_name_HREF = mycppUrl(example_name),
            user_ms = user_secs * 1000, 
+           sys_ms = sys_secs * 1000, 
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
-    select(-c(user_secs, max_rss_KiB)) ->
+    select(-c(user_secs, sys_secs, max_rss_KiB)) ->
     details
 
-  details %>% select(-c(max_rss_MB)) %>%
+  details %>% select(-c(sys_ms, max_rss_MB)) %>%
     spread(key = impl, value = user_ms) %>%
     mutate(`C++ : Python` = `C++` / Python) %>%
     arrange(`C++ : Python`) ->
     user_time
 
-  details %>% select(-c(user_ms)) %>%
+  details %>% select(-c(user_ms, max_rss_MB)) %>%
+    spread(key = impl, value = sys_ms) %>%
+    mutate(`C++ : Python` = `C++` / Python) %>%
+    arrange(`C++ : Python`) ->
+    sys_time
+
+  details %>% select(-c(user_ms, sys_ms)) %>%
     spread(key = impl, value = max_rss_MB) %>%
     mutate(`C++ : Python` = `C++` / Python) %>%
     arrange(`C++ : Python`) ->
@@ -778,6 +785,7 @@ MyCppReport = function(in_dir, out_dir) {
   # Sometimes it speeds up by more than 10x
   precision1 = ColumnPrecision(list(`C++ : Python` = 3), default = 0)
   writeTsv(user_time, file.path(out_dir, 'user_time'), precision1)
+  writeTsv(sys_time, file.path(out_dir, 'sys_time'), precision1)
 
   precision2 = ColumnPrecision(list(`C++ : Python` = 2), default = 1)
   writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision2)
