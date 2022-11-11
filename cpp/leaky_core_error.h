@@ -16,23 +16,17 @@ using syntax_asdl::Token;
 using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
 
-class Usage : public std::exception {
+class Usage : public Obj {
  public:
-  Usage(Str* msg, int span_id) : msg(msg), span_id(span_id) {
-    heap_tag_ = Tag::FixedSize;
-    type_tag_ = 0;
-    field_mask_ = Usage::field_mask();
-    obj_len_ = sizeof(Usage);
+  Usage(Str* msg, int span_id) : 
+    Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
+    msg(msg), span_id(span_id) {
   }
 
-  Usage(Str* msg) : msg(msg), span_id(runtime::NO_SPID) {
-    heap_tag_ = Tag::FixedSize;
-    type_tag_ = 0;
-    field_mask_ = Usage::field_mask();
-    obj_len_ = sizeof(Usage);
+  Usage(Str* msg) : 
+    Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
+    msg(msg), span_id(runtime::NO_SPID) {
   }
-
-  OBJ_HEADER()
 
   Str* msg;
   int span_id;
@@ -43,7 +37,7 @@ class Usage : public std::exception {
 };
 
 // This definition is different in Python than C++.  Not worth auto-translating.
-class _ErrorWithLocation : public std::exception, Obj {
+class _ErrorWithLocation : public Obj {
  public:
   _ErrorWithLocation(Str* user_str, int span_id)
       : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),

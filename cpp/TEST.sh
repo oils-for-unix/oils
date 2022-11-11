@@ -57,6 +57,7 @@ unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
   run-one-test cpp/gc_binding_test '' gcevery
+  run-one-test cpp/core_test '' gcevery
 
   # Need -D CPP_UNIT_TEST
 
