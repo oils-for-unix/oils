@@ -132,12 +132,6 @@ class _FlagSpecAndMore : Obj {
   }
 };
 
-class _OilFlagSpec {
- public:
-  Dict<Str*, args::_Action*>* arity1;
-  Dict<Str*, runtime_asdl::value_t*>* defaults;
-};
-
 // for testing only
 flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name);
 

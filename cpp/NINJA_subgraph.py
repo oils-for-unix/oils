@@ -84,16 +84,16 @@ def NinjaGraph(ru):
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_binary(
-      'cpp/gc_binding_test.cc',
+      'cpp/qsn_test.cc',
       deps = [
-        '//cpp/leaky_bindings',
+        '//cpp/leaky_bindings',  # TODO: Only needs qsn.h
         '//frontend/arg_types',  # is it necessary?
         '//mycpp/runtime',
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_binary(
-      'cpp/leaky_flag_spec_test.cc',
+      'cpp/leaky_frontend_flag_spec_test.cc',
 
       deps = [
         '//cpp/leaky_bindings',  # TODO: It only needs cpp/leaky_frontend_flag_spec.cc
