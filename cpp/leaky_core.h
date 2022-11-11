@@ -85,8 +85,9 @@ namespace pyutil {
 bool IsValidCharEscape(int c);
 Str* ChArrayToString(List<int>* ch_array);
 
-class _ResourceLoader {
+class _ResourceLoader : Obj {
  public:
+  _ResourceLoader();
   virtual Str* Get(Str* path);
 };
 

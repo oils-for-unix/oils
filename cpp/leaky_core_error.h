@@ -16,22 +16,35 @@ using syntax_asdl::Token;
 using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
 
-class Usage : public std::exception {
+class Usage : public Obj {
  public:
-  Usage(Str* msg, int span_id) : msg(msg), span_id(span_id) {
+  Usage(Str* msg, int span_id)
+      : Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
+        msg(msg),
+        span_id(span_id) {
   }
-  Usage(Str* msg) : msg(msg), span_id(runtime::NO_SPID) {
+
+  Usage(Str* msg)
+      : Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
+        msg(msg),
+        span_id(runtime::NO_SPID) {
   }
 
   Str* msg;
   int span_id;
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(Usage, msg));
+  }
 };
 
 // This definition is different in Python than C++.  Not worth auto-translating.
-class _ErrorWithLocation : public std::exception {
+class _ErrorWithLocation : public Obj {
  public:
   _ErrorWithLocation(Str* user_str, int span_id)
-      : status(1),
+      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
+            sizeof(_ErrorWithLocation)),
+        status(1),
         user_str_(user_str),
         span_id(span_id),
         token(nullptr),
@@ -39,7 +52,9 @@ class _ErrorWithLocation : public std::exception {
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, Token* token)
-      : status(1),
+      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
+            sizeof(_ErrorWithLocation)),
+        status(1),
         user_str_(user_str),
         span_id(runtime::NO_SPID),
         token(token),
@@ -47,7 +62,9 @@ class _ErrorWithLocation : public std::exception {
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, word_part_t* part)
-      : status(1),
+      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
+            sizeof(_ErrorWithLocation)),
+        status(1),
         user_str_(user_str),
         span_id(runtime::NO_SPID),
         token(nullptr),
@@ -55,7 +72,9 @@ class _ErrorWithLocation : public std::exception {
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, word_t* word)
-      : status(1),
+      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
+            sizeof(_ErrorWithLocation)),
+        status(1),
         user_str_(user_str),
         span_id(runtime::NO_SPID),
         token(nullptr),
@@ -63,7 +82,9 @@ class _ErrorWithLocation : public std::exception {
         word(word) {
   }
   _ErrorWithLocation(int status, Str* user_str, int span_id, bool show_code)
-      : status(status),
+      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
+            sizeof(_ErrorWithLocation)),
+        status(status),
         user_str_(user_str),
         span_id(span_id),
         token(nullptr),
@@ -94,6 +115,10 @@ class _ErrorWithLocation : public std::exception {
   syntax_asdl::word_t* word;
 
   bool show_code;
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(_ErrorWithLocation, user_str_));
+  }
 };
 
 class Parse : public _ErrorWithLocation {

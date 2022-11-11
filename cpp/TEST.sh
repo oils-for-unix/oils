@@ -57,6 +57,7 @@ unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
   run-one-test cpp/gc_binding_test '' gcevery
+  run-one-test cpp/core_test '' gcevery
 
   # Need -D CPP_UNIT_TEST
 
@@ -77,6 +78,7 @@ coverage() {
   pre-build
 
   run-one-test cpp/gc_binding_test clang coverage
+  run-one-test cpp/core_test clang coverage
 
   run-special-test cpp/leaky_core_test clang coverage
   run-special-test cpp/leaky_flag_spec_test clang coverage

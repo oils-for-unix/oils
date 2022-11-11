@@ -24,6 +24,7 @@ def NinjaGraph(ru):
       deps = ['//frontend/syntax.asdl'],
   )
 
+  # doesn't run with GC
   ru.cc_binary(
       'cpp/leaky_core_test.cc',
       deps = [
@@ -31,6 +32,14 @@ def NinjaGraph(ru):
         '//mycpp/runtime',
         ],
       matrix = CPP_UNIT)
+
+  ru.cc_binary(
+      'cpp/core_test.cc',
+      deps = [
+        '//cpp/leaky_core',
+        '//mycpp/runtime',
+        ],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_binary(
       'cpp/data_race_test.cc',
