@@ -1,15 +1,12 @@
 
 #include <errno.h>
-#include <fcntl.h>  // O_RDWR
 
 #include "_gen/core/runtime.asdl.h"  // cell, etc
-#include "leaky_core.h"  // Chdir
-#include "leaky_core_error.h"
-#include "leaky_core_pyerror.h"
-#include "leaky_libc.h"
-#include "leaky_osh.h"
-#include "leaky_pylib.h"
-#include "leaky_stdlib.h"
+#include "cpp/leaky_core_error.h"    // FatalRuntime
+#include "cpp/leaky_libc.h"
+#include "cpp/leaky_osh.h"
+#include "cpp/leaky_pylib.h"
+#include "cpp/leaky_stdlib.h"
 #include "mycpp/builtins.h"
 #include "vendor/greatest.h"
 
@@ -50,29 +47,6 @@ TEST show_sizeof() {
   log("alignof(Str*) = %d", alignof(Str*));
 
   log("alignof(max_align_t) = %d", alignof(max_align_t));
-
-  PASS();
-}
-
-TEST util_test() {
-  // OK this seems to work
-  Str* escaped = pyutil::BackslashEscape(StrFromC("'foo bar'"), StrFromC(" '"));
-  ASSERT(str_equals(escaped, StrFromC("\\'foo\\ bar\\'")));
-
-  Str* escaped2 = pyutil::BackslashEscape(StrFromC(""), StrFromC(" '"));
-  ASSERT(str_equals(escaped2, StrFromC("")));
-
-  Str* s = pyutil::ChArrayToString(NewList<int>({65}));
-  ASSERT(str_equals(s, StrFromC("A")));
-  ASSERT_EQ_FMT(1, len(s), "%d");
-
-  Str* s2 = pyutil::ChArrayToString(NewList<int>({102, 111, 111}));
-  ASSERT(str_equals(s2, StrFromC("foo")));
-  ASSERT_EQ_FMT(3, len(s2), "%d");
-
-  Str* s3 = pyutil::ChArrayToString(NewList<int>({45, 206, 188, 45}));
-  ASSERT(str_equals(s3, StrFromC("-\xce\xbc-")));  // mu char
-  ASSERT_EQ_FMT(4, len(s3), "%d");
 
   PASS();
 }
@@ -134,24 +108,6 @@ TEST posix_test() {
   PASS();
 }
 
-// HACK!  asdl/runtime.py isn't translated, but leaky_core_error.h uses it...
-namespace runtime {
-int NO_SPID = -1;
-};
-
-TEST exceptions() {
-  bool caught = false;
-  try {
-    e_strict(StrFromC("foo"));
-  } catch (error::Strict* e) {  // Catch by reference!
-    // log("%p ", e);
-    caught = true;
-  }
-  ASSERT(caught);
-
-  PASS();
-}
-
 TEST bool_stat_test() {
   int fail = 0;
   try {
@@ -164,71 +120,6 @@ TEST bool_stat_test() {
   bool b2 = bool_stat::isatty(StrFromC("0"), nullptr);
   // This will be true interactively
   log("stdin isatty = %d", b2);
-
-  PASS();
-}
-
-TEST pyos_readbyte_test() {
-  // Write 2 bytes to this file
-  const char* tmp_name = "pyos_ReadByte";
-  int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
-  if (fd < 0) {
-    printf("1. ERROR %s\n", strerror(errno));
-  }
-  ASSERT(fd > 0);
-  write(fd, "SH", 2);
-  close(fd);
-
-  fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
-  if (fd < 0) {
-    printf("2. ERROR %s\n", strerror(errno));
-  }
-
-  Tuple2<int, int> tup = pyos::ReadByte(fd);
-  ASSERT_EQ_FMT(0, tup.at1(), "%d");  // error code
-  ASSERT_EQ_FMT('S', tup.at0(), "%d");
-
-  tup = pyos::ReadByte(fd);
-  ASSERT_EQ_FMT(0, tup.at1(), "%d");  // error code
-  ASSERT_EQ_FMT('H', tup.at0(), "%d");
-
-  tup = pyos::ReadByte(fd);
-  ASSERT_EQ_FMT(0, tup.at1(), "%d");  // error code
-  ASSERT_EQ_FMT(pyos::EOF_SENTINEL, tup.at0(), "%d");
-
-  close(fd);
-
-  PASS();
-}
-
-TEST pyos_read_test() {
-  const char* tmp_name = "pyos_Read";
-  int fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
-  if (fd < 0) {
-    printf("3. ERROR %s\n", strerror(errno));
-  }
-  ASSERT(fd > 0);
-  write(fd, "SH", 2);
-  close(fd);
-
-  // open needs an absolute path for some reason?  _tmp/pyos doesn't work
-  fd = ::open(tmp_name, O_CREAT | O_RDWR, 0644);
-  if (fd < 0) {
-    printf("4. ERROR %s\n", strerror(errno));
-  }
-
-  List<Str*>* chunks = NewList<Str*>();
-  Tuple2<int, int> tup = pyos::Read(fd, 4096, chunks);
-  ASSERT_EQ_FMT(2, tup.at0(), "%d");  // error code
-  ASSERT_EQ_FMT(0, tup.at1(), "%d");
-  ASSERT_EQ_FMT(1, len(chunks), "%d");
-
-  tup = pyos::Read(fd, 4096, chunks);
-  ASSERT_EQ_FMT(0, tup.at0(), "%d");  // error code
-  ASSERT_EQ_FMT(0, tup.at1(), "%d");
-  ASSERT_EQ_FMT(1, len(chunks), "%d");
-
-  close(fd);
 
   PASS();
 }
@@ -281,24 +172,6 @@ TEST libc_glob_test() {
   PASS();
 }
 
-TEST pyos_test() {
-  // This test isn't hermetic but it should work in most places, including in a
-  // container
-
-  Str* current = posix::getcwd();
-
-  int err_num = pyos::Chdir(StrFromC("/"));
-  ASSERT(err_num == 0);
-
-  err_num = pyos::Chdir(StrFromC("/nonexistent__"));
-  ASSERT(err_num != 0);
-
-  err_num = pyos::Chdir(current);
-  ASSERT(err_num == 0);
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -307,20 +180,13 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(show_sizeof);
-  RUN_TEST(util_test);
   RUN_TEST(libc_test);
   RUN_TEST(libc_glob_test);
   RUN_TEST(time_test);
   RUN_TEST(posix_test);
-  RUN_TEST(exceptions);
   RUN_TEST(bool_stat_test);
-  RUN_TEST(pyos_readbyte_test);
-  RUN_TEST(pyos_read_test);
   RUN_TEST(os_path_test);
   RUN_TEST(putenv_test);
-
-  // non-hermetic
-  RUN_TEST(pyos_test);
 
   gHeap.CleanProcessExit();
 

@@ -1,4 +1,5 @@
 #include "cpp/qsn.h"
+
 #include "vendor/greatest.h"
 
 // This test runs primarily in the GC mode, but you can also run it in the
