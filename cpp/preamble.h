@@ -22,9 +22,9 @@
 #include "cpp/leaky_frontend_tdop.h"
 #include "cpp/leaky_libc.h"
 #include "cpp/leaky_osh.h"
-#include "cpp/leaky_osh_eval_stubs.h"
 #include "cpp/leaky_pgen2.h"
 #include "cpp/leaky_pylib.h"
 #include "cpp/leaky_stdlib.h"
 #include "cpp/qsn.h"
+#include "cpp/translation_stubs.h"
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures

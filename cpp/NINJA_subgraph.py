@@ -108,11 +108,6 @@ def NinjaGraph(ru):
         'cpp/leaky_stdlib.cc',
         'cpp/leaky_libc.cc',
       ],
-      deps = [
-        '//core/runtime.asdl',
-        '//frontend/arg_types',
-        '//frontend/syntax.asdl',
-      ],
   )
 
   ru.cc_binary(
