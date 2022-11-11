@@ -3,19 +3,15 @@
 #include <fcntl.h>  // O_RDWR
 
 #include "_gen/core/runtime.asdl.h"  // cell, etc
-#include "_gen/frontend/id_kind.asdl_c.h"
 #include "leaky_core.h"  // Chdir
 #include "leaky_core_error.h"
 #include "leaky_core_pyerror.h"
-#include "leaky_frontend_match.h"
 #include "leaky_libc.h"
 #include "leaky_osh.h"
 #include "leaky_pylib.h"
 #include "leaky_stdlib.h"
 #include "mycpp/builtins.h"
 #include "vendor/greatest.h"
-
-namespace Id = id_kind_asdl::Id;
 
 TEST show_sizeof() {
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
@@ -54,43 +50,6 @@ TEST show_sizeof() {
   log("alignof(Str*) = %d", alignof(Str*));
 
   log("alignof(max_align_t) = %d", alignof(max_align_t));
-
-  PASS();
-}
-
-TEST match_test() {
-  match::SimpleLexer* lex = match::BraceRangeLexer(StrFromC("{-1..22}"));
-
-  while (true) {
-    auto t = lex->Next();
-    int id = t.at0();
-    if (id == id__Eol_Tok) {
-      break;
-    }
-    log("id = %d", id);
-    log("val = %s", t.at1()->data_);
-  }
-
-  match::SimpleLexer* lex2 = match::BraceRangeLexer(kEmptyString);
-  auto t = lex2->Next();
-  int id = t.at0();
-  ASSERT_EQ(Id::Eol_Tok, id);
-
-  ASSERT_EQ(Id::BoolUnary_G, match::BracketUnary(StrFromC("-G")));
-  ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(StrFromC("-Gz")));
-  ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(StrFromC("")));
-
-  ASSERT_EQ(Id::BoolBinary_NEqual, match::BracketBinary(StrFromC("!=")));
-  ASSERT_EQ(Id::Undefined_Tok, match::BracketBinary(StrFromC("")));
-
-  // This still works, but can't it overflow a buffer?
-  Str* s = StrFromC("!= ");
-  Str* stripped = s->strip();
-
-  ASSERT_EQ(3, len(s));
-  ASSERT_EQ(2, len(stripped));
-
-  ASSERT_EQ(Id::BoolBinary_NEqual, match::BracketBinary(stripped));
 
   PASS();
 }
@@ -348,7 +307,6 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(show_sizeof);
-  RUN_TEST(match_test);
   RUN_TEST(util_test);
   RUN_TEST(libc_test);
   RUN_TEST(libc_glob_test);

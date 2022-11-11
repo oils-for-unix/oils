@@ -61,6 +61,11 @@ readonly -a GOOD_TESTS=(
   cpp/core_test
 )
 
+readonly -a LEAKY_TESTS=(
+  cpp/leaky_core_test
+  cpp/frontend_match_test
+)
+
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
@@ -70,9 +75,10 @@ unit() {
     run-one-test $t '' rvroot
   done
 
-  # Doesn't run with GC_EVERY_ALLOC
-  run-one-test cpp/leaky_core_test '' ubsan
-  run-one-test cpp/leaky_core_test '' asan
+  # These don't run with GC_EVERY_ALLOC
+  for t in "${LEAKY_TESTS[@]}"; do
+    run-one-test $t '' ubsan
+  done
 
   # Need -D CPP_UNIT_TEST
   run-special-test cpp/leaky_frontend_flag_spec_test '' ubsan
@@ -97,6 +103,10 @@ coverage() {
   pre-build
 
   for t in "${GOOD_TESTS[@]}"; do
+    run-one-test $t clang coverage
+  done
+
+  for t in "${LEAKY_TESTS[@]}"; do
     run-one-test $t clang coverage
   done
 

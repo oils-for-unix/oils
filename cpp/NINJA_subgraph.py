@@ -56,11 +56,49 @@ def NinjaGraph(ru):
       ])
 
   ru.cc_library(
-      '//cpp/leaky_bindings', 
-      # TODO: could split these up more
+      '//cpp/frontend_match', 
+      srcs = [
+        'cpp/leaky_frontend_match.cc',
+      ],
+      deps = [
+        '//frontend/syntax.asdl',
+        '//frontend/types.asdl',
+      ],
+  )
+
+  ru.cc_binary(
+      'cpp/frontend_match_test.cc',
+      deps = [
+        '//cpp/frontend_match',
+        '//mycpp/runtime',
+        ],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
+  ru.cc_library(
+      '//cpp/frontend_flag_spec', 
       srcs = [
         'cpp/leaky_frontend_flag_spec.cc',
-        'cpp/leaky_frontend_match.cc',
+      ],
+      deps = [
+        '//core/runtime.asdl',
+        '//frontend/arg_types',
+      ],
+  )
+
+  ru.cc_binary(
+      'cpp/leaky_frontend_flag_spec_test.cc',
+
+      deps = [
+        '//cpp/frontend_flag_spec',
+        '//mycpp/runtime',
+        ],
+      # special -D CPP_UNIT_TEST
+      matrix = CPP_UNIT_MATRIX)
+
+  ru.cc_library(
+      '//cpp/leaky_bindings', 
+      # TODO: split these into their own libraries
+      srcs = [
         'cpp/leaky_frontend_tdop.cc',
         'cpp/leaky_osh.cc',
         'cpp/leaky_pgen2.cc',
@@ -72,7 +110,6 @@ def NinjaGraph(ru):
         '//core/runtime.asdl',
         '//frontend/arg_types',
         '//frontend/syntax.asdl',
-        '//frontend/types.asdl',  # leaky_frontend_match.cc uses it
       ],
   )
 
@@ -93,13 +130,3 @@ def NinjaGraph(ru):
         '//mycpp/runtime',
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
-
-  ru.cc_binary(
-      'cpp/leaky_frontend_flag_spec_test.cc',
-
-      deps = [
-        '//cpp/leaky_bindings',  # TODO: It only needs cpp/leaky_frontend_flag_spec.cc
-        '//frontend/arg_types',
-        '//mycpp/runtime',
-        ],
-      matrix = CPP_UNIT_MATRIX)
