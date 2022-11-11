@@ -9,9 +9,10 @@ from build.ninja_lib import log
 
 # Some tests use #ifndef CPP_UNIT_TEST to disable circular dependencies on
 # generated code
-CPP_UNIT = [
+CPP_UNIT_MATRIX = [
   ('cxx', 'dbg', '-D CPP_UNIT_TEST'),
   ('cxx', 'asan', '-D CPP_UNIT_TEST'),
+  ('cxx', 'ubsan', '-D CPP_UNIT_TEST'),
   ('clang', 'coverage', '-D CPP_UNIT_TEST'),
 ]
 
@@ -31,7 +32,7 @@ def NinjaGraph(ru):
         '//cpp/leaky_core',
         '//mycpp/runtime',
         ],
-      matrix = CPP_UNIT)
+      matrix = ninja_lib.SMALL_TEST_MATRIX)
 
   ru.cc_binary(
       'cpp/core_test.cc',
@@ -99,4 +100,4 @@ def NinjaGraph(ru):
         '//frontend/arg_types',
         '//mycpp/runtime',
         ],
-      matrix = CPP_UNIT)
+      matrix = CPP_UNIT_MATRIX)

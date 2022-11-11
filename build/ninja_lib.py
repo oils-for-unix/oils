@@ -76,7 +76,8 @@ COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
 
 SMALL_TEST_MATRIX = [
   ('cxx', 'asan'),
-  ('clang', 'coverage', '-D CPP_UNIT_TEST'),
+  ('cxx', 'ubsan'),
+  ('clang', 'coverage'),
 ]
 
 

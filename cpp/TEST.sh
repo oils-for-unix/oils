@@ -56,19 +56,22 @@ pre-build() {
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
+  run-one-test cpp/gc_binding_test '' ubsan
   run-one-test cpp/gc_binding_test '' gcevery
+
+  run-one-test cpp/core_test '' ubsan
   run-one-test cpp/core_test '' gcevery
 
+  # Doesn't run with GC_EVERY_ALLOC
+  run-one-test cpp/leaky_core_test '' ubsan
+  run-one-test cpp/leaky_core_test '' asan
+
   # Need -D CPP_UNIT_TEST
-
-  run-special-test cpp/leaky_core_test '' ''
-  run-special-test cpp/leaky_core_test '' asan
-
-  run-special-test cpp/leaky_flag_spec_test '' ''
+  run-special-test cpp/leaky_flag_spec_test '' ubsan
   run-special-test cpp/leaky_flag_spec_test '' asan
 
   # Runs in different dir
-  leaky-binding-test '' ''
+  leaky-binding-test '' ubsan
   leaky-binding-test '' asan
 }
 
@@ -79,8 +82,9 @@ coverage() {
 
   run-one-test cpp/gc_binding_test clang coverage
   run-one-test cpp/core_test clang coverage
+  run-one-test cpp/leaky_core_test clang coverage
 
-  run-special-test cpp/leaky_core_test clang coverage
+  # Need -D CPP_UNIT_TEST
   run-special-test cpp/leaky_flag_spec_test clang coverage
 
   leaky-binding-test clang coverage
