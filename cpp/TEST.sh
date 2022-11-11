@@ -62,7 +62,6 @@ readonly -a GOOD_TESTS=(
 )
 
 readonly -a LEAKY_TESTS=(
-  cpp/leaky_core_test
   cpp/frontend_match_test
 )
 

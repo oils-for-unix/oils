@@ -26,6 +26,7 @@ Tuple2<int, int> WaitPid() {
 }
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
+  RootingScope _r;
   Str* s = OverAllocatedStr(n);  // Allocate enough for the result
 
   int length = ::read(fd, s->data(), n);
@@ -61,9 +62,11 @@ Str* ReadLine() {
 }
 
 Dict<Str*, Str*>* Environ() {
+  RootingScope _r;
   auto d = NewDict<Str*, Str*>();
 
   for (char** env = environ; *env; ++env) {
+    RootingScope _for;
     char* pair = *env;
 
     char* eq = strchr(pair, '=');
@@ -80,10 +83,12 @@ Dict<Str*, Str*>* Environ() {
     d->set(key, val);
   }
 
+  gHeap.RootOnReturn(d);
   return d;
 }
 
 int Chdir(Str* dest_dir) {
+  // RootingScope NO FRAME - only deals with integers
   if (chdir(dest_dir->data_) == 0) {
     return 0;  // success
   } else {
@@ -92,6 +97,7 @@ int Chdir(Str* dest_dir) {
 }
 
 Str* GetMyHomeDir() {
+  RootingScope _r;
   uid_t uid = getuid();  // always succeeds
 
   // Don't free this.  (May return a pointer to a static area)
@@ -99,19 +105,25 @@ Str* GetMyHomeDir() {
   if (entry == nullptr) {
     return nullptr;
   }
-  return StrFromC(entry->pw_dir);
+  Str* s = StrFromC(entry->pw_dir);
+  gHeap.RootOnReturn(s);
+  return s;
 }
 
 Str* GetHomeDir(Str* user_name) {
+  RootingScope _r;
   // Don't free this.  (May return a pointer to a static area)
   struct passwd* entry = getpwnam(user_name->data_);
   if (entry == nullptr) {
     return nullptr;
   }
-  return StrFromC(entry->pw_dir);
+  Str* s = StrFromC(entry->pw_dir);
+  gHeap.RootOnReturn(s);
+  return s;
 }
 
 Str* GetUserName(int uid) {
+  RootingScope _r;
   Str* result = kEmptyString;
 
   if (passwd* pw = getpwuid(uid)) {
@@ -120,10 +132,12 @@ Str* GetUserName(int uid) {
     throw Alloc<IOError>(errno);
   }
 
+  gHeap.RootOnReturn(result);
   return result;
 }
 
 Str* OsType() {
+  RootingScope _r;
   Str* result = kEmptyString;
 
   utsname un = {};
@@ -133,6 +147,7 @@ Str* OsType() {
     throw Alloc<IOError>(errno);
   }
 
+  gHeap.RootOnReturn(result);
   return result;
 }
 
@@ -253,12 +268,14 @@ bool IsValidCharEscape(int c) {
 }
 
 Str* ChArrayToString(List<int>* ch_array) {
+  RootingScope _r;
   int n = len(ch_array);
   Str* result = NewStr(n);
   for (int i = 0; i < n; ++i) {
     result->data_[i] = ch_array->index_(i);
   }
   result->data_[n] = '\0';
+  gHeap.RootOnReturn(result);
   return result;
 }
 
@@ -289,6 +306,7 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
 }
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {
+  RootingScope _r;
   int upper_bound = len(s) * 2;
   Str* buf = OverAllocatedStr(upper_bound);
   char* p = buf->data_;
@@ -301,11 +319,15 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
     *p++ = c;
   }
   buf->SetObjLenFromStrLen(p - buf->data_);
+  gHeap.RootOnReturn(buf);
   return buf;
 }
 
 Str* strerror(IOError_OSError* e) {
-  return StrFromC(::strerror(e->errno_));
+  RootingScope _r;
+  Str* s = StrFromC(::strerror(e->errno_));
+  gHeap.RootOnReturn(s);
+  return s;
 }
 
 }  // namespace pyutil
