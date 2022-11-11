@@ -28,6 +28,9 @@ soil-run() {
   test-r-packages
   echo
 
+  return
+
+  # TODO: Container image needs RUnit!
   benchmarks/report.sh report-test
   echo
 }

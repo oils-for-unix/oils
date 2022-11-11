@@ -422,9 +422,18 @@ EOF
   cmark <<< '### Per-File Measurements'
   echo
 
-  # Flat list for CI
+  # Flat tables for CI
   if test -f $in_dir/times_flat.tsv; then
+    cmark <<< '#### Time and Memory'
+    echo
+
     tsv2html $in_dir/times_flat.tsv
+  fi
+  if test -f $in_dir/cachegrind_flat.tsv; then
+    cmark <<< '#### Instruction Counts'
+    echo
+
+    tsv2html $in_dir/cachegrind_flat.tsv
   fi
 
   # Breakdowns for release

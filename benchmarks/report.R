@@ -175,7 +175,9 @@ ParserReport = function(in_dir, out_dir) {
     left_join(lines, by = c('path')) %>%
     select(-c(elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>% 
     left_join(distinct_shells_2, by = c('shell_name', 'shell_hash')) %>%
-    select(-c(shell_name, shell_hash)) ->
+    select(-c(shell_name, shell_hash)) %>%
+    mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>%
+    select(-c(path)) ->
     joined_cachegrind
 
   Log('summary(joined_times):')
@@ -223,11 +225,18 @@ ParserReport = function(in_dir, out_dir) {
     joined_times %>%
       select(c(shell_label, elapsed_ms, user_ms, sys_ms, max_rss_MB,
                num_lines, filename, filename_HREF)) %>%
-      arrange(filename, elapsed_ms) -> times_flat
+      arrange(filename, elapsed_ms) ->
+      times_flat
+
+    joined_cachegrind %>%
+      select(c(shell_label, irefs, num_lines, filename, filename_HREF)) %>%
+      arrange(filename, irefs) ->
+      cachegrind_flat
 
   } else {
 
     times_flat = NA
+    cachegrind_flat = NA
 
     # Elapsed seconds for each shell by platform and file
     joined_times %>%
@@ -279,7 +288,6 @@ ParserReport = function(in_dir, out_dir) {
       select(-c(irefs)) %>%
       spread(key = shell_label, value = thousand_irefs_per_line) %>%
       arrange(num_lines) %>%
-      mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
       select(c(bash, dash, mksh, `oil-native`,
                num_lines, filename, filename_HREF)) ->
       instructions
@@ -308,6 +316,11 @@ ParserReport = function(in_dir, out_dir) {
   if (!is.na(times_flat)) {
     precision = SamePrecision(0)
     writeTsv(times_flat, file.path(out_dir, 'times_flat'), precision)
+  }
+
+  if (!is.na(cachegrind_flat)) {
+    precision = SamePrecision(0)
+    writeTsv(cachegrind_flat, file.path(out_dir, 'cachegrind_flat'), precision)
   }
 
   if (!is.na(elapsed)) {  # equivalent to no-host

@@ -21,6 +21,8 @@ other-tests() {
 
   # Note: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  See R 4.0
   # installation below.
+
+  # TODO: Add RUnit for devtools/R-test.sh
   INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
 
   # Note: The above doesn't seem to return non-zero status if there are
