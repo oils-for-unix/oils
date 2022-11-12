@@ -225,6 +225,9 @@ compile_one() {
 
   setglobal_cxx $compiler
 
+  if test -n "${OIL_NINJA_VERBOSE:-}"; then
+    echo '__' "$cxx" $flags -o "$out" -c "$in" >&2
+  fi
   "$cxx" $flags -o "$out" -c "$in"
 }
 
@@ -247,6 +250,8 @@ link() {
 }
 
 compile_and_link() {
+  ### This function is no longer used; use 'compile_one' and 'link'
+
   local compiler=$1
   local variant=$2
   local more_cxx_flags=$3
@@ -260,9 +265,7 @@ compile_and_link() {
   setglobal_cxx $compiler
 
   if test -n "${OIL_NINJA_VERBOSE:-}"; then
-    echo ""
-    echo "Building: $cxx -o $out $flags $@ $link_flags"
-    echo ""
+    echo "__ $cxx -o $out $flags $@ $link_flags" >&2
   fi
 
   "$cxx" -o "$out" $flags "$@" $link_flags

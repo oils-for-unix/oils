@@ -48,9 +48,7 @@ html-report() {
   local html_dir=$out_dir/html
   mkdir -p $html_dir
 
-  $CLANG_DIR/bin/llvm-cov show \
-    --format html --output-dir $html_dir \
-    --project-title "$suite" \
+  local -a filter_flags=(
     --ignore-filename-regex '_test.cc$' \
     --ignore-filename-regex 'greatest.h$' \
     --ignore-filename-regex '_gen/' \
@@ -60,8 +58,14 @@ html-report() {
     --ignore-filename-regex 'mycpp/cheney' \
     --ignore-filename-regex 'mycpp/bump_leak' \
     --ignore-filename-regex 'prebuilt/' \
-    --show-instantiation-summary \
+  )
+
+  $CLANG_DIR/bin/llvm-cov show \
     --instr-profile $merged \
+    --format html --output-dir $html_dir \
+    --project-title "$suite" \
+    --show-instantiation-summary \
+    "${filter_flags[@]}" \
     "${args[@]}"
 
   #echo "Wrote $html"
@@ -80,13 +84,52 @@ html-report() {
   chmod --changes -R o+r $html_dir
   echo
 
+  $CLANG_DIR/bin/llvm-cov report \
+    --instr-profile $merged \
+    "${filter_flags[@]}" \
+    "${args[@]}"
+
+  # --format text is JSON.  Need --skip-expansions to avoid running out of memory
+  # Doesn't seem to work?
+  # --Xdemangler=$CLANG_DIR/bin/llvm-cxxfilt \
+  # --Xdemangler=-n \
+
+  local json=$out_dir/coverage.json
+
+  $CLANG_DIR/bin/llvm-cov export \
+    --instr-profile $merged \
+    --format text --skip-expansions \
+    "${filter_flags[@]}" \
+    "${args[@]}" > $json
+
+  ls -l --si $json
+  echo
+
+  wc -l $json
+  echo
+
   # 2.4 MB of HTML
   du --si -s $html_dir
   echo
+}
 
-  $CLANG_DIR/bin/llvm-cov report --instr-profile $merged "${args[@]}"
+extract-coverage() {
+  local json=${1:-'_test/clang-coverage/cpp/coverage.json'}
 
-  # Also TODO: leaky_bindings_test, etc.
+  # Shows the same totals
+  cat $json | jq -r '.data[0] | .totals'
+
+  # 1291 functions.
+  # - Includes greatest.h stuff, which you can filter away
+  # - Hm this doesn't seem to respect the --ignore-filename-regex?
+  # - It has many template expansions.
+  # - Some of these have filename prefixes, and some don't.
+
+  cat $json | jq -r '.data[0] | .functions[] | .name' | $CLANG_DIR/bin/llvm-cxxfilt #| wc -l
+
+  # Each of this has a "regions" key, which is a list of list of integers.
+  # It's not clear how to tell if there was coverage or not!
+  # cat $json | jq -r '.data[0] | .functions'
 }
 
 llvm-cov-help() {
@@ -94,6 +137,9 @@ llvm-cov-help() {
   # --name-allowlist
 
   $CLANG_DIR/bin/llvm-cov show --help
+  echo
+
+  $CLANG_DIR/bin/llvm-cov export --help
 }
 
 unified-report() {
