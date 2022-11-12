@@ -28,6 +28,25 @@
 
 using std::unordered_map;
 
+class RootingScope2 {
+ public:
+  RootingScope2() {
+  }
+  RootingScope2(const char* func_name) {
+    log(">>> %s", func_name);
+  }
+  ~RootingScope2() {
+  }
+};
+
+#define ROOTING_REPORT 1
+
+#if ROOTING_REPORT
+  #define FUNC_NAME() __PRETTY_FUNCTION__
+#else
+  #define FUNC_NAME()
+#endif
+
 class MyList {
  public:
   MyList(std::initializer_list<int> init) : v_() {
@@ -51,6 +70,8 @@ class Array {
   }
 
   void append(T item) {
+    RootingScope2 _r(FUNC_NAME());
+
     v_.push_back(item);
   }
 
@@ -68,6 +89,8 @@ class ParseError : public FatalError {
   ParseError(const char* reason) : reason_(reason) {
   }
   const char* reason() const {
+    RootingScope2 _r(FUNC_NAME());
+
     return reason_;
   }
 

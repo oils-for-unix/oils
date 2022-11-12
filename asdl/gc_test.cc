@@ -62,26 +62,34 @@ TEST hnode_test() {
 
   rec = Alloc<hnode__Record>();
   rec->node_type = StrFromC("dummy_node");
+#ifndef RET_VAL_ROOTING
   ASSERT_EQ_FMT(10, gHeap.Collect(), "%d");
+#endif
 
   h = rec;  // base type
   array->children->append(h);
 
   format::PrintTree(h, ast_f);
   printf("\n");
+#ifndef RET_VAL_ROOTING
   ASSERT_EQ_FMT(11, gHeap.Collect(), "%d");
+#endif
 
   h = Alloc<hnode__Leaf>(StrFromC("zz"), color_e::TypeName);
   array->children->append(h);
 
   format::PrintTree(h, ast_f);
   printf("\n");
+#ifndef RET_VAL_ROOTING
   ASSERT_EQ_FMT(13, gHeap.Collect(), "%d");
+#endif
 
   h = array;
   format::PrintTree(h, ast_f);
   printf("\n");
+#ifndef RET_VAL_ROOTING
   ASSERT_EQ_FMT(13, gHeap.Collect(), "%d");
+#endif
 
   PASS();
 }

@@ -72,7 +72,7 @@ unit() {
   for t in "${GOOD_TESTS[@]}"; do
     run-one-test $t '' ubsan
     run-one-test $t '' gcevery
-    run-one-test $t '' rvroot
+    # run-one-test $t '' rvroot
   done
 
   # These don't run with GC_EVERY_ALLOC

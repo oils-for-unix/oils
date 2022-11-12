@@ -187,7 +187,8 @@ int MarkSweepHeap::Collect() {
 #if RET_VAL_ROOTING
 
   #ifdef GC_VERBOSE
-  log("  Collect with %d roots and %d frames", NumRoots(), NumFrames());
+  log("  Collect with %d roots and %d frames", root_set_.NumRoots(),
+      root_set_.NumFrames());
   #endif
 
   root_set_.MarkRoots(this);
