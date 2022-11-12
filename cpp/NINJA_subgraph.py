@@ -27,15 +27,6 @@ def NinjaGraph(ru):
       deps = ['//frontend/syntax.asdl'],
   )
 
-  # doesn't run with GC
-  ru.cc_binary(
-      'cpp/leaky_core_test.cc',
-      deps = [
-        '//cpp/leaky_core',
-        '//mycpp/runtime',
-        ],
-      matrix = ninja_lib.SMALL_TEST_MATRIX)
-
   ru.cc_binary(
       'cpp/core_test.cc',
       deps = [
