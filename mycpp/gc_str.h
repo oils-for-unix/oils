@@ -101,7 +101,8 @@ inline int len(const Str* s) {
 //
 
 inline Str* NewStr(int len) {
-  // RootingScope omitted for PASS THROUGH
+  NO_ROOTS_FRAME(FUNC_NAME);
+
   int obj_len = kStrHeaderSize + len + 1;
 
   // only allocation is unconditionally returned
@@ -122,7 +123,8 @@ inline Str* OverAllocatedStr(int len) {
 }
 
 inline Str* StrFromC(const char* data, int len) {
-  // RootingScope omitted for PASS THROUGH
+  NO_ROOTS_FRAME(FUNC_NAME);
+
   Str* s = NewStr(len);
   memcpy(s->data_, data, len);
   assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
@@ -131,7 +133,8 @@ inline Str* StrFromC(const char* data, int len) {
 }
 
 inline Str* StrFromC(const char* data) {
-  // RootingScope omitted for PASS THROUGH
+  NO_ROOTS_FRAME(FUNC_NAME);
+
   return StrFromC(data, strlen(data));
 }
 

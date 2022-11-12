@@ -31,7 +31,7 @@ inline bool IsPlainChar(Str* ch) {
 }
 
 inline Str* XEscape(Str* ch) {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
   assert(len(ch) == 1);
   StackRoots _roots({&ch});
   Str* result = NewStr(4);
@@ -45,7 +45,7 @@ inline Str* UEscape(int codepoint) {
   // 3 for \u{
   // 6 for codepoint
   // 1 for }
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
   Str* result = OverAllocatedStr(10);
   int n = sprintf(result->data(), "\\u{%x}", codepoint);
   result->SetObjLenFromStrLen(n);  // truncate to what we wrote

@@ -64,7 +64,7 @@ class RootSet {
   }
 
   // Called in 2 situations:
-  // - the "leaf" Allocate(), which does not have a RootingScope
+  // - the "leaf" Allocate(), which does not have a RootsFrame
   // - when catching exceptions:
   //   catch (IOError e) { gHeap.RootInCurrentFrame(e); }
   void RootInCurrentFrame(Obj* root) {

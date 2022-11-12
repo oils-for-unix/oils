@@ -12,28 +12,61 @@
   #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: cheney\n")
 #endif
 
-class RootingScope {
+class RootsFrame {
   // Create an instance of this in every function.  This lets the GC now when
   // functions return, so it can remove values from the root set.
+  //
+  // Example:
+  //
+  //   RootsFrame _r{FUNC_NAME};
+  //   RootsFrame _r{LOOP};
+  //
+  // You must use braced initialization!
+  //
+  //   RootsFrame _r(FUNC_NAME);  // WRONG because it sometimes expands to:
+  //   RootsFrame _r();           // MOST VEXING PARSE: a function prototype,
+  //                              // not a variable
 
  public:
-  RootingScope() {
-#if !defined(BUMP_LEAK)
+#ifdef COLLECT_COVERAGE
+  explicit RootsFrame(const char* description) {
+    log(">>> %s", description);
+  #ifndef BUMP_LEAK
+    gHeap.root_set_.PushScope();
+  #endif
+  }
+#endif
+
+  RootsFrame() {
+#ifndef BUMP_LEAK
     gHeap.root_set_.PushScope();
 #endif
   }
-  ~RootingScope() {
-#if !defined(BUMP_LEAK)
+  ~RootsFrame() {
+#ifndef BUMP_LEAK
     gHeap.root_set_.PopScope();
 #endif
   }
 };
 
+// Explicit annotation for "skipped frame" optimization, and the like
+
+#define NO_ROOTS_FRAME(description)
+
+#ifdef COLLECT_COVERAGE
+  #define FUNC_NAME __PRETTY_FUNCTION__
+  // TODO: create a different string for loops
+  #define LOOP __PRETTY_FUNCTION__
+#else
+  #define FUNC_NAME
+  #define LOOP
+#endif
+
 // Variadic templates:
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
-  // RootingScope omitted for PASS THROUGH
+  NO_ROOTS_FRAME(FUNC_NAME);
 
   assert(gHeap.is_initialized_);
   void* place = gHeap.Allocate(sizeof(T));

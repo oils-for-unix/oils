@@ -26,7 +26,7 @@ Tuple2<int, int> WaitPid() {
 }
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
   Str* s = OverAllocatedStr(n);  // Allocate enough for the result
 
   int length = ::read(fd, s->data(), n);
@@ -62,11 +62,11 @@ Str* ReadLine() {
 }
 
 Dict<Str*, Str*>* Environ() {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
   auto d = NewDict<Str*, Str*>();
 
   for (char** env = environ; *env; ++env) {
-    RootingScope _for;
+    RootsFrame _for{LOOP};
     char* pair = *env;
 
     char* eq = strchr(pair, '=');
@@ -88,7 +88,8 @@ Dict<Str*, Str*>* Environ() {
 }
 
 int Chdir(Str* dest_dir) {
-  // RootingScope NO FRAME - only deals with integers
+  NO_ROOTS_FRAME(FUNC_NAME);
+
   if (chdir(dest_dir->data_) == 0) {
     return 0;  // success
   } else {
@@ -97,7 +98,8 @@ int Chdir(Str* dest_dir) {
 }
 
 Str* GetMyHomeDir() {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
+
   uid_t uid = getuid();  // always succeeds
 
   // Don't free this.  (May return a pointer to a static area)
@@ -111,7 +113,7 @@ Str* GetMyHomeDir() {
 }
 
 Str* GetHomeDir(Str* user_name) {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
   // Don't free this.  (May return a pointer to a static area)
   struct passwd* entry = getpwnam(user_name->data_);
   if (entry == nullptr) {
@@ -123,7 +125,7 @@ Str* GetHomeDir(Str* user_name) {
 }
 
 Str* GetUserName(int uid) {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
   Str* result = kEmptyString;
 
   if (passwd* pw = getpwuid(uid)) {
@@ -137,7 +139,7 @@ Str* GetUserName(int uid) {
 }
 
 Str* OsType() {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
   Str* result = kEmptyString;
 
   utsname un = {};
@@ -268,7 +270,8 @@ bool IsValidCharEscape(int c) {
 }
 
 Str* ChArrayToString(List<int>* ch_array) {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
+
   int n = len(ch_array);
   Str* result = NewStr(n);
   for (int i = 0; i < n; ++i) {
@@ -306,7 +309,8 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
 }
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {
-  RootingScope _r;
+  RootsFrame _r{FUNC_NAME};
+
   int upper_bound = len(s) * 2;
   Str* buf = OverAllocatedStr(upper_bound);
   char* p = buf->data_;
@@ -324,9 +328,9 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
 }
 
 Str* strerror(IOError_OSError* e) {
-  RootingScope _r;
+  NO_ROOTS_FRAME(FUNC_NAME);
+
   Str* s = StrFromC(::strerror(e->errno_));
-  gHeap.RootOnReturn(s);
   return s;
 }
 
