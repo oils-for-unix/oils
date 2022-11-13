@@ -1,5 +1,6 @@
+#include "cpp/frontend_match.h"
+
 #include "_gen/frontend/id_kind.asdl_c.h"
-#include "cpp/leaky_frontend_match.h"
 #include "vendor/greatest.h"
 
 namespace Id = id_kind_asdl::Id;

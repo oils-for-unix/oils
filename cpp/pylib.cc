@@ -1,6 +1,6 @@
-// leaky_pylib.cc
+// pylib.cc
 
-#include "leaky_pylib.h"
+#include "pylib.h"
 
 #include <sys/stat.h>
 

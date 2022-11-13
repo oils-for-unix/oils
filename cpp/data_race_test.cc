@@ -11,7 +11,7 @@
 
 #include <map>
 
-#include "cpp/leaky_core.h"
+#include "cpp/core.h"
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 

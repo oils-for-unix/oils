@@ -1,6 +1,6 @@
 // frontend_flag_spec.cc
 
-#include "cpp/leaky_frontend_flag_spec.h"
+#include "cpp/frontend_flag_spec.h"
 
 #include "_gen/frontend/arg_types.h"
 #include "mycpp/gc_builtins.h"

@@ -1,7 +1,7 @@
-// leaky_stdlib.cc: Replacement for standard library modules
+// stdlib.cc: Replacement for standard library modules
 // and native/posixmodule.c
 
-#include "leaky_stdlib.h"
+#include "stdlib.h"
 
 #include <errno.h>
 #include <fcntl.h>      // open
@@ -12,8 +12,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "cpp/leaky_core_error.h"
-#include "cpp/leaky_core_pyerror.h"
+#include "cpp/core_error.h"
+#include "cpp/core_pyerror.h"
 #include "mycpp/runtime.h"
 
 namespace fcntl_ {
@@ -143,7 +143,7 @@ time_t localtime(time_t ts) {
 }
 
 Str* strftime(Str* s, time_t ts) {
-  // TODO: may not work with leaky_containers.h
+  // TODO: may not work with containers.h
   // https://github.com/oilshell/oil/issues/1221
   tm* loc_time = ::localtime(&ts);
 

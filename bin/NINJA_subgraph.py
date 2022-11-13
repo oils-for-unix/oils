@@ -36,8 +36,8 @@ def NinjaGraph(ru):
       matrix = ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
       top_level = True,  # _bin/cxx-dbg/osh_eval
       deps = [
-        '//cpp/leaky_core',
-        '//cpp/leaky_bindings',
+        '//cpp/core',
+        '//cpp/bindings',
         '//cpp/frontend_flag_spec',
         '//cpp/frontend_match',
 

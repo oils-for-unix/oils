@@ -1,4 +1,4 @@
-// leaky_frontend_flag_spec.h
+// frontend_flag_spec.h
 
 #ifndef FRONTEND_FLAG_SPEC_H
 #define FRONTEND_FLAG_SPEC_H

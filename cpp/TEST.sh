@@ -33,7 +33,7 @@ leaky-binding-test() {
   local compiler=${1:-cxx}
   local variant=${2:-dbg}
 
-  local name=leaky_binding_test
+  local name=binding_test
   local bin=_bin/$compiler-$variant/cpp/$name
   ninja $bin
 
@@ -80,10 +80,10 @@ unit() {
   done
 
   # Need -D CPP_UNIT_TEST
-  run-special-test cpp/leaky_frontend_flag_spec_test '' ubsan
-  run-special-test cpp/leaky_frontend_flag_spec_test '' asan
+  run-special-test cpp/frontend_flag_spec_test '' ubsan
+  run-special-test cpp/frontend_flag_spec_test '' asan
   # Doesn't work
-  # run-special-test cpp/leaky_frontend_flag_spec_test '' gcevery
+  # run-special-test cpp/frontend_flag_spec_test '' gcevery
 
   # Runs in different dir
   leaky-binding-test '' ubsan
@@ -110,7 +110,7 @@ coverage() {
   done
 
   # Need -D CPP_UNIT_TEST
-  run-special-test cpp/leaky_frontend_flag_spec_test clang coverage
+  run-special-test cpp/frontend_flag_spec_test clang coverage
 
   leaky-binding-test clang coverage
 

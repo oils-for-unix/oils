@@ -1,4 +1,4 @@
-// leaky_pylib.h: Replacement for pylib/*.py
+// pylib.h: Replacement for pylib/*.py
 
 #ifndef LEAKY_PYLIB_H
 #define LEAKY_PYLIB_H

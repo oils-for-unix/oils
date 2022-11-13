@@ -2,11 +2,11 @@
 #include <errno.h>
 
 #include "_gen/core/runtime.asdl.h"  // cell, etc
-#include "cpp/leaky_core_error.h"    // FatalRuntime
-#include "cpp/leaky_libc.h"
-#include "cpp/leaky_osh.h"
-#include "cpp/leaky_pylib.h"
-#include "cpp/leaky_stdlib.h"
+#include "cpp/core_error.h"          // FatalRuntime
+#include "cpp/libc.h"
+#include "cpp/osh.h"
+#include "cpp/pylib.h"
+#include "cpp/stdlib.h"
 #include "mycpp/gc_builtins.h"
 #include "vendor/greatest.h"
 

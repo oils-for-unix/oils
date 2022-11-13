@@ -1,6 +1,6 @@
-// leaky_core.cc
+// core.cc
 
-#include "cpp/leaky_core.h"
+#include "cpp/core.h"
 
 #include <errno.h>
 #include <pwd.h>  // passwd

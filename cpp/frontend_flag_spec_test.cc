@@ -1,4 +1,4 @@
-#include "cpp/leaky_frontend_flag_spec.h"
+#include "cpp/frontend_flag_spec.h"
 
 #include "vendor/greatest.h"
 

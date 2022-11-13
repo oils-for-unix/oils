@@ -1,4 +1,4 @@
-// leaky_core.h: Replacement for core/*.py
+// core.h: Replacement for core/*.py
 
 #ifndef LEAKY_CORE_H
 #define LEAKY_CORE_H

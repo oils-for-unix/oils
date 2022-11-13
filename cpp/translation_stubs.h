@@ -1,7 +1,7 @@
-// leaky_osh_eval_stubs.h
+// cpp/translation_stubs.h
 
-#ifndef OSH_EVAL_STUBS_H
-#define OSH_EVAL_STUBS_H
+#ifndef CPP_TRANSLATION_STUBS_H
+#define CPP_TRANSLATION_STUBS_H
 
 // Hm is this overload really necessary?
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
@@ -44,4 +44,4 @@ class OilEvaluator {
 };
 }  // namespace expr_eval
 
-#endif  // OSH_EVAL_STUBS_H
+#endif  // CPP_TRANSLATION_STUBS_H

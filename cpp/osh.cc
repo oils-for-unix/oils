@@ -1,13 +1,13 @@
-// leaky_osh.cc
+// osh.cc
 
-#include "cpp/leaky_osh.h"
+#include "cpp/osh.h"
 
 #include <fcntl.h>  // AT_* Constants
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "cpp/leaky_core_error.h"
-#include "cpp/leaky_core_pyerror.h"
+#include "cpp/core_error.h"
+#include "cpp/core_pyerror.h"
 #include "mycpp/gc_builtins.h"
 
 namespace arith_parse {

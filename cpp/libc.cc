@@ -1,6 +1,6 @@
 // libc.cc: Replacement for pyext/libc.c
 
-#include "cpp/leaky_libc.h"
+#include "cpp/libc.h"
 
 #include <errno.h>
 #include <fnmatch.h>

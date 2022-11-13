@@ -1,4 +1,4 @@
-// leaky_pgen2.h
+// pgen2.h
 
 #ifndef LEAKY_PGEN2_H
 #define LEAKY_PGEN2_H
