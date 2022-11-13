@@ -107,6 +107,7 @@ def NinjaGraph(ru):
   ru.cc_binary(
       'cpp/binding_test.cc',
       deps = [
+        '//core/runtime.asdl',  # sizeof_test uses this
         '//cpp/bindings',
         '//mycpp/runtime',
         ],
