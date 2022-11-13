@@ -1,4 +1,4 @@
-// builtins.h: Statically typed Python builtins.
+// gc_builtins.h: Statically typed Python builtins.
 //
 // Builtin types: tuples, NotImplementedError, AssertionError
 // Builtin functions: print(), repr(), ord()
@@ -122,6 +122,13 @@ inline bool to_bool(int i) {
 }
 
 bool str_contains(Str* haystack, Str* needle);
+
+// Only used by unit tests
+bool str_equals0(const char* c_string, Str* s);
+
+Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
+Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
+Str* str_repeat(Str* s, int times);        // e.g. ' ' * 3
 
 extern Str* kEmptyString;
 

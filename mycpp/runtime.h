@@ -5,7 +5,7 @@
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
 #include "mycpp/gc_heap.h"
-#include "mycpp/builtins.h"
+#include "mycpp/gc_builtins.h"
 
 #include "mycpp/gc_tuple.h"
 #include "mycpp/gc_str.h"
@@ -13,7 +13,7 @@
 #include "mycpp/gc_list.h"
 #include "mycpp/gc_dict.h"
 
-#include "mycpp/leaky_mylib.h"
+#include "mycpp/gc_mylib.h"
 // clang-format on
 
 #endif  // MYCPP_RUNTIME_H

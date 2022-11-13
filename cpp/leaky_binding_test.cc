@@ -7,7 +7,7 @@
 #include "cpp/leaky_osh.h"
 #include "cpp/leaky_pylib.h"
 #include "cpp/leaky_stdlib.h"
-#include "mycpp/builtins.h"
+#include "mycpp/gc_builtins.h"
 #include "vendor/greatest.h"
 
 TEST show_sizeof() {

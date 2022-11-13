@@ -23,14 +23,11 @@ def DefineTargets(ru):
   ru.cc_library(
       '//mycpp/runtime', 
       srcs = [
-        'mycpp/gc_mylib.cc',
         'mycpp/bump_leak_heap.cc',
+        'mycpp/gc_builtins.cc',
+        'mycpp/gc_mylib.cc',
+        'mycpp/gc_str.cc',
         'mycpp/marksweep_heap.cc',
-
-        # files we haven't added StackRoots to
-        'mycpp/leaky_containers.cc',
-        'mycpp/leaky_builtins.cc',
-        'mycpp/leaky_mylib.cc',
       ]
   )
 
@@ -62,8 +59,8 @@ def DefineTargets(ru):
 
   for test_main in [
       # TODO: make these 2 run under GC
-      'mycpp/leaky_containers_test.cc',
-      'mycpp/leaky_str_test.cc',
+      'mycpp/gc_containers_test.cc',
+      'mycpp/gc_str_test.cc',
 
       'mycpp/demo/target_lang.cc',
       'mycpp/demo/hash_table.cc',

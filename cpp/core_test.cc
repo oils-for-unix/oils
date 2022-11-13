@@ -6,7 +6,7 @@
 #include "cpp/leaky_core.h"
 #include "cpp/leaky_core_error.h"
 #include "cpp/leaky_stdlib.h"  // posix::getcwd
-#include "mycpp/builtins.h"    // IOError_OSError
+#include "mycpp/gc_builtins.h"    // IOError_OSError
 #include "vendor/greatest.h"
 
 static_assert(offsetof(Obj, field_mask_) == offsetof(error::Usage, field_mask_),

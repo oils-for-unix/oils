@@ -1889,20 +1889,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write_ind('}\n')
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
-        # TODO:
-        # del mylist[:] -> mylist->clear()
-        # del mydict[mykey] -> mydict->remove(key)
 
         d = o.expr
         if isinstance(d, IndexExpr):
           self.write_ind('')
           self.accept(d.base)
+
           if isinstance(d.index, SliceExpr):
+            # del mylist[:] -> mylist->clear()
+
             sl = d.index
             assert sl.begin_index is None, sl
             assert sl.end_index is None, sl
             self.write('->clear()')
           else:
+            # del mydict[mykey] -> mydict->remove(key)
+            # TODO: This is wrong because dict_remove() doesn't raise KeyError
+            # like del does!
+
             self.write('->remove(')
             self.accept(d.index)
             self.write(')')
