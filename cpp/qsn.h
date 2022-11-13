@@ -31,25 +31,24 @@ inline bool IsPlainChar(Str* ch) {
 }
 
 inline Str* XEscape(Str* ch) {
-  RootsFrame _r{FUNC_NAME};
+  NO_ROOTS_FRAME(FUNC_NAME);  // NewStr does it
+
   assert(len(ch) == 1);
-  StackRoots _roots({&ch});
   Str* result = NewStr(4);
   sprintf(result->data(), "\\x%02x", ch->data_[0] & 0xff);
-  gHeap.RootOnReturn(result);
   return result;
 }
 
 inline Str* UEscape(int codepoint) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // OverAllocatedStr does it
+
   // maximum length:
   // 3 for \u{
   // 6 for codepoint
   // 1 for }
-  RootsFrame _r{FUNC_NAME};
   Str* result = OverAllocatedStr(10);
   int n = sprintf(result->data(), "\\u{%x}", codepoint);
   result->SetObjLenFromStrLen(n);  // truncate to what we wrote
-  gHeap.RootOnReturn(result);
   return result;
 }
 
