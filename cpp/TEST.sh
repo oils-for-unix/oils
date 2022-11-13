@@ -27,17 +27,17 @@ run-special-test() {
   run-test-bin $bin
 }
 
-leaky-binding-test() {
+run-test-in-dir() {
   ### Test hand-written code
 
-  local compiler=${1:-cxx}
-  local variant=${2:-dbg}
+  local rel_path=$1
+  local compiler=${2:-cxx}
+  local variant=${3:-dbg}
 
-  local name=binding_test
-  local bin=_bin/$compiler-$variant/cpp/$name
+  local bin=_bin/$compiler-$variant/$rel_path
   ninja $bin
 
-  local working_dir=_tmp/leaky-binding-test
+  local working_dir=_tmp/$rel_path
   rm -r -f -v $working_dir
   mkdir -p $working_dir
 
@@ -53,41 +53,35 @@ pre-build() {
   build/py.sh fastmatch
 }
 
-# Tests that pass with the garbage collector on.
-# TODO: Move all tests here
 
 readonly -a GOOD_TESTS=(
   cpp/qsn_test
-  cpp/core_test
 )
 
 readonly -a LEAKY_TESTS=(
-  cpp/frontend_match_test
 )
 
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
-  for t in "${GOOD_TESTS[@]}"; do
-    run-one-test $t '' ubsan
-    run-one-test $t '' gcevery
-    # run-one-test $t '' rvroot
+  # Tests that pass with the garbage collector on.
+  # TODO: Move all tests here
+
+  for variant in ubsan gcevery; do
+    run-test-in-dir  cpp/core_test '' $variant  # has testdata
+
+    run-one-test     cpp/qsn_test '' $variant
   done
 
-  # These don't run with GC_EVERY_ALLOC
-  for t in "${LEAKY_TESTS[@]}"; do
-    run-one-test $t '' ubsan
+  # Other tests
+  for variant in ubsan asan; do
+    run-test-in-dir  cpp/binding_test '' $variant  # has testdata
+
+    # Need -D CPP_UNIT_TEST
+    run-special-test cpp/frontend_flag_spec_test '' $variant
+
+    run-one-test     cpp/frontend_match_test '' $variant
   done
-
-  # Need -D CPP_UNIT_TEST
-  run-special-test cpp/frontend_flag_spec_test '' ubsan
-  run-special-test cpp/frontend_flag_spec_test '' asan
-  # Doesn't work
-  # run-special-test cpp/frontend_flag_spec_test '' gcevery
-
-  # Runs in different dir
-  leaky-binding-test '' ubsan
-  leaky-binding-test '' asan
 }
 
 data-race-test() {
@@ -101,18 +95,19 @@ coverage() {
 
   pre-build
 
-  for t in "${GOOD_TESTS[@]}"; do
-    run-one-test $t clang coverage
-  done
+  local compiler=clang
+  local variant=coverage
 
-  for t in "${LEAKY_TESTS[@]}"; do
-    run-one-test $t clang coverage
-  done
+  run-test-in-dir  cpp/core_test $compiler $variant  # has testdata
+
+  run-one-test     cpp/qsn_test $compiler $variant
+
+  run-test-in-dir  cpp/binding_test $compiler $variant  # has testdata
 
   # Need -D CPP_UNIT_TEST
-  run-special-test cpp/frontend_flag_spec_test clang coverage
+  run-special-test cpp/frontend_flag_spec_test $compiler $variant
 
-  leaky-binding-test clang coverage
+  run-one-test     cpp/frontend_match_test $compiler $variant
 
   local out_dir=_test/clang-coverage/cpp
   test/coverage.sh html-report $out_dir cpp
