@@ -121,7 +121,7 @@ class UnAlias(vm._Builtin):
     status = 0
     for i, name in enumerate(argv):
       if name in self.aliases:
-        del self.aliases[name]
+        mylib.dict_remove(self.aliases, name)
       else:
         self.errfmt.Print_('No alias named %r' % name,
                            span_id=cmd_val.arg_spids[i])

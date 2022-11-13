@@ -18,6 +18,7 @@ from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import args
+from mycpp import mylib
 from osh import sh_expr_eval
 from osh import cmd_eval
 from qsn_ import qsn
@@ -461,8 +462,7 @@ class Unset(vm._Builtin):
       return False
 
     if proc_fallback and not found:
-      if arg in self.procs:
-        del self.procs[arg]
+      mylib.dict_remove(self.procs, arg)
 
     return True
 
@@ -476,8 +476,7 @@ class Unset(vm._Builtin):
       spid = arg_spids[i]
 
       if arg.f:
-        if name in self.procs:
-          del self.procs[name]
+        mylib.dict_remove(self.procs, name)
 
       elif arg.v:
         if not self._UnsetVar(name, spid, False):

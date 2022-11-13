@@ -2063,7 +2063,7 @@ class Mem(object):
       if case(lvalue_e.Named):  # unset x
         # Make variables in higher scopes visible.
         # example: test/spec.sh builtin-vars -r 24 (ble.sh)
-        del name_map[cell_name]
+        mylib.dict_remove(name_map, cell_name)
 
         # alternative that some shells use:
         #   name_map[cell_name].val = value.Undef()

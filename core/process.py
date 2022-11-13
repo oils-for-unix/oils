@@ -1276,14 +1276,7 @@ class JobState(object):
     if pid == self.last_stopped_pid:
       self.last_stopped_pid = -1
 
-    if pid in self.jobs:
-      del self.jobs[pid]
-    else:
-      # I believe it is reasonable to ignore this. 'waitpid' will return the
-      # status of any child process whose state changes. Some of these child
-      # processes will neither have been stopped nor backgrounded, so they will
-      # never have been added to the dict.
-      return
+    mylib.dict_remove(self.jobs, pid)
 
   def AddJob(self, job):
     # type: (Job) -> int

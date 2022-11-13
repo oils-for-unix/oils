@@ -1903,13 +1903,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             assert sl.end_index is None, sl
             self.write('->clear()')
           else:
-            # del mydict[mykey] -> mydict->remove(key)
-            # TODO: This is wrong because dict_remove() doesn't raise KeyError
-            # like del does!
-
-            self.write('->remove(')
-            self.accept(d.index)
-            self.write(')')
+            # del mydict[mykey] raises KeyError, which we don't want
+            raise AssertionError(
+                'Use mylib.maybe_remove(d, key) instead of del d[key]')
 
           self.write(';\n')
 
