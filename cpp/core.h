@@ -55,7 +55,7 @@ class TermState {
   }
 };
 
-class SignalHandler {
+class SignalHandler : public Obj {
  public:
   SignalHandler();
   void Update(int sig_num);
@@ -64,6 +64,10 @@ class SignalHandler {
   List<int>* signal_queue_;
   int last_sig_num_;
   int sigwinch_num_;
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(SignalHandler, signal_queue_));
+  }
 };
 
 void Sigaction(int sig_num, sighandler_t handler);

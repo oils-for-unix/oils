@@ -14,7 +14,7 @@
 
 namespace pyos {
 
-static SignalHandler gSignalHandler;
+static SignalHandler* gSignalHandler = nullptr;
 
 Tuple2<int, int> WaitPid() {
   int status;
@@ -197,7 +197,10 @@ bool InputAvailable(int fd) {
 }
 
 SignalHandler::SignalHandler()
-    : signal_queue_(), last_sig_num_(0), sigwinch_num_(UNTRAPPED_SIGWINCH) {
+    : Obj(Tag::FixedSize, SignalHandler::field_mask(), sizeof(SignalHandler)),
+      signal_queue_(),
+      last_sig_num_(0),
+      sigwinch_num_(UNTRAPPED_SIGWINCH) {
 }
 
 void SignalHandler::Update(int sig_num) {
@@ -211,12 +214,14 @@ void SignalHandler::Update(int sig_num) {
 }
 
 static List<int>* AllocSignalQueue() {
+  NO_ROOTS_FRAME(FUNC_NAME);  // NewList() does it
   List<int>* ret = NewList<int>();
   ret->reserve(kMaxSignalsInFlight);
   return ret;
 }
 
 List<int>* SignalHandler::TakeSignalQueue() {
+  NO_ROOTS_FRAME(FUNC_NAME);  // AllocSingalQueue() does it
   List<int>* new_queue = AllocSignalQueue();
   List<int>* ret = signal_queue_;
   signal_queue_ = new_queue;
@@ -224,35 +229,46 @@ List<int>* SignalHandler::TakeSignalQueue() {
 }
 
 void Sigaction(int sig_num, sighandler_t handler) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
   struct sigaction act = {};
   act.sa_handler = handler;
   assert(sigaction(sig_num, &act, nullptr) == 0);
 }
 
 static void signal_handler(int sig_num) {
-  gSignalHandler.Update(sig_num);
+  assert(gSignalHandler != nullptr);
+  gSignalHandler->Update(sig_num);
 }
 
 void RegisterSignalInterest(int sig_num) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
   struct sigaction act = {};
   act.sa_handler = signal_handler;
   assert(sigaction(sig_num, &act, nullptr) == 0);
 }
 
 List<int>* TakeSignalQueue() {
-  return gSignalHandler.TakeSignalQueue();
+  NO_ROOTS_FRAME(FUNC_NAME);  // SignalHandler::TakeSignalQueue() does it
+  assert(gSignalHandler != nullptr);
+  return gSignalHandler->TakeSignalQueue();
 }
 
 int LastSignal() {
-  return gSignalHandler.last_sig_num_;
+  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
+  assert(gSignalHandler != nullptr);
+  return gSignalHandler->last_sig_num_;
 }
 
 void SetSigwinchCode(int code) {
-  gSignalHandler.sigwinch_num_ = code;
+  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
+  assert(gSignalHandler != nullptr);
+  gSignalHandler->sigwinch_num_ = code;
 }
 
 void InitShell() {
-  gSignalHandler.signal_queue_ = AllocSignalQueue();
+  RootsFrame _r{FUNC_NAME};
+  gSignalHandler = Alloc<SignalHandler>();
+  gSignalHandler->signal_queue_ = AllocSignalQueue();
 }
 
 }  // namespace pyos
