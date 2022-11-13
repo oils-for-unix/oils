@@ -96,18 +96,29 @@ def NinjaGraph(ru):
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
+      '//cpp/osh', 
+      srcs = ['cpp/osh.cc'],
+      deps = [
+        '//frontend/syntax.asdl', 
+        '//cpp/core', 
+        '//mycpp/runtime', 
+      ]
+  )
+
+  ru.cc_binary(
+      'cpp/osh_test.cc', 
+      deps = ['//cpp/osh'],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
+  ru.cc_library(
       '//cpp/bindings', 
       # TODO: split these into their own libraries
       srcs = [
         'cpp/frontend_tdop.cc',
-        'cpp/osh.cc',
         'cpp/pgen2.cc',
         'cpp/pylib.cc',
         'cpp/stdlib.cc',
       ],
-      deps = [
-        '//frontend/syntax.asdl',  # osh depends on this
-      ]
   )
 
   ru.cc_binary(

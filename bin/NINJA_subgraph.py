@@ -37,6 +37,8 @@ def NinjaGraph(ru):
       top_level = True,  # _bin/cxx-dbg/osh_eval
       deps = [
         '//cpp/core',
+        '//cpp/libc',
+        '//cpp/osh',
         '//cpp/bindings',
         '//cpp/frontend_flag_spec',
         '//cpp/frontend_match',

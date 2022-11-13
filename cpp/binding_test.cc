@@ -69,22 +69,6 @@ TEST posix_test() {
   PASS();
 }
 
-TEST bool_stat_test() {
-  int fail = 0;
-  try {
-    bool_stat::isatty(StrFromC("invalid"), nullptr);
-  } catch (error::FatalRuntime* e) {
-    fail++;
-  }
-  ASSERT_EQ(1, fail);
-
-  bool b2 = bool_stat::isatty(StrFromC("0"), nullptr);
-  // This will be true interactively
-  log("stdin isatty = %d", b2);
-
-  PASS();
-}
-
 TEST os_path_test() {
   // TODO: use gc_mylib here, with NewStr(), StackRoots, etc.
   Str* s = nullptr;
@@ -129,7 +113,6 @@ int main(int argc, char** argv) {
   RUN_TEST(show_sizeof);
   RUN_TEST(time_test);
   RUN_TEST(posix_test);
-  RUN_TEST(bool_stat_test);
   RUN_TEST(os_path_test);
   RUN_TEST(putenv_test);
 
