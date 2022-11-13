@@ -462,7 +462,7 @@ class Unset(vm._Builtin):
       return False
 
     if proc_fallback and not found:
-      mylib.dict_remove(self.procs, arg)
+      mylib.dict_erase(self.procs, arg)
 
     return True
 
@@ -476,7 +476,7 @@ class Unset(vm._Builtin):
       spid = arg_spids[i]
 
       if arg.f:
-        mylib.dict_remove(self.procs, name)
+        mylib.dict_erase(self.procs, name)
 
       elif arg.v:
         if not self._UnsetVar(name, spid, False):

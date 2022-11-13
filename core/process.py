@@ -1276,7 +1276,7 @@ class JobState(object):
     if pid == self.last_stopped_pid:
       self.last_stopped_pid = -1
 
-    mylib.dict_remove(self.jobs, pid)
+    mylib.dict_erase(self.jobs, pid)
 
   def AddJob(self, job):
     # type: (Job) -> int

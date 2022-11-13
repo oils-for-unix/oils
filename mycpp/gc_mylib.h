@@ -1,3 +1,5 @@
+// gc_mylib.h - corresponds to mycpp/mylib.py
+
 #ifndef MYCPP_GC_MYLIB_H
 #define MYCPP_GC_MYLIB_H
 
@@ -12,9 +14,6 @@ class Dict;
 
 const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
-template <typename K, typename V>
-void dict_remove(Dict<K, V>* haystack, K needle);
-
 namespace mylib {
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
@@ -25,8 +24,16 @@ inline Str* StrFromC(const char* s) {
 }
 
 template <typename K, typename V>
-void dict_remove(Dict<K, V>* haystack, K needle) {
-  ::dict_remove(haystack, needle);
+void dict_erase(Dict<K, V>* haystack, K needle) {
+  int pos = haystack->position_of_key(needle);
+  if (pos == -1) {
+    return;
+  }
+  haystack->entry_->items_[pos] = kDeletedEntry;
+  // Zero out for GC.  These could be nullptr or 0
+  haystack->keys_->items_[pos] = 0;
+  haystack->values_->items_[pos] = 0;
+  haystack->len_--;
 }
 
 // NOTE: Can use OverAllocatedStr for all of these, rather than copying

@@ -126,7 +126,7 @@ class SearchPath(object):
   def MaybeRemoveEntry(self, name):
     # type: (str) -> None
     """When the file system changes."""
-    mylib.dict_remove(self.cache, name)
+    mylib.dict_erase(self.cache, name)
 
   def ClearCache(self):
     # type: () -> None
@@ -2063,7 +2063,7 @@ class Mem(object):
       if case(lvalue_e.Named):  # unset x
         # Make variables in higher scopes visible.
         # example: test/spec.sh builtin-vars -r 24 (ble.sh)
-        mylib.dict_remove(name_map, cell_name)
+        mylib.dict_erase(name_map, cell_name)
 
         # alternative that some shells use:
         #   name_map[cell_name].val = value.Undef()
@@ -2116,7 +2116,7 @@ class Mem(object):
         #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
         val = cast(value__AssocArray, UP_val)
-        mylib.dict_remove(val.d, lval.key)
+        mylib.dict_erase(val.d, lval.key)
 
       else:
         raise AssertionError(lval)

@@ -137,10 +137,10 @@ def octal(i):
   return '%o' % i
 
 
-def dict_remove(d, key):
+def dict_erase(d, key):
   # type: (Dict[Any, Any], Any) -> None
   """
-  Ensure that a key isn't in the dict.
+  Ensure that a key isn't in the Dict d.  This makes C++ translation easier.
   """
   try:
     del d[key]

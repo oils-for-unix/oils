@@ -55,7 +55,7 @@ class TrapState(object):
   def RemoveUserHook(self, hook_name):
     # type: (str) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
-    mylib.dict_remove(self.hooks, hook_name)
+    mylib.dict_erase(self.hooks, hook_name)
 
   def AddUserTrap(self, sig_num, handler):
     # type: (int, command_t) -> None
@@ -73,7 +73,7 @@ class TrapState(object):
     # type: (int) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     # Restore default
-    mylib.dict_remove(self.traps, sig_num)
+    mylib.dict_erase(self.traps, sig_num)
 
     if sig_num == SIGWINCH:
       pyos.SetSigwinchCode(pyos.UNTRAPPED_SIGWINCH)
