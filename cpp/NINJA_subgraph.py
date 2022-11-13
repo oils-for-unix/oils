@@ -24,7 +24,10 @@ def NinjaGraph(ru):
   ru.cc_library(
       '//cpp/core', 
       srcs = ['cpp/core.cc'],
-      deps = ['//frontend/syntax.asdl'],
+      deps = [
+        '//frontend/syntax.asdl',
+        '//mycpp/runtime',
+        ],
   )
 
   ru.cc_binary(
@@ -32,7 +35,6 @@ def NinjaGraph(ru):
       deps = [
         '//cpp/core',
         '//cpp/bindings',  # TODO: it's only stdlib
-        '//mycpp/runtime',
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
@@ -56,15 +58,13 @@ def NinjaGraph(ru):
       deps = [
         '//frontend/syntax.asdl',
         '//frontend/types.asdl',
+        '//mycpp/runtime',
       ],
   )
 
   ru.cc_binary(
       'cpp/frontend_match_test.cc',
-      deps = [
-        '//cpp/frontend_match',
-        '//mycpp/runtime',
-        ],
+      deps = ['//cpp/frontend_match'],
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
@@ -75,18 +75,25 @@ def NinjaGraph(ru):
       deps = [
         '//core/runtime.asdl',
         '//frontend/arg_types',  # generated code
+        '//mycpp/runtime',
       ],
   )
 
   ru.cc_binary(
       'cpp/frontend_flag_spec_test.cc',
-
-      deps = [
-        '//cpp/frontend_flag_spec',
-        '//mycpp/runtime',
-        ],
+      deps = ['//cpp/frontend_flag_spec'],
       # special -D CPP_UNIT_TEST
       matrix = CPP_UNIT_MATRIX)
+
+  ru.cc_library(
+      '//cpp/libc', 
+      srcs = ['cpp/libc.cc'],
+      deps = ['//mycpp/runtime'])
+
+  ru.cc_binary(
+      'cpp/libc_test.cc', 
+      deps = ['//cpp/libc'],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
       '//cpp/bindings', 
@@ -97,7 +104,6 @@ def NinjaGraph(ru):
         'cpp/pgen2.cc',
         'cpp/pylib.cc',
         'cpp/stdlib.cc',
-        'cpp/libc.cc',
       ],
       deps = [
         '//frontend/syntax.asdl',  # osh depends on this

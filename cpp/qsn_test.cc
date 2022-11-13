@@ -1,11 +1,7 @@
 #include "cpp/qsn.h"
 
-#include "vendor/greatest.h"
-
-// This test runs primarily in the GC mode, but you can also run it in the
-// leaky mode!
-
 #include "mycpp/runtime.h"
+#include "vendor/greatest.h"
 
 TEST qsn_test() {
   Str* s = nullptr;
@@ -39,6 +35,6 @@ int main(int argc, char** argv) {
 
   gHeap.CleanProcessExit();
 
-  GREATEST_MAIN_END(); /* display results */
+  GREATEST_MAIN_END();
   return 0;
 }
