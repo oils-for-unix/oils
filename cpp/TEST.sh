@@ -75,16 +75,18 @@ unit() {
 
   # Other tests
   for variant in ubsan asan; do
-    run-one-test     cpp/binding_test '' $variant
+    # Need -D CPP_UNIT_TEST
+    run-special-test cpp/frontend_flag_spec_test '' $variant
+
+    run-one-test     cpp/frontend_match_test '' $variant
 
     run-test-in-dir  cpp/libc_test '' $variant  # has testdata
 
     run-one-test     cpp/osh_test '' $variant
 
-    # Need -D CPP_UNIT_TEST
-    run-special-test cpp/frontend_flag_spec_test '' $variant
+    run-one-test     cpp/pylib_test '' $variant
 
-    run-one-test     cpp/frontend_match_test '' $variant
+    run-one-test     cpp/stdlib_test '' $variant
   done
 }
 
@@ -106,16 +108,18 @@ coverage() {
 
   run-one-test     cpp/qsn_test $compiler $variant
 
-  run-one-test     cpp/binding_test $compiler $variant
+  # Need -D CPP_UNIT_TEST
+  run-special-test cpp/frontend_flag_spec_test $compiler $variant
+
+  run-one-test     cpp/frontend_match_test $compiler $variant
 
   run-test-in-dir  cpp/libc_test $compiler $variant  # has testdata
 
   run-one-test     cpp/osh_test $compiler $variant
 
-  # Need -D CPP_UNIT_TEST
-  run-special-test cpp/frontend_flag_spec_test $compiler $variant
+  run-one-test     cpp/pylib_test $compiler $variant
 
-  run-one-test     cpp/frontend_match_test $compiler $variant
+  run-one-test     cpp/stdlib_test $compiler $variant
 
   local out_dir=_test/clang-coverage/cpp
   test/coverage.sh html-report $out_dir cpp

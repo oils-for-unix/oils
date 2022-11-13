@@ -40,7 +40,7 @@ Correspond to files:
     frontend_match.{cc,h}
       from frontend import match
 
-    frontend_tdop.{cc,h}
+    osh_tdop.{cc,h}
       from frontend import tdop
 
 TODO: We want non-leaky versions of all files!

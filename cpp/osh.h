@@ -4,7 +4,7 @@
 #define LEAKY_OSH_H
 
 #include "_gen/frontend/syntax.asdl.h"
-#include "cpp/frontend_tdop.h"
+#include "cpp/osh_tdop.h"
 #include "mycpp/runtime.h"
 
 namespace arith_parse {

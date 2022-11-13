@@ -34,7 +34,7 @@ def NinjaGraph(ru):
       'cpp/core_test.cc',
       deps = [
         '//cpp/core',
-        '//cpp/bindings',  # TODO: it's only stdlib
+        '//cpp/stdlib',
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
@@ -97,7 +97,10 @@ def NinjaGraph(ru):
 
   ru.cc_library(
       '//cpp/osh', 
-      srcs = ['cpp/osh.cc'],
+      srcs = [
+        'cpp/osh.cc',
+        'cpp/osh_tdop.cc',
+        ],
       deps = [
         '//frontend/syntax.asdl', 
         '//cpp/core', 
@@ -111,22 +114,30 @@ def NinjaGraph(ru):
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
-      '//cpp/bindings', 
-      # TODO: split these into their own libraries
-      srcs = [
-        'cpp/frontend_tdop.cc',
-        'cpp/pgen2.cc',
-        'cpp/pylib.cc',
-        'cpp/stdlib.cc',
-      ],
-  )
+      '//cpp/pgen2', 
+      srcs = ['cpp/pgen2.cc'],
+      deps = ['//mycpp/runtime'])
+
+  ru.cc_library(
+      '//cpp/pylib', 
+      srcs = ['cpp/pylib.cc'],
+      deps = ['//mycpp/runtime'])
 
   ru.cc_binary(
-      'cpp/binding_test.cc',
+      'cpp/pylib_test.cc',
+      deps = ['//cpp/pylib'],
+      matrix = ninja_lib.COMPILERS_VARIANTS)
+
+  ru.cc_library(
+      '//cpp/stdlib', 
+      srcs = ['cpp/stdlib.cc'],
+      deps = ['//mycpp/runtime'])
+
+  ru.cc_binary(
+      'cpp/stdlib_test.cc',
       deps = [
         '//core/runtime.asdl',  # sizeof_test uses this
-        '//cpp/bindings',
-        '//mycpp/runtime',
+        '//cpp/stdlib',
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
 

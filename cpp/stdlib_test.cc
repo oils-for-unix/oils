@@ -1,12 +1,11 @@
 
+#include "cpp/stdlib.h"
+
 #include <errno.h>
 
 #include "_gen/core/runtime.asdl.h"  // cell, etc
 #include "cpp/core_error.h"          // FatalRuntime
-#include "cpp/libc.h"
-#include "cpp/osh.h"
 #include "cpp/pylib.h"
-#include "cpp/stdlib.h"
 #include "mycpp/gc_builtins.h"
 #include "vendor/greatest.h"
 
@@ -69,29 +68,6 @@ TEST posix_test() {
   PASS();
 }
 
-TEST os_path_test() {
-  // TODO: use gc_mylib here, with NewStr(), StackRoots, etc.
-  Str* s = nullptr;
-
-  s = os_path::rstrip_slashes(StrFromC(""));
-  ASSERT(str_equals(s, StrFromC("")));
-
-  s = os_path::rstrip_slashes(StrFromC("foo"));
-  ASSERT(str_equals(s, StrFromC("foo")));
-
-  s = os_path::rstrip_slashes(StrFromC("foo/"));
-  ASSERT(str_equals(s, StrFromC("foo")));
-
-  s = os_path::rstrip_slashes(StrFromC("/foo/"));
-  ASSERT(str_equals(s, StrFromC("/foo")));
-
-  // special case of not stripping
-  s = os_path::rstrip_slashes(StrFromC("///"));
-  ASSERT(str_equals(s, StrFromC("///")));
-
-  PASS();
-}
-
 TEST putenv_test() {
   Str* key = StrFromC("KEY");
   Str* value = StrFromC("value");
@@ -113,7 +89,6 @@ int main(int argc, char** argv) {
   RUN_TEST(show_sizeof);
   RUN_TEST(time_test);
   RUN_TEST(posix_test);
-  RUN_TEST(os_path_test);
   RUN_TEST(putenv_test);
 
   gHeap.CleanProcessExit();

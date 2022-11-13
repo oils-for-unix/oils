@@ -39,7 +39,10 @@ def NinjaGraph(ru):
         '//cpp/core',
         '//cpp/libc',
         '//cpp/osh',
-        '//cpp/bindings',
+        '//cpp/pgen2',
+        '//cpp/pylib',
+        '//cpp/stdlib',
+
         '//cpp/frontend_flag_spec',
         '//cpp/frontend_match',
 
