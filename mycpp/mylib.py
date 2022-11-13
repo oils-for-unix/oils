@@ -24,13 +24,10 @@ def NewDict():
   """Make dictionaries ordered in Python, e.g. for JSON.
   
   In C++, our Dict implementation should be ordered.
-
-  TODO: can this be the same as NewDict?
   """
   return collections_.OrderedDict()
 
 
-# C code ignores this!
 def log(msg, *args):
   # type: (str, *Any) -> None
   if args:
@@ -38,7 +35,7 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-# TODO: Do we need this?
+# TODO: This is only used for test code: mycpp/examples/varargs
 def p_die(msg, *args):
   # type: (str, *Any) -> None
   raise RuntimeError(msg % args)

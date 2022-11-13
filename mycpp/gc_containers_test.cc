@@ -237,7 +237,7 @@ TEST test_dict() {
   ASSERT(!list_contains(keys3, StrFromC("zzz")));
 
   ASSERT(dict_contains(d3, a));
-  mylib::dict_remove(d3, a);
+  mylib::dict_erase(d3, a);
   ASSERT(!dict_contains(d3, a));
   ASSERT_EQ(2, len(d3));
 
@@ -248,11 +248,6 @@ TEST test_dict() {
     print(key);
   }
 
-  // Use the method version
-  d3->remove(StrFromC("b"));
-  ASSERT(!dict_contains(d3, StrFromC("b")));
-  ASSERT_EQ(1, len(d3));
-
   // Test a different type of dict, to make sure partial template
   // specialization works
   auto ss = NewDict<Str*, Str*>();
@@ -262,7 +257,7 @@ TEST test_dict() {
   ASSERT_EQ(1, len(ss->keys()));
   ASSERT_EQ(1, len(ss->values()));
 
-  ss->remove(a);
+  mylib::dict_erase(ss, a);
   ASSERT_EQ(0, len(ss));
 
   // Test removed item

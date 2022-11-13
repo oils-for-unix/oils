@@ -628,7 +628,7 @@ TEST dict_methods_test() {
   ASSERT(str_equals0("key2", keys->index_(1)));
   ASSERT(str_equals0("key3", keys->index_(2)));
 
-  mylib::dict_remove(d2, StrFromC("key"));
+  mylib::dict_erase(d2, StrFromC("key"));
   ASSERT_EQ_FMT(2, len(d2), "%d");
 
   auto keys2 = d2->keys();
@@ -692,7 +692,7 @@ TEST dict_methods_test() {
   ASSERT(!list_contains(keys4, StrFromC("zzz")));
 
   ASSERT(dict_contains(d3, a));
-  mylib::dict_remove(d3, a);
+  mylib::dict_erase(d3, a);
   ASSERT(!dict_contains(d3, a));
   ASSERT_EQ(2, len(d3));
 
@@ -712,7 +712,7 @@ TEST dict_methods_test() {
   }
   ASSERT_EQ_FMT(len(ss), k, "%d");
 
-  mylib::dict_remove(ss, a);
+  mylib::dict_erase(ss, a);
   ASSERT_EQ(0, len(ss));
 
   int m = 0;
