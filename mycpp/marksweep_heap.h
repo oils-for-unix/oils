@@ -21,7 +21,7 @@ class RootSet {
   }
 
   // Called on function entry
-  void PushScope() {
+  void PushFrame() {
     // Construct more std::vector frames if necessary.  We reuse vectors to
     // avoid constructing one on every function call.
     int num_constructed = stack_.size();
@@ -36,16 +36,16 @@ class RootSet {
     }
 
     num_frames_++;
-    // log("PushScope -> %d", num_frames_);
+    // log("PushFrame -> %d", num_frames_);
   }
 
   // Called on function exit
-  void PopScope() {
+  void PopFrame() {
     // Remove all roots owned by the top frame.  We're REUSING frames, so not
     // calling vector<>::pop().
     stack_[num_frames_ - 1].clear();
     num_frames_--;
-    // log("PopScope -> %d", num_frames_);
+    // log("PopFrame -> %d", num_frames_);
   }
 
   // Called when returning a value (except in trivial passthrough case)

@@ -90,7 +90,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
   bytes_allocated_ += num_bytes;
 
   // Allocate() is special: we use RootInCurrentFrame because it's a LEAF, and
-  // this function doesn't have RootsFrame to do PushScope/PopScope
+  // this function doesn't have RootsFrame to do PushFrame/PopFrame
   #if RET_VAL_ROOTING
   gHeap.RootInCurrentFrame(static_cast<Obj*>(result));
   static_cast<Obj*>(result)->heap_tag_ = Tag::Opaque;  // it is opaque to start!
@@ -225,7 +225,7 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   if (fast_exit) {
     // don't collect by default; OIL_GC_ON_EXIT=1 overrides
     if (e && strcmp(e, "1") == 0) {
-      root_set_.PopScope();
+      root_set_.PopFrame();
       Collect();
     }
   } else {
@@ -233,7 +233,7 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
     if (e && strcmp(e, "0") == 0) {
       ;
     } else {
-      root_set_.PopScope();
+      root_set_.PopFrame();
       Collect();
     }
   }

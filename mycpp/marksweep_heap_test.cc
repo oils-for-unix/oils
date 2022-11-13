@@ -240,11 +240,11 @@ TEST root_set_test() {
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
 
-  r.PushScope();  // main() call
+  r.PushFrame();  // main() call
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
 
-  r.PushScope();  // g() call
+  r.PushFrame();  // g() call
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(3, r.NumFrames(), "%d");
 
@@ -255,13 +255,13 @@ TEST root_set_test() {
   ASSERT_EQ_FMT(1, static_cast<int>(r.stack_[1].size()), "%d");
   ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[2].size()), "%d");
 
-  r.PopScope();  // g() return
+  r.PopFrame();  // g() return
   // "X" is still live after foo() returns!
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
   ASSERT_EQ_FMT(1, static_cast<int>(r.stack_[1].size()), "%d");
 
-  r.PushScope();  // another g() call
+  r.PushFrame();  // another g() call
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(3, r.NumFrames(), "%d");
 
@@ -272,12 +272,12 @@ TEST root_set_test() {
   ASSERT_EQ_FMT(2, static_cast<int>(r.stack_[1].size()), "%d");
   ASSERT_EQ_FMT(0, static_cast<int>(r.stack_[2].size()), "%d");
 
-  r.PopScope();  // another g() return
+  r.PopFrame();  // another g() return
   ASSERT_EQ_FMT(2, r.NumRoots(), "%d");
   ASSERT_EQ_FMT(2, r.NumFrames(), "%d");
   ASSERT_EQ_FMT(2, static_cast<int>(r.stack_[1].size()), "%d");
 
-  r.PopScope();  // main() return
+  r.PopFrame();  // main() return
   ASSERT_EQ_FMT(1, r.NumFrames(), "%d");
   ASSERT_EQ_FMT(0, r.NumRoots(), "%d");
 
@@ -287,8 +287,8 @@ TEST root_set_test() {
 TEST root_set_null_test() {
   RootSet r(32);
 
-  r.PushScope();
-  r.PushScope();
+  r.PushFrame();
+  r.PushFrame();
 
   r.RootOnReturn(StrFromC("X"));
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
@@ -297,8 +297,8 @@ TEST root_set_null_test() {
   r.RootOnReturn(nullptr);
   ASSERT_EQ_FMT(1, r.NumRoots(), "%d");
 
-  r.PopScope();
-  r.PopScope();
+  r.PopFrame();
+  r.PopFrame();
 
   PASS();
 }
@@ -308,10 +308,10 @@ TEST root_set_big_test() {
 
   RootSet r(32);
   // Test many frames
-  r.PushScope();
+  r.PushFrame();
   for (int i = 0; i < 100; ++i) {
     // log("i %d", i);
-    r.PushScope();
+    r.PushFrame();
     for (int j = 0; j < 100; ++j) {
       r.RootOnReturn(s);
     }

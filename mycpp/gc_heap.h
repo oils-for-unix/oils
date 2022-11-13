@@ -32,19 +32,19 @@ class RootsFrame {
   explicit RootsFrame(const char* description) {
     log(">>> %s", description);
   #ifndef BUMP_LEAK
-    gHeap.root_set_.PushScope();
+    gHeap.root_set_.PushFrame();
   #endif
   }
 #endif
 
   RootsFrame() {
 #ifndef BUMP_LEAK
-    gHeap.root_set_.PushScope();
+    gHeap.root_set_.PushFrame();
 #endif
   }
   ~RootsFrame() {
 #ifndef BUMP_LEAK
-    gHeap.root_set_.PopScope();
+    gHeap.root_set_.PopFrame();
 #endif
   }
 };
