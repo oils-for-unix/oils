@@ -806,8 +806,6 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  PRINT_GC_MODE_STRING();
-
   RUN_TEST(print_test);
   RUN_TEST(formatter_test);
 

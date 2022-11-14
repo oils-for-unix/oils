@@ -38,6 +38,169 @@ TEST test_sizeof() {
   PASS();
 }
 
+TEST test_tuple() {
+  List<int>* L = NewList<int>(std::initializer_list<int>{1, 2, 3});
+
+  log("size: %d", len(L));
+  log("");
+
+  Tuple2<int, int>* t2 = Alloc<Tuple2<int, int>>(5, 6);
+  log("t2[0] = %d", t2->at0());
+  log("t2[1] = %d", t2->at1());
+
+  Tuple2<int, Str*>* u2 = Alloc<Tuple2<int, Str*>>(42, StrFromC("hello"));
+  log("u2[0] = %d", u2->at0());
+  log("u2[1] = %s", u2->at1()->data_);
+
+  log("");
+
+  auto t3 =
+      Alloc<Tuple3<int, Str*, Str*>>(42, StrFromC("hello"), StrFromC("bye"));
+  log("t3[0] = %d", t3->at0());
+  log("t3[1] = %s", t3->at1()->data_);
+  log("t3[2] = %s", t3->at2()->data_);
+
+  log("");
+
+  auto t4 = Alloc<Tuple4<int, Str*, Str*, int>>(42, StrFromC("4"),
+                                                StrFromC("four"), -42);
+
+  log("t4[0] = %d", t4->at0());
+  log("t4[1] = %s", t4->at1()->data_);
+  log("t4[2] = %s", t4->at2()->data_);
+  log("t4[3] = %d", t4->at3());
+
+  PASS();
+}
+
+// TODO:
+//
+// - Test what happens append() runs over the max heap size
+//   - how does it trigger a collection?
+
+TEST test_list_gc_header() {
+  auto list1 = NewList<int>();
+  StackRoots _roots1({&list1});
+  auto list2 = NewList<Str*>();
+  StackRoots _roots2({&list2});
+
+  ASSERT_EQ(0, len(list1));
+  ASSERT_EQ(0, len(list2));
+
+  ASSERT_EQ_FMT(0, list1->capacity_, "%d");
+  ASSERT_EQ_FMT(0, list2->capacity_, "%d");
+
+  ASSERT_EQ_FMT(Tag::FixedSize, list1->heap_tag_, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, list2->heap_tag_, "%d");
+
+  // 8 byte obj header + 2 integers + pointer
+  ASSERT_EQ_FMT(24, list1->obj_len_, "%d");
+  ASSERT_EQ_FMT(24, list2->obj_len_, "%d");
+
+  // Make sure they're on the heap
+#ifndef MARK_SWEEP
+  int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_.begin_;
+  int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_.begin_;
+  ASSERT(diff1 < 1024);
+  ASSERT(diff2 < 1024);
+#endif
+
+  auto more = NewList<int>(std::initializer_list<int>{11, 22, 33});
+  StackRoots _roots3({&more});
+  list1->extend(more);
+  ASSERT_EQ_FMT(3, len(list1), "%d");
+
+  // 32 byte block - 8 byte header = 24 bytes, 6 elements
+  ASSERT_EQ_FMT(6, list1->capacity_, "%d");
+  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->heap_tag_, "%d");
+
+  // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
+  ASSERT_EQ_FMT(32, list1->slab_->obj_len_, "%d");
+
+  ASSERT_EQ_FMT(11, list1->index_(0), "%d");
+  ASSERT_EQ_FMT(22, list1->index_(1), "%d");
+  ASSERT_EQ_FMT(33, list1->index_(2), "%d");
+
+  log("extending");
+  auto more2 = NewList<int>(std::initializer_list<int>{44, 55, 66, 77});
+  StackRoots _roots4({&more2});
+  list1->extend(more2);
+
+  // 64 byte block - 8 byte header = 56 bytes, 14 elements
+  ASSERT_EQ_FMT(14, list1->capacity_, "%d");
+  ASSERT_EQ_FMT(7, len(list1), "%d");
+
+  // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
+  ASSERT_EQ_FMT(64, list1->slab_->obj_len_, "%d");
+
+  ASSERT_EQ_FMT(11, list1->index_(0), "%d");
+  ASSERT_EQ_FMT(22, list1->index_(1), "%d");
+  ASSERT_EQ_FMT(33, list1->index_(2), "%d");
+  ASSERT_EQ_FMT(44, list1->index_(3), "%d");
+  ASSERT_EQ_FMT(55, list1->index_(4), "%d");
+  ASSERT_EQ_FMT(66, list1->index_(5), "%d");
+  ASSERT_EQ_FMT(77, list1->index_(6), "%d");
+
+  list1->append(88);
+  ASSERT_EQ_FMT(88, list1->index_(7), "%d");
+  ASSERT_EQ_FMT(8, len(list1), "%d");
+
+#ifndef MARK_SWEEP
+  int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_.begin_;
+  ASSERT(d_slab < 1024);
+#endif
+
+  log("list1_ = %p", list1);
+  log("list1->slab_ = %p", list1->slab_);
+
+  auto str1 = StrFromC("foo");
+  StackRoots _roots5({&str1});
+  log("str1 = %p", str1);
+  auto str2 = StrFromC("bar");
+  StackRoots _roots6({&str2});
+  log("str2 = %p", str2);
+
+  list2->append(str1);
+  list2->append(str2);
+  ASSERT_EQ(2, len(list2));
+  ASSERT(str_equals(str1, list2->index_(0)));
+  ASSERT(str_equals(str2, list2->index_(1)));
+
+  PASS();
+}
+
+// Manual initialization.  This helped me write the GLOBAL_LIST() macro.
+GlobalSlab<int, 3> _gSlab = {Tag::Global, 0, kZeroMask, kNoObjLen, {5, 6, 7}};
+GlobalList<int, 3> _gList = {Tag::Global, 0, kZeroMask, kNoObjLen,
+                             3,  // len
+                             3,  // capacity
+                             &_gSlab};
+List<int>* gList = reinterpret_cast<List<int>*>(&_gList);
+
+GLOBAL_LIST(int, 4, gList2, {5 COMMA 4 COMMA 3 COMMA 2});
+
+GLOBAL_STR(gFoo, "foo");
+GLOBAL_LIST(Str*, 2, gList3, {gFoo COMMA gFoo});
+
+TEST test_global_list() {
+  ASSERT_EQ(3, len(gList));
+  ASSERT_EQ_FMT(5, gList->index_(0), "%d");
+  ASSERT_EQ_FMT(6, gList->index_(1), "%d");
+  ASSERT_EQ_FMT(7, gList->index_(2), "%d");
+
+  ASSERT_EQ(4, len(gList2));
+  ASSERT_EQ_FMT(5, gList2->index_(0), "%d");
+  ASSERT_EQ_FMT(4, gList2->index_(1), "%d");
+  ASSERT_EQ_FMT(3, gList2->index_(2), "%d");
+  ASSERT_EQ_FMT(2, gList2->index_(3), "%d");
+
+  ASSERT_EQ(2, len(gList3));
+  ASSERT(str_equals(gFoo, gList3->index_(0)));
+  ASSERT(str_equals(gFoo, gList3->index_(1)));
+
+  PASS();
+}
+
 TEST test_list_funcs() {
   log("  ints");
   auto ints = NewList<int>({4, 5, 6});
@@ -171,146 +334,6 @@ TEST test_list_contains() {
   PASS();
 }
 
-TEST test_dict() {
-  // TODO: How to initialize constants?
-
-  // Dict d {{"key", 1}, {"val", 2}};
-  Dict<int, Str*>* d = NewDict<int, Str*>();
-  d->set(1, StrFromC("foo"));
-  log("d[1] = %s", d->index_(1)->data_);
-
-  auto d2 = NewDict<Str*, int>();
-  Str* key = StrFromC("key");
-  d2->set(key, 42);
-
-  log("d2['key'] = %d", d2->index_(key));
-  d2->set(StrFromC("key2"), 2);
-  d2->set(StrFromC("key3"), 3);
-
-  ASSERT_EQ_FMT(3, len(d2), "%d");
-  ASSERT_EQ_FMT(3, len(d2->keys()), "%d");
-  ASSERT_EQ_FMT(3, len(d2->values()), "%d");
-
-  d2->clear();
-  ASSERT_EQ(0, len(d2));
-
-  log("  iterating over Dict");
-  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
-    log("k = %s, v = %d", it.Key()->data_, it.Value());
-  }
-
-  Str* v1 = d->get(1);
-  log("v1 = %s", v1->data_);
-  ASSERT(dict_contains(d, 1));
-  ASSERT(!dict_contains(d, 2));
-
-  Str* v2 = d->get(423);  // nonexistent
-  log("v2 = %p", v2);
-
-  auto d3 = NewDict<Str*, int>();
-  ASSERT_EQ(0, len(d3));
-
-  auto a = StrFromC("a");
-
-  d3->set(StrFromC("b"), 11);
-  ASSERT_EQ(1, len(d3));
-
-  d3->set(StrFromC("c"), 12);
-  ASSERT_EQ(2, len(d3));
-
-  d3->set(StrFromC("a"), 10);
-  ASSERT_EQ(3, len(d3));
-
-  ASSERT_EQ(10, d3->index_(StrFromC("a")));
-  ASSERT_EQ(11, d3->index_(StrFromC("b")));
-  ASSERT_EQ(12, d3->index_(StrFromC("c")));
-  ASSERT_EQ(3, len(d3));
-
-  auto keys = sorted(d3);
-  ASSERT(str_equals0("a", keys->index_(0)));
-  ASSERT(str_equals0("b", keys->index_(1)));
-  ASSERT(str_equals0("c", keys->index_(2)));
-  ASSERT_EQ(3, len(keys));
-
-  auto keys3 = d3->keys();
-  ASSERT(list_contains(keys3, a));
-  ASSERT(!list_contains(keys3, StrFromC("zzz")));
-
-  ASSERT(dict_contains(d3, a));
-  mylib::dict_erase(d3, a);
-  ASSERT(!dict_contains(d3, a));
-  ASSERT_EQ(2, len(d3));
-
-  // Test removed item
-  for (DictIter<Str*, int> it(d3); !it.Done(); it.Next()) {
-    auto key = it.Key();
-    printf("d3 key = ");
-    print(key);
-  }
-
-  // Test a different type of dict, to make sure partial template
-  // specialization works
-  auto ss = NewDict<Str*, Str*>();
-  ss->set(a, a);
-  ASSERT_EQ(1, len(ss));
-
-  ASSERT_EQ(1, len(ss->keys()));
-  ASSERT_EQ(1, len(ss->values()));
-
-  mylib::dict_erase(ss, a);
-  ASSERT_EQ(0, len(ss));
-
-  // Test removed item
-  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
-    auto key = it.Key();
-    printf("ss key = ");
-    print(key);
-  }
-
-  // Testing NewDict() stub for ordered dicts ... hm.
-  //
-  // Dict<int, int>* frame = nullptr;
-  // frame = NewDict<int, int>();
-
-  PASS();
-}
-
-// TODO: disallow heap-allocated tuples?
-TEST test_list_tuple() {
-  List<int>* L = NewList<int>(std::initializer_list<int>{1, 2, 3});
-
-  log("size: %d", len(L));
-  log("");
-
-  Tuple2<int, int>* t2 = Alloc<Tuple2<int, int>>(5, 6);
-  log("t2[0] = %d", t2->at0());
-  log("t2[1] = %d", t2->at1());
-
-  Tuple2<int, Str*>* u2 = Alloc<Tuple2<int, Str*>>(42, StrFromC("hello"));
-  log("u2[0] = %d", u2->at0());
-  log("u2[1] = %s", u2->at1()->data_);
-
-  log("");
-
-  auto t3 =
-      Alloc<Tuple3<int, Str*, Str*>>(42, StrFromC("hello"), StrFromC("bye"));
-  log("t3[0] = %d", t3->at0());
-  log("t3[1] = %s", t3->at1()->data_);
-  log("t3[2] = %s", t3->at2()->data_);
-
-  log("");
-
-  auto t4 = Alloc<Tuple4<int, Str*, Str*, int>>(42, StrFromC("4"),
-                                                StrFromC("four"), -42);
-
-  log("t4[0] = %d", t4->at0());
-  log("t4[1] = %s", t4->at1()->data_);
-  log("t4[2] = %s", t4->at2()->data_);
-  log("t4[3] = %d", t4->at3());
-
-  PASS();
-}
-
 TEST test_list_copy() {
   List<int>* a = NewList<int>(std::initializer_list<int>{1, 2, 3});
   List<int>* b = list(a);
@@ -323,126 +346,6 @@ TEST test_list_copy() {
   PASS();
 }
 
-#define PRINT_STRING(str) printf("(%.*s)\n", len(str), (str)->data_)
-
-#define PRINT_LIST(list)                                         \
-  for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) { \
-    Str* piece = iter.Value();                                   \
-    printf("(%.*s) ", len(piece), piece->data_);                 \
-  }                                                              \
-  printf("\n")
-
-TEST test_str_split() {
-  printf("\n");
-
-  Str* s0 = StrFromC("abc def");
-
-  printf("------- Str::split -------\n");
-
-  {
-    List<Str*>* split_result = s0->split(StrFromC(" "));
-    PRINT_LIST(split_result);
-    ASSERT(len(split_result) == 2);
-    ASSERT(are_equal(split_result->index_(0), StrFromC("abc")));
-    ASSERT(are_equal(split_result->index_(1), StrFromC("def")));
-  }
-
-  {
-    List<Str*>* split_result = (StrFromC("###"))->split(StrFromC("#"));
-    PRINT_LIST(split_result);
-    ASSERT(len(split_result) == 4);
-    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
-    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
-    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
-    ASSERT(are_equal(split_result->index_(3), StrFromC("")));
-  }
-
-  {
-    List<Str*>* split_result = (StrFromC(" ### "))->split(StrFromC("#"));
-    PRINT_LIST(split_result);
-    ASSERT(len(split_result) == 4);
-    ASSERT(are_equal(split_result->index_(0), StrFromC(" ")));
-    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
-    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
-    ASSERT(are_equal(split_result->index_(3), StrFromC(" ")));
-  }
-
-  {
-    List<Str*>* split_result = (StrFromC(" # "))->split(StrFromC(" "));
-    PRINT_LIST(split_result);
-    ASSERT(len(split_result) == 3);
-    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
-    ASSERT(are_equal(split_result->index_(1), StrFromC("#")));
-    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
-  }
-
-  {
-    List<Str*>* split_result = (StrFromC("  #"))->split(StrFromC("#"));
-    PRINT_LIST(split_result);
-    ASSERT(len(split_result) == 2);
-    ASSERT(are_equal(split_result->index_(0), StrFromC("  ")));
-    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
-  }
-
-  {
-    List<Str*>* split_result = (StrFromC("#  #"))->split(StrFromC("#"));
-    PRINT_LIST(split_result);
-    ASSERT(len(split_result) == 3);
-    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
-    ASSERT(are_equal(split_result->index_(1), StrFromC("  ")));
-    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
-  }
-
-  {
-    List<Str*>* split_result = (StrFromC(""))->split(StrFromC(" "));
-    PRINT_LIST(split_result);
-    ASSERT(len(split_result) == 1);
-    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
-  }
-
-  // NOTE(Jesse): Failure case.  Not sure if we care about supporting this.
-  // It might happen if we do something like : 'weahtevr'.split()
-  // Would need to check on what the Python interpreter does in that case to
-  // decipher what we'd expect to see.
-  //
-  /* { */
-  /*   List<Str*> *split_result = (StrFromC("weahtevr"))->split(0); */
-  /*   PRINT_LIST(split_result); */
-  /*   ASSERT(len(split_result) == 1); */
-  /*   ASSERT(are_equal(split_result->index_(0), StrFromC(""))); */
-  /* } */
-
-  printf("---------- Done ----------\n");
-
-  PASS();
-}
-
-TEST test_str_join() {
-  printf("\n");
-
-  printf("-------- Str::join -------\n");
-
-  {
-    Str* result =
-        (StrFromC(""))->join(NewList<Str*>({StrFromC("abc"), StrFromC("def")}));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, StrFromC("abcdef")));
-  }
-  {
-    Str* result = (StrFromC(" "))
-                      ->join(NewList<Str*>({StrFromC("abc"), StrFromC("def"),
-                                            StrFromC("abc"), StrFromC("def"),
-                                            StrFromC("abc"), StrFromC("def"),
-                                            StrFromC("abc"), StrFromC("def")}));
-    PRINT_STRING(result);
-    ASSERT(are_equal(result, StrFromC("abc def abc def abc def abc def")));
-  }
-
-  printf("---------- Done ----------\n");
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -450,17 +353,16 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
   RUN_TEST(test_sizeof);
+  RUN_TEST(test_tuple);
+
+  RUN_TEST(test_list_gc_header);
+  RUN_TEST(test_global_list);
 
   RUN_TEST(test_list_funcs);
   RUN_TEST(test_list_iters);
-  RUN_TEST(test_dict);
 
   RUN_TEST(test_list_contains);
-  RUN_TEST(test_list_tuple);
   RUN_TEST(test_list_copy);
-
-  RUN_TEST(test_str_split);
-  RUN_TEST(test_str_join);
 
   gHeap.CleanProcessExit();
 

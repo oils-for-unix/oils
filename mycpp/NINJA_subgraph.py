@@ -47,30 +47,23 @@ def DefineTargets(ru):
       'mycpp/marksweep_heap_test.cc',
       'mycpp/gc_heap_test.cc',
       'mycpp/gc_stress_test.cc',
+
       'mycpp/gc_builtins_test.cc',
       'mycpp/gc_mylib_test.cc',
+
+      'mycpp/gc_containers_test.cc',
+      'mycpp/gc_dict_test.cc',
+      'mycpp/gc_str_test.cc',
+      'mycpp/gc_tuple_test.cc',
+
       'mycpp/smartptr_test.cc',
+      'mycpp/demo/target_lang.cc',
+      'mycpp/demo/hash_table.cc',
   ]:
     ru.cc_binary(
         test_main,
         deps = ['//mycpp/runtime'],
         matrix = COMPILERS_VARIANTS,
-        phony_prefix = 'mycpp-unit')
-
-  for test_main in [
-      # TODO: make these 2 run under GC
-      'mycpp/gc_containers_test.cc',
-      'mycpp/gc_str_test.cc',
-
-      'mycpp/demo/target_lang.cc',
-      'mycpp/demo/hash_table.cc',
-
-      # there is also demo/{gc_heap,square_heap}.cc
-  ]:
-    ru.cc_binary(
-        test_main,
-        deps = ['//mycpp/runtime'],
-        matrix = COMPILERS_VARIANTS_LEAKY,
         phony_prefix = 'mycpp-unit')
 
   # ASDL schema that examples/parse.py depends on
