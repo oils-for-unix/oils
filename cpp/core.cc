@@ -232,7 +232,9 @@ void Sigaction(int sig_num, sighandler_t handler) {
   NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
   struct sigaction act = {};
   act.sa_handler = handler;
-  assert(sigaction(sig_num, &act, nullptr) == 0);
+  if (sigaction(sig_num, &act, nullptr) != 0) {
+    throw Alloc<OSError>(errno);
+  }
 }
 
 static void signal_handler(int sig_num) {
