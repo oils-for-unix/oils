@@ -434,6 +434,7 @@ TEST root_set_stress_test() {
   PASS();
 }
 
+static List<int> *gList = nullptr;
 TEST rooting_scope_test() {
   ASSERT_EQ_FMT(1, gHeap.root_set_.NumFrames(), "%d");
 
@@ -444,6 +445,14 @@ TEST rooting_scope_test() {
   ASSERT_EQ_FMT(3, f_num_frames, "%d");
 
   ASSERT_EQ_FMT(2, gHeap.root_set_.NumFrames(), "%d");
+
+  {
+    RootsFrame _r;
+    gList = Alloc<List<int>>();
+    gHeap.AddGlobalRoot(gList);
+  }
+  gList->append(0xbeef);
+  ASSERT_EQ(gList->index_(0), 0xbeef);
 
   PASS();
 }
