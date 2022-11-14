@@ -18,6 +18,7 @@ class RootSet {
       stack_.emplace_back();      // Construct std::vector frame IN PLACE.
       stack_.back().reserve(16);  // Reserve 16 rooted variables per frame.
     }
+    globals_.reserve(16);  // Reserve 16 globals.
   }
 
   // Called on function entry
@@ -75,6 +76,13 @@ class RootSet {
     stack_[num_frames_ - 1].push_back(root);
   }
 
+  void AddGlobalRoot(Obj* root) {
+    if (root == nullptr) {  // No reason to add it
+      return;
+    }
+    globals_.push_back(root);
+  }
+
   // For testing
   int NumFrames() {
     return num_frames_;
@@ -97,6 +105,9 @@ class RootSet {
   // root_set_[2] is being pushed/popped/modified.
   std::vector<std::vector<Obj*>> stack_;
   int num_frames_ = 0;  // frames 0 to N-1 are valid
+
+  // Track globals separately from the stack to avoid mistakes.
+  std::vector<Obj*> globals_;
 };
 
 class MarkSweepHeap {
@@ -130,6 +141,10 @@ class MarkSweepHeap {
 
   void RootInCurrentFrame(Obj* root) {
     root_set_.RootInCurrentFrame(root);
+  }
+
+  void AddGlobalRoot(Obj* root) {
+    root_set_.AddGlobalRoot(root);
   }
 
   void* Allocate(size_t num_bytes);

@@ -11,6 +11,11 @@ void RootSet::MarkRoots(MarkSweepHeap* heap) {
       heap->MarkObjects(frame[j]);
     }
   }
+  int n = globals_.size();
+  for (int i = 0; i < n; ++i) {
+    // TODO: would be nice to do non-recursive marking
+    heap->MarkObjects(globals_[i]);
+  }
 }
 
 void MarkSweepHeap::Init() {
