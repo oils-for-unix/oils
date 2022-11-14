@@ -1,7 +1,20 @@
 #include "cpp/libc.h"
 
+#include <unistd.h>  // gethostname()
+
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
+
+TEST hostname_test() {
+  Str* s0 = libc::gethostname();
+  ASSERT(s0 != nullptr);
+
+  char buf[1024];
+  ASSERT(gethostname(buf, HOST_NAME_MAX) == 0);
+  ASSERT(str_equals(s0, StrFromC(buf)));
+
+  PASS();
+}
 
 TEST libc_test() {
   Str* s1 = (StrFromC("foo.py "))->strip();
@@ -65,6 +78,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(libc_test);
   RUN_TEST(libc_glob_test);
+  RUN_TEST(hostname_test);
 
   gHeap.CleanProcessExit();
 
