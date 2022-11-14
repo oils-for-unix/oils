@@ -1,11 +1,4 @@
-// Unit tests for gc_heap
-
-// More tests to do:
-//
-// - Integrate with ASDL and use the pretty printer.
-//
-// - Integrate with mycpp and run mycpp/examples/
-//   - Make sure the benchmarks show less heap usage.
+// mycpp/gc_heap_test.cc
 
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
@@ -487,6 +480,6 @@ int main(int argc, char** argv) {
 
   gHeap.CleanProcessExit();
 
-  GREATEST_MAIN_END(); /* display results */
+  GREATEST_MAIN_END();
   return 0;
 }

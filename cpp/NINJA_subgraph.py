@@ -131,7 +131,10 @@ def NinjaGraph(ru):
   ru.cc_library(
       '//cpp/stdlib', 
       srcs = ['cpp/stdlib.cc'],
-      deps = ['//mycpp/runtime'])
+      deps = [
+        '//cpp/core',  # e_die()
+        '//mycpp/runtime'
+        ])
 
   ru.cc_binary(
       'cpp/stdlib_test.cc',

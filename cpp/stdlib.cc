@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 #include "cpp/core_error.h"
-#include "cpp/core_pyerror.h"
+#include "cpp/core_pyerror.h"  // e_die for strftime
 #include "mycpp/runtime.h"
 
 namespace fcntl_ {

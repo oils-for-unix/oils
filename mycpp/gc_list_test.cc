@@ -2,8 +2,6 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include <vector>
-
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
