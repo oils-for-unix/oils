@@ -37,11 +37,6 @@ static_assert(offsetof(List<int>, slab_) ==
                   offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
-#if 0
-static_assert(offsetof(Str, data_) == offsetof(mylib::Buf, data_),
-              "Str and Buf should have same data layout");
-#endif
-
 // Doesn't really test anything
 TEST sizeof_test() {
   log("");
@@ -74,6 +69,84 @@ TEST sizeof_test() {
   char* q = static_cast<char*>(gHeap.Allocate(9));
   log("p = %p", p);
   log("q = %p", q);
+
+  PASS();
+}
+
+void ShowSlab(Obj* obj) {
+  assert(obj->heap_tag_ == Tag::Scanned);
+  auto slab = reinterpret_cast<Slab<void*>*>(obj);
+
+  int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
+  log("slab len = %d, n = %d", slab->obj_len_, n);
+  for (int i = 0; i < n; ++i) {
+    void* p = slab->items_[i];
+    if (p == nullptr) {
+      log("p = nullptr");
+    } else {
+      log("p = %p", p);
+    }
+  }
+}
+
+// Prints field masks for Dict and List
+TEST field_masks_test() {
+  auto L = NewList<int>();
+  StackRoots _roots({&L});
+
+  L->append(1);
+  log("List mask = %d", L->field_mask_);
+
+  auto d = Alloc<Dict<Str*, int>>();
+  StackRoots _roots2({&d});
+
+  auto key = StrFromC("foo");
+  StackRoots _roots9({&key});
+  d->set(key, 3);
+
+  // oops this is bad?  Because StrFromC() might move d in the middle of the
+  // expression!  Gah!
+  // d->set(StrFromC("foo"), 3);
+
+  log("Dict mask = %d", d->field_mask_);
+
+#if 0
+  ShowFixedChildren(L);
+  ShowFixedChildren(d);
+#endif
+
+  auto L2 = NewList<Str*>();
+  StackRoots _roots3({&L2});
+
+  auto s = StrFromC("foo");
+  StackRoots _roots4({&s});
+
+  L2->append(s);
+  L2->append(s);
+  ShowSlab(L2->slab_);
+
+  PASS();
+}
+
+TEST offsets_test() {
+  // Note: These will be different for 32 bit
+
+  ASSERT_EQ(offsetof(List<int>, slab_),
+            offsetof(GlobalList<int COMMA 1>, slab_));
+  // 0b 0000 0010
+  ASSERT_EQ_FMT(0x0002, maskof_List(), "0x%x");
+
+  // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
+  // There is a trick with __VA_ARGS__ I don't understand.
+
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, entry_),
+            offsetof(_DummyDict, entry_));
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, keys_), offsetof(_DummyDict, keys_));
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, values_),
+            offsetof(_DummyDict, values_));
+
+  // in binary: 0b 0000 0000 0000 01110
+  ASSERT_EQ_FMT(0x000E, maskof_Dict(), "0x%x");
 
   PASS();
 }
@@ -248,141 +321,6 @@ TEST global_trace_test() {
   PASS();
 }
 
-#if 0
-void ShowRoots(const Heap& heap) {
-  log("--");
-  for (int i = 0; i < heap.roots_top_; ++i) {
-    log("%d. %p", i, heap.roots_[i]);
-    // This is NOT on the heap; it's on the stack.
-    // int diff1 = reinterpret_cast<char*>(heap.roots[i]) - gHeap.from_space_;
-    // assert(diff1 < 1024);
-
-    Obj** h = heap.roots_[i];
-    Obj* raw = *h;
-    log("   %p", raw);
-
-    // Raw pointer is on the heap.
-    int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_.begin_;
-    // log("diff2 = %d", diff2);
-    assert(diff2 < 2048);
-
-    // This indeed mutates it and causes a crash
-    // h->Update(nullptr);
-  }
-}
-#endif
-
-TEST stack_roots_test() {
-  Str* s = nullptr;
-  List<int>* L = nullptr;
-
-  gHeap.Collect();
-
-  ASSERT_EQ(0, gHeap.roots_.size());
-
-  StackRoots _roots({&s, &L});
-
-  s = StrFromC("foo");
-  // L = nullptr;
-  L = NewList<int>();
-
-  int num_roots = gHeap.roots_.size();
-  ASSERT_EQ_FMT(2, num_roots, "%u");
-
-  PASS();
-}
-
-void ShowSlab(Obj* obj) {
-  assert(obj->heap_tag_ == Tag::Scanned);
-  auto slab = reinterpret_cast<Slab<void*>*>(obj);
-
-  int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", slab->obj_len_, n);
-  for (int i = 0; i < n; ++i) {
-    void* p = slab->items_[i];
-    if (p == nullptr) {
-      log("p = nullptr");
-    } else {
-      log("p = %p", p);
-    }
-  }
-}
-
-// Prints field masks for Dict and List
-TEST field_mask_test() {
-  auto L = NewList<int>();
-  StackRoots _roots({&L});
-
-  L->append(1);
-  log("List mask = %d", L->field_mask_);
-
-  auto d = Alloc<Dict<Str*, int>>();
-  StackRoots _roots2({&d});
-
-  auto key = StrFromC("foo");
-  StackRoots _roots9({&key});
-  d->set(key, 3);
-
-  // oops this is bad?  Because StrFromC() might move d in the middle of the
-  // expression!  Gah!
-  // d->set(StrFromC("foo"), 3);
-
-  log("Dict mask = %d", d->field_mask_);
-
-#if 0
-  ShowFixedChildren(L);
-  ShowFixedChildren(d);
-#endif
-
-  auto L2 = NewList<Str*>();
-  StackRoots _roots3({&L2});
-
-  auto s = StrFromC("foo");
-  StackRoots _roots4({&s});
-
-  L2->append(s);
-  L2->append(s);
-  ShowSlab(L2->slab_);
-
-  PASS();
-}
-
-#if 0
-TEST repro2() {
-  auto d = Alloc<Dict<Str*, int>>();
-  StackRoots _roots2({&d});
-
-  auto key = StrFromC("foo");
-  StackRoots _roots9({&key});
-  d->set(key, 3);
-
-  PASS();
-}
-#endif
-
-TEST compile_time_masks_test() {
-  // Note: These will be different for 32 bit
-
-  ASSERT_EQ(offsetof(List<int>, slab_),
-            offsetof(GlobalList<int COMMA 1>, slab_));
-  // 0b 0000 0010
-  ASSERT_EQ_FMT(0x0002, maskof_List(), "0x%x");
-
-  // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
-  // There is a trick with __VA_ARGS__ I don't understand.
-
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, entry_),
-            offsetof(_DummyDict, entry_));
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, keys_), offsetof(_DummyDict, keys_));
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, values_),
-            offsetof(_DummyDict, values_));
-
-  // in binary: 0b 0000 0000 0000 01110
-  ASSERT_EQ_FMT(0x000E, maskof_Dict(), "0x%x");
-
-  PASS();
-}
-
 // 8 byte vtable, 8 byte Obj header, then member_
 class BaseObj : public Obj {
  public:
@@ -482,6 +420,49 @@ TEST inheritance_test() {
   PASS();
 }
 
+#if 0
+void ShowRoots(const Heap& heap) {
+  log("--");
+  for (int i = 0; i < heap.roots_top_; ++i) {
+    log("%d. %p", i, heap.roots_[i]);
+    // This is NOT on the heap; it's on the stack.
+    // int diff1 = reinterpret_cast<char*>(heap.roots[i]) - gHeap.from_space_;
+    // assert(diff1 < 1024);
+
+    Obj** h = heap.roots_[i];
+    Obj* raw = *h;
+    log("   %p", raw);
+
+    // Raw pointer is on the heap.
+    int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_.begin_;
+    // log("diff2 = %d", diff2);
+    assert(diff2 < 2048);
+
+    // This indeed mutates it and causes a crash
+    // h->Update(nullptr);
+  }
+}
+#endif
+
+TEST stack_roots_test() {
+  Str* s = nullptr;
+  List<int>* L = nullptr;
+
+  gHeap.Collect();
+
+  ASSERT_EQ(0, gHeap.roots_.size());
+
+  StackRoots _roots({&s, &L});
+
+  s = StrFromC("foo");
+  L = NewList<int>();
+
+  int num_roots = gHeap.roots_.size();
+  ASSERT_EQ_FMT(2, num_roots, "%u");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -490,18 +471,19 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(sizeof_test);
+  RUN_TEST(field_masks_test);
+  RUN_TEST(offsets_test);
+
   RUN_TEST(roundup_test);
 
   RUN_TEST(fixed_trace_test);
   RUN_TEST(slab_trace_test);
   RUN_TEST(global_trace_test);
 
-  RUN_TEST(stack_roots_test);
-  RUN_TEST(field_mask_test);
-
-  RUN_TEST(compile_time_masks_test);
   RUN_TEST(vtable_test);
   RUN_TEST(inheritance_test);
+
+  RUN_TEST(stack_roots_test);
 
   gHeap.CleanProcessExit();
 
