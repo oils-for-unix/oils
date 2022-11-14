@@ -68,6 +68,8 @@ unit() {
   # TODO: Move all tests here
 
   for variant in ubsan gcevery; do
+    run-one-test     cpp/obj_layout_test '' $variant
+
     run-test-in-dir  cpp/core_test '' $variant  # has testdata
 
     run-one-test     cpp/qsn_test '' $variant
@@ -103,6 +105,8 @@ coverage() {
 
   local compiler=clang
   local variant=coverage
+
+  run-one-test     cpp/obj_layout_test $compiler $variant
 
   run-test-in-dir  cpp/core_test $compiler $variant  # has testdata
 

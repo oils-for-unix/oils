@@ -30,42 +30,6 @@ static_assert(offsetof(List<int>, slab_) ==
                   offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
-// Doesn't really test anything
-TEST sizeof_test() {
-  log("");
-
-  // 24 = 4 + (4 + 4 + 4) + 8
-  // Feels like a small string optimization here would be nice.
-  log("sizeof(Str) = %d", sizeof(Str));
-  // 16 = 4 + pad4 + 8
-  log("sizeof(List) = %d", sizeof(List<int>));
-  // 32 = 4 + pad4 + 8 + 8 + 8
-  log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
-
-  // 8 byte sheader
-  log("sizeof(Obj) = %d", sizeof(Obj));
-  // 8 + 128 possible entries
-  // log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
-
-  /* log("sizeof(Heap) = %d", sizeof(Heap)); */
-
-  int min_obj_size = sizeof(LayoutForwarded);
-  int short_str_size = aligned(kStrHeaderSize + 1);
-
-  log("kStrHeaderSize = %d", kStrHeaderSize);
-  log("aligned(kStrHeaderSize + 1) = %d", short_str_size);
-  log("sizeof(LayoutForwarded) = %d", min_obj_size);
-
-  ASSERT(min_obj_size <= short_str_size);
-
-  char* p = static_cast<char*>(gHeap.Allocate(17));
-  char* q = static_cast<char*>(gHeap.Allocate(9));
-  log("p = %p", p);
-  log("q = %p", q);
-
-  PASS();
-}
-
 void ShowSlab(Obj* obj) {
   assert(obj->heap_tag_ == Tag::Scanned);
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
@@ -463,7 +427,6 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(sizeof_test);
   RUN_TEST(field_masks_test);
   RUN_TEST(offsets_test);
 

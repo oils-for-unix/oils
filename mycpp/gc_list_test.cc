@@ -14,28 +14,6 @@ void Print(List<Str*>* parts) {
   }
 }
 
-TEST test_sizeof() {
-  // Str = 16 and List = 24.
-  // Rejected ideas about slicing:
-  //
-  // - Use data[len] == '\0' as OWNING and data[len] != '\0' as a slice?
-  //   It doesn't work because s[1:] would always have that problem
-  //
-  // - s->data == (void*)(s + 1)
-  //   Owning string has the data RIGHT AFTER?
-  //   Maybe works? but probably a bad idea because of GLOBAL Str instances.
-
-  log("");
-  log("sizeof(Str) = %zu", sizeof(Str));
-  log("sizeof(List<int>) = %zu", sizeof(List<int>));
-  log("sizeof(Dict<int, Str*>) = %zu", sizeof(Dict<int, Str*>));
-  log("sizeof(Tuple2<int, int>) = %zu", sizeof(Tuple2<int, int>));
-  log("sizeof(Tuple2<Str*, Str*>) = %zu", sizeof(Tuple2<Str*, Str*>));
-  log("sizeof(Tuple3<int, int, int>) = %zu", sizeof(Tuple3<int, int, int>));
-
-  PASS();
-}
-
 // TODO:
 //
 // - Test what happens append() runs over the max heap size
@@ -315,7 +293,6 @@ int main(int argc, char** argv) {
   gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
-  RUN_TEST(test_sizeof);
 
   RUN_TEST(test_list_gc_header);
   RUN_TEST(test_global_list);
