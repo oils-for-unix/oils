@@ -39,6 +39,9 @@ class BumpLeakHeap {
   void RootInCurrentFrame(Obj* root) {
   }
 
+  void AddGlobalRoot(Obj* root) {
+  }
+
   void* Allocate(size_t num_bytes);
   void* Reallocate(void* p, size_t num_bytes);
   int Collect();

@@ -75,6 +75,14 @@ class RootSet {
     stack_[num_frames_ - 1].push_back(root);
   }
 
+  void AddGlobalRoot(Obj* root) {
+    if (root == nullptr) {  // No reason to add it
+      return;
+    }
+    assert(num_frames_ > 0);
+    stack_[0].push_back(root);
+  }
+
   // For testing
   int NumFrames() {
     return num_frames_;
@@ -130,6 +138,10 @@ class MarkSweepHeap {
 
   void RootInCurrentFrame(Obj* root) {
     root_set_.RootInCurrentFrame(root);
+  }
+
+  void AddGlobalRoot(Obj* root) {
+    root_set_.AddGlobalRoot(root);
   }
 
   void* Allocate(size_t num_bytes);

@@ -2,8 +2,9 @@
 
 #include <errno.h>        // errno
 #include <fcntl.h>        // O_RDWR
+#include <signal.h>       // SIG*, kill()
 #include <sys/utsname.h>  // uname
-#include <unistd.h>       // getuid(), environ
+#include <unistd.h>       // getpid(), getuid(), environ
 
 #include "cpp/core_error.h"
 #include "cpp/stdlib.h"         // posix::getcwd
@@ -186,6 +187,66 @@ TEST strerror_test() {
   PASS();
 }
 
+TEST signal_test() {
+  pyos::InitShell();
+
+  {
+    // Approximate TrapState::TakeRunList()
+    RootsFrame _r;
+    List<int>* q = pyos::TakeSignalQueue();
+    ASSERT(q != nullptr);
+    ASSERT(len(q) == 0);
+  }
+
+  pid_t mypid = getpid();
+
+  pyos::RegisterSignalInterest(SIGUSR1);
+  pyos::RegisterSignalInterest(SIGUSR2);
+  kill(mypid, SIGUSR1);
+  ASSERT(pyos::LastSignal() == SIGUSR1);
+  kill(mypid, SIGUSR2);
+  ASSERT(pyos::LastSignal() == SIGUSR2);
+
+  {
+    // Approximate TrapState::TakeRunList()
+    RootsFrame _r;
+    List<int>* q = pyos::TakeSignalQueue();
+    ASSERT(q != nullptr);
+    ASSERT(len(q) == 2);
+    ASSERT(q->index_(0) == SIGUSR1);
+    ASSERT(q->index_(1) == SIGUSR2);
+  }
+
+  pyos::Sigaction(SIGUSR1, SIG_IGN);
+  kill(mypid, SIGUSR1);
+  {
+    // Approximate TrapState::TakeRunList()
+    RootsFrame _r;
+    List<int>* q = pyos::TakeSignalQueue();
+    ASSERT(q != nullptr);
+    ASSERT(len(q) == 0);
+  }
+  pyos::Sigaction(SIGUSR2, SIG_IGN);
+
+  pyos::RegisterSignalInterest(SIGWINCH);
+  kill(mypid, SIGWINCH);
+  ASSERT(pyos::LastSignal() == pyos::UNTRAPPED_SIGWINCH);
+  pyos::SetSigwinchCode(SIGWINCH);
+  kill(mypid, SIGWINCH);
+  ASSERT(pyos::LastSignal() == SIGWINCH);
+  {
+    // Approximate TrapState::TakeRunList()
+    RootsFrame _r;
+    List<int>* q = pyos::TakeSignalQueue();
+    ASSERT(q != nullptr);
+    ASSERT(len(q) == 2);
+    ASSERT(q->index_(0) == SIGWINCH);
+    ASSERT(q->index_(1) == SIGWINCH);
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -202,6 +263,7 @@ int main(int argc, char** argv) {
   RUN_TEST(pyos_test);  // non-hermetic
   RUN_TEST(pyutil_test);
   RUN_TEST(strerror_test);
+  RUN_TEST(signal_test);
 
   gHeap.CleanProcessExit();
 
