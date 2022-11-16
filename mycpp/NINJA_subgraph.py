@@ -27,7 +27,7 @@ def DefineTargets(ru):
         'mycpp/gc_builtins.cc',
         'mycpp/gc_mylib.cc',
         'mycpp/gc_str.cc',
-        'mycpp/marksweep_heap.cc',
+        'mycpp/mark_sweep_heap.cc',
       ]
   )
 
@@ -44,7 +44,7 @@ def DefineTargets(ru):
       phony_prefix = 'mycpp-unit')
 
   for test_main in [
-      'mycpp/marksweep_heap_test.cc',
+      'mycpp/mark_sweep_heap_test.cc',
       'mycpp/gc_heap_test.cc',
       'mycpp/gc_stress_test.cc',
 

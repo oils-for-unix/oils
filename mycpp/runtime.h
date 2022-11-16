@@ -5,7 +5,7 @@
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
 #include "mycpp/bump_leak_heap.h"
-#include "mycpp/marksweep_heap.h"
+#include "mycpp/mark_sweep_heap.h"
 #include "mycpp/gc_builtins.h"
 
 #include "mycpp/gc_tuple.h"
