@@ -52,7 +52,8 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
 }
 
 void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
-  return NotImplemented();
+  NotImplemented();
+  return nullptr;
 }
 
 #elif defined(BUMP_LEAK)
