@@ -101,7 +101,7 @@ inline int len(const Str* s) {
 //
 
 inline Str* NewStr(int len) {
-  NO_ROOTS_FRAME(FUNC_NAME);
+  NO_ROOTS_FRAME(FUNC_NAME);  // Allocate() does it
 
   int obj_len = kStrHeaderSize + len + 1;
 
@@ -116,6 +116,8 @@ inline Str* NewStr(int len) {
 // Like NewStr, but allocate more than you need, e.g. for snprintf() to write
 // into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
 inline Str* OverAllocatedStr(int len) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // Allocate() does it
+
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);
   auto s = new (place) Str();
@@ -123,7 +125,7 @@ inline Str* OverAllocatedStr(int len) {
 }
 
 inline Str* StrFromC(const char* data, int len) {
-  NO_ROOTS_FRAME(FUNC_NAME);
+  NO_ROOTS_FRAME(FUNC_NAME);  // NewStr() does it
 
   Str* s = NewStr(len);
   memcpy(s->data_, data, len);

@@ -13,14 +13,58 @@ void debug_string(Str* s) {
 #define PRINT_INT(i) printf("(%d)\n", (i))
 #define PRINT_STRING(str) debug_string(str)
 
-/* #define STRINGIFY_VALUE_INNER(a) #a */
-/* #define STRINGIFY_VALUE(a) STRINGIFY_VALUE_INNER(a) */
-
 #define PRINT_STR_INT(str, i)     \
   printf("(%s) -> ", str->data_); \
   PRINT_INT(i)
 
 #define STRINGIFY(x) (#x)
+
+#define PRINT_LIST(list)                                         \
+  for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) { \
+    Str* piece = iter.Value();                                   \
+    printf("(%.*s) ", len(piece), piece->data_);                 \
+  }                                                              \
+  printf("\n")
+
+GLOBAL_STR(str4, "egg");
+
+TEST test_str_gc_header() {
+  ASSERT(str_equals(kEmptyString, kEmptyString));
+
+  Str* str1 = nullptr;
+  Str* str2 = nullptr;
+  StackRoots _roots({&str1, &str2});
+
+  str1 = StrFromC("");
+  str2 = StrFromC("one\0two", 7);
+
+  ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag_, "%d");
+  ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->obj_len_, "%d");
+  ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->obj_len_, "%d");
+
+  // Make sure they're on the heap
+#ifndef MARK_SWEEP
+  int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_.begin_;
+  int diff2 = reinterpret_cast<char*>(str2) - gHeap.from_space_.begin_;
+  ASSERT(diff1 < 1024);
+  ASSERT(diff2 < 1024);
+#endif
+
+  ASSERT_EQ(0, len(str1));
+  ASSERT_EQ(7, len(str2));
+
+  // Global strings
+
+  ASSERT_EQ('e', str4->data_[0]);
+  ASSERT_EQ('g', str4->data_[1]);
+  ASSERT_EQ('g', str4->data_[2]);
+  ASSERT_EQ('\0', str4->data_[3]);
+  ASSERT_EQ(Tag::Global, str4->heap_tag_);
+  ASSERT_EQ(16, str4->obj_len_);
+  ASSERT_EQ(3, len(str4));
+
+  PASS();
+}
 
 // Emulating the gc_heap API.  COPIED from gc_heap_test.cc
 TEST test_str_creation() {
@@ -823,7 +867,7 @@ TEST test_str_size() {
   PASS();
 }
 
-TEST test_str_helpers() {
+TEST test_str_startswith() {
   printf("------ Str::helpers ------\n");
 
   ASSERT((StrFromC(""))->startswith(StrFromC("")) == true);
@@ -885,6 +929,117 @@ TEST test_str_contains() {
   PASS();
 }
 
+TEST test_str_split() {
+  printf("\n");
+
+  Str* s0 = StrFromC("abc def");
+
+  printf("------- Str::split -------\n");
+
+  {
+    List<Str*>* split_result = s0->split(StrFromC(" "));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 2);
+    ASSERT(are_equal(split_result->index_(0), StrFromC("abc")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("def")));
+  }
+
+  {
+    List<Str*>* split_result = (StrFromC("###"))->split(StrFromC("#"));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 4);
+    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(3), StrFromC("")));
+  }
+
+  {
+    List<Str*>* split_result = (StrFromC(" ### "))->split(StrFromC("#"));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 4);
+    ASSERT(are_equal(split_result->index_(0), StrFromC(" ")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(3), StrFromC(" ")));
+  }
+
+  {
+    List<Str*>* split_result = (StrFromC(" # "))->split(StrFromC(" "));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 3);
+    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("#")));
+    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
+  }
+
+  {
+    List<Str*>* split_result = (StrFromC("  #"))->split(StrFromC("#"));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 2);
+    ASSERT(are_equal(split_result->index_(0), StrFromC("  ")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("")));
+  }
+
+  {
+    List<Str*>* split_result = (StrFromC("#  #"))->split(StrFromC("#"));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 3);
+    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
+    ASSERT(are_equal(split_result->index_(1), StrFromC("  ")));
+    ASSERT(are_equal(split_result->index_(2), StrFromC("")));
+  }
+
+  {
+    List<Str*>* split_result = (StrFromC(""))->split(StrFromC(" "));
+    PRINT_LIST(split_result);
+    ASSERT(len(split_result) == 1);
+    ASSERT(are_equal(split_result->index_(0), StrFromC("")));
+  }
+
+  // NOTE(Jesse): Failure case.  Not sure if we care about supporting this.
+  // It might happen if we do something like : 'weahtevr'.split()
+  // Would need to check on what the Python interpreter does in that case to
+  // decipher what we'd expect to see.
+  //
+  /* { */
+  /*   List<Str*> *split_result = (StrFromC("weahtevr"))->split(0); */
+  /*   PRINT_LIST(split_result); */
+  /*   ASSERT(len(split_result) == 1); */
+  /*   ASSERT(are_equal(split_result->index_(0), StrFromC(""))); */
+  /* } */
+
+  printf("---------- Done ----------\n");
+
+  PASS();
+}
+
+TEST test_str_join() {
+  printf("\n");
+
+  printf("-------- Str::join -------\n");
+
+  {
+    Str* result =
+        (StrFromC(""))->join(NewList<Str*>({StrFromC("abc"), StrFromC("def")}));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, StrFromC("abcdef")));
+  }
+  {
+    Str* result = (StrFromC(" "))
+                      ->join(NewList<Str*>({StrFromC("abc"), StrFromC("def"),
+                                            StrFromC("abc"), StrFromC("def"),
+                                            StrFromC("abc"), StrFromC("def"),
+                                            StrFromC("abc"), StrFromC("def")}));
+    PRINT_STRING(result);
+    ASSERT(are_equal(result, StrFromC("abc def abc def abc def abc def")));
+  }
+
+  printf("---------- Done ----------\n");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -892,6 +1047,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(test_str_gc_header);
   RUN_TEST(test_str_creation);
 
   // Members
@@ -908,7 +1064,10 @@ int main(int argc, char** argv) {
   RUN_TEST(test_str_size);
   RUN_TEST(test_str_contains);
 
-  RUN_TEST(test_str_helpers);
+  RUN_TEST(test_str_startswith);
+
+  RUN_TEST(test_str_split);
+  RUN_TEST(test_str_join);
 
   gHeap.CleanProcessExit();
 

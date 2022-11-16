@@ -3,44 +3,53 @@
 
 Structure of this directory:
 
+Correspond to Python standard library modules:
+
+    stdlib{.h,.cc,_test.cc}
+      import fcntl
+      import time
+      import posix  # forked in pyext/posixmodule.c
+
 Correspond to repo directories:
 
-    core.{cc,h}
-    osh.{cc,h}
+    core{.h,.cc,_test.cc}
+
+    osh{.h,.cc,_test.cc}
       from osh import arith_parse
       from osh import bool_stat
 
-    pylib.{cc,h}  # Corresponds to pylib/
+    pylib{.h,.cc,_test.cc}
       from pylib import os_path
       from pylib import path_stat
 
-    pgen2.{cc,h}
+    pgen2{.h,.cc,_test.cc}
       from pgen2 import parse
 
-    stdlib.{cc,h}  # Python standard library modules
-      import fcntl
-      import time
-      import posix  # forked in native/posixmodule.c
+    qsn{.h,_test.cc}
 
-    qsn.h
+Corresponds to our Python extensions:
 
-Correspond to files:
+    libc{.h,.cc,_test.cc}  # Python module pyext/libc.c
 
-    core_error.h    # Straggler for core/error.py
-    core_pyerror.h  # core/pyerror.py
+Correspond to individual files:
 
-    libc.{cc,h}  # Corresponds to Python extension native/libc.c
+    core_error.h    # corresponds to core/error.py
+    core_pyerror.h  # corresponds to core/pyerror.py
 
     # These three are separate because there is generated code associated with
     # them, like the re2c lexer.
 
-    frontend_flag_spec.{cc,h}
+    frontend_flag_spec{.h,.cc,_test.cc}
       from frontend import flag_spec
 
-    frontend_match.{cc,h}
+    frontend_match{.h,.cc,_test.cc}
       from frontend import match
 
-    osh_tdop.{cc,h}
+    osh_tdop.{h,cc}
       from frontend import tdop
 
-TODO: We want non-leaky versions of all files!
+Other files:
+
+    preamble.h           # for the big mycpp translation unit
+    translation_stubs.h      
+

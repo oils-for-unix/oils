@@ -1,11 +1,4 @@
-// Unit tests for gc_heap
-
-// More tests to do:
-//
-// - Integrate with ASDL and use the pretty printer.
-//
-// - Integrate with mycpp and run mycpp/examples/
-//   - Make sure the benchmarks show less heap usage.
+// mycpp/gc_heap_test.cc
 
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
@@ -37,74 +30,80 @@ static_assert(offsetof(List<int>, slab_) ==
                   offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
+void ShowSlab(Obj* obj) {
+  assert(obj->heap_tag_ == Tag::Scanned);
+  auto slab = reinterpret_cast<Slab<void*>*>(obj);
+
+  int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
+  log("slab len = %d, n = %d", slab->obj_len_, n);
+  for (int i = 0; i < n; ++i) {
+    void* p = slab->items_[i];
+    if (p == nullptr) {
+      log("p = nullptr");
+    } else {
+      log("p = %p", p);
+    }
+  }
+}
+
+// Prints field masks for Dict and List
+TEST field_masks_test() {
+  auto L = NewList<int>();
+  StackRoots _roots({&L});
+
+  L->append(1);
+  log("List mask = %d", L->field_mask_);
+
+  auto d = Alloc<Dict<Str*, int>>();
+  StackRoots _roots2({&d});
+
+  auto key = StrFromC("foo");
+  StackRoots _roots9({&key});
+  d->set(key, 3);
+
+  // oops this is bad?  Because StrFromC() might move d in the middle of the
+  // expression!  Gah!
+  // d->set(StrFromC("foo"), 3);
+
+  log("Dict mask = %d", d->field_mask_);
+
 #if 0
-static_assert(offsetof(Str, data_) == offsetof(mylib::Buf, data_),
-              "Str and Buf should have same data layout");
+  ShowFixedChildren(L);
+  ShowFixedChildren(d);
 #endif
 
-TEST test_str_creation() {
-  Str* s = StrFromC("foo");
-  ASSERT_EQ(3, len(s));
-  ASSERT_EQ(0, strcmp("foo", s->data_));
+  auto L2 = NewList<Str*>();
+  StackRoots _roots3({&L2});
 
-  // String with internal NUL
-  Str* s2 = StrFromC("foo\0bar", 7);
-  ASSERT_EQ(7, len(s2));
-  ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
+  auto s = StrFromC("foo");
+  StackRoots _roots4({&s});
 
-  Str* s3 = NewStr(1);
-  ASSERT_EQ(1, len(s3));
-  ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
-
-  // Test truncating a string
-  Str* s4 = OverAllocatedStr(7);
-  // LENGTH IS NOT YET SET -- CALLER IS RESPONSIBLE
-  // ASSERT_EQ(7, len(s4));
-  ASSERT_EQ(0, memcmp("\0\0\0\0\0\0\0\0", s4->data_, 8));
-
-  // Hm annoying that we have to do a const_cast
-  memcpy(s4->data(), "foo", 3);
-  strcpy(s4->data(), "foo");
-  s4->SetObjLenFromStrLen(3);
-
-  ASSERT_EQ(3, len(s4));
-  ASSERT_EQ(0, strcmp("foo", s4->data_));
+  L2->append(s);
+  L2->append(s);
+  ShowSlab(L2->slab_);
 
   PASS();
 }
 
-// Doesn't really test anything
-TEST sizeof_test() {
-  log("");
+TEST offsets_test() {
+  // Note: These will be different for 32 bit
 
-  // 24 = 4 + (4 + 4 + 4) + 8
-  // Feels like a small string optimization here would be nice.
-  log("sizeof(Str) = %d", sizeof(Str));
-  // 16 = 4 + pad4 + 8
-  log("sizeof(List) = %d", sizeof(List<int>));
-  // 32 = 4 + pad4 + 8 + 8 + 8
-  log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
+  ASSERT_EQ(offsetof(List<int>, slab_),
+            offsetof(GlobalList<int COMMA 1>, slab_));
+  // 0b 0000 0010
+  ASSERT_EQ_FMT(0x0002, maskof_List(), "0x%x");
 
-  // 8 byte sheader
-  log("sizeof(Obj) = %d", sizeof(Obj));
-  // 8 + 128 possible entries
-  // log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
+  // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
+  // There is a trick with __VA_ARGS__ I don't understand.
 
-  /* log("sizeof(Heap) = %d", sizeof(Heap)); */
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, entry_),
+            offsetof(_DummyDict, entry_));
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, keys_), offsetof(_DummyDict, keys_));
+  ASSERT_EQ(offsetof(Dict<int COMMA int>, values_),
+            offsetof(_DummyDict, values_));
 
-  int min_obj_size = sizeof(LayoutForwarded);
-  int short_str_size = aligned(kStrHeaderSize + 1);
-
-  log("kStrHeaderSize = %d", kStrHeaderSize);
-  log("aligned(kStrHeaderSize + 1) = %d", short_str_size);
-  log("sizeof(LayoutForwarded) = %d", min_obj_size);
-
-  ASSERT(min_obj_size <= short_str_size);
-
-  char* p = static_cast<char*>(gHeap.Allocate(17));
-  char* q = static_cast<char*>(gHeap.Allocate(9));
-  log("p = %p", p);
-  log("q = %p", q);
+  // in binary: 0b 0000 0000 0000 01110
+  ASSERT_EQ_FMT(0x000E, maskof_Dict(), "0x%x");
 
   PASS();
 }
@@ -119,299 +118,6 @@ TEST roundup_test() {
     int n = sizes[i];
     log("%d -> %d", n, RoundUp(n));
   }
-
-  PASS();
-}
-
-// TODO:
-// - Test what happens when a new string goes over the max heap size
-//   - We want to resize the to_space, trigger a GC, and then allocate?  Or is
-//     there something simpler?
-
-GLOBAL_STR(str4, "egg");
-
-TEST str_test() {
-  ASSERT(str_equals(kEmptyString, kEmptyString));
-
-  Str* str1 = nullptr;
-  Str* str2 = nullptr;
-  StackRoots _roots({&str1, &str2});
-
-  str1 = StrFromC("");
-  str2 = StrFromC("one\0two", 7);
-
-  ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag_, "%d");
-  ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->obj_len_, "%d");
-  ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->obj_len_, "%d");
-
-  // Make sure they're on the heap
-#ifndef MARK_SWEEP
-  int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_.begin_;
-  int diff2 = reinterpret_cast<char*>(str2) - gHeap.from_space_.begin_;
-  ASSERT(diff1 < 1024);
-  ASSERT(diff2 < 1024);
-#endif
-
-  ASSERT_EQ(0, len(str1));
-  ASSERT_EQ(7, len(str2));
-
-  // Global strings
-
-  ASSERT_EQ('e', str4->data_[0]);
-  ASSERT_EQ('g', str4->data_[1]);
-  ASSERT_EQ('g', str4->data_[2]);
-  ASSERT_EQ('\0', str4->data_[3]);
-  ASSERT_EQ(Tag::Global, str4->heap_tag_);
-  ASSERT_EQ(16, str4->obj_len_);
-  ASSERT_EQ(3, len(str4));
-
-  PASS();
-}
-
-// TODO:
-//
-// - Test what happens append() runs over the max heap size
-//   - how does it trigger a collection?
-
-TEST list_test() {
-  auto list1 = NewList<int>();
-  StackRoots _roots1({&list1});
-  auto list2 = NewList<Str*>();
-  StackRoots _roots2({&list2});
-
-  ASSERT_EQ(0, len(list1));
-  ASSERT_EQ(0, len(list2));
-
-  ASSERT_EQ_FMT(0, list1->capacity_, "%d");
-  ASSERT_EQ_FMT(0, list2->capacity_, "%d");
-
-  ASSERT_EQ_FMT(Tag::FixedSize, list1->heap_tag_, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, list2->heap_tag_, "%d");
-
-  // 8 byte obj header + 2 integers + pointer
-  ASSERT_EQ_FMT(24, list1->obj_len_, "%d");
-  ASSERT_EQ_FMT(24, list2->obj_len_, "%d");
-
-  // Make sure they're on the heap
-#ifndef MARK_SWEEP
-  int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_.begin_;
-  int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_.begin_;
-  ASSERT(diff1 < 1024);
-  ASSERT(diff2 < 1024);
-#endif
-
-  auto more = NewList<int>(std::initializer_list<int>{11, 22, 33});
-  StackRoots _roots3({&more});
-  list1->extend(more);
-  ASSERT_EQ_FMT(3, len(list1), "%d");
-
-  // 32 byte block - 8 byte header = 24 bytes, 6 elements
-  ASSERT_EQ_FMT(6, list1->capacity_, "%d");
-  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->heap_tag_, "%d");
-
-  // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
-  ASSERT_EQ_FMT(32, list1->slab_->obj_len_, "%d");
-
-  ASSERT_EQ_FMT(11, list1->index_(0), "%d");
-  ASSERT_EQ_FMT(22, list1->index_(1), "%d");
-  ASSERT_EQ_FMT(33, list1->index_(2), "%d");
-
-  log("extending");
-  auto more2 = NewList<int>(std::initializer_list<int>{44, 55, 66, 77});
-  StackRoots _roots4({&more2});
-  list1->extend(more2);
-
-  // 64 byte block - 8 byte header = 56 bytes, 14 elements
-  ASSERT_EQ_FMT(14, list1->capacity_, "%d");
-  ASSERT_EQ_FMT(7, len(list1), "%d");
-
-  // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
-  ASSERT_EQ_FMT(64, list1->slab_->obj_len_, "%d");
-
-  ASSERT_EQ_FMT(11, list1->index_(0), "%d");
-  ASSERT_EQ_FMT(22, list1->index_(1), "%d");
-  ASSERT_EQ_FMT(33, list1->index_(2), "%d");
-  ASSERT_EQ_FMT(44, list1->index_(3), "%d");
-  ASSERT_EQ_FMT(55, list1->index_(4), "%d");
-  ASSERT_EQ_FMT(66, list1->index_(5), "%d");
-  ASSERT_EQ_FMT(77, list1->index_(6), "%d");
-
-  list1->append(88);
-  ASSERT_EQ_FMT(88, list1->index_(7), "%d");
-  ASSERT_EQ_FMT(8, len(list1), "%d");
-
-#ifndef MARK_SWEEP
-  int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_.begin_;
-  ASSERT(d_slab < 1024);
-#endif
-
-  log("list1_ = %p", list1);
-  log("list1->slab_ = %p", list1->slab_);
-
-  auto str1 = StrFromC("foo");
-  StackRoots _roots5({&str1});
-  log("str1 = %p", str1);
-  auto str2 = StrFromC("bar");
-  StackRoots _roots6({&str2});
-  log("str2 = %p", str2);
-
-  list2->append(str1);
-  list2->append(str2);
-  ASSERT_EQ(2, len(list2));
-  ASSERT(str_equals(str1, list2->index_(0)));
-  ASSERT(str_equals(str2, list2->index_(1)));
-
-  PASS();
-}
-
-TEST list_repro() {
-  // For isolation
-
-  PASS();
-}
-
-// Manual initialization.  This helped me write the GLOBAL_LIST() macro.
-GlobalSlab<int, 3> _gSlab = {Tag::Global, 0, kZeroMask, kNoObjLen, {5, 6, 7}};
-GlobalList<int, 3> _gList = {Tag::Global, 0, kZeroMask, kNoObjLen,
-                             3,  // len
-                             3,  // capacity
-                             &_gSlab};
-List<int>* gList = reinterpret_cast<List<int>*>(&_gList);
-
-GLOBAL_LIST(int, 4, gList2, {5 COMMA 4 COMMA 3 COMMA 2});
-
-GLOBAL_STR(gFoo, "foo");
-GLOBAL_LIST(Str*, 2, gList3, {gFoo COMMA gFoo});
-
-TEST global_list_test() {
-  ASSERT_EQ(3, len(gList));
-  ASSERT_EQ_FMT(5, gList->index_(0), "%d");
-  ASSERT_EQ_FMT(6, gList->index_(1), "%d");
-  ASSERT_EQ_FMT(7, gList->index_(2), "%d");
-
-  ASSERT_EQ(4, len(gList2));
-  ASSERT_EQ_FMT(5, gList2->index_(0), "%d");
-  ASSERT_EQ_FMT(4, gList2->index_(1), "%d");
-  ASSERT_EQ_FMT(3, gList2->index_(2), "%d");
-  ASSERT_EQ_FMT(2, gList2->index_(3), "%d");
-
-  ASSERT_EQ(2, len(gList3));
-  ASSERT(str_equals(gFoo, gList3->index_(0)));
-  ASSERT(str_equals(gFoo, gList3->index_(1)));
-
-  PASS();
-}
-
-// TODO:
-// - Test set() can resize the dict
-//   - I guess you have to do rehashing?
-
-TEST dict_test() {
-  auto dict1 = NewDict<int, int>();
-  StackRoots _roots1({&dict1});
-  auto dict2 = NewDict<Str*, Str*>();
-  StackRoots _roots2({&dict2});
-
-  ASSERT_EQ(0, len(dict1));
-  ASSERT_EQ(0, len(dict2));
-
-  ASSERT_EQ_FMT(Tag::FixedSize, dict1->heap_tag_, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, dict1->heap_tag_, "%d");
-
-  ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
-  ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
-
-  ASSERT_EQ(nullptr, dict1->entry_);
-  ASSERT_EQ(nullptr, dict1->keys_);
-  ASSERT_EQ(nullptr, dict1->values_);
-
-  // Make sure they're on the heap
-#ifndef MARK_SWEEP
-  int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_.begin_;
-  int diff2 = reinterpret_cast<char*>(dict2) - gHeap.from_space_.begin_;
-  ASSERT(diff1 < 1024);
-  ASSERT(diff2 < 1024);
-#endif
-
-  dict1->set(42, 5);
-  ASSERT_EQ(5, dict1->index_(42));
-  ASSERT_EQ(1, len(dict1));
-  ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
-
-  ASSERT_EQ_FMT(32, dict1->entry_->obj_len_, "%d");
-  ASSERT_EQ_FMT(32, dict1->keys_->obj_len_, "%d");
-  ASSERT_EQ_FMT(32, dict1->values_->obj_len_, "%d");
-
-  dict1->set(42, 99);
-  ASSERT_EQ(99, dict1->index_(42));
-  ASSERT_EQ(1, len(dict1));
-  ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
-
-  dict1->set(43, 10);
-  ASSERT_EQ(10, dict1->index_(43));
-  ASSERT_EQ(2, len(dict1));
-  ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
-
-  for (int i = 0; i < 14; ++i) {
-    dict1->set(i, 999);
-    log("i = %d, capacity = %d", i, dict1->capacity_);
-
-    // make sure we didn't lose old entry after resize
-    ASSERT_EQ(10, dict1->index_(43));
-  }
-
-  Str* foo = nullptr;
-  Str* bar = nullptr;
-  StackRoots _roots3({&foo, &bar});
-  foo = StrFromC("foo");
-  bar = StrFromC("bar");
-
-  dict2->set(foo, bar);
-
-  ASSERT_EQ(1, len(dict2));
-  ASSERT(str_equals(bar, dict2->index_(foo)));
-
-  ASSERT_EQ_FMT(32, dict2->entry_->obj_len_, "%d");
-  ASSERT_EQ_FMT(64, dict2->keys_->obj_len_, "%d");
-  ASSERT_EQ_FMT(64, dict2->values_->obj_len_, "%d");
-
-  auto dict_si = NewDict<Str*, int>();
-  StackRoots _roots4({&dict_si});
-  dict_si->set(foo, 42);
-  ASSERT_EQ(1, len(dict_si));
-
-  ASSERT_EQ_FMT(32, dict_si->entry_->obj_len_, "%d");
-  ASSERT_EQ_FMT(64, dict_si->keys_->obj_len_, "%d");
-  ASSERT_EQ_FMT(32, dict_si->values_->obj_len_, "%d");
-
-  auto dict_is = NewDict<int, Str*>();
-  StackRoots _roots5({&dict_is});
-  dict_is->set(42, foo);
-  PASS();
-
-  ASSERT_EQ(1, len(dict_is));
-
-  ASSERT_EQ_FMT(32, dict_is->entry_->obj_len_, "%d");
-  ASSERT_EQ_FMT(32, dict_is->keys_->obj_len_, "%d");
-  ASSERT_EQ_FMT(64, dict_is->values_->obj_len_, "%d");
-
-  auto two = StrFromC("two");
-  StackRoots _roots6({&two});
-
-  auto dict3 =
-      NewDict<int, Str*>(std::initializer_list<int>{1, 2},
-                         std::initializer_list<Str*>{kEmptyString, two});
-  StackRoots _roots7({&dict3});
-
-  ASSERT_EQ_FMT(2, len(dict3), "%d");
-  ASSERT(str_equals(kEmptyString, dict3->get(1)));
-  ASSERT(str_equals(two, dict3->get(2)));
-
-  PASS();
-}
-
-TEST dict_repro() {
-  // For isolation
 
   PASS();
 }
@@ -485,6 +191,8 @@ TEST fixed_trace_test() {
 
   PASS();
 }
+
+GLOBAL_STR(str4, "egg");
 
 TEST slab_trace_test() {
   gHeap.Collect();
@@ -566,141 +274,6 @@ TEST global_trace_test() {
   // Not after GC either
   gHeap.Collect();
   ASSERT_NUM_LIVE_OBJS(2);
-
-  PASS();
-}
-
-#if 0
-void ShowRoots(const Heap& heap) {
-  log("--");
-  for (int i = 0; i < heap.roots_top_; ++i) {
-    log("%d. %p", i, heap.roots_[i]);
-    // This is NOT on the heap; it's on the stack.
-    // int diff1 = reinterpret_cast<char*>(heap.roots[i]) - gHeap.from_space_;
-    // assert(diff1 < 1024);
-
-    Obj** h = heap.roots_[i];
-    Obj* raw = *h;
-    log("   %p", raw);
-
-    // Raw pointer is on the heap.
-    int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_.begin_;
-    // log("diff2 = %d", diff2);
-    assert(diff2 < 2048);
-
-    // This indeed mutates it and causes a crash
-    // h->Update(nullptr);
-  }
-}
-#endif
-
-TEST stack_roots_test() {
-  Str* s = nullptr;
-  List<int>* L = nullptr;
-
-  gHeap.Collect();
-
-  ASSERT_EQ(0, gHeap.roots_.size());
-
-  StackRoots _roots({&s, &L});
-
-  s = StrFromC("foo");
-  // L = nullptr;
-  L = NewList<int>();
-
-  int num_roots = gHeap.roots_.size();
-  ASSERT_EQ_FMT(2, num_roots, "%u");
-
-  PASS();
-}
-
-void ShowSlab(Obj* obj) {
-  assert(obj->heap_tag_ == Tag::Scanned);
-  auto slab = reinterpret_cast<Slab<void*>*>(obj);
-
-  int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", slab->obj_len_, n);
-  for (int i = 0; i < n; ++i) {
-    void* p = slab->items_[i];
-    if (p == nullptr) {
-      log("p = nullptr");
-    } else {
-      log("p = %p", p);
-    }
-  }
-}
-
-// Prints field masks for Dict and List
-TEST field_mask_test() {
-  auto L = NewList<int>();
-  StackRoots _roots({&L});
-
-  L->append(1);
-  log("List mask = %d", L->field_mask_);
-
-  auto d = Alloc<Dict<Str*, int>>();
-  StackRoots _roots2({&d});
-
-  auto key = StrFromC("foo");
-  StackRoots _roots9({&key});
-  d->set(key, 3);
-
-  // oops this is bad?  Because StrFromC() might move d in the middle of the
-  // expression!  Gah!
-  // d->set(StrFromC("foo"), 3);
-
-  log("Dict mask = %d", d->field_mask_);
-
-#if 0
-  ShowFixedChildren(L);
-  ShowFixedChildren(d);
-#endif
-
-  auto L2 = NewList<Str*>();
-  StackRoots _roots3({&L2});
-
-  auto s = StrFromC("foo");
-  StackRoots _roots4({&s});
-
-  L2->append(s);
-  L2->append(s);
-  ShowSlab(L2->slab_);
-
-  PASS();
-}
-
-#if 0
-TEST repro2() {
-  auto d = Alloc<Dict<Str*, int>>();
-  StackRoots _roots2({&d});
-
-  auto key = StrFromC("foo");
-  StackRoots _roots9({&key});
-  d->set(key, 3);
-
-  PASS();
-}
-#endif
-
-TEST compile_time_masks_test() {
-  // Note: These will be different for 32 bit
-
-  ASSERT_EQ(offsetof(List<int>, slab_),
-            offsetof(GlobalList<int COMMA 1>, slab_));
-  // 0b 0000 0010
-  ASSERT_EQ_FMT(0x0002, maskof_List(), "0x%x");
-
-  // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
-  // There is a trick with __VA_ARGS__ I don't understand.
-
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, entry_),
-            offsetof(_DummyDict, entry_));
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, keys_), offsetof(_DummyDict, keys_));
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, values_),
-            offsetof(_DummyDict, values_));
-
-  // in binary: 0b 0000 0000 0000 01110
-  ASSERT_EQ_FMT(0x000E, maskof_Dict(), "0x%x");
 
   PASS();
 }
@@ -804,6 +377,49 @@ TEST inheritance_test() {
   PASS();
 }
 
+#if 0
+void ShowRoots(const Heap& heap) {
+  log("--");
+  for (int i = 0; i < heap.roots_top_; ++i) {
+    log("%d. %p", i, heap.roots_[i]);
+    // This is NOT on the heap; it's on the stack.
+    // int diff1 = reinterpret_cast<char*>(heap.roots[i]) - gHeap.from_space_;
+    // assert(diff1 < 1024);
+
+    Obj** h = heap.roots_[i];
+    Obj* raw = *h;
+    log("   %p", raw);
+
+    // Raw pointer is on the heap.
+    int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_.begin_;
+    // log("diff2 = %d", diff2);
+    assert(diff2 < 2048);
+
+    // This indeed mutates it and causes a crash
+    // h->Update(nullptr);
+  }
+}
+#endif
+
+TEST stack_roots_test() {
+  Str* s = nullptr;
+  List<int>* L = nullptr;
+
+  gHeap.Collect();
+
+  ASSERT_EQ(0, gHeap.roots_.size());
+
+  StackRoots _roots({&s, &L});
+
+  s = StrFromC("foo");
+  L = NewList<int>();
+
+  int num_roots = gHeap.roots_.size();
+  ASSERT_EQ_FMT(2, num_roots, "%u");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -811,31 +427,22 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(test_str_creation);
+  RUN_TEST(field_masks_test);
+  RUN_TEST(offsets_test);
 
-  RUN_TEST(sizeof_test);
   RUN_TEST(roundup_test);
-  RUN_TEST(str_test);
-  RUN_TEST(list_test);
-  RUN_TEST(list_repro);
-
-  RUN_TEST(global_list_test);
-  RUN_TEST(dict_test);
-  RUN_TEST(dict_repro);
 
   RUN_TEST(fixed_trace_test);
   RUN_TEST(slab_trace_test);
   RUN_TEST(global_trace_test);
 
-  RUN_TEST(stack_roots_test);
-  RUN_TEST(field_mask_test);
-
-  RUN_TEST(compile_time_masks_test);
   RUN_TEST(vtable_test);
   RUN_TEST(inheritance_test);
 
+  RUN_TEST(stack_roots_test);
+
   gHeap.CleanProcessExit();
 
-  GREATEST_MAIN_END(); /* display results */
+  GREATEST_MAIN_END();
   return 0;
 }

@@ -4,14 +4,6 @@
 #include "mycpp/bump_leak_heap.h"
 #include "mycpp/marksweep_heap.h"
 
-#if defined(MARK_SWEEP)
-  #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: marksweep\n")
-#elif defined(BUMP_LEAK)
-  #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: bumpleak\n")
-#else
-  #define PRINT_GC_MODE_STRING() printf("  -- GC_MODE :: cheney\n")
-#endif
-
 class RootsFrame {
   // Create an instance of this in every function.  This lets the GC now when
   // functions return, so it can remove values from the root set.
