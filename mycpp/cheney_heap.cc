@@ -2,6 +2,11 @@
 
 #include "mycpp/runtime.h"
 
+class LayoutForwarded : public Obj {
+ public:
+  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
+};
+
 void Space::Init(int num_bytes) {
   void* requested_addr = nullptr;
 

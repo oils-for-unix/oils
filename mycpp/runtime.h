@@ -4,7 +4,8 @@
 // clang-format off
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
-#include "mycpp/gc_heap.h"
+#include "mycpp/bump_leak_heap.h"
+#include "mycpp/marksweep_heap.h"
 #include "mycpp/gc_builtins.h"
 
 #include "mycpp/gc_tuple.h"
@@ -14,6 +15,7 @@
 #include "mycpp/gc_dict.h"
 
 #include "mycpp/gc_mylib.h"
+
 // clang-format on
 
 #endif  // MYCPP_RUNTIME_H

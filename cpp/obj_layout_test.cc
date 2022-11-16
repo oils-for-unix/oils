@@ -62,6 +62,7 @@ TEST sizeof_core_types() {
 
   /* log("sizeof(Heap) = %d", sizeof(Heap)); */
 
+#ifndef MARK_SWEEP
   int min_obj_size = sizeof(LayoutForwarded);
   int short_str_size = aligned(kStrHeaderSize + 1);
 
@@ -70,6 +71,7 @@ TEST sizeof_core_types() {
   log("sizeof(LayoutForwarded) = %d", min_obj_size);
 
   ASSERT(min_obj_size <= short_str_size);
+#endif
 
   char* p = static_cast<char*>(gHeap.Allocate(17));
   char* q = static_cast<char*>(gHeap.Allocate(9));
