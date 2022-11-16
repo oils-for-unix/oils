@@ -182,14 +182,11 @@ Buf* BufWriter::EnsureCapacity(int capacity) {
   assert(buf_->cap_ >= buf_->len_);
 
   if (buf_->cap_ < capacity) {
-    const int new_capacity = std::max(buf_->cap_ * 2, capacity);
-    buf_ = (Buf*)gHeap.Reallocate(reinterpret_cast<void*>(buf_), sizeof(Buf) + new_capacity + 1);
-    buf_->cap_ = new_capacity;
-    // auto* b = NewBuf(std::max(buf_->cap_ * 2, capacity));
-    // memcpy(b->data_, buf_->data_, buf_->len_);
-    // b->len_ = buf_->len_;
-    // b->data_[b->len_] = '\0';
-    return buf_;
+    auto* b = NewBuf(std::max(buf_->cap_ * 2, capacity));
+    memcpy(b->data_, buf_->data_, buf_->len_);
+    b->len_ = buf_->len_;
+    b->data_[b->len_] = '\0';
+    return b;
   } else {
     return buf_;  // no-op
   }
