@@ -7,6 +7,7 @@
 namespace os_path {
 
 Str* rstrip_slashes(Str* s) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // NewStr() handles it
   // Strip all the rightmost slashes, but not if it's ALL slashes
   int n = len(s);
   if (n == 0) {
@@ -39,6 +40,7 @@ Str* rstrip_slashes(Str* s) {
 namespace path_stat {
 
 bool exists(Str* path) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // No allocations here
   struct stat st;
   if (::stat(path->data_, &st) < 0) {
     return false;
