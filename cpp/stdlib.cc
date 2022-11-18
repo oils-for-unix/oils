@@ -19,6 +19,8 @@
 namespace fcntl_ {
 
 int fcntl(int fd, int cmd) {
+  NO_ROOTS_FRAME(
+      FUNC_NAME);  // No allocations here and caller will root IOError
   int result = ::fcntl(fd, cmd);
   if (result < 0) {
     throw Alloc<IOError>(errno);
@@ -27,6 +29,8 @@ int fcntl(int fd, int cmd) {
 }
 
 int fcntl(int fd, int cmd, int arg) {
+  NO_ROOTS_FRAME(
+      FUNC_NAME);  // No allocations here and caller will root IOError
   int result = ::fcntl(fd, cmd, arg);
   if (result < 0) {
     throw Alloc<IOError>(errno);
@@ -39,19 +43,25 @@ int fcntl(int fd, int cmd, int arg) {
 namespace posix {
 
 mode_t umask(mode_t mask) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // No allocations here
   return ::umask(mask);
 }
 
 int open(Str* path, int flags, int perms) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // No allocations here
   return ::open(path->data_, flags, perms);
 }
 
 void dup2(int oldfd, int newfd) {
+  NO_ROOTS_FRAME(
+      FUNC_NAME);  // No allocations here and caller will root OSError
   if (::dup2(oldfd, newfd) < 0) {
     throw Alloc<OSError>(errno);
   }
 }
 void putenv(Str* name, Str* value) {
+  NO_ROOTS_FRAME(
+      FUNC_NAME);  // No allocations here and caller will root IOError
   int overwrite = 1;
   int ret = ::setenv(name->data_, value->data_, overwrite);
   if (ret < 0) {
@@ -60,6 +70,7 @@ void putenv(Str* name, Str* value) {
 }
 
 mylib::LineReader* fdopen(int fd, Str* c_mode) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // Alloc() will handle it
   FILE* f = ::fdopen(fd, c_mode->data_);
 
   // TODO: raise exception
@@ -69,6 +80,7 @@ mylib::LineReader* fdopen(int fd, Str* c_mode) {
 }
 
 void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // GC heap isn't used here
   int n_args = len(argv);
   // never deallocated
   char** _argv = static_cast<char**>(malloc((n_args + 1) * sizeof(char*)));
@@ -113,6 +125,7 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
 }
 
 void kill(int pid, int sig) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // No allocations here
   if (::kill(pid, sig) != 0) {
     throw Alloc<OSError>(errno);
   }
@@ -123,10 +136,12 @@ void kill(int pid, int sig) {
 namespace time_ {
 
 void tzset() {
+  NO_ROOTS_FRAME(FUNC_NAME);  // No allocations here
   ::tzset();
 }
 
 time_t time() {
+  NO_ROOTS_FRAME(FUNC_NAME);  // No allocations here
   return ::time(nullptr);
 }
 
@@ -137,12 +152,14 @@ time_t time() {
 // 32 bits.  Point being, using anything but the time_t typedef here could
 // (unlikely, but possible) produce weird behavior.
 time_t localtime(time_t ts) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // No allocations here
   tm* loc_time = ::localtime(&ts);
   time_t result = mktime(loc_time);
   return result;
 }
 
 Str* strftime(Str* s, time_t ts) {
+  RootsFrame _r{FUNC_NAME};
   // TODO: may not work with containers.h
   // https://github.com/oilshell/oil/issues/1221
   tm* loc_time = ::localtime(&ts);
@@ -158,6 +175,7 @@ Str* strftime(Str* s, time_t ts) {
     e_die(StrFromC("strftime() result exceeds 1024 bytes"));
   }
   result->SetObjLenFromStrLen(n);
+  gHeap.RootOnReturn(result);
   return result;
 }
 
