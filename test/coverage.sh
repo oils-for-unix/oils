@@ -150,7 +150,10 @@ unified-report() {
   mkdir -p $out_dir
 
   html-report $out_dir \
-    clang-coverage/mycpp clang-coverage/mycpp/examples clang-coverage/cpp \
+    clang-coverage/mycpp/examples \
+    clang-coverage/mycpp \
+    clang-coverage/mycpp clang-coverage-D_BUMP_LEAK/mycpp \
+    clang-coverage/cpp \
     clang-coverage-D_CPP_UNIT_TEST/cpp
 }
 

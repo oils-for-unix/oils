@@ -280,10 +280,15 @@ test-translator() {
 unit-test-coverage() {
   ### Invoked by Soil
 
+  local bin=_bin/clang-coverage-D_BUMP_LEAK/mycpp/bump_leak_heap_test
+  ninja $bin
+  run-test-bin $bin
+
   unit clang coverage
 
   local out_dir=_test/clang-coverage/mycpp
-  test/coverage.sh html-report $out_dir clang-coverage/mycpp
+  test/coverage.sh html-report $out_dir \
+    clang-coverage/mycpp clang-coverage-D_BUMP_LEAK/mycpp
 }
 
 examples-coverage() {
