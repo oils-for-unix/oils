@@ -8,14 +8,15 @@ namespace Id = id_kind_asdl::Id;
 TEST match_test() {
   match::SimpleLexer* lex = match::BraceRangeLexer(StrFromC("{-1..22}"));
 
-  while (true) {
-    auto t = lex->Next();
-    int id = t.at0();
+  List<Tuple2<Id_t, Str*>*>* toks = lex->Tokens();
+  for (int i = 0; i < len(toks); i++) {
+    auto* t = toks->index_(i);
+    int id = t->at0();
     if (id == id__Eol_Tok) {
       break;
     }
     log("id = %d", id);
-    log("val = %s", t.at1()->data_);
+    log("val = %s", t->at1()->data_);
   }
 
   match::SimpleLexer* lex2 = match::BraceRangeLexer(kEmptyString);
