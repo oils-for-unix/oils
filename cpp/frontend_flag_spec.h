@@ -82,7 +82,7 @@ struct FlagSpecAndMore_c {
 
 namespace flag_spec {
 
-class _FlagSpec : Obj {
+class _FlagSpec : public Obj {
  public:
   _FlagSpec()
       : Obj(Tag::FixedSize, _FlagSpec::field_mask(), sizeof(_FlagSpec)),
@@ -108,7 +108,7 @@ class _FlagSpec : Obj {
   }
 };
 
-class _FlagSpecAndMore : Obj {
+class _FlagSpecAndMore : public Obj {
  public:
   _FlagSpecAndMore()
       : Obj(Tag::FixedSize, _FlagSpecAndMore::field_mask(),
