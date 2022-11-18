@@ -283,7 +283,7 @@ unit-test-coverage() {
   unit clang coverage
 
   local out_dir=_test/clang-coverage/mycpp
-  test/coverage.sh html-report $out_dir mycpp
+  test/coverage.sh html-report $out_dir clang-coverage/mycpp
 }
 
 examples-coverage() {
@@ -292,7 +292,7 @@ examples-coverage() {
   examples-variant clang coverage
 
   local out_dir=_test/clang-coverage/mycpp/examples
-  test/coverage.sh html-report $out_dir mycpp/examples
+  test/coverage.sh html-report $out_dir clang-coverage/mycpp/examples
 }
 
 compare-malloc-leak-parse() {

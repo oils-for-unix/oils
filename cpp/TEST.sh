@@ -126,7 +126,8 @@ coverage() {
   run-one-test     cpp/stdlib_test $compiler $variant
 
   local out_dir=_test/clang-coverage/cpp
-  test/coverage.sh html-report $out_dir cpp
+  test/coverage.sh html-report $out_dir \
+    clang-coverage/cpp clang-coverage-D_CPP_UNIT_TEST/cpp
 }
 
 "$@"

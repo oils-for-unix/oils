@@ -17,9 +17,9 @@ html-report() {
   local -a args=()
   local -a to_merge=()
 
-  for suite in "$@"; do
-    local prof_dir="_test/clang-coverage/$suite"
-    local bin_dir="_bin/clang-coverage/$suite"
+  for subdir in "$@"; do
+    local prof_dir="_test/$subdir"
+    local bin_dir="_bin/$subdir"
 
     # args for merging
     to_merge+=($prof_dir/*.profraw)
@@ -56,14 +56,15 @@ html-report() {
     --ignore-filename-regex 'mycpp/examples' \
     --ignore-filename-regex 'mycpp/smartptr' \
     --ignore-filename-regex 'mycpp/cheney' \
-    --ignore-filename-regex 'mycpp/bump_leak' \
     --ignore-filename-regex 'prebuilt/' \
   )
+
+  local title=$(basename $subdir)
 
   $CLANG_DIR/bin/llvm-cov show \
     --instr-profile $merged \
     --format html --output-dir $html_dir \
-    --project-title "$suite" \
+    --project-title "$title" \
     --show-instantiation-summary \
     "${filter_flags[@]}" \
     "${args[@]}"
@@ -149,7 +150,8 @@ unified-report() {
   mkdir -p $out_dir
 
   html-report $out_dir \
-    mycpp mycpp/examples cpp
+    clang-coverage/mycpp clang-coverage/mycpp/examples clang-coverage/cpp \
+    clang-coverage-D_CPP_UNIT_TEST/cpp
 }
 
 log-files-index() {
