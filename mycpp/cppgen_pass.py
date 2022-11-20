@@ -1685,7 +1685,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(' = it.Value();\n')
 
           # Register loop variable as a stack root.
-          if CTypeIsManaged(c_item_type):
+          if not self.ret_val_rooting and CTypeIsManaged(c_item_type):
             self.write_ind('  StackRoots _for({&');
             self.accept(index_expr)
             self.write_ind('});\n')
