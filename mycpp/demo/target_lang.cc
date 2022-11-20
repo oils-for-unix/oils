@@ -585,8 +585,8 @@ TEST mmap_demo() {
   log("value = %d", *space);
 
   // Can't use this anymore
-  char* tmp2 = static_cast<char*>(tmp);
-  log("tmp2 = %d", *tmp2);
+  char* bad = static_cast<char*>(tmp);
+  (void)bad;
 
   PASS();
 }
