@@ -124,7 +124,10 @@ def NinjaGraph(ru):
   ru.cc_library(
       '//cpp/pgen2', 
       srcs = ['cpp/pgen2.cc'],
-      deps = ['//mycpp/runtime'])
+      deps = [
+        '//mycpp/runtime',
+        '//frontend/syntax.asdl',
+        ])
 
   ru.cc_library(
       '//cpp/pylib', 

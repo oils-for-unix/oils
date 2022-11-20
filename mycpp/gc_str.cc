@@ -88,6 +88,8 @@ bool Str::endswith(Str* s) {
 
 // Get a string with one character
 Str* Str::index_(int i) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // skip to NewStr
+
   int len_ = len(this);
   if (i < 0) {
     i = len_ + i;
