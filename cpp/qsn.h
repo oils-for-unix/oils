@@ -8,16 +8,25 @@
 namespace qsn {
 
 inline bool IsUnprintableLow(Str* ch) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations
+
   assert(len(ch) == 1);
   return ch->data_[0] < ' ';
 }
 
 inline bool IsUnprintableHigh(Str* ch) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations
+
   assert(len(ch) == 1);
-  return ch->data_[0] >= 0x7f;
+  // 255 should not be -1!
+  // log("ch->data_[0] %d", ch->data_[0]);
+  unsigned char c = static_cast<unsigned char>(ch->data_[0]);
+  return c >= 0x7f;
 }
 
 inline bool IsPlainChar(Str* ch) {
+  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations
+
   assert(len(ch) == 1);
   uint8_t c = ch->data_[0];
   switch (c) {
@@ -31,7 +40,7 @@ inline bool IsPlainChar(Str* ch) {
 }
 
 inline Str* XEscape(Str* ch) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // NewStr does it
+  NO_ROOTS_FRAME(FUNC_NAME);  // skip to NewStr
 
   assert(len(ch) == 1);
   Str* result = NewStr(4);
@@ -40,7 +49,7 @@ inline Str* XEscape(Str* ch) {
 }
 
 inline Str* UEscape(int codepoint) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // OverAllocatedStr does it
+  NO_ROOTS_FRAME(FUNC_NAME);  // skip to OverAllocatedStr
 
   // maximum length:
   // 3 for \u{
