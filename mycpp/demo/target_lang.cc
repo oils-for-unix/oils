@@ -42,9 +42,9 @@ class RootingScope2 {
 #define ROOTING_REPORT 1
 
 #if ROOTING_REPORT
-  #define FUNC_NAME() __PRETTY_FUNCTION__
+  #define FUNC_NAME_2() __PRETTY_FUNCTION__
 #else
-  #define FUNC_NAME()
+  #define FUNC_NAME_2()
 #endif
 
 class MyList {
@@ -70,7 +70,7 @@ class Array {
   }
 
   void append(T item) {
-    RootingScope2 _r(FUNC_NAME());
+    RootingScope2 _r(FUNC_NAME_2());
 
     v_.push_back(item);
   }
@@ -89,7 +89,7 @@ class ParseError : public FatalError {
   ParseError(const char* reason) : reason_(reason) {
   }
   const char* reason() const {
-    RootingScope2 _r(FUNC_NAME());
+    RootingScope2 _r(FUNC_NAME_2());
 
     return reason_;
   }
@@ -232,8 +232,10 @@ TEST namespace_demo() {
   log("");
   log("namespace_demo()");
   f(42);
-  auto p = new tdop::Parser(42);
-  auto p2 = new Parser(43);
+  auto unused1 = new tdop::Parser(42);
+  auto unused2 = new Parser(43);
+  (void)unused1;
+  (void)unused2;
 
   util::p_die("ns");
 
@@ -536,8 +538,9 @@ class Derived : public Base {
   Node* three;
 };
 
+// Demonstrate problem with Local<T>
 #if 0
-TEST inheritance_demo() {
+TEST smartptr_inheritance_demo() {
   Local<Base> b = Alloc<Base>(2);
   Local<Derived> d = Alloc<Derived>(4, 5);
 
@@ -583,13 +586,14 @@ TEST mmap_demo() {
 
   // Can't use this anymore
   char* tmp2 = static_cast<char*>(tmp);
-  // log("tmp2 = %d", *tmp2);
+  log("tmp2 = %d", *tmp2);
 
   PASS();
 }
 
 TEST comma_demo() {
-  auto k = (3, 5);
+  auto i = 3;
+  auto k = (i++, 5);
   log("k = %d", k);
 
   auto n = new Node();
@@ -599,6 +603,35 @@ TEST comma_demo() {
   Node* tmp;
   auto n2 = (tmp = new Node(), tmp->i = 42, tmp);
   log("n2 = %p, n2->i = %d, n2->j = %d", n2, n2->i, n2->j);
+
+  PASS();
+}
+
+// Trick here to print types at compile time
+//
+// https://stackoverflow.com/questions/60203857/print-a-types-name-at-compile-time-without-aborting-compilation
+
+template <typename T>
+[[gnu::warning("your type here")]] bool print_type() {
+  return true;
+}
+
+TEST signed_unsigned_demo() {
+  char c = '\xff';
+  log("c = %d", c);
+  log("c = %u", c);
+  log("c > 127 = %d", c > 127);  // FALSE because it's char
+  log("'\\xff' > 127 = %d", '\xff' > 127);  // also FALSE
+
+#if 0
+  bool b1 = print_type<decltype(c)>();
+
+  // The type of literal '\xff' is 'char'
+  bool b2 = print_type<decltype('\xff')>();
+
+  log("b1 = %d", b1);
+  log("b2 = %d", b2);
+#endif
 
   PASS();
 }
@@ -622,10 +655,11 @@ int main(int argc, char** argv) {
   RUN_TEST(static_literals);
   RUN_TEST(enum_demo);
   RUN_TEST(field_mask_demo);
-  // RUN_TEST(inheritance_demo);
+  // RUN_TEST(smartptr_inheritance_demo);
 
   RUN_TEST(mmap_demo);
   RUN_TEST(comma_demo);
+  RUN_TEST(signed_unsigned_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
