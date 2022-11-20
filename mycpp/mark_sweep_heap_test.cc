@@ -364,7 +364,7 @@ TEST rooting_scope_test() {
   {
     RootsFrame _r;
     gList = Alloc<List<int>>();
-    gHeap.AddGlobalRoot(gList);
+    gHeap.RootGlobalVar(gList);
   }
   gList->append(0xbeef);
   ASSERT_EQ(gList->index_(0), 0xbeef);

@@ -270,7 +270,7 @@ void SetSigwinchCode(int code) {
 void InitShell() {
   RootsFrame _r{FUNC_NAME};
   gSignalHandler = Alloc<SignalHandler>();
-  gHeap.AddGlobalRoot(gSignalHandler);
+  gHeap.RootGlobalVar(gSignalHandler);
   gSignalHandler->signal_queue_ = AllocSignalQueue();
 }
 

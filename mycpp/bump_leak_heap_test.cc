@@ -21,6 +21,25 @@ TEST Reallocate_test() {
   PASS();
 }
 
+// Test empty and trivial methods
+TEST for_code_coverage() {
+  BumpLeakHeap h;
+
+  h.Init();
+  h.Init(10);
+  h.RootOnReturn(nullptr);
+  h.RootInCurrentFrame(nullptr);
+  h.RootGlobalVar(nullptr);
+  (void)h.Allocate(10);
+
+  h.Report();
+
+  h.FastProcessExit();
+  h.CleanProcessExit();
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -29,6 +48,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(Reallocate_test);
+  RUN_TEST(for_code_coverage);
 
   gHeap.CleanProcessExit();
 

@@ -620,7 +620,7 @@ TEST signed_unsigned_demo() {
   char c = '\xff';
   log("c = %d", c);
   log("c = %u", c);
-  log("c > 127 = %d", c > 127);  // FALSE because it's char
+  log("c > 127 = %d", c > 127);             // FALSE because it's char
   log("'\\xff' > 127 = %d", '\xff' > 127);  // also FALSE
 
 #if 0
