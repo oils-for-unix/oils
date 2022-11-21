@@ -22,6 +22,8 @@ from mycpp import format_strings
 from mycpp.crash import catch_errors
 from mycpp.util import log
 
+from typing import Tuple
+
 
 T = None
 
@@ -259,14 +261,19 @@ def get_c_type(t, param=False, local=False):
   return c_type
 
 
-def get_c_return_type(t):
+def get_c_return_type(t) -> Tuple[str, bool]:
+  """
+  Returns a C string, and whether the tuple-by-value optimization was applied
+  """
+
   c_ret_type = get_c_type(t)
 
   # Optimization: Return tupels BY VALUE
   if isinstance(t, TupleType):
     assert c_ret_type.endswith('*')
-    c_ret_type = c_ret_type[:-1]
-  return c_ret_type
+    return c_ret_type[:-1], True
+  else:
+    return c_ret_type, False
 
 
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
@@ -298,7 +305,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.local_var_list = []  # Collected at assignment
       self.prepend_to_block = None  # For writing vars after {
       self.current_func_node = None
-      self.return_tuple_value = False  # to return tuples by value
 
       # This is cleared when we start visiting a class.  Then we visit all the
       # methods, and accumulate the types of everything that looks like
@@ -1074,13 +1080,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
-        maybe_new = c_type if self.return_tuple_value else 'Alloc<%s>' % c_type
-        self.write('(%s(' % maybe_new)
+        self.write('(Alloc<%s>(' % c_type)
         for i, item in enumerate(o.items):
-            if i != 0:
-                self.write(', ')
-            self.accept(item)
-            # TODO: const_lookup
+          if i != 0:
+            self.write(', ')
+          self.accept(item)
         self.write('))')
 
     def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> T:
@@ -2087,7 +2091,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.write('\n')
 
-        c_ret_type = get_c_return_type(ret_type)
+        c_ret_type, _ = get_c_return_type(ret_type)
 
         self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
 
@@ -2580,32 +2584,65 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Don't handle 'return None' here
             if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
 
-              # Don't use the type of the return expression; use the return
-              # type of the FUNCTION!
-              #ret_type = self.types[o.expr]
+              # Note: the type of the return expression (self.types[o.expr])
+              # and the return type of the FUNCTION are different.  Use the
+              # latter.
               ret_type = self.current_func_node.type.ret_type
 
-              c_ret_type = get_c_return_type(ret_type)
+              c_ret_type, returning_tuple = get_c_return_type(ret_type)
+
+              # return '', None  # tuple literal
+              #   but NOT
+              # return tuple_func()
+              if returning_tuple and isinstance(o.expr, TupleExpr):
+
+                # Figure out which ones we have to root
+                item_temp_names = []
+                for i, item in enumerate(o.expr.items):
+                  item_type = self.types[item]
+                  item_c_type = get_c_type(item_type)
+                  if CTypeIsManaged(item_c_type):
+                    var_name = 'tmp_item%d' % i
+                    self.write_ind('%s %s = ', item_c_type, var_name)
+                    self.accept(item)
+                    self.write(';\n')
+
+                    self.write_ind('gHeap.RootOnReturn(reinterpret_cast<Obj*>(%s));\n' % var_name)
+                    item_temp_names.append(var_name)
+
+                  else:
+                    item_temp_names.append(None)
+
+                self.write_ind('return %s(' % c_ret_type)
+                for i, item in enumerate(o.expr.items):
+                  if i != 0:
+                    self.write(', ')
+
+                  var_name = item_temp_names[i]
+                  if var_name is not None:
+                    self.write(var_name)
+                  else:
+                    self.accept(item)
+                self.write(');\n')
+
+                return
 
               if CTypeIsManaged(c_ret_type):
-                self.write_ind('%s ret_tmp = ', c_ret_type)
+                self.write_ind('%s tmp_ret = ', c_ret_type)
                 self.accept(o.expr)
                 self.write(';\n')
 
-                self.write_ind('gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));\n')
-                self.write_ind('return ret_tmp;\n')
+                self.write_ind('gHeap.RootOnReturn(reinterpret_cast<Obj*>(tmp_ret));\n')
+                self.write_ind('return tmp_ret;\n')
                 return
 
           # Examples:
           # return
           # return None
           # return my_int + 3;
-          # return '', None  # tuple
           self.write_ind('return ')
           if o.expr:
-            self.return_tuple_value = True
             self.accept(o.expr)
-            self.return_tuple_value = False
           self.write(';\n')
           return
 
