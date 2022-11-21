@@ -278,6 +278,8 @@ soil-run() {
 
   # Write _test/mycpp-examples.html, used by soil/woker.sh
   find-dir-html _test mycpp-examples
+
+  return $status
 }
 
 unit-test-coverage() {
