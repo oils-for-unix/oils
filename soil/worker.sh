@@ -215,7 +215,7 @@ osh-eval-smoke   build/native.sh osh-eval-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 native-code      metrics/native-code.sh oil-native     _tmp/metrics/oil-native/index.html
-mycpp-translator mycpp/TEST.sh test-translator         _test/mycpp-examples.html
+mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 make-tar         devtools/release-native.sh make-tar   _release/oil-native.tar
 test-tar         devtools/release-native.sh test-tar   -
