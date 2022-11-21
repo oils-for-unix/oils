@@ -298,7 +298,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.local_var_list = []  # Collected at assignment
       self.prepend_to_block = None  # For writing vars after {
       self.current_func_node = None
-      self.in_return_expr = False  # to return tuples by value
+      self.return_tuple_value = False  # to return tuples by value
 
       # This is cleared when we start visiting a class.  Then we visit all the
       # methods, and accumulate the types of everything that looks like
@@ -1074,19 +1074,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
-        maybe_new = c_type if self.in_return_expr else 'Alloc<%s>' % c_type
-        if len(o.items) == 0:
-            self.write('(%s())' % maybe_new)
-        else:
-            # Use initialize list.  Lists are MUTABLE so we can't pull them to
-            # the top level.
-            self.write('(%s(' % maybe_new)
-            for i, item in enumerate(o.items):
-                if i != 0:
-                    self.write(', ')
-                self.accept(item)
-                # TODO: const_lookup
-            self.write('))')
+        maybe_new = c_type if self.return_tuple_value else 'Alloc<%s>' % c_type
+        self.write('(%s(' % maybe_new)
+        for i, item in enumerate(o.items):
+            if i != 0:
+                self.write(', ')
+            self.accept(item)
+            # TODO: const_lookup
+        self.write('))')
 
     def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> T:
         pass
@@ -2594,30 +2589,30 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               if CTypeIsManaged(c_ret_type):
                 self.write_ind('%s ret_tmp = ', c_ret_type)
-                self.in_return_expr = True
                 self.accept(o.expr)
-                self.in_return_expr = False
                 self.write(';\n')
 
                 self.write_ind('gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));\n')
                 self.write_ind('return ret_tmp;\n')
                 return
 
-          # e.g. return my_int + 3;
+          # Examples:
+          # return
+          # return None
+          # return my_int + 3;
+          # return '', None  # tuple
           self.write_ind('return ')
           if o.expr:
-            self.in_return_expr = True
+            self.return_tuple_value = True
             self.accept(o.expr)
-            self.in_return_expr = False
+            self.return_tuple_value = False
           self.write(';\n')
           return
 
         # OLD StackRoots
         self.write_ind('return ')
         if o.expr:
-          self.in_return_expr = True
           self.accept(o.expr)
-          self.in_return_expr = False
         self.write(';\n')
 
     def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:
