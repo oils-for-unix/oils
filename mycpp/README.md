@@ -162,6 +162,11 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
       import'
   - Code under `if __name__ == '__main__'`
 
+### Optimizations
+
+- Return Tuples by Value.  To reduce GC pressure, we we return `Tuple2<A, B>`
+  insetad of `Tuple2<A, B>*`, and likewise for `Tuple3` and `Tuple4`.
+
 ### Hard-Coded Lists To Get Rid Of
 
 - `mycpp_main.py`

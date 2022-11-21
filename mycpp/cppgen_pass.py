@@ -259,6 +259,16 @@ def get_c_type(t, param=False, local=False):
   return c_type
 
 
+def get_c_return_type(t):
+  c_ret_type = get_c_type(t)
+
+  # Optimization: Return tupels BY VALUE
+  if isinstance(t, TupleType):
+    assert c_ret_type.endswith('*')
+    c_ret_type = c_ret_type[:-1]
+  return c_ret_type
+
+
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
@@ -287,8 +297,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.indent = 0
       self.local_var_list = []  # Collected at assignment
       self.prepend_to_block = None  # For writing vars after {
-      self.in_func_body = False
-      self.in_return_expr = False
+      self.current_func_node = None
+      self.in_return_expr = False  # to return tuples by value
 
       # This is cleared when we start visiting a class.  Then we visit all the
       # methods, and accumulate the types of everything that looks like
@@ -1348,7 +1358,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           c_type = get_c_type(lval_type)
 
           # for "hoisting" to the top of the function
-          if self.in_func_body:
+          if self.current_func_node:
             self.write_ind('%s = ', lval.name)
             if self.decl:
               self.local_var_list.append((lval.name, c_type))
@@ -2082,19 +2092,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.write('\n')
 
-        c_ret_type = get_c_type(ret_type)
-        if isinstance(ret_type, TupleType):
-          assert c_ret_type.endswith('*')
-          c_ret_type = c_ret_type[:-1]
+        c_ret_type = get_c_return_type(ret_type)
+
         self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
 
         self._WriteFuncParams(o.type.arg_types, o.arguments, update_locals=True)
 
         if self.decl:
           self.decl_write(');\n')
-          self.in_func_body = True
+          self.current_func_node = o
           self.accept(o.body)  # Collect member_vars, but don't write anything
-          self.in_func_body = False
+          self.current_func_node = None
           return
 
         self.write(') ')
@@ -2109,9 +2117,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               for (lval_name, c_type) in self.local_vars[o]
           ]
 
-        self.in_func_body = True
+        self.current_func_node = o
         self.accept(o.body)
-        self.in_func_body = False
+        self.current_func_node = None
 
     def visit_overloaded_func_def(self, o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
@@ -2530,15 +2538,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               roots.append(lval_name)
           #self.log('roots %s', roots)
 
-          if not self.ret_val_rooting and len(roots):
-            self.write_ind('StackRoots _roots({');
-            for i, r in enumerate(roots):
-              if i != 0:
-                self.write(', ')
-              self.write('&%s' % r)
+          if self.ret_val_rooting:
+            self.write_ind('RootsFrame _r{FUNC_NAME};\n')
+          else:
+            if len(roots):
+              self.write_ind('StackRoots _roots({');
+              for i, r in enumerate(roots):
+                if i != 0:
+                  self.write(', ')
+                self.write('&%s' % r)
 
-            self.write('});\n')
-            self.write('\n')
+              self.write('});\n')
+              self.write('\n')
 
           self.prepend_to_block = None
 
@@ -2569,6 +2580,39 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.body)
 
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
+        if self.ret_val_rooting:
+          if o.expr:
+            # Don't handle 'return None' here
+            if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
+
+              # Don't use the type of the return expression; use the return
+              # type of the FUNCTION!
+              #ret_type = self.types[o.expr]
+              ret_type = self.current_func_node.type.ret_type
+
+              c_ret_type = get_c_return_type(ret_type)
+
+              if CTypeIsManaged(c_ret_type):
+                self.write_ind('%s ret_tmp = ', c_ret_type)
+                self.in_return_expr = True
+                self.accept(o.expr)
+                self.in_return_expr = False
+                self.write(';\n')
+
+                self.write_ind('gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));\n')
+                self.write_ind('return ret_tmp;\n')
+                return
+
+          # e.g. return my_int + 3;
+          self.write_ind('return ')
+          if o.expr:
+            self.in_return_expr = True
+            self.accept(o.expr)
+            self.in_return_expr = False
+          self.write(';\n')
+          return
+
+        # OLD StackRoots
         self.write_ind('return ')
         if o.expr:
           self.in_return_expr = True
