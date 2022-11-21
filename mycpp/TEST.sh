@@ -268,6 +268,13 @@ test-translator() {
     log 'FAIL mycpp-logs-equal'
     return 1
   fi
+}
+
+soil-run() {
+  set +o errexit
+  $0 test-translator
+  local status=$?
+  set -o errexit
 
   # Write _test/mycpp-examples.html, used by soil/woker.sh
   find-dir-html _test mycpp-examples
