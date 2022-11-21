@@ -12,6 +12,12 @@ class MutableStr : public Str {
 
 };
 
+MutableStr* NewMutableStr(int cap) {
+  // In order for everything to work, MutableStr must be identical in layout to Str.
+  // One easy way to achieve this is for MutableStr to have no members and to inherit from Str.
+  static_assert(sizeof(MutableStr) == sizeof(Str));
+  return reinterpret_cast<MutableStr*>(NewStr(cap));
+}
 
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
@@ -189,10 +195,10 @@ void BufWriter::EnsureCapacity(int capacity) {
   assert(buf_.capacity() >= buf_.len_);
 
   if (buf_.capacity() < capacity) {
-    auto* s = NewStr(std::max(buf_.capacity() * 2, capacity));
+    auto* s = NewMutableStr(std::max(buf_.capacity() * 2, capacity));
     memcpy(s->data_, buf_.str_->data_, buf_.len_);
     s->data_[buf_.len_] = '\0';
-    buf_.str_ = reinterpret_cast<MutableStr*>(s);
+    buf_.str_ = s;
   }
 }
 
@@ -209,7 +215,7 @@ void BufWriter::write(Str* s) {
   if (buf_.str_ == nullptr) {
     // TODO: we could make the default capacity big enough for a line, e.g. 128
     // capacity: 128 -> 256 -> 512
-    buf_.str_ = reinterpret_cast<MutableStr*>(NewStr(n));
+    buf_.str_ = NewMutableStr(n);
   } else {
     EnsureCapacity(buf_.len_ + n);
   }
