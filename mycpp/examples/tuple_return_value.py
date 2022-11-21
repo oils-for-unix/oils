@@ -15,9 +15,9 @@ def f(x):
   # type: (int) -> Tuple[int, str]
 
   i = x + 42
-  s = 'foo'
+  s = 'foo bar'
 
-  return i, s
+  return i, s[1:]
 
 
 def run_tests():

@@ -86,20 +86,15 @@ examples-variant() {
   log "$num_failed of $num_tests tests failed"
   log ''
 
-  case $variant in
-    (gcevery)
-      if test $num_failed -ne 5; then
-        # echo "FAIL: Expected 5 failures with GC_EVERY_ALLOC"
-        return 0  # not an error with -D RET_VAL_ROOTING
-      fi
-      ;;
-    (*)
-      if test $num_failed -ne 0; then
-        echo "FAIL: Expected no failures, got $num_failed"
-        return 1
-      fi
-      ;;
-  esac
+  # TODO: fix failure and remove this
+  if test $variant = 'gcevery'; then
+    return 0
+  fi
+
+  if test $num_failed -ne 0; then
+    echo "FAIL: Expected no failures, got $num_failed"
+    return 1
+  fi
 
   return 0
 }
@@ -261,20 +256,21 @@ test-runtime() {
 test-translator() {
   ### Invoked by soil/worker.sh
 
-  # examples-variant '' rvroot
-
   examples-variant '' asan
 
-  # Test with more collections -- 5 failures above
+  # Test with more collections
   examples-variant '' gcevery
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
-  # Runs test in cxx-asan variant, and benchmarks in cxx-opt variant
+  # Runs tests in cxx-asan variant, and benchmarks in cxx-opt variant
   if ! ninja mycpp-logs-equal; then
     log 'FAIL mycpp-logs-equal'
     return 1
   fi
+
+  # Write _test/mycpp-examples.html, used by soil/woker.sh
+  find-dir-html _test mycpp-examples
 }
 
 unit-test-coverage() {
