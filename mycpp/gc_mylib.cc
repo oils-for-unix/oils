@@ -8,6 +8,11 @@ mylib::FormatStringer gBuf;
 
 namespace mylib {
 
+class MutableStr : public Str {
+
+};
+
+
 // NOTE: split_once() was in gc_mylib, and is likely not leaky
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   StackRoots _roots({&s, &delim});
@@ -136,23 +141,44 @@ bool CFileWriter::isatty() {
 class Buf : Obj {
  public:
   // The initial capacity is big enough for a line
-  Buf(int cap) : Obj(Tag::Opaque, kZeroMask, 0), len_(0), cap_(cap) {
+  Buf(int cap) : Obj(Tag::Opaque, kZeroMask, 0), str_(reinterpret_cast<MutableStr*>(NewStr(cap))), len_(0) {
   }
   void Extend(Str* s);
 
  private:
   friend class BufWriter;
-  friend Str* StrFromBuf(const Buf*);
+  friend Str* StrFromBuf(Buf*);
   friend Buf* NewBuf(int);
 
+  char* data() const {
+    return str_->data_;
+  }
+
+  char* end() {
+    return str_->data_ + len_;
+  }
+
+  int capacity() {
+      return str_ ? len(str_) : 0;
+  }
+
+  MutableStr* str_;
+  int len_;
+
+  /*
   // TODO: move this state into BufWriter
   int len_;  // data length, not including NUL
   int cap_;  // capacity, not including NUL
   char data_[1];
+  */
 };
 
-Str* StrFromBuf(const Buf* buf) {
-  return ::StrFromC(buf->data_, buf->len_);
+Str* StrFromBuf(Buf* buf) {
+  Str* s = buf->str_;
+  s->SetObjLenFromStrLen(buf->len_);
+  buf->str_ = nullptr;
+  buf->len_ = -1;
+  return s;
 }
 
 Buf* NewBuf(int cap) {
@@ -166,11 +192,11 @@ Buf* NewBuf(int cap) {
 void Buf::Extend(Str* s) {
   const int n = len(s);
 
-  assert(cap_ >= len_ + n);
+  assert(capacity() >= len_ + n);
 
-  memcpy(data_ + len_, s->data_, n);
+  memcpy(end(), s->data_, n);
   len_ += n;
-  data_[len_] = '\0';
+  data()[len_] = '\0';
 }
 
 //
@@ -179,13 +205,13 @@ void Buf::Extend(Str* s) {
 
 // TODO: realloc() to new capacity instead of creating NewBuf()
 Buf* BufWriter::EnsureCapacity(int capacity) {
-  assert(buf_->cap_ >= buf_->len_);
+  assert(buf_->capacity() >= buf_->len_);
 
-  if (buf_->cap_ < capacity) {
-    auto* b = NewBuf(std::max(buf_->cap_ * 2, capacity));
-    memcpy(b->data_, buf_->data_, buf_->len_);
+  if (buf_->capacity() < capacity) {
+    auto* b = NewBuf(std::max(buf_->capacity() * 2, capacity));
+    memcpy(b->data(), buf_->data(), buf_->len_);
     b->len_ = buf_->len_;
-    b->data_[b->len_] = '\0';
+    b->data()[b->len_] = '\0';
     return b;
   } else {
     return buf_;  // no-op

@@ -134,7 +134,7 @@ class Writer : public Obj {
 
 class Buf;  // forward declaration
 
-Str* StrFromBuf(const Buf&);
+Str* StrFromBuf(Buf&);
 Buf* NewBuf(int);
 
 constexpr uint16_t maskof_BufWriter();
