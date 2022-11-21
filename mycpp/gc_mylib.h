@@ -132,16 +132,42 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
-class Buf;  // forward declaration
+class MutableStr;
 
-Str* StrFromBuf(Buf&);
+class Buf {
+ public:
+  // The initial capacity is big enough for a line
+  Buf(int cap);
+  void Extend(Str* s);
+
+ private:
+  friend class BufWriter;
+  friend Str* StrFromBuf(Buf*);
+  friend Buf* NewBuf(int);
+
+  char* data();
+  char* end();
+  int capacity();
+
+  MutableStr* str_;
+  int len_;
+
+  /*
+  // TODO: move this state into BufWriter
+  int len_;  // data length, not including NUL
+  int cap_;  // capacity, not including NUL
+  char data_[1];
+  */
+};
+
+Str* StrFromBuf(Buf*);
 Buf* NewBuf(int);
 
 constexpr uint16_t maskof_BufWriter();
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)) {
+  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)), buf_(0) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -154,9 +180,9 @@ class BufWriter : public Writer {
 
  private:
   friend constexpr uint16_t maskof_BufWriter();
-  Buf* EnsureCapacity(int n);
+  void EnsureCapacity(int n);
 
-  Buf* buf_ = nullptr;
+  Buf buf_;
   bool is_valid_ = true;  // It becomes invalid after getvalue() is called
 };
 

@@ -137,41 +137,22 @@ bool CFileWriter::isatty() {
 // Buf
 //
 
+Buf::Buf(int cap) : str_(nullptr), len_(0) {
+}
+
+char* Buf::data() {
+  return str_->data_;
+}
+
+char* Buf::end() {
+  return str_->data_ + len_;
+}
+
+int Buf::capacity() {
+  return str_ ? len(str_) : 0;
+}
+
 // TODO: Consider renaming MutableStr, or make this a subclass of Str
-class Buf : Obj {
- public:
-  // The initial capacity is big enough for a line
-  Buf(int cap) : Obj(Tag::Opaque, kZeroMask, 0), str_(reinterpret_cast<MutableStr*>(NewStr(cap))), len_(0) {
-  }
-  void Extend(Str* s);
-
- private:
-  friend class BufWriter;
-  friend Str* StrFromBuf(Buf*);
-  friend Buf* NewBuf(int);
-
-  char* data() const {
-    return str_->data_;
-  }
-
-  char* end() {
-    return str_->data_ + len_;
-  }
-
-  int capacity() {
-      return str_ ? len(str_) : 0;
-  }
-
-  MutableStr* str_;
-  int len_;
-
-  /*
-  // TODO: move this state into BufWriter
-  int len_;  // data length, not including NUL
-  int cap_;  // capacity, not including NUL
-  char data_[1];
-  */
-};
 
 Str* StrFromBuf(Buf* buf) {
   Str* s = buf->str_;
@@ -204,17 +185,14 @@ void Buf::Extend(Str* s) {
 //
 
 // TODO: realloc() to new capacity instead of creating NewBuf()
-Buf* BufWriter::EnsureCapacity(int capacity) {
-  assert(buf_->capacity() >= buf_->len_);
+void BufWriter::EnsureCapacity(int capacity) {
+  assert(buf_.capacity() >= buf_.len_);
 
-  if (buf_->capacity() < capacity) {
-    auto* b = NewBuf(std::max(buf_->capacity() * 2, capacity));
-    memcpy(b->data(), buf_->data(), buf_->len_);
-    b->len_ = buf_->len_;
-    b->data()[b->len_] = '\0';
-    return b;
-  } else {
-    return buf_;  // no-op
+  if (buf_.capacity() < capacity) {
+    auto* s = NewStr(std::max(buf_.capacity() * 2, capacity));
+    memcpy(s->data_, buf_.str_->data_, buf_.len_);
+    s->data_[buf_.len_] = '\0';
+    buf_.str_ = reinterpret_cast<MutableStr*>(s);
   }
 }
 
@@ -228,27 +206,26 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  if (buf_ == nullptr) {
+  if (buf_.str_ == nullptr) {
     // TODO: we could make the default capacity big enough for a line, e.g. 128
     // capacity: 128 -> 256 -> 512
-    int capacity = n;
-    buf_ = NewBuf(capacity);
+    buf_.str_ = reinterpret_cast<MutableStr*>(NewStr(n));
   } else {
-    buf_ = EnsureCapacity(buf_->len_ + n);
+    EnsureCapacity(buf_.len_ + n);
   }
 
   // Append the contents to the buffer
-  buf_->Extend(s);
+  buf_.Extend(s);
 }
 
 Str* BufWriter::getvalue() {
   assert(is_valid_);  // Check for two INVALID getvalue() in a row
   is_valid_ = false;
 
-  if (buf_ == nullptr) {  // if no write() methods are called, the result is ""
+  if (buf_.str_ == nullptr) {  // if no write() methods are called, the result is ""
     return kEmptyString;
   } else {
-    return StrFromBuf(buf_);
+    return StrFromBuf(&buf_);
   }
 }
 
