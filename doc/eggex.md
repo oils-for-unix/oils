@@ -87,7 +87,7 @@ Eggexes have a consistent syntax:
 
 - Single characters are unadorned, in lowercase: `dot`, `space`, or `s`
 - A sequence of multiple characters looks like `'lit'`, `$var`, etc.
-- Constructs that match **zero** characters look like `%start %end` 
+- Constructs that match **zero** characters look like `%start`, `%word_end`, etc. 
 - Entire subpatterns (which may contain alternation, repetition, etc.) are in
   uppercase like `HexDigit`.  Important: these are **spliced** as syntax trees,
   not strings, so you **don't** need to think about quoting.
