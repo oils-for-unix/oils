@@ -27,4 +27,5 @@ def NinjaGraph(ru):
 
   ru.cc_library(
       '//osh/arith_parse',
-      srcs = ['_gen/osh/arith_parse.cc'])
+      srcs = ['_gen/osh/arith_parse.cc'],
+      deps = ['//cpp/osh'])
