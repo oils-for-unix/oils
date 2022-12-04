@@ -67,7 +67,7 @@ setglobal_compile_flags() {
     flags="$flags $env_flags"
   fi
 
-  flags="$flags -D MARK_SWEEP -D RET_VAL_ROOTING -I $REPO_ROOT"
+  flags="$flags -D MARK_SWEEP -I $REPO_ROOT"
 
   case $variant in
     (dbg)
