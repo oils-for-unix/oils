@@ -2636,20 +2636,38 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.write_ind('return tmp_ret;\n')
                 return
 
-          # Examples:
-          # return
-          # return None
-          # return my_int + 3;
-          self.write_ind('return ')
-          if o.expr:
-            self.accept(o.expr)
-          self.write(';\n')
-          return
+        # OLD return value rooting.
 
-        # OLD StackRoots
+        # Examples:
+        # return
+        # return None
+        # return my_int + 3;
         self.write_ind('return ')
         if o.expr:
+          if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
+
+            # Note: the type of the return expression (self.types[o.expr])
+            # and the return type of the FUNCTION are different.  Use the
+            # latter.
+            ret_type = self.current_func_node.type.ret_type
+
+            c_ret_type, returning_tuple = get_c_return_type(ret_type)
+
+            # return '', None  # tuple literal
+            #   but NOT
+            # return tuple_func()
+            if returning_tuple and isinstance(o.expr, TupleExpr):
+              self.write_ind('%s(' % c_ret_type)
+              for i, item in enumerate(o.expr.items):
+                if i != 0:
+                  self.write(', ')
+                self.accept(item)
+              self.write(');\n')
+              return
+
+          # Not returning tuple
           self.accept(o.expr)
+
         self.write(';\n')
 
     def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:
