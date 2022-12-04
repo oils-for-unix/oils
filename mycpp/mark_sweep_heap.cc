@@ -59,15 +59,14 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
 
 #else
 
-void* MarkSweepHeap::Allocate(size_t num_bytes) {
-  // log("Allocate %d", num_bytes);
-
+int MarkSweepHeap::MaybeCollect() {
   // Maybe collect BEFORE allocation, because the new object won't be rooted
   #if GC_EVERY_ALLOC
-  Collect();
+  int result = Collect();
   #else
+  int result = -1;
   if (num_live_ > gc_threshold_) {
-    Collect();
+    result = Collect();
   }
   #endif
 
@@ -75,6 +74,12 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
   if (num_live_ > gc_threshold_) {
     gc_threshold_ = num_live_ * 2;
   }
+
+  return result;
+}
+
+void* MarkSweepHeap::Allocate(size_t num_bytes) {
+  // log("Allocate %d", num_bytes);
 
   //
   // Allocate and update stats
