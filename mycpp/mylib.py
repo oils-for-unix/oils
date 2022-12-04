@@ -15,6 +15,11 @@ CPP = False
 PYTHON = True
 
 
+def MaybeCollect():
+  # type: () -> None
+  pass
+
+
 def StrFromC(s):
   """Hack to translate const char* s to Str * in C++."""
   return s
