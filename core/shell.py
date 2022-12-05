@@ -611,7 +611,6 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
       if 'HISTFILE_%s' % lang.upper() in environ:
         history_filename = environ.get('HISTFILE_%s' % lang.upper())
-        print(repr(history_filename))
       elif 'XDG_DATA_HOME' in environ:
         history_filename = os_path.join(
           environ.get('XDG_DATA_HOME'), 'oil/history_%s' % lang)
