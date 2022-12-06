@@ -134,40 +134,11 @@ class Writer : public Obj {
 
 class MutableStr;
 
-class Buf {
- public:
-  // The initial capacity is big enough for a line
-  Buf(int cap);
-  void Extend(Str* s);
-
- private:
-  friend class BufWriter;
-  friend Str* StrFromBuf(Buf*);
-  friend Buf* NewBuf(int);
-
-  char* data();
-  char* end();
-  int capacity();
-
-  MutableStr* str_;
-  int len_;
-
-  /*
-  // TODO: move this state into BufWriter
-  int len_;  // data length, not including NUL
-  int cap_;  // capacity, not including NUL
-  char data_[1];
-  */
-};
-
-Str* StrFromBuf(Buf*);
-Buf* NewBuf(int);
-
 constexpr uint16_t maskof_BufWriter();
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)), buf_(0) {
+  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)), str_(0), len_(0) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -182,13 +153,19 @@ class BufWriter : public Writer {
   friend constexpr uint16_t maskof_BufWriter();
   void EnsureCapacity(int n);
 
-  Buf buf_;
+  void Extend(Str* s);
+  char* data();
+  char* end();
+  int capacity();
+
+  MutableStr* str_;
+  int len_;
   bool is_valid_ = true;  // It becomes invalid after getvalue() is called
 };
 
 constexpr uint16_t maskof_BufWriter() {
   // maskvit_v() because BufWriter has virtual methods
-  return maskbit_v(offsetof(BufWriter, buf_));
+  return maskbit_v(offsetof(BufWriter, str_));
 }
 
 class FormatStringer {

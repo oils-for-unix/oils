@@ -140,43 +140,24 @@ bool CFileWriter::isatty() {
 }
 
 //
-// Buf
+// BufWriter
 //
 
-Buf::Buf(int cap) : str_(nullptr), len_(0) {
-}
-
-char* Buf::data() {
+char* BufWriter::data() {
+  assert(str_);
   return str_->data_;
 }
 
-char* Buf::end() {
+char* BufWriter::end() {
+  assert(str_);
   return str_->data_ + len_;
 }
 
-int Buf::capacity() {
+int BufWriter::capacity() {
   return str_ ? len(str_) : 0;
 }
 
-// TODO: Consider renaming MutableStr, or make this a subclass of Str
-
-Str* StrFromBuf(Buf* buf) {
-  Str* s = buf->str_;
-  s->SetObjLenFromStrLen(buf->len_);
-  buf->str_ = nullptr;
-  buf->len_ = -1;
-  return s;
-}
-
-Buf* NewBuf(int cap) {
-  // TODO: sizeof(Buf) is an overestimate because of flexible array member
-  void* place = gHeap.Allocate(sizeof(Buf) + cap + 1);
-
-  auto* b = new (place) Buf(cap);
-  return b;
-}
-
-void Buf::Extend(Str* s) {
+void BufWriter::Extend(Str* s) {
   const int n = len(s);
 
   assert(capacity() >= len_ + n);
@@ -186,19 +167,15 @@ void Buf::Extend(Str* s) {
   data()[len_] = '\0';
 }
 
-//
-// BufWriter
-//
-
 // TODO: realloc() to new capacity instead of creating NewBuf()
-void BufWriter::EnsureCapacity(int capacity) {
-  assert(buf_.capacity() >= buf_.len_);
+void BufWriter::EnsureCapacity(int cap) {
+  assert(capacity() >= len_);
 
-  if (buf_.capacity() < capacity) {
-    auto* s = NewMutableStr(std::max(buf_.capacity() * 2, capacity));
-    memcpy(s->data_, buf_.str_->data_, buf_.len_);
-    s->data_[buf_.len_] = '\0';
-    buf_.str_ = s;
+  if (capacity() < cap) {
+    auto* s = NewMutableStr(std::max(capacity() * 2, cap));
+    memcpy(s->data_, str_->data_, len_);
+    s->data_[len_] = '\0';
+    str_ = s;
   }
 }
 
@@ -212,26 +189,30 @@ void BufWriter::write(Str* s) {
     return;
   }
 
-  if (buf_.str_ == nullptr) {
+  if (str_ == nullptr) {
     // TODO: we could make the default capacity big enough for a line, e.g. 128
     // capacity: 128 -> 256 -> 512
-    buf_.str_ = NewMutableStr(n);
+    str_ = NewMutableStr(n);
   } else {
-    EnsureCapacity(buf_.len_ + n);
+    EnsureCapacity(len_ + n);
   }
 
   // Append the contents to the buffer
-  buf_.Extend(s);
+  Extend(s);
 }
 
 Str* BufWriter::getvalue() {
   assert(is_valid_);  // Check for two INVALID getvalue() in a row
   is_valid_ = false;
 
-  if (buf_.str_ == nullptr) {  // if no write() methods are called, the result is ""
+  if (str_ == nullptr) {  // if no write() methods are called, the result is ""
     return kEmptyString;
   } else {
-    return StrFromBuf(&buf_);
+    Str* s = str_;
+    s->SetObjLenFromStrLen(len_);
+    str_ = nullptr;
+    len_ = -1;
+    return s;
   }
 }
 
