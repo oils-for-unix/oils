@@ -840,11 +840,35 @@ The exit status of all the process subs in the last command.
 
 ### String
 
-find sub join split
+#### find 
+
+#### sub 
+
+#### join 
+
+Given an array of strings, returns a string.
+
+    var x = ['a', 'b', 'c']
+
+    $ echo $join(x)
+    abc
+
+    $ echo $join(x, ' ')  # optional delimiter
+    a b c
+
+#### split
+
+<!--
+Note: This is currently SplitForWordEval.  Could expose Python-type splitting?
+-->
 
 ### Word
 
-glob maybe
+<!--
+Note: glob() function conflicts with 'glob' language help topic
+-->
+
+#### maybe
 
 ### Arrays
 
