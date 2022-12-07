@@ -140,7 +140,7 @@ def ParseJobs(stdin):
 
           num_tasks += 1
       except (IndexError, ValueError) as e:
-        log('Error in %r: %s (%r)', tsv_path, e, row)
+        raise RuntimeError('Error in %r: %s (%r)' % (tsv_path, e, row))
 
     num_failures = len(failed_tasks)
     if num_failures == 0:
