@@ -353,6 +353,7 @@ run-tasks() {
       timeout $timeout_secs $script $action >$log_path 2>&1
     status=$?
     set -o errexit
+    command -v timeout
     echo "$task_name status=$status"
     ls -l $tsv || true
 
