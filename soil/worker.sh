@@ -356,6 +356,8 @@ run-tasks() {
     command -v timeout
     echo "$task_name status=$status"
     ls -l $tsv || true
+    ls -l $log_path || true
+    cat $log_path
 
     if test "$status" -gt "$max_status"; then
       max_status=$status
