@@ -128,16 +128,19 @@ def ParseJobs(stdin):
     with open(tsv_path) as f:
       reader = csv.reader(f, delimiter='\t')
 
-      for row in reader:
-        status = int(row[0])
-        task_name = row[2]
-        if status != 0:
-          failed_tasks.append(task_name)
+      try:
+        for row in reader:
+          status = int(row[0])
+          task_name = row[2]
+          if status != 0:
+            failed_tasks.append(task_name)
 
-        elapsed = float(row[1])
-        total_elapsed += elapsed
+          elapsed = float(row[1])
+          total_elapsed += elapsed
 
-        num_tasks += 1
+          num_tasks += 1
+      except (IndexError, ValueError) as e:
+        log('Error in %r: %s (%r)', tsv_path, e, row)
 
     num_failures = len(failed_tasks)
     if num_failures == 0:
