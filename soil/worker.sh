@@ -343,6 +343,7 @@ run-tasks() {
 
     # 15 minutes per task
     # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
+    # TODO: should have a configurable timeout
     local timeout_secs=900
 
     set +o errexit
@@ -358,7 +359,6 @@ run-tasks() {
     fi
 
     # show the last line
-
     echo
     tsv-row status elapsed task script action result_html
     tail -n 1 $tsv
