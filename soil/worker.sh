@@ -353,26 +353,9 @@ run-tasks() {
       timeout $timeout_secs $script $action >$log_path 2>&1
     status=$?
     set -o errexit
-    command -v timeout
-    echo "$task_name status=$status"
-    ls -l $tsv || true
-    ls -l $log_path || true
-    cat $log_path
 
     if test "$status" -gt "$max_status"; then
       max_status=$status
-    fi
-
-    # debug
-    if test -f $tsv; then
-      echo "$tsv doesn't exist"
-      which timeout
-
-      ls -a -l $out_dir
-      time-tsv -o $tsv -- ls
-      echo
-      cat $tsv
-      echo
     fi
 
     # show the last line

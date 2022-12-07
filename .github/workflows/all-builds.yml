@@ -24,7 +24,7 @@ on:
   #    - master
 jobs:
   dummy_orig:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
