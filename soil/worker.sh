@@ -343,6 +343,7 @@ run-tasks() {
 
     # 15 minutes per task
     # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
+    # TODO: should have a configurable timeout
     local timeout_secs=900
 
     set +o errexit
@@ -352,6 +353,8 @@ run-tasks() {
       timeout $timeout_secs $script $action >$log_path 2>&1
     status=$?
     set -o errexit
+    echo "$task_name status=$status"
+    ls -l $tsv || true
 
     if test "$status" -gt "$max_status"; then
       max_status=$status

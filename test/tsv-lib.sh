@@ -1,4 +1,4 @@
-# TSV utiltiies
+# TSV utilties
 #
 # Usage:
 #   source test/tsv-lib.sh

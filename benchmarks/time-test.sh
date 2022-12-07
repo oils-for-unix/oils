@@ -7,7 +7,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source test/common.sh
+source test/tsv-lib.sh
 
 # TODO: This would be a nice little program for Oil
 count-lines-and-cols() {
@@ -253,8 +256,29 @@ test-time-helper() {
   assert $? -eq 2
 }
 
+test-time-tsv() {
+  local status
+
+  local out=_tmp/time-test-zz
+  rm -f -v $out
+
+  # Similar to what soil/worker.sh does
+  set +o errexit
+  time-tsv -o $out --append -- zz
+  status=$?
+  set -o errexit
+
+  echo status=$status
+  assert $status -eq 1
+
+  cat $out
+  echo
+}
+
 soil-run() {
   run-test-funcs
 }
+
+
 
 "$@"
