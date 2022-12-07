@@ -357,8 +357,19 @@ run-tasks() {
       max_status=$status
     fi
 
-    # show the last line
+    # debug
+    if test -f $tsv; then
+      echo "$tsv doesn't exist"
+      which timeout
 
+      ls -a -l $out_dir
+      time-tsv -o $tsv -- ls
+      echo
+      cat $tsv
+      echo
+    fi
+
+    # show the last line
     echo
     tsv-row status elapsed task script action result_html
     tail -n 1 $tsv
