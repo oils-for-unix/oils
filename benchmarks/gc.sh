@@ -169,6 +169,10 @@ parser-compare() {
   # 277 ms -- free() is slow
   OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $tsv_out $bin 'mutator+malloc+free' $file
 
+  # Enable GC with low GC threshold
+  # Note: The parsing case won't show up because main_loop.ParseWholeFile() retains all nodes
+  OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 run-osh $tsv_out $bin 'mutator+malloc+free+gc' $file
+
   if false; then
     # Surprisingly, -m32 is SLOWER, even though it allocates less.
     # My guess is because less work is going into maintaining this code path in
@@ -195,14 +199,6 @@ parser-compare() {
     # Maybe it doesn't do all the malloc_consolidate() stuff.
     banner 'tcmalloc GC on exit - malloc + free'
     OIL_GC_ON_EXIT=1 run-osh $tcmalloc_bin
-  fi
-
-  echo 'TODO'
-  if false; then
-    banner 'OPT with low threshold - malloc + free + mark/sweep'
-
-    # TODO: crashes!
-    OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 run-osh $bin
   fi
 
   if command -v pretty-tsv; then

@@ -55,6 +55,10 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
   NotImplemented();
 }
 
+int MarkSweepHeap::MaybeCollect() {
+  return -1;  // no collection
+}
+
 #elif defined(BUMP_LEAK)
 
 #else
