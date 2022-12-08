@@ -16,6 +16,10 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib {
 
+inline void MaybeCollect() {
+  gHeap.MaybeCollect();
+}
+
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 // Used by generated _build/cpp/osh_eval.cc

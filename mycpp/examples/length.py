@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import os
 from mycpp.mylib import log
+from mycpp import mylib
 
 from typing import Optional
 
@@ -94,6 +95,9 @@ def run_benchmarks():
     result += len(mylist[1:])
 
     i += 1
+
+    mylib.MaybeCollect()
+
   log('result = %d', result)
   log('iterations = %d', n)
 
