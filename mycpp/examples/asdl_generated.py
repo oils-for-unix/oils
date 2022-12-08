@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import os
 
+from mycpp import mylib
 from mycpp.mylib import log
 
 from typing import Optional, List
@@ -52,6 +53,7 @@ def run_benchmarks():
   while i < n:
     x = arith_expr__Const(i)
     i = i + 1
+    mylib.MaybeCollect()
 
 
 if __name__ == '__main__':

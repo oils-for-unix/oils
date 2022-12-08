@@ -5,6 +5,7 @@ escape.py: Test string and list operations.
 from __future__ import print_function
 
 import os
+from mycpp import mylib
 from mycpp.mylib import log
 
 from typing import List
@@ -57,6 +58,8 @@ def run_benchmarks():
     #s = '*'
     BackslashEscape(s, GLOB_META_CHARS)
     i = i + 1
+
+    mylib.MaybeCollect()
 
 
 if __name__ == '__main__':

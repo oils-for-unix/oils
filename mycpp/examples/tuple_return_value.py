@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import os
 
+from mycpp import mylib
 from mycpp.mylib import log
 
 from typing import Tuple, List
@@ -43,6 +44,7 @@ def run_benchmarks():
     j, s = f(i)
     if j == 100000:
       print(str(i))
+    mylib.MaybeCollect()
 
 
 if __name__ == '__main__':

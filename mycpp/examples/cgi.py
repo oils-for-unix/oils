@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import os
 
+from mycpp import mylib
 from mycpp.mylib import log
 
 
@@ -49,6 +50,8 @@ def run_benchmarks():
     escape('<html>', True)
     i = i + 1
     #log("i = %d", i)
+
+    mylib.MaybeCollect()
 
 
 if __name__ == '__main__':
