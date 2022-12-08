@@ -136,16 +136,13 @@ class Writer : public Obj {
   virtual bool isatty() = 0;
 };
 
-class Buf;  // forward declaration
-
-Str* StrFromBuf(const Buf&);
-Buf* NewBuf(int);
+class MutableStr;
 
 constexpr uint16_t maskof_BufWriter();
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)) {
+  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)), str_(0), len_(0) {
   }
   void write(Str* s) override;
   void flush() override {
@@ -158,15 +155,21 @@ class BufWriter : public Writer {
 
  private:
   friend constexpr uint16_t maskof_BufWriter();
-  Buf* EnsureCapacity(int n);
+  void EnsureCapacity(int n);
 
-  Buf* buf_ = nullptr;
+  void Extend(Str* s);
+  char* data();
+  char* end();
+  int capacity();
+
+  MutableStr* str_;
+  int len_;
   bool is_valid_ = true;  // It becomes invalid after getvalue() is called
 };
 
 constexpr uint16_t maskof_BufWriter() {
   // maskvit_v() because BufWriter has virtual methods
-  return maskbit_v(offsetof(BufWriter, buf_));
+  return maskbit_v(offsetof(BufWriter, str_));
 }
 
 class FormatStringer {
