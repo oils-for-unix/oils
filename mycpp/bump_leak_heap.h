@@ -44,6 +44,9 @@ class BumpLeakHeap {
 
   void* Allocate(size_t num_bytes);
   void* Reallocate(void* p, size_t num_bytes);
+  int MaybeCollect() {
+    return -1;  // no collection attempted
+  }
 
   void CleanProcessExit() {
   }
