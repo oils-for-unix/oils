@@ -157,16 +157,6 @@ int BufWriter::capacity() {
   return str_ ? len(str_) : 0;
 }
 
-void BufWriter::Extend(Str* s) {
-  const int n = len(s);
-
-  assert(capacity() >= len_ + n);
-
-  memcpy(end(), s->data_, n);
-  len_ += n;
-  data()[len_] = '\0';
-}
-
 // TODO: realloc() to new capacity instead of creating NewBuf()
 void BufWriter::EnsureCapacity(int cap) {
   assert(capacity() >= len_);
@@ -182,7 +172,7 @@ void BufWriter::EnsureCapacity(int cap) {
 void BufWriter::write(Str* s) {
   assert(is_valid_);  // Can't write() after getvalue()
 
-  int n = len(s);
+  const int n = len(s);
 
   // write('') is a no-op, so don't create Buf if we don't need to
   if (n == 0) {
@@ -198,7 +188,11 @@ void BufWriter::write(Str* s) {
   }
 
   // Append the contents to the buffer
-  Extend(s);
+  assert(capacity() >= len_ + n);
+
+  memcpy(end(), s->data_, n);
+  len_ += n;
+  data()[len_] = '\0';
 }
 
 Str* BufWriter::getvalue() {
