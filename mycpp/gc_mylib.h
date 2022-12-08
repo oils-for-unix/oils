@@ -142,7 +142,10 @@ constexpr uint16_t maskof_BufWriter();
 
 class BufWriter : public Writer {
  public:
-  BufWriter() : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)), str_(0), len_(0) {
+  BufWriter()
+      : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)),
+        str_(nullptr),
+        len_(0) {
   }
   void write(Str* s) override;
   void flush() override {

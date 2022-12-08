@@ -8,13 +8,12 @@ mylib::FormatStringer gBuf;
 
 namespace mylib {
 
-class MutableStr : public Str {
-
-};
+class MutableStr : public Str {};
 
 MutableStr* NewMutableStr(int cap) {
-  // In order for everything to work, MutableStr must be identical in layout to Str.
-  // One easy way to achieve this is for MutableStr to have no members and to inherit from Str.
+  // In order for everything to work, MutableStr must be identical in layout to
+  // Str. One easy way to achieve this is for MutableStr to have no members and
+  // to inherit from Str.
   static_assert(sizeof(MutableStr) == sizeof(Str));
   return reinterpret_cast<MutableStr*>(NewStr(cap));
 }
