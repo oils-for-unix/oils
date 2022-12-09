@@ -83,7 +83,7 @@ appendix](#list-of-pitfalls).
 ### When Is `$?` Set?
 
 Each external process and shell builtin has one exit status.  But the
-definition of `$?` is obscure: it's tied to the `command` rule in the POSIX
+definition of `$?` is obscure: it's tied to the `pipeline` rule in the POSIX
 shell grammar, which does **not** correspond to a single process or builtin.
 
 We saw that `pipefail` fixes one case:
