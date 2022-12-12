@@ -280,7 +280,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
                  virtual=None, local_vars=None, fmt_ids=None,
-                 mask_funcs=None,
+                 field_gc=None,
                  decl=False, forward_decl=False, ret_val_rooting=False):
       self.types = types
       self.const_lookup = const_lookup
@@ -292,7 +292,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # phase.  But then write it in the definition phase.
       self.local_vars = local_vars
       self.fmt_ids = fmt_ids
-      self.mask_funcs = mask_funcs
+      self.field_gc = field_gc
       self.fmt_funcs = io.StringIO()
 
       self.decl = decl
@@ -2209,39 +2209,64 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             mask_func_name = 'maskbit_v'
           else:
             mask_func_name = 'maskbit'
-            # TODO: No inheritance -- SORT MEMBER VARS HERE
 
-          bits = []
-          for name in sorted(self.member_vars):
-            c_type = get_c_type(self.member_vars[name])
-            if CTypeIsManaged(c_type):
-              bits.append('%s(offsetof(%s, %s))' % (mask_func_name, o.name, name))
-          if bits:
-            self.mask_funcs[o] = 'maskof_%s()' % o.name
+          mask_bits = []
+          if self.virtual.CanReorderFields(o.name):
+            # No inheritance, so we are free to REORDER member vars, putting
+            # pointers at the front.
+
+            pointer_members = []
+            non_pointer_members = []
+
+            for name in self.member_vars:
+              c_type = get_c_type(self.member_vars[name])
+              if CTypeIsManaged(c_type):
+                pointer_members.append(name)
+              else:
+                non_pointer_members.append(name)
+
+            # So we declare them in the right order
+            sorted_member_names = pointer_members + non_pointer_members
+
+            if len(pointer_members) == 0:
+              self.field_gc[o] = ('Tag::Opaque', None)
+            else:
+              self.field_gc[o] = ('Tag::Scanned', len(pointer_members))
+          else:
+            for name in sorted(self.member_vars):
+              c_type = get_c_type(self.member_vars[name])
+              if CTypeIsManaged(c_type):
+                mask_bits.append('%s(offsetof(%s, %s))' % (mask_func_name, o.name, name))
+
+            # If the arg is 0, then it can be optimized as Tag::Opque
+            if len(mask_bits) == 0:
+              self.field_gc[o] = ('Tag::Opaque', None)
+            else:
+              self.field_gc[o] = ('Tag::FixedSize', None)
+
+            sorted_member_names = sorted(self.member_vars)
 
           # Now write member defs
           #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
           if self.member_vars:
             self.decl_write('\n')  # separate from functions
-            for name in sorted(self.member_vars):
+            for name in sorted_member_names:
               c_type = get_c_type(self.member_vars[name])
               self.decl_write_ind('%s %s;\n', c_type, name)
 
           self.current_class_name = None
 
-          if bits:
+          if mask_bits:
             self.decl_write_ind('\n')
             self.decl_write_ind('constexpr uint16_t field_mask() {\n')
 
-            self.decl_write_ind('  return\n')
-            for i, b in enumerate(bits):
-              if i == 0:
-                self.decl_write_ind('    ')
-              else:
-                self.decl_write_ind('  | ')
+            self.decl_write_ind('  return ')
+            for i, b in enumerate(mask_bits):
+              if i != 0:
+                self.decl_write('\n')
+                self.decl_write_ind('       | ')
               self.decl_write(b)
-              self.decl_write('\n')
-            self.decl_write_ind('  ;\n')
+            self.decl_write(';\n')
             self.decl_write_ind('}\n')
 
           self.decl_write('\n')
@@ -2270,19 +2295,25 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               # Base class can use Obj() constructor directly, but Derived class can't
               if not base_class_name:
-                if o in self.mask_funcs:
-                  mask_str = 'field_mask()'
-                else: 
-                  mask_str = 'kZeroMask'
+                if o in self.field_gc:
+                  obj_tag, obj_arg = self.field_gc[o]
+                  if obj_tag == 'Tag::FixedSize':
+                    obj_mask = 'field_mask()'
+                    obj_len = 'kNoObjLen'  # don't need length
+                  elif obj_tag == 'Tag::Scanned':
+                    obj_mask = 'kZeroMask'
+                    obj_len = '%d * sizeof(void*)' % obj_arg
+                  elif obj_tag == 'Tag::Opaque':
+                    obj_mask = 'kZeroMask'
+                    obj_len = 'kNoObjLen'
+                else:
+                  # do we need this default?
+                  obj_tag = 'Tag::Opaque'
+                  obj_mask = 'kZeroMask'
+                  obj_len = 'kNoObjLen'
 
                 self.write('\n')
-                if 0:
-                  # TODO: Tag::Scanned, kZeroMask, num_pointer_members * sizeof(void*)
-                  self.write(
-                      '    : Obj(Tag::FixedSize, %s, sizeof(%s)) ' % (mask_str, o.name))
-                else:
-                  self.write(
-                      '    : Obj(Tag::FixedSize, %s, sizeof(%s)) ' % (mask_str, o.name))
+                self.write('    : Obj(%s, %s, %s) ' % (obj_tag, obj_mask, obj_len))
 
               # Check for Base.__init__(self, ...) and move that to the initializer list.
 
@@ -2320,12 +2351,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               # Derived classes MUTATE the mask
               if base_class_name:
-                mask_str = self.mask_funcs.get(o)
-                if mask_str is None:
+                pair = self.field_gc.get(o)
+                if pair is None:
                   #self.log('*** No mask for %s', o.name)
                   pass
                 else:
-                  self.write('  field_mask_ |= %s::field_mask();\n' % o.name)
+                  obj_tag, _ = pair
+                  if obj_tag == 'Tag::FixedSize':
+                    self.write('  field_mask_ |= %s::field_mask();\n' % o.name)
 
               # Now visit the rest of the statements
               self.indent += 1

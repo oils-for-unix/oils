@@ -285,10 +285,12 @@ def main(argv):
   # After seeing class and method names in the first pass, figure out which
   # ones are virtual.  We use this info in the second pass.
   virtual.Calculate()
-  #log('V %s', virtual.virtuals)
+  if 0:
+    log('virtuals %s', virtual.virtuals)
+    log('has_vtable %s', virtual.has_vtable)
 
   local_vars = {}  # FuncDef node -> (name, c_type) list
-  mask_funcs = {}  # ClassDef node -> maskof_Foo() string, if it's required
+  field_gc = {}  # ClassDef node -> maskof_Foo() string, if it's required
 
   # Node -> fmt_name, plus a hack for the counter
   # TODO: This could be a class with 2 members
@@ -306,7 +308,7 @@ def main(argv):
       out_f = f
     p3 = cppgen_pass.Generate(result.types, const_lookup, out_f,
                               local_vars=local_vars, fmt_ids=fmt_ids,
-                              mask_funcs=mask_funcs,
+                              field_gc=field_gc,
                               virtual=virtual, decl=True)
 
     p3.visit_mypy_file(module)
@@ -319,7 +321,7 @@ def main(argv):
   for name, module in to_compile:
     p4 = cppgen_pass.Generate(result.types, const_lookup, f,
                               local_vars=local_vars, fmt_ids=fmt_ids,
-                              mask_funcs=mask_funcs,
+                              field_gc=field_gc,
                               ret_val_rooting=opts.ret_val_rooting)
     p4.visit_mypy_file(module)
 

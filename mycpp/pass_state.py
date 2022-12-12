@@ -7,7 +7,7 @@ import sys
 
 from collections import defaultdict
 
-#from mycpp.util import log
+from mycpp.util import log
 
 
 class Virtual(object):
@@ -20,6 +20,7 @@ class Virtual(object):
     self.subclasses: dict[str, list[str]] = defaultdict(list)
     self.virtuals: list[tuple[str, str]] = []
     self.has_vtable: dict[str, bool] = {}
+    self.can_reorder_fields: dict[str, bool] = {}
 
     # _Executor -> vm::_Executor
     self.base_class_unique: dict[str, str] = {}
@@ -27,6 +28,11 @@ class Virtual(object):
   # These are called on the Forward Declare pass
   def OnMethod(self, class_name: str, method_name: str) -> None:
     #log('OnMethod %s %s', class_name, method_name)
+
+    # __init__ and so forth don't count
+    if method_name.startswith('__') and method_name.endswith('__'):
+      return
+
     self.methods[class_name].append(method_name)
 
   def OnSubclass(self, base_class: str, subclass: str) -> None:
@@ -54,9 +60,15 @@ class Virtual(object):
   def Calculate(self) -> None:
     """
     Call this after the forward declare pass.
+
+    TODO: Are there bugs based on conflicting class names?
     """
     for base_class, subclasses in self.subclasses.items():
+      self.can_reorder_fields[base_class] = False
+
       for subclass in subclasses:
+        self.can_reorder_fields[subclass] = False
+
         b_methods = self.methods[base_class]
         s_methods = self.methods[subclass]
         overlapping = set(b_methods) & set(s_methods)
@@ -73,3 +85,10 @@ class Virtual(object):
 
   def HasVTable(self, class_name: str) -> bool:
     return class_name in self.has_vtable
+
+  def CanReorderFields(self, class_name: str) -> bool:
+    if class_name in self.can_reorder_fields:
+      return self.can_reorder_fields[class_name]
+    else:
+      return True  # by default they can be reordered
+
