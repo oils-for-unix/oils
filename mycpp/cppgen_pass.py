@@ -2158,8 +2158,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')
 
-          # NOTE: declaration still has to traverse the whole body to fill out
-          # self.member_vars!!!
           block = o.defs
 
           self.indent += 1
@@ -2203,15 +2201,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.current_method_name = None
               continue
 
-            # Do we need this?  I think everything under a class is a method?
+            # TODO: Remove this?  Everything under a class is a method?
             self.accept(stmt)
 
           # List of field mask expressions
-
           if self.virtual.HasVTable(o.name):  # Account for vtable pointer offset
             mask_func_name = 'maskbit_v'
           else:
             mask_func_name = 'maskbit'
+            # TODO: No inheritance -- SORT MEMBER VARS HERE
 
           bits = []
           for name in sorted(self.member_vars):
@@ -2231,22 +2229,26 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.current_class_name = None
 
+          if bits:
+            self.decl_write_ind('\n')
+            self.decl_write_ind('constexpr uint16_t field_mask() {\n')
+
+            self.decl_write_ind('  return\n')
+            for i, b in enumerate(bits):
+              if i == 0:
+                self.decl_write_ind('    ')
+              else:
+                self.decl_write_ind('  | ')
+              self.decl_write(b)
+              self.decl_write('\n')
+            self.decl_write_ind('  ;\n')
+            self.decl_write_ind('}\n')
+
           self.decl_write('\n')
           self.decl_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
           self.indent -= 1
           self.decl_write_ind('};\n')
           self.decl_write('\n')
-
-          if bits:
-            self.decl_write('constexpr uint16_t maskof_%s() {\n', o.name)
-
-            self.decl_write('  return\n')
-            self.decl_write('    ')
-            self.decl_write('\n  | '.join(bits))
-            self.decl_write(';\n')
-
-            self.decl_write('}\n')
-            self.decl_write('\n')
 
           return
 
@@ -2269,13 +2271,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               # Base class can use Obj() constructor directly, but Derived class can't
               if not base_class_name:
                 if o in self.mask_funcs:
-                  mask_str = 'maskof_%s()' % o.name
+                  mask_str = 'field_mask()'
                 else: 
                   mask_str = 'kZeroMask'
 
                 self.write('\n')
-                self.write(
-                    '    : Obj(Tag::FixedSize, %s, sizeof(%s)) ' % (mask_str, o.name))
+                if 0:
+                  # TODO: Tag::Scanned, kZeroMask, num_pointer_members * sizeof(void*)
+                  self.write(
+                      '    : Obj(Tag::FixedSize, %s, sizeof(%s)) ' % (mask_str, o.name))
+                else:
+                  self.write(
+                      '    : Obj(Tag::FixedSize, %s, sizeof(%s)) ' % (mask_str, o.name))
 
               # Check for Base.__init__(self, ...) and move that to the initializer list.
 
@@ -2318,7 +2325,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                   #self.log('*** No mask for %s', o.name)
                   pass
                 else:
-                  self.write('  field_mask_ |= %s;\n' % mask_str)
+                  self.write('  field_mask_ |= %s::field_mask();\n' % o.name)
 
               # Now visit the rest of the statements
               self.indent += 1
