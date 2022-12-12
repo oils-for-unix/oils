@@ -15,9 +15,10 @@ from frontend import match
 from frontend import reader
 from osh import word_
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
+  from core.pyutil import Readline
   from core.util import _DebugFile
 
 
@@ -30,9 +31,9 @@ class Evaluator(object):
   -p, if we want to support that.
   """
 
-  def __init__(self, readline_mod, parse_ctx, debug_f):
-    # type: (Any, ParseContext, _DebugFile) -> None
-    self.readline_mod = readline_mod
+  def __init__(self, readline, parse_ctx, debug_f):
+    # type: (Optional[Readline], ParseContext, _DebugFile) -> None
+    self.readline = readline
     self.parse_ctx = parse_ctx
     self.debug_f = debug_f
 
@@ -40,7 +41,7 @@ class Evaluator(object):
     # type: (str) -> str
     """Returns an expanded line."""
 
-    if not self.readline_mod:
+    if not self.readline:
       return line
 
     tokens = match.HistoryTokens(line)
@@ -50,7 +51,7 @@ class Evaluator(object):
     if all(id_ == Id.History_Other for (id_, _) in tokens):
       return line
 
-    history_len = self.readline_mod.get_current_history_length()
+    history_len = self.readline.get_current_history_length()
     if history_len <= 0:  # no commands to expand
       return line
 
@@ -63,7 +64,7 @@ class Evaluator(object):
 
       elif id_ == Id.History_Op:
         # all operations get a part of the previous line
-        prev = self.readline_mod.get_history_item(history_len)
+        prev = self.readline.get_history_item(history_len)
 
         ch = val[1]
         if ch == '!':  # !!
@@ -141,7 +142,7 @@ class Evaluator(object):
         else:
           num = index
 
-        out = self.readline_mod.get_history_item(num)
+        out = self.readline.get_history_item(num)
         if out is None:  # out of range
           raise util.HistoryError('%s: not found', val)
 
@@ -161,7 +162,7 @@ class Evaluator(object):
 
         out = None
         for i in xrange(history_len, 1, -1):
-          cmd = self.readline_mod.get_history_item(i)
+          cmd = self.readline.get_history_item(i)
           if prefix and cmd.startswith(prefix):
             out = cmd
           if len(substring) and substring in cmd:

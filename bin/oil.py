@@ -53,10 +53,6 @@ from tools import deps
 from tools import osh2oil
 from tools import readlink
 
-try:
-  import line_input
-except ImportError:
-  line_input = None
 
 # TODO: Hook up to completion.
 SUBCOMMANDS = [
@@ -267,9 +263,11 @@ def AppBundleMain(argv):
     login_shell = True
     main_name = main_name[1:]
 
+  readline = pyutil.MaybeGetReadline()
+
   if main_name.endswith('sh'):  # sh, osh, bash imply OSH
     status = shell.Main('osh', arg_r, posix.environ, login_shell,
-                        loader, line_input)
+                        loader, readline)
     return status
 
   elif main_name == 'oshc':
@@ -283,7 +281,7 @@ def AppBundleMain(argv):
 
   elif main_name == 'oil':
     return shell.Main('oil', arg_r, posix.environ, login_shell,
-                      loader, line_input)
+                      loader, readline)
 
   elif main_name == 'tea':
     arg_r.Next()

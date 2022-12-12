@@ -67,7 +67,7 @@ import libc
 
 import posix_ as posix
 
-from typing import List, Dict, Optional, Any, TYPE_CHECKING
+from typing import List, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import Proc
@@ -130,9 +130,9 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
 
 class ShellOptHook(state.OptHook):
 
-  def __init__(self, line_input):
-    # type: (Any) -> None
-    self.line_input = line_input
+  def __init__(self, readline):
+    # type: (Optional[pyutil.Readline]) -> None
+    self.readline = readline
 
   def OnChange(self, opt0_array, opt_name, b):
     # type: (List[bool], str, bool) -> bool
@@ -142,8 +142,8 @@ class ShellOptHook(state.OptHook):
     """
     if opt_name == 'vi' or opt_name == 'emacs':
       # TODO: Replace with a hook?  Just like setting LANG= can have a hook.
-      if self.line_input:
-        self.line_input.parse_and_bind("set editing-mode " + opt_name);
+      if self.readline:
+        self.readline.parse_and_bind("set editing-mode " + opt_name);
       else:
         stderr_line(
             "Warning: Can't set option %r because Oil wasn't built with line editing (e.g. GNU readline)", opt_name)
@@ -174,8 +174,8 @@ def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
   b[builtin_i.describe] = builtin_oil.Describe(mem, errfmt)
 
 
-def Main(lang, arg_r, environ, login_shell, loader, line_input):
-  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Any) -> int
+def Main(lang, arg_r, environ, login_shell, loader, readline):
+  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[pyutil.Readline]) -> int
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
   Args:
@@ -184,7 +184,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     environ: environment
     login_shell: Was - on the front?
     loader: to get help, version, grammar, etc.
-    line_input: optional GNU readline
+    readline: optional GNU readline
   """
   # Differences between osh and oil:
   # - --help?  I guess Oil has a SUPERSET of OSH options.
@@ -195,7 +195,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # osh-pure:
   # - no oil grammar
   # - no expression evaluator
-  # - no interactive shell, or line_input
+  # - no interactive shell, or readline
   # - no process.*
   #   process.{ExternalProgram,Waiter,FdState,JobState,SignalState} -- we want
   #   to evaluate config files without any of these
@@ -253,7 +253,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   arg_r.Next()
   mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
 
-  opt_hook = ShellOptHook(line_input)
+  opt_hook = ShellOptHook(readline)
   # Note: only MutableOpts needs mem, so it's not a true circular dep.
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
   mem.exec_opts = exec_opts  # circular dep
@@ -408,9 +408,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   builtins[builtin_i.help] = help_builtin
 
-  # Interactive, depend on line_input
-  builtins[builtin_i.bind] = builtin_lib.Bind(line_input, errfmt)
-  builtins[builtin_i.history] = builtin_lib.History(line_input, mylib.Stdout())
+  # Interactive, depend on readline
+  builtins[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
+  builtins[builtin_i.history] = builtin_lib.History(readline, mylib.Stdout())
 
   #
   # Initialize Evaluators
@@ -483,8 +483,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   builtins[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer, errfmt)
 
-  # History evaluation is a no-op if line_input is None.
-  hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
+  # History evaluation is a no-op if readline is None.
+  hist_ev = history.Evaluator(readline, hist_ctx, debug_f)
 
   if flag.c is not None:
     src = source.CFlag()  # type: source_t
@@ -495,7 +495,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   elif flag.i:  # force interactive
     src = source.Stdin(' -i')
     line_reader = py_reader.InteractiveLineReader(
-        arena, prompt_ev, hist_ev, line_input, prompt_state)
+        arena, prompt_ev, hist_ev, readline, prompt_state)
     mutable_opts.set_interactive()
 
   else:
@@ -509,7 +509,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
         if stdin.isatty():
           src = source.Interactive()
           line_reader = py_reader.InteractiveLineReader(
-              arena, prompt_ev, hist_ev, line_input, prompt_state)
+              arena, prompt_ev, hist_ev, readline, prompt_state)
           mutable_opts.set_interactive()
         else:
           src = source.Stdin('')
@@ -584,7 +584,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     mutable_opts.set_redefine_proc()
     mutable_opts.set_redefine_module()
 
-    if line_input:
+    if readline:
       # NOTE: We're using a different WordEvaluator here.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
                                              splitter, errfmt)
@@ -606,12 +606,12 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
       if term_width != 0:
         display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
-                                      debug_f, line_input)  # type: comp_ui._IDisplay
+                                      debug_f, readline)  # type: comp_ui._IDisplay
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
       history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
-      comp_ui.InitReadline(line_input, history_filename, root_comp, display,
+      comp_ui.InitReadline(readline, history_filename, root_comp, display,
                            debug_f)
       if mylib.PYTHON:
         _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)

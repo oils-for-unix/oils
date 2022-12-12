@@ -57,7 +57,7 @@ from pylib import os_path
 
 import posix_ as posix
 
-from typing import List, Dict, Optional, Any, TYPE_CHECKING
+from typing import List, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
@@ -182,7 +182,7 @@ def InitAssignmentBuiltins(mem, procs, errfmt):
 
 
 def Main(lang, arg_r, environ, login_shell, loader, line_input):
-  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Any) -> int
+  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[pyutil.Readline]) -> int
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
   Args:

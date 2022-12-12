@@ -12,6 +12,7 @@ import libc
 
 from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
 if TYPE_CHECKING:
+  from core.pyutil import Readline
   from core.util import _DebugFile
   from core import completion
 
@@ -311,7 +312,7 @@ class NiceDisplay(_IDisplay):
                comp_state,  # type: State
                prompt_state,  # type: PromptState
                debug_f,  # type: _DebugFile
-               readline_mod,  # type: Any
+               readline,  # type: Optional[Readline]
                f=sys.stdout,  # type: IO[bytes]
                num_lines_cap=10,  # type: int
                bold_line=False,  # type: bool
@@ -323,7 +324,7 @@ class NiceDisplay(_IDisplay):
     """
     _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
                        debug_f)
-    self.readline_mod = readline_mod
+    self.readline = readline
     self.term_width = term_width
     self.width_is_dirty = False
 
@@ -532,36 +533,36 @@ class NiceDisplay(_IDisplay):
     #
     # https://tiswww.case.edu/php/chet/readline/readline.html
 
-    #self.readline_mod.resize_terminal()
+    #self.readline.resize_terminal()
 
 
-def InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
+def InitReadline(readline, history_filename, root_comp, display, debug_f):
   # type: (Any, str, completion.RootCompleter, _IDisplay, _DebugFile) -> None
-  assert readline_mod
+  assert readline
 
   try:
-    readline_mod.read_history_file(history_filename)
+    readline.read_history_file(history_filename)
   except IOError:
     pass
 
   def _MaybeWriteHistoryFile(history_filename):
     # type: (str) -> None
     try:
-      readline_mod.write_history_file(history_filename)
+      readline.write_history_file(history_filename)
     except IOError:
       pass
 
   # The 'atexit' module is a small wrapper around sys.exitfunc.
   atexit.register(_MaybeWriteHistoryFile, history_filename)
-  readline_mod.parse_and_bind('tab: complete')
+  readline.parse_and_bind('tab: complete')
 
-  readline_mod.parse_and_bind('set horizontal-scroll-mode on')
+  readline.parse_and_bind('set horizontal-scroll-mode on')
 
   # How does this map to C?
   # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
 
-  complete_cb = completion.ReadlineCallback(readline_mod, root_comp, debug_f)
-  readline_mod.set_completer(complete_cb)
+  complete_cb = completion.ReadlineCallback(readline, root_comp, debug_f)
+  readline.set_completer(complete_cb)
 
   # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
   # "The basic list of characters that signal a break between words for the
@@ -578,8 +579,8 @@ def InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
   # user!
 
   # No delimiters because readline isn't smart enough to tokenize shell!
-  readline_mod.set_completer_delims('')
+  readline.set_completer_delims('')
 
-  readline_mod.set_completion_display_matches_hook(
+  readline.set_completion_display_matches_hook(
       lambda *args: display.PrintCandidates(*args)
   )

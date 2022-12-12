@@ -10,17 +10,18 @@ from core.pyerror import e_usage
 from frontend import flag_spec
 from mycpp import mylib
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from core.pyutil import Readline
   from core.ui import ErrorFormatter
 
 
 class Bind(vm._Builtin):
   """For :, true, false."""
-  def __init__(self, readline_mod, errfmt):
-    # type: (Any, ErrorFormatter) -> None
-    self.readline_mod = readline_mod
+  def __init__(self, readline, errfmt):
+    # type: (Optional[Readline], ErrorFormatter) -> None
+    self.readline = readline
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -33,9 +34,9 @@ class Bind(vm._Builtin):
 class History(vm._Builtin):
   """Show interactive command history."""
 
-  def __init__(self, readline_mod, f):
-    # type: (Any, mylib.Writer) -> None
-    self.readline_mod = readline_mod
+  def __init__(self, readline, f):
+    # type: (Optional[Readline], mylib.Writer) -> None
+    self.readline = readline
     self.f = f  # this hook is for unit testing only
 
   def Run(self, cmd_val):
@@ -43,8 +44,8 @@ class History(vm._Builtin):
     # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
     # It silently exits zero.
     # zsh -c 'history' produces an error.
-    readline_mod = self.readline_mod
-    if not readline_mod:
+    readline = self.readline
+    if not readline:
       e_usage("is disabled because Oil wasn't compiled with 'readline'")
 
     attrs, arg_r = flag_spec.ParseCmdVal('history', cmd_val)
@@ -52,7 +53,7 @@ class History(vm._Builtin):
 
     # Clear all history
     if arg.c:
-      readline_mod.clear_history()
+      readline.clear_history()
       return 0
 
     # Delete history entry by id number
@@ -60,14 +61,14 @@ class History(vm._Builtin):
       cmd_index = arg.d - 1
 
       try:
-        readline_mod.remove_history_item(cmd_index)
+        readline.remove_history_item(cmd_index)
       except ValueError:
         e_usage("couldn't find item %d" % arg.d)
 
       return 0
 
     # Returns 0 items in non-interactive mode?
-    num_items = readline_mod.get_current_history_length()
+    num_items = readline.get_current_history_length()
     #log('len = %d', num_items)
 
     rest = arg_r.Rest()
@@ -89,6 +90,6 @@ class History(vm._Builtin):
     # - Consolidate multiline commands.
 
     for i in xrange(start_index, num_items+1):  # 1-based index
-      item = readline_mod.get_history_item(i)
+      item = readline.get_history_item(i)
       self.f.write('%5d  %s\n' % (i, item))
     return 0
