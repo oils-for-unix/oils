@@ -15,7 +15,7 @@ from frontend import match
 from frontend import reader
 from osh import word_
 
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from core.pyutil import Readline

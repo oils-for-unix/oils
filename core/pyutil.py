@@ -18,11 +18,11 @@ except ImportError:
 
 import posix_ as posix
 
-from typing import List, Any, Optional, Union, TYPE_CHECKING
+from typing import Callable, List, Any, Optional, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from mycpp import mylib
-  ReadlineCompleterFunc = Callable[str, int]
-  ReadlineDisplayMatchesHookFunc = Callable[str, List[str], int]
+  ReadlineCompleterFunc = Callable[[str, int], str]
+  ReadlineDisplayMatchesHookFunc = Callable[[str, List[str], int], None]
 
 
 # Copied from 'string' module
@@ -321,7 +321,7 @@ class Readline(object):
 
     def resize_terminal(self):
         # type: () -> None
-        return line_input.resize_terminal()
+        line_input.resize_terminal()
 
 
 def MaybeGetReadline():
