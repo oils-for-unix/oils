@@ -64,6 +64,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token, compound_word
   from core.comp_ui import State
   from core.state import Mem
+  from core.pyutil import Readline
   from core.util import _DebugFile
   from frontend.parse_lib import ParseContext
   from osh.cmd_eval import CommandEvaluator
@@ -1184,9 +1185,9 @@ class RootCompleter(object):
 class ReadlineCallback(object):
   """A callable we pass to the readline module."""
 
-  def __init__(self, readline_mod, root_comp, debug_f):
-    # type: (Any, RootCompleter, util._DebugFile) -> None
-    self.readline_mod = readline_mod
+  def __init__(self, readline, root_comp, debug_f):
+    # type: (Optional[Readline], RootCompleter, util._DebugFile) -> None
+    self.readline = readline
     self.root_comp = root_comp
     self.debug_f = debug_f
 
@@ -1198,13 +1199,13 @@ class ReadlineCallback(object):
       # TODO: Tokenize it according to our language.  If this is $PS2, we also
       # need previous lines!  Could make a VirtualLineReader instead of
       # StringLineReader?
-      buf = self.readline_mod.get_line_buffer()
+      buf = self.readline.get_line_buffer()
 
       # Readline parses "words" using characters provided by
       # set_completer_delims().
       # We have our own notion of words.  So let's call this a 'rl_slice'.
-      begin = self.readline_mod.get_begidx()
-      end = self.readline_mod.get_endidx()
+      begin = self.readline.get_begidx()
+      end = self.readline.get_endidx()
 
       comp = Api(line=buf, begin=begin, end=end)
 
