@@ -193,70 +193,93 @@ namespace arg_types {
     if not spec.fields:
       continue  # skip empty 'eval' spec
 
-    header_f.write("""
-class %s : Obj {
- public:
-  %s(Dict<Str*, runtime_asdl::value_t*>* attrs)
-    : Obj(Tag::FixedSize, %s::field_mask(), sizeof(%s)),
-""" % (spec_name, spec_name, spec_name, spec_name))
+    #
+    # Figure out how to initialize the class
+    #
 
     init_vals = []
+    field_names = []
     field_decls = []
+    bits = []
     for field_name in sorted(spec.fields):
       typ = spec.fields[field_name]
       field_name = field_name.replace('-', '_')
+      field_names.append(field_name)
 
       with switch(typ) as case:
         if case(flag_type_e.Bool):
           init_vals.append('static_cast<value__Bool*>(attrs->index_(StrFromC("%s")))->b' % field_name)
           field_decls.append('bool %s;' % field_name)
 
+          # Bug that test should find
+          #bits.append('maskbit(offsetof(%s, %s))' % (spec_name, field_name))
+
         elif case(flag_type_e.Str):
           # TODO: This code is ugly and inefficient!  Generate something
           # better.  At least get rid of 'new' everywhere?
           init_vals.append('''\
 attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
-      ? nullptr
-      : static_cast<value__Str*>(attrs->index_(StrFromC("%s")))->s''' % (
+          ? nullptr
+          : static_cast<value__Str*>(attrs->index_(StrFromC("%s")))->s''' % (
               field_name, field_name))
 
           field_decls.append('Str* %s;' % field_name)
 
+          # Str* is a pointer type, so add a field here
+          bits.append('maskbit(offsetof(%s, %s))' % (spec_name, field_name))
+
         elif case(flag_type_e.Int):
           init_vals.append('''\
 attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
-      ? -1
-      : static_cast<value__Int*>(attrs->index_(StrFromC("%s")))->i''' % (field_name, field_name))
+          ? -1
+          : static_cast<value__Int*>(attrs->index_(StrFromC("%s")))->i''' % (field_name, field_name))
           field_decls.append('int %s;' % field_name)
 
         elif case(flag_type_e.Float):
           init_vals.append('''\
 attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
-      ? -1
-      : static_cast<value__Float*>(attrs->index_(StrFromC("%s")))->f''' % (field_name, field_name))
+          ? -1
+          : static_cast<value__Float*>(attrs->index_(StrFromC("%s")))->f''' % (field_name, field_name))
           field_decls.append('float %s;' % field_name)
 
         else:
           raise AssertionError(typ)
 
-    bits = []
-    for i, field_name in enumerate(sorted(spec.fields)):
-      field_name = field_name.replace('-', '_')
-      bits.append('maskbit(offsetof(%s, %s))' % (spec_name, field_name))
+    #
+    # Now emit the class
+    #
+
+    if bits:
+      obj_tag = 'Tag::FixedSize'
+      mask_str = 'field_mask()' 
+    else:
+      obj_tag = 'Tag::Opaque'
+      mask_str = 'kZeroMask'
+
+    header_f.write("""
+class %s : Obj {
+ public:
+  %s(Dict<Str*, runtime_asdl::value_t*>* attrs)
+      : Obj(%s, %s, kNoObjLen),
+""" % (spec_name, spec_name, obj_tag, mask_str))
+
+    for i, field_name in enumerate(field_names):
       if i != 0:
         header_f.write(',\n')
-      header_f.write('    %s(%s)' % (field_name, init_vals[i]))
+      header_f.write('        %s(%s)' % (field_name, init_vals[i]))
     header_f.write(' {\n')
     header_f.write('  }\n')
+    header_f.write('\n')
 
     for decl in field_decls:
       header_f.write('  %s\n' % decl)
 
     if bits:
+      header_f.write('\n')
       header_f.write('  static constexpr uint16_t field_mask() {\n')
       header_f.write('    return\n')
       header_f.write('      ')
-      header_f.write('\n      | '.join(bits))
+      header_f.write('\n    | '.join(bits))
       header_f.write(';\n')
       header_f.write('  }\n')
       header_f.write('\n')

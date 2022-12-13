@@ -2313,7 +2313,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                   obj_len = 'kNoObjLen'
 
                 self.write('\n')
-                self.write('    : Obj(%s, %s, %s) ' % (obj_tag, obj_mask, obj_len))
+                self.write('    : Obj(%s, %s, %s)' % (obj_tag, obj_mask, obj_len))
 
               # Check for Base.__init__(self, ...) and move that to the initializer list.
 
@@ -2697,7 +2697,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #   but NOT
             # return tuple_func()
             if returning_tuple and isinstance(o.expr, TupleExpr):
-              self.write_ind('%s(' % c_ret_type)
+              self.write('%s(' % c_ret_type)
               for i, item in enumerate(o.expr.items):
                 if i != 0:
                   self.write(', ')

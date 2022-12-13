@@ -88,8 +88,10 @@ def NinjaGraph(ru):
 
   ru.cc_binary(
       'frontend/arg_types_test.cc',
-      deps = ['//frontend/arg_types'],
-      matrix = ninja_lib.SMALL_TEST_MATRIX,
+      deps = [
+        '//frontend/arg_types',
+        '//mycpp/runtime'],
+      matrix = ninja_lib.COMPILERS_VARIANTS,
       )
 
   prefix = '_gen/frontend/option.asdl'
