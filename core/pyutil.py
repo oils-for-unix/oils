@@ -11,18 +11,11 @@ from mycpp import mylib
 from pgen2 import grammar
 from pylib import os_path
 
-try:
-  import line_input
-except ImportError:
-  line_input = None
-
 import posix_ as posix
 
 from typing import Callable, List, Any, Optional, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from mycpp import mylib
-  ReadlineCompleterFunc = Callable[[str, int], str]
-  ReadlineDisplayMatchesHookFunc = Callable[[str, List[str], int], None]
 
 
 # Copied from 'string' module
@@ -252,84 +245,3 @@ def ShowFdState():
   import subprocess
   import posix_ as posix
   subprocess.call(['ls', '-l', '/proc/%d/fd' % posix.getpid()])
-
-
-class Readline(object):
-    """
-    A thin wrapper around GNU readline to make it usable from C++.
-    """
-
-    def __init__(self):
-        # type: () -> None
-        assert line_input is not None
-
-    def parse_and_bind(self, s):
-        # type: (str) -> None
-        line_input.parse_and_bind(s)
-
-    def add_history(self, line):
-        # type: (str) -> None
-        line_input.add_history(line)
-
-    def read_history_file(self, path=None):
-        # type: (Optional[str]) -> None
-        line_input.read_history_file(path)
-
-    def write_history_file(self, path=None):
-        # type: (Optional[str]) -> None
-        line_input.write_history_file(path)
-
-    def set_completer(self, completer=None):
-        # type: (Optional[ReadlineCompleterFunc]) -> None
-        line_input.set_completer(completer)
-
-    def set_completer_delims(self, delims):
-        # type: (str) -> None
-        line_input.set_completer_delims(delims)
-
-    def set_completion_display_matches_hook(self, hook=None):
-        # type: (Optional[ReadlineDisplayMatchesHookFunc]) -> None
-        line_input.set_completion_display_matches_hook(hook)
-
-    def get_line_buffer(self):
-        # type: () -> str
-        return line_input.get_line_buffer()
-
-    def get_begidx(self):
-        # type: () -> int
-        return line_input.get_begidx()
-
-    def get_endidx(self):
-        # type: () -> int
-        return line_input.get_endidx()
-
-    def clear_history(self):
-        # type: () -> None
-        line_input.clear_history()
-
-    def get_history_item(self, pos):
-        # type: (int) -> str
-        return line_input.get_history_item(pos)
-
-    def remove_history_item(self, pos):
-        # type: (int) -> None
-        line_input.remove_history_item(pos)
-
-    def get_current_history_length(self):
-        # type: () -> int
-        return line_input.get_current_history_length()
-
-    def resize_terminal(self):
-        # type: () -> None
-        line_input.resize_terminal()
-
-
-def MaybeGetReadline():
-    # type: () -> Optional[Readline]
-    """
-    Returns a readline "module" if we were built with readline support.
-    """
-    if line_input is not None:
-        return Readline()
-
-    return None

@@ -46,6 +46,7 @@ from core.pyerror import log
 from frontend import args
 from frontend import reader
 from frontend import parse_lib
+from frontend import py_readline
 from osh import builtin_misc
 from pylib import os_path
 from tea import tea_main
@@ -263,7 +264,7 @@ def AppBundleMain(argv):
     login_shell = True
     main_name = main_name[1:]
 
-  readline = pyutil.MaybeGetReadline()
+  readline = py_readline.MaybeGetReadline()
 
   if main_name.endswith('sh'):  # sh, osh, bash imply OSH
     status = shell.Main('osh', arg_r, posix.environ, login_shell,

@@ -64,7 +64,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token, compound_word
   from core.comp_ui import State
   from core.state import Mem
-  from core.pyutil import Readline
+  from frontend.py_readline import Readline
   from core.util import _DebugFile
   from frontend.parse_lib import ParseContext
   from osh.cmd_eval import CommandEvaluator

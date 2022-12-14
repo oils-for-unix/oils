@@ -62,6 +62,7 @@ from typing import List, Dict, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
   from core import optview
+  from frontend.py_readline import Readline
   from oil_lang import expr_eval
   from pgen2 import grammar
 
@@ -182,7 +183,7 @@ def InitAssignmentBuiltins(mem, procs, errfmt):
 
 
 def Main(lang, arg_r, environ, login_shell, loader, line_input):
-  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[pyutil.Readline]) -> int
+  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[Readline]) -> int
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
   Args:

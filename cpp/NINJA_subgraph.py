@@ -70,6 +70,16 @@ def NinjaGraph(ru):
       ],
   )
 
+  ru.cc_library(
+      '//cpp/frontend_pyreadline', 
+      srcs = [
+        'cpp/frontend_pyreadline.cc',
+      ],
+      deps = [
+        '//mycpp/runtime',
+      ],
+  )
+
   ru.cc_binary(
       'cpp/frontend_match_test.cc',
       deps = ['//cpp/frontend_match'],

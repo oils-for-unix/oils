@@ -12,7 +12,7 @@ import libc
 
 from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.pyutil import Readline
+  from frontend.py_readline import Readline
   from core.util import _DebugFile
   from core import completion
 
