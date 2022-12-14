@@ -13,7 +13,7 @@ from pylib import os_path
 
 import posix_ as posix
 
-from typing import Callable, List, Any, Union, TYPE_CHECKING
+from typing import List, Any, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from mycpp import mylib
 
