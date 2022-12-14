@@ -73,7 +73,7 @@ void Readline::resize_terminal() {
 Readline* MaybeGetReadline() {
   // TODO: incorporate OIL_READLINE into the build config
 #ifdef HAVE_READLINE
-  return Alloc<Readline*>();
+  return Alloc<Readline>();
 #else
   return nullptr;
 #endif
