@@ -30,10 +30,11 @@ namespace optview {
 
 namespace option_i = option_asdl::option_i;
 
-class _View {
+class _View : public Obj {
  public:
   _View(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
-      : opt0_array(opt0_array), opt_stacks(opt_stacks) {
+      : Obj(Tag::FixedSize, field_mask(), kNoObjLen),
+        opt0_array(opt0_array), opt_stacks(opt_stacks) {
   }
 
   bool _Get(int opt_num) {
@@ -47,6 +48,12 @@ class _View {
 
   List<bool>* opt0_array;
   List<List<bool>*>* opt_stacks;
+
+  static constexpr uint16_t field_mask() {
+    return
+      maskbit(offsetof(_View, opt0_array))
+    | maskbit(offsetof(_View, opt_stacks));
+  }
 };
 
 class Parse : public _View {
@@ -61,7 +68,6 @@ class Parse : public _View {
   f.write("""\
 };
 
-#ifndef OSH_PARSE  // hack for osh_parse, set in build/mycpp.sh
 class Exec : public _View {
  public:
   Exec(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
@@ -73,7 +79,6 @@ class Exec : public _View {
 
   f.write("""\
 };
-#endif  // OSH_PARSE
 
 }  // namespace optview
 
