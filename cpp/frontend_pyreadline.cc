@@ -2,6 +2,8 @@
 
 #include <assert.h>
 
+#include "_build/detected-config.h"
+
 namespace py_readline {
 
 Readline::Readline() : Obj(Tag::Opaque, kZeroMask, sizeof(Readline)) {
@@ -70,7 +72,7 @@ void Readline::resize_terminal() {
 
 Readline* MaybeGetReadline() {
   // TODO: incorporate OIL_READLINE into the build config
-#ifdef OIL_READLINE
+#ifdef HAVE_READLINE
   return Alloc<Readline*>();
 #else
   return nullptr;
