@@ -40,7 +40,9 @@ def TarballManifest(cc_sources):
   names.extend([
     'LICENSE.txt',
     'README-native.txt',
+    'configure',
     ])
+  names.extend(glob('build/detect-*.c'))
 
   # Code we know about
   names.extend(cc_sources)

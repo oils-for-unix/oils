@@ -18,6 +18,8 @@ set -o errexit
 tarball-demo() {
   mkdir -p _bin
 
+  ./configure
+
   time _build/oil-native.sh '' '' SKIP_REBUILD
 
   local bin=_bin/cxx-opt-sh/osh_eval.stripped
