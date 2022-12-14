@@ -57,7 +57,13 @@ class TermState {
 
 class SignalHandler : public Obj {
  public:
-  SignalHandler();
+  SignalHandler()
+      : Obj(Tag::FixedSize, field_mask(), kNoObjLen),
+        signal_queue_(nullptr),
+        last_sig_num_(0),
+        sigwinch_num_(UNTRAPPED_SIGWINCH) {
+  }
+
   void Update(int sig_num);
   List<int>* TakeSignalQueue();
 

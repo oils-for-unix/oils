@@ -196,13 +196,6 @@ bool InputAvailable(int fd) {
   NotImplemented();
 }
 
-SignalHandler::SignalHandler()
-    : Obj(Tag::FixedSize, SignalHandler::field_mask(), sizeof(SignalHandler)),
-      signal_queue_(),
-      last_sig_num_(0),
-      sigwinch_num_(UNTRAPPED_SIGWINCH) {
-}
-
 void SignalHandler::Update(int sig_num) {
   assert(signal_queue_ != nullptr);
   assert(signal_queue_->len_ < signal_queue_->capacity_);

@@ -211,16 +211,23 @@ int MarkSweepHeap::Collect() {
   root_set_.MarkRoots(this);
 #else
   int num_roots = roots_.size();
+  int num_globals = global_roots_.size();
 
   #ifdef GC_VERBOSE
-  log("  Collect with %d roots, %d live", num_roots, num_live_);
+  log("  Collect with %d + %d roots, %d live", num_roots, num_globals, num_live_);
   #endif
 
-  for (int i = 0; i < num_roots; ++i) {
-    // Note: When we abandon the Cheney collector, we no longer need double
-    // pointers
-    Obj* root = *(roots_[i]);
+  // Note: Can we get rid of double pointers?
 
+  for (int i = 0; i < num_roots; ++i) {
+    Obj* root = *(roots_[i]);
+    if (root) {
+      MarkObjects(root);
+    }
+  }
+
+  for (int i = 0; i < num_globals; ++i) {
+    Obj* root = global_roots_[i];
     if (root) {
       MarkObjects(root);
     }

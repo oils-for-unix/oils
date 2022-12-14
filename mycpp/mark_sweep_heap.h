@@ -141,7 +141,11 @@ class MarkSweepHeap {
   }
 
   void RootGlobalVar(Obj* root) {
+#ifdef RET_VAL_ROOTING
     root_set_.RootGlobalVar(root);
+#else
+    global_roots_.push_back(root);
+#endif
   }
 
   void* Allocate(size_t num_bytes);
@@ -177,6 +181,7 @@ class MarkSweepHeap {
 
   // OLD rooting
   std::vector<Obj**> roots_;
+  std::vector<Obj*> global_roots_;
 
   // NEW rooting
   RootSet root_set_;
