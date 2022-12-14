@@ -257,11 +257,43 @@ T* Alloc(Args&&... args) {
   return new (place) T(std::forward<Args>(args)...);
 }
 
+#define VALIDATE_ROOTS 0
+
 class StackRoots {
  public:
   StackRoots(std::initializer_list<void*> roots) {
     n_ = roots.size();
+
+#if VALIDATE_ROOTS
+    int i = 0;
+#endif
+
     for (auto root : roots) {  // can't use roots[i]
+
+#if VALIDATE_ROOTS
+      Obj* obj = *(reinterpret_cast<Obj**>(root));
+      if (obj) {
+        Obj* header = ObjHeader(obj);
+        log("obj %p header %p", obj, header);
+
+        switch (header->heap_tag_) {
+        case Tag::Global:
+        case Tag::Opaque:
+        case Tag::Scanned:
+        case Tag::FixedSize:
+          break;
+
+        default:
+          log("root %d heap %d type %d mask %d len %d", i, header->heap_tag_,
+              header->type_tag_, header->field_mask_, header->obj_len_);
+
+          assert(0);
+          break;
+        }
+      }
+      i++;
+#endif
+
       gHeap.PushRoot(reinterpret_cast<Obj**>(root));
     }
   }

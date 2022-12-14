@@ -12,9 +12,12 @@ enum Tag {
   Scanned = 9,    // Copy AND scan for non-NULL pointers.
 };
 
-const int kZeroMask = 0;  // for types with no pointers
+const uint16_t kZeroMask = 0;  // for types with no pointers
 // no obj_len_ computed for global List/Slab/Dict
 const int kNoObjLen = 0x0badbeef;
+
+// Can be used as a debug tag
+const uint8_t kMycppDebugType = 255;
 
 // Why do we need this macro instead of using inheritance?
 // - Because ASDL uses multiple inheritance for first class variants, but we
@@ -53,9 +56,10 @@ class Obj {
   // breaks down because mycpp has inheritance.  Could do this later.
 
  public:
-  // Note: ASDL types are layout-compatible with Obj, but don't actually
-  // inherit from it because of the 'multiple inheritance of implementation'
-  // issue.  So they don't call this constructor.
+  // Note: ASDL types don't call this constructor.  They're layout-compatible
+  // with Obj, but don't inherit from it, using the OBJ_HEADER() macro instead.
+  // This is because "shared variants" use multiple inheritance, and we don't
+  // want multiple IMPL inheritance.
   constexpr Obj(uint8_t heap_tag, uint16_t field_mask, int obj_len)
       : heap_tag_(heap_tag),
         type_tag_(0),

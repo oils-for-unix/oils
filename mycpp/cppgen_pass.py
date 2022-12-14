@@ -2349,6 +2349,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               self.write(' {\n')
 
+              # Debug Tag!
+              # self.write('  type_tag_ = kMycppDebugType;\n')
+
               # Derived classes MUTATE the mask
               if base_class_name:
                 pair = self.field_gc.get(o)

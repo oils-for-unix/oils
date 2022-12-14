@@ -301,10 +301,6 @@ Str* ChArrayToString(List<int>* ch_array) {
   return result;
 }
 
-_ResourceLoader::_ResourceLoader()
-    : Obj(Tag::Opaque, kZeroMask, sizeof(_ResourceLoader)) {
-}
-
 Str* _ResourceLoader::Get(Str* path) {
   /* NotImplemented(); */
   return StrFromC("TODO");

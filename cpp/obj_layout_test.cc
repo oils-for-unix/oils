@@ -24,6 +24,11 @@ TEST sizeof_syntax() {
   log("sizeof(List<int>) = %d", sizeof(List<int>));
   log("sizeof(List<Str*>) = %d", sizeof(List<Str*>));
 
+  log("sizeof(Slab<int>) = %d", sizeof(Slab<int>));
+  log("sizeof(Slab<Str*>) = %d", sizeof(Slab<Str*>));
+  // Right after object header
+  log("kSlabHeaderSize = %d", kSlabHeaderSize);
+
   // Unlike Python, this is -1, not 255!
   int mod = -1 % 256;
   log("mod = %d", mod);
