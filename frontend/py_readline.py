@@ -1,5 +1,5 @@
 """
-py_reader.py: Code that's only needed in Python.  C++ will use other mechanisms.
+py_readline.py: GNU readline wrapper that's also implemented in C++
 """
 
 try:
