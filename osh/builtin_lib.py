@@ -13,7 +13,7 @@ from mycpp import mylib
 from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
-  from core.pyutil import Readline
+  from frontend.py_readline import Readline
   from core.ui import ErrorFormatter
 
 

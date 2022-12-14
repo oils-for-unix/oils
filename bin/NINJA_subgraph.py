@@ -45,6 +45,7 @@ def NinjaGraph(ru):
 
         '//cpp/frontend_flag_spec',
         '//cpp/frontend_match',
+        '//cpp/frontend_pyreadline',
 
         '//frontend/arg_types',
         '//frontend/consts',

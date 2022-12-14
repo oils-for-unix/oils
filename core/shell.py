@@ -71,6 +71,7 @@ from typing import List, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import Proc
+  from frontend.py_readline import Readline
 
 
 if mylib.PYTHON:
@@ -131,7 +132,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
 class ShellOptHook(state.OptHook):
 
   def __init__(self, readline):
-    # type: (Optional[pyutil.Readline]) -> None
+    # type: (Optional[Readline]) -> None
     self.readline = readline
 
   def OnChange(self, opt0_array, opt_name, b):
@@ -175,7 +176,7 @@ def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
 
 
 def Main(lang, arg_r, environ, login_shell, loader, readline):
-  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[pyutil.Readline]) -> int
+  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[Readline]) -> int
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
   Args:

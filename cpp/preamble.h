@@ -19,6 +19,7 @@
 #include "cpp/core_pyerror.h"
 #include "cpp/frontend_flag_spec.h"
 #include "cpp/frontend_match.h"
+#include "cpp/frontend_pyreadline.h"
 #include "cpp/libc.h"
 #include "cpp/osh.h"
 #include "cpp/osh_tdop.h"
