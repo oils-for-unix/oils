@@ -2302,7 +2302,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     obj_len = 'kNoObjLen'  # don't need length
                   elif obj_tag == 'Tag::Scanned':
                     obj_mask = 'kZeroMask'
-                    obj_len = '%d * sizeof(void*)' % obj_arg
+                    obj_len = '%d * sizeof(void*) + sizeof(Obj)' % obj_arg
                   elif obj_tag == 'Tag::Opaque':
                     obj_mask = 'kZeroMask'
                     obj_len = 'kNoObjLen'

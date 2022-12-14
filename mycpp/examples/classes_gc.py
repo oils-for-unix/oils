@@ -9,7 +9,7 @@ import os
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import List
+from typing import List, Dict
 
 
 class Opaque(object):
@@ -89,6 +89,13 @@ class DerivedWithMethod(BaseWithMethod):
     return 99
 
 
+class WithDict(object):
+  def __init__(self):
+    # type: () -> None
+    self.s = 'foo'
+    self.d = {}  # type: Dict[str, str]
+
+
 def run_tests():
   # type: () -> None
 
@@ -103,6 +110,20 @@ def run_tests():
   m1 = BaseWithMethod()
   m2 = DerivedWithMethod()
 
+  # Reproduce bug found in osh_eval with IfsSplitter and the dict splitter
+
+  c = WithDict()
+  c.d['key'] = 'value'
+
+  mylib.MaybeCollect()
+
+  s = 'heap'
+  p1.s = s[1:]  # why do we need this to trigger the bug
+  # Does not trigger it
+  #p1.s = s
+
+  #p1.t = s[2:]
+  print(c.d['key'])
 
 
 def run_benchmarks():
@@ -123,6 +144,7 @@ def run_benchmarks():
     op.append(o3)
 
     p1 = Pointers()
+
     p2 = PointersBase()
     p3 = PointersDerived()
 

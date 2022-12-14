@@ -214,7 +214,8 @@ int MarkSweepHeap::Collect() {
   int num_globals = global_roots_.size();
 
   #ifdef GC_VERBOSE
-  log("  Collect with %d + %d roots, %d live", num_roots, num_globals, num_live_);
+  log("  Collect with %d + %d roots, %d live", num_roots, num_globals,
+      num_live_);
   #endif
 
   // Note: Can we get rid of double pointers?

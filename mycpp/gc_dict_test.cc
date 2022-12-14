@@ -29,12 +29,15 @@ TEST test_dict() {
     log("k = %s, v = %d", it.Key()->data_, it.Value());
   }
 
+  ASSERT(dict_contains(d, 1));
+  ASSERT(!dict_contains(d, 423));
+
   Str* v1 = d->get(1);
   log("v1 = %s", v1->data_);
-  ASSERT(dict_contains(d, 1));
-  ASSERT(!dict_contains(d, 2));
+  ASSERT(str_equals0("foo", v1));
 
   Str* v2 = d->get(423);  // nonexistent
+  ASSERT_EQ(nullptr, v2);
   log("v2 = %p", v2);
 
   auto d3 = NewDict<Str*, int>();
@@ -213,6 +216,17 @@ TEST test_dict_internals() {
   PASS();
 }
 
+TEST test_empty_dict() {
+  auto d = Alloc<Dict<Str*, Str*>>();
+
+  // Look up in empty dict
+  Str* val = d->get(StrFromC("nonexistent"));
+  log("val %p", val);
+  ASSERT_EQ(nullptr, val);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -222,6 +236,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_dict);
   RUN_TEST(test_dict_internals);
+  RUN_TEST(test_empty_dict);
 
   gHeap.CleanProcessExit();
 
