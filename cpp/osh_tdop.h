@@ -32,9 +32,10 @@ struct NullInfo {
   DISALLOW_COPY_AND_ASSIGN(NullInfo)
 };
 
-class ParserSpec {
+class ParserSpec : public Obj {
  public:
-  ParserSpec() {
+  // No fields
+  ParserSpec() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
   }
   LeftInfo* LookupLed(Id_t id);
   NullInfo* LookupNud(Id_t id);
