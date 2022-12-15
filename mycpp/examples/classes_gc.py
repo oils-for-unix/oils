@@ -89,11 +89,42 @@ class DerivedWithMethod(BaseWithMethod):
     return 99
 
 
+#
+# Regression for off-by-one bug in Tag::Scanned
+#
+
 class WithDict(object):
   def __init__(self):
     # type: () -> None
     self.s = 'foo'
     self.d = {}  # type: Dict[str, str]
+
+
+
+#
+# Regression for printf bug -- Tag::Opaque
+#
+
+class _Builtin(object):
+  def __init__(self):
+    # type: () -> None
+    pass
+
+  def Run(self):
+    # type: () -> None
+    print('_Builtin')
+
+
+class Printf(_Builtin):
+  def __init__(self):
+    # type: () -> None
+    _Builtin.__init__(self)
+    self.cache = {}  # type: Dict[str, str]
+
+  def Run(self):
+    # type: () -> None
+    print('Printf')
+
 
 
 def run_tests():
@@ -124,6 +155,12 @@ def run_tests():
 
   #p1.t = s[2:]
   print(c.d['key'])
+
+  # Reproduce printf bug
+  p = Printf()
+  mylib.MaybeCollect()
+
+  log("cache length %d", len(p.cache))
 
 
 def run_benchmarks():

@@ -2233,16 +2233,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
               self.field_gc[o] = ('Tag::Scanned', len(pointer_members))
           else:
+            # Has inheritance
+
             for name in sorted(self.member_vars):
               c_type = get_c_type(self.member_vars[name])
               if CTypeIsManaged(c_type):
                 mask_bits.append('%s(offsetof(%s, %s))' % (mask_func_name, o.name, name))
 
-            # If the arg is 0, then it can be optimized as Tag::Opque
             if len(mask_bits) == 0:
-              self.field_gc[o] = ('Tag::Opaque', None)
+              # Bug fix: even if the base class has no mask_bits, it can't be
+              # Tag::Opaque, because that would mess up derived classes.
+              self.field_gc[o] = ('Tag::FixedSize', 'kZeroMask')
             else:
-              self.field_gc[o] = ('Tag::FixedSize', None)
+              self.field_gc[o] = ('Tag::FixedSize', 'field_mask()')
 
             sorted_member_names = sorted(self.member_vars)
 
@@ -2298,7 +2301,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 if o in self.field_gc:
                   obj_tag, obj_arg = self.field_gc[o]
                   if obj_tag == 'Tag::FixedSize':
-                    obj_mask = 'field_mask()'
+                    obj_mask = obj_arg
                     obj_len = 'kNoObjLen'  # don't need length
                   elif obj_tag == 'Tag::Scanned':
                     obj_mask = 'kZeroMask'
@@ -2359,8 +2362,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                   #self.log('*** No mask for %s', o.name)
                   pass
                 else:
-                  obj_tag, _ = pair
-                  if obj_tag == 'Tag::FixedSize':
+                  obj_tag, obj_arg = pair
+                  if obj_tag == 'Tag::FixedSize' and obj_arg != 'kZeroMask':
                     self.write('  field_mask_ |= %s::field_mask();\n' % o.name)
 
               # Now visit the rest of the statements

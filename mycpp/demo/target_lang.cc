@@ -643,9 +643,12 @@ class Object {
 
 class Writer : public Object {
  public:
+  // This vtable causes the quirk!
+#if 1
   virtual int f() {
     return 42;
   }
+#endif
 };
 
 void RootGlobalVar(Object* root) {
@@ -677,8 +680,14 @@ Writer* Stdout() {
 }
 
 TEST param_passing_demo() {
-  Writer* foo = Stdout();
-  log("foo %p", foo);
+  Writer* writer = Stdout();
+  log("writer %p", writer);
+  log("");
+
+  // Same behavior: surprising!
+  Object* obj = writer;
+  log("obj %p", obj);
+  log("");
 
   PASS();
 }

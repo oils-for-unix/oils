@@ -206,7 +206,7 @@ parser-compare() {
   fi
 }
 
-parse-compare-two() {
+parser-compare-2() {
   parser-compare ''
 
   # Similar, smaller file.  zsh is faster
@@ -254,6 +254,28 @@ soil-run() {
   R_LIBS_USER=$R_PATH benchmarks/report.R gc $BASE_DIR/raw $BASE_DIR/stage2
 
   benchmarks/report.sh stage3 $BASE_DIR
+}
+
+#
+# Misc Tests
+#
+
+
+gc-parse-smoke() {
+  local bin=_bin/cxx-gcverbose/osh_eval
+  ninja $bin
+
+  OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -n configure
+}
+
+gc-run-smoke() {
+  local bin=_bin/cxx-gcverbose/osh_eval
+  ninja $bin
+
+  # expose a bug with printf
+  OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -c '
+  for i in $(seq 100); do printf %s "x $i"; done
+  '
 }
 
 "$@"
