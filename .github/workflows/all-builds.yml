@@ -170,7 +170,7 @@ jobs:
           soil/github-actions.sh publish-and-exit app-tests T
 
   cpp-coverage:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -191,7 +191,7 @@ jobs:
           soil/github-actions.sh publish-and-exit cpp-coverage T
 
   benchmarks:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -212,7 +212,7 @@ jobs:
           soil/github-actions.sh publish-and-exit benchmarks T
 
   cpp-small:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -233,7 +233,7 @@ jobs:
           soil/github-actions.sh publish-and-exit cpp-small T
 
   cpp-spec:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -254,7 +254,7 @@ jobs:
           soil/github-actions.sh publish-and-exit cpp-spec T
 
   maybe-merge-to-master:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs

@@ -266,6 +266,9 @@ gc-parse-smoke() {
   ninja $bin
 
   OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -n configure
+
+  # No leaks
+  # OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -n -c '('
 }
 
 gc-run-smoke() {
@@ -277,5 +280,40 @@ gc-run-smoke() {
   for i in $(seq 100); do printf %s "x $i"; done
   '
 }
+
+gc-run-oil() {
+  ### Run some scripts from the repo
+
+  local bin=_bin/cxx-gcverbose/osh_eval
+  ninja $bin
+
+  local i=0
+  for script in */*.sh; do
+    echo "=== $script"
+
+    # Just run the top level, which (hopefully) does nothing
+    OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin $script
+
+    i=$((i + 1))
+    if test $i -gt 3; then
+      break
+    fi
+  done
+}
+
+gc-run-big() {
+  local target=_bin/cxx-gcverbose/osh_eval
+  ninja $target
+
+  local osh=$REPO_ROOT/$target
+
+  local dir=_tmp/gc-run-big
+  mkdir -v -p $dir
+
+  pushd $dir
+  time OIL_GC_STATS=1 OIL_GC_THRESHOLD=100000 OIL_GC_ON_EXIT=1 $osh ../../Python-2.7.13/configure
+  popd
+}
+
 
 "$@"
