@@ -289,13 +289,22 @@ gc-run-oil() {
 
   local i=0
   for script in */*.sh; do
-    echo "=== $script"
+    case $script in
+      (build/clean.sh|build/common.sh|build/dev.sh)
+        # Top level does something!
+        echo "=== SKIP $script"
+        continue
+        ;;
+    esac
+
+    echo
+    echo "=== ($i) $script"
 
     # Just run the top level, which (hopefully) does nothing
     OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin $script
 
     i=$((i + 1))
-    if test $i -gt 3; then
+    if test $i -gt 60; then
       break
     fi
   done

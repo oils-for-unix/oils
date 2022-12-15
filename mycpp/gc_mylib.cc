@@ -18,7 +18,7 @@ MutableStr* NewMutableStr(int cap) {
   return reinterpret_cast<MutableStr*>(NewStr(cap));
 }
 
-// NOTE: split_once() was in gc_mylib, and is likely not leaky
+// TODO: remove unnecessary rooting
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
   StackRoots _roots({&s, &delim});
 
@@ -72,6 +72,8 @@ Str* CFileLineReader::readline() {
   errno = 0;
   ssize_t len = getline(&line, &allocated_size, f_);
   if (len < 0) {
+    // man page says the buffer should be freed even if getline fails
+    free(line);
     if (errno != 0) {  // Unexpected error
       log("getline() error: %s", strerror(errno));
       throw Alloc<IOError>(errno);
@@ -80,9 +82,10 @@ Str* CFileLineReader::readline() {
     return kEmptyString;
   }
 
-  // TODO: Fix the leak here.
   // Note: getline() NUL terminates the buffer
-  return ::StrFromC(line, len);
+  Str* result = ::StrFromC(line, len);
+  free(line);
+  return result;
 }
 
 // Problem: most Str methods like index() and slice() COPY so they have a
