@@ -636,6 +636,53 @@ TEST signed_unsigned_demo() {
   PASS();
 }
 
+class Object {
+ public:
+  uint32_t header;
+};
+
+class Writer : public Object {
+ public:
+  virtual int f() {
+    return 42;
+  }
+};
+
+void RootGlobalVar(Object* root) {
+  // Super weird behavior!!!  The param root is 8 bytes ahead of the argument
+  // gStdout!
+  log("root = %p", root);
+}
+
+Writer* gStdout = nullptr;
+
+Writer* Stdout() {
+  if (gStdout == nullptr) {
+    gStdout = new Writer();
+    log("gStdout = %p", gStdout);
+
+    log("no cast");
+    RootGlobalVar(gStdout);
+    log("");
+
+    log("reinterpret_cast");
+    RootGlobalVar(reinterpret_cast<Object*>(gStdout));
+    log("");
+
+    log("static_cast");
+    RootGlobalVar(static_cast<Object*>(gStdout));
+    log("");
+  }
+  return gStdout;
+}
+
+TEST param_passing_demo() {
+  Writer* foo = Stdout();
+  log("foo %p", foo);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -660,6 +707,7 @@ int main(int argc, char** argv) {
   RUN_TEST(mmap_demo);
   RUN_TEST(comma_demo);
   RUN_TEST(signed_unsigned_demo);
+  RUN_TEST(param_passing_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
