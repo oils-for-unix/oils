@@ -1,3 +1,5 @@
+#include <sys/time.h>  // gettimeofday()
+
 #include "mycpp/runtime.h"
 
 // Start of garbage collection.  We have a circular dependency here because I
@@ -39,9 +41,12 @@ void MarkSweepHeap::Report() {
   log("  max live        = %10d", max_live_);
   log("  num live        = %10d", num_live_);
   log("  num collections = %10d", num_collections_);
+  log("   gc threshold   = %10d", gc_threshold_);
   log("");
   log("roots capacity    = %10d", roots_.capacity());
   log(" objs capacity    = %10d", live_objs_.capacity());
+  log("");
+  log("  max gc millis   = %10.1f", max_gc_millis_);
 }
 
 #if defined(MALLOC_LEAK)
@@ -201,10 +206,17 @@ void MarkSweepHeap::Sweep() {
 }
 
 int MarkSweepHeap::Collect() {
+#ifdef GC_TIMING
+  struct timespec start, end;
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start) < 0) {
+    assert(0);
+  }
+#endif
+
 #if RET_VAL_ROOTING
 
   #ifdef GC_VERBOSE
-  log("  Collect with %d roots and %d frames", root_set_.NumRoots(),
+  log("Collect with %d roots and %d frames", root_set_.NumRoots(),
       root_set_.NumFrames());
   #endif
 
@@ -214,8 +226,8 @@ int MarkSweepHeap::Collect() {
   int num_globals = global_roots_.size();
 
   #ifdef GC_VERBOSE
-  log("  Collect with %d + %d roots, %d live", num_roots, num_globals,
-      num_live_);
+  log("%2d. GC with %d roots (%d global) and %d live objects", num_collections_,
+      num_roots + num_globals, num_globals, num_live_);
   #endif
 
   // Note: Can we get rid of double pointers?
@@ -237,8 +249,26 @@ int MarkSweepHeap::Collect() {
 
   Sweep();
 #ifdef GC_VERBOSE
-  log("  %d live after sweep", num_live_);
+  log("    %d live after sweep", num_live_);
 #endif
+
+#ifdef GC_TIMING
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) < 0) {
+    assert(0);
+  }
+
+  double start_secs = start.tv_sec + start.tv_nsec / 1e9;
+  double end_secs = end.tv_sec + end.tv_nsec / 1e9;
+  double gc_millis = (end_secs - start_secs) * 1000.0;
+
+  #ifdef GC_VERBOSE
+  log("    %.1f ms GC", gc_millis);
+  #endif
+#endif
+
+  if (gc_millis > max_gc_millis_) {
+    max_gc_millis_ = gc_millis;
+  }
 
   return num_live_;  // for unit tests only
 }

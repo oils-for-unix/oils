@@ -276,8 +276,8 @@ gc-run-smoke() {
   ninja $bin
 
   # expose a bug with printf
-  OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -c '
-  for i in $(seq 100); do printf %s "x $i"; done
+  OIL_GC_STATS=1 OIL_GC_THRESHOLD=500 OIL_GC_ON_EXIT=1 $bin -c '
+  for i in $(seq 100); do printf "%s\\n" "-- $i"; done
   '
 }
 
@@ -312,6 +312,7 @@ gc-run-oil() {
 
 gc-run-big() {
   local target=_bin/cxx-gcverbose/osh_eval
+  #local target=_bin/cxx-opt/osh_eval
   ninja $target
 
   local osh=$REPO_ROOT/$target

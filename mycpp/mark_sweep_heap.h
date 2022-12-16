@@ -179,6 +179,8 @@ class MarkSweepHeap {
   // Should we keep track of sizes?
   // int64_t bytes_live_ = 0;
 
+  double max_gc_millis_ = 0.0;
+
   // OLD rooting
   std::vector<Obj**> roots_;
   std::vector<Obj*> global_roots_;
