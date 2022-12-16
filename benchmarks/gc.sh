@@ -119,7 +119,7 @@ run-osh() {
 
   ninja $bin
 
-  table-row $tsv_out $bin $comment \
+  table-row $tsv_out $bin "$comment" \
     $bin --ast-format none -n $file
 }
 
@@ -129,6 +129,7 @@ run-osh() {
 parser-compare() {
   local tsv_out=${1:-$BASE_DIR/raw/parser.tsv}
   local file=${2:-benchmarks/testdata/configure-coreutils}
+  local compare_more=${3:-''}  # add "m32" and/or "tcmalloc"
 
   mkdir -p $(dirname $tsv_out)
 
@@ -151,6 +152,8 @@ parser-compare() {
     zsh -n $file
   echo
 
+  local big_threshold=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
+
   # ~88 ms!  But we are using more system time than bash/dash -- it's almost
   # certainly UNBUFFERED line-based I/O!
   local bin=_bin/cxx-bumpleak/osh_eval
@@ -164,42 +167,61 @@ parser-compare() {
   # 184 ms
   # Garbage-collected Oil binary
   local bin=_bin/cxx-opt/osh_eval
-  OIL_GC_STATS=1 run-osh $tsv_out $bin 'mutator+malloc' $file
+  OIL_GC_THRESHOLD=$big_threshold \
+    run-osh $tsv_out $bin 'mutator+malloc' $file
 
   # 277 ms -- free() is slow
-  OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $tsv_out $bin 'mutator+malloc+free' $file
+  OIL_GC_THRESHOLD=$big_threshold OIL_GC_ON_EXIT=1 \
+    run-osh $tsv_out $bin 'mutator+malloc+free' $file
 
-  # Enable GC with low GC threshold
-  # Note: The parsing case won't show up because main_loop.ParseWholeFile() retains all nodes
-  OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 run-osh $tsv_out $bin 'mutator+malloc+free+gc' $file
+  OIL_GC_STATS=1 \
+    run-osh $tsv_out $bin 'mutator+malloc+free+gc' $file
 
-  if false; then
-    # Surprisingly, -m32 is SLOWER, even though it allocates less.
-    # My guess is because less work is going into maintaining this code path in
-    # GCC.
+  OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
+    run-osh $tsv_out $bin 'mutator+malloc+free+gc+exit_gc' $file
 
-    # 223 ms
-    # 61.9 MB bytes allocated
-    banner 'OPT32 - malloc only'
-    local bin=_bin/cxx-opt32/osh_eval
-    run-osh $bin
+  case $compare_more in
+    (*m32*)
+      # Surprisingly, -m32 is SLOWER, even though it allocates less.
+      # My guess is because less work is going into maintaining this code path in
+      # GCC.
 
-    # 280 ms
-    banner 'OPT32 GC on exit - malloc + free'
-    OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 run-osh $bin
-  fi
+      # 223 ms
+      # 61.9 MB bytes allocated
+      local bin=_bin/cxx-opt32/osh_eval
+      OIL_GC_THRESHOLD=$big_threshold \
+        run-osh $tsv_out $bin 'm32 mutator+malloc' $file
 
-  if false; then
-    # 184 ms
-    banner 'tcmalloc - malloc only'
-    local tcmalloc_bin=_bin/cxx-tcmalloc/osh_eval
-    run-osh $tcmalloc_bin
+      # 280 ms
+      OIL_GC_STATS=1 \
+        run-osh $tsv_out $bin 'm32 mutator+malloc+free+gc' $file
+      ;;
+  esac
 
-    # Faster: 218 ms!  It doesn't have the huge free() penalty that glibc does.
-    # Maybe it doesn't do all the malloc_consolidate() stuff.
-    banner 'tcmalloc GC on exit - malloc + free'
-    OIL_GC_ON_EXIT=1 run-osh $tcmalloc_bin
-  fi
+  case $compare_more in
+    (*tcmalloc*)
+
+      # 184 ms
+      local tcmalloc_bin=_bin/cxx-tcmalloc/osh_eval
+      OIL_GC_THRESHOLD=$big_threshold \
+        run-osh $tsv_out $tcmalloc_bin 'mutator+tcmalloc' $file
+
+      # Faster: 218 ms!  It doesn't have the huge free() penalty that glibc does.
+      # Maybe it doesn't do all the malloc_consolidate() stuff.
+      OIL_GC_STATS=1 \
+        run-osh $tsv_out $tcmalloc_bin 'mutator+tcmalloc+free+gc' $file
+      ;;
+  esac
+
+  # Show log of GC
+  case $compare_more in
+    (*gcverbose*)
+      local bin=_bin/cxx-gcverbose/osh_eval
+      # 280 ms
+      OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
+        run-osh $tsv_out $bin 'gcverbose mutator+malloc+free+gc' $file
+      ;;
+  esac
 
   if command -v pretty-tsv; then
     pretty-tsv $tsv_out
@@ -318,6 +340,7 @@ gc-run-big() {
   local osh=$REPO_ROOT/$target
 
   local dir=_tmp/gc-run-big
+  rm -r -f -v $dir
   mkdir -v -p $dir
 
   pushd $dir
