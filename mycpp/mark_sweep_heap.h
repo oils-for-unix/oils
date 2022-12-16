@@ -180,6 +180,7 @@ class MarkSweepHeap {
   // int64_t bytes_live_ = 0;
 
   double max_gc_millis_ = 0.0;
+  double total_gc_millis_ = 0.0;
 
   // OLD rooting
   std::vector<Obj**> roots_;

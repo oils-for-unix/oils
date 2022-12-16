@@ -47,6 +47,7 @@ void MarkSweepHeap::Report() {
   log(" objs capacity    = %10d", live_objs_.capacity());
   log("");
   log("  max gc millis   = %10.1f", max_gc_millis_);
+  log("total gc millis   = %10.1f", total_gc_millis_);
 }
 
 #if defined(MALLOC_LEAK)
@@ -266,6 +267,7 @@ int MarkSweepHeap::Collect() {
   #endif
 #endif
 
+  total_gc_millis_ += gc_millis;
   if (gc_millis > max_gc_millis_) {
     max_gc_millis_ = gc_millis;
   }
