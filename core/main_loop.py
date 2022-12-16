@@ -198,6 +198,8 @@ if mylib.PYTHON:
     status = 0
     done = False
     while not done:
+      mylib.MaybeCollect()  # manual GC point
+
       # - This loop has a an odd structure because we want to do cleanup after
       # every 'break'.  (The ones without 'done = True' were 'continue')
       # - display.EraseLines() needs to be called BEFORE displaying anything, so
@@ -288,6 +290,7 @@ if mylib.PYTHON:
     return status
 
 
+
 def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
   # type: (CommandEvaluator, CommandParser, ui.ErrorFormatter, int) -> int
   """Loop for batch execution.
@@ -335,6 +338,8 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
     if is_return or is_fatal:
       break
 
+    mylib.MaybeCollect()  # manual GC point
+
   return status
 
 
@@ -354,6 +359,8 @@ def ParseWholeFile(c_parser):
       c_parser.CheckForPendingHereDocs()  # can raise ParseError
       break
     children.append(node)
+
+    mylib.MaybeCollect()  # manual GC point
 
   if len(children) == 1:
     return children[0]
