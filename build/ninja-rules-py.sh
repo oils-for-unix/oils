@@ -43,8 +43,8 @@ int main(int argc, char **argv) {
 
   // complain_loudly_on_segfault();
 
-  // So big that we don't trigger collection
-  gHeap.Init(400 << 20);
+  // Arbitrary threshold of 100K objects based on CPython's configure
+  gHeap.Init(100000);
 
   // NOTE(Jesse): Turn off buffered IO
   setvbuf(stdout, 0, _IONBF, 0);

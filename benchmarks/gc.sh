@@ -311,8 +311,8 @@ gc-run-oil() {
 }
 
 gc-run-big() {
-  local target=_bin/cxx-gcverbose/osh_eval
-  #local target=_bin/cxx-opt/osh_eval
+  #local target=_bin/cxx-gcverbose/osh_eval
+  local target=_bin/cxx-opt/osh_eval
   ninja $target
 
   local osh=$REPO_ROOT/$target
