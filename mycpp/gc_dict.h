@@ -19,8 +19,6 @@ template <typename T>
 List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
   // TODO: Reserve the right amount of space
   List<T>* result = nullptr;
-  StackRoots _roots({&index, &slab, &result});
-
   result = Alloc<List<T>>();
 
   for (int i = 0; i < n; ++i) {
@@ -96,8 +94,6 @@ class Dict : public Obj {
   V get(K key, V default_val);
 
   // Implements d[k] = v.  May resize the dictionary.
-  //
-  // TODO: Need to specialize this for StackRoots!  Gah!
   void set(K key, V val);
 
   List<K>* keys();
@@ -141,10 +137,10 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return haystack->position_of_key(needle) != -1;
 }
 
+// TODO: Remove one of these styles using mycpp code gen
 template <typename K, typename V>
 Dict<K, V>* NewDict() {
-  auto self = Alloc<Dict<K, V>>();
-  return self;
+  return Alloc<Dict<K, V>>();
 }
 
 template <typename K, typename V>
@@ -152,8 +148,6 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
                     std::initializer_list<V> values) {
   assert(keys.size() == values.size());
   auto self = Alloc<Dict<K, V>>();
-  StackRoots _roots({&self});
-
   auto v = values.begin();  // This simulates a "zip" loop
   for (auto key : keys) {
     self->set(key, *v);
@@ -165,21 +159,18 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
 
 template <typename K, typename V>
 void Dict<K, V>::reserve(int n) {
-  auto self = this;
   Slab<int>* new_i = nullptr;
   Slab<K>* new_k = nullptr;
   Slab<V>* new_v = nullptr;
-  StackRoots _roots({&self, &new_i, &new_k, &new_v});
-
   // log("--- reserve %d", capacity_);
   //
-  if (self->capacity_ < n) {  // TODO: use load factor, not exact fit
+  if (capacity_ < n) {  // TODO: use load factor, not exact fit
     // calculate the number of keys and values we should have
-    self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+    capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
 
     // TODO: This is SPARSE.  How to compute a size that ensures a decent
     // load factor?
-    int index_len = self->capacity_;
+    int index_len = capacity_;
     new_i = NewSlab<int>(index_len);
 
     // For the linear search to work
@@ -188,20 +179,20 @@ void Dict<K, V>::reserve(int n) {
     }
 
     // These are DENSE.
-    new_k = NewSlab<K>(self->capacity_);
-    new_v = NewSlab<V>(self->capacity_);
+    new_k = NewSlab<K>(capacity_);
+    new_v = NewSlab<V>(capacity_);
 
-    if (self->keys_ != nullptr) {
+    if (keys_ != nullptr) {
       // Right now the index is the same size as keys and values.
-      memcpy(new_i->items_, self->entry_->items_, self->len_ * sizeof(int));
+      memcpy(new_i->items_, entry_->items_, len_ * sizeof(int));
 
-      memcpy(new_k->items_, self->keys_->items_, self->len_ * sizeof(K));
-      memcpy(new_v->items_, self->values_->items_, self->len_ * sizeof(V));
+      memcpy(new_k->items_, keys_->items_, len_ * sizeof(K));
+      memcpy(new_v->items_, values_->items_, len_ * sizeof(V));
     }
 
-    self->entry_ = new_i;
-    self->keys_ = new_k;
-    self->values_ = new_v;
+    entry_ = new_i;
+    keys_ = new_k;
+    values_ = new_v;
   }
 }
 
@@ -278,91 +269,34 @@ void Dict<K, V>::clear() {
 //   This will enable duplicate copies of the string to be garbage collected
 template <typename K, typename V>
 int Dict<K, V>::position_of_key(K key) {
-  auto self = this;
-  StackRoots _roots({&self});
-
-  for (int i = 0; i < self->capacity_; ++i) {
-    int special = self->entry_->items_[i];  // NOT an index now
+  for (int i = 0; i < capacity_; ++i) {
+    int special = entry_->items_[i];  // NOT an index now
     if (special == kDeletedEntry) {
       continue;  // keep searching
     }
     if (special == kEmptyEntry) {
       return -1;  // not found
     }
-    if (keys_equal(self->keys_->items_[i], key)) {
+    if (keys_equal(keys_->items_[i], key)) {
       return i;
     }
   }
   return -1;  // table is completely full?  Does this happen?
 }
 
-// Four overloads for dict_set()!  TODO: Is there a nicer way to do this?
-// e.g. Dict<int, int>
-template <typename K, typename V>
-void dict_set(Dict<K, V>* self, K key, V val) {
-  StackRoots _roots({&self});
-
-  self->reserve(self->len_ + 1);
-  self->keys_->items_[self->len_] = key;
-  self->values_->items_[self->len_] = val;
-
-  self->entry_->items_[self->len_] = 0;  // new special value
-
-  ++self->len_;
-}
-
-// e.g. Dict<Str*, int>
-template <typename K, typename V>
-void dict_set(Dict<K*, V>* self, K* key, V val) {
-  StackRoots _roots({&self, &key});
-
-  self->reserve(self->len_ + 1);
-  self->keys_->items_[self->len_] = key;
-  self->values_->items_[self->len_] = val;
-
-  self->entry_->items_[self->len_] = 0;  // new special value
-
-  ++self->len_;
-}
-
-// e.g. Dict<int, Str*>
-template <typename K, typename V>
-void dict_set(Dict<K, V*>* self, K key, V* val) {
-  StackRoots _roots({&self, &val});
-
-  self->reserve(self->len_ + 1);
-  self->keys_->items_[self->len_] = key;
-  self->values_->items_[self->len_] = val;
-
-  self->entry_->items_[self->len_] = 0;  // new special value
-
-  ++self->len_;
-}
-
-// e.g. Dict<Str*, Str*>
-template <typename K, typename V>
-void dict_set(Dict<K*, V*>* self, K* key, V* val) {
-  StackRoots _roots({&self, &key, &val});
-
-  self->reserve(self->len_ + 1);
-  self->keys_->items_[self->len_] = key;
-  self->values_->items_[self->len_] = val;
-
-  self->entry_->items_[self->len_] = 0;  // new special value
-
-  ++self->len_;
-}
-
 template <typename K, typename V>
 void Dict<K, V>::set(K key, V val) {
-  auto self = this;
-  StackRoots _roots({&self});  // May not need this here?
+  int pos = position_of_key(key);
+  if (pos == -1) {  // new pair
+    reserve(len_ + 1);
+    keys_->items_[len_] = key;
+    values_->items_[len_] = val;
 
-  int pos = self->position_of_key(key);
-  if (pos == -1) {             // new pair
-    dict_set(self, key, val);  // ALLOCATES
+    entry_->items_[len_] = 0;  // new special value
+
+    ++len_;
   } else {
-    self->values_->items_[pos] = val;
+    values_->items_[pos] = val;
   }
 }
 

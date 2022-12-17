@@ -18,10 +18,7 @@ MutableStr* NewMutableStr(int cap) {
   return reinterpret_cast<MutableStr*>(NewStr(cap));
 }
 
-// TODO: remove unnecessary rooting
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
-  StackRoots _roots({&s, &delim});
-
   assert(len(delim) == 1);
 
   const char* start = s->data_;  // note: this pointer may move
@@ -36,7 +33,6 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
 
     Str* s1 = nullptr;
     Str* s2 = nullptr;
-    StackRoots _roots({&s1, &s2});
     // Allocate together to avoid 's' moving in between
     s1 = NewStr(len1);
     s2 = NewStr(len2);
@@ -53,8 +49,6 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
 LineReader* gStdin;
 
 LineReader* open(Str* path) {
-  StackRoots _roots({&path});
-
   // TODO: Don't use C I/O; use POSIX I/O!
   FILE* f = fopen(path->data_, "r");
 
@@ -93,9 +87,7 @@ Str* CFileLineReader::readline() {
 // log("%s") falls back on sprintf, so it expects a NUL terminator.
 // It would be easier for us to just share.
 Str* BufLineReader::readline() {
-  auto self = this;
   Str* line = nullptr;
-  StackRoots _roots({&self, &line});
 
   int buf_len = len(s_);
   if (pos_ == buf_len) {
@@ -107,7 +99,7 @@ Str* BufLineReader::readline() {
   // log("pos_ = %s", pos_);
   int line_len;
   if (p) {
-    int new_pos = p - self->s_->data_;
+    int new_pos = p - s_->data_;
     line_len = new_pos - pos_ + 1;  // past newline char
     pos_ = new_pos + 1;
   } else {  // leftover line
@@ -116,7 +108,7 @@ Str* BufLineReader::readline() {
   }
 
   line = NewStr(line_len);
-  memcpy(line->data_, self->s_->data_ + orig_pos, line_len);
+  memcpy(line->data_, s_->data_ + orig_pos, line_len);
   assert(line->data_[line_len] == '\0');
   return line;
 }

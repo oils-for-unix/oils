@@ -116,43 +116,6 @@ TEST cycle_collection_test() {
   PASS();
 }
 
-int count_old(Str *a, Str *b) {
-  StackRoots _roots({&a, &b});
-
-  int result = 0;
-  if (a) {
-    result += len(a);
-  }
-  if (b) {
-    result += len(b);
-  }
-  return result;
-}
-
-TEST old_slice_demo() {
-  Str *s = nullptr;
-  Str *t = nullptr;
-  StackRoots _roots({&s, &t});
-  s = StrFromC("spam");
-  t = StrFromC("eggs");
-
-  log("old_slice_demo");
-
-  // OK
-  int i = count_old(s->slice(1), nullptr);
-  log("s[1:] %d", i);
-
-  // OK
-  int j = count_old(t->slice(2), nullptr);
-  log("t[2:] %d", j);
-
-  // f(g(), h()) problem -- ASAN in gcevery mode finds this!
-  int k = count_old(s->slice(1), t->slice(2));
-  log("s[1:] t[2:] %d", k);
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
@@ -163,9 +126,6 @@ int main(int argc, char **argv) {
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);
   RUN_TEST(cycle_collection_test);
-
-  // f(g(), h()) problem
-  // RUN_TEST(old_slice_demo);
 
   gHeap.CleanProcessExit();
 

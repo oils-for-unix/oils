@@ -56,8 +56,6 @@ class List : public Obj {
   int index(T element);
 
   // Implements L[i] = item
-  // Note: Unlike Dict::set(), we don't need to specialize List::set() on T for
-  // StackRoots because it doesn't allocate.
   void set(int i, T item);
 
   // L[begin:]
@@ -86,8 +84,7 @@ class List : public Obj {
   // Ensure that there's space for a number of items
   void reserve(int n);
 
-  // Append a single element to this list.  Calls free function list_append(),
-  // which has pointer and non-pointer specializations.
+  // Append a single element to this list.
   void append(T item);
 
   // Extend this list with multiple elements.
@@ -115,7 +112,6 @@ List<T>* NewList() {
 template <typename T>
 List<T>* NewList(std::initializer_list<T> init) {
   auto self = Alloc<List<T>>();
-  StackRoots _roots({&self});
 
   int n = init.size();
   self->reserve(n);
@@ -133,7 +129,6 @@ List<T>* NewList(std::initializer_list<T> init) {
 template <typename T>
 List<T>* NewList(T item, int times) {
   auto self = Alloc<List<T>>();
-  StackRoots _roots({&self});
 
   self->reserve(times);
   self->len_ = times;
@@ -143,29 +138,11 @@ List<T>* NewList(T item, int times) {
   return self;
 }
 
-// e.g. List<int>
-template <typename T>
-void list_append(List<T>* self, T item) {
-  StackRoots _roots({&self});
-
-  self->reserve(self->len_ + 1);
-  self->set(self->len_, item);
-  ++self->len_;
-}
-
-// e.g. List<Str*>
-template <typename T>
-void list_append(List<T*>* self, T* item) {
-  StackRoots _roots({&self, &item});
-
-  self->reserve(self->len_ + 1);
-  self->set(self->len_, item);
-  ++self->len_;
-}
-
 template <typename T>
 void List<T>::append(T item) {
-  list_append(this, item);
+  reserve(len_ + 1);
+  set(len_, item);
+  ++len_;
 }
 
 template <typename T>
@@ -207,14 +184,11 @@ List<T>* List<T>::slice(int begin) {
 
   assert(begin >= 0);
 
-  auto self = this;
   List<T>* result = nullptr;
-  StackRoots _roots({&self, &result});
-
   result = NewList<T>();
 
-  for (int i = begin; i < self->len_; i++) {
-    result->append(self->slab_->items_[i]);
+  for (int i = begin; i < len_; i++) {
+    result->append(slab_->items_[i]);
   }
 
   return result;
@@ -235,13 +209,9 @@ List<T>* List<T>::slice(int begin, int end) {
   assert(begin >= 0);
   assert(end >= 0);
 
-  auto self = this;
-  List<T>* result = nullptr;
-  StackRoots _roots({&self, &result});
-
-  result = NewList<T>();
+  List<T>* result = NewList<T>();
   for (int i = begin; i < end; i++) {
-    result->append(self->slab_->items_[i]);
+    result->append(slab_->items_[i]);
   }
 
   return result;
@@ -251,29 +221,27 @@ List<T>* List<T>::slice(int begin, int end) {
 template <typename T>
 void List<T>::reserve(int n) {
   // log("reserve capacity = %d, n = %d", capacity_, n);
-  auto self = this;
-  StackRoots _roots({&self});
 
   // Don't do anything if there's already enough space.
-  if (self->capacity_ >= n) return;
+  if (capacity_ >= n) {
+    return;
+  }
 
   // Example: The user asks for space for 7 integers.  Account for the
   // header, and say we need 9 to determine the obj length.  9 is
   // rounded up to 16, for a 64-byte obj.  Then we actually have space
   // for 14 items.
-  self->capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
-  auto new_slab = NewSlab<T>(self->capacity_);
+  capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+  auto new_slab = NewSlab<T>(capacity_);
 
-  if (self->len_ > 0) {
+  if (len_ > 0) {
     // log("Copying %d bytes", len_ * sizeof(T));
-    memcpy(new_slab->items_, self->slab_->items_, self->len_ * sizeof(T));
+    memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
   }
-  self->slab_ = new_slab;
+  slab_ = new_slab;
 }
 
 // Implements L[i] = item
-// Note: Unlike Dict::set(), we don't need to specialize List::set() on T for
-// StackRoots because it doesn't allocate.
 template <typename T>
 void List<T>::set(int i, T item) {
   if (i < 0) {
@@ -368,17 +336,14 @@ void List<T>::reverse() {
 // Extend this list with multiple elements.
 template <typename T>
 void List<T>::extend(List<T>* other) {
-  auto self = this;
-  StackRoots _roots({&self, &other});
-
   int n = other->len_;
-  int new_len = self->len_ + n;
-  self->reserve(new_len);
+  int new_len = len_ + n;
+  reserve(new_len);
 
   for (int i = 0; i < n; ++i) {
-    self->set(self->len_ + i, other->slab_->items_[i]);
+    set(len_ + i, other->slab_->items_[i]);
   }
-  self->len_ = new_len;
+  len_ = new_len;
 }
 
 // Used by [[ a > b ]] and so forth
@@ -406,11 +371,6 @@ void List<T>::sort() {
   std::sort(slab_->items_, slab_->items_ + len_, _cmp);
 }
 
-/* template <typename T> */
-/* int len(const List<T>* L) { */
-/*   return L->len_; */
-/* } */
-
 // TODO: mycpp can just generate the constructor instead?
 // e.g. [None] * 3
 template <typename T>
@@ -418,50 +378,9 @@ List<T>* list_repeat(T item, int times) {
   return NewList<T>(item, times);
 }
 
-#if 0
-template <typename T>
-List<T>* NewList() {
-  return Alloc<List<T>>();
-}
-
-// Literal ['foo', 'bar']
-template <typename T>
-List<T>* NewList(std::initializer_list<T> init) {
-  auto self = Alloc<List<T>>();
-  StackRoots _roots({&self});
-
-  int n = init.size();
-  self->reserve(n);
-
-  int i = 0;
-  for (auto item : init) {
-    self->set(i, item);
-    ++i;
-  }
-  self->len_ = n;
-  return self;
-}
-
-// ['foo'] * 3
-template <typename T>
-List<T>* NewList(T item, int times) {
-  auto self = Alloc<List<T>>();
-  StackRoots _roots({&self});
-
-  self->reserve(times);
-  self->len_ = times;
-  for (int i = 0; i < times; ++i) {
-    self->set(i, item);
-  }
-  return self;
-}
-#endif
-
 // e.g. 'a' in ['a', 'b', 'c']
 template <typename T>
 inline bool list_contains(List<T>* haystack, T needle) {
-  // StackRoots _roots({&haystack, &needle});  // doesn't allocate
-
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
     if (are_equal(haystack->index_(i), needle)) {
