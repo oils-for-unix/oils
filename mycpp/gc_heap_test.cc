@@ -3,13 +3,8 @@
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
-// disable for now
-#ifdef RET_VAL_ROOTING
-  #define ASSERT_NUM_LIVE_OBJS(x) ;
-#else
-  #define ASSERT_NUM_LIVE_OBJS(x) \
-    ASSERT_EQ_FMT((x), static_cast<int>(gHeap.num_live_), "%d");
-#endif
+#define ASSERT_NUM_LIVE_OBJS(x) \
+  ASSERT_EQ_FMT((x), static_cast<int>(gHeap.num_live_), "%d");
 
 // Hm we're getting a warning because these aren't plain old data?
 // https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c

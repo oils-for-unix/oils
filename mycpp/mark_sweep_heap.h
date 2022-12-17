@@ -4,121 +4,14 @@
 #include <unordered_set>
 #include <vector>
 
-class MarkSweepHeap;  // forward decl for circular dep
-
-// The set of objects where the mark and sweep algorithm starts.  Terminology:
-// to "root" an object means "add it to the root set".
-class RootSet {
- public:
-  // start with 1 live frame and e.g. 32 reserved ones
-  explicit RootSet(int num_reserved) : num_frames_(1) {
-    assert(num_reserved > 1);
-    stack_.reserve(num_reserved);
-    for (int i = 0; i < num_reserved; ++i) {
-      stack_.emplace_back();      // Construct std::vector frame IN PLACE.
-      stack_.back().reserve(16);  // Reserve 16 rooted variables per frame.
-    }
-  }
-
-  // Called on function entry
-  void PushFrame() {
-    // Construct more std::vector frames if necessary.  We reuse vectors to
-    // avoid constructing one on every function call.
-    int num_constructed = stack_.size();
-    if (num_frames_ >= num_constructed) {
-      stack_.emplace_back();
-      stack_.back().reserve(16);
-#if 0
-      num_constructed = roots_.size();
-      log("num_frames_ %d, num_constructed %d", num_frames_, num_constructed);
-      assert(num_frames_ + 1 == num_constructed);
-#endif
-    }
-
-    num_frames_++;
-    // log("PushFrame -> %d", num_frames_);
-  }
-
-  // Called on function exit
-  void PopFrame() {
-    // Remove all roots owned by the top frame.  We're REUSING frames, so not
-    // calling vector<>::pop().
-    stack_[num_frames_ - 1].clear();
-    num_frames_--;
-    // log("PopFrame -> %d", num_frames_);
-  }
-
-  // Called when returning a value (except in trivial passthrough case)
-  void RootOnReturn(Obj* root) {
-    // log("RootOnReturn %p %d", root, num_frames_);
-
-    if (root == nullptr) {  // No reason to add it
-      return;
-    }
-    // We should have 2 frames because we start with 1 for main(), and main()
-    // itself can't return GC objects.
-    assert(num_frames_ > 1);
-
-    // Owned by the frame BELOW
-    stack_[num_frames_ - 2].push_back(root);
-  }
-
-  // Called in 2 situations:
-  // - the "leaf" Allocate(), which does not have a RootsFrame
-  // - when catching exceptions:
-  //   catch (IOError e) { gHeap.RootInCurrentFrame(e); }
-  void RootInCurrentFrame(Obj* root) {
-    if (root == nullptr) {  // No reason to add it
-      return;
-    }
-    assert(num_frames_ > 0);
-    stack_[num_frames_ - 1].push_back(root);
-  }
-
-  void RootGlobalVar(Obj* root) {
-    if (root == nullptr) {  // No reason to add it
-      return;
-    }
-    assert(num_frames_ > 0);
-    stack_[0].push_back(root);
-  }
-
-  // For testing
-  int NumFrames() {
-    return num_frames_;
-  }
-
-  // Calculate size of root set, for unit tests only.
-  int NumRoots() {
-    int result = 0;
-    for (int i = 0; i < num_frames_; ++i) {
-      result += stack_[i].size();
-    }
-    return result;
-  }
-
-  void MarkRoots(MarkSweepHeap* heap);
-
-  // A stack of frames that's updated in parallel the call stack.
-  // This representation is appropriate since multiple stack frames are "in
-  // play" at once.  That is, RootOnReturn() may mutate root_set_[1] while
-  // root_set_[2] is being pushed/popped/modified.
-  std::vector<std::vector<Obj*>> stack_;
-  int num_frames_ = 0;  // frames 0 to N-1 are valid
-};
-
 class MarkSweepHeap {
  public:
   // reserve 32 frames to start
-  MarkSweepHeap() : root_set_(32) {
+  MarkSweepHeap() {
   }
 
   void Init();  // use default threshold
   void Init(int gc_threshold);
-
-  //
-  // OLD Local Var Rooting
-  //
 
   void PushRoot(Obj** p) {
     roots_.push_back(p);
@@ -128,24 +21,10 @@ class MarkSweepHeap {
     roots_.pop_back();
   }
 
-  //
-  // NEW Return Value Rooting
-  //
-
-  void RootOnReturn(Obj* root) {
-    root_set_.RootOnReturn(root);
-  }
-
-  void RootInCurrentFrame(Obj* root) {
-    root_set_.RootInCurrentFrame(root);
-  }
-
+  // TODO: change to void* to avoid implicit static_cast<>, which changes the
+  // address when there's a vtable
   void RootGlobalVar(Obj* root) {
-#ifdef RET_VAL_ROOTING
-    root_set_.RootGlobalVar(root);
-#else
     global_roots_.push_back(root);
-#endif
   }
 
   void* Allocate(size_t num_bytes);
@@ -182,12 +61,8 @@ class MarkSweepHeap {
   double max_gc_millis_ = 0.0;
   double total_gc_millis_ = 0.0;
 
-  // OLD rooting
   std::vector<Obj**> roots_;
   std::vector<Obj*> global_roots_;
-
-  // NEW rooting
-  RootSet root_set_;
 
   std::vector<void*> live_objs_;
   std::unordered_set<void*> marked_;
@@ -220,22 +95,12 @@ class RootsFrame {
  public:
 #ifdef COLLECT_COVERAGE
   explicit RootsFrame(const char* description) {
-    log(">>> %s", description);
-  #ifndef BUMP_LEAK
-    gHeap.root_set_.PushFrame();
-  #endif
   }
 #endif
 
   RootsFrame() {
-#ifndef BUMP_LEAK
-    gHeap.root_set_.PushFrame();
-#endif
   }
   ~RootsFrame() {
-#ifndef BUMP_LEAK
-    gHeap.root_set_.PopFrame();
-#endif
   }
 };
 

@@ -760,7 +760,6 @@ TEST exceptions_test() {
     throw Alloc<IndexError>();
   } catch (IndexError* e) {
     log("e %p", e);
-    gHeap.RootInCurrentFrame(e);
     other = e;
     caught = true;
   }
@@ -772,7 +771,6 @@ TEST exceptions_test() {
   try {
     throw Alloc<OSError>(99);
   } catch (IOError_OSError* e) {
-    gHeap.RootInCurrentFrame(e);
     caught = true;
   }
   ASSERT(caught);
@@ -789,7 +787,6 @@ TEST exceptions_test() {
     throw r;
 
   } catch (RuntimeError* e) {
-    gHeap.RootInCurrentFrame(e);
     caught = true;
 
     log("RuntimeError %s", e->message->data());

@@ -2,19 +2,6 @@
 
 #include "mycpp/runtime.h"
 
-// Start of garbage collection.  We have a circular dependency here because I
-// don't want some kind of STL iterator.
-void RootSet::MarkRoots(MarkSweepHeap* heap) {
-  for (int i = 0; i < num_frames_; ++i) {
-    const std::vector<Obj*>& frame = stack_[i];
-    int n = frame.size();
-    for (int j = 0; j < n; ++j) {
-      // TODO: would be nice to do non-recursive marking
-      heap->MarkObjects(frame[j]);
-    }
-  }
-}
-
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
 }
@@ -103,13 +90,6 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
   num_live_++;
   num_allocated_++;
   bytes_allocated_ += num_bytes;
-
-  // Allocate() is special: we use RootInCurrentFrame because it's a LEAF, and
-  // this function doesn't have RootsFrame to do PushFrame/PopFrame
-  #if RET_VAL_ROOTING
-  gHeap.RootInCurrentFrame(static_cast<Obj*>(result));
-  static_cast<Obj*>(result)->heap_tag_ = Tag::Opaque;  // it is opaque to start!
-  #endif
 
   return result;
 }
@@ -214,22 +194,13 @@ int MarkSweepHeap::Collect() {
   }
 #endif
 
-#if RET_VAL_ROOTING
-
-  #ifdef GC_VERBOSE
-  log("Collect with %d roots and %d frames", root_set_.NumRoots(),
-      root_set_.NumFrames());
-  #endif
-
-  root_set_.MarkRoots(this);
-#else
   int num_roots = roots_.size();
   int num_globals = global_roots_.size();
 
-  #ifdef GC_VERBOSE
+#ifdef GC_VERBOSE
   log("%2d. GC with %d roots (%d global) and %d live objects", num_collections_,
       num_roots + num_globals, num_globals, num_live_);
-  #endif
+#endif
 
   // Note: Can we get rid of double pointers?
 
@@ -246,7 +217,6 @@ int MarkSweepHeap::Collect() {
       MarkObjects(root);
     }
   }
-#endif
 
   Sweep();
 #ifdef GC_VERBOSE
@@ -282,7 +252,6 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   if (fast_exit) {
     // don't collect by default; OIL_GC_ON_EXIT=1 overrides
     if (e && strcmp(e, "1") == 0) {
-      root_set_.PopFrame();
       Collect();
     }
   } else {
@@ -290,7 +259,6 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
     if (e && strcmp(e, "0") == 0) {
       ;
     } else {
-      root_set_.PopFrame();
       Collect();
     }
   }
