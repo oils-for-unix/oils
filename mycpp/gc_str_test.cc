@@ -1040,6 +1040,52 @@ TEST test_str_join() {
   PASS();
 }
 
+TEST test_str_format() {
+  // check trivial case
+  ASSERT(str_equals(StrFromC("foo"), StrFormat("foo")));
+
+  // check %s
+  ASSERT(str_equals(StrFromC("foo"), StrFormat("%s", StrFromC("foo"))));
+  ASSERT(str_equals(StrFromC("              foo"),
+                    StrFormat("%17s", StrFromC("foo"))));
+
+  // check %d
+  ASSERT(str_equals(StrFromC("12345"), StrFormat("%d", 12345)));
+  ASSERT(str_equals(StrFromC("            12345"), StrFormat("%17d", 12345)));
+  ASSERT(str_equals(StrFromC("00000000000012345"), StrFormat("%017d", 12345)));
+
+  // check %o
+  ASSERT(str_equals(StrFromC("30071"), StrFormat("%o", 12345)));
+  ASSERT(str_equals(StrFromC("            30071"), StrFormat("%17o", 12345)));
+  ASSERT(str_equals(StrFromC("00000000000030071"), StrFormat("%017o", 12345)));
+
+  // check that %% escape works
+  ASSERT(str_equals(StrFromC("%12345"), StrFormat("%%%d", 12345)));
+  ASSERT(str_equals(StrFromC("%12345%%"), StrFormat("%%%d%%%%", 12345)));
+
+  // check that operators can be combined
+  ASSERT(str_equals(StrFromC("      1234foo"),
+                    StrFormat("%10d%s", 1234, StrFromC("foo"))));
+
+  // check StrFormat(char*) == StrFormat(Str*)
+  ASSERT(str_equals(StrFormat("%10d%s", 1234, StrFromC("foo")),
+                    StrFormat(StrFromC("%10d%s"), 1234, StrFromC("foo"))));
+
+  // check that %r behaves like repr()
+  ASSERT(str_equals0("''", StrFormat("%r", kEmptyString)));
+  ASSERT(str_equals0("\"'\"", StrFormat("%r", StrFromC("'"))));
+  ASSERT(str_equals0("\"'single'\"", StrFormat("%r", StrFromC("'single'"))));
+  ASSERT(str_equals0("'\"double\"'", StrFormat("%r", StrFromC("\"double\""))));
+  ASSERT(str_equals0("'NUL \\x00 NUL'",
+                     StrFormat("%r", StrFromC("NUL \x00 NUL", 9))));
+  ASSERT(str_equals0("'tab\\tline\\nline\\r\\n'",
+                     StrFormat("%r", StrFromC("tab\tline\nline\r\n"))));
+  ASSERT(str_equals0("'high \\xff \\xfe high'",
+                     StrFormat("%r", StrFromC("high \xFF \xFE high"))));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -1068,6 +1114,8 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_str_split);
   RUN_TEST(test_str_join);
+
+  RUN_TEST(test_str_format);
 
   gHeap.CleanProcessExit();
 

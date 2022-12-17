@@ -1,8 +1,14 @@
 #include <ctype.h>  // isalpha(), isdigit()
+#include <stdarg.h>
+
+#include <regex>
 
 #include "mycpp/runtime.h"
 
 GLOBAL_STR(kEmptyString, "");
+
+static const std::regex gStrFmtRegex("([^%]*)(?:%([0-9]*)(.))?");
+static const int kMaxFmtWidth = 256;  // arbitrary...
 
 int Str::find(Str* needle, int pos) {
   int len_ = len(this);
@@ -461,4 +467,105 @@ List<Str*>* Str::split(Str* sep) {
   }
 
   return result;
+}
+
+static inline Str* _StrFormat(const char* fmt, va_list args) {
+  int n = strlen(fmt);
+  auto beg = std::cregex_iterator(fmt, fmt + n, gStrFmtRegex);
+  auto end = std::cregex_iterator();
+
+  char int_buf[kMaxFmtWidth];
+  std::string buf;
+  for (std::cregex_iterator it = beg; it != end; ++it) {
+    const std::cmatch& match = *it;
+
+    const std::csub_match& lit_m = match[1];
+    assert(lit_m.matched);
+    const std::string& lit_s = lit_m.str();
+    buf.append(lit_s.c_str());
+
+    int width = 0;
+    bool zero_pad = false;
+    const std::csub_match& width_m = match[2];
+    const std::string& width_s = width_m.str();
+    if (width_m.matched && !width_m.str().empty()) {
+      if (width_s[0] == '0') {
+        zero_pad = true;
+        assert(width_s.size() > 1);
+        assert(StringToInteger(width_s.c_str() + 1, width_s.size() - 1, 10,
+                               &width));
+      } else {
+        assert(StringToInteger(width_s.c_str(), width_s.size(), 10, &width));
+      }
+      assert(width >= 0 && width < kMaxFmtWidth);
+    }
+
+    char const* str_to_add = nullptr;
+    const std::csub_match& code_m = match[3];
+    const std::string& code_s = code_m.str();
+    if (!code_m.matched) {
+      assert(!width_m.matched);  // python errors on invalid format operators
+      goto done;
+    }
+    assert(code_s.size() == 1);
+    switch (code_s[0]) {
+    case '%': {
+      assert(code_s.size() == 1);
+      str_to_add = code_s.c_str();
+      break;
+    }
+    case 's': {
+      Str* s = va_arg(args, Str*);
+      str_to_add = s->data();
+      zero_pad = false;  // python ignores the 0 directive for strings
+      break;
+    }
+    case 'r': {
+      Str* s = va_arg(args, Str*);
+      s = repr(s);
+      str_to_add = s->data();
+      zero_pad = false;  // python ignores the 0 directive for strings
+      break;
+    }
+    case 'd':  // fallthrough
+    case 'o': {
+      int d = va_arg(args, int);
+      assert(snprintf(int_buf, kMaxFmtWidth, match.str().c_str(), d) > 0);
+      str_to_add = int_buf;
+      break;
+    }
+    default:
+      break;
+    }
+    assert(str_to_add != nullptr);
+
+  done:
+    if (str_to_add != nullptr) {
+      int n = strlen(str_to_add);
+      if (n < width) {
+        for (int i = 0; i < width - n; ++i) {
+          buf.push_back(zero_pad ? '0' : ' ');
+        }
+      }
+      buf.append(str_to_add);
+    }
+  }
+
+  return StrFromC(buf.c_str());
+}
+
+Str* StrFormat(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  Str* ret = _StrFormat(fmt, args);
+  va_end(args);
+  return ret;
+}
+
+Str* StrFormat(Str* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  Str* ret = _StrFormat(fmt->data(), args);
+  va_end(args);
+  return ret;
 }
