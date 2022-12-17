@@ -202,17 +202,6 @@ Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
   collisions.
   - Could enforce this if it becomes a problem
 
-### Due to Garbage Collection
-
-- Big limitation: I think `f(g(x))` is not allowed if g() returns a
-  pointer!  Due to `StackRoots`.
-  - TODO: enforce this or translate it.
-- Likewise `for x in [1, 2, 3]` is not allowed.  Assign it to a temporary
-  variable first, so it can be picked up in `StackRoots()`.
-- Generally constructors should only assign members.  They shouldn't call
-  functions or raise exceptions.
-  - TODO: we could enforce this.
-
 ## C++
 
 ### Interactions Between C++ and Garbage Collection

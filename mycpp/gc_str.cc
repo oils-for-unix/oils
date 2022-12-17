@@ -225,8 +225,6 @@ Str* Str::rjust(int width, Str* fillchar) {
 }
 
 Str* Str::replace(Str* old, Str* new_str) {
-  StackRoots _roots0({&old, &new_str});
-
   // log("replacing %s with %s", old_data, new_str->data_);
   const char* old_data = old->data_;
 
@@ -259,7 +257,6 @@ Str* Str::replace(Str* old, Str* new_str) {
       this_len - (replace_count * old_len) + (replace_count * new_str_len);
 
   Str* result = NewStr(result_len);
-  StackRoots _roots1({&result});
 
   const char* new_data = new_str->data_;
   const size_t new_len = new_str_len;
@@ -311,8 +308,6 @@ bool OmitChar(uint8_t ch, int what) {
 //   what: kWhitespace, or an ASCII code 0-255
 
 Str* StripAny(Str* s, StripWhere where, int what) {
-  StackRoots _roots({&s});
-
   int length = len(s);
   const char* char_data = s->data();
 
@@ -372,9 +367,6 @@ Str* Str::lstrip() {
 }
 
 Str* Str::join(List<Str*>* items) {
-  auto self = this;
-  StackRoots _roots({&self, &items});
-
   int length = 0;
 
   int num_parts = len(items);
@@ -385,7 +377,7 @@ Str* Str::join(List<Str*>* items) {
     length += len(items->index_(i));
   }
   // add length of all the separators
-  int len_ = len(self);
+  int len_ = len(this);
   length += len_ * (num_parts - 1);
 
   Str* result = NewStr(length);
@@ -421,8 +413,6 @@ int find_next(const char* haystack, int starting_index, int end_index,
 }
 
 Str* NewStrFromHeapStr(Str* src, int new_len, int start_index = 0) {
-  StackRoots _roots({&src});
-
   Str* result = NewStr(new_len);
   assert((start_index + new_len) <= len(src));
   memcpy(result->data_, src->data_ + start_index, new_len);
@@ -434,37 +424,33 @@ List<Str*>* Str::split(Str* sep) {
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
 
-  auto self = this;
   List<Str*>* result = nullptr;
 
-  StackRoots _roots({&self, &result});
-
-  if (len(self) == 0) {
+  int n = len(this);
+  if (n == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
     return NewList<Str*>({kEmptyString});
   }
 
   result = NewList<Str*>({});
-
-  int n = len(self);
   int pos = 0;
   int end = n;
 
   while (true) {
     // NOTE(Jesse): Perfect use case for BoundedBuffer
-    int new_pos = find_next(self->data_, pos, end, sep_char);
+    int new_pos = find_next(data_, pos, end, sep_char);
     assert(new_pos >= pos);
     assert(new_pos <= end);
 
     if (new_pos == end) {
-      Str* to_push = NewStrFromHeapStr(self, end - pos, pos);
+      Str* to_push = NewStrFromHeapStr(this, end - pos, pos);
       result->append(to_push);  // StrFromC(self->data_+pos, end - pos));  //
                                 // rest of the string
       break;
     }
 
     int new_len = new_pos - pos;
-    Str* to_push = NewStrFromHeapStr(self, new_len, pos);
+    Str* to_push = NewStrFromHeapStr(this, new_len, pos);
     result->append(to_push);
 
     pos = new_pos + 1;
