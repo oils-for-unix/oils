@@ -1064,8 +1064,8 @@ TEST test_str_format() {
   ASSERT(str_equals(StrFromC("%12345%%"), StrFormat("%%%d%%%%", 12345)));
 
   // check that operators can be combined
-  ASSERT(str_equals(StrFromC("      1234foo"),
-                    StrFormat("%10d%s", 1234, StrFromC("foo"))));
+  ASSERT(str_equals(StrFromC("ABC      1234DfooEF"),
+                    StrFormat("ABC%10dD%sEF", 1234, StrFromC("foo"))));
 
   // check StrFormat(char*) == StrFormat(Str*)
   ASSERT(str_equals(StrFormat("%10d%s", 1234, StrFromC("foo")),

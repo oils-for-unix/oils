@@ -482,13 +482,13 @@ static inline Str* _StrFormat(const char* fmt, va_list args) {
     const std::csub_match& lit_m = match[1];
     assert(lit_m.matched);
     const std::string& lit_s = lit_m.str();
-    buf.append(lit_s.c_str());
+    buf.append(lit_s);
 
     int width = 0;
     bool zero_pad = false;
     const std::csub_match& width_m = match[2];
     const std::string& width_s = width_m.str();
-    if (width_m.matched && !width_m.str().empty()) {
+    if (width_m.matched && !width_s.empty()) {
       if (width_s[0] == '0') {
         zero_pad = true;
         assert(width_s.size() > 1);
@@ -530,7 +530,8 @@ static inline Str* _StrFormat(const char* fmt, va_list args) {
     case 'd':  // fallthrough
     case 'o': {
       int d = va_arg(args, int);
-      assert(snprintf(int_buf, kMaxFmtWidth, match.str().c_str(), d) > 0);
+      assert(snprintf(int_buf, kMaxFmtWidth, match.str().c_str() + lit_s.size(),
+                      d) > 0);
       str_to_add = int_buf;
       break;
     }
