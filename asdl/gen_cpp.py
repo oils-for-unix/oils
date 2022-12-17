@@ -277,6 +277,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     return int_to_type
 
   def VisitSimpleSum(self, sum, name, depth):
+    # Note: there can be more than 128 variants in a simple sum, because it's an
+    # integer and doesn't have an object header.
+
     if name in self.simple_int_sums:
       self._EmitEnum(sum, name, depth, strong=False, is_simple=True)
       self.Emit('typedef int %s_t;' % name)
@@ -285,6 +288,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self._EmitEnum(sum, name, depth, strong=True)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
+    #log('%d variants in %s', len(sum.types), sum_name)
+
+    # Must fit in 7 bit Obj::type_tag
+    # TODO: They should be odd numbers
+    assert len(sum.types) < 128, 'sum type %r has too many variants' % sum_name
+
     # This is a sign that Python needs string interpolation!!!
     def Emit(s, depth=depth):
       self.Emit(s % sys._getframe(1).f_locals, depth)

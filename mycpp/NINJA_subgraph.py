@@ -60,6 +60,7 @@ def DefineTargets(ru):
       'mycpp/smartptr_test.cc',
       'mycpp/demo/target_lang.cc',
       'mycpp/demo/hash_table.cc',
+      'mycpp/demo/gc_header.cc',
   ]:
     ru.cc_binary(
         test_main,

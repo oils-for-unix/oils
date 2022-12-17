@@ -171,20 +171,20 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('}', depth)
     self.Emit('', depth)
 
-  def VisitSimpleSum(self, sum, name, depth):
+  def VisitSimpleSum(self, sum, sum_name, depth):
     int_to_str = {}
     variants = []
     for i, variant in enumerate(sum.types):
       tag_num = i + 1
-      tag_str = '%s.%s' % (name, variant.name)
+      tag_str = '%s.%s' % (sum_name, variant.name)
       int_to_str[tag_num] = tag_str
       variants.append((variant, tag_num))
 
-    if name in self.simple_int_sums:
-      self.Emit('%s_t = int  # type alias for integer' % name)
+    if sum_name in self.simple_int_sums:
+      self.Emit('%s_t = int  # type alias for integer' % sum_name)
       self.Emit('')
 
-      i_name = ('%s_i' % name) if self.e_suffix else name
+      i_name = ('%s_i' % sum_name) if self.e_suffix else sum_name
 
       self.Emit('class %s(object):' % i_name, depth)
 
@@ -196,28 +196,27 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       line = '  %s = %d' % ('ARRAY_SIZE', len(variants) + 1)
       self.Emit(line, depth)
      
-
     else:
       # First emit a type
-      self.Emit('class %s_t(pybase.SimpleObj):' % name, depth)
+      self.Emit('class %s_t(pybase.SimpleObj):' % sum_name, depth)
       self.Emit('  pass', depth)
       self.Emit('', depth)
 
       # Now emit a namespace
-      e_name = ('%s_e' % name) if self.e_suffix else name
+      e_name = ('%s_e' % sum_name) if self.e_suffix else sum_name
       self.Emit('class %s(object):' % e_name, depth)
 
       for variant, tag_num in variants:
-        line = '  %s = %s_t(%d)' % (variant.name, name, tag_num)
+        line = '  %s = %s_t(%d)' % (variant.name, sum_name, tag_num)
         self.Emit(line, depth)
 
     self.Emit('', depth)
 
-    self._EmitDict(name, int_to_str, depth)
+    self._EmitDict(sum_name, int_to_str, depth)
 
-    self.Emit('def %s_str(val):' % name, depth)
-    self.Emit('  # type: (%s_t) -> str' % name, depth)
-    self.Emit('  return _%s_str[val]' % name, depth)
+    self.Emit('def %s_str(val):' % sum_name, depth)
+    self.Emit('  # type: (%s_t) -> str' % sum_name, depth)
+    self.Emit('  return _%s_str[val]' % sum_name, depth)
     self.Emit('', depth)
 
   def _EmitCodeForField(self, abbrev, field, counter):
@@ -396,6 +395,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     The generated code changes depending on which one it is.
     """
+    #log('%d variants in %s', len(sum.types), sum_name)
+
     # We emit THREE Python types for each meta.CompoundType:
     #
     # 1. enum for tag (cflow_e)
@@ -410,6 +411,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     # enum for the tag
     self.Emit('class %s_e(object):' % sum_name, depth)
+
     for i, variant in enumerate(sum.types):
       if variant.shared_type:
         tag_num = self._shared_type_tags[variant.shared_type]
