@@ -26,7 +26,6 @@ Tuple2<int, int> WaitPid() {
 }
 
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
-  RootsFrame _r{FUNC_NAME};
   Str* s = OverAllocatedStr(n);  // Allocate enough for the result
 
   int length = ::read(fd, s->data(), n);
@@ -62,11 +61,9 @@ Str* ReadLine() {
 }
 
 Dict<Str*, Str*>* Environ() {
-  RootsFrame _r{FUNC_NAME};
   auto d = NewDict<Str*, Str*>();
 
   for (char** env = environ; *env; ++env) {
-    RootsFrame _for{LOOP};
     char* pair = *env;
 
     char* eq = strchr(pair, '=');
@@ -83,13 +80,10 @@ Dict<Str*, Str*>* Environ() {
     d->set(key, val);
   }
 
-  gHeap.RootOnReturn(d);
   return d;
 }
 
 int Chdir(Str* dest_dir) {
-  NO_ROOTS_FRAME(FUNC_NAME);
-
   if (chdir(dest_dir->data_) == 0) {
     return 0;  // success
   } else {
@@ -98,8 +92,6 @@ int Chdir(Str* dest_dir) {
 }
 
 Str* GetMyHomeDir() {
-  RootsFrame _r{FUNC_NAME};
-
   uid_t uid = getuid();  // always succeeds
 
   // Don't free this.  (May return a pointer to a static area)
@@ -108,24 +100,20 @@ Str* GetMyHomeDir() {
     return nullptr;
   }
   Str* s = StrFromC(entry->pw_dir);
-  gHeap.RootOnReturn(s);
   return s;
 }
 
 Str* GetHomeDir(Str* user_name) {
-  RootsFrame _r{FUNC_NAME};
   // Don't free this.  (May return a pointer to a static area)
   struct passwd* entry = getpwnam(user_name->data_);
   if (entry == nullptr) {
     return nullptr;
   }
   Str* s = StrFromC(entry->pw_dir);
-  gHeap.RootOnReturn(s);
   return s;
 }
 
 Str* GetUserName(int uid) {
-  RootsFrame _r{FUNC_NAME};
   Str* result = kEmptyString;
 
   if (passwd* pw = getpwuid(uid)) {
@@ -134,12 +122,10 @@ Str* GetUserName(int uid) {
     throw Alloc<IOError>(errno);
   }
 
-  gHeap.RootOnReturn(result);
   return result;
 }
 
 Str* OsType() {
-  RootsFrame _r{FUNC_NAME};
   Str* result = kEmptyString;
 
   utsname un = {};
@@ -149,7 +135,6 @@ Str* OsType() {
     throw Alloc<IOError>(errno);
   }
 
-  gHeap.RootOnReturn(result);
   return result;
 }
 
@@ -207,14 +192,12 @@ void SignalHandler::Update(int sig_num) {
 }
 
 static List<int>* AllocSignalQueue() {
-  NO_ROOTS_FRAME(FUNC_NAME);  // NewList() does it
   List<int>* ret = NewList<int>();
   ret->reserve(kMaxSignalsInFlight);
   return ret;
 }
 
 List<int>* SignalHandler::TakeSignalQueue() {
-  NO_ROOTS_FRAME(FUNC_NAME);  // AllocSingalQueue() does it
   List<int>* new_queue = AllocSignalQueue();
   List<int>* ret = signal_queue_;
   signal_queue_ = new_queue;
@@ -222,7 +205,6 @@ List<int>* SignalHandler::TakeSignalQueue() {
 }
 
 void Sigaction(int sig_num, sighandler_t handler) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
   struct sigaction act = {};
   act.sa_handler = handler;
   if (sigaction(sig_num, &act, nullptr) != 0) {
@@ -236,32 +218,27 @@ static void signal_handler(int sig_num) {
 }
 
 void RegisterSignalInterest(int sig_num) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
   struct sigaction act = {};
   act.sa_handler = signal_handler;
   assert(sigaction(sig_num, &act, nullptr) == 0);
 }
 
 List<int>* TakeSignalQueue() {
-  NO_ROOTS_FRAME(FUNC_NAME);  // SignalHandler::TakeSignalQueue() does it
   assert(gSignalHandler != nullptr);
   return gSignalHandler->TakeSignalQueue();
 }
 
 int LastSignal() {
-  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
   assert(gSignalHandler != nullptr);
   return gSignalHandler->last_sig_num_;
 }
 
 void SetSigwinchCode(int code) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // no allocations here
   assert(gSignalHandler != nullptr);
   gSignalHandler->sigwinch_num_ = code;
 }
 
 void InitShell() {
-  RootsFrame _r{FUNC_NAME};
   gSignalHandler = Alloc<SignalHandler>();
   gHeap.RootGlobalVar(gSignalHandler);
   gSignalHandler->signal_queue_ = AllocSignalQueue();
@@ -282,15 +259,12 @@ bool IsValidCharEscape(int c) {
 }
 
 Str* ChArrayToString(List<int>* ch_array) {
-  RootsFrame _r{FUNC_NAME};
-
   int n = len(ch_array);
   Str* result = NewStr(n);
   for (int i = 0; i < n; ++i) {
     result->data_[i] = ch_array->index_(i);
   }
   result->data_[n] = '\0';
-  gHeap.RootOnReturn(result);
   return result;
 }
 
@@ -317,8 +291,6 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
 }
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {
-  RootsFrame _r{FUNC_NAME};
-
   int upper_bound = len(s) * 2;
   Str* buf = OverAllocatedStr(upper_bound);
   char* p = buf->data_;
@@ -331,13 +303,10 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
     *p++ = c;
   }
   buf->SetObjLenFromStrLen(p - buf->data_);
-  gHeap.RootOnReturn(buf);
   return buf;
 }
 
 Str* strerror(IOError_OSError* e) {
-  NO_ROOTS_FRAME(FUNC_NAME);
-
   Str* s = StrFromC(::strerror(e->errno_));
   return s;
 }

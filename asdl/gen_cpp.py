@@ -535,7 +535,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     self.Emit('')
     self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
-    self.Emit('  RootsFrame _r{FUNC_NAME};');
     self.Emit('  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' % pretty_cls_name)
     if all_fields:
       self.Emit('  List<field*>* L = out_node->fields;')
@@ -548,7 +547,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self._EmitCodeForField('PrettyTree', field, local_id)
       self.Dedent()
       self.Emit('')
-    self.Emit('  gHeap.RootOnReturn(reinterpret_cast<Obj*>(out_node));')
     self.Emit('  return out_node;')
     self.Emit('}')
 

@@ -68,14 +68,13 @@ class ColorOutput : public Obj {
 
   mylib::Writer* f;
   int num_chars;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(ColorOutput, f));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
-
-constexpr uint16_t maskof_ColorOutput() {
-  return
-    maskbit_v(offsetof(ColorOutput, f));
-}
 
 class TextOutput : public ColorOutput {
  public:
@@ -182,23 +181,15 @@ class _Attributes : public Obj {
   void SetTrue(Str* name);
   void Set(Str* name, runtime_asdl::value_t* val);
 
-  List<Str*>* actions;
   Dict<Str*, runtime_asdl::value_t*>* attrs;
   List<Tuple2<Str*, bool>*>* opt_changes;
-  bool saw_double_dash;
   List<Tuple2<Str*, bool>*>* shopt_changes;
+  List<Str*>* actions;
   bool show_options;
+  bool saw_double_dash;
 
   DISALLOW_COPY_AND_ASSIGN(_Attributes)
 };
-
-constexpr uint16_t maskof__Attributes() {
-  return
-    maskbit(offsetof(_Attributes, actions))
-  | maskbit(offsetof(_Attributes, attrs))
-  | maskbit(offsetof(_Attributes, opt_changes))
-  | maskbit(offsetof(_Attributes, shopt_changes));
-}
 
 class Reader : public Obj {
  public:
@@ -215,18 +206,12 @@ class Reader : public Obj {
   int SpanId();
 
   List<Str*>* argv;
-  int i;
-  int n;
   List<int>* spids;
+  int n;
+  int i;
 
   DISALLOW_COPY_AND_ASSIGN(Reader)
 };
-
-constexpr uint16_t maskof_Reader() {
-  return
-    maskbit(offsetof(Reader, argv))
-  | maskbit(offsetof(Reader, spids));
-}
 
 class _Action : public Obj {
  public:
@@ -245,15 +230,14 @@ class _ArgAction : public _Action {
   Str* name;
   bool quit_parsing_flags;
   List<Str*>* valid;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(_ArgAction, name))
+         | maskbit_v(offsetof(_ArgAction, valid));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(_ArgAction)
 };
-
-constexpr uint16_t maskof__ArgAction() {
-  return
-    maskbit_v(offsetof(_ArgAction, name))
-  | maskbit_v(offsetof(_ArgAction, valid));
-}
 
 class SetToInt : public _ArgAction {
  public:
@@ -285,14 +269,13 @@ class SetAttachedBool : public _Action {
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   Str* name;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(SetAttachedBool, name));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(SetAttachedBool)
 };
-
-constexpr uint16_t maskof_SetAttachedBool() {
-  return
-    maskbit_v(offsetof(SetAttachedBool, name));
-}
 
 class SetToTrue : public _Action {
  public:
@@ -300,14 +283,13 @@ class SetToTrue : public _Action {
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   Str* name;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(SetToTrue, name));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(SetToTrue)
 };
-
-constexpr uint16_t maskof_SetToTrue() {
-  return
-    maskbit_v(offsetof(SetToTrue, name));
-}
 
 class SetOption : public _Action {
  public:
@@ -315,14 +297,13 @@ class SetOption : public _Action {
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   Str* name;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(SetOption, name));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(SetOption)
 };
-
-constexpr uint16_t maskof_SetOption() {
-  return
-    maskbit_v(offsetof(SetOption, name));
-}
 
 class SetNamedOption : public _Action {
  public:
@@ -332,14 +313,13 @@ class SetNamedOption : public _Action {
 
   List<Str*>* names;
   bool shopt;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(SetNamedOption, names));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(SetNamedOption)
 };
-
-constexpr uint16_t maskof_SetNamedOption() {
-  return
-    maskbit_v(offsetof(SetNamedOption, names));
-}
 
 class SetAction : public _Action {
  public:
@@ -347,14 +327,13 @@ class SetAction : public _Action {
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   Str* name;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(SetAction, name));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(SetAction)
 };
-
-constexpr uint16_t maskof_SetAction() {
-  return
-    maskbit_v(offsetof(SetAction, name));
-}
 
 class SetNamedAction : public _Action {
  public:
@@ -363,14 +342,13 @@ class SetNamedAction : public _Action {
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   List<Str*>* names;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(SetNamedAction, names));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(SetNamedAction)
 };
-
-constexpr uint16_t maskof_SetNamedAction() {
-  return
-    maskbit_v(offsetof(SetNamedAction, names));
-}
 
 args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r);
 args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r);

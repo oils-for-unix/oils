@@ -227,23 +227,19 @@ using hnode_asdl::color_e;
 int NO_SPID = -1;
 
 hnode_asdl::hnode__Record* NewRecord(Str* node_type) {
-  RootsFrame _r{FUNC_NAME};
-  hnode_asdl::hnode__Record* ret_tmp = Alloc<hnode__Record>(node_type, Alloc<List<hnode_asdl::field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  StackRoots _roots({&node_type});
+
+  return Alloc<hnode__Record>(node_type, Alloc<List<hnode_asdl::field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
 }
 
 hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s});
+
   if (s == nullptr) {
-    hnode_asdl::hnode__Leaf* ret_tmp = Alloc<hnode__Leaf>(str2, color_e::OtherConst);
-    gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-    return ret_tmp;
+    return Alloc<hnode__Leaf>(str2, color_e::OtherConst);
   }
   else {
-    hnode_asdl::hnode__Leaf* ret_tmp = Alloc<hnode__Leaf>(s, e_color);
-    gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-    return ret_tmp;
+    return Alloc<hnode__Leaf>(s, e_color);
   }
 }
 Str* TRUE_STR = str3;
@@ -263,21 +259,18 @@ using hnode_asdl::color_e;
 using hnode_asdl::color_t;
 
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&f});
+
   if (f->isatty()) {
-    format::ColorOutput* ret_tmp = Alloc<AnsiOutput>(f);
-    gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-    return ret_tmp;
+    return Alloc<AnsiOutput>(f);
   }
   else {
-    format::ColorOutput* ret_tmp = Alloc<TextOutput>(f);
-    gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-    return ret_tmp;
+    return Alloc<TextOutput>(f);
   }
 }
 
 ColorOutput::ColorOutput(mylib::Writer* f) 
-    : Obj(Tag::FixedSize, maskof_ColorOutput(), sizeof(ColorOutput))  {
+    : Obj(Tag::FixedSize, field_mask(), kNoObjLen) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -295,7 +288,6 @@ void ColorOutput::FileFooter() {
 }
 
 void ColorOutput::PushColor(hnode_asdl::color_t e_color) {
-  RootsFrame _r{FUNC_NAME};
   throw Alloc<NotImplementedError>();
 }
 
@@ -304,7 +296,8 @@ void ColorOutput::PopColor() {
 }
 
 void ColorOutput::write(Str* s) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s});
+
   this->f->write(s);
   this->num_chars += len(s);
 }
@@ -312,7 +305,8 @@ void ColorOutput::write(Str* s) {
 void ColorOutput::WriteRaw(Tuple2<Str*, int>* raw) {
   Str* s = nullptr;
   int num_chars;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&raw, &s});
+
   Tuple2<Str*, int>* tup0 = raw;
   s = tup0->at0();
   num_chars = tup0->at1();
@@ -326,20 +320,17 @@ int ColorOutput::NumChars() {
 
 Tuple2<Str*, int> ColorOutput::GetRaw() {
   mylib::BufWriter* f = static_cast<mylib::BufWriter*>(this->f);
-  return (Tuple2<Str*, int>(f->getvalue(), this->num_chars));
+  return Tuple2<Str*, int>(f->getvalue(), this->num_chars);
 }
 
 TextOutput::TextOutput(mylib::Writer* f) : ColorOutput(f) {
 }
 
 format::TextOutput* TextOutput::NewTempBuffer() {
-  format::TextOutput* ret_tmp = Alloc<TextOutput>(Alloc<mylib::BufWriter>());
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return Alloc<TextOutput>(Alloc<mylib::BufWriter>());
 }
 
 void TextOutput::PushColor(hnode_asdl::color_t e_color) {
-  RootsFrame _r{FUNC_NAME};
   ;  // pass
 }
 
@@ -351,9 +342,7 @@ HtmlOutput::HtmlOutput(mylib::Writer* f) : ColorOutput(f) {
 }
 
 format::HtmlOutput* HtmlOutput::NewTempBuffer() {
-  format::HtmlOutput* ret_tmp = Alloc<HtmlOutput>(Alloc<mylib::BufWriter>());
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return Alloc<HtmlOutput>(Alloc<mylib::BufWriter>());
 }
 
 void HtmlOutput::FileHeader() {
@@ -366,7 +355,8 @@ void HtmlOutput::FileFooter() {
 
 void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
   Str* css_class = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&css_class});
+
   if (e_color == color_e::TypeName) {
     css_class = str7;
   }
@@ -401,7 +391,8 @@ void HtmlOutput::PopColor() {
 }
 
 void HtmlOutput::write(Str* s) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s});
+
   this->f->write(cgi::escape(s));
   this->num_chars += len(s);
 }
@@ -410,13 +401,10 @@ AnsiOutput::AnsiOutput(mylib::Writer* f) : ColorOutput(f) {
 }
 
 format::AnsiOutput* AnsiOutput::NewTempBuffer() {
-  format::AnsiOutput* ret_tmp = Alloc<AnsiOutput>(Alloc<mylib::BufWriter>());
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return Alloc<AnsiOutput>(Alloc<mylib::BufWriter>());
 }
 
 void AnsiOutput::PushColor(hnode_asdl::color_t e_color) {
-  RootsFrame _r{FUNC_NAME};
   if (e_color == color_e::TypeName) {
     this->f->write(ansi::YELLOW);
   }
@@ -451,7 +439,7 @@ void AnsiOutput::PopColor() {
 int INDENT = 2;
 
 _PrettyPrinter::_PrettyPrinter(int max_col) 
-    : Obj(Tag::FixedSize, kZeroMask, sizeof(_PrettyPrinter))  {
+    : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
   this->max_col = max_col;
 }
 
@@ -462,12 +450,14 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
   format::ColorOutput* single_f = nullptr;
   Str* s = nullptr;
   int num_chars;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&array, &f, &single_f, &s});
+
   all_fit = true;
   chars_so_far = prefix_len;
   i = 0;
   for (ListIter<hnode_asdl::hnode_t*> it(array); !it.Done(); it.Next(), ++i) {
     hnode_asdl::hnode_t* val = it.Value();
+    StackRoots _for({&val  });
     if (i != 0) {
       f->write(str14);
     }
@@ -497,12 +487,14 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
   Str* s = nullptr;
   int num_chars;
   int i;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&array, &f, &pieces, &single_f, &s});
+
   all_fit = true;
   pieces = Alloc<List<Tuple2<Str*, int>*>>();
   chars_so_far = prefix_len;
   for (ListIter<hnode_asdl::hnode_t*> it(array); !it.Done(); it.Next()) {
     hnode_asdl::hnode_t* item = it.Value();
+    StackRoots _for({&item  });
     single_f = f->NewTempBuffer();
     if (_TrySingleLine(item, single_f, (this->max_col - chars_so_far))) {
       Tuple2<Str*, int> tup2 = single_f->GetRaw();
@@ -520,6 +512,7 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
     i = 0;
     for (ListIter<Tuple2<Str*, int>*> it(pieces); !it.Done(); it.Next(), ++i) {
       Tuple2<Str*, int>* p = it.Value();
+      StackRoots _for({&p    });
       if (i != 0) {
         f->write(str16);
       }
@@ -544,7 +537,8 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
   format::ColorOutput* single_f = nullptr;
   Str* s = nullptr;
   int num_chars;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&node, &f, &ind, &prefix, &name, &val, &ind1, &UP_val, &name_str, &single_f, &s});
+
   ind = str_repeat(str18, indent);
   if (node->abbrev) {
     prefix = str_concat(ind, node->left);
@@ -571,6 +565,7 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
     f->write(str21);
     for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::field* field = it.Value();
+      StackRoots _for({&field    });
       name = field->name;
       val = field->val;
       ind1 = str_repeat(str22, (indent + INDENT));
@@ -585,6 +580,7 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
           f->write(str24);
           for (ListIter<hnode_asdl::hnode_t*> it(val->children); !it.Done(); it.Next()) {
             hnode_asdl::hnode_t* child = it.Value();
+            StackRoots _for({&child          });
             this->PrintNode(child, f, ((indent + INDENT) + INDENT));
             f->write(str25);
           }
@@ -620,7 +616,8 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
   int num_chars;
   hnode_asdl::hnode_t* UP_node = nullptr;
   int tag;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&node, &f, &ind, &single_f, &s, &UP_node});
+
   ind = str_repeat(str30, indent);
   single_f = f->NewTempBuffer();
   single_f->write(ind);
@@ -660,7 +657,8 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
 
 bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int max_chars) {
   int i;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&node, &f});
+
   f->write(node->left);
   if (node->abbrev) {
     if (len(node->node_type)) {
@@ -672,6 +670,7 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
+      StackRoots _for({&val    });
       if (i != 0) {
         f->write(str32);
       }
@@ -686,6 +685,7 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
     f->PopColor();
     for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::field* field = it.Value();
+      StackRoots _for({&field    });
       f->write(fmt4(field->name));
       if (!_TrySingleLine(field->val, f, max_chars)) {
         return false;
@@ -701,7 +701,8 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
   int tag;
   int i;
   int num_chars_so_far;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&node, &f, &UP_node});
+
   UP_node = node;
   tag = node->tag_();
   if (tag == hnode_e::Leaf) {
@@ -724,6 +725,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
+          StackRoots _for({&item        });
           if (i != 0) {
             f->write(str35);
           }
@@ -753,7 +755,8 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
 
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
   format::_PrettyPrinter* pp = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&node, &f, &pp});
+
   pp = Alloc<_PrettyPrinter>(100);
   pp->PrintNode(node, f, 0);
 }
@@ -777,13 +780,12 @@ namespace cgi {  // define
 
 
 Str* escape(Str* s) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s});
+
   s = s->replace(str45, str46);
   s = s->replace(str47, str48);
   s = s->replace(str49, str50);
-  Str* ret_tmp = s;
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return s;
 }
 
 }  // define namespace cgi
@@ -796,7 +798,8 @@ int BIT8_X_ESCAPE = 2;
 int MUST_QUOTE = 4;
 
 bool _encode(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s, &parts});
+
   if (bit8_display == BIT8_X_ESCAPE) {
     _encode_bytes_x(s, shell_compat, parts);
     return true;
@@ -817,7 +820,8 @@ Str* maybe_shell_encode(Str* s, int flags) {
   List<Str*>* parts = nullptr;
   bool valid_utf8;
   Str* prefix = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s, &parts, &prefix});
+
   quote = 0;
   must_quote = (flags & 4);
   bit8_display = (flags & 3);
@@ -827,6 +831,7 @@ Str* maybe_shell_encode(Str* s, int flags) {
   else {
     for (StrIter it(s); !it.Done(); it.Next()) {
       Str* ch = it.Value();
+      StackRoots _for({&ch    });
       if ((!must_quote and IsPlainChar(ch))) {
         continue;
       }
@@ -838,9 +843,7 @@ Str* maybe_shell_encode(Str* s, int flags) {
     }
   }
   if (quote == 0) {
-    Str* ret_tmp = s;
-    gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-    return ret_tmp;
+    return s;
   }
   parts = Alloc<List<Str*>>();
   valid_utf8 = _encode(s, bit8_display, true, parts);
@@ -851,9 +854,7 @@ Str* maybe_shell_encode(Str* s, int flags) {
     prefix = str53;
   }
   parts->append(str54);
-  Str* ret_tmp = str_concat(prefix, str55->join(parts));
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return str_concat(prefix, str55->join(parts));
 }
 
 Str* maybe_encode(Str* s) {
@@ -863,7 +864,8 @@ Str* maybe_encode(Str* s) {
 Str* maybe_encode(Str* s, int bit8_display) {
   int quote;
   List<Str*>* parts = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s, &parts});
+
   quote = 0;
   if (len(s) == 0) {
     quote = 1;
@@ -871,6 +873,7 @@ Str* maybe_encode(Str* s, int bit8_display) {
   else {
     for (StrIter it(s); !it.Done(); it.Next()) {
       Str* ch = it.Value();
+      StackRoots _for({&ch    });
       if (IsPlainChar(ch)) {
         continue;
       }
@@ -878,36 +881,33 @@ Str* maybe_encode(Str* s, int bit8_display) {
     }
   }
   if (!quote) {
-    Str* ret_tmp = s;
-    gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-    return ret_tmp;
+    return s;
   }
   parts = Alloc<List<Str*>>();
   parts->append(str56);
   _encode(s, bit8_display, false, parts);
   parts->append(str57);
-  Str* ret_tmp = str58->join(parts);
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return str58->join(parts);
 }
 
 Str* encode(Str* s, int bit8_display) {
   List<Str*>* parts = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s, &parts});
+
   parts = Alloc<List<Str*>>();
   parts->append(str59);
   _encode(s, bit8_display, false, parts);
   parts->append(str60);
-  Str* ret_tmp = str61->join(parts);
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return str61->join(parts);
 }
 
 void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts) {
   Str* part = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s, &parts, &part});
+
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
+    StackRoots _for({&byte  });
     if (str_equals(byte, str62)) {
       part = str63;
     }
@@ -976,7 +976,8 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
   int typ;
   Str* out = nullptr;
   int rune;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s, &parts, &r1, &r2, &r3, &out});
+
   valid_utf8 = true;
   state = Start;
   r1 = str75;
@@ -984,6 +985,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
   r3 = str77;
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
+    StackRoots _for({&byte  });
     b = ord(byte);
     if (b < 127) {
       typ = Ascii;
@@ -1185,7 +1187,8 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
 }
 
 Str* maybe_qtt_encode(Str* s, int bit8_display) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&s});
+
   throw Alloc<NotImplementedError>();
 }
 
@@ -1206,7 +1209,7 @@ int Float = 3;
 int Bool = 4;
 
 _Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) 
-    : Obj(Tag::FixedSize, maskof__Attributes(), sizeof(_Attributes))  {
+    : Obj(Tag::Scanned, kZeroMask, 4 * sizeof(void*) + sizeof(Obj)) {
   this->attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
@@ -1221,18 +1224,20 @@ _Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults)
 }
 
 void _Attributes::SetTrue(Str* name) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&name});
+
   this->Set(name, Alloc<value::Bool>(true));
 }
 
 void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&name, &val});
+
   name = name->replace(str91, str92);
   this->attrs->set(name, val);
 }
 
 Reader::Reader(List<Str*>* argv, List<int>* spids) 
-    : Obj(Tag::FixedSize, maskof_Reader(), sizeof(Reader))  {
+    : Obj(Tag::Scanned, kZeroMask, 2 * sizeof(void*) + sizeof(Obj)) {
   this->argv = argv;
   this->spids = spids;
   this->n = len(argv);
@@ -1248,58 +1253,55 @@ Str* Reader::Peek() {
     return nullptr;
   }
   else {
-    Str* ret_tmp = this->argv->index_(this->i);
-    gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-    return ret_tmp;
+    return this->argv->index_(this->i);
   }
 }
 
 Tuple2<Str*, int> Reader::Peek2() {
   Str* no_str = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&no_str});
+
   if (this->i >= this->n) {
     no_str = nullptr;
-    return (Tuple2<Str*, int>(no_str, -1));
+    return Tuple2<Str*, int>(no_str, -1);
   }
   else {
-    return (Tuple2<Str*, int>(this->argv->index_(this->i), this->spids->index_(this->i)));
+    return Tuple2<Str*, int>(this->argv->index_(this->i), this->spids->index_(this->i));
   }
 }
 
 Str* Reader::ReadRequired(Str* error_msg) {
   Str* arg = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&error_msg, &arg});
+
   arg = this->Peek();
   if (arg == nullptr) {
     e_usage(dynamic_fmt_dummy(), this->_FirstSpanId());
   }
   this->Next();
-  Str* ret_tmp = arg;
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return arg;
 }
 
 Tuple2<Str*, int> Reader::ReadRequired2(Str* error_msg) {
   Str* arg = nullptr;
   int spid;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&error_msg, &arg});
+
   arg = this->Peek();
   if (arg == nullptr) {
     e_usage(dynamic_fmt_dummy(), this->_FirstSpanId());
   }
   spid = this->spids->index_(this->i);
   this->Next();
-  return (Tuple2<Str*, int>(arg, spid));
+  return Tuple2<Str*, int>(arg, spid);
 }
 
 List<Str*>* Reader::Rest() {
-  List<Str*>* ret_tmp = this->argv->slice(this->i);
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return this->argv->slice(this->i);
 }
 
 Tuple2<List<Str*>*, List<int>*> Reader::Rest2() {
-  return (Tuple2<List<Str*>*, List<int>*>(this->argv->slice(this->i), this->spids->slice(this->i)));
+  return Tuple2<List<Str*>*, List<int>*>(this->argv->slice(this->i), this->spids->slice(this->i));
 }
 
 bool Reader::AtEnd() {
@@ -1317,7 +1319,6 @@ int Reader::_FirstSpanId() {
 
 int Reader::SpanId() {
   int i;
-  RootsFrame _r{FUNC_NAME};
   if (this->spids) {
     if (this->i == this->n) {
       i = (this->n - 1);
@@ -1333,31 +1334,34 @@ int Reader::SpanId() {
 }
 
 _Action::_Action() 
-    : Obj(Tag::FixedSize, kZeroMask, sizeof(_Action))  {
+    : Obj(Tag::FixedSize, kZeroMask, kNoObjLen) {
   ;  // pass
 }
 
 bool _Action::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&attached_arg, &arg_r, &out});
+
   throw Alloc<NotImplementedError>();
 }
 
 _ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid)  {
-  field_mask_ |= maskof__ArgAction();
+  field_mask_ |= _ArgAction::field_mask();
   this->name = name;
   this->quit_parsing_flags = quit_parsing_flags;
   this->valid = valid;
 }
 
 runtime_asdl::value_t* _ArgAction::_Value(Str* arg, int span_id) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&arg});
+
   throw Alloc<NotImplementedError>();
 }
 
 bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   Str* arg = nullptr;
   runtime_asdl::value_t* val = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&attached_arg, &arg_r, &out, &arg, &val});
+
   if (attached_arg != nullptr) {
     arg = attached_arg;
   }
@@ -1378,7 +1382,8 @@ SetToInt::SetToInt(Str* name) : _ArgAction(name, false, nullptr) {
 
 runtime_asdl::value_t* SetToInt::_Value(Str* arg, int span_id) {
   int i;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&arg});
+
   try {
     i = to_int(arg);
   }
@@ -1388,9 +1393,7 @@ runtime_asdl::value_t* SetToInt::_Value(Str* arg, int span_id) {
   if (i < 0) {
     e_usage(dynamic_fmt_dummy(), span_id);
   }
-  runtime_asdl::value_t* ret_tmp = Alloc<value::Int>(i);
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return Alloc<value::Int>(i);
 }
 
 SetToFloat::SetToFloat(Str* name) : _ArgAction(name, false, nullptr) {
@@ -1398,7 +1401,8 @@ SetToFloat::SetToFloat(Str* name) : _ArgAction(name, false, nullptr) {
 
 runtime_asdl::value_t* SetToFloat::_Value(Str* arg, int span_id) {
   double f;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&arg});
+
   try {
     f = to_float(arg);
   }
@@ -1408,32 +1412,30 @@ runtime_asdl::value_t* SetToFloat::_Value(Str* arg, int span_id) {
   if (f < 0) {
     e_usage(dynamic_fmt_dummy(), span_id);
   }
-  runtime_asdl::value_t* ret_tmp = Alloc<value::Float>(f);
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return Alloc<value::Float>(f);
 }
 
 SetToString::SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid) : _ArgAction(name, quit_parsing_flags, valid) {
 }
 
 runtime_asdl::value_t* SetToString::_Value(Str* arg, int span_id) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&arg});
+
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
     e_usage(dynamic_fmt_dummy(), span_id);
   }
-  runtime_asdl::value_t* ret_tmp = Alloc<value::Str>(arg);
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return Alloc<value::Str>(arg);
 }
 
 SetAttachedBool::SetAttachedBool(Str* name)  {
-  field_mask_ |= maskof_SetAttachedBool();
+  field_mask_ |= SetAttachedBool::field_mask();
   this->name = name;
 }
 
 bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   bool b;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&attached_arg, &arg_r, &out});
+
   if (attached_arg != nullptr) {
     if ((str_equals(attached_arg, str108) || str_equals(attached_arg, str109) || str_equals(attached_arg, str110) || str_equals(attached_arg, str111))) {
       b = false;
@@ -1455,37 +1457,40 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
 }
 
 SetToTrue::SetToTrue(Str* name)  {
-  field_mask_ |= maskof_SetToTrue();
+  field_mask_ |= SetToTrue::field_mask();
   this->name = name;
 }
 
 bool SetToTrue::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&attached_arg, &arg_r, &out});
+
   out->SetTrue(this->name);
   return false;
 }
 
 SetOption::SetOption(Str* name)  {
-  field_mask_ |= maskof_SetOption();
+  field_mask_ |= SetOption::field_mask();
   this->name = name;
 }
 
 bool SetOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   bool b;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&attached_arg, &arg_r, &out});
+
   b = maybe_str_equals(attached_arg, str117);
   out->opt_changes->append((Alloc<Tuple2<Str*, bool>>(this->name, b)));
   return false;
 }
 
 SetNamedOption::SetNamedOption(bool shopt)  {
-  field_mask_ |= maskof_SetNamedOption();
+  field_mask_ |= SetNamedOption::field_mask();
   this->names = Alloc<List<Str*>>();
   this->shopt = shopt;
 }
 
 void SetNamedOption::ArgName(Str* name) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&name});
+
   this->names->append(name);
 }
 
@@ -1494,7 +1499,8 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   Str* arg = nullptr;
   Str* attr_name = nullptr;
   List<Tuple2<Str*, bool>*>* changes = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&attached_arg, &arg_r, &out, &arg, &attr_name, &changes});
+
   b = maybe_str_equals(attached_arg, str118);
   arg_r->Next();
   arg = arg_r->Peek();
@@ -1512,30 +1518,33 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
 }
 
 SetAction::SetAction(Str* name)  {
-  field_mask_ |= maskof_SetAction();
+  field_mask_ |= SetAction::field_mask();
   this->name = name;
 }
 
 bool SetAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&attached_arg, &arg_r, &out});
+
   out->actions->append(this->name);
   return false;
 }
 
 SetNamedAction::SetNamedAction()  {
-  field_mask_ |= maskof_SetNamedAction();
+  field_mask_ |= SetNamedAction::field_mask();
   this->names = Alloc<List<Str*>>();
 }
 
 void SetNamedAction::ArgName(Str* name) {
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&name});
+
   this->names->append(name);
 }
 
 bool SetNamedAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   Str* arg = nullptr;
   Str* attr_name = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&attached_arg, &arg_r, &out, &arg, &attr_name});
+
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
@@ -1559,7 +1568,8 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   int n;
   Str* ch = nullptr;
   Str* attached_arg = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&spec, &arg_r, &out, &arg, &suffix, &flag_name, &action, &ch, &attached_arg});
+
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
@@ -1631,9 +1641,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       }
     }
   }
-  args::_Attributes* ret_tmp = out;
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return out;
 }
 
 args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
@@ -1641,7 +1649,8 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   Str* arg = nullptr;
   Str* chars = nullptr;
   bool done;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&spec, &arg_r, &out, &arg, &chars});
+
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
@@ -1650,6 +1659,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
         Str* c = it.Value();
+        StackRoots _for({&c      });
         if (!list_contains(spec->arity0, c)) {
           done = true;
           break;
@@ -1660,6 +1670,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
       }
       for (StrIter it(chars); !it.Done(); it.Next()) {
         Str* ch = it.Value();
+        StackRoots _for({&ch      });
         out->SetTrue(ch);
       }
     }
@@ -1668,9 +1679,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
     }
     arg_r->Next();
   }
-  args::_Attributes* ret_tmp = out;
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return out;
 }
 
 args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* arg_r) {
@@ -1680,7 +1689,8 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
   args::_Action* action = nullptr;
   Str* char0 = nullptr;
   Str* attached_arg = nullptr;
-  RootsFrame _r{FUNC_NAME};
+  StackRoots _roots({&spec, &arg_r, &out, &arg, &action, &char0, &attached_arg});
+
   out = Alloc<_Attributes>(spec->defaults);
   quit = false;
   while (!arg_r->AtEnd()) {
@@ -1703,6 +1713,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       char0 = arg->index_(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         Str* ch = it.Value();
+        StackRoots _for({&ch      });
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
           e_usage(dynamic_fmt_dummy(), arg_r->SpanId());
@@ -1720,9 +1731,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
     }
     break;
   }
-  args::_Attributes* ret_tmp = out;
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(ret_tmp));
-  return ret_tmp;
+  return out;
 }
 
 }  // define namespace args

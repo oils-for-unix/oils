@@ -17,12 +17,8 @@ using runtime_asdl::value__Undef;
 using runtime_asdl::value_t;
 
 void _CreateStrList(const char** in, List<Str*>* out) {
-  // The caller will have properly rooted `out`
-  NO_ROOTS_FRAME(FUNC_NAME);
   int i = 0;
   while (true) {
-    // The caller will have properly rooted `out`
-    NO_ROOTS_FRAME(LOOP);
     const char* s = in[i];
     if (!s) {
       break;
@@ -35,12 +31,8 @@ void _CreateStrList(const char** in, List<Str*>* out) {
 
 void _CreateDefaults(DefaultPair_c* in,
                      Dict<Str*, runtime_asdl::value_t*>* out) {
-  // The caller will have properly rooted `out`
-  NO_ROOTS_FRAME(FUNC_NAME);
   int i = 0;
   while (true) {
-    // The caller will have properly rooted `out`
-    NO_ROOTS_FRAME(LOOP);
     DefaultPair_c* pair = &(in[i]);
     if (!pair->name) {
       break;
@@ -74,12 +66,8 @@ void _CreateDefaults(DefaultPair_c* in,
 
 #ifndef CPP_UNIT_TEST
 void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
-  // The caller will have properly rooted `out`
-  NO_ROOTS_FRAME(FUNC_NAME);
   int i = 0;
   while (true) {
-    // The caller will have properly rooted `out`
-    NO_ROOTS_FRAME(LOOP);
     Action_c* p = &(in[i]);
     if (!p->key) {
       break;
@@ -152,7 +140,6 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
 //
 // TODO: Make a GLOBAL CACHE?  It could be shared between subinterpreters even?
 flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
-  RootsFrame _r{FUNC_NAME};
   auto out = Alloc<flag_spec::_FlagSpec>();
   out->arity0 = NewList<Str*>();
   out->arity1 = NewDict<Str*, args::_Action*>();
@@ -177,12 +164,10 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   if (in->defaults) {
     _CreateDefaults(in->defaults, out->defaults);
   }
-  gHeap.RootOnReturn(out);
   return out;
 }
 
 flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
-  RootsFrame _r{FUNC_NAME};
   auto out = Alloc<flag_spec::_FlagSpecAndMore>();
   out->actions_short = NewDict<Str*, args::_Action*>();
   out->actions_long = NewDict<Str*, args::_Action*>();
@@ -204,15 +189,12 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   if (in->defaults) {
     _CreateDefaults(in->defaults, out->defaults);
   }
-  gHeap.RootOnReturn(out);
   return out;
 }
 
 flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // CreateSpec() handles it
   int i = 0;
   while (true) {
-    NO_ROOTS_FRAME(LOOP);  // CreateSpec() handles it
     const char* name = kFlagSpecs[i].name;
     if (name == nullptr) {
       break;
@@ -229,10 +211,8 @@ flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name) {
 }
 
 flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // CreateSpec2() handles it
   int i = 0;
   while (true) {
-    NO_ROOTS_FRAME(LOOP);  // CreateSpec2() handles it
     const char* name = kFlagSpecsAndMore[i].name;
     if (name == nullptr) {
       break;
@@ -249,7 +229,6 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
 }
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // LookupFlagSpec() and Parse() will handle it
   flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
   assert(spec);  // should always be found
 
@@ -266,7 +245,6 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 #ifdef CPP_UNIT_TEST
   return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
 #else
-  NO_ROOTS_FRAME(FUNC_NAME);  // LookupFlagSpec() and Alloc() handle it
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
@@ -281,7 +259,6 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val,
     bool accept_typed_args) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // ParseCmdCal() handles it
   // TODO: disallow typed args!
   return ParseCmdVal(spec_name, cmd_val);
 }
@@ -291,7 +268,6 @@ Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
 #ifdef CPP_UNIT_TEST
   return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
 #else
-  NO_ROOTS_FRAME(FUNC_NAME);  // LookupFlagSpec2() and Alloc() handle it
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
@@ -306,7 +282,6 @@ args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
 #ifdef CPP_UNIT_TEST
   return nullptr;
 #else
-  NO_ROOTS_FRAME(FUNC_NAME);  // LookupFlagSpec2() and ParseMore() handle it
   // TODO: Fill this in from constant data!
   flag_spec::_FlagSpecAndMore* spec = LookupFlagSpec2(spec_name);
   assert(spec);

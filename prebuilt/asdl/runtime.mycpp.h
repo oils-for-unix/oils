@@ -50,14 +50,13 @@ class ColorOutput : public Obj {
 
   mylib::Writer* f;
   int num_chars;
+  
+  constexpr uint16_t field_mask() {
+    return maskbit_v(offsetof(ColorOutput, f));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
-
-constexpr uint16_t maskof_ColorOutput() {
-  return
-    maskbit_v(offsetof(ColorOutput, f));
-}
 
 class TextOutput : public ColorOutput {
  public:

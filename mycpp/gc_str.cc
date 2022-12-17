@@ -88,8 +88,6 @@ bool Str::endswith(Str* s) {
 
 // Get a string with one character
 Str* Str::index_(int i) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // skip to NewStr
-
   int len_ = len(this);
   if (i < 0) {
     i = len_ + i;
@@ -104,8 +102,6 @@ Str* Str::index_(int i) {
 
 // s[begin:end]
 Str* Str::slice(int begin, int end) {
-  RootsFrame _r{FUNC_NAME};
-
   int len_ = len(this);
   begin = std::min(begin, len_);
   end = std::min(end, len_);
@@ -153,8 +149,6 @@ Str* Str::slice(int begin, int end) {
 
 // s[begin:]
 Str* Str::slice(int begin) {
-  NO_ROOTS_FRAME(FUNC_NAME);
-
   // log("slice(begin) -> %d frames", gHeap.root_set_.NumFrames());
 
   int len_ = len(this);

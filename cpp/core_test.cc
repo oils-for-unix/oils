@@ -27,7 +27,6 @@ TEST exceptions_test() {
     throw Alloc<error::Usage>(StrFromC("msg"), 42);
   } catch (error::Usage* e) {
     log("e %p", e);
-    gHeap.RootInCurrentFrame(e);
     caught = true;
   }
 
@@ -196,7 +195,6 @@ TEST signal_test() {
 
   {
     // Approximate TrapState::TakeRunList()
-    RootsFrame _r;
     List<int>* q = pyos::TakeSignalQueue();
     ASSERT(q != nullptr);
     ASSERT(len(q) == 0);
@@ -213,7 +211,6 @@ TEST signal_test() {
 
   {
     // Approximate TrapState::TakeRunList()
-    RootsFrame _r;
     List<int>* q = pyos::TakeSignalQueue();
     ASSERT(q != nullptr);
     ASSERT(len(q) == 2);
@@ -225,7 +222,6 @@ TEST signal_test() {
   kill(mypid, SIGUSR1);
   {
     // Approximate TrapState::TakeRunList()
-    RootsFrame _r;
     List<int>* q = pyos::TakeSignalQueue();
     ASSERT(q != nullptr);
     ASSERT(len(q) == 0);
@@ -240,7 +236,6 @@ TEST signal_test() {
   ASSERT(pyos::LastSignal() == SIGWINCH);
   {
     // Approximate TrapState::TakeRunList()
-    RootsFrame _r;
     List<int>* q = pyos::TakeSignalQueue();
     ASSERT(q != nullptr);
     ASSERT(len(q) == 2);

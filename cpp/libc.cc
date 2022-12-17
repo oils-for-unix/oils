@@ -12,7 +12,6 @@
 namespace libc {
 
 Str* gethostname() {
-  NO_ROOTS_FRAME(FUNC_NAME);  // OverAllocatedStr() does it
   Str* result = OverAllocatedStr(HOST_NAME_MAX);
   int status = ::gethostname(result->data_, HOST_NAME_MAX);
   if (status != 0) {
@@ -24,7 +23,6 @@ Str* gethostname() {
 }
 
 int fnmatch(Str* pat, Str* str) {
-  NO_ROOTS_FRAME(FUNC_NAME);  // No allocaitons here
   int flags = FNM_EXTMATCH;
   int result = ::fnmatch(pat->data_, str->data_, flags);
   switch (result) {
@@ -39,7 +37,6 @@ int fnmatch(Str* pat, Str* str) {
 }
 
 List<Str*>* glob(Str* pat) {
-  RootsFrame _r{FUNC_NAME};
   glob_t results;
   // Hm, it's weird that the first one can't be called with GLOB_APPEND.  You
   // get a segfault.
@@ -78,20 +75,17 @@ List<Str*>* glob(Str* pat) {
   // Print array of results
   size_t i;
   for (i = 0; i < n; i++) {
-    NO_ROOTS_FRAME(LOOP);  // Allocations are retained through `matches`
     const char* m = results.gl_pathv[i];
     matches->append(StrFromC(m));
   }
   globfree(&results);
 
-  gHeap.RootOnReturn(matches);
   return matches;
 }
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
 List<Str*>* regex_match(Str* pattern, Str* str) {
-  RootsFrame _r{FUNC_NAME};
   List<Str*>* results = NewList<Str*>();
 
   regex_t pat;
@@ -109,7 +103,6 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
   if (match) {
     int i;
     for (i = 0; i < outlen; i++) {
-      NO_ROOTS_FRAME(LOOP);  // Allocations are retained through `results`
       int len = pmatch[i].rm_eo - pmatch[i].rm_so;
       Str* m = StrFromC(s0 + pmatch[i].rm_so, len);
       results->append(m);
@@ -123,7 +116,6 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
     return nullptr;
   }
 
-  gHeap.RootOnReturn(results);
   return results;
 }
 
@@ -136,7 +128,6 @@ const int NMATCH = 2;
 
 // Odd: This a Tuple2* not Tuple2 because it's Optional[Tuple2]!
 Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
-  RootsFrame _r{FUNC_NAME};
   regex_t pat;
   regmatch_t m[NMATCH];
 
@@ -169,8 +160,6 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   regoff_t end = m[1].rm_eo;
   Tuple2<int, int>* tup = Alloc<Tuple2<int, int>>(pos + start, pos + end);
 
-  // Tuple2<...> uses the OBJ_HEADER macro
-  gHeap.RootOnReturn(reinterpret_cast<Obj*>(tup));
   return tup;
 }
 
