@@ -187,7 +187,19 @@ profile-osh-parse() {
 
   local bin='_bin/cxx-opt/osh_eval'
   ninja $bin
-  profile-cpp 'osh-parse' $mode $bin --ast-format none -n benchmarks/testdata/configure
+
+  local file=benchmarks/testdata/configure
+  #local file=benchmarks/testdata/configure-coreutils
+
+  local -a cmd=( $bin --ast-format none -n $file )
+  profile-cpp 'osh-parse' $mode "${cmd[@]}"
+
+  # 'perf list' shows the events
+  #OIL_GC_STATS=1 sudo perf stat -e cache-misses -e cache-references "${cmd[@]}"
+  OIL_GC_STATS=1 sudo perf stat "${cmd[@]}"
+
+  # Run again with GC stats
+  time OIL_GC_STATS=1 "${cmd[@]}"
 }
 
 profile-example() {
