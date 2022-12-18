@@ -280,7 +280,7 @@ ParserReport = function(in_dir, out_dir) {
     Log('\n')
     Log('joined_cachegrind has %d rows', nrow(joined_cachegrind))
     #print(joined_cachegrind)
-    print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
+    #print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
 
     # Cachegrind instructions by file
     joined_cachegrind %>%

@@ -64,6 +64,7 @@ extract-for-benchmarks() {
 
   # For benchmarks
   pushd oil-native-$OIL_VERSION
+  ./configure
   _build/oil-native.sh '' dbg SKIP_REBUILD
   _build/oil-native.sh '' opt SKIP_REBUILD
   popd

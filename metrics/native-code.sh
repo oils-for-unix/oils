@@ -75,6 +75,13 @@ R-report() {
 }
 
 build-ovm() {
+  # 2022-12: hack for ./configure, because line_input failed to compile without
+  # HAVE_READLINE See _build/oil/module_init.c
+  # TODO: This metric should either be DELETED, or automated in the CI, so it
+  # doesn't break
+
+  ./configure
+
   make _build/oil/ovm-{dbg,opt}
 }
 
