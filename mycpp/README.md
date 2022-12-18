@@ -52,7 +52,7 @@ To build oil-native, use:
 
 To run the tests and benchmarks:
 
-    oil$ ninja mycpp-logs-equal
+    oil$ mycpp/TEST.sh test-translator
     ... 200+ tasks run ...
 
 If you have problems, post a message on `#oil-dev` at
@@ -164,8 +164,23 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 
 ### Optimizations
 
-- Return Tuples by Value.  To reduce GC pressure, we we return `Tuple2<A, B>`
-  insetad of `Tuple2<A, B>*`, and likewise for `Tuple3` and `Tuple4`.
+- Returning Tuples by value.  To reduce GC pressure, we we return
+  `Tuple2<A, B>` instead of `Tuple2<A, B>*`, and likewise for `Tuple3` and `Tuple4`.
+
+### Rooting Policy
+
+The translated code roots local variables in every function
+
+    StackRoots _r({&var1, &var2});
+
+We have two kinds of hand-written code:
+
+1. Methods like `Str::strip()` in `mycpp/` 
+2. OS bindings like `stat()` in `cpp/` 
+
+Neither of them needs any rooting!  This is because we use **manual collection
+points** in the interpreter, and these functions don't call any functions that
+can collect.  They are "leaves" in the call tree.
 
 ### Hard-Coded Lists To Get Rid Of
 
@@ -179,7 +194,6 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
   - lists of functions with default arguments (we only allow 1)
   - lists of modules vs. types: `module.Func()` vs. `sum_type.Variant()`
   - `_GetCastKind()` has some hard-coded names
-
 
 Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
 
@@ -203,10 +217,6 @@ Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
   - Could enforce this if it becomes a problem
 
 ## C++
-
-### Interactions Between C++ and Garbage Collection
-
-- TODO: Link to a wiki page.  The `f(g())` problem, etc.
 
 ### Gotchas
 
