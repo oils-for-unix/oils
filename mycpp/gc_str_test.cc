@@ -1048,6 +1048,13 @@ TEST test_str_format() {
   ASSERT(str_equals(StrFromC("foo"), StrFormat("%s", StrFromC("foo"))));
   ASSERT(str_equals(StrFromC("              foo"),
                     StrFormat("%17s", StrFromC("foo"))));
+  ASSERT(str_equals(StrFromC("foo"), StrFormat("foo%s", StrFromC(""))));
+
+  // check that NUL bytes are preserved
+  ASSERT(str_equals(StrFromC("foo b\0ar", 8),
+                    StrFormat("foo %s", StrFromC("b\0ar", 4))));
+  ASSERT(str_equals(StrFromC("foo\0bar", 7),
+                    StrFormat(StrFromC("foo\0%s", 6), StrFromC("bar"))));
 
   // check %d
   ASSERT(str_equals(StrFromC("12345"), StrFormat("%d", 12345)));

@@ -469,9 +469,8 @@ List<Str*>* Str::split(Str* sep) {
   return result;
 }
 
-static inline Str* _StrFormat(const char* fmt, va_list args) {
-  int n = strlen(fmt);
-  auto beg = std::cregex_iterator(fmt, fmt + n, gStrFmtRegex);
+static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
+  auto beg = std::cregex_iterator(fmt, fmt + fmt_len, gStrFmtRegex);
   auto end = std::cregex_iterator();
 
   char int_buf[kMaxFmtWidth];
@@ -501,6 +500,7 @@ static inline Str* _StrFormat(const char* fmt, va_list args) {
     }
 
     char const* str_to_add = nullptr;
+    int add_len = 0;
     const std::csub_match& code_m = match[3];
     const std::string& code_s = code_m.str();
     if (!code_m.matched) {
@@ -510,13 +510,14 @@ static inline Str* _StrFormat(const char* fmt, va_list args) {
     assert(code_s.size() == 1);
     switch (code_s[0]) {
     case '%': {
-      assert(code_s.size() == 1);
       str_to_add = code_s.c_str();
+      add_len = 1;
       break;
     }
     case 's': {
       Str* s = va_arg(args, Str*);
       str_to_add = s->data();
+      add_len = len(s);
       zero_pad = false;  // python ignores the 0 directive for strings
       break;
     }
@@ -524,41 +525,43 @@ static inline Str* _StrFormat(const char* fmt, va_list args) {
       Str* s = va_arg(args, Str*);
       s = repr(s);
       str_to_add = s->data();
+      add_len = len(s);
       zero_pad = false;  // python ignores the 0 directive for strings
       break;
     }
     case 'd':  // fallthrough
     case 'o': {
       int d = va_arg(args, int);
-      assert(snprintf(int_buf, kMaxFmtWidth, match.str().c_str() + lit_s.size(),
-                      d) > 0);
+      add_len = snprintf(int_buf, kMaxFmtWidth,
+                         match.str().c_str() + lit_s.size(), d);
+      assert(add_len > 0);
       str_to_add = int_buf;
       break;
     }
     default:
+      assert(0);
       break;
     }
     assert(str_to_add != nullptr);
 
   done:
     if (str_to_add != nullptr) {
-      int n = strlen(str_to_add);
-      if (n < width) {
-        for (int i = 0; i < width - n; ++i) {
+      if (add_len < width) {
+        for (int i = 0; i < width - add_len; ++i) {
           buf.push_back(zero_pad ? '0' : ' ');
         }
       }
-      buf.append(str_to_add);
+      buf.append(str_to_add, add_len);
     }
   }
 
-  return StrFromC(buf.c_str());
+  return StrFromC(buf.c_str(), buf.size());
 }
 
 Str* StrFormat(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  Str* ret = _StrFormat(fmt, args);
+  Str* ret = _StrFormat(fmt, strlen(fmt), args);
   va_end(args);
   return ret;
 }
@@ -566,7 +569,7 @@ Str* StrFormat(const char* fmt, ...) {
 Str* StrFormat(Str* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  Str* ret = _StrFormat(fmt->data(), args);
+  Str* ret = _StrFormat(fmt->data(), len(fmt), args);
   va_end(args);
   return ret;
 }
