@@ -47,6 +47,9 @@ def run_tests():
   x = 'x'
   print("%s\tb\n%s\td\n" % (x, x))
 
+  fmt = "%d"
+  print(fmt % 10)
+
 
 def run_benchmarks():
   # type: () -> None
