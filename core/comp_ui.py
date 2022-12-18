@@ -4,13 +4,14 @@ comp_ui.py
 from __future__ import print_function
 
 import atexit
-import sys
 
 from core import ansi
 from core import completion
 import libc
 
-from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
+from mycpp import mylib
+
+from typing import Any, List, Optional, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.py_readline import Readline
   from core.util import _DebugFile
@@ -44,12 +45,13 @@ def _PromptLen(prompt_str):
     elif c == '\x02':
       escaped = False
     elif not escaped:
-      display_str += c
+      # mycpp: rewrite of +=
+      display_str = display_str + c
   last_line = display_str.split('\n')[-1]
   try:
     width = libc.wcswidth(last_line)
   # en_US.UTF-8 locale missing, just return the number of bytes
-  except (SystemError, UnicodeError):
+  except UnicodeError:
     return len(display_str)
   if width == -1:
     return len(display_str)
@@ -90,24 +92,24 @@ class _IDisplay(object):
   """Interface for completion displays."""
 
   def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f):
-    # type: (State, PromptState, int, IO[bytes], _DebugFile) -> None
+    # type: (State, PromptState, int, mylib.Writer, _DebugFile) -> None
     self.comp_state = comp_state
     self.prompt_state = prompt_state
     self.num_lines_cap = num_lines_cap
     self.f = f
     self.debug_f = debug_f
 
-  def PrintCandidates(self, *args):
-    # type: (*Any) -> None
+  def PrintCandidates(self, unused_subst, matches, unused_match_len):
+    # type: (Optional[str], List[str], int) -> None
     try:
-      self._PrintCandidates(*args)
-    except Exception as e:
+      self._PrintCandidates(unused_subst, matches, unused_match_len)
+    except Exception:
       if 0:
         import traceback
         traceback.print_exc()
 
   def _PrintCandidates(self, unused_subst, matches, unused_match_len):
-    # type: (Optional[Any], List[str], Optional[Any]) -> None
+    # type: (Optional[str], List[str], int) -> None
     """Abstract method."""
     raise NotImplementedError()
 
@@ -126,14 +128,15 @@ class _IDisplay(object):
     # Doesn't apply to MinimalDisplay
     pass
 
-  def PrintRequired(self, msg, *args):
-    # type: (str, *Any) -> None
-    # This gets called with "nothing to display"
-    pass
+  if mylib.PYTHON:
+    def PrintRequired(self, msg, *args):
+      # type: (str, *Any) -> None
+      # This gets called with "nothing to display"
+      pass
 
-  def PrintOptional(self, msg, *args):
-    # type: (str, *Any) -> None
-    pass
+    def PrintOptional(self, msg, *args):
+      # type: (str, *Any) -> None
+      pass
 
   def OnWindowChange(self):
     # type: () -> None
@@ -148,10 +151,9 @@ class MinimalDisplay(_IDisplay):
   It could be useful if we ever have a browser build!  We can see completion
   without testing it.
   """
-  def __init__(self, comp_state, prompt_state, debug_f, num_lines_cap=10,
-               f=sys.stdout):
-    # type: (State, PromptState, _DebugFile, int, IO[bytes]) -> None
-    _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
+  def __init__(self, comp_state, prompt_state, debug_f):
+    # type: (State, PromptState, _DebugFile) -> None
+    _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
                        debug_f)
 
     self.reader = None
@@ -164,7 +166,7 @@ class MinimalDisplay(_IDisplay):
     self.f.write(self.comp_state.line_until_tab)
 
   def _PrintCandidates(self, unused_subst, matches, unused_match_len):
-    # type: (Optional[Any], List[str], Optional[Any]) -> None
+    # type: (Optional[str], List[str], int) -> None
     #log('_PrintCandidates %s', matches)
     self.f.write('\n')  # need this
     display_pos = self.comp_state.display_pos
@@ -189,17 +191,18 @@ class MinimalDisplay(_IDisplay):
 
     self._RedrawPrompt()
 
-  def PrintRequired(self, msg, *args):
-    # type: (str, *Any) -> None
-    self.f.write('\n')
-    if args:
-      msg = msg % args
-    self.f.write(' %s\n' % msg)  # need a newline
-    self._RedrawPrompt()
+  if mylib.PYTHON:
+    def PrintRequired(self, msg, *args):
+      # type: (str, *Any) -> None
+      self.f.write('\n')
+      if args:
+        msg = msg % args
+      self.f.write(' %s\n' % msg)  # need a newline
+      self._RedrawPrompt()
 
 
 def _PrintPacked(matches, max_match_len, term_width, max_lines, f):
-  # type: (List[str], int, int, int, IO[bytes]) -> int
+  # type: (List[str], int, int, int, mylib.Writer) -> int
   # With of each candidate.  2 spaces between each.
   w = max_match_len + 2
 
@@ -253,7 +256,7 @@ def _PrintLong(matches,  # type: List[str]
                term_width,  # type: int
                max_lines,  # type: int
                descriptions,  # type: Dict[str, str]
-               f,  # type: Any
+               f,  # type: mylib.Writer
                ):
   # type: (...) -> int
   """Print flags with descriptions, one per line.
@@ -275,7 +278,9 @@ def _PrintLong(matches,  # type: List[str]
 
   # rl_match is a raw string, which may or may not have a trailing space
   for rl_match in matches:
-    desc = descriptions.get(rl_match) or ''
+    desc = descriptions.get(rl_match)
+    if desc is None:
+        desc = ''
     if max_desc == 0:  # the window is not wide enough for some flag
       f.write(' %s\n' % rl_match)
     else:
@@ -313,22 +318,19 @@ class NiceDisplay(_IDisplay):
                prompt_state,  # type: PromptState
                debug_f,  # type: _DebugFile
                readline,  # type: Optional[Readline]
-               f=sys.stdout,  # type: IO[bytes]
-               num_lines_cap=10,  # type: int
-               bold_line=False,  # type: bool
                ):
     # type: (...) -> None
     """
     Args:
       bold_line: Should user's entry be bold?
     """
-    _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
+    _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
                        debug_f)
     self.readline = readline
     self.term_width = term_width
     self.width_is_dirty = False
 
-    self.bold_line = bold_line
+    self.bold_line = False
 
     self.num_lines_last_displayed = 0
 
@@ -368,13 +370,13 @@ class NiceDisplay(_IDisplay):
     self.f.flush()
 
   def _PrintCandidates(self, unused_subst, matches, unused_max_match_len):
-    # type: (Optional[Any], List[str], Optional[Any]) -> None
+    # type: (Optional[str], List[str], int) -> None
     term_width = self._GetTerminalWidth()
 
     # Variables set by the completion generator.  They should always exist,
     # because we can't get "matches" without calling that function.
     display_pos = self.comp_state.display_pos
-    self.debug_f.log('DISPLAY POS in _PrintCandidates = %d', display_pos)
+    self.debug_f.write('DISPLAY POS in _PrintCandidates = %d\n' % display_pos)
 
     self.f.write('\n')
 
@@ -394,7 +396,8 @@ class NiceDisplay(_IDisplay):
     # This could be more accurate but I think it's good enough.
     comp_id = hash(''.join(matches))
     if comp_id in self.dupes:
-      self.dupes[comp_id] += 1
+      # mycpp: rewrite of +=
+      self.dupes[comp_id] = self.dupes[comp_id] + 1
     else:
       self.dupes.clear()  # delete the old ones
       self.dupes[comp_id] = 1
@@ -408,13 +411,14 @@ class NiceDisplay(_IDisplay):
       to_display = [m[display_pos:] for m in matches]
 
     # Calculate max length after stripping prefix.
-    max_match_len = max(len(m) for m in to_display)
+    lens = [len(m) for m in to_display]
+    max_match_len = max(lens)
 
     # TODO: NiceDisplay should truncate when max_match_len > term_width?
     # Also truncate when a single candidate is super long?
 
     # Print and go back up.  But we have to ERASE these before hitting enter!
-    if self.comp_state.descriptions:  # exists and is NON EMPTY
+    if self.comp_state.descriptions is not None and len(self.comp_state.descriptions) > 0:  # exists and is NON EMPTY
       num_lines = _PrintLong(to_display, max_match_len, term_width,
                              max_lines, self.comp_state.descriptions, self.f)
     else:
@@ -426,41 +430,42 @@ class NiceDisplay(_IDisplay):
 
     self.c_count += 1
 
-  def PrintRequired(self, msg, *args):
-    # type: (str, *Any) -> None
-    """
-    Print a message below the prompt, and then return to the location on the
-    prompt line.
-    """
-    if args:
-      msg = msg % args
+  if mylib.PYTHON:
+    def PrintRequired(self, msg, *args):
+      # type: (str, *Any) -> None
+      """
+      Print a message below the prompt, and then return to the location on the
+      prompt line.
+      """
+      if args:
+        msg = msg % args
 
-    # This will mess up formatting
-    assert not msg.endswith('\n'), msg
+      # This will mess up formatting
+      assert not msg.endswith('\n'), msg
 
-    self.f.write('\n')
+      self.f.write('\n')
 
-    self.EraseLines()
-    #log('PrintOptional %r', msg, file=DEBUG_F)
+      self.EraseLines()
+      #log('PrintOptional %r', msg, file=DEBUG_F)
 
-    # Truncate to terminal width
-    max_len = self._GetTerminalWidth() - 2
-    if len(msg) > max_len:
-      msg = msg[:max_len-5] + ' ... '
+      # Truncate to terminal width
+      max_len = self._GetTerminalWidth() - 2
+      if len(msg) > max_len:
+        msg = msg[:max_len-5] + ' ... '
 
-    # NOTE: \n at end is REQUIRED.  Otherwise we get drawing problems when on
-    # the last line.
-    fmt = ansi.BOLD + ansi.BLUE + '%' + str(max_len) + 's' + ansi.RESET + '\n'
-    self.f.write(fmt % msg)
+      # NOTE: \n at end is REQUIRED.  Otherwise we get drawing problems when on
+      # the last line.
+      fmt = ansi.BOLD + ansi.BLUE + '%' + str(max_len) + 's' + ansi.RESET + '\n'
+      self.f.write(fmt % msg)
 
-    self._ReturnToPrompt(2)
+      self._ReturnToPrompt(2)
 
-    self.num_lines_last_displayed = 1
-    self.m_count += 1
+      self.num_lines_last_displayed = 1
+      self.m_count += 1
 
-  def PrintOptional(self, msg, *args):
-    # type: (str, *Any) -> None
-    self.PrintRequired(msg, *args)
+    def PrintOptional(self, msg, *args):
+      # type: (str, *Any) -> None
+      self.PrintRequired(msg, *args)
 
   def ShowPromptOnRight(self, rendered):
     # type: (str) -> None
@@ -537,50 +542,51 @@ class NiceDisplay(_IDisplay):
 
 
 def InitReadline(readline, history_filename, root_comp, display, debug_f):
-  # type: (Any, str, completion.RootCompleter, _IDisplay, _DebugFile) -> None
+  # type: (Optional[Readline], str, completion.RootCompleter, _IDisplay, _DebugFile) -> None
   assert readline
 
-  try:
-    readline.read_history_file(history_filename)
-  except IOError:
-    pass
-
-  def _MaybeWriteHistoryFile(history_filename):
-    # type: (str) -> None
+  if mylib.PYTHON:
     try:
-      readline.write_history_file(history_filename)
+      readline.read_history_file(history_filename)
     except IOError:
       pass
 
-  # The 'atexit' module is a small wrapper around sys.exitfunc.
-  atexit.register(_MaybeWriteHistoryFile, history_filename)
-  readline.parse_and_bind('tab: complete')
+    def _MaybeWriteHistoryFile(history_filename):
+      # type: (str) -> None
+      try:
+        readline.write_history_file(history_filename)
+      except IOError:
+        pass
 
-  readline.parse_and_bind('set horizontal-scroll-mode on')
+    # The 'atexit' module is a small wrapper around sys.exitfunc.
+    atexit.register(_MaybeWriteHistoryFile, history_filename)
+    readline.parse_and_bind('tab: complete')
 
-  # How does this map to C?
-  # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
+    readline.parse_and_bind('set horizontal-scroll-mode on')
 
-  complete_cb = completion.ReadlineCallback(readline, root_comp, debug_f)
-  readline.set_completer(complete_cb)
+    # How does this map to C?
+    # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
 
-  # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
-  # "The basic list of characters that signal a break between words for the
-  # completer routine. The default value of this variable is the characters
-  # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
+    complete_cb = completion.ReadlineCallback(readline, root_comp, debug_f)
+    readline.set_completer(complete_cb)
 
-  # This determines the boundaries you get back from get_begidx() and
-  # get_endidx() at completion time!
-  # We could be more conservative and set it to ' ', but then cases like
-  # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
-  #
-  # Note that this should not affect the OSH completion algorithm.  It only
-  # affects what we pass back to readline and what readline displays to the
-  # user!
+    # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
+    # "The basic list of characters that signal a break between words for the
+    # completer routine. The default value of this variable is the characters
+    # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
 
-  # No delimiters because readline isn't smart enough to tokenize shell!
-  readline.set_completer_delims('')
+    # This determines the boundaries you get back from get_begidx() and
+    # get_endidx() at completion time!
+    # We could be more conservative and set it to ' ', but then cases like
+    # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
+    #
+    # Note that this should not affect the OSH completion algorithm.  It only
+    # affects what we pass back to readline and what readline displays to the
+    # user!
 
-  readline.set_completion_display_matches_hook(
-      lambda *args: display.PrintCandidates(*args)
-  )
+    # No delimiters because readline isn't smart enough to tokenize shell!
+    readline.set_completer_delims('')
+
+    readline.set_completion_display_matches_hook(
+        lambda *args: display.PrintCandidates(*args)
+    )

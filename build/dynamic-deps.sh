@@ -63,7 +63,6 @@ _gen/
 .*_spec\.py
 asdl/py.*
 core/py.*
-core/comp_ui.py
 core/optview.py
 frontend/consts.py
 frontend/match.py

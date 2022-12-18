@@ -10,8 +10,8 @@
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration
-namespace comp_ui {
-class _IDisplay;
+namespace completion {
+class RootCompleter;
 };
 
 namespace pyos {
