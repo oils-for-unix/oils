@@ -505,7 +505,7 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     const std::string& code_s = code_m.str();
     if (!code_m.matched) {
       assert(!width_m.matched);  // python errors on invalid format operators
-      goto done;
+      break;
     }
     assert(code_s.size() == 1);
     switch (code_s[0]) {
@@ -544,15 +544,12 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     }
     assert(str_to_add != nullptr);
 
-  done:
-    if (str_to_add != nullptr) {
-      if (add_len < width) {
-        for (int i = 0; i < width - add_len; ++i) {
-          buf.push_back(zero_pad ? '0' : ' ');
-        }
+    if (add_len < width) {
+      for (int i = 0; i < width - add_len; ++i) {
+        buf.push_back(zero_pad ? '0' : ' ');
       }
-      buf.append(str_to_add, add_len);
     }
+    buf.append(str_to_add, add_len);
   }
 
   return StrFromC(buf.c_str(), buf.size());
