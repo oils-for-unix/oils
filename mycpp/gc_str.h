@@ -132,6 +132,9 @@ inline Str* StrFromC(const char* data) {
   return StrFromC(data, strlen(data));
 }
 
+Str* StrFormat(const char* fmt, ...);
+Str* StrFormat(Str* fmt, ...);
+
 // NOTE: This iterates over bytes.
 class StrIter {
  public:

@@ -1,5 +1,7 @@
 #include <sys/time.h>  // gettimeofday()
 
+#include <ctime>  // CLOCK_PROCESS_CPUTIME_ID
+
 #include "mycpp/runtime.h"
 
 void MarkSweepHeap::Init() {

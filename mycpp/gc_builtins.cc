@@ -28,7 +28,7 @@ Str* repr(Str* s) {
 }
 
 // Helper for str_to_int() that doesn't use exceptions.
-bool StringToInteger(char* s, int length, int base, int* result) {
+bool StringToInteger(const char* s, int length, int base, int* result) {
   if (length == 0) {
     return false;  // empty string isn't a valid integer
   }

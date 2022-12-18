@@ -101,7 +101,7 @@ Str* str(int i);
 // Helper function: returns whether the string is a valid integer, and
 // populates the result.  (Also used by marksweep_heap.cc; could be moved
 // there)
-bool StringToInteger(char* s, int len, int base, int* result);
+bool StringToInteger(const char* s, int len, int base, int* result);
 
 // String to integer, raising ValueError if invalid
 int to_int(Str* s);
