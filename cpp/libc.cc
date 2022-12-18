@@ -7,7 +7,9 @@
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
+#include <sys/ioctl.h>
 #include <unistd.h>  // gethostname()
+#include <wchar.h>
 
 namespace libc {
 
@@ -161,6 +163,29 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   Tuple2<int, int>* tup = Alloc<Tuple2<int, int>>(pos + start, pos + end);
 
   return tup;
+}
+
+int wcswidth(Str* str) {
+  int len = mbstowcs(NULL, str->data(), 0);
+  if (len == -1) {
+    throw Alloc<UnicodeError>(StrFromC("mbstowcs error: Invalid UTF-8 string"));
+  }
+
+  auto* unicode = static_cast<wchar_t*>(malloc(len + 1));
+  assert(unicode != nullptr);
+  mbstowcs(unicode, str->data(), len + 1);
+  int width = ::wcswidth(unicode, len + 1);
+  free(unicode);
+
+  return width;
+}
+
+int get_terminal_width() {
+  struct winsize w;
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) {
+    throw Alloc<IOError>(errno);
+  }
+  return w.ws_col;
 }
 
 }  // namespace libc

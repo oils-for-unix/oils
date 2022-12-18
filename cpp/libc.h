@@ -29,6 +29,9 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos);
 
 List<Str*>* regex_match(Str* pattern, Str* str);
 
+int wcswidth(Str* str);
+int get_terminal_width();
+
 }  // namespace libc
 
 #endif  // LIBC_H
