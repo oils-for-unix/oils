@@ -76,7 +76,7 @@ class Obj {
   // reserved for "tagless" value_e ?
   // - 3 value_e.Str is Str
   // - 5 value_e.List
-  // - 7 value_e.Dict 
+  // - 7 value_e.Dict
   // - 9 value_e.Bool
   // - 11 value_e.Int
   // - 13 value_e.Float
@@ -208,10 +208,10 @@ TEST dual_header_test() {
 
 struct Str {
   // zero the 7 bytes
-  Str(int n) : is_small(1), pad(0), small_len(n), small_data {0} {
+  Str(int n) : is_small(1), pad(0), small_len(n), small_data{0} {
   }
   // zero initialize for the union
-  //Str() : is_small(0), pad(0), small_len(0), small_data {0} {
+  // Str() : is_small(0), pad(0), small_len(0), small_data {0} {
   //}
 #if LITTLE_ENDIAN
   unsigned is_small : 1;  // reserved
@@ -227,8 +227,7 @@ struct Str {
 };
 
 // Layout compatible with Str, and globally initialized
-// TODO: maybe Str can inherit from GlobalStr?
-struct GlobalStr {
+struct GlobalSmallStr {
   unsigned is_small : 1;  // reserved
   unsigned pad : 3;
   unsigned small_len : 4;  // 0 to 7 bytes -- not it's NOT aligned
@@ -243,6 +242,117 @@ class HeapStr : public Obj {
   }
   char data_[1];
 };
+
+// the bindings shouldn't use this directly
+static HeapStr* NewHeapStr(int n) {
+  void* place = malloc(sizeof(Obj) + n + 1);  // +1 for NUL terminator
+  return new (place) HeapStr();
+}
+
+class SmallStr {
+ public:
+  SmallStr(int n) : is_small(1), pad(0), small_len(n), small_data{0} {
+  }
+  // is_present, length, etc.
+
+  unsigned is_small : 1;  // reserved
+  unsigned pad : 3;
+  unsigned small_len : 4;  // 0 to 6 bytes of data payload
+
+  char small_data[7];
+};
+
+union Str_ {
+  Str_(SmallStr small) : small_(small) {
+    // small_ is the whole 8 bytes
+  }
+  Str_(HeapStr* big) : zero_init(0) {
+    // big_ may be 4 bytes, so we need zero_init first
+    big_ = big;
+  }
+
+  bool IsSmall() {
+    return small_.is_small;
+  }
+
+  Str_ upper() {
+    if (small_.is_small) {
+      // Mutate
+      for (int i = 0; i < small_.small_len; ++i) {
+        small_.small_data[i] = toupper(small_.small_data[i]);
+      }
+      return Str_(small_);  // return a copy BY VALUE
+    } else {
+      // TODO: big_.Length()?
+      int n = strlen(big_->data_);
+      HeapStr* result = NewHeapStr(n);
+
+      for (int i = 0; i < n; ++i) {
+        result->data_[i] = toupper(big_->data_[i]);
+      }
+      result->data_[n] = '\0';
+      return Str_(result);
+    }
+  }
+
+  char* c_str() {
+    if (small_.is_small) {
+      return small_.small_data;  // NUL terminated
+    } else {
+      return big_->data_;
+    }
+  }
+
+  // private:
+  uint64_t zero_init;
+  SmallStr small_;
+  HeapStr* big_;
+};
+
+Str_ NewStr_(int n) {
+  if (n <= 6) {
+    SmallStr small(n);
+    return Str_(small);
+  } else {
+    HeapStr* big = NewHeapStr(n);
+    return Str_(big);
+  }
+}
+
+Str_ StrFromC(const char* s, int n) {
+  if (n <= 6) {
+    SmallStr small(n);
+    memcpy(small.small_data, s, n + 1);  // copy NUL terminator too
+    return Str_(small);
+  } else {
+    HeapStr* big = NewHeapStr(n);
+    memcpy(big->data_, s, n + 1);  // copy NUL terminator too
+    return Str_(big);
+  }
+}
+
+Str_ StrFromC(const char* s) {
+  return StrFromC(s, strlen(s));
+}
+
+int len(Str_ s) {
+  if (s.small_.is_small) {
+    return s.small_.small_len;
+  } else {
+    // TODO: use header length
+    return strlen(s.big_->data_);
+  }
+}
+
+// TODO: NewStr() tests the length, and then returns either Str_(small) or
+// Str_(big)
+
+static_assert(sizeof(Str_) == 8);
+
+bool str_equals(Str_ a, Str_ b) {
+  // this can be a friend of Str_ I guess
+  return true;
+}
 
 // Do not initialize directly
 union SmallOrBig {
@@ -264,12 +374,6 @@ union SmallOrBig {
   // bits
   HeapStr* big;
 };
-
-// can't call this directly
-static HeapStr* NewHeapStr(int n) {
-  void* place = malloc(sizeof(Obj) + n + 1);  // +1 for NUL terminator
-  return new (place) HeapStr();
-}
 
 Str NewStr(int n) {
   if (n <= 6) {
@@ -387,11 +491,17 @@ Str str_concat(Str a, Str b) {
   assert(0);
 }
 
-#define G_SMALL_STR(name, s, small_len) \
-  GlobalStr _##name = {1, 0, small_len, s}; \
+#define G_SMALL_STR(name, s, small_len)          \
+  GlobalSmallStr _##name = {1, 0, small_len, s}; \
   Str name = *(reinterpret_cast<Str*>(&_##name));
 
 G_SMALL_STR(gSmall, "global", 6);
+
+#define G_SMALL_STR_2(name, s, small_len)        \
+  GlobalSmallStr _##name = {1, 0, small_len, s}; \
+  Str_ name = *(reinterpret_cast<Str_*>(&_##name));
+
+G_SMALL_STR_2(gSmall2, "global", 6);
 
 static_assert(sizeof(Str) == 8);
 
@@ -471,11 +581,85 @@ TEST small_str_test() {
   PASS();
 }
 
+TEST small_str_test2() {
+  log("sizeof(Str) = %d", sizeof(Str));
+  log("sizeof(SmallStr) = %d", sizeof(SmallStr));
+  log("sizeof(HeapStr*) = %d", sizeof(HeapStr*));
+
+  log("");
+  log("---- SmallStrFromC() / StrFromC() / global G_SMALL_STR() ---- ");
+  log("");
+
+  log("gSmall = %s", gSmall.small_data);
+
+  // Str s { 1, 0, 3, "foo" };
+  SmallStr local_small(0);
+  ASSERT(local_small.is_small);
+
+  // It just has 1 bit set
+  log("local_small as integer %d", local_small);
+  log("local_small = %s", local_small.small_data);
+
+  Str_ local_s = StrFromC("little");
+  ASSERT(local_s.small_.is_small);
+  log("local_s = %s", local_s.small_.small_data);
+
+  Str_ local_big = StrFromC("big long string");
+  ASSERT(!local_big.small_.is_small);
+
+  log("");
+  log("---- c_str() ---- ");
+  log("");
+
+  log("gSmall = %s %d", gSmall2.c_str(), len(gSmall2));
+  log("local_small = %s %d", local_s.c_str(), len(local_small));
+  log("local_big = %s %d", local_big.c_str(), len(local_big));
+
+  log("");
+  log("---- Str_upper() ---- ");
+  log("");
+
+  Str_ u1 = local_s.upper();
+  ASSERT(u1.IsSmall());
+
+  Str_ u2 = gSmall2.upper();
+  ASSERT(u2.IsSmall());
+
+  Str_ u3 = local_big.upper();
+  ASSERT(!u3.IsSmall());
+
+  log("local_small = %s %d", u1.c_str(), len(u1));
+  log("gSmall = %s %d", u2.c_str(), len(u2));
+  log("local_big = %s %d", u3.c_str(), len(u3));
+
+  log("");
+  log("---- NewStr() ---- ");
+  log("");
+
+#if 1
+  // Str toobig = SmallStrFromC("toolong");
+
+  Str_ small_empty = NewStr_(6);
+  ASSERT(small_empty.IsSmall());
+  ASSERT_EQ(6, len(small_empty));
+
+  Str_ big_empty = NewStr_(7);
+  ASSERT(!big_empty.IsSmall());
+
+  // TODO: Fix by not using strlen() -- it's part of the header
+  // ASSERT_EQ(7, len(big_empty));
+#endif
+
+#if 0
+  // I don't want typedef uint64_t Str because I want more type safety than
+  // this !!!
+  log("len(42) = %d", len(42));
+#endif
+
+  PASS();
+}
+
 // TODO:
-//
-// Change to methods!
-//   mystr.upper() -- it can be a method!
-//   mystr.c_str() 
 //
 // OverAllocatedStr()
 //   mystr.Shrink(3);  // may copy into small_data
@@ -484,13 +668,11 @@ TEST small_str_test() {
 //   writer.getvalue();  // may copy into small_data
 //
 // str_equals() -- also used for hashing
-//   not clear: should we take care of the case where an OS binding creates a short HeapStr?
-//   But as long as they use NewStr() and OverAllocatedStr() APIs correctly,
-//   they will never get a HeapStr?
+//   not clear: should we take care of the case where an OS binding creates a
+//   short HeapStr? But as long as they use NewStr() and OverAllocatedStr() APIs
+//   correctly, they will never get a HeapStr?
 //
 //   Invariant: it's IMPOSSIBLE to create a HeapStr directly?  Yes I think so
-
-
 
 }  // namespace demo
 
@@ -505,6 +687,7 @@ int main(int argc, char** argv) {
   RUN_TEST(demo::endian_test);
   RUN_TEST(demo::dual_header_test);
   RUN_TEST(demo::small_str_test);
+  RUN_TEST(demo::small_str_test2);
 
   // gHeap.CleanProcessExit();
 
