@@ -47,8 +47,17 @@ def run_tests():
   x = 'x'
   print("%s\tb\n%s\td\n" % (x, x))
 
-  fmt = "%d"
+  fmt = "%dfoo"
   print(fmt % 10)
+
+  fmts = ["foo%d"]
+  print(fmts[0] % 10)
+
+  print(("foo " + "%s") % "bar")
+
+  print("foo\0%s" % "bar")
+
+  print("foo%s" % "\0bar")
 
 
 def run_benchmarks():

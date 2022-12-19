@@ -276,13 +276,13 @@ def get_c_return_type(t) -> Tuple[str, bool]:
     return c_ret_type, False
 
 
-def escape_format_str(fmt: str) -> str:
+def PythonStringLiteral(s: str) -> str:
   """
-  Returns an escaped version of a format string.
+  Returns a properly quoted string.
   """
   # MyPy does bad escaping. Decode and push through json to get something
   # workable in C++.
-  return json.dumps(format_strings.DecodeMyPyString(fmt))
+  return json.dumps(format_strings.DecodeMyPyString(s))
 
 
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
@@ -627,10 +627,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
           rest = args[1:]
-          fmt = escape_format_str(args[0].value)
+          quoted_fmt = PythonStringLiteral(args[0].value)
 
           # DEFINITION PASS: Write the call
-          self.write('println_stderr(StrFormat(%s, ' % fmt)
+          self.write('println_stderr(StrFormat(%s, ' % quoted_fmt)
           for i, arg in enumerate(rest):
             if i != 0:
               self.write(', ')
@@ -659,14 +659,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if not rest:
             pass
 
+          self.write('%s(StrFormat(' % o.callee.name)
           if isinstance(args[0], StrExpr):
-            fmt = 'StrFormat(%s' % escape_format_str(args[0].value)
+            self.write(PythonStringLiteral(args[0].value))
           else:
-            fmt = 'dynamic_fmt_dummy('
+            self.accept(args[0])
 
           # Should p_die() be in mylib?
           # DEFINITION PASS: Write the call
-          self.write('%s(%s ' % (o.callee.name, fmt))
           for i, arg in enumerate(rest):
             self.write(', ')
             self.accept(arg)
@@ -757,12 +757,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # RHS can be primitive or tuple
         if left_ctype == 'Str*' and c_op == '%':
+          self.write('StrFormat(')
           if isinstance(o.left, StrExpr):
-            fmt = escape_format_str(o.left.value)
-          elif isinstance(o.left, NameExpr):
-            fmt = o.left.name
+            self.write(PythonStringLiteral(o.left.value))
           else:
-            raise AssertionError('Expected constant or named format string, got %s' % o.left)
+            self.accept(o.left)
           #log('right_type %s', right_type)
           if isinstance(right_type, Instance):
             fmt_types = [right_type]
@@ -777,13 +776,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             raise AssertionError(right_type)
 
           # In the definition pass, write the call site.
-          self.write('StrFormat(%s, ' % fmt)
           if isinstance(right_type, TupleType):
             for i, item in enumerate(o.right.items):
-              if i != 0:
-                self.write(', ')
+              self.write(', ')
               self.accept(item)
           else:  # '[%s]' % x
+            self.write(', ')
             self.accept(o.right)
 
           self.write(')')
