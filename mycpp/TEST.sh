@@ -103,7 +103,6 @@ examples-variant() {
 # 3 Variants x {test, benchmark}
 #
 
-# 10 segfaults
 ex-gcevery() {
   local compiler=${1:-}
   examples-variant "$compiler" gcevery
@@ -115,7 +114,6 @@ ex-gcevery-bench() {
   examples-variant "$compiler" gcevery '.BENCHMARK'
 }
 
-# PASS!
 ex-asan() {
   local compiler=${1:-}
   examples-variant "$compiler" asan
@@ -176,8 +174,6 @@ unit() {
     binaries+=(_bin/$compiler-$variant/mycpp/demo/*)
   fi
 
-  local asan_options=''
-
   for b in "${binaries[@]}"; do
     if ! test -f $b; then
       continue
@@ -187,19 +183,16 @@ unit() {
     local log=$prefix.log
     mkdir -p $(dirname $log)
 
+    local asan_options=''
     case $b in
       # leaks with malloc
-      (*/demo/hash_table|*/demo/target_lang)
-        asan_options='detect_leaks=0'
-        ;;
-
-      # What is the problem here?  300 allocations leaked.
-      (*/gc_mylib_test)
+      (*/demo/hash_table|*/demo/target_lang|*/demo/gc_header)
         asan_options='detect_leaks=0'
         ;;
     esac
 
-    ASAN_OPTIONS=$asan_options run-test-bin $b
+    ASAN_OPTIONS="$asan_options" run-test-bin $b
+
   done
 }
 

@@ -325,6 +325,7 @@ Str Str_upper(Str s) {
     for (int i = 0; i < n; ++i) {
       result->data_[i] = toupper(big->data_[i]);
     }
+    result->data_[n] = '\0';
     return StrFromHeapStr(result);
   }
 }
