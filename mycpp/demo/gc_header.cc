@@ -26,7 +26,7 @@ enum Tag {
   Scanned = 3,
 };
 
-// TODO: Put this in ./configure
+// Could put this in ./configure, although glibc seems to have it
 bool IsLittleEndian() {
   int i = 42;
   int* pointer_i = &i;
@@ -43,7 +43,7 @@ class Obj {
   Obj() {
   }
   Obj(int heap_tag, int u_mask_npointers_strlen)
-      : type_tag(1),  // should be odd numbers?
+      : type_tag(1),  // must be odd
         heap_tag(heap_tag),
         u_mask_npointers_strlen(u_mask_npointers_strlen) {
   }
@@ -68,6 +68,21 @@ class Obj {
   // Big endian version.  TODO: Put tests in mycpp/portability_test.
 
   unsigned obj_id : 24;
+
+  // type_tag must be odd
+  //
+  // - 1 for user-defined class
+  //
+  // reserved for "tagless" value_e ?
+  // - 3 value_e.Str is Str
+  // - 5 value_e.List
+  // - 7 value_e.Dict 
+  // - 9 value_e.Bool
+  // - 11 value_e.Int
+  // - 13 value_e.Float
+  //
+  // - 15 to 255: ASDL union.  So that's about 115 variants allowed.
+
   unsigned type_tag : 8;
 #endif
 
@@ -192,6 +207,12 @@ TEST dual_header_test() {
 }
 
 struct Str {
+  // zero the 7 bytes
+  Str(int n) : is_small(1), pad(0), small_len(n), small_data {0} {
+  }
+  // zero initialize for the union
+  //Str() : is_small(0), pad(0), small_len(0), small_data {0} {
+  //}
 #if LITTLE_ENDIAN
   unsigned is_small : 1;  // reserved
   unsigned pad : 3;
@@ -205,6 +226,16 @@ struct Str {
 #endif
 };
 
+// Layout compatible with Str, and globally initialized
+// TODO: maybe Str can inherit from GlobalStr?
+struct GlobalStr {
+  unsigned is_small : 1;  // reserved
+  unsigned pad : 3;
+  unsigned small_len : 4;  // 0 to 7 bytes -- not it's NOT aligned
+
+  char small_data[7];
+};
+
 class HeapStr : public Obj {
  public:
   // HeapStr() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
@@ -213,9 +244,42 @@ class HeapStr : public Obj {
   char data_[1];
 };
 
-HeapStr* NewHeapStr(int n) {
+// Do not initialize directly
+union SmallOrBig {
+  // C++11: unions can have constructors
+  SmallOrBig() : zero_init(0) {
+  }
+  SmallOrBig(Str s) : small(s) {
+  }
+
+  // They can have methods
+  SmallOrBig upper(SmallOrBig s) {
+    assert(0);
+  }
+
+  uint64_t zero_init;  // in case sizeof(HeapStr*) == 4, not 8
+
+  Str small;  // 8 bytes
+  // What if the pointer is 32 bits?  Assigning to this doesn't assign all 64
+  // bits
+  HeapStr* big;
+};
+
+// can't call this directly
+static HeapStr* NewHeapStr(int n) {
   void* place = malloc(sizeof(Obj) + n + 1);  // +1 for NUL terminator
   return new (place) HeapStr();
+}
+
+Str NewStr(int n) {
+  if (n <= 6) {
+    Str result(n);
+    return result;
+  } else {
+    SmallOrBig tmp;
+    tmp.big = NewHeapStr(n);
+    return tmp.small;
+  }
 }
 
 // Do I want
@@ -239,29 +303,15 @@ int len(MyStr s) {
 }
 #endif
 
-// Do not initialize directly
-union SmallOrBig {
-  uint64_t zero_init;  // in case sizeof(HeapStr*) == 4, not 8
-
-  Str small;  // 8 bytes
-  // What if the pointer is 32 bits?  Assigning to this doesn't assign all 64
-  // bits
-  HeapStr* big;
-};
-
 Str StrFromHeapStr(HeapStr* p) {
-  SmallOrBig result = {.zero_init = 0};
+  SmallOrBig result;
   result.big = p;
   return result.small;
 }
 
 Str SmallStrFromC(const char* s, int n) {
-  Str result;
-  result.is_small = 1;
-  result.pad = 0;
-
   assert(n <= 6);  // 6 bytes
-  result.small_len = n;
+  Str result(n);
   memcpy(result.small_data, s, n + 1);  // copy NUL terminator too
 
   return result;
@@ -294,7 +344,7 @@ char* StrToC(Str s) {
     // log("result %p", result);
     return result;
   } else {
-    SmallOrBig tmp = {.small = s};
+    SmallOrBig tmp(s);
     return tmp.big->data_;
   }
 }
@@ -303,7 +353,7 @@ int len(Str s) {
   if (s.is_small) {
     return s.small_len;
   } else {
-    SmallOrBig tmp = {.small = s};
+    SmallOrBig tmp(s);
     return strlen(tmp.big->data_);
   }
 }
@@ -316,7 +366,7 @@ Str Str_upper(Str s) {
     }
     return s;  // return a copy BY VALUE
   } else {
-    SmallOrBig tmp = {.small = s};
+    SmallOrBig tmp(s);
     HeapStr* big = tmp.big;
 
     int n = strlen(big->data_);
@@ -330,7 +380,16 @@ Str Str_upper(Str s) {
   }
 }
 
-#define G_SMALL_STR(name, s, small_len) Str name = {1, 0, small_len, s};
+Str str_concat(Str a, Str b) {
+  // TODO: implement this
+  //
+  // Probably with Str::CopyTo(char* dest)
+  assert(0);
+}
+
+#define G_SMALL_STR(name, s, small_len) \
+  GlobalStr _##name = {1, 0, small_len, s}; \
+  Str name = *(reinterpret_cast<Str*>(&_##name));
 
 G_SMALL_STR(gSmall, "global", 6);
 
@@ -356,7 +415,7 @@ TEST small_str_test() {
 
   Str local_big = StrFromC_("big long string");
   ASSERT(!local_big.is_small);
-  SmallOrBig either2 = {.small = local_big};
+  SmallOrBig either2(local_big);
 
   log("either.big.data_ = %s", either2.big->data_);
 
@@ -393,6 +452,16 @@ TEST small_str_test() {
   either.big = h;
   ASSERT(!either.small.is_small);
 
+  Str small_empty = NewStr(6);
+  ASSERT(small_empty.is_small);
+  ASSERT_EQ(6, len(small_empty));
+
+  Str big_empty = NewStr(7);
+  ASSERT(!big_empty.is_small);
+
+  // TODO: Fix by not using strlen() -- it's part of the header
+  // ASSERT_EQ(7, len(big_empty));
+
 #if 0
   // I don't want typedef uint64_t Str because I want more type safety than
   // this !!!
@@ -401,6 +470,27 @@ TEST small_str_test() {
 
   PASS();
 }
+
+// TODO:
+//
+// Change to methods!
+//   mystr.upper() -- it can be a method!
+//   mystr.c_str() 
+//
+// OverAllocatedStr()
+//   mystr.Shrink(3);  // may copy into small_data
+//
+// BufWriter (rename StrWriter, and uses MutableHeapStr ?)
+//   writer.getvalue();  // may copy into small_data
+//
+// str_equals() -- also used for hashing
+//   not clear: should we take care of the case where an OS binding creates a short HeapStr?
+//   But as long as they use NewStr() and OverAllocatedStr() APIs correctly,
+//   they will never get a HeapStr?
+//
+//   Invariant: it's IMPOSSIBLE to create a HeapStr directly?  Yes I think so
+
+
 
 }  // namespace demo
 

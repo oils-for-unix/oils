@@ -58,14 +58,23 @@ def DefineTargets(ru):
       'mycpp/gc_tuple_test.cc',
 
       'mycpp/smartptr_test.cc',
-      'mycpp/demo/target_lang.cc',
-      'mycpp/demo/hash_table.cc',
-      'mycpp/demo/gc_header.cc',
   ]:
     ru.cc_binary(
         test_main,
         deps = ['//mycpp/runtime'],
         matrix = COMPILERS_VARIANTS,
+        phony_prefix = 'mycpp-unit')
+
+  for test_main in [
+      'mycpp/demo/gc_header.cc',
+      'mycpp/demo/hash_table.cc',
+      'mycpp/demo/target_lang.cc',
+      ]:
+    ru.cc_binary(
+        test_main,
+        deps = ['//mycpp/runtime'],
+        # test how C++ will be have on 32-bit platforms too
+        matrix = COMPILERS_VARIANTS + [('cxx', 'opt32')],
         phony_prefix = 'mycpp-unit')
 
   # ASDL schema that examples/parse.py depends on
