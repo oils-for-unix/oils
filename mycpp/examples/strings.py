@@ -59,6 +59,14 @@ def run_tests():
 
   print("foo%s" % "\0bar")
 
+  print("%o" % 12345)
+  print("%17o" % 12345)
+  print("%017o" % 12345)
+
+  print("%%%d%%%%" % 12345)
+
+  print("%r" % "tab\tline\nline\r\n")
+
 
 def run_benchmarks():
   # type: () -> None
