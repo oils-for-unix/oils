@@ -40,97 +40,107 @@ bool IsLittleEndian() {
 // NEW OBJECT HEADER
 //
 
-class Obj {
- public:
-  Obj() {
-  }
-
-  // Allocator is responsible for setting obj_id_
-  Obj(int heap_tag, int u_mask_npointers_strlen)
-      : type_tag_(1),  // must be odd
-        heap_tag_(heap_tag),
-        u_mask_npointers_strlen_(u_mask_npointers_strlen) {
-  }
-
-#if LITTLE_ENDIAN
-
+struct ObjHeader {
   // First 32 bits
-  unsigned type_tag_ : 8;  // for ASDL: max of 128 variants in a sum type
-                           // Not 256 because it includes the NOT VTABLE bit
+#if 1  // little endian
 
-  // note: had small_str here, but I don't think it's feasible
+  // Set to 1, for the garbage collector to distinguish with vtable bits
+  unsigned is_header_ : 1;
 
-  // NOTE: for Cheney, the field mask can be stored in obj_id.  Cheney needs
-  // BOTH the obj_len and the field mask.  num_pointers and str_len can be
-  // derived from obj_len, but field mask can't.
-  //
-  // Shouldn't be str_len because strings greater than 16 MiB should be
-  // supported.
+  // - 0 is for user-defined classes
+  // - 1 to 6 reserved for "tagless" value:
+  // value_e.{Str,List,Dict,Bool,Int,Float}
+  // - 7 to 127: ASDL union, so we have a maximuim of ~120 variants.
+  unsigned type_tag_ : 7;
 
-  unsigned obj_id_ : 24;  // implies 16 Mi unique objects
+  #if MARK_SWEEP
+  unsigned obj_id_ : 24;  // small index into mark bitmap, implies 16 Mi unique
+                          // objects
+  #else
+  unsigned field_mask_ : 24;  // Cheney doesn't need obj_id, but needs
+                              // field_mask AND obj_len
+  #endif
+
 #else
-  // Big endian version.  TODO: Put tests in mycpp/portability_test.
-
+  // Possible 32-bit big endian version.  TODO: Put tests in
+  // mycpp/portability_test.
   unsigned obj_id_ : 24;
-
-  // type_tag must be odd
-  //
-  // - 1 for user-defined class
-  //
-  // reserved for "tagless" value_e ?
-  // - 3 value_e.Str is Str
-  // - 5 value_e.List
-  // - 7 value_e.Dict
-  // - 9 value_e.Bool
-  // - 11 value_e.Int
-  // - 13 value_e.Float
-  //
-  // - 15 to 255: ASDL union.  So that's about 115 variants allowed.
-
-  unsigned type_tag_ : 8;
+  unsigned is_header_ : 1;
+  unsigned type_tag_ : 7;
 #endif
 
   // Second 32 bits
-  unsigned heap_tag_ : 2;
-
-  // a "union", because struct bitfields and union bitfield don't pack well
-  // For Cheney, this is OBJECT length
-  unsigned u_mask_npointers_strlen_ : 30;
-};
-
-#define FIELD_MASK(obj) (obj)->u_mask_npointers_strlen_
-#define NUM_POINTERS(obj) (obj)->u_mask_npointers_strlen_
-#define STR_LEN(obj) (obj)->u_mask_npointers_strlen_
+  unsigned heap_tag_ : 2;  // Tag::Opaque, Tag::Scanned, etc.
 
 #ifdef MARK_SWEEP
-  // mark-sweep throws away obj_len
-  #define WITH_HEADER(tag, field_mask, obj_len) Obj(tag, field_mask)
+  // A fake "union", because unions and bitfields don't pack as you'd like
+  unsigned u_mask_npointers_strlen_ : 30;
+#else
+  unsigned obj_len_ : 30;
+#endif
+};
 
-// Str header: STRLEN in u_mask_npointers_strlen_
-// Slab header: NPOINTERS in u_mask_npointers_strlen_
+const int kIsHeader = 1;
+
+const int kClassType = 0;
+const int kStrType = 1;
+
+const int kNoObjId = 0;
+
+// ON string construction, we don't know the string length or object length
+#define INIT_STRING(header_)                      \
+  header_ {                                       \
+    kIsHeader, kStrType, kNoObjId, Tag::Opaque, 0 \
+  }
+
+#ifdef MARK_SWEEP
+  // obj_len thrown away
+  #define INIT_CLASS(header_, field_mask, obj_len)                \
+    header_ {                                                     \
+      kIsHeader, kClassType, kNoObjId, Tag::FixedSize, field_mask \
+    }
+
+  // Different values stored in the same "union" field
+  #define FIELD_MASK(header) (header).u_mask_npointers_strlen_
+  #define NUM_POINTERS(header) (header).u_mask_npointers_strlen_
+  #define STR_LEN(header) (header).u_mask_npointers_strlen_
+
+  // TODO: implement this
+  #define SET_STR_LEN(s, str_len, obj_len)
+// There is no SET_SLAB_LEN because it doesn't need the equivalent of
+// OverAllocatedStr()
 
 #else
-  // Cheney uses obj_len
-  #define WITH_HEADER(tag, field_mask, obj_len) Obj(tag, field_mask, obj_len)
+  // 24-bit object ID is used for field mask, 30-bit obj_len for copying
+  #define INIT_CLASS(header_, field_mask, obj_len)               \
+    header_ {                                                    \
+      kIsHeader, kClassType, field_mask, Tag::FixedSize, obj_len \
+    }
 
-  // Store obj_len in 30-bit field (1 Gi strings)
-  #define OBJ_LEN(obj) (obj)->u_mask_npointers_strlen_
   // Store field_mask in 24-bit field (~24 fields with inheritance)
-  #define FIELD_MASK(obj) (obj)->obj_id_
+  #define FIELD_MASK(header) (header).obj_id_
 
-// Str header: OBJLEN u_mask_npointers_strlen_, deriving STRLEN
-// Slab header: OBJLEN length in u_mask_npointers_strlen_, deriving NPOINTERS
+// Derive these 2 values from obj_len_.  TODO: write tests for these.
+
+  #define NUM_POINTERS(header) \
+    (((header).obj_len_ - sizeof(ObjHeader)) / sizeof(void*))
+
+  // 1 for NUL terminator
+  #define STR_LEN(header) ((header).obj_len_ - sizeof(ObjHeader) - 1)
+
+  // TODO: implement this
+  #define SET_STR_LEN(s, str_len, obj_len)
 #endif
 
 TEST gc_header_test() {
-  Obj obj;
+  ObjHeader obj;
   // log("sizeof(Introspect) = %d", sizeof(Introspect));
-  log("sizeof(Obj) = %d", sizeof(Obj));
+  log("sizeof(ObjHeader) = %d", sizeof(ObjHeader));
   log("sizeof(UnionBitfield) = %d", sizeof(UnionBitfield));
 
-  static_assert(sizeof(Obj) == 8);
+  static_assert(sizeof(ObjHeader) == 8);
 
-  obj.type_tag_ = 255;
+  obj.type_tag_ = 127;
   log("type tag %d", obj.type_tag_);
 
   obj.heap_tag_ = Tag::Scanned;
@@ -139,38 +149,51 @@ TEST gc_header_test() {
   // obj.heap_tag = 4;  // Overflow
   // log("heap tag %d", obj.heap_tag_);
 
-  FIELD_MASK(&obj) = 0b11;
-  log("field mask %d", FIELD_MASK(&obj));
-  log("num pointers %d", NUM_POINTERS(&obj));
-  log("str len %d", STR_LEN(&obj));
-
   PASS();
 }
 
-class Node : public Obj {
+class Node {
  public:
-  Node() : WITH_HEADER(Tag::FixedSize, 0xff, sizeof(Node)) {
+  Node() : INIT_CLASS(header_, field_mask(), sizeof(Node)) {
   }
 
   virtual int Method() {
     return 42;
   }
+
+  // max is either 24 or 30 bits, so use unsigned int
+  static constexpr unsigned int field_mask() {
+    return 0x0f;
+  }
+
+  ObjHeader header_;
 };
 
 class Derived : public Node {
  public:
   Derived() : Node() {
+    FIELD_MASK(header_) |= Derived::field_mask();
   }
+
   virtual int Method() {
     return 43;
   }
+
+  static constexpr unsigned int field_mask() {
+    return 0x30;
+  }
 };
 
-class NoVirtual : public Obj {
+class NoVirtual {
  public:
-  NoVirtual() : WITH_HEADER(Tag::FixedSize, 0xff, sizeof(NoVirtual)) {
+  NoVirtual() : INIT_CLASS(header_, field_mask(), sizeof(NoVirtual)) {
   }
+  ObjHeader header_;
   int i;
+
+  static constexpr unsigned int field_mask() {
+    return 0xf0;
+  }
 };
 
 // TODO: Put this in mycpp/portability_test.cc and distribute to users
@@ -182,12 +205,18 @@ TEST endian_test() {
   log("sizeof(Node) = %d", sizeof(Node));
   log("sizeof(Derived) = %d", sizeof(Derived));
 
-  Obj* obj = reinterpret_cast<Obj*>(&derived);
-  log("Derived is GC object? %d", obj->type_tag_ & 0x1);
+  ObjHeader* header = reinterpret_cast<ObjHeader*>(&derived);
+  log("Derived is GC object? %d", header->type_tag_ & 0x1);
 
   NoVirtual n2;
-  Obj* obj2 = reinterpret_cast<Obj*>(&n2);
-  log("NoVirtual is GC object? %d", obj2->type_tag_ & 0x1);
+  ObjHeader* header2 = reinterpret_cast<ObjHeader*>(&n2);
+  log("NoVirtual is GC object? %d", header2->type_tag_ & 0x1);
+
+  auto n = new Node();
+  FIELD_MASK(n->header_) = 0b11;
+  log("field mask %d", FIELD_MASK(n->header_));
+  log("num pointers %d", NUM_POINTERS(n->header_));
+  log("str len %d", STR_LEN(n->header_));
 
   PASS();
 }
@@ -198,8 +227,8 @@ TEST endian_test() {
 TEST dual_header_test() {
   auto* n = new Node();
   log("n = %p", n);
-  log("n->heap_tag %d", n->heap_tag_);
-  log("FIELD_MASK(*n) %d", FIELD_MASK(n));
+  log("n->heap_tag %d", n->header_.heap_tag_);
+  log("FIELD_MASK(n) %d", FIELD_MASK(n->header_));
 
   PASS();
 }
@@ -237,28 +266,29 @@ class SmallStr {
 
 // HeapStr is used as POINTER
 
-class HeapStr : public Obj {
+class HeapStr {
  public:
   // HeapStr() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
-  HeapStr() : Obj() {
+  HeapStr() : INIT_STRING(header_) {
   }
   int Length() {
-    return STR_LEN(this);
+    return STR_LEN(header_);
   }
   void SetLength(int len) {
     // Important invariant that makes str_equals() simpler: "abc" in a HeapStr
     // is INVALID.
     assert(len > kSmallStrThreshold);
 
-    STR_LEN(this) = len;
+    STR_LEN(header_) = len;
   }
+  ObjHeader header_;
   char data_[1];
 };
 
 // AllocHeapStr() is a helper that allocates a HeapStr but doesn't set its
 // length.  It's NOT part of the public API; use NewStr() instead
 static HeapStr* AllocHeapStr(int n) {
-  void* place = malloc(sizeof(Obj) + n + 1);  // +1 for NUL terminator
+  void* place = malloc(sizeof(ObjHeader) + n + 1);  // +1 for NUL terminator
   return new (place) HeapStr();
 }
 
@@ -630,14 +660,14 @@ TEST small_str_test() {
 //   header_.obj_len
 // #endif
 
-union ObjHeader {
+union ObjHeader2 {
   // doesn't work: initializations for multiple members?
-  // ObjHeader() : raw_bytes(0), is_header(1) {
+  // ObjHeader2() : raw_bytes(0), is_header(1) {
 
   // also doesn't work
-  // ObjHeader() : is_header(1), type_tag(1) {
+  // ObjHeader2() : is_header(1), type_tag(1) {
 
-  ObjHeader() : raw_bytes(0) {
+  ObjHeader2() : raw_bytes(0) {
   }
 
   uint64_t raw_bytes;
@@ -728,7 +758,6 @@ union ObjHeader {
   // All the variants of value_e get their own type tag?
   // - Boxed value.{Bool,Int,Float}
   // - And "boxless" / "tagless" Str, List, Dict
-
 };
 
 class Token {
@@ -736,7 +765,7 @@ class Token {
   Token() : header_() {
   }
 
-  ObjHeader header_;
+  ObjHeader2 header_;
 };
 
 TEST union_test() {
@@ -764,9 +793,9 @@ TEST union_test() {
   // Garbage collector
 
   // First check check SmallStr.is_present_ - it might not be a pointer at all
-  ObjHeader* obj = reinterpret_cast<ObjHeader*>(&t);
+  ObjHeader2* obj = reinterpret_cast<ObjHeader2*>(&t);
 
-  // Then check for vtable - it might not be a pointer to an ObjHeader
+  // Then check for vtable - it might not be a pointer to an ObjHeader2
   if (!obj->is_header.val) {
     // advance 8 bytes and assert header.is_header
     log("Not a header");
