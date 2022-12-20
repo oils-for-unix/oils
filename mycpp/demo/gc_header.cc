@@ -1,30 +1,12 @@
+#include <time.h>    // strftime()
+#include <unistd.h>  // gethostname()
+
 #include <new>  // placement new
 
 #include "mycpp/common.h"  // for log()
 #include "vendor/greatest.h"
 
 namespace demo {
-
-// This is 8 bytes!  Unions and bitfields don't work together?
-struct UnionBitfield {
-  unsigned heap_tag : 2;
-
-  union Trace {
-    // Note: the string length is NOT used by the GC, so it doesn't really have
-    // to be here.  But this makes the Str object smaller.
-
-    unsigned str_len : 30;       // Tag::Opaque
-    unsigned num_pointers : 30;  // Tag::Scanned
-    unsigned field_mask : 30;    // Tag::Fixed
-  } trace;
-};
-
-enum Tag {
-  Global = 0,
-  Opaque = 1,
-  FixedSize = 2,
-  Scanned = 3,
-};
 
 // Could put this in ./configure, although glibc seems to have it
 bool IsLittleEndian() {
@@ -36,14 +18,23 @@ bool IsLittleEndian() {
   return c == 42;
 }
 
+enum HeapTag {
+  Global = 0,
+  Opaque = 1,
+  FixedSize = 2,
+  Scanned = 3,
+
+  Forwarded = 4,  // only for Cheney
+};
+
 //
-// NEW OBJECT HEADER
+// NEW OBJECT HEADER (with 24-bit object ID, also usable with Cheney collector)
 //
 
 struct ObjHeader {
-  // First 32 bits
-#if 1  // little endian
+  // --- First 32 bits ---
 
+#if 1  // little endian
   // Set to 1, for the garbage collector to distinguish with vtable bits
   unsigned is_header_ : 1;
 
@@ -63,41 +54,44 @@ struct ObjHeader {
 
 #else
   // Possible 32-bit big endian version.  TODO: Put tests in
-  // mycpp/portability_test.
+  // mycpp/portability_test.cc
   unsigned obj_id_ : 24;
   unsigned is_header_ : 1;
   unsigned type_tag_ : 7;
 #endif
 
-  // Second 32 bits
-  unsigned heap_tag_ : 2;  // Tag::Opaque, Tag::Scanned, etc.
+  // --- Second 32 bits ---
 
-#ifdef MARK_SWEEP
+#if MARK_SWEEP
   // A fake "union", because unions and bitfields don't pack as you'd like
+  unsigned heap_tag_ : 2;  // HeapTag::Opaque, HeapTag::Scanned, etc.
   unsigned u_mask_npointers_strlen_ : 30;
 #else
-  unsigned obj_len_ : 30;
+  unsigned heap_tag_ : 3;  // also needs HeapTag::Forwarded
+  unsigned obj_len_ : 29;
 #endif
 };
 
 const int kIsHeader = 1;
 
-const int kClassType = 0;
-const int kStrType = 1;
+enum TypeTag {
+  Class = 0,
+  String = 1,  // note: 'Str' would conflict with 'class Str'
+};
 
 const int kNoObjId = 0;
 
 // ON string construction, we don't know the string length or object length
-#define INIT_STRING(header_)                      \
-  header_ {                                       \
-    kIsHeader, kStrType, kNoObjId, Tag::Opaque, 0 \
+#define INIT_STRING(header_)                                 \
+  header_ {                                                  \
+    kIsHeader, TypeTag::String, kNoObjId, HeapTag::Opaque, 0 \
   }
 
 #ifdef MARK_SWEEP
   // obj_len thrown away
-  #define INIT_CLASS(header_, field_mask, obj_len)                \
-    header_ {                                                     \
-      kIsHeader, kClassType, kNoObjId, Tag::FixedSize, field_mask \
+  #define INIT_CLASS(header_, field_mask, obj_len)                        \
+    header_ {                                                             \
+      kIsHeader, TypeTag::Class, kNoObjId, HeapTag::FixedSize, field_mask \
     }
 
   // Different values stored in the same "union" field
@@ -105,16 +99,19 @@ const int kNoObjId = 0;
   #define NUM_POINTERS(header) (header).u_mask_npointers_strlen_
   #define STR_LEN(header) (header).u_mask_npointers_strlen_
 
-  // TODO: implement this
-  #define SET_STR_LEN(s, str_len, obj_len)
-// There is no SET_SLAB_LEN because it doesn't need the equivalent of
+  #define SET_STR_LEN(header, str_len) \
+    (header).u_mask_npointers_strlen_ = str_len;
+
+// There is no SET_SLAB_LEN() because it doesn't need the equivalent of
 // OverAllocatedStr()
+// We might need an #ifdef aroud the Slab::Slab() constructor to do
+// NUM_POINTERS(header) = n or OBJ_LEN(header) = n;
 
 #else
   // 24-bit object ID is used for field mask, 30-bit obj_len for copying
-  #define INIT_CLASS(header_, field_mask, obj_len)               \
-    header_ {                                                    \
-      kIsHeader, kClassType, field_mask, Tag::FixedSize, obj_len \
+  #define INIT_CLASS(header_, field_mask, obj_len)                       \
+    header_ {                                                            \
+      kIsHeader, TypeTag::Class, field_mask, HeapTag::FixedSize, obj_len \
     }
 
   // Store field_mask in 24-bit field (~24 fields with inheritance)
@@ -136,14 +133,13 @@ TEST gc_header_test() {
   ObjHeader obj;
   // log("sizeof(Introspect) = %d", sizeof(Introspect));
   log("sizeof(ObjHeader) = %d", sizeof(ObjHeader));
-  log("sizeof(UnionBitfield) = %d", sizeof(UnionBitfield));
 
-  static_assert(sizeof(ObjHeader) == 8);
+  static_assert(sizeof(ObjHeader) == 8, "expected 8 byte header");
 
   obj.type_tag_ = 127;
   log("type tag %d", obj.type_tag_);
 
-  obj.heap_tag_ = Tag::Scanned;
+  obj.heap_tag_ = HeapTag::Scanned;
   log("heap tag %d", obj.heap_tag_);
 
   // obj.heap_tag = 4;  // Overflow
@@ -268,7 +264,7 @@ class SmallStr {
 
 class HeapStr {
  public:
-  // HeapStr() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+  // HeapStr() : Obj(HeapTag::Opaque, kZeroMask, kNoObjLen) {
   HeapStr() : INIT_STRING(header_) {
   }
   int Length() {
@@ -279,7 +275,7 @@ class HeapStr {
     // is INVALID.
     assert(len > kSmallStrThreshold);
 
-    STR_LEN(header_) = len;
+    SET_STR_LEN(header_, len);
   }
   ObjHeader header_;
   char data_[1];
@@ -312,6 +308,37 @@ union Str {
       return small_.data_;
     } else {
       return big_->data_;
+    }
+  }
+
+  // Mutate in place, like OverAllocatedStr then SetObjLenFromStrLen()
+  // Assumes the caller already NUL-terminate the string to this length!
+  // e.g. read(), snprintf
+  void MaybeShrink(int new_len) {
+    if (new_len <= kSmallStrThreshold) {
+      if (small_.is_present_) {  // It's already small, just set length
+
+        // Callers like strftime() should have NUL-terminated it!
+        assert(small_.data_[new_len] == '\0');
+
+        small_.length_ = new_len;
+
+      } else {                        // Shrink from big to small
+        HeapStr* copy_of_big = big_;  // Important!
+
+        raw_bytes_ = 0;  // maintain invariants for fast str_equals()
+        small_.is_present_ = 1;
+        memcpy(small_.data_, copy_of_big->data_, new_len);
+        small_.data_[new_len] = '\0';  // NUL terminate
+      }
+    } else {  // It's already bit, set length
+      // OverAllocatedStr always starts with a big string
+      assert(!small_.is_present_);
+
+      // Callers like strftime() should have NUL-terminated it!
+      assert(big_->data_[new_len] == '\0');
+
+      big_->SetLength(new_len);
     }
   }
 
@@ -355,7 +382,7 @@ union Str {
   HeapStr* big_;
 };
 
-// Invariants affecting equality
+// Invariants affecting Str equality
 //
 // 1. The contents of Str are normalized
 //  - SmallStr: the bytes past the NUL terminator are zero-initialized.
@@ -368,7 +395,7 @@ union Str {
 // This is enforced by the fact that all strings are created by:
 //
 // 1. StrFromC()
-// 2. OverAllocatedStr(), then Shrink()
+// 2. OverAllocatedStr(), then MaybeShrink()
 // 3. Str:: methods that use the above functions, or NewStr()
 
 bool str_equals(Str a, Str b) {
@@ -421,16 +448,15 @@ Str NewStr(int n) {
   }
 }
 
-// NOTE: must call Shrink(n) afterward to set length!  Should it NUL terminate?
+// NOTE: must call MaybeShrink(n) afterward to set length!  Should it NUL
+// terminate?
 Str OverAllocatedStr(int n) {
-  if (n <= kSmallStrThreshold) {
-    SmallStr small(kSmallStrInvalidLength);
-    return Str(small);
-  } else {
-    HeapStr* big = AllocHeapStr(n);
-    // Not setting length!
-    return Str(big);
-  }
+  // There's no point in overallocating small strings
+  assert(n > kSmallStrThreshold);
+
+  HeapStr* big = AllocHeapStr(n);
+  // Not setting length!
+  return Str(big);
 }
 
 Str StrFromC(const char* s, int n) {
@@ -616,10 +642,42 @@ TEST small_str_test() {
   log("---- OverAllocatedStr() ---- ");
   log("");
 
+#if 1
+  Str hostname = OverAllocatedStr(HOST_NAME_MAX);
+  int status = ::gethostname(hostname.big_->data_, HOST_NAME_MAX);
+  if (status != 0) {
+    assert(0);
+  }
+  hostname.MaybeShrink(strlen(hostname.big_->data_));
+
+  log("hostname = %s", hostname.c_str());
+#endif
+
+  time_t ts = 0;
+  tm* loc_time = ::localtime(&ts);
+  // time_t result = mktime(loc_time);
+
+  const int max_len = 1024;
+  Str t1 = OverAllocatedStr(max_len);
+
+  int n = strftime(t1.big_->data_, max_len, "%Y-%m-%d", loc_time);
+  if (n == 0) {  // exceeds max length
+    assert(0);
+  }
+  t1.MaybeShrink(n);
+
+  log("t1 = %s", t1.c_str());
+
+  Str t2 = OverAllocatedStr(max_len);
+  n = strftime(t2.big_->data_, max_len, "%Y", loc_time);
+  if (n == 0) {  // exceeds max length
+    assert(0);
+  }
+  t2.MaybeShrink(n);
+
+  log("t2 = %s", t2.c_str());
+
   // TODO:
-  //
-  // OverAllocatedStr()
-  //   mystr.Shrink(3);  // may copy into data_
   //
   // BufWriter (rename StrWriter, and uses MutableHeapStr ?)
   //   writer.getvalue();  // may copy into data_
@@ -637,6 +695,20 @@ TEST small_str_test() {
 //
 // Union test
 //
+
+// This is 8 bytes!  Unions and bitfields don't work together?
+struct UnionBitfield {
+  unsigned heap_tag : 2;
+
+  union Trace {
+    // Note: the string length is NOT used by the GC, so it doesn't really have
+    // to be here.  But this makes the Str object smaller.
+
+    unsigned str_len : 30;       // HeapTag::Opaque
+    unsigned num_pointers : 30;  // HeapTag::Scanned
+    unsigned field_mask : 30;    // HeapTag::Fixed
+  } trace;
+};
 
 //
 // header_.not_vtable  // 1 bit
@@ -724,7 +796,7 @@ union ObjHeader2 {
   // Hand-written classes, including fixed size List and Dict headers
   void InitFixedClass(int field_mask) {
     this->is_header.val = 1;
-    this->heap_tag.val = Tag::FixedSize;
+    this->heap_tag.val = HeapTag::FixedSize;
     this->field_mask.val = field_mask;
   }
 
@@ -733,13 +805,13 @@ union ObjHeader2 {
   // - all ASDL types
   void InitScanned(int num_pointers) {
     this->is_header.val = 1;
-    this->heap_tag.val = Tag::Scanned;
+    this->heap_tag.val = HeapTag::Scanned;
     this->num_pointers.val = num_pointers;
   }
 
   void InitStr(int str_len) {
     this->is_header.val = 1;
-    this->heap_tag.val = Tag::Opaque;
+    this->heap_tag.val = HeapTag::Opaque;
     this->str_len.val = str_len;
   }
 
@@ -748,12 +820,12 @@ union ObjHeader2 {
 
     this->type_tag.val = type_tag;
 
-    this->heap_tag.val = Tag::Scanned;
+    this->heap_tag.val = HeapTag::Scanned;
     this->num_pointers.val = num_pointers;
   }
 
   // Other:
-  // - Tag::Global is for GlobalBigStr*, GLOBAL_LIST, ...
+  // - HeapTag::Global is for GlobalBigStr*, GLOBAL_LIST, ...
   //
   // All the variants of value_e get their own type tag?
   // - Boxed value.{Bool,Int,Float}
@@ -769,6 +841,8 @@ class Token {
 };
 
 TEST union_test() {
+  log("sizeof(UnionBitfield) = %d", sizeof(UnionBitfield));
+
   Token t;
 
   t.header_.is_header.val = 1;
@@ -776,7 +850,7 @@ TEST union_test() {
   t.header_.type_tag.val = 127;
   t.header_.obj_id.val = 12345678;  // max 16 Mi
 
-  t.header_.heap_tag.val = Tag::Scanned;
+  t.header_.heap_tag.val = HeapTag::Scanned;
   t.header_.field_mask.val = 0xff;
 
   log("is_header %d", t.header_.is_header.val);
