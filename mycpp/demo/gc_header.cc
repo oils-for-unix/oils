@@ -208,26 +208,7 @@ TEST dual_header_test() {
 // STRING IMPLEMENTATION
 //
 
-class HeapStr : public Obj {
- public:
-  // HeapStr() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
-  HeapStr() : Obj() {
-  }
-  int Length() {
-    return STR_LEN(this);
-  }
-  void SetLength(int len) {
-    STR_LEN(this) = len;
-  }
-  char data_[1];
-};
-
-// AllocHeapStr() is a helper that allocates a HeapStr but doesn't set its
-// length.  It's NOT part of the public API; use NewStr() instead
-static HeapStr* AllocHeapStr(int n) {
-  void* place = malloc(sizeof(Obj) + n + 1);  // +1 for NUL terminator
-  return new (place) HeapStr();
-}
+// SmallStr is used as a VALUE
 
 const int kSmallStrThreshold = 6;
 const int kSmallStrInvalidLength = 0b1111;
@@ -254,13 +235,40 @@ class SmallStr {
   char data_[7];
 };
 
+// HeapStr is used as POINTER
+
+class HeapStr : public Obj {
+ public:
+  // HeapStr() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+  HeapStr() : Obj() {
+  }
+  int Length() {
+    return STR_LEN(this);
+  }
+  void SetLength(int len) {
+    // Important invariant that makes str_equals() simpler: "abc" in a HeapStr
+    // is INVALID.
+    assert(len > kSmallStrThreshold);
+
+    STR_LEN(this) = len;
+  }
+  char data_[1];
+};
+
+// AllocHeapStr() is a helper that allocates a HeapStr but doesn't set its
+// length.  It's NOT part of the public API; use NewStr() instead
+static HeapStr* AllocHeapStr(int n) {
+  void* place = malloc(sizeof(Obj) + n + 1);  // +1 for NUL terminator
+  return new (place) HeapStr();
+}
+
 // Str is a value type that can be small or big!
 union Str {
   Str(SmallStr small) : small_(small) {
     // small_ is the whole 8 bytes
   }
-  Str(HeapStr* big) : zero_init(0) {
-    // big_ may be 4 bytes, so we need zero_init first
+  Str(HeapStr* big) : raw_bytes_(0) {
+    // big_ may be 4 bytes, so we need raw_bytes_ first
     big_ = big;
   }
 
@@ -268,12 +276,26 @@ union Str {
     return small_.is_present_;
   }
 
+  // Returns a NUL-terminated C string, like std::string::c_str()
   char* c_str() {
     if (small_.is_present_) {
-      return small_.data_;  // NUL terminated
+      return small_.data_;
     } else {
       return big_->data_;
     }
+  }
+
+  void CopyTo(char* dest) {
+    char* src;
+    int n;
+    if (small_.is_present_) {
+      src = small_.data_;
+      n = small_.length_;
+    } else {
+      src = big_->data_;
+      n = big_->Length();
+    }
+    memcpy(dest, src, n);
   }
 
   Str upper() {
@@ -298,14 +320,64 @@ union Str {
   }
 
   // private:
-  uint64_t zero_init;
+  uint64_t raw_bytes_;
   SmallStr small_;
   HeapStr* big_;
 };
 
+// Invariants affecting equality
+//
+// 1. The contents of Str are normalized
+//  - SmallStr: the bytes past the NUL terminator are zero-initialized.
+//  - HeapStr*: if sizeof(HeapStr*) == 4, then the rest of the bytes are
+//    zero-initialized.
+//
+// 2.             If len(s) <= kSmallStrThreshold, then     s.IsSmall()
+//    Conversely, If len(s) >  kSmallStrThreshold, then NOT s.IsSmall()
+//
+// This is enforced by the fact that all strings are created by:
+//
+// 1. StrFromC()
+// 2. OverAllocatedStr(), then Shrink()
+// 3. Str:: methods that use the above functions, or NewStr()
+
+bool str_equals(Str a, Str b) {
+  // Fast path takes care of two cases:  Identical small strings, or identical
+  // pointers to big strings!
+  if (a.raw_bytes_ == b.raw_bytes_) {
+    return true;
+  }
+
+  // Str are normalized so a SmallStr can't equal a HeapStr*
+  bool a_small = a.IsSmall();
+  bool b_small = b.IsSmall();
+  if (a_small != b_small) {
+    return false;
+  }
+
+  if (a_small) {
+    int a_len = a.small_.length_;
+    int b_len = b.small_.length_;
+    if (a_len != b_len) {
+      return false;
+    }
+    return memcmp(a.small_.data_, b.small_.data_, a_len) == 0;
+  } else {
+    int a_len = a.big_->Length();
+    int b_len = b.big_->Length();
+    if (a_len != b_len) {
+      return false;
+    }
+    return memcmp(a.big_->data_, b.big_->data_, a_len) == 0;
+  }
+}
+
+
 #define G_SMALL_STR(name, s, small_len)          \
   GlobalSmallStr _##name = {1, 0, small_len, s}; \
   Str name = *(reinterpret_cast<Str*>(&_##name));
+
+G_SMALL_STR(kEmptyString, "", 0);
 
 G_SMALL_STR(gSmall, "global", 6);
 
@@ -357,18 +429,40 @@ int len(Str s) {
   }
 }
 
-static_assert(sizeof(Str) == 8);
-
-bool str_equals(Str a, Str b) {
-  assert(0);
-  // return true;
-}
-
 Str str_concat(Str a, Str b) {
-  // TODO: implement this
-  //
-  // Probably with Str::CopyTo(char* dest)
-  assert(0);
+  int a_len = len(a);
+  int b_len = len(b);
+  int new_len = a_len + b_len;
+
+  // Create both on the stack so we can share the logic
+  HeapStr* big;
+  SmallStr small(kSmallStrInvalidLength);
+
+  char* dest;
+
+  if (new_len <= kSmallStrThreshold) {
+    dest = small.data_;
+    small.length_ = new_len;
+  } else {
+    big = AllocHeapStr(new_len);
+
+    dest = big->data_;
+    big->SetLength(new_len);
+  }
+
+  a.CopyTo(dest);
+  dest += a_len;
+
+  b.CopyTo(dest);
+  dest += b_len;
+
+  *dest = '\0';
+
+  if (new_len <= kSmallStrThreshold) {
+    return Str(small);
+  } else {
+    return Str(big);
+  }
 }
 
 static_assert(sizeof(SmallStr) == 8);
@@ -437,18 +531,60 @@ TEST small_str_test() {
   ASSERT(!big_empty.IsSmall());
   ASSERT_EQ_FMT(7, len(big_empty), "%d");
 
-  // TODO:
-  //
   log("");
-  log("---- OverAllocatedStr() ---- ");
+  log("---- str_concat() ---- ");
   log("");
+
+  Str empty_empty = str_concat(kEmptyString, kEmptyString);
+  ASSERT(empty_empty.IsSmall());
+  log("empty_empty (%d) = %s", len(empty_empty), empty_empty.c_str());
+
+  Str empty_small = str_concat(kEmptyString, StrFromC("b"));
+  ASSERT(empty_small.IsSmall());
+  log("empty_small (%d) = %s", len(empty_small), empty_small.c_str());
+
+  Str small_small = str_concat(StrFromC("a"), StrFromC("b"));
+  ASSERT(small_small.IsSmall());
+  log("small_small (%d) %s", len(small_small), small_small.c_str());
+
+  Str small_big = str_concat(StrFromC("small"), StrFromC("big string"));
+  ASSERT(!small_big.IsSmall());
+  log("small_big (%d) %s", len(small_big), small_big.c_str());
+
+  Str big_small = str_concat(StrFromC("big string"), StrFromC("small"));
+  ASSERT(!big_small.IsSmall());
+  log("big_small (%d) %s", len(big_small), big_small.c_str());
+
+  Str big_big = str_concat(StrFromC("abcdefghij"), StrFromC("0123456789"));
+  ASSERT(!big_big.IsSmall());
+  log("big_big (%d) = %s ", len(big_big), big_big.c_str());
 
   log("");
   log("---- str_equals() ---- ");
   log("");
 
+  ASSERT(str_equals(kEmptyString, StrFromC("")));
+  ASSERT(str_equals(kEmptyString, NewStr(0)));
+
+  // small vs. small
+  ASSERT(!str_equals(kEmptyString, StrFromC("a")));
+
+  ASSERT(str_equals(StrFromC("a"), StrFromC("a")));
+  ASSERT(!str_equals(StrFromC("a"), StrFromC("b")));    // same length
+  ASSERT(!str_equals(StrFromC("a"), StrFromC("two")));  // different length
+
+  // small vs. big
+  ASSERT(!str_equals(StrFromC("small"), StrFromC("big string")));
+  ASSERT(!str_equals(StrFromC("big string"), StrFromC("small")));
+
+  // big vs. big
+  ASSERT(str_equals(StrFromC("big string"), StrFromC("big string")));
+  ASSERT(!str_equals(StrFromC("big string"), StrFromC("big strinZ")));
+  ASSERT(!str_equals(StrFromC("big string"), StrFromC("longer string")));
+
+  // TODO:
   log("");
-  log("---- str_concat() ---- ");
+  log("---- OverAllocatedStr() ---- ");
   log("");
 
 #if 0
