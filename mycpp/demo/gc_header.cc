@@ -18,6 +18,14 @@ bool IsLittleEndian() {
   return c == 42;
 }
 
+const int kIsHeader = 1;
+const int kNoObjId = 0;
+
+enum TypeTag {
+  Class = 0,
+  String = 1,  // note: 'Str' would conflict with 'class Str'
+};
+
 enum HeapTag {
   Global = 0,
   Opaque = 1,
@@ -72,24 +80,22 @@ struct ObjHeader {
 #endif
 };
 
-const int kIsHeader = 1;
-
-enum TypeTag {
-  Class = 0,
-  String = 1,  // note: 'Str' would conflict with 'class Str'
-};
-
-const int kNoObjId = 0;
+#ifdef BUMP_LEAK
+  // omit GC header
+  #define GC_OBJ(var_name)
+#else
+  #define GC_OBJ(var_name) ObjHeader var_name
+#endif
 
 // ON string construction, we don't know the string length or object length
-#define INIT_STRING(header_)                                 \
+#define GC_STR(header_)                                      \
   header_ {                                                  \
     kIsHeader, TypeTag::String, kNoObjId, HeapTag::Opaque, 0 \
   }
 
 #ifdef MARK_SWEEP
   // obj_len thrown away
-  #define INIT_CLASS(header_, field_mask, obj_len)                        \
+  #define GC_CLASS(header_, field_mask, obj_len)                          \
     header_ {                                                             \
       kIsHeader, TypeTag::Class, kNoObjId, HeapTag::FixedSize, field_mask \
     }
@@ -97,10 +103,6 @@ const int kNoObjId = 0;
   // Different values stored in the same "union" field
   #define FIELD_MASK(header) (header).u_mask_npointers_strlen_
   #define NUM_POINTERS(header) (header).u_mask_npointers_strlen_
-  #define STR_LEN(header) (header).u_mask_npointers_strlen_
-
-  #define SET_STR_LEN(header, str_len) \
-    (header).u_mask_npointers_strlen_ = str_len;
 
 // There is no SET_SLAB_LEN() because it doesn't need the equivalent of
 // OverAllocatedStr()
@@ -109,24 +111,19 @@ const int kNoObjId = 0;
 
 #else
   // 24-bit object ID is used for field mask, 30-bit obj_len for copying
-  #define INIT_CLASS(header_, field_mask, obj_len)                       \
+  #define GC_CLASS(header_, field_mask, obj_len)                         \
     header_ {                                                            \
       kIsHeader, TypeTag::Class, field_mask, HeapTag::FixedSize, obj_len \
     }
 
   // Store field_mask in 24-bit field (~24 fields with inheritance)
-  #define FIELD_MASK(header) (header).obj_id_
+  #define FIELD_MASK(header) (header).field_mask_
 
 // Derive these 2 values from obj_len_.  TODO: write tests for these.
 
   #define NUM_POINTERS(header) \
     (((header).obj_len_ - sizeof(ObjHeader)) / sizeof(void*))
 
-  // 1 for NUL terminator
-  #define STR_LEN(header) ((header).obj_len_ - sizeof(ObjHeader) - 1)
-
-  // TODO: implement this
-  #define SET_STR_LEN(s, str_len, obj_len)
 #endif
 
 TEST gc_header_test() {
@@ -150,19 +147,19 @@ TEST gc_header_test() {
 
 class Node {
  public:
-  Node() : INIT_CLASS(header_, field_mask(), sizeof(Node)) {
+  Node() : GC_CLASS(header_, field_mask(), sizeof(Node)) {
   }
 
   virtual int Method() {
     return 42;
   }
 
+  GC_OBJ(header_);
+
   // max is either 24 or 30 bits, so use unsigned int
   static constexpr unsigned int field_mask() {
     return 0x0f;
   }
-
-  ObjHeader header_;
 };
 
 class Derived : public Node {
@@ -175,6 +172,8 @@ class Derived : public Node {
     return 43;
   }
 
+  int x;
+
   static constexpr unsigned int field_mask() {
     return 0x30;
   }
@@ -182,9 +181,10 @@ class Derived : public Node {
 
 class NoVirtual {
  public:
-  NoVirtual() : INIT_CLASS(header_, field_mask(), sizeof(NoVirtual)) {
+  NoVirtual() : GC_CLASS(header_, field_mask(), sizeof(NoVirtual)) {
   }
-  ObjHeader header_;
+
+  GC_OBJ(header_);
   int i;
 
   static constexpr unsigned int field_mask() {
@@ -212,7 +212,6 @@ TEST endian_test() {
   FIELD_MASK(n->header_) = 0b11;
   log("field mask %d", FIELD_MASK(n->header_));
   log("num pointers %d", NUM_POINTERS(n->header_));
-  log("str len %d", STR_LEN(n->header_));
 
   PASS();
 }
@@ -264,37 +263,52 @@ class SmallStr {
 
 class HeapStr {
  public:
-  // HeapStr() : Obj(HeapTag::Opaque, kZeroMask, kNoObjLen) {
-  HeapStr() : INIT_STRING(header_) {
+  HeapStr() : GC_STR(header_) {
   }
   int Length() {
-    return STR_LEN(header_);
+#ifdef MARK_SWEEP
+    return header_.u_mask_npointers_strlen_;
+#elif BUMP_LEAK
+  #error "TODO: add field to HeapStr"
+#else
+    // derive string length from GC object length
+    return header.obj_len_ - kStrHeaderSize - 1;
+#endif
   }
   void SetLength(int len) {
     // Important invariant that makes str_equals() simpler: "abc" in a HeapStr
     // is INVALID.
     assert(len > kSmallStrThreshold);
 
-    SET_STR_LEN(header_, len);
+#ifdef MARK_SWEEP
+    header_.u_mask_npointers_strlen_ = len;
+#elif BUMP_LEAK
+  #error "TODO: add field to HeapStr"
+#else
+    // set object length, which can derive string length
+    header.obj_len_ = kStrHeaderSize + len + 1;  // +1 for
+#endif
   }
   ObjHeader header_;
   char data_[1];
 };
 
+constexpr int kStrHeaderSize = offsetof(HeapStr, data_);
+
 // AllocHeapStr() is a helper that allocates a HeapStr but doesn't set its
 // length.  It's NOT part of the public API; use NewStr() instead
 static HeapStr* AllocHeapStr(int n) {
-  void* place = malloc(sizeof(ObjHeader) + n + 1);  // +1 for NUL terminator
+  void* place = malloc(kStrHeaderSize + n + 1);  // +1 for NUL terminator
   return new (place) HeapStr();
 }
 
 // Str is a value type that can be small or big!
 union Str {
+  // small_ is the whole 8 bytes
   Str(SmallStr small) : small_(small) {
-    // small_ is the whole 8 bytes
   }
+  // big_ may be 4 bytes, so we need raw_bytes_ first
   Str(HeapStr* big) : raw_bytes_(0) {
-    // big_ may be 4 bytes, so we need raw_bytes_ first
     big_ = big;
   }
 
@@ -376,7 +390,6 @@ union Str {
     }
   }
 
-  // private:
   uint64_t raw_bytes_;
   SmallStr small_;
   HeapStr* big_;
@@ -642,7 +655,6 @@ TEST small_str_test() {
   log("---- OverAllocatedStr() ---- ");
   log("");
 
-#if 1
   Str hostname = OverAllocatedStr(HOST_NAME_MAX);
   int status = ::gethostname(hostname.big_->data_, HOST_NAME_MAX);
   if (status != 0) {
@@ -651,11 +663,9 @@ TEST small_str_test() {
   hostname.MaybeShrink(strlen(hostname.big_->data_));
 
   log("hostname = %s", hostname.c_str());
-#endif
 
   time_t ts = 0;
   tm* loc_time = ::localtime(&ts);
-  // time_t result = mktime(loc_time);
 
   const int max_len = 1024;
   Str t1 = OverAllocatedStr(max_len);
@@ -678,16 +688,8 @@ TEST small_str_test() {
   log("t2 = %s", t2.c_str());
 
   // TODO:
-  //
   // BufWriter (rename StrWriter, and uses MutableHeapStr ?)
   //   writer.getvalue();  // may copy into data_
-  //
-  // str_equals() -- also used for hashing
-  //   not clear: should we take care of the case where an OS binding creates a
-  //   short HeapStr? But as long as they use NewStr() and OverAllocatedStr()
-  //   APIs correctly, they will never get a HeapStr?
-  //
-  //   Invariant: it's IMPOSSIBLE to create a HeapStr directly?  Yes I think so
 
   PASS();
 }
@@ -711,7 +713,7 @@ struct UnionBitfield {
 };
 
 //
-// header_.not_vtable  // 1 bit
+// header_.is_header  // 1 bit
 // header_.type_tag   // 7 bits
 //
 // #ifdef MARK_SWEEP
