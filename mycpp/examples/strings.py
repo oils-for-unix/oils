@@ -47,6 +47,26 @@ def run_tests():
   x = 'x'
   print("%s\tb\n%s\td\n" % (x, x))
 
+  fmt = "%dfoo"
+  print(fmt % 10)
+
+  fmts = ["foo%d"]
+  print(fmts[0] % 10)
+
+  print(("foo " + "%s") % "bar")
+
+  print("foo\0%s" % "bar")
+
+  print("foo%s" % "\0bar")
+
+  print("%o" % 12345)
+  print("%17o" % 12345)
+  print("%017o" % 12345)
+
+  print("%%%d%%%%" % 12345)
+
+  print("%r" % "tab\tline\nline\r\n")
+
 
 def run_benchmarks():
   # type: () -> None

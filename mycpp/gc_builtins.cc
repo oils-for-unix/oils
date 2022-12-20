@@ -4,13 +4,17 @@
 
 // Translation of Python's print().
 void print(Str* s) {
-  fputs(s->data(), stdout);
+  for (int i = 0; i < len(s); ++i) {
+    fputc(s->data()[i], stdout);
+  }
   fputs("\n", stdout);
 }
 
 // Like print(..., file=sys.stderr), but Python code explicitly calls it.
 void println_stderr(Str* s) {
-  fputs(s->data(), stderr);
+  for (int i = 0; i < len(s); ++i) {
+    fputc(s->data()[i], stderr);
+  }
   fputs("\n", stderr);
 }
 
