@@ -45,7 +45,7 @@ class Obj {
   Obj() {
   }
 
-  // Allocator is responsible for setting obj_id
+  // Allocator is responsible for setting obj_id_
   Obj(int heap_tag, int u_mask_npointers_strlen)
       : type_tag_(1),  // must be odd
         heap_tag_(heap_tag),
@@ -67,11 +67,11 @@ class Obj {
   // Shouldn't be str_len because strings greater than 16 MiB should be
   // supported.
 
-  unsigned obj_id : 24;  // implies 16 Mi unique objects
+  unsigned obj_id_ : 24;  // implies 16 Mi unique objects
 #else
   // Big endian version.  TODO: Put tests in mycpp/portability_test.
 
-  unsigned obj_id : 24;
+  unsigned obj_id_ : 24;
 
   // type_tag must be odd
   //
@@ -116,7 +116,7 @@ class Obj {
   // Store obj_len in 30-bit field (1 Gi strings)
   #define OBJ_LEN(obj) (obj)->u_mask_npointers_strlen_
   // Store field_mask in 24-bit field (~24 fields with inheritance)
-  #define FIELD_MASK(obj) (obj)->obj_id
+  #define FIELD_MASK(obj) (obj)->obj_id_
 
 // Str header: OBJLEN u_mask_npointers_strlen_, deriving STRLEN
 // Slab header: OBJLEN length in u_mask_npointers_strlen_, deriving NPOINTERS
@@ -372,7 +372,6 @@ bool str_equals(Str a, Str b) {
   }
 }
 
-
 #define G_SMALL_STR(name, s, small_len)          \
   GlobalSmallStr _##name = {1, 0, small_len, s}; \
   Str name = *(reinterpret_cast<Str*>(&_##name));
@@ -587,29 +586,194 @@ TEST small_str_test() {
   log("---- OverAllocatedStr() ---- ");
   log("");
 
-#if 0
-  // I don't want typedef uint64_t Str because I want more type safety than
-  // this !!!
-  log("len(42) = %d", len(42));
-#endif
+  // TODO:
+  //
+  // OverAllocatedStr()
+  //   mystr.Shrink(3);  // may copy into data_
+  //
+  // BufWriter (rename StrWriter, and uses MutableHeapStr ?)
+  //   writer.getvalue();  // may copy into data_
+  //
+  // str_equals() -- also used for hashing
+  //   not clear: should we take care of the case where an OS binding creates a
+  //   short HeapStr? But as long as they use NewStr() and OverAllocatedStr()
+  //   APIs correctly, they will never get a HeapStr?
+  //
+  //   Invariant: it's IMPOSSIBLE to create a HeapStr directly?  Yes I think so
 
   PASS();
 }
 
-// TODO:
 //
-// OverAllocatedStr()
-//   mystr.Shrink(3);  // may copy into data_
+// Union test
 //
-// BufWriter (rename StrWriter, and uses MutableHeapStr ?)
-//   writer.getvalue();  // may copy into data_
+
 //
-// str_equals() -- also used for hashing
-//   not clear: should we take care of the case where an OS binding creates a
-//   short HeapStr? But as long as they use NewStr() and OverAllocatedStr() APIs
-//   correctly, they will never get a HeapStr?
+// header_.not_vtable  // 1 bit
+// header_.type_tag   // 7 bits
 //
-//   Invariant: it's IMPOSSIBLE to create a HeapStr directly?  Yes I think so
+// #ifdef MARK_SWEEP
+//   header_.obj_id
+// #else
+//   header_.field_mask
+// #endif
+//
+// header_.heap_tag
+//
+// #ifdef MARK_SWEEP
+//   union {
+//     header_.field_mask.val
+//     header_.str_len.val
+//     header_.num_pointers.val
+//   }
+// #else
+//   header_.obj_len
+// #endif
+
+union ObjHeader {
+  // doesn't work: initializations for multiple members?
+  // ObjHeader() : raw_bytes(0), is_header(1) {
+
+  // also doesn't work
+  // ObjHeader() : is_header(1), type_tag(1) {
+
+  ObjHeader() : raw_bytes(0) {
+  }
+
+  uint64_t raw_bytes;
+
+  class _is_header {
+   public:
+    _is_header(int val) : val(val) {
+    }
+    unsigned val : 1;
+    unsigned _1 : 31;
+    unsigned _2 : 32;
+  } is_header;
+
+  struct _type_tag {
+    _type_tag(int val) : val(val) {
+    }
+    unsigned _1 : 1;
+    unsigned val : 7;
+    unsigned _2 : 24;
+    unsigned _3 : 32;
+  } type_tag;
+
+  struct _obj_id {
+    unsigned _1 : 8;
+    unsigned val : 24;
+    unsigned _2 : 32;
+  } obj_id;
+
+  struct _heap_tag {
+    unsigned _1 : 32;
+    unsigned val : 2;
+    unsigned _2 : 30;
+  } heap_tag;
+
+  // These three share the same bigs
+  struct _field_mask {
+    unsigned _1 : 32;
+    unsigned _2 : 2;
+    unsigned val : 30;
+  } field_mask;
+
+  struct _str_len {
+    unsigned _1 : 32;
+    unsigned _2 : 2;
+    unsigned val : 30;
+  } str_len;
+
+  struct _num_pointers {
+    unsigned _1 : 32;
+    unsigned _2 : 2;
+    unsigned val : 30;
+  } num_pointers;
+
+  // Hand-written classes, including fixed size List and Dict headers
+  void InitFixedClass(int field_mask) {
+    this->is_header.val = 1;
+    this->heap_tag.val = Tag::FixedSize;
+    this->field_mask.val = field_mask;
+  }
+
+  // - Slab<List*>, Slab<Str> (might be HeapStr*)
+  // - Generated classes without inheritance
+  // - all ASDL types
+  void InitScanned(int num_pointers) {
+    this->is_header.val = 1;
+    this->heap_tag.val = Tag::Scanned;
+    this->num_pointers.val = num_pointers;
+  }
+
+  void InitStr(int str_len) {
+    this->is_header.val = 1;
+    this->heap_tag.val = Tag::Opaque;
+    this->str_len.val = str_len;
+  }
+
+  void InitAsdlVariant(int type_tag, int num_pointers) {
+    this->is_header.val = 1;
+
+    this->type_tag.val = type_tag;
+
+    this->heap_tag.val = Tag::Scanned;
+    this->num_pointers.val = num_pointers;
+  }
+
+  // Other:
+  // - Tag::Global is for GlobalBigStr*, GLOBAL_LIST, ...
+  //
+  // All the variants of value_e get their own type tag?
+  // - Boxed value.{Bool,Int,Float}
+  // - And "boxless" / "tagless" Str, List, Dict
+
+};
+
+class Token {
+ public:
+  Token() : header_() {
+  }
+
+  ObjHeader header_;
+};
+
+TEST union_test() {
+  Token t;
+
+  t.header_.is_header.val = 1;
+
+  t.header_.type_tag.val = 127;
+  t.header_.obj_id.val = 12345678;  // max 16 Mi
+
+  t.header_.heap_tag.val = Tag::Scanned;
+  t.header_.field_mask.val = 0xff;
+
+  log("is_header %d", t.header_.is_header.val);
+
+  log("type_tag %d", t.header_.type_tag.val);
+  log("obj_id %d", t.header_.obj_id.val);
+
+  log("heap_tag %d", t.header_.heap_tag.val);
+
+  log("field_mask %d", t.header_.field_mask.val);
+  log("str_len %d", t.header_.str_len.val);
+  log("num_pointers %d", t.header_.num_pointers.val);
+
+  // Garbage collector
+
+  // First check check SmallStr.is_present_ - it might not be a pointer at all
+  ObjHeader* obj = reinterpret_cast<ObjHeader*>(&t);
+
+  // Then check for vtable - it might not be a pointer to an ObjHeader
+  if (!obj->is_header.val) {
+    // advance 8 bytes and assert header.is_header
+    log("Not a header");
+  }
+
+  PASS();
+}
 
 }  // namespace demo
 
@@ -624,6 +788,7 @@ int main(int argc, char** argv) {
   RUN_TEST(demo::endian_test);
   RUN_TEST(demo::dual_header_test);
   RUN_TEST(demo::small_str_test);
+  RUN_TEST(demo::union_test);
 
   // gHeap.CleanProcessExit();
 
