@@ -160,7 +160,8 @@ cpp-counts() {
     'Includes OS bindings.  Small C++ files like cpp/osh_arith_parse.{cc,h} correspond to larger Python files like osh/arith_parse.py.' \
     "$@"
 
-  ls mycpp/*.{cc,h} | egrep -v '_test.cc' \
+  # Remove code that isn't "in production"
+  ls mycpp/*.{cc,h} | egrep -v '_test.cc|cheney_heap|bump_leak_heap|smartptr' \
     | $count \
     'Garbage-Collected Runtime' \
     'Uses a simple Cheney / semi-space collector.' \
