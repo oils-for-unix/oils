@@ -39,7 +39,7 @@ class BumpLeakHeap {
   void RootInCurrentFrame(Obj* root) {
   }
 
-  void RootGlobalVar(Obj* root) {
+  void RootGlobalVar(void* root) {
   }
 
   void* Allocate(size_t num_bytes);

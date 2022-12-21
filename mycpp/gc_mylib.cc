@@ -14,7 +14,8 @@ MutableStr* NewMutableStr(int cap) {
   // In order for everything to work, MutableStr must be identical in layout to
   // Str. One easy way to achieve this is for MutableStr to have no members and
   // to inherit from Str.
-  static_assert(sizeof(MutableStr) == sizeof(Str));
+  static_assert(sizeof(MutableStr) == sizeof(Str),
+                "Str and MutableStr must have same size");
   return reinterpret_cast<MutableStr*>(NewStr(cap));
 }
 

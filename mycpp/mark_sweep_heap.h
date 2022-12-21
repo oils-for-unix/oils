@@ -21,10 +21,8 @@ class MarkSweepHeap {
     roots_.pop_back();
   }
 
-  // TODO: change to void* to avoid implicit static_cast<>, which changes the
-  // address when there's a vtable
-  void RootGlobalVar(Obj* root) {
-    global_roots_.push_back(root);
+  void RootGlobalVar(void* root) {
+    global_roots_.push_back(reinterpret_cast<Obj*>(root));
   }
 
   void* Allocate(size_t num_bytes);

@@ -233,7 +233,7 @@ extern Writer* gStdout;
 inline Writer* Stdout() {
   if (gStdout == nullptr) {
     gStdout = Alloc<CFileWriter>(stdout);
-    gHeap.RootGlobalVar(reinterpret_cast<Obj*>(gStdout));
+    gHeap.RootGlobalVar(gStdout);
   }
   return gStdout;
 }
@@ -243,7 +243,7 @@ extern Writer* gStderr;
 inline Writer* Stderr() {
   if (gStderr == nullptr) {
     gStderr = Alloc<CFileWriter>(stderr);
-    gHeap.RootGlobalVar(reinterpret_cast<Obj*>(gStderr));
+    gHeap.RootGlobalVar(gStderr);
   }
   return gStderr;
 }
