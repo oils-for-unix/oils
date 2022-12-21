@@ -18,6 +18,7 @@ TEST unordered_set_bucket_test() {
     int h = hasher(p);
     // This is just the low bits!
     // log("std::hash<void*>(pp) = %x", h);
+    (void)h;
 
     set.insert(p);
     log("bucket %d", set.bucket(p));

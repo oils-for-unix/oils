@@ -27,7 +27,7 @@ unit() {
   echo
 
   # use-after-free detected
-  # run-one-test 'asdl/gc_test' '' gcevery
+  # run-one-test 'asdl/gc_test' '' gcalways
   # echo
 }
 

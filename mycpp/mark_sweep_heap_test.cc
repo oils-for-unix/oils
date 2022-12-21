@@ -6,7 +6,7 @@ TEST string_collection_test() {
 
   {
     // NOTE(Jesse): This causes a crash when this gets compiled against the
-    // cheney collector w/ GC_EVERY_ALLOC.  I did verify it doesn't crash with
+    // cheney collector w/ GC_ALWAYS.  I did verify it doesn't crash with
     // the marksweep allocator but didn't want to figure out how to tell the
     // build system to not compile these tests against the cheney collector
     //

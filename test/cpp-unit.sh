@@ -20,7 +20,7 @@ all-tests() {
 
   frontend/TEST.sh unit
 
-  # uses Ninja to run (cxx, gcevery) variant.  Could also run (clang, ubsan),
+  # uses Ninja to run (cxx, gcalways) variant.  Could also run (clang, ubsan),
   # which finds more bugs.
   mycpp/TEST.sh test-runtime
 }

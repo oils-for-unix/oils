@@ -60,7 +60,7 @@ int MarkSweepHeap::MaybeCollect() {
 
 int MarkSweepHeap::MaybeCollect() {
   // Maybe collect BEFORE allocation, because the new object won't be rooted
-  #if GC_EVERY_ALLOC
+  #if GC_ALWAYS
   int result = Collect();
   #else
   int result = -1;

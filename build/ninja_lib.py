@@ -71,7 +71,7 @@ GC_PERF_VARIANTS = [
 COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
     # mainly for unit tests
     ('cxx', 'gcverbose'),
-    ('cxx', 'gcevery'),
+    ('cxx', 'gcalways'),
 ]
 
 SMALL_TEST_MATRIX = [

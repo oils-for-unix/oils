@@ -13,7 +13,7 @@ CPP_UNIT_MATRIX = [
   ('cxx', 'dbg', '-D CPP_UNIT_TEST'),
   ('cxx', 'asan', '-D CPP_UNIT_TEST'),
   ('cxx', 'ubsan', '-D CPP_UNIT_TEST'),
-  #('cxx', 'gcevery', '-D CPP_UNIT_TEST'),
+  #('cxx', 'gcalways', '-D CPP_UNIT_TEST'),
   #('cxx', 'rvroot', '-D CPP_UNIT_TEST'),
   ('clang', 'coverage', '-D CPP_UNIT_TEST'),
 ]

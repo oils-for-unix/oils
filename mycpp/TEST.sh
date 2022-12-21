@@ -26,7 +26,7 @@ examples-variant() {
   ### Run all examples using a variant -- STATS only
 
   local compiler=${1:-cxx}
-  local variant=${2:-gcevery}
+  local variant=${2:-gcalways}
   local do_benchmark=${3:-}
 
   banner "$0 examples-variant $compiler $variant"
@@ -87,7 +87,7 @@ examples-variant() {
   log ''
 
   # TODO: fix failure and remove this
-  if test $variant = 'gcevery'; then
+  if test $variant = 'gcalways'; then
     return 0
   fi
 
@@ -103,15 +103,15 @@ examples-variant() {
 # 3 Variants x {test, benchmark}
 #
 
-ex-gcevery() {
+ex-gcalways() {
   local compiler=${1:-}
-  examples-variant "$compiler" gcevery
+  examples-variant "$compiler" gcalways
 }
 
 # TOO SLOW to run.  It's garbage collecting all the time.
-ex-gcevery-bench() {
+ex-gcalways-bench() {
   local compiler=${1:-}
-  examples-variant "$compiler" gcevery '.BENCHMARK'
+  examples-variant "$compiler" gcalways '.BENCHMARK'
 }
 
 ex-asan() {
@@ -120,7 +120,7 @@ ex-asan() {
 }
 
 # 2 of 18 tests failed: cartesian, parse
-# So it does not catch the 10 segfaults that 'gcevery' catches with a few
+# So it does not catch the 10 segfaults that 'gcalways' catches with a few
 # iterations!
 ex-asan-bench() {
   local compiler=${1:-}
@@ -159,7 +159,7 @@ unit() {
   ### Run by test/cpp-unit.sh
 
   local compiler=${1:-cxx}
-  local variant=${2:-gcevery}
+  local variant=${2:-gcalways}
 
   log ''
   log "$0 unit $compiler $variant"
@@ -238,7 +238,7 @@ test-runtime() {
 
   unit '' asan
   unit '' gcverbose
-  unit '' gcevery
+  unit '' gcalways
   # unit '' rvroot
 }
 
@@ -252,7 +252,7 @@ test-translator() {
   examples-variant '' asan
 
   # Test with more collections
-  examples-variant '' gcevery
+  examples-variant '' gcalways
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 

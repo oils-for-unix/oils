@@ -100,13 +100,13 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=address -D GC_VERBOSE"
       ;;
 
-    (gcevery)
-      flags="$flags -g -D GC_EVERY_ALLOC -fsanitize=address"
+    (gcalways)
+      flags="$flags -g -D GC_ALWAYS -fsanitize=address"
       ;;
 
     # Just like GCEVERY
     (rvroot)
-      flags="$flags -g -D RET_VAL_ROOTING -D GC_EVERY_ALLOC -fsanitize=address"
+      flags="$flags -g -D RET_VAL_ROOTING -D GC_ALWAYS -fsanitize=address"
       ;;
 
     (opt)
@@ -174,7 +174,7 @@ setglobal_link_flags() {
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    (asan|gcevery|gcverbose|rvroot)
+    (asan|gcalways|gcverbose|rvroot)
       link_flags='-fsanitize=address'
       ;;
     (tsan)

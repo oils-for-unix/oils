@@ -27,7 +27,7 @@ TEST pretty_print_test() {
 #endif
 
   // Note: this segfaults with 1000 iterations, because it hit GC.
-  // TODO: GC_EVERY_ALLOC and make it pass.
+  // TODO: GC_ALWAYS and make it pass.
   for (int i = 0; i < 2; ++i) {
     hnode_t* t1 = b->PrettyTree();
     ASSERT_EQ(hnode_e::Record, t1->tag_());

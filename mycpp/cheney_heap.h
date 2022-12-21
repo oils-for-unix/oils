@@ -91,7 +91,7 @@
 
 // #defines for degbugging:
 //
-// GC_EVERY_ALLOC: Collect() on every Allocate().  Exposes many bugs!
+// GC_ALWAYS: Collect() on every Allocate().  Exposes many bugs!
 // GC_VERBOSE: Log when we collect
 
 // Silly definition for passing types like GlobalList<T, N> and initializer

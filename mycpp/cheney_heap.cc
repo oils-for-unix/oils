@@ -240,7 +240,7 @@ void* CheneyHeap::Allocate(int num_bytes) {
   // it went to forward the pointer.
   assert(n >= static_cast<int>(sizeof(LayoutForwarded)));
 
-#if GC_EVERY_ALLOC
+#if GC_ALWAYS
   Collect();  // force collection to find problems early
 #endif
 

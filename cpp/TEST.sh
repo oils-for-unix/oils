@@ -67,7 +67,7 @@ unit() {
   # Tests that pass with the garbage collector on.
   # TODO: Move all tests here
 
-  for variant in ubsan gcevery; do
+  for variant in ubsan gcalways; do
     run-one-test     cpp/obj_layout_test '' $variant
 
     run-test-in-dir  cpp/core_test '' $variant  # has testdata
