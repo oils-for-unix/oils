@@ -418,28 +418,28 @@ bool str_equals(Str a, Str b) {
     return true;
   }
 
-  // Str are normalized so a SmallStr can't equal a HeapStr*
   bool a_small = a.IsSmall();
   bool b_small = b.IsSmall();
+
+  // Str instances are normalized so a SmallStr can't equal a HeapStr*
   if (a_small != b_small) {
     return false;
   }
 
+  // Both are small, and we already failed the fast path
   if (a_small) {
-    int a_len = a.small_.length_;
-    int b_len = b.small_.length_;
-    if (a_len != b_len) {
-      return false;
-    }
-    return memcmp(a.small_.data_, b.small_.data_, a_len) == 0;
-  } else {
-    int a_len = a.big_->Length();
-    int b_len = b.big_->Length();
-    if (a_len != b_len) {
-      return false;
-    }
-    return memcmp(a.big_->data_, b.big_->data_, a_len) == 0;
+    return false;
   }
+
+  // Both are big
+  int a_len = a.big_->Length();
+  int b_len = b.big_->Length();
+
+  if (a_len != b_len) {
+    return false;
+  }
+
+  return memcmp(a.big_->data_, b.big_->data_, a_len) == 0;
 }
 
 #define G_SMALL_STR(name, s, small_len)          \
