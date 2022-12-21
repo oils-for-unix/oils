@@ -95,32 +95,37 @@ struct ObjHeader {
 
 #ifdef MARK_SWEEP
   // obj_len thrown away
-  #define GC_CLASS(header_, field_mask, obj_len)                          \
+  #define GC_CLASS_FIXED(header_, field_mask, obj_len)                    \
     header_ {                                                             \
       kIsHeader, TypeTag::Class, kNoObjId, HeapTag::FixedSize, field_mask \
+    }
+  // Used by code generators: ASDL, mycpp
+  #define GC_CLASS_SCANNED(header_, num_pointers, obj_len)                \
+    header_ {                                                             \
+      kIsHeader, TypeTag::Class, kNoObjId, HeapTag::Scanned, num_pointers \
     }
 
   // Different values stored in the same "union" field
   #define FIELD_MASK(header) (header).u_mask_npointers_strlen_
   #define NUM_POINTERS(header) (header).u_mask_npointers_strlen_
 
-// There is no SET_SLAB_LEN() because it doesn't need the equivalent of
-// OverAllocatedStr()
-// We might need an #ifdef aroud the Slab::Slab() constructor to do
-// NUM_POINTERS(header) = n or OBJ_LEN(header) = n;
-
 #else
+
   // 24-bit object ID is used for field mask, 30-bit obj_len for copying
-  #define GC_CLASS(header_, field_mask, obj_len)                         \
+  #define GC_CLASS_FIXED(header_, field_mask, obj_len)                   \
     header_ {                                                            \
       kIsHeader, TypeTag::Class, field_mask, HeapTag::FixedSize, obj_len \
+    }
+  // num_pointers thrown away, because it can be derived
+  #define GC_CLASS_SCANNED(header_, num_pointers, obj_len)            \
+    header_ {                                                         \
+      kIsHeader, TypeTag::Class, kZeroMask, HeapTag::Scanned, obj_len \
     }
 
   // Store field_mask in 24-bit field (~24 fields with inheritance)
   #define FIELD_MASK(header) (header).field_mask_
 
-// Derive these 2 values from obj_len_.  TODO: write tests for these.
-
+  // Derive num pointers from object length
   #define NUM_POINTERS(header) \
     (((header).obj_len_ - sizeof(ObjHeader)) / sizeof(void*))
 
@@ -147,7 +152,7 @@ TEST gc_header_test() {
 
 class Node {
  public:
-  Node() : GC_CLASS(header_, field_mask(), sizeof(Node)) {
+  Node() : GC_CLASS_FIXED(header_, field_mask(), sizeof(Node)) {
   }
 
   virtual int Method() {
@@ -181,7 +186,7 @@ class Derived : public Node {
 
 class NoVirtual {
  public:
-  NoVirtual() : GC_CLASS(header_, field_mask(), sizeof(NoVirtual)) {
+  NoVirtual() : GC_CLASS_FIXED(header_, field_mask(), sizeof(NoVirtual)) {
   }
 
   GC_OBJ(header_);

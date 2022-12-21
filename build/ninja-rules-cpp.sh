@@ -130,10 +130,11 @@ setglobal_compile_flags() {
     (uftrace)
       # -O0 creates a A LOT more data.  But sometimes we want to see the
       # structure of the code.
-      # vector::size(), std::forward, len(), etc. are not inlined.
-      # Also List::List, Tuple2::at0, etc.
-      #local opt='-O2'
+      # NewStr(), OverAllocatedStr(), StrFromC() etc. are not inlined
+      # Ditto vector::size(), std::forward, len(), etc.
+
       local opt='-O0'
+      #local opt='-O2'
       flags="$flags $opt -g -pg"
       ;;
 

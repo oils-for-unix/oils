@@ -6,6 +6,7 @@
 # Examples:
 #   benchmarks/uftrace.sh record-osh-eval
 #   benchmarks/uftrace.sh replay-alloc
+#   benchmarks/uftrace.sh plugin-allocs
 #
 # TODO:
 # - uftrace dump --chrome       # time-based trace
@@ -17,16 +18,25 @@ set -o errexit
 
 download() {
   wget --no-clobber --directory _deps \
-    https://github.com/namhyung/uftrace/archive/v0.9.3.tar.gz
+    https://github.com/namhyung/uftrace/archive/refs/tags/v0.12.tar.gz
+    #https://github.com/namhyung/uftrace/archive/v0.9.3.tar.gz
 }
 
 build() {
-  cd _deps/uftrace-0.9.3
+  cd _deps/uftrace-0.12
   ./configure
   make
 
   # It can't find some files unless we do this
   echo 'Run sudo make install'
+}
+
+ubuntu-hack() {
+  # Annoying: the plugin engine tries to look for the wrong file?
+  # What's 3.6m.so vs 3.6.so ???
+
+  cd /usr/lib/x86_64-linux-gnu
+  ln -s libpython3.6m.so.1.0 libpython3.6.so
 }
 
 # https://github.com/namhyung/uftrace/wiki/Tutorial
@@ -58,15 +68,34 @@ replay() {
 record-osh-eval() {
   #local flags=(-F process::Process::RunWait -F process::Process::Process)
 
-  # It's faster to filter just those functino calls
+  # It's faster to filter just those function calls
   # record allocation sizes
   # first arg is 'this'
-  local flags=( -F MarkSweepHeap::Allocate -A MarkSweepHeap::Allocate@arg2 )
 
-  # Why isn't this showing up?  Is it because of placement new or something?
-  #local flags=( -F 'syntax_asdl::Token' )
+    #-F MarkSweepHeap::Allocate -A MarkSweepHeap::Allocate@arg2
+  local flags=( \
+    -F 'MarkSweepHeap::Allocate' -A 'MarkSweepHeap::Allocate@arg2'
+    -F 'NewStr' -A 'NewStr@arg1'
+    -F 'OverAllocatedStr' -A 'OverAllocatedStr@arg1'
+    -F 'List::List'
+    -F 'Dict::Dict'
+    -F 'syntax_asdl::Token::Token'
+    -F 'Alloc'  # missing type info
+    -D 1
+    )
+    # Problem: some of these aren't allocations
+    # -F 'Tuple2::Tuple2'
+    # -F 'Tuple3::Tuple3'
+    # -F 'Tuple4::Tuple4'
 
-  uftrace record "${flags[@]}" _bin/cxx-uftrace/osh_eval "$@"
+    # StrFromC calls NewStr, so we don't need it
+    # -F 'StrFromC' -A 'StrFromC@arg1' -A 'StrFromC@arg2'
+
+  local osh_eval=_bin/cxx-uftrace/osh_eval 
+  ninja $osh_eval
+
+  time uftrace record "${flags[@]}" $osh_eval "$@"
+  #time uftrace record $osh_eval "$@"
 
   # Hint: ls -l uftrace.data to make sure this filtering worked!
   ls -l --si uftrace.data/
@@ -78,6 +107,12 @@ record-execute() {
 
 record-parse() {
   local path=${1:-benchmarks/testdata/abuild}
+
+  # 2.3 seconds to parse under -O2, 15 under -O0, which we need
+  #local path=${1:-benchmarks/testdata/configure}
+
+  # 9 seconds to parse, 5 seconds to analyze
+  #local path=${1:-benchmarks/testdata/configure-coreutils}
 
   # 635 MB of trace data for this file, Allocate() calls only
   #local path=${1:-benchmarks/testdata/configure-coreutils}
@@ -177,13 +212,30 @@ plugin-allocs() {
   # On the big configure-coreutils script, this takes 10 seconds.  That's
   # acceptable.  Gives 2,402,003 allocations.
 
-  time uftrace script \
-    -D 1 \
-    -F 'MarkSweepHeap::Allocate' \
-    -S benchmarks/uftrace_allocs.py > _tmp/allocs.txt
+  local out_dir=_tmp/uftrace
+  rm -rf $out_dir
+  mkdir -p $out_dir
+
+  set -x
+  time uftrace script -S benchmarks/uftrace_allocs.py $out_dir
+
+  wc -l $out_dir/*
+  return
 
   # Make allocation size histogram
-  sort -n _tmp/allocs.txt | uniq -c | sort -n -r | head -n 20
+  # TODO: 'counts' tool with percentages!
+
+  sort -n _tmp/allocs.txt | uniq -c | sort -n -r | head -n 30
+
+  echo 'TOTAL'
+  wc -l _tmp/allocs.txt
 }
+
+# TODO:
+#
+# - all heap allocations vs. all string allocations (include StrFromC())
+#   - obj length vs. string length
+#   - the -D 1 arg interfers?
+# - parse workload vs evaluation workload (benchmarks/compute/*.sh)
 
 "$@"
