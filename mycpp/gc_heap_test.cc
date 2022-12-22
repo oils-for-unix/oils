@@ -245,8 +245,16 @@ TEST global_trace_test() {
   Str* l4 = nullptr;
   List<Str*>* strings = nullptr;
 
+  int num_roots;
+  num_roots = gHeap.roots_.size();
+  ASSERT_EQ_FMT(0, num_roots, "%d");
+
   StackRoots _roots({&l4, &strings});
 
+  num_roots = gHeap.roots_.size();
+  ASSERT_EQ_FMT(2, num_roots, "%d");
+
+  // 2 roots, but no live objects
   l4 = str4;
   ASSERT_NUM_LIVE_OBJS(0);
 

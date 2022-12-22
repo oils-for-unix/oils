@@ -118,11 +118,15 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
     return;
   }
 
-  marked_.insert(static_cast<void*>(obj));
-
   auto header = ObjHeader(obj);
   switch (header->heap_tag_) {
+  case Tag::Opaque:
+    marked_.insert(obj);
+    break;
+
   case Tag::FixedSize: {
+    marked_.insert(obj);
+
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
     int mask = fixed->field_mask_;
 
@@ -135,11 +139,12 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
         }
       }
     }
-
     break;
   }
 
   case Tag::Scanned: {
+    marked_.insert(obj);
+
     assert(header == obj);
 
     auto slab = reinterpret_cast<Slab<void*>*>(header);
@@ -153,17 +158,16 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
         MarkObjects(child);
       }
     }
-
     break;
   }
 
-  default: {
-    assert(header->heap_tag_ == Tag::Forwarded ||
-           header->heap_tag_ == Tag::Global ||
-           header->heap_tag_ == Tag::Opaque);
-  }
+  case Tag::Global:
+    // Not marked
+    break;
 
-    // other tags like Tag::Opaque have no children
+  default:
+    // Invalid tag
+    assert(0);
   }
 }
 
@@ -222,6 +226,14 @@ int MarkSweepHeap::Collect() {
     }
   }
 
+#if 0
+  log("Collect(): num marked %d", marked_.size());
+  for (auto marked_obj : marked_ ) {
+    auto m = reinterpret_cast<Obj*>(marked_obj);
+    assert(m->heap_tag_ != Tag::Global);  // BUG FIX
+  }
+#endif
+
   Sweep();
   if (gc_verbose_) {
     log("    %d live after sweep", num_live_);
@@ -236,7 +248,8 @@ int MarkSweepHeap::Collect() {
   if (num_live_ > water_mark) {
     gc_threshold_ = num_live_ * 2;
     if (gc_verbose_) {
-      log("    exceeded %d live objects; gc_threshold set to %d", water_mark, gc_threshold_);
+      log("    exceeded %d live objects; gc_threshold set to %d", water_mark,
+          gc_threshold_);
     }
   }
 
@@ -258,7 +271,6 @@ int MarkSweepHeap::Collect() {
   if (gc_millis > max_gc_millis_) {
     max_gc_millis_ = gc_millis;
   }
-
 
   return num_live_;  // for unit tests only
 }
