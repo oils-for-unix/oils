@@ -458,52 +458,6 @@ RuntimeReport = function(in_dir, out_dir) {
   Log('Wrote %s', out_dir)
 }
 
-# foo/bar/name.sh__oheap -> name.sh
-filenameFromPath = function(path) {
-  # https://stackoverflow.com/questions/33683862/first-entry-from-string-split
-  # Not sure why [[1]] doesn't work?
-  parts = strsplit(basename(path), '__', fixed = T)
-  sapply(parts, head, 1)
-}
-
-OheapReport = function(in_dir, out_dir) {
-  sizes = read.csv(file.path(in_dir, 'sizes.csv'))
-
-  sizes %>%
-    mutate(filename = filenameFromPath(path),
-           metric_name = paste(format, compression, sep = '_'),
-           kilobytes = num_bytes / 1000) %>%
-    select(-c(path, format, compression, num_bytes)) %>%
-    spread(key = c(metric_name), value = kilobytes) %>%
-    select(c(text_none, text_gz, text_xz, oheap_none, oheap_gz, oheap_xz, filename)) %>%
-    arrange(text_none) ->
-    sizes
-  print(sizes)
-
-  # Interesting:
-  # - oheap is 2-7x bigger uncompressed, and 4-12x bigger compressed.
-  # - oheap is less compressible than text!
-
-  # TODO: The ratio needs 2 digits of precision.
-
-  sizes %>%
-    transmute(oheap_to_text = oheap_none / text_none,
-              xz_text = text_xz / text_none,
-              xz_oheap = oheap_xz / oheap_none,
-              oheap_to_text_xz = oheap_xz / text_xz,
-              ) ->
-    ratios
-
-  print(ratios)
-
-  precision = SamePrecision(0)
-  writeCsv(sizes, file.path(out_dir, 'encoding_size'), precision)
-  precision = SamePrecision(2)
-  writeCsv(ratios, file.path(out_dir, 'encoding_ratios'), precision)
-
-  Log('Wrote %s', out_dir)
-}
-
 VmBaselineReport = function(in_dir, out_dir) {
   vm = read.csv(file.path(in_dir, 'vm-baseline.csv'))
   #print(vm)
@@ -793,6 +747,64 @@ MyCppReport = function(in_dir, out_dir) {
   writeTsv(details, file.path(out_dir, 'details'))
 }
 
+AllocReport = function(in_dir, out_dir) {
+  # TSV file, not CSV
+  strings = readTsv(file.path(in_dir, 'strings.tsv'))
+  allocs = readTsv(file.path(in_dir, 'allocs.tsv'))
+
+  string_overhead = 13
+  strings %>% mutate(obj_len = str_len + string_overhead) -> strings
+
+  # median string length is 4, mean is 9.5!
+  print(summary(strings))
+  print(summary(allocs))
+
+  num_strings = nrow(strings)
+  num_allocs = nrow(allocs)
+  total_string_bytes = sum(strings$obj_len)
+  total_bytes = sum(allocs$obj_len)
+  Log('')
+  Log('%d string allocations, total length %d, %d bytes', num_strings,
+      sum(strings$str_len), total_string_bytes)
+
+  Log('%d total allocations, %d bytes', num_allocs, total_bytes)
+  Log('')
+
+  Log('%.2f%% of allocs are strings', num_strings * 100 / num_allocs)
+  Log('%.2f%% of bytes are strings', total_string_bytes * 100 / total_bytes)
+  Log('')
+
+  strings %>% group_by(str_len) %>% count() -> string_lengths
+
+  # Why doesn't this work ???  I think it's a grouping problem.
+  #strings %>% group_by(str_len) %>% count() %>% mutate(n2 = cumsum(n)) -> string_lengths
+  #print(string_lengths)
+
+  # This works
+  string_lengths$n_less_than = cumsum(string_lengths$n)
+  string_lengths %>% mutate(percent = n_less_than * 100.0 / num_strings) -> string_lengths
+
+
+  Log('String Lengths')
+  # Parse workload
+  # 62% of strings <= 6 bytes
+  # 84% of strings <= 14 bytes
+  print(string_lengths %>% head(16))
+  print(string_lengths %>% tail(10))
+
+  Log('Allocation Sizes')
+  allocs %>% group_by(obj_len) %>% count() -> alloc_sizes
+  alloc_sizes$n_less_than = cumsum(alloc_sizes$n)
+
+  alloc_sizes %>% mutate(percent = n_less_than * 100.0 / num_allocs) -> alloc_sizes
+
+  # How many objects?  Measures GC pressure
+  # Total size of objects: Measures memory usage
+
+  print(alloc_sizes %>% head(20))
+  print(alloc_sizes %>% tail(10))
+}
+
 main = function(argv) {
   action = argv[[1]]
   in_dir = argv[[2]]
@@ -819,8 +831,8 @@ main = function(argv) {
   } else if (action == 'mycpp') {
     MyCppReport(in_dir, out_dir)
 
-  } else if (action == 'oheap') {
-    OheapReport(in_dir, out_dir)
+  } else if (action == 'alloc') {
+    AllocReport(in_dir, out_dir)
 
   } else {
     Log("Invalid action '%s'", action)

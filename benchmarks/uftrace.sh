@@ -16,6 +16,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # R_PATH
+
 download() {
   wget --no-clobber --directory _deps \
     https://github.com/namhyung/uftrace/archive/refs/tags/v0.12.tar.gz
@@ -66,6 +68,9 @@ replay() {
 
 # creates uftrace.data/ dir
 record-osh-eval() {
+  local out_dir=$1
+  shift
+
   #local flags=(-F process::Process::RunWait -F process::Process::Process)
 
   # It's faster to filter just these function calls
@@ -82,7 +87,7 @@ record-osh-eval() {
     -F 'Slab::Slab'
     -F 'NewList' -F 'List::List'
     -F 'List::append'
-    -F 'Dict::Dict'  # doesn't allocate
+    -F 'Dict::Dict'  # does not allocate
     -F 'Dict::reserve'  # this allocates
     -F 'Dict::append'
     -F 'Dict::extend'
@@ -101,15 +106,11 @@ record-osh-eval() {
   local osh_eval=_bin/cxx-uftrace/osh_eval 
   ninja $osh_eval
 
-  time uftrace record "${flags[@]}" $osh_eval "$@"
+  time uftrace record -d $out_dir "${flags[@]}" $osh_eval "$@"
   #time uftrace record $osh_eval "$@"
 
-  # Hint: ls -l uftrace.data to make sure this filtering worked!
-  ls -l --si uftrace.data/
-}
-
-record-execute() {
-  record-osh-eval -c 'echo hi > _tmp/redir'
+  ls -d $out_dir/
+  ls -l --si $out_dir/
 }
 
 record-parse() {
@@ -124,7 +125,18 @@ record-parse() {
   # 635 MB of trace data for this file, Allocate() calls only
   #local path=${1:-benchmarks/testdata/configure-coreutils}
 
-  record-osh-eval --ast-format none -n $path
+  local out_dir=_tmp/uftrace/parse.data
+  mkdir -p $out_dir
+
+  record-osh-eval $out_dir --ast-format none -n $path
+}
+
+record-execute() {
+  local out_dir=_tmp/uftrace/execute.data
+  mkdir -p $out_dir
+
+  # TODO: use something that's more shell-like
+  record-osh-eval $out_dir benchmarks/compute/fib.sh 10 44
 }
 
 by-call() {
@@ -206,26 +218,28 @@ plugin() {
 }
 
 plugin-allocs() {
+  local name=${1:-parse}
+
+  local dir=_tmp/uftrace/$name.data
+
   # On the big configure-coreutils script, this takes 10 seconds.  That's
   # acceptable.  Gives 2,402,003 allocations.
 
-  local out_dir=_tmp/uftrace
-  rm -rf $out_dir
+  local out_dir=_tmp/uftrace/${name}_tsv
   mkdir -p $out_dir
+  time uftrace script -d $dir -S benchmarks/uftrace_allocs.py $out_dir
 
-  set -x
-  time uftrace script -S benchmarks/uftrace_allocs.py $out_dir
+  wc -l $out_dir/*.tsv
+}
 
-  wc -l $out_dir/*
-  return
+report() {
+  local name=${1:-parse}
 
-  # Make allocation size histogram
-  # TODO: 'counts' tool with percentages!
+  local in_dir=_tmp/uftrace/${name}_tsv
 
-  sort -n _tmp/allocs.txt | uniq -c | sort -n -r | head -n 30
+  R_LIBS_USER=$R_PATH benchmarks/report.R alloc $in_dir _tmp/uftrace
 
-  echo 'TOTAL'
-  wc -l _tmp/allocs.txt
+  #ls $dir/*.tsv
 }
 
 # TODO:

@@ -54,8 +54,6 @@ gOutDir = None
 class Stats(object):
 
   def __init__(self, out_dir):
-    self.out_dir = out_dir
-
     p = os.path.join(out_dir, 'strings.tsv')
     self.strings = open(p, 'w')
     header = ['func_name', 'str_len']
