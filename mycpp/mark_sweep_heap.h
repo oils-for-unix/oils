@@ -42,8 +42,14 @@ class MarkSweepHeap {
 
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
-  // In number of live objects, since we aren't keeping track of total bytes
+  // Runtime params
+
+  // Threshold is a number of live objects, since we aren't keeping track of
+  // total bytes
   int gc_threshold_;
+
+  // Show debug logging
+  bool gc_verbose_ = false;
 
   // Cumulative stats
   int64_t num_allocated_ = 0;

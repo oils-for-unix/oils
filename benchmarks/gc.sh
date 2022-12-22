@@ -284,29 +284,35 @@ soil-run() {
 
 
 gc-parse-smoke() {
-  local bin=_bin/cxx-gcverbose/osh_eval
+  local variant=${1:-opt}
+
+  local bin=_bin/cxx-$variant/osh_eval
   ninja $bin
 
-  OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -n configure
+  _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
+    $bin -n configure
 
   # No leaks
   # OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -n -c '('
 }
 
 gc-run-smoke() {
-  local bin=_bin/cxx-gcverbose/osh_eval
+  local variant=${1:-opt}
+
+  local bin=_bin/cxx-$variant/osh_eval
   ninja $bin
 
   # expose a bug with printf
-  OIL_GC_STATS=1 OIL_GC_THRESHOLD=500 OIL_GC_ON_EXIT=1 $bin -c '
-  for i in $(seq 100); do printf "%s\\n" "-- $i"; done
-  '
+  _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=500 OIL_GC_ON_EXIT=1 \
+    $bin -c 'for i in $(seq 100); do printf "%s\\n" "-- $i"; done'
 }
 
 gc-run-oil() {
   ### Run some scripts from the repo
 
-  local bin=_bin/cxx-gcverbose/osh_eval
+  local variant=${1:-opt}
+
+  local bin=_bin/cxx-$variant/osh_eval
   ninja $bin
 
   local i=0
@@ -323,7 +329,8 @@ gc-run-oil() {
     echo "=== ($i) $script"
 
     # Just run the top level, which (hopefully) does nothing
-    OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin $script
+    _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
+      $bin $script
 
     i=$((i + 1))
     if test $i -gt 60; then
@@ -333,8 +340,9 @@ gc-run-oil() {
 }
 
 gc-run-big() {
-  #local target=_bin/cxx-gcverbose/osh_eval
-  local target=_bin/cxx-opt/osh_eval
+  local variant=${1:-opt}
+
+  local target=_bin/cxx-$variant/osh_eval
   ninja $target
 
   local osh=$REPO_ROOT/$target
@@ -344,7 +352,8 @@ gc-run-big() {
   mkdir -v -p $dir
 
   pushd $dir
-  time OIL_GC_STATS=1 OIL_GC_THRESHOLD=100000 OIL_GC_ON_EXIT=1 $osh ../../Python-2.7.13/configure
+  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=100000 OIL_GC_ON_EXIT=1 \
+    $osh ../../Python-2.7.13/configure
   popd
 }
 

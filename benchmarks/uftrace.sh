@@ -68,19 +68,26 @@ replay() {
 record-osh-eval() {
   #local flags=(-F process::Process::RunWait -F process::Process::Process)
 
-  # It's faster to filter just those function calls
-  # record allocation sizes
-  # first arg is 'this'
-
-    #-F MarkSweepHeap::Allocate -A MarkSweepHeap::Allocate@arg2
+  # It's faster to filter just these function calls
   local flags=( \
+    -F 'Alloc'  # missing type info
+    # arg1 is this, arg2 is num_bytes
     -F 'MarkSweepHeap::Allocate' -A 'MarkSweepHeap::Allocate@arg2'
+    # arg 1 is str_len
     -F 'NewStr' -A 'NewStr@arg1'
     -F 'OverAllocatedStr' -A 'OverAllocatedStr@arg1'
-    -F 'List::List'
-    -F 'Dict::Dict'
+    -F 'Str::Str'
+    # arg1 is number of elements of type T
+    -F 'NewSlab' -A 'NewSlab@arg1'
+    -F 'Slab::Slab'
+    -F 'NewList' -F 'List::List'
+    -F 'List::append'
+    -F 'Dict::Dict'  # doesn't allocate
+    -F 'Dict::reserve'  # this allocates
+    -F 'Dict::append'
+    -F 'Dict::extend'
+    -F 'Dict::set'
     -F 'syntax_asdl::Token::Token'
-    -F 'Alloc'  # missing type info
     -D 1
     )
     # Problem: some of these aren't allocations
@@ -193,19 +200,9 @@ replay-alloc() {
   uftrace replay -D 1 -F 'MarkSweepHeap::Allocate'
 }
 
-# TODO: the 'record' command has to line up with this
 plugin() {
-  # These manual filters speed it up
-  uftrace script \
-    -C 'Dict::Dict' \
-    -C 'List::List' \
-    -C 'Str::Str' \
-    -C 'Tuple2::Tuple2' \
-    -C 'Tuple3::Tuple3' \
-    -C 'Tuple4::Tuple4' \
-    -C 'operator new' \
-    -C 'malloc' \
-    -S benchmarks/uftrace_plugin.py
+  # Note this one likes UNFILTERED data
+  uftrace script -S benchmarks/uftrace_plugin.py
 }
 
 plugin-allocs() {

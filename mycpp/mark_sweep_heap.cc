@@ -11,13 +11,20 @@ void MarkSweepHeap::Init() {
 void MarkSweepHeap::Init(int gc_threshold) {
   gc_threshold_ = gc_threshold;
 
-  char* e = getenv("OIL_GC_THRESHOLD");
+  char* e;
+  e = getenv("OIL_GC_THRESHOLD");
   if (e) {
     int result;
     if (StringToInteger(e, strlen(e), 10, &result)) {
       // Override collection threshold
       gc_threshold_ = result;
     }
+  }
+
+  // only for developers
+  e = getenv("_OIL_GC_VERBOSE");
+  if (e && strcmp(e, "1") == 0) {
+    gc_verbose_ = true;
   }
 
   live_objs_.reserve(KiB(10));
@@ -68,12 +75,6 @@ int MarkSweepHeap::MaybeCollect() {
     result = Collect();
   }
   #endif
-
-  // num_live_ UPDATED after possible collection
-  if (num_live_ > gc_threshold_) {
-    gc_threshold_ = num_live_ * 2;
-  }
-
   return result;
 }
 
@@ -199,10 +200,11 @@ int MarkSweepHeap::Collect() {
   int num_roots = roots_.size();
   int num_globals = global_roots_.size();
 
-#ifdef GC_VERBOSE
-  log("%2d. GC with %d roots (%d global) and %d live objects", num_collections_,
-      num_roots + num_globals, num_globals, num_live_);
-#endif
+  if (gc_verbose_) {
+    log("");
+    log("%2d. GC with %d roots (%d global) and %d live objects",
+        num_collections_, num_roots + num_globals, num_globals, num_live_);
+  }
 
   // Note: Can we get rid of double pointers?
 
@@ -221,9 +223,22 @@ int MarkSweepHeap::Collect() {
   }
 
   Sweep();
-#ifdef GC_VERBOSE
-  log("    %d live after sweep", num_live_);
-#endif
+  if (gc_verbose_) {
+    log("    %d live after sweep", num_live_);
+  }
+
+  // We know how many are live.  If the number of objects is close to the
+  // threshold (above 75%), then set the threshold to 2 times the number of
+  // live objects.  This is an ad hoc policy that removes observed "thrashing"
+  // -- being at 99% of the threshold and doing FUTILE mark and sweep.
+
+  int water_mark = (gc_threshold_ * 3) / 4;
+  if (num_live_ > water_mark) {
+    gc_threshold_ = num_live_ * 2;
+    if (gc_verbose_) {
+      log("    exceeded %d live objects; gc_threshold set to %d", water_mark, gc_threshold_);
+    }
+  }
 
 #ifdef GC_TIMING
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) < 0) {
@@ -234,15 +249,16 @@ int MarkSweepHeap::Collect() {
   double end_secs = end.tv_sec + end.tv_nsec / 1e9;
   double gc_millis = (end_secs - start_secs) * 1000.0;
 
-  #ifdef GC_VERBOSE
-  log("    %.1f ms GC", gc_millis);
-  #endif
+  if (gc_verbose_) {
+    log("    %.1f ms GC", gc_millis);
+  }
 #endif
 
   total_gc_millis_ += gc_millis;
   if (gc_millis > max_gc_millis_) {
     max_gc_millis_ = gc_millis;
   }
+
 
   return num_live_;  // for unit tests only
 }
