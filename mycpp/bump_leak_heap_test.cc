@@ -27,10 +27,11 @@ TEST for_code_coverage() {
 
   h.Init();
   h.Init(10);
-  h.RootOnReturn(nullptr);
-  h.RootInCurrentFrame(nullptr);
+  h.PushRoot(nullptr);
+  h.PopRoot();
   h.RootGlobalVar(nullptr);
   (void)h.Allocate(10);
+  ASSERT_EQ(-1, h.MaybeCollect());
 
   h.Report();
 

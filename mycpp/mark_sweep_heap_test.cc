@@ -1,6 +1,45 @@
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
+TEST api_test() {
+#ifdef GC_ALWAYS
+  // no objects live
+  ASSERT_EQ_FMT(0, gHeap.MaybeCollect(), "%d");
+  {
+    Str *s1 = StrFromC("foo");
+    Str *s2 = StrFromC("bar");
+    StackRoots _r({&s1, &s2});
+
+    // 2 live objects
+    ASSERT_EQ_FMT(2, gHeap.MaybeCollect(), "%d");
+
+    // 1 live
+    s2 = nullptr;
+    ASSERT_EQ_FMT(1, gHeap.MaybeCollect(), "%d");
+  }
+  ASSERT_EQ_FMT(0, gHeap.MaybeCollect(), "%d");
+#else
+  // otherwise we didn't try to collect
+  ASSERT_EQ_FMT(-1, gHeap.MaybeCollect(), "%d");
+#endif
+
+  PASS();
+}
+
+TEST for_code_coverage() {
+  // Add coverage for some methods
+
+  void *p = gHeap.Allocate(10);
+  void *q = gHeap.Reallocate(p, 20);
+
+  ASSERT(p != nullptr);
+  ASSERT(q != nullptr);
+
+  gHeap.FastProcessExit();
+
+  PASS();
+}
+
 TEST string_collection_test() {
   Str *test_str = StrFromC("foo");
 
@@ -123,6 +162,7 @@ int main(int argc, char **argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(api_test);
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);
   RUN_TEST(cycle_collection_test);

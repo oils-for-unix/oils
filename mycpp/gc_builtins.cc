@@ -103,7 +103,21 @@ bool to_bool(Str* s) {
 }
 
 double to_float(Str* s) {
-  double result = atof(s->data_);
+  char* begin = s->data_;
+  char* end = begin + len(s);
+
+  errno = 0;
+  double result = strtod(begin, &end);
+
+  if (errno == ERANGE) {  // error: overflow or underflow
+    // log("OVERFLOW or UNDERFLOW %s", s->data_);
+    // log("result %f", result);
+    throw Alloc<ValueError>();
+  }
+  if (end == begin) {  // error: not a floating point number
+    throw Alloc<ValueError>();
+  }
+
   return result;
 }
 

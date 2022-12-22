@@ -36,6 +36,66 @@ TEST formatter_test() {
   PASS();
 }
 
+TEST bool_test() {
+  ASSERT_EQ(false, to_bool(kEmptyString));
+  ASSERT_EQ(true, to_bool(StrFromC("a")));
+
+  PASS();
+}
+
+TEST float_test() {
+  ASSERT_EQ(0.0f, to_float(StrFromC("0.0")));
+
+  ASSERT_EQ(0.25f, to_float(StrFromC("0.25")));
+  ASSERT_EQ(0.5f, to_float(StrFromC("0.5")));
+  ASSERT_EQ(99.0f, to_float(StrFromC("99")));
+
+  ASSERT_EQ(-0.25f, to_float(StrFromC("-0.25")));
+  ASSERT_EQ(-0.5f, to_float(StrFromC("-0.5")));
+  ASSERT_EQ(-99.0f, to_float(StrFromC("-99")));
+
+  // Note: strtod supports hexadecimal and NaN
+
+  bool caught;
+
+  caught = false;
+  try {
+    (void)to_float(kEmptyString);
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  caught = false;
+  try {
+    (void)to_float(StrFromC("x"));
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  caught = false;
+  try {
+    Str* huge = str_repeat(StrFromC("123456789"), 100);
+    (void)to_float(huge);
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  caught = false;
+  try {
+    Str* zeros = str_repeat(StrFromC("00000000"), 100);
+    Str* tiny = str_concat3(StrFromC("0."), zeros, StrFromC("1"));
+    (void)to_float(tiny);
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  PASS();
+}
+
 // Wrapper for testing
 bool _StrToInteger(Str* s, int* result, int base) {
   return StringToInteger(s->data_, len(s), base, result);
@@ -805,6 +865,9 @@ int main(int argc, char** argv) {
 
   RUN_TEST(print_test);
   RUN_TEST(formatter_test);
+
+  RUN_TEST(bool_test);
+  RUN_TEST(float_test);
 
   RUN_TEST(StringToInteger_test);
   RUN_TEST(str_to_int_test);

@@ -19,26 +19,10 @@ class BumpLeakHeap {
   void Init(int gc_threshold) {
   }
 
-  //
-  // OLD Local Var Rooting
-  //
-
   void PushRoot(Obj** p) {
   }
-
   void PopRoot() {
   }
-
-  //
-  // NEW Return Value Rooting
-  //
-
-  void RootOnReturn(Obj* root) {
-  }
-
-  void RootInCurrentFrame(Obj* root) {
-  }
-
   void RootGlobalVar(void* root) {
   }
 

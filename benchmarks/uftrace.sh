@@ -69,32 +69,50 @@ replay() {
 # creates uftrace.data/ dir
 record-osh-eval() {
   local out_dir=$1
-  shift
+  local unfiltered=${2:-}
+  shift 2
 
   #local flags=(-F process::Process::RunWait -F process::Process::Process)
 
-  # It's faster to filter just these function calls
-  local flags=( \
-    -F 'Alloc'  # missing type info
-    # arg1 is this, arg2 is num_bytes
-    -F 'MarkSweepHeap::Allocate' -A 'MarkSweepHeap::Allocate@arg2'
-    # arg 1 is str_len
-    -F 'NewStr' -A 'NewStr@arg1'
-    -F 'OverAllocatedStr' -A 'OverAllocatedStr@arg1'
-    -F 'Str::Str'
-    # arg1 is number of elements of type T
-    -F 'NewSlab' -A 'NewSlab@arg1'
-    -F 'Slab::Slab'
-    -F 'NewList' -F 'List::List'
-    -F 'List::append'
-    -F 'Dict::Dict'  # does not allocate
-    -F 'Dict::reserve'  # this allocates
-    -F 'Dict::append'
-    -F 'Dict::extend'
-    -F 'Dict::set'
-    -F 'syntax_asdl::Token::Token'
-    -D 1
+  local -a flags
+
+  if test -n "$unfiltered"; then
+    out_dir=$out_dir.unfiltered
+
+    # Look for the pattern:
+    # Alloc() {
+    #   MarkSweepHeap::Allocate(24)
+    #   syntax_asdl::line_span::line_span()
+    # }
+    flags=(
+      -F 'Alloc'
+      -F 'MarkSweepHeap::Allocate' -A 'MarkSweepHeap::Allocate@arg2'
+      -D 2
     )
+  else
+    # It's faster to filter just these function calls
+    flags=(
+      -F 'Alloc'  # missing type info
+      # arg1 is this, arg2 is num_bytes
+      -F 'MarkSweepHeap::Allocate' -A 'MarkSweepHeap::Allocate@arg2'
+      # arg 1 is str_len
+      -F 'NewStr' -A 'NewStr@arg1'
+      -F 'OverAllocatedStr' -A 'OverAllocatedStr@arg1'
+      -F 'Str::Str'
+      # arg1 is number of elements of type T
+      -F 'NewSlab' -A 'NewSlab@arg1'
+      -F 'Slab::Slab'
+      -F 'NewList' -F 'List::List'
+      -F 'List::append'
+      -F 'Dict::Dict'  # does not allocate
+      -F 'Dict::reserve'  # this allocates
+      -F 'Dict::append'
+      -F 'Dict::extend'
+      -F 'Dict::set'
+      -F 'syntax_asdl::Token::Token'
+      -D 1
+    )
+
     # Problem: some of these aren't allocations
     # -F 'Tuple2::Tuple2'
     # -F 'Tuple3::Tuple3'
@@ -102,6 +120,7 @@ record-osh-eval() {
 
     # StrFromC calls NewStr, so we don't need it
     # -F 'StrFromC' -A 'StrFromC@arg1' -A 'StrFromC@arg2'
+  fi
 
   local osh_eval=_bin/cxx-uftrace/osh_eval 
   ninja $osh_eval
@@ -116,6 +135,9 @@ record-osh-eval() {
 record-parse() {
   local path=${1:-benchmarks/testdata/abuild}
 
+  # For abuild, unfiltered gives 1.6 GB of data, vs. 19 MB filtered!
+  local unfiltered=${2:-}
+
   # 2.3 seconds to parse under -O2, 15 under -O0, which we need
   #local path=${1:-benchmarks/testdata/configure}
 
@@ -128,15 +150,16 @@ record-parse() {
   local out_dir=_tmp/uftrace/parse.data
   mkdir -p $out_dir
 
-  record-osh-eval $out_dir --ast-format none -n $path
+  record-osh-eval $out_dir "$unfiltered" --ast-format none -n $path
 }
 
 record-execute() {
   local out_dir=_tmp/uftrace/execute.data
+  local unfiltered=${2:-}
   mkdir -p $out_dir
 
   # TODO: use something that's more shell-like
-  record-osh-eval $out_dir benchmarks/compute/fib.sh 10 44
+  record-osh-eval $out_dir "$unfiltered" benchmarks/compute/fib.sh 10 44
 }
 
 by-call() {
