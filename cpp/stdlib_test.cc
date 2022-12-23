@@ -34,6 +34,18 @@ TEST putenv_test() {
   PASS();
 }
 
+TEST open_test() {
+  bool caught = false;
+  try {
+    posix::open(StrFromC("nonexistent_ZZ"), 0, 0);
+  } catch (IOError_OSError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -44,6 +56,7 @@ int main(int argc, char** argv) {
   RUN_TEST(time_test);
   RUN_TEST(posix_test);
   RUN_TEST(putenv_test);
+  RUN_TEST(open_test);
 
   gHeap.CleanProcessExit();
 

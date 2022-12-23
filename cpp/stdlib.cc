@@ -39,11 +39,16 @@ int fcntl(int fd, int cmd, int arg) {
 namespace posix {
 
 mode_t umask(mode_t mask) {
+  // No error case: always succeeds
   return ::umask(mask);
 }
 
 int open(Str* path, int flags, int perms) {
-  return ::open(path->data_, flags, perms);
+  int result = ::open(path->data_, flags, perms);
+  if (result < 0) {
+    throw Alloc<OSError>(errno);
+  }
+  return result;
 }
 
 void dup2(int oldfd, int newfd) {
@@ -123,11 +128,16 @@ void kill(int pid, int sig) {
 namespace time_ {
 
 void tzset() {
+  // No error case: no return value
   ::tzset();
 }
 
 time_t time() {
-  return ::time(nullptr);
+  time_t result = ::time(nullptr);
+  if (result < 0) {
+    throw Alloc<IOError>(errno);
+  }
+  return result;
 }
 
 // NOTE(Jesse): time_t is specified to be an arithmetic type by C++. On most
@@ -137,14 +147,17 @@ time_t time() {
 // 32 bits.  Point being, using anything but the time_t typedef here could
 // (unlikely, but possible) produce weird behavior.
 time_t localtime(time_t ts) {
+  // localtime returns a pointer to a static buffer
   tm* loc_time = ::localtime(&ts);
+
   time_t result = mktime(loc_time);
+  if (result < 0) {
+    throw Alloc<IOError>(errno);
+  }
   return result;
 }
 
 Str* strftime(Str* s, time_t ts) {
-  // TODO: may not work with containers.h
-  // https://github.com/oilshell/oil/issues/1221
   tm* loc_time = ::localtime(&ts);
 
   const int max_len = 1024;

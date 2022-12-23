@@ -1,4 +1,4 @@
-// stdlib.h: Replacement for native/posixmodule.c
+// cpp/stdlib.h: Replacement for pyext/posixmodule.c
 
 #ifndef LEAKY_STDLIB_H
 #define LEAKY_STDLIB_H
@@ -21,7 +21,8 @@ namespace posix {
 
 mode_t umask(mode_t mask);
 
-inline int access(Str* pathname, int mode) {
+inline bool access(Str* pathname, int mode) {
+  // No error case: 0 is success, -1 is error AND false.
   return ::access(pathname->data_, mode) == 0;
 }
 
@@ -35,6 +36,8 @@ inline Str* getcwd() {
   result->SetObjLenFromC();
   return result;
 }
+
+// No error cases: the man page says these get*() functions always succeed
 
 inline int getegid() {
   return ::getegid();
@@ -57,18 +60,19 @@ inline int getuid() {
 }
 
 inline bool isatty(int fd) {
+  // No error case: false is the same as error (e.g. in pyext/posixmodule.c)
   return ::isatty(fd);
 }
 
 inline Str* strerror(int err_num) {
+  // No error case: returns an appropriate string if err_num is invalid
   return StrFromC(::strerror(err_num));
 }
 
 inline Tuple2<int, int> pipe() {
   int fd[2];
   if (::pipe(fd) < 0) {
-    // TODO: handle errno
-    assert(0);
+    throw Alloc<OSError>(errno);
   }
   return Tuple2<int, int>(fd[0], fd[1]);
 }
@@ -81,15 +85,26 @@ inline int close(int fd) {
 void putenv(Str* name, Str* value);
 
 inline int fork() {
-  return ::fork();
+  int result = ::fork();
+  if (result < 0) {
+    throw Alloc<OSError>(errno);
+  }
+  return result;
 }
 
 inline void _exit(int status) {
+  // No error case: does not return
   ::_exit(status);
 }
 
 inline void write(int fd, Str* s) {
-  ::write(fd, s->data_, len(s));
+  //
+  // IMPORTANT TODO: Write in a loop like posix_write() in pyext/posixmodule.c
+  //
+
+  if (::write(fd, s->data_, len(s)) < 0) {
+    throw Alloc<OSError>(errno);
+  }
 }
 
 // Can we use fcntl instead?
