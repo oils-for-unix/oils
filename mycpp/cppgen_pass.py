@@ -707,8 +707,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('  arg_names %s', o.arg_names)
 
     def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> T:
-        c_op = o.op
-
         # a + b when a and b are strings.  (Can't use operator overloading
         # because they're pointers.)
         left_type = self.types[o.left]
@@ -719,17 +717,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         left_ctype = get_c_type(left_type)
         right_ctype = get_c_type(right_type)
 
-        #if c_op == '+':
-        if 0:
-          self.log('*** %r', c_op)
-          self.log('%s', o.left)
-          self.log('%s', o.right)
-          #self.log('t0 %r', t0.type.fullname)
-          #self.log('t1 %r', t1.type.fullname)
-          self.log('left_ctype %r', left_ctype)
-          self.log('right_ctype %r', right_ctype)
-          self.log('')
+        c_op = o.op
+        if left_ctype == right_ctype == 'int' and c_op == '//':
+          # integer division // -> /
+          c_op = '/'
 
+        # 'abc' + 'def'
         if left_ctype == right_ctype == 'Str*' and c_op == '+':
           self.write('str_concat(')
           self.accept(o.left)
@@ -738,6 +731,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(')')
           return
 
+        # 'abc' * 3
         if left_ctype == 'Str*' and right_ctype == 'int' and c_op == '*':
           self.write('str_repeat(')
           self.accept(o.left)
