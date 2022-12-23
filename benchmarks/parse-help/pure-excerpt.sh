@@ -68,5 +68,10 @@ _parse_help()
     done
 }
 
+# My addition
+parse_help_file() {
+  _parse_help - < "$1"
+}
+
 "$@"
 

@@ -759,50 +759,52 @@ AllocReport = function(in_dir, out_dir) {
   print(summary(strings))
   print(summary(allocs))
 
-  num_strings = nrow(strings)
+  # TODO: Output these totals PER WORKLOAD, e.g. parsing big/small, executing
+  # big/small
+  #
+  # And then zoom in on distributions as well
+
   num_allocs = nrow(allocs)
-  total_string_bytes = sum(strings$obj_len)
   total_bytes = sum(allocs$obj_len)
+
   Log('')
-  Log('%d string allocations, total length %d, %d bytes', num_strings,
+  Log('%d total allocations, total bytes = %d', num_allocs, total_bytes)
+  Log('')
+
+  allocs %>% group_by(obj_len) %>% count() %>% ungroup() %>%
+    mutate(n_less_than = cumsum(n),
+           percent = n_less_than * 100.0 / num_allocs) ->
+    alloc_sizes
+
+  print(alloc_sizes %>% head(20))
+  print(alloc_sizes %>% tail(10))
+
+  #
+  # Strings
+  #
+
+  num_strings = nrow(strings)
+  total_string_bytes = sum(strings$obj_len)
+
+  Log('')
+  Log('%d string allocations, total length = %d, total bytes = %d', num_strings,
       sum(strings$str_len), total_string_bytes)
-
-  Log('%d total allocations, %d bytes', num_allocs, total_bytes)
   Log('')
-
   Log('%.2f%% of allocs are strings', num_strings * 100 / num_allocs)
   Log('%.2f%% of bytes are strings', total_string_bytes * 100 / total_bytes)
   Log('')
 
-  strings %>% group_by(str_len) %>% count() -> string_lengths
+  strings %>% group_by(str_len) %>% count() %>% ungroup() %>%
+    mutate(n_less_than = cumsum(n),
+           percent = n_less_than * 100.0 / num_strings) ->
+    string_lengths
 
-  # Why doesn't this work ???  I think it's a grouping problem.
-  #strings %>% group_by(str_len) %>% count() %>% mutate(n2 = cumsum(n)) -> string_lengths
-  #print(string_lengths)
-
-  # This works
-  string_lengths$n_less_than = cumsum(string_lengths$n)
-  string_lengths %>% mutate(percent = n_less_than * 100.0 / num_strings) -> string_lengths
-
-
-  Log('String Lengths')
   # Parse workload
   # 62% of strings <= 6 bytes
   # 84% of strings <= 14 bytes
   print(string_lengths %>% head(16))
   print(string_lengths %>% tail(10))
 
-  Log('Allocation Sizes')
-  allocs %>% group_by(obj_len) %>% count() -> alloc_sizes
-  alloc_sizes$n_less_than = cumsum(alloc_sizes$n)
-
-  alloc_sizes %>% mutate(percent = n_less_than * 100.0 / num_allocs) -> alloc_sizes
-
-  # How many objects?  Measures GC pressure
-  # Total size of objects: Measures memory usage
-
-  print(alloc_sizes %>% head(20))
-  print(alloc_sizes %>% tail(10))
 }
 
 main = function(argv) {

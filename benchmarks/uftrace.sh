@@ -158,8 +158,10 @@ record-execute() {
   local unfiltered=${2:-}
   mkdir -p $out_dir
 
-  # TODO: use something that's more shell-like
-  record-osh-eval $out_dir "$unfiltered" benchmarks/compute/fib.sh 10 44
+  #local cmd=( benchmarks/compute/fib.sh 10 44 )
+  local cmd=( benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
+
+  record-osh-eval $out_dir "$unfiltered" "${cmd[@]}"
 }
 
 by-call() {
