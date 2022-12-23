@@ -16,7 +16,11 @@ def NinjaGraph(ru):
 
   # These files are checked in
   ru.cc_library(
-      '//prebuilt/asdl/runtime.mycpp', ['prebuilt/asdl/runtime.mycpp.cc'])
+      '//prebuilt/asdl/runtime.mycpp',
+      srcs = ['prebuilt/asdl/runtime.mycpp.cc'],
+      deps = ['//asdl/hnode.asdl'])
 
-  ru.cc_library(
-      '//prebuilt/frontend/args.mycpp', ['prebuilt/frontend/args.mycpp.cc'])
+  ru.cc_library (
+      '//prebuilt/frontend/args.mycpp',
+      srcs = ['prebuilt/frontend/args.mycpp.cc'],
+      deps = ['//asdl/hnode.asdl'])
