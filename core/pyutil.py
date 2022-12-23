@@ -4,7 +4,6 @@ pyutil.py: Code that's only needed in Python.  C++ will use other mechanisms.
 from __future__ import print_function
 
 import sys
-import time
 import zipimport  # NOT the zipfile module.
 
 from mycpp import mylib
