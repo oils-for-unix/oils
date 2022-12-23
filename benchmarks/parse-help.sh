@@ -11,10 +11,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+source build/common.sh
+
 readonly DATA_DIR='benchmarks/parse-help'
 readonly EXCERPT=benchmarks/parse-help/excerpt.sh
 
-# TODO: Check these in to testdata/parse-help
 collect() {
   mkdir -p $DATA_DIR
 
@@ -22,6 +24,10 @@ collect() {
   ~/.local/bin/mypy --help > $DATA_DIR/mypy.txt
 
   wc -l $DATA_DIR/*
+}
+
+collect-clang() {
+  $CLANGXX --help > $DATA_DIR/clang.txt
 }
 
 shorten() {

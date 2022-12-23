@@ -677,7 +677,7 @@ ComputeReport = function(in_dir, out_dir) {
 }
 
 GcReport = function(in_dir, out_dir) {
-  parser_times = read.table(file.path(in_dir, 'parser.tsv'), header=T)
+  parser_times = read.table(file.path(in_dir, 'times.tsv'), header=T)
 
   parser_times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
@@ -691,11 +691,11 @@ GcReport = function(in_dir, out_dir) {
            sys_ms = sys_secs * 1000,
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
     select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
-    select(c(elapsed_ms, user_ms, sys_ms, max_rss_MB, shell, comment)) ->
+    select(c(elapsed_ms, user_ms, sys_ms, max_rss_MB, join_id, task, shell_bin, shell_runtime_opts)) ->
     parser_out
 
   precision = ColumnPrecision(list(max_rss_MB = 1), default = 0)
-  writeTsv(parser_out, file.path(out_dir, 'parser'), precision)
+  writeTsv(parser_out, file.path(out_dir, 'times'), precision)
 }
 
 MyCppReport = function(in_dir, out_dir) {

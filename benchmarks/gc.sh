@@ -117,6 +117,19 @@ run-osh() {
   local comment=$3
   local file=$4
 
+  #local work_type=$4
+
+  if false; then
+    local -a argv
+    case $work_type in
+      (parse)
+        argv=( --ast-format none -n $file )
+        ;;
+      (execute)
+        ;;
+    esac
+  fi
+
   ninja $bin
 
   table-row $tsv_out $bin "$comment" \
@@ -126,7 +139,7 @@ run-osh() {
 # TODO:
 # - integrate with benchmarks/gperftools.sh, and measure memory usage
 
-parser-compare() {
+measure-parse() {
   local tsv_out=${1:-$BASE_DIR/raw/parser.tsv}
   local file=${2:-benchmarks/testdata/configure-coreutils}
   local compare_more=${3:-''}  # add "m32" and/or "tcmalloc"
@@ -228,14 +241,190 @@ parser-compare() {
   fi
 }
 
-parser-compare-2() {
-  parser-compare ''
+readonly TAB=$'\t'
 
-  # Similar, smaller file.  zsh is faster
-  parser-compare '' benchmarks/testdata/configure
+print-tasks() {
+  local workload='parse.configure-coreutils'
+  local -a rows=( $workload"$TAB"{bash,dash,zsh,osh-{1,2,3,4,5}} )
 
-  #compare testdata/completion/git-completion.bash
-  #compare testdata/osh-runtime/abuild
+  local -a workloads=(
+    parse.configure-coreutils
+    parse.abuild
+    execute.bashcomp-parse-help  # only runs with bash
+    execute.abuild-print-help  # bash / dash / zsh
+    execute.compute-fib  # bash / dash / zsh
+  )
+
+  local -a shells=(
+    "bash$TAB-"
+    "dash$TAB-"
+    "zsh$TAB-"
+
+    "_bin/cxx-bumpleak/osh_eval${TAB}mutator"
+    # these have trivial GC stats
+    "_bin/cxx-opt/osh_eval${TAB}mutator+malloc"
+    "_bin/cxx-opt/osh_eval${TAB}mutator+malloc+free"
+    # good GC stats
+    "_bin/cxx-opt/osh_eval${TAB}mutator+malloc+free+gc"
+    "_bin/cxx-opt/osh_eval${TAB}mutator+malloc+free+gc+gc_exit"
+  )
+
+  local id=0
+
+  for workload in "${workloads[@]}"; do
+    for shell in "${shells[@]}"; do
+      local row_part="$workload${TAB}$shell"
+
+      # Skip these rows
+      case $row_part in
+        "execute.bashcomp-parse-help${TAB}dash"*)
+          continue
+          ;;
+        "execute.bashcomp-parse-help${TAB}zsh"*)
+          continue
+          ;;
+      esac
+
+      local join_id="gc-row$id"
+      local row="$join_id${TAB}$row_part"
+      echo "$row"
+
+      id=$((id + 1))
+
+
+    done
+  done
+}
+
+measure-all() {
+  ninja _bin/cxx-{bumpleak,opt}/osh_eval
+
+  local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
+  mkdir -p $(dirname $tsv_out)
+
+  # Make the header
+  time-tsv -o $tsv_out --print-header \
+    --rusage --field join_id --field task --field shell_bin --field shell_runtime_opts
+
+  time print-tasks | run-tasks $tsv_out
+
+  if command -v pretty-tsv; then
+    pretty-tsv $tsv_out
+  fi
+}
+
+readonly BIG_THRESHOLD=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
+
+run-tasks() {
+  while read -r join_id task shell_bin shell_runtime_opts; do
+
+    # Parse two different files
+    case $task in
+      parse.configure-coreutils)
+        data_file='benchmarks/testdata/configure-coreutils'
+        ;;
+      parse.abuild)
+        data_file='benchmarks/testdata/abuild'
+        ;;
+    esac
+
+    # Construct argv for each task
+    local -a argv
+    case $task in
+      parse.*)
+        argv=( -n $data_file )
+
+        case $shell_bin in
+          */osh_eval)
+            argv=( --ast-format none "${argv[@]}" )
+            ;;
+        esac
+        ;;
+
+      execute.bashcomp-parse-help)
+        argv=( benchmarks/parse-help/pure-excerpt.sh parse_help_file 
+               benchmarks/parse-help/clang.txt )
+        ;;
+
+      execute.abuild-print-help)
+        argv=( testdata/osh-runtime/abuild -h )
+        ;;
+
+      execute.compute-fib)
+        argv=( benchmarks/compute/fib.sh 100 44 )
+        ;;
+
+      *)
+        die "Invalid task $task"
+        ;;
+    esac
+
+    echo $join_id $task $shell_bin $shell_runtime_opts
+
+    argv=( $shell_bin "${argv[@]}" )
+    #echo + "${argv[@]}"
+    #set -x
+
+    # Wrap in a command that writes one row of a TSV
+    local -a time_argv=(
+      time-tsv -o $tsv_out --append 
+      --rusage
+      --field "$join_id" --field "$task" --field "$shell_bin" --field "$shell_runtime_opts"
+      -- "${argv[@]}"
+    )
+
+    # Run with the right environment variables
+
+    case $shell_runtime_opts in 
+      -)
+        "${time_argv[@]}" > /dev/null
+        ;;
+      mutator)
+        OIL_GC_STATS=1 \
+          "${time_argv[@]}" > /dev/null
+        ;;
+      mutator+malloc)
+        # disable GC with big threshold
+        OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD \
+          "${time_argv[@]}" > /dev/null
+        ;;
+      mutator+malloc+free)
+        # do a single GC on exit
+        OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD OIL_GC_ON_EXIT=1 \
+          "${time_argv[@]}" > /dev/null
+        ;;
+      mutator+malloc+free+gc)
+        # default configuration
+        OIL_GC_STATS=1 \
+          "${time_argv[@]}" > /dev/null
+        ;;
+      mutator+malloc+free+gc+gc_exit)
+        # also GC on exit
+        OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
+          "${time_argv[@]}" > /dev/null
+        ;;
+
+      # More comparisons:
+      # - tcmalloc,
+      # - 32-bit 
+      # - different GC thresholds
+
+      *)
+        die "Invalid shell runtime opts $shell_runtime_opts"
+        ;;
+    esac
+
+  done
+
+  # So you can do:
+  # - print-tasks - 3 columns: workload, shell, shell_runtime_opts
+  #               - you can also have benchmark_id
+  # - xargs execute tasks: timing
+
+  # Then the OIL_GC_STATS_TSV=_tmp/gc/stats/$benchmark_id.tsv
+  #
+  # Then make the filename into a COLUMN, and join
+  #  tsv_column_from_files.py
 }
 
 print-report() {
@@ -255,13 +444,13 @@ EOF
 
 Source code: [oil/benchmarks/gc.sh](https://github.com/oilshell/oil/tree/master/benchmarks/gc.sh)
 
-### Parser Comparison
+### Comparison
 
 Parsing a big file, like in the [parser benchmark](../osh-parser/index.html).
 
 EOF
 
-  tsv2html $in_dir/parser.tsv
+  tsv2html $in_dir/times.tsv
 
   cat <<EOF
   </body>
@@ -270,7 +459,7 @@ EOF
 }
 
 soil-run() {
-  parser-compare
+  measure-all
 
   mkdir -p $BASE_DIR/stage2
   R_LIBS_USER=$R_PATH benchmarks/report.R gc $BASE_DIR/raw $BASE_DIR/stage2
