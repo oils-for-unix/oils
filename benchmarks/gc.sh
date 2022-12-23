@@ -85,113 +85,177 @@ banner() {
   echo "$@"
 }
 
-# Table column:
-#
-# - status elapsed user sys max_rss_KiB
-# - shell (with variant) 
-# - comment (OIL_GC_ON_EXIT, OIL_GC_THRESHOLD)
-# - TODO: can also add the file parsed
+readonly TAB=$'\t'
 
-table-row() {
-  local out=$1
-  local shell=$2
-  local comment=$3
-  shift 3
+print-tasks() {
+  local workload='parse.configure-coreutils'
+  local -a rows=( $workload"$TAB"{bash,dash,zsh,osh-{1,2,3,4,5}} )
 
-  banner "  time-tsv $shell / $comment"
+  local -a workloads=(
+    parse.configure-coreutils
+    parse.abuild
+    ex.bashcomp-parse-help  # only runs with bash
+    ex.abuild-print-help  # bash / dash / zsh
+    ex.compute-fib  # bash / dash / zsh
+  )
 
-  # TODO: add --verbose to show a message on stderr?
-  time-tsv -o $out --append \
-    --rusage --field "$shell" --field "$comment" -- "$@"
+  local -a shells=(
+    "bash$TAB-"
+    "dash$TAB-"
+    "zsh$TAB-"
+
+    "_bin/cxx-bumpleak/osh_eval${TAB}mut"
+    # these have trivial GC stats
+    "_bin/cxx-opt/osh_eval${TAB}mut+alloc"
+    "_bin/cxx-opt/osh_eval${TAB}mut+alloc+free"
+    # good GC stats
+    "_bin/cxx-opt/osh_eval${TAB}mut+alloc+free+gc"
+    "_bin/cxx-opt/osh_eval${TAB}mut+alloc+free+gc+exit"
+  )
+
+  local id=0
+
+  for workload in "${workloads[@]}"; do
+    for shell in "${shells[@]}"; do
+      local row_part="$workload${TAB}$shell"
+
+      # Skip these rows
+      case $row_part in
+        "ex.bashcomp-parse-help${TAB}dash"*)
+          continue
+          ;;
+        "ex.bashcomp-parse-help${TAB}zsh"*)
+          continue
+          ;;
+      esac
+
+      local join_id="gc$id"
+      local row="$join_id${TAB}$row_part"
+      echo "$row"
+
+      id=$((id + 1))
+
+
+    done
+  done
 }
 
-table-header() {
-  local out=$1
-  time-tsv -o $out --print-header \
-    --rusage --field shell --field comment
-}
+readonly BIG_THRESHOLD=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
 
-run-osh() {
-  local tsv_out=$1
-  local bin=$2
-  local comment=$3
-  local file=$4
+run-tasks() {
+  while read -r join_id task shell_bin shell_runtime_opts; do
 
-  #local work_type=$4
-
-  if false; then
-    local -a argv
-    case $work_type in
-      (parse)
-        argv=( --ast-format none -n $file )
+    # Parse two different files
+    case $task in
+      parse.configure-coreutils)
+        data_file='benchmarks/testdata/configure-coreutils'
         ;;
-      (execute)
+      parse.abuild)
+        data_file='benchmarks/testdata/abuild'
         ;;
     esac
-  fi
 
-  ninja $bin
+    # Construct argv for each task
+    local -a argv
+    case $task in
+      parse.*)
+        argv=( -n $data_file )
 
-  table-row $tsv_out $bin "$comment" \
-    $bin --ast-format none -n $file
+        case $shell_bin in
+          */osh_eval)
+            argv=( --ast-format none "${argv[@]}" )
+            ;;
+        esac
+        ;;
+
+      ex.bashcomp-parse-help)
+        argv=( benchmarks/parse-help/pure-excerpt.sh parse_help_file 
+               benchmarks/parse-help/clang.txt )
+        ;;
+
+      ex.abuild-print-help)
+        argv=( testdata/osh-runtime/abuild -h )
+        ;;
+
+      ex.compute-fib)
+        argv=( benchmarks/compute/fib.sh 100 44 )
+        ;;
+
+      *)
+        die "Invalid task $task"
+        ;;
+    esac
+
+    echo $join_id $task $shell_bin $shell_runtime_opts
+
+    argv=( $shell_bin "${argv[@]}" )
+    #echo + "${argv[@]}"
+    #set -x
+
+    # Wrap in a command that writes one row of a TSV
+    local -a time_argv=(
+      time-tsv -o $tsv_out --append 
+      --rusage
+      --field "$join_id" --field "$task" --field "$shell_bin" --field "$shell_runtime_opts"
+      -- "${argv[@]}"
+    )
+
+    # Run with the right environment variables
+
+    case $shell_runtime_opts in 
+      -)
+        "${time_argv[@]}" > /dev/null
+        ;;
+      mut)
+        OIL_GC_STATS=1 \
+          "${time_argv[@]}" > /dev/null
+        ;;
+      mut+alloc)
+        # disable GC with big threshold
+        OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD \
+          "${time_argv[@]}" > /dev/null
+        ;;
+      mut+alloc+free)
+        # do a single GC on exit
+        OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD OIL_GC_ON_EXIT=1 \
+          "${time_argv[@]}" > /dev/null
+        ;;
+      mut+alloc+free+gc)
+        # default configuration
+        OIL_GC_STATS=1 \
+          "${time_argv[@]}" > /dev/null
+        ;;
+      mut+alloc+free+gc+exit)
+        # also GC on exit
+        OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
+          "${time_argv[@]}" > /dev/null
+        ;;
+
+      # More comparisons:
+      # - tcmalloc,
+      # - 32-bit 
+      # - different GC thresholds
+
+      *)
+        die "Invalid shell runtime opts $shell_runtime_opts"
+        ;;
+    esac
+
+  done
+
+  # So you can do:
+  # - print-tasks - 3 columns: workload, shell, shell_runtime_opts
+  #               - you can also have benchmark_id
+  # - xargs execute tasks: timing
+
+  # Then the OIL_GC_STATS_TSV=_tmp/gc/stats/$benchmark_id.tsv
+  #
+  # Then make the filename into a COLUMN, and join
+  #  tsv_column_from_files.py
 }
 
-# TODO:
-# - integrate with benchmarks/gperftools.sh, and measure memory usage
-
-measure-parse() {
-  local tsv_out=${1:-$BASE_DIR/raw/parser.tsv}
-  local file=${2:-benchmarks/testdata/configure-coreutils}
-  local compare_more=${3:-''}  # add "m32" and/or "tcmalloc"
-
-  mkdir -p $(dirname $tsv_out)
-
-  table-header $tsv_out
-
-  local no_comment='-'
-
-  # ~50ms
-  table-row $tsv_out dash $no_comment \
-    dash -n $file
-  echo
-
-  # 91 ms
-  table-row $tsv_out bash $no_comment \
-    bash -n $file
-  echo
-
-  # 274 ms
-  table-row $tsv_out zsh $no_comment \
-    zsh -n $file
-  echo
-
-  local big_threshold=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
-
-  # ~88 ms!  But we are using more system time than bash/dash -- it's almost
-  # certainly UNBUFFERED line-based I/O!
-  local bin=_bin/cxx-bumpleak/osh_eval
-  OIL_GC_STATS=1 run-osh $tsv_out $bin 'mutator' $file
-  echo
-
-  # 165 ms
-  local bin=_bin/cxx-mallocleak/osh_eval
-  run-osh $tsv_out $bin 'mutator+mallocleak' $file
-
-  # 184 ms
-  # Garbage-collected Oil binary
-  local bin=_bin/cxx-opt/osh_eval
-  OIL_GC_THRESHOLD=$big_threshold \
-    run-osh $tsv_out $bin 'mutator+malloc' $file
-
-  # 277 ms -- free() is slow
-  OIL_GC_THRESHOLD=$big_threshold OIL_GC_ON_EXIT=1 \
-    run-osh $tsv_out $bin 'mutator+malloc+free' $file
-
-  OIL_GC_STATS=1 \
-    run-osh $tsv_out $bin 'mutator+malloc+free+gc' $file
-
-  OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
-    run-osh $tsv_out $bin 'mutator+malloc+free+gc+exit_gc' $file
+more-variants() {
+  # TODO: could revive this
 
   case $compare_more in
     (*m32*)
@@ -241,61 +305,6 @@ measure-parse() {
   fi
 }
 
-readonly TAB=$'\t'
-
-print-tasks() {
-  local workload='parse.configure-coreutils'
-  local -a rows=( $workload"$TAB"{bash,dash,zsh,osh-{1,2,3,4,5}} )
-
-  local -a workloads=(
-    parse.configure-coreutils
-    parse.abuild
-    execute.bashcomp-parse-help  # only runs with bash
-    execute.abuild-print-help  # bash / dash / zsh
-    execute.compute-fib  # bash / dash / zsh
-  )
-
-  local -a shells=(
-    "bash$TAB-"
-    "dash$TAB-"
-    "zsh$TAB-"
-
-    "_bin/cxx-bumpleak/osh_eval${TAB}mutator"
-    # these have trivial GC stats
-    "_bin/cxx-opt/osh_eval${TAB}mutator+malloc"
-    "_bin/cxx-opt/osh_eval${TAB}mutator+malloc+free"
-    # good GC stats
-    "_bin/cxx-opt/osh_eval${TAB}mutator+malloc+free+gc"
-    "_bin/cxx-opt/osh_eval${TAB}mutator+malloc+free+gc+gc_exit"
-  )
-
-  local id=0
-
-  for workload in "${workloads[@]}"; do
-    for shell in "${shells[@]}"; do
-      local row_part="$workload${TAB}$shell"
-
-      # Skip these rows
-      case $row_part in
-        "execute.bashcomp-parse-help${TAB}dash"*)
-          continue
-          ;;
-        "execute.bashcomp-parse-help${TAB}zsh"*)
-          continue
-          ;;
-      esac
-
-      local join_id="gc-row$id"
-      local row="$join_id${TAB}$row_part"
-      echo "$row"
-
-      id=$((id + 1))
-
-
-    done
-  done
-}
-
 measure-all() {
   ninja _bin/cxx-{bumpleak,opt}/osh_eval
 
@@ -311,120 +320,6 @@ measure-all() {
   if command -v pretty-tsv; then
     pretty-tsv $tsv_out
   fi
-}
-
-readonly BIG_THRESHOLD=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
-
-run-tasks() {
-  while read -r join_id task shell_bin shell_runtime_opts; do
-
-    # Parse two different files
-    case $task in
-      parse.configure-coreutils)
-        data_file='benchmarks/testdata/configure-coreutils'
-        ;;
-      parse.abuild)
-        data_file='benchmarks/testdata/abuild'
-        ;;
-    esac
-
-    # Construct argv for each task
-    local -a argv
-    case $task in
-      parse.*)
-        argv=( -n $data_file )
-
-        case $shell_bin in
-          */osh_eval)
-            argv=( --ast-format none "${argv[@]}" )
-            ;;
-        esac
-        ;;
-
-      execute.bashcomp-parse-help)
-        argv=( benchmarks/parse-help/pure-excerpt.sh parse_help_file 
-               benchmarks/parse-help/clang.txt )
-        ;;
-
-      execute.abuild-print-help)
-        argv=( testdata/osh-runtime/abuild -h )
-        ;;
-
-      execute.compute-fib)
-        argv=( benchmarks/compute/fib.sh 100 44 )
-        ;;
-
-      *)
-        die "Invalid task $task"
-        ;;
-    esac
-
-    echo $join_id $task $shell_bin $shell_runtime_opts
-
-    argv=( $shell_bin "${argv[@]}" )
-    #echo + "${argv[@]}"
-    #set -x
-
-    # Wrap in a command that writes one row of a TSV
-    local -a time_argv=(
-      time-tsv -o $tsv_out --append 
-      --rusage
-      --field "$join_id" --field "$task" --field "$shell_bin" --field "$shell_runtime_opts"
-      -- "${argv[@]}"
-    )
-
-    # Run with the right environment variables
-
-    case $shell_runtime_opts in 
-      -)
-        "${time_argv[@]}" > /dev/null
-        ;;
-      mutator)
-        OIL_GC_STATS=1 \
-          "${time_argv[@]}" > /dev/null
-        ;;
-      mutator+malloc)
-        # disable GC with big threshold
-        OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD \
-          "${time_argv[@]}" > /dev/null
-        ;;
-      mutator+malloc+free)
-        # do a single GC on exit
-        OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD OIL_GC_ON_EXIT=1 \
-          "${time_argv[@]}" > /dev/null
-        ;;
-      mutator+malloc+free+gc)
-        # default configuration
-        OIL_GC_STATS=1 \
-          "${time_argv[@]}" > /dev/null
-        ;;
-      mutator+malloc+free+gc+gc_exit)
-        # also GC on exit
-        OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
-          "${time_argv[@]}" > /dev/null
-        ;;
-
-      # More comparisons:
-      # - tcmalloc,
-      # - 32-bit 
-      # - different GC thresholds
-
-      *)
-        die "Invalid shell runtime opts $shell_runtime_opts"
-        ;;
-    esac
-
-  done
-
-  # So you can do:
-  # - print-tasks - 3 columns: workload, shell, shell_runtime_opts
-  #               - you can also have benchmark_id
-  # - xargs execute tasks: timing
-
-  # Then the OIL_GC_STATS_TSV=_tmp/gc/stats/$benchmark_id.tsv
-  #
-  # Then make the filename into a COLUMN, and join
-  #  tsv_column_from_files.py
 }
 
 print-report() {
