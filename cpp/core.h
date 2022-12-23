@@ -105,8 +105,6 @@ class _ResourceLoader : public Obj {
 
 _ResourceLoader* GetResourceLoader();
 
-void CopyFile(Str* in_path, Str* out_path);
-
 Str* GetVersion(_ResourceLoader* loader);
 
 Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader);

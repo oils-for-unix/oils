@@ -152,29 +152,31 @@ Tuple3<double, double, double> Time() {
   return result;
 }
 
+// bash source: builtins/times.def
 void PrintTimes() {
-  tms t;
+  struct tms t;
   if (times(&t) == -1) {
     throw Alloc<IOError>(errno);
-  } else {
-    {
-      int user_minutes = t.tms_utime / 60;
-      float user_seconds = t.tms_utime % 60;
-      int system_minutes = t.tms_stime / 60;
-      float system_seconds = t.tms_stime % 60;
-      printf("%dm%1.3fs %dm%1.3fs\n", user_minutes, user_seconds,
-             system_minutes, system_seconds);
-    }
-
-    {
-      int child_user_minutes = t.tms_cutime / 60;
-      float child_user_seconds = t.tms_cutime % 60;
-      int child_system_minutes = t.tms_cstime / 60;
-      float child_system_seconds = t.tms_cstime % 60;
-      printf("%dm%1.3fs %dm%1.3fs", child_user_minutes, child_user_seconds,
-             child_system_minutes, child_system_seconds);
-    }
   }
+	long ticks_per_sec = sysconf(_SC_CLK_TCK);
+
+  clock_t user_ticks = t.tms_utime;
+  clock_t sys_ticks = t.tms_stime;
+
+  printf("%ldm%.3fs %ldm%.3fs\n",
+         static_cast<long>(user_ticks / ticks_per_sec / 60),
+         static_cast<double>(user_ticks) / ticks_per_sec,
+         static_cast<long>(sys_ticks / ticks_per_sec / 60),
+         static_cast<double>(sys_ticks) / ticks_per_sec);
+
+  clock_t child_user_ticks = t.tms_cutime;
+  clock_t child_sys_ticks = t.tms_cstime;
+
+  printf("%ldm%.3fs %ldm%.3fs\n",
+         static_cast<long>(child_user_ticks / ticks_per_sec / 60),
+         static_cast<double>(child_user_ticks) / ticks_per_sec,
+         static_cast<long>(child_sys_ticks / ticks_per_sec / 60),
+         static_cast<double>(child_sys_ticks) / ticks_per_sec);
 }
 
 bool InputAvailable(int fd) {
@@ -268,8 +270,8 @@ Str* ChArrayToString(List<int>* ch_array) {
   return result;
 }
 
+// TODO: Should eliminate _ResourceLoader
 Str* _ResourceLoader::Get(Str* path) {
-  /* NotImplemented(); */
   return StrFromC("TODO");
 }
 
@@ -277,12 +279,7 @@ _ResourceLoader* GetResourceLoader() {
   return Alloc<_ResourceLoader>();
 }
 
-void CopyFile(Str* in_path, Str* out_path) {
-  assert(0);
-}
-
 Str* GetVersion(_ResourceLoader* loader) {
-  /* NotImplemented(); */
   return StrFromC("TODO");
 }
 

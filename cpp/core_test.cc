@@ -174,6 +174,8 @@ TEST pyutil_test() {
   ASSERT(str_equals(s3, StrFromC("-\xce\xbc-")));  // mu char
   ASSERT_EQ_FMT(4, len(s3), "%d");
 
+  pyos::PrintTimes();
+
   PASS();
 }
 
