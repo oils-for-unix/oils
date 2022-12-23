@@ -1,4 +1,5 @@
 #include <ctype.h>  // isspace()
+#include <errno.h>  // errno
 
 #include "mycpp/runtime.h"
 
