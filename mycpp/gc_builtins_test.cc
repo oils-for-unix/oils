@@ -454,7 +454,6 @@ TEST comparators_test() {
 }
 
 TEST str_funcs_test() {
-
   log("str_concat()");
   ASSERT(str_equals0("foodfood", str_concat(kStrFood, kStrFood)));
   ASSERT(str_equals(kEmptyString, str_concat(kEmptyString, kEmptyString)));

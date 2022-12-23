@@ -97,9 +97,10 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
   return result;
 }
 
-// Right now, this doesn't affect the GC policy
 void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
-  return realloc(p, num_bytes);
+  NotImplemented();
+  // This causes a double-free in the GC!
+  // return realloc(p, num_bytes);
 }
 
 #endif  // MALLOC_LEAK

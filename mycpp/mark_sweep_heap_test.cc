@@ -4,12 +4,6 @@
 TEST for_code_coverage() {
   // Add coverage for some methods
 
-  void *p = gHeap.Allocate(10);
-  void *q = gHeap.Reallocate(p, 20);
-
-  ASSERT(p != nullptr);
-  ASSERT(q != nullptr);
-
   gHeap.FastProcessExit();
 
   PASS();

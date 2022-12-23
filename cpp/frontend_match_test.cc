@@ -6,6 +6,9 @@
 namespace Id = id_kind_asdl::Id;
 
 TEST match_test() {
+  // Need lex_mode_e
+  // auto tup = match::OneToken(lex_mode__ShCommand, StrFromC("cd /tmp"), 0);
+
   match::SimpleLexer* lex = match::BraceRangeLexer(StrFromC("{-1..22}"));
 
   List<Tuple2<Id_t, Str*>*>* toks = lex->Tokens();
@@ -40,6 +43,23 @@ TEST match_test() {
 
   ASSERT_EQ(Id::BoolBinary_NEqual, match::BracketBinary(stripped));
 
+  ASSERT(match::IsValidVarName(StrFromC("a")));
+  ASSERT(!match::IsValidVarName(StrFromC("01")));
+  ASSERT(!match::IsValidVarName(StrFromC("!!")));
+  ASSERT(!match::IsValidVarName(kEmptyString));
+
+  ASSERT(match::ShouldHijack(StrFromC("#!/bin/bash\n")));
+  ASSERT(!match::ShouldHijack(StrFromC("/bin/bash\n")));
+
+  PASS();
+}
+
+TEST for_test_coverage() {
+  (void)match::GlobLexer(kEmptyString);
+  (void)match::EchoLexer(kEmptyString);
+  (void)match::HistoryTokens(kEmptyString);
+  (void)match::Ps1Tokens(kEmptyString);
+
   PASS();
 }
 
@@ -51,6 +71,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(match_test);
+  RUN_TEST(for_test_coverage);
 
   gHeap.CleanProcessExit();
 
