@@ -1,6 +1,20 @@
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
+TEST for_code_coverage() {
+  // Add coverage for some methods
+
+  void *p = gHeap.Allocate(10);
+  void *q = gHeap.Reallocate(p, 20);
+
+  ASSERT(p != nullptr);
+  ASSERT(q != nullptr);
+
+  gHeap.FastProcessExit();
+
+  PASS();
+}
+
 TEST api_test() {
 #ifdef GC_ALWAYS
   // no objects live
@@ -22,20 +36,6 @@ TEST api_test() {
   // otherwise we didn't try to collect
   ASSERT_EQ_FMT(-1, gHeap.MaybeCollect(), "%d");
 #endif
-
-  PASS();
-}
-
-TEST for_code_coverage() {
-  // Add coverage for some methods
-
-  void *p = gHeap.Allocate(10);
-  void *q = gHeap.Reallocate(p, 20);
-
-  ASSERT(p != nullptr);
-  ASSERT(q != nullptr);
-
-  gHeap.FastProcessExit();
 
   PASS();
 }
@@ -162,6 +162,7 @@ int main(int argc, char **argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(for_code_coverage);
   RUN_TEST(api_test);
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);

@@ -71,7 +71,7 @@ class LineReader : Obj {
     return false;
   }
   virtual int fileno() {
-    NotImplemented();  // Uncalled
+    NotImplemented();
   }
 };
 

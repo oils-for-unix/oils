@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
@@ -39,6 +38,18 @@ TEST formatter_test() {
 TEST bool_test() {
   ASSERT_EQ(false, to_bool(kEmptyString));
   ASSERT_EQ(true, to_bool(StrFromC("a")));
+
+  ASSERT_EQ(true, to_bool(42));
+  ASSERT_EQ(true, to_bool(1));
+  ASSERT_EQ(false, to_bool(0));
+  ASSERT_EQ(true, to_bool(-42));
+
+  PASS();
+}
+
+TEST int_test() {
+  ASSERT_EQ(1, to_int(true));
+  ASSERT_EQ(0, to_int(false));
 
   PASS();
 }
@@ -424,7 +435,26 @@ TEST str_methods_test() {
   PASS();
 }
 
+TEST comparators_test() {
+  log("maybe_str_equals()");
+  ASSERT(maybe_str_equals(kEmptyString, kEmptyString));
+  ASSERT(!maybe_str_equals(kEmptyString, nullptr));
+  ASSERT(maybe_str_equals(nullptr, nullptr));
+
+  // TODO: check for this bug elsewhere
+  log("Tuple2<Str*, int> are_equal()");
+  auto t1 = Alloc<Tuple2<Str*, int>>(StrFromC("42"), 42);
+  auto t2 = Alloc<Tuple2<Str*, int>>(StrFromC("42"), 42);
+  auto t3 = Alloc<Tuple2<Str*, int>>(StrFromC("99"), 99);
+
+  ASSERT(are_equal(t1, t2));
+  ASSERT(!are_equal(t2, t3));
+
+  PASS();
+}
+
 TEST str_funcs_test() {
+
   log("str_concat()");
   ASSERT(str_equals0("foodfood", str_concat(kStrFood, kStrFood)));
   ASSERT(str_equals(kEmptyString, str_concat(kEmptyString, kEmptyString)));
@@ -867,6 +897,7 @@ int main(int argc, char** argv) {
   RUN_TEST(formatter_test);
 
   RUN_TEST(bool_test);
+  RUN_TEST(int_test);
   RUN_TEST(float_test);
 
   RUN_TEST(StringToInteger_test);

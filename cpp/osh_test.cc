@@ -20,6 +20,18 @@ TEST bool_stat_test() {
   PASS();
 }
 
+TEST functions_test() {
+  ASSERT(sh_expr_eval::IsLower(StrFromC("a")));
+  ASSERT(!sh_expr_eval::IsLower(StrFromC("A")));
+  ASSERT(!sh_expr_eval::IsLower(StrFromC("9")));
+
+  ASSERT(sh_expr_eval::IsUpper(StrFromC("Z")));
+  ASSERT(!sh_expr_eval::IsUpper(StrFromC("z")));
+  ASSERT(!sh_expr_eval::IsUpper(StrFromC("9")));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -28,6 +40,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(bool_stat_test);
+  RUN_TEST(functions_test);
 
   gHeap.CleanProcessExit();
 

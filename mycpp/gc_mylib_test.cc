@@ -220,6 +220,25 @@ TEST files_test() {
   auto f3 = mylib::open(filename2->strip());
   ASSERT(f3 != nullptr);
 
+  auto w = Alloc<mylib::CFileWriter>(stdout);
+  w->write(StrFromC("stdout"));
+  w->flush();
+
+  PASS();
+}
+
+TEST for_test_coverage() {
+  mylib::MaybeCollect();  // trivial wrapper for translation
+  mylib::StrFromC("x");   // trivial wrapper for translation
+
+  auto writer = mylib::Stderr();
+  writer->write(kEmptyString);
+
+  // Methods we're not really using?  Refactoring types could eliminate these
+  auto w = Alloc<mylib::BufWriter>();
+  ASSERT_EQ(false, w->isatty());
+  w->flush();
+
   PASS();
 }
 
@@ -237,6 +256,7 @@ int main(int argc, char** argv) {
   RUN_TEST(BufWriter_test);
   RUN_TEST(BufLineReader_test);
   RUN_TEST(files_test);
+  RUN_TEST(for_test_coverage);
 
   gHeap.CleanProcessExit();
 
