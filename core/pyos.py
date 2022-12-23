@@ -205,8 +205,8 @@ def Time():
 def PrintTimes():
   # type: () -> None
   utime, stime, cutime, cstime, elapsed = posix.times()
-  print("%dm%1.3fs %dm%1.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
-  print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
+  print("%dm%.3fs %dm%.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
+  print("%dm%.3fs %dm%.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
 
 
 # So builtin_misc.py doesn't depend on termios, which makes C++ translation

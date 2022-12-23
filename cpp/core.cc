@@ -3,6 +3,7 @@
 #include "cpp/core.h"
 
 #include <errno.h>
+#include <math.h>  // fmod()
 #include <pwd.h>  // passwd
 #include <signal.h>
 #include <sys/resource.h>  // getrusage
@@ -152,6 +153,13 @@ Tuple3<double, double, double> Time() {
   return result;
 }
 
+static void PrintClock(clock_t ticks, long ticks_per_sec) {
+  double seconds = static_cast<double>(ticks) / ticks_per_sec;
+  printf("%ldm%.3fs",
+         static_cast<long>(seconds) / 60,
+         std::fmod(seconds, 60));
+}
+
 // bash source: builtins/times.def
 void PrintTimes() {
   struct tms t;
@@ -160,23 +168,14 @@ void PrintTimes() {
   }
 	long ticks_per_sec = sysconf(_SC_CLK_TCK);
 
-  clock_t user_ticks = t.tms_utime;
-  clock_t sys_ticks = t.tms_stime;
-
-  printf("%ldm%.3fs %ldm%.3fs\n",
-         static_cast<long>(user_ticks / ticks_per_sec / 60),
-         static_cast<double>(user_ticks) / ticks_per_sec,
-         static_cast<long>(sys_ticks / ticks_per_sec / 60),
-         static_cast<double>(sys_ticks) / ticks_per_sec);
-
-  clock_t child_user_ticks = t.tms_cutime;
-  clock_t child_sys_ticks = t.tms_cstime;
-
-  printf("%ldm%.3fs %ldm%.3fs\n",
-         static_cast<long>(child_user_ticks / ticks_per_sec / 60),
-         static_cast<double>(child_user_ticks) / ticks_per_sec,
-         static_cast<long>(child_sys_ticks / ticks_per_sec / 60),
-         static_cast<double>(child_sys_ticks) / ticks_per_sec);
+  PrintClock(t.tms_utime, ticks_per_sec);
+  putc(' ', stdout);
+  PrintClock(t.tms_stime, ticks_per_sec);
+  putc('\n', stdout);
+  PrintClock(t.tms_cutime, ticks_per_sec);
+  putc(' ', stdout);
+  PrintClock(t.tms_cstime, ticks_per_sec);
+  putc('\n', stdout);
 }
 
 bool InputAvailable(int fd) {
