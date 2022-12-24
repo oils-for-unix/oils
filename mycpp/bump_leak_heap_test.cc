@@ -1,3 +1,5 @@
+#include <unistd.h>  // STDERR_FILENO
+
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
@@ -33,7 +35,7 @@ TEST for_code_coverage() {
   (void)h.Allocate(10);
   ASSERT_EQ(-1, h.MaybeCollect());
 
-  h.Report();
+  h.PrintStats(STDERR_FILENO);
 
   h.FastProcessExit();
   h.CleanProcessExit();

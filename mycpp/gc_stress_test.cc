@@ -1,5 +1,7 @@
 // gc_stress_test.cc: Do many allocations and collections under ASAN
 
+#include <unistd.h>  // STDERR_FILENO
+
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
@@ -53,7 +55,7 @@ TEST str_simple_test() {
   }
 
   log("total = %d", total);
-  gHeap.Report();
+  gHeap.PrintStats(STDERR_FILENO);
 
   PASS();
 }
@@ -67,7 +69,7 @@ TEST str_growth_test() {
   Str* s = nullptr;
   StackRoots _roots({&s});
 
-  gHeap.Report();
+  gHeap.PrintStats(STDERR_FILENO);
 
   s = StrFromC("b");
   int n = 300;
@@ -85,7 +87,7 @@ TEST str_growth_test() {
   int expected = (n * (n + 1)) / 2;
   ASSERT_EQ_FMT(expected, total, "%d");
 
-  gHeap.Report();
+  gHeap.PrintStats(STDERR_FILENO);
 
   PASS();
 }

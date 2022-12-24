@@ -32,11 +32,10 @@ class MarkSweepHeap {
   void MarkObjects(Obj* obj);
   void Sweep();
 
-  // Cleanup at the end of main() to remain ASAN-safe
-  void CleanProcessExit();
+  void PrintStats(int fd);  // public for testing
 
-  // Faster exit
-  void FastProcessExit();
+  void CleanProcessExit();  // do one last GC so ASAN passes
+  void FastProcessExit();   // let the OS clean up
 
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
@@ -57,7 +56,7 @@ class MarkSweepHeap {
   // Cumulative stats
   int max_survived_ = 0;  // max # live after a collection
   int num_allocated_ = 0;
-  int64_t bytes_allocated_ = 0;  // make this bigger
+  int64_t bytes_allocated_ = 0;  // avoid overflow
   int num_gc_points_ = 0;        // manual collection points
   int num_collections_ = 0;
   int num_growths_;
@@ -71,7 +70,6 @@ class MarkSweepHeap {
   std::unordered_set<void*> marked_;
 
  private:
-  void PrintStats(int fd);
   void DoProcessExit(bool fast_exit);
 
   DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);

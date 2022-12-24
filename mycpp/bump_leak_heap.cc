@@ -2,8 +2,10 @@
 
 #include "mycpp/bump_leak_heap.h"
 
+#include <inttypes.h>  // PRId64
 #include <stddef.h>
 #include <stdio.h>
+#include <unistd.h>  // STDERR_FILENO
 
 #include "mycpp/common.h"  // aligned
 
@@ -51,11 +53,19 @@ void* BumpLeakHeap::Reallocate(void* old_data, size_t num_bytes) {
   return new_data;
 }
 
-void BumpLeakHeap::Report() {
-  log("[BumpLeakHeap]");
-  log("  num allocated = %10d", num_allocated_);
-  log("bytes allocated = %10d", bytes_allocated_);
-  log("  mem pos       = %10d", mem_pos_);
+void BumpLeakHeap::PrintStats(int fd) {
+  dprintf(fd, "[BumpLeakHeap]");
+  dprintf(fd, "  num allocated = %10d\n", num_allocated_);
+  dprintf(fd, "bytes allocated = %10" PRId64 "\n", bytes_allocated_);
+  dprintf(fd, "  mem pos       = %10d\n", mem_pos_);
+}
+
+void BumpLeakHeap::CleanProcessExit() {
+  PrintStats(STDERR_FILENO);
+}
+
+void BumpLeakHeap::FastProcessExit() {
+  PrintStats(STDERR_FILENO);
 }
 
 BumpLeakHeap gHeap;

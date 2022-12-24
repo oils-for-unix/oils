@@ -1,7 +1,6 @@
 #include <inttypes.h>  // PRId64
-#include <sys/time.h>  // gettimeofday()
-
-#include <ctime>  // CLOCK_PROCESS_CPUTIME_ID
+#include <sys/time.h>  // gettimeofday(), CLOCK_PROCESS_CPUTIME_ID
+#include <unistd.h>    // STDERR_FILENO
 
 #include "mycpp/runtime.h"
 
@@ -309,7 +308,7 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   int stats_fd = -1;
   e = getenv("OIL_GC_STATS");
   if (e && strlen(e)) {  // env var set and non-empty
-    stats_fd = 2;        // stderr
+    stats_fd = STDERR_FILENO;
   } else {
     // A raw file descriptor lets benchmarks extract stats even if the script
     // writes to stdout and stderr.  Shells can't use open() without potential

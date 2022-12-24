@@ -32,13 +32,10 @@ class BumpLeakHeap {
     return -1;  // no collection attempted
   }
 
-  void CleanProcessExit() {
-  }
-  void FastProcessExit() {
-    Report();
-  }
+  void PrintStats(int fd);
 
-  void Report();
+  void CleanProcessExit();
+  void FastProcessExit();
 
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
@@ -47,8 +44,8 @@ class BumpLeakHeap {
   int mem_pos_ = 0;
 
   // Cumulative stats
-  int64_t num_allocated_ = 0;
-  int64_t bytes_allocated_ = 0;
+  int num_allocated_ = 0;
+  int64_t bytes_allocated_ = 0;  // avoid overflow
 };
 
 #if defined(BUMP_LEAK)
