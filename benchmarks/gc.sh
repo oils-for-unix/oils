@@ -221,9 +221,13 @@ run-tasks() {
           "${time_argv[@]}" > /dev/null
         ;;
       mut+alloc+free+gc)
-        # default configuration
-        OIL_GC_STATS=1 \
-          "${time_argv[@]}" > /dev/null
+        # Default configuration
+        #
+        # Save the GC stats here.  None of the other runtime options are that
+        # interesting.
+
+        OIL_GC_STATS_FD=99 \
+          "${time_argv[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.tsv
         ;;
       mut+alloc+free+gc+exit)
         # also GC on exit
@@ -246,22 +250,20 @@ run-tasks() {
   # TODO: OIL_GC_STATS_FD and tsv_column_from_files.py
 }
 
-# This is how OIL_GC_STATS_FD=99 will work?
-
 fd-demo() {
-  local fd=99
+  local out=_tmp/gc/demo.txt
+
+  local bin=_bin/cxx-dbg/osh_eval
+  ninja $bin
 
   # Hm you can't do $fd>out.txt, but that's OK
+  local fd=99
 
-  FD=$fd 99>out.txt python -c '
-import os
-fd = int(os.getenv("FD"))
-os.write(fd, "hello\n")
-os.write(fd, "world\n")
-  '
+  OIL_GC_STATS_FD=$fd 99>$out \
+    $bin --ast-format none -n benchmarks/testdata/configure
 
-  ls -l out.txt
-  cat out.txt
+  ls -l $out
+  cat $out
 }
 
 more-variants() {
@@ -361,6 +363,47 @@ EOF
   </body>
 </html>
 EOF
+}
+
+gc-stats-to-tsv() {
+  ### Turn a set of files with OIL_GC_STATS output into a TSV file
+
+  python -c '
+import collections
+import os
+import sys
+
+header = None
+
+for path in sys.argv[1:]:
+  filename = os.path.basename(path)
+  join_id, _ = os.path.splitext(filename)
+  
+  d = collections.OrderedDict()
+
+  d["join_id"] = join_id
+
+  with open(path) as f:
+    for line in f:
+      line = line.strip()
+      if not line:
+        continue
+      key, value = line.split("=", 1)
+      key = key.strip().replace(" ", "_")
+      value = value.strip()
+      d[key] = value
+
+  if header is None:
+    header = d.keys()
+    print("\t".join(header))
+  else:
+    # Ensure the order
+    assert d.keys() == header
+
+  row = d.values()
+  print("\t".join(row))
+
+  ' $BASE_DIR/raw/gc*.tsv
 }
 
 soil-run() {

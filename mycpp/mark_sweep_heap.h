@@ -38,8 +38,6 @@ class MarkSweepHeap {
   // Faster exit
   void FastProcessExit();
 
-  void Report();
-
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
   // Runtime params
@@ -60,7 +58,7 @@ class MarkSweepHeap {
   int max_survived_ = 0;  // max # live after a collection
   int num_allocated_ = 0;
   int64_t bytes_allocated_ = 0;  // make this bigger
-  int num_gc_points_ = 0;  // manual collection points
+  int num_gc_points_ = 0;        // manual collection points
   int num_collections_ = 0;
   int num_growths_;
   double max_gc_millis_ = 0.0;
@@ -73,6 +71,7 @@ class MarkSweepHeap {
   std::unordered_set<void*> marked_;
 
  private:
+  void PrintStats(int fd);
   void DoProcessExit(bool fast_exit);
 
   DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);

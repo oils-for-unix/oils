@@ -40,9 +40,6 @@ bool StringToInteger(const char* s, int length, int base, int* result) {
   char* pos;  // mutated by strtol
   long v = strtol(s, &pos, base);
 
-  // Unconditionally set out param.  Caller should use the return value!
-  *result = v;
-
   switch (v) {
   case LONG_MIN:
     return false;  // underflow
@@ -52,6 +49,7 @@ bool StringToInteger(const char* s, int length, int base, int* result) {
 
   const char* end = s + length;
   if (pos == end) {
+    *result = v;
     return true;  // strtol() consumed ALL characters.
   }
 
@@ -62,6 +60,7 @@ bool StringToInteger(const char* s, int length, int base, int* result) {
     pos++;
   }
 
+  *result = v;
   return true;  // Trailing space is OK
 }
 

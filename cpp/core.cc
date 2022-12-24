@@ -4,7 +4,7 @@
 
 #include <errno.h>
 #include <math.h>  // fmod()
-#include <pwd.h>  // passwd
+#include <pwd.h>   // passwd
 #include <signal.h>
 #include <sys/resource.h>  // getrusage
 #include <sys/times.h>     // tms / times()
@@ -155,9 +155,7 @@ Tuple3<double, double, double> Time() {
 
 static void PrintClock(clock_t ticks, long ticks_per_sec) {
   double seconds = static_cast<double>(ticks) / ticks_per_sec;
-  printf("%ldm%.3fs",
-         static_cast<long>(seconds) / 60,
-         std::fmod(seconds, 60));
+  printf("%ldm%.3fs", static_cast<long>(seconds) / 60, std::fmod(seconds, 60));
 }
 
 // bash source: builtins/times.def
@@ -166,7 +164,7 @@ void PrintTimes() {
   if (times(&t) == -1) {
     throw Alloc<IOError>(errno);
   }
-	long ticks_per_sec = sysconf(_SC_CLK_TCK);
+  long ticks_per_sec = sysconf(_SC_CLK_TCK);
 
   PrintClock(t.tms_utime, ticks_per_sec);
   putc(' ', stdout);

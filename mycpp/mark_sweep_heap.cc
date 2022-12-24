@@ -1,7 +1,7 @@
+#include <inttypes.h>  // PRId64
 #include <sys/time.h>  // gettimeofday()
 
 #include <ctime>  // CLOCK_PROCESS_CPUTIME_ID
-#include <inttypes.h>  // PRId64
 
 #include "mycpp/runtime.h"
 
@@ -30,26 +30,6 @@ void MarkSweepHeap::Init(int gc_threshold) {
 
   live_objs_.reserve(KiB(10));
   roots_.reserve(KiB(1));  // prevent resizing in common case
-}
-
-void MarkSweepHeap::Report() {
-  int fd = 2;  // write to stderr
-  dprintf(fd, "  num live        = %10d\n", num_live_);
-  // max survived_ can be less than num_live_, because leave off the last GC
-  dprintf(fd, "  max survived    = %10d\n", max_survived_);
-  dprintf(fd, "\n");
-  dprintf(fd, "  num allocated   = %10d\n", num_allocated_);
-  dprintf(fd, "bytes allocated   = %10" PRId64 "\n", bytes_allocated_);
-  dprintf(fd, "  num gc points   = %10d\n", num_gc_points_);
-  dprintf(fd, "  num collections = %10d\n", num_collections_);
-  dprintf(fd, "   gc threshold   = %10d\n", gc_threshold_);
-  dprintf(fd, "  num growths     = %10d\n", num_growths_);
-  dprintf(fd, "\n");
-  dprintf(fd, "  max gc millis   = %10.1f\n", max_gc_millis_);
-  dprintf(fd, "total gc millis   = %10.1f\n", total_gc_millis_);
-  dprintf(fd, "\n");
-  dprintf(fd, "roots capacity    = %10d\n", static_cast<int>(roots_.capacity()));
-  dprintf(fd, " objs capacity    = %10d\n", static_cast<int>(live_objs_.capacity()));
 }
 
 #if defined(MALLOC_LEAK)
@@ -285,6 +265,29 @@ int MarkSweepHeap::Collect() {
   return num_live_;  // for unit tests only
 }
 
+void MarkSweepHeap::PrintStats(int fd) {
+  dprintf(fd, "  num live        = %10d\n", num_live_);
+  // max survived_ can be less than num_live_, because leave off the last GC
+  dprintf(fd, "  max survived    = %10d\n", max_survived_);
+  dprintf(fd, "\n");
+  dprintf(fd, "  num allocated   = %10d\n", num_allocated_);
+  dprintf(fd, "bytes allocated   = %10" PRId64 "\n", bytes_allocated_);
+  dprintf(fd, "\n");
+  dprintf(fd, "  num gc points   = %10d\n", num_gc_points_);
+  dprintf(fd, "  num collections = %10d\n", num_collections_);
+  dprintf(fd, "\n");
+  dprintf(fd, "   gc threshold   = %10d\n", gc_threshold_);
+  dprintf(fd, "  num growths     = %10d\n", num_growths_);
+  dprintf(fd, "\n");
+  dprintf(fd, "  max gc millis   = %10.1f\n", max_gc_millis_);
+  dprintf(fd, "total gc millis   = %10.1f\n", total_gc_millis_);
+  dprintf(fd, "\n");
+  dprintf(fd, "roots capacity    = %10d\n",
+          static_cast<int>(roots_.capacity()));
+  dprintf(fd, " objs capacity    = %10d\n",
+          static_cast<int>(live_objs_.capacity()));
+}
+
 // Cleanup at the end of main() to remain ASAN-safe
 void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   char* e = getenv("OIL_GC_ON_EXIT");
@@ -303,9 +306,25 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
     }
   }
 
+  int stats_fd = -1;
   e = getenv("OIL_GC_STATS");
   if (e && strlen(e)) {  // env var set and non-empty
-    Report();
+    stats_fd = 2;        // stderr
+  } else {
+    // A raw file descriptor lets benchmarks extract stats even if the script
+    // writes to stdout and stderr.  Shells can't use open() without potential
+    // conflicts.
+
+    e = getenv("OIL_GC_STATS_FD");
+    if (e && strlen(e)) {
+      // Try setting 'stats_fd'.  If there's an error, it will be unchanged, and
+      // we don't PrintStats();
+      StringToInteger(e, strlen(e), 10, &stats_fd);
+    }
+  }
+
+  if (stats_fd != -1) {
+    PrintStats(stats_fd);
   }
 }
 
