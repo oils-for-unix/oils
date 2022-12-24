@@ -243,15 +243,25 @@ run-tasks() {
 
   done
 
-  # So you can do:
-  # - print-tasks - 3 columns: workload, shell, shell_runtime_opts
-  #               - you can also have benchmark_id
-  # - xargs execute tasks: timing
+  # TODO: OIL_GC_STATS_FD and tsv_column_from_files.py
+}
 
-  # Then the OIL_GC_STATS_TSV=_tmp/gc/stats/$benchmark_id.tsv
-  #
-  # Then make the filename into a COLUMN, and join
-  #  tsv_column_from_files.py
+# This is how OIL_GC_STATS_FD=99 will work?
+
+fd-demo() {
+  local fd=99
+
+  # Hm you can't do $fd>out.txt, but that's OK
+
+  FD=$fd 99>out.txt python -c '
+import os
+fd = int(os.getenv("FD"))
+os.write(fd, "hello\n")
+os.write(fd, "world\n")
+  '
+
+  ls -l out.txt
+  cat out.txt
 }
 
 more-variants() {

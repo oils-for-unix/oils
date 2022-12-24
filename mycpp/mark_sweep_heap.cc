@@ -1,6 +1,7 @@
 #include <sys/time.h>  // gettimeofday()
 
 #include <ctime>  // CLOCK_PROCESS_CPUTIME_ID
+#include <inttypes.h>  // PRId64
 
 #include "mycpp/runtime.h"
 
@@ -32,18 +33,23 @@ void MarkSweepHeap::Init(int gc_threshold) {
 }
 
 void MarkSweepHeap::Report() {
-  log("  num allocated   = %10d", num_allocated_);
-  log("bytes allocated   = %10d", bytes_allocated_);
-  log("  max live        = %10d", max_live_);
-  log("  num live        = %10d", num_live_);
-  log("  num collections = %10d", num_collections_);
-  log("   gc threshold   = %10d", gc_threshold_);
-  log("");
-  log("roots capacity    = %10d", roots_.capacity());
-  log(" objs capacity    = %10d", live_objs_.capacity());
-  log("");
-  log("  max gc millis   = %10.1f", max_gc_millis_);
-  log("total gc millis   = %10.1f", total_gc_millis_);
+  int fd = 2;  // write to stderr
+  dprintf(fd, "  num live        = %10d\n", num_live_);
+  // max survived_ can be less than num_live_, because leave off the last GC
+  dprintf(fd, "  max survived    = %10d\n", max_survived_);
+  dprintf(fd, "\n");
+  dprintf(fd, "  num allocated   = %10d\n", num_allocated_);
+  dprintf(fd, "bytes allocated   = %10" PRId64 "\n", bytes_allocated_);
+  dprintf(fd, "  num gc points   = %10d\n", num_gc_points_);
+  dprintf(fd, "  num collections = %10d\n", num_collections_);
+  dprintf(fd, "   gc threshold   = %10d\n", gc_threshold_);
+  dprintf(fd, "  num growths     = %10d\n", num_growths_);
+  dprintf(fd, "\n");
+  dprintf(fd, "  max gc millis   = %10.1f\n", max_gc_millis_);
+  dprintf(fd, "total gc millis   = %10.1f\n", total_gc_millis_);
+  dprintf(fd, "\n");
+  dprintf(fd, "roots capacity    = %10d\n", static_cast<int>(roots_.capacity()));
+  dprintf(fd, " objs capacity    = %10d\n", static_cast<int>(live_objs_.capacity()));
 }
 
 #if defined(MALLOC_LEAK)
@@ -75,6 +81,8 @@ int MarkSweepHeap::MaybeCollect() {
     result = Collect();
   }
   #endif
+
+  num_gc_points_++;  // this is a manual collection point
   return result;
 }
 
@@ -191,7 +199,7 @@ void MarkSweepHeap::Sweep() {
   marked_.clear();
 
   num_collections_++;
-  max_live_ = std::max(max_live_, num_live_);
+  max_survived_ = std::max(max_survived_, num_live_);
 }
 
 int MarkSweepHeap::Collect() {
@@ -248,6 +256,7 @@ int MarkSweepHeap::Collect() {
   int water_mark = (gc_threshold_ * 3) / 4;
   if (num_live_ > water_mark) {
     gc_threshold_ = num_live_ * 2;
+    num_growths_++;
     if (gc_verbose_) {
       log("    exceeded %d live objects; gc_threshold set to %d", water_mark,
           gc_threshold_);

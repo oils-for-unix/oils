@@ -51,17 +51,18 @@ class MarkSweepHeap {
   // Show debug logging
   bool gc_verbose_ = false;
 
-  // Cumulative stats
-  int64_t num_allocated_ = 0;
-  int64_t bytes_allocated_ = 0;
-  int64_t num_collections_ = 0;
-  int max_live_ = 0;  // max # live after a collection
-
-  // current stats
+  // Current stats
   int num_live_ = 0;
   // Should we keep track of sizes?
   // int64_t bytes_live_ = 0;
 
+  // Cumulative stats
+  int max_survived_ = 0;  // max # live after a collection
+  int num_allocated_ = 0;
+  int64_t bytes_allocated_ = 0;  // make this bigger
+  int num_gc_points_ = 0;  // manual collection points
+  int num_collections_ = 0;
+  int num_growths_;
   double max_gc_millis_ = 0.0;
   double total_gc_millis_ = 0.0;
 
