@@ -350,16 +350,35 @@ EOF
 ## Memory Management Overhead
 
 Source code: [oil/benchmarks/gc.sh](https://github.com/oilshell/oil/tree/master/benchmarks/gc.sh)
+EOF
 
-### Comparison
+  cmark << 'EOF'
+### GC Stats
 
-Parsing a big file, like in the [parser benchmark](../osh-parser/index.html).
+EOF
+
+  tsv2html $in_dir/gc_stats.tsv
+
+  cmark << 'EOF'
+
+- Underlying data: [stage2/gc_stats.tsv](stage2/gc_stats.tsv)
+- More columns: [stage1/gc_stats.tsv](stage1/gc_stats.tsv)
+
+### Resource Usage
+
+Note that unlike other shells, `osh -n` retains all nodes on purpose.  (See the
+[parser benchmark](../osh-parser/index.html)).
 
 EOF
 
   tsv2html $in_dir/times.tsv
 
+  cmark << 'EOF'
+- Underlying data: [stage2/times.tsv](stage2/times.tsv)
+EOF
+
   cat <<EOF
+
   </body>
 </html>
 EOF
@@ -403,16 +422,26 @@ for path in sys.argv[1:]:
   row = d.values()
   print("\t".join(row))
 
-  ' $BASE_DIR/raw/gc*.tsv
+  ' "$@"
+}
+
+make-report() {
+  mkdir -p $BASE_DIR/{stage1,stage2}
+
+  # Concatenate tiny files
+  gc-stats-to-tsv $BASE_DIR/raw/gc*.tsv > $BASE_DIR/stage1/gc_stats.tsv
+
+  # Make TSV files
+  R_LIBS_USER=$R_PATH benchmarks/report.R gc $BASE_DIR $BASE_DIR/stage2
+
+  # Make HTML
+  benchmarks/report.sh stage3 $BASE_DIR
 }
 
 soil-run() {
   measure-all
 
-  mkdir -p $BASE_DIR/stage2
-  R_LIBS_USER=$R_PATH benchmarks/report.R gc $BASE_DIR/raw $BASE_DIR/stage2
-
-  benchmarks/report.sh stage3 $BASE_DIR
+  make-report
 }
 
 #

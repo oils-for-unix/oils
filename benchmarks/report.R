@@ -677,25 +677,39 @@ ComputeReport = function(in_dir, out_dir) {
 }
 
 GcReport = function(in_dir, out_dir) {
-  parser_times = read.table(file.path(in_dir, 'times.tsv'), header=T)
+  times = read.table(file.path(in_dir, 'raw/times.tsv'), header=T)
+  gc_stats = read.table(file.path(in_dir, 'stage1/gc_stats.tsv'), header=T)
 
-  parser_times %>% filter(status != 0) -> failed
+  times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
     print(failed)
     stop('Some gc tasks failed')
   }
 
-  parser_times %>%
+  # Change units and order columns
+  times %>%
+    arrange(task) %>%
     mutate(elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
-    select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
-    select(c(elapsed_ms, user_ms, sys_ms, max_rss_MB, join_id, task, shell_bin, shell_runtime_opts)) ->
-    parser_out
+    select(c(join_id, task, elapsed_ms, user_ms, sys_ms, max_rss_MB, shell_bin, shell_runtime_opts)) ->
+    times
+
+  # Join and order columns
+  gc_stats %>% left_join(times, by = c('join_id')) %>% 
+    arrange(task) %>%
+    select(task, elapsed_ms, total_gc_millis, max_gc_millis,
+           num_gc_points, gc_threshold, num_collections,
+           max_survived, max_rss_MB,
+           num_allocated, bytes_allocated, shell_bin) ->
+    gc_stats
+
+  times %>% select(-c(join_id)) -> times
 
   precision = ColumnPrecision(list(max_rss_MB = 1), default = 0)
-  writeTsv(parser_out, file.path(out_dir, 'times'), precision)
+  writeTsv(times, file.path(out_dir, 'times'), precision)
+  writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision)
 }
 
 MyCppReport = function(in_dir, out_dir) {
