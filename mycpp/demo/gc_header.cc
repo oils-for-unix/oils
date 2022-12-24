@@ -44,39 +44,39 @@ struct ObjHeader {
 
 #if 1  // little endian
   // Set to 1, for the garbage collector to distinguish with vtable bits
-  unsigned is_header_ : 1;
+  unsigned is_header : 1;
 
   // - 0 is for user-defined classes
   // - 1 to 6 reserved for "tagless" value:
   // value_e.{Str,List,Dict,Bool,Int,Float}
   // - 7 to 127: ASDL union, so we have a maximuim of ~120 variants.
-  unsigned type_tag_ : 7;
+  unsigned type_tag : 7;
 
   #if MARK_SWEEP
-  unsigned obj_id_ : 24;  // small index into mark bitmap, implies 16 Mi unique
-                          // objects
+  unsigned obj_id : 24;  // small index into mark bitmap, implies 16 Mi unique
+                         // objects
   #else
-  unsigned field_mask_ : 24;  // Cheney doesn't need obj_id, but needs
-                              // field_mask AND obj_len
+  unsigned field_mask : 24;  // Cheney doesn't need obj_id, but needs
+                             // field_mask AND obj_len
   #endif
 
 #else
   // Possible 32-bit big endian version.  TODO: Put tests in
   // mycpp/portability_test.cc
-  unsigned obj_id_ : 24;
-  unsigned is_header_ : 1;
-  unsigned type_tag_ : 7;
+  unsigned obj_id : 24;
+  unsigned is_header : 1;
+  unsigned type_tag : 7;
 #endif
 
   // --- Second 32 bits ---
 
 #if MARK_SWEEP
   // A fake "union", because unions and bitfields don't pack as you'd like
-  unsigned heap_tag_ : 2;  // HeapTag::Opaque, HeapTag::Scanned, etc.
-  unsigned u_mask_npointers_strlen_ : 30;
+  unsigned heap_tag : 2;  // HeapTag::Opaque, HeapTag::Scanned, etc.
+  unsigned u_mask_npointers_strlen : 30;
 #else
-  unsigned heap_tag_ : 3;  // also needs HeapTag::Forwarded
-  unsigned obj_len_ : 29;
+  unsigned heap_tag : 3;  // also needs HeapTag::Forwarded
+  unsigned obj_len : 29;
 #endif
 };
 
@@ -106,8 +106,8 @@ struct ObjHeader {
     }
 
   // Different values stored in the same "union" field
-  #define FIELD_MASK(header) (header).u_mask_npointers_strlen_
-  #define NUM_POINTERS(header) (header).u_mask_npointers_strlen_
+  #define FIELD_MASK(header) (header).u_mask_npointers_strlen
+  #define NUM_POINTERS(header) (header).u_mask_npointers_strlen
 
 #else
 
@@ -123,11 +123,11 @@ struct ObjHeader {
     }
 
   // Store field_mask in 24-bit field (~24 fields with inheritance)
-  #define FIELD_MASK(header) (header).field_mask_
+  #define FIELD_MASK(header) (header).field_mask
 
   // Derive num pointers from object length
   #define NUM_POINTERS(header) \
-    (((header).obj_len_ - sizeof(ObjHeader)) / sizeof(void*))
+    (((header).obj_len - sizeof(ObjHeader)) / sizeof(void*))
 
 #endif
 
@@ -138,14 +138,14 @@ TEST gc_header_test() {
 
   static_assert(sizeof(ObjHeader) == 8, "expected 8 byte header");
 
-  obj.type_tag_ = 127;
-  log("type tag %d", obj.type_tag_);
+  obj.type_tag = 127;
+  log("type tag %d", obj.type_tag);
 
-  obj.heap_tag_ = HeapTag::Scanned;
-  log("heap tag %d", obj.heap_tag_);
+  obj.heap_tag = HeapTag::Scanned;
+  log("heap tag %d", obj.heap_tag);
 
   // obj.heap_tag = 4;  // Overflow
-  // log("heap tag %d", obj.heap_tag_);
+  // log("heap tag %d", obj.heap_tag);
 
   PASS();
 }
@@ -179,7 +179,7 @@ class Derived : public Node {
 
   int x;
 
-  static constexpr unsigned int field_mask() {
+  static constexpr unsigned field_mask() {
     return 0x30;
   }
 };
@@ -192,7 +192,7 @@ class NoVirtual {
   GC_OBJ(header_);
   int i;
 
-  static constexpr unsigned int field_mask() {
+  static constexpr unsigned field_mask() {
     return 0xf0;
   }
 };
@@ -207,11 +207,11 @@ TEST endian_test() {
   log("sizeof(Derived) = %d", sizeof(Derived));
 
   ObjHeader* header = reinterpret_cast<ObjHeader*>(&derived);
-  log("Derived is GC object? %d", header->type_tag_ & 0x1);
+  log("Derived is GC object? %d", header->type_tag & 0x1);
 
   NoVirtual n2;
   ObjHeader* header2 = reinterpret_cast<ObjHeader*>(&n2);
-  log("NoVirtual is GC object? %d", header2->type_tag_ & 0x1);
+  log("NoVirtual is GC object? %d", header2->type_tag & 0x1);
 
   auto n = new Node();
   FIELD_MASK(n->header_) = 0b11;
@@ -227,7 +227,7 @@ TEST endian_test() {
 TEST dual_header_test() {
   auto* n = new Node();
   log("n = %p", n);
-  log("n->heap_tag %d", n->header_.heap_tag_);
+  log("n->heap_tag %d", n->header_.heap_tag);
   log("FIELD_MASK(n) %d", FIELD_MASK(n->header_));
 
   PASS();
@@ -272,12 +272,12 @@ class HeapStr {
   }
   int Length() {
 #ifdef MARK_SWEEP
-    return header_.u_mask_npointers_strlen_;
+    return header_.u_mask_npointers_strlen;
 #elif BUMP_LEAK
   #error "TODO: add field to HeapStr"
 #else
     // derive string length from GC object length
-    return header.obj_len_ - kStrHeaderSize - 1;
+    return header.obj_len - kStrHeaderSize - 1;
 #endif
   }
   void SetLength(int len) {
@@ -286,12 +286,12 @@ class HeapStr {
     assert(len > kSmallStrThreshold);
 
 #ifdef MARK_SWEEP
-    header_.u_mask_npointers_strlen_ = len;
+    header_.u_mask_npointers_strlen = len;
 #elif BUMP_LEAK
   #error "TODO: add field to HeapStr"
 #else
     // set object length, which can derive string length
-    header.obj_len_ = kStrHeaderSize + len + 1;  // +1 for
+    header.obj_len = kStrHeaderSize + len + 1;  // +1 for
 #endif
   }
   ObjHeader header_;

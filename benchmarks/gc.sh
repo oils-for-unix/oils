@@ -387,7 +387,7 @@ EOF
 gc-stats-to-tsv() {
   ### Turn a set of files with OIL_GC_STATS output into a TSV file
 
-  python -c '
+  python2 -c '
 import collections
 import os
 import sys
