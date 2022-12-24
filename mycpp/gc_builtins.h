@@ -16,6 +16,8 @@ class _ExceptionOpaque : public Obj {
 };
 
 // mycpp removes constructor arguments
+class Exception : public _ExceptionOpaque {};
+
 class AssertionError : public _ExceptionOpaque {};
 
 class IndexError : public _ExceptionOpaque {};
@@ -58,6 +60,20 @@ constexpr uint16_t maskof_RuntimeError() {
 inline RuntimeError::RuntimeError(Str* message)
     : Obj(Tag::FixedSize, maskof_RuntimeError(), kNoObjLen), message(message) {
 }
+
+// libc::wcswidth raises UnicodeError
+class UnicodeError : public Obj {
+ public:
+  explicit UnicodeError(Str* message)
+    : Obj(Tag::FixedSize, UnicodeError::field_mask(), kNoObjLen),
+      message(message) {}
+
+  Str* message;
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(UnicodeError, message));
+  }
+};
 
 // Python 2 has a dubious distinction between IOError and OSError, so mycpp
 // generates this base class to catch both.
@@ -139,5 +155,9 @@ extern Str* kEmptyString;
 inline Str* dynamic_fmt_dummy() {
   return kEmptyString;
 }
+
+int hash(Str* s);
+
+int max(int a, int b);
 
 #endif  // GC_BUILTINS_H

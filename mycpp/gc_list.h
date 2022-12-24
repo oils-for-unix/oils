@@ -460,4 +460,6 @@ class ReverseListIter {
   int i_;
 };
 
+int max(List<int>* elems);
+
 #endif  // MYCPP_GC_LIST_H

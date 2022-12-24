@@ -15,6 +15,7 @@ from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 
 from core import alloc
+from core import comp_ui
 from core import dev
 from core import error
 from core import executor
@@ -379,8 +380,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # Various Global State objects to work around readline interfaces
   #compopt_state = completion.OptionState()
-  #comp_ui_state = comp_ui.State()
-  #prompt_state = comp_ui.PromptState()
+  comp_ui_state = comp_ui.State()
+  prompt_state = comp_ui.PromptState()
 
   dir_stack = state.DirStack()
 

@@ -120,7 +120,7 @@ class UiTest(unittest.TestCase):
 
     # terminal width
     d1 = comp_ui.NiceDisplay(80, comp_ui_state, prompt_state, debug_f,
-                             line_input, bold_line=False)
+                             line_input)
     d2 = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     prompt_state.SetLastPrompt('$ ')

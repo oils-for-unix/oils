@@ -885,6 +885,26 @@ TEST exceptions_test() {
   PASS();
 }
 
+TEST str_hash_test() {
+  // two strings known not to collide ahead of time
+  Str* a = StrFromC("foobarbaz");
+  Str* b = StrFromC("123456789");
+  ASSERT(hash(a) != hash(b));
+
+  PASS();
+}
+
+TEST max_test() {
+  ASSERT(max(-1, 0) == 0);
+  ASSERT(max(0, -1) == max(-1, 0));
+  ASSERT(max(42, 13) == 42);
+
+  auto* ints = NewList<int>(std::initializer_list<int>{13, 0, 42, -1});
+  ASSERT(max(ints) == 42);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -921,6 +941,10 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_iters_test);
 
   RUN_TEST(exceptions_test);
+
+  RUN_TEST(str_hash_test);
+
+  RUN_TEST(max_test);
 
   gHeap.CleanProcessExit();
 

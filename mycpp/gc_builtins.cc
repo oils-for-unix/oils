@@ -1,4 +1,5 @@
 #include <ctype.h>  // isspace()
+#include <errno.h>  // errno
 
 #include "mycpp/runtime.h"
 
@@ -267,4 +268,36 @@ bool str_equals0(const char* c_string, Str* s) {
   } else {
     return false;
   }
+}
+
+int hash(Str* s) {
+  // FNV-1 from http://www.isthe.com/chongo/tech/comp/fnv/#FNV-1
+  int h = 2166136261;          // 32-bit FNV-1 offset basis
+  constexpr int p = 16777619;  // 32-bit FNV-1 prime
+  for (int i = 0; i < len(s); i++) {
+    h *= s->data()[i];
+    h ^= p;
+  }
+  return h;
+}
+
+int max(int a, int b) {
+  return std::max(a, b);
+}
+
+int max(List<int>* elems) {
+  int n = len(elems);
+  if (n < 1) {
+    throw Alloc<ValueError>();
+  }
+
+  int ret = elems->index_(0);
+  for (int i = 0; i < n; ++i) {
+    int cand = elems->index_(i);
+    if (cand > ret) {
+      ret = cand;
+    }
+  }
+
+  return ret;
 }
