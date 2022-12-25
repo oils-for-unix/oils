@@ -279,7 +279,8 @@ TEST global_trace_test() {
 // 8 byte vtable, 8 byte Obj header, then member_
 class BaseObj {
  public:
-  explicit BaseObj(int obj_len) : GC_CLASS_FIXED(header_, kZeroMask, obj_len) {
+  explicit BaseObj(uint32_t obj_len)
+      : GC_CLASS_FIXED(header_, kZeroMask, obj_len) {
   }
   BaseObj() : BaseObj(sizeof(BaseObj)) {
   }

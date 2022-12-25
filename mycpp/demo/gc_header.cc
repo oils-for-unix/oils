@@ -538,8 +538,8 @@ Str str_concat(Str a, Str b) {
   }
 }
 
-static_assert(sizeof(SmallStr) == 8);
-static_assert(sizeof(Str) == 8);
+static_assert(sizeof(SmallStr) == 8, "SmallStr should be 8 bytes");
+static_assert(sizeof(Str) == 8, "Str should be 8 bytes");
 
 TEST small_str_test() {
   log("sizeof(Str) = %d", sizeof(Str));
