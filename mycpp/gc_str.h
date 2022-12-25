@@ -179,8 +179,7 @@ class GlobalStr {
   // A template type with the same layout as Str with length N-1 (which needs a
   // buffer of size N).  For initializing global constant instances.
  public:
-  OBJ_HEADER()
-
+  ObjHeader header_;
   int hash_value_;
   const char data_[N];
 
@@ -195,9 +194,11 @@ class GlobalStr {
 // https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
 // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
-#define GLOBAL_STR(name, val)                                            \
-  GlobalStr<sizeof(val)> _##name = {                                     \
-      Tag::Global, 0, kZeroMask, kStrHeaderSize + sizeof(val), -1, val}; \
+#define GLOBAL_STR(name, val)                                              \
+  GlobalStr<sizeof(val)> _##name = {                                       \
+      {Tag::Global, kStrTypeTag, kZeroMask, kStrHeaderSize + sizeof(val)}, \
+      -1,                                                                  \
+      val};                                                                \
   Str* name = reinterpret_cast<Str*>(&_##name);
 
 #endif  // MYCPP_GC_STR_H

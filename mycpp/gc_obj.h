@@ -40,7 +40,7 @@ const uint8_t kMycppDebugType = 255;
 //   And we can sort integers BEFORE pointers.
 
 // TODO: ./configure could detect big or little endian, and then flip the
-// fields in OBJ_HEADER?
+// fields in Obj?
 //
 // https://stackoverflow.com/questions/2100331/c-macro-definition-to-determine-big-endian-or-little-endian-machine
 //
@@ -107,7 +107,7 @@ class Obj {
 
 class _DummyObj {  // For maskbit()
  public:
-  OBJ_HEADER()
+  ObjHeader header_;
   int first_field_;
 };
 
@@ -116,7 +116,7 @@ class _DummyObj {  // For maskbit()
 //
 // - Note that we only call maskbit() on offsets of pointer fields, which must
 //   be POINTER-ALIGNED.
-// - _DummyObj is used in case OBJ_HEADER() requires padding, then
+// - _DummyObj is used in case ObjHeader requires padding, then
 //   sizeof(Obj) != offsetof(_DummyObj, first_field_)
 
 constexpr int maskbit(int offset) {
@@ -126,7 +126,7 @@ constexpr int maskbit(int offset) {
 class _DummyObj_v {  // For maskbit_v()
  public:
   void* vtable;  // how the compiler does dynamic dispatch
-  OBJ_HEADER()
+  ObjHeader header_;
   int first_field_;
 };
 

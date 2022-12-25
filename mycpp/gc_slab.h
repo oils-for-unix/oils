@@ -44,8 +44,7 @@ class GlobalSlab {
   // A template type with the same layout as Str with length N-1 (which needs a
   // buffer of size N).  For initializing global constant instances.
  public:
-  OBJ_HEADER()
-
+  ObjHeader header_;
   T items_[N];
 
   DISALLOW_COPY_AND_ASSIGN(GlobalSlab)
