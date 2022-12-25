@@ -92,14 +92,6 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
 
 #endif  // MALLOC_LEAK
 
-// The "homogeneous" layout of objects with Tag::FixedSize.  LayoutFixed is for
-// casting; it isn't a real type.
-
-class LayoutFixed : public Obj {
- public:
-  Obj* children_[16];  // only the entries denoted in field_mask will be valid
-};
-
 void MarkSweepHeap::MarkObjects(Obj* obj) {
   bool is_marked = marked_.find(obj) != marked_.end();
   if (is_marked) {

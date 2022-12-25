@@ -20,6 +20,12 @@ def DefineTargets(ru):
       '//mycpp/cheney_heap', 
       srcs = ['mycpp/cheney_heap.cc'])
 
+  ru.cc_binary(
+      'mycpp/cheney_heap_test.cc',
+      deps = ['//mycpp/cheney_heap'],
+      matrix = COMPILERS_VARIANTS,
+      phony_prefix = 'mycpp-unit')
+
   ru.cc_library(
       '//mycpp/runtime', 
       srcs = [

@@ -1,6 +1,11 @@
+#include "mycpp/cheney_heap.h"
+
 #include <sys/mman.h>  // mmap
 
-#include "mycpp/runtime.h"
+#include "mycpp/gc_obj.h"
+#include "mycpp/gc_slab.h"
+
+CheneyHeap gHeap;
 
 class LayoutForwarded : public Obj {
  public:

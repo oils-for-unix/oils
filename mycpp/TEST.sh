@@ -239,7 +239,6 @@ test-runtime() {
   unit '' asan
   unit '' gcverbose
   unit '' gcalways
-  # unit '' rvroot
 }
 
 #

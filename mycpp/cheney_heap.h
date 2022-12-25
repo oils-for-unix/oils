@@ -232,8 +232,6 @@ class CheneyHeap {
 void ShowFixedChildren(Obj* obj);
 #endif
 
-#if !defined(MARK_SWEEP) && !defined(BUMP_LEAK)
 extern CheneyHeap gHeap;
-#endif
 
 #endif  // GC_HEAP_H
