@@ -47,7 +47,7 @@ TEST field_masks_test() {
   StackRoots _roots({&L});
 
   L->append(1);
-  log("List mask = %d", L->field_mask_);
+  log("List mask = %d", L->header_.field_mask_);
 
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
@@ -60,7 +60,7 @@ TEST field_masks_test() {
   // expression!  Gah!
   // d->set(StrFromC("foo"), 3);
 
-  log("Dict mask = %d", d->field_mask_);
+  log("Dict mask = %d", d->header_.field_mask_);
 
 #if 0
   ShowFixedChildren(L);
@@ -86,19 +86,12 @@ TEST offsets_test() {
   ASSERT_EQ(offsetof(List<int>, slab_),
             offsetof(GlobalList<int COMMA 1>, slab_));
   // 0b 0000 0010
-  ASSERT_EQ_FMT(0x0002, maskof_List(), "0x%x");
-
-  // https://stackoverflow.com/questions/13842468/comma-in-c-c-macro
-  // There is a trick with __VA_ARGS__ I don't understand.
-
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, entry_),
-            offsetof(_DummyDict, entry_));
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, keys_), offsetof(_DummyDict, keys_));
-  ASSERT_EQ(offsetof(Dict<int COMMA int>, values_),
-            offsetof(_DummyDict, values_));
+  unsigned list_mask = List<int>::field_mask();
+  ASSERT_EQ_FMT(0x0002, list_mask, "0x%x");
 
   // in binary: 0b 0000 0000 0000 01110
-  ASSERT_EQ_FMT(0x000E, maskof_Dict(), "0x%x");
+  unsigned dict_mask = Dict<int COMMA int>::field_mask();
+  ASSERT_EQ_FMT(0x000E, dict_mask, "0x%x");
 
   PASS();
 }
@@ -117,27 +110,29 @@ TEST roundup_test() {
   PASS();
 }
 
-class Point : public Obj {
+class Point {
  public:
   Point(int x, int y)
-      : Obj(Tag::Opaque, kZeroMask, sizeof(Point)), x_(x), y_(y) {
+      : GC_CLASS_FIXED(header_, kZeroMask, sizeof(Point)), x_(x), y_(y) {
   }
   int size() {
     return x_ + y_;
   }
+  GC_OBJ(header_);
   int x_;
   int y_;
 };
 
 const int kLineMask = 0x3;  // 0b0011
 
-class Line : public Obj {
+class Line {
  public:
   Line()
-      : Obj(Tag::FixedSize, kLineMask, sizeof(Line)),
+      : GC_CLASS_FIXED(header_, kLineMask, sizeof(Line)),
         begin_(nullptr),
         end_(nullptr) {
   }
+  GC_OBJ(header_);
   Point* begin_;
   Point* end_;
 };
@@ -282,9 +277,9 @@ TEST global_trace_test() {
 }
 
 // 8 byte vtable, 8 byte Obj header, then member_
-class BaseObj : public Obj {
+class BaseObj {
  public:
-  explicit BaseObj(int obj_len) : Obj(Tag::Opaque, kZeroMask, obj_len) {
+  explicit BaseObj(int obj_len) : GC_CLASS_FIXED(header_, kZeroMask, obj_len) {
   }
   BaseObj() : BaseObj(sizeof(BaseObj)) {
   }
@@ -292,6 +287,8 @@ class BaseObj : public Obj {
   virtual int Method() {
     return 3;
   }
+
+  GC_OBJ(header_);
   int member_ = 254;
 };
 
@@ -320,8 +317,8 @@ TEST vtable_test() {
 
   BaseObj base3;
 
-  log("BaseObj obj_len_ = %d", base3.obj_len_);
-  log("derived b3->obj_len_ = %d", b3->obj_len_);  // derived length
+  log("BaseObj obj_len_ = %d", base3.header_.obj_len_);
+  log("derived b3->obj_len_ = %d", b3->header_.obj_len_);  // derived length
   log("sizeof(d3) = %d", sizeof(d3));
 
   unsigned char* c3 = reinterpret_cast<unsigned char*>(b3);
@@ -346,7 +343,7 @@ TEST vtable_test() {
     // Now we have the right GC info.
     ShowObj(header);
 
-    ASSERT_EQ_FMT(Tag::Opaque, header->heap_tag_, "%d");
+    ASSERT_EQ_FMT(Tag::FixedSize, header->heap_tag_, "%d");
     ASSERT_EQ_FMT(0, header->field_mask_, "%d");
     // casts get rid of warning
     ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len_, "%d");

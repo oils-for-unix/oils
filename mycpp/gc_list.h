@@ -22,13 +22,8 @@ class GlobalList {
   GlobalSlab<T, N>* slab_;
 };
 
-// A list has one Slab pointer which we need to follow.
-constexpr uint16_t maskof_List() {
-  return maskbit(offsetof(GlobalList<int COMMA 1>, slab_));
-}
-
 template <typename T>
-class List : public Obj {
+class List {
   // TODO: Move methods that don't allocate or resize: out of gc_heap?
   // - allocate: append(), extend()
   // - resize: pop(), clear()
@@ -42,7 +37,7 @@ class List : public Obj {
                 "Slab header size should be multiple of item size");
 
  public:
-  List() : Obj(Tag::FixedSize, maskof_List(), sizeof(List<T>)) {
+  List() : GC_CLASS_FIXED(header_, field_mask(), sizeof(List<T>)) {
     // Ensured by heap zeroing.  It's never directly on the stack.
     assert(len_ == 0);
     assert(capacity_ == 0);
@@ -90,11 +85,18 @@ class List : public Obj {
   // Extend this list with multiple elements.
   void extend(List<T>* other);
 
+  GC_OBJ(header_);
+
   int len_;       // number of entries
   int capacity_;  // max entries before resizing
 
   // The container may be resized, so this field isn't in-line.
   Slab<T>* slab_;
+
+  // A list has one Slab pointer which we need to follow.
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(List, slab_));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(List)
 };

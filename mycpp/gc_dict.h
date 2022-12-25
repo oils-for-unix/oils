@@ -34,29 +34,10 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
   return result;
 }
 
-// Type that is layout-compatible with List to avoid invalid-offsetof warnings.
-// Unit tests assert that they have the same layout.
-class _DummyDict {
- public:
-  OBJ_HEADER()
-  int len_;
-  int capacity_;
-  void* entry_;
-  void* keys_;
-  void* values_;
-};
-
-// A dict has 3 pointers the GC needs to follow.
-constexpr uint16_t maskof_Dict() {
-  return maskbit(offsetof(_DummyDict, entry_)) |
-         maskbit(offsetof(_DummyDict, keys_)) |
-         maskbit(offsetof(_DummyDict, values_));
-}
-
 template <class K, class V>
-class Dict : public Obj {
+class Dict {
  public:
-  Dict() : Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
+  Dict() : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)) {
     assert(len_ == 0);
     assert(capacity_ == 0);
     assert(entry_ == nullptr);
@@ -65,7 +46,7 @@ class Dict : public Obj {
   }
 
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-      : Obj(Tag::FixedSize, maskof_Dict(), sizeof(Dict)) {
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)) {
     assert(len_ == 0);
     assert(capacity_ == 0);
     assert(entry_ == nullptr);
@@ -118,7 +99,7 @@ class Dict : public Obj {
   //   This will enable duplicate copies of the string to be garbage collected
   int position_of_key(K key);
 
-  // int index_size_;  // size of index (sparse)
+  GC_OBJ(header_);
   int len_;       // number of entries (keys and values, almost dense)
   int capacity_;  // number of entries before resizing
 
@@ -128,6 +109,12 @@ class Dict : public Obj {
                       // value % capacity_
   Slab<K>* keys_;     // Dict<int, V>
   Slab<V>* values_;   // Dict<K, int>
+
+  // A dict has 3 pointers the GC needs to follow.
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(Dict, entry_)) | maskbit(offsetof(Dict, keys_)) |
+           maskbit(offsetof(Dict, values_));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 };

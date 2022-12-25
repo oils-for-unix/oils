@@ -31,12 +31,12 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(0, list1->capacity_, "%d");
   ASSERT_EQ_FMT(0, list2->capacity_, "%d");
 
-  ASSERT_EQ_FMT(Tag::FixedSize, list1->heap_tag_, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, list2->heap_tag_, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, list1->header_.heap_tag_, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, list2->header_.heap_tag_, "%d");
 
   // 8 byte obj header + 2 integers + pointer
-  ASSERT_EQ_FMT(24, list1->obj_len_, "%d");
-  ASSERT_EQ_FMT(24, list2->obj_len_, "%d");
+  ASSERT_EQ_FMT(24, list1->header_.obj_len_, "%d");
+  ASSERT_EQ_FMT(24, list2->header_.obj_len_, "%d");
 
   // Make sure they're on the heap
 #ifndef MARK_SWEEP

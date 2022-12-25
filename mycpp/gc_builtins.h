@@ -9,10 +9,12 @@
 
 class Str;
 
-class _ExceptionOpaque : public Obj {
+class _ExceptionOpaque {
  public:
-  _ExceptionOpaque() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+  _ExceptionOpaque()
+      : GC_CLASS_FIXED(header_, kZeroMask, sizeof(_ExceptionOpaque)) {
   }
+  GC_OBJ(header_);
 };
 
 // mycpp removes constructor arguments
@@ -47,28 +49,30 @@ class NotImplementedError : public _ExceptionOpaque {
 };
 
 // libc::regex_match and other bindings raise RuntimeError
-class RuntimeError : public Obj {
+class RuntimeError {
  public:
-  explicit RuntimeError(Str* message);
-  Str* message;
-};
-
-constexpr uint16_t maskof_RuntimeError() {
-  return maskbit(offsetof(RuntimeError, message));
-}
-
-inline RuntimeError::RuntimeError(Str* message)
-    : Obj(Tag::FixedSize, maskof_RuntimeError(), kNoObjLen), message(message) {
-}
-
-// libc::wcswidth raises UnicodeError
-class UnicodeError : public Obj {
- public:
-  explicit UnicodeError(Str* message)
-      : Obj(Tag::FixedSize, UnicodeError::field_mask(), kNoObjLen),
+  explicit RuntimeError(Str* message)
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(RuntimeError)),
         message(message) {
   }
 
+  GC_OBJ(header_);
+  Str* message;
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(RuntimeError, message));
+  }
+};
+
+// libc::wcswidth raises UnicodeError
+class UnicodeError {
+ public:
+  explicit UnicodeError(Str* message)
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(UnicodeError)),
+        message(message) {
+  }
+
+  GC_OBJ(header_);
   Str* message;
 
   static constexpr uint16_t field_mask() {

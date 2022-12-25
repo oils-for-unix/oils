@@ -116,19 +116,18 @@ TEST list_collection_test() {
   PASS();
 }
 
-class Node : Obj {
+class Node {
  public:
-  Node();
+  Node() : GC_CLASS_FIXED(header_, field_mask(), sizeof(Node)), next_(nullptr) {
+  }
+
+  GC_OBJ(header_);
   Node *next_;
+
+  constexpr uint16_t field_mask() {
+    return maskbit(offsetof(Node, next_));
+  }
 };
-
-constexpr uint16_t maskof_Node() {
-  return maskbit(offsetof(Node, next_));
-}
-
-Node::Node()
-    : Obj(Tag::FixedSize, maskof_Node(), sizeof(Node)), next_(nullptr) {
-}
 
 TEST cycle_collection_test() {
   // Dict<Str*, int>* d = NewDict<Str*, int>();
