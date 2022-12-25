@@ -82,10 +82,10 @@ struct FlagSpecAndMore_c {
 
 namespace flag_spec {
 
-class _FlagSpec : public Obj {
+class _FlagSpec {
  public:
   _FlagSpec()
-      : Obj(Tag::FixedSize, _FlagSpec::field_mask(), sizeof(_FlagSpec)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_FlagSpec)),
         arity0(nullptr),
         arity1(nullptr),
         plus_flags(nullptr),
@@ -93,6 +93,7 @@ class _FlagSpec : public Obj {
         defaults(nullptr) {
   }
 
+  GC_OBJ(header_);
   List<Str*>* arity0;
   Dict<Str*, args::_Action*>* arity1;
   List<Str*>* plus_flags;
@@ -108,17 +109,17 @@ class _FlagSpec : public Obj {
   }
 };
 
-class _FlagSpecAndMore : public Obj {
+class _FlagSpecAndMore {
  public:
   _FlagSpecAndMore()
-      : Obj(Tag::FixedSize, _FlagSpecAndMore::field_mask(),
-            sizeof(_FlagSpecAndMore)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_FlagSpecAndMore)),
         actions_long(nullptr),
         actions_short(nullptr),
         plus_flags(nullptr),
         defaults(nullptr) {
   }
 
+  GC_OBJ(header_);
   Dict<Str*, args::_Action*>* actions_long;
   Dict<Str*, args::_Action*>* actions_short;
   List<Str*>* plus_flags;

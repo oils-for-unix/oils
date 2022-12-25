@@ -6,9 +6,6 @@
 
 namespace py_readline {
 
-Readline::Readline() : Obj(Tag::Opaque, kZeroMask, sizeof(Readline)) {
-}
-
 void Readline::parse_and_bind(Str* s) {
   assert(0);  // not implemented
 }

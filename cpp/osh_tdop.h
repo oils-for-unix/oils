@@ -32,15 +32,17 @@ struct NullInfo {
   DISALLOW_COPY_AND_ASSIGN(NullInfo)
 };
 
-class ParserSpec : public Obj {
+class ParserSpec {
  public:
   // No fields
-  ParserSpec() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+  ParserSpec() : GC_CLASS_FIXED(header_, kZeroMask, sizeof(ParserSpec)) {
   }
   LeftInfo* LookupLed(Id_t id);
   NullInfo* LookupNud(Id_t id);
 
   DISALLOW_COPY_AND_ASSIGN(ParserSpec)
+
+  GC_OBJ(header_);
 };
 
 }  // namespace tdop

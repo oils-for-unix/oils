@@ -10,9 +10,10 @@ namespace py_readline {
 typedef Str* (*ReadlineCompleterFunc)(Str*, int);
 typedef void (*ReadlineDisplayMatchesHookFunc)(Str*, List<Str*>*, int);
 
-class Readline : public Obj {
+class Readline {
  public:
-  Readline();
+  Readline() : GC_CLASS_FIXED(header_, kZeroMask, sizeof(Readline)) {
+  }
   void parse_and_bind(Str* s);
   void add_history(Str* line);
   void read_history_file(Str* path);
@@ -29,6 +30,8 @@ class Readline : public Obj {
   void remove_history_item(int pos);
   int get_current_history_length();
   void resize_terminal();
+
+  GC_OBJ(header_);
 };
 
 Readline* MaybeGetReadline();

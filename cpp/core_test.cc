@@ -11,16 +11,6 @@
 #include "mycpp/gc_builtins.h"  // IOError_OSError
 #include "vendor/greatest.h"
 
-static_assert(offsetof(Obj, field_mask_) == offsetof(error::Usage, field_mask_),
-              "Invalid layout");
-static_assert(offsetof(Obj, field_mask_) ==
-                  offsetof(error::_ErrorWithLocation, field_mask_),
-              "Invalid layout");
-// This has a virtual function
-static_assert(sizeof(void*) + offsetof(Obj, field_mask_) ==
-                  offsetof(pyutil::_ResourceLoader, field_mask_),
-              "Invalid layout");
-
 TEST exceptions_test() {
   bool caught = false;
   try {

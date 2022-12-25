@@ -55,10 +55,10 @@ class TermState {
   }
 };
 
-class SignalHandler : public Obj {
+class SignalHandler {
  public:
   SignalHandler()
-      : Obj(Tag::FixedSize, field_mask(), kNoObjLen),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalHandler)),
         signal_queue_(nullptr),
         last_sig_num_(0),
         sigwinch_num_(UNTRAPPED_SIGWINCH) {
@@ -67,6 +67,7 @@ class SignalHandler : public Obj {
   void Update(int sig_num);
   List<int>* TakeSignalQueue();
 
+  GC_OBJ(header_);
   List<int>* signal_queue_;
   int last_sig_num_;
   int sigwinch_num_;
@@ -95,12 +96,15 @@ namespace pyutil {
 bool IsValidCharEscape(int c);
 Str* ChArrayToString(List<int>* ch_array);
 
-class _ResourceLoader : public Obj {
+class _ResourceLoader {
  public:
-  _ResourceLoader() : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+  _ResourceLoader()
+      : GC_CLASS_FIXED(header_, kZeroMask, sizeof(_ResourceLoader)) {
   }
 
   virtual Str* Get(Str* path);
+
+  GC_OBJ(header_);
 };
 
 _ResourceLoader* GetResourceLoader();

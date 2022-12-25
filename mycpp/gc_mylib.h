@@ -86,7 +86,7 @@ class BufLineReader : public LineReader {
   Str* s_;
   int pos_;
 
-  constexpr unsigned field_mask() {
+  static constexpr unsigned field_mask() {
     return maskbit_v(offsetof(BufLineReader, s_));
   }
 
@@ -161,7 +161,7 @@ class BufWriter : public Writer {
   int len_;
   bool is_valid_ = true;  // It becomes invalid after getvalue() is called
 
-  constexpr unsigned field_mask() {
+  static constexpr unsigned field_mask() {
     // maskvit_v() because BufWriter has virtual methods
     return maskbit_v(offsetof(BufWriter, str_));
   }

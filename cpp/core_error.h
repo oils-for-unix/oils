@@ -16,20 +16,21 @@ using syntax_asdl::Token;
 using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
 
-class Usage : public Obj {
+class Usage {
  public:
   Usage(Str* msg, int span_id)
-      : Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Usage)),
         msg(msg),
         span_id(span_id) {
   }
 
   Usage(Str* msg)
-      : Obj(Tag::FixedSize, Usage::field_mask(), sizeof(Usage)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Usage)),
         msg(msg),
         span_id(runtime::NO_SPID) {
   }
 
+  GC_OBJ(header_);
   Str* msg;
   int span_id;
 
@@ -39,11 +40,10 @@ class Usage : public Obj {
 };
 
 // This definition is different in Python than C++.  Not worth auto-translating.
-class _ErrorWithLocation : public Obj {
+class _ErrorWithLocation {
  public:
   _ErrorWithLocation(Str* user_str, int span_id)
-      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
-            sizeof(_ErrorWithLocation)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
         status(1),
         user_str_(user_str),
         span_id(span_id),
@@ -52,8 +52,7 @@ class _ErrorWithLocation : public Obj {
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, Token* token)
-      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
-            sizeof(_ErrorWithLocation)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
         status(1),
         user_str_(user_str),
         span_id(runtime::NO_SPID),
@@ -62,8 +61,7 @@ class _ErrorWithLocation : public Obj {
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, word_part_t* part)
-      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
-            sizeof(_ErrorWithLocation)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
         status(1),
         user_str_(user_str),
         span_id(runtime::NO_SPID),
@@ -72,8 +70,7 @@ class _ErrorWithLocation : public Obj {
         word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, word_t* word)
-      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
-            sizeof(_ErrorWithLocation)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
         status(1),
         user_str_(user_str),
         span_id(runtime::NO_SPID),
@@ -82,8 +79,7 @@ class _ErrorWithLocation : public Obj {
         word(word) {
   }
   _ErrorWithLocation(int status, Str* user_str, int span_id, bool show_code)
-      : Obj(Tag::FixedSize, _ErrorWithLocation::field_mask(),
-            sizeof(_ErrorWithLocation)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
         status(status),
         user_str_(user_str),
         span_id(span_id),
@@ -106,8 +102,9 @@ class _ErrorWithLocation : public Obj {
     return status;
   }
 
-  int status;
+  GC_OBJ(header_);
 
+  int status;
   Str* user_str_;
   int span_id;
   syntax_asdl::Token* token;
