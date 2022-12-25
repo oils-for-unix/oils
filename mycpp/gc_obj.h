@@ -16,9 +16,10 @@ const uint16_t kZeroMask = 0;  // for types with no pointers
 // no obj_len_ computed for global List/Slab/Dict
 const int kNoObjLen = 0x0badbeef;
 
-// Start from the end of the valid range
+// We start from the end of the valid range; ASDL starts from the beginning.
 const int kStrTypeTag = 127;
 const int kSlabTypeTag = 126;
+const int kTupleTypeTag = 125;
 
 // Can be used as a debug tag
 const uint8_t kMycppDebugType = 255;
@@ -61,6 +62,11 @@ struct ObjHeader {
 #define GC_CLASS_FIXED(header_, field_mask, obj_len) \
   header_ {                                          \
     Tag::FixedSize, 0, field_mask, obj_len           \
+  }
+
+#define GC_TUPLE(header_, field_mask, obj_len)         \
+  header_ {                                            \
+    Tag::FixedSize, kTupleTypeTag, field_mask, obj_len \
   }
 
 // TODO: could omit this in BUMP_LEAK mode

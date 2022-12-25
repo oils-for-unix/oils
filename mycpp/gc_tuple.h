@@ -1,22 +1,13 @@
 #ifndef MYCPP_GC_TUPLE_H
 #define MYCPP_GC_TUPLE_H
 
-// Note:
-//
-// - These use OBJ_HEADER() instead of inheriting from Obj, because Obj can't
-//   be returned by value.  mycpp generates code that returns TupleN<> VALUES,
-//   not references (to reduce GC pressure).
-
 template <class A, class B>
 class Tuple2 {
+  typedef Tuple2<A, B> this_type;
+
  public:
-  Tuple2(A a, B b) : a_(a), b_(b) {
-    heap_tag_ = Tag::FixedSize;
-    typedef Tuple2<A, B> this_type;
-    constexpr int m =
-        (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
-        (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0);
-    field_mask_ = m;
+  Tuple2(A a, B b)
+      : GC_TUPLE(header_, field_mask(), sizeof(this_type)), a_(a), b_(b) {
   }
 
   A at0() {
@@ -26,7 +17,12 @@ class Tuple2 {
     return b_;
   }
 
-  OBJ_HEADER();
+  static constexpr uint16_t field_mask() {
+    return (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
+           (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0);
+  }
+
+  GC_OBJ(header_);
 
  private:
   A a_;
@@ -35,15 +31,14 @@ class Tuple2 {
 
 template <class A, class B, class C>
 class Tuple3 {
+  typedef Tuple3<A, B, C> this_type;
+
  public:
-  Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
-    heap_tag_ = Tag::FixedSize;
-    typedef Tuple3<A, B, C> this_type;
-    constexpr int m =
-        (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
-        (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0) |
-        (std::is_pointer<C>() ? maskbit(offsetof(this_type, c_)) : 0);
-    field_mask_ = m;
+  Tuple3(A a, B b, C c)
+      : GC_TUPLE(header_, field_mask(), sizeof(this_type)),
+        a_(a),
+        b_(b),
+        c_(c) {
   }
   A at0() {
     return a_;
@@ -55,7 +50,13 @@ class Tuple3 {
     return c_;
   }
 
-  OBJ_HEADER();
+  static constexpr uint16_t field_mask() {
+    return (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
+           (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0) |
+           (std::is_pointer<C>() ? maskbit(offsetof(this_type, c_)) : 0);
+  }
+
+  GC_OBJ(header_);
 
  private:
   A a_;
@@ -65,18 +66,16 @@ class Tuple3 {
 
 template <class A, class B, class C, class D>
 class Tuple4 {
- public:
-  Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
-    heap_tag_ = Tag::FixedSize;
-    typedef Tuple4<A, B, C, D> this_type;
-    constexpr int m =
-        (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
-        (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0) |
-        (std::is_pointer<C>() ? maskbit(offsetof(this_type, c_)) : 0) |
-        (std::is_pointer<D>() ? maskbit(offsetof(this_type, d_)) : 0);
-    field_mask_ = m;
-  }
+  typedef Tuple4<A, B, C, D> this_type;
 
+ public:
+  Tuple4(A a, B b, C c, D d)
+      : GC_TUPLE(header_, field_mask(), sizeof(this_type)),
+        a_(a),
+        b_(b),
+        c_(c),
+        d_(d) {
+  }
   A at0() {
     return a_;
   }
@@ -90,7 +89,14 @@ class Tuple4 {
     return d_;
   }
 
-  OBJ_HEADER();
+  static constexpr uint16_t field_mask() {
+    return (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
+           (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0) |
+           (std::is_pointer<C>() ? maskbit(offsetof(this_type, c_)) : 0) |
+           (std::is_pointer<D>() ? maskbit(offsetof(this_type, d_)) : 0);
+  }
+
+  GC_OBJ(header_);
 
  private:
   A a_;
