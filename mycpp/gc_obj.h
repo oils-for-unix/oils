@@ -16,6 +16,10 @@ const uint16_t kZeroMask = 0;  // for types with no pointers
 // no obj_len_ computed for global List/Slab/Dict
 const int kNoObjLen = 0x0badbeef;
 
+// Start from the end of the valid range
+const int kStrTypeTag = 127;
+const int kSlabTypeTag = 126;
+
 // Can be used as a debug tag
 const uint8_t kMycppDebugType = 255;
 
@@ -139,8 +143,9 @@ inline Obj* FindObjHeader(Obj* obj) {
 // The "homogeneous" layout of objects with Tag::FixedSize.  LayoutFixed is for
 // casting; it isn't a real type.
 
-class LayoutFixed : public Obj {
+class LayoutFixed {
  public:
+  ObjHeader header_;
   Obj* children_[16];  // only the entries denoted in field_mask will be valid
 };
 

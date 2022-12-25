@@ -25,12 +25,12 @@ static_assert(offsetof(List<int>, slab_) ==
                   offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
-void ShowSlab(Obj* obj) {
-  assert(obj->heap_tag_ == Tag::Scanned);
+void ShowSlab(void* obj) {
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
+  assert(slab->header_.heap_tag_ == Tag::Scanned);
 
-  int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", slab->obj_len_, n);
+  int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
+  log("slab len = %d, n = %d", slab->header_.obj_len_, n);
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
     if (p == nullptr) {

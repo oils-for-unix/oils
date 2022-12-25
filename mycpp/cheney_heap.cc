@@ -7,8 +7,9 @@
 
 CheneyHeap gHeap;
 
-class LayoutForwarded : public Obj {
+class LayoutForwarded {
  public:
+  ObjHeader header_;
   Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
 };
 
@@ -80,7 +81,7 @@ Obj* CheneyHeap::Relocate(Obj* obj, Obj* header) {
 #endif
 
     auto f = reinterpret_cast<LayoutForwarded*>(header);
-    f->heap_tag_ = Tag::Forwarded;
+    f->header_.heap_tag_ = Tag::Forwarded;
     f->new_location = new_location;
     return new_location;
   }
@@ -162,7 +163,7 @@ void CheneyHeap::Collect(int to_space_size) {
     switch (header->heap_tag_) {
     case Tag::FixedSize: {
       auto fixed = reinterpret_cast<LayoutFixed*>(header);
-      int mask = fixed->field_mask_;
+      int mask = fixed->header_.field_mask_;
       for (int i = 0; i < 16; ++i) {
         if (mask & (1 << i)) {
           Obj* child = fixed->children_[i];
@@ -180,7 +181,7 @@ void CheneyHeap::Collect(int to_space_size) {
     case Tag::Scanned: {
       assert(header == obj);  // no inheritance
       auto slab = reinterpret_cast<Slab<void*>*>(header);
-      int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
+      int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
       for (int i = 0; i < n; ++i) {
         Obj* child = reinterpret_cast<Obj*>(slab->items_[i]);
         if (child) {  // note: List<> may have nullptr; Dict is sparse

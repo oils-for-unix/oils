@@ -215,7 +215,7 @@ bool str_equals(Str* left, Str* right) {
 
   // obj_len_ equal implies string lengths are equal
 
-  if (left->obj_len_ == right->obj_len_) {
+  if (left->header_.obj_len_ == right->header_.obj_len_) {
     assert(len(left) == len(right));
     return memcmp(left->data_, right->data_, len(left)) == 0;
   }

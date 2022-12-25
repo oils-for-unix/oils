@@ -4,10 +4,10 @@
 template <typename T>
 class List;
 
-class Str : public Obj {
+class Str {
  public:
   // Don't call this directly.  Call NewStr() instead, which calls this.
-  Str() : Obj(Tag::Opaque, kZeroMask, 0) {
+  Str() : header_{Tag::Opaque, kStrTypeTag, kZeroMask, kNoObjLen} {
   }
 
   char* data() {
@@ -68,6 +68,8 @@ class Str : public Obj {
   // - Intern strings at GARBAGE COLLECTION TIME, with
   //   LayoutForwarded::new_location_?  Is this possible?  Does it introduce
   //   too much coupling between strings, hash tables, and GC?
+
+  GC_OBJ(header_);
   int hash_value_;
   char data_[1];  // flexible array
 
@@ -81,12 +83,12 @@ class Str : public Obj {
 constexpr int kStrHeaderSize = offsetof(Str, data_);
 
 inline void Str::SetObjLenFromStrLen(int str_len) {
-  obj_len_ = kStrHeaderSize + str_len + 1;
+  header_.obj_len_ = kStrHeaderSize + str_len + 1;
 }
 
 inline int len(const Str* s) {
-  assert(s->obj_len_ >= kStrHeaderSize - 1);
-  return s->obj_len_ - kStrHeaderSize - 1;
+  assert(s->header_.obj_len_ >= kStrHeaderSize - 1);
+  return s->header_.obj_len_ - kStrHeaderSize - 1;
 }
 
 // Notes:
@@ -107,7 +109,7 @@ inline Str* NewStr(int len) {
   void* place = gHeap.Allocate(obj_len);
 
   auto s = new (place) Str();
-  s->SetObjLen(obj_len);
+  s->header_.obj_len_ = obj_len;
   return s;
 }
 

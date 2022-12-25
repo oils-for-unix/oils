@@ -28,13 +28,14 @@ const int kSlabHeaderSize = sizeof(Obj);
 
 // Opaque slab, e.g. for List<int>
 template <typename T>
-class Slab : public Obj {
+class Slab {
  public:
   // slabs of pointers are scanned; slabs of ints/bools are opaque.
-  explicit Slab(int obj_len)
-      : Obj(std::is_pointer<T>() ? Tag::Scanned : Tag::Opaque, kZeroMask,
-            obj_len) {
+  explicit Slab(uint32_t obj_len)
+      : header_{std::is_pointer<T>() ? Tag::Scanned : Tag::Opaque, kSlabTypeTag,
+                kZeroMask, obj_len} {
   }
+  GC_OBJ(header_);
   T items_[1];  // variable length
 };
 

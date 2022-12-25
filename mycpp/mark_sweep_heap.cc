@@ -108,7 +108,7 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
     marked_.insert(obj);
 
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
-    int mask = fixed->field_mask_;
+    int mask = fixed->header_.field_mask_;
 
     // TODO(Jesse): Put the 16 in a #define
     for (int i = 0; i < 16; ++i) {
@@ -130,7 +130,7 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
     auto slab = reinterpret_cast<Slab<void*>*>(header);
 
     // TODO(Jesse): Give this a name
-    int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
+    int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
 
     for (int i = 0; i < n; ++i) {
       Obj* child = reinterpret_cast<Obj*>(slab->items_[i]);

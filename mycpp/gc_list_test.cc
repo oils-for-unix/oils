@@ -53,10 +53,10 @@ TEST test_list_gc_header() {
 
   // 32 byte block - 8 byte header = 24 bytes, 6 elements
   ASSERT_EQ_FMT(6, list1->capacity_, "%d");
-  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->heap_tag_, "%d");
+  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->header_.heap_tag_, "%d");
 
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
-  ASSERT_EQ_FMT(32, list1->slab_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, list1->slab_->header_.obj_len_, "%d");
 
   ASSERT_EQ_FMT(11, list1->index_(0), "%d");
   ASSERT_EQ_FMT(22, list1->index_(1), "%d");
@@ -72,7 +72,7 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(7, len(list1), "%d");
 
   // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
-  ASSERT_EQ_FMT(64, list1->slab_->obj_len_, "%d");
+  ASSERT_EQ_FMT(64, list1->slab_->header_.obj_len_, "%d");
 
   ASSERT_EQ_FMT(11, list1->index_(0), "%d");
   ASSERT_EQ_FMT(22, list1->index_(1), "%d");
