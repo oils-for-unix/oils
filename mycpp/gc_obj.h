@@ -48,6 +48,21 @@ const uint8_t kMycppDebugType = 255;
   uint16_t field_mask_; \
   uint32_t obj_len_;
 
+// New style to migrate to: the first member of every class is 'ObjHeader
+// header_'.  No inheritance from Obj!
+struct ObjHeader {
+  OBJ_HEADER();
+};
+
+#define GC_CLASS_FIXED(header_, field_mask, obj_len) \
+  header_ {                                          \
+    Tag::FixedSize, 0, field_mask, obj_len           \
+  }
+
+// TODO: could omit this in BUMP_LEAK mode
+#define GC_OBJ(var_name) ObjHeader var_name
+
+// TODO: remove Obj in favor of ObjHeader
 class Obj {
   // The unit of garbage collection.  It has a header describing how to find
   // the pointers within it.
@@ -112,7 +127,7 @@ constexpr int maskbit_v(int offset) {
   return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
 }
 
-inline Obj* ObjHeader(Obj* obj) {
+inline Obj* FindObjHeader(Obj* obj) {
   // If we see a vtable pointer, return the Obj* header immediately following.
   // Otherwise just return Obj itself.
   return (obj->heap_tag_ & 0x1) == 0

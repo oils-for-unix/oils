@@ -60,11 +60,10 @@ inline Str* octal(int i) {
   return ::StrFromC(buf, len);
 }
 
-class LineReader : Obj {
+class LineReader {
  public:
   // Abstract type with no fields: unknown size
-  LineReader(uint16_t field_mask, int obj_len)
-      : Obj(Tag::FixedSize, field_mask, obj_len) {
+  LineReader() : GC_CLASS_FIXED(header_, kZeroMask, kNoObjLen) {
   }
   virtual Str* readline() = 0;
   virtual bool isatty() {
@@ -73,33 +72,33 @@ class LineReader : Obj {
   virtual int fileno() {
     NotImplemented();
   }
+
+  GC_OBJ(header_);
 };
 
 class BufLineReader : public LineReader {
  public:
-  explicit BufLineReader(Str* s);
+  explicit BufLineReader(Str* s) : LineReader(), s_(s), pos_(0) {
+    header_.field_mask_ |= BufLineReader::field_mask();
+  }
   virtual Str* readline();
 
   Str* s_;
   int pos_;
 
+  constexpr unsigned field_mask() {
+    return maskbit_v(offsetof(BufLineReader, s_));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(BufLineReader)
 };
-
-constexpr uint16_t maskof_BufLineReader() {
-  return maskbit_v(offsetof(BufLineReader, s_));
-}
-
-inline BufLineReader::BufLineReader(Str* s)
-    : LineReader(maskof_BufLineReader(), sizeof(BufLineReader)),
-      s_(s),
-      pos_(0) {
-}
 
 // Wrap a FILE*
 class CFileLineReader : public LineReader {
  public:
-  explicit CFileLineReader(FILE* f);
+  explicit CFileLineReader(FILE* f) : LineReader(), f_(f) {
+    // not mutating field_mask_ because FILE* isn't a GC object
+  }
   virtual Str* readline();
   virtual int fileno() {
     return ::fileno(f_);
@@ -110,10 +109,6 @@ class CFileLineReader : public LineReader {
 
   DISALLOW_COPY_AND_ASSIGN(CFileLineReader)
 };
-
-inline CFileLineReader::CFileLineReader(FILE* f)
-    : LineReader(kZeroMask, sizeof(CFileLineReader)), f_(f) {
-}
 
 extern LineReader* gStdin;
 
@@ -126,26 +121,24 @@ inline LineReader* Stdin() {
 
 LineReader* open(Str* path);
 
-class Writer : public Obj {
+class Writer {
  public:
-  Writer(uint8_t heap_tag, uint16_t field_mask, int obj_len)
-      : Obj(heap_tag, field_mask, obj_len) {
+  // subclasses mutate the mask (and can set obj_len length for Cheney)
+  Writer() : GC_CLASS_FIXED(header_, kZeroMask, kNoObjLen) {
   }
   virtual void write(Str* s) = 0;
   virtual void flush() = 0;
   virtual bool isatty() = 0;
+
+  GC_OBJ(header_);
 };
 
 class MutableStr;
 
-constexpr uint16_t maskof_BufWriter();
-
 class BufWriter : public Writer {
  public:
-  BufWriter()
-      : Writer(Tag::FixedSize, maskof_BufWriter(), sizeof(BufWriter)),
-        str_(nullptr),
-        len_(0) {
+  BufWriter() : Writer(), str_(nullptr), len_(0) {
+    header_.field_mask_ |= field_mask();
   }
   void write(Str* s) override;
   void flush() override {
@@ -157,7 +150,6 @@ class BufWriter : public Writer {
   Str* getvalue();
 
  private:
-  friend constexpr uint16_t maskof_BufWriter();
   void EnsureCapacity(int n);
 
   void Extend(Str* s);
@@ -168,12 +160,12 @@ class BufWriter : public Writer {
   MutableStr* str_;
   int len_;
   bool is_valid_ = true;  // It becomes invalid after getvalue() is called
-};
 
-constexpr uint16_t maskof_BufWriter() {
-  // maskvit_v() because BufWriter has virtual methods
-  return maskbit_v(offsetof(BufWriter, str_));
-}
+  constexpr unsigned field_mask() {
+    // maskvit_v() because BufWriter has virtual methods
+    return maskbit_v(offsetof(BufWriter, str_));
+  }
+};
 
 class FormatStringer {
  public:
@@ -215,8 +207,8 @@ class FormatStringer {
 // Wrap a FILE*
 class CFileWriter : public Writer {
  public:
-  explicit CFileWriter(FILE* f)
-      : Writer(Tag::FixedSize, kZeroMask, sizeof(BufWriter)), f_(f) {
+  explicit CFileWriter(FILE* f) : Writer(), f_(f) {
+    // not mutating field_mask_ because FILE* is not a managed pointer
   }
   void write(Str* s) override;
   void flush() override;

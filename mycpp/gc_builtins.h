@@ -65,8 +65,9 @@ inline RuntimeError::RuntimeError(Str* message)
 class UnicodeError : public Obj {
  public:
   explicit UnicodeError(Str* message)
-    : Obj(Tag::FixedSize, UnicodeError::field_mask(), kNoObjLen),
-      message(message) {}
+      : Obj(Tag::FixedSize, UnicodeError::field_mask(), kNoObjLen),
+        message(message) {
+  }
 
   Str* message;
 

@@ -117,7 +117,7 @@ void CheneyHeap::Collect(int to_space_size) {
 #endif
 
     if (root) {  // could be nullptr
-      auto header = ObjHeader(root);
+      auto header = FindObjHeader(root);
 
       // This updates the underlying Str/List/Dict with a forwarding pointer,
       // i.e. for other objects that are pointing to it
@@ -152,7 +152,7 @@ void CheneyHeap::Collect(int to_space_size) {
 
   while (scan < free_) {
     auto obj = reinterpret_cast<Obj*>(scan);
-    auto header = ObjHeader(obj);
+    auto header = FindObjHeader(obj);
 
     switch (header->heap_tag_) {
     case Tag::FixedSize: {
@@ -163,7 +163,7 @@ void CheneyHeap::Collect(int to_space_size) {
           Obj* child = fixed->children_[i];
           // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
           if (child) {
-            auto child_header = ObjHeader(child);
+            auto child_header = FindObjHeader(child);
             // log("  fixed: child %d from %p", i, child);
             fixed->children_[i] = Relocate(child, child_header);
             // log("  to %p", fixed->children_[i]);
@@ -179,7 +179,7 @@ void CheneyHeap::Collect(int to_space_size) {
       for (int i = 0; i < n; ++i) {
         Obj* child = reinterpret_cast<Obj*>(slab->items_[i]);
         if (child) {  // note: List<> may have nullptr; Dict is sparse
-          auto child_header = ObjHeader(child);
+          auto child_header = FindObjHeader(child);
           slab->items_[i] = Relocate(child, child_header);
         }
       }

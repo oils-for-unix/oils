@@ -106,7 +106,7 @@ class StackRoots {
 #if VALIDATE_ROOTS
       Obj* obj = *(reinterpret_cast<Obj**>(root));
       if (obj) {
-        Obj* header = ObjHeader(obj);
+        Obj* header = FindObjHeader(obj);
         log("obj %p header %p", obj, header);
 
         switch (header->heap_tag_) {

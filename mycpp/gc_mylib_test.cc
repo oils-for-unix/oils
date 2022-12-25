@@ -108,10 +108,8 @@ TEST test_mylib_funcs() {
 TEST BufWriter_test() {
   // Demonstrate vtable offset issue
   //
-  // The ObjHeader() function in the garbage collector accounts for this
+  // The FindObjHeader() function in the garbage collector accounts for this
   log("offset of obj_len in Obj = %d", offsetof(Obj, obj_len_));
-  log("offset of obj_len in mylib::BufWriter = %d",
-      offsetof(mylib::BufWriter, obj_len_));
 
   mylib::BufWriter* writer = nullptr;
   Str* s = nullptr;

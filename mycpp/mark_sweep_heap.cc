@@ -106,7 +106,7 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
     return;
   }
 
-  auto header = ObjHeader(obj);
+  auto header = FindObjHeader(obj);
   switch (header->heap_tag_) {
   case Tag::Opaque:
     marked_.insert(obj);
