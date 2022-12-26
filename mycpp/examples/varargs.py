@@ -57,6 +57,12 @@ def run_tests():
 
   if 0:
     span_id = 123
+
+    # Is the first arg a LITERAL string or a FORMAT string?  This is a
+    # problem with custom translation of e_die() combined with dynamic format
+    # strings.  You can get StrFormat(StrFormat()), leading to a crash.
+    e_die('hello %%%s' % 's', span_id=span_id)
+
     p_die('hello %d %s', 3, "PP", span_id=span_id)
 
     # No keyword arguments
