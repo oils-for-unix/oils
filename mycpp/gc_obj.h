@@ -1,9 +1,9 @@
 #ifndef GC_OBJ_H
 #define GC_OBJ_H
 
-// Obj::heap_tag_ values.  They're odd numbers to distinguish them from vtable
-// pointers.
-//
+// ObjHeader::heap_tag_ values.  They're odd numbers to distinguish them from
+// vtable pointers.
+
 enum Tag {
   Forwarded = 1,  // For the Cheney algorithm.
   Global = 3,     // Neither copy nor scan.
@@ -28,13 +28,6 @@ const int Tuple = 124;
 // Can be used as a debug tag
 const uint8_t kMycppDebugType = 255;
 
-// Why do we need this macro instead of using inheritance?
-// - Because ASDL uses multiple inheritance for first class variants, but we
-//   don't want multiple IMPLEMENTATION inheritance.  Instead we just generate
-//   compatible layouts.
-// - Similarly, GlobalStr is layout-compatible with Str.  It can't inherit from
-//   Obj like Str, because of the constexpr issue with char[N].
-
 // heap_tag_: one of Tag::
 // type_tag_: ASDL tag (variant)
 // field_mask_: for fixed length records, so max 16 fields
@@ -51,16 +44,20 @@ const uint8_t kMycppDebugType = 255;
 // Because we want to do (obj->heap_tag_ & 1 == 0) to distinguish it from
 // vtable pointer.  We assume low bits of a pointer are 0 but not high bits.
 
-#define _OBJ_HEADER()   \
-  uint8_t heap_tag_;    \
-  uint8_t type_tag_;    \
-  uint16_t field_mask_; \
-  uint32_t obj_len_;
-
 // New style to migrate to: the first member of every class is 'ObjHeader
 // header_'.  No inheritance from Obj!
 struct ObjHeader {
-  _OBJ_HEADER();
+  uint8_t heap_tag_;
+  uint8_t type_tag_;
+  uint16_t field_mask_;
+  uint32_t obj_len_;
+};
+
+// An Obj* is like a void* -- it can point to any C++ object.  The object may
+// start with either ObjHeader, or vtable pointer then an ObjHeader.
+struct Obj {
+  unsigned points_to_header : 1;
+  unsigned pad : 31;
 };
 
 // Used by hand-written and generated classes
@@ -88,35 +85,6 @@ struct ObjHeader {
 
 // TODO: could omit this in BUMP_LEAK mode
 #define GC_OBJ(var_name) ObjHeader var_name
-
-// TODO: remove Obj in favor of ObjHeader
-class Obj {
-  // The unit of garbage collection.  It has a header describing how to find
-  // the pointers within it.
-  //
-  // Note: Sorting ASDL fields by (non-pointer, pointer) is a good idea, but it
-  // breaks down because mycpp has inheritance.  Could do this later.
-
- public:
-  // Note: ASDL types don't call this constructor.  They're layout-compatible
-  // with Obj, but don't inherit from it, using the OBJ_HEADER() macro instead.
-  // This is because "shared variants" use multiple inheritance, and we don't
-  // want multiple IMPL inheritance.
-  constexpr Obj(uint8_t heap_tag, uint16_t field_mask, int obj_len)
-      : heap_tag_(heap_tag),
-        type_tag_(0),
-        field_mask_(field_mask),
-        obj_len_(obj_len) {
-  }
-
-  void SetObjLen(int obj_len) {
-    obj_len_ = obj_len;
-  }
-
-  _OBJ_HEADER()
-
-  DISALLOW_COPY_AND_ASSIGN(Obj)
-};
 
 //
 // Compile-time computation of GC field masks.
@@ -154,13 +122,15 @@ constexpr int maskbit_v(int offset) {
   return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
 }
 
-inline Obj* FindObjHeader(Obj* obj) {
-  // If we see a vtable pointer, return the Obj* header immediately following.
-  // Otherwise just return Obj itself.
-  return (obj->heap_tag_ & 0x1) == 0
-             ? reinterpret_cast<Obj*>(reinterpret_cast<char*>(obj) +
-                                      sizeof(void*))
-             : obj;
+inline ObjHeader* FindObjHeader(Obj* obj) {
+  if (obj->points_to_header) {
+    return reinterpret_cast<ObjHeader*>(obj);
+  } else {
+    // We saw a vtable pointer, so return the ObjHeader* header that
+    // immediately follows.
+    return reinterpret_cast<ObjHeader*>(reinterpret_cast<char*>(obj) +
+                                        sizeof(void*));
+  }
 }
 
 // The "homogeneous" layout of objects with Tag::FixedSize.  LayoutFixed is for

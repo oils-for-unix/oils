@@ -34,6 +34,8 @@ class Slab {
   }
   GC_OBJ(header_);
   T items_[1];  // variable length
+
+  DISALLOW_COPY_AND_ASSIGN(Slab);
 };
 
 template <typename T, int N>

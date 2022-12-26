@@ -15,6 +15,8 @@
 
 #include "mycpp/common.h"
 
+class ObjHeader;  // from gc_obj.h
+
 // Design Notes:
 
 // It's a semi-space collector using the Cheney algorithm.  (Later we may add a
@@ -184,7 +186,7 @@ class CheneyHeap {
     // log("PopRoot %d", roots_top_);
   }
 
-  Obj* Relocate(Obj* obj, Obj* header);
+  Obj* Relocate(Obj* obj, ObjHeader* header);
 
   // mutates free_ and other variables
   void Collect(int to_space_size = 0);

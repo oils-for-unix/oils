@@ -515,14 +515,11 @@ TEST field_mask_demo() {
   PASS();
 }
 
-// https://stackoverflow.com/questions/7405740/how-can-i-initialize-base-class-member-variables-in-derived-class-constructor
-class Base : public Obj {
+class Base {
  public:
-  Base(int i) : Obj(Tag::FixedSize, kZeroMask, 0), i(i) {
-    // annoying: should be in initializer list
-    // maybe only do this if there's inheritance!
-    field_mask_ = 0x9;
+  Base(int i) : GC_CLASS_FIXED(header_, kZeroMask, kNoObjLen), i(i) {
   }
+  GC_OBJ(header_);
   int i;
   Node* left;
   Node* right;
@@ -532,7 +529,7 @@ class Derived : public Base {
  public:
   Derived(int i, int j) : Base(i), j(j) {
     // annoying: should be in initializer list
-    field_mask_ = 0x5;
+    header_.field_mask_ |= 0x5;
   }
   int j;
   Node* three;

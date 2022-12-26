@@ -94,6 +94,8 @@ T* Alloc(Args&&... args) {
 
 class StackRoots {
  public:
+  // Note: void** seems logical, because these are pointers to pointers, but
+  // the C++ compiler doesn't like it.
   StackRoots(std::initializer_list<void*> roots) {
     n_ = roots.size();
 

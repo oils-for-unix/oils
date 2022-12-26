@@ -125,15 +125,16 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
   case Tag::Scanned: {
     marked_.insert(obj);
 
-    assert(header == obj);
+    // no vtable
+    assert(reinterpret_cast<void*>(header) == reinterpret_cast<void*>(obj));
 
-    auto slab = reinterpret_cast<Slab<void*>*>(header);
+    auto slab = reinterpret_cast<Slab<Obj*>*>(header);
 
-    // TODO(Jesse): Give this a name
+    // TODO: mark and sweep should store number of pointers directly
     int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
 
     for (int i = 0; i < n; ++i) {
-      Obj* child = reinterpret_cast<Obj*>(slab->items_[i]);
+      Obj* child = slab->items_[i];
       if (child) {
         MarkObjects(child);
       }

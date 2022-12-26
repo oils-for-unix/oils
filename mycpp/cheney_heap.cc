@@ -37,7 +37,7 @@ void Space::Free() {
   munmap(begin_, size_);
 }
 
-Obj* CheneyHeap::Relocate(Obj* obj, Obj* header) {
+Obj* CheneyHeap::Relocate(Obj* obj, ObjHeader* header) {
   // Move an object from one space to another.
   // If there's no vtable, then obj == header.  Otherwise header points to the
   // Obj header, which is right after the vtable.
@@ -179,7 +179,9 @@ void CheneyHeap::Collect(int to_space_size) {
       break;
     }
     case Tag::Scanned: {
-      assert(header == obj);  // no inheritance
+      // no vtable
+      assert(reinterpret_cast<void*>(header) == reinterpret_cast<void*>(obj));
+
       auto slab = reinterpret_cast<Slab<void*>*>(header);
       int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
       for (int i = 0; i < n; ++i) {

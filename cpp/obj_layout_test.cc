@@ -52,6 +52,11 @@ TEST sizeof_syntax() {
 TEST sizeof_core_types() {
   log("");
 
+  // 8 byte header
+  log("sizeof(ObjHeader) = %d", sizeof(ObjHeader));
+  // 8 + 128 possible entries
+  // log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
+
   // 24 = 4 + (4 + 4 + 4) + 8
   // Feels like a small string optimization here would be nice.
   log("sizeof(Str) = %d", sizeof(Str));
@@ -59,13 +64,6 @@ TEST sizeof_core_types() {
   log("sizeof(List) = %d", sizeof(List<int>));
   // 32 = 4 + pad4 + 8 + 8 + 8
   log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
-
-  // 8 byte sheader
-  log("sizeof(Obj) = %d", sizeof(Obj));
-  // 8 + 128 possible entries
-  // log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
-
-  /* log("sizeof(Heap) = %d", sizeof(Heap)); */
 
 #ifndef MARK_SWEEP
   int min_obj_size = sizeof(LayoutForwarded);

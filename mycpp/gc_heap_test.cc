@@ -306,7 +306,7 @@ class DerivedObj : public BaseObj {
   int derived_member2_ = 252;
 };
 
-void ShowObj(Obj* obj) {
+void ShowObj(ObjHeader* obj) {
   log("obj->heap_tag_ %d", obj->heap_tag_);
   log("obj->obj_len_ %d", obj->obj_len_);
 }
@@ -335,12 +335,12 @@ TEST vtable_test() {
 
   // Note: if static casting, then it doesn't include the vtable pointer!  Must
   // reinterpret_cast!
-  Obj* obj = reinterpret_cast<Obj*>(b3);
+  ObjHeader* obj = reinterpret_cast<ObjHeader*>(b3);
 
   ShowObj(obj);
   if ((obj->heap_tag_ & 0x1) == 0) {  // vtable pointer, NOT A TAG!
-    Obj* header =
-        reinterpret_cast<Obj*>(reinterpret_cast<char*>(obj) + sizeof(void*));
+    ObjHeader* header = reinterpret_cast<ObjHeader*>(
+        reinterpret_cast<char*>(obj) + sizeof(void*));
     // Now we have the right GC info.
     ShowObj(header);
 
