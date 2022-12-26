@@ -290,7 +290,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
                  virtual=None, local_vars=None, fmt_ids=None,
                  field_gc=None,
-                 decl=False, forward_decl=False, ret_val_rooting=False):
+                 decl=False, forward_decl=False):
       self.types = types
       self.const_lookup = const_lookup
       self.f = f 
@@ -306,7 +306,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
       self.decl = decl
       self.forward_decl = forward_decl
-      self.ret_val_rooting = ret_val_rooting
 
       self.unique_id = 0
 
@@ -1628,7 +1627,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(' = it.Value();\n')
 
           # Register loop variable as a stack root.
-          if not self.ret_val_rooting and CTypeIsManaged(c_item_type):
+          if CTypeIsManaged(c_item_type):
             self.write_ind('  StackRoots _for({&');
             self.accept(index_expr)
             self.write_ind('});\n')
@@ -2517,18 +2516,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               roots.append(lval_name)
           #self.log('roots %s', roots)
 
-          if self.ret_val_rooting:
-            self.write_ind('RootsFrame _r{FUNC_NAME};\n')
-          else:
-            if len(roots):
-              self.write_ind('StackRoots _roots({');
-              for i, r in enumerate(roots):
-                if i != 0:
-                  self.write(', ')
-                self.write('&%s' % r)
+          if len(roots):
+            self.write_ind('StackRoots _roots({');
+            for i, r in enumerate(roots):
+              if i != 0:
+                self.write(', ')
+              self.write('&%s' % r)
 
-              self.write('});\n')
-              self.write('\n')
+            self.write('});\n')
+            self.write('\n')
 
           self.prepend_to_block = None
 
@@ -2559,65 +2555,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.body)
 
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
-        if self.ret_val_rooting:
-          if o.expr:
-            # Don't handle 'return None' here
-            if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
-
-              # Note: the type of the return expression (self.types[o.expr])
-              # and the return type of the FUNCTION are different.  Use the
-              # latter.
-              ret_type = self.current_func_node.type.ret_type
-
-              c_ret_type, returning_tuple = get_c_return_type(ret_type)
-
-              # return '', None  # tuple literal
-              #   but NOT
-              # return tuple_func()
-              if returning_tuple and isinstance(o.expr, TupleExpr):
-
-                # Figure out which ones we have to root
-                item_temp_names = []
-                for i, item in enumerate(o.expr.items):
-                  item_type = self.types[item]
-                  item_c_type = get_c_type(item_type)
-                  if CTypeIsManaged(item_c_type):
-                    var_name = 'tmp_item%d' % i
-                    self.write_ind('%s %s = ', item_c_type, var_name)
-                    self.accept(item)
-                    self.write(';\n')
-
-                    self.write_ind('gHeap.RootOnReturn(reinterpret_cast<Obj*>(%s));\n' % var_name)
-                    item_temp_names.append(var_name)
-
-                  else:
-                    item_temp_names.append(None)
-
-                self.write_ind('return %s(' % c_ret_type)
-                for i, item in enumerate(o.expr.items):
-                  if i != 0:
-                    self.write(', ')
-
-                  var_name = item_temp_names[i]
-                  if var_name is not None:
-                    self.write(var_name)
-                  else:
-                    self.accept(item)
-                self.write(');\n')
-
-                return
-
-              if CTypeIsManaged(c_ret_type):
-                self.write_ind('%s tmp_ret = ', c_ret_type)
-                self.accept(o.expr)
-                self.write(';\n')
-
-                self.write_ind('gHeap.RootOnReturn(reinterpret_cast<Obj*>(tmp_ret));\n')
-                self.write_ind('return tmp_ret;\n')
-                return
-
-        # OLD return value rooting.
-
         # Examples:
         # return
         # return None
