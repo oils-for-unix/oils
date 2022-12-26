@@ -637,8 +637,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write('))')
           return
 
-        # TODO: Consolidate X_die() and log()?  It has an extra arg though.
-        if o.callee.name in ('p_die', 'e_die', 'e_strict', 'e_usage'):
+        # Translate
+        # e_die("hi %d", x, span_id=42) => e_die(StrFormat("hi %d", x), 42)
+        # These functions are like log(), but they can have location info.
+        #
+        # TODO: probably remove this case -- they can all use the binary %
+        # operator.  This may simplify cpp/core_error.h
+
+        if o.callee.name in ('p_die', 'e_die', 'e_strict'):
           args = o.args
           if len(args) == 1:  # log(CONST)
             self.write('%s(' % o.callee.name)
@@ -646,17 +652,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
             return
 
+          if len(args) > 2:
+            #raise AssertionError('%s got %d args' % (o.callee.name, len(args)))
+            pass
+
+            #self.log('%s got %d args', o.callee.name, len(args))
+            # STATS:
+            # - 119 calls with 3 args
+            # - 14 calls with 4 args
+            #
+            # 65 e_die
+            # 56 p_die
+            # 12 e_strict
+
           has_keyword_arg = o.arg_names[-1] is not None
-          if has_keyword_arg:
+          if has_keyword_arg:  # e.g. span_id=42
             rest = args[1:-1]
           else:
             rest = args[1:]
-
-          # If there are no arguments, it must look like
-          # Same with
-          # e_die('constant string')
-          if not rest:
-            pass
 
           self.write('%s(StrFormat(' % o.callee.name)
           if isinstance(args[0], StrExpr):
@@ -664,8 +677,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           else:
             self.accept(args[0])
 
-          # Should p_die() be in mylib?
-          # DEFINITION PASS: Write the call
           for i, arg in enumerate(rest):
             self.write(', ')
             self.accept(arg)
@@ -677,7 +688,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
 
           self.write(')')
-
           return
 
         callee_name = o.callee.name
@@ -2352,19 +2362,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.imported_names.add(name)
 
         for name, alias in o.names:
-
           #self.log('ImportFrom id: %s name: %s alias: %s', o.id, name, alias)
 
-          # TODO: Should these be moved to core/pylib.py or something?
-          # They are varargs functions that have to be rewritten.
-          if name in ('log', 'p_die', 'e_die', 'e_die_status', 'e_strict',
-                      'e_usage', 'stderr_line'):
-            continue    # do nothing
+          # These functions are defined in cpp/core_pyerror.h.
+          if name in ('log', 'p_die', 'e_die', 'e_strict'):  # varargs translation
+            continue
 
-          # mylib
+          if name in ('e_usage', 'e_die_status', 'stderr_line'):  # not special
+            continue
+
+          # defined in mylib
           if name in ('switch', 'tagswitch', 'iteritems', 'str_cmp',
                       'NewDict'):
-            continue  # do nothing
+            continue
 
           # A heuristic that works for the Oil import style.
           if '.' in o.id:

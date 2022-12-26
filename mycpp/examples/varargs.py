@@ -51,13 +51,10 @@ def run_tests():
 
   log(CONST)
 
-  # mycpp generates dynamic_fmt_dummy() for DYNAMIC format string.
-  # TODO: We want to do something else.
-  # p_die(CONST, span_id=-1)
-
   # Keyword args give location info for X_die()
   # Just make sure these COMPILE.  We're not catching error::Parse or
   # error::FatalRuntime here.
+
   if 0:
     span_id = 123
     p_die('hello %d %s', 3, "PP", span_id=span_id)
