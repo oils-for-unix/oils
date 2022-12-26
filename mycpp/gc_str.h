@@ -141,12 +141,11 @@ Str* StrFormat(Str* fmt, ...);
 class StrIter {
  public:
   explicit StrIter(Str* s) : s_(s), i_(0), len_(len(s)) {
-    // We need this because StrIter is directly on the stack, and s_ could be
-    // moved during iteration.
-    gHeap.PushRoot(reinterpret_cast<Obj**>(&s_));
+    // Cheney only: s_ could be moved during iteration.
+    // gHeap.PushRoot(reinterpret_cast<Obj**>(&s_));
   }
   ~StrIter() {
-    gHeap.PopRoot();
+    // gHeap.PopRoot();
   }
   void Next() {
     i_++;

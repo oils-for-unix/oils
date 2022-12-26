@@ -276,7 +276,7 @@ TEST global_trace_test() {
   PASS();
 }
 
-// 8 byte vtable, 8 byte Obj header, then member_
+// 8 byte vtable, 8 byte ObjHeader, then member_
 class BaseObj {
  public:
   explicit BaseObj(uint32_t obj_len)
@@ -293,7 +293,7 @@ class BaseObj {
   int member_ = 254;
 };
 
-// 8 byte vtable, 8 byte Obj header, then member_, then derived_member_
+// 8 byte vtable, 8 byte ObjHeader, then member_, then derived_member_
 class DerivedObj : public BaseObj {
  public:
   DerivedObj() : BaseObj(sizeof(DerivedObj)) {

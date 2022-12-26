@@ -21,10 +21,10 @@ Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
 typedef void (*MatchFunc)(const unsigned char* line, int line_len,
                           int start_pos, int* id, int* end_pos);
 
-class SimpleLexer : Obj {
+class SimpleLexer {
  public:
   SimpleLexer(MatchFunc match_func, Str* s)
-      : Obj(Tag::FixedSize, SimpleLexer::field_mask(), sizeof(SimpleLexer)),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(SimpleLexer)),
         match_func_(match_func),
         s_(s),
         pos_(0) {
@@ -38,6 +38,7 @@ class SimpleLexer : Obj {
   }
 
  private:
+  GC_OBJ(header_);
   MatchFunc match_func_;
   Str* s_;
   int pos_;

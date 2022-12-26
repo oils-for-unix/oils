@@ -7,11 +7,8 @@
 
 class ValueError;
 
-// Type that is layout-compatible with List (unit tests assert this).  Two
-// purposes:
-// - To make globals of "plain old data" at compile-time, not at startup time.
-//   This can't be done with subclasses of Obj.
-// - To avoid invalid-offsetof warnings when computing GC masks.
+// GlobalList layout-compatible with List (unit tests assert this), and it can
+// be a true C global (incurs zero startup time)
 
 template <typename T, int N>
 class GlobalList {
@@ -418,12 +415,11 @@ template <class T>
 class ListIter {
  public:
   explicit ListIter(List<T>* L) : L_(L), i_(0) {
-    // We need this because ListIter is directly on the stack, and L_ could be
-    // moved during iteration.
-    gHeap.PushRoot(reinterpret_cast<Obj**>(&L_));
+    // Cheney only: L_ could be moved during iteration.
+    // gHeap.PushRoot(reinterpret_cast<Obj**>(&L_));
   }
   ~ListIter() {
-    gHeap.PopRoot();
+    // gHeap.PopRoot();
   }
   void Next() {
     i_++;

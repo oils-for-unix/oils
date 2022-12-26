@@ -23,9 +23,6 @@ inline int RoundUp(int n) {
   return n;
 }
 
-// don't include items_[1]
-const int kSlabHeaderSize = sizeof(Obj);
-
 // Opaque slab, e.g. for List<int>
 template <typename T>
 class Slab {
@@ -49,6 +46,9 @@ class GlobalSlab {
 
   DISALLOW_COPY_AND_ASSIGN(GlobalSlab)
 };
+
+// The first field is items_
+const int kSlabHeaderSize = offsetof(Slab<int>, items_);
 
 // Note: entries will be zero'd because the Heap is zero'd.
 template <typename T>
