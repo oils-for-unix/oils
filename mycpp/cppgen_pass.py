@@ -2086,7 +2086,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write_ind('class %s', o.name)  # block after this
 
           # e.g. class TextOutput : public ColorOutput
-          self.decl_write(' : public %s', base_class_name or 'Obj')
+          if base_class_name:
+            self.decl_write(' : public %s', base_class_name)
 
           self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')
@@ -2182,7 +2183,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             sorted_member_names = sorted(self.member_vars)
 
-          # Now write member defs
+          # Write member variables
+
+          if not base_class_name:
+            self.decl_write('GC_OBJ(header_);')
+
           #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
           if self.member_vars:
             self.decl_write('\n')  # separate from functions
@@ -2231,25 +2236,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               # Base class can use Obj() constructor directly, but Derived class can't
               if not base_class_name:
-                if o in self.field_gc:
-                  obj_tag, obj_arg = self.field_gc[o]
-                  if obj_tag == 'Tag::FixedSize':
-                    obj_mask = obj_arg
-                    obj_len = 'kNoObjLen'  # don't need length
-                  elif obj_tag == 'Tag::Scanned':
-                    obj_mask = 'kZeroMask'
-                    obj_len = '%d * sizeof(void*) + sizeof(Obj)' % obj_arg
-                  elif obj_tag == 'Tag::Opaque':
-                    obj_mask = 'kZeroMask'
-                    obj_len = 'kNoObjLen'
-                else:
-                  # do we need this default?
-                  obj_tag = 'Tag::Opaque'
+                obj_tag, obj_arg = self.field_gc[o]
+                if obj_tag == 'Tag::FixedSize':
+                  obj_mask = obj_arg
+                  obj_len = 'kNoObjLen'  # don't need length
+                elif obj_tag == 'Tag::Scanned':
+                  obj_mask = 'kZeroMask'
+                  obj_len = '%d * sizeof(void*) + sizeof(ObjHeader)' % obj_arg
+                elif obj_tag == 'Tag::Opaque':
                   obj_mask = 'kZeroMask'
                   obj_len = 'kNoObjLen'
 
                 self.write('\n')
-                self.write('    : Obj(%s, %s, %s)' % (obj_tag, obj_mask, obj_len))
+                self.write('    : GC_CLASS(header_, %s, %s, %s)' % (obj_tag, obj_mask, obj_len))
 
               # Check for Base.__init__(self, ...) and move that to the initializer list.
 
@@ -2290,14 +2289,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               # Derived classes MUTATE the mask
               if base_class_name:
-                pair = self.field_gc.get(o)
-                if pair is None:
-                  #self.log('*** No mask for %s', o.name)
-                  pass
-                else:
-                  obj_tag, obj_arg = pair
-                  if obj_tag == 'Tag::FixedSize' and obj_arg != 'kZeroMask':
-                    self.write('  field_mask_ |= %s::field_mask();\n' % o.name)
+                obj_tag, obj_arg = self.field_gc[o]
+                if obj_tag == 'Tag::FixedSize' and obj_arg != 'kZeroMask':
+                  self.write('  header_.field_mask_ |= %s::field_mask();\n' % o.name)
 
               # Now visit the rest of the statements
               self.indent += 1
