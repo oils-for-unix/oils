@@ -326,7 +326,7 @@ TEST vtable_test() {
   log("c3[0] = %x", c3[0]);
   log("c3[1] = %x", c3[1]);
   log("c3[2] = %x", c3[2]);
-  log("c3[8] = %x", c3[8]);  // this is the Obj header
+  log("c3[8] = %x", c3[8]);  // this is the ObjHeader
 
   log("c3[12] = %x", c3[12]);  // this is padding?   gah.
 
@@ -377,30 +377,6 @@ TEST inheritance_test() {
 
   PASS();
 }
-
-#if 0
-void ShowRoots(const Heap& heap) {
-  log("--");
-  for (int i = 0; i < heap.roots_top_; ++i) {
-    log("%d. %p", i, heap.roots_[i]);
-    // This is NOT on the heap; it's on the stack.
-    // int diff1 = reinterpret_cast<char*>(heap.roots[i]) - gHeap.from_space_;
-    // assert(diff1 < 1024);
-
-    Obj** h = heap.roots_[i];
-    Obj* raw = *h;
-    log("   %p", raw);
-
-    // Raw pointer is on the heap.
-    int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_.begin_;
-    // log("diff2 = %d", diff2);
-    assert(diff2 < 2048);
-
-    // This indeed mutates it and causes a crash
-    // h->Update(nullptr);
-  }
-}
-#endif
 
 TEST stack_roots_test() {
   Str* s = nullptr;

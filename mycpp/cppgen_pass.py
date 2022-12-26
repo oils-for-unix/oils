@@ -2186,11 +2186,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Write member variables
 
           if not base_class_name:
-            self.decl_write('GC_OBJ(header_);')
+            self.decl_write('\n')  # separate from functions
+            self.decl_write_ind('GC_OBJ(header_);\n')
 
           #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
           if self.member_vars:
-            self.decl_write('\n')  # separate from functions
+            if base_class_name:
+              self.decl_write('\n')  # separate from functions
+
             for name in sorted_member_names:
               c_type = get_c_type(self.member_vars[name])
               self.decl_write_ind('%s %s;\n', c_type, name)

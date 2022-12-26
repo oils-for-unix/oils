@@ -10,7 +10,7 @@ CheneyHeap gHeap;
 class LayoutForwarded {
  public:
   ObjHeader header_;
-  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
+  RawObject* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
 };
 
 void Space::Init(int num_bytes) {
@@ -37,10 +37,10 @@ void Space::Free() {
   munmap(begin_, size_);
 }
 
-Obj* CheneyHeap::Relocate(Obj* obj, ObjHeader* header) {
+RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
   // Move an object from one space to another.
   // If there's no vtable, then obj == header.  Otherwise header points to the
-  // Obj header, which is right after the vtable.
+  // RawObject header, which is right after the vtable.
 
   switch (header->heap_tag_) {
   case Tag::Forwarded: {
@@ -58,7 +58,7 @@ Obj* CheneyHeap::Relocate(Obj* obj, ObjHeader* header) {
            header->heap_tag_ == Tag::FixedSize ||
            header->heap_tag_ == Tag::Scanned);
 
-    auto new_location = reinterpret_cast<Obj*>(free_);
+    auto new_location = reinterpret_cast<RawObject*>(free_);
     // Note: if we wanted to save space on ASDL records, we could calculate
     // their length from the field_mask here.  How much would it slow down GC?
     int n = header->obj_len_;
@@ -115,7 +115,7 @@ void CheneyHeap::Collect(int to_space_size) {
 #endif
 
   for (int i = 0; i < roots_top_; ++i) {
-    Obj** handle = roots_[i];
+    RawObject** handle = roots_[i];
     auto root = *handle;
 #if GC_VERBOSE
     log("%d. handle %p", i, handle);
@@ -127,10 +127,10 @@ void CheneyHeap::Collect(int to_space_size) {
 
       // This updates the underlying Str/List/Dict with a forwarding pointer,
       // i.e. for other objects that are pointing to it
-      Obj* new_location = Relocate(root, header);
+      RawObject* new_location = Relocate(root, header);
 #if TODO_BUG
       for (int j = 0; j < roots_top_; ++j) {
-        Obj** handle2 = roots_[j];
+        RawObject** handle2 = roots_[j];
         auto root2 = *handle2;
         if (root2) {
           switch (root2->heap_tag_) {
@@ -157,7 +157,7 @@ void CheneyHeap::Collect(int to_space_size) {
   }
 
   while (scan < free_) {
-    auto obj = reinterpret_cast<Obj*>(scan);
+    auto obj = reinterpret_cast<RawObject*>(scan);
     auto header = FindObjHeader(obj);
 
     switch (header->heap_tag_) {
@@ -166,7 +166,7 @@ void CheneyHeap::Collect(int to_space_size) {
       int mask = fixed->header_.field_mask_;
       for (int i = 0; i < 16; ++i) {
         if (mask & (1 << i)) {
-          Obj* child = fixed->children_[i];
+          RawObject* child = fixed->children_[i];
           // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
           if (child) {
             auto child_header = FindObjHeader(child);
@@ -185,7 +185,7 @@ void CheneyHeap::Collect(int to_space_size) {
       auto slab = reinterpret_cast<Slab<void*>*>(header);
       int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
       for (int i = 0; i < n; ++i) {
-        Obj* child = reinterpret_cast<Obj*>(slab->items_[i]);
+        RawObject* child = reinterpret_cast<RawObject*>(slab->items_[i]);
         if (child) {  // note: List<> may have nullptr; Dict is sparse
           auto child_header = FindObjHeader(child);
           slab->items_[i] = Relocate(child, child_header);
@@ -215,7 +215,7 @@ void CheneyHeap::Collect(int to_space_size) {
 }
 
 #if GC_STATS
-void ShowFixedChildren(Obj* obj) {
+void ShowFixedChildren(RawObject* obj) {
   assert(obj->heap_tag_ == Tag::FixedSize);
   auto fixed = reinterpret_cast<LayoutFixed*>(obj);
   log("MASK:");
@@ -228,7 +228,7 @@ void ShowFixedChildren(Obj* obj) {
   int mask = fixed->field_mask_;
   for (int i = 0; i < 16; ++i) {
     if (mask & (1 << i)) {
-      Obj* child = fixed->children_[i];
+      RawObject* child = fixed->children_[i];
       if (child) {
         // make sure we get Tag::Opaque, Tag::Scanned, etc.
         log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);

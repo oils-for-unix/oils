@@ -217,7 +217,7 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
 }
 
 ColorOutput::ColorOutput(mylib::Writer* f) 
-    : Obj(Tag::FixedSize, field_mask(), kNoObjLen) {
+    : GC_CLASS(header_, Tag::FixedSize, field_mask(), kNoObjLen) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -330,7 +330,7 @@ void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
       }
     }
   }
-  this->f->write(fmt0(css_class));
+  this->f->write(StrFormat("<span class=\"%s\">", css_class));
 }
 
 void HtmlOutput::PopColor() {
@@ -386,7 +386,7 @@ void AnsiOutput::PopColor() {
 int INDENT = 2;
 
 _PrettyPrinter::_PrettyPrinter(int max_col) 
-    : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+    : GC_CLASS(header_, Tag::Opaque, kZeroMask, kNoObjLen) {
   this->max_col = max_col;
 }
 
@@ -520,7 +520,7 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
       tag = val->tag_();
       if (tag == hnode_e::Array) {
         hnode__Array* val = static_cast<hnode__Array*>(UP_val);
-        name_str = fmt1(ind1, name);
+        name_str = StrFormat("%s%s: [", ind1, name);
         f->write(name_str);
         prefix_len = len(name_str);
         if (!this->_PrintWholeArray(val->children, prefix_len, f, indent)) {
@@ -531,11 +531,11 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
             this->PrintNode(child, f, ((indent + INDENT) + INDENT));
             f->write(str25);
           }
-          f->write(fmt2(ind1));
+          f->write(StrFormat("%s]", ind1));
         }
       }
       else {
-        name_str = fmt3(ind1, name);
+        name_str = StrFormat("%s%s: ", ind1, name);
         f->write(name_str);
         prefix_len = len(name_str);
         single_f = f->NewTempBuffer();
@@ -633,7 +633,7 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
     for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::field* field = it.Value();
       StackRoots _for({&field    });
-      f->write(fmt4(field->name));
+      f->write(StrFormat(" %s:", field->name));
       if (!_TrySingleLine(field->val, f, max_chars)) {
         return false;
       }

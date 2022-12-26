@@ -53,7 +53,7 @@ extern Str* FALSE_STR;
 namespace format {  // declare
 
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f);
-class ColorOutput : public Obj {
+class ColorOutput {
  public:
   ColorOutput(mylib::Writer* f);
   virtual format::ColorOutput* NewTempBuffer();
@@ -66,10 +66,11 @@ class ColorOutput : public Obj {
   int NumChars();
   Tuple2<Str*, int> GetRaw();
 
+  GC_OBJ(header_);
   mylib::Writer* f;
   int num_chars;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(ColorOutput, f));
   }
 
@@ -110,7 +111,7 @@ class AnsiOutput : public ColorOutput {
 };
 
 extern int INDENT;
-class _PrettyPrinter : public Obj {
+class _PrettyPrinter {
  public:
   _PrettyPrinter(int max_col);
   bool _PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
@@ -118,6 +119,7 @@ class _PrettyPrinter : public Obj {
   void _PrintRecord(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int indent);
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
 
+  GC_OBJ(header_);
   int max_col;
 
   DISALLOW_COPY_AND_ASSIGN(_PrettyPrinter)
@@ -126,45 +128,6 @@ class _PrettyPrinter : public Obj {
 bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
-
-inline Str* fmt0(Str* a0) {
-  gBuf.reset();
-  gBuf.write_const("<span class=\"", 13);
-  gBuf.format_s(a0);
-  gBuf.write_const("\">", 2);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt1(Str* a0, Str* a1) {
-  gBuf.reset();
-  gBuf.format_s(a0);
-  gBuf.format_s(a1);
-  gBuf.write_const(": [", 3);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt2(Str* a0) {
-  gBuf.reset();
-  gBuf.format_s(a0);
-  gBuf.write_const("]", 1);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt3(Str* a0, Str* a1) {
-  gBuf.reset();
-  gBuf.format_s(a0);
-  gBuf.format_s(a1);
-  gBuf.write_const(": ", 2);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt4(Str* a0) {
-  gBuf.reset();
-  gBuf.write_const(" ", 1);
-  gBuf.format_s(a0);
-  gBuf.write_const(":", 1);
-  return gBuf.getvalue();
-}
 
 
 }  // declare namespace format
@@ -175,12 +138,13 @@ extern int String;
 extern int Int;
 extern int Float;
 extern int Bool;
-class _Attributes : public Obj {
+class _Attributes {
  public:
   _Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults);
   void SetTrue(Str* name);
   void Set(Str* name, runtime_asdl::value_t* val);
 
+  GC_OBJ(header_);
   Dict<Str*, runtime_asdl::value_t*>* attrs;
   List<Tuple2<Str*, bool>*>* opt_changes;
   List<Tuple2<Str*, bool>*>* shopt_changes;
@@ -191,7 +155,7 @@ class _Attributes : public Obj {
   DISALLOW_COPY_AND_ASSIGN(_Attributes)
 };
 
-class Reader : public Obj {
+class Reader {
  public:
   Reader(List<Str*>* argv, List<int>* spids);
   void Next();
@@ -205,6 +169,7 @@ class Reader : public Obj {
   int _FirstSpanId();
   int SpanId();
 
+  GC_OBJ(header_);
   List<Str*>* argv;
   List<int>* spids;
   int n;
@@ -213,10 +178,12 @@ class Reader : public Obj {
   DISALLOW_COPY_AND_ASSIGN(Reader)
 };
 
-class _Action : public Obj {
+class _Action {
  public:
   _Action();
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+
+  GC_OBJ(header_);
 
   DISALLOW_COPY_AND_ASSIGN(_Action)
 };
@@ -231,7 +198,7 @@ class _ArgAction : public _Action {
   bool quit_parsing_flags;
   List<Str*>* valid;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(_ArgAction, name))
          | maskbit_v(offsetof(_ArgAction, valid));
   }
@@ -270,7 +237,7 @@ class SetAttachedBool : public _Action {
 
   Str* name;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetAttachedBool, name));
   }
 
@@ -284,7 +251,7 @@ class SetToTrue : public _Action {
 
   Str* name;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetToTrue, name));
   }
 
@@ -298,7 +265,7 @@ class SetOption : public _Action {
 
   Str* name;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetOption, name));
   }
 
@@ -314,7 +281,7 @@ class SetNamedOption : public _Action {
   List<Str*>* names;
   bool shopt;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetNamedOption, names));
   }
 
@@ -328,7 +295,7 @@ class SetAction : public _Action {
 
   Str* name;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetAction, name));
   }
 
@@ -343,7 +310,7 @@ class SetNamedAction : public _Action {
 
   List<Str*>* names;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetNamedAction, names));
   }
 
@@ -353,27 +320,6 @@ class SetNamedAction : public _Action {
 args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r);
 args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r);
 args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* arg_r);
-
-inline Str* fmt5(Str* a0) {
-  gBuf.reset();
-  gBuf.write_const("got invalid argument to boolean flag: ", 38);
-  gBuf.format_r(a0);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt6(Str* a0) {
-  gBuf.reset();
-  gBuf.write_const("Invalid option ", 15);
-  gBuf.format_r(a0);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt7(Str* a0) {
-  gBuf.reset();
-  gBuf.write_const("Invalid action name ", 20);
-  gBuf.format_r(a0);
-  return gBuf.getvalue();
-}
 
 
 }  // declare namespace args

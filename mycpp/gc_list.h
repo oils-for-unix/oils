@@ -54,7 +54,6 @@ class List {
   List* slice(int begin);
 
   // L[begin:end]
-  // TODO: Can this be optimized?
   List* slice(int begin, int end);
 
   // Should we have a separate API that doesn't return it?
@@ -171,10 +170,8 @@ class Dict;  // forward decl
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d);
 
-/* template <typename T> */
-/* void List<T>::sort(); */
-
 // L[begin:]
+// TODO: Implement this in terms of slice(begin, end)
 template <typename T>
 List<T>* List<T>::slice(int begin) {
   if (begin < 0) {
@@ -194,7 +191,6 @@ List<T>* List<T>::slice(int begin) {
 }
 
 // L[begin:end]
-// TODO: Can this be optimized?
 template <typename T>
 List<T>* List<T>::slice(int begin, int end) {
   if (begin < 0) {
@@ -416,7 +412,7 @@ class ListIter {
  public:
   explicit ListIter(List<T>* L) : L_(L), i_(0) {
     // Cheney only: L_ could be moved during iteration.
-    // gHeap.PushRoot(reinterpret_cast<Obj**>(&L_));
+    // gHeap.PushRoot(reinterpret_cast<RawObject**>(&L_));
   }
   ~ListIter() {
     // gHeap.PopRoot();

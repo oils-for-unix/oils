@@ -92,7 +92,7 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
 
 #endif  // MALLOC_LEAK
 
-void MarkSweepHeap::MarkObjects(Obj* obj) {
+void MarkSweepHeap::MarkObjects(RawObject* obj) {
   bool is_marked = marked_.find(obj) != marked_.end();
   if (is_marked) {
     return;
@@ -113,7 +113,7 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
     // TODO(Jesse): Put the 16 in a #define
     for (int i = 0; i < 16; ++i) {
       if (mask & (1 << i)) {
-        Obj* child = fixed->children_[i];
+        RawObject* child = fixed->children_[i];
         if (child) {
           MarkObjects(child);
         }
@@ -128,13 +128,13 @@ void MarkSweepHeap::MarkObjects(Obj* obj) {
     // no vtable
     assert(reinterpret_cast<void*>(header) == reinterpret_cast<void*>(obj));
 
-    auto slab = reinterpret_cast<Slab<Obj*>*>(header);
+    auto slab = reinterpret_cast<Slab<RawObject*>*>(header);
 
     // TODO: mark and sweep should store number of pointers directly
     int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
 
     for (int i = 0; i < n; ++i) {
-      Obj* child = slab->items_[i];
+      RawObject* child = slab->items_[i];
       if (child) {
         MarkObjects(child);
       }
@@ -194,14 +194,14 @@ int MarkSweepHeap::Collect() {
   // Note: Can we get rid of double pointers?
 
   for (int i = 0; i < num_roots; ++i) {
-    Obj* root = *(roots_[i]);
+    RawObject* root = *(roots_[i]);
     if (root) {
       MarkObjects(root);
     }
   }
 
   for (int i = 0; i < num_globals; ++i) {
-    Obj* root = global_roots_[i];
+    RawObject* root = global_roots_[i];
     if (root) {
       MarkObjects(root);
     }
@@ -210,7 +210,7 @@ int MarkSweepHeap::Collect() {
 #if 0
   log("Collect(): num marked %d", marked_.size());
   for (auto marked_obj : marked_ ) {
-    auto m = reinterpret_cast<Obj*>(marked_obj);
+    auto m = reinterpret_cast<RawObject*>(marked_obj);
     assert(m->heap_tag_ != Tag::Global);  // BUG FIX
   }
 #endif

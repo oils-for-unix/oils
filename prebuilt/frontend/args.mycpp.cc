@@ -270,7 +270,7 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
 }
 
 ColorOutput::ColorOutput(mylib::Writer* f) 
-    : Obj(Tag::FixedSize, field_mask(), kNoObjLen) {
+    : GC_CLASS(header_, Tag::FixedSize, field_mask(), kNoObjLen) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -383,7 +383,7 @@ void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
       }
     }
   }
-  this->f->write(fmt0(css_class));
+  this->f->write(StrFormat("<span class=\"%s\">", css_class));
 }
 
 void HtmlOutput::PopColor() {
@@ -439,7 +439,7 @@ void AnsiOutput::PopColor() {
 int INDENT = 2;
 
 _PrettyPrinter::_PrettyPrinter(int max_col) 
-    : Obj(Tag::Opaque, kZeroMask, kNoObjLen) {
+    : GC_CLASS(header_, Tag::Opaque, kZeroMask, kNoObjLen) {
   this->max_col = max_col;
 }
 
@@ -573,7 +573,7 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
       tag = val->tag_();
       if (tag == hnode_e::Array) {
         hnode__Array* val = static_cast<hnode__Array*>(UP_val);
-        name_str = fmt1(ind1, name);
+        name_str = StrFormat("%s%s: [", ind1, name);
         f->write(name_str);
         prefix_len = len(name_str);
         if (!this->_PrintWholeArray(val->children, prefix_len, f, indent)) {
@@ -584,11 +584,11 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
             this->PrintNode(child, f, ((indent + INDENT) + INDENT));
             f->write(str25);
           }
-          f->write(fmt2(ind1));
+          f->write(StrFormat("%s]", ind1));
         }
       }
       else {
-        name_str = fmt3(ind1, name);
+        name_str = StrFormat("%s%s: ", ind1, name);
         f->write(name_str);
         prefix_len = len(name_str);
         single_f = f->NewTempBuffer();
@@ -686,7 +686,7 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
     for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::field* field = it.Value();
       StackRoots _for({&field    });
-      f->write(fmt4(field->name));
+      f->write(StrFormat(" %s:", field->name));
       if (!_TrySingleLine(field->val, f, max_chars)) {
         return false;
       }
@@ -1209,7 +1209,7 @@ int Float = 3;
 int Bool = 4;
 
 _Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) 
-    : Obj(Tag::Scanned, kZeroMask, 4 * sizeof(void*) + sizeof(Obj)) {
+    : GC_CLASS(header_, Tag::Scanned, kZeroMask, 4 * sizeof(void*) + sizeof(ObjHeader)) {
   this->attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
@@ -1237,7 +1237,7 @@ void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
 }
 
 Reader::Reader(List<Str*>* argv, List<int>* spids) 
-    : Obj(Tag::Scanned, kZeroMask, 2 * sizeof(void*) + sizeof(Obj)) {
+    : GC_CLASS(header_, Tag::Scanned, kZeroMask, 2 * sizeof(void*) + sizeof(ObjHeader)) {
   this->argv = argv;
   this->spids = spids;
   this->n = len(argv);
@@ -1276,7 +1276,7 @@ Str* Reader::ReadRequired(Str* error_msg) {
 
   arg = this->Peek();
   if (arg == nullptr) {
-    e_usage(dynamic_fmt_dummy(), this->_FirstSpanId());
+    e_usage(StrFormat(error_msg), this->_FirstSpanId());
   }
   this->Next();
   return arg;
@@ -1289,7 +1289,7 @@ Tuple2<Str*, int> Reader::ReadRequired2(Str* error_msg) {
 
   arg = this->Peek();
   if (arg == nullptr) {
-    e_usage(dynamic_fmt_dummy(), this->_FirstSpanId());
+    e_usage(StrFormat(error_msg), this->_FirstSpanId());
   }
   spid = this->spids->index_(this->i);
   this->Next();
@@ -1334,7 +1334,7 @@ int Reader::SpanId() {
 }
 
 _Action::_Action() 
-    : Obj(Tag::FixedSize, kZeroMask, kNoObjLen) {
+    : GC_CLASS(header_, Tag::FixedSize, kZeroMask, kNoObjLen) {
   ;  // pass
 }
 
@@ -1345,7 +1345,7 @@ bool _Action::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes*
 }
 
 _ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid)  {
-  field_mask_ |= _ArgAction::field_mask();
+  header_.field_mask_ |= _ArgAction::field_mask();
   this->name = name;
   this->quit_parsing_flags = quit_parsing_flags;
   this->valid = valid;
@@ -1369,7 +1369,7 @@ bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribut
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(dynamic_fmt_dummy(), arg_r->SpanId());
+      e_usage(StrFormat(StrFormat("expected argument to %r", str_concat(str96, this->name))), arg_r->SpanId());
     }
   }
   val = this->_Value(arg, arg_r->SpanId());
@@ -1388,10 +1388,10 @@ runtime_asdl::value_t* SetToInt::_Value(Str* arg, int span_id) {
     i = to_int(arg);
   }
   catch (ValueError*) {
-    e_usage(dynamic_fmt_dummy(), span_id);
+    e_usage(StrFormat(StrFormat("expected integer after %s, got %r", str_concat(str98, this->name), arg)), span_id);
   }
   if (i < 0) {
-    e_usage(dynamic_fmt_dummy(), span_id);
+    e_usage(StrFormat(StrFormat("got invalid integer for %s: %s", str_concat(str100, this->name), arg)), span_id);
   }
   return Alloc<value::Int>(i);
 }
@@ -1407,10 +1407,10 @@ runtime_asdl::value_t* SetToFloat::_Value(Str* arg, int span_id) {
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(dynamic_fmt_dummy(), span_id);
+    e_usage(StrFormat(StrFormat("expected number after %r, got %r", str_concat(str102, this->name), arg)), span_id);
   }
   if (f < 0) {
-    e_usage(dynamic_fmt_dummy(), span_id);
+    e_usage(StrFormat(StrFormat("got invalid float for %s: %s", str_concat(str104, this->name), arg)), span_id);
   }
   return Alloc<value::Float>(f);
 }
@@ -1422,13 +1422,13 @@ runtime_asdl::value_t* SetToString::_Value(Str* arg, int span_id) {
   StackRoots _roots({&arg});
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(dynamic_fmt_dummy(), span_id);
+    e_usage(StrFormat(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str106, this->name), str107->join(this->valid))), span_id);
   }
   return Alloc<value::Str>(arg);
 }
 
 SetAttachedBool::SetAttachedBool(Str* name)  {
-  field_mask_ |= SetAttachedBool::field_mask();
+  header_.field_mask_ |= SetAttachedBool::field_mask();
   this->name = name;
 }
 
@@ -1445,7 +1445,7 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
         b = true;
       }
       else {
-        e_usage(fmt5(attached_arg));
+        e_usage(StrFormat("got invalid argument to boolean flag: %r", attached_arg));
       }
     }
   }
@@ -1457,7 +1457,7 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
 }
 
 SetToTrue::SetToTrue(Str* name)  {
-  field_mask_ |= SetToTrue::field_mask();
+  header_.field_mask_ |= SetToTrue::field_mask();
   this->name = name;
 }
 
@@ -1469,7 +1469,7 @@ bool SetToTrue::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
 }
 
 SetOption::SetOption(Str* name)  {
-  field_mask_ |= SetOption::field_mask();
+  header_.field_mask_ |= SetOption::field_mask();
   this->name = name;
 }
 
@@ -1483,7 +1483,7 @@ bool SetOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
 }
 
 SetNamedOption::SetNamedOption(bool shopt)  {
-  field_mask_ |= SetNamedOption::field_mask();
+  header_.field_mask_ |= SetNamedOption::field_mask();
   this->names = Alloc<List<Str*>>();
   this->shopt = shopt;
 }
@@ -1510,7 +1510,7 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
-    e_usage(fmt6(arg));
+    e_usage(StrFormat("Invalid option %r", arg));
   }
   changes = this->shopt ? out->shopt_changes : out->opt_changes;
   changes->append((Alloc<Tuple2<Str*, bool>>(attr_name, b)));
@@ -1518,7 +1518,7 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
 }
 
 SetAction::SetAction(Str* name)  {
-  field_mask_ |= SetAction::field_mask();
+  header_.field_mask_ |= SetAction::field_mask();
   this->name = name;
 }
 
@@ -1530,7 +1530,7 @@ bool SetAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
 }
 
 SetNamedAction::SetNamedAction()  {
-  field_mask_ |= SetNamedAction::field_mask();
+  header_.field_mask_ |= SetNamedAction::field_mask();
   this->names = Alloc<List<Str*>>();
 }
 
@@ -1552,7 +1552,7 @@ bool SetNamedAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
-    e_usage(fmt7(arg));
+    e_usage(StrFormat("Invalid action name %r", arg));
   }
   out->actions->append(attr_name);
   return false;
@@ -1590,7 +1590,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       }
       action = spec->actions_long->get(flag_name);
       if (action == nullptr) {
-        e_usage(dynamic_fmt_dummy(), arg_r->SpanId());
+        e_usage(StrFormat(StrFormat("got invalid flag %r", arg)), arg_r->SpanId());
       }
       action->OnMatch(suffix, arg_r, out);
       arg_r->Next();
@@ -1618,7 +1618,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(dynamic_fmt_dummy(), arg_r->SpanId());
+          e_usage(StrFormat(StrFormat("doesn't accept flag %s", str_concat(str131, ch))), arg_r->SpanId());
         }
         arg_r->Next();
       }
@@ -1631,7 +1631,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
               out->Set(ch, Alloc<value::Str>(str133));
               continue;
             }
-            e_usage(dynamic_fmt_dummy(), arg_r->SpanId());
+            e_usage(StrFormat(StrFormat("doesn't accept option %s", str_concat(str135, ch))), arg_r->SpanId());
           }
           arg_r->Next();
         }
@@ -1703,7 +1703,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
     if (arg->startswith(str138)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
-        e_usage(dynamic_fmt_dummy(), arg_r->SpanId());
+        e_usage(StrFormat(StrFormat("got invalid flag %r", arg)), arg_r->SpanId());
       }
       action->OnMatch(nullptr, arg_r, out);
       arg_r->Next();
@@ -1716,7 +1716,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
         StackRoots _for({&ch      });
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(dynamic_fmt_dummy(), arg_r->SpanId());
+          e_usage(StrFormat(StrFormat("got invalid flag %r", str_concat(str143, ch))), arg_r->SpanId());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);

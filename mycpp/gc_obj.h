@@ -37,15 +37,15 @@ const uint8_t kMycppDebugType = 255;
 //   And we can sort integers BEFORE pointers.
 
 // TODO: ./configure could detect big or little endian, and then flip the
-// fields in Obj?
+// fields in ObjHeader?
 //
 // https://stackoverflow.com/questions/2100331/c-macro-definition-to-determine-big-endian-or-little-endian-machine
 //
 // Because we want to do (obj->heap_tag_ & 1 == 0) to distinguish it from
 // vtable pointer.  We assume low bits of a pointer are 0 but not high bits.
 
-// New style to migrate to: the first member of every class is 'ObjHeader
-// header_'.  No inheritance from Obj!
+// The first member of every GC-managed object is 'ObjHeader header_'.
+// (There's no inheritance!)
 struct ObjHeader {
   uint8_t heap_tag_;
   uint8_t type_tag_;
@@ -53,9 +53,9 @@ struct ObjHeader {
   uint32_t obj_len_;
 };
 
-// An Obj* is like a void* -- it can point to any C++ object.  The object may
-// start with either ObjHeader, or vtable pointer then an ObjHeader.
-struct Obj {
+// A RawObject* is like a void* -- it can point to any C++ object.  The object
+// may start with either ObjHeader, or vtable pointer then an ObjHeader.
+struct RawObject {
   unsigned points_to_header : 1;
   unsigned pad : 31;
 };
@@ -102,7 +102,7 @@ class _DummyObj {  // For maskbit()
 // - Note that we only call maskbit() on offsets of pointer fields, which must
 //   be POINTER-ALIGNED.
 // - _DummyObj is used in case ObjHeader requires padding, then
-//   sizeof(Obj) != offsetof(_DummyObj, first_field_)
+//   sizeof(ObjHeader) != offsetof(_DummyObj, first_field_)
 
 constexpr int maskbit(int offset) {
   return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
@@ -122,7 +122,7 @@ constexpr int maskbit_v(int offset) {
   return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
 }
 
-inline ObjHeader* FindObjHeader(Obj* obj) {
+inline ObjHeader* FindObjHeader(RawObject* obj) {
   if (obj->points_to_header) {
     return reinterpret_cast<ObjHeader*>(obj);
   } else {
@@ -139,7 +139,8 @@ inline ObjHeader* FindObjHeader(Obj* obj) {
 class LayoutFixed {
  public:
   ObjHeader header_;
-  Obj* children_[16];  // only the entries denoted in field_mask will be valid
+  // only the entries denoted in field_mask will be valid
+  RawObject* children_[16];
 };
 
 #endif

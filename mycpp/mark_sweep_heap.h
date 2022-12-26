@@ -13,7 +13,7 @@ class MarkSweepHeap {
   void Init();  // use default threshold
   void Init(int gc_threshold);
 
-  void PushRoot(Obj** p) {
+  void PushRoot(RawObject** p) {
     roots_.push_back(p);
   }
 
@@ -22,14 +22,14 @@ class MarkSweepHeap {
   }
 
   void RootGlobalVar(void* root) {
-    global_roots_.push_back(reinterpret_cast<Obj*>(root));
+    global_roots_.push_back(reinterpret_cast<RawObject*>(root));
   }
 
   void* Allocate(size_t num_bytes);
   void* Reallocate(void* p, size_t num_bytes);
   int MaybeCollect();
   int Collect();
-  void MarkObjects(Obj* obj);
+  void MarkObjects(RawObject* obj);
   void Sweep();
 
   void PrintStats(int fd);  // public for testing
@@ -63,8 +63,8 @@ class MarkSweepHeap {
   double max_gc_millis_ = 0.0;
   double total_gc_millis_ = 0.0;
 
-  std::vector<Obj**> roots_;
-  std::vector<Obj*> global_roots_;
+  std::vector<RawObject**> roots_;
+  std::vector<RawObject*> global_roots_;
 
   std::vector<void*> live_objs_;
   std::unordered_set<void*> marked_;
@@ -106,9 +106,9 @@ class StackRoots {
     for (auto root : roots) {  // can't use roots[i]
 
 #if VALIDATE_ROOTS
-      Obj* obj = *(reinterpret_cast<Obj**>(root));
+      RawObject* obj = *(reinterpret_cast<RawObject**>(root));
       if (obj) {
-        Obj* header = FindObjHeader(obj);
+        RawObject* header = FindObjHeader(obj);
         log("obj %p header %p", obj, header);
 
         switch (header->heap_tag_) {
@@ -129,7 +129,7 @@ class StackRoots {
       i++;
 #endif
 
-      gHeap.PushRoot(reinterpret_cast<Obj**>(root));
+      gHeap.PushRoot(reinterpret_cast<RawObject**>(root));
     }
   }
 

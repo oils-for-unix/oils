@@ -142,7 +142,7 @@ class StrIter {
  public:
   explicit StrIter(Str* s) : s_(s), i_(0), len_(len(s)) {
     // Cheney only: s_ could be moved during iteration.
-    // gHeap.PushRoot(reinterpret_cast<Obj**>(&s_));
+    // gHeap.PushRoot(reinterpret_cast<RawObject**>(&s_));
   }
   ~StrIter() {
     // gHeap.PopRoot();

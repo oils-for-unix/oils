@@ -4,6 +4,7 @@
 
 #include "_gen/frontend/arg_types.h"
 #include "mycpp/gc_builtins.h"
+// TODO: This prebuilt header should not be included in the tarball
 // for definition of args::Reader, etc.
 #include "prebuilt/frontend/args.mycpp.h"
 

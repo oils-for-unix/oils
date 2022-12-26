@@ -35,7 +35,7 @@ extern Str* FALSE_STR;
 namespace format {  // declare
 
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f);
-class ColorOutput : public Obj {
+class ColorOutput {
  public:
   ColorOutput(mylib::Writer* f);
   virtual format::ColorOutput* NewTempBuffer();
@@ -48,10 +48,11 @@ class ColorOutput : public Obj {
   int NumChars();
   Tuple2<Str*, int> GetRaw();
 
+  GC_OBJ(header_);
   mylib::Writer* f;
   int num_chars;
   
-  constexpr uint16_t field_mask() {
+  static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(ColorOutput, f));
   }
 
@@ -92,7 +93,7 @@ class AnsiOutput : public ColorOutput {
 };
 
 extern int INDENT;
-class _PrettyPrinter : public Obj {
+class _PrettyPrinter {
  public:
   _PrettyPrinter(int max_col);
   bool _PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
@@ -100,6 +101,7 @@ class _PrettyPrinter : public Obj {
   void _PrintRecord(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int indent);
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
 
+  GC_OBJ(header_);
   int max_col;
 
   DISALLOW_COPY_AND_ASSIGN(_PrettyPrinter)
@@ -108,45 +110,6 @@ class _PrettyPrinter : public Obj {
 bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
-
-inline Str* fmt0(Str* a0) {
-  gBuf.reset();
-  gBuf.write_const("<span class=\"", 13);
-  gBuf.format_s(a0);
-  gBuf.write_const("\">", 2);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt1(Str* a0, Str* a1) {
-  gBuf.reset();
-  gBuf.format_s(a0);
-  gBuf.format_s(a1);
-  gBuf.write_const(": [", 3);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt2(Str* a0) {
-  gBuf.reset();
-  gBuf.format_s(a0);
-  gBuf.write_const("]", 1);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt3(Str* a0, Str* a1) {
-  gBuf.reset();
-  gBuf.format_s(a0);
-  gBuf.format_s(a1);
-  gBuf.write_const(": ", 2);
-  return gBuf.getvalue();
-}
-
-inline Str* fmt4(Str* a0) {
-  gBuf.reset();
-  gBuf.write_const(" ", 1);
-  gBuf.format_s(a0);
-  gBuf.write_const(":", 1);
-  return gBuf.getvalue();
-}
 
 
 }  // declare namespace format

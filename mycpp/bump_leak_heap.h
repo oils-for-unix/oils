@@ -19,7 +19,7 @@ class BumpLeakHeap {
   void Init(int gc_threshold) {
   }
 
-  void PushRoot(Obj** p) {
+  void PushRoot(RawObject** p) {
   }
   void PopRoot() {
   }

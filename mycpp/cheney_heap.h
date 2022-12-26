@@ -36,7 +36,7 @@ class ObjHeader;  // from gc_obj.h
 //   - List<T>*
 //   - Dict<K, V>*
 //   - User-defined classes, which may have a vtable pointer.
-// - Graph of GC nodes: everything is an Obj* with an 8 byte header
+// - Graph of GC nodes: everything is an object with an 8 byte header
 //   - 1 byte heap tag, for Cheney
 //   - 1 byte type tag for Zephyr ASDL unions
 //   - 2 byte / 16-bit field bit mask for following pointers on user-defined
@@ -102,7 +102,7 @@ class ObjHeader;  // from gc_obj.h
 template <class T>
 class List;
 
-class Obj;
+class RawObject;
 
 class Space {
  public:
@@ -174,7 +174,7 @@ class CheneyHeap {
     to_space_.size_ = tmp2;
   }
 
-  void PushRoot(Obj** p) {
+  void PushRoot(RawObject** p) {
     // log("PushRoot %d", roots_top_);
     roots_[roots_top_++] = p;
     // TODO: This should be like a malloc() failure?
@@ -186,7 +186,7 @@ class CheneyHeap {
     // log("PopRoot %d", roots_top_);
   }
 
-  Obj* Relocate(Obj* obj, ObjHeader* header);
+  RawObject* Relocate(RawObject* obj, ObjHeader* header);
 
   // mutates free_ and other variables
   void Collect(int to_space_size = 0);
@@ -218,7 +218,7 @@ class CheneyHeap {
   // with initial N_STACK = 262144!  Kind of arbitrary.
 
   int roots_top_;
-  Obj** roots_[kMaxRoots];  // These are pointers to Obj* pointers
+  RawObject** roots_[kMaxRoots];  // These are pointers to RawObject* pointers
 
   bool is_initialized_ = false;
 
@@ -231,7 +231,7 @@ class CheneyHeap {
 };
 
 #if GC_STATS
-void ShowFixedChildren(Obj* obj);
+void ShowFixedChildren(RawObject* obj);
 #endif
 
 extern CheneyHeap gHeap;
