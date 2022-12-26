@@ -30,10 +30,10 @@ namespace optview {
 
 namespace option_i = option_asdl::option_i;
 
-class _View : public Obj {
+class _View {
  public:
   _View(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
-      : Obj(Tag::FixedSize, field_mask(), kNoObjLen),
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_View)),
         opt0_array(opt0_array), opt_stacks(opt_stacks) {
   }
 
@@ -46,6 +46,7 @@ class _View : public Obj {
     }
   }
 
+  GC_OBJ(header_);
   List<bool>* opt0_array;
   List<List<bool>*>* opt_stacks;
 

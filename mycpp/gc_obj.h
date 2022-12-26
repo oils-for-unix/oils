@@ -63,11 +63,19 @@ struct ObjHeader {
   _OBJ_HEADER();
 };
 
+// Used by hand-written and generated classes
 #define GC_CLASS_FIXED(header_, field_mask, obj_len)         \
   header_ {                                                  \
     Tag::FixedSize, TypeTag::OtherClass, field_mask, obj_len \
   }
 
+// Used by frontend/flag_gen.py.  TODO: Sort fields and use Tag::Scanned
+#define GC_CLASS(header_, heap_tag, field_mask, obj_len) \
+  header_ {                                              \
+    heap_tag, TypeTag::OtherClass, field_mask, obj_len   \
+  }
+
+// Used by ASDL.  TODO: Sort fields and use Tag::Scanned
 #define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len) \
   header_ {                                                   \
     Tag::FixedSize, type_tag, field_mask, obj_len             \

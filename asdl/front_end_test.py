@@ -37,7 +37,7 @@ class FrontEndTest(unittest.TestCase):
     print(word_part_e)
 
     # These have the same value!
-    self.assertEqual(201, expr_e.DoubleQuoted)
+    self.assertEqual(65, expr_e.DoubleQuoted)
     self.assertEqual(expr_e.DoubleQuoted, word_part_e.DoubleQuoted)
 
     d = double_quoted(5, ['foo', 'bar'])

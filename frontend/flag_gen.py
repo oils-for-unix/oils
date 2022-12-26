@@ -257,11 +257,11 @@ attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
       mask_str = 'kZeroMask'
 
     header_f.write("""
-class %s : Obj {
+class %s {
  public:
   %s(Dict<Str*, runtime_asdl::value_t*>* attrs)
-      : Obj(%s, %s, kNoObjLen),
-""" % (spec_name, spec_name, obj_tag, mask_str))
+      : GC_CLASS(header_, %s, %s, sizeof(%s)),
+""" % (spec_name, spec_name, obj_tag, mask_str, spec_name))
 
     for i, field_name in enumerate(field_names):
       if i != 0:
@@ -271,6 +271,7 @@ class %s : Obj {
     header_f.write('  }\n')
     header_f.write('\n')
 
+    header_f.write('  GC_OBJ(header_);\n')
     for decl in field_decls:
       header_f.write('  %s\n' % decl)
 
