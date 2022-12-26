@@ -65,6 +65,16 @@ format-cpp() {
   git diff
 }
 
+test-asdl-format() {
+  ### Test how clang-format would like our generated code
+
+  local file=${1:-_gen/asdl/hnode.asdl.h}
+
+  local tmp=_tmp/hnode
+  clang-format $file > $tmp
+  diff -u $file $tmp
+}
+
 #
 # Python
 #

@@ -84,6 +84,7 @@ def NinjaGraph(ru):
       '//frontend/arg_types',
       generated_headers = ['_gen/frontend/arg_types.h'],
       srcs = ['_gen/frontend/arg_types.cc'],
+      deps = ['//cpp/frontend_flag_spec'],
       )
 
   ru.cc_binary(

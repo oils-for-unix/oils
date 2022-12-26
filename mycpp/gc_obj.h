@@ -47,7 +47,7 @@ const uint8_t kMycppDebugType = 255;
 // Because we want to do (obj->heap_tag_ & 1 == 0) to distinguish it from
 // vtable pointer.  We assume low bits of a pointer are 0 but not high bits.
 
-#define OBJ_HEADER()    \
+#define _OBJ_HEADER()   \
   uint8_t heap_tag_;    \
   uint8_t type_tag_;    \
   uint16_t field_mask_; \
@@ -56,12 +56,18 @@ const uint8_t kMycppDebugType = 255;
 // New style to migrate to: the first member of every class is 'ObjHeader
 // header_'.  No inheritance from Obj!
 struct ObjHeader {
-  OBJ_HEADER();
+  _OBJ_HEADER();
 };
 
+// Should this have kTypeTagClass?
 #define GC_CLASS_FIXED(header_, field_mask, obj_len) \
   header_ {                                          \
     Tag::FixedSize, 0, field_mask, obj_len           \
+  }
+
+#define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len) \
+  header_ {                                                   \
+    Tag::FixedSize, type_tag, field_mask, obj_len             \
   }
 
 #define GC_TUPLE(header_, field_mask, obj_len)         \
@@ -96,7 +102,7 @@ class Obj {
     obj_len_ = obj_len;
   }
 
-  OBJ_HEADER()
+  _OBJ_HEADER()
 
   DISALLOW_COPY_AND_ASSIGN(Obj)
 };

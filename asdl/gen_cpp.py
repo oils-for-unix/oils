@@ -206,6 +206,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.debug_info = debug_info if debug_info is not None else {}
 
     self._shared_type_tags = {}
+    # TODO: must fit in 7 bits
     self._product_counter = 200  # fits in uint8_t
 
     self._products = []
@@ -308,11 +309,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Can't be constructed directly.  Note: this shows up in uftrace in debug
     # mode, e.g. when we intantiate Token.  Do we need it?
     Emit(' protected:')
-    Emit('  %s_t() {}' % sum_name)
+    Emit('  %s_t() {' % sum_name)
+    Emit('  }')
     Emit(' public:')
     Emit('  int tag_() const {')
     # There's no inheritance relationship, so we have to reinterpret_cast.
-    Emit('    return reinterpret_cast<const Obj*>(this)->type_tag_;')
+    Emit('    return reinterpret_cast<const ObjHeader*>(this)->type_tag_;')
     Emit('  }')
 
     if self.pretty_print_methods:
@@ -352,8 +354,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit("class %s {" % class_name, depth)
     self.Emit(" public:", depth)
 
-    heap_init = 'heap_tag_(Tag::FixedSize)'
-    type_init = 'type_tag_(%s)' % tag
     all_fields = ast_node.fields + attributes
 
     bits = []
@@ -363,19 +363,35 @@ class ClassDefVisitor(visitor.AsdlVisitor):
           bits.append('maskbit(offsetof(%s, %s))' % (class_name, field.name))
 
     if bits:
-      mask_init = 'field_mask_(maskof_%s())' % class_name
+      mask_init = 'field_mask()'
       #mask_init = 'field_mask_(kZeroMask)'
     else:
-      mask_init = 'field_mask_(kZeroMask)'
+      mask_init = 'kZeroMask'
 
-    # Declare constructor with ZERO args.  Don't emit two constructors for
+    line_break = '\n' + ' ' * 22  # wrapping/indent determined manually
+    header_init = 'GC_ASDL_CLASS(header_, %s,%s%s, sizeof(%s))' % (
+        tag, line_break, mask_init, class_name)
+
+    def FieldInitJoin(strs):
+      # reflow doesn't work well here, so do it manually
+      return ',\n        '.join(strs)
+
+    # Define constructor with ZERO args.  And don't emit two constructors for #
     # types with no fields.
     if ast_node.fields:
-      self.Emit("  %s();" % class_name)
+      default_inits = [header_init]
+      for field in all_fields:
+        default = _DefaultValue(field.typ)
+        default_inits.append('%s(%s)' % (field.name, default))
+
+      self.Emit('  %s()' % class_name, depth)
+      self.Emit('      : %s {' % FieldInitJoin(default_inits), depth, reflow=False)
+      self.Emit('  }')
+      self.Emit('')
 
     params = []
     # All product types and variants have a tag
-    inits = [heap_init, type_init, mask_init]
+    inits = [header_init]
 
     for f in ast_node.fields:
       params.append('%s %s' % (_GetCppType(f.typ), f.name))
@@ -383,55 +399,41 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for f in attributes:  # spids are initialized separately
       inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ)))
 
-    # Declare constructor with N args
-    self.Emit("  %s(%s);" % (class_name, ', '.join(params)))
+    # Define constructor with N args
+    self.Emit('  %s(%s)' % (class_name, ', '.join(params)), depth)
+    self.Emit('      : %s {' % FieldInitJoin(inits), depth, reflow=False)
+    self.Emit('  }')
+    self.Emit('')
 
     if self.pretty_print_methods:
       for abbrev in PRETTY_METHODS:
         self.Emit('  hnode_t* %s();' % abbrev, depth)
-
-    self.Emit('')
+      self.Emit('')
 
     #
     # Members
     #
-    self.Emit('  OBJ_HEADER();')
+    self.Emit('  GC_OBJ(header_);')
     for field in all_fields:
       self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
+
+    if bits:
+      self.Emit('', depth)
+      self.Emit('  static constexpr uint16_t field_mask() {', depth)
+      # do our own formatting of this expression
+      self.f.write('    return ')
+      for i, b in enumerate(bits):
+        if i != 0:
+          self.f.write('\n')
+          self.f.write('         | ')
+        self.f.write(b)
+      self.f.write(';\n')
+      self.Emit('  }', depth)
 
     self.Emit('')
     self.Emit('  DISALLOW_COPY_AND_ASSIGN(%s)' % class_name)
     self.Emit('};', depth)
     self.Emit('', depth)
-
-    if bits:
-      self.Emit('constexpr uint16_t maskof_%s() {' % class_name, depth)
-      self.Emit('  return', depth)
-      self.Emit('    ' + '\n  | '.join(bits) + ';', depth, reflow=False)
-      self.Emit('}', depth)
-      self.Emit('', depth)
-
-    def FieldInitJoin(strs):
-      # reflow doesn't work well here, so do it manually
-      return ',\n      '.join(strs)
-
-    # Define constructor with ZERO args
-    if ast_node.fields:
-      default_inits = [heap_init, type_init, mask_init]
-      for field in all_fields:
-        default = _DefaultValue(field.typ)
-        default_inits.append('%s(%s)' % (field.name, default))
-
-      self.Emit('inline %s::%s()' % (class_name, class_name), depth)
-      self.Emit('    : %s {' % FieldInitJoin(default_inits), depth, reflow=False)
-      self.Emit('}')
-      self.Emit('')
-
-    # Define constructor with N args
-    self.Emit('inline %s::%s(%s)' % (class_name, class_name, ', '.join(params)), depth)
-    self.Emit('    : %s {' % FieldInitJoin(inits), depth, reflow=False)
-    self.Emit('}')
-    self.Emit('')
 
   def VisitProduct(self, product, name, depth):
     self._shared_type_tags[name] = self._product_counter
