@@ -7,7 +7,7 @@ class List;
 class Str {
  public:
   // Don't call this directly.  Call NewStr() instead, which calls this.
-  Str() : header_{Tag::Opaque, kStrTypeTag, kZeroMask, kNoObjLen} {
+  Str() : header_{Tag::Opaque, TypeTag::Str, kZeroMask, kNoObjLen} {
   }
 
   char* data() {
@@ -194,11 +194,11 @@ class GlobalStr {
 // https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
 // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
-#define GLOBAL_STR(name, val)                                              \
-  GlobalStr<sizeof(val)> _##name = {                                       \
-      {Tag::Global, kStrTypeTag, kZeroMask, kStrHeaderSize + sizeof(val)}, \
-      -1,                                                                  \
-      val};                                                                \
+#define GLOBAL_STR(name, val)                                               \
+  GlobalStr<sizeof(val)> _##name = {                                        \
+      {Tag::Global, TypeTag::Str, kZeroMask, kStrHeaderSize + sizeof(val)}, \
+      -1,                                                                   \
+      val};                                                                 \
   Str* name = reinterpret_cast<Str*>(&_##name);
 
 #endif  // MYCPP_GC_STR_H

@@ -159,7 +159,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.simple_int_sums = simple_int_sums or []
 
     self._shared_type_tags = {}
-    self._product_counter = 200  # in C++, fits in uint8_t
+    self._product_counter = 64  # matches asdl/gen_cpp.py
 
     self._products = []
     self._product_bases = defaultdict(list)

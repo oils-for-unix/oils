@@ -16,10 +16,14 @@ const uint16_t kZeroMask = 0;  // for types with no pointers
 // no obj_len_ computed for global List/Slab/Dict
 const int kNoObjLen = 0x0badbeef;
 
-// We start from the end of the valid range; ASDL starts from the beginning.
-const int kStrTypeTag = 127;
-const int kSlabTypeTag = 126;
-const int kTupleTypeTag = 125;
+// This "enum" starts from the end of the valid type_tag range.
+// asdl/gen_cpp.py starts from 1, or 64 for shared variants.
+namespace TypeTag {
+const int OtherClass = 127;  // non-ASDL class
+const int Str = 126;
+const int Slab = 125;
+const int Tuple = 124;
+};  // namespace TypeTag
 
 // Can be used as a debug tag
 const uint8_t kMycppDebugType = 255;
@@ -59,10 +63,9 @@ struct ObjHeader {
   _OBJ_HEADER();
 };
 
-// Should this have kTypeTagClass?
-#define GC_CLASS_FIXED(header_, field_mask, obj_len) \
-  header_ {                                          \
-    Tag::FixedSize, 0, field_mask, obj_len           \
+#define GC_CLASS_FIXED(header_, field_mask, obj_len)         \
+  header_ {                                                  \
+    Tag::FixedSize, TypeTag::OtherClass, field_mask, obj_len \
   }
 
 #define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len) \
@@ -70,9 +73,9 @@ struct ObjHeader {
     Tag::FixedSize, type_tag, field_mask, obj_len             \
   }
 
-#define GC_TUPLE(header_, field_mask, obj_len)         \
-  header_ {                                            \
-    Tag::FixedSize, kTupleTypeTag, field_mask, obj_len \
+#define GC_TUPLE(header_, field_mask, obj_len)          \
+  header_ {                                             \
+    Tag::FixedSize, TypeTag::Tuple, field_mask, obj_len \
   }
 
 // TODO: could omit this in BUMP_LEAK mode

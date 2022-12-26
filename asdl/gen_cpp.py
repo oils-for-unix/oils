@@ -206,8 +206,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.debug_info = debug_info if debug_info is not None else {}
 
     self._shared_type_tags = {}
-    # TODO: must fit in 7 bits
-    self._product_counter = 200  # fits in uint8_t
+    self._product_counter = 64  # start halfway through the range 0-127
 
     self._products = []
     self._product_bases = defaultdict(list)
@@ -292,8 +291,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     #log('%d variants in %s', len(sum.types), sum_name)
 
     # Must fit in 7 bit Obj::type_tag
-    # TODO: They should be odd numbers
-    assert len(sum.types) < 128, 'sum type %r has too many variants' % sum_name
+    assert len(sum.types) < 64, 'sum type %r has too many variants' % sum_name
 
     # This is a sign that Python needs string interpolation!!!
     def Emit(s, depth=depth):
