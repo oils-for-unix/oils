@@ -882,6 +882,12 @@ TEST exceptions_test() {
   }
   ASSERT(caught);
 
+  auto u = Alloc<UnicodeError>(StrFromC("libc"));
+  (void)u;
+
+  auto i = Alloc<IOError>(0);
+  (void)i;
+
   PASS();
 }
 

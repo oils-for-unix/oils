@@ -276,7 +276,7 @@ ColorOutput::ColorOutput(mylib::Writer* f)
 }
 
 format::ColorOutput* ColorOutput::NewTempBuffer() {
-  throw Alloc<NotImplementedError>();
+  NotImplemented();  // Python NotImplementedError
 }
 
 void ColorOutput::FileHeader() {
@@ -288,11 +288,11 @@ void ColorOutput::FileFooter() {
 }
 
 void ColorOutput::PushColor(hnode_asdl::color_t e_color) {
-  throw Alloc<NotImplementedError>();
+  NotImplemented();  // Python NotImplementedError
 }
 
 void ColorOutput::PopColor() {
-  throw Alloc<NotImplementedError>();
+  NotImplemented();  // Python NotImplementedError
 }
 
 void ColorOutput::write(Str* s) {
@@ -1189,7 +1189,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
 Str* maybe_qtt_encode(Str* s, int bit8_display) {
   StackRoots _roots({&s});
 
-  throw Alloc<NotImplementedError>();
+  NotImplemented();  // Python NotImplementedError
 }
 
 }  // define namespace qsn
@@ -1341,7 +1341,7 @@ _Action::_Action()
 bool _Action::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   StackRoots _roots({&attached_arg, &arg_r, &out});
 
-  throw Alloc<NotImplementedError>();
+  NotImplemented();  // Python NotImplementedError
 }
 
 _ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid)  {
@@ -1354,7 +1354,7 @@ _ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid)  {
 runtime_asdl::value_t* _ArgAction::_Value(Str* arg, int span_id) {
   StackRoots _roots({&arg});
 
-  throw Alloc<NotImplementedError>();
+  NotImplemented();  // Python NotImplementedError
 }
 
 bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {

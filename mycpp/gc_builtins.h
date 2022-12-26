@@ -20,8 +20,6 @@ class _ExceptionOpaque {
 // mycpp removes constructor arguments
 class Exception : public _ExceptionOpaque {};
 
-class AssertionError : public _ExceptionOpaque {};
-
 class IndexError : public _ExceptionOpaque {};
 
 class ValueError : public _ExceptionOpaque {};
@@ -32,21 +30,9 @@ class EOFError : public _ExceptionOpaque {};
 
 class KeyboardInterrupt : public _ExceptionOpaque {};
 
-// TODO: we could eliminate args to NotImplementedError, like we do for
-// AssertionError
-class NotImplementedError : public _ExceptionOpaque {
- public:
-  NotImplementedError() : _ExceptionOpaque() {
-  }
-  // used in expr_to_ast
-  explicit NotImplementedError(int i) : _ExceptionOpaque() {
-  }
-  // called with Id_str()
-  explicit NotImplementedError(const char* s) : _ExceptionOpaque() {
-  }
-  explicit NotImplementedError(Str* s) : _ExceptionOpaque() {
-  }
-};
+// Note these translations by mycpp:
+// - AssertionError      -> assert(0);
+// - NotImplementedError -> NotImplemented();
 
 // libc::regex_match and other bindings raise RuntimeError
 class RuntimeError {
@@ -64,19 +50,10 @@ class RuntimeError {
   }
 };
 
-// libc::wcswidth raises UnicodeError
-class UnicodeError {
+// libc::wcswidth raises UnicodeError on invalid UTF-8
+class UnicodeError : public RuntimeError {
  public:
-  explicit UnicodeError(Str* message)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(UnicodeError)),
-        message(message) {
-  }
-
-  GC_OBJ(header_);
-  Str* message;
-
-  static constexpr uint16_t field_mask() {
-    return maskbit(offsetof(UnicodeError, message));
+  explicit UnicodeError(Str* message) : RuntimeError(message) {
   }
 };
 
@@ -154,12 +131,6 @@ Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 Str* str_repeat(Str* s, int times);        // e.g. ' ' * 3
 
 extern Str* kEmptyString;
-
-// Function that mycpp generates for non-constant format strings
-// TODO: switch back to a printf interpreter
-inline Str* dynamic_fmt_dummy() {
-  return kEmptyString;
-}
 
 int hash(Str* s);
 

@@ -531,12 +531,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def _WriteArgList(self, o):
       self.write('(')
-      # So we can get better AssertionError messages in Python
-      if o.callee.name != 'AssertionError':
-        for i, arg in enumerate(o.args):
-          if i != 0:
-            self.write(', ')
-          self.accept(arg)
+      for i, arg in enumerate(o.args):
+        if i != 0:
+          self.write(', ')
+        self.accept(arg)
       self.write(')')
 
     def _IsInstantiation(self, o):
@@ -2672,11 +2670,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
         # C++ compiler is aware of assert(0) for unreachable code
-        if (o.expr and 
-            isinstance(o.expr, CallExpr) and
-            o.expr.callee.name == 'AssertionError'):
-          self.write_ind('assert(0);  // AssertionError\n')
-          return
+        if o.expr and isinstance(o.expr, CallExpr):
+          if o.expr.callee.name == 'AssertionError':
+            self.write_ind('assert(0);  // AssertionError\n')
+            return
+          if o.expr.callee.name == 'NotImplementedError':
+            self.write_ind('NotImplemented();  // Python NotImplementedError\n')
+            return
 
         self.write_ind('throw ')
         # it could be raise -> throw ; .  OSH uses that.

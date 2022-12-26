@@ -102,7 +102,7 @@ class ObjHeader;  // from gc_obj.h
 template <class T>
 class List;
 
-class RawObject;
+struct RawObject;
 
 class Space {
  public:
