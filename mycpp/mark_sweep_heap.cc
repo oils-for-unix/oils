@@ -4,6 +4,7 @@
 #include <unistd.h>    // STDERR_FILENO
 
 #include "mycpp/runtime.h"
+#include "_build/detected-cpp-config.h"  // for GC_TIMING
 
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
