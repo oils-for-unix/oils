@@ -67,6 +67,9 @@ GetOshLabel = function(shell_hash, num_hosts) {
   return(label)
 }
 
+opt_suffix1 = '_bin/cxx-opt/osh_eval.stripped'
+opt_suffix2 = '_bin/cxx-opt-sh/osh_eval.stripped'
+
 ShellLabels = function(shell_name, shell_hash, num_hosts) {
   ### Given 2 vectors, return a vector of readable labels.
 
@@ -75,17 +78,24 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
 
   labels = c()
   for (i in 1:length(shell_name)) {
-    if (shell_name[i] == 'osh') {
+    sh = shell_name[i]
+    if (sh == 'osh') {
       label = GetOshLabel(shell_hash[i], num_hosts)
-    } else if (shell_name[i] == 'osh_eval.stripped') {
+
+    } else if (sh == 'osh_eval.stripped') {
+      # e.g. used by osh-parser
       label = 'oil-native'
-    } else if (endsWith(shell_name[i], '_bin/cxx-opt/osh_eval.stripped')) {
+
+    } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       label = 'opt/osh_eval'
-    } else if (endsWith(shell_name[i], '_bin/cxx-bumpleak/osh_eval')) {
+
+    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh_eval')) {
       label = 'bumpleak/osh_eval'
+
     } else {
-      label = shell_name[i]
+      label = sh
     }
+
     Log('[%s] [%s]', shell_name[i], label)
     labels = c(labels, label)
   }
@@ -97,12 +107,13 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
 ShellLabelFromPath = function(shell_path) {
   labels = c()
   for (i in 1:length(shell_path)) {
-    if (endsWith(shell_path[i], '_bin/cxx-opt/osh_eval.stripped')) {
+    sh = shell_path[i]
+    if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       label = 'opt/osh_eval'
-    } else if (endsWith(shell_path[i], '_bin/cxx-bumpleak/osh_eval')) {
+    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh_eval')) {
       label = 'bumpleak/osh_eval'
     } else {
-      label = shell_path[i]
+      label = sh
     }
     labels = c(labels, label)
   }
