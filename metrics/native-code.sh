@@ -155,4 +155,42 @@ run-for-release() {
   collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/osh_eval
 }
 
+dupe-strings() {
+  ### Check for NUL-terminated strings
+
+  python2 -c '
+import collections
+import re
+import sys
+
+with open(sys.argv[1]) as f:
+  contents = f.read()
+strs = re.split("\\0", contents)
+
+printable = re.compile("[ -~]+$")
+
+d = collections.Counter()
+for s in strs:
+  if len(s) > 1 and printable.match(s):
+    d[s] += 1
+
+for s, count in d.most_common()[:50]:
+  if count == 1:
+    break
+  print("%5d %r" % (count, s))
+
+' "$@"
+}
+
+# Results: 
+# Found StrFromC() and len() duplication
+
+oil-dupe-strings() {
+  local bin=_bin/cxx-opt/osh_eval.stripped
+  #local bin=_bin/clang-opt/osh_eval.stripped
+  ninja $bin
+
+  dupe-strings $bin
+}
+
 "$@"

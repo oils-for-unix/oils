@@ -87,7 +87,7 @@ inline void Str::SetObjLenFromStrLen(int str_len) {
 }
 
 inline int len(const Str* s) {
-  assert(s->header_.obj_len >= kStrHeaderSize - 1);
+  DCHECK(s->header_.obj_len >= kStrHeaderSize - 1);
   return s->header_.obj_len - kStrHeaderSize - 1;
 }
 
@@ -125,7 +125,7 @@ inline Str* OverAllocatedStr(int len) {
 inline Str* StrFromC(const char* data, int len) {
   Str* s = NewStr(len);
   memcpy(s->data_, data, len);
-  assert(s->data_[len] == '\0');  // should be true because Heap was zeroed
+  DCHECK(s->data_[len] == '\0');  // should be true because Heap was zeroed
 
   return s;
 }
