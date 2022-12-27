@@ -93,6 +93,22 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
   return(labels)
 }
 
+# Simple version of the above, used by benchmarks/gc
+ShellLabelFromPath = function(shell_path) {
+  labels = c()
+  for (i in 1:length(shell_path)) {
+    if (endsWith(shell_path[i], '_bin/cxx-opt/osh_eval.stripped')) {
+      label = 'opt/osh_eval'
+    } else if (endsWith(shell_path[i], '_bin/cxx-bumpleak/osh_eval')) {
+      label = 'bumpleak/osh_eval'
+    } else {
+      label = shell_path[i]
+    }
+    labels = c(labels, label)
+  }
+  return(labels)
+}
+
 DistinctHosts = function(t) {
   t %>% distinct(host_name, host_hash) -> distinct_hosts
   # The label is just the name
@@ -692,24 +708,48 @@ GcReport = function(in_dir, out_dir) {
     mutate(elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
-           max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
-    select(c(join_id, task, elapsed_ms, user_ms, sys_ms, max_rss_MB, shell_bin, shell_runtime_opts)) ->
+           max_rss_MB = max_rss_KiB * 1024 / 1e6,
+           shell_label = ShellLabelFromPath(shell_bin)
+           ) %>%
+    select(c(join_id, task, elapsed_ms, user_ms, sys_ms, max_rss_MB, shell_label,
+             shell_runtime_opts)) ->
     times
 
   # Join and order columns
   gc_stats %>% left_join(times, by = c('join_id')) %>% 
-    arrange(task) %>%
-    select(task, elapsed_ms, total_gc_millis, max_gc_millis,
-           num_gc_points, gc_threshold, num_collections,
-           max_survived, max_rss_MB,
-           num_allocated, bytes_allocated, shell_bin) ->
+    arrange(desc(task)) %>%
+    mutate(allocated_MB = bytes_allocated / 1e6) %>%
+    # try to make the table skinnier
+    rename(num_gc_done = num_collections) %>%
+    select(task, elapsed_ms, max_gc_millis, total_gc_millis,
+           num_gc_points, num_gc_done, gc_threshold, num_growths,
+           max_survived, num_allocated, allocated_MB, max_rss_MB,
+           shell_label) ->
     gc_stats
 
   times %>% select(-c(join_id)) -> times
 
-  precision = ColumnPrecision(list(max_rss_MB = 1), default = 0)
+
+  precision = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),
+                              default = 0)
+
   writeTsv(times, file.path(out_dir, 'times'), precision)
   writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision)
+
+  WriteTimes = function(times, task_name) {
+    # weird ensym() for "tidy evaluation"
+    times %>%
+      filter(task == task_name) %>%
+      select(-c(task)) -> subset
+    writeTsv(subset, file.path(out_dir, task_name), precision)
+  }
+
+  # Write out separate rows
+  WriteTimes(times, 'parse.configure-coreutils')
+  WriteTimes(times, 'parse.abuild')
+  WriteTimes(times, 'ex.compute-fib')
+  WriteTimes(times, 'ex.bashcomp-parse-help')
+  WriteTimes(times, 'ex.abuild-print-help')
 }
 
 MyCppReport = function(in_dir, out_dir) {

@@ -106,11 +106,11 @@ print-tasks() {
 
     "_bin/cxx-bumpleak/osh_eval${TAB}mut"
     # these have trivial GC stats
-    "_bin/cxx-opt/osh_eval${TAB}mut+alloc"
-    "_bin/cxx-opt/osh_eval${TAB}mut+alloc+free"
+    "_bin/cxx-opt/osh_eval.stripped${TAB}mut+alloc"
+    "_bin/cxx-opt/osh_eval.stripped${TAB}mut+alloc+free"
     # good GC stats
-    "_bin/cxx-opt/osh_eval${TAB}mut+alloc+free+gc"
-    "_bin/cxx-opt/osh_eval${TAB}mut+alloc+free+gc+exit"
+    "_bin/cxx-opt/osh_eval.stripped${TAB}mut+alloc+free+gc"
+    "_bin/cxx-opt/osh_eval.stripped${TAB}mut+alloc+free+gc+exit"
   )
 
   local id=0
@@ -162,7 +162,7 @@ run-tasks() {
         argv=( -n $data_file )
 
         case $shell_bin in
-          */osh_eval)
+          */osh_eval*)
             argv=( --ast-format none "${argv[@]}" )
             ;;
         esac
@@ -318,7 +318,8 @@ more-variants() {
 }
 
 measure-all() {
-  ninja _bin/cxx-{bumpleak,opt}/osh_eval
+  ninja _bin/cxx-bumpleak/osh_eval \
+        _bin/cxx-opt/osh_eval.stripped
 
   local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
   mkdir -p $(dirname $tsv_out)
@@ -366,12 +367,49 @@ EOF
 
 ### Resource Usage
 
+#### parse.configure-coreutils
+
+Parsing the autoconf-generated `configure` script from GNU coreutils.
+
 Note that unlike other shells, `osh -n` retains all nodes on purpose.  (See the
 [parser benchmark](../osh-parser/index.html)).
 
 EOF
 
-  tsv2html $in_dir/times.tsv
+  tsv2html $in_dir/parse.configure-coreutils.tsv
+
+  cmark <<'EOF'
+#### parse.abuild
+
+Parsing `abuild` from Alpine Linux.
+EOF
+
+  tsv2html $in_dir/parse.abuild.tsv
+
+  cmark <<'EOF'
+#### ex.compute-fib
+
+A synthetic benchmark for POSIX shell arithmetic.
+EOF
+
+  tsv2html $in_dir/ex.compute-fib.tsv
+
+  cmark <<'EOF'
+#### ex.bashcomp-parse-help
+
+A realistic `bash-completion` workload.
+EOF
+
+  tsv2html $in_dir/ex.bashcomp-parse-help.tsv
+
+  cmark <<'EOF'
+#### ex.abuild-print-help
+
+Running `abuild -h` from Alpine Linux.
+
+EOF
+
+  tsv2html $in_dir/ex.abuild-print-help.tsv
 
   cmark << 'EOF'
 - Underlying data: [stage2/times.tsv](stage2/times.tsv)
