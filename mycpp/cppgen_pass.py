@@ -2302,7 +2302,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               if base_class_name:
                 obj_tag, obj_arg = self.field_gc[o]
                 if obj_tag == 'Tag::FixedSize' and obj_arg != 'kZeroMask':
-                  self.write('  header_.field_mask_ |= %s::field_mask();\n' % o.name)
+                  self.write('  header_.field_mask |= %s::field_mask();\n' % o.name)
 
               # Now visit the rest of the statements
               self.indent += 1
@@ -2312,7 +2312,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.write('}\n')
 
               continue  # wrote FuncDef for constructor
-
 
             if stmt.name == '__enter__':
               continue

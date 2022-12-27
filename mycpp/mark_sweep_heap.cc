@@ -99,7 +99,7 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
   }
 
   auto header = FindObjHeader(obj);
-  switch (header->heap_tag_) {
+  switch (header->heap_tag) {
   case Tag::Opaque:
     marked_.insert(obj);
     break;
@@ -108,7 +108,7 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
     marked_.insert(obj);
 
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
-    int mask = fixed->header_.field_mask_;
+    int mask = fixed->header_.field_mask;
 
     // TODO(Jesse): Put the 16 in a #define
     for (int i = 0; i < 16; ++i) {
@@ -131,7 +131,7 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
     auto slab = reinterpret_cast<Slab<RawObject*>*>(header);
 
     // TODO: mark and sweep should store number of pointers directly
-    int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
+    int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
 
     for (int i = 0; i < n; ++i) {
       RawObject* child = slab->items_[i];
@@ -211,7 +211,7 @@ int MarkSweepHeap::Collect() {
   log("Collect(): num marked %d", marked_.size());
   for (auto marked_obj : marked_ ) {
     auto m = reinterpret_cast<RawObject*>(marked_obj);
-    assert(m->heap_tag_ != Tag::Global);  // BUG FIX
+    assert(m->heap_tag != Tag::Global);  // BUG FIX
   }
 #endif
 

@@ -79,7 +79,7 @@ class LineReader {
 class BufLineReader : public LineReader {
  public:
   explicit BufLineReader(Str* s) : LineReader(), s_(s), pos_(0) {
-    header_.field_mask_ |= BufLineReader::field_mask();
+    header_.field_mask |= BufLineReader::field_mask();
   }
   virtual Str* readline();
 
@@ -97,7 +97,7 @@ class BufLineReader : public LineReader {
 class CFileLineReader : public LineReader {
  public:
   explicit CFileLineReader(FILE* f) : LineReader(), f_(f) {
-    // not mutating field_mask_ because FILE* isn't a GC object
+    // not mutating field_mask because FILE* isn't a GC object
   }
   virtual Str* readline();
   virtual int fileno() {
@@ -138,7 +138,7 @@ class MutableStr;
 class BufWriter : public Writer {
  public:
   BufWriter() : Writer(), str_(nullptr), len_(0) {
-    header_.field_mask_ |= field_mask();
+    header_.field_mask |= field_mask();
   }
   void write(Str* s) override;
   void flush() override {
@@ -208,7 +208,7 @@ class FormatStringer {
 class CFileWriter : public Writer {
  public:
   explicit CFileWriter(FILE* f) : Writer(), f_(f) {
-    // not mutating field_mask_ because FILE* is not a managed pointer
+    // not mutating field_mask because FILE* is not a managed pointer
   }
   void write(Str* s) override;
   void flush() override;

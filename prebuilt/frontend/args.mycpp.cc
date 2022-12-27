@@ -1345,7 +1345,7 @@ bool _Action::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes*
 }
 
 _ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid)  {
-  header_.field_mask_ |= _ArgAction::field_mask();
+  header_.field_mask |= _ArgAction::field_mask();
   this->name = name;
   this->quit_parsing_flags = quit_parsing_flags;
   this->valid = valid;
@@ -1428,7 +1428,7 @@ runtime_asdl::value_t* SetToString::_Value(Str* arg, int span_id) {
 }
 
 SetAttachedBool::SetAttachedBool(Str* name)  {
-  header_.field_mask_ |= SetAttachedBool::field_mask();
+  header_.field_mask |= SetAttachedBool::field_mask();
   this->name = name;
 }
 
@@ -1457,7 +1457,7 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
 }
 
 SetToTrue::SetToTrue(Str* name)  {
-  header_.field_mask_ |= SetToTrue::field_mask();
+  header_.field_mask |= SetToTrue::field_mask();
   this->name = name;
 }
 
@@ -1469,7 +1469,7 @@ bool SetToTrue::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
 }
 
 SetOption::SetOption(Str* name)  {
-  header_.field_mask_ |= SetOption::field_mask();
+  header_.field_mask |= SetOption::field_mask();
   this->name = name;
 }
 
@@ -1483,7 +1483,7 @@ bool SetOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
 }
 
 SetNamedOption::SetNamedOption(bool shopt)  {
-  header_.field_mask_ |= SetNamedOption::field_mask();
+  header_.field_mask |= SetNamedOption::field_mask();
   this->names = Alloc<List<Str*>>();
   this->shopt = shopt;
 }
@@ -1518,7 +1518,7 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
 }
 
 SetAction::SetAction(Str* name)  {
-  header_.field_mask_ |= SetAction::field_mask();
+  header_.field_mask |= SetAction::field_mask();
   this->name = name;
 }
 
@@ -1530,7 +1530,7 @@ bool SetAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
 }
 
 SetNamedAction::SetNamedAction()  {
-  header_.field_mask_ |= SetNamedAction::field_mask();
+  header_.field_mask |= SetNamedAction::field_mask();
   this->names = Alloc<List<Str*>>();
 }
 

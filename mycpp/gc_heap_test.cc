@@ -27,10 +27,10 @@ static_assert(offsetof(List<int>, slab_) ==
 
 void ShowSlab(void* obj) {
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
-  assert(slab->header_.heap_tag_ == Tag::Scanned);
+  assert(slab->header_.heap_tag == Tag::Scanned);
 
-  int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", slab->header_.obj_len_, n);
+  int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
+  log("slab len = %d, n = %d", slab->header_.obj_len, n);
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
     if (p == nullptr) {
@@ -47,7 +47,7 @@ TEST field_masks_test() {
   StackRoots _roots({&L});
 
   L->append(1);
-  log("List mask = %d", L->header_.field_mask_);
+  log("List mask = %d", L->header_.field_mask);
 
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
@@ -60,7 +60,7 @@ TEST field_masks_test() {
   // expression!  Gah!
   // d->set(StrFromC("foo"), 3);
 
-  log("Dict mask = %d", d->header_.field_mask_);
+  log("Dict mask = %d", d->header_.field_mask);
 
 #if 0
   ShowFixedChildren(L);
@@ -307,8 +307,8 @@ class DerivedObj : public BaseObj {
 };
 
 void ShowObj(ObjHeader* obj) {
-  log("obj->heap_tag_ %d", obj->heap_tag_);
-  log("obj->obj_len_ %d", obj->obj_len_);
+  log("obj->heap_tag %d", obj->heap_tag);
+  log("obj->obj_len %d", obj->obj_len);
 }
 
 TEST vtable_test() {
@@ -318,8 +318,8 @@ TEST vtable_test() {
 
   BaseObj base3;
 
-  log("BaseObj obj_len_ = %d", base3.header_.obj_len_);
-  log("derived b3->obj_len_ = %d", b3->header_.obj_len_);  // derived length
+  log("BaseObj obj_len = %d", base3.header_.obj_len);
+  log("derived b3->obj_len = %d", b3->header_.obj_len);  // derived length
   log("sizeof(d3) = %d", sizeof(d3));
 
   unsigned char* c3 = reinterpret_cast<unsigned char*>(b3);
@@ -338,16 +338,16 @@ TEST vtable_test() {
   ObjHeader* obj = reinterpret_cast<ObjHeader*>(b3);
 
   ShowObj(obj);
-  if ((obj->heap_tag_ & 0x1) == 0) {  // vtable pointer, NOT A TAG!
+  if ((obj->heap_tag & 0x1) == 0) {  // vtable pointer, NOT A TAG!
     ObjHeader* header = reinterpret_cast<ObjHeader*>(
         reinterpret_cast<char*>(obj) + sizeof(void*));
     // Now we have the right GC info.
     ShowObj(header);
 
-    ASSERT_EQ_FMT(Tag::FixedSize, header->heap_tag_, "%d");
-    ASSERT_EQ_FMT(0, header->field_mask_, "%d");
+    ASSERT_EQ_FMT(Tag::FixedSize, header->heap_tag, "%d");
+    ASSERT_EQ_FMT(0, header->field_mask, "%d");
     // casts get rid of warning
-    ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len_, "%d");
+    ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len, "%d");
   } else {
     ASSERT(false);  // shouldn't get here
   }

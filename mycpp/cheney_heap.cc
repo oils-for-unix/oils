@@ -10,7 +10,7 @@ CheneyHeap gHeap;
 class LayoutForwarded {
  public:
   ObjHeader header_;
-  RawObject* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
+  RawObject* new_location;  // valid if and only if heap_tag == Tag::Forwarded
 };
 
 void Space::Init(int num_bytes) {
@@ -42,7 +42,7 @@ RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
   // If there's no vtable, then obj == header.  Otherwise header points to the
   // RawObject header, which is right after the vtable.
 
-  switch (header->heap_tag_) {
+  switch (header->heap_tag) {
   case Tag::Forwarded: {
     auto f = reinterpret_cast<LayoutForwarded*>(header);
     return f->new_location;
@@ -54,19 +54,19 @@ RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
   }
 
   default: {
-    assert(header->heap_tag_ == Tag::Opaque ||
-           header->heap_tag_ == Tag::FixedSize ||
-           header->heap_tag_ == Tag::Scanned);
+    assert(header->heap_tag == Tag::Opaque ||
+           header->heap_tag == Tag::FixedSize ||
+           header->heap_tag == Tag::Scanned);
 
     auto new_location = reinterpret_cast<RawObject*>(free_);
     // Note: if we wanted to save space on ASDL records, we could calculate
     // their length from the field_mask here.  How much would it slow down GC?
-    int n = header->obj_len_;
+    int n = header->obj_len;
     assert(n > 0);  // detect common problem
     memcpy(new_location, obj, n);
     // log("memcpy %d bytes from %p -> %p", n, obj, new_location);
 #if 0
-    if (obj->heap_tag_ == Tag::Opaque) {
+    if (obj->heap_tag == Tag::Opaque) {
       Str* s = static_cast<Str*>(obj);
       log("from = %s", s->data_);
       Str* s2 = static_cast<Str*>(new_location);
@@ -81,7 +81,7 @@ RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
 #endif
 
     auto f = reinterpret_cast<LayoutForwarded*>(header);
-    f->header_.heap_tag_ = Tag::Forwarded;
+    f->header_.heap_tag = Tag::Forwarded;
     f->new_location = new_location;
     return new_location;
   }
@@ -133,7 +133,7 @@ void CheneyHeap::Collect(int to_space_size) {
         RawObject** handle2 = roots_[j];
         auto root2 = *handle2;
         if (root2) {
-          switch (root2->heap_tag_) {
+          switch (root2->heap_tag) {
           case Tag::Forwarded:
           case Tag::Global:
           case Tag::Opaque:
@@ -160,14 +160,14 @@ void CheneyHeap::Collect(int to_space_size) {
     auto obj = reinterpret_cast<RawObject*>(scan);
     auto header = FindObjHeader(obj);
 
-    switch (header->heap_tag_) {
+    switch (header->heap_tag) {
     case Tag::FixedSize: {
       auto fixed = reinterpret_cast<LayoutFixed*>(header);
-      int mask = fixed->header_.field_mask_;
+      int mask = fixed->header_.field_mask;
       for (int i = 0; i < 16; ++i) {
         if (mask & (1 << i)) {
           RawObject* child = fixed->children_[i];
-          // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
+          // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag);
           if (child) {
             auto child_header = FindObjHeader(child);
             // log("  fixed: child %d from %p", i, child);
@@ -183,7 +183,7 @@ void CheneyHeap::Collect(int to_space_size) {
       assert(reinterpret_cast<void*>(header) == reinterpret_cast<void*>(obj));
 
       auto slab = reinterpret_cast<Slab<void*>*>(header);
-      int n = (slab->header_.obj_len_ - kSlabHeaderSize) / sizeof(void*);
+      int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
       for (int i = 0; i < n; ++i) {
         RawObject* child = reinterpret_cast<RawObject*>(slab->items_[i]);
         if (child) {  // note: List<> may have nullptr; Dict is sparse
@@ -194,15 +194,15 @@ void CheneyHeap::Collect(int to_space_size) {
       break;
     }
     default: {
-      assert(header->heap_tag_ == Tag::Forwarded ||
-             header->heap_tag_ == Tag::Global ||
-             header->heap_tag_ == Tag::Opaque);
+      assert(header->heap_tag == Tag::Forwarded ||
+             header->heap_tag == Tag::Global ||
+             header->heap_tag == Tag::Opaque);
     }
 
       // other tags like Tag::Opaque have no children
     }
     // aligned() like Heap::Allocate()
-    scan += aligned(header->obj_len_);
+    scan += aligned(header->obj_len);
   }
 
   Swap();
@@ -216,7 +216,7 @@ void CheneyHeap::Collect(int to_space_size) {
 
 #if GC_STATS
 void ShowFixedChildren(RawObject* obj) {
-  assert(obj->heap_tag_ == Tag::FixedSize);
+  assert(obj->heap_tag == Tag::FixedSize);
   auto fixed = reinterpret_cast<LayoutFixed*>(obj);
   log("MASK:");
 
@@ -225,13 +225,13 @@ void ShowFixedChildren(RawObject* obj) {
   // There is a de Brjuin sequence solution?
   // https://stackoverflow.com/questions/757059/position-of-least-significant-bit-that-is-set
 
-  int mask = fixed->field_mask_;
+  int mask = fixed->field_mask;
   for (int i = 0; i < 16; ++i) {
     if (mask & (1 << i)) {
       RawObject* child = fixed->children_[i];
       if (child) {
         // make sure we get Tag::Opaque, Tag::Scanned, etc.
-        log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
+        log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag);
       }
     }
   }

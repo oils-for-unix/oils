@@ -529,7 +529,7 @@ class Derived : public Base {
  public:
   Derived(int i, int j) : Base(i), j(j) {
     // annoying: should be in initializer list
-    header_.field_mask_ |= 0x5;
+    header_.field_mask |= 0x5;
   }
   int j;
   Node* three;

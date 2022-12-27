@@ -1,19 +1,19 @@
 #ifndef GC_OBJ_H
 #define GC_OBJ_H
 
-// ObjHeader::heap_tag_ values.  They're odd numbers to distinguish them from
+// ObjHeader::heap_tag values.  They're odd numbers to distinguish them from
 // vtable pointers.
 
 enum Tag {
   Forwarded = 1,  // For the Cheney algorithm.
   Global = 3,     // Neither copy nor scan.
   Opaque = 5,     // Copy but don't scan.  List<int> and Str
-  FixedSize = 7,  // Fixed size headers: consult field_mask_
+  FixedSize = 7,  // Fixed size headers: consult field_mask
   Scanned = 9,    // Copy AND scan for non-NULL pointers.
 };
 
 const uint16_t kZeroMask = 0;  // for types with no pointers
-// no obj_len_ computed for global List/Slab/Dict
+// no obj_len computed for global List/Slab/Dict
 const int kNoObjLen = 0x0badbeef;
 
 // This "enum" starts from the end of the valid type_tag range.
@@ -28,12 +28,12 @@ const int Tuple = 124;
 // Can be used as a debug tag
 const uint8_t kMycppDebugType = 255;
 
-// heap_tag_: one of Tag::
-// type_tag_: ASDL tag (variant)
-// field_mask_: for fixed length records, so max 16 fields
-// obj_len_: number of bytes to copy
-//   TODO: with a limitation of ~15 fields, we can encode obj_len_ in
-//   field_mask_, and save space on many ASDL types.
+// heap_tag: one of Tag::
+// type_tag: ASDL tag (variant)
+// field_mask: for fixed length records, so max 16 fields
+// obj_len: number of bytes to copy
+//   TODO: with a limitation of ~15 fields, we can encode obj_len in
+//   field_mask, and save space on many ASDL types.
 //   And we can sort integers BEFORE pointers.
 
 // TODO: ./configure could detect big or little endian, and then flip the
@@ -41,16 +41,16 @@ const uint8_t kMycppDebugType = 255;
 //
 // https://stackoverflow.com/questions/2100331/c-macro-definition-to-determine-big-endian-or-little-endian-machine
 //
-// Because we want to do (obj->heap_tag_ & 1 == 0) to distinguish it from
+// Because we want to do (obj->heap_tag & 1 == 0) to distinguish it from
 // vtable pointer.  We assume low bits of a pointer are 0 but not high bits.
 
 // The first member of every GC-managed object is 'ObjHeader header_'.
 // (There's no inheritance!)
 struct ObjHeader {
-  uint8_t heap_tag_;
-  uint8_t type_tag_;
-  uint16_t field_mask_;
-  uint32_t obj_len_;
+  uint8_t heap_tag;
+  uint8_t type_tag;
+  uint16_t field_mask;
+  uint32_t obj_len;
 };
 
 // A RawObject* is like a void* -- it can point to any C++ object.  The object
@@ -66,7 +66,8 @@ struct RawObject {
     Tag::FixedSize, TypeTag::OtherClass, field_mask, obj_len \
   }
 
-// Used by frontend/flag_gen.py.  TODO: Sort fields and use Tag::Scanned
+// Used by mycpp and frontend/flag_gen.py.  TODO: Sort fields and use
+// Tag::Scanned.
 #define GC_CLASS(header_, heap_tag, field_mask, obj_len) \
   header_ {                                              \
     heap_tag, TypeTag::OtherClass, field_mask, obj_len   \
@@ -76,6 +77,16 @@ struct RawObject {
 #define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len) \
   header_ {                                                   \
     Tag::FixedSize, type_tag, field_mask, obj_len             \
+  }
+
+#define GC_STR(header_)                             \
+  header_ {                                         \
+    Tag::Opaque, TypeTag::Str, kZeroMask, kNoObjLen \
+  }
+
+#define GC_SLAB(header_, heap_tag, obj_len)     \
+  header_ {                                     \
+    heap_tag, TypeTag::Slab, kZeroMask, obj_len \
   }
 
 #define GC_TUPLE(header_, field_mask, obj_len)          \

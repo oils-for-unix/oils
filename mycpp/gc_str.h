@@ -7,7 +7,7 @@ class List;
 class Str {
  public:
   // Don't call this directly.  Call NewStr() instead, which calls this.
-  Str() : header_{Tag::Opaque, TypeTag::Str, kZeroMask, kNoObjLen} {
+  Str() : GC_STR(header_) {
   }
 
   char* data() {
@@ -83,12 +83,12 @@ class Str {
 constexpr int kStrHeaderSize = offsetof(Str, data_);
 
 inline void Str::SetObjLenFromStrLen(int str_len) {
-  header_.obj_len_ = kStrHeaderSize + str_len + 1;
+  header_.obj_len = kStrHeaderSize + str_len + 1;
 }
 
 inline int len(const Str* s) {
-  assert(s->header_.obj_len_ >= kStrHeaderSize - 1);
-  return s->header_.obj_len_ - kStrHeaderSize - 1;
+  assert(s->header_.obj_len >= kStrHeaderSize - 1);
+  return s->header_.obj_len - kStrHeaderSize - 1;
 }
 
 // Notes:
@@ -109,7 +109,7 @@ inline Str* NewStr(int len) {
   void* place = gHeap.Allocate(obj_len);
 
   auto s = new (place) Str();
-  s->header_.obj_len_ = obj_len;
+  s->header_.obj_len = obj_len;
   return s;
 }
 

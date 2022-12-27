@@ -111,7 +111,7 @@ class StackRoots {
         RawObject* header = FindObjHeader(obj);
         log("obj %p header %p", obj, header);
 
-        switch (header->heap_tag_) {
+        switch (header->heap_tag) {
         case Tag::Global:
         case Tag::Opaque:
         case Tag::Scanned:
@@ -119,8 +119,8 @@ class StackRoots {
           break;
 
         default:
-          log("root %d heap %d type %d mask %d len %d", i, header->heap_tag_,
-              header->type_tag_, header->field_mask_, header->obj_len_);
+          log("root %d heap %d type %d mask %d len %d", i, header->heap_tag,
+              header->type_tag, header->field_mask, header->obj_len);
 
           assert(0);
           break;
