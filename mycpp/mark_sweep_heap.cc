@@ -3,8 +3,8 @@
 #include <time.h>      // clock_gettime(), CLOCK_PROCESS_CPUTIME_ID
 #include <unistd.h>    // STDERR_FILENO
 
-#include "mycpp/runtime.h"
 #include "_build/detected-cpp-config.h"  // for GC_TIMING
+#include "mycpp/runtime.h"
 
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests

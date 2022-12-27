@@ -108,10 +108,10 @@ setglobal_compile_flags() {
       ;;
 
     (opt)
-      flags="$flags -O2 -g"
+      flags="$flags -O2 -g -D OPTIMIZED"
       ;;
     (opt32)
-      flags="$flags -O2 -g -m32"
+      flags="$flags -O2 -g -D OPTIMIZED -m32"
       ;;
     (mallocleak)
       # optimized build with malloc only

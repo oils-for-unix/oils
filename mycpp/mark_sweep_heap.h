@@ -79,15 +79,18 @@ class MarkSweepHeap {
 extern MarkSweepHeap gHeap;
 #endif
 
+// Note:
+// - This function causes code bloat due to template expansion on hundreds of
+//   types.  Could switch to a GC_NEW() macro
+// - GCC generates slightly larger code if you factor out void* place and new
+//   (place) T()
+//
 // Variadic templates:
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
-  assert(gHeap.is_initialized_);
-  void* place = gHeap.Allocate(sizeof(T));
-  assert(place != nullptr);
-  // placement new
-  return new (place) T(std::forward<Args>(args)...);
+  DCHECK(gHeap.is_initialized_);
+  return new (gHeap.Allocate(sizeof(T))) T(std::forward<Args>(args)...);
 }
 
 #define VALIDATE_ROOTS 0

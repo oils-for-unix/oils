@@ -20,6 +20,13 @@
 #define NotImplemented() assert(!"Not Implemented")
 #define InvalidCodePath() assert(!"Invalid Code Path")
 
+// opt variants pass -D OPTIMIZED
+#ifdef OPTIMIZED
+  #define DCHECK(cond)
+#else
+  #define DCHECK(cond) assert(cond)
+#endif
+
 // Workaround for macros that take templates
 #define COMMA ,
 
