@@ -249,12 +249,12 @@ int MarkSweepHeap::Collect() {
   if (gc_verbose_) {
     log("    %.1f ms GC", gc_millis);
   }
-#endif
 
   total_gc_millis_ += gc_millis;
   if (gc_millis > max_gc_millis_) {
     max_gc_millis_ = gc_millis;
   }
+#endif
 
   return num_live_;  // for unit tests only
 }
