@@ -32,7 +32,7 @@ class KeyboardInterrupt : public _ExceptionOpaque {};
 
 // Note these translations by mycpp:
 // - AssertionError      -> assert(0);
-// - NotImplementedError -> NotImplemented();
+// - NotImplementedError -> FAIL(kNotImplemented);
 
 // libc::regex_match and other bindings raise RuntimeError
 class RuntimeError {
@@ -87,11 +87,11 @@ Str* repr(Str* s);
 // For hnode::External in asdl/format.py.  TODO: Remove this when that is
 // removed.
 inline Str* repr(void* obj) {
-  InvalidCodePath();
+  FAIL(kNotImplemented);
 }
 
 inline Str* str(double f) {
-  NotImplemented();
+  FAIL(kNotImplemented);
 }
 
 Str* str(int i);

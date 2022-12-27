@@ -110,11 +110,8 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
     throw Alloc<OSError>(errno);
   }
 
-  // NOTE(Jesse): ::execve() is specified to never return on success.  If we
-  // hit this assertion, it returned successfully (or at least something other
-  // than -1) but should have overwritten our address space with the invoked
-  // process'
-  InvalidCodePath();
+  // ::execve() never returns on succcess
+  FAIL(kShouldNotGetHere);
 }
 
 void kill(int pid, int sig) {

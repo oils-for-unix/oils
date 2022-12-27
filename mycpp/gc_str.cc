@@ -171,7 +171,7 @@ Str* Str::slice(int begin) {
 
 List<Str*>* Str::splitlines(bool keep) {
   assert(keep == true);
-  NotImplemented();
+  FAIL(kNotImplemented);
 }
 
 Str* Str::upper() {

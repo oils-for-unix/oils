@@ -177,7 +177,7 @@ void PrintTimes() {
 }
 
 bool InputAvailable(int fd) {
-  NotImplemented();
+  FAIL(kNotImplemented);
 }
 
 void SignalHandler::Update(int sig_num) {

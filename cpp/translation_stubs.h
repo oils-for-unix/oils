@@ -10,13 +10,13 @@ inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
 
 // Hack for now.  Every sum type should have repr()?
 inline Str* repr(syntax_asdl::source_t* obj) {
-  /* NotImplemented(); */
+  /* FAIL(kNotImplemented); */
   return StrFromC("TODO");
 }
 
 // STUB for osh/word_.py
 inline Str* str(syntax_asdl::word_t* w) {
-  /* NotImplemented(); */
+  /* FAIL(kNotImplemented); */
   return StrFromC("TODO");
 }
 

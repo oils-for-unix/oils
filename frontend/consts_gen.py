@@ -361,7 +361,7 @@ int RedirDefaultFd(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
-  InvalidCodePath();
+  FAIL(kShouldNotGetHere);
 }
 """)
 
@@ -377,7 +377,7 @@ types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
-  InvalidCodePath();
+  FAIL(kShouldNotGetHere);
 }
 """)
 
@@ -393,7 +393,7 @@ types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
-  InvalidCodePath();
+  FAIL(kShouldNotGetHere);
 }
 """)
 
@@ -408,7 +408,7 @@ Kind GetKind(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
-  InvalidCodePath();
+  FAIL(kShouldNotGetHere);
 }
 """)
 
@@ -445,7 +445,7 @@ Str* OptionName(option_asdl::option_t opt_num) {
 
       out("""\
   default:
-    InvalidCodePath();
+    FAIL(kShouldNotGetHere);
   }
   return StrFromC(s);  // TODO-intern
 }

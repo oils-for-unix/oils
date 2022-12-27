@@ -112,16 +112,6 @@ class Space {
 
   void Free();
 
-#if GC_STATS
-  void AssertValid(void* p) {
-    if (begin_ <= p && p < begin_ + size_) {
-      return;
-    }
-    log("p = %p isn't between %p and %p", begin_, begin_ + size_);
-    InvalidCodePath();
-  }
-#endif
-
   char* begin_;
   int size_;  // number of bytes
 };

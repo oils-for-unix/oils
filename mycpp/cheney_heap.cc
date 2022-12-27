@@ -102,9 +102,7 @@ void CheneyHeap::Collect(int to_space_size) {
 
   to_space_.Init(to_space_size);
 
-  if (to_space_.size_ < from_space_.size_) {
-    InvalidCodePath();
-  }
+  assert(to_space_.size_ >= from_space_.size_);
 
   char* scan = to_space_.begin_;  // boundary between black and gray
   free_ = scan;                   // where to copy new entries
@@ -141,7 +139,7 @@ void CheneyHeap::Collect(int to_space_size) {
           case Tag::Scanned:
             break;
           default:
-            assert(0);  // NOTE(Jesse): Pretty sure this is InvalidCodePath();
+            FAIL(kShouldNotGetHere);
           }
         }
       }

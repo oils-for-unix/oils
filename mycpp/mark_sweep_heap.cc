@@ -41,7 +41,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
 }
 
 void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
-  NotImplemented();
+  FAIL(kNotImplemented);
 }
 
 int MarkSweepHeap::MaybeCollect() {
@@ -87,7 +87,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
 }
 
 void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
-  NotImplemented();
+  FAIL(kNotImplemented);
   // This causes a double-free in the GC!
   // return realloc(p, num_bytes);
 }

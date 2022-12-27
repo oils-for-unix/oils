@@ -122,9 +122,7 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
     }
   }
 
-  InvalidCodePath();
-
-  return false;
+  FAIL(kShouldNotGetHere);
 }
 
 bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
@@ -149,7 +147,7 @@ bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
     return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
   }
 
-  InvalidCodePath();
+  FAIL(kShouldNotGetHere);
 }
 
 }  // namespace bool_stat

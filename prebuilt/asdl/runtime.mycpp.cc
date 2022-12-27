@@ -223,7 +223,7 @@ ColorOutput::ColorOutput(mylib::Writer* f)
 }
 
 format::ColorOutput* ColorOutput::NewTempBuffer() {
-  NotImplemented();  // Python NotImplementedError
+  FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
 void ColorOutput::FileHeader() {
@@ -235,11 +235,11 @@ void ColorOutput::FileFooter() {
 }
 
 void ColorOutput::PushColor(hnode_asdl::color_t e_color) {
-  NotImplemented();  // Python NotImplementedError
+  FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
 void ColorOutput::PopColor() {
-  NotImplemented();  // Python NotImplementedError
+  FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
 void ColorOutput::write(Str* s) {
@@ -1136,7 +1136,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
 Str* maybe_qtt_encode(Str* s, int bit8_display) {
   StackRoots _roots({&s});
 
-  NotImplemented();  // Python NotImplementedError
+  FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
 }  // define namespace qsn

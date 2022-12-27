@@ -2674,7 +2674,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write_ind('assert(0);  // AssertionError\n')
             return
           if o.expr.callee.name == 'NotImplementedError':
-            self.write_ind('NotImplemented();  // Python NotImplementedError\n')
+            self.write_ind('FAIL(kNotImplemented);  // Python NotImplementedError\n')
             return
 
         self.write_ind('throw ')

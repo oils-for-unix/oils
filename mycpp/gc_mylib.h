@@ -70,7 +70,7 @@ class LineReader {
     return false;
   }
   virtual int fileno() {
-    NotImplemented();
+    FAIL(kNotImplemented);
   }
 
   GC_OBJ(header_);
