@@ -379,7 +379,7 @@ detect_cpp() {
     fi
   fi
 
-  # Only for dev builds
+  # Dev builds can use non-portable clock_gettime()
   if test -n "$_OIL_DEV"; then
     echo '#define GC_TIMING 1'
     log 'Turned on -D GC_TIMING because $_OIL_DEV is set'
@@ -392,7 +392,9 @@ detect_cpp() {
 main() {
   parse_flags "$@"  # sets FLAG_*
 
-  # oil-native
+  mkdir -p _build
+
+  # Generate configuration for oil-native
   local cpp_out=_build/detected-cpp-config.h
   detect_cpp > $cpp_out
   log "Wrote $cpp_out"
@@ -409,7 +411,6 @@ main() {
   # Legacy OVM build: shell build actions will 'source
   # _build/detected-config.sh'.  And then adjust flags to compiler (-D, -l,
   # etc.)
-  mkdir -p _build
   local sh_out=_build/detected-config.sh
   local c_out=_build/detected-config.h
 
