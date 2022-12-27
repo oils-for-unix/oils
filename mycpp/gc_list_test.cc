@@ -111,8 +111,9 @@ TEST test_list_gc_header() {
 }
 
 // Manual initialization.  This helped me write the GLOBAL_LIST() macro.
-GlobalSlab<int, 3> _gSlab = {{Tag::Global, 0, kZeroMask, kNoObjLen}, {5, 6, 7}};
-GlobalList<int, 3> _gList = {{Tag::Global, 0, kZeroMask, kNoObjLen},
+GlobalSlab<int, 3> _gSlab = {{kIsHeader, Tag::Global, 0, kZeroMask, kNoObjLen},
+                             {5, 6, 7}};
+GlobalList<int, 3> _gList = {{kIsHeader, Tag::Global, 0, kZeroMask, kNoObjLen},
                              3,  // len
                              3,  // capacity
                              &_gSlab};

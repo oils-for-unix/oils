@@ -400,11 +400,11 @@ List<T>* list(List<T>* other) {
   return result;
 }
 
-#define GLOBAL_LIST(T, N, name, array)                                     \
-  GlobalSlab<T, N> _slab_##name = {{Tag::Global, 0, kZeroMask, kNoObjLen}, \
-                                   array};                                 \
-  GlobalList<T, N> _list_##name = {                                        \
-      {Tag::Global, 0, kZeroMask, kNoObjLen}, N, N, &_slab_##name};        \
+#define GLOBAL_LIST(T, N, name, array)                                         \
+  GlobalSlab<T, N> _slab_##name = {                                            \
+      {kIsHeader, Tag::Global, 0, kZeroMask, kNoObjLen}, array};               \
+  GlobalList<T, N> _list_##name = {                                            \
+      {kIsHeader, Tag::Global, 0, kZeroMask, kNoObjLen}, N, N, &_slab_##name}; \
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
 
 template <class T>
