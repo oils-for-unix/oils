@@ -67,9 +67,7 @@ setglobal_compile_flags() {
     flags="$flags $env_flags"
   fi
 
-  # GC_TIMING should be eventually turned off, but it's negligible while we
-  # tune the GC.
-  flags="$flags -D MARK_SWEEP -D GC_TIMING -I $REPO_ROOT"
+  flags="$flags -D MARK_SWEEP -I $REPO_ROOT"
 
   case $variant in
     (dbg)

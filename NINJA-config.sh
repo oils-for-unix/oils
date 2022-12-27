@@ -73,7 +73,7 @@ main() {
 
   echo
   # TODO: remove --without-readline once frontend_pyreadline is complete.
-  ./configure --without-readline
+  _OIL_DEV=1 ./configure --without-readline
 
   # Reads the deps.txt files above
   PYTHONPATH=. build/ninja_main.py

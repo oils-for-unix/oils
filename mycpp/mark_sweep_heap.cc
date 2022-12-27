@@ -1,5 +1,6 @@
 #include <inttypes.h>  // PRId64
-#include <sys/time.h>  // gettimeofday(), CLOCK_PROCESS_CPUTIME_ID
+#include <sys/time.h>  // gettimeofday()
+#include <time.h>      // clock_gettime(), CLOCK_PROCESS_CPUTIME_ID
 #include <unistd.h>    // STDERR_FILENO
 
 #include "mycpp/runtime.h"
