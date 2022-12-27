@@ -36,9 +36,9 @@ class List {
  public:
   List() : GC_CLASS_FIXED(header_, field_mask(), sizeof(List<T>)) {
     // Ensured by heap zeroing.  It's never directly on the stack.
-    assert(len_ == 0);
-    assert(capacity_ == 0);
-    assert(slab_ == nullptr);
+    DCHECK(len_ == 0);
+    DCHECK(capacity_ == 0);
+    DCHECK(slab_ == nullptr);
   }
 
   // Implements L[i]
@@ -178,7 +178,7 @@ List<T>* List<T>::slice(int begin) {
     begin = len_ + begin;
   }
 
-  assert(begin >= 0);
+  DCHECK(begin >= 0);
 
   List<T>* result = nullptr;
   result = NewList<T>();
@@ -200,9 +200,9 @@ List<T>* List<T>::slice(int begin, int end) {
     end = len_ + end;
   }
 
-  assert(end <= len_);
-  assert(begin >= 0);
-  assert(end >= 0);
+  DCHECK(end <= len_);
+  DCHECK(begin >= 0);
+  DCHECK(end >= 0);
 
   List<T>* result = NewList<T>();
   for (int i = begin; i < end; i++) {
@@ -243,8 +243,8 @@ void List<T>::set(int i, T item) {
     i = len_ + i;
   }
 
-  assert(i >= 0);
-  assert(i < capacity_);
+  DCHECK(i >= 0);
+  DCHECK(i < capacity_);
 
   slab_->items_[i] = item;
 }
@@ -254,13 +254,13 @@ template <typename T>
 T List<T>::index_(int i) {
   if (i < 0) {
     int j = len_ + i;
-    assert(j < len_);
-    assert(j >= 0);
+    DCHECK(j < len_);
+    DCHECK(j >= 0);
     return slab_->items_[j];
   }
 
-  assert(i < len_);
-  assert(i >= 0);
+  DCHECK(i < len_);
+  DCHECK(i >= 0);
   return slab_->items_[i];
 }
 
@@ -280,7 +280,7 @@ int List<T>::index(T value) {
 // https://stackoverflow.com/questions/12600330/pop-back-return-value
 template <typename T>
 T List<T>::pop() {
-  assert(len_ > 0);
+  DCHECK(len_ > 0);
   len_--;
   T result = slab_->items_[len_];
   slab_->items_[len_] = 0;  // zero for GC scan
@@ -291,8 +291,8 @@ T List<T>::pop() {
 // TODO: Don't accept an arbitrary index?
 template <typename T>
 T List<T>::pop(int i) {
-  assert(len_ > 0);
-  assert(i == 0);  // only support popping the first item
+  DCHECK(len_ > 0);
+  DCHECK(i == 0);  // only support popping the first item
 
   T result = index_(0);
   len_--;
