@@ -8,7 +8,7 @@
 lexer.py - Library for lexing.
 """
 
-from _devbuild.gen.syntax_asdl import Token, line_span
+from _devbuild.gen.syntax_asdl import Token
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind
 from asdl import runtime
@@ -17,10 +17,9 @@ from mycpp import mylib
 from frontend import consts
 from frontend import match
 
-from typing import Callable, List, Tuple, Optional, Counter, TYPE_CHECKING
+from typing import List, Tuple, Optional, Counter, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
-  from core import optview
   from frontend.reader import _Reader
 
 

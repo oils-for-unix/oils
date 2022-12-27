@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-#include "_build/detected-config.h"
+#include "_build/detected-cpp-config.h"
 
 namespace py_readline {
 

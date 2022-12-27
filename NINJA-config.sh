@@ -71,6 +71,7 @@ main() {
 
   echo DEPS prebuilt/ninja/*/deps.txt
 
+  echo
   # TODO: remove --without-readline once frontend_pyreadline is complete.
   ./configure --without-readline
 

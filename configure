@@ -63,91 +63,93 @@ FLAG_with_readline=''  # Fail if it's not available.
 FLAG_without_readline=''  # Don't even check if it's available
 FLAG_readline=''
 
-while true; do
-  case "$1" in
-    '')
-      break
-      ;;
-    --help)
-      # TODO: Fill out help
-      show_help
-      exit 0
-      ;;
+parse_flags() {
+  while true; do
+    case "$1" in
+      '')
+        break
+        ;;
+      --help)
+        # TODO: Fill out help
+        show_help
+        exit 0
+        ;;
 
-    --with-readline)
-      FLAG_with_readline=1
-      ;;
+      --with-readline)
+        FLAG_with_readline=1
+        ;;
 
-    --without-readline)
-      FLAG_without_readline=1
-      ;;
+      --without-readline)
+        FLAG_without_readline=1
+        ;;
 
-    --readline=*)
-      FLAG_readline="${1#*=}"
-      ;;
-    --readline)
-      if test $# -eq 1; then
-        die "--readline requires an argument"
-      fi
-      shift
-      FLAG_readline=$1
-      ;;
+      --readline=*)
+        FLAG_readline="${1#*=}"
+        ;;
+      --readline)
+        if test $# -eq 1; then
+          die "--readline requires an argument"
+        fi
+        shift
+        FLAG_readline=$1
+        ;;
 
-    # TODO: Maybe prefix only needs to be part of the install step?  I'm not
-    # sure if we need it for building anything.
-    --prefix=*)
-      FLAG_prefix="${1#*=}"
-      ;;
-    --prefix)
-      if test $# -eq 1; then
-        die "--prefix requires an argument"
-      fi
-      shift
-      FLAG_prefix=$1
-      ;;
+      # TODO: Maybe prefix only needs to be part of the install step?  I'm not
+      # sure if we need it for building anything.
+      --prefix=*)
+        FLAG_prefix="${1#*=}"
+        ;;
+      --prefix)
+        if test $# -eq 1; then
+          die "--prefix requires an argument"
+        fi
+        shift
+        FLAG_prefix=$1
+        ;;
 
-    # Following autoconf's spelling of --mandir
-    --datarootdir=*)
-      FLAG_datarootdir="${1#*=}"
-      ;;
-    --datarootdir)
-      if test $# -eq 1; then
-        die "--datarootdir requires an argument"
-      fi
-      shift
-      FLAG_datarootdir=$1
-      ;;
+      # Following autoconf's spelling of --mandir
+      --datarootdir=*)
+        FLAG_datarootdir="${1#*=}"
+        ;;
+      --datarootdir)
+        if test $# -eq 1; then
+          die "--datarootdir requires an argument"
+        fi
+        shift
+        FLAG_datarootdir=$1
+        ;;
 
-    --with-*|--enable-*)
-      info "Argument '$1' not used by this configure script"
-      ;;
+      --with-*|--enable-*)
+        info "Argument '$1' not used by this configure script"
+        ;;
 
-    --build=*|--host=*)
-      info "Argument '$1' not used by this configure script"
-      ;;
+      --build=*|--host=*)
+        info "Argument '$1' not used by this configure script"
+        ;;
 
-    --exec-prefix=*|--bindir=*|--sbindir=*|--libexecdir=*|--sysconfdir=*)
-      info "Argument '$1' not used by this configure script"
-      ;;
-    --sharedstatedir=*|--localstatedir=*|--runstatedir=*)
-      info "Argument '$1' not used by this configure script"
-      ;;
-    --libdir=*|--includedir=*|--oldincludedir=*)
-      info "Argument '$1' not used by this configure script"
-      ;;
-    --datadir=*|--infodir=*|--localedir=*|--mandir=*|--docdir=*)
-      info "Argument '$1' not used by this configure script"
-      ;;
-    --htmldir=*|--dvidir=*|--pdfdir=*|--psdir=*)
-      info "Argument '$1' not used by this configure script"
-      ;;
+      --exec-prefix=*|--bindir=*|--sbindir=*|--libexecdir=*|--sysconfdir=*)
+        info "Argument '$1' not used by this configure script"
+        ;;
+      --sharedstatedir=*|--localstatedir=*|--runstatedir=*)
+        info "Argument '$1' not used by this configure script"
+        ;;
+      --libdir=*|--includedir=*|--oldincludedir=*)
+        info "Argument '$1' not used by this configure script"
+        ;;
+      --datadir=*|--infodir=*|--localedir=*|--mandir=*|--docdir=*)
+        info "Argument '$1' not used by this configure script"
+        ;;
+      --htmldir=*|--dvidir=*|--pdfdir=*|--psdir=*)
+        info "Argument '$1' not used by this configure script"
+        ;;
 
-    *)
-      die "Invalid argument '$1'"
-      ;;
-  esac
-  shift
-done
+      *)
+        die "Invalid argument '$1'"
+        ;;
+    esac
+    shift
+  done
+}
 
 # If not set, fallback to --prefix
 FLAG_datarootdir=${FLAG_datarootdir:-$FLAG_prefix/share}
@@ -353,7 +355,9 @@ EOF
   cc_statement HAVE_STAT_TV_NSEC2 \
     'struct stat st; st.st_mtimespec.tv_nsec = 1; return 0;' \
     '#include <sys/stat.h>'
+}
 
+detect_cpp() {
   if test "$FLAG_without_readline" = 1; then
     echo '#define HAVE_READLINE 0'
   else
@@ -380,12 +384,15 @@ EOF
 # And set the default target as oil_readline, oil_no_readline, oil_lto,
 # oil_pgo, etc.?
 main() {
+  parse_flags "$@"  # sets FLAG_*
+
   if ! cc_quiet build/detect-cc.c; then
     die "Couldn't compile a basic C program (cc not installed?)"
   fi
 
-  # The shell build actions will 'source _build/detected-config.sh'.  And then
-  # adjust flags to compiler (-D, -l, etc.)
+  # Legacy OVM build: shell build actions will 'source
+  # _build/detected-config.sh'.  And then adjust flags to compiler (-D, -l,
+  # etc.)
   mkdir -p _build
   local sh_out=_build/detected-config.sh
   local c_out=_build/detected-config.h
@@ -393,24 +400,13 @@ main() {
   detect_and_echo_vars > $sh_out
   detect_c_language > $c_out
 
-  log "Wrote $sh_out and $c_out"
+  # oil-native
+  local cpp_out=_build/detected-cpp-config.h
+  detect_cpp > $cpp_out
+
+  log "Wrote $sh_out, $c_out, and $cpp_out"
 }
 
-unittest() {
-  cc_print_expr 'sizeof(int)'
-  local actual
-  actual=$(cat $TMP/print_expr.out)
-  test "$actual" = 4 || die "Expected 4, got $actual"
-
-  check_sizeof SIZEOF_INT 'int' 4 || die "FAILED"
-  # failing test
-  #check_sizeof SIZEOF_INT 'int' 8
-
-  cc_statement HAVE_INT 'int x = (int)0;' || die "FAILED"
-  cc_statement HAVE_FOO 'foo x = (foo)0;' && die "Expected to fail"
-
-  #detect_c_language
-}
-
-main "$@"
-#unittest "$@"
+if test -z "$_OIL_CONFIGURE_TEST"; then
+  main "$@"
+fi
