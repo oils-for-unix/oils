@@ -29,7 +29,8 @@ class Slab {
  public:
   // slabs of pointers are scanned; slabs of ints/bools are opaque.
   explicit Slab(uint32_t obj_len)
-      : GC_SLAB(header_, std::is_pointer<T>() ? Tag::Scanned : Tag::Opaque,
+      : GC_SLAB(header_,
+                std::is_pointer<T>() ? HeapTag::Scanned : HeapTag::Opaque,
                 obj_len) {
   }
   GC_OBJ(header_);

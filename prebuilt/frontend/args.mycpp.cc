@@ -270,7 +270,7 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
 }
 
 ColorOutput::ColorOutput(mylib::Writer* f) 
-    : GC_CLASS(header_, Tag::FixedSize, field_mask(), kNoObjLen) {
+    : GC_CLASS(header_, HeapTag::FixedSize, field_mask(), kNoObjLen) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -439,7 +439,7 @@ void AnsiOutput::PopColor() {
 int INDENT = 2;
 
 _PrettyPrinter::_PrettyPrinter(int max_col) 
-    : GC_CLASS(header_, Tag::Opaque, kZeroMask, kNoObjLen) {
+    : GC_CLASS(header_, HeapTag::Opaque, kZeroMask, kNoObjLen) {
   this->max_col = max_col;
 }
 
@@ -1209,7 +1209,7 @@ int Float = 3;
 int Bool = 4;
 
 _Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) 
-    : GC_CLASS(header_, Tag::Scanned, kZeroMask, 4 * sizeof(void*) + sizeof(ObjHeader)) {
+    : GC_CLASS(header_, HeapTag::Scanned, kZeroMask, 4 * sizeof(void*) + sizeof(ObjHeader)) {
   this->attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
@@ -1237,7 +1237,7 @@ void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
 }
 
 Reader::Reader(List<Str*>* argv, List<int>* spids) 
-    : GC_CLASS(header_, Tag::Scanned, kZeroMask, 2 * sizeof(void*) + sizeof(ObjHeader)) {
+    : GC_CLASS(header_, HeapTag::Scanned, kZeroMask, 2 * sizeof(void*) + sizeof(ObjHeader)) {
   this->argv = argv;
   this->spids = spids;
   this->n = len(argv);
@@ -1334,7 +1334,7 @@ int Reader::SpanId() {
 }
 
 _Action::_Action() 
-    : GC_CLASS(header_, Tag::FixedSize, kZeroMask, kNoObjLen) {
+    : GC_CLASS(header_, HeapTag::FixedSize, kZeroMask, kNoObjLen) {
   ;  // pass
 }
 

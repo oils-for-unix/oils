@@ -5,7 +5,7 @@
 using runtime_asdl::value__Bool;
 
 TEST opaque_test() {
-  // struct for command -v is Tag::Opaque
+  // struct for command -v is HeapTag::Opaque
 
   auto attrs = NewDict<Str*, runtime_asdl::value_t*>();
   StackRoots _r({&attrs});

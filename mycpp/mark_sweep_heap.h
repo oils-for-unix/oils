@@ -115,10 +115,10 @@ class StackRoots {
         log("obj %p header %p", obj, header);
 
         switch (header->heap_tag) {
-        case Tag::Global:
-        case Tag::Opaque:
-        case Tag::Scanned:
-        case Tag::FixedSize:
+        case HeapTag::Global:
+        case HeapTag::Opaque:
+        case HeapTag::Scanned:
+        case HeapTag::FixedSize:
           break;
 
         default:

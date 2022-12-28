@@ -1,14 +1,16 @@
-#ifndef GC_OBJ_H
-#define GC_OBJ_H
+#ifndef MYCPP_GC_OBJ_H
+#define MYCPP_GC_OBJ_H
 
-enum Tag {
-  Global = 0,  // Don't mark or sweep.  (Don't copy or scan)
-  Opaque = 1,  // Mark and sweep, e.g. List<int>, Str.  (Copy but don't scan.)
-  FixedSize = 2,  // Consult field_mask for children
-  Scanned = 3,    // Scan a contiguous range of children
+namespace HeapTag {
+const int Global = 0;     // Don't mark or sweep.
+                          // Cheney: Don't copy or scan.
+const int Opaque = 1;     // Mark and sweep, e.g. List<int>, Str.
+                          // Cheney: Copy, but don't scan.
+const int FixedSize = 2;  // Consult field_mask for children
+const int Scanned = 3;    // Scan a contiguous range of children
 
-  Forwarded = 4,  // For the Cheney algorithm.  It needs 3 bits instead of 2!
-};
+const int Forwarded = 4;  // For the Cheney algorithm.
+};                        // namespace HeapTag
 
 // This "enum" starts from the end of the valid type_tag range.
 // asdl/gen_cpp.py starts from 1 for variants, or 64 for shared variants.
@@ -21,18 +23,10 @@ const int Tuple = 124;
 
 const int kIsHeader = 1;
 
-const uint16_t kZeroMask = 0;  // for types with no pointers
+const unsigned kZeroMask = 0;  // for types with no pointers
 
 // no obj_len computed for global List/Slab/Dict
 const int kNoObjLen = 0x0badbeef;
-
-// TODO: ./configure could detect big or little endian, and then flip the
-// fields in ObjHeader?
-//
-// https://stackoverflow.com/questions/2100331/c-macro-definition-to-determine-big-endian-or-little-endian-machine
-//
-// Because we want to do (obj->heap_tag & 1 == 0) to distinguish it from
-// vtable pointer.  We assume low bits of a pointer are 0 but not high bits.
 
 // The first member of every GC-managed object is 'ObjHeader header_'.
 // (There's no inheritance!)
@@ -43,10 +37,10 @@ struct ObjHeader {
   unsigned field_mask : 24;  // For some user-defined classes, so max 16 fields
 
 #ifdef MARK_SWEEP
-  unsigned heap_tag : 2;  // Tag::Opaque, etc.
+  unsigned heap_tag : 2;  // HeapTag::Opaque, etc.
   unsigned obj_len : 30;  // Mark-sweep: derive Str length, Slab length
 #else
-  unsigned heap_tag : 3;  // Cheney also needs Tag::Forwarded
+  unsigned heap_tag : 3;  // Cheney also needs HeapTag::Forwarded
   unsigned obj_len : 29;  // Cheney: number of bytes to copy
 #endif
 };
@@ -54,32 +48,35 @@ struct ObjHeader {
 // A RawObject* is like a void* -- it can point to any C++ object.  The object
 // may start with either ObjHeader, or vtable pointer then an ObjHeader.
 struct RawObject {
-  unsigned points_to_header : 1;
+  unsigned points_to_header : 1;  // same as ObjHeader::is_header
   unsigned pad : 31;
 };
 
+// TODO: ./configure could detect endian-ness, and reorder the fields in
+// ObjHeader.  See mycpp/demo/gc_header.cc.
+
 // Used by hand-written and generated classes
-#define GC_CLASS_FIXED(header_, field_mask, obj_len)                    \
-  header_ {                                                             \
-    kIsHeader, TypeTag::OtherClass, field_mask, Tag::FixedSize, obj_len \
+#define GC_CLASS_FIXED(header_, field_mask, obj_len)                        \
+  header_ {                                                                 \
+    kIsHeader, TypeTag::OtherClass, field_mask, HeapTag::FixedSize, obj_len \
   }
 
 // Used by mycpp and frontend/flag_gen.py.  TODO: Sort fields and use
-// Tag::Scanned.
+// HeapTag::Scanned.
 #define GC_CLASS(header_, heap_tag, field_mask, obj_len)          \
   header_ {                                                       \
     kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, obj_len \
   }
 
-// Used by ASDL.  TODO: Sort fields and use Tag::Scanned
-#define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len) \
-  header_ {                                                   \
-    kIsHeader, type_tag, field_mask, Tag::FixedSize, obj_len  \
+// Used by ASDL.  TODO: Sort fields and use HeapTag::Scanned
+#define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len)    \
+  header_ {                                                      \
+    kIsHeader, type_tag, field_mask, HeapTag::FixedSize, obj_len \
   }
 
-#define GC_STR(header_)                                        \
-  header_ {                                                    \
-    kIsHeader, TypeTag::Str, kZeroMask, Tag::Opaque, kNoObjLen \
+#define GC_STR(header_)                                            \
+  header_ {                                                        \
+    kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Opaque, kNoObjLen \
   }
 
 #define GC_SLAB(header_, heap_tag, obj_len)                \
@@ -87,9 +84,9 @@ struct RawObject {
     kIsHeader, TypeTag::Slab, kZeroMask, heap_tag, obj_len \
   }
 
-#define GC_TUPLE(header_, field_mask, obj_len)                     \
-  header_ {                                                        \
-    kIsHeader, TypeTag::Tuple, field_mask, Tag::FixedSize, obj_len \
+#define GC_TUPLE(header_, field_mask, obj_len)                         \
+  header_ {                                                            \
+    kIsHeader, TypeTag::Tuple, field_mask, HeapTag::FixedSize, obj_len \
   }
 
 // TODO: could omit this in BUMP_LEAK mode
@@ -142,8 +139,8 @@ inline ObjHeader* FindObjHeader(RawObject* obj) {
   }
 }
 
-// The "homogeneous" layout of objects with Tag::FixedSize.  LayoutFixed is for
-// casting; it isn't a real type.
+// The "homogeneous" layout of objects with HeapTag::FixedSize.  LayoutFixed is
+// for casting; it isn't a real type.
 
 class LayoutFixed {
  public:
@@ -152,4 +149,4 @@ class LayoutFixed {
   RawObject* children_[16];
 };
 
-#endif
+#endif  // MYCPP_GC_OBJ_H

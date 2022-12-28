@@ -27,7 +27,7 @@ static_assert(offsetof(List<int>, slab_) ==
 
 void ShowSlab(void* obj) {
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
-  assert(slab->header_.heap_tag == Tag::Scanned);
+  assert(slab->header_.heap_tag == HeapTag::Scanned);
 
   int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
   log("slab len = %d, n = %d", slab->header_.obj_len, n);
@@ -346,7 +346,7 @@ TEST vtable_test() {
     // Now we have the right GC info.
     ShowObj(header);
 
-    ASSERT_EQ_FMT(Tag::FixedSize, header->heap_tag, "%d");
+    ASSERT_EQ_FMT(HeapTag::FixedSize, header->heap_tag, "%d");
     ASSERT_EQ_FMT(0, header->field_mask, "%d");
     // casts get rid of warning
     ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len, "%d");

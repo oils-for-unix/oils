@@ -250,10 +250,10 @@ attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
     #
 
     if bits:
-      obj_tag = 'Tag::FixedSize'
+      obj_tag = 'HeapTag::FixedSize'
       mask_str = 'field_mask()' 
     else:
-      obj_tag = 'Tag::Opaque'
+      obj_tag = 'HeapTag::Opaque'
       mask_str = 'kZeroMask'
 
     header_f.write("""

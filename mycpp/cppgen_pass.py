@@ -1196,7 +1196,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # d = {} at the TOP LEVEL
           # TODO: Change this to
           # - GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
-          # So it has Tag::Global
+          # So it has HeapTag::Global
 
           if isinstance(o.rvalue, DictExpr):
             key_type, val_type = lval_type.args
@@ -1219,7 +1219,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # TODO: Change this to
           # - GLOBAL_INSTANCE(name, Token, ...)
-          # for Tag::Global
+          # for HeapTag::Global
           if isinstance(o.rvalue, CallExpr):
             call_expr = o.rvalue
             if self._IsInstantiation(call_expr):
@@ -2171,9 +2171,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             sorted_member_names = pointer_members + non_pointer_members
 
             if len(pointer_members) == 0:
-              self.field_gc[o] = ('Tag::Opaque', None)
+              self.field_gc[o] = ('HeapTag::Opaque', None)
             else:
-              self.field_gc[o] = ('Tag::Scanned', len(pointer_members))
+              self.field_gc[o] = ('HeapTag::Scanned', len(pointer_members))
           else:
             # Has inheritance
 
@@ -2184,10 +2184,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if len(mask_bits) == 0:
               # Bug fix: even if the base class has no mask_bits, it can't be
-              # Tag::Opaque, because that would mess up derived classes.
-              self.field_gc[o] = ('Tag::FixedSize', 'kZeroMask')
+              # HeapTag::Opaque, because that would mess up derived classes.
+              self.field_gc[o] = ('HeapTag::FixedSize', 'kZeroMask')
             else:
-              self.field_gc[o] = ('Tag::FixedSize', 'field_mask()')
+              self.field_gc[o] = ('HeapTag::FixedSize', 'field_mask()')
 
             sorted_member_names = sorted(self.member_vars)
 
@@ -2248,13 +2248,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               # Base class can use Obj() constructor directly, but Derived class can't
               if not base_class_name:
                 obj_tag, obj_arg = self.field_gc[o]
-                if obj_tag == 'Tag::FixedSize':
+                if obj_tag == 'HeapTag::FixedSize':
                   obj_mask = obj_arg
                   obj_len = 'kNoObjLen'  # don't need length
-                elif obj_tag == 'Tag::Scanned':
+                elif obj_tag == 'HeapTag::Scanned':
                   obj_mask = 'kZeroMask'
                   obj_len = '%d * sizeof(void*) + sizeof(ObjHeader)' % obj_arg
-                elif obj_tag == 'Tag::Opaque':
+                elif obj_tag == 'HeapTag::Opaque':
                   obj_mask = 'kZeroMask'
                   obj_len = 'kNoObjLen'
 
@@ -2301,7 +2301,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               # Derived classes MUTATE the mask
               if base_class_name:
                 obj_tag, obj_arg = self.field_gc[o]
-                if obj_tag == 'Tag::FixedSize' and obj_arg != 'kZeroMask':
+                if obj_tag == 'HeapTag::FixedSize' and obj_arg != 'kZeroMask':
                   self.write('  header_.field_mask |= %s::field_mask();\n' % o.name)
 
               # Now visit the rest of the statements

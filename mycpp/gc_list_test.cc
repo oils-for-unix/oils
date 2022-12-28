@@ -31,8 +31,8 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(0, list1->capacity_, "%d");
   ASSERT_EQ_FMT(0, list2->capacity_, "%d");
 
-  ASSERT_EQ_FMT(Tag::FixedSize, list1->header_.heap_tag, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, list2->header_.heap_tag, "%d");
+  ASSERT_EQ_FMT(HeapTag::FixedSize, list1->header_.heap_tag, "%d");
+  ASSERT_EQ_FMT(HeapTag::FixedSize, list2->header_.heap_tag, "%d");
 
   // 8 byte obj header + 2 integers + pointer
   ASSERT_EQ_FMT(24, list1->header_.obj_len, "%d");
@@ -53,7 +53,7 @@ TEST test_list_gc_header() {
 
   // 32 byte block - 8 byte header = 24 bytes, 6 elements
   ASSERT_EQ_FMT(6, list1->capacity_, "%d");
-  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->header_.heap_tag, "%d");
+  ASSERT_EQ_FMT(HeapTag::Opaque, list1->slab_->header_.heap_tag, "%d");
 
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
   ASSERT_EQ_FMT(32, list1->slab_->header_.obj_len, "%d");
@@ -111,12 +111,13 @@ TEST test_list_gc_header() {
 }
 
 // Manual initialization.  This helped me write the GLOBAL_LIST() macro.
-GlobalSlab<int, 3> _gSlab = {{kIsHeader, Tag::Global, 0, kZeroMask, kNoObjLen},
-                             {5, 6, 7}};
-GlobalList<int, 3> _gList = {{kIsHeader, Tag::Global, 0, kZeroMask, kNoObjLen},
-                             3,  // len
-                             3,  // capacity
-                             &_gSlab};
+GlobalSlab<int, 3> _gSlab = {
+    {kIsHeader, HeapTag::Global, 0, kZeroMask, kNoObjLen}, {5, 6, 7}};
+GlobalList<int, 3> _gList = {
+    {kIsHeader, HeapTag::Global, 0, kZeroMask, kNoObjLen},
+    3,  // len
+    3,  // capacity
+    &_gSlab};
 List<int>* gList = reinterpret_cast<List<int>*>(&_gList);
 
 GLOBAL_LIST(int, 4, gList2, {5 COMMA 4 COMMA 3 COMMA 2});

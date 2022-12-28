@@ -38,7 +38,7 @@ TEST test_str_gc_header() {
   str1 = StrFromC("");
   str2 = StrFromC("one\0two", 7);
 
-  ASSERT_EQ_FMT(Tag::Opaque, str1->header_.heap_tag, "%d");
+  ASSERT_EQ_FMT(HeapTag::Opaque, str1->header_.heap_tag, "%d");
   ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->header_.obj_len, "%d");
   ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->header_.obj_len, "%d");
 
@@ -59,7 +59,7 @@ TEST test_str_gc_header() {
   ASSERT_EQ('g', str4->data_[1]);
   ASSERT_EQ('g', str4->data_[2]);
   ASSERT_EQ('\0', str4->data_[3]);
-  ASSERT_EQ(Tag::Global, str4->header_.heap_tag);
+  ASSERT_EQ(HeapTag::Global, str4->header_.heap_tag);
   ASSERT_EQ(16, str4->header_.obj_len);
   ASSERT_EQ(3, len(str4));
 

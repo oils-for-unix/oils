@@ -10,7 +10,8 @@ CheneyHeap gHeap;
 class LayoutForwarded {
  public:
   ObjHeader header_;
-  RawObject* new_location;  // valid if and only if heap_tag == Tag::Forwarded
+  // valid if and only if heap_tag == HeapTag::Forwarded
+  RawObject* new_location;
 };
 
 void Space::Init(int num_bytes) {
@@ -43,20 +44,20 @@ RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
   // RawObject header, which is right after the vtable.
 
   switch (header->heap_tag) {
-  case Tag::Forwarded: {
+  case HeapTag::Forwarded: {
     auto f = reinterpret_cast<LayoutForwarded*>(header);
     return f->new_location;
   }
 
-  case Tag::Global: {  // e.g. GlobalStr isn't copied or forwarded
+  case HeapTag::Global: {  // e.g. GlobalStr isn't copied or forwarded
     // log("*** GLOBAL POINTER");
     return obj;
   }
 
   default: {
-    assert(header->heap_tag == Tag::Opaque ||
-           header->heap_tag == Tag::FixedSize ||
-           header->heap_tag == Tag::Scanned);
+    assert(header->heap_tag == HeapTag::Opaque ||
+           header->heap_tag == HeapTag::FixedSize ||
+           header->heap_tag == HeapTag::Scanned);
 
     auto new_location = reinterpret_cast<RawObject*>(free_);
     // Note: if we wanted to save space on ASDL records, we could calculate
@@ -66,7 +67,7 @@ RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
     memcpy(new_location, obj, n);
     // log("memcpy %d bytes from %p -> %p", n, obj, new_location);
 #if 0
-    if (obj->heap_tag == Tag::Opaque) {
+    if (obj->heap_tag == HeapTag::Opaque) {
       Str* s = static_cast<Str*>(obj);
       log("from = %s", s->data_);
       Str* s2 = static_cast<Str*>(new_location);
@@ -81,7 +82,7 @@ RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
 #endif
 
     auto f = reinterpret_cast<LayoutForwarded*>(header);
-    f->header_.heap_tag = Tag::Forwarded;
+    f->header_.heap_tag = HeapTag::Forwarded;
     f->new_location = new_location;
     return new_location;
   }
@@ -132,11 +133,11 @@ void CheneyHeap::Collect(int to_space_size) {
         auto root2 = *handle2;
         if (root2) {
           switch (root2->heap_tag) {
-          case Tag::Forwarded:
-          case Tag::Global:
-          case Tag::Opaque:
-          case Tag::FixedSize:
-          case Tag::Scanned:
+          case HeapTag::Forwarded:
+          case HeapTag::Global:
+          case HeapTag::Opaque:
+          case HeapTag::FixedSize:
+          case HeapTag::Scanned:
             break;
           default:
             FAIL(kShouldNotGetHere);
@@ -159,7 +160,7 @@ void CheneyHeap::Collect(int to_space_size) {
     auto header = FindObjHeader(obj);
 
     switch (header->heap_tag) {
-    case Tag::FixedSize: {
+    case HeapTag::FixedSize: {
       auto fixed = reinterpret_cast<LayoutFixed*>(header);
       int mask = fixed->header_.field_mask;
       for (int i = 0; i < 16; ++i) {
@@ -176,7 +177,7 @@ void CheneyHeap::Collect(int to_space_size) {
       }
       break;
     }
-    case Tag::Scanned: {
+    case HeapTag::Scanned: {
       // no vtable
       assert(reinterpret_cast<void*>(header) == reinterpret_cast<void*>(obj));
 
@@ -192,12 +193,12 @@ void CheneyHeap::Collect(int to_space_size) {
       break;
     }
     default: {
-      assert(header->heap_tag == Tag::Forwarded ||
-             header->heap_tag == Tag::Global ||
-             header->heap_tag == Tag::Opaque);
+      assert(header->heap_tag == HeapTag::Forwarded ||
+             header->heap_tag == HeapTag::Global ||
+             header->heap_tag == HeapTag::Opaque);
     }
 
-      // other tags like Tag::Opaque have no children
+      // other tags like HeapTag::Opaque have no children
     }
     // aligned() like Heap::Allocate()
     scan += aligned(header->obj_len);
@@ -214,7 +215,7 @@ void CheneyHeap::Collect(int to_space_size) {
 
 #if GC_STATS
 void ShowFixedChildren(RawObject* obj) {
-  assert(obj->heap_tag == Tag::FixedSize);
+  assert(obj->heap_tag == HeapTag::FixedSize);
   auto fixed = reinterpret_cast<LayoutFixed*>(obj);
   log("MASK:");
 
@@ -228,7 +229,7 @@ void ShowFixedChildren(RawObject* obj) {
     if (mask & (1 << i)) {
       RawObject* child = fixed->children_[i];
       if (child) {
-        // make sure we get Tag::Opaque, Tag::Scanned, etc.
+        // make sure we get HeapTag::Opaque, HeapTag::Scanned, etc.
         log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag);
       }
     }

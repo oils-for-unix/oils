@@ -121,8 +121,8 @@ TEST test_dict_internals() {
   ASSERT_EQ(0, len(dict1));
   ASSERT_EQ(0, len(dict2));
 
-  ASSERT_EQ_FMT(Tag::FixedSize, dict1->header_.heap_tag, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, dict1->header_.heap_tag, "%d");
+  ASSERT_EQ_FMT(HeapTag::FixedSize, dict1->header_.heap_tag, "%d");
+  ASSERT_EQ_FMT(HeapTag::FixedSize, dict1->header_.heap_tag, "%d");
 
   ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
   ASSERT_EQ_FMT(0, dict2->capacity_, "%d");

@@ -102,11 +102,11 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
 
   auto header = FindObjHeader(obj);
   switch (header->heap_tag) {
-  case Tag::Opaque:
+  case HeapTag::Opaque:
     marked_.insert(obj);
     break;
 
-  case Tag::FixedSize: {
+  case HeapTag::FixedSize: {
     marked_.insert(obj);
 
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
@@ -124,7 +124,7 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
     break;
   }
 
-  case Tag::Scanned: {
+  case HeapTag::Scanned: {
     marked_.insert(obj);
 
     // no vtable
@@ -144,7 +144,7 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
     break;
   }
 
-  case Tag::Global:
+  case HeapTag::Global:
     // Not marked
     break;
 
@@ -213,7 +213,7 @@ int MarkSweepHeap::Collect() {
   log("Collect(): num marked %d", marked_.size());
   for (auto marked_obj : marked_ ) {
     auto m = reinterpret_cast<RawObject*>(marked_obj);
-    assert(m->heap_tag != Tag::Global);  // BUG FIX
+    assert(m->heap_tag != HeapTag::Global);  // BUG FIX
   }
 #endif
 

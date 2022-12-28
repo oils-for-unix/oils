@@ -217,7 +217,7 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
 }
 
 ColorOutput::ColorOutput(mylib::Writer* f) 
-    : GC_CLASS(header_, Tag::FixedSize, field_mask(), kNoObjLen) {
+    : GC_CLASS(header_, HeapTag::FixedSize, field_mask(), kNoObjLen) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -386,7 +386,7 @@ void AnsiOutput::PopColor() {
 int INDENT = 2;
 
 _PrettyPrinter::_PrettyPrinter(int max_col) 
-    : GC_CLASS(header_, Tag::Opaque, kZeroMask, kNoObjLen) {
+    : GC_CLASS(header_, HeapTag::Opaque, kZeroMask, kNoObjLen) {
   this->max_col = max_col;
 }
 
