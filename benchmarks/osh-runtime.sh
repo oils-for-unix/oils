@@ -9,9 +9,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source benchmarks/common.sh  # csv-concat
 source soil/common.sh  # find-dir-html
 source test/common.sh
+source test/tsv-lib.sh  # tsv-row
 
 readonly BASE_DIR=_tmp/osh-runtime
 
@@ -51,7 +54,7 @@ extract() {
 #
 
 runtime-task() {
-  local raw_dir=$1  # output
+  local out_dir=$1  # output
   local job_id=$2
   local host=$3
   local host_hash=$4
@@ -66,8 +69,8 @@ runtime-task() {
   local x=$(basename $task_arg)
   local task_label="${shell_name}-${shell_hash}__${x}"
 
-  local times_out="$PWD/$raw_dir/$host.$job_id.times.csv"
-  local files_out_dir="$PWD/$raw_dir/$host.$job_id.files/$task_label"
+  local times_out="$PWD/$out_dir/$host.$job_id.times.csv"
+  local files_out_dir="$PWD/$out_dir/$host.$job_id.files/$task_label"
   mkdir -p $files_out_dir
 
   local -a TIME_PREFIX=(
@@ -165,17 +168,37 @@ readonly HEADER='status,elapsed_secs,user_secs,sys_secs,max_rss_KiB,host_name,ho
 
 measure() {
   local provenance=$1
-  local raw_dir=${2:-$BASE_DIR/raw}
+  local out_dir=${2:-$BASE_DIR/raw}  # could be ../benchmark-data
   local pattern=${3:-}
-
-  #local base_dir=${2:-../benchmark-data/osh-parser}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
   local prefix=${name%.provenance.txt}  # strip suffix
 
-  local times_out="$raw_dir/$prefix.times.csv"
-  mkdir -p $BASE_DIR/{raw,stage1} $raw_dir
+  # TODO:
+  # - output times.tsv AND gc_stats.tsv, which is joined
+  # - factor out gc_stats_to_tsv from benchmarks/gc
+  # - provenance can be joined later?  It shouldn't be preserved in print-tasks
+  #   - output _tmp/osh-runtime/stage1/provenance.tsv then?
+  #
+  # Dir structure:
+  #
+  # raw/
+  #   times.tsv
+  #   gc1.txt
+  #   gc2.txt
+  # stage1/
+  #   times.tsv
+  #   gc_stats.tsv
+  #   provenance.tsv - benchmarks/provenance_to_tsv.py
+  # stage2/
+  #   elasped.tsv
+  #   elasped.schema.tsv
+  #   gc_stats.tsv
+  #   gc_stats.schema.tsv
+
+  local times_out="$out_dir/$prefix.times.csv"
+  mkdir -p $BASE_DIR/{raw,stage1} $out_dir
 
   # Write Header of the CSV file that is appended to.
   echo $HEADER > $times_out
@@ -188,10 +211,10 @@ measure() {
 
   # An empty pattern matches every line.
   time egrep "$pattern" $tasks |
-    xargs -n $NUM_COLUMNS -- $0 runtime-task $raw_dir ||
+    xargs -n $NUM_COLUMNS -- $0 runtime-task $out_dir ||
     die "*** Some tasks failed. ***"
 
-  cp -v $provenance $raw_dir
+  cp -v $provenance $out_dir
 }
 
 stage1() {

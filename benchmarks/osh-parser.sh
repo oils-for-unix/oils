@@ -5,20 +5,9 @@
 # Usage:
 #   benchmarks/osh-parser.sh <function name>
 #
-# Hacky way to run it by itself:
-#
-#   devtools/release-native.sh make-tar
-#   devtools/release-native.sh extract-for-benchmarks
-#   devtools/release.sh benchmark-build  # builds in _tmp/oil-tar-test
-#   make  
-#   devtools/bin.sh make-bin-links  # to build _bin/osh
-#   lenny:
-#     benchmark/auto.sh osh-parser-quick
-#   flanders:
-#     benchmark/auto.sh osh-parser-dup-testdata
-#     TODO: fix this.  sometimes we use _bin/osh_eval.*, and sometimes the
-#     ../benchmark-data/ version.
-#   benchmarks/report.sh osh-parser
+# Examples:
+#   benchmarks/osh-parser.sh soil-run
+#   QUICKLY=1 benchmarks/osh-parser.sh soil-run
 
 set -o nounset
 set -o pipefail

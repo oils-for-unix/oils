@@ -227,7 +227,7 @@ run-tasks() {
         # interesting.
 
         OIL_GC_STATS_FD=99 \
-          "${time_argv[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.tsv
+          "${time_argv[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.txt
         ;;
       mut+alloc+free+gc+exit)
         # also GC on exit
@@ -422,52 +422,12 @@ EOF
 EOF
 }
 
-gc-stats-to-tsv() {
-  ### Turn a set of files with OIL_GC_STATS output into a TSV file
-
-  python2 -c '
-import collections
-import os
-import sys
-
-header = None
-
-for path in sys.argv[1:]:
-  filename = os.path.basename(path)
-  join_id, _ = os.path.splitext(filename)
-  
-  d = collections.OrderedDict()
-
-  d["join_id"] = join_id
-
-  with open(path) as f:
-    for line in f:
-      line = line.strip()
-      if not line:
-        continue
-      key, value = line.split("=", 1)
-      key = key.strip().replace(" ", "_")
-      value = value.strip()
-      d[key] = value
-
-  if header is None:
-    header = d.keys()
-    print("\t".join(header))
-  else:
-    # Ensure the order
-    assert d.keys() == header
-
-  row = d.values()
-  print("\t".join(row))
-
-  ' "$@"
-}
-
 make-report() {
   mkdir -p $BASE_DIR/{stage1,stage2}
 
   # Concatenate tiny files
-  gc-stats-to-tsv $BASE_DIR/raw/gc*.tsv > $BASE_DIR/stage1/gc_stats.tsv
+  benchmarks/gc_stats_to_tsv.py $BASE_DIR/raw/gc*.txt \
+    > $BASE_DIR/stage1/gc_stats.tsv
 
   # Make TSV files
   R_LIBS_USER=$R_PATH benchmarks/report.R gc $BASE_DIR $BASE_DIR/stage2
