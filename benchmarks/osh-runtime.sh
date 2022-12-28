@@ -66,6 +66,8 @@ runtime-task() {
   # TODO: remove shell_name; do it in R
   local shell_name=$(basename $sh_path)
 
+  # TODO: Use $task_id instead of $task_label
+
   # NOTE: For abuild, this isn't a directory name.
   local x=$(basename $task_arg)
   local task_label="${shell_name}-${shell_hash}__${x}"
@@ -147,15 +149,6 @@ print-tasks() {
         ;;
     esac
 
-    # Need $PWD/$sh_path because we must change dirs to configure.
-    case $sh_path in
-      /*)
-        # It's already absolute -- do nothing.
-        ;;
-      */osh*)  # matches _bin/osh and _bin/cxx-opt/osh_eval.stripped
-        sh_path=$PWD/$sh_path
-        ;;
-    esac
     local prefix="$job_id $host_name $host_hash $sh_path $shell_hash"
 
     # NOTE: 'abuild-help' is a dummy label.
@@ -230,7 +223,9 @@ measure() {
     xargs -n $NUM_COLUMNS -- $0 runtime-task $out_dir ||
     die "*** Some tasks failed. ***"
 
-  cp -v $provenance $out_dir
+  # R uses the TSV version of the provenance.
+  # TODO: we don't even need the text version
+  cp -v ${provenance%%.txt}.tsv $BASE_DIR/stage1/provenance.tsv
 }
 
 stage1() {
@@ -294,8 +289,8 @@ EOF
 
     <h3>Shell and Host Details</h3>
 EOF
-  csv2html $in_dir/shells.csv
-  csv2html $in_dir/hosts.csv
+  tsv2html $in_dir/shells.tsv
+  tsv2html $in_dir/hosts.tsv
 
   cmark <<'EOF'
 ---

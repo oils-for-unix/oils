@@ -84,7 +84,7 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
 
     } else if (sh == 'osh_eval.stripped') {
       # e.g. used by osh-parser
-      label = 'oil-native'
+      label = 'osh-native'
 
     } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       label = 'opt/osh_eval'
@@ -104,14 +104,24 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
 }
 
 # Simple version of the above, used by benchmarks/gc
-ShellLabelFromPath = function(shell_path) {
+ShellLabelFromPath = function(sh_path) {
   labels = c()
-  for (i in 1:length(shell_path)) {
-    sh = shell_path[i]
+  for (i in 1:length(sh_path)) {
+    sh = sh_path[i]
+
     if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
-      label = 'opt/osh_eval'
+      # the opt binary is osh-native
+      label = 'osh-native'
+
     } else if (endsWith(sh, '_bin/cxx-bumpleak/osh_eval')) {
       label = 'bumpleak/osh_eval'
+
+    } else if (endsWith(sh, '_bin/osh')) {  # the app bundle
+      label = 'osh-ovm'
+
+    } else if (endsWith(sh, 'bin/osh')) {
+      label = 'osh-cpython'
+
     } else {
       label = sh
     }
@@ -270,9 +280,9 @@ ParserReport = function(in_dir, out_dir) {
       select(-c(lines_per_ms, user_ms, sys_ms, max_rss_MB)) %>% 
       spread(key = shell_label, value = elapsed_ms) %>%
       arrange(host_label, num_lines) %>%
-      mutate(osh_to_bash_ratio = `oil-native` / bash) %>% 
+      mutate(osh_to_bash_ratio = `osh-native` / bash) %>% 
       select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `oil-native`,
+               `osh-ovm`, `osh-cpython`, `osh-native`,
                osh_to_bash_ratio, num_lines, filename, filename_HREF)) ->
       elapsed
 
@@ -286,7 +296,7 @@ ParserReport = function(in_dir, out_dir) {
       spread(key = shell_label, value = lines_per_ms) %>%
       arrange(host_label, num_lines) %>%
       select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `oil-native`,
+               `osh-ovm`, `osh-cpython`, `osh-native`,
                num_lines, filename, filename_HREF)) ->
       rate
 
@@ -300,7 +310,7 @@ ParserReport = function(in_dir, out_dir) {
       spread(key = shell_label, value = max_rss_MB) %>%
       arrange(host_label, num_lines) %>%
       select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `oil-native`,
+               `osh-ovm`, `osh-cpython`, `osh-native`,
                num_lines, filename, filename_HREF)) ->
       max_rss
 
@@ -315,7 +325,7 @@ ParserReport = function(in_dir, out_dir) {
       select(-c(irefs)) %>%
       spread(key = shell_label, value = thousand_irefs_per_line) %>%
       arrange(num_lines) %>%
-      select(c(bash, dash, mksh, `oil-native`,
+      select(c(bash, dash, mksh, `osh-native`,
                num_lines, filename, filename_HREF)) ->
       instructions
 
@@ -376,6 +386,14 @@ WriteProvenance = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
     linkify = benchmarkDataLink
   }
 
+  Log('distinct_hosts')
+  print(distinct_hosts)
+  Log('')
+
+  Log('distinct_shells')
+  print(distinct_shells)
+  Log('')
+
   # Should be:
   # host_id_url
   # And then csv_to_html will be smart enough?  It should take --url flag?
@@ -395,9 +413,6 @@ WriteProvenance = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
                      distinct_shells$shell_hash, sep='-'),
     shell_id_HREF = linkify('shell-id', shell_id, '/')
   )
-  Log('distinct_shells')
-  print(distinct_shells)
-  Log('')
 
   Log('shell_table')
   print(shell_table)
@@ -412,9 +427,32 @@ WriteProvenance = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
   }
 }
 
+WriteSimpleProvenance = function(provenance, out_dir) {
+  Log('provenance')
+  print(provenance)
+  Log('')
+
+  distinct_shells = provenance  # They're alrady unique
+
+  #provenance %>% distinct(shell_label) -> distinct_shells
+  provenance %>% distinct(host_label, host_name, host_hash) -> distinct_hosts
+
+  WriteProvenance(distinct_hosts, distinct_shells, out_dir, tsv = T)
+}
+
 RuntimeReport = function(in_dir, out_dir) {
   times = readTsv(file.path(in_dir, 'times.tsv'))
   gc_stats = readTsv(file.path(in_dir, 'gc_stats.tsv'))
+  provenance = readTsv(file.path(in_dir, 'provenance.tsv'))
+
+  # Joins
+  # times <= join_id => gc_stats
+  # times <= sh_path => provenance
+
+  # Then 
+  # - shell_name is basename()
+  # - shell_label is ShellLabels or ShellLabelFromPath
+  # - host_label is the same as host_name, see DistinctHosts
 
   Log('GC stats')
   print(gc_stats)
@@ -425,27 +463,22 @@ RuntimeReport = function(in_dir, out_dir) {
     stop('Some osh-runtime tasks failed')
   }
 
-  distinct_hosts = DistinctHosts(times)
-  distinct_shells = DistinctShells(times)
+  # It should have (host_label, host_name, host_hash)
+  #                (shell_label, sh_path, shell_hash)
+  provenance %>%
+    mutate(host_label = host_name, shell_label = ShellLabelFromPath(sh_path)) ->
+    provenance
 
-  print(distinct_hosts)
-  Log('')
-  print(distinct_shells)
-  Log('')
+  provenance %>% select(sh_path, shell_label) -> label_lookup
 
-  #return()
+  Log('label_lookup')
+  print(label_lookup)
 
-  # Replace name/hash combinations with labels.
+  # Join with provenance for host label and shell label
   times %>%
-    # drop sh_path for now
-    select(-c(sh_path)) %>%
-    left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
-    left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
-    select(-c(host_name, host_hash, shell_name, shell_hash)) ->
+    left_join(label_lookup, by = c('sh_path')) %>%
+    select(-c(host_hash, sh_path, shell_name, shell_hash)) ->
     details
-
-  #Log('times')
-  #print(times)
 
   Log('details')
   print(details)
@@ -457,9 +490,9 @@ RuntimeReport = function(in_dir, out_dir) {
     select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
-    mutate(native_bash_ratio = `oil-native` / bash) %>%
-    arrange(task_arg, host_label) %>%
-    select(c(task_arg, host_label, bash, dash, `osh-cpython`, `oil-native`, py_bash_ratio, native_bash_ratio)) ->
+    mutate(native_bash_ratio = `osh-native` / bash) %>%
+    arrange(task_arg, host_name) %>%
+    select(c(task_arg, host_name, bash, dash, `osh-cpython`, `osh-native`, py_bash_ratio, native_bash_ratio)) ->
     elapsed
 
   Log('elapsed')
@@ -474,17 +507,17 @@ RuntimeReport = function(in_dir, out_dir) {
     select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     spread(key = shell_label, value = max_rss_MB) %>%
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
-    mutate(native_bash_ratio = `oil-native` / bash) %>%
-    arrange(task_arg, host_label) %>%
-    select(c(task_arg, host_label, bash, dash, `osh-cpython`, `oil-native`, py_bash_ratio, native_bash_ratio)) ->
+    mutate(native_bash_ratio = `osh-native` / bash) %>%
+    arrange(task_arg, host_name) %>%
+    select(c(task_arg, host_name, bash, dash, `osh-cpython`, `osh-native`, py_bash_ratio, native_bash_ratio)) ->
     max_rss
 
   print(summary(elapsed))
   print(head(elapsed))
 
-  WriteProvenance(distinct_hosts, distinct_shells, out_dir)
+  WriteSimpleProvenance(provenance, out_dir)
 
-  precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0, `oil-native` = 0))
+  precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0, `osh-native` = 0))
   writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeCsv(max_rss, file.path(out_dir, 'max_rss'))
 
@@ -726,7 +759,7 @@ GcReport = function(in_dir, out_dir) {
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
            max_rss_MB = max_rss_KiB * 1024 / 1e6,
-           shell_label = ShellLabelFromPath(shell_bin)
+           shell_label = ShellLabelFromPath(sh_path)
            ) %>%
     select(c(join_id, task, elapsed_ms, user_ms, sys_ms, max_rss_MB, shell_label,
              shell_runtime_opts)) ->

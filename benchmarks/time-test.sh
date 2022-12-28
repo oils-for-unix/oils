@@ -275,10 +275,21 @@ test-time-tsv() {
   echo
 }
 
+test-grandchild-memory() {
+  local -a use_mem=( python2 -c 'import sys; ["X" * int(sys.argv[1])]' 10000000 )
+
+  time-tsv -o /dev/stdout --rusage -- "${use_mem[@]}"
+
+  # RUSAGE_CHILDREN includes grandchildren!
+  time-tsv -o /dev/stdout --rusage -- sh -c 'echo; "$@"' dummy "${use_mem[@]}"
+
+  # 'exec' doesn't make a consistent difference, because /bin/sh doesn't use
+  # much memory
+  time-tsv -o /dev/stdout --rusage -- sh -c 'echo; exec "$@"' dummy "${use_mem[@]}"
+}
+
 soil-run() {
   run-test-funcs
 }
-
-
 
 "$@"

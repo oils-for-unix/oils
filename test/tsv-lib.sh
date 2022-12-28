@@ -8,6 +8,8 @@ if test -z "${REPO_ROOT:-}"; then
   exit 2
 fi
 
+readonly TAB=$'\t'
+
 time-tsv() {
   ### Run a task and output TSV
   $REPO_ROOT/benchmarks/time_.py --tsv "$@"

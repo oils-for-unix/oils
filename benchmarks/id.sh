@@ -15,6 +15,7 @@ readonly REPO_ROOT
 source build/common.sh  # for $CLANG
 source benchmarks/common.sh
 source soil/common.sh  # find-dir-html
+source test/tsv-lib.sh  # tsv-row
 
 # TODO: add benchmark labels/hashes for osh and all other shells
 #
@@ -344,26 +345,31 @@ shell-provenance() {
   local prov_dir
 
   if test -n "$label"; then  # label is often 'no-host'
-    host=$label
+    host_name=$label
     prov_dir=_tmp/provenance  # local links
   else
-    host=$(hostname)
+    host_name=$(hostname)
     prov_dir=../benchmark-data  # shared links
   fi
 
-  log "*** $label $host $prov_dir"
+  log "*** $label $host_name $prov_dir"
 
   #set -x
 
-  local tmp_dir=_tmp/host-id/$host
+  local tmp_dir=_tmp/host-id/$host_name
   dump-host-id $tmp_dir
 
   local host_hash
   host_hash=$(publish-host-id $tmp_dir "$prov_dir/host-id")
   local shell_hash
 
-  # Filename
-  local out=_tmp/${host}.${job_id}.provenance.txt
+  # Legacy text file.  TODO: remove
+  local out_txt=_tmp/${host_name}.${job_id}.provenance.txt
+  echo -n '' > $out_txt  # trunacte, no header
+
+  # TSV file
+  local out_tsv=_tmp/${host_name}.${job_id}.provenance.tsv
+  tsv-row job_id host_name host_hash sh_path shell_hash > $out_tsv
 
   for sh_path in "$@"; do
     # There will be two different OSH
@@ -376,13 +382,16 @@ shell-provenance() {
     shell_hash=$(publish-shell-id $tmp_dir "$prov_dir/shell-id")
 
     # note: filter-provenance depends on $4 being $sh_path
-    echo "$job_id $host $host_hash $sh_path $shell_hash"
-  done > $out
+    # APPEND to txt
+    echo "$job_id $host_name $host_hash $sh_path $shell_hash" >> $out_txt
 
-  log "Wrote $out"
+    tsv-row "$job_id" "$host_name" "$host_hash" "$sh_path" "$shell_hash" >> $out_tsv
+  done
+
+  log "Wrote $out_txt and $out_tsv"
 
   # Return value used in command sub
-  echo $out
+  echo $out_txt
 }
 
 compiler-provenance() {

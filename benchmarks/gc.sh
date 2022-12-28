@@ -85,8 +85,6 @@ banner() {
   echo "$@"
 }
 
-readonly TAB=$'\t'
-
 print-tasks() {
   local workload='parse.configure-coreutils'
   local -a rows=( $workload"$TAB"{bash,dash,zsh,osh-{1,2,3,4,5}} )
@@ -143,7 +141,7 @@ print-tasks() {
 readonly BIG_THRESHOLD=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
 
 run-tasks() {
-  while read -r join_id task shell_bin shell_runtime_opts; do
+  while read -r join_id task sh_path shell_runtime_opts; do
 
     # Parse two different files
     case $task in
@@ -161,7 +159,7 @@ run-tasks() {
       parse.*)
         argv=( -n $data_file )
 
-        case $shell_bin in
+        case $sh_path in
           */osh_eval*)
             argv=( --ast-format none "${argv[@]}" )
             ;;
@@ -186,9 +184,9 @@ run-tasks() {
         ;;
     esac
 
-    echo $join_id $task $shell_bin $shell_runtime_opts
+    echo $join_id $task $sh_path $shell_runtime_opts
 
-    argv=( $shell_bin "${argv[@]}" )
+    argv=( $sh_path "${argv[@]}" )
     #echo + "${argv[@]}"
     #set -x
 
@@ -196,7 +194,7 @@ run-tasks() {
     local -a time_argv=(
       time-tsv -o $tsv_out --append 
       --rusage
-      --field "$join_id" --field "$task" --field "$shell_bin" --field "$shell_runtime_opts"
+      --field "$join_id" --field "$task" --field "$sh_path" --field "$shell_runtime_opts"
       -- "${argv[@]}"
     )
 
@@ -326,7 +324,7 @@ measure-all() {
 
   # Make the header
   time-tsv -o $tsv_out --print-header \
-    --rusage --field join_id --field task --field shell_bin --field shell_runtime_opts
+    --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
   time print-tasks | run-tasks $tsv_out
 

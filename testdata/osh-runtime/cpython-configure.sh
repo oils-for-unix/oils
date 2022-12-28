@@ -4,13 +4,19 @@ set -e
 
 readonly PY27_DIR=$PWD/Python-2.7.13
 
-sh_path=$1
-files_out_dir=$2
+main() {
+  local sh_path=$1
+  local files_out_dir=$2
 
-# We leave output files in the dir that the harness will save.
-#
-# GNU autoconf supports running configure from a different directory.
+  local sh_abs_path=$PWD/$sh_path
 
-cd $files_out_dir
+  # We leave output files in the dir that the harness will save.
+  #
+  # GNU autoconf supports running configure from a different directory.
 
-"$sh_path" $PY27_DIR/configure
+  cd $files_out_dir
+
+  "$sh_abs_path" $PY27_DIR/configure
+}
+
+main "$@"
