@@ -413,7 +413,11 @@ WriteProvenance = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
 }
 
 RuntimeReport = function(in_dir, out_dir) {
-  times = read.csv(file.path(in_dir, 'times.csv'))
+  times = readTsv(file.path(in_dir, 'times.tsv'))
+  gc_stats = readTsv(file.path(in_dir, 'gc_stats.tsv'))
+
+  Log('GC stats')
+  print(gc_stats)
 
   times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
@@ -433,6 +437,8 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # Replace name/hash combinations with labels.
   times %>%
+    # drop sh_path for now
+    select(-c(sh_path)) %>%
     left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
     left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
     select(-c(host_name, host_hash, shell_name, shell_hash)) ->

@@ -63,25 +63,16 @@ runtime-task() {
   local task_type=$7
   local task_arg=$8
 
+  # TODO: remove shell_name; do it in R
   local shell_name=$(basename $sh_path)
 
   # NOTE: For abuild, this isn't a directory name.
   local x=$(basename $task_arg)
   local task_label="${shell_name}-${shell_hash}__${x}"
 
-  local times_out="$PWD/$out_dir/$host.$job_id.times.csv"
+  local times_out="$PWD/$out_dir/$host.$job_id.times.tsv"
   local files_out_dir="$PWD/$out_dir/$host.$job_id.files/$task_label"
   mkdir -p $files_out_dir
-
-  local -a TIME_PREFIX=(
-    $PWD/benchmarks/time_.py \
-    --append \
-    --output $times_out \
-    --rusage \
-    --field "$host" --field "$host_hash" \
-    --field "$shell_name" --field "$shell_hash" \
-    --field "$task_type" --field "$task_arg"
-  )
 
   echo
   echo "--- $sh_path $task_type $task_arg ---"
@@ -91,7 +82,6 @@ runtime-task() {
   case $task_type in
     hello-world)  # NOTE: $task_arg unused.
       argv=( testdata/osh-runtime/hello_world.sh )
-
       ;;
 
     abuild)  # NOTE: $task_arg unused.
@@ -114,7 +104,31 @@ runtime-task() {
       ;;
   esac
 
-  "${TIME_PREFIX[@]}" -- "$sh_path" "${argv[@]}" > $files_out_dir/STDOUT.txt
+  local -a time_argv=(
+    time-tsv 
+      --output $times_out --append 
+      --rusage
+      --field "$host" --field "$host_hash" 
+      --field "$sh_path"
+      --field "$shell_name" --field "$shell_hash" 
+      --field "$task_type" --field "$task_arg"
+      -- "$sh_path" "${argv[@]}"
+  )
+
+  local stdout_file="$files_out_dir/STDOUT.txt"
+
+  local join_id=gc42  # TODO
+  local gc_stats_file="$BASE_DIR/raw/$join_id.txt"
+
+  case $sh_path in
+    */osh_eval*)
+      # TODO: need join ID
+      OIL_GC_STATS_FD=99 "${time_argv[@]}" > $stdout_file 99>$gc_stats_file
+      ;;
+    *)
+      "${time_argv[@]}" > $stdout_file
+      ;;
+  esac
 }
 
 # For each configure file.
@@ -163,9 +177,6 @@ print-tasks() {
 # input columns: 5 from provenence, then task_type / task_arg
 readonly NUM_COLUMNS=7
 
-# output columns
-readonly HEADER='status,elapsed_secs,user_secs,sys_secs,max_rss_KiB,host_name,host_hash,shell_name,shell_hash,task_type,task_arg'
-
 measure() {
   local provenance=$1
   local out_dir=${2:-$BASE_DIR/raw}  # could be ../benchmark-data
@@ -197,11 +208,16 @@ measure() {
   #   gc_stats.tsv
   #   gc_stats.schema.tsv
 
-  local times_out="$out_dir/$prefix.times.csv"
+  local times_out="$out_dir/$prefix.times.tsv"
   mkdir -p $BASE_DIR/{raw,stage1} $out_dir
 
-  # Write Header of the CSV file that is appended to.
-  echo $HEADER > $times_out
+  # Write header of the TSV file that is appended to.
+  time-tsv -o $times_out --print-header \
+    --rusage \
+    --field host_name --field host_hash \
+    --field sh_path \
+    --field shell_name --field shell_hash \
+    --field task_type --field task_arg
 
   local tasks=$BASE_DIR/tasks.txt
   print-tasks $provenance > $tasks
@@ -227,17 +243,20 @@ stage1() {
 
   local -a raw=()
   if test -n "$single_machine"; then
-    local -a a=($raw_dir/$single_machine.*.times.csv)
+    local -a a=($raw_dir/$single_machine.*.times.tsv)
     raw+=( ${a[-1]} )
   else
     # Globs are in lexicographical order, which works for our dates.
-    local -a a=($raw_dir/$MACHINE1.*.times.csv)
-    local -a b=($raw_dir/$MACHINE2.*.times.csv)
+    local -a a=($raw_dir/$MACHINE1.*.times.tsv)
+    local -a b=($raw_dir/$MACHINE2.*.times.tsv)
     raw+=( ${a[-1]} ${b[-1]} )
   fi
 
-  local times_csv=$out_dir/times.csv
+  local times_csv=$out_dir/times.tsv
   csv-concat "${raw[@]}" > $times_csv
+
+  benchmarks/gc_stats_to_tsv.py $raw_dir/gc*.txt \
+    > $BASE_DIR/stage1/gc_stats.tsv
 }
 
 print-report() {
