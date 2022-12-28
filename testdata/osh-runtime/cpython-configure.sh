@@ -17,7 +17,7 @@ main() {
       sh_run_path=$PWD/$sh_path
       ;;
     *)  # 'dash' should remain 'dash'
-      sh_run_path=$path
+      sh_run_path=$sh_path
       ;;
   esac
 
