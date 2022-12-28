@@ -278,7 +278,3 @@ void* CheneyHeap::Allocate(int num_bytes) {
 
   return Bump(n);
 }
-
-#if !defined(MARK_SWEEP) && !defined(BUMP_LEAK)
-CheneyHeap gHeap;
-#endif

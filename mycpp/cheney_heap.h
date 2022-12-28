@@ -15,6 +15,8 @@
 
 #include "mycpp/common.h"
 
+#undef MARK_SWEEP  // TODO: put this in the build system
+
 class ObjHeader;  // from gc_obj.h
 
 // Design Notes:

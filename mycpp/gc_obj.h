@@ -42,9 +42,13 @@ struct ObjHeader {
   unsigned type_tag : 7;     // TypeTag, ASDL variant / shared variant
   unsigned field_mask : 24;  // For some user-defined classes, so max 16 fields
 
+#ifdef MARK_SWEEP
   unsigned heap_tag : 2;  // Tag::Opaque, etc.
   unsigned obj_len : 30;  // Mark-sweep: derive Str length, Slab length
-                          // Cheney: number of bytes to copy
+#else
+  unsigned heap_tag : 3;  // Cheney also needs Tag::Forwarded
+  unsigned obj_len : 29;  // Cheney: number of bytes to copy
+#endif
 };
 
 // A RawObject* is like a void* -- it can point to any C++ object.  The object

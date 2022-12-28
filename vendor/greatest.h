@@ -1194,7 +1194,8 @@ greatest_run_info greatest_info
 #define ASSERT_MEM_EQm GREATEST_ASSERT_MEM_EQm
 #define ASSERT_ENUM_EQm GREATEST_ASSERT_ENUM_EQm
 #define PASS           GREATEST_PASS
-#define FAIL           GREATEST_FAIL
+// Oil patch: FAIL() conflicts with mycpp/common.h
+// #define FAIL           GREATEST_FAIL
 #define SKIP           GREATEST_SKIP
 #define PASSm          GREATEST_PASSm
 #define FAILm          GREATEST_FAILm
