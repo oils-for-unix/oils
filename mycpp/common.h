@@ -25,7 +25,7 @@
 #endif
 
 #define FAIL(reason) assert(false)
-  
+
 enum Reason { kShouldNotGetHere, kNotImplemented };
 
 // Workaround for macros that take templates

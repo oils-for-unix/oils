@@ -37,13 +37,14 @@ const int kNoObjLen = 0x0badbeef;
 // The first member of every GC-managed object is 'ObjHeader header_'.
 // (There's no inheritance!)
 struct ObjHeader {
-  unsigned is_header : 1;  // To distinguish from vtable pointer
-                           // Overlaps with RawObject::points_to_header
-  unsigned heap_tag : 7;   // Tag::Opaque, etc.
-  uint8_t type_tag;        // TypeTag, ASDL variant / shared variant
-  uint16_t field_mask;     // For some user-defined classes, so max 16 fields
-  uint32_t obj_len;        // Mark-sweep: derive Str length, Slab length
-                           // Cheney: number of bytes to copy
+  unsigned is_header : 1;    // To distinguish from vtable pointer
+                             // Overlaps with RawObject::points_to_header
+  unsigned type_tag : 7;     // TypeTag, ASDL variant / shared variant
+  unsigned field_mask : 24;  // For some user-defined classes, so max 16 fields
+
+  unsigned heap_tag : 2;  // Tag::Opaque, etc.
+  unsigned obj_len : 30;  // Mark-sweep: derive Str length, Slab length
+                          // Cheney: number of bytes to copy
 };
 
 // A RawObject* is like a void* -- it can point to any C++ object.  The object
@@ -56,35 +57,35 @@ struct RawObject {
 // Used by hand-written and generated classes
 #define GC_CLASS_FIXED(header_, field_mask, obj_len)                    \
   header_ {                                                             \
-    kIsHeader, Tag::FixedSize, TypeTag::OtherClass, field_mask, obj_len \
+    kIsHeader, TypeTag::OtherClass, field_mask, Tag::FixedSize, obj_len \
   }
 
 // Used by mycpp and frontend/flag_gen.py.  TODO: Sort fields and use
 // Tag::Scanned.
 #define GC_CLASS(header_, heap_tag, field_mask, obj_len)          \
   header_ {                                                       \
-    kIsHeader, heap_tag, TypeTag::OtherClass, field_mask, obj_len \
+    kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, obj_len \
   }
 
 // Used by ASDL.  TODO: Sort fields and use Tag::Scanned
 #define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len) \
   header_ {                                                   \
-    kIsHeader, Tag::FixedSize, type_tag, field_mask, obj_len  \
+    kIsHeader, type_tag, field_mask, Tag::FixedSize, obj_len  \
   }
 
 #define GC_STR(header_)                                        \
   header_ {                                                    \
-    kIsHeader, Tag::Opaque, TypeTag::Str, kZeroMask, kNoObjLen \
+    kIsHeader, TypeTag::Str, kZeroMask, Tag::Opaque, kNoObjLen \
   }
 
 #define GC_SLAB(header_, heap_tag, obj_len)                \
   header_ {                                                \
-    kIsHeader, heap_tag, TypeTag::Slab, kZeroMask, obj_len \
+    kIsHeader, TypeTag::Slab, kZeroMask, heap_tag, obj_len \
   }
 
 #define GC_TUPLE(header_, field_mask, obj_len)                     \
   header_ {                                                        \
-    kIsHeader, Tag::FixedSize, TypeTag::Tuple, field_mask, obj_len \
+    kIsHeader, TypeTag::Tuple, field_mask, Tag::FixedSize, obj_len \
   }
 
 // TODO: could omit this in BUMP_LEAK mode

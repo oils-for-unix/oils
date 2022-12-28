@@ -338,7 +338,9 @@ TEST vtable_test() {
   ObjHeader* obj = reinterpret_cast<ObjHeader*>(b3);
 
   ShowObj(obj);
-  if ((obj->heap_tag & 0x1) == 0) {  // vtable pointer, NOT A TAG!
+  if (obj->is_header) {
+    ASSERT(false);  // shouldn't get here
+  } else {          // vtable pointer, NOT A TAG!
     ObjHeader* header = reinterpret_cast<ObjHeader*>(
         reinterpret_cast<char*>(obj) + sizeof(void*));
     // Now we have the right GC info.
@@ -348,8 +350,6 @@ TEST vtable_test() {
     ASSERT_EQ_FMT(0, header->field_mask, "%d");
     // casts get rid of warning
     ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len, "%d");
-  } else {
-    ASSERT(false);  // shouldn't get here
   }
 
   PASS();
