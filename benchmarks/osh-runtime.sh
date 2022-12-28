@@ -50,25 +50,6 @@ extract() {
 # Computation
 #
 
-readonly PY27_DIR=$PWD/Python-2.7.13
-
-cpython-configure() {
-  local sh_path=${1:-bash}
-  local out_dir=${2:-$BASE_DIR/${sh_path}-cpython-configure}
-  mkdir -p $out_dir
-
-  pushd $out_dir
-  time $sh_path $PY27_DIR/configure || true
-  popd
-
-  tree $out_dir
-}
-
-# 18.9 seconds vs 11 seconds above.
-osh-cpython-configure() {
-  cpython-configure $OSH_OVM $BASE_DIR/osh-cpython-configure
-}
-
 runtime-task() {
   local raw_dir=$1  # output
   local job_id=$2
@@ -103,51 +84,34 @@ runtime-task() {
   echo "--- $sh_path $task_type $task_arg ---"
   echo
 
+  local -a argv
   case $task_type in
     hello-world)  # NOTE: $task_arg unused.
+      argv=( testdata/osh-runtime/hello_world.sh )
 
-      "${TIME_PREFIX[@]}" -- \
-        "$sh_path" testdata/osh-runtime/hello_world.sh
-        > $files_out_dir/STDOUT.txt
       ;;
 
     abuild)  # NOTE: $task_arg unused.
-
-      "${TIME_PREFIX[@]}" -- \
-        "$sh_path" testdata/osh-runtime/abuild -h \
-        > $files_out_dir/STDOUT.txt
+      argv=( testdata/osh-runtime/abuild -h )
       ;;
 
     cpython)  # NOTE: $task_arg unused.
-
-      # autoconf supports running configure from a different directory.
-      pushd $files_out_dir >/dev/null
-
-      "${TIME_PREFIX[@]}" -- \
-        "$sh_path" $PY27_DIR/configure \
-        > $files_out_dir/STDOUT.txt
-
-      popd >/dev/null
+      argv=( testdata/osh-runtime/cpython-configure.sh 
+             $sh_path $files_out_dir) 
       ;;
 
     configure)
       local conf_dir=$task_arg
-
-      pushd $conf_dir >/dev/null
-      touch __TIMESTAMP
-
-      "${TIME_PREFIX[@]}" -- "$sh_path" ./configure \
-        > $files_out_dir/STDOUT.txt
-
-      find . -type f -newer __TIMESTAMP \
-        | xargs -I {} -- cp --verbose {} $files_out_dir
-      popd >/dev/null
+      argv=( testdata/osh-runtime/configure-and-save.sh
+             $sh_path $files_out_dir $conf_dir )
       ;;
 
     *)
       die "Invalid task type $task_type"
       ;;
   esac
+
+  "${TIME_PREFIX[@]}" -- "$sh_path" "${argv[@]}" > $files_out_dir/STDOUT.txt
 }
 
 # For each configure file.
@@ -218,6 +182,9 @@ measure() {
 
   local tasks=$BASE_DIR/tasks.txt
   print-tasks $provenance > $tasks
+
+  # TODO: Get rid of 'xargs' because it makes failure harder to handle and see.
+  # We're not exiting with 255 to abort xargs!
 
   # An empty pattern matches every line.
   time egrep "$pattern" $tasks |
@@ -345,25 +312,7 @@ soil-run() {
 }
 
 #
-# Non-configure scripts
-#
-
-abuild-h() {
-  local out_dir=_tmp/osh-runtime
-  mkdir -p $out_dir
-
-  # TODO: Should test the correctness too.
-  local out=$out_dir/abuild-h-times.csv
-
-  echo 'status,elapsed_secs,sh_path' > $out
-  for sh_path in bash dash mksh zsh $OSH_OVM; do
-    benchmarks/time_.py --append --output $out --field "$sh_path" -- \
-      $sh_path benchmarks/testdata/abuild -h
-  done
-}
-
-#
-# Misc
+# Old
 #
 
 # Same problem as tcc
