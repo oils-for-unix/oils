@@ -201,7 +201,7 @@ readonly NUM_TASK_COLS=6  # input columns: 5 from provenance, 1 for file
 measure() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
-  local oil_native=${3:-$OIL_NATIVE}
+  local oil_native=${3:-$OSH_EVAL_BENCHMARK_DATA}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -235,7 +235,7 @@ measure() {
 measure-cachegrind() {
   local provenance=$1
   local raw_dir=${2:-$BASE_DIR/raw}
-  local oil_native=${3:-$OIL_NATIVE}
+  local oil_native=${3:-$OSH_EVAL_BENCHMARK_DATA}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -490,16 +490,16 @@ EOF
 }
 
 cachegrind-main() {
-  ### Invoked by benchmarks/auto.sh and 'soil-run' function
+  ### Invoked by benchmarks/auto.sh
 
   local base_dir=${1:-../benchmark-data}
 
   local provenance
   provenance=$(benchmarks/id.sh shell-provenance no-host \
-    "${OTHER_SHELLS[@]}" $OIL_NATIVE)
+    "${OTHER_SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA)
 
   measure-cachegrind \
-    $provenance $base_dir/osh-parser $OIL_NATIVE
+    $provenance $base_dir/osh-parser $OSH_EVAL_BENCHMARK_DATA
 
 }
 

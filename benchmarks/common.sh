@@ -10,7 +10,10 @@ readonly MACHINE1=broome
 readonly MACHINE2=lenny
 
 OIL_VERSION=$(head -n 1 oil-version.txt)
+
+# Used by devtools/release.sh
 readonly BENCHMARK_DATA_OIL_NATIVE=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
+
 readonly OSH_EVAL_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/_bin/cxx-opt-sh/osh_eval.stripped
 
 #
@@ -18,7 +21,6 @@ readonly OSH_EVAL_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/_bin/cxx-opt-sh/osh_
 #
 
 OSH_OVM=${OSH_OVM:-_bin/osh}  # This is overridden by devtools/release.sh.
-OIL_NATIVE=${OIL_NATIVE:-$OSH_EVAL_BENCHMARK_DATA}
 
 readonly OTHER_SHELLS=( bash dash mksh zsh )
 readonly SHELLS=( ${OTHER_SHELLS[@]} bin/osh $OSH_OVM )
@@ -81,13 +83,6 @@ filter-provenance() {
 
   # 4th column is the shell
   awk -v pat="$pat" '$4 ~ pat { print }'
-}
-
-our-shell-provenance() {
-  ### The list of programs we compare
-
-  # empty label
-  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OIL_NATIVE python2
 }
 
 maybe-tree() {

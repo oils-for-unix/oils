@@ -40,8 +40,8 @@ osh-parser-quick() {
 
   local c_prov prov
   c_prov=$(benchmarks/id.sh shell-provenance no-host \
-    "${OTHER_SHELLS[@]}" $OIL_NATIVE python2)
-  prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OIL_NATIVE)
+    "${OTHER_SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2)
+  prov=$(benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA)
 
   # normally done on one machine
   benchmarks/osh-parser.sh measure $prov $base_dir/osh-parser
@@ -66,6 +66,13 @@ osh-parser-dup-testdata() {
       sed -i 's/lenny/flanders/g' $dest
     fi
   done
+}
+
+our-shell-provenance() {
+  ### The list of programs we compare
+
+  # empty label
+  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2
 }
 
 measure-shells() {
@@ -108,7 +115,7 @@ all() {
     benchmarks/mycpp.sh soil-run
     benchmarks/gc.sh soil-run
 
-    benchmarks/osh-parser.sh cachegrind-main '' $OIL_NATIVE
+    benchmarks/osh-parser.sh cachegrind-main ''
   fi
 
   measure-shells
