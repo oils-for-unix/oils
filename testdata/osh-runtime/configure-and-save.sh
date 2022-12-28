@@ -7,13 +7,24 @@ main() {
   local files_out_dir=$2
   local conf_dir=$3
 
-  local sh_abs_path=$PWD/$sh_path
+  local sh_run_path
+  case $sh_path in
+    /*)  # Already absolute
+      sh_run_path=$sh_path
+      ;;
+    */*)  # It's relative, so make it absolute
+      sh_run_path=$PWD/$sh_path
+      ;;
+    *)  # 'dash' should remain 'dash'
+      sh_run_path=$path
+      ;;
+  esac
 
   cd $conf_dir
 
   touch __TIMESTAMP
 
-  "$sh_abs_path" ./configure
+  "$sh_run_path" ./configure
 
   # This extra step is added to the resource usage of ./configure, but it's OK
   # for now

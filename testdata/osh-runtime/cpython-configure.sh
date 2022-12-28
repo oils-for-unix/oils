@@ -8,7 +8,18 @@ main() {
   local sh_path=$1
   local files_out_dir=$2
 
-  local sh_abs_path=$PWD/$sh_path
+  local sh_run_path
+  case $sh_path in
+    /*)  # Already absolute
+      sh_run_path=$sh_path
+      ;;
+    */*)  # It's relative, so make it absolute
+      sh_run_path=$PWD/$sh_path
+      ;;
+    *)  # 'dash' should remain 'dash'
+      sh_run_path=$path
+      ;;
+  esac
 
   # We leave output files in the dir that the harness will save.
   #
@@ -16,7 +27,7 @@ main() {
 
   cd $files_out_dir
 
-  "$sh_abs_path" $PY27_DIR/configure
+  "$sh_run_path" $PY27_DIR/configure
 }
 
 main "$@"
