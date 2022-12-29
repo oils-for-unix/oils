@@ -26,6 +26,8 @@ readonly TAR_DIR=$PWD/_deps/osh-runtime  # Make it absolute
 # Dependencies
 #
 
+readonly PY27_DIR=$PWD/Python-2.7.13
+
 # NOTE: Same list in oilshell.org/blob/run.sh.
 tarballs() {
   cat <<EOF
@@ -57,6 +59,7 @@ extract() {
 
 run-tasks() {
   local raw_out_dir=$1
+  raw_out_dir="$PWD/$raw_out_dir"  # because we change dirs
 
   local task_id=0
   while read -r host_name sh_path workload; do
@@ -76,8 +79,11 @@ run-tasks() {
         ;;
     esac
 
-    local files_out_dir="$PWD/$raw_out_dir/files-$task_id"
+    local working_dir=''
+    local files_out_dir="$raw_out_dir/files-$task_id"
     mkdir -v -p $files_out_dir
+
+    local save_new_files=''
 
     local -a argv
     case $workload in
@@ -90,11 +96,13 @@ run-tasks() {
         ;;
 
       configure.cpython)
-        argv=( testdata/osh-runtime/cpython-configure.sh 
-               $sh_run_path $files_out_dir)  
+        argv=( $PY27_DIR/configure )
+        working_dir=$files_out_dir
         ;;
 
       configure.*)
+        argv=( ./configure )
+
         local conf_dir
         case $workload in
           *.ocaml)
@@ -110,8 +118,7 @@ run-tasks() {
             die "Invalid workload $workload"
         esac
 
-        argv=( testdata/osh-runtime/configure-and-save.sh
-               $sh_run_path $files_out_dir "$TAR_DIR/$conf_dir" )
+        working_dir=$TAR_DIR/$conf_dir
         ;;
 
       *)
@@ -126,13 +133,22 @@ run-tasks() {
         --field "$task_id"
         --field "$host_name" --field "$sh_path"
         --field "$workload"
-        -- "$sh_path" "${argv[@]}"
+        -- "$sh_run_path" "${argv[@]}"
     )
 
     local stdout_file="$files_out_dir/STDOUT.txt"
-
     local gc_stats_file="$raw_out_dir/gc-$task_id.txt"
 
+    # Maybe change dirs
+    if test -n "$working_dir"; then
+      pushd "$working_dir"
+    fi
+
+    if test -n "$save_new_files"; then
+      touch __TIMESTAMP
+    fi
+
+    # Run it, possibly with GC stats
     case $sh_path in
       */osh_eval*)
         OIL_GC_STATS_FD=99 "${time_argv[@]}" > $stdout_file 99> $gc_stats_file
@@ -142,9 +158,18 @@ run-tasks() {
         ;;
     esac
 
-    # NOTE: will have to join on (host_name, id)
-    task_id=$((task_id + 1))
+    if test -n "$save_new_files"; then
+      echo "COPYING to $files_out_dir"
+      find . -type f -newer __TIMESTAMP \
+        | xargs -I {} -- cp --verbose {} $files_out_dir
+    fi
 
+    # Restore dir
+    if test -n "$working_dir"; then
+      popd
+    fi
+
+    task_id=$((task_id + 1))
   done
 }
 
@@ -313,8 +338,7 @@ soil-run() {
   download
   extract
 
-  # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
-  # $shell_name 
+  # could add _bin/cxx-bumpleak/osh_eval, although sometimes it's slower
   local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
@@ -343,35 +367,6 @@ soil-run() {
   find-dir-html _tmp/osh-runtime files
 
   benchmarks/report.sh stage3 $BASE_DIR
-}
-
-#
-# Old
-#
-
-# Same problem as tcc
-qemu-old() {
-  local out_dir=$PWD/_tmp/qemu-old
-  mkdir -p $out_dir
-  configure-and-copy ~/src/qemu-1.6.0 $OSH_OVM $out_dir
-}
-
-# This doesn't work for ash either, because it uses the busybox pattern.  It
-# says "exe: applet not found".  I guess yash doesn't configure under ash!
-self-exe() {
-  set +o errexit
-  dash <<EOF
-/proc/self/exe -V
-EOF
-  echo
-
-  _bin/osh <<EOF
-/proc/self/exe -V
-EOF
-
-  _tmp/shells/ash <<EOF
-/proc/self/exe -V
-EOF
 }
 
 "$@"
