@@ -33,76 +33,45 @@ _banner() {
   echo -----
 }
 
-  # New interface for shell-provenance
-  # 3 fixed inputs:
-  #   maybe_host   - 'lenny' or 'no-host'
-  #   job_id       - use $(print-job-timestamp)
-  #   out_dir      - location for put shell-id, host-id, but TSV is first
-  #                  written to _tmp/provenance.tsv, and later COPIED TO EACH
-  #                  $out_dir/$bench_name/$host_job_id/ dir
-  # Variable inputs:
-  #   list of shells
-
-  # shell-provenance-tsv 'no-host' $(print-job-id) _tmp \
-  #   bash dash bin/osh $OSH_EVAL_NINJA_BUILD
-
-  # shell-provenance-tsv 'lenny' $(print-job-id) ../benchmark-data \
-  #   bash dash bin/osh $OSH_EVAL_BENCHMARK_DATA
-  #
-  # - A key problem is that you need to concat the two provenances
-  #   - and CHECK that you're comparing the same shells!
-  #   - the number of hosts should be 2, and they should have an equal number
-  #   of rows
-  #   - and there should be exactly 2 of every hash?
-
 measure-shells() {
   local host_name=$1
-  local host_job_id=$2
+  local job_id=$2
 
-  # TODO:
-
-  # capture the filename
-  local provenance
-  # pass empty label, so it writes to ../benchmark-data/{shell,host}-id
-  provenance=$(benchmarks/id.sh shell-provenance '' \
+  local out_dir=../benchmark-data
+  benchmarks/id.sh shell-provenance-2 \
+    $host_name $job_id $out_dir \
     "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2
   )
 
-  local out_dir=../benchmark-data
+  local host_job_id="$host_name.$job_id"
 
-  #local name
-  #name=$(basename $provenance)
-  #local host_job_id=${name%.provenance.txt}  # strip suffix
+  # New Style doesn't need provenance -- it's joined later
+  benchmarks/osh-runtime.sh measure \
+    $host_name $host_job_id $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
+
+  # Old style needs provenance
+  local provenance=_tmp/provenance.txt
 
   benchmarks/vm-baseline.sh measure \
     $provenance $host_job_id $out_dir/vm-baseline
 
-  benchmarks/osh-runtime.sh measure \
-    $host_name $host_job_id $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
-
-  # TODO: Either
-  # (OLD) cp -v _tmp/provenance.txt $out_dir/osh-runtime/$host.$job_id.provenance.txt
-  # (NEW) cp -v _tmp/provenance.tsv $out_dir/osh-runtime/raw.$host.$job_id/
-  #
-  # Eliminate $job_id calculation from shell-provenance altogether
-  # All soil-shell-provenance callers should just pass $job_id and $maybe_host
-
-  # SAVE provenance so you know which 2 machines a benchmark ran on
-  cp -v $provenance $out_dir/osh-runtime
-
   benchmarks/osh-parser.sh measure \
     $provenance $host_job_id $out_dir/osh-parser
+
   benchmarks/compute.sh measure \
     $provenance $host_job_id $out_dir/compute
 }
 
 measure-builds() {
-  local base_dir=../benchmark-data
+  local host_name=$1
+  local job_id=$2
+
+  local out_dir=../benchmark-data
 
   local provenance
   provenance=$(benchmarks/id.sh compiler-provenance)  # capture the filename
 
-  benchmarks/ovm-build.sh measure $provenance $base_dir/ovm-build
+  benchmarks/ovm-build.sh measure $provenance $out_dir/ovm-build
 }
 
 # Run all benchmarks from a clean git checkout.
@@ -131,8 +100,8 @@ all() {
     benchmarks/osh-parser.sh cachegrind-main $host_job_id ''
   fi
 
-  measure-shells $host_name $host_job_id
-  measure-builds
+  measure-shells $host_name $job_id
+  measure-builds $host_name $job_id
 }
 
 #

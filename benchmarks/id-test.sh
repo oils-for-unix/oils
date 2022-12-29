@@ -11,7 +11,8 @@ set -o pipefail
 set -o errexit
 
 test-shell-prov() {
-  shell-provenance no-host bin/osh
+  shell-provenance-2 no-host 2022-12-29 _tmp/ \
+    bin/osh
 }
 
 test-out-param() {

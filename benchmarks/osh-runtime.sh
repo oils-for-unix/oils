@@ -222,6 +222,8 @@ measure() {
   print-tasks $host_name $osh_native | run-tasks $tsv_out $files_base_dir
 
   # TODO: call gc_stats_to_tsv.py here, adding HOST NAME, and put it in 'raw'
+
+  cp -v _tmp/provenance.tsv $out_dir
 }
 
 stage1() {
@@ -257,6 +259,9 @@ stage1() {
   # - concat multiple hosts in stage1
   benchmarks/gc_stats_to_tsv.py $raw_dir/gc-*.txt \
     > $BASE_DIR/stage1/gc_stats.tsv
+
+  # TODO: Concatenate by host.
+  cp -v $raw_dir/provenance.tsv $out_dir
 }
 
 print-report() {
@@ -351,9 +356,6 @@ soil-run() {
   local host_job_id=$single_machine.$job_id
 
   measure $single_machine $host_job_id $OSH_EVAL_NINJA_BUILD
-
-  # R uses the TSV version of the provenance.  TODO: concatenate per-host
-  cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv
 
   # Trivial concatenation for 1 machine
   stage1 '' $single_machine

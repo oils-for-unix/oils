@@ -385,9 +385,10 @@ measure() {
   hello-all $provenance $host_job_id $out_dir
   fib-all $provenance $host_job_id $out_dir
 
-  if test -n "${QUICKLY:-}"; then
-    return
-  fi
+  # TODO: doesn't work because we would need duplicate logic in stage1
+  #if test -n "${QUICKLY:-}"; then
+  #  return
+  #fi
   
   word_freq-all $provenance $host_job_id $out_dir
   parse_help-all $provenance $host_job_id $out_dir
@@ -456,7 +457,7 @@ stage1() {
 
   local -a raw=()
 
-  # TODO: Doesn't respect QUICKLY=1
+  # TODO: We should respect QUICKLY=1
   for metric in hello fib word_freq parse_help bubble_sort palindrome; do
     local dir=$raw_dir/$metric
 
@@ -544,6 +545,7 @@ EOF
   tsv2html $in_dir/bubble_sort.tsv
 
   # Comment out until checksum is fixed
+
 if false; then
   cmark <<EOF
 ### palindrome (byte strings, unicode strings)

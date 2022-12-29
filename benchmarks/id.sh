@@ -3,7 +3,7 @@
 # Keep track of benchmark data provenance.
 #
 # Usage:
-#   ./id.sh <function name>
+#   benchmarks/id.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -334,72 +334,6 @@ publish-compiler-id() {
 #
 # The table can be passed to other benchmarks to ensure that their provenance
 # is recorded.
-
-shell-provenance() {
-  ### Write info about the given shells to a file, and print its name
-  local label=$1  # if it exists, it overrides the host
-  shift
-
-  # log "*** shell-provenance"
-
-  local job_id
-  job_id=$(print-job-id)
-
-  local tmp_prov_dir=_tmp/provenance
-  mkdir -p $tmp_prov_dir
-
-  local host
-  local prov_dir  # for $prov_dir/{shell-id,host-id}
-
-  if test -n "$label"; then  # label is often 'no-host'
-    host_name=$label
-    prov_dir=$tmp_prov_dir  # local links
-  else
-    host_name=$(hostname)
-    prov_dir='../benchmark-data'  # shared links
-  fi
-
-  log "*** $label $host_name $prov_dir"
-
-  #set -x
-
-  local tmp_dir=_tmp/host-id/$host_name
-  dump-host-id $tmp_dir
-
-  local host_hash
-  host_hash=$(publish-host-id $tmp_dir "$prov_dir/host-id")
-  local shell_hash
-
-  # Legacy text file.  TODO: remove
-  local out_txt=$tmp_prov_dir/${host_name}.${job_id}.provenance.txt
-  echo -n '' > $out_txt  # trunacte, no header
-
-  # TSV file
-  local out_tsv=$tmp_prov_dir/${host_name}.${job_id}.provenance.tsv
-  tsv-row job_id host_name host_hash sh_path shell_hash > $out_tsv
-
-  for sh_path in "$@"; do
-    # There will be two different OSH
-    local name=$(basename $sh_path)
-
-    tmp_dir=_tmp/shell-id/$name
-    dump-shell-id $sh_path $tmp_dir
-
-    # writes to ../benchmark-data or _tmp/provenance
-    shell_hash=$(publish-shell-id $tmp_dir "$prov_dir/shell-id")
-
-    # note: filter-provenance depends on $4 being $sh_path
-    # APPEND to txt
-    echo "$job_id $host_name $host_hash $sh_path $shell_hash" >> $out_txt
-
-    tsv-row "$job_id" "$host_name" "$host_hash" "$sh_path" "$shell_hash" >> $out_tsv
-  done
-
-  log "Wrote $out_txt and $out_tsv"
-
-  # Return value used in command sub
-  echo $out_txt
-}
 
 shell-provenance-2() {
   ### Write to _tmp/provenance.{txt,tsv} and $out_dir/{shell,host-id}
