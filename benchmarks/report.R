@@ -432,13 +432,17 @@ WriteSimpleProvenance = function(provenance, out_dir) {
   print(provenance)
   Log('')
 
-  # There is one row per shell
-  #
   # Legacy: add $shell_name, because "$shell_basename-$shell_hash" is what
-  # benchmarks/id.sh publish-shell-id
-  provenance %>% mutate(shell_name = basename(sh_path)) -> distinct_shells 
+  # benchmarks/id.sh publish-shell-id uses
+  provenance %>%
+    mutate(shell_name = basename(sh_path)) %>%
+    distinct(shell_label, shell_name, shell_hash) ->
+    distinct_shells 
 
-  #provenance %>% distinct(shell_label) -> distinct_shells
+  Log('distinct_shells')
+  print(distinct_shells)
+  Log('')
+
   provenance %>% distinct(host_label, host_name, host_hash) -> distinct_hosts
 
   WriteProvenance(distinct_hosts, distinct_shells, out_dir, tsv = T)
@@ -447,7 +451,6 @@ WriteSimpleProvenance = function(provenance, out_dir) {
 RuntimeReport = function(in_dir, out_dir) {
   times = readTsv(file.path(in_dir, 'times.tsv'))
    
-  # TODO: Both GC stats and provenance could have both hosts
   gc_stats = readTsv(file.path(in_dir, 'gc_stats.tsv'))
   provenance = readTsv(file.path(in_dir, 'provenance.tsv'))
 

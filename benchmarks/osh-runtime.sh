@@ -131,7 +131,6 @@ run-tasks() {
 
     local stdout_file="$files_out_dir/STDOUT.txt"
 
-    # TODO: GC stats can be PER HOST
     local gc_stats_file="$raw_out_dir/gc-$task_id.txt"
 
     case $sh_path in
@@ -197,8 +196,7 @@ measure() {
   # per-task GC stats
   print-tasks $host_name $osh_native | run-tasks $raw_out_dir
 
-  # Turn individual files into a TSV
-  # TODO: Add host
+  # Turn individual files into a TSV, adding host
   benchmarks/gc_stats_to_tsv.py $raw_out_dir/gc-*.txt \
     | tsv-add-const-column host_name "$host_name" \
     > $raw_out_dir/gc_stats.tsv
