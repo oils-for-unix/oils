@@ -103,7 +103,7 @@ all() {
   fi
 
   measure-shells $host_name $job_id $out_dir
-  measure-builds # $host_name $job_id $out_dir
+  measure-builds $host_name $job_id $out_dir
 }
 
 "$@"
