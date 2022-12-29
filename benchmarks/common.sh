@@ -51,11 +51,6 @@ cmark() {
   PYTHONPATH=. doctools/cmark.py "$@"
 }
 
-csv-concat() { devtools/csv_concat.py "$@"; }
-
-# TSV and CSV concatenation are actually the same.  Just use the same script.
-tsv-concat() { devtools/csv_concat.py "$@"; }
-
 # For compatibility, if cell starts with 'osh', apply the 'special' CSS class.
 csv2html() {
   web/table/csv2html.py --css-class-pattern 'special ^osh' "$@"

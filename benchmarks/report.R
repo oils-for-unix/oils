@@ -524,7 +524,7 @@ RuntimeReport = function(in_dir, out_dir) {
   # TODO: GC stats needs to be per hostname!  Or maybe just one!
 
   gc_stats %>%
-    left_join(gc_details, by = c('join_id')) %>%
+    left_join(gc_details, by = c('join_id', 'host_name')) %>%
     select(-c(join_id, roots_capacity, objs_capacity)) ->
     gc_stats
 

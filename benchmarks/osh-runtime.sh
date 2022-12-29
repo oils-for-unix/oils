@@ -200,6 +200,7 @@ measure() {
   # Turn individual files into a TSV
   # TODO: Add host
   benchmarks/gc_stats_to_tsv.py $raw_out_dir/gc-*.txt \
+    | tsv-add-const-column host_name "$host_name" \
     > $raw_out_dir/gc_stats.tsv
 
   cp -v _tmp/provenance.tsv $raw_out_dir

@@ -43,8 +43,36 @@ tsv-row() {
 here-schema-tsv() {
   ### Read a legible text format on stdin, and write TSV on stdout
 
-  local tab=$'\t'
-  while read one two; do
-    echo "${one}${tab}${two}"
+  while read -r one two; do
+    echo "${one}${TAB}${two}"
+  done
+}
+
+tsv-concat() {
+  devtools/tsv_concat.py "$@"
+}
+
+# TSV and CSV concatenation are actually the same.  Just use the same script.
+csv-concat() {
+  devtools/tsv_concat.py "$@"
+}
+
+tsv-add-const-column() {
+  ### Used to add a host name to GC stats
+
+  local col_name=$1
+  local const_value=$2
+
+  local i=0
+  while read -r line; do
+    if test $i = 0; then
+      echo -n "$col_name$TAB"
+    else
+      echo -n "$const_value$TAB"
+    fi
+    # Print the other columns
+    printf '%s\n' "$line"
+
+    i=$((i+1))
   done
 }
