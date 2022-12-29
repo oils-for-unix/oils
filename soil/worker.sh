@@ -173,9 +173,12 @@ EOF
 benchmarks-tasks() {
   # (task_name, script, action, result_html)
 
+  # Note: id-test doesn't run in 'other-tests' because 'gawk' isn't in that image
+
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+id-test          benchmarks/id-test.sh soil-run        -
 osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/osh-parser/index.html
 osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
@@ -286,7 +289,6 @@ dump-distro            soil/worker.sh dump-distro                 -
 dump-locale            soil/worker.sh dump-locale                 -
 configure-test         ./configure-test.sh soil_run               -
 time-test              benchmarks/time-test.sh soil-run           -
-id-test                benchmarks/id-test.sh soil-run             -
 csv-concat-test        devtools/csv-concat-test.sh soil-run       -
 osh2oil                test/osh2oil.sh soil-run                   -
 R-test                 devtools/R-test.sh soil-run                -
