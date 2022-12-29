@@ -127,7 +127,7 @@ print-tasks() {
           ;;
       esac
 
-      local join_id="gc$id"
+      local join_id="gc-$id"
       local row="$join_id${TAB}$row_part"
       echo "$row"
 
@@ -424,7 +424,7 @@ make-report() {
   mkdir -p $BASE_DIR/{stage1,stage2}
 
   # Concatenate tiny files
-  benchmarks/gc_stats_to_tsv.py $BASE_DIR/raw/gc*.txt \
+  benchmarks/gc_stats_to_tsv.py $BASE_DIR/raw/gc-*.txt \
     > $BASE_DIR/stage1/gc_stats.tsv
 
   # Make TSV files

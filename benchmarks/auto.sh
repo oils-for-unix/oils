@@ -46,10 +46,16 @@ measure-shells() {
   local provenance
   provenance=$(our-shell-provenance)
 
+  local host
+  host=$(hostname)  # Running on multiple machines
+
   benchmarks/vm-baseline.sh measure \
     $provenance $out_dir/vm-baseline
+
+  # Uses $host
   benchmarks/osh-runtime.sh measure \
-    $provenance $out_dir/osh-runtime
+    $provenance $host $out_dir/osh-runtime
+
   benchmarks/osh-parser.sh measure \
     $provenance $out_dir/osh-parser
   benchmarks/compute.sh measure \

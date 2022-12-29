@@ -53,127 +53,99 @@ extract() {
 # Computation
 #
 
-runtime-task() {
-  local out_dir=$1  # output
-  local job_id=$2
-  local host=$3
-  local host_hash=$4
-  local sh_path=$5
-  local shell_hash=$6
-  local task_type=$7
-  local task_arg=$8
+run-tasks() {
+  local tsv_out=$1
+  local files_base_dir=$2
 
-  # TODO: remove shell_name; do it in R
-  local shell_name=$(basename $sh_path)
+  local task_id=0
+  while read -r maybe_host sh_path task_type task_arg; do
 
-  # TODO: Use $task_id instead of $task_label
+    local files_out_dir="$files_base_dir/files-$task_id"
+    mkdir -p $files_out_dir
 
-  # NOTE: For abuild, this isn't a directory name.
-  local x=$(basename $task_arg)
-  local task_label="${shell_name}-${shell_hash}__${x}"
+    local -a argv
+    case $task_type in
+      hello-world)  # NOTE: $task_arg unused.
+        argv=( testdata/osh-runtime/hello_world.sh )
+        ;;
 
-  local times_out="$PWD/$out_dir/$host.$job_id.times.tsv"
-  local files_out_dir="$PWD/$out_dir/$host.$job_id.files/$task_label"
-  mkdir -p $files_out_dir
+      abuild)  # NOTE: $task_arg unused.
+        argv=( testdata/osh-runtime/abuild -h )
+        ;;
 
-  echo
-  echo "--- $sh_path $task_type $task_arg ---"
-  echo
+      cpython)  # NOTE: $task_arg unused.
+        argv=( testdata/osh-runtime/cpython-configure.sh 
+               $sh_path $files_out_dir) 
+        ;;
 
-  local -a argv
-  case $task_type in
-    hello-world)  # NOTE: $task_arg unused.
-      argv=( testdata/osh-runtime/hello_world.sh )
-      ;;
+      configure)
+        local conf_dir=$task_arg
+        argv=( testdata/osh-runtime/configure-and-save.sh
+               $sh_path $files_out_dir $conf_dir )
+        ;;
 
-    abuild)  # NOTE: $task_arg unused.
-      argv=( testdata/osh-runtime/abuild -h )
-      ;;
+      *)
+        die "Invalid task type $task_type"
+        ;;
+    esac
 
-    cpython)  # NOTE: $task_arg unused.
-      argv=( testdata/osh-runtime/cpython-configure.sh 
-             $sh_path $files_out_dir) 
-      ;;
+    local -a time_argv=(
+      time-tsv 
+        --output $tsv_out --append 
+        --rusage
+        --field "$task_id"
+        --field "$maybe_host" --field "$sh_path"
+        --field "$task_type" --field "$task_arg"
+        -- "$sh_path" "${argv[@]}"
+    )
 
-    configure)
-      local conf_dir=$task_arg
-      argv=( testdata/osh-runtime/configure-and-save.sh
-             $sh_path $files_out_dir $conf_dir )
-      ;;
+    local stdout_file="$files_out_dir/STDOUT.txt"
 
-    *)
-      die "Invalid task type $task_type"
-      ;;
-  esac
+    # TODO: GC stats can be PER HOST
+    local gc_stats_file=$BASE_DIR/raw/gc-$task_id.txt
 
-  local -a time_argv=(
-    time-tsv 
-      --output $times_out --append 
-      --rusage
-      --field "$host" --field "$host_hash" 
-      --field "$sh_path"
-      --field "$shell_name" --field "$shell_hash" 
-      --field "$task_type" --field "$task_arg"
-      -- "$sh_path" "${argv[@]}"
-  )
+    case $sh_path in
+      */osh_eval*)
+        # TODO: need join ID
+        OIL_GC_STATS_FD=99 "${time_argv[@]}" > $stdout_file 99>$gc_stats_file
+        ;;
+      *)
+        "${time_argv[@]}" > $stdout_file
+        ;;
+    esac
 
-  local stdout_file="$files_out_dir/STDOUT.txt"
+    # NOTE: will have to join on (maybe_host, id)
+    task_id=$((task_id + 1))
 
-  local join_id=gc42  # TODO
-  local gc_stats_file="$BASE_DIR/raw/$join_id.txt"
-
-  case $sh_path in
-    */osh_eval*)
-      # TODO: need join ID
-      OIL_GC_STATS_FD=99 "${time_argv[@]}" > $stdout_file 99>$gc_stats_file
-      ;;
-    *)
-      "${time_argv[@]}" > $stdout_file
-      ;;
-  esac
+  done
 }
 
 # For each configure file.
 print-tasks() {
-  local provenance=$1
+  local maybe_host=$1  
 
-  # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance "${SHELLS[@]}" $OIL_NATIVE_REGEX |
-  while read job_id host_name host_hash sh_path shell_hash; do
-
-    # Skip shells for speed
-    case $sh_path in
-      mksh|zsh|_bin/osh)
-        log "--- osh-runtime.sh: Skipping $sh_path"
-        continue
-        ;;
-    esac
-
-    local prefix="$job_id $host_name $host_hash $sh_path $shell_hash"
-
+  for sh_path in bash dash bin/osh $OSH_EVAL_NINJA_BUILD; do
     # NOTE: 'abuild-help' is a dummy label.
-    echo "$prefix" hello-world hello-world
-    echo "$prefix" abuild abuild-help
+    tsv-row $maybe_host $sh_path hello-world hello-world
+    tsv-row $maybe_host $sh_path abuild abuild-help
 
     if test -n "${QUICKLY:-}"; then
       continue
     fi
 
-    echo "$prefix" cpython cpython-configure
+    tsv-row $maybe_host $sh_path cpython cpython-configure
 
     for dir in "${TAR_SUBDIRS[@]}"; do
-      echo "$prefix" configure $TAR_DIR/$dir
+      tsv-row $maybe_host $sh_path configure $TAR_DIR/$dir
     done
   done
 }
 
-# input columns: 5 from provenence, then task_type / task_arg
-readonly NUM_COLUMNS=7
-
 measure() {
+  # TODO: just change this to prefix
   local provenance=$1
-  local out_dir=${2:-$BASE_DIR/raw}  # could be ../benchmark-data
-  local pattern=${3:-}
+  local maybe_host=$2  # e.g. 'lenny' or 'no-host'
+  local out_dir=${3:-$BASE_DIR/raw}  # could be ../benchmark-data/osh-runtime
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
@@ -201,27 +173,23 @@ measure() {
   #   gc_stats.tsv
   #   gc_stats.schema.tsv
 
-  local times_out="$out_dir/$prefix.times.tsv"
+  local tsv_out="$out_dir/$prefix.times.tsv"
+  local files_base_dir="$out_dir/$prefix.files"
+
+  #set -x
   mkdir -p $BASE_DIR/{raw,stage1} $out_dir
 
   # Write header of the TSV file that is appended to.
-  time-tsv -o $times_out --print-header \
+  time-tsv -o $tsv_out --print-header \
     --rusage \
-    --field host_name --field host_hash \
-    --field sh_path \
-    --field shell_name --field shell_hash \
+    --field task_id \
+    --field host_name --field sh_path \
     --field task_type --field task_arg
 
-  local tasks=$BASE_DIR/tasks.txt
-  print-tasks $provenance > $tasks
+  # run-tasks outputs 3 things: raw times.tsv, per-task STDOUT and files, and
+  # per-task GC stats
 
-  # TODO: Get rid of 'xargs' because it makes failure harder to handle and see.
-  # We're not exiting with 255 to abort xargs!
-
-  # An empty pattern matches every line.
-  time egrep "$pattern" $tasks |
-    xargs -n $NUM_COLUMNS -- $0 runtime-task $out_dir ||
-    die "*** Some tasks failed. ***"
+  print-tasks $maybe_host | run-tasks $tsv_out $files_base_dir
 
   # R uses the TSV version of the provenance.
   # TODO: we don't even need the text version
@@ -250,7 +218,7 @@ stage1() {
   local times_csv=$out_dir/times.tsv
   csv-concat "${raw[@]}" > $times_csv
 
-  benchmarks/gc_stats_to_tsv.py $raw_dir/gc*.txt \
+  benchmarks/gc_stats_to_tsv.py $raw_dir/gc-*.txt \
     > $BASE_DIR/stage1/gc_stats.tsv
 }
 
@@ -331,15 +299,15 @@ soil-run() {
   local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped)
   ninja "${oil_bin[@]}"
 
-  local label='no-host'
+  local maybe_host='no-host'
 
   local provenance
-  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
+  provenance=$(soil-shell-provenance $maybe_host "${oil_bin[@]}")
 
-  measure $provenance
+  measure $provenance $maybe_host
 
   # Make it run on one machine
-  stage1 '' $label
+  stage1 '' $maybe_host
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR

@@ -477,7 +477,7 @@ RuntimeReport = function(in_dir, out_dir) {
   # Join with provenance for host label and shell label
   times %>%
     left_join(label_lookup, by = c('sh_path')) %>%
-    select(-c(host_hash, sh_path, shell_name, shell_hash)) ->
+    select(-c(sh_path, task_id)) ->
     details
 
   Log('details')
