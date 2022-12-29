@@ -497,7 +497,10 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
-    select(c(workload, host_name, bash, dash, `osh-cpython`, `osh-native`, py_bash_ratio, native_bash_ratio)) ->
+    select(c(workload, host_name,
+             bash, dash, `osh-cpython`, `osh-native`,
+             py_bash_ratio, native_bash_ratio)) ->
+
     elapsed
 
   Log('elapsed')
@@ -509,7 +512,9 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
-    select(c(workload, host_name, bash, dash, `osh-cpython`, `osh-native`, py_bash_ratio, native_bash_ratio)) ->
+    select(c(workload, host_name,
+             bash, dash, `osh-cpython`, `osh-native`,
+             py_bash_ratio, native_bash_ratio)) ->
     max_rss
 
   Log('max rss')
@@ -524,11 +529,17 @@ RuntimeReport = function(in_dir, out_dir) {
   Log('GC stats')
   print(gc_stats)
 
-  # TODO: GC stats needs to be per hostname!  Or maybe just one!
-
   gc_stats %>%
     left_join(gc_details, by = c('join_id', 'host_name')) %>%
-    select(-c(join_id, roots_capacity, objs_capacity)) ->
+    select(-c(join_id, roots_capacity, objs_capacity)) %>%
+    # Do same transformations as GcReport()
+    mutate(allocated_MB = bytes_allocated / 1e6) %>%
+    select(-c(bytes_allocated)) %>%
+    rename(num_gc_done = num_collections) %>%
+    # Put these columns first
+    relocate(workload, host_name,
+             elapsed_ms, max_gc_millis, total_gc_millis,
+             allocated_MB, max_rss_MB, num_allocated) ->
     gc_stats
 
   Log('After GC stats')
@@ -536,11 +547,15 @@ RuntimeReport = function(in_dir, out_dir) {
 
   WriteSimpleProvenance(provenance, out_dir)
 
-  precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0, `osh-native` = 0))
+  precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
+                                   `osh-native` = 0))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
-  writeTsv(max_rss, file.path(out_dir, 'max_rss'))
-  writeTsv(gc_stats, file.path(out_dir, 'gc_stats'))
-  writeTsv(details, file.path(out_dir, 'details'))
+  writeTsv(max_rss, file.path(out_dir, 'max_rss'))  # default is OK
+
+  precision2 = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),
+                               default = 0)
+  writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision2)
+  writeTsv(details, file.path(out_dir, 'details'), precision2)
 
   Log('Wrote %s', out_dir)
 }
@@ -793,8 +808,8 @@ GcReport = function(in_dir, out_dir) {
     # try to make the table skinnier
     rename(num_gc_done = num_collections) %>%
     select(task, elapsed_ms, max_gc_millis, total_gc_millis,
-           num_gc_points, num_gc_done, gc_threshold, num_growths,
-           max_survived, num_allocated, allocated_MB, max_rss_MB,
+           allocated_MB, max_rss_MB, num_allocated,
+           num_gc_points, num_gc_done, gc_threshold, num_growths, max_survived,
            shell_label) ->
     gc_stats
 

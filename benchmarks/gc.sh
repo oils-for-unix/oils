@@ -133,8 +133,12 @@ print-tasks() {
 
       id=$((id + 1))
 
-
     done
+
+    # Run a quick 10 tasks
+    if test -n "${QUICKLY:-}" && test $id -gt 10; then
+      break
+    fi
   done
 }
 
