@@ -40,19 +40,22 @@ our-shell-provenance() {
 }
 
   # New interface for shell-provenance
-  # 2 out params:
-  #   prov_out_prefix job_id
-  # 2 fixed inputs:
-  #   maybe_host out_dir
+  # 3 fixed inputs:
+  #   maybe_host   - 'lenny' or 'no-host'
+  #   job_id       - use $(print-job-timestamp)
+  #   out_dir      - location for put shell-id, host-id, but TSV is first
+  #                  written to _tmp/provenance.tsv, and later COPIED TO EACH
+  #                  $out_dir/$bench_name/$host_job_id/ dir
   # Variable inputs:
   #   list of shells
 
-  # prov_out_prefix:
-  # - .txt is copied to ../benchmark-data/osh-runtime, so you can merge machines
-  # - .tsv is also copied to _tmp/osh-runtime/stage1, so it can be READ by the
-  # report.  TODO: This is kind of wrong
-  #   - stage1 is for MERGING
-  #   - I think the key problem is that you need to concat the two provenances
+  # shell-provenance-tsv 'no-host' $(print-job-id) _tmp \
+  #   bash dash bin/osh $OSH_EVAL_NINJA_BUILD
+
+  # shell-provenance-tsv 'lenny' $(print-job-id) ../benchmark-data \
+  #   bash dash bin/osh $OSH_EVAL_BENCHMARK_DATA
+  #
+  # - A key problem is that you need to concat the two provenances
   #   - and CHECK that you're comparing the same shells!
   #   - the number of hosts should be 2, and they should have an equal number
   #   of rows

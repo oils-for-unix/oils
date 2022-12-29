@@ -136,7 +136,6 @@ run-tasks() {
 
     case $sh_path in
       */osh_eval*)
-        # TODO: need join ID
         OIL_GC_STATS_FD=99 "${time_argv[@]}" > $stdout_file 99> $gc_stats_file
         ;;
       *)
@@ -217,6 +216,8 @@ measure() {
   # per-task GC stats
 
   print-tasks $maybe_host $osh_native | run-tasks $tsv_out $files_base_dir
+
+  # TODO: call gc_stats_to_tsv.py here, adding HOST NAME, and put it in 'raw'
 }
 
 stage1() {
@@ -227,26 +228,25 @@ stage1() {
 
   mkdir -p $out_dir
 
-  local -a raw=()
+  local -a raw_times=()
   if test -n "$single_machine"; then
     local -a a=($raw_dir/$single_machine.*.times.tsv)
-    raw+=( ${a[-1]} )
+    raw_times+=( ${a[-1]} )
   else
     # Globs are in lexicographical order, which works for our dates.
     local -a a=($raw_dir/$MACHINE1.*.times.tsv)
     local -a b=($raw_dir/$MACHINE2.*.times.tsv)
-    raw+=( ${a[-1]} ${b[-1]} )
+    raw_times+=( ${a[-1]} ${b[-1]} )
   fi
 
   local times_tsv=$out_dir/times.tsv
-  tsv-concat "${raw[@]}" > $times_tsv
+  tsv-concat "${raw_times[@]}" > $times_tsv
 
-  # TODO: concat multiple hosts
+  # TODO: 
+  # - Add host column in 'measure' step
+  # - concat multiple hosts in stage1
   benchmarks/gc_stats_to_tsv.py $raw_dir/gc-*.txt \
     > $BASE_DIR/stage1/gc_stats.tsv
-
-  # files.html lets you see the raw files.
-  find-dir-html _tmp/osh-runtime files
 }
 
 print-report() {
@@ -298,11 +298,14 @@ EOF
   tsv2html $in_dir/shells.tsv
   tsv2html $in_dir/hosts.tsv
 
-  cmark <<'EOF'
+  # Only show files.html link on a single machine
+  if test -f $(dirname $in_dir)/files.html; then
+    cmark <<'EOF'
 ---
 
 [raw files](files.html)
 EOF
+  fi
 
   cat <<EOF
   </body>
@@ -334,7 +337,6 @@ soil-run() {
 
   # TODO: This testdata should be baked into Docker image, or mounted
   download
-
   extract
 
   # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
@@ -356,13 +358,18 @@ soil-run() {
   measure $host_job_id $maybe_host $OSH_EVAL_NINJA_BUILD
 
   # R uses the TSV version of the provenance.
-  # TODO: we don't even need the text version
+  # TODO: concatenate per-host
   cp -v ${provenance%%.txt}.tsv $BASE_DIR/stage1/provenance.tsv
 
   # Make it run on one machine
   stage1 '' $maybe_host
 
   benchmarks/report.sh stage2 $BASE_DIR
+
+  # Make _tmp/osh-runtime/files.html, so _tmp/osh-runtime/index.html can test
+  # for it, and link to it.
+  find-dir-html _tmp/osh-runtime files
+
   benchmarks/report.sh stage3 $BASE_DIR
 }
 

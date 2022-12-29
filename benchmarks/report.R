@@ -446,6 +446,8 @@ WriteSimpleProvenance = function(provenance, out_dir) {
 
 RuntimeReport = function(in_dir, out_dir) {
   times = readTsv(file.path(in_dir, 'times.tsv'))
+   
+  # TODO: Both GC stats and provenance could have both hosts
   gc_stats = readTsv(file.path(in_dir, 'gc_stats.tsv'))
   provenance = readTsv(file.path(in_dir, 'provenance.tsv'))
 
