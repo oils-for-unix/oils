@@ -56,12 +56,10 @@ _banner() {
   #   - and there should be exactly 2 of every hash?
 
 measure-shells() {
-  local host
-  host=$(hostname)  # Running on multiple machines
+  local host_name=$1
+  local host_job_id=$2
 
-  # TODO: Pass this to shell-provenance-2, and to all 'measure' functions
-  local job_id
-  job_id=$(print-job-id)
+  # TODO:
 
   # capture the filename
   local provenance
@@ -72,14 +70,15 @@ measure-shells() {
 
   local out_dir=../benchmark-data
 
-  benchmarks/vm-baseline.sh measure \
-    $provenance $out_dir/vm-baseline
+  #local name
+  #name=$(basename $provenance)
+  #local host_job_id=${name%.provenance.txt}  # strip suffix
 
-  local name
-  name=$(basename $provenance)
-  local host_job_id=${name%.provenance.txt}  # strip suffix
+  benchmarks/vm-baseline.sh measure \
+    $provenance $host_job_id $out_dir/vm-baseline
+
   benchmarks/osh-runtime.sh measure \
-    $host $host_job_id $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
+    $host_name $host_job_id $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
 
   # TODO: Either
   # (OLD) cp -v _tmp/provenance.txt $out_dir/osh-runtime/$host.$job_id.provenance.txt
@@ -94,7 +93,7 @@ measure-shells() {
   benchmarks/osh-parser.sh measure \
     $provenance $host_job_id $out_dir/osh-parser
   benchmarks/compute.sh measure \
-    $provenance $out_dir/compute
+    $provenance $host_job_id $out_dir/compute
 }
 
 measure-builds() {
@@ -106,11 +105,20 @@ measure-builds() {
   benchmarks/ovm-build.sh measure $provenance $base_dir/ovm-build
 }
 
-# Run the whole benchmark from a clean git checkout.
+# Run all benchmarks from a clean git checkout.
 # Before this, run devtools/release.sh benchmark-build.
 
 all() {
   local do_machine1=${1:-}
+
+  local host_name
+  host_name=$(hostname)  # Running on multiple machines
+
+  # TODO: Pass this to shell-provenance-2, and to all 'measure' functions
+  local job_id
+  job_id=$(print-job-id)
+
+  local host_job_id="$host_name.$job_id"
 
   # Notes:
   # - During release, this happens on machine1, but not machine2
@@ -120,10 +128,10 @@ all() {
     benchmarks/mycpp.sh soil-run
     benchmarks/gc.sh soil-run
 
-    benchmarks/osh-parser.sh cachegrind-main ''
+    benchmarks/osh-parser.sh cachegrind-main $host_job_id ''
   fi
 
-  measure-shells
+  measure-shells $host_name $host_job_id
   measure-builds
 }
 

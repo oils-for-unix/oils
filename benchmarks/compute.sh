@@ -265,14 +265,12 @@ parse_help-all() { task-all parse_help "$@"; }
 task-all() {
   local task_name=$1
   local provenance=$2
-  local out_dir=$3  # put files to save in benchmarks-data repo here
+  local host_job_id=$3
+  local out_dir=$4  # put files to save in benchmarks-data repo here
 
   local tmp_dir=$BASE_DIR/tmp/$task_name
 
-  local filename=$(basename $provenance)
-  local prefix=${filename%.provenance.txt}  # strip suffix
-
-  local times_tsv=$out_dir/$task_name/$prefix.times.tsv
+  local times_tsv=$out_dir/$task_name/$host_job_id.times.tsv
   rm -f $times_tsv
 
   mkdir -p $tmp_dir $out_dir/$task_name
@@ -379,22 +377,28 @@ EOF
 
 measure() {
   local provenance=$1
-  local out_dir=${2:-$BASE_DIR/raw}  # ../benchmark-data/compute
+  local host_job_id=$2
+  local out_dir=${3:-$BASE_DIR/raw}  # ../benchmark-data/compute
 
   mkdir -p $BASE_DIR/{tmp,raw,stage1} $out_dir
 
-  hello-all $provenance $out_dir
-  fib-all $provenance $out_dir
-  word_freq-all $provenance $out_dir
-  parse_help-all $provenance $out_dir
+  hello-all $provenance $host_job_id $out_dir
+  fib-all $provenance $host_job_id $out_dir
+
+  if test -n "${QUICKLY:-}"; then
+    return
+  fi
+  
+  word_freq-all $provenance $host_job_id $out_dir
+  parse_help-all $provenance $host_job_id $out_dir
 
   bubble_sort-testdata
   palindrome-testdata
 
-  bubble_sort-all $provenance $out_dir
+  bubble_sort-all $provenance $host_job_id $out_dir
 
   # INCORRECT, but still run it
-  palindrome-all $provenance $out_dir
+  palindrome-all $provenance $host_job_id $out_dir
 
   # array_ref takes too long to show quadratic behavior, and that's only
   # necessary on 1 machine.  I think I will make a separate blog post,
@@ -403,40 +407,37 @@ measure() {
   maybe-tree $out_dir
 }
 
-soil-shell-provenance() {
-  ### Only measure shells in the Docker image
-
-  # - The Soil 'benchmarks' job uses the 'cpp' Docker image, which doesn't have
-  #   layer-cpython, ../oil_DEPS/cpython-full
-  # - It also doesn't have mksh or zsh
-
-  local label=$1
-  shift
-  benchmarks/id.sh shell-provenance "$label" bash dash python2 "$@"
-}
-
 soil-run() {
   ### Run it on just this machine, and make a report
 
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  #make _bin/oil.ovm
-  #devtools/bin.sh make-bin-links
-
   # Test the one that's IN TREE, NOT in ../benchmark-data
-  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped _bin/cxx-bumpleak/osh_eval)
+  local -a oil_bin=( $OSH_EVAL_NINJA_BUILD _bin/cxx-bumpleak/osh_eval)
   ninja "${oil_bin[@]}"
 
-  local label='no-host'
+  local single_machine='no-host'
 
-  local provenance
-  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
+  local job_id
+  job_id=$(benchmarks/id.sh print-job-id)
 
-  measure $provenance
+  # Only measure what's in the Docker image
+  # - The Soil 'benchmarks' job uses the 'cpp' Docker image, which doesn't have
+  #   layer-cpython, ../oil_DEPS/cpython-full
+  # - It also doesn't have mksh or zsh
+
+  benchmarks/id.sh shell-provenance-2 \
+    $single_machine $job_id _tmp \
+    bash dash python2 "${oil_bin[@]}"
+
+  local provenance=_tmp/provenance.txt
+  local host_job_id="$single_machine.$job_id"
+
+  measure $provenance $host_job_id
 
   # Make it run on one machine
-  stage1 '' $label
+  stage1 '' $single_machine
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR
@@ -455,6 +456,7 @@ stage1() {
 
   local -a raw=()
 
+  # TODO: Doesn't respect QUICKLY=1
   for metric in hello fib word_freq parse_help bubble_sort palindrome; do
     local dir=$raw_dir/$metric
 

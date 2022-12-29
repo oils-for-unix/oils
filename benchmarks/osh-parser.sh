@@ -478,15 +478,11 @@ EOF
 cachegrind-main() {
   ### Invoked by benchmarks/auto.sh
 
-  local base_dir=${1:-../benchmark-data}
-
-  local provenance
-  provenance=$(benchmarks/id.sh shell-provenance no-host \
-    "${OTHER_SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA)
+  local host_job_id=$1
+  local out_dir=${2:-../benchmark-data}
 
   measure-cachegrind \
-    $provenance $base_dir/osh-parser $OSH_EVAL_BENCHMARK_DATA
-
+    _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_EVAL_BENCHMARK_DATA
 }
 
 soil-run() {
@@ -509,7 +505,6 @@ soil-run() {
 
   # TODO: measure* should use print-tasks | run-tasks
   local provenance=_tmp/provenance.txt
-
   local host_job_id="$single_machine.$job_id"
 
   measure $provenance $host_job_id '' $OSH_EVAL_NINJA_BUILD

@@ -130,16 +130,6 @@ EOF
 # Other
 #
 
-soil-shell-provenance() {
-  ### Only measure shells in the Docker image
-
-  local label=$1
-  shift
-
-  # TODO: mksh, zsh
-  benchmarks/id.sh shell-provenance "$label" bash dash bin/osh "$@"
-}
-
 soil-run() {
   ### Run it on just this machine, and make a report
 
