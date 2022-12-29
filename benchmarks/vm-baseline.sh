@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Do a quick test of virtual memory.
-# TODO: We could use Max RSS instead?  Didn't know about that when I originally
-# wrote this.
+#
+# Note: This is probably very similar to max RSS of
+# testdata/osh-runtime/hello-world.sh, so it could be retired.
 #
 # Usage:
 #   benchmarks/vm-baseline.sh <function name>
@@ -18,12 +19,10 @@ readonly BASE_DIR=_tmp/vm-baseline
 
 measure() {
   local provenance=$1
-  local base_dir=${2:-_tmp/vm-baseline}
+  local host_job_id=$2
+  local base_dir=${3:-_tmp/vm-baseline}
 
-  local name=$(basename $provenance)
-  local prefix=${name%.provenance.txt}  # strip suffix
-
-  local out_dir="$base_dir/$prefix"
+  local out_dir="$base_dir/$host_job_id"
   mkdir -p $out_dir
 
   # Fourth column is the shell.
@@ -147,20 +146,26 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
-  # $shell_name 
-  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped)
+  local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
-  local label='no-host'
+  local single_machine='no-host'
 
-  local provenance
-  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
+  local job_id
+  job_id=$(benchmarks/id.sh print-job-id)
 
-  measure $provenance
+  benchmarks/id.sh shell-provenance-2 \
+    $single_machine $job_id _tmp \
+    bash dash bin/osh "${oil_bin[@]}"
+
+  # TODO: measure* should use print-tasks | run-tasks
+  local provenance=_tmp/provenance.txt
+  local host_job_id="$single_machine.$job_id"
+
+  measure $provenance $host_job_id
 
   # Make it run on one machine
-  stage1 '' $label
+  stage1 '' $single_machine 
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR

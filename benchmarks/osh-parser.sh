@@ -460,11 +460,14 @@ EOF
 EOF
   csv2html $in_dir/raw-data.csv
 
-  cmark << 'EOF'
+  # Only show files.html link on a single machine
+  if test -f $(dirname $in_dir)/files.html; then
+    cmark << 'EOF'
 ---
 [raw files](files.html)
 
 EOF
+  fi
 
   cat <<EOF
   </body>
@@ -492,9 +495,6 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
-  # $shell_name 
-
   local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
@@ -507,6 +507,7 @@ soil-run() {
     $single_machine $job_id _tmp \
     bash dash bin/osh "${oil_bin[@]}"
 
+  # TODO: measure* should use print-tasks | run-tasks
   local provenance=_tmp/provenance.txt
 
   local host_job_id="$single_machine.$job_id"
@@ -518,14 +519,16 @@ soil-run() {
   # TODO: R can use this TSV file
   cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv
 
-  # Make it run on one machine
+  # Trivial concatenation for 1 machine
   stage1 '' $single_machine
 
   benchmarks/report.sh stage2 $BASE_DIR
+
+  # Make _tmp/osh-parser/files.html, so index.html can potentially link to it
+  find-dir-html _tmp/osh-parser files
+
   benchmarks/report.sh stage3 $BASE_DIR
 
-  # Index of raw files
-  find-dir-html _tmp/osh-parser files
 }
 
 "$@"

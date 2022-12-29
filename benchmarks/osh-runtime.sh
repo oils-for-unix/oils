@@ -355,12 +355,12 @@ soil-run() {
   # R uses the TSV version of the provenance.  TODO: concatenate per-host
   cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv
 
-  # Trival concatenation for 1 machine
+  # Trivial concatenation for 1 machine
   stage1 '' $single_machine
 
   benchmarks/report.sh stage2 $BASE_DIR
 
-  # Make _tmp/osh-runtime/files.html, so index.html can link to it
+  # Make _tmp/osh-parser/files.html, so index.html can potentially link to it
   find-dir-html _tmp/osh-runtime files
 
   benchmarks/report.sh stage3 $BASE_DIR
