@@ -24,6 +24,16 @@ test-out-param() {
   echo "mylocal=$mylocal"
 }
 
+test-compiler-id() {
+  dump-compiler-id $(which gcc)
+
+  if test -f $CLANG; then
+    dump-compiler-id $CLANG
+  fi
+
+  head _tmp/compiler-id/*/version.txt
+}
+
 soil-run() {
   run-test-funcs
 }

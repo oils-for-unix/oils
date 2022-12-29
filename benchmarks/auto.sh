@@ -63,8 +63,9 @@ measure-shells() {
 }
 
 measure-builds() {
-  local host_name=$1
-  local job_id=$2
+  # TODO: Use new provenance style, like measure-shells
+  #local host_name=$1
+  #local job_id=$2
 
   local out_dir=../benchmark-data
 
@@ -83,7 +84,6 @@ all() {
   local host_name
   host_name=$(hostname)  # Running on multiple machines
 
-  # TODO: Pass this to shell-provenance-2, and to all 'measure' functions
   local job_id
   job_id=$(print-job-id)
 
@@ -101,7 +101,7 @@ all() {
   fi
 
   measure-shells $host_name $job_id
-  measure-builds $host_name $job_id
+  measure-builds # $host_name $job_id
 }
 
 #

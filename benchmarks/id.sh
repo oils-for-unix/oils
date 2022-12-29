@@ -290,12 +290,6 @@ dump-compiler-id() {
   esac > $out_dir/version.txt
 }
 
-test-compiler-id() {
-  dump-compiler-id $(which gcc)
-  dump-compiler-id $CLANG
-  head _tmp/compiler-id/*/version.txt
-}
-
 _compiler-id-hash() {
   local src=$1
 
