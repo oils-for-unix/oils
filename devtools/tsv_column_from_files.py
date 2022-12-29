@@ -8,10 +8,8 @@ tsv_column_from_files.py
   - optional --base-dir
   - a new column name
   - a regex to extract from the files
-
-
-
 """
+
 from __future__ import print_function
 
 import csv
@@ -83,7 +81,7 @@ def main(argv):
         try:
           path_col_index = row.index(opts.path_column)
         except ValueError:
-          raise RuntimeError('%r not found in %r' % (opts.path_column, row))
+          raise RuntimeError('Expected %r in header %r' % (opts.path_column, row))
         _PrintNewRow(row, path_col_index, opts.new_column)
         continue  # skip to first row
 
@@ -118,5 +116,5 @@ if __name__ == '__main__':
   try:
     sys.exit(main(sys.argv))
   except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
+    print('%s FATAL: %s' % (sys.argv[0], e), file=sys.stderr)
     sys.exit(1)

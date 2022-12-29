@@ -189,15 +189,12 @@ readonly NUM_TASK_COLS=6  # input columns: 5 from provenance, 1 for file
 # should be the ../benchmarks-data repo.
 measure() {
   local provenance=$1
-  local out_dir=${2:-$BASE_DIR/raw}
-  local oil_native=${3:-$OSH_EVAL_BENCHMARK_DATA}
+  local host_job_id=$2
+  local out_dir=${3:-$BASE_DIR/raw}
+  local oil_native=${4:-$OSH_EVAL_BENCHMARK_DATA}
 
-  # Job ID is everything up to the first dot in the filename.
-  local name=$(basename $provenance)
-  local prefix=${name%.provenance.txt}  # strip suffix
-
-  local times_out="$out_dir/$prefix.times.csv"
-  local lines_out="$out_dir/$prefix.lines.csv"
+  local times_out="$out_dir/$host_job_id.times.csv"
+  local lines_out="$out_dir/$host_job_id.lines.csv"
 
   mkdir -p $BASE_DIR/{tmp,raw,stage1} $out_dir
 
@@ -218,20 +215,17 @@ measure() {
   # Run them all
   cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $out_dir
 
-  cp -v $provenance $out_dir
+  cp -v _tmp/provenance.txt $out_dir
 }
 
 measure-cachegrind() {
   local provenance=$1
-  local out_dir=${2:-$BASE_DIR/raw}
-  local oil_native=${3:-$OSH_EVAL_BENCHMARK_DATA}
+  local host_job_id=$2
+  local out_dir=${3:-$BASE_DIR/raw}
+  local oil_native=${4:-$OSH_EVAL_BENCHMARK_DATA}
 
-  # Job ID is everything up to the first dot in the filename.
-  local name=$(basename $provenance)
-  local prefix=${name%.provenance.txt}  # strip suffix
-
-  local cachegrind_tsv="$out_dir/$prefix.cachegrind.tsv"
-  local lines_out="$out_dir/$prefix.lines.tsv"
+  local cachegrind_tsv="$out_dir/$host_job_id.cachegrind.tsv"
+  local lines_out="$out_dir/$host_job_id.lines.tsv"
 
   mkdir -p $BASE_DIR/{tmp,raw,stage1} $out_dir
 
@@ -257,7 +251,7 @@ measure-cachegrind() {
 
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $out_dir
 
-  cp -v $provenance $out_dir
+  cp -v _tmp/provenance.txt $out_dir
 }
 
 
@@ -492,18 +486,6 @@ cachegrind-main() {
 
 }
 
-soil-shell-provenance() {
-  ### Only measure shells in the Docker image
-
-  local label=$1
-  shift
-
-  # This is a superset of shells; see filter-provenance
-  # - _bin/osh isn't available in the Docker image, so use bin/osh instead
-
-  benchmarks/id.sh shell-provenance "$label" bash dash bin/osh "$@"
-}
-
 soil-run() {
   ### Run it on just this machine, and make a report
 
@@ -513,21 +495,31 @@ soil-run() {
   # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
   # $shell_name 
 
-  local osh_eval=_bin/cxx-opt/osh_eval.stripped
-  local -a oil_bin=( $osh_eval )
+  local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
-  local label='no-host'
+  local single_machine='no-host'
 
-  local provenance
-  provenance=$(soil-shell-provenance $label "${oil_bin[@]}")
+  local job_id
+  job_id=$(benchmarks/id.sh print-job-id)
 
-  measure $provenance '' $osh_eval
+  benchmarks/id.sh shell-provenance-2 \
+    $single_machine $job_id _tmp \
+    bash dash bin/osh "${oil_bin[@]}"
 
-  measure-cachegrind $provenance '' $osh_eval
+  local provenance=_tmp/provenance.txt
+
+  local host_job_id="$single_machine.$job_id"
+
+  measure $provenance $host_job_id '' $OSH_EVAL_NINJA_BUILD
+
+  measure-cachegrind $provenance $host_job_id '' $OSH_EVAL_NINJA_BUILD
+
+  # TODO: R can use this TSV file
+  cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv
 
   # Make it run on one machine
-  stage1 '' $label
+  stage1 '' $single_machine
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR

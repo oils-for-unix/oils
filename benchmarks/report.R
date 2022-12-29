@@ -45,7 +45,7 @@ GetOshLabel = function(shell_hash, num_hosts) {
   ### Given a string, return another string.
 
   if (num_hosts == 1) {
-    prov_dir = '_tmp/provenance'
+    prov_dir = '_tmp'
   } else {
     prov_dir = '../benchmark-data/'
   }

@@ -59,7 +59,7 @@ measure-shells() {
   local host
   host=$(hostname)  # Running on multiple machines
 
-  # TODO: Pass this to shell-provenance
+  # TODO: Pass this to shell-provenance-2, and to all 'measure' functions
   local job_id
   job_id=$(print-job-id)
 
@@ -75,7 +75,6 @@ measure-shells() {
   benchmarks/vm-baseline.sh measure \
     $provenance $out_dir/vm-baseline
 
-  # TODO: 'shell-provenance' could just print host and job ID
   local name
   name=$(basename $provenance)
   local host_job_id=${name%.provenance.txt}  # strip suffix
@@ -93,7 +92,7 @@ measure-shells() {
   cp -v $provenance $out_dir/osh-runtime
 
   benchmarks/osh-parser.sh measure \
-    $provenance $out_dir/osh-parser
+    $provenance $host_job_id $out_dir/osh-parser
   benchmarks/compute.sh measure \
     $provenance $out_dir/compute
 }

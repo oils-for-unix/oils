@@ -60,9 +60,9 @@ run-tasks() {
   local files_base_dir=$2
 
   local task_id=0
-  while read -r maybe_host sh_path workload; do
+  while read -r host_name sh_path workload; do
 
-    log "*** $maybe_host $sh_path $workload $task_id"
+    log "*** $host_name $sh_path $workload $task_id"
 
     local sh_run_path
     case $sh_path in
@@ -125,7 +125,7 @@ run-tasks() {
         --output $tsv_out --append 
         --rusage
         --field "$task_id"
-        --field "$maybe_host" --field "$sh_path"
+        --field "$host_name" --field "$sh_path"
         --field "$workload"
         -- "$sh_path" "${argv[@]}"
     )
@@ -144,14 +144,14 @@ run-tasks() {
         ;;
     esac
 
-    # NOTE: will have to join on (maybe_host, id)
+    # NOTE: will have to join on (host_name, id)
     task_id=$((task_id + 1))
 
   done
 }
 
 print-tasks() {
-  local maybe_host=$1  
+  local host_name=$1  
   local osh_native=$2
 
   local -a workloads=(
@@ -174,13 +174,13 @@ print-tasks() {
 
   for sh_path in bash dash bin/osh $osh_native; do
     for workload in "${workloads[@]}"; do
-      tsv-row $maybe_host $sh_path $workload
+      tsv-row $host_name $sh_path $workload
     done
   done
 }
 
 measure() {
-  local maybe_host=$1  # e.g. 'lenny' or 'no-host'
+  local host_name=$1  # 'no-host' or 'lenny'
   local host_job_id=$2
   local osh_native=$3  # $OSH_EVAL_NINJA_BUILD or $OSH_EVAL_BENCHMARK_DATA
   local out_dir=${4:-$BASE_DIR/raw}  # could be ../benchmark-data/osh-runtime
@@ -219,7 +219,7 @@ measure() {
   # TODO: run-tasks can take $raw_dir, and then it outputs times.tsv, files/, and copies
   # _tmp/provenance.txt there
 
-  print-tasks $maybe_host $osh_native | run-tasks $tsv_out $files_base_dir
+  print-tasks $host_name $osh_native | run-tasks $tsv_out $files_base_dir
 
   # TODO: call gc_stats_to_tsv.py here, adding HOST NAME, and put it in 'raw'
 }
@@ -338,25 +338,25 @@ soil-run() {
   local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
-  local maybe_host='no-host'
+  local single_machine='no-host'
 
   local job_id
   job_id=$(print-job-id)
 
   # Write _tmp/provenance.* and _tmp/{host,shell}-id
   shell-provenance-2 \
-    $maybe_host $job_id _tmp \
+    $single_machine $job_id _tmp \
     bash dash bin/osh "${oil_bin[@]}"
 
-  local host_job_id=$maybe_host.$job_id
+  local host_job_id=$single_machine.$job_id
 
-  measure $maybe_host $host_job_id $OSH_EVAL_NINJA_BUILD
+  measure $single_machine $host_job_id $OSH_EVAL_NINJA_BUILD
 
   # R uses the TSV version of the provenance.  TODO: concatenate per-host
   cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv
 
   # Trival concatenation for 1 machine
-  stage1 '' $maybe_host
+  stage1 '' $single_machine
 
   benchmarks/report.sh stage2 $BASE_DIR
 
