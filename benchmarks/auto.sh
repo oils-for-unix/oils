@@ -25,18 +25,12 @@ set -o errexit
 
 source test/common.sh  # die
 source benchmarks/common.sh  # default value of OSH_OVM
+source benchmarks/id.sh
 
 _banner() {
   echo -----
   echo "$@"
   echo -----
-}
-
-our-shell-provenance() {
-  ### The list of programs we compare
-
-  # empty label
-  benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2
 }
 
   # New interface for shell-provenance
@@ -62,14 +56,21 @@ our-shell-provenance() {
   #   - and there should be exactly 2 of every hash?
 
 measure-shells() {
-  local out_dir=../benchmark-data
+  local host
+  host=$(hostname)  # Running on multiple machines
+
+  # TODO: Pass this to shell-provenance
+  local job_id
+  job_id=$(print-job-id)
 
   # capture the filename
   local provenance
-  provenance=$(our-shell-provenance)
+  # pass empty label, so it writes to ../benchmark-data/{shell,host}-id
+  provenance=$(benchmarks/id.sh shell-provenance '' \
+    "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2
+  )
 
-  local host
-  host=$(hostname)  # Running on multiple machines
+  local out_dir=../benchmark-data
 
   benchmarks/vm-baseline.sh measure \
     $provenance $out_dir/vm-baseline
@@ -79,7 +80,14 @@ measure-shells() {
   name=$(basename $provenance)
   local host_job_id=${name%.provenance.txt}  # strip suffix
   benchmarks/osh-runtime.sh measure \
-    $host_job_id $host $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
+    $host $host_job_id $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
+
+  # TODO: Either
+  # (OLD) cp -v _tmp/provenance.txt $out_dir/osh-runtime/$host.$job_id.provenance.txt
+  # (NEW) cp -v _tmp/provenance.tsv $out_dir/osh-runtime/raw.$host.$job_id/
+  #
+  # Eliminate $job_id calculation from shell-provenance altogether
+  # All soil-shell-provenance callers should just pass $job_id and $maybe_host
 
   # SAVE provenance so you know which 2 machines a benchmark ran on
   cp -v $provenance $out_dir/osh-runtime

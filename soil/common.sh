@@ -1,5 +1,9 @@
 # Common functions for soil/
 
+# Include guard.
+test -n "${__SOIL_COMMON_SH:-}" && return
+readonly __SOIL_COMMON_SH=1
+
 log() {
   echo "$@" 1>&2
 }

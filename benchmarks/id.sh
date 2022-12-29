@@ -17,6 +17,10 @@ source benchmarks/common.sh
 source soil/common.sh  # find-dir-html
 source test/tsv-lib.sh  # tsv-row
 
+print-job-id() {
+  date '+%Y-%m-%d__%H-%M-%S'
+}
+
 # TODO: add benchmark labels/hashes for osh and all other shells
 #
 # Need to archive labels too.
@@ -339,7 +343,7 @@ shell-provenance() {
   # log "*** shell-provenance"
 
   local job_id
-  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+  job_id=$(print-job-id)
 
   local tmp_prov_dir=_tmp/provenance
   mkdir -p $tmp_prov_dir
@@ -397,9 +401,65 @@ shell-provenance() {
   echo $out_txt
 }
 
+shell-provenance-2() {
+  ### Write to _tmp/provenance.{txt,tsv} and $out_dir/{shell,host-id}
+
+  local maybe_host=$1  # if it exists, it overrides the host
+  local job_id=$2
+  local out_dir=$3
+  shift 3
+
+  # log "*** shell-provenance"
+
+  mkdir -p _tmp/provenance
+
+  local host_name
+  if test -n "$maybe_host"; then  # label is often 'no-host'
+    host_name=$maybe_host
+  else
+    host_name=$(hostname)
+  fi
+
+  log "*** $maybe_host $host_name $job_id $out_dir"
+
+  local tmp_dir=_tmp/prov-tmp/$host_name
+  dump-host-id $tmp_dir
+
+  local host_hash
+  host_hash=$(publish-host-id $tmp_dir "$out_dir/host-id")
+  local shell_hash
+
+  local out_txt=_tmp/provenance.txt  # Legacy text file
+  echo -n '' > $out_txt  # trunacte, no header
+
+  local out_tsv=_tmp/provenance.tsv
+  tsv-row job_id host_name host_hash sh_path shell_hash > $out_tsv
+
+  for sh_path in "$@"; do
+    # There will be two different OSH
+    local shell_name
+    shell_name=$(basename $sh_path)
+
+    tmp_dir=_tmp/prov_tmp/$shell_name
+    dump-shell-id $sh_path $tmp_dir
+
+    # writes to ../benchmark-data or _tmp/provenance
+    shell_hash=$(publish-shell-id $tmp_dir "$out_dir/shell-id")
+
+    # note: filter-provenance depends on $4 being $sh_path
+    # APPEND to txt
+    echo "$job_id $host_name $host_hash $sh_path $shell_hash" >> $out_txt
+
+    tsv-row "$job_id" "$host_name" "$host_hash" "$sh_path" "$shell_hash" >> $out_tsv
+  done
+
+  log "Wrote $out_txt and $out_tsv"
+}
+
 compiler-provenance() {
   local job_id
-  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+  job_id=$(print-job-id)
+
   local host
   host=$(hostname)
 

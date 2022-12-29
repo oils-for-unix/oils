@@ -12,6 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source benchmarks/common.sh  # tsv-concat
+source benchmarks/id.sh  # print-job-id
 source soil/common.sh  # find-dir-html
 source test/common.sh
 source test/tsv-lib.sh  # tsv-row
@@ -179,8 +180,8 @@ print-tasks() {
 }
 
 measure() {
-  local host_job_id=$1
-  local maybe_host=$2  # e.g. 'lenny' or 'no-host'
+  local maybe_host=$1  # e.g. 'lenny' or 'no-host'
+  local host_job_id=$2
   local osh_native=$3  # $OSH_EVAL_NINJA_BUILD or $OSH_EVAL_BENCHMARK_DATA
   local out_dir=${4:-$BASE_DIR/raw}  # could be ../benchmark-data/osh-runtime
 
@@ -215,6 +216,9 @@ measure() {
   # run-tasks outputs 3 things: raw times.tsv, per-task STDOUT and files, and
   # per-task GC stats
 
+  # TODO: run-tasks can take $raw_dir, and then it outputs times.tsv, files/, and copies
+  # _tmp/provenance.txt there
+
   print-tasks $maybe_host $osh_native | run-tasks $tsv_out $files_base_dir
 
   # TODO: call gc_stats_to_tsv.py here, adding HOST NAME, and put it in 'raw'
@@ -230,9 +234,15 @@ stage1() {
 
   local -a raw_times=()
   if test -n "$single_machine"; then
+
+    # TODO: Change this to $BASE_DIR/raw.no-host.*/
+    # That's the latest directory
+
     local -a a=($raw_dir/$single_machine.*.times.tsv)
     raw_times+=( ${a[-1]} )
   else
+    # TODO: Change this to $BASE_DIR/raw.$MACHINE1.*/
+
     # Globs are in lexicographical order, which works for our dates.
     local -a a=($raw_dir/$MACHINE1.*.times.tsv)
     local -a b=($raw_dir/$MACHINE2.*.times.tsv)
@@ -313,22 +323,6 @@ EOF
 EOF
 }
 
-soil-shell-provenance() {
-  ### Only measure shells in the Docker image
-
-  local label=$1
-  shift
-
-  # This is a superset of shells; see filter-provenance
-  # - _bin/osh isn't available in the Docker image, so use bin/osh instead
-
-  # Depending on the label, this function publishes to ../benchmark-data or
-  # _tmp/provenance
-  # TODO: We should have _tmp/benchmark-data/provenance/$host.$job_id.{shell,compiler}.tsv
-
-  benchmarks/id.sh shell-provenance "$label" bash dash bin/osh "$@"
-}
-
 soil-run() {
   ### Run it on just this machine, and make a report
 
@@ -346,28 +340,27 @@ soil-run() {
 
   local maybe_host='no-host'
 
-  local provenance
-  provenance=$(soil-shell-provenance $maybe_host "${oil_bin[@]}")
+  local job_id
+  job_id=$(print-job-id)
 
-  # Job ID is everything up to the first dot in the filename.
-  local name
-  name=$(basename $provenance)
+  # Write _tmp/provenance.* and _tmp/{host,shell}-id
+  shell-provenance-2 \
+    $maybe_host $job_id _tmp \
+    bash dash bin/osh "${oil_bin[@]}"
 
-  local host_job_id=${name%.provenance.txt}  # strip suffix
+  local host_job_id=$maybe_host.$job_id
 
-  measure $host_job_id $maybe_host $OSH_EVAL_NINJA_BUILD
+  measure $maybe_host $host_job_id $OSH_EVAL_NINJA_BUILD
 
-  # R uses the TSV version of the provenance.
-  # TODO: concatenate per-host
-  cp -v ${provenance%%.txt}.tsv $BASE_DIR/stage1/provenance.tsv
+  # R uses the TSV version of the provenance.  TODO: concatenate per-host
+  cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv
 
-  # Make it run on one machine
+  # Trival concatenation for 1 machine
   stage1 '' $maybe_host
 
   benchmarks/report.sh stage2 $BASE_DIR
 
-  # Make _tmp/osh-runtime/files.html, so _tmp/osh-runtime/index.html can test
-  # for it, and link to it.
+  # Make _tmp/osh-runtime/files.html, so index.html can link to it
   find-dir-html _tmp/osh-runtime files
 
   benchmarks/report.sh stage3 $BASE_DIR

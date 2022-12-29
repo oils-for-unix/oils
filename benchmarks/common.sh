@@ -3,6 +3,10 @@
 # Common functions for benchmarks.
 #
 
+# Include guard.
+test -n "${__BENCHMARKS_COMMON_SH:-}" && return
+readonly __BENCHMARKS_COMMON_SH=1
+
 #readonly MACHINE1=flanders
 #readonly MACHINE2=lenny
 

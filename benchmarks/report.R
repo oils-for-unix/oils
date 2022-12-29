@@ -37,7 +37,7 @@ benchmarkDataLink = function(subdir, name, suffix) {
 }
 
 provenanceLink = function(subdir, name, suffix) {
-  sprintf('../provenance/%s/%s%s', subdir, name, suffix)
+  sprintf('../%s/%s%s', subdir, name, suffix)
 }
 
 

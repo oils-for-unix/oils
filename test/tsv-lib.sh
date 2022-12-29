@@ -3,6 +3,9 @@
 # Usage:
 #   source test/tsv-lib.sh
 
+test -n "${__TEST_TSV_LIB_SH:-}" && return
+readonly __TEST_TSV_LIB_SH=1
+
 if test -z "${REPO_ROOT:-}"; then
   echo "${BASH_SOURCE[0]}: \$REPO_ROOT must be set before sourcing" >&2
   exit 2
