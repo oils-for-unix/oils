@@ -432,7 +432,11 @@ WriteSimpleProvenance = function(provenance, out_dir) {
   print(provenance)
   Log('')
 
-  distinct_shells = provenance  # They're alrady unique
+  # There is one row per shell
+  #
+  # Legacy: add $shell_name, because "$shell_basename-$shell_hash" is what
+  # benchmarks/id.sh publish-shell-id
+  provenance %>% mutate(shell_name = basename(sh_path)) -> distinct_shells 
 
   #provenance %>% distinct(shell_label) -> distinct_shells
   provenance %>% distinct(host_label, host_name, host_hash) -> distinct_hosts
@@ -445,23 +449,15 @@ RuntimeReport = function(in_dir, out_dir) {
   gc_stats = readTsv(file.path(in_dir, 'gc_stats.tsv'))
   provenance = readTsv(file.path(in_dir, 'provenance.tsv'))
 
-  # Joins
-  # times <= join_id => gc_stats
-  # times <= sh_path => provenance
-
-  # Then 
-  # - shell_name is basename()
-  # - shell_label is ShellLabels or ShellLabelFromPath
-  # - host_label is the same as host_name, see DistinctHosts
-
-  Log('GC stats')
-  print(gc_stats)
-
   times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
     print(failed)
     stop('Some osh-runtime tasks failed')
   }
+
+  # Joins:
+  # times <= sh_path => provenance
+  # times <= join_id, host_name => gc_stats
 
   # It should have (host_label, host_name, host_hash)
   #                (shell_label, sh_path, shell_hash)
@@ -476,8 +472,14 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # Join with provenance for host label and shell label
   times %>%
+    select(-c(status)) %>%
+    mutate(elapsed_ms = elapsed_secs * 1000,
+           user_ms = user_secs * 1000,
+           sys_ms = sys_secs * 1000,
+           max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
+    select(-c(elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     left_join(label_lookup, by = c('sh_path')) %>%
-    select(-c(sh_path, task_id)) ->
+    select(-c(sh_path)) ->
     details
 
   Log('details')
@@ -485,41 +487,55 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # Sort by osh elapsed ms.
   details %>%
-    mutate(elapsed_ms = elapsed_secs * 1000,
-           task_arg = basename(task_arg)) %>%
-    select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
+    select(-c(task_id, user_ms, sys_ms, max_rss_MB)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
-    arrange(task_arg, host_name) %>%
-    select(c(task_arg, host_name, bash, dash, `osh-cpython`, `osh-native`, py_bash_ratio, native_bash_ratio)) ->
+    arrange(workload, host_name) %>%
+    select(c(workload, host_name, bash, dash, `osh-cpython`, `osh-native`, py_bash_ratio, native_bash_ratio)) ->
     elapsed
 
   Log('elapsed')
   print(elapsed)
 
-  #print(summary(elapsed))
-  #print(head(elapsed))
-
   details %>%
-    mutate(max_rss_MB = max_rss_KiB * 1024 / 1e6,
-           task_arg = basename(task_arg)) %>%
-    select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
+    select(-c(task_id, elapsed_ms, user_ms, sys_ms)) %>%
     spread(key = shell_label, value = max_rss_MB) %>%
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
-    arrange(task_arg, host_name) %>%
-    select(c(task_arg, host_name, bash, dash, `osh-cpython`, `osh-native`, py_bash_ratio, native_bash_ratio)) ->
+    arrange(workload, host_name) %>%
+    select(c(workload, host_name, bash, dash, `osh-cpython`, `osh-native`, py_bash_ratio, native_bash_ratio)) ->
     max_rss
 
-  print(summary(elapsed))
-  print(head(elapsed))
+  Log('max rss')
+  print(max_rss)
+
+  details %>% 
+    select(c(task_id, host_name, workload, elapsed_ms, max_rss_MB)) %>%
+    mutate(join_id = sprintf("gc-%d", task_id)) %>%
+    select(-c(task_id)) ->
+    gc_details
+
+  Log('GC stats')
+  print(gc_stats)
+
+  # TODO: GC stats needs to be per hostname!  Or maybe just one!
+
+  gc_stats %>%
+    left_join(gc_details, by = c('join_id')) %>%
+    select(-c(join_id, roots_capacity, objs_capacity)) ->
+    gc_stats
+
+  Log('After GC stats')
+  print(gc_stats)
 
   WriteSimpleProvenance(provenance, out_dir)
 
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0, `osh-native` = 0))
-  writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
-  writeCsv(max_rss, file.path(out_dir, 'max_rss'))
+  writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
+  writeTsv(max_rss, file.path(out_dir, 'max_rss'))
+  writeTsv(gc_stats, file.path(out_dir, 'gc_stats'))
+  writeTsv(details, file.path(out_dir, 'details'))
 
   Log('Wrote %s', out_dir)
 }
