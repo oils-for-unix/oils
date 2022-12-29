@@ -341,15 +341,18 @@ shell-provenance() {
   local job_id
   job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
+  local tmp_prov_dir=_tmp/provenance
+  mkdir -p $tmp_prov_dir
+
   local host
-  local prov_dir
+  local prov_dir  # for $prov_dir/{shell-id,host-id}
 
   if test -n "$label"; then  # label is often 'no-host'
     host_name=$label
-    prov_dir=_tmp/provenance  # local links
+    prov_dir=$tmp_prov_dir  # local links
   else
     host_name=$(hostname)
-    prov_dir=../benchmark-data  # shared links
+    prov_dir='../benchmark-data'  # shared links
   fi
 
   log "*** $label $host_name $prov_dir"
@@ -364,11 +367,11 @@ shell-provenance() {
   local shell_hash
 
   # Legacy text file.  TODO: remove
-  local out_txt=_tmp/${host_name}.${job_id}.provenance.txt
+  local out_txt=$tmp_prov_dir/${host_name}.${job_id}.provenance.txt
   echo -n '' > $out_txt  # trunacte, no header
 
   # TSV file
-  local out_tsv=_tmp/${host_name}.${job_id}.provenance.tsv
+  local out_tsv=$tmp_prov_dir/${host_name}.${job_id}.provenance.tsv
   tsv-row job_id host_name host_hash sh_path shell_hash > $out_tsv
 
   for sh_path in "$@"; do
@@ -405,7 +408,7 @@ compiler-provenance() {
   host=$(hostname)
 
   # Filename
-  local out=_tmp/${host}.${job_id}.compiler-provenance.txt
+  local out=_tmp/provenance/${host}.${job_id}.compiler-provenance.txt
 
   local tmp_dir=_tmp/host-id/$host
   dump-host-id $tmp_dir

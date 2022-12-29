@@ -265,17 +265,17 @@ parse_help-all() { task-all parse_help "$@"; }
 task-all() {
   local task_name=$1
   local provenance=$2
-  local raw_dir=$3  # put files to save in benchmarks-data repo here
+  local out_dir=$3  # put files to save in benchmarks-data repo here
 
   local tmp_dir=$BASE_DIR/tmp/$task_name
 
   local filename=$(basename $provenance)
   local prefix=${filename%.provenance.txt}  # strip suffix
 
-  local times_tsv=$raw_dir/$task_name/$prefix.times.tsv
+  local times_tsv=$out_dir/$task_name/$prefix.times.tsv
   rm -f $times_tsv
 
-  mkdir -p $tmp_dir $raw_dir/$task_name
+  mkdir -p $tmp_dir $out_dir/$task_name
 
   # header
   tsv-row \
@@ -379,28 +379,28 @@ EOF
 
 measure() {
   local provenance=$1
-  local raw_dir=${2:-$BASE_DIR/raw}  # ../benchmark-data/compute
+  local out_dir=${2:-$BASE_DIR/raw}  # ../benchmark-data/compute
 
-  mkdir -p $BASE_DIR/{tmp,raw,stage1} $raw_dir
+  mkdir -p $BASE_DIR/{tmp,raw,stage1} $out_dir
 
-  hello-all $provenance $raw_dir
-  fib-all $provenance $raw_dir
-  word_freq-all $provenance $raw_dir
-  parse_help-all $provenance $raw_dir
+  hello-all $provenance $out_dir
+  fib-all $provenance $out_dir
+  word_freq-all $provenance $out_dir
+  parse_help-all $provenance $out_dir
 
   bubble_sort-testdata
   palindrome-testdata
 
-  bubble_sort-all $provenance $raw_dir
+  bubble_sort-all $provenance $out_dir
 
   # INCORRECT, but still run it
-  palindrome-all $provenance $raw_dir
+  palindrome-all $provenance $out_dir
 
   # array_ref takes too long to show quadratic behavior, and that's only
   # necessary on 1 machine.  I think I will make a separate blog post,
   # if anything.
 
-  maybe-tree $raw_dir
+  maybe-tree $out_dir
 }
 
 soil-shell-provenance() {

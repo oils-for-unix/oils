@@ -39,6 +39,25 @@ our-shell-provenance() {
   benchmarks/id.sh shell-provenance '' "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2
 }
 
+  # New interface for shell-provenance
+  # 2 out params:
+  #   prov_out_prefix job_id
+  # 2 fixed inputs:
+  #   maybe_host out_dir
+  # Variable inputs:
+  #   list of shells
+
+  # prov_out_prefix:
+  # - .txt is copied to ../benchmark-data/osh-runtime, so you can merge machines
+  # - .tsv is also copied to _tmp/osh-runtime/stage1, so it can be READ by the
+  # report.  TODO: This is kind of wrong
+  #   - stage1 is for MERGING
+  #   - I think the key problem is that you need to concat the two provenances
+  #   - and CHECK that you're comparing the same shells!
+  #   - the number of hosts should be 2, and they should have an equal number
+  #   of rows
+  #   - and there should be exactly 2 of every hash?
+
 measure-shells() {
   local out_dir=../benchmark-data
 
@@ -58,6 +77,9 @@ measure-shells() {
   local host_job_id=${name%.provenance.txt}  # strip suffix
   benchmarks/osh-runtime.sh measure \
     $host_job_id $host $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
+
+  # SAVE provenance so you know which 2 machines a benchmark ran on
+  cp -v $provenance $out_dir/osh-runtime
 
   benchmarks/osh-parser.sh measure \
     $provenance $out_dir/osh-parser

@@ -47,7 +47,7 @@ write-sorted-manifest() {
 
 # Called by xargs with a task row.
 parser-task() {
-  local raw_dir=$1  # output
+  local out_dir=$1  # output
   local job_id=$2
   local host=$3
   local host_hash=$4
@@ -57,7 +57,7 @@ parser-task() {
 
   echo "--- TIME $sh_path $script_path ---"
 
-  local times_out="$raw_dir/$host.$job_id.times.csv"
+  local times_out="$out_dir/$host.$job_id.times.csv"
 
   local shell_name
   shell_name=$(basename $sh_path)
@@ -86,7 +86,7 @@ parser-task() {
 # NOTE: This is very similar to the function above, except that we add
 # cachegrind.  We could probably conslidate these.
 cachegrind-task() {
-  local raw_dir=$1  # output
+  local out_dir=$1  # output
   local job_id=$2
   local unused1=$3
   local unused2=$4
@@ -97,10 +97,10 @@ cachegrind-task() {
   echo "--- CACHEGRIND $sh_path $script_path ---"
 
   # NOTE: This has to match the path that the header was written to
-  local times_out="$raw_dir/no-host.$job_id.cachegrind.tsv"
+  local times_out="$out_dir/no-host.$job_id.cachegrind.tsv"
 
   local cachegrind_out_dir="no-host.$job_id.cachegrind"
-  mkdir -p $raw_dir/$cachegrind_out_dir
+  mkdir -p $out_dir/$cachegrind_out_dir
 
   local shell_name
   shell_name=$(basename $sh_path)
@@ -128,7 +128,7 @@ cachegrind-task() {
     --field "$script_path" \
     --field $cachegrind_out_path \
     -- \
-    $0 cachegrind $raw_dir/$cachegrind_out_path \
+    $0 cachegrind $out_dir/$cachegrind_out_path \
     "$sh_path" -n $extra_args "$script_path" || echo FAILED
 }
 
@@ -189,17 +189,17 @@ readonly NUM_TASK_COLS=6  # input columns: 5 from provenance, 1 for file
 # should be the ../benchmarks-data repo.
 measure() {
   local provenance=$1
-  local raw_dir=${2:-$BASE_DIR/raw}
+  local out_dir=${2:-$BASE_DIR/raw}
   local oil_native=${3:-$OSH_EVAL_BENCHMARK_DATA}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
   local prefix=${name%.provenance.txt}  # strip suffix
 
-  local times_out="$raw_dir/$prefix.times.csv"
-  local lines_out="$raw_dir/$prefix.lines.csv"
+  local times_out="$out_dir/$prefix.times.csv"
+  local lines_out="$out_dir/$prefix.lines.csv"
 
-  mkdir -p $BASE_DIR/{tmp,raw,stage1} $raw_dir
+  mkdir -p $BASE_DIR/{tmp,raw,stage1} $out_dir
 
   # Files that we should measure.  Exploded into tasks.
   write-sorted-manifest '' $lines_out
@@ -216,24 +216,24 @@ measure() {
   print-tasks $provenance "${SHELLS[@]}" $oil_native > $tasks
 
   # Run them all
-  cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $raw_dir
+  cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $out_dir
 
-  cp -v $provenance $raw_dir
+  cp -v $provenance $out_dir
 }
 
 measure-cachegrind() {
   local provenance=$1
-  local raw_dir=${2:-$BASE_DIR/raw}
+  local out_dir=${2:-$BASE_DIR/raw}
   local oil_native=${3:-$OSH_EVAL_BENCHMARK_DATA}
 
   # Job ID is everything up to the first dot in the filename.
   local name=$(basename $provenance)
   local prefix=${name%.provenance.txt}  # strip suffix
 
-  local cachegrind_tsv="$raw_dir/$prefix.cachegrind.tsv"
-  local lines_out="$raw_dir/$prefix.lines.tsv"
+  local cachegrind_tsv="$out_dir/$prefix.cachegrind.tsv"
+  local lines_out="$out_dir/$prefix.lines.tsv"
 
-  mkdir -p $BASE_DIR/{tmp,raw,stage1} $raw_dir
+  mkdir -p $BASE_DIR/{tmp,raw,stage1} $out_dir
 
   write-sorted-manifest '' $lines_out $'\t'  # TSV
 
@@ -255,9 +255,9 @@ measure-cachegrind() {
   # strace -e fork -f -- zsh -n $file)
   print-tasks $provenance bash dash mksh $oil_native > $ctasks
 
-  cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $raw_dir
+  cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $out_dir
 
-  cp -v $provenance $raw_dir
+  cp -v $provenance $out_dir
 }
 
 

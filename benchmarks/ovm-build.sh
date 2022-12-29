@@ -165,7 +165,7 @@ clang-oil-dbg() {
 # It would be possible, but it complicates the makefile.
 
 build-task() {
-  local raw_dir=$1  # output
+  local out_dir=$1
   local job_id=$2
   local host=$3
   local host_hash=$4
@@ -174,7 +174,7 @@ build-task() {
   local src_dir=$7
   local action=$8
 
-  local times_out="$PWD/$raw_dir/$host.$job_id.times.tsv"
+  local times_out="$PWD/$out_dir/$host.$job_id.times.tsv"
 
   # Definitions that depends on $PWD.
   local -a TIME_PREFIX=(
@@ -328,7 +328,7 @@ readonly NUM_COLUMNS=7  # 5 from provenence, then tarball/target
 
 measure() {
   local provenance=$1  # from benchmarks/id.sh compiler-provenance
-  local raw_dir=${2:-$BASE_DIR/raw}
+  local out_dir=${2:-$BASE_DIR/raw}
 
   extract-oil
 
@@ -336,9 +336,9 @@ measure() {
   local name=$(basename $provenance)
   local prefix=${name%.compiler-provenance.txt}  # strip suffix
 
-  local times_out="$raw_dir/$prefix.times.tsv"
+  local times_out="$out_dir/$prefix.times.tsv"
   # NOTE: Do we need two raw dirs?
-  mkdir -p $BASE_DIR/{raw,stage1,bin} $raw_dir
+  mkdir -p $BASE_DIR/{raw,stage1,bin} $out_dir
 
   # TODO: the $times_out calculation is duplicated in build-task()
 
@@ -357,7 +357,7 @@ measure() {
   #grep dash $t2 |
   #time cat $t1 |
   set +o errexit
-  time cat $t1 $t2 | xargs --verbose -n $NUM_COLUMNS -- $0 build-task $raw_dir 
+  time cat $t1 $t2 | xargs --verbose -n $NUM_COLUMNS -- $0 build-task $out_dir 
   local status=$?
   set -o errexit
 
@@ -365,9 +365,9 @@ measure() {
     die "*** Some tasks failed. (xargs status=$status) ***"
   fi
 
-  measure-sizes $raw_dir/$prefix
+  measure-sizes $out_dir/$prefix
 
-  cp -v $provenance $raw_dir
+  cp -v $provenance $out_dir
 }
 
 #
