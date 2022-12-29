@@ -56,8 +56,7 @@ extract() {
 #
 
 run-tasks() {
-  local tsv_out=$1
-  local files_base_dir=$2
+  local raw_out_dir=$1
 
   local task_id=0
   while read -r host_name sh_path workload; do
@@ -77,7 +76,7 @@ run-tasks() {
         ;;
     esac
 
-    local files_out_dir="$PWD/$files_base_dir/files-$task_id"
+    local files_out_dir="$PWD/$raw_out_dir/files-$task_id"
     mkdir -v -p $files_out_dir
 
     local -a argv
@@ -122,7 +121,7 @@ run-tasks() {
 
     local -a time_argv=(
       time-tsv 
-        --output $tsv_out --append 
+        --output "$raw_out_dir/times.tsv" --append 
         --rusage
         --field "$task_id"
         --field "$host_name" --field "$sh_path"
@@ -133,7 +132,7 @@ run-tasks() {
     local stdout_file="$files_out_dir/STDOUT.txt"
 
     # TODO: GC stats can be PER HOST
-    local gc_stats_file=$BASE_DIR/raw/gc-$task_id.txt
+    local gc_stats_file="$raw_out_dir/gc-$task_id.txt"
 
     case $sh_path in
       */osh_eval*)
@@ -181,30 +180,11 @@ print-tasks() {
 
 measure() {
   local host_name=$1  # 'no-host' or 'lenny'
-  local host_job_id=$2
+  local raw_out_dir=$2
   local osh_native=$3  # $OSH_EVAL_NINJA_BUILD or $OSH_EVAL_BENCHMARK_DATA
-  local out_dir=${4:-$BASE_DIR/raw}  # could be ../benchmark-data/osh-runtime
+  local out_dir=${4:-$BASE_DIR}  # ../benchmark-data/osh-runtime or _tmp/osh-runtime
 
-  # Dir structure:
-  #
-  # raw/
-  #   times.tsv
-  #   gc1.txt
-  #   gc2.txt
-  # stage1/
-  #   times.tsv
-  #   gc_stats.tsv
-  #   provenance.tsv - benchmarks/provenance_to_tsv.py
-  # stage2/
-  #   elapsed.tsv
-  #   elapsed.schema.tsv
-  #   gc_stats.tsv
-  #   gc_stats.schema.tsv
-
-  local tsv_out="$out_dir/$host_job_id.times.tsv"
-  local files_base_dir="$out_dir/$host_job_id.files"
-
-  mkdir -p $BASE_DIR/{raw,stage1} $out_dir
+  local tsv_out="$raw_out_dir/times.tsv"
 
   # Write header of the TSV file that is appended to.
   time-tsv -o $tsv_out --print-header \
@@ -215,53 +195,49 @@ measure() {
 
   # run-tasks outputs 3 things: raw times.tsv, per-task STDOUT and files, and
   # per-task GC stats
+  print-tasks $host_name $osh_native | run-tasks $raw_out_dir
 
-  # TODO: run-tasks can take $raw_dir, and then it outputs times.tsv, files/, and copies
-  # _tmp/provenance.txt there
+  # Turn individual files into a TSV
+  # TODO: Add host
+  benchmarks/gc_stats_to_tsv.py $raw_out_dir/gc-*.txt \
+    > $raw_out_dir/gc_stats.tsv
 
-  print-tasks $host_name $osh_native | run-tasks $tsv_out $files_base_dir
-
-  # TODO: call gc_stats_to_tsv.py here, adding HOST NAME, and put it in 'raw'
-
-  cp -v _tmp/provenance.tsv $out_dir
+  cp -v _tmp/provenance.tsv $raw_out_dir
 }
 
 stage1() {
-  local raw_dir=${1:-$BASE_DIR/raw}
+  local base_dir=${1:-$BASE_DIR}
   local single_machine=${2:-}
 
-  local out_dir=$BASE_DIR/stage1
+  local out_dir=$base_dir/stage1
 
-  mkdir -p $out_dir
+  # Globs are in lexicographical order, which works for our dates.
 
   local -a raw_times=()
+  local -a raw_gc_stats=()
+  local -a raw_provenance=()
+
   if test -n "$single_machine"; then
+    local -a a=( $base_dir/raw.$single_machine.* )
 
-    # TODO: Change this to $BASE_DIR/raw.no-host.*/
-    # That's the latest directory
+    raw_times+=( ${a[-1]}/times.tsv )
+    raw_gc_stats+=( ${a[-1]}/gc_stats.tsv )
+    raw_provenance+=( ${a[-1]}/provenance.tsv )
 
-    local -a a=($raw_dir/$single_machine.*.times.tsv)
-    raw_times+=( ${a[-1]} )
   else
-    # TODO: Change this to $BASE_DIR/raw.$MACHINE1.*/
+    local -a a=( $base_dir/raw.$MACHINE1.* )
+    local -a b=( $base_dir/raw.$MACHINE2.* )
 
-    # Globs are in lexicographical order, which works for our dates.
-    local -a a=($raw_dir/$MACHINE1.*.times.tsv)
-    local -a b=($raw_dir/$MACHINE2.*.times.tsv)
-    raw_times+=( ${a[-1]} ${b[-1]} )
+    raw_times+=( ${a[-1]}/times.tsv ${b[-1]}/times.tsv )
+    raw_gc_stats+=( ${a[-1]}/gc_stats.tsv ${b[-1]}/gc_stats.tsv )
+    raw_provenance+=( ${a[-1]}/provenance.tsv ${b[-1]}/provenance.tsv )
   fi
 
-  local times_tsv=$out_dir/times.tsv
-  tsv-concat "${raw_times[@]}" > $times_tsv
+  tsv-concat "${raw_times[@]}" > $out_dir/times.tsv
 
-  # TODO: 
-  # - Add host column in 'measure' step
-  # - concat multiple hosts in stage1
-  benchmarks/gc_stats_to_tsv.py $raw_dir/gc-*.txt \
-    > $BASE_DIR/stage1/gc_stats.tsv
+  tsv-concat "${raw_gc_stats[@]}" > $out_dir/gc_stats.tsv
 
-  # TODO: Concatenate by host.
-  cp -v $raw_dir/provenance.tsv $out_dir
+  tsv-concat "${raw_provenance[@]}" > $out_dir/provenance.tsv
 }
 
 print-report() {
@@ -353,9 +329,11 @@ soil-run() {
     $single_machine $job_id _tmp \
     bash dash bin/osh "${oil_bin[@]}"
 
-  local host_job_id=$single_machine.$job_id
+  local host_job_id="$single_machine.$job_id"
+  local raw_out_dir="$BASE_DIR/raw.$host_job_id"
+  mkdir -p $raw_out_dir $BASE_DIR/stage1
 
-  measure $single_machine $host_job_id $OSH_EVAL_NINJA_BUILD
+  measure $single_machine $raw_out_dir $OSH_EVAL_NINJA_BUILD
 
   # Trivial concatenation for 1 machine
   stage1 '' $single_machine

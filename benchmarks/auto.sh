@@ -44,10 +44,11 @@ measure-shells() {
   )
 
   local host_job_id="$host_name.$job_id"
+  local raw_out_dir="$out_dir/raw.$host_job_id"
 
   # New Style doesn't need provenance -- it's joined later
   benchmarks/osh-runtime.sh measure \
-    $host_name $host_job_id $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
+    $host_name $raw_out_dir $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
 
   # Old style needs provenance
   local provenance=_tmp/provenance.txt
