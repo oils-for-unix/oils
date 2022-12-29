@@ -475,16 +475,6 @@ EOF
 EOF
 }
 
-cachegrind-main() {
-  ### Invoked by benchmarks/auto.sh
-
-  local host_job_id=$1
-  local out_dir=${2:-../benchmark-data}
-
-  measure-cachegrind \
-    _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_EVAL_BENCHMARK_DATA
-}
-
 soil-run() {
   ### Run it on just this machine, and make a report
 

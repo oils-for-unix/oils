@@ -208,6 +208,8 @@ measure() {
   local osh_native=$3  # $OSH_EVAL_NINJA_BUILD or $OSH_EVAL_BENCHMARK_DATA
   local out_dir=${4:-$BASE_DIR}  # ../benchmark-data/osh-runtime or _tmp/osh-runtime
 
+  mkdir -v -p $raw_out_dir
+
   local tsv_out="$raw_out_dir/times.tsv"
 
   # Write header of the TSV file that is appended to.
