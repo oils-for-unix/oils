@@ -52,9 +52,12 @@ measure-shells() {
   benchmarks/vm-baseline.sh measure \
     $provenance $out_dir/vm-baseline
 
-  # Uses $host
+  # TODO: 'shell-provenance' could just print host and job ID
+  local name
+  name=$(basename $provenance)
+  local host_job_id=${name%.provenance.txt}  # strip suffix
   benchmarks/osh-runtime.sh measure \
-    $provenance $host $out_dir/osh-runtime
+    $host_job_id $host $OSH_EVAL_BENCHMARK_DATA $out_dir/osh-runtime
 
   benchmarks/osh-parser.sh measure \
     $provenance $out_dir/osh-parser

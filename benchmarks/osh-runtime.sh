@@ -41,9 +41,12 @@ download() {
 }
 
 extract() {
+  set -x
   time for f in $TAR_DIR/*.{bz2,xz}; do
     tar -x --directory $TAR_DIR --file $f 
   done
+  set +x
+
   ls -l $TAR_DIR
 }
 
@@ -149,33 +152,38 @@ run-tasks() {
 
 print-tasks() {
   local maybe_host=$1  
+  local osh_native=$2
 
-  for sh_path in bash dash bin/osh $OSH_EVAL_NINJA_BUILD; do
-    # NOTE: Some task_arg like 'abuild-help' aren't used
+  local -a workloads=(
+    hello-world
+    abuild-print-help
 
-    tsv-row $maybe_host $sh_path hello-world
-    tsv-row $maybe_host $sh_path abuild-print-help
+    configure.cpython
+    configure.ocaml
+    configure.tcc
+    configure.yash
+  )
 
-    if test -n "${QUICKLY:-}"; then
-      continue
-    fi
+  if test -n "${QUICKLY:-}"; then
+    # Just do the first two
+    workloads=(
+      hello-world
+      abuild-print-help
+    )
+  fi
 
-    tsv-row $maybe_host $sh_path configure.cpython
-    tsv-row $maybe_host $sh_path configure.ocaml
-    tsv-row $maybe_host $sh_path configure.tcc
-    tsv-row $maybe_host $sh_path configure.yash
+  for sh_path in bash dash bin/osh $osh_native; do
+    for workload in "${workloads[@]}"; do
+      tsv-row $maybe_host $sh_path $workload
+    done
   done
 }
 
 measure() {
-  # TODO: just change this to prefix
-  local provenance=$1
+  local host_job_id=$1
   local maybe_host=$2  # e.g. 'lenny' or 'no-host'
-  local out_dir=${3:-$BASE_DIR/raw}  # could be ../benchmark-data/osh-runtime
-
-  # Job ID is everything up to the first dot in the filename.
-  local name=$(basename $provenance)
-  local prefix=${name%.provenance.txt}  # strip suffix
+  local osh_native=$3  # $OSH_EVAL_NINJA_BUILD or $OSH_EVAL_BENCHMARK_DATA
+  local out_dir=${4:-$BASE_DIR/raw}  # could be ../benchmark-data/osh-runtime
 
   # Dir structure:
   #
@@ -193,10 +201,9 @@ measure() {
   #   gc_stats.tsv
   #   gc_stats.schema.tsv
 
-  local tsv_out="$out_dir/$prefix.times.tsv"
-  local files_base_dir="$out_dir/$prefix.files"
+  local tsv_out="$out_dir/$host_job_id.times.tsv"
+  local files_base_dir="$out_dir/$host_job_id.files"
 
-  #set -x
   mkdir -p $BASE_DIR/{raw,stage1} $out_dir
 
   # Write header of the TSV file that is appended to.
@@ -209,11 +216,7 @@ measure() {
   # run-tasks outputs 3 things: raw times.tsv, per-task STDOUT and files, and
   # per-task GC stats
 
-  print-tasks $maybe_host | run-tasks $tsv_out $files_base_dir
-
-  # R uses the TSV version of the provenance.
-  # TODO: we don't even need the text version
-  cp -v ${provenance%%.txt}.tsv $BASE_DIR/stage1/provenance.tsv
+  print-tasks $maybe_host $osh_native | run-tasks $tsv_out $files_base_dir
 }
 
 stage1() {
@@ -241,6 +244,9 @@ stage1() {
   # TODO: concat multiple hosts
   benchmarks/gc_stats_to_tsv.py $raw_dir/gc-*.txt \
     > $BASE_DIR/stage1/gc_stats.tsv
+
+  # files.html lets you see the raw files.
+  find-dir-html _tmp/osh-runtime files
 }
 
 print-report() {
@@ -313,6 +319,10 @@ soil-shell-provenance() {
   # This is a superset of shells; see filter-provenance
   # - _bin/osh isn't available in the Docker image, so use bin/osh instead
 
+  # Depending on the label, this function publishes to ../benchmark-data or
+  # _tmp/provenance
+  # TODO: We should have _tmp/benchmark-data/provenance/$host.$job_id.{shell,compiler}.tsv
+
   benchmarks/id.sh shell-provenance "$label" bash dash bin/osh "$@"
 }
 
@@ -324,11 +334,12 @@ soil-run() {
 
   # TODO: This testdata should be baked into Docker image, or mounted
   download
+
   extract
 
   # TODO: could add _bin/cxx-bumpleak/osh_eval, but we would need to fix
   # $shell_name 
-  local -a oil_bin=(_bin/cxx-opt/osh_eval.stripped)
+  local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
   local maybe_host='no-host'
@@ -336,16 +347,23 @@ soil-run() {
   local provenance
   provenance=$(soil-shell-provenance $maybe_host "${oil_bin[@]}")
 
-  measure $provenance $maybe_host
+  # Job ID is everything up to the first dot in the filename.
+  local name
+  name=$(basename $provenance)
+
+  local host_job_id=${name%.provenance.txt}  # strip suffix
+
+  measure $host_job_id $maybe_host $OSH_EVAL_NINJA_BUILD
+
+  # R uses the TSV version of the provenance.
+  # TODO: we don't even need the text version
+  cp -v ${provenance%%.txt}.tsv $BASE_DIR/stage1/provenance.tsv
 
   # Make it run on one machine
   stage1 '' $maybe_host
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR
-
-  # Index of raw files
-  find-dir-html _tmp/osh-runtime files
 }
 
 #

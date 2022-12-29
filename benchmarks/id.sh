@@ -391,6 +391,10 @@ shell-provenance() {
   log "Wrote $out_txt and $out_tsv"
 
   # Return value used in command sub
+
+  # TODO: We want multiple returns values
+  # $out_txt $out_tsv $host_job_id
+
   echo $out_txt
 }
 
@@ -429,4 +433,13 @@ compiler-provenance() {
   echo $out
 }
 
-"$@"
+out-param() {
+  declare -n out=$1
+
+  out=returned
+}
+
+if test $(basename $0) = 'id.sh'; then
+  "$@"
+fi
+
