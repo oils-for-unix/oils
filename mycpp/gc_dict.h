@@ -37,7 +37,13 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
 template <class K, class V>
 class Dict {
  public:
-  Dict() : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)) {
+  Dict()
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)),
+        len_(),
+        capacity_(),
+        entry_(),
+        keys_(),
+        values_() {
     assert(len_ == 0);
     assert(capacity_ == 0);
     assert(entry_ == nullptr);
@@ -46,7 +52,12 @@ class Dict {
   }
 
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)) {
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)),
+        len_(),
+        capacity_(),
+        entry_(),
+        keys_(),
+        values_() {
     assert(len_ == 0);
     assert(capacity_ == 0);
     assert(entry_ == nullptr);

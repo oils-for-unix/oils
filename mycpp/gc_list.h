@@ -34,7 +34,11 @@ class List {
                 "Slab header size should be multiple of item size");
 
  public:
-  List() : GC_CLASS_FIXED(header_, field_mask(), sizeof(List<T>)) {
+  List()
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(List<T>)),
+        len_(),
+        capacity_(),
+        slab_() {
     // Ensured by heap zeroing.  It's never directly on the stack.
     DCHECK(len_ == 0);
     DCHECK(capacity_ == 0);
