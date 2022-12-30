@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   services/zulip.sh <function name>
+#   devtools/services/zulip.sh <function name>
+#
+# https://oilshell.zulipchat.com -> Personal -> Bots for email and API key
+#
+# To get a thread, you have to get the messages in the stream, and the filter
+# it with JQ.
+
 
 set -o nounset
 set -o pipefail
@@ -24,7 +30,7 @@ messages-in-stream() {
     -d 'num_before=50' \
     -d 'num_after=0' \
     -d 'apply_markdown=false' \
-    --data-urlencode narrow='[{"operand": "oil-discuss", "operator": "stream"}]' \
+    --data-urlencode narrow='[{"operand": "oil-dev", "operator": "stream"}]' \
     https://oilshell.zulipchat.com/api/v1/messages 
 
     # doesn't work
@@ -44,7 +50,7 @@ print-thread() {
   # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
 
   messages-in-stream "$@" | jq -r \
-    '.messages[] | { content: .content, subject: .subject } | select( .subject == "0.8.4 Release Notes" ) | .content '
+    '.messages[] | { content: .content, subject: .subject } | select( .subject == "0.13.1 Release" ) | .content '
     #'{ content: .messages[].content, subject: .messages[].subject }'
     #'{ subject: .messages[].subject }'
 }
@@ -57,10 +63,15 @@ topics() {
   local bot_email=$1
   local bot_api_key=$2
 
-  # stream ID 121540 is #oil-discuss
+  # stream ID for #oil-discuss
+  #local stream_id=121540
+
+  # stream ID for #oil-dev.  You get the max ID
+  local stream_id=121539
+
   my-curl \
     -u "$bot_email:$bot_api_key" \
-    https://oilshell.zulipchat.com/api/v1/users/me/121540/topics 
+    https://oilshell.zulipchat.com/api/v1/users/me/$stream_id/topics 
 }
 
 one-message() {
