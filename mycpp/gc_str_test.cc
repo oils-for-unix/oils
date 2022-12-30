@@ -997,6 +997,20 @@ TEST test_str_split() {
     ASSERT(are_equal(split_result->index_(0), StrFromC("")));
   }
 
+  {
+    List<Str*>* result = (StrFromC("a,b,c,d,e,f,g"))->split(StrFromC(","));
+    PRINT_LIST(result);
+    ASSERT(len(result) == 7);
+    ASSERT(are_equal(result->index_(0), StrFromC("a")));
+
+    result = (StrFromC("a,b,c,d,e,f,g"))->split(StrFromC(","), 3);
+    PRINT_LIST(result);
+    ASSERT(len(result) == 3);
+    ASSERT(are_equal(result->index_(0), StrFromC("a")));
+    ASSERT(are_equal(result->index_(1), StrFromC("b")));
+    ASSERT(are_equal(result->index_(2), StrFromC("c")));
+  }
+
   // NOTE(Jesse): Failure case.  Not sure if we care about supporting this.
   // It might happen if we do something like : 'weahtevr'.split()
   // Would need to check on what the Python interpreter does in that case to

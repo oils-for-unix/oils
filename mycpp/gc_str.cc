@@ -426,7 +426,7 @@ Str* NewStrFromHeapStr(Str* src, int new_len, int start_index = 0) {
   return result;
 }
 
-List<Str*>* Str::split(Str* sep) {
+List<Str*>* Str::split(Str* sep, int max_split) {
   assert(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
 
@@ -442,7 +442,7 @@ List<Str*>* Str::split(Str* sep) {
   int pos = 0;
   int end = n;
 
-  while (true) {
+  while (len(result) < max_split) {
     // NOTE(Jesse): Perfect use case for BoundedBuffer
     int new_pos = find_next(data_, pos, end, sep_char);
     assert(new_pos >= pos);
@@ -467,6 +467,10 @@ List<Str*>* Str::split(Str* sep) {
   }
 
   return result;
+}
+
+List<Str*>* Str::split(Str* sep) {
+  return this->split(sep, len(this));
 }
 
 static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
