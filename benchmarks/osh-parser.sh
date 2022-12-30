@@ -88,7 +88,7 @@ parser-task() {
 cachegrind-task() {
   local out_dir=$1  # output
   local job_id=$2
-  local unused1=$3
+  local host_name=$3
   local unused2=$4
   local sh_path=$5
   local shell_hash=$6
@@ -96,10 +96,12 @@ cachegrind-task() {
 
   echo "--- CACHEGRIND $sh_path $script_path ---"
 
-  # NOTE: This has to match the path that the header was written to
-  local times_out="$out_dir/no-host.$job_id.cachegrind.tsv"
+  local host_job_id="$host_name.$job_id"
 
-  local cachegrind_out_dir="no-host.$job_id.cachegrind"
+  # NOTE: This has to match the path that the header was written to
+  local times_out="$out_dir/$host_job_id.cachegrind.tsv"
+
+  local cachegrind_out_dir="$host_job_id.cachegrind"
   mkdir -p $out_dir/$cachegrind_out_dir
 
   local shell_name
@@ -214,8 +216,6 @@ measure() {
 
   # Run them all
   cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $out_dir
-
-  cp -v _tmp/provenance.txt $out_dir
 }
 
 measure-cachegrind() {
@@ -250,8 +250,6 @@ measure-cachegrind() {
   print-tasks $provenance bash dash mksh $oil_native > $ctasks
 
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $out_dir
-
-  cp -v _tmp/provenance.txt $out_dir
 }
 
 
@@ -284,7 +282,8 @@ stage1-cachegrind() {
   local out_dir=$2
   local raw_data_csv=$3
 
-  local -a sorted=($raw_dir/no-host.*.cachegrind.tsv)
+  # Only runs on one machine
+  local -a sorted=($raw_dir/$MACHINE2.*.cachegrind.tsv)
   local tsv_in=${sorted[-1]}  # latest one
 
   devtools/tsv_column_from_files.py \
