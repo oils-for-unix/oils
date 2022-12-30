@@ -315,8 +315,12 @@ ParserReport = function(in_dir, out_dir) {
       max_rss
 
     Log('\n')
+    Log('MAX RSS')
+    print(max_rss)
+
+    Log('\n')
     Log('joined_cachegrind has %d rows', nrow(joined_cachegrind))
-    #print(joined_cachegrind)
+    print(joined_cachegrind)
     #print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
 
     # Cachegrind instructions by file
@@ -464,13 +468,16 @@ RuntimeReport = function(in_dir, out_dir) {
   # times <= sh_path => provenance
   # times <= join_id, host_name => gc_stats
 
+  # TODO: provenance may have rows from 2 machines.  Could validate them and
+  # deduplicate.
+
   # It should have (host_label, host_name, host_hash)
   #                (shell_label, sh_path, shell_hash)
   provenance %>%
     mutate(host_label = host_name, shell_label = ShellLabelFromPath(sh_path)) ->
     provenance
 
-  provenance %>% select(sh_path, shell_label) -> label_lookup
+  provenance %>% distinct(sh_path, shell_label) -> label_lookup
 
   Log('label_lookup')
   print(label_lookup)

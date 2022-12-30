@@ -232,10 +232,11 @@ measure() {
 }
 
 stage1() {
-  local base_dir=${1:-$BASE_DIR}
+  local base_dir=${1:-$BASE_DIR}  # _tmp/osh-runtime or ../benchmark-data/osh-runtime
   local single_machine=${2:-}
 
-  local out_dir=$base_dir/stage1
+  local out_dir=$BASE_DIR/stage1  # _tmp/osh-runtime
+  mkdir -p $out_dir
 
   # Globs are in lexicographical order, which works for our dates.
 
