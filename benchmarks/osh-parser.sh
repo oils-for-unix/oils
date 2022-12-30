@@ -252,38 +252,27 @@ measure-cachegrind() {
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $out_dir
 }
 
-
-#
-# Testing
-#
-
-# Copy data so it looks like it's from another host
-fake-other-host() {
-  local dir=${1:-_tmp/osh-parser/raw}
-  for entry in $dir/lenny*; do
-    local fake=${entry/lenny/flanders}
-    #echo $entry $fake
-    mv -v $entry $fake
-
-    # The host ID isn't changed, but that's OK.
-    # provencence.txt has host names.
-    if test -f $fake; then
-      sed -i 's/lenny/flanders/g' $fake
-    fi
-  done
-}
-
 #
 # Data Preparation and Analysis
 #
 
 stage1-cachegrind() {
   local raw_dir=$1
-  local out_dir=$2
-  local raw_data_csv=$3
+  local single_machine=$2
+  local out_dir=$3
+  local raw_data_csv=$4
+
+  local maybe_host
+  if test -n "$single_machine"; then
+    # CI: _tmp/osh-parser/raw.no-host.$job_id
+    maybe_host='no-host'
+  else
+    # release: ../benchmark-data/osh-parser/raw.lenny.$job_id
+    maybe_host=$(hostname)
+  fi
 
   # Only runs on one machine
-  local -a sorted=($raw_dir/$MACHINE2.*.cachegrind.tsv)
+  local -a sorted=( $raw_dir/$maybe_host.*.cachegrind.tsv )
   local tsv_in=${sorted[-1]}  # latest one
 
   devtools/tsv_column_from_files.py \
@@ -307,7 +296,7 @@ stage1() {
   local raw_data_csv=$out/raw-data.csv
   echo 'path' > $raw_data_csv
 
-  stage1-cachegrind $raw_dir $out $raw_data_csv
+  stage1-cachegrind $raw_dir "$single_machine" $out $raw_data_csv
 
   local lines_csv=$out/lines.csv
 
@@ -512,7 +501,6 @@ soil-run() {
   find-dir-html _tmp/osh-parser files
 
   benchmarks/report.sh stage3 $BASE_DIR
-
 }
 
 "$@"
