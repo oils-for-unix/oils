@@ -37,21 +37,22 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
 template <class K, class V>
 class Dict {
  public:
-  Dict() : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)) {
-    assert(len_ == 0);
-    assert(capacity_ == 0);
-    assert(entry_ == nullptr);
-    assert(keys_ == nullptr);
-    assert(values_ == nullptr);
+  Dict()
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)),
+        len_(0),
+        capacity_(0),
+        entry_(nullptr),
+        keys_(nullptr),
+        values_(nullptr) {
   }
 
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)) {
-    assert(len_ == 0);
-    assert(capacity_ == 0);
-    assert(entry_ == nullptr);
-    assert(keys_ == nullptr);
-    assert(values_ == nullptr);
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)),
+        len_(0),
+        capacity_(0),
+        entry_(nullptr),
+        keys_(nullptr),
+        values_(nullptr) {
   }
 
   // This relies on the fact that containers of 4-byte ints are reduced by 2
