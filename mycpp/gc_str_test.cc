@@ -1005,10 +1005,11 @@ TEST test_str_split() {
 
     result = (StrFromC("a,b,c,d,e,f,g"))->split(StrFromC(","), 3);
     PRINT_LIST(result);
-    ASSERT(len(result) == 3);
+    ASSERT(len(result) == 4);
     ASSERT(are_equal(result->index_(0), StrFromC("a")));
     ASSERT(are_equal(result->index_(1), StrFromC("b")));
     ASSERT(are_equal(result->index_(2), StrFromC("c")));
+    ASSERT(are_equal(result->index_(3), StrFromC("d,e,f,g")));
   }
 
   // NOTE(Jesse): Failure case.  Not sure if we care about supporting this.

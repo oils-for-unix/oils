@@ -452,6 +452,7 @@ List<Str*>* Str::split(Str* sep, int max_split) {
       Str* to_push = NewStrFromHeapStr(this, end - pos, pos);
       result->append(to_push);  // StrFromC(self->data_+pos, end - pos));  //
                                 // rest of the string
+      pos = new_pos + 1;
       break;
     }
 
@@ -464,6 +465,11 @@ List<Str*>* Str::split(Str* sep, int max_split) {
       result->append(kEmptyString);
       break;
     }
+  }
+
+  if (pos < end) {
+    Str* leftover = NewStrFromHeapStr(this, end - pos, pos);
+    result->append(leftover);
   }
 
   return result;
