@@ -427,7 +427,8 @@ Str* NewStrFromHeapStr(Str* src, int new_len, int start_index = 0) {
 }
 
 List<Str*>* Str::split(Str* sep, int max_split) {
-  assert(len(sep) == 1);  // we can only split one char
+  DCHECK(sep != nullptr);
+  DCHECK(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
 
   List<Str*>* result = nullptr;
