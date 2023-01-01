@@ -47,6 +47,7 @@ class Str {
   Str* join(List<Str*>* items);
 
   List<Str*>* split(Str* sep);
+  List<Str*>* split(Str* sep, int max_split);
   List<Str*>* splitlines(bool keep);
 
   bool isdigit();
