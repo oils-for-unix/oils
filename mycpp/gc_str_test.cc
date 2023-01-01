@@ -924,7 +924,7 @@ TEST test_str_split() {
     List<Str*>* parts = s->split(StrFromC("x"));
     ShowList(parts);
     ASSERT_EQ(1, len(parts));
-    // ASSERT_EQ(parts->index_(0), s);
+    ASSERT_EQ(parts->index_(0), s);
   }
 
   {
@@ -938,11 +938,12 @@ TEST test_str_split() {
   {
     List<Str*>* parts = StrFromC("###")->split(StrFromC("#"));
     ShowList(parts);
-    ASSERT_EQ(4, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC("")));
-    ASSERT(are_equal(parts->index_(1), StrFromC("")));
-    ASSERT(are_equal(parts->index_(2), StrFromC("")));
-    ASSERT(are_equal(parts->index_(3), StrFromC("")));
+    ASSERT_EQ_FMT(4, len(parts), "%d");
+    // Identical objects
+    ASSERT_EQ(kEmptyString, parts->index_(0));
+    ASSERT_EQ(kEmptyString, parts->index_(1));
+    ASSERT_EQ(kEmptyString, parts->index_(2));
+    ASSERT_EQ(kEmptyString, parts->index_(3));
   }
 
   {
@@ -998,7 +999,7 @@ TEST test_str_split() {
     // ask for 3 splits
     parts = s->split(StrFromC(","), 3);
     ShowList(parts);
-    ASSERT_EQ(4, len(parts));
+    ASSERT_EQ_FMT(4, len(parts), "%d");
     ASSERT(are_equal(parts->index_(0), StrFromC("a")));
     ASSERT(are_equal(parts->index_(1), StrFromC("b")));
     ASSERT(are_equal(parts->index_(2), StrFromC("c")));
@@ -1008,10 +1009,8 @@ TEST test_str_split() {
     parts = s->split(StrFromC(","), 0);
     ShowList(parts);
     ASSERT_EQ(1, len(parts));
-    ASSERT(are_equal(parts->index_(0), s));
-
-    // TODO: Should be identical objects
-    // ASSERT_EQ(s, parts->index_(0));
+    // identical objects
+    ASSERT_EQ(parts->index_(0), s);
 
     parts = StrFromC("###")->split(StrFromC("#"), 2);
     ShowList(parts);

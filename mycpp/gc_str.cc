@@ -406,71 +406,52 @@ Str* Str::join(List<Str*>* items) {
   return result;
 }
 
-int find_next(const char* haystack, int starting_index, int end_index,
-              const char needle) {
-  int result = end_index;
-  for (int i = starting_index; i < end_index; ++i) {
-    if (haystack[i] == needle) {
-      result = i;
-      break;
-    }
+static void AppendPart(List<Str*>* result, Str* s, int left, int right) {
+  int new_len = right - left;
+  Str* part;
+  if (new_len == 0) {
+    part = kEmptyString;
+  } else {
+    part = NewStr(new_len);
+    memcpy(part->data_, s->data_ + left, new_len);
   }
-  return result;
+  result->append(part);
 }
 
-Str* NewStrFromHeapStr(Str* src, int new_len, int start_index = 0) {
-  Str* result = NewStr(new_len);
-  assert((start_index + new_len) <= len(src));
-  memcpy(result->data_, src->data_ + start_index, new_len);
-
-  return result;
-}
-
+// Split Str into List<Str*> of parts separated by 'sep'.
+// The code structure is taken from CPython's Objects/stringlib/split.h.
 List<Str*>* Str::split(Str* sep, int max_split) {
   DCHECK(sep != nullptr);
   DCHECK(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
 
-  List<Str*>* result = nullptr;
-
-  int n = len(this);
-  if (n == 0) {
+  int str_len = len(this);
+  if (str_len == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
     return NewList<Str*>({kEmptyString});
   }
 
-  result = NewList<Str*>({});
-  int pos = 0;
-  int end = n;
+  List<Str*>* result = NewList<Str*>({});
+  int left = 0;
+  int right = 0;
+  int num_parts = 0;  // 3 splits results in 4 parts
 
-  while (len(result) < max_split) {
-    // NOTE(Jesse): Perfect use case for BoundedBuffer
-    int new_pos = find_next(data_, pos, end, sep_char);
-    assert(new_pos >= pos);
-    assert(new_pos <= end);
-
-    if (new_pos == end) {
-      Str* to_push = NewStrFromHeapStr(this, end - pos, pos);
-      result->append(to_push);  // StrFromC(self->data_+pos, end - pos));  //
-                                // rest of the string
-      pos = new_pos + 1;
-      break;
-    }
-
-    int new_len = new_pos - pos;
-    Str* to_push = NewStrFromHeapStr(this, new_len, pos);
-    result->append(to_push);
-
-    pos = new_pos + 1;
-    if (pos >= end) {  // separator was at end of string
-      result->append(kEmptyString);
-      break;
+  while (right < str_len && num_parts < max_split) {
+    // search for separator
+    for (; right < str_len; right++) {
+      if (data_[right] == sep_char) {
+        AppendPart(result, this, left, right);
+        right++;
+        left = right;
+        num_parts++;
+        break;
+      }
     }
   }
-
-  if (pos < end) {
-    Str* leftover = NewStrFromHeapStr(this, end - pos, pos);
-    result->append(leftover);
+  if (num_parts == 0) {  // Optimization when there is no split
+    result->append(this);
+  } else if (left <= str_len) {  // Last part
+    AppendPart(result, this, left, str_len);
   }
 
   return result;
