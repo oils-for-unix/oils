@@ -28,10 +28,10 @@ template <typename T>
 class Slab {
  public:
   // slabs of pointers are scanned; slabs of ints/bools are opaque.
-  explicit Slab(uint32_t obj_len)
+  explicit Slab(uint32_t num_pointers)
       : GC_SLAB(header_,
                 std::is_pointer<T>() ? HeapTag::Scanned : HeapTag::Opaque,
-                obj_len) {
+                num_pointers) {
   }
   GC_OBJ(header_);
   T items_[1];  // variable length
@@ -58,7 +58,7 @@ template <typename T>
 inline Slab<T>* NewSlab(int len) {
   int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
   void* place = gHeap.Allocate(obj_len);
-  auto slab = new (place) Slab<T>(obj_len);  // placement new
+  auto slab = new (place) Slab<T>(len);  // placement new
   return slab;
 }
 

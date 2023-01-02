@@ -84,12 +84,14 @@ class Str {
 constexpr int kStrHeaderSize = offsetof(Str, data_);
 
 inline void Str::SetObjLenFromStrLen(int str_len) {
-  header_.obj_len = kStrHeaderSize + str_len + 1;
+  // header_.obj_len = kStrHeaderSize + str_len + 1;
+  STR_LEN(header_) = str_len;
 }
 
 inline int len(const Str* s) {
-  DCHECK(s->header_.obj_len >= kStrHeaderSize - 1);
-  return s->header_.obj_len - kStrHeaderSize - 1;
+  // DCHECK(s->header_.obj_len >= kStrHeaderSize - 1);
+  // return s->header_.obj_len - kStrHeaderSize - 1;
+  return STR_LEN(s->header_);
 }
 
 // Notes:
@@ -110,7 +112,7 @@ inline Str* NewStr(int len) {
   void* place = gHeap.Allocate(obj_len);
 
   auto s = new (place) Str();
-  s->header_.obj_len = obj_len;
+  STR_LEN(s->header_) = len;
   return s;
 }
 
@@ -194,12 +196,11 @@ class GlobalStr {
 // https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
 // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
-#define GLOBAL_STR(name, val)                               \
-  GlobalStr<sizeof(val)> _##name = {                        \
-      {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Global, \
-       kStrHeaderSize + sizeof(val)},                       \
-      -1,                                                   \
-      val};                                                 \
+#define GLOBAL_STR(name, val)                                                 \
+  GlobalStr<sizeof(val)> _##name = {                                          \
+      {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Global, sizeof(val) - 1}, \
+      -1,                                                                     \
+      val};                                                                   \
   Str* name = reinterpret_cast<Str*>(&_##name);
 
 #endif  // MYCPP_GC_STR_H

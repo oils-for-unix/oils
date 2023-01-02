@@ -29,8 +29,11 @@ void ShowSlab(void* obj) {
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
   assert(slab->header_.heap_tag == HeapTag::Scanned);
 
+  int n = NUM_POINTERS(slab->header_);
+#if 0
   int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
   log("slab len = %d, n = %d", slab->header_.obj_len, n);
+#endif
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
     if (p == nullptr) {
@@ -308,7 +311,9 @@ class DerivedObj : public BaseObj {
 
 void ShowObj(ObjHeader* obj) {
   log("obj->heap_tag %d", obj->heap_tag);
+#if 0
   log("obj->obj_len %d", obj->obj_len);
+#endif
 }
 
 TEST vtable_test() {
@@ -318,8 +323,10 @@ TEST vtable_test() {
 
   BaseObj base3;
 
+#if 0
   log("BaseObj obj_len = %d", base3.header_.obj_len);
   log("derived b3->obj_len = %d", b3->header_.obj_len);  // derived length
+#endif
   log("sizeof(d3) = %d", sizeof(d3));
 
   unsigned char* c3 = reinterpret_cast<unsigned char*>(b3);
@@ -348,8 +355,10 @@ TEST vtable_test() {
 
     ASSERT_EQ_FMT(HeapTag::FixedSize, header->heap_tag, "%d");
     ASSERT_EQ_FMT(0, header->field_mask, "%d");
+#if 0
     // casts get rid of warning
     ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len, "%d");
+#endif
   }
 
   PASS();

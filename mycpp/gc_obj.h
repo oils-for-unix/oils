@@ -42,9 +42,9 @@ struct ObjHeader {
 #endif
 
 #ifdef MARK_SWEEP
-  unsigned heap_tag : 2;  // HeapTag::Opaque, etc.
-  // TODO: u_mask_npointers_strlen
-  unsigned obj_len : 30;  // Mark-sweep: derive Str length, Slab length
+  unsigned heap_tag : 2;                  // HeapTag::Opaque, etc.
+  unsigned u_mask_npointers_strlen : 30;  // Mark-sweep: derive Str length, Slab
+                                          // length
 #else
   unsigned heap_tag : 3;     // Cheney also needs HeapTag::Forwarded
   unsigned obj_len : 29;     // Cheney: number of bytes to copy
@@ -53,7 +53,8 @@ struct ObjHeader {
 
 #if MARK_SWEEP
   #define FIELD_MASK(header) (header).field_mask
-  // #define FIELD_MASK(header) (header).u_mask_npointers_strlen
+  #define STR_LEN(header) (header).u_mask_npointers_strlen
+  #define NUM_POINTERS(header) (header).u_mask_npointers_strlen
 #else
   #define FIELD_MASK(header) (header).field_mask
 #endif
@@ -92,9 +93,9 @@ struct RawObject {
     kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Opaque, kNoObjLen \
   }
 
-#define GC_SLAB(header_, heap_tag, obj_len)                \
-  header_ {                                                \
-    kIsHeader, TypeTag::Slab, kZeroMask, heap_tag, obj_len \
+#define GC_SLAB(header_, heap_tag, num_pointers)                \
+  header_ {                                                     \
+    kIsHeader, TypeTag::Slab, kZeroMask, heap_tag, num_pointers \
   }
 
 #define GC_TUPLE(header_, field_mask, obj_len)                         \

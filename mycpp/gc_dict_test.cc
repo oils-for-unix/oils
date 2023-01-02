@@ -144,9 +144,11 @@ TEST test_dict_internals() {
   ASSERT_EQ(1, len(dict1));
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 
+#if 0
   ASSERT_EQ_FMT(32, dict1->entry_->header_.obj_len, "%d");
   ASSERT_EQ_FMT(32, dict1->keys_->header_.obj_len, "%d");
   ASSERT_EQ_FMT(32, dict1->values_->header_.obj_len, "%d");
+#endif
 
   dict1->set(42, 99);
   ASSERT_EQ(99, dict1->index_(42));
@@ -177,18 +179,22 @@ TEST test_dict_internals() {
   ASSERT_EQ(1, len(dict2));
   ASSERT(str_equals(bar, dict2->index_(foo)));
 
+#if 0
   ASSERT_EQ_FMT(32, dict2->entry_->header_.obj_len, "%d");
   ASSERT_EQ_FMT(64, dict2->keys_->header_.obj_len, "%d");
   ASSERT_EQ_FMT(64, dict2->values_->header_.obj_len, "%d");
+#endif
 
   auto dict_si = NewDict<Str*, int>();
   StackRoots _roots4({&dict_si});
   dict_si->set(foo, 42);
   ASSERT_EQ(1, len(dict_si));
 
+#if 0
   ASSERT_EQ_FMT(32, dict_si->entry_->header_.obj_len, "%d");
   ASSERT_EQ_FMT(64, dict_si->keys_->header_.obj_len, "%d");
   ASSERT_EQ_FMT(32, dict_si->values_->header_.obj_len, "%d");
+#endif
 
   auto dict_is = NewDict<int, Str*>();
   StackRoots _roots5({&dict_is});
@@ -197,9 +203,11 @@ TEST test_dict_internals() {
 
   ASSERT_EQ(1, len(dict_is));
 
+#if 0
   ASSERT_EQ_FMT(32, dict_is->entry_->header_.obj_len, "%d");
   ASSERT_EQ_FMT(32, dict_is->keys_->header_.obj_len, "%d");
   ASSERT_EQ_FMT(64, dict_is->values_->header_.obj_len, "%d");
+#endif
 
   auto two = StrFromC("two");
   StackRoots _roots6({&two});

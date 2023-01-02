@@ -133,7 +133,8 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
     auto slab = reinterpret_cast<Slab<RawObject*>*>(header);
 
     // TODO: mark and sweep should store number of pointers directly
-    int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
+    // int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
+    int n = NUM_POINTERS(slab->header_);
 
     for (int i = 0; i < n; ++i) {
       RawObject* child = slab->items_[i];

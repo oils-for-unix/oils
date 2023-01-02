@@ -34,9 +34,11 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(HeapTag::FixedSize, list1->header_.heap_tag, "%d");
   ASSERT_EQ_FMT(HeapTag::FixedSize, list2->header_.heap_tag, "%d");
 
+#if 0
   // 8 byte obj header + 2 integers + pointer
   ASSERT_EQ_FMT(24, list1->header_.obj_len, "%d");
   ASSERT_EQ_FMT(24, list2->header_.obj_len, "%d");
+#endif
 
   // Make sure they're on the heap
 #ifndef MARK_SWEEP
@@ -55,8 +57,10 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(6, list1->capacity_, "%d");
   ASSERT_EQ_FMT(HeapTag::Opaque, list1->slab_->header_.heap_tag, "%d");
 
+#if 0
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
   ASSERT_EQ_FMT(32, list1->slab_->header_.obj_len, "%d");
+#endif
 
   ASSERT_EQ_FMT(11, list1->index_(0), "%d");
   ASSERT_EQ_FMT(22, list1->index_(1), "%d");
@@ -71,8 +75,10 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(14, list1->capacity_, "%d");
   ASSERT_EQ_FMT(7, len(list1), "%d");
 
+#if 0
   // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
   ASSERT_EQ_FMT(64, list1->slab_->header_.obj_len, "%d");
+#endif
 
   ASSERT_EQ_FMT(11, list1->index_(0), "%d");
   ASSERT_EQ_FMT(22, list1->index_(1), "%d");
