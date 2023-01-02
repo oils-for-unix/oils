@@ -1,8 +1,12 @@
+#include "mycpp/gc_list.h"
+
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
-#include "mycpp/runtime.h"
+#include "mycpp/common.h"
+#include "mycpp/gc_alloc.h"  // gHeap
+#include "mycpp/gc_obj.h"
 #include "vendor/greatest.h"
 
 void Print(List<Str*>* parts) {

@@ -1,9 +1,13 @@
 #ifndef MYCPP_GC_LIST_H
 #define MYCPP_GC_LIST_H
 
+#include <stdlib.h>  // memcpy
+
 #include <algorithm>  // sort() is templated
 
+#include "mycpp/common.h"  // DCHECK
 #include "mycpp/comparators.h"
+#include "mycpp/gc_alloc.h"  // Alloc
 #include "mycpp/gc_slab.h"
 
 class ValueError;

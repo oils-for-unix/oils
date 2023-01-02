@@ -3,6 +3,9 @@
 
 #include <utility>  // std::is_pointer
 
+#include "mycpp/common.h"  // DISALLOW_COPY_AND_ASSIGN
+#include "mycpp/gc_obj.h"  // GC_OBJ
+
 // Return the size of a resizeable allocation.  For now we just round up by
 // powers of 2. This could be optimized later.  CPython has an interesting
 // policy in listobject.c.
@@ -30,10 +33,10 @@ template <typename T>
 class Slab {
  public:
   // slabs of pointers are scanned; slabs of ints/bools are opaque.
-  explicit Slab(uint32_t num_pointers)
+  explicit Slab(unsigned num_items)
       : GC_SLAB(header_,
                 std::is_pointer<T>() ? HeapTag::Scanned : HeapTag::Opaque,
-                num_pointers) {
+                num_items) {
   }
   GC_OBJ(header_);
   T items_[1];  // variable length
