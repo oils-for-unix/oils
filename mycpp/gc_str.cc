@@ -1,9 +1,14 @@
+#include "mycpp/gc_str.h"
+
 #include <ctype.h>  // isalpha(), isdigit()
 #include <stdarg.h>
 
 #include <regex>
 
-#include "mycpp/runtime.h"
+#include "mycpp/common.h"
+#include "mycpp/gc_alloc.h"     // NewStr()
+#include "mycpp/gc_builtins.h"  // StringToInteger()
+#include "mycpp/gc_list.h"      // join(), split() use it
 
 GLOBAL_STR(kEmptyString, "");
 
@@ -542,6 +547,13 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
   }
 
   return StrFromC(buf.c_str(), buf.size());
+}
+
+Str* StrIter::Value() {  // similar to index_()
+  Str* result = NewStr(1);
+  result->data_[0] = s_->data_[i_];
+  DCHECK(result->data_[1] == '\0');
+  return result;
 }
 
 Str* StrFormat(const char* fmt, ...) {

@@ -4,6 +4,7 @@
 #include <algorithm>  // sort() is templated
 
 #include "mycpp/comparators.h"
+#include "mycpp/gc_slab.h"
 
 class ValueError;
 

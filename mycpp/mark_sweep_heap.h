@@ -130,8 +130,4 @@ class MarkSweepHeap {
   DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);
 };
 
-#ifndef BUMP_LEAK
-extern MarkSweepHeap gHeap;
-#endif
-
 #endif  // MARKSWEEP_HEAP_H

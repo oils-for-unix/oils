@@ -1,6 +1,9 @@
 #ifndef MYCPP_GC_STR_H
 #define MYCPP_GC_STR_H
 
+#include "mycpp/common.h"  // DISALLOW_COPY_AND_ASSIGN
+#include "mycpp/gc_obj.h"  // GC_OBJ
+
 template <typename T>
 class List;
 
@@ -98,54 +101,6 @@ inline int len(const Str* s) {
 #endif
 }
 
-// Notes:
-// - sizeof("foo") == 4, for the NUL terminator.
-// - gc_heap_test.cc has a static_assert that GlobalStr matches Str.  We don't
-// put it here because it triggers -Winvalid-offsetof
-
-//
-// String "Constructors".  We need these because of the "flexible array"
-// pattern.  I don't think "new Str()" can do that, and placement new would
-// require mycpp to generate 2 statements everywhere.
-//
-
-inline Str* NewStr(int len) {
-  int obj_len = kStrHeaderSize + len + 1;
-
-  // only allocation is unconditionally returned
-  void* place = gHeap.Allocate(obj_len);
-
-  auto s = new (place) Str();
-#ifdef MARK_SWEEP
-  STR_LEN(s->header_) = len;
-#else
-  // reversed in len() to derive string length
-  header_.obj_len = kStrHeaderSize + str_len + 1;
-#endif
-  return s;
-}
-
-// Like NewStr, but allocate more than you need, e.g. for snprintf() to write
-// into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
-inline Str* OverAllocatedStr(int len) {
-  int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Allocate(obj_len);
-  auto s = new (place) Str();
-  return s;
-}
-
-inline Str* StrFromC(const char* data, int len) {
-  Str* s = NewStr(len);
-  memcpy(s->data_, data, len);
-  DCHECK(s->data_[len] == '\0');  // should be true because Heap was zeroed
-
-  return s;
-}
-
-inline Str* StrFromC(const char* data) {
-  return StrFromC(data, strlen(data));
-}
-
 Str* StrFormat(const char* fmt, ...);
 Str* StrFormat(Str* fmt, ...);
 
@@ -165,13 +120,7 @@ class StrIter {
   bool Done() {
     return i_ >= len_;
   }
-  Str* Value() {  // similar to index_()
-    // TODO: create 256 GLOBAL_STR() and return those instead!
-    Str* result = NewStr(1);
-    result->data_[0] = s_->data_[i_];
-    // assert(result->data_[1] == '\0');
-    return result;
-  }
+  Str* Value();  // similar to index_()
 
  private:
   Str* s_;
@@ -184,6 +133,11 @@ class StrIter {
 bool maybe_str_equals(Str* left, Str* right);
 
 extern Str* kEmptyString;
+
+// GlobalStr notes:
+// - sizeof("foo") == 4, for the NUL terminator.
+// - gc_heap_test.cc has a static_assert that GlobalStr matches Str.  We don't
+// put it here because it triggers -Winvalid-offsetof
 
 template <int N>
 class GlobalStr {

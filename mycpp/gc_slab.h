@@ -55,13 +55,4 @@ class GlobalSlab {
 // The first field is items_
 const int kSlabHeaderSize = offsetof(Slab<int>, items_);
 
-// Note: entries will be zero'd because the Heap is zero'd.
-template <typename T>
-inline Slab<T>* NewSlab(int len) {
-  int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
-  void* place = gHeap.Allocate(obj_len);
-  auto slab = new (place) Slab<T>(len);  // placement new
-  return slab;
-}
-
 #endif  // GC_SLAB_H
