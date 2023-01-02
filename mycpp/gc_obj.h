@@ -29,6 +29,8 @@ const unsigned kZeroMask = 0;  // for types with no pointers
 const int kNoObjLen = 0x0badbeef;
 const int kNoObjId = 42;
 
+const int kMaxObjId = (1 << 24) - 1;  // 24 bits
+
 // The first member of every GC-managed object is 'ObjHeader header_'.
 // (There's no inheritance!)
 struct ObjHeader {

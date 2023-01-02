@@ -448,18 +448,24 @@ soil-run() {
 # Misc Tests
 #
 
-
 gc-parse-smoke() {
   local variant=${1:-opt}
+  local file=${2:-configure}
 
   local bin=_bin/cxx-$variant/osh_eval
   ninja $bin
 
   _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
-    $bin -n configure
+    $bin --ast-format none -n $file
 
   # No leaks
   # OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -n -c '('
+}
+
+gc-parse-big() {
+  local variant=${1:-opt}
+
+  gc-parse-smoke $variant benchmarks/testdata/configure-coreutils
 }
 
 gc-run-smoke() {

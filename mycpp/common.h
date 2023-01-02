@@ -24,6 +24,9 @@
   #define DCHECK(cond) assert(cond)
 #endif
 
+// TODO: all assert() should be DCHECK() or CHECK()
+#define CHECK(cond) assert(cond)
+
 #define FAIL(reason) assert(false)
 
 enum Reason { kShouldNotGetHere, kNotImplemented };

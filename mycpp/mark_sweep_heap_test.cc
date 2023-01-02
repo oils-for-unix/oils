@@ -9,6 +9,46 @@ TEST for_code_coverage() {
   PASS();
 }
 
+TEST mark_set_test() {
+  MarkSet mark_set;
+  mark_set.ReInit(20);
+
+  for (int i = 0; i < 20; ++i) {
+    ASSERT_EQ(false, mark_set.IsMarked(i));
+  }
+
+  for (int i = 0; i < 10; ++i) {
+    mark_set.Mark(i);
+    ASSERT_EQ(true, mark_set.IsMarked(i));
+  }
+
+  for (int i = 10; i < 20; ++i) {
+    ASSERT_EQ(false, mark_set.IsMarked(i));
+  }
+
+  mark_set.Debug();
+
+  // Another collection
+  int big = 1000;
+  mark_set.ReInit(big);
+
+  for (int i = 0; i < 20; ++i) {
+    ASSERT_EQ(false, mark_set.IsMarked(i));
+  }
+  for (int i = big - 100; i < big; ++i) {
+    ASSERT_EQ(false, mark_set.IsMarked(i));
+  }
+
+  ASSERT_EQ(false, mark_set.IsMarked(big));
+  mark_set.Mark(big);
+  ASSERT_EQ(true, mark_set.IsMarked(big));
+
+  // ASAN will detect buffer overflow
+  // mark_set.Mark(13220);
+
+  PASS();
+}
+
 TEST api_test() {
 #ifdef GC_ALWAYS
   // no objects live
@@ -156,6 +196,7 @@ int main(int argc, char **argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(for_code_coverage);
+  RUN_TEST(mark_set_test);
   RUN_TEST(api_test);
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);

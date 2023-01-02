@@ -83,6 +83,9 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
   num_allocated_++;
   bytes_allocated_ += num_bytes;
 
+  // Right now the object ID grows indefinitely
+  current_obj_id_++;
+
   return result;
 }
 

@@ -5,24 +5,54 @@
 #include <vector>
 
 class MarkSet {
-  // Reserve a few objects to start
-  MarkSet() : bits_(1024) {
+ public:
+  MarkSet() : bits_() {
   }
-  void Clear() {
-    // TODO: memset the vector; don't empty it
+
+  // ReInit() must be called at the start of MarkObjects().  Allocate() should
+  // keep track of the maximum object ID.
+  void ReInit(int max_obj_id) {
+    // TODO: exit with a good error message, and TEST it!  Another thing we
+    // could is disable collection if there are too many objects?  The process
+    // MIGHT finish, and the OS will clean up.
+    CHECK(max_obj_id <= kMaxObjId);
+
+    // https://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
+    std::fill(bits_.begin(), bits_.end(), 0);
+    int max_byte_index = (max_obj_id >> 3) + 1;  // round up
+    // log("ReInit max_byte_index %d", max_byte_index);
+    bits_.resize(max_byte_index);
   }
+
+  // Called by MarkObjects()
   void Mark(int obj_id) {
+    int byte_index = obj_id >> 3;  // 8 bits per byte
+    int bit_index = obj_id & 0b111;
+    // log("byte_index %d %d", byte_index, bit_index);
+    bits_[byte_index] |= (1 << bit_index);
   }
+
+  // Called by Sweep()
   bool IsMarked(int obj_id) {
-    return false;
+    int byte_index = obj_id >> 3;
+    int bit_index = obj_id & 0b111;
+    return bits_[byte_index] & (1 << bit_index);
   }
 
+  // Allocate() will call this when we implement recycling of object IDs
   int NextObjectId() {
-    // TODO: Implement recycling of objects
-    return -1;
+    FAIL(kNotImplemented);
   }
 
-  std::vector<uint8_t> bits_;  // simple index
+  void Debug() {
+    int n = bits_.size();
+    for (int i = 0; i < n; ++i) {
+      printf("%x ", bits_[i]);
+    }
+    printf("\n");
+  }
+
+  std::vector<uint8_t> bits_;  // bit vector indexed by obj_id
 };
 
 class MarkSweepHeap {
@@ -89,6 +119,10 @@ class MarkSweepHeap {
 
   std::vector<void*> live_objs_;
   std::unordered_set<void*> marked_;
+
+  MarkSet mark_set_;
+
+  int current_obj_id_ = 0;
 
  private:
   void DoProcessExit(bool fast_exit);
