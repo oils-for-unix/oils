@@ -31,19 +31,32 @@ const int kNoObjLen = 0x0badbeef;
 // The first member of every GC-managed object is 'ObjHeader header_'.
 // (There's no inheritance!)
 struct ObjHeader {
-  unsigned is_header : 1;    // To distinguish from vtable pointer
-                             // Overlaps with RawObject::points_to_header
-  unsigned type_tag : 7;     // TypeTag, ASDL variant / shared variant
+  unsigned is_header : 1;  // To distinguish from vtable pointer
+                           // Overlaps with RawObject::points_to_header
+  unsigned type_tag : 7;   // TypeTag, ASDL variant / shared variant
+#ifdef MARK_SWEEP
+  // TODO: change to obj_id
   unsigned field_mask : 24;  // For some user-defined classes, so max 16 fields
+#else
+  unsigned field_mask : 24;  // Cheney needs field_maks AND obj_len
+#endif
 
 #ifdef MARK_SWEEP
   unsigned heap_tag : 2;  // HeapTag::Opaque, etc.
+  // TODO: u_mask_npointers_strlen
   unsigned obj_len : 30;  // Mark-sweep: derive Str length, Slab length
 #else
-  unsigned heap_tag : 3;  // Cheney also needs HeapTag::Forwarded
-  unsigned obj_len : 29;  // Cheney: number of bytes to copy
+  unsigned heap_tag : 3;     // Cheney also needs HeapTag::Forwarded
+  unsigned obj_len : 29;     // Cheney: number of bytes to copy
 #endif
 };
+
+#if MARK_SWEEP
+  #define FIELD_MASK(header) (header).field_mask
+  // #define FIELD_MASK(header) (header).u_mask_npointers_strlen
+#else
+  #define FIELD_MASK(header) (header).field_mask
+#endif
 
 // A RawObject* is like a void* -- it can point to any C++ object.  The object
 // may start with either ObjHeader, or vtable pointer then an ObjHeader.

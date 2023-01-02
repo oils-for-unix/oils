@@ -110,7 +110,7 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
     marked_.insert(obj);
 
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
-    int mask = fixed->header_.field_mask;
+    int mask = FIELD_MASK(fixed->header_);
 
     // TODO(Jesse): Put the 16 in a #define
     for (int i = 0; i < 16; ++i) {

@@ -4,6 +4,27 @@
 #include <unordered_set>
 #include <vector>
 
+class MarkSet {
+  // Reserve a few objects to start
+  MarkSet() : bits_(1024) {
+  }
+  void Clear() {
+    // TODO: memset the vector; don't empty it
+  }
+  void Mark(int obj_id) {
+  }
+  bool IsMarked(int obj_id) {
+    return false;
+  }
+
+  int NextObjectId() {
+    // TODO: Implement recycling of objects
+    return -1;
+  }
+
+  std::vector<uint8_t> bits_;  // simple index
+};
+
 class MarkSweepHeap {
  public:
   // reserve 32 frames to start

@@ -79,7 +79,7 @@ class LineReader {
 class BufLineReader : public LineReader {
  public:
   explicit BufLineReader(Str* s) : LineReader(), s_(s), pos_(0) {
-    header_.field_mask |= BufLineReader::field_mask();
+    FIELD_MASK(header_) |= BufLineReader::field_mask();
   }
   virtual Str* readline();
 
@@ -138,7 +138,7 @@ class MutableStr;
 class BufWriter : public Writer {
  public:
   BufWriter() : Writer(), str_(nullptr), len_(0) {
-    header_.field_mask |= field_mask();
+    FIELD_MASK(header_) |= field_mask();
   }
   void write(Str* s) override;
   void flush() override {
