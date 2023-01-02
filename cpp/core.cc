@@ -38,7 +38,7 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
   }
 
   // Now we know how much data we got back
-  s->SetObjLenFromStrLen(length);
+  s->MaybeShrink(length);
   chunks->append(s);
 
   return Tuple2<int, int>(length, 0);
@@ -296,7 +296,7 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
     }
     *p++ = c;
   }
-  buf->SetObjLenFromStrLen(p - buf->data_);
+  buf->MaybeShrink(p - buf->data_);
   return buf;
 }
 

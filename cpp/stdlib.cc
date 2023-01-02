@@ -167,7 +167,7 @@ Str* strftime(Str* s, time_t ts) {
     // No error location info, but leaving it out points reliably to 'printf'
     e_die(StrFromC("strftime() result exceeds 1024 bytes"));
   }
-  result->SetObjLenFromStrLen(n);
+  result->MaybeShrink(n);
   return result;
 }
 

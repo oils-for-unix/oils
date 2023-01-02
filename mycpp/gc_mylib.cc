@@ -204,7 +204,7 @@ Str* BufWriter::getvalue() {
     return kEmptyString;
   } else {
     Str* s = str_;
-    s->SetObjLenFromStrLen(len_);
+    s->MaybeShrink(len_);
     str_ = nullptr;
     len_ = -1;
     return s;

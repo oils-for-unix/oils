@@ -47,7 +47,7 @@ inline Str* UEscape(int codepoint) {
   // 1 for }
   Str* result = OverAllocatedStr(10);
   int n = sprintf(result->data(), "\\u{%x}", codepoint);
-  result->SetObjLenFromStrLen(n);  // truncate to what we wrote
+  result->MaybeShrink(n);  // truncate to what we wrote
   return result;
 }
 

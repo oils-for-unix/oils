@@ -14,12 +14,8 @@ class Str {
     return data_;
   }
 
-  void SetObjLenFromStrLen(int str_len);
-
-  // Useful for getcwd() + PATH_MAX, gethostname() + HOSTNAME_MAX, etc.
-  void SetObjLenFromC() {
-    SetObjLenFromStrLen(strlen(data_));
-  }
+  // Call this after writing into buffer created by OverAllocatedStr()
+  void MaybeShrink(int str_len);
 
   Str* index_(int i);
 
@@ -83,15 +79,23 @@ class Str {
 
 constexpr int kStrHeaderSize = offsetof(Str, data_);
 
-inline void Str::SetObjLenFromStrLen(int str_len) {
-  // header_.obj_len = kStrHeaderSize + str_len + 1;
+// Note: for SmallStr, we might copy into the VALUE
+inline void Str::MaybeShrink(int str_len) {
+#ifdef MARK_SWEEP
   STR_LEN(header_) = str_len;
+#else
+  // reversed in len() to derive string length
+  header_.obj_len = kStrHeaderSize + str_len + 1;
+#endif
 }
 
 inline int len(const Str* s) {
-  // DCHECK(s->header_.obj_len >= kStrHeaderSize - 1);
-  // return s->header_.obj_len - kStrHeaderSize - 1;
+#ifdef MARK_SWEEP
   return STR_LEN(s->header_);
+#else
+  DCHECK(s->header_.obj_len >= kStrHeaderSize - 1);
+  return s->header_.obj_len - kStrHeaderSize - 1;
+#endif
 }
 
 // Notes:
@@ -112,7 +116,12 @@ inline Str* NewStr(int len) {
   void* place = gHeap.Allocate(obj_len);
 
   auto s = new (place) Str();
+#ifdef MARK_SWEEP
   STR_LEN(s->header_) = len;
+#else
+  // reversed in len() to derive string length
+  header_.obj_len = kStrHeaderSize + str_len + 1;
+#endif
   return s;
 }
 

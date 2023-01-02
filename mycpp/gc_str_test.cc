@@ -91,7 +91,7 @@ TEST test_str_creation() {
   // Hm annoying that we have to do a const_cast
   memcpy(s4->data(), "foo", 3);
   strcpy(s4->data(), "foo");
-  s4->SetObjLenFromStrLen(3);
+  s4->MaybeShrink(3);
 
   ASSERT_EQ(3, len(s4));
   ASSERT_EQ(0, strcmp("foo", s4->data_));

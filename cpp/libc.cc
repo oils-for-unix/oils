@@ -20,7 +20,7 @@ Str* gethostname() {
     throw Alloc<OSError>(errno);
   }
   // Important: set the length of the string!
-  result->SetObjLenFromC();
+  result->MaybeShrink(strlen(result->data_));
   return result;
 }
 

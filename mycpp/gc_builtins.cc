@@ -22,7 +22,7 @@ void println_stderr(Str* s) {
 Str* str(int i) {
   Str* s = OverAllocatedStr(kIntBufSize);
   int length = snprintf(s->data(), kIntBufSize, "%d", i);
-  s->SetObjLenFromStrLen(length);
+  s->MaybeShrink(length);
   return s;
 }
 
