@@ -2253,7 +2253,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                   obj_len = 'kNoObjLen'  # don't need length
                 elif obj_tag == 'HeapTag::Scanned':
                   obj_mask = 'kZeroMask'
-                  obj_len = '%d * sizeof(void*) + sizeof(ObjHeader)' % obj_arg
+                  #obj_len = '%d * sizeof(void*) + sizeof(ObjHeader)' % obj_arg
+                  obj_len = str(obj_arg)  # number of pointers
                 elif obj_tag == 'HeapTag::Opaque':
                   obj_mask = 'kZeroMask'
                   obj_len = 'kNoObjLen'

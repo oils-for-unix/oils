@@ -1209,7 +1209,7 @@ int Float = 3;
 int Bool = 4;
 
 _Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) 
-    : GC_CLASS(header_, HeapTag::Scanned, kZeroMask, 4 * sizeof(void*) + sizeof(ObjHeader)) {
+    : GC_CLASS(header_, HeapTag::Scanned, kZeroMask, 4) {
   this->attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
@@ -1237,7 +1237,7 @@ void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
 }
 
 Reader::Reader(List<Str*>* argv, List<int>* spids) 
-    : GC_CLASS(header_, HeapTag::Scanned, kZeroMask, 2 * sizeof(void*) + sizeof(ObjHeader)) {
+    : GC_CLASS(header_, HeapTag::Scanned, kZeroMask, 2) {
   this->argv = argv;
   this->spids = spids;
   this->n = len(argv);
