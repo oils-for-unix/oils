@@ -86,11 +86,6 @@ examples-variant() {
   log "$num_failed of $num_tests tests failed"
   log ''
 
-  # TODO: fix failure and remove this
-  if test $variant = 'gcalways'; then
-    return 0
-  fi
-
   if test $num_failed -ne 0; then
     echo "FAIL: Expected no failures, got $num_failed"
     return 1

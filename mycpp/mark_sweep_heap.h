@@ -77,6 +77,12 @@ class MarkSweepHeap {
   }
 
   void* Allocate(size_t num_bytes);
+  int UnusedObjectId() {
+    // Allocate() increments this
+    // TODO: consult MarkSet for small integers
+    return current_obj_id_;
+  }
+
   void* Reallocate(void* p, size_t num_bytes);
   int MaybeCollect();
   int Collect();

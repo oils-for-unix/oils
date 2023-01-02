@@ -77,7 +77,13 @@ setglobal_compile_flags() {
       flags="$flags -D CHENEY_GC"
       ;;
     (*)
-      flags="$flags -D MARK_SWEEP"
+      case $more_cxx_flags in  # make sure we don't already have a -D GC mode
+        (*BUMP_LEAK*|*CHENEY_GC*)
+          ;;
+        (*)
+          flags="$flags -D MARK_SWEEP"
+          ;;
+      esac
       ;;
   esac
 

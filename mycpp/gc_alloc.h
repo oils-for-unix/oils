@@ -85,8 +85,14 @@ template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
   DCHECK(gHeap.is_initialized_);
 
-  // TODO: get object ID, FindObjHeader(), and set it after construciton
-  return new (gHeap.Allocate(sizeof(T))) T(std::forward<Args>(args)...);
+  void* place = gHeap.Allocate(sizeof(T));
+  T* obj = new (place) T(std::forward<Args>(args)...);
+#if MARK_SWEEP
+  // Hack for now: find the header
+  ObjHeader* header = FindObjHeader(reinterpret_cast<RawObject*>(obj));
+  header->obj_id = gHeap.UnusedObjectId();
+#endif
+  return obj;
 }
 
 //
@@ -108,6 +114,10 @@ inline Str* NewStr(int len) {
   // reversed in len() to derive string length
   s->header_.obj_len = kStrHeaderSize + len + 1;
 #endif
+
+#if MARK_SWEEP
+  s->header_.obj_id = gHeap.UnusedObjectId();
+#endif
   return s;
 }
 
@@ -118,6 +128,9 @@ inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);
   auto s = new (place) Str();
+#if MARK_SWEEP
+  s->header_.obj_id = gHeap.UnusedObjectId();
+#endif
   return s;
 }
 
@@ -142,6 +155,9 @@ inline Slab<T>* NewSlab(int len) {
   int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
   void* place = gHeap.Allocate(obj_len);
   auto slab = new (place) Slab<T>(len);  // placement new
+#if MARK_SWEEP
+  slab->header_.obj_id = gHeap.UnusedObjectId();
+#endif
   return slab;
 }
 
