@@ -181,6 +181,21 @@ class CheneyHeap {
   // mutates free_ and other variables
   void Collect(int to_space_size = 0);
 
+  // Like MarkSweepHeap
+  int MaybeCollect() {
+    return -1;
+  }
+
+  // Like MarkSweepHeap.  TODO: Does this API work?
+  void RootGlobalVar(void* root) {
+  }
+
+  // Like MarkSweepHeap
+  void CleanProcessExit() {
+  }
+  void FastProcessExit() {
+  }
+
 #if GC_STATS
   void Report() {
     log("-----");
@@ -224,6 +239,4 @@ class CheneyHeap {
 void ShowFixedChildren(RawObject* obj);
 #endif
 
-extern CheneyHeap gHeap;
-
-#endif  // GC_HEAP_H
+#endif  // CHENEY_HEAP_H

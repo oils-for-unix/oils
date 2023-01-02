@@ -56,6 +56,7 @@ COMPILERS_VARIANTS_LEAKY = [
 
 GC_PERF_VARIANTS = [
     ('cxx', 'bumpleak'),
+    ('cxx', 'cheney'),
     ('cxx', 'tcmalloc'),
 
     # For tracing allocations, or debugging

@@ -5,6 +5,8 @@
 #include "mycpp/gc_obj.h"
 #include "mycpp/gc_slab.h"
 
+#ifdef CHENEY_GC
+
 CheneyHeap gHeap;
 
 class LayoutForwarded {
@@ -66,20 +68,20 @@ RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
     assert(n > 0);  // detect common problem
     memcpy(new_location, obj, n);
     // log("memcpy %d bytes from %p -> %p", n, obj, new_location);
-#if 0
+  #if 0
     if (obj->heap_tag == HeapTag::Opaque) {
       Str* s = static_cast<Str*>(obj);
       log("from = %s", s->data_);
       Str* s2 = static_cast<Str*>(new_location);
       log("to = %s", s2->data_);
     }
-#endif
+  #endif
     // aligned() like Heap::Allocate()
     free_ += aligned(n);
 
-#if GC_STATS
+  #if GC_STATS
     num_live_objs_++;
-#endif
+  #endif
 
     auto f = reinterpret_cast<LayoutForwarded*>(header);
     f->header_.heap_tag = HeapTag::Forwarded;
@@ -90,10 +92,10 @@ RawObject* CheneyHeap::Relocate(RawObject* obj, ObjHeader* header) {
 }
 
 void CheneyHeap::Collect(int to_space_size) {
-#if GC_STATS
+  #if GC_STATS
   log("--> COLLECT with %d roots", roots_top_);
   num_collections_++;
-#endif
+  #endif
 
   if (to_space_size == 0) {
     to_space_size = from_space_.size_;
@@ -109,17 +111,17 @@ void CheneyHeap::Collect(int to_space_size) {
   free_ = scan;                   // where to copy new entries
   limit_ = scan + to_space_.size_;
 
-#if GC_STATS
+  #if GC_STATS
   num_live_objs_ = 0;
-#endif
+  #endif
 
   for (int i = 0; i < roots_top_; ++i) {
     RawObject** handle = roots_[i];
     auto root = *handle;
-#if GC_VERBOSE
+  #if GC_VERBOSE
     log("%d. handle %p", i, handle);
     log("    root %p", root);
-#endif
+  #endif
 
     if (root) {  // could be nullptr
       auto header = FindObjHeader(root);
@@ -127,7 +129,7 @@ void CheneyHeap::Collect(int to_space_size) {
       // This updates the underlying Str/List/Dict with a forwarding pointer,
       // i.e. for other objects that are pointing to it
       RawObject* new_location = Relocate(root, header);
-#if TODO_BUG
+  #if TODO_BUG
       for (int j = 0; j < roots_top_; ++j) {
         RawObject** handle2 = roots_[j];
         auto root2 = *handle2;
@@ -145,7 +147,7 @@ void CheneyHeap::Collect(int to_space_size) {
         }
       }
 
-#endif
+  #endif
 
       // log("    new location %p", new_location);
 
@@ -208,12 +210,12 @@ void CheneyHeap::Collect(int to_space_size) {
 
   to_space_.Free();
 
-#if GC_STATS
+  #if GC_STATS
   Report();
-#endif
+  #endif
 }
 
-#if GC_STATS
+  #if GC_STATS
 void ShowFixedChildren(RawObject* obj) {
   assert(obj->heap_tag == HeapTag::FixedSize);
   auto fixed = reinterpret_cast<LayoutFixed*>(obj);
@@ -235,7 +237,7 @@ void ShowFixedChildren(RawObject* obj) {
     }
   }
 }
-#endif
+  #endif
 
 void* CheneyHeap::Allocate(int num_bytes) {
   int n = aligned(num_bytes);
@@ -247,18 +249,18 @@ void* CheneyHeap::Allocate(int num_bytes) {
   // it went to forward the pointer.
   assert(n >= static_cast<int>(sizeof(LayoutForwarded)));
 
-#if GC_ALWAYS
+  #if GC_ALWAYS
   Collect();  // force collection to find problems early
-#endif
+  #endif
 
   if (free_ + n <= limit_) {  // Common case: we have space for it.
     return Bump(n);
   }
 
-#if GC_STATS
-  // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
-  //    space_size_);
-#endif
+  #if GC_STATS
+    // log("GC free_ %p,  from_space_ %p, space_size_ %d", free_, from_space_,
+    //    space_size_);
+  #endif
 
   Collect();  // Try to free some space.
 
@@ -273,9 +275,11 @@ void* CheneyHeap::Allocate(int num_bytes) {
   int multiple = 2;
   Collect((from_space_.size_ + n) * multiple);
 
-#if GC_STATS
+  #if GC_STATS
   num_forced_growths_++;
-#endif
+  #endif
 
   return Bump(n);
 }
+
+#endif  // CHENEY_GC

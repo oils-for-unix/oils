@@ -7,7 +7,7 @@
 
 #include "mycpp/common.h"  // DCHECK
 #include "mycpp/comparators.h"
-#include "mycpp/gc_alloc.h"  // Alloc
+#include "mycpp/gc_alloc.h"     // Alloc
 #include "mycpp/gc_builtins.h"  // ValueError
 #include "mycpp/gc_slab.h"
 

@@ -43,9 +43,11 @@ soil-run() {
 
   ./NINJA-config.sh
 
+  # Keep the Cheney build compiling
   ninja _bin/cxx-dbg/osh_eval \
         _bin/cxx-asan/osh_eval \
-        _bin/cxx-opt/osh_eval.stripped
+        _bin/cxx-opt/osh_eval.stripped \
+        _bin/cxx-cheney/osh_eval
 }
 
 oil-slice-demo() {

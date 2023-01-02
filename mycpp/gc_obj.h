@@ -59,6 +59,9 @@ struct ObjHeader {
   #define NUM_POINTERS(header) (header).u_mask_npointers_strlen
 #else
   #define FIELD_MASK(header) (header).field_mask
+                             // TODO: derive from obj_len
+  #define STR_LEN(header) -1
+  #define NUM_POINTERS(header) -1
 #endif
 
 // A RawObject* is like a void* -- it can point to any C++ object.  The object

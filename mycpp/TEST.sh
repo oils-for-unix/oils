@@ -224,13 +224,15 @@ test-runtime() {
 
   # Special test
 
-  local bin=_bin/cxx-asan-D_BUMP_LEAK/mycpp/bump_leak_heap_test
-  ninja $bin
-  run-test-bin $bin
+  for variant in asan ubsan; do
+    local bin=_bin/cxx-$variant-D_BUMP_LEAK/mycpp/bump_leak_heap_test
+    ninja $bin
+    run-test-bin $bin
 
-  local bin=_bin/cxx-ubsan-D_BUMP_LEAK/mycpp/bump_leak_heap_test
-  ninja $bin
-  run-test-bin $bin
+    local bin=_bin/cxx-$variant-D_CHENEY_GC/mycpp/cheney_heap_test
+    ninja $bin
+    run-test-bin $bin
+  done
 
   # Run other tests with all variants
 

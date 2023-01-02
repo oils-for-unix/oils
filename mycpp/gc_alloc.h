@@ -15,6 +15,9 @@ extern BumpLeakHeap gHeap;
 #elif defined(MARK_SWEEP)
   #include "mycpp/mark_sweep_heap.h"
 extern MarkSweepHeap gHeap;
+#elif defined(CHENEY_GC)
+  #include "mycpp/cheney_heap.h"
+extern CheneyHeap gHeap;
 #endif
 
 #define VALIDATE_ROOTS 0
@@ -103,7 +106,7 @@ inline Str* NewStr(int len) {
   STR_LEN(s->header_) = len;
 #else
   // reversed in len() to derive string length
-  header_.obj_len = kStrHeaderSize + str_len + 1;
+  s->header_.obj_len = kStrHeaderSize + len + 1;
 #endif
   return s;
 }

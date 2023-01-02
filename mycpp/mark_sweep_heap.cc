@@ -7,7 +7,7 @@
 #include "mycpp/runtime.h"
 
 // TODO: Remove this guard when we have separate binaries
-#ifndef BUMP_LEAK
+#if !defined(BUMP_LEAK) && !defined(CHENEY_GC)
 
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
@@ -316,4 +316,4 @@ void MarkSweepHeap::FastProcessExit() {
 
 MarkSweepHeap gHeap;
 
-#endif  // BUMP_LEAK
+#endif  // BUMP_LEAK CHENEY_GC

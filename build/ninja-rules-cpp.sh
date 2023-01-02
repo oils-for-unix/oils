@@ -73,14 +73,17 @@ setglobal_compile_flags() {
     (bumpleak)
       flags="$flags -D BUMP_LEAK"
       ;;
+    (cheney)
+      flags="$flags -D CHENEY_GC"
+      ;;
     (*)
       flags="$flags -D MARK_SWEEP"
       ;;
   esac
 
   case $variant in
-    (bumpleak)
-      # make it an optimized build for now
+    (bumpleak|cheney)
+      # Make them optimized builds for now
       flags="$flags -O2 -g"
       ;;
 

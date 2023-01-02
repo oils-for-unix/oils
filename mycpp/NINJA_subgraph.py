@@ -20,14 +20,21 @@ def DefineTargets(ru):
       '//mycpp/cheney_heap', 
       srcs = ['mycpp/cheney_heap.cc'])
 
+  # special test with -D
   ru.cc_binary(
       'mycpp/cheney_heap_test.cc',
       deps = ['//mycpp/cheney_heap'],
-      matrix = COMPILERS_VARIANTS,
+      matrix = [
+        ('cxx', 'asan', '-D CHENEY_GC'),
+        ('cxx', 'ubsan', '-D CHENEY_GC'),
+        ('clang', 'coverage', '-D CHENEY_GC'),
+      ],
       phony_prefix = 'mycpp-unit')
 
   ru.cc_library(
       '//mycpp/runtime', 
+      # TODO: separate into //mycpp/runtime_{marksweep,bumpleak,cheney}
+      deps = [ '//mycpp/cheney_heap' ],
       srcs = [
         'mycpp/bump_leak_heap.cc',
         'mycpp/gc_builtins.cc',
@@ -36,8 +43,6 @@ def DefineTargets(ru):
         'mycpp/mark_sweep_heap.cc',
       ]
   )
-
-  # Unit tests
 
   # Special test with -D
   ru.cc_binary(
