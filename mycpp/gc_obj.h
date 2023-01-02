@@ -27,6 +27,7 @@ const unsigned kZeroMask = 0;  // for types with no pointers
 
 // no obj_len computed for global List/Slab/Dict
 const int kNoObjLen = 0x0badbeef;
+const int kNoObjId = 42;
 
 // The first member of every GC-managed object is 'ObjHeader header_'.
 // (There's no inheritance!)
@@ -35,8 +36,7 @@ struct ObjHeader {
                            // Overlaps with RawObject::points_to_header
   unsigned type_tag : 7;   // TypeTag, ASDL variant / shared variant
 #ifdef MARK_SWEEP
-  // TODO: change to obj_id
-  unsigned field_mask : 24;  // For some user-defined classes, so max 16 fields
+  unsigned obj_id : 24;  // For some user-defined classes, so max 16 fields
 #else
   unsigned field_mask : 24;  // Cheney needs field_maks AND obj_len
 #endif
@@ -52,7 +52,7 @@ struct ObjHeader {
 };
 
 #if MARK_SWEEP
-  #define FIELD_MASK(header) (header).field_mask
+  #define FIELD_MASK(header) (header).u_mask_npointers_strlen
   #define STR_LEN(header) (header).u_mask_npointers_strlen
   #define NUM_POINTERS(header) (header).u_mask_npointers_strlen
 #else
@@ -70,22 +70,22 @@ struct RawObject {
 // ObjHeader.  See mycpp/demo/gc_header.cc.
 
 // Used by hand-written and generated classes
-#define GC_CLASS_FIXED(header_, field_mask, obj_len)                        \
-  header_ {                                                                 \
-    kIsHeader, TypeTag::OtherClass, field_mask, HeapTag::FixedSize, obj_len \
+#define GC_CLASS_FIXED(header_, field_mask, obj_len)                         \
+  header_ {                                                                  \
+    kIsHeader, TypeTag::OtherClass, kNoObjId, HeapTag::FixedSize, field_mask \
   }
 
 // Used by mycpp and frontend/flag_gen.py.  TODO: Sort fields and use
 // HeapTag::Scanned.
-#define GC_CLASS(header_, heap_tag, field_mask, obj_len)          \
-  header_ {                                                       \
-    kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, obj_len \
+#define GC_CLASS(header_, heap_tag, field_mask, obj_len)           \
+  header_ {                                                        \
+    kIsHeader, TypeTag::OtherClass, kNoObjId, heap_tag, field_mask \
   }
 
 // Used by ASDL.  TODO: Sort fields and use HeapTag::Scanned
-#define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len)    \
-  header_ {                                                      \
-    kIsHeader, type_tag, field_mask, HeapTag::FixedSize, obj_len \
+#define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len)     \
+  header_ {                                                       \
+    kIsHeader, type_tag, kNoObjId, HeapTag::FixedSize, field_mask \
   }
 
 #define GC_STR(header_)                                            \
@@ -98,9 +98,9 @@ struct RawObject {
     kIsHeader, TypeTag::Slab, kZeroMask, heap_tag, num_pointers \
   }
 
-#define GC_TUPLE(header_, field_mask, obj_len)                         \
-  header_ {                                                            \
-    kIsHeader, TypeTag::Tuple, field_mask, HeapTag::FixedSize, obj_len \
+#define GC_TUPLE(header_, field_mask, obj_len)                          \
+  header_ {                                                             \
+    kIsHeader, TypeTag::Tuple, kNoObjId, HeapTag::FixedSize, field_mask \
   }
 
 // TODO: could omit this in BUMP_LEAK mode

@@ -50,7 +50,7 @@ TEST field_masks_test() {
   StackRoots _roots({&L});
 
   L->append(1);
-  log("List mask = %d", L->header_.field_mask);
+  log("List mask = %d", FIELD_MASK(L->header_));
 
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
@@ -63,7 +63,7 @@ TEST field_masks_test() {
   // expression!  Gah!
   // d->set(StrFromC("foo"), 3);
 
-  log("Dict mask = %d", d->header_.field_mask);
+  log("Dict mask = %d", FIELD_MASK(d->header_));
 
 #if 0
   ShowFixedChildren(L);
@@ -354,7 +354,7 @@ TEST vtable_test() {
     ShowObj(header);
 
     ASSERT_EQ_FMT(HeapTag::FixedSize, header->heap_tag, "%d");
-    ASSERT_EQ_FMT(0, header->field_mask, "%d");
+    ASSERT_EQ_FMT(0, FIELD_MASK(*header), "%d");
 #if 0
     // casts get rid of warning
     ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len, "%d");
