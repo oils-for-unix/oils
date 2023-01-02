@@ -29,7 +29,6 @@ int main(int argc, char **argv) {
     $main_module::run_tests();
   }
 
-  gBuf.reset();  // free internal buffer for fmtX()
   gHeap.CleanProcessExit();
 }
 EOF
@@ -70,7 +69,6 @@ int main(int argc, char **argv) {
     status = $name::main(args);
   }
 
-  gBuf.reset();  // free internal buffer for fmtX()
   gHeap.FastProcessExit();
 
   return status;

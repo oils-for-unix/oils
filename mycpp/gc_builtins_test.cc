@@ -19,22 +19,6 @@ TEST print_test() {
   PASS();
 }
 
-TEST formatter_test() {
-  gBuf.reset();
-  gBuf.write_const("[", 1);
-  gBuf.format_s(StrFromC("bar"));
-  gBuf.write_const("]", 1);
-  log("value = %s", gBuf.getvalue()->data_);
-
-  gBuf.format_d(42);
-  gBuf.write_const("-", 1);
-  gBuf.format_d(42);
-  gBuf.write_const(".", 1);
-  log("value = %s", gBuf.getvalue()->data_);
-
-  PASS();
-}
-
 TEST bool_test() {
   ASSERT_EQ(false, to_bool(kEmptyString));
   ASSERT_EQ(true, to_bool(StrFromC("a")));
@@ -454,48 +438,59 @@ TEST str_methods_test() {
 }
 
 TEST str_funcs_test() {
+  Str* s = nullptr;
+
+  log("ord()");
+  s = StrFromC("A");
+  print(repr(s));
+  ASSERT_EQ(65, ord(s));
+
+  log("chr()");
+  ASSERT(str_equals(s, chr(65)));
+
   log("str_concat()");
   ASSERT(str_equals0("foodfood", str_concat(kStrFood, kStrFood)));
   ASSERT(str_equals(kEmptyString, str_concat(kEmptyString, kEmptyString)));
 
   log("str_repeat()");
 
-  Str* s = nullptr;
-  Str* result = nullptr;
-  StackRoots _roots({&s, &result});
-
   // -1 is allowed by Python and used by Oil!
   s = StrFromC("abc");
   ASSERT(str_equals(kEmptyString, str_repeat(s, -1)));
   ASSERT(str_equals(kEmptyString, str_repeat(s, 0)));
 
-  result = str_repeat(s, 1);
-  ASSERT(str_equals(s, result));
+  ASSERT(str_equals(s, str_repeat(s, 1)));
 
-  result = str_repeat(s, 3);
-  ASSERT(str_equals0("abcabcabc", result));
+  ASSERT(str_equals0("abcabcabc", str_repeat(s, 3)));
 
-  ASSERT(str_equals0("''", repr(kEmptyString)));
-  ASSERT(str_equals0("\"'\"", repr(StrFromC("'"))));
-  ASSERT(str_equals0("\"'single'\"", repr(StrFromC("'single'"))));
-  ASSERT(str_equals0("'\"double\"'", repr(StrFromC("\"double\""))));
+  log("repr()");
+
+  s = kEmptyString;
+  print(repr(s));
+  ASSERT(str_equals0("''", repr(s)));
+
+  s = StrFromC("'");
+  print(repr(s));
+  ASSERT(str_equals0("\"'\"", repr(s)));
+
+  s = StrFromC("'single'");
+  ASSERT(str_equals0("\"'single'\"", repr(s)));
+
+  s = StrFromC("\"double\"");
+  ASSERT(str_equals0("'\"double\"'", repr(s)));
 
   // this one is truncated
   s = StrFromC("NUL \x00 NUL", 9);
+  print(repr(s));
   ASSERT(str_equals0("'NUL \\x00 NUL'", repr(s)));
 
-  result = repr(StrFromC("tab\tline\nline\r\n"));
-  print(result);
-  ASSERT(str_equals0("'tab\\tline\\nline\\r\\n'", result));
+  s = StrFromC("tab\tline\nline\r\n");
+  print(repr(s));
+  ASSERT(str_equals0("'tab\\tline\\nline\\r\\n'", repr(s)));
 
-  result = repr(StrFromC("high \xFF \xFE high"));
-  ASSERT(str_equals0("'high \\xff \\xfe high'", result));
-
-  s = StrFromC("A");
-  ASSERT_EQ(65, ord(s));
-
-  result = chr(65);
-  ASSERT(str_equals(s, result));
+  s = StrFromC("high \xFF \xFE high");
+  print(repr(s));
+  ASSERT(str_equals0("'high \\xff \\xfe high'", repr(s)));
 
   PASS();
 }
@@ -919,7 +914,6 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(print_test);
-  RUN_TEST(formatter_test);
 
   RUN_TEST(bool_test);
   RUN_TEST(int_test);

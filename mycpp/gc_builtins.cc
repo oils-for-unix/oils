@@ -26,10 +26,50 @@ Str* str(int i) {
   return s;
 }
 
+// Print quoted string.  TODO: use C-style strings (YSTR)
 Str* repr(Str* s) {
-  mylib::FormatStringer f;
-  f.format_r(s);
-  return f.getvalue();
+  // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
+  int n = len(s);
+  int upper_bound = n * 4 + 2;
+
+  Str* result = OverAllocatedStr(upper_bound);
+
+  // Single quote by default.
+  char quote = '\'';
+  if (memchr(s->data_, '\'', n) && !memchr(s->data_, '"', n)) {
+    quote = '"';
+  }
+  char* p = result->data_;
+
+  // From PyString_Repr()
+  *p++ = quote;
+  for (int i = 0; i < n; ++i) {
+    char c = s->data_[i];
+    if (c == quote || c == '\\') {
+      *p++ = '\\';
+      *p++ = c;
+    } else if (c == '\t') {
+      *p++ = '\\';
+      *p++ = 't';
+    } else if (c == '\n') {
+      *p++ = '\\';
+      *p++ = 'n';
+    } else if (c == '\r') {
+      *p++ = '\\';
+      *p++ = 'r';
+    } else if (isprint(c)) {
+      *p++ = c;
+    } else {  // Unprintable is \xff
+      sprintf(p, "\\x%02x", c & 0xff);
+      p += 4;
+    }
+  }
+  *p++ = quote;
+  *p = '\0';
+
+  int length = p - result->data_;
+  result->MaybeShrink(length);
+  return result;
 }
 
 // Helper for str_to_int() that doesn't use exceptions.
