@@ -37,13 +37,13 @@ struct ObjHeader {
   unsigned is_header : 1;  // To distinguish from vtable pointer
                            // Overlaps with RawObject::points_to_header
   unsigned type_tag : 7;   // TypeTag, ASDL variant / shared variant
-#ifdef MARK_SWEEP
+#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   unsigned obj_id : 24;  // For some user-defined classes, so max 16 fields
 #else
   unsigned field_mask : 24;  // Cheney needs field_maks AND obj_len
 #endif
 
-#ifdef MARK_SWEEP
+#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   unsigned heap_tag : 2;                  // HeapTag::Opaque, etc.
   unsigned u_mask_npointers_strlen : 30;  // Mark-sweep: derive Str length, Slab
                                           // length
@@ -53,7 +53,7 @@ struct ObjHeader {
 #endif
 };
 
-#if MARK_SWEEP
+#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   #define FIELD_MASK(header) (header).u_mask_npointers_strlen
   #define STR_LEN(header) (header).u_mask_npointers_strlen
   #define NUM_POINTERS(header) (header).u_mask_npointers_strlen

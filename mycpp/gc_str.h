@@ -84,7 +84,7 @@ constexpr int kStrHeaderSize = offsetof(Str, data_);
 
 // Note: for SmallStr, we might copy into the VALUE
 inline void Str::MaybeShrink(int str_len) {
-#ifdef MARK_SWEEP
+#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   STR_LEN(header_) = str_len;
 #else
   // reversed in len() to derive string length
@@ -93,7 +93,7 @@ inline void Str::MaybeShrink(int str_len) {
 }
 
 inline int len(const Str* s) {
-#ifdef MARK_SWEEP
+#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   return STR_LEN(s->header_);
 #else
   DCHECK(s->header_.obj_len >= kStrHeaderSize - 1);

@@ -99,7 +99,7 @@ inline Str* NewStr(int len) {
   void* place = gHeap.Allocate(obj_len);
 
   auto s = new (place) Str();
-#ifdef MARK_SWEEP
+#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   STR_LEN(s->header_) = len;
 #else
   // reversed in len() to derive string length
@@ -108,8 +108,9 @@ inline Str* NewStr(int len) {
   return s;
 }
 
-// Like NewStr, but allocate more than you need, e.g. for snprintf() to write
-// into.  CALLER IS RESPONSIBLE for calling s->SetObjLenFromStrLen() afterward!
+// Call OverAllocatedStr() when you don't know the length of the string up
+// front, e.g. with snprintf().  CALLER IS RESPONSIBLE for calling
+// s->MaybeShrink() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);
@@ -117,6 +118,7 @@ inline Str* OverAllocatedStr(int len) {
   return s;
 }
 
+// Copy C string into the managed heap.
 inline Str* StrFromC(const char* data, int len) {
   Str* s = NewStr(len);
   memcpy(s->data_, data, len);
@@ -129,7 +131,9 @@ inline Str* StrFromC(const char* data) {
   return StrFromC(data, strlen(data));
 }
 
-// Note: entries will be zero'd because the Heap is zero'd.
+// Create a slab with a number of entries of a certain type.
+// Note: entries will be zero'd because we use calloc().  TODO: Consider
+// zeroing them separately.
 template <typename T>
 inline Slab<T>* NewSlab(int len) {
   int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
