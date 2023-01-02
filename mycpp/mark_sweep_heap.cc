@@ -33,46 +33,24 @@ void MarkSweepHeap::Init(int gc_threshold) {
   roots_.reserve(KiB(1));  // prevent resizing in common case
 }
 
-#if defined(MALLOC_LEAK)
-
-// for testing performance
-void* MarkSweepHeap::Allocate(size_t num_bytes) {
-  return calloc(num_bytes, 1);
-}
-
-void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
-  FAIL(kNotImplemented);
-}
-
 int MarkSweepHeap::MaybeCollect() {
-  return -1;  // no collection
-}
-
-#elif defined(BUMP_LEAK)
-
-#else
-
-int MarkSweepHeap::MaybeCollect() {
-  // Maybe collect BEFORE allocation, because the new object won't be rooted
-  #if GC_ALWAYS
+// Maybe collect BEFORE allocation, because the new object won't be rooted
+#if GC_ALWAYS
   int result = Collect();
-  #else
+#else
   int result = -1;
   if (num_live_ > gc_threshold_) {
     result = Collect();
   }
-  #endif
+#endif
 
   num_gc_points_++;  // this is a manual collection point
   return result;
 }
 
+// Allocate and update stats
 void* MarkSweepHeap::Allocate(size_t num_bytes) {
   // log("Allocate %d", num_bytes);
-
-  //
-  // Allocate and update stats
-  //
 
   void* result = calloc(num_bytes, 1);
   assert(result);
@@ -94,8 +72,6 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
   // This causes a double-free in the GC!
   // return realloc(p, num_bytes);
 }
-
-#endif  // MALLOC_LEAK
 
 void MarkSweepHeap::MarkObjects(RawObject* obj) {
   bool is_marked = marked_.find(obj) != marked_.end();

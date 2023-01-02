@@ -56,8 +56,6 @@ COMPILERS_VARIANTS_LEAKY = [
 
 GC_PERF_VARIANTS = [
     ('cxx', 'bumpleak'),
-    # calling calloc() by iteslf is somehow faster than MarkSweepHeap::Allocate
-    ('cxx', 'mallocleak'),
     ('cxx', 'tcmalloc'),
 
     # For tracing allocations, or debugging
@@ -70,7 +68,6 @@ GC_PERF_VARIANTS = [
 
 COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
     # mainly for unit tests
-    ('cxx', 'gcverbose'),
     ('cxx', 'gcalways'),
 ]
 

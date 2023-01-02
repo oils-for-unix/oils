@@ -215,6 +215,24 @@ TEST int_to_str_test() {
   PASS();
 }
 
+TEST comparators_test() {
+  log("maybe_str_equals()");
+  ASSERT(maybe_str_equals(kEmptyString, kEmptyString));
+  ASSERT(!maybe_str_equals(kEmptyString, nullptr));
+  ASSERT(maybe_str_equals(nullptr, nullptr));
+
+  // TODO: check for this bug elsewhere
+  log("Tuple2<Str*, int> are_equal()");
+  auto t1 = Alloc<Tuple2<Str*, int>>(StrFromC("42"), 42);
+  auto t2 = Alloc<Tuple2<Str*, int>>(StrFromC("42"), 42);
+  auto t3 = Alloc<Tuple2<Str*, int>>(StrFromC("99"), 99);
+
+  ASSERT(are_equal(t1, t2));
+  ASSERT(!are_equal(t2, t3));
+
+  PASS();
+}
+
 GLOBAL_STR(kStrFoo, "foo");
 GLOBAL_STR(kStrBar, "bar");
 GLOBAL_STR(a, "a");
@@ -431,24 +449,6 @@ TEST str_methods_test() {
   result = kSpace->join(empty_list);
   ASSERT(str_equals(kEmptyString, result));
   ASSERT_EQ(0, len(result));
-
-  PASS();
-}
-
-TEST comparators_test() {
-  log("maybe_str_equals()");
-  ASSERT(maybe_str_equals(kEmptyString, kEmptyString));
-  ASSERT(!maybe_str_equals(kEmptyString, nullptr));
-  ASSERT(maybe_str_equals(nullptr, nullptr));
-
-  // TODO: check for this bug elsewhere
-  log("Tuple2<Str*, int> are_equal()");
-  auto t1 = Alloc<Tuple2<Str*, int>>(StrFromC("42"), 42);
-  auto t2 = Alloc<Tuple2<Str*, int>>(StrFromC("42"), 42);
-  auto t3 = Alloc<Tuple2<Str*, int>>(StrFromC("99"), 99);
-
-  ASSERT(are_equal(t1, t2));
-  ASSERT(!are_equal(t2, t3));
 
   PASS();
 }
@@ -928,6 +928,8 @@ int main(int argc, char** argv) {
   RUN_TEST(StringToInteger_test);
   RUN_TEST(str_to_int_test);
   RUN_TEST(int_to_str_test);
+
+  RUN_TEST(comparators_test);
 
   RUN_TEST(str_replace_test);
   RUN_TEST(str_split_test);

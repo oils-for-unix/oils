@@ -93,11 +93,6 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=undefined"
       ;;
 
-    (gcverbose)
-      # show log statements
-      flags="$flags -O0 -g -fsanitize=address -D GC_VERBOSE"
-      ;;
-
     (gcalways)
       flags="$flags -g -D GC_ALWAYS -fsanitize=address"
       ;;
@@ -112,10 +107,6 @@ setglobal_compile_flags() {
       ;;
     (opt32)
       flags="$flags -O2 -g -D OPTIMIZED -m32"
-      ;;
-    (mallocleak)
-      # optimized build with malloc only
-      flags="$flags -O2 -g -D MALLOC_LEAK"
       ;;
     (bumpleak)
       # optimized build with bump allocator
