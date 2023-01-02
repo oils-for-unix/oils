@@ -58,18 +58,32 @@ setglobal_compile_flags() {
   local more_cxx_flags=$2
   local dotd=${3:-}
 
-  # Args from Ninja/shell respected
-  flags="$BASE_CXXFLAGS $more_cxx_flags"
+  # flags from Ninja/shell respected
+  flags="$BASE_CXXFLAGS -I $REPO_ROOT $more_cxx_flags"
 
-  # Environment variables respected
+  # flags from env respected
   local env_flags=${CXXFLAGS:-}
   if test -n "$env_flags"; then
     flags="$flags $env_flags"
   fi
 
-  flags="$flags -D MARK_SWEEP -I $REPO_ROOT"
+  # TODO: bumpleak and cheney should really be separate binaries like
+  # osh_eval.bumpleak.stripped, and mycpp/examples/strings.mycpp.bumpleak
+  case $variant in
+    (bumpleak)
+      flags="$flags -D BUMP_LEAK"
+      ;;
+    (*)
+      flags="$flags -D MARK_SWEEP"
+      ;;
+  esac
 
   case $variant in
+    (bumpleak)
+      # make it an optimized build for now
+      flags="$flags -O2 -g"
+      ;;
+
     (dbg)
       flags="$flags -O0 -g"
       ;;
@@ -107,10 +121,6 @@ setglobal_compile_flags() {
       ;;
     (opt32)
       flags="$flags -O2 -g -D OPTIMIZED -m32"
-      ;;
-    (bumpleak)
-      # optimized build with bump allocator
-      flags="$flags -O2 -g -D BUMP_LEAK"
       ;;
     (tcmalloc)
       flags="$flags -O2 -g -D TCMALLOC"

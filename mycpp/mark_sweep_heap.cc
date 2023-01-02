@@ -6,6 +6,9 @@
 #include "_build/detected-cpp-config.h"  // for GC_TIMING
 #include "mycpp/runtime.h"
 
+// TODO: Remove this guard when we have separate binaries
+#ifndef BUMP_LEAK
+
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
 }
@@ -34,15 +37,15 @@ void MarkSweepHeap::Init(int gc_threshold) {
 }
 
 int MarkSweepHeap::MaybeCollect() {
-// Maybe collect BEFORE allocation, because the new object won't be rooted
-#if GC_ALWAYS
+  // Maybe collect BEFORE allocation, because the new object won't be rooted
+  #if GC_ALWAYS
   int result = Collect();
-#else
+  #else
   int result = -1;
   if (num_live_ > gc_threshold_) {
     result = Collect();
   }
-#endif
+  #endif
 
   num_gc_points_++;  // this is a manual collection point
   return result;
@@ -157,12 +160,12 @@ void MarkSweepHeap::Sweep() {
 }
 
 int MarkSweepHeap::Collect() {
-#ifdef GC_TIMING
+  #ifdef GC_TIMING
   struct timespec start, end;
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start) < 0) {
     assert(0);
   }
-#endif
+  #endif
 
   int num_roots = roots_.size();
   int num_globals = global_roots_.size();
@@ -189,13 +192,13 @@ int MarkSweepHeap::Collect() {
     }
   }
 
-#if 0
+  #if 0
   log("Collect(): num marked %d", marked_.size());
   for (auto marked_obj : marked_ ) {
     auto m = reinterpret_cast<RawObject*>(marked_obj);
     assert(m->heap_tag != HeapTag::Global);  // BUG FIX
   }
-#endif
+  #endif
 
   Sweep();
   if (gc_verbose_) {
@@ -217,7 +220,7 @@ int MarkSweepHeap::Collect() {
     }
   }
 
-#ifdef GC_TIMING
+  #ifdef GC_TIMING
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) < 0) {
     assert(0);
   }
@@ -234,7 +237,7 @@ int MarkSweepHeap::Collect() {
   if (gc_millis > max_gc_millis_) {
     max_gc_millis_ = gc_millis;
   }
-#endif
+  #endif
 
   return num_live_;  // for unit tests only
 }
@@ -311,6 +314,6 @@ void MarkSweepHeap::FastProcessExit() {
   DoProcessExit(true);
 }
 
-#if defined(MARK_SWEEP) && !defined(BUMP_LEAK)
 MarkSweepHeap gHeap;
-#endif
+
+#endif  // BUMP_LEAK

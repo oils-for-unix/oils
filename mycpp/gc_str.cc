@@ -141,7 +141,7 @@ Str* Str::slice(int begin, int end) {
   new_len = std::max(new_len, 0);
   new_len = std::min(new_len, len_);
 
-  /* printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len); */
+  // printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len);
 
   assert(new_len >= 0);
   assert(new_len <= len_);
@@ -149,14 +149,11 @@ Str* Str::slice(int begin, int end) {
   Str* result = NewStr(new_len);
   memcpy(result->data_, data_ + begin, new_len);
 
-  // gHeap.RootOnReturn(result);  // return value rooting
   return result;
 }
 
 // s[begin:]
 Str* Str::slice(int begin) {
-  // log("slice(begin) -> %d frames", gHeap.root_set_.NumFrames());
-
   int len_ = len(this);
   if (begin == 0) {
     return this;  // s[i:] where i == 0 is common in here docs

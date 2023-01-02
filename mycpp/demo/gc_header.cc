@@ -131,6 +131,74 @@ struct ObjHeader {
 
 #endif
 
+struct LayoutGc {
+  ObjHeader header;
+  uint8_t place[1];  // flexible array, for placement new
+};
+
+// Hm I guess this has to be templated.
+
+// 4 steps:
+// 1. allocate untyped data
+// 2. invoke constructor
+// 3. header data known statically
+// 4. header data that's dynamic, like object ID
+
+#define GC_NEW(T, ...)                                                \
+  LayoutGc* untyped = gHeap.Allocate();                               \
+  T* obj = new (untyped.place)(...) untyped.header = T::obj_header(); \
+  untyped.header.obj_id = gHeap.mark_set_.NextObjectId() return obj
+
+// Alloc<T> can solve the  VTABLE problem if we want
+// However it can't solve the code bloat problem
+// you need to be able to do "return GC_NEW()"
+
+// We remove FindHeader etc.
+
+class Point {
+ public:
+  int x;
+  int y;
+  static constexpr ObjHeader object_header() {
+    return ObjHeader{0};
+  }
+};
+
+// Replacement for crazy macro
+// Problem: you can't dynamically assign object ID this way.
+//
+// Actually if you say the ALLOCATOR always does it ... hm.
+// Because it's always in the same place?
+//
+// code bloat isn't that bad actually
+// But yeah you want to reduce it by not having FindObjHeader() in there!!!
+// I think we can do that
+// ---
+// And also if MarkSweepHeap is responsible for it, then you don't have as many
+// code paths You don't have to check every caller of Allocate()
+
+template <typename T>
+T* Alloc() {
+  // return reinterpret_cast<T*>( LayoutGc { T::object_header(), new (malloc(1))
+  // T() }.place );
+
+  // gHeap.Allocate()
+  LayoutGc* untyped =
+      static_cast<LayoutGc*>(malloc(sizeof(ObjHeader) + sizeof(T)));
+  untyped->header = T::object_header();  // It's always before the vtable
+
+  // gHeap.GetObjectId()
+  untyped->header.obj_id = 124;  // dynamic, but ca be done by allocator
+  return new (untyped->place) T();
+}
+
+TEST gc_new_test() {
+  Point* p = Alloc<Point>();
+  log("p = %p", p);
+
+  PASS();
+}
+
 TEST gc_header_test() {
   ObjHeader obj;
   // log("sizeof(Introspect) = %d", sizeof(Introspect));
@@ -894,6 +962,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(demo::gc_new_test);
   RUN_TEST(demo::gc_header_test);
   RUN_TEST(demo::endian_test);
   RUN_TEST(demo::dual_header_test);

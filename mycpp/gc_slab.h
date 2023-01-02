@@ -1,6 +1,8 @@
 #ifndef GC_SLAB_H
 #define GC_SLAB_H
 
+#include <utility>  // std::is_pointer
+
 // Return the size of a resizeable allocation.  For now we just round up by
 // powers of 2. This could be optimized later.  CPython has an interesting
 // policy in listobject.c.

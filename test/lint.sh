@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh
@@ -44,7 +44,7 @@ clang-format() {
 
 cpp-files() {
   shopt -s nullglob
-  for file in asdl/*.cc benchmarks/*.c cpp/*.{cc,h} mycpp/*.{cc,h} \
+  for file in {asdl,core}/*.cc benchmarks/*.c cpp/*.{cc,h} mycpp/*.{cc,h} \
     mycpp/demo/*.{cc,h}; do
 
     echo $file

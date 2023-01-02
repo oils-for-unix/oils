@@ -10,8 +10,6 @@
 #include <cstdlib>  // malloc
 #include <cstring>  // memcpy
 #include <initializer_list>
-#include <new>      // placement new
-#include <utility>  // std::forward
 
 #include "mycpp/common.h"
 
