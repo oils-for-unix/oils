@@ -75,14 +75,19 @@ struct RawObject {
     kIsHeader, TypeTag::OtherClass, kNoObjId, HeapTag::FixedSize, field_mask \
   }
 
-// Used by mycpp and frontend/flag_gen.py.  TODO: Sort fields and use
-// HeapTag::Scanned.
+// Classes with no inheritance (e.g. used by mycpp)
+#define GC_CLASS_SCANNED(header_, num_pointers, obj_len)                     \
+  header_ {                                                                  \
+    kIsHeader, TypeTag::OtherClass, kNoObjId, HeapTag::Scanned, num_pointers \
+  }
+
+// Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
 #define GC_CLASS(header_, heap_tag, field_mask, obj_len)           \
   header_ {                                                        \
     kIsHeader, TypeTag::OtherClass, kNoObjId, heap_tag, field_mask \
   }
 
-// Used by ASDL.  TODO: Sort fields and use HeapTag::Scanned
+// Used by ASDL.  TODO: Sort fields and use GC_CLASS_SCANNED
 #define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len)     \
   header_ {                                                       \
     kIsHeader, type_tag, kNoObjId, HeapTag::FixedSize, field_mask \

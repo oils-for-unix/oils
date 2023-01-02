@@ -2170,10 +2170,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # So we declare them in the right order
             sorted_member_names = pointer_members + non_pointer_members
 
-            if len(pointer_members) == 0:
-              self.field_gc[o] = ('HeapTag::Opaque', None)
-            else:
-              self.field_gc[o] = ('HeapTag::Scanned', len(pointer_members))
+            self.field_gc[o] = ('HeapTag::Scanned', len(pointer_members))
           else:
             # Has inheritance
 
@@ -2250,17 +2247,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 obj_tag, obj_arg = self.field_gc[o]
                 if obj_tag == 'HeapTag::FixedSize':
                   obj_mask = obj_arg
-                  obj_len = 'kNoObjLen'  # don't need length
+                  header_init = 'GC_CLASS_FIXED(header_, %s, sizeof(%s))' % (
+                      obj_mask, o.name)
                 elif obj_tag == 'HeapTag::Scanned':
-                  obj_mask = 'kZeroMask'
-                  #obj_len = '%d * sizeof(void*) + sizeof(ObjHeader)' % obj_arg
-                  obj_len = str(obj_arg)  # number of pointers
-                elif obj_tag == 'HeapTag::Opaque':
-                  obj_mask = 'kZeroMask'
-                  obj_len = 'kNoObjLen'
+                  num_pointers = obj_arg
+                  header_init = 'GC_CLASS_SCANNED(header_, %s, sizeof(%s))' % (
+                      num_pointers, o.name)
+                else: 
+                  raise AssertionError(o.name)
 
                 self.write('\n')
-                self.write('    : GC_CLASS(header_, %s, %s, %s)' % (obj_tag, obj_mask, obj_len))
+                self.write('    : %s' % header_init)
 
               # Check for Base.__init__(self, ...) and move that to the initializer list.
 
