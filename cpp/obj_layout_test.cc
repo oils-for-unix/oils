@@ -76,10 +76,12 @@ TEST sizeof_core_types() {
   ASSERT(min_obj_size <= short_str_size);
 #endif
 
+#if 0
   char* p = static_cast<char*>(gHeap.Allocate(17));
   char* q = static_cast<char*>(gHeap.Allocate(9));
   log("p = %p", p);
   log("q = %p", q);
+#endif
 
   // Str = 16 and List = 24.
   // Rejected ideas about slicing:

@@ -86,11 +86,18 @@ T* Alloc(Args&&... args) {
   DCHECK(gHeap.is_initialized_);
 
   void* place = gHeap.Allocate(sizeof(T));
+#if MARK_SWEEP
+  // IMPORTANT: save the object ID before calling placement new, which can
+  // invoke Allocate() again!
+  int obj_id = gHeap.UnusedObjectId();
+#endif
+
   T* obj = new (place) T(std::forward<Args>(args)...);
+
 #if MARK_SWEEP
   // Hack for now: find the header
   ObjHeader* header = FindObjHeader(reinterpret_cast<RawObject*>(obj));
-  header->obj_id = gHeap.UnusedObjectId();
+  header->obj_id = obj_id;
 #endif
   return obj;
 }

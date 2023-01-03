@@ -77,19 +77,21 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
 }
 
 void MarkSweepHeap::MarkObjects(RawObject* obj) {
-  bool is_marked = marked_.find(obj) != marked_.end();
+  ObjHeader* header = FindObjHeader(obj);
+  int obj_id = header->obj_id;
+  bool is_marked = mark_set_.IsMarked(obj_id);
+
   if (is_marked) {
     return;
   }
 
-  auto header = FindObjHeader(obj);
   switch (header->heap_tag) {
   case HeapTag::Opaque:
-    marked_.insert(obj);
+    mark_set_.Mark(obj_id);
     break;
 
   case HeapTag::FixedSize: {
-    marked_.insert(obj);
+    mark_set_.Mark(obj_id);
 
     auto fixed = reinterpret_cast<LayoutFixed*>(header);
     int mask = FIELD_MASK(fixed->header_);
@@ -107,7 +109,7 @@ void MarkSweepHeap::MarkObjects(RawObject* obj) {
   }
 
   case HeapTag::Scanned: {
-    marked_.insert(obj);
+    mark_set_.Mark(obj_id);
 
     // no vtable
     assert(reinterpret_cast<void*>(header) == reinterpret_cast<void*>(obj));
@@ -144,7 +146,8 @@ void MarkSweepHeap::Sweep() {
     void* obj = live_objs_[i];
     assert(obj);  // malloc() shouldn't have returned nullptr
 
-    bool is_live = marked_.find(obj) != marked_.end();
+    ObjHeader* header = FindObjHeader(reinterpret_cast<RawObject*>(obj));
+    bool is_live = mark_set_.IsMarked(header->obj_id);
     if (is_live) {
       live_objs_[last_live_index++] = obj;
     } else {
@@ -153,7 +156,6 @@ void MarkSweepHeap::Sweep() {
     }
   }
   live_objs_.resize(last_live_index);  // remove dangling objects
-  marked_.clear();
 
   num_collections_++;
   max_survived_ = std::max(max_survived_, num_live_);
@@ -176,6 +178,9 @@ int MarkSweepHeap::Collect() {
         num_collections_, num_roots + num_globals, num_globals, num_live_);
   }
 
+  // Resize it
+  mark_set_.ReInit(current_obj_id_);
+
   // Note: Can we get rid of double pointers?
 
   for (int i = 0; i < num_roots; ++i) {
@@ -194,6 +199,7 @@ int MarkSweepHeap::Collect() {
 
   #if 0
   log("Collect(): num marked %d", marked_.size());
+
   for (auto marked_obj : marked_ ) {
     auto m = reinterpret_cast<RawObject*>(marked_obj);
     assert(m->heap_tag != HeapTag::Global);  // BUG FIX

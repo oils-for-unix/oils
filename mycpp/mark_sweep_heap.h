@@ -1,7 +1,6 @@
 #ifndef MARKSWEEP_HEAP_H
 #define MARKSWEEP_HEAP_H
 
-#include <unordered_set>
 #include <vector>
 
 class MarkSet {
@@ -26,6 +25,9 @@ class MarkSet {
 
   // Called by MarkObjects()
   void Mark(int obj_id) {
+    DCHECK(obj_id >= 0);
+    // log("obj id %d", obj_id);
+    DCHECK(!IsMarked(obj_id));
     int byte_index = obj_id >> 3;  // 8 bits per byte
     int bit_index = obj_id & 0b111;
     // log("byte_index %d %d", byte_index, bit_index);
@@ -34,6 +36,7 @@ class MarkSet {
 
   // Called by Sweep()
   bool IsMarked(int obj_id) {
+    DCHECK(obj_id >= 0);
     int byte_index = obj_id >> 3;
     int bit_index = obj_id & 0b111;
     return bits_[byte_index] & (1 << bit_index);
@@ -46,10 +49,21 @@ class MarkSet {
 
   void Debug() {
     int n = bits_.size();
+    dprintf(2, "[ ");
     for (int i = 0; i < n; ++i) {
-      printf("%x ", bits_[i]);
+      dprintf(2, "%02x ", bits_[i]);
     }
-    printf("\n");
+    dprintf(2, "] (%d bytes) \n", n);
+    dprintf(2, "[ ");
+    int num_bits = 0;
+    for (int i = 0; i < n; ++i) {
+      for (int j = 0; j < 8; ++j) {
+        int bit = (bits_[i] & (1 << j)) != 0;
+        dprintf(2, "%d", bit);
+        num_bits += bit;
+      }
+    }
+    dprintf(2, " ] (%d bits set)\n", num_bits);
   }
 
   std::vector<uint8_t> bits_;  // bit vector indexed by obj_id
@@ -80,6 +94,7 @@ class MarkSweepHeap {
   int UnusedObjectId() {
     // Allocate() increments this
     // TODO: consult MarkSet for small integers
+    // log("  unused -> %d", current_obj_id_);
     return current_obj_id_;
   }
 
@@ -124,8 +139,6 @@ class MarkSweepHeap {
   std::vector<RawObject*> global_roots_;
 
   std::vector<void*> live_objs_;
-  std::unordered_set<void*> marked_;
-
   MarkSet mark_set_;
 
   int current_obj_id_ = 0;
