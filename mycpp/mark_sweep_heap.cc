@@ -89,10 +89,6 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
 // - Tag::{FixedSize,Scanned} are also pushed on the gray stack
 
 void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
-  if (obj == nullptr) {
-    return;
-  }
-
   ObjHeader* header = FindObjHeader(obj);
   int obj_id = header->obj_id;
 
@@ -112,8 +108,7 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
     gray_stack_.push_back(header);  // Push the header, not the object!
     break;
 
-  case HeapTag::Global:
-    // don't mark or push
+  case HeapTag::Global:  // don't mark or push
     break;
 
   default:
@@ -133,7 +128,10 @@ void MarkSweepHeap::TraceChildren() {
 
       for (int i = 0; i < kFieldMaskBits; ++i) {
         if (mask & (1 << i)) {
-          MaybeMarkAndPush(fixed->children_[i]);
+          RawObject* child = fixed->children_[i];
+          if (child) {
+            MaybeMarkAndPush(child);
+          }
         }
       }
       break;
@@ -146,12 +144,12 @@ void MarkSweepHeap::TraceChildren() {
 
       auto slab = reinterpret_cast<Slab<RawObject*>*>(header);
 
-      // TODO: mark and sweep should store number of pointers directly
-      // int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
       int n = NUM_POINTERS(slab->header_);
-
       for (int i = 0; i < n; ++i) {
-        MaybeMarkAndPush(slab->items_[i]);
+        RawObject* child = slab->items_[i];
+        if (child) {
+          MaybeMarkAndPush(child);
+        }
       }
       break;
     }
@@ -204,16 +202,23 @@ int MarkSweepHeap::Collect() {
   // Resize it
   mark_set_.ReInit(current_obj_id_);
 
+  // Mark roots.
   // Note: It might be nice to get rid of double pointers
   for (int i = 0; i < num_roots; ++i) {
     RawObject* root = *(roots_[i]);
-    MaybeMarkAndPush(root);
+    if (root) {
+      MaybeMarkAndPush(root);
+    }
   }
 
   for (int i = 0; i < num_globals; ++i) {
-    MaybeMarkAndPush(global_roots_[i]);
+    RawObject* root = global_roots_[i];
+    if (root) {
+      MaybeMarkAndPush(root);
+    }
   }
 
+  // Traverse object graph.
   TraceChildren();
 
   Sweep();

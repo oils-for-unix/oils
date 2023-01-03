@@ -163,6 +163,25 @@ cachegrind() {
     -- "$@"
 }
 
+cachegrind-parse-configure-coreutils() {
+  ### Similar to benchmarks/gc, benchmarks/uftrace
+
+  local bin=_bin/cxx-opt/osh_eval
+  ninja $bin
+  local out=_tmp/parse.configure-coreutils.txt 
+
+  local -a cmd=( 
+    $bin --ast-format none -n
+    benchmarks/testdata/configure-coreutils )
+
+  time "${cmd[@]}"
+
+  time cachegrind $out "${cmd[@]}"
+
+  echo
+  cat $out
+}
+
 cachegrind-demo() {
   #local sh=bash
   local sh=zsh
