@@ -1,13 +1,18 @@
+#include "mycpp/mark_sweep_heap.h"
+
 #include <inttypes.h>  // PRId64
+#include <stdlib.h>    // getenv()
+#include <string.h>    // strlen()
 #include <sys/time.h>  // gettimeofday()
 #include <time.h>      // clock_gettime(), CLOCK_PROCESS_CPUTIME_ID
 #include <unistd.h>    // STDERR_FILENO
 
 #include "_build/detected-cpp-config.h"  // for GC_TIMING
-#include "mycpp/runtime.h"
+#include "mycpp/gc_builtins.h"           // StringToInteger()
+#include "mycpp/gc_slab.h"
 
 // TODO: Remove this guard when we have separate binaries
-#if !defined(BUMP_LEAK) && !defined(CHENEY_GC)
+#if MARK_SWEEP
 
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
@@ -322,4 +327,4 @@ void MarkSweepHeap::FastProcessExit() {
 
 MarkSweepHeap gHeap;
 
-#endif  // BUMP_LEAK CHENEY_GC
+#endif  // MARK_SWEEP

@@ -1,3 +1,6 @@
+#include <inttypes.h>
+#include <limits.h>  // HOST_NAME_MAX
+#include <string.h>  // memcpy()
 #include <time.h>    // strftime()
 #include <unistd.h>  // gethostname()
 

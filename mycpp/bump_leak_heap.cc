@@ -5,6 +5,7 @@
 #include <inttypes.h>  // PRId64
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>  // memcpy
 #include <unistd.h>  // STDERR_FILENO
 
 #include "mycpp/common.h"  // aligned

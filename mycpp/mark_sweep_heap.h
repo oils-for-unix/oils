@@ -3,6 +3,9 @@
 
 #include <vector>
 
+#include "mycpp/common.h"
+#include "mycpp/gc_obj.h"
+
 class MarkSet {
  public:
   MarkSet() : bits_() {
