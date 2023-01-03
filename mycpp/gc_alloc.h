@@ -3,6 +3,8 @@
 #ifndef MYCPP_GC_ALLOC_H
 #define MYCPP_GC_ALLOC_H
 
+#include <string.h>  // strlen
+
 #include <new>      // placement new
 #include <utility>  // std::forward
 

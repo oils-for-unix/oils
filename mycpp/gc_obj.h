@@ -1,6 +1,8 @@
 #ifndef MYCPP_GC_OBJ_H
 #define MYCPP_GC_OBJ_H
 
+#include <stdint.h>  // uint8_t
+
 namespace HeapTag {
 const int Global = 0;     // Don't mark or sweep.
                           // Cheney: Don't copy or scan.

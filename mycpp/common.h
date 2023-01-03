@@ -6,16 +6,9 @@
 #define COMMON_H
 
 #include <assert.h>  // assert()
-#include <ctype.h>   // isalpha(), isdigit()
-#include <limits.h>  // CHAR_BIT
 #include <stdarg.h>  // va_list, etc.
 #include <stddef.h>  // max_align_t
-#include <stdint.h>  // uint8_t
 #include <stdio.h>   // vprintf
-#include <stdlib.h>
-#include <string.h>  // strlen
-
-#include <initializer_list>
 
 // opt variants pass -D OPTIMIZED
 #ifdef OPTIMIZED

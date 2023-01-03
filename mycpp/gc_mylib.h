@@ -3,6 +3,8 @@
 #ifndef MYCPP_GC_MYLIB_H
 #define MYCPP_GC_MYLIB_H
 
+#include <limits.h>  // CHAR_BIT
+
 template <class K, class V>
 class Dict;
 

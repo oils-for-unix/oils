@@ -2,6 +2,7 @@
 
 #include "cpp/core.h"
 
+#include <ctype.h>  // ispunct()
 #include <errno.h>
 #include <math.h>  // fmod()
 #include <pwd.h>   // passwd

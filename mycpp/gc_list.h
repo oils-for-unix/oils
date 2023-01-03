@@ -1,7 +1,7 @@
 #ifndef MYCPP_GC_LIST_H
 #define MYCPP_GC_LIST_H
 
-#include <stdlib.h>  // memcpy
+#include <string.h>  // memcpy
 
 #include <algorithm>  // sort() is templated
 
