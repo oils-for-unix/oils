@@ -104,7 +104,10 @@ class MarkSweepHeap {
   void* Reallocate(void* p, size_t num_bytes);
   int MaybeCollect();
   int Collect();
-  void MarkObjects(RawObject* obj);
+
+  void MaybeMarkAndPush(RawObject* obj);
+  void TraceChildren();
+
   void Sweep();
 
   void PrintStats(int fd);  // public for testing
@@ -142,6 +145,8 @@ class MarkSweepHeap {
   std::vector<RawObject*> global_roots_;
 
   std::vector<void*> live_objs_;
+
+  std::vector<ObjHeader*> gray_stack_;
   MarkSet mark_set_;
 
   int current_obj_id_ = 0;

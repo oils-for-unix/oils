@@ -55,10 +55,14 @@ struct ObjHeader {
 #endif
 };
 
+// TODO: we could determine the max statically!
+const int kFieldMaskBits = 16;
+
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   #define FIELD_MASK(header) (header).u_mask_npointers_strlen
   #define STR_LEN(header) (header).u_mask_npointers_strlen
   #define NUM_POINTERS(header) (header).u_mask_npointers_strlen
+
 #else
   #define FIELD_MASK(header) (header).field_mask
                              // TODO: derive from obj_len

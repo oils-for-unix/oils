@@ -81,66 +81,84 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
   // return realloc(p, num_bytes);
 }
 
-void MarkSweepHeap::MarkObjects(RawObject* obj) {
+// "Leaf" for marking / TraceChildren
+//
+// - Abort if nullptr
+// - Find the header (get rid of this when remove ObjHeader member)
+// - Tag::{Opaque,FixedSized,Scanned} have their mark bits set
+// - Tag::{FixedSize,Scanned} are also pushed on the gray stack
+
+void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
+  if (obj == nullptr) {
+    return;
+  }
+
   ObjHeader* header = FindObjHeader(obj);
   int obj_id = header->obj_id;
-  bool is_marked = mark_set_.IsMarked(obj_id);
 
-  if (is_marked) {
+  // Don't re-mark or re-push
+  if (mark_set_.IsMarked(obj_id)) {
     return;
   }
 
   switch (header->heap_tag) {
-  case HeapTag::Opaque:
+  case HeapTag::Opaque:  // e.g. strings have no children
     mark_set_.Mark(obj_id);
     break;
 
-  case HeapTag::FixedSize: {
+  case HeapTag::Scanned:  // these 2 types have children
+  case HeapTag::FixedSize:
     mark_set_.Mark(obj_id);
-
-    auto fixed = reinterpret_cast<LayoutFixed*>(header);
-    int mask = FIELD_MASK(fixed->header_);
-
-    // TODO(Jesse): Put the 16 in a #define
-    for (int i = 0; i < 16; ++i) {
-      if (mask & (1 << i)) {
-        RawObject* child = fixed->children_[i];
-        if (child) {
-          MarkObjects(child);
-        }
-      }
-    }
+    gray_stack_.push_back(header);  // Push the header, not the object!
     break;
-  }
-
-  case HeapTag::Scanned: {
-    mark_set_.Mark(obj_id);
-
-    // no vtable
-    assert(reinterpret_cast<void*>(header) == reinterpret_cast<void*>(obj));
-
-    auto slab = reinterpret_cast<Slab<RawObject*>*>(header);
-
-    // TODO: mark and sweep should store number of pointers directly
-    // int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
-    int n = NUM_POINTERS(slab->header_);
-
-    for (int i = 0; i < n; ++i) {
-      RawObject* child = slab->items_[i];
-      if (child) {
-        MarkObjects(child);
-      }
-    }
-    break;
-  }
 
   case HeapTag::Global:
-    // Not marked
+    // don't mark or push
     break;
 
   default:
-    // Invalid tag
-    assert(0);
+    FAIL(kShouldNotGetHere);
+  }
+}
+
+void MarkSweepHeap::TraceChildren() {
+  while (!gray_stack_.empty()) {
+    ObjHeader* header = gray_stack_.back();
+    gray_stack_.pop_back();
+
+    switch (header->heap_tag) {
+    case HeapTag::FixedSize: {
+      auto fixed = reinterpret_cast<LayoutFixed*>(header);
+      int mask = FIELD_MASK(fixed->header_);
+
+      for (int i = 0; i < kFieldMaskBits; ++i) {
+        if (mask & (1 << i)) {
+          MaybeMarkAndPush(fixed->children_[i]);
+        }
+      }
+      break;
+    }
+
+    case HeapTag::Scanned: {
+      // no vtable
+      // assert(reinterpret_cast<void*>(header) ==
+      // reinterpret_cast<void*>(obj));
+
+      auto slab = reinterpret_cast<Slab<RawObject*>*>(header);
+
+      // TODO: mark and sweep should store number of pointers directly
+      // int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
+      int n = NUM_POINTERS(slab->header_);
+
+      for (int i = 0; i < n; ++i) {
+        MaybeMarkAndPush(slab->items_[i]);
+      }
+      break;
+    }
+    default:
+      // Only FixedSize and Scanned are pushed
+      FAIL(kShouldNotGetHere);
+    }
   }
 }
 
@@ -186,32 +204,20 @@ int MarkSweepHeap::Collect() {
   // Resize it
   mark_set_.ReInit(current_obj_id_);
 
-  // Note: Can we get rid of double pointers?
-
+  // Note: It might be nice to get rid of double pointers
   for (int i = 0; i < num_roots; ++i) {
     RawObject* root = *(roots_[i]);
-    if (root) {
-      MarkObjects(root);
-    }
+    MaybeMarkAndPush(root);
   }
 
   for (int i = 0; i < num_globals; ++i) {
-    RawObject* root = global_roots_[i];
-    if (root) {
-      MarkObjects(root);
-    }
+    MaybeMarkAndPush(global_roots_[i]);
   }
 
-  #if 0
-  log("Collect(): num marked %d", marked_.size());
-
-  for (auto marked_obj : marked_ ) {
-    auto m = reinterpret_cast<RawObject*>(marked_obj);
-    assert(m->heap_tag != HeapTag::Global);  // BUG FIX
-  }
-  #endif
+  TraceChildren();
 
   Sweep();
+
   if (gc_verbose_) {
     log("    %d live after sweep", num_live_);
   }
