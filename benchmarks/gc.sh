@@ -529,5 +529,10 @@ gc-run-big() {
   popd
 }
 
+# This hit the 24-bit object ID limitation in 2.5 seconds
+# Should be able to run indefinitely.
+run-for-a-long-time() {
+  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-opt/osh_eval benchmarks/compute/fib.sh 10000
+}
 
 "$@"

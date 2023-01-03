@@ -60,17 +60,28 @@ int MarkSweepHeap::MaybeCollect() {
 void* MarkSweepHeap::Allocate(size_t num_bytes) {
   // log("Allocate %d", num_bytes);
 
-  void* result = calloc(num_bytes, 1);
-  assert(result);
+  if (to_free_.empty()) {
+    // Use higher object IDs
+    obj_id_after_allocate_ = greatest_obj_id_;
+    greatest_obj_id_++;
+  } else {
+    RawObject* dead = to_free_.back();
+    to_free_.pop_back();
 
-  live_objs_.push_back(result);
+    ObjHeader* header = FindObjHeader(dead);
+    obj_id_after_allocate_ = header->obj_id;  // reuse the dead object's ID
+
+    free(dead);
+  }
+
+  void* result = calloc(num_bytes, 1);
+  DCHECK(result != nullptr);
+
+  live_objs_.push_back(reinterpret_cast<RawObject*>(result));
 
   num_live_++;
   num_allocated_++;
   bytes_allocated_ += num_bytes;
-
-  // Right now the object ID grows indefinitely
-  current_obj_id_++;
 
   return result;
 }
@@ -164,15 +175,19 @@ void MarkSweepHeap::Sweep() {
   int last_live_index = 0;
   int num_objs = live_objs_.size();
   for (int i = 0; i < num_objs; ++i) {
-    void* obj = live_objs_[i];
+    RawObject* obj = live_objs_[i];
     assert(obj);  // malloc() shouldn't have returned nullptr
 
-    ObjHeader* header = FindObjHeader(reinterpret_cast<RawObject*>(obj));
+    ObjHeader* header = FindObjHeader(obj);
     bool is_live = mark_set_.IsMarked(header->obj_id);
+
+    // Compact live_objs_ and populate to_free_.  Note: doing the reverse could
+    // be more efficient when many objects are dead.
     if (is_live) {
       live_objs_[last_live_index++] = obj;
     } else {
-      free(obj);
+      to_free_.push_back(obj);
+      // free(obj);
       num_live_--;
     }
   }
@@ -200,7 +215,7 @@ int MarkSweepHeap::Collect() {
   }
 
   // Resize it
-  mark_set_.ReInit(current_obj_id_);
+  mark_set_.ReInit(greatest_obj_id_);
 
   // Mark roots.
   // Note: It might be nice to get rid of double pointers
@@ -287,6 +302,12 @@ void MarkSweepHeap::PrintStats(int fd) {
           static_cast<int>(live_objs_.capacity()));
 }
 
+void MarkSweepHeap::EagerFree() {
+  for (auto obj : to_free_) {
+    free(obj);
+  }
+}
+
 // Cleanup at the end of main() to remain ASAN-safe
 void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   char* e = getenv("OIL_GC_ON_EXIT");
@@ -295,6 +316,7 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
     // don't collect by default; OIL_GC_ON_EXIT=1 overrides
     if (e && strcmp(e, "1") == 0) {
       Collect();
+      EagerFree();
     }
   } else {
     // collect by default; OIL_GC_ON_EXIT=0 overrides
@@ -302,6 +324,7 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
       ;
     } else {
       Collect();
+      EagerFree();
     }
   }
 

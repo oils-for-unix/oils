@@ -95,10 +95,9 @@ class MarkSweepHeap {
 
   void* Allocate(size_t num_bytes);
   int UnusedObjectId() {
-    // Allocate() increments this
-    // TODO: consult MarkSet for small integers
-    // log("  unused -> %d", current_obj_id_);
-    return current_obj_id_;
+    // Allocate() sets this
+    // log("  unused -> %d", obj_id_after_allocate_);
+    return obj_id_after_allocate_;
   }
 
   void* Reallocate(void* p, size_t num_bytes);
@@ -112,6 +111,7 @@ class MarkSweepHeap {
 
   void PrintStats(int fd);  // public for testing
 
+  void EagerFree();         // for remaining ASAN clean
   void CleanProcessExit();  // do one last GC so ASAN passes
   void FastProcessExit();   // let the OS clean up
 
@@ -144,12 +144,16 @@ class MarkSweepHeap {
   std::vector<RawObject**> roots_;
   std::vector<RawObject*> global_roots_;
 
-  std::vector<void*> live_objs_;
+  // Allocate() appends live objects, and Sweep() compacts it
+  std::vector<RawObject*> live_objs_;
+  // Allocate lazily frees these, and Sweep() replenishes it
+  std::vector<RawObject*> to_free_;
 
   std::vector<ObjHeader*> gray_stack_;
   MarkSet mark_set_;
 
-  int current_obj_id_ = 0;
+  int greatest_obj_id_ = 0;
+  int obj_id_after_allocate_ = 0;
 
  private:
   void DoProcessExit(bool fast_exit);
