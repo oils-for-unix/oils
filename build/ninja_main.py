@@ -174,9 +174,8 @@ def Preprocessed(n, cc_sources):
   for compiler, variant in pre_matrix:
     preprocessed = []
     for src in cc_sources:
-      # e.g. _build/preprocessed/cxx-dbg/mycpp/gc_heap.cc
-      rel_path, _ = os.path.splitext(src)
-      pre = '_build/preprocessed/%s-%s/%s.cc' % (compiler, variant, rel_path)
+      # e.g. mycpp/gc_heap.cc -> _build/preprocessed/cxx-dbg/mycpp/gc_heap.cc
+      pre = '_build/preprocessed/%s-%s/%s' % (compiler, variant, src)
       preprocessed.append(pre)
 
     # Summary file
