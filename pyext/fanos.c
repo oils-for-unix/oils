@@ -10,6 +10,8 @@
 
 #include <Python.h>
 
+#include "cpp/fanos_shared.h"
+
 // Log messages to stderr.
 static void debug(const char* fmt, ...) {
 #if 0
@@ -28,67 +30,6 @@ static PyObject *fanos_error;
 #define NUM_FDS 3
 #define SIZEOF_FDS (sizeof(int) * NUM_FDS)
 
-// Helper that calls recvmsg() once.
-PyObject* recv_fds_once(
-    int sock_fd, int num_bytes,
-    char *buf, int* buf_len, PyObject *fd_out) {
-  // Where to put data
-  struct iovec iov = {0};
-  iov.iov_base = buf;
-  iov.iov_len = num_bytes;  // number of bytes REQUESTED
-
-  struct msghdr msg = {0};
-  msg.msg_iov = &iov;
-  msg.msg_iovlen = 1;
-
-  union {
-    char control[CMSG_SPACE(SIZEOF_FDS)];
-    struct cmsghdr align;
-  } u;
-  msg.msg_control = u.control;
-  msg.msg_controllen = sizeof u.control;
-
-  size_t bytes_read = recvmsg(sock_fd, &msg, 0);
-  if (bytes_read < 0) {
-    return PyErr_SetFromErrno(io_error);
-  }
-  *buf_len = bytes_read;
-
-  struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
-  if (cmsg && cmsg->cmsg_len == CMSG_LEN(SIZEOF_FDS)) {
-    if (cmsg->cmsg_level != SOL_SOCKET) {
-      PyErr_SetString(fanos_error, "Expected cmsg_level SOL_SOCKET");
-      return NULL;
-    }
-    if (cmsg->cmsg_type != SCM_RIGHTS) {
-      PyErr_SetString(fanos_error, "Expected cmsg_type SCM_RIGHTS");
-      return NULL;
-    }
-
-    int* fd_list = (int *) CMSG_DATA(cmsg);
-
-    // Append the descriptors received
-    if (PyList_Append(fd_out, PyInt_FromLong(fd_list[0])) != 0) {
-      goto append_error;
-    }
-    if (PyList_Append(fd_out, PyInt_FromLong(fd_list[1])) != 0) {
-      goto append_error;
-    }
-    if (PyList_Append(fd_out, PyInt_FromLong(fd_list[2])) != 0) {
-      goto append_error;
-    }
-
-  } else {
-    debug("NO FDS");
-  }
-
-  Py_RETURN_NONE;
-
-append_error:
-  PyErr_SetString(PyExc_RuntimeError, "Couldn't append()");
-  return NULL;
-}
-
 static PyObject *
 func_recv(PyObject *self, PyObject *args) {
   int sock_fd;
@@ -100,83 +41,30 @@ func_recv(PyObject *self, PyObject *args) {
 
   debug("fanos.recv %d\n", sock_fd);
 
-  // Receive with netstring encoding
-  char buf[10];  // up to 9 digits, then :
-  char* p = buf;
-  size_t n;
-  for (int i = 0; i < 10; ++i) {
-    n = read(sock_fd, p, 1);
-    if (n < 0) {
-      return PyErr_SetFromErrno(io_error);
-    }
-    if (n != 1) {
-      debug("n = %d", n);
-      if (i == 0) {
-        Py_RETURN_NONE;  // EOF at message boudnary
-      } else {
-        PyErr_SetString(fanos_error, "Unexpected EOF");
-        return NULL;
-      }
-    }
-    // debug("p %c", *p);
-
-    if ('0' <= *p && *p <= '9') {
-      ;  // added to the buffer
-    } else {
-      break;
-    }
-
-    p++;
-  }
-  if (p == buf) {
-    debug("*p = %c", *p);
-    PyErr_SetString(fanos_error, "Expected netstring length");
-    return NULL;
-  }
-  if (*p != ':') {
-    PyErr_SetString(fanos_error, "Expected : after netstring length");
-    return NULL;
-  }
-
-  *p = '\0';  // change : to NUL terminator
-  int expected_bytes = atoi(buf);
-
-  debug("expected_bytes = %d", expected_bytes);
-
-  char *data_buf = malloc(expected_bytes + 1);
-  data_buf[expected_bytes] = '\0';
-
-  n = 0;
-  while (n < expected_bytes) {
-    int bytes_read;
-    PyObject* result = recv_fds_once(
-        sock_fd, expected_bytes - n,
-        data_buf + n, &bytes_read, fd_out);
-    if (result == NULL) {
-      return NULL;  // error already set
-    }
-    debug("bytes_read = %d", bytes_read);
-    n += bytes_read;
-    break;
-  }
-
-  assert(n == expected_bytes);
-  debug("data_buf = %s", data_buf);
-
-  n = read(sock_fd, buf, 1);
-  if (n < 0) {
+  int fds[NUM_FDS] = { -1, -1, -1 };
+  char *value_err = NULL;
+  int err_code = 0;
+  int data_len = -1;
+  char *data_buf = fanos_recv(sock_fd, fds, &data_len, &err_code, &value_err);
+  if (err_code != 0) {
     return PyErr_SetFromErrno(io_error);
   }
-  if (n != 1) {
-    PyErr_SetString(fanos_error, "Unexpected EOF");
-    return NULL;
-  }
-  if (buf[0] != ',') {
-    PyErr_SetString(fanos_error, "Expected ,");
+  if (value_err != NULL) {
+    PyErr_SetString(fanos_error, value_err);
     return NULL;
   }
 
-  return PyString_FromStringAndSize(data_buf, expected_bytes);
+  for (int i = 0; i < 3; i++) {
+    if (fds[i] != -1 && PyList_Append(fd_out, PyInt_FromLong(fds[i])) != 0) {
+      PyErr_SetString(PyExc_RuntimeError, "Couldn't append()");
+      return NULL;
+    }
+  }
+  if (data_len == 0) {
+    Py_RETURN_NONE;
+  }
+
+  return PyString_FromStringAndSize(data_buf, data_len);
 }
 
 static PyObject *
@@ -196,81 +84,18 @@ func_send(PyObject *self, PyObject *args) {
   debug("SEND fd %d blob %s\n", sock_fd, blob);
   debug("%d %d %d\n", fds[0], fds[1], fds[2]);
 
-  char buf[10];
-  // snprintf() doesn't write more than 10 bytes, INCLUDING \0
-  // It the number of bytes it would have written, EXCLUDING \0
-  int full_length = snprintf(buf, 10, "%d:", blob_len);
-  if (full_length > sizeof(buf)) {
-    PyErr_SetString(fanos_error, "Message too large");
+  char *value_err = NULL;
+  int err_code = 0;
+  fanos_send(sock_fd, blob, blob_len, fds, &err_code, &value_err);
+  if (err_code != 0) {
+    return PyErr_SetFromErrno(io_error);
+  }
+  if (value_err != NULL) {
+    PyErr_SetString(fanos_error, value_err);
     return NULL;
   }
 
-  debug("full_length = %d", full_length);
-  if (write(sock_fd, buf, full_length) < 0) {  // send '3:'
-    goto write_error;
-  }
-
-  // Example code adapted from 'man CMSG_LEN' on my machine.  (Is this
-  // portable?)
-  //
-  // The APUE code only sends a single FD and doesn't use CMSG_SPACE.
-
-  // Set up the blob data
-  struct iovec iov = {0};
-  iov.iov_base = blob;
-  iov.iov_len = blob_len;
-
-  struct msghdr msg = {0};
-  msg.msg_iov = &iov;
-  msg.msg_iovlen = 1;
-
-  // This stack buffer has to live until the sendmsg() call!
-  union {
-     /* ancillary data buffer, wrapped in a union in order to ensure
-        it is suitably aligned */
-     char buf[CMSG_SPACE(sizeof fds)];
-     struct cmsghdr align;
-  } u;
-  debug("sizeof fds = %d", sizeof fds);  // 12
-  debug("cmsg space = %d", CMSG_SPACE(sizeof fds));  // 32!
-  debug("cmsg len = %d", CMSG_LEN(sizeof fds));  // 28!
-
-  // Optionally set up file descriptor data
-  if (fds[0] != -1) {
-    // If one FD is passed, all should be passed
-    assert(fds[1] != -1); 
-    assert(fds[2] != -1);
-
-    msg.msg_control = u.buf;
-    msg.msg_controllen = sizeof u.buf;
-
-    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
-    cmsg->cmsg_level = SOL_SOCKET;
-    cmsg->cmsg_type = SCM_RIGHTS;
-    cmsg->cmsg_len = CMSG_LEN(sizeof fds);
-
-    int *fd_msg = (int *) CMSG_DATA(cmsg);
-    memcpy(fd_msg, fds, sizeof fds);
-  }
-
-  int num_bytes = sendmsg(sock_fd, &msg, 0);
-  if (num_bytes < 0) {
-    goto write_error;
-  }
-  debug("sendmsg num_bytes = %d", num_bytes);
-
-  buf[0] = ',';
-  if (write(sock_fd, buf, 1) < 0) {
-    goto write_error;
-  }
-  debug("sent ,");
-
-  // This return value would be redundant since send() and sendmsg() block.
-  // return PyInt_FromLong(num_bytes);
   Py_RETURN_NONE;
-
-write_error:
-  return PyErr_SetFromErrno(io_error);
 }
 
 static PyMethodDef methods[] = {

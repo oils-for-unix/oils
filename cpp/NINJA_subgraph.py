@@ -104,6 +104,15 @@ def NinjaGraph(ru):
       matrix = CPP_UNIT_MATRIX)
 
   ru.cc_library(
+      '//cpp/fanos_shared', 
+      srcs = ['cpp/fanos_shared.c'])
+
+  ru.cc_library(
+      '//cpp/fanos', 
+      srcs = ['cpp/fanos.cc'],
+      deps = ['//cpp/fanos_shared', '//mycpp/runtime'])
+
+  ru.cc_library(
       '//cpp/libc', 
       srcs = ['cpp/libc.cc'],
       deps = ['//mycpp/runtime'])

@@ -22,13 +22,28 @@ class Exception : public _ExceptionOpaque {};
 
 class IndexError : public _ExceptionOpaque {};
 
-class ValueError : public _ExceptionOpaque {};
-
 class KeyError : public _ExceptionOpaque {};
 
 class EOFError : public _ExceptionOpaque {};
 
 class KeyboardInterrupt : public _ExceptionOpaque {};
+
+class ValueError {
+ public:
+  ValueError() : message(nullptr) {
+  }
+  explicit ValueError(Str* message)
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(ValueError)),
+        message(message) {
+  }
+
+  GC_OBJ(header_);
+  Str* message;
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(ValueError, message));
+  }
+};
 
 // Note these translations by mycpp:
 // - AssertionError      -> assert(0);

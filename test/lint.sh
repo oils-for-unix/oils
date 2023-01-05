@@ -44,7 +44,7 @@ clang-format() {
 
 cpp-files() {
   shopt -s nullglob
-  for file in {asdl,core}/*.cc benchmarks/*.c cpp/*.{cc,h} mycpp/*.{cc,h} \
+  for file in {asdl,core}/*.cc benchmarks/*.c cpp/*.{c,cc,h} mycpp/*.{cc,h} \
     mycpp/demo/*.{cc,h}; do
 
     echo $file
