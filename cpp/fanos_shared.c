@@ -9,8 +9,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-static const int kNumFds = 3;
-static const int kSizeOfFds = sizeof(int) * kNumFds;
+#define NUM_FDS 3
+#define SIZEOF_FDS (sizeof(int) * NUM_FDS)
 
 // error string helper
 static void set_err(char** dst, const char* msg) {
@@ -53,7 +53,7 @@ void fanos_send(int sock_fd, char* blob, int blob_len, const int* fds,
   union {
     /* ancillary data buffer, wrapped in a union in order to ensure
        it is suitably aligned */
-    char buf[CMSG_SPACE(kSizeOfFds)];
+    char buf[CMSG_SPACE(SIZEOF_FDS)];
     struct cmsghdr align;
   } u;
 
@@ -69,10 +69,10 @@ void fanos_send(int sock_fd, char* blob, int blob_len, const int* fds,
     struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
     cmsg->cmsg_level = SOL_SOCKET;
     cmsg->cmsg_type = SCM_RIGHTS;
-    cmsg->cmsg_len = CMSG_LEN(kSizeOfFds);
+    cmsg->cmsg_len = CMSG_LEN(SIZEOF_FDS);
 
     int* fd_msg = (int*)CMSG_DATA(cmsg);
-    memcpy(fd_msg, fds, kSizeOfFds);
+    memcpy(fd_msg, fds, SIZEOF_FDS);
   }
 
   int num_bytes = sendmsg(sock_fd, &msg, 0);
@@ -100,7 +100,7 @@ static int recv_fds_once(int sock_fd, int num_bytes, char* buf, int* buf_len,
   msg.msg_iovlen = 1;
 
   union {
-    char control[CMSG_SPACE(kSizeOfFds)];
+    char control[CMSG_SPACE(SIZEOF_FDS)];
     struct cmsghdr align;
   } u;
   msg.msg_control = u.control;
@@ -114,7 +114,7 @@ static int recv_fds_once(int sock_fd, int num_bytes, char* buf, int* buf_len,
   *buf_len = bytes_read;
 
   struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
-  if (cmsg && cmsg->cmsg_len == CMSG_LEN(kSizeOfFds)) {
+  if (cmsg && cmsg->cmsg_len == CMSG_LEN(SIZEOF_FDS)) {
     if (cmsg->cmsg_level != SOL_SOCKET) {
       set_err(value_err_out, "Expected cmsg_level SOL_SOCKET");
       return -1;
