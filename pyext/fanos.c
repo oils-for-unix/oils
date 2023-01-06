@@ -41,16 +41,15 @@ func_recv(PyObject *self, PyObject *args) {
 
   debug("fanos.recv %d\n", sock_fd);
 
+  struct FanosError err = {0};
+  struct FanosResult res = {NULL, -1};
   int fds[NUM_FDS] = { -1, -1, -1 };
-  char *value_err = NULL;
-  int err_code = 0;
-  int data_len = -1;
-  char *data_buf = fanos_recv(sock_fd, fds, &data_len, &err_code, &value_err);
-  if (err_code != 0) {
+  fanos_recv(sock_fd, fds, &res, &err);
+  if (err.err_code != 0) {
     return PyErr_SetFromErrno(io_error);
   }
-  if (value_err != NULL) {
-    PyErr_SetString(fanos_error, value_err);
+  if (err.value_err != NULL) {
+    PyErr_SetString(fanos_error, err.value_err);
     return NULL;
   }
 
@@ -60,11 +59,13 @@ func_recv(PyObject *self, PyObject *args) {
       return NULL;
     }
   }
-  if (data_len == 0) {
+  if (res.len == 0) {
     Py_RETURN_NONE;
   }
 
-  return PyString_FromStringAndSize(data_buf, data_len);
+  PyObject *ret = PyString_FromStringAndSize(res.data, res.len);
+  free(res.data);
+  return ret;
 }
 
 static PyObject *
@@ -84,14 +85,13 @@ func_send(PyObject *self, PyObject *args) {
   debug("SEND fd %d blob %s\n", sock_fd, blob);
   debug("%d %d %d\n", fds[0], fds[1], fds[2]);
 
-  char *value_err = NULL;
-  int err_code = 0;
-  fanos_send(sock_fd, blob, blob_len, fds, &err_code, &value_err);
-  if (err_code != 0) {
+  struct FanosError err = {0};
+  fanos_send(sock_fd, blob, blob_len, fds, &err);
+  if (err.err_code != 0) {
     return PyErr_SetFromErrno(io_error);
   }
-  if (value_err != NULL) {
-    PyErr_SetString(fanos_error, value_err);
+  if (err.value_err != NULL) {
+    PyErr_SetString(fanos_error, err.value_err);
     return NULL;
   }
 

@@ -12,26 +12,27 @@
 #define NUM_FDS 3
 #define SIZEOF_FDS (sizeof(int) * NUM_FDS)
 
-// error string helper
-static void set_err(char** dst, const char* msg) {
-  *dst = (char*)malloc(strlen(msg) + 1);
-  assert(*dst != NULL);
-  strcpy(*dst, msg);
-}
+const char* kErrTooLarge = "Message too large";
+const char* kErrSolSocket = "Expected cmsg_level SOL_SOCKET";
+const char* kErrScmRights = "Expected cmsg_type SCM_RIGHTS";
+const char* kErrUnexpectedEof = "Unexpected EOF";
+const char* kErrMissingLength = "Expected netstring length";
+const char* kErrMissingColon = "Expected : after netstring length";
+const char* kErrMissingComma = "Expected ,";
 
 void fanos_send(int sock_fd, char* blob, int blob_len, const int* fds,
-                int* errno_out, char** value_err_out) {
+                struct FanosError* err) {
   char buf[10];
   // snprintf() doesn't write more than 10 bytes, INCLUDING \0
   // It the number of bytes it would have written, EXCLUDING \0
   unsigned int full_length = snprintf(buf, 10, "%d:", blob_len);
   if (full_length > sizeof(buf)) {
-    set_err(value_err_out, "Message too large");
+    err->value_err = kErrTooLarge;
     return;
   }
 
   if (write(sock_fd, buf, full_length) < 0) {  // send '3:'
-    *errno_out = errno;
+    err->err_code = errno;
     return;
   }
 
@@ -77,19 +78,19 @@ void fanos_send(int sock_fd, char* blob, int blob_len, const int* fds,
 
   int num_bytes = sendmsg(sock_fd, &msg, 0);
   if (num_bytes < 0) {
-    *errno_out = errno;
+    err->err_code = errno;
     return;
   }
 
   buf[0] = ',';
   if (write(sock_fd, buf, 1) < 0) {
-    *errno_out = errno;
+    err->err_code = errno;
     return;
   }
 }
 
 static int recv_fds_once(int sock_fd, int num_bytes, char* buf, int* buf_len,
-                         int* fd_out, int* errno_out, char** value_err_out) {
+                         int* fd_out, struct FanosError* err) {
   // Where to put data
   struct iovec iov = {0};
   iov.iov_base = buf;
@@ -108,7 +109,7 @@ static int recv_fds_once(int sock_fd, int num_bytes, char* buf, int* buf_len,
 
   size_t bytes_read = recvmsg(sock_fd, &msg, 0);
   if (bytes_read < 0) {
-    *errno_out = errno;
+    err->err_code = errno;
     return -1;
   }
   *buf_len = bytes_read;
@@ -116,11 +117,11 @@ static int recv_fds_once(int sock_fd, int num_bytes, char* buf, int* buf_len,
   struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
   if (cmsg && cmsg->cmsg_len == CMSG_LEN(SIZEOF_FDS)) {
     if (cmsg->cmsg_level != SOL_SOCKET) {
-      set_err(value_err_out, "Expected cmsg_level SOL_SOCKET");
+      err->value_err = kErrSolSocket;
       return -1;
     }
     if (cmsg->cmsg_type != SCM_RIGHTS) {
-      set_err(value_err_out, "Expected cmsg_type SCM_RIGHTS");
+      err->value_err = kErrScmRights;
       return -1;
     }
 
@@ -135,8 +136,8 @@ static int recv_fds_once(int sock_fd, int num_bytes, char* buf, int* buf_len,
   return 0;
 }
 
-char* fanos_recv(int sock_fd, int* fd_out, int* len_out, int* errno_out,
-                 char** value_err_out) {
+void fanos_recv(int sock_fd, int* fd_out, struct FanosResult* result_out,
+                struct FanosError* err) {
   // Receive with netstring encoding
   char buf[10];  // up to 9 digits, then :
   char* p = buf;
@@ -144,16 +145,16 @@ char* fanos_recv(int sock_fd, int* fd_out, int* len_out, int* errno_out,
   for (int i = 0; i < 10; ++i) {
     n = read(sock_fd, p, 1);
     if (n < 0) {
-      *errno_out = errno;
-      return NULL;
+      err->err_code = errno;
+      return;
     }
     if (n != 1) {
       if (i == 0) {
-        *len_out = 0;
-        return NULL;
+        result_out->len = 0;
+        return;
       } else {
-        set_err(value_err_out, "Unexpected EOF");
-        return NULL;
+        err->value_err = kErrUnexpectedEof;
+        return;
       }
     }
 
@@ -166,12 +167,12 @@ char* fanos_recv(int sock_fd, int* fd_out, int* len_out, int* errno_out,
     p++;
   }
   if (p == buf) {
-    set_err(value_err_out, "Expected netstring length");
-    return NULL;
+    err->value_err = kErrMissingLength;
+    return;
   }
   if (*p != ':') {
-    set_err(value_err_out, "Expected : after netstring length");
-    return NULL;
+    err->value_err = kErrMissingColon;
+    return;
   }
 
   *p = '\0';  // change : to NUL terminator
@@ -184,8 +185,8 @@ char* fanos_recv(int sock_fd, int* fd_out, int* len_out, int* errno_out,
   while (n < expected_bytes) {
     int bytes_read;
     if (recv_fds_once(sock_fd, expected_bytes - n, data_buf + n, &bytes_read,
-                      fd_out, errno_out, value_err_out) < 0) {
-      return NULL;
+                      fd_out, err) < 0) {
+      return;
     }
     n += bytes_read;
     break;
@@ -195,18 +196,18 @@ char* fanos_recv(int sock_fd, int* fd_out, int* len_out, int* errno_out,
 
   n = read(sock_fd, buf, 1);
   if (n < 0) {
-    *errno_out = errno;
-    return NULL;
+    err->err_code = errno;
+    return;
   }
   if (n != 1) {
-    set_err(value_err_out, "Unexpected EOF");
-    return NULL;
+    err->value_err = kErrUnexpectedEof;
+    return;
   }
   if (buf[0] != ',') {
-    set_err(value_err_out, "Expected ,");
-    return NULL;
+    err->value_err = kErrMissingComma;
+    return;
   }
 
-  *len_out = expected_bytes;
-  return data_buf;
+  result_out->data = data_buf;
+  result_out->len = expected_bytes;
 }
