@@ -2,7 +2,8 @@
 from distutils.core import setup, Extension
 
 module = Extension('fanos',
-                    sources = ['pyext/fanos.c'],
+                    sources = ['cpp/fanos_shared.c', 'pyext/fanos.c'],
+                    include_dirs = ['.'],
                     undef_macros = ['NDEBUG'])
 
 setup(name = 'fanos',

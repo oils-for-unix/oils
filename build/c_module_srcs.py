@@ -28,9 +28,13 @@ def main(argv):
 
       # Hard-coded special cases for now.
 
-      if mod_name in ('libc', 'fanos', 'fastlex', 'line_input'):  # Our own modules
+      if mod_name in ('libc', 'fastlex', 'line_input'):  # Our own modules
         # Relative to Python-2.7.13 dir
         print('../pyext/%s.c' % mod_name)
+
+      elif mod_name == 'fanos':
+        print('../pyext/%s.c' % mod_name)
+        print('../cpp/fanos_shared.c')
 
       elif mod_name == 'posix_':
         print('../pyext/posixmodule.c')
