@@ -171,4 +171,8 @@ Str* strftime(Str* s, time_t ts) {
   return result;
 }
 
+void sleep(int seconds) {
+  ::sleep(seconds);
+}
+
 }  // namespace time_
