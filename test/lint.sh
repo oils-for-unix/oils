@@ -42,10 +42,20 @@ clang-format() {
   $CLANG_DIR/bin/clang-format -style="$style" "$@"
 }
 
+readonly -a CPP_FILES=(
+  {asdl,core}/*.cc
+  benchmarks/*.c
+  cpp/*.{c,cc,h}
+  mycpp/*.{cc,h} 
+  mycpp/demo/*.{cc,h}
+
+  # Could add pyext, but they have sort of a Python style
+  # pyext/fanos.c
+)
+
 cpp-files() {
   shopt -s nullglob
-  for file in {asdl,core}/*.cc benchmarks/*.c cpp/*.{c,cc,h} mycpp/*.{cc,h} \
-    mycpp/demo/*.{cc,h}; do
+  for file in "${CPP_FILES[@]}"; do
 
     echo $file
   done

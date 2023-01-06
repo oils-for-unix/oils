@@ -9,8 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define NUM_FDS 3
-#define SIZEOF_FDS (sizeof(int) * NUM_FDS)
+#define SIZEOF_FDS (sizeof(int) * FANOS_NUM_FDS)
 
 const char* kErrTooLarge = "Message too large";
 const char* kErrSolSocket = "Expected cmsg_level SOL_SOCKET";

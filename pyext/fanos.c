@@ -24,10 +24,6 @@ static void debug(const char* fmt, ...) {
 static PyObject *io_error;
 static PyObject *fanos_error;
 
-// same as 'sizeof fds' in send()
-#define NUM_FDS 3
-#define SIZEOF_FDS (sizeof(int) * NUM_FDS)
-
 static PyObject *
 func_recv(PyObject *self, PyObject *args) {
   int sock_fd;
@@ -41,8 +37,10 @@ func_recv(PyObject *self, PyObject *args) {
 
   struct FanosError err = {0};
   struct FanosResult res = {NULL, FANOS_INVALID_LEN};
-  int fds[NUM_FDS] = { -1, -1, -1 };
+  int fds[FANOS_NUM_FDS] = { -1, -1, -1 };
+
   fanos_recv(sock_fd, fds, &res, &err);
+
   if (err.err_code != 0) {
     return PyErr_SetFromErrno(io_error);
   }
@@ -51,14 +49,14 @@ func_recv(PyObject *self, PyObject *args) {
     return NULL;
   }
 
+  if (res.len == FANOS_EOF) {
+    Py_RETURN_NONE;  // EOF sentinel
+  }
   for (int i = 0; i < 3; i++) {
     if (fds[i] != -1 && PyList_Append(fd_out, PyInt_FromLong(fds[i])) != 0) {
       PyErr_SetString(PyExc_RuntimeError, "Couldn't append()");
       return NULL;
     }
-  }
-  if (res.len == FANOS_EOF) {
-    Py_RETURN_NONE;  // EOF sentinel
   }
 
   PyObject *ret = PyString_FromStringAndSize(res.data, res.len);
@@ -71,7 +69,7 @@ func_send(PyObject *self, PyObject *args) {
   int sock_fd;
   char *blob;
   int blob_len;
-  int fds[NUM_FDS] = { -1, -1, -1 };
+  int fds[FANOS_NUM_FDS] = { -1, -1, -1 };
 
   // 3 optional file descriptors
   if (!PyArg_ParseTuple(args, "is#|iii",

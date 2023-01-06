@@ -23,6 +23,10 @@ struct FanosResult {
   int len;
 };
 
+// We send or receive 3 file descriptors at a time (for stdin, stdout, stderr)
+
+#define FANOS_NUM_FDS 3
+
 // Send a byte string and optional FDs to a Unix socket.
 //
 // Upon failure `err` may be populated with an error message. The caller does
