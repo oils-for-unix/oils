@@ -35,7 +35,7 @@ TEST test_str_gc_header() {
   str1 = StrFromC("");
   str2 = StrFromC("one\0two", 7);
 
-  ASSERT_EQ_FMT(HeapTag::Opaque, str1->header_.heap_tag, "%d");
+  ASSERT_EQ_FMT(HeapTag::Opaque, str2->header_.heap_tag, "%d");
   // ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->header_.obj_len, "%d");
   // ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->header_.obj_len, "%d");
 

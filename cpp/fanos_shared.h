@@ -11,7 +11,7 @@
 
 // Callers should check for BOTH I/O errors and protocol errors.
 struct FanosError {
-  int err_code;  // errno for IOError
+  int err_code;           // errno for IOError
   char const* value_err;  // caller must not free; it's global
 };
 

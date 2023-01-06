@@ -62,26 +62,26 @@ TEST hnode_test() {
 
   rec = Alloc<hnode__Record>();
   rec->node_type = StrFromC("dummy_node");
-  ASSERT_EQ_FMT(10, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(8, gHeap.Collect(), "%d");
 
   h = rec;  // base type
   array->children->append(h);
 
   format::PrintTree(h, ast_f);
   printf("\n");
-  ASSERT_EQ_FMT(11, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(9, gHeap.Collect(), "%d");
 
   h = Alloc<hnode__Leaf>(StrFromC("zz"), color_e::TypeName);
   array->children->append(h);
 
   format::PrintTree(h, ast_f);
   printf("\n");
-  ASSERT_EQ_FMT(13, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(11, gHeap.Collect(), "%d");
 
   h = array;
   format::PrintTree(h, ast_f);
   printf("\n");
-  ASSERT_EQ_FMT(13, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(11, gHeap.Collect(), "%d");
 
   PASS();
 }

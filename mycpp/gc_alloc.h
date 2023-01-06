@@ -145,6 +145,10 @@ inline Str* OverAllocatedStr(int len) {
 
 // Copy C string into the managed heap.
 inline Str* StrFromC(const char* data, int len) {
+  // Optimization that could be taken out once we have SmallStr
+  if (len == 0) {
+    return kEmptyString;
+  }
   Str* s = NewStr(len);
   memcpy(s->data_, data, len);
   DCHECK(s->data_[len] == '\0');  // should be true because Heap was zeroed
