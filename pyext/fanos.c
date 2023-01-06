@@ -1,6 +1,4 @@
-/*
- * FANOS: File descriptors And Netstrings Over Sockets.
- */
+// Python wrapper for FANOS library in cpp/fanos_shared.h
 
 #include <assert.h>
 #include <stdarg.h>  // va_list, etc.
@@ -42,7 +40,7 @@ func_recv(PyObject *self, PyObject *args) {
   debug("fanos.recv %d\n", sock_fd);
 
   struct FanosError err = {0};
-  struct FanosResult res = {NULL, -1};
+  struct FanosResult res = {NULL, FANOS_INVALID_LEN};
   int fds[NUM_FDS] = { -1, -1, -1 };
   fanos_recv(sock_fd, fds, &res, &err);
   if (err.err_code != 0) {
@@ -59,8 +57,8 @@ func_recv(PyObject *self, PyObject *args) {
       return NULL;
     }
   }
-  if (res.len == 0) {
-    Py_RETURN_NONE;
+  if (res.len == FANOS_EOF) {
+    Py_RETURN_NONE;  // EOF sentinel
   }
 
   PyObject *ret = PyString_FromStringAndSize(res.data, res.len);

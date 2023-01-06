@@ -150,7 +150,10 @@ void fanos_recv(int sock_fd, int* fd_out, struct FanosResult* result_out,
     }
     if (n != 1) {
       if (i == 0) {
-        result_out->len = 0;
+        // read() returned 0 bytes, which means we got EOF at a message
+        // boundary.  This is part of the protocol and the caller should handle
+        // it.
+        result_out->len = FANOS_EOF;
         return;
       } else {
         err->value_err = kErrUnexpectedEof;

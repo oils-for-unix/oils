@@ -70,10 +70,10 @@ def netstring_recv(sock):
   return msg
 
 
-class fanosTest(unittest.TestCase):
+class FanosTest(unittest.TestCase):
 
   def testSend(self):
-    """Send with our cp50 library; receive with Python stdlib."""
+    """Send with our fanos library; receive with Python stdlib."""
 
     print('\n___ c5po.send ___')
     left, right = socket.socketpair()
@@ -90,8 +90,8 @@ class fanosTest(unittest.TestCase):
     self.assertEqual('https://www.oilshell.org/', msg)
 
   def testRecv(self):
-    """Send with Python; received our cp50 library"""
-    print('\n___ c5po.recv ___')
+    """Send with Python; received our fanos library"""
+    print('\n___ fanos.recv ___')
     left, right = socket.socketpair()
 
     left.send(netstring_encode('spam'))
@@ -106,6 +106,14 @@ class fanosTest(unittest.TestCase):
 
     msg = fanos.recv(right.fileno(), fd_out)
     self.assertEqual('eggs-eggs-eggs', msg)
+    print("py msg = %r" % msg)
+    print('fd_out = %s' % fd_out)
+
+    # Empty string
+    left.send(netstring_encode(''))
+
+    msg = fanos.recv(right.fileno(), fd_out)
+    self.assertEqual('', msg)
     print("py msg = %r" % msg)
     print('fd_out = %s' % fd_out)
 
@@ -139,7 +147,7 @@ class fanosTest(unittest.TestCase):
     print('fd_out = %s' % fd_out)
 
   def testSendRecv(self):
-    """Send and receive with our cp50 library"""
+    """Send and receive with our fanos library"""
     print('\n___ testSendReceive ___')
 
     left, right = socket.socketpair()

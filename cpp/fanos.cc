@@ -30,7 +30,7 @@ void send(int sock_fd, Str* blob) {
 
 Str* recv(int sock_fd, List<int>* fd_out) {
   FanosError err = {0};
-  FanosResult res = {nullptr, -1};
+  FanosResult res = {nullptr, FANOS_INVALID_LEN};
   int fds[kNumFds] = {-1, -1, -1};
   fanos_recv(sock_fd, fds, &res, &err);
   if (err.err_code != 0) {
@@ -43,8 +43,8 @@ Str* recv(int sock_fd, List<int>* fd_out) {
   for (int i = 0; i < 3; i++) {
     fd_out->append(fds[i]);
   }
-  if (res.len == 0) {
-    return nullptr;
+  if (res.len == FANOS_EOF) {
+    return nullptr;  // EOF sentinel
   }
 
   Str* ret = StrFromC(res.data, res.len);
