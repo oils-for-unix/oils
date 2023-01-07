@@ -10,7 +10,15 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-redir-trace() {
+banner() {
+  echo
+  echo
+  echo -e -n "\t"; echo "$@"
+  echo 
+  echo 
+}
+
+redir-strace() {
   ### trace relevant calls
 
   strace -e open,fcntl,dup2,close -- "$@"
@@ -23,9 +31,7 @@ redir() {
   # interpreter
   for sh in dash bash mksh; do
 
-    echo
-    echo "--- $sh ---"
-    echo
+    banner "$sh"
 
     #local code='exec 3>_tmp/3.txt; echo hello >&3; exec 3>&-; cat _tmp/3.txt'
 
@@ -33,7 +39,68 @@ redir() {
     #local code='true 2>&1'
 
     local code='true > _tmp/out.txt'
-    redir-trace $sh -c "$code"
+    redir-strace $sh -c "$code"
+  done
+}
+
+io-strace() {
+  ### trace relevant calls
+
+  # -ff because it's a pipeline
+  strace -ff -e 'open,close,fcntl,read,write' -- "$@"
+}
+
+readonly OSH_NATIVE=_bin/cxx-dbg/osh_eval
+
+readonly READ_SH='
+{ echo "0123456789"; echo "ABCDEFGHIJ"; } |
+while read -r line; do echo $line; done
+'
+
+read-builtin() {
+  # RESULTS
+  #
+  # All shells read 1 byte at a time
+
+  for sh in dash bash $OSH_NATIVE; do
+    banner "$sh"
+
+    io-strace $sh -c "$READ_SH"
+  done
+}
+
+read-lines-from-disk-file() {
+  # dash can't read this script
+
+  # RESULTS:
+  # mksh: reads 512 bytes at a time
+  # bash: 80 and then 2620?
+  # osh_native: using libc readline, it's 832 bytes at a time.
+
+  # I think we can have a "regular file reader", which is different than a pipe
+  # reader?
+
+  for sh in mksh bash $OSH_NATIVE; do
+    banner "$sh"
+
+    # Run without args
+    io-strace $sh $0
+  done
+}
+
+read-lines-from-pipe() {
+  # RESULTS: 
+  # - dash does read(8192), hm
+  # - mksh reads 1 byte at a time
+  # - bash reads 1 byte at a time
+  # - zsh reads 1 byte at a time
+  # - osh_native with libc does 832 bytes at time.
+
+  for sh in dash mksh bash zsh $OSH_NATIVE; do
+    banner "$sh"
+
+    # Run without args
+    io-strace sh -c "cat testdata/osh-runtime/hello_world.sh | $sh"
   done
 }
 
@@ -76,24 +143,36 @@ interactive() {
 # Translation tests
 #
 
-_compare() {
+readonly BASE_DIR=_tmp/strace
+
+_compare-native() {
   local code=$1
 
-  rm -f -v _tmp/py* _tmp/cpp*
+  rm -r -f -v $BASE_DIR
+  mkdir -p $BASE_DIR
 
-  strace -ff -o _tmp/py -- _bin/osh -c "$code"
-  strace -ff -o _tmp/cpp -- _bin/osh_eval.dbg -c "$code"
+  ninja $OSH_NATIVE
 
-  wc -l _tmp/py* _tmp/cpp*
+  strace -ff -o $BASE_DIR/py -- bin/osh -c "$code"
+  strace -ff -o $BASE_DIR/cpp -- $OSH_NATIVE -c "$code"
+
+  wc -l $BASE_DIR/*
 }
 
-command-sub() {
-  _compare 'echo $(echo hi)'
+native-command-sub() {
+  _compare-native 'echo $(echo hi)'
 }
 
-redirect() {
-  _compare 'echo hi > _tmp/redir'
+native-redirect() {
+  _compare-native 'echo hi > _tmp/redir'
 }
 
+native-read-builtin() {
+  _compare-native "$READ_SH"
+}
 
-"$@"
+if test $# -eq 0; then
+  echo "$0: expected arguments"
+else
+  "$@"
+fi
