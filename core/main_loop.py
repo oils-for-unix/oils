@@ -11,8 +11,7 @@ Variants:
 """
 from __future__ import print_function
 
-import sys
-
+from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import (
     command_t, command, parse_result__Node, parse_result_e
 )
@@ -21,11 +20,13 @@ from core import process
 from core import ui
 from core import util
 from core.pyerror import log
+from core.pyutil import stderr_line
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 
+import fanos
 import posix_ as posix
 
 from typing import cast, Any, List, TYPE_CHECKING
@@ -80,214 +81,212 @@ class ctx_Descriptors(object):
     posix.close(self.fds[2])
 
 
-if mylib.PYTHON:
-  import fanos
+def fanos_log(msg):
+  # type: (str) -> None
+  stderr_line('[FANOS] %s' % msg)
 
-  def fanos_log(msg, *args):
-    # type: (str, Any) -> None
-    if args:
-      msg = msg % args
-    print('[FANOS] %s' % msg, file=sys.stderr)
+def ShowDescriptorState(label):
+  # type: (str) -> None
+  if mylib.PYTHON:
+    import os  # Our posix fork doesn't have os.system
+    import time
+    time.sleep(0.01)  # prevent interleaving
 
-  def ShowDescriptorState(label):
-    # type: (str) -> None
-    if 1:
-      import os  # Our posix fork doesn't have os.system
-      import time
-      time.sleep(0.01)  # prevent interleaving
+    pid = posix.getpid()
+    stderr_line(label + ' (PID %d)' % pid)
 
-      pid = posix.getpid()
-      print(label + ' (PID %d)' % pid, file=sys.stderr)
+    os.system('ls -l /proc/%d/fd >&2' % pid)
 
-      os.system('ls -l /proc/%d/fd >&2' % pid)
+    time.sleep(0.01)  # prevent interleaving
 
-      time.sleep(0.01)  # prevent interleaving
+class Headless(object):
+  """Main loop for headless mode."""
 
-  class Headless(object):
-    """Main loop for headless mode."""
+  def __init__(self, cmd_ev, parse_ctx, errfmt):
+    # type: (CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> None
+    self.cmd_ev = cmd_ev
+    self.parse_ctx = parse_ctx
+    self.errfmt = errfmt
 
-    def __init__(self, cmd_ev, parse_ctx, errfmt):
-      # type: (CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> None
-      self.cmd_ev = cmd_ev
-      self.parse_ctx = parse_ctx
-      self.errfmt = errfmt
+  def Loop(self):
+    # type: () -> int
+    try:
+      return self._Loop()
+    except ValueError as e:
+      fanos.send(1, 'ERROR %s' % e)
+      return 1
 
-    def Loop(self):
-      # type: () -> int
+  def EVAL(self, arg):
+    # type: (str) -> str
+
+    # This logic is similar to the 'eval' builtin in osh/builtin_meta.
+
+    # Note: we're not using the InteractiveLineReader, so there's no history
+    # expansion.  It would be nice if there was a way for the client to use
+    # that.
+    line_reader = reader.StringLineReader(arg, self.parse_ctx.arena)
+    c_parser = self.parse_ctx.MakeOshParser(line_reader)
+
+    # Status is unused; $_ can be queried by the headless client
+    unused_status = Batch(self.cmd_ev, c_parser, self.errfmt, 0)
+
+    return ''  # result is always 'OK ' since there was no protocol error
+
+  def _Loop(self):
+    # type: () -> int
+    fanos_log('Connect stdin and stdout to one end of socketpair() and send control messages.  osh writes debug messages (like this one) to stderr.')
+
+    fd_out = []  # type: List[int]
+    while True:
       try:
-        return self._Loop()
+        blob = fanos.recv(0, fd_out)
       except ValueError as e:
-        fanos.send(1, 'ERROR %s' % e)
-        return 1
+        fanos_log('protocol error: %s' % e)
+        raise  # higher level handles it
 
-    def EVAL(self, arg):
-      # type: (str) -> str
+      if blob is None:
+        fanos_log('EOF received')
+        break
 
-      # This logic is similar to the 'eval' builtin in osh/builtin_meta.
+      fanos_log('received blob %r' % blob)
+      if ' ' in blob:
+        bs = blob.split(' ', 1)
+        command = bs[0]
+        arg = bs[1]
+      else:
+        command = blob
+        arg = ''
 
-      # Note: we're not using the InteractiveLineReader, so there's no history
-      # expansion.  It would be nice if there was a way for the client to use
-      # that.
-      line_reader = reader.StringLineReader(arg, self.parse_ctx.arena)
-      c_parser = self.parse_ctx.MakeOshParser(line_reader)
+      if command == 'GETPID':
+        reply = str(posix.getpid())
 
-      # Status is unused; $_ can be queried by the headless client
-      unused_status = Batch(self.cmd_ev, c_parser, self.errfmt, 0)
+      elif command == 'EVAL':
+        #fanos_log('arg %r', arg)
 
-      return ''  # result is always 'OK ' since there was no protocol error
+        if len(fd_out) != 3:
+          raise ValueError('Expected 3 file descriptors')
 
-    def _Loop(self):
-      # type: () -> int
-      fanos_log('Connect stdin and stdout to one end of socketpair() and send control messages.  osh writes debug messages (like this one) to stderr.')
+        for fd in fd_out:
+          fanos_log('received descriptor %d' % fd)
 
-      fd_out = []  # type: List[int]
-      while True:
-        try:
-          blob = fanos.recv(0, fd_out)
-        except ValueError as e:
-          fanos_log('protocol error: %s', e)
-          raise  # higher level handles it
+        with ctx_Descriptors(fd_out):
+          reply = self.EVAL(arg)
 
-        if blob is None:
-          fanos_log('EOF received')
-          break
+        #ShowDescriptorState('RESTORED')
 
-        fanos_log('received blob %r', blob)
-        if ' ' in blob:
-          command, arg = blob.split(' ', 1)
-        else:
-          command = blob
-          arg = ''
+      # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
+      # Do we also need 'complete --oil' and 'complete --osh' ?
+      elif command == 'PARSE':
+        # Just parse
+        reply = 'TODO:PARSE'
 
-        if command == 'GETPID':
-          reply = str(posix.getpid())
+      else:
+        fanos_log('Invalid command %r' % command)
+        raise ValueError('Invalid command %r' % command)
 
-        elif command == 'EVAL':
-          #fanos_log('arg %r', arg)
+      fanos.send(1, b'OK %s' % reply)
+      del fd_out[:]  # reset for next iteration
 
-          if len(fd_out) != 3:
-            raise ValueError('Expected 3 file descriptors')
+    return 0
 
-          fanos_log('received descriptors %s', fd_out)
+def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
+  # type: (arg_types.main, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
 
-          with ctx_Descriptors(fd_out):
-            reply = self.EVAL(arg)
+  # TODO: Any could be _Attributes from frontend/args.py
 
-          #ShowDescriptorState('RESTORED')
+  status = 0
+  done = False
+  while not done:
+    mylib.MaybeCollect()  # manual GC point
 
-        # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
-        # Do we also need 'complete --oil' and 'complete --osh' ?
-        elif command == 'PARSE':
-          # Just parse
-          reply = 'TODO:PARSE'
+    # - This loop has a an odd structure because we want to do cleanup after
+    # every 'break'.  (The ones without 'done = True' were 'continue')
+    # - display.EraseLines() needs to be called BEFORE displaying anything, so
+    # it appears in all branches.
 
-        else:
-          fanos_log('Invalid command %r', command)
-          raise ValueError('Invalid command %r' % command)
+    while True:  # ONLY EXECUTES ONCE
+      prompt_plugin.Run()
+      try:
+        # may raise HistoryError or ParseError
+        result = c_parser.ParseInteractiveLine()
+        UP_result = result
+        with tagswitch(result) as case:
+          if case(parse_result_e.EmptyLine):
+            display.EraseLines()
+            break  # quit shell
+          elif case(parse_result_e.Eof):
+            display.EraseLines()
+            done = True
+            break  # quit shell
+          elif case(parse_result_e.Node):
+            result = cast(parse_result__Node, UP_result)
+            node = result.cmd
+          else:
+            raise AssertionError()
 
-        fanos.send(1, b'OK %s' % reply)
-        del fd_out[:]  # reset for next iteration
+      except util.HistoryError as e:  # e.g. expansion failed
+        # Where this happens:
+        # for i in 1 2 3; do
+        #   !invalid
+        # done
+        display.EraseLines()
+        print(e.UserErrorString())
+        break
+      except error.Parse as e:
+        display.EraseLines()
+        errfmt.PrettyPrintError(e)
+        status = 2
+        cmd_ev.mem.SetLastStatus(status)
+        break
+      except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
+        # Here we must print a newline BEFORE EraseLines()
+        print('^C')
+        display.EraseLines()
+        # http://www.tldp.org/LDP/abs/html/exitcodes.html
+        # bash gives 130, dash gives 0, zsh gives 1.
+        # Unless we SET cmd_ev.last_status, scripts see it, so don't bother now.
+        break
 
-      return 0
+      display.EraseLines()  # Clear candidates right before executing
 
-  def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
-    # type: (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
+      # to debug the slightly different interactive prasing
+      if cmd_ev.exec_opts.noexec():
+        ui.PrintAst(node, flag)
+        break
 
-    # TODO: Any could be _Attributes from frontend/args.py
+      try:
+        is_return, _ = cmd_ev.ExecuteAndCatch(node)
+      except KeyboardInterrupt:  # issue 467, Ctrl-C during $(sleep 1)
+        is_return = False
+        display.EraseLines()
+        status = 130  # 128 + 2
+        cmd_ev.mem.SetLastStatus(status)
+        break
 
-    status = 0
-    done = False
-    while not done:
-      mylib.MaybeCollect()  # manual GC point
+      status = cmd_ev.LastStatus()
+      if is_return:
+        done = True
+        break
 
-      # - This loop has a an odd structure because we want to do cleanup after
-      # every 'break'.  (The ones without 'done = True' were 'continue')
-      # - display.EraseLines() needs to be called BEFORE displaying anything, so
-      # it appears in all branches.
+      break  # QUIT LOOP after one iteration.
 
-      while True:  # ONLY EXECUTES ONCE
-        prompt_plugin.Run()
-        try:
-          # may raise HistoryError or ParseError
-          result = c_parser.ParseInteractiveLine()
-          UP_result = result
-          with tagswitch(result) as case:
-            if case(parse_result_e.EmptyLine):
-              display.EraseLines()
-              break  # quit shell
-            elif case(parse_result_e.Eof):
-              display.EraseLines()
-              done = True
-              break  # quit shell
-            elif case(parse_result_e.Node):
-              result = cast(parse_result__Node, UP_result)
-              node = result.cmd
-            else:
-              raise AssertionError()
+    cmd_ev.RunPendingTraps()  # Run trap handlers even if we get just ENTER
 
-        except util.HistoryError as e:  # e.g. expansion failed
-          # Where this happens:
-          # for i in 1 2 3; do
-          #   !invalid
-          # done
-          display.EraseLines()
-          print(e.UserErrorString())
-          break
-        except error.Parse as e:
-          display.EraseLines()
-          errfmt.PrettyPrintError(e)
-          status = 2
-          cmd_ev.mem.SetLastStatus(status)
-          break
-        except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
-          # Here we must print a newline BEFORE EraseLines()
-          print('^C')
-          display.EraseLines()
-          # http://www.tldp.org/LDP/abs/html/exitcodes.html
-          # bash gives 130, dash gives 0, zsh gives 1.
-          # Unless we SET cmd_ev.last_status, scripts see it, so don't bother now.
-          break
+    # Cleanup after every command (or failed command).
 
-        display.EraseLines()  # Clear candidates right before executing
+    # Reset internal newline state.
+    c_parser.Reset()
+    c_parser.ResetInputObjects()
 
-        # to debug the slightly different interactive prasing
-        if cmd_ev.exec_opts.noexec():
-          ui.PrintAst(node, flag)
-          break
+    display.Reset()  # clears dupes and number of lines last displayed
 
-        try:
-          is_return, _ = cmd_ev.ExecuteAndCatch(node)
-        except KeyboardInterrupt:  # issue 467, Ctrl-C during $(sleep 1)
-          is_return = False
-          display.EraseLines()
-          status = 130  # 128 + 2
-          cmd_ev.mem.SetLastStatus(status)
-          break
+    # TODO: Replace this with a shell hook?  with 'trap', or it could be just
+    # like command_not_found.  The hook can be 'echo $?' or something more
+    # complicated, i.e. with timetamps.
+    if flag.print_status:
+      print('STATUS\t%r' % status)
 
-        status = cmd_ev.LastStatus()
-        if is_return:
-          done = True
-          break
-
-        break  # QUIT LOOP after one iteration.
-
-      cmd_ev.RunPendingTraps()  # Run trap handlers even if we get just ENTER
-
-      # Cleanup after every command (or failed command).
-
-      # Reset internal newline state.
-      c_parser.Reset()
-      c_parser.ResetInputObjects()
-
-      display.Reset()  # clears dupes and number of lines last displayed
-
-      # TODO: Replace this with a shell hook?  with 'trap', or it could be just
-      # like command_not_found.  The hook can be 'echo $?' or something more
-      # complicated, i.e. with timetamps.
-      if flag.print_status:
-        print('STATUS', repr(status))
-
-    return status
+  return status
 
 
 
