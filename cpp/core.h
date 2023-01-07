@@ -7,6 +7,7 @@
 #include <termios.h>
 
 #include "_gen/frontend/syntax.asdl.h"
+#include "cpp/pgen2.h"
 #include "mycpp/runtime.h"
 
 // Hacky forward declaration
@@ -116,6 +117,8 @@ Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader);
 Str* strerror(IOError_OSError* e);
 
 Str* BackslashEscape(Str* s, Str* meta_chars);
+
+grammar::Grammar* LoadOilGrammar(_ResourceLoader*);
 
 }  // namespace pyutil
 

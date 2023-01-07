@@ -306,4 +306,8 @@ Str* strerror(IOError_OSError* e) {
   return s;
 }
 
+grammar::Grammar* LoadOilGrammar(_ResourceLoader*) {
+  return nullptr;
+}
+
 }  // namespace pyutil
