@@ -5,8 +5,6 @@ UI details should go in core/ui.py.
 """
 from __future__ import print_function
 
-import sys
-
 from _devbuild.gen.id_kind_asdl import Id
 from core import error
 from core import util
@@ -15,7 +13,7 @@ from frontend import match
 from frontend import reader
 from osh import word_
 
-from typing import Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from frontend.py_readline import Readline
@@ -48,7 +46,14 @@ class Evaluator(object):
     #self.debug_f.log('tokens %r', tokens)
 
     # Common case: no history expansion.
-    if all(id_ == Id.History_Other for (id_, _) in tokens):
+    # mycpp: rewrite of all()
+    ok = True
+    for (id_, _) in tokens:
+      if id_ != Id.History_Other:
+        ok = False
+        break
+
+    if ok:
       return line
 
     history_len = self.readline.get_current_history_length()
@@ -57,7 +62,7 @@ class Evaluator(object):
 
     self.debug_f.log('history length = %d', history_len)
 
-    parts = []
+    parts = []  # type: List[str]
     for id_, val in tokens:
       if id_ == Id.History_Other:
         out = val
@@ -100,7 +105,7 @@ class Evaluator(object):
             try:
               w = words[1]
             except IndexError:
-              raise util.HistoryError("No first word in %r", prev)
+              raise util.HistoryError("No first word in %r" % prev)
             spid1 = word_.LeftMostSpanForWord(w)
             spid2 = word_.RightMostSpanForWord(w)
 
@@ -108,7 +113,7 @@ class Evaluator(object):
             try:
               w = words[-1]
             except IndexError:
-              raise util.HistoryError("No last word in %r", prev)
+              raise util.HistoryError("No last word in %r" % prev)
 
             spid1 = word_.LeftMostSpanForWord(w)
             spid2 = word_.RightMostSpanForWord(w)
@@ -118,7 +123,7 @@ class Evaluator(object):
               w1 = words[1]
               w2 = words[-1]
             except IndexError:
-              raise util.HistoryError("Couldn't find words in %r", prev)
+              raise util.HistoryError("Couldn't find words in %r" % prev)
 
             spid1 = word_.LeftMostSpanForWord(w1)
             spid2 = word_.RightMostSpanForWord(w2)
@@ -144,7 +149,7 @@ class Evaluator(object):
 
         out = self.readline.get_history_item(num)
         if out is None:  # out of range
-          raise util.HistoryError('%s: not found', val)
+          raise util.HistoryError('%s: not found' % val)
 
       elif id_ == Id.History_Search:
         # Remove the required space at the end and save it.  A simple hack than
@@ -153,7 +158,7 @@ class Evaluator(object):
         val = val[:-1]
 
         # Search backward
-        prefix = None
+        prefix = None  # type: Optional[str]
         substring = ''
         if val[1] == '?':
           substring = val[2:]
@@ -168,11 +173,12 @@ class Evaluator(object):
           if len(substring) and substring in cmd:
             out = cmd
           if out is not None:
-            out += last_char  # restore required space
+            # mycpp: rewrite of +=
+            out = out + last_char  # restore required space
             break
 
         if out is None:
-          raise util.HistoryError('%r found no results', val)
+          raise util.HistoryError('%r found no results' % val)
 
       else:
         raise AssertionError(id_)
@@ -181,5 +187,5 @@ class Evaluator(object):
 
     line = ''.join(parts)
     # show what we expanded to
-    sys.stdout.write('! %s' % line)
+    print('! %s' % line)
     return line
