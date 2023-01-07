@@ -10,9 +10,10 @@ from __future__ import print_function
 """
 fanos_test.py: Tests for fanos.c
 """
-import unittest
+import errno
 import socket
 import sys
+import unittest
 
 from core.pyerror import log
 
@@ -75,7 +76,7 @@ class FanosTest(unittest.TestCase):
   def testSend(self):
     """Send with our fanos library; receive with Python stdlib."""
 
-    print('\n___ c5po.send ___')
+    print('\n___ fanos.send ___')
     left, right = socket.socketpair()
     print(left)
     print(right)
@@ -116,6 +117,25 @@ class FanosTest(unittest.TestCase):
     self.assertEqual('', msg)
     print("py msg = %r" % msg)
     print('fd_out = %s' % fd_out)
+
+  def testIOErrors(self):
+    try:
+      fanos.send(99, b'foo')
+    except IOError as e:
+      print(e)
+      print(type(e))
+      self.assertEqual(errno.EBADF, e.errno)
+    else:
+      self.fail('Expected IOError')
+
+    try:
+      result = fanos.recv(99, [])
+    except IOError as e:
+      print(e)
+      print(type(e))
+      self.assertEqual(errno.EBADF, e.errno)
+    else:
+      self.fail('Expected IOError')
 
   def testRecvErrors(self):
     left, right = socket.socketpair()

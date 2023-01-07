@@ -14,7 +14,7 @@
 namespace fanos {
 
 void send(int sock_fd, Str* blob) {
-  // TODO: Suppor this argument
+  // TODO: Support this argument
   int fds[FANOS_NUM_FDS] = {-1, -1, -1};
 
   FanosError err = {0};

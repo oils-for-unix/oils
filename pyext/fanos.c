@@ -42,6 +42,8 @@ func_recv(PyObject *self, PyObject *args) {
   fanos_recv(sock_fd, fds, &res, &err);
 
   if (err.err_code != 0) {
+    // uses the errno global, which is apparently still set (see tests)
+    debug("func_recv errno = %d", err.err_code);
     return PyErr_SetFromErrno(io_error);
   }
   if (err.value_err != NULL) {
@@ -84,6 +86,8 @@ func_send(PyObject *self, PyObject *args) {
   struct FanosError err = {0};
   fanos_send(sock_fd, blob, blob_len, fds, &err);
   if (err.err_code != 0) {
+    // uses the errno global, which is apparently still set (see tests)
+    debug("func_send errno %d", err.err_code);
     return PyErr_SetFromErrno(io_error);
   }
   if (err.value_err != NULL) {
