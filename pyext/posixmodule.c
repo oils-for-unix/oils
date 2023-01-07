@@ -2398,6 +2398,22 @@ posix_strerror(PyObject *self, PyObject *args)
     return PyString_FromString(message);
 }
 
+#ifdef HAVE_STDLIB_H
+
+#include <stdlib.h>
+
+PyDoc_STRVAR_remove(posix_system__doc__,
+"system(command)\n\n\
+Execute the command (a string) in a subshell.");
+
+static PyObject *
+posix_system(PyObject *self, PyObject *args)
+{
+    return posix_1str(args, "et:system", system);
+}
+
+#endif /* HAVE_STDLIB_H */
+
 
 #ifdef HAVE_SYS_WAIT_H
 

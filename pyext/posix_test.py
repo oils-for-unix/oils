@@ -175,6 +175,9 @@ class PosixTest(unittest.TestCase):
       print('x'*65537, file=f)
       log('2: done')
 
+  def testSystem(self):
+    posix_.system("uname -a")
+
 
 def _Handler(x, y):
   log('Got signal %s %s', x, y)
