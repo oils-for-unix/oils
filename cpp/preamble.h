@@ -17,6 +17,7 @@
 #include "cpp/core.h"
 #include "cpp/core_error.h"
 #include "cpp/core_pyerror.h"
+#include "cpp/fanos.h"
 #include "cpp/frontend_flag_spec.h"
 #include "cpp/frontend_match.h"
 #include "cpp/frontend_pyreadline.h"
