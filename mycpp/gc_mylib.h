@@ -74,6 +74,8 @@ class LineReader {
   virtual int fileno() {
     FAIL(kNotImplemented);
   }
+  virtual void close() {
+  }
 
   GC_OBJ(header_);
 };
@@ -104,6 +106,9 @@ class CFileLineReader : public LineReader {
   virtual Str* readline();
   virtual int fileno() {
     return ::fileno(f_);
+  }
+  void close() {
+    fclose(f_);
   }
 
  private:
