@@ -44,6 +44,9 @@ def _GetCTypeForCast(type_expr):
     # But worked around it in osh/word_parse.py
     #subtype_name = 'List<word_t>'
     raise AssertionError()
+  elif isinstance(type_expr, StrExpr):
+    parts = type_expr.value.split('.')
+    subtype_name = '::'.join(parts)
   else:
     subtype_name = type_expr.name
 
@@ -66,6 +69,10 @@ def _GetCastKind(module_path, subtype_name):
       if name in subtype_name:
         cast_kind = 'reinterpret_cast'
         break
+
+  if 'process.py' in module_path and 'mylib::Writer' in subtype_name:
+      cast_kind = 'reinterpret_cast'
+
   return cast_kind
 
 

@@ -145,15 +145,14 @@ class FdState(object):
     fd_mode = O_RDONLY
     return self._Open(path, 'r', fd_mode)
 
-  if mylib.PYTHON:
-    # used for util.DebugFile
-    def OpenForWrite(self, path):
-      # type: (str) -> mylib.Writer
-      fd_mode = O_CREAT | O_RDWR
-      f = self._Open(path, 'w', fd_mode)
-      # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
-      # object supports both interfaces.
-      return cast('mylib.Writer', f)
+  # used for util.DebugFile
+  def OpenForWrite(self, path):
+    # type: (str) -> mylib.Writer
+    fd_mode = O_CREAT | O_RDWR
+    f = self._Open(path, 'w', fd_mode)
+    # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
+    # object supports both interfaces.
+    return cast('mylib.Writer', f)
 
   def _Open(self, path, c_mode, fd_mode):
     # type: (str, str, int) -> mylib.LineReader
