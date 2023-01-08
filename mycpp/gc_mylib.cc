@@ -129,7 +129,7 @@ void CFileWriter::flush() {
 }
 
 bool CFileWriter::isatty() {
-  return ::isatty(fileno(f_));
+  return ::isatty(::fileno(f_));
 }
 
 //

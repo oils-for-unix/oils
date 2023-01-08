@@ -15,6 +15,8 @@ from typing import Tuple, Any
 CPP = False
 PYTHON = True
 
+STDIN_FILENO = 0
+
 
 def MaybeCollect():
   # type: () -> None
@@ -69,6 +71,9 @@ class File(object):
     # type: (str) -> None
     """
     Write a line.  The name is consistent with JavaScript writeln() and Rust.
+
+    TODO: The Oil interpreter shouldn't use print() anywhere.  Instead it can
+    use gStdout.writeln()
     """
     posix.write(self.fd, s)
     posix.write(self.fd, '\n')
