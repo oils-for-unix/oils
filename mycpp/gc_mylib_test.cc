@@ -177,8 +177,6 @@ TEST files_test() {
   mylib::LineReader* stdin_ = mylib::Stdin();
   log("stdin isatty() = %d", stdin_->isatty());
 
-  ASSERT_EQ(0, stdin_->fileno());
-
   FILE* f = fopen("README.md", "r");
 
   mylib::CFileLineReader* r = nullptr;

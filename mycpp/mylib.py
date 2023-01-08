@@ -7,12 +7,21 @@ import cStringIO
 import sys
 
 from pylib import collections_
+try:
+  import posix_ as posix
+except ImportError:
+  # Hack for tangled dependencies.  Many tools import core.pyerror.log, which
+  # ends up importing mylib.PYTHON
+  import os
+  posix = os
 
 from typing import Tuple, Any
 
 # For conditional translation
 CPP = False
 PYTHON = True
+
+STDIN_FILENO = 0
 
 
 def MaybeCollect():
@@ -35,13 +44,14 @@ def NewDict():
 
 def log(msg, *args):
   # type: (str, *Any) -> None
+  """Only for test code"""
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)
 
 
-# TODO: This is only used for test code: mycpp/examples/varargs
 def p_die(msg, *args):
+  """Only for test code, like mycpp/examples/varargs"""
   # type: (str, *Any) -> None
   raise RuntimeError(msg % args)
 
@@ -51,10 +61,37 @@ BufWriter = cStringIO.StringIO
 BufLineReader = cStringIO.StringIO
 
 
+class File(object):
+  """Custom file wrapper for Unix I/O like write() read()
+  
+  Not C I/O like fwrite() fread().  There should be no flush().
+  """
+  def __init__(self, fd):
+    # type: (int) -> None
+    self.fd = fd
+
+  def write(self, s):
+    # type: (str) -> None
+    posix.write(self.fd, s)
+
+  def writeln(self, s):
+    # type: (str) -> None
+    """
+    Write a line.  The name is consistent with JavaScript writeln() and Rust.
+
+    TODO: The Oil interpreter shouldn't use print() anywhere.  Instead it can
+    use gStdout.writeln()
+    """
+    posix.write(self.fd, s)
+    posix.write(self.fd, '\n')
+
+
+# TODO: Can return File(1)
 def Stdout():
   return sys.stdout
 
 
+# TODO: Can return File(2)
 def Stderr():
   return sys.stderr
 

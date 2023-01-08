@@ -2375,7 +2375,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # defined in mylib
           if name in ('switch', 'tagswitch', 'iteritems', 'str_cmp',
-                      'NewDict'):
+                      'NewDict', 'STDIN_FILENO'):
             continue
 
           # A heuristic that works for the Oil import style.

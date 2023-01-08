@@ -71,9 +71,6 @@ class LineReader {
   virtual bool isatty() {
     return false;
   }
-  virtual int fileno() {
-    FAIL(kNotImplemented);
-  }
   virtual void close() {
   }
 
@@ -104,9 +101,6 @@ class CFileLineReader : public LineReader {
     // not mutating field_mask because FILE* isn't a GC object
   }
   virtual Str* readline();
-  virtual int fileno() {
-    return ::fileno(f_);
-  }
   void close() {
     fclose(f_);
   }

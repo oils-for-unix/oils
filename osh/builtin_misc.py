@@ -29,6 +29,7 @@ from frontend import flag_spec
 from frontend import reader
 from frontend import typed_args
 from mycpp import mylib
+from mycpp.mylib import STDIN_FILENO
 from osh import word_compile
 from pylib import os_path
 from qsn_ import qsn_native
@@ -146,12 +147,12 @@ def _AppendParts(s, spans, max_results, join_next, parts):
 # _ReadUntilDelim, and _ReadLineSlowly
 #
 
-def _ReadN(stdin_fd, num_bytes, cmd_ev):
-  # type: (int, int, CommandEvaluator) -> str
+def _ReadN(num_bytes, cmd_ev):
+  # type: (int, CommandEvaluator) -> str
   chunks = []  # type: List[str]
   bytes_left = num_bytes
   while bytes_left > 0:
-    n, err_num = pyos.Read(stdin_fd, bytes_left, chunks)  # read up to n bytes
+    n, err_num = pyos.Read(STDIN_FILENO, bytes_left, chunks)  # read up to n bytes
 
     if n < 0:
       if err_num == EINTR:
@@ -377,13 +378,11 @@ class Read(vm._Builtin):
     if arg.q:
       e_usage('--qsn not implemented yet')
 
-    fd = self.stdin.fileno()
-
     if arg.t >= 0.0:
       if arg.t != 0.0:
         e_die("read -t isn't implemented (except t=0)")
       else:
-        return 0 if pyos.InputAvailable(fd) else 1
+        return 0 if pyos.InputAvailable(STDIN_FILENO) else 1
 
     bits = 0
     if self.stdin.isatty():
@@ -399,7 +398,7 @@ class Read(vm._Builtin):
     if bits == 0:
       status = self._Read(arg, names)
     else:
-      term = pyos.TermState(fd, ~bits)
+      term = pyos.TermState(STDIN_FILENO, ~bits)
       try:
         status = self._Read(arg, names)
       finally:
@@ -415,8 +414,7 @@ class Read(vm._Builtin):
       else:
         name = 'REPLY'  # default variable name
 
-      stdin_fd = self.stdin.fileno()
-      s = _ReadN(stdin_fd, arg.n, self.cmd_ev)
+      s = _ReadN(arg.n, self.cmd_ev)
 
       state.BuiltinSetString(self.mem, name, s)
 
