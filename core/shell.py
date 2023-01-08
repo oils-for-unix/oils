@@ -555,8 +555,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
-  if line_reader is not None:
-    c_parser = parse_ctx.MakeOshParser(line_reader)
+  assert line_reader is not None
+  c_parser = parse_ctx.MakeOshParser(line_reader)
 
   # Calculate ~/.config/oil/oshrc or oilrc.  Used for both -i and --headless
   # We avoid cluttering the user's home directory.  Some users may want to ln
@@ -654,8 +654,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       except util.UserExit as e:
         return e.status
 
-    if line_reader is not None:
-      line_reader.Reset()  # After sourcing startup file, render $PS1
+    assert line_reader is not None
+    line_reader.Reset()  # After sourcing startup file, render $PS1
 
     prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)
     try:
