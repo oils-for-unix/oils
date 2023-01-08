@@ -30,7 +30,9 @@ class KeyboardInterrupt : public _ExceptionOpaque {};
 
 class ValueError {
  public:
-  ValueError() : message(nullptr) {
+  ValueError()
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(ValueError)),
+        message(nullptr) {
   }
   explicit ValueError(Str* message)
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(ValueError)),

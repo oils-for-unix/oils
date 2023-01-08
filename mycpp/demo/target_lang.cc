@@ -689,6 +689,54 @@ TEST param_passing_demo() {
   PASS();
 }
 
+#define ENUM(name, schema)
+
+#define ENUM2(name, ...)
+
+#define USE(path)
+
+TEST tea_macros_demo() {
+  // The preprocessor does NOT expand this.  Instead we have a separate parser
+  // that does it.  Hm not bad.
+  //
+  // Problem: the processor has to expand imports.
+
+  USE("frontend/syntax.asdl");
+
+  // Without commas
+
+  ENUM(
+      suffix_op,
+
+      Nullary % Token |
+          Unary {
+            Token word;
+            Word arg_word
+          }
+
+  );
+
+  // More natural comma syntax.  Although less consistent with C++.
+  // TODO: See what clang-format does on these.
+  // Oh it treats:
+  // - % and | as binary operators
+  // - ; breaks a line but comma doesn't , which I might not want
+  //
+  // OK () and , looks better, but no line breaking.  Maybe there is a
+  // clang-format option.
+
+  ENUM2(suffix_op,
+
+        Nullary #Token, Unary(Token word, Word arg_word),
+        Binary(Token word, Word arg_word), Static(Token tok, Str arg)
+
+  );
+
+  printf("Sum types defined");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -714,6 +762,8 @@ int main(int argc, char** argv) {
   RUN_TEST(comma_demo);
   RUN_TEST(signed_unsigned_demo);
   RUN_TEST(param_passing_demo);
+
+  RUN_TEST(tea_macros_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

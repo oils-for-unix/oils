@@ -838,6 +838,12 @@ TEST dict_iters_test() {
 }
 
 TEST exceptions_test() {
+  auto v1 = Alloc<ValueError>();
+  ASSERT_EQ(HeapTag::FixedSize, v1->header_.heap_tag);
+
+  auto v2 = Alloc<ValueError>(kEmptyString);
+  ASSERT_EQ(HeapTag::FixedSize, v2->header_.heap_tag);
+
   IndexError* other;
   bool caught = false;
   try {
