@@ -122,7 +122,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
   rc_line_reader = reader.FileLineReader(f, arena)
   rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
-  with alloc.ctx_Location(arena, source.SourcedFile(rc_path)):
+  with alloc.ctx_Location(arena, source.SourcedFile(rc_path, runtime.NO_SPID)):
     # TODO: handle status, e.g. 2 for ParseError
     status = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
@@ -161,18 +161,18 @@ class ShellOptHook(state.OptHook):
 
 def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
   # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
-  b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
 
   b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
   b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
   b[builtin_i.fopen] = builtin_pure.Fopen(mem, cmd_ev)
-
-  b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
-  b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
-
   b[builtin_i.use] = builtin_pure.Use(mem, errfmt)
-  b[builtin_i.argparse] = builtin_oil.ArgParse(mem, errfmt)
-  b[builtin_i.describe] = builtin_oil.Describe(mem, errfmt)
+
+  if mylib.PYTHON:
+    b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
+    b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
+    b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
+    b[builtin_i.argparse] = builtin_oil.ArgParse(mem, errfmt)
+    b[builtin_i.describe] = builtin_oil.Describe(mem, errfmt)
 
 
 def Main(lang, arg_r, environ, login_shell, loader, readline):
@@ -263,7 +263,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   version_str = pyutil.GetVersion(loader)
   state.InitMem(mem, environ, version_str)
 
-  funcs_builtin.Init(mem)
+  if mylib.PYTHON:
+    funcs_builtin.Init(mem)
 
   procs = {}  # type: Dict[str, Proc]
   hay_state = state.Hay()
@@ -373,17 +374,20 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   # TODO: This is instantiation is duplicated in osh/word_eval.py
   globber = glob_.Globber(exec_opts)
 
-  funcs_builtin.Init2(mem, splitter, globber)
+  if mylib.PYTHON:
+    funcs_builtin.Init2(mem, splitter, globber)
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
   crash_dump_dir = environ.get('OSH_CRASH_DUMP_DIR', '')
   cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
 
-  comp_lookup = completion.Lookup()
+  if mylib.PYTHON:
+    comp_lookup = completion.Lookup()
 
-  # Various Global State objects to work around readline interfaces
-  compopt_state = completion.OptionState()
+    # Various Global State objects to work around readline interfaces
+    compopt_state = completion.OptionState()
+
   comp_ui_state = comp_ui.State()
   prompt_state = comp_ui.PromptState()
 
@@ -419,7 +423,12 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
-  expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
+
+  if mylib.PYTHON:
+    expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
+  else:
+    expr_ev = None
+
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)
 
@@ -429,11 +438,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 
-  parse_config = funcs.ParseHay(fd_state, parse_ctx, errfmt)
-  eval_to_dict = funcs.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
-  block_as_str = funcs.BlockAsStr(arena)
-  hay_func = funcs.HayFunc(hay_state)
-  funcs_builtin.Init3(mem, parse_config, eval_to_dict, block_as_str, hay_func)
+  if mylib.PYTHON:
+    parse_config = funcs.ParseHay(fd_state, parse_ctx, errfmt)
+    eval_to_dict = funcs.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
+    block_as_str = funcs.BlockAsStr(arena)
+
+    hay_func = funcs.HayFunc(hay_state)
+    funcs_builtin.Init3(mem, parse_config, eval_to_dict, block_as_str, hay_func)
 
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
@@ -472,15 +483,17 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                        search_path, errfmt)
   shell_native.AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev,
                         shell_ex, hay_state, errfmt)
-  builtins[builtin_i.json] = builtin_oil.Json(mem, expr_ev, errfmt)
 
-  spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
-                                          comp_lookup, errfmt)
-  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
-  builtins[builtin_i.complete] = complete_builtin
-  builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
-  builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
-  builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
+  if mylib.PYTHON:
+    builtins[builtin_i.json] = builtin_oil.Json(mem, expr_ev, errfmt)
+
+    spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
+                                            comp_lookup, errfmt)
+    complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
+    builtins[builtin_i.complete] = complete_builtin
+    builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
+    builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
+    builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
   builtins[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer, errfmt)
 
@@ -495,8 +508,11 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   elif flag.i:  # force interactive
     src = source.Stdin(' -i')
-    line_reader = py_reader.InteractiveLineReader(
-        arena, prompt_ev, hist_ev, readline, prompt_state)
+    if mylib.PYTHON:
+      line_reader = py_reader.InteractiveLineReader(
+          arena, prompt_ev, hist_ev, readline, prompt_state)
+    else:
+      line_reader = None
     mutable_opts.set_interactive()
 
   else:
@@ -509,8 +525,11 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         stdin = mylib.Stdin()
         if stdin.isatty():
           src = source.Interactive()
-          line_reader = py_reader.InteractiveLineReader(
-              arena, prompt_ev, hist_ev, readline, prompt_state)
+          if mylib.PYTHON:
+            line_reader = py_reader.InteractiveLineReader(
+                arena, prompt_ev, hist_ev, readline, prompt_state)
+          else:
+            line_reader = None
           mutable_opts.set_interactive()
         else:
           src = source.Stdin('')
@@ -528,6 +547,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   # Pretend it came from somewhere else
   if flag.location_str is not None:
     src = source.Synthetic(flag.location_str)
+    assert line_reader is not None
     if flag.location_start_line != -1:
       line_reader.SetLineOffset(flag.location_start_line)
 
@@ -535,6 +555,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
+  assert line_reader is not None
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   # Calculate ~/.config/oil/oshrc or oilrc.  Used for both -i and --headless
@@ -545,7 +566,10 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   home_dir = pyos.GetMyHomeDir()
   assert home_dir is not None
-  rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil/%src' % lang)
+  rc_path = flag.rcfile
+  # mycpp: rewrite of or
+  if rc_path is None:
+      rc_path = os_path.join(home_dir, '.config/oil/%src' % lang)
 
   if flag.headless:
     state.InitInteractive(mem)
@@ -586,35 +610,36 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     mutable_opts.set_redefine_module()
 
     if readline:
-      # NOTE: We're using a different WordEvaluator here.
-      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
-                                             splitter, errfmt)
-
-      ev.arith_ev = arith_ev
-      ev.expr_ev = expr_ev
-      ev.prompt_ev = prompt_ev
-      ev.CheckCircularDeps()
-
-      root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
-                                           comp_ui_state, comp_ctx, debug_f)
-
-      term_width = 0
-      if flag.completion_display == 'nice':
-        try:
-          term_width = libc.get_terminal_width()
-        except IOError:  # stdin not a terminal
-          pass
-
-      if term_width != 0:
-        display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
-                                      debug_f, readline)  # type: comp_ui._IDisplay
-      else:
-        display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
-
-      history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
-      comp_ui.InitReadline(readline, history_filename, root_comp, display,
-                           debug_f)
       if mylib.PYTHON:
+        # NOTE: We're using a different WordEvaluator here.
+        ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
+                                               splitter, errfmt)
+
+        ev.arith_ev = arith_ev
+        ev.expr_ev = expr_ev
+        ev.prompt_ev = prompt_ev
+        ev.CheckCircularDeps()
+
+        root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
+                                             comp_ui_state, comp_ctx, debug_f)
+
+        term_width = 0
+        if flag.completion_display == 'nice':
+          try:
+            term_width = libc.get_terminal_width()
+          except IOError:  # stdin not a terminal
+            pass
+
+        if term_width != 0:
+          display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
+                                        debug_f, readline)  # type: comp_ui._IDisplay
+        else:
+          display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
+
+        history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
+        comp_ui.InitReadline(readline, history_filename, root_comp, display,
+                             debug_f)
+
         _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     else:  # Without readline module
@@ -629,6 +654,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       except util.UserExit as e:
         return e.status
 
+    assert line_reader is not None
     line_reader.Reset()  # After sourcing startup file, render $PS1
 
     prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)

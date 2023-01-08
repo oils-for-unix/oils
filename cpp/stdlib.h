@@ -128,6 +128,7 @@ time_t time();
 // factor out our own API with better types.
 time_t localtime(time_t ts);
 Str* strftime(Str* s, time_t ts);
+void sleep(int seconds);
 
 }  // namespace time_
 

@@ -13,9 +13,11 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, scope_e, Proc
+    value, value_e, scope_e, Proc, cmd_value__Assign
 )
-from _devbuild.gen.syntax_asdl import sh_lhs_expr, command_e
+from _devbuild.gen.syntax_asdl import (
+    sh_lhs_expr, command_e, BraceGroup, 
+)
 from core import error
 from core.pyerror import log, e_usage
 from core import state
@@ -30,7 +32,7 @@ from qsn_ import qsn
 import yajl
 import posix_ as posix
 
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, cast
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.ui import ErrorFormatter
@@ -59,6 +61,7 @@ class Pp(_Builtin):
     self.arena = arena
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     arg, arg_r = flag_spec.ParseCmdVal('pp', cmd_val)
 
     action, action_spid = arg_r.ReadRequired2(
@@ -108,8 +111,9 @@ class Pp(_Builtin):
         # TODO: not just command__ShFunction, but command__Proc!
         doc = ''
         if body.tag_() == command_e.BraceGroup:
-          if body.doc_token:
-            span_id = body.doc_token.span_id
+          bgroup = cast(BraceGroup, body)
+          if bgroup.doc_token:
+            span_id = bgroup.doc_token.span_id
             span = self.arena.GetLineSpan(span_id)
             line = self.arena.GetLine(span.line_id)
             # 1 to remove leading space
@@ -132,6 +136,7 @@ class Append(_Builtin):
   Note: this could also be in builtins_pure.py?
   """
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     arg, arg_r = flag_spec.ParseCmdVal('append', cmd_val)
 
     var_name, var_spid = arg_r.ReadRequired2(
@@ -182,6 +187,7 @@ class ArgParse(_Builtin):
   opt.file
   """
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     return 0
 
 
@@ -193,6 +199,7 @@ class Describe(_Builtin):
   It would test out Oil blocks well.
   """
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     return 0
 
 
@@ -230,6 +237,7 @@ class Json(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'json'
 
@@ -311,6 +319,7 @@ class Write(_Builtin):
   write --qsn --sep $'\t' -- @strs   # this is like QTSV
   """
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     arg, arg_r = flag_spec.ParseCmdVal('write', cmd_val)
     #print(arg)
 

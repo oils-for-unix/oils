@@ -21,23 +21,18 @@ class UserExit(Exception):
     self.status = status
 
 
-if mylib.PYTHON:
-  class HistoryError(Exception):
+class HistoryError(Exception):
 
-    def __init__(self, msg, *args):
-      # type: (str, *Any) -> None
+  def __init__(self, msg):
+    # type: (str) -> None
+    if mylib.PYTHON:
       Exception.__init__(self)
-      self.msg = msg
-      self.args = args
 
-    def UserErrorString(self):
-      # type: () -> str
-      out = 'history: '
-      if self.args:
-        out += self.msg % self.args
-      else:
-        out += self.msg
-      return out
+    self.msg = msg
+
+  def UserErrorString(self):
+    # type: () -> str
+    return 'history: %s' % self.msg
 
 
 class _DebugFile(object):

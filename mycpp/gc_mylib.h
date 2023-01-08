@@ -71,6 +71,8 @@ class LineReader {
   virtual bool isatty() {
     return false;
   }
+  virtual void close() {
+  }
 
   GC_OBJ(header_);
 };
@@ -99,6 +101,9 @@ class CFileLineReader : public LineReader {
     // not mutating field_mask because FILE* isn't a GC object
   }
   virtual Str* readline();
+  void close() {
+    fclose(f_);
+  }
 
  private:
   FILE* f_;

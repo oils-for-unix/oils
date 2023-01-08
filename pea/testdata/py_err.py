@@ -8,7 +8,7 @@ import sys
 
 from asdl import runtime
 from core import error
-from core import shell_native
+from core import shell
 from core.pyerror import log
 from core import pyos
 from core import pyutil
@@ -30,8 +30,7 @@ def main(argv):
   arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
 
   try SYNTAX_ERROR:
-    status = shell_native.Main('osh', arg_r, environ, login_shell, loader,
-                               None)
+    status = shell.Main('osh', arg_r, environ, login_shell, loader, None)
     return status
   except error.Usage as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
