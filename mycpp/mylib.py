@@ -7,7 +7,13 @@ import cStringIO
 import sys
 
 from pylib import collections_
-import posix_ as posix
+try:
+  import posix_ as posix
+except ImportError:
+  # Hack for tangled dependencies.  Many tools import core.pyerror.log, which
+  # ends up importing mylib.PYTHON
+  import os
+  posix = os
 
 from typing import Tuple, Any
 
@@ -38,13 +44,14 @@ def NewDict():
 
 def log(msg, *args):
   # type: (str, *Any) -> None
+  """Only for test code"""
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)
 
 
-# TODO: This is only used for test code: mycpp/examples/varargs
 def p_die(msg, *args):
+  """Only for test code, like mycpp/examples/varargs"""
   # type: (str, *Any) -> None
   raise RuntimeError(msg % args)
 
