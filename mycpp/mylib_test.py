@@ -9,12 +9,22 @@ import unittest
 from mycpp import mylib  # module under test
 
 
-class MycppTest(unittest.TestCase):
+class MylibTest(unittest.TestCase):
 
   def testSplit(self):
     self.assertEqual(('foo', None), mylib.split_once('foo', '='))
     self.assertEqual(('foo', ''), mylib.split_once('foo=', '='))
     self.assertEqual(('foo', 'bar'), mylib.split_once('foo=bar', '='))
+
+  def testFile(self):
+    stdout = mylib.File(1)
+    stderr = mylib.File(2)
+
+    stdout.write('stdout ')
+    stdout.writeln('stdout')
+
+    stderr.write('stderr ')
+    stderr.writeln('stderr ')
 
 
 if __name__ == '__main__':

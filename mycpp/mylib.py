@@ -7,6 +7,7 @@ import cStringIO
 import sys
 
 from pylib import collections_
+import posix_ as posix
 
 from typing import Tuple, Any
 
@@ -51,10 +52,34 @@ BufWriter = cStringIO.StringIO
 BufLineReader = cStringIO.StringIO
 
 
+class File(object):
+  """Custom file wrapper for Unix I/O like write() read()
+  
+  Not C I/O like fwrite() fread().  There should be no flush().
+  """
+  def __init__(self, fd):
+    # type: (int) -> None
+    self.fd = fd
+
+  def write(self, s):
+    # type: (str) -> None
+    posix.write(self.fd, s)
+
+  def writeln(self, s):
+    # type: (str) -> None
+    """
+    Write a line.  The name is consistent with JavaScript writeln() and Rust.
+    """
+    posix.write(self.fd, s)
+    posix.write(self.fd, '\n')
+
+
+# TODO: Can return File(1)
 def Stdout():
   return sys.stdout
 
 
+# TODO: Can return File(2)
 def Stderr():
   return sys.stderr
 
