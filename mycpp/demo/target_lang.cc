@@ -691,9 +691,17 @@ TEST param_passing_demo() {
 
 #define ENUM(name, schema)
 
-#define ENUM2(name, ...)
+#define SUM(name, ...)
+
+#define VARIANT(...)
 
 #define USE(path)
+
+#define SUM_NS(name)
+
+#define PROD(name) struct name
+
+#define SCHEMA(name)
 
 TEST tea_macros_demo() {
   // The preprocessor does NOT expand this.  Instead we have a separate parser
@@ -724,12 +732,71 @@ TEST tea_macros_demo() {
   //
   // OK () and , looks better, but no line breaking.  Maybe there is a
   // clang-format option.
+  //
+  // Enabled WhitespaceSensitiveMacros for now.
 
-  ENUM2(suffix_op,
+  SUM(suffix_op,
+      Nullary #Token,
+      Unary(Token word, Word arg_word),
+      Static(Token tok, Str arg)
+  );
 
-        Nullary #Token, Unary(Token word, Word arg_word),
-        Binary(Token word, Word arg_word), Static(Token tok, Str arg)
+  SUM(suffix_op,
 
+      Nullary #Token;
+      Unary {
+        Token word;
+        Word arg_word;
+      }
+      Static {
+        Token tok;
+        Str arg;
+      }
+  );
+
+  // The C++ compiler parses and validates these
+  // Problem: recursive types and so forth.  We would need forward declarations
+  // and all that?
+  // It's also a bit more verbose.
+  // How to do the % reference?  typedef?
+
+  PROD(Token) {
+    int id;
+    Str val;
+  };
+  struct Word {};
+
+  SUM_NS(suffix_op) {
+    // typedef Token Nullary;
+    struct Unary {
+      Token op;
+      Word arg_word;
+    };
+  }
+
+  SCHEMA(
+    data Token(Id id, Str val);
+
+    enum suffix_op {
+      Nullary %Token
+    | Unary(Token op, Word arg_word)
+    }
+
+    // I guess we retain * for reference semantics and so forth
+    // *out = val; can be useful
+
+    data Other(Word[] words, Dict<Str, Word>* mydict, Str? option);
+
+    // List<Word>* is also possible, but a bit verbose
+    // Word words[] would be more like C++
+    //
+    // Probably want something more clearly different like:
+    //
+    // Word... words
+    // [Word] words   -- synonym for List<Word>* words
+    // Word@ words    -- not bad, for repetition
+    //
+    // There are also grammars with + and [] though
   );
 
   printf("Sum types defined");

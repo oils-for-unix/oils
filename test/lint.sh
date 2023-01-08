@@ -36,6 +36,11 @@ clang-format() {
       AllowShortFunctionsOnASingleLine: None,
       AllowShortBlocksOnASingleLine: false,
       IndentPPDirectives: BeforeHash,
+
+      # Does not do what I want
+      # TypenameMacros: ["SUM", "VARIANT"]
+      WhitespaceSensitiveMacros: ["SUM", "VARIANT", "SCHEMA"]
+      TypenameMacros: ["SUM_NS", "PROD"]
     }
   '
   # We have a lot of switch statements, and the extra indent doesn't help.
