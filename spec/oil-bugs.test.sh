@@ -46,3 +46,17 @@ echo 'should not get here'
 ## STDOUT:
 s=foo
 ## END
+
+
+#### Command sub paren parsing bug (#1387)
+
+write $(if (true) { write true })
+
+const r = $(write $[len('foo')])
+
+#const r = $(write $[5 ** 3])
+#echo $r
+
+## STDOUT:
+## END
+

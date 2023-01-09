@@ -1095,7 +1095,7 @@ oil-user-feedback() {
 }
 
 oil-bugs() {
-  sh-spec spec/oil-bugs.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/oil-bugs.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
