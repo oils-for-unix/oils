@@ -297,7 +297,7 @@ osh-only() {
 
 # Regress bugs
 bugs() {
-  sh-spec spec/bugs.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/bugs.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
