@@ -5,6 +5,7 @@ container_types.py
 from __future__ import print_function
 
 import os
+from mycpp import mylib
 from mycpp.mylib import log
 
 from typing import List, Tuple
@@ -97,6 +98,8 @@ def run_benchmarks():
         num_exceptions += 1
         continue
     i += 1
+
+    mylib.MaybeCollect()  # manual GC point
 
   log('num_exceptions = %d', num_exceptions)
   log('Ran %d iterations of try/except', n)

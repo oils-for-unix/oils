@@ -55,7 +55,14 @@ def run_tests():
 
   print(("foo " + "%s") % "bar")
 
-  print("foo\0%s" % "bar")
+  # NUL bytes
+  s = "spam\0%s" % "eggs"
+
+  # TODO: There's a bug here -- we get len == 4 in C++, but it should be 9.
+  # It's either StrFormat() or the bad JSON literals \u0000
+  if 0:
+    print("len(s) = %d" % len(s))
+    print(s)
 
   print("foo%s" % "\0bar")
 

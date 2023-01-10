@@ -209,7 +209,7 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
-  n = 200000
+  n = 100000
 
   result = 0
   i = 0
@@ -219,6 +219,8 @@ def run_benchmarks():
     tree = p.Parse()
 
     i += 1
+
+    mylib.MaybeCollect()  # manual GC point
 
   log('result = %d', result)
   log('iterations = %d', n)

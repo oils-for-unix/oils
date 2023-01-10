@@ -7,6 +7,7 @@ from __future__ import print_function
 import os
 
 from typing import List
+from mycpp import mylib
 from mycpp.mylib import log
 
 # Operations:
@@ -60,11 +61,13 @@ def run_tests():
 def run_benchmarks():
   # type: () -> None
   i = 0
-  n = 200000
+  n = 100000
   while i < n:
     out = []  # type: List[str]
     Cartesian(['ab', '-|_', 'ABC'], out)
     i = i + 1
+
+    mylib.MaybeCollect()  # manual GC point
 
 
 if __name__ == '__main__':

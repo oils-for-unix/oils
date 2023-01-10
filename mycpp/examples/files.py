@@ -49,6 +49,8 @@ def run_benchmarks():
 
     result += len(f.getvalue())
 
+    mylib.MaybeCollect()
+
     i += 1
   log('Ran %d iterations', n)
   log('result = %d', result)

@@ -135,40 +135,11 @@ def ExamplesToBuild():
 
 
 def ShouldSkipTest(name):
-  #return False
-
-  # '%5d' doesn't work yet.  TODO: fix this.
-  if name in (
-      'strings',
-    ):
-    return True
-
   return False
 
 
 def ShouldSkipBenchmark(name):
-  if name.startswith('test_'):
-    return True
-
-  # two crashes
-
-  # BUG: Assertion failure here!
-  if name == 'cartesian':
-    return True
-  # This crashes with an assertion -- probably because ASDL has no GC header!
-  if name == 'parse':
-    return True
-
-  # two differences
-
-  # BUG: 8191 exceptions problem, I think caused by Alloc<ParseError>
-  if name == 'control_flow':
-    return True
-  # BUG: Different number of iterations!
-  if name == 'files':
-    return True
-
-  return False
+  return name.startswith('test_')
 
 
 TRANSLATE_FILES = {
