@@ -28,6 +28,8 @@ class EOFError : public _ExceptionOpaque {};
 
 class KeyboardInterrupt : public _ExceptionOpaque {};
 
+class StopIteration : public _ExceptionOpaque {};
+
 class ValueError {
  public:
   ValueError()

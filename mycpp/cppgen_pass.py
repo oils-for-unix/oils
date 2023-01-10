@@ -196,6 +196,12 @@ def get_c_type(t, param=False, local=False):
       c_type = 'void'
       is_pointer = True
 
+    elif type_name == 'typing.Iterator':
+      assert len(t.args) == 1, t.args
+      type_param = t.args[0]
+      inner_c_type = get_c_type(type_param)
+      c_type = 'ListIter<%s>' % inner_c_type
+
     else:
       # note: fullname => 'parse.Lexer'; name => 'Lexer'
       base_class_names = [b.type.fullname for b in t.type.bases]
@@ -268,7 +274,7 @@ def get_c_type(t, param=False, local=False):
   return c_type
 
 
-def get_c_return_type(t) -> Tuple[str, bool]:
+def get_c_return_type(t) -> Tuple[str, bool, Optional[str]]:
   """
   Returns a C string, and whether the tuple-by-value optimization was applied
   """
@@ -278,9 +284,13 @@ def get_c_return_type(t) -> Tuple[str, bool]:
   # Optimization: Return tupels BY VALUE
   if isinstance(t, TupleType):
     assert c_ret_type.endswith('*')
-    return c_ret_type[:-1], True
+    return c_ret_type[:-1], True, None
+  elif c_ret_type.startswith('ListIter<'):
+    assert len(t.args) == 1, t.args
+    inner_c_type = get_c_type(t.args[0])
+    return 'void', False, 'List<%s>*' % inner_c_type
   else:
-    return c_ret_type, False
+    return c_ret_type, False, None
 
 
 def PythonStringLiteral(s: str) -> str:
@@ -320,6 +330,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.local_var_list = []  # Collected at assignment
       self.prepend_to_block = None  # For writing vars after {
       self.current_func_node = None
+      self.current_stmt_node = None
+      # Temporary lists to use as output params for generators
+      self.yield_accumulators = {}  # type: Dict[Union[Statement, FuncDef], Tuple[str, str]]
 
       # This is cleared when we start visiting a class.  Then we visit all the
       # methods, and accumulate the types of everything that looks like
@@ -534,7 +547,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> T:
-        pass
+        assert self.current_func_node in self.yield_accumulators
+        self.write_ind('%s->append(', self.yield_accumulators[self.current_func_node][0])
+        self.accept(o.expr)
+        self.write(');\n')
 
     def _WriteArgList(self, o):
       self.write('(')
@@ -542,6 +558,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if i != 0:
           self.write(', ')
         self.accept(arg)
+
+      # Will be set if we're:
+      # a) accumulating the output of an iterator
+      # b) constructing an iterator with the result of (a)
+      if self.current_stmt_node in self.yield_accumulators:
+          if len(o.args) > 0:
+            self.write(', ')
+
+          arg_name, _ = self.yield_accumulators[self.current_stmt_node]
+          self.write('&%s', arg_name)
+
       self.write(')')
 
     def _IsInstantiation(self, o):
@@ -696,6 +723,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         callee_name = o.callee.name
+
+        if isinstance(o.callee, MemberExpr) and callee_name == 'next':
+          self.accept(o.callee.expr)
+          self.write('.NextValue')
+          self._WriteArgList(o)
+          return
 
         if self._IsInstantiation(o):
           self.write('Alloc<')
@@ -1296,6 +1329,26 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(');\n')
             return
 
+          rval_type = self.types[o.rvalue]
+          if isinstance(rval_type, Instance) and rval_type.type.fullname == 'typing.Iterator':
+            # We're calling a generator. Create a temporary List<T> on the stack
+            # to accumulate the results in one big batch, then wrap it in
+            # ListIter<T>.
+            assert len(rval_type.args) == 1, rval_type.args
+            c_type = get_c_type(rval_type)
+            type_param = rval_type.args[0]
+            inner_c_type = get_c_type(type_param)
+            iter_buf = ('_iter_buf_%s' % lval.name, 'List<%s>*' % inner_c_type)
+            self.write_ind('List<%s> %s;\n', inner_c_type, iter_buf[0])
+            self.current_stmt_node = o
+            self.yield_accumulators[o] = iter_buf
+            self.write_ind('')
+            self.accept(o.rvalue)
+            self.current_stmt_node = None
+            self.write(';\n')
+            self.write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
+            return
+
         if isinstance(lval, NameExpr):
           if _SkipAssignment(lval.name):
             return
@@ -1454,7 +1507,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           c_type = get_c_type(rvalue_type)
 
-          is_return = isinstance(o.rvalue, CallExpr)
+          is_return = isinstance(o.rvalue, CallExpr) and o.rvalue.callee.name != "next"
           if is_return:
             assert c_type.endswith('*')
             c_type = c_type[:-1]
@@ -1589,6 +1642,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('  iterating over type %s', over_type.type.fullname)
 
         over_dict = False
+        yield_acc = None
 
         if over_type.type.fullname == 'builtins.list':
           c_type = get_c_type(over_type)
@@ -1613,6 +1667,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           c_iter_type = 'StrIter'
           assert not reverse  # can't reverse iterate over string yet
 
+        elif over_type.type.fullname == 'typing.Iterator':
+          # We're iterating over a generator. Create a temporary List<T> on the stack
+          # to accumulate the results in one big batch.
+          c_iter_type = get_c_type(over_type)
+          assert len(over_type.args) == 1, over_type.args
+          inner_c_type = get_c_type(over_type.args[0])
+          yield_acc = ('_for_yield_acc%d' % self.unique_id, 'List<%s>*' % inner_c_type)
+          self.unique_id += 1
+          self.write_ind('List<%s> %s;\n', inner_c_type, yield_acc[0])
+          self.write_ind('')
+          self.yield_accumulators[o] = yield_acc
+          self.current_stmt_node = o
+          self.accept(iterated_over)
+          self.current_stmt_node = None
+          self.write(';\n')
+
         else:  # assume it's like d.iteritems()?  Iterator type
           assert False, over_type
 
@@ -1626,7 +1696,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           index_update = ''
 
         self.write_ind('for (%s it(', c_iter_type)
-        self.accept(iterated_over)  # the thing being iterated over
+        if yield_acc:
+          self.write('&%s', yield_acc[0])
+        else:
+          self.accept(iterated_over)  # the thing being iterated over
         self.write('); !it.Done(); it.Next()%s) {\n', index_update)
 
         # for x in it: ...
@@ -1904,6 +1977,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.log('  initializer %s', arg.initializer)
             self.log('  kind %s', arg.kind)
 
+        # Will be set if we're declaring or defining a function that returns
+        # Iterator[T].
+        if self.current_func_node in self.yield_accumulators:
+          if not first:
+            self.decl_write(', ')
+
+          arg_name, c_type = self.yield_accumulators[self.current_func_node]
+          self.decl_write('%s %s', c_type, arg_name)
+
     def _WithOneLessArg(self, o, class_name, ret_type):
       default_val = o.arguments[-1].initializer
       if default_val:  # e.g. osh/bool_parse.py has default val
@@ -2039,16 +2121,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.write('\n')
 
-        c_ret_type, _ = get_c_return_type(ret_type)
+        c_ret_type, _, c_iter_list_type = get_c_return_type(ret_type)
+        if c_iter_list_type is not None:
+          # The function is a generator. Add an output param that references an
+          # accumulator for the results.
+          self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
 
         self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
 
+
+        self.current_func_node = o
         self._WriteFuncParams(o.type.arg_types, o.arguments, update_locals=True)
 
         if self.decl:
           self.decl_write(');\n')
-          self.current_func_node = o
           self.accept(o.body)  # Collect member_vars, but don't write anything
+
           self.current_func_node = None
           return
 
@@ -2064,7 +2152,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               for (lval_name, c_type) in self.local_vars[o]
           ]
 
-        self.current_func_node = o
         self.accept(o.body)
         self.current_func_node = None
 
@@ -2577,7 +2664,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # latter.
             ret_type = self.current_func_node.type.ret_type
 
-            c_ret_type, returning_tuple = get_c_return_type(ret_type)
+            c_ret_type, returning_tuple, _ = get_c_return_type(ret_type)
 
             # return '', None  # tuple literal
             #   but NOT
