@@ -434,6 +434,14 @@ class ListIter {
   T Value() {
     return L_->slab_->items_[i_];
   }
+  T iterNext() {
+    if (Done()) {
+      throw Alloc<StopIteration>();
+    }
+    T ret = L_->slab_->items_[i_];
+    Next();
+    return ret;
+  }
 
  private:
   List<T>* L_;
