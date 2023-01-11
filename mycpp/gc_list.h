@@ -434,7 +434,7 @@ class ListIter {
   T Value() {
     return L_->slab_->items_[i_];
   }
-  T NextValue() {
+  T iterNext() {
     if (Done()) {
       throw Alloc<StopIteration>();
     }

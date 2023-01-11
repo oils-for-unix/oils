@@ -276,7 +276,8 @@ def get_c_type(t, param=False, local=False):
 
 def get_c_return_type(t) -> Tuple[str, bool, Optional[str]]:
   """
-  Returns a C string, and whether the tuple-by-value optimization was applied
+  Returns a C string, whether the tuple-by-value optimization was applied, and
+  the C type of an extra output param if the function is a generator.
   """
 
   c_ret_type = get_c_type(t)
@@ -563,11 +564,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # a) accumulating the output of an iterator
       # b) constructing an iterator with the result of (a)
       if self.current_stmt_node in self.yield_accumulators:
-          if len(o.args) > 0:
-            self.write(', ')
+        if len(o.args) > 0:
+          self.write(', ')
 
-          arg_name, _ = self.yield_accumulators[self.current_stmt_node]
-          self.write('&%s', arg_name)
+        arg_name, _ = self.yield_accumulators[self.current_stmt_node]
+        self.write('&%s', arg_name)
 
       self.write(')')
 
@@ -726,7 +727,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if isinstance(o.callee, MemberExpr) and callee_name == 'next':
           self.accept(o.callee.expr)
-          self.write('.NextValue')
+          self.write('.iterNext')
           self._WriteArgList(o)
           return
 

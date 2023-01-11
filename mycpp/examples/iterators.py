@@ -37,8 +37,12 @@ class Foo(object):
 
   def baz(self, n):
     # type: (int) -> Iterator[Tuple[int, str]]
-    for i in g(n):
-      yield i
+    it_g = g(n)
+    while True:
+      try:
+        yield it_g.next()
+      except StopIteration:
+        break
 
 
 def run_tests():
