@@ -43,6 +43,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core.pyerror import log
 from core.pyutil import stderr_line
+from core import pyos
 from core import state
 from core import ui
 from core import util
@@ -297,7 +298,7 @@ class UsersAction(CompletionAction):
 
   def Matches(self, comp):
     # type: (Api) -> Iterator[str]
-    for u in pwd.getpwall():
+    for u in pyos.GetAllUsers():
       name = u.pw_name
       if name.startswith(comp.to_complete):
         yield name
