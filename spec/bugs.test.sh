@@ -207,8 +207,18 @@ mysed() {
 sedinputs="f1 f2"
 sedscript='my sed command'
 
-x=`eval "mysed -n \"\$sedscript\" $sedinputs"`
+# Parsed and evaluated correctly: with word_part.EscapedLiteral \"
+
+x=$(eval "mysed -n \"\$sedscript\" $sedinputs")
+echo '--- $()'
 echo "$x"
+
+# With backticks, the \" gets lost somehow
+
+x=`eval "mysed -n \"\$sedscript\" $sedinputs"`
+echo '--- backticks'
+echo "$x"
+
 
 # Test it in a case statement
 
@@ -219,6 +229,12 @@ case `eval "mysed -n \"\$sedscript\" $sedinputs"` in
 esac
 
 ## STDOUT:
+--- $()
+[-n]
+[my sed command]
+[f1]
+[f2]
+--- backticks
 [-n]
 [my sed command]
 [f1]
@@ -226,7 +242,11 @@ esac
 NOT SPLIT
 ## END
 
-#### autoconf arithmetic (#1450)
+#### autoconf arithmetic - eval_unsafe_arith (#1450)
+
+# Fixes the bug, but not sure
+# shopt -s eval_unsafe_arith
+
 as_fn_arith ()
 {
     as_val=$(( $* ))
