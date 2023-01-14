@@ -96,6 +96,22 @@ TEST mtime_demo() {
   PASS();
 }
 
+TEST listdir_test() {
+  List<Str*>* contents = posix::listdir(StrFromC("/"));
+  // This should be universally true on any working Unix right...?
+  ASSERT(len(contents) > 0);
+
+  int ec = -1;
+  try {
+    posix::listdir(StrFromC("nonexistent_ZZ"));
+  } catch (IOError_OSError* e) {
+    ec = e->errno_;
+  }
+  ASSERT(ec == ENOENT);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -108,6 +124,7 @@ int main(int argc, char** argv) {
   RUN_TEST(open_test);
   RUN_TEST(time_test);
   RUN_TEST(mtime_demo);
+  RUN_TEST(listdir_test);
 
   gHeap.CleanProcessExit();
 
