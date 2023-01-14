@@ -15,6 +15,8 @@ namespace path_stat {
 
 bool exists(Str* path);
 
+bool isdir(Str* path);
+
 }  // namespace path_stat
 
 #endif  // LEAKY_PYLIB_H

@@ -47,4 +47,12 @@ bool exists(Str* path) {
   }
 }
 
+bool isdir(Str* path) {
+  struct stat st;
+  if (::stat(path->data_, &st) < 0) {
+    return false;
+  }
+  return (st.st_mode & S_IFMT) == S_IFDIR;
+}
+
 }  // namespace path_stat
