@@ -2,7 +2,7 @@
 parse_lib.py - Consolidate various parser instantiations here.
 """
 
-from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     Token, compound_word, expr_t, word_t, redir, ArgList, name_type,
 )
@@ -357,10 +357,13 @@ class ParseContext(object):
     ast_node.keyword = kw_token  # VarDecl didn't fill this in
     return ast_node, last_token
 
-  def ParseOilArgList(self, lexer, out):
+  def ParseOilArgList(self, lx, out):
     # type: (Lexer, ArgList) -> Token
     """ $f(x, y) """
-    pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_arglist)
+
+    lx.PushHint(Id.Op_RParen, Id.Op_RParen)
+
+    pnode, last_token = self._ParseOil(lx, grammar_nt.oil_arglist)
 
     if 0:
       self.p_printer.Print(pnode)
@@ -368,10 +371,16 @@ class ParseContext(object):
     self.tr.ToArgList(pnode, out)
     return last_token
 
-  def ParseOilExpr(self, lexer, start_symbol):
+  def ParseOilExpr(self, lx, start_symbol):
     # type: (Lexer, int) -> Tuple[expr_t, Token]
     """ if (x > 0) { ... }, while, etc. """
-    pnode, last_token = self._ParseOil(lexer, start_symbol)
+
+    # Needed for $( if (true) { echo hi } ) -- expression in command sub
+    # Almost all calls are ( ) osh/cmd_parse.py: if (), while (), for x in ()
+    # In other cases, this hint harmless, e.g. '= 1+2'
+    lx.PushHint(Id.Op_RParen, Id.Op_RParen)
+
+    pnode, last_token = self._ParseOil(lx, start_symbol)
 
     if 0:
       self.p_printer.Print(pnode)

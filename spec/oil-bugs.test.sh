@@ -52,11 +52,15 @@ s=foo
 
 write $(if (true) { write true })
 
-const r = $(write $[len('foo')])
+const a = $(write $[len('foo')])
+echo $a
 
-#const r = $(write $[5 ** 3])
-#echo $r
+const b = $(write $[5 ** 3])
+echo $b
 
 ## STDOUT:
+true
+3
+125
 ## END
 

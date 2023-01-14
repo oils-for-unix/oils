@@ -1371,10 +1371,6 @@ class WordParser(WordEmitter):
   def _ParseInlineCallArgs(self, arglist):
     # type: (ArgList) -> None
     """For $f(x) and @arrayfunc(x)."""
-
-    # Needed so ) doesn't get translated to something else
-    self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)
-
     #log('t: %s', self.cur_token)
 
     # Call into expression language.
@@ -1383,7 +1379,6 @@ class WordParser(WordEmitter):
   def ParseProcCallArgs(self):
     # type: () -> ArgList
     self.lexer.MaybeUnreadOne()
-    self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)
 
     arg_list = ArgList()
     arg_list.spids.append(self.cur_token.span_id)
