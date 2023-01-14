@@ -238,6 +238,27 @@ TEST signal_test() {
   PASS();
 }
 
+TEST passwd_test() {
+  uid_t my_uid = getuid();
+  Str* username = pyos::GetUserName(my_uid);
+  ASSERT(username != nullptr);
+
+  List<pyos::PasswdEntry*>* entries = pyos::GetAllUsers();
+  pyos::PasswdEntry* me = nullptr;
+  for (ListIter<pyos::PasswdEntry*> it(entries); !it.Done(); it.Next()) {
+    pyos::PasswdEntry* entry = it.Value();
+    if (entry->pw_uid == static_cast<int>(my_uid)) {
+      me = entry;
+      break;
+    }
+  }
+  ASSERT(me != nullptr);
+  ASSERT(me->pw_name != nullptr);
+  ASSERT(str_equals(username, me->pw_name));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -255,6 +276,7 @@ int main(int argc, char** argv) {
   RUN_TEST(pyutil_test);
   RUN_TEST(strerror_test);
   RUN_TEST(signal_test);
+  RUN_TEST(passwd_test);
 
   gHeap.CleanProcessExit();
 

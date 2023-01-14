@@ -115,6 +115,29 @@ Str* GetHomeDir(Str* user_name) {
   return s;
 }
 
+List<PasswdEntry*>* GetAllUsers() {
+  auto* ret = NewList<PasswdEntry*>();
+  struct passwd* entry = nullptr;
+
+  setpwent();
+  while (true) {
+    errno = 0;
+    entry = getpwent();
+    if (entry == nullptr) {
+      if (errno == EINTR) {
+        continue;  // try again
+      } else if (errno != 0) {
+        throw Alloc<OSError>(errno);
+      }
+      break;
+    }
+    ret->append(Alloc<PasswdEntry>(entry));
+  }
+  endpwent();
+
+  return ret;
+}
+
 Str* GetUserName(int uid) {
   Str* result = kEmptyString;
 
