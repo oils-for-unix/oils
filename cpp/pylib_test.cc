@@ -26,6 +26,12 @@ TEST os_path_test() {
   PASS();
 }
 
+TEST isdir_test() {
+  ASSERT(path_stat::isdir(StrFromC(".")));
+  ASSERT(path_stat::isdir(StrFromC("/")));
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -34,6 +40,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(os_path_test);
+  RUN_TEST(isdir_test);
 
   gHeap.CleanProcessExit();
 
