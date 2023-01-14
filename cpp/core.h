@@ -3,6 +3,7 @@
 #ifndef LEAKY_CORE_H
 #define LEAKY_CORE_H
 
+#include <pwd.h>     // passwd
 #include <signal.h>  // sighandler_t
 #include <termios.h>
 
@@ -40,6 +41,26 @@ class ReadError {
   int err_num;
 };
 
+class PasswdEntry {
+ public:
+  explicit PasswdEntry(const passwd* entry)
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(PasswdEntry)),
+        pw_name(StrFromC(entry->pw_name)),
+        pw_uid(entry->pw_uid),
+        pw_gid(entry->pw_gid) {
+  }
+
+  GC_OBJ(header_);
+  Str* pw_name;
+  int pw_uid;
+  int pw_gid;
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(PasswdEntry, pw_name));
+  }
+};
+
+List<PasswdEntry*>* GetAllUsers();
 Str* GetUserName(int uid);
 Str* OsType();
 Tuple3<double, double, double> Time();

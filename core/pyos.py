@@ -185,6 +185,20 @@ def GetHomeDir(user_name):
   return e.pw_dir
 
 
+class PasswdEntry(object):
+  def __init__(self, pw_name, uid, gid):
+    # type: (str, int, int) -> None
+    self.pw_name = pw_name
+    self.pw_uid = uid
+    self.pw_gid = gid
+
+
+def GetAllUsers():
+  # type: () -> List[PasswdEntry]
+  users = [PasswdEntry(u.pw_name, u.pw_uid, u.pw_gid) for u in pwd.getpwall()]
+  return users
+
+
 def GetUserName(uid):
   # type: (int) -> str
   try:
