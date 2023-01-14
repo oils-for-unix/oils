@@ -226,3 +226,14 @@ esac
 NOT SPLIT
 ## END
 
+#### autoconf arithmetic (#1450)
+as_fn_arith ()
+{
+    as_val=$(( $* ))
+}
+as_fn_arith 1 + 1
+echo $as_val
+
+## STDOUT:
+2
+## END
