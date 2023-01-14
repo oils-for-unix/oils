@@ -194,3 +194,35 @@ for (( n=0; n<(3- (1)); n++ )) ; do echo $n; done
 ## END
 ## N-I dash/mksh/ash STDOUT:
 ## END
+
+
+#### autoconf word split (#1449)
+
+mysed() {
+  for line in "$@"; do
+    echo "[$line]"
+  done
+}
+
+sedinputs="f1 f2"
+sedscript='my sed command'
+
+x=`eval "mysed -n \"\$sedscript\" $sedinputs"`
+echo "$x"
+
+# Test it in a case statement
+
+case `eval "mysed -n \"\$sedscript\" $sedinputs"` in 
+  (*'[my sed command]'*)
+    echo 'NOT SPLIT'
+    ;;
+esac
+
+## STDOUT:
+[-n]
+[my sed command]
+[f1]
+[f2]
+NOT SPLIT
+## END
+
