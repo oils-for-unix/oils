@@ -129,6 +129,16 @@ cat $file
 "
 ## END
 
+#### Quoting " within ``
+echo 1 `echo \"`
+#echo 2 `echo \\"`
+#echo 3 `echo \\\"`
+#echo 4 `echo \\\\"`
+
+## STDOUT:
+1 "
+## END
+
 #### Quoting $ within ``
 echo 1 `echo $`
 echo 2 `echo \$`
@@ -229,14 +239,6 @@ echo `echo \\"foo\\"`
 ## STDOUT:
 "foo"
 "foo"
-"foo"
-## END
-
-# Documented in doc/known-differences.md (and Morbig paper brought up the same
-# issue)
-## OK osh STDOUT:
-"foo"
-foo
 "foo"
 ## END
 

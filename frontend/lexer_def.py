@@ -359,9 +359,11 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
 # Preprocessing before ShCommand
 LEXER_DEF[lex_mode_e.Backtick] = [
   C(r'`', Id.Backtick_Right),
-  # A backslash, and then one of the SAME FOUR escaped chars in the DQ mode.
-  R(r'\\[$`"\\]', Id.Backtick_Quoted),
-  R(r'[^`\\\0]+', Id.Backtick_Other),  # contiguous run of litera
+  # A backslash, and then $ or ` or \
+  R(r'\\[$`\\]', Id.Backtick_Quoted),
+  # \" treated specially, depending on whether bacticks are double-quoted!
+  R(r'\\"', Id.Backtick_DoubleQuote),
+  R(r'[^`\\\0]+', Id.Backtick_Other),  # contiguous run of literals
   R(r'[^\0]', Id.Backtick_Other),  # anything else
 ]
 

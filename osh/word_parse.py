@@ -447,7 +447,7 @@ class WordParser(WordEmitter):
   def ReadBracedVarSub(self, left_token):
     # type: (Token) -> Tuple[braced_var_sub, Token]
     """   For Oil expressions like var x = ${x:-"default"}.  """
-    part = self._ReadBracedVarSub(left_token, False)  # not quoted
+    part = self._ReadBracedVarSub(left_token, d_quoted=False)
     last_token = self.cur_token
     return part, last_token
 
@@ -680,10 +680,10 @@ class WordParser(WordEmitter):
     # type: () -> word_part_t
     """Read substitution parts in a double quoted context."""
     if self.token_type in (Id.Left_DollarParen, Id.Left_Backtick):
-      return self._ReadCommandSub(self.token_type)
+      return self._ReadCommandSub(self.token_type, d_quoted=True)
 
     if self.token_type == Id.Left_DollarBrace:
-      return self._ReadBracedVarSub(self.cur_token, True)  # DQ
+      return self._ReadBracedVarSub(self.cur_token, d_quoted=True)
 
     if self.token_type == Id.Left_DollarDParen:
       return self._ReadArithSub()
@@ -741,10 +741,10 @@ class WordParser(WordEmitter):
     if self.token_type in (
         Id.Left_DollarParen, Id.Left_Backtick, Id.Left_ProcSubIn,
         Id.Left_ProcSubOut):
-      return self._ReadCommandSub(self.token_type)
+      return self._ReadCommandSub(self.token_type, d_quoted=False)
 
     if self.token_type == Id.Left_DollarBrace:
-      return self._ReadBracedVarSub(self.cur_token, False)  # not DQ
+      return self._ReadBracedVarSub(self.cur_token, d_quoted=False)
 
     if self.token_type == Id.Left_DollarDParen:
       return self._ReadArithSub()
@@ -920,8 +920,8 @@ class WordParser(WordEmitter):
     self._ReadLikeDQ(left_token, True, parts)
     return self.cur_token
 
-  def _ReadCommandSub(self, left_id):
-    # type: (Id_t) -> command_sub
+  def _ReadCommandSub(self, left_id, d_quoted=False):
+    # type: (Id_t, bool) -> command_sub
     """
     NOTE: This is not in the grammar, because word parts aren't in the grammar!
 
@@ -968,22 +968,40 @@ class WordParser(WordEmitter):
 
       self._Next(lex_mode_e.Backtick)  # advance past `
 
+      log("d_quoted %s", d_quoted)
+
       parts = []  # type: List[str]
       while True:
         self._Peek()
-        #print(self.cur_token)
+        #log("TOK %s", self.cur_token)
+
         if self.token_type == Id.Backtick_Quoted:
-          parts.append(self.cur_token.val[1:])  # remove leading \
+          parts.append(self.cur_token.val[1:])  # Remove leading \
+
+        elif self.token_type == Id.Backtick_DoubleQuote:
+          # Compatibility: If backticks are double quoted, then double quotes
+          # within them have to be \"
+          # Shells aren't smart enough to match nested " and ` quotes (but OSH
+          # is)
+          if d_quoted:
+            parts.append(self.cur_token.val[1:])  # Remove leading \
+          else:
+            parts.append(self.cur_token.val)
+
         elif self.token_type == Id.Backtick_Other:
           parts.append(self.cur_token.val)
+
         elif self.token_type == Id.Backtick_Right:
           break
+
         elif self.token_type == Id.Eof_Real:
           # Note: this parse error is in the ORIGINAL context.  No code_str yet.
           p_die('Unexpected EOF while looking for closing backtick',
                 token=left_token)
+
         else:
           raise AssertionError(self.cur_token)
+
         self._Next(lex_mode_e.Backtick)
 
       # Calculate right SPID on CommandSub BEFORE re-parsing.
@@ -1529,7 +1547,7 @@ class WordParser(WordEmitter):
         # Users can also use look at ,(*.py|*.sh)
         if (self.parse_opts.parse_at() and self.token_type == Id.ExtGlob_At and
             num_parts == 0):
-          cs_part = self._ReadCommandSub(Id.Left_AtParen)
+          cs_part = self._ReadCommandSub(Id.Left_AtParen, d_quoted=False)
           # RARE mutation of tok.id!
           cs_part.left_token.id = Id.Left_AtParen
           part = cs_part  # for type safety
