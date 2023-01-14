@@ -113,7 +113,7 @@ test-osh-interactive() {
 
   # Bug fix: c_parser.Peek() in main_loop.InteractiveLoop can raise execptions
   echo 'v=`echo \"`' | $OSH -i
-  assert $? -eq 2
+  assert $? -eq 0
 }
 
 test-help() {

@@ -968,8 +968,6 @@ class WordParser(WordEmitter):
 
       self._Next(lex_mode_e.Backtick)  # advance past `
 
-      log("d_quoted %s", d_quoted)
-
       parts = []  # type: List[str]
       while True:
         self._Peek()
