@@ -121,6 +121,9 @@ _LEFT_UNQUOTED = [
   C('$"', Id.Left_DollarDoubleQuote),
   C("$'", Id.Left_DollarSingleQuote),
 
+]
+
+_LEFT_PROCSUB = [
   C('<(', Id.Left_ProcSubIn),
   C('>(', Id.Left_ProcSubOut),
 ]
@@ -153,7 +156,7 @@ LEXER_DEF[lex_mode_e.Comment] = [
 # The range \x80-\xff makes sure that UTF-8 sequences are a single token.
 _LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_/.\-]+'
 
-_UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+_UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
   # NOTE: We could add anything 128 and above to this character class?  So
   # utf-8 characters don't get split?
   R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
@@ -445,7 +448,7 @@ _VS_ARG_COMMON = [
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
-  _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + \
+  _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + \
   _VARS + _EXTGLOB_BEGIN + [
 
   _TILDE_LIKE,

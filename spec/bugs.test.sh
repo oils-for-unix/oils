@@ -195,7 +195,6 @@ for (( n=0; n<(3- (1)); n++ )) ; do echo $n; done
 ## N-I dash/mksh/ash STDOUT:
 ## END
 
-
 #### autoconf word split (#1449)
 
 mysed() {

@@ -90,3 +90,28 @@ done
 2
 3
 ## END
+
+
+#### Arith lexer mode
+
+# bash is lenient; zsh disagrees
+
+for ((i = '3';  i < '5';  ++i)); do echo $i; done
+for ((i = "3";  i < "5";  ++i)); do echo $i; done
+for ((i = $'3'; i < $'5'; ++i)); do echo $i; done
+for ((i = $"3"; i < $"5"; ++i)); do echo $i; done
+
+## STDOUT:
+3
+4
+3
+4
+3
+4
+3
+4
+## END
+## OK zsh status: 1
+## OK zsh STDOUT:
+## END
+
