@@ -136,6 +136,11 @@ test-parse-help() {
   _compare $dir/excerpt.sh _parse_help ls
 }
 
+test-autoconf-backtick() {
+  # https://github.com/oilshell/oil/issues/1449
+  _compare $GOLD_DIR/autoconf-backtick.sh
+}
+
 # Gah, bash gets this from compile-time configuration generated with autoconf,
 # not uname().  It looks like 'linux-gnu' on Ubuntu.  In Alpine, it's
 # 'linux-musl'.
