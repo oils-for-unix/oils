@@ -22,6 +22,9 @@ TEST exceptions_test() {
 
   ASSERT(caught);
 
+  auto read_error = Alloc<pyos::ReadError>(0);
+  (void)read_error;
+
   PASS();
 }
 
