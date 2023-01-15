@@ -36,8 +36,12 @@ Str* GetHomeDir(Str* user_name);
 
 class ReadError {
  public:
-  explicit ReadError(int err_num_) : err_num(err_num_) {
+  explicit ReadError(int err_num_)
+      : GC_CLASS_FIXED(header_, kZeroMask, sizeof(ReadError)),
+        err_num(err_num_) {
   }
+
+  GC_OBJ(header_);
   int err_num;
 };
 
