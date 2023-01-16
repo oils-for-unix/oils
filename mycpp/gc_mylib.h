@@ -18,21 +18,25 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib {
 
-const int kStdout = 1;
-const int kStderr = 2;
+void ProcessInit();
 
-void writeln(Str* s, int fd);
+// Wrappers around our C++ APIs
 
 inline void MaybeCollect() {
   gHeap.MaybeCollect();
 }
 
-Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
-
 // Used by generated _build/cpp/osh_eval.cc
 inline Str* StrFromC(const char* s) {
   return ::StrFromC(s);
 }
+
+const int kStdout = 1;
+const int kStderr = 2;
+
+void writeln(Str* s, int fd);
+
+Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 template <typename K, typename V>
 void dict_erase(Dict<K, V>* haystack, K needle) {

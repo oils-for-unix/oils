@@ -6,6 +6,13 @@
 
 namespace mylib {
 
+void ProcessInit() {
+  // Turn off buffering for now.
+  // TODO: Restore the flush() calls in 'finally'
+  setvbuf(stdout, 0, _IONBF, 0);
+  // setvbuf(stderr, 0, _IONBF, 0);
+}
+
 void writeln(Str* s, int fd = kStdout) {
   // TODO: handle errors and write in a loop, like posix::write().  If possible,
   // use posix::write directly, but that introduces some dependency problems.

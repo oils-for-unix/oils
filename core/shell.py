@@ -570,7 +570,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   rc_path = flag.rcfile
   # mycpp: rewrite of or
   if rc_path is None:
-      rc_path = os_path.join(home_dir, '.config/oil/%src' % lang)
+    rc_path = os_path.join(home_dir, '.config/oil/%src' % lang)
 
   if flag.headless:
     state.InitInteractive(mem)

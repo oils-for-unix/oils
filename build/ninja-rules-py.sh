@@ -45,9 +45,8 @@ int main(int argc, char **argv) {
   // Arbitrary threshold of 100K objects based on CPython's configure
   gHeap.Init(100000);
 
-  // NOTE(Jesse): Turn off buffered IO
-  setvbuf(stdout, 0, _IONBF, 0);
-  setvbuf(stderr, 0, _IONBF, 0);
+  // Hook to test out buffering
+  mylib::ProcessInit();
 
   auto* args = Alloc<List<Str*>>();
   for (int i = 0; i < argc; ++i) {
