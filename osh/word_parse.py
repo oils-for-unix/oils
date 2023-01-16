@@ -1089,7 +1089,7 @@ class WordParser(WordEmitter):
   def ParseBareDecl(self):
     # type: () -> expr_t
     """
-    Parse the RHS of x = @{name: val}
+    x = {name: val}
     """
     self._Next(lex_mode_e.Expr)
     self._Peek()
@@ -1103,6 +1103,9 @@ class WordParser(WordEmitter):
 
   def ParseCommandExpr(self):
     # type: () -> expr_t
+    """
+    = 1+2
+    """
     enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
                                                     grammar_nt.command_expr)
     if last_token.id == Id.Op_RBrace:

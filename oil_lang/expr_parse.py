@@ -146,6 +146,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
     balance += _OTHER_BALANCE.get(tok.id, 0)
     #log('BALANCE after seeing %s = %d', tok.id, balance)
 
+    if tok.id == Id.Op_LParen:
+      # For nesting inside $()
+      lex.PushHint(Id.Op_RParen, Id.Op_RParen)
+
     #if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
     #  tok.id = KEYWORDS[tok.val]
     #  log('Replaced with %s', tok.id)

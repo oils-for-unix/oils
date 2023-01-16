@@ -58,9 +58,34 @@ echo $a
 const b = $(write $[5 ** 3])
 echo $b
 
+const c = $(
+  write $[6 + 7]
+)
+echo $c
+
 ## STDOUT:
 true
 3
 125
+13
 ## END
+
+
+#### More Command sub paren parsing
+
+write $( var mylist = ['for']; for x in (mylist) { echo $x } )
+
+write $( echo while; while (false) { write hi } )
+
+write $( if (true) { write 'if' } )
+
+write $( if (false) { write 'if' } elif (true) { write 'elif' } )
+
+## STDOUT:
+for
+while
+if
+elif
+## END
+
 

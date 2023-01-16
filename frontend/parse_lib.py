@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
-from core.pyerror import p_die
+from core.pyerror import p_die, log
 from core import state
 from frontend import lexer
 from frontend import reader
@@ -361,8 +361,6 @@ class ParseContext(object):
     # type: (Lexer, ArgList) -> Token
     """ $f(x, y) """
 
-    lx.PushHint(Id.Op_RParen, Id.Op_RParen)
-
     pnode, last_token = self._ParseOil(lx, grammar_nt.oil_arglist)
 
     if 0:
@@ -375,13 +373,7 @@ class ParseContext(object):
     # type: (Lexer, int) -> Tuple[expr_t, Token]
     """ if (x > 0) { ... }, while, etc. """
 
-    # Needed for $( if (true) { echo hi } ) -- expression in command sub
-    # Almost all calls are ( ) osh/cmd_parse.py: if (), while (), for x in ()
-    # In other cases, this hint harmless, e.g. '= 1+2'
-    lx.PushHint(Id.Op_RParen, Id.Op_RParen)
-
     pnode, last_token = self._ParseOil(lx, start_symbol)
-
     if 0:
       self.p_printer.Print(pnode)
 

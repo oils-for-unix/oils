@@ -10,7 +10,7 @@ lexer.py - Library for lexing.
 
 from _devbuild.gen.syntax_asdl import Token
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
-from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind
+from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str, Kind
 from asdl import runtime
 from core.pyerror import log
 from mycpp import mylib
@@ -278,6 +278,7 @@ class Lexer(object):
       - precedence in [[,   e.g.  [[ (1 == 2) && (2 == 3) ]]
       - arrays: a=(1 2 3), a+=(4 5)
     """
+    #log('   PushHint %s ==> %s', Id_str(old_id), Id_str(new_id))
     self.translation_stack.append((old_id, new_id))
 
   def _Read(self, lex_mode):
@@ -304,7 +305,7 @@ class Lexer(object):
     if len(self.translation_stack):
       old_id, new_id = self.translation_stack[-1]  # top
       if t.id == old_id:
-        #print('==> TRANSLATING %s ==> %s' % (t, new_s))
+        #log('==> TRANSLATING %s ==> %s', Id_str(old_id), Id_str(t.id))
         self.translation_stack.pop()
         t.id = new_id
 

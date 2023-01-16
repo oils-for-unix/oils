@@ -542,6 +542,7 @@ class CommandParser(object):
     """
     if self.next_lex_mode != lex_mode_e.Undefined:
       w = self.w_parser.ReadWord(self.next_lex_mode)
+      #log("w %s", w)
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
       if w.tag_() == word_e.Token:
@@ -2325,6 +2326,8 @@ class CommandParser(object):
       elif self.c_kind != Kind.Word:
         # e.g. f() { echo (( x )) ; }
         # but can't fail on 'fi fi', see osh/cmd_parse_test.py
+
+        #log("Invalid %s", self.cur_word)
         p_die("Invalid word while parsing command list", word=self.cur_word)
 
       children.append(child)
