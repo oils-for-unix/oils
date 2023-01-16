@@ -18,6 +18,11 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib {
 
+const int kStdout = 1;
+const int kStderr = 2;
+
+void writeln(Str* s, int fd);
+
 inline void MaybeCollect() {
   gHeap.MaybeCollect();
 }

@@ -5,6 +5,11 @@ PYTHON: bool
 
 STDIN_FILENO: int
 
+kStdout: int
+kStderr: int
+
+def writeln(s: str, fd: int = 0) -> None: ...
+
 def MaybeCollect() -> None: ...
 
 def StrFromC(s: str) -> str: ...

@@ -6,6 +6,18 @@
 
 namespace mylib {
 
+void writeln(Str* s, int fd = kStdout) {
+  // TODO: handle errors and write in a loop, like posix::write().  If possible,
+  // use posix::write directly, but that introduces some dependency problems.
+
+  if (write(fd, s->data_, len(s)) < 0) {
+    assert(0);
+  }
+  if (write(fd, "\n", 1) < 0) {
+    assert(0);
+  }
+}
+
 class MutableStr : public Str {};
 
 MutableStr* NewMutableStr(int cap) {

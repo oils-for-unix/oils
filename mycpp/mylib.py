@@ -21,7 +21,25 @@ from typing import Tuple, Any
 CPP = False
 PYTHON = True
 
+# Use POSIX name directly
 STDIN_FILENO = 0
+
+# Short versions of STDOUT_FILENO and STDERR_FILENO
+kStdout = 1
+kStderr = 2
+
+def writeln(s, fd=kStdout):
+  # type: (str) -> None
+  """Write a line.  The name is consistent with JavaScript writeln() and Rust.
+
+  e.g.
+  writeln("x = %d" % x, kStderr)
+
+  TODO: The Oil interpreter shouldn't use print() anywhere.  Instead it can use
+  writeln(s) and writeln(s, kStderr)
+  """
+  posix.write(fd, s)
+  posix.write(fd, '\n')
 
 
 def MaybeCollect():
@@ -76,14 +94,7 @@ class File(object):
 
   def writeln(self, s):
     # type: (str) -> None
-    """
-    Write a line.  The name is consistent with JavaScript writeln() and Rust.
-
-    TODO: The Oil interpreter shouldn't use print() anywhere.  Instead it can
-    use gStdout.writeln()
-    """
-    posix.write(self.fd, s)
-    posix.write(self.fd, '\n')
+    writeln(self.fd, s)
 
 
 # TODO: Can return File(1)

@@ -61,6 +61,7 @@ from osh import split
 from osh import word_eval
 
 from mycpp import mylib
+from mycpp.mylib import writeln, kStderr
 from pylib import os_path
 
 import libc
@@ -539,8 +540,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       try:
         f = fd_state.Open(script_name)
       except (IOError, OSError) as e:
-        stderr_line("osh: Couldn't open %r: %s", script_name,
-                    posix.strerror(e.errno))
+        writeln("osh: Couldn't open %r: %s" %
+                (script_name, posix.strerror(e.errno)), kStderr)
         return 1
       line_reader = reader.FileLineReader(f, arena)
 
