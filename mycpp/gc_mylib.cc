@@ -7,10 +7,10 @@
 namespace mylib {
 
 void ProcessInit() {
-  // Turn off buffering for now.
-  // TODO: Restore the flush() calls in 'finally'
+  // Turn off buffering of stdout for now.
+  // Note: ctx_FlushStdout() doesn't seem to be enough?
+
   setvbuf(stdout, 0, _IONBF, 0);
-  // setvbuf(stderr, 0, _IONBF, 0);
 }
 
 void writeln(Str* s, int fd = kStdout) {
