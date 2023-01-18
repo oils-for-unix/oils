@@ -9,7 +9,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly OIL_OVM_NAMES=(oil osh oshc tea sh true false readlink)
+# New name is ysh!
+# TODO:
+# - remove the 'oil' everywhere
+# - translation should be 'ysh-translate'.  Later 'ysh-format'
+readonly OIL_OVM_NAMES=(oil ysh osh oshc tea sh true false readlink)
 
 # TODO: probably delete this
 # For osh-dbg.
@@ -90,6 +94,13 @@ make-bin-links() {
   for link in "${OIL_OVM_NAMES[@]}"; do
     # _bin/ symlink
     ln -s -f --verbose oil.ovm _bin/$link
+
+    # Skip oil in favor of ysh.
+    if test $link != 'oil'; then
+      # TODO: do this in Ninja?
+      # Also to cxx-opt/oils_cpp.stripped
+      ln -s -f --verbose oils_cpp _bin/cxx-dbg/$link
+    fi
   done
 }
 

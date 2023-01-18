@@ -98,6 +98,8 @@ def AppBundleMain(argv):
   # TODO: Do we need span IDs here?
   arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
 
+  login_shell = False
+
   # Are we running the C++ bundle or the Python bundle directly, without a
   # symlink?
   if main_name == 'oils_cpp' or (main_name == 'oil' and len(ext)):
@@ -121,20 +123,27 @@ def AppBundleMain(argv):
     if first_arg == '---caper':
       return CaperDispatch()
 
-    main_name = first_arg
+    applet = first_arg
+  else:
+    applet = main_name
 
-  login_shell = False
-  if main_name.startswith('-'):
-    login_shell = True
-    main_name = main_name[1:]
+    if applet.startswith('-'):
+      login_shell = True
+      applet = applet[1:]
 
   readline = py_readline.MaybeGetReadline()
 
   environ = pyos.Environ()
-  if main_name.endswith('sh'):  # sh, osh, bash imply OSH
+
+  if applet in ('ysh', 'oil'):
+    return shell.Main('oil', arg_r, environ, login_shell, loader, readline)
+
+  elif applet.endswith('sh'):  # sh, osh, bash imply OSH
     return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
 
-  elif main_name == 'oshc':
+  elif applet == 'oshc':
+    # TODO: ysh-format is probably the only thing we will expose.
+
     arg_r.Next()
     main_argv = arg_r.Rest()
     try:
@@ -147,10 +156,7 @@ def AppBundleMain(argv):
       stderr_line('oshc usage error: %s', e.msg)
       return 2
 
-  elif main_name == 'oil':
-    return shell.Main('oil', arg_r, environ, login_shell, loader, readline)
-
-  elif main_name == 'tea':
+  elif applet == 'tea':
     arg_r.Next()
     if mylib.PYTHON:
       return tea_main.Main(arg_r)
@@ -159,11 +165,11 @@ def AppBundleMain(argv):
       return 2
 
   # For testing latency
-  elif main_name == 'true':
+  elif applet == 'true':
     return 0
-  elif main_name == 'false':
+  elif applet == 'false':
     return 1
-  elif main_name == 'readlink':
+  elif applet == 'readlink':
     if mylib.PYTHON:
       # TODO: Move this to 'internal readlink' (issue #1013)
       main_argv = arg_r.Rest()
@@ -171,8 +177,9 @@ def AppBundleMain(argv):
     else:
       stderr_line('readlink not translated')
       return 2
+
   else:
-    raise error.Usage('Invalid applet name %r.' % main_name)
+    raise error.Usage("Invalid applet %r" % applet)
 
 
 def main(argv):
