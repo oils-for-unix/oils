@@ -42,14 +42,14 @@ osh-eval() {
   echo DEPS $dir/*
 }
 
-oils-for-unix() {
+oils-cpp() {
   ### bin/osh_eval is oil-native
 
-  local dir=$DIR/oils-for-unix
+  local dir=$DIR/oils_cpp
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/dynamic_deps.py py-manifest bin.oil \
+    build/dynamic_deps.py py-manifest bin.oils_cpp \
   > $dir/all.txt
 
   set +o errexit
@@ -89,7 +89,7 @@ main() {
   # Explicit dependencies for translating and type checking
   # Baked into mycpp/NINJA.
   osh-eval
-  oils-for-unix
+  oils-cpp
 
   echo DEPS prebuilt/ninja/*/deps.txt
 

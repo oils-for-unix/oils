@@ -62,11 +62,8 @@ soil-run() {
   # Generate osh_eval dependencies.  Though this is overly aggressive
   ./NINJA-config.sh
 
-  banner 'typecheck oils-for-nix'
-  typecheck-files-2 _build/NINJA/oils-for-unix/typecheck.txt
-
-  banner 'typecheck Oil'
-  typecheck-files-2 _build/NINJA/osh_eval/typecheck.txt
+  banner 'typecheck oils_cpp'
+  typecheck-files-2 _build/NINJA/oils_cpp/typecheck.txt
 
   # Ad hoc list of additional files
   banner 'typecheck More'
