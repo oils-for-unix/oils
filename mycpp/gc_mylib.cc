@@ -8,8 +8,8 @@ namespace mylib {
 
 void ProcessInit() {
   // Turn off buffering for now.
-  // TODO: Restore the flush() calls in 'finally'
-  setvbuf(stdout, 0, _IONBF, 0);
+
+  // setvbuf(stdout, 0, _IONBF, 0);
   // setvbuf(stderr, 0, _IONBF, 0);
 }
 
