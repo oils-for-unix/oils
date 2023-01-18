@@ -721,6 +721,10 @@ class SubProgramThunk(Thunk):
       stderr_line('osh I/O error: %s', pyutil.strerror(e))
       status = 2
 
+    # If ProcessInit() doesn't turn off buffering, this is needed before
+    # _exit()
+    pyos.FlushStdout()
+
     # We do NOT want to raise SystemExit here.  Otherwise dev.Tracer::Pop()
     # gets called in BOTH processes.
     # The crash dump seems to be unaffected.
