@@ -65,9 +65,9 @@ _gen/
 asdl/py.*
 core/py.*
 core/optview.py
+frontend/py.*.py
 frontend/consts.py
 frontend/match.py
-frontend/py_reader.py
 pgen2/parse.py
 pylib/path_stat.py
 oil_lang/builtin_oil.py
@@ -75,6 +75,7 @@ oil_lang/expr_eval.py
 oil_lang/objects.py
 osh/bool_stat.py
 tools/.*
+tea/.*
 EOF
 
   wc -l $FILTER_DIR/filter-*

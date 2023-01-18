@@ -6,18 +6,12 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-oil.py - A busybox-like binary for OSH and Oil.
+bin/oil.py - Python wrapper for oils_cpp.py
 
-Based on argv[0], it acts like a few different programs.
-- true, false
-- readlink
-
-Note: could also expose some other binaries for a smaller POSIX system?
-- test / '['
-- printf, echo
-- cat
-- seq
-- 'time' -- has some different flags
+- Needed for libc.cpython_reset_locale()
+- Used to build the OVM tarball, which we might want to get rid of.
+  - This file should be called bin/oils_py.py, but that might break 
+    the deployed oil.ovm, which we we might want to get rid of anyway.
 """
 from __future__ import print_function
 

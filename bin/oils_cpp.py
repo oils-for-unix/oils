@@ -1,6 +1,19 @@
 #!/usr/bin/env python2
 """
-oils_cpp.py
+oils_cpp.py - A busybox-like binary for OSH and YSH (formerly Oil).
+
+This is the main program that is translated to C++ by mycpp.
+
+Based on argv[0], it acts like a few different programs.
+- true, false
+- readlink
+
+We could could also expose some other binaries for a smaller POSIX system:
+
+- test / '['
+- printf, echo
+- cat
+- 'time' -- different usage
 """
 from __future__ import print_function
 
@@ -46,7 +59,7 @@ def CaperDispatch():
 
     log('msg = %r', msg)
 
-    command, arg = msg.split(' ', 1)
+    command, arg = mylib.split_once(msg, ' ')
     if command == 'GETPID':
       pass
     elif command == 'CHDIR':
@@ -119,10 +132,10 @@ def AppBundleMain(argv):
     main_argv = arg_r.Rest()
     try:
       if mylib.PYTHON:
-        status = tools_main.OshCommandMain(main_argv)
+        return tools_main.OshCommandMain(main_argv)
       else:
-        stderr_line('oshc not implemented')
-        status = 2
+        stderr_line('oshc not translated')
+        return 2
       return status
     except error.Usage as e:
       stderr_line('oshc usage error: %s', e.msg)
@@ -134,7 +147,11 @@ def AppBundleMain(argv):
 
   elif main_name == 'tea':
     arg_r.Next()
-    return tea_main.Main(arg_r)
+    if mylib.PYTHON:
+      return tea_main.Main(arg_r)
+    else:
+      stderr_line('tea not translated')
+      return 2
 
   # For testing latency
   elif main_name == 'true':
@@ -176,6 +193,7 @@ def main(argv):
     # test this with prlimit --nproc=1 --pid=$$
     stderr_line('osh I/O error: %s', posix.strerror(e.errno))
     return 2  # dash gives status 2
+
 
 if __name__ == '__main__':
   sys.exit(main(sys.argv))
