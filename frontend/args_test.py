@@ -227,6 +227,19 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(False, arg.n)
     self.assertEqual(1, arg_r.i)
 
+  def testArgGetters(self):
+    s = flag_spec._FlagSpec()
+    s.ShortFlag('-a', args.String)
+    s.ShortFlag('-b', args.Int)
+    s.ShortFlag('-c', args.Float)
+    s.ShortFlag('-d', args.Bool)
+
+    argv = ['-a', 'foo', '-b', '12345', '-c', '5.4321', '-d']
+    arg, _ = _ParseCmdVal(s, _MakeBuiltinArgv(argv))
+    self.assertEqual(arg.GetStr('a'), 'foo')
+    self.assertEqual(arg.GetInt('b'), 12345)
+    self.assertEqual(arg.GetFloat('c'), 5.4321)
+    self.assertEqual(arg.GetBool('d'), True)
 
 if __name__ == '__main__':
   unittest.main()

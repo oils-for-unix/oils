@@ -125,6 +125,42 @@ class _Attributes(object):
 
       setattr(self, name, py_val)
 
+  def GetBool(self, name):
+    # type: (str) -> Optional[bool]
+    val = self.attrs.get(name)
+    if val:
+      assert val.tag == value_e.Bool
+      return cast(value__Bool, val).b
+
+    return None
+
+  def GetInt(self, name):
+    # type: (str) -> Optional[int]
+    val = self.attrs.get(name)
+    if val:
+      assert val.tag == value_e.Int
+      return cast(value__Int, val).i
+
+    return None
+
+  def GetFloat(self, name):
+    # type: (str) -> Optional[float]
+    val = self.attrs.get(name)
+    if val:
+      assert val.tag == value_e.Float
+      return cast(value__Float, val).f
+
+    return None
+
+  def GetStr(self, name):
+    # type: (str) -> Optional[str]
+    val = self.attrs.get(name)
+    if val:
+      assert val.tag == value_e.Str
+      return cast(value__Str, val).s
+
+    return None
+
   def __repr__(self):
     # type: () -> str
     return '<_Attributes %s>' % self.__dict__
