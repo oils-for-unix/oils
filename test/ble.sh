@@ -23,7 +23,7 @@ build() {
   make  # make osh
 
   # make _bin/osh
-  devtools/bin.sh make-bin-links
+  devtools/bin.sh make-ovm-links
 
   # make ble.sh
   cd $BASE_DIR

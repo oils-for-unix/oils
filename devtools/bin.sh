@@ -70,7 +70,7 @@ opy-dev-snippet() {
   sh-snippet opy_.py $action
 }
 
-make-bin-stubs() {
+make-src-stubs() {
   ### bin/ is for running with the Python interpreter.
   mkdir -p bin
 
@@ -86,7 +86,7 @@ make-bin-stubs() {
   make-osh-eval
 }
 
-make-bin-links() {
+make-ovm-links() {
   ### _bin/ is for running with OVM app bundles.
 
   mkdir -p _bin
@@ -94,7 +94,11 @@ make-bin-links() {
   for link in "${OIL_OVM_NAMES[@]}"; do
     # _bin/ symlink
     ln -s -f --verbose oil.ovm _bin/$link
+  done
+}
 
+make-cpp-links() {
+  for link in "${OIL_OVM_NAMES[@]}"; do
     # Skip oil in favor of ysh.
     if test $link != 'oil'; then
       # TODO: do this in Ninja?
