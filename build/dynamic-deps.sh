@@ -49,6 +49,7 @@ osh/builtin_comp.py
 oil_lang/builtin_oil.py
 oil_lang/funcs_builtin.py
 pylib/collections_.py
+tools/.*
 EOF
 
   # On top of the typecheck filter, exclude these from translation
@@ -73,6 +74,7 @@ oil_lang/builtin_oil.py
 oil_lang/expr_eval.py
 oil_lang/objects.py
 osh/bool_stat.py
+tools/.*
 EOF
 
   wc -l $FILTER_DIR/filter-*

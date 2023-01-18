@@ -8,11 +8,14 @@ from frontend import args
 from frontend import flag_spec
 from core.pyutil import stderr_line
 
+from typing import List
+
 SPEC = flag_spec.FlagSpec('readlink')
 SPEC.ShortFlag('-f')
 
 
 def main(argv):
+  # type: (List[str]) -> int
   arg_r = args.Reader(argv)
   arg_r.Next()  # skip argv[0]
   arg = args.Parse(SPEC, arg_r)

@@ -42,6 +42,27 @@ osh-eval() {
   echo DEPS $dir/*
 }
 
+oils-for-unix() {
+  ### bin/osh_eval is oil-native
+
+  local dir=$DIR/oils-for-unix
+  mkdir -p $dir
+
+  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
+    build/dynamic_deps.py py-manifest bin.oil \
+  > $dir/all.txt
+
+  set +o errexit
+  cat $dir/all.txt | repo-filter | exclude-filter typecheck | mysort \
+    > $dir/typecheck.txt
+
+  cat $dir/typecheck.txt | exclude-filter translate | mysort \
+    > $dir/translate.txt
+
+  echo DEPS $dir/*
+}
+
+
 main() {
   # _build/NINJA/  # Part of the Ninja graph
   #   asdl.asdl_main/
@@ -68,6 +89,7 @@ main() {
   # Explicit dependencies for translating and type checking
   # Baked into mycpp/NINJA.
   osh-eval
+  oils-for-unix
 
   echo DEPS prebuilt/ninja/*/deps.txt
 
