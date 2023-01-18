@@ -35,7 +35,7 @@ EOF
 }
 
 osh-eval-main() {
-  local name=$1
+  local main_namespace=$1
 
   cat <<EOF
 int main(int argc, char **argv) {
@@ -61,11 +61,11 @@ int main(int argc, char **argv) {
     int n = to_int(r);
     log("Running %d times", n);
     for (int i = 0; i < n; ++i) { 
-      status = $name::main(args);
+      status = $main_namespace::main(args);
     }
     // TODO: clear memory?
   } else {
-    status = $name::main(args);
+    status = $main_namespace::main(args);
   }
 
   gHeap.FastProcessExit();
@@ -76,8 +76,9 @@ EOF
 }
 
 gen-osh-eval() {
-  local out_prefix=$1
-  shift  # rest are inputs
+  local main_name=$1
+  local out_prefix=$2
+  shift 2  # rest are inputs
 
   # Put it in _build/tmp so it's not in the tarball
   local tmp=_build/tmp
@@ -95,9 +96,7 @@ gen-osh-eval() {
     "$@"
     #--to-header osh.cmd_eval \
 
-  local name='osh_eval'
-
-  { echo "// $name.h: translated from Python by mycpp"
+  { echo "// $main_name.h: translated from Python by mycpp"
     echo
     echo '#ifndef OSH_EVAL_MYCPP_H'
     echo '#define OSH_EVAL_MYCPP_H'
@@ -109,7 +108,7 @@ gen-osh-eval() {
   } > $header_out
 
   { cat <<EOF
-// $name.cc: translated from Python by mycpp
+// $main_name.cc: translated from Python by mycpp
 
 // #include "$header_out"
 
@@ -118,7 +117,7 @@ EOF
 
     cat $raw_cc
 
-    osh-eval-main $name
+    osh-eval-main $main_name
   } > $cc_out
 }
 

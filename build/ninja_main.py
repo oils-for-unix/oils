@@ -238,8 +238,8 @@ def InitSteps(n):
   n.newline()
 
   n.rule('gen-osh-eval',
-         command='build/ninja-rules-py.sh gen-osh-eval $out_prefix $in',
-         description='gen-osh-eval $out_prefix $in')
+         command='build/ninja-rules-py.sh gen-osh-eval $main_name $out_prefix $in',
+         description='gen-osh-eval $main_name $out_prefix $in')
   n.newline()
 
 

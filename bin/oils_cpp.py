@@ -20,8 +20,10 @@ from __future__ import print_function
 import posix_ as posix
 import sys
 
+from asdl import runtime
 from core import error
 from core import shell
+from core import pyos
 from core import pyutil
 from core.pyutil import stderr_line
 from core import shell_native
@@ -39,7 +41,9 @@ if mylib.PYTHON:
 
 import fanos
 
-from typing import List
+from typing import List, TYPE_CHECKING
+if TYPE_CHECKING:
+  from core import ui
 
 
 def CaperDispatch():
@@ -91,8 +95,12 @@ def AppBundleMain(argv):
   b = os_path.basename(argv[0])
   main_name, ext = os_path.splitext(b)
 
-  arg_r = args.Reader(argv)
-  if main_name == 'oil' and ext:  # oil.py or oil.ovm
+  # TODO: Do we need span IDs here?
+  arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
+
+  # Are we running the C++ bundle or the Python bundle directly, without a
+  # symlink?
+  if main_name == 'oils_cpp' or (main_name == 'oil' and len(ext)):
     arg_r.Next()
     first_arg = arg_r.Peek()
     if first_arg is None:
@@ -100,7 +108,7 @@ def AppBundleMain(argv):
 
     # Special flags to the top level binary: bin/oil.py --help, ---caper, etc.
     if first_arg in ('-h', '--help'):
-      errfmt = None  # not needed here
+      errfmt = None  # type: ui.ErrorFormatter
       help_builtin = builtin_misc.Help(loader, errfmt)
       help_builtin.Run(shell_native.MakeBuiltinArgv(['bundle-usage']))
       return 0
@@ -122,10 +130,9 @@ def AppBundleMain(argv):
 
   readline = py_readline.MaybeGetReadline()
 
+  environ = pyos.Environ()
   if main_name.endswith('sh'):  # sh, osh, bash imply OSH
-    status = shell.Main('osh', arg_r, posix.environ, login_shell,
-                        loader, readline)
-    return status
+    return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
 
   elif main_name == 'oshc':
     arg_r.Next()
@@ -136,14 +143,12 @@ def AppBundleMain(argv):
       else:
         stderr_line('oshc not translated')
         return 2
-      return status
     except error.Usage as e:
       stderr_line('oshc usage error: %s', e.msg)
       return 2
 
   elif main_name == 'oil':
-    return shell.Main('oil', arg_r, posix.environ, login_shell,
-                      loader, readline)
+    return shell.Main('oil', arg_r, environ, login_shell, loader, readline)
 
   elif main_name == 'tea':
     arg_r.Next()
@@ -159,9 +164,13 @@ def AppBundleMain(argv):
   elif main_name == 'false':
     return 1
   elif main_name == 'readlink':
-    # TODO: Move this to 'internal readlink' (issue #1013)
-    main_argv = arg_r.Rest()
-    return readlink.main(main_argv)
+    if mylib.PYTHON:
+      # TODO: Move this to 'internal readlink' (issue #1013)
+      main_argv = arg_r.Rest()
+      return readlink.main(main_argv)
+    else:
+      stderr_line('readlink not translated')
+      return 2
   else:
     raise error.Usage('Invalid applet name %r.' % main_name)
 
@@ -183,7 +192,7 @@ def main(argv):
     log('FATAL: %r', e)
     return 1
   except KeyboardInterrupt:
-    print()
+    print('')
     return 130  # 128 + 2
   except (IOError, OSError) as e:
     if 0:
