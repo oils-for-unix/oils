@@ -94,7 +94,7 @@ class File(object):
 
   def writeln(self, s):
     # type: (str) -> None
-    writeln(self.fd, s)
+    writeln(s, fd=self.fd)
 
 
 # TODO: Can return File(1)

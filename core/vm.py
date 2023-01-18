@@ -5,6 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import CommandStatus, StatusArray
 from core.pyerror import log
+from core import pyos
 
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -211,3 +212,19 @@ class ctx_ProcessSub(object):
 
     # Wait and return array to set _process_sub_status
     self.shell_ex.PopProcessSub(self.process_sub_status)
+
+
+class ctx_FlushStdout(object):
+  def __init__(self):
+    # type: () -> None
+    pass
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+
+    # This function can't be translated, so it's in pyos
+    pyos.FlushStdout()

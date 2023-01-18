@@ -10,6 +10,7 @@ import pwd
 import resource
 import signal
 import select
+import sys
 import termios  # for read -n
 import time
 
@@ -27,6 +28,12 @@ _ = log
 
 EOF_SENTINEL = 256  # bigger than any byte
 NEWLINE_CH = 10  # ord('\n')
+
+
+def FlushStdout():
+  # type: () -> None
+  """Flush CPython buffers."""
+  sys.stdout.flush()
 
 
 def WaitPid():

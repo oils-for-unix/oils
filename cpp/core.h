@@ -65,11 +65,21 @@ class PasswdEntry {
 };
 
 List<PasswdEntry*>* GetAllUsers();
+
 Str* GetUserName(int uid);
+
 Str* OsType();
+
 Tuple3<double, double, double> Time();
+
 void PrintTimes();
+
 bool InputAvailable(int fd);
+
+inline void FlushStdout() {
+  // Flush libc buffers
+  fflush(stdout);
+}
 
 class TermState {
  public:
