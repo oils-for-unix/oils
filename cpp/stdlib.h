@@ -118,6 +118,8 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ);
 
 void kill(int pid, int sig);
 
+List<Str*>* listdir(Str* path);
+
 }  // namespace posix
 
 namespace time_ {

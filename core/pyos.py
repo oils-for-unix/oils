@@ -374,3 +374,12 @@ def InitShell():
   # type: () -> None
   global gSignalHandler
   gSignalHandler = SignalHandler()
+
+
+def MakeDirCacheKey(path):
+  # type: (str) -> Tuple[str, int]
+  """
+  Returns a pair (path with last modified time) that can be used to cache directory accesses.
+  """
+  st = posix.stat(path)
+  return (path, int(st.st_mtime))

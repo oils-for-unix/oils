@@ -3,6 +3,7 @@
 
 #include "stdlib.h"
 
+#include <dirent.h>  // closedir(), opendir(), readdir()
 #include <errno.h>
 #include <fcntl.h>      // open
 #include <signal.h>     // kill
@@ -120,6 +121,37 @@ void kill(int pid, int sig) {
   }
 }
 
+List<Str*>* listdir(Str* path) {
+  DIR* dirp = opendir(path->data());
+  if (dirp == NULL) {
+    throw Alloc<OSError>(errno);
+  }
+
+  auto* ret = NewList<Str*>();
+  while (true) {
+    errno = 0;
+    struct dirent* ep = readdir(dirp);
+    if (ep == NULL) {
+      if (errno == 0) {
+        break;
+      } else {
+        closedir(dirp);
+        throw Alloc<OSError>(errno);
+      }
+    }
+    int name_len = strlen(ep->d_name);
+    if (ep->d_name[0] == '.' &&
+        (name_len == 1 || (ep->d_name[1] == '.' && name_len == 2))) {
+      continue;
+    }
+    ret->append(StrFromC(ep->d_name, name_len));
+  }
+
+  closedir(dirp);
+
+  return ret;
+}
+
 }  // namespace posix
 
 namespace time_ {
@@ -139,10 +171,10 @@ time_t time() {
 
 // NOTE(Jesse): time_t is specified to be an arithmetic type by C++. On most
 // systems it's a 64-bit integer.  64 bits is used because 32 will overflow in
-// 2038.  Someone on a comittee somewhere thought of that when moving to 64-bit
-// architectures to prevent breaking ABI again; on 32-bit systems it's usually
-// 32 bits.  Point being, using anything but the time_t typedef here could
-// (unlikely, but possible) produce weird behavior.
+// 2038.  Someone on a comittee somewhere thought of that when moving to
+// 64-bit architectures to prevent breaking ABI again; on 32-bit systems it's
+// usually 32 bits.  Point being, using anything but the time_t typedef here
+// could (unlikely, but possible) produce weird behavior.
 time_t localtime(time_t ts) {
   // localtime returns a pointer to a static buffer
   tm* loc_time = ::localtime(&ts);
