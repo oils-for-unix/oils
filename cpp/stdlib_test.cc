@@ -1,6 +1,7 @@
 #include "cpp/stdlib.h"
 
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "mycpp/gc_builtins.h"
 #include "vendor/greatest.h"
@@ -64,6 +65,37 @@ TEST time_test() {
   PASS();
 }
 
+// To figure out how we should use stat() for core/completion.py
+// The number of seconds should suffice, for another 15 years :-P
+TEST mtime_demo() {
+  struct stat statbuf;
+  if (stat("README.md", &statbuf) < 0) {
+    ASSERT(false);
+  }
+
+  // POSIX API
+  long mtime = statbuf.st_mtime;
+  log("mtime        = %10ld", mtime);
+
+  // More precision
+  long secs = statbuf.st_mtim.tv_sec;
+  log("mtim.tv_sec  = %10ld", secs);
+
+  long ns = statbuf.st_mtim.tv_nsec;
+  log("mtim.tv_nsec = %10ld", ns);
+
+  Str* s = time_::strftime(StrFromC("%Y-%m-%d"), secs);
+  print(s);
+
+  log("INT_MAX      = %10d", INT_MAX);
+  log("diff         = %10d", INT_MAX - statbuf.st_mtime);
+
+  s = time_::strftime(StrFromC("%Y-%m-%d"), INT_MAX);
+  print(s);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -75,6 +107,7 @@ int main(int argc, char** argv) {
   RUN_TEST(putenv_test);
   RUN_TEST(open_test);
   RUN_TEST(time_test);
+  RUN_TEST(mtime_demo);
 
   gHeap.CleanProcessExit();
 
