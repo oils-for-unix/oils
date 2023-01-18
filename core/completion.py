@@ -42,6 +42,7 @@ from _devbuild.gen.runtime_asdl import value_e, value__Str, scope_e, Proc
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core.pyerror import log
+from core import pyos
 from core.pyutil import stderr_line
 from core import pyos
 from core import state
@@ -575,11 +576,10 @@ class ExternalCommandAction(CompletionAction):
     executables = []  # type: List[str]
     for d in path_dirs:
       try:
-        st = posix.stat(d)
+        key = pyos.MakeDirCacheKey(d)
       except OSError as e:
         # There could be a directory that doesn't exist in the $PATH.
         continue
-      key = (d, st.st_mtime)
 
       dir_exes = self.cache.get(key)
       if dir_exes is None:

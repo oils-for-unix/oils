@@ -3,6 +3,7 @@
 #include <errno.h>        // errno
 #include <fcntl.h>        // O_RDWR
 #include <signal.h>       // SIG*, kill()
+#include <sys/stat.h>     // stat
 #include <sys/utsname.h>  // uname
 #include <unistd.h>       // getpid(), getuid(), environ
 
@@ -262,6 +263,25 @@ TEST passwd_test() {
   PASS();
 }
 
+TEST dir_cache_key_test() {
+  struct stat st;
+  ASSERT(::stat("/", &st) == 0);
+
+  Tuple2<Str*, int> key = pyos::MakeDirCacheKey(StrFromC("/"));
+  ASSERT(str_equals(key.at0(), StrFromC("/")));
+  ASSERT(key.at1() == st.st_mtime);
+
+  int ec = -1;
+  try {
+    pyos::MakeDirCacheKey(StrFromC("nonexistent_ZZ"));
+  } catch (IOError_OSError* e) {
+    ec = e->errno_;
+  }
+  ASSERT(ec == ENOENT);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -280,6 +300,7 @@ int main(int argc, char** argv) {
   RUN_TEST(strerror_test);
   RUN_TEST(signal_test);
   RUN_TEST(passwd_test);
+  RUN_TEST(dir_cache_key_test);
 
   gHeap.CleanProcessExit();
 
