@@ -23,8 +23,7 @@
 readonly OVM_NAME=oil.ovm
 readonly OVM_PATH=_bin/$OVM_NAME
 
-readonly OILS_NAME=oils_cpp.stripped
-readonly OILS_PATH=_bin/cxx-opt-sh/$OILS_NAME
+readonly OILS_PATH=_bin/cxx-opt-sh/oils_cpp.stripped
 
 
 log() {
@@ -41,8 +40,9 @@ install_bin_and_links() {
   ### Install an executable and symlinks.
 
   bin_src=$1
-  bin_name=$2
+  bin_new_name=$2
   shift 2
+
   # symlinks are the remaining args
 
   # NOTE: The configure step generates this
@@ -55,22 +55,23 @@ install_bin_and_links() {
   # Install the shell binary
   #
 
-  local bin_dest="${DESTDIR}${PREFIX}/bin/"
+  bin_dest_dir="${DESTDIR}${PREFIX}/bin"
+  bin_dest="$bin_dest_dir/$bin_new_name"
 
-  if ! install -v -d "$bin_dest"; then
-    die "Couldn't create $bin_dest"
+  if ! install -v -d "$bin_dest_dir"; then
+    die "Couldn't create $bin_dest_dir"
   fi
 
   if ! install -v "$bin_src" "$bin_dest"; then
     die "Couldn't install $bin_src -> $bin_dest"
   fi
-  log "Installed executable"
+  log "Installed $bin_dest"
 
-  local working_dir=$PWD  # save for later
+  working_dir=$PWD  # save for later
 
-  cd "$bin_dest"
+  cd "$bin_dest_dir"
   for link in "$@"; do
-    if ! ln -s -f "$bin_name" "$link"; then  # -f to overwrite
+    if ! ln -s -f "$bin_new_name" "$link"; then  # -f to overwrite
       die "Couldn't create $link symlink"
     fi
     log "Created '$link' symlink"
@@ -87,15 +88,15 @@ install_bin_and_links() {
   cd "$working_dir"
 
   # e.g. /usr/local/share/man/man1
-  local man_dest="${DESTDIR}${DATAROOTDIR}/man/man1/"
+  man_dest_dir="${DESTDIR}${DATAROOTDIR}/man/man1"
 
-  if ! install -v -d "$man_dest"; then
-    die "Couldn't create $man_dest"
+  if ! install -v -d "$man_dest_dir"; then
+    die "Couldn't create $man_dest_dir"
   fi
   log "Installed man page"
 
   # -t to install to a directory and make them, -m so it's not executable
-  if ! install -v -m 644 doc/osh.1 "$man_dest"; then
+  if ! install -v -m 644 doc/osh.1 "$man_dest_dir"; then
     die "Couldn't install man page"
   fi
 }
@@ -104,8 +105,8 @@ if test -f "$OVM_PATH"; then
   # old name is 'oil'
   install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh oil
 elif test -f "$OILS_PATH"; then
-  # new name is 'ysh'
-  install_bin_and_links "$OILS_PATH" "$OILS_NAME" osh ysh
+  # new name is 'ysh', which points at oils-for-unix
+  install_bin_and_links "$OILS_PATH" 'oils-for-unix' osh ysh
 else
   die "Couldn't find $OVM_PATH or $OILS_PATH"
 fi
