@@ -41,6 +41,8 @@ def TarballManifest(cc_sources):
     'LICENSE.txt',
     'README-native.txt',
     'configure',
+    'install',
+    'doc/osh.1',
     ])
   names.extend(glob('build/detect-*.c'))
 

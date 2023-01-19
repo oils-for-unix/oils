@@ -1,7 +1,9 @@
 #!/bin/sh 
 #
-# POSIX shell script to install a build oil into the proper directory.
+# POSIX shell script to install oils-for-unix into the proper directory.
 # Distributed with the source tarball.
+#
+# Also shared with the old "oil.ovm" build.
 
 # NOTE: 'install' is part of coreutils and busybox.
 
@@ -16,6 +18,15 @@
 #
 # https://devmanual.gentoo.org/quickstart/index.html
 
+# old tarball
+
+readonly OVM_NAME=oil.ovm
+readonly OVM_PATH=_bin/$OVM_NAME
+
+readonly OILS_NAME=oils_cpp.stripped
+readonly OILS_PATH=_bin/cxx-opt-sh/$OILS_NAME
+
+
 log() {
   # indent it a bit
   echo "    $@" 1>&2
@@ -26,8 +37,15 @@ die() {
   exit 1
 }
 
-# NOTE: The configure step
-main() {
+install_bin_and_links() {
+  ### Install an executable and symlinks.
+
+  bin_src=$1
+  bin_name=$2
+  shift 2
+  # symlinks are the remaining args
+
+  # NOTE: The configure step generates this
   if ! . _build/detected-config.sh; then
     die "Can't find _build/detected-config.sh.  Run './configure'"
   fi
@@ -37,24 +55,22 @@ main() {
   # Install the shell binary
   #
 
-  #local exec_filename=oil.ovm-dbg
-  local exec_filename=oil.ovm
   local bin_dest="${DESTDIR}${PREFIX}/bin/"
 
   if ! install -v -d "$bin_dest"; then
     die "Couldn't create $bin_dest"
   fi
 
-  if ! install -v "_bin/$exec_filename" "$bin_dest"; then
-    die "Couldn't install oil binary"
+  if ! install -v "$bin_src" "$bin_dest"; then
+    die "Couldn't install $bin_src -> $bin_dest"
   fi
   log "Installed executable"
 
   local working_dir=$PWD  # save for later
 
   cd "$bin_dest"
-  for link in osh oil; do
-    if ! ln -s -f "$exec_filename" "$link"; then  # -f to overwrite
+  for link in "$@"; do
+    if ! ln -s -f "$bin_name" "$link"; then  # -f to overwrite
       die "Couldn't create $link symlink"
     fi
     log "Created '$link' symlink"
@@ -84,4 +100,13 @@ main() {
   fi
 }
 
-main "$@"
+if test -f "$OVM_PATH"; then
+  # old name is 'oil'
+  install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh oil
+elif test -f "$OILS_PATH"; then
+  # new name is 'ysh'
+  install_bin_and_links "$OILS_PATH" "$OILS_NAME" osh ysh
+else
+  die "Couldn't find $OVM_PATH or $OILS_PATH"
+fi
+
