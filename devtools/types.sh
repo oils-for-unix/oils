@@ -59,7 +59,7 @@ soil-run() {
   mypy_ --version
   set +x
 
-  # Generate osh_eval dependencies.  Though this is overly aggressive
+  # Generate oils_cpp dependencies.  Though this is overly aggressive
   ./NINJA-config.sh
 
   banner 'typecheck oils_cpp'

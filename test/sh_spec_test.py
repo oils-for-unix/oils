@@ -133,6 +133,16 @@ class ShSpecTest(unittest.TestCase):
     RunCases([self.CASE1], lambda i, case: True, shells, env, out, opts)
     print(repr(out.f.getvalue()))
 
+  def testMakeShellPairs(self):
+    pairs = spec_lib.MakeShellPairs(['bin/osh', '_bin/osh'])
+    print(pairs)
+
+    pairs = spec_lib.MakeShellPairs(['bin/osh', '_bin/cxx-dbg/osh'])
+    print(pairs)
+
+    pairs = spec_lib.MakeShellPairs(['bin/osh', '_bin/osh_cpp'])
+    print(pairs)
+
 
 if __name__ == '__main__':
   unittest.main()

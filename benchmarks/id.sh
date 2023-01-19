@@ -75,20 +75,19 @@ _dump-if-exists() {
 #
 
 dump-shell-id() {
-  local sh=$1  # path to the shell
+  local sh_path=$1
+  local out_dir=$2
 
-  if ! command -v $sh >/dev/null; then
-    die "dump-shell-id: Couldn't find $sh"
+  if ! command -v $sh_path >/dev/null; then
+    die "dump-shell-id: Couldn't find $sh_path"
   fi
 
-  local name
-  name=$(basename $sh)
-
-  local out_dir=${2:-_tmp/shell-id/$name}
   mkdir -p $out_dir
 
+  echo $sh_path > $out_dir/sh-path.txt
+
   # Add extra repository info for osh.
-  case $sh in
+  case $sh_path in
     */osh*)
       local branch
       branch=$(git rev-parse --abbrev-ref HEAD)
@@ -97,27 +96,36 @@ dump-shell-id() {
       ;;
   esac
 
-  case $name in
+  local sh_name
+  sh_name=$(basename $sh_path)
+
+  case $sh_name in
     bash|zsh|yash)
-      $sh --version > $out_dir/version.txt
+      $sh_path --version > $out_dir/version.txt
       ;;
     osh)
-      $sh --version > $out_dir/osh-version.txt
+      case $sh_path in
+        *_bin/*/osh)
+          # Doesn't support --version yet
+          ;;
+        *)
+          $sh_path --version > $out_dir/osh-version.txt
+          ;;
+      esac
       ;;
-    osh_eval|osh_eval.stripped)
-      # just rely on the stuff above
-      ;;
+    # oils_cpp|oils_cpp.stripped)
+    #  ;;
     dash|mksh)
       # These don't have version strings!
-      dpkg -s $name > $out_dir/dpkg-version.txt
+      dpkg -s $sh_name > $out_dir/dpkg-version.txt
       ;;
 
     # not a shell, but useful for benchmarks/compute
     python2)
-      $sh -V 2> $out_dir/version.txt
+      $sh_path -V 2> $out_dir/version.txt
       ;;
     *)
-      die "Invalid shell '$name'"
+      die "Invalid shell '$sh_name'"
       ;;
   esac
 }
@@ -149,21 +157,21 @@ _shell-id-hash() {
   return 0
 }
 
-# Writes a short ID to stdout.
 publish-shell-id() {
-  local src=$1  # e.g. _tmp/shell-id/osh
-  local dest_base=${2:-../benchmark-data/shell-id}
+  ### Copy temp directory to hashed location
 
-  local name
-  name=$(basename $src)
+  local src=$1  # e.g. _tmp/prov-tmp/osh
+  local dest_base=${2:-../benchmark-data/shell-id}  # or _tmp/shell-id
 
-  # Problem: OSH is built on each machine.  Get rid of the release date?
-  # And use the commit hash or what?
+  local sh_path sh_name
+  read sh_path < $src/sh-path.txt
+  sh_name=$(basename $sh_path)
+
   local hash
   hash=$(_shell-id-hash $src | md5sum)  # not secure, an identifier
 
   local id="${hash:0:8}"
-  local dest="$dest_base/$name-$id"
+  local dest="$dest_base/$sh_name-$id"
 
   mkdir -p $dest
   cp --no-target-directory --recursive $src/ $dest/
@@ -363,12 +371,14 @@ shell-provenance-2() {
   local out_tsv=_tmp/provenance.tsv
   tsv-row job_id host_name host_hash sh_path shell_hash > $out_tsv
 
-  for sh_path in "$@"; do
-    # There will be two different OSH
-    local shell_name
-    shell_name=$(basename $sh_path)
+  local i=0
 
-    tmp_dir=_tmp/prov_tmp/$shell_name
+  for sh_path in "$@"; do
+    # There can be two different OSH
+
+    tmp_dir=_tmp/prov-tmp/shell-$i
+    i=$((i + 1))
+
     dump-shell-id $sh_path $tmp_dir
 
     # writes to ../benchmark-data or _tmp/provenance

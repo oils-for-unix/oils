@@ -199,7 +199,7 @@ dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
 HACK-fastlex     build/py.sh fastlex                   -
 ninja-config     soil/worker.sh ninja-config           -
-osh-eval-smoke   build/native.sh osh-eval-smoke        -
+oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 }
@@ -214,7 +214,7 @@ dump-versions    soil/worker.sh dump-versions          -
 build-minimal    build/py.sh minimal                   -
 ninja-config     soil/worker.sh ninja-config           -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
-osh-eval-smoke   build/native.sh osh-eval-smoke        -
+oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 native-code      metrics/native-code.sh oil-native     _tmp/metrics/oil-native/index.html

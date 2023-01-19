@@ -117,7 +117,7 @@ int* g1 = new int[100];
 
 ' > $dir/lib.cc
 
-  # Why is it OK to link asdl/runtime.cc and _build/cpp/osh_eval.cc together?
+  # Why is it OK to link asdl/runtime.cc and _build/cpp/oils_cpp.cc together?
   #
   # Oh they are NOT linked together.  asdl/runtime.cc is only for tests!
 

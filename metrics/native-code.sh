@@ -121,7 +121,7 @@ oil-native() {
   ### Report on the ones we just built
 
   # TODO: could compare GCC and Clang once we have R on the CI images
-  local -a targets=(_bin/cxx-{dbg,opt}/osh_eval)
+  local -a targets=(_bin/cxx-{dbg,opt}/oils_cpp)
   ninja "${targets[@]}"
 
   collect-and-report $OIL_BASE_DIR "${targets[@]}"
@@ -132,7 +132,7 @@ oil-native() {
 compare-gcc-clang() {
   ### Run by Soil 'cpp-coverage' task, because it has clang
 
-  local -a targets=(_bin/{clang,cxx}-dbg/osh_eval _bin/{clang,cxx}-opt/osh_eval.stripped)
+  local -a targets=(_bin/{clang,cxx}-dbg/oils_cpp _bin/{clang,cxx}-opt/oils_cpp.stripped)
   ninja "${targets[@]}"
 
   mkdir -p _tmp/metrics
@@ -149,10 +149,10 @@ run-for-release() {
 
   collect-and-report $OVM_BASE_DIR $dbg $opt
 
-  # TODO: consolidate with benchmarks/common.sh, OSH_EVAL_BENCHMARK_DATA
+  # TODO: consolidate with benchmarks/common.sh, OSH_CPP_BENCHMARK_DATA
   # For some reason _bin/cxx-opt/ and _bin/cxx-opt-sh can differ by a few bytes
   local bin_dir="../benchmark-data/src/oil-native-$OIL_VERSION"
-  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/osh_eval
+  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/oils_cpp
 }
 
 dupe-strings() {
@@ -186,8 +186,8 @@ for s, count in d.most_common()[:50]:
 # Found StrFromC() and len() duplication
 
 oil-dupe-strings() {
-  local bin=_bin/cxx-opt/osh_eval.stripped
-  #local bin=_bin/clang-opt/osh_eval.stripped
+  local bin=_bin/cxx-opt/oils_cpp.stripped
+  #local bin=_bin/clang-opt/oils_cpp.stripped
   ninja $bin
 
   dupe-strings $bin

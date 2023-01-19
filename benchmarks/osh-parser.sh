@@ -65,7 +65,7 @@ parser-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   case "$shell_name" in
-    osh|osh_eval.*)
+    osh|oils_cpp.*)
       extra_args='--ast-format none'
       ;;
   esac
@@ -116,7 +116,7 @@ cachegrind-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   case "$shell_name" in
-    osh|osh_eval.*)
+    osh|oils_cpp.*)
       extra_args="--ast-format none"
       ;;
   esac
@@ -166,7 +166,7 @@ cachegrind() {
 cachegrind-parse-configure-coreutils() {
   ### Similar to benchmarks/gc, benchmarks/uftrace
 
-  local bin=_bin/cxx-opt/osh_eval
+  local bin=_bin/cxx-opt/oils_cpp
   ninja $bin
   local out=_tmp/parse.configure-coreutils.txt 
 
@@ -212,7 +212,7 @@ measure() {
   local provenance=$1
   local host_job_id=$2
   local out_dir=${3:-$BASE_DIR/raw}
-  local oil_native=${4:-$OSH_EVAL_BENCHMARK_DATA}
+  local oil_native=${4:-$OSH_CPP_BENCHMARK_DATA}
 
   local times_out="$out_dir/$host_job_id.times.csv"
   local lines_out="$out_dir/$host_job_id.lines.csv"
@@ -241,7 +241,7 @@ measure-cachegrind() {
   local provenance=$1
   local host_job_id=$2
   local out_dir=${3:-$BASE_DIR/raw}
-  local oil_native=${4:-$OSH_EVAL_BENCHMARK_DATA}
+  local oil_native=${4:-$OSH_CPP_BENCHMARK_DATA}
 
   local cachegrind_tsv="$out_dir/$host_job_id.cachegrind.tsv"
   local lines_out="$out_dir/$host_job_id.lines.tsv"
@@ -488,7 +488,7 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
+  local -a oil_bin=( $OSH_CPP_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
   local single_machine='no-host'
@@ -504,9 +504,9 @@ soil-run() {
   local provenance=_tmp/provenance.txt
   local host_job_id="$single_machine.$job_id"
 
-  measure $provenance $host_job_id '' $OSH_EVAL_NINJA_BUILD
+  measure $provenance $host_job_id '' $OSH_CPP_NINJA_BUILD
 
-  measure-cachegrind $provenance $host_job_id '' $OSH_EVAL_NINJA_BUILD
+  measure-cachegrind $provenance $host_job_id '' $OSH_CPP_NINJA_BUILD
 
   # TODO: R can use this TSV file
   cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv

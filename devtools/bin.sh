@@ -37,10 +37,10 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 EOF
 }
 
-make-osh-eval() {
-  local out=bin/osh_eval
+make-oils-cpp() {
+  local out=bin/oils_cpp
   { sh-prefix
-    echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/osh_eval.py "$@"'
+    echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/oils_cpp.py "$@"'
   } > $out
   chmod +x $out
   echo "Wrote $out"
@@ -83,7 +83,7 @@ make-src-stubs() {
 
   make-osh-dbg
 
-  make-osh-eval
+  make-oils-cpp
 }
 
 make-ovm-links() {

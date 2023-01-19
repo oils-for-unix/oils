@@ -25,14 +25,17 @@ def NinjaGraph(ru):
     prefix = '_gen/bin/%s.mycpp' % main_name
     # header exports osh.cmd_eval
     outputs = [prefix + '.cc', prefix + '.h']
-    n.build(outputs, 'gen-osh-eval', deps,
+    n.build(outputs, 'gen-oils-cpp', deps,
             implicit=['_bin/shwrap/mycpp_main', RULES_PY],
             variables=[('out_prefix', prefix), ('main_name', main_name)])
 
     # The main program!
 
+    symlinks = ['osh', 'ysh'] if main_name == 'oils_cpp' else []
+
     ru.cc_binary(
         '_gen/bin/%s.mycpp.cc' % main_name,
+        symlinks = symlinks,
         preprocessed = True,
         matrix = ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
         top_level = True,  # _bin/cxx-dbg/osh_eval

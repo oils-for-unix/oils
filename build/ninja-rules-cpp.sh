@@ -68,7 +68,7 @@ setglobal_compile_flags() {
   fi
 
   # TODO: bumpleak and cheney should really be separate binaries like
-  # osh_eval.bumpleak.stripped, and mycpp/examples/strings.mycpp.bumpleak
+  # oils_cpp.bumpleak.stripped, and mycpp/examples/strings.mycpp.bumpleak
   case $variant in
     (bumpleak)
       flags="$flags -D BUMP_LEAK"
@@ -219,7 +219,7 @@ compile_one() {
 
     # DISABLE spew for generated code.  mycpp/pea could flag this at the PYTHON
     # level, rather than doing it at the C++ level.
-    (_build/obj/*/osh_eval.*)
+    (_build/obj/*/oils_cpp.*)
       flags="$flags -Wno-unused-variable -Wno-unused-but-set-variable"
       ;;
   esac
@@ -295,6 +295,15 @@ strip_() {
     objcopy --only-keep-debug $in $symbols
     objcopy --add-gnu-debuglink=$symbols $stripped
   fi
+}
+
+symlink() {
+  local dir=$1
+  local in=$2
+  local out=$3
+
+  cd $dir
+  ln -s -f -v $in $out
 }
 
 # test/cpp-unit.sh sources this

@@ -335,7 +335,7 @@ base-classes() {
 translation() {
   set +o errexit
 
-  build/translate.sh osh-eval-xmanifest \
+  build/translate.sh oils-cpp-xmanifest \
     | xargs egrep -n 'IndexError|KeyError'
   local status=$?
 
@@ -347,7 +347,7 @@ translation() {
 
   # See what we have to translate to 'with' in Python
   # 36 different occurrences.  OK it's doable.
-  build/translate.sh osh-eval-xmanifest \
+  build/translate.sh oils-cpp-xmanifest \
     | xargs egrep -n 'finally:'
     #| xargs egrep -n -A 1 'finally:'
 

@@ -23,7 +23,7 @@ def MakeShellPairs(shells):
   saw_osh = False
   saw_oil = False
   for path in shells:
-    if 'osh_eval' in path:
+    if 'osh_eval' in path or 'oils_cpp' in path:
       name = path
       if '_bin' in path:
         label = 'osh_.cc'

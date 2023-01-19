@@ -4,7 +4,7 @@
 #   benchmarks/uftrace.sh <function name>
 #
 # Examples:
-#   benchmarks/uftrace.sh record-osh-eval
+#   benchmarks/uftrace.sh record-oils-cpp
 #   benchmarks/uftrace.sh replay-alloc
 #   benchmarks/uftrace.sh plugin-allocs
 #
@@ -67,7 +67,7 @@ replay() {
 }
 
 # creates uftrace.data/ dir
-record-osh-eval() {
+record-oils-cpp() {
   local out_dir=$1
   local unfiltered=${2:-}
   shift 2
@@ -122,11 +122,11 @@ record-osh-eval() {
     # -F 'StrFromC' -A 'StrFromC@arg1' -A 'StrFromC@arg2'
   fi
 
-  local osh_eval=_bin/cxx-uftrace/osh_eval 
-  ninja $osh_eval
+  local oils_cpp=_bin/cxx-uftrace/oils_cpp 
+  ninja $oils_cpp
 
-  time uftrace record -d $out_dir "${flags[@]}" $osh_eval "$@"
-  #time uftrace record $osh_eval "$@"
+  time uftrace record -d $out_dir "${flags[@]}" $oils_cpp "$@"
+  #time uftrace record $oils_cpp "$@"
 
   ls -d $out_dir/
   ls -l --si $out_dir/
@@ -150,7 +150,7 @@ record-parse() {
   local out_dir=_tmp/uftrace/parse.data
   mkdir -p $out_dir
 
-  record-osh-eval $out_dir "$unfiltered" --ast-format none -n $path
+  record-oils-cpp $out_dir "$unfiltered" --ast-format none -n $path
 }
 
 record-execute() {
@@ -161,7 +161,7 @@ record-execute() {
   #local cmd=( benchmarks/compute/fib.sh 10 44 )
   local cmd=( benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
 
-  record-osh-eval $out_dir "$unfiltered" "${cmd[@]}"
+  record-oils-cpp $out_dir "$unfiltered" "${cmd[@]}"
 }
 
 by-call() {

@@ -44,7 +44,7 @@ hello-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash $OIL_NATIVE_REGEX |
+  cat $provenance | filter-provenance python2 bash dash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'hello _ _' | xargs -n 3 -- echo "$fields"
   done
@@ -55,7 +55,7 @@ fib-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash $OIL_NATIVE_REGEX |
+  cat $provenance | filter-provenance python2 bash dash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
   done
@@ -64,9 +64,9 @@ fib-tasks() {
 word_freq-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python2 bash $OIL_NATIVE_REGEX |
+  cat $provenance | filter-provenance python2 bash "$OSH_CPP_REGEX" |
   while read fields; do
-    # BUG: osh_eval differs on these two.  Looks like it's related to
+    # BUG: oils_cpp differs on these two.  Looks like it's related to
     # backslashes!
     #echo 'word_freq 10 benchmarks/testdata/abuild' | xargs -n 3 -- echo "$fields"
     #echo 'word_freq 2 benchmarks/testdata/ltmain.sh' | xargs -n 3 -- echo "$fields"
@@ -77,7 +77,7 @@ word_freq-tasks() {
 assoc_array-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python2 bash $OIL_NATIVE_REGEX |
+  cat $provenance | filter-provenance python2 bash "$OSH_CPP_REGEX" |
   while read fields; do
     for n in 1000 2000 3000; do
       echo "word_freq 10 $n" | xargs -n 3 -- echo "$fields"
@@ -89,7 +89,7 @@ bubble_sort-tasks() {
   # Note: this is quadratic, but bubble sort itself is quadratic!
   local provenance=$1
 
-  cat $provenance | filter-provenance python2 bash $OIL_NATIVE_REGEX |
+  cat $provenance | filter-provenance python2 bash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'bubble_sort int   200' | xargs -n 3 -- echo "$fields"
     echo 'bubble_sort bytes 200' | xargs -n 3 -- echo "$fields"
@@ -129,7 +129,7 @@ array_ref-tasks() {
 palindrome-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance python2 bash $OIL_NATIVE_REGEX |
+  cat $provenance | filter-provenance python2 bash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'palindrome unicode _' | xargs -n 3 -- echo "$fields"
     echo 'palindrome bytes   _' | xargs -n 3 -- echo "$fields"
@@ -139,7 +139,7 @@ palindrome-tasks() {
 parse_help-tasks() {
   local provenance=$1
 
-  cat $provenance | filter-provenance bash $OIL_NATIVE_REGEX |
+  cat $provenance | filter-provenance bash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'parse_help ls-short _' | xargs -n 3 -- echo "$fields"
     echo 'parse_help ls       _' | xargs -n 3 -- echo "$fields"
@@ -415,7 +415,7 @@ soil-run() {
   mkdir -p $BASE_DIR
 
   # Test the one that's IN TREE, NOT in ../benchmark-data
-  local -a oil_bin=( $OSH_EVAL_NINJA_BUILD _bin/cxx-bumpleak/osh_eval)
+  local -a oil_bin=( $OSH_CPP_NINJA_BUILD _bin/cxx-bumpleak/osh)
   ninja "${oil_bin[@]}"
 
   local single_machine='no-host'

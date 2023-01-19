@@ -108,7 +108,7 @@ run-file() {
   case $compare_mode in
     # Note: could make these names more consistent
     (compare-py)     prefix=(test/spec.sh) ;;
-    (compare-cpp)    prefix=(test/spec-cpp.sh run-with-osh-eval) ;;
+    (compare-cpp)    prefix=(test/spec-cpp.sh run-with-oils-cpp) ;;
     (release-alpine) prefix=(test/spec-alpine.sh run-test) ;;
     (*) die "Invalid compare mode $compare_mode" ;;
   esac

@@ -33,7 +33,7 @@ debug-tcmalloc() {
   touch mycpp/marksweep_heap.cc
 
   # No evidence of difference
-  for bin in _bin/cxx-{opt,tcmalloc}/osh_eval; do
+  for bin in _bin/cxx-{opt,tcmalloc}/osh; do
     echo $bin
     ninja $bin
 
@@ -61,7 +61,7 @@ max-rss() {
 }
 
 compare-m32() {
-  for bin in _bin/cxx-opt{,32}/osh_eval.stripped; do
+  for bin in _bin/cxx-opt{,32}/osh; do
     echo $bin
     ninja $bin
 
@@ -102,13 +102,13 @@ print-tasks() {
     "dash$TAB-"
     "zsh$TAB-"
 
-    "_bin/cxx-bumpleak/osh_eval${TAB}mut"
+    "_bin/cxx-bumpleak/osh${TAB}mut"
     # these have trivial GC stats
-    "_bin/cxx-opt/osh_eval.stripped${TAB}mut+alloc"
-    "_bin/cxx-opt/osh_eval.stripped${TAB}mut+alloc+free"
+    "_bin/cxx-opt/osh${TAB}mut+alloc"
+    "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     # good GC stats
-    "_bin/cxx-opt/osh_eval.stripped${TAB}mut+alloc+free+gc"
-    "_bin/cxx-opt/osh_eval.stripped${TAB}mut+alloc+free+gc+exit"
+    "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
+    "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
   )
 
   local id=0
@@ -164,7 +164,7 @@ run-tasks() {
         argv=( -n $data_file )
 
         case $sh_path in
-          */osh_eval*)
+          _bin/*/osh)
             argv=( --ast-format none "${argv[@]}" )
             ;;
         esac
@@ -255,7 +255,7 @@ run-tasks() {
 fd-demo() {
   local out=_tmp/gc/demo.txt
 
-  local bin=_bin/cxx-dbg/osh_eval
+  local bin=_bin/cxx-dbg/oils_cpp
   ninja $bin
 
   # Hm you can't do $fd>out.txt, but that's OK
@@ -279,7 +279,7 @@ more-variants() {
 
       # 223 ms
       # 61.9 MB bytes allocated
-      local bin=_bin/cxx-opt32/osh_eval
+      local bin=_bin/cxx-opt32/oils_cpp
       OIL_GC_THRESHOLD=$big_threshold \
         run-osh $tsv_out $bin 'm32 mutator+malloc' $file
 
@@ -293,7 +293,7 @@ more-variants() {
     (*tcmalloc*)
 
       # 184 ms
-      local tcmalloc_bin=_bin/cxx-tcmalloc/osh_eval
+      local tcmalloc_bin=_bin/cxx-tcmalloc/oils_cpp
       OIL_GC_THRESHOLD=$big_threshold \
         run-osh $tsv_out $tcmalloc_bin 'mutator+tcmalloc' $file
 
@@ -307,7 +307,7 @@ more-variants() {
   # Show log of GC
   case $compare_more in
     (*gcverbose*)
-      local bin=_bin/cxx-gcverbose/osh_eval
+      local bin=_bin/cxx-gcverbose/oils_cpp
       # 280 ms
       OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
         run-osh $tsv_out $bin 'gcverbose mutator+malloc+free+gc' $file
@@ -320,8 +320,7 @@ more-variants() {
 }
 
 measure-all() {
-  ninja _bin/cxx-bumpleak/osh_eval \
-        _bin/cxx-opt/osh_eval.stripped
+  ninja _bin/cxx-bumpleak/osh _bin/cxx-opt/osh
 
   local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
   mkdir -p $(dirname $tsv_out)
@@ -452,7 +451,7 @@ gc-parse-smoke() {
   local variant=${1:-opt}
   local file=${2:-configure}
 
-  local bin=_bin/cxx-$variant/osh_eval
+  local bin=_bin/cxx-$variant/oils_cpp
   ninja $bin
 
   _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
@@ -471,7 +470,7 @@ gc-parse-big() {
 gc-run-smoke() {
   local variant=${1:-opt}
 
-  local bin=_bin/cxx-$variant/osh_eval
+  local bin=_bin/cxx-$variant/oils_cpp
   ninja $bin
 
   # expose a bug with printf
@@ -484,7 +483,7 @@ gc-run-oil() {
 
   local variant=${1:-opt}
 
-  local bin=_bin/cxx-$variant/osh_eval
+  local bin=_bin/cxx-$variant/oils_cpp
   ninja $bin
 
   local i=0
@@ -514,7 +513,7 @@ gc-run-oil() {
 gc-run-big() {
   local variant=${1:-opt}
 
-  local target=_bin/cxx-$variant/osh_eval
+  local target=_bin/cxx-$variant/oils_cpp
   ninja $target
 
   local osh=$REPO_ROOT/$target
@@ -532,7 +531,7 @@ gc-run-big() {
 # This hit the 24-bit object ID limitation in 2.5 seconds
 # Should be able to run indefinitely.
 run-for-a-long-time() {
-  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-opt/osh_eval benchmarks/compute/fib.sh 10000
+  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-opt/oils_cpp benchmarks/compute/fib.sh 10000
 }
 
 "$@"

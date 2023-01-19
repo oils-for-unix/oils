@@ -25,13 +25,25 @@ measure() {
   local out_dir="$base_dir/$host_job_id"
   mkdir -p $out_dir
 
+  # TODO:
+  # print-tasks should:
+  # - use the whole shell path like _bin/osh
+  # - the host name shoudl be a column
+  # - the join ID can be a file, and construct the task name from that
+  # - Then maybe use tsv_columns_from_files.py like we do with cachegrind
+
+  # - should not
+  #   - get shell name from the filename
+  #   - get host name from the filename
+  # - should use TSV files
+
   # Fourth column is the shell.
-  # TODO: when oil-native can start processes, hook it up!
-  cat $provenance | filter-provenance "${SHELLS[@]}" $OIL_NATIVE_REGEX |
+  cat $provenance | filter-provenance "${SHELLS[@]}" "$OSH_CPP_REGEX" |
   while read _ _ _ sh_path shell_hash; do
-    # _bin/cxx-opt/osh_eval.stripped -> osh_eval.stripped
-    # TODO: bumpleak
-    local sh_name=$(basename $sh_path)
+
+    local sh_name
+    sh_name=$(basename $sh_path)
+
     local out="$out_dir/${sh_name}-${shell_hash}.txt"
 
     # There is a race condition on the status but sleep helps.
@@ -136,7 +148,7 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
+  local -a oil_bin=( $OSH_CPP_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
   local single_machine='no-host'

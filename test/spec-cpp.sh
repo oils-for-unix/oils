@@ -19,12 +19,15 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 # Run with debug binary by default
-OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-dbg/osh_eval}
+OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-dbg/osh}
+
+# Same variable in test/spec-runner.sh
+NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
 
 readonly -a COMPARE_CPP_SHELLS=(
-    $REPO_ROOT/bin/osh 
-    $REPO_ROOT/bin/osh_eval 
-    $OSH_CC 
+    $REPO_ROOT/bin/osh
+    $REPO_ROOT/bin/osh_cpp
+    $OSH_CC
 )
 
 # Applies everywhere
@@ -34,17 +37,17 @@ export ASAN_OPTIONS=detect_leaks=0
 # For translation
 #
 
-osh-eval-py() {
-  ### Run a suite with osh_eval.py (manual)
+oils-cpp-py() {
+  ### Run a suite with oils_cpp.py (manual)
   local suite=${1:-arith}
   if test $# -gt 0; then
     shift
   fi
-  test/spec.sh $suite $PWD/bin/osh_eval "$@"
+  test/spec.sh $suite $PWD/bin/oils_cpp "$@"
 }
 
-osh-eval-cpp() {
-  ### Run a suite with the translation of osh_eval.py (manual)
+oils-cpp-cpp() {
+  ### Run a suite with the translation of oils_cpp.py (manual)
   local suite=${1:-arith}
   if test $# -gt 0; then
     shift
@@ -54,12 +57,12 @@ osh-eval-cpp() {
 }
 
 asan-smoke() {
-  ninja _bin/cxx-asan/osh_eval
-  _bin/cxx-asan/osh_eval -c 'echo -c'
-  echo 'echo stdin' | _bin/cxx-asan/osh_eval
+  ninja _bin/cxx-asan/osh
+  _bin/cxx-asan/osh -c 'echo -c'
+  echo 'echo stdin' | _bin/cxx-asan/osh
 }
 
-run-with-osh-eval() {
+run-with-oils-cpp() {
   ### Run a test with the given name.
 
   local test_name=$1
@@ -84,6 +87,8 @@ osh-all() {
   # For debugging hangs
   #export MAX_PROCS=1
 
+  ninja _bin/cxx-dbg/osh
+
   test/spec-runner.sh shell-sanity-check "${COMPARE_CPP_SHELLS[@]}"
 
   # $suite $compare_mode $spec_subdir
@@ -98,7 +103,7 @@ all() {
 }
 
 soil-run() {
-  local opt_bin=_bin/cxx-opt/osh_eval.stripped
+  local opt_bin=_bin/cxx-opt/osh
 
   # Run with optimized binary since it's faster
   ninja $opt_bin
@@ -122,9 +127,9 @@ FNR != 1 {
 
   if (sh == "osh") {
     osh[result] += 1
-  } else if (sh == "osh_.py") {
+  } else if (sh == "osh_cpp") {  # bin/osh_cpp
     oe_py[result] += 1
-  } else if (sh == "osh_.cc") {
+  } else if (sh == "osh_ALT") {  # _bin/*/osh
     oe_cpp[result] += 1
   }
 }
@@ -148,8 +153,8 @@ function print_hist(sh, hist) {
 
 END { 
   print_hist("osh", osh)
-  print_hist("osh_.py", oe_py)
-  print_hist("osh_.cc", oe_cpp)
+  print_hist("osh_cpp", oe_py)
+  print_hist("osh_ALT", oe_cpp)
 }
   ' "$@"
 }
@@ -196,17 +201,17 @@ FNR != 1 {
 
   if (sh == "osh") {
     osh[result] += 1
-  } else if (sh == "osh_.py") {
-    osh_eval_py[result] += 1
-  } else if (sh == "osh_.cc") {
-    osh_eval_cpp[result] += 1
+  } else if (sh == "osh_cpp") {  # bin/osh_cpp
+    oils_cpp_py[result] += 1
+  } else if (sh == "osh_ALT") {  # bin/*/osh
+    oils_cpp_cpp[result] += 1
   }
 }
 
 END { 
   num_osh = osh["pass"]
-  num_py = osh_eval_py["pass"] 
-  num_cpp = osh_eval_cpp["pass"]
+  num_py = oils_cpp_py["pass"] 
+  num_cpp = oils_cpp_cpp["pass"]
   if (spec_name == "TOTAL") {
     href = ""
   } else {
@@ -236,15 +241,16 @@ END {
 summary-csv() {
   # Can't go at the top level because files might not exist!
   cat <<EOF
-ROW_CSS_CLASS,name,name_HREF,osh,osh_eval.py,delta_py,osh_eval.cpp,delta_cpp
+ROW_CSS_CLASS,name,name_HREF,osh,osh_cpp.py,delta_py,osh_cpp,delta_cpp
 EOF
 
   # total row rows goes at the TOP, so it's in <thead> and not sorted.
   summary-csv-row _tmp/spec/cpp/*.tsv
 
+  head -n $NUM_SPEC_TASKS _tmp/spec/SUITE-osh.txt |
   while read spec_name; do
     summary-csv-row $spec_name
-  done < _tmp/spec/SUITE-osh.txt
+  done 
 }
 
 html-summary-header() {
@@ -309,9 +315,9 @@ ROW_CSS_CLASS string
 name          string
 name_HREF     string
 osh           integer
-osh_eval.py   integer
+osh_cpp.py    integer
 delta_py      integer
-osh_eval.cpp  integer
+osh_cpp       integer
 delta_cpp     integer
 EOF
 
@@ -350,18 +356,18 @@ one-off() {
 
   # this might be an IFS problem, because backslashes are missing from the
   # unquoted one
-  run-with-osh-eval quote -r 11 -v
+  run-with-oils-cpp quote -r 11 -v
 
   # not sure
-  run-with-osh-eval prompt -r 3 -v
+  run-with-oils-cpp prompt -r 3 -v
 
   return
 
   # redirects is nullptr problem
-  run-with-osh-eval for-expr -r 2 -v
+  run-with-oils-cpp for-expr -r 2 -v
 
-  run-with-osh-eval builtin-io -r 9 -v  # \0
-  run-with-osh-eval assign-extended -r 9 -v  # declare -p, crash
+  run-with-oils-cpp builtin-io -r 9 -v  # \0
+  run-with-oils-cpp assign-extended -r 9 -v  # declare -p, crash
 
   # xtrace: unicode
   return
@@ -369,21 +375,21 @@ one-off() {
   # printf: putenv() and strftime, and %5d
 
   # unicode.  I think this is a libc glob setting
-  run-with-osh-eval var-op-strip -r 10 -v
-  run-with-osh-eval var-op-strip -r 24 -v
+  run-with-oils-cpp var-op-strip -r 10 -v
+  run-with-oils-cpp var-op-strip -r 24 -v
 
-  #run-with-osh-eval builtin-io -r 26 -v  # posix::read
-  #run-with-osh-eval builtin-io -r 54 -v  # to_float()
+  #run-with-oils-cpp builtin-io -r 26 -v  # posix::read
+  #run-with-oils-cpp builtin-io -r 54 -v  # to_float()
 }
 
 repro() {
   test/spec.sh alias -r 0 -p > _tmp/a
-  ninja _bin/clang-dbg/osh_eval
-  _bin/clang-dbg/osh_eval _tmp/a
+  ninja _bin/clang-dbg/oils_cpp
+  _bin/clang-dbg/oils_cpp _tmp/a
 }
 
 repro-all() {
-  OSH_CC=$REPO_ROOT/_bin/clang-dbg/osh_eval $0 all
+  OSH_CC=$REPO_ROOT/_bin/clang-dbg/oils_cpp $0 all
 }
 
 "$@"

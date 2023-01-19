@@ -113,11 +113,11 @@ measure-sizes() {
   # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
   # in R.
 
-  # clang/osh_eval
-  # clang/osh_eval.stripped
-  # gcc/osh_eval
-  # gcc/osh_eval.stripped
-  sizes-tsv $BASE_DIR/bin/*/{osh_eval,osh_eval.stripped} \
+  # clang/oils_cpp
+  # clang/oils_cpp.stripped
+  # gcc/oils_cpp
+  # gcc/oils_cpp.stripped
+  sizes-tsv $BASE_DIR/bin/*/{oils_cpp,oils_cpp.stripped} \
     > ${prefix}.native-sizes.tsv
 
   sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode-opy.zip \
@@ -222,12 +222,12 @@ build-task() {
       cp -v $target $bin_dir
       ;;
 
-    (osh_eval*)
+    (oils_cpp*)
       case $action in
-        (osh_eval)
+        (oils_cpp)
           local variant='dbg'
           ;;
-        (osh_eval.stripped)
+        (oils_cpp.stripped)
           local variant='opt'
           ;;
         *)
@@ -255,7 +255,7 @@ build-task() {
 
       "${TIME_PREFIX[@]}" -- _build/oil-native.sh $compiler $variant
 
-      # e.g. cp _bin/clang-opt-sh/osh_eval.stripped _tmp/ovm-build/bin/clang/
+      # e.g. cp _bin/clang-opt-sh/oils_cpp.stripped _tmp/ovm-build/bin/clang/
       local filename=$action
       cp -v _bin/$compiler-$variant-sh/$filename $bin_dir
       ;;
@@ -289,8 +289,8 @@ oil-tasks() {
     echo "$line" $oil_dir _bin/oil.ovm
     echo "$line" $oil_dir _bin/oil.ovm-dbg
 
-    echo "$line" $oil_native_dir osh_eval
-    echo "$line" $oil_native_dir osh_eval.stripped
+    echo "$line" $oil_native_dir oils_cpp
+    echo "$line" $oil_native_dir oils_cpp.stripped
   done
 }
 

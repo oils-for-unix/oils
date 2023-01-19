@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 EOF
 }
 
-osh-eval-main() {
+oils-cpp-main() {
   local main_namespace=$1
 
   cat <<EOF
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 EOF
 }
 
-gen-osh-eval() {
+gen-oils-cpp() {
   local main_name=$1
   local out_prefix=$2
   shift 2  # rest are inputs
@@ -84,10 +84,10 @@ gen-osh-eval() {
   local tmp=_build/tmp
   mkdir -p $tmp
 
-  local raw_cc=$tmp/osh_eval_raw.cc
+  local raw_cc=$tmp/oils_cpp_raw.cc
   local cc_out=${out_prefix}.cc
 
-  local raw_header=$tmp/osh_eval_raw.h
+  local raw_header=$tmp/oils_cpp_raw.h
   local header_out=${out_prefix}.h
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
@@ -98,12 +98,12 @@ gen-osh-eval() {
 
   { echo "// $main_name.h: translated from Python by mycpp"
     echo
-    echo '#ifndef OSH_EVAL_MYCPP_H'
-    echo '#define OSH_EVAL_MYCPP_H'
+    echo '#ifndef OILS_CPP_MYCPP_H'
+    echo '#define OILS_CPP_MYCPP_H'
 
     cat $raw_header
 
-    echo '#endif  // OSH_EVAL_MYCPP_H'
+    echo '#endif  // OILS_CPP_MYCPP_H'
 
   } > $header_out
 
@@ -117,7 +117,7 @@ EOF
 
     cat $raw_cc
 
-    osh-eval-main $main_name
+    oils-cpp-main $main_name
   } > $cc_out
 }
 

@@ -22,7 +22,7 @@ tarball-demo() {
 
   time _build/oil-native.sh '' '' SKIP_REBUILD
 
-  local bin=_bin/cxx-opt-sh/osh_eval.stripped
+  local bin=_bin/cxx-opt-sh/oils_cpp.stripped
 
   ls -l $bin
 
@@ -31,7 +31,9 @@ tarball-demo() {
   echo
 
   set -o xtrace
-  $bin -n -c 'echo "hello $name"'
+
+  # TODO: Use symlink
+  $bin osh -n -c 'echo "hello $name"'
 }
 
 #
@@ -44,10 +46,10 @@ soil-run() {
   ./NINJA-config.sh
 
   # Keep the Cheney build compiling
-  ninja _bin/cxx-dbg/osh_eval \
-        _bin/cxx-asan/osh_eval \
-        _bin/cxx-opt/osh_eval.stripped \
-        _bin/cxx-cheney/osh_eval
+  ninja _bin/cxx-dbg/oils_cpp \
+        _bin/cxx-asan/oils_cpp \
+        _bin/cxx-opt/oils_cpp.stripped \
+        _bin/cxx-cheney/oils_cpp
 }
 
 oil-slice-demo() {
@@ -56,28 +58,28 @@ oil-slice-demo() {
   echo 'echo hi' | bin/osh_parse.py
   bin/osh_parse.py -c 'ls -l'
 
-  local osh_eval=${1:-bin/osh_eval.py}
+  local osh=${1:-bin/osh}
 
-  # Same functionality in bin/osh_eval
-  echo 'echo hi' | $osh_eval
-  $osh_eval -n -c 'ls -l'
+  # Same functionality in bin/oils_cpp
+  echo 'echo hi' | $osh
+  $osh -n -c 'ls -l'
   echo ---
   # ast format is none
-  $osh_eval --ast-format none -n -c 'ls -l'
+  $osh --ast-format none -n -c 'ls -l'
 
   echo '-----'
 
   # Now test some more exotic stuff
-  $osh_eval -c '(( a = 1 + 2 * 3 ))'
+  $osh -c '(( a = 1 + 2 * 3 ))'
 
-  $osh_eval -c \
+  $osh -c \
     'echo "hello"x $$ ${$} $((1 + 2 * 3)) {foo,bar}@example.com'
 
-  $osh_eval -c 'for x in 1 2 3; do echo $x; done'
+  $osh -c 'for x in 1 2 3; do echo $x; done'
 }
 
-osh-eval-smoke() {
-  local bin=_bin/cxx-dbg/osh_eval
+oils-cpp-smoke() {
+  local bin=_bin/cxx-dbg/osh
   ninja $bin
   oil-slice-demo $bin
 }

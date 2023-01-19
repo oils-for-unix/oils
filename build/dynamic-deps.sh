@@ -192,7 +192,9 @@ mycpp-example-parse() {
 }
 
 pea-hack() {
-  cp -v $DIR/osh_eval/typecheck.txt pea/osh-eval-typecheck.txt
+  # Leave out help_.py for Soil
+  grep -v '_devbuild/gen/help_.py' $DIR/oils_cpp/typecheck.txt \
+    > pea/oils-cpp-typecheck.txt
 }
 
 # Sourced by NINJA-config.sh

@@ -43,7 +43,7 @@ grep "Assertion.*failed\." _tmp/spec/cpp/* > $tmp_file_0
 
 echo "Recording Assertion Failuers"
 while read -r line; do
-  assert_fail=$(echo -n "$line" | grep -o -P "osh_eval: \K.*") || allow_errors
+  assert_fail=$(echo -n "$line" | grep -o -P "oils_cpp: \K.*") || allow_errors
   test_fail=$(echo "$line" | cut -d: -f1) || allow_errors
   echo "($assert_fail) $test_fail" >> $tmp_file_1
 done < $tmp_file_0

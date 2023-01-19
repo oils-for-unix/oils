@@ -20,7 +20,7 @@ banner() {
 
 is-oil-native() {
   case $SH in
-    *osh_eval*)
+    _bin/*/*)
       return 0
       ;;
   esac
@@ -1483,9 +1483,9 @@ soil-run-cpp() {
   ### run with C++.  output: _tmp/other/oil-parse-errors-oil-native.txt
 
   # Done in _oil-native-tarball-build on the benchmark-data version
-  ninja _bin/cxx-asan/osh_eval
+  ninja _bin/cxx-asan/osh
 
-  ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh_eval all
+  ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh all
 }
 
 release-oil-native() {
@@ -1498,7 +1498,7 @@ release-oil-native() {
   popd
 
   local out=_tmp/other/parse-errors-oil-native.txt
-  SH=$dir/_bin/cxx-opt-sh/osh_eval.stripped \
+  SH=$dir/_bin/cxx-opt-sh/oils_cpp.stripped \
     run-other-suite-for-release parse-errors all $out
 }
 

@@ -105,13 +105,14 @@ main() {
   local compiler=${1:-cxx}   # default is system compiler
   local variant=${2:-opt}    # default is optimized build
   local skip_rebuild=${3:-}  # if the output exists, skip build'
-
 ''' % (argv0), file=f)
 
-  out = '_bin/$compiler-$variant-sh/osh_eval'
-  print('  local out=%s' % out, file=f)
+  out_dir = '_bin/$compiler-$variant-sh'
+  print('  local out_dir=%s' % out_dir, file=f)
 
   print('''\
+  local out=$out_dir/oils_cpp
+
   if test -n "$skip_rebuild" && test -f "$out"; then
     echo
     echo "$0: SKIPPING build because $out exists"
@@ -151,9 +152,16 @@ main() {
   # TODO: provide a way for the user to get symbols?
 
   print('''\
+  local out_name=oils_cpp
   if test "$variant" = opt; then
     strip -o "$out.stripped" "$out"
+    out_name=$out_name.stripped
   fi
+
+  cd $out_dir
+  for symlink in osh ysh; do
+    ln -s -f -v $out_name $symlink
+  done
 }
 
 main "$@"
@@ -229,6 +237,12 @@ def InitSteps(n):
          description='STRIP $in $out')
   n.newline()
 
+  # cc_binary can have symliks
+  n.rule('symlink',
+         command='build/ninja-rules-cpp.sh symlink $dir $target $new',
+         description='SYMLINK $dir $target $new')
+  n.newline()
+
   #
   # Code generators
   #
@@ -239,9 +253,9 @@ def InitSteps(n):
          description='make-pystub $out $in')
   n.newline()
 
-  n.rule('gen-osh-eval',
-         command='build/ninja-rules-py.sh gen-osh-eval $main_name $out_prefix $in',
-         description='gen-osh-eval $main_name $out_prefix $in')
+  n.rule('gen-oils-cpp',
+         command='build/ninja-rules-py.sh gen-oils-cpp $main_name $out_prefix $in',
+         description='gen-oils-cpp $main_name $out_prefix $in')
   n.newline()
 
 
@@ -301,7 +315,7 @@ def main(argv):
   ru.WriteRules()
 
   # Collect sources for metrics, tarball, shell script
-  cc_sources = ru.SourcesForBinary('_gen/bin/osh_eval.mycpp.cc')
+  cc_sources = ru.SourcesForBinary('_gen/bin/oils_cpp.mycpp.cc')
 
   if 0:
     from pprint import pprint
@@ -312,7 +326,7 @@ def main(argv):
 
   ru.WritePhony()
 
-  n.default(['_bin/cxx-dbg/osh_eval'])
+  n.default(['_bin/cxx-dbg/oils_cpp'])
 
 
   if action == 'ninja':

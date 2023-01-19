@@ -39,7 +39,7 @@ measure-shells() {
 
   # New Style doesn't need provenance -- it's joined later
   benchmarks/osh-runtime.sh measure \
-    $host_name $raw_out_dir $OSH_EVAL_BENCHMARK_DATA $out_dir
+    $host_name $raw_out_dir $OSH_CPP_BENCHMARK_DATA $out_dir
 
   # Old style uses provenance.txt.  TODO: use raw_out_dir everywhere
   local provenance=_tmp/provenance.txt
@@ -86,7 +86,7 @@ all() {
 
   benchmarks/id.sh shell-provenance-2 \
     $host_name $job_id $out_dir \
-    "${SHELLS[@]}" $OSH_EVAL_BENCHMARK_DATA python2
+    "${SHELLS[@]}" $OSH_CPP_BENCHMARK_DATA python2
 
   # TODO: probably move compiler-provenance here
 
@@ -99,7 +99,7 @@ all() {
     benchmarks/gc.sh soil-run
 
     benchmarks/osh-parser.sh measure-cachegrind \
-      _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_EVAL_BENCHMARK_DATA
+      _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_CPP_BENCHMARK_DATA
   fi
 
   measure-shells $host_name $job_id $out_dir

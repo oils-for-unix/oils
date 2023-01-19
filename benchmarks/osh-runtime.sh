@@ -150,7 +150,7 @@ run-tasks() {
 
     # Run it, possibly with GC stats
     case $sh_path in
-      */osh_eval*)
+      *_bin/*/osh)
         OIL_GC_STATS_FD=99 "${time_argv[@]}" > $stdout_file 99> $gc_stats_file
         ;;
       *)
@@ -205,7 +205,7 @@ print-tasks() {
 measure() {
   local host_name=$1  # 'no-host' or 'lenny'
   local raw_out_dir=$2
-  local osh_native=$3  # $OSH_EVAL_NINJA_BUILD or $OSH_EVAL_BENCHMARK_DATA
+  local osh_native=$3  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA
   local out_dir=${4:-$BASE_DIR}  # ../benchmark-data/osh-runtime or _tmp/osh-runtime
 
   mkdir -v -p $raw_out_dir
@@ -341,8 +341,8 @@ soil-run() {
   download
   extract
 
-  # could add _bin/cxx-bumpleak/osh_eval, although sometimes it's slower
-  local -a oil_bin=( $OSH_EVAL_NINJA_BUILD )
+  # could add _bin/cxx-bumpleak/oils_cpp, although sometimes it's slower
+  local -a oil_bin=( $OSH_CPP_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 
   local single_machine='no-host'
@@ -359,7 +359,7 @@ soil-run() {
   local raw_out_dir="$BASE_DIR/raw.$host_job_id"
   mkdir -p $raw_out_dir $BASE_DIR/stage1
 
-  measure $single_machine $raw_out_dir $OSH_EVAL_NINJA_BUILD
+  measure $single_machine $raw_out_dir $OSH_CPP_NINJA_BUILD
 
   # Trivial concatenation for 1 machine
   stage1 '' $single_machine

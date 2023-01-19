@@ -17,7 +17,7 @@ install() {
 }
 
 demo() {
-  rr record _bin/osh_eval.dbg -c 'x=Y; echo "_$x"'
+  rr record _bin/oils_cpp.dbg -c 'x=Y; echo "_$x"'
 }
 
 # rr needs /proc/sys/kernel/perf_event_paranoid <= 1, but it is 3.

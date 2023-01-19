@@ -9,9 +9,10 @@ _devbuild/gen/types_asdl.py
 asdl/format.py
 asdl/pybase.py
 asdl/runtime.py
-bin/osh_eval.py
+bin/oils_cpp.py
 core/alloc.py
 core/ansi.py
+core/comp_ui.py
 core/dev.py
 core/error.py
 core/executor.py
@@ -21,6 +22,7 @@ core/process.py
 core/pyerror.py
 core/pyos.py
 core/pyutil.py
+core/shell.py
 core/shell_native.py
 core/state.py
 core/ui.py
@@ -38,9 +40,12 @@ frontend/location.py
 frontend/match.py
 frontend/option_def.py
 frontend/parse_lib.py
+frontend/py_reader.py
+frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
 frontend/typed_args.py
+oil_lang/expr_eval.py
 oil_lang/expr_parse.py
 oil_lang/expr_to_ast.py
 oil_lang/funcs.py
@@ -52,6 +57,7 @@ osh/bool_stat.py
 osh/braces.py
 osh/builtin_assign.py
 osh/builtin_bracket.py
+osh/builtin_lib.py
 osh/builtin_meta.py
 osh/builtin_misc.py
 osh/builtin_printf.py
@@ -62,6 +68,7 @@ osh/builtin_trap.py
 osh/cmd_eval.py
 osh/cmd_parse.py
 osh/glob_.py
+osh/history.py
 osh/prompt.py
 osh/sh_expr_eval.py
 osh/split.py
@@ -79,3 +86,4 @@ pylib/os_path.py
 pylib/path_stat.py
 qsn_/qsn.py
 qsn_/qsn_native.py
+tea/tea_main.py

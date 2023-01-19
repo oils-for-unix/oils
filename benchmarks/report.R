@@ -41,25 +41,22 @@ provenanceLink = function(subdir, name, suffix) {
 }
 
 
-GetOshLabel = function(shell_hash, num_hosts) {
+GetOshLabel = function(shell_hash, prov_dir) {
   ### Given a string, return another string.
 
-  if (num_hosts == 1) {
-    prov_dir = '_tmp'
-  } else {
-    prov_dir = '../benchmark-data/'
-  }
-  path = sprintf('%s/shell-id/osh-%s/osh-version.txt', prov_dir, shell_hash)
+  path = sprintf('%s/shell-id/osh-%s/sh-path.txt', prov_dir, shell_hash)
 
   if (file.exists(path)) {
     Log('Reading %s', path)
     lines = readLines(path)
-    if (length(grep('OVM', lines)) > 0) {
+    if (length(grep('_bin/osh', lines)) > 0) {
       label = 'osh-ovm'
-    } else if (length(grep('CPython', lines)) > 0) {
+    } else if (length(grep('bin/osh', lines)) > 0) {
       label = 'osh-cpython'
+    } else if (length(grep('_bin/.*/osh', lines)) > 0) {
+      label = 'osh-native'
     } else {
-      stop("Couldn't find OVM or CPython in the version string")
+      stop("Expected _bin/osh, bin/osh, or _bin/.*/osh")
     }
   } else {
     stop(sprintf("%s doesn't exist", path))
@@ -67,20 +64,33 @@ GetOshLabel = function(shell_hash, num_hosts) {
   return(label)
 }
 
-opt_suffix1 = '_bin/cxx-opt/osh_eval.stripped'
-opt_suffix2 = '_bin/cxx-opt-sh/osh_eval.stripped'
+#opt_suffix1 = '_bin/cxx-opt/osh_eval.stripped'
+#opt_suffix2 = '_bin/cxx-opt-sh/osh_eval.stripped'
+
+opt_suffix1 = '_bin/cxx-opt/osh'
+opt_suffix2 = '_bin/cxx-opt-sh/osh'
 
 ShellLabels = function(shell_name, shell_hash, num_hosts) {
   ### Given 2 vectors, return a vector of readable labels.
 
+  # TODO: Clean up callers.  Some metrics all this function with a
+  # shell/runtime BASENAME, and others a PATH
+  # - e.g. ComputeReport calls this with runtime_name which is actually a PATH
+
   #Log('name %s', shell_name)
   #Log('hash  %s', shell_hash)
+
+  if (num_hosts == 1) {
+    prov_dir = '_tmp'
+  } else {
+    prov_dir = '../benchmark-data/'
+  }
 
   labels = c()
   for (i in 1:length(shell_name)) {
     sh = shell_name[i]
     if (sh == 'osh') {
-      label = GetOshLabel(shell_hash[i], num_hosts)
+      label = GetOshLabel(shell_hash[i], prov_dir)
 
     } else if (sh == 'osh_eval.stripped') {
       # e.g. used by osh-parser
@@ -137,15 +147,20 @@ DistinctHosts = function(t) {
   return(distinct_hosts)
 }
 
-DistinctShells = function(t) {
+DistinctShells = function(t, num_hosts = -1) {
   t %>% distinct(shell_name, shell_hash) -> distinct_shells
 
   Log('')
   Log('Labeling shells')
 
+  # Calculate it if not passed
+  if (num_hosts == -1) {
+    num_hosts = nrow(DistinctHosts(t))
+  }
+
   distinct_shells$shell_label = ShellLabels(distinct_shells$shell_name,
                                             distinct_shells$shell_hash,
-                                            nrow(DistinctHosts(t)))
+                                            num_hosts)
   return(distinct_shells)
 }
 
@@ -207,7 +222,8 @@ ParserReport = function(in_dir, out_dir) {
     joined_times
 
   # Like 'times', but do shell_label as one step
-  distinct_shells_2 = DistinctShells(cachegrind)
+  # Hack: we know benchmarks/auto.sh runs this on one machine
+  distinct_shells_2 = DistinctShells(cachegrind, num_hosts = 1)
   cachegrind %>%
     left_join(lines, by = c('path')) %>%
     select(-c(elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>% 

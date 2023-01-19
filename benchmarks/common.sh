@@ -18,10 +18,10 @@ OIL_VERSION=$(head -n 1 oil-version.txt)
 # Used by devtools/release.sh
 readonly BENCHMARK_DATA_OIL_NATIVE=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
 
-readonly OSH_EVAL_NINJA_BUILD=_bin/cxx-opt/osh_eval.stripped
-readonly OSH_EVAL_SH_BUILD=_bin/cxx-opt-sh/osh_eval.stripped
+readonly OSH_CPP_NINJA_BUILD=_bin/cxx-opt/osh
+readonly OSH_CPP_SH_BUILD=_bin/cxx-opt-sh/osh
 
-readonly OSH_EVAL_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/$OSH_EVAL_SH_BUILD
+readonly OSH_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/$OSH_CPP_SH_BUILD
 
 #
 # Binaries we want to test, which can be overridden
@@ -34,7 +34,7 @@ readonly SHELLS=( ${OTHER_SHELLS[@]} bin/osh $OSH_OVM )
 
 # Passed to awk in filter-provenance.  TODO: This could be a parameter
 # Awk wants this to be \\. ?  Probably should stop using Awk.
-readonly OIL_NATIVE_REGEX='osh_eval(\.stripped)?'
+readonly OSH_CPP_REGEX='_bin/.*/osh'
 
 # NOTE: This is in {build,test}/common.sh too.
 die() {
@@ -79,7 +79,7 @@ filter-provenance() {
   # create a regex bash|dash
   local pat=$(echo "$@" | sed 's/ /|/g')
 
-  # Anchor it at the end only.  For _bin/cxx-opt/osh_eval.stripped and the
+  # Anchor it at the end only.  For _bin/cxx-opt/oils_cpp.stripped and the
   # ../benchmark-data one.
   pat="($pat)\$"
 

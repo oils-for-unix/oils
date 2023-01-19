@@ -97,7 +97,7 @@ def ObjPath(src_path, config):
 # Used namedtuple since it doesn't have any state
 CcBinary = collections.namedtuple(
     'CcBinary',
-    'main_cc implicit deps matrix phony_prefix preprocessed top_level')
+    'main_cc symlinks implicit deps matrix phony_prefix preprocessed top_level')
 
 
 class CcLibrary(object):
@@ -307,6 +307,7 @@ class Rules(object):
       self._TransitiveClosure(cc_lib.label, cc_lib.deps, unique_out)
 
   def cc_binary(self, main_cc,
+      symlinks = None,
       implicit = None,  # for COMPILE action, not link action
       deps = None,
       matrix = None,  # $compiler $variant
@@ -314,12 +315,15 @@ class Rules(object):
       preprocessed = False,
       top_level = False,
       ):
+    symlinks = symlinks or []
     implicit = implicit or []
     deps = deps or []
     if not matrix:
       raise RuntimeError("Config matrix required")
 
-    cc_bin = CcBinary(main_cc, implicit, deps, matrix, phony_prefix, preprocessed, top_level)
+    cc_bin = CcBinary(main_cc, symlinks, implicit, deps, matrix, phony_prefix,
+                      preprocessed, top_level)
+
     self.cc_bins.append(cc_bin)
 
   def WriteCcBinary(self, cc_bin):
@@ -356,11 +360,14 @@ class Rules(object):
                      maybe_preprocess=True)
 
       config_dir = ConfigDir(config)
+      bin_dir = '_bin/%s' % config_dir
+      first_name = None
+
       if c.top_level:
         # e.g. _bin/cxx-dbg/osh_eval
         basename = os.path.basename(c.main_cc)
         first_name = basename.split('.')[0]
-        bin_= '_bin/%s/%s' % (config_dir, first_name)
+        bin_ = '%s/%s' % (bin_dir, first_name)
       else:
         # e.g. _gen/mycpp/examples/classes.mycpp
         rel_path, _ = os.path.splitext(c.main_cc)
@@ -369,10 +376,21 @@ class Rules(object):
         if rel_path.startswith('_gen/'):
           rel_path = rel_path[len('_gen/'):]
 
-        bin_= '_bin/%s/%s' % (config_dir, rel_path)
+        bin_= '%s/%s' % (bin_dir, rel_path)
 
       # Link with OBJECT deps
       self.link(bin_, main_obj, unique_deps, config)
+
+      # Make symlinks
+      for symlink in c.symlinks:
+        # Only top_level binaries can have symlinks for now
+        assert first_name is not None
+        self.n.build(
+            ['%s/%s' % (bin_dir, symlink)],
+            'symlink',
+            [bin_],
+            variables = [('dir', bin_dir), ('target', first_name), ('new', symlink)])
+        self.n.newline() 
 
       if c.phony_prefix:
         key = '%s-%s' % (c.phony_prefix, config_dir)

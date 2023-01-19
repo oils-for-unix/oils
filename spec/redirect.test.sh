@@ -628,7 +628,7 @@ is-fd-open() { : >&$1; }
 while is-fd-open "$fd"; do
   : $((fd+=1))
 
-  # prevent infinite loop for broken osh_eval
+  # prevent infinite loop for broken oils_cpp
   if test $fd -gt 1000; then
     break
   fi

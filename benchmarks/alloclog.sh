@@ -4,7 +4,7 @@
 #   benchmarks/sizelog.sh <function name>
 #
 # Example:
-#   ninja _test/osh_eval.alloclog
+#   ninja _test/oils_cpp.alloclog
 #   benchmarks/alloclog.sh alloc-hist
 
 set -o nounset
@@ -19,14 +19,14 @@ source benchmarks/common.sh
 # ~42.8M for benchmarks/testdata/configure-coreutils
 alloc-hist() {
   local prog=${1:-configure}
-  _bin/osh_eval.alloclog -n $prog | egrep '^new|^malloc' | hist
-  #_bin/osh_eval.sizelog -n $prog | egrep '^new|^malloc' | hist
+  _bin/oils_cpp.alloclog -n $prog | egrep '^new|^malloc' | hist
+  #_bin/oils_cpp.sizelog -n $prog | egrep '^new|^malloc' | hist
 }
 
 list-lengths() {
   ### Show the address of each list, its length, and its maximum element
   local prog=${1:-configure}
-  _bin/osh_eval.alloclog -n $prog | egrep '^0x' | benchmarks/alloclog.py
+  _bin/oils_cpp.alloclog -n $prog | egrep '^0x' | benchmarks/alloclog.py
 }
 
 # Hm this shows that almost all lists have 1-3 elements.
@@ -54,8 +54,8 @@ length-hist() {
 
 build-variants() {
   # opt uses dumb_alloc
-  # TODO: might want _bin/cxx-tcmalloc/osh_eval, which depends on a system library
-  ninja _bin/cxx-{opt,malloc}.osh_eval
+  # TODO: might want _bin/cxx-tcmalloc/oils_cpp, which depends on a system library
+  ninja _bin/cxx-{opt,malloc}.oils_cpp
 }
 
 time-mem() {
@@ -72,7 +72,7 @@ measure() {
 
   for variant in .opt .malloc .tcmalloc; do
     echo $variant
-    #time-mem _bin/osh_eval$variant -c 'echo hi'
+    #time-mem _bin/oils_cpp$variant -c 'echo hi'
 
     # dumb_alloc: 3876 KiB, GNU: 4088, tcmalloc: 9200.
     # OK that's actually not too bad for GNU.  Not too much overhead.
@@ -82,9 +82,9 @@ measure() {
     # Gah that is not good.  I want to get these numbers down.
     local file=benchmarks/testdata/configure-coreutils
 
-    time-mem $out "$variant\\tparse" _bin/osh_eval$variant --ast-format none -n $file
+    time-mem $out "$variant\\tparse" _bin/oils_cpp$variant --ast-format none -n $file
 
-    time-mem $out "$variant\\trun" _bin/osh_eval$variant benchmarks/compute/fib.sh 1000 44
+    time-mem $out "$variant\\trun" _bin/oils_cpp$variant benchmarks/compute/fib.sh 1000 44
   done
 
   cat $out

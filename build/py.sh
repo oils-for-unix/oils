@@ -277,7 +277,7 @@ print-all() { lexer-gen print-all; }
 #     frontend/
 #       match.re2c.in
 #     bin/
-#       osh_eval_raw.mycpp.cc
+#       oils_cpp_raw.mycpp.cc
 
 # re2c native.
 osh-lex-gen-native() {

@@ -57,7 +57,7 @@ REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
 OIL_VERSION=$(head -n 1 oil-version.txt)
 
 source devtools/common.sh  # banner
-source benchmarks/common.sh  # BENCHMARK_DATA_OIL_NATIVE, OSH_EVAL_BENCHMARK_DATA
+source benchmarks/common.sh  # BENCHMARK_DATA_OIL_NATIVE, OSH_CPP_BENCHMARK_DATA
                              # redefines OIL_VERSION as readonly
 
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
@@ -282,11 +282,11 @@ spec-all() {
   export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
   test/spec.sh all-and-smoosh
 
-  # Build $OSH_EVAL_BENCHMARK_DATA
+  # Build $OSH_CPP_BENCHMARK_DATA
   _build-oil-native-benchmark-data
 
   # Collect and publish stats about the C++ translation.
-  OSH_CC="$OSH_EVAL_BENCHMARK_DATA" test/spec-cpp.sh all
+  OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
 }
 
 # For quickly debugging failures that don't happen in dev mode.
